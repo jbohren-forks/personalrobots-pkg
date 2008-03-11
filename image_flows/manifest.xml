@@ -1,0 +1,19 @@
+<package>
+  <description brief="Flows carrying images">
+
+    This package contains serialization/deserialization for images, and handy
+    libraries to compress/decompress them. The image flow itself is just a
+    binary byte block. It is up to the sender and receiver to decide what goes
+    in the byte block. This package supplies a library that makes it easy to do
+    this. This library is just provided in C++ for now, but could be ported
+    relatively easily to more modern languages, since many of them have image
+    compression codecs built-in.
+
+  </description>
+  <author>Morgan Quigley (email: mquigley@cs.stanford.edu)</author>
+  <license>BSD</license>
+  <url>http://stair.stanford.edu</url>
+  <depend package="roscpp"/>
+  <depend package="ijg_libjpeg"/>
+</package>
+

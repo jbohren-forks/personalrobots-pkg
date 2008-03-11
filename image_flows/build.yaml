@@ -1,0 +1,4 @@
+cpp:
+  make:
+    - test/get_raster
+    - test/read_write
