@@ -1,0 +1,65 @@
+#!/usr/bin/env ruby
+require 'fileutils.rb'
+
+pkg_path = File.expand_path($0).split('/')
+pkg_path = pkg_path[0,pkg_path.length-1].join('/')
+puts "package path: [#{pkg_path}]"
+if pkg_path.length < 1
+  puts "woah! package path looks scary. something isn't right. bailing..."
+  exit
+end
+
+Dir.chdir(pkg_path)
+# TODO make sure we got there
+
+if ARGV.length == 0 || ARGV[0] == 'update'
+  Dir.mkdir 'bin' if !File.exists? 'bin'
+  Dir.mkdir 'lib' if !File.exists? 'lib'
+  Dir.mkdir 'man' if !File.exists? 'man'
+  Dir.mkdir 'man/man1' if !File.exists? 'man/man1'
+  puts "configuring libjpeg ============================"
+  Dir.chdir 'jpeg-6b'
+  system("./configure --prefix=${PWD}/..")
+# TODO check for blowups after configure
+  puts "making libjpeg ================================="
+  system("make")
+  puts "making libros_jpeg_mutex ======================="
+  Dir.chdir "#{pkg_path}/src"
+  system "make"
+  if $?.exitstatus != 0
+    puts "make returned #{$?.exitstatus}. aborting..."
+    exit $?.exitstatus
+  end
+  puts "moving files around ============================"
+  Dir.chdir "#{pkg_path}/jpeg-6b"
+  system("make install")
+# TODO check for make errors
+  FileUtils.cp 'libjpeg.a', '../lib/libjpeg.a'
+  FileUtils.cp 'jpeglib.h', '../include/jpeglib.h'
+  #FileUtils.cp 'jconfig.h', '../include/jconfig.h'
+  FileUtils.cp 'jmorecfg.h', '../include/jmorecfg.h'
+  FileUtils.cp 'jerror.h', '../include/jerror.h'
+  FileUtils.cp 'jpegint.h', '../include/jpegint.h'
+  # strip out the HAVE_STDLIB_H and HAVE_STDDEF_H lines which cause problems 
+  # when compiling with other large libraries... they aren't used at all in 
+  # these headers, they're just there because autoconf throws them in. 
+  system "sed -e '/HAVE_STDLIB_H/d' -e '/HAVE_STDDEF_H/d' <jconfig.h >../include/jconfig.h"
+
+  puts "done! hooray! =================================="
+elsif ARGV[0] == 'clean'
+  Dir.chdir "#{pkg_path}/src"
+  system "make clean"
+  Dir.chdir "#{pkg_path}"
+  system("rm -rf bin")
+  system("rm include/j*.h")
+  system("rm -rf lib")
+  system("rm -rf man")
+  Dir.chdir "#{pkg_path}/jpeg-6b"
+  system "make clean"
+  system "rm jconfig.h"
+  system "rm Makefile"
+  puts "done!"
+else
+  puts "unknown parameter: #{ARGV[0]}"
+end
+
