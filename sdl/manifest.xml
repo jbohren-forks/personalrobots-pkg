@@ -1,0 +1,14 @@
+<package>
+<description brief="The Simple DirectMedia Layer">
+
+This package contains the Simple DirectMedia Layer (SDL). This package does not
+modify SDL in any way; it simply provides a convenient way to download and
+compile the library's shared object in a way that can be managed by the ROS
+dependency system.
+
+</description>
+<author>Sam Lantinga, with contributions from many others. See web page for a full credits llist.</author>
+<license>LGPL</license>
+<url>http://www.libsdl.org</url>
+</package>
+

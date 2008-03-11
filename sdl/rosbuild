@@ -1,0 +1,44 @@
+#!/usr/bin/env ruby
+require 'fileutils.rb'
+
+pkg_path = File.expand_path($0).split('/')
+pkg_path = pkg_path[0,pkg_path.length-1].join('/')
+puts "package path: [#{pkg_path}]"
+if pkg_path.length < 1
+  puts "woah! package path looks scary. something isn't right. bailing..."
+  exit
+end
+
+Dir.chdir(pkg_path)
+# TODO make sure we got there
+
+if ARGV.length == 0 || ARGV[0] == 'update'
+  puts "extracting SDL ============================"
+  system("tar xzvf SDL-1.2.13.tar.gz")
+  Dir.mkdir 'bin' if !File.exists? 'bin'
+  Dir.mkdir 'lib' if !File.exists? 'lib'
+  Dir.mkdir 'man' if !File.exists? 'man'
+  Dir.mkdir 'man/man1' if !File.exists? 'man/man1'
+  puts "configuring libsdl ============================"
+  Dir.chdir "#{pkg_path}/SDL-1.2.13"
+  system("./configure --prefix=${PWD}/..")
+# TODO check for blowups after configure
+  puts "making libsdl ================================="
+  system("make")
+  puts "moving files around ============================"
+  system("make install")
+# TODO check for make errors
+  puts "done! hooray! =================================="
+elsif ARGV[0] == 'clean'
+  Dir.chdir "#{pkg_path}"
+  system("rm -rf bin")
+  system("rm -rf include")
+  system("rm -rf lib")
+  system("rm -rf man")
+  system("rm -rf share")
+  system("rm -rf SDL-1.2.13")
+  puts "done!"
+else
+  puts "unknown parameter: #{ARGV[0]}"
+end
+
