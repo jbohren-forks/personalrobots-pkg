@@ -1,0 +1,5 @@
+This program is a ROS node which uses libaxis_cam to supply a stream of JPEG images from an Axis IP camera. You can give it a "host" parameter to tell it where the camera is. Otherwise, it defaults to 192.168.0.90, which is the default IP of the camera when it comes out of the box, but is unlikely to correspond to your network.
+
+The output flow of images is registered as "image" with ROS.
+
+The camera outputs 704 by 480-pixel images.

@@ -1,0 +1,17 @@
+<package>
+<description brief="Controlling and acquiring data from Axis IP-based cameras">
+
+There are many ways to get images out of Axis IP-based cameras. The simplest is
+to just call 'wget' over and over. This is what the 'axis_cam_wget' and
+'axis_cam_wget_polled' programs do.
+
+In the future, I may add more sophisticated (more efficient) transport methods.
+
+</description>
+<author>Morgan Quigley (email: mquigley@cs.stanford.edu)</author>
+<license>BSD</license>
+<url>http://stair.stanford.edu</url>
+<depend package="image_flows"/>
+<depend package="common_flows"/>
+</package>
+

@@ -1,0 +1,7 @@
+cpp:
+  make:
+    - src/libaxis_cam
+    - src/axis_cam_wget
+    - src/axis_cam_wget_polled
+    - test/test_wget
+    - test/test_ptz
