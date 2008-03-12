@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+require "#{`#{ENV['ROS_ROOT']}/rospack latest yamlgraph`}/lib/yamlgraph/ygl.rb"
+g = YAMLGraph.new
+g.param 'image_sender.freq', 2.0
+g.param 'image_sender.image_file', '../examples/image_sender/test.jpg'
+g.node 'image_flows/image_sender', {'launch'=>'xterm'}
+YAMLGraphLauncher.new.launch g
+

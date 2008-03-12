@@ -28,20 +28,43 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 // POSSIBILITY OF SUCH DAMAGE.
 
-
 #include <cstdio>
 #include "image_flows/FlowImage.h"
 #include "image_flows/image_flow_codec.h"
+#include "ros/ros_slave.h"
+
+class ImageSender : public ROS_Slave
+{
+public:
+  double freq;
+  string image_file;
+  FlowImage *image;
+  ImageFlowCodec<FlowImage> *codec;
+
+  ImageSender() : ROS_Slave(), freq(1), image_file("test.jpg")
+  {
+    register_source(image = new FlowImage("image"));
+    codec = new ImageFlowCodec<FlowImage>(image);
+    register_with_master();
+    get_double_param(".freq", &freq);
+    get_string_param(".image_file", image_file);
+    codec->read_file(image_file);
+  }
+  void send_image()
+  {
+    printf("sending image %d\n", image->publish_count);
+    image->publish();
+  }
+};
 
 int main(int argc, char **argv)
 {
-  struct stat sbuf;
-  FlowImage image("image");
-  ImageFlowCodec<FlowImage> codec(&image);
-  codec.read_file("test.jpg");
-  codec.write_file("out.ppm");
-  codec.write_file("out.jpg", 5, false);
-
+  ImageSender is;
+  int sleep_usecs = (int)(1000000.0 / is.freq);
+  while (is.happy()) // ha ha CODING PUN
+  {
+    usleep(sleep_usecs);
+    is.send_image();
+  }
   return 0;
 }
-
