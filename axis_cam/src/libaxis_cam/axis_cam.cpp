@@ -2,8 +2,7 @@
 // The axis_cam package provides a library that talks to Axis IP-based cameras
 // as well as ROS nodes which use these libraries
 //
-// Copyright (C) 2008
-//   Morgan Quigley, Eric Berger, Ken Conley, Brian Gerkey
+// Copyright (C) 2008, Morgan Quigley
 //
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:

@@ -2,8 +2,7 @@
 // The image_flows package provides image transport, codec wrapping, and 
 // various handy image utilities.
 //
-// Copyright (C) 2008
-//   Morgan Quigley, Eric Berger, Ken Conley, Brian Gerkey
+// Copyright (C) 2008, Morgan Quigley
 //
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
