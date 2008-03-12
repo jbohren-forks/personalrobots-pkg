@@ -121,7 +121,7 @@ public:
 
   bool set_flow_data()
   {
-    if (flow->flow_dir != SOURCE)
+    if (flow->flow_dir != ROS_Flow::SOURCE)
     {
       printf("hey! you can't send an image out a sink flow. UR DONE.\n");
       assert(0);
