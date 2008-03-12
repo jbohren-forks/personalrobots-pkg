@@ -39,8 +39,9 @@ public:
   FlowImage *image;
   string axis_host;
   AxisCam *cam;
+  int frame_id;
 
-  AxisCamWget() : ROS_Slave(), cam(NULL)
+  AxisCamWget() : ROS_Slave(), cam(NULL), frame_id(0)
   {
     register_source(image = new FlowImage("image"));
     if (!get_string_param(".host", axis_host))
@@ -49,6 +50,7 @@ public:
       axis_host = "192.168.0.90";
     }
     printf("axis_cam host set to [%s]\n", axis_host.c_str());
+    get_int_param(".frame_id", &frame_id);
     cam = new AxisCam(axis_host);
   }
   virtual ~AxisCamWget()
@@ -62,7 +64,13 @@ public:
     uint32_t jpeg_size;
     if (!cam->wget_jpeg(&jpeg, &jpeg_size))
       return false;
-    image->set_jpeg_buffer(jpeg, jpeg_size, 704, 480);
+    image->set_data_size(jpeg_size);
+    memcpy(image->data, jpeg, jpeg_size);
+    image->width = 704;
+    image->height = 480;
+    image->compression = "jpeg";
+    image->colorspace = "rgb24";
+    image->frame_id = frame_id;
     image->publish();
     return true;
   }

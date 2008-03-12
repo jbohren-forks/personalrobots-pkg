@@ -49,6 +49,7 @@ public:
     get_double_param(".freq", &freq);
     get_string_param(".image_file", image_file);
     codec->read_file(image_file);
+    printf("WD is [%s]\n", getcwd(NULL, 0));
   }
   void send_image()
   {

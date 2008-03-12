@@ -76,7 +76,6 @@ bool AxisCam::wget_jpeg(uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_siz
   struct stat s;
   stat(filename.c_str(), &s);
   uint32_t jpeg_file_size = (uint32_t) s.st_size;
-  printf("jpeg_file_size = %d\n", jpeg_file_size);
   if (jpeg_file_size > jpeg_buf_size)
   {
     if (jpeg_buf)
@@ -114,7 +113,10 @@ bool AxisCam::ptz(double pan, double tilt, double zoom)
     return false;
   }
   else if (retval < 0)
-    printf("odd wget system retval = %d\n", retval);
+  {
+    // not sure what's happening here, but it appears to be benign.
+    //printf("odd wget system retval = %d\n", retval);
+  }
   return true;
 }
 

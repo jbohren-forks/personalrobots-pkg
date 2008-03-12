@@ -176,7 +176,6 @@ private:
 
   uint8_t *decompress_jpeg()
   {
-    printf("decompress jpeg\n");
     // sanity check
     if (flow->compression != string("jpeg"))
     {
@@ -314,7 +313,6 @@ private:
       return false;
     }
     flow->set_data_size(sbuf.st_size);
-    printf("reading a %d-byte file\n", sbuf.st_size);
     FILE *f = fopen(filename.c_str(), "rb");
     if (!f)
     {
@@ -342,7 +340,6 @@ private:
     jpeg_start_decompress(&dinfo);
     flow->width = dinfo.output_width;
     flow->height = dinfo.output_height;
-    printf("jpeg encodes a %d by %d image\n", flow->width, flow->height);
     jpeg_destroy_decompress(&dinfo);
     ros_jpeg_mutex_unlock();
     fclose(f);

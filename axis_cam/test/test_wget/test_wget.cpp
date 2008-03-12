@@ -56,10 +56,9 @@ bool tryit()
 int main(int argc, char **argv)
 {
   printf("construct AxisCam object...\n");
-  axis = new AxisCam("192.168.0.90");
+  axis = new AxisCam("192.168.1.90");
 
-  for (int i = 0; i < 10; i++)
-    tryit();
+  tryit();
 
   printf("delete AxisCam...\n");
   delete axis;

@@ -29,16 +29,20 @@
 #include "ros/ros_slave.h"
 #include "SDL/SDL.h"
 #include "image_flows/FlowImage.h"
+#include "image_flows/image_flow_codec.h"
 
 class ImageViewer : public ROS_Slave
 {
 public:
   FlowImage *image;
+  ImageFlowCodec<FlowImage> *codec;
   SDL_Surface *screen, *blit_prep;
 
   ImageViewer() : ROS_Slave(), blit_prep(NULL)
   {
     register_sink(image = new FlowImage("image"), ROS_CALLBACK(ImageViewer, image_received));
+    codec = new ImageFlowCodec<FlowImage>(image);
+    register_with_master();
   }
   virtual ~ImageViewer() { if (blit_prep) SDL_FreeSurface(blit_prep); }
   bool sdl_init()
@@ -48,8 +52,6 @@ public:
   }
   void image_received()
   {
-    printf("received a %d by %d image\n", image->width, image->height);
-    
     if (!screen)
       return; // paranoia. shouldn't happen. we should have bailed by now.
     if (screen->h != image->height || screen->w != image->width)
@@ -71,9 +73,10 @@ public:
         0x0000ff, 0x00ff00, 0xff0000, 0);
     }
     
+    uint8_t *raster = codec->get_raster(); // decompress if required
     int row_offset = 0;
     for (int row = 0; row < image->height; row++, row_offset += screen->pitch)
-      memcpy((char *)blit_prep->pixels + row_offset, image->raster + (row * image->width * 3), image->width * 3);
+      memcpy((char *)blit_prep->pixels + row_offset, raster + (row * image->width * 3), image->width * 3);
     
     if (SDL_MUSTLOCK(screen))
       if (SDL_LockSurface(screen) < 0)
