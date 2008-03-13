@@ -93,6 +93,9 @@ bool AxisCam::wget_jpeg(uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_siz
   *fetch_jpeg_buf = jpeg_buf;
   *fetch_buf_size = jpeg_file_size;
 
+  if (jpeg_file_size < 500) // sanity check
+    return false;
+
   return true;
 }
 
