@@ -1,0 +1,10 @@
+<package>
+<description brief="Universal logging node">
+This package has a "vacuum" node which can connect to any source and dumps it to a file.
+</description>
+<author>Morgan Quigley (email: mquigley@cs.stanford.edu)</author>
+<license>BSD</license>
+<url>http://personalrobots.wikidot.com</url>
+<depend package="roscpp"/>
+</package>
+

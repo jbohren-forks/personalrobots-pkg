@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////////
-// The axis_cam package provides a library that talks to Axis IP-based cameras
-// as well as ROS nodes which use these libraries
+// The vacuum package provides a catch-all node that will write any ROS stream
+// to a file. It tries to be smart about some types of streams.
 //
-// Copyright (C) 2008, Morgan Quigley
+// Copyright (C) 2008  Morgan Quigley
 //
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -28,63 +28,52 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ros/ros_slave.h"
-#include "SDL/SDL.h"
-#include "image_flows/FlowImage.h"
-#include "axis_cam/axis_cam.h"
 
-class AxisCamWget : public ROS_Slave
+class VacuumFlow : public ROS_Flow
 {
 public:
-  FlowImage *image;
-  string axis_host;
-  AxisCam *cam;
-  int frame_id;
+  FILE *log;
+  // uses an empty datatype string to bypass sanity check on flow connect
+  VacuumFlow(string name) : ROS_Flow(name, "", 1)
+  {
+    log = NULL;
+  }
+  ~VacuumFlow()
+  {
+    if (log)
+      fclose(log);
+    log = NULL;
+  }
+  virtual void deserialize()
+  {
+    printf("vacuum received a %d-byte atom\n", get_atom_len());
+  }
+  virtual void serialize() { }
+};
 
-  AxisCamWget() : ROS_Slave(), cam(NULL), frame_id(0)
+class Vacuum : public ROS_Slave
+{
+public:
+  Vacuum() : ROS_Slave()
   {
-    register_source(image = new FlowImage("image"));
-    if (!get_string_param(".host", axis_host))
-    {
-      printf("host parameter not specified; defaulting to 192.168.0.90\n");
-      axis_host = "192.168.0.90";
-    }
-    printf("axis_cam host set to [%s]\n", axis_host.c_str());
-    get_int_param(".frame_id", &frame_id);
-    cam = new AxisCam(axis_host);
-    printf("package path is [%s]\n", get_my_package_path().c_str());
+    register_with_master();
   }
-  virtual ~AxisCamWget()
-  { 
-    if (cam) 
-      delete cam; 
-  }
-  bool take_and_send_image()
+  virtual ~Vacuum() { }
+  void hose_cb() { }
+  virtual ROS_Flow *sinkConnectFlow_findFlow(string flowname)
   {
-    uint8_t *jpeg;
-    uint32_t jpeg_size;
-    if (!cam->wget_jpeg(&jpeg, &jpeg_size))
-      return false;
-    image->set_data_size(jpeg_size);
-    memcpy(image->data, jpeg, jpeg_size);
-    image->width = 704;
-    image->height = 480;
-    image->compression = "jpeg";
-    image->colorspace = "rgb24";
-    image->frame_id = frame_id;
-    image->publish();
-    return true;
+    printf("vacuum creating flow for [%s]\n", flowname.c_str());
+    VacuumFlow *vac = new VacuumFlow(flowname);
+    vac->flow_dir = ROS_Flow::SINK;
+    add_flow(vac);
+    return vac;
   }
 };
 
 int main(int argc, char **argv)
 {
-  AxisCamWget a;
-  while (a.happy())
-    if (!a.take_and_send_image())
-    {
-      printf("couldn't take image.\n");
-      break;
-    }
+  Vacuum v;
+  v.spin();
   return 0;
 }
 
