@@ -150,7 +150,10 @@ private:
   static boolean buffer_source_fill(j_decompress_ptr dinfo)
   {
     if (dinfo->src->bytes_in_buffer == 0)
+    {
       printf("woah! the flow should have received the entire JPEG buffer...\n");
+      return FALSE; // not sure what to do here...
+    }
     return TRUE;
   }
   static void buffer_source_skip(j_decompress_ptr dinfo, long num_bytes)
