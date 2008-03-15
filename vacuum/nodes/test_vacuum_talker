@@ -3,6 +3,6 @@ require "#{`#{ENV['ROS_ROOT']}/rospack latest yamlgraph`}/lib/yamlgraph/ygl.rb"
 g = YAMLGraph.new
 g.node 'roscpp_demo/talker', {'launch'=>'xterm'}
 g.node 'vacuum/vacuum', {'launch'=>'xterm'}
-g.flow 'talker:out', 'vacuum:talker_out'
+g.flow 'talker:out', 'vacuum:hose'
 YAMLGraphLauncher.new.launch g
 
