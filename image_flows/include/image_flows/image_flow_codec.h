@@ -71,7 +71,7 @@ public:
 
   uint8_t *get_raster(string colorspace = "rgb24")
   {
-    if (flow->flow_dir == ROS_Flow::SOURCE)
+    if (flow->flow_dir == ROS::SOURCE)
     {
       realloc_raster_if_needed();
       return raster; // outbound is the easy case...

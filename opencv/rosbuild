@@ -1,0 +1,45 @@
+#!/usr/bin/env ruby
+require 'fileutils.rb'
+
+pkg_path = File.expand_path($0).split('/')
+pkg_path = pkg_path[0,pkg_path.length-1].join('/')
+puts "package path: [#{pkg_path}]"
+if pkg_path.length < 1
+  puts "woah! package path looks scary. something isn't right. bailing..."
+  exit
+end
+
+Dir.chdir(pkg_path)
+# TODO make sure we got there
+
+if ARGV.length == 0 || ARGV[0] == 'update'
+  puts "extracting opencv ============================"
+  system("tar xzvf opencv-1.0.0.tar.gz")
+  puts "configuring opencv ============================"
+  Dir.chdir "#{pkg_path}/opencv-1.0.0"
+  ffmpeg = `#{ENV['ROS_ROOT']}/rospack find ffmpeg`
+  ENV['LD_LIBRARY_PATH'] = ENV['LD_LIBRARY_PATH'] + ':' if ENV['LD_LIBRARY_PATH']
+  ENV['LD_LIBRARY_PATH'] ||= ''
+  ENV['LD_LIBRARY_PATH'] = ENV['LD_LIBRARY_PATH'] + "#{ffmpeg}/lib"
+  system("./configure --without-quicktime --with-ffmpeg --prefix=${PWD}/.. CFLAGS=\"-I#{ffmpeg}/include -I#{ffmpeg}/include/libavutils -I#{ffmpeg}/include/libavformat\" CPPFLAGS=\"-I#{ffmpeg}/include -I#{ffmpeg}/include/libavutils -I#{ffmpeg}/include/libavformat\" LDFLAGS=-L#{ffmpeg}/lib --with-gnu-ld --with-x")
+# hack up the opencv <=> ffmpeg interface so we can use the latest ffmpeg
+  system "cd #{pkg_path}/opencv-1.0.0/otherlibs/highgui; patch -p0 <../../../cvcap_ffmpeg.patch"
+# TODO check for blowups after configure
+  puts "making opencv ================================="
+  system("make")
+  puts "moving files around ============================"
+  system("make install")
+# TODO check for make errors
+  puts "done! hooray! =================================="
+elsif ARGV[0] == 'clean'
+  Dir.chdir "#{pkg_path}"
+  system("rm -rf bin")
+  system("rm -rf include")
+  system("rm -rf lib")
+  system("rm -rf share")
+  system("rm -rf opencv-1.0.0")
+  puts "done!"
+else
+  puts "unknown parameter: #{ARGV[0]}"
+end
+

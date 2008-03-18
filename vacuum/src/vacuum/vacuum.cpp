@@ -69,8 +69,12 @@ public:
     if (log)
     {
       uint32_t atom_len = get_atom_len();
+      uint32_t secs = get_stamp_secs(), nsecs = get_stamp_nsecs();
       fwrite(&atom_len, 1, 4, log);
-      fwrite(read_ptr, 1, get_atom_len(), log);
+      fwrite(&publish_count, 1, 4, log);
+      fwrite(&secs, 1, 4, log);
+      fwrite(&nsecs, 1, 4, log);
+      fwrite(read_ptr, 1, get_atom_len() - 12, log);
     }
   }
   virtual void serialize() { }
