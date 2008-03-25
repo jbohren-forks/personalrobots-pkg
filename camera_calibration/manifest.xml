@@ -5,11 +5,12 @@ This package uses opencv to calibrate a camera with readings from an image flow.
 <author>Jeremy Leibs (email: leibs@willowgarage.com)</author>
 <license>BSD</license>
 <depend package='roscpp'/>
-<depend package='stair.image_flows'/>
+<depend package='image_flows'/>
 <depend package='driver_axis213'/>
 <depend package='common_flows'/>
 <depend package='yamlgraph'/>
 <depend package='sdl'/>
+<depend package='simple_sdl_gui'/>
 <repository>http://pr.willowgarage.com/repos</repository>
 </package>
 

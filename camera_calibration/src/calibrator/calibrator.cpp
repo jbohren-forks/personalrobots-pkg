@@ -46,20 +46,9 @@
 
 #include "ros/ros_slave.h"
 #include "image_flows/FlowImage.h"
+#include "image_flows/image_flow_codec.h"
 #include "driver_axis213/FlowPTZPosition.h"
-#include "common_flows/FlowInt32.h"
-
-
-
-void matToFile(CvMat *mat, ofstream &out, const char *matname) {
-  out << matname << " = [\r\n";
-  for(int i=0; i<mat->rows; i++) {
-    for(int j=0; j<mat->cols; j++)
-      out << " " << cvmGet(mat, i, j);
-    out << ";\r\n";
-  }
-  out << "]\r\n";   
-}
+#include "simple_sdl_gui/FlowSDLKeyEvent.h"
 
 void matToScreen(CvMat *mat, const char* matname) {
   cout << matname << " = [\r\n";
@@ -72,15 +61,18 @@ void matToScreen(CvMat *mat, const char* matname) {
 }
 
 
-
 class Calibrator : public ROS_Slave
 {
 public:
   FlowImage *image_in;
+  ImageFlowCodec<FlowImage> *codec_in;
+
   FlowImage *image_out;
+  ImageFlowCodec<FlowImage> *codec_out;
+
   FlowPTZPosition *control;
   FlowPTZPosition *observe;
-  FlowInt32 *key;
+  FlowSDLKeyEvent *key;
 
   CvMat *cvimage_in;
   CvMat *cvimage_out;
@@ -101,15 +93,17 @@ public:
 
   Calibrator() : ROS_Slave()
   {
-    register_sink(image_in = new FlowImage("imagein"), ROS_CALLBACK(Calibrator, image_received));
-    register_source(image_out = new FlowImage("imageout", FlowImage::UNCOMPRESSED, 704, 480));
+    register_sink(image_in = new FlowImage("image_in"), ROS_CALLBACK(Calibrator, image_received));
+    codec_in = new ImageFlowCodec<FlowImage>(image_in);
+
+    register_source(image_out = new FlowImage("image_out"));
+    codec_out = new ImageFlowCodec<FlowImage>(image_out);
+
     register_sink(observe = new FlowPTZPosition("observe"), ROS_CALLBACK(Calibrator, ptz_received));
     register_source(control = new FlowPTZPosition("control"));
-    register_sink(key = new FlowInt32("key"), ROS_CALLBACK(Calibrator, key_received));
+    register_sink(key = new FlowSDLKeyEvent("key"), ROS_CALLBACK(Calibrator, key_received));
 
-    image_out->width = 704;
-    image_out->height = 480;
-    image_out->resize_raster();
+    register_with_master();
 
     cvimage_in = cvCreateMatHeader(480, 704, CV_8UC3);
     cvimage_out = cvCreateMatHeader(480, 704, CV_8UC3);
@@ -158,69 +152,70 @@ public:
     //    std::cout << "Got keypress: " << key->data << std::endl;
 
     float tmp_focus;
-
-    switch (key->data) {
-    case SDLK_UP:
-      control->tilt += 1;
-      break;
-    case SDLK_DOWN:
-      control->tilt -= 1;
-      break;
-    case SDLK_LEFT:
-      control->pan -= 1;
-      break;
-    case SDLK_RIGHT:
-      control->pan += 1;
-      break;
-    case 61:
-      control->zoom += 100;
-      break;
-    case 45:
-      control->zoom -= 100;
-      break;
-    case SDLK_RIGHTBRACKET:
-      control->focus += 100;
-      break;
-    case SDLK_LEFTBRACKET:
-      control->focus -= 100;
-      break;
-    case SDLK_SPACE:
-      control->pan = 0;
-      control->tilt = 0;
-      control->zoom = 5000;
-      control->focus = -1;
-      control->relative = false;
-      break;
-    case SDLK_c:
-      centering = !centering;
-      break;
-    case SDLK_d:
-      undistort = !undistort;
-      break;
-    case SDLK_f:
-      observe->lock_atom();
-      control->pan = observe->pan;
-      control->tilt = observe->tilt;
-      control->zoom = observe->zoom;
-      tmp_focus = observe->focus;
-      observe->unlock_atom();
-      control->relative = false;
-
-      if (tmp_focus > 1) {
+    if (key->state == SDL_PRESSED) {
+      switch (key->sym) {
+      case SDLK_UP:
+	control->tilt += 1;
+	break;
+      case SDLK_DOWN:
+	control->tilt -= 1;
+	break;
+      case SDLK_LEFT:
+	control->pan -= 1;
+	break;
+      case SDLK_RIGHT:
+	control->pan += 1;
+	break;
+      case 61:
+	control->zoom += 100;
+	break;
+      case 45:
+	control->zoom -= 100;
+	break;
+      case SDLK_RIGHTBRACKET:
+	control->focus += 100;
+	break;
+      case SDLK_LEFTBRACKET:
+	control->focus -= 100;
+	break;
+      case SDLK_SPACE:
+	control->pan = 0;
+	control->tilt = 0;
+	control->zoom = 5000;
 	control->focus = -1;
-      } else {
-	control->focus = 0;
-      }
-      break;
-    case SDLK_RETURN:
-      take_pic = true;
-      break;
-    case SDLK_a:
-      do_calibration();
-    }
+	control->relative = false;
+	break;
+      case SDLK_c:
+	centering = !centering;
+	break;
+      case SDLK_d:
+	undistort = !undistort;
+	break;
+      case SDLK_f:
+	observe->lock_atom();
+	control->pan = observe->pan;
+	control->tilt = observe->tilt;
+	control->zoom = observe->zoom;
+	tmp_focus = observe->focus;
+	observe->unlock_atom();
+	control->relative = false;
 
-    control->publish();
-    return;
+	if (tmp_focus > 1) {
+	  control->focus = -1;
+	} else {
+	  control->focus = 0;
+	}
+	break;
+      case SDLK_RETURN:
+	take_pic = true;
+	break;
+      case SDLK_a:
+	do_calibration();
+      }
+
+      control->publish();
+      return;
+    }
   }
 
   void ptz_received() {
@@ -239,13 +234,17 @@ public:
 
   void process_image()
   {
-    image_in->lock_atom();
+
+    //    std::cout << "Checking publish count: " << image_in->publish_count << std::endl;
+
+    //    image_in->lock_atom();
 
     if (image_in->publish_count > 0) {
 
-      cvSetData(cvimage_in, image_in->raster, image_in->bpp*image_in->width);
+      cvSetData(cvimage_in, codec_in->get_raster(), 3*704);
       cvConvertImage(cvimage_in, cvimage_bgr, CV_CVTIMG_SWAP_RB);
-      image_in->unlock_atom();
+
+      //      image_in->unlock_atom();
 
       CvSize board_sz = cvSize(12, 12);
       CvPoint2D32f* corners = new CvPoint2D32f[12*12];
@@ -319,8 +318,16 @@ public:
       }
       cvPutText(cvimage_undistort, ss.str().c_str(), cvPoint(15,60), &font, CV_RGB(255,0,0));
 
-      cvSetData(cvimage_out, image_out->raster, image_out->bpp*image_out->width);      
+      image_out->width = 704;
+      image_out->height = 480;
+      image_out->compression = "raw";
+      image_out->colorspace = "rgb24";
+
+      codec_out->realloc_raster_if_needed();
+      cvSetData(cvimage_out, codec_out->get_raster(), 3*image_out->width);      
       cvConvertImage(cvimage_undistort, cvimage_out, CV_CVTIMG_SWAP_RB);
+
+      codec_out->set_flow_data();
 
       image_out->publish();
 
@@ -353,7 +360,7 @@ public:
       delete[] corners;
       
     } else {
-      image_in->unlock_atom();
+      //      image_in->unlock_atom();
     }
   }
 
