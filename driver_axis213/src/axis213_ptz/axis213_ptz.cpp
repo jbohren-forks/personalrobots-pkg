@@ -70,6 +70,8 @@ public:
     register_source(ptz_observe_polled = new FlowPTZPosition("ptz_observe_polled"));
     register_sink(shutter = new FlowEmpty("shutter"), ROS_CALLBACK(Axis213_ptz, shutter_callback));
 
+    register_with_master();
+
     print_param_names();
 
     if (!get_string_param("axis213_ptz.host", axis_host))

@@ -60,6 +60,8 @@ public:
 
     register_sink(shutter = new FlowEmpty("shutter"), ROS_CALLBACK(Axis213_cam, shutter_callback));
 
+    register_with_master();
+
     if (!get_string_param(".host", axis_host))
     {
       printf("axis_host parameter not specified; defaulting to 10.0.0.150\n");
@@ -68,7 +70,6 @@ public:
     printf("axis host set to [%s]\n", axis_host.c_str());
     cam = new Axis213(axis_host);
 
-    register_with_master();
   }
 
   virtual ~Axis213_cam()
