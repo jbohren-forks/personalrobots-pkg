@@ -1,0 +1,31 @@
+#!/usr/bin/env ruby
+
+if !ENV['ROS_ROOT']
+  puts "aaaaaaa! The ROS_ROOT environment variable is not set."
+  puts "Navigate to your ROS_ROOT directory and run ./set_ros_root"
+  puts "(alternatively, you can do this in your .bashrc file"
+  exit
+end
+
+pkg_path = File.expand_path($0).split('/')
+pkg_path = pkg_path[0,pkg_path.length-1].join('/')
+
+Dir.chdir(pkg_path)
+
+if ARGV.length == 0 || ARGV[0] == 'update'
+  Dir.mkdir "#{pkg_path}/bin" if !File.exist?("#{pkg_path}/bin")
+  Dir.chdir "#{pkg_path}/src/calibrator"
+  system "make"
+  Dir.chdir "#{pkg_path}/src/camera_gui"
+  system "make"
+elsif ARGV[0] == 'clean'
+  Dir.chdir "#{pkg_path}/src/calibrator"
+  system "make clean"
+  Dir.chdir "#{pkg_path}/src/camera_gui"
+  system "make clean"
+  Dir.chdir "#{pkg_path}"
+  system "rmdir bin"
+else
+  puts "unknown parameter: #{ARGV[0]}"
+end
+

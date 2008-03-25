@@ -1,0 +1,4 @@
+cpp:
+  make:
+    - src/simple_sdl_gui
+    - src/key_monitor

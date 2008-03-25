@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+(puts "aaaaaaaa no ROS_ROOT"; exit) if !ENV['ROS_ROOT']
+require "#{`#{ENV['ROS_ROOT']}/rospack latest yamlgraph`}/lib/yamlgraph/yamlgraph_launcher.rb"
+g = ROS_Graph.new
+g.node  'driver_axis213/axis213_cam'
+g.node  'driver_axis213/axis213_ptz'
+g.param 'axis213_cam.host', '10.0.0.150'
+g.param 'axis213_ptz.host', '10.0.0.150'
+g.node  'camera_calibration/calibrator'
+g.node  'camera_calibration/camera_gui'
+g.flow  'axis213_cam.image_all', 'calibrator.imagein'
+g.flow  'axis213_ptz.ptz_observe_all', 'calibrator.observe'
+g.flow  'calibrator.control', 'axis213_ptz.ptz_control'
+g.flow  'calibrator.imageout', 'camera_gui.image'
+g.flow  'camera_gui.key', 'calibrator.key'
+ROS_GraphLauncher.new.launch g
+

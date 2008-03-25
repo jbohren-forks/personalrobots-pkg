@@ -1,0 +1,6 @@
+cpp:
+  make:
+    - src/libaxis213
+    - src/axis213_cam
+    - src/axis213_ptz
+

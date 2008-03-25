@@ -1,0 +1,7 @@
+<package>
+  <description brief='A Python Tkinter based Image Viewer'>This will display an image to screen.</description>
+  <author>Tully Foote tfoote at willowgarage.com</author>
+  <license>BSD</license>
+  <depend package="rospy" />
+  <depend package="common_flows" />
+</package>

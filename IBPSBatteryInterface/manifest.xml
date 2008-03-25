@@ -1,0 +1,7 @@
+<package>
+  <description>This is an interface to the Osean Server Technology Intelligent Battery and Power System.</description>
+  <author>Tully Foote</author>
+  <license>BSD</license>
+  <depend package="rospy" />
+  <depend package="common_flows" />
+</package>

@@ -1,0 +1,14 @@
+<package>
+<description brief='Controlling and acquiring data from the Axis 213 camera'>
+
+This set of nodes uses libcurl to communicate with the axis213.  It is derived from the
+package axis213_cam driver written by Morgan Quigley.
+
+</description>
+<author>Jeremy Leibs (email: leibs@willowgarage.com)</author>
+<license>BSD</license>
+<url>http://pr.willowgarage.com</url>
+<depend package='image_flows'/>
+<depend package='common_flows'/>
+<repository>http://pr.willowgarage.com/repos</repository>
+</package>
