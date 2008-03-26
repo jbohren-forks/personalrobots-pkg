@@ -1,5 +1,7 @@
 import operator
 import select
+import time
+import os
 
 # returns total as checksum
 # input - string
@@ -82,9 +84,11 @@ class robotPower:
 
     def print_remaining(self):
         print "___________________________________"
-        print 'time remaining per battery pack'
+        print "Battery Controller Information:"
+        print "-----------------------------------"
+        print 'time remaining per battery pack in minutes'
         print '1: %d, 2:%d, 3:%d, 4:%d'%(self.controllers[0].time_remaining,self.controllers[1].time_remaining,self.controllers[2].time_remaining,self.controllers[3].time_remaining)
-        print "average charge"
+        print "average charge percentage"
         print '1: %d, 2:%d, 3:%d, 4:%d'%(self.controllers[0].average_charge,self.controllers[1].average_charge,self.controllers[2].average_charge,self.controllers[3].average_charge)
         print "total_current"
         print '1: %f, 2:%f, 3:%f, 4:%f'%(self.controllers[0].total_current(),self.controllers[1].total_current(),self.controllers[2].total_current(),self.controllers[3].total_current())
@@ -98,6 +102,14 @@ class robotPower:
                 for message in control.latest_system_messages:
                     print message
 
+
+
+
+os.system('stty 19200 </dev/ttyUSB0')
+os.system('stty 19200 </dev/ttyUSB1')
+os.system('stty 19200 </dev/ttyUSB2')
+os.system('stty 19200 </dev/ttyUSB3')
+
     
 #f= open('testfile.txt','r')
 f0 = open('/dev/ttyUSB0','r')
@@ -109,6 +121,8 @@ f3 = open('/dev/ttyUSB3','r')
 
 myPow = robotPower()
 
+start_time = time.time()
+last_time = start_time
 while True:
     current, blah, blah2 = select.select([f0,f1,f2,f3],[],[],1)
     for f in current:
@@ -150,7 +164,11 @@ while True:
         # for each pair
         # read index  01-07
         # record value
-
+        if len(message) < 2:
+            print "error message too short: \"%s\" from \"%s\""%(message, line)
+            print "This often indicates a misconfigured serial port check port:"
+            print f
+            continue
         if message[0] == 'C':
             controller_number = int(message[1])
             #print 'Controller on port %s says:'%(port_string)
@@ -194,7 +212,7 @@ while True:
             controller_number = int(message[1])
             battery_number = int(message[2])
 
-            print 'Battery %d on Controller %d'%(battery_number, controller_number)
+            #print 'Battery %d on Controller %d'%(battery_number, controller_number)
 
             splitmessage = message.split(',')
 
@@ -231,7 +249,7 @@ while True:
 #case S system data
         if message[0] == 'S':
             splitmessage = message.split(',')
-            print 'System Message'
+            #print 'System Message'
             for i in range(0,(len(splitmessage)-1)/2):
                 key = splitmessage[i*2+1]
                 value = splitmessage[i*2+2]
@@ -253,5 +271,8 @@ while True:
                     #print 'average charge percent %d'% hex2dec(value)
                     myPow.controllers[port].average_charge = int(hex2dec(value))
 
-                    
+    #print time.time()
+    increment = 1.0
+    if time.time() - last_time > increment:
+        last_time = last_time + increment
         myPow.print_remaining()
