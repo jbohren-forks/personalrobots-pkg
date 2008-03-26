@@ -1,0 +1,20 @@
+<package>
+<description brief="SSH library for Python">
+This package contains a redistribution of the paramiko library by Robey Pointer. It has been modified to restructure Python source files to ROS package conventions and files relating to installing paramiko using easy_install have been removed to eliminate confusion. 
+
+Unaltered distribution can be downloaded from: 
+    http://www.lag.net/paramiko/download/paramiko-1.7.1.zip
+
+Paramiko is a library for making SSH2 connections (client or server).
+Emphasis is on using SSH2 as an alternative to SSL for making secure
+connections between python scripts.  All major ciphers and hash methods
+are supported.  SFTP client and server mode are both supported too.
+        
+Required packages:
+pyCrypto
+</description>
+<author>Robey Pointer/robey@lag.net. ROS package maintained by Ken Conley.</author>
+<license>LGPL</license>
+<url>http://lag.net/paramiko/</url>
+</package>
+
