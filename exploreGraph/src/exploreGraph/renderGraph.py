@@ -59,19 +59,35 @@ def require(args):
     return val
 
 def usage(stdout, progname):
-    print >>stdout, """%s [-h]
+    print >>stdout, """%s [-h] [-s SERVER_ADDRESS] [-p SERVER_PORT]
 
 """%progname+rospy.USAGE_ENV
 
 def renderGraphMain(argv, stdout, env):
+    # default arguments
+    server = "http://localhost"
+    server_port = rospy.DEFAULT_TEST_PORT
+
     #check arguments for a help flag
-    optlist, args = getopt.getopt(argv[1:], "h?", ["help","test"])
+    optlist, args = getopt.getopt(argv[1:], "h?p:s:", ["help","port=","server=","test"])
     for o, a in optlist:
         if o in ("-h","-?","--help"):
             usage(stdout, argv[0])
             return
-        if o == "--test":
-            testMode(NAME)
+        elif o in ("--test"):
+            server_port = rospy.DEFAULT_TEST_PORT
+        elif o in ("-p", "--port"):
+            server_port = a
+        elif o in ("-s", "--server"):
+            server = a
+
+
+    serverUri = '%s:%s/'%(server,server_port)
+    print "Looking for server at %s"%serverUri
+    os.environ[rospy.ROS_MASTER_URI] = serverUri
+    os.environ[rospy.ROS_NODE] = "viewGraph"
+    os.environ[rospy.ROS_PORT] = str(0) # any
+
             
     master = rospy.getMaster()
 
