@@ -1,8 +1,7 @@
 #include "libTF.hh"
 
 RefFrame::RefFrame() :
-  parent(0),
-  active(false)
+  parent(0)
 {
   return;
 }
@@ -34,13 +33,11 @@ NEWMAT::Matrix RefFrame::getInverseMatrix()
 }
 
 
-TransformReference::TransformReference():
-  mMat(4,4)
-{
-  
-
-  return;
-}
+/*TransformReference::TransformReference()
+ *{
+ * return;
+ *}
+ */
 
 void TransformReference::set(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d,double e,double f)
 {
