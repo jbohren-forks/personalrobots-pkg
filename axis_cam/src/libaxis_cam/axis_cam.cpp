@@ -2,7 +2,8 @@
 // The axis_cam package provides a library that talks to Axis IP-based cameras
 // as well as ROS nodes which use these libraries
 //
-// Copyright (C) 2008, Morgan Quigley
+// Copyright (C) 2008, Morgan Quigley, Stanford Univerity
+//                     Jeremy Leibs, Willow Garage
 //
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -11,9 +12,9 @@
 //   * Redistributions in binary form must reproduce the above copyright 
 //     notice, this list of conditions and the following disclaimer in the 
 //     documentation and/or other materials provided with the distribution.
-//   * Neither the name of Stanford University nor the names of its 
-//     contributors may be used to endorse or promote products derived from 
-//     this software without specific prior written permission.
+//   * Neither the name of Stanford University, Willow Garage, nor the names 
+//     of its contributors may be used to endorse or promote products derived 
+//     from this software without specific prior written permission.
 //   
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
@@ -28,13 +29,28 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <sstream>
-#include <sys/stat.h>
 #include "axis_cam/axis_cam.h"
 
 AxisCam::AxisCam(string ip) : ip(ip)
 {
   jpeg_buf = NULL;
   jpeg_buf_size = 0;
+  curl_global_init(0);
+  ostringstream oss;
+  oss << "http://" << ip << "/axis-cgi/com/ptz.cgi";
+  setptz_curl = curl_easy_init();
+  curl_easy_setopt(setptz_curl, CURLOPT_URL, oss.str().c_str());
+  curl_easy_setopt(setptz_curl, CURLOPT_WRITEFUNCTION, AxisCam::setptz_write);
+  curl_easy_setopt(setptz_curl, CURLOPT_WRITEDATA, this);
+
+  oss.str(""); // clear it
+  oss << "http://" << ip << "/jpg/image.jpg";
+  jpeg_curl = curl_easy_init();
+  curl_easy_setopt(jpeg_curl, CURLOPT_URL, oss.str().c_str());
+  curl_easy_setopt(jpeg_curl, CURLOPT_WRITEFUNCTION, AxisCam::jpeg_write);
+  curl_easy_setopt(jpeg_curl, CURLOPT_WRITEDATA, this);
+
+  printf("Getting images from [%s]", oss.str().c_str());
 }
 
 AxisCam::~AxisCam()
@@ -42,39 +58,45 @@ AxisCam::~AxisCam()
   if (jpeg_buf)
     delete[] jpeg_buf;
   jpeg_buf = NULL;
+  curl_global_cleanup();
 }
 
-bool AxisCam::wget_jpeg(uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_size, string filename)
+bool AxisCam::get_jpeg(uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_size)
 {
   if (fetch_jpeg_buf && fetch_buf_size)
   {
     *fetch_jpeg_buf = NULL;
     *fetch_buf_size = 0;
   }
-  if (filename == string())
-    filename = "axiscam-temp.jpg";
-  ostringstream oss;
-  oss << string("wget -q -O") << filename << string(" \"") << ip << string("/jpg/image.jpg\"");
-  //printf("about to execute: [%s]\n", oss.str().c_str());
-  int retval = system(oss.str().c_str());
-  if (retval > 0)
-  {
-    printf("ahhh nonzero return value from wget: %d\n", retval);
+  else
+    return false; // don't make me crash
+  jpeg_file_size = 0;
+  if (curl_easy_perform(jpeg_curl))
     return false;
-  }
-  else if (retval < 0)
-    printf("wget system retval = %d\n", retval);
-  
-  FILE *jpeg_file = fopen(filename.c_str(),"rb");
-  if (!jpeg_file)
-  {
-    printf("couldn't read back the jpeg file from disk\n");
-    return false;
-  }
+  *fetch_jpeg_buf = jpeg_buf;
+  *fetch_buf_size = jpeg_file_size;
+  return true;
+}
 
-  struct stat s;
-  stat(filename.c_str(), &s);
-  uint32_t jpeg_file_size = (uint32_t) s.st_size;
+size_t AxisCam::jpeg_write(void *buf, size_t size, size_t nmemb, void *userp)
+{
+  if (size * nmemb == 0)
+    return 0;
+  AxisCam *a = (AxisCam *)userp;
+  if (a->jpeg_file_size + size*nmemb >= a->jpeg_buf_size)
+  {
+    // overalloc
+    a->jpeg_buf_size = 2 * (a->jpeg_file_size + (size*nmemb));
+    if (a->jpeg_buf)
+      delete[] a->jpeg_buf;
+    a->jpeg_buf = new uint8_t[a->jpeg_buf_size];
+  }
+  memcpy(a->jpeg_buf + a->jpeg_file_size, buf, size*nmemb);
+  a->jpeg_file_size += size*nmemb;
+  return size*nmemb;
+}
+  
+  /*
   if (jpeg_file_size > jpeg_buf_size)
   {
     if (jpeg_buf)
@@ -89,15 +111,9 @@ bool AxisCam::wget_jpeg(uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_siz
     return false;
   }
   fclose(jpeg_file);
-
   *fetch_jpeg_buf = jpeg_buf;
   *fetch_buf_size = jpeg_file_size;
-
-  if (jpeg_file_size < 500) // sanity check
-    return false;
-
-  return true;
-}
+  */
 
 bool AxisCam::ptz(double pan, double tilt, double zoom)
 {
