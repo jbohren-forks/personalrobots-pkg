@@ -1,0 +1,4 @@
+cpp:
+  make:
+    - src/test/range_sender
+    - src/test/range_receiver
