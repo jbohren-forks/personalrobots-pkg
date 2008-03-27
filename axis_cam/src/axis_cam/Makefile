@@ -1,4 +1,4 @@
-SRC = axis_cam_wget.cpp
-OUT = ../../nodes/axis_cam_wget
+SRC = axis_cam.cpp
+OUT = ../../nodes/axis_cam
 PKG = axis_cam
 include $(shell $(ROS_ROOT)/rospack find roscpp)/make_include/node.mk

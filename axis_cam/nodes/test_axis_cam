@@ -4,8 +4,8 @@ g = YAMLGraph.new
 g.param 'axis_cam.host', '192.168.1.90'
 g.node 'axis_cam/axis_cam', {'launch'=>'xterm'}
 g.node 'image_viewer/image_viewer', {'launch'=>'xterm'}
-g.node 'image_viewer/image_viewer', {'name'=>'iv2','launch'=>'xterm'}
+#g.node 'vacuum/vacuum', {'launch' => 'valgrind'}
 g.flow 'axis_cam:image', 'image_viewer:image'
-g.flow 'axis_cam:image', 'iv2:image'
+#g.flow 'axis_cam:image', 'vacuum:hose'
 YAMLGraphLauncher.new.launch g
 

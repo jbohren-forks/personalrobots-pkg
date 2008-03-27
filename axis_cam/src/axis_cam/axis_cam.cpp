@@ -28,7 +28,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ros/ros_slave.h"
-#include "SDL/SDL.h"
 #include "image_flows/FlowImage.h"
 #include "axis_cam/axis_cam.h"
 
@@ -62,8 +61,11 @@ public:
   {
     uint8_t *jpeg;
     uint32_t jpeg_size;
-    if (!cam->wget_jpeg(&jpeg, &jpeg_size))
+    if (!cam->get_jpeg(&jpeg, &jpeg_size))
+    {
+      log(ROS::ERROR, "woah! AxisCam::get_jpeg returned an error");
       return false;
+    }
     image->set_data_size(jpeg_size);
     memcpy(image->data, jpeg, jpeg_size);
     image->width = 704;
@@ -82,7 +84,7 @@ int main(int argc, char **argv)
   while (a.happy())
     if (!a.take_and_send_image())
     {
-      printf("couldn't take image.\n");
+      a.log(ROS::ERROR,"couldn't take image.");
       break;
     }
   return 0;

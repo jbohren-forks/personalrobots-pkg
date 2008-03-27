@@ -30,6 +30,7 @@
 #ifndef AXIS_CAM_AXIS_CAM_H
 #define AXIS_CAM_AXIS_CAM_H
 
+#include <curl/curl.h>
 #include <string>
 using namespace std;
 
@@ -39,18 +40,20 @@ public:
   AxisCam(string ip);
   ~AxisCam();
 
-  bool wget_jpeg(uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_size, 
-                 string filename = string());
+  bool get_jpeg(uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_size);
   bool ptz(double pan, double tilt, double zoom);
 
 private:
   string ip;
   uint8_t *jpeg_buf;
-  uint32_t jpeg_buf_size;
+  uint32_t jpeg_buf_size, jpeg_file_size;
+  CURL *jpeg_curl;
   inline double clamp(double d, double low, double high)
   { 
     return (d < low ? low : (d > high ? high : d)); 
   }
+  static size_t jpeg_write(void *buf, size_t size, size_t nmemb, void *userp);
+  char *image_url;
 };
 
 #endif
