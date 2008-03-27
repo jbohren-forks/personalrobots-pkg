@@ -40,8 +40,10 @@ launcher.ready(launchCommand, launchArgs, launchEnv, BOOTSTRAP_VERSION)
 # END BOILERPLATE:
 # You may wish to modify the exec command below to
 # customize the behavior of your node, e.g.:
-#  * env['FOO'] = bar
+#  * launchEnv['FOO'] = bar
 #  * launchArgs.append('--test')
 ######################################################
+
+launchEnv['LD_PRELOAD'] = '/usr/lib/libgvc.so.3'
 
 os.execvpe(launchCommand, launchArgs, launchEnv)
