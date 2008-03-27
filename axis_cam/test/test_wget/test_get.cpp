@@ -36,11 +36,11 @@ bool tryit()
 {
   uint8_t *jpeg;
   uint32_t jpeg_size;
-  bool ok = axis->wget_jpeg(&jpeg, &jpeg_size);
+  bool ok = axis->get_jpeg(&jpeg, &jpeg_size);
   if (ok)
   {
     printf("caller jpeg size = %d\n", jpeg_size);
-    FILE *f = fopen("resaved.jpg", "wb");
+    FILE *f = fopen("saved.jpg", "wb");
     fwrite(jpeg, 1, jpeg_size, f);
     fclose(f);
     return true;
