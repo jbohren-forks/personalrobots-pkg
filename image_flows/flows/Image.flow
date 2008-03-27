@@ -1,7 +1,0 @@
-uint32 width
-uint32 height
-int32 frame_id
-string compression
-string colorspace
-byte[] data
-
