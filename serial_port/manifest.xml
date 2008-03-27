@@ -1,0 +1,9 @@
+<package>
+<description brief="A few simple serial port classes">
+These are used all over the place for talking to hardware. These implementations are certainly suboptimal, but they do seem to work.
+</description>
+<author>Morgan Quigley (email: mquigley@cs.stanford.edu)</author>
+<license>BSD</license>
+<url>http://stair.stanford.edu</url>
+</package>
+
