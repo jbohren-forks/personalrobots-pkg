@@ -1,0 +1,24 @@
+<package>
+<description brief="A triangulation-based laser scanner">
+
+Sharks with laser beams on their heads. For all we know, they were using those
+laser beams to triangulate the distance to the nearest victim.
+
+This package uses a line laser mounted on a rotary stage (driven by the
+ipdcmot package) and the axis_cam camera package to create a
+triangulation-based laser range scanner.
+
+</description>
+<author>Morgan Quigley (email: mquigley@cs.stanford.edu)</author>
+<license>BSD</license>
+<url>http://stair.stanford.edu</url>
+<depend package="axis_cam"/>
+<depend package="sdl_image"/>
+<depend package="ipdcmot"/>
+<depend package="common_flows"/>
+<depend package="yamlgraph"/>
+<depend package="roscpp"/>
+<depend package="vacuum"/>
+<sys_depend lib="ncurses"/>
+</package>
+

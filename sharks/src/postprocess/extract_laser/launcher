@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+rp = "#{ENV['ROS_ROOT']}/rospack"
+olp = ENV['LD_LIBRARY_PATH']
+ENV['LD_LIBRARY_PATH'] = (olp ? olp + ':' : '') + "#{`#{rp} find stair.sdl`}/lib:#{`#{rp} find stair__sdl_image`}/lib"
+exec('./extract_laser', *ARGV)
