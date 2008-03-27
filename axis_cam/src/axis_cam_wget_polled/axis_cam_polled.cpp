@@ -33,7 +33,7 @@
 #include "common_flows/FlowEmpty.h"
 #include "axis_cam/axis_cam.h"
 
-class AxisCamWgetPolled : public ROS_Slave
+class AxisCamPolled : public ROS_Slave
 {
 public:
   FlowImage *image;
@@ -42,10 +42,11 @@ public:
   AxisCam *cam;
   int frame_id;
 
-  AxisCamWgetPolled() : ROS_Slave(), cam(NULL), frame_id(0)
+  AxisCamPolled() : ROS_Slave(), cam(NULL), frame_id(0)
   {
     register_source(image = new FlowImage("image"));
-    register_sink(shutter = new FlowEmpty("shutter"), ROS_CALLBACK(AxisCamWgetPolled, shutter_callback));
+    register_sink(shutter = new FlowEmpty("shutter"), 
+      ROS_CALLBACK(AxisCamPolled, shutter_cb));
     if (!get_string_param(".host", axis_host))
     {
       printf("axis_host parameter not specified; defaulting to 192.168.0.90\n");
@@ -55,7 +56,7 @@ public:
     get_int_param(".frame_id", &frame_id);
     cam = new AxisCam(axis_host);
   }
-  virtual ~AxisCamWgetPolled()
+  virtual ~AxisCamPolled()
   { 
     if (cam) 
       delete cam; 
@@ -64,7 +65,7 @@ public:
   {
     uint8_t *jpeg;
     uint32_t jpeg_size;
-    if (!cam->wget_jpeg(&jpeg, &jpeg_size))
+    if (!cam->get_jpeg(&jpeg, &jpeg_size))
       return false;
     image->set_data_size(jpeg_size);
     memcpy(image->data, jpeg, jpeg_size);
@@ -76,7 +77,7 @@ public:
     image->publish();
     return true;
   }
-  void shutter_callback()
+  void shutter_cb()
   {
     take_and_send_image();
   }
@@ -84,7 +85,7 @@ public:
 
 int main(int argc, char **argv)
 {
-  AxisCamWgetPolled a;
+  AxisCamPolled a;
   a.spin();
   return 0;
 }
