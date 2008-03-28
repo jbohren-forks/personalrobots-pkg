@@ -362,7 +362,9 @@ def monitorBatteriesMain(argv, stdout, env):
         increment = 1.0
         if time.time() - last_time > increment:
             last_time = last_time + increment
+            print "displaying to screen"
             myPow.print_remaining()
+            print "updating param server"
             myPow.updateParamServer(master)
         
 if __name__ == '__main__':

@@ -82,17 +82,18 @@ def viewGraphMain(argv, stdout, env):
         print "Getting IBPS params from Parameter Server"
         print "-------------------------------------------------------------------"
         status_code, statusMessage, current = master.getParam('IBPS.current')
-        print  "Current"
+        print  "Current (A into Battery)"
         print current
         status_code, statusMessage, voltage = master.getParam('IBPS.voltage')
-        print  "Voltage"
+        print  "Voltage (V)"
         print voltage
         status_code, statusMessage, time_remaining = master.getParam('IBPS.time_remaining')
         print  "Time Remaining (minutes)"
         print  time_remaining
         status_code, statusMessage, average_charge = master.getParam('IBPS.average_charge')
-        print  "Average Charge"
+        print  "Average Charge (percentage)"
         print average_charge
+
         
         time.sleep(1.0)
         
