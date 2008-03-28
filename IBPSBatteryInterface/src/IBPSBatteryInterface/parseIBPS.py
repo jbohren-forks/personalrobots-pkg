@@ -279,4 +279,4 @@ def main():
             myPow.print_remaining()
 
 
-#main()
+main()
