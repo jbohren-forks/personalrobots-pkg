@@ -76,6 +76,7 @@ def viewGraphMain(argv, stdout, env):
 
             
     master = rospy.getMaster()
+    rospy.ready()
 
     while 1:
         status_code, statusMessage, [nodes,flows] = master.getGraph()
