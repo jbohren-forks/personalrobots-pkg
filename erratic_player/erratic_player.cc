@@ -7,8 +7,9 @@
 
 // roscpp
 #include <ros/ros_slave.h>
-// I'm using a RobotBase2D flow
-#include <common_flows/FlowRobotBase2D.h>
+// Flows that I need
+#include <common_flows/FlowRobotBase2DOdom.h>
+#include <common_flows/FlowRobotBase2DCmdVel.h>
 
 #define PLAYER_QUEUE_LEN 32
 
@@ -20,6 +21,9 @@ class ErraticNode: public ROS_Slave
 {
   public:
     QueuePointer q;
+
+    FlowRobotBase2DOdom* odom;
+    FlowRobotBase2DCmdVel* cmdvel;
 
     ErraticNode() : ROS_Slave()
     {
@@ -62,6 +66,10 @@ class ErraticNode: public ROS_Slave
 
       // Create a message queue
       this->q = QueuePointer(false,PLAYER_QUEUE_LEN);
+
+      this->register_source(this->odom = new FlowRobotBase2DOdom(".odometry"));
+      this->register_sink(this->cmdvel = new FlowRobotBase2DCmdVel(".cmdvel"),
+                          ROS_CALLBACK(ErraticNode, cmdvelReceived));
     }
 
     ~ErraticNode()
@@ -71,7 +79,7 @@ class ErraticNode: public ROS_Slave
       player_globals_fini();
     }
 
-    int Start()
+    int start()
     {
       // Subscribe to device, which causes it to startup
       if(this->device->Subscribe(this->q) != 0)
@@ -83,7 +91,7 @@ class ErraticNode: public ROS_Slave
         return(0);
     }
 
-    int Stop()
+    int stop()
     {
       // Unsubscribe from the device, which causes it to shutdown
       if(device->Unsubscribe(this->q) != 0)
@@ -93,6 +101,48 @@ class ErraticNode: public ROS_Slave
       }
       else
         return(0);
+    }
+
+    int setMotorState(uint8_t state)
+    {
+      Message* msg;
+      // Enable the motors
+      player_position2d_power_config_t motorconfig;
+      motorconfig.state = state;
+      if(!(msg = this->device->Request(this->q,
+                                       PLAYER_MSGTYPE_REQ,
+                                       PLAYER_POSITION2D_REQ_MOTOR_POWER,
+                                       (void*)&motorconfig,
+                                       sizeof(motorconfig), NULL, false)))
+      {
+        return(-1);
+      }
+      else
+      {
+        delete msg;
+        return(0);
+      }
+    }
+
+    void cmdvelReceived()
+    {
+      printf("received cmd: (%.3f,%.3f,%.3f)\n",
+             this->cmdvel->vx,
+             this->cmdvel->vy,
+             this->cmdvel->vyaw);
+
+      player_position2d_cmd_vel_t cmd;
+      memset(&cmd, 0, sizeof(cmd));
+
+      cmd.vel.px = this->cmdvel->vx;
+      cmd.vel.py = this->cmdvel->vy;
+      cmd.vel.pa = this->cmdvel->vyaw;
+      cmd.state = 1;
+
+      this->device->PutMsg(this->q,
+                           PLAYER_MSGTYPE_CMD,
+                           PLAYER_POSITION2D_CMD_VEL,
+                           (void*)&cmd,sizeof(cmd),NULL);
     }
 
   private:
@@ -108,27 +158,12 @@ main(void)
   Message* msg;
 
   // Start up the robot
-  if(en.Start() != 0)
+  if(en.start() != 0)
     exit(-1);
 
-  // Declare a flow
-  FlowRobotBase2D fl(".odometry");
-
-#if 0
   // Enable the motors
-  player_position2d_power_config_t motorconfig;
-  motorconfig.state = 1;
-  if(!(msg = this->position->Request(this->InQueue,
-                                     PLAYER_MSGTYPE_REQ,
-                                     PLAYER_POSITION2D_REQ_MOTOR_POWER,
-                                     (void*)&motorconfig,
-                                     sizeof(motorconfig), NULL, false)))
-  {
-    PLAYER_WARN("failed to enable motors");
-  }
-  else
-    delete msg;
-#endif
+  if(en.setMotorState(1) < 0)
+    puts("failed to enable motors");
 
   /////////////////////////////////////////////////////////////////
   // Main loop; grab messages off our queue and republish them via ROS
@@ -149,18 +184,19 @@ main(void)
       player_position2d_data_t* pdata = (player_position2d_data_t*)msg->GetPayload();
       
       // Translate from Player data to ROS data
-      fl.px = pdata->pos.px;
-      fl.py = pdata->pos.py;
-      fl.pyaw = pdata->pos.pa;
-      fl.vx = pdata->vel.px;
-      fl.vy = pdata->vel.py;
-      fl.vyaw = pdata->vel.pa;
-      fl.stall = pdata->stall;
+      en.odom->px = pdata->pos.px;
+      en.odom->py = pdata->pos.py;
+      en.odom->pyaw = pdata->pos.pa;
+      en.odom->vx = pdata->vel.px;
+      en.odom->vy = pdata->vel.py;
+      en.odom->vyaw = pdata->vel.pa;
+      en.odom->stall = pdata->stall;
 
       // Publish the new data
-      fl.publish();
+      en.odom->publish();
 
-      printf("Published new odom: (%.3f,%.3f,%.3f)\n", fl.px,fl.py,fl.pyaw);
+      printf("Published new odom: (%.3f,%.3f,%.3f)\n", 
+             en.odom->px, en.odom->py, en.odom->pyaw);
     }
     else
     {
@@ -178,7 +214,7 @@ main(void)
   /////////////////////////////////////////////////////////////////
 
   // Stop the robot
-  en.Stop();
+  en.stop();
 
   // To quote Morgan, Hooray!
   return(0);
