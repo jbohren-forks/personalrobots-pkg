@@ -28,10 +28,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ros/ros_slave.h"
-#include "image_flows/FlowImage.h"
+#include "common_flows/FlowImage.h"
 #include "axis_cam/axis_cam.h"
 
-class AxisCamWget : public ROS_Slave
+class AxisCamNode : public ROS_Slave
 {
 public:
   FlowImage *image;
@@ -39,7 +39,7 @@ public:
   AxisCam *cam;
   int frame_id;
 
-  AxisCamWget() : ROS_Slave(), cam(NULL), frame_id(0)
+  AxisCamNode() : ROS_Slave(), cam(NULL), frame_id(0)
   {
     register_source(image = new FlowImage("image"));
     if (!get_string_param(".host", axis_host))
@@ -52,7 +52,7 @@ public:
     cam = new AxisCam(axis_host);
     printf("package path is [%s]\n", get_my_package_path().c_str());
   }
-  virtual ~AxisCamWget()
+  virtual ~AxisCamNode()
   { 
     if (cam) 
       delete cam; 
@@ -80,7 +80,7 @@ public:
 
 int main(int argc, char **argv)
 {
-  AxisCamWget a;
+  AxisCamNode a;
   while (a.happy())
     if (!a.take_and_send_image())
     {

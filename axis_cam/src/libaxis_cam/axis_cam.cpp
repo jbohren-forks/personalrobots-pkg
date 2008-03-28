@@ -29,7 +29,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <sstream>
+#include <iostream>
 #include "axis_cam/axis_cam.h"
+#include "string_utils/string_utils.h"
 
 AxisCam::AxisCam(string ip) : ip(ip)
 {
@@ -42,12 +44,34 @@ AxisCam::AxisCam(string ip) : ip(ip)
   image_url = new char[oss.str().length()+1];
   strcpy(image_url, oss.str().c_str());
 
+  oss.str(""); // clear it
+  oss << "http://" << ip << "/axis-cgi/com/ptz.cgi";
+  ptz_url = new char[oss.str().length()+1];
+  strcpy(ptz_url, oss.str().c_str());
+
   jpeg_curl = curl_easy_init();
   curl_easy_setopt(jpeg_curl, CURLOPT_URL, image_url);
   curl_easy_setopt(jpeg_curl, CURLOPT_WRITEFUNCTION, AxisCam::jpeg_write);
   curl_easy_setopt(jpeg_curl, CURLOPT_WRITEDATA, this);
 
-  printf("Getting images from [%s]", oss.str().c_str());
+  getptz_curl = curl_easy_init();
+  curl_easy_setopt(getptz_curl, CURLOPT_URL, ptz_url);
+  curl_easy_setopt(getptz_curl, CURLOPT_WRITEFUNCTION, AxisCam::ptz_write);
+  curl_easy_setopt(getptz_curl, CURLOPT_WRITEDATA, this);
+  curl_easy_setopt(getptz_curl, CURLOPT_POSTFIELDS, "query=position");
+
+  setptz_curl = curl_easy_init();
+  curl_easy_setopt(setptz_curl, CURLOPT_URL, ptz_url);
+  curl_easy_setopt(setptz_curl, CURLOPT_WRITEFUNCTION, AxisCam::ptz_write);
+  curl_easy_setopt(setptz_curl, CURLOPT_WRITEDATA, this);
+
+  printf("Getting images from [%s]\n", oss.str().c_str());
+  if (!query_params())
+    printf("sad! I couldn't query the camera parameters.\n");
+  if (!query_params())
+    printf("sad! I couldn't query the camera parameters.\n");
+  if (!query_params())
+    printf("sad! I couldn't query the camera parameters.\n");
 }
 
 AxisCam::~AxisCam()
@@ -101,45 +125,121 @@ size_t AxisCam::jpeg_write(void *buf, size_t size, size_t nmemb, void *userp)
   a->jpeg_file_size += size*nmemb;
   return size*nmemb;
 }
-  
-  /*
-  if (jpeg_file_size > jpeg_buf_size)
-  {
-    if (jpeg_buf)
-      delete[] jpeg_buf;
-    jpeg_buf_size = (uint32_t)(1.5*jpeg_file_size);
-    jpeg_buf = new uint8_t[jpeg_buf_size]; // go big to save reallocs
-  }
-  size_t bytes_read = fread(jpeg_buf, 1, jpeg_file_size, jpeg_file);
-  if (bytes_read != jpeg_file_size)
-  {
-    printf("couldn't read entire jpeg file\n");
-    return false;
-  }
-  fclose(jpeg_file);
-  *fetch_jpeg_buf = jpeg_buf;
-  *fetch_buf_size = jpeg_file_size;
-  */
 
-bool AxisCam::ptz(double pan, double tilt, double zoom)
+size_t AxisCam::ptz_write(void *buf, size_t size, size_t nmemb, void *userp)
 {
-  pan = clamp(pan, -175, 175);
-  tilt = clamp(tilt, -45, 90);
-  zoom = clamp(zoom, 0, 50000); // not sure of the real upper bound. units are rather magical.
+  if (size * nmemb == 0)
+    return 0;
+  AxisCam *a = (AxisCam *)userp;
+  a->ptz_ss << string((char *)buf, size*nmemb);
+  printf("%d bytes\n", size*nmemb);
+  //cout << string((char *)buf, size*nmemb);
+  return size*nmemb;
+}
+
+bool AxisCam::set_ptz(double pan, double tilt, double zoom, bool relative) 
+{
   ostringstream oss;
-  oss << string("wget -q -O/dev/null \"") << ip << string("/axis-cgi/com/ptz.cgi?camera=1&pan=") << pan 
-      << string("&tilt=") << tilt << string("&zoom=") << zoom << string("\"");
-  //printf("about to execute: [%s]\n", oss.str().c_str());
-  int retval = system(oss.str().c_str());
-  if (retval > 0)
+  if (relative)
+    oss << "rpan=" << pan 
+        << "&rtilt=" << tilt
+        << "&rzoom=" << zoom;
+  else
+    oss << "pan=" << clamp(pan, -175, 175)
+        << "&tilt=" << clamp(tilt, -45, 90)
+        << "&zoom=" << clamp(zoom, 0, 50000); // not sure of upper bound
+  return send_params(oss.str());
+}
+
+int AxisCam::get_focus()
+{
+  if (last_autofocus_enabled)
   {
-    printf("ahhh nonzero return value from wget during ptz: %d\n", retval);
+    set_focus(0, true); // manual focus but don't move it
+    query_params();
+    set_focus(0); // re-enable autofocus
+    return last_focus;
+  }
+  query_params();
+  return last_focus;
+}
+  
+bool AxisCam::set_focus(int focus, bool relative)
+{
+  ostringstream oss;
+  if (focus == 0 && !relative)
+    oss << string("autofocus=on");
+  else
+  {
+    last_autofocus_enabled = false;
+    oss << string("autofocus=off&")
+        << (relative ? "r" : "") << string("focus=") << focus;
+  }
+  return send_params(oss.str());
+}
+
+bool AxisCam::set_iris(int iris, bool relative)
+{
+  ostringstream oss;
+  if (iris == 0)
+    oss << "autoiris=on";
+  else
+    oss << string("autoiris=off&")
+        << (relative ? "r" : "") << string("iris=") << iris;
+  return send_params(oss.str());
+}
+
+bool AxisCam::send_params(string params)
+{
+  ptz_ss.str("");
+  curl_easy_setopt(setptz_curl, CURLOPT_POSTFIELDS, params.c_str());
+  CURLcode code;
+  if (code = curl_easy_perform(setptz_curl))
+  {
+    printf("woah! curl error: [%s]\n", curl_easy_strerror(code));
     return false;
   }
-  else if (retval < 0)
+  return true;
+}
+
+bool AxisCam::query_params()
+{
+  ptz_ss.str("");
+  CURLcode code;
+  if (code = curl_easy_perform(getptz_curl))
   {
-    // not sure what's happening here, but it appears to be benign.
-    //printf("odd wget system retval = %d\n", retval);
+    printf("woah! curl error: [%s]\n", curl_easy_strerror(code));
+    return false;
+  }
+  printf("response:\n%s\n", ptz_ss.str().c_str());
+  while (ptz_ss.good())
+  {
+    string line;
+    getline(ptz_ss, line);
+    vector<string> tokens;
+    string_utils::split(line, tokens, "=");
+    if (tokens.size() != 2)
+      continue;
+    if (tokens[0] == string("pan"))
+      last_pan = atof(tokens[1].c_str());
+    else if (tokens[0] == string("tilt"))
+      last_tilt = atof(tokens[1].c_str());
+    else if (tokens[0] == string("zoom"))
+      last_zoom = atof(tokens[1].c_str());
+    else if (tokens[0] == string("focus"))
+      last_focus = atoi(tokens[1].c_str());
+    else if (tokens[0] == string("iris"))
+      last_iris = atoi(tokens[1].c_str());
+    else if (tokens[0] == string("autofocus"))
+      last_autofocus_enabled = (tokens[1] == string("on") ? true : false);
+    else if (tokens[0] == string("autoiris"))
+      last_autoiris_enabled = (tokens[1] == string("on") ? true : false);
+/*
+    printf("line has %d tokens:\n", tokens.size());
+    for (int i = 0; i < tokens.size(); i++)
+      printf(" [%s] ", tokens[i].c_str());
+    printf("\n");
+*/
   }
   return true;
 }

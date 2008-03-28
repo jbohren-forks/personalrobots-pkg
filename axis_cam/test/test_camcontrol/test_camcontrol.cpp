@@ -2,7 +2,7 @@
 // The axis_cam package provides a library that talks to Axis IP-based cameras
 // as well as ROS nodes which use these libraries
 //
-// Copyright (C) 2008, Morgan Quigley
+// This file Copyright (C) 2008, Morgan Quigley
 //
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -27,46 +27,65 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef AXIS_CAM_AXIS_CAM_H
-#define AXIS_CAM_AXIS_CAM_H
+#include <cstdio>
+#include "axis_cam/axis_cam.h"
+#include "kbhit.h"
 
-#include <curl/curl.h>
-#include <string>
-#include <sstream>
-using namespace std;
-
-class AxisCam
+int main(int argc, char **argv)
 {
-public:
-  AxisCam(string ip);
-  ~AxisCam();
+  AxisCam *axis = new AxisCam("192.168.1.90");
 
-  bool get_jpeg(uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_size);
-  bool set_ptz(double pan, double tilt, double zoom, bool relative = false);
-  bool set_focus(int focus = 0, bool relative = false); // zero for autofocus
-  int  get_focus();
-  bool set_iris(int iris = 0, bool relative = false); // zero for autoiris
-  int  get_iris();
-
-private:
-  string ip;
-  uint8_t *jpeg_buf;
-  uint32_t jpeg_buf_size, jpeg_file_size;
-  CURL *jpeg_curl, *getptz_curl, *setptz_curl;
-  char *image_url, *ptz_url;
-  stringstream ptz_ss; // need to mutex this someday...
-  inline double clamp(double d, double low, double high)
-  { 
-    return (d < low ? low : (d > high ? high : d)); 
+  init_keyboard();
+  int focus = 2000, iris = 2000;
+  while (1)
+  {
+    if (_kbhit())
+    {
+      char c = _getch();
+      if (c == 'q')
+        break;
+      switch(c)
+      {
+        case 'F':
+          printf("enabling autofocus\n");
+          axis->set_focus(0);
+          break;
+        case 'f':
+          focus += 500;
+          printf("focus = %d\n", focus);
+          axis->set_focus(focus);
+          break;
+        case 'd':
+          focus -= 500;
+          printf("focus = %d\n", focus);
+          axis->set_focus(focus);
+          break;
+        case 'I':
+          printf("enabling autoiris\n");
+          axis->set_iris(0);
+          break;
+        case 'i':
+          iris += 500;
+          printf("iris = %d\n", iris);
+          axis->set_iris(iris);
+          break;
+        case 'u':
+          iris -= 500;
+          printf("iris = %d\n", iris);
+          axis->set_iris(iris);
+          break;
+        case '?':
+          printf("focus: [%d]\n", axis->get_focus());
+          break;
+        default:
+          printf("unknown char [%c]\n", c);
+      }
+    }
+    usleep(10000); 
   }
-  static size_t jpeg_write(void *buf, size_t size, size_t nmemb, void *userp);
-  static size_t ptz_write(void *buf, size_t size, size_t nmemb, void *userp);
-  bool send_params(string params);
-  bool query_params();
-  int last_iris, last_focus;
-  double last_pan, last_tilt, last_zoom;
-  bool last_autofocus_enabled, last_autoiris_enabled;
-};
+  close_keyboard();
 
-#endif
+  delete axis;
+  return 0;
+}
 
