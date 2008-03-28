@@ -1,12 +1,13 @@
 <package>
-<description brief="SDL-based image viewer">
-This package has an image viewing node that is implemented using SDL.
+<description brief="Simple OpenCV-based camera grabber">
+
+This is a simple program which grabs frames from a V4L device using OpenCV and publishes them.
+
 </description>
 <author>Morgan Quigley (email: mquigley@cs.stanford.edu)</author>
 <license>BSD</license>
 <url>http://stair.stanford.edu</url>
-<depend package="roscpp"/>
 <depend package="common_flows"/>
-<depend package="sdl"/>
+<depend package="opencv"/>
 </package>
 

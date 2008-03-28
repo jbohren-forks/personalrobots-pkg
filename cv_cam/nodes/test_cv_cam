@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+require "#{`#{ENV['ROS_ROOT']}/rospack latest yamlgraph`}/lib/yamlgraph/ygl.rb"
+g = YAMLGraph.new
+g.param 'cv_cam.show_image',0
+g.node 'cv_cam/cv_cam', {'launch' => 'xterm'}
+g.node 'image_viewer/image_viewer', {'launch' => 'xterm'}
+g.flow 'cv_cam:image','image_viewer:image'
+YAMLGraphLauncher.new.launch g
+

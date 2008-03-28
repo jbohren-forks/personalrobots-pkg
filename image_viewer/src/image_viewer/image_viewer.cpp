@@ -40,7 +40,8 @@ public:
 
   ImageViewer() : ROS_Slave(), blit_prep(NULL)
   {
-    register_sink(image = new FlowImage("image"), ROS_CALLBACK(ImageViewer, image_received));
+    register_sink(image = new FlowImage("image"), 
+      ROS_CALLBACK(ImageViewer, image_cb));
     codec = new ImageFlowCodec<FlowImage>(image);
     register_with_master();
   }
@@ -50,12 +51,13 @@ public:
     screen = SDL_SetVideoMode(320, 240, 24, 0);
     return (screen ? true : false);
   }
-  void image_received()
+  void image_cb()
   {
     if (!screen)
       return; // paranoia. shouldn't happen. we should have bailed by now.
     if (screen->h != image->height || screen->w != image->width)
     {
+      printf("resizing for a %d by %d image\n", image->width, image->height);
       screen = SDL_SetVideoMode(image->width, image->height, 24, 0);
       if (!screen)
       {
@@ -64,7 +66,9 @@ public:
         exit(1);
       }
     }
-    if (!blit_prep || blit_prep->w != image->width || blit_prep->h != image->width)
+    if (!blit_prep || 
+         blit_prep->w != image->width || 
+         blit_prep->h != image->width)
     {
       if (blit_prep)
         SDL_FreeSurface(blit_prep);
@@ -120,9 +124,7 @@ int main(int argc, char **argv)
     exit(1);
   }
   while (v.happy())
-  {
     usleep(1000000);
-  }
   return 0;
 }
 
