@@ -150,7 +150,12 @@ class robotPower:
                 for message in control.latest_system_messages:
                     print message
 
-
+    def updateParamServer(self, master):
+        master.setParam('IBPS.current', (self.controllers[0].total_current(),self.controllers[1].total_current(),self.controllers[2].total_current(),self.controllers[3].total_current()))
+        master.setParam('IBPS.voltage', (self.controllers[0].average_voltage(),self.controllers[1].average_voltage(),self.controllers[2].average_voltage(),self.controllers[3].average_voltage()))
+        master.setParam('IBPS.time_remaining', (self.controllers[0].time_remaining,self.controllers[1].time_remaining,self.controllers[2].time_remaining,self.controllers[3].time_remaining))
+        master.setParam('IBPS.average_charge', (self.controllers[0].average_charge,self.controllers[1].average_charge,self.controllers[2].average_charge,self.controllers[3].average_charge))
+        
 
 def setupPorts():
 
@@ -358,8 +363,7 @@ def monitorBatteriesMain(argv, stdout, env):
         if time.time() - last_time > increment:
             last_time = last_time + increment
             myPow.print_remaining()
-
-
+            myPow.updateParamServer(master)
         
 if __name__ == '__main__':
     try:
