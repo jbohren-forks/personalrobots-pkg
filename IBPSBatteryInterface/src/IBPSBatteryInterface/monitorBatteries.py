@@ -181,14 +181,14 @@ def monitorBatteriesMain(argv, stdout, env):
     serverUri = '%s:%s/'%(server,server_port)
     print "Looking for server at %s"%serverUri
     os.environ[rospy.ROS_MASTER_URI] = serverUri
-    os.environ[rospy.ROS_NODE] = "viewGraph"
+    os.environ[rospy.ROS_NODE] = NAME
     os.environ[rospy.ROS_PORT] = str(0) # any
 
 
     master = rospy.getMaster()
 
 
-
+    rospy.ready()
 
 
     setupPorts()
