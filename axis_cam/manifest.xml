@@ -12,7 +12,8 @@ In the future, I may add more sophisticated (more efficient) transport methods.
 <license>BSD</license>
 <url>http://stair.stanford.edu</url>
 <depend package="common_flows"/>
-<depend package="image_viewer"/>
+<depend package="roscpp"/>
+<!-- <depend package="image_viewer"/> -->
 <depend package="string_utils"/>
 </package>
 

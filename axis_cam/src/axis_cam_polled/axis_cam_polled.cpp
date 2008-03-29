@@ -28,8 +28,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ros/ros_slave.h"
-#include "SDL/SDL.h"
-#include "image_flows/FlowImage.h"
+#include "common_flows/FlowImage.h"
 #include "common_flows/FlowEmpty.h"
 #include "axis_cam/axis_cam.h"
 

@@ -21,6 +21,8 @@ class HokuyoNode: public ROS_Slave
   public:
     QueuePointer q;
 
+    FlowLaserScan* fl;
+
     HokuyoNode() : ROS_Slave()
     {
       // libplayercore boiler plate
@@ -62,6 +64,8 @@ class HokuyoNode: public ROS_Slave
 
       // Create a message queue
       this->q = QueuePointer(false,PLAYER_QUEUE_LEN);
+
+      this->register_source(this->fl = new FlowLaserScan(".scans"));
     }
 
     ~HokuyoNode()
@@ -71,7 +75,7 @@ class HokuyoNode: public ROS_Slave
       player_globals_fini();
     }
 
-    int Start()
+    int start()
     {
       // Subscribe to device, which causes it to startup
       if(this->device->Subscribe(this->q) != 0)
@@ -83,7 +87,7 @@ class HokuyoNode: public ROS_Slave
         return(0);
     }
 
-    int Stop()
+    int stop()
     {
       // Unsubscribe from the device, which causes it to shutdown
       if(device->Unsubscribe(this->q) != 0)
@@ -107,11 +111,8 @@ main(void)
   HokuyoNode hn;
 
   // Start up the laser
-  if(hn.Start() != 0)
+  if(hn.start() != 0)
     exit(-1);
-
-  // Declare a flow
-  FlowLaserScan fl(".laser");
 
   /////////////////////////////////////////////////////////////////
   // Main loop; grab messages off our queue and republish them via ROS
@@ -133,19 +134,19 @@ main(void)
       player_laser_data_t* pdata = (player_laser_data_t*)msg->GetPayload();
       
       // Translate from Player data to ROS data
-      fl.px = fl.py = fl.pyaw = 0.0;
-      fl.angle_min = pdata->min_angle;
-      fl.angle_max = pdata->max_angle;
-      fl.angle_increment = pdata->resolution;
-      fl.set_ranges_size(pdata->ranges_count);
+      hn.fl->px = hn.fl->py = hn.fl->pyaw = 0.0;
+      hn.fl->angle_min = pdata->min_angle;
+      hn.fl->angle_max = pdata->max_angle;
+      hn.fl->angle_increment = pdata->resolution;
+      hn.fl->set_ranges_size(pdata->ranges_count);
       for(unsigned int i=0;i<pdata->ranges_count;i++)
-        fl.ranges[i] = pdata->ranges[i];
-      fl.set_intensities_size(pdata->intensity_count);
+        hn.fl->ranges[i] = pdata->ranges[i];
+      hn.fl->set_intensities_size(pdata->intensity_count);
       for(unsigned int i=0;i<pdata->intensity_count;i++)
-        fl.intensities[i] = pdata->intensity[i];
+        hn.fl->intensities[i] = pdata->intensity[i];
 
       // Publish the new data
-      fl.publish();
+      hn.fl->publish();
 
       printf("Published a scan with %d ranges\n", pdata->ranges_count);
     }
@@ -156,7 +157,7 @@ main(void)
   /////////////////////////////////////////////////////////////////
 
   // Stop the laser
-  hn.Stop();
+  hn.stop();
 
   // To quote Morgan, Hooray!
   return(0);
