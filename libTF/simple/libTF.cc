@@ -33,16 +33,27 @@ NEWMAT::Matrix RefFrame::getInverseMatrix()
 }
 
 
-/*TransformReference::TransformReference()
- *{
- * return;
- *}
- */
+TransformReference::TransformReference()
+{
+  /* initialize pointers to NULL */
+  for (unsigned int i = 0; i < MAX_NUM_FRAMES; i++)
+    {
+      frames[i] = NULL;
+    }
+  return;
+}
+
 
 void TransformReference::set(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d,double e,double f)
 {
-  frames[frameID].setParent(parentID);
-  frames[frameID].setParams(a,b,c,d,e,f);
+  if (frameID > MAX_NUM_FRAMES || parentID > MAX_NUM_FRAMES)
+    throw InvalidFrame;
+  
+  if (frames[frameID] == NULL)
+    frames[frameID] = new RefFrame();
+  
+  getFrame(frameID)->setParent(parentID);
+  getFrame(frameID)->setParams(a,b,c,d,e,f);
 }
 
 
@@ -110,19 +121,19 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
   unsigned int frame = target_frame;
   while (frame != 0)
     {
-      if (frames[frame].getParent() > 100) exit(-1); //todo cleanup
+      if (getFrame(frame)->getParent() > MAX_NUM_FRAMES) throw InvalidFrame;
       mTfLs.inverseTransforms.push_back(frame);
       //   std::cout <<"Frame: " << frame <<std::endl;
-      frame = frames[frame].getParent();
+      frame = getFrame(frame)->getParent();
     }
   mTfLs.inverseTransforms.push_back(0);
   
   frame = source_frame;
   while (frame != 0)
     {
-      if (frames[frame].getParent() > 100) exit(-1); //todo cleanup
+      if (getFrame(frame)->getParent() > MAX_NUM_FRAMES) throw InvalidFrame;
       mTfLs.forwardTransforms.push_back(frame);
-      frame = frames[frame].getParent();
+      frame = getFrame(frame)->getParent();
     }
   mTfLs.forwardTransforms.push_back(0);
   
@@ -152,13 +163,13 @@ NEWMAT::Matrix TransformReference::computeTransformFromList(TransformLists lists
   
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
-      retMat *= frames[lists.inverseTransforms[i]].getInverseMatrix();
+      retMat *= getFrame(lists.inverseTransforms[i])->getInverseMatrix();
       //      std::cout <<"Multiplying by " << std::endl << frames[lists.inverseTransforms[i]].getInverseMatrix() << std::endl; 
       //std::cout <<"Result "<<std::endl << retMat << std::endl;
    }
   for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
     {
-      retMat *= frames[lists.forwardTransforms[lists.forwardTransforms.size() -1 - i]].getMatrix(); //Do this list backwards for it was generated traveling the wrong way
+      retMat *= getFrame(lists.forwardTransforms[lists.forwardTransforms.size() -1 - i])->getMatrix(); //Do this list backwards for it was generated traveling the wrong way
       //      std::cout <<"Multiplying by "<<std::endl << frames[lists.forwardTransforms[i]].getMatrix() << std::endl;
       //std::cout <<"Result "<<std::endl << retMat << std::endl;
     }
@@ -175,7 +186,7 @@ void TransformReference::view(unsigned int target_frame, unsigned int source_fra
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
       std::cout << lists.inverseTransforms[i];
-      //      retMat *= frames[lists.inverseTransforms[i]].getInverseMatrix();
+      //      retMat *= getFrame(lists.inverseTransforms[i])->getInverseMatrix();
     }
   std::cout << std::endl;
 
@@ -183,7 +194,7 @@ void TransformReference::view(unsigned int target_frame, unsigned int source_fra
   for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
     {
       std::cout << lists.forwardTransforms[i];
-      //      retMat *= frames[lists.inverseTransforms[lists.forwardTransforms.size() -1 - i]].getMatrix(); //Do this list backwards for it was generated traveling the wrong way
+      //      retMat *= getFrame(lists.inverseTransforms[lists.forwardTransforms.size() -1 - i])->getMatrix(); //Do this list backwards for it was generated traveling the wrong way
     }
   std::cout << std::endl;
   

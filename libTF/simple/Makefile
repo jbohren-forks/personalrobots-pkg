@@ -6,7 +6,7 @@ all: test
 
 
 test: main.cc libTF.o
-	g++ -O2 $^ -o test -lnewmat
+	g++ -g -O2 $^ -o test -lnewmat
 
 
 clean:

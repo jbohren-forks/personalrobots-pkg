@@ -10,6 +10,7 @@
 class RefFrame
 {
 public:
+
   /* The type of frame
    * This determines how many different parameters to expect to be updated, versus fixed */
   //  static enum FrameType {SIXDOF, DH //how to tell which mode it's in  //todo add this process i'm going to start with 6dof only
@@ -46,7 +47,9 @@ private:
 
 class TransformReference
 {
- public:
+public:
+  static const unsigned int MAX_NUM_FRAMES = 100;
+
   /* Set a new frame or update an old one. */
   void set(unsigned int framid, unsigned int parentid, double,double,double,double,double,double);
 
@@ -54,14 +57,29 @@ class TransformReference
   NEWMAT::Matrix get(unsigned int target_frame, unsigned int source_frame);
 
   /* Constructor */
-  //  TransformReference();
+  TransformReference();
 
   /* Debugging function that will print to std::cout the transformation matrix */
   void view(unsigned int target_frame, unsigned int source_frame);
-
- private:
+  
+  /* An exception class to notify of bad frame number */
+  class LookupException : public std::exception
+  {
+  public:
+    virtual const char* what() const throw()    { return "InvalidFrame"; }
+  } InvalidFrame;
+  /* An exception class to notify of no connection */
+  class ConnectivityException : public std::exception
+  {
+  public:
+    virtual const char* what() const throw()    { return "No connection between frames"; }
+  private:
+  } NoFrameConnectivity;
+private:
+  
+  inline RefFrame* getFrame(unsigned int frame_number) { if (frames[frame_number] == NULL) throw InvalidFrame; else return frames[frame_number];};
   /* The frames that the tree can be made of */
-  RefFrame frames[100];
+  RefFrame* frames[MAX_NUM_FRAMES];
 
 
   /* This struct is how the list of transforms are stored  before being generated. */

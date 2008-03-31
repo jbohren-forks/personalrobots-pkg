@@ -36,7 +36,17 @@ int main(void)
       mTR.set(6,5,dx,dy,dz,dyaw,dp,dr);
       mTR.set(7,6,1,1,1,dyaw,dp,dr);
       mTR.set(8,7,1,1,1,dyaw,dp,dr);
-      mTR.view(1,8);
+      try
+	{
+	  mTR.view(1,9);
+	}
+      catch (TransformReference::LookupException &ex)
+	{
+	  std::cout << "Caught " << ex.what()<<std::endl;
+	  mTR.view(1,8);
+	}
+	  
+	
 
 
       std::cout <<"Calling get(1,8)"<<std::endl;
