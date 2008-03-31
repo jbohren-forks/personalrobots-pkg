@@ -44,6 +44,12 @@ launcher.ready(launchCommand, launchArgs, launchEnv, BOOTSTRAP_VERSION)
 #  * launchArgs.append('--test')
 ######################################################
 
+#This makes up for a bug in the graphviz package.  
+#It is "fixed upstream, and the fix is in the 
+#latest stable release: graphviz-2.18"
+# so when the packaged version gets upgraded we can remove this
+# todo clean this out when it's upgraded
+# https://bugs.launchpad.net/ubuntu/+source/graphviz/+bug/208072
 launchEnv['LD_PRELOAD'] = '/usr/lib/libgvc.so.3'
 
 os.execvpe(launchCommand, launchArgs, launchEnv)
