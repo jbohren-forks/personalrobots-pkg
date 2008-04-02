@@ -46,7 +46,7 @@ TransformReference::TransformReference()
 
 void TransformReference::set(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d,double e,double f)
 {
-  if (frameID > MAX_NUM_FRAMES || parentID > MAX_NUM_FRAMES)
+  if (frameID > MAX_NUM_FRAMES || parentID > MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
     throw InvalidFrame;
   
   if (frames[frameID] == NULL)
@@ -120,35 +120,44 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
 
   unsigned int frame = target_frame;
   unsigned int counter = 0;  //A counter to keep track of how deep we've descended
-  while (frame != NO_PARENT  && frame != ROOT_FRAME) //Descend until we reach the root node or don't have a parent
+  while (true)
     {
-      if (getFrame(frame)->getParent() > MAX_NUM_FRAMES) throw InvalidFrame;
       mTfLs.inverseTransforms.push_back(frame);
+      if (frame == NO_PARENT  || frame == ROOT_FRAME) //Descend until we reach the root node or don't have a parent
+	break;
+      if (getFrame(frame)->getParent() > MAX_NUM_FRAMES) throw InvalidFrame;
       //   std::cout <<"Frame: " << frame <<std::endl;
       frame = getFrame(frame)->getParent();
       /* Check if we've gone too deep.  Probably a loop */
       if (counter++ > MAX_GRAPH_DEPTH)
 	throw(MaxSearchDepth);
     }
-  mTfLs.inverseTransforms.push_back(0);
+  //  mTfLs.inverseTransforms.push_back(0);
   
   frame = source_frame;
   counter = 0;
-  while (frame != NO_PARENT  && frame != ROOT_FRAME) //Descend until we reach the root node or don't have a parent
+  while (true)//(frame != NO_PARENT  && frame != ROOT_FRAME) //Descend until we reach the root node or don't have a parent
     {
-      if (getFrame(frame)->getParent() > MAX_NUM_FRAMES) throw InvalidFrame;
       mTfLs.forwardTransforms.push_back(frame);
+      if (frame == NO_PARENT  || frame == ROOT_FRAME) //Descend until we reach the root node or don't have a parent
+	break;
+      if (getFrame(frame)->getParent() > MAX_NUM_FRAMES) throw InvalidFrame;
       frame = getFrame(frame)->getParent();
       /* Check if we've gone too deep.  Probably a loop */
       if (counter++ > MAX_GRAPH_DEPTH)
 	throw(MaxSearchDepth);
     }
-  mTfLs.forwardTransforms.push_back(0);
+  //  mTfLs.forwardTransforms.push_back(0);
   
   
   /* Make sure the end of the search shares a parent. */
   if (mTfLs.inverseTransforms.back() != mTfLs.forwardTransforms.back())
     throw(NoFrameConnectivity);
+
+  /* Make sure that we don't have a no parent at the top */
+  std::cout << "Back = " << mTfLs.inverseTransforms.back()<<" " << mTfLs.forwardTransforms.back();
+  //  if (mTfLs.inverseTransforms.back() == NO_PARENT ||  mTfLs.forwardTransforms.back() == NO_PARENT)
+  //   throw(NoFrameConnectivity);
 
   while (mTfLs.inverseTransforms.back() == mTfLs.forwardTransforms.back())
     {

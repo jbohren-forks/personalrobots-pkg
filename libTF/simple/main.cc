@@ -32,7 +32,7 @@ int main(void)
       mTR.set(10,2,1,1,1,dyaw,dp,dr);
       mTR.set(2,3,1,1,1,dyaw,dp,dr);
       mTR.set(3,5,dx,dy,dz,dyaw,dp,dr);
-      mTR.set(5,0,dx,dy,dz,dyaw,dp,dr);
+      mTR.set(5,1,dx,dy,dz,dyaw,dp,dr);
       mTR.set(6,5,dx,dy,dz,dyaw,dp,dr);
       mTR.set(7,6,1,1,1,dyaw,dp,dr);
       mTR.set(8,7,1,1,1,dyaw,dp,dr);
@@ -43,9 +43,10 @@ int main(void)
       catch (TransformReference::LookupException &ex)
 	{
 	  std::cout << "Caught " << ex.what()<<std::endl;
-	  mTR.view(10,8);
 	}
-	  
+	
+      std::cout<<"Viewing (10,8)";  
+      mTR.view(10,8);
 	
 
 
@@ -54,6 +55,34 @@ int main(void)
       NEWMAT::Matrix mat = mTR.get(10,8);
 
       std::cout << "Result" << std::endl << mat<< std::endl;
+
+
+
+
+      mTR.set(6,7,dx,dy,dz,dyaw,dp,dr);
+      
+      try {
+	mTR.view(10,8);
+      }
+      catch (TransformReference::MaxDepthException &ex)
+	{
+	  std::cout <<"caught loop in graph"<<std::endl;
+	}
+
+      mTR.set(6,0,dx,dy,dz,dyaw,dp,dr);
+      
+      try {
+	mTR.view(10,8);
+      }
+      catch (TransformReference::ConnectivityException &ex)
+	{
+	  std::cout <<"caught unconnected frame"<<std::endl;
+	}
+
+
+
+
+
 #ifdef DONOTUSE
 
       //      NEWMAT::Matrix mat(4,4);
