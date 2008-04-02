@@ -1,0 +1,4 @@
+float64 stop1
+float64 stop2
+float64 speed
+int32 init_dir

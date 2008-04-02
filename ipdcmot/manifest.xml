@@ -1,0 +1,11 @@
+<package>
+<description brief="Driver for the IPDCMOT motor controller">
+This is an IP-based motor controller.
+</description>
+<author>Morgan Quigley (email: mquigley@cs.stanford.edu)</author>
+<license>BSD</license>
+<url>http://stair.stanford.edu</url>
+<depend package="common_flows"/>
+<depend package="roscpp"/>
+</package>
+

@@ -1,0 +1,7 @@
+cpp:
+  make:
+    - src/libipdcmot
+    - src/servo
+    - src/servo_stepper
+    - test/test_position
+    - test/test_patrol
