@@ -122,33 +122,44 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
   unsigned int counter = 0;  //A counter to keep track of how deep we've descended
   while (true)
     {
-      mTfLs.inverseTransforms.push_back(frame);
-      if (frame == NO_PARENT  || frame == ROOT_FRAME) //Descend until we reach the root node or don't have a parent
+      if (frame == NO_PARENT)
 	break;
+      mTfLs.inverseTransforms.push_back(frame);
+      if (frame == ROOT_FRAME) //Descend until we reach the root node or don't have a parent
+	break;
+
+      //Check that we arn't going somewhere illegal 
       if (getFrame(frame)->getParent() > MAX_NUM_FRAMES) throw InvalidFrame;
+
+      // Descent to parent frame
       //   std::cout <<"Frame: " << frame <<std::endl;
       frame = getFrame(frame)->getParent();
-      /* Check if we've gone too deep.  Probably a loop */
+
+      /* Check if we've gone too deep.  A loop in the tree would cause this */
       if (counter++ > MAX_GRAPH_DEPTH)
 	throw(MaxSearchDepth);
     }
-  //  mTfLs.inverseTransforms.push_back(0);
   
   frame = source_frame;
   counter = 0;
-  while (true)//(frame != NO_PARENT  && frame != ROOT_FRAME) //Descend until we reach the root node or don't have a parent
+  while (true)
     {
-      mTfLs.forwardTransforms.push_back(frame);
-      if (frame == NO_PARENT  || frame == ROOT_FRAME) //Descend until we reach the root node or don't have a parent
+      if (frame == NO_PARENT)
 	break;
+      mTfLs.forwardTransforms.push_back(frame);
+      if (frame == ROOT_FRAME) //Descend until we reach the root node or don't have a parent
+	break;
+
+      //Check that we aren't going somewhere illegal
       if (getFrame(frame)->getParent() > MAX_NUM_FRAMES) throw InvalidFrame;
+
+      //Descent to parent frame
       frame = getFrame(frame)->getParent();
-      /* Check if we've gone too deep.  Probably a loop */
+
+      /* Check if we've gone too deep.  A loop in the tree would cause this*/
       if (counter++ > MAX_GRAPH_DEPTH)
 	throw(MaxSearchDepth);
     }
-  //  mTfLs.forwardTransforms.push_back(0);
-  
   
   /* Make sure the end of the search shares a parent. */
   if (mTfLs.inverseTransforms.back() != mTfLs.forwardTransforms.back())
