@@ -119,29 +119,37 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
   //  std::vector<unsigned int> retVec;
 
   unsigned int frame = target_frame;
-  while (frame != 0)
+  unsigned int counter = 0;  //A counter to keep track of how deep we've descended
+  while (frame != NO_PARENT  && frame != ROOT_FRAME) //Descend until we reach the root node or don't have a parent
     {
       if (getFrame(frame)->getParent() > MAX_NUM_FRAMES) throw InvalidFrame;
       mTfLs.inverseTransforms.push_back(frame);
       //   std::cout <<"Frame: " << frame <<std::endl;
       frame = getFrame(frame)->getParent();
+      /* Check if we've gone too deep.  Probably a loop */
+      if (counter++ > MAX_GRAPH_DEPTH)
+	throw(MaxSearchDepth);
     }
   mTfLs.inverseTransforms.push_back(0);
   
   frame = source_frame;
-  while (frame != 0)
+  counter = 0;
+  while (frame != NO_PARENT  && frame != ROOT_FRAME) //Descend until we reach the root node or don't have a parent
     {
       if (getFrame(frame)->getParent() > MAX_NUM_FRAMES) throw InvalidFrame;
       mTfLs.forwardTransforms.push_back(frame);
       frame = getFrame(frame)->getParent();
+      /* Check if we've gone too deep.  Probably a loop */
+      if (counter++ > MAX_GRAPH_DEPTH)
+	throw(MaxSearchDepth);
     }
   mTfLs.forwardTransforms.push_back(0);
   
-
-  //todo fixme throw something
-  //  if (tList.size() <= 1) exit(-1);
-  // if (sList.size() <= 1) exit(-1);   // I think below will catch all these anyway
   
+  /* Make sure the end of the search shares a parent. */
+  if (mTfLs.inverseTransforms.back() != mTfLs.forwardTransforms.back())
+    throw(NoFrameConnectivity);
+
   while (mTfLs.inverseTransforms.back() == mTfLs.forwardTransforms.back())
     {
       //      std::cout << "removing " << mTfLs.inverseTransforms.back() << std::endl;
@@ -185,7 +193,7 @@ void TransformReference::view(unsigned int target_frame, unsigned int source_fra
   std::cout << "Inverse Transforms:" <<std::endl;
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
-      std::cout << lists.inverseTransforms[i];
+      std::cout << lists.inverseTransforms[i]<<", ";
       //      retMat *= getFrame(lists.inverseTransforms[i])->getInverseMatrix();
     }
   std::cout << std::endl;
@@ -193,7 +201,7 @@ void TransformReference::view(unsigned int target_frame, unsigned int source_fra
   std::cout << "Forward Transforms: "<<std::endl ;
   for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
     {
-      std::cout << lists.forwardTransforms[i];
+      std::cout << lists.forwardTransforms[i]<<", ";
       //      retMat *= getFrame(lists.inverseTransforms[lists.forwardTransforms.size() -1 - i])->getMatrix(); //Do this list backwards for it was generated traveling the wrong way
     }
   std::cout << std::endl;

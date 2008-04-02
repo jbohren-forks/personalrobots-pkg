@@ -29,7 +29,7 @@ int main(void)
            
       
       
-      mTR.set(1,2,1,1,1,dyaw,dp,dr);
+      mTR.set(10,2,1,1,1,dyaw,dp,dr);
       mTR.set(2,3,1,1,1,dyaw,dp,dr);
       mTR.set(3,5,dx,dy,dz,dyaw,dp,dr);
       mTR.set(5,0,dx,dy,dz,dyaw,dp,dr);
@@ -38,20 +38,20 @@ int main(void)
       mTR.set(8,7,1,1,1,dyaw,dp,dr);
       try
 	{
-	  mTR.view(1,9);
+	  mTR.view(10,9);
 	}
       catch (TransformReference::LookupException &ex)
 	{
 	  std::cout << "Caught " << ex.what()<<std::endl;
-	  mTR.view(1,8);
+	  mTR.view(10,8);
 	}
 	  
 	
 
 
-      std::cout <<"Calling get(1,8)"<<std::endl;
+      std::cout <<"Calling get(10,8)"<<std::endl;
       //      NEWMAT::Matrix mat = mTR.get(1,1);
-      NEWMAT::Matrix mat = mTR.get(1,8);
+      NEWMAT::Matrix mat = mTR.get(10,8);
 
       std::cout << "Result" << std::endl << mat<< std::endl;
 #ifdef DONOTUSE

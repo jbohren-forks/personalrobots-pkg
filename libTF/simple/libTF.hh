@@ -48,7 +48,13 @@ private:
 class TransformReference
 {
 public:
+  static const unsigned int ROOT_FRAME = 1;
+  static const unsigned int NO_PARENT = 0;
+
+  /* The maximum number of frames possible */
   static const unsigned int MAX_NUM_FRAMES = 100;
+  /* The maximum number of times to descent before determining that graph has a loop. */
+  static const unsigned int MAX_GRAPH_DEPTH = 100;
 
   /* Set a new frame or update an old one. */
   void set(unsigned int framid, unsigned int parentid, double,double,double,double,double,double);
@@ -68,6 +74,7 @@ public:
   public:
     virtual const char* what() const throw()    { return "InvalidFrame"; }
   } InvalidFrame;
+
   /* An exception class to notify of no connection */
   class ConnectivityException : public std::exception
   {
@@ -75,14 +82,27 @@ public:
     virtual const char* what() const throw()    { return "No connection between frames"; }
   private:
   } NoFrameConnectivity;
+
+  /* An exception class to notify of no connection */
+  class MaxDepthException : public std::exception
+  {
+  public:
+    virtual const char* what() const throw()    { return "Search exceeded max depth.  Probably a loop in the tree."; }
+  private:
+  } MaxSearchDepth;
+
+
 private:
   
+  /* An accessor to get a frame, which will throw an exception if the frame is no there. */
   inline RefFrame* getFrame(unsigned int frame_number) { if (frames[frame_number] == NULL) throw InvalidFrame; else return frames[frame_number];};
-  /* The frames that the tree can be made of */
+
+  /* The pointers to potential frames that the tree can be made of.
+   * The frames will be dynamically created at run time when set the first time. */
   RefFrame* frames[MAX_NUM_FRAMES];
 
 
-  /* This struct is how the list of transforms are stored  before being generated. */
+  /* This struct is how the list of transforms are stored  before being passed to computeTransformFromList. */
   typedef struct 
   {
     std::vector<unsigned int> inverseTransforms;
