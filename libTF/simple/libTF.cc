@@ -107,6 +107,39 @@ bool RefFrame::fill_transformation_matrix(NEWMAT::Matrix & matrix, double ax,
   return true;
 };
 
+// Math from http://en.wikipedia.org/wiki/Robotics_conventions
+bool RefFrame::fill_transformation_matrix_from_dh(NEWMAT::Matrix& matrix, double theta,
+						 double length, double distance, double alpha)
+{
+  double ca = cos(alpha);
+  double sa = sin(alpha);
+  double ct = cos(theta);
+  double st = sin(theta);
+
+  double* matrix_pointer = matrix.Store();
+  if (matrix.Storage() != 16)
+    return false;
+
+  matrix_pointer[0] =  ct;
+  matrix_pointer[1] = -st*ca;
+  matrix_pointer[2] = st*sa;
+  matrix_pointer[3] = distance * ct;
+  matrix_pointer[4] = st;
+  matrix_pointer[5] = ct*ca;
+  matrix_pointer[6] = -ct*sa;
+  matrix_pointer[7] = distance*st;
+  matrix_pointer[8] = 0;
+  matrix_pointer[9] = sa;
+  matrix_pointer[10] = ca;
+  matrix_pointer[11] = length;
+  matrix_pointer[12] = 0.0;
+  matrix_pointer[13] = 0.0;
+  matrix_pointer[14] = 0.0;
+  matrix_pointer[15] = 1.0;
+
+  return true;
+};
+
 
 
 TransformReference::TransformLists TransformReference::lookUpList(unsigned int target_frame, unsigned int source_frame)

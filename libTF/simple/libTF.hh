@@ -40,6 +40,11 @@ private:
   static  bool fill_transformation_matrix(NEWMAT::Matrix& matrix_pointer, double ax,
 					  double ay, double az, double yaw,
 					  double pitch, double roll);
+
+  /* A helper function to build a homogeneous transform based on DH parameters */
+  bool fill_transformation_matrix_from_dh(NEWMAT::Matrix& matrix, double theta,
+					  double length, double distance, double alpha);
+
   /* Storage of the parent */
   unsigned int parent;
 
