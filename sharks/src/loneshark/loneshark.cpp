@@ -32,12 +32,17 @@
 int main(int argc, char **argv)
 {
   printf("construct Sharks object...\n");
-  Sharks *sharks = new Sharks("192.168.1.90", "192.168.1.38");
+  Sharks *sharks = new Sharks("192.168.1.90", "192.168.1.38", true);
 
-  printf("press enter to scan or type 'a' then enter to abort\n");
-  char c = fgetc(stdin);
+  //printf("press enter to scan or type 'a' then enter to abort\n");
+  //char c = fgetc(stdin);
+  sharks->calibrate();
+  sharks->loneshark();
+  /*
   if (c != 'a')
     sharks->loneshark();
+  */
+  //sharks->gui_spin();
 
   delete sharks;
   return 0;

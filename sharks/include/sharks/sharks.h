@@ -32,22 +32,42 @@
 #include <string>
 #include "axis_cam/axis_cam.h"
 #include "ipdcmot/ipdcmot.h"
+#include "image_utils/jpeg_wrapper.h"
+#include "SDL/SDL.h"
 using namespace std;
 
 class Sharks
 {
 public:
-  Sharks(string axis_ip, string ipdcmot_ip);
+  Sharks(string axis_ip, string ipdcmot_ip, bool gui = false);
   ~Sharks();
+  void calibrate();
   void loneshark();
   inline bool ok() { return cam_ok && mot_ok; }
+  // gui functions (only do anything if gui=true in the constructor)
+  void pump_gui_event_loop();
+  void gui_spin();
+
+  class img_diff_t
+  {
+    public:
+      int r, g, b;
+      img_diff_t() : r(0), g(0), b(0) { }
+  };
+  img_diff_t image_diff(int w, int h, uint8_t *img1, uint8_t *img2, int thresh = -100000);
 
 private:
-  bool cam_ok, mot_ok;
+  bool cam_ok, mot_ok, gui;
   string axis_ip, ipdcmot_ip;
   AxisCam *cam;
   IPDCMOT *mot;
   bool get_and_save_image(string filename);
+  SDL_Surface *screen, *blit_prep;
+  double left_laser_bound, right_laser_bound;
+  JpegWrapper *jpeg_wrapper;
+  void display_image(int width, int height, uint8_t *raster);
+  void render_image();
+  double left_scan_extent, right_scan_extent;
 };
 
 #endif

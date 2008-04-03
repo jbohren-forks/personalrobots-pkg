@@ -13,13 +13,14 @@ triangulation-based laser range scanner.
 <license>BSD</license>
 <url>http://stair.stanford.edu</url>
 <depend package="string_utils"/>
-<depend package="sdl_image"/>
 <depend package="ipdcmot"/>
 <depend package="common_flows"/>
+<depend package="image_utils"/>
 <depend package="yamlgraph"/>
 <depend package="roscpp"/>
 <depend package="axis_cam"/>
 <depend package="vacuum"/>
+<depend package="sdl"/>
 <sys_depend lib="ncurses"/>
 </package>
 
