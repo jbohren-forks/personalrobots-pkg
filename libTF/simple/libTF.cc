@@ -6,8 +6,10 @@ RefFrame::RefFrame() :
   return;
 }
 
-void RefFrame::setParams(double a,double b,double c,double d,double e,double f)
+/* Six DOF version */
+void RefFrame::setParamsXYZYPR(double a,double b,double c,double d,double e,double f)
 {
+  paramType = SIXDOF;
   params[0]=a;
   params[1]=b;
   params[2]=c;
@@ -17,19 +19,47 @@ void RefFrame::setParams(double a,double b,double c,double d,double e,double f)
 
 }
 
+/* DH Params version */
+void RefFrame::setParamsDH(double a,double b,double c,double d)
+{
+  paramType = DH;
+  params[0]=a;
+  params[1]=b;
+  params[2]=c;
+  params[3]=d;
+}
+
+
 NEWMAT::Matrix RefFrame::getMatrix()
 {
   NEWMAT::Matrix mMat(4,4);
-  fill_transformation_matrix(mMat,params[0],params[1],params[2],params[3],params[4],params[5]);
+  switch ( paramType)
+    {
+    case SIXDOF:
+      fill_transformation_matrix(mMat,params[0],params[1],params[2],params[3],params[4],params[5]);
+      break;
+    case DH:
+      fill_transformation_matrix_from_dh(mMat,params[0],params[1],params[2],params[3]);
+    }
   return mMat;
 }
 
 NEWMAT::Matrix RefFrame::getInverseMatrix()
 {
   NEWMAT::Matrix mMat(4,4);
-  fill_transformation_matrix(mMat,params[0],params[1],params[2],params[3],params[4],params[5]);
-  //todo create a fill_inverse_transform_matrix call to be more efficient
-  return mMat.i();
+  switch(paramType)
+    {
+    case SIXDOF:
+      fill_transformation_matrix(mMat,params[0],params[1],params[2],params[3],params[4],params[5]);
+      //todo create a fill_inverse_transform_matrix call to be more efficient
+      return mMat.i();
+      break;
+    case DH:
+      fill_transformation_matrix_from_dh(mMat,params[0],params[1],params[2],params[3]);
+      //todo create a fill_inverse_transform_matrix call to be more efficient
+      return mMat.i();
+      break;
+    }
 }
 
 
@@ -53,7 +83,7 @@ void TransformReference::set(unsigned int frameID, unsigned int parentID, double
     frames[frameID] = new RefFrame();
   
   getFrame(frameID)->setParent(parentID);
-  getFrame(frameID)->setParams(a,b,c,d,e,f);
+  getFrame(frameID)->setParamsXYZYPR(a,b,c,d,e,f);
 }
 
 

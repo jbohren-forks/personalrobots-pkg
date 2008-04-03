@@ -13,13 +13,14 @@ public:
 
   /* The type of frame
    * This determines how many different parameters to expect to be updated, versus fixed */
-  //  static enum FrameType {SIXDOF, DH //how to tell which mode it's in  //todo add this process i'm going to start with 6dof only
+  enum ParamTypeEnum {SIXDOF, DH };//how to tell which mode it's in  //todo add this process i'm going to start with 6dof only
 
   /* Constructor */
   RefFrame();
 
   /* Set the parameters for this frame */
-  void setParams(double, double, double, double, double, double);
+  void setParamsXYZYPR(double, double, double, double, double, double);
+  void setParamsDH(double, double, double, double);
   
   /* Get the parent node */
   inline unsigned int getParent(){return parent;};
@@ -33,7 +34,8 @@ public:
   /* Generate and return the transform associated with getting out of this frame.  */
   NEWMAT::Matrix getInverseMatrix();
 private:
-  /* Storage of the parametsrs */
+  /* Storage of the parametsrs 
+   * NOTE: Depending on if this is a 6dof or DH parameter the storage will be different. */
   double params[6];
 
   /* A helper function to build a homogeneous transform based on 6dof parameters */
@@ -42,11 +44,13 @@ private:
 					  double pitch, double roll);
 
   /* A helper function to build a homogeneous transform based on DH parameters */
-  bool fill_transformation_matrix_from_dh(NEWMAT::Matrix& matrix, double theta,
+  static bool fill_transformation_matrix_from_dh(NEWMAT::Matrix& matrix, double theta,
 					  double length, double distance, double alpha);
 
   /* Storage of the parent */
   unsigned int parent;
+
+  ParamTypeEnum paramType;
 
 };
 
