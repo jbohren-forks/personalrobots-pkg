@@ -13,6 +13,6 @@ error handling.
 <author>The Independent JPEG Group</author>
 <license>I believe the IJG JPEG software license is BSD-compatible. See the README file in the jpeg-6b directory in this package for all the details.</license>
 <url>http://www.ijg.org</url>
-<depend package="roscpp"/>
+<depend package="thread_utils"/>
 </package>
 
