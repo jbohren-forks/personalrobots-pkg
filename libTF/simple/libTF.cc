@@ -229,9 +229,9 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
     throw(NoFrameConnectivity);
 
   /* Make sure that we don't have a no parent at the top */
-  std::cout << "Back = " << mTfLs.inverseTransforms.back()<<" " << mTfLs.forwardTransforms.back();
-  //  if (mTfLs.inverseTransforms.back() == NO_PARENT ||  mTfLs.forwardTransforms.back() == NO_PARENT)
-  //   throw(NoFrameConnectivity);
+  //  std::cout << "Back = " << mTfLs.inverseTransforms.back()<<" " << mTfLs.forwardTransforms.back();
+  if (mTfLs.inverseTransforms.back() == NO_PARENT ||  mTfLs.forwardTransforms.back() == NO_PARENT)
+    throw(NoFrameConnectivity);
 
   while (mTfLs.inverseTransforms.back() == mTfLs.forwardTransforms.back())
     {

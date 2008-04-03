@@ -33,10 +33,12 @@ public:
   
   /* Generate and return the transform associated with getting out of this frame.  */
   NEWMAT::Matrix getInverseMatrix();
+
+
 private:
   /* Storage of the parametsrs 
    * NOTE: Depending on if this is a 6dof or DH parameter the storage will be different. */
-  double params[6];
+  double params[6]; 
 
   /* A helper function to build a homogeneous transform based on 6dof parameters */
   static  bool fill_transformation_matrix(NEWMAT::Matrix& matrix_pointer, double ax,
@@ -57,26 +59,40 @@ private:
 class TransformReference
 {
 public:
-  static const unsigned int ROOT_FRAME = 1;
-  static const unsigned int NO_PARENT = 0;
+  /************* Constants ***********************/
+  static const unsigned int ROOT_FRAME = 1;  //Hard Value for ROOT_FRAME
+  static const unsigned int NO_PARENT = 0;  //Value for NO_PARENT
 
-  /* The maximum number of frames possible */
-  static const unsigned int MAX_NUM_FRAMES = 100;
-  /* The maximum number of times to descent before determining that graph has a loop. */
-  static const unsigned int MAX_GRAPH_DEPTH = 100;
-
-  /* Set a new frame or update an old one. */
-  void set(unsigned int framid, unsigned int parentid, double,double,double,double,double,double);
-
-  /* Get the transform between two frames.  */
-  NEWMAT::Matrix get(unsigned int target_frame, unsigned int source_frame);
+  static const unsigned int MAX_NUM_FRAMES = 100;   /* The maximum number of frames possible */
+  static const unsigned int MAX_GRAPH_DEPTH = 100;   /* The maximum number of times to descent before determining that graph has a loop. */
 
   /* Constructor */
   TransformReference();
 
+  /********** Mutators **************/
+  /* Set a new frame or update an old one. */
+  void set(unsigned int framid, unsigned int parentid, double,double,double,double,double,double);
+  // Possible exceptions TransformReference::LookupException
+
+  /*********** Accessors *************/
+
+  /* Get the transform between two frames by frame ID.  */
+  NEWMAT::Matrix get(unsigned int target_frame, unsigned int source_frame);
+  // Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
+  // TransformReference::MaxDepthException
+
   /* Debugging function that will print to std::cout the transformation matrix */
   void view(unsigned int target_frame, unsigned int source_frame);
-  
+  // Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
+  // TransformReference::MaxDepthException
+
+
+
+
+
+
+  /************ Possible Exceptions ****************************/
+
   /* An exception class to notify of bad frame number */
   class LookupException : public std::exception
   {
@@ -92,7 +108,7 @@ public:
   private:
   } NoFrameConnectivity;
 
-  /* An exception class to notify of no connection */
+  /* An exception class to notify that the search for connectivity descended too deep. */
   class MaxDepthException : public std::exception
   {
   public:
@@ -100,23 +116,25 @@ public:
   private:
   } MaxSearchDepth;
 
-
 private:
-  
-  /* An accessor to get a frame, which will throw an exception if the frame is no there. */
-  inline RefFrame* getFrame(unsigned int frame_number) { if (frames[frame_number] == NULL) throw InvalidFrame; else return frames[frame_number];};
+  /******************** Internal Storage ****************/
 
   /* The pointers to potential frames that the tree can be made of.
-   * The frames will be dynamically created at run time when set the first time. */
+   * The frames will be dynamically allocated at run time when set the first time. */
   RefFrame* frames[MAX_NUM_FRAMES];
 
 
-  /* This struct is how the list of transforms are stored  before being passed to computeTransformFromList. */
+  /* This struct is how the list of transforms are stored before being passed to computeTransformFromList. */
   typedef struct 
   {
     std::vector<unsigned int> inverseTransforms;
     std::vector<unsigned int> forwardTransforms;
   } TransformLists;
+
+  /************************* Internal Functions ****************************/
+  
+  /* An accessor to get a frame, which will throw an exception if the frame is no there. */
+  inline RefFrame* getFrame(unsigned int frame_number) { if (frames[frame_number] == NULL) throw InvalidFrame; else return frames[frame_number];};
 
   /* Find the list of connected frames necessary to connect two different frames */
   TransformLists  lookUpList(unsigned int target_frame, unsigned int source_frame);
