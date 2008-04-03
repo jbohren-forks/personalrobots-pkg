@@ -46,7 +46,7 @@ public:
   bool set_ptz(double pan, double tilt, double zoom, bool relative = false);
   bool set_focus(int focus = 0, bool relative = false); // zero for autofocus
   int  get_focus();
-  bool set_iris(int iris = 0, bool relative = false); // zero for autoiris
+  bool set_iris(int iris = 0, bool relative = false, bool blocking = true);
   int  get_iris();
 
 private:

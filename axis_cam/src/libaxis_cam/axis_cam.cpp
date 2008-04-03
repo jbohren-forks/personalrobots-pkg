@@ -91,13 +91,18 @@ bool AxisCam::get_jpeg(uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_size
     printf("woah! bad input parameters\n");
     return false; // don't make me crash
   }
-  jpeg_file_size = 0;
   CURLcode code;
-  if (code = curl_easy_perform(jpeg_curl))
+  do
   {
-    printf("woah! curl error: [%s]\n", curl_easy_strerror(code));
-    return false;
-  }
+    jpeg_file_size = 0;
+    if (code = curl_easy_perform(jpeg_curl))
+    {
+      printf("woah! curl error: [%s]\n", curl_easy_strerror(code));
+      return false;
+    }
+    if (jpeg_buf[0] == 0 && jpeg_buf[1] == 0)
+      printf("[axis_cam] ODD...first two bytes are zero...\n");
+  } while (jpeg_buf[0] == 0 && jpeg_buf[1] == 0);
   *fetch_jpeg_buf = jpeg_buf;
   *fetch_buf_size = jpeg_file_size;
   return true;
@@ -112,7 +117,7 @@ size_t AxisCam::jpeg_write(void *buf, size_t size, size_t nmemb, void *userp)
   {
     // overalloc
     a->jpeg_buf_size = 2 * (a->jpeg_file_size + (size*nmemb));
-    printf("jpeg_buf_size is now %d\n", a->jpeg_buf_size);
+    //printf("jpeg_buf_size is now %d\n", a->jpeg_buf_size);
     if (a->jpeg_buf)
       delete[] a->jpeg_buf;
     a->jpeg_buf = new uint8_t[a->jpeg_buf_size];
@@ -163,6 +168,19 @@ int AxisCam::get_focus()
   return last_focus;
 }
   
+int AxisCam::get_iris()
+{
+  if (last_autoiris_enabled)
+  {
+    set_iris(0, true); // manual focus but don't move it
+    query_params();
+    set_iris(0); // re-enable autofocus
+    return last_iris;
+  }
+  query_params();
+  return last_iris;
+}
+  
 bool AxisCam::set_focus(int focus, bool relative)
 {
   ostringstream oss;
@@ -177,15 +195,25 @@ bool AxisCam::set_focus(int focus, bool relative)
   return send_params(oss.str());
 }
 
-bool AxisCam::set_iris(int iris, bool relative)
+bool AxisCam::set_iris(int iris, bool relative, bool blocking)
 {
   ostringstream oss;
-  if (iris == 0)
+  int target_iris = iris;
+  if (relative)
+    target_iris = get_iris() + iris;
+  printf("target iris = %d\n", target_iris);
+
+  if (iris == 0 && !relative)
     oss << "autoiris=on";
   else
     oss << string("autoiris=off&")
         << (relative ? "r" : "") << string("iris=") << iris;
-  return send_params(oss.str());
+  if (!send_params(oss.str()))
+    return false;
+  if (!blocking || iris == 0)
+    return true;
+  get_iris(); // this appears to force a block on the camera side
+  return true;
 }
 
 bool AxisCam::send_params(string params)
@@ -218,7 +246,7 @@ bool AxisCam::query_params()
     return false;
   }
   ptz_ss_mutex.lock();
-  printf("%d-byte response:\n%s\n", ptz_ss.str().length(), ptz_ss.str().c_str());
+  //printf("%d-byte response:\n%s\n", ptz_ss.str().length(), ptz_ss.str().c_str());
   while (ptz_ss.good())
   {
     string line;
