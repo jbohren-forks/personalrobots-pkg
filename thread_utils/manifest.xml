@@ -1,0 +1,15 @@
+<package>
+  <description brief="Thread Utilities">
+
+    This package provides a simple static library which makes dealing with
+    threads in C++ a bit less of a headache. This includes cross-platform
+    wrappers for mutexes, etc. I suppose we could add utilities for other
+    languages in here, but most modern languages seem to have nice
+    cross-platform thread stuff already.
+
+  </description>
+  <author>Morgan Quigley (email: mquigley@cs.stanford.edu)</author>
+  <license>BSD</license>
+  <url>http://stair.stanford.edu</url>
+</package>
+
