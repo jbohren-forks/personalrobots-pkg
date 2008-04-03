@@ -335,7 +335,7 @@ void IPDCMOT::set_pos_enc(int pos_request)
 	if (reg_mode == POSITION)
   {
 		set_input(pos_request);
-    printf("set position input to %d\n", pos_request);
+    //printf("set position input to %d\n", pos_request);
   }
   else
     printf("woah! regulation mode is not position\n");
