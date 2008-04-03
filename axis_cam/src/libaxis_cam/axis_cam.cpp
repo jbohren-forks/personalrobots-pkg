@@ -68,10 +68,6 @@ AxisCam::AxisCam(string ip) : ip(ip)
   printf("Getting images from [%s]\n", oss.str().c_str());
   if (!query_params())
     printf("sad! I couldn't query the camera parameters.\n");
-  if (!query_params())
-    printf("sad! I couldn't query the camera parameters.\n");
-  if (!query_params())
-    printf("sad! I couldn't query the camera parameters.\n");
 }
 
 AxisCam::~AxisCam()
@@ -131,8 +127,11 @@ size_t AxisCam::ptz_write(void *buf, size_t size, size_t nmemb, void *userp)
   if (size * nmemb == 0)
     return 0;
   AxisCam *a = (AxisCam *)userp;
+  a->ptz_ss_mutex.lock();
   a->ptz_ss << string((char *)buf, size*nmemb);
-  printf("%d bytes\n", size*nmemb);
+  //printf("writing %d bytes\n", size*nmemb);
+  //cout << a->ptz_ss.str() << endl;
+  a->ptz_ss_mutex.unlock();
   //cout << string((char *)buf, size*nmemb);
   return size*nmemb;
 }
@@ -191,7 +190,11 @@ bool AxisCam::set_iris(int iris, bool relative)
 
 bool AxisCam::send_params(string params)
 {
+//  stringstream ss;
+  ptz_ss_mutex.lock();
+  ptz_ss.clear(); // reset stringstream state so we can insert into it again
   ptz_ss.str("");
+  ptz_ss_mutex.unlock();
   curl_easy_setopt(setptz_curl, CURLOPT_POSTFIELDS, params.c_str());
   CURLcode code;
   if (code = curl_easy_perform(setptz_curl))
@@ -204,14 +207,18 @@ bool AxisCam::send_params(string params)
 
 bool AxisCam::query_params()
 {
+  ptz_ss_mutex.lock();
+  ptz_ss.clear(); // reset stringstream state so we can insert into it again
   ptz_ss.str("");
+  ptz_ss_mutex.unlock();
   CURLcode code;
   if (code = curl_easy_perform(getptz_curl))
   {
     printf("woah! curl error: [%s]\n", curl_easy_strerror(code));
     return false;
   }
-  printf("response:\n%s\n", ptz_ss.str().c_str());
+  ptz_ss_mutex.lock();
+  printf("%d-byte response:\n%s\n", ptz_ss.str().length(), ptz_ss.str().c_str());
   while (ptz_ss.good())
   {
     string line;
@@ -241,6 +248,7 @@ bool AxisCam::query_params()
     printf("\n");
 */
   }
+  ptz_ss_mutex.unlock();
   return true;
 }
 

@@ -28,6 +28,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <cstdio>
+#include <iostream>
 #include "axis_cam/axis_cam.h"
 #include "kbhit.h"
 
