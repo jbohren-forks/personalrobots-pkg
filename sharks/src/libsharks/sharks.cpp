@@ -27,6 +27,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <sstream>
+#include <cstdio>
 #include "sharks/sharks.h"
 #include "axis_cam/axis_cam.h"
 #include "ipdcmot/ipdcmot.h"

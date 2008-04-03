@@ -12,12 +12,13 @@ triangulation-based laser range scanner.
 <author>Morgan Quigley (email: mquigley@cs.stanford.edu)</author>
 <license>BSD</license>
 <url>http://stair.stanford.edu</url>
-<depend package="axis_cam"/>
+<depend package="string_utils"/>
 <depend package="sdl_image"/>
 <depend package="ipdcmot"/>
 <depend package="common_flows"/>
 <depend package="yamlgraph"/>
 <depend package="roscpp"/>
+<depend package="axis_cam"/>
 <depend package="vacuum"/>
 <sys_depend lib="ncurses"/>
 </package>
