@@ -48,6 +48,7 @@ public:
   int  get_focus();
   bool set_iris(int iris = 0, bool relative = false, bool blocking = true);
   int  get_iris();
+  void print_params();
 
 private:
   string ip;

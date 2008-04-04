@@ -280,3 +280,10 @@ bool AxisCam::query_params()
   return true;
 }
 
+void AxisCam::print_params()
+{
+  query_params();
+  printf("pan = %f\ntilt = %f\nzoom = %f\n", 
+    last_pan, last_tilt, last_zoom);
+}
+

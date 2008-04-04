@@ -76,7 +76,7 @@ int main(int argc, char **argv)
           axis->set_iris(iris);
           break;
         case '?':
-          printf("focus: [%d]\n", axis->get_focus());
+          axis->print_params();
           break;
         default:
           printf("unknown char [%c]\n", c);
