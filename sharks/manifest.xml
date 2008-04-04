@@ -21,6 +21,7 @@ triangulation-based laser range scanner.
 <depend package="axis_cam"/>
 <depend package="vacuum"/>
 <depend package="sdl"/>
+<depend package="sdl_image"/>
 <sys_depend lib="ncurses"/>
 </package>
 

@@ -52,6 +52,7 @@ Sharks::Sharks(string axis_ip, string ipdcmot_ip, bool gui)
     printf("cam ok. grabbed a %d-byte image.\n",
       jpeg_buf_size);
   }
+  cam->set_ptz(0, -30, 0);
   printf("entering ipdcmot construct\n");
   mot = new IPDCMOT(ipdcmot_ip, 0, false);
   printf("done with ipdcmot construct\n");
@@ -150,7 +151,6 @@ void Sharks::calibrate()
   memcpy(nolaser_buf, jpeg_wrapper->get_raster(), rs);
   int max_red_diff = 0;
   double max_red_diff_ang = 135;
-  /*
   for (double ang = left_laser_bound; ang <= right_laser_bound; ang += 5.0)
   {
     mot->set_pos_deg_blocking(ang);
@@ -195,7 +195,6 @@ void Sharks::calibrate()
       }
     display_image(width, height, diff_image); //jpeg_wrapper->get_raster());
   }
-  */
   mot->set_pos_deg_blocking(max_red_diff_ang);
   printf("setting camera to autofocus again\n");
   cam->set_focus(0);
@@ -204,7 +203,7 @@ void Sharks::calibrate()
   printf("fixing focus and iris to current values\n");
   cam->set_focus(0, true);
   
-  int red[256];
+  int red[256], green[256], blue[256]; // build histogram
   // do a binary search on the iris
   for (int diris = 1000; diris > 50; diris /= 2)
   {
@@ -220,32 +219,39 @@ void Sharks::calibrate()
       jpeg_wrapper->decompress_jpeg_buf((char *)jpeg_buf, jpeg_buf_size);
       display_image(width, height, jpeg_wrapper->get_raster());
       for (int i = 0; i < 256; i++)
-        red[i] = 0;
+        red[i] = green[i] = blue[i] = 0;
       for (int y = 0; y < height; y++)
         for (int x = 0; x < width; x++)
         {
           uint8_t *p1 = jpeg_wrapper->get_raster() + y*width*3 + x*3;
           red[*p1]++;
+          green[*(p1+1)]++;
+          blue[*(p1+2)]++;
         }
       printf("red-saturated pixels: %d\n", red[255]);
-      const int tgt_sat = 500;
+      const int tgt_sat = 500, greenblue_tgt = 100; // aim for seeing red
       if (attempt == 0)
         direction = (red[255] > tgt_sat ? -1 : 1);
       if (direction == -1)
       {
-        // see if we've closed the iris enough to not saturate big swaths of the image
-        if (red[255] <= tgt_sat)
+        // see if we've closed the iris enough to not saturate big swaths 
+        if (red[255] <= tgt_sat && green[255] < greenblue_tgt &&
+            blue[255] < greenblue_tgt)
           break; // done!
         cam->set_iris(-diris, true); // else, close the iris some more
       }
       else // direction is -1
       {
         // see if we've opened the iris enough to saturate a bit of the image
-        if (red[255] > tgt_sat)
+        if (red[255] > tgt_sat ||
+            green[255] > greenblue_tgt ||
+            blue[255] > greenblue_tgt)
           break;
         cam->set_iris(diris, true);
+        if (cam->get_iris() > 9000)
+          break; // we're already fully open
       }
-      if (diris >= 500)
+      if (diris >= 300)
         usleep(500000); // big motions take a while
       printf("direction = %d diris = %d cam iris = %d\n", direction, diris, cam->get_iris());
     }
@@ -269,7 +275,7 @@ void Sharks::calibrate()
     img_diff_t diff = image_diff(jpeg_wrapper->width(), jpeg_wrapper->height(), 
                                  jpeg_wrapper->get_raster(), nolaser_buf, 20);
     printf("ang = %f  delta = (%d, %d, %d)\n", ang, diff.r, diff.g, diff.b);
-    if (diff.r > 10000)
+    if (diff.r > 5000)
     {
       if (left_image_start < -1000)
       {
@@ -356,7 +362,6 @@ void Sharks::loneshark()
   mot->set_pos_deg_blocking(left_scan_extent);
   mot->set_patrol(left_scan_extent, right_scan_extent, 1, 1);
   printf("press any key to stop scanning\n");
-  double prev_mot = -1000;
   while (!_kbhit())
   {
     double pos;
@@ -365,12 +370,11 @@ void Sharks::loneshark()
       printf("woah! couldn't get position\n");
       break;
     }
-    if (pos < prev_mot)
+    if (mot->get_patrol_dir() < 0)
     {
-      printf("direction change detected. scan complete.\n");
+      printf("scan complete.\n");
       break;
     }
-    prev_mot = pos;
     printf(".");
     fflush(stdout);
     char fnamebuf[500];

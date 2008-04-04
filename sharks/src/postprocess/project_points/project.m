@@ -1,5 +1,5 @@
 if ~exist('d')
-  d = load('laser.txt');
+  d = load('../extract_laser/log.txt');
   fprintf('ok, loaded %d scanlines\n', size(d,1));
 end
 baseline = 0.49;
@@ -10,7 +10,7 @@ vfov = hfov * vres / hres;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 scene = [];
 r = 2000:length(d);
-lang = -d(r,1) * pi/180 + 40*pi/180;
+lang = -d(r,1) * pi/180 - 225*pi/180;
 img_y = d(r,2);
 img_x = d(r,3);
 azi = ((hres/2-img_x) / hres * hfov + 90) * pi/180;

@@ -73,7 +73,8 @@ int main(int argc, char **argv)
     }
 //    for (int i = 0; i < tokens.size(); i++)
 //      printf("%d = [%s]\n", i, tokens[i].c_str());
-    string lang_str = tokens[tokens.size() - 2];
+//    string lang_str = tokens[tokens.size() - 2];
+    string lang_str = tokens[2];
 //    printf("lang str = [%s]\n", lang_str.c_str());
     lang = atof(lang_str.c_str());
     printf("lang = %f\n", lang);
@@ -99,7 +100,7 @@ int main(int argc, char **argv)
         *(fg_p + fg_image->format->Gshift/8) = 0;
         *(fg_p + bg_image->format->Bshift/8) = 0;
         int diff = fg_r - bg_r;
-        if (diff > 50)
+        if (diff > 30)
         {
           *(fg_p + fg_image->format->Rshift/8) = diff;
           centroid += (diff) * x;
