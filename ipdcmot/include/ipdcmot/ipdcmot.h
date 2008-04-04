@@ -49,6 +49,7 @@ public:
   bool set_pos_deg_blocking(double deg, int tick_tol = 1, int max_wait_secs = 20);
   void set_pos_deg_nonblocking(double deg);
   void set_patrol(double stop1, double stop2, double speed, int32_t init_dir);
+  inline int get_patrol_dir() { return (patrol.dir == INCREASING ? 1 : -1); }
   
 private:
   double max_ang_vel, mount_bias_deg;

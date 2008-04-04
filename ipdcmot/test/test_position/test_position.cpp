@@ -33,14 +33,23 @@
 
 int main(int argc, char **argv)
 {
-  IPDCMOT *mot = new IPDCMOT("192.168.1.38", 75);
-  printf("sleeping...\n");
-  usleep(1000000);
-  printf("going to 20 degrees\n");
-  mot->set_pos_deg_blocking(20);
-  printf("done. going to 40 degrees\n");
-  mot->set_pos_deg_blocking(40);
-  printf("done.\n");
+  if (argc != 2)
+  {
+    printf("usage: test_position POS\nwhere POS is in degrees from home\n");
+    return 0;
+  }
+  IPDCMOT *mot = new IPDCMOT("192.168.1.38", 0, false);
+  double pos = 30;
+  pos = atof(argv[1]);
+  mot->set_pos_deg_blocking(pos);
+
+  //printf("sleeping...\n");
+  //usleep(1000000);
+  //printf("going to 20 degrees\n");
+  //mot->set_pos_deg_blocking(20);
+  //printf("done. going to 40 degrees\n");
+  //mot->set_pos_deg_blocking(40);
+  //printf("done.\n");
 
 
   delete mot;
