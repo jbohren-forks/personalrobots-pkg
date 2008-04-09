@@ -6,19 +6,19 @@ if !ENV['ROS_ROOT']
   exit
 end
 
-libjpeg_path = `#{ENV['ROS_ROOT']}/rospack find stair__ijg_libjpeg`
+libjpeg_path = `#{ENV['ROS_ROOT']}/rospack find ijg_libjpeg`
 puts "libjpeg path = #{libjpeg_path}"
 if libjpeg_path.length <= 1
   puts "couldn't find libjpeg. try running this from your ROS_ROOT directory:"
-  puts "   ./rospack install stair__ijg_libjpeg"
+  puts "   ./rospack install ijg_libjpeg"
   exit
 end
 
-sdl_path = `#{ENV['ROS_ROOT']}/rospack find stair__sdl`
+sdl_path = `#{ENV['ROS_ROOT']}/rospack find sdl`
 puts "sdl path = #{sdl_path}"
 if sdl_path.length <= 1
   puts "couldn't find SDL. try running this from your ROS_ROOT directory:"
-  puts "   ./rospack install stair__sdl"
+  puts "   ./rospack install sdl"
   exit
 end
 
