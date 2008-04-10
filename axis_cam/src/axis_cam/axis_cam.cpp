@@ -42,6 +42,7 @@ public:
   AxisCamNode() : ROS_Slave(), cam(NULL), frame_id(0)
   {
     register_source(image = new FlowImage("image"));
+    register_with_master();
     if (!get_string_param(".host", axis_host))
     {
       printf("host parameter not specified; defaulting to 192.168.0.90\n");
@@ -66,6 +67,7 @@ public:
       log(ROS::ERROR, "woah! AxisCam::get_jpeg returned an error");
       return false;
     }
+    //printf("sending %d-byte jpeg block\n", jpeg_size);
     image->set_data_size(jpeg_size);
     memcpy(image->data, jpeg, jpeg_size);
     image->width = 704;
