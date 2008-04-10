@@ -33,10 +33,10 @@
 int main(int argc, char **argv)
 {
   AxisCam *axis = new AxisCam("192.168.1.90");
-  axis->ptz(0,0,0);
+  axis->set_ptz(0,0,0);
   for (int i = 0; i < 5; i++)
-    axis->ptz(i*10, i*10, 0);
-  axis->ptz(0,0,0);
+    axis->set_ptz(i*10, i*10, 0);
+  axis->set_ptz(0,0,0);
   delete axis;
   return 0;
 }

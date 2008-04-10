@@ -10,6 +10,7 @@
   <license>BSD</license>
   <url>http://stair.stanford.edu</url>
   <depend package="roscpp"/>
+  <depend package="common_flows"/>
   <depend package="ijg_libjpeg"/>
 </package>
 

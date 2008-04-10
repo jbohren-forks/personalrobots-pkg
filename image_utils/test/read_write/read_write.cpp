@@ -29,14 +29,14 @@
 
 
 #include <cstdio>
-#include "image_flows/FlowImage.h"
-#include "image_flows/image_flow_codec.h"
+#include "common_flows/FlowImage.h"
+#include "common_flows/ImageCodec.h"
 
 int main(int argc, char **argv)
 {
   struct stat sbuf;
   FlowImage image("image");
-  ImageFlowCodec<FlowImage> codec(&image);
+  ImageCodec<FlowImage> codec(&image);
   codec.read_file("test.jpg");
   codec.write_file("out.ppm");
   codec.write_file("out.jpg", 5, false);

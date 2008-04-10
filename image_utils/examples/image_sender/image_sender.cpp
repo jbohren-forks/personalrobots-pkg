@@ -28,8 +28,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <cstdio>
-#include "image_flows/FlowImage.h"
-#include "image_flows/image_flow_codec.h"
+#include "common_flows/FlowImage.h"
+#include "common_flows/ImageCodec.h"
 #include "ros/ros_slave.h"
 
 class ImageSender : public ROS_Slave
@@ -38,12 +38,12 @@ public:
   double freq;
   string image_file;
   FlowImage *image;
-  ImageFlowCodec<FlowImage> *codec;
+  ImageCodec<FlowImage> *codec;
 
   ImageSender() : ROS_Slave(), freq(1), image_file("test.jpg")
   {
     register_source(image = new FlowImage("image"));
-    codec = new ImageFlowCodec<FlowImage>(image);
+    codec = new ImageCodec<FlowImage>(image);
     register_with_master();
     get_double_param(".freq", &freq);
     get_string_param(".image_file", image_file);

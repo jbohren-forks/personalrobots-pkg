@@ -33,8 +33,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-#include "image_flows/FlowImage.h"
-#include "image_flows/image_flow_codec.h"
+#include "common_flows/FlowImage.h"
+#include "common_flows/ImageCodec.h"
 
 void toast(char *msg)
 {
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
   image.colorspace = "rgb24";
   image.width = 200;
   image.height = 153;
-  ImageFlowCodec<FlowImage> codec(&image);
+  ImageCodec<FlowImage> codec(&image);
   uint8_t *raster;
   if (!(raster = codec.get_raster()))
     printf("couldn't get raster\n");
