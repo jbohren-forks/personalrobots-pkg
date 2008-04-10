@@ -35,15 +35,15 @@
 
 #include "ros/ros_slave.h"
 #include "SDL/SDL.h"
-#include "image_flows/FlowImage.h"
-#include "image_flows/image_flow_codec.h"
+#include "common_flows/FlowImage.h"
+#include "common_flows/ImageCodec.h"
 #include "simple_sdl_gui/FlowSDLKeyEvent.h"
 
 class Simple_SDL_GUI : public ROS_Slave
 {
 public:
   FlowImage *image;
-  ImageFlowCodec<FlowImage> *codec;
+  ImageCodec<FlowImage> *codec;
   
   FlowSDLKeyEvent *key;
 
@@ -55,7 +55,7 @@ public:
   Simple_SDL_GUI() : ROS_Slave(), blit_prep(NULL)
   {
     register_sink(image = new FlowImage("image"), ROS_CALLBACK(Simple_SDL_GUI, image_received));
-    codec = new ImageFlowCodec<FlowImage>(image);
+    codec = new ImageCodec<FlowImage>(image);
 
     register_source(key = new FlowSDLKeyEvent("key"));
 
@@ -122,7 +122,7 @@ public:
 	}
 
       // NOTE: get_raster internally locks the image mutex
-      uint8_t *raster = codec->get_raster(); // decompress if required
+      uint8_t *raster = codec->get_raster();
       int row_offset = 0;
       for (int row = 0; row < image->height; row++, row_offset += screen->pitch)
 	memcpy((char *)blit_prep->pixels + row_offset, raster + (row * image->width * 3), image->width * 3);

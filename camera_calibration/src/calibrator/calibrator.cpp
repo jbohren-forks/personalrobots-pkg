@@ -45,8 +45,8 @@
 #include "SDL/SDL.h"
 
 #include "ros/ros_slave.h"
-#include "image_flows/FlowImage.h"
-#include "image_flows/image_flow_codec.h"
+#include "common_flows/FlowImage.h"
+#include "common_flows/ImageCodec.h"
 #include "driver_axis213/FlowPTZPosition.h"
 #include "simple_sdl_gui/FlowSDLKeyEvent.h"
 
@@ -65,10 +65,10 @@ class Calibrator : public ROS_Slave
 {
 public:
   FlowImage *image_in;
-  ImageFlowCodec<FlowImage> *codec_in;
+  ImageCodec<FlowImage> *codec_in;
 
   FlowImage *image_out;
-  ImageFlowCodec<FlowImage> *codec_out;
+  ImageCodec<FlowImage> *codec_out;
 
   FlowPTZPosition *control;
   FlowPTZPosition *observe;
@@ -94,10 +94,10 @@ public:
   Calibrator() : ROS_Slave()
   {
     register_sink(image_in = new FlowImage("image_in"), ROS_CALLBACK(Calibrator, image_received));
-    codec_in = new ImageFlowCodec<FlowImage>(image_in);
+    codec_in = new ImageCodec<FlowImage>(image_in);
 
     register_source(image_out = new FlowImage("image_out"));
-    codec_out = new ImageFlowCodec<FlowImage>(image_out);
+    codec_out = new ImageCodec<FlowImage>(image_out);
 
     register_sink(observe = new FlowPTZPosition("observe"), ROS_CALLBACK(Calibrator, ptz_received));
     register_source(control = new FlowPTZPosition("control"));
@@ -323,7 +323,7 @@ public:
       image_out->compression = "raw";
       image_out->colorspace = "rgb24";
 
-      codec_out->realloc_raster_if_needed();
+      //      codec_out->realloc_raster_if_needed();
       cvSetData(cvimage_out, codec_out->get_raster(), 3*image_out->width);      
       cvConvertImage(cvimage_undistort, cvimage_out, CV_CVTIMG_SWAP_RB);
 

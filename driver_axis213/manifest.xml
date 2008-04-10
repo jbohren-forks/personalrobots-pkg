@@ -8,7 +8,7 @@ package axis213_cam driver written by Morgan Quigley.
 <author>Jeremy Leibs (email: leibs@willowgarage.com)</author>
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
-<depend package='image_flows'/>
+<depend package='roscpp'/>
 <depend package='common_flows'/>
 <repository>http://pr.willowgarage.com/repos</repository>
 </package>

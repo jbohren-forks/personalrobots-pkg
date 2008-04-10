@@ -36,10 +36,7 @@
 #include "ros/ros_slave.h"
 #include "common_flows/FlowEmpty.h"
 
-#include "image_flows/FlowImage.h"
-#include "image_flows/image_flow_codec.h"
-
-
+#include "common_flows/FlowImage.h"
 
 class Axis213_cam : public ROS_Slave
 {

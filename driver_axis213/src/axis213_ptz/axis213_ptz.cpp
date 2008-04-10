@@ -33,7 +33,6 @@
 *********************************************************************/
 
 #include "ros/ros_slave.h"
-#include "image_flows/FlowImage.h"
 #include "common_flows/FlowEmpty.h"
 #include "axis213/axis213.h"
 #include "driver_axis213/FlowPTZPosition.h"
