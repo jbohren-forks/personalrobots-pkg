@@ -1,12 +1,14 @@
 #!/usr/bin/env ruby
 require "#{`#{ENV['ROS_ROOT']}/rospack latest yamlgraph`}/lib/yamlgraph/ygl.rb"
 g = YAMLGraph.new
-g.param 'image_sender.freq', 0.5
-g.param 'image_sender.image_file', 'examples/image_sender/test.jpg'
-g.node 'image_flows/image_sender', {'launch'=>'xterm'}
+#g.node  'driver_axis213/axis213_cam',  {'launch'=>'xterm', }
+g.node  'axis_cam/axis_cam',  {'launch'=>'xterm', }
+#g.param 'axis213_cam.host', '10.0.0.150'
+g.param 'axis_cam.host', '10.0.0.150'
 g.node 'simple_sdl_gui/gui', {'launch'=>'xterm'}
 g.node 'simple_sdl_gui/keymon', {'launch'=>'xterm'}
-g.flow 'image_sender:image', 'gui:image'
+#g.flow 'axis213_cam:image_all', 'gui:image'
+g.flow 'axis_cam:image', 'gui:image'
 g.flow 'gui:key', 'keymon:key'
 YAMLGraphLauncher.new.launch g
 

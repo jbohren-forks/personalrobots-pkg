@@ -8,5 +8,6 @@ This package has an image viewing node that is implemented using SDL.
 <depend package="roscpp"/>
 <depend package="common_flows"/>
 <depend package="sdl"/>
+<depend package="ijg_libjpeg"/>
 </package>
 

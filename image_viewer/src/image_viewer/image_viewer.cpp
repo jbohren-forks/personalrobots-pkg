@@ -28,21 +28,21 @@
 
 #include "ros/ros_slave.h"
 #include "SDL/SDL.h"
-#include "image_flows/FlowImage.h"
-#include "image_flows/image_flow_codec.h"
+#include "common_flows/FlowImage.h"
+#include "common_flows/ImageCodec.h"
 
 class ImageViewer : public ROS_Slave
 {
 public:
   FlowImage *image;
-  ImageFlowCodec<FlowImage> *codec;
+  ImageCodec<FlowImage> *codec;
   SDL_Surface *screen, *blit_prep;
 
   ImageViewer() : ROS_Slave(), blit_prep(NULL)
   {
     register_sink(image = new FlowImage("image"), 
       ROS_CALLBACK(ImageViewer, image_cb));
-    codec = new ImageFlowCodec<FlowImage>(image);
+    codec = new ImageCodec<FlowImage>(image);
     register_with_master();
   }
   virtual ~ImageViewer() { if (blit_prep) SDL_FreeSurface(blit_prep); }
