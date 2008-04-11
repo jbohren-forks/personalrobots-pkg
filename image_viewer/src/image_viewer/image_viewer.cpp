@@ -37,8 +37,11 @@ public:
   FlowImage *image;
   ImageCodec<FlowImage> *codec;
   SDL_Surface *screen, *blit_prep;
+  bool save_next_image;
+  int save_number;
 
-  ImageViewer() : ROS_Slave(), blit_prep(NULL)
+  ImageViewer() : ROS_Slave(), blit_prep(NULL), 
+    save_next_image(false), save_number(1)
   {
     register_sink(image = new FlowImage("image"), 
       ROS_CALLBACK(ImageViewer, image_cb));
@@ -51,8 +54,31 @@ public:
     screen = SDL_SetVideoMode(320, 240, 24, 0);
     return (screen ? true : false);
   }
+  void request_save_image() { save_next_image = true; }
+  void save_image()
+  {
+    save_next_image = false;
+    if (image->compression != string("jpeg"))
+      printf("I am only smart enough to save a jpeg image\n");
+    else
+    {
+      char fnamebuf[100];
+      sprintf(fnamebuf, "image%04d.jpg", save_number++);
+      FILE *f = fopen(fnamebuf, "wb");
+      if (!f)
+      {
+        printf("couldn't open [%s]\n", fnamebuf);
+        return; // bummer
+      }
+      fwrite(image->data, 1, image->get_data_size(), f);
+      fclose(f);
+      printf("saved %s\n", fnamebuf);
+    }
+  }
   void image_cb()
   {
+    if (save_next_image)
+      save_image();
     if (!screen)
       return; // paranoia. shouldn't happen. we should have bailed by now.
     if (screen->h != image->height || screen->w != image->width)
@@ -124,7 +150,11 @@ int main(int argc, char **argv)
     exit(1);
   }
   while (v.happy())
-    usleep(1000000);
+  {
+    getc(stdin);
+    v.save_next_image = true;
+    //usleep(1000000);
+  }
   return 0;
 }
 
