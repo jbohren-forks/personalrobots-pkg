@@ -1,6 +1,0 @@
-#!/usr/bin/env ruby
-(puts "aaaaaaaa no ROS_ROOT"; exit) if !ENV['ROS_ROOT']
-rosrb = `#{ENV['ROS_ROOT']}/rospack latest rosrb`
-require "#{rosrb}/lib/rosrb/launcher"
-l = Launcher.new('driver_axis213','bin/axis213_cam',['cpp','xterm','persist'])
-Kernel.exec(l.cmd, *l.args)
