@@ -2,15 +2,15 @@
 (puts "aaaaaaaa no ROS_ROOT"; exit) if !ENV['ROS_ROOT']
 require "#{`#{ENV['ROS_ROOT']}/rospack latest yamlgraph`}/lib/yamlgraph/ygl.rb"
 g = YAMLGraph.new
-g.node  'driver_axis213/axis213_cam',  {'launch'=>'xterm', }
-g.node  'driver_axis213/axis213_ptz',  {'launch'=>'xterm'}
-g.param 'axis213_cam.host', '10.0.0.150'
-g.param 'axis213_ptz.host', '10.0.0.150'
+g.node  'axis_cam/axis_cam',  {'launch'=>'xterm', }
+g.node  'axis_cam/axis_ptz',  {'launch'=>'xterm'}
+g.param 'axis_cam.host', '10.0.0.150'
+g.param 'axis_ptz.host', '10.0.0.150'
 g.node  'camera_calibration/calibrator',  {'launch'=>'xterm'}
 g.node  'simple_sdl_gui/gui',  {'launch'=>'xterm'}
-g.flow  'axis213_cam:image_all', 'calibrator:image_in'
-g.flow  'axis213_ptz:ptz_observe_all', 'calibrator:observe'
-g.flow  'calibrator:control', 'axis213_ptz:ptz_control'
+g.flow  'axis_cam:image', 'calibrator:image_in'
+g.flow  'axis_ptz:ptz', 'calibrator:observe'
+g.flow  'calibrator:control', 'axis_ptz:ptz_control'
 g.flow  'calibrator:image_out', 'gui:image'
 g.flow  'gui:key', 'calibrator:key'
 YAMLGraphLauncher.new.launch g

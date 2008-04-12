@@ -2,6 +2,7 @@ cpp:
   make:
     - src/libaxis_cam
     - src/axis_cam
+    - src/axis_ptz
     - src/axis_cam_polled
     - test/test_get
     - test/test_ptz

@@ -266,16 +266,18 @@ bool AxisCam::query_params()
     else if (tokens[0] == string("iris"))
       last_iris = atoi(tokens[1].c_str());
     else if (tokens[0] == string("autofocus"))
-      last_autofocus_enabled = (tokens[1] == string("on") ? true : false);
+      last_autofocus_enabled = (tokens[1].substr(0,2) == string("on") ? true : false);
     else if (tokens[0] == string("autoiris"))
-      last_autoiris_enabled = (tokens[1] == string("on") ? true : false);
-/*
+      last_autoiris_enabled = (tokens[1].substr(0,2) == string("on") ? true : false);
+
+    /*
     printf("line has %d tokens:\n", tokens.size());
     for (int i = 0; i < tokens.size(); i++)
-      printf(" [%s] ", tokens[i].c_str());
+      printf(" '%s' ", tokens[i].substr(0,2).c_str());
     printf("\n");
-*/
+    */
   }
+
   ptz_ss_mutex.unlock();
   return true;
 }

@@ -15,5 +15,6 @@ In the future, I may add more sophisticated (more efficient) transport methods.
 <depend package="image_viewer"/>
 <depend package="thread_utils"/>
 <depend package="string_utils"/>
+<depend package="unstable_flows"/>
 </package>
 

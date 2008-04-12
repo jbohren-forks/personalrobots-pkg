@@ -48,7 +48,15 @@ public:
   int  get_focus();
   bool set_iris(int iris = 0, bool relative = false, bool blocking = true);
   int  get_iris();
+
+  bool send_params(string params);
+  bool query_params();
+
   void print_params();
+
+  int last_iris, last_focus;
+  double last_pan, last_tilt, last_zoom;
+  bool last_autofocus_enabled, last_autoiris_enabled;
 
 private:
   string ip;
@@ -64,11 +72,7 @@ private:
   }
   static size_t jpeg_write(void *buf, size_t size, size_t nmemb, void *userp);
   static size_t ptz_write(void *buf, size_t size, size_t nmemb, void *userp);
-  bool send_params(string params);
-  bool query_params();
-  int last_iris, last_focus;
-  double last_pan, last_tilt, last_zoom;
-  bool last_autofocus_enabled, last_autoiris_enabled;
+
 };
 
 #endif

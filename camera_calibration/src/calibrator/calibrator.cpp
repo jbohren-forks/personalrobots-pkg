@@ -47,7 +47,7 @@
 #include "ros/ros_slave.h"
 #include "common_flows/FlowImage.h"
 #include "common_flows/ImageCodec.h"
-#include "driver_axis213/FlowPTZPosition.h"
+#include "unstable_flows/FlowPTZActuatorNoSub.h"
 #include "simple_sdl_gui/FlowSDLKeyEvent.h"
 
 void matToScreen(CvMat *mat, const char* matname) {
@@ -70,8 +70,8 @@ public:
   FlowImage *image_out;
   ImageCodec<FlowImage> *codec_out;
 
-  FlowPTZPosition *control;
-  FlowPTZPosition *observe;
+  FlowPTZActuatorNoSub *control;
+  FlowPTZActuatorNoSub *observe;
   FlowSDLKeyEvent *key;
 
   CvMat *cvimage_in;
@@ -99,8 +99,8 @@ public:
     register_source(image_out = new FlowImage("image_out"));
     codec_out = new ImageCodec<FlowImage>(image_out);
 
-    register_sink(observe = new FlowPTZPosition("observe"), ROS_CALLBACK(Calibrator, ptz_received));
-    register_source(control = new FlowPTZPosition("control"));
+    register_sink(observe = new FlowPTZActuatorNoSub("observe"), ROS_CALLBACK(Calibrator, ptz_received));
+    register_source(control = new FlowPTZActuatorNoSub("control"));
     register_sink(key = new FlowSDLKeyEvent("key"), ROS_CALLBACK(Calibrator, key_received));
 
     register_with_master();
@@ -143,11 +143,11 @@ public:
   virtual ~Calibrator() { }
 
   void key_received() {
-    control->pan = 0;      
-    control->tilt = 0;
-    control->zoom = 0;
-    control->focus = 0;
-    control->relative = true;
+    control->pan_valid = false;      
+    control->tilt_valid = false;
+    control->lens_zoom_valid = false;
+    control->lens_focus_valid = false;
+    control->lens_iris_valid = false;
 
     //    std::cout << "Got keypress: " << key->data << std::endl;
 
@@ -155,35 +155,57 @@ public:
     if (key->state == SDL_PRESSED) {
       switch (key->sym) {
       case SDLK_UP:
-	control->tilt += 1;
+	control->tilt_val = 1;
+	control->tilt_rel = true;
+	control->tilt_valid = true;
 	break;
       case SDLK_DOWN:
-	control->tilt -= 1;
+	control->tilt_val = -1;
+	control->tilt_rel = true;
+	control->tilt_valid = true;
 	break;
       case SDLK_LEFT:
-	control->pan -= 1;
+	control->pan_val = -1;
+	control->pan_rel = true;
+	control->pan_valid = true;
 	break;
       case SDLK_RIGHT:
-	control->pan += 1;
+	control->pan_val = 1;
+	control->pan_rel = true;
+	control->pan_valid = true;
 	break;
       case 61:
-	control->zoom += 100;
+	control->lens_zoom_val = 100;
+	control->lens_zoom_rel = true;
+	control->lens_zoom_valid = true;
 	break;
       case 45:
-	control->zoom -= 100;
+	control->lens_zoom_val = -100;
+	control->lens_zoom_rel = true;
+	control->lens_zoom_valid = true;
 	break;
       case SDLK_RIGHTBRACKET:
-	control->focus += 100;
+	control->lens_focus_val = 100;
+	control->lens_focus_rel = true;
+	control->lens_focus_valid = true;
 	break;
       case SDLK_LEFTBRACKET:
-	control->focus -= 100;
+	control->lens_focus_val = -100;
+	control->lens_focus_rel = true;
+	control->lens_focus_valid = true;
 	break;
       case SDLK_SPACE:
-	control->pan = 0;
-	control->tilt = 0;
-	control->zoom = 5000;
-	control->focus = -1;
-	control->relative = false;
+	control->pan_val = 0;
+	control->pan_rel = false;
+	control->pan_valid = true;
+
+	control->tilt_val = 0;
+	control->tilt_rel = false;
+	control->tilt_valid = true;
+
+	control->lens_zoom_val = 5000;
+	control->lens_zoom_rel = false;
+	control->lens_zoom_valid = true;
 	break;
       case SDLK_c:
 	centering = !centering;
@@ -193,17 +215,17 @@ public:
 	break;
       case SDLK_f:
 	observe->lock_atom();
-	control->pan = observe->pan;
-	control->tilt = observe->tilt;
-	control->zoom = observe->zoom;
-	tmp_focus = observe->focus;
+	tmp_focus = observe->lens_focus_val;
 	observe->unlock_atom();
-	control->relative = false;
 
-	if (tmp_focus > 1) {
-	  control->focus = -1;
+	if (tmp_focus > 0) {
+	  control->lens_focus_val = -1;
+	  control->lens_focus_rel = false;
+	  control->lens_focus_valid = true;
 	} else {
-	  control->focus = 0;
+	  control->lens_focus_val = 0;
+	  control->lens_focus_rel = true;
+	  control->lens_focus_valid = true;
 	}
 	break;
       case SDLK_RETURN:
@@ -279,10 +301,10 @@ public:
 
 	std::ofstream posfile(ss.str().c_str());
 	observe->lock_atom();
-	posfile << "P: " << observe->pan << std::endl
-		<< "T: " << observe->tilt << std::endl
-		<< "Z: " << observe->zoom << std::endl
-		<< "F: " << observe->focus;
+	posfile << "P: " << observe->pan_val << std::endl
+		<< "T: " << observe->tilt_val << std::endl
+		<< "Z: " << observe->lens_zoom_val << std::endl
+		<< "F: " << observe->lens_focus_val;
 	observe->unlock_atom();
 
 	posfile.close();
@@ -303,10 +325,10 @@ public:
       std::stringstream ss;
 
       observe->lock_atom();
-      ss << "P: " << observe->pan;
-      ss << " T: " << observe->tilt;
-      ss << " Z: " << observe->zoom;
-      ss << " F: " << observe->focus;
+      ss << "P: " << observe->pan_val;
+      ss << " T: " << observe->tilt_val;
+      ss << " Z: " << observe->lens_zoom_val;
+      ss << " F: " << observe->lens_focus_val;
       observe->unlock_atom();
       cvPutText(cvimage_undistort, ss.str().c_str(), cvPoint(15,30), &font, CV_RGB(255,0,0));
 
@@ -347,11 +369,14 @@ public:
 	  rel_pan = (COM.x - 354.0) * .001;
 	  rel_tilt = -(COM.y - 240.0) * .001;
 
-	  control->pan = rel_pan;      
-	  control->tilt = rel_tilt;
-	  control->zoom = 0;
-	  control->focus = 0;
-	  control->relative = true;
+	  control->pan_val = rel_pan;      
+	  control->pan_rel = true;
+	  control->pan_valid = true;
+
+	  control->tilt_val = rel_tilt;
+	  control->tilt_rel = true;
+	  control->tilt_valid = true;
+
 	  control->publish();
 	}
 
