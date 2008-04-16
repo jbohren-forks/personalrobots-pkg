@@ -10,7 +10,7 @@ all: test
 quat: testQuat.cc Quaternion3D.o
 	g++ -g -O2 $^ -o quat -lnewmat
 
-test: main.cc libTF.o
+test: main.cc libTF.o Quaternion3D.o
 	g++ -g -O2 $^ -o test -lnewmat
 
 

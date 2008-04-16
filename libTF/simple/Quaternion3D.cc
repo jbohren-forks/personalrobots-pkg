@@ -14,7 +14,12 @@ Quaternion3D::Quaternion3D(double _xt, double _yt, double _zt, double _xr, doubl
   return;
 };
 
-Quaternion3D::Quaternion3D(NEWMAT::Matrix matIn)
+Quaternion3D::Quaternion3D(NEWMAT::Matrix matrixIn)
+{
+  fromMatrix(matrixIn);
+};
+
+void Quaternion3D::fromMatrix(NEWMAT::Matrix matIn)
 {
   // math derived from http://www.j3d.org/matrix_faq/matrfaq_latest.html
 
@@ -65,6 +70,89 @@ Quaternion3D::Quaternion3D(NEWMAT::Matrix matIn)
         zr = 0.25 * S;
         w = (mat[1] - mat[4] ) / S;
       }
+};
+
+void Quaternion3D::fromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll)
+{
+  fromMatrix(matrixFromEuler(_x,_y,_z,_yaw,_pitch,_roll));
+};
+
+void Quaternion3D::fromDH(double theta,
+			  double length, double distance, double alpha)
+{
+  fromMatrix(matrixFromDH(theta, length, distance, alpha));
+};
+
+
+NEWMAT::Matrix Quaternion3D::matrixFromEuler(double ax,
+					     double ay, double az, double yaw,
+					     double pitch, double roll)
+{
+  NEWMAT::Matrix matrix(4,4);
+  double ca = cos(yaw);
+  double sa = sin(yaw);
+  double cb = cos(pitch);
+  double sb = sin(pitch);
+  double cg = cos(roll);
+  double sg = sin(roll);
+  double sbsg = sb*sg;
+  double sbcg = sb*cg;
+
+
+  double* matrix_pointer = matrix.Store();
+
+  matrix_pointer[0] =  ca*cb;
+  matrix_pointer[1] = (ca*sbsg)-(sa*cg);
+  matrix_pointer[2] = (ca*sbcg)+(sa*sg);
+  matrix_pointer[3] = ax;
+  matrix_pointer[4] = sa*cb;
+  matrix_pointer[5] = (sa*sbsg)+(ca*cg);
+  matrix_pointer[6] = (sa*sbcg)-(ca*sg);
+  matrix_pointer[7] = ay;
+  matrix_pointer[8] = -sb;
+  matrix_pointer[9] = cb*sg;
+  matrix_pointer[10] = cb*cg;
+  matrix_pointer[11] = az;
+  matrix_pointer[12] = 0.0;
+  matrix_pointer[13] = 0.0;
+  matrix_pointer[14] = 0.0;
+  matrix_pointer[15] = 1.0;
+
+  return matrix;
+};
+
+
+// Math from http://en.wikipedia.org/wiki/Robotics_conventions
+NEWMAT::Matrix Quaternion3D::matrixFromDH(double theta,
+					  double length, double distance, double alpha)
+{
+  NEWMAT::Matrix matrix(4,4);
+  
+  double ca = cos(alpha);
+  double sa = sin(alpha);
+  double ct = cos(theta);
+  double st = sin(theta);
+  
+  double* matrix_pointer = matrix.Store();
+  
+  matrix_pointer[0] =  ct;
+  matrix_pointer[1] = -st*ca;
+  matrix_pointer[2] = st*sa;
+  matrix_pointer[3] = distance * ct;
+  matrix_pointer[4] = st;
+  matrix_pointer[5] = ct*ca;
+  matrix_pointer[6] = -ct*sa;
+  matrix_pointer[7] = distance*st;
+  matrix_pointer[8] = 0;
+  matrix_pointer[9] = sa;
+  matrix_pointer[10] = ca;
+  matrix_pointer[11] = length;
+  matrix_pointer[12] = 0.0;
+  matrix_pointer[13] = 0.0;
+  matrix_pointer[14] = 0.0;
+  matrix_pointer[15] = 1.0;
+
+  return matrix;
 };
 
 

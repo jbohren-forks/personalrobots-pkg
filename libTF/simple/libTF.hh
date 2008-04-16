@@ -38,6 +38,7 @@
 #include <newmat/newmatio.h>
 #include <math.h>
 #include <vector>
+#include "Quaternion3D.hh"
 
 class RefFrame
 {
@@ -71,6 +72,8 @@ private:
   /* Storage of the parametsrs 
    * NOTE: Depending on if this is a 6dof or DH parameter the storage will be different. */
   double params[6]; 
+
+  Quaternion3D myQuat;
 
   /* A helper function to build a homogeneous transform based on 6dof parameters */
   static  bool fill_transformation_matrix(NEWMAT::Matrix& matrix_pointer, double ax,

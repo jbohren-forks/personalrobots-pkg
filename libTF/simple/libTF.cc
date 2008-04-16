@@ -33,7 +33,8 @@
 #include "libTF.hh"
 
 RefFrame::RefFrame() :
-  parent(0)
+  parent(0),
+  myQuat(0,0,0,0,0,0,0)
 {
   return;
 }
@@ -48,7 +49,8 @@ void RefFrame::setParamsXYZYPR(double a,double b,double c,double d,double e,doub
   params[3]=d;
   params[4]=e;
   params[5]=f;
-
+  
+  myQuat.fromEuler(a,b,c,d,e,f);
 }
 
 /* DH Params version */
@@ -68,7 +70,9 @@ NEWMAT::Matrix RefFrame::getMatrix()
   switch ( paramType)
     {
     case SIXDOF:
-      fill_transformation_matrix(mMat,params[0],params[1],params[2],params[3],params[4],params[5]);
+      //temp insert
+      return myQuat.asMatrix();
+      //      fill_transformation_matrix(mMat,params[0],params[1],params[2],params[3],params[4],params[5]);
       break;
     case DH:
       fill_transformation_matrix_from_dh(mMat,params[0],params[1],params[2],params[3]);
@@ -82,6 +86,7 @@ NEWMAT::Matrix RefFrame::getInverseMatrix()
   switch(paramType)
     {
     case SIXDOF:
+      return myQuat.asMatrix().i();
       fill_transformation_matrix(mMat,params[0],params[1],params[2],params[3],params[4],params[5]);
       //todo create a fill_inverse_transform_matrix call to be more efficient
       return mMat.i();
