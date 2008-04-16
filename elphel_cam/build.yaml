@@ -1,0 +1,4 @@
+cpp:
+  make:
+    - src/libelphel_cam
+    - test/test_cam
