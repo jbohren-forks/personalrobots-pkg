@@ -22,6 +22,7 @@ class Quaternion3D {
 public:
   //Constructor
   Quaternion3D(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w);
+  Quaternion3D(NEWMAT::Matrix matIn);
 
   inline void Set(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w)
   {xt = _xt; yt = _yt; zt = _zt; xr = _xr; yr = _yr; zr = _zr; w = _w;} ;
