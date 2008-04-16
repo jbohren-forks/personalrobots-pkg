@@ -8,6 +8,6 @@ A package to configure and grab images from the Elphel IP-based camera.
 <url>http://pr.willowgarage.com</url>
 <depend package="common_flows"/>
 <depend package="thread_utils"/>
-<depend package="image_viewer"/>
+<depend package="simple_sdl_gui"/>
 </package>
 

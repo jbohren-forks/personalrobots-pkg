@@ -45,7 +45,7 @@ int main() {
   uint8_t* jpeg;
   uint32_t jpeg_size;
 
-  e.init(80, 4, 4);
+  e.init(20, 2, 2);
 
   e.start();
 

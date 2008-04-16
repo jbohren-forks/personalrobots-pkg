@@ -38,22 +38,25 @@ Elphel_Cam::Elphel_Cam(string ip) : ip(ip)
   jpeg_buf_size = 0;
   curl_global_init(0);
 
+  //URL to get next image, and increment pointer
   ostringstream oss; 
   oss << "http://" << ip << ":8081/torp/wait/img/next/save";
   image_url = new char[oss.str().length()+1];
   strcpy(image_url, oss.str().c_str());
 
-
+  //URL to initialize pointer
   oss.str("");
-  oss << "http://" << ip << ":8081/towp/save";
+  oss << "http://" << ip << ":8081/towp/wait/next/save";
   towp_url = new char[oss.str().length()+1];
   strcpy(towp_url, oss.str().c_str());
 
+  //URL to control camera adjustments
   oss.str("");
   oss << "http://" << ip << "/admin-bin/ccam.cgi?";
   ccam_url = new char[oss.str().length()+1];
   strcpy(ccam_url, oss.str().c_str());
 
+  //URL to turn on/off the hardware compressor
   oss.str("");
   oss << "http://" << ip << ":81/compressor.php?";
   comp_url = new char[oss.str().length()+1];
@@ -65,10 +68,8 @@ Elphel_Cam::Elphel_Cam(string ip) : ip(ip)
   curl_easy_setopt(jpeg_curl, CURLOPT_WRITEDATA, this);
 
   config_curl = curl_easy_init();
-  //  curl_easy_setopt(config_curl, CURLOPT_URL, config_url);
   curl_easy_setopt(config_curl, CURLOPT_WRITEFUNCTION, Elphel_Cam::config_write);
   curl_easy_setopt(config_curl, CURLOPT_WRITEDATA, this);
-
   
 }
 
@@ -127,8 +128,6 @@ bool Elphel_Cam::config_cmd(string url, string cmd)
   char urlbuf[512];
   strcpy(urlbuf, oss.str().c_str());
 
-  //  printf("Executing command: %s\n", urlbuf);
-
   curl_easy_setopt(config_curl, CURLOPT_URL, urlbuf);
 
   CURLcode code;
@@ -158,20 +157,26 @@ bool Elphel_Cam::init(float fps, int im_dec, int im_bin) {
   uint8_t *jpeg;
   uint32_t jpeg_size;
 
-  for (int i = 0; i < 2; i++) { //loop twice 
+  // We loop twice here and grab 10 images per loop This is fairly
+  // heuristic and involves the fact that the autogain stuff doesn't
+  // work right until the camera is actually capturing images.  We
+  // want this to work if the camera has just powered on without being
+  // manually configured.
+  for (int i = 0; i < 2; i++) {
 
     if (!compressor_cmd("cmd=reset"))
       return false;
 
-    //magic incantation:
-    //http://wiki.elphel.com/index.php?title=Ccam.cgi
+    //These are the dark fairly undocumented incantations that
+    //initialize the camera well:
+    //"Documentation" can be found at: http://wiki.elphel.com/index.php?title=Ccam.cgi
     ostringstream oss;
     oss << "opt=vhcxyu+!-"
 	<< "&dh=" << im_dec << "&dv=" << im_dec
 	<< "&bh=" << im_bin << "&bh=" << im_bin
 	<< "&iq=90"
-	<< "&fps=" << fps << "&fpslm=3"
-	<< "&kgm=6&sens=2&bit=8&gam=50&pxl=10&csb=200&csr=200&rscale=auto&bscale=auto";
+	<< "&fps=" << fps << ".0&fpslm=3"
+	<< "&sens=4&bit=8&gam=50&pxl=10&csb=200&csr=200&rscale=auto&bscale=auto";
     
     if (!ccam_cmd(oss.str()))
       return false;
@@ -197,11 +202,20 @@ bool Elphel_Cam::init(float fps, int im_dec, int im_bin) {
 
 
 bool Elphel_Cam::start() {
+  
+  //We put in sleeps here (*cringe*) because otherwise if we start reading too fast things break.
+
+  usleep(100000);
+
   if (!compressor_cmd("cmd=run"))
     return false;
   
+  usleep(100000);
+
   if (!towp())
     return false;
+
+  usleep(100000);
 
   return true;
 
@@ -221,7 +235,6 @@ size_t Elphel_Cam::jpeg_write(void *buf, size_t size, size_t nmemb, void *userp)
   {
     // overalloc
     a->jpeg_buf_size = 2 * (a->jpeg_file_size + (size*nmemb));
-    //printf("jpeg_buf_size is now %d\n", a->jpeg_buf_size);
     if (a->jpeg_buf)
       delete[] a->jpeg_buf;
     a->jpeg_buf = new uint8_t[a->jpeg_buf_size];
@@ -239,9 +252,6 @@ size_t Elphel_Cam::config_write(void *buf, size_t size, size_t nmemb, void *user
   Elphel_Cam *a = (Elphel_Cam *)userp;
   a->config_ss_mutex.lock();
   a->config_ss << string((char *)buf, size*nmemb);
-  //printf("writing %d bytes\n", size*nmemb);
-  //cout << a->ptz_ss.str() << endl;
   a->config_ss_mutex.unlock();
-  //cout << string((char *)buf, size*nmemb);
   return size*nmemb;
 }
