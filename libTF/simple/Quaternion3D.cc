@@ -40,14 +40,22 @@ Euler3D::Euler3D(double _x, double _y, double _z, double _yaw, double _pitch, do
 
 
 Quaternion3D::Quaternion3D(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w):
-  xt(_xt),yt(_yt),zt(_zt),xr(_xr),yr(_yr),zr(_zr),w(_w)
+  xt(_xt),yt(_yt),zt(_zt),xr(_xr),yr(_yr),zr(_zr),w(_w),
+  max_storage_time(MAX_STORAGE_TIME),
+  first(NULL),
+  last(NULL)
 {
+  pthread_mutex_init( &linked_list_mutex, NULL);
   Normalize();
   return;
 };
 
-Quaternion3D::Quaternion3D(NEWMAT::Matrix matrixIn)
+Quaternion3D::Quaternion3D(NEWMAT::Matrix matrixIn):
+  max_storage_time(MAX_STORAGE_TIME),
+  first(NULL),
+  last(NULL)
 {
+  pthread_mutex_init( &linked_list_mutex, NULL);
   fromMatrix(matrixIn);
 };
 
@@ -243,4 +251,228 @@ void Quaternion3D::printMatrix()
 {
   std::cout << asMatrix();
 
+};
+
+
+unsigned long long Quaternion3D::Qgettime()
+{
+  timeval temp_time_struct;
+  gettimeofday(&temp_time_struct,NULL);
+  return temp_time_struct.tv_sec * 1000000ULL + (unsigned long long)temp_time_struct.tv_usec;
+}
+
+
+bool Quaternion3D::getValue(Quaternion3DStorage& buff, unsigned long long time, long long  &time_diff)
+{
+  Quaternion3DStorage p_temp_1;
+  Quaternion3DStorage p_temp_2;
+  //  long long temp_time;
+  int num_nodes;
+
+  bool retval = false;
+
+  pthread_mutex_lock(&linked_list_mutex);
+  num_nodes = findClosest(p_temp_1,p_temp_2, time, time_diff);
+
+  if (num_nodes == 0)
+    retval= false;
+  else if (num_nodes == 1)
+    {
+      memcpy(&buff, &p_temp_1, sizeof(Quaternion3DStorage));
+      retval = true;  
+    }
+  else
+    {
+      interpolate(p_temp_1, p_temp_2, time, buff); 
+      retval = true;  
+    }
+  
+  pthread_mutex_unlock(&linked_list_mutex);
+
+
+  return retval;
+
+};
+
+void Quaternion3D::add_value(Quaternion3DStorage dataIn)
+{
+  Quaternion3DStorage  temp;
+  //cout << "started thread" << endl;
+
+  pthread_mutex_lock(&linked_list_mutex);
+  insertNode(dataIn);
+  pruneList();
+  pthread_mutex_unlock(&linked_list_mutex);
+  
+  
+};
+
+
+void Quaternion3D::insertNode(Quaternion3DStorage new_val)
+{
+  data_LL* p_current;
+  data_LL* p_old;
+
+  //  cout << "Inserting Node" << endl;
+
+  //Base case empty list
+  if (first == NULL)
+    {
+      cout << "Base case" << endl;
+      first = new data_LL;
+      first->data = new_val;
+      first->next = NULL;
+      first->previous = NULL;
+      last = first;
+    }
+  else 
+    {
+      //Increment through until at the end of the list or in the right spot
+      p_current = first;
+      while (p_current != NULL && first->data.time > new_val.time)
+	{
+	  //cout << "passed beyond " << p_current->data.time << endl;
+	  p_current = p_current->next;
+	}
+      
+      //THis means we hit the end of the list so just append the node
+      if (p_current == NULL)
+	{
+	  //cout << "Appending node to the end" << endl;
+	  p_current = new data_LL;
+	  p_current->data = new_val;
+	  p_current->previous = last;
+	  p_current->next = NULL;
+
+	  last = p_current;
+	}
+      else
+	{
+	  
+	  //  cout << "Found a place to put data into the list" << endl;
+	  
+	  // Insert the new node
+	  // Record where the old first node was
+	  p_old = p_current;
+	  //Fill in the new node
+	  p_current = new data_LL;
+	  p_current->data = new_val;
+	  p_current->next = p_old;
+	  p_current->previous = p_old->previous;
+	  
+	  //point the old to the new 
+	  p_old->previous = p_current;
+
+	  //If at the top of the list make sure we're not 
+	  if (p_current->previous == NULL)
+	    first = p_current;
+	}
+
+
+
+    }
+};
+
+void Quaternion3D::pruneList()
+{
+  unsigned long long current_time = Qgettime();
+  data_LL* p_current = last;
+
+  //  cout << "Pruning List" << endl;
+
+  //Empty Set
+  if (last == NULL) return;
+
+  //While time stamps too old
+  while (p_current->data.time + max_storage_time < current_time)
+    {
+      //      cout << "Age of node " << (double)(-p_current->data.time + current_time)/1000000.0 << endl;
+     // Make sure that there's at least two elements in the list
+      if (p_current->previous != NULL)
+	{
+	  if (p_current->previous->previous != NULL)
+	    {
+	      // Remove the last node
+	      p_current->previous->next = NULL;
+	      last = p_current->previous;
+	      delete p_current;
+	      p_current = last;
+	      //	      cout << " Pruning Node" << endl;
+	    }
+	  else 
+	    break;
+	}
+      else 
+	break;
+
+    }
+  
+};
+
+
+
+int Quaternion3D::findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two, unsigned long long target_time, long long &time_diff)
+{
+
+  unsigned long long current_time = Qgettime();
+  data_LL* p_current = first;
+
+
+  // Base case no list
+  if (first == NULL)
+    {
+      return 0;
+    }
+  
+  //Case one element list
+  else if (first->next == NULL)
+    {
+      one = first->data;
+      time_diff = current_time - first->data.time;
+      return 1;
+    }
+  
+  else
+    {
+      //Two or more elements
+      //Find the one that just exceeds the time or hits the end
+      //and then take the previous one
+      p_current = first->next; //Start on the 2nd element so if we fail we fall back to the first one
+      while (p_current->next != NULL && p_current->data.time > target_time)
+	{
+	  p_current = p_current->next;
+	}
+      
+      one = p_current->data;
+      two = p_current->previous->data;
+      
+      //FIXME this should be the min distance not just one random one.
+      time_diff = target_time - two.time; 
+      return 2;
+    }
+};
+
+
+void Quaternion3D::interpolate(Quaternion3DStorage &one, Quaternion3DStorage &two,unsigned long long target_time, Quaternion3DStorage& output)
+{
+  //fixme do a proper interpolatioln here!!!
+  output.time = target_time;
+
+  output.xt = interpolateDouble(one.xt, one.time, two.xt, two.time, target_time);
+  output.yt = interpolateDouble(one.yt, one.time, two.yt, two.time, target_time);
+  output.zt = interpolateDouble(one.zt, one.time, two.zt, two.time, target_time);
+  output.xr = interpolateDouble(one.xr, one.time, two.xr, two.time, target_time);
+  output.yr = interpolateDouble(one.yr, one.time, two.yr, two.time, target_time);
+  output.zr = interpolateDouble(one.zr, one.time, two.zr, two.time, target_time);
+  output.w = interpolateDouble(one.w, one.time, two.w, two.time, target_time);
+
+};
+
+double Quaternion3D::interpolateDouble(double first, unsigned long long first_time, double second, unsigned long long second_time, unsigned long long target_time)
+{
+  if ( first_time == second_time ) {
+    return first;
+  } else {
+    return first + (second-first)* (double)((target_time - first_time)/(second_time - first_time));
+  }
 };

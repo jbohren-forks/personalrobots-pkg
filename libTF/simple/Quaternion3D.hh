@@ -37,6 +37,8 @@
 #include <newmat/newmat.h>
 #include <newmat/newmatio.h>
 #include <math.h>
+#include <pthread.h>
+#include <sys/time.h>
 
 class Euler3D {
 public:
@@ -45,13 +47,19 @@ public:
 
   //Storage
   double  x,y,z,yaw,pitch,roll;
-
-  
-
 };
 
+
 class Quaternion3D {
+
 public:
+  // Storage 
+  struct Quaternion3DStorage
+  {
+    double xt, yt, zt, xr, yr, zr, w;
+    unsigned long long time;
+  };
+  
   /** Constructors **/
   // Standard constructor which takes in 7 doubles
   Quaternion3D(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w);
@@ -62,9 +70,12 @@ public:
   // Set the values manually
   inline void Set(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w)
   {xt = _xt; yt = _yt; zt = _zt; xr = _xr; yr = _yr; zr = _zr; w = _w;} ;
+
   //Set the values from a matrix
   void fromMatrix(NEWMAT::Matrix matIn);
+  // Set the values using Euler angles
   void fromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll);
+  // Set the values using DH Parameters
   void fromDH(double theta, double length, double distance, double alpha);
 
   
@@ -82,7 +93,7 @@ public:
   /** Accessors **/
   // Return a Matrix
   NEWMAT::Matrix asMatrix();
-  
+
   //Print as a matrix
   void printMatrix();
 
@@ -90,6 +101,49 @@ public:
 private:
   //Quaternion Storage
   double xt,yt,zt,xr,yr,zr,w;
+
+  /**** Linked List stuff ****/
+  static const unsigned int MAX_STORAGE_TIME = 100000000; // max of 100 seconds storage
+ 
+  struct data_LL{
+    Quaternion3DStorage data;
+    data_LL * next;
+    data_LL * previous;
+  };
+
+  bool getValue(Quaternion3DStorage& buff, unsigned long long time, long long  &time_diff);
+  void add_value(Quaternion3DStorage);//todo fixme finish implementing this
+
+  // this is a function to return the current time in microseconds from the beginning of 1970
+  unsigned long long Qgettime(void);
+
+
+  // insert a node into the sorted linked list
+  void insertNode(Quaternion3DStorage);
+  // prune data older than max_storage_time from the list
+  void pruneList();
+
+  //Find the closest two points in the list  
+  //Return the distance to the closest one
+  int findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two, unsigned long long target_time, long long &time_diff);
+
+  //Interpolate between two nodes and return the interpolated value
+  // This must always take two valid points!!!!!!
+  // Only Cpose version implemented
+  void interpolate(Quaternion3DStorage &one, Quaternion3DStorage &two, unsigned long long target_time, Quaternion3DStorage& output);
+
+  //Used by interpolate to interpolate between double values
+  double interpolateDouble(double, unsigned long long, double, unsigned long long, unsigned long long);
+
+  //How long to cache incoming values
+  unsigned long long max_storage_time;
+
+  //A mutex to prevent linked list collisions
+  pthread_mutex_t linked_list_mutex;
+
+  //Pointers for the start and end of a sorted linked list.
+  data_LL* first;
+  data_LL* last;
 
 
 
