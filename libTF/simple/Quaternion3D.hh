@@ -60,6 +60,7 @@ public:
     // Utility functions to normalize and get magnitude.
     void Normalize();
     double getMagnitude();
+    Quaternion3DStorage & operator=(const Quaternion3DStorage & input);
     
     double xt, yt, zt, xr, yr, zr, w;
     unsigned long long time;
@@ -74,7 +75,7 @@ public:
   void Set(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time);
 
   //Set the values from a matrix
-  void fromMatrix(NEWMAT::Matrix matIn, unsigned long long time);
+  void fromMatrix(const NEWMAT::Matrix& matIn, unsigned long long time);
   // Set the values using Euler angles
   void fromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll, unsigned long long time);
   // Set the values using DH Parameters
@@ -111,26 +112,26 @@ private:
   };
 
   bool getValue(Quaternion3DStorage& buff, unsigned long long time, long long  &time_diff);
-  void add_value(Quaternion3DStorage);//todo fixme finish implementing this
+  void add_value(const Quaternion3DStorage&);//todo fixme finish implementing this
 
 
 
   // insert a node into the sorted linked list
-  void insertNode(Quaternion3DStorage);
+  void insertNode(const Quaternion3DStorage & );
   // prune data older than max_storage_time from the list
   void pruneList();
 
   //Find the closest two points in the list  
   //Return the distance to the closest one
-  int findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two, unsigned long long target_time, long long &time_diff);
+  int findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two, const unsigned long long target_time, long long &time_diff);
 
   //Interpolate between two nodes and return the interpolated value
   // This must always take two valid points!!!!!!
   // Only Cpose version implemented
-  void interpolate(Quaternion3DStorage &one, Quaternion3DStorage &two, unsigned long long target_time, Quaternion3DStorage& output);
+  void interpolate(const Quaternion3DStorage &one, const Quaternion3DStorage &two, const unsigned long long target_time, Quaternion3DStorage& output);
 
   //Used by interpolate to interpolate between double values
-  double interpolateDouble(double, unsigned long long, double, unsigned long long, unsigned long long);
+  double interpolateDouble(const double, const unsigned long long, const double, const unsigned long long, const unsigned long long);
 
   //How long to cache incoming values
   unsigned long long max_storage_time;
@@ -148,7 +149,8 @@ private:
 
 
 
-
+//A global ostream overload for displaying storage
+std::ostream & operator<<(std::ostream& mystream,const Quaternion3D::Quaternion3DStorage & storage);    
 
 
 

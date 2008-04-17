@@ -60,13 +60,13 @@ void Quaternion3D::Set(double _xt, double _yt, double _zt, double _xr, double _y
 } ;
 
 
-void Quaternion3D::fromMatrix(NEWMAT::Matrix matIn, unsigned long long time)
+void Quaternion3D::fromMatrix(const NEWMAT::Matrix& matIn, unsigned long long time)
 {
   // math derived from http://www.j3d.org/matrix_faq/matrfaq_latest.html
   Quaternion3DStorage temp;
   temp.time = time;  
 
-  double * mat = matIn.Store();
+  const double * mat = matIn.Store();
   //Get the translations
   temp.xt = mat[3];
   temp.yt = mat[7];
@@ -200,6 +200,22 @@ NEWMAT::Matrix Quaternion3D::matrixFromDH(double theta,
 };
 
 
+Quaternion3D::Quaternion3DStorage& Quaternion3D::Quaternion3DStorage::operator=(const Quaternion3DStorage & input)
+{
+  xt = input.xt;
+  yt = input.yt;
+  zt = input.zt;
+  xr = input.xr;
+  yr = input.yr;
+  zr = input.zr;
+  w  = input.w ;
+  time = input.time;
+
+  return *this;
+};
+
+
+
 void Quaternion3D::Quaternion3DStorage::Normalize()
 {
   double mag = getMagnitude();
@@ -214,6 +230,14 @@ double Quaternion3D::Quaternion3DStorage::getMagnitude()
   return sqrt(xr*xr + yr*yr + zr*zr + w*w);
 };
 
+//Note global scope
+std::ostream & operator<<(std::ostream& mystream, const Quaternion3D::Quaternion3DStorage& storage)
+{
+
+  mystream << "Storage: " << storage.xt <<", " << storage.yt <<", " << storage.zt<<", " << storage.xr<<", " << storage.yr <<", " << storage.zr <<", " << storage.w<<std::endl; 
+  return mystream;
+};
+
 
 NEWMAT::Matrix Quaternion3D::asMatrix(unsigned long long time)
 {
@@ -221,6 +245,7 @@ NEWMAT::Matrix Quaternion3D::asMatrix(unsigned long long time)
   long long diff_time;
   getValue(temp, time, diff_time);
 
+  std::cout << temp;
   //  printStorage(temp);
   // std::cout <<"Locally: "<< xt <<", "<< yt  <<", "<< zt <<", "<< xr <<", "<<yr  <<", "<<zr  <<", "<<w<<std::endl;
   //std::cout << "time Difference: "<< diff_time<<std::endl;
@@ -266,7 +291,7 @@ void Quaternion3D::printMatrix(unsigned long long time)
 
 void Quaternion3D::printStorage(const Quaternion3DStorage& storage)
 {
-  std::cout << "Storage: " << storage.xt <<", " << storage.yt <<", " << storage.zt<<", " << storage.xr<<", " << storage.yr <<", " << storage.zr <<", " << storage.w<<std::endl; 
+  std::cout << storage;
 };
 
 
@@ -310,21 +335,16 @@ bool Quaternion3D::getValue(Quaternion3DStorage& buff, unsigned long long time, 
 
 };
 
-void Quaternion3D::add_value(Quaternion3DStorage dataIn)
+void Quaternion3D::add_value(const Quaternion3DStorage &dataIn)
 {
-  Quaternion3DStorage  temp;
-  //cout << "started thread" << endl;
-
   pthread_mutex_lock(&linked_list_mutex);
   insertNode(dataIn);
   pruneList();
   pthread_mutex_unlock(&linked_list_mutex);
-  
-  
 };
 
 
-void Quaternion3D::insertNode(Quaternion3DStorage new_val)
+void Quaternion3D::insertNode(const Quaternion3DStorage & new_val)
 {
   data_LL* p_current;
   data_LL* p_old;
@@ -427,7 +447,7 @@ void Quaternion3D::pruneList()
 
 
 
-int Quaternion3D::findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two, unsigned long long target_time, long long &time_diff)
+int Quaternion3D::findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two, const unsigned long long target_time, long long &time_diff)
 {
 
   data_LL* p_current = first;
@@ -468,7 +488,7 @@ int Quaternion3D::findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two
 };
 
 
-void Quaternion3D::interpolate(Quaternion3DStorage &one, Quaternion3DStorage &two,unsigned long long target_time, Quaternion3DStorage& output)
+void Quaternion3D::interpolate(const Quaternion3DStorage &one, const Quaternion3DStorage &two,unsigned long long target_time, Quaternion3DStorage& output)
 {
   //fixme do a proper interpolatioln here!!!
   output.time = target_time;
@@ -483,7 +503,7 @@ void Quaternion3D::interpolate(Quaternion3DStorage &one, Quaternion3DStorage &tw
 
 };
 
-double Quaternion3D::interpolateDouble(double first, unsigned long long first_time, double second, unsigned long long second_time, unsigned long long target_time)
+double Quaternion3D::interpolateDouble(const double first, const unsigned long long first_time, const double second, const unsigned long long second_time, const unsigned long long target_time)
 {
   if ( first_time == second_time ) {
     return first;
