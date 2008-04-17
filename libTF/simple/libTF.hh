@@ -90,6 +90,7 @@ public:
   /********** Mutators **************/
   /* Set a new frame or update an old one. */
   void set(unsigned int framid, unsigned int parentid, double,double,double,double,double,double,unsigned long long time);
+  void set(unsigned int framid, unsigned int parentid, double,double,double,double,unsigned long long time);
   // Possible exceptions TransformReference::LookupException
 
   /*********** Accessors *************/

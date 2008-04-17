@@ -92,6 +92,18 @@ void TransformReference::set(unsigned int frameID, unsigned int parentID, double
   getFrame(frameID)->setParamsEulers(a,b,c,d,e,f,time);
 }
 
+void TransformReference::set(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d, unsigned long long time)
+{
+  if (frameID > MAX_NUM_FRAMES || parentID > MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
+    throw InvalidFrame;
+  
+  if (frames[frameID] == NULL)
+    frames[frameID] = new RefFrame();
+  
+  getFrame(frameID)->setParent(parentID);
+  getFrame(frameID)->setParamsDH(a,b,c,d,time);
+}
+
 
 NEWMAT::Matrix TransformReference::get(unsigned int target_frame, unsigned int source_frame, unsigned long long time)
 {

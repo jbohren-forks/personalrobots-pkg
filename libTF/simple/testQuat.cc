@@ -37,13 +37,13 @@
 
 int main()
 {
-  Quaternion3D myquat(1,1,1,1,1,1,1);
+  Quaternion3D myquat(1,1,1,1,1,1,1,1000101010);
 
-  Quaternion3D my2ndquat(myquat.asMatrix());
+  Quaternion3D my2ndquat(myquat.asMatrix(1000101010),1000101010);
   std::cout << "Quat1"<<std::endl;
-  myquat.printMatrix();
+  myquat.printMatrix(1000101010);
   std::cout << "Quat2"<<std::endl;
-  my2ndquat.printMatrix();
+  my2ndquat.printMatrix(1000101010);
 
   return 0;
 }
