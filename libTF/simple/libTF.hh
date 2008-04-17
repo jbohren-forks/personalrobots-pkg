@@ -44,15 +44,11 @@ class RefFrame
 {
 public:
 
-  /* The type of frame
-   * This determines how many different parameters to expect to be updated, versus fixed */
-  enum ParamTypeEnum {SIXDOF, DH };//how to tell which mode it's in  //todo add this process i'm going to start with 6dof only
-
   /* Constructor */
   RefFrame();
 
   /* Set the parameters for this frame */
-  void setParamsXYZYPR(double, double, double, double, double, double);
+  void setParamsEulers(double, double, double, double, double, double);
   void setParamsDH(double, double, double, double);
   
   /* Get the parent node */
@@ -69,25 +65,11 @@ public:
 
 
 private:
-  /* Storage of the parametsrs 
-   * NOTE: Depending on if this is a 6dof or DH parameter the storage will be different. */
-  double params[6]; 
-
+  /* Storage of the parametsrs */
   Quaternion3D myQuat;
-
-  /* A helper function to build a homogeneous transform based on 6dof parameters */
-  static  bool fill_transformation_matrix(NEWMAT::Matrix& matrix_pointer, double ax,
-					  double ay, double az, double yaw,
-					  double pitch, double roll);
-
-  /* A helper function to build a homogeneous transform based on DH parameters */
-  static bool fill_transformation_matrix_from_dh(NEWMAT::Matrix& matrix, double theta,
-					  double length, double distance, double alpha);
 
   /* Storage of the parent */
   unsigned int parent;
-
-  ParamTypeEnum paramType;
 
 };
 

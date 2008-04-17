@@ -34,70 +34,33 @@
 
 RefFrame::RefFrame() :
   parent(0),
-  myQuat(0,0,0,0,0,0,0)
+  myQuat(0,0,0,0,0,0,1)
 {
   return;
 }
 
 /* Six DOF version */
-void RefFrame::setParamsXYZYPR(double a,double b,double c,double d,double e,double f)
+void RefFrame::setParamsEulers(double a,double b,double c,double d,double e,double f)
 {
-  paramType = SIXDOF;
-  params[0]=a;
-  params[1]=b;
-  params[2]=c;
-  params[3]=d;
-  params[4]=e;
-  params[5]=f;
-  
   myQuat.fromEuler(a,b,c,d,e,f);
 }
 
 /* DH Params version */
 void RefFrame::setParamsDH(double a,double b,double c,double d)
 {
-  paramType = DH;
-  params[0]=a;
-  params[1]=b;
-  params[2]=c;
-  params[3]=d;
+  myQuat.fromDH(a,b,c,d);
 }
 
 
 NEWMAT::Matrix RefFrame::getMatrix()
 {
-  NEWMAT::Matrix mMat(4,4);
-  switch ( paramType)
-    {
-    case SIXDOF:
-      //temp insert
-      return myQuat.asMatrix();
-      //      fill_transformation_matrix(mMat,params[0],params[1],params[2],params[3],params[4],params[5]);
-      break;
-    case DH:
-      fill_transformation_matrix_from_dh(mMat,params[0],params[1],params[2],params[3]);
-    }
-  return mMat;
+  return myQuat.asMatrix();
 }
 
 NEWMAT::Matrix RefFrame::getInverseMatrix()
 {
-  NEWMAT::Matrix mMat(4,4);
-  switch(paramType)
-    {
-    case SIXDOF:
-      return myQuat.asMatrix().i();
-      fill_transformation_matrix(mMat,params[0],params[1],params[2],params[3],params[4],params[5]);
-      //todo create a fill_inverse_transform_matrix call to be more efficient
-      return mMat.i();
-      break;
-    case DH:
-      fill_transformation_matrix_from_dh(mMat,params[0],params[1],params[2],params[3]);
-      //todo create a fill_inverse_transform_matrix call to be more efficient
-      return mMat.i();
-      break;
-    }
-}
+  return myQuat.asMatrix().i();
+};
 
 
 TransformReference::TransformReference()
@@ -120,7 +83,7 @@ void TransformReference::set(unsigned int frameID, unsigned int parentID, double
     frames[frameID] = new RefFrame();
   
   getFrame(frameID)->setParent(parentID);
-  getFrame(frameID)->setParamsXYZYPR(a,b,c,d,e,f);
+  getFrame(frameID)->setParamsEulers(a,b,c,d,e,f);
 }
 
 
@@ -132,81 +95,6 @@ NEWMAT::Matrix TransformReference::get(unsigned int target_frame, unsigned int s
   //  std::cout << myMat;
   return myMat;
 }
-
-
-
-
-bool RefFrame::fill_transformation_matrix(NEWMAT::Matrix & matrix, double ax,
-                                                   double ay, double az, double yaw,
-                                                   double pitch, double roll)
-{
-  double ca = cos(yaw);
-  double sa = sin(yaw);
-  double cb = cos(pitch);
-  double sb = sin(pitch);
-  double cg = cos(roll);
-  double sg = sin(roll);
-  double sbsg = sb*sg;
-  double sbcg = sb*cg;
-
-
-  double* matrix_pointer = matrix.Store();
-  if (matrix.Storage() != 16)
-    return false;
-
-  matrix_pointer[0] =  ca*cb;
-  matrix_pointer[1] = (ca*sbsg)-(sa*cg);
-  matrix_pointer[2] = (ca*sbcg)+(sa*sg);
-  matrix_pointer[3] = ax;
-  matrix_pointer[4] = sa*cb;
-  matrix_pointer[5] = (sa*sbsg)+(ca*cg);
-  matrix_pointer[6] = (sa*sbcg)-(ca*sg);
-  matrix_pointer[7] = ay;
-  matrix_pointer[8] = -sb;
-  matrix_pointer[9] = cb*sg;
-  matrix_pointer[10] = cb*cg;
-  matrix_pointer[11] = az;
-  matrix_pointer[12] = 0.0;
-  matrix_pointer[13] = 0.0;
-  matrix_pointer[14] = 0.0;
-  matrix_pointer[15] = 1.0;
-
-  return true;
-};
-
-// Math from http://en.wikipedia.org/wiki/Robotics_conventions
-bool RefFrame::fill_transformation_matrix_from_dh(NEWMAT::Matrix& matrix, double theta,
-						 double length, double distance, double alpha)
-{
-  double ca = cos(alpha);
-  double sa = sin(alpha);
-  double ct = cos(theta);
-  double st = sin(theta);
-
-  double* matrix_pointer = matrix.Store();
-  if (matrix.Storage() != 16)
-    return false;
-
-  matrix_pointer[0] =  ct;
-  matrix_pointer[1] = -st*ca;
-  matrix_pointer[2] = st*sa;
-  matrix_pointer[3] = distance * ct;
-  matrix_pointer[4] = st;
-  matrix_pointer[5] = ct*ca;
-  matrix_pointer[6] = -ct*sa;
-  matrix_pointer[7] = distance*st;
-  matrix_pointer[8] = 0;
-  matrix_pointer[9] = sa;
-  matrix_pointer[10] = ca;
-  matrix_pointer[11] = length;
-  matrix_pointer[12] = 0.0;
-  matrix_pointer[13] = 0.0;
-  matrix_pointer[14] = 0.0;
-  matrix_pointer[15] = 1.0;
-
-  return true;
-};
-
 
 
 TransformReference::TransformLists TransformReference::lookUpList(unsigned int target_frame, unsigned int source_frame)
