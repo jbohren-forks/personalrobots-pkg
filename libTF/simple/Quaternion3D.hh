@@ -103,9 +103,6 @@ public:
   static  unsigned long long Qgettime(void);
 
 private:
-  //Quaternion Storage
-  double xt,yt,zt,xr,yr,zr,w;
-
   /**** Linked List stuff ****/
   static const long long MAX_STORAGE_TIME = 1000000000; // max of 100 seconds storage
  

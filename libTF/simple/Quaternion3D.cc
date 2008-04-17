@@ -40,7 +40,6 @@ Euler3D::Euler3D(double _x, double _y, double _z, double _yaw, double _pitch, do
 
 
 Quaternion3D::Quaternion3D(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time):
-  xt(_xt),yt(_yt),zt(_zt),xr(_xr),yr(_yr),zr(_zr),w(_w),
   max_storage_time(MAX_STORAGE_TIME),
   first(NULL),
   last(NULL)
@@ -61,8 +60,7 @@ Quaternion3D::Quaternion3D(NEWMAT::Matrix matrixIn, unsigned long long time):
 };
 
 void Quaternion3D::Set(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time)
-{xt = _xt; yt = _yt; zt = _zt; xr = _xr; yr = _yr; zr = _zr; w = _w;
-
+{
  Quaternion3DStorage temp;
  temp.xt = _xt; temp.yt = _yt; temp.zt = _zt; temp.xr = _xr; temp.yr = _yr; temp.zr = _zr; temp.w = _w; temp.time = time;
 
@@ -124,7 +122,6 @@ void Quaternion3D::fromMatrix(NEWMAT::Matrix matIn, unsigned long long time)
         temp.zr = 0.25 * S;
         temp.w = (mat[1] - mat[4] ) / S;
       }
-      xt = temp.xt; yt = temp.yt; zt = temp.zt; xr = temp.xr; yr = temp.yr; zr = temp.zr; w = temp.w;
       add_value(temp);
 };
 
@@ -261,9 +258,9 @@ NEWMAT::Matrix Quaternion3D::asMatrix(unsigned long long time)
   mat[6]  =     2 * ( yz + xw );
   mat[10] = 1 - 2 * ( xx + yy );
   mat[12]  = mat[13] = mat[14] = 0;
-  mat[3] = xt;
-  mat[7] = yt;
-  mat[11] = zt;
+  mat[3] = temp.xt;
+  mat[7] = temp.yt;
+  mat[11] = temp.zt;
   mat[15] = 1;
     
 

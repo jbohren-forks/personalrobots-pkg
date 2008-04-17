@@ -21,7 +21,7 @@ int main(void)
   //  mTR.set(10,2,1,1,1,dyaw,dp,dr,atime); //Switching out for DH params below
   mTR.set(10,2,1,1,1,dyaw,atime);
     //mTR.set(2,3,1-1,1,1,dyaw,dp,dr,atime-1000);
-   mTR.set(2,3,2,1,1,dyaw,dp,dr,atime-100);
+   mTR.set(2,3,1,1,1,dyaw,dp,dr,atime-100);
    mTR.set(2,3,1,1,1,dyaw,dp,dr,atime-50);
    mTR.set(2,3,1,1,1,dyaw,dp,dr,atime-1000);
    //mTR.set(2,3,1+1,1,1,dyaw,dp,dr,atime+1000);
