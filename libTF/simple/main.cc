@@ -19,7 +19,8 @@ int main(void)
   
   //Fill in some transforms
   mTR.set(10,2,1,1,1,dyaw,dp,dr,atime);
-  mTR.set(2,3,1,1,1,dyaw,dp,dr,atime);
+  mTR.set(2,3,1,1,1,dyaw,dp,dr+1,atime-1000);
+  mTR.set(2,3,1,1,1,dyaw,dp,dr-1,atime+1000);
   mTR.set(3,5,dx,dy,dz,dyaw,dp,dr,atime);
   mTR.set(5,1,dx,dy,dz,dyaw,dp,dr,atime);
   mTR.set(6,5,dx,dy,dz,dyaw,dp,dr,atime);

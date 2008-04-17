@@ -334,7 +334,7 @@ void Quaternion3D::insertNode(Quaternion3DStorage new_val)
   //Base case empty list
   if (first == NULL)
     {
-      cout << "Base case" << endl;
+      //cout << "Base case" << endl;
       first = new data_LL;
       first->data = new_val;
       first->next = NULL;
