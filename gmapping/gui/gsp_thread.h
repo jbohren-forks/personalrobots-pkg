@@ -36,6 +36,11 @@
 using namespace std;
 using namespace GMapping;
 
+#ifdef PLAYER_SUPPORT
+namespace GMapping {
+class PlayerGFSWrapper;
+}
+#endif
 
 #define MAX_STRING_LENGTH 1024
 
@@ -82,6 +87,10 @@ struct GridSlamProcessorThread : public GridSlamProcessor {
 		
 		EventDeque getEvents();
 		
+#ifdef PLAYER_SUPPORT
+                PlayerGFSWrapper* m_pwrapper;
+		void start(PlayerGFSWrapper* pwrapper);
+#endif
 		void start();
 		void stop();
 		

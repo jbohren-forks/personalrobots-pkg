@@ -504,6 +504,12 @@ void GridSlamProcessorThread::start(){
 	pthread_create(&gfs_thread, 0, (void * (*)(void *))fastslamthread, (void *) this);
 }
 
+void GridSlamProcessorThread::start(PlayerGFSWrapper* pwrapper)
+{
+  m_pwrapper = pwrapper;
+  start();
+}
+
 void GridSlamProcessorThread::stop(){
 	if (! running){
 		cout << "PORCO CAZZO" << endl;
