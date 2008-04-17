@@ -39,6 +39,12 @@ RefFrame::RefFrame() :
   return;
 }
 
+/* Quaternion 3D version */
+void RefFrame::setParamsQuaternion3D(double a,double b,double c,double d,double e,double f, double g)
+{
+  myQuat.Set(a,b,c,d,e,f,g);
+};
+
 /* Six DOF version */
 void RefFrame::setParamsEulers(double a,double b,double c,double d,double e,double f)
 {

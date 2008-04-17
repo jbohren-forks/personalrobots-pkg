@@ -48,6 +48,7 @@ public:
   RefFrame();
 
   /* Set the parameters for this frame */
+  void setParamsQuaternion3D(double, double, double, double, double, double, double);
   void setParamsEulers(double, double, double, double, double, double);
   void setParamsDH(double, double, double, double);
   
