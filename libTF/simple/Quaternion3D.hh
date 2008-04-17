@@ -66,10 +66,8 @@ public:
   };
   
   /** Constructors **/
-  // Standard constructor which takes in 7 doubles
-  Quaternion3D(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time);
-  // Constructor from Matrix
-  Quaternion3D(NEWMAT::Matrix matrixIn, unsigned long long time);
+  // Standard constructor
+  Quaternion3D();
   
   /** Mutators **/
   // Set the values manually

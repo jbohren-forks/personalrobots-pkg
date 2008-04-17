@@ -39,7 +39,7 @@ Euler3D::Euler3D(double _x, double _y, double _z, double _yaw, double _pitch, do
 };
 
 
-Quaternion3D::Quaternion3D(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time):
+Quaternion3D::Quaternion3D():
   max_storage_time(MAX_STORAGE_TIME),
   first(NULL),
   last(NULL)
@@ -48,15 +48,6 @@ Quaternion3D::Quaternion3D(double _xt, double _yt, double _zt, double _xr, doubl
   pthread_mutex_init( &linked_list_mutex, NULL);
   //fixme Normalize();
   return;
-};
-
-Quaternion3D::Quaternion3D(NEWMAT::Matrix matrixIn, unsigned long long time):
-  max_storage_time(MAX_STORAGE_TIME),
-  first(NULL),
-  last(NULL)
-{
-  pthread_mutex_init( &linked_list_mutex, NULL);
-  fromMatrix(matrixIn, time);
 };
 
 void Quaternion3D::Set(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time)

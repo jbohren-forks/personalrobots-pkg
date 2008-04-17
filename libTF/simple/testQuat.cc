@@ -37,9 +37,11 @@
 
 int main()
 {
-  Quaternion3D myquat(1,1,1,1,1,1,1,1000101010);
+  Quaternion3D myquat;
 
-  Quaternion3D my2ndquat(myquat.asMatrix(1000101010),1000101010);
+  Quaternion3D my2ndquat;
+  myquat.Set(1,1,1,0,0,0,1,1000101010);
+  my2ndquat.Set(1,1,1,0,0,0,1,1000101010);
   std::cout << "Quat1"<<std::endl;
   myquat.printMatrix(1000101010);
   std::cout << "Quat2"<<std::endl;

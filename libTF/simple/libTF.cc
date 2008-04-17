@@ -34,7 +34,7 @@
 
 RefFrame::RefFrame() :
   parent(0),
-  myQuat(0,0,0,0,0,0,1,111110000)
+  myQuat()
 {
   return;
 }
