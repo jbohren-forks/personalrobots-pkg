@@ -57,11 +57,17 @@ public:
   class Quaternion3DStorage
   {
   public:
+
+    /** Unary operators preserve timestamps
+     * Binary operators destroy timestamps */
+
     // Utility functions to normalize and get magnitude.
     void Normalize();
     double getMagnitude();
     Quaternion3DStorage & operator=(const Quaternion3DStorage & input);
-    
+
+
+    /* Internal Data */    
     double xt, yt, zt, xr, yr, zr, w;
     unsigned long long time;
   };
@@ -90,13 +96,14 @@ public:
 				 double pitch, double roll);
   
 
-  /** Accessors **/
+  /** Interpolated Accessors **/
   // Return a Matrix
+  Quaternion3D::Quaternion3DStorage asQuaternion(unsigned long long time);
   NEWMAT::Matrix asMatrix(unsigned long long time);
 
   //Print as a matrix
-  void printMatrix(unsigned long long time);
-  void printStorage(const Quaternion3DStorage &storage);
+  void printMatrix(unsigned long long time);  //Not a critical part either
+  void printStorage(const Quaternion3DStorage &storage); //Do i need this now that i've got the ostream method??
 
   // this is a function to return the current time in microseconds from the beginning of 1970
   static  unsigned long long Qgettime(void);

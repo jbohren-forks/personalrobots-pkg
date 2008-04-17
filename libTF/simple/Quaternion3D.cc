@@ -238,6 +238,14 @@ std::ostream & operator<<(std::ostream& mystream, const Quaternion3D::Quaternion
   return mystream;
 };
 
+Quaternion3D::Quaternion3DStorage Quaternion3D::asQuaternion(unsigned long long time)
+{
+  Quaternion3DStorage temp;
+  long long diff_time; //todo Find a way to use this offset. pass storage by reference and return diff_time??
+  getValue(temp, time, diff_time);
+  return temp;
+};
+
 
 NEWMAT::Matrix Quaternion3D::asMatrix(unsigned long long time)
 {
@@ -245,7 +253,7 @@ NEWMAT::Matrix Quaternion3D::asMatrix(unsigned long long time)
   long long diff_time;
   getValue(temp, time, diff_time);
 
-  std::cout << temp;
+  //  std::cout << temp;
   //  printStorage(temp);
   // std::cout <<"Locally: "<< xt <<", "<< yt  <<", "<< zt <<", "<< xr <<", "<<yr  <<", "<<zr  <<", "<<w<<std::endl;
   //std::cout << "time Difference: "<< diff_time<<std::endl;
