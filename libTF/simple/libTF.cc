@@ -34,38 +34,38 @@
 
 RefFrame::RefFrame() :
   parent(0),
-  myQuat(0,0,0,0,0,0,1)
+  myQuat(0,0,0,0,0,0,1,111110000)
 {
   return;
 }
 
 /* Quaternion 3D version */
-void RefFrame::setParamsQuaternion3D(double a,double b,double c,double d,double e,double f, double g)
+void RefFrame::setParamsQuaternion3D(double a,double b,double c,double d,double e,double f, double g, unsigned long long time)
 {
-  myQuat.Set(a,b,c,d,e,f,g);
+  myQuat.Set(a,b,c,d,e,f,g,time);
 };
 
 /* Six DOF version */
-void RefFrame::setParamsEulers(double a,double b,double c,double d,double e,double f)
+void RefFrame::setParamsEulers(double a,double b,double c,double d,double e,double f, unsigned long long time)
 {
-  myQuat.fromEuler(a,b,c,d,e,f);
+  myQuat.fromEuler(a,b,c,d,e,f,time) ;
 }
 
 /* DH Params version */
-void RefFrame::setParamsDH(double a,double b,double c,double d)
+void RefFrame::setParamsDH(double a,double b,double c,double d, unsigned long long time)
 {
-  myQuat.fromDH(a,b,c,d);
+  myQuat.fromDH(a,b,c,d,time);
 }
 
 
-NEWMAT::Matrix RefFrame::getMatrix()
+NEWMAT::Matrix RefFrame::getMatrix(unsigned long long time)
 {
-  return myQuat.asMatrix();
+  return myQuat.asMatrix(time);
 }
 
-NEWMAT::Matrix RefFrame::getInverseMatrix()
+NEWMAT::Matrix RefFrame::getInverseMatrix(unsigned long long time)
 {
-  return myQuat.asMatrix().i();
+  return myQuat.asMatrix(time).i();
 };
 
 
@@ -80,7 +80,7 @@ TransformReference::TransformReference()
 }
 
 
-void TransformReference::set(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d,double e,double f)
+void TransformReference::set(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d,double e,double f, unsigned long long time)
 {
   if (frameID > MAX_NUM_FRAMES || parentID > MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
     throw InvalidFrame;
@@ -89,15 +89,15 @@ void TransformReference::set(unsigned int frameID, unsigned int parentID, double
     frames[frameID] = new RefFrame();
   
   getFrame(frameID)->setParent(parentID);
-  getFrame(frameID)->setParamsEulers(a,b,c,d,e,f);
+  getFrame(frameID)->setParamsEulers(a,b,c,d,e,f,time);
 }
 
 
-NEWMAT::Matrix TransformReference::get(unsigned int target_frame, unsigned int source_frame)
+NEWMAT::Matrix TransformReference::get(unsigned int target_frame, unsigned int source_frame, unsigned long long time)
 {
   NEWMAT::Matrix myMat(4,4);
   TransformLists lists = lookUpList(target_frame, source_frame);
-  myMat = computeTransformFromList(lists);
+  myMat = computeTransformFromList(lists,time);
   //  std::cout << myMat;
   return myMat;
 }
@@ -175,7 +175,7 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
 
 }
 
-NEWMAT::Matrix TransformReference::computeTransformFromList(TransformLists lists)
+NEWMAT::Matrix TransformReference::computeTransformFromList(TransformLists lists, unsigned long long time)
 {
   NEWMAT::Matrix retMat(4,4);
   retMat << 1 << 0 << 0 << 0
@@ -185,13 +185,13 @@ NEWMAT::Matrix TransformReference::computeTransformFromList(TransformLists lists
   
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
-      retMat *= getFrame(lists.inverseTransforms[i])->getInverseMatrix();
+      retMat *= getFrame(lists.inverseTransforms[i])->getInverseMatrix(time);
       //      std::cout <<"Multiplying by " << std::endl << frames[lists.inverseTransforms[i]].getInverseMatrix() << std::endl; 
       //std::cout <<"Result "<<std::endl << retMat << std::endl;
    }
   for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
     {
-      retMat *= getFrame(lists.forwardTransforms[lists.forwardTransforms.size() -1 - i])->getMatrix(); //Do this list backwards for it was generated traveling the wrong way
+      retMat *= getFrame(lists.forwardTransforms[lists.forwardTransforms.size() -1 - i])->getMatrix(time); //Do this list backwards for it was generated traveling the wrong way
       //      std::cout <<"Multiplying by "<<std::endl << frames[lists.forwardTransforms[i]].getMatrix() << std::endl;
       //std::cout <<"Result "<<std::endl << retMat << std::endl;
     }

@@ -48,9 +48,9 @@ public:
   RefFrame();
 
   /* Set the parameters for this frame */
-  void setParamsQuaternion3D(double, double, double, double, double, double, double);
-  void setParamsEulers(double, double, double, double, double, double);
-  void setParamsDH(double, double, double, double);
+  void setParamsQuaternion3D(double, double, double, double, double, double, double, unsigned long long time);
+  void setParamsEulers(double, double, double, double, double, double, unsigned long long time);
+  void setParamsDH(double, double, double, double, unsigned long long time);
   
   /* Get the parent node */
   inline unsigned int getParent(){return parent;};
@@ -59,10 +59,10 @@ public:
   inline void setParent(unsigned int parentID){parent = parentID;};
 
   /* Generate and return the transform associated with gettingn into this frame */
-  NEWMAT::Matrix getMatrix();
+  NEWMAT::Matrix getMatrix(unsigned long long time);
   
   /* Generate and return the transform associated with getting out of this frame.  */
-  NEWMAT::Matrix getInverseMatrix();
+  NEWMAT::Matrix getInverseMatrix(unsigned long long time);
 
 
 private:
@@ -89,13 +89,13 @@ public:
 
   /********** Mutators **************/
   /* Set a new frame or update an old one. */
-  void set(unsigned int framid, unsigned int parentid, double,double,double,double,double,double);
+  void set(unsigned int framid, unsigned int parentid, double,double,double,double,double,double,unsigned long long time);
   // Possible exceptions TransformReference::LookupException
 
   /*********** Accessors *************/
 
   /* Get the transform between two frames by frame ID.  */
-  NEWMAT::Matrix get(unsigned int target_frame, unsigned int source_frame);
+  NEWMAT::Matrix get(unsigned int target_frame, unsigned int source_frame, unsigned long long time);
   // Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
   // TransformReference::MaxDepthException
 
@@ -158,7 +158,7 @@ private:
   TransformLists  lookUpList(unsigned int target_frame, unsigned int source_frame);
   
   /* Compute the transform based on the list of frames */
-  NEWMAT::Matrix computeTransformFromList(TransformLists list);
+  NEWMAT::Matrix computeTransformFromList(TransformLists list, unsigned long long time);
 
 };
 #endif //LIBTF_HH

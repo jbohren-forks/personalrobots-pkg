@@ -14,15 +14,17 @@ int main(void)
   dx = dy= dz = 0;
   dyaw = dp = dr = .1;
   
+  unsigned long long atime = Quaternion3D::Qgettime();
+
   
   //Fill in some transforms
-  mTR.set(10,2,1,1,1,dyaw,dp,dr);
-  mTR.set(2,3,1,1,1,dyaw,dp,dr);
-  mTR.set(3,5,dx,dy,dz,dyaw,dp,dr);
-  mTR.set(5,1,dx,dy,dz,dyaw,dp,dr);
-  mTR.set(6,5,dx,dy,dz,dyaw,dp,dr);
-  mTR.set(7,6,1,1,1,dyaw,dp,dr);
-  mTR.set(8,7,1,1,1,dyaw,dp,dr);
+  mTR.set(10,2,1,1,1,dyaw,dp,dr,atime);
+  mTR.set(2,3,1,1,1,dyaw,dp,dr,atime);
+  mTR.set(3,5,dx,dy,dz,dyaw,dp,dr,atime);
+  mTR.set(5,1,dx,dy,dz,dyaw,dp,dr,atime);
+  mTR.set(6,5,dx,dy,dz,dyaw,dp,dr,atime);
+  mTR.set(7,6,1,1,1,dyaw,dp,dr,atime);
+  mTR.set(8,7,1,1,1,dyaw,dp,dr,atime);
   
   
   //Demonstrate InvalidFrame LookupException
@@ -44,14 +46,14 @@ int main(void)
   //See the resultant transform
   std::cout <<"Calling get(10,8)"<<std::endl;
   //      NEWMAT::Matrix mat = mTR.get(1,1);
-  NEWMAT::Matrix mat = mTR.get(10,8);
+  NEWMAT::Matrix mat = mTR.get(10,8,atime);
   
-  std::cout << "Result of get(10,8):" << std::endl << mat<< std::endl;
+  std::cout << "Result of get(10,8,atime):" << std::endl << mat<< std::endl;
 
   
   
   //Break the graph, making it loop and demonstrate catching MaxDepthException
-  mTR.set(6,7,dx,dy,dz,dyaw,dp,dr);
+  mTR.set(6,7,dx,dy,dz,dyaw,dp,dr,atime);
   
   try {
     mTR.view(10,8);
@@ -62,7 +64,7 @@ int main(void)
     }
   
   //Break the graph, making it disconnected, and demonstrate catching ConnectivityException
-  mTR.set(6,0,dx,dy,dz,dyaw,dp,dr);
+  mTR.set(6,0,dx,dy,dz,dyaw,dp,dr,atime);
   
   try {
     mTR.view(10,8);

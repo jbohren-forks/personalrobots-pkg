@@ -39,35 +39,49 @@ Euler3D::Euler3D(double _x, double _y, double _z, double _yaw, double _pitch, do
 };
 
 
-Quaternion3D::Quaternion3D(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w):
+Quaternion3D::Quaternion3D(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time):
   xt(_xt),yt(_yt),zt(_zt),xr(_xr),yr(_yr),zr(_zr),w(_w),
   max_storage_time(MAX_STORAGE_TIME),
   first(NULL),
   last(NULL)
 {
+  
   pthread_mutex_init( &linked_list_mutex, NULL);
   Normalize();
   return;
 };
 
-Quaternion3D::Quaternion3D(NEWMAT::Matrix matrixIn):
+Quaternion3D::Quaternion3D(NEWMAT::Matrix matrixIn, unsigned long long time):
   max_storage_time(MAX_STORAGE_TIME),
   first(NULL),
   last(NULL)
 {
   pthread_mutex_init( &linked_list_mutex, NULL);
-  fromMatrix(matrixIn);
+  fromMatrix(matrixIn, time);
 };
 
-void Quaternion3D::fromMatrix(NEWMAT::Matrix matIn)
+void Quaternion3D::Set(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time)
+{xt = _xt; yt = _yt; zt = _zt; xr = _xr; yr = _yr; zr = _zr; w = _w;
+
+ Quaternion3DStorage temp;
+ temp.xt = _xt; temp.yt = _yt; temp.zt = _zt; temp.xr = _xr; temp.yr = _yr; temp.zr = _zr; temp.w = _w; temp.time = time;
+
+ add_value(temp);
+ 
+} ;
+
+
+void Quaternion3D::fromMatrix(NEWMAT::Matrix matIn, unsigned long long time)
 {
   // math derived from http://www.j3d.org/matrix_faq/matrfaq_latest.html
+  Quaternion3DStorage temp;
+  temp.time = time;  
 
   double * mat = matIn.Store();
   //Get the translations
-  xt = mat[3];
-  yt = mat[7];
-  zt = mat[11];
+  temp.xt = mat[3];
+  temp.yt = mat[7];
+  temp.zt = mat[11];
 
   //TODO ASSERT others are zero and one as they should be
 
@@ -82,10 +96,10 @@ void Quaternion3D::fromMatrix(NEWMAT::Matrix matIn)
   if ( T > 0.00000001 ) //to avoid large distortions!
     {
       double S = sqrt(T) * 2;
-      xr = ( mat[9] - mat[6] ) / S;
-      yr = ( mat[2] - mat[8] ) / S;
-      zr = ( mat[4] - mat[1] ) / S;
-      w = 0.25 * S;
+      temp.xr = ( mat[9] - mat[6] ) / S;
+      temp.yr = ( mat[2] - mat[8] ) / S;
+      temp.zr = ( mat[4] - mat[1] ) / S;
+      temp.w = 0.25 * S;
     }
   //If the trace of the matrix is equal to zero then identify
   // which major diagonal element has the greatest value.
@@ -93,34 +107,36 @@ void Quaternion3D::fromMatrix(NEWMAT::Matrix matIn)
 
       if ( mat[0] > mat[5] && mat[0] > mat[10] ) {// Column 0: 
         double S  = sqrt( 1.0 + mat[0] - mat[5] - mat[10] ) * 2;
-        xr = 0.25 * S;
-        yr = (mat[1] + mat[4] ) / S;
-        zr = (mat[8] + mat[2] ) / S;
-        w = (mat[6] - mat[9] ) / S;
+        temp.xr = 0.25 * S;
+        temp.yr = (mat[1] + mat[4] ) / S;
+        temp.zr = (mat[8] + mat[2] ) / S;
+        temp.w = (mat[6] - mat[9] ) / S;
       } else if ( mat[5] > mat[10] ) {// Column 1: 
         double S  = sqrt( 1.0 + mat[5] - mat[0] - mat[10] ) * 2;
-        xr = (mat[1] + mat[4] ) / S;
-        yr = 0.25 * S;
-        zr = (mat[6] + mat[9] ) / S;
-        w = (mat[8] - mat[2] ) / S;
+        temp.xr = (mat[1] + mat[4] ) / S;
+        temp.yr = 0.25 * S;
+        temp.zr = (mat[6] + mat[9] ) / S;
+        temp.w = (mat[8] - mat[2] ) / S;
       } else {// Column 2:
         double S  = sqrt( 1.0 + mat[10] - mat[0] - mat[5] ) * 2;
-        xr = (mat[8] + mat[2] ) / S;
-        yr = (mat[6] + mat[9] ) / S;
-        zr = 0.25 * S;
-        w = (mat[1] - mat[4] ) / S;
+        temp.xr = (mat[8] + mat[2] ) / S;
+        temp.yr = (mat[6] + mat[9] ) / S;
+        temp.zr = 0.25 * S;
+        temp.w = (mat[1] - mat[4] ) / S;
       }
+
+      add_value(temp);
 };
 
-void Quaternion3D::fromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll)
+void Quaternion3D::fromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll, unsigned long long time)
 {
-  fromMatrix(matrixFromEuler(_x,_y,_z,_yaw,_pitch,_roll));
+  fromMatrix(matrixFromEuler(_x,_y,_z,_yaw,_pitch,_roll),time);
 };
 
 void Quaternion3D::fromDH(double theta,
-			  double length, double distance, double alpha)
+			  double length, double distance, double alpha, unsigned long long time)
 {
-  fromMatrix(matrixFromDH(theta, length, distance, alpha));
+  fromMatrix(matrixFromDH(theta, length, distance, alpha),time);
 };
 
 
@@ -211,7 +227,7 @@ double Quaternion3D::getMagnitude()
 };
 
 
-NEWMAT::Matrix Quaternion3D::asMatrix()
+NEWMAT::Matrix Quaternion3D::asMatrix(unsigned long long time)
 {
   NEWMAT::Matrix outMat(4,4);
   
@@ -247,9 +263,9 @@ NEWMAT::Matrix Quaternion3D::asMatrix()
 };
 
 
-void Quaternion3D::printMatrix()
+void Quaternion3D::printMatrix(unsigned long long time)
 {
-  std::cout << asMatrix();
+  std::cout << asMatrix(time);
 
 };
 

@@ -62,21 +62,20 @@ public:
   
   /** Constructors **/
   // Standard constructor which takes in 7 doubles
-  Quaternion3D(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w);
+  Quaternion3D(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time);
   // Constructor from Matrix
-  Quaternion3D(NEWMAT::Matrix matrixIn);
+  Quaternion3D(NEWMAT::Matrix matrixIn, unsigned long long time);
   
   /** Mutators **/
   // Set the values manually
-  inline void Set(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w)
-  {xt = _xt; yt = _yt; zt = _zt; xr = _xr; yr = _yr; zr = _zr; w = _w;} ;
+  void Set(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time);
 
   //Set the values from a matrix
-  void fromMatrix(NEWMAT::Matrix matIn);
+  void fromMatrix(NEWMAT::Matrix matIn, unsigned long long time);
   // Set the values using Euler angles
-  void fromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll);
+  void fromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll, unsigned long long time);
   // Set the values using DH Parameters
-  void fromDH(double theta, double length, double distance, double alpha);
+  void fromDH(double theta, double length, double distance, double alpha, unsigned long long time);
 
   
   /**** Utility Functions ****/
@@ -92,11 +91,13 @@ public:
 
   /** Accessors **/
   // Return a Matrix
-  NEWMAT::Matrix asMatrix();
+  NEWMAT::Matrix asMatrix(unsigned long long time);
 
   //Print as a matrix
-  void printMatrix();
+  void printMatrix(unsigned long long time);
 
+  // this is a function to return the current time in microseconds from the beginning of 1970
+  static  unsigned long long Qgettime(void);
 
 private:
   //Quaternion Storage
@@ -114,8 +115,6 @@ private:
   bool getValue(Quaternion3DStorage& buff, unsigned long long time, long long  &time_diff);
   void add_value(Quaternion3DStorage);//todo fixme finish implementing this
 
-  // this is a function to return the current time in microseconds from the beginning of 1970
-  unsigned long long Qgettime(void);
 
 
   // insert a node into the sorted linked list
