@@ -54,8 +54,13 @@ class Quaternion3D {
 
 public:
   // Storage 
-  struct Quaternion3DStorage
+  class Quaternion3DStorage
   {
+  public:
+    // Utility functions to normalize and get magnitude.
+    void Normalize();
+    double getMagnitude();
+    
     double xt, yt, zt, xr, yr, zr, w;
     unsigned long long time;
   };
@@ -85,9 +90,6 @@ public:
 				 double ay, double az, double yaw,
 				 double pitch, double roll);
   
-  // Utility functions to normalize and get magnitude.
-  void Normalize();
-  double getMagnitude();
 
   /** Accessors **/
   // Return a Matrix
@@ -95,6 +97,7 @@ public:
 
   //Print as a matrix
   void printMatrix(unsigned long long time);
+  void printStorage(const Quaternion3DStorage &storage);
 
   // this is a function to return the current time in microseconds from the beginning of 1970
   static  unsigned long long Qgettime(void);
@@ -104,7 +107,7 @@ private:
   double xt,yt,zt,xr,yr,zr,w;
 
   /**** Linked List stuff ****/
-  static const unsigned int MAX_STORAGE_TIME = 100000000; // max of 100 seconds storage
+  static const long long MAX_STORAGE_TIME = 1000000000; // max of 100 seconds storage
  
   struct data_LL{
     Quaternion3DStorage data;

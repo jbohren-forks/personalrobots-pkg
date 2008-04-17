@@ -47,7 +47,7 @@ Quaternion3D::Quaternion3D(double _xt, double _yt, double _zt, double _xr, doubl
 {
   
   pthread_mutex_init( &linked_list_mutex, NULL);
-  Normalize();
+  //fixme Normalize();
   return;
 };
 
@@ -124,7 +124,7 @@ void Quaternion3D::fromMatrix(NEWMAT::Matrix matIn, unsigned long long time)
         temp.zr = 0.25 * S;
         temp.w = (mat[1] - mat[4] ) / S;
       }
-
+      xt = temp.xt; yt = temp.yt; zt = temp.zt; xr = temp.xr; yr = temp.yr; zr = temp.zr; w = temp.w;
       add_value(temp);
 };
 
@@ -212,7 +212,7 @@ NEWMAT::Matrix Quaternion3D::matrixFromDH(double theta,
 };
 
 
-void Quaternion3D::Normalize()
+void Quaternion3D::Quaternion3DStorage::Normalize()
 {
   double mag = getMagnitude();
   xr /= mag;
@@ -221,7 +221,7 @@ void Quaternion3D::Normalize()
   w /= mag;
 };
 
-double Quaternion3D::getMagnitude()
+double Quaternion3D::Quaternion3DStorage::getMagnitude()
 {
   return sqrt(xr*xr + yr*yr + zr*zr + w*w);
 };
@@ -229,20 +229,28 @@ double Quaternion3D::getMagnitude()
 
 NEWMAT::Matrix Quaternion3D::asMatrix(unsigned long long time)
 {
+  Quaternion3DStorage temp;
+  long long diff_time;
+  getValue(temp, time, diff_time);
+
+  //  printStorage(temp);
+  // std::cout <<"Locally: "<< xt <<", "<< yt  <<", "<< zt <<", "<< xr <<", "<<yr  <<", "<<zr  <<", "<<w<<std::endl;
+  //std::cout << "time Difference: "<< diff_time<<std::endl;
+  
   NEWMAT::Matrix outMat(4,4);
   
   double * mat = outMat.Store();
 
   // math derived from http://www.j3d.org/matrix_faq/matrfaq_latest.html
-  double xx      = xr * xr;
-  double xy      = xr * yr;
-  double xz      = xr * zr;
-  double xw      = xr * w;
-  double yy      = yr * yr;
-  double yz      = yr * zr;
-  double yw      = yr * w;
-  double zz      = zr * zr;
-  double zw      = zr * w;
+  double xx      = temp.xr * temp.xr;
+  double xy      = temp.xr * temp.yr;
+  double xz      = temp.xr * temp.zr;
+  double xw      = temp.xr * temp.w;
+  double yy      = temp.yr * temp.yr;
+  double yz      = temp.yr * temp.zr;
+  double yw      = temp.yr * temp.w;
+  double zz      = temp.zr * temp.zr;
+  double zw      = temp.zr * temp.w;
   mat[0]  = 1 - 2 * ( yy + zz );
   mat[4]  =     2 * ( xy - zw );
   mat[8]  =     2 * ( xz + yw );
@@ -266,7 +274,11 @@ NEWMAT::Matrix Quaternion3D::asMatrix(unsigned long long time)
 void Quaternion3D::printMatrix(unsigned long long time)
 {
   std::cout << asMatrix(time);
+};
 
+void Quaternion3D::printStorage(const Quaternion3DStorage& storage)
+{
+  std::cout << "Storage: " << storage.xt <<", " << storage.yt <<", " << storage.zt<<", " << storage.xr<<", " << storage.yr <<", " << storage.zr <<", " << storage.w<<std::endl; 
 };
 
 
@@ -430,7 +442,6 @@ void Quaternion3D::pruneList()
 int Quaternion3D::findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two, unsigned long long target_time, long long &time_diff)
 {
 
-  unsigned long long current_time = Qgettime();
   data_LL* p_current = first;
 
 
@@ -444,7 +455,7 @@ int Quaternion3D::findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two
   else if (first->next == NULL)
     {
       one = first->data;
-      time_diff = current_time - first->data.time;
+      time_diff = target_time - first->data.time;
       return 1;
     }
   
