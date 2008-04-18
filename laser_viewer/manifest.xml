@@ -1,0 +1,14 @@
+<package>
+<description brief="Use the cloud viewer to display laster data.">
+
+</description>
+<author>Jeremy Leibs (email: leibs@willowgarage.com)</author>
+<license>BSD</license>
+<url>http://pr.willowgarage.com</url>
+<depend package="common_flows"/>
+<depend package="hokuyourg_player"/>
+<depend package="cloud_viewer"/>
+<sys_depend lib="GL"/>
+<sys_depend lib="GLU"/>
+</package>
+

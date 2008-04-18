@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "etherdrive.h"
+#include "etherdrive/etherdrive.h"
 
 EtherDrive::EtherDrive()
 {

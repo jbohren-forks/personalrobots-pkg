@@ -1,0 +1,5 @@
+0.000987 ROS_PORT = 0
+0.001046 starting abyss XMLRPC server on port 32900
+0.011219 calling registerNode on master at http://127.0.1.1:11311/
+0.011307 sending port = 32900 to registerNode
+0.011782 TCPROS server up and running on port 34990

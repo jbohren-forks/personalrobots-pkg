@@ -1,0 +1,3 @@
+cpp:
+  make:
+    - src/laser_viewer

@@ -1,5 +1,6 @@
 cpp:
   make:
     - src/libetherdrive
-    - test
+    - src/etherdrive_control
+    - test/test_etherdrive
 

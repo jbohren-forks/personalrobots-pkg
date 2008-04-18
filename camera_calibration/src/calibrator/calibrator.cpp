@@ -91,6 +91,8 @@ public:
 
   char dir_name[256];
 
+  CvPoint2D32f* last_corners;
+
   Calibrator() : ROS_Slave()
   {
     register_sink(image_in = new FlowImage("image_in"), ROS_CALLBACK(Calibrator, image_received));
@@ -138,6 +140,8 @@ public:
     if (mkdir(dir_name, 0755)) {
       std::cout << "Failed to make directory: " << dir_name;
     }
+
+    last_corners = new CvPoint2D32f[12*12];
     
   }
   virtual ~Calibrator() { }
@@ -311,6 +315,22 @@ public:
 
 	take_pic = false;
       }
+
+      float maxdiff = 0;
+
+      for(int c=0; c<12*12; c++) {
+	float diff = sqrt( pow(corners[c].x - last_corners[c].x, 2.0) + 
+		     pow(corners[c].y - last_corners[c].y, 2.0));
+	last_corners[c].x = corners[c].x;
+	last_corners[c].y = corners[c].y;
+
+	if (diff > maxdiff) {
+	  maxdiff = diff;
+	}
+      }
+
+      printf("Max diff: %g\n", maxdiff);
+
 
       cvDrawChessboardCorners(cvimage_bgr, board_sz, corners, corner_count, found);
 
