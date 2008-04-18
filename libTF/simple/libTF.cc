@@ -34,7 +34,7 @@
 
 RefFrame::RefFrame() :
   Quaternion3D(),
-  parent(0)
+  parent(TransformReference::NO_PARENT)
 {
   return;
 }
@@ -81,7 +81,6 @@ NEWMAT::Matrix TransformReference::get(unsigned int target_frame, unsigned int s
   NEWMAT::Matrix myMat(4,4);
   TransformLists lists = lookUpList(target_frame, source_frame);
   myMat = computeTransformFromList(lists,time);
-  //  std::cout << myMat;
   return myMat;
 }
 
@@ -89,11 +88,6 @@ NEWMAT::Matrix TransformReference::get(unsigned int target_frame, unsigned int s
 TransformReference::TransformLists TransformReference::lookUpList(unsigned int target_frame, unsigned int source_frame)
 {
   TransformLists mTfLs;
-
-  //  std::vector<unsigned int> tList;
-  //  std::vector<unsigned int> sList;
-
-  //  std::vector<unsigned int> retVec;
 
   unsigned int frame = target_frame;
   unsigned int counter = 0;  //A counter to keep track of how deep we've descended
@@ -109,7 +103,6 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
       if (getFrame(frame)->getParent() > MAX_NUM_FRAMES) throw InvalidFrame;
 
       // Descent to parent frame
-      //   std::cout <<"Frame: " << frame <<std::endl;
       frame = getFrame(frame)->getParent();
 
       /* Check if we've gone too deep.  A loop in the tree would cause this */
@@ -143,13 +136,11 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
     throw(NoFrameConnectivity);
 
   /* Make sure that we don't have a no parent at the top */
-  //  std::cout << "Back = " << mTfLs.inverseTransforms.back()<<" " << mTfLs.forwardTransforms.back();
   if (mTfLs.inverseTransforms.back() == NO_PARENT ||  mTfLs.forwardTransforms.back() == NO_PARENT)
     throw(NoFrameConnectivity);
 
   while (mTfLs.inverseTransforms.back() == mTfLs.forwardTransforms.back())
     {
-      //      std::cout << "removing " << mTfLs.inverseTransforms.back() << std::endl;
       mTfLs.inverseTransforms.pop_back();
       mTfLs.forwardTransforms.pop_back();
     }
@@ -192,7 +183,6 @@ std::string TransformReference::viewChain(unsigned int target_frame, unsigned in
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
       mstream << lists.inverseTransforms[i]<<", ";
-      //      retMat *= getFrame(lists.inverseTransforms[i])->getInverseMatrix();
     }
   mstream << std::endl;
 
@@ -200,7 +190,6 @@ std::string TransformReference::viewChain(unsigned int target_frame, unsigned in
   for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
     {
       mstream << lists.forwardTransforms[i]<<", ";
-      //      retMat *= getFrame(lists.inverseTransforms[lists.forwardTransforms.size() -1 - i])->getMatrix(); //Do this list backwards for it was generated traveling the wrong way
     }
   mstream << std::endl;
   return mstream.str();
