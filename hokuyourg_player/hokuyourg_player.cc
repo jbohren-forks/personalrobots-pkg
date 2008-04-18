@@ -47,6 +47,9 @@ class HokuyoNode: public ROS_Slave
       // Insert (name,value) pairs into the ConfigFile object.  These would
       // presumably come from the param server
       this->cf->InsertFieldValue(0,"provides",player_addr);
+      this->cf->InsertFieldValue(0,"unit_angle","degrees");
+      this->cf->InsertFieldValue(0,"min_angle","-90");
+      this->cf->InsertFieldValue(0,"max_angle","90");
       this->cf->InsertFieldValue(0,"port","/dev/ttyACM0");
 
       // Create an instance of the driver, passing it the ConfigFile object.

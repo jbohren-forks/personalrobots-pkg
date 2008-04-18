@@ -1,7 +1,7 @@
 CPP = g++
 AR = ar
-CPPFLAGS = -g -Wall -Werror `pkg-config --cflags playercore playerxdr playerutils playerdrivers` `rospack cflags roscpp` `rospack cflags common_flows`
-LDFLAGS = `pkg-config --libs playercore playerxdr playerutils playerdrivers` `rospack lflags roscpp` `rospack lflags common_flows`
+CPPFLAGS = -g -Wall -Werror `pkg-config --cflags playercore playerxdr playerutils playerdrivers` `${ROS_ROOT}/rospack cflags roscpp` `${ROS_ROOT}/rospack cflags common_flows`
+LDFLAGS = `pkg-config --libs playercore playerxdr playerutils playerdrivers` `${ROS_ROOT}/rospack lflags roscpp` `${ROS_ROOT}/rospack lflags common_flows`
 
 all: nodes/hokuyourg_player
 
