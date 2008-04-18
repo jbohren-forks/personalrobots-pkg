@@ -68,7 +68,7 @@ class HokuyoNode: public ROS_Slave
       // Create a message queue
       this->q = QueuePointer(false,PLAYER_QUEUE_LEN);
 
-      this->register_source(this->fl = new FlowLaserScan(".scans"));
+      this->register_source(this->fl = new FlowLaserScan("scans"));
     }
 
     ~HokuyoNode()
