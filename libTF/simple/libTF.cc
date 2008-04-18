@@ -183,24 +183,25 @@ NEWMAT::Matrix TransformReference::computeTransformFromList(TransformLists lists
 }
 
 
-void TransformReference::view(unsigned int target_frame, unsigned int source_frame)
+std::string TransformReference::viewChain(unsigned int target_frame, unsigned int source_frame)
 {
+  stringstream mstream;
   TransformLists lists = lookUpList(target_frame, source_frame);
 
-  std::cout << "Inverse Transforms:" <<std::endl;
+  mstream << "Inverse Transforms:" <<std::endl;
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
-      std::cout << lists.inverseTransforms[i]<<", ";
+      mstream << lists.inverseTransforms[i]<<", ";
       //      retMat *= getFrame(lists.inverseTransforms[i])->getInverseMatrix();
     }
-  std::cout << std::endl;
+  mstream << std::endl;
 
-  std::cout << "Forward Transforms: "<<std::endl ;
+  mstream << "Forward Transforms: "<<std::endl ;
   for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
     {
-      std::cout << lists.forwardTransforms[i]<<", ";
+      mstream << lists.forwardTransforms[i]<<", ";
       //      retMat *= getFrame(lists.inverseTransforms[lists.forwardTransforms.size() -1 - i])->getMatrix(); //Do this list backwards for it was generated traveling the wrong way
     }
-  std::cout << std::endl;
-  
+  mstream << std::endl;
+  return mstream.str();
 }

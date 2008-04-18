@@ -39,6 +39,15 @@
 #include <math.h>
 #include <vector>
 #include "Quaternion3D.hh"
+#include <sstream>
+
+/** RefFrame *******
+ * An instance of this class is created for each frame in the system.
+ * This class natively handles the relationship between frames.  
+ *
+ * The derived class Quaternion3D provides a buffered history of positions
+ * with interpolation.  
+ */
 
 class RefFrame: public Quaternion3D 
 {
@@ -46,8 +55,7 @@ public:
 
   /* Constructor */
   RefFrame();
-
-  
+ 
   /* Get the parent node */
   inline unsigned int getParent(){return parent;};
 
@@ -59,6 +67,15 @@ private:
   unsigned int parent;
 
 };
+
+/*** Transform Reference ***********
+ * This class provides a simple interface to allow recording and lookup of 
+ * relationships between arbitrary frames of the system.
+ * 
+ * The positions of frames over time must be pushed in.  
+ * 
+ * It will provide interpolated positions out given a time argument.
+ */
 
 class TransformReference
 {
@@ -87,7 +104,7 @@ public:
   // TransformReference::MaxDepthException
 
   /* Debugging function that will print to std::cout the transformation matrix */
-  void view(unsigned int target_frame, unsigned int source_frame);
+  std::string viewChain(unsigned int target_frame, unsigned int source_frame);
   // Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
   // TransformReference::MaxDepthException
 

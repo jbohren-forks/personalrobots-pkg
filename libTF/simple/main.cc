@@ -36,7 +36,7 @@ int main(void)
   //Demonstrate InvalidFrame LookupException
   try
     {
-      mTR.view(10,9);
+      std::cout<< mTR.viewChain(10,9);
     }
   catch (TransformReference::LookupException &ex)
     {
@@ -46,7 +46,7 @@ int main(void)
   
   // See the list of transforms to get between the frames
   std::cout<<"Viewing (10,8):"<<std::endl;  
-  mTR.view(10,8);
+  std::cout << mTR.viewChain(10,8);
   
   
   //See the resultant transform
@@ -62,7 +62,7 @@ int main(void)
   mTR.set(6,7,dx,dy,dz,dyaw,dp,dr,atime);
   
   try {
-    mTR.view(10,8);
+    std::cout<<mTR.viewChain(10,8);
   }
   catch (TransformReference::MaxDepthException &ex)
     {
@@ -73,7 +73,7 @@ int main(void)
   mTR.set(6,0,dx,dy,dz,dyaw,dp,dr,atime);
   
   try {
-    mTR.view(10,8);
+    std::cout<<mTR.viewChain(10,8);
   }
   catch (TransformReference::ConnectivityException &ex)
     {
