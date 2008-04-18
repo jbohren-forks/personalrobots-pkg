@@ -32,7 +32,7 @@ all: $(SONAME) $(APPLICATIONS) $(INSTALL_SCRIPTS)
 $(SONAME): $(OBJS) $(COBJS)
 	@$(MESSAGE) "Creating library lib$(LIBNAME).so"
 ifeq ($(MACOSX),1)
-	@$(PRETTY) "$(CXX) $(LDFLAGS)  -dynamiclib $(OBJS) $(COBJS) -L$(LIBDIR) $(LIBS) -install_name $@ -o $@"
+	@$(PRETTY) "$(CXX) $(LDFLAGS) -dynamiclib $(OBJS) $(COBJS) -L$(LIBDIR) $(LIBS) -install_name $@ -o $@"
 endif
 ifeq ($(LINUX),1)
 	@$(PRETTY) "$(CXX) $(LDFLAGS) -fPIC -shared $(OBJS) $(COBJS) -L $(LIBDIR) $(LIBS) -o $@"
