@@ -166,8 +166,8 @@ PlayerGFSWrapper::Setup()
   }
 
   // start GFS thread
-  //this->gsp->start(this);
-  pthread_create(&this->gui_thread, 0, GUI_thread, this);
+  this->gsp->start(this);
+  //pthread_create(&this->gui_thread, 0, GUI_thread, this);
 
   this->StartThread();
   return(0);
@@ -204,7 +204,52 @@ PlayerGFSWrapper::Main()
 
     this->ProcessMessages();
 
-    // TODO: check for new pose / map from GFS thread
+    // check for new pose / map from GFS thread
+    GridSlamProcessorThread::EventDeque events=this->gsp->getEvents();
+    for(GridSlamProcessorThread::EventDeque::const_iterator it=events.begin(); 
+        it!=events.end();
+        it++)
+    {
+      GridSlamProcessorThread::MapEvent* mapEvent = 
+              dynamic_cast<GridSlamProcessorThread::MapEvent*>(*it);
+      if(mapEvent)
+      {
+        int sx, sy;
+        double res;
+        sx = mapEvent->pmap->getMapSizeX();
+        sy = mapEvent->pmap->getMapSizeY();
+        res = mapEvent->pmap->getResolution();
+        printf("got a %d X %d map @ %.3f m / pix\n", sx,sy,res);
+        double v;
+        for(int j=0;j<sy;j++)
+        {
+          for(int i=0;i<sx;i++)
+          {
+            v = mapEvent->pmap->cell(i,j);
+            if (v>=0)
+            {
+              int grayValue=255-(int)(255.*v);
+            }
+          }
+        }
+      }
+      else
+      {
+        GridSlamProcessorThread::DoneEvent* doneEvent = 
+                dynamic_cast<GridSlamProcessorThread::DoneEvent*>(*it);
+        if(doneEvent)
+        {
+          this->gsp->stop();
+          delete doneEvent;
+        } 
+        else
+        {
+          // TODO: handle other events somehow
+          //history.push_back(*it);
+        }
+      }	
+
+    }
   }
 }
 
