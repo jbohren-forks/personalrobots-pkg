@@ -1,6 +1,6 @@
 #include <math.h>
-#include "stair__serial_port/lightweightserial.h"
-#include "stair__hokuyo_top_urg/hokuyo_top_urg.h"
+#include "serial_port/lightweightserial.h"
+#include "hokuyo_top_urg/hokuyo_top_urg.h"
 
 const double HokuyoTopUrg::SCAN_FOV = 270.0 * M_PI / 180.0;
 
