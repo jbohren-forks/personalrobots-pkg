@@ -62,8 +62,17 @@ class PlayerGFSWrapper : public Driver
 
     void ProcessLaser(player_msghdr_t* hdr,
                       player_laser_data_scanpose_t* data);
+    void ProcessMapDataRequest(QueuePointer& resp_queue,
+                               player_map_data_t* mapreq);
+    void ProcessMapInfoRequest(QueuePointer& resp_queue);
+
+    void ProcessGFSEvents();
 
     pthread_t gui_thread;
+
+    // Current map
+    player_map_data_t map;
+    double map_resolution;
 
   public:
     PlayerGFSWrapper(ConfigFile* cf, int section);

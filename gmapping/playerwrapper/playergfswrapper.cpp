@@ -111,6 +111,9 @@ PlayerGFSWrapper::PlayerGFSWrapper(ConfigFile* cf, int section)
 
   this->laser_rs = NULL;
   this->sensorMap_ready = false;
+
+  memset(&this->map,0,sizeof(player_map_data_t));
+  this->map_resolution = 0.0;
 }
 
 QApplication* app;
@@ -129,7 +132,6 @@ GUI_thread(void* d)
   GFSMainWindow* mainWin=new GFSMainWindow(pd->gsp);
   app->setMainWidget(mainWin);
   mainWin->show();
-  pd->gsp->setEventBufferSize(10000);
   pd->gsp->start(pd);
   mainWin->start(1000);
   app->exec();
@@ -158,6 +160,9 @@ PlayerGFSWrapper::Setup()
   // TODO: get laser geometry
 
   this->gsp = new GridSlamProcessorThread();
+  // Set the size of the mapper's outgoing event queue.  We service the
+  // queue to recieve, e.g., news that a new map is ready.
+  this->gsp->setEventBufferSize(10000);
 
   if(this->laser_rs)
   {
@@ -166,8 +171,8 @@ PlayerGFSWrapper::Setup()
   }
 
   // start GFS thread
-  this->gsp->start(this);
-  //pthread_create(&this->gui_thread, 0, GUI_thread, this);
+  //this->gsp->start(this);
+  pthread_create(&this->gui_thread, 0, GUI_thread, this);
 
   this->StartThread();
   return(0);
@@ -198,58 +203,110 @@ PlayerGFSWrapper::Main()
 {
   for(;;)
   {
+    // Give chance to be shutdown
     pthread_testcancel();
 
+    // Wait for incoming Player messages (e.g., laser scans)
     this->InQueue->Wait();
 
+    // Process Player messages (includes handing laser scans off the
+    // mapper)
     this->ProcessMessages();
 
-    // check for new pose / map from GFS thread
-    GridSlamProcessorThread::EventDeque events=this->gsp->getEvents();
-    for(GridSlamProcessorThread::EventDeque::const_iterator it=events.begin(); 
-        it!=events.end();
-        it++)
+    // Process events coming from mapper thread (e.g., new map is ready)
+    //this->ProcessGFSEvents();
+  }
+}
+
+void
+PlayerGFSWrapper::ProcessGFSEvents()
+{
+  // check for new pose / map from GFS thread
+  GridSlamProcessorThread::EventDeque events=this->gsp->getEvents();
+  for(GridSlamProcessorThread::EventDeque::const_iterator it=events.begin(); 
+      it!=events.end();
+      it++)
+  {
+    GridSlamProcessorThread::MapEvent* mapEvent = 
+            dynamic_cast<GridSlamProcessorThread::MapEvent*>(*it);
+    if(mapEvent)
     {
-      GridSlamProcessorThread::MapEvent* mapEvent = 
-              dynamic_cast<GridSlamProcessorThread::MapEvent*>(*it);
-      if(mapEvent)
+      unsigned int sx, sy;
+      sx = mapEvent->pmap->getMapSizeX();
+      sy = mapEvent->pmap->getMapSizeY();
+
+      if((this->map.width != sx) ||
+         (this->map.height != sy))
       {
-        int sx, sy;
-        double res;
-        sx = mapEvent->pmap->getMapSizeX();
-        sy = mapEvent->pmap->getMapSizeY();
-        res = mapEvent->pmap->getResolution();
-        printf("got a %d X %d map @ %.3f m / pix\n", sx,sy,res);
-        double v;
-        for(int j=0;j<sy;j++)
+        this->map.width = sx;
+        this->map.height = sy;
+        this->map.data_count = this->map.width * this->map.height;
+        this->map.data = (int8_t*)realloc(this->map.data,
+                                          sizeof(int8_t) *
+                                          this->map.data_count);
+        assert(this->map.data);
+      }
+      this->map_resolution = mapEvent->pmap->getResolution();
+
+      printf("got a %d X %d map @ %.3f m / pix\n", sx,sy,this->map_resolution);
+
+      double v;
+      double minv=DBL_MAX;
+      double maxv=-DBL_MAX;
+      for(unsigned int j=0;j<sy;j++)
+      {
+        for(unsigned int i=0;i<sx;i++)
         {
-          for(int i=0;i<sx;i++)
+          //v = mapEvent->pmap->cell(i,j);
+          IntPoint p(i,j);
+          v = mapEvent->pmap->cell(p);
+          if((v != 1.0) && (v != -1.0))
           {
-            v = mapEvent->pmap->cell(i,j);
-            if (v>=0)
+            printf("v: %.9lf\n", v);
+          }
+          //int grayValue=255-(int)(255.*v);
+          if(v < 0)
+            this->map.data[i + j * this->map.width] = 0;
+          else
+          {
+            if(v < minv)
+              minv = v;
+            if(v > maxv)
+              maxv = v;
+
+              /*
+            if(v > .9)
+              this->map.data[i + j * this->map.width] = 1;
+            else
             {
-              int grayValue=255-(int)(255.*v);
+              puts("free");
+              this->map.data[i + j * this->map.width] = -1;
             }
+            */
           }
         }
       }
+      printf("minv: %.6lf  max: %.6lf\n", minv, maxv);
+      // The MapEvent destructor will delete the pmap field if it's
+      // non-NULL
+      //delete mapEvent->pmap;
+      delete mapEvent;
+    }
+    else
+    {
+      GridSlamProcessorThread::DoneEvent* doneEvent = 
+              dynamic_cast<GridSlamProcessorThread::DoneEvent*>(*it);
+      if(doneEvent)
+      {
+        this->gsp->stop();
+        delete doneEvent;
+      } 
       else
       {
-        GridSlamProcessorThread::DoneEvent* doneEvent = 
-                dynamic_cast<GridSlamProcessorThread::DoneEvent*>(*it);
-        if(doneEvent)
-        {
-          this->gsp->stop();
-          delete doneEvent;
-        } 
-        else
-        {
-          // TODO: handle other events somehow
-          //history.push_back(*it);
-        }
-      }	
-
-    }
+        // TODO: handle other events somehow
+        //history.push_back(*it);
+      }
+    }	
   }
 }
 
@@ -301,6 +358,23 @@ PlayerGFSWrapper::ProcessMessage(QueuePointer & resp_queue,
     this->ProcessLaser(hdr, (player_laser_data_scanpose_t*)data);
     return(0);
   }
+  // Is it a request for map meta-data?
+  else if(Message::MatchMessage(hdr, PLAYER_MSGTYPE_REQ, 
+                                PLAYER_MAP_REQ_GET_INFO, 
+                                this->device_addr))
+  {
+    this->ProcessMapInfoRequest(resp_queue);
+    return(0);
+  }
+  // Is it a request for a map tile?
+  else if(Message::MatchMessage(hdr, PLAYER_MSGTYPE_REQ, 
+                           PLAYER_MAP_REQ_GET_DATA,
+                           this->device_addr))
+  {
+    this->ProcessMapDataRequest(resp_queue,
+                                (player_map_data_t*)data);
+    return(0);
+  }
   else
     return(-1);
 }
@@ -343,6 +417,69 @@ PlayerGFSWrapper::ProcessLaser(player_msghdr_t* hdr,
 
   printf("queue size: %d\n", this->rangeDeque.size());
   pthread_mutex_unlock(&this->rangeDeque_mutex);
+}
+
+void
+PlayerGFSWrapper::ProcessMapInfoRequest(QueuePointer& resp_queue)
+{
+  player_map_info_t info;
+  info.scale = this->map_resolution;
+  info.width = this->map.width;
+  info.height = this->map.height;
+  info.origin.px = 0.0;
+  info.origin.py = 0.0;
+  info.origin.pa = 0.0;
+
+  this->Publish(this->map_id, resp_queue,
+                PLAYER_MSGTYPE_RESP_ACK,
+                PLAYER_MAP_REQ_GET_INFO,
+                (void*)&info);
+}
+
+// check that given coords are valid (i.e., on the map)
+#define MAP_VALID(mf, i, j) ((i >= 0) && (i < mf.width) && (j >= 0) && (j < mf.height))
+// compute linear index for given map coords
+#define MAP_IDX(mf, i, j) ((mf.width) * (j) + (i))
+
+void
+PlayerGFSWrapper::ProcessMapDataRequest(QueuePointer& resp_queue,
+                                        player_map_data_t* mapreq)
+{
+  player_map_data_t mapresp;
+
+  unsigned int i, j;
+  unsigned int oi, oj, si, sj;
+
+  // Construct reply
+  oi = mapresp.col = mapreq->col;
+  oj = mapresp.row = mapreq->row;
+  si = mapresp.width = mapreq->width;
+  sj = mapresp.height = mapreq->height;
+  mapresp.data_count = mapresp.width * mapresp.height;
+  mapresp.data = new int8_t [mapresp.data_count];
+  assert(mapresp.data);
+
+  // Grab the pixels from the map
+  for(j = 0; j < sj; j++)
+  {
+    for(i = 0; i < si; i++)
+    {
+      if(MAP_VALID(this->map, i + oi, j + oj))
+        mapresp.data[i + j * si] = 
+                this->map.data[MAP_IDX(this->map, i+oi, j+oj)];
+      else
+      {
+        PLAYER_WARN2("requested cell (%d,%d) is offmap", i+oi, j+oj);
+        mapresp.data[i + j * si] = 0;
+      }
+    }
+  }
+
+  this->Publish(this->map_id, resp_queue,
+                PLAYER_MSGTYPE_RESP_ACK,
+                PLAYER_MAP_REQ_GET_DATA,
+                (void*)&mapresp);
+  delete [] mapresp.data;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
