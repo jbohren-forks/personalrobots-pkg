@@ -67,6 +67,9 @@ public:
     Quaternion3DStorage & operator=(const Quaternion3DStorage & input);
 
 
+    /* accessors */
+    NEWMAT::Matrix asMatrix();
+
     /* Internal Data */    
     double xt, yt, zt, xr, yr, zr, w;
     unsigned long long time;
@@ -78,7 +81,7 @@ public:
   
   /** Mutators **/
   // Set the values manually
-  void Set(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time);
+  void fromQuaternion(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time);
 
   //Set the values from a matrix
   void fromMatrix(const NEWMAT::Matrix& matIn, unsigned long long time);
@@ -98,8 +101,8 @@ public:
 
   /** Interpolated Accessors **/
   // Return a Matrix
-  Quaternion3D::Quaternion3DStorage asQuaternion(unsigned long long time);
-  NEWMAT::Matrix asMatrix(unsigned long long time);
+  Quaternion3D::Quaternion3DStorage getQuaternion(unsigned long long time);
+  NEWMAT::Matrix getMatrix(unsigned long long time);
 
   //Print as a matrix
   void printMatrix(unsigned long long time);  //Not a critical part either

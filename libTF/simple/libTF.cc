@@ -42,7 +42,7 @@ RefFrame::RefFrame() :
 /* Quaternion 3D version */
 void RefFrame::setParamsQuaternion3D(double a,double b,double c,double d,double e,double f, double g, unsigned long long time)
 {
-  myQuat.Set(a,b,c,d,e,f,g,time);
+  myQuat.fromQuaternion(a,b,c,d,e,f,g,time);
 };
 
 /* Six DOF version */
@@ -60,12 +60,12 @@ void RefFrame::setParamsDH(double a,double b,double c,double d, unsigned long lo
 
 NEWMAT::Matrix RefFrame::getMatrix(unsigned long long time)
 {
-  return myQuat.asMatrix(time);
+  return myQuat.getMatrix(time);
 }
 
 NEWMAT::Matrix RefFrame::getInverseMatrix(unsigned long long time)
 {
-  return myQuat.asMatrix(time).i();
+  return myQuat.getMatrix(time).i();
 };
 
 

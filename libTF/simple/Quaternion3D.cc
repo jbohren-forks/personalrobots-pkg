@@ -50,7 +50,7 @@ Quaternion3D::Quaternion3D():
   return;
 };
 
-void Quaternion3D::Set(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time)
+void Quaternion3D::fromQuaternion(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time)
 {
  Quaternion3DStorage temp;
  temp.xt = _xt; temp.yt = _yt; temp.zt = _zt; temp.xr = _xr; temp.yr = _yr; temp.zr = _zr; temp.w = _w; temp.time = time;
@@ -238,7 +238,7 @@ std::ostream & operator<<(std::ostream& mystream, const Quaternion3D::Quaternion
   return mystream;
 };
 
-Quaternion3D::Quaternion3DStorage Quaternion3D::asQuaternion(unsigned long long time)
+Quaternion3D::Quaternion3DStorage Quaternion3D::getQuaternion(unsigned long long time)
 {
   Quaternion3DStorage temp;
   long long diff_time; //todo Find a way to use this offset. pass storage by reference and return diff_time??
@@ -247,31 +247,38 @@ Quaternion3D::Quaternion3DStorage Quaternion3D::asQuaternion(unsigned long long 
 };
 
 
-NEWMAT::Matrix Quaternion3D::asMatrix(unsigned long long time)
+NEWMAT::Matrix Quaternion3D::getMatrix(unsigned long long time)
 {
   Quaternion3DStorage temp;
   long long diff_time;
   getValue(temp, time, diff_time);
 
-  //  std::cout << temp;
+  std::cout << temp;
   //  printStorage(temp);
   // std::cout <<"Locally: "<< xt <<", "<< yt  <<", "<< zt <<", "<< xr <<", "<<yr  <<", "<<zr  <<", "<<w<<std::endl;
   //std::cout << "time Difference: "<< diff_time<<std::endl;
+
+  return temp.asMatrix();
+}  
+
+
+NEWMAT::Matrix Quaternion3D::Quaternion3DStorage::asMatrix()
+{
   
   NEWMAT::Matrix outMat(4,4);
   
   double * mat = outMat.Store();
 
   // math derived from http://www.j3d.org/matrix_faq/matrfaq_latest.html
-  double xx      = temp.xr * temp.xr;
-  double xy      = temp.xr * temp.yr;
-  double xz      = temp.xr * temp.zr;
-  double xw      = temp.xr * temp.w;
-  double yy      = temp.yr * temp.yr;
-  double yz      = temp.yr * temp.zr;
-  double yw      = temp.yr * temp.w;
-  double zz      = temp.zr * temp.zr;
-  double zw      = temp.zr * temp.w;
+  double xx      = xr * xr;
+  double xy      = xr * yr;
+  double xz      = xr * zr;
+  double xw      = xr * w;
+  double yy      = yr * yr;
+  double yz      = yr * zr;
+  double yw      = yr * w;
+  double zz      = zr * zr;
+  double zw      = zr * w;
   mat[0]  = 1 - 2 * ( yy + zz );
   mat[4]  =     2 * ( xy - zw );
   mat[8]  =     2 * ( xz + yw );
@@ -282,9 +289,9 @@ NEWMAT::Matrix Quaternion3D::asMatrix(unsigned long long time)
   mat[6]  =     2 * ( yz + xw );
   mat[10] = 1 - 2 * ( xx + yy );
   mat[12]  = mat[13] = mat[14] = 0;
-  mat[3] = temp.xt;
-  mat[7] = temp.yt;
-  mat[11] = temp.zt;
+  mat[3] = xt;
+  mat[7] = yt;
+  mat[11] = zt;
   mat[15] = 1;
     
 
@@ -294,7 +301,7 @@ NEWMAT::Matrix Quaternion3D::asMatrix(unsigned long long time)
 
 void Quaternion3D::printMatrix(unsigned long long time)
 {
-  std::cout << asMatrix(time);
+  std::cout << getMatrix(time);
 };
 
 void Quaternion3D::printStorage(const Quaternion3DStorage& storage)
