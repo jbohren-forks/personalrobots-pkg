@@ -1,10 +1,11 @@
-OBJS= playergfswrapper.o
+OBJS= ../gui/gsp_thread.o ../gui/qparticleviewer.o ../gui/qgraphpainter.o ../gui/qmappainter.o  playergfswrapper.o
 APPS= 
 
-#LIBS+= -L$(CARMEN_HOME)/lib -lnavigator_interface -lsimulator_interface -lrobot_interface -llaser_interface -lparam_interface -lglobal -lipc -lm -lutils -lsensor_range -llog -lscanmatcher -lpthread -lz
-LIBS+= `pkg-config --libs playercore` -lsensor_range
-#-L$(CARMEN_HOME)/lib -lnavigator_interface -lsimulator_interface -lrobot_interface -llaser_interface -lparam_interface -lglobal -lipc -lm -lutils -lsensor_range -llog -lscanmatcher -lpthread -lz
-CPPFLAGS+=-I../sensor `pkg-config --cflags playercore`
+LIBS+= `pkg-config --libs playercore playerxdr` -lsensor_range -lgridfastslam
+CPPFLAGS+=-Wall -I../sensor `pkg-config --cflags playercore`
+
+LDFLAGS+=$(QT_LIB)
+CPPFLAGS+=$(QT_INCLUDE)
 
 -include ../global.mk
 

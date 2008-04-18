@@ -26,26 +26,15 @@
 #ifndef PLAYERWRAPPER_H
 #define PLAYERWRAPPER_H
 
-//#include <iostream>
 #include <deque>
 #include <pthread.h>
-//#include <semaphore.h>
-
-//#include <carmen/carmen.h>
-//#include <carmen/global.h>
-//#include <log/carmenconfiguration.h>
-
-#include <libplayercore/playercore.h>
 
 #include <gui/gsp_thread.h>
 
-//#include <sensor/sensor_base/sensor.h>
-//#include <log/sensorstream.h>
-//#include <log/sensorlog.h>
 #include <sensor/sensor_range/rangesensor.h>
 #include <sensor/sensor_range/rangereading.h>
 
-namespace GMapping {
+#include <libplayercore/playercore.h>
 
 class PlayerGFSWrapper : public Driver
 {
@@ -60,17 +49,19 @@ class PlayerGFSWrapper : public Driver
     // Devices to which we subscribe
     player_devaddr_t laser_id;
     Device* laser;
-    RangeSensor* laser_rs;
+    GMapping::RangeSensor* laser_rs;
 
-    // The GFS object
-    GridSlamProcessorThread* gsp;
+    GMapping::SensorMap sensorMap;
+    bool sensorMap_ready;
 
     // Queue of range readings, with mutex
-    std::deque<RangeReading> rangeDeque;
+    std::deque<RangeReading*> rangeDeque;
     pthread_mutex_t rangeDeque_mutex;
 
     void ProcessLaser(player_msghdr_t* hdr,
                       player_laser_data_scanpose_t* data);
+
+    pthread_t gui_thread;
 
   public:
     PlayerGFSWrapper(ConfigFile* cf, int section);
@@ -80,72 +71,14 @@ class PlayerGFSWrapper : public Driver
                                player_msghdr * hdr,
                                void * data);
 
-    bool getReading(RangeReading& reading);
-
-    /*
-    void initializeIPC(const char* name);
-    bool start(const char* name);
-    bool isRunning();
-    void lock();
-    void unlock();
-    int registerLocalizationMessages();
-
-    int queueLength();
-    OrientedPoint getTruePos();
-    bool getReading(RangeReading& reading);
-    void addReading(RangeReading& reading);
-    const SensorMap& sensorMap();
-    bool sensorMapComputed();
-    bool isStopped();
-
-    // conversion function  
-    carmen_robot_laser_message reading2carmen(const RangeReading& reading);
-    RangeReading carmen2reading(const carmen_robot_laser_message& msg);
-    carmen_point_t point2carmen (const OrientedPoint& p);
-    OrientedPoint carmen2point (const carmen_point_t& p);
-
-
-    // carmen interaction
-    void robot_frontlaser_handler(carmen_robot_laser_message* frontlaser);
-    void robot_rearlaser_handler(carmen_robot_laser_message* frontlaser);
-    void simulator_truepos_handler(carmen_simulator_truepos_message* truepos);
-    //babsi:
-    void navigator_go_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, void*) ;
-    void navigator_stop_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, void*) ;
-
-    //babsi:
-    void publish_globalpos(carmen_localize_summary_p summary);
-    void publish_particles(carmen_localize_particle_filter_p filter, 
-                                  carmen_localize_summary_p summary);
-
-    void shutdown_module(int sig);
-
-  private:
-    std::deque<RangeReading> m_rangeDeque;
-    sem_t m_dequeSem;
-    pthread_mutex_t m_mutex, m_lock;  
-    pthread_t m_readingThread;
-    void * m_reading_function(void*);
-    bool m_threadRunning;
-    SensorMap m_sensorMap;
-    RangeSensor* m_frontLaser, *m_rearLaser;
-    OrientedPoint m_truepos;
-    bool stopped;
-    */
+    // Interface used by the GFS thread
+    GMapping::RangeReading* getReading();
+    bool sensorMapComputed() { return(this->sensorMap_ready); }
+    const SensorMap& getSensorMap() { return(this->sensorMap); }
+    
+    // The GFS object (public so that it can be accessed from the GUI
+    // thread)
+    GridSlamProcessorThread* gsp;
 };
 
-} //end namespace
-
-
-
 #endif
-/*
-int main (int argc, char** argv) {
-
-	CarmenWrapper::init_carmen(argc, argv);
-	while (true) {
-		IPC_listenWait(100);
-	}    
-	return 1;
-}
-*/

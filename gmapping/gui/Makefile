@@ -9,6 +9,11 @@ ifeq ($(CARMENSUPPORT),1)
 LDFLAGS+= -lcarmenwrapper 
 endif
 
+ifeq ($(PLAYERSUPPORT),1)
+CPPFLAGS+= `pkg-config --cflags playercore`
+LDFLAGS+= -lplayerwrapper `pkg-config --libs playerxdr playercore`
+endif
+
 CPPFLAGS+= -I../sensor $(QT_INCLUDE) $(KDE_INCLUDE) -I$(CARMEN_HOME)/include
 
 

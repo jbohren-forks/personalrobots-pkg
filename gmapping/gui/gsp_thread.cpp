@@ -20,6 +20,9 @@
  *
  *****************************************************************/
 
+#ifdef PLAYER_SUPPORT
+	#include <playerwrapper/playergfswrapper.h>
+#endif
 
 #include "gsp_thread.h"
 #include <utils/commandline.h>
@@ -45,7 +48,7 @@ int GridSlamProcessorThread::init(int argc, const char * const * argv){
 	CMD_PARSE_END_SILENT;
 
 	if (configfilename.length()>0){
-	  ConfigFile cfg(configfilename);
+          GMapping::ConfigFile cfg(configfilename);
 
 	  filename = (std::string) cfg.value("gfs","filename",filename);
 	  outfilename = (std::string) cfg.value("gfs","outfilename",outfilename);
@@ -281,8 +284,9 @@ void * GridSlamProcessorThread::fastslamthread(GridSlamProcessorThread* gpt){
 		
 	
 	//if started online retrieve the settings from the connection
+	if (gpt->onLine)
+        {
 #ifdef CARMEN_SUPPORT
-	if (gpt->onLine){
 		cout << "starting the process:" << endl;
 		CarmenWrapper::initializeIPC(gpt->m_argv[0]);
 		CarmenWrapper::start(gpt->m_argv[0]);
@@ -293,15 +297,25 @@ void * GridSlamProcessorThread::fastslamthread(GridSlamProcessorThread* gpt){
 		}
 		gpt->sensorMap=CarmenWrapper::sensorMap();
 		cout << "Connected " << endl;
-	}
 #else
-	if (gpt->onLine){
+  #ifdef PLAYER_SUPPORT
+		cout << "Waiting for retrieving the sensor map:" << endl;
+		while (!gpt->m_pwrapper->sensorMapComputed()){
+			usleep(100000);
+			cout << "." << flush;
+		}
+		gpt->sensorMap=gpt->m_pwrapper->getSensorMap();
+		cout << "Connected " << endl;
+
+  #else
+
 		cout << "FATAL ERROR: cannot run online without the carmen support" << endl;
 		DoneEvent *done=new DoneEvent;
 		gpt->addEvent(done);
 		return 0;
+  #endif // PLAYER_SUPPORT
+#endif // CARMEN_SUPPORT
 	}
-#endif
 	
 	gpt->setSensorMap(gpt->sensorMap);
 	gpt->setMatchingParameters(gpt->maxUrange, gpt->maxrange, gpt->sigma, gpt->kernelSize, gpt->lstep, gpt->astep, gpt->iterations, gpt->lsigma, gpt->ogain, gpt->lskip);
@@ -412,6 +426,21 @@ void * GridSlamProcessorThread::fastslamthread(GridSlamProcessorThread* gpt){
 			}
 		}
 	}
+#else
+  #ifdef PLAYER_SUPPORT
+	if (gpt->onLine){
+		while (1){
+                  RangeReading* nr;
+                  while((nr = gpt->m_pwrapper->getReading()))
+                  {
+                    gpt->processScan(*nr);
+                    delete nr;
+                  }
+                  usleep(1000);
+                  pthread_testcancel();
+                }
+        }
+  #endif
 #endif
 	ofstream rawpath("rawpath.dat");
 	if (!gpt->onLine){
@@ -504,11 +533,14 @@ void GridSlamProcessorThread::start(){
 	pthread_create(&gfs_thread, 0, (void * (*)(void *))fastslamthread, (void *) this);
 }
 
+#ifdef PLAYER_SUPPORT
 void GridSlamProcessorThread::start(PlayerGFSWrapper* pwrapper)
 {
   m_pwrapper = pwrapper;
+  onLine = true;
   start();
 }
+#endif
 
 void GridSlamProcessorThread::stop(){
 	if (! running){
@@ -517,6 +549,7 @@ void GridSlamProcessorThread::stop(){
 	}
 	running=false;
 	void * retval;
+	pthread_cancel(gfs_thread);
 	pthread_join(gfs_thread, &retval);
 }
 

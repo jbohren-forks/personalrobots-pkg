@@ -33,14 +33,13 @@
 #include <log/sensorstream.h>
 #include <gridfastslam/gridslamprocessor.h>
 
+#ifdef PLAYER_SUPPORT
+class PlayerGFSWrapper;
+#endif
+
 using namespace std;
 using namespace GMapping;
 
-#ifdef PLAYER_SUPPORT
-namespace GMapping {
-class PlayerGFSWrapper;
-}
-#endif
 
 #define MAX_STRING_LENGTH 1024
 

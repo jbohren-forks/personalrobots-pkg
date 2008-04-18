@@ -22,10 +22,55 @@
  *
  *****************************************************************/
 
+#include <gui/qparticleviewer.h>
+#include <gui/qgraphpainter.h>
+
+#include <qapplication.h>
+#include <qframe.h>
+#include <qlabel.h>
+#include <qlayout.h>
+#include <qvbox.h>
+#include <qmainwindow.h>
 
 #include "playergfswrapper.h"
 
-using namespace GMapping;
+class GFSMainWindow: public QMainWindow{
+public:
+  GFSMainWindow(GridSlamProcessorThread* t){
+    gsp_thread=t;
+    QVBoxLayout* layout=new QVBoxLayout(this);
+    pviewer=new QParticleViewer(this,0,0,gsp_thread);
+    pviewer->setGeometry(0,0,500,500);
+    pviewer->setFocusPolicy(QParticleViewer::ClickFocus);
+    layout->addWidget(pviewer);
+						
+    gpainter=new QGraphPainter(this);
+    gpainter->setFixedHeight(100);
+    layout->addWidget(gpainter);
+    gpainter->setRange(0,1);
+    gpainter->setTitle("Neff");
+		
+    help = new QLabel(QString("+/- - zoom | b - show/hide best path | p - show/hide all paths | c - center robot "),this); 
+    help->setMaximumHeight(30);
+    layout->addWidget(help);
+	
+    QObject::connect( pviewer, SIGNAL(neffChanged(double) ), gpainter, SLOT(valueAdded(double)) );
+    setTabOrder(pviewer, pviewer);
+  }
+		
+  void start(int c){
+    pviewer->start(c);
+    gpainter->start(c);
+  }
+
+protected:
+  GridSlamProcessorThread* gsp_thread;
+  QVBoxLayout* layout;
+  QParticleViewer* pviewer;
+  QGraphPainter* gpainter;
+  QLabel* help;
+};
+
 
 PlayerGFSWrapper::PlayerGFSWrapper(ConfigFile* cf, int section)
     : Driver(cf, section)
@@ -63,6 +108,30 @@ PlayerGFSWrapper::PlayerGFSWrapper(ConfigFile* cf, int section)
     this->SetError(-1);
     return;
   }
+
+  this->laser_rs = NULL;
+  this->sensorMap_ready = false;
+}
+
+void*
+GUI_thread(void* d)
+{
+  PlayerGFSWrapper* pd = (PlayerGFSWrapper*)d;
+  int argc;
+  char* argv[1];
+
+  argv[0] = "playergfswrapper";
+  argc=1;
+
+  QApplication app(argc,argv);
+  GFSMainWindow* mainWin=new GFSMainWindow(pd->gsp);
+  app.setMainWidget(mainWin);
+  mainWin->show();
+  //pd->gsp->setEventBufferSize(10000);
+  pd->gsp->start(pd);
+  mainWin->start(1000);
+  app.exec();
+  return(NULL);
 }
 
 int
@@ -86,12 +155,15 @@ PlayerGFSWrapper::Setup()
 
   this->gsp = new GridSlamProcessorThread();
 
-  // TODO: create this->laser_rs
-
-  // TODO: compute GFS "sensorMap"
+  if(this->laser_rs)
+  {
+    delete this->laser_rs;
+    this->laser_rs = NULL;
+  }
 
   // start GFS thread
-  this->gsp->start(this);
+  //this->gsp->start(this);
+  pthread_create(&this->gui_thread, 0, GUI_thread, this);
 
   this->StartThread();
   return(0);
@@ -119,24 +191,29 @@ PlayerGFSWrapper::Main()
 {
   for(;;)
   {
+    pthread_testcancel();
+
+    this->InQueue->Wait();
+
     this->ProcessMessages();
 
     // TODO: check for new pose / map from GFS thread
   }
 }
 
-bool
-PlayerGFSWrapper::getReading(RangeReading& reading)
+GMapping::RangeReading*
+PlayerGFSWrapper::getReading()
 {
-  bool ret=false;
+  GMapping::RangeReading* ret = NULL;
   pthread_mutex_lock(&this->rangeDeque_mutex);
   if(!this->rangeDeque.empty())
   {
-    reading=this->rangeDeque.front();
+    ret=this->rangeDeque.front();
     this->rangeDeque.pop_front();
-    ret=true;
   }
   pthread_mutex_unlock(&this->rangeDeque_mutex);
+  if(ret)
+    puts("returned a reading");
   return(ret);
 }
 
@@ -165,14 +242,58 @@ void
 PlayerGFSWrapper::ProcessLaser(player_msghdr_t* hdr,
                                player_laser_data_scanpose_t* data)
 {
-  RangeReading reading(this->laser_rs,hdr->timestamp);
+  if(!this->laser_rs)
+  {
+    // create this->laser_rs
+    std::string lasername = "FLASER";
+    this->laser_rs = 
+            new GMapping::RangeSensor(lasername,
+                            data->scan.ranges_count,
+                            data->scan.resolution,
+                            //OrientedPoint(0,0,laser_pose.pa-robot_pose.theta),
+                            GMapping::OrientedPoint(0,0,-data->pose.pa),
+                            0, data->scan.max_range);
+    this->laser_rs->updateBeamsLookup();
+    this->sensorMap.insert(make_pair(lasername, this->laser_rs));
+    this->sensorMap_ready = true;
+  }
+
+  GMapping::RangeReading* reading = new GMapping::RangeReading(this->laser_rs,hdr->timestamp);
+  reading->resize(data->scan.ranges_count);
   for(unsigned int i=0;i<data->scan.ranges_count;i++)
-    reading[i] = data->scan.ranges[i];
-  reading.setPose(OrientedPoint(data->pose.px,
+    (*reading)[i] = data->scan.ranges[i];
+  reading->setPose(GMapping::OrientedPoint(data->pose.px,
                                 data->pose.py,
                                 data->pose.pa));
 
   pthread_mutex_lock(&this->rangeDeque_mutex);
   this->rangeDeque.push_back(reading);
+  printf("queue size: %d\n", this->rangeDeque.size());
   pthread_mutex_unlock(&this->rangeDeque_mutex);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Extra stuff for building a shared object.
+
+// A factory creation function, declared outside of the class so that it
+// can be invoked without any object context (alternatively, you can
+// declare it static in the class).  In this function, we create and return
+// (as a generic Driver*) a pointer to a new instance of this driver.
+Driver* 
+PlayerGFSWrapper_Init(ConfigFile* cf, int section)
+{
+  // Create and return a new instance of this driver
+  return((Driver*)(new PlayerGFSWrapper(cf, section)));
+}
+
+/* need the extern to avoid C++ name-mangling  */
+extern "C" {
+  int player_driver_init(DriverTable* table)
+  {
+    puts("PlayerGFSWrapper driver initializing");
+    table->AddDriver("playergfswrapper", PlayerGFSWrapper_Init);
+    puts("PlayerGFSWrapper driver done");
+    return(0);
+  }
+}
+
