@@ -57,6 +57,8 @@ class PlayerGFSWrapper : public Driver
     // Queue of range readings, with mutex
     std::deque<RangeReading*> rangeDeque;
     pthread_mutex_t rangeDeque_mutex;
+    pthread_cond_t rangeDeque_cond;
+    pthread_mutex_t rangeDeque_cond_mutex;
 
     void ProcessLaser(player_msghdr_t* hdr,
                       player_laser_data_scanpose_t* data);

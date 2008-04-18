@@ -430,13 +430,22 @@ void * GridSlamProcessorThread::fastslamthread(GridSlamProcessorThread* gpt){
   #ifdef PLAYER_SUPPORT
 	if (gpt->onLine){
 		while (1){
-                  RangeReading* nr;
-                  while((nr = gpt->m_pwrapper->getReading()))
-                  {
-                    gpt->processScan(*nr);
-                    delete nr;
+                  // getReading() will block until data is available
+                  RangeReading* nr = gpt->m_pwrapper->getReading();
+
+                  gpt->processScan(*nr);
+                  const OdometryReading* o=dynamic_cast<const OdometryReading*>(nr);
+                  if (o && gpt->running){
+                    gpt->processTruePos(*o);
+                    TruePosEvent* truepos=new TruePosEvent;
+                    truepos->pose=o->getPose();
                   }
-                  usleep(1000);
+
+                  // Should we delete this reading, or does the mapper
+                  // still need it?
+                  //delete nr;
+
+                  // Give ourselves a chance to be canceled.
                   pthread_testcancel();
                 }
         }

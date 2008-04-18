@@ -150,6 +150,8 @@ PlayerGFSWrapper::Setup()
   }
 
   pthread_mutex_init(&this->rangeDeque_mutex, NULL);
+  pthread_cond_init(&this->rangeDeque_cond, NULL);
+  pthread_mutex_init(&this->rangeDeque_cond_mutex, NULL);
 
   // TODO: get laser geometry
 
@@ -182,6 +184,8 @@ PlayerGFSWrapper::Shutdown()
   delete this->gsp;
 
   pthread_mutex_destroy(&this->rangeDeque_mutex);
+  pthread_mutex_destroy(&this->rangeDeque_cond_mutex);
+  pthread_cond_destroy(&this->rangeDeque_cond);
 
   return(0);
 }
@@ -204,16 +208,31 @@ PlayerGFSWrapper::Main()
 GMapping::RangeReading*
 PlayerGFSWrapper::getReading()
 {
-  GMapping::RangeReading* ret = NULL;
+  // Do we need to wait?
+  bool needtowait;
   pthread_mutex_lock(&this->rangeDeque_mutex);
-  if(!this->rangeDeque.empty())
-  {
-    ret=this->rangeDeque.front();
-    this->rangeDeque.pop_front();
-  }
+  needtowait = this->rangeDeque.empty();
   pthread_mutex_unlock(&this->rangeDeque_mutex);
-  if(ret)
-    puts("returned a reading");
+
+  if(needtowait)
+  {
+    pthread_cleanup_push((void(*)(void*))pthread_mutex_unlock,
+                         (void*)&this->rangeDeque_cond_mutex);
+    pthread_mutex_lock(&this->rangeDeque_cond_mutex);
+    pthread_cond_wait(&this->rangeDeque_cond,&this->rangeDeque_cond_mutex);
+    pthread_mutex_unlock(&this->rangeDeque_cond_mutex);
+    pthread_cleanup_pop(0);
+  }
+
+  // Now there must be data
+  pthread_mutex_lock(&this->rangeDeque_mutex);
+  assert(!this->rangeDeque.empty());
+
+  // remove the reading
+  GMapping::RangeReading* ret=this->rangeDeque.front();
+  this->rangeDeque.pop_front();
+
+  pthread_mutex_unlock(&this->rangeDeque_mutex);
   return(ret);
 }
 
@@ -268,6 +287,12 @@ PlayerGFSWrapper::ProcessLaser(player_msghdr_t* hdr,
 
   pthread_mutex_lock(&this->rangeDeque_mutex);
   this->rangeDeque.push_back(reading);
+
+  // Signal that data is available on the queue
+  pthread_mutex_lock(&this->rangeDeque_cond_mutex);
+  pthread_cond_broadcast(&this->rangeDeque_cond);
+  pthread_mutex_unlock(&this->rangeDeque_cond_mutex);
+
   printf("queue size: %d\n", this->rangeDeque.size());
   pthread_mutex_unlock(&this->rangeDeque_mutex);
 }
