@@ -51,7 +51,7 @@ TransformReference::TransformReference()
 }
 
 
-void TransformReference::set(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d,double e,double f, unsigned long long time)
+void TransformReference::setWithEulers(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d,double e,double f, unsigned long long time)
 {
   if (frameID > MAX_NUM_FRAMES || parentID > MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
     throw InvalidFrame;
@@ -63,7 +63,7 @@ void TransformReference::set(unsigned int frameID, unsigned int parentID, double
   getFrame(frameID)->fromEuler(a,b,c,d,e,f,time);
 }
 
-void TransformReference::set(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d, unsigned long long time)
+void TransformReference::setWithDH(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d, unsigned long long time)
 {
   if (frameID > MAX_NUM_FRAMES || parentID > MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
     throw InvalidFrame;

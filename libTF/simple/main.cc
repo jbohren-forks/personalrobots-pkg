@@ -18,19 +18,19 @@ int main(void)
 
   
   //Fill in some transforms
-  //  mTR.set(10,2,1,1,1,dyaw,dp,dr,atime); //Switching out for DH params below
-  mTR.set(10,2,1,1,1,dyaw,atime);
-    //mTR.set(2,3,1-1,1,1,dyaw,dp,dr,atime-1000);
-   mTR.set(2,3,1,1,1,dyaw,dp,dr,atime-100);
-   mTR.set(2,3,1,1,1,dyaw,dp,dr,atime-50);
-   mTR.set(2,3,1,1,1,dyaw,dp,dr,atime-1000);
-   //mTR.set(2,3,1+1,1,1,dyaw,dp,dr,atime+1000);
-  mTR.set(3,5,dx,dy,dz,dyaw,dp,dr,atime);
-  mTR.set(5,1,dx,dy,dz,dyaw,dp,dr,atime);
-  mTR.set(6,5,dx,dy,dz,dyaw,dp,dr,atime);
-  mTR.set(7,6,1,1,1,dyaw,dp,dr,atime);
-  mTR.set(8,7,1,1,1,dyaw,atime);
-  //mTR.set(8,7,1,1,1,dyaw,dp,dr,atime); //Switching out for DH params above
+  //  mTR.setWithEulers(10,2,1,1,1,dyaw,dp,dr,atime); //Switching out for DH params below
+  mTR.setWithDH(10,2,1,1,1,dyaw,atime);
+    //mTR.setWithEulers(2,3,1-1,1,1,dyaw,dp,dr,atime-1000);
+   mTR.setWithEulers(2,3,1,1,1,dyaw,dp,dr,atime-100);
+   mTR.setWithEulers(2,3,1,1,1,dyaw,dp,dr,atime-50);
+   mTR.setWithEulers(2,3,1,1,1,dyaw,dp,dr,atime-1000);
+   //mTR.setWithEulers(2,3,1+1,1,1,dyaw,dp,dr,atime+1000);
+  mTR.setWithEulers(3,5,dx,dy,dz,dyaw,dp,dr,atime);
+  mTR.setWithEulers(5,1,dx,dy,dz,dyaw,dp,dr,atime);
+  mTR.setWithEulers(6,5,dx,dy,dz,dyaw,dp,dr,atime);
+  mTR.setWithEulers(7,6,1,1,1,dyaw,dp,dr,atime);
+  mTR.setWithDH(8,7,1,1,1,dyaw,atime);
+  //mTR.setWithEulers(8,7,1,1,1,dyaw,dp,dr,atime); //Switching out for DH params above
   
   
   //Demonstrate InvalidFrame LookupException
@@ -59,7 +59,7 @@ int main(void)
   
   
   //Break the graph, making it loop and demonstrate catching MaxDepthException
-  mTR.set(6,7,dx,dy,dz,dyaw,dp,dr,atime);
+  mTR.setWithEulers(6,7,dx,dy,dz,dyaw,dp,dr,atime);
   
   try {
     std::cout<<mTR.viewChain(10,8);
@@ -70,7 +70,7 @@ int main(void)
     }
   
   //Break the graph, making it disconnected, and demonstrate catching ConnectivityException
-  mTR.set(6,0,dx,dy,dz,dyaw,dp,dr,atime);
+  mTR.setWithEulers(6,0,dx,dy,dz,dyaw,dp,dr,atime);
   
   try {
     std::cout<<mTR.viewChain(10,8);
