@@ -113,6 +113,8 @@ PlayerGFSWrapper::PlayerGFSWrapper(ConfigFile* cf, int section)
   this->sensorMap_ready = false;
 }
 
+QApplication* app;
+
 void*
 GUI_thread(void* d)
 {
@@ -123,14 +125,14 @@ GUI_thread(void* d)
   argv[0] = "playergfswrapper";
   argc=1;
 
-  QApplication app(argc,argv);
+  app = new QApplication(argc,argv);
   GFSMainWindow* mainWin=new GFSMainWindow(pd->gsp);
-  app.setMainWidget(mainWin);
+  app->setMainWidget(mainWin);
   mainWin->show();
-  //pd->gsp->setEventBufferSize(10000);
+  pd->gsp->setEventBufferSize(10000);
   pd->gsp->start(pd);
   mainWin->start(1000);
-  app.exec();
+  app->exec();
   return(NULL);
 }
 
@@ -179,7 +181,8 @@ PlayerGFSWrapper::Shutdown()
   this->laser->Unsubscribe(this->InQueue);
 
   // stop GFS thread
-  this->gsp->stop();
+  app->exit();
+  //this->gsp->stop();
 
   delete this->gsp;
 

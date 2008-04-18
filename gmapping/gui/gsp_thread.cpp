@@ -547,6 +547,7 @@ void GridSlamProcessorThread::start(PlayerGFSWrapper* pwrapper)
 {
   m_pwrapper = pwrapper;
   onLine = true;
+  mapUpdateTime = 1;
   start();
 }
 #endif
