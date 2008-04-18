@@ -40,34 +40,20 @@
 #include <vector>
 #include "Quaternion3D.hh"
 
-class RefFrame
+class RefFrame: public Quaternion3D 
 {
 public:
 
   /* Constructor */
   RefFrame();
 
-  /* Set the parameters for this frame */
-  void setParamsQuaternion3D(double, double, double, double, double, double, double, unsigned long long time);
-  void setParamsEulers(double, double, double, double, double, double, unsigned long long time);
-  void setParamsDH(double, double, double, double, unsigned long long time);
   
   /* Get the parent node */
   inline unsigned int getParent(){return parent;};
 
   /* Return tha parent node */
   inline void setParent(unsigned int parentID){parent = parentID;};
-
-  /* Generate and return the transform associated with gettingn into this frame */
-  NEWMAT::Matrix getMatrix(unsigned long long time);
-  
-  /* Generate and return the transform associated with getting out of this frame.  */
-  NEWMAT::Matrix getInverseMatrix(unsigned long long time);
-
-
 private:
-  /* Storage of the parametsrs */
-  Quaternion3D myQuat;
 
   /* Storage of the parent */
   unsigned int parent;

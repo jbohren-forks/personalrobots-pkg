@@ -33,40 +33,11 @@
 #include "libTF.hh"
 
 RefFrame::RefFrame() :
-  parent(0),
-  myQuat()
+  Quaternion3D(),
+  parent(0)
 {
   return;
 }
-
-/* Quaternion 3D version */
-void RefFrame::setParamsQuaternion3D(double a,double b,double c,double d,double e,double f, double g, unsigned long long time)
-{
-  myQuat.fromQuaternion(a,b,c,d,e,f,g,time);
-};
-
-/* Six DOF version */
-void RefFrame::setParamsEulers(double a,double b,double c,double d,double e,double f, unsigned long long time)
-{
-  myQuat.fromEuler(a,b,c,d,e,f,time) ;
-}
-
-/* DH Params version */
-void RefFrame::setParamsDH(double a,double b,double c,double d, unsigned long long time)
-{
-  myQuat.fromDH(a,b,c,d,time);
-}
-
-
-NEWMAT::Matrix RefFrame::getMatrix(unsigned long long time)
-{
-  return myQuat.getMatrix(time);
-}
-
-NEWMAT::Matrix RefFrame::getInverseMatrix(unsigned long long time)
-{
-  return myQuat.getMatrix(time).i();
-};
 
 
 TransformReference::TransformReference()
@@ -89,7 +60,7 @@ void TransformReference::set(unsigned int frameID, unsigned int parentID, double
     frames[frameID] = new RefFrame();
   
   getFrame(frameID)->setParent(parentID);
-  getFrame(frameID)->setParamsEulers(a,b,c,d,e,f,time);
+  getFrame(frameID)->fromEuler(a,b,c,d,e,f,time);
 }
 
 void TransformReference::set(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d, unsigned long long time)
@@ -101,7 +72,7 @@ void TransformReference::set(unsigned int frameID, unsigned int parentID, double
     frames[frameID] = new RefFrame();
   
   getFrame(frameID)->setParent(parentID);
-  getFrame(frameID)->setParamsDH(a,b,c,d,time);
+  getFrame(frameID)->fromDH(a,b,c,d,time);
 }
 
 
