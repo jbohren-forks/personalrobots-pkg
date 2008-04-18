@@ -53,7 +53,7 @@ public:
 class Quaternion3D {
 
 public:
-  // Storage 
+  // Storage class
   class Quaternion3DStorage
   {
   public:
@@ -82,7 +82,6 @@ public:
   /** Mutators **/
   // Set the values manually
   void fromQuaternion(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time);
-
   //Set the values from a matrix
   void fromMatrix(const NEWMAT::Matrix& matIn, unsigned long long time);
   // Set the values using Euler angles
@@ -91,26 +90,31 @@ public:
   void fromDH(double theta, double length, double distance, double alpha, unsigned long long time);
 
   
+  /** Interpolated Accessors **/
+  // Return a Quaternion
+  Quaternion3D::Quaternion3DStorage getQuaternion(unsigned long long time);
+  // Return a Matrix
+  NEWMAT::Matrix getMatrix(unsigned long long time);
+  // Return the inverse matrix
+  NEWMAT::Matrix getInverseMatrix(unsigned long long time);
+
   /**** Utility Functions ****/
+  // this is a function to return the current time in microseconds from the beginning of 1970
+  static  unsigned long long Qgettime(void);
+
+  // Convert DH Parameters to a Homogeneous Transformation Matrix
   static NEWMAT::Matrix matrixFromDH(double theta,
 			      double length, double distance, double alpha);
+  // Convert Euler Angles to a Homogeneous Transformation Matrix
   static NEWMAT::Matrix matrixFromEuler(double ax,
 				 double ay, double az, double yaw,
 				 double pitch, double roll);
   
-
-  /** Interpolated Accessors **/
-  // Return a Matrix
-  Quaternion3D::Quaternion3DStorage getQuaternion(unsigned long long time);
-  NEWMAT::Matrix getMatrix(unsigned long long time);
-
   //Print as a matrix
   void printMatrix(unsigned long long time);  //Not a critical part either
   void printStorage(const Quaternion3DStorage &storage); //Do i need this now that i've got the ostream method??
-
-  // this is a function to return the current time in microseconds from the beginning of 1970
-  static  unsigned long long Qgettime(void);
-
+  
+  
 private:
   /**** Linked List stuff ****/
   static const long long MAX_STORAGE_TIME = 1000000000; // max of 100 seconds storage

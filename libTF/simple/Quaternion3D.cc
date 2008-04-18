@@ -261,6 +261,11 @@ NEWMAT::Matrix Quaternion3D::getMatrix(unsigned long long time)
   return temp.asMatrix();
 }  
 
+NEWMAT::Matrix Quaternion3D::getInverseMatrix(unsigned long long time)
+{
+  return getMatrix(time).i();
+
+};
 
 NEWMAT::Matrix Quaternion3D::Quaternion3DStorage::asMatrix()
 {
