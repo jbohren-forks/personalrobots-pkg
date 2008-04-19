@@ -39,7 +39,6 @@
 #include <math.h>
 #include <pthread.h>
 #include <sys/time.h>
-
 class Euler3D {
 public:
   //Constructor
@@ -87,7 +86,7 @@ public:
   // Set the values using Euler angles
   void fromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll, unsigned long long time);
   // Set the values using DH Parameters
-  void fromDH(double theta, double length, double distance, double alpha, unsigned long long time);
+  void fromDH(double length, double alpha, double offset, double theta, unsigned long long time);
 
   
   /** Interpolated Accessors **/
@@ -103,8 +102,7 @@ public:
   static  unsigned long long Qgettime(void);
 
   // Convert DH Parameters to a Homogeneous Transformation Matrix
-  static NEWMAT::Matrix matrixFromDH(double theta,
-			      double length, double distance, double alpha);
+  static NEWMAT::Matrix matrixFromDH(double length, double alpha, double offset, double theta);
   // Convert Euler Angles to a Homogeneous Transformation Matrix
   static NEWMAT::Matrix matrixFromEuler(double ax,
 				 double ay, double az, double yaw,

@@ -76,7 +76,7 @@ void TransformReference::setWithDH(unsigned int frameID, unsigned int parentID, 
 }
 
 
-NEWMAT::Matrix TransformReference::get(unsigned int target_frame, unsigned int source_frame, unsigned long long time)
+NEWMAT::Matrix TransformReference::getMatrix(unsigned int target_frame, unsigned int source_frame, unsigned long long time)
 {
   NEWMAT::Matrix myMat(4,4);
   TransformLists lists = lookUpList(target_frame, source_frame);

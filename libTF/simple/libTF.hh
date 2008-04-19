@@ -38,8 +38,9 @@
 #include <newmat/newmatio.h>
 #include <math.h>
 #include <vector>
-#include "Quaternion3D.hh"
 #include <sstream>
+
+#include "Quaternion3D.hh"
 
 /** RefFrame *******
  * An instance of this class is created for each frame in the system.
@@ -92,14 +93,17 @@ public:
 
   /********** Mutators **************/
   /* Set a new frame or update an old one. */
-  void setWithEulers(unsigned int framid, unsigned int parentid, double,double,double,double,double,double,unsigned long long time);
-  void setWithDH(unsigned int framid, unsigned int parentid, double,double,double,double,unsigned long long time);
+  /* Use Euler Angles.  X forward, Y to the left, Z up, Yaw about Z, pitch about new Y, Roll about new X */
+  void setWithEulers(unsigned int framid, unsigned int parentid, double x, double y, double z, double yaw, double pitch, double roll, unsigned long long time);
+  /* Using DH Parameters */
+  // Conventions from http://en.wikipedia.org/wiki/Robotics_conventions
+  void setWithDH(unsigned int framid, unsigned int parentid, double length, double alpha, double offset, double theta, unsigned long long time);
   // Possible exceptions TransformReference::LookupException
 
   /*********** Accessors *************/
 
   /* Get the transform between two frames by frame ID.  */
-  NEWMAT::Matrix get(unsigned int target_frame, unsigned int source_frame, unsigned long long time);
+  NEWMAT::Matrix getMatrix(unsigned int target_frame, unsigned int source_frame, unsigned long long time);
   // Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
   // TransformReference::MaxDepthException
 

@@ -19,7 +19,7 @@ int main(void)
   
   //Fill in some transforms
   //  mTR.setWithEulers(10,2,1,1,1,dyaw,dp,dr,atime); //Switching out for DH params below
-  mTR.setWithDH(10,2,1,1,1,dyaw,atime);
+  mTR.setWithDH(10,2,1.0,1.0,1.0,dyaw,atime);
     //mTR.setWithEulers(2,3,1-1,1,1,dyaw,dp,dr,atime-1000);
    mTR.setWithEulers(2,3,1,1,1,dyaw,dp,dr,atime-100);
    mTR.setWithEulers(2,3,1,1,1,dyaw,dp,dr,atime-50);
@@ -29,7 +29,7 @@ int main(void)
   mTR.setWithEulers(5,1,dx,dy,dz,dyaw,dp,dr,atime);
   mTR.setWithEulers(6,5,dx,dy,dz,dyaw,dp,dr,atime);
   mTR.setWithEulers(7,6,1,1,1,dyaw,dp,dr,atime);
-  mTR.setWithDH(8,7,1,1,1,dyaw,atime);
+  mTR.setWithDH(8,7,1.0,1.0,1.0,dyaw,atime);
   //mTR.setWithEulers(8,7,1,1,1,dyaw,dp,dr,atime); //Switching out for DH params above
   
   
@@ -50,11 +50,11 @@ int main(void)
   
   
   //See the resultant transform
-  std::cout <<"Calling get(10,8)"<<std::endl;
-  //      NEWMAT::Matrix mat = mTR.get(1,1);
-  NEWMAT::Matrix mat = mTR.get(10,8,atime);
+  std::cout <<"Calling getMatrix(10,8)"<<std::endl;
+  //      NEWMAT::Matrix mat = mTR.getMatrix(1,1);
+  NEWMAT::Matrix mat = mTR.getMatrix(10,8,atime);
   
-  std::cout << "Result of get(10,8,atime):" << std::endl << mat<< std::endl;
+  std::cout << "Result of getMatrix(10,8,atime):" << std::endl << mat<< std::endl;
 
   
   

@@ -121,10 +121,9 @@ void Quaternion3D::fromEuler(double _x, double _y, double _z, double _yaw, doubl
   fromMatrix(matrixFromEuler(_x,_y,_z,_yaw,_pitch,_roll),time);
 };
 
-void Quaternion3D::fromDH(double theta,
-			  double length, double distance, double alpha, unsigned long long time)
+void Quaternion3D::fromDH(double length, double alpha, double offset, double theta, unsigned long long time)
 {
-  fromMatrix(matrixFromDH(theta, length, distance, alpha),time);
+  fromMatrix(matrixFromDH(length, alpha, offset, theta),time);
 };
 
 
@@ -167,8 +166,8 @@ NEWMAT::Matrix Quaternion3D::matrixFromEuler(double ax,
 
 
 // Math from http://en.wikipedia.org/wiki/Robotics_conventions
-NEWMAT::Matrix Quaternion3D::matrixFromDH(double theta,
-					  double length, double distance, double alpha)
+NEWMAT::Matrix Quaternion3D::matrixFromDH(double length,
+					  double alpha, double offset, double theta)
 {
   NEWMAT::Matrix matrix(4,4);
   
@@ -182,15 +181,15 @@ NEWMAT::Matrix Quaternion3D::matrixFromDH(double theta,
   matrix_pointer[0] =  ct;
   matrix_pointer[1] = -st*ca;
   matrix_pointer[2] = st*sa;
-  matrix_pointer[3] = distance * ct;
+  matrix_pointer[3] = length * ct;
   matrix_pointer[4] = st;
   matrix_pointer[5] = ct*ca;
   matrix_pointer[6] = -ct*sa;
-  matrix_pointer[7] = distance*st;
+  matrix_pointer[7] = length*st;
   matrix_pointer[8] = 0;
   matrix_pointer[9] = sa;
   matrix_pointer[10] = ca;
-  matrix_pointer[11] = length;
+  matrix_pointer[11] = offset;
   matrix_pointer[12] = 0.0;
   matrix_pointer[13] = 0.0;
   matrix_pointer[14] = 0.0;
