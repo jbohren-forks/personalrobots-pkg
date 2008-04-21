@@ -25,6 +25,9 @@ class HokuyoNode: public ROS_Slave
 
     HokuyoNode() : ROS_Slave()
     {
+      register_source(fl = new FlowLaserScan("scans"));
+
+
       // libplayercore boiler plate
       player_globals_init();
       itable_init();
@@ -50,7 +53,14 @@ class HokuyoNode: public ROS_Slave
       this->cf->InsertFieldValue(0,"unit_angle","degrees");
       this->cf->InsertFieldValue(0,"min_angle","-90");
       this->cf->InsertFieldValue(0,"max_angle","90");
-      this->cf->InsertFieldValue(0,"port","/dev/ttyACM0");
+
+      string port;
+      if (!get_string_param(".port", port))
+	port = "/dev/ttyACM0";
+
+      printf("Setting port to: %s\n",port.c_str());
+
+      this->cf->InsertFieldValue(0,"port",port.c_str());
 
       // Create an instance of the driver, passing it the ConfigFile object.
       // The -1 tells it to look into the "global" section of the ConfigFile,
@@ -68,7 +78,6 @@ class HokuyoNode: public ROS_Slave
       // Create a message queue
       this->q = QueuePointer(false,PLAYER_QUEUE_LEN);
 
-      this->register_source(this->fl = new FlowLaserScan("scans"));
     }
 
     ~HokuyoNode()
