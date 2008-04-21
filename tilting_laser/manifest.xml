@@ -1,0 +1,16 @@
+<package>
+<description brief="A package for a laser mounted on a tilting stage.">
+
+This is a package to deal with a laser range finder mounted on a
+tilting stage, such as the one found in the head of PR2.
+
+</description>
+<author>Jeremy Leibs</author>
+<license>BSD</license>
+<url>http://pr.willowgarage.com</url>
+<depend package="roscpp"/>
+<depend package="common_flows"/>
+<depend package="unstable_flows"/>
+<depend package="hokuyourg_player"/>
+</package>
+
