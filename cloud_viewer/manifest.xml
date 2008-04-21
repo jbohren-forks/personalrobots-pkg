@@ -5,6 +5,10 @@ A simple point cloud viewer written using SDL.
 <author>Morgan Quigley mquigley@cs.stanford.edu</author>
 <license>BSD</license>
 <url>http://stair.stanford.edu</url>
+<depend package="roscpp"/>
+<depend package="common_flows"/>
 <depend package="sdl"/>
+<sys_depend lib="GL"/>
+<sys_depend lib="GLU"/>
 </package>
 
