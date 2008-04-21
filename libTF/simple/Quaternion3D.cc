@@ -506,20 +506,49 @@ int Quaternion3D::findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two
     }
 };
 
-
+// Quaternion slerp algorithm from http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp/index.htm
 void Quaternion3D::interpolate(const Quaternion3DStorage &one, const Quaternion3DStorage &two,unsigned long long target_time, Quaternion3DStorage& output)
 {
-  //fixme do a proper interpolatioln here!!!
   output.time = target_time;
 
-  output.xt = interpolateDouble(one.xt, one.time, two.xt, two.time, target_time);
-  output.yt = interpolateDouble(one.yt, one.time, two.yt, two.time, target_time);
-  output.zt = interpolateDouble(one.zt, one.time, two.zt, two.time, target_time);
-  output.xr = interpolateDouble(one.xr, one.time, two.xr, two.time, target_time);
-  output.yr = interpolateDouble(one.yr, one.time, two.yr, two.time, target_time);
-  output.zr = interpolateDouble(one.zr, one.time, two.zr, two.time, target_time);
-  output.w = interpolateDouble(one.w, one.time, two.w, two.time, target_time);
+  // Calculate the ration of time betwen target and the two end points.
+  long long total_diff = two.time - one.time;
+  long long target_diff = target_time - one.time;
+  double t = (double)target_diff / (double) total_diff; //ratio between first and 2nd position interms of time
 
+  // Interpolate the translation
+  output.xt = one.xt + t * (two.xt - one.xt);  
+  output.yt = one.yt + t * (two.yt - one.yt);  
+  output.zt = one.zt + t * (two.zt - one.zt);  
+
+  // Calculate angle between them.
+  double cosHalfTheta = one.w * two.w + one.xr * two.xr + one.yr * two.yr + one.zr * two.zr;
+  // if qa=qb or qa=-qb then theta = 0 and we can return qa
+  if (cosHalfTheta >= 1.0 || cosHalfTheta <= -1.0){
+    output.w = one.w;output.xr = one.xr;output.yr = one.yr;output.zr = one.zr;
+    return;
+  }
+  // Calculate temporary values.
+  double halfTheta = acos(cosHalfTheta);
+  double sinHalfTheta = sqrt(1.0 - cosHalfTheta*cosHalfTheta);
+  // if theta = 180 degrees then result is not fully defined
+  // we could rotate around any axis normal to qa or qb
+  if (fabs(sinHalfTheta) < 0.001){ // fabs is floating point absolute
+    output.w = (one.w * 0.5 + two.w * 0.5);
+    output.xr = (one.xr * 0.5 + two.xr * 0.5);
+    output.yr = (one.yr * 0.5 + two.yr * 0.5);
+    output.zr = (one.zr * 0.5 + two.zr * 0.5);
+    return;
+  }
+
+  double ratioA = sin((1 - t) * halfTheta) / sinHalfTheta;
+  double ratioB = sin(t * halfTheta) / sinHalfTheta; 
+  //calculate Quaternion.
+  output.w = (one.w * ratioA + two.w * ratioB);
+  output.xr = (one.xr * ratioA + two.xr * ratioB);
+  output.yr = (one.yr * ratioA + two.yr * ratioB);
+  output.zr = (one.zr * ratioA + two.zr * ratioB);
+  return;
 };
 
 double Quaternion3D::interpolateDouble(const double first, const unsigned long long first_time, const double second, const unsigned long long second_time, const unsigned long long target_time)
