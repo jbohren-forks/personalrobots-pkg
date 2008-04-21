@@ -2,7 +2,7 @@
 require "#{`#{ENV['ROS_ROOT']}/rospack latest yamlgraph`}/lib/yamlgraph/ygl.rb"
 g = YAMLGraph.new
 g.node 'laser_viewer/laser_viewer', {'launch'=>'xterm'}
-g.node 'hokuyourg_player/hokuyourg_player'#, {'launch'=>'xterm'}
-g.flow 'hokuyourg_player:scans', 'laser_viewer:scans'
+g.node 'hokuyourg_player/hokuyourg'#, {'launch'=>'xterm'}
+g.flow 'hokuyourg:scans', 'laser_viewer:scans'
 YAMLGraphLauncher.new.launch g
 
