@@ -1,0 +1,12 @@
+<package>
+<description brief='Transform Library'>
+
+Library for doing transformations.
+
+</description>
+<author>Tully Foote</author>
+<license>BSD</license>
+<url>http://pr.willowgarage.com</url>
+<sys_depend lib='newmat'/>
+<repository>http://pr.willowgarage.com/repos</repository>
+</package>
