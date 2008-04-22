@@ -514,6 +514,14 @@ void Quaternion3D::interpolate(const Quaternion3DStorage &one, const Quaternion3
   // Calculate the ration of time betwen target and the two end points.
   long long total_diff = two.time - one.time;
   long long target_diff = target_time - one.time;
+
+  //Check for zero distance case and just return
+  if (total_diff < 10 || target_diff < 10)
+    {
+      output = one;
+      return;
+    } 
+
   double t = (double)target_diff / (double) total_diff; //ratio between first and 2nd position interms of time
 
   // Interpolate the translation

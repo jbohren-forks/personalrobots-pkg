@@ -27,6 +27,7 @@ int main(void)
   mTR.setWithEulers(3,5,dx,dy,dz,dyaw,dp,dr,atime);
   mTR.setWithEulers(5,1,dx,dy,dz,dyaw,dp,dr,atime);
   mTR.setWithEulers(6,5,dx,dy,dz,dyaw,dp,dr,atime);
+  mTR.setWithEulers(6,5,dx,dy,dz,dyaw,dp,dr,atime);
   mTR.setWithEulers(7,6,1,1,1,dyaw,dp,dr,atime);
   mTR.setWithDH(8,7,1.0,1.0,1.0,dyaw,atime);
   //mTR.setWithEulers(8,7,1,1,1,dyaw,dp,dr,atime); //Switching out for DH params above

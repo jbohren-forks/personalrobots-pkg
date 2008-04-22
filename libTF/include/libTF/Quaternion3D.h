@@ -52,6 +52,7 @@ public:
 class Quaternion3D {
 
 public:
+  static const int MIN_INTERPOLATION_DISTANCE = 5; //Number of micro seconds to not interpolate below.
   // Storage class
   class Quaternion3DStorage
   {
