@@ -1,5 +1,4 @@
-#include "libTF/Quaternion3D.hh"
-#include "libTF/libTF.hh"
+#include "libTF/libTF.h"
 #include <time.h>
 
 using namespace std;

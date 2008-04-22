@@ -40,7 +40,7 @@
 #include <vector>
 #include <sstream>
 
-#include "Quaternion3D.hh"
+#include "Quaternion3D.h"
 
 /** RefFrame *******
  * An instance of this class is created for each frame in the system.
