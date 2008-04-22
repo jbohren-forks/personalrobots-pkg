@@ -252,11 +252,9 @@ NEWMAT::Matrix Quaternion3D::getMatrix(unsigned long long time)
   long long diff_time;
   getValue(temp, time, diff_time);
 
-  std::cout << temp;
-  //  printStorage(temp);
-  // std::cout <<"Locally: "<< xt <<", "<< yt  <<", "<< zt <<", "<< xr <<", "<<yr  <<", "<<zr  <<", "<<w<<std::endl;
-  //std::cout << "time Difference: "<< diff_time<<std::endl;
-
+  //print Storage:
+  //  std::cout << temp;
+ 
   return temp.asMatrix();
 }  
 
@@ -516,7 +514,7 @@ void Quaternion3D::interpolate(const Quaternion3DStorage &one, const Quaternion3
   long long target_diff = target_time - one.time;
 
   //Check for zero distance case and just return
-  if (total_diff < 10 || target_diff < 10)
+  if (abs(total_diff) < MIN_INTERPOLATION_DISTANCE || abs(target_diff) < MIN_INTERPOLATION_DISTANCE)
     {
       output = one;
       return;
