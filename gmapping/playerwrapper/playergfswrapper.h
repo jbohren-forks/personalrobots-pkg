@@ -73,6 +73,7 @@ class PlayerGFSWrapper : public Driver
     // Current map
     player_map_data_t map;
     double map_resolution;
+    bool enable_gui;
 
   public:
     PlayerGFSWrapper(ConfigFile* cf, int section);

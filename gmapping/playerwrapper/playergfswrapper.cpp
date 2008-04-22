@@ -114,6 +114,9 @@ PlayerGFSWrapper::PlayerGFSWrapper(ConfigFile* cf, int section)
 
   memset(&this->map,0,sizeof(player_map_data_t));
   this->map_resolution = 0.0;
+
+  int eg = cf->ReadInt(section, "enable_gui", 0);
+  this->enable_gui = eg ? true : false;
 }
 
 QApplication* app;
@@ -171,8 +174,10 @@ PlayerGFSWrapper::Setup()
   }
 
   // start GFS thread
-  //this->gsp->start(this);
-  pthread_create(&this->gui_thread, 0, GUI_thread, this);
+  if(this->enable_gui)
+    pthread_create(&this->gui_thread, 0, GUI_thread, this);
+  else
+    this->gsp->start(this);
 
   this->StartThread();
   return(0);
@@ -186,8 +191,10 @@ PlayerGFSWrapper::Shutdown()
   this->laser->Unsubscribe(this->InQueue);
 
   // stop GFS thread
-  app->exit();
-  //this->gsp->stop();
+  if(this->enable_gui)
+    app->exit();
+  else
+    this->gsp->stop();
 
   delete this->gsp;
 
