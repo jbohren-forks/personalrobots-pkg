@@ -30,7 +30,7 @@
 //ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 //POSSIBILITY OF SUCH DAMAGE.
 
-#include "libTF.hh"
+#include "libTF/libTF.hh"
 
 RefFrame::RefFrame() :
   Quaternion3D(),

@@ -30,7 +30,7 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-#include "Quaternion3D.hh"
+#include "libTF/Quaternion3D.hh"
 
 Euler3D::Euler3D(double _x, double _y, double _z, double _yaw, double _pitch, double _roll) :
   x(_x),y(_y),z(_z),yaw(_yaw),pitch(_pitch),roll(_roll)
