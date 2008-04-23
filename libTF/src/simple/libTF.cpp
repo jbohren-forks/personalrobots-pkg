@@ -159,13 +159,13 @@ NEWMAT::Matrix TransformReference::computeTransformFromList(TransformLists lists
   
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
-      retMat *= getFrame(lists.inverseTransforms[i])->getInverseMatrix(time);
+      retMat *= getFrame(lists.inverseTransforms[i])->getMatrix(time);
       //      std::cout <<"Multiplying by " << std::endl << frames[lists.inverseTransforms[i]].getInverseMatrix() << std::endl; 
       //std::cout <<"Result "<<std::endl << retMat << std::endl;
    }
   for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
     {
-      retMat *= getFrame(lists.forwardTransforms[lists.forwardTransforms.size() -1 - i])->getMatrix(time); //Do this list backwards for it was generated traveling the wrong way
+      retMat *= getFrame(lists.forwardTransforms[lists.forwardTransforms.size() -1 - i])->getInverseMatrix(time); //Do this list backwards for it was generated traveling the wrong way
       //      std::cout <<"Multiplying by "<<std::endl << frames[lists.forwardTransforms[i]].getMatrix() << std::endl;
       //std::cout <<"Result "<<std::endl << retMat << std::endl;
     }
