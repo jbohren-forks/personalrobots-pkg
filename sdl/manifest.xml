@@ -10,8 +10,5 @@ dependency system.
 <author>Sam Lantinga, with contributions from many others. See web page for a full credits llist.</author>
 <license>LGPL</license>
 <url>http://www.libsdl.org</url>
-<export>
-  <cpp lflags="-Xlinker -rpath ${prefix}/SDL/lib -L${prefix}/SDL/lib -lSDL" cflags="-I${prefix}/SDL/include"/>
-</export>
 </package>
 
