@@ -93,8 +93,7 @@ void Quaternion3D::fromMatrix(const NEWMAT::Matrix& matIn, unsigned long long ti
   //If the trace of the matrix is equal to zero then identify
   // which major diagonal element has the greatest value.
   //  Depending on this, calculate the following:
-
-      if ( mat[0] > mat[5] && mat[0] > mat[10] ) {// Column 0: 
+  else if ( mat[0] > mat[5] && mat[0] > mat[10] ) {// Column 0: 
         double S  = sqrt( 1.0 + mat[0] - mat[5] - mat[10] ) * 2;
         temp.xr = 0.25 * S;
         temp.yr = (mat[1] + mat[4] ) / S;
@@ -113,6 +112,7 @@ void Quaternion3D::fromMatrix(const NEWMAT::Matrix& matIn, unsigned long long ti
         temp.zr = 0.25 * S;
         temp.w = (mat[1] - mat[4] ) / S;
       }
+
       add_value(temp);
 };
 
@@ -363,6 +363,7 @@ void Quaternion3D::add_value(const Quaternion3DStorage &dataIn)
 
 void Quaternion3D::insertNode(const Quaternion3DStorage & new_val)
 {
+
   data_LL* p_current;
   data_LL* p_old;
 
@@ -428,13 +429,15 @@ void Quaternion3D::insertNode(const Quaternion3DStorage & new_val)
 
 void Quaternion3D::pruneList()
 {
-  unsigned long long current_time = Qgettime();
   data_LL* p_current = last;
 
   //  cout << "Pruning List" << endl;
 
   //Empty Set
   if (last == NULL) return;
+
+  unsigned long long current_time = first->data.time;;
+
 
   //While time stamps too old
   while (p_current->data.time + max_storage_time < current_time)

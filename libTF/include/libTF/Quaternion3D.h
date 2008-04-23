@@ -116,7 +116,7 @@ public:
   
 private:
   /**** Linked List stuff ****/
-  static const long long MAX_STORAGE_TIME = 1000000000; // max of 100 seconds storage
+  static const long long MAX_STORAGE_TIME = 100000000; // max of 100 seconds storage
  
   struct data_LL{
     Quaternion3DStorage data;
