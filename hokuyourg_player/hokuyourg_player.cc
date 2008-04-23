@@ -10,6 +10,8 @@
 // I'm using a LaserScan flow
 #include <common_flows/FlowLaserScan.h>
 
+#include <sstream>
+
 #define PLAYER_QUEUE_LEN 32
 
 // Must prototype this function here.  It's implemented inside
@@ -51,13 +53,32 @@ class HokuyoNode: public ROS_Slave
       // presumably come from the param server
       this->cf->InsertFieldValue(0,"provides",player_addr);
       this->cf->InsertFieldValue(0,"unit_angle","degrees");
-      this->cf->InsertFieldValue(0,"min_angle","-90");
-      this->cf->InsertFieldValue(0,"max_angle","90");
+
+      double min_ang;
+      if (!get_double_param(".min_ang", &min_ang))
+	min_ang = -90;
+      printf("Setting min_ang to: %g\n",min_ang);
+
+      double max_ang;
+      if (!get_double_param(".max_ang", &max_ang))
+	max_ang = 90;
+      printf("Setting max_ang to: %g\n",max_ang);
+
+      ostringstream oss;
+      oss << min_ang;
+
+      this->cf->InsertFieldValue(0,"min_angle",oss.str().c_str());
+
+      oss.str("");
+      oss << max_ang;
+
+      this->cf->InsertFieldValue(0,"max_angle",oss.str().c_str());
+
+
 
       string port;
       if (!get_string_param(".port", port))
 	port = "/dev/ttyACM0";
-
       printf("Setting port to: %s\n",port.c_str());
 
       this->cf->InsertFieldValue(0,"port",port.c_str());
@@ -160,7 +181,7 @@ main(void)
       // Publish the new data
       hn.fl->publish();
 
-      printf("Published a scan with %d ranges\n", pdata->ranges_count);
+      //      printf("Published a scan with %d ranges\n", pdata->ranges_count);
     }
 
     // We're done with the message now
