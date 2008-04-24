@@ -112,7 +112,7 @@ public:
 
     control_mutex.lock();
 
-    printf("Commanding: %g -- %d\n", last_mot_val[1], tmp_mot_cmd[1]);
+    //    printf("Commanding: %g -- %d\n", last_mot_val[1], tmp_mot_cmd[1]);
 
     ed->drive(6,tmp_mot_cmd);
 
