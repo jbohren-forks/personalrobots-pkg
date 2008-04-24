@@ -19,7 +19,8 @@ public:
 	~CloudViewer();
 
 	void clear_cloud();
-	void add_point(float x, float y, float z, uint8_t r, uint8_t g, uint8_t b);
+        void add_point(CloudViewerPoint p);
+        void add_point(float x, float y, float z, uint8_t r, uint8_t g, uint8_t b);
 	void set_opengl_params(unsigned width, unsigned height);
 	void render();
 	void mouse_button(int x, int y, int button, bool is_down);

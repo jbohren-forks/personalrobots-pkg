@@ -28,6 +28,58 @@ void CloudViewer::add_point(float x, float y, float z, uint8_t r, uint8_t g, uin
 	points.push_back(CloudViewerPoint(x,y,z,r,g,b));
 }
 
+void CloudViewer::add_point(CloudViewerPoint p)
+{
+	points.push_back(p);
+}
+
+void drawrectgrid(float x_distance, float y_distance, float z_distance, float center_x, float center_y, float center_z, float x_div, float y_div, float z_div)
+{
+  float i = 0;
+  float j = 0;
+
+  glPushMatrix();
+  glTranslatef(center_x,center_y,center_z);
+
+  glColor3f(0.2, 0.2, 0.4);
+
+  for(i =-x_distance/2; i<=x_distance/2; i+=x_div)
+    {
+      glBegin(GL_LINES);
+      glVertex3f(i, 0.0,  z_distance/2);
+      glVertex3f(i, 0.0, -z_distance/2);
+      glEnd();
+    }
+
+  for(i =-z_distance/2; i<=z_distance/2; i+=z_div)
+    {
+      glBegin(GL_LINES);
+      glVertex3f(x_distance/2, 0.0,  i);
+      glVertex3f(-x_distance/2, 0.0, i);
+      glEnd();
+    }
+
+  glColor3f(0.2, 0.4, 0.2);
+  for(i =-x_distance/2; i<=x_distance/2; i+=x_div)
+    {
+      glBegin(GL_LINES);
+      glVertex3f(i, y_distance/2,  0.0);
+      glVertex3f(i, -y_distance/2, 0.0);
+      glEnd();
+    }
+
+  for(i =-y_distance/2; i<=y_distance/2; i+=y_div)
+    {
+      glBegin(GL_LINES);
+      glVertex3f(x_distance/2, i,  0.0);
+      glVertex3f(-x_distance/2, i, 0.0);
+      glEnd();
+    }
+
+  glPopMatrix();
+}
+
+
 void CloudViewer::render()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -62,13 +114,14 @@ void CloudViewer::render()
   	glPopMatrix();
 	
     // draw a vector from the origin so we don't get lost
-    glBegin(GL_LINES);
+	glBegin(GL_LINES);
   		glColor3f(1,1,1);
   		glVertex3f(0,0,0);
   		glVertex3f(look_tgt_x, look_tgt_y, look_tgt_z);
   	glEnd();
-  }
 
+	drawrectgrid(4, 4, 4, 2, 0, 0, 1, 1, 1);
+  }
 
 	glBegin(GL_POINTS);
 	for (size_t i = 0; i < points.size(); i++)

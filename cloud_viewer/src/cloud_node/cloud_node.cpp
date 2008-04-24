@@ -39,15 +39,27 @@
 #include <SDL/SDL.h>
 #include "math.h"
 
+#include <fstream>
+#include <sstream>
+#include <sys/stat.h>
+#include <time.h>
+
+
 class Cloud_Node : public ROS_Slave
 {
 public:
   FlowPointCloudFloat32 *cloud;
   FlowEmpty *shutter;
-  CloudViewer *cloud_viewer;
-  
 
-  int count;
+  CloudViewer *cloud_viewer;
+  ROS_Mutex cloud_mutex;
+  
+  std::vector<CloudViewerPoint> cloud_buffer;
+  int cloud_cnt;
+
+  char dir_name[256];
+
+  int save;
 
   Cloud_Node() : ROS_Slave(), cloud_viewer(NULL)
   {
@@ -56,9 +68,25 @@ public:
 
     cloud_viewer =  new CloudViewer;
 
-    count = 0;
-
     register_with_master();
+
+    if (!get_int_param(".save", &save))
+      save = 0;
+
+    if (save) {
+      time_t rawtime;
+      struct tm* timeinfo;
+      time(&rawtime);
+      timeinfo = localtime(&rawtime);
+      
+      sprintf(dir_name, "clouds/%.2d%.2d%.2d_%.2d%.2d%.2d", timeinfo->tm_mon + 1, timeinfo->tm_mday,timeinfo->tm_year - 100,timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+      
+      if (mkdir(dir_name, 0755)) {
+	printf("Failed to make directory: %s", dir_name);
+      }
+    }
+
+    cloud_cnt = 0;
   }
 
   virtual ~Cloud_Node()
@@ -69,10 +97,10 @@ public:
 
 
   void refresh() {
-    // SDL (and Xlib) don't handle threads well, so we do both of these
     check_keyboard();
     display_image();
   }
+    
 
   void check_keyboard() {
     SDL_Event event;
@@ -105,10 +133,10 @@ public:
   }
 
   void display_image() {
-    cloud->lock_atom();     // I've commandeered the cloud mutex for my own nefarious purposes
+    cloud_mutex.lock();
     cloud_viewer->render();
     SDL_GL_SwapBuffers();
-    cloud->unlock_atom();
+    cloud_mutex.unlock();
   }
 
 
@@ -116,7 +144,7 @@ public:
   {
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,   24);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    const int w = 640, h = 480;
+    const int w = 1024, h = 768;
     if (SDL_SetVideoMode(w, h, 32, SDL_OPENGL | SDL_HWSURFACE) == 0)  {
       fprintf(stderr, "setvideomode failed: %s\n", SDL_GetError());
       return false;
@@ -132,16 +160,52 @@ public:
   void cloud_callback()
   {
     for (int i = 0; i < cloud->get_x_size(); i++) {
-      cloud_viewer->add_point(cloud->x[i], cloud->y[i], cloud->z[i],
-			      255,255,255);
+      cloud_buffer.push_back(CloudViewerPoint(cloud->x[i], cloud->z[i], -cloud->y[i], 
+					      255,255,255));
     }
   }
 
   void shutter_callback()
   {
-    cloud->lock_atom();
+    cloud_mutex.lock();
+
     cloud_viewer->clear_cloud();
+
+    cloud->lock_atom();
+
+    for (int i = 0; i < cloud_buffer.size(); i++) {
+      cloud_viewer->add_point(cloud_buffer[i]);
+    }
+
+    if (save) {
+      std::ostringstream oss;
+      cloud_cnt++;
+      oss << dir_name << "/Cloud" << cloud_cnt << ".cld";    
+      ofstream out(oss.str().c_str());
+      
+      out.setf(ios::fixed, ios::floatfield);
+      out.setf(ios::showpoint);
+      out.precision(4);
+      
+      
+      out << "# Hokuyo Point Cloud" << endl;
+      out << "# First line is number of points, all subsequent lines are points (x y z)" << endl;
+      out << cloud_buffer.size() << endl;
+      
+      for (int i = 0; i < cloud_buffer.size(); i++) {
+	out << cloud_buffer[i].x << " " 
+	    << cloud_buffer[i].y << " " 
+	    << cloud_buffer[i].z << endl;
+      }
+      
+      out.close();
+    }
+
     cloud->unlock_atom();
+
+    cloud_buffer.clear();
+
+    cloud_mutex.unlock();
   }
 
 
