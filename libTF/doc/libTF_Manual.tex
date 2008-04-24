@@ -1,22 +1,165 @@
 \documentclass[12pt]{article}
 
+\usepackage{makeidx}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\makeindex
+
+% a todo macro                                                                  
+\newcommand{\todo}[1]{\vspace{3 mm}\par \noindent {\textsc{ToDo}}\framebox{
+\begin{minipage}[c]{1.0\hsize}\tt #1 \end{minipage}}\vspace{3mm}\par}
+
+
+
 
 \begin{document}
 \title{libTF Manual}
-\author{Tully Foote} 
+\author{Tully Foote\\
+\href{mailto:tfoote@willowgarage.com}{\texttt{tfoote at willowgarage.com}}}
 \date{\today}
 \maketitle
 
 \tableofcontents
 \pagebreak
 
-\section{Introduction}
+\section{Overview}
+litTF is designed to provide a simple interface for keeping track 
+of coordinate transforms within a robotic framework.  
+A simple case which was one of the driving design considerations was
+the use of a sensor on an actuated platform.  In this case the sensor
+will report data in the frame of the moving platform, but the data is much 
+more useful in the world frame. To provide the transform libTF will be told 
+the position of the platform periodically as it moves.  And when prompted libTF can 
+provide the transform from the sensor frame to the world frame at the time when the
+sensor data was acquired.  Not only will libTF will keep track of the transform between 
+two coordinate frames, but it will also keep track of a whole tree of coordinate frames, 
+and automatically chain transformations together between any two connected frames.  
 
 \section{Transform Library}
 
+\subsection{Terminology and Conventions}
+\paragraph {Coodinate Frame}
+In this documentation the default 
+will be a right handed system with X forward, Y left and Z up. 
+
+\paragraph {Denavit-Hartenberg Parameters (DH Parameters)}
+DH Parameters are a way to concicely represent a rigid body tranformation in three dimentions.  
+It has four parameters: length, twist, offset, and angle.  In addition to using the optimal 
+amount of data to store the transformation, there are also optimized methods of chaining 
+transformations together.  And lastly the parameters can directly represent rotary and prismatic
+joints found on robotic arms.  
+See \url{http://en.wikipedia.org/wiki/Denavit-Hartenberg_Parameters} for more details.  
+
+\todo{reproduce labeled diagram a good example \url{http://uwf.edu/ria/robotics/robotdraw/DH_parm.htm}}
+
+\paragraph {Euler Angles}
+For this library Euler angles are considered to be translations in x, y, z, followed by a rotation around z, y, x.
+With the respective angular changes referred to as yaw, pitch and roll. 
+
+\paragraph {Homogeneous Transformation Matrix}
+Homogeneous Transformation Matrices are a simple way to manipulate 3D translations and rotations 
+with standard matrix multiplication.  It is a composite of a standard 3x3 rotation matrix
+(see \url{http://en.wikipedia.org/wiki/Rotation_matrix}) and a translation vector.  
+
+Let $_1R_0$ be the 3x3 rotation matrix defined by the Euler angles $(yaw_0,pitch_0,roll_0)$ 
+and let $_1T_0$ be the column vector $(x_0,y_0,z_0)^T$ representing the translation.  The combination 
+of these two transformations results in the transformation of reference frame 0 to reference frame 1.
+
+A point P in frame 1, $P_1$, can be transformed into frame 1, $P_0$, by the following:
+
+\begin{equation}
+\label{eqn:HT}
+\begin{pmatrix}
+P_0 \\
+1
+\end{pmatrix}
+=
+\begin{pmatrix}
+_0R_1 & _0T_1 \\
+1 & 1
+\end{pmatrix}
+\begin{pmatrix}
+P_1 \\
+1
+\end{pmatrix}
+\end{equation}
+
+The net result is a 4x4 transformation matrix which does both the rotation and translation 
+between coordinate frames. The basic approach is to use a 4x1 vector consisting of $(x,y,z,1)^T_1$ 
+and by left multiplying by $_0A_1$ it will result in $(x',y',z',1)^T_1$.
+
+The matrix library used within this library is Newmat10.
+
+
+\paragraph {Newmat10}
+Newmat10 is the matrix library used in this library.  Documentation for Newmat can be found at 
+\url{http://www.robertnz.net/nm10.htm}.  
+
+\subsection{libTF API}
+
+\subsubsection{Mutators}
+
+\paragraph{setWithEulers}
+A method to set the parameters of a coordinate transform with Euler angles. \index{libTF API!setWithEulers}
+\begin{verbatim}
+void setWithEulers(unsigned int framid, unsigned int parentid, 
+                   double x, double y, double z, 
+                   double yaw, double pitch, double roll, 
+                   unsigned long long time);
+\end{verbatim}
+
+\paragraph{setWithDH}
+A method to set the parameters of a coordinate transform using DH Parameters. \index{libTF API!setWithDH}
+\begin{verbatim} 
+void setWithDH(unsigned int framid, unsigned int parentid, 
+               double length, double alpha, 
+               double offset, double theta, 
+               unsigned long long time);
+\end{verbatim}
+
+
+
+\paragraph{setWithMatrix}
+A method to set the parameters of a coordinate transform with a homogeneous transformation matrix. \index{libTF API!setWithMatrix}
+\begin{verbatim}
+unimplemented
+\end{verbatim}
+
+\paragraph{setWithQuaternion}
+A method to set the parameters of a coordinate transform with Quaternions. \index{libTF API!setWithQuaternion}
+\begin{verbatim}
+unimplemented
+\end{verbatim}
+
+
+\subsubsection{Accessors}
+\paragraph{getMatrix}
+\begin{verbatim}
+NEWMAT::Matrix getMatrix(unsigned int target_frame,
+                         unsigned int source_frame,
+                         unsigned long long time); 
+\end{verbatim}
+
+\paragraph{viewChain}
+\begin{verbatim}
+std::string viewChain(unsigned int target_frame, 
+                      unsigned int source_frame);
+\end{verbatim}
+
+\subsubsection{Constructor}
+\begin{verbatim}
+
+\end{verbatim}
+
 \section{ROS Integration}
+\subsection{libTF ROS API}
 
 \section{Example Usage}
+
+\section{Summary of Internal Mathematics}
+
+\pagebreak
+\printindex
 
 \end{document}
 
