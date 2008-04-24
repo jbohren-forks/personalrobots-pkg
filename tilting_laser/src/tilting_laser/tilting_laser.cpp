@@ -37,6 +37,7 @@
 #include "common_flows/FlowLaserScan.h"
 #include "common_flows/FlowPointCloudFloat32.h"
 #include "unstable_flows/FlowActuator.h"
+#include "libTF/libTF.h"
 #include "math.h"
 
 class Tilting_Laser : public ROS_Slave
@@ -53,6 +54,8 @@ public:
   double next_shutter;
   double period;
 
+  TransformReference TR;
+
   Tilting_Laser() : ROS_Slave(), next_shutter(0.0)
   {
     register_source(cloud = new FlowPointCloudFloat32("cloud"));
@@ -65,6 +68,17 @@ public:
 
     if (!get_double_param(".period", &period))
       period = 5.0;
+
+    unsigned long long time = Quaternion3D::Qgettime();
+    TR.setWithEulers(3, 2,
+		     0, 0, 0.01,
+		     0, 0, 0,
+		     time);
+
+    TR.setWithEulers(2, 1,
+		     0, 0, 0,
+		     0, 0, 0,
+		     time);
 
     gettimeofday(&starttime,NULL);    
   }
@@ -80,16 +94,54 @@ public:
     cloud->set_y_size(scans->get_ranges_size());
     cloud->set_z_size(scans->get_ranges_size());
 
+    /*
     for (int i = 0; i < scans->get_ranges_size(); i++) {
       cloud->x[i] = cos(encoder->val)*cos(scans->angle_min + i*scans->angle_increment) * scans->ranges[i];
-      cloud->y[i] = sin(encoder->val)*cos(scans->angle_min + i*scans->angle_increment) * scans->ranges[i];
-      cloud->z[i] = sin(scans->angle_min + i*scans->angle_increment) * scans->ranges[i];
+      cloud->y[i] = sin(scans->angle_min + i*scans->angle_increment) * scans->ranges[i];
+      cloud->z[i] = sin(encoder->val)*cos(scans->angle_min + i*scans->angle_increment) * scans->ranges[i];
     }
+    */
+
+    NEWMAT::Matrix points(4,scans->get_ranges_size());
+    for (int i = 0; i < scans->get_ranges_size(); i++) {
+      if (scans->ranges[i] < 20.0) {
+	points(1,i+1) = cos(scans->angle_min + i*scans->angle_increment) * scans->ranges[i];
+	points(2,i+1) = sin(scans->angle_min + i*scans->angle_increment) * scans->ranges[i];
+	points(3,i+1) = 0.0;
+	points(4,i+1) = 1.0;
+      } else {
+	points(1,i+1) = 0.0;
+	points(2,i+1) = 0.0;
+	points(3,i+1) = 0.0;
+	points(4,i+1) = 1.0;
+      }
+    }
+    
+    unsigned long long time = (unsigned long long)scans->get_stamp_secs()*1000000 + (unsigned long long)scans->get_stamp_nsecs()/1000 - 2000;
+    NEWMAT::Matrix rot_points = TR.getMatrix(1,3,time) * points;
+    
+    for (int i = 0; i < scans->get_ranges_size(); i++) {
+      cloud->x[i] = rot_points(1,i+1);
+      cloud->y[i] = rot_points(2,i+1);
+      cloud->z[i] = rot_points(3,i+1);
+    }
+
+
     encoder->unlock_atom();
     cloud->publish();
   }
 
   void encoder_callback() {
+    unsigned long long time = (unsigned long long)encoder->get_stamp_secs()*1000000 + (unsigned long long)encoder->get_stamp_nsecs()/1000 - 2000;
+    TR.setWithEulers(3, 2,
+		     .02, 0, .02,
+		     0.0, 0.0, 0.0,
+		     time);
+    TR.setWithEulers(2, 1,
+		     0, 0, 0,
+		     0, -encoder->val, 0,
+		     time);
+
     motor_control(); // Control on encoder reads sounds reasonable
     //    printf("I got some encoder values: %g!\n", encoder->val);
   }
@@ -114,7 +166,7 @@ public:
     cmd->valid = true;
 
     if (elapsed_cycles > next_shutter) {
-      next_shutter += 0.5;
+      next_shutter += 1.0;
       shutter->publish();
     }
 

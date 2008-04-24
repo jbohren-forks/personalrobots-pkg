@@ -3,10 +3,13 @@ require "#{`#{ENV['ROS_ROOT']}/rospack latest yamlgraph`}/lib/yamlgraph/ygl.rb"
 g = YAMLGraph.new
 g.node 'tilting_laser/tilting_laser', {'launch'=>'xterm'}
 g.param 'hokuyourg.port', '/dev/ttyACM0'
+g.param 'hokuyourg.min_ang', '-90.0'
+g.param 'hokuyourg.max_ang', '90.0'
 g.node 'hokuyourg_player/hokuyourg', {'launch'=>'xterm'}
 g.node 'etherdrive/etherdrive', {'launch'=>'xterm'}
 g.param 'etherdrive.pulse_per_rad1', '9549.29659'
 g.node 'cloud_viewer/cloud_node', {'launch'=>'xterm'}
+g.param 'cloud_node.save', '0'
 g.flow 'etherdrive:mot1', 'tilting_laser:encoder'
 g.flow 'tilting_laser:cmd', 'etherdrive:mot1_cmd'
 g.param 'tilting_laser.period', '10.0'
