@@ -3,13 +3,19 @@
 \usepackage{makeidx}
 \usepackage{hyperref}
 \usepackage{amsmath}
+\usepackage{float}
 \makeindex
 
 % a todo macro                                                                  
 \newcommand{\todo}[1]{\vspace{3 mm}\par \noindent {\textsc{ToDo}}\framebox{
 \begin{minipage}[c]{1.0\hsize}\tt #1 \end{minipage}}\vspace{3mm}\par}
 
+\floatstyle{ruled}
+\newfloat{program}{thp}{lop}
+\floatname{program}{Program}
 
+\newfloat{struct}{thp}{lop}
+\floatname{struct}{Data Structure}
 
 
 \begin{document}
@@ -39,10 +45,12 @@ and automatically chain transformations together between any two connected frame
 
 \subsection{Terminology and Conventions}
 \paragraph {Coodinate Frame}
+\index{Coordinate Frame}
 In this documentation the default 
 will be a right handed system with X forward, Y left and Z up. 
 
 \paragraph {Denavit-Hartenberg Parameters (DH Parameters)}
+\index{Denavit-Hartenberg Parameters} 
 DH Parameters are a way to concicely represent a rigid body tranformation in three dimentions.  
 It has four parameters: length, twist, offset, and angle.  In addition to using the optimal 
 amount of data to store the transformation, there are also optimized methods of chaining 
@@ -53,10 +61,12 @@ See \url{http://en.wikipedia.org/wiki/Denavit-Hartenberg_Parameters} for more de
 \todo{reproduce labeled diagram a good example \url{http://uwf.edu/ria/robotics/robotdraw/DH_parm.htm}}
 
 \paragraph {Euler Angles}
+\index{Euler Angles}
 For this library Euler angles are considered to be translations in x, y, z, followed by a rotation around z, y, x.
 With the respective angular changes referred to as yaw, pitch and roll. 
 
 \paragraph {Homogeneous Transformation Matrix}
+\index{Homogeneous Transform}
 Homogeneous Transformation Matrices are a simple way to manipulate 3D translations and rotations 
 with standard matrix multiplication.  It is a composite of a standard 3x3 rotation matrix
 (see \url{http://en.wikipedia.org/wiki/Rotation_matrix}) and a translation vector.  
@@ -92,11 +102,12 @@ The matrix library used within this library is Newmat10.
 
 
 \paragraph {Newmat10}
+\index{Newmat10}
 Newmat10 is the matrix library used in this library.  Documentation for Newmat can be found at 
 \url{http://www.robertnz.net/nm10.htm}.  
 
 \subsection{libTF API}
-
+\index{libTF API}
 \subsubsection{Mutators}
 
 \paragraph{setWithEulers}
@@ -134,6 +145,7 @@ unimplemented
 
 \subsubsection{Accessors}
 \paragraph{getMatrix}
+\index{libTF API!getMatrix}
 \begin{verbatim}
 NEWMAT::Matrix getMatrix(unsigned int target_frame,
                          unsigned int source_frame,
@@ -141,12 +153,14 @@ NEWMAT::Matrix getMatrix(unsigned int target_frame,
 \end{verbatim}
 
 \paragraph{viewChain}
+\index{libTF API!viewChain}
 \begin{verbatim}
 std::string viewChain(unsigned int target_frame, 
                       unsigned int source_frame);
 \end{verbatim}
 
 \subsubsection{Constructor}
+\index{libTF API!Constructor}
 \begin{verbatim}
 TransformReference();
 \end{verbatim}
@@ -160,6 +174,8 @@ unimplemented
 unimplemented
 
 \section{Example Usage}
+\subsection{Library}
+%\begin{program}[H]
 \begin{verbatim}
 #include ``libTF/libTF.h''
 #include <time.h>
@@ -245,10 +261,66 @@ tyException
 };
 
 \end{verbatim}
+%\end{program}
+
+\subsection{ROS Implementation}
+\begin{verbatim}
+TODO
+\end{verbatim}
+
 \section{Summary of Internal Mathematics}
+This libarary uses quaternion notation as the internal representation
+of coordinate transforms.  Transform information is stored in a linked 
+list sorted by time.  When a transform is requested the closest two points 
+on the linked list are found and then interpolated in time to generate the 
+return value.  
 
-\pagebreak
+\subsection{Storage}
+The internal storage for the transforms consists of:
+\begin{struct}[H]
+\caption{libTF Internal Data Storage}
+\begin{verbatim}
+  double xtranslation;// The three components of translation
+  double ytranslation;
+  double ztranslation;
+  double xrotation; // The three components of the rotation axis
+  double yrotation;
+  double zrotation;
+  double w; // Omega
+  unsigned long long time; //nano seconds since 1970
+\end{verbatim}
+\end{struct}
+
+
+\subsection{Interpolation}
+The interpolation method used in this library is Spherical Linear Interpolation
+(SLERP). \index{SLERP} The standard formula for SLERP is defined in Equation \ref{eq:slerp}.
+The inputs are points $p_0$ and $p_1$, and $t$ is the proportion to interpolate 
+between $p_0$ and $p_1$, and $\Omega$ is the angle between the axis of the two quaternions. 
+
+\begin{equation}
+Slerp(p_0,p_1;t) = \frac{sin((1-t)\Omega)}{sin(\Omega)} * p_0 + \frac{sin(t*\Omega)}{sin(\Omega)} * p_1
+\label{eq:slerp}
+\end{equation}
+
+\todo{add graphic}
+
+\paragraph{Alternatives}
+The SLERP technique was developed in 1985 by Ken Shoemake. \cite{SHOEMAKE} SLERP has been 
+largely adopted in the field of computer graphics, however there have been many alternatives 
+developed.  The advantages of SLERP are that it provides a constant speed solution 
+along the shortest path over the 4D unit sphere.  This is not optimal in all cases however.
+A good discussion of various alternatives is here \url{http://number-none.com/product/Understanding%20Slerp,%20Then%20Not%20Using%20It/index.html}. 
+The approaches discussed above are normalized linear interpolation (nlerp), and 
+log-quaternion linear interpolation (log-quaternion lerp). 
+SLERP can be recursively called to do a cubic interpolation, called SQUAD for short.  
+This is discussed at \url{http://www.sjbrown.co.uk/?article=quaternions}.
+
+
+
+\bibliographystyle{plain}
+\bibliography{libTF_Manual}
+
 \printindex
-
 \end{document}
 
