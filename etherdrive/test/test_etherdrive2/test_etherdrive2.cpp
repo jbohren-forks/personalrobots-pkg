@@ -45,33 +45,38 @@ int main() {
     cout << "Could not initialize etherdrive." << endl;
     return -1;
   }
+
+  EDMotor m0 = e.get_motor(0);
+  EDMotor m1 = e.get_motor(1);
+
   e.motors_on();
   
-  int drv = 100000;
-  int enc[2];
-  int cur[2];
-
   int count = 0;
 
+  int drv = 100000;
+
   while (1) {
-    if (!e.drive(1,&drv))
-      printf("Drive problem!.");
-    if (!e.tick(2,enc,cur))
+
+    m0.set_drv(drv);
+
+    if (!e.tick())
       printf("Tick problem!.");
 
-    printf("Encoder0: %d Current: %d\n", enc[0], cur[0]);
-    printf("Encoder1: %d Current: %d\n", enc[1], cur[1]);
+    printf("Encoder0: %d Current: %d\n", m0.get_enc(), m0.get_cur());
+    printf("Encoder1: %d Current: %d\n", m1.get_enc(), m1.get_cur());
 
-    if (abs(cur[0]) > 200) {
+    
+    // Crappy control
+    if (abs(m0.get_cur()) > 200) {
       if (count++ > 50)
 	e.motors_off();
     } else {
       count = 0;
     }
 
-    if (enc[0] == 100000) {
+    if (m0.get_enc() == 100000) {
       drv = -100000;
-    } else if (enc[0] == -100000) {
+    } else if (m0.get_enc() == -100000) {
       drv = 100000;
     }
   }
