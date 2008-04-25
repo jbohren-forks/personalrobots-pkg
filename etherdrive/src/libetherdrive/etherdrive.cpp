@@ -196,7 +196,7 @@ int32_t EtherDrive::get_enc(uint32_t m) {
 
 int32_t EtherDrive::get_cur(uint32_t m) {
   if (m < 6) {
-    return last_enc[m];
+    return last_cur[m];
   }
 }
 
@@ -242,7 +242,7 @@ bool EtherDrive::tick(size_t num,  int32_t* enc, int32_t* cur, int32_t* pwm)
     last_cur[i] = buf[6+i];
   }
   for (int i = 0; i < 6; i++) {
-    last_pwm[i] = buf[6+i];
+    last_pwm[i] = buf[12+i];
   }
 
 

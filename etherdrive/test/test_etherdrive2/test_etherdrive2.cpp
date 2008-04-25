@@ -62,8 +62,8 @@ int main() {
     if (!e.tick())
       printf("Tick problem!.");
 
-    printf("Encoder0: %d Current: %d\n", m0.get_enc(), m0.get_cur());
-    printf("Encoder1: %d Current: %d\n", m1.get_enc(), m1.get_cur());
+    printf("Encoder0: %d Current: %d PWM: %d\n", m0.get_enc(), m0.get_cur(), m0.get_pwm());
+    printf("Encoder1: %d Current: %d PWM: %d\n", m1.get_enc(), m1.get_cur(), m1.get_pwm());
 
     
     // Crappy control
