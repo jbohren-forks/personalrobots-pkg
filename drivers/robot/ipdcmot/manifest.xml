@@ -7,5 +7,8 @@ This is an IP-based motor controller.
 <url>http://stair.stanford.edu</url>
 <depend package="common_flows"/>
 <depend package="roscpp"/>
+<export>
+  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lipdcmot"/>
+</export>
 </package>
 
