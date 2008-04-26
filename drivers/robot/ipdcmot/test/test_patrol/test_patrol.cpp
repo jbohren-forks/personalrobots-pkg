@@ -48,7 +48,7 @@ int main(int argc, char **argv)
   signal(SIGINT, safe_term);
   signal(SIGQUIT, safe_term);
   signal(SIGHUP, safe_term);
-  mot = new IPDCMOT("192.168.1.38", 75);
+  mot = new IPDCMOT("192.168.1.38", 0);
   printf("press enter to patrol\n");
   fgetc(stdin);
   mot->set_patrol(10, 30, .5, 1);
