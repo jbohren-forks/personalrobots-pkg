@@ -316,7 +316,7 @@ unsigned long long Quaternion3D::Qgettime()
 {
   timeval temp_time_struct;
   gettimeofday(&temp_time_struct,NULL);
-  return temp_time_struct.tv_sec * 1000000ULL + (unsigned long long)temp_time_struct.tv_usec;
+  return temp_time_struct.tv_sec * 1000000000ULL + (unsigned long long)temp_time_struct.tv_usec * 1000ULL;
 }
 
 

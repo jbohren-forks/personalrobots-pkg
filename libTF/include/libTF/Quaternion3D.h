@@ -52,7 +52,7 @@ public:
 class Quaternion3D {
 
 public:
-  static const int MIN_INTERPOLATION_DISTANCE = 5; //Number of micro seconds to not interpolate below.
+  static const int MIN_INTERPOLATION_DISTANCE = 5; //Number of nano-seconds to not interpolate below.
   // Storage class
   class Quaternion3DStorage
   {
@@ -72,7 +72,7 @@ public:
 
     /* Internal Data */    
     double xt, yt, zt, xr, yr, zr, w;
-    unsigned long long time;
+    unsigned long long time; //nanoseconds since 1970
   };
   
   /** Constructors **/
@@ -99,7 +99,7 @@ public:
   NEWMAT::Matrix getInverseMatrix(unsigned long long time);
 
   /**** Utility Functions ****/
-  // this is a function to return the current time in microseconds from the beginning of 1970
+  // this is a function to return the current time in nanooseconds from the beginning of 1970
   static  unsigned long long Qgettime(void);
 
   // Convert DH Parameters to a Homogeneous Transformation Matrix
@@ -116,7 +116,7 @@ public:
   
 private:
   /**** Linked List stuff ****/
-  static const long long MAX_STORAGE_TIME = 100000000; // max of 100 seconds storage
+  static const unsigned long long MAX_STORAGE_TIME = 100ULL * 1000000000ULL; // max of 100 seconds storage
  
   struct data_LL{
     Quaternion3DStorage data;
