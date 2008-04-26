@@ -98,10 +98,6 @@ public:
   // Return the inverse matrix
   NEWMAT::Matrix getInverseMatrix(unsigned long long time);
 
-  /**** Utility Functions ****/
-  // this is a function to return the current time in nanooseconds from the beginning of 1970
-  static  unsigned long long Qgettime(void);
-
   // Convert DH Parameters to a Homogeneous Transformation Matrix
   static NEWMAT::Matrix matrixFromDH(double length, double alpha, double offset, double theta);
   // Convert Euler Angles to a Homogeneous Transformation Matrix

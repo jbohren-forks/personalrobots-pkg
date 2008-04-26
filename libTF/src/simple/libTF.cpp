@@ -51,7 +51,7 @@ TransformReference::TransformReference()
 }
 
 
-void TransformReference::setWithEulers(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d,double e,double f, unsigned long long time)
+void TransformReference::setWithEulers(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d,double e,double f, ULLtime time)
 {
   if (frameID > MAX_NUM_FRAMES || parentID > MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
     throw InvalidFrame;
@@ -63,7 +63,7 @@ void TransformReference::setWithEulers(unsigned int frameID, unsigned int parent
   getFrame(frameID)->fromEuler(a,b,c,d,e,f,time);
 }
 
-void TransformReference::setWithDH(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d, unsigned long long time)
+void TransformReference::setWithDH(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d, ULLtime time)
 {
   if (frameID > MAX_NUM_FRAMES || parentID > MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
     throw InvalidFrame;
@@ -76,7 +76,7 @@ void TransformReference::setWithDH(unsigned int frameID, unsigned int parentID, 
 }
 
 
-NEWMAT::Matrix TransformReference::getMatrix(unsigned int target_frame, unsigned int source_frame, unsigned long long time)
+NEWMAT::Matrix TransformReference::getMatrix(unsigned int target_frame, unsigned int source_frame, ULLtime time)
 {
   NEWMAT::Matrix myMat(4,4);
   TransformLists lists = lookUpList(target_frame, source_frame);
@@ -149,7 +149,7 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
 
 }
 
-NEWMAT::Matrix TransformReference::computeTransformFromList(TransformLists lists, unsigned long long time)
+NEWMAT::Matrix TransformReference::computeTransformFromList(TransformLists lists, ULLtime time)
 {
   NEWMAT::Matrix retMat(4,4);
   retMat << 1 << 0 << 0 << 0
@@ -194,3 +194,11 @@ std::string TransformReference::viewChain(unsigned int target_frame, unsigned in
   mstream << std::endl;
   return mstream.str();
 }
+
+TransformReference::ULLtime TransformReference::gettime()
+{
+  timeval temp_time_struct;
+  gettimeofday(&temp_time_struct,NULL);
+  return temp_time_struct.tv_sec * 1000000000ULL + (unsigned long long)temp_time_struct.tv_usec * 1000ULL;
+}
+

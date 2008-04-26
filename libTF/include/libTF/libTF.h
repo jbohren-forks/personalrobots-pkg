@@ -88,22 +88,24 @@ public:
   static const unsigned int MAX_NUM_FRAMES = 100;   /* The maximum number of frames possible */
   static const unsigned int MAX_GRAPH_DEPTH = 100;   /* The maximum number of times to descent before determining that graph has a loop. */
 
+  typedef unsigned long long ULLtime;
+
   /* Constructor */
   TransformReference();
 
   /********** Mutators **************/
   /* Set a new frame or update an old one. */
   /* Use Euler Angles.  X forward, Y to the left, Z up, Yaw about Z, pitch about new Y, Roll about new X */
-  void setWithEulers(unsigned int framid, unsigned int parentid, double x, double y, double z, double yaw, double pitch, double roll, unsigned long long time);
+  void setWithEulers(unsigned int framid, unsigned int parentid, double x, double y, double z, double yaw, double pitch, double roll, ULLtime time);
   /* Using DH Parameters */
   // Conventions from http://en.wikipedia.org/wiki/Robotics_conventions
-  void setWithDH(unsigned int framid, unsigned int parentid, double length, double alpha, double offset, double theta, unsigned long long time);
+  void setWithDH(unsigned int framid, unsigned int parentid, double length, double alpha, double offset, double theta, ULLtime time);
   // Possible exceptions TransformReference::LookupException
 
   /*********** Accessors *************/
 
   /* Get the transform between two frames by frame ID.  */
-  NEWMAT::Matrix getMatrix(unsigned int target_frame, unsigned int source_frame, unsigned long long time);
+  NEWMAT::Matrix getMatrix(unsigned int target_frame, unsigned int source_frame, ULLtime time);
   // Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
   // TransformReference::MaxDepthException
 
@@ -113,6 +115,10 @@ public:
   // TransformReference::MaxDepthException
 
 
+
+  /**** Utility Functions ****/
+  // this is a function to return the current time in nanooseconds from the beginning of 1970
+  static  ULLtime gettime(void);
 
 
 
@@ -166,7 +172,7 @@ private:
   TransformLists  lookUpList(unsigned int target_frame, unsigned int source_frame);
   
   /* Compute the transform based on the list of frames */
-  NEWMAT::Matrix computeTransformFromList(TransformLists list, unsigned long long time);
+  NEWMAT::Matrix computeTransformFromList(TransformLists list, ULLtime time);
 
 };
 #endif //LIBTF_HH

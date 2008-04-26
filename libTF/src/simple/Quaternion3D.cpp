@@ -312,14 +312,6 @@ void Quaternion3D::printStorage(const Quaternion3DStorage& storage)
 };
 
 
-unsigned long long Quaternion3D::Qgettime()
-{
-  timeval temp_time_struct;
-  gettimeofday(&temp_time_struct,NULL);
-  return temp_time_struct.tv_sec * 1000000000ULL + (unsigned long long)temp_time_struct.tv_usec * 1000ULL;
-}
-
-
 bool Quaternion3D::getValue(Quaternion3DStorage& buff, unsigned long long time, long long  &time_diff)
 {
   Quaternion3DStorage p_temp_1;
