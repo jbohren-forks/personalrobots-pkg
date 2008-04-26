@@ -9,8 +9,7 @@
   <author>Morgan Quigley (email: mquigley@cs.stanford.edu)</author>
   <license>BSD</license>
   <url>http://stair.stanford.edu</url>
-  <depend package="roscpp"/>
-  <depend package="common_flows"/>
   <depend package="ijg_libjpeg"/>
+  <depend package="std_msgs"/>
 </package>
 
