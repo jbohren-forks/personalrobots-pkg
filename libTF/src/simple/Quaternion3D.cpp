@@ -39,8 +39,8 @@ Euler3D::Euler3D(double _x, double _y, double _z, double _yaw, double _pitch, do
 };
 
 
-Quaternion3D::Quaternion3D():
-  max_storage_time(MAX_STORAGE_TIME),
+Quaternion3D::Quaternion3D(unsigned long long max_cache_time):
+  max_storage_time(max_cache_time),
   first(NULL),
   last(NULL)
 {

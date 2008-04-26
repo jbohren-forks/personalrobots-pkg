@@ -76,8 +76,8 @@ public:
   };
   
   /** Constructors **/
-  // Standard constructor
-  Quaternion3D();
+  // Standard constructor max_cache_time is how long to cache transform data
+  Quaternion3D(unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME);
   
   /** Mutators **/
   // Set the values manually
@@ -112,7 +112,7 @@ public:
   
 private:
   /**** Linked List stuff ****/
-  static const unsigned long long MAX_STORAGE_TIME = 100ULL * 1000000000ULL; // max of 100 seconds storage
+  static const unsigned long long DEFAULT_MAX_STORAGE_TIME = 10ULL * 1000000000ULL; // default value of 10 seconds storage
  
   struct data_LL{
     Quaternion3DStorage data;
