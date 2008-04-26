@@ -36,8 +36,21 @@ int main(int argc, char **argv)
 
   //printf("press enter to scan or type 'a' then enter to abort\n");
   //char c = fgetc(stdin);
-  sharks->calibrate();
+  
+  if (argc == 1)
+    sharks->load_config_file("config.txt");
+  else if (argc == 2 && argv[1] == string("--calibrate"))
+  { 
+    sharks->manual_calibration();
+    delete sharks; return 0;
+  }
+
+//    sharks->calibrate();
+//  else if (argc == 2 && argv[1] == "--manual")
+  else
+    sharks->load_config_file(argv[1]);
   sharks->loneshark();
+
   /*
   if (c != 'a')
     sharks->loneshark();

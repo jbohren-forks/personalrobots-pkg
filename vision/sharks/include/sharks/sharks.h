@@ -55,6 +55,8 @@ public:
       img_diff_t() : r(0), g(0), b(0) { }
   };
   img_diff_t image_diff(int w, int h, uint8_t *img1, uint8_t *img2, int thresh = -100000);
+  bool load_config_file(string filename);
+  void manual_calibration();
 
 private:
   bool cam_ok, mot_ok, gui;
@@ -68,6 +70,9 @@ private:
   void display_image(int width, int height, uint8_t *raster);
   void render_image();
   double left_scan_extent, right_scan_extent;
+  void handle_key(int k);
+  bool manual_calibration_complete;
+  int man_iris, man_focus;
 };
 
 #endif

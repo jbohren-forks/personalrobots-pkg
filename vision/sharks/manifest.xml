@@ -14,14 +14,10 @@ triangulation-based laser range scanner.
 <url>http://stair.stanford.edu</url>
 <depend package="string_utils"/>
 <depend package="ipdcmot"/>
-<depend package="common_flows"/>
 <depend package="image_utils"/>
-<depend package="yamlgraph"/>
 <depend package="roscpp"/>
 <depend package="axis_cam"/>
-<depend package="vacuum"/>
 <depend package="sdl"/>
-<depend package="sdl_image"/>
 <depend package="serial_port"/>
 <sys_depend lib="ncurses"/>
 <export>

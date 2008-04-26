@@ -38,7 +38,8 @@ Sharks::Sharks(string axis_ip, string ipdcmot_ip, bool gui)
     cam_ok(true), mot_ok(true), gui(gui),
     screen(NULL), blit_prep(NULL),
     left_laser_bound(70.0), right_laser_bound(190.0),
-    left_scan_extent(-100000), right_scan_extent(-100000)
+    left_scan_extent(-100000), right_scan_extent(-100000),
+    manual_calibration_complete(false)
 {
   cam = new AxisCam(axis_ip);
   // make sure we can get an image
@@ -402,6 +403,7 @@ void Sharks::pump_gui_event_loop()
     switch(event.type)
     {
       case SDL_VIDEOEXPOSE: render_image(); break;
+      case SDL_KEYDOWN: handle_key(event.key.keysym.sym); break;
     }
   }
 }
@@ -417,5 +419,84 @@ void Sharks::gui_spin()
     pump_gui_event_loop();
   }
   close_keyboard();
+}
+
+bool Sharks::load_config_file(string filename)
+{
+  printf("loading [%s]\n", filename.c_str());
+  FILE *f = fopen(filename.c_str(), "r");
+  if (!f)
+  {
+    printf("woah! couldn't open [%s]\n", filename.c_str());
+    return false;
+  }
+  while (!feof(f))
+  {
+    char buf[1000]; // OVERRUNS R FUN
+    double d;
+    if (2 != fscanf(f, "%s %lf\n", buf, &d))
+      continue;
+    printf("[%s] = %f\n", buf, d);
+    if (buf == string("left_scan_extent"))
+      left_scan_extent = d;
+    else if (buf == string("right_scan_extent"))
+      right_scan_extent = d;
+    else if (buf == string("iris"))
+      cam->set_iris((int)d);
+    else if (buf == string("focus"))
+      cam->set_focus((int)d);
+  }
+  fclose(f);
+  printf("letting camera settle to new iris/focus for 3 seconds...\n");
+  usleep(3000000);
+  printf("done. carry on.\n");
+}
+
+void Sharks::manual_calibration()
+{
+  printf("manual calibration\n");
+  man_iris = cam->get_iris();
+  man_focus = cam->get_focus();
+  cam->set_focus(man_focus); // lock focus
+  cam->set_iris(man_iris);   // lock iris
+  printf("man_iris = %d\n", man_iris);
+  while (!manual_calibration_complete)
+  {
+    pump_gui_event_loop();
+    uint8_t *jpeg_buf;
+    uint32_t jpeg_buf_size;
+    cam->get_jpeg(&jpeg_buf, &jpeg_buf_size);
+    jpeg_wrapper->decompress_jpeg_buf((char *)jpeg_buf, jpeg_buf_size);
+    display_image(704, 480, jpeg_wrapper->get_raster());
+  }
+  FILE *f = fopen("config.txt", "w");
+  fprintf(f, "left_scan_extent %f\n", left_scan_extent);
+  fprintf(f, "right_scan_extent %f\n", right_scan_extent);
+  fprintf(f, "iris %d\n", man_iris);
+  fprintf(f, "focus %d\n", man_focus);
+  fclose(f);
+}
+
+void Sharks::handle_key(int k)
+{
+  if (k == '?')
+  {
+    printf("i = close iris slightly\nI = close iris a lot\n");
+    printf("o = open iris slightly\nO = open iris a lot\n");
+    printf("f = focus more near slightly\nF = focus more near a lot\n");
+    printf("d = focus more far slightly\nD = focus more far a lot\n");
+    printf("e = move laser left extent slighty\nE = more left extent a lot\n");
+    printf("r = move laser right extent slightly\nR = a lot\n");
+    printf("q = save calibration and quit\n");
+  }
+  switch(k)
+  {
+    case 'q': manual_calibration_complete = true; break;
+    case 'i': cam->set_iris(man_iris -=  50); break;
+    case 'k': cam->set_iris(man_iris -= 500); break;
+    case 'o': cam->set_iris(man_iris +=  50); break;
+    case 'l': cam->set_iris(man_iris += 500); break;
+  }
+  printf("man_iris = %d\n", man_iris);
 }
 
