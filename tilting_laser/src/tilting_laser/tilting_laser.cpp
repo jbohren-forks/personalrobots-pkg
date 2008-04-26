@@ -54,9 +54,14 @@ public:
   double next_shutter;
   double period;
 
+  double min_ang;
+  double max_ang;
+
+  int scancount;
+
   TransformReference TR;
 
-  Tilting_Laser() : ROS_Slave(), next_shutter(0.0)
+  Tilting_Laser() : ROS_Slave(), next_shutter(0.0), scancount(0)
   {
     register_source(cloud = new FlowPointCloudFloat32("cloud"));
     register_source(shutter = new FlowEmpty("shutter"));
@@ -69,9 +74,15 @@ public:
     if (!get_double_param(".period", &period))
       period = 5.0;
 
+    if (!get_double_param(".min_ang", &min_ang))
+      min_ang = -1.3;
+
+    if (!get_double_param(".max_ang", &max_ang))
+      max_ang = 0.6;
+
     unsigned long long time = Quaternion3D::Qgettime();
     TR.setWithEulers(3, 2,
-		     0, 0, 0.01,
+		     0, 0, 0,
 		     0, 0, 0,
 		     time);
 
@@ -117,7 +128,7 @@ public:
       }
     }
     
-    unsigned long long time = (unsigned long long)scans->get_stamp_secs()*1000000 + (unsigned long long)scans->get_stamp_nsecs()/1000 - 2000;
+    unsigned long long time = (unsigned long long)scans->get_stamp_secs()*1000000 + (unsigned long long)scans->get_stamp_nsecs()/1000 - 20000;
     NEWMAT::Matrix rot_points = TR.getMatrix(1,3,time) * points;
     
     for (int i = 0; i < scans->get_ranges_size(); i++) {
@@ -126,13 +137,14 @@ public:
       cloud->z[i] = rot_points(3,i+1);
     }
 
+    scancount++;
 
     encoder->unlock_atom();
     cloud->publish();
   }
 
   void encoder_callback() {
-    unsigned long long time = (unsigned long long)encoder->get_stamp_secs()*1000000 + (unsigned long long)encoder->get_stamp_nsecs()/1000 - 2000;
+    unsigned long long time = (unsigned long long)encoder->get_stamp_secs()*1000000 + (unsigned long long)encoder->get_stamp_nsecs()/1000;
     TR.setWithEulers(3, 2,
 		     .02, 0, .02,
 		     0.0, 0.0, 0.0,
@@ -161,15 +173,14 @@ public:
     double elapsed_cycles = timeval_diff(nowtime, starttime) / (period);
     double index = fabs(fmod(elapsed_cycles, 1) * 2.0 - 1.0);
 
-    cmd->val = index * (0.6 + 1.3) - 1.3;
+    cmd->val = index * (max_ang - min_ang) + min_ang;
     cmd->rel = false;
     cmd->valid = true;
 
     if (elapsed_cycles > next_shutter) {
-      next_shutter += 1.0;
+      next_shutter += 0.5;
       shutter->publish();
     }
-
     cmd->publish();
   }
 
