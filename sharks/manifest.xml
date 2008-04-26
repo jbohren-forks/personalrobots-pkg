@@ -22,6 +22,10 @@ triangulation-based laser range scanner.
 <depend package="vacuum"/>
 <depend package="sdl"/>
 <depend package="sdl_image"/>
+<depend package="serial_port"/>
 <sys_depend lib="ncurses"/>
+<export>
+  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lsharks"/>
+</export>
 </package>
 

@@ -33,7 +33,7 @@
 #include <curl/curl.h>
 #include <string>
 #include <sstream>
-#include "thread_utils/mutex.h"
+#include "rosthread/mutex.h"
 using namespace std;
 
 class AxisCam
@@ -65,7 +65,7 @@ private:
   CURL *jpeg_curl, *getptz_curl, *setptz_curl;
   char *image_url, *ptz_url;
   stringstream ptz_ss; // need to mutex this someday...
-  ThreadUtils::Mutex ptz_ss_mutex;
+  ros::thread::mutex ptz_ss_mutex;
   inline double clamp(double d, double low, double high)
   { 
     return (d < low ? low : (d > high ? high : d)); 
