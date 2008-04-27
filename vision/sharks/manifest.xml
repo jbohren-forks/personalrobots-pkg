@@ -18,6 +18,7 @@ triangulation-based laser range scanner.
 <depend package="roscpp"/>
 <depend package="axis_cam"/>
 <depend package="sdl"/>
+<depend package="sdl_image"/>
 <depend package="serial_port"/>
 <sys_depend lib="ncurses"/>
 <export>

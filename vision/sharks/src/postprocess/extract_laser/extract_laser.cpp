@@ -24,11 +24,12 @@ int main(int argc, char **argv)
   if (argc < 3)
   {
     printf("give at least two filenames.\n");
+    exit(1);
     //bg = string("test_bg.jpg");
     //fg = string("test_fg.jpg");
-    bg = string("../../../stair__sharks_testdata/stapler_pen_apple/shark_00001_-024.99886_.jpg");
-    fgs.push_back(string("../../../stair__sharks_testdata/stapler_pen_apple/shark_00500_-000.05039_.jpg"));
-    fgs.push_back(string("../../../stair__sharks_testdata/stapler_pen_apple/shark_00501_-000.00508_.jpg"));
+    //bg = string("../../../stair__sharks_testdata/stapler_pen_apple/shark_00001_-024.99886_.jpg");
+    //fgs.push_back(string("../../../stair__sharks_testdata/stapler_pen_apple/shark_00500_-000.05039_.jpg"));
+    //fgs.push_back(string("../../../stair__sharks_testdata/stapler_pen_apple/shark_00501_-000.00508_.jpg"));
   }
   else
   {
@@ -97,27 +98,37 @@ int main(int argc, char **argv)
         uint8_t *fg_p = (uint8_t *)fg_image->pixels + y*fg_image->pitch + x*3;
         uint8_t bg_r = *(bg_p + bg_image->format->Rshift/8);
         uint8_t fg_r = *(fg_p + fg_image->format->Rshift/8);
-        *(fg_p + fg_image->format->Gshift/8) = 0;
-        *(fg_p + bg_image->format->Bshift/8) = 0;
-        int diff = fg_r - bg_r;
-        if (diff > 30)
+        uint8_t bg_g = *(bg_p + bg_image->format->Gshift/8);
+        uint8_t fg_g = *(fg_p + fg_image->format->Gshift/8);
+        uint8_t bg_b = *(bg_p + bg_image->format->Bshift/8);
+        uint8_t fg_b = *(fg_p + fg_image->format->Bshift/8);
+        int added = abs(fg_r - bg_r) + abs(fg_g - bg_g) + abs(fg_b - bg_b);
+        if (added > 300)
         {
-          *(fg_p + fg_image->format->Rshift/8) = diff;
-          centroid += (diff) * x;
-          sum += diff;
+          *(fg_p + fg_image->format->Rshift/8) = added/3;
+          *(fg_p + fg_image->format->Gshift/8) = added/3;
+          *(fg_p + fg_image->format->Bshift/8) = added/3;
+          centroid += added * x;
+          sum += added;
         }
         else
+        {
           *(fg_p + fg_image->format->Rshift/8) = 0;
+          *(fg_p + fg_image->format->Gshift/8) = 0;
+          *(fg_p + fg_image->format->Bshift/8) = 0;
+        }
       }
       centroid /= sum;
-      if (sum > 200)
+      if (sum > 600)
       {
         //printf("centroid = %f sum = %f\n", centroid, sum);
         int x = (int)floor(centroid);
         if (x < 0) x = 0;
         if (x >= fg_image->w) x = fg_image->w - 1;
         uint8_t *fg_p = (uint8_t *)fg_image->pixels + y*fg_image->pitch + x*3;
+        *(fg_p + fg_image->format->Rshift/8) = 255;
         *(fg_p + fg_image->format->Gshift/8) = 255;
+        *(fg_p + fg_image->format->Bshift/8) = 255;
         fprintf(log, "%f %d %f %f\n", lang, y, centroid, sum);
       }
     }

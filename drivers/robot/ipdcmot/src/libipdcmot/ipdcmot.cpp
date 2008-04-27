@@ -47,7 +47,8 @@ const double IPDCMOT::DEG_TO_RAD = M_PI / 180.0;
 IPDCMOT::IPDCMOT(string host, double mount_bias_deg, bool home_myself) : 
   host(host), max_ang_vel(500), ok(true), mount_bias_deg(mount_bias_deg),
   homing_in_progress(false), awaiting_response(false),
-  reg_mode(UNKNOWN), last_pos_deg(0), last_pos_enc(0), sock(0)
+  reg_mode(UNKNOWN), last_pos_deg(0), last_pos_enc(0), sock(0),
+  servo_mode(IDLE)
 {
   if (clock_gettime(CLOCK_REALTIME, &init_time) == -1)
   {

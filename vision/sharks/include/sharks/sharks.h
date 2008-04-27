@@ -33,6 +33,7 @@
 #include "axis_cam/axis_cam.h"
 #include "ipdcmot/ipdcmot.h"
 #include "image_utils/jpeg_wrapper.h"
+#include "serial_port/lightweightserial.h"
 #include "SDL/SDL.h"
 using namespace std;
 
@@ -63,6 +64,7 @@ private:
   string axis_ip, ipdcmot_ip;
   AxisCam *cam;
   IPDCMOT *mot;
+  LightweightSerial *laser_control;
   bool get_and_save_image(string filename);
   SDL_Surface *screen, *blit_prep;
   double left_laser_bound, right_laser_bound;

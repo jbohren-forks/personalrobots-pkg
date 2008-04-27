@@ -58,6 +58,11 @@ Sharks::Sharks(string axis_ip, string ipdcmot_ip, bool gui)
   mot = new IPDCMOT(ipdcmot_ip, 0, false);
   printf("done with ipdcmot construct\n");
   jpeg_wrapper = new JpegWrapper();
+  laser_control = new LightweightSerial("/dev/ttyUSB0", 115200);
+  if (!laser_control)
+    printf("couldn't open laser control port\n");
+  else
+    printf("opened laser control port OK\n");
   if (gui)
   {
     SDL_Init(SDL_INIT_VIDEO);
@@ -69,6 +74,11 @@ Sharks::~Sharks()
 {
   printf("sharks destructor\n");
   mot->stop();
+  if (laser_control)
+  {
+    laser_control->write('Q'); // turn laser on
+    delete laser_control;
+  }
   if (blit_prep)
     SDL_FreeSurface(blit_prep);
   if (gui)
@@ -360,6 +370,8 @@ void Sharks::loneshark()
   }
   int image_count = 1;
   init_keyboard();
+  if (laser_control)
+    laser_control->write('1'); // turn laser on
   mot->set_pos_deg_blocking(left_scan_extent);
   mot->set_patrol(left_scan_extent, right_scan_extent, 1, 1);
   printf("press any key to stop scanning\n");
@@ -387,6 +399,8 @@ void Sharks::loneshark()
       break;
     }
   }
+  if (laser_control)
+    laser_control->write('Q'); // turn laser on
   mot->set_pos_deg_blocking(left_laser_bound); // stop the patrol
   char c = _getch();
   printf("you pressed: [%c]\n", c);

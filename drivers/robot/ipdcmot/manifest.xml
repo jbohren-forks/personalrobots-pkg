@@ -5,7 +5,6 @@ This is an IP-based motor controller.
 <author>Morgan Quigley (email: mquigley@cs.stanford.edu)</author>
 <license>BSD</license>
 <url>http://stair.stanford.edu</url>
-<depend package="common_flows"/>
 <depend package="roscpp"/>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lipdcmot"/>

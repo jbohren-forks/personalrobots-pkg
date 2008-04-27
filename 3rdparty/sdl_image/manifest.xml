@@ -17,5 +17,8 @@ not the SDL_image authors.
 <url>http://www.libsdl.org/projects/SDL_image</url>
 <depend package="sdl"/>
 <depend package="ijg_libjpeg"/>
+<export>
+  <cpp cflags="-I${prefix}/SDL_image/include" lflags="-Xlinker -rpath ${prefix}/SDL_image/lib -L${prefix}/SDL_image/lib -lSDL_image"/>
+</export>
 </package>
 

@@ -1,4 +1,4 @@
-left_scan_extent 100
-right_scan_extent 125
-iris 770
+left_scan_extent 30
+right_scan_extent 75
+iris 300
 focus 6930
