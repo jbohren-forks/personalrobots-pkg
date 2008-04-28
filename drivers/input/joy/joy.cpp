@@ -17,7 +17,7 @@ public:
   string joy_dev;
   int joy_buttons;
 
-  Joy() : node("joy")
+  Joy() : node("joy"), joy_buttons(0)
   {
     param("joy_dev", joy_dev, "/dev/input/js0");
     joy_fd = open(joy_dev.c_str(), O_RDONLY);
