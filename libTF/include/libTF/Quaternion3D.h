@@ -108,6 +108,9 @@ public:
   //Print as a matrix
   void printMatrix(unsigned long long time);  //Not a critical part either
   void printStorage(const Quaternion3DStorage &storage); //Do i need this now that i've got the ostream method??
+
+  // Remove all nodes from the list
+  void clearList();
   
   
 private:

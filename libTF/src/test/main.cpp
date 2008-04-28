@@ -79,6 +79,9 @@ int main(void)
     {
       std::cout <<"caught unconnected frame"<<std::endl;
     }
+
+  //Testing clearing the history with parent change
+  mTR.setWithEulers(7,5,1,1,1,dyaw,dp,dr,atime);
   
   return 0;
 };

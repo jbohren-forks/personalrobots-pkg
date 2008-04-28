@@ -60,8 +60,10 @@ public:
   /* Get the parent node */
   inline unsigned int getParent(){return parent;};
 
-  /* Return tha parent node */
-  inline void setParent(unsigned int parentID){parent = parentID;};
+  /* Set the parent node 
+  * return: false => change of parent, cleared history
+  * return: true => no change of parent */
+  inline bool setParent(unsigned int parentID){if (parent != parentID){parent = parentID; clearList(); return false;} return true;};
 private:
 
   /* Storage of the parent */

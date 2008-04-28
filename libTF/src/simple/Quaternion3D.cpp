@@ -457,6 +457,24 @@ void Quaternion3D::pruneList()
   
 };
 
+void Quaternion3D::clearList()
+{
+  data_LL * p_current = first;
+  data_LL * p_last = NULL;
+
+  // Delete all nodes in list
+  while (p_current != NULL)
+    {
+      p_last = p_current;
+      p_current = p_current->next;
+      delete p_last;
+    }
+
+  //Clean up pointers
+  first = NULL;
+  last = NULL;
+  
+};
 
 
 int Quaternion3D::findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two, const unsigned long long target_time, long long &time_diff)
