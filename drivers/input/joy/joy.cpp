@@ -4,7 +4,6 @@
 #include <fcntl.h>
 #include "ros/node.h"
 #include "joy/MsgJoy.h"
-#include "std_msgs/MsgEmpty.h"
 
 void *s_joy_func(void *);
 using namespace ros;
@@ -13,7 +12,6 @@ class Joy : public node
 {
 public:
   MsgJoy joy_msg;
-  MsgEmpty deadman_msg;
 
   int joy_fd;
   string joy_dev;
@@ -29,16 +27,6 @@ public:
     pthread_create(&joy_thread, NULL, s_joy_func, this);
 
     advertise("joy", joy_msg);
-    advertise("deadman", deadman_msg);
-  }
-  void monitor_deadman()
-  {
-    while (ok())
-    {
-      usleep(100000);
-      if (joy_buttons & 0x20)
-        publish("deadman", deadman_msg);
-    }
   }
   void joy_func()
   {
@@ -55,6 +43,7 @@ public:
             joy_buttons |= (1 << event.number);
           else
             joy_buttons &= ~(1 << event.number);
+          joy_msg.buttons = joy_buttons;
           publish("joy", joy_msg);
           break;
         case JS_EVENT_AXIS:
@@ -82,7 +71,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   Joy joy;
-  joy.monitor_deadman();
+  joy.spin();
   return 0;
 }
 

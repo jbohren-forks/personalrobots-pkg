@@ -14,6 +14,8 @@ public:
 
   JoyView() : node("joy_view")
   {
+    joy.buttons = 0;
+    joy.x1 = joy.x2 = joy.y1 = joy.y2 = 0;
     subscribe("joy", joy, &JoyView::joy_cb);
     init_gui(640, 480, "nav view");
   }
@@ -37,6 +39,21 @@ public:
       glVertex2f(1, 0);
       glVertex2f(1 + joy.x2, joy.y2);
     glEnd();
+    for (int i = 0; i < 16; i++)
+    {
+      if (joy.buttons & (1 << i))
+        glColor3f(1, 0.8, 0.4);
+      else
+        glColor3f(0.5f, 0.5f, 0.5f);
+      float lx = -2.0f + (float)i / 4.0f;
+      float rx = -2.0f + (float)(i+1) / 4.0f;
+      glBegin(GL_QUADS);
+      glVertex2f(lx, 1.8);
+      glVertex2f(rx, 1.8);
+      glVertex2f(rx, 2.0);
+      glVertex2f(lx, 2.0);
+      glEnd();
+    }
     joy.unlock();
     SDL_GL_SwapBuffers();
   }
