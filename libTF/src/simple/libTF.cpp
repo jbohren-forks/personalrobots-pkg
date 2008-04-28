@@ -40,7 +40,8 @@ RefFrame::RefFrame() :
 }
 
 
-TransformReference::TransformReference()
+TransformReference::TransformReference(ULLtime cache_time):
+  cache_time(cache_time)
 {
   /* initialize pointers to NULL */
   for (unsigned int i = 0; i < MAX_NUM_FRAMES; i++)

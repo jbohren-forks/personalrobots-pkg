@@ -108,6 +108,26 @@ Newmat10 is the matrix library used in this library.  Documentation for Newmat c
 
 \subsection{libTF API}
 \index{libTF API}
+The class which provides external functionality is named TransformReference.  
+
+\subsubsection{Data Types}
+\begin{verbatim}
+typedef unsigned long long ULLtime;
+\end{verbatim}
+
+\texttt{ULLtime} provides a simple typedef for the timestamp used in this library. 
+\texttt{ULLtime} is the number of nanoseconds since the epoch(1970) expressed as 
+an unsigned long long, which should be equivilant to a \texttt{uint64\_t}. 
+
+\subsubsection{Constructor}
+\index{libTF API!Constructor}
+\begin{verbatim}
+TransformReference(ULLtime cache_time = DEFAULT_CACHE_TIME);
+\end{verbatim}
+This is the constructor for the class.  It's optional argument is 
+how long to keep a history of the transforms.  It is expressed in 
+\texttt{ULLtime}, nanoseconds since the epoch(1970).  
+
 \subsubsection{Mutators}
 
 \paragraph{setWithEulers}
@@ -158,14 +178,6 @@ NEWMAT::Matrix getMatrix(unsigned int target_frame,
 std::string viewChain(unsigned int target_frame, 
                       unsigned int source_frame);
 \end{verbatim}
-
-\subsubsection{Constructor}
-\index{libTF API!Constructor}
-\begin{verbatim}
-TransformReference();
-\end{verbatim}
-\todo{add max time default argument}
-
 
 \section{ROS Integration}
 

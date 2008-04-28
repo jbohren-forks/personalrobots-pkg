@@ -83,6 +83,9 @@ private:
 class TransformReference
 {
 public:
+  // A typedef for clarity
+  typedef unsigned long long ULLtime;
+
   /************* Constants ***********************/
   static const unsigned int ROOT_FRAME = 1;  //Hard Value for ROOT_FRAME
   static const unsigned int NO_PARENT = 0;  //Value for NO_PARENT
@@ -90,10 +93,11 @@ public:
   static const unsigned int MAX_NUM_FRAMES = 100;   /* The maximum number of frames possible */
   static const unsigned int MAX_GRAPH_DEPTH = 100;   /* The maximum number of times to descent before determining that graph has a loop. */
 
-  typedef unsigned long long ULLtime;
+  static const ULLtime DEFAULT_CACHE_TIME = 10 * 1000000000ULL; //10 seconds in nanoseconds
+
 
   /* Constructor */
-  TransformReference();
+  TransformReference(ULLtime cache_time = DEFAULT_CACHE_TIME);
 
   /********** Mutators **************/
   /* Set a new frame or update an old one. */
@@ -157,6 +161,8 @@ private:
    * The frames will be dynamically allocated at run time when set the first time. */
   RefFrame* frames[MAX_NUM_FRAMES];
 
+  // How long to cache transform history
+  ULLtime cache_time;
 
   /* This struct is how the list of transforms are stored before being passed to computeTransformFromList. */
   typedef struct 
