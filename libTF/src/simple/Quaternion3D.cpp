@@ -39,8 +39,8 @@ Euler3D::Euler3D(double _x, double _y, double _z, double _yaw, double _pitch, do
 };
 
 
-Quaternion3D::Quaternion3D():
-  max_storage_time(MAX_STORAGE_TIME),
+Quaternion3D::Quaternion3D(unsigned long long max_cache_time):
+  max_storage_time(max_cache_time),
   first(NULL),
   last(NULL)
 {
@@ -312,14 +312,6 @@ void Quaternion3D::printStorage(const Quaternion3DStorage& storage)
 };
 
 
-unsigned long long Quaternion3D::Qgettime()
-{
-  timeval temp_time_struct;
-  gettimeofday(&temp_time_struct,NULL);
-  return temp_time_struct.tv_sec * 1000000ULL + (unsigned long long)temp_time_struct.tv_usec;
-}
-
-
 bool Quaternion3D::getValue(Quaternion3DStorage& buff, unsigned long long time, long long  &time_diff)
 {
   Quaternion3DStorage p_temp_1;
@@ -465,6 +457,24 @@ void Quaternion3D::pruneList()
   
 };
 
+void Quaternion3D::clearList()
+{
+  data_LL * p_current = first;
+  data_LL * p_last = NULL;
+
+  // Delete all nodes in list
+  while (p_current != NULL)
+    {
+      p_last = p_current;
+      p_current = p_current->next;
+      delete p_last;
+    }
+
+  //Clean up pointers
+  first = NULL;
+  last = NULL;
+  
+};
 
 
 int Quaternion3D::findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two, const unsigned long long target_time, long long &time_diff)

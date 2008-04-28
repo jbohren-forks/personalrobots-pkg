@@ -32,53 +32,61 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef ETHERDRIVE_H
-#define ETHERDRIVE_H
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-
-#include <string>
+#include "etherdrive/etherdrive.h"
+#include <iostream>
 
 using namespace std;
 
-class EtherDrive
-{
-public:
-  EtherDrive();
-  ~EtherDrive();
+int main() {
 
-  // Initialize 
-  bool init(string ip);
+  EtherDrive e;
   
-  void shutdown();
+  if (!e.init("192.168.0.100")) {
+    cout << "Could not initialize etherdrive." << endl;
+    return -1;
+  }
 
-  // Manually send EtherDrive command.
-  int send_cmd(char* cmd, size_t cmd_len, char* buf, size_t buf_len);
+  EDMotor m0 = e.get_motor(0);
+  EDMotor m1 = e.get_motor(1);
 
-  // Enable motors
-  bool motors_on();
+  e.motors_on();
+  
+  int count = 0;
 
-  // Disable motors
-  bool motors_off();
+  int drv = 100000;
 
-  // Send an array of motor commands up to 6 in length.
-  bool drive(size_t num, int32_t* drv);
+  e.set_control_mode(2);
 
-  // Send most recent motor commands, and retrieve update (this must be run at sufficient rate).
-  bool tick(size_t num = 0, int32_t* enc = 0, int32_t* curr = 0, int32_t* pwm = 0);
-private:
-  bool ready;
+  if (!m1.set_gains(150, 20, -10, 50, 200, 13)) {
+    printf("Setting gains failed!\n");
+    return 0;
+  }
 
-  int32_t last_drv[6];
+  while (1) {
 
-  int mot_sock;
-  int cmd_sock;
+    m0.set_drv(drv);
 
-  struct sockaddr_in mot_addr_out;
-  struct sockaddr_in cmd_addr_out;
-};
+    if (!e.tick())
+      printf("Tick problem!.");
 
-#endif
+    printf("Encoder0: %d Current: %d PWM: %d\n", m0.get_enc(), m0.get_cur(), m0.get_pwm());
+    printf("Encoder1: %d Current: %d PWM: %d\n", m1.get_enc(), m1.get_cur(), m1.get_pwm());
 
+    
+    // Crappy control
+    if (abs(m0.get_cur()) > 200) {
+      if (count++ > 50)
+	e.motors_off();
+    } else {
+      count = 0;
+    }
+
+    if (m0.get_enc() == 100000) {
+      drv = -100000;
+    } else if (m0.get_enc() == -100000) {
+      drv = 100000;
+    }
+  }
+
+  e.shutdown();
+}

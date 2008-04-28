@@ -13,7 +13,7 @@ int main(void)
   dx = dy= dz = 0;
   dyaw = dp = dr = 0.1;
   
-  unsigned long long atime = Quaternion3D::Qgettime();
+  unsigned long long atime = mTR.gettime();
 
   
   //Fill in some transforms
@@ -79,6 +79,9 @@ int main(void)
     {
       std::cout <<"caught unconnected frame"<<std::endl;
     }
+
+  //Testing clearing the history with parent change
+  mTR.setWithEulers(7,5,1,1,1,dyaw,dp,dr,atime);
   
   return 0;
 };

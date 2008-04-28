@@ -57,7 +57,7 @@ int main() {
     if (!e.drive(1,&drv))
       printf("Drive problem!.");
     if (!e.tick(2,enc,cur))
-// // //       printf("Tick problem!.");
+      printf("Tick problem!.");
 
     printf("Encoder0: %d Current: %d\n", enc[0], cur[0]);
     printf("Encoder1: %d Current: %d\n", enc[1], cur[1]);

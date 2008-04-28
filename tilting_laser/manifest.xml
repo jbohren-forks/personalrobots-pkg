@@ -12,5 +12,6 @@ tilting stage, such as the one found in the head of PR2.
 <depend package="common_flows"/>
 <depend package="unstable_flows"/>
 <depend package="hokuyourg_player"/>
+<depend package="libTF"/>
 </package>
 

@@ -60,8 +60,10 @@ public:
   /* Get the parent node */
   inline unsigned int getParent(){return parent;};
 
-  /* Return tha parent node */
-  inline void setParent(unsigned int parentID){parent = parentID;};
+  /* Set the parent node 
+  * return: false => change of parent, cleared history
+  * return: true => no change of parent */
+  inline bool setParent(unsigned int parentID){if (parent != parentID){parent = parentID; clearList(); return false;} return true;};
 private:
 
   /* Storage of the parent */
@@ -81,6 +83,9 @@ private:
 class TransformReference
 {
 public:
+  // A typedef for clarity
+  typedef unsigned long long ULLtime;
+
   /************* Constants ***********************/
   static const unsigned int ROOT_FRAME = 1;  //Hard Value for ROOT_FRAME
   static const unsigned int NO_PARENT = 0;  //Value for NO_PARENT
@@ -88,22 +93,25 @@ public:
   static const unsigned int MAX_NUM_FRAMES = 100;   /* The maximum number of frames possible */
   static const unsigned int MAX_GRAPH_DEPTH = 100;   /* The maximum number of times to descent before determining that graph has a loop. */
 
+  static const ULLtime DEFAULT_CACHE_TIME = 10 * 1000000000ULL; //10 seconds in nanoseconds
+
+
   /* Constructor */
-  TransformReference();
+  TransformReference(ULLtime cache_time = DEFAULT_CACHE_TIME);
 
   /********** Mutators **************/
   /* Set a new frame or update an old one. */
   /* Use Euler Angles.  X forward, Y to the left, Z up, Yaw about Z, pitch about new Y, Roll about new X */
-  void setWithEulers(unsigned int framid, unsigned int parentid, double x, double y, double z, double yaw, double pitch, double roll, unsigned long long time);
+  void setWithEulers(unsigned int framid, unsigned int parentid, double x, double y, double z, double yaw, double pitch, double roll, ULLtime time);
   /* Using DH Parameters */
   // Conventions from http://en.wikipedia.org/wiki/Robotics_conventions
-  void setWithDH(unsigned int framid, unsigned int parentid, double length, double alpha, double offset, double theta, unsigned long long time);
+  void setWithDH(unsigned int framid, unsigned int parentid, double length, double alpha, double offset, double theta, ULLtime time);
   // Possible exceptions TransformReference::LookupException
 
   /*********** Accessors *************/
 
   /* Get the transform between two frames by frame ID.  */
-  NEWMAT::Matrix getMatrix(unsigned int target_frame, unsigned int source_frame, unsigned long long time);
+  NEWMAT::Matrix getMatrix(unsigned int target_frame, unsigned int source_frame, ULLtime time);
   // Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
   // TransformReference::MaxDepthException
 
@@ -113,6 +121,10 @@ public:
   // TransformReference::MaxDepthException
 
 
+
+  /**** Utility Functions ****/
+  // this is a function to return the current time in nanooseconds from the beginning of 1970
+  static  ULLtime gettime(void);
 
 
 
@@ -149,6 +161,8 @@ private:
    * The frames will be dynamically allocated at run time when set the first time. */
   RefFrame* frames[MAX_NUM_FRAMES];
 
+  // How long to cache transform history
+  ULLtime cache_time;
 
   /* This struct is how the list of transforms are stored before being passed to computeTransformFromList. */
   typedef struct 
@@ -166,7 +180,7 @@ private:
   TransformLists  lookUpList(unsigned int target_frame, unsigned int source_frame);
   
   /* Compute the transform based on the list of frames */
-  NEWMAT::Matrix computeTransformFromList(TransformLists list, unsigned long long time);
+  NEWMAT::Matrix computeTransformFromList(TransformLists list, ULLtime time);
 
 };
 #endif //LIBTF_HH

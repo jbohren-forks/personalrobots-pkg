@@ -43,6 +43,8 @@
 
 using namespace std;
 
+class EDMotor;
+
 class EtherDrive
 {
 public:
@@ -63,15 +65,32 @@ public:
   // Disable motors
   bool motors_off();
 
+  bool set_control_mode(int8_t m);
+
+  bool set_gain(uint32_t m, char G, int32_t val);
+
+  EDMotor get_motor(uint32_t m);
+
+  void set_drv(uint32_t m, int32_t drv);
+  int32_t get_enc(uint32_t m);
+  int32_t get_cur(uint32_t m);
+  int32_t get_pwm(uint32_t m);
+
   // Send an array of motor commands up to 6 in length.
   bool drive(size_t num, int32_t* drv);
 
   // Send most recent motor commands, and retrieve update (this must be run at sufficient rate).
   bool tick(size_t num = 0, int32_t* enc = 0, int32_t* curr = 0, int32_t* pwm = 0);
+
+
+
 private:
   bool ready;
 
   int32_t last_drv[6];
+  int32_t last_enc[6];
+  int32_t last_cur[6];
+  int32_t last_pwm[6];
 
   int mot_sock;
   int cmd_sock;
@@ -79,6 +98,44 @@ private:
   struct sockaddr_in mot_addr_out;
   struct sockaddr_in cmd_addr_out;
 };
+
+class EDMotor
+{
+  friend class EtherDrive;
+public:
+  void set_drv(int32_t drv) {
+    driver->set_drv(motor, drv);
+  }
+
+  int32_t get_enc() {
+    return driver->get_enc(motor);
+  }
+
+  int32_t get_cur() {
+    return driver->get_cur(motor);
+  }
+
+  int32_t get_pwm() {
+    return driver->get_pwm(motor);
+  }
+
+  bool set_gains(int32_t P, int32_t I, int32_t D, int32_t W, int32_t M, int32_t Z) {
+    return driver->set_gain(motor, 'P', P) & 
+      driver->set_gain(motor, 'I', I) & 
+      driver->set_gain(motor, 'D', D) & 
+      driver->set_gain(motor, 'W', W) & 
+      driver->set_gain(motor, 'M', M) & 
+      driver->set_gain(motor, 'Z', Z);
+  }
+protected:
+  EDMotor(EtherDrive* driver, uint32_t motor) : driver(driver), motor(motor) {}
+
+private:
+  EtherDrive* driver;
+
+  uint32_t motor;
+};
+
 
 #endif
 

@@ -48,6 +48,11 @@ EtherDrive::EtherDrive()
 
 }
 
+EtherDrive::~EtherDrive()
+{
+  shutdown();
+}
+
 bool EtherDrive::init(string ip) {
 
   if (ready) {
@@ -94,12 +99,6 @@ bool EtherDrive::init(string ip) {
 }
 
 
-EtherDrive::~EtherDrive()
-{
-  shutdown();
-}
-
-
 void EtherDrive::shutdown() {
 
   if (ready = true) {
@@ -108,9 +107,30 @@ void EtherDrive::shutdown() {
   }
 
   ready = false;
-    
 }
 
+
+int EtherDrive::send_cmd(char* cmd, size_t cmd_len, char* buf, size_t buf_len) {
+
+  if (!ready)
+    return -1;
+
+  int n_sent;
+  int n_recv;
+
+  struct sockaddr_in from;
+  socklen_t fromlen = sizeof(struct sockaddr_in);
+
+  n_sent = sendto(cmd_sock, cmd, cmd_len, 0, (struct sockaddr *)&cmd_addr_out, sizeof(mot_addr_out));
+
+  if (n_sent != cmd_len) {
+    return -1;
+  }
+
+  n_recv = recvfrom(cmd_sock, buf, buf_len, 0, (struct sockaddr *)&from, &fromlen);
+
+  return n_recv;
+}
 
 bool EtherDrive::motors_on() {
 
@@ -119,11 +139,11 @@ bool EtherDrive::motors_on() {
     cmd[0] = 'm';
     cmd[1] = 1;
     cmd[2] = 0;
-
+  
     int32_t res[3];
-
+  
     int res_len = send_cmd((char*)cmd, 3*sizeof(int32_t), (char*)res, 100*sizeof(int32_t));
-
+  
     if (res_len == 3) {
       if (res[1] == 1) {
 	return true;
@@ -132,7 +152,6 @@ bool EtherDrive::motors_on() {
   }
 
   return false;
-
 }
 
 bool EtherDrive::motors_off() {
@@ -158,47 +177,95 @@ bool EtherDrive::motors_off() {
 
 }
 
+bool EtherDrive::set_control_mode(int8_t m) {
 
-int EtherDrive::send_cmd(char* cmd, size_t cmd_len, char* buf, size_t buf_len) {
+  if (ready) {
 
-  int n_sent;
-  int n_recv;
+    if (m == 0 || m == 1 || m == 2) {
 
-  struct sockaddr_in from;
-  socklen_t fromlen = sizeof(struct sockaddr_in);
+      int32_t cmd[3];
+      cmd[0] = 'i';
+      cmd[1] = m;
+      cmd[2] = 0;
 
-  n_sent = sendto(cmd_sock, cmd, cmd_len, 0, (struct sockaddr *)&cmd_addr_out, sizeof(mot_addr_out));
+      int32_t res[3];
 
-  if (n_sent != cmd_len) {
-    return -1;
+      int res_len = send_cmd((char*)cmd, 3*sizeof(int32_t), (char*)res, 100*sizeof(int32_t));
+
+      if (res_len == 3) {
+	if (res[1] == m) {
+	  return true;
+	} 
+      }
+    }
   }
 
-  n_recv = recvfrom(cmd_sock, buf, buf_len, 0, (struct sockaddr *)&from, &fromlen);
-
-  return n_recv;
-
+  return false;
 }
 
 
-bool EtherDrive::drive(size_t num, int32_t* drv)
+bool EtherDrive::set_gain(uint32_t m, char G, int32_t val) {
+  if (ready) {
+
+    if (m < 6) {
+
+      char cmds[] = "PIDWMZ";
+      if ( memchr(cmds, G, strlen(cmds)) != NULL) {
+
+	int32_t cmd[3];
+	cmd[0] = G;
+	cmd[1] = m;
+	cmd[2] = val;
+	
+	int32_t res[3];
+	
+	int res_len = send_cmd((char*)cmd, 3*sizeof(int32_t), (char*)res, 100*sizeof(int32_t));
+	
+	if (res_len == 3) {
+	  if (res[1] == m && res[2] == val) {
+	    return true;
+	  } 
+	}
+      }
+    }
+  }
+}
+
+
+EDMotor EtherDrive::get_motor(uint32_t m) {
+    return EDMotor(this, m);
+} 
+
+void EtherDrive::set_drv(uint32_t m, int32_t drv) {
+  if (m < 6) {
+    last_drv[m] = drv;
+  }
+}
+
+int32_t EtherDrive::get_enc(uint32_t m) {
+  if (m < 6) {
+    return last_enc[m];
+  }
+}
+
+int32_t EtherDrive::get_cur(uint32_t m) {
+  if (m < 6) {
+    return last_cur[m];
+  }
+}
+
+int32_t EtherDrive::get_pwm(uint32_t m) {
+  if (m < 6) {
+    return last_pwm[m];
+  }
+}
+
+
+bool EtherDrive::tick(size_t num,  int32_t* enc, int32_t* cur, int32_t* pwm)
 {
-  if (num > 6) {
+
+  if (!ready)
     return false;
-  }
-
-  for (int i = 0; i < num; i++) {
-    last_drv[i] = drv[i];
-  }
-
-  for (int i = num; i < 6; i++) {
-    last_drv[i] = 0;
-  }
-
-  return true;
-}
-
-bool EtherDrive::tick(size_t num,  int32_t* enc, int32_t* curr, int32_t* pwm)
-{
 
   if (num > 6) {
     return false;
@@ -224,23 +291,47 @@ bool EtherDrive::tick(size_t num,  int32_t* enc, int32_t* curr, int32_t* pwm)
     return false;
   }
 
+
+  for (int i = 0; i < 6; i++) {
+    last_enc[i] = buf[i];
+  }
+  for (int i = 0; i < 6; i++) {
+    last_cur[i] = buf[6+i];
+  }
+  for (int i = 0; i < 6; i++) {
+    last_pwm[i] = buf[12+i];
+  }
+
+
   if (enc > 0) {
     for (int i = 0; i < num; i++) {
-      enc[i] = buf[i];
+      enc[i] = last_enc[i];
     }
   }
-
-  if (curr > 0) {
+  if (cur > 0) {
     for (int i = 0; i < num; i++) {
-      curr[i] = buf[6+i];
+      cur[i] = last_cur[i];
     }
   }
-
   if (pwm > 0) {
     for (int i = 0; i < num; i++) {
-      pwm[i] = buf[12+i];
+      pwm[i] = last_pwm[i];
     }
   }
 
   return n_recv;
 }
+
+bool EtherDrive::drive(size_t num, int32_t* drv)
+{
+  if (num > 6) {
+    return false;
+  }
+
+  for (int i = 0; i < num; i++) {
+    last_drv[i] = drv[i];
+  }
+
+  return true;
+}
+

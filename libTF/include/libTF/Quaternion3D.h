@@ -52,7 +52,7 @@ public:
 class Quaternion3D {
 
 public:
-  static const int MIN_INTERPOLATION_DISTANCE = 5; //Number of micro seconds to not interpolate below.
+  static const int MIN_INTERPOLATION_DISTANCE = 5; //Number of nano-seconds to not interpolate below.
   // Storage class
   class Quaternion3DStorage
   {
@@ -72,12 +72,12 @@ public:
 
     /* Internal Data */    
     double xt, yt, zt, xr, yr, zr, w;
-    unsigned long long time;
+    unsigned long long time; //nanoseconds since 1970
   };
   
   /** Constructors **/
-  // Standard constructor
-  Quaternion3D();
+  // Standard constructor max_cache_time is how long to cache transform data
+  Quaternion3D(unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME);
   
   /** Mutators **/
   // Set the values manually
@@ -98,10 +98,6 @@ public:
   // Return the inverse matrix
   NEWMAT::Matrix getInverseMatrix(unsigned long long time);
 
-  /**** Utility Functions ****/
-  // this is a function to return the current time in microseconds from the beginning of 1970
-  static  unsigned long long Qgettime(void);
-
   // Convert DH Parameters to a Homogeneous Transformation Matrix
   static NEWMAT::Matrix matrixFromDH(double length, double alpha, double offset, double theta);
   // Convert Euler Angles to a Homogeneous Transformation Matrix
@@ -112,11 +108,14 @@ public:
   //Print as a matrix
   void printMatrix(unsigned long long time);  //Not a critical part either
   void printStorage(const Quaternion3DStorage &storage); //Do i need this now that i've got the ostream method??
+
+  // Remove all nodes from the list
+  void clearList();
   
   
 private:
   /**** Linked List stuff ****/
-  static const long long MAX_STORAGE_TIME = 100000000; // max of 100 seconds storage
+  static const unsigned long long DEFAULT_MAX_STORAGE_TIME = 10ULL * 1000000000ULL; // default value of 10 seconds storage
  
   struct data_LL{
     Quaternion3DStorage data;

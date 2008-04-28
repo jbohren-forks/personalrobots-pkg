@@ -1,0 +1,9 @@
+<package>
+<description brief="KDTree library">
+A Wrapper for the KDTREE2 library.
+</description>
+<author>Matthew B. Kennel</author>
+<license>Academic Free License 1.1</license>
+<url>http://arxiv.org/abs/physics/0408067</url>
+</package>
+

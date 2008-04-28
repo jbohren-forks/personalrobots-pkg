@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+require 'fileutils.rb'
+
+pkg_path = File.expand_path($0).split('/')
+pkg_path = pkg_path[0,pkg_path.length-1].join('/')
+puts "package path: [#{pkg_path}]"
+if pkg_path.length < 1
+  puts "woah! package path looks scary. something isn't right. bailing..."
+  exit
+end
+
+Dir.chdir(pkg_path)
+# TODO make sure we got there
+
+if ARGV.length == 0 || ARGV[0] == 'update'
+  puts "extracting KDTree ============================"
+  system("tar xzvf kdtree2.tar.gz")
+  system("cp kdtree2.31/src-c++/kdtree2.hpp include/kdtree/")
+  puts "making kdtree2 ================================="
+  system("make")
+  puts "building test ================================="
+  Dir.chdir "#{pkg_path}/test"
+  system("make")
+  puts "done! hooray! =================================="
+elsif ARGV[0] == 'clean'
+  Dir.chdir "#{pkg_path}"
+  system("make clean")
+  system("rm -rf kdtree2.31")
+  system("rm include/kdtree/kdtree2.hpp")
+  Dir.chdir "#{pkg_path}/test"
+  system("make clean")
+  puts "done!"
+else
+  puts "unknown parameter: #{ARGV[0]}"
+end
+
