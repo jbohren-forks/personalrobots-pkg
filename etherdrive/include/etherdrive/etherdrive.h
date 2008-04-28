@@ -65,6 +65,10 @@ public:
   // Disable motors
   bool motors_off();
 
+  bool set_control_mode(int8_t m);
+
+  bool set_gain(uint32_t m, char G, int32_t val);
+
   EDMotor get_motor(uint32_t m);
 
   void set_drv(uint32_t m, int32_t drv);
@@ -113,6 +117,15 @@ public:
 
   int32_t get_pwm() {
     return driver->get_pwm(motor);
+  }
+
+  bool set_gains(int32_t P, int32_t I, int32_t D, int32_t W, int32_t M, int32_t Z) {
+    return driver->set_gain(motor, 'P', P) & 
+      driver->set_gain(motor, 'I', I) & 
+      driver->set_gain(motor, 'D', D) & 
+      driver->set_gain(motor, 'W', W) & 
+      driver->set_gain(motor, 'M', M) & 
+      driver->set_gain(motor, 'Z', Z);
   }
 protected:
   EDMotor(EtherDrive* driver, uint32_t motor) : driver(driver), motor(motor) {}

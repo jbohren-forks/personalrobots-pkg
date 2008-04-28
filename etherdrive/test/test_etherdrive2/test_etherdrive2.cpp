@@ -55,6 +55,13 @@ int main() {
 
   int drv = 100000;
 
+  e.set_control_mode(2);
+
+  if (!m1.set_gains(150, 20, -10, 50, 200, 13)) {
+    printf("Setting gains failed!\n");
+    return 0;
+  }
+
   while (1) {
 
     m0.set_drv(drv);

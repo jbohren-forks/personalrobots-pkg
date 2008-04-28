@@ -107,11 +107,13 @@ void EtherDrive::shutdown() {
   }
 
   ready = false;
-    
 }
 
 
 int EtherDrive::send_cmd(char* cmd, size_t cmd_len, char* buf, size_t buf_len) {
+
+  if (!ready)
+    return -1;
 
   int n_sent;
   int n_recv;
@@ -128,7 +130,6 @@ int EtherDrive::send_cmd(char* cmd, size_t cmd_len, char* buf, size_t buf_len) {
   n_recv = recvfrom(cmd_sock, buf, buf_len, 0, (struct sockaddr *)&from, &fromlen);
 
   return n_recv;
-
 }
 
 bool EtherDrive::motors_on() {
@@ -138,11 +139,11 @@ bool EtherDrive::motors_on() {
     cmd[0] = 'm';
     cmd[1] = 1;
     cmd[2] = 0;
-
+  
     int32_t res[3];
-
+  
     int res_len = send_cmd((char*)cmd, 3*sizeof(int32_t), (char*)res, 100*sizeof(int32_t));
-
+  
     if (res_len == 3) {
       if (res[1] == 1) {
 	return true;
@@ -151,7 +152,6 @@ bool EtherDrive::motors_on() {
   }
 
   return false;
-
 }
 
 bool EtherDrive::motors_off() {
@@ -175,6 +175,60 @@ bool EtherDrive::motors_off() {
 
   return false;
 
+}
+
+bool EtherDrive::set_control_mode(int8_t m) {
+
+  if (ready) {
+
+    if (m == 0 || m == 1 || m == 2) {
+
+      int32_t cmd[3];
+      cmd[0] = 'i';
+      cmd[1] = m;
+      cmd[2] = 0;
+
+      int32_t res[3];
+
+      int res_len = send_cmd((char*)cmd, 3*sizeof(int32_t), (char*)res, 100*sizeof(int32_t));
+
+      if (res_len == 3) {
+	if (res[1] == m) {
+	  return true;
+	} 
+      }
+    }
+  }
+
+  return false;
+}
+
+
+bool EtherDrive::set_gain(uint32_t m, char G, int32_t val) {
+  if (ready) {
+
+    if (m < 6) {
+
+      char cmds[] = "PIDWMZ";
+      if ( memchr(cmds, G, strlen(cmds)) != NULL) {
+
+	int32_t cmd[3];
+	cmd[0] = G;
+	cmd[1] = m;
+	cmd[2] = val;
+	
+	int32_t res[3];
+	
+	int res_len = send_cmd((char*)cmd, 3*sizeof(int32_t), (char*)res, 100*sizeof(int32_t));
+	
+	if (res_len == 3) {
+	  if (res[1] == m && res[2] == val) {
+	    return true;
+	  } 
+	}
+      }
+    }
+  }
 }
 
 
@@ -209,6 +263,9 @@ int32_t EtherDrive::get_pwm(uint32_t m) {
 
 bool EtherDrive::tick(size_t num,  int32_t* enc, int32_t* cur, int32_t* pwm)
 {
+
+  if (!ready)
+    return false;
 
   if (num > 6) {
     return false;
