@@ -41,7 +41,7 @@ int main() {
 
   EtherDrive e;
   
-  if (!e.init("10.0.0.151")) {
+  if (!e.init("192.168.0.100")) {
     cout << "Could not initialize etherdrive." << endl;
     return -1;
   }
