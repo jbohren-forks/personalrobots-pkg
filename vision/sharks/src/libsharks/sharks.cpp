@@ -28,6 +28,9 @@
 
 #include <sstream>
 #include <cstdio>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <ctime>
 #include "sharks/sharks.h"
 #include "axis_cam/axis_cam.h"
 #include "ipdcmot/ipdcmot.h"
@@ -370,6 +373,14 @@ void Sharks::loneshark()
   }
   int image_count = 1;
   init_keyboard();
+  char logdir[500];
+  time_t t = time(NULL);
+  struct tm *tms = localtime(&t);
+  snprintf(logdir, sizeof(logdir), "%d-%02d-%02d-%02d-%02d-%02d",
+           tms->tm_year+1900, tms->tm_mon+1, tms->tm_mday,
+           tms->tm_hour     , tms->tm_min  , tms->tm_sec);
+  printf("log directory: %s", logdir);
+  mkdir(logdir, 0755);
   if (laser_control)
     laser_control->write('1'); // turn laser on
   mot->set_pos_deg_blocking(left_scan_extent);
@@ -390,8 +401,10 @@ void Sharks::loneshark()
     }
     printf(".");
     fflush(stdout);
-    char fnamebuf[500];
-    sprintf(fnamebuf, "img_%06d_%012.6f.jpg", image_count, pos);
+
+    char fnamebuf[800];
+    snprintf(fnamebuf, sizeof(fnamebuf), "%s/img_%06d_%012.6f.jpg", 
+             logdir, image_count, pos);
     image_count++;
     if (!get_and_save_image(fnamebuf))
     {
@@ -400,7 +413,7 @@ void Sharks::loneshark()
     }
   }
   if (laser_control)
-    laser_control->write('Q'); // turn laser on
+    laser_control->write('Q'); // turn laser off
   mot->set_pos_deg_blocking(left_laser_bound); // stop the patrol
   char c = _getch();
   printf("you pressed: [%c]\n", c);
@@ -444,6 +457,7 @@ bool Sharks::load_config_file(string filename)
     printf("woah! couldn't open [%s]\n", filename.c_str());
     return false;
   }
+  cam->set_focus(0); // enable autofocus by default
   while (!feof(f))
   {
     char buf[1000]; // OVERRUNS R FUN
@@ -463,6 +477,8 @@ bool Sharks::load_config_file(string filename)
   fclose(f);
   printf("letting camera settle to new iris/focus for 3 seconds...\n");
   usleep(3000000);
+  cam->set_focus(0, true); // lock focus
+  usleep(200000);
   printf("done. carry on.\n");
 }
 

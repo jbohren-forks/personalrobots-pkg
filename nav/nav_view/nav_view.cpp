@@ -2,13 +2,13 @@
 #include <math.h>
 #include <GL/gl.h>
 #include "ros/node.h"
-#include "std_msgs/MsgPose2DFloat32.h"
+#include "std_msgs/MsgRobotBase2DOdom.h"
 #include "sdlgl/sdlgl.h"
 
 class NavView : public ros::node, public ros::SDLGL
 {
 public:
-  MsgPose2DFloat32 odom;
+  MsgRobotBase2DOdom odom;
   float view_scale, view_x, view_y;
 
   NavView() : ros::node("nav_view"),
@@ -31,8 +31,8 @@ public:
 
     glPushMatrix();
       odom.lock();
-      glTranslatef(odom.x, odom.y, 0);
-      glRotatef(odom.th * 180 / M_PI, 0, 0, 1);
+      glTranslatef(odom.px, odom.py, 0);
+      glRotatef(odom.pyaw * 180 / M_PI, 0, 0, 1);
       odom.unlock();
       glColor3f(0.2, 1.0, 0.4);
       glBegin(GL_LINE_LOOP);
