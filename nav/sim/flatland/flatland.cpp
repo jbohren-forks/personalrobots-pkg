@@ -3,6 +3,7 @@
 #include "ros/node.h"
 #include "rosrand/rosrand.h"
 #include "std_msgs/MsgPose2DFloat32.h"
+#include "std_msgs/MsgBaseVel.h"
 
 class FlatlandRobot
 {
@@ -23,12 +24,9 @@ public:
   }
   double normalize_angle(double a)
   {
-    if (a >= -M_PI && a < M_PI)
-      return a;
-    a -= floor(a / 2*M_PI) * 2 * M_PI;
-    if (a >= M_PI)
+    while (a > M_PI)
       a -= 2 * M_PI;
-    else if (a < -M_PI)
+    while (a < -M_PI)
       a += 2 * M_PI;
     return a;
   }
@@ -57,21 +55,29 @@ class Flatland : public ros::node
 {
 public:
   MsgPose2DFloat32 odom;
+  MsgBaseVel cmd_vel;
   FlatlandRobot robot;
   double last_odom_t, last_t;
 
   Flatland() : ros::node("flatland"), last_odom_t(0), last_t(0)
   {
     advertise("odom", odom);
+    subscribe("cmd_vel", cmd_vel, &Flatland::cmd_vel_cb);
+  }
+  void cmd_vel_cb()
+  {
+    cmd_vel.lock();
+    robot.v = cmd_vel.vx;
+    robot.w = cmd_vel.vw;
+    cmd_vel.unlock();
   }
   void tic()
   {
-    robot.v = 0.1; robot.w = 0.01;
     double t = clock.time();
     double dt = t - last_t;
     last_t = t;
     robot.tic(dt);
-    if (t > last_odom_t + 0.01)
+    if (t > last_odom_t + 0.05)
     {
       // send odom message
       odom.x  = robot.odom_x;
@@ -89,7 +95,7 @@ int main(int argc, char **argv)
   Flatland flatland;
   while (flatland.ok())
   {
-    usleep(1000);
+    usleep(10000);
     flatland.tic();
   }
   return 0;

@@ -1,0 +1,4 @@
+<package>
+  <depend package="joy"/>
+  <depend package="std_msgs"/>
+</package>
