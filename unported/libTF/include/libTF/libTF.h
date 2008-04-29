@@ -42,6 +42,20 @@
 
 #include "Quaternion3D.h"
 
+
+
+
+
+/**** Point ****
+ */
+struct TFPoint
+{
+  double x,y,z;
+  unsigned long long time;
+  unsigned int frame;
+};
+
+
 /** RefFrame *******
  * An instance of this class is created for each frame in the system.
  * This class natively handles the relationship between frames.  
@@ -106,6 +120,10 @@ public:
   /* Using DH Parameters */
   // Conventions from http://en.wikipedia.org/wiki/Robotics_conventions
   void setWithDH(unsigned int framid, unsigned int parentid, double length, double alpha, double offset, double theta, ULLtime time);
+  /* Set the transform using a matrix */
+  void setWithMatrix(unsigned int framid, unsigned int parentid, const NEWMAT::Matrix & matrix_in, ULLtime time);
+  /* Set the transform using quaternions natively */
+  void setWithQuaternion(unsigned int framid, unsigned int parentid, double xt, double yt, double zt, double xr, double yr, double zr, double w, ULLtime time);
   // Possible exceptions TransformReference::LookupException
 
   /*********** Accessors *************/
@@ -114,6 +132,10 @@ public:
   NEWMAT::Matrix getMatrix(unsigned int target_frame, unsigned int source_frame, ULLtime time);
   // Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
   // TransformReference::MaxDepthException
+
+
+  /* Transform a point to a different frame */
+  TFPoint transformPoint(unsigned int target_frame, const TFPoint & point_in);
 
   /* Debugging function that will print to std::cout the transformation matrix */
   std::string viewChain(unsigned int target_frame, unsigned int source_frame);
@@ -164,6 +186,7 @@ private:
   // How long to cache transform history
   ULLtime cache_time;
 
+ public:
   /* This struct is how the list of transforms are stored before being passed to computeTransformFromList. */
   typedef struct 
   {
@@ -171,6 +194,7 @@ private:
     std::vector<unsigned int> forwardTransforms;
   } TransformLists;
 
+  // private:
   /************************* Internal Functions ****************************/
   
   /* An accessor to get a frame, which will throw an exception if the frame is no there. */
@@ -180,7 +204,7 @@ private:
   TransformLists  lookUpList(unsigned int target_frame, unsigned int source_frame);
   
   /* Compute the transform based on the list of frames */
-  NEWMAT::Matrix computeTransformFromList(TransformLists list, ULLtime time);
+  NEWMAT::Matrix computeTransformFromList(const TransformLists & list, ULLtime time);
 
 };
 #endif //LIBTF_HH

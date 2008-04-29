@@ -77,12 +77,63 @@ void TransformReference::setWithDH(unsigned int frameID, unsigned int parentID, 
 }
 
 
+void TransformReference::setWithMatrix(unsigned int frameID, unsigned int parentID, const NEWMAT::Matrix & matrix_in, ULLtime time)
+{
+  if (frameID > MAX_NUM_FRAMES || parentID > MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
+    throw InvalidFrame;
+  
+  //TODO check and throw exception if matrix wrong size
+  if (frames[frameID] == NULL)
+    frames[frameID] = new RefFrame();
+
+  getFrame(frameID)->setParent(parentID);
+  getFrame(frameID)->fromMatrix(matrix_in,time);
+}
+
+
+void TransformReference::setWithQuaternion(unsigned int frameID, unsigned int parentID, double xt, double yt, double zt, double xr, double yr, double zr, double w, ULLtime time)
+{
+  if (frameID > MAX_NUM_FRAMES || parentID > MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
+    throw InvalidFrame;
+  
+  if (frames[frameID] == NULL)
+    frames[frameID] = new RefFrame();
+  
+  getFrame(frameID)->setParent(parentID);
+  getFrame(frameID)->fromQuaternion(xt, yt, zt, xr, yr, zr, w,time);
+}
+
+
+
+
 NEWMAT::Matrix TransformReference::getMatrix(unsigned int target_frame, unsigned int source_frame, ULLtime time)
 {
   NEWMAT::Matrix myMat(4,4);
   TransformLists lists = lookUpList(target_frame, source_frame);
   myMat = computeTransformFromList(lists,time);
   return myMat;
+}
+
+
+
+
+TFPoint TransformReference::transformPoint(unsigned int target_frame, const TFPoint & point_in)
+{
+  //Create a vector
+  NEWMAT::Matrix pointMat(4,1);
+  pointMat << point_in.x << point_in.y << point_in.z << 1;
+
+  NEWMAT::Matrix myMat = getMatrix(target_frame, point_in.frame, point_in.time);
+
+  
+  pointMat = myMat * pointMat;
+  TFPoint retPoint;
+  retPoint.x = pointMat(1,1);
+  retPoint.y = pointMat(2,1);
+  retPoint.z = pointMat(3,1);
+  retPoint.frame = target_frame;
+  retPoint.time = point_in.time;
+  return retPoint;
 }
 
 
@@ -140,17 +191,24 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
   if (mTfLs.inverseTransforms.back() == NO_PARENT ||  mTfLs.forwardTransforms.back() == NO_PARENT)
     throw(NoFrameConnectivity);
 
+  bool imdone = false;
   while (mTfLs.inverseTransforms.back() == mTfLs.forwardTransforms.back())
     {
       mTfLs.inverseTransforms.pop_back();
       mTfLs.forwardTransforms.pop_back();
+
+      // Make sure we don't go beyond the beginning of the list.  
+      // (The while statement above doesn't fail if you hit the beginning of the list, 
+      // which happens in the zero distance case.)
+      if (mTfLs.inverseTransforms.size() == 0 || mTfLs.forwardTransforms.size() == 0)
+	break;
     }
   
   return mTfLs;
 
 }
 
-NEWMAT::Matrix TransformReference::computeTransformFromList(TransformLists lists, ULLtime time)
+NEWMAT::Matrix TransformReference::computeTransformFromList(const TransformLists & lists, ULLtime time)
 {
   NEWMAT::Matrix retMat(4,4);
   retMat << 1 << 0 << 0 << 0
@@ -158,17 +216,14 @@ NEWMAT::Matrix TransformReference::computeTransformFromList(TransformLists lists
 	 << 0 << 0 << 1 << 0
 	 << 0 << 0 << 0 << 1;
   
+
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
       retMat *= getFrame(lists.inverseTransforms[i])->getMatrix(time);
-      //      std::cout <<"Multiplying by " << std::endl << frames[lists.inverseTransforms[i]].getInverseMatrix() << std::endl; 
-      //std::cout <<"Result "<<std::endl << retMat << std::endl;
    }
   for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
     {
       retMat *= getFrame(lists.forwardTransforms[lists.forwardTransforms.size() -1 - i])->getInverseMatrix(time); //Do this list backwards for it was generated traveling the wrong way
-      //      std::cout <<"Multiplying by "<<std::endl << frames[lists.forwardTransforms[i]].getMatrix() << std::endl;
-      //std::cout <<"Result "<<std::endl << retMat << std::endl;
     }
 
   return retMat;
