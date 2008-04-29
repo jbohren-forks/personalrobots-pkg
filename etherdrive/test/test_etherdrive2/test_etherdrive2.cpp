@@ -48,6 +48,7 @@ int main() {
 
   EDMotor m0 = e.get_motor(0);
   EDMotor m1 = e.get_motor(1);
+  EDMotor m2 = e.get_motor(2);
 
   e.motors_on();
   
