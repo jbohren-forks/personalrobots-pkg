@@ -114,14 +114,15 @@ main(int argc, char** argv)
 
   // Start up the laser
   if(hn.start() != 0)
-    exit(-1);
+    hn.self_destruct();
 
-  for(;;)
+  while (hn.ok())
   {
     if(hn.publish_scan() < 0)
       break;
   }
 
+  //stopping should be fine even if not running
   hn.stop();
 
   return(0);
