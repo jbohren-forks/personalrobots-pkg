@@ -1,7 +1,7 @@
 all: player-build
 
 player-checkout:
-	@if [ ! -d player-svn ]; then svn co https://playerstage.svn.sf.net/svnroot/playerstage/code/player/trunk player-svn; else cd player-svn && svn up; fi
+	@if [ ! -d player-svn ]; then svn co https://playerstage.svn.sf.net/svnroot/playerstage/code/player/trunk player-svn; fi
 
 player-build: player-checkout
 	cd player-svn && mkdir -p build
