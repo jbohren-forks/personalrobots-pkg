@@ -34,30 +34,45 @@
 
 #include "etherdrive/etherdrive.h"
 #include <iostream>
+#include <fstream>
+#include <signal.h>
 
 using namespace std;
 
+void shutdown(int sig);
+
+EtherDrive e;
+
 int main() {
 
-  EtherDrive e;
+  (void) signal(SIGINT,shutdown); 
+
+  ofstream outstr;
+  outstr.open("output");
+
+  extern EtherDrive e;
   
-  if (!e.init("192.168.0.100")) {
+  if (!e.init("192.168.1.12")) {
     cout << "Could not initialize etherdrive." << endl;
     return -1;
   }
 
   EDMotor m0 = e.get_motor(0);
-  EDMotor m1 = e.get_motor(1);
+  //  EDMotor m1 = e.get_motor(1);
+  EDMotor m2 = e.get_motor(2);
 
   e.motors_on();
   
   int count = 0;
+  int counter2 = 0;
 
-  int drv = 100000;
+  int wait_time = 1000;
+  int junk = 50;
+  int drv = junk;
+  
+  e.set_control_mode(0); // 0 = voltage, 1 = current, 2 = position
 
-  e.set_control_mode(2);
-
-  if (!m1.set_gains(150, 20, -10, 50, 200, 13)) {
+  if (!m0.set_gains(150, 0, 0, 80, 300, 0)) { // P, I, D, Windup, Clamp, Deadzone
     printf("Setting gains failed!\n");
     return 0;
   }
@@ -69,24 +84,44 @@ int main() {
     if (!e.tick())
       printf("Tick problem!.");
 
-    printf("Encoder0: %d Current: %d PWM: %d\n", m0.get_enc(), m0.get_cur(), m0.get_pwm());
-    printf("Encoder1: %d Current: %d PWM: %d\n", m1.get_enc(), m1.get_cur(), m1.get_pwm());
+    printf("Encoder0: %d Current: %d PWM: %d Drv: %d\n", m0.get_enc(), m0.get_cur(), m0.get_pwm(), drv);
+    std::cout << count <<" " << counter2;
+outstr <<count  << " " << m0.get_enc() << " " << m0.get_cur() << " "  << m0.get_pwm() << " "  << drv <<std::endl;
+    //printf("Encoder1: %d Current: %d PWM: %d\n", m1.get_enc(), m1.get_cur(), m1.get_pwm());
 
-    
-    // Crappy control
-    if (abs(m0.get_cur()) > 200) {
-      if (count++ > 50)
-	e.motors_off();
-    } else {
-      count = 0;
+    if (m0.get_enc() >= 15000) {
+      if (counter2 < wait_time) //waiting
+	{
+	  drv = 0;
+	}
+      else //done waiting
+	drv = -junk;
+      //note that we're waiting
+      counter2++;
+    } else if (m0.get_enc() <= -15000) {
+      if (counter2 < wait_time) //waiting
+	{
+	  drv = 0;
+	}
+      else //done waiting
+	drv = junk;
+      //note that we're done waiting
+      counter2++;
     }
-
-    if (m0.get_enc() == 100000) {
-      drv = -100000;
-    } else if (m0.get_enc() == -100000) {
-      drv = 100000;
+    else { 
+      counter2 = 0; // We're not in a waiting zone, reset counter
     }
+    count++;
   }
 
   e.shutdown();
+  outstr.close();
+}
+
+
+void shutdown(int sig)
+{
+  extern EtherDrive e;
+  e.shutdown();
+  exit(0);
 }
