@@ -56,8 +56,31 @@ int main(void)
   
   std::cout << "Result of getMatrix(10,8,atime):" << std::endl << mat<< std::endl;
 
-  
-  
+  TFPoint mPoint;
+  mPoint.x = 1;
+  mPoint.y = 1;
+  mPoint.z = 1;
+  mPoint.frame = 10;
+
+  TFPoint nPoint = mPoint;
+
+  std::cout <<"Point 1,1,1 goes like this:" <<std::endl;
+  std::cout << "(" << mPoint.x <<","<< mPoint.y << "," << mPoint.z << ") in frame " << mPoint.frame << std::endl;
+  mPoint =  mTR.transformPoint(2, mPoint);
+  std::cout << "(" << mPoint.x <<","<< mPoint.y << "," << mPoint.z << ") in frame " << mPoint.frame << std::endl;
+  mPoint =  mTR.transformPoint(3, mPoint);
+  std::cout << "(" << mPoint.x <<","<< mPoint.y << "," << mPoint.z << ") in frame " << mPoint.frame << std::endl;
+  mPoint =  mTR.transformPoint(5, mPoint);
+  std::cout << "(" << mPoint.x <<","<< mPoint.y << "," << mPoint.z << ") in frame " << mPoint.frame << std::endl;
+  mPoint =  mTR.transformPoint(6, mPoint);
+  std::cout << "(" << mPoint.x <<","<< mPoint.y << "," << mPoint.z << ") in frame " << mPoint.frame << std::endl;
+  mPoint =  mTR.transformPoint(7, mPoint);
+  std::cout << "(" << mPoint.x <<","<< mPoint.y << "," << mPoint.z << ") in frame " << mPoint.frame << std::endl;
+  mPoint =  mTR.transformPoint(8, mPoint);
+  std::cout << "(" << mPoint.x <<","<< mPoint.y << "," << mPoint.z << ") in frame " << mPoint.frame << std::endl;
+  mPoint =  mTR.transformPoint(10, mPoint);
+  std::cout << "(" << mPoint.x <<","<< mPoint.y << "," << mPoint.z << ") in frame " << mPoint.frame << std::endl;
+
   //Break the graph, making it loop and demonstrate catching MaxDepthException
   mTR.setWithEulers(6,7,dx,dy,dz,dyaw,dp,dr,atime);
   
@@ -82,6 +105,7 @@ int main(void)
 
   //Testing clearing the history with parent change
   mTR.setWithEulers(7,5,1,1,1,dyaw,dp,dr,atime);
+  //todo display this somehow
   
   return 0;
 };
