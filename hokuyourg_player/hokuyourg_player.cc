@@ -1,197 +1,128 @@
 #include <assert.h>
 
-// For core Player stuff (message queues, config file objects, etc.)
-#include <libplayercore/playercore.h>
-// TODO: remove XDR dependency
-#include <libplayerxdr/playerxdr.h>
+#include <libstandalone_drivers/urg_laser.h>
 
-// roscpp
-#include <ros/ros_slave.h>
-// I'm using a LaserScan flow
-#include <common_flows/FlowLaserScan.h>
+#include <ros/node.h>
+#include <std_msgs/MsgLaserScan.h>
 
-#include <sstream>
-
-#define PLAYER_QUEUE_LEN 32
-
-// Must prototype this function here.  It's implemented inside
-// libplayerdrivers.
-Driver* URGLaserDriver_Init(ConfigFile* cf, int section);
-
-class HokuyoNode: public ROS_Slave
+class HokuyoNode: public ros::node
 {
+  private:
+    urg_laser_readings_t* readings;
+    urg_laser_config_t cfg;
+    bool running;
+    unsigned int scanid;
+
   public:
-    QueuePointer q;
+    urg_laser urg;
+    MsgLaserScan scan;
+    double min_ang;
+    double max_ang;
+    string port;
 
-    FlowLaserScan* fl;
-
-    HokuyoNode() : ROS_Slave()
+    HokuyoNode() : ros::node("urglaser")
     {
-      register_source(fl = new FlowLaserScan("scans"));
+      advertise("scan", scan);
 
-
-      // libplayercore boiler plate
-      player_globals_init();
-      itable_init();
-      
-      // TODO: remove XDR dependency
-      playerxdr_ftable_init();
-
-      // The Player address that will be assigned to this device.  The format
-      // is interface:index.  The interface must match what the driver is
-      // expecting to provide.  The value of the index doesn't really matter, 
-      // but 0 is most common.
-      const char* player_addr = "laser:0";
-
-      // Create a ConfigFile object, into which we'll stuff parameters.
-      // Drivers assume that this object will persist throughout execution
-      // (e.g., they store pointers to data inside it).  So it must NOT be
-      // deleted until after the driver is shut down.
-      this->cf = new ConfigFile();
-
-      // Insert (name,value) pairs into the ConfigFile object.  These would
-      // presumably come from the param server
-      this->cf->InsertFieldValue(0,"provides",player_addr);
-      this->cf->InsertFieldValue(0,"unit_angle","degrees");
-
-      double min_ang;
+      // TODO: add min/max angle support
+      /*
       if (!get_double_param(".min_ang", &min_ang))
 	min_ang = -90;
       printf("Setting min_ang to: %g\n",min_ang);
 
-      double max_ang;
       if (!get_double_param(".max_ang", &max_ang))
 	max_ang = 90;
       printf("Setting max_ang to: %g\n",max_ang);
+      */
 
-      ostringstream oss;
-      oss << min_ang;
-
-      this->cf->InsertFieldValue(0,"min_angle",oss.str().c_str());
-
-      oss.str("");
-      oss << max_ang;
-
-      this->cf->InsertFieldValue(0,"max_angle",oss.str().c_str());
-
-
-
-      string port;
-      if (!get_string_param(".port", port))
+      if (!has_param("port") || !get_param("port", port))
 	port = "/dev/ttyACM0";
       printf("Setting port to: %s\n",port.c_str());
 
-      this->cf->InsertFieldValue(0,"port",port.c_str());
-
-      // Create an instance of the driver, passing it the ConfigFile object.
-      // The -1 tells it to look into the "global" section of the ConfigFile,
-      // which is where ConfigFile::InsertFieldValue() put the parameters.
-      assert((this->driver = URGLaserDriver_Init(cf, -1)));
-
-      // Print out warnings about parameters that were set, but which the
-      // driver never looked at.
-      cf->WarnUnused();
-
-      // Grab from the global deviceTable a pointer to the Device that was 
-      // created as part of the driver's initialization.
-      assert((this->device = deviceTable->GetDevice(player_addr,false)));
-
-      // Create a message queue
-      this->q = QueuePointer(false,PLAYER_QUEUE_LEN);
-
+      readings = new urg_laser_readings_t;
+      assert(readings);
+      running = false;
+      scanid = 0;
     }
 
     ~HokuyoNode()
     {
-      delete driver;
-      delete cf;
-      player_globals_fini();
+      stop();
+      delete readings;
     }
 
     int start()
     {
-      // Subscribe to device, which causes it to startup
-      if(this->device->Subscribe(this->q) != 0)
+      stop();
+      if((urg.Open(port.c_str(),0,0) < 0) || (urg.GetSensorConfig(&cfg) < 0))
       {
-        puts("Failed to subscribe the driver");
+        puts("error connecting to laser");
         return(-1);
       }
-      else
-        return(0);
+      running = true;
+      return(0);
     }
 
     int stop()
     {
-      // Unsubscribe from the device, which causes it to shutdown
-      if(device->Unsubscribe(this->q) != 0)
+      if(running)
       {
-        puts("Failed to start the driver");
-        return(-1);
+        urg.Close();
+        running = false;
       }
-      else
-        return(0);
+      return(0);
     }
 
-  private:
-    Driver* driver;
-    Device* device;
-    ConfigFile* cf;
+    int publish_scan()
+    {
+      // TODO: add support for pushing readings out
+      int numreadings;
+      if((numreadings = urg.GetReadings(readings,-1,-1)) < 0)
+      {
+        puts("error getting scan");
+        return(numreadings);
+      }
+
+      printf("%d readings\n", numreadings);
+
+      scan.angle_min = cfg.min_angle;
+      scan.angle_max = cfg.max_angle;
+      scan.angle_increment = cfg.resolution;
+      scan.range_max = cfg.max_range;
+      scan.id = scanid++;
+      scan.set_ranges_size(numreadings);
+      scan.set_intensities_size(numreadings);
+
+      for(int i = 0; i < numreadings; ++i)
+      {
+        scan.ranges[i]  = readings->Readings[i] < 20 ? (scan.range_max*1000) : (readings->Readings[i]);
+        scan.ranges[i] /= 1000;
+        // TODO: add intensity support
+        scan.intensities[i] = 0;
+      }
+      publish("scan", scan);
+      return(0);
+    }
 };
 
 int
-main(void)
+main(int argc, char** argv)
 {
+  ros::init(argc, argv);
+
   HokuyoNode hn;
 
   // Start up the laser
   if(hn.start() != 0)
     exit(-1);
 
-  /////////////////////////////////////////////////////////////////
-  // Main loop; grab messages off our queue and republish them via ROS
   for(;;)
   {
-    // Block until there's a message on the queue
-    hn.q->Wait();
-
-    // Pop off one message (we own the resulting memory)
-    Message* msg;
-    assert((msg = hn.q->Pop()));
-
-    // Is the message a laser scan?
-    player_msghdr_t* hdr = msg->GetHeader();
-    if((hdr->type == PLAYER_MSGTYPE_DATA) && 
-       (hdr->subtype == PLAYER_LASER_DATA_SCAN))
-    {
-      // Cast the message payload appropriately 
-      player_laser_data_t* pdata = (player_laser_data_t*)msg->GetPayload();
-      
-      // Translate from Player data to ROS data
-      hn.fl->px = hn.fl->py = hn.fl->pyaw = 0.0;
-      hn.fl->angle_min = pdata->min_angle;
-      hn.fl->angle_max = pdata->max_angle;
-      hn.fl->angle_increment = pdata->resolution;
-      hn.fl->set_ranges_size(pdata->ranges_count);
-      for(unsigned int i=0;i<pdata->ranges_count;i++)
-        hn.fl->ranges[i] = pdata->ranges[i];
-      hn.fl->set_intensities_size(pdata->intensity_count);
-      for(unsigned int i=0;i<pdata->intensity_count;i++)
-        hn.fl->intensities[i] = pdata->intensity[i];
-
-      // Publish the new data
-      hn.fl->publish();
-
-      //      printf("Published a scan with %d ranges\n", pdata->ranges_count);
-    }
-
-    // We're done with the message now
-    delete msg;
+    if(hn.publish_scan() < 0)
+      break;
   }
-  /////////////////////////////////////////////////////////////////
 
-  // Stop the laser
   hn.stop();
 
-  // To quote Morgan, Hooray!
   return(0);
 }
