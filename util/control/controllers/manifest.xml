@@ -1,0 +1,11 @@
+<package>
+<description brief='Controller Library'>
+
+Library for doing transformations.
+
+</description>
+<author>Melonee Wise</author>
+<license>BSD</license>
+<url>http://pr.willowgarage.com</url>
+<repository>http://pr.willowgarage.com/repos</repository>
+</package>
