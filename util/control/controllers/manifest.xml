@@ -8,4 +8,7 @@ Library for doing transformations.
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
 <repository>http://pr.willowgarage.com/repos</repository>
+<export>
+<cpp cflags='-I${prefix}/include' lflags='-L${prefix}/lib'/>
+</export>
 </package>
