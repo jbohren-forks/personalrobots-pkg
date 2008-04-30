@@ -9,8 +9,8 @@ tilting stage, such as the one found in the head of PR2.
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
 <depend package="roscpp"/>
-<depend package="common_flows"/>
-<depend package="unstable_flows"/>
+<depend package="std_msgs"/>
+<depend package="unstable_msgs"/>
 <depend package="hokuyourg_player"/>
 <depend package="libTF"/>
 </package>
