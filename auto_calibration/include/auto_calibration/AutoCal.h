@@ -44,18 +44,12 @@ class AutoCal
     /*!
       * \brief Run the auto calibration
       */
-    double RunAutoCal();  
+    double RunAutoCal(string object);  
     
-    /*!
-      * \brief Initialize AutoCal with the proper values from the config file
-      *
-      * \param object What you want to calibrate 
-      */
-    void   InitAutoCal();  
+ 
     
 
-  private:
-    int object;                         /**< Object to calibrate. */
+  private:                        /**< Object to calibrate. */
     multimap<string, Info> paramMap;    /**< Motor information. */
     EtherDrive e;                       /**< The motor driver you are hooked up to. */
 };
