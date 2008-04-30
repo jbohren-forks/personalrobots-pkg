@@ -27,16 +27,16 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "ros/ros_slave.h"
-#include "unstable_flows/FlowActuator.h"
+#include "ros/node.h"
+#include "unstable_flows/MsgActuator.h"
 #include "etherdrive/etherdrive.h"
 #include <sstream>
 
-class EtherDrive_Control : public ROS_Slave
+class EtherDrive_Node : public ros::node
 {
 public:
-  FlowActuator* mot[6];
-  FlowActuator* mot_cmd[6];
+  MsgActuator mot[6];
+  MsgActuator mot_cmd[6];
 
   string host;
   EtherDrive *ed;
@@ -45,36 +45,32 @@ public:
   float last_mot_val[6];
   double pulse_per_rad[6];
 
-  ROS_Mutex control_mutex;
-
-  EtherDrive_Control() : ROS_Slave(), ed(NULL)
+  EtherDrive_Node() : ros::node("etherdrive"), ed(NULL)
   {
 
     for (int i = 0;i < 6;i++) {
       ostringstream oss;
       oss << "mot" << i;
-      register_source(mot[i] = new FlowActuator(oss.str().c_str()));
+      advertise(oss.str().c_str(), mot[i]);
 
       oss << "_cmd";
-      register_sink(mot_cmd[i] = new FlowActuator(oss.str().c_str()), ROS_CALLBACK(EtherDrive_Control, mot_callback));
+      subscribe(oss.str().c_str(), mot_cmd[i], &EtherDrive_Node::mot_callback);
 
       last_mot_val[i] = 0;
     }
 
-    register_with_master();
-
-    if (!get_string_param(".host", host))
+    if (!get_param(string(".host"), host))
       host = "10.0.0.151";
     printf("EtherDrive host set to [%s]\n", host.c_str());
 
-    if (!get_int_param(".frame_id", &frame_id))
+    if (!get_param(string(".frame_id"), frame_id))
       frame_id = -1;
     printf("EtherDrive frame_id set to [%d]\n", frame_id);
 
     for (int i = 0;i < 6;i++) {
       ostringstream oss;
       oss << ".pulse_per_rad" << i;
-      if (!get_double_param(oss.str().c_str(), &(pulse_per_rad[i])))
+      if (!get_param(oss.str().c_str(), pulse_per_rad[i]))
 	pulse_per_rad[i] = 1591.54943;
     }
 
@@ -83,7 +79,7 @@ public:
     ed->motors_on();
   }
 
-  virtual ~EtherDrive_Control()
+  virtual ~EtherDrive_Node()
   { 
     if (ed) 
       delete ed; 
@@ -95,28 +91,23 @@ public:
     int tmp_mot_cmd[6];
 
     for (int i = 0; i < 6; i++) {
-    mot_cmd[i]->lock_atom();
-      if (mot_cmd[i]->valid) {
-	if (mot_cmd[i]->rel) {
-	  last_mot_val[i] = mot[i]->val + mot_cmd[i]->val;
+
+      mot_cmd[i].lock();
+      if (mot_cmd[i].valid) {
+	if (mot_cmd[i].rel) {
+	  last_mot_val[i] = mot[i].val + mot_cmd[i].val;
 	} else {
-	  last_mot_val[i] = mot_cmd[i]->val;
+	  last_mot_val[i] = mot_cmd[i].val;
 	}
       }
-      mot_cmd[i]->valid = false;  // set to invalid so we don't re-use
+      mot_cmd[i].valid = false;  // set to invalid so we don't re-use
 
       tmp_mot_cmd[i] = (int)(last_mot_val[i] * pulse_per_rad[i]);
 
-      mot_cmd[i]->unlock_atom();
+      mot_cmd[i].unlock();
     }
 
-    control_mutex.lock();
-
-    //    printf("Commanding: %g -- %d\n", last_mot_val[1], tmp_mot_cmd[1]);
-
     ed->drive(6,tmp_mot_cmd);
-
-    control_mutex.unlock();
 
     int val[6];
     
@@ -125,10 +116,12 @@ public:
     }
 
     for (int i = 0; i < 6; i++) {
-      mot[i]->val = val[i] / pulse_per_rad[i];
-      mot[i]->rel = false;
-      mot[i]->valid = true;
-      mot[i]->publish();
+      mot[i].val = val[i] / pulse_per_rad[i];
+      mot[i].rel = false;
+      mot[i].valid = true;
+      ostringstream oss;
+      oss << "mot" << i;
+      publish(oss.str().c_str(), mot[i]);
     }
     return true;
   }
@@ -139,14 +132,14 @@ public:
 
 int main(int argc, char **argv)
 {
-  EtherDrive_Control a;
-  while (a.happy()) {
+  ros::init(argc, argv);
+  EtherDrive_Node a;
+  while (a.ok()) {
     if (!a.do_tick())
     {
-      a.log(ROS::ERROR,"Etherdrive tick failed.");
+      a.log(ros::ERROR,"Etherdrive tick failed.");
       break;
     }
   }
   return 0;
 }
-

@@ -7,6 +7,9 @@ likely to break things since they are subject to refactoring and/or moving at an
   <author>Jeremy Leibs (email: leibs@willowgarage.com)</author>
   <license>BSD</license>
   <url>http://pr.willowgarage.com</url>
-  <depend package="common_flows"/>
+  <depend package="std_msgs"/>
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
 </package>
 

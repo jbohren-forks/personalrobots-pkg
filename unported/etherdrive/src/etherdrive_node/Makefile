@@ -1,4 +1,4 @@
-SRC = test_etherdrive.cpp
-OUT = test_etherdrive
+SRC = etherdrive_node.cpp
+OUT = ../../bin/etherdrive
 PKG = etherdrive
 include $(shell rospack find mk)/node.mk

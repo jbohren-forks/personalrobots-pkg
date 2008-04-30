@@ -10,7 +10,10 @@ http://hubbard.engr.scu.edu/embedded/motorcontrol/etherdrive/v20/
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
 <depend package='roscpp'/>
-<depend package='common_flows'/>
-<depend package='unstable_flows'/>
+<depend package='std_msgs'/>
+<depend package='unstable_msgs'/>
+<export>
+  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -letherdrive"/>
+</export>
 <repository>http://pr.willowgarage.com/repos</repository>
 </package>
