@@ -1,3 +1,0 @@
-AutoCal.o: AutoCal.cpp \
-  /u/mwise/ros_packages//auto_calibration/include/auto_calibration/AutoCal.h \
-  /u/mwise/ros_packages//etherdrive/include/etherdrive/etherdrive.h

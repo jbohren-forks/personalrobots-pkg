@@ -1,0 +1,4 @@
+<package>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+</package>

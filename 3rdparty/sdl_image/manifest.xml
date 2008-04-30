@@ -1,0 +1,24 @@
+<package>
+<description brief="A simple library to load image files as SDL surfaces">
+
+The SDL_image library can load images of various formats as SDL surfaces.
+This library supports BMP, PNM (PPM/PGM/PBM), XBM, LBM, PCX, GIF, JPEG, PNG,
+TGA, and TIFF formats.
+
+This ROS package is just a wrapper for the standard SDL_image distribution, to
+allow automatic installation using ROS dependency generation. It does not
+change the SDL_image library in any way. Any specific questions about broken
+automatic ROS build scripts should be directed at the ROS package maintainer
+not the SDL_image authors.
+
+</description>
+<author>Sam Lantinga, Mattias Engdegard, and many contributors. See the CHANGES file in the distribution or the project web page for full credits.</author>
+<license>LGPL</license>
+<url>http://www.libsdl.org/projects/SDL_image</url>
+<depend package="sdl"/>
+<depend package="ijg_libjpeg"/>
+<export>
+  <cpp cflags="-I${prefix}/SDL_image/include" lflags="-Xlinker -rpath ${prefix}/SDL_image/lib -L${prefix}/SDL_image/lib -lSDL_image"/>
+</export>
+</package>
+

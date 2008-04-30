@@ -1,0 +1,18 @@
+<package>
+  <description brief="Image utilities">
+
+    This package provides a few sample nodes to show how to use the Image flow,
+    as well as a few test programs and utility programs (e.g. which send out
+    a static image at arbitrary intervals).
+
+  </description>
+  <author>Morgan Quigley (email: mquigley@cs.stanford.edu)</author>
+  <license>BSD</license>
+  <url>http://stair.stanford.edu</url>
+  <depend package="ijg_libjpeg"/>
+  <depend package="std_msgs"/>
+  <export>
+    <cpp cflags="-I${prefix}/include"/>
+  </export>
+</package>
+

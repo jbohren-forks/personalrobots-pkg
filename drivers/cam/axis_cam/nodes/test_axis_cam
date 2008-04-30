@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+require "#{`#{ENV['ROS_ROOT']}/rospack latest yamlgraph`}/lib/yamlgraph/ygl.rb"
+g = YAMLGraph.new
+g.param 'axis_cam.host', '192.168.1.90'
+g.node 'axis_cam/axis_cam', {'launch'=>'valgrind'}
+g.node 'image_viewer/image_viewer', {'launch'=>'valgrind'}
+#g.node 'vacuum/vacuum', {'launch' => 'valgrind'}
+g.flow 'axis_cam:image', 'image_viewer:image'
+#g.flow 'axis_cam:image', 'vacuum:hose'
+YAMLGraphLauncher.new.launch g
+
