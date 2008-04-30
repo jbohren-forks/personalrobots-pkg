@@ -67,12 +67,16 @@ int main() {
   int counter2 = 0;
 
   int wait_time = 1000;
-  int junk = 50;
+  int junk = 100;
   int drv = junk;
+  int max_range = 15000;
   
-  e.set_control_mode(0); // 0 = voltage, 1 = current, 2 = position
+  e.set_control_mode(1); // 0 = voltage, 1 = current, 2 = position
+  
 
-  if (!m0.set_gains(150, 0, 0, 80, 300, 0)) { // P, I, D, Windup, Clamp, Deadzone
+
+  //Kc ~=550 for elbow
+  if (!m0.set_gains(250, 250, 0, 5, 900, 0)) { // P, I, D, Windup, Clamp, Deadzone
     printf("Setting gains failed!\n");
     return 0;
   }
@@ -89,7 +93,7 @@ int main() {
 outstr <<count  << " " << m0.get_enc() << " " << m0.get_cur() << " "  << m0.get_pwm() << " "  << drv <<std::endl;
     //printf("Encoder1: %d Current: %d PWM: %d\n", m1.get_enc(), m1.get_cur(), m1.get_pwm());
 
-    if (m0.get_enc() >= 15000) {
+    if (m0.get_enc() >= max_range) {
       if (counter2 < wait_time) //waiting
 	{
 	  drv = 0;
@@ -98,7 +102,7 @@ outstr <<count  << " " << m0.get_enc() << " " << m0.get_cur() << " "  << m0.get_
 	drv = -junk;
       //note that we're waiting
       counter2++;
-    } else if (m0.get_enc() <= -15000) {
+    } else if (m0.get_enc() <= -max_range) {
       if (counter2 < wait_time) //waiting
 	{
 	  drv = 0;
