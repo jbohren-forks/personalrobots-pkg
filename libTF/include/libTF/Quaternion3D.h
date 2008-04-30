@@ -53,6 +53,7 @@ class Quaternion3D {
 
 public:
   static const int MIN_INTERPOLATION_DISTANCE = 5; //Number of nano-seconds to not interpolate below.
+  static const unsigned int MAX_LENGTH_LINKED_LIST = 1000000; // Maximum length of linked list, to make sure not to be able to use unlimited memory.
   // Storage class
   class Quaternion3DStorage
   {
@@ -155,7 +156,7 @@ private:
   data_LL* first;
   data_LL* last;
 
-
+  unsigned int list_length;
 
 };
 
