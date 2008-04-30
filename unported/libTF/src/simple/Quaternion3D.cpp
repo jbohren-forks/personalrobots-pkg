@@ -42,7 +42,8 @@ Euler3D::Euler3D(double _x, double _y, double _z, double _yaw, double _pitch, do
 Quaternion3D::Quaternion3D(unsigned long long max_cache_time):
   max_storage_time(max_cache_time),
   first(NULL),
-  last(NULL)
+  last(NULL),
+  list_length(0)
 {
   
   pthread_mutex_init( &linked_list_mutex, NULL);
@@ -355,7 +356,6 @@ void Quaternion3D::add_value(const Quaternion3DStorage &dataIn)
 
 void Quaternion3D::insertNode(const Quaternion3DStorage & new_val)
 {
-
   data_LL* p_current;
   data_LL* p_old;
 
@@ -417,6 +417,10 @@ void Quaternion3D::insertNode(const Quaternion3DStorage & new_val)
 
 
     }
+
+  // Record that we have increased the length of th elist
+  list_length ++;
+  
 };
 
 void Quaternion3D::pruneList()
@@ -432,7 +436,7 @@ void Quaternion3D::pruneList()
 
 
   //While time stamps too old
-  while (p_current->data.time + max_storage_time < current_time)
+  while (p_current->data.time + max_storage_time < current_time || list_length > MAX_LENGTH_LINKED_LIST)
     {
       //      cout << "Age of node " << (double)(-p_current->data.time + current_time)/1000000.0 << endl;
      // Make sure that there's at least two elements in the list
@@ -446,6 +450,7 @@ void Quaternion3D::pruneList()
 	      delete p_current;
 	      p_current = last;
 	      //	      cout << " Pruning Node" << endl;
+	      list_length--;
 	    }
 	  else 
 	    break;
