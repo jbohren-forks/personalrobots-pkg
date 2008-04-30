@@ -3,7 +3,7 @@ CFLAGS = -g -Wall -Iinclude
 
 LDFLAGS = -lnewmat
 
-all:test
+all: install test
 
 
 Quaternion3D.o: src/simple/Quaternion3D.cpp include/libTF/Quaternion3D.h
@@ -12,8 +12,15 @@ Quaternion3D.o: src/simple/Quaternion3D.cpp include/libTF/Quaternion3D.h
 libTF.o: src/simple/libTF.cpp include/libTF/libTF.h
 	g++  $(CFLAGS) -o $@ -c $< 
 
-test: src/test/main.cpp libTF.o Quaternion3D.o
+libTF.a: libTF.o Quaternion3D.o
+	ar -rs libTF.a $^
+
+test: src/test/main.cpp libTF.a
 	g++ $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+install: libTF.a
+	cp libTF.a lib/
+
 clean:
-	rm -f *.o test
+	rm -f *.o test *.a
+
