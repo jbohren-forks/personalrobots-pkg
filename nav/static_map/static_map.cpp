@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include "ros/node.h"
-#include "std_rpc/map.h"
+#include "std_msgs/rpcMap.h"
 
 using namespace ros;
 
@@ -21,11 +21,17 @@ public:
     rpc.request.extents.y0
     rpc.request.extents.x1
     rpc.request.extents.y1
-    */
+    
+    // now, we respond to the query
     rpc.response.cell_size = 0.1; // 10cm grid
     rpc.response.map.width = 600;
     rpc.response.map.height = 600;
-    // copy over the buffer
+    // we have a gzipped version of the map already
+    // i will provide some mechanism for setting a const
+    // pointer in the message class to point to an 
+    // externally-allocated buffer
+    rpc.response.map.use_data(my_data_buf);
+    */
   }
 };
 
