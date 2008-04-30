@@ -7,9 +7,11 @@ returns key event information.
 <author>Jeremy Leibs (email: leibs@willowgarage.com)</author>
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
-<depend package="common_flows"/>
-<depend package="image_utils"/>
 <depend package="roscpp"/>
+<depend package="std_msgs"/>
 <depend package="sdl"/>
+<export>
+  <cpp cflags="-I${prefix}/msg/cpp"/>
+</export>
 </package>
 

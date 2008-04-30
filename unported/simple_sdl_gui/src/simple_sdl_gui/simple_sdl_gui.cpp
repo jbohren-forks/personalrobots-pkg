@@ -33,7 +33,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "ros/ros_slave.h"
+#include "ros/node.h"
 #include "SDL/SDL.h"
 #include "common_flows/FlowImage.h"
 #include "common_flows/ImageCodec.h"

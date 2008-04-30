@@ -33,30 +33,30 @@
 *********************************************************************/
 #include <iostream>
 
-#include "ros/ros_slave.h"
+#include "ros/node.h"
 #include "SDL/SDL.h"
-#include "simple_sdl_gui/FlowSDLKeyEvent.h"
+#include "simple_sdl_gui/MsgSDLKeyEvent.h"
 
-class Key_Monitor : public ROS_Slave
+class Key_Monitor : public ros::node
 {
 public:
-  FlowSDLKeyEvent *key;
+  MsgSDLKeyEvent key;
 
-  Key_Monitor() : ROS_Slave()
+  Key_Monitor() : ros::node("key_monitor")
   {
-    register_sink(key = new FlowSDLKeyEvent("key"), ROS_CALLBACK(Key_Monitor, get_key));
-    register_with_master();
+    subscribe("key", key, &Key_Monitor::get_key);
   }
   virtual ~Key_Monitor() {}
 
   void get_key() {
-    std::cout << "Got key: " << key->state << ", " << key->sym << ", " << key->mod << std::endl;
+    std::cout << "Got key: " << key.state << ", " << key.sym << ", " << key.mod << std::endl;
   }
 
 };
 
 int main(int argc, char **argv)
 {
+  ros::init(argc, argv);
   Key_Monitor k;
   k.spin();
   return 0;
