@@ -1,6 +1,9 @@
 #pragma once
 
-
+#include <string.h>
+#include <iostream>
+#include <map>
+#include <utility>
 #include "etherdrive/etherdrive.h"
 
 /***************************************************/
@@ -52,8 +55,8 @@ class AutoCal
     
 
   private:
-    int object;             /**< Object to calibrate. */
-    //vector<Info> motors;    /**< Motor information. */
-    EtherDrive e; 
+    int object;                         /**< Object to calibrate. */
+    multimap<string, Info> paramMap;    /**< Motor information. */
+    EtherDrive e;                       /**< The motor driver you are hooked up to. */
 };
 

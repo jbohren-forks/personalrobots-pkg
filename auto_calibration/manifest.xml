@@ -1,11 +1,12 @@
 <package>
 <description brief='Auto Calibration Library'>
 
-Library for doing transformations.
+Library for auto calibration.
 
 </description>
 <author>Melonee Wise</author>
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
+<depend package='etherdrive'/>
 <repository>http://pr.willowgarage.com/repos</repository>
 </package>
