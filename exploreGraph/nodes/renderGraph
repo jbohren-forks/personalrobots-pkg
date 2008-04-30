@@ -50,6 +50,6 @@ launcher.ready(launchCommand, launchArgs, launchEnv, BOOTSTRAP_VERSION)
 # so when the packaged version gets upgraded we can remove this
 # todo clean this out when it's upgraded
 # https://bugs.launchpad.net/ubuntu/+source/graphviz/+bug/208072
-launchEnv['LD_PRELOAD'] = '/usr/lib/libgvc.so.3'
+#launchEnv['LD_PRELOAD'] = '/usr/lib/libgvc.so.3'
 
 os.execvpe(launchCommand, launchArgs, launchEnv)
