@@ -1,5 +1,6 @@
 cpp:
   make:
     - src/
+    - test/
 
 

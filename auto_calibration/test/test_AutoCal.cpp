@@ -1,14 +1,15 @@
 #include "auto_calibration/AutoCal.h"
 
-#include <string.h>
-#include <iostream>
-#include <map>
-#include <utility>
+
 
 using namespace std;
 
 int main(int argc, char **argv)
 {
+
+  AutoCal robot;
+  robot.RunAutoCal(argv[1]);
+  #if 0 
   multimap<string, Info> paramMap;
   Info headinfo1 = {0, 180, 0.0, 0.0, 0.0, 0.0, 0};
   paramMap.insert(pair<string, Info>("head", headinfo1));   
@@ -33,4 +34,5 @@ int main(int argc, char **argv)
    {
        cout << "  [" << (*it2).first << ", " << (*it2).second.motornum << "]" << endl;
    }  
+   #endif
 }

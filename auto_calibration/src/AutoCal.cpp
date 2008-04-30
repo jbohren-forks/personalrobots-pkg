@@ -1,4 +1,4 @@
-#include "AutoCal.h"
+#include "auto_calibration/AutoCal.h"
 
 
 using namespace std;
@@ -24,15 +24,37 @@ AutoCal::~AutoCal()
 }
 
 
-void AutoCal::InitAutoCal()
-{
- 
- 
-}
 
-
-double AutoCal::RunAutoCal( )
+double AutoCal::RunAutoCal(string object )
 {
+  int speed = 50;
+  int flag = 1;
+  cout << "Now auto calibrating " << paramMap.count(object) <<" motors." << endl;   
+  
+  e.motors_on();
+  e.set_control_mode(0);
+  
+  pair<multimap<string, Info>::iterator, multimap<string, Info>::iterator> ppp;
+  ppp = paramMap.equal_range(object);
+  
+  for (multimap<string, Info>::iterator it2 = ppp.first; it2 != ppp.second; ++it2)
+  {
+      e.set_drv((*it2).second.motornum, speed);
+  }  
+  
+  while(flag)
+  {
+    e.tick();
+    for (multimap<string, Info>::iterator it2 = ppp.first; it2 != ppp.second; ++it2)
+    {
+        if(e.get_cur((*it2).second.motornum)>200)
+        {
+          e.set_drv((*it2).second.motornum, 0);
+          (*it2).second.maxEncoder = e.get_enc((*it2).second.motornum);
+        }
+    }  
+  }
+    
 #if 0
   for 
   int a[]={0, 0, 0, 0, 0, 0};
