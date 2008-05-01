@@ -2,8 +2,9 @@
 #include <math.h>
 #include "ros/node.h"
 #include "rosrand/rosrand.h"
-#include "std_msgs/MsgPose2DFloat32.h"
+#include "std_msgs/MsgRobotBase2DOdom.h"
 #include "std_msgs/MsgBaseVel.h"
+#include "std_msgs/MsgLaserScan.h"
 
 class FlatlandRobot
 {
@@ -54,14 +55,24 @@ public:
 class Flatland : public ros::node
 {
 public:
-  MsgPose2DFloat32 odom;
+  MsgRobotBase2DOdom odom;
   MsgBaseVel cmd_vel;
-  FlatlandRobot robot;
-  double last_odom_t, last_t;
+  MsgLaserScan laser;
 
-  Flatland() : ros::node("flatland"), last_odom_t(0), last_t(0)
+  FlatlandRobot robot;
+  double last_odom_t, last_laser_t, last_t;
+
+  Flatland() : ros::node("flatland"), 
+    last_odom_t(0), last_laser_t(0), last_t(0)
   {
-    advertise("odom", odom);
+    laser.set_ranges_size(100);
+    laser.angle_min = -M_PI/2;
+    laser.angle_max =  M_PI/2;
+    laser.angle_increment = M_PI/99;
+    laser.range_max = 10;
+
+    advertise<MsgRobotBase2DOdom>("odom");
+    advertise<MsgLaserScan>("laser");
     subscribe("cmd_vel", cmd_vel, &Flatland::cmd_vel_cb);
   }
   void cmd_vel_cb()
@@ -80,11 +91,17 @@ public:
     if (t > last_odom_t + 0.05)
     {
       // send odom message
-      odom.x  = robot.odom_x;
-      odom.y  = robot.odom_y;
-      odom.th = robot.odom_th;
+      odom.px   = robot.odom_x;
+      odom.py   = robot.odom_y;
+      odom.pyaw = robot.odom_th;
       publish("odom", odom);
       last_odom_t = t;
+    }
+    if (t > last_laser_t + 0.5)
+    {
+      for (int i = 0; i < laser.get_ranges_size(); i++)
+        laser.ranges[i] = ros::rand::gaussian(2, 0.5);
+      publish("laser", laser);
     }
   }
 };
