@@ -38,6 +38,7 @@
 #include "std_msgs/MsgPointCloudFloat32.h"
 #include "unstable_msgs/MsgActuator.h"
 #include "libTF/libTF.h"
+#include "rostime/clock.h"
 #include "math.h"
 
 class Tilting_Laser : public ros::node
@@ -52,7 +53,7 @@ public:
   MsgActuator encoder;
 
 
-  struct timeval starttime;
+  double starttime;
 
   double next_shutter;
   double period;
@@ -62,6 +63,8 @@ public:
 
   TransformReference TR;
 
+  ros::time::clock clock;
+
   Tilting_Laser() : ros::node("tilting_laser"), next_shutter(0.0)
   {
     
@@ -69,7 +72,7 @@ public:
     advertise("shutter", shutter);
     advertise("mot2_cmd", cmd);
 
-    subscribe("scans", scans, &Tilting_Laser::scans_callback);
+    subscribe("scan", scans, &Tilting_Laser::scans_callback);
     subscribe("mot2",  encoder, &Tilting_Laser::encoder_callback);
 
     if (!get_param(".period", period))
@@ -81,7 +84,7 @@ public:
     if (!get_param(".max_ang", max_ang))
       max_ang = 0.6;
 
-    unsigned long long time = Quaternion3D::Qgettime();
+    unsigned long long time = clock.ulltime();
     TR.setWithEulers(3, 2,
 		     0, 0, 0,
 		     0, 0, 0,
@@ -92,7 +95,7 @@ public:
 		     0, 0, 0,
 		     time);
 
-    gettimeofday(&starttime,NULL);    
+    starttime = clock.time();
   }
 
   virtual ~Tilting_Laser()
@@ -129,8 +132,7 @@ public:
       }
     }
     
-    unsigned long long time = (unsigned long long)scans.get_stamp_secs()*1000000 + (unsigned long long)scans.get_stamp_nsecs()/1000 - 20000;
-    NEWMAT::Matrix rot_points = TR.getMatrix(1,3,time) * points;
+    NEWMAT::Matrix rot_points = TR.getMatrix(1,3,clock.ulltime()) * points;
     
     for (int i = 0; i < scans.get_ranges_size(); i++) {
       cloud.x[i] = rot_points(1,i+1);
@@ -143,7 +145,7 @@ public:
   }
 
   void encoder_callback() {
-    unsigned long long time = (unsigned long long)encoder.get_stamp_secs()*1000000 + (unsigned long long)encoder.get_stamp_nsecs()/1000;
+    unsigned long long time = clock.ulltime();
     TR.setWithEulers(3, 2,
 		     .02, 0, .02,
 		     0.0, 0.0, 0.0,
@@ -157,19 +159,11 @@ public:
     //    printf("I got some encoder values: %g!\n", encoder.val);
   }
 
-  double timeval_diff (struct timeval x, 
-		       struct timeval y)  {
-    double dsec = x.tv_sec - y.tv_sec;
-    double dusec = x.tv_usec - y.tv_usec;
-    return dsec + dusec/1000000.0;
-  }
-
   void motor_control() {
 
-    struct timeval nowtime;
-    gettimeofday(&nowtime,NULL);    
+    double nowtime = clock.time();
     
-    double elapsed_cycles = timeval_diff(nowtime, starttime) / (period);
+    double elapsed_cycles = (nowtime - starttime) / (period);
     double index = fabs(fmod(elapsed_cycles, 1) * 2.0 - 1.0);
 
     cmd.val = index * (max_ang - min_ang) + min_ang;
@@ -187,8 +181,9 @@ public:
 
 int main(int argc, char **argv)
 {
+  ros::init(argc, argv);
   Tilting_Laser tl;
-  while (tl.happy()) {
+  while (tl.ok()) {
     usleep(10000);
   }
   return 0;
