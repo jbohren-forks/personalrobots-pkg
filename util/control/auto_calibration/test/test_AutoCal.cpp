@@ -1,13 +1,15 @@
 #include "auto_calibration/AutoCal.h"
 
-
-
 using namespace std;
 
 int main(int argc, char **argv)
 {
-
-  AutoCal robot;
+  EtherDrive e;
+  if (!e.init("192.168.1.12")) {
+    cout << "Could not initialize etherdrive." << endl;
+    return -1;
+  }
+  AutoCal robot(e);
   robot.RunAutoCal(argv[1]);
   #if 0 
   multimap<string, Info> paramMap;

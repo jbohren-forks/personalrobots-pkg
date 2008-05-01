@@ -23,6 +23,8 @@ struct _Info
   double negOffset;       /**< Degrees negative of zero. */
   double posOffset;       /**< Degrees positive of zero. */
   int sign;               /**< Positive or negative in the sense of right handedness (1 or -1). */
+  int flag;
+  int count;
 };
 
 typedef struct _Info Info;
@@ -34,7 +36,7 @@ class AutoCal
     /*!
       * \brief Constructor
       */
-    AutoCal();
+    AutoCal(EtherDrive &_e);
     
     /*!
       * \brief Destructor 
@@ -49,8 +51,8 @@ class AutoCal
  
     
 
-  private:                        /**< Object to calibrate. */
+  private:                              /**< Object to calibrate. */
     multimap<string, Info> paramMap;    /**< Motor information. */
-    EtherDrive e;                       /**< The motor driver you are hooked up to. */
+    EtherDrive &e;                       /**< The motor driver you are hooked up to. */
 };
 
