@@ -67,7 +67,7 @@ int main() {
   int counter2 = 0;
 
   int wait_time = 1000;
-  int junk = 100;
+  int junk = 200;
   int drv = junk;
   int max_range = 15000;
   
@@ -76,7 +76,7 @@ int main() {
 
 
   //Kc ~=550 for elbow
-  if (!m0.set_gains(250, 250, 0, 5, 900, 0)) { // P, I, D, Windup, Clamp, Deadzone
+  if (!m0.set_gains(400, 100, 0, 5, 200, 0)) { // P, I, D, Windup, Clamp, Deadzone
     printf("Setting gains failed!\n");
     return 0;
   }
