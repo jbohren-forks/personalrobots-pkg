@@ -1,6 +1,0 @@
-cpp:
-  make:
-    - src/simple
-    - src/test
-
-
