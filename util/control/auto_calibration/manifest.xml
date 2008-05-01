@@ -7,6 +7,7 @@ Library for auto calibration.
 <author>Melonee Wise</author>
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
+<depend package='roscpp'/>
 <depend package='etherdrive'/>
 <repository>http://pr.willowgarage.com/repos</repository>
 <export>
