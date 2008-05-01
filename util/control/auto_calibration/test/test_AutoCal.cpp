@@ -5,7 +5,7 @@ using namespace std;
 int main(int argc, char **argv)
 {
   EtherDrive e;
-  if (!e.init("192.168.1.12")) {
+  if (!e.init("192.168.0.100")) {
     cout << "Could not initialize etherdrive." << endl;
     return -1;
   }

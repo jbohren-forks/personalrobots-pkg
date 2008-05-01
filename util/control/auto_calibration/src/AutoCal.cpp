@@ -7,11 +7,11 @@ using namespace std;
 
 AutoCal::AutoCal(EtherDrive &_e):e(_e)
 {
-  Info headinfo1 = {0, 180, 0.0, 0.0, 0.0, 0.0, 0,1,1000};
+  Info headinfo1 = {0, 180, 0.0, 0.0, 0.0, 0.0, 0,1,1000}; //neck
   paramMap.insert(pair<string, Info>("head", headinfo1));   
-  Info headinfo2 = {1, 180, 0.0, 0.0, 0.0, 0.0, 0,1,1000};
+  Info headinfo2 = {1, 180, 0.0, 0.0, 0.0, 0.0, 0,1,1000}; //eyes
   paramMap.insert(pair<string, Info>("head", headinfo2));
-  Info headinfo3 = {2, 180, 0.0, 0.0, 0.0, 0.0, 0,1,1000};
+  Info headinfo3 = {2, 180, 0.0, 0.0, 0.0, 0.0, 0,1,1000}; //hokuyo
   paramMap.insert(pair<string, Info>("head", headinfo3));  
   Info shoulderinfo1 = {0, 180.0, 0.0, 0.0, 90.0, -90.0, 1,1,1000};
   paramMap.insert(pair<string, Info>("shoulder", shoulderinfo1)); 
@@ -26,7 +26,7 @@ AutoCal::~AutoCal()
 
 double AutoCal::RunAutoCal(string object)
 {
-  int speed = 100;
+  int speed = 125;
   int flag = 1;
   int count = 0;
   
@@ -56,7 +56,8 @@ double AutoCal::RunAutoCal(string object)
       
     for (multimap<string, Info>::iterator it2 = ppp.first; it2 != ppp.second; ++it2)
     {
-        if(e.get_cur((*it2).second.motornum)>200 && (*it2).second.count>999)
+	
+        if(e.get_cur((*it2).second.motornum)>425 && (*it2).second.count>999)
         {   
           e.set_drv((*it2).second.motornum, 0);
           
@@ -64,10 +65,9 @@ double AutoCal::RunAutoCal(string object)
           {
             (*it2).second.maxEncoder = e.get_enc((*it2).second.motornum);
             (*it2).second.flag=0;
-            (*it2).second.count =0;
-            
+            (*it2).second.count =0;   
           }
-          else
+          else if((*it2).second.flag==-1)
           {
             (*it2).second.minEncoder = e.get_enc((*it2).second.motornum);
             (*it2).second.flag=-2;
@@ -81,6 +81,8 @@ double AutoCal::RunAutoCal(string object)
         else if((*it2).second.flag==-2)
         {
           count=count+1;
+	  (*it2).second.flag=-3;
+	   
         }
         if(count>=paramMap.count(object))
         {
@@ -91,7 +93,7 @@ double AutoCal::RunAutoCal(string object)
         } 
         (*it2).second.count = (*it2).second.count +1;
     } 
-    usleep(500);
+    usleep(300);
     
   }
    for (multimap<string, Info>::iterator it2 = ppp.first; it2 != ppp.second; ++it2)
