@@ -3,5 +3,6 @@
   <author>Brian P. Gerkey</author>
   <license>BSD</license>
   <depend package="roscpp" />
-  <depend package="common_flows" />
+  <depend package="player" />
+  <depend package="std_msgs" />
 </package>

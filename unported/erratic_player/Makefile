@@ -1,12 +1,12 @@
-CPP = g++
-AR = ar
-CPPFLAGS = -g -Wall -Werror `pkg-config --cflags playercore playerxdr playerutils playerdrivers` `rospack cflags roscpp` `rospack cflags common_flows`
-LDFLAGS = `pkg-config --libs playercore playerxdr playerutils playerdrivers` `rospack lflags roscpp` `rospack lflags common_flows`
+PKG = erratic_player
+CXX = g++
+all: $(PKG)
 
-all: nodes/erratic_player
+CFLAGS = -g -Wall -Werror `rospack export/cpp/cflags $(PKG)`
+LFLAGS = `rospack export/cpp/lflags $(PKG)`
 
-nodes/erratic_player: erratic_player.cc
-	$(CPP) $(CPPFLAGS) -o $@ $< $(LDFLAGS)
+erratic_player: erratic_player.cc
+	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
 
 clean:
-	rm -f *.o nodes/erratic_player
+	rm -f *.o $(PKG)

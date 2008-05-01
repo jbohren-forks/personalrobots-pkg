@@ -6,10 +6,10 @@
 #include <libplayerxdr/playerxdr.h>
 
 // roscpp
-#include <ros/ros_slave.h>
-// Flows that I need
-#include <common_flows/FlowRobotBase2DOdom.h>
-#include <common_flows/FlowRobotBase2DCmdVel.h>
+#include <ros/node.h>
+// Messages that I need
+#include <std_msgs/MsgRobotBase2DOdom.h>
+#include <std_msgs/MsgRobotBase2DCmdVel.h>
 
 #define PLAYER_QUEUE_LEN 32
 
@@ -17,16 +17,19 @@
 // libplayerdrivers.
 Driver* Erratic_Init(ConfigFile* cf, int section);
 
-class ErraticNode: public ROS_Slave
+class ErraticNode: public ros::node
 {
   public:
     QueuePointer q;
 
-    FlowRobotBase2DOdom* odom;
-    FlowRobotBase2DCmdVel* cmdvel;
+    MsgRobotBase2DOdom odom;
+    MsgRobotBase2DCmdVel cmdvel;
 
-    ErraticNode() : ROS_Slave()
+    ErraticNode() : ros::node("erratic")
     {
+      advertise("odom", odom);
+      subscribe("cmdvel", cmdvel, &ErraticNode::cmdvelReceived);
+
       // libplayercore boiler plate
       player_globals_init();
       itable_init();
@@ -66,10 +69,6 @@ class ErraticNode: public ROS_Slave
 
       // Create a message queue
       this->q = QueuePointer(false,PLAYER_QUEUE_LEN);
-
-      this->register_source(this->odom = new FlowRobotBase2DOdom("odometry"));
-      this->register_sink(this->cmdvel = new FlowRobotBase2DCmdVel("cmdvel"),
-                          ROS_CALLBACK(ErraticNode, cmdvelReceived));
     }
 
     ~ErraticNode()
@@ -127,16 +126,16 @@ class ErraticNode: public ROS_Slave
     void cmdvelReceived()
     {
       printf("received cmd: (%.3f,%.3f,%.3f)\n",
-             this->cmdvel->vx,
-             this->cmdvel->vy,
-             this->cmdvel->vyaw);
+             this->cmdvel.vx,
+             this->cmdvel.vy,
+             this->cmdvel.vyaw);
 
       player_position2d_cmd_vel_t cmd;
       memset(&cmd, 0, sizeof(cmd));
 
-      cmd.vel.px = this->cmdvel->vx;
-      cmd.vel.py = this->cmdvel->vy;
-      cmd.vel.pa = this->cmdvel->vyaw;
+      cmd.vel.px = this->cmdvel.vx;
+      cmd.vel.py = this->cmdvel.vy;
+      cmd.vel.pa = this->cmdvel.vyaw;
       cmd.state = 1;
 
       this->device->PutMsg(this->q,
@@ -184,23 +183,23 @@ main(void)
       player_position2d_data_t* pdata = (player_position2d_data_t*)msg->GetPayload();
       
       // Translate from Player data to ROS data
-      en.odom->px = pdata->pos.px;
-      en.odom->py = pdata->pos.py;
-      en.odom->pyaw = pdata->pos.pa;
-      en.odom->vx = pdata->vel.px;
-      en.odom->vy = pdata->vel.py;
-      en.odom->vyaw = pdata->vel.pa;
-      en.odom->stall = pdata->stall;
+      en.odom.px = pdata->pos.px;
+      en.odom.py = pdata->pos.py;
+      en.odom.pyaw = pdata->pos.pa;
+      en.odom.vx = pdata->vel.px;
+      en.odom.vy = pdata->vel.py;
+      en.odom.vyaw = pdata->vel.pa;
+      en.odom.stall = pdata->stall;
 
       // Publish the new data
-      en.odom->publish();
+      publish("odom", odom);
 
       printf("Published new odom: (%.3f,%.3f,%.3f)\n", 
-             en.odom->px, en.odom->py, en.odom->pyaw);
+             en.odom.px, en.odom.py, en.odom.pyaw);
     }
     else
     {
-      printf("%d:%d:%d:%d\n",
+      printf("Unhandled Player message %d:%d:%d:%d\n",
              hdr->type,
              hdr->subtype,
              hdr->addr.interf,
