@@ -22,7 +22,7 @@ class HokuyoNode: public ros::node
 
     HokuyoNode() : ros::node("urglaser")
     {
-      advertise("scan", scan);
+      advertise<MsgLaserScan>("scan");
 
       // TODO: add min/max angle support
       /*
@@ -89,7 +89,7 @@ class HokuyoNode: public ros::node
       scan.angle_max = cfg.max_angle;
       scan.angle_increment = cfg.resolution;
       scan.range_max = cfg.max_range;
-      scan.id = scanid++;
+      scan.header.seq = scanid++;
       scan.set_ranges_size(numreadings);
       scan.set_intensities_size(numreadings);
 

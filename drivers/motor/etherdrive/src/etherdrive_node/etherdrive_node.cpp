@@ -51,7 +51,7 @@ public:
     for (int i = 0;i < 6;i++) {
       ostringstream oss;
       oss << "mot" << i;
-      advertise(oss.str().c_str(), mot[i]);
+      advertise<MsgActuator>(oss.str().c_str());
 
       oss << "_cmd";
       subscribe(oss.str().c_str(), mot_cmd[i], &EtherDrive_Node::mot_callback);

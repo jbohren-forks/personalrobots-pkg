@@ -68,12 +68,12 @@ public:
   Tilting_Laser() : ros::node("tilting_laser"), next_shutter(0.0)
   {
     
-    advertise("cloud", cloud);
-    advertise("shutter", shutter);
-    advertise("mot2_cmd", cmd);
+    advertise<MsgPointCloudFloat32>("cloud");
+    advertise<MsgEmpty>("shutter");
+    advertise<MsgActuator>("mot_cmd");
 
     subscribe("scan", scans, &Tilting_Laser::scans_callback);
-    subscribe("mot2",  encoder, &Tilting_Laser::encoder_callback);
+    subscribe("mot",  encoder, &Tilting_Laser::encoder_callback);
 
     if (!get_param(".period", period))
       period = 5.0;
@@ -156,7 +156,7 @@ public:
 		     time);
 
     motor_control(); // Control on encoder reads sounds reasonable
-    //    printf("I got some encoder values: %g!\n", encoder.val);
+    printf("I got some encoder values: %g!\n", encoder.val);
   }
 
   void motor_control() {

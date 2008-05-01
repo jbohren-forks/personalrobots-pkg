@@ -1,0 +1,6 @@
+#!/bin/bash
+export ROS_NAMESPACE=$ROS_NAMESPACE/TL
+`rospack find xmlparam`/xmlparam `rospack find tilting_laser`/params.xml
+xterm -e `rospack find hokuyourg_player`/hokuyourg_player&
+xterm -e `rospack find etherdrive`/bin/etherdrive &
+xterm -e `rospack find tilting_laser`/bin/tilting_laser mot:=mot2 mot_cmd:=mot2_cmd&
