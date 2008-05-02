@@ -1,0 +1,16 @@
+<package>
+<description brief='A ROS specific Transform Library'>
+
+Library for doing transformations within ROS.
+
+</description>
+<author>Tully Foote</author>
+<license>BSD</license>
+<url>http://pr.willowgarage.com</url>
+<export>
+<cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lrosTF"/>
+</export>
+<depend package="libTF"/>
+<depend package="roscpp"/>
+<depend package="std_msgs"/>
+</package>
