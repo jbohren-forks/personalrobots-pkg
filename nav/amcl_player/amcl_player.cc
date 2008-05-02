@@ -17,19 +17,47 @@
 // libplayerdrivers.
 Driver* AdaptiveMCL_Init(ConfigFile* cf, int section);
 
+/*template<class N>
 class DummyDriver : public Driver
 {
-  int Setup() {}
-  int Shutdown() {}
-  int ProcessMessage() {}
-}
+  private:
+    int (N::*cb)(QueuePointer&, player_msghdr*, void*);
+  public:
+    DummyDriver(N* node, int (N::*fp)(QueuePointer&, player_msghdr*, void*),
+                player_devaddr_t* addrs, size_t len) :
+            Driver(NULL, -1, true, PLAYER_QUEUE_LEN)
+    {
+      this->cb = fp;
+      for(int i=0;i<len;i++)
+      {
+        if(this->AddInterface(addrs[i]))
+        {
+          this->SetError(-1);
+          return;
+        }
+      }
+    }
+    int Setup() { return(0); }
+    int Shutdown() { return(0); }
+    int ProcessMessage(QueuePointer& q, player_msghdr* h, void* d)
+    { 
+      return((this->cb)(q,h,d));
+    }
+};
+*/
 
 class AmclNode: public ros::node
 {
   public:
     QueuePointer q;
 
+    player_devaddr_t position2d_addr;
+    player_devaddr_t laser_addr;
+    Device* position2d_dev;
+    Device* laser_dev;
+
     MsgRobotBase2DOdom odom;
+
 
     AmclNode() : ros::node("erratic")
     {
@@ -46,7 +74,26 @@ class AmclNode: public ros::node
       // is interface:index.  The interface must match what the driver is
       // expecting to provide.  The value of the index doesn't really matter, 
       // but 0 is most common.
-      const char* player_addr = "position2d:0";
+      const char* player_saddr = "position2d:0";
+
+      // TODO: automatically convert between string and player_devaddr_t
+      // representations
+      const char* position2d_saddr = "odometery:::position2d:1";
+      const char* laser_saddr = "laser:0";
+      this->position2d_addr.host = 0;
+      this->position2d_addr.robot = 0;
+      this->position2d_addr.interf = PLAYER_POSITION2D_CODE;
+      this->position2d_addr.index = 1;
+      this->laser_addr.host = 0;
+      this->laser_addr.robot = 0;
+      this->laser_addr.interf = PLAYER_LASER_CODE;
+      this->laser_addr.index = 0;
+
+      this->position2d_dev = deviceTable->AddDevice(this->position2d_addr, 
+                                                    NULL, false);
+      assert(this->position2d_dev);
+      this->laser_dev = deviceTable->AddDevice(this->laser_addr, NULL, false);
+      assert(this->laser_dev);
 
       // Create a ConfigFile object, into which we'll stuff parameters.
       // Drivers assume that this object will persist throughout execution
@@ -56,8 +103,11 @@ class AmclNode: public ros::node
 
       // Insert (name,value) pairs into the ConfigFile object.  These would
       // presumably come from the param server
-      this->cf->InsertFieldValue(0,"provides",player_addr);
+      this->cf->InsertFieldValue(0,"provides",player_saddr);
       this->cf->InsertFieldValue(0,"port","/dev/ttyUSB0");
+
+      this->cf->InsertFieldValue(0,"requires",position2d_saddr);
+      this->cf->InsertFieldValue(0,"requires",laser_saddr);
 
       // Create an instance of the driver, passing it the ConfigFile object.
       // The -1 tells it to look into the "global" section of the ConfigFile,
@@ -70,7 +120,7 @@ class AmclNode: public ros::node
 
       // Grab from the global deviceTable a pointer to the Device that was 
       // created as part of the driver's initialization.
-      assert((this->device = deviceTable->GetDevice(player_addr,false)));
+      assert((this->device = deviceTable->GetDevice(player_saddr,false)));
 
       // Create a message queue
       this->q = QueuePointer(false,PLAYER_QUEUE_LEN);
@@ -151,7 +201,7 @@ main(void)
       an.odom.stall = pdata->stall;
 
       // Publish the new data
-      publish("odom", odom);
+      an.publish("odom", an.odom);
 
       printf("Published new odom: (%.3f,%.3f,%.3f)\n", 
              an.odom.px, an.odom.py, an.odom.pyaw);
