@@ -2,9 +2,6 @@ CFLAGS = -g -Wall -Iinclude
 
 LDFLAGS = -lnewmat
 
-ROSCFLAGS = $(shell rospack export/cpp/cflags libTF)
-ROSLDFLAGS = $(shell rospack export/cpp/lflags libTF)
-
 all: install test
 
 
@@ -24,7 +21,7 @@ install: libTF.a
 	cp libTF.a lib/
 
 clean:
-	rm -f *.o test *.a
+	rm -f *.o test *.a lib/*.a
 
 
 
