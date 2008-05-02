@@ -22,6 +22,8 @@
  *
  *****************************************************************/
 
+#include <float.h>
+
 #include <gui/qparticleviewer.h>
 #include <gui/qgraphpainter.h>
 

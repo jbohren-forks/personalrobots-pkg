@@ -151,8 +151,10 @@ class ErraticNode: public ros::node
 };
 
 int
-main(void)
+main(int argc, char** argv)
 {
+  ros::init(argc, argv);
+
   ErraticNode en;
   Message* msg;
 
@@ -192,7 +194,7 @@ main(void)
       en.odom.stall = pdata->stall;
 
       // Publish the new data
-      publish("odom", odom);
+      en.publish("odom", en.odom);
 
       printf("Published new odom: (%.3f,%.3f,%.3f)\n", 
              en.odom.px, en.odom.py, en.odom.pyaw);
