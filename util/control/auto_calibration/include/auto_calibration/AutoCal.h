@@ -32,8 +32,7 @@ struct _Info
 
 #define TOXMLRPCVAL(val) x[#val] = val;
 
-  XmlRpc::XmlRpcValue toXmlRpcValue() {
-    XmlRpc::XmlRpcValue x;
+  bool toXmlRpcValue(XmlRpc::XmlRpcValue &x) {
     TOXMLRPCVAL(motorNum)
     TOXMLRPCVAL(rotationRange)
     TOXMLRPCVAL(maxEncoder)
@@ -43,7 +42,11 @@ struct _Info
     TOXMLRPCVAL(sign)
     TOXMLRPCVAL(flag)
     TOXMLRPCVAL(count)
-    return x;
+    return true;
+  }
+
+  bool toXmlRpcValue(XmlRpc::XmlRpcValue::iterator &i) {
+    return toXmlRpcValue((*i).second);
   }
 
 #define FROMXMLRPCVAL(val) if (x.hasMember(#val)) { val = x[#val]; } else { return false; }
@@ -59,6 +62,10 @@ struct _Info
     FROMXMLRPCVAL(flag)
     FROMXMLRPCVAL(count)
     return true;
+  }
+
+  bool fromXmlRpcValue(XmlRpc::XmlRpcValue::iterator &i) {
+    return fromXmlRpcValue((*i).second);
   }
 };
 
