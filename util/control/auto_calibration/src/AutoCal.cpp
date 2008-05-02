@@ -7,66 +7,27 @@ using namespace XmlRpc;
 
 AutoCal::AutoCal(EtherDrive &_e):e(_e)
 {
-  //make the part
+
+  // Info for head stage
+  Info pan = {0, 360.0, 0.0, 0.0, -180.0, 180.0, 0.0, 0, 1000}; 
+  Info tilt = {1, 120.0, 0.0, 0.0, -50.0, 70.0, 0.0, 0, 1000};
+  Info hokuyo = {2, 180.0, 0.0, 0.0, -90.0, 90.0, 0.0, 0, 1000};
+
   XmlRpcValue head;
-  //make the infos
-  //neck (pan)
-  XmlRpcValue info; 
-  info["motorNum"] = 0;
-  info["rotationRange"]= 360.0;
-  info["maxEncoder"] = 0.0;
-  info["minEncoder"]= 0.0;
-  info["negOffset"] = -180.0;
-  info["posOffset"]= 180.0;
-  info["signRhr"] = 0.0;
-  info["flag"]= 0;
-  info["count"]= 1000;
-  head["info1"] = info;
-  //eyes (tilt)
-  info.clear();
-  info["motorNum"] = 1;
-  info["rotationRange"]= 120.0;
-  info["maxEncoder"] = 0.0;
-  info["minEncoder"]= 0.0;
-  info["negOffset"] = -50.0;
-  info["posOffset"]= 70.0;
-  info["signRhr"] = 0.0;
-  info["flag"]= 0;
-  info["count"]= 1000;
-  head["info2"] = info;
-  //mouth (hokuyo)
-  info.clear();
-  info["motorNum"] = 2;
-  info["rotationRange"]= 180.0;
-  info["maxEncoder"] = 0.0;
-  info["minEncoder"]= 0.0;
-  info["negOffset"] = -90.0;
-  info["posOffset"]= 90.0;
-  info["signRhr"] = 0.0;
-  info["flag"]= 0;
-  info["count"]= 1000;
-  head["info3"] = info;
-  //make the map
+  head["pan"] = pan.toXmlRpcValue();
+  head["tilt"] = tilt.toXmlRpcValue();
+  head["hokuyo"] = hokuyo.toXmlRpcValue();
+
   paramMap["head"] = head;   
 
-  //make the part
-  XmlRpcValue arm;
-  //make the infos
-  //Humerus (shoulder)
-  info.clear(); 
-  info["motorNum"] = 0;
-  info["rotationRange"]= 180.0;
-  info["maxEncoder"] = 0.0;
-  info["minEncoder"]= 0.0;
-  info["negOffset"] = -90.0;
-  info["posOffset"]= 90.0;
-  info["signRhr"] = 0.0;
-  info["flag"]= 0;
-  info["count"]= 1000;
-  arm["info1"] = info;
-  //make the map
-  paramMap["arm"] = arm;   
 
+  // Info for arm stage
+  Info shoulder = {0, 180.0, 0.0, 0.0, -90.0, 90.0, 0.0, 0, 1000};
+
+  XmlRpcValue arm;
+  arm["shoulder"] = shoulder.toXmlRpcValue();
+  
+  paramMap["arm"] = arm;   
 
 }
 
@@ -77,12 +38,14 @@ AutoCal::~AutoCal()
 }
 
 
-double AutoCal::RunAutoCal(string objectName)
+void AutoCal::RunAutoCal(string objectName)
 {
   int speed = 125;
   int flag = 1;
   int count = 0;
   
+  Info info;
+
   XmlRpcValue object = paramMap[objectName];
 
   cout << "Now auto calibrating " << object.size() <<" motors." << endl;   
@@ -92,7 +55,9 @@ double AutoCal::RunAutoCal(string objectName)
   
   for (XmlRpcValue::iterator it2 = object.begin(); it2 != object.end(); ++it2)
   {
-      e.set_drv((int)(*it2).second["motorNum"], speed);
+      if (info.fromXmlRpcValue((*it2).second)) {
+	e.set_drv((int)(*it2).second["motorNum"], speed);
+      }
   }  
   
   while(flag)
@@ -107,32 +72,32 @@ double AutoCal::RunAutoCal(string objectName)
       
     for (XmlRpcValue::iterator it2 = object.begin(); it2 != object.end(); ++it2)
     {
-	
-        if(e.get_cur((int)(*it2).second["motorNum"])>425 && (int)(*it2).second["count"]>999)
+      if (info.fromXmlRpcValue((*it2).second)) {
+        if(e.get_cur(info.motorNum)>425 && info.count>999)
         {   
-          e.set_drv((int)(*it2).second["motorNum"], 0);
+          e.set_drv(info.motorNum, 0);
           
-          if((int)(*it2).second["flag"] == 1)
+          if(info.flag == 1)
           {
-            (*it2).second["maxEncoder"] = e.get_enc((*it2).second["motorNum"]);
-            (*it2).second["flag"]=0;
-            (*it2).second["count"] =0;   
+            info.maxEncoder = e.get_enc(info.motorNum);
+            info.flag = 0;
+            info.count = 0;   
           }
-          else if((int)(*it2).second["flag"]==-1)
+          else if(info.flag == -1)
           {
-            (*it2).second["minEncoder"] = e.get_enc((*it2).second["motorNum"]);
-            (*it2).second["flag"]=-2;
+            info.minEncoder = e.get_enc(info.motorNum);
+            info.flag = -2;
           }
         }
-        else if((int)(*it2).second["flag"]==0)
+        else if(info.flag==0)
         {
-          e.set_drv((*it2).second["motorNum"], -speed);
-          (*it2).second["flag"]=-1;
+          e.set_drv(info.motorNum, -speed);
+          info.flag = -1;
         } 
-        else if((int)(*it2).second["flag"]==-2)
+        else if(info.flag == -2)
         {
-          count=count+1;
-	        (*it2).second["flag"]=-3;
+          count = count+1;
+	  info.flag = -3;
 	   
         }
         if(count==object.size())
@@ -142,16 +107,16 @@ double AutoCal::RunAutoCal(string objectName)
           cout << "Done calibrating " << object.size() <<" motors." << endl;
           
         } 
-        (*it2).second["count"] = (int)(*it2).second["count"] +1;
-    } 
+        info.count = info.count +1;
+      } 
+    }
     usleep(300);
-    
   }
+
   for (XmlRpcValue::iterator it2 = object.begin(); it2 != object.end(); ++it2)
   {
-    cout << "Min Encoder : " << (*it2).second["minEncoder"] << " Max Encoder : "<< (*it2).second["maxEncoder"] << endl;
+    if (info.fromXmlRpcValue((*it2).second)) {
+      cout << "Min Encoder : " << info.minEncoder << " Max Encoder : "<< info.maxEncoder << endl;
+    }
   }  
-    
 }
-
-

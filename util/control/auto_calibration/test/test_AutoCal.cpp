@@ -3,36 +3,34 @@
 
 using namespace std;
 
-class test : public ros::node
+class Test_Autocal : public ros::node
 {
-  public:
-  test() : ros::node("test"){}
+public:
+  EtherDrive e;
+  AutoCal ac;
+
+  Test_Autocal() : ros::node("test"), ac(e)
+  {
+    if (!e.init("192.168.0.100")) {
+      cout << "Could not initialize etherdrive." << endl;
+      exit(-1);
+    }
+  }
+
+  void run() {
+    ac.RunAutoCal(argv[1]);    
+    set_param("autocal",ac.paramMap);
+  }
+
+
 };
 
 int main(int argc, char **argv)
 {
   ros::init(argc, argv);
-  test T;
-  
-  T.set_param("junk", 89898);
-  int happy;
-  
-  if(T.get_param("junk", happy))
-  {
-  	cout<< "happy "<<happy<<endl;
-  }
-  else
-  {
-    cout<<"sad"<<endl;
-  }
+  Test_Autocal T;
 
-  EtherDrive e;
-  if (!e.init("192.168.0.100")) {
-    cout << "Could not initialize etherdrive." << endl;
-    return -1;
-  }
-  AutoCal robot(e);
-  robot.RunAutoCal(argv[1]);
-  T.set_param("autocal",robot.paramMap);
- 
+  T.run();
+
+  return 1;
 }
