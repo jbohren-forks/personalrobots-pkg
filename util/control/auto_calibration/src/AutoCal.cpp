@@ -55,9 +55,9 @@ void AutoCal::RunAutoCal(string objectName)
   
   for (XmlRpcValue::iterator it2 = object.begin(); it2 != object.end(); ++it2)
   {
-      if (info.fromXmlRpcValue(it2) {
-	e.set_drv(info.motorNum, speed);
-      }
+    if (info.fromXmlRpcValue(it2)) {
+      e.set_drv(info.motorNum, speed);
+    }
   }  
   
   while(flag)
@@ -117,7 +117,7 @@ void AutoCal::RunAutoCal(string objectName)
 
   for (XmlRpcValue::iterator it2 = object.begin(); it2 != object.end(); ++it2)
   {
-    if (info.fromXmlRpcValue(it2) {
+    if (info.fromXmlRpcValue(it2)) {
       cout << "Min Encoder : " << info.minEncoder << " Max Encoder : "<< info.maxEncoder << endl;
     }
   }  
