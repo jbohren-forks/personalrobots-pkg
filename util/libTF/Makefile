@@ -1,7 +1,9 @@
-
 CFLAGS = -g -Wall -Iinclude
 
 LDFLAGS = -lnewmat
+
+ROSCFLAGS = $(shell rospack export/cpp/cflags libTF)
+ROSLDFLAGS = $(shell rospack export/cpp/lflags libTF)
 
 all: install test
 
@@ -13,14 +15,16 @@ libTF.o: src/simple/libTF.cpp include/libTF/libTF.h
 	g++  $(CFLAGS) -o $@ -c $< 
 
 libTF.a: libTF.o Quaternion3D.o
-	ar -rs libTF.a $^
+	ar -rs $@ $^
 
 test: src/test/main.cpp libTF.a
 	g++ $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-install: libTF.a
+install: libTF.a 
 	cp libTF.a lib/
 
 clean:
 	rm -f *.o test *.a
+
+
 
