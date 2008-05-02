@@ -75,13 +75,13 @@ public:
     subscribe("scan", scans, &Tilting_Laser::scans_callback);
     subscribe("mot",  encoder, &Tilting_Laser::encoder_callback);
 
-    if (!get_param(".period", period))
+    if (!get_param("period", period))
       period = 5.0;
 
-    if (!get_param(".min_ang", min_ang))
+    if (!get_param("min_ang", min_ang))
       min_ang = -1.3;
 
-    if (!get_param(".max_ang", max_ang))
+    if (!get_param("max_ang", max_ang))
       max_ang = 0.6;
 
     unsigned long long time = clock.ulltime();
