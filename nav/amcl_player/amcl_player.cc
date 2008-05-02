@@ -92,7 +92,8 @@ class AmclNode: public ros::node
       this->position2d_dev = deviceTable->AddDevice(this->position2d_addr, 
                                                     NULL, false);
       assert(this->position2d_dev);
-      this->laser_dev = deviceTable->AddDevice(this->laser_addr, NULL, false);
+      this->laser_dev = deviceTable->AddDevice(this->laser_addr, 
+                                               NULL, false);
       assert(this->laser_dev);
 
       // Create a ConfigFile object, into which we'll stuff parameters.
@@ -164,8 +165,10 @@ class AmclNode: public ros::node
 };
 
 int
-main(void)
+main(int argc, char** argv)
 {
+  ros::init(argc, argv);
+
   AmclNode an;
   Message* msg;
 
