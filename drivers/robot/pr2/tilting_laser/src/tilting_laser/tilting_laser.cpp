@@ -75,14 +75,9 @@ public:
     subscribe("scan", scans, &Tilting_Laser::scans_callback);
     subscribe("mot",  encoder, &Tilting_Laser::encoder_callback);
 
-    if (!get_param("period", period))
-      period = 5.0;
-
-    if (!get_param("min_ang", min_ang))
-      min_ang = -1.3;
-
-    if (!get_param("max_ang", max_ang))
-      max_ang = 0.6;
+    param("period", period, 5.0);
+    param("min_ang", min_ang, -1.3);
+    param("max_ang", max_ang, 0.6);
 
     unsigned long long time = clock.ulltime();
     TR.setWithEulers(3, 2,
@@ -118,7 +113,7 @@ public:
     */
 
     NEWMAT::Matrix points(4,scans.get_ranges_size());
-    for (int i = 0; i < scans.get_ranges_size(); i++) {
+    for (uint32_t i = 0; i < scans.get_ranges_size(); i++) {
       if (scans.ranges[i] < 20.0) {
 	points(1,i+1) = cos(scans.angle_min + i*scans.angle_increment) * scans.ranges[i];
 	points(2,i+1) = sin(scans.angle_min + i*scans.angle_increment) * scans.ranges[i];
@@ -134,7 +129,7 @@ public:
     
     NEWMAT::Matrix rot_points = TR.getMatrix(1,3,clock.ulltime()) * points;
     
-    for (int i = 0; i < scans.get_ranges_size(); i++) {
+    for (uint32_t i = 0; i < scans.get_ranges_size(); i++) {
       cloud.x[i] = rot_points(1,i+1);
       cloud.y[i] = rot_points(2,i+1);
       cloud.z[i] = rot_points(3,i+1);
