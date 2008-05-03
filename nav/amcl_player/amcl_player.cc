@@ -17,10 +17,10 @@
 // libplayerdrivers.
 Driver* AdaptiveMCL_Init(ConfigFile* cf, int section);
 
-class AmclNode: public ros::node
+class AmclNode: public ros::node, public Driver
 {
   public:
-    AmclNode() : ros::node("erratic")
+    AmclNode() : ros::node("erratic"), Driver(NULL,-1,false,PLAYER_QUEUE_LEN)
     {
       advertise("odom", odom);
 
@@ -31,9 +31,6 @@ class AmclNode: public ros::node
       // TODO: remove XDR dependency
       playerxdr_ftable_init();
       
-      // Create a message queue
-      this->q = QueuePointer(false,PLAYER_QUEUE_LEN);
-
       // TODO: automatically convert between string and player_devaddr_t
       // representations
 
@@ -68,15 +65,20 @@ class AmclNode: public ros::node
       this->position2d_dev = deviceTable->AddDevice(this->position2d_addr, 
                                                     NULL, false);
       assert(this->position2d_dev);
-      this->position2d_dev->InQueue = QueuePointer(this->q);
+      this->position2d_dev->InQueue = QueuePointer(this->InQueue);
+      this->position2d_dev->driver = (Driver*)this;
+
       this->laser_dev = deviceTable->AddDevice(this->laser_addr, 
                                                NULL, false);
       assert(this->laser_dev);
-      this->laser_dev->InQueue = QueuePointer(this->q);
+      this->laser_dev->InQueue = QueuePointer(this->InQueue);
+      this->laser_dev->driver = (Driver*)this;
+
       this->map_dev = deviceTable->AddDevice(this->map_addr, 
                                              NULL, false);
       assert(this->map_dev);
-      this->map_dev->InQueue = QueuePointer(this->q);
+      this->map_dev->InQueue = QueuePointer(this->InQueue);
+      this->map_dev->driver = (Driver*)this;
 
       // Create a ConfigFile object, into which we'll stuff parameters.
       // Drivers assume that this object will persist throughout execution
@@ -109,58 +111,27 @@ class AmclNode: public ros::node
       assert((this->device = deviceTable->GetDevice(oposition2d_saddr,false)));
     }
 
-    ~AmclNode()
+    int Setup() {return(0);}
+    int Shutdown() {return(0);}
+    int ProcessMessage(QueuePointer &resp_queue, 
+                       player_msghdr * hdr,
+                       void * data)
     {
-      delete driver;
-      delete cf;
-      player_globals_fini();
-    }
-
-    int start()
-    {
-      // Subscribe to device, which causes it to startup
-      if(this->device->Subscribe(this->q) != 0)
-      {
-        puts("Failed to subscribe the driver");
-        return(-1);
-      }
-      else
-        return(0);
-    }
-
-    int stop()
-    {
-      // Unsubscribe from the device, which causes it to shutdown
-      if(device->Unsubscribe(this->q) != 0)
-      {
-        puts("Failed to start the driver");
-        return(-1);
-      }
-      else
-        return(0);
-    }
-
-    int process()
-    {
-      // Block until there's a message on our queue
-      this->q->Wait();
-
-      Message* msg;
-
-      // Pop off one message (we own the resulting memory)
-      assert((msg = this->q->Pop()));
-
-      player_msghdr_t hdr = *msg->GetHeader();
+      printf("Player message %d:%d:%d:%d\n",
+             hdr->type,
+             hdr->subtype,
+             hdr->addr.interf,
+             hdr->addr.index);
 
       // Is it a new pose from amcl?
-      if(Message::MatchMessage(&hdr,
+      if(Message::MatchMessage(hdr,
                                PLAYER_MSGTYPE_DATA, 
                                PLAYER_POSITION2D_DATA_STATE,
                                this->oposition2d_addr))
       {
         // Cast the message payload appropriately 
         player_position2d_data_t* pdata = 
-                (player_position2d_data_t*)msg->GetPayload();
+                (player_position2d_data_t*)data;
 
         // Translate from Player data to ROS data
         this->odom.px = pdata->pos.px;
@@ -176,55 +147,90 @@ class AmclNode: public ros::node
 
         printf("Published new odom: (%.3f,%.3f,%.3f)\n", 
                this->odom.px, this->odom.py, this->odom.pyaw);
+        return(0);
       }
       // Is it a request for the map metadata?
-      else if(Message::MatchMessage(&hdr,
+      else if(Message::MatchMessage(hdr,
                                     PLAYER_MSGTYPE_REQ, 
                                     PLAYER_MAP_REQ_GET_INFO,
                                     this->map_addr))
       {
-        // Send a NACK
-        hdr.type = PLAYER_MSGTYPE_RESP_NACK;
-        this->device->PutMsg(this->q, &hdr, NULL);
+        player_map_info_t info;
+        info.scale = 0.1;
+        info.width = 100;
+        info.height = 100;
+        info.origin.px = 0;
+        info.origin.py = 0;
+        info.origin.pa = 0;
+        this->Publish(this->map_addr, resp_queue,
+                      PLAYER_MSGTYPE_RESP_ACK,
+                      PLAYER_MAP_REQ_GET_INFO,
+                      (void*)&info);
+        return(0);
       }
       // Is it a request for a map tile?
-      else if(Message::MatchMessage(&hdr,
+      else if(Message::MatchMessage(hdr,
                                     PLAYER_MSGTYPE_REQ, 
                                     PLAYER_MAP_REQ_GET_DATA,
                                     this->map_addr))
       {
         // Send a NACK
-        hdr.type = PLAYER_MSGTYPE_RESP_NACK;
-        this->device->PutMsg(this->q, &hdr, NULL);
-      }
-      // Is some other request?
-      else if(hdr.type == PLAYER_MSGTYPE_REQ)
-      {
-        // Send a NACK
-        hdr.type = PLAYER_MSGTYPE_RESP_NACK;
-        this->device->PutMsg(this->q, &hdr, NULL);
+        return(-1);
       }
       else
       {
         printf("Unhandled Player message %d:%d:%d:%d\n",
-               hdr.type,
-               hdr.subtype,
-               hdr.addr.interf,
-               hdr.addr.index);
+               hdr->type,
+               hdr->subtype,
+               hdr->addr.interf,
+               hdr->addr.index);
+        return(-1);
       }
+    }
 
-      // We're done with the message now
-      delete msg;
+    ~AmclNode()
+    {
+      delete driver;
+      delete cf;
+      player_globals_fini();
+    }
+
+    int start()
+    {
+      // Subscribe to device, which causes it to startup
+      if(this->device->Subscribe(this->InQueue) != 0)
+      {
+        puts("Failed to subscribe the driver");
+        return(-1);
+      }
+      else
+        return(0);
+    }
+
+    int stop()
+    {
+      // Unsubscribe from the device, which causes it to shutdown
+      if(device->Unsubscribe(this->InQueue) != 0)
+      {
+        puts("Failed to start the driver");
+        return(-1);
+      }
+      else
+        return(0);
+    }
+
+    int process()
+    {
+      // Block until there's a message on our queue
+      this->InQueue->Wait();
+
+      this->ProcessMessages();
 
       return(0);
     }
 
   private:
     ConfigFile* cf;
-
-    // This is "our" queue, which we will subscribe to the underlying amcl
-    // driver.
-    QueuePointer q;
 
     // These are the devices that amcl offers, and to which we subscribe
     Driver* driver;
