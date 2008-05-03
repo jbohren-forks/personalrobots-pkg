@@ -30,6 +30,9 @@ class AmclNode: public ros::node
       
       // TODO: remove XDR dependency
       playerxdr_ftable_init();
+      
+      // Create a message queue
+      this->q = QueuePointer(false,PLAYER_QUEUE_LEN);
 
       // TODO: automatically convert between string and player_devaddr_t
       // representations
@@ -104,9 +107,6 @@ class AmclNode: public ros::node
       // Grab from the global deviceTable a pointer to the Device that was 
       // created as part of the driver's initialization.
       assert((this->device = deviceTable->GetDevice(oposition2d_saddr,false)));
-
-      // Create a message queue
-      this->q = QueuePointer(false,PLAYER_QUEUE_LEN);
     }
 
     ~AmclNode()
