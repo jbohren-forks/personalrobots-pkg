@@ -6,7 +6,7 @@ A simple point cloud viewer written using SDL.
 <license>BSD</license>
 <url>http://stair.stanford.edu</url>
 <depend package="roscpp"/>
-<depend package="common_flows"/>
+<depend package="std_msgs"/>
 <depend package="sdl"/>
 <sys_depend lib="GL"/>
 <sys_depend lib="GLU"/>

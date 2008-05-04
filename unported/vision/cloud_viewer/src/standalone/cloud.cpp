@@ -29,7 +29,7 @@ int main(int argc, char **argv)
       printf("bad syntax on line %d\n", line_num);
       break;
     }
-    y *= -1; // convert from right-hand coordinate system
+    //y *= -1; // convert from right-hand coordinate system
     if (line_num == 1)
     {
       printf("%f %f %f\n", x, y, z);
@@ -46,7 +46,8 @@ int main(int argc, char **argv)
   }
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,   24);
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-  const int w = 640, h = 480;
+//  const int w = 640, h = 480;
+  const int w = 1280, h = 960;
   if (SDL_SetVideoMode(w, h, 32, SDL_OPENGL | SDL_HWSURFACE) == 0)
   {
     fprintf(stderr, "setvideomode failed: %s\n", SDL_GetError());
@@ -54,6 +55,7 @@ int main(int argc, char **argv)
   }
 
   cloud_viewer.set_opengl_params(w,h);
+  cloud_viewer.set_look_tgt(0, 0.5, 1.0);
   cloud_viewer.render();
   SDL_GL_SwapBuffers();
 /*

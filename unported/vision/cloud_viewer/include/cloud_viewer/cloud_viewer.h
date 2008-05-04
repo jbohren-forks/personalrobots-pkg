@@ -25,10 +25,12 @@ public:
 	void mouse_button(int x, int y, int button, bool is_down);
 	void mouse_motion(int x, int y, int dx, int dy);
 	void keypress(char c);
+  void set_look_tgt(double x, double y, double z) 
+  { look_tgt_x = x; look_tgt_y = y; look_tgt_z = z; }
 
 private:
 	std::vector<CloudViewerPoint> points;
-	float cam_x, cam_y, cam_z, cam_rho, cam_ele, cam_azi;
+	float cam_x, cam_y, cam_z, cam_azi, cam_ele, cam_rho;
 	float look_tgt_x, look_tgt_y, look_tgt_z;
 	bool left_button_down, right_button_down;
   bool hide_axes;

@@ -7,7 +7,7 @@
 
 CloudViewer::CloudViewer() : 
 	cam_x(0), cam_y(0), cam_z(0),
-	cam_azi(M_PI), cam_ele(0), cam_rho(3),
+	cam_azi(-M_PI/2), cam_ele(0), cam_rho(1),
 	look_tgt_x(0), look_tgt_y(0), look_tgt_z(0),
 	left_button_down(false), right_button_down(false),
   hide_axes(false)
@@ -39,7 +39,7 @@ void CloudViewer::render()
 	cam_x = cam_rho * sinf((float)(M_PI/2) - cam_ele) * cosf(cam_azi) + look_tgt_x;
 	cam_y = cam_rho * cosf((float)(M_PI/2) - cam_ele)                 + look_tgt_y;
 	cam_z = cam_rho * sinf((float)(M_PI/2) - cam_ele) * sinf(cam_azi) + look_tgt_z;
-	gluLookAt(cam_x, cam_y, cam_z, look_tgt_x, look_tgt_y, look_tgt_z, 0, 1, 0);
+	gluLookAt(cam_x, cam_y, cam_z, look_tgt_x, look_tgt_y, look_tgt_z, 0, -1, 0);
 
   if (!hide_axes)
   {
@@ -122,8 +122,8 @@ void CloudViewer::keypress(char c)
 		case 'x': look_tgt_z -= 0.05; break;
 		case 'a': look_tgt_x -= 0.05; break;
 		case 'd': look_tgt_x += 0.05; break;
-		case 'i': look_tgt_y += 0.05; break;
-		case 'k': look_tgt_y -= 0.05; break;
+		case 'i': look_tgt_y -= 0.05; break;
+		case 'k': look_tgt_y += 0.05; break;
     case 'h': hide_axes = !hide_axes; break;
 	}
 }
