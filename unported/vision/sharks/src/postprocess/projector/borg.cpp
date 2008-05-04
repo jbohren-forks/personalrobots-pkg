@@ -74,9 +74,9 @@ int main(int argc, char **argv)
 
   const double laser_encoder_offset = 150 * units::DEGREES();
   const double baseline   = 9.25 * units::INCHES();
-  const double stage_tilt = -15 * units::DEGREES();
+  const double stage_tilt = 15 * units::DEGREES();
   const double stage_back = 0.5  * units::INCHES();
-  const double stage_up   = 8  * units::INCHES();
+  const double stage_up   = 7.5  * units::INCHES();
   const double a2 = stage_up * sin(-stage_tilt) + stage_back * cos(-stage_tilt);
   const double d2 = stage_up * cos(-stage_tilt) - stage_back * sin(-stage_tilt);
 
