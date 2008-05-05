@@ -10,7 +10,11 @@ public:
 
   rosTFServer * pTFServer;
 
-  void test () {pTFServer->sendEuler(5,count++,1,1,1,1,1,1,100000,100000);};
+  void test () {
+    pTFServer->sendEuler(5,count++,1,1,1,1,1,1,100000,100000);
+    pTFServer->sendDH(5,count++,1,1,1,1,100000,100000);
+    pTFServer->sendQuaternion(5,count++,1,1,1,1,1,1,1,100000,100000);
+  };
 
 private:
   int count;
