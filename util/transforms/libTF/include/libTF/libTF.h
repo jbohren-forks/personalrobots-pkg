@@ -104,7 +104,7 @@ public:
   static const unsigned int ROOT_FRAME = 1;  //Hard Value for ROOT_FRAME
   static const unsigned int NO_PARENT = 0;  //Value for NO_PARENT
 
-  static const unsigned int MAX_NUM_FRAMES = 100;   /* The maximum number of frames possible */
+  static const unsigned int MAX_NUM_FRAMES = 10000;   /* The maximum number of frames possible */
   static const unsigned int MAX_GRAPH_DEPTH = 100;   /* The maximum number of times to descent before determining that graph has a loop. */
 
   static const ULLtime DEFAULT_CACHE_TIME = 10 * 1000000000ULL; //10 seconds in nanoseconds
