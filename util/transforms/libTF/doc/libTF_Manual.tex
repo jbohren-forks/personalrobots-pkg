@@ -44,6 +44,8 @@ two coordinate frames, but it will also keep track of a whole tree of coordinate
 and automatically chain transformations together between any two connected frames.  
 
 \section{Transform Library}
+This section will first provide an overview of terms and conventions followed
+by the direct API calls necessary to interact with the library.  
 
 \subsection{Terminology and Conventions}
 \paragraph {Coodinate Frame}
@@ -108,7 +110,15 @@ The matrix library used within this library is Newmat10.
 Newmat10 is the matrix library used in this library.  Documentation for Newmat can be found at 
 \url{http://www.robertnz.net/nm10.htm}.  
 
+\paragraph {Time Representation}
+libTF uses an \texttt{unsigned long long} (equivilant to a \texttt{uint64\_t}) to represent nanoseconds since the epoch(1970).  
+It is named \texttt{ULLtime} for clarity.
+
+rosTF converts automatically to the above representation from a time pair of seconds and nanoseconds since the epoch, to 
+be consistant with the rest of ROS.  
+
 \subsection{libTF API}
+\label{libTFAPI}
 \index{libTF API}
 The class which provides external functionality is named TransformReference.  
 
@@ -176,6 +186,7 @@ unimplemented
 
 
 \subsubsection{Accessors}
+\label{libTFAPI accessors}
 \paragraph{getMatrix}
 \index{libTF API!getMatrix}
 \begin{verbatim}
@@ -205,7 +216,7 @@ static const unsigned int ROOT_FRAME = 1;  //Hard Value for ROOT_FRAME
 static const unsigned int NO_PARENT = 0;  //Value for NO_PARENT
 
 /* The maximum number of frames possible */
-static const unsigned int MAX_NUM_FRAMES = 100;   
+static const unsigned int MAX_NUM_FRAMES = 10000;   
 /* The maximum number of times to descent before 
  * determining that graph has a loop. */
 static const unsigned int MAX_GRAPH_DEPTH = 100; 
@@ -216,10 +227,70 @@ static const ULLtime DEFAULT_CACHE_TIME = 10 * 1000000000ULL;
 \end{verbatim}
 
 \section{ROS Integration}
+The libTF was designed to be used within the ROS architecture and to that end 
+a ROS compatible wrapper has also been written.  This wrapper enables the library
+to handle all the communication between seperate sources and users of transformations.
+The API for this is defined below.
 
-unimplemented
 \subsection{libTF ROS API}
-unimplemented
+
+\subsubsection {rosTF Client API}
+\index{rosTF Client API}
+\index{rosTF Client API!Constructor}
+\paragraph {Constructor}
+The constructor is designed to be launched within a ROS node, but be passed a reference to 
+the node so that it can access the nodes public methods.  This is done instead of inheriting
+to prevent interactions between different possible future derivatives of ros::node. 
+\begin{verbatim}
+rosTFClient(ros::node & rosnode);
+\end{verbatim}
+
+\index{rosTF Client API!Accessors|see{libTF API}}
+\paragraph {Accessors}
+rosTF inherits from libTF, so it gathers all data coming and 
+and all the accessors remain the same see Section \ref{libTFAPI accessors}.
+
+
+\subsubsection{rosTF Server}
+\index{rosTF Server API}
+\index{rosTF Server API!Constructor}
+\paragraph {Constructor}
+The constructor is designed to be launched within a ROS node, but be passed a reference to 
+the node so that it can access the nodes public methods.  This is done instead of inheriting
+to prevent interactions between different possible future derivatives of ros::node. 
+\begin{verbatim}
+rosTFServer(ros::node & rosnode);
+\end{verbatim}
+
+\paragraph {Mutators}
+The rosTF server class provides three methods to easily broadcast transforms.  
+
+The transform can be defined using Euler angles: (x, y, z, yaw, pitch, roll).
+\index{rosTF Server API!sendEuler}
+\begin{verbatim}
+void sendEuler(unsigned int frame, unsigned int parent, 
+               double x, double y, double z, 
+               double yaw, double pitch, double roll,
+               unsigned int secs, unsigned int nsecs);
+\end{verbatim}
+
+The transform can be defined using DH Parameters: (length, twist, offset, angle).
+\index{rosTF Server API!sendDH}
+\begin{verbatim}
+void sendDH(unsigned int frame, unsigned int parent, 
+            double length, double twist, 
+            double offset, double angle, 
+            unsigned int secs, unsigned int nsecs);
+\end{verbatim}
+
+Or the transform can be defined using Quaternions: (xt, yt, zt, xr, yr, zr, w).
+\index{rosTF Server API!sendQuaternion}
+\begin{verbatim}
+void sendQuaternion(unsigned int frame, unsigned int parent, 
+                    double xt, double yt, double zt, //Translation
+                    double xr, double yr, double zr, double w, //Rotation
+                    unsigned int secs, unsigned int nsecs);
+\end{verbatim}
 
 \section{Example Usage}
 \subsection{Library}
@@ -312,8 +383,90 @@ tyException
 %\end{program}
 
 \subsection{ROS Implementation}
+
+\subsubsection{Example Broadcaster}
 \begin{verbatim}
-TODO
+#include "rosTF/rosTF.h"
+
+class testServer : public ros::node
+{
+public:
+  //constructor
+  testServer() : ros::node("server"),count(2){
+    pTFServer = new rosTFServer(*this);
+  };
+
+  //A pointer to the rosTFServer class
+  rosTFServer * pTFServer;
+
+
+  // A function to call to send data periodically
+  void test () {
+    pTFServer->sendEuler(5,count++,1,1,1,1,1,1,100000,100000);
+    pTFServer->sendDH(5,count++,1,1,1,1,100000,100000);
+    pTFServer->sendQuaternion(5,count++,1,1,1,1,1,1,1,100000,100000);
+  };
+
+private:
+  int count;
+
+};
+
+int main(int argc, char ** argv)
+{
+  //Initialize ROS
+  ros::init(argc, argv);
+
+  //Construct/initialize the server
+  testServer myTestServer;
+  
+  while(myTestServer.ok())
+    {
+      //Send some data
+      myTestServer.test();
+      sleep(1);
+    }
+
+  return 0;
+};
+\end{verbatim}
+
+\subsubsection{Example Client}
+\begin{verbatim}
+#include "rosTF/rosTF.h"
+
+class testListener : public ros::node
+{
+public:
+  //constructor with name
+  testListener() : ros::node("client") {
+    pClient = new rosTFClient(*this);
+  };
+
+  //A pointer to the client library object  
+  rosTFClient * pClient;
+
+};
+
+
+int main(int argc, char ** argv)
+{
+  //Initialize ROS
+  ros::init(argc, argv);
+
+  //Instantiate a local listener
+  testListener testListener;
+  
+  //Nothing needs to be done except wait for a quit
+  //The callbacks withing the listener class 
+  //will take care of everything
+  while(testListener.ok())
+    {
+      sleep(1);
+    }
+
+  return 0;
+};
 \end{verbatim}
 
 \section{Summary of Internal Mathematics}

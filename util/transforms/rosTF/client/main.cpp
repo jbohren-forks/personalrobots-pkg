@@ -1,13 +1,14 @@
 #include "rosTF/rosTF.h"
 
-class testClient : public ros::node
+class testListener : public ros::node
 {
 public:
-  //constructor
-  testClient() : ros::node("client") {
+  //constructor with name
+  testListener() : ros::node("client") {
     pClient = new rosTFClient(*this);
   };
-  
+
+  //A pointer to the client library object  
   rosTFClient * pClient;
 
 };
@@ -15,10 +16,16 @@ public:
 
 int main(int argc, char ** argv)
 {
+  //Initialize ROS
   ros::init(argc, argv);
-  testClient testClient;
+
+  //Instantiate a local client
+  testListener testListener;
   
-  while(testClient.ok())
+  //Nothing needs to be done except wait for a quit
+  //The callbacks withing the listener class 
+  //will take care of everything
+  while(testListener.ok())
     {
       sleep(1);
     }
