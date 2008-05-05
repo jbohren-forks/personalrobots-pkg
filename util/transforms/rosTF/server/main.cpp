@@ -4,13 +4,16 @@ class testServer : ros::node
 {
 public:
   //constructor
-  testServer() : ros::node("server"){
+  testServer() : ros::node("server"),count(2){
     pTFServer = new rosTFServer(*this);
   };
 
   rosTFServer * pTFServer;
 
-  void test () {pTFServer->sendEuler(5,2,1,1,1,1,1,1,383838838ULL);};
+  void test () {pTFServer->sendEuler(5,count++,1,1,1,1,1,1,100000,100000);};
+
+private:
+  int count;
 
 };
 

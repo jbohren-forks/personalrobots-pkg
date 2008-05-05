@@ -26,7 +26,7 @@ class rosTFServer
   //Constructor
   rosTFServer(ros::node & rosnode);
 
-  void sendEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned long long time);
+  void sendEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs);
   //  void sendQuaternion();
   // void sendDH();
 

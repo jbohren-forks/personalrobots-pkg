@@ -10,7 +10,7 @@ rosTFClient::rosTFClient(ros::node & rosnode):
 
 void rosTFClient::receiveEuler()
 {
-  setWithEulers(eulerIn.frame, eulerIn.parent, eulerIn.x, eulerIn.y, eulerIn.z, eulerIn.yaw, eulerIn.pitch, eulerIn.roll, 11111111111111ULL); ///TODO FIXME fill out time
+  setWithEulers(eulerIn.frame, eulerIn.parent, eulerIn.x, eulerIn.y, eulerIn.z, eulerIn.yaw, eulerIn.pitch, eulerIn.roll, eulerIn.header.stamp_secs * 1000000000ULL + eulerIn.header.stamp_nsecs);
   std::cout << "recieved frame: " << eulerIn.frame << " with parent:" << eulerIn.parent << std::endl;
 };
 
@@ -23,7 +23,7 @@ rosTFServer::rosTFServer(ros::node & rosnode):
 };
 
 
-void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned long long time)
+void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs)
 {
   eulerOut.frame = frame;
   eulerOut.parent = parent;
@@ -33,6 +33,8 @@ void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, d
   eulerOut.yaw = yaw;
   eulerOut.pitch = pitch;
   eulerOut.roll = roll;
+  eulerOut.header.stamp_secs = secs;
+  eulerOut.header.stamp_nsecs = nsecs;
 
   myNode.publish("TransformEuler", eulerOut);
 
