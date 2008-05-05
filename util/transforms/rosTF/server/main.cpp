@@ -1,6 +1,6 @@
 #include "rosTF/rosTF.h"
 
-class testServer : ros::node
+class testServer : public ros::node
 {
 public:
   //constructor
@@ -22,7 +22,7 @@ int main(int argc, char ** argv)
   ros::init(argc, argv);
   testServer myTestServer;
   
-  while(1)
+  while(myTestServer.ok())
     {
       myTestServer.test();
       sleep(1);
