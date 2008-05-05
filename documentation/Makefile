@@ -11,4 +11,3 @@ upload-local: docs
 
 clean: 
 	rm -rf html latex
-
