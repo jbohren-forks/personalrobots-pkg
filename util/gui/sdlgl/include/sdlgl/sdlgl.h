@@ -1,7 +1,8 @@
 #ifndef SDLGL_SDLGL_H
 #define SDLGL_SDLGL_H
 
-#include <SDL/SDL.h>
+//#include <SDL/SDL.h>
+#include <SDL.h>
 
 namespace ros
 {

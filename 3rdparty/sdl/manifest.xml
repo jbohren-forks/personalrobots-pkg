@@ -11,7 +11,8 @@ dependency system.
 <license>LGPL</license>
 <url>http://www.libsdl.org</url>
 <export>
-  <cpp lflags="-Xlinker -rpath ${prefix}/SDL/lib -L${prefix}/SDL/lib -lSDL" cflags="-I${prefix}/SDL/include"/>
+  <!-- <cpp lflags="-Xlinker -rpath ${prefix}/SDL/lib -L${prefix}/SDL/lib -lSDL" cflags="-I${prefix}/SDL/include"/> -->
+  <cpp lflags="`${prefix}/SDL/bin/sdl-config --libs`" cflags="`${prefix}/SDL/bin/sdl-config --cflags`"/>
 </export>
 </package>
 
