@@ -470,7 +470,10 @@ bool Sharks::load_config_file(string filename)
     else if (buf == string("right_scan_extent"))
       right_scan_extent = d;
     else if (buf == string("iris"))
+    {
+      printf("setting iris to %d\n", (int)d);
       cam->set_iris((int)d);
+    }
     else if (buf == string("focus"))
       cam->set_focus((int)d);
   }
