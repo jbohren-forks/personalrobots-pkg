@@ -1,327 +1,116 @@
+#include <stdio.h>
 #include <assert.h>
+#include <stdlib.h>
+#include <sys/time.h>
 
-// For core Player stuff (message queues, config file objects, etc.)
-#include <libplayercore/playercore.h>
-// TODO: remove XDR dependency
-#include <libplayerxdr/playerxdr.h>
+#include <libstandalone_drivers/plan.h>
 
-// roscpp
 #include <ros/node.h>
-// Messages that I need
-#include <std_msgs/MsgPlanner2D.h>
-#include <std_msgs/MsgOccMap2D.h>
+#include <std_msgs/MsgPlanner2DState.h>
+#include <std_msgs/MsgPlanner2DGoal.h>
 
-#define PLAYER_QUEUE_LEN 32
-
-// TODO: remove this code when we can get the map via RPC
+// compute linear index for given map coords
+#define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
+//void draw_cspace(plan_t* plan, const char* fname);
+//void draw_path(plan_t* plan, double lx, double ly, const char* fname);
 #include <gdk-pixbuf/gdk-pixbuf.h>
-int
-read_map_from_image(int* size_x, int* size_y, char** mapdata, 
-                    const char* fname, int negate);
+double get_time(void);
+int read_map_from_image(int* size_x, int* size_y, char** mapdata, 
+       			const char* fname, int negate);
 
-// Must prototype this function here.  It's implemented inside
-// libplayerdrivers.
-Driver* Wavefront_Init( ConfigFile* cf, int section);
-
-class WavefrontNode: public ros::node, public Driver
+class WavefrontNode: public ros::node
 {
-  public:
-    WavefrontNode();
-    ~WavefrontNode();
-
-    int Setup() {return(0);}
-    int Shutdown() {return(0);}
-    int ProcessMessage(QueuePointer &resp_queue, 
-                       player_msghdr * hdr,
-                       void * data);
-
-    int start();
-    int stop();
-
-    int process();
-
   private:
-    ConfigFile* cf;
+    plan_t* plan;
+    char* mapdata;
+    int sx, sy;
 
-    // These are the devices that wavefront offers, and to which we subscribe
-    Driver* driver;
-    Device* device;
-    player_devaddr_t planner_addr;
+    double robot_radius;
+    double safety_dist;
+    double max_radius;
+    double dist_penalty;
+    double plan_halfwidth;
 
-    // These are the devices that wavefront requires, and so which we must
-    // provide
-    player_devaddr_t position2d_addr;
-    player_devaddr_t laser_addr;
-    player_devaddr_t map_addr;
-    Device* position2d_dev;
-    Device* laser_dev;
-    Device* map_dev;
+    MsgPlanner2DGoal goal;
 
-    MsgPlanner2D plandata;
+    void goalReceived() {}
+
+  public:
+    WavefrontNode(char* fname, double res);
+    ~WavefrontNode();
 };
+
+#define USAGE "USAGE: wavefront_player <map.png> <res>"
 
 int
 main(int argc, char** argv)
 {
-  ros::init(argc, argv);
-
-  WavefrontNode wn;
-
-  // Start up the robot
-  if(wn.start() != 0)
+  if(argc < 3)
+  {
+    puts(USAGE);
     exit(-1);
+  }
 
-  /////////////////////////////////////////////////////////////////
-  // Main loop; grab messages off our queue and republish them via ROS
-  for(;;)
-    wn.process();
-  /////////////////////////////////////////////////////////////////
+  ros::init(argc,argv);
 
-  // Stop the robot
-  wn.stop();
-
-  // To quote Morgan, Hooray!
+  WavefrontNode wn(argv[1],atof(argv[2]));
   return(0);
 }
 
-WavefrontNode::WavefrontNode() : 
-        ros::node("erratic"), 
-        Driver(NULL,-1,false,PLAYER_QUEUE_LEN)
+WavefrontNode::WavefrontNode(char* fname, double res) : 
+        ros::node("wavfront_player"),
+        robot_radius(0.16),
+        safety_dist(0.05),
+        max_radius(0.25),
+        dist_penalty(1.0),
+        plan_halfwidth(5.0)
 {
-  this->ros::node::advertise<MsgPlanner2D>("plandata");
+  advertise<MsgPlanner2DState>("state");
+  subscribe("goal", goal, &WavefrontNode::goalReceived);
 
-  // libplayercore boiler plate
-  player_globals_init();
-  itable_init();
+  // TODO: get map via RPC
+  assert(read_map_from_image(&sx, &sy, &mapdata, fname, 0) == 0);
 
-  // TODO: remove XDR dependency
-  playerxdr_ftable_init();
+  // TODO: get robot geometry (via RPC?) and plan params from
+  // param_server
+  assert((plan = plan_alloc(robot_radius+safety_dist,
+                            robot_radius+safety_dist,
+                            max_radius,
+                            dist_penalty,0.5)));
+  // allocate space for map cells
+  assert(plan->cells == NULL);
+  assert((plan->cells = 
+          (plan_cell_t*)realloc(plan->cells,
+                                (sx * sy * sizeof(plan_cell_t)))));
 
-  // TODO: automatically convert between string and player_devaddr_t
-  // representations
+  // Copy over obstacle information from the image data that we read
+  for(int j=0;j<sy;j++)
+  {
+    for(int i=0;i<sx;i++)
+    {
+      plan->cells[i+j*sx].occ_state = mapdata[MAP_IDX(sx,i,j)];
+    }
+  }
+  free(mapdata);
 
-  // The Player address that will be assigned to this device.  The format
-  // is interface:index.  The interface must match what the driver is
-  // expecting to provide.  The value of the index doesn't really matter, 
-  // but 0 is most common.
-  const char* planner_saddr = "planner:0";
-  this->planner_addr.host = 0;
-  this->planner_addr.robot = 0;
-  this->planner_addr.interf = PLAYER_PLANNER_CODE;
-  this->planner_addr.index = 0;
+  plan->scale = res;
+  plan->size_x = sx;
+  plan->size_y = sy;
+  plan->origin_x = 0.0;
+  plan->origin_y = 0.0;
 
-  const char* out_position2d_saddr = "output:::position2d:0";
-  const char* in_position2d_saddr = "input:::position2d:0";
-  this->position2d_addr.host = 0;
-  this->position2d_addr.robot = 0;
-  this->position2d_addr.interf = PLAYER_POSITION2D_CODE;
-  this->position2d_addr.index = 0;
+  // Do initialization
+  plan_init(plan);
 
-  const char* laser_saddr = "laser:0";
-  this->laser_addr.host = 0;
-  this->laser_addr.robot = 0;
-  this->laser_addr.interf = PLAYER_LASER_CODE;
-  this->laser_addr.index = 0;
-
-  const char* map_saddr = "laser:::map:0";
-  this->map_addr.host = 0;
-  this->map_addr.robot = 0;
-  this->map_addr.interf = PLAYER_MAP_CODE;
-  this->map_addr.index = 0;
-
-  this->position2d_dev = deviceTable->AddDevice(this->position2d_addr, 
-                                                NULL, false);
-  assert(this->position2d_dev);
-  this->position2d_dev->InQueue = QueuePointer(this->Driver::InQueue);
-  this->position2d_dev->driver = (Driver*)this;
-
-  this->laser_dev = deviceTable->AddDevice(this->laser_addr, 
-                                           NULL, false);
-  assert(this->laser_dev);
-  this->laser_dev->InQueue = QueuePointer(this->Driver::InQueue);
-  this->laser_dev->driver = (Driver*)this;
-
-  this->map_dev = deviceTable->AddDevice(this->map_addr, 
-                                         NULL, false);
-  assert(this->map_dev);
-  this->map_dev->InQueue = QueuePointer(this->Driver::InQueue);
-  this->map_dev->driver = (Driver*)this;
-
-  // Create a ConfigFile object, into which we'll stuff parameters.
-  // Drivers assume that this object will persist throughout execution
-  // (e.g., they store pointers to data inside it).  So it must NOT be
-  // deleted until after the driver is shut down.
-  this->cf = new ConfigFile();
-
-  // Insert (name,value) pairs into the ConfigFile object.  These would
-  // presumably come from the param server
-  this->cf->InsertFieldValue(0,"provides",planner_saddr);
-
-  // Fill in the requires fields for the device that this device
-  // subscribes to
-  this->cf->InsertFieldValue(0,"requires",out_position2d_saddr);
-  this->cf->InsertFieldValue(1,"requires",in_position2d_saddr);
-  this->cf->InsertFieldValue(2,"requires",laser_saddr);
-  this->cf->InsertFieldValue(3,"requires",map_saddr);
-  this->cf->DumpTokens();
-
-  // Create an instance of the driver, passing it the ConfigFile object.
-  // The -1 tells it to look into the "global" section of the ConfigFile,
-  // which is where ConfigFile::InsertFieldValue() put the parameters.
-  assert((this->driver = Wavefront_Init(cf, -1)));
-
-  // Print out warnings about parameters that were set, but which the
-  // driver never looked at.
-  cf->WarnUnused();
-
-  // Grab from the global deviceTable a pointer to the Device that was 
-  // created as part of the driver's initialization.
-  assert((this->device = deviceTable->GetDevice(planner_addr,false)));
+  // Compute cspace over static map
+  plan_compute_cspace(plan);
 }
 
 WavefrontNode::~WavefrontNode()
 {
-  delete driver;
-  delete cf;
-  player_globals_fini();
+  plan_free(plan);
 }
 
-int 
-WavefrontNode::ProcessMessage(QueuePointer &resp_queue, 
-                         player_msghdr * hdr,
-                         void * data)
-{
-  printf("Player message %d:%d:%d:%d\n",
-         hdr->type,
-         hdr->subtype,
-         hdr->addr.interf,
-         hdr->addr.index);
-
-  // Is it a new planner data?
-  if(Message::MatchMessage(hdr,
-                           PLAYER_MSGTYPE_DATA, 
-                           PLAYER_PLANNER_DATA_STATE,
-                           this->planner_addr))
-  {
-    /*
-    // Cast the message payload appropriately 
-    player_position2d_data_t* pdata = 
-            (player_position2d_data_t*)data;
-
-    // Translate from Player data to ROS data
-    this->odom.px = pdata->pos.px;
-    this->odom.py = pdata->pos.py;
-    this->odom.pyaw = pdata->pos.pa;
-    this->odom.vx = pdata->vel.px;
-    this->odom.vy = pdata->vel.py;
-    this->odom.vyaw = pdata->vel.pa;
-    this->odom.stall = pdata->stall;
-
-    // Publish the new data
-    this->ros::node::publish("odom", this->odom);
-
-    printf("Published new odom: (%.3f,%.3f,%.3f)\n", 
-           this->odom.px, this->odom.py, this->odom.pyaw);
-           */
-    return(0);
-  }
-  // Is it a request for the robot geometry?
-  else if(Message::MatchMessage(hdr,
-                                PLAYER_MSGTYPE_REQ, 
-                                PLAYER_POSITION2D_REQ_GET_GEOM,
-                                this->position2d_addr))
-  {
-    // TODO: get this data via ROSRPC
-    player_position2d_geom_t geom;
-    memset(&geom,0,sizeof(player_position2d_geom_t));
-    geom.size.sw = 0.5;
-    geom.size.sl = 0.5;
-    geom.size.sh = 0.25;
-
-    this->Publish(this->position2d_addr, resp_queue,
-                  PLAYER_MSGTYPE_RESP_ACK,
-                  PLAYER_POSITION2D_REQ_GET_GEOM,
-                  (void*)&geom);
-  }
-  // Is it a request for the map metadata?
-  else if(Message::MatchMessage(hdr,
-                                PLAYER_MSGTYPE_REQ, 
-                                PLAYER_MAP_REQ_GET_INFO,
-                                this->map_addr))
-  {
-    player_map_info_t info;
-    info.scale = 0.1;
-    info.width = 100;
-    info.height = 100;
-    info.origin.px = 0;
-    info.origin.py = 0;
-    info.origin.pa = 0;
-    this->Publish(this->map_addr, resp_queue,
-                  PLAYER_MSGTYPE_RESP_ACK,
-                  PLAYER_MAP_REQ_GET_INFO,
-                  (void*)&info);
-    return(0);
-  }
-  // Is it a request for a map tile?
-  else if(Message::MatchMessage(hdr,
-                                PLAYER_MSGTYPE_REQ, 
-                                PLAYER_MAP_REQ_GET_DATA,
-                                this->map_addr))
-  {
-    // Send a NACK
-    return(-1);
-  }
-  else
-  {
-    printf("Unhandled Player message %d:%d:%d:%d\n",
-           hdr->type,
-           hdr->subtype,
-           hdr->addr.interf,
-           hdr->addr.index);
-    return(-1);
-  }
-}
-
-int 
-WavefrontNode::start()
-{
-  // Subscribe to device, which causes it to startup
-  if(this->device->Subscribe(this->Driver::InQueue) != 0)
-  {
-    puts("Failed to subscribe the driver");
-    return(-1);
-  }
-  else
-    return(0);
-}
-
-int 
-WavefrontNode::stop()
-{
-  // Unsubscribe from the device, which causes it to shutdown
-  if(device->Unsubscribe(this->Driver::InQueue) != 0)
-  {
-    puts("Failed to start the driver");
-    return(-1);
-  }
-  else
-    return(0);
-}
-
-int 
-WavefrontNode::process()
-{
-  // Block until there's a message on our queue
-  this->Driver::InQueue->Wait();
-
-  this->Driver::ProcessMessages();
-
-  return(0);
-}
-
-#define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
-
-// TODO: remove this code when we can get the map via RPC
 int
 read_map_from_image(int* size_x, int* size_y, char** mapdata, 
                     const char* fname, int negate)
@@ -390,4 +179,12 @@ read_map_from_image(int* size_x, int* size_y, char** mapdata,
   puts("Done.");
   printf("MapFile read a %d X %d map\n", *size_x, *size_y);
   return(0);
+}
+
+double 
+get_time(void)
+{
+  struct timeval curr;
+  gettimeofday(&curr,NULL);
+  return(curr.tv_sec + curr.tv_usec / 1e6);
 }
