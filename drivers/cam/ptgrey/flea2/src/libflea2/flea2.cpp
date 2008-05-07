@@ -15,7 +15,7 @@ void save_image(int num)
 */
 
 Flea2::Flea2(int n_host) :
-  raw_created(false), cam_created(false)
+  raw_created(false), cam_created(false), frame_released(true)
 {
   raw = dc1394_create_handle(n_host);
   if (!raw)
@@ -54,10 +54,13 @@ Flea2::Flea2(int n_host) :
     fprintf(stderr, "Unable to get the iso channel number\n" );
     throw std::runtime_error("toast");
   }
+
+  dc1394_set_operation_mode(raw, nodes[0], OPERATION_MODE_1394B);
+
   char host_dev[200];
   snprintf(host_dev, sizeof(host_dev), "/dev/video1394/%d", n_host);
   int e = dc1394_dma_setup_capture(raw, nodes[0], channel, 
-    FORMAT_VGA_NONCOMPRESSED, MODE_640x480_RGB, SPEED_400,
+    FORMAT_VGA_NONCOMPRESSED, MODE_640x480_RGB, SPEED_800,
     FRAMERATE_30, 8, 1, host_dev, &cam);
   if ( e != DC1394_SUCCESS )
   {
@@ -87,6 +90,34 @@ Flea2::~Flea2()
   }
   if (raw_created)
     raw1394_destroy_handle(raw);
+}
+
+bool Flea2::get_frame(uint8_t ** const frame, uint32_t *width, uint32_t *height)
+{
+  if (!frame_released)
+    release_frame(); // maybe the coder forgot to do it.
+  if (dc1394_dma_single_capture(&cam) == DC1394_SUCCESS) 
+  {
+    *frame  = (uint8_t *)cam.capture_buffer;
+    *width  = cam.frame_width;
+    *height = cam.frame_height;
+    frame_released = false;
+    return true;
+  }
+  else
+  {
+    *frame = NULL;
+    *width = *height = 0;
+    return false;
+  }
+}
+
+void Flea2::release_frame()
+{
+  if (frame_released)
+    return; // nothing to do
+  dc1394_dma_done_with_buffer(&cam);
+  frame_released = true;
 }
 
 bool Flea2::get_jpeg(const uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_size)

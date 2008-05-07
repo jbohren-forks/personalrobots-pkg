@@ -28,25 +28,57 @@
 
 
 #include <cstdio>
+#include <cassert>
 #include "flea2/flea2.h"
+#include "SDL/SDL.h"
 
 int main(int argc, char **argv)
 {
-/*
-  uint8_t rgb[640*480*3];
-  JpegWrapper jw;
-  uint32_t csize = jw.compress_to_jpeg(rgb, 640, 480);
-  FILE *of = fopen("out.jpg", "wb");
-  fwrite(jw.get_compress_buf(), 1, csize, of);
-  fclose(of);
-*/
-  Flea2 flea2;
-  const uint8_t *buf;
-  uint32_t buf_size;
-  for (int i = 0; i < 10; i++)
+  if (SDL_Init(SDL_INIT_VIDEO) < 0)
   {
-    flea2.get_jpeg(&buf, &buf_size);
-    printf("%d bytes\n", buf_size);
+    fprintf(stderr, "sdl init error [%s]\n", SDL_GetError());
+    exit(1);
+  }
+  atexit(SDL_Quit);
+  SDL_Surface *surf = SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE);
+  assert(surf);
+  
+  Flea2 flea2;
+  uint8_t *frame;
+  uint32_t w, h;
+
+  bool done = false;
+  while (!done)
+  {
+    flea2.get_frame(&frame, &w, &h);
+    uint8_t *in = frame, *out = (uint8_t *)surf->pixels;
+    for (uint32_t row = 0; row < h; row++)
+      for (uint32_t col = 0; col < w; col++)
+      {
+        *(out  ) = *(in+2);
+        *(out+1) = *(in+1);
+        *(out+2) = *(in  );
+        out += 4;
+        in += 3;
+      }
+    flea2.release_frame();
+    SDL_UpdateRect(surf, 0, 0, 640, 480);
+    SDL_Event event;
+    while (SDL_PollEvent(&event))
+    {
+      switch(event.type)
+      {
+        case SDL_KEYDOWN:
+          if (event.key.keysym.sym == SDLK_ESCAPE)
+            done = true;
+          else if (event.key.keysym.sym == SDLK_SPACE)
+            printf("space\n");
+          break;
+        case SDL_QUIT:
+          done = true;
+          break;
+      }
+    }
   }
   return 0;
 }
