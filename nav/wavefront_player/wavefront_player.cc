@@ -15,13 +15,13 @@
 
 // Must prototype this function here.  It's implemented inside
 // libplayerdrivers.
-Driver* AdaptiveMCL_Init(ConfigFile* cf, int section);
+Driver* Wavefront_Init( ConfigFile* cf, int section);
 
-class AmclNode: public ros::node, public Driver
+class WavefrontNode: public ros::node, public Driver
 {
   public:
-    AmclNode();
-    ~AmclNode();
+    WavefrontNode();
+    ~WavefrontNode();
 
     int Setup() {return(0);}
     int Shutdown() {return(0);}
@@ -37,12 +37,12 @@ class AmclNode: public ros::node, public Driver
   private:
     ConfigFile* cf;
 
-    // These are the devices that amcl offers, and to which we subscribe
+    // These are the devices that wavefront offers, and to which we subscribe
     Driver* driver;
     Device* device;
-    player_devaddr_t oposition2d_addr;
+    player_devaddr_t planner_addr;
 
-    // These are the devices that amcl requires, and so which we must
+    // These are the devices that wavefront requires, and so which we must
     // provide
     player_devaddr_t position2d_addr;
     player_devaddr_t laser_addr;
@@ -52,7 +52,6 @@ class AmclNode: public ros::node, public Driver
     Device* map_dev;
 
     MsgRobotBase2DOdom odom;
-
 };
 
 int
@@ -60,7 +59,7 @@ main(int argc, char** argv)
 {
   ros::init(argc, argv);
 
-  AmclNode an;
+  WavefrontNode an;
 
   // Start up the robot
   if(an.start() != 0)
@@ -79,7 +78,7 @@ main(int argc, char** argv)
   return(0);
 }
 
-AmclNode::AmclNode() : 
+WavefrontNode::WavefrontNode() : 
         ros::node("erratic"), 
         Driver(NULL,-1,false,PLAYER_QUEUE_LEN)
 {
@@ -99,17 +98,18 @@ AmclNode::AmclNode() :
   // is interface:index.  The interface must match what the driver is
   // expecting to provide.  The value of the index doesn't really matter, 
   // but 0 is most common.
-  const char* oposition2d_saddr = "position2d:0";
-  this->oposition2d_addr.host = 0;
-  this->oposition2d_addr.robot = 0;
-  this->oposition2d_addr.interf = PLAYER_POSITION2D_CODE;
-  this->oposition2d_addr.index = 0;
+  const char* planner_saddr = "planner:0";
+  this->planner_addr.host = 0;
+  this->planner_addr.robot = 0;
+  this->planner_addr.interf = PLAYER_PLANNER_CODE;
+  this->planner_addr.index = 0;
 
-  const char* position2d_saddr = "odometry:::position2d:1";
+  const char* out_position2d_saddr = "output:::position2d:0";
+  const char* in_position2d_saddr = "input:::position2d:0";
   this->position2d_addr.host = 0;
   this->position2d_addr.robot = 0;
   this->position2d_addr.interf = PLAYER_POSITION2D_CODE;
-  this->position2d_addr.index = 1;
+  this->position2d_addr.index = 0;
 
   const char* laser_saddr = "laser:0";
   this->laser_addr.host = 0;
@@ -149,19 +149,20 @@ AmclNode::AmclNode() :
 
   // Insert (name,value) pairs into the ConfigFile object.  These would
   // presumably come from the param server
-  this->cf->InsertFieldValue(0,"provides",oposition2d_saddr);
+  this->cf->InsertFieldValue(0,"provides",planner_saddr);
 
   // Fill in the requires fields for the device that this device
   // subscribes to
-  this->cf->InsertFieldValue(0,"requires",position2d_saddr);
-  this->cf->InsertFieldValue(1,"requires",laser_saddr);
-  this->cf->InsertFieldValue(2,"requires",map_saddr);
+  this->cf->InsertFieldValue(0,"requires",out_position2d_saddr);
+  this->cf->InsertFieldValue(1,"requires",in_position2d_saddr);
+  this->cf->InsertFieldValue(2,"requires",laser_saddr);
+  this->cf->InsertFieldValue(3,"requires",map_saddr);
   this->cf->DumpTokens();
 
   // Create an instance of the driver, passing it the ConfigFile object.
   // The -1 tells it to look into the "global" section of the ConfigFile,
   // which is where ConfigFile::InsertFieldValue() put the parameters.
-  assert((this->driver = AdaptiveMCL_Init(cf, -1)));
+  assert((this->driver = Wavefront_Init(cf, -1)));
 
   // Print out warnings about parameters that were set, but which the
   // driver never looked at.
@@ -169,10 +170,10 @@ AmclNode::AmclNode() :
 
   // Grab from the global deviceTable a pointer to the Device that was 
   // created as part of the driver's initialization.
-  assert((this->device = deviceTable->GetDevice(oposition2d_saddr,false)));
+  assert((this->device = deviceTable->GetDevice(planner_addr,false)));
 }
 
-AmclNode::~AmclNode()
+WavefrontNode::~WavefrontNode()
 {
   delete driver;
   delete cf;
@@ -180,7 +181,7 @@ AmclNode::~AmclNode()
 }
 
 int 
-AmclNode::ProcessMessage(QueuePointer &resp_queue, 
+WavefrontNode::ProcessMessage(QueuePointer &resp_queue, 
                          player_msghdr * hdr,
                          void * data)
 {
@@ -190,12 +191,13 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
          hdr->addr.interf,
          hdr->addr.index);
 
-  // Is it a new pose from amcl?
+  // Is it a new planner data?
   if(Message::MatchMessage(hdr,
                            PLAYER_MSGTYPE_DATA, 
-                           PLAYER_POSITION2D_DATA_STATE,
-                           this->oposition2d_addr))
+                           PLAYER_PLANNER_DATA_STATE,
+                           this->planner_addr))
   {
+    /*
     // Cast the message payload appropriately 
     player_position2d_data_t* pdata = 
             (player_position2d_data_t*)data;
@@ -214,6 +216,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
 
     printf("Published new odom: (%.3f,%.3f,%.3f)\n", 
            this->odom.px, this->odom.py, this->odom.pyaw);
+           */
     return(0);
   }
   // Is it a request for the map metadata?
@@ -256,7 +259,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
 }
 
 int 
-AmclNode::start()
+WavefrontNode::start()
 {
   // Subscribe to device, which causes it to startup
   if(this->device->Subscribe(this->Driver::InQueue) != 0)
@@ -269,7 +272,7 @@ AmclNode::start()
 }
 
 int 
-AmclNode::stop()
+WavefrontNode::stop()
 {
   // Unsubscribe from the device, which causes it to shutdown
   if(device->Unsubscribe(this->Driver::InQueue) != 0)
@@ -282,7 +285,7 @@ AmclNode::stop()
 }
 
 int 
-AmclNode::process()
+WavefrontNode::process()
 {
   // Block until there's a message on our queue
   this->Driver::InQueue->Wait();

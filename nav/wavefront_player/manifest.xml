@@ -1,0 +1,8 @@
+<package>
+  <description>A ROS node that wraps up the Player wavefront driver, which implements wavefront path-planning for a planar robot.</description>
+  <author>Brian P. Gerkey</author>
+  <license>BSD</license>
+  <depend package="roscpp" />
+  <depend package="player" />
+  <depend package="std_msgs" />
+</package>
