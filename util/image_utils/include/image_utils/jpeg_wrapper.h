@@ -5,7 +5,7 @@
 #include "ijg_libjpeg/ros_jpeg_mutex.h"
 extern "C"
 {
-#include "jpeglib.h"
+#include "ijg_libjpeg/jpeglib.h"
 }
 #include <cstdlib>
 #include <cstring>
