@@ -8,6 +8,7 @@
 #include <ros/node.h>
 #include <std_msgs/MsgPlanner2DState.h>
 #include <std_msgs/MsgPlanner2DGoal.h>
+#include <rosTF/rosTF.h>
 
 // compute linear index for given map coords
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
@@ -48,6 +49,9 @@ class WavefrontNode: public ros::node
     void goalReceived();
 
   public:
+    // Transform client
+    rosTFClient* tf;
+
     WavefrontNode(char* fname, double res);
     ~WavefrontNode();
     
@@ -72,6 +76,7 @@ main(int argc, char** argv)
   ros::init(argc,argv);
 
   WavefrontNode wn(argv[1],atof(argv[2]));
+  wn.tf = new rosTFClient(wn);
 
   while(wn.ok())
   {
@@ -90,7 +95,8 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         safety_dist(0.05),
         max_radius(0.25),
         dist_penalty(1.0),
-        plan_halfwidth(5.0)
+        plan_halfwidth(5.0),
+        tf(NULL)
 {
   advertise<MsgPlanner2DState>("state");
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived);
@@ -139,7 +145,9 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
 
 WavefrontNode::~WavefrontNode()
 {
-  plan_free(plan);
+  plan_free(this->plan);
+  if(this->tf)
+    delete this->tf;
 }
 
 void 

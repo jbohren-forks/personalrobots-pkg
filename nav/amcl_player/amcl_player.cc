@@ -201,19 +201,19 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
             (player_position2d_data_t*)data;
 
     // Translate from Player data to ROS data
-    this->odom.px = pdata->pos.px;
-    this->odom.py = pdata->pos.py;
-    this->odom.pyaw = pdata->pos.pa;
-    this->odom.vx = pdata->vel.px;
-    this->odom.vy = pdata->vel.py;
-    this->odom.vyaw = pdata->vel.pa;
+    this->odom.pos.x = pdata->pos.px;
+    this->odom.pos.y = pdata->pos.py;
+    this->odom.pos.th = pdata->pos.pa;
+    this->odom.vel.x = pdata->vel.px;
+    this->odom.vel.y = pdata->vel.py;
+    this->odom.vel.th = pdata->vel.pa;
     this->odom.stall = pdata->stall;
 
     // Publish the new data
     this->ros::node::publish("odom", this->odom);
 
     printf("Published new odom: (%.3f,%.3f,%.3f)\n", 
-           this->odom.px, this->odom.py, this->odom.pyaw);
+           this->odom.pos.x, this->odom.pos.y, this->odom.pos.th);
     return(0);
   }
   // Is it a request for the map metadata?
