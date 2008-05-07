@@ -32,6 +32,8 @@
 //
 #include "libTF/Quaternion3D.h"
 
+using namespace libTF;
+
 Euler3D::Euler3D(double _x, double _y, double _z, double _yaw, double _pitch, double _roll) :
   x(_x),y(_y),z(_z),yaw(_yaw),pitch(_pitch),roll(_roll)
 {
@@ -230,8 +232,8 @@ double Quaternion3D::Quaternion3DStorage::getMagnitude()
   return sqrt(xr*xr + yr*yr + zr*zr + w*w);
 };
 
-//Note global scope
-std::ostream & operator<<(std::ostream& mystream, const Quaternion3D::Quaternion3DStorage& storage)
+//Note not member function
+std::ostream & libTF::operator<<(std::ostream& mystream, const Quaternion3D::Quaternion3DStorage& storage)
 {
 
   mystream << "Storage: " << storage.xt <<", " << storage.yt <<", " << storage.zt<<", " << storage.xr<<", " << storage.yr <<", " << storage.zr <<", " << storage.w<<std::endl; 

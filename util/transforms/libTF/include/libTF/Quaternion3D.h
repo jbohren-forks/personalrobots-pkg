@@ -39,6 +39,9 @@
 #include <math.h>
 #include <pthread.h>
 #include <sys/time.h>
+
+namespace libTF{
+
 class Euler3D {
 public:
   //Constructor
@@ -161,10 +164,10 @@ private:
 };
 
 
-
-//A global ostream overload for displaying storage
+//A namespace ostream overload for displaying storage
 std::ostream & operator<<(std::ostream& mystream,const Quaternion3D::Quaternion3DStorage & storage);    
 
+};
 
 
 
