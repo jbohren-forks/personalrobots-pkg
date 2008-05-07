@@ -21,23 +21,41 @@ int read_map_from_image(int* size_x, int* size_y, char** mapdata,
 class WavefrontNode: public ros::node
 {
   private:
+    // Plan object
     plan_t* plan;
-    char* mapdata;
-    int sx, sy;
+    // Do we have a goal?
+    bool have_goal;
+    // Have we reached our goal?
+    bool reached_goal;
+    // Are we enabled?
+    bool enable;
+    // Current goal
+    double goal[3];
+    // Current pose
+    double pose[3];
 
+    // Planning parameters
     double robot_radius;
     double safety_dist;
     double max_radius;
     double dist_penalty;
     double plan_halfwidth;
 
-    MsgPlanner2DGoal goal;
+    // Goal message
+    MsgPlanner2DGoal goalMsg;
 
-    void goalReceived() {}
+    // Message callback
+    void goalReceived();
 
   public:
     WavefrontNode(char* fname, double res);
     ~WavefrontNode();
+    
+    // Execute a planning cycle
+    void doOneCycle();
+    // Sleep for the remaining time of the cycle
+    void sleep();
+
 };
 
 #define USAGE "USAGE: wavefront_player <map.png> <res>"
@@ -54,11 +72,20 @@ main(int argc, char** argv)
   ros::init(argc,argv);
 
   WavefrontNode wn(argv[1],atof(argv[2]));
+
+  while(wn.ok())
+  {
+    wn.doOneCycle();
+    wn.sleep();
+  }
   return(0);
 }
 
 WavefrontNode::WavefrontNode(char* fname, double res) : 
         ros::node("wavfront_player"),
+        have_goal(false),
+        reached_goal(false),
+        enable(true),
         robot_radius(0.16),
         safety_dist(0.05),
         max_radius(0.25),
@@ -66,21 +93,24 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         plan_halfwidth(5.0)
 {
   advertise<MsgPlanner2DState>("state");
-  subscribe("goal", goal, &WavefrontNode::goalReceived);
+  subscribe("goal", goalMsg, &WavefrontNode::goalReceived);
 
   // TODO: get map via RPC
-  assert(read_map_from_image(&sx, &sy, &mapdata, fname, 0) == 0);
+  char* mapdata;
+  int sx, sy;
+  assert(read_map_from_image(&sx, &sy, &mapdata, 
+                             fname, 0) == 0);
 
   // TODO: get robot geometry (via RPC?) and plan params from
   // param_server
-  assert((plan = plan_alloc(robot_radius+safety_dist,
-                            robot_radius+safety_dist,
-                            max_radius,
-                            dist_penalty,0.5)));
+  assert((this->plan = plan_alloc(this->robot_radius+this->safety_dist,
+                                  this->robot_radius+this->safety_dist,
+                                  this->max_radius,
+                                  this->dist_penalty,0.5)));
   // allocate space for map cells
-  assert(plan->cells == NULL);
-  assert((plan->cells = 
-          (plan_cell_t*)realloc(plan->cells,
+  assert(this->plan->cells == NULL);
+  assert((this->plan->cells = 
+          (plan_cell_t*)realloc(this->plan->cells,
                                 (sx * sy * sizeof(plan_cell_t)))));
 
   // Copy over obstacle information from the image data that we read
@@ -88,27 +118,71 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
   {
     for(int i=0;i<sx;i++)
     {
-      plan->cells[i+j*sx].occ_state = mapdata[MAP_IDX(sx,i,j)];
+      this->plan->cells[i+j*sx].occ_state = 
+              mapdata[MAP_IDX(sx,i,j)];
     }
   }
   free(mapdata);
 
-  plan->scale = res;
-  plan->size_x = sx;
-  plan->size_y = sy;
-  plan->origin_x = 0.0;
-  plan->origin_y = 0.0;
+  this->plan->scale = res;
+  this->plan->size_x = sx;
+  this->plan->size_y = sy;
+  this->plan->origin_x = 0.0;
+  this->plan->origin_y = 0.0;
 
   // Do initialization
-  plan_init(plan);
+  plan_init(this->plan);
 
   // Compute cspace over static map
-  plan_compute_cspace(plan);
+  plan_compute_cspace(this->plan);
 }
 
 WavefrontNode::~WavefrontNode()
 {
   plan_free(plan);
+}
+
+void 
+WavefrontNode::goalReceived()
+{
+  // Got a new goal message; handle it
+  this->enable = goalMsg.enable;
+  if(this->enable)
+  {
+    this->goal[0] = goalMsg.goal.x;
+    this->goal[1] = goalMsg.goal.y;
+    this->goal[2] = goalMsg.goal.th;
+    this->have_goal = true;
+  }
+}
+
+// Execute a planning cycle
+void 
+WavefrontNode::doOneCycle()
+{
+  // Try a local plan
+  /*
+  if(plan_do_local(this->plan, this->localize_x, 
+                   this->localize_y, this->scan_maxrange) < 0)
+  {
+    // Fallback on global plan
+    if(plan_do_global(this->plan, this->localize_x, this->localize_y, 
+                      this->target_x, this->target_y) < 0)
+    {
+      if(!printed_warning)
+      {
+        puts("Wavefront: global plan failed");
+        printed_warning = true;
+      }
+    }
+  }
+  */
+}
+
+// Sleep for the remaining time of the cycle
+void 
+WavefrontNode::sleep()
+{
 }
 
 int
