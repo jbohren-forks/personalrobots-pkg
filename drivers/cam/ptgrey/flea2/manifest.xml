@@ -1,0 +1,6 @@
+<package>
+  <depend package="image_utils"/>
+  <export>
+    <cpp lflags="-L${prefix}/lib -lflea2"/>
+  </export>
+</package>
