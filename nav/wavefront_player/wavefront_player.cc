@@ -8,10 +8,16 @@
 // roscpp
 #include <ros/node.h>
 // Messages that I need
-#include <std_msgs/MsgRobotBase2DOdom.h>
-#include <std_msgs/MsgRobotBase2DCmdVel.h>
+#include <std_msgs/MsgPlanner2D.h>
+#include <std_msgs/MsgOccMap2D.h>
 
 #define PLAYER_QUEUE_LEN 32
+
+// TODO: remove this code when we can get the map via RPC
+#include <gdk-pixbuf/gdk-pixbuf.h>
+int
+read_map_from_image(int* size_x, int* size_y, char** mapdata, 
+                    const char* fname, int negate);
 
 // Must prototype this function here.  It's implemented inside
 // libplayerdrivers.
@@ -51,7 +57,7 @@ class WavefrontNode: public ros::node, public Driver
     Device* laser_dev;
     Device* map_dev;
 
-    MsgRobotBase2DOdom odom;
+    MsgPlanner2D plandata;
 };
 
 int
@@ -59,20 +65,20 @@ main(int argc, char** argv)
 {
   ros::init(argc, argv);
 
-  WavefrontNode an;
+  WavefrontNode wn;
 
   // Start up the robot
-  if(an.start() != 0)
+  if(wn.start() != 0)
     exit(-1);
 
   /////////////////////////////////////////////////////////////////
   // Main loop; grab messages off our queue and republish them via ROS
   for(;;)
-    an.process();
+    wn.process();
   /////////////////////////////////////////////////////////////////
 
   // Stop the robot
-  an.stop();
+  wn.stop();
 
   // To quote Morgan, Hooray!
   return(0);
@@ -82,7 +88,7 @@ WavefrontNode::WavefrontNode() :
         ros::node("erratic"), 
         Driver(NULL,-1,false,PLAYER_QUEUE_LEN)
 {
-  this->ros::node::advertise<MsgRobotBase2DOdom>("odom");
+  this->ros::node::advertise<MsgPlanner2D>("plandata");
 
   // libplayercore boiler plate
   player_globals_init();
@@ -219,6 +225,24 @@ WavefrontNode::ProcessMessage(QueuePointer &resp_queue,
            */
     return(0);
   }
+  // Is it a request for the robot geometry?
+  else if(Message::MatchMessage(hdr,
+                                PLAYER_MSGTYPE_REQ, 
+                                PLAYER_POSITION2D_REQ_GET_GEOM,
+                                this->position2d_addr))
+  {
+    // TODO: get this data via ROSRPC
+    player_position2d_geom_t geom;
+    memset(&geom,0,sizeof(player_position2d_geom_t));
+    geom.size.sw = 0.5;
+    geom.size.sl = 0.5;
+    geom.size.sh = 0.25;
+
+    this->Publish(this->position2d_addr, resp_queue,
+                  PLAYER_MSGTYPE_RESP_ACK,
+                  PLAYER_POSITION2D_REQ_GET_GEOM,
+                  (void*)&geom);
+  }
   // Is it a request for the map metadata?
   else if(Message::MatchMessage(hdr,
                                 PLAYER_MSGTYPE_REQ, 
@@ -292,5 +316,78 @@ WavefrontNode::process()
 
   this->Driver::ProcessMessages();
 
+  return(0);
+}
+
+#define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
+
+// TODO: remove this code when we can get the map via RPC
+int
+read_map_from_image(int* size_x, int* size_y, char** mapdata, 
+                    const char* fname, int negate)
+{
+  GdkPixbuf* pixbuf;
+  guchar* pixels;
+  guchar* p;
+  int rowstride, n_channels, bps;
+  GError* error = NULL;
+  int i,j,k;
+  double occ;
+  int color_sum;
+  double color_avg;
+
+  // Initialize glib
+  g_type_init();
+
+  printf("MapFile loading image file: %s...", fname);
+  fflush(stdout);
+
+  // Read the image
+  if(!(pixbuf = gdk_pixbuf_new_from_file(fname, &error)))
+  {
+    printf("failed to open image file %s", fname);
+    return(-1);
+  }
+
+  *size_x = gdk_pixbuf_get_width(pixbuf);
+  *size_y = gdk_pixbuf_get_height(pixbuf);
+
+  assert(*mapdata = (char*)malloc(sizeof(char) * (*size_x) * (*size_y)));
+
+  rowstride = gdk_pixbuf_get_rowstride(pixbuf);
+  bps = gdk_pixbuf_get_bits_per_sample(pixbuf)/8;
+  n_channels = gdk_pixbuf_get_n_channels(pixbuf);
+  //if(gdk_pixbuf_get_has_alpha(pixbuf))
+    //n_channels++;
+
+  // Read data
+  pixels = gdk_pixbuf_get_pixels(pixbuf);
+  for(j = 0; j < *size_y; j++)
+  {
+    for (i = 0; i < *size_x; i++)
+    {
+      p = pixels + j*rowstride + i*n_channels*bps;
+      color_sum = 0;
+      for(k=0;k<n_channels;k++)
+        color_sum += *(p + (k * bps));
+      color_avg = color_sum / (double)n_channels;
+
+      if(negate)
+        occ = color_avg / 255.0;
+      else
+        occ = (255 - color_avg) / 255.0;
+      if(occ > 0.95)
+        (*mapdata)[MAP_IDX(*size_x,i,*size_y - j - 1)] = +1;
+      else if(occ < 0.1)
+        (*mapdata)[MAP_IDX(*size_x,i,*size_y - j - 1)] = -1;
+      else
+        (*mapdata)[MAP_IDX(*size_x,i,*size_y - j - 1)] = 0;
+    }
+  }
+
+  gdk_pixbuf_unref(pixbuf);
+
+  puts("Done.");
+  printf("MapFile read a %d X %d map\n", *size_x, *size_y);
   return(0);
 }
