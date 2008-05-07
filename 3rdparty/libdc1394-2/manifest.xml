@@ -10,7 +10,6 @@ libdc1394 is a library that provides a complete high level application programmi
 <license>LGPL</license>
 <url>http://libdc1394.sourceforge.net</url>
 <export>
-  <cpp lflags="`${prefix}/SDL/bin/sdl-config --libs`" cflags="`${prefix}/SDL/bin/sdl-config --cflags`"/>
 </export>
 </package>
 
