@@ -12,6 +12,6 @@ opencv: opencv-1.0.0
 	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${FFMPEG}/ffmpeg/lib && cd opencv-1.0.0 && make && make install
 
 clean:
-	-rm -rf opencv opencv-1.0.0
+	-rm -rf opencv opencv-1.0.0 opencv-1.0.0.tar.gz
 
 .PHONY : clean
