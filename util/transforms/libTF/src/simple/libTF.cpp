@@ -32,6 +32,8 @@
 
 #include "libTF/libTF.h"
 
+using namespace libTF;
+
 RefFrame::RefFrame() :
   Quaternion3D(),
   parent(TransformReference::NO_PARENT)

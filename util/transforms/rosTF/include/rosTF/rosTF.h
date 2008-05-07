@@ -37,7 +37,7 @@
 #include "std_msgs/MsgTransformQuaternion.h"
 #include "libTF/libTF.h"
 
-class rosTFClient : public TransformReference
+class rosTFClient : public libTF::TransformReference
 {
  public:
   //Constructor

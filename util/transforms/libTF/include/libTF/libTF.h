@@ -44,7 +44,8 @@
 
 
 
-
+namespace libTF
+{
 
 /** ** Point ****
  *  \brief A simple point class incorperating the time and frameID
@@ -272,5 +273,6 @@ private:
   /** Compute the transform based on the list of frames */
   NEWMAT::Matrix computeTransformFromList(const TransformLists & list, ULLtime time);
 
+};
 };
 #endif //LIBTF_HH

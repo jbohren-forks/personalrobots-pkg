@@ -2,6 +2,7 @@
 #include <time.h>
 
 using namespace std;
+using namespace libTF;
 
 int main(void)
 {
