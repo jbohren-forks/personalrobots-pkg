@@ -1,6 +1,7 @@
 all: SDL_image
 
 SDL_image-1.2.6:
+	wget http://www.libsdl.org/projects/SDL_image/release/SDL_image-1.2.6.tar.gz
 	tar xzf SDL_image-1.2.6.tar.gz
 
 SDL_image: SDL_image-1.2.6
@@ -11,6 +12,6 @@ SDL_image: SDL_image-1.2.6
 	mv SDL_image/include/SDL/SDL_image_mod.h SDL_image/include/SDL/SDL_image.h
 
 clean:
-	-rm -rf SDL_image-1.2.6 SDL_image
+	-rm -rf SDL_image-1.2.6.tar.gz SDL_image-1.2.6 SDL_image
 
 .PHONY : clean

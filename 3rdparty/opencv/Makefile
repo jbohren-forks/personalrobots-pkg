@@ -1,6 +1,7 @@
 all: opencv
 
 opencv-1.0.0:
+	wget http://internap.dl.sourceforge.net/sourceforge/opencvlibrary/opencv-1.0.0.tar.gz
 	tar xzf opencv-1.0.0.tar.gz
 
 FFMPEG := $(shell rospack find ffmpeg)

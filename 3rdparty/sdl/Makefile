@@ -1,6 +1,7 @@
 all: SDL
 
 SDL-1.2.13:
+	wget http://libsdl.org/release/SDL-1.2.13.tar.gz
 	tar xzf SDL-1.2.13.tar.gz
 
 SDL: SDL-1.2.13
@@ -11,6 +12,6 @@ SDL: SDL-1.2.13
 	cd SDL-1.2.13 && make && make install
 
 clean:
-	-rm -rf SDL-1.2.13 SDL
+	-rm -rf SDL-1.2.13 SDL SDL-1.2.13.tar.gz
 
 .PHONY : clean
