@@ -56,17 +56,18 @@ except ImportError, e:
 #######################################################################
 # Generate Doxygen
 
+dir = 'doc'
+
 def createPackageTemplate(doxyTemplate, package, path, htmlPaths):
     #replace vars in the template file to point to package we are documenting
-    doc = 'doc'
-    if not os.path.exists(doc):
-        os.mkdir(doc)
+    if not os.path.exists(dir):
+        os.mkdir(dir)
     t = doxyTemplate.replace('$INPUT', path)
     t = t.replace('$PROJECT_NAME', package)
-    t = t.replace('$OUTPUT_DIRECTORY', os.path.join(doc, package))
+    t = t.replace('$OUTPUT_DIRECTORY', os.path.join(dir, package))
     # although HTML_OUTPUT is fine being relative, it's worth actually using a template
     # variable for it given that we depend on being able to compute it
-    htmlOutput = os.path.join(doc, package, 'html')
+    htmlOutput = os.path.join(dir, package, 'html')
     t = t.replace('$HTML_OUTPUT', htmlOutput)
     htmlPaths[package] = htmlOutput
     return t
@@ -109,7 +110,7 @@ def computeRelative(src, target):
     rel = ['..' for d in s1[i:]] + s2[i:]
     return os.sep.join(rel)
 
-f = open(os.path.join('doc', 'index.html'), 'w')
+f = open(os.path.join(dir, 'index.html'), 'w')
 try:
     #TODO: replace with a doxygen-based header/footer
     header = """
@@ -123,7 +124,7 @@ try:
             return -1
         return 1
     success.sort(caselessComp)
-    list = ['<li><a href="%s/index.html">%s</a></li>'%(computeRelative("./", htmlPaths[p]), p) for p in success]
+    list = ['<li><a href="%s/index.html">%s</a></li>'%(computeRelative(dir, htmlPaths[p]), p) for p in success]
     f.write(header)
     f.write('\n'.join(list))
     f.write(footer)
