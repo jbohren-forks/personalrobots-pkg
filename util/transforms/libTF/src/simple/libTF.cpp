@@ -34,7 +34,7 @@
 
 using namespace libTF;
 
-RefFrame::RefFrame() :
+TransformReference::RefFrame::RefFrame() :
   Quaternion3D(),
   parent(TransformReference::NO_PARENT)
 {

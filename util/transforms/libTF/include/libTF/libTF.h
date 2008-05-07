@@ -62,37 +62,6 @@ struct TFPoint
 };
 
 
-/** RefFrame *******
- * An instance of this class is created for each frame in the system.
- * This class natively handles the relationship between frames.  
- *
- * The derived class Quaternion3D provides a buffered history of positions
- * with interpolation.
- * \brief The internal storage class for ReferenceTransform.  
- */
-
-class RefFrame: public Quaternion3D 
-{
-public:
-
-  /** Constructor */
-  RefFrame();
- 
-  /** \brief Get the parent nodeID */
-  inline unsigned int getParent(){return parent;};
-
-  /** \brief Set the parent node 
-  * return: false => change of parent, cleared history
-  * return: true => no change of parent 
-  * \param The frameID of the parent
-  */
-  inline bool setParent(unsigned int parentID){if (parent != parentID){parent = parentID; clearList(); return false;} return true;};
-private:
-
-  /** Internal storage of the parent */
-  unsigned int parent;
-
-};
 
 /** Transform Reference
  * \brief A c++ library which provides coordinate transforms between any two frames in a system. 
@@ -127,7 +96,7 @@ class TransformReference
 public:
   /// A typedef for clarity
   typedef unsigned long long ULLtime;
-
+  
   /************* Constants ***********************/
   /** Value for ROOT_FRAME */
   static const unsigned int ROOT_FRAME = 1;  
@@ -238,6 +207,39 @@ public:
   } MaxSearchDepth;
 
 private:
+
+  /** RefFrame *******
+   * An instance of this class is created for each frame in the system.
+   * This class natively handles the relationship between frames.  
+   *
+   * The derived class Quaternion3D provides a buffered history of positions
+   * with interpolation.
+   * \brief The internal storage class for ReferenceTransform.  
+   */
+  
+  class RefFrame: public Quaternion3D 
+    {
+    public:
+
+      /** Constructor */
+      RefFrame();
+      
+      /** \brief Get the parent nodeID */
+      inline unsigned int getParent(){return parent;};
+      
+      /** \brief Set the parent node 
+       * return: false => change of parent, cleared history
+       * return: true => no change of parent 
+       * \param The frameID of the parent
+       */
+      inline bool setParent(unsigned int parentID){if (parent != parentID){parent = parentID; clearList(); return false;} return true;};
+    private:
+      
+      /** Internal storage of the parent */
+      unsigned int parent;
+      
+    };
+
   /******************** Internal Storage ****************/
 
   /** The pointers to potential frames that the tree can be made of.
