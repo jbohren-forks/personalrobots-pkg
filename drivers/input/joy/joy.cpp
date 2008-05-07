@@ -19,7 +19,7 @@ public:
 
   Joy() : node("joy"), joy_buttons(0)
   {
-    param("joy_dev", joy_dev, "/dev/input/js0");
+    param<string>("joy_dev", joy_dev, "/dev/input/js0");
     joy_fd = open(joy_dev.c_str(), O_RDONLY);
     if (joy_fd <= 0)
       log(FATAL, "couldn't open joystick %s.", joy_dev.c_str());
@@ -65,6 +65,7 @@ public:
 void *s_joy_func(void *parent)
 {
   ((Joy *)parent)->joy_func();
+  return NULL;
 }
 
 int main(int argc, char **argv)
