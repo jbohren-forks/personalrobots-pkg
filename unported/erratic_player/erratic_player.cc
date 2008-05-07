@@ -126,16 +126,16 @@ class ErraticNode: public ros::node
     void cmdvelReceived()
     {
       printf("received cmd: (%.3f,%.3f,%.3f)\n",
-             this->cmdvel.vx,
-             this->cmdvel.vy,
-             this->cmdvel.vyaw);
+             this->cmdvel.vel.x,
+             this->cmdvel.vel.y,
+             this->cmdvel.vel.th);
 
       player_position2d_cmd_vel_t cmd;
       memset(&cmd, 0, sizeof(cmd));
 
-      cmd.vel.px = this->cmdvel.vx;
-      cmd.vel.py = this->cmdvel.vy;
-      cmd.vel.pa = this->cmdvel.vyaw;
+      cmd.vel.px = this->cmdvel.vel.x;
+      cmd.vel.py = this->cmdvel.vel.y;
+      cmd.vel.pa = this->cmdvel.vel.th;
       cmd.state = 1;
 
       this->device->PutMsg(this->q,
@@ -185,19 +185,19 @@ main(int argc, char** argv)
       player_position2d_data_t* pdata = (player_position2d_data_t*)msg->GetPayload();
       
       // Translate from Player data to ROS data
-      en.odom.px = pdata->pos.px;
-      en.odom.py = pdata->pos.py;
-      en.odom.pyaw = pdata->pos.pa;
-      en.odom.vx = pdata->vel.px;
-      en.odom.vy = pdata->vel.py;
-      en.odom.vyaw = pdata->vel.pa;
+      en.odom.pos.x = pdata->pos.px;
+      en.odom.pos.y = pdata->pos.py;
+      en.odom.pos.th = pdata->pos.pa;
+      en.odom.vel.x = pdata->vel.px;
+      en.odom.vel.y = pdata->vel.py;
+      en.odom.vel.th = pdata->vel.pa;
       en.odom.stall = pdata->stall;
 
       // Publish the new data
       en.publish("odom", en.odom);
 
       printf("Published new odom: (%.3f,%.3f,%.3f)\n", 
-             en.odom.px, en.odom.py, en.odom.pyaw);
+             en.odom.pos.x, en.odom.pos.y, en.odom.pos.th);
     }
     else
     {
