@@ -1,0 +1,16 @@
+<package>
+<description brief="Library for controlling IEEE 1394 cameras">
+
+(from the website:)
+
+libdc1394 is a library that provides a complete high level application programming interface (API) for developers who wish to control IEEE 1394 based cameras that conform to the 1394-based Digital Camera Specifications (also known as the IIDC or DCAM Specifications). The library currently works on Linux, Mac OSX and (soon) Windows.
+
+</description>
+<author>Damien Douxchamps with contributions from many others. See web page for a full credits list.</author>
+<license>LGPL</license>
+<url>http://libdc1394.sourceforge.net</url>
+<export>
+  <cpp lflags="`${prefix}/SDL/bin/sdl-config --libs`" cflags="`${prefix}/SDL/bin/sdl-config --cflags`"/>
+</export>
+</package>
+

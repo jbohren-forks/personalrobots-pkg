@@ -13,5 +13,8 @@ I have patched the 1.0.0 release of OpenCV a tiny bit so it will happily compile
 <license>BSD</license>
 <url>http://opencvlibrary.sourceforge.net</url>
 <depend package="ffmpeg"/>
+<export>
+  <cpp cflags="-I${prefix}/opencv/include" lflags="-L${prefix}/opencv/lib -Xlinker -rpath -Xlinker ${prefix}/opencv/lib -lcvaux -lcv -lcxcore -lhighgui -lml"/>
+</export>
 </package>
 
