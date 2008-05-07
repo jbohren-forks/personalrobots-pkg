@@ -42,6 +42,14 @@
 
 #include "Quaternion3D.h"
 
+/** \MainPage libTF a transformation library
+ *
+ * This is a library for keeping track of transforms for 
+ * an entire system.
+ * 
+ * The manual can be found http://pr.willowgarage.com/wiki/Transformations
+ */
+
 
 
 namespace libTF
@@ -61,6 +69,12 @@ struct TFPoint
   unsigned int frame;
 };
 
+struct TFVector
+{
+  double x,y,z;
+  unsigned long long time;
+  unsigned int frame;
+};
 
 
 /** Transform Reference
@@ -149,6 +163,7 @@ public:
 
   /** Transform a point to a different frame */
   TFPoint transformPoint(unsigned int target_frame, const TFPoint & point_in);
+  TFVector transformVector(unsigned int target_frame, const TFVector & point_in);
 
   /* Debugging function that will print to std::cout the transformation matrix */
   std::string viewChain(unsigned int target_frame, unsigned int source_frame);

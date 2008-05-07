@@ -138,6 +138,25 @@ TFPoint TransformReference::transformPoint(unsigned int target_frame, const TFPo
   return retPoint;
 }
 
+TFVector TransformReference::transformVector(unsigned int target_frame, const TFVector & vector_in)
+{
+  //Create a vector
+  NEWMAT::Matrix vectorMat(4,1);
+  vectorMat << vector_in.x << vector_in.y << vector_in.z << 0; // 0 vs 1 only difference between point and vector //fixme make this less copy and paste
+
+  NEWMAT::Matrix myMat = getMatrix(target_frame, vector_in.frame, vector_in.time);
+
+  
+  vectorMat = myMat * vectorMat;
+  TFVector retVector;
+  retVector.x = vectorMat(1,1);
+  retVector.y = vectorMat(2,1);
+  retVector.z = vectorMat(3,1);
+  retVector.frame = target_frame;
+  retVector.time = vector_in.time;
+  return retVector;
+}
+
 
 TransformReference::TransformLists TransformReference::lookUpList(unsigned int target_frame, unsigned int source_frame)
 {
@@ -193,7 +212,6 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
   if (mTfLs.inverseTransforms.back() == NO_PARENT ||  mTfLs.forwardTransforms.back() == NO_PARENT)
     throw(NoFrameConnectivity);
 
-  bool imdone = false;
   while (mTfLs.inverseTransforms.back() == mTfLs.forwardTransforms.back())
     {
       mTfLs.inverseTransforms.pop_back();
