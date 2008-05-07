@@ -47,6 +47,13 @@ int main(int argc, char **argv)
   uint8_t *frame;
   uint32_t w, h;
 
+  double shutter = 0.5;
+  flea2.set_shutter(shutter);
+  double gamma = 0.2;
+  flea2.set_gamma(gamma);
+  double gain = 0.5;
+  flea2.set_gain(gain);
+
   bool done = false;
   while (!done)
   {
@@ -69,10 +76,31 @@ int main(int argc, char **argv)
       switch(event.type)
       {
         case SDL_KEYDOWN:
-          if (event.key.keysym.sym == SDLK_ESCAPE)
-            done = true;
-          else if (event.key.keysym.sym == SDLK_SPACE)
-            printf("space\n");
+          switch(event.key.keysym.sym)
+          {
+            case SDLK_ESCAPE: done = true; break;
+            case SDLK_SPACE: 
+            {
+              static int num = 1;
+              char fn[100];
+              snprintf(fn, sizeof(fn), "img%06d.jpg", num++);
+              const uint8_t *buf;
+              uint32_t buf_size;
+              flea2.get_jpeg(&buf, &buf_size);
+              FILE *of = fopen(fn, "wb");
+              fwrite(buf, 1, buf_size, of);
+              fclose(of);
+              printf("wrote %d bytes to %s\n", buf_size, fn);
+              break;
+            }
+            case SDLK_EQUALS: flea2.set_shutter(shutter += 0.05); break;
+            case SDLK_MINUS:  flea2.set_shutter(shutter -= 0.05); break;
+            case SDLK_g: flea2.set_gamma(gamma += 0.02); break;
+            case SDLK_b: flea2.set_gamma(gamma -= 0.02); break;
+            case SDLK_i: flea2.set_gain(gain += 0.02); break;
+            case SDLK_k: flea2.set_gain(gain -= 0.02); break;
+            default: break;
+          }
           break;
         case SDL_QUIT:
           done = true;

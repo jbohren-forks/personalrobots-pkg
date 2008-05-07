@@ -16,6 +16,7 @@ public:
   JpegWrapper jpeg;
   raw1394handle_t raw;
   dc1394_cameracapture cam;
+  nodeid_t cam_node;
   bool raw_created, cam_created;
   bool frame_released;
 
@@ -25,6 +26,10 @@ public:
   bool get_frame(uint8_t ** const frame, uint32_t *width, uint32_t *height); 
   // for mow, you *must* call release_frame after you're done with the frame
   void release_frame();
+
+  void set_shutter(double d); // range = [0,1]
+  void set_gamma(double g); // range = [0,1]
+  void set_gain(double g); // range = [0,1]
 };
 
 #endif
