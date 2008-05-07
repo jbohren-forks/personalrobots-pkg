@@ -1,4 +1,5 @@
 #include "image_utils/ppm_wrapper.h"
+#include "image_utils/jpeg_wrapper.h"
 #include <cstdio>
 
 int main(int argc, char **argv)
@@ -30,6 +31,13 @@ int main(int argc, char **argv)
     }
 
   PpmWrapper::write_file("board.ppm", img_width, img_height, "rgb24", img);
+
+  JpegWrapper jw;
+  uint32_t csize = jw.compress_to_jpeg(img, img_width, img_height);
+  FILE *of = fopen("board.jpg", "wb");
+  fwrite(jw.get_compress_buf(), 1, csize, of);
+  fclose(of);
+
   delete[] img;
 
   return 0;

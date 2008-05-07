@@ -1,19 +1,26 @@
 #ifndef IMAGE_UTILS_JPEG_WRAPPER_H
 #define IMAGE_UTILS_JPEG_WRAPPER_H
 
+#include <inttypes.h>
 #include "ijg_libjpeg/ros_jpeg_mutex.h"
 extern "C"
 {
 #include "jpeglib.h"
 }
+#include <cstdlib>
+#include <cstring>
 
 class JpegWrapper
 {
 public:
+  static JpegWrapper *g_wrapper;
+
   JpegWrapper() 
-  : raster_width(0), raster_height(0), raster(NULL),
-    raster_alloc_size(0)
+  : raster(NULL), compress_buf(NULL),
+    raster_width(0), raster_height(0),
+    raster_alloc_size(0), compress_buf_alloc_size(0)
   {
+    g_wrapper = this;
     cinfo.err = jpeg_std_error(&jerr);
     jpeg_create_compress(&cinfo);
     dinfo.err = jpeg_std_error(&jerr);
@@ -26,6 +33,8 @@ public:
     jpeg_destroy_decompress(&dinfo);
     if (raster)
       delete[] raster;
+    if (compress_buf)
+      delete[] compress_buf;
   }
 
   inline int width()  { return raster_width; }
@@ -58,10 +67,41 @@ public:
     ros_jpeg_mutex_unlock();
     return true;
   }
+  uint32_t compress_to_jpeg(uint8_t *raster, uint32_t w, uint32_t h, 
+                            uint32_t quality = 95)
+  {
+    cinfo.image_width = w;
+    cinfo.image_height = h;
+    cinfo.input_components = 3;
+    cinfo.in_color_space = JCS_RGB;
+    const int compress_start_size = 1024;
+    if (!compress_buf)
+    {
+      compress_buf = new uint8_t[compress_start_size];
+      compress_buf_alloc_size = compress_start_size;
+    }
+    ros_jpeg_mutex_lock();
+    jpeg_set_defaults(&cinfo);
+    jpeg_buffer_dest(&cinfo, (char *)compress_buf, compress_buf_alloc_size);
+    jpeg_set_quality(&cinfo, quality, TRUE);
+    jpeg_start_compress(&cinfo, TRUE);
+    int row_stride = w * 3;
+    JSAMPROW row_pointer[1];
+    while (cinfo.next_scanline < cinfo.image_height)
+    {
+      row_pointer[0] = (JSAMPROW)&raster[cinfo.next_scanline * row_stride];
+      jpeg_write_scanlines(&cinfo, row_pointer, 1);
+    }
+    jpeg_finish_compress(&cinfo);
+    ros_jpeg_mutex_unlock();
+    uint32_t compressed_size = (uint32_t)(compress_buf_alloc_size - cinfo.dest->free_in_buffer);
+    return compressed_size;
+  }
+  const uint8_t *get_compress_buf() { return compress_buf; }
 protected:
-  uint8_t *raster;
+  uint8_t *raster, *compress_buf;
   int raster_width, raster_height;
-  int raster_alloc_size;
+  int raster_alloc_size, compress_buf_alloc_size;
   jpeg_compress_struct cinfo;
   jpeg_decompress_struct dinfo;
   jpeg_error_mgr jerr;
@@ -88,6 +128,22 @@ protected:
     // TODO: enlarge the compression buffer by a factor of 2 and
     // copy over everything, then reset the write pointer
     // and the number of available bytes
+    JpegWrapper::g_wrapper->grow_buffer_dest(cinfo->dest->next_output_byte,
+                                             cinfo->dest->free_in_buffer);
+//    cinfo->dest->next_output_byte = (JOCTET *)(+ compress_buf_alloc_size);
+//    cinfo->dest->free_in_buffer = compress_buf_alloc_size;
+    return TRUE;
+  }
+  void grow_buffer_dest(JOCTET *&next_output_byte, size_t &free_in_buffer)
+  {
+    printf("grow buffer dest\n");
+    uint8_t *bigger_dest = new uint8_t[compress_buf_alloc_size * 2];
+    memcpy(bigger_dest, compress_buf, compress_buf_alloc_size);
+    delete[] compress_buf;
+    next_output_byte = (JOCTET *)(bigger_dest + compress_buf_alloc_size);
+    compress_buf = bigger_dest;
+    free_in_buffer = compress_buf_alloc_size;
+    compress_buf_alloc_size *= 2;
   }
   static void buffer_dest_term(j_compress_ptr cinfo) { }
   static void jpeg_buffer_src(j_decompress_ptr dinfo, char *buf, int size)
@@ -105,9 +161,16 @@ protected:
   }
   static void jpeg_buffer_dest(j_compress_ptr cinfo, char *buf, int size)
   {
-    // TODO
+    if (cinfo->dest == NULL)
+      cinfo->dest = (struct jpeg_destination_mgr *)(*cinfo->mem->alloc_small)
+                    ((j_common_ptr)cinfo, JPOOL_PERMANENT,
+                    sizeof(struct jpeg_destination_mgr));
+    cinfo->dest->init_destination = buffer_dest_init;
+    cinfo->dest->empty_output_buffer = buffer_dest_empty;
+    cinfo->dest->term_destination = buffer_dest_term;
+    cinfo->dest->next_output_byte = (JOCTET *)buf;
+    cinfo->dest->free_in_buffer = size;
   }
-
   void realloc_raster_if_needed()
   {
     if (raster_alloc_size < raster_size())
