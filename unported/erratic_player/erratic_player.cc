@@ -27,7 +27,7 @@ class ErraticNode: public ros::node
 
     ErraticNode() : ros::node("erratic")
     {
-      advertise("odom", odom);
+      advertise<MsgRobotBase2DOdom>("odom");
       subscribe("cmdvel", cmdvel, &ErraticNode::cmdvelReceived);
 
       // libplayercore boiler plate
