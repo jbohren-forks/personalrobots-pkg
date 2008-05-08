@@ -37,18 +37,39 @@
 #include "cloud_viewer/cloud_viewer.h"
 #include <SDL.h>
 #include "math.h"
+#include <fstream>
+#include <sstream>
+#include <sys/stat.h>
 
 class Laser_Viewer : public ros::node
 {
 public:
   MsgLaserScan laser;
   vector< vector<float> > scans;
+  vector<CloudViewerPoint> saved_cloud;
   CloudViewer cloud_viewer;
   int count;
 
-  Laser_Viewer() : ros::node("laser_viewer"), count(0)
+  char dir_name[256];
+
+  int scan_cnt;
+
+  bool save_next;
+
+  Laser_Viewer() : ros::node("laser_viewer"), count(0), scan_cnt(0), save_next(false)
   {
     subscribe("scan", laser, &Laser_Viewer::scans_callback);
+
+    time_t rawtime;
+    struct tm* timeinfo;
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    
+    sprintf(dir_name, "scans/%.2d%.2d%.2d_%.2d%.2d%.2d", timeinfo->tm_mon + 1, timeinfo->tm_mday,timeinfo->tm_year - 100,timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+    
+    if (mkdir(dir_name, 0755)) {
+      printf("Failed to make directory: %s", dir_name);
+    }
   }
 
   virtual ~Laser_Viewer()
@@ -93,6 +114,9 @@ public:
 	      break;
 	    }
 	  case SDL_KEYDOWN:
+	    if (event.key.keysym.sym == SDLK_RETURN) {
+	      save_next = true;
+	    }
 	    laser.lock();
 	    cloud_viewer.keypress(event.key.keysym.sym);
 	    laser.unlock();
@@ -129,37 +153,51 @@ public:
   void scans_callback()
   {
     if (count > 100) {
+            
+      saved_cloud.clear();
       cloud_viewer.clear_cloud();
-
+      
       for (int j = 0; j < scans[0].size(); j++) {
 	double val = 0.0;
 	double valsq = 0.0;
+	int cnt = 0;
 	for (int i = 0; i < scans.size(); i++) {
-	  val += scans[i][j];
-	  valsq += pow(scans[i][j],2.0);
-	  /*
-	  cloud_viewer.add_point( -sin(laser.angle_min + j*laser.angle_increment) * scans[i][j], 
-				  -cos(laser.angle_min + j*laser.angle_increment) * scans[i][j], 
-				  0, 
-				  255,255,255);
-	  */
+	  if (scans[i][j] < 20.0) {
+	    val += scans[i][j];
+	    valsq += pow(scans[i][j],2.0);
+	  }
+	  cnt++;
 	}
-	double mean = val / scans.size();
-	double std = sqrt( (valsq - scans.size()*pow(mean, 2.0))/(scans.size() - 1));
-	cloud_viewer.add_point( -sin(laser.angle_min + j*laser.angle_increment) * (mean + std), 
-				-cos(laser.angle_min + j*laser.angle_increment) * (mean + std),
-				0, 
-				255,0,0);
-	cloud_viewer.add_point( -sin(laser.angle_min + j*laser.angle_increment) * mean, 
-				-cos(laser.angle_min + j*laser.angle_increment) * mean,
-				0, 
-				0,255,0);
-	cloud_viewer.add_point( -sin(laser.angle_min + j*laser.angle_increment) * (mean - std),
-				-cos(laser.angle_min + j*laser.angle_increment) * (mean - std),
-				0, 
-				255,0,0);
+	
+	if (cnt > 0) {
+	  double mean = val / cnt;
+	  double std = sqrt( (valsq - cnt*pow(mean, 2.0))/(cnt - 1));
+	  
+	  cloud_viewer.add_point( -sin(laser.angle_min + j*laser.angle_increment) * (mean + std), 
+				  -cos(laser.angle_min + j*laser.angle_increment) * (mean + std),
+				  0, 
+				  255,0,0);
+	  cloud_viewer.add_point( -sin(laser.angle_min + j*laser.angle_increment) * mean, 
+				  -cos(laser.angle_min + j*laser.angle_increment) * mean,
+				  0, 
+				  0,255,0);
+	  cloud_viewer.add_point( -sin(laser.angle_min + j*laser.angle_increment) * (mean - std),
+				  -cos(laser.angle_min + j*laser.angle_increment) * (mean - std),
+				  0, 
+				  255,0,0);
+	  saved_cloud.push_back(CloudViewerPoint(cos(laser.angle_min + j*laser.angle_increment) * (mean - std),
+						 sin(laser.angle_min + j*laser.angle_increment) * (mean - std),
+						 0,
+						 0, 0, 0));
+	}
       }
       refresh();
+
+      if (save_next) {
+	save();
+	save_next = false;
+      }
+      
       count = 0;
       scans.clear();
     } else {
@@ -171,7 +209,47 @@ public:
       count++;
     }
   }
+    
+    
+  void save () {
+    scan_cnt++;
+    {
+      std::ostringstream oss;
+      oss << dir_name << "/Scan" << scan_cnt << ".xy";    
+      ofstream out(oss.str().c_str());
+      
+      out.setf(ios::fixed, ios::floatfield);
+      out.setf(ios::showpoint);
+      out.precision(4);
+      
+      for (int i = 0; i < saved_cloud.size(); i++) {
+	out << saved_cloud[i].x << " " << saved_cloud[i].y << endl;
+      }
+    
+      out.close();
+    }
+
+    {
+      std::ostringstream oss;
+      oss << dir_name << "/Scan" << scan_cnt << ".rng";    
+      ofstream out(oss.str().c_str());
+      
+      out.setf(ios::fixed, ios::floatfield);
+      out.setf(ios::showpoint);
+      out.precision(4);
+      
+      for (int i = 0; i < scans.size(); i++) {
+	for (int j = 0; j < scans[i].size(); j++) {
+	  out << scans[i][j] << " ";
+	}
+	out << endl;
+      }
+      
+      out.close();
+    }
+  }
 };
+
 
 int main(int argc, char **argv)
 {
