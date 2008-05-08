@@ -137,9 +137,15 @@ public:
 	for (int i = 0; i < scans.size(); i++) {
 	  val += scans[i][j];
 	  valsq += pow(scans[i][j],2.0);
+	  /*
+	  cloud_viewer.add_point( -sin(laser.angle_min + j*laser.angle_increment) * scans[i][j], 
+				  -cos(laser.angle_min + j*laser.angle_increment) * scans[i][j], 
+				  0, 
+				  255,255,255);
+	  */
 	}
-	double mean = val / scans[0].size();
-	double std = sqrt(valsq - scans[0].size()*pow(mean, 2.0))/(scans[0].size() - 1);
+	double mean = val / scans.size();
+	double std = sqrt( (valsq - scans.size()*pow(mean, 2.0))/(scans.size() - 1));
 	cloud_viewer.add_point( -sin(laser.angle_min + j*laser.angle_increment) * (mean + std), 
 				-cos(laser.angle_min + j*laser.angle_increment) * (mean + std),
 				0, 
