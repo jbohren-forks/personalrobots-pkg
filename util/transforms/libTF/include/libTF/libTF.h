@@ -55,20 +55,6 @@
 namespace libTF
 {
 
-  /** TFData 
-   * \brief A base class that all data used by libTF data types
-   * 
-   * This provides the basic information that all TF data
-   * must have.  
-   */
-struct TFData 
-  {
-    unsigned long long time;
-    unsigned int frame;
-  };
-
-#warning todo use TFData for all structs
-
 /** ** Point ****
  *  \brief A simple point class incorperating the time and frameID
  * 
@@ -76,11 +62,11 @@ struct TFData
  * incorperates the timestamp and associated frame to make 
  * association easier for the programmer.    
  */
- struct TFPoint : public TFData
+ struct TFPoint 
 {
   double x,y,z;
-  //  unsigned long long time;
-  // unsigned int frame;
+  unsigned long long time;
+  unsigned int frame;
  };
 
 /** ** Point2D ****
