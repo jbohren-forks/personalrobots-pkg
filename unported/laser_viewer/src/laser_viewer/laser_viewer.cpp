@@ -42,9 +42,11 @@ class Laser_Viewer : public ros::node
 {
 public:
   MsgLaserScan laser;
+  vector< vector<float> > scans;
   CloudViewer cloud_viewer;
+  int count;
 
-  Laser_Viewer() : ros::node("laser_viewer")
+  Laser_Viewer() : ros::node("laser_viewer"), count(0)
   {
     subscribe("scan", laser, &Laser_Viewer::scans_callback);
   }
@@ -58,6 +60,7 @@ public:
     SDL_Event event;
     event.type = SDL_USEREVENT;
     SDL_PushEvent(&event);
+    scans.reserve(100);
   }
 
   void check_events() {
@@ -125,14 +128,42 @@ public:
 
   void scans_callback()
   {
-    cloud_viewer.clear_cloud();
-    for (int i = 0; i < laser.get_ranges_size(); i++) {
-      cloud_viewer.add_point( -sin(laser.angle_min + i*laser.angle_increment) * laser.ranges[i], 
-			      -cos(laser.angle_min + i*laser.angle_increment) * laser.ranges[i],
-			      0, 
-			      255,255,255);
+    if (count > 100) {
+      cloud_viewer.clear_cloud();
+
+      for (int j = 0; j < scans[0].size(); j++) {
+	double val = 0.0;
+	double valsq = 0.0;
+	for (int i = 0; i < scans.size(); i++) {
+	  val += scans[i][j];
+	  valsq += pow(scans[i][j],2.0);
+	}
+	double mean = val / scans[0].size();
+	double std = sqrt(valsq - scans[0].size()*pow(mean, 2.0))/(scans[0].size() - 1);
+	cloud_viewer.add_point( -sin(laser.angle_min + j*laser.angle_increment) * (mean + std), 
+				-cos(laser.angle_min + j*laser.angle_increment) * (mean + std),
+				0, 
+				255,0,0);
+	cloud_viewer.add_point( -sin(laser.angle_min + j*laser.angle_increment) * mean, 
+				-cos(laser.angle_min + j*laser.angle_increment) * mean,
+				0, 
+				0,255,0);
+	cloud_viewer.add_point( -sin(laser.angle_min + j*laser.angle_increment) * (mean - std),
+				-cos(laser.angle_min + j*laser.angle_increment) * (mean - std),
+				0, 
+				255,0,0);
+      }
+      refresh();
+      count = 0;
+      scans.clear();
+    } else {
+      vector<float> tmp;
+      for (int i = 0; i < laser.get_ranges_size(); i++) {
+	tmp.push_back(laser.ranges[i]);
+      }
+      scans.push_back(tmp);
+      count++;
     }
-    refresh();
   }
 };
 
