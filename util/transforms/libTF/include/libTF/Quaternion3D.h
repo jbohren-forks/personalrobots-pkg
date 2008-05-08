@@ -45,6 +45,7 @@ namespace libTF{
 class Euler3D {
 public:
   //Constructor
+  Euler3D();
   Euler3D(double _x, double _y, double _z, double _yaw, double _pitch, double _roll);
 
   //Storage
@@ -108,6 +109,8 @@ public:
   static NEWMAT::Matrix matrixFromEuler(double ax,
 				 double ay, double az, double yaw,
 				 double pitch, double roll);
+
+  static Euler3D eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned int solution_number=1);
   
   //Print as a matrix
   void printMatrix(unsigned long long time);  //Not a critical part either

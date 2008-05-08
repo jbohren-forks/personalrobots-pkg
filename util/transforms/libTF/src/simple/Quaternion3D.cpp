@@ -34,6 +34,8 @@
 
 using namespace libTF;
 
+Euler3D::Euler3D():x(0),y(0),z(0),yaw(0),pitch(0),roll(0) {;};
+
 Euler3D::Euler3D(double _x, double _y, double _z, double _yaw, double _pitch, double _roll) :
   x(_x),y(_y),z(_z),yaw(_yaw),pitch(_pitch),roll(_roll)
 {
@@ -151,14 +153,17 @@ NEWMAT::Matrix Quaternion3D::matrixFromEuler(double ax,
   matrix_pointer[1] = (ca*sbsg)-(sa*cg);
   matrix_pointer[2] = (ca*sbcg)+(sa*sg);
   matrix_pointer[3] = ax;
+
   matrix_pointer[4] = sa*cb;
   matrix_pointer[5] = (sa*sbsg)+(ca*cg);
   matrix_pointer[6] = (sa*sbcg)-(ca*sg);
   matrix_pointer[7] = ay;
+
   matrix_pointer[8] = -sb;
   matrix_pointer[9] = cb*sg;
   matrix_pointer[10] = cb*cg;
   matrix_pointer[11] = az;
+
   matrix_pointer[12] = 0.0;
   matrix_pointer[13] = 0.0;
   matrix_pointer[14] = 0.0;
@@ -216,6 +221,63 @@ Quaternion3D::Quaternion3DStorage& Quaternion3D::Quaternion3DStorage::operator=(
   return *this;
 };
 
+
+Euler3D Quaternion3D::eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned int solution_number)
+{
+
+  Euler3D euler_out;
+  Euler3D euler_out2; //second solution
+  //get the pointer to the raw data
+  double* matrix_pointer = matrix_in.Store();
+  //Pass through translations
+  euler_out.x = matrix_pointer[3];
+  euler_out.y = matrix_pointer[7];
+  euler_out.z = matrix_pointer[11];
+  
+  // Check that pitch is not at a singularity
+  if (fabs(matrix_pointer[8]) >= 1)
+    {
+      euler_out.pitch = - asin(matrix_pointer[8]);
+      euler_out2.pitch = M_PI - euler_out.pitch;
+
+      euler_out.roll = atan2(matrix_pointer[9]/cos(euler_out.pitch), 
+			     matrix_pointer[10]/cos(euler_out.pitch));
+      euler_out2.roll = atan2(matrix_pointer[9]/cos(euler_out2.pitch), 
+			      matrix_pointer[10]/cos(euler_out2.pitch));
+      
+      euler_out.yaw = atan2(matrix_pointer[4]/cos(euler_out.pitch), 
+			    matrix_pointer[1]/cos(euler_out.pitch));
+      euler_out2.yaw = atan2(matrix_pointer[4]/cos(euler_out2.pitch), 
+			     matrix_pointer[1]/cos(euler_out2.pitch));
+    }
+  else
+    {
+      euler_out.yaw = 0;
+      euler_out2.yaw = 0;
+
+      // From difference of angles formula
+      double delta = atan2(matrix_pointer[1],matrix_pointer[2]);
+      if (matrix_pointer[8] > 0)  //gimbal locked up
+	{
+	  euler_out.pitch = M_PI / 2.0;
+	  euler_out2.pitch = M_PI / 2.0;
+	  euler_out.roll = euler_out.pitch + delta;
+	  euler_out2.roll = euler_out.pitch + delta;
+	}
+      else // gimbal locked down
+	{
+	  euler_out.pitch = -M_PI / 2.0;
+	  euler_out2.pitch = -M_PI / 2.0;
+	  euler_out.roll = -euler_out.pitch + delta;
+	  euler_out2.roll = -euler_out.pitch + delta;
+	}
+    }
+  
+  if (solution_number == 1)
+    return euler_out;
+  else
+    return euler_out2;
+};
 
 
 void Quaternion3D::Quaternion3DStorage::Normalize()

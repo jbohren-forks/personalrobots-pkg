@@ -195,24 +195,19 @@ TFVector2D TransformReference::transformVector2D(unsigned int target_frame, cons
 
 TFEulerYPR TransformReference::transformEulerYPR(unsigned int target_frame, const TFEulerYPR & euler_in)
 {
-  //Create a vector
-  /*
-  NEWMAT::Matrix vectorMat(4,1);
-  vectorMat << vector_in.x << vector_in.y << vector_in.z << 0; // 0 vs 1 only difference between point and vector //fixme make this less copy and paste
 
-  NEWMAT::Matrix myMat = getMatrix(target_frame, vector_in.frame, vector_in.time);
-
+  NEWMAT::Matrix local = Quaternion3D::matrixFromEuler(0,0,0,euler_in.yaw, euler_in.pitch, euler_in.roll);
+  NEWMAT::Matrix Transform = getMatrix(target_frame, euler_in.frame, euler_in.time);
   
-  vectorMat = myMat * vectorMat;
-  TFVector retVector;
-  retVector.x = vectorMat(1,1);
-  retVector.y = vectorMat(2,1);
-  retVector.z = vectorMat(3,1);
-  retVector.frame = target_frame;
-  retVector.time = vector_in.time;
-  return retVector;
-  */
-#warning finish me
+  NEWMAT::Matrix output = local.i() * Transform;
+
+  Euler3D eulers = Quaternion3D::eulerFromMatrix(output,1); 
+
+  TFEulerYPR retEuler;
+  retEuler.yaw = eulers.yaw;
+  retEuler.pitch = eulers.pitch;
+  retEuler.roll = eulers.roll;
+  return retEuler;
 }
 
 TFYaw  TransformReference::transformYaw(unsigned int target_frame, const TFYaw & euler_in)
@@ -246,7 +241,18 @@ TFPose TransformReference::transformPose(unsigned int target_frame, const TFPose
   pose_out.y = point_out.y;
   pose_out.z = point_out.z;
 
-#warning todo fixme add angle
+  TFEulerYPR eulers_in;
+  eulers_in.yaw = pose_in.yaw;
+  eulers_in.pitch = pose_in.pitch;
+  eulers_in.pitch = pose_in.roll;
+  eulers_in.frame = pose_in.frame;
+  eulers_in.time = pose_in.time;
+
+  TFEulerYPR eulers_out = transformEulerYPR(target_frame, eulers_in);
+
+  pose_out.yaw = eulers_out.yaw;
+  pose_out.pitch = eulers_out.pitch;
+  pose_out.roll = eulers_out.roll;
 
   pose_out.time = pose_in.time;
   pose_out.frame = target_frame;
