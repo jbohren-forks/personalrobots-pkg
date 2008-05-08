@@ -137,6 +137,23 @@ TFPoint TransformReference::transformPoint(unsigned int target_frame, const TFPo
   retPoint.time = point_in.time;
   return retPoint;
 }
+TFPoint2D TransformReference::transformPoint2D(unsigned int target_frame, const TFPoint2D & point_in)
+{
+  //Create a vector
+  NEWMAT::Matrix pointMat(4,1);
+  pointMat << point_in.x << point_in.y << 0 << 1;  //no Z element
+
+  NEWMAT::Matrix myMat = getMatrix(target_frame, point_in.frame, point_in.time);
+
+  
+  pointMat = myMat * pointMat;
+  TFPoint2D retPoint;
+  retPoint.x = pointMat(1,1);
+  retPoint.y = pointMat(2,1);
+  retPoint.frame = target_frame;
+  retPoint.time = point_in.time;
+  return retPoint;
+}
 
 TFVector TransformReference::transformVector(unsigned int target_frame, const TFVector & vector_in)
 {
@@ -156,6 +173,110 @@ TFVector TransformReference::transformVector(unsigned int target_frame, const TF
   retVector.time = vector_in.time;
   return retVector;
 }
+
+TFVector2D TransformReference::transformVector2D(unsigned int target_frame, const TFVector2D & vector_in)
+{
+  //Create a vector
+  NEWMAT::Matrix vectorMat(4,1);
+  vectorMat << vector_in.x << vector_in.y << 0 << 0; // 0 vs 1 only difference between point and vector //fixme make this less copy and paste
+  // no Z
+
+  NEWMAT::Matrix myMat = getMatrix(target_frame, vector_in.frame, vector_in.time);
+
+  
+  vectorMat = myMat * vectorMat;
+  TFVector2D retVector;
+  retVector.x = vectorMat(1,1);
+  retVector.y = vectorMat(2,1);
+  retVector.frame = target_frame;
+  retVector.time = vector_in.time;
+  return retVector;
+}
+
+TFEulerYPR TransformReference::transformEulerYPR(unsigned int target_frame, const TFEulerYPR & euler_in)
+{
+  //Create a vector
+  /*
+  NEWMAT::Matrix vectorMat(4,1);
+  vectorMat << vector_in.x << vector_in.y << vector_in.z << 0; // 0 vs 1 only difference between point and vector //fixme make this less copy and paste
+
+  NEWMAT::Matrix myMat = getMatrix(target_frame, vector_in.frame, vector_in.time);
+
+  
+  vectorMat = myMat * vectorMat;
+  TFVector retVector;
+  retVector.x = vectorMat(1,1);
+  retVector.y = vectorMat(2,1);
+  retVector.z = vectorMat(3,1);
+  retVector.frame = target_frame;
+  retVector.time = vector_in.time;
+  return retVector;
+  */
+#warning finish me
+}
+
+TFYaw  TransformReference::transformYaw(unsigned int target_frame, const TFYaw & euler_in)
+{
+  TFPoint2D point_in;
+  point_in.x = cos(euler_in.yaw);
+  point_in.y = sin(euler_in.yaw);
+  point_in.frame = euler_in.frame;
+  point_in.time = euler_in.time;
+  TFPoint2D point_out = transformPoint2D(target_frame, point_in);
+
+  TFYaw retYaw;
+  retYaw.yaw = atan2(point_out.y, point_out.x);
+  retYaw.frame = target_frame;
+  retYaw.time = euler_in.time;
+  return retYaw;
+}
+
+TFPose TransformReference::transformPose(unsigned int target_frame, const TFPose & pose_in)
+{
+  TFPoint point_in;
+  point_in.x = pose_in.x;
+  point_in.y = pose_in.y;
+  point_in.z = pose_in.z;
+  point_in.frame = pose_in.frame;
+  point_in.time = pose_in.time;
+  TFPoint point_out = transformPoint(target_frame, point_in);
+
+  TFPose pose_out;
+  pose_out.x = point_out.x;
+  pose_out.y = point_out.y;
+  pose_out.z = point_out.z;
+
+#warning todo fixme add angle
+
+  pose_out.time = pose_in.time;
+  pose_out.frame = target_frame;
+  return pose_out;
+}
+
+TFPose2D TransformReference::transformPose2D(unsigned int target_frame, const TFPose2D & pose_in)
+{
+  TFPoint2D point_in;
+  point_in.x = pose_in.x;
+  point_in.y = pose_in.y;
+  point_in.frame = pose_in.frame;
+  point_in.time = pose_in.time;
+  TFPoint2D point_out = transformPoint2D(target_frame, point_in);
+
+  TFYaw yaw;
+  yaw.yaw = pose_in.yaw;
+  yaw.time = pose_in.time;
+  yaw.frame = pose_in.frame;
+  TFYaw yaw_out = transformYaw(target_frame, yaw);
+
+  TFPose2D pose_out;
+  pose_out.x = point_out.x;
+  pose_out.y = point_out.y;
+  pose_out.yaw = yaw_out.yaw;
+  pose_out.time = pose_in.time;
+  pose_out.frame = target_frame;
+  return pose_out;
+}
+
 
 
 TransformReference::TransformLists TransformReference::lookUpList(unsigned int target_frame, unsigned int source_frame)

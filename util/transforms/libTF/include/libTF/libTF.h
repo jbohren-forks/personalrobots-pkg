@@ -55,6 +55,20 @@
 namespace libTF
 {
 
+  /** TFData 
+   * \brief A base class that all data used by libTF data types
+   * 
+   * This provides the basic information that all TF data
+   * must have.  
+   */
+struct TFData 
+  {
+    unsigned long long time;
+    unsigned int frame;
+  };
+
+#warning todo use TFData for all structs
+
 /** ** Point ****
  *  \brief A simple point class incorperating the time and frameID
  * 
@@ -62,16 +76,79 @@ namespace libTF
  * incorperates the timestamp and associated frame to make 
  * association easier for the programmer.    
  */
-struct TFPoint
+ struct TFPoint : public TFData
+{
+  double x,y,z;
+  //  unsigned long long time;
+  // unsigned int frame;
+ };
+
+/** ** Point2D ****
+ *  \brief A simple point class incorperating the time and frameID
+ * 
+ * This is a point class designed to interact with libTF.  It 
+ * incorperates the timestamp and associated frame to make 
+ * association easier for the programmer.    
+ */
+struct TFPoint2D
+{
+  double x,y;
+  unsigned long long time;
+  unsigned int frame;
+};
+
+
+/** TFVector
+ *  \brief A representation of a vector
+ */
+struct TFVector
 {
   double x,y,z;
   unsigned long long time;
   unsigned int frame;
 };
 
-struct TFVector
+/** TFVector2D
+ *  \brief A representation of a 2D vector
+ * 
+ */
+struct TFVector2D
 {
-  double x,y,z;
+  double x,y;
+  unsigned long long time;
+  unsigned int frame;
+};
+
+struct TFEulerYPR
+{
+  double yaw, pitch, roll;
+  unsigned long long time;
+  unsigned int frame;
+};
+
+struct TFYaw
+{
+  double yaw;
+  unsigned long long time;
+  unsigned int frame;
+};
+
+/** TFPose
+ *  \brief A representation of position in free space
+ */
+struct TFPose
+{
+  double x,y,z,yaw,pitch,roll;
+  unsigned long long time;
+  unsigned int frame;
+};
+
+/** TFPose2D
+ *  \brief A representation of 2D position
+ */
+struct TFPose2D
+{
+  double x,y,yaw;
   unsigned long long time;
   unsigned int frame;
 };
@@ -163,7 +240,13 @@ public:
 
   /** Transform a point to a different frame */
   TFPoint transformPoint(unsigned int target_frame, const TFPoint & point_in);
-  TFVector transformVector(unsigned int target_frame, const TFVector & point_in);
+  TFPoint2D transformPoint2D(unsigned int target_frame, const TFPoint2D & point_in);
+  TFVector transformVector(unsigned int target_frame, const TFVector & vector_in);
+  TFVector2D transformVector2D(unsigned int target_frame, const TFVector2D & vector_in);
+  TFEulerYPR transformEulerYPR(unsigned int target_frame, const TFEulerYPR & euler_in);
+  TFYaw transformYaw(unsigned int target_frame, const TFYaw & euler_in);
+  TFPose transformPose(unsigned int target_frame, const TFPose & pose_in);
+  TFPose2D transformPose2D(unsigned int target_frame, const TFPose2D & pose_in);
 
   /* Debugging function that will print to std::cout the transformation matrix */
   std::string viewChain(unsigned int target_frame, unsigned int source_frame);
