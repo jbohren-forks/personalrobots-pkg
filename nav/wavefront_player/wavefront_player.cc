@@ -4,13 +4,20 @@
 #include <math.h>
 #include <sys/time.h>
 
+// The Player lib we're using
 #include <libstandalone_drivers/plan.h>
 
+// roscpp
 #include <ros/node.h>
+
+// The messages that we'll use
 #include <std_msgs/MsgPlanner2DState.h>
 #include <std_msgs/MsgPlanner2DGoal.h>
 #include <std_msgs/MsgRobotBase2DCmdVel.h>
 #include <std_msgs/MsgRobotBase2DOdom.h>
+#include <std_msgs/MsgLaserScan.h>
+
+// For transform support
 #include <rosTF/rosTF.h>
 
 #define ANG_NORM(a) atan2(cos((a)),sin((a)))
@@ -65,6 +72,11 @@ class WavefrontNode: public ros::node
     double plan_halfwidth;
     double dist_eps;
     double ang_eps;
+    double cycletime;
+
+    // Map update paramters (for adding obstacles)
+    double laser_maxrange;
+    int laser_maxscans;
 
     // Controller paramters
     double lookahead_maxdist;
@@ -74,10 +86,13 @@ class WavefrontNode: public ros::node
     // incoming messages
     MsgPlanner2DGoal goalMsg;
     MsgRobotBase2DOdom odomMsg;
+    MsgLaserScan laserMsg;
+    std::vector<MsgLaserScan> laserScans;
 
     // Message callbacks
     void goalReceived();
     void odomReceived();
+    void laserReceived();
 
     // Internal helpers
     void sendVelCmd(double vx, double vy, double vth);
@@ -94,8 +109,7 @@ class WavefrontNode: public ros::node
     // Execute a planning cycle
     void doOneCycle();
     // Sleep for the remaining time of the cycle
-    void sleep();
-
+    void sleep(double loopstart);
 };
 
 #define USAGE "USAGE: wavefront_player <map.png> <res>"
@@ -114,10 +128,12 @@ main(int argc, char** argv)
   WavefrontNode wn(argv[1],atof(argv[2]));
   wn.tf = new rosTFClient(wn);
 
+  struct timeval curr;
   while(wn.ok())
   {
+    gettimeofday(&curr,NULL);
     wn.doOneCycle();
-    wn.sleep();
+    wn.sleep(curr.tv_sec+curr.tv_usec/1e6);
   }
   return(0);
 }
@@ -136,6 +152,9 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         plan_halfwidth(5.0),
         dist_eps(1.0),
         ang_eps(DTOR(10.0)),
+        cycletime(0.1),
+        laser_maxrange(4.0),
+        laser_maxscans(40),
         lookahead_maxdist(2.0),
         lookahead_distweight(10.0),
         tvmin(0.1),
@@ -150,19 +169,18 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
   advertise<MsgRobotBase2DCmdVel>("cmdvel");
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived);
   subscribe("odom", odomMsg, &WavefrontNode::odomReceived);
+  subscribe("scan", laserMsg, &WavefrontNode::laserReceived);
 
   // TODO: get map via RPC
   char* mapdata;
   int sx, sy;
-  assert(read_map_from_image(&sx, &sy, &mapdata, 
-                             fname, 0) == 0);
+  assert(read_map_from_image(&sx, &sy, &mapdata, fname, 0) == 0);
 
-  // TODO: get robot geometry (via RPC?) and plan params from
-  // param_server
   assert((this->plan = plan_alloc(this->robot_radius+this->safety_dist,
                                   this->robot_radius+this->safety_dist,
                                   this->max_radius,
                                   this->dist_penalty,0.5)));
+
   // allocate space for map cells
   assert(this->plan->cells == NULL);
   assert((this->plan->cells = 
@@ -227,6 +245,14 @@ WavefrontNode::odomReceived()
 
   libTF::TFPose2D global_pose = this->tf->transformPose2D(this->tf->ROOT_FRAME,
                                                           odom_pose);
+  this->pose[0] = global_pose.x;
+  this->pose[1] = global_pose.y;
+  this->pose[2] = global_pose.yaw;
+}
+
+void
+WavefrontNode::laserReceived()
+{
 }
 
 void
@@ -273,6 +299,17 @@ WavefrontNode::doOneCycle()
       break;
     case PURSUING_GOAL:
       {
+        // Are we done?
+        if(plan_check_done(this->plan,
+                           this->pose[0], this->pose[1], this->pose[2],
+                           this->goal[0], this->goal[1], this->goal[2],
+                           this->dist_eps, this->ang_eps))
+        {
+          this->stopRobot();
+          this->planner_state = REACHED_GOAL;
+          break;
+        }
+
         // Try a local plan
         if(plan_do_local(this->plan, this->pose[0], this->pose[1], 
                          this->plan_halfwidth) < 0)
@@ -298,7 +335,7 @@ WavefrontNode::doOneCycle()
             if(plan_do_local(this->plan, this->pose[0], this->pose[1], 
                              this->plan_halfwidth) < 0)
             {
-              // no local plan; better luck next time
+              // no local plan; better luck next time through
               this->stopRobot();
               break;
             }
@@ -307,9 +344,13 @@ WavefrontNode::doOneCycle()
 
         // We have a valid local plan.  Now compute controls
         double vx, va;
-        /*if(plan_compute_diffdrive_cmds(this->plan, &vx, &va,
+        if(plan_compute_diffdrive_cmds(this->plan, &vx, &va,
+                                       &this->rotate_dir,
                                        this->pose[0], this->pose[1],
                                        this->pose[2],
+                                       this->goal[0], this->goal[1],
+                                       this->goal[2],
+                                       this->dist_eps, this->ang_eps,
                                        this->lookahead_maxdist, 
                                        this->lookahead_distweight,
                                        this->tvmin, this->tvmax,
@@ -320,7 +361,6 @@ WavefrontNode::doOneCycle()
           puts("Failed to find a carrot");
           break;
         }
-        */
 
         this->sendVelCmd(vx, 0.0, va);
 
@@ -333,8 +373,17 @@ WavefrontNode::doOneCycle()
 
 // Sleep for the remaining time of the cycle
 void 
-WavefrontNode::sleep()
+WavefrontNode::sleep(double loopstart)
 {
+  struct timeval curr;
+  double currt,tdiff;
+  gettimeofday(&curr,NULL);
+  currt = curr.tv_sec + curr.tv_usec/1e6;
+  tdiff = this->cycletime - (currt-loopstart);
+  if(tdiff <= 0.0)
+    puts("Wavefront missed deadline and not sleeping; check machine load");
+  else
+    usleep((unsigned int)rint(tdiff*1e6));
 }
 
 int
