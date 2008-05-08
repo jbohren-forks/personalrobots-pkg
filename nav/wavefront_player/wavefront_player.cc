@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <math.h>
 #include <sys/time.h>
 
 #include <libstandalone_drivers/plan.h>
@@ -8,13 +9,22 @@
 #include <ros/node.h>
 #include <std_msgs/MsgPlanner2DState.h>
 #include <std_msgs/MsgPlanner2DGoal.h>
+#include <std_msgs/MsgRobotBase2DCmdVel.h>
+#include <std_msgs/MsgRobotBase2DOdom.h>
 #include <rosTF/rosTF.h>
 
-// compute linear index for given map coords
-#define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
+#define ANG_NORM(a) atan2(cos((a)),sin((a)))
+#define DTOR(a) ((a)*M_PI/180.0)
+#define RTOD(a) ((a)*180.0/M_PI)
+#define SIGN(x) (((x) < 0.0) ? -1 : 1)
+
+// TODO: add mutexes around objects accessed by callbacks.
+
 //void draw_cspace(plan_t* plan, const char* fname);
 //void draw_path(plan_t* plan, double lx, double ly, const char* fname);
 #include <gdk-pixbuf/gdk-pixbuf.h>
+// compute linear index for given map coords
+#define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
 double get_time(void);
 int read_map_from_image(int* size_x, int* size_y, char** mapdata, 
        			const char* fname, int negate);
@@ -24,16 +34,28 @@ class WavefrontNode: public ros::node
   private:
     // Plan object
     plan_t* plan;
-    // Do we have a goal?
-    bool have_goal;
-    // Have we reached our goal?
-    bool reached_goal;
+    // Our state
+    enum
+    {
+      NO_GOAL,
+      PURSUING_GOAL,
+      ROTATING_AT_GOAL,
+      REACHED_GOAL
+    } planner_state;
     // Are we enabled?
     bool enable;
     // Current goal
     double goal[3];
     // Current pose
     double pose[3];
+    // Direction that we're rotating in order to assume the goal
+    // orientation
+    int rotate_dir;
+
+    bool printed_warning;
+
+    // Have we already stopped the robot?
+    bool stopped;
 
     // Planning parameters
     double robot_radius;
@@ -41,12 +63,24 @@ class WavefrontNode: public ros::node
     double max_radius;
     double dist_penalty;
     double plan_halfwidth;
+    double dist_eps;
+    double ang_eps;
 
-    // Goal message
+    // Controller paramters
+    double lookahead_maxdist;
+    double lookahead_distweight;
+    double tvmin, tvmax, avmin, avmax, amin, amax;
+
+    // incoming messages
     MsgPlanner2DGoal goalMsg;
+    MsgRobotBase2DOdom odomMsg;
 
-    // Message callback
+    // Message callbacks
     void goalReceived();
+    void odomReceived();
+
+    // Internal helpers
+    void sendVelCmd(double vx, double vy, double vth);
 
   public:
     // Transform client
@@ -55,6 +89,8 @@ class WavefrontNode: public ros::node
     WavefrontNode(char* fname, double res);
     ~WavefrontNode();
     
+    // Stop the robot
+    void stopRobot();
     // Execute a planning cycle
     void doOneCycle();
     // Sleep for the remaining time of the cycle
@@ -88,18 +124,32 @@ main(int argc, char** argv)
 
 WavefrontNode::WavefrontNode(char* fname, double res) : 
         ros::node("wavfront_player"),
-        have_goal(false),
-        reached_goal(false),
+        planner_state(NO_GOAL),
         enable(true),
+        rotate_dir(0),
+        printed_warning(false),
+        stopped(false),
         robot_radius(0.16),
         safety_dist(0.05),
         max_radius(0.25),
         dist_penalty(1.0),
         plan_halfwidth(5.0),
+        dist_eps(1.0),
+        ang_eps(DTOR(10.0)),
+        lookahead_maxdist(2.0),
+        lookahead_distweight(10.0),
+        tvmin(0.1),
+        tvmax(0.5),
+        avmin(DTOR(10.0)),
+        avmax(DTOR(90.0)),
+        amin(DTOR(5.0)),
+        amax(DTOR(20.0)),
         tf(NULL)
 {
   advertise<MsgPlanner2DState>("state");
+  advertise<MsgRobotBase2DCmdVel>("cmdvel");
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived);
+  subscribe("odom", odomMsg, &WavefrontNode::odomReceived);
 
   // TODO: get map via RPC
   char* mapdata;
@@ -160,31 +210,125 @@ WavefrontNode::goalReceived()
     this->goal[0] = goalMsg.goal.x;
     this->goal[1] = goalMsg.goal.y;
     this->goal[2] = goalMsg.goal.th;
-    this->have_goal = true;
+    this->planner_state = PURSUING_GOAL;
   }
 }
+
+void 
+WavefrontNode::odomReceived()
+{
+  libTF::TFPose2D odom_pose;
+  odom_pose.x = odomMsg.pos.x;
+  odom_pose.y = odomMsg.pos.y;
+  odom_pose.yaw = odomMsg.pos.th;
+  odom_pose.time = odomMsg.header.stamp_secs * 1000000000 + 
+          odomMsg.header.stamp_nsecs;
+  odom_pose.frame = odomMsg.header.frame_id;
+
+  libTF::TFPose2D global_pose = this->tf->transformPose2D(this->tf->ROOT_FRAME,
+                                                          odom_pose);
+}
+
+void
+WavefrontNode::stopRobot()
+{
+  if(!this->stopped)
+  {
+    // TODO: should we send more than once, or perhaps use RPC for this?
+    this->sendVelCmd(0.0,0.0,0.0);
+    this->stopped = true;
+  }
+}
+
+void
+WavefrontNode::sendVelCmd(double vx, double vy, double vth)
+{
+  MsgRobotBase2DCmdVel cmdvel;
+  cmdvel.vel.x = vx;
+  cmdvel.vel.y = vy;
+  cmdvel.vel.th = vth;
+  this->ros::node::publish("cmdvel", cmdvel);
+}
+
 
 // Execute a planning cycle
 void 
 WavefrontNode::doOneCycle()
 {
-  // Try a local plan
-  /*
-  if(plan_do_local(this->plan, this->localize_x, 
-                   this->localize_y, this->scan_maxrange) < 0)
+  if(!this->enable)
   {
-    // Fallback on global plan
-    if(plan_do_global(this->plan, this->localize_x, this->localize_y, 
-                      this->target_x, this->target_y) < 0)
-    {
-      if(!printed_warning)
-      {
-        puts("Wavefront: global plan failed");
-        printed_warning = true;
-      }
-    }
+    this->stopRobot();
+    return;
   }
-  */
+
+  switch(this->planner_state)
+  {
+    // Treat these states the same; do nothing
+    case NO_GOAL:
+    case REACHED_GOAL:
+      this->stopRobot();
+      break;
+    case ROTATING_AT_GOAL:
+
+      break;
+    case PURSUING_GOAL:
+      {
+        // Try a local plan
+        if(plan_do_local(this->plan, this->pose[0], this->pose[1], 
+                         this->plan_halfwidth) < 0)
+        {
+          // Fallback on global plan
+          if(plan_do_global(this->plan, this->pose[0], this->pose[1], 
+                            this->goal[0], this->goal[1]) < 0)
+          {
+            // no global plan
+            this->stopRobot();
+
+            if(!this->printed_warning)
+            {
+              puts("global plan failed");
+              this->printed_warning = true;
+            }
+            break;
+          }
+          else
+          {
+            // global plan succeeded; now try the local plan again
+            this->printed_warning = false;
+            if(plan_do_local(this->plan, this->pose[0], this->pose[1], 
+                             this->plan_halfwidth) < 0)
+            {
+              // no local plan; better luck next time
+              this->stopRobot();
+              break;
+            }
+          }
+        }
+
+        // We have a valid local plan.  Now compute controls
+        double vx, va;
+        /*if(plan_compute_diffdrive_cmds(this->plan, &vx, &va,
+                                       this->pose[0], this->pose[1],
+                                       this->pose[2],
+                                       this->lookahead_maxdist, 
+                                       this->lookahead_distweight,
+                                       this->tvmin, this->tvmax,
+                                       this->avmin, this->avmax,
+                                       this->amin, this->amax) < 0)
+        {
+          this->stopRobot();
+          puts("Failed to find a carrot");
+          break;
+        }
+        */
+
+        this->sendVelCmd(vx, 0.0, va);
+
+        break;
+      }
+    default:
+      assert(0);
+  }
 }
 
 // Sleep for the remaining time of the cycle
