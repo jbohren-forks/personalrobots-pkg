@@ -8,7 +8,8 @@ A simple point cloud viewer written using SDL.
 <depend package="roscpp"/>
 <depend package="std_msgs"/>
 <depend package="sdl"/>
-<sys_depend lib="GL"/>
-<sys_depend lib="GLU"/>
+<export>
+  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lcloud_viewer -lGL -lGLU"/>
+</export>
 </package>
 

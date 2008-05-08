@@ -32,50 +32,45 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "ros/ros_slave.h"
-#include "common_flows/FlowLaserScan.h"
+#include "ros/node.h"
+#include "std_msgs/MsgLaserScan.h"
 #include "cloud_viewer/cloud_viewer.h"
-#include <SDL/SDL.h>
+#include <SDL.h>
 #include "math.h"
 
-class Laser_Viewer : public ROS_Slave
+class Laser_Viewer : public ros::node
 {
 public:
-  FlowLaserScan *laser;
-  CloudViewer *cloud_viewer;
+  MsgLaserScan laser;
+  CloudViewer cloud_viewer;
 
-  Laser_Viewer() : ROS_Slave(), cloud_viewer(NULL)
+  Laser_Viewer() : ros::node("laser_viewer")
   {
-    register_sink(laser = new FlowLaserScan("scans"), ROS_CALLBACK(Laser_Viewer, cloud_callback));
-
-    cloud_viewer =  new CloudViewer;
-
-    register_with_master();
+    subscribe("scan", laser, &Laser_Viewer::scans_callback);
   }
 
   virtual ~Laser_Viewer()
   { 
-    if (cloud_viewer)
-      delete cloud_viewer;
   }
 
 
   void refresh() {
-    // SDL (and Xlib) don't handle threads well, so we do both of these
-    check_keyboard();
-    display_image();
+    SDL_Event event;
+    event.type = SDL_USEREVENT;
+    SDL_PushEvent(&event);
   }
 
-  void check_keyboard() {
+  void check_events() {
     SDL_Event event;
-    while(SDL_PollEvent(&event))
+    if(SDL_WaitEvent(&event))
       {
 	switch(event.type)
 	  {
 	  case SDL_MOUSEMOTION:
-	    cloud_viewer->mouse_motion(event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel);
-	    cloud_viewer->render();
-	    SDL_GL_SwapBuffers();
+	    laser.lock();
+	    cloud_viewer.mouse_motion(event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel);
+	    laser.unlock();
+	    refresh();
 	    break;
 	  case SDL_MOUSEBUTTONDOWN:
 	  case SDL_MOUSEBUTTONUP:
@@ -87,56 +82,63 @@ public:
 		case SDL_BUTTON_MIDDLE: button = 1; break;
 		case SDL_BUTTON_RIGHT: button = 2; break;
 		}
-	      cloud_viewer->mouse_button(event.button.x, event.button.y,
+	      laser.lock();
+	      cloud_viewer.mouse_button(event.button.x, event.button.y,
 					button, (event.type == SDL_MOUSEBUTTONDOWN ? true : false));
+	      laser.unlock();
+	      refresh();
 	      break;
 	    }
 	  case SDL_KEYDOWN:
-	    cloud_viewer->keypress(event.key.keysym.sym);
-	    cloud_viewer->render();
+	    laser.lock();
+	    cloud_viewer.keypress(event.key.keysym.sym);
+	    laser.unlock();
+	    refresh();
+	    break;
+	  case SDL_USEREVENT:
+	    laser.lock();
+	    cloud_viewer.render();
+	    laser.unlock();
 	    SDL_GL_SwapBuffers();
 	    break;
 	  }
+
       }
   }
-
-  void display_image() {
-    cloud_viewer->render();
-    SDL_GL_SwapBuffers();
-  }
-
 
   bool sdl_init()
   {
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,   24);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    const int w = 640, h = 480;
+    const int w = 1024, h = 768;
     if (SDL_SetVideoMode(w, h, 32, SDL_OPENGL | SDL_HWSURFACE) == 0)  {
       fprintf(stderr, "setvideomode failed: %s\n", SDL_GetError());
       return false;
     }
 
-    cloud_viewer->set_opengl_params(w,h);
+    cloud_viewer.set_opengl_params(w,h);
 
-    SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);//People expect Key Repeat
+    SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 
     return true;
   }
 
-  void cloud_callback()
+  void scans_callback()
   {
-    cloud_viewer->clear_cloud();
-    for (int i = 0; i < laser->get_ranges_size(); i++) {
-      cloud_viewer->add_point(0, 
-			      cos(laser->angle_min + i*laser->angle_increment) * laser->ranges[i], 
-			      sin(laser->angle_min + i*laser->angle_increment) * laser->ranges[i], 
+    cloud_viewer.clear_cloud();
+    for (int i = 0; i < laser.get_ranges_size(); i++) {
+      cloud_viewer.add_point( -sin(laser.angle_min + i*laser.angle_increment) * laser.ranges[i], 
+			      -cos(laser.angle_min + i*laser.angle_increment) * laser.ranges[i],
+			      0, 
 			      255,255,255);
     }
+    refresh();
   }
 };
 
 int main(int argc, char **argv)
 {
+  ros::init(argc,argv);
   if (SDL_Init(SDL_INIT_VIDEO) < 0)
   {
     fprintf(stderr, "SDL initialization error: %s\n", SDL_GetError());
@@ -152,9 +154,8 @@ int main(int argc, char **argv)
     exit(1);
   }
 
-  while (lv.happy()) {
-    lv.refresh();
-    usleep(1000);
+  while (lv.ok()) {
+    lv.check_events();
   }
   return 0;
 }

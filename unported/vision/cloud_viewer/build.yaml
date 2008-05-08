@@ -1,5 +1,0 @@
-cpp:
-  make:
-    - src/libcloud_viewer
-    - src/standalone
-    - src/cloud_node
