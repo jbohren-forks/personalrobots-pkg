@@ -126,7 +126,6 @@ main(int argc, char** argv)
   ros::init(argc,argv);
 
   WavefrontNode wn(argv[1],atof(argv[2]));
-  wn.tf = new rosTFClient(wn);
 
   struct timeval curr;
   while(wn.ok())
@@ -209,6 +208,8 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
 
   // Compute cspace over static map
   plan_compute_cspace(this->plan);
+
+  this->tf = new rosTFClient(*this);
 }
 
 WavefrontNode::~WavefrontNode()

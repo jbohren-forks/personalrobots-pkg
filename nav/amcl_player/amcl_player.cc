@@ -7,9 +7,13 @@
 
 // roscpp
 #include <ros/node.h>
+
 // Messages that I need
+#include <std_msgs/MsgLaserScan.h>
 #include <std_msgs/MsgRobotBase2DOdom.h>
-#include <std_msgs/MsgRobotBase2DCmdVel.h>
+
+// For transform support
+#include <rosTF/rosTF.h>
 
 #define PLAYER_QUEUE_LEN 32
 
@@ -35,7 +39,16 @@ class AmclNode: public ros::node, public Driver
     int process();
 
   private:
+    rosTFServer* tf;
     ConfigFile* cf;
+
+    // incoming messages
+    MsgRobotBase2DOdom odomMsg;
+    MsgLaserScan laserMsg;
+    
+    // Message callbacks
+    void odomReceived();
+    void laserReceived();
 
     // These are the devices that amcl offers, and to which we subscribe
     Driver* driver;
@@ -50,9 +63,6 @@ class AmclNode: public ros::node, public Driver
     Device* position2d_dev;
     Device* laser_dev;
     Device* map_dev;
-
-    MsgRobotBase2DOdom odom;
-
 };
 
 int
@@ -83,7 +93,8 @@ AmclNode::AmclNode() :
         ros::node("erratic"), 
         Driver(NULL,-1,false,PLAYER_QUEUE_LEN)
 {
-  this->ros::node::advertise<MsgRobotBase2DOdom>("odom");
+  subscribe("odom", odomMsg, &AmclNode::odomReceived);
+  subscribe("scan", laserMsg, &AmclNode::laserReceived);
 
   // libplayercore boiler plate
   player_globals_init();
@@ -170,6 +181,8 @@ AmclNode::AmclNode() :
   // Grab from the global deviceTable a pointer to the Device that was 
   // created as part of the driver's initialization.
   assert((this->device = deviceTable->GetDevice(oposition2d_saddr,false)));
+
+  this->tf = new rosTFServer(*this);
 }
 
 AmclNode::~AmclNode()
@@ -200,20 +213,8 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     player_position2d_data_t* pdata = 
             (player_position2d_data_t*)data;
 
-    // Translate from Player data to ROS data
-    this->odom.pos.x = pdata->pos.px;
-    this->odom.pos.y = pdata->pos.py;
-    this->odom.pos.th = pdata->pos.pa;
-    this->odom.vel.x = pdata->vel.px;
-    this->odom.vel.y = pdata->vel.py;
-    this->odom.vel.th = pdata->vel.pa;
-    this->odom.stall = pdata->stall;
-
-    // Publish the new data
-    this->ros::node::publish("odom", this->odom);
-
-    printf("Published new odom: (%.3f,%.3f,%.3f)\n", 
-           this->odom.pos.x, this->odom.pos.y, this->odom.pos.th);
+    // publish new transform map->odom
+    //this->tf->sendEuler(5,count++,1,1,1,1,1,1,100000,100000);
     return(0);
   }
   // Is it a request for the map metadata?
@@ -290,4 +291,14 @@ AmclNode::process()
   this->Driver::ProcessMessages();
 
   return(0);
+}
+
+void
+AmclNode::laserReceived()
+{
+}
+
+void
+AmclNode::odomReceived()
+{
 }
