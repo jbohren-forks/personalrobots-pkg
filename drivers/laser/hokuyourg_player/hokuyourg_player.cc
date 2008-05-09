@@ -83,7 +83,7 @@ class HokuyoNode: public ros::node
         return(numreadings);
       }
 
-      printf("%d readings\n", numreadings);
+      //printf("%d readings\n", numreadings);
 
       scan.angle_min = cfg.min_angle;
       scan.angle_max = cfg.max_angle;

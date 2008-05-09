@@ -111,9 +111,16 @@ main(int argc, char** argv)
 }
 
 AmclNode::AmclNode(char* fname, double res) : 
-        ros::node("erratic"), 
+        ros::node("amcl_player"), 
         Driver(NULL,-1,false,PLAYER_QUEUE_LEN)
 {
+  // libplayercore boiler plate
+  player_globals_init();
+  itable_init();
+
+  // TODO: remove XDR dependency
+  playerxdr_ftable_init();
+
   subscribe("odom", odomMsg, &AmclNode::odomReceived);
   subscribe("scan", laserMsg, &AmclNode::laserReceived);
 
@@ -121,13 +128,6 @@ AmclNode::AmclNode(char* fname, double res) :
   assert(read_map_from_image(&this->sx, &this->sy, &this->mapdata, fname, 0)
          == 0);
   this->resolution = res;
-
-  // libplayercore boiler plate
-  player_globals_init();
-  itable_init();
-
-  // TODO: remove XDR dependency
-  playerxdr_ftable_init();
 
   // TODO: automatically convert between string and player_devaddr_t
   // representations
@@ -213,7 +213,6 @@ AmclNode::AmclNode(char* fname, double res) :
 
 AmclNode::~AmclNode()
 {
-  delete this->driver;
   delete this->cf;
   player_globals_fini();
   free(this->mapdata);
@@ -224,12 +223,6 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
                          player_msghdr * hdr,
                          void * data)
 {
-  printf("Player message %d:%d:%d:%d\n",
-         hdr->type,
-         hdr->subtype,
-         hdr->addr.interf,
-         hdr->addr.index);
-
   // Is it a new pose from amcl?
   if(Message::MatchMessage(hdr,
                            PLAYER_MSGTYPE_DATA, 
@@ -242,7 +235,10 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
 
     // publish new transform map->odom
     //this->tf->sendEuler(5,count++,1,1,1,1,1,1,100000,100000);
-    printf("got new pose");
+    printf("pose: (%.3f %.3f %.3f)\n",
+           pdata->pos.px,
+           pdata->pos.py,
+           RTOD(pdata->pos.pa));
     return(0);
   }
   // Is it a request for the map metadata?
@@ -360,16 +356,28 @@ AmclNode::stop()
     return(-1);
   }
   else
+  {
+    // Give the driver a chance to shutdown.  Wish there were a way to
+    // detect when that happened.
+    usleep(1000000);
     return(0);
+  }
 }
 
 int 
 AmclNode::process()
 {
+  // Can't block here, because we won't exit cleanly.  The Wait() call
+  // blocks on pthread_cond_wait(), which is a cancellation point, but in
+  // this case we're the main thread and noone will try to cancel us.
+  //
   // Block until there's a message on our queue
-  this->Driver::InQueue->Wait();
+  //this->Driver::InQueue->Wait();
 
-  this->Driver::ProcessMessages();
+  if(!this->Driver::InQueue->Empty())
+    this->Driver::ProcessMessages();
+  else
+    usleep(1000000);
 
   return(0);
 }
@@ -398,11 +406,14 @@ AmclNode::laserReceived()
   double timestamp = this->odomMsg.header.stamp_secs + 
           this->odomMsg.header.stamp_nsecs / 1e9;
 
-  this->device->PutMsg(this->Driver::InQueue,
-                       PLAYER_MSGTYPE_DATA,
-                       PLAYER_LASER_DATA_SCAN,
-                       (void*)&pdata,0,
-                       &timestamp);
+  this->Driver::Publish(this->laser_addr,
+                        PLAYER_MSGTYPE_DATA,
+                        PLAYER_LASER_DATA_SCAN,
+                        (void*)&pdata,0,
+                        &timestamp,true);
+
+  //delete[] pdata.ranges;
+  //delete[] pdata.intensity;
 }
 
 void
@@ -421,11 +432,11 @@ AmclNode::odomReceived()
   double timestamp = this->odomMsg.header.stamp_secs + 
           this->odomMsg.header.stamp_nsecs / 1e9;
 
-  this->device->PutMsg(this->Driver::InQueue,
-                       PLAYER_MSGTYPE_DATA,
-                       PLAYER_POSITION2D_DATA_STATE,
-                       (void*)&pdata,0,
-                       &timestamp);
+  this->Driver::Publish(this->position2d_addr,
+                        PLAYER_MSGTYPE_DATA,
+                        PLAYER_POSITION2D_DATA_STATE,
+                        (void*)&pdata,0,
+                        &timestamp,true);
 }
 
 int

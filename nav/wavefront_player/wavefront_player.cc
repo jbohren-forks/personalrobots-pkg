@@ -25,8 +25,6 @@
 #define RTOD(a) ((a)*180.0/M_PI)
 #define SIGN(x) (((x) < 0.0) ? -1 : 1)
 
-// TODO: add mutexes around objects accessed by callbacks.
-
 //void draw_cspace(plan_t* plan, const char* fname);
 //void draw_path(plan_t* plan, double lx, double ly, const char* fname);
 #include <gdk-pixbuf/gdk-pixbuf.h>
@@ -133,6 +131,7 @@ main(int argc, char** argv)
     gettimeofday(&curr,NULL);
     wn.doOneCycle();
     wn.sleep(curr.tv_sec+curr.tv_usec/1e6);
+    puts("slept");
   }
   return(0);
 }
@@ -267,14 +266,19 @@ WavefrontNode::stopRobot()
   }
 }
 
+// Declare this globally, so that it never gets desctructed (message
+// desctruction causes master disconnect)
+MsgRobotBase2DCmdVel* cmdvel;
+
 void
 WavefrontNode::sendVelCmd(double vx, double vy, double vth)
 {
-  MsgRobotBase2DCmdVel cmdvel;
-  cmdvel.vel.x = vx;
-  cmdvel.vel.y = vy;
-  cmdvel.vel.th = vth;
-  this->ros::node::publish("cmdvel", cmdvel);
+  if(!cmdvel)
+    cmdvel = new MsgRobotBase2DCmdVel();
+  cmdvel->vel.x = vx;
+  cmdvel->vel.y = vy;
+  cmdvel->vel.th = vth;
+  this->ros::node::publish("cmdvel", *cmdvel);
 }
 
 

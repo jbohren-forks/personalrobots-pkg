@@ -9,7 +9,8 @@
 #include <ros/node.h>
 // Messages that I need
 #include <std_msgs/MsgRobotBase2DOdom.h>
-#include <std_msgs/MsgRobotBase2DCmdVel.h>
+//#include <std_msgs/MsgRobotBase2DCmdVel.h>
+#include <std_msgs/MsgBaseVel.h>
 
 #define PLAYER_QUEUE_LEN 32
 
@@ -23,19 +24,20 @@ class ErraticNode: public ros::node
     QueuePointer q;
 
     MsgRobotBase2DOdom odom;
-    MsgRobotBase2DCmdVel cmdvel;
+    //MsgRobotBase2DCmdVel cmdvel;
+    MsgBaseVel cmdvel;
 
-    ErraticNode() : ros::node("erratic")
+    ErraticNode() : ros::node("erratic_player")
     {
-      advertise<MsgRobotBase2DOdom>("odom");
-      subscribe("cmdvel", cmdvel, &ErraticNode::cmdvelReceived);
-
       // libplayercore boiler plate
       player_globals_init();
+      puts("init");
       itable_init();
       
       // TODO: remove XDR dependency
       playerxdr_ftable_init();
+
+      advertise<MsgRobotBase2DOdom>("odom");
 
       // The Player address that will be assigned to this device.  The format
       // is interface:index.  The interface must match what the driver is
@@ -86,7 +88,10 @@ class ErraticNode: public ros::node
         return(-1);
       }
       else
+      {
+        subscribe("cmd_vel", cmdvel, &ErraticNode::cmdvelReceived);
         return(0);
+      }
     }
 
     int stop()
@@ -129,18 +134,24 @@ class ErraticNode: public ros::node
 
     void cmdvelReceived()
     {
+      /*
       printf("received cmd: (%.3f,%.3f,%.3f)\n",
              this->cmdvel.vel.x,
              this->cmdvel.vel.y,
              this->cmdvel.vel.th);
+             */
 
       player_position2d_cmd_vel_t cmd;
       memset(&cmd, 0, sizeof(cmd));
 
-      cmd.vel.px = this->cmdvel.vel.x;
-      cmd.vel.py = this->cmdvel.vel.y;
-      cmd.vel.pa = this->cmdvel.vel.th;
+      //cmd.vel.px = this->cmdvel.vel.x;
+      //cmd.vel.py = this->cmdvel.vel.y;
+      //cmd.vel.pa = this->cmdvel.vel.th;
+      cmd.vel.px = this->cmdvel.vx;
+      cmd.vel.py = 0.0;
+      cmd.vel.pa = this->cmdvel.vw;
       cmd.state = 1;
+
 
       this->device->PutMsg(this->q,
                            PLAYER_MSGTYPE_CMD,
