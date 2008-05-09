@@ -34,8 +34,8 @@
 #define QUATERNION3D_HH
 
 #include <iostream>
-#include <newmat/newmat.h>
-#include <newmat/newmatio.h>
+#include <newmat10/newmat.h>
+#include <newmat10/newmatio.h>
 #include <math.h>
 #include <pthread.h>
 #include <sys/time.h>

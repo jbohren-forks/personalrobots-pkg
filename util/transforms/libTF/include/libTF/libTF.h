@@ -34,8 +34,8 @@
 #define LIBTF_HH
 #include <iostream>
 #include <iomanip>
-#include <newmat/newmat.h>
-#include <newmat/newmatio.h>
+#include <newmat10/newmat.h>
+#include <newmat10/newmatio.h>
 #include <math.h>
 #include <vector>
 #include <sstream>
