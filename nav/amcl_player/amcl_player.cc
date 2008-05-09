@@ -247,7 +247,17 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
             (player_position2d_data_t*)data;
 
     // publish new transform map->odom
-    //this->tf->sendEuler(5,count++,1,1,1,1,1,1,100000,100000);
+    this->tf->sendEuler(2,1,
+                        this->odomMsg.pos.x-pdata->pos.px,
+                        this->odomMsg.pos.y-pdata->pos.py,
+                        0.0,
+                        this->odomMsg.pos.th-pdata->pos.pa,
+                        0.0, 
+                        0.0,
+                        (unsigned int)floor(hdr->timestamp),
+                        (unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1e9));
+
+
     printf("pose: (%.3f %.3f %.3f)\n",
            pdata->pos.px,
            pdata->pos.py,

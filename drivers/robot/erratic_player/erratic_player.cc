@@ -208,6 +208,8 @@ main(int argc, char** argv)
       en.odom.vel.th = pdata->vel.pa;
       en.odom.stall = pdata->stall;
 
+      en.odom.header.frame_id = 2;
+
       // Publish the new data
       en.publish("odom", en.odom);
 

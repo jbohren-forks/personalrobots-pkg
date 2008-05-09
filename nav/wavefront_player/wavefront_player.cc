@@ -163,12 +163,6 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         amax(DTOR(20.0)),
         tf(NULL)
 {
-  advertise<MsgPlanner2DState>("state");
-  advertise<MsgRobotBase2DCmdVel>("cmdvel");
-  subscribe("goal", goalMsg, &WavefrontNode::goalReceived);
-  subscribe("odom", odomMsg, &WavefrontNode::odomReceived);
-  subscribe("scan", laserMsg, &WavefrontNode::laserReceived);
-
   // TODO: get map via RPC
   char* mapdata;
   int sx, sy;
@@ -209,6 +203,12 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
   plan_compute_cspace(this->plan);
 
   this->tf = new rosTFClient(*this);
+
+  advertise<MsgPlanner2DState>("state");
+  advertise<MsgRobotBase2DCmdVel>("cmdvel");
+  subscribe("goal", goalMsg, &WavefrontNode::goalReceived);
+  subscribe("odom", odomMsg, &WavefrontNode::odomReceived);
+  subscribe("scan", laserMsg, &WavefrontNode::laserReceived);
 }
 
 WavefrontNode::~WavefrontNode()
@@ -243,11 +243,19 @@ WavefrontNode::odomReceived()
           odomMsg.header.stamp_nsecs;
   odom_pose.frame = odomMsg.header.frame_id;
 
-  libTF::TFPose2D global_pose = this->tf->transformPose2D(this->tf->ROOT_FRAME,
-                                                          odom_pose);
-  this->pose[0] = global_pose.x;
-  this->pose[1] = global_pose.y;
-  this->pose[2] = global_pose.yaw;
+  printf("frame: %d\n", odomMsg.header.frame_id);
+  try
+  {
+    libTF::TFPose2D global_pose = 
+            this->tf->transformPose2D(1, odom_pose);
+    this->pose[0] = global_pose.x;
+    this->pose[1] = global_pose.y;
+    this->pose[2] = global_pose.yaw;
+  }
+  catch(libTF::TransformReference::LookupException& ex)
+  {
+    puts("no tx yet");
+  }
 }
 
 void
