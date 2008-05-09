@@ -1,0 +1,18 @@
+<package>
+<description brief="C++ Matrix Library">
+
+(from the website:)
+
+This C++ library is intended for scientists and engineers who need to manipulate a variety of types of matrices using standard matrix operations. Emphasis is on the kind of operations needed in statistical calculations such as least squares, linear equation solve and eigenvalues. 
+
+This ROS package also supplies a small patch which enables namespaces and streams.
+
+</description>
+<author>Robert Davies</author>
+<license>Zlib-style, see distribution for details</license>
+<url>http://www.robertnz.net/nm_intro.htm</url>
+<export>
+  <cpp cflags="-I${prefix}/newmat10/include" lflags="-L${prefix}/newmat10/lib " />
+</export>
+</package>
+
