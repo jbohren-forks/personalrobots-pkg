@@ -38,6 +38,7 @@ public:
   void joy_cb()
   {
     joy.lock();
+    /*
     printf("axes: ");
     for(int i=0;i<joy.get_axes_size();i++)
       printf("%.3f ", joy.axes[i]);
@@ -46,6 +47,7 @@ public:
     for(int i=0;i<joy.get_buttons_size();i++)
       printf("%d ", joy.buttons[i]);
     puts("");
+    */
 
     if((axis_vx >= 0) && (((unsigned int)axis_vx) < joy.get_axes_size()))
       req_vx = joy.axes[axis_vx] * max_vx;
