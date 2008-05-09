@@ -1,229 +1,928 @@
-<!DOCTYPE html
-    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
-<head>
- <title>#167: newmat_1.10.4-2build1.diff - ros - Trac</title><link rel="start" href="/trac/ros/wiki" /><link rel="search" href="/trac/ros/search" /><link rel="help" href="/trac/ros/wiki/TracGuide" /><link rel="stylesheet" href="/trac/ros/chrome/common/css/trac.css" type="text/css" /><link rel="stylesheet" href="/trac/ros/chrome/common/css/diff.css" type="text/css" /><link rel="stylesheet" href="/trac/ros/chrome/common/css/code.css" type="text/css" /><link rel="icon" href="/trac/ros/chrome/common/trac.ico" type="image/x-icon" /><link rel="shortcut icon" href="/trac/ros/chrome/common/trac.ico" type="image/x-icon" /><link rel="up" href="/trac/ros/ticket/167" title="Ticket #167" /><link rel="alternate" href="/trac/ros/attachment/ticket/167/newmat_1.10.4-2build1.diff?format=raw" title="Original Format" type="text/x-diff; charset=iso-8859-15" /><style type="text/css">
-</style>
- <script type="text/javascript" src="/trac/ros/chrome/common/js/trac.js"></script>
-</head>
-<body>
-
-
-<div id="banner">
-
-<div id="header"><a id="logo" href="http://prdev.willowgarage.com/trac/ros/"><img src="/trac/ros/chrome/common/trac_banner.png" alt="" /></a><hr /></div>
-
-<form id="search" action="/trac/ros/search" method="get">
- <div>
-  <label for="proj-search">Search:</label>
-  <input type="text" id="proj-search" name="q" size="10" accesskey="f" value="" />
-  <input type="submit" value="Search" />
-  <input type="hidden" name="wiki" value="on" />
-  <input type="hidden" name="changeset" value="on" />
-  <input type="hidden" name="ticket" value="on" />
- </div>
-</form>
-
-
-
-<div id="metanav" class="nav"><ul><li class="first">logged in as mquigley</li><li><a href="/trac/ros/logout">Logout</a></li><li><a href="/trac/ros/settings">Settings</a></li><li><a accesskey="6" href="/trac/ros/wiki/TracGuide">Help/Guide</a></li><li class="last"><a href="/trac/ros/about">About Trac</a></li></ul></div>
-</div>
-
-<div id="mainnav" class="nav"><ul><li class="first"><a accesskey="1" href="/trac/ros/wiki">Wiki</a></li><li><a accesskey="2" href="/trac/ros/timeline">Timeline</a></li><li><a accesskey="3" href="/trac/ros/roadmap">Roadmap</a></li><li><a href="/trac/ros/browser">Browse Source</a></li><li><a href="/trac/ros/report">View Tickets</a></li><li><a accesskey="7" href="/trac/ros/newticket">New Ticket</a></li><li><a accesskey="4" href="/trac/ros/search">Search</a></li><li class="last"><a href="/trac/ros/gantt">Gantt Charts</a></li></ul></div>
-<div id="main">
-
-
-
-
-<div id="ctxtnav" class="nav"></div>
-
-<div id="content" class="attachment">
-
-
- <h1><a href="/trac/ros/ticket/167">Ticket #167</a>: newmat_1.10.4-2build1.diff</h1>
- <table id="info" summary="Description"><tbody><tr>
-   <th scope="col">
-    File newmat_1.10.4-2build1.diff, 25.4 kB 
-    (added by tfoote,  5 hours ago)
-   </th></tr><tr>
-   <td class="message"><p>
-tarball to package diff
-</p>
-</td>
-  </tr>
- </tbody></table>
- <div id="preview">
-   
-
-
-<div class="diff"><ul class="entries"><li class="entry">
-  <h2>newmat-1.10.4/include.h</h2>
-  <table class="inline" summary="Differences" cellspacing="0">
-   <colgroup><col class="lineno" /><col class="lineno" /><col class="content" /></colgroup>
-   <thead><tr>
-    <th>old</th>
-    <th>new</th>
-    <th>&nbsp;</th>
-   </tr></thead><tbody><tr><th>7</th><th>7</th><td class="l"><span>#ifndef INCLUDE_LIB</span>&nbsp;</td></tr><tr><th>8</th><th>8</th><td class="l"><span>#define INCLUDE_LIB</span>&nbsp;</td></tr><tr><th>9</th><th>9</th><td class="l"><span></span>&nbsp;</td></tr></tbody><tbody class="mod"><tr class="first"><th>10</th><th>&nbsp;</th><td class="l">//#define use_namespace&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;// define name spaces&nbsp;</td></tr><tr><th>&nbsp;</th><th>10</th><td class="r">#include &#34;config.h&#34; // create a blank file if missing (not using autotools) , &nbsp;</td></tr><tr><th>&nbsp;</th><th>11</th><td class="r">&nbsp;</td></tr><tr class="last"><th>&nbsp;</th><th>12</th><td class="r">#define use_namespace&nbsp; &nbsp;// define name spaces // commented by default&nbsp;</td></tr></tbody><tbody><tr><th>11</th><th>13</th><td class="l"><span></span>&nbsp;</td></tr><tr><th>12</th><th>14</th><td class="l"><span>//#define SETUP_C_SUBSCRIPTS&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; // allow element access via A[i][j]</span>&nbsp;</td></tr><tr><th>13</th><th>15</th><td class="l"><span></span>&nbsp;</td></tr></tbody>
-     <tbody class="skipped">
-      <tr><th>&hellip;</th><th>&hellip;</th><td>&nbsp;</td></tr>
-     </tbody><tbody><tr><th>36</th><th>38</th><td class="l"><span>//#define ios_format_flags ios::fmtflags&nbsp; // for Gnu 3 and Intel for Linux</span>&nbsp;</td></tr><tr><th>37</th><th>39</th><td class="l"><span></span>&nbsp;</td></tr><tr><th>38</th><th>40</th><td class="l"><span></span>&nbsp;</td></tr></tbody><tbody class="mod"><tr class="first"><th>39</th><th>&nbsp;</th><td class="l">//#define _STANDARD_&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; // using standard library&nbsp;</td></tr><tr class="last"><th>&nbsp;</th><th>41</th><td class="r">#define _STANDARD_&nbsp; &nbsp; // using standard library // default is commented&nbsp;</td></tr></tbody><tbody><tr><th>40</th><th>42</th><td class="l"><span></span>&nbsp;</td></tr><tr><th>41</th><th>43</th><td class="l"><span>//#define use_float_h&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;// use float.h for precision data</span>&nbsp;</td></tr><tr><th>42</th><th>44</th><td class="l"><span></span>&nbsp;</td></tr></tbody>
-     <tbody class="skipped">
-      <tr><th>&hellip;</th><th>&hellip;</th><td>&nbsp;</td></tr>
-     </tbody><tbody><tr><th>73</th><th>75</th><td class="l"><span>&nbsp; &nbsp; &nbsp; #include &lt;limits&gt;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; // for VC++6</span>&nbsp;</td></tr><tr><th>74</th><th>76</th><td class="l"><span>&nbsp; &nbsp;#endif</span>&nbsp;</td></tr><tr><th>75</th><th>77</th><td class="l"><span>&nbsp; &nbsp;#ifdef WANT_STREAM</span>&nbsp;</td></tr></tbody><tbody class="mod"><tr class="first"><th>76</th><th>&nbsp;</th><td class="l">&nbsp; &nbsp; &nbsp; #include &lt;iostream&gt;&nbsp;</td></tr><tr><th>77</th><th>&nbsp;</th><td class="l">&nbsp; &nbsp; &nbsp; #include &lt;iomanip&gt;&nbsp;</td></tr><tr><th>&nbsp;</th><th>78</th><td class="r">&nbsp; &nbsp; &nbsp; #ifdef use_namespace //#~rzr{ needed for msvc-6 msvc-7.1 msvc-8&nbsp;</td></tr><tr><th>&nbsp;</th><th>79</th><td class="r">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;#include &lt;iostream&gt;&nbsp;</td></tr><tr><th>&nbsp;</th><th>80</th><td class="r">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;#include &lt;iomanip&gt;&nbsp;</td></tr><tr><th>&nbsp;</th><th>81</th><td class="r">&nbsp; &nbsp; &nbsp; #else&nbsp;</td></tr><tr><th>&nbsp;</th><th>82</th><td class="r">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;#include &lt;iostream.h&gt;&nbsp;</td></tr><tr><th>&nbsp;</th><th>83</th><td class="r">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;#include &lt;iomanip.h&gt;&nbsp;</td></tr><tr class="last"><th>&nbsp;</th><th>84</th><td class="r">&nbsp; &nbsp; &nbsp; #endif // #~rzr}&nbsp;</td></tr></tbody><tbody><tr><th>78</th><th>85</th><td class="l"><span>&nbsp; &nbsp;#endif</span>&nbsp;</td></tr><tr><th>79</th><th>86</th><td class="l"><span>&nbsp; &nbsp;#ifdef WANT_MATH</span>&nbsp;</td></tr><tr><th>80</th><th>87</th><td class="l"><span>&nbsp; &nbsp; &nbsp; #include &lt;cmath&gt;</span>&nbsp;</td></tr></tbody>
-     <tbody class="skipped">
-      <tr><th>&hellip;</th><th>&hellip;</th><td>&nbsp;</td></tr>
-     </tbody><tbody><tr><th>106</th><th>113</th><td class="l"><span>//&nbsp; &nbsp;}</span>&nbsp;</td></tr><tr><th>107</th><th>114</th><td class="l"><span></span>&nbsp;</td></tr><tr><th>108</th><th>115</th><td class="l"><span>&nbsp; &nbsp;#ifdef WANT_STREAM</span>&nbsp;</td></tr></tbody><tbody class="mod"><tr class="first"><th>109</th><th>&nbsp;</th><td class="l">&nbsp; &nbsp; &nbsp; #include &lt;iostream.h&gt;&nbsp;</td></tr><tr><th>110</th><th>&nbsp;</th><td class="l">&nbsp; &nbsp; &nbsp; #include &lt;iomanip.h&gt;&nbsp;</td></tr><tr><th>&nbsp;</th><th>116</th><td class="r">&nbsp; &nbsp; &nbsp; #ifdef use_namespace //#~rzr{ needed for msvc-6 msvc-7.1 msvc-8&nbsp;</td></tr><tr><th>&nbsp;</th><th>117</th><td class="r">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;#include &lt;iostream&gt;&nbsp;</td></tr><tr><th>&nbsp;</th><th>118</th><td class="r">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;#include &lt;iomanip&gt;&nbsp;</td></tr><tr><th>&nbsp;</th><th>119</th><td class="r">&nbsp; &nbsp; &nbsp; #else&nbsp;</td></tr><tr><th>&nbsp;</th><th>120</th><td class="r">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;#include &lt;iostream.h&gt;&nbsp;</td></tr><tr><th>&nbsp;</th><th>121</th><td class="r">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;#include &lt;iomanip.h&gt;&nbsp;</td></tr><tr class="last"><th>&nbsp;</th><th>122</th><td class="r">&nbsp; &nbsp; &nbsp; #endif // #~rzr}&nbsp;</td></tr></tbody><tbody><tr><th>111</th><th>123</th><td class="l"><span>&nbsp; &nbsp;#endif</span>&nbsp;</td></tr><tr><th>112</th><th>124</th><td class="l"><span>&nbsp; &nbsp;#ifdef WANT_MATH</span>&nbsp;</td></tr><tr><th>113</th><th>125</th><td class="l"><span>&nbsp; &nbsp; &nbsp; #include &lt;math.h&gt;</span>&nbsp;</td></tr></tbody>
-  </table>
- </li><li class="entry">
-  <h2>newmat-1.10.4/newmatnl.cpp</h2>
-  <table class="inline" summary="Differences" cellspacing="0">
-   <colgroup><col class="lineno" /><col class="lineno" /><col class="content" /></colgroup>
-   <thead><tr>
-    <th>old</th>
-    <th>new</th>
-    <th>&nbsp;</th>
-   </tr></thead><tbody><tr><th>10</th><th>10</th><td class="l"><span>#include &#34;newmatnl.h&#34;</span>&nbsp;</td></tr><tr><th>11</th><th>11</th><td class="l"><span></span>&nbsp;</td></tr><tr><th>12</th><th>12</th><td class="l"><span>#ifdef use_namespace</span>&nbsp;</td></tr></tbody><tbody class="add"><tr class="first last"><th>&nbsp;</th><th>13</th><td class="r"><ins>using namespace std; //#~rzr : needed for msvc</ins>&nbsp;</td></tr></tbody><tbody><tr><th>13</th><th>14</th><td class="l"><span>namespace NEWMAT {</span>&nbsp;</td></tr><tr><th>14</th><th>15</th><td class="l"><span>#endif</span>&nbsp;</td></tr><tr><th>15</th><th>16</th><td class="l"><span></span>&nbsp;</td></tr></tbody>
-  </table>
- </li><li class="entry">
-  <h2>newmat-1.10.4/tmtm.cpp</h2>
-  <table class="inline" summary="Differences" cellspacing="0">
-   <colgroup><col class="lineno" /><col class="lineno" /><col class="content" /></colgroup>
-   <thead><tr>
-    <th>old</th>
-    <th>new</th>
-    <th>&nbsp;</th>
-   </tr></thead><tbody><tr><th>8</th><th>8</th><td class="l"><span>#include &#34;tmt.h&#34;</span>&nbsp;</td></tr><tr><th>9</th><th>9</th><td class="l"><span></span>&nbsp;</td></tr><tr><th>10</th><th>10</th><td class="l"><span>#ifdef use_namespace</span>&nbsp;</td></tr></tbody><tbody class="add"><tr class="first last"><th>&nbsp;</th><th>11</th><td class="r"><ins>using namespace std; //#~rzr : needed for msvc</ins>&nbsp;</td></tr></tbody><tbody><tr><th>11</th><th>12</th><td class="l"><span>using namespace NEWMAT;</span>&nbsp;</td></tr><tr><th>12</th><th>13</th><td class="l"><span>#endif</span>&nbsp;</td></tr><tr><th>13</th><th>14</th><td class="l"><span></span>&nbsp;</td></tr></tbody>
-  </table>
- </li><li class="entry">
-  <h2>newmat-1.10.4/debian/changelog</h2>
-  <table class="inline" summary="Differences" cellspacing="0">
-   <colgroup><col class="lineno" /><col class="lineno" /><col class="content" /></colgroup>
-   <thead><tr>
-    <th>old</th>
-    <th>new</th>
-    <th>&nbsp;</th>
-   </tr></thead><tbody class="add"><tr class="first"><th>&nbsp;</th><th>1</th><td class="r"><ins>newmat (1.10.4-2build1) feisty; urgency=low</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>2</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>3</th><td class="r"><ins>&nbsp; * Rebuild for ldbl128 change on powerpc and sparc.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>4</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>5</th><td class="r"><ins>&nbsp;-- Matthias Klose &lt;doko@ubuntu.com&gt;&nbsp; Thu,&nbsp; 2 Nov 2006 10:23:58 +0000</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>6</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>7</th><td class="r"><ins>newmat (1.10.4-2) unstable; urgency=low</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>8</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>9</th><td class="r"><ins>&nbsp; * Closes: #367875 (for g++ 4.1 support)</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>10</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>11</th><td class="r"><ins>&nbsp;-- Philippe Coval &lt;rzr@users.sf.net&gt;&nbsp; Sat, 20 May 2006 00:01:28 +0200</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>12</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>13</th><td class="r"><ins>newmat (1.10.4-1) unstable; urgency=low</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>14</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>15</th><td class="r"><ins>&nbsp; * New upstream release</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>16</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>17</th><td class="r"><ins>&nbsp;-- Philippe Coval &lt;rzr@users.sf.net&gt;&nbsp; Sat,&nbsp; 6 May 2006 01:09:53 +0200</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>18</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>19</th><td class="r"><ins>newmat (1.10.3-1) unstable; urgency=low</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>20</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>21</th><td class="r"><ins>&nbsp; * Initial release Closes: #335185</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>22</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>23</th><td class="r"><ins>&nbsp;-- Philippe Coval &lt;rzr@users.sf.net&gt;&nbsp; Sat,&nbsp; 1 Apr 2006 12:08:38 +0200</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>24</th><td class="r"><ins></ins>&nbsp;</td></tr><tr class="last"><th>&nbsp;</th><th>25</th><td class="r"><ins></ins>&nbsp;</td></tr></tbody>
-  </table>
- </li><li class="entry">
-  <h2>newmat-1.10.4/debian/Makefile.am</h2>
-  <table class="inline" summary="Differences" cellspacing="0">
-   <colgroup><col class="lineno" /><col class="lineno" /><col class="content" /></colgroup>
-   <thead><tr>
-    <th>old</th>
-    <th>new</th>
-    <th>&nbsp;</th>
-   </tr></thead><tbody class="add"><tr class="first"><th>&nbsp;</th><th>1</th><td class="r"><ins>#ident &#34;$Id: Makefile.am -- pcoval&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>2</th><td class="r"><ins>lib_LTLIBRARIES = libnewmat.la</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>3</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>4</th><td class="r"><ins>libnewmat_la_LDFLAGS = -version-info 10:0:0</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>5</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>6</th><td class="r"><ins>libnewmat_la_SOURCES = \</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>7</th><td class="r"><ins>&nbsp; newmat1.cpp newmat2.cpp newmat3.cpp newmat4.cpp newmat5.cpp newmat6.cpp \</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>8</th><td class="r"><ins>&nbsp; newmat7.cpp newmat8.cpp newmatex.cpp bandmat.cpp submat.cpp myexcept.cpp \</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>9</th><td class="r"><ins>&nbsp; cholesky.cpp evalue.cpp fft.cpp hholder.cpp jacobi.cpp newfft.cpp \</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>10</th><td class="r"><ins>&nbsp; sort.cpp svd.cpp newmatrm.cpp newmat9.cpp</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>11</th><td class="r"><ins>&nbsp;#</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>12</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>13</th><td class="r"><ins>pkgincludedir = $(includedir)/newmat</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>14</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>15</th><td class="r"><ins>pkginclude_HEADERS = \</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>16</th><td class="r"><ins>&nbsp; config.h include.h \</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>17</th><td class="r"><ins>&nbsp; boolean.h controlw.h myexcept.h newmat.h newmatnl.h newmatrm.h solution.h \</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>18</th><td class="r"><ins>&nbsp; newmatap.h&nbsp; newmatio.h&nbsp; newmatrc.h&nbsp; precisio.h</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>19</th><td class="r"><ins>&nbsp;#</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>20</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>21</th><td class="r"><ins>bin_PROGRAMS = example test_exc tmt</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>22</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>23</th><td class="r"><ins>example_SOURCES = example.cpp</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>24</th><td class="r"><ins>example_LDFLAGS = -lnewmat</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>25</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>26</th><td class="r"><ins>test_exc_SOURCES = test_exc.cpp</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>27</th><td class="r"><ins>test_exc_LDFLAGS = -lnewmat</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>28</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>29</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>30</th><td class="r"><ins>tmt_SOURCES = tmt.cpp \</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>31</th><td class="r"><ins>&nbsp; tmt1.cpp tmt2.cpp tmt3.cpp tmt4.cpp tmt5.cpp tmt6.cpp tmt7.cpp tmt8.cpp \</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>32</th><td class="r"><ins>&nbsp; tmt9.cpp tmta.cpp tmtb.cpp tmtc.cpp tmtd.cpp tmte.cpp tmtf.cpp tmtg.cpp \</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>33</th><td class="r"><ins>&nbsp; tmth.cpp tmti.cpp tmtj.cpp tmtk.cpp tmtl.cpp tmtm.cpp</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>34</th><td class="r"><ins>&nbsp;#</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>35</th><td class="r"><ins>tmt_LDFLAGS = -lnewmat</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>36</th><td class="r"><ins></ins>&nbsp;</td></tr><tr class="last"><th>&nbsp;</th><th>37</th><td class="r"><ins>#eof &#34;$Id: Makefile.am -- pcoval&#34;</ins>&nbsp;</td></tr></tbody>
-  </table>
- </li><li class="entry">
-  <h2>newmat-1.10.4/debian/dirs</h2>
-  <table class="inline" summary="Differences" cellspacing="0">
-   <colgroup><col class="lineno" /><col class="lineno" /><col class="content" /></colgroup>
-   <thead><tr>
-    <th>old</th>
-    <th>new</th>
-    <th>&nbsp;</th>
-   </tr></thead><tbody class="add"><tr class="first"><th>&nbsp;</th><th>1</th><td class="r"><ins>usr/lib</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>2</th><td class="r"><ins>usr/include</ins>&nbsp;</td></tr><tr class="last"><th>&nbsp;</th><th>3</th><td class="r"><ins></ins>&nbsp;</td></tr></tbody>
-  </table>
- </li><li class="entry">
-  <h2>newmat-1.10.4/debian/libnewmat10-dev.examples</h2>
-  <table class="inline" summary="Differences" cellspacing="0">
-   <colgroup><col class="lineno" /><col class="lineno" /><col class="content" /></colgroup>
-   <thead><tr>
-    <th>old</th>
-    <th>new</th>
-    <th>&nbsp;</th>
-   </tr></thead><tbody class="add"><tr class="first"><th>&nbsp;</th><th>1</th><td class="r"><ins>example.cpp</ins>&nbsp;</td></tr><tr class="last"><th>&nbsp;</th><th>2</th><td class="r"><ins>example.txt</ins>&nbsp;</td></tr></tbody>
-  </table>
- </li><li class="entry">
-  <h2>newmat-1.10.4/debian/libnewmat10-dev.links</h2>
-  <table class="inline" summary="Differences" cellspacing="0">
-   <colgroup><col class="lineno" /><col class="lineno" /><col class="content" /></colgroup>
-   <thead><tr>
-    <th>old</th>
-    <th>new</th>
-    <th>&nbsp;</th>
-   </tr></thead>
-  </table>
- </li><li class="entry">
-  <h2>newmat-1.10.4/debian/libnewmat10.files</h2>
-  <table class="inline" summary="Differences" cellspacing="0">
-   <colgroup><col class="lineno" /><col class="lineno" /><col class="content" /></colgroup>
-   <thead><tr>
-    <th>old</th>
-    <th>new</th>
-    <th>&nbsp;</th>
-   </tr></thead>
-  </table>
- </li><li class="entry">
-  <h2>newmat-1.10.4/debian/control</h2>
-  <table class="inline" summary="Differences" cellspacing="0">
-   <colgroup><col class="lineno" /><col class="lineno" /><col class="content" /></colgroup>
-   <thead><tr>
-    <th>old</th>
-    <th>new</th>
-    <th>&nbsp;</th>
-   </tr></thead><tbody class="add"><tr class="first"><th>&nbsp;</th><th>1</th><td class="r"><ins>Source: newmat</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>2</th><td class="r"><ins>Priority: optional</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>3</th><td class="r"><ins>Maintainer: Philippe Coval &lt;rzr@users.sf.net&gt;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>4</th><td class="r"><ins>Uploader: Andreas Tille &lt;tille@debian.org&gt;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>5</th><td class="r"><ins>Build-Depends: debhelper (&gt;= 4.0.0), autotools-dev, automake1.7, autoconf (&gt;&gt; 2.13), libtool , libltdl3-dev</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>6</th><td class="r"><ins>Standards-Version: 3.6.2</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>7</th><td class="r"><ins>Section: libs</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>8</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>9</th><td class="r"><ins>Package: libnewmat10</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>10</th><td class="r"><ins>Section: libs</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>11</th><td class="r"><ins>Architecture: any</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>12</th><td class="r"><ins>Depends: ${shlibs:Depends}, ${misc:Depends}</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>13</th><td class="r"><ins>Description: matrix manipulations C++ library</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>14</th><td class="r"><ins>&nbsp;Newmat library is intended for scientists and engineers </ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>15</th><td class="r"><ins>&nbsp;who need to manipulate a variety of types of matrices </ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>16</th><td class="r"><ins>&nbsp;using standard matrix operations.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>17</th><td class="r"><ins>&nbsp;Emphasis is on the kind of operations needed in statistical calculations</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>18</th><td class="r"><ins>&nbsp;such as least squares, linear equation solve and eigenvalues.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>19</th><td class="r"><ins>&nbsp;.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>20</th><td class="r"><ins>&nbsp;Newmat supports matrix types: Matrix (rectangular matrix); </ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>21</th><td class="r"><ins>&nbsp;UpperTriangularMatrix; LowerTriangularMatrix; DiagonalMatrix; </ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>22</th><td class="r"><ins>&nbsp;SymmetricMatrix; BandMatrix; UpperBandMatrix; LowerBandMatrix; </ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>23</th><td class="r"><ins>&nbsp;SymmetricBandMatrix; IdentityMatrix;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>24</th><td class="r"><ins>&nbsp;RowVector; ColumnVector.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>25</th><td class="r"><ins>&nbsp;.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>26</th><td class="r"><ins>&nbsp;Only one element type (float or double) is supported.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>27</th><td class="r"><ins>&nbsp;.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>28</th><td class="r"><ins>&nbsp;The library includes the operations *, +, -, *=, +=, -=, Kronecker product,</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>29</th><td class="r"><ins>&nbsp;Schur product, concatenation, inverse, transpose, conversion between types,</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>30</th><td class="r"><ins>&nbsp;submatrix, determinant, Cholesky decomposition, QR triangularisation,</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>31</th><td class="r"><ins>&nbsp;singular value decomposition, eigenvalues of a symmetric matrix, sorting,</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>32</th><td class="r"><ins>&nbsp;fast Fourier and trig. transforms and printing.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>33</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>34</th><td class="r"><ins>Package: libnewmat10-dev</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>35</th><td class="r"><ins>Provides: libnewmat-dev</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>36</th><td class="r"><ins>Section: libdevel</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>37</th><td class="r"><ins>Architecture: any</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>38</th><td class="r"><ins>Depends: libnewmat10 (= ${Source-Version})</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>39</th><td class="r"><ins>Description: matrix manipulations C++ library</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>40</th><td class="r"><ins>&nbsp;Newmat library is intended for scientists and engineers </ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>41</th><td class="r"><ins>&nbsp;who need to manipulate a variety of types of matrices </ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>42</th><td class="r"><ins>&nbsp;using standard matrix operations.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>43</th><td class="r"><ins>&nbsp;Emphasis is on the kind of operations needed in statistical calculations</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>44</th><td class="r"><ins>&nbsp;such as least squares, linear equation solve and eigenvalues.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>45</th><td class="r"><ins>&nbsp;.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>46</th><td class="r"><ins>&nbsp;Newmat supports matrix types: Matrix (rectangular matrix); </ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>47</th><td class="r"><ins>&nbsp;UpperTriangularMatrix; LowerTriangularMatrix; DiagonalMatrix; </ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>48</th><td class="r"><ins>&nbsp;SymmetricMatrix; BandMatrix; UpperBandMatrix; LowerBandMatrix; </ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>49</th><td class="r"><ins>&nbsp;SymmetricBandMatrix; IdentityMatrix;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>50</th><td class="r"><ins>&nbsp;RowVector; ColumnVector.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>51</th><td class="r"><ins>&nbsp;.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>52</th><td class="r"><ins>&nbsp;Only one element type (float or double) is supported (default is double).</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>53</th><td class="r"><ins>&nbsp;.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>54</th><td class="r"><ins>&nbsp;The library includes the operations *, +, -, *=, +=, -=, Kronecker product,</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>55</th><td class="r"><ins>&nbsp;Schur product, concatenation, inverse, transpose, conversion between types,</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>56</th><td class="r"><ins>&nbsp;submatrix, determinant, Cholesky decomposition, QR triangularisation,</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>57</th><td class="r"><ins>&nbsp;singular value decomposition, eigenvalues of a symmetric matrix, sorting,</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>58</th><td class="r"><ins>&nbsp;fast Fourier and trig. transforms and printing.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>59</th><td class="r"><ins>&nbsp;.</ins>&nbsp;</td></tr><tr class="last"><th>&nbsp;</th><th>60</th><td class="r"><ins>&nbsp;libnewmat-dev contains static libraries, headers, and some documentation.</ins>&nbsp;</td></tr></tbody>
-  </table>
- </li><li class="entry">
-  <h2>newmat-1.10.4/debian/copyright</h2>
-  <table class="inline" summary="Differences" cellspacing="0">
-   <colgroup><col class="lineno" /><col class="lineno" /><col class="content" /></colgroup>
-   <thead><tr>
-    <th>old</th>
-    <th>new</th>
-    <th>&nbsp;</th>
-   </tr></thead><tbody class="add"><tr class="first"><th>&nbsp;</th><th>1</th><td class="r"><ins>This package was debianized by Philippe Coval &lt;rzr@users.sf.net&gt; on</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>2</th><td class="r"><ins>Sat,&nbsp; 1 Apr 2006 12:08:38 +0200</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>3</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>4</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>5</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>6</th><td class="r"><ins>It was downloaded from &lt;http://www.robertnz.net/&gt;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>7</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>8</th><td class="r"><ins>Copyright Holder: Robert Davies &lt;robert[a]statsresearch.co.nz&gt;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>9</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>10</th><td class="r"><ins>I place no restrictions on the use of newmat except that I take</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>11</th><td class="r"><ins>no liability for any problems that may arise from its use,</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>12</th><td class="r"><ins>distribution or other dealings with it.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>13</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>14</th><td class="r"><ins>You can use it in your commercial projects.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>15</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>16</th><td class="r"><ins>You can make and distribute modified or merged versions. You can</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>17</th><td class="r"><ins>include parts of it in your own software.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>18</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>19</th><td class="r"><ins>If you distribute modified or merged versions, please make it</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>20</th><td class="r"><ins>clear which parts are mine and which parts are modified.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>21</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>22</th><td class="r"><ins>For a substantially modified version, simply note that it is,</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>23</th><td class="r"><ins>in part, derived from my software. A comment in the code will</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>24</th><td class="r"><ins>be sufficient.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>25</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>26</th><td class="r"><ins>The software is provided &#34;as is&#34;, without warranty of any kind.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>27</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>28</th><td class="r"><ins>Please understand that there may still be bugs and errors.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>29</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>30</th><td class="r"><ins>Use at your own risk. I (Robert Davies) take no responsibility</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>31</th><td class="r"><ins>for any errors or omissions in this package or for any misfortune</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>32</th><td class="r"><ins>that may befall you or others as a result of your use,</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>33</th><td class="r"><ins>distribution or other dealings with it.</ins>&nbsp;</td></tr><tr class="last"><th>&nbsp;</th><th>34</th><td class="r"><ins></ins>&nbsp;</td></tr></tbody>
-  </table>
- </li><li class="entry">
-  <h2>newmat-1.10.4/example.dsp</h2>
-  <table class="inline" summary="Differences" cellspacing="0">
-   <colgroup><col class="lineno" /><col class="lineno" /><col class="content" /></colgroup>
-   <thead><tr>
-    <th>old</th>
-    <th>new</th>
-    <th>&nbsp;</th>
-   </tr></thead><tbody class="add"><tr class="first"><th>&nbsp;</th><th>1</th><td class="r"><ins># Microsoft Developer Studio Project File - Name=&#34;example&#34; - Package Owner=&lt;4&gt;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>2</th><td class="r"><ins># Microsoft Developer Studio Generated Build File, Format Version 6.00</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>3</th><td class="r"><ins># Added By Philippe COVAL &lt;rzr@users.sf.net&gt;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>4</th><td class="r"><ins># ** DO NOT EDIT **</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>5</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>6</th><td class="r"><ins># TARGTYPE &#34;Win32 (x86) Console Application&#34; 0x0103</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>7</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>8</th><td class="r"><ins>CFG=example - Win32 Debug</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>9</th><td class="r"><ins>!MESSAGE This is not a valid makefile. To build this project using NMAKE,</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>10</th><td class="r"><ins>!MESSAGE use the Export Makefile command and run</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>11</th><td class="r"><ins>!MESSAGE </ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>12</th><td class="r"><ins>!MESSAGE NMAKE /f &#34;example.mak&#34;.</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>13</th><td class="r"><ins>!MESSAGE </ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>14</th><td class="r"><ins>!MESSAGE You can specify a configuration when running NMAKE</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>15</th><td class="r"><ins>!MESSAGE by defining the macro CFG on the command line. For example:</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>16</th><td class="r"><ins>!MESSAGE </ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>17</th><td class="r"><ins>!MESSAGE NMAKE /f &#34;example.mak&#34; CFG=&#34;example - Win32 Debug&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>18</th><td class="r"><ins>!MESSAGE </ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>19</th><td class="r"><ins>!MESSAGE Possible choices for configuration are:</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>20</th><td class="r"><ins>!MESSAGE </ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>21</th><td class="r"><ins>!MESSAGE &#34;example - Win32 Release&#34; (based on &#34;Win32 (x86) Console Application&#34;)</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>22</th><td class="r"><ins>!MESSAGE &#34;example - Win32 Debug&#34; (based on &#34;Win32 (x86) Console Application&#34;)</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>23</th><td class="r"><ins>!MESSAGE </ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>24</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>25</th><td class="r"><ins># Begin Project</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>26</th><td class="r"><ins># PROP AllowPerConfigDependencies 0</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>27</th><td class="r"><ins># PROP Scc_ProjName &#34;&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>28</th><td class="r"><ins># PROP Scc_LocalPath &#34;&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>29</th><td class="r"><ins>CPP=cl.exe</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>30</th><td class="r"><ins>RSC=rc.exe</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>31</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>32</th><td class="r"><ins>!IF&nbsp; &#34;$(CFG)&#34; == &#34;example - Win32 Release&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>33</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>34</th><td class="r"><ins># PROP BASE Use_MFC 0</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>35</th><td class="r"><ins># PROP BASE Use_Debug_Libraries 0</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>36</th><td class="r"><ins># PROP BASE Output_Dir &#34;Release&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>37</th><td class="r"><ins># PROP BASE Intermediate_Dir &#34;Release&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>38</th><td class="r"><ins># PROP BASE Target_Dir &#34;&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>39</th><td class="r"><ins># PROP Use_MFC 0</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>40</th><td class="r"><ins># PROP Use_Debug_Libraries 0</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>41</th><td class="r"><ins># PROP Output_Dir &#34;Release&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>42</th><td class="r"><ins># PROP Intermediate_Dir &#34;Release&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>43</th><td class="r"><ins># PROP Target_Dir &#34;&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>44</th><td class="r"><ins># ADD BASE CPP /nologo /W3 /GX /O2 /D &#34;WIN32&#34; /D &#34;NDEBUG&#34; /D &#34;_CONSOLE&#34; /D &#34;_MBCS&#34; /YX /FD /c</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>45</th><td class="r"><ins># ADD CPP /nologo /W3 /GX /O2 /D &#34;WIN32&#34; /D &#34;NDEBUG&#34; /D &#34;_CONSOLE&#34; /D &#34;_MBCS&#34; /YX /FD /c</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>46</th><td class="r"><ins># ADD BASE RSC /l 0x40c /d &#34;NDEBUG&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>47</th><td class="r"><ins># ADD RSC /l 0x40c /d &#34;NDEBUG&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>48</th><td class="r"><ins>BSC32=bscmake.exe</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>49</th><td class="r"><ins># ADD BASE BSC32 /nologo</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>50</th><td class="r"><ins># ADD BSC32 /nologo</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>51</th><td class="r"><ins>LINK32=link.exe</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>52</th><td class="r"><ins># ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>53</th><td class="r"><ins># ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>54</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>55</th><td class="r"><ins>!ELSEIF&nbsp; &#34;$(CFG)&#34; == &#34;example - Win32 Debug&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>56</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>57</th><td class="r"><ins># PROP BASE Use_MFC 0</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>58</th><td class="r"><ins># PROP BASE Use_Debug_Libraries 1</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>59</th><td class="r"><ins># PROP BASE Output_Dir &#34;Debug&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>60</th><td class="r"><ins># PROP BASE Intermediate_Dir &#34;Debug&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>61</th><td class="r"><ins># PROP BASE Target_Dir &#34;&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>62</th><td class="r"><ins># PROP Use_MFC 0</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>63</th><td class="r"><ins># PROP Use_Debug_Libraries 1</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>64</th><td class="r"><ins># PROP Output_Dir &#34;Debug&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>65</th><td class="r"><ins># PROP Intermediate_Dir &#34;Debug&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>66</th><td class="r"><ins># PROP Target_Dir &#34;&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>67</th><td class="r"><ins># ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D &#34;WIN32&#34; /D &#34;_DEBUG&#34; /D &#34;_CONSOLE&#34; /D &#34;_MBCS&#34; /YX /FD /GZ /c</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>68</th><td class="r"><ins># ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D &#34;WIN32&#34; /D &#34;_DEBUG&#34; /D &#34;_CONSOLE&#34; /D &#34;_MBCS&#34; /YX /FD /GZ /c</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>69</th><td class="r"><ins># ADD BASE RSC /l 0x40c /d &#34;_DEBUG&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>70</th><td class="r"><ins># ADD RSC /l 0x40c /d &#34;_DEBUG&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>71</th><td class="r"><ins>BSC32=bscmake.exe</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>72</th><td class="r"><ins># ADD BASE BSC32 /nologo</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>73</th><td class="r"><ins># ADD BSC32 /nologo</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>74</th><td class="r"><ins>LINK32=link.exe</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>75</th><td class="r"><ins># ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>76</th><td class="r"><ins># ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>77</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>78</th><td class="r"><ins>!ENDIF </ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>79</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>80</th><td class="r"><ins># Begin Target</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>81</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>82</th><td class="r"><ins># Name &#34;example - Win32 Release&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>83</th><td class="r"><ins># Name &#34;example - Win32 Debug&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>84</th><td class="r"><ins># Begin Group &#34;Source Files&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>85</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>86</th><td class="r"><ins># PROP Default_Filter &#34;cpp;c;cxx;rc;def;r;odl;idl;hpj;bat&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>87</th><td class="r"><ins># Begin Source File</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>88</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>89</th><td class="r"><ins>SOURCE=.\example.cpp</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>90</th><td class="r"><ins># End Source File</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>91</th><td class="r"><ins># End Group</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>92</th><td class="r"><ins># Begin Group &#34;Header Files&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>93</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>94</th><td class="r"><ins># PROP Default_Filter &#34;h;hpp;hxx;hm;inl&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>95</th><td class="r"><ins># End Group</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>96</th><td class="r"><ins># Begin Group &#34;Resource Files&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>97</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>98</th><td class="r"><ins># PROP Default_Filter &#34;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe&#34;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>99</th><td class="r"><ins># End Group</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>100</th><td class="r"><ins># End Target</ins>&nbsp;</td></tr><tr class="last"><th>&nbsp;</th><th>101</th><td class="r"><ins># End Project</ins>&nbsp;</td></tr></tbody>
-  </table>
- </li><li class="entry">
-  <h2>newmat-1.10.4/newmat.dsw</h2>
-  <table class="inline" summary="Differences" cellspacing="0">
-   <colgroup><col class="lineno" /><col class="lineno" /><col class="content" /></colgroup>
-   <thead><tr>
-    <th>old</th>
-    <th>new</th>
-    <th>&nbsp;</th>
-   </tr></thead><tbody class="add"><tr class="first"><th>&nbsp;</th><th>1</th><td class="r"><ins>Microsoft Developer Studio Workspace File, Format Version 6.00</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>2</th><td class="r"><ins># Added By Philippe COVAL &lt;rzr@users.sf.net&gt;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>3</th><td class="r"><ins># WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>4</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>5</th><td class="r"><ins>###############################################################################</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>6</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>7</th><td class="r"><ins>Project: &#34;example&#34;=&#34;.\example.dsp&#34; - Package Owner=&lt;4&gt;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>8</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>9</th><td class="r"><ins>Package=&lt;5&gt;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>10</th><td class="r"><ins>{{{</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>11</th><td class="r"><ins>}}}</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>12</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>13</th><td class="r"><ins>Package=&lt;4&gt;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>14</th><td class="r"><ins>{{{</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>15</th><td class="r"><ins>&nbsp; &nbsp; Begin Project Dependency</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>16</th><td class="r"><ins>&nbsp; &nbsp; Project_Dep_Name newmat</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>17</th><td class="r"><ins>&nbsp; &nbsp; End Project Dependency</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>18</th><td class="r"><ins>}}}</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>19</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>20</th><td class="r"><ins>###############################################################################</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>21</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>22</th><td class="r"><ins>Project: &#34;newmat&#34;=&#34;.\newmat.dsp&#34; - Package Owner=&lt;4&gt;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>23</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>24</th><td class="r"><ins>Package=&lt;5&gt;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>25</th><td class="r"><ins>{{{</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>26</th><td class="r"><ins>}}}</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>27</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>28</th><td class="r"><ins>Package=&lt;4&gt;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>29</th><td class="r"><ins>{{{</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>30</th><td class="r"><ins>}}}</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>31</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>32</th><td class="r"><ins>###############################################################################</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>33</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>34</th><td class="r"><ins>Global:</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>35</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>36</th><td class="r"><ins>Package=&lt;5&gt;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>37</th><td class="r"><ins>{{{</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>38</th><td class="r"><ins>}}}</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>39</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>40</th><td class="r"><ins>Package=&lt;3&gt;</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>41</th><td class="r"><ins>{{{</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>42</th><td class="r"><ins>}}}</ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>43</th><td class="r"><ins></ins>&nbsp;</td></tr><tr><th>&nbsp;</th><th>44</th><td class="r"><ins>###############################################################################</ins>&nbsp;</td></tr><tr class="last"><th>&nbsp;</th><th>45</th><td class="r"><ins></ins>&nbsp;</td></tr></tbody>
-  </table>
- </li>
-</ul></div>
-
- </div>
+--- newmat-1.10.4.orig/include.h
++++ newmat-1.10.4/include.h
+@@ -7,7 +7,9 @@
+ #ifndef INCLUDE_LIB
+ #define INCLUDE_LIB
  
-
-
-</div>
-<script type="text/javascript">searchHighlight()</script>
-<div id="altlinks"><h3>Download in other formats:</h3><ul><li class="first last"><a href="/trac/ros/attachment/ticket/167/newmat_1.10.4-2build1.diff?format=raw">Original Format</a></li></ul></div>
-
-</div>
-
-<div id="footer">
- <hr />
- <a id="tracpowered" href="http://trac.edgewall.org/"><img src="/trac/ros/chrome/common/trac_logo_mini.png" height="30" width="107"
-   alt="Trac Powered"/></a>
- <p class="left">
-  Powered by <a href="/trac/ros/about"><strong>Trac 0.10.4</strong></a><br />
-  By <a href="http://www.edgewall.org/">Edgewall Software</a>.
- </p>
- <p class="right">
-  <a href="http://willowgarage.com">Willow Garage</a>
- </p>
-</div>
-
-
-
- </body>
-</html>
-
+-//#define use_namespace                   // define name spaces
++#include "config.h" // create a blank file if missing (not using autotools) , 
++
++#define use_namespace   // define name spaces // commented by default
+ 
+ //#define SETUP_C_SUBSCRIPTS              // allow element access via A[i][j]
+ 
+@@ -36,7 +38,7 @@
+ //#define ios_format_flags ios::fmtflags  // for Gnu 3 and Intel for Linux
+ 
+ 
+-//#define _STANDARD_                    // using standard library
++#define _STANDARD_    // using standard library // default is commented
+ 
+ //#define use_float_h                   // use float.h for precision data
+ 
+@@ -73,8 +75,13 @@
+       #include <limits>              // for VC++6
+    #endif
+    #ifdef WANT_STREAM
+-      #include <iostream>
+-      #include <iomanip>
++      #ifdef use_namespace //#~rzr{ needed for msvc-6 msvc-7.1 msvc-8
++         #include <iostream>
++         #include <iomanip>
++      #else
++         #include <iostream.h>
++         #include <iomanip.h>
++      #endif // #~rzr}
+    #endif
+    #ifdef WANT_MATH
+       #include <cmath>
+@@ -106,8 +113,13 @@
+ //   }
+ 
+    #ifdef WANT_STREAM
+-      #include <iostream.h>
+-      #include <iomanip.h>
++      #ifdef use_namespace //#~rzr{ needed for msvc-6 msvc-7.1 msvc-8
++         #include <iostream>
++         #include <iomanip>
++      #else
++         #include <iostream.h>
++         #include <iomanip.h>
++      #endif // #~rzr}
+    #endif
+    #ifdef WANT_MATH
+       #include <math.h>
+--- newmat-1.10.4.orig/newmat.h
++++ newmat-1.10.4/newmat.h
+@@ -560,6 +560,8 @@
+ 
+ 
+ 
++class Matrix;
++Real DotProduct(const Matrix& A, const Matrix& B);
+ class Matrix : public GeneralMatrix             // usual rectangular matrix
+ {
+    GeneralMatrix* Image() const;                // copy of matrix
+@@ -1207,6 +1209,12 @@
+    NEW_DELETE(AddedMatrix)
+ };
+ 
++class SPMatrix;
++#ifndef TEMPS_DESTROYED_QUICKLY
++   SPMatrix SP(const BaseMatrix&, const BaseMatrix&);
++#else
++   SPMatrix& SP(const BaseMatrix&, const BaseMatrix&);
++#endif
+ class SPMatrix : public AddedMatrix
+ {
+ protected:
+@@ -1230,6 +1238,12 @@
+    NEW_DELETE(SPMatrix)
+ };
+ 
++class KPMatrix;
++#ifndef TEMPS_DESTROYED_QUICKLY
++   KPMatrix KP(const BaseMatrix&, const BaseMatrix&);
++#else
++   KPMatrix& KP(const BaseMatrix&, const BaseMatrix&);
++#endif
+ class KPMatrix : public MultipliedMatrix
+ {
+ protected:
+@@ -1328,6 +1342,12 @@
+    NEW_DELETE(ShiftedMatrix)
+ };
+ 
++class NegShiftedMatrix;
++#ifndef TEMPS_DESTROYED_QUICKLY
++   NegShiftedMatrix operator-(Real, const BaseMatrix&);
++#else
++   NegShiftedMatrix& operator-(Real, const BaseMatrix&);
++#endif
+ class NegShiftedMatrix : public ShiftedMatrix
+ {
+ protected:
+--- newmat-1.10.4.orig/newmatnl.cpp
++++ newmat-1.10.4/newmatnl.cpp
+@@ -10,6 +10,7 @@
+ #include "newmatnl.h"
+ 
+ #ifdef use_namespace
++using namespace std; //#~rzr : needed for msvc
+ namespace NEWMAT {
+ #endif
+ 
+--- newmat-1.10.4.orig/tmt1.cpp
++++ newmat-1.10.4/tmt1.cpp
+@@ -10,6 +10,7 @@
+ #include "tmt.h"
+ 
+ #ifdef use_namespace
++using namespace std; //#~rzr : needed for msvc
+ using namespace NEWMAT;
+ #endif
+ 
+--- newmat-1.10.4.orig/tmtm.cpp
++++ newmat-1.10.4/tmtm.cpp
+@@ -8,6 +8,7 @@
+ #include "tmt.h"
+ 
+ #ifdef use_namespace
++using namespace std; //#~rzr : needed for msvc
+ using namespace NEWMAT;
+ #endif
+ 
+--- newmat-1.10.4.orig/debian/README.Debian
++++ newmat-1.10.4/debian/README.Debian
+@@ -0,0 +1,8 @@
++newmat for Debian
++-----------------
++
++Upstream version name was 10C renamed to 1.10.2
++
++Using default settings plus C++ namespaces support to prevent polution
++
++ -- Philippe Coval <rzr@users.sf.net>, Sat,  1 Apr 2006 12:08:38 +0200
+--- newmat-1.10.4.orig/debian/changelog
++++ newmat-1.10.4/debian/changelog
+@@ -0,0 +1,25 @@
++newmat (1.10.4-2build1) feisty; urgency=low
++
++  * Rebuild for ldbl128 change on powerpc and sparc.
++
++ -- Matthias Klose <doko@ubuntu.com>  Thu,  2 Nov 2006 10:23:58 +0000
++
++newmat (1.10.4-2) unstable; urgency=low
++
++  * Closes: #367875 (for g++ 4.1 support)
++
++ -- Philippe Coval <rzr@users.sf.net>  Sat, 20 May 2006 00:01:28 +0200
++
++newmat (1.10.4-1) unstable; urgency=low
++
++  * New upstream release
++
++ -- Philippe Coval <rzr@users.sf.net>  Sat,  6 May 2006 01:09:53 +0200
++
++newmat (1.10.3-1) unstable; urgency=low
++
++  * Initial release Closes: #335185
++
++ -- Philippe Coval <rzr@users.sf.net>  Sat,  1 Apr 2006 12:08:38 +0200
++
++
+--- newmat-1.10.4.orig/debian/compat
++++ newmat-1.10.4/debian/compat
+@@ -0,0 +1 @@
++4
+--- newmat-1.10.4.orig/debian/Makefile.am
++++ newmat-1.10.4/debian/Makefile.am
+@@ -0,0 +1,37 @@
++#ident "$Id: Makefile.am -- pcoval"
++lib_LTLIBRARIES = libnewmat.la
++
++libnewmat_la_LDFLAGS = -version-info 10:0:0
++
++libnewmat_la_SOURCES = \
++  newmat1.cpp newmat2.cpp newmat3.cpp newmat4.cpp newmat5.cpp newmat6.cpp \
++  newmat7.cpp newmat8.cpp newmatex.cpp bandmat.cpp submat.cpp myexcept.cpp \
++  cholesky.cpp evalue.cpp fft.cpp hholder.cpp jacobi.cpp newfft.cpp \
++  sort.cpp svd.cpp newmatrm.cpp newmat9.cpp
++ #
++
++pkgincludedir = $(includedir)/newmat
++
++pkginclude_HEADERS = \
++  config.h include.h \
++  boolean.h controlw.h myexcept.h newmat.h newmatnl.h newmatrm.h solution.h \
++  newmatap.h  newmatio.h  newmatrc.h  precisio.h
++ #
++
++bin_PROGRAMS = example test_exc tmt
++
++example_SOURCES = example.cpp
++example_LDFLAGS = -lnewmat
++
++test_exc_SOURCES = test_exc.cpp
++test_exc_LDFLAGS = -lnewmat
++
++
++tmt_SOURCES = tmt.cpp \
++  tmt1.cpp tmt2.cpp tmt3.cpp tmt4.cpp tmt5.cpp tmt6.cpp tmt7.cpp tmt8.cpp \
++  tmt9.cpp tmta.cpp tmtb.cpp tmtc.cpp tmtd.cpp tmte.cpp tmtf.cpp tmtg.cpp \
++  tmth.cpp tmti.cpp tmtj.cpp tmtk.cpp tmtl.cpp tmtm.cpp
++ #
++tmt_LDFLAGS = -lnewmat
++
++#eof "$Id: Makefile.am -- pcoval"
+--- newmat-1.10.4.orig/debian/bootstrap
++++ newmat-1.10.4/debian/bootstrap
+@@ -0,0 +1,15 @@
++#! /bin/sh
++set -xe
++
++aclocal-1.7
++libtoolize --force --copy
++libtoolize --ltdl --force --copy
++autoheader
++touch  INSTALL NEWS ChangeLog # COPYING README AUTHORS  # TODO 
++automake-1.7 --add-missing --copy 
++automake-1.7
++autoconf
++
++rm -f config.cache
++
++#eof "$Id: bootstrap -- pcoval $"
+--- newmat-1.10.4.orig/debian/dirs
++++ newmat-1.10.4/debian/dirs
+@@ -0,0 +1,3 @@
++usr/lib
++usr/include
++
+--- newmat-1.10.4.orig/debian/configure.in
++++ newmat-1.10.4/debian/configure.in
+@@ -0,0 +1,35 @@
++#                                               -*- Autoconf -*-
++# Process this file with autoconf to produce a configure script.
++AC_PREREQ(2.59)
++AC_INIT(newmat, 1.10.2, rzr@users.sf.net)
++AM_INIT_AUTOMAKE(libnewmat, 1.10.2)
++
++AC_CONFIG_SRCDIR([config.h.in])
++AC_CONFIG_HEADER([config.h])
++# AC_CONFIG_FILES([Makefile]) 
++
++AC_LANG_CPLUSPLUS
++# Checks for programs.
++AC_PROG_CXX
++AC_PROG_CC
++AC_PROG_INSTALL
++AC_PROG_LIBTOOL
++
++# Checks for libraries.
++
++# Checks for header files.
++AC_CHECK_HEADER( [ float.h , cstdlib , setjmp.h , limits ] )
++
++# Checks for typedefs, structures, and compiler characteristics.
++AC_HEADER_STDBOOL
++AC_C_CONST
++AC_C_INLINE
++AC_TYPE_SIZE_T
++AC_STRUCT_TM
++
++# Checks for library functions.
++AC_CHECK_FUNCS([floor pow sqrt])
++AC_OUTPUT( [Makefile] )
++
++
++#eof "Id: configure.in -- pcoval $"
+--- newmat-1.10.4.orig/debian/libnewmat10-dev.examples
++++ newmat-1.10.4/debian/libnewmat10-dev.examples
+@@ -0,0 +1,2 @@
++example.cpp
++example.txt
+--- newmat-1.10.4.orig/debian/libnewmat10-dev.files
++++ newmat-1.10.4/debian/libnewmat10-dev.files
+@@ -0,0 +1,5 @@
++usr/include/*
++usr/lib/lib*.a
++usr/lib/lib*.so
++usr/lib/pkgconfig/*
++usr/lib/*.la
+--- newmat-1.10.4.orig/debian/libnewmat10-dev.links
++++ newmat-1.10.4/debian/libnewmat10-dev.links
+@@ -0,0 +1 @@
++/usr/lib/libnewmat.so.10 /usr/lib/libnewmat.so
+--- newmat-1.10.4.orig/debian/libnewmat10.files
++++ newmat-1.10.4/debian/libnewmat10.files
+@@ -0,0 +1 @@
++usr/lib/lib*.so.*
+--- newmat-1.10.4.orig/debian/control
++++ newmat-1.10.4/debian/control
+@@ -0,0 +1,60 @@
++Source: newmat
++Priority: optional
++Maintainer: Philippe Coval <rzr@users.sf.net>
++Uploader: Andreas Tille <tille@debian.org>
++Build-Depends: debhelper (>= 4.0.0), autotools-dev, automake1.7, autoconf (>> 2.13), libtool , libltdl3-dev
++Standards-Version: 3.6.2
++Section: libs
++
++Package: libnewmat10
++Section: libs
++Architecture: any
++Depends: ${shlibs:Depends}, ${misc:Depends}
++Description: matrix manipulations C++ library
++ Newmat library is intended for scientists and engineers 
++ who need to manipulate a variety of types of matrices 
++ using standard matrix operations.
++ Emphasis is on the kind of operations needed in statistical calculations
++ such as least squares, linear equation solve and eigenvalues.
++ .
++ Newmat supports matrix types: Matrix (rectangular matrix); 
++ UpperTriangularMatrix; LowerTriangularMatrix; DiagonalMatrix; 
++ SymmetricMatrix; BandMatrix; UpperBandMatrix; LowerBandMatrix; 
++ SymmetricBandMatrix; IdentityMatrix;
++ RowVector; ColumnVector.
++ .
++ Only one element type (float or double) is supported.
++ .
++ The library includes the operations *, +, -, *=, +=, -=, Kronecker product,
++ Schur product, concatenation, inverse, transpose, conversion between types,
++ submatrix, determinant, Cholesky decomposition, QR triangularisation,
++ singular value decomposition, eigenvalues of a symmetric matrix, sorting,
++ fast Fourier and trig. transforms and printing.
++
++Package: libnewmat10-dev
++Provides: libnewmat-dev
++Section: libdevel
++Architecture: any
++Depends: libnewmat10 (= ${Source-Version})
++Description: matrix manipulations C++ library
++ Newmat library is intended for scientists and engineers 
++ who need to manipulate a variety of types of matrices 
++ using standard matrix operations.
++ Emphasis is on the kind of operations needed in statistical calculations
++ such as least squares, linear equation solve and eigenvalues.
++ .
++ Newmat supports matrix types: Matrix (rectangular matrix); 
++ UpperTriangularMatrix; LowerTriangularMatrix; DiagonalMatrix; 
++ SymmetricMatrix; BandMatrix; UpperBandMatrix; LowerBandMatrix; 
++ SymmetricBandMatrix; IdentityMatrix;
++ RowVector; ColumnVector.
++ .
++ Only one element type (float or double) is supported (default is double).
++ .
++ The library includes the operations *, +, -, *=, +=, -=, Kronecker product,
++ Schur product, concatenation, inverse, transpose, conversion between types,
++ submatrix, determinant, Cholesky decomposition, QR triangularisation,
++ singular value decomposition, eigenvalues of a symmetric matrix, sorting,
++ fast Fourier and trig. transforms and printing.
++ .
++ libnewmat-dev contains static libraries, headers, and some documentation.
+--- newmat-1.10.4.orig/debian/rules
++++ newmat-1.10.4/debian/rules
+@@ -0,0 +1,103 @@
++#!/usr/bin/make -f
++# -*- makefile -*-
++# Uncomment this to turn on verbose mode.
++#export DH_VERBOSE=1
++
++DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
++DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
++
++
++CXXFLAGS = -Wall -g $(DEB_ARCH_OPT_FLAGS)
++
++ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
++	CXXFLAGS += -O0
++else
++	CXXFLAGS += -O2
++endif
++
++# shared library versions,
++version=`ls src/.libs/lib*.so.* | \
++awk '{if (match($$0,/[0-9]+\.[0-9]+\.[0-9]+$$/)) print substr($$0,RSTART)}'`
++major=`ls src/.libs/lib*.so.* | \
++awk '{if (match($$0,/\.so\.[0-9]+$$/)) print substr($$0,RSTART+4)}'`
++
++
++autotools_input := configure.in Makefile.am
++
++
++config-stamp:
++	cp -f $(patsubst %,debian/%,$(autotools_input)) .
++	${SHELL} ./debian/bootstrap
++# 	autoreconf --force --install
++	touch $@
++
++config.status: config-stamp
++	dh_testdir
++	CFLAGS="$(CFLAGS) -Wl,-z,defs" \
++	 ./configure --host=$(DEB_HOST_GNU_TYPE) \
++	 --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr \
++	 --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info
++
++build: build-stamp
++build-stamp:  config.status
++	dh_testdir
++	$(MAKE)
++# regression tests
++	./example
++	./tmt
++	./test_exc
++#
++	touch build-stamp
++
++autoclean:
++	-rm -f a.out aclocal.m4 config.log config.sub config.guess      \
++	  configure cryptopp_config.h.in depcomp install-sh ltmain.sh     \
++	  missing $(autotools_input)  config.h.in   Makefile.in \
++	  config.status libtool  mkinstalldirs #  config.h
++	-rm -r libltdl
++
++distclean: clean
++	-rm -r *stamp
++
++clean:autoclean
++	dh_testdir
++	dh_testroot
++	rm -f build-stamp config-stamp
++	-$(MAKE) -k distclean
++	-${RM} *.lo NEWS INSTALL *~
++	dh_clean 
++
++install: build
++	dh_testdir
++	dh_testroot
++	dh_clean -k 
++	dh_installdirs
++	$(MAKE) install prefix=$(CURDIR)/debian/tmp/usr
++
++
++binary-indep: build install
++
++
++binary-arch: build install
++	dh_testdir
++	dh_testroot
++	dh_movefiles
++	dh_installchangelogs ChangeLog
++	dh_installdocs
++	dh_installexamples
++	dh_install
++	dh_link
++	dh_strip
++	dh_compress
++	dh_fixperms
++	dh_makeshlibs
++	dh_installdeb
++	dh_shlibdeps
++	dh_gencontrol
++	dh_md5sums
++	dh_builddeb
++
++binary: binary-indep binary-arch
++.PHONY: build clean binary-indep binary-arch binary install 
++
++#eof "$Id: rules -- pcoval $"
+--- newmat-1.10.4.orig/debian/copyright
++++ newmat-1.10.4/debian/copyright
+@@ -0,0 +1,34 @@
++This package was debianized by Philippe Coval <rzr@users.sf.net> on
++Sat,  1 Apr 2006 12:08:38 +0200
++
++
++
++It was downloaded from <http://www.robertnz.net/>
++
++Copyright Holder: Robert Davies <robert[a]statsresearch.co.nz>
++
++I place no restrictions on the use of newmat except that I take
++no liability for any problems that may arise from its use,
++distribution or other dealings with it.
++
++You can use it in your commercial projects.
++
++You can make and distribute modified or merged versions. You can
++include parts of it in your own software.
++
++If you distribute modified or merged versions, please make it
++clear which parts are mine and which parts are modified.
++
++For a substantially modified version, simply note that it is,
++in part, derived from my software. A comment in the code will
++be sufficient.
++
++The software is provided "as is", without warranty of any kind.
++
++Please understand that there may still be bugs and errors.
++
++Use at your own risk. I (Robert Davies) take no responsibility
++for any errors or omissions in this package or for any misfortune
++that may befall you or others as a result of your use,
++distribution or other dealings with it.
++
+--- newmat-1.10.4.orig/debian/docs
++++ newmat-1.10.4/debian/docs
+@@ -0,0 +1 @@
++nm10.htm
+--- newmat-1.10.4.orig/example.dsp
++++ newmat-1.10.4/example.dsp
+@@ -0,0 +1,101 @@
++# Microsoft Developer Studio Project File - Name="example" - Package Owner=<4>
++# Microsoft Developer Studio Generated Build File, Format Version 6.00
++# Added By Philippe COVAL <rzr@users.sf.net>
++# ** DO NOT EDIT **
++
++# TARGTYPE "Win32 (x86) Console Application" 0x0103
++
++CFG=example - Win32 Debug
++!MESSAGE This is not a valid makefile. To build this project using NMAKE,
++!MESSAGE use the Export Makefile command and run
++!MESSAGE 
++!MESSAGE NMAKE /f "example.mak".
++!MESSAGE 
++!MESSAGE You can specify a configuration when running NMAKE
++!MESSAGE by defining the macro CFG on the command line. For example:
++!MESSAGE 
++!MESSAGE NMAKE /f "example.mak" CFG="example - Win32 Debug"
++!MESSAGE 
++!MESSAGE Possible choices for configuration are:
++!MESSAGE 
++!MESSAGE "example - Win32 Release" (based on "Win32 (x86) Console Application")
++!MESSAGE "example - Win32 Debug" (based on "Win32 (x86) Console Application")
++!MESSAGE 
++
++# Begin Project
++# PROP AllowPerConfigDependencies 0
++# PROP Scc_ProjName ""
++# PROP Scc_LocalPath ""
++CPP=cl.exe
++RSC=rc.exe
++
++!IF  "$(CFG)" == "example - Win32 Release"
++
++# PROP BASE Use_MFC 0
++# PROP BASE Use_Debug_Libraries 0
++# PROP BASE Output_Dir "Release"
++# PROP BASE Intermediate_Dir "Release"
++# PROP BASE Target_Dir ""
++# PROP Use_MFC 0
++# PROP Use_Debug_Libraries 0
++# PROP Output_Dir "Release"
++# PROP Intermediate_Dir "Release"
++# PROP Target_Dir ""
++# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
++# ADD CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
++# ADD BASE RSC /l 0x40c /d "NDEBUG"
++# ADD RSC /l 0x40c /d "NDEBUG"
++BSC32=bscmake.exe
++# ADD BASE BSC32 /nologo
++# ADD BSC32 /nologo
++LINK32=link.exe
++# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
++# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
++
++!ELSEIF  "$(CFG)" == "example - Win32 Debug"
++
++# PROP BASE Use_MFC 0
++# PROP BASE Use_Debug_Libraries 1
++# PROP BASE Output_Dir "Debug"
++# PROP BASE Intermediate_Dir "Debug"
++# PROP BASE Target_Dir ""
++# PROP Use_MFC 0
++# PROP Use_Debug_Libraries 1
++# PROP Output_Dir "Debug"
++# PROP Intermediate_Dir "Debug"
++# PROP Target_Dir ""
++# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
++# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
++# ADD BASE RSC /l 0x40c /d "_DEBUG"
++# ADD RSC /l 0x40c /d "_DEBUG"
++BSC32=bscmake.exe
++# ADD BASE BSC32 /nologo
++# ADD BSC32 /nologo
++LINK32=link.exe
++# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
++# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
++
++!ENDIF 
++
++# Begin Target
++
++# Name "example - Win32 Release"
++# Name "example - Win32 Debug"
++# Begin Group "Source Files"
++
++# PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
++# Begin Source File
++
++SOURCE=.\example.cpp
++# End Source File
++# End Group
++# Begin Group "Header Files"
++
++# PROP Default_Filter "h;hpp;hxx;hm;inl"
++# End Group
++# Begin Group "Resource Files"
++
++# PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
++# End Group
++# End Target
++# End Project
+--- newmat-1.10.4.orig/newmat.dsp
++++ newmat-1.10.4/newmat.dsp
+@@ -0,0 +1,248 @@
++# Microsoft Developer Studio Project File - Name="newmat" - Package Owner=<4>
++# Microsoft Developer Studio Generated Build File, Format Version 6.00
++# Added By Philippe COVAL <rzr@users.sf.net>
++# ** DO NOT EDIT **
++# TARGTYPE "Win32 (x86) Static Library" 0x0104
++
++CFG=newmat - Win32 Debug
++!MESSAGE This is not a valid makefile. To build this project using NMAKE,
++!MESSAGE use the Export Makefile command and run
++!MESSAGE 
++!MESSAGE NMAKE /f "newmat.mak".
++!MESSAGE 
++!MESSAGE You can specify a configuration when running NMAKE
++!MESSAGE by defining the macro CFG on the command line. For example:
++!MESSAGE 
++!MESSAGE NMAKE /f "newmat.mak" CFG="newmat - Win32 Debug"
++!MESSAGE 
++!MESSAGE Possible choices for configuration are:
++!MESSAGE 
++!MESSAGE "newmat - Win32 Release" (based on "Win32 (x86) Static Library")
++!MESSAGE "newmat - Win32 Debug" (based on "Win32 (x86) Static Library")
++!MESSAGE 
++
++# Begin Project
++# PROP AllowPerConfigDependencies 0
++# PROP Scc_ProjName ""
++# PROP Scc_LocalPath ""
++CPP=cl.exe
++RSC=rc.exe
++
++!IF  "$(CFG)" == "newmat - Win32 Release"
++
++# PROP BASE Use_MFC 0
++# PROP BASE Use_Debug_Libraries 0
++# PROP BASE Output_Dir "Release"
++# PROP BASE Intermediate_Dir "Release"
++# PROP BASE Target_Dir ""
++# PROP Use_MFC 0
++# PROP Use_Debug_Libraries 0
++# PROP Output_Dir "Release"
++# PROP Intermediate_Dir "Release"
++# PROP Target_Dir ""
++# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
++# ADD CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
++# ADD BASE RSC /l 0x40c /d "NDEBUG"
++# ADD RSC /l 0x40c /d "NDEBUG"
++BSC32=bscmake.exe
++# ADD BASE BSC32 /nologo
++# ADD BSC32 /nologo
++LIB32=link.exe -lib
++# ADD BASE LIB32 /nologo
++# ADD LIB32 /nologo
++
++!ELSEIF  "$(CFG)" == "newmat - Win32 Debug"
++
++# PROP BASE Use_MFC 0
++# PROP BASE Use_Debug_Libraries 1
++# PROP BASE Output_Dir "Debug"
++# PROP BASE Intermediate_Dir "Debug"
++# PROP BASE Target_Dir ""
++# PROP Use_MFC 0
++# PROP Use_Debug_Libraries 1
++# PROP Output_Dir "Debug"
++# PROP Intermediate_Dir "Debug"
++# PROP Target_Dir ""
++# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
++# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /FR /YX /FD /GZ /c
++# ADD BASE RSC /l 0x40c /d "_DEBUG"
++# ADD RSC /l 0x40c /d "_DEBUG"
++BSC32=bscmake.exe
++# ADD BASE BSC32 /nologo
++# ADD BSC32 /nologo
++LIB32=link.exe -lib
++# ADD BASE LIB32 /nologo
++# ADD LIB32 /nologo
++
++!ENDIF 
++
++# Begin Target
++
++# Name "newmat - Win32 Release"
++# Name "newmat - Win32 Debug"
++# Begin Group "Source Files"
++
++# PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
++# Begin Source File
++
++SOURCE=.\bandmat.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\cholesky.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\evalue.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\fft.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\hholder.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\jacobi.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\myexcept.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\newfft.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmat.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmat1.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmat2.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmat3.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmat4.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmat5.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmat6.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmat7.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmat8.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmat9.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmatex.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmatnl.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmatrm.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\solution.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\sort.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\submat.cpp
++# End Source File
++# Begin Source File
++
++SOURCE=.\svd.cpp
++# End Source File
++# End Group
++# Begin Group "Header Files"
++
++# PROP Default_Filter "h;hpp;hxx;hm;inl"
++# Begin Source File
++
++SOURCE=.\boolean.h
++# End Source File
++# Begin Source File
++
++SOURCE=.\controlw.h
++# End Source File
++# Begin Source File
++
++SOURCE=.\include.h
++# End Source File
++# Begin Source File
++
++SOURCE=.\myexcept.h
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmat.h
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmatap.h
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmatio.h
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmatnl.h
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmatrc.h
++# End Source File
++# Begin Source File
++
++SOURCE=.\newmatrm.h
++# End Source File
++# Begin Source File
++
++SOURCE=.\precisio.h
++# End Source File
++# Begin Source File
++
++SOURCE=.\solution.h
++# End Source File
++# End Group
++# Begin Source File
++
++SOURCE=.\nm10.htm
++# End Source File
++# Begin Source File
++
++SOURCE=.\readme
++# End Source File
++# End Target
++# End Project
+--- newmat-1.10.4.orig/newmat.dsw
++++ newmat-1.10.4/newmat.dsw
+@@ -0,0 +1,45 @@
++Microsoft Developer Studio Workspace File, Format Version 6.00
++# Added By Philippe COVAL <rzr@users.sf.net>
++# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!
++
++###############################################################################
++
++Project: "example"=".\example.dsp" - Package Owner=<4>
++
++Package=<5>
++{{{
++}}}
++
++Package=<4>
++{{{
++    Begin Project Dependency
++    Project_Dep_Name newmat
++    End Project Dependency
++}}}
++
++###############################################################################
++
++Project: "newmat"=".\newmat.dsp" - Package Owner=<4>
++
++Package=<5>
++{{{
++}}}
++
++Package=<4>
++{{{
++}}}
++
++###############################################################################
++
++Global:
++
++Package=<5>
++{{{
++}}}
++
++Package=<3>
++{{{
++}}}
++
++###############################################################################
++
+--- newmat-1.10.4.orig/ChangeLog
++++ newmat-1.10.4/ChangeLog
+@@ -0,0 +1,12 @@
++Version 10C makes the conditions of use compatible with Debian
++distribution, replaces include.h, myexcept.h, myexcept.cpp, precisio.h
++with recent versions, includes additional make files and makes a
++few minor corrections. 
++
++Version 10B corrects incompatibilities with Gnu G++ version 3.4 and
++Intel C++ for Windows, 8.1. Include.h, myexcept.h, myexcept.cpp,
++precisio.h are replaced with recent versions.
++
++Version 10A corrects an error on the Kronecker production function and
++you can now run Gnu G++ version 3 and Intel for Linux without making
++any modifications.
