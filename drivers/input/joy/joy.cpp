@@ -5,6 +5,10 @@
 #include "ros/node.h"
 #include "joy/MsgJoy.h"
 
+// This should really go in the .msg
+#define MAX_BUTTONS 4
+#define MAX_AXES 4
+
 void *s_joy_func(void *);
 using namespace ros;
 
@@ -15,11 +19,14 @@ public:
 
   int joy_fd;
   string joy_dev;
-  int joy_buttons;
+  int deadzone;
 
-  Joy() : node("joy"), joy_buttons(0)
+  Joy() : node("joy")
   {
-    param<string>("joy_dev", joy_dev, "/dev/input/js0");
+    param<string>("joy/dev", joy_dev, "/dev/input/js0");
+    param<int>("joy/deadzone", deadzone, 2000);
+    printf("dev:%s\n", joy_dev.c_str());
+    printf("deadzone:%d\n", deadzone);
     joy_fd = open(joy_dev.c_str(), O_RDONLY);
     if (joy_fd <= 0)
       log(FATAL, "couldn't open joystick %s.", joy_dev.c_str());
@@ -39,22 +46,27 @@ public:
       switch(event.type)
       {
         case JS_EVENT_BUTTON:
-          if (event.value)
-            joy_buttons |= (1 << event.number);
+          if(event.number >= joy_msg.get_buttons_size())
+          {
+            joy_msg.set_buttons_size(event.number+1);
+            for(unsigned int i=0;i<joy_msg.get_buttons_size();i++)
+              joy_msg.buttons[i] = 0;
+          }
+          if(event.value)
+            joy_msg.buttons[event.number] = 1;
           else
-            joy_buttons &= ~(1 << event.number);
-          joy_msg.buttons = joy_buttons;
+            joy_msg.buttons[event.number] = 0;
           publish("joy", joy_msg);
           break;
         case JS_EVENT_AXIS:
-          switch(event.number)
+          if(event.number >= joy_msg.get_axes_size())
           {
-            case 0: joy_msg.x1 =  event.value / 32767.0; break;
-            case 1: joy_msg.y1 = -event.value / 32767.0; break;
-            case 2: joy_msg.x2 =  event.value / 32767.0; break;
-            case 3: joy_msg.y2 = -event.value / 32767.0; break;
-            default: break;
+            joy_msg.set_axes_size(event.number+1);
+            for(unsigned int i=0;i<joy_msg.get_axes_size();i++)
+              joy_msg.axes[i] = 0.0;
           }
+          joy_msg.axes[event.number] = (fabs(event.value) < deadzone) ? 0.0 : 
+                  (-event.value / 32767.0);
           publish("joy", joy_msg);
           break;
       }
