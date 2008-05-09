@@ -162,11 +162,11 @@ public:
 	double valsq = 0.0;
 	int cnt = 0;
 	for (int i = 0; i < scans.size(); i++) {
-	  if (scans[i][j] < 20.0) {
+	  if (scans[i][j] < 20.0  && scans[i][j] > 0.1) {
 	    val += scans[i][j];
 	    valsq += pow(scans[i][j],2.0);
+            cnt++;
 	  }
-	  cnt++;
 	}
 	
 	if (cnt > 0) {
