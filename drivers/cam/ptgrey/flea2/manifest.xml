@@ -2,6 +2,6 @@
   <depend package="image_utils"/>
   <depend package="sdl"/>
   <export>
-    <cpp lflags="-L${prefix}/lib -lflea2"/>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lflea2 -ldc1394_control -lraw1394"/>
   </export>
 </package>
