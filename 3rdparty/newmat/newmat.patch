@@ -1,0 +1,86 @@
+*** include.h	2006-04-17 01:10:52.000000000 -0700
+--- /tmp/include.h	2008-05-08 12:09:43.000000000 -0700
+***************
+*** 7,13 ****
+  #ifndef INCLUDE_LIB
+  #define INCLUDE_LIB
+  
+! //#define use_namespace                   // define name spaces
+  
+  //#define SETUP_C_SUBSCRIPTS              // allow element access via A[i][j]
+  
+--- 7,15 ----
+  #ifndef INCLUDE_LIB
+  #define INCLUDE_LIB
+  
+! //#include "config.h" // create a blank file if missing (not using autotools) , 
+! 
+! #define use_namespace   // define name spaces // commented by default
+  
+  //#define SETUP_C_SUBSCRIPTS              // allow element access via A[i][j]
+  
+***************
+*** 36,42 ****
+  //#define ios_format_flags ios::fmtflags  // for Gnu 3 and Intel for Linux
+  
+  
+! //#define _STANDARD_                    // using standard library
+  
+  //#define use_float_h                   // use float.h for precision data
+  
+--- 38,44 ----
+  //#define ios_format_flags ios::fmtflags  // for Gnu 3 and Intel for Linux
+  
+  
+! #define _STANDARD_    // using standard library // default is commented
+  
+  //#define use_float_h                   // use float.h for precision data
+  
+***************
+*** 73,80 ****
+        #include <limits>              // for VC++6
+     #endif
+     #ifdef WANT_STREAM
+!       #include <iostream>
+!       #include <iomanip>
+     #endif
+     #ifdef WANT_MATH
+        #include <cmath>
+--- 75,87 ----
+        #include <limits>              // for VC++6
+     #endif
+     #ifdef WANT_STREAM
+!       #ifdef use_namespace //#~rzr{ needed for msvc-6 msvc-7.1 msvc-8
+!          #include <iostream>
+!          #include <iomanip>
+!       #else
+!          #include <iostream.h>
+!          #include <iomanip.h>
+!       #endif // #~rzr}
+     #endif
+     #ifdef WANT_MATH
+        #include <cmath>
+***************
+*** 106,113 ****
+  //   }
+  
+     #ifdef WANT_STREAM
+!       #include <iostream.h>
+!       #include <iomanip.h>
+     #endif
+     #ifdef WANT_MATH
+        #include <math.h>
+--- 113,125 ----
+  //   }
+  
+     #ifdef WANT_STREAM
+!       #ifdef use_namespace //#~rzr{ needed for msvc-6 msvc-7.1 msvc-8
+!          #include <iostream>
+!          #include <iomanip>
+!       #else
+!          #include <iostream.h>
+!          #include <iomanip.h>
+!       #endif // #~rzr}
+     #endif
+     #ifdef WANT_MATH
+        #include <math.h>
