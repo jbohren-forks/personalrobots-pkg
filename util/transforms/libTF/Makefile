@@ -1,6 +1,8 @@
-CFLAGS = -g -Wall -Iinclude
+PKG = libTF
 
-LDFLAGS = -lnewmat
+CFLAGS = -g -Wall -Iinclude `rospack export/cpp/cflags $(PKG)`
+
+LDFLAGS = `rospack export/cpp/lflags $(PKG)`
 
 all: install test
 
