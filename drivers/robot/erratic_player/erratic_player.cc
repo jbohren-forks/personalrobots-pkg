@@ -73,7 +73,6 @@ class ErraticNode: public ros::node
 
     ~ErraticNode()
     {
-      delete driver;
       delete cf;
       player_globals_fini();
     }
@@ -93,13 +92,18 @@ class ErraticNode: public ros::node
     int stop()
     {
       // Unsubscribe from the device, which causes it to shutdown
-      if(device->Unsubscribe(this->q) != 0)
+      if(this->device->Unsubscribe(this->q) != 0)
       {
         puts("Failed to start the driver");
         return(-1);
       }
       else
+      {
+        // Give the driver a chance to shutdown.  Wish there were a way to
+        // detect when that happened.
+        usleep(1000000);
         return(0);
+      }
     }
 
     int setMotorState(uint8_t state)
@@ -168,7 +172,7 @@ main(int argc, char** argv)
 
   /////////////////////////////////////////////////////////////////
   // Main loop; grab messages off our queue and republish them via ROS
-  for(;;)
+  while(en.ok())
   {
     // Block until there's a message on the queue
     en.q->Wait();
@@ -196,8 +200,8 @@ main(int argc, char** argv)
       // Publish the new data
       en.publish("odom", en.odom);
 
-      printf("Published new odom: (%.3f,%.3f,%.3f)\n", 
-             en.odom.pos.x, en.odom.pos.y, en.odom.pos.th);
+      //printf("Published new odom: (%.3f,%.3f,%.3f)\n", 
+             //en.odom.pos.x, en.odom.pos.y, en.odom.pos.th);
     }
     else
     {
