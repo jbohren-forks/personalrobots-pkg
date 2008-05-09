@@ -7,7 +7,7 @@ Library for doing transformations.
 <author>Tully Foote</author>
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
-<depend package="newmat"/>
+<depend package="newmat10"/>
 <export>
 <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lTF -lnewmat"/>
 </export>
