@@ -2,8 +2,8 @@ PKG = amcl_player
 CXX = g++
 all: $(PKG)
 
-CFLAGS = -g -Wall `rospack export/cpp/cflags $(PKG)`
-LFLAGS = `rospack export/cpp/lflags $(PKG)`
+CFLAGS = -g -Wall `rospack export/cpp/cflags $(PKG)` `pkg-config --cflags gdk-pixbuf-2.0`
+LFLAGS = `rospack export/cpp/lflags $(PKG)` `pkg-config --libs gdk-pixbuf-2.0`
 
 amcl_player: amcl_player.cc
 	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)

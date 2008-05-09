@@ -15,6 +15,15 @@
 // For transform support
 #include <rosTF/rosTF.h>
 
+#include <gdk-pixbuf/gdk-pixbuf.h>
+// compute linear index for given map coords
+#define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
+// check that given coords are valid (i.e., on the map)
+#define MAP_VALID(mf, i, j) ((i >= 0) && (i < mf->sx) && (j >= 0) && (j < mf->sy))
+double get_time(void);
+int read_map_from_image(int* size_x, int* size_y, char** mapdata, 
+       			const char* fname, int negate);
+
 #define PLAYER_QUEUE_LEN 32
 
 // Must prototype this function here.  It's implemented inside
@@ -24,7 +33,7 @@ Driver* AdaptiveMCL_Init(ConfigFile* cf, int section);
 class AmclNode: public ros::node, public Driver
 {
   public:
-    AmclNode();
+    AmclNode(char* fname, double res);
     ~AmclNode();
 
     int Setup() {return(0);}
@@ -63,14 +72,26 @@ class AmclNode: public ros::node, public Driver
     Device* position2d_dev;
     Device* laser_dev;
     Device* map_dev;
+
+    char* mapdata;
+    int sx, sy;
+    double resolution;
 };
+
+#define USAGE "USAGE: amcl_player <map.png> <res>"
 
 int
 main(int argc, char** argv)
 {
+  if(argc < 3)
+  {
+    puts(USAGE);
+    exit(-1);
+  }
+
   ros::init(argc, argv);
 
-  AmclNode an;
+  AmclNode an(argv[1],atof(argv[2]));
 
   // Start up the robot
   if(an.start() != 0)
@@ -78,7 +99,7 @@ main(int argc, char** argv)
 
   /////////////////////////////////////////////////////////////////
   // Main loop; grab messages off our queue and republish them via ROS
-  for(;;)
+  while(an.ok())
     an.process();
   /////////////////////////////////////////////////////////////////
 
@@ -89,12 +110,17 @@ main(int argc, char** argv)
   return(0);
 }
 
-AmclNode::AmclNode() : 
+AmclNode::AmclNode(char* fname, double res) : 
         ros::node("erratic"), 
         Driver(NULL,-1,false,PLAYER_QUEUE_LEN)
 {
   subscribe("odom", odomMsg, &AmclNode::odomReceived);
   subscribe("scan", laserMsg, &AmclNode::laserReceived);
+
+  // TODO: get map via RPC
+  assert(read_map_from_image(&this->sx, &this->sy, &this->mapdata, fname, 0)
+         == 0);
+  this->resolution = res;
 
   // libplayercore boiler plate
   player_globals_init();
@@ -187,9 +213,10 @@ AmclNode::AmclNode() :
 
 AmclNode::~AmclNode()
 {
-  delete driver;
-  delete cf;
+  delete this->driver;
+  delete this->cf;
   player_globals_fini();
+  free(this->mapdata);
 }
 
 int 
@@ -215,6 +242,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
 
     // publish new transform map->odom
     //this->tf->sendEuler(5,count++,1,1,1,1,1,1,100000,100000);
+    printf("got new pose");
     return(0);
   }
   // Is it a request for the map metadata?
@@ -224,9 +252,9 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
                                 this->map_addr))
   {
     player_map_info_t info;
-    info.scale = 0.1;
-    info.width = 100;
-    info.height = 100;
+    info.scale = this->resolution;
+    info.width = this->sx;
+    info.height = this->sy;
     info.origin.px = 0;
     info.origin.py = 0;
     info.origin.pa = 0;
@@ -242,8 +270,61 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
                                 PLAYER_MAP_REQ_GET_DATA,
                                 this->map_addr))
   {
-    // Send a NACK
-    return(-1);
+    player_map_data_t* mapreq = (player_map_data_t*)data;
+
+    player_map_data_t mapresp;
+
+    int i, j;
+    int oi, oj, si, sj;
+
+    // Construct reply
+    oi = mapresp.col = mapreq->col;
+    oj = mapresp.row = mapreq->row;
+    si = mapresp.width = mapreq->width;
+    sj = mapresp.height = mapreq->height;
+    mapresp.data_count = mapresp.width * mapresp.height;
+    mapresp.data = new int8_t [mapresp.data_count];
+    // Grab the pixels from the map
+    for(j = 0; j < sj; j++)
+    {
+      for(i = 0; i < si; i++)
+      {
+        if(MAP_VALID(this, i + oi, j + oj))
+          mapresp.data[i + j * si] = this->mapdata[MAP_IDX(this->sx, i+oi, j+oj)];
+        else
+        {
+          PLAYER_WARN2("requested cell (%d,%d) is offmap", i+oi, j+oj);
+          mapresp.data[i + j * si] = 0;
+        }
+      }
+    }
+
+    this->Publish(this->map_addr, resp_queue,
+                  PLAYER_MSGTYPE_RESP_ACK,
+                  PLAYER_MAP_REQ_GET_DATA,
+                  (void*)&mapresp);
+    delete [] mapresp.data;
+    return(0);
+  }
+  // Is it a request for laser geometry (pose of laser wrt parent)?
+  else if (Message::MatchMessage(hdr, PLAYER_MSGTYPE_REQ,
+                                 PLAYER_LASER_REQ_GET_GEOM,
+                                 this->laser_addr))
+  {
+    player_laser_geom_t geom;
+    memset(&geom, 0, sizeof(geom));
+    geom.pose.px = 0.05;
+    geom.pose.py = 0;
+    geom.pose.pyaw = 0;
+    geom.size.sl = 0.06;
+    geom.size.sw = 0.06;
+
+    this->Publish(this->laser_addr,
+                  resp_queue,
+                  PLAYER_MSGTYPE_RESP_ACK,
+                  PLAYER_LASER_REQ_GET_GEOM,
+                  (void*)&geom);
+    return(0);
   }
   else
   {
@@ -296,9 +377,123 @@ AmclNode::process()
 void
 AmclNode::laserReceived()
 {
+  // Got new scan; reformat and pass it on
+  player_laser_data_t pdata;
+  pdata.min_angle = this->laserMsg.angle_min;
+  pdata.max_angle = this->laserMsg.angle_max;
+  pdata.resolution = this->laserMsg.angle_increment;
+  pdata.max_range = this->laserMsg.range_max;
+  pdata.ranges_count = this->laserMsg.get_ranges_size() ;
+  pdata.ranges = new float[pdata.ranges_count];
+  assert(pdata.ranges);
+  for(unsigned int i=0;i<pdata.ranges_count;i++)
+    pdata.ranges[i] = this->laserMsg.ranges[i];
+  pdata.intensity_count =this->laserMsg.get_intensities_size();
+  pdata.intensity = new uint8_t[pdata.intensity_count];
+  assert(pdata.intensity);
+  for(unsigned int i=0;i<pdata.intensity_count;i++)
+    pdata.intensity[i] = this->laserMsg.intensities[i];
+  pdata.id = this->laserMsg.header.seq;
+
+  double timestamp = this->odomMsg.header.stamp_secs + 
+          this->odomMsg.header.stamp_nsecs / 1e9;
+
+  this->device->PutMsg(this->Driver::InQueue,
+                       PLAYER_MSGTYPE_DATA,
+                       PLAYER_LASER_DATA_SCAN,
+                       (void*)&pdata,0,
+                       &timestamp);
 }
 
 void
 AmclNode::odomReceived()
 {
+  // Got new odom; reformat and pass it on
+  player_position2d_data_t pdata;
+  pdata.pos.px = this->odomMsg.pos.x;
+  pdata.pos.py = this->odomMsg.pos.y;
+  pdata.pos.pa = this->odomMsg.pos.th;
+  pdata.vel.px = this->odomMsg.vel.x;
+  pdata.vel.py = this->odomMsg.vel.y;
+  pdata.vel.pa = this->odomMsg.vel.th;
+  pdata.stall = this->odomMsg.stall;
+
+  double timestamp = this->odomMsg.header.stamp_secs + 
+          this->odomMsg.header.stamp_nsecs / 1e9;
+
+  this->device->PutMsg(this->Driver::InQueue,
+                       PLAYER_MSGTYPE_DATA,
+                       PLAYER_POSITION2D_DATA_STATE,
+                       (void*)&pdata,0,
+                       &timestamp);
+}
+
+int
+read_map_from_image(int* size_x, int* size_y, char** mapdata, 
+                    const char* fname, int negate)
+{
+  GdkPixbuf* pixbuf;
+  guchar* pixels;
+  guchar* p;
+  int rowstride, n_channels, bps;
+  GError* error = NULL;
+  int i,j,k;
+  double occ;
+  int color_sum;
+  double color_avg;
+
+  // Initialize glib
+  g_type_init();
+
+  printf("MapFile loading image file: %s...", fname);
+  fflush(stdout);
+
+  // Read the image
+  if(!(pixbuf = gdk_pixbuf_new_from_file(fname, &error)))
+  {
+    printf("failed to open image file %s", fname);
+    return(-1);
+  }
+
+  *size_x = gdk_pixbuf_get_width(pixbuf);
+  *size_y = gdk_pixbuf_get_height(pixbuf);
+
+  assert(*mapdata = (char*)malloc(sizeof(char) * (*size_x) * (*size_y)));
+
+  rowstride = gdk_pixbuf_get_rowstride(pixbuf);
+  bps = gdk_pixbuf_get_bits_per_sample(pixbuf)/8;
+  n_channels = gdk_pixbuf_get_n_channels(pixbuf);
+  //if(gdk_pixbuf_get_has_alpha(pixbuf))
+    //n_channels++;
+
+  // Read data
+  pixels = gdk_pixbuf_get_pixels(pixbuf);
+  for(j = 0; j < *size_y; j++)
+  {
+    for (i = 0; i < *size_x; i++)
+    {
+      p = pixels + j*rowstride + i*n_channels*bps;
+      color_sum = 0;
+      for(k=0;k<n_channels;k++)
+        color_sum += *(p + (k * bps));
+      color_avg = color_sum / (double)n_channels;
+
+      if(negate)
+        occ = color_avg / 255.0;
+      else
+        occ = (255 - color_avg) / 255.0;
+      if(occ > 0.95)
+        (*mapdata)[MAP_IDX(*size_x,i,*size_y - j - 1)] = +1;
+      else if(occ < 0.1)
+        (*mapdata)[MAP_IDX(*size_x,i,*size_y - j - 1)] = -1;
+      else
+        (*mapdata)[MAP_IDX(*size_x,i,*size_y - j - 1)] = 0;
+    }
+  }
+
+  gdk_pixbuf_unref(pixbuf);
+
+  puts("Done.");
+  printf("MapFile read a %d X %d map\n", *size_x, *size_y);
+  return(0);
 }
