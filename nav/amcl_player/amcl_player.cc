@@ -47,6 +47,8 @@ class AmclNode: public ros::node, public Driver
 
     int process();
 
+    int setPose(double x, double y, double a);
+
   private:
     rosTFServer* tf;
     ConfigFile* cf;
@@ -61,8 +63,10 @@ class AmclNode: public ros::node, public Driver
 
     // These are the devices that amcl offers, and to which we subscribe
     Driver* driver;
-    Device* device;
+    Device* pdevice;
+    Device* ldevice;
     player_devaddr_t oposition2d_addr;
+    player_devaddr_t olocalize_addr;
 
     // These are the devices that amcl requires, and so which we must
     // provide
@@ -78,12 +82,12 @@ class AmclNode: public ros::node, public Driver
     double resolution;
 };
 
-#define USAGE "USAGE: amcl_player <map.png> <res>"
+#define USAGE "USAGE: amcl_player <map.png> <res> <x> <y> <a>"
 
 int
 main(int argc, char** argv)
 {
-  if(argc < 3)
+  if(argc < 6)
   {
     puts(USAGE);
     exit(-1);
@@ -92,6 +96,7 @@ main(int argc, char** argv)
   ros::init(argc, argv);
 
   AmclNode an(argv[1],atof(argv[2]));
+  assert(an.setPose(atof(argv[3]),atof(argv[4]),DTOR(atof(argv[5]))) == 0);
 
   // Start up the robot
   if(an.start() != 0)
@@ -142,6 +147,12 @@ AmclNode::AmclNode(char* fname, double res) :
   this->oposition2d_addr.interf = PLAYER_POSITION2D_CODE;
   this->oposition2d_addr.index = 0;
 
+  const char* olocalize_saddr = "localize:0";
+  this->olocalize_addr.host = 0;
+  this->olocalize_addr.robot = 0;
+  this->olocalize_addr.interf = PLAYER_LOCALIZE_CODE;
+  this->olocalize_addr.index = 0;
+
   const char* position2d_saddr = "odometry:::position2d:1";
   this->position2d_addr.host = 0;
   this->position2d_addr.robot = 0;
@@ -187,6 +198,7 @@ AmclNode::AmclNode(char* fname, double res) :
   // Insert (name,value) pairs into the ConfigFile object.  These would
   // presumably come from the param server
   this->cf->InsertFieldValue(0,"provides",oposition2d_saddr);
+  this->cf->InsertFieldValue(1,"provides",olocalize_saddr);
 
   // Fill in the requires fields for the device that this device
   // subscribes to
@@ -206,7 +218,8 @@ AmclNode::AmclNode(char* fname, double res) :
 
   // Grab from the global deviceTable a pointer to the Device that was 
   // created as part of the driver's initialization.
-  assert((this->device = deviceTable->GetDevice(oposition2d_saddr,false)));
+  assert((this->pdevice = deviceTable->GetDevice(oposition2d_saddr,false)));
+  assert((this->ldevice = deviceTable->GetDevice(olocalize_addr,false)));
 
   this->tf = new rosTFServer(*this);
 }
@@ -337,7 +350,7 @@ int
 AmclNode::start()
 {
   // Subscribe to device, which causes it to startup
-  if(this->device->Subscribe(this->Driver::InQueue) != 0)
+  if(this->pdevice->Subscribe(this->Driver::InQueue) != 0)
   {
     puts("Failed to subscribe the driver");
     return(-1);
@@ -350,7 +363,7 @@ int
 AmclNode::stop()
 {
   // Unsubscribe from the device, which causes it to shutdown
-  if(device->Unsubscribe(this->Driver::InQueue) != 0)
+  if(pdevice->Unsubscribe(this->Driver::InQueue) != 0)
   {
     puts("Failed to start the driver");
     return(-1);
@@ -379,6 +392,26 @@ AmclNode::process()
   else
     usleep(1000000);
 
+  return(0);
+}
+
+int
+AmclNode::setPose(double x, double y, double a)
+{
+  player_localize_set_pose_t p;
+
+  p.mean.px = x;
+  p.mean.py = y;
+  p.mean.pa = a;
+
+  p.cov[0] = 0.5*0.5;
+  p.cov[1] = 0.5*0.5;
+  p.cov[2] = (M_PI/6.0)*(M_PI/6.0);
+
+  this->ldevice->PutMsg(this->Driver::InQueue,
+                        PLAYER_MSGTYPE_REQ,
+                        PLAYER_LOCALIZE_REQ_SET_POSE,
+                        (void*)&p,0,NULL);
   return(0);
 }
 
