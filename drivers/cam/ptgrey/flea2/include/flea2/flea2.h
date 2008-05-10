@@ -10,7 +10,16 @@
 class Flea2
 {
 public:
-  Flea2(int n_host = 0);
+  // todo: add higher-resolution modes if we ever use them
+  // right now, our algorithms can barely handle 640x480
+  // so I don't really have a need for more than that...
+  enum video_mode_t
+  {
+    FLEA2_MONO,
+    FLEA2_RGB
+  } video_mode;
+
+  Flea2(video_mode_t _video_mode = FLEA2_MONO, int n_host = 0);
   ~Flea2();
 
   JpegWrapper jpeg;

@@ -14,16 +14,17 @@ void save_image(int num)
 }
 */
 
-Flea2::Flea2(int n_host) :
-  raw_created(false), cam_created(false), frame_released(true)
+Flea2::Flea2(video_mode_t _video_mode, int n_host) :
+  video_mode(_video_mode), raw_created(false), 
+  cam_created(false), frame_released(true)
 {
   raw = dc1394_create_handle(n_host);
   if (!raw)
   {
     fprintf( stderr, "Unable to aquire a raw1394 handle\n\n"
-                     "Please check \n"
-            	       "  - if the kernel modules `ieee1394',`raw1394' and `ohci1394' are loaded\n"
-            	       "  - if you have read/write access to /dev/raw1394\n" );
+      "Please check \n"
+      "if the kernel modules `ieee1394',`raw1394' and `ohci1394' are loaded\n"
+      "if you have read/write access to /dev/raw1394\n" );
     throw std::runtime_error("toast");
   }
   raw_created = true;
@@ -60,9 +61,15 @@ Flea2::Flea2(int n_host) :
 
   char host_dev[200];
   snprintf(host_dev, sizeof(host_dev), "/dev/video1394/%d", n_host);
-  int e = dc1394_dma_setup_capture(raw, cam_node, channel, 
-    FORMAT_VGA_NONCOMPRESSED, MODE_640x480_RGB, SPEED_800,
-    FRAMERATE_30, 8, 1, host_dev, &cam);
+  int e;
+  if (video_mode == FLEA2_MONO)
+    e = dc1394_dma_setup_capture(raw, cam_node, channel, 
+          FORMAT_VGA_NONCOMPRESSED, MODE_640x480_MONO, SPEED_800,
+          FRAMERATE_30, 8, 1, host_dev, &cam);
+  else
+    e = dc1394_dma_setup_capture(raw, cam_node, channel, 
+          FORMAT_VGA_NONCOMPRESSED, MODE_640x480_RGB, SPEED_800,
+          FRAMERATE_30, 8, 1, host_dev, &cam);
   if ( e != DC1394_SUCCESS )
   {
     fprintf(stderr, "Unable to setup camera-\n"
@@ -129,8 +136,10 @@ bool Flea2::get_jpeg(const uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_
     return false;
   }
   *fetch_buf_size = jpeg.compress_to_jpeg((uint8_t *)cam.capture_buffer, 
-                                        cam.frame_width, 
-                                        cam.frame_height);
+                                          cam.frame_width, 
+                                          cam.frame_height,
+                                          JpegWrapper::RT_MONO8,
+                                          99);
   *fetch_jpeg_buf = jpeg.get_compress_buf();
   dc1394_dma_done_with_buffer(&cam);
   return true;

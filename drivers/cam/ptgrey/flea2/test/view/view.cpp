@@ -31,6 +31,7 @@
 #include <cassert>
 #include "flea2/flea2.h"
 #include "SDL/SDL.h"
+#include "image_utils/pgm_wrapper.h"
 
 int main(int argc, char **argv)
 {
@@ -43,13 +44,13 @@ int main(int argc, char **argv)
   SDL_Surface *surf = SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE);
   assert(surf);
   
-  Flea2 flea2;
+  Flea2 flea2; // default is monochrome
   uint8_t *frame;
   uint32_t w, h;
 
-  double shutter = 0.5;
+  double shutter = 0.2;
   flea2.set_shutter(shutter);
-  double gamma = 0.2;
+  double gamma = 0.3;
   flea2.set_gamma(gamma);
   double gain = 0.5;
   flea2.set_gain(gain);
@@ -58,16 +59,28 @@ int main(int argc, char **argv)
   while (!done)
   {
     flea2.get_frame(&frame, &w, &h);
+    // I know this looks inefficient, but the compiler & CPU will 
+    // speed this up a lot. this is what speculative execution was
+    // designed for.
     uint8_t *in = frame, *out = (uint8_t *)surf->pixels;
     for (uint32_t row = 0; row < h; row++)
       for (uint32_t col = 0; col < w; col++)
-      {
-        *(out  ) = *(in+2);
-        *(out+1) = *(in+1);
-        *(out+2) = *(in  );
-        out += 4;
-        in += 3;
-      }
+        if (flea2.video_mode == Flea2::FLEA2_RGB)
+        {
+          *(out  ) = *(in+2);
+          *(out+1) = *(in+1);
+          *(out+2) = *(in  );
+          in += 3;
+          out += 4;
+        }
+        else if (flea2.video_mode == Flea2::FLEA2_MONO)
+        {
+          *(out++) = *in;
+          *(out++) = *in;
+          *(out++) = *in;
+          *(out++); // skip the 4th byte
+          in++;
+        }
     flea2.release_frame();
     SDL_UpdateRect(surf, 0, 0, 640, 480);
     SDL_Event event;
@@ -83,6 +96,7 @@ int main(int argc, char **argv)
             {
               static int num = 1;
               char fn[100];
+              /*
               snprintf(fn, sizeof(fn), "img%06d.jpg", num++);
               const uint8_t *buf;
               uint32_t buf_size;
@@ -91,6 +105,11 @@ int main(int argc, char **argv)
               fwrite(buf, 1, buf_size, of);
               fclose(of);
               printf("wrote %d bytes to %s\n", buf_size, fn);
+              */
+              snprintf(fn, sizeof(fn), "img%06d.pgm", num++);
+              flea2.get_frame(&frame, &w, &h);
+              PgmWrapper::write_file(string(fn), 640, 480, frame);
+              flea2.release_frame();
               break;
             }
             case SDLK_EQUALS: flea2.set_shutter(shutter += 0.05); break;
