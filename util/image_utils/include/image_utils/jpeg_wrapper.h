@@ -14,6 +14,11 @@ class JpegWrapper
 {
 public:
   static JpegWrapper *g_wrapper;
+  enum raster_type_t
+  {
+    RT_RGB24,
+    RT_MONO8
+  };
 
   JpegWrapper() 
   : raster(NULL), compress_buf(NULL),
@@ -68,12 +73,21 @@ public:
     return true;
   }
   uint32_t compress_to_jpeg(uint8_t *raster, uint32_t w, uint32_t h, 
-                            uint32_t quality = 95)
+                            raster_type_t raster_type = RT_RGB24, 
+                            int32_t quality = 95)
   {
     cinfo.image_width = w;
     cinfo.image_height = h;
-    cinfo.input_components = 3;
-    cinfo.in_color_space = JCS_RGB;
+    if (raster_type == RT_RGB24)
+    {
+      cinfo.input_components = 3;
+      cinfo.in_color_space = JCS_RGB;
+    }
+    else if (raster_type == RT_MONO8)
+    {
+      cinfo.input_components = 1;
+      cinfo.in_color_space = JCS_GRAYSCALE;
+    }
     const int compress_start_size = 1024;
     if (!compress_buf)
     {
@@ -85,7 +99,7 @@ public:
     jpeg_buffer_dest(&cinfo, (char *)compress_buf, compress_buf_alloc_size);
     jpeg_set_quality(&cinfo, quality, TRUE);
     jpeg_start_compress(&cinfo, TRUE);
-    int row_stride = w * 3;
+    int row_stride = w * cinfo.input_components;
     JSAMPROW row_pointer[1];
     while (cinfo.next_scanline < cinfo.image_height)
     {
@@ -94,7 +108,8 @@ public:
     }
     jpeg_finish_compress(&cinfo);
     ros_jpeg_mutex_unlock();
-    uint32_t compressed_size = (uint32_t)(compress_buf_alloc_size - cinfo.dest->free_in_buffer);
+    uint32_t compressed_size = (uint32_t)(compress_buf_alloc_size - 
+                                          cinfo.dest->free_in_buffer);
     return compressed_size;
   }
   const uint8_t *get_compress_buf() { return compress_buf; }
