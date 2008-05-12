@@ -6,7 +6,7 @@
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
 <depend package="std_msgs"/>
-<depend package="hokuyourg_player"/>
+<!-- <depend package="hokuyourg_player"/> -->
 <depend package="cloud_viewer"/>
 </package>
 
