@@ -16,14 +16,14 @@ triangulation-based laser range scanner.
 <depend package="ipdcmot"/>
 <depend package="image_utils"/>
 <depend package="roscpp"/>
-<depend package="axis_cam"/>
+<depend package="flea2"/>
 <depend package="sdl"/>
 <depend package="sdl_image"/>
 <depend package="serial_port"/>
 <depend package="joy"/>
 <sys_depend lib="ncurses"/>
 <export>
-  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lsharks"/>
+  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lfleasharks"/>
 </export>
 </package>
 
