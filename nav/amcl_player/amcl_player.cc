@@ -247,21 +247,29 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
             (player_position2d_data_t*)data;
 
     // publish new transform map->odom
+    printf("lpose: %.3f %.3f %.3f\n",
+           odomMsg.pos.x,
+           odomMsg.pos.y,
+           RTOD(odomMsg.pos.th));
     this->tf->sendEuler(2,1,
                         this->odomMsg.pos.x-pdata->pos.px,
                         this->odomMsg.pos.y-pdata->pos.py,
                         0.0,
-                        this->odomMsg.pos.th-pdata->pos.pa,
                         0.0, 
                         0.0,
-                        (unsigned int)floor(hdr->timestamp),
-                        (unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1e9));
+                        //-(pdata->pos.pa-this->odomMsg.pos.th),
+                        0.0,
+                        (long long unsigned int)floor(hdr->timestamp),
+                        (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL));
 
-
-    printf("pose: (%.3f %.3f %.3f)\n",
+    printf("pose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",
            pdata->pos.px,
            pdata->pos.py,
-           RTOD(pdata->pos.pa));
+           RTOD(pdata->pos.pa),
+           (long long unsigned int)floor(hdr->timestamp),
+           (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 
+                          1000000000ULL));
+
     return(0);
   }
   // Is it a request for the map metadata?

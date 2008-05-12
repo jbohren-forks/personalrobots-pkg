@@ -8,5 +8,11 @@ LFLAGS = `rospack export/cpp/lflags $(PKG)` -lwavefront_standalone `pkg-config -
 wavefront_player: wavefront_player.cc
 	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
 
+send_goal: send_goal.cc
+	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
+
+testtf: testtf.cc
+	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
+
 clean:
 	rm -f *.o $(PKG)

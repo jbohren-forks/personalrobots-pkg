@@ -87,6 +87,9 @@ class WavefrontNode: public ros::node
     MsgLaserScan laserMsg;
     std::vector<MsgLaserScan> laserScans;
 
+    // Lock for access to class members in callbacks
+    ros::thread::mutex lock;
+
     // Message callbacks
     void goalReceived();
     void odomReceived();
@@ -131,7 +134,6 @@ main(int argc, char** argv)
     gettimeofday(&curr,NULL);
     wn.doOneCycle();
     wn.sleep(curr.tv_sec+curr.tv_usec/1e6);
-    puts("slept");
   }
   return(0);
 }
@@ -221,6 +223,7 @@ WavefrontNode::~WavefrontNode()
 void 
 WavefrontNode::goalReceived()
 {
+  this->lock.lock();
   // Got a new goal message; handle it
   this->enable = goalMsg.enable;
   if(this->enable)
@@ -230,20 +233,21 @@ WavefrontNode::goalReceived()
     this->goal[2] = goalMsg.goal.th;
     this->planner_state = PURSUING_GOAL;
   }
+  this->lock.unlock();
 }
 
 void 
 WavefrontNode::odomReceived()
 {
+  this->lock.lock();
   libTF::TFPose2D odom_pose;
   odom_pose.x = odomMsg.pos.x;
   odom_pose.y = odomMsg.pos.y;
   odom_pose.yaw = odomMsg.pos.th;
-  odom_pose.time = odomMsg.header.stamp_secs * 1000000000 + 
+  odom_pose.time = odomMsg.header.stamp_secs * 1000000000ULL + 
           odomMsg.header.stamp_nsecs;
   odom_pose.frame = odomMsg.header.frame_id;
 
-  printf("frame: %d\n", odomMsg.header.frame_id);
   try
   {
     libTF::TFPose2D global_pose = 
@@ -251,16 +255,29 @@ WavefrontNode::odomReceived()
     this->pose[0] = global_pose.x;
     this->pose[1] = global_pose.y;
     this->pose[2] = global_pose.yaw;
+    printf("lpose: %.3f %.3f %.3f\n",
+           odomMsg.pos.x,
+           odomMsg.pos.y,
+           RTOD(odomMsg.pos.th));
+    printf("gpose: %.3f %.3f %.3f @ (%u:%u)\n",
+           this->pose[0],
+           this->pose[1],
+           RTOD(this->pose[2]),
+           odomMsg.header.stamp_secs,
+           odomMsg.header.stamp_nsecs);
   }
   catch(libTF::TransformReference::LookupException& ex)
   {
-    puts("no tx yet");
+    puts("no global->local Tx yet");
   }
+  this->lock.unlock();
 }
 
 void
 WavefrontNode::laserReceived()
 {
+  this->lock.lock();
+  this->lock.unlock();
 }
 
 void
@@ -300,6 +317,7 @@ WavefrontNode::doOneCycle()
     return;
   }
 
+  this->lock.lock();
   switch(this->planner_state)
   {
     // Treat these states the same; do nothing
@@ -382,6 +400,7 @@ WavefrontNode::doOneCycle()
     default:
       assert(0);
   }
+  this->lock.unlock();
 }
 
 // Sleep for the remaining time of the cycle
