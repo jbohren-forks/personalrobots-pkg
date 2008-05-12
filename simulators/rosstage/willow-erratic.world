@@ -4,7 +4,6 @@ define topurg laser
   range_max 30.0
   fov 282.0
   samples 1128
-
   # generic model properties
   color "black"
   size [ 0.05 0.05 0.1 ]
@@ -46,7 +45,7 @@ interval_real 100  # real-time interval between simulation updates in millisecon
 window
 ( 
   size [ 745.000 448.000 ] 
-  center [-7.010 5.960] 
+  center [852.990 221.960] 
   rotate [ 0.000 -1.560 ]
   scale 28.806 
 )
@@ -57,8 +56,8 @@ floorplan
   name "willow"
   bitmap "willow-full.png"
   size3 [54.0 58.7 0.5]
-  pose [0.000 0.000 0.000]
+  pose [-29.350 27.000 90.000]
 )
 
 # throw in a robot
-erratic(pose [0.000 0.000 0.000] name "era")
+erratic( pose [-11.271 30.279 180.000] name "era")
