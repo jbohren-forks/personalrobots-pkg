@@ -19,6 +19,7 @@ class StageNode : public ros::node
     MsgBaseVel velMsg;
     MsgLaserScan laserMsg;
     MsgRobotBase2DOdom odomMsg;
+    ros::thread::mutex lock;
 
   public:
     StageNode(int argc, char** argv, const char* fname);
@@ -54,8 +55,13 @@ StageNode::ghfunc(gpointer key,
 void
 StageNode::cmdvelReceived()
 {
+  this->lock.lock();
+
   printf("received cmd: %.3f %.3f\n",
          this->velMsg.vx, this->velMsg.vw);
+
+  this->positionmodel->SetSpeed(this->velMsg.vx, 0.0, this->velMsg.vw);
+  this->lock.unlock();
 }
 
 StageNode::StageNode(int argc, char** argv, const char* fname) :
@@ -105,42 +111,45 @@ StageNode::~StageNode()
 void
 StageNode::Update()
 {
-  if(this->world->RealTimeUpdate())
-  {
-    Stg::stg_laser_sample_t* samples = this->lasermodel->GetSamples();
-    if(samples)
-    {
-      Stg::stg_laser_cfg_t cfg = this->lasermodel->GetConfig();
-      this->laserMsg.angle_min = -cfg.fov/2.0;
-      this->laserMsg.angle_max = +cfg.fov/2.0;
-      this->laserMsg.angle_increment = cfg.fov / (double)(cfg.sample_count-1);
-      this->laserMsg.range_max = cfg.range_bounds.max;
-      this->laserMsg.set_ranges_size(cfg.sample_count);
-      this->laserMsg.set_intensities_size(cfg.sample_count);
-      for(unsigned int i=0;i<cfg.sample_count;i++)
-      {
-        this->laserMsg.ranges[i] = samples[i].range;
-        this->laserMsg.intensities[i] = (uint8_t)samples[i].reflectance;
-      }
+  this->world->PauseUntilNextUpdateTime();
+  this->lock.lock();
+  this->world->Update();
 
-      publish("scan",this->laserMsg);
+  Stg::stg_laser_sample_t* samples = this->lasermodel->GetSamples();
+  if(samples)
+  {
+    Stg::stg_laser_cfg_t cfg = this->lasermodel->GetConfig();
+    this->laserMsg.angle_min = -cfg.fov/2.0;
+    this->laserMsg.angle_max = +cfg.fov/2.0;
+    this->laserMsg.angle_increment = cfg.fov / (double)(cfg.sample_count-1);
+    this->laserMsg.range_max = cfg.range_bounds.max;
+    this->laserMsg.set_ranges_size(cfg.sample_count);
+    this->laserMsg.set_intensities_size(cfg.sample_count);
+    for(unsigned int i=0;i<cfg.sample_count;i++)
+    {
+      this->laserMsg.ranges[i] = samples[i].range;
+      this->laserMsg.intensities[i] = (uint8_t)samples[i].reflectance;
     }
 
-    this->odomMsg.pos.x = this->positionmodel->est_pose.x;
-    this->odomMsg.pos.y = this->positionmodel->est_pose.y;
-    this->odomMsg.pos.th = this->positionmodel->est_pose.a;
-
-    Stg::stg_velocity_t v = this->positionmodel->GetVelocity();
-
-    this->odomMsg.vel.x = v.x;
-    this->odomMsg.vel.y = v.y;
-    this->odomMsg.vel.th = v.a;
-
-    this->odomMsg.stall = this->positionmodel->Stall();
-
-    publish("odom",this->odomMsg);
-
+    publish("scan",this->laserMsg);
   }
+
+  this->odomMsg.pos.x = this->positionmodel->est_pose.x;
+  this->odomMsg.pos.y = this->positionmodel->est_pose.y;
+  this->odomMsg.pos.th = this->positionmodel->est_pose.a;
+
+  Stg::stg_velocity_t v = this->positionmodel->GetVelocity();
+
+  this->odomMsg.vel.x = v.x;
+  this->odomMsg.vel.y = v.y;
+  this->odomMsg.vel.th = v.a;
+
+  this->odomMsg.stall = this->positionmodel->Stall();
+
+  publish("odom",this->odomMsg);
+  puts("published");
+
+  this->lock.unlock();
 }
 
 int 

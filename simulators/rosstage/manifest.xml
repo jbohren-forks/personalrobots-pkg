@@ -3,6 +3,7 @@
   <author>Brian P. Gerkey</author>
   <license>GPL</license>
   <depend package="roscpp" />
+  <depend package="rosthread" />
   <depend package="stage" />
   <depend package="std_msgs" />
 </package>
