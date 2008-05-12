@@ -44,6 +44,7 @@ int main(void)
       std::cout << "Caught " << ex.what()<<std::endl;
     }
   
+
   
   // See the list of transforms to get between the frames
   std::cout<<"Viewing (10,8):"<<std::endl;  
@@ -134,6 +135,17 @@ int main(void)
 
   printf("%.3f %.3f %.3f\n",
          out.x, out.y, out.yaw*180.0/M_PI);
+
+
+  try
+    {
+      out = mTR.transformPose2D(0,in);
+      std::cout << "failed to throw" << std::endl;
+    }
+  catch (TransformReference::LookupException &ex)
+    {
+      std::cout << "transformPose2D(0,in): Caught " << ex.what()<<std::endl;
+    }
 
   
   return 0;
