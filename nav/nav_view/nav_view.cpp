@@ -31,8 +31,8 @@ public:
 
     glPushMatrix();
       odom.lock();
-      glTranslatef(odom.px, odom.py, 0);
-      glRotatef(odom.pyaw * 180 / M_PI, 0, 0, 1);
+      glTranslatef(odom.pos.x, odom.pos.y, 0);
+      glRotatef(odom.pos.th * 180 / M_PI, 0, 0, 1);
       odom.unlock();
       glColor3f(0.2, 1.0, 0.4);
       glBegin(GL_LINE_LOOP);
