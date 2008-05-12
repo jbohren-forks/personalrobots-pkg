@@ -12,6 +12,7 @@ dependency system.
 <url>http://www.libsdl.org</url>
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/SDL/lib `${prefix}/SDL/bin/sdl-config --libs`" cflags="`${prefix}/SDL/bin/sdl-config --cflags`"/>
+  <doxymaker external="http://libsdl.org/cgi/docwiki.cgi" />
 </export>
 </package>
 

@@ -13,6 +13,7 @@ system.
 <url>http://playerstage.sf.net</url>
 <export>
   <cpp lflags="-Xlinker -rpath ${prefix}/player/lib -L${prefix}/player/lib -lplayercore -lplayerxdr -lplayerutils -lplayererror" cflags="-I${prefix}/player/include/player-2.2"/>
+  <doxymaker external="http://playerstage.sourceforge.net/doc/Player-2.0.0/player/" />
 </export>
 </package>
 
