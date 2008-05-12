@@ -1,6 +1,12 @@
 #include <cstdio>
+#include <vector>
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
+
+using namespace std;
+
+//#define SHOW_IMAGES
+#define SHOW_UNDISTORTED
 
 int main(int argc, char **argv)
 {
@@ -9,7 +15,12 @@ int main(int argc, char **argv)
     printf("usage: cv_cam_calib IMG1 IMG2 IMG3 ...\n");
     return 1;
   }
-  for (int i = 1; i < 2; i++) //argc; i++)
+  vector< vector<CvPoint2D32f> > img_corners;
+  const int horiz = 6, vert = 7;
+  const int num_corners = horiz * vert;
+  const double square_size = 29.2; // in millimeters
+  CvSize img_size;
+  for (int i = 1; i < argc; i++) //argc; i++)
   {
     IplImage *img = cvLoadImage(argv[i]);
     if (!img)
@@ -17,27 +28,105 @@ int main(int argc, char **argv)
       printf("couldn't load image\n");
       return 1;
     }
+    img_size = cvSize(img->width, img->height);
+#ifdef SHOW_IMAGES
     cvNamedWindow("checkers", CV_WINDOW_AUTOSIZE);
-    const int horiz_corners = 6, vert_corners = 7;
-    const int num_corners = horiz_corners * vert_corners;
-    CvSize pattern_size = cvSize(horiz_corners, vert_corners);
+#endif
+    CvSize pattern_size = cvSize(horiz, vert);
     CvPoint2D32f corners[num_corners];
     int corner_count;
     int ok = cvFindChessboardCorners(img, pattern_size,
                                      corners, &corner_count, 0);
+    if (ok)
+    {
+      vector<CvPoint2D32f> c;
+      for (int j = 0; j < corner_count; j++)
+        c.push_back(corners[j]);
+      img_corners.push_back(c);
+    }
+#ifdef SHOW_IMAGES
     cvDrawChessboardCorners(img, pattern_size, corners, corner_count, ok);
     cvShowImage("checkers", img);
-/*
-    if (corner_count == num_corners)
-    {
-      printf("found all %d corners\n", corner_count);
-    }
-    else
-      printf("couldn't find all corners\n");
-*/
     cvWaitKey(0);
+#endif
     cvReleaseImage(&img);
   }
+  const int num_img = (int)img_corners.size();
+  printf("%d of %d images had all corners detected\n", num_img, argc - 1);
+  if (!num_img)
+  {
+    printf("I need more good images.\n");
+    return 1;
+  }
+  CvMat *img_points = cvCreateMat(num_img * num_corners, 2, CV_32FC1);
+  CvMat *obj_points = cvCreateMat(num_img * num_corners, 3, CV_32FC1);
+  CvMat *num_points = cvCreateMat(num_img, 1, CV_32SC1);
+
+  for (size_t i = 0; i < img_corners.size(); i++)
+  {
+    cvSetReal1D(num_points, i, num_corners);
+    for (int y = 0; y < vert; y++)
+      for (int x = 0; x < horiz; x++)
+      {
+        cvSetReal2D(img_points, x + y * horiz + i * num_corners, 
+              0, img_corners[i][x + y * horiz].x);
+        cvSetReal2D(img_points, x + y * horiz + i * num_corners, 
+              1, img_corners[i][x + y * horiz].y);
+        cvSetReal2D(obj_points, x + y * horiz + i * num_corners, 
+              0, square_size * x);
+        cvSetReal2D(obj_points, x + y * horiz + i * num_corners, 
+              1, square_size * y);
+        cvSetReal2D(obj_points, x + y * horiz + i * num_corners, 2, 0);
+      }
+  }
+
+  CvMat *intrinsics = cvCreateMat(3, 3, CV_32FC1);
+  CvMat *distortion = cvCreateMat(4, 1, CV_32FC1);
+
+  cvCalibrateCamera2(obj_points, img_points, num_points, img_size, 
+                     intrinsics, distortion);
+
+  printf("%10f %10f %10f\n%10f %10f %10f\n%10f %10f %10f\n",
+         cvGet2D(intrinsics, 0, 0).val[0],
+         cvGet2D(intrinsics, 0, 1).val[0],
+         cvGet2D(intrinsics, 0, 2).val[0],
+         cvGet2D(intrinsics, 1, 0).val[0],
+         cvGet2D(intrinsics, 1, 1).val[0],
+         cvGet2D(intrinsics, 1, 2).val[0],
+         cvGet2D(intrinsics, 2, 0).val[0],
+         cvGet2D(intrinsics, 2, 1).val[0],
+         cvGet2D(intrinsics, 2, 2).val[0]);
+
+  printf("\ndistortion:\n%10f %10f\n%10f %10f\n",
+         cvGet2D(distortion, 0, 0).val[0],
+         cvGet2D(distortion, 1, 0).val[0],
+         cvGet2D(distortion, 2, 0).val[0],
+         cvGet2D(distortion, 3, 0).val[0]);
+
+#ifdef SHOW_UNDISTORTED
+  for (int i = 1; i < argc; i++) //argc; i++) //argc; i++)
+  {
+    IplImage *img = cvLoadImage(argv[i]);
+    if (!img)
+      continue;
+    IplImage *undist = cvCreateImage(cvSize(img->width, img->height), 
+                                     img->depth, img->nChannels);
+    cvUndistort2(img, undist, intrinsics, distortion);
+    cvNamedWindow("orig", CV_WINDOW_AUTOSIZE);
+    cvShowImage("orig", img);
+    cvNamedWindow("undist", CV_WINDOW_AUTOSIZE);
+    cvShowImage("undist", undist);
+    cvWaitKey(0);
+    cvReleaseImage(&undist);
+    cvReleaseImage(&img);
+  }
+#endif
+
+  cvReleaseMat(&intrinsics);
+  cvReleaseMat(&distortion);
+  cvReleaseMat(&img_points);
+  cvReleaseMat(&obj_points);
+  cvReleaseMat(&num_points);
   return 0;
 }
 
