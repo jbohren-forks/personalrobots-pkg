@@ -1,3 +1,24 @@
+/*
+ *  Software License Agreement (GNU LGPL)
+ *
+ *  Copyright (c) 2008, Willow Garage, Inc.
+ *  All rights reserved.
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU Lesser General Public
+ *  License as published by the Free Software Foundation; either
+ *  version 2.1 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public
+ *  License along with this library; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include <assert.h>
 
 // For core Player stuff (message queues, config file objects, etc.)
@@ -54,6 +75,7 @@ class AmclNode: public ros::node, public Driver
     ConfigFile* cf;
 
     // incoming messages
+    MsgRobotBase2DOdom localizedOdomMsg;
     MsgRobotBase2DOdom odomMsg;
     MsgLaserScan laserMsg;
     
@@ -126,6 +148,7 @@ AmclNode::AmclNode(char* fname, double res) :
   // TODO: remove XDR dependency
   playerxdr_ftable_init();
 
+  advertise<MsgRobotBase2DOdom>("localizedpose");
   subscribe("odom", odomMsg, &AmclNode::odomReceived);
   subscribe("scan", laserMsg, &AmclNode::laserReceived);
 
@@ -251,6 +274,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
            odomMsg.pos.x,
            odomMsg.pos.y,
            RTOD(odomMsg.pos.th));
+    /*
     this->tf->sendEuler(2,1,
                         this->odomMsg.pos.x-pdata->pos.px,
                         this->odomMsg.pos.y-pdata->pos.py,
@@ -269,6 +293,15 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
            (long long unsigned int)floor(hdr->timestamp),
            (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 
                           1000000000ULL));
+                          */
+    printf("pose: (%.3f %.3f %.3f)\n",
+           pdata->pos.px,
+           pdata->pos.py,
+           RTOD(pdata->pos.pa));
+    localizedOdomMsg.pos.x = pdata->pos.px;
+    localizedOdomMsg.pos.y = pdata->pos.py;
+    localizedOdomMsg.pos.th = pdata->pos.pa;
+    publish("localizedpose", localizedOdomMsg);
 
     return(0);
   }
@@ -408,7 +441,7 @@ AmclNode::process()
   if(!this->Driver::InQueue->Empty())
     this->Driver::ProcessMessages();
   else
-    usleep(1000000);
+    usleep(100000);
 
   return(0);
 }

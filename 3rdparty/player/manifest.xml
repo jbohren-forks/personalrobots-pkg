@@ -12,7 +12,7 @@ system.
 <license>LGPL</license>
 <url>http://playerstage.sf.net</url>
 <export>
-  <cpp lflags="-Xlinker -rpath ${prefix}/player/lib -L${prefix}/player/lib -lplayerdrivers -lplayercore -lplayerxdr -lplayerutils -lplayererror" cflags="-I${prefix}/player/include/player-2.2"/>
+  <cpp lflags="-Xlinker -rpath ${prefix}/player/lib -L${prefix}/player/lib -lplayercore -lplayerxdr -lplayerutils -lplayererror" cflags="-I${prefix}/player/include/player-2.2"/>
 </export>
 </package>
 

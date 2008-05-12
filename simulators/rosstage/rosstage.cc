@@ -1,3 +1,24 @@
+/*
+ *  Software License Agreement (GNU GPL)
+ *
+ *  Copyright (c) 2008, Willow Garage, Inc.
+ *  All rights reserved.
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,26 +34,46 @@
 
 #define USAGE "rosstage <worldfile>"
 
+// Our node
 class StageNode : public ros::node
 {
   private:
+    // Messages that we'll send or receive
     MsgBaseVel velMsg;
     MsgLaserScan laserMsg;
     MsgRobotBase2DOdom odomMsg;
+
+    // A mutex to lock access to fields that are used in message callbacks
     ros::thread::mutex lock;
 
-  public:
-    StageNode(int argc, char** argv, const char* fname);
-    ~StageNode();
-    int SubscribeModels();
-    void cmdvelReceived();
-    void Update();
-
-    static void ghfunc(gpointer key, Stg::StgModel* mod, StageNode* node);
-
-    Stg::StgWorldGui* world;
+    // The models that we're interested in
     Stg::StgModelLaser* lasermodel;
     Stg::StgModelPosition* positionmodel;
+
+    // A helper function that is executed for each stage model.  We use it
+    // to search for models of interest.
+    static void ghfunc(gpointer key, Stg::StgModel* mod, StageNode* node);
+
+  public:
+    // Constructor; stage itself needs argc/argv.  fname is the .world file
+    // that stage should load.
+    StageNode(int argc, char** argv, const char* fname);
+    ~StageNode();
+
+    // Subscribe to models of interest.  Currently, we find and subscribe
+    // to the first 'laser' model and the first 'position' model.  Returns
+    // 0 on success (both models subscribed), -1 otherwise.
+    int SubscribeModels();
+
+    // Do one update of the simulator.  May pause if the next update time
+    // has not yet arrived.
+    void Update();
+
+    // Message callback for a MsgBaseVel message, which set velocities.
+    void cmdvelReceived();
+
+    // The main simulator object
+    Stg::StgWorldGui* world;
 };
 
 void
@@ -80,6 +121,12 @@ StageNode::StageNode(int argc, char** argv, const char* fname) :
   this->world->ForEachModel((GHFunc)ghfunc, this);
 }
 
+// Subscribe to models of interest.  Currently, we find and subscribe
+// to the first 'laser' model and the first 'position' model.  Returns
+// 0 on success (both models subscribed), -1 otherwise.
+//
+// Eventually, we should provide a general way to map stage models onto ROS
+// topics, similar to Player .cfg files.
 int
 StageNode::SubscribeModels()
 {
@@ -111,13 +158,18 @@ StageNode::~StageNode()
 void
 StageNode::Update()
 {
+  // Wait until it's time to update
   this->world->PauseUntilNextUpdateTime();
   this->lock.lock();
+
+  // Let the simulator update
   this->world->Update();
 
+  // Get latest laser data
   Stg::stg_laser_sample_t* samples = this->lasermodel->GetSamples();
   if(samples)
   {
+    // Translate into ROS message format and publish
     Stg::stg_laser_cfg_t cfg = this->lasermodel->GetConfig();
     this->laserMsg.angle_min = -cfg.fov/2.0;
     this->laserMsg.angle_max = +cfg.fov/2.0;
@@ -134,20 +186,20 @@ StageNode::Update()
     publish("scan",this->laserMsg);
   }
 
+  // Get latest odometry data
+  // Translate into ROS message format and publish
   this->odomMsg.pos.x = this->positionmodel->est_pose.x;
   this->odomMsg.pos.y = this->positionmodel->est_pose.y;
   this->odomMsg.pos.th = this->positionmodel->est_pose.a;
-
   Stg::stg_velocity_t v = this->positionmodel->GetVelocity();
-
   this->odomMsg.vel.x = v.x;
   this->odomMsg.vel.y = v.y;
   this->odomMsg.vel.th = v.a;
-
   this->odomMsg.stall = this->positionmodel->Stall();
+  // TODO: get the frame ID from somewhere
+  this->odomMsg.header.frame_id = 2;
 
   publish("odom",this->odomMsg);
-  puts("published");
 
   this->lock.unlock();
 }
@@ -174,7 +226,7 @@ main(int argc, char** argv)
   }
   
   // have to call this explicitly for some reason.  probably interference
-  // from signal handling in Stage?
+  // from signal handling in Stage / FLTK?
   ros::msg_destruct();
 
   exit(0);

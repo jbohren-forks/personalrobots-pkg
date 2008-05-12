@@ -1,3 +1,24 @@
+/*
+ *  Software License Agreement (GNU LGPL)
+ *
+ *  Copyright (c) 2008, Willow Garage, Inc.
+ *  All rights reserved.
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU Lesser General Public
+ *  License as published by the Free Software Foundation; either
+ *  version 2.1 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public
+ *  License along with this library; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -13,14 +34,14 @@
 // The messages that we'll use
 #include <std_msgs/MsgPlanner2DState.h>
 #include <std_msgs/MsgPlanner2DGoal.h>
-#include <std_msgs/MsgRobotBase2DCmdVel.h>
+#include <std_msgs/MsgBaseVel.h>
 #include <std_msgs/MsgRobotBase2DOdom.h>
 #include <std_msgs/MsgLaserScan.h>
 
 // For transform support
 #include <rosTF/rosTF.h>
 
-#define ANG_NORM(a) atan2(cos((a)),sin((a)))
+#define ANG_NORM(a) atan2(sin((a)),cos((a)))
 #define DTOR(a) ((a)*M_PI/180.0)
 #define RTOD(a) ((a)*180.0/M_PI)
 #define SIGN(x) (((x) < 0.0) ? -1 : 1)
@@ -44,7 +65,6 @@ class WavefrontNode: public ros::node
     {
       NO_GOAL,
       PURSUING_GOAL,
-      ROTATING_AT_GOAL,
       REACHED_GOAL
     } planner_state;
     // Are we enabled?
@@ -145,7 +165,7 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         rotate_dir(0),
         printed_warning(false),
         stopped(false),
-        robot_radius(0.16),
+        robot_radius(0.2),
         safety_dist(0.05),
         max_radius(0.25),
         dist_penalty(1.0),
@@ -158,9 +178,9 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         lookahead_maxdist(2.0),
         lookahead_distweight(10.0),
         tvmin(0.1),
-        tvmax(0.5),
+        tvmax(0.35),
         avmin(DTOR(10.0)),
-        avmax(DTOR(90.0)),
+        avmax(DTOR(60.0)),
         amin(DTOR(5.0)),
         amax(DTOR(20.0)),
         tf(NULL)
@@ -186,8 +206,12 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
   {
     for(int i=0;i<sx;i++)
     {
-      this->plan->cells[i+j*sx].occ_state = 
-              mapdata[MAP_IDX(sx,i,j)];
+      if(mapdata[i+j*sx] < 0.1*255)
+        this->plan->cells[i+j*sx].occ_state = -1;
+      else if(mapdata[i+j*sx] > 0.9*255)
+        this->plan->cells[i+j*sx].occ_state = 1;
+      else
+        this->plan->cells[i+j*sx].occ_state = 0;
     }
   }
   free(mapdata);
@@ -207,9 +231,10 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
   this->tf = new rosTFClient(*this);
 
   advertise<MsgPlanner2DState>("state");
-  advertise<MsgRobotBase2DCmdVel>("cmdvel");
+  advertise<MsgBaseVel>("cmd_vel");
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived);
-  subscribe("odom", odomMsg, &WavefrontNode::odomReceived);
+  //subscribe("odom", odomMsg, &WavefrontNode::odomReceived);
+  subscribe("localizedpose", odomMsg, &WavefrontNode::odomReceived);
   subscribe("scan", laserMsg, &WavefrontNode::laserReceived);
 }
 
@@ -226,6 +251,11 @@ WavefrontNode::goalReceived()
   this->lock.lock();
   // Got a new goal message; handle it
   this->enable = goalMsg.enable;
+  printf("got new goal: %.3f %.3f %.3f\n", 
+         goalMsg.goal.x,
+         goalMsg.goal.y,
+         RTOD(goalMsg.goal.th));
+
   if(this->enable)
   {
     this->goal[0] = goalMsg.goal.x;
@@ -240,6 +270,7 @@ void
 WavefrontNode::odomReceived()
 {
   this->lock.lock();
+  /*
   libTF::TFPose2D odom_pose;
   odom_pose.x = odomMsg.pos.x;
   odom_pose.y = odomMsg.pos.y;
@@ -270,6 +301,14 @@ WavefrontNode::odomReceived()
   {
     puts("no global->local Tx yet");
   }
+  */
+  this->pose[0] = odomMsg.pos.x;
+  this->pose[1] = odomMsg.pos.y;
+  this->pose[2] = odomMsg.pos.th;
+  printf("gpose: %.3f %.3f %.3f\n",
+         this->pose[0],
+         this->pose[1],
+         RTOD(this->pose[2]));
   this->lock.unlock();
 }
 
@@ -283,27 +322,26 @@ WavefrontNode::laserReceived()
 void
 WavefrontNode::stopRobot()
 {
-  if(!this->stopped)
-  {
+  //if(!this->stopped)
+  //{
     // TODO: should we send more than once, or perhaps use RPC for this?
     this->sendVelCmd(0.0,0.0,0.0);
     this->stopped = true;
-  }
+  //}
 }
 
 // Declare this globally, so that it never gets desctructed (message
 // desctruction causes master disconnect)
-MsgRobotBase2DCmdVel* cmdvel;
+MsgBaseVel* cmdvel;
 
 void
 WavefrontNode::sendVelCmd(double vx, double vy, double vth)
 {
   if(!cmdvel)
-    cmdvel = new MsgRobotBase2DCmdVel();
-  cmdvel->vel.x = vx;
-  cmdvel->vel.y = vy;
-  cmdvel->vel.th = vth;
-  this->ros::node::publish("cmdvel", *cmdvel);
+    cmdvel = new MsgBaseVel();
+  cmdvel->vx = vx;
+  cmdvel->vw = vth;
+  this->ros::node::publish("cmd_vel", *cmdvel);
 }
 
 
@@ -320,13 +358,13 @@ WavefrontNode::doOneCycle()
   this->lock.lock();
   switch(this->planner_state)
   {
-    // Treat these states the same; do nothing
     case NO_GOAL:
-    case REACHED_GOAL:
+      puts("no goal");
       this->stopRobot();
       break;
-    case ROTATING_AT_GOAL:
-
+    case REACHED_GOAL:
+      puts("still done");
+      this->stopRobot();
       break;
     case PURSUING_GOAL:
       {
@@ -336,6 +374,7 @@ WavefrontNode::doOneCycle()
                            this->goal[0], this->goal[1], this->goal[2],
                            this->dist_eps, this->ang_eps))
         {
+          puts("done");
           this->stopRobot();
           this->planner_state = REACHED_GOAL;
           break;
@@ -352,11 +391,11 @@ WavefrontNode::doOneCycle()
             // no global plan
             this->stopRobot();
 
-            if(!this->printed_warning)
-            {
+            //if(!this->printed_warning)
+            //{
               puts("global plan failed");
-              this->printed_warning = true;
-            }
+              //this->printed_warning = true;
+            //}
             break;
           }
           else
@@ -393,6 +432,7 @@ WavefrontNode::doOneCycle()
           break;
         }
 
+        printf("computed velocities: %.3f %.3f\n", vx, RTOD(va));
         this->sendVelCmd(vx, 0.0, va);
 
         break;
