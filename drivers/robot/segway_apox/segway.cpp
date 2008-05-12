@@ -186,9 +186,9 @@ void Segway::main_loop()
 					if (odom_count++ % 10 == 0) // send it at 5 hz or so
 					{
 //						printf("(%f, %f, %f)\n", odom_x, odom_y, odom_yaw);
-            odom.px = odom_x;
-            odom.py = odom_y;
-            odom.pyaw = odom_yaw;
+            odom.pos.x  = odom_x;
+            odom.pos.y  = odom_y;
+            odom.pos.th = odom_yaw;
             publish("odom", odom);
 					}
 				}
@@ -214,5 +214,6 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   Segway s;
   s.main_loop();
+	s.shutdown();
   return 0;
 }
