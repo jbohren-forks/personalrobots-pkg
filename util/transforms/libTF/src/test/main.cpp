@@ -107,6 +107,34 @@ int main(void)
   //Testing clearing the history with parent change
   mTR.setWithEulers(7,5,1,1,1,dyaw,dp,dr,atime);
   //todo display this somehow
+
+
+  std::cout << " Testing accessors" <<std::endl;
+
+  double x,y,z,yaw,pitch,roll;
+
+  x = 30.0;
+  y = 10.0;
+  z = 0.0;
+  yaw = 0.0;
+  pitch = 0.0;
+  roll = 0.0;
+
+  mTR.setWithEulers(2,1,x,y,z,yaw,pitch,roll,atime);
+
+  libTF::TFPose2D in, out;
+
+  in.x = 0.0;
+  in.y = 0.0;
+  in.yaw = 0.0;
+  in.frame = 2;
+  in.time = atime;
+
+  out = mTR.transformPose2D(1,in);
+
+  printf("%.3f %.3f %.3f\n",
+         out.x, out.y, out.yaw*180.0/M_PI);
+
   
   return 0;
 };

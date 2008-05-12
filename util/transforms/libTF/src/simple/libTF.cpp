@@ -212,15 +212,15 @@ TFEulerYPR TransformReference::transformEulerYPR(unsigned int target_frame, cons
 
 TFYaw  TransformReference::transformYaw(unsigned int target_frame, const TFYaw & euler_in)
 {
-  TFPoint2D point_in;
-  point_in.x = cos(euler_in.yaw);
-  point_in.y = sin(euler_in.yaw);
-  point_in.frame = euler_in.frame;
-  point_in.time = euler_in.time;
-  TFPoint2D point_out = transformPoint2D(target_frame, point_in);
+  TFVector2D vector_in;
+  vector_in.x = cos(euler_in.yaw);
+  vector_in.y = sin(euler_in.yaw);
+  vector_in.frame = euler_in.frame;
+  vector_in.time = euler_in.time;
+  TFVector2D vector_out = transformVector2D(target_frame, vector_in);
 
   TFYaw retYaw;
-  retYaw.yaw = atan2(point_out.y, point_out.x);
+  retYaw.yaw = atan2(vector_out.y, vector_out.x);
   retYaw.frame = target_frame;
   retYaw.time = euler_in.time;
   return retYaw;
