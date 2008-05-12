@@ -250,6 +250,12 @@ public:
   }
 };
 
+void 
+quit(int sig) 
+{
+  SDL_Quit();
+  ros::basic_sigint_handler(sig);
+}
 
 int main(int argc, char **argv)
 {
@@ -269,9 +275,12 @@ int main(int argc, char **argv)
     exit(1);
   }
 
+  signal(SIGINT, quit);
+
   while (lv.ok()) {
     lv.check_events();
   }
+
   return 0;
 }
 
