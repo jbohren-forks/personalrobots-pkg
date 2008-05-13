@@ -42,6 +42,29 @@
 
 namespace libTF{
 
+
+
+struct PoseYPR
+{
+  double x,y,z,yaw, pitch, roll;
+};
+
+struct Position
+{
+  double x,y,z;
+};
+
+struct Quaternion
+{
+  double x,y,z,w;
+};
+
+struct EulerYPR
+{
+  double yaw, pitch, roll;
+};
+
+
 class Euler3D {
 public:
   //Constructor
@@ -53,30 +76,37 @@ public:
 };
 
 
+class Pose3D 
+{
+ public:
+  
+  /** Unary operators preserve timestamps
+   * Binary operators destroy timestamps */
+  
+  // Utility functions to normalize and get magnitude.
+  void Normalize();
+  double getMagnitude();
+  Pose3D & operator=(const Pose3D & input);
+  
+    
+    /* accessors */
+    NEWMAT::Matrix asMatrix();
+    
+    /* Internal Data */    
+    double xt, yt, zt, xr, yr, zr, w;
+    
+};
+ 
 class Quaternion3D {
 
 public:
   static const int MIN_INTERPOLATION_DISTANCE = 5; //Number of nano-seconds to not interpolate below.
   static const unsigned int MAX_LENGTH_LINKED_LIST = 1000000; // Maximum length of linked list, to make sure not to be able to use unlimited memory.
   // Storage class
-  class Quaternion3DStorage
+  class Quaternion3DStorage : public Pose3D
   {
   public:
-
-    /** Unary operators preserve timestamps
-     * Binary operators destroy timestamps */
-
-    // Utility functions to normalize and get magnitude.
-    void Normalize();
-    double getMagnitude();
     Quaternion3DStorage & operator=(const Quaternion3DStorage & input);
-
-
-    /* accessors */
-    NEWMAT::Matrix asMatrix();
-
-    /* Internal Data */    
-    double xt, yt, zt, xr, yr, zr, w;
     unsigned long long time; //nanoseconds since 1970
   };
   

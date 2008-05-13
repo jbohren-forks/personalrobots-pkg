@@ -207,6 +207,19 @@ NEWMAT::Matrix Quaternion3D::matrixFromDH(double length,
 };
 
 
+Pose3D& Pose3D::operator=(const Pose3D & input)
+{
+  xt = input.xt;
+  yt = input.yt;
+  zt = input.zt;
+  xr = input.xr;
+  yr = input.yr;
+  zr = input.zr;
+  w  = input.w ;
+
+  return *this;
+};
+
 Quaternion3D::Quaternion3DStorage& Quaternion3D::Quaternion3DStorage::operator=(const Quaternion3DStorage & input)
 {
   xt = input.xt;
@@ -220,6 +233,7 @@ Quaternion3D::Quaternion3DStorage& Quaternion3D::Quaternion3DStorage::operator=(
 
   return *this;
 };
+
 
 
 Euler3D Quaternion3D::eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned int solution_number)
@@ -280,7 +294,7 @@ Euler3D Quaternion3D::eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned
 };
 
 
-void Quaternion3D::Quaternion3DStorage::Normalize()
+void Pose3D::Normalize()
 {
   double mag = getMagnitude();
   xr /= mag;
@@ -289,7 +303,7 @@ void Quaternion3D::Quaternion3DStorage::Normalize()
   w /= mag;
 };
 
-double Quaternion3D::Quaternion3DStorage::getMagnitude()
+double Pose3D::getMagnitude()
 {
   return sqrt(xr*xr + yr*yr + zr*zr + w*w);
 };
@@ -329,7 +343,7 @@ NEWMAT::Matrix Quaternion3D::getInverseMatrix(unsigned long long time)
 
 };
 
-NEWMAT::Matrix Quaternion3D::Quaternion3DStorage::asMatrix()
+NEWMAT::Matrix Pose3D::asMatrix()
 {
   
   NEWMAT::Matrix outMat(4,4);
