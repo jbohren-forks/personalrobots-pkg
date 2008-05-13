@@ -94,8 +94,21 @@ class Pose3D
     
     /* Internal Data */    
     double xt, yt, zt, xr, yr, zr, w;
+
+    // Convert DH Parameters to a Homogeneous Transformation Matrix
+    static NEWMAT::Matrix matrixFromDH(double length, double alpha, double offset, double theta);
+    // Convert Euler Angles to a Homogeneous Transformation Matrix
+    static NEWMAT::Matrix matrixFromEuler(double ax,
+					  double ay, double az, double yaw,
+					  double pitch, double roll);
+
+    static Euler3D eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned int solution_number=1);
+    
     
 };
+
+
+
  
 class Quaternion3D {
 
@@ -132,15 +145,6 @@ public:
   NEWMAT::Matrix getMatrix(unsigned long long time);
   // Return the inverse matrix
   NEWMAT::Matrix getInverseMatrix(unsigned long long time);
-
-  // Convert DH Parameters to a Homogeneous Transformation Matrix
-  static NEWMAT::Matrix matrixFromDH(double length, double alpha, double offset, double theta);
-  // Convert Euler Angles to a Homogeneous Transformation Matrix
-  static NEWMAT::Matrix matrixFromEuler(double ax,
-				 double ay, double az, double yaw,
-				 double pitch, double roll);
-
-  static Euler3D eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned int solution_number=1);
   
   //Print as a matrix
   void printMatrix(unsigned long long time);  //Not a critical part either

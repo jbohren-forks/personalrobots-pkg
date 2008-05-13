@@ -196,12 +196,12 @@ TFVector2D TransformReference::transformVector2D(unsigned int target_frame, cons
 TFEulerYPR TransformReference::transformEulerYPR(unsigned int target_frame, const TFEulerYPR & euler_in)
 {
 
-  NEWMAT::Matrix local = Quaternion3D::matrixFromEuler(0,0,0,euler_in.yaw, euler_in.pitch, euler_in.roll);
+  NEWMAT::Matrix local = Pose3D::matrixFromEuler(0,0,0,euler_in.yaw, euler_in.pitch, euler_in.roll);
   NEWMAT::Matrix Transform = getMatrix(target_frame, euler_in.frame, euler_in.time);
   
   NEWMAT::Matrix output = local.i() * Transform;
 
-  Euler3D eulers = Quaternion3D::eulerFromMatrix(output,1); 
+  Euler3D eulers = Pose3D::eulerFromMatrix(output,1); 
 
   TFEulerYPR retEuler;
   retEuler.yaw = eulers.yaw;

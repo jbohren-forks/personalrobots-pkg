@@ -123,18 +123,18 @@ void Quaternion3D::fromMatrix(const NEWMAT::Matrix& matIn, unsigned long long ti
 
 void Quaternion3D::fromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll, unsigned long long time)
 {
-  fromMatrix(matrixFromEuler(_x,_y,_z,_yaw,_pitch,_roll),time);
+  fromMatrix(Pose3D::matrixFromEuler(_x,_y,_z,_yaw,_pitch,_roll),time);
 };
 
 void Quaternion3D::fromDH(double length, double alpha, double offset, double theta, unsigned long long time)
 {
-  fromMatrix(matrixFromDH(length, alpha, offset, theta),time);
+  fromMatrix(Pose3D::matrixFromDH(length, alpha, offset, theta),time);
 };
 
 
-NEWMAT::Matrix Quaternion3D::matrixFromEuler(double ax,
-					     double ay, double az, double yaw,
-					     double pitch, double roll)
+NEWMAT::Matrix Pose3D::matrixFromEuler(double ax,
+			       double ay, double az, double yaw,
+			       double pitch, double roll)
 {
   NEWMAT::Matrix matrix(4,4);
   double ca = cos(yaw);
@@ -174,8 +174,8 @@ NEWMAT::Matrix Quaternion3D::matrixFromEuler(double ax,
 
 
 // Math from http://en.wikipedia.org/wiki/Robotics_conventions
-NEWMAT::Matrix Quaternion3D::matrixFromDH(double length,
-					  double alpha, double offset, double theta)
+NEWMAT::Matrix Pose3D::matrixFromDH(double length,
+			    double alpha, double offset, double theta)
 {
   NEWMAT::Matrix matrix(4,4);
   
@@ -236,7 +236,7 @@ Quaternion3D::Quaternion3DStorage& Quaternion3D::Quaternion3DStorage::operator=(
 
 
 
-Euler3D Quaternion3D::eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned int solution_number)
+Euler3D Pose3D::eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned int solution_number)
 {
 
   Euler3D euler_out;
