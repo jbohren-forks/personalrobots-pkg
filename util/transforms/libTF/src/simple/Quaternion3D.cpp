@@ -75,6 +75,35 @@ void Quaternion3D::addFromMatrix(const NEWMAT::Matrix& matIn, unsigned long long
 
 };
 
+
+Pose3D::Pose3D():
+  xt(0), yt(0),zt(0),
+  xr(1), yr(0), zr(0),w(0)
+{
+};
+
+
+///Translation only constructor
+Pose3D::Pose3D(double xt, double yt, double zt):
+  xt(xt), yt(yt),zt(zt),
+  xr(1), yr(0), zr(0),w(0)
+{
+}; 
+/// Quaternion only constructor
+Pose3D::Pose3D(double xr, double yr, double zr, double w):
+  xt(0), yt(0),zt(0),
+  xr(xr), yr(yr), zr(zr),w(w)
+{
+}; 
+  /// Trans and Quat constructor
+Pose3D::Pose3D(double xt, double yt, double zt, 
+	       double xr, double yr, double zr, double w):
+  xt(xt), yt(yt),zt(zt),
+  xr(xr), yr(yr), zr(zr),w(w)
+{
+}; 
+
+
 void Pose3D::setFromMatrix(const NEWMAT::Matrix& matIn)
 {
   // math derived from http://www.j3d.org/matrix_faq/matrfaq_latest.html

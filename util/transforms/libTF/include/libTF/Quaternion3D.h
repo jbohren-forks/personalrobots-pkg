@@ -79,9 +79,16 @@ public:
 class Pose3D 
 {
  public:
-  
-  /** Unary operators preserve timestamps
-   * Binary operators destroy timestamps */
+  /* Constructors */
+  ///Empty Constructor initialize to zero
+  Pose3D();
+  ///Translation only constructor
+  Pose3D(double xt, double yt, double zt); 
+  /// Quaternion only constructor
+  Pose3D(double xr, double yt, double zt, double w);
+  /// Trans and Quat constructor
+  Pose3D(double xt, double yt, double zt, 
+	 double xr, double yt, double zt, double w);
   
   // Utility functions to normalize and get magnitude.
   void Normalize();
