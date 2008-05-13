@@ -91,6 +91,9 @@ class Pose3D
     
     /* accessors */
     NEWMAT::Matrix asMatrix();
+    NEWMAT::Matrix getInverseMatrix();
+    Quaternion asQuaternion();
+    Position asPosition();
     
 
     /** Mutators **/

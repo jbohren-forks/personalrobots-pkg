@@ -402,6 +402,29 @@ NEWMAT::Matrix Pose3D::asMatrix()
   return outMat;
 };
 
+NEWMAT::Matrix Pose3D::getInverseMatrix()
+{
+  return asMatrix().i();
+};
+
+Quaternion Pose3D::asQuaternion()
+{
+  Quaternion quat;
+  quat.x = xr;
+  quat.y = yr;
+  quat.z = zr;
+  quat.w = w;
+  return quat;
+};
+
+Position Pose3D::asPosition()
+{
+  Position pos;
+  pos.x = xt;
+  pos.y = yt;
+  pos.z = zt;
+  return pos;
+};
 
 void Quaternion3D::printMatrix(unsigned long long time)
 {
