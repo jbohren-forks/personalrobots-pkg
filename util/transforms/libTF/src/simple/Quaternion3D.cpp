@@ -67,15 +67,25 @@ void Quaternion3D::fromQuaternion(double _xt, double _yt, double _zt, double _xr
 
 void Quaternion3D::fromMatrix(const NEWMAT::Matrix& matIn, unsigned long long time)
 {
-  // math derived from http://www.j3d.org/matrix_faq/matrfaq_latest.html
   Quaternion3DStorage temp;
+  temp.fromMatrix(matIn);
   temp.time = time;  
+
+  add_value(temp);
+
+};
+
+void Pose3D::fromMatrix(const NEWMAT::Matrix& matIn)
+{
+  // math derived from http://www.j3d.org/matrix_faq/matrfaq_latest.html
+
+
 
   const double * mat = matIn.Store();
   //Get the translations
-  temp.xt = mat[3];
-  temp.yt = mat[7];
-  temp.zt = mat[11];
+  xt = mat[3];
+  yt = mat[7];
+  zt = mat[11];
 
   //TODO ASSERT others are zero and one as they should be
 
@@ -90,35 +100,34 @@ void Quaternion3D::fromMatrix(const NEWMAT::Matrix& matIn, unsigned long long ti
   if ( T > 0.00000001 ) //to avoid large distortions!
     {
       double S = sqrt(T) * 2;
-      temp.xr = ( mat[9] - mat[6] ) / S;
-      temp.yr = ( mat[2] - mat[8] ) / S;
-      temp.zr = ( mat[4] - mat[1] ) / S;
-      temp.w = 0.25 * S;
+      xr = ( mat[9] - mat[6] ) / S;
+      yr = ( mat[2] - mat[8] ) / S;
+      zr = ( mat[4] - mat[1] ) / S;
+      w = 0.25 * S;
     }
   //If the trace of the matrix is equal to zero then identify
   // which major diagonal element has the greatest value.
   //  Depending on this, calculate the following:
   else if ( mat[0] > mat[5] && mat[0] > mat[10] ) {// Column 0: 
         double S  = sqrt( 1.0 + mat[0] - mat[5] - mat[10] ) * 2;
-        temp.xr = 0.25 * S;
-        temp.yr = (mat[1] + mat[4] ) / S;
-        temp.zr = (mat[8] + mat[2] ) / S;
-        temp.w = (mat[6] - mat[9] ) / S;
+        xr = 0.25 * S;
+        yr = (mat[1] + mat[4] ) / S;
+        zr = (mat[8] + mat[2] ) / S;
+        w = (mat[6] - mat[9] ) / S;
       } else if ( mat[5] > mat[10] ) {// Column 1: 
         double S  = sqrt( 1.0 + mat[5] - mat[0] - mat[10] ) * 2;
-        temp.xr = (mat[1] + mat[4] ) / S;
-        temp.yr = 0.25 * S;
-        temp.zr = (mat[6] + mat[9] ) / S;
-        temp.w = (mat[8] - mat[2] ) / S;
+        xr = (mat[1] + mat[4] ) / S;
+        yr = 0.25 * S;
+        zr = (mat[6] + mat[9] ) / S;
+        w = (mat[8] - mat[2] ) / S;
       } else {// Column 2:
         double S  = sqrt( 1.0 + mat[10] - mat[0] - mat[5] ) * 2;
-        temp.xr = (mat[8] + mat[2] ) / S;
-        temp.yr = (mat[6] + mat[9] ) / S;
-        temp.zr = 0.25 * S;
-        temp.w = (mat[1] - mat[4] ) / S;
+        xr = (mat[8] + mat[2] ) / S;
+        yr = (mat[6] + mat[9] ) / S;
+        zr = 0.25 * S;
+        w = (mat[1] - mat[4] ) / S;
       }
 
-      add_value(temp);
 };
 
 void Quaternion3D::fromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll, unsigned long long time)

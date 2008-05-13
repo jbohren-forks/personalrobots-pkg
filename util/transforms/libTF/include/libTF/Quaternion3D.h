@@ -92,9 +92,21 @@ class Pose3D
     /* accessors */
     NEWMAT::Matrix asMatrix();
     
+
+    /** Mutators **/
+    //Set the values from a matrix
+    void fromMatrix(const NEWMAT::Matrix& matIn);
+
     /* Internal Data */    
     double xt, yt, zt, xr, yr, zr, w;
 
+
+
+
+
+
+
+    /**************** Static Helper Functions ***********************/
     // Convert DH Parameters to a Homogeneous Transformation Matrix
     static NEWMAT::Matrix matrixFromDH(double length, double alpha, double offset, double theta);
     // Convert Euler Angles to a Homogeneous Transformation Matrix
