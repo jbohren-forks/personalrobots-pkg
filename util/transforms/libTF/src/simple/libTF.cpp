@@ -63,7 +63,7 @@ void TransformReference::setWithEulers(unsigned int frameID, unsigned int parent
     frames[frameID] = new RefFrame();
   
   getFrame(frameID)->setParent(parentID);
-  getFrame(frameID)->fromEuler(a,b,c,d,e,f,time);
+  getFrame(frameID)->addFromEuler(a,b,c,d,e,f,time);
 }
 
 void TransformReference::setWithDH(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d, ULLtime time)
@@ -75,7 +75,7 @@ void TransformReference::setWithDH(unsigned int frameID, unsigned int parentID, 
     frames[frameID] = new RefFrame();
   
   getFrame(frameID)->setParent(parentID);
-  getFrame(frameID)->fromDH(a,b,c,d,time);
+  getFrame(frameID)->addFromDH(a,b,c,d,time);
 }
 
 
@@ -89,7 +89,7 @@ void TransformReference::setWithMatrix(unsigned int frameID, unsigned int parent
     frames[frameID] = new RefFrame();
 
   getFrame(frameID)->setParent(parentID);
-  getFrame(frameID)->fromMatrix(matrix_in,time);
+  getFrame(frameID)->addFromMatrix(matrix_in,time);
 }
 
 
@@ -102,7 +102,7 @@ void TransformReference::setWithQuaternion(unsigned int frameID, unsigned int pa
     frames[frameID] = new RefFrame();
   
   getFrame(frameID)->setParent(parentID);
-  getFrame(frameID)->fromQuaternion(xt, yt, zt, xr, yr, zr, w,time);
+  getFrame(frameID)->addFromQuaternion(xt, yt, zt, xr, yr, zr, w,time);
 }
 
 

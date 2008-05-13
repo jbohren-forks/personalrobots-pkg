@@ -55,7 +55,7 @@ Quaternion3D::Quaternion3D(unsigned long long max_cache_time):
   return;
 };
 
-void Quaternion3D::fromQuaternion(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time)
+void Quaternion3D::addFromQuaternion(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time)
 {
  Quaternion3DStorage temp;
  temp.xt = _xt; temp.yt = _yt; temp.zt = _zt; temp.xr = _xr; temp.yr = _yr; temp.zr = _zr; temp.w = _w; temp.time = time;
@@ -65,17 +65,17 @@ void Quaternion3D::fromQuaternion(double _xt, double _yt, double _zt, double _xr
 } ;
 
 
-void Quaternion3D::fromMatrix(const NEWMAT::Matrix& matIn, unsigned long long time)
+void Quaternion3D::addFromMatrix(const NEWMAT::Matrix& matIn, unsigned long long time)
 {
   Quaternion3DStorage temp;
-  temp.fromMatrix(matIn);
+  temp.setFromMatrix(matIn);
   temp.time = time;  
 
   add_value(temp);
 
 };
 
-void Pose3D::fromMatrix(const NEWMAT::Matrix& matIn)
+void Pose3D::setFromMatrix(const NEWMAT::Matrix& matIn)
 {
   // math derived from http://www.j3d.org/matrix_faq/matrfaq_latest.html
 
@@ -130,14 +130,28 @@ void Pose3D::fromMatrix(const NEWMAT::Matrix& matIn)
 
 };
 
-void Quaternion3D::fromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll, unsigned long long time)
+void Quaternion3D::addFromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll, unsigned long long time)
 {
-  fromMatrix(Pose3D::matrixFromEuler(_x,_y,_z,_yaw,_pitch,_roll),time);
+  Quaternion3DStorage temp;
+  temp.setFromEuler(_x,_y,_z,_yaw,_pitch,_roll);
+  temp.time = time;
+
+  add_value(temp);  
 };
 
-void Quaternion3D::fromDH(double length, double alpha, double offset, double theta, unsigned long long time)
+void Pose3D::setFromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll)
 {
-  fromMatrix(Pose3D::matrixFromDH(length, alpha, offset, theta),time);
+  setFromMatrix(Pose3D::matrixFromEuler(_x,_y,_z,_yaw,_pitch,_roll));
+};
+
+void Quaternion3D::addFromDH(double length, double alpha, double offset, double theta, unsigned long long time)
+{
+  addFromMatrix(Pose3D::matrixFromDH(length, alpha, offset, theta),time);
+};
+
+void Pose3D::setFromDH(double length, double alpha, double offset, double theta)
+{
+  setFromMatrix(Pose3D::matrixFromDH(length, alpha, offset, theta));
 };
 
 

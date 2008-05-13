@@ -95,7 +95,11 @@ class Pose3D
 
     /** Mutators **/
     //Set the values from a matrix
-    void fromMatrix(const NEWMAT::Matrix& matIn);
+    void setFromMatrix(const NEWMAT::Matrix& matIn);
+    // Set the values using Euler angles
+    void setFromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll);
+    // Set the values using DH Parameters
+    void setFromDH(double length, double alpha, double offset, double theta);
 
     /* Internal Data */    
     double xt, yt, zt, xr, yr, zr, w;
@@ -141,13 +145,13 @@ public:
   
   /** Mutators **/
   // Set the values manually
-  void fromQuaternion(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time);
+  void addFromQuaternion(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time);
   //Set the values from a matrix
-  void fromMatrix(const NEWMAT::Matrix& matIn, unsigned long long time);
+  void addFromMatrix(const NEWMAT::Matrix& matIn, unsigned long long time);
   // Set the values using Euler angles
-  void fromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll, unsigned long long time);
+  void addFromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll, unsigned long long time);
   // Set the values using DH Parameters
-  void fromDH(double length, double alpha, double offset, double theta, unsigned long long time);
+  void addFromDH(double length, double alpha, double offset, double theta, unsigned long long time);
 
   
   /** Interpolated Accessors **/
