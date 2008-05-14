@@ -1,4 +1,6 @@
 <package>
+  <author>Morgan Quigley</author>
+  <license>BSD</license>
   <depend package="sdl"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsdlgl -lGL -lGLU"/>
