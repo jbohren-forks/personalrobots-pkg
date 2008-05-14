@@ -43,13 +43,17 @@ Euler3D::Euler3D(double _x, double _y, double _z, double _yaw, double _pitch, do
 };
 
 
-Quaternion3D::Quaternion3D(unsigned long long max_cache_time):
+Quaternion3D::Quaternion3D(bool caching, unsigned long long max_cache_time):
   max_storage_time(max_cache_time),
+  max_length_linked_list(MAX_LENGTH_LINKED_LIST),
   first(NULL),
   last(NULL),
   list_length(0)
 {
-  
+  //Turn of caching, this should only keep a liked list of lenth 1
+  // Thus returning only the latest
+  if (!caching) max_length_linked_list = 1;
+
   pthread_mutex_init( &linked_list_mutex, NULL);
   //fixme Normalize();
   return;
@@ -589,24 +593,19 @@ void Quaternion3D::pruneList()
 
 
   //While time stamps too old
-  while (p_current->data.time + max_storage_time < current_time || list_length > MAX_LENGTH_LINKED_LIST)
+  while (p_current->data.time + max_storage_time < current_time || list_length >= max_length_linked_list)
     {
       //      cout << "Age of node " << (double)(-p_current->data.time + current_time)/1000000.0 << endl;
-     // Make sure that there's at least two elements in the list
+     // Make sure that there's at least one element in the list
       if (p_current->previous != NULL)
 	{
-	  if (p_current->previous->previous != NULL)
-	    {
-	      // Remove the last node
-	      p_current->previous->next = NULL;
-	      last = p_current->previous;
-	      delete p_current;
-	      p_current = last;
-	      //	      cout << " Pruning Node" << endl;
-	      list_length--;
-	    }
-	  else 
-	    break;
+	  // Remove the last node
+	  p_current->previous->next = NULL;
+	  last = p_current->previous;
+	  delete p_current;
+	  p_current = last;
+	  // std::cout << " Pruning Node" << list_length << std::endl;
+	  list_length--;
 	}
       else 
 	break;

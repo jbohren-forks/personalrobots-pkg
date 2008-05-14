@@ -141,6 +141,8 @@ class Quaternion3D {
 public:
   static const int MIN_INTERPOLATION_DISTANCE = 5; //Number of nano-seconds to not interpolate below.
   static const unsigned int MAX_LENGTH_LINKED_LIST = 1000000; // Maximum length of linked list, to make sure not to be able to use unlimited memory.
+  static const unsigned long long DEFAULT_MAX_STORAGE_TIME = 10ULL * 1000000000ULL; // default value of 10 seconds storage
+
   // Storage class
   class Quaternion3DStorage : public Pose3D
   {
@@ -151,7 +153,7 @@ public:
   
   /** Constructors **/
   // Standard constructor max_cache_time is how long to cache transform data
-  Quaternion3D(unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME);
+  Quaternion3D(bool caching = true, unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME);
   
   /** Mutators **/
   // Set the values manually
@@ -182,7 +184,6 @@ public:
   
 private:
   /**** Linked List stuff ****/
-  static const unsigned long long DEFAULT_MAX_STORAGE_TIME = 10ULL * 1000000000ULL; // default value of 10 seconds storage
  
   struct data_LL{
     Quaternion3DStorage data;
@@ -214,6 +215,8 @@ private:
 
   //How long to cache incoming values
   unsigned long long max_storage_time;
+  //Max length of linked list
+  unsigned long long max_length_linked_list;
 
   //A mutex to prevent linked list collisions
   pthread_mutex_t linked_list_mutex;

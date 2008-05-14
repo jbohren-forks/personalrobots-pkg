@@ -34,16 +34,17 @@
 
 using namespace libTF;
 
-TransformReference::RefFrame::RefFrame() :
-  Quaternion3D(),
+TransformReference::RefFrame::RefFrame(bool caching, unsigned long long max_cache_time) :
+  Quaternion3D(caching, max_cache_time),
   parent(TransformReference::NO_PARENT)
 {
   return;
 }
 
 
-TransformReference::TransformReference(ULLtime cache_time):
-  cache_time(cache_time)
+TransformReference::TransformReference(bool caching, ULLtime cache_time):
+  cache_time(cache_time),
+  caching (caching)
 {
   /* initialize pointers to NULL */
   for (unsigned int i = 0; i < MAX_NUM_FRAMES; i++)
@@ -60,7 +61,7 @@ void TransformReference::setWithEulers(unsigned int frameID, unsigned int parent
     throw InvalidFrame;
   
   if (frames[frameID] == NULL)
-    frames[frameID] = new RefFrame();
+    frames[frameID] = new RefFrame(caching);
   
   getFrame(frameID)->setParent(parentID);
   getFrame(frameID)->addFromEuler(a,b,c,d,e,f,time);
@@ -72,7 +73,7 @@ void TransformReference::setWithDH(unsigned int frameID, unsigned int parentID, 
     throw InvalidFrame;
   
   if (frames[frameID] == NULL)
-    frames[frameID] = new RefFrame();
+    frames[frameID] = new RefFrame(caching);
   
   getFrame(frameID)->setParent(parentID);
   getFrame(frameID)->addFromDH(a,b,c,d,time);
@@ -86,7 +87,7 @@ void TransformReference::setWithMatrix(unsigned int frameID, unsigned int parent
   
   //TODO check and throw exception if matrix wrong size
   if (frames[frameID] == NULL)
-    frames[frameID] = new RefFrame();
+    frames[frameID] = new RefFrame(caching);
 
   getFrame(frameID)->setParent(parentID);
   getFrame(frameID)->addFromMatrix(matrix_in,time);
@@ -99,7 +100,7 @@ void TransformReference::setWithQuaternion(unsigned int frameID, unsigned int pa
     throw InvalidFrame;
   
   if (frames[frameID] == NULL)
-    frames[frameID] = new RefFrame();
+    frames[frameID] = new RefFrame(caching);
   
   getFrame(frameID)->setParent(parentID);
   getFrame(frameID)->addFromQuaternion(xt, yt, zt, xr, yr, zr, w,time);

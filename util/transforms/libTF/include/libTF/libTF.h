@@ -193,7 +193,7 @@ public:
   /** Constructor 
    * \param How long to keep a history of transforms in nanoseconds
    */
-  TransformReference(ULLtime cache_time = DEFAULT_CACHE_TIME);
+  TransformReference(bool caching = true, ULLtime cache_time = DEFAULT_CACHE_TIME);
 
   /********** Mutators **************/
   /** Set a new frame or update an old one.
@@ -306,7 +306,7 @@ private:
     public:
 
       /** Constructor */
-      RefFrame();
+      RefFrame(bool caching = true,  unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME);
       
       /** \brief Get the parent nodeID */
       inline unsigned int getParent(){return parent;};
@@ -333,6 +333,9 @@ private:
   /// How long to cache transform history
   ULLtime cache_time;
 
+  /// whether or not to cache
+  bool caching;
+
  public:
   /** \brief An internal representation of transform chains
    * 
@@ -343,7 +346,7 @@ private:
     std::vector<unsigned int> forwardTransforms;
   } TransformLists;
 
-  // private:
+  // private: //commented for debugging
   /************************* Internal Functions ****************************/
   
   /** \brief An accessor to get a frame, which will throw an exception if the frame is no there. 

@@ -6,8 +6,17 @@ using namespace libTF;
 
 int main(void)
 {
+
+  for (int ind = 0; ind < 2;ind++)
+    {
+      bool caching;
+      if (ind == 0) { caching = true; std::cout << "Caching Mode"<<std::endl;}
+      else {caching = false; std::cout << std::endl<<std::endl<<std::endl<<"Not Caching Mode" <<std::endl;}
+
+
+
   double dx,dy,dz,dyaw,dp,dr;
-  TransformReference mTR;
+  TransformReference mTR(caching);
   
       
   
@@ -24,7 +33,9 @@ int main(void)
    mTR.setWithEulers(2,3,1,1,1,dyaw,dp,dr,atime-100);
    mTR.setWithEulers(2,3,1,1,1,dyaw,dp,dr,atime-50);
    mTR.setWithEulers(2,3,1,1,1,dyaw,dp,dr,atime-1000);
-   //mTR.setWithEulers(2,3,1+1,1,1,dyaw,dp,dr,atime+1000);
+   mTR.setWithEulers(2,3,1,1,1,dyaw,dp,dr,atime+500);
+   mTR.setWithEulers(2,3,1+100,1,1,dyaw,dp,dr,atime+1000);
+   mTR.setWithEulers(2,3,1,1,1,dyaw,dp,dr,atime+1100);
   mTR.setWithEulers(3,5,dx,dy,dz,dyaw,dp,dr,atime);
   mTR.setWithEulers(5,1,dx,dy,dz,dyaw,dp,dr,atime);
   mTR.setWithEulers(6,5,dx,dy,dz,dyaw,dp,dr,atime);
@@ -147,6 +158,10 @@ int main(void)
       std::cout << "transformPose2D(0,in): Caught " << ex.what()<<std::endl;
     }
 
+
+    }
+
+  std::cout <<"Congratulations! You reached the end of the test program without errors." <<std::endl;
   
   return 0;
 };
