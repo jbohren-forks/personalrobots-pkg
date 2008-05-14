@@ -16,7 +16,7 @@ class mqmat;
 template<size_t rows, size_t cols, typename T> 
 std::ostream &operator<<(std::ostream &, const mqmat<rows, cols, T> &);
 
-template<size_t rows, size_t cols, typename T = double>
+template<size_t rows, size_t cols = 1, typename T = double>
 class mqmat
 {
   friend std::ostream &operator<< <rows, cols, T>

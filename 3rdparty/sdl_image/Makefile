@@ -1,7 +1,11 @@
 all: SDL_image
 
-SDL_image-1.2.6:
+SDL_image-1.2.6.tar.gz:
 	wget http://www.libsdl.org/projects/SDL_image/release/SDL_image-1.2.6.tar.gz
+
+download: SDL_image-1.2.6.tar.gz
+
+SDL_image-1.2.6: SDL_image-1.2.6.tar.gz
 	tar xzf SDL_image-1.2.6.tar.gz
 
 SDL_image: SDL_image-1.2.6

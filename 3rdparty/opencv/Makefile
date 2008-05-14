@@ -1,8 +1,12 @@
 all: opencv
 
-opencv-1.0.0:
+opencv-1.0.0.tar.gz: 
 	wget http://internap.dl.sourceforge.net/sourceforge/opencvlibrary/opencv-1.0.0.tar.gz
+
+opencv-1.0.0: opencv-1.0.0.tar.gz
 	tar xzf opencv-1.0.0.tar.gz
+
+download: opencv-1.0.0.tar.gz
 
 FFMPEG := $(shell rospack find ffmpeg)
 opencv: opencv-1.0.0
@@ -14,4 +18,4 @@ opencv: opencv-1.0.0
 clean:
 	-rm -rf opencv opencv-1.0.0 opencv-1.0.0.tar.gz
 
-.PHONY : clean
+.PHONY : clean download

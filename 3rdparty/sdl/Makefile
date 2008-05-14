@@ -1,7 +1,11 @@
 all: SDL
 
-SDL-1.2.13:
+SDL-1.2.13.tar.gz:
 	wget http://libsdl.org/release/SDL-1.2.13.tar.gz
+
+download: SDL-1.2.13.tar.gz
+
+SDL-1.2.13: SDL-1.2.13.tar.gz
 	tar xzf SDL-1.2.13.tar.gz
 
 SDL: SDL-1.2.13

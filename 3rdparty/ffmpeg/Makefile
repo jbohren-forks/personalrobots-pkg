@@ -3,6 +3,8 @@ all: ffmpeg
 ffmpeg-latest:
 	svn export svn://svn.mplayerhq.hu/ffmpeg/trunk ffmpeg-latest
 
+download: ffmpeg-latest
+
 ffmpeg: ffmpeg-latest
 	cd ffmpeg-latest && ./configure --prefix=$(PWD)/ffmpeg --enable-shared
 	cd ffmpeg-latest && make && make install
