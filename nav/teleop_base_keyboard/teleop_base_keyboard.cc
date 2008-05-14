@@ -32,6 +32,7 @@
 
 #include <termios.h>
 #include <signal.h>
+#include <math.h>
 
 #include <ros/node.h>
 #include <std_msgs/MsgBaseVel.h>
