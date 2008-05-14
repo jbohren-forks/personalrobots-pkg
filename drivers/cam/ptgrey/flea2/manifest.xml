@@ -1,4 +1,6 @@
 <package>
+  <author>Morgan Quigley</author>
+  <license>BSD</license>
   <depend package="image_utils"/>
   <depend package="sdl"/>
   <export>
