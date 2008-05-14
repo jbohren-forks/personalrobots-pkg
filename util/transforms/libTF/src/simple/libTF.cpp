@@ -291,7 +291,7 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
   TransformLists mTfLs;
   if (target_frame == NO_PARENT) throw InvalidFrame; 
 
-  unsigned int frame = target_frame;
+  unsigned int frame = source_frame;
   unsigned int counter = 0;  //A counter to keep track of how deep we've descended
   while (true)
     {
@@ -312,7 +312,7 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
 	throw(MaxSearchDepth);
     }
   
-  frame = source_frame;
+  frame = target_frame;
   counter = 0;
   while (true)
     {
