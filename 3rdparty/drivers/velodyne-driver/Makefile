@@ -1,7 +1,10 @@
 all: velodyne-driver
 
-velodyne-driver-1.0:
-	tar xzf velodyne-driver-1.0.tar.gz
+download: 
+	wget -nc -nv http://downloads.sourceforge.net/velodyne-driver/velodyne-driver-1.0.tar.gz
+
+velodyne-driver-1.0: download
+	tar -xzf velodyne-driver-1.0.tar.gz
 
 velodyne-driver: velodyne-driver-1.0
 	cd velodynedriver-1.0 && ./configure --prefix=$(PWD)/velodyne-driver
@@ -12,3 +15,6 @@ clean:
 	rm -f *~
 
 .PHONY : clean
+
+wipe: clean
+	rm -f velodyne-driver-1.0.tar.gz
