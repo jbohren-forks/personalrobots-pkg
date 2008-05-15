@@ -218,7 +218,7 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
     {
       if(mapdata[i+j*sx] < 0.1*255)
         this->plan->cells[i+j*sx].occ_state = -1;
-      else if(mapdata[i+j*sx] > 0.9*255)
+      else if(mapdata[i+j*sx] > 0.5*255)
         this->plan->cells[i+j*sx].occ_state = 1;
       else
         this->plan->cells[i+j*sx].occ_state = 0;
