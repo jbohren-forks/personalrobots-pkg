@@ -6,6 +6,7 @@
 #include "ros/node.h"
 #include "std_msgs/MsgRobotBase2DOdom.h"
 #include "std_msgs/MsgParticleCloud2D.h"
+#include "std_msgs/MsgPlanner2DGoal.h"
 #include "sdlgl/sdlgl.h"
 
 class NavView : public ros::node, public ros::SDLGL
@@ -13,17 +14,22 @@ class NavView : public ros::node, public ros::SDLGL
 public:
   MsgRobotBase2DOdom odom;
   MsgParticleCloud2D cloud;
+  MsgPlanner2DGoal goal;
   float view_scale, view_x, view_y;
   SDL_Surface* map_surface;
   GLuint map_texture;
   double map_res;
+  int gwidth, gheight;
 
   NavView() : ros::node("nav_view",false),
     view_scale(10), view_x(0), view_y(0)
   {
+    advertise<MsgPlanner2DGoal>("goal");
     subscribe("odom", odom, &NavView::odom_cb);
     subscribe("particlecloud", cloud, &NavView::odom_cb);
-    init_gui(1024, 768, "nav view");
+    gwidth = 1024;
+    gheight = 768;
+    init_gui(gwidth, gheight, "nav view");
     glClearColor(1.0,1.0,1.0,0);
     map_surface = NULL;
   }
@@ -128,6 +134,22 @@ public:
     {
       view_scale *= 1.0 - dy * 0.01;
       request_render();
+    }
+  }
+  virtual void mouse_button(int x, int y, int button, bool is_down) 
+  { 
+    if((button == 2) && !is_down) // middle mouse button; set goal
+    {
+      // Convert to conventional coords
+      double gx = (x-gwidth/2.0)/view_scale-view_x;
+      double gy = -((y-gheight/2.0)/view_scale+view_y);
+      
+      // Send out the goal
+      goal.goal.x = gx;
+      goal.goal.y = gy;
+      goal.goal.th = 0.0;
+      goal.enable = 1;
+      publish("goal", goal);
     }
   }
 };
