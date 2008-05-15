@@ -281,6 +281,8 @@ int main(int argc, char **argv)
     lv.check_events();
   }
 
+  ros::fini();
+
   return 0;
 }
 
