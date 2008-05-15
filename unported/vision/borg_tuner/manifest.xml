@@ -1,3 +1,5 @@
 <package>
+  <author>Morgan Quigley</author>
+  <license>BSD</license>
   <depend package="cloud_viewer"/>
 </package>
