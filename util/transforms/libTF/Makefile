@@ -27,3 +27,5 @@ clean:
 
 
 
+testtf: testtf.cc libTF.a
+	g++ $(CFLAGS) -o $@ $< $(LDFLAGS)
