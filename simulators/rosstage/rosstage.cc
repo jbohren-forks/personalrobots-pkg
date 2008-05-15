@@ -223,9 +223,7 @@ main(int argc, char** argv)
     sn.Update();
   }
   
-  // have to call this explicitly for some reason.  probably interference
-  // from signal handling in Stage / FLTK?
-  ros::msg_destruct();
+  ros::fini();
 
   exit(0);
 }

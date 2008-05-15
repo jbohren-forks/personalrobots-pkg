@@ -90,7 +90,7 @@ void
 quit(int sig)
 {
   tbk->stopRobot();
-  ros::msg_destruct();
+  ros::fini();
   exit(0);
 }
 
