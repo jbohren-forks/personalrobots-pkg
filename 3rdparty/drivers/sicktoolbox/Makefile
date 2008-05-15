@@ -1,6 +1,9 @@
 all: sicktoolbox
 
-sicktoolbox-1.0:
+download:
+	wget -nc -nv http://downloads.sourceforge.net/sicktoolbox/sicktoolbox-1.0.tar.gz
+
+sicktoolbox-1.0: download
 	tar xzf sicktoolbox-1.0.tar.gz
 
 sicktoolbox: sicktoolbox-1.0
@@ -12,3 +15,6 @@ clean:
 	rm -f *~
 
 .PHONY : clean
+
+wipe: clean
+	rm -f sicktoolbox-1.0.tar.gz
