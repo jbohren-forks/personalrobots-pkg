@@ -244,7 +244,7 @@ AmclNode::AmclNode(char* fname, double res) :
   this->cf->InsertFieldValue(2,"requires",map_saddr);
 
   // Options
-  this->cf->InsertFieldValue(0,"enable_gui","1");
+  //this->cf->InsertFieldValue(0,"enable_gui","1");
 
   // Create an instance of the driver, passing it the ConfigFile object.
   // The -1 tells it to look into the "global" section of the ConfigFile,
