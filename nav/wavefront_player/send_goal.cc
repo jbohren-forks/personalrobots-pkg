@@ -42,9 +42,12 @@ main(int argc, char** argv)
 
   SendGoalNode n;
 
+  usleep(1000000);
   n.sendGoal(atof(argv[1]),atof(argv[2]),atof(argv[3])*M_PI/180.0);
 
   n.spin();
+
+  ros::fini();
   
   return(0);
 }

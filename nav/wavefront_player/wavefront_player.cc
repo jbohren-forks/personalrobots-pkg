@@ -164,6 +164,7 @@ main(int argc, char** argv)
     wn.doOneCycle();
     wn.sleep(curr.tv_sec+curr.tv_usec/1e6);
   }
+  ros::fini();
   return(0);
 }
 
@@ -291,7 +292,7 @@ WavefrontNode::odomReceived()
   try
   {
     libTF::TFPose2D global_pose = 
-            this->tf->transformPose2D(1, odom_pose);
+            this->tf->transformPose2D(ROSTF_FRAME_MAP, odom_pose);
     this->pose[0] = global_pose.x;
     this->pose[1] = global_pose.y;
     this->pose[2] = global_pose.yaw;
@@ -311,6 +312,7 @@ WavefrontNode::odomReceived()
     puts("no global->local Tx yet");
   }
   */
+
   this->pose[0] = odomMsg.pos.x;
   this->pose[1] = odomMsg.pos.y;
   this->pose[2] = odomMsg.pos.th;
@@ -318,6 +320,7 @@ WavefrontNode::odomReceived()
          this->pose[0],
          this->pose[1],
          RTOD(this->pose[2]));
+
   this->lock.unlock();
 }
 
@@ -331,12 +334,12 @@ WavefrontNode::laserReceived()
 void
 WavefrontNode::stopRobot()
 {
-  //if(!this->stopped)
-  //{
+  if(!this->stopped)
+  {
     // TODO: should we send more than once, or perhaps use RPC for this?
     this->sendVelCmd(0.0,0.0,0.0);
     this->stopped = true;
-  //}
+  }
 }
 
 // Declare this globally, so that it never gets desctructed (message
@@ -351,6 +354,8 @@ WavefrontNode::sendVelCmd(double vx, double vy, double vth)
   cmdvel->vx = vx;
   cmdvel->vw = vth;
   this->ros::node::publish("cmd_vel", *cmdvel);
+  if(vx || vy || vth)
+    this->stopped = false;
 }
 
 
@@ -368,7 +373,7 @@ WavefrontNode::doOneCycle()
   switch(this->planner_state)
   {
     case NO_GOAL:
-      puts("no goal");
+      //puts("no goal");
       this->stopRobot();
       break;
     case REACHED_GOAL:
