@@ -13,32 +13,33 @@ main(void)
   libTF::TransformReference mTR(false);
   unsigned long long atime = mTR.gettime();
 
-  libTF::TFPose2D odompose;
   libTF::TFPose2D mappose;
+  libTF::TFPose2D odompose;
 
   odompose.x = 10.0;
   odompose.y = 5;
-  odompose.yaw = 0.0;
-  odompose.frame = 2;
+  odompose.yaw = DTOR(35.0);
+  odompose.frame = 3;
   odompose.time = atime;
 
   mappose.x = 30.0;
   mappose.y = 10.0;
   //  mappose.yaw = DTOR(-36.0);
-  mappose.yaw = 0.0;
+  mappose.yaw = DTOR(-89.0);
   mappose.frame = 1;
   mappose.time = atime;
 
   libTF::TFPose diffpose;
-  //diffpose.x = mappose.x-odompose.x;
-  //diffpose.y = mappose.y-odompose.y;
-  //diffpose.yaw = mappose.yaw-odompose.yaw;
-  diffpose.x = 10;
-  diffpose.y = 100;
+  diffpose.x = mappose.x-odompose.x;
+  diffpose.y = mappose.y-odompose.y;
+  diffpose.yaw = mappose.yaw-odompose.yaw;
+  //diffpose.x = 10;
+  //diffpose.y = 100;
   diffpose.z = 1000;
-  diffpose.yaw = DTOR(0);
+  //diffpose.yaw = DTOR(0);
   diffpose.pitch = DTOR(0);
-  diffpose.roll = DTOR(90);
+  //diffpose.roll = DTOR(90);
+  diffpose.roll = DTOR(0);
   //  diffpose.yaw = 0;
   diffpose.frame = 1;
   diffpose.time = atime;
@@ -53,7 +54,28 @@ main(void)
   diffpose2.frame = 1;
   diffpose2.time = atime;
 
+  mTR.setWithEulers(2,
+                    mappose.frame,
+                    mappose.x,
+                    mappose.y,
+                    0.0,
+                    mappose.yaw,
+                    0.0,
+                    0.0,
+                    atime);
 
+  mTR.setWithEulers(odompose.frame,
+                    2,
+                    -odompose.x,
+                    -odompose.y,
+                    0.0,
+                    -odompose.yaw,
+                    0.0,
+                    0.0,
+                    atime);
+
+
+  /*
   mTR.setWithEulers(odompose.frame,
                     mappose.frame,
                     diffpose.x,
@@ -63,6 +85,7 @@ main(void)
                     diffpose.pitch,
                     diffpose.roll,
                     atime);
+                    */
 
   libTF::TFPose2D result = mTR.transformPose2D(mappose.frame,odompose);
 
@@ -78,8 +101,8 @@ main(void)
   puts("--------------------------");
   printf("Odom: %.3f %.3f %.3f\n",
          odompose.x, odompose.y, RTOD(odompose.yaw));
-  //  printf("Map : %.3f %.3f %.3f\n",
-  //      mappose.x, mappose.y, RTOD(mappose.yaw));
+  printf("Map : %.3f %.3f %.3f\n",
+         mappose.x, mappose.y, RTOD(mappose.yaw));
   printf("Diff : %.3f %.3f %.3f %.3f %.3f %.3f\n",
          diffpose.x, diffpose.y, diffpose.z, RTOD(diffpose.yaw), RTOD(diffpose.pitch), RTOD(diffpose.roll));
   puts("--------------------------");
