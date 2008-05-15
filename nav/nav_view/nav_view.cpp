@@ -7,6 +7,7 @@
 #include "std_msgs/MsgRobotBase2DOdom.h"
 #include "std_msgs/MsgParticleCloud2D.h"
 #include "std_msgs/MsgPlanner2DGoal.h"
+#include "std_msgs/MsgPolyline2D.h"
 #include "sdlgl/sdlgl.h"
 
 class NavView : public ros::node, public ros::SDLGL
@@ -15,6 +16,8 @@ public:
   MsgRobotBase2DOdom odom;
   MsgParticleCloud2D cloud;
   MsgPlanner2DGoal goal;
+  MsgPolyline2D pathline;
+  MsgPolyline2D laserscan;
   float view_scale, view_x, view_y;
   SDL_Surface* map_surface;
   GLuint map_texture;
@@ -27,6 +30,8 @@ public:
     advertise<MsgPlanner2DGoal>("goal");
     subscribe("odom", odom, &NavView::odom_cb);
     subscribe("particlecloud", cloud, &NavView::odom_cb);
+    subscribe("gui_path", pathline, &NavView::odom_cb);
+    subscribe("gui_laser", laserscan, &NavView::odom_cb);
     gwidth = 1024;
     gheight = 768;
     init_gui(gwidth, gheight, "nav view");
@@ -113,6 +118,23 @@ public:
       glPopMatrix();
     }
     cloud.unlock();
+
+    pathline.lock();
+    glColor3f(pathline.color.r,pathline.color.g,pathline.color.b);
+    glBegin(GL_LINES);
+    for(unsigned int i=0;i<pathline.get_points_size();i++)
+      glVertex2f(pathline.points[i].x,pathline.points[i].y);
+    glEnd();
+    pathline.unlock();
+
+    pathline.lock();
+    glColor3f(laserscan.color.r,laserscan.color.g,laserscan.color.b);
+    glBegin(GL_POINTS);
+    for(unsigned int i=0;i<laserscan.get_points_size();i++)
+      glVertex2f(laserscan.points[i].x,laserscan.points[i].y);
+    glEnd();
+    pathline.unlock();
+
     SDL_GL_SwapBuffers();
   }
   void set_view_params(int width, int height)

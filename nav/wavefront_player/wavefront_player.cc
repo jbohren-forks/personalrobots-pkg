@@ -34,6 +34,8 @@
 #include <math.h>
 #include <sys/time.h>
 
+#include <list>
+
 // The Player lib we're using
 #include <libstandalone_drivers/plan.h>
 
@@ -46,6 +48,10 @@
 #include <std_msgs/MsgBaseVel.h>
 #include <std_msgs/MsgRobotBase2DOdom.h>
 #include <std_msgs/MsgLaserScan.h>
+#include <std_msgs/MsgPose2DFloat32.h>
+
+// For GUI debug
+#include <std_msgs/MsgPolyline2D.h>
 
 // For transform support
 #include <rosTF/rosTF.h>
@@ -60,7 +66,8 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 // compute linear index for given map coords
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
-double get_time(void);
+// computes the signed minimum difference between the two angles.
+static double angle_diff(double a, double b);
 int read_map_from_image(int* size_x, int* size_y, char** mapdata, 
        			const char* fname, int negate);
 
@@ -73,6 +80,7 @@ class WavefrontNode: public ros::node
     enum
     {
       NO_GOAL,
+      NEW_GOAL,
       PURSUING_GOAL,
       REACHED_GOAL
     } planner_state;
@@ -103,7 +111,10 @@ class WavefrontNode: public ros::node
 
     // Map update paramters (for adding obstacles)
     double laser_maxrange;
-    int laser_maxscans;
+    double laser_buffer_time;
+    std::list<std::pair<MsgPose2DFloat32, MsgLaserScan*> > laser_scans;
+    double* laser_hitpts;
+    size_t laser_hitpts_len, laser_hitpts_size;
 
     // Controller paramters
     double lookahead_maxdist;
@@ -114,7 +125,10 @@ class WavefrontNode: public ros::node
     MsgPlanner2DGoal goalMsg;
     MsgRobotBase2DOdom odomMsg;
     MsgLaserScan laserMsg;
+    MsgPolyline2D polylineMsg;
+    MsgPolyline2D pointcloudMsg;
     std::vector<MsgLaserScan> laserScans;
+    MsgRobotBase2DOdom* odomStack[2];
 
     // Lock for access to class members in callbacks
     ros::thread::mutex lock;
@@ -176,15 +190,15 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         printed_warning(false),
         stopped(false),
         robot_radius(0.2),
-        safety_dist(0.05),
-        max_radius(0.25),
+        safety_dist(0.1),
+        max_radius(1.0),
         dist_penalty(1.0),
         plan_halfwidth(5.0),
         dist_eps(1.0),
         ang_eps(DTOR(10.0)),
         cycletime(0.1),
         laser_maxrange(4.0),
-        laser_maxscans(40),
+        laser_buffer_time(2.0),
         lookahead_maxdist(2.0),
         lookahead_distweight(10.0),
         tvmin(0.1),
@@ -216,12 +230,15 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
   {
     for(int i=0;i<sx;i++)
     {
+      this->plan->cells[i+j*sx].occ_state = mapdata[i+j*sx];
+        /*
       if(mapdata[i+j*sx] < 0.1*255)
         this->plan->cells[i+j*sx].occ_state = -1;
       else if(mapdata[i+j*sx] > 0.5*255)
         this->plan->cells[i+j*sx].occ_state = 1;
       else
         this->plan->cells[i+j*sx].occ_state = 0;
+        */
     }
   }
   free(mapdata);
@@ -240,7 +257,15 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
 
   this->tf = new rosTFClient(*this);
 
+  this->laser_hitpts_size = this->laser_hitpts_len = 0;
+  this->laser_hitpts = NULL;
+
+  this->odomStack[0] = NULL;
+  this->odomStack[1] = NULL;
+
   advertise<MsgPlanner2DState>("state");
+  advertise<MsgPolyline2D>("gui_path");
+  advertise<MsgPolyline2D>("gui_laser");
   advertise<MsgBaseVel>("cmd_vel");
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived);
   //subscribe("odom", odomMsg, &WavefrontNode::odomReceived);
@@ -271,7 +296,7 @@ WavefrontNode::goalReceived()
     this->goal[0] = goalMsg.goal.x;
     this->goal[1] = goalMsg.goal.y;
     this->goal[2] = goalMsg.goal.th;
-    this->planner_state = PURSUING_GOAL;
+    this->planner_state = NEW_GOAL;
   }
   this->lock.unlock();
 }
@@ -321,14 +346,150 @@ WavefrontNode::odomReceived()
          this->pose[1],
          RTOD(this->pose[2]));
 
+  if(!this->odomStack[0])
+    this->odomStack[0] = new MsgRobotBase2DOdom(odomMsg);
+  else if(!this->odomStack[1])
+    this->odomStack[1] = new MsgRobotBase2DOdom(odomMsg);
+  else
+  {
+    assert(this->odomStack[0]);
+    delete this->odomStack[0];
+    this->odomStack[0] = this->odomStack[1];
+    this->odomStack[1] = new MsgRobotBase2DOdom(odomMsg);
+  }
+
   this->lock.unlock();
 }
 
 void
 WavefrontNode::laserReceived()
 {
+  // Add the new message, interpolating its pose.
+  // TODO: use libTF's interpolation
+  if(this->odomStack[0] && this->odomStack[1])
+  {
+    double dx = this->odomStack[1]->pos.x - this->odomStack[0]->pos.x;
+    double dy = this->odomStack[1]->pos.y - this->odomStack[0]->pos.y;
+    double da = angle_diff(this->odomStack[1]->pos.th,
+                           this->odomStack[0]->pos.th);
+    double t0 = this->odomStack[0]->header.stamp_secs + 
+            this->odomStack[0]->header.stamp_nsecs / 1e9;
+    double t1 = this->odomStack[1]->header.stamp_secs + 
+            this->odomStack[1]->header.stamp_nsecs / 1e9;
+    double dt = t1 - t0;
+    double tl = this->laserMsg.header.stamp_secs + 
+            this->laserMsg.header.stamp_nsecs / 1e9;
+    double dtl = tl - t0;
+
+    printf("0: %.3f %.3f %.3f %.6f\n", 
+           this->odomStack[0]->pos.x,
+           this->odomStack[0]->pos.y,
+           this->odomStack[0]->pos.th, t0);
+    printf("1: %.3f %.3f %.3f %.6f\n", 
+           this->odomStack[1]->pos.x,
+           this->odomStack[1]->pos.y,
+           this->odomStack[1]->pos.th, t1);
+
+    MsgPose2DFloat32 p;
+    p.x = this->odomStack[1]->pos.x - (dx / dt) * dtl;
+    p.y = this->odomStack[1]->pos.y - (dy / dt) * dtl;
+    p.th = ANG_NORM(this->odomStack[1]->pos.th - (da / dt) * dtl);
+
+    printf("I: %.3f %.3f %.3f %.6f\n", 
+           p.x, p.y, p.th, tl);
+
+    MsgLaserScan* scan = new MsgLaserScan(this->laserMsg);
+
+    std::pair<MsgPose2DFloat32,MsgLaserScan*> item(p,scan);
+
+    this->laser_scans.push_back(item);
+  }
+  
+  // Remove anything that's too old
+  double currtime = this->laserMsg.header.stamp_secs + 
+          this->laserMsg.header.stamp_nsecs / 1e9;
+  // Also count how many points we have
+  unsigned int hitpt_cnt=0;
+  for(std::list<std::pair<MsgPose2DFloat32,MsgLaserScan*> >::iterator it = this->laser_scans.begin();
+      it != this->laser_scans.end();
+      it++)
+  {
+    double msgtime = it->second->header.stamp_secs + it->second->header.stamp_nsecs / 1e9;
+    if((currtime - msgtime) > this->laser_buffer_time)
+    {
+      delete it->second;
+      it = this->laser_scans.erase(it);
+      it--;
+    }
+    else
+    {
+      hitpt_cnt += it->second->get_ranges_size()*2;
+    }
+  }
+
+  // allocate more space as necessary
+  if(this->laser_hitpts_size < hitpt_cnt)
+  {
+    this->laser_hitpts_size = hitpt_cnt;
+    this->laser_hitpts = 
+            (double*)realloc(this->laser_hitpts,
+                             this->laser_hitpts_size*sizeof(double));
+    assert(this->laser_hitpts);
+  }
+
+  // project hit points from each scan
+  double* pts = this->laser_hitpts;
+  this->laser_hitpts_len = 0;
+  for(std::list<std::pair<MsgPose2DFloat32, MsgLaserScan*> >::iterator it = this->laser_scans.begin();
+      it != this->laser_scans.end();
+      it++)
+  {
+    float b=it->second->angle_min;
+    float* r=it->second->ranges;
+    for(unsigned int j=0;
+        j<it->second->get_ranges_size();
+        j++,r++,b+=it->second->angle_increment)
+    {
+      if(((*r) >= this->laser_maxrange) || ((*r) >= it->second->range_max))
+        continue;
+      //double rx, ry;
+      //rx = (*r)*cos(b);
+      //ry = (*r)*sin(b);
+
+      double cs,sn;
+      cs = cos(it->first.th+b);
+      sn = sin(it->first.th+b);
+
+      double lx,ly;
+      lx = it->first.x + (*r)*cs;
+      ly = it->first.y + (*r)*sn;
+
+      assert(this->laser_hitpts_len*2 < this->laser_hitpts_size);
+      *(pts++) = lx;
+      *(pts++) = ly;
+      this->laser_hitpts_len++;
+    }
+  }
+
+  //printf("setting %d hit points\n", this->scan_points_count);
   this->lock.lock();
+  plan_set_obstacles(this->plan, this->laser_hitpts, this->laser_hitpts_len);
   this->lock.unlock();
+
+  // Draw the points
+
+  this->pointcloudMsg.set_points_size(hitpt_cnt/2);
+  this->pointcloudMsg.color.a = 0.0;
+  this->pointcloudMsg.color.r = 0.0;
+  this->pointcloudMsg.color.b = 1.0;
+  this->pointcloudMsg.color.g = 0.0;
+  for(unsigned int i=0;i<hitpt_cnt/2;i++)
+  {
+    this->pointcloudMsg.points[i].x = this->laser_hitpts[2*i];
+    this->pointcloudMsg.points[i].y = this->laser_hitpts[2*i+1];
+  }
+  publish("gui_laser",this->pointcloudMsg);
+  printf("published %d laser hits\n", hitpt_cnt/2);
 }
 
 void
@@ -380,6 +541,7 @@ WavefrontNode::doOneCycle()
       puts("still done");
       this->stopRobot();
       break;
+    case NEW_GOAL:
     case PURSUING_GOAL:
       {
         // Are we done?
@@ -395,8 +557,9 @@ WavefrontNode::doOneCycle()
         }
 
         // Try a local plan
-        if(plan_do_local(this->plan, this->pose[0], this->pose[1], 
-                         this->plan_halfwidth) < 0)
+        if((this->planner_state == NEW_GOAL) ||
+           (plan_do_local(this->plan, this->pose[0], this->pose[1], 
+                         this->plan_halfwidth) < 0))
         {
           // Fallback on global plan
           if(plan_do_global(this->plan, this->pose[0], this->pose[1], 
@@ -426,6 +589,9 @@ WavefrontNode::doOneCycle()
           }
         }
 
+        if(this->planner_state == NEW_GOAL)
+          this->planner_state = PURSUING_GOAL;
+
         // We have a valid local plan.  Now compute controls
         double vx, va;
         if(plan_compute_diffdrive_cmds(this->plan, &vx, &va,
@@ -445,6 +611,22 @@ WavefrontNode::doOneCycle()
           puts("Failed to find a carrot");
           break;
         }
+
+        assert(this->plan->path_count);
+
+        this->polylineMsg.set_points_size(this->plan->path_count);
+        this->polylineMsg.color.r = 0;
+        this->polylineMsg.color.g = 1.0;
+        this->polylineMsg.color.b = 0;
+        this->polylineMsg.color.a = 0;
+        for(int i=0;i<this->plan->path_count;i++)
+        {
+          this->polylineMsg.points[i].x = 
+                  PLAN_WXGX(this->plan,this->plan->path[i]->ci);
+          this->polylineMsg.points[i].y = 
+                  PLAN_WYGY(this->plan,this->plan->path[i]->cj);
+        }
+        publish("gui_path", polylineMsg);
 
         printf("computed velocities: %.3f %.3f\n", vx, RTOD(va));
         this->sendVelCmd(vx, 0.0, va);
@@ -526,7 +708,7 @@ read_map_from_image(int* size_x, int* size_y, char** mapdata,
         occ = color_avg / 255.0;
       else
         occ = (255 - color_avg) / 255.0;
-      if(occ > 0.95)
+      if(occ > 0.5)
         (*mapdata)[MAP_IDX(*size_x,i,*size_y - j - 1)] = +1;
       else if(occ < 0.1)
         (*mapdata)[MAP_IDX(*size_x,i,*size_y - j - 1)] = -1;
@@ -542,10 +724,19 @@ read_map_from_image(int* size_x, int* size_y, char** mapdata,
   return(0);
 }
 
-double 
-get_time(void)
+// computes the signed minimum difference between the two angles.
+static double
+angle_diff(double a, double b)
 {
-  struct timeval curr;
-  gettimeofday(&curr,NULL);
-  return(curr.tv_sec + curr.tv_usec / 1e6);
+  double d1, d2;
+  a = ANG_NORM(a);
+  b = ANG_NORM(b);
+  d1 = a-b;
+  d2 = 2*M_PI - fabs(d1);
+  if(d1 > 0)
+    d2 *= -1.0;
+  if(fabs(d1) < fabs(d2))
+    return(d1);
+  else
+    return(d2);
 }

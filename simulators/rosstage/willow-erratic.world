@@ -1,3 +1,9 @@
+define block model
+(
+  size3 [0.5 0.5 0.5]
+  gui_nose 0
+)
+
 define topurg laser
 (
   range_min 0.0
@@ -16,7 +22,6 @@ define erratic position
   gui_nose 1
   drive "diff"
   topurg(pose [0.050 0.000 0.000])
-  color "blue"
 )
 
 define floorplan model
@@ -60,4 +65,5 @@ floorplan
 )
 
 # throw in a robot
-erratic( pose [-11.277 23.266 180.000] name "era")
+erratic( pose [-11.277 23.266 180.000] name "era" color "blue")
+block( pose [-13.924 25.020 180.000] color "red")
