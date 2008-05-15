@@ -13,10 +13,6 @@ ffmpeg: ffmpeg-latest
 	cd ffmpeg/include/ffmpeg && ln -s ../libavformat/avformat.h avformat.h
 
 clean:
-	-rm -rf ffmpeg 
-	@echo "Local build products cleaned, but the SVN export from ffmpeg's repository was retained. If you want to delete that too, do 'make superclean'"
-
-superclean:
-	-rm -rf ffmpeg-latest
+	-rm -rf ffmpeg ffmpeg-latest
 
 .PHONY : clean
