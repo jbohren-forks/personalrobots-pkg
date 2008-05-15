@@ -45,7 +45,7 @@ interval_real 100  # real-time interval between simulation updates in millisecon
 window
 ( 
   size [ 745.000 448.000 ] 
-  center [852.990 221.960] 
+  center [678.990 293.960] 
   rotate [ 0.000 -1.560 ]
   scale 28.806 
 )
@@ -60,4 +60,4 @@ floorplan
 )
 
 # throw in a robot
-erratic( pose [-11.271 30.279 180.000] name "era")
+erratic( pose [-11.277 23.266 180.000] name "era")
