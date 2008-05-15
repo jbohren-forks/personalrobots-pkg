@@ -40,6 +40,7 @@ bool SDLGL::init_gui(int width, int height, const char *title)
   }
   set_view_params(width, height);
   request_render();
+  return true;
 }
 /*
 void *srosSDLGL::g_main_loop(void *parent)
