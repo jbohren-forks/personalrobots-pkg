@@ -124,11 +124,12 @@ int main(int argc, char **argv)
 {
   printf("LOWER YOUR SHIELDS\n\n");
 
-  const double laser_encoder_offset = 152 * units::DEGREES();
-  const double baseline   = 6.25 * units::INCHES(); //9.25
-  const double stage_tilt = 2 * units::DEGREES();//15
-  const double stage_back = -2.5  * units::INCHES();
-  const double stage_up   = 5.5  * units::INCHES();
+  const double laser_encoder_offset = 2.5929; //152 * units::DEGREES();
+  const double baseline   = 0.16875; //6.25 * units::INCHES(); //9.25
+  const double stage_tilt = -0.07509; //2 * units::DEGREES();//15
+  const double stage_back = -0.163; //-2.5  * units::INCHES();
+  const double stage_up   = 0.0897; //5.5  * units::INCHES();
+  const double laser_rotation = -0.0849;
   const double a2 = stage_up * sin(-stage_tilt) + stage_back * cos(-stage_tilt);
   const double d2 = stage_up * cos(-stage_tilt) - stage_back * sin(-stage_tilt);
 
@@ -143,7 +144,7 @@ int main(int argc, char **argv)
 //  mqdh T0(0, 0, 0, cam_tilt);
   mqdh T0(0, 0, 0, 0);
   mqdh T1(0, 0, baseline, stage_tilt);
-  mqdh T3(M_PI/2, 0, 0, -2 * units::DEGREES()); //M_PI in linux
+  mqdh T3(M_PI/2, 0, 0, laser_rotation); //-2 * units::DEGREES()); //M_PI in linux
 
   //const char *laserfile = "laserData.txt";
   char *laserfile = argv[1];
