@@ -9,7 +9,7 @@ using namespace std;
 using namespace mqmath;
 
 double ray[3], laser_norm[3], laser_origin[3], cam_point[3], world_point[3];
-const double cam_tilt = 0.0 * units::DEGREES(); //30
+const double cam_tilt = 30.0 * units::DEGREES(); //30
 
 
 
@@ -43,8 +43,8 @@ void intrinsics(double xp, double yp)
 	//-0.344023   0.127415
 	//and the first two tangential distortion coefficients:
 	//-0.000815   -0.000350
-	double fx = 394.493, fy = 394.327;
-	double x0 = 318.619 , y0 = 247.207;
+	double fx = 392.953, fy = 392.757;
+	double x0 = 316.125, y0 = 248.496; //318.619 , y0 = 247.207;
 	double k1 = -0.344023 , k2 = 0.127415 , k3 = -0.000815 , k4 = -0.000350 , k5 = 0;
 
 	// express the pixel ray in the base kinematic frame
@@ -54,7 +54,7 @@ void intrinsics(double xp, double yp)
 	double zd =	1;
 	double yd = (yp - y0) / fy;
 	double xd = (xp - x0) / fx;
-
+/*
 
 	double r2 = pow(xd,2) + pow(yd,2);
 
@@ -65,16 +65,17 @@ void intrinsics(double xp, double yp)
 
 	double x =  (xd - tangentialX) / radialDistortion;
 	double y =  (yd - tangentialY) / radialDistortion;
-  
+ */ 
 	ray[0] = 1;
-	ray[1] = -y;
-	ray[2] =  x;
+	ray[1] = -yd;
+	ray[2] = xd;
 	
 
 	double ray_norm = sqrt(ray[0]*ray[0] + ray[1]*ray[1] + ray[2]*ray[2]);
 	ray[0] /= ray_norm;
 	ray[1] /= ray_norm;
 	ray[2] /= ray_norm;
+
 }
 
 void extrinsics(const mqmat<4,4> &T)
@@ -123,11 +124,11 @@ int main(int argc, char **argv)
 {
   printf("LOWER YOUR SHIELDS\n\n");
 
-  const double laser_encoder_offset = 150 * units::DEGREES();
+  const double laser_encoder_offset = 152 * units::DEGREES();
   const double baseline   = 6.25 * units::INCHES(); //9.25
-  const double stage_tilt = 5 * units::DEGREES();//15
-  const double stage_back = 0.5  * units::INCHES();
-  const double stage_up   = 8  * units::INCHES();
+  const double stage_tilt = 2 * units::DEGREES();//15
+  const double stage_back = -2.5  * units::INCHES();
+  const double stage_up   = 5.5  * units::INCHES();
   const double a2 = stage_up * sin(-stage_tilt) + stage_back * cos(-stage_tilt);
   const double d2 = stage_up * cos(-stage_tilt) - stage_back * sin(-stage_tilt);
 
@@ -142,7 +143,7 @@ int main(int argc, char **argv)
 //  mqdh T0(0, 0, 0, cam_tilt);
   mqdh T0(0, 0, 0, 0);
   mqdh T1(0, 0, baseline, stage_tilt);
-  mqdh T3(M_PI/2, 0, 0, 0 * units::DEGREES()); //M_PI in linux
+  mqdh T3(M_PI/2, 0, 0, -2 * units::DEGREES()); //M_PI in linux
 
   //const char *laserfile = "laserData.txt";
   char *laserfile = argv[1];
@@ -159,10 +160,9 @@ int main(int argc, char **argv)
   while (!feof(f))
   {
     line++;
-    double laser_ang, row, col;
-	double r,g,b;
-    //if (3 != fscanf(f, "%lf %lf %lf\n", &laser_ang, &row, &col))
-	if (6 != fscanf(f, "%lf %lf %lf %lf %lf %lf\n", &laser_ang, &row, &col,&r,&g,&b))
+    double laser_ang, row, col, r, g, b;
+    if (6 != fscanf(f, "%lf %lf %lf %lf %lf %lf\n", &laser_ang, &row, &col,
+                    &r, &g, &b))
     {
       printf("error in parse\n");
       break;
@@ -190,7 +190,7 @@ int main(int argc, char **argv)
 #endif
 
     //fprintf(out, "%f %f %f\n", world_point[0], world_point[1], world_point[2]);
-	fprintf(out, "%f %f %f %d %d %d %f %f %f %d\n", world_point[0], world_point[1], world_point[2],0,0,0,r,g,b,0);
+	  fprintf(out, "%f %f %f %f %f %f\n", world_point[0], world_point[1], world_point[2],r,g,b);
 
   }//while laser points are being read
   fclose(f);

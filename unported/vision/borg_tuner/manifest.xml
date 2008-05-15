@@ -1,0 +1,3 @@
+<package>
+  <depend package="cloud_viewer"/>
+</package>

@@ -23,8 +23,8 @@ int main(int argc, char **argv)
   int line_num = 1;
   while (!feof(f))
   {
-    double x, y, z;
-    if (3 != fscanf(f, "%lf %lf %lf\n", &x, &y, &z))
+    double x, y, z, r, g, b;
+    if (6 != fscanf(f, "%lf %lf %lf %lf %lf %lf\n", &x, &y, &z, &r, &g, &b))
     {
       printf("bad syntax on line %d\n", line_num);
       break;
@@ -34,7 +34,7 @@ int main(int argc, char **argv)
     {
       printf("%f %f %f\n", x, y, z);
     }
-    cloud_viewer.add_point(x, y, z, 255,255,255);
+    cloud_viewer.add_point(x, y, z, 255*r, 255*g, 255*b);
     line_num++;
   }
   printf("read %d points\n", line_num);
