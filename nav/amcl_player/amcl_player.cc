@@ -41,6 +41,7 @@
 // Messages that I need
 #include <std_msgs/MsgLaserScan.h>
 #include <std_msgs/MsgRobotBase2DOdom.h>
+#include <std_msgs/MsgParticleCloud2D.h>
 
 // For transform support
 #include <rosTF/rosTF.h>
@@ -85,6 +86,7 @@ class AmclNode: public ros::node, public Driver
 
     // incoming messages
     MsgRobotBase2DOdom localizedOdomMsg;
+    MsgParticleCloud2D particleCloudMsg;
     MsgRobotBase2DOdom odomMsg;
     MsgLaserScan laserMsg;
     
@@ -142,6 +144,8 @@ main(int argc, char** argv)
   // Stop the robot
   an.stop();
 
+  ros::fini();
+
   // To quote Morgan, Hooray!
   return(0);
 }
@@ -158,6 +162,7 @@ AmclNode::AmclNode(char* fname, double res) :
   playerxdr_ftable_init();
 
   advertise<MsgRobotBase2DOdom>("localizedpose");
+  advertise<MsgParticleCloud2D>("particlecloud");
   subscribe("odom", odomMsg, &AmclNode::odomReceived);
   subscribe("scan", laserMsg, &AmclNode::laserReceived);
 
@@ -237,7 +242,9 @@ AmclNode::AmclNode(char* fname, double res) :
   this->cf->InsertFieldValue(0,"requires",position2d_saddr);
   this->cf->InsertFieldValue(1,"requires",laser_saddr);
   this->cf->InsertFieldValue(2,"requires",map_saddr);
-  this->cf->DumpTokens();
+
+  // Options
+  this->cf->InsertFieldValue(0,"enable_gui","1");
 
   // Create an instance of the driver, passing it the ConfigFile object.
   // The -1 tells it to look into the "global" section of the ConfigFile,
@@ -278,19 +285,19 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     player_position2d_data_t* pdata = 
             (player_position2d_data_t*)data;
 
+    /*
     // publish new transform map->odom
     printf("lpose: %.3f %.3f %.3f\n",
            odomMsg.pos.x,
            odomMsg.pos.y,
            RTOD(odomMsg.pos.th));
-    /*
-    this->tf->sendEuler(2,1,
-                        this->odomMsg.pos.x-pdata->pos.px,
-                        this->odomMsg.pos.y-pdata->pos.py,
+    this->tf->sendEuler(ROSTF_FRAME_ODOM,
+                        ROSTF_FRAME_MAP,
+                        pdata->pos.px-this->odomMsg.pos.x,
+                        pdata->pos.py-this->odomMsg.pos.y,
                         0.0,
-                        0.0, 
+                        pdata->pos.pa-this->odomMsg.pos.th,
                         0.0,
-                        //-(pdata->pos.pa-this->odomMsg.pos.th),
                         0.0,
                         (long long unsigned int)floor(hdr->timestamp),
                         (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL));
@@ -302,7 +309,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
            (long long unsigned int)floor(hdr->timestamp),
            (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 
                           1000000000ULL));
-                          */
+    */
     printf("pose: (%.3f %.3f %.3f)\n",
            pdata->pos.px,
            pdata->pos.py,
@@ -311,6 +318,30 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     localizedOdomMsg.pos.y = pdata->pos.py;
     localizedOdomMsg.pos.th = pdata->pos.pa;
     publish("localizedpose", localizedOdomMsg);
+
+    // Also request and publish the particle cloud
+    Message* msg;
+    if((msg = this->ldevice->Request(this->Driver::InQueue,
+                                     PLAYER_MSGTYPE_REQ,
+                                     PLAYER_LOCALIZE_REQ_GET_PARTICLES,
+                                     NULL, 0, NULL, true)))
+    {
+      player_localize_get_particles_t* resp =
+              (player_localize_get_particles_t*)(msg->GetPayload());
+      particleCloudMsg.set_particles_size(resp->particles_count);
+      for(unsigned int i=0;i<resp->particles_count;i++)
+      {
+        particleCloudMsg.particles[i].x = resp->particles[i].pose.px;
+        particleCloudMsg.particles[i].y = resp->particles[i].pose.py;
+        particleCloudMsg.particles[i].th = resp->particles[i].pose.pa;
+      }
+      publish("particlecloud", particleCloudMsg);
+      delete msg;
+    }
+    else
+    {
+      puts("Warning: failed to get particle cloud from amcl");
+    }
 
     return(0);
   }
@@ -395,6 +426,10 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
                   (void*)&geom);
     return(0);
   }
+  // Is it an ACK from a request that I sent earlier?
+  else if(Message::MatchMessage(hdr, PLAYER_MSGTYPE_RESP_ACK,
+                                 -1))
+    return(0);
   else
   {
     printf("Unhandled Player message %d:%d:%d:%d\n",
@@ -484,29 +519,29 @@ AmclNode::laserReceived()
   pdata.max_angle = this->laserMsg.angle_max;
   pdata.resolution = this->laserMsg.angle_increment;
   pdata.max_range = this->laserMsg.range_max;
-  pdata.ranges_count = this->laserMsg.get_ranges_size() ;
+  pdata.ranges_count = this->laserMsg.get_ranges_size();
   pdata.ranges = new float[pdata.ranges_count];
   assert(pdata.ranges);
   for(unsigned int i=0;i<pdata.ranges_count;i++)
     pdata.ranges[i] = this->laserMsg.ranges[i];
-  pdata.intensity_count =this->laserMsg.get_intensities_size();
+  pdata.intensity_count = this->laserMsg.get_intensities_size();
   pdata.intensity = new uint8_t[pdata.intensity_count];
   assert(pdata.intensity);
   for(unsigned int i=0;i<pdata.intensity_count;i++)
     pdata.intensity[i] = this->laserMsg.intensities[i];
   pdata.id = this->laserMsg.header.seq;
 
-  double timestamp = this->odomMsg.header.stamp_secs + 
-          this->odomMsg.header.stamp_nsecs / 1e9;
+  double timestamp = this->laserMsg.header.stamp_secs + 
+          this->laserMsg.header.stamp_nsecs / 1e9;
 
   this->Driver::Publish(this->laser_addr,
                         PLAYER_MSGTYPE_DATA,
                         PLAYER_LASER_DATA_SCAN,
                         (void*)&pdata,0,
-                        &timestamp,true);
+                        &timestamp);
 
-  //delete[] pdata.ranges;
-  //delete[] pdata.intensity;
+  delete[] pdata.ranges;
+  delete[] pdata.intensity;
 }
 
 void
