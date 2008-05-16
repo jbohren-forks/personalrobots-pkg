@@ -181,6 +181,12 @@ StageNode::Update()
       this->laserMsg.intensities[i] = (uint8_t)samples[i].reflectance;
     }
 
+    this->laserMsg.header.stamp_secs = 
+            (unsigned long)floor(world->SimTimeNow() / 1e6);
+    this->laserMsg.header.stamp_nsecs = 
+            (unsigned long)rint(1e3 * (world->SimTimeNow() - 
+                                       this->laserMsg.header.stamp_secs * 1e6));
+    this->laserMsg.__timestamp_override = true;
     publish("scan",this->laserMsg);
   }
 
@@ -197,6 +203,12 @@ StageNode::Update()
   // TODO: get the frame ID from somewhere
   this->odomMsg.header.frame_id = 2;
 
+  this->odomMsg.header.stamp_secs = 
+          (unsigned long)floor(world->SimTimeNow() / 1e6);
+  this->odomMsg.header.stamp_nsecs = 
+          (unsigned long)rint(1e3 * (world->SimTimeNow() - 
+                                     this->odomMsg.header.stamp_secs * 1e6));
+  this->odomMsg.__timestamp_override = true;
   publish("odom",this->odomMsg);
 
   this->lock.unlock();

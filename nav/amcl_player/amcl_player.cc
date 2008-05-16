@@ -317,6 +317,11 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     localizedOdomMsg.pos.x = pdata->pos.px;
     localizedOdomMsg.pos.y = pdata->pos.py;
     localizedOdomMsg.pos.th = pdata->pos.pa;
+    localizedOdomMsg.header.stamp_secs = (unsigned long)floor(hdr->timestamp);
+    localizedOdomMsg.header.stamp_nsecs = 
+            (unsigned long)rint(1e9 * (hdr->timestamp -
+                                       localizedOdomMsg.header.stamp_secs));
+    localizedOdomMsg.__timestamp_override = true;
     publish("localizedpose", localizedOdomMsg);
 
     // Also request and publish the particle cloud
