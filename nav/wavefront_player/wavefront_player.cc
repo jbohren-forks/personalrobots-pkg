@@ -112,7 +112,8 @@ class WavefrontNode: public ros::node
     // Map update paramters (for adding obstacles)
     double laser_maxrange;
     double laser_buffer_time;
-    std::list<std::pair<MsgPose2DFloat32, MsgLaserScan*> > laser_scans;
+    std::list<MsgLaserScan*> buffered_laser_scans;
+    std::list<std::pair<MsgPose2DFloat32*, MsgLaserScan*> > laser_scans;
     double* laser_hitpts;
     size_t laser_hitpts_len, laser_hitpts_size;
 
@@ -128,7 +129,8 @@ class WavefrontNode: public ros::node
     MsgPolyline2D polylineMsg;
     MsgPolyline2D pointcloudMsg;
     std::vector<MsgLaserScan> laserScans;
-    MsgRobotBase2DOdom* odomStack[2];
+    MsgRobotBase2DOdom prevOdom;
+    bool firstodom;
 
     // Lock for access to class members in callbacks
     ros::thread::mutex lock;
@@ -260,8 +262,7 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
   this->laser_hitpts_size = this->laser_hitpts_len = 0;
   this->laser_hitpts = NULL;
 
-  this->odomStack[0] = NULL;
-  this->odomStack[1] = NULL;
+  this->firstodom = true;
 
   advertise<MsgPlanner2DState>("state");
   advertise<MsgPolyline2D>("gui_path");
@@ -346,17 +347,144 @@ WavefrontNode::odomReceived()
          this->pose[1],
          RTOD(this->pose[2]));
 
-  if(!this->odomStack[0])
-    this->odomStack[0] = new MsgRobotBase2DOdom(odomMsg);
-  else if(!this->odomStack[1])
-    this->odomStack[1] = new MsgRobotBase2DOdom(odomMsg);
+  if(this->firstodom)
+  {
+    this->prevOdom = odomMsg;
+    this->firstodom = false;
+  }
   else
   {
-    assert(this->odomStack[0]);
-    delete this->odomStack[0];
-    this->odomStack[0] = this->odomStack[1];
-    this->odomStack[1] = new MsgRobotBase2DOdom(odomMsg);
+    // Interpolate poses for all buffered scans
+    // TODO: use libTF's interpolation
+    for(std::list<MsgLaserScan*>::iterator it = this->buffered_laser_scans.begin();
+        it != this->buffered_laser_scans.end();
+        it++)
+    {
+      double t0 = prevOdom.header.stamp_secs + 
+              prevOdom.header.stamp_nsecs / 1e9;
+      double t1 = odomMsg.header.stamp_secs + 
+              odomMsg.header.stamp_nsecs / 1e9;
+      double tl = (*it)->header.stamp_secs + 
+              (*it)->header.stamp_nsecs / 1e9;
+
+      if(tl < t0)
+      {
+        // Too late
+        it = this->buffered_laser_scans.erase(it);
+        it--;
+        continue;
+      }
+
+      if(tl > t1)
+      {
+        // Too early
+        continue;
+      }
+
+      double dt = t1 - t0;
+      double dtl = tl - t0;
+
+      double dx = odomMsg.pos.x - prevOdom.pos.x;
+      double dy = odomMsg.pos.y - prevOdom.pos.y;
+      double da = angle_diff(odomMsg.pos.th, prevOdom.pos.th);
+
+      MsgPose2DFloat32* p = new MsgPose2DFloat32();
+      p->x = prevOdom.pos.x + (dx / dt) * dtl;
+      p->y = prevOdom.pos.y + (dy / dt) * dtl;
+      p->th = ANG_NORM(prevOdom.pos.th + (da / dt) * dtl);
+
+      MsgLaserScan* scan = new MsgLaserScan(this->laserMsg);
+
+      std::pair<MsgPose2DFloat32*,MsgLaserScan*> item(p,scan);
+
+      this->laser_scans.push_back(item);
+      it = this->buffered_laser_scans.erase(it);
+      it--;
+    }
+
+    // Remove anything that's too old
+    double currtime = this->laserMsg.header.stamp_secs + 
+            this->laserMsg.header.stamp_nsecs / 1e9;
+    // Also count how many points we have
+    unsigned int hitpt_cnt=0;
+    for(std::list<std::pair<MsgPose2DFloat32*,MsgLaserScan*> >::iterator it = this->laser_scans.begin();
+        it != this->laser_scans.end();
+        it++)
+    {
+    double msgtime = it->second->header.stamp_secs + it->second->header.stamp_nsecs / 1e9;
+    if((currtime - msgtime) > this->laser_buffer_time)
+    {
+      delete it->first;
+      delete it->second;
+      it = this->laser_scans.erase(it);
+      it--;
+    }
+    else
+      hitpt_cnt += it->second->get_ranges_size()*2;
+    }
+
+    // allocate more space as necessary
+    if(this->laser_hitpts_size < hitpt_cnt)
+    {
+      this->laser_hitpts_size = hitpt_cnt;
+      this->laser_hitpts = 
+              (double*)realloc(this->laser_hitpts,
+                               this->laser_hitpts_size*sizeof(double));
+      assert(this->laser_hitpts);
+    }
+
+    // project hit points from each scan
+    double* pts = this->laser_hitpts;
+    this->laser_hitpts_len = 0;
+    for(std::list<std::pair<MsgPose2DFloat32*, MsgLaserScan*> >::iterator it = this->laser_scans.begin();
+        it != this->laser_scans.end();
+        it++)
+    {
+      float b=it->second->angle_min;
+      float* r=it->second->ranges;
+      for(unsigned int j=0;
+          j<it->second->get_ranges_size();
+          j++,r++,b+=it->second->angle_increment)
+      {
+        if(((*r) >= this->laser_maxrange) || ((*r) >= it->second->range_max))
+          continue;
+
+        double cs,sn;
+        cs = cos(it->first->th+b);
+        sn = sin(it->first->th+b);
+
+        double lx,ly;
+        lx = it->first->x + (*r)*cs;
+        ly = it->first->y + (*r)*sn;
+
+        assert(this->laser_hitpts_len*2 < this->laser_hitpts_size);
+        *(pts++) = lx;
+        *(pts++) = ly;
+        this->laser_hitpts_len++;
+      }
+    }
+
+    //printf("setting %d hit points\n", this->scan_points_count);
+    plan_set_obstacles(this->plan, this->laser_hitpts, this->laser_hitpts_len);
+
+    // Draw the points
+
+    this->pointcloudMsg.set_points_size(hitpt_cnt/2);
+    this->pointcloudMsg.color.a = 0.0;
+    this->pointcloudMsg.color.r = 0.0;
+    this->pointcloudMsg.color.b = 1.0;
+    this->pointcloudMsg.color.g = 0.0;
+    for(unsigned int i=0;i<hitpt_cnt/2;i++)
+    {
+      this->pointcloudMsg.points[i].x = this->laser_hitpts[2*i];
+      this->pointcloudMsg.points[i].y = this->laser_hitpts[2*i+1];
+    }
+    publish("gui_laser",this->pointcloudMsg);
+    printf("published %d laser hits\n", hitpt_cnt/2);
+
+    prevOdom = odomMsg;
   }
+
 
   this->lock.unlock();
 }
@@ -364,132 +492,8 @@ WavefrontNode::odomReceived()
 void
 WavefrontNode::laserReceived()
 {
-  // Add the new message, interpolating its pose.
-  // TODO: use libTF's interpolation
-  if(this->odomStack[0] && this->odomStack[1])
-  {
-    double dx = this->odomStack[1]->pos.x - this->odomStack[0]->pos.x;
-    double dy = this->odomStack[1]->pos.y - this->odomStack[0]->pos.y;
-    double da = angle_diff(this->odomStack[1]->pos.th,
-                           this->odomStack[0]->pos.th);
-    double t0 = this->odomStack[0]->header.stamp_secs + 
-            this->odomStack[0]->header.stamp_nsecs / 1e9;
-    double t1 = this->odomStack[1]->header.stamp_secs + 
-            this->odomStack[1]->header.stamp_nsecs / 1e9;
-    double dt = t1 - t0;
-    double tl = this->laserMsg.header.stamp_secs + 
-            this->laserMsg.header.stamp_nsecs / 1e9;
-    double dtl = tl - t0;
-
-    printf("0: %.3f %.3f %.3f %.6f\n", 
-           this->odomStack[0]->pos.x,
-           this->odomStack[0]->pos.y,
-           this->odomStack[0]->pos.th, t0);
-    printf("1: %.3f %.3f %.3f %.6f\n", 
-           this->odomStack[1]->pos.x,
-           this->odomStack[1]->pos.y,
-           this->odomStack[1]->pos.th, t1);
-
-    MsgPose2DFloat32 p;
-    p.x = this->odomStack[1]->pos.x - (dx / dt) * dtl;
-    p.y = this->odomStack[1]->pos.y - (dy / dt) * dtl;
-    p.th = ANG_NORM(this->odomStack[1]->pos.th - (da / dt) * dtl);
-
-    printf("I: %.3f %.3f %.3f %.6f\n", 
-           p.x, p.y, p.th, tl);
-
-    MsgLaserScan* scan = new MsgLaserScan(this->laserMsg);
-
-    std::pair<MsgPose2DFloat32,MsgLaserScan*> item(p,scan);
-
-    this->laser_scans.push_back(item);
-  }
-  
-  // Remove anything that's too old
-  double currtime = this->laserMsg.header.stamp_secs + 
-          this->laserMsg.header.stamp_nsecs / 1e9;
-  // Also count how many points we have
-  unsigned int hitpt_cnt=0;
-  for(std::list<std::pair<MsgPose2DFloat32,MsgLaserScan*> >::iterator it = this->laser_scans.begin();
-      it != this->laser_scans.end();
-      it++)
-  {
-    double msgtime = it->second->header.stamp_secs + it->second->header.stamp_nsecs / 1e9;
-    if((currtime - msgtime) > this->laser_buffer_time)
-    {
-      delete it->second;
-      it = this->laser_scans.erase(it);
-      it--;
-    }
-    else
-    {
-      hitpt_cnt += it->second->get_ranges_size()*2;
-    }
-  }
-
-  // allocate more space as necessary
-  if(this->laser_hitpts_size < hitpt_cnt)
-  {
-    this->laser_hitpts_size = hitpt_cnt;
-    this->laser_hitpts = 
-            (double*)realloc(this->laser_hitpts,
-                             this->laser_hitpts_size*sizeof(double));
-    assert(this->laser_hitpts);
-  }
-
-  // project hit points from each scan
-  double* pts = this->laser_hitpts;
-  this->laser_hitpts_len = 0;
-  for(std::list<std::pair<MsgPose2DFloat32, MsgLaserScan*> >::iterator it = this->laser_scans.begin();
-      it != this->laser_scans.end();
-      it++)
-  {
-    float b=it->second->angle_min;
-    float* r=it->second->ranges;
-    for(unsigned int j=0;
-        j<it->second->get_ranges_size();
-        j++,r++,b+=it->second->angle_increment)
-    {
-      if(((*r) >= this->laser_maxrange) || ((*r) >= it->second->range_max))
-        continue;
-      //double rx, ry;
-      //rx = (*r)*cos(b);
-      //ry = (*r)*sin(b);
-
-      double cs,sn;
-      cs = cos(it->first.th+b);
-      sn = sin(it->first.th+b);
-
-      double lx,ly;
-      lx = it->first.x + (*r)*cs;
-      ly = it->first.y + (*r)*sn;
-
-      assert(this->laser_hitpts_len*2 < this->laser_hitpts_size);
-      *(pts++) = lx;
-      *(pts++) = ly;
-      this->laser_hitpts_len++;
-    }
-  }
-
-  //printf("setting %d hit points\n", this->scan_points_count);
-  this->lock.lock();
-  plan_set_obstacles(this->plan, this->laser_hitpts, this->laser_hitpts_len);
-  this->lock.unlock();
-
-  // Draw the points
-
-  this->pointcloudMsg.set_points_size(hitpt_cnt/2);
-  this->pointcloudMsg.color.a = 0.0;
-  this->pointcloudMsg.color.r = 0.0;
-  this->pointcloudMsg.color.b = 1.0;
-  this->pointcloudMsg.color.g = 0.0;
-  for(unsigned int i=0;i<hitpt_cnt/2;i++)
-  {
-    this->pointcloudMsg.points[i].x = this->laser_hitpts[2*i];
-    this->pointcloudMsg.points[i].y = this->laser_hitpts[2*i+1];
-  }
-  publish("gui_laser",this->pointcloudMsg);
-  printf("published %d laser hits\n", hitpt_cnt/2);
+  // Buffer the scan.  It will get processed in odomReceived()
+  this->buffered_laser_scans.push_back(new MsgLaserScan(laserMsg));
 }
 
 void
