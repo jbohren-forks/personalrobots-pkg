@@ -310,10 +310,6 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
            (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 
                           1000000000ULL));
     */
-    printf("pose: (%.3f %.3f %.3f)\n",
-           pdata->pos.px,
-           pdata->pos.py,
-           RTOD(pdata->pos.pa));
     localizedOdomMsg.pos.x = pdata->pos.px;
     localizedOdomMsg.pos.y = pdata->pos.py;
     localizedOdomMsg.pos.th = pdata->pos.pa;
@@ -569,7 +565,7 @@ AmclNode::odomReceived()
                         PLAYER_MSGTYPE_DATA,
                         PLAYER_POSITION2D_DATA_STATE,
                         (void*)&pdata,0,
-                        &timestamp,true);
+                        &timestamp);
 }
 
 int

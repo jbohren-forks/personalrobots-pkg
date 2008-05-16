@@ -117,6 +117,8 @@ class WavefrontNode: public ros::node
     double* laser_hitpts;
     size_t laser_hitpts_len, laser_hitpts_size;
 
+    double laser_pose[3];
+
     // Controller paramters
     double lookahead_maxdist;
     double lookahead_distweight;
@@ -191,7 +193,7 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         rotate_dir(0),
         printed_warning(false),
         stopped(false),
-        robot_radius(0.2),
+        robot_radius(0.20),
         safety_dist(0.1),
         max_radius(1.0),
         dist_penalty(1.0),
@@ -200,7 +202,7 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         ang_eps(DTOR(10.0)),
         cycletime(0.1),
         laser_maxrange(4.0),
-        laser_buffer_time(0.5),
+        laser_buffer_time(2.0),
         lookahead_maxdist(2.0),
         lookahead_distweight(10.0),
         tvmin(0.1),
@@ -231,17 +233,7 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
   for(int j=0;j<sy;j++)
   {
     for(int i=0;i<sx;i++)
-    {
       this->plan->cells[i+j*sx].occ_state = mapdata[i+j*sx];
-        /*
-      if(mapdata[i+j*sx] < 0.1*255)
-        this->plan->cells[i+j*sx].occ_state = -1;
-      else if(mapdata[i+j*sx] > 0.5*255)
-        this->plan->cells[i+j*sx].occ_state = 1;
-      else
-        this->plan->cells[i+j*sx].occ_state = 0;
-        */
-    }
   }
   free(mapdata);
 
@@ -263,6 +255,11 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
   this->laser_hitpts = NULL;
 
   this->firstodom = true;
+
+  // TODO: get this info via ROS somehow
+  laser_pose[0] = 0.0;
+  laser_pose[1] = 0.0;
+  laser_pose[2] = 0.0;
 
   advertise<MsgPlanner2DState>("state");
   advertise<MsgPolyline2D>("gui_path");
@@ -342,10 +339,12 @@ WavefrontNode::odomReceived()
   this->pose[0] = odomMsg.pos.x;
   this->pose[1] = odomMsg.pos.y;
   this->pose[2] = odomMsg.pos.th;
+  /*
   printf("gpose: %.3f %.3f %.3f\n",
          this->pose[0],
          this->pose[1],
          RTOD(this->pose[2]));
+         */
 
   if(this->firstodom)
   {
@@ -394,20 +393,31 @@ WavefrontNode::odomReceived()
       p->y = prevOdom.pos.y + (dy / dt) * dtl;
       p->th = ANG_NORM(prevOdom.pos.th + (da / dt) * dtl);
 
+      /*
       printf("0: %.3f %.3f %.3f\t%.6f\n",
-             odomMsg.pos.x,
-             odomMsg.pos.y,
-             odomMsg.pos.th,
+             prevOdom.pos.x,
+             prevOdom.pos.y,
+             prevOdom.pos.th,
              t0);
       printf("I: %.3f %.3f %.3f\t%.6f\n",
              p->x,p->y,p->th, tl);
       printf("1: %.3f %.3f %.3f\t%.6f\n",
-             prevOdom.pos.x,
-             prevOdom.pos.y,
-             prevOdom.pos.th,
+             odomMsg.pos.x,
+             odomMsg.pos.y,
+             odomMsg.pos.th,
              t1);
+             */
 
-      MsgLaserScan* scan = new MsgLaserScan(this->laserMsg);
+      //MsgLaserScan* scan = new MsgLaserScan(**it);
+      MsgLaserScan* scan = new MsgLaserScan();
+      scan->angle_min = (*it)->angle_min;
+      scan->angle_increment = (*it)->angle_increment;
+      scan->range_max = (*it)->range_max;
+      scan->set_ranges_size((*it)->get_ranges_size());
+      scan->header.stamp_secs = (*it)->header.stamp_secs;
+      scan->header.stamp_nsecs = (*it)->header.stamp_nsecs;
+      memcpy(scan->ranges,(*it)->ranges,
+             sizeof(float)*(*it)->get_ranges_size());
 
       std::pair<MsgPose2DFloat32*,MsgLaserScan*> item(p,scan);
 
@@ -416,10 +426,12 @@ WavefrontNode::odomReceived()
       it--;
     }
 
+    //printf("%lu scans\n", laser_scans.size());
+
     // Remove anything that's too old
     // Also count how many points we have
-    double currtime = this->laserMsg.header.stamp_secs + 
-            this->laserMsg.header.stamp_nsecs / 1e9;
+    double currtime = this->odomMsg.header.stamp_secs + 
+            this->odomMsg.header.stamp_nsecs / 1e9;
     unsigned int hitpt_cnt=0;
     for(std::list<std::pair<MsgPose2DFloat32*,MsgLaserScan*> >::iterator it = this->laser_scans.begin();
         it != this->laser_scans.end();
@@ -429,6 +441,7 @@ WavefrontNode::odomReceived()
       if((currtime - msgtime) > this->laser_buffer_time)
       {
         delete it->first;
+        delete it->second->ranges;
         delete it->second;
         it = this->laser_scans.erase(it);
         it--;
@@ -454,6 +467,12 @@ WavefrontNode::odomReceived()
         it != this->laser_scans.end();
         it++)
     {
+      /*
+      printf("%.3f %.3f %.3f\n", 
+             it->first->x,
+             it->first->y,
+             it->first->th);
+             */
       float b=it->second->angle_min;
       float* r=it->second->ranges;
       for(unsigned int j=0;
@@ -463,17 +482,29 @@ WavefrontNode::odomReceived()
         if(((*r) >= this->laser_maxrange) || ((*r) >= it->second->range_max))
           continue;
 
-        double cs,sn;
-        cs = cos(it->first->th+b);
-        sn = sin(it->first->th+b);
+        // Project into laser frame
+        double lx, ly;
+        lx = (*r)*cos(b);
+        ly = (*r)*sin(b);
 
-        double lx,ly;
-        lx = it->first->x + (*r)*cs;
-        ly = it->first->y + (*r)*sn;
+        // Convert into robot frame
+        double rx,ry;
+        double cs,sn;
+        cs = cos(laser_pose[2]);
+        sn = sin(laser_pose[2]);
+        rx = laser_pose[0] + lx*cs - ly*sn;
+        ry = laser_pose[1] + lx*sn + ly*cs;
+
+        // Convert to world frame
+        double wx,wy;
+        cs = cos(it->first->th);
+        sn = sin(it->first->th);
+        wx = it->first->x + cs*rx - sn*ry;
+        wy = it->first->y + sn*rx + cs*ry;
 
         assert(this->laser_hitpts_len*2 < this->laser_hitpts_size);
-        *(pts++) = lx;
-        *(pts++) = ly;
+        *(pts++) = wx;
+        *(pts++) = wy;
         this->laser_hitpts_len++;
       }
     }
@@ -497,7 +528,6 @@ WavefrontNode::odomReceived()
 
     prevOdom = odomMsg;
   }
-
 
   this->lock.unlock();
 }
@@ -557,7 +587,7 @@ WavefrontNode::doOneCycle()
       this->stopRobot();
       break;
     case REACHED_GOAL:
-      puts("still done");
+      //puts("still done");
       this->stopRobot();
       break;
     case NEW_GOAL:
@@ -647,7 +677,7 @@ WavefrontNode::doOneCycle()
         }
         publish("gui_path", polylineMsg);
 
-        printf("computed velocities: %.3f %.3f\n", vx, RTOD(va));
+        //printf("computed velocities: %.3f %.3f\n", vx, RTOD(va));
         this->sendVelCmd(vx, 0.0, va);
 
         break;

@@ -96,9 +96,6 @@ StageNode::cmdvelReceived()
 {
   this->lock.lock();
 
-  printf("received cmd: %.3f %.3f\n",
-         this->velMsg.vx, this->velMsg.vw);
-
   this->positionmodel->SetSpeed(this->velMsg.vx, 0.0, this->velMsg.vw);
   this->lock.unlock();
 }
