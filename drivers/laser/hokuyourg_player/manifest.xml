@@ -1,6 +1,6 @@
 <package>
-  <description>A ROS node that wraps up the Player urglaser driver, which provides access to a wide range of Hokuyo URG lasers.</description>
-  <author>Brian P. Gerkey</author>
+  <description>A ROS node that uses the Player liburglaser_standalone library, which provides access to a wide range of Hokuyo URG lasers.</description>
+  <author>Brian P. Gerkey, Jeremy Leibs</author>
   <license>BSD</license>
   <depend package="roscpp" />
   <depend package="player" />

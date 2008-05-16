@@ -28,6 +28,43 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+
+@mainpage
+
+@htmlinclude manifest.html
+
+@b teleop_base_keyboard teleoperates a differential-drive robot by mapping
+key presses into velocity commands.  Consider it a poor man's joystick.
+
+<hr>
+
+@section usage Usage
+@verbatim
+$ teleop_base_keyboard [standard ROS args]
+@endverbatim
+
+Key mappings are printed to screen on startup.  Press any unmapped key to
+stop the robot.
+
+<hr>
+
+@section topic ROS topics
+
+Subscribes to (name/type):
+- None
+
+Publishes to (name / type):
+- @b "cmd_vel"/BaseVel : velocity to the robot; sent on every keypress.
+
+<hr>
+
+@section parameters ROS parameters
+
+- None
+
+ **/
+
 #include <termios.h>
 #include <signal.h>
 #include <math.h>

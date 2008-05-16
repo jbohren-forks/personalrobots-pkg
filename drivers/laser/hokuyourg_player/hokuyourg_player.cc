@@ -28,6 +28,56 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+
+@mainpage
+
+@htmlinclude manifest.html
+
+@b hokuyourg_player is a driver for the Hokuyo URG line of laser range-finders.
+
+This node uses part of the the Player @b urglaser driver.  For detailed documentation,
+consult <a href="http://playerstage.sourceforge.net/doc/Player-cvs/player/group__driver__urglaser.html">Player urglaser documentation</a>.
+Note that this node does not actually wrap the @b
+urglaser driver, but rather calls into the underlying library, @b
+liburglaser_standalone.
+
+This node should be capable to controlling any of Hokuyo's URG laser.
+However, to date is has only been tested on the TOP-URG.
+
+<hr>
+
+@section usage Usage
+@verbatim
+$ hokuyourg_player [standard ROS args]
+@endverbatim
+
+@par Example
+
+@verbatim
+$ hokuyourg_player
+@endverbatim
+
+<hr>
+
+@section topic ROS topics
+
+Subscribes to (name/type):
+- None
+
+Publishes to (name / type):
+- @b "scan"/LaserScan : scan data from the laser.
+
+<hr>
+
+@section parameters ROS parameters
+
+- None
+
+@todo Expose the various urglaser parameters via ROS.
+
+ **/
+
 #include <assert.h>
 #include <libstandalone_drivers/urg_laser.h>
 

@@ -17,6 +17,63 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+
+@mainpage
+
+@htmlinclude manifest.html
+
+@b rosstage wraps the Stage 2-D multi-robot simulator, via @b libstage.
+
+For detailed documentation,
+consult the <a href="http://playerstage.sourceforge.net/doc/stage-cvs">Stage manual</a>.
+
+This node finds the first Stage model of type @b laser, and the first model
+of type @b position, and maps these models to the ROS topics given below.
+If a laser and a position model are not found, rosstage exits.
+
+@todo Define a more general method for mapping Stage models onto ROS topics
+/ services.  Something like the Player/Stage model, in which a Player .cfg
+file is used to map named Stage models onto Player devices, is probably the
+way to go.  The same technique can be used for rosgazebo.
+
+<hr>
+
+@section usage Usage
+@verbatim
+$ rosstage <world> [standard ROS args]
+@endverbatim
+
+@param world The Stage .world file to load.
+
+@par Example
+
+@verbatim
+$ rosstage willow-erratic.world
+@endverbatim
+
+<hr>
+
+@section topic ROS topics
+
+Subscribes to (name/type):
+- @b "cmd_vel"/BaseVel : velocity commands to differentially drive the 
+position model.
+
+Publishes to (name / type):
+- @b "odom"/RobotBase2DOdom : odometry data from the position model.
+- @b "scan"/LaserScan : scans from the laser model.
+
+
+<hr>
+
+@section parameters ROS parameters
+
+- None
+
+
+ **/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

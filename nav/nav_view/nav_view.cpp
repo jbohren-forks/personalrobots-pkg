@@ -29,18 +29,61 @@
  */
 
 /**
- *
- * @mainpage
- *
- * @htmlinclude manifest.html
- *
- *
- * @b nav_view is a GUI for 2-D navigation.  It can:
- *   - display a map
- *   - display a robot's pose
- *   - display a cloud of particles (e.g., from a localization system)
- *   - display a path (e.g., from a path planner)
- *
+
+@mainpage
+
+@htmlinclude manifest.html
+
+@b nav_view is a GUI for 2-D navigation.  It can:
+ - display a map
+ - display a robot's pose
+ - display a cloud of particles (e.g., from a localization system)
+ - display a path (e.g., from a path planner)
+ - send a goal to a planner
+
+<hr>
+
+@section usage Usage
+@verbatim
+$ nav_view [map res] [standard ROS args]
+@endverbatim
+
+@param map An image file to load as an occupancy grid map. The lower-left pixel of the map is assigned the pose (0,0,0).
+@param res The resolution of the map, in meters, pixel.
+
+@todo Remove the map and res arguments in favor map retrieval via ROSRPC.
+
+@par Example
+
+@verbatim
+$ nav_view mymap.png 0.1 odom:=localizedpose
+@endverbatim
+
+@par GUI controls
+Mouse bindings:
+- drag left button: pan view
+- drag right button: zoom view
+- click middle button: send goal
+
+<hr>
+
+@section topic ROS topics
+
+Subscribes to (name/type):
+- @b "odom"/RobotBase2DOdom : the robot's 2D pose.  Rendered as a circle with a heading line.
+- @b "particlecloud"/ParticleCloud2D : a set particles from a probabilistic localization system.  Rendered is a set of small arrows.
+- @b "gui_path"/Polyline2D : a path from a planner.  Rendered as a dashed line.
+- @b "gui_laser"/Polyline2D : re-projected laser scan from a planner.  Rendered as a set of points.
+
+Publishes to (name / type):
+- @b "goal"/Planner2DGoal : goal for planner.  Sent on middle button click.
+
+<hr>
+
+@section parameters ROS parameters
+
+- None
+
  **/
 
 #include <unistd.h>

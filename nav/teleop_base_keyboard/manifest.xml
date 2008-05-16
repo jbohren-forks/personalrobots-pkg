@@ -1,5 +1,5 @@
 <package>
-<description>A ROS that supports velocity-mode teleoperation of a
+<description>A ROS node that supports velocity-mode teleoperation of a
 differential drive robot base from keyboard input</description>
   <author>Brian P. Gerkey</author>
   <license>BSD</license>

@@ -32,6 +32,50 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/**
+
+@mainpage
+
+@htmlinclude manifest.html
+
+@b laser_viewer is a GUI for displaying laser scans, in 3-D.
+
+<hr>
+
+@section usage Usage
+@verbatim
+$ laser_viewer  [standard ROS args]
+@endverbatim
+
+@par Example
+
+@verbatim
+$ laser_viewer 
+@endverbatim
+
+@par GUI controls
+
+GL-style mouse-based manipulation.
+
+@todo Actually document the controls.
+
+<hr>
+
+@section topic ROS topics
+
+Subscribes to (name/type):
+- @b "scan"/LaserScan : scans to display
+
+Publishes to (name / type):
+- None
+
+<hr>
+
+@section parameters ROS parameters
+
+- None
+
+ **/
 #include "ros/node.h"
 #include "std_msgs/MsgLaserScan.h"
 #include "cloud_viewer/cloud_viewer.h"

@@ -28,6 +28,87 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+
+@mainpage
+
+@htmlinclude manifest.html
+
+@b wavefront_player is a path-planning system for a robot moving in 2D.  It
+implements the wavefront algorithm (described in various places; Latombe's
+book is a good reference), which uses dynamic programming over an occupancy
+grid map to find the lowest-cost path from the robot's pose to the goal.
+
+This node uses part of the Player @b wavefront driver.  For detailed
+documentation, consult <a
+href="http://playerstage.sourceforge.net/doc/Player-cvs/player/group__driver__wavefront.html">Player
+wavefront documentation</a>.  Note that this node does not actually wrap the @b
+wavefront driver, but rather calls into the underlying library, @b
+libwavefront_standalone.
+
+The planning algorithm assumes that the robot is circular and holonomic.
+Under these assumptions, it efficiently dilates obstacles and then plans
+over the map as if the robot occupied a single grid cell.
+
+If provided, laser scans are used to temporarily modify the map.  In this
+way, the planner can avoid obstacles that are not in the static map.
+
+The node also contains a controller that generates velocities for a
+differential drive robot.  The intended usage is to run the node at a
+modest rate, e.g., 20Hz, allowing it to replan and generate new controls
+every cycle.  The controller ignores dynamics (i.e., assumes infinite
+acceleration); this becomes a problem with robots that take non-trivial
+time to slow down.
+
+<hr>
+
+@section usage Usage
+@verbatim
+$ wavefront_player <map> <res> [standard ROS args]
+@endverbatim
+
+@param map An image file to load as an occupancy grid map.  The robot will be localized against this map using laser scans.  The lower-left pixel of the map is assigned the pose (0,0,0).
+@param res The resolution of the map, in meters, pixel.
+
+@todo Remove the map and res arguments in favor map retrieval via ROSRPC.
+
+@par Example
+
+@verbatim
+$ wavefront_player mymap.png 0.1
+@endverbatim
+
+<hr>
+
+@section topic ROS topics
+
+Subscribes to (name/type):
+- @b "localizedpose"/RobotBase2DOdom : robot's map pose.  Only the position information is used (velocity is ignored).
+- @b "goal"/Planner2DGoal : goal for the robot.
+- @b "scan"/LaserScan : laser scans.  Used to temporarily modify the map for dynamic obstacles.
+
+Publishes to (name / type):
+- @b "cmd_vel"/BaseVel : velocity commands to robot
+- @b "state"/Planner2DState : current planner state (e.g., goal reached, no
+path)
+- @b "gui_path"/Polyline2D : current global path (for visualization)
+- @b "gui_laser"/Polyline2D : re-projected laser scans (for visualization)
+
+@todo Start using libTF for transform management:
+  - subscribe to odometry and use transform to recover map pose.
+
+<hr>
+
+@section parameters ROS parameters
+
+- None
+
+@todo There are an enormous number of parameters, values for which are all
+currently hardcoded. These should be exposed as ROS parameters.  In
+particular, robot radius and safety distance must be changed for each
+robot.
+
+ **/
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>

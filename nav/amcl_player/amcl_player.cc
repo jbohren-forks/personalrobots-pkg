@@ -28,6 +28,66 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+
+@mainpage
+
+@htmlinclude manifest.html
+
+@b amcl_player is a probabilistic localization system for a robot moving in
+2D.  It implements the adaptive Monte Carlo localization algorithm (as
+described by Dieter Fox), which uses a particle filter to track the pose of
+a robot against a known map.
+
+This node wraps up the Player @b amcl driver.  For detailed documentation,
+consult <a href="http://playerstage.sourceforge.net/doc/Player-cvs/player/group__driver__amcl.html">Player amcl documentation</a>.
+
+<hr>
+
+@section usage Usage
+@verbatim
+$ amcl_player <map> <res> <x> <y> <th> [standard ROS args]
+@endverbatim
+
+@param map An image file to load as an occupancy grid map.  The robot will be localized against this map using laser scans.  The lower-left pixel of the map is assigned the pose (0,0,0).
+@param res The resolution of the map, in meters, pixel.
+@param (x,y,th) Approximate pose of robot, used to initialize particle filter.  Units are (meters,meters,degrees).
+
+@todo Remove the map and res arguments in favor map retrieval via ROSRPC.
+@todo Remove the x,y,th arguments and expose the particle filter initialization via a ROS topic.
+
+@par Example
+
+@verbatim
+$ amcl_player mymap.png 0.1 10.4 31.2 90.0
+@endverbatim
+
+<hr>
+
+@section topic ROS topics
+
+Subscribes to (name/type):
+- @b "odom"/RobotBase2DOdom : robot's odometric pose.  Only the position information is used (velocity is ignored).
+- @b "scan"/LaserScan : laser scans.
+
+Publishes to (name / type):
+- @b "localizedpose"/RobotBase2DOdom : robot's localized map pose.  Only the position information is set (no velocity).
+- @b "particlecloud"/ParticleCloud2D : the set of particles being maintained by the filter.
+
+@todo Start using libTF for transform management:
+  - remove the manual interpolation of poses to attach to laser scans
+  - add the ability to set the laser's pose relative to the robot (currently assumed to be 0,0,0).
+  - publish map->odom transform, instead of map pose
+
+<hr>
+
+@section parameters ROS parameters
+
+- None
+
+@todo Expose the various amcl parameters via ROS.
+
+ **/
 #include <assert.h>
 
 // For core Player stuff (message queues, config file objects, etc.)

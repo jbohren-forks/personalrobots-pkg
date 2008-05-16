@@ -13,6 +13,7 @@ system.
 <url>http://playerstage.sf.net</url>
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/stage/lib `PKG_CONFIG_PATH=${prefix}/stage/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --libs stage`" cflags="`PKG_CONFIG_PATH=${prefix}/stage/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --cflags stage`"/>
+  <doxymaker external="http://playerstage.sourceforge.net/doc/stage-cvs"/>
 </export>
 </package>
 

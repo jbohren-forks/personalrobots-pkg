@@ -28,6 +28,51 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+
+@mainpage
+
+@htmlinclude manifest.html
+
+@b erratic_player is a driver for the Erratic mobile robot, available from
+<a href="http://www.videredesign.com">Videre Design</a>.
+
+This node wraps up the Player @b erratic driver.  For detailed documentation,
+consult <a href="http://playerstage.sourceforge.net/doc/Player-cvs/player/group__driver__erratic.html">Player erratic documentation</a>.
+
+<hr>
+
+@section usage Usage
+@verbatim
+$ erratic_player [standard ROS args]
+@endverbatim
+
+@par Example
+
+@verbatim
+$ erratic_player
+@endverbatim
+
+<hr>
+
+@section topic ROS topics
+
+Subscribes to (name/type):
+- @b "cmd_vel"/BaseVel : velocity commands to differentially drive the robot.
+
+Publishes to (name / type):
+- @b "odom"/RobotBase2DOdom : odometry data from the robot.
+
+<hr>
+
+@section parameters ROS parameters
+
+- None
+
+@todo Expose the various erratic parameters via ROS.
+
+ **/
+
 #include <assert.h>
 
 // For core Player stuff (message queues, config file objects, etc.)
