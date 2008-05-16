@@ -6,7 +6,8 @@
 using namespace std;
 
 //#define SHOW_IMAGES
-#define SHOW_UNDISTORTED
+//#define SHOW_UNDISTORTED
+//#define SAVE_UNDISTORTED
 
 int main(int argc, char **argv)
 {
@@ -116,7 +117,18 @@ int main(int argc, char **argv)
     cvShowImage("orig", img);
     cvNamedWindow("undist", CV_WINDOW_AUTOSIZE);
     cvShowImage("undist", undist);
-    cvWaitKey(0);
+    cvWaitKey(5);
+#ifdef SAVE_UNDISTORTED
+/*
+    IplImage *undist_rgb = cvCreateImage(cvSize(img->width, img->height),
+                                         IPL_DEPTH_8U, 3);
+    cvCvtColor(undist, undist_rgb, CV_GRAY2BGR);
+*/
+    char fnbuf[100];
+    snprintf(fnbuf, sizeof(fnbuf), "undist%d.ppm", i);
+    cvSaveImage(fnbuf, undist);
+//    cvReleaseImage(&undist_rgb);
+#endif
     cvReleaseImage(&undist);
     cvReleaseImage(&img);
   }
