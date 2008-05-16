@@ -488,7 +488,7 @@ WavefrontNode::odomReceived()
     this->pointcloudMsg.color.r = 0.0;
     this->pointcloudMsg.color.b = 1.0;
     this->pointcloudMsg.color.g = 0.0;
-    for(unsigned int i=0;i<hitpt_cnt/2;i++)
+    for(unsigned int i=0;i<this->laser_hitpts_len;i++)
     {
       this->pointcloudMsg.points[i].x = this->laser_hitpts[2*i];
       this->pointcloudMsg.points[i].y = this->laser_hitpts[2*i+1];
