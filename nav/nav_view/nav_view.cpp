@@ -28,11 +28,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
+/**
+ *
  * @mainpage
  *
- * foo
- */
+ * @htmlinclude manifest.html
+ *
+ *
+ * @b nav_view is a GUI for 2-D navigation.  It can:
+ *   - display a map
+ *   - display a robot's pose
+ *   - display a cloud of particles (e.g., from a localization system)
+ *   - display a path (e.g., from a path planner)
+ *
+ **/
 
 #include <unistd.h>
 #include <assert.h>
