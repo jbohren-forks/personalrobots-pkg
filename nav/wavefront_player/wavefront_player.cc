@@ -200,7 +200,7 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         ang_eps(DTOR(10.0)),
         cycletime(0.1),
         laser_maxrange(4.0),
-        laser_buffer_time(2.0),
+        laser_buffer_time(0.5),
         lookahead_maxdist(2.0),
         lookahead_distweight(10.0),
         tvmin(0.1),
@@ -257,7 +257,7 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
   // Compute cspace over static map
   plan_compute_cspace(this->plan);
 
-  this->tf = new rosTFClient(*this);
+  //this->tf = new rosTFClient(*this);
 
   this->laser_hitpts_size = this->laser_hitpts_len = 0;
   this->laser_hitpts = NULL;
@@ -356,7 +356,8 @@ WavefrontNode::odomReceived()
   {
     // Interpolate poses for all buffered scans
     // TODO: use libTF's interpolation
-    for(std::list<MsgLaserScan*>::iterator it = this->buffered_laser_scans.begin();
+    for(std::list<MsgLaserScan*>::iterator it = 
+        this->buffered_laser_scans.begin();
         it != this->buffered_laser_scans.end();
         it++)
     {
@@ -393,6 +394,19 @@ WavefrontNode::odomReceived()
       p->y = prevOdom.pos.y + (dy / dt) * dtl;
       p->th = ANG_NORM(prevOdom.pos.th + (da / dt) * dtl);
 
+      printf("0: %.3f %.3f %.3f\t%.6f\n",
+             odomMsg.pos.x,
+             odomMsg.pos.y,
+             odomMsg.pos.th,
+             t0);
+      printf("I: %.3f %.3f %.3f\t%.6f\n",
+             p->x,p->y,p->th, tl);
+      printf("1: %.3f %.3f %.3f\t%.6f\n",
+             prevOdom.pos.x,
+             prevOdom.pos.y,
+             prevOdom.pos.th,
+             t1);
+
       MsgLaserScan* scan = new MsgLaserScan(this->laserMsg);
 
       std::pair<MsgPose2DFloat32*,MsgLaserScan*> item(p,scan);
@@ -403,24 +417,24 @@ WavefrontNode::odomReceived()
     }
 
     // Remove anything that's too old
+    // Also count how many points we have
     double currtime = this->laserMsg.header.stamp_secs + 
             this->laserMsg.header.stamp_nsecs / 1e9;
-    // Also count how many points we have
     unsigned int hitpt_cnt=0;
     for(std::list<std::pair<MsgPose2DFloat32*,MsgLaserScan*> >::iterator it = this->laser_scans.begin();
         it != this->laser_scans.end();
         it++)
     {
-    double msgtime = it->second->header.stamp_secs + it->second->header.stamp_nsecs / 1e9;
-    if((currtime - msgtime) > this->laser_buffer_time)
-    {
-      delete it->first;
-      delete it->second;
-      it = this->laser_scans.erase(it);
-      it--;
-    }
-    else
-      hitpt_cnt += it->second->get_ranges_size()*2;
+      double msgtime = it->second->header.stamp_secs + it->second->header.stamp_nsecs / 1e9;
+      if((currtime - msgtime) > this->laser_buffer_time)
+      {
+        delete it->first;
+        delete it->second;
+        it = this->laser_scans.erase(it);
+        it--;
+      }
+      else
+        hitpt_cnt += it->second->get_ranges_size()*2;
     }
 
     // allocate more space as necessary
@@ -480,7 +494,6 @@ WavefrontNode::odomReceived()
       this->pointcloudMsg.points[i].y = this->laser_hitpts[2*i+1];
     }
     publish("gui_laser",this->pointcloudMsg);
-    printf("published %d laser hits\n", hitpt_cnt/2);
 
     prevOdom = odomMsg;
   }
@@ -493,7 +506,9 @@ void
 WavefrontNode::laserReceived()
 {
   // Buffer the scan.  It will get processed in odomReceived()
+  this->lock.lock();
   this->buffered_laser_scans.push_back(new MsgLaserScan(laserMsg));
+  this->lock.unlock();
 }
 
 void
