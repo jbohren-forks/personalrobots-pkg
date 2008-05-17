@@ -205,12 +205,13 @@ class WavefrontNode: public ros::node
     double lookahead_distweight;
     double tvmin, tvmax, avmin, avmax, amin, amax;
 
-    // incoming messages
+    // incoming/outgoing messages
     MsgPlanner2DGoal goalMsg;
     MsgRobotBase2DOdom odomMsg;
     MsgLaserScan laserMsg;
     MsgPolyline2D polylineMsg;
     MsgPolyline2D pointcloudMsg;
+    MsgPlanner2DState pstate;
     std::vector<MsgLaserScan> laserScans;
     MsgRobotBase2DOdom prevOdom;
     bool firstodom;
@@ -274,7 +275,7 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         rotate_dir(0),
         printed_warning(false),
         stopped(false),
-        robot_radius(0.205),
+        robot_radius(0.175),
         safety_dist(0.05),
         max_radius(1.0),
         dist_penalty(1.0),
@@ -766,6 +767,25 @@ WavefrontNode::doOneCycle()
     default:
       assert(0);
   }
+
+  this->pstate.active = (this->enable &&
+			 (this->planner_state == PURSUING_GOAL)) ? 1 : 0;
+  this->pstate.valid = (this->plan->path_count > 0) ? 1 : 0;
+  this->pstate.done = (this->planner_state == REACHED_GOAL) ? 1 : 0;
+  this->pstate.pos.x = this->pose[0];
+  this->pstate.pos.y = this->pose[1];
+  this->pstate.pos.th = this->pose[2];
+  this->pstate.goal.x = this->goal[0];
+  this->pstate.goal.y = this->goal[1];
+  this->pstate.goal.th = this->goal[2];
+  this->pstate.waypoint.x = 0.0;
+  this->pstate.waypoint.y = 0.0;
+  this->pstate.waypoint.th = 0.0;
+  this->pstate.set_waypoints_size(0);
+  this->pstate.waypoint_idx = -1;
+
+  publish("state",this->pstate);
+
   this->lock.unlock();
 }
 
