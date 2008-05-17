@@ -1,0 +1,11 @@
+<package>
+  <description>
+  A wrapper around the stellar OpenCV + ffmpeg movie-reading capabilities.
+  Just give it a movie file on the command line and it will blast out images.
+  </description>
+  <author>Morgan Quigley</author>
+  <license>BSD</license>
+  <depend package="opencv"/>
+  <depend package="roscpp"/>
+  <depend package="simple_options"/>
+</package>
