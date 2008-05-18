@@ -86,6 +86,9 @@ Flea2::Flea2(video_mode_t _video_mode, int n_host) :
     fprintf(stderr, "Unable to start camera iso transmission\n" );
     throw std::runtime_error("asdf");
   }
+  set_shutter(0.8);
+  set_gamma(0.24);
+  set_gain(0);
 }
 
 Flea2::~Flea2()

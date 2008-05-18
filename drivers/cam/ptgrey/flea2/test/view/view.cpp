@@ -48,11 +48,11 @@ int main(int argc, char **argv)
   uint8_t *frame;
   uint32_t w, h;
 
-  double shutter = 0.2;
+  double shutter = 0.8;
   flea2.set_shutter(shutter);
-  double gamma = 0.3;
+  double gamma = 0.24;
   flea2.set_gamma(gamma);
-  double gain = 0.5;
+  double gain = 0;
   flea2.set_gain(gain);
 
   bool done = false;
