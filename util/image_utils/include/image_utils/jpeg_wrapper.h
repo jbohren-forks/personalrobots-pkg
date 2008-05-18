@@ -25,7 +25,6 @@ public:
     raster_width(0), raster_height(0),
     raster_alloc_size(0), compress_buf_alloc_size(0)
   {
-    g_wrapper = this;
     cinfo.err = jpeg_std_error(&jerr);
     jpeg_create_compress(&cinfo);
     dinfo.err = jpeg_std_error(&jerr);
@@ -95,6 +94,7 @@ public:
       compress_buf_alloc_size = compress_start_size;
     }
     ros_jpeg_mutex_lock();
+    g_wrapper = this;
     jpeg_set_defaults(&cinfo);
     jpeg_buffer_dest(&cinfo, (char *)compress_buf, compress_buf_alloc_size);
     jpeg_set_quality(&cinfo, quality, TRUE);
@@ -140,18 +140,12 @@ protected:
   static void buffer_source_term(j_decompress_ptr dinfo) { }
   static boolean buffer_dest_empty(j_compress_ptr cinfo)
   {
-    // TODO: enlarge the compression buffer by a factor of 2 and
-    // copy over everything, then reset the write pointer
-    // and the number of available bytes
     JpegWrapper::g_wrapper->grow_buffer_dest(cinfo->dest->next_output_byte,
                                              cinfo->dest->free_in_buffer);
-//    cinfo->dest->next_output_byte = (JOCTET *)(+ compress_buf_alloc_size);
-//    cinfo->dest->free_in_buffer = compress_buf_alloc_size;
     return TRUE;
   }
   void grow_buffer_dest(JOCTET *&next_output_byte, size_t &free_in_buffer)
   {
-    printf("grow buffer dest\n");
     uint8_t *bigger_dest = new uint8_t[compress_buf_alloc_size * 2];
     memcpy(bigger_dest, compress_buf, compress_buf_alloc_size);
     delete[] compress_buf;
