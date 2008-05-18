@@ -4,6 +4,8 @@
 #include "opencv/highgui.h"
 #include "ros/node.h"
 #include "simple_options/simple_options.h"
+#include "std_msgs/MsgImage.h"
+#include "image_utils/cv_bridge.h"
 
 using namespace std;
 using namespace ros;
@@ -11,12 +13,17 @@ using namespace ros;
 class CvMovieStreamer : public node
 {
 public:
+  MsgImage image_msg;
+  CvBridge<MsgImage> cv_bridge;
   string movie_fname;
-  int delay, loop;
-  CvMovieStreamer(const string &_movie_fname, int _delay, int _loop) 
-  : node("cv_movie_streamer"), movie_fname(_movie_fname), 
-    delay(_delay), loop(_loop)
+  int delay, loop, qual;
+
+  CvMovieStreamer(const string &_movie_fname, int _delay, int _loop, int _qual) 
+  : node("cv_movie_streamer"), cv_bridge(&image_msg),
+    movie_fname(_movie_fname), delay(_delay), loop(_loop), qual(_qual)
   { 
+    image_msg.compression = "jpeg";
+    advertise<MsgImage>("image");
   }
   void stream_movie()
   {
@@ -33,6 +40,8 @@ public:
       while ((img = cvQueryFrame(capture)))
       {
         frames++;
+        cv_bridge.from_cv(img, qual);
+        publish("image", image_msg);
         cvShowImage("movie stream", img);
         if (cvWaitKey(delay) >= 0)
         {
@@ -56,11 +65,12 @@ int main(int argc, char **argv)
     printf("\nusage: cv_movie_streamer MOVIEFILE [OPTIONS]\n\n");
     printf("options:\n");
     printf("  frame_delay_ms=123   : delay inserted between frame decodes\n");
-    printf("  loop=1               : loop playback of movie file\n\n");
+    printf("  loop=1               : loop playback of movie file\n");
+    printf("  quality=85           : jpeg compression quality of frames\n\n");
     return 1;
   }
   map<string,string> opts = simple_options::parse(argc, argv, 2);
-  int delay = 5, loop = 0;
+  int delay = 5, loop = 0, quality = 90;
   for (map<string,string>::iterator i = opts.begin(); i != opts.end(); ++i)
   {
     string key = (*i).first, value = (*i).second;
@@ -68,11 +78,14 @@ int main(int argc, char **argv)
       delay = atoi(value.c_str());
     else if (key == string("loop"))
       loop  = atoi(value.c_str());
+    else if (key == string("quality"))
+      quality = atoi(value.c_str());
   }
   printf("movie file: [%s]\n", argv[1]);
   printf("frame_delay_ms = %d\n", delay);
   printf("loop = %d\n", loop);
-  CvMovieStreamer ms(argv[1], delay, loop);
+  printf("quality (as defined by JPEG) = %d\n", quality);
+  CvMovieStreamer ms(argv[1], delay, loop, quality);
   ms.stream_movie();
   ros::fini();
   return 0;

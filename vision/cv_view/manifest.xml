@@ -1,7 +1,7 @@
 <package>
   <description>
-  A wrapper around the stellar OpenCV + ffmpeg movie-reading capabilities.
-  Just give it a movie file on the command line and it will blast out images.
+  A wrapper around the OpenCV HighGUI image viewer. It just shows images
+  flying across the ROS botnet.
   </description>
   <author>Morgan Quigley</author>
   <license>BSD</license>
@@ -9,5 +9,4 @@
   <depend package="std_msgs"/>
   <depend package="image_utils"/>
   <depend package="roscpp"/>
-  <depend package="simple_options"/>
 </package>
