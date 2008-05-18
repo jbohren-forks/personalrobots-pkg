@@ -1,0 +1,9 @@
+<package>
+ <description brief = "Package to test Xenomai">
+  Xenomai test program.  Designed to test that Xenomai build system and runtime system are both configured correctly and quantify 
+timing jitter.
+ </description>
+ <depend package="roscpp"/>
+ <depend package="std_msgs"/>
+ <depend package="xenomai"/>
+</package>
