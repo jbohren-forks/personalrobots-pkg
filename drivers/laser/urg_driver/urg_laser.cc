@@ -233,7 +233,7 @@ urg_laser::urg_read(char *buf, int len, int timeout)
     {
       if ((retval = poll(ufd, 1, timeout)) < 0)
       {
-        perror ("urg_laser::read:poll:");
+        perror ("urg_laser::read: poll error:");
         return -1;
       }
       else if (retval == 0)
@@ -245,7 +245,7 @@ urg_laser::urg_read(char *buf, int len, int timeout)
     ret = read(laser_fd, &buf[current], len-current);
 
     if (ret <= 0) {
-      close();
+      printf("urg_laser::read: read error\n");
       return -1;
     }
     
@@ -281,6 +281,7 @@ urg_laser::skip_until(const char* search, int search_len, int timeout)
     ret = urg_read(buf, read_len, timeout);
 
     if (ret < 0) {
+      printf("urg_laser::skip_until: read error\n");
       delete[] buf;
       return ret;
     }
@@ -320,8 +321,9 @@ urg_laser::read_until(char* buf, int buf_len, const char* search, int search_len
     }
 
     ret = urg_read(&buf[current], read_len, timeout);
+
     if (ret < 0) {
-      printf("urg_laser::read_until: read failure\n");
+      printf("urg_laser::read_until: read error\n");
       return ret;
     }
 
@@ -600,6 +602,9 @@ urg_laser::get_readings(urg_laser_readings_t* res, double min_ang, double max_an
   else if(SCIP_version == 2)
   {
     
+    if (cluster == 0)
+      cluster = 1;
+
     int min_i = afrt + min_ang*ares/(2.0*M_PI);
     int max_i = afrt + max_ang*ares/(2.0*M_PI);
     
@@ -618,22 +623,25 @@ urg_laser::get_readings(urg_laser_readings_t* res, double min_ang, double max_an
     char buf[100];
 
     // skip over the timestamp
-    skip_until("\n", 1, timeout);
+    if (skip_until("\n", 1, timeout) < 0)
+      return -1;
 
     // we use ind to cope with data spanning data boundaries
     int ind = 0;
     int i = 0;
 
-
     // Populate configuration
     res->config.min_angle  =  (min_i - afrt) * (2.0*M_PI)/(ares);
     res->config.max_angle  =  (max_i - afrt) * (2.0*M_PI)/(ares);
-    res->config.resolution =  (2.0*M_PI)/(ares);
+    res->config.resolution =  cluster*(2.0*M_PI)/(ares);
     res->config.max_range  =  dmax / 1000.0;
 
     for (;;)
     {
       int bytes = read_until(&buf[ind], 100 - ind, "\n", 1, timeout);
+
+      if (bytes < 0)
+	return -1;
 
       if (bytes == 1) {
         // This is \n\n so we should be done
@@ -650,7 +658,6 @@ urg_laser::get_readings(urg_laser_readings_t* res, double min_ang, double max_an
         {
           res->ranges[i++] = ((buf[j]-0x30) << 12) | ((buf[j+1]-0x30) << 6) | (buf[j+2]-0x30);
           res->num_readings++;
-          //          printf("%d ", res->ranges[i]);
         }
         else
         {

@@ -79,12 +79,16 @@ Publishes to (name / type):
  **/
 
 #include <assert.h>
+#include <math.h>
+#include <iostream>
+
 //#include <libstandalone_drivers/urg_laser.h>
 #include "urg_laser.h"
 
 #include <ros/node.h>
 #include <std_msgs/MsgLaserScan.h>
-#include <math.h>
+#include "rostime/clock.h"
+
 
 class HokuyoNode: public ros::node
 {
@@ -94,6 +98,13 @@ class HokuyoNode: public ros::node
     bool running;
     unsigned int scanid;
 
+    ros::time::clock rosclock;
+
+  int count;
+  unsigned long long next_time;
+
+
+
   public:
     urg_laser urg;
     MsgLaserScan scan;
@@ -101,7 +112,7 @@ class HokuyoNode: public ros::node
     double max_ang;
     string port;
 
-    HokuyoNode() : ros::node("urglaser")
+  HokuyoNode() : ros::node("urglaser"), count(0), next_time(0)
     {
       advertise<MsgLaserScan>("scan");
 
@@ -141,6 +152,9 @@ class HokuyoNode: public ros::node
         return(-1);
       }
       running = true;
+
+      urg.urg_cmd("BM");
+
       return(0);
     }
 
@@ -156,18 +170,24 @@ class HokuyoNode: public ros::node
 
     int publish_scan()
     {
-      urg.urg_cmd("BM");
-
       // TODO: add support for pushing readings out
 
-      int status = urg.get_readings(readings, -M_PI/2.0, M_PI/2.0, 1);
+      int status = urg.get_readings(readings, -M_PI/2.0, M_PI/2.0, 0);
       if(status != 0)
       {
         printf("error getting scan: %d\n", status);
         return -1;
       }
 
-      printf("%d readings\n", readings->num_readings);
+      count++;
+      unsigned long long now_time = rosclock.ulltime();
+      if (now_time > next_time) {
+	std::cout << count << " scans/sec at " << now_time << std::endl;
+	count = 0;
+	next_time += 1000000000;
+      }
+
+      //      printf("%d readings\n", readings->num_readings);
 
       scan.angle_min = readings->config.min_angle;
       scan.angle_max = readings->config.max_angle;
