@@ -92,7 +92,9 @@ public:
 
   bool deflate(int compression_quality = 90)
   {
-    // TODO: perform decompression and/or colorspace conversion if necessary
+    // TODO: perform colorspace conversion if necessary
+    if (msg->compression.length() == 0)
+      msg->compression = "jpeg"; // assume jpeg compression if none given
     if (msg->compression == string("jpeg"))
       return compress_jpeg(compression_quality);
     else if (msg->compression == string("raw"))
