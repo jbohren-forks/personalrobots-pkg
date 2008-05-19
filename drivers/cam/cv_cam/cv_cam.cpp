@@ -27,31 +27,30 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "ros/ros_slave.h"
-#include "common_flows/FlowImage.h"
-#include "common_flows/ImageCvBridge.h"
+#include "ros/node.h"
+#include "std_msgs/MsgImage.h"
+#include "image_utils/cv_bridge.h"
 #include "opencv/highgui.h"
 
-class CVCam : public ROS_Slave
+using namespace ros;
+
+class CVCam : public node
 {
 public:
-  FlowImage *image_f;
-  ImageCvBridge<FlowImage> *cv_bridge;
+  MsgImage image_msg;
+  CvBridge<MsgImage> cv_bridge;
   CvCapture *capture;
   IplImage *cam_image;
   double last_image_time;
   int show_image;
 
-  CVCam() : ROS_Slave(), last_image_time(0), show_image(0)
+  CVCam() : node("cv_cam"), cv_bridge(&image_msg), last_image_time(0), 
+            show_image(0)
   {
-    register_source(image_f = new FlowImage("image"));
-    image_f->frame_id = 0; // frame is zero unless specified
-    get_int_param(".frame_id", &image_f->frame_id);
-    get_int_param(".show_image", &show_image);
-    cv_bridge = new ImageCvBridge<FlowImage>(image_f);
+    advertise<MsgImage>("image");
     capture = cvCaptureFromCAM(CV_CAP_ANY);
     if (!capture)
-      log(ROS::ERROR,"woah! couldn't open a camera. is one connected?\n");
+      log(FATAL, "woah! couldn't open a camera. is one connected?\n");
   }
   virtual ~CVCam() 
   {
@@ -63,34 +62,34 @@ public:
     if (!capture)
       return false;
     cam_image = cvQueryFrame(capture);
-    double t = runtime();
+    double t = clock.time();
     double dt = t - last_image_time;
     printf("dt = %f\t(%f fps)\n", dt, 1.0 / dt);
     last_image_time = t;
-    if (show_image)
-      cvShowImage("CV Cam", cam_image);
-    image_f->compression = "raw";
-    cv_bridge->from_cv(cam_image);
-    cv_bridge->set_flow_data();
-    image_f->publish();
+//    if (show_image)
+      cvShowImage("cvcam", cam_image);
+    cv_bridge.from_cv(cam_image);
+    publish("image", image_msg);
     return true;
   }
 };
 
 int main(int argc, char **argv)
 {
-  CVCam a;
-  if (a.show_image)
-    cvNamedWindow("CV Cam", CV_WINDOW_AUTOSIZE);
-  while (a.happy())
+  ros::init(argc, argv);
+  CVCam cvcam;
+//  if (cvcam.show_image)
+    cvNamedWindow("cvcam", CV_WINDOW_AUTOSIZE);
+  while (cvcam.ok())
   {
-    if (a.show_image)
+//    if (cvcam.show_image)
       cvWaitKey(5);
-    if (!a.take_and_send_picture())
+    if (!cvcam.take_and_send_picture())
       usleep(100000);
   }
-  if (a.show_image)
-    cvDestroyWindow("CV Cam");
+//  if (a.show_image)
+    cvDestroyWindow("cvcam");
+  ros::fini();
   return 0;
 }
 
