@@ -3,6 +3,6 @@
   <author>Brian P. Gerkey, Jeremy Leibs</author>
   <license>BSD</license>
   <depend package="roscpp" />
-  <depend package="player" />
   <depend package="std_msgs" />
+  <depend package="urg_driver" />
 </package>

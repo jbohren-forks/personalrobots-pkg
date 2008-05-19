@@ -79,10 +79,12 @@ Publishes to (name / type):
  **/
 
 #include <assert.h>
-#include <libstandalone_drivers/urg_laser.h>
+//#include <libstandalone_drivers/urg_laser.h>
+#include "urg_laser.h"
 
 #include <ros/node.h>
 #include <std_msgs/MsgLaserScan.h>
+#include <math.h>
 
 class HokuyoNode: public ros::node
 {
@@ -133,7 +135,7 @@ class HokuyoNode: public ros::node
     int start()
     {
       stop();
-      if((urg.Open(port.c_str(),0,0) < 0) || (urg.GetSensorConfig(&cfg) < 0))
+      if((urg.open(port.c_str()) < 0))
       {
         puts("error connecting to laser");
         return(-1);
@@ -146,7 +148,7 @@ class HokuyoNode: public ros::node
     {
       if(running)
       {
-        urg.Close();
+        urg.close();
         running = false;
       }
       return(0);
@@ -154,28 +156,30 @@ class HokuyoNode: public ros::node
 
     int publish_scan()
     {
+      urg.urg_cmd("BM");
+
       // TODO: add support for pushing readings out
-      int numreadings;
-      if((numreadings = urg.GetReadings(readings,-1,-1)) < 0)
+      if(int status = urg.get_readings(readings, -M_PI/2.0, M_PI/2.0, 1) != 0)
       {
-        puts("error getting scan");
-        return(numreadings);
+        printf("error getting scan: %d\n", status);
       }
 
-      //printf("%d readings\n", numreadings);
+      printf("%d readings\n", readings->num_readings);
 
-      scan.angle_min = cfg.min_angle;
-      scan.angle_max = cfg.max_angle;
-      scan.angle_increment = cfg.resolution;
+      scan.angle_min = readings->config.min_angle;
+      scan.angle_max = readings->config.max_angle;
+      scan.angle_increment = readings->config.resolution;
+
+      printf("%g %g %g\n", scan.angle_min * 180.0/M_PI, scan.angle_max*180.0/M_PI, scan.angle_increment*180.0/M_PI);
+
       scan.range_max = cfg.max_range;
-      scan.header.seq = scanid++;
-      scan.set_ranges_size(numreadings);
-      scan.set_intensities_size(numreadings);
+      scan.set_ranges_size(readings->num_readings);
+      scan.set_intensities_size(readings->num_readings);
 
-      for(int i = 0; i < numreadings; ++i)
+      for(int i = 0; i < readings->num_readings; ++i)
       {
-        scan.ranges[i]  = readings->Readings[i] < 20 ? (scan.range_max*1000) : (readings->Readings[i]);
-        scan.ranges[i] /= 1000;
+        //        scan.ranges[i]  = readings->ranges[i] < 20 ? (scan.range_max) : (readings->ranges[i] / 1000.0);
+        scan.ranges[i]  = readings->ranges[i] / 1000.0;
         // TODO: add intensity support
         scan.intensities[i] = 0;
       }
@@ -203,6 +207,8 @@ main(int argc, char** argv)
 
   //stopping should be fine even if not running
   hn.stop();
+
+  ros::fini();
 
   return(0);
 }
