@@ -1,0 +1,564 @@
+%YAML:1.0
+door_handle: !!opencv-ml-boost-tree
+   params:
+      boost_type: Gentle AdaBoost
+      num_iter: 50
+      infl_trim_rate: 0.9000000000000000
+      num_splits: 2
+   class_labels: !!opencv-matrix
+      rows: 1
+      cols: 2
+      dt: i
+      data: [ 0, 1 ]
+   total_features: 63
+   trees:
+      - # tree 0
+         - # root node 0
+            comp_idx: 42
+            threshold: 0.0189285501837730
+            left_node: 1
+            right_val: -0.9920033812522888
+         - # node 1
+            comp_idx: 58
+            threshold: 0.7459844946861267
+            left_val: -0.7391304373741150
+            right_val: 0.8421034812927246
+      - # tree 1
+         - # root node 0
+            comp_idx: 13
+            threshold: 0.8202040195465088
+            left_val: -0.9622670412063599
+            right_node: 1
+         - # node 1
+            comp_idx: 17
+            threshold: 0.3800935149192810
+            left_val: -0.9302181005477905
+            right_val: 0.4692667126655579
+      - # tree 2
+         - # root node 0
+            comp_idx: 28
+            threshold: 0.4205414950847626
+            left_val: -0.8633273243904114
+            right_node: 1
+         - # node 1
+            comp_idx: 34
+            threshold: 0.3672900199890137
+            left_val: -0.8138456940650940
+            right_val: 0.7059193849563599
+      - # tree 3
+         - # root node 0
+            comp_idx: 0
+            threshold: 0.5871729850769043
+            left_val: -0.8789034485816956
+            right_node: 1
+         - # node 1
+            comp_idx: 25
+            threshold: 0.3266505002975464
+            left_val: -0.6451339721679688
+            right_val: 0.5968130230903625
+      - # tree 4
+         - # root node 0
+            comp_idx: 44
+            threshold: 0.4127175211906433
+            left_val: -0.6774802207946777
+            right_node: 1
+         - # node 1
+            comp_idx: 48
+            threshold: 0.3046755194664001
+            left_val: -0.6234207749366760
+            right_val: 0.6290786862373352
+      - # tree 5
+         - # root node 0
+            comp_idx: 35
+            threshold: 0.3238205015659332
+            left_val: -0.7989076375961304
+            right_node: 1
+         - # node 1
+            comp_idx: 31
+            threshold: 0.2670115232467651
+            left_val: -0.5829469561576843
+            right_val: 0.5311211943626404
+      - # tree 6
+         - # root node 0
+            comp_idx: 26
+            threshold: 0.2723034918308258
+            left_val: -0.5069905519485474
+            right_node: 1
+         - # node 1
+            comp_idx: 53
+            threshold: 0.2062115073204041
+            left_val: -0.8711752295494080
+            right_val: 0.5663979053497314
+      - # tree 7
+         - # root node 0
+            comp_idx: 11
+            threshold: 0.1850804984569550
+            left_node: 1
+            right_val: 0.3118147552013397
+         - # node 1
+            comp_idx: 37
+            threshold: 0.5704115033149719
+            left_val: -0.8068898916244507
+            right_val: 0.8057237863540649
+      - # tree 8
+         - # root node 0
+            comp_idx: 20
+            threshold: 0.5224004983901978
+            left_node: 1
+            right_val: 0.6843521595001221
+         - # node 1
+            comp_idx: 1
+            threshold: 0.5373435020446777
+            left_val: -0.4240616858005524
+            right_val: 0.8965026736259460
+      - # tree 9
+         - # root node 0
+            comp_idx: 13
+            threshold: 0.7468035221099854
+            left_node: 1
+            right_val: 0.6099445223808289
+         - # node 1
+            comp_idx: 51
+            threshold: 0.3352789878845215
+            left_val: -0.5828640460968018
+            right_val: 0.6275351047515869
+      - # tree 10
+         - # root node 0
+            comp_idx: 6
+            threshold: 0.7005094885826111
+            left_node: 1
+            right_val: 0.5511254072189331
+         - # node 1
+            comp_idx: 36
+            threshold: 0.2328824996948242
+            left_val: -0.5094839334487915
+            right_val: 0.6517627239227295
+      - # tree 11
+         - # root node 0
+            comp_idx: 45
+            threshold: 0.7121350169181824
+            left_node: 1
+            right_val: 0.8340888023376465
+         - # node 1
+            comp_idx: 49
+            threshold: 0.5786529779434204
+            left_val: -0.3585100173950195
+            right_val: 0.7149334549903870
+      - # tree 12
+         - # root node 0
+            comp_idx: 15
+            threshold: 0.2742869853973389
+            left_val: -0.4364941418170929
+            right_node: 1
+         - # node 1
+            comp_idx: 19
+            threshold: 0.5792139768600464
+            left_val: 0.5698792934417725
+            right_val: -0.6605439186096191
+      - # tree 13
+         - # root node 0
+            comp_idx: 2
+            threshold: 0.1655020117759705
+            left_node: 1
+            right_val: 0.3229044377803802
+         - # node 1
+            comp_idx: 40
+            threshold: 0.3827444911003113
+            left_val: -0.8987103104591370
+            right_val: 0.2047406435012817
+      - # tree 14
+         - # root node 0
+            comp_idx: 58
+            threshold: 0.3360854983329773
+            left_val: -0.7025887370109558
+            right_node: 1
+         - # node 1
+            comp_idx: 32
+            threshold: 0.4540265202522278
+            left_val: -0.1839083731174469
+            right_val: 0.5310153365135193
+      - # tree 15
+         - # root node 0
+            comp_idx: 29
+            threshold: 0.2714779973030090
+            left_val: 0.4777560830116272
+            right_node: 1
+         - # node 1
+            comp_idx: 11
+            threshold: 0.5828695297241211
+            left_val: -0.4536730945110321
+            right_val: 0.6073400378227234
+      - # tree 16
+         - # root node 0
+            comp_idx: 55
+            threshold: 0.5461870431900024
+            left_node: 1
+            right_val: 0.9482079148292542
+         - # node 1
+            comp_idx: 38
+            threshold: 0.3221309781074524
+            left_val: -0.8835179805755615
+            right_val: 0.0696827620267868
+      - # tree 17
+         - # root node 0
+            comp_idx: 62
+            threshold: 0.9088330268859863
+            left_node: 1
+            right_val: 0.6882309317588806
+         - # node 1
+            comp_idx: 16
+            threshold: 0.0181108005344868
+            left_val: 0.5199742317199707
+            right_val: -0.5196045637130737
+      - # tree 18
+         - # root node 0
+            comp_idx: 33
+            threshold: 0.2501569986343384
+            left_val: -0.7597590684890747
+            right_node: 1
+         - # node 1
+            comp_idx: 1
+            threshold: 0.1813005059957504
+            left_val: -0.4381991326808929
+            right_val: 0.4126490354537964
+      - # tree 19
+         - # root node 0
+            comp_idx: 18
+            threshold: 0.7447555065155029
+            left_node: 1
+            right_val: -0.6363083124160767
+         - # node 1
+            comp_idx: 59
+            threshold: 0.2565270066261292
+            left_val: -0.1354360133409500
+            right_val: 0.5808553695678711
+      - # tree 20
+         - # root node 0
+            comp_idx: 43
+            threshold: 0.4165880084037781
+            left_node: 1
+            right_val: 0.4082391560077667
+         - # node 1
+            comp_idx: 27
+            threshold: 0.3978565037250519
+            left_val: -0.4993327260017395
+            right_val: 0.4773423969745636
+      - # tree 21
+         - # root node 0
+            comp_idx: 48
+            threshold: 0.4751904904842377
+            left_node: 1
+            right_val: 0.6331674456596375
+         - # node 1
+            comp_idx: 13
+            threshold: 0.8037949800491333
+            left_val: -0.4933241009712219
+            right_val: 0.4318282306194305
+      - # tree 22
+         - # root node 0
+            comp_idx: 39
+            threshold: 0.1452904939651489
+            left_val: -0.6328890323638916
+            right_node: 1
+         - # node 1
+            comp_idx: 39
+            threshold: 0.4010115265846252
+            left_val: 0.6208320856094360
+            right_val: -0.1798864006996155
+      - # tree 23
+         - # root node 0
+            comp_idx: 24
+            threshold: 0.3923844993114471
+            left_val: -0.5430226922035217
+            right_node: 1
+         - # node 1
+            comp_idx: 0
+            threshold: 0.6478099822998047
+            left_val: -0.8031159043312073
+            right_val: 0.3876085281372070
+      - # tree 24
+         - # root node 0
+            comp_idx: 46
+            threshold: 0.5004680156707764
+            left_node: 1
+            right_val: 0.5885165333747864
+         - # node 1
+            comp_idx: 26
+            threshold: 0.2545135021209717
+            left_val: -0.6769266724586487
+            right_val: 0.0985623672604561
+      - # tree 25
+         - # root node 0
+            comp_idx: 11
+            threshold: 0.1223400011658669
+            left_val: -0.7752699851989746
+            right_node: 1
+         - # node 1
+            comp_idx: 54
+            threshold: 0.6188399791717529
+            left_val: 0.4032939076423645
+            right_val: -0.3903304040431976
+      - # tree 26
+         - # root node 0
+            comp_idx: 47
+            threshold: 0.4239115118980408
+            left_node: 1
+            right_val: 0.4993673861026764
+         - # node 1
+            comp_idx: 51
+            threshold: 0.2777345180511475
+            left_val: -0.5203656554222107
+            right_val: 0.3817074298858643
+      - # tree 27
+         - # root node 0
+            comp_idx: 9
+            threshold: 0.3410034775733948
+            left_val: -0.9144384264945984
+            right_node: 1
+         - # node 1
+            comp_idx: 42
+            threshold: 0.6056560277938843
+            left_val: -0.1605737656354904
+            right_val: 0.5225647091865540
+      - # tree 28
+         - # root node 0
+            comp_idx: 4
+            threshold: 0.6419080495834351
+            left_node: 1
+            right_val: 0.4476428329944611
+         - # node 1
+            comp_idx: 6
+            threshold: 0.7481800317764282
+            left_val: -0.5096116065979004
+            right_val: 0.3505327105522156
+      - # tree 29
+         - # root node 0
+            comp_idx: 45
+            threshold: 0.7115740180015564
+            left_node: 1
+            right_val: 0.7312610745429993
+         - # node 1
+            comp_idx: 59
+            threshold: 0.1837330013513565
+            left_val: -0.4847960472106934
+            right_val: 0.1648346781730652
+      - # tree 30
+         - # root node 0
+            comp_idx: 5
+            threshold: 0.7946839928627014
+            left_node: 1
+            right_val: 0.3729667961597443
+         - # node 1
+            comp_idx: 50
+            threshold: 0.3498079776763916
+            left_val: -0.6515337824821472
+            right_val: 0.1941791921854019
+      - # tree 31
+         - # root node 0
+            comp_idx: 17
+            threshold: 0.4298369884490967
+            left_val: -0.3521848022937775
+            right_node: 1
+         - # node 1
+            comp_idx: 19
+            threshold: 0.5595235228538513
+            left_val: 0.6782897710800171
+            right_val: -0.3668374717235565
+      - # tree 32
+         - # root node 0
+            comp_idx: 61
+            threshold: 0.2417294979095459
+            left_val: -0.9779757261276245
+            right_node: 1
+         - # node 1
+            comp_idx: 21
+            threshold: 0.3567194938659668
+            left_val: -0.2024949342012405
+            right_val: 0.5075076818466187
+      - # tree 33
+         - # root node 0
+            comp_idx: 33
+            threshold: 0.7170835137367249
+            left_node: 1
+            right_val: 0.7744988203048706
+         - # node 1
+            comp_idx: 11
+            threshold: 0.7066190242767334
+            left_val: -0.3055168390274048
+            right_val: 0.7080887556076050
+      - # tree 34
+         - # root node 0
+            comp_idx: 23
+            threshold: 0.2514739930629730
+            left_node: 1
+            right_val: 0.3114586770534515
+         - # node 1
+            comp_idx: 37
+            threshold: 0.6361994743347168
+            left_val: -0.5279121994972229
+            right_val: 0.9622570276260376
+      - # tree 35
+         - # root node 0
+            comp_idx: 44
+            threshold: 0.3988980054855347
+            left_val: -0.4974000751972198
+            right_node: 1
+         - # node 1
+            comp_idx: 30
+            threshold: 0.3879275023937225
+            left_val: -0.3351668715476990
+            right_val: 0.5277224779129028
+      - # tree 36
+         - # root node 0
+            comp_idx: 52
+            threshold: 0.3922615051269531
+            left_val: -0.3370009660720825
+            right_node: 1
+         - # node 1
+            comp_idx: 22
+            threshold: 0.4501504898071289
+            left_val: 0.7096437215805054
+            right_val: -0.1252779364585876
+      - # tree 37
+         - # root node 0
+            comp_idx: 20
+            threshold: 0.5357899665832520
+            left_node: 1
+            right_val: 0.5909608006477356
+         - # node 1
+            comp_idx: 57
+            threshold: 0.1903734952211380
+            left_val: -0.9182987213134766
+            right_val: 0.0299879647791386
+      - # tree 38
+         - # root node 0
+            comp_idx: 38
+            threshold: 0.2820819914340973
+            left_val: -0.7869858145713806
+            right_node: 1
+         - # node 1
+            comp_idx: 39
+            threshold: 0.5207735300064087
+            left_val: 0.3206846714019775
+            right_val: -0.5348080396652222
+      - # tree 39
+         - # root node 0
+            comp_idx: 39
+            threshold: 6.7652249708771706e-03
+            left_val: -0.7605467438697815
+            right_node: 1
+         - # node 1
+            comp_idx: 13
+            threshold: 0.8228989839553833
+            left_val: -0.0836799442768097
+            right_val: 0.7449592351913452
+      - # tree 40
+         - # root node 0
+            comp_idx: 55
+            threshold: 0.5438870191574097
+            left_node: 1
+            right_val: 0.8430227637290955
+         - # node 1
+            comp_idx: 20
+            threshold: 0.2806624770164490
+            left_val: -0.8548063635826111
+            right_val: 0.0246366430073977
+      - # tree 41
+         - # root node 0
+            comp_idx: 32
+            threshold: 0.4523150026798248
+            left_node: 1
+            right_val: 0.3137173056602478
+         - # node 1
+            comp_idx: 56
+            threshold: 0.4234544932842255
+            left_val: -0.8199346661567688
+            right_val: 0.1009592339396477
+      - # tree 42
+         - # root node 0
+            comp_idx: 37
+            threshold: 0.5608054995536804
+            left_node: 1
+            right_val: 0.6365523934364319
+         - # node 1
+            comp_idx: 50
+            threshold: 0.3498079776763916
+            left_val: -0.5570107698440552
+            right_val: 0.1565030515193939
+      - # tree 43
+         - # root node 0
+            comp_idx: 41
+            threshold: 0.3241420090198517
+            left_val: -0.4575906693935394
+            right_node: 1
+         - # node 1
+            comp_idx: 53
+            threshold: 0.2052074968814850
+            left_val: -0.9562342762947083
+            right_val: 0.3509540855884552
+      - # tree 44
+         - # root node 0
+            comp_idx: 14
+            threshold: 0.2253409922122955
+            left_val: 0.2692384123802185
+            right_node: 1
+         - # node 1
+            comp_idx: 62
+            threshold: 0.8646060228347778
+            left_val: -0.6283684968948364
+            right_val: 0.5068506002426147
+      - # tree 45
+         - # root node 0
+            comp_idx: 10
+            threshold: 0.1989444941282272
+            left_val: -0.6603040099143982
+            right_node: 1
+         - # node 1
+            comp_idx: 3
+            threshold: 0.4033629894256592
+            left_val: -0.1558025926351547
+            right_val: 0.5560538768768311
+      - # tree 46
+         - # root node 0
+            comp_idx: 60
+            threshold: 0.7118195295333862
+            left_node: 1
+            right_val: 1.0000017881393433
+         - # node 1
+            comp_idx: 7
+            threshold: 0.5921764969825745
+            left_val: -0.2894053757190704
+            right_val: 0.5951491594314575
+      - # tree 47
+         - # root node 0
+            comp_idx: 50
+            threshold: 0.4215865135192871
+            left_node: 1
+            right_val: 0.5881423950195312
+         - # node 1
+            comp_idx: 56
+            threshold: 0.5500869750976562
+            left_val: -0.3261868357658386
+            right_val: 0.4894423484802246
+      - # tree 48
+         - # root node 0
+            comp_idx: 12
+            threshold: 0.6467889547348022
+            left_val: -0.2178033441305161
+            right_node: 1
+         - # node 1
+            comp_idx: 58
+            threshold: 0.4242299795150757
+            left_val: -0.6557294130325317
+            right_val: 0.7356280684471130
+      - # tree 49
+         - # root node 0
+            comp_idx: 8
+            threshold: 0.6365084648132324
+            left_node: 1
+            right_val: -0.5035383701324463
+         - # node 1
+            comp_idx: 25
+            threshold: 0.3380759954452515
+            left_val: -0.5056897997856140
+            right_val: 0.4245427250862122

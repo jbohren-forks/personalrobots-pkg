@@ -1,0 +1,14 @@
+<package>
+  <description>
+  The 'lite' version of the STAIR vision library.
+  </description>
+  <author>Stephen Gould, with ROS wrapping by Morgan Quigley</author>
+  <license>BSD</license>
+  <depend package="opencv"/>
+  <depend package="std_msgs"/>
+  <depend package="image_utils"/>
+  <depend package="roscpp"/>
+  <export>
+    <cpp cflags="-I${prefix}/lib" lflags="-L${prefix}/bin -llasiklite"/>
+  </export>
+</package>
