@@ -22,7 +22,6 @@ public:
   : node("cv_movie_streamer"), cv_bridge(&image_msg),
     movie_fname(_movie_fname), delay(_delay), loop(_loop), qual(_qual)
   { 
-    image_msg.compression = "jpeg";
     advertise<MsgImage>("image");
   }
   void stream_movie()
