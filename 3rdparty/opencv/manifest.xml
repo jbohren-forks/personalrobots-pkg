@@ -14,7 +14,7 @@ I have patched the 1.0.0 release of OpenCV a tiny bit so it will happily compile
 <url>http://opencvlibrary.sourceforge.net</url>
 <depend package="ffmpeg"/>
 <export>
-  <cpp cflags="-I${prefix}/opencv/include" lflags="-L${prefix}/opencv/lib -Xlinker -rpath -Xlinker ${prefix}/opencv/lib -lcvaux -lcv -lcxcore -lhighgui -lml"/>
+  <cpp cflags="-I${prefix}/opencv/include -I${prefix}/opencv/include/opencv" lflags="-L${prefix}/opencv/lib -Xlinker -rpath -Xlinker ${prefix}/opencv/lib -lcvaux -lcv -lcxcore -lhighgui -lml"/>
   <doxymaker external="http://opencvlibrary.sourceforge.net/" />
 </export>
 </package>
