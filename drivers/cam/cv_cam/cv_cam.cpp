@@ -41,35 +41,51 @@ public:
   CvBridge<MsgImage> cv_bridge;
   CvCapture *capture;
   IplImage *cam_image;
-  double last_image_time;
-  int show_image;
+  double last_print_time;
+  int show_image, fps_count, delay_us;
 
-  CVCam() : node("cv_cam"), cv_bridge(&image_msg), last_image_time(0), 
-            show_image(0)
+  CVCam() : node("cv_cam"), cv_bridge(&image_msg), 
+            last_print_time(0), show_image(0), fps_count(0)
   {
     advertise<MsgImage>("image");
     capture = cvCaptureFromCAM(CV_CAP_ANY);
     if (!capture)
       log(FATAL, "woah! couldn't open a camera. is one connected?\n");
+    param("display", show_image, 0);
+    param("delay_us", delay_us, 0);
+    if (show_image)
+      cvNamedWindow("cv_cam", CV_WINDOW_AUTOSIZE);
   }
   virtual ~CVCam() 
   {
     if (capture)
       cvReleaseCapture(&capture);
+    if (show_image)
+      cvDestroyWindow("cv_cam");
   }
   bool take_and_send_picture()
   {
     if (!capture)
       return false;
     cam_image = cvQueryFrame(capture);
+    if (!cam_image)
+      return false;
     double t = clock.time();
-    double dt = t - last_image_time;
-    printf("dt = %f\t(%f fps)\n", dt, 1.0 / dt);
-    last_image_time = t;
-//    if (show_image)
-      cvShowImage("cvcam", cam_image);
+    if ((last_print_time + 1 < t) && fps_count)
+    {
+      printf("%f fps\n", fps_count / (t - last_print_time));
+      last_print_time = t;
+      fps_count = 0;
+    }
+    fps_count++;
     cv_bridge.from_cv(cam_image);
     publish("image", image_msg);
+    if (show_image)
+    {
+      cvShowImage("cv_cam", cam_image);
+      cvWaitKey(5);
+    }
+    usleep(delay_us);
     return true;
   }
 };
@@ -78,17 +94,11 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   CVCam cvcam;
-//  if (cvcam.show_image)
-    cvNamedWindow("cvcam", CV_WINDOW_AUTOSIZE);
   while (cvcam.ok())
   {
-//    if (cvcam.show_image)
-      cvWaitKey(5);
     if (!cvcam.take_and_send_picture())
       usleep(100000);
   }
-//  if (a.show_image)
-    cvDestroyWindow("cvcam");
   ros::fini();
   return 0;
 }
