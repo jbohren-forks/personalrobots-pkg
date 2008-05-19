@@ -19,7 +19,6 @@
  */
 
 
-#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -29,8 +28,6 @@
 #include <termios.h>
 #include <math.h>
 #include <poll.h>
-
-//#include <replace/replace.h>
 
 #include "urg_laser.h"
 
@@ -94,6 +91,7 @@ urg_laser::open(const char * port_name, bool use_serial, int baud)
   }
   else
   {
+
     // Settings for USB?
     struct termios newtio;
     memset (&newtio, 0, sizeof (newtio));
@@ -111,8 +109,9 @@ urg_laser::open(const char * port_name, bool use_serial, int baud)
 
   // Just in case a previous failure mode has left our Hokuyo
   // spewing data, we send the QT command.
+
   urg_flush();
-  urg_cmd("QT");
+  urg_cmd("QT", 1000);
   usleep(200000);
   urg_flush();
 
@@ -141,9 +140,9 @@ urg_laser::close ()
   if (port_open()) {
     //Try to be a good citizen and turn off the laser before we shutdown communication
     if (SCIP_version == 2)
-      urg_cmd("QT");
+      urg_cmd("QT",1000);
     if (SCIP_version == 1)
-      urg_cmd1("L0");
+      urg_cmd1("L0",1000);
     urg_flush();
     if (fclose(laser_port) != 0) {
       retval = -1;
@@ -159,22 +158,32 @@ urg_laser::close ()
 ///////////////////////////////////////////////////////////////////////////////
 int urg_laser::urg_cmd(const char* cmd, int timeout)
 {
-  char* buf = new char[strlen(cmd)+1];
-  sprintf(buf, "%s\n", cmd);
+  if (urg_write(cmd) < 0)
+    return -1;
 
-  urg_write(buf);
+  if (urg_write("\n") < 0)
+    return -1;
 
-  if (skip_until(buf, strlen(buf), timeout) < 0) {
-    printf ("urg_laser::urg_cmd: skippping until command echo failed\n");
-    delete[] buf;
+  if (skip_until(cmd, strlen(cmd), timeout) < 0) {
+    printf ("urg_laser::urg_cmd: skippping until echoed command failed\n");
     return -1;
   }
-  delete[] buf;
+  if (skip_until("\n", 1, timeout) < 0) {
+    printf ("urg_laser::urg_cmd: skippping until following return line failed\n");
+    return -1;
+  }
 
   char buf2[4];
   if (read_until(buf2, 4, "\n", 1, timeout) == 4) {
-    int status =  (buf2[0] - '0')*10 + (buf2[1] - '0');
-    return status;
+    if (buf2[0] - '0' >= 0 && buf2[0] - '0' <= 9 && buf2[1] - '0' >= 0 && buf2[1] - '0' <= 9) {
+      return (buf2[0] - '0')*10 + (buf2[1] - '0');
+    }
+    else
+    {
+      printf ("urg_laser::urg_cmd: invalid command.  Error code: %s\n", buf2);
+      return 100 + buf2[0] - 'A';
+    }
+      
   }
   else
     return -1;
@@ -206,9 +215,11 @@ int urg_laser::urg_flush()
 int 
 urg_laser::urg_read(char *buf, int len, int timeout)
 {
+  if (!port_open())
+    return -1;
+
   int ret;
   int current=0;
-
 
   struct pollfd ufd[1];
   int retval;
@@ -218,7 +229,6 @@ urg_laser::urg_read(char *buf, int len, int timeout)
 
   while (current < len)
   {
-
     if(timeout >= 0)
     {
       if ((retval = poll(ufd, 1, timeout)) < 0)
@@ -229,13 +239,15 @@ urg_laser::urg_read(char *buf, int len, int timeout)
       else if (retval == 0)
       {
         printf("urg_laser::read: timed out on read\n");
-        return (-1);
+        return -1;
       }
     }
+    ret = read(laser_fd, &buf[current], len-current);
 
-    ret = read (laser_fd, &buf[current], len-current);
-    if (ret < 0)
-      return ret;
+    if (ret <= 0) {
+      close();
+      return -1;
+    }
     
     current += ret;
   }
@@ -261,7 +273,7 @@ urg_laser::skip_until(const char* search, int search_len, int timeout)
     int read_len = search_len - ind;
 
     if (skipped + read_len > MAX_SKIPPED) {
-        printf("urg_laser::skip_until: MAX_SKIPPED exceeded\n");
+      printf("urg_laser::skip_until: MAX_SKIPPED exceeded\n");
         delete[] buf;
         return -1;
     }
@@ -378,8 +390,6 @@ urg_laser::query_SCIP_version ()
 int
 urg_laser::query_sensor_config()
 {
-    printf("Query sensor config.\n");
-
   //////////////
   // SCIP1.0
   //////////////
@@ -403,9 +413,6 @@ urg_laser::query_sensor_config()
   //////////////
   else if(SCIP_version == 2)
   {
-
-    printf("Sending command: PP\n");
-
     if (urg_cmd("PP") != 0) {
       printf ("urg_laser> E: GetSensorConfig: Error requesting information\n");
       urg_flush();
@@ -565,7 +572,7 @@ urg_laser::change_baud (int curr_baud, int new_baud, int timeout)
 
 ///////////////////////////////////////////////////////////////////////////////
 int
-urg_laser::get_readings(urg_laser_readings_t* res, double min_ang, double max_ang, int cluster)
+urg_laser::get_readings(urg_laser_readings_t* res, double min_ang, double max_ang, int cluster, int timeout)
 {
   int status;
 
@@ -600,10 +607,8 @@ urg_laser::get_readings(urg_laser_readings_t* res, double min_ang, double max_an
 
     sprintf(cmdbuf,"GD%.4d%.4d%.2d", min_i, max_i, cluster);
 
-    status = urg_cmd(cmdbuf);
+    status = urg_cmd(cmdbuf, timeout);
 
-    printf("Sending command; %d %d %d -- %s\n",min_i, max_i, cluster, cmdbuf);
-     
     if (status != 0) {
       urg_flush();
       return status;
@@ -613,7 +618,7 @@ urg_laser::get_readings(urg_laser_readings_t* res, double min_ang, double max_an
     char buf[100];
 
     // skip over the timestamp
-    skip_until("\n", 1, -1);
+    skip_until("\n", 1, timeout);
 
     // we use ind to cope with data spanning data boundaries
     int ind = 0;
@@ -628,7 +633,7 @@ urg_laser::get_readings(urg_laser_readings_t* res, double min_ang, double max_an
 
     for (;;)
     {
-      int bytes = read_until(&buf[ind], 100 - ind, "\n", 1, -1);
+      int bytes = read_until(&buf[ind], 100 - ind, "\n", 1, timeout);
 
       if (bytes == 1) {
         // This is \n\n so we should be done

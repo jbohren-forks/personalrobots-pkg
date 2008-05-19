@@ -141,7 +141,7 @@ public:
 
 
   //! Get readings from the urg
-  int get_readings(urg_laser_readings_t * readings, double min_ang, double max_ang, int clustering);
+  int get_readings(urg_laser_readings_t * readings, double min_ang, double max_ang, int clustering, int timeout = -1);
 
   //! Get serial number from the URG
   int get_ID();
