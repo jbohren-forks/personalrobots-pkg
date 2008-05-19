@@ -1,3 +1,3 @@
-SUBDIRS = create_chessboard libimage_utils
+SUBDIRS = libimage_utils create_chessboard
 include $(shell rospack find mk)/recurse_subdirs.mk
 
