@@ -139,6 +139,11 @@ urg_laser::close ()
   int retval = 0;
 
   if (port_open()) {
+    //Try to be a good citizen and turn off the laser before we shutdown communication
+    if (SCIP_version == 2)
+      urg_cmd("QT");
+    if (SCIP_version == 1)
+      urg_cmd1("L0");
     urg_flush();
     if (fclose(laser_port) != 0) {
       retval = -1;
@@ -203,6 +208,8 @@ urg_laser::urg_read(char *buf, int len, int timeout)
 {
   int ret;
   int current=0;
+
+
   struct pollfd ufd[1];
   int retval;
 
@@ -211,6 +218,7 @@ urg_laser::urg_read(char *buf, int len, int timeout)
 
   while (current < len)
   {
+
     if(timeout >= 0)
     {
       if ((retval = poll(ufd, 1, timeout)) < 0)
@@ -240,35 +248,14 @@ int
 urg_laser::skip_until(const char* search, int search_len, int timeout)
 {
   int ret;
-  struct pollfd ufd[1];
-  int retval;
 
   int ind = 0;
   int skipped = 0;
-
-  ufd[0].fd = laser_fd;
-  ufd[0].events = POLLIN;
 
   char* buf = new char[strlen(search)];
 
   while (ind < search_len)
   {
-
-    if(timeout >= 0)
-    {
-      if ((retval = poll(ufd, 1, timeout)) < 0)
-      {
-        perror ("urg_laser::skip_until:poll:");
-        delete[] buf;
-        return -1;
-      }
-      else if (retval == 0)
-      {
-        printf("urg_laser::skip_until: timed out on read\n");
-        delete[] buf;
-        return (-1);
-      }
-    }
 
     int check_ind = 0;
     int read_len = search_len - ind;
@@ -279,7 +266,7 @@ urg_laser::skip_until(const char* search, int search_len, int timeout)
         return -1;
     }
 
-    ret = read (laser_fd, buf, read_len);
+    ret = urg_read(buf, read_len, timeout);
 
     if (ret < 0) {
       delete[] buf;
@@ -306,29 +293,11 @@ urg_laser::read_until(char* buf, int buf_len, const char* search, int search_len
 {
   int ret;
   int current=0;
-  struct pollfd ufd[1];
-  int retval;
 
   int ind = 0;
 
-  ufd[0].fd = laser_fd;
-  ufd[0].events = POLLIN;
-
   while (ind < search_len)
   {
-    if(timeout >= 0)
-    {
-      if ((retval = poll (ufd, 1, timeout)) < 0)
-      {
-        perror ("urg_laser::read_until:poll:");
-        return (-1);
-      }
-      else if (retval == 0)
-      {
-        printf("urg_laser::read_until: timed out on read\n");
-        return (-1);
-      }
-    }
 
     int check_ind = current;
     int read_len = search_len - ind;
@@ -338,7 +307,7 @@ urg_laser::read_until(char* buf, int buf_len, const char* search, int search_len
       return -1;
     }
 
-    ret = read (laser_fd, &buf[current], read_len);
+    ret = urg_read(&buf[current], read_len, timeout);
     if (ret < 0) {
       printf("urg_laser::read_until: read failure\n");
       return ret;
