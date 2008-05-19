@@ -2,8 +2,9 @@
  <description brief="Xenomai dependencies and build flags"> This package ensures that Xenomai is 
 properly installed on the system and provides the build flags to create realtime ROS nodes that 
 depend on Xenomai. </description>
- <author>Eric Berger berger@willowgarage.com></author>
- <license>BSD</license>
+ <author>Philippe Gerum</author>
+ <license>GPL</license>
+ <url>http://xenomai.org</license>
  <export>
   <cpp
    cflags="-I/usr/xenomai/include -I/usr/xenomai/src/include -D_GNU_SOURCE -D_REENTRANT -D__XENO__"
