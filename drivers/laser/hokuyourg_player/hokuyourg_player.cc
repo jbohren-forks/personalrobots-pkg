@@ -159,9 +159,12 @@ class HokuyoNode: public ros::node
       urg.urg_cmd("BM");
 
       // TODO: add support for pushing readings out
-      if(int status = urg.get_readings(readings, -M_PI/2.0, M_PI/2.0, 1) != 0)
+
+      int status = urg.get_readings(readings, -M_PI/2.0, M_PI/2.0, 1);
+      if(status != 0)
       {
         printf("error getting scan: %d\n", status);
+        return -1;
       }
 
       printf("%d readings\n", readings->num_readings);
@@ -170,7 +173,7 @@ class HokuyoNode: public ros::node
       scan.angle_max = readings->config.max_angle;
       scan.angle_increment = readings->config.resolution;
 
-      printf("%g %g %g\n", scan.angle_min * 180.0/M_PI, scan.angle_max*180.0/M_PI, scan.angle_increment*180.0/M_PI);
+      //      printf("%g %g %g\n", scan.angle_min * 180.0/M_PI, scan.angle_max*180.0/M_PI, scan.angle_increment*180.0/M_PI);
 
       scan.range_max = cfg.max_range;
       scan.set_ranges_size(readings->num_readings);
@@ -196,13 +199,16 @@ main(int argc, char** argv)
   HokuyoNode hn;
 
   // Start up the laser
-  if(hn.start() != 0)
-    hn.self_destruct();
-
   while (hn.ok())
   {
-    if(hn.publish_scan() < 0)
-      break;
+    while(hn.start() != 0) {
+      usleep(1000000);
+    }
+
+    while(hn.ok()) {
+      if(hn.publish_scan() < 0)
+        break;
+    }
   }
 
   //stopping should be fine even if not running
