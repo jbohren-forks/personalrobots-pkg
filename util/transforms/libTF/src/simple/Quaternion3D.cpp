@@ -112,7 +112,7 @@ void Pose3D::setFromMatrix(const NEWMAT::Matrix& matIn)
 {
   // math derived from http://www.j3d.org/matrix_faq/matrfaq_latest.html
 
-
+  //  std::cout <<std::endl<<"Matrix in"<<std::endl<<matIn;
 
   const double * mat = matIn.Store();
   //Get the translations
@@ -160,6 +160,9 @@ void Pose3D::setFromMatrix(const NEWMAT::Matrix& matIn)
         zr = 0.25 * S;
         w = (mat[1] - mat[4] ) / S;
       }
+
+  //  std::cout << "setFromMatrix" << xt  <<" "<< yt  <<" "<< zt  <<" "<< xr  <<" "<<yr <<" "<<zr <<" "<<w <<std::endl;
+  //std::cout << "asMatrix" <<std::endl<< asMatrix();
 
 };
 
@@ -417,13 +420,13 @@ NEWMAT::Matrix Pose3D::asMatrix()
   double zz      = zr * zr;
   double zw      = zr * w;
   mat[0]  = 1 - 2 * ( yy + zz );
-  mat[4]  =     2 * ( xy - zw );
-  mat[8]  =     2 * ( xz + yw );
-  mat[1]  =     2 * ( xy + zw );
+  mat[1]  =     2 * ( xy - zw );
+  mat[2]  =     2 * ( xz + yw );
+  mat[4]  =     2 * ( xy + zw );
   mat[5]  = 1 - 2 * ( xx + zz );
-  mat[9]  =     2 * ( yz - xw );
-  mat[2]  =     2 * ( xz - yw );
-  mat[6]  =     2 * ( yz + xw );
+  mat[6]  =     2 * ( yz - xw );
+  mat[8]  =     2 * ( xz - yw );
+  mat[9]  =     2 * ( yz + xw );
   mat[10] = 1 - 2 * ( xx + yy );
   mat[12]  = mat[13] = mat[14] = 0;
   mat[3] = xt;
