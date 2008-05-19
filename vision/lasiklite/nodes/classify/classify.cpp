@@ -60,7 +60,7 @@ using namespace std;
 svlObject2dFrame classifyImage(IplImage *image, svlObjectDetector *classifier,
     vector<CvRect>& rects);
 
-static bool read_rects_from_file( vector<CvRect> &, char* , int);
+static bool read_rects_from_file( vector<CvRect> &, char*);
 
 bool rect_is_shorter( const CvRect& a, const CvRect& b ) { return a.height < b.height; }
 bool  rect_is_taller( const CvRect& a, const CvRect& b ) { return a.height > b.height; }
@@ -100,20 +100,19 @@ public:
   }
   void image_cb()
   {
-    printf("image_cb\n");
+    image_mutex.lock();
+    cv_bridge.to_cv(&image);
+    image_mutex.unlock();
   }
 };
 
 int main(int argc, char *argv[])
 {		
   ros::init(argc, argv);
-  const int MAX_RESULTS_TO_SHOW = 25;
-  const int MAX_WIDTH = 640;
 
   // read commandline parameters
   const char *dictionaryFilename = NULL;
   const char *classifierFilename = NULL;
-  const char *imageFilename = NULL;
   const char *outputFilename = NULL;
   const char *objectName = "[unknown]";
   const char *classifierType = "patch";
@@ -181,7 +180,7 @@ int main(int argc, char *argv[])
 
   // argc now is the number of image files to process
   if (rectFile)
-    read_rects_from_file(rects, rectFile, argc);
+    read_rects_from_file(rects, rectFile);
 
   int total_rects_initial = 0;
   if (rectFile) {
@@ -204,23 +203,10 @@ int main(int argc, char *argv[])
   classifier->setThreshold(threshold);
 
   // run classifier on all supplied images
-  vector<IplImage *> annotatedImages;
-  annotatedImages.resize(((argc < MAX_RESULTS_TO_SHOW) ?
-        argc : MAX_RESULTS_TO_SHOW), NULL);
-  if (sqrt((double)annotatedImages.size()) * width > MAX_WIDTH) {
-    annotatedImages.resize(1);
-  }
   IplImage *resultsImage = NULL;
 
   if (bDisplayImage) {
     cvNamedWindow(WINDOW_NAME, 0);
-  }
-
-  ofstream ofs;
-  if (outputFilename) {
-    ofs.open(outputFilename);
-    assert(!ofs.fail());
-    ofs << "<Object2dVideo>" << endl;
   }
 
   Classify classify;
@@ -237,7 +223,7 @@ int main(int argc, char *argv[])
     if (image->nChannels != 1) 
     {
       IplImage *grey = cvCreateImage(cvSize(image->width, image->height), 
-          IPL_DEPTH_8U, 1);
+                                     IPL_DEPTH_8U, 1);
       cvCvtColor(image, grey, CV_RGB2GRAY);
       cvReleaseImage(&image);
       image = grey;	       
@@ -257,8 +243,10 @@ int main(int argc, char *argv[])
     if ((region.width != 0) && (region.height != 0)) {
       if (bBaseScaleOnly) {
         vector<CvPoint> locations;
-        classifier->createWindowLocations(region.width, region.height, locations);
-        for (vector<CvPoint>::iterator it = locations.begin(); it != locations.end(); ++it) {
+        classifier->createWindowLocations(region.width, region.height, 
+                                          locations);
+        for (vector<CvPoint>::iterator it = locations.begin(); 
+             it != locations.end(); ++it) {
           it->x += region.x;
           it->y += region.y;
         }
@@ -271,7 +259,8 @@ int main(int argc, char *argv[])
         if (bBaseScaleOnly) 
         {
           vector<CvPoint> locations;
-          classifier->createWindowLocations(image->width, image->height, locations);
+          classifier->createWindowLocations(image->width, image->height, 
+                                            locations);
           objects = classifier->classifyImage(image, locations);
         } else {
           objects = classifier->classifyImage(image);
@@ -280,23 +269,10 @@ int main(int argc, char *argv[])
         objects = classifyImage(image, classifier, rects);
       }
     }
-    // output response map
-    if (responseMapFilename != NULL) {
-      ofstream ofs(responseMapFilename);
-      assert(!ofs.fail());
-      CvMat *response = classifier->responseMap(image);	    
-      writeMatrix(response, ofs);
-      cvReleaseMat(&response);
-      ofs.close();
-    }
-    // output objects
-    if (outputFilename) {
-      writeObject2dFrame(ofs, objects, getIndexFromFilename(imageFilename));
-    }
 
     if (bDisplayImage) {
       IplImage *colourImage = cvCreateImage(cvSize(image->width, image->height),
-          IPL_DEPTH_8U, 3);
+                                            IPL_DEPTH_8U, 3);
       cvCvtColor(image, colourImage, CV_GRAY2RGB);
       if (resultsImage != NULL) {		
         cvReleaseImage(&resultsImage);
@@ -323,11 +299,7 @@ int main(int argc, char *argv[])
             region.y + region.height - 1), 
           CV_RGB(0, 0, 255), 1);
 
-      if (annotatedImages[index % annotatedImages.size()] != NULL) {
-        cvReleaseImage(&annotatedImages[index % annotatedImages.size()]);
-      }
-      annotatedImages[index % annotatedImages.size()] = colourImage;
-      resultsImage = combineImages(annotatedImages);
+      resultsImage = colourImage;
       cvShowImage(WINDOW_NAME, resultsImage);
       cvWaitKey(5);
       //int c = cvWaitKey(index != argc - 1 ? 100 : 0);
@@ -340,9 +312,6 @@ int main(int argc, char *argv[])
   delete classifier;
   if (resultsImage != NULL)
     cvReleaseImage(&resultsImage);
-  for (unsigned i = 0; i < annotatedImages.size(); i++)
-    if (annotatedImages[i] != NULL)
-      cvReleaseImage(&annotatedImages[i]);
   cvDestroyAllWindows();
   ros::fini();
 }
@@ -523,7 +492,7 @@ svlObject2dFrame classifyImage(IplImage *image,
 // rectangles provided by the caller.
 //
 
-bool read_rects_from_file(std::vector<CvRect>& rects,
+bool read_rects_from_file(vector<CvRect>& rects,
 			  char* filename)
 {
   FILE* fp = fopen( filename, "r" );
