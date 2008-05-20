@@ -153,6 +153,8 @@ class HokuyoNode: public ros::node
       }
       running = true;
 
+      printf("Connected to URG with ID: %d\n", urg.get_ID());
+
       urg.urg_cmd("BM");
 
       return(0);
@@ -222,7 +224,7 @@ main(int argc, char** argv)
   while (hn.ok())
   {
     while(hn.start() != 0) {
-      usleep(1000000);
+      usleep(2000000);
     }
 
     while(hn.ok()) {

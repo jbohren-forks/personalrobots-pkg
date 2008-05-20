@@ -162,52 +162,11 @@ private:
   //! Wrapper around write
   int urg_write(const char* msg);
 
-  //! Wrapper around read
-  /*! 
-   * This is a wrapper around a combination of read and poll that
-   * allows us to use a timeout on the read.
-   * 
-   * \param buf     pointer to a buffer of length len
-   * \param len     length of buffer buf
-   * \param timeout timeout of read call in milliseconds (-1 is blocking)
-   * 
-   * \return The number of bytes read
-   */
-  int urg_read(char *buf, int len, int timeout = -1);
+  int urg_readline(char *buf, int len, int timeout = -1);
 
+  char* urg_readline_after(char *buf, int len, const char *str, int timeout = -1);
 
-  //! Read from the file descriptor until reach a certain string
-  /*! 
-   *  The characters which are being searched for are also read into
-   *  the buffer.
-   *
-   * \param buf     Pointer to the buffer the data will be read into
-   * \param len     Length of the buffer
-   * \param search  Character array to search for
-   * \param len     Length of search string
-   * \param timeout timeout of read call in milliseconds (-1 is blocking)
-   * 
-   *  \return The number of bytes skipped over (including the string searched for)
-   */
-  int read_until(char* buf, int buf_len, const char* search, int search_len, int timeout = -1);
-
-
-  //! Skip messages sent by urg until contents of search are found
-  /*! 
-   *  The characters which are being searched for are also skipped,
-   *  so the next read will begin immediately after those characters.
-   *
-   *  Skip will also terminate once MAX_SKIPPED bytes have been
-   *  skipped over.  This is usually an indication that something has
-   *  gone wrong.
-   *
-   * \param search  Character array to search for
-   * \param len     Length of character array to search for
-   * \param timeout timeout of read call in milliseconds (-1 is blocking)
-   * 
-   *  \return The number of bytes skipped over (including the string searched for)
-   */
-  int skip_until(const char* search, int search_len, int timeout = -1);
+  int urg_scanf(const char *fmt, ...);
 
   int check_sum(const char* buf, int buf_len);
 
