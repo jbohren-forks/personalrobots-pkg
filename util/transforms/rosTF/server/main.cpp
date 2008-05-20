@@ -7,6 +7,8 @@ public:
   testServer() : ros::node("server"),count(2){
     pTFServer = new rosTFServer(*this);
   };
+  //Clean up ros connections
+  ~testServer() {ros::fini();};
 
   //A pointer to the rosTFServer class
   rosTFServer * pTFServer;

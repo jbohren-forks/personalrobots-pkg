@@ -8,6 +8,11 @@ public:
     pClient = new rosTFClient(*this);
   };
 
+  ~testListener()
+  {
+    ros::fini();
+  };
+
   //A pointer to the client library object  
   rosTFClient * pClient;
 
