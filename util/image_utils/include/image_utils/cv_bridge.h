@@ -45,11 +45,24 @@ public:
   {
     this->msg->width = cv_image->width;
     this->msg->height = cv_image->height;
-    // TODO: verify colorspace, handle monochrome, etc.
+    // TODO: verify colorspaces other than rgb and monochrome
     // return false for unhandled types
     this->msg->colorspace = "rgb24";
     this->realloc_raster_if_needed();
-    memcpy(this->raster, cv_image->imageData, this->get_raster_size());
+    if (cv_image->nChannels == 1)
+    {
+      for (int y = 0; y < cv_image->height; y++)
+        for (int x = 0; x < cv_image->width; x++)
+        {
+          uint8_t *p = (uint8_t *)(cv_image->imageData + y * cv_image->widthStep + x);
+          uint8_t *q = this->raster + y * cv_image->width * 3 + x * 3;
+          (*q   )  = *p;
+          (*(q+1)) = *p;
+          (*(q+2)) = *p;
+        }
+    }
+    else
+      memcpy(this->raster, cv_image->imageData, this->get_raster_size());
     this->deflate(compression_quality);
     return true;
   }
