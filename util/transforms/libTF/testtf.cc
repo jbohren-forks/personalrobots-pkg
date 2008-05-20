@@ -19,14 +19,14 @@ main(void)
 
   odompose.x = 1;
   odompose.y = 0;
-  odompose.yaw = DTOR(90);
+  odompose.yaw = DTOR(60);
   odompose.frame = 3;
   odompose.time = atime;
 
   mappose.x = 30.0;
   mappose.y = 40.0;
   //  mappose.yaw = DTOR(-36.0);
-  mappose.yaw = DTOR(-90.0);
+  mappose.yaw = DTOR(90);
   mappose.frame = 1;
   mappose.time = atime;
 
@@ -75,65 +75,6 @@ main(void)
   		    2,
 		    Pose3D::matrixFromEuler(odompose.x, odompose.y, 0.0, odompose.yaw, 0.0, 0.0).i(),
 		    atime);
-  mTR.setWithMatrix(4,
-  		    3,
-		    Pose3D::matrixFromEuler(odompose.x, odompose.y, 0.0, odompose.yaw, 0.0, 0.0),
-		    atime);
-
-  NEWMAT::Matrix m1 = Pose3D::matrixFromEuler(odompose.x, odompose.y, 0.0, odompose.yaw, 0.0, 0.0);
-  std::cout <<"Forward"<<std::endl<< m1;
-  NEWMAT::Matrix m2 = Pose3D::matrixFromEuler(odompose.x, odompose.y, 0.0, odompose.yaw, 0.0, 0.0).i();
-  std::cout << "Backward"<<std::endl<< m2;
-
-  std::cout << "Product" <<std::endl<< m1*m2;
-  std::cout << "Product" <<std::endl<< m2*m1;
-
-
-  
-  /*  mTR.setWithEulers(3,
-                    4,
-		    0.0,
-                    0.0,
-                    0.0,
-                    mappose.yaw,
-                    0.0,
-                    0.0,
-                    atime);
-  mTR.setWithEulers(4,
-                    2,
-                    mappose.x,
-                    mappose.y,
-                    0.0,
-		    0.0,
-                    0.0,
-                    0.0,
-                    atime);
-  */
-
-
-  /* // this is not a proper inverse
-  mTR.setWithEulers(3,//odompose.frame,
-                    2,
-                    -odompose.x,
-                    -odompose.y,
-                    0.0,
-                    -odompose.yaw,
-                    0.0,
-                    0.0,
-                    atime);
-  */
-
-  /*  differences shouldn't work
-  mTR.setWithEulers(odompose.frame,
-                    mappose.frame,
-                    diffpose.x,
-                    diffpose.y,
-                    diffpose.z,
-                    diffpose.yaw,
-                    diffpose.pitch,
-                    diffpose.roll,
-                    atime);
-                    */
 
   // See the list of transforms to get between the frames
   std::cout<<"Viewing (1,3):"<<std::endl;  
@@ -171,10 +112,7 @@ main(void)
 
   std::cout<<"1,2:"<<std::endl<<mTR.getMatrix(1,2,atime);
   std::cout<<"2,3"<<std::endl<<mTR.getMatrix(2,3,atime);
-  std::cout<<"3,4"<<std::endl<<mTR.getMatrix(3,4,atime);
-  std::cout<<"2,4"<<std::endl<<mTR.getMatrix(2,4,atime);
   std::cout<<"1,3:"<<std::endl<<mTR.getMatrix(1,3,atime);
-  std::cout<<"1,4:"<<std::endl<<mTR.getMatrix(1,4,atime);
 
   NEWMAT::Matrix matPoint(4,1);
   matPoint(1,1) = point_in.x;
@@ -225,33 +163,33 @@ main(void)
   xaxis.x = 1;
   xaxis.y = 0;
   xaxis.z = 0;
-  xaxis.frame = 3;
+  xaxis.frame = 9;
   xaxis.time = atime;
 
   TFVector yaxis;
   yaxis.x = 0;
   yaxis.y = 1;
   yaxis.z = 0;
-  yaxis.frame = 3;
+  yaxis.frame = 9;
   yaxis.time = atime;
 
   TFVector zaxis;
   zaxis.x = 0;
   zaxis.y = 0;
   zaxis.z = 1;
-  zaxis.frame = 3;
+  zaxis.frame = 9;
   zaxis.time = atime;
 
 
   printf("--------------------------TESTING VECTORS\n");
-  printf("From Frame 3 into frame 1\n");
+  printf("From Frame 9 into frame 1\n");
   for (int ind = 0; ind < 2; ind++)
     for (int ind1 = 0; ind1 < 2; ind1++)
       for (int ind2 = 0; ind2 < 2; ind2++)
 	{	
 	  
-	  mTR.setWithEulers(odompose.frame,
-			    mappose.frame,
+	  mTR.setWithEulers(9,
+			    1,
 			    diffpose.x,
 			    diffpose.y,
 			    diffpose.z,
@@ -289,26 +227,26 @@ main(void)
   xunit.x = 1;
   xunit.y = 0;
   xunit.z = 0;
-  xunit.frame = 3;
+  xunit.frame = 9;
   xunit.time = atime;
 
   TFPoint yunit;
   yunit.x = 0;
   yunit.y = 1;
   yunit.z = 0;
-  yunit.frame = 3;
+  yunit.frame = 9;
   yunit.time = atime;
 
   TFPoint zunit;
   zunit.x = 0;
   zunit.y = 0;
   zunit.z = 1;
-  zunit.frame = 3;
+  zunit.frame = 9;
   zunit.time = atime;
 
 
   printf("-------------------TESTING POINTS\n");
-	 printf("From Frame 3 into frame 1\n");
+	 printf("From Frame 9 into frame 1\n");
 
   printf("Fixed offset:\n %.3f %.3f %.3f \n", 
 	 diffpose.x, diffpose.y, diffpose.z);
@@ -318,8 +256,8 @@ main(void)
       for (int ind2 = 0; ind2 < 2; ind2++)
 	{	
 	  
-	  mTR.setWithEulers(odompose.frame,
-			    mappose.frame,
+	  mTR.setWithEulers(9,
+			    1,
 			    diffpose.x,
 			    diffpose.y,
 			    diffpose.z,

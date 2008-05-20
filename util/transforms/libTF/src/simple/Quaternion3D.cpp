@@ -196,12 +196,12 @@ NEWMAT::Matrix Pose3D::matrixFromEuler(double ax,
 			       double pitch, double roll)
 {
   NEWMAT::Matrix matrix(4,4);
-  double ca = cos(-yaw);
-  double sa = sin(-yaw);
-  double cb = cos(-pitch);
-  double sb = sin(-pitch);
-  double cg = cos(-roll);
-  double sg = sin(-roll);
+  double ca = cos(yaw);
+  double sa = sin(yaw);
+  double cb = cos(pitch);
+  double sb = sin(pitch);
+  double cg = cos(roll);
+  double sg = sin(roll);
   double sbsg = sb*sg;
   double sbcg = sb*cg;
 

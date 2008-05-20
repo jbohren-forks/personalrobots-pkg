@@ -163,7 +163,6 @@ TFVector TransformReference::transformVector(unsigned int target_frame, const TF
   vectorMat << vector_in.x << vector_in.y << vector_in.z << 0; // 0 vs 1 only difference between point and vector //fixme make this less copy and paste
 
   NEWMAT::Matrix myMat = getMatrix(target_frame, vector_in.frame, vector_in.time);
-
   
   vectorMat = myMat * vectorMat;
   TFVector retVector;
@@ -368,11 +367,11 @@ NEWMAT::Matrix TransformReference::computeTransformFromList(const TransformLists
 
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
-      retMat *= getFrame(lists.inverseTransforms[i])->getMatrix(time);
+      retMat *= getFrame(lists.inverseTransforms[lists.inverseTransforms.size() -1 - i])->getMatrix(time); //Reverse to get left multiply
    }
   for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
     {
-      retMat *= getFrame(lists.forwardTransforms[lists.forwardTransforms.size() -1 - i])->getInverseMatrix(time); //Do this list backwards for it was generated traveling the wrong way
+      retMat *= getFrame(lists.forwardTransforms[i])->getInverseMatrix(time); //Do this list backwards(from backwards) for it was generated traveling the wrong way
     }
 
   return retMat;
