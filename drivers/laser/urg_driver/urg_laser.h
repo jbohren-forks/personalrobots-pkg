@@ -209,6 +209,8 @@ private:
    */
   int skip_until(const char* search, int search_len, int timeout = -1);
 
+  int check_sum(const char* buf, int buf_len);
+
   int SCIP_version;  
 
   int dmin;

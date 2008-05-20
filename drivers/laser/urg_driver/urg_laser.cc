@@ -175,6 +175,9 @@ int urg_laser::urg_cmd(const char* cmd, int timeout)
 
   char buf2[4];
   if (read_until(buf2, 4, "\n", 1, timeout) == 4) {
+    if (check_sum(buf2,4) != 0)
+      return -1;
+
     if (buf2[0] - '0' >= 0 && buf2[0] - '0' <= 9 && buf2[1] - '0' >= 0 && buf2[1] - '0' <= 9) {
       return (buf2[0] - '0')*10 + (buf2[1] - '0');
     }
@@ -572,6 +575,18 @@ urg_laser::change_baud (int curr_baud, int new_baud, int timeout)
 }
 
 
+int urg_laser::check_sum(const char* buf, int buf_len) {
+
+  unsigned char sum = 0;
+  for (int i = 0; i < buf_len - 2; i++)
+    sum += (unsigned char)(buf[i]);
+
+  if ((sum & 63) + 0x30 == buf[buf_len - 2])
+    return 0;
+  else
+    return -1;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 int
 urg_laser::get_readings(urg_laser_readings_t* res, double min_ang, double max_ang, int cluster, int timeout)
@@ -639,7 +654,7 @@ urg_laser::get_readings(urg_laser_readings_t* res, double min_ang, double max_an
     for (;;)
     {
       int bytes = read_until(&buf[ind], 100 - ind, "\n", 1, timeout);
-
+      
       if (bytes < 0)
 	return -1;
 
@@ -647,6 +662,9 @@ urg_laser::get_readings(urg_laser_readings_t* res, double min_ang, double max_an
         // This is \n\n so we should be done
         return status;
       }
+
+      if (check_sum(&buf[ind], bytes) != 0)
+	return -1;
 
       bytes += ind - 2;
       
