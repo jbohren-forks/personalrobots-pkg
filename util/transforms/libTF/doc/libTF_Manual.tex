@@ -110,6 +110,10 @@ The matrix library used within this library is Newmat10.
 Newmat10 is the matrix library used in this library.  Documentation for Newmat can be found at 
 \url{http://www.robertnz.net/nm10.htm}.  
 
+\paragraph {Point}
+Within this documentation a point is considered a 3D representation of a position within a 
+frame.  It is notated, as x, y, z.  
+
 \paragraph {Time Representation}
 libTF uses an \texttt{unsigned long long} (equivilant to a \texttt{uint64\_t}) to represent nanoseconds since the epoch(1970).  
 It is named \texttt{ULLtime} for clarity.
@@ -117,12 +121,19 @@ It is named \texttt{ULLtime} for clarity.
 rosTF converts automatically to the above representation from a time pair of seconds and nanoseconds since the epoch, to 
 be consistant with the rest of ROS.  
 
+\paragraph{Vector}
+Within this library a vector is a representation of a direction.  It is represented with the components in 3 directions, 
+x,y,z.  However when subject to transformation, a vector will only be subject to rotations and will remain attached to the 
+origin.  For example a point (1,1,1) subject to a translation of 5 in the x direction and yawed by 90 degrees would end
+at (5,1,1), while a vector (1,1,1) subject to the same transformation would be (-1,1,1).  
+
 \subsection{libTF API}
 \label{libTFAPI}
 \index{libTF API}
 The class which provides external functionality is named TransformReference.  
 
 \subsubsection{Data Types}
+\paragraph {Time}
 \begin{verbatim}
 typedef unsigned long long ULLtime;
 \end{verbatim}
@@ -131,10 +142,97 @@ typedef unsigned long long ULLtime;
 \texttt{ULLtime} is the number of nanoseconds since the epoch(1970) expressed as 
 an unsigned long long, which should be equivilant to a \texttt{uint64\_t}. 
 
+\paragraph{Data} The following data structs are available to facilitate simple 
+accessors if the user does not want to use the matrices natively.  
+
 \begin{verbatim}
+/** ** Point ****
+ *  \brief A simple point class incorperating the time and frameID
+ * 
+ * This is a point class designed to interact with libTF.  It 
+ * incorperates the timestamp and associated frame to make 
+ * association easier for the programmer.    
+ */
 struct TFPoint
 {
   double x,y,z;
+  unsigned long long time;
+  unsigned int frame;
+};
+
+/** ** Point2D ****
+ *  \brief A simple point class incorperating the time and frameID
+ * 
+ * This is a point class designed to interact with libTF.  It 
+ * incorperates the timestamp and associated frame to make 
+ * association easier for the programmer.    
+ */
+struct TFPoint2D
+{
+  double x,y;
+  unsigned long long time;
+  unsigned int frame;
+};
+
+
+/** TFVector
+ *  \brief A representation of a vector
+ */
+struct TFVector
+{
+  double x,y,z;
+  unsigned long long time;
+  unsigned int frame;
+};
+
+/** TFVector2D
+ *  \brief A representation of a 2D vector
+ * 
+ */
+struct TFVector2D
+{
+  double x,y;
+  unsigned long long time;
+  unsigned int frame;
+};
+
+/** TFEulerYPR
+ * \brief A representation of Euler angles
+ * Using Yaw, Pitch, Roll
+ * commonly known as xyz Euler angles */
+struct TFEulerYPR
+{
+  double yaw, pitch, roll;
+  unsigned long long time;
+  unsigned int frame;
+};
+
+/** TFYaw
+ * \brief Rotation about the Z axis.  
+ */
+struct TFYaw
+{
+  double yaw;
+  unsigned long long time;
+  unsigned int frame;
+};
+
+/** TFPose
+ *  \brief A representation of position in free space
+ */
+struct TFPose
+{
+  double x,y,z,yaw,pitch,roll;
+  unsigned long long time;
+  unsigned int frame;
+};
+
+/** TFPose2D
+ *  \brief A representation of 2D position
+ */
+struct TFPose2D
+{
+  double x,y,yaw;
   unsigned long long time;
   unsigned int frame;
 };
@@ -195,13 +293,28 @@ NEWMAT::Matrix getMatrix(unsigned int target_frame,
                          unsigned long long time); 
 \end{verbatim}
 
-\paragraph{transformPoint}
+\paragraph{transform[DATA\_TYPE]}
+For each of the data types above there are accessors to automatically
+transform the data from one frame to another. They are listed below:
 \begin{verbatim}
-/* Transform a point to a different frame */
-TFPoint transformPoint(unsigned int target_frame, const TFPoint & point_in);
+  /** Transform a point to a different frame */
+  TFPoint transformPoint(unsigned int target_frame, const TFPoint & point_in);
+  /** Transform a 2D point to a different frame */
+  TFPoint2D transformPoint2D(unsigned int target_frame, const TFPoint2D & point_in);
+  /** Transform a vector to a different frame */
+  TFVector transformVector(unsigned int target_frame, const TFVector & vector_in);
+  /** Transform a 2D vector to a different frame */
+  TFVector2D transformVector2D(unsigned int target_frame, const TFVector2D & vector_in);
+  /** Transform Euler angles between frames */
+  TFEulerYPR transformEulerYPR(unsigned int target_frame, const TFEulerYPR & euler_in);
+  /** Transform Yaw between frames. Useful for 2D navigation */
+  TFYaw transformYaw(unsigned int target_frame, const TFYaw & euler_in);
+  /** Transform a 6DOF pose.  (x, y, z, yaw, pitch, roll). */
+  TFPose transformPose(unsigned int target_frame, const TFPose & pose_in);
+  /** Transform a planar pose, x,y,yaw */
+  TFPose2D transformPose2D(unsigned int target_frame, const TFPose2D & pose_in);
 \end{verbatim}
-Point $P_0 = (x,y,z,1)^T$ will be transformed into the target frame
-using the time and source frame embedded in the point struct.  
+
 
 \paragraph{viewChain}
 \index{libTF API!viewChain}
@@ -517,6 +630,12 @@ log-quaternion linear interpolation (log-quaternion lerp).
 SLERP can be recursively called to do a cubic interpolation, called SQUAD for short.  
 This is discussed at \url{http://www.sjbrown.co.uk/?article=quaternions}.
 
+
+\subsection{Data Representation Conversion}
+\subsubsection{Matrix to Quaternion}
+\subsubsection{Quaternion to Matrix}
+\subsubsection{DH Parameters to Matrix}
+\subsubsection{Euler Angles to Matrix}
 
 
 \bibliographystyle{plain}

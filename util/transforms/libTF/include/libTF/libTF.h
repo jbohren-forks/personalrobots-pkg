@@ -105,6 +105,10 @@ struct TFVector2D
   unsigned int frame;
 };
 
+/** TFEulerYPR
+ * \brief A representation of Euler angles
+ * Using Yaw, Pitch, Roll
+ * commonly known as xyz Euler angles */
 struct TFEulerYPR
 {
   double yaw, pitch, roll;
@@ -112,6 +116,9 @@ struct TFEulerYPR
   unsigned int frame;
 };
 
+/** TFYaw
+ * \brief Rotation about the Z axis.  
+ */
 struct TFYaw
 {
   double yaw;
@@ -226,12 +233,19 @@ public:
 
   /** Transform a point to a different frame */
   TFPoint transformPoint(unsigned int target_frame, const TFPoint & point_in);
+  /** Transform a 2D point to a different frame */
   TFPoint2D transformPoint2D(unsigned int target_frame, const TFPoint2D & point_in);
+  /** Transform a vector to a different frame */
   TFVector transformVector(unsigned int target_frame, const TFVector & vector_in);
+  /** Transform a 2D vector to a different frame */
   TFVector2D transformVector2D(unsigned int target_frame, const TFVector2D & vector_in);
+  /** Transform Euler angles between frames */
   TFEulerYPR transformEulerYPR(unsigned int target_frame, const TFEulerYPR & euler_in);
+  /** Transform Yaw between frames. Useful for 2D navigation */
   TFYaw transformYaw(unsigned int target_frame, const TFYaw & euler_in);
+  /** Transform a 6DOF pose.  (x, y, z, yaw, pitch, roll). */
   TFPose transformPose(unsigned int target_frame, const TFPose & pose_in);
+  /** Transform a planar pose, x,y,yaw */
   TFPose2D transformPose2D(unsigned int target_frame, const TFPose2D & pose_in);
 
   /* Debugging function that will print to std::cout the transformation matrix */
