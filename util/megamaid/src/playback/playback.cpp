@@ -48,7 +48,7 @@ public:
   bool done;
   Bag() : msg("*", "*"), log(NULL), next_msg(NULL), next_msg_alloc_size(0), 
           done(false) { }
-  virtual ~Bag() { fclose(log); }
+  virtual ~Bag() { fclose(log); if (next_msg) delete[] next_msg; }
   bool open_log(const string &bag_name, ros::Time _start)
   {
     playback_start = _start;
@@ -155,7 +155,7 @@ public:
           if (usecs < 5)
           {
             // send message
-            printf("send message\n");
+            publish(bags[i].topic_name, bags[i]);
             if (!bags[i].read_next_msg())
               bags[i].done = true;
             min_usecs = 0;

@@ -56,7 +56,7 @@ public:
   virtual void serialize(uint8_t *write_ptr) { }
   virtual void deserialize(uint8_t *read_ptr)
   {
-    ros::Duration elapsed = start - ros::Time::now();
+    ros::Duration elapsed = ros::Time::now() - start;
     fwrite(&elapsed.sec, 4, 1, log);
     fwrite(&elapsed.nsec, 4, 1, log);
     fwrite(&__serialized_length, 4, 1, log);
@@ -78,6 +78,7 @@ public:
              tms->tm_year+1900, tms->tm_mon+1, tms->tm_mday,
              tms->tm_hour     , tms->tm_min  , tms->tm_sec);
     mkdir(logdir, 0755);
+    start = ros::Time::now();
     for (size_t i = 0; i < vac_topics.size(); i++)
     {
       printf("vacuum up [%s]\n", vac_topics[i].c_str());
