@@ -52,17 +52,17 @@ typedef struct urg_laser_config
 
 
 //! A struct for returning laser readings from the urg
-typedef struct urg_laser_readings
+typedef struct urg_laser_scan
 {
   //! Array of ranges
-  unsigned int ranges[MAX_READINGS];
+  float ranges[MAX_READINGS];
   //! Array of intensities
-  unsigned int intensities[MAX_READINGS];
+  float intensities[MAX_READINGS];
   //! Number of readings
   int num_readings;
   //! Configuration of scan
   urg_laser_config_t config;
-} urg_laser_readings_t;
+} urg_laser_scan_t;
 
 
 //! A class for interfacing to the various Hokuyo URG devices
@@ -140,8 +140,12 @@ public:
   int change_baud(int curr_baud, int new_baud, int timeout = -1);
 
 
-  //! Get readings from the urg
-  int get_readings(urg_laser_readings_t * readings, double min_ang, double max_ang, int clustering, int timeout = -1);
+  //! Get a single scan from the urg
+  int poll_scan(urg_laser_scan_t * scan, double min_ang, double max_ang, int clustering = 0, int timeout = -1);
+
+  int request_scans(bool intensity, double min_ang, double max_ang, int cluster = 0, int skip = 0, int num = 0, int timeout = -1);
+
+  int service_scan(urg_laser_scan_t * scan, int timeout = -1);
 
   //! Get serial number from the URG
   int get_ID();
@@ -166,9 +170,9 @@ private:
 
   char* urg_readline_after(char *buf, int len, const char *str, int timeout = -1);
 
-  int urg_scanf(const char *fmt, ...);
-
   int check_sum(const char* buf, int buf_len);
+
+  int read_data(urg_laser_scan_t* scan, bool has_intensity, int timout = -1);
 
   int SCIP_version;  
 
@@ -179,7 +183,7 @@ private:
   int amax;
   int afrt;
   int scan;
-  
+
   FILE * laser_port;
   int laser_fd;
 };

@@ -108,7 +108,6 @@ urg_laser::open(const char * port_name, bool use_serial, int baud)
   urg_flush();
   //  urg_write("\n");
   urg_cmd("QT", 1000);
-  usleep(200000);
   urg_flush();
 
   if (query_SCIP_version() < 0) {
@@ -237,7 +236,7 @@ urg_laser::urg_readline(char *buf, int len, int timeout)
 
     current += strlen(&buf[current]);
   }
-  URG_ERR_ARGS(-1, " buffer size reached without finding line termination: |%s|", buf);
+  URG_ERR(-1, " buffer size reached without finding line termination.");
 }
 
 
@@ -245,12 +244,12 @@ char*
 urg_laser::urg_readline_after(char* buf, int len, const char* str, int timeout)
 {
   buf[0] = 0;
-  char* ind = NULL;
+  char* ind = &buf[0];
 
   int bytes_read = 0;
   int skipped = 0;
 
-  while ((ind = strstr(buf, str)) == NULL) {
+  while ((strncmp(buf, str, strlen(str))) != 0) {
     if ((bytes_read = urg_readline(buf,len,timeout)) < 0)
       URG_ERR_ARGS(NULL, "failed on readline while searching for: '%s'", str);
 
@@ -259,24 +258,6 @@ urg_laser::urg_readline_after(char* buf, int len, const char* str, int timeout)
   }
 
   return ind += strlen(str);
-}
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-int
-urg_laser::urg_scanf(const char* fmt, ...) {
-  if (!port_open())
-    URG_ERR(-1, " port not open");
-
-  va_list argList;
-  va_start(argList,fmt);
-  
-  int retval = vfscanf(laser_port, fmt, argList);
-
-  va_end(argList);
-  
-  return retval;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -350,30 +331,28 @@ urg_laser::query_sensor_config()
 
 
     char buf[100];
+    char* ind;
 
-    // Skip over model.
-    urg_readline(buf,100,-1);
+    ind = urg_readline_after(buf,100,"DMIN:",-1);
+    sscanf(ind, "%d", &dmin);
 
-    urg_scanf("DMIN:%d;",&dmin);
-    urg_readline(buf,100,-1);
+    ind = urg_readline_after(buf,100,"DMAX:",-1);
+    sscanf(ind, "%d", &dmax);
 
-    urg_scanf("DMAX:%d;",&dmax);
-    urg_readline(buf,100,-1);
+    ind = urg_readline_after(buf,100,"ARES:",-1);
+    sscanf(ind, "%d", &ares);
 
-    urg_scanf("ARES:%d;",&ares);
-    urg_readline(buf,100,-1);
+    ind = urg_readline_after(buf,100,"AMIN:",-1);
+    sscanf(ind, "%d", &amin);
 
-    urg_scanf("AMIN:%d;",&amin);
-    urg_readline(buf,100,-1);
+    ind = urg_readline_after(buf,100,"AMAX:",-1);
+    sscanf(ind, "%d", &amax);
 
-    urg_scanf("AMAX:%d;",&amax);
-    urg_readline(buf,100,-1);
+    ind = urg_readline_after(buf,100,"AFRT:",-1);
+    sscanf(ind, "%d", &afrt);
 
-    urg_scanf("AFRT:%d;",&afrt);
-    urg_readline(buf,100,-1);
-
-    urg_scanf("SCAN:%d;",&scan);
-    urg_readline(buf,100,-1);
+    ind = urg_readline_after(buf,100,"SCAN:",-1);
+    sscanf(ind, "%d", &scan);
 
     return 0;
   }
@@ -494,14 +473,72 @@ int urg_laser::check_sum(const char* buf, int buf_len)
     return -1;
 }
 
+
+int
+urg_laser::read_data(urg_laser_scan_t* scan, bool has_intensity, int timeout)
+{
+  scan->num_readings = 0;
+
+  int data_size = 3;
+  if (has_intensity)
+    data_size = 6;
+
+  char buf[100];
+
+  int ind = 0;
+
+  // skip over the timestamp
+  if (urg_readline(buf, 100, timeout) < 0)
+    return -1;
+
+  for (;;)
+  {
+    int bytes = urg_readline(&buf[ind], 100 - ind, timeout);
+    
+    if (bytes < 0)
+      return -1;
+    
+    if (bytes == 1)          // This is \n\n so we should be done
+      return 0;
+    
+    if (check_sum(&buf[ind], bytes) != 0)
+      URG_ERR_ARGS(-1,"Check_sum is wrong on %d: %s", bytes, &buf[ind]);
+    
+    bytes += ind - 2;
+    
+    // Read as many ranges as we can get
+    for (int j = 0; j < bytes - (bytes % data_size); j+=data_size)
+    {
+      if (scan->num_readings < MAX_READINGS)
+      {
+	scan->ranges[scan->num_readings] = (((buf[j]-0x30) << 12) | ((buf[j+1]-0x30) << 6) | (buf[j+2]-0x30)) / 1000.0;
+	
+	if (has_intensity)
+	  scan->intensities[scan->num_readings] = (((buf[j+3]-0x30) << 12) | ((buf[j+4]-0x30) << 6) | (buf[j+5]-0x30));
+	else
+	  scan->intensities[scan->num_readings] = 0;
+	
+	scan->num_readings++;
+      }
+      else
+	URG_ERR(-1,"Got too many readings.");
+    }
+    // Shuffle remaining bytes to front of buffer to get them on the next loop
+    ind = 0;
+    for (int j = bytes - (bytes % data_size); j < bytes ; j++)
+      buf[ind++] = buf[j];
+  }
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 int
-urg_laser::get_readings(urg_laser_readings_t* res, double min_ang, double max_ang, int cluster, int timeout)
+urg_laser::poll_scan(urg_laser_scan_t* scan, double min_ang, double max_ang, int cluster, int timeout)
 {
   int status;
 
   // Always set num_readings to 0 so we can return easily in case of erro
-  res->num_readings = 0;
+  scan->num_readings = 0;
 
   if (!port_open ())
     URG_ERR(-1, "Port is not open\n");
@@ -536,57 +573,109 @@ urg_laser::get_readings(urg_laser_readings_t* res, double min_ang, double max_an
     if (status != 0)
       URG_ERR(status, "Status not 0");
  
-    //Data should never be more than 64 bytes before hitting a \n
-    char buf[100];
-
-    // skip over the timestamp
-    if (urg_readline(buf, 100, timeout) < 0)
-      return -1;
-
-    // we use ind to cope with data spanning data boundaries
-    int ind = 0;
-    int i = 0;
-
     // Populate configuration
-    res->config.min_angle  =  (min_i - afrt) * (2.0*M_PI)/(ares);
-    res->config.max_angle  =  (max_i - afrt) * (2.0*M_PI)/(ares);
-    res->config.resolution =  cluster*(2.0*M_PI)/(ares);
-    res->config.max_range  =  dmax / 1000.0;
+    scan->config.min_angle  =  (min_i - afrt) * (2.0*M_PI)/(ares);
+    scan->config.max_angle  =  (max_i - afrt) * (2.0*M_PI)/(ares);
+    scan->config.resolution =  cluster*(2.0*M_PI)/(ares);
+    scan->config.max_range  =  dmax / 1000.0;
 
-    for (;;)
-    {
-      int bytes = urg_readline(&buf[ind], 100 - ind, timeout);
-      
-      if (bytes < 0)
-	return -1;
+    if (read_data(scan, false, timeout) == 0)
+      return status;
 
-      if (bytes == 1)          // This is \n\n so we should be done
-        return status;
-
-      if (check_sum(&buf[ind], bytes) != 0)
-	return -1;
-
-      bytes += ind - 2;
-      
-      // Read as many ranges as we can get
-      for (int j = 0; j < bytes - (bytes % 3); j+=3)
-      {
-        if (i < MAX_READINGS)
-        {
-          res->ranges[i++] = ((buf[j]-0x30) << 12) | ((buf[j+1]-0x30) << 6) | (buf[j+2]-0x30);
-          res->num_readings++;
-        }
-        else
-          URG_ERR(-1,"Got too many readings.");
-      }
-	// Shuffle remaining bytes to front of buffer to get them on the next loop
-      ind = 0;
-      for (int j = bytes - (bytes % 3); j < bytes ; j++)
-	buf[ind++] = buf[j];
-    }
   }
 
   return -1;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+int
+urg_laser::request_scans(bool intensity, double min_ang, double max_ang, int cluster, int skip, int count, int timeout)
+{
+
+  int status;
+
+  // Always set num_readings to 0 so we can return easily in case of erro
+  if (!port_open ())
+    URG_ERR(-1, "Port is not open\n");
+
+  if (SCIP_version == 2)
+  {
+    if (cluster == 0)
+      cluster = 1;
+
+    int min_i = (int)(afrt + min_ang*ares/(2.0*M_PI));
+    int max_i = (int)(afrt + max_ang*ares/(2.0*M_PI));
+    
+    char cmdbuf[MAX_CMD_LEN];
+
+    char intensity_char = 'D';
+    if (intensity)
+      intensity_char = 'E';
+
+    sprintf(cmdbuf,"M%c%.4d%.4d%.2d%.1d%.2d", intensity_char, min_i, max_i, cluster, skip, count);
+
+    printf("Sending command: %s\n", cmdbuf);
+
+    status = urg_cmd(cmdbuf, timeout);
+
+    return status;
+  }
+
+  return -1;
+}
+
+
+int
+urg_laser::service_scan(urg_laser_scan_t* scan, int timeout)
+{
+
+  scan->num_readings = 0;
+
+  if (!port_open ())
+    URG_ERR(-1, "Port is not open\n");
+
+  char buf[100];
+
+  bool intensity = false;
+  int min_i;
+  int max_i;
+  int cluster;
+  int skip;
+  int left;
+
+  char* ind;
+
+  do {
+    ind = urg_readline_after(buf, 100, "M",timeout);
+
+    if (ind == NULL)
+      return -1;
+
+    if (ind[0] == 'D')
+      intensity = false;
+    else if (ind[0] == 'E')
+      intensity = true;
+    else
+      continue;
+
+    ind++;
+
+    sscanf(ind, "%4d%4d%2d%1d%2d", &min_i, &max_i, &cluster, &skip, &left);  
+    urg_readline(buf,100,timeout);
+
+  } while(strcmp(buf,"99b\n"));
+
+  scan->config.min_angle  =  (min_i - afrt) * (2.0*M_PI)/(ares);
+  scan->config.max_angle  =  (max_i - afrt) * (2.0*M_PI)/(ares);
+  scan->config.resolution =  cluster*(2.0*M_PI)/(ares);
+  scan->config.max_range  =  dmax / 1000.0;
+
+  if (read_data(scan, intensity, timeout) == 0)
+    return 0;
+  else
+    URG_ERR(-1, "Reading scan failed");
+
 }
 
 //////////////////////////////////////////////////////////////////////////////

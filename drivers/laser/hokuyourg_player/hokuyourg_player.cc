@@ -93,7 +93,7 @@ Publishes to (name / type):
 class HokuyoNode: public ros::node
 {
   private:
-    urg_laser_readings_t* readings;
+    urg_laser_scan_t* scan;
     urg_laser_config_t cfg;
     bool running;
     unsigned int scanid;
@@ -107,7 +107,7 @@ class HokuyoNode: public ros::node
 
   public:
     urg_laser urg;
-    MsgLaserScan scan;
+    MsgLaserScan scan_msg;
     double min_ang;
     double max_ang;
     string port;
@@ -131,8 +131,8 @@ class HokuyoNode: public ros::node
 	port = "/dev/ttyACM0";
       printf("Setting port to: %s\n",port.c_str());
 
-      readings = new urg_laser_readings_t;
-      assert(readings);
+      scan = new urg_laser_scan_t;
+      assert(scan);
       running = false;
       scanid = 0;
     }
@@ -140,7 +140,7 @@ class HokuyoNode: public ros::node
     ~HokuyoNode()
     {
       stop();
-      delete readings;
+      delete scan;
     }
 
     int start()
@@ -156,6 +156,14 @@ class HokuyoNode: public ros::node
       printf("Connected to URG with ID: %d\n", urg.get_ID());
 
       urg.urg_cmd("BM");
+
+
+      int status = urg.request_scans(true, -M_PI/2.0, M_PI/2.0);
+
+      if (status != 0) {
+	printf("Failed to request scans %d.\n", status);
+	return -1;
+      }
 
       return(0);
     }
@@ -174,7 +182,8 @@ class HokuyoNode: public ros::node
     {
       // TODO: add support for pushing readings out
 
-      int status = urg.get_readings(readings, -M_PI/2.0, M_PI/2.0, 0);
+      //      int status = urg.poll_scan(scan, -M_PI/2.0, M_PI/2.0);
+      int status = urg.service_scan(scan);
       if(status != 0)
       {
         printf("error getting scan: %d\n", status);
@@ -191,24 +200,24 @@ class HokuyoNode: public ros::node
 
       //      printf("%d readings\n", readings->num_readings);
 
-      scan.angle_min = readings->config.min_angle;
-      scan.angle_max = readings->config.max_angle;
-      scan.angle_increment = readings->config.resolution;
+      scan_msg.angle_min = scan->config.min_angle;
+      scan_msg.angle_max = scan->config.max_angle;
+      scan_msg.angle_increment = scan->config.resolution;
 
       //      printf("%g %g %g\n", scan.angle_min * 180.0/M_PI, scan.angle_max*180.0/M_PI, scan.angle_increment*180.0/M_PI);
 
-      scan.range_max = cfg.max_range;
-      scan.set_ranges_size(readings->num_readings);
-      scan.set_intensities_size(readings->num_readings);
+      scan_msg.range_max = cfg.max_range;
+      scan_msg.set_ranges_size(scan->num_readings);
+      scan_msg.set_intensities_size(scan->num_readings);
 
-      for(int i = 0; i < readings->num_readings; ++i)
+      for(int i = 0; i < scan->num_readings; ++i)
       {
         //        scan.ranges[i]  = readings->ranges[i] < 20 ? (scan.range_max) : (readings->ranges[i] / 1000.0);
-        scan.ranges[i]  = readings->ranges[i] / 1000.0;
+        scan_msg.ranges[i]  = scan->ranges[i];
         // TODO: add intensity support
-        scan.intensities[i] = 0;
+        scan_msg.intensities[i] = scan->intensities[i];
       }
-      publish("scan", scan);
+      publish("scan", scan_msg);
       return(0);
     }
 };
@@ -223,9 +232,9 @@ main(int argc, char** argv)
   // Start up the laser
   while (hn.ok())
   {
-    while(hn.start() != 0) {
-      usleep(2000000);
-    }
+    do {
+      usleep(1000000);
+    } while(hn.start() != 0);
 
     while(hn.ok()) {
       if(hn.publish_scan() < 0)
