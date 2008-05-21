@@ -40,7 +40,7 @@ int main(int argc, char **argv)
     num_messages++;
   }
   fclose(f);
-  ros::Duration elapsed = start - ros::Time(secs, nsecs);
+  ros::Duration elapsed = ros::Time(secs, nsecs) - start;
   printf("message count: %d\ntime span: %f seconds\n", 
          num_messages, elapsed.to_double());
   printf("largest message: %d bytes\nsmallest message: %d bytes\n",
