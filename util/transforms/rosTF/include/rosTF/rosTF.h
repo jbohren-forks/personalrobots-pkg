@@ -30,6 +30,14 @@
 //ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 //POSSIBILITY OF SUCH DAMAGE.
 
+/** \mainpage This is a ROS wrapper for the libTF library. 
+ * It provides a server and client class which can be created
+ * to make publishing and recieving transform information very 
+ * simple.  
+ * There are test server and test client code in the aptly named
+ * subdirectories.  
+ */
+
 #include <iostream>
 #include "ros/node.h"
 #include "std_msgs/MsgTransformEuler.h"
@@ -37,40 +45,53 @@
 #include "std_msgs/MsgTransformQuaternion.h"
 #include "libTF/libTF.h"
 
+/** \brief A basic ROS client library for libTF
+ * This inherits from libTF and will automatically
+ * push incoming date into the library.  
+ * The accessors remain available as before.  
+ */
 class rosTFClient : public libTF::TransformReference
 {
  public:
   //Constructor
   rosTFClient(ros::node & rosnode);
 
-
+  //Call back functions
   void receiveEuler();
   void receiveDH();
   void receiveQuaternion();
 
  private:
-  ros::node & myNode;
+  // A reference to the active ros::node to allow setting callbacks
+  ros::node & myNode; 
+  //Temporary storage for callbacks(todo check threadsafe? make scoped in call?)
   MsgTransformEuler eulerIn;
   MsgTransformDH dhIn;
   MsgTransformQuaternion quaternionIn;
 
 };
 
-
+/** \brief A simple class to broadcast transforms
+ * This class properly broadcasts transforms without
+ * requiring the user to deal with any communication
+ * beyond a function call.
+ */
 class rosTFServer
 {
  public:
   //Constructor
   rosTFServer(ros::node & rosnode);
-
+  /** \brief Send a Transform with Euler Angles */
   void sendEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs);
+  /** \brief Send a transform using DH Parameters */
   void sendDH(unsigned int frame, unsigned int parent, double length, double twist, double offset, double angle, unsigned int secs, unsigned int nsecs);
+  /** \brief Send a transform using Quaternion notation */
   void sendQuaternion(unsigned int frame, unsigned int parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, unsigned int secs, unsigned int nsecs);
-  //  void sendQuaternion();
-  // void sendDH();
 
  private:
+  //ros::node reference to allow setting callbacks
   ros::node & myNode;
+  //Temp variables for in transit. (todo check threadsafe? make scoped in call?)
   MsgTransformEuler eulerOut;
   MsgTransformDH dhOut;
   MsgTransformQuaternion quaternionOut;
