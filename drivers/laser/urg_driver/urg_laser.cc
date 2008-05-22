@@ -151,6 +151,9 @@ urg_laser::close ()
 ///////////////////////////////////////////////////////////////////////////////
 int urg_laser::urg_cmd(const char* cmd, int timeout)
 {
+  if (!port_open())
+    URG_ERR(-1," port not open");
+
   printf("Sending CMD: %s\n",cmd);
 
   char buf[100]; 
@@ -589,6 +592,11 @@ urg_laser::poll_scan(urg_laser_scan_t* scan, double min_ang, double max_ang, int
   return -1;
 }
 
+
+int
+urg_laser::stop_scanning() {
+  return urg_cmd("QT");
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 int

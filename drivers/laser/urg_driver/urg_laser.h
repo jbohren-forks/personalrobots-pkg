@@ -141,13 +141,14 @@ public:
    */
   int change_baud(int curr_baud, int new_baud, int timeout = -1);
 
-
   //! Get a single scan from the urg
   int poll_scan(urg_laser_scan_t * scan, double min_ang, double max_ang, int clustering = 0, int timeout = -1);
 
   int request_scans(bool intensity, double min_ang, double max_ang, int cluster = 0, int skip = 0, int num = 0, int timeout = -1);
 
   int service_scan(urg_laser_scan_t * scan, int timeout = -1);
+
+  int stop_scanning();
 
   //! Get serial number from the URG
   int get_ID();
