@@ -376,7 +376,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     localizedOdomMsg.header.stamp.sec = (unsigned long)floor(hdr->timestamp);
     localizedOdomMsg.header.stamp.nsec = 
             (unsigned long)rint(1e9 * (hdr->timestamp -
-                                       localizedOdomMsg.header.stamp_secs));
+                                       localizedOdomMsg.header.stamp.sec));
     localizedOdomMsg.__timestamp_override = true;
     publish("localizedpose", localizedOdomMsg);
 
