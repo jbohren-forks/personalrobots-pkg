@@ -32,143 +32,322 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "ros/ros_slave.h"
-#include "common_flows/FlowPointCloudFloat32.h"
-#include "common_flows/FlowEmpty.h"
+#include "ros/node.h"
+#include "std_msgs/MsgPointCloudFloat32.h"
+#include "std_msgs/MsgEmpty.h"
 #include "cloud_viewer/cloud_viewer.h"
 #include <SDL/SDL.h>
 #include "math.h"
+#include "sdlgl/sdlgl.h"
+#include "rosthread/mutex.h"
+#include <fstream>
+#include <sstream>
+#include <sys/stat.h>
 
-class Cloud_Node : public ROS_Slave
+#include <vector>
+
+struct cloud_point {
+public:
+  float x;
+  float y;
+  float z;
+  float i;
+
+  cloud_point(float _x, float _y, float _z, float _i) : x(_x), y(_y), z(_z), i(_i) {}
+};
+
+class Cloud_Node : public ros::node, public ros::SDLGL
 {
 public:
-  FlowPointCloudFloat32 *cloud;
-  FlowEmpty *shutter;
-  CloudViewer *cloud_viewer;
+  MsgPointCloudFloat32 cloud;
+  MsgEmpty shutter;
+  CloudViewer cloud_viewer;
+
+  int level;
+  int spread;
+
+  vector<cloud_point> buf[2];
+  int buf_read_ind;
+  int buf_use_ind;
+
+  char dir_name[256];
+  int cloud_cnt;
+
+  bool made_dir;
   
+  ros::thread::mutex cloud_mutex;
 
-  int count;
-
-  Cloud_Node() : ROS_Slave(), cloud_viewer(NULL)
+  Cloud_Node() : ros::node("cloud_viewer"), level(20), spread(400), buf_read_ind(0), buf_use_ind(1), cloud_cnt(0), made_dir(false)
   {
-    register_sink(cloud = new FlowPointCloudFloat32("cloud"), ROS_CALLBACK(Cloud_Node, cloud_callback));
-    register_sink(shutter = new FlowEmpty("shutter"), ROS_CALLBACK(Cloud_Node, shutter_callback));
+    subscribe("cloud", cloud, &Cloud_Node::cloud_callback);
+    subscribe("shutter", shutter, &Cloud_Node::shutter_callback);
 
-    cloud_viewer =  new CloudViewer;
+    if (!init_gui(1024, 768))
+      self_destruct();
 
-    count = 0;
+    cloud_viewer.set_opengl_params(1024,768);
 
-    register_with_master();
+    time_t rawtime;
+    struct tm* timeinfo;
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    
+    sprintf(dir_name, "clouds_%.2d%.2d%.2d_%.2d%.2d%.2d", timeinfo->tm_mon + 1, timeinfo->tm_mday,timeinfo->tm_year - 100,timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+    
   }
 
   virtual ~Cloud_Node()
   { 
-    if (cloud_viewer)
-      delete cloud_viewer;
   }
 
-
-  void refresh() {
-    // SDL (and Xlib) don't handle threads well, so we do both of these
-    check_keyboard();
-    display_image();
-  }
-
-  void check_keyboard() {
-    SDL_Event event;
-    while(SDL_PollEvent(&event))
-      {
-	switch(event.type)
-	  {
-	  case SDL_MOUSEMOTION:
-	    cloud_viewer->mouse_motion(event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel);
-	    break;
-	  case SDL_MOUSEBUTTONDOWN:
-	  case SDL_MOUSEBUTTONUP:
-	    {
-	      int button = -1;
-	      switch(event.button.button)
-		{
-		case SDL_BUTTON_LEFT: button = 0; break;
-		case SDL_BUTTON_MIDDLE: button = 1; break;
-		case SDL_BUTTON_RIGHT: button = 2; break;
-		}
-	      cloud_viewer->mouse_button(event.button.x, event.button.y,
-					button, (event.type == SDL_MOUSEBUTTONDOWN ? true : false));
-	      break;
-	    }
-	  case SDL_KEYDOWN:
-	    cloud_viewer->keypress(event.key.keysym.sym);
-	    break;
-	  }
-      }
-  }
-
-  void display_image() {
-    cloud->lock_atom();     // I've commandeered the cloud mutex for my own nefarious purposes
-    cloud_viewer->render();
-    SDL_GL_SwapBuffers();
-    cloud->unlock_atom();
-  }
-
-
-  bool sdl_init()
+  virtual void render()
   {
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,   24);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    const int w = 640, h = 480;
-    if (SDL_SetVideoMode(w, h, 32, SDL_OPENGL | SDL_HWSURFACE) == 0)  {
-      fprintf(stderr, "setvideomode failed: %s\n", SDL_GetError());
-      return false;
+    cloud_mutex.lock();     // I've commandeered the cloud mutex for my own nefarious purposes
+    cloud_viewer.render();
+    cloud_mutex.unlock();
+    SDL_GL_SwapBuffers();
+  }
+
+  virtual void mouse_motion(int x, int y, int dx, int dy, int buttons)
+  {
+    cloud_mutex.lock();
+    cloud_viewer.mouse_motion(x, y, dx, dy);
+    cloud_mutex.unlock();
+    request_render();
+  }
+
+  virtual void mouse_button(int x, int y, int button, bool is_down)
+  {
+    switch(button) {
+    case SDL_BUTTON_LEFT: button = 0; break;
+    case SDL_BUTTON_MIDDLE: button = 1; break;
+    case SDL_BUTTON_RIGHT: button = 2; break;
+    }
+    cloud_mutex.lock();
+    cloud_viewer.mouse_button(x, y, button, is_down);
+    cloud_mutex.unlock();
+    request_render();
+  }
+
+  virtual void keypress(char c, uint16_t u, SDLMod mod)
+  {
+
+    if (c == 91 || c == 93)
+    {
+      if (c == 91 && mod == 0)
+	level -= 5;
+      else if (c == 93 && mod == 0)
+	level += 5;
+      else if (c == 91 && mod == 1)
+	spread -= 5;
+      else if (c == 93 && mod == 1)
+	spread += 5;
+
+      printf("Level: %d, Spread: %d\n",level,spread);
+      refill_cloud();
     }
 
-    cloud_viewer->set_opengl_params(w,h);
+    if (c == SDLK_RETURN) {
+      save();
+    }
 
-    SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);//People expect Key Repeat
-
-    return true;
+    cloud_mutex.lock();
+    cloud_viewer.keypress(c);
+    cloud_mutex.unlock();
+    request_render();
   }
 
   void cloud_callback()
   {
-    for (int i = 0; i < cloud->get_x_size(); i++) {
-      cloud_viewer->add_point(cloud->x[i], cloud->y[i], cloud->z[i],
-			      255,255,255);
+    int intensity_ind = -1;
+
+    for (int i = 0; i < cloud.get_chan_size(); i++)
+      if (cloud.chan[i].name == string("intensities"))
+	intensity_ind = i;
+
+    double intensity;
+
+    for (int i = 0; i < cloud.get_pts_size(); i++)
+    {
+      intensity = 4000;
+      if (intensity_ind != -1)
+	intensity = cloud.chan[intensity_ind].vals[i];
+
+      buf[buf_read_ind].push_back(cloud_point(cloud.pts[i].x, cloud.pts[i].y, cloud.pts[i].z, intensity));
+
     }
+
+    /*
+    int intensity;
+
+    for (int i = 0; i < cloud.get_pts_size(); i++)
+    {
+      if (intensity_ind < 0)
+      {
+	intensity = 0;
+      } else {
+	intensity = level + cloud.chan[intensity_ind].vals[i] / spread;
+	if (intensity > 255)
+	  intensity = 255;
+	else if (intensity < 0)
+	  intensity = 0;
+      }
+
+      cloud_viewer.add_point(-cloud.pts[i].y, -cloud.pts[i].z, cloud.pts[i].x,
+			       intensity, intensity, intensity);
+    }
+    */
+
   }
 
   void shutter_callback()
   {
-    cloud->lock_atom();
-    cloud_viewer->clear_cloud();
-    cloud->unlock_atom();
+
+    buf_use_ind =  buf_read_ind;
+    buf_read_ind = !buf_read_ind;
+
+    buf[buf_read_ind].clear();
+
+    refill_cloud();
   }
 
+  void refill_cloud() 
+  {
+    cloud_mutex.lock();
 
+    cloud_viewer.clear_cloud();
+    
+    double val = 0.0;
+    double valsq = 0.0;
+    int cnt = 0;
+
+    for (int i = 0; i < buf[buf_use_ind].size(); i++) {
+      val += buf[buf_use_ind][i].i;
+      valsq += pow(buf[buf_use_ind][i].i, 2.0);
+      cnt++;
+    }
+    double mean = val / cnt;
+    double std = sqrt( (valsq - cnt*pow(mean, 2.0))/(cnt - 1));
+
+    for (int i = 0; i < buf[buf_use_ind].size(); i++) {
+      float intensity = level + spread * (buf[buf_use_ind][i].i - mean) / (2*std);
+      
+      if (intensity > 255)
+	intensity = 255;
+      else if (intensity < 0)
+	intensity = 0;
+      
+      cloud_viewer.add_point(-buf[buf_use_ind][i].y, -buf[buf_use_ind][i].z, buf[buf_use_ind][i].x,
+			     intensity, intensity, intensity);
+    }
+
+    cloud_mutex.unlock();
+
+    request_render();
+  }
+
+  void save() {
+    
+    printf("Trying to save..\n");
+
+    if (!made_dir) {
+      if (mkdir(dir_name, 0755)) {
+	printf("Failed to make directory: %s\n", dir_name);
+	return;
+      } else {
+	made_dir = true;
+      }
+    }
+
+    std::ostringstream oss;
+    oss << dir_name << "/Cloud" << cloud_cnt++ << ".wrl";
+    ofstream out(oss.str().c_str());
+    
+    out.setf(ios::fixed, ios::floatfield);
+    out.setf(ios::showpoint);
+    out.precision(4);
+
+    double val = 0.0;
+    double valsq = 0.0;
+    int cnt = 0;
+    
+    for (int i = 0; i < buf[buf_use_ind].size(); i++) {
+      val += buf[buf_use_ind][i].i;
+      valsq += pow(buf[buf_use_ind][i].i, 2.0);
+      cnt++;
+    }
+    double mean = val / cnt;
+    double std = sqrt( (valsq - cnt*pow(mean, 2.0))/(cnt - 1));
+
+    out << "#VRML V2.0 utf8" << endl
+	<< "DEF InitView Viewpoint" << endl
+	<< "{" << endl
+	<< "position -2 0 0" << endl
+	<< "orientation 0 1 0 -1.57079633" << endl
+	<< "" << endl
+	<< "}DEF World Transform " << endl
+	<< "{" << endl
+	<< "translation 0 0 0" << endl
+	<< "children  [" << endl
+	<< "DEF Scene Transform" << endl
+	<< "{" << endl
+	<< "translation 0 0 0" << endl
+	<< "children [" << endl
+	<< "Shape" << endl
+	<< "{" << endl
+	<< "geometry PointSet" << endl
+	<< "{" << endl
+	<< "coord Coordinate" << endl
+	<< "{" << endl
+	<< "point[" << endl;
+
+    for (int i = 0; i < buf[buf_use_ind].size(); i++) {
+      out << buf[buf_use_ind][i].x << " " << buf[buf_use_ind][i].z << " " << -buf[buf_use_ind][i].y << ", " << endl;
+    }
+
+    out << "]"
+	<< "}" << endl
+	<< "color Color" << endl
+	<< "{" << endl
+	<< "color[" << endl;
+
+    for (int i = 0; i < buf[buf_use_ind].size(); i++) {
+      float intensity = (level + spread * (buf[buf_use_ind][i].i - mean) / (2*std)) / 255;
+      
+      if (intensity > 255)
+	intensity = 255;
+      else if (intensity < 0)
+	intensity = 0;
+
+      out << intensity << " " << intensity << " " << intensity << "," << endl;
+    }
+
+    out << "]"
+	<< "}" << endl
+	<< "}" << endl
+	<< "}" << endl
+	<< "" << endl
+	<< "]" << endl
+	<< "} # end of scene transform" << endl
+	<< "]" << endl
+	<< "} # end of world transform" << endl;
+
+  }
 
 };
 
+
 int main(int argc, char **argv)
 {
-  if (SDL_Init(SDL_INIT_VIDEO) < 0)
-  {
-    fprintf(stderr, "SDL initialization error: %s\n", SDL_GetError());
-    exit(1);
-  }
+  ros::init(argc, argv);
+
   atexit(SDL_Quit);
 
   Cloud_Node cn;
 
-  if (!cn.sdl_init())
-  {
-    fprintf(stderr, "SDL video startup error: %s\n", SDL_GetError());
-    exit(1);
-  }
+  cn.main_loop();
 
-  while (cn.happy()) {
-    cn.refresh();
-    usleep(1000);
-  }
+  ros::fini();
   return 0;
 }
 

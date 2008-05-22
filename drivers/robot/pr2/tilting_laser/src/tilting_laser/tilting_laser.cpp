@@ -61,7 +61,7 @@ public:
   double min_ang;
   double max_ang;
 
-  TransformReference TR;
+  libTF::TransformReference TR;
 
   ros::time::clock clock;
 
@@ -100,9 +100,11 @@ public:
 
   void scans_callback() {
     encoder.lock();
-    cloud.set_x_size(scans.get_ranges_size());
-    cloud.set_y_size(scans.get_ranges_size());
-    cloud.set_z_size(scans.get_ranges_size());
+    cloud.set_pts_size(scans.get_ranges_size());
+
+    cloud.set_chan_size(1);
+    cloud.chan[0].name = "intensities";
+    cloud.chan[0].set_vals_size(scans.get_ranges_size());
 
     /*
     for (int i = 0; i < scans.get_ranges_size(); i++) {
@@ -130,17 +132,20 @@ public:
     NEWMAT::Matrix rot_points = TR.getMatrix(1,3,clock.ulltime()) * points;
     
     for (uint32_t i = 0; i < scans.get_ranges_size(); i++) {
-      cloud.x[i] = rot_points(1,i+1);
-      cloud.y[i] = rot_points(2,i+1);
-      cloud.z[i] = rot_points(3,i+1);
+      cloud.pts[i].x = rot_points(1,i+1);
+      cloud.pts[i].y = rot_points(2,i+1);
+      cloud.pts[i].z = rot_points(3,i+1);
+      cloud.chan[0].vals[i] = scans.intensities[i];
     }
 
     encoder.unlock();
+
     publish("cloud", cloud);
   }
 
   void encoder_callback() {
     unsigned long long time = clock.ulltime();
+
     TR.setWithEulers(3, 2,
 		     .02, 0, .02,
 		     0.0, 0.0, 0.0,
@@ -151,7 +156,6 @@ public:
 		     time);
 
     motor_control(); // Control on encoder reads sounds reasonable
-    printf("I got some encoder values: %g!\n", encoder.val);
   }
 
   void motor_control() {
@@ -169,7 +173,7 @@ public:
       next_shutter += 0.5;
       publish("shutter", shutter);
     }
-    publish("mot2_cmd",cmd);
+    publish("mot_cmd",cmd);
   }
 
 };
@@ -181,6 +185,7 @@ int main(int argc, char **argv)
   while (tl.ok()) {
     usleep(10000);
   }
+  ros::fini();
   return 0;
 }
 

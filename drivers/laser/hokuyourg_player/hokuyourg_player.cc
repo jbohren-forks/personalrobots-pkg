@@ -110,27 +110,27 @@ class HokuyoNode: public ros::node
     MsgLaserScan scan_msg;
     double min_ang;
     double max_ang;
+
+    int cluster;
+    int skip;
+
     string port;
 
   HokuyoNode() : ros::node("urglaser"), count(0), next_time(0)
     {
       advertise<MsgLaserScan>("scan");
 
-      // TODO: add min/max angle support
-      /*
-      if (!get_double_param(".min_ang", &min_ang))
-	min_ang = -90;
-      printf("Setting min_ang to: %g\n",min_ang);
+      param("min_ang", min_ang, -90.0);
+      min_ang *= M_PI/180;
 
-      if (!get_double_param(".max_ang", &max_ang))
-	max_ang = 90;
-      printf("Setting max_ang to: %g\n",max_ang);
-      */
+      param("max_ang", max_ang, -90.0);
+      max_ang *= M_PI/180;
 
-      if (!has_param("port") || !get_param("port", port))
-	port = "/dev/ttyACM0";
-      printf("Setting port to: %s\n",port.c_str());
+      param("cluster", cluster, 1);
+      param("skip", skip, 1);
 
+      param("port", port, string("/dev/ttyACM0"));
+       
       scan = new urg_laser_scan_t;
       assert(scan);
       running = false;
@@ -157,8 +157,7 @@ class HokuyoNode: public ros::node
 
       urg.urg_cmd("BM");
 
-
-      int status = urg.request_scans(true, -M_PI/2.0, M_PI/2.0);
+      int status = urg.request_scans(true, min_ang, max_ang, cluster, skip);
 
       if (status != 0) {
 	printf("Failed to request scans %d.\n", status);
@@ -180,7 +179,7 @@ class HokuyoNode: public ros::node
 
     int publish_scan()
     {
-      // TODO: add support for pushing readings out
+
 
       //      int status = urg.poll_scan(scan, -M_PI/2.0, M_PI/2.0);
       int status = urg.service_scan(scan);
@@ -198,23 +197,16 @@ class HokuyoNode: public ros::node
 	next_time += 1000000000;
       }
 
-      //      printf("%d readings\n", readings->num_readings);
-
       scan_msg.angle_min = scan->config.min_angle;
       scan_msg.angle_max = scan->config.max_angle;
       scan_msg.angle_increment = scan->config.resolution;
-
-      //      printf("%g %g %g\n", scan.angle_min * 180.0/M_PI, scan.angle_max*180.0/M_PI, scan.angle_increment*180.0/M_PI);
-
       scan_msg.range_max = cfg.max_range;
       scan_msg.set_ranges_size(scan->num_readings);
       scan_msg.set_intensities_size(scan->num_readings);
 
       for(int i = 0; i < scan->num_readings; ++i)
       {
-        //        scan.ranges[i]  = readings->ranges[i] < 20 ? (scan.range_max) : (readings->ranges[i] / 1000.0);
         scan_msg.ranges[i]  = scan->ranges[i];
-        // TODO: add intensity support
         scan_msg.intensities[i] = scan->intensities[i];
       }
       publish("scan", scan_msg);

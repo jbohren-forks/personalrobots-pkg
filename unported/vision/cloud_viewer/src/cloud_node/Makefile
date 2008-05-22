@@ -1,4 +1,4 @@
 SRC = cloud_node.cpp
-OUT = ../../nodes/cloud_node
+OUT = ../../bin/cloud_node
 PKG = cloud_viewer
-include $(shell $(ROS_ROOT)/rospack find roscpp)/make_include/node.mk
+include $(shell rospack find mk)/node.mk

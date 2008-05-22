@@ -69,9 +69,10 @@ public:
 
     for (int i = 0;i < 6;i++) {
       ostringstream oss;
-      oss << ".pulse_per_rad" << i;
+      oss << "pulse_per_rad" << i;
       if (!get_param(oss.str().c_str(), pulse_per_rad[i]))
 	pulse_per_rad[i] = 1591.54943;
+      printf("Using %g pulse_per_rad for motor %d\n", pulse_per_rad[i], i);
     }
 
     ed = new EtherDrive();
@@ -115,6 +116,8 @@ public:
       return false;
     }
 
+    //    printf("%d %d %d\n",ed->get_enc(0), ed->get_cur(0), ed->get_pwm(0));
+   
     for (int i = 0; i < 6; i++) {
       mot[i].val = val[i] / pulse_per_rad[i];
       mot[i].rel = false;
@@ -135,11 +138,14 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   EtherDrive_Node a;
   while (a.ok()) {
+
+    usleep(1000);
     if (!a.do_tick())
     {
       a.log(ros::ERROR,"Etherdrive tick failed.");
       break;
     }
   }
+  ros::fini();
   return 0;
 }

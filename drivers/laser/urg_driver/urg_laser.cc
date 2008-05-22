@@ -151,6 +151,8 @@ urg_laser::close ()
 ///////////////////////////////////////////////////////////////////////////////
 int urg_laser::urg_cmd(const char* cmd, int timeout)
 {
+  printf("Sending CMD: %s\n",cmd);
+
   char buf[100]; 
 
   if (urg_write(cmd) < 0)
@@ -614,8 +616,6 @@ urg_laser::request_scans(bool intensity, double min_ang, double max_ang, int clu
       intensity_char = 'E';
 
     sprintf(cmdbuf,"M%c%.4d%.4d%.2d%.1d%.2d", intensity_char, min_i, max_i, cluster, skip, count);
-
-    printf("Sending command: %s\n", cmdbuf);
 
     status = urg_cmd(cmdbuf, timeout);
 

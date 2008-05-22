@@ -60,6 +60,8 @@ typedef struct urg_laser_scan
   float intensities[MAX_READINGS];
   //! Number of readings
   int num_readings;
+  //! Self reported time
+  int time_stamp;
   //! Configuration of scan
   urg_laser_config_t config;
 } urg_laser_scan_t;
