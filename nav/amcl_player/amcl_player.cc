@@ -373,8 +373,8 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     localizedOdomMsg.pos.x = pdata->pos.px;
     localizedOdomMsg.pos.y = pdata->pos.py;
     localizedOdomMsg.pos.th = pdata->pos.pa;
-    localizedOdomMsg.header.stamp_secs = (unsigned long)floor(hdr->timestamp);
-    localizedOdomMsg.header.stamp_nsecs = 
+    localizedOdomMsg.header.stamp.sec = (unsigned long)floor(hdr->timestamp);
+    localizedOdomMsg.header.stamp.nsec = 
             (unsigned long)rint(1e9 * (hdr->timestamp -
                                        localizedOdomMsg.header.stamp_secs));
     localizedOdomMsg.__timestamp_override = true;
@@ -592,8 +592,8 @@ AmclNode::laserReceived()
     pdata.intensity[i] = this->laserMsg.intensities[i];
   pdata.id = this->laserMsg.header.seq;
 
-  double timestamp = this->laserMsg.header.stamp_secs + 
-          this->laserMsg.header.stamp_nsecs / 1e9;
+  double timestamp = this->laserMsg.header.stamp.sec + 
+          this->laserMsg.header.stamp.nsec / 1e9;
 
   this->Driver::Publish(this->laser_addr,
                         PLAYER_MSGTYPE_DATA,
@@ -618,8 +618,8 @@ AmclNode::odomReceived()
   pdata.vel.pa = this->odomMsg.vel.th;
   pdata.stall = this->odomMsg.stall;
 
-  double timestamp = this->odomMsg.header.stamp_secs + 
-          this->odomMsg.header.stamp_nsecs / 1e9;
+  double timestamp = this->odomMsg.header.stamp.sec + 
+          this->odomMsg.header.stamp.nsec / 1e9;
 
   this->Driver::Publish(this->position2d_addr,
                         PLAYER_MSGTYPE_DATA,
