@@ -87,8 +87,7 @@ Publishes to (name / type):
 
 #include <ros/node.h>
 #include <std_msgs/MsgLaserScan.h>
-#include "rostime/clock.h"
-
+#include "ros/time.h"
 
 class HokuyoNode: public ros::node
 {
@@ -98,12 +97,8 @@ class HokuyoNode: public ros::node
     bool running;
     unsigned int scanid;
 
-    ros::time::clock rosclock;
-
-  int count;
-  unsigned long long next_time;
-
-
+    int count;
+    ros::Time next_time;
 
   public:
     urg_laser urg;
@@ -116,7 +111,7 @@ class HokuyoNode: public ros::node
 
     string port;
 
-  HokuyoNode() : ros::node("urglaser"), count(0), next_time(0)
+    HokuyoNode() : ros::node("urglaser"), count(0)
     {
       advertise<MsgLaserScan>("scan");
 
@@ -160,9 +155,10 @@ class HokuyoNode: public ros::node
       int status = urg.request_scans(true, min_ang, max_ang, cluster, skip);
 
       if (status != 0) {
-	printf("Failed to request scans %d.\n", status);
-	return -1;
+        printf("Failed to request scans %d.\n", status);
+        return -1;
       }
+      next_time = ros::Time::now();
 
       return(0);
     }
@@ -190,11 +186,11 @@ class HokuyoNode: public ros::node
       }
 
       count++;
-      unsigned long long now_time = rosclock.ulltime();
+      ros::Time now_time = ros::Time::now();
       if (now_time > next_time) {
-	std::cout << count << " scans/sec at " << now_time << std::endl;
-	count = 0;
-	next_time += 1000000000;
+        std::cout << count << " scans/sec at " << now_time << std::endl;
+        count = 0;
+        next_time = next_time + ros::Duration(1,0);
       }
 
       scan_msg.angle_min = scan->config.min_angle;
