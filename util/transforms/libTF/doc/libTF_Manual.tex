@@ -294,27 +294,42 @@ NEWMAT::Matrix getMatrix(unsigned int target_frame,
 \end{verbatim}
 
 \paragraph{transform[DATA\_TYPE]}
+\index{libTF API!transform[DATA\_TYPE]}
 For each of the data types above there are accessors to automatically
 transform the data from one frame to another. They are listed below:
 \begin{verbatim}
-  /** Transform a point to a different frame */
-  TFPoint transformPoint(unsigned int target_frame, const TFPoint & point_in);
-  /** Transform a 2D point to a different frame */
-  TFPoint2D transformPoint2D(unsigned int target_frame, const TFPoint2D & point_in);
-  /** Transform a vector to a different frame */
-  TFVector transformVector(unsigned int target_frame, const TFVector & vector_in);
-  /** Transform a 2D vector to a different frame */
-  TFVector2D transformVector2D(unsigned int target_frame, const TFVector2D & vector_in);
-  /** Transform Euler angles between frames */
-  TFEulerYPR transformEulerYPR(unsigned int target_frame, const TFEulerYPR & euler_in);
-  /** Transform Yaw between frames. Useful for 2D navigation */
-  TFYaw transformYaw(unsigned int target_frame, const TFYaw & euler_in);
-  /** Transform a 6DOF pose.  (x, y, z, yaw, pitch, roll). */
-  TFPose transformPose(unsigned int target_frame, const TFPose & pose_in);
-  /** Transform a planar pose, x,y,yaw */
-  TFPose2D transformPose2D(unsigned int target_frame, const TFPose2D & pose_in);
-\end{verbatim}
+/** Transform a point to a different frame */
+TFPoint transformPoint(unsigned int target_frame, 
+                       const TFPoint & point_in);
 
+/** Transform a 2D point to a different frame */
+TFPoint2D transformPoint2D(unsigned int target_frame, 
+                           const TFPoint2D & point_in);
+
+/** Transform a vector to a different frame */
+TFVector transformVector(unsigned int target_frame, 
+                         const TFVector & vector_in);
+
+/** Transform a 2D vector to a different frame */
+TFVector2D transformVector2D(unsigned int target_frame, 
+                             const TFVector2D & vector_in);
+
+/** Transform Euler angles between frames */
+TFEulerYPR transformEulerYPR(unsigned int target_frame, 
+                             const TFEulerYPR & euler_in);
+
+/** Transform Yaw between frames. Useful for 2D navigation */
+TFYaw transformYaw(unsigned int target_frame, 
+                   const TFYaw & euler_in);
+
+/** Transform a 6DOF pose.  (x, y, z, yaw, pitch, roll). */
+TFPose transformPose(unsigned int target_frame, 
+                     const TFPose & pose_in);
+
+/** Transform a planar pose, x,y,yaw */
+TFPose2D transformPose2D(unsigned int target_frame, 
+                         const TFPose2D & pose_in);
+\end{verbatim}
 
 \paragraph{viewChain}
 \index{libTF API!viewChain}
