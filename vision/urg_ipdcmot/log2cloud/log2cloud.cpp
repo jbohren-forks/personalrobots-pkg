@@ -132,7 +132,7 @@ int main(int argc, char **argv)
     else if (pts[i].inten < 0)
       pts[i].inten = 0.0;
     fprintf(out, "%f %f %f %f %f %f\n", pts[i].x, pts[i].y, pts[i].z,
-            pts[i].inten, pts[i].inten, pts[i].inten);
+            pts[i].inten, 1.0 - pts[i].inten, 0.0);
   }
   fclose(out);
   fclose(motor_file);
