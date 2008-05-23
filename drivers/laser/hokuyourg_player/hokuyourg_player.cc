@@ -118,7 +118,7 @@ class HokuyoNode: public ros::node
       param("min_ang", min_ang, -90.0);
       min_ang *= M_PI/180;
 
-      param("max_ang", max_ang, -90.0);
+      param("max_ang", max_ang, 90.0);
       max_ang *= M_PI/180;
 
       param("cluster", cluster, 1);
