@@ -51,16 +51,71 @@ int main(int argc, char **argv)
   imgset.load(argv[1], argc, argv, 2);
   cvNamedWindow(win_name, CV_WINDOW_AUTOSIZE);
   bool done = false;
+  vector<IplImage *> positives;
   for (size_t i = 0; !done && i < imgset.images.size(); i++)
   {
-    IplImage *img = imgset.images[i]->create_annotated_image();
-    cvShowImage(win_name, img);
-    char c = cvWaitKey();
-    if (c == 27)
-      done = true;
-    cvReleaseImage(&img);
+    for (size_t l = 0; !done && l < imgset.images[i]->labels.size(); l++)
+    {
+      labelrect r = imgset.images[i]->labels[l];
+      if (r.name != string("mug"))
+        continue;
+      int diff = fabs(r.h - r.w);
+      int width = imgset.images[i]->image->width;
+      int height = imgset.images[i]->image->height;
+      if (r.w > r.h)
+      {
+        r.y -= diff / 2;
+        r.h += diff;
+      }
+      else if (r.w < r.h)
+      {
+        r.x -= diff / 2;
+        r.w += diff;
+      }
+      if (r.y < 0 || r.x < 0 || r.y + r.h > height || r.x + r.w > width)
+        continue; 
+      CvMat mat;
+      cvGetSubRect(imgset.images[i]->image, &mat, cvRect(r.x, r.y, r.w, r.h));
+      IplImage *positive = cvCreateImage(cvSize(32, 32), IPL_DEPTH_8U, 3);
+      cvResize(&mat, positive);
+      /*
+      cvShowImage(win_name, positive);
+      if ((char)cvWaitKey() == 27)
+        done = true;
+        */
+      /*
+      double minval, maxval;
+      cvMinMaxLoc(positive, &minval, &maxval);
+      if (minval != maxval)
+        cvConvertScale(positive, positive, 255.0 / (maxval - minval), -minval);
+        */
+      //cvNormalize(positive, positive, 0, 255, CV_MINMAX, NULL);
+      positives.push_back(positive);
+      //cvReleaseImage(&positive);
+    }
   }
+  printf("found %d positives\n", positives.size());
+  int np = (int)positives.size();
+  int tile_cols = (int)ceil(sqrt(np));
+  printf("%d tile cols\n", tile_cols);
+  IplImage *poster = cvCreateImage(cvSize(tile_cols * 32, tile_cols * 32), 
+                                   IPL_DEPTH_8U, 3);
+  for (int y = 0; y < tile_cols; y++)
+    for (int x = 0; x < tile_cols && y*tile_cols+x < (int)positives.size(); x++)
+    {
+      cvSetImageROI(poster, cvRect(x*32, y*32, 32, 32));
+      cvCopy(positives[y*tile_cols+x], poster);
+    }
   
+  cvResetImageROI(poster);
+  cvShowImage(win_name, poster);
+  cvWaitKey();
+  cvReleaseImage(&poster);
+
+
+  for (size_t i = 0; i < positives.size(); i++)
+    cvReleaseImage(&positives[i]);
+  positives.clear();
   return 0;
 }
 

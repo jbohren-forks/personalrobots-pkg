@@ -3,6 +3,7 @@
 
 #include "opencv/cv.h"
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -24,6 +25,17 @@ class labeled_image
 public:
   vector<labelrect> labels;
   IplImage *image;
+  IplImage *create_annotated_image();
+};
+
+class labeled_imageset
+{
+public:
+  labeled_imageset();
+  ~labeled_imageset();
+  vector<labeled_image *> images;
+  bool load(const string &labelfile, const vector<string> &imagefiles);
+  bool load(const string &labelfile, int argc, char **argv, int start = 0);
 };
 
 }
