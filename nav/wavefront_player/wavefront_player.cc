@@ -390,8 +390,8 @@ WavefrontNode::odomReceived()
   odom_pose.x = odomMsg.pos.x;
   odom_pose.y = odomMsg.pos.y;
   odom_pose.yaw = odomMsg.pos.th;
-  odom_pose.time = odomMsg.header.stamp_secs * 1000000000ULL + 
-          odomMsg.header.stamp_nsecs;
+  odom_pose.time = odomMsg.header.stamp.sec * 1000000000ULL + 
+          odomMsg.header.stamp.nsec;
   odom_pose.frame = odomMsg.header.frame_id;
 
   try
@@ -409,8 +409,8 @@ WavefrontNode::odomReceived()
            this->pose[0],
            this->pose[1],
            RTOD(this->pose[2]),
-           odomMsg.header.stamp_secs,
-           odomMsg.header.stamp_nsecs);
+           odomMsg.header.stamp.sec,
+           odomMsg.header.stamp.nsec);
   }
   catch(libTF::TransformReference::LookupException& ex)
   {
@@ -442,12 +442,12 @@ WavefrontNode::odomReceived()
         it != this->buffered_laser_scans.end();
         it++)
     {
-      double t0 = prevOdom.header.stamp_secs + 
-              prevOdom.header.stamp_nsecs / 1e9;
-      double t1 = odomMsg.header.stamp_secs + 
-              odomMsg.header.stamp_nsecs / 1e9;
-      double tl = (*it)->header.stamp_secs + 
-              (*it)->header.stamp_nsecs / 1e9;
+      double t0 = prevOdom.header.stamp.sec + 
+              prevOdom.header.stamp.nsec / 1e9;
+      double t1 = odomMsg.header.stamp.sec + 
+              odomMsg.header.stamp.nsec / 1e9;
+      double tl = (*it)->header.stamp.sec + 
+              (*it)->header.stamp.nsec / 1e9;
 
       if(tl < t0)
       {
@@ -496,8 +496,8 @@ WavefrontNode::odomReceived()
       scan->angle_increment = (*it)->angle_increment;
       scan->range_max = (*it)->range_max;
       scan->set_ranges_size((*it)->get_ranges_size());
-      scan->header.stamp_secs = (*it)->header.stamp_secs;
-      scan->header.stamp_nsecs = (*it)->header.stamp_nsecs;
+      scan->header.stamp.sec = (*it)->header.stamp.sec;
+      scan->header.stamp.nsec = (*it)->header.stamp.nsec;
       memcpy(scan->ranges,(*it)->ranges,
              sizeof(float)*(*it)->get_ranges_size());
 
@@ -512,14 +512,14 @@ WavefrontNode::odomReceived()
 
     // Remove anything that's too old
     // Also count how many points we have
-    double currtime = this->odomMsg.header.stamp_secs + 
-            this->odomMsg.header.stamp_nsecs / 1e9;
+    double currtime = this->odomMsg.header.stamp.sec + 
+            this->odomMsg.header.stamp.nsec / 1e9;
     unsigned int hitpt_cnt=0;
     for(std::list<std::pair<MsgPose2DFloat32*,MsgLaserScan*> >::iterator it = this->laser_scans.begin();
         it != this->laser_scans.end();
         it++)
     {
-      double msgtime = it->second->header.stamp_secs + it->second->header.stamp_nsecs / 1e9;
+      double msgtime = it->second->header.stamp.sec + it->second->header.stamp.nsec / 1e9;
       if((currtime - msgtime) > this->laser_buffer_time)
       {
         delete it->first;
