@@ -450,6 +450,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     sj = mapresp.height = mapreq->height;
     mapresp.data_count = mapresp.width * mapresp.height;
     mapresp.data = new int8_t [mapresp.data_count];
+    assert(mapresp.data);
     // Grab the pixels from the map
     for(j = 0; j < sj; j++)
     {
@@ -594,7 +595,11 @@ AmclNode::laserReceived()
   pdata.intensity = new uint8_t[pdata.intensity_count];
   assert(pdata.intensity);
   for(unsigned int i=0;i<pdata.intensity_count;i++)
-    pdata.intensity[i] = this->laserMsg.intensities[i];
+  {
+    // AMCL doesn't care about intensity data
+    //pdata.intensity[i] = this->laserMsg.intensities[i];
+    pdata.intensity[i] = 0;
+  }
   pdata.id = this->laserMsg.header.seq;
 
   double timestamp = this->laserMsg.header.stamp.sec + 
