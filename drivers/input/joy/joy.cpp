@@ -9,6 +9,8 @@
 #define MAX_BUTTONS 4
 #define MAX_AXES 4
 
+using namespace std;
+
 void *s_joy_func(void *);
 using namespace ros;
 
