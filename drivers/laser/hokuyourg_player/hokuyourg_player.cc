@@ -89,6 +89,8 @@ Publishes to (name / type):
 #include <std_msgs/MsgLaserScan.h>
 #include "ros/time.h"
 
+using namespace std;
+
 class HokuyoNode: public ros::node
 {
   private:
