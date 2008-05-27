@@ -25,6 +25,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
+#include <string>
+#include <vector>
+
+using std::string;
+using std::vector;
+using std::pair;
+
 #include "wx/wx.h"
 #include "wxstring.h"
 #include "ros/node.h"

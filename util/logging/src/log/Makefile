@@ -1,5 +1,5 @@
 SRC = log.cpp
-OUT = log
+OUT = ../../bin/log
 PKG = logging
 
 LFLAGS = `wx-config --libs`
