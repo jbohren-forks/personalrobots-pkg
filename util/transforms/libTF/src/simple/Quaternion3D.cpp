@@ -519,7 +519,7 @@ void Quaternion3D::insertNode(const Quaternion3DStorage & new_val)
   data_LL* p_current;
   data_LL* p_old;
 
-  //  cout << "Inserting Node" << endl;
+  //  cout << "Inserting Node " << new_val.time << endl;
 
   //Base case empty list
   if (first == NULL)
@@ -535,9 +535,9 @@ void Quaternion3D::insertNode(const Quaternion3DStorage & new_val)
     {
       //Increment through until at the end of the list or in the right spot
       p_current = first;
-      while (p_current != NULL && first->data.time > new_val.time)
+      while (p_current != NULL && p_current->data.time > new_val.time)
 	{
-	  //cout << "passed beyond " << p_current->data.time << endl;
+	  //  cout << "passed beyond " << p_current->data.time << endl;
 	  p_current = p_current->next;
 	}
       
@@ -663,8 +663,10 @@ int Quaternion3D::findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two
       //Find the one that just exceeds the time or hits the end
       //and then take the previous one
       p_current = first->next; //Start on the 2nd element so if we fail we fall back to the first one
-      while (p_current->next != NULL && p_current->data.time > target_time)
+      //  cout << p_current->data.time << " vs " << target_time << endl;
+      while (p_current->next != NULL && p_current->next->data.time < target_time)
 	{
+	  //	  std::cout << "Skipping over " << p_current->data << endl;
 	  p_current = p_current->next;
 	}
       
