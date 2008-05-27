@@ -69,6 +69,7 @@ $ amcl_player mymap.png 0.1 10.4 31.2 90.0
 Subscribes to (name/type):
 - @b "odom"/RobotBase2DOdom : robot's odometric pose.  Only the position information is used (velocity is ignored).
 - @b "scan"/LaserScan : laser scans.
+- @b "initialpose"/Pose2DFloat32: pose used to (re)initialize particle filter
 
 Publishes to (name / type):
 - @b "localizedpose"/RobotBase2DOdom : robot's localized map pose.  Only the position information is set (no velocity).
@@ -102,6 +103,7 @@ Publishes to (name / type):
 #include <std_msgs/MsgLaserScan.h>
 #include <std_msgs/MsgRobotBase2DOdom.h>
 #include <std_msgs/MsgParticleCloud2D.h>
+#include <std_msgs/MsgPose2DFloat32.h>
 
 // For transform support
 #include <rosTF/rosTF.h>
@@ -149,10 +151,12 @@ class AmclNode: public ros::node, public Driver
     MsgParticleCloud2D particleCloudMsg;
     MsgRobotBase2DOdom odomMsg;
     MsgLaserScan laserMsg;
+    MsgPose2DFloat32 initialPoseMsg;
     
     // Message callbacks
     void odomReceived();
     void laserReceived();
+    void initialPoseReceived();
 
     // These are the devices that amcl offers, and to which we subscribe
     Driver* driver;
@@ -225,6 +229,7 @@ AmclNode::AmclNode(char* fname, double res) :
   advertise<MsgParticleCloud2D>("particlecloud");
   subscribe("odom", odomMsg, &AmclNode::odomReceived);
   subscribe("scan", laserMsg, &AmclNode::laserReceived);
+  subscribe("initialpose", initialPoseMsg, &AmclNode::initialPoseReceived);
 
   // TODO: get map via RPC
   assert(read_map_from_image(&this->sx, &this->sy, &this->mapdata, fname, 0)
@@ -603,6 +608,14 @@ AmclNode::laserReceived()
 
   delete[] pdata.ranges;
   delete[] pdata.intensity;
+}
+
+void 
+AmclNode::initialPoseReceived()
+{
+  this->AmclNode::setPose(this->initialPoseMsg.x,
+                          this->initialPoseMsg.y,
+                          this->initialPoseMsg.th);
 }
 
 void

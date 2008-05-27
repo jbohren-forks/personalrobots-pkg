@@ -63,7 +63,12 @@ $ nav_view mymap.png 0.1 odom:=localizedpose
 Mouse bindings:
 - drag left button: pan view
 - drag right button: zoom view
-- click middle button: send goal
+- click middle button:
+ - 1st click: set goal position
+ - 2nd click: set goal orientation
+- SHIFT + click middle button:
+ - 1st click: set goal position
+ - 2nd click: set goal orientation
 
 <hr>
 
@@ -96,6 +101,7 @@ Publishes to (name / type):
 #include "std_msgs/MsgParticleCloud2D.h"
 #include "std_msgs/MsgPlanner2DGoal.h"
 #include "std_msgs/MsgPolyline2D.h"
+#include "std_msgs/MsgPose2DFloat32.h"
 #include "sdlgl/sdlgl.h"
 
 class NavView : public ros::node, public ros::SDLGL
@@ -106,16 +112,20 @@ public:
   MsgPlanner2DGoal goal;
   MsgPolyline2D pathline;
   MsgPolyline2D laserscan;
+  MsgPose2DFloat32 initialpose;
   float view_scale, view_x, view_y;
   SDL_Surface* map_surface;
   GLuint map_texture;
   double map_res;
   int gwidth, gheight;
+  bool setting_theta;
+  double gx,gy;
 
   NavView() : ros::node("nav_view",false),
     view_scale(10), view_x(0), view_y(0)
   {
     advertise<MsgPlanner2DGoal>("goal");
+    advertise<MsgPose2DFloat32>("initialpose");
     subscribe("odom", odom, &NavView::odom_cb);
     subscribe("particlecloud", cloud, &NavView::odom_cb);
     subscribe("gui_path", pathline, &NavView::odom_cb);
@@ -125,6 +135,7 @@ public:
     init_gui(gwidth, gheight, "nav view");
     glClearColor(1.0,1.0,1.0,0);
     map_surface = NULL;
+    setting_theta = false;
   }
 
   ~NavView()
@@ -248,18 +259,51 @@ public:
   }
   virtual void mouse_button(int x, int y, int button, bool is_down) 
   { 
-    if((button == 2) && !is_down) // middle mouse button; set goal
+    if((button == 2) && !is_down) // middle mouse button
     {
-      // Convert to conventional coords
-      double gx = (x-gwidth/2.0)/view_scale-view_x;
-      double gy = -((y-gheight/2.0)/view_scale+view_y);
-      
-      // Send out the goal
-      goal.goal.x = gx;
-      goal.goal.y = gy;
-      goal.goal.th = 0.0;
-      goal.enable = 1;
-      publish("goal", goal);
+      // If this is the first click, we're setting the position, next click
+      // will give direction
+      if(!setting_theta)
+      {
+        // Convert to conventional coords
+        gx = (x-gwidth/2.0)/view_scale-view_x;
+        gy = -((y-gheight/2.0)/view_scale+view_y);
+
+        setting_theta = true;
+      }
+      else
+      {
+        // Convert to conventional coords
+        double nx = (x-gwidth/2.0)/view_scale-view_x;
+        double ny = -((y-gheight/2.0)/view_scale+view_y);
+
+        // Compute orientation
+        double ga = atan2(ny-gy,nx-gx);
+        
+        // Check modifier keys
+        Uint8* keystate = SDL_GetKeyState(NULL);
+        // If shift is down, set initial pose
+        if(keystate[SDLK_LSHIFT] || keystate[SDLK_RSHIFT])
+        {
+          // Send out the pose
+          initialpose.x = gx;
+          initialpose.y = gy;
+          initialpose.th = ga;
+          publish("initialpose", initialpose);
+        }
+        // No modifiers; set goal
+        else 
+        {
+          // Send out the goal
+          goal.goal.x = gx;
+          goal.goal.y = gy;
+          goal.goal.th = ga;
+          goal.enable = 1;
+          publish("goal", goal);
+        }
+
+        setting_theta = false;
+      }
     }
   }
 };
