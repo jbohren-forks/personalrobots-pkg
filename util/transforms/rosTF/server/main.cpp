@@ -20,6 +20,8 @@ public:
     pTFServer->sendInverseEuler(5,count++,1,1,1,1,1,1,100000,100000);
     pTFServer->sendDH(5,count++,1,1,1,1,100000,100000);
     pTFServer->sendQuaternion(5,count++,1,1,1,1,1,1,1,100000,100000);
+    if (count > 9000)
+      count = 0;
     std::cerr<<count<<std::endl;
   };
 
@@ -40,7 +42,7 @@ int main(int argc, char ** argv)
     {
       //Send some data
       myTestServer.test();
-      //      sleep(1);
+      usleep(1000);
     }
 
   return 0;
