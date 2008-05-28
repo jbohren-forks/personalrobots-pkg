@@ -63,12 +63,12 @@ $ nav_view mymap.png 0.1 odom:=localizedpose
 Mouse bindings:
 - drag left button: pan view
 - drag right button: zoom view
-- click middle button:
+- click middle button (set goal):
  - 1st click: set goal position
  - 2nd click: set goal orientation
-- SHIFT + click middle button:
- - 1st click: set goal position
- - 2nd click: set goal orientation
+- SHIFT + click middle button (set robot pose):
+ - 1st click: set robot position
+ - 2nd click: set robot orientation
 
 <hr>
 
@@ -82,6 +82,7 @@ Subscribes to (name/type):
 
 Publishes to (name / type):
 - @b "goal"/Planner2DGoal : goal for planner.  Sent on middle button click.
+- @b "initialpose"/Pose2DFloat32 : pose to initialize localization system.  Sent on SHIFT + middle button click.
 
 <hr>
 
