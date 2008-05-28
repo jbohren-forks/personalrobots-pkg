@@ -17,7 +17,8 @@ define topurg laser
 
 define erratic position
 (
-  size3 [0.415 0.392 0.25]
+  #size3 [0.415 0.392 0.25]
+  size3 [0.35 0.35 0.25]
   origin3 [-0.05 0 0 0]
   gui_nose 1
   drive "diff"
