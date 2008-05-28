@@ -34,7 +34,7 @@
 #include <curl/curl.h>
 #include <string>
 #include <sstream>
-#include "thread_utils/mutex.h"
+#include "pthread.h"
 
 using namespace std;
 
@@ -67,7 +67,7 @@ private:
   char *image_url, *towp_url, *ccam_url, *comp_url;
 
   stringstream config_ss;
-  ThreadUtils::Mutex config_ss_mutex;
+  pthread_mutex_t config_ss_mutex;
 
   static size_t jpeg_write(void *buf, size_t size, size_t nmemb, void *userp);
   static size_t config_write(void *buf, size_t size, size_t nmemb, void *userp);
@@ -75,4 +75,3 @@ private:
 };
 
 #endif
-

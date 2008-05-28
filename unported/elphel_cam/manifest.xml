@@ -6,8 +6,8 @@ A package to configure and grab images from the Elphel IP-based camera.
 <author>Jeremy Leibs (email: leibs@willowgarage.com)</author>
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
-<depend package="common_flows"/>
-<depend package="thread_utils"/>
-<depend package="simple_sdl_gui"/>
+<export>
+  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lelphel_cam -lcurl"/>
+</export>
 </package>
 

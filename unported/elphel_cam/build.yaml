@@ -1,5 +1,0 @@
-cpp:
-  make:
-    - src/libelphel_cam
-    - src/elphel_cam
-    - test/test_cam

@@ -34,8 +34,12 @@
 
 Elphel_Cam::Elphel_Cam(string ip) : ip(ip)
 {
+
   jpeg_buf = NULL;
   jpeg_buf_size = 0;
+
+  pthread_mutex_init(&config_ss_mutex, NULL);
+
   curl_global_init(0);
 
   //URL to get next image, and increment pointer
@@ -117,10 +121,10 @@ bool Elphel_Cam::next_jpeg(uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_
 
 bool Elphel_Cam::config_cmd(string url, string cmd)
 {
-  config_ss_mutex.lock();
+  pthread_mutex_lock(&config_ss_mutex);
   config_ss.clear(); // reset stringstream state so we can insert into it again
   config_ss.str("");
-  config_ss_mutex.unlock();
+  pthread_mutex_unlock(&config_ss_mutex);
 
   ostringstream oss;
   oss << url << cmd;
@@ -250,8 +254,8 @@ size_t Elphel_Cam::config_write(void *buf, size_t size, size_t nmemb, void *user
   if (size * nmemb == 0)
     return 0;
   Elphel_Cam *a = (Elphel_Cam *)userp;
-  a->config_ss_mutex.lock();
+  pthread_mutex_lock(&a->config_ss_mutex);
   a->config_ss << string((char *)buf, size*nmemb);
-  a->config_ss_mutex.unlock();
+  pthread_mutex_unlock(&a->config_ss_mutex);
   return size*nmemb;
 }
