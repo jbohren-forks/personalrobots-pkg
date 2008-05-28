@@ -101,7 +101,7 @@ Publishes to (name / type):
 #include "std_msgs/MsgRobotBase2DOdom.h"
 #include "std_msgs/MsgParticleCloud2D.h"
 #include "std_msgs/MsgPlanner2DGoal.h"
-#include "std_msgs/MsgPlanner2DState.h"
+//#include "std_msgs/MsgPlanner2DState.h"
 #include "std_msgs/MsgPolyline2D.h"
 #include "std_msgs/MsgPose2DFloat32.h"
 #include "sdlgl/sdlgl.h"
@@ -112,7 +112,7 @@ public:
   MsgRobotBase2DOdom odom;
   MsgParticleCloud2D cloud;
   MsgPlanner2DGoal goal;
-  MsgPlanner2DState pstate;
+  //MsgPlanner2DState pstate;
   MsgPolyline2D pathline;
   MsgPolyline2D laserscan;
   MsgPose2DFloat32 initialpose;
@@ -129,7 +129,7 @@ public:
   {
     advertise<MsgPlanner2DGoal>("goal");
     advertise<MsgPose2DFloat32>("initialpose");
-    subscribe("state", pstate, &NavView::pstate_cb);
+    //subscribe("state", pstate, &NavView::pstate_cb);
     subscribe("odom", odom, &NavView::odom_cb);
     subscribe("particlecloud", cloud, &NavView::odom_cb);
     subscribe("gui_path", pathline, &NavView::odom_cb);
@@ -156,6 +156,7 @@ public:
     request_render();
   }
 
+  /*
   void pstate_cb()
   {
     printf("Planner state: %d %d %d (%.3f %.3f %.3f)\n", 
@@ -166,6 +167,7 @@ public:
            pstate.pos.y,
            pstate.pos.th);
   }
+  */
   void render()
   {
     glClear(GL_COLOR_BUFFER_BIT);
@@ -345,6 +347,7 @@ int main(int argc, char **argv)
   double res=0.0;
 
   signal(SIGINT, quit);
+  signal(SIGPIPE, SIG_IGN);
 
   ros::init(argc, argv);
   
@@ -360,6 +363,7 @@ int main(int argc, char **argv)
   if(fname)
     view.load_map(fname,res);
   view.main_loop();
+  ros::fini();
   return 0;
 }
 
