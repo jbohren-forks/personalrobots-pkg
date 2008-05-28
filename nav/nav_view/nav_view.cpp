@@ -101,6 +101,7 @@ Publishes to (name / type):
 #include "std_msgs/MsgRobotBase2DOdom.h"
 #include "std_msgs/MsgParticleCloud2D.h"
 #include "std_msgs/MsgPlanner2DGoal.h"
+#include "std_msgs/MsgPlanner2DState.h"
 #include "std_msgs/MsgPolyline2D.h"
 #include "std_msgs/MsgPose2DFloat32.h"
 #include "sdlgl/sdlgl.h"
@@ -111,6 +112,7 @@ public:
   MsgRobotBase2DOdom odom;
   MsgParticleCloud2D cloud;
   MsgPlanner2DGoal goal;
+  MsgPlanner2DState pstate;
   MsgPolyline2D pathline;
   MsgPolyline2D laserscan;
   MsgPose2DFloat32 initialpose;
@@ -127,6 +129,7 @@ public:
   {
     advertise<MsgPlanner2DGoal>("goal");
     advertise<MsgPose2DFloat32>("initialpose");
+    subscribe("state", pstate, &NavView::pstate_cb);
     subscribe("odom", odom, &NavView::odom_cb);
     subscribe("particlecloud", cloud, &NavView::odom_cb);
     subscribe("gui_path", pathline, &NavView::odom_cb);
@@ -151,6 +154,17 @@ public:
   void odom_cb()
   {
     request_render();
+  }
+
+  void pstate_cb()
+  {
+    printf("Planner state: %d %d %d (%.3f %.3f %.3f)\n", 
+           pstate.active,
+           pstate.valid,
+           pstate.done,
+           pstate.pos.x,
+           pstate.pos.y,
+           pstate.pos.th);
   }
   void render()
   {
