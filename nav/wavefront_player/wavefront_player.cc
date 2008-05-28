@@ -265,6 +265,7 @@ main(int argc, char** argv)
     wn.sleep(curr.tv_sec+curr.tv_usec/1e6);
   }
   ros::fini();
+  //exit(0);
   return(0);
 }
 
@@ -550,10 +551,11 @@ WavefrontNode::odomReceived()
         it++)
     {
       /*
-      printf("%.3f %.3f %.3f\n", 
+      printf("%.3f %.3f %.3f: %d\n", 
              it->first->x,
              it->first->y,
-             it->first->th);
+             it->first->th,
+             it->second->get_ranges_size());
              */
       float b=it->second->angle_min;
       float* r=it->second->ranges;
@@ -561,7 +563,11 @@ WavefrontNode::odomReceived()
           j<it->second->get_ranges_size();
           j++,r++,b+=it->second->angle_increment)
       {
-        if(((*r) >= this->laser_maxrange) || ((*r) >= it->second->range_max))
+        // TODO: take out the bogus epsilon range_max check, after the
+        // hokuyourg_player node is fixed
+        if(((*r) >= this->laser_maxrange) || 
+           ((it->second->range_max > 0.1) && ((*r) >= it->second->range_max)) ||
+           ((*r) <= 0.01))
           continue;
 
         // Project into laser frame
@@ -585,13 +591,15 @@ WavefrontNode::odomReceived()
         wy = it->first->y + sn*rx + cs*ry;
 
         assert(this->laser_hitpts_len*2 < this->laser_hitpts_size);
-        *(pts++) = wx;
-        *(pts++) = wy;
+        *pts = wx;
+        pts++;
+        *pts = wy;
+        pts++;
         this->laser_hitpts_len++;
       }
     }
 
-    //printf("setting %d hit points\n", this->scan_points_count);
+    //printf("setting %d hit points\n", this->laser_hitpts_len);
     plan_set_obstacles(this->plan, this->laser_hitpts, this->laser_hitpts_len);
 
     // Draw the points

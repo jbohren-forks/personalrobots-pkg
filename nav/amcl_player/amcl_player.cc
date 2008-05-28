@@ -225,11 +225,14 @@ AmclNode::AmclNode(char* fname, double res) :
   // TODO: remove XDR dependency
   playerxdr_ftable_init();
 
+  puts("advertising");
   advertise<MsgRobotBase2DOdom>("localizedpose");
   advertise<MsgParticleCloud2D>("particlecloud");
+  puts("subscribing");
   subscribe("odom", odomMsg, &AmclNode::odomReceived);
   subscribe("scan", laserMsg, &AmclNode::laserReceived);
   subscribe("initialpose", initialPoseMsg, &AmclNode::initialPoseReceived);
+  puts("done");
 
   // TODO: get map via RPC
   assert(read_map_from_image(&this->sx, &this->sy, &this->mapdata, fname, 0)
@@ -566,9 +569,9 @@ AmclNode::setPose(double x, double y, double a)
   p.mean.py = y;
   p.mean.pa = a;
 
-  p.cov[0] = 0.5*0.5;
-  p.cov[1] = 0.5*0.5;
-  p.cov[2] = (M_PI/6.0)*(M_PI/6.0);
+  p.cov[0] = 0.25*0.25;
+  p.cov[1] = 0.25*0.25;
+  p.cov[2] = (M_PI/12.0)*(M_PI/12.0);
 
   this->ldevice->PutMsg(this->Driver::InQueue,
                         PLAYER_MSGTYPE_REQ,
@@ -585,7 +588,11 @@ AmclNode::laserReceived()
   pdata.min_angle = this->laserMsg.angle_min;
   pdata.max_angle = this->laserMsg.angle_max;
   pdata.resolution = this->laserMsg.angle_increment;
-  pdata.max_range = this->laserMsg.range_max;
+  // HACK, until the hokuyourg_player node is fixed
+  if(this->laserMsg.range_max > 0.1)
+    pdata.max_range = this->laserMsg.range_max;
+  else
+    pdata.max_range = 30.0;
   pdata.ranges_count = this->laserMsg.get_ranges_size();
   pdata.ranges = new float[pdata.ranges_count];
   assert(pdata.ranges);

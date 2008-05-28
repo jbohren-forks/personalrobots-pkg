@@ -309,6 +309,8 @@ main(int argc, char** argv)
   // Stop the robot
   en.stop();
 
+  ros::fini();
+
   // To quote Morgan, Hooray!
   return(0);
 }
