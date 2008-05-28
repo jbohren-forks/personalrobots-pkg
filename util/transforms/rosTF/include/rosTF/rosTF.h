@@ -95,7 +95,7 @@ class rosTFServer
   //ros::node reference to allow setting callbacks
   ros::node & myNode;
   //Temp variables for in transit. (todo check threadsafe? make scoped in call?)
-  MsgTransformEuler eulerOut;
+  //  MsgTransformEuler eulerOut;
   MsgTransformDH dhOut;
   MsgTransformQuaternion quaternionOut;
 

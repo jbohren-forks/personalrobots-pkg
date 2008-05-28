@@ -17,8 +17,10 @@ public:
   // A function to call to send data periodically
   void test () {
     pTFServer->sendEuler(5,count++,1,1,1,1,1,1,100000,100000);
+    pTFServer->sendInverseEuler(5,count++,1,1,1,1,1,1,100000,100000);
     pTFServer->sendDH(5,count++,1,1,1,1,100000,100000);
     pTFServer->sendQuaternion(5,count++,1,1,1,1,1,1,1,100000,100000);
+    std::cerr<<count<<std::endl;
   };
 
 private:
@@ -38,7 +40,7 @@ int main(int argc, char ** argv)
     {
       //Send some data
       myTestServer.test();
-      sleep(1);
+      //      sleep(1);
     }
 
   return 0;

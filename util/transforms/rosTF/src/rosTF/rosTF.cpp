@@ -72,6 +72,7 @@ rosTFServer::rosTFServer(ros::node & rosnode):
 
 void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs)
 {
+  MsgTransformEuler eulerOut;
   eulerOut.frame = frame;
   eulerOut.parent = parent;
   eulerOut.x = x;
@@ -88,7 +89,8 @@ void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, d
 };
 
 void rosTFServer::sendInverseEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs)
-{
+{ 
+  MsgTransformEuler eulerOut;
   //Invert the transform
   libTF::Euler3D odomeuler = libTF::Pose3D::eulerFromMatrix(libTF::Pose3D::matrixFromEuler(x, y, z, yaw, pitch, roll).i());
   
