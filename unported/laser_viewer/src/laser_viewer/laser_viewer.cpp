@@ -85,6 +85,8 @@ Publishes to (name / type):
 #include <sstream>
 #include <sys/stat.h>
 
+using namespace std;
+
 class Laser_Viewer : public ros::node
 {
 public:
