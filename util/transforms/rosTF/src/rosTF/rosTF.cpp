@@ -86,11 +86,40 @@ void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, d
   myNode.publish("TransformEuler", eulerOut);
 
 };
-void rosTFServer::sendEuler(libTF::TFPose pose, unsigned int parent)
+
+void rosTFServer::sendInverseEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs)
+{
+  //Invert the transform
+  libTF::Euler3D odomeuler = libTF::Pose3D::eulerFromMatrix(libTF::Pose3D::matrixFromEuler(x, y, z, yaw, pitch, roll).i());
+  
+  eulerOut.frame = frame;
+  eulerOut.parent = parent;
+  eulerOut.x = odomeuler.x;
+  eulerOut.y = odomeuler.y;
+  eulerOut.z = odomeuler.z;
+  eulerOut.yaw = odomeuler.yaw;
+  eulerOut.pitch = odomeuler.pitch;
+  eulerOut.roll = odomeuler.roll;
+  eulerOut.header.stamp.sec = secs;
+  eulerOut.header.stamp.nsec = nsecs;
+
+  myNode.publish("TransformEuler", eulerOut);
+ 
+};
+
+void rosTFServer::sendPose(libTF::TFPose pose, unsigned int parent)
 {
   unsigned int nsecs = pose.time % 1000000000;
   unsigned int secs = (pose.time - nsecs) / 1000000000;
   sendEuler(pose.frame, parent, pose.x, pose.y, pose.z, pose.yaw, pose.pitch, pose.roll, secs, nsecs);  
+};
+
+
+void rosTFServer::sendInversePose(libTF::TFPose pose, unsigned int parent)
+{
+  unsigned int nsecs = pose.time % 1000000000;
+  unsigned int secs = (pose.time - nsecs) / 1000000000;
+  sendInverseEuler(pose.frame, parent, pose.x, pose.y, pose.z, pose.yaw, pose.pitch, pose.roll, secs, nsecs);  
 };
 
 
