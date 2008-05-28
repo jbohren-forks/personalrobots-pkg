@@ -265,7 +265,6 @@ main(int argc, char** argv)
     wn.sleep(curr.tv_sec+curr.tv_usec/1e6);
   }
   ros::fini();
-  //exit(0);
   return(0);
 }
 
@@ -599,9 +598,6 @@ WavefrontNode::odomReceived()
       }
     }
 
-    //printf("setting %d hit points\n", this->laser_hitpts_len);
-    plan_set_obstacles(this->plan, this->laser_hitpts, this->laser_hitpts_len);
-
     // Draw the points
 
     this->pointcloudMsg.set_points_size(hitpt_cnt/2);
@@ -694,6 +690,11 @@ WavefrontNode::doOneCycle()
           this->planner_state = REACHED_GOAL;
           break;
         }
+
+        //printf("setting %d hit points\n", this->laser_hitpts_len);
+        plan_set_obstacles(this->plan, 
+                           this->laser_hitpts, 
+                           this->laser_hitpts_len);
 
         // Try a local plan
         if((this->planner_state == NEW_GOAL) ||
