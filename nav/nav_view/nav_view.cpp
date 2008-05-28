@@ -289,6 +289,10 @@ public:
           initialpose.x = gx;
           initialpose.y = gy;
           initialpose.th = ga;
+          printf("setting pose: %.3f %.3f %.3f\n",
+                 initialpose.x,
+                 initialpose.y,
+                 initialpose.th);
           publish("initialpose", initialpose);
         }
         // No modifiers; set goal
@@ -299,6 +303,10 @@ public:
           goal.goal.y = gy;
           goal.goal.th = ga;
           goal.enable = 1;
+          printf("setting goal: %.3f %.3f %.3f\n",
+                 goal.goal.x,
+                 goal.goal.y,
+                 goal.goal.th);
           publish("goal", goal);
         }
 
