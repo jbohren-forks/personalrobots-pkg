@@ -46,12 +46,11 @@ consult <a href="http://playerstage.sourceforge.net/doc/Player-cvs/player/group_
 
 @section usage Usage
 @verbatim
-$ amcl_player <map> <res> <x> <y> <th> [standard ROS args]
+$ amcl_player <map> <res> [standard ROS args]
 @endverbatim
 
 @param map An image file to load as an occupancy grid map.  The robot will be localized against this map using laser scans.  The lower-left pixel of the map is assigned the pose (0,0,0).
 @param res The resolution of the map, in meters, pixel.
-@param (x,y,th) Approximate pose of robot, used to initialize particle filter.  Units are (meters,meters,degrees).
 
 @todo Remove the map and res arguments in favor map retrieval via ROSRPC.
 @todo Remove the x,y,th arguments and expose the particle filter initialization via a ROS topic.
@@ -179,12 +178,12 @@ class AmclNode: public ros::node, public Driver
     double resolution;
 };
 
-#define USAGE "USAGE: amcl_player <map.png> <res> <x> <y> <a>"
+#define USAGE "USAGE: amcl_player <map.png> <res>"
 
 int
 main(int argc, char** argv)
 {
-  if(argc < 6)
+  if(argc < 3)
   {
     puts(USAGE);
     exit(-1);
@@ -193,7 +192,6 @@ main(int argc, char** argv)
   ros::init(argc, argv);
 
   AmclNode an(argv[1],atof(argv[2]));
-  assert(an.setPose(atof(argv[3]),atof(argv[4]),DTOR(atof(argv[5]))) == 0);
 
   // Start up the robot
   if(an.start() != 0)
