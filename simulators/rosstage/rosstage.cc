@@ -236,10 +236,10 @@ StageNode::Update()
     }
 
     this->laserMsg.header.stamp.sec = 
-            (unsigned long)floor(world->SimTimeNow() / 1e6);
+            (unsigned long)floor(world->SimTimeNow() / 1e3);
     this->laserMsg.header.stamp.nsec = 
-            (unsigned long)rint(1e3 * (world->SimTimeNow() - 
-                                       this->laserMsg.header.stamp.sec * 1e6));
+            (unsigned long)rint(1e6 * (world->SimTimeNow() - 
+                                       this->laserMsg.header.stamp.sec * 1e3));
     this->laserMsg.__timestamp_override = true;
     publish("scan",this->laserMsg);
   }
@@ -258,10 +258,10 @@ StageNode::Update()
   this->odomMsg.header.frame_id = 2;
 
   this->odomMsg.header.stamp.sec = 
-          (unsigned long)floor(world->SimTimeNow() / 1e6);
+          (unsigned long)floor(world->SimTimeNow() / 1e3);
   this->odomMsg.header.stamp.nsec = 
-          (unsigned long)rint(1e3 * (world->SimTimeNow() - 
-                                     this->odomMsg.header.stamp.sec * 1e6));
+          (unsigned long)rint(1e6 * (world->SimTimeNow() - 
+                                     this->odomMsg.header.stamp.sec * 1e3));
   this->odomMsg.__timestamp_override = true;
   publish("odom",this->odomMsg);
 
