@@ -83,6 +83,7 @@ class rosTFServer
   rosTFServer(ros::node & rosnode);
   /** \brief Send a Transform with Euler Angles */
   void sendEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs);
+  void sendEuler(libTF::TFPose pose, unsigned int parent);
   /** \brief Send a transform using DH Parameters */
   void sendDH(unsigned int frame, unsigned int parent, double length, double twist, double offset, double angle, unsigned int secs, unsigned int nsecs);
   /** \brief Send a transform using Quaternion notation */

@@ -86,6 +86,12 @@ void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, d
   myNode.publish("TransformEuler", eulerOut);
 
 };
+void rosTFServer::sendEuler(libTF::TFPose pose, unsigned int parent)
+{
+  unsigned int nsecs = pose.time % 1000000000;
+  unsigned int secs = (pose.time - nsecs) / 1000000000;
+  sendEuler(pose.frame, parent, pose.x, pose.y, pose.z, pose.yaw, pose.pitch, pose.roll, secs, nsecs);  
+};
 
 
 void rosTFServer::sendDH(unsigned int frame, unsigned int parent, double length, double twist, double offset, double angle, unsigned int secs, unsigned int nsecs)
