@@ -16,6 +16,9 @@ SDL: SDL-1.2.13
 	cd SDL-1.2.13 && make && make install
 
 clean:
-	-rm -rf SDL-1.2.13 SDL SDL-1.2.13.tar.gz
+	-rm -rf SDL-1.2.13 SDL 
 
-.PHONY : clean
+wipe: clean
+	rm -rf SDL-1.2.13.tar.gz
+
+.PHONY : clean wipe

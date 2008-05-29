@@ -11,5 +11,8 @@ player: player-svn
 	touch player
 
 clean:
+	cd player-svn/build && make clean
+	rm -rf player
+wipe:
 	rm -rf player-svn player
 

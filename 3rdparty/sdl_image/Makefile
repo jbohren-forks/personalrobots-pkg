@@ -16,6 +16,9 @@ SDL_image: SDL_image-1.2.6
 	mv SDL_image/include/SDL/SDL_image_mod.h SDL_image/include/SDL/SDL_image.h
 
 clean:
-	-rm -rf SDL_image-1.2.6.tar.gz SDL_image-1.2.6 SDL_image
+	-rm -rf SDL_image-1.2.6 SDL_image
 
-.PHONY : clean
+wipe: clean
+	rm -rf SDL_image-1.2.6.tar.gz 
+
+.PHONY : clean wipe

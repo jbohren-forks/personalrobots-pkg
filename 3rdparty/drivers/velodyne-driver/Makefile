@@ -14,7 +14,7 @@ clean:
 	-rm -rf velodynedriver-1.0 velodyne-driver
 	rm -f *~
 
-.PHONY : clean
+.PHONY : clean wipe
 
 wipe: clean
 	rm -f velodyne-driver-1.0.tar.gz

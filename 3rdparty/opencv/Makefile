@@ -24,6 +24,9 @@ opencv: opencv-1.0.0
 	touch opencv
 
 clean:
-	-rm -rf opencv opencv-1.0.0 opencv-1.0.0.tar.gz
+	-rm -rf opencv opencv-1.0.0 
+
+wipe:
+	rm -rf opencv-1.0.0.tar.gz
 
 .PHONY : clean download ffmpeg

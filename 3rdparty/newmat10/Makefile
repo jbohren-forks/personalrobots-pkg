@@ -14,6 +14,9 @@ newmat/newmat10: newmat/newmat_1.10.4/newmat10.tar.gz
 	mv newmat/newmat_1.10.4 newmat/newmat10
 
 clean: 
+	rm -rf newmat/newmat10
+
+wipe: clean
 	rm -rf newmat
 
-.PHONY : clean
+.PHONY : clean wipe

@@ -10,4 +10,8 @@ stage-build: stage-checkout
 	cd stage-svn && make install
 
 clean:
-	rm -rf stage-svn stage
+	cd stage-svn && make clean
+	rm -rf stage
+
+wipe: clean
+	rm -rf stage-svn

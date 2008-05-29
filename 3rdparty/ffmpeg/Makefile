@@ -13,6 +13,9 @@ ffmpeg: ffmpeg-latest
 	cd ffmpeg/include/ffmpeg && ln -s ../libavformat/avformat.h avformat.h
 
 clean:
-	-rm -rf ffmpeg ffmpeg-latest
+	-rm -rf ffmpeg 
 
-.PHONY : clean
+wipe: clean
+	rm -rf ffmpeg-latest
+
+.PHONY : clean wipe

@@ -14,7 +14,7 @@ clean:
 	-rm -rf sicktoolbox-1.0 sicktoolbox
 	rm -f *~
 
-.PHONY : clean
+.PHONY : clean wipe
 
 wipe: clean
 	rm -f sicktoolbox-1.0.tar.gz
