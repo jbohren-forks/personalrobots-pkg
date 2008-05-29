@@ -1,2 +1,1 @@
-Pid.o: Pid.cpp /u/mwise/ros_packages//controllers/include/Pid.h
-timer.o: timer.cpp /u/mwise/ros_packages//controllers/include/timer.h
+Pid.o: Pid.cpp /u/mwise/pr_project/ros-pkg/controllers/include/Pid.h
