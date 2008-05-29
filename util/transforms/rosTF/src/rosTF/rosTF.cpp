@@ -32,14 +32,17 @@
 
 #include "rosTF/rosTF.h"
 
-rosTFClient::rosTFClient(ros::node & rosnode):
+rosTFClient::rosTFClient(ros::node & rosnode, bool caching):
+  TransformReference(caching),
   myNode(rosnode)
 {
-  myNode.subscribe("TransformEuler", eulerIn, &rosTFClient::receiveEuler, this);
+  myNode.subscribe("TransformEuler", eulerIn, &rosTFClient::receiveEuler, this,100);
   myNode.subscribe("TransformDH", dhIn, &rosTFClient::receiveDH, this);
   myNode.subscribe("TransformQuaternion", quaternionIn, &rosTFClient::receiveQuaternion, this);
 
 };
+
+
 
 void rosTFClient::receiveEuler()
 {

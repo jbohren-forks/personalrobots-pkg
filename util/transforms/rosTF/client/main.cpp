@@ -3,18 +3,22 @@
 class testListener : public ros::node
 {
 public:
-  //constructor with name
-  testListener() : ros::node("client") {
-    pClient = new rosTFClient(*this);
-  };
 
+  rosTFClient tf;
+  
+  //constructor with name
+  testListener() : 
+    ros::node("client"),  
+    tf(*this) 
+  {
+  
+  };
+  
   ~testListener()
   {
+    
     ros::fini();
   };
-
-  //A pointer to the client library object  
-  rosTFClient * pClient;
 
 };
 

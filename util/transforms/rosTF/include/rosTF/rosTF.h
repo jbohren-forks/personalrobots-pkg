@@ -45,6 +45,13 @@
 #include "std_msgs/MsgTransformQuaternion.h"
 #include "libTF/libTF.h"
 
+
+//TODO FIXME REMOVE WHEN FRAME ID SERVER IS IMPLEMENTED
+#define FRAMEID_MAP 1
+#define FRAMEID_ROBOT 2
+#define FRAMEID_ODOM 3
+#define FRAMEID_LASER 4
+
 /** \brief A basic ROS client library for libTF
  * This inherits from libTF and will automatically
  * push incoming date into the library.  
@@ -54,7 +61,7 @@ class rosTFClient : public libTF::TransformReference
 {
  public:
   //Constructor
-  rosTFClient(ros::node & rosnode);
+  rosTFClient(ros::node & rosnode, bool caching = true);
 
   //Call back functions
   void receiveEuler();

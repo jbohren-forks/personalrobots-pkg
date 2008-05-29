@@ -31,6 +31,7 @@
 //POSSIBILITY OF SUCH DAMAGE.
 
 #include "libTF/libTF.h"
+#include <assert.h>
 
 using namespace libTF;
 
@@ -46,6 +47,10 @@ TransformReference::TransformReference(bool caching, ULLtime cache_time):
   cache_time(cache_time),
   caching (caching)
 {
+
+  frames = new RefFrame*[MAX_NUM_FRAMES];
+  assert(frames);
+
   /* initialize pointers to NULL */
   for (unsigned int i = 0; i < MAX_NUM_FRAMES; i++)
     {
@@ -54,10 +59,22 @@ TransformReference::TransformReference(bool caching, ULLtime cache_time):
   return;
 }
 
+TransformReference::~TransformReference()
+{
+  /* initialize pointers to NULL */
+  for (unsigned int i = 0; i < MAX_NUM_FRAMES; i++)
+    {
+      if (frames[i] != NULL)
+	delete frames[i];
+    }
+  
+  delete[] frames;
+};
+
 
 void TransformReference::setWithEulers(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d,double e,double f, ULLtime time)
 {
-  if (frameID > MAX_NUM_FRAMES || parentID > MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
+  if (frameID >= MAX_NUM_FRAMES || parentID >= MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
     throw InvalidFrame;
   
   if (frames[frameID] == NULL)
@@ -69,7 +86,7 @@ void TransformReference::setWithEulers(unsigned int frameID, unsigned int parent
 
 void TransformReference::setWithDH(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d, ULLtime time)
 {
-  if (frameID > MAX_NUM_FRAMES || parentID > MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
+  if (frameID >= MAX_NUM_FRAMES || parentID >= MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
     throw InvalidFrame;
   
   if (frames[frameID] == NULL)
@@ -82,7 +99,7 @@ void TransformReference::setWithDH(unsigned int frameID, unsigned int parentID, 
 
 void TransformReference::setWithMatrix(unsigned int frameID, unsigned int parentID, const NEWMAT::Matrix & matrix_in, ULLtime time)
 {
-  if (frameID > MAX_NUM_FRAMES || parentID > MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
+  if (frameID >=MAX_NUM_FRAMES || parentID >=MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
     throw InvalidFrame;
   
   //TODO check and throw exception if matrix wrong size
@@ -96,7 +113,7 @@ void TransformReference::setWithMatrix(unsigned int frameID, unsigned int parent
 
 void TransformReference::setWithQuaternion(unsigned int frameID, unsigned int parentID, double xt, double yt, double zt, double xr, double yr, double zr, double w, ULLtime time)
 {
-  if (frameID > MAX_NUM_FRAMES || parentID > MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
+  if (frameID >=MAX_NUM_FRAMES || parentID >=MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
     throw InvalidFrame;
   
   if (frames[frameID] == NULL)
@@ -301,7 +318,7 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
 	break;
 
       //Check that we arn't going somewhere illegal 
-      if (getFrame(frame)->getParent() > MAX_NUM_FRAMES) throw InvalidFrame;
+      if (getFrame(frame)->getParent() >=MAX_NUM_FRAMES) throw InvalidFrame;
 
       // Descent to parent frame
       frame = getFrame(frame)->getParent();
@@ -322,7 +339,7 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
 	break;
 
       //Check that we aren't going somewhere illegal
-      if (getFrame(frame)->getParent() > MAX_NUM_FRAMES) throw InvalidFrame;
+      if (getFrame(frame)->getParent() >=MAX_NUM_FRAMES) throw InvalidFrame;
 
       //Descent to parent frame
       frame = getFrame(frame)->getParent();

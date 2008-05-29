@@ -154,7 +154,8 @@ public:
   /** Constructors **/
   // Standard constructor max_cache_time is how long to cache transform data
   Quaternion3D(bool caching = true, unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME);
-  
+  ~Quaternion3D();  
+
   /** Mutators **/
   // Set the values manually
   void addFromQuaternion(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time);
@@ -184,11 +185,13 @@ public:
   
 private:
   /**** Linked List stuff ****/
- 
+
+  struct data_LL;
+
   struct data_LL{
     Quaternion3DStorage data;
-    data_LL * next;
-    data_LL * previous;
+    struct data_LL * next;
+    struct data_LL * previous;
   };
 
   bool getValue(Quaternion3DStorage& buff, unsigned long long time, long long  &time_diff);

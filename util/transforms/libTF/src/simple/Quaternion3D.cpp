@@ -32,6 +32,8 @@
 //
 #include "libTF/Quaternion3D.h"
 
+#include <assert.h>
+
 using namespace libTF;
 
 Euler3D::Euler3D():x(0),y(0),z(0),yaw(0),pitch(0),roll(0) {;};
@@ -57,6 +59,23 @@ Quaternion3D::Quaternion3D(bool caching, unsigned long long max_cache_time):
   pthread_mutex_init( &linked_list_mutex, NULL);
   //fixme Normalize();
   return;
+};
+
+Quaternion3D::~Quaternion3D()
+{
+
+  //Deallocate linked list
+  data_LL * temp = first;
+  data_LL * temp1 = first;
+  while ( temp != NULL)
+    {
+      temp1 = temp;
+      temp = temp->next;
+      delete temp1;
+    }
+  first = NULL;
+  last = NULL;
+
 };
 
 void Quaternion3D::addFromQuaternion(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time)
@@ -526,6 +545,7 @@ void Quaternion3D::insertNode(const Quaternion3DStorage & new_val)
     {
       //cout << "Base case" << endl;
       first = new data_LL;
+      assert(first);
       first->data = new_val;
       first->next = NULL;
       first->previous = NULL;
@@ -546,6 +566,7 @@ void Quaternion3D::insertNode(const Quaternion3DStorage & new_val)
 	{
 	  //cout << "Appending node to the end" << endl;
 	  p_current = new data_LL;
+	  assert (p_current);
 	  p_current->data = new_val;
 	  p_current->previous = last;
 	  p_current->next = NULL;
@@ -562,16 +583,21 @@ void Quaternion3D::insertNode(const Quaternion3DStorage & new_val)
 	  p_old = p_current;
 	  //Fill in the new node
 	  p_current = new data_LL;
+	  assert (p_current);
 	  p_current->data = new_val;
 	  p_current->next = p_old;
 	  p_current->previous = p_old->previous;
 	  
+	  
 	  //point the old to the new 
 	  p_old->previous = p_current;
+	  
 
 	  //If at the top of the list make sure we're not 
 	  if (p_current->previous == NULL)
 	    first = p_current;
+	  else
+	    p_current->previous->next = p_current;
 	}
 
 

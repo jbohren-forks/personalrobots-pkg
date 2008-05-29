@@ -203,6 +203,7 @@ public:
    * \param How long to keep a history of transforms in nanoseconds
    */
   TransformReference(bool caching = true, ULLtime cache_time = DEFAULT_CACHE_TIME);
+  ~TransformReference();
 
   /********** Mutators **************/
   /** Set a new frame or update an old one.
@@ -344,7 +345,7 @@ private:
 
   /** The pointers to potential frames that the tree can be made of.
    * The frames will be dynamically allocated at run time when set the first time. */
-  RefFrame* frames[MAX_NUM_FRAMES];
+  RefFrame** frames;
 
   /// How long to cache transform history
   ULLtime cache_time;
