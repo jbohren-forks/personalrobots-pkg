@@ -88,8 +88,5 @@ class Pid
     double iMax;            /**< Maximum allowable integrator state. */
     double iMin;            /**< Minimum allowable integrator state. */
     double currentCommand;  /**< Current position command. */
-    float  currentTime;     /**< Current time in seconds. */
-    float  lastTime;        /**< Lasttime in seconds. */
-    bool   timeInitiated;   /**< Has currentTime and lastTime been initiated? */
 };
 
