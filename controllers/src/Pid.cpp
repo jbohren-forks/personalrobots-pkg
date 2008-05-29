@@ -1,6 +1,5 @@
 #include "Pid.h"
 #include<iostream>  
-#include "timer.h"
 
 using namespace std;
 
@@ -12,9 +11,6 @@ Pid::Pid(double P,double I, double D, double I1, double I2 ):
   dError          = 0.0;
   iError          = 0.0;
   currentCommand  = 0.0;
-  currentTime     = 0.0;
-     lastTime     = 0.0;
-  timeInitiated   = false;
 }
 
 
@@ -35,35 +31,23 @@ void Pid::InitPid( double P,double I, double D, double I1, double I2 )
   dError          = 0.0;
   iError          = 0.0;
   currentCommand  = 0.0;
-  currentTime     = 0.0;
-     lastTime     = 0.0;
-  timeInitiated   = false;
 }
 
 
 double Pid::UpdatePid( double pError, double dt )
 {
-  double pTerm, dTerm, iTerm, dT;
-  // Get current time
-  currentTime = Timer::GetTimeSeconds();
-  // For the very first time step, initialize lastTime to currentTime. First dT will be 0.
-  if (!timeInitiated)
+  double pTerm, dTerm, iTerm;
+
+  if (dt == 0)
   {
-    timeInitiated = true;
-    lastTime      = currentTime;
-  }
-  dT = currentTime - lastTime;
-  
-  if (dt !=0)
-  {
-    dT=dt;
+    throw "dividebyzero";
   }
 
   // calculate proportional contribution to command
   pTerm = pGain * pError;
 
   // CALCULATE THE INTEGRAL ERROR ACCUMULATION WITH APPROPRIATE LIMITING
-  iError = iError + dT * pError;
+  iError = iError + dt * pError;
   // limit iError
   if (iError > iMax)
   {
@@ -76,16 +60,15 @@ double Pid::UpdatePid( double pError, double dt )
   // calculate integral contribution to command
   iTerm = iGain * iError;
   // CALCULATE DERIVATIVE ERROR
-  if (dT != 0)
+  if (dt != 0)
   {
-      dError   = pError / dT;
+      dError   = pError / dt;
   }
   // calculate derivative contribution to command
   dTerm = dGain * dError;
 
   // create current command value
   currentCommand = pTerm + iTerm + dTerm;
-  // save time value
-  lastTime = currentTime;
+
   return currentCommand;
 }
