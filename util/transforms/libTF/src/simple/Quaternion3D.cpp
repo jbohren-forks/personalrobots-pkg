@@ -63,19 +63,7 @@ Quaternion3D::Quaternion3D(bool caching, unsigned long long max_cache_time):
 
 Quaternion3D::~Quaternion3D()
 {
-
-  //Deallocate linked list
-  data_LL * temp = first;
-  data_LL * temp1 = first;
-  while ( temp != NULL)
-    {
-      temp1 = temp;
-      temp = temp->next;
-      delete temp1;
-    }
-  first = NULL;
-  last = NULL;
-
+  clearList();
 };
 
 void Quaternion3D::addFromQuaternion(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time)
@@ -645,6 +633,8 @@ void Quaternion3D::pruneList()
 
 void Quaternion3D::clearList()
 {
+  pthread_mutex_lock(&linked_list_mutex);  
+  
   data_LL * p_current = first;
   data_LL * p_last = NULL;
 
@@ -659,6 +649,7 @@ void Quaternion3D::clearList()
   //Clean up pointers
   first = NULL;
   last = NULL;
+  pthread_mutex_unlock(&linked_list_mutex);  
   
 };
 

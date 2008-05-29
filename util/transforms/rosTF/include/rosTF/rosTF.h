@@ -76,6 +76,8 @@ class rosTFClient : public libTF::TransformReference
   MsgTransformDH dhIn;
   MsgTransformQuaternion quaternionIn;
 
+  pthread_mutex_t cb_mutex;
+
 };
 
 /** \brief A simple class to broadcast transforms

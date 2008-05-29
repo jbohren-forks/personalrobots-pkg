@@ -423,3 +423,13 @@ TransformReference::ULLtime TransformReference::gettime()
   return temp_time_struct.tv_sec * 1000000000ULL + (unsigned long long)temp_time_struct.tv_usec * 1000ULL;
 }
 
+bool TransformReference::RefFrame::setParent(unsigned int parentID)
+{
+  if (parent != parentID)
+    {
+      parent = parentID; 
+      clearList(); 
+      return false;
+    } 
+  return true;
+};

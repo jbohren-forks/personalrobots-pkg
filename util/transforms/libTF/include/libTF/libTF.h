@@ -333,7 +333,8 @@ private:
        * return: true => no change of parent 
        * \param The frameID of the parent
        */
-      inline bool setParent(unsigned int parentID){if (parent != parentID){parent = parentID; clearList(); return false;} return true;};
+      bool setParent(unsigned int parentID);
+
     private:
       
       /** Internal storage of the parent */
