@@ -1,0 +1,46 @@
+SubDir trex_demo ;
+
+if ! $(trex_demo_READY) {
+
+	# Define Libraries required for ROS:  Can obtain from rospack export/cpp/lflags roscp
+   	NEEDLIBS = 	[ FDirName $(ROS_ROOT) core roscpp lib libros.a ]
+			[ FDirName $(ROS_ROOT) 3rdparty xmlrpc++ libXmlRpc.a ]
+			[ FDirName $(ROS_ROOT) util rosthread lib librosthread.a ]
+			[ FDirName $(ROS_ROOT) util rostime lib librostime.a ]
+			[ FDirName $(PR2_ROOT) 3rdparty player player lib libwavefront_standalone.so ]
+	;
+
+	# Include directories for ROS. Can obtain from rospack export/cpp/cflags roscpp
+   	SubDirHdrs $(ROS_ROOT) core roscpp include ;
+   	SubDirHdrs $(ROS_ROOT) util rosthread include ;
+   	SubDirHdrs $(ROS_ROOT) util rostime include ;
+   	SubDirHdrs $(ROS_ROOT) 3rdparty xmlrpc++ src ;
+   	SubDirHdrs $(ROS_ROOT) std_msgs msg cpp ;
+	SubDirHdrs $(PR2_ROOT) 3rdparty player player include player-2.2  ;
+
+	# GNU Library include directories
+	SubDirHdrs / usr include gtk-2.0 ;
+	SubDirHdrs / usr include glib-2.0 ;
+	SubDirHdrs / usr lib glib-2.0 include ;
+
+	# Need to add this to obtain clock get time. Also need gtk for pix buf image loading when using wavefront
+	# planner
+	LINKFLAGS = $(LINKFLAGS) -lrt  -lgtk-x11-2.0 ;
+
+	ModuleMain ros_exec : Executive.cc Monitor.cc RCSAdapter.cc ExecDefs.cc Components.cc pr2.model.o : TREX : ros_exec ;
+	Depends ros_exec : ros.exec.xml ;
+
+	ModuleMain exec_listener : ExecListener.cc : : exec_listener ;
+	ModuleMain rcs : RCS.cc ExecDefs.cc : TREX : rcs ;
+	ModuleMain logger : MessageLogger.cc ExecDefs.cc : TREX : logger ;
+
+ 	# Input file for exec
+ 	NddlParser ros.exec.xml : ros.exec.nddl ;
+ 	NddlParser ros.sim.xml : ros.sim.nddl ;
+ 
+ 	# Build the model - generates .cc and .hh files from .nddl
+	NddlModel pr2.model.nddl : System ;
+
+	# Build all
+	Depends trex_demo : rcs ros_exec exec_listener logger ros.exec.xml ros.sim.xml ;
+}	

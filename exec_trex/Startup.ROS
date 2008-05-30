@@ -1,0 +1,6 @@
+botherder
+simulators/rosstage/rosstage simulators/rosstage/willow-erratic.world &
+nav/amcl_player/amcl_player simulators/rosstage/willow-full.png 0.1 23 11 90 &
+nav/wavefront_player/wavefront_player simulators/rosstage/willow-full.png 0.1
+nav/nav_view/nav_view simulators/rosstage/willow-full.png 0.1 odom:=localizedpose &
+nav/teleop_base_keyboard/teleop_base_keyboard
