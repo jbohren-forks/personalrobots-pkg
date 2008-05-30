@@ -2,6 +2,10 @@ SubDir exec_trex ;
 
 if ! $(exec_trex_READY) {
 
+	# All this ROS and PR2 related stuff needs to be cleaned up. As it stands, it will not have any make integration
+	# for when ROS or Pr2 change. Also, the declarations at this level force linkage of more than should otherwise
+	# be necessary
+
 	# Define Libraries required for ROS:  Can obtain from rospack export/cpp/lflags roscp
    	NEEDLIBS = 	[ FDirName $(ROS_ROOT) core roscpp lib libros.a ]
 			[ FDirName $(ROS_ROOT) 3rdparty xmlrpc++ libXmlRpc.a ]
@@ -27,20 +31,20 @@ if ! $(exec_trex_READY) {
 	# planner
 	LINKFLAGS = $(LINKFLAGS) -lrt  -lgtk-x11-2.0 ;
 
-	ModuleMain ros_exec : Executive.cc Monitor.cc RCSAdapter.cc ExecDefs.cc Components.cc pr2.model.o : TREX : ros_exec ;
-	Depends ros_exec : ros.exec.xml ;
+	ModuleMain exec_trex : Executive.cc Monitor.cc RCSAdapter.cc ExecDefs.cc Components.cc pr2.model.o : TREX : exec_trex ;
+	Depends exec_trex : pr2.exec.xml ;
 
 	ModuleMain exec_listener : ExecListener.cc : : exec_listener ;
 	ModuleMain rcs : RCS.cc ExecDefs.cc : TREX : rcs ;
 	ModuleMain logger : MessageLogger.cc ExecDefs.cc : TREX : logger ;
 
  	# Input file for exec
- 	NddlParser ros.exec.xml : ros.exec.nddl ;
- 	NddlParser ros.sim.xml : ros.sim.nddl ;
+ 	NddlParser pr2.exec.xml : pr2.exec.nddl ;
+ 	NddlParser pr2.sim.xml : pr2.sim.nddl ;
  
  	# Build the model - generates .cc and .hh files from .nddl
 	NddlModel pr2.model.nddl : System ;
 
 	# Build all
-	Depends exec_trex : rcs ros_exec exec_listener logger ros.exec.xml ros.sim.xml ;
-}	
+	Depends exec_all : exec_trex rcs exec_listener logger pr2.exec.xml pr2.sim.xml ;
+}

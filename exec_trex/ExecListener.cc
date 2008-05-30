@@ -1,6 +1,10 @@
+/**
+ * This class will go away when we have a logging service, if not sooner.
+ * It is used to enable monitoring of states in the Executive.
+ */
+
 #include "ros/node.h"
 #include "std_msgs/MsgToken.h"
-
 
 class ExecListener : public ros::node
 {

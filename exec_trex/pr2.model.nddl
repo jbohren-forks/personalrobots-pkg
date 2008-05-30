@@ -1,187 +1,32 @@
-#include "TREX.nddl"
-
-typedef int [0 5] PRIORITY;
-typedef float [0.0 +inff] PFLOAT;
-
-float POSITION_ERROR = 2.0;
-float NOMINAL_SPEED = 1.0;
-
-/**
- * VehicleState will capture position and orientation.
+/*
+ * pr2.model.nddl
+ * Copyright (c) 2008, Willow Garage, Inc.
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <ORGANIZATION> nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
-class VehicleState extends AgentTimeline {
-	predicate Holds{
-		PFLOAT x;
-		PFLOAT y;
-	}
-
-	VehicleState(Mode _mode){
-		super(_mode, "Holds");
-	}
-}
-
-/**
- * Encapsulate Behaviors that have a state of active or inactive
- */
-class Behavior extends AgentTimeline {
-	predicate Inactive{}
-
-	predicate Active{}
-
-	Behavior(Mode _mode){
-		super(_mode, "Inactive");
-	}
-}
-
-/**
- * All behaviors will oscillate between active and inactive
- */
-Behavior::Inactive{
-	met_by(Active);
-	meets(Active);
-}
-
-Behavior::Active{
-	met_by(Inactive);
-	meets(Inactive);
-}
-
-/**
- * WaypointController will handle active control of vehicle to accomplish 
- * a waypoint. This maps to the wave front planner.
- */
-class WaypointController extends Behavior {
-	// Parameters to get to the target
-	predicate Active{
-		PFLOAT x;
-		PFLOAT y;
-	}
-
-	WaypointController(Mode _mode){
-		super(_mode);
-	}
-}
-
-/**
- * Captures high-level navigation state, in terms of moving towards a target
- * waypoint. No consideration is made at this level for the path to the target.
- */
-class Navigator extends AgentTimeline {
-
-	/**
-	 * Inactive
-	 */
-	predicate Inactive{}
-
-	/**
-	 * Navigation to a target position
-         */
-	predicate Going{
-		PFLOAT x;
-		PFLOAT y;
-		PRIORITY priority; // 0 is highest priority
-	}
-
-	Navigator(Mode _mode){
-		super(_mode, "Inactive");
-	}
-}
-
-
-/**
- * Action class. Drives decomposition into behaviors and mapped to telemetry.
- */
-class Actions extends AgentActions {
-	/**
-	 * Go to a target location
-         */
-	predicate Go{
-		PFLOAT x;
-		PFLOAT y;
-	}
-}
-
-/*************************************************************************
- * RULES START HERE
- ************************************************************************/
-Navigator::Going{
-	// If the target is bound then generate behavior to accomplish goal
-	if(x){
-		if(y){
-			ends(Actions.Go a);
-			eq(a.x, x);
-			eq(a.y, y);
-		}
-	}
-}
-
-Actions::Go{
-	// If we have a meaningful distance to travel, get going
-	starts(VehicleState.Holds initialPos);
-	float distanceToGo;
-	calcDistance(distanceToGo, initialPos.x, initialPos.y, x, y);
-	bool done;
-	testLEQ(done, distanceToGo, POSITION_ERROR);
-	if(done == false){
-		ends(WaypointController.Active wpc);
-		contains wpc;
-		eq(wpc.x, x);
-		eq(wpc.y, y);
-	}
-
-	// When it ends, check the end conditions.
-	if(end){
-		ends(VehicleState.Holds vs);
-		float delta;
-		calcDistance(delta, vs.x, vs.y, x, y);
-
-		// Just constrain the vehicle to be within the expected error of position
-		leq(delta, POSITION_ERROR);
-	}
-
-}
-
-/*******************************************************************
- * Rules for NDDL based trivial simulation
- ******************************************************************/
-WaypointController::Active{
-	if(object.mode == Internal){
-		starts(VehicleState.Holds startPos);
-		float distance;
-		calcDistance(distance, startPos.x, startPos.y, x, y);
-
-		// Constrain the duration
-		float maxDuration;
-		mulEq(maxDuration, NOMINAL_SPEED, distance);
-		calcFloor(duration, maxDuration);
-
-		// End up where we wanted to
-		if(end){
-			ends(VehicleState.Holds endPos);
-			eq(endPos.x, x);
-			eq(endPos.y, y);
-		}
-	}
-}
-
-VehicleState::Holds{
-	if(object.mode == Internal){
-		met_by(VehicleState.Holds p);
-		defaultOnCommit(x, p.x);
-		defaultOnCommit(y, p.y);
-	}
-}
-
-class SimActions extends AgentActions{
-	predicate StartAction{}
-
-	SimActions(){
-		super();
-	}
-}
-
-Behavior::Active{
-	if(object.mode == Internal){
-		starts(SimActions.StartAction);
-	}
-}
+#include "pr2.model.declarations.nddl"
+#include "pr2.model.rules.nddl"
+#include "pr2.model.sim.nddl"
