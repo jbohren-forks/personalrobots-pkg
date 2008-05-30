@@ -241,10 +241,10 @@ StageNode::Update()
     }
 
     this->laserMsg.header.stamp.sec = 
-            (unsigned long)floor(world->SimTimeNow() / 1e3);
+            (unsigned long)floor(world->SimTimeNow() / 1e6);
     this->laserMsg.header.stamp.nsec = 
-            (unsigned long)rint(1e6 * (world->SimTimeNow() - 
-                                       this->laserMsg.header.stamp.sec * 1e3));
+            (unsigned long)rint(1e3 * (world->SimTimeNow() - 
+                                       this->laserMsg.header.stamp.sec * 1e6));
     this->laserMsg.__timestamp_override = true;
     publish("scan",this->laserMsg);
   }
