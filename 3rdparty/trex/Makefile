@@ -20,9 +20,7 @@ trex: PLASMA
 
 # Build library and run regression tests
 test: trex
-	cd TREX
-	jam agent-inputs
-	jam run-agent-module-tests
+	cd TREX && jam agent-inputs && jam run-agent-module-tests
 
 clean:
 	rm -rf PLASMA TREX trex EUROPA logs
