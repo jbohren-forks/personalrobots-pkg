@@ -1,0 +1,124 @@
+/*
+ * pr2.model.nddl
+ * Copyright (c) 2008, Willow Garage, Inc.
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <ORGANIZATION> nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/**
+ * Provides for all class declarations for the pr2 model
+ */
+
+#include "TREX.nddl" // TREX base classes
+
+
+typedef int [0 5] PRIORITY;
+typedef float [0.0 +inff] PFLOAT;
+
+float POSITION_ERROR = 2.0;
+float NOMINAL_SPEED = 1.0;
+
+/**
+ * VehicleState will capture position and orientation.
+ */
+class VehicleState extends AgentTimeline {
+	predicate Holds{
+		PFLOAT x;
+		PFLOAT y;
+	}
+
+	VehicleState(Mode _mode){
+		super(_mode, "Holds");
+	}
+}
+
+/**
+ * Encapsulate Behaviors that have a state of active or inactive
+ */
+class Behavior extends AgentTimeline {
+	predicate Inactive{}
+
+	predicate Active{}
+
+	Behavior(Mode _mode){
+		super(_mode, "Inactive");
+	}
+}
+
+/**
+ * WaypointController will handle active control of vehicle to accomplish 
+ * a waypoint. This maps to the wave front planner.
+ */
+class WaypointController extends Behavior {
+	// Parameters to get to the target
+	predicate Active{
+		PFLOAT x;
+		PFLOAT y;
+	}
+
+	WaypointController(Mode _mode){
+		super(_mode);
+	}
+}
+
+/**
+ * Captures high-level navigation state, in terms of moving towards a target
+ * waypoint. No consideration is made at this level for the path to the target.
+ */
+class Navigator extends AgentTimeline {
+
+	/**
+	 * Inactive
+	 */
+	predicate Inactive{}
+
+	/**
+	 * Navigation to a target position
+         */
+	predicate Going{
+		PFLOAT x;
+		PFLOAT y;
+		PRIORITY priority; // 0 is highest priority
+	}
+
+	Navigator(Mode _mode){
+		super(_mode, "Inactive");
+	}
+}
+
+
+/**
+ * Action class. Drives decomposition into behaviors and mapped to telemetry.
+ */
+class Actions extends AgentActions {
+	/**
+	 * Go to a target location
+         */
+	predicate Go{
+		PFLOAT x;
+		PFLOAT y;
+	}
+}
