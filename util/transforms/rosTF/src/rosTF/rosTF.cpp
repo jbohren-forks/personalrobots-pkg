@@ -32,8 +32,12 @@
 
 #include "rosTF/rosTF.h"
 
-rosTFClient::rosTFClient(ros::node & rosnode, bool caching):
-  TransformReference(caching),
+rosTFClient::rosTFClient(ros::node & rosnode, 
+                         bool caching,
+                         bool extrapolate):
+  TransformReference(caching,
+                     TransformReference::DEFAULT_CACHE_TIME,
+                     extrapolate),
   myNode(rosnode)
 {
   myNode.subscribe("TransformEuler", eulerIn, &rosTFClient::receiveEuler, this,100);

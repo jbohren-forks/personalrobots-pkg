@@ -43,7 +43,6 @@
 namespace libTF{
 
 
-
 struct PoseYPR
 {
   double x,y,z,yaw, pitch, roll;
@@ -150,10 +149,21 @@ public:
     Quaternion3DStorage & operator=(const Quaternion3DStorage & input);
     unsigned long long time; //nanoseconds since 1970
   };
+
+  /** \brief An exception class to notify that the requested value would have required extrapolation, and extrapolation is not allowed.
+   * 
+   */
+  class ExtrapolateException : public std::exception
+  {
+  public:
+    virtual const char* what() const throw()    { return "Disallowed extrapolation required."; }
+  };
   
   /** Constructors **/
   // Standard constructor max_cache_time is how long to cache transform data
-  Quaternion3D(bool caching = true, unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME);
+  Quaternion3D(bool caching = true, 
+               unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME,
+               bool extrapolate = true);
   ~Quaternion3D();  
 
   /** Mutators **/
@@ -198,6 +208,7 @@ private:
   void add_value(const Quaternion3DStorage&);//todo fixme finish implementing this
 
 
+  ExtrapolateException NoExtrapolation;
 
   // insert a node into the sorted linked list
   void insertNode(const Quaternion3DStorage & );
@@ -220,6 +231,8 @@ private:
   unsigned long long max_storage_time;
   //Max length of linked list
   unsigned long long max_length_linked_list;
+  //Whether to allow extrapolation
+  bool extrapolate;
 
   //A mutex to prevent linked list collisions
   pthread_mutex_t linked_list_mutex;

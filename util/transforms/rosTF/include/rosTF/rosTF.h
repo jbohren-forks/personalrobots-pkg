@@ -61,7 +61,7 @@ class rosTFClient : public libTF::TransformReference
 {
  public:
   //Constructor
-  rosTFClient(ros::node & rosnode, bool caching = true);
+  rosTFClient(ros::node & rosnode, bool caching = true, bool extrapolate = true);
 
   //Call back functions
   void receiveEuler();

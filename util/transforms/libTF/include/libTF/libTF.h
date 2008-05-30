@@ -202,7 +202,9 @@ public:
   /** Constructor 
    * \param How long to keep a history of transforms in nanoseconds
    */
-  TransformReference(bool caching = true, ULLtime cache_time = DEFAULT_CACHE_TIME);
+  TransformReference(bool caching = true, 
+                     ULLtime cache_time = DEFAULT_CACHE_TIME,
+                     bool extrapolate = true);
   ~TransformReference();
 
   /********** Mutators **************/
@@ -264,7 +266,6 @@ public:
    */
   static  ULLtime gettime(void);
 
-
   /************ Possible Exceptions ****************************/
 
   /** \brief An exception class to notify of bad frame number 
@@ -307,6 +308,7 @@ public:
   private:
   } MaxSearchDepth;
 
+
 private:
 
   /** RefFrame *******
@@ -323,7 +325,9 @@ private:
     public:
 
       /** Constructor */
-      RefFrame(bool caching = true,  unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME);
+      RefFrame(bool caching = true,  
+               unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME,
+               bool extrapolate = true);
       
       /** \brief Get the parent nodeID */
       inline unsigned int getParent(){return parent;};
@@ -339,7 +343,7 @@ private:
       
       /** Internal storage of the parent */
       unsigned int parent;
-      
+
     };
 
   /******************** Internal Storage ****************/
@@ -353,6 +357,9 @@ private:
 
   /// whether or not to cache
   bool caching;
+  
+  /// whether or not to allow extrapolation
+  bool extrapolate;
 
  public:
   /** \brief An internal representation of transform chains

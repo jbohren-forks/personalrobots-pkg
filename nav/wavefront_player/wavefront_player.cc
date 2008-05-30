@@ -201,7 +201,7 @@ class WavefrontNode: public ros::node
     // Map update paramters (for adding obstacles)
     double laser_maxrange;
     ros::Duration laser_buffer_time;
-    //std::list<MsgLaserScan*> buffered_laser_scans;
+    std::list<MsgLaserScan*> buffered_laser_scans;
     std::list<laser_pts_t> laser_scans;
     double* laser_hitpts;
     size_t laser_hitpts_len, laser_hitpts_size;
@@ -298,7 +298,7 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         avmax(DTOR(80.0)),
         amin(DTOR(10.0)),
         amax(DTOR(40.0)),
-        tf(*this, true)
+        tf(*this, true, false)
 {
   // TODO: get map via RPC
   char* mapdata;
@@ -386,54 +386,81 @@ WavefrontNode::goalReceived()
 void
 WavefrontNode::laserReceived()
 {
-  this->lock.lock();
+  // Copy and push this scan into the list of buffered scans
+  MsgLaserScan* newscan = new MsgLaserScan(laserMsg);
+  assert(newscan);
+  // Do a deep copy of the range data
+  newscan->set_ranges_size(laserMsg.get_ranges_size());
+  memcpy(newscan->ranges,laserMsg.ranges,laserMsg.get_ranges_size()*sizeof(float));
+  newscan->set_intensities_size(0);
+  this->buffered_laser_scans.push_back(newscan);
 
-  // For each beam, convert to cartesian in the laser's frame, then convert
-  // to the map frame and store the result in the the laser_scans list
-
-  laser_pts_t pts;
-  pts.pts_num = laserMsg.get_ranges_size();
-  pts.pts = new double[pts.pts_num*2];
-  assert(pts.pts);
-  pts.ts = laserMsg.header.stamp;
-
-  libTF::TFPose2D local,global;
-  //local.frame = FRAMEID_LASER;
-  local.frame = FRAMEID_ROBOT;
-  local.time = laserMsg.header.stamp.sec * 1000000000ULL + 
-          laserMsg.header.stamp.nsec;
-  float b=laserMsg.angle_min;
-  float* r=laserMsg.ranges;
-  for(unsigned int i=0;i<laserMsg.get_ranges_size();
-      i++,r++,b+=laserMsg.angle_increment)
+  // Iterate through the buffered scans, trying to interpolate each one
+  for(std::list<MsgLaserScan*>::iterator it = this->buffered_laser_scans.begin();
+      it != this->buffered_laser_scans.end();
+      it++)
   {
-    // TODO: take out the bogus epsilon range_max check, after the
-    // hokuyourg_player node is fixed
-    if(((*r) >= this->laser_maxrange) || 
-       ((laserMsg.range_max > 0.1) && ((*r) >= laserMsg.range_max)) ||
-       ((*r) <= 0.01))
+    // For each beam, convert to cartesian in the laser's frame, then convert
+    // to the map frame and store the result in the the laser_scans list
+
+    laser_pts_t pts;
+    pts.pts_num = (*it)->get_ranges_size();
+    pts.pts = new double[pts.pts_num*2];
+    assert(pts.pts);
+    pts.ts = (*it)->header.stamp;
+
+    libTF::TFPose2D local,global;
+    local.frame = FRAMEID_LASER;
+    //local.frame = FRAMEID_ROBOT;
+    local.time = (*it)->header.stamp.sec * 1000000000ULL + 
+            (*it)->header.stamp.nsec;
+    float b=(*it)->angle_min;
+    float* r=(*it)->ranges;
+    unsigned int i;
+    for(i=0;i<(*it)->get_ranges_size();
+        i++,r++,b+=(*it)->angle_increment)
+    {
+      // TODO: take out the bogus epsilon range_max check, after the
+      // hokuyourg_player node is fixed
+      if(((*r) >= this->laser_maxrange) || 
+         (((*it)->range_max > 0.1) && ((*r) >= (*it)->range_max)) ||
+         ((*r) <= 0.01))
+        continue;
+
+      local.x = (*r)*cos(b);
+      local.y = (*r)*sin(b);
+      local.yaw = 0;
+      try
+      {
+        global = this->tf.transformPose2D(FRAMEID_MAP, local);
+      }
+      catch(libTF::TransformReference::LookupException& ex)
+      {
+        puts("no global->local Tx yet");
+        delete[] pts.pts;
+        return;
+      }
+      catch(libTF::Quaternion3D::ExtrapolateException& ex)
+      {
+        //puts("extrapolation required");
+        delete[] pts.pts;
+        break;
+      }
+
+      // Copy in the result
+      pts.pts[2*i] = global.x;
+      pts.pts[2*i+1] = global.y;
+    }
+    // Did we break early?
+    if(i < (*it)->get_ranges_size())
       continue;
-
-    local.x = (*r)*cos(b);
-    local.y = (*r)*sin(b);
-    local.yaw = 0;
-    try
+    else
     {
-      global = this->tf.transformPose2D(FRAMEID_MAP, local);
+      this->laser_scans.push_back(pts);
+      it = this->buffered_laser_scans.erase(it);
+      it--;
     }
-    catch(libTF::TransformReference::LookupException& ex)
-    {
-      puts("no global->local Tx yet");
-      delete[] pts.pts;
-      this->lock.unlock();
-      return;
-    }
-
-    // Copy in the result
-    pts.pts[2*i] = global.x;
-    pts.pts[2*i+1] = global.y;
   }
-  this->laser_scans.push_back(pts);
 
   // Remove anything that's too old from the laser_scans list
   // Also count how many points we have
@@ -452,6 +479,9 @@ WavefrontNode::laserReceived()
       hitpt_cnt += it->pts_num;
   }
   
+  // Lock here because we're operating on the laser_hitpts array, which is
+  // used in another thread.
+  this->lock.lock();
   // allocate more space as necessary
   if(this->laser_hitpts_size < hitpt_cnt)
   {
@@ -474,6 +504,7 @@ WavefrontNode::laserReceived()
            it->pts, it->pts_num * 2 * sizeof(double));
     this->laser_hitpts_len += it->pts_num;
   }
+  this->lock.unlock();
   
   // Draw the points
 
@@ -488,8 +519,6 @@ WavefrontNode::laserReceived()
     this->pointcloudMsg.points[i].y = this->laser_hitpts[2*i+1];
   }
   publish("gui_laser",this->pointcloudMsg);
-
-  this->lock.unlock();
 }
 
 void
@@ -546,6 +575,10 @@ WavefrontNode::doOneCycle()
     puts("no global->local Tx yet");
     this->stopRobot();
     return;
+  }
+  catch(libTF::Quaternion3D::ExtrapolateException& ex)
+  {
+    // no big deal.
   }
 
   this->lock.lock();
