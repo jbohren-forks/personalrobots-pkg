@@ -63,9 +63,10 @@ public:
     raster = NULL;
   }
 
-  uint8_t *inflate(string colorspace = "rgb24")
+  uint8_t *inflate()
   {
     msg->lock();
+
     // perform decompression and/or colorspace conversion if necessary
     if (msg->compression == string("jpeg"))
       decompress_jpeg();
@@ -87,6 +88,8 @@ public:
     int bpp = 0;
     if (msg->colorspace == "rgb24" || msg->colorspace == "bgr24")
       bpp = 3;
+    if (msg->colorspace == "mono8")
+      bpp = 1;
     return msg->width * msg->height * bpp;
   }
 
@@ -122,9 +125,13 @@ protected:
     JpegWrapper::raster_type_t rt;
     if (msg->colorspace == "rgb24")
       rt = JpegWrapper::RT_RGB24;
+    else if (msg->colorspace == "mono8")
+    {
+      rt = JpegWrapper::RT_MONO8;
+    }
     else
     {
-      printf("image_codec::compress_jpeg() only handles colorspace 'rgb24'\n");
+      printf("image_codec::compress_jpeg() only handles colorspaces 'rgb24' and 'mono8'\n");
       return false;
     }
     if (!jpeg)

@@ -14,6 +14,7 @@ class JpegWrapper
 {
 public:
   static JpegWrapper *g_wrapper;
+
   enum raster_type_t
   {
     RT_RGB24,
@@ -43,7 +44,15 @@ public:
 
   inline int width()  { return raster_width; }
   inline int height() { return raster_height; }
-  inline int raster_size() { return 3 * raster_width * raster_height; }
+  inline int raster_size()
+  {
+    if (raster_type == RT_RGB24)
+      return 3 * raster_width * raster_height;
+    else if (raster_type == RT_MONO8)
+      return 1 * raster_width * raster_height;
+    else
+      return 0;
+  }
   inline uint8_t *get_raster() { return raster; }
 
   bool decompress_jpeg_buf(char *data, uint32_t data_len)
@@ -52,15 +61,21 @@ public:
     jpeg_buffer_src(&dinfo, data, data_len);
     jpeg_read_header(&dinfo, TRUE);
     jpeg_start_decompress(&dinfo);
-    if (dinfo.output_components != 3)
+    if (dinfo.out_color_space == JCS_GRAYSCALE) {
+      raster_type = RT_MONO8;
+    }
+    else if (dinfo.out_color_space == JCS_GRAYSCALE)
     {
-      printf("woah! this jpeg buffer doesn't have three components.\n");
-      return false;
+      raster_type = RT_RGB24;
+    } 
+    else {
+          printf("woah! this jpeg buffer uses an unexpected color space.\n");
+          return false;
     }
     raster_width = dinfo.output_width;
     raster_height = dinfo.output_height;
     realloc_raster_if_needed();
-    int row_stride = raster_width * 3;
+    int row_stride = raster_width * dinfo.output_components;
     JSAMPROW row_pointer[1];
     while (dinfo.output_scanline < dinfo.output_height)
     {
@@ -117,6 +132,8 @@ protected:
   uint8_t *raster, *compress_buf;
   int raster_width, raster_height;
   int raster_alloc_size, compress_buf_alloc_size;
+  raster_type_t raster_type;  
+
   jpeg_compress_struct cinfo;
   jpeg_decompress_struct dinfo;
   jpeg_error_mgr jerr;

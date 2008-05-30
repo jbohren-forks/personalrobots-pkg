@@ -69,15 +69,25 @@ public:
 
   bool to_cv(IplImage **cv_image)
   {
-    this->inflate("rgb24");
+    //    this->inflate("rgb24");
+    this->inflate();
     if (!this->raster)
       return false;
+
+    int channels = 1;
+
+    if (this->msg->colorspace == "rgb24") {
+      channels = 3;
+    } else if (this->msg->colorspace == "mono8") {
+      channels = 1;
+    }
+
     *cv_image = cvCreateImage(cvSize(this->msg->width, this->msg->height), 
-                              IPL_DEPTH_8U, 3);
+                              IPL_DEPTH_8U, channels);
     // todo: ensure row alignment is ok (copy in one scanline at a time)
     for (size_t row = 0; row < this->msg->height; row++)
       memcpy((*cv_image)->imageData + row * (*cv_image)->widthStep, 
-             this->raster + row * this->msg->width * 3, this->msg->width*3);
+             this->raster + row * this->msg->width * channels, this->msg->width*channels);
     return true;
   }
 };
