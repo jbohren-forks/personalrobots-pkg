@@ -1,0 +1,11 @@
+<package>
+  <description>A ROS node to encapsulate the TeleoReactive Executive for task level planning and control.</description>
+  <author>Conor McGann</author>
+  <license>BSD</license>
+  <depend package="roscpp" />
+  <depend package="XmlRpc" />
+  <depend package="std_msgs" />
+  <depend package="rostime" />
+  <depend package="rosthread" />
+  <depend package="wavefront_standalone" />
+</package>
