@@ -207,7 +207,9 @@ public:
       glEnd();
     }
 
-    glPushMatrix();
+    const float robot_rad = 0.3;
+    try
+    {
       libTF::TFPose2D robotPose;
       robotPose.x = 0;
       robotPose.y = 0;
@@ -217,26 +219,23 @@ public:
 
       libTF::TFPose2D mapPose = tf.transformPose2D(FRAMEID_MAP, robotPose);
 
+      glPushMatrix();
       glTranslatef(mapPose.x, mapPose.y, 0);
       glRotatef(mapPose.yaw * 180 / M_PI, 0, 0, 1);
-
-      /*      printf("lpose: %.3f %.3f %.3f\n",
-           mapPose.x,
-           mapPose.y,
-           mapPose.yaw);
-      */
-
       glColor3f(0.2, 1.0, 0.4);
       glBegin(GL_LINE_LOOP);
-        const float robot_rad = 0.3;
-        for (float f = 0; f < (float)(2*M_PI); f += 0.5f)
-          glVertex2f(robot_rad * cos(f), robot_rad * sin(f));
+      for (float f = 0; f < (float)(2*M_PI); f += 0.5f)
+        glVertex2f(robot_rad * cos(f), robot_rad * sin(f));
       glEnd();
       glBegin(GL_LINES);
-        glVertex2f(0,0);
-        glVertex2f(robot_rad,0);
+      glVertex2f(0,0);
+      glVertex2f(robot_rad,0);
       glEnd();
-    glPopMatrix();
+      glPopMatrix();
+    }
+    catch(libTF::TransformReference::LookupException& ex)
+    {
+    }
     
     cloud.lock();
     for(unsigned int i=0;i<cloud.get_particles_size();i++)
@@ -246,11 +245,11 @@ public:
       glRotatef(cloud.particles[i].th * 180 / M_PI, 0, 0, 1);
       glColor3f(1.0, 0.0, 0.0);
       glBegin(GL_LINE_LOOP);
-        glVertex2f(0,0);
-        glVertex2f(robot_rad,0);
-        glVertex2f(0.75*robot_rad,-0.25*robot_rad);
-        glVertex2f(0.75*robot_rad,0.25*robot_rad);
-        glVertex2f(robot_rad,0);
+      glVertex2f(0,0);
+      glVertex2f(robot_rad,0);
+      glVertex2f(0.75*robot_rad,-0.25*robot_rad);
+      glVertex2f(0.75*robot_rad,0.25*robot_rad);
+      glVertex2f(robot_rad,0);
       glEnd();
       glPopMatrix();
     }
