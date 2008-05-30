@@ -681,7 +681,8 @@ int Quaternion3D::findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two
       //and then take the previous one
       p_current = first->next; //Start on the 2nd element so if we fail we fall back to the first one
       //  cout << p_current->data.time << " vs " << target_time << endl;
-      while (p_current->next != NULL && p_current->next->data.time < target_time)
+      //while (p_current->next != NULL && p_current->next->data.time < target_time)
+      while (p_current->next != NULL && p_current->data.time > target_time)
 	{
 	  //	  std::cout << "Skipping over " << p_current->data << endl;
 	  p_current = p_current->next;

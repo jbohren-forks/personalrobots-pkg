@@ -47,7 +47,7 @@ rosTFClient::rosTFClient(ros::node & rosnode, bool caching):
 void rosTFClient::receiveEuler()
 {
   setWithEulers(eulerIn.frame, eulerIn.parent, eulerIn.x, eulerIn.y, eulerIn.z, eulerIn.yaw, eulerIn.pitch, eulerIn.roll, eulerIn.header.stamp.sec * 1000000000ULL + eulerIn.header.stamp.nsec);
-  std::cout << "received euler frame: " << eulerIn.frame << " with parent:" << eulerIn.parent << "time " << eulerIn.header.stamp.sec * 1000000000ULL + eulerIn.header.stamp.nsec << std::endl;
+  //std::cout << "received euler frame: " << eulerIn.frame << " with parent:" << eulerIn.parent << "time " << eulerIn.header.stamp.sec * 1000000000ULL + eulerIn.header.stamp.nsec << std::endl;
 };
 
 void rosTFClient::receiveDH()
