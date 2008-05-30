@@ -524,7 +524,10 @@ AmclNode::start()
     return(-1);
   }
   else
+  {
+    this->setPose(0,0,0);
     return(0);
+  }
 }
 
 int 
