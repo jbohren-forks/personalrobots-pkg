@@ -1,0 +1,83 @@
+///////////////////////////////////////////////////////////////////////////////
+// The flea2 provides a bare-bones driver for the flea2 camera
+//
+// Copyright (C) 2008, Morgan Quigley
+//
+// Redistribution and use in source and binary forms, with or without 
+// modification, are permitted provided that the following conditions are met:
+//   * Redistributions of source code must retain the above copyright notice, 
+//     this list of conditions and the following disclaimer.
+//   * Redistributions in binary form must reproduce the above copyright 
+//     notice, this list of conditions and the following disclaimer in the 
+//     documentation and/or other materials provided with the distribution.
+//   * Neither the name of Stanford University nor the names of its 
+//     contributors may be used to endorse or promote products derived from 
+//     this software without specific prior written permission.
+//   
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// POSSIBILITY OF SUCH DAMAGE.
+
+#include <cstdio>
+
+#include "flea2/flea2.h"
+#include "ros/node.h"
+#include "std_msgs/MsgImage.h"
+
+class Flea2_Node : public ros::node
+{
+public:
+  MsgImage img;
+  Flea2 flea2;
+
+  Flea2_Node() : ros::node("flea2")
+  {
+    advertise<MsgImage>("image");
+
+    flea2.set_shutter(0.8);
+    flea2.set_gamma(0.24);
+    flea2.set_gain(0);
+  }
+  
+  bool get_and_send_jpeg() 
+  {
+    const uint8_t *buf;
+    uint32_t buf_size;
+    flea2.get_jpeg(&buf, &buf_size);
+
+    img.width = flea2.cam.frame_width;
+    img.height = flea2.cam.frame_height;
+    img.compression = "jpeg";
+    img.colorspace = "mono8";
+    img.set_data_size(buf_size);
+    memcpy(img.data, buf, buf_size);
+
+    printf("Got %d bytes\n", buf_size);
+
+    publish("image", img);
+    return true;
+  }
+};
+
+int main(int argc, char **argv)
+{
+  ros::init(argc, argv);
+  
+  Flea2_Node fn;
+
+  while (fn.ok()) {
+    fn.get_and_send_jpeg();
+  }
+
+  ros::fini();
+  return 0;
+}
+
