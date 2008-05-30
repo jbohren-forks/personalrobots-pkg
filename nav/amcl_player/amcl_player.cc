@@ -371,7 +371,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
 			//(long long unsigned int)floor(hdr->timestamp),
                         //(long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL));
 
-    std::cout <<"Sent 21" <<std::endl;
+    //std::cout <<"Sent 21" <<std::endl;
 
     printf("pose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",
            pdata->pos.px,
