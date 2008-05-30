@@ -127,7 +127,7 @@ robot.
 #include <std_msgs/MsgPlanner2DState.h>
 #include <std_msgs/MsgPlanner2DGoal.h>
 #include <std_msgs/MsgBaseVel.h>
-#include <std_msgs/MsgRobotBase2DOdom.h>
+//#include <std_msgs/MsgRobotBase2DOdom.h>
 #include <std_msgs/MsgLaserScan.h>
 #include <std_msgs/MsgPose2DFloat32.h>
 
@@ -136,6 +136,9 @@ robot.
 
 // For transform support
 #include <rosTF/rosTF.h>
+
+// For time support
+#include <ros/time.h>
 
 #define ANG_NORM(a) atan2(sin((a)),cos((a)))
 #define DTOR(a) ((a)*M_PI/180.0)
@@ -148,9 +151,16 @@ robot.
 // compute linear index for given map coords
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
 // computes the signed minimum difference between the two angles.
-static double angle_diff(double a, double b);
 int read_map_from_image(int* size_x, int* size_y, char** mapdata, 
        			const char* fname, int negate);
+
+// A bunch of x,y points, with a timestamp
+typedef struct
+{
+  double* pts;
+  size_t pts_num;
+  ros::Time ts;
+} laser_pts_t;
 
 class WavefrontNode: public ros::node
 {
@@ -169,8 +179,6 @@ class WavefrontNode: public ros::node
     bool enable;
     // Current goal
     double goal[3];
-    // Current pose
-    double pose[3];
     // Direction that we're rotating in order to assume the goal
     // orientation
     int rotate_dir;
@@ -192,13 +200,11 @@ class WavefrontNode: public ros::node
 
     // Map update paramters (for adding obstacles)
     double laser_maxrange;
-    double laser_buffer_time;
-    std::list<MsgLaserScan*> buffered_laser_scans;
-    std::list<std::pair<MsgPose2DFloat32*, MsgLaserScan*> > laser_scans;
+    ros::Duration laser_buffer_time;
+    //std::list<MsgLaserScan*> buffered_laser_scans;
+    std::list<laser_pts_t> laser_scans;
     double* laser_hitpts;
     size_t laser_hitpts_len, laser_hitpts_size;
-
-    double laser_pose[3];
 
     // Controller paramters
     double lookahead_maxdist;
@@ -207,13 +213,13 @@ class WavefrontNode: public ros::node
 
     // incoming/outgoing messages
     MsgPlanner2DGoal goalMsg;
-    MsgRobotBase2DOdom odomMsg;
+    //MsgRobotBase2DOdom odomMsg;
     MsgLaserScan laserMsg;
     MsgPolyline2D polylineMsg;
     MsgPolyline2D pointcloudMsg;
     MsgPlanner2DState pstate;
     std::vector<MsgLaserScan> laserScans;
-    MsgRobotBase2DOdom prevOdom;
+    //MsgRobotBase2DOdom prevOdom;
     bool firstodom;
 
     // Lock for access to class members in callbacks
@@ -221,7 +227,6 @@ class WavefrontNode: public ros::node
 
     // Message callbacks
     void goalReceived();
-    void odomReceived();
     void laserReceived();
 
     // Internal helpers
@@ -284,7 +289,7 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         ang_eps(DTOR(10.0)),
         cycletime(0.1),
         laser_maxrange(4.0),
-        laser_buffer_time(2.5),
+        laser_buffer_time(3.0),
         lookahead_maxdist(2.0),
         lookahead_distweight(5.0),
         tvmin(0.2),
@@ -293,7 +298,7 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         avmax(DTOR(80.0)),
         amin(DTOR(10.0)),
         amax(DTOR(40.0)),
-        tf(*this, false)
+        tf(*this, true)
 {
   // TODO: get map via RPC
   char* mapdata;
@@ -336,18 +341,17 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
 
   this->firstodom = true;
 
+  // Static robot->laser transform
   // TODO: get this info via ROS somehow
-  laser_pose[0] = 0.0;
-  laser_pose[1] = 0.0;
-  laser_pose[2] = 0.0;
+  this->tf.setWithEulers(FRAMEID_LASER,
+                         FRAMEID_ROBOT,
+                         0.05, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
 
   advertise<MsgPlanner2DState>("state");
   advertise<MsgPolyline2D>("gui_path");
   advertise<MsgPolyline2D>("gui_laser");
   advertise<MsgBaseVel>("cmd_vel");
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived);
-  subscribe("odom", odomMsg, &WavefrontNode::odomReceived);
-  //subscribe("localizedpose", odomMsg, &WavefrontNode::odomReceived);
   subscribe("scan", laserMsg, &WavefrontNode::laserReceived);
 }
 
@@ -379,66 +383,12 @@ WavefrontNode::goalReceived()
   this->lock.unlock();
 }
 
+#if 0
 void 
 WavefrontNode::odomReceived()
 {
   this->lock.lock();
   
-  libTF::TFPose2D robotPose;
-  robotPose.x = 0;
-  robotPose.y = 0;
-  robotPose.yaw = 0;
-  robotPose.frame = FRAMEID_ROBOT;
-  //  robotPose.time = myClock.ulltime();
-  robotPose.time = odomMsg.header.stamp.sec * 1000000000ULL + 
-    odomMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
-
-  //  std::cout <<"robotTime"  << robotPose.time << std::endl;
-  /* libTF::TFPose2D pose;
-  odom_pose.x = odomMsg.pos.x;
-  odom_pose.y = odomMsg.pos.y;
-  odom_pose.yaw = odomMsg.pos.th;
-  odom_pose.time = odomMsg.header.stamp.sec * 1000000000ULL + 
-          odomMsg.header.stamp.nsec;
-  odom_pose.frame = odomMsg.header.frame_id;
-  */
-  try
-  {
-    libTF::TFPose2D global_pose = 
-      this->tf.transformPose2D(FRAMEID_MAP, robotPose);
-    cout << tf.getMatrix(FRAMEID_MAP, FRAMEID_ROBOT, robotPose.time);
-
-    this->pose[0] = global_pose.x;
-    this->pose[1] = global_pose.y;
-    this->pose[2] = global_pose.yaw;
-    printf("lpose: %.3f %.3f %.3f\n",
-           odomMsg.pos.x,
-           odomMsg.pos.y,
-           RTOD(odomMsg.pos.th));
-    printf("gpose: %.3f %.3f %.3f @ (%u:%u)\n",
-           this->pose[0],
-           this->pose[1],
-           RTOD(this->pose[2]),
-           odomMsg.header.stamp.sec,
-           odomMsg.header.stamp.nsec);
-  }
-  catch(libTF::TransformReference::LookupException& ex)
-  {
-    puts("no global->local Tx yet");
-  }
-  
-
-  /*
-  this->pose[0] = odomMsg.pos.x;
-  this->pose[1] = odomMsg.pos.y;
-  this->pose[2] = odomMsg.pos.th;
-
-  printf("gpose: %.3f %.3f %.3f\n",
-         this->pose[0],
-         this->pose[1],
-         RTOD(this->pose[2]));
-         */
-
   if(this->firstodom)
   {
     this->prevOdom = odomMsg;
@@ -628,13 +578,106 @@ WavefrontNode::odomReceived()
 
   this->lock.unlock();
 }
+#endif
 
 void
 WavefrontNode::laserReceived()
 {
-  // Buffer the scan.  It will get processed in odomReceived()
   this->lock.lock();
-  this->buffered_laser_scans.push_back(new MsgLaserScan(laserMsg));
+
+  // For each beam, convert to cartesian in the laser's frame, then convert
+  // to the map frame and store the result in the the laser_scans list
+
+  laser_pts_t pts;
+  pts.pts_num = laserMsg.get_ranges_size() * 2;
+  pts.pts = new double[pts.pts_num];
+  assert(pts.pts);
+  pts.ts = laserMsg.header.stamp;
+
+  libTF::TFPose2D local,global;
+  local.frame = FRAMEID_LASER;
+  local.time = laserMsg.header.stamp.sec * 1000000000ULL + 
+          laserMsg.header.stamp.nsec;
+  float b=laserMsg.angle_min;
+  float* r=laserMsg.ranges;
+  for(unsigned int i=0;i<laserMsg.get_ranges_size();
+      i++,r++,b+=laserMsg.angle_increment)
+  {
+    local.x = (*r)*cos(b);
+    local.y = (*r)*sin(b);
+    local.yaw = 0;
+    try
+    {
+      global = this->tf.transformPose2D(FRAMEID_MAP, local);
+    }
+    catch(libTF::TransformReference::LookupException& ex)
+    {
+      puts("no global->local Tx yet");
+      delete[] pts.pts;
+      this->lock.unlock();
+      return;
+    }
+
+    // Copy in the result
+    pts.pts[2*i] = global.x;
+    pts.pts[2*i+1] = global.y;
+  }
+  this->laser_scans.push_back(pts);
+
+  // Remove anything that's too old from the laser_scans list
+  // Also count how many points we have
+  unsigned int hitpt_cnt=0;
+  for(std::list<laser_pts_t>::iterator it = this->laser_scans.begin();
+      it != this->laser_scans.end();
+      it++)
+  {
+    if((laserMsg.header.stamp - it->ts) > this->laser_buffer_time)
+    {
+      delete[] it->pts;
+      it = this->laser_scans.erase(it);
+      it--;
+    }
+    else
+      hitpt_cnt += it->pts_num;
+  }
+  
+  // allocate more space as necessary
+  if(this->laser_hitpts_size < hitpt_cnt)
+  {
+    this->laser_hitpts_size = hitpt_cnt;
+    this->laser_hitpts = 
+            (double*)realloc(this->laser_hitpts,
+                             this->laser_hitpts_size*sizeof(double));
+    assert(this->laser_hitpts);
+  }
+
+  // Copy all of the current hitpts into the laser_hitpts array, from where
+  // they will be copied into the planner, via plan_set_obstacles(), in
+  // doOneCycle()
+  this->laser_hitpts_len = 0;
+  for(std::list<laser_pts_t>::iterator it = this->laser_scans.begin();
+      it != this->laser_scans.end();
+      it++)
+  {
+    memcpy(this->laser_hitpts + this->laser_hitpts_len,
+           it->pts, it->pts_num * sizeof(double));
+    this->laser_hitpts_len += it->pts_num/2;
+  }
+  
+  // Draw the points
+
+  this->pointcloudMsg.set_points_size(hitpt_cnt/2);
+  this->pointcloudMsg.color.a = 0.0;
+  this->pointcloudMsg.color.r = 0.0;
+  this->pointcloudMsg.color.b = 1.0;
+  this->pointcloudMsg.color.g = 0.0;
+  for(unsigned int i=0;i<this->laser_hitpts_len;i++)
+  {
+    this->pointcloudMsg.points[i].x = this->laser_hitpts[2*i];
+    this->pointcloudMsg.points[i].y = this->laser_hitpts[2*i+1];
+  }
+  publish("gui_laser",this->pointcloudMsg);
+
   this->lock.unlock();
 }
 
@@ -665,13 +708,31 @@ WavefrontNode::sendVelCmd(double vx, double vy, double vth)
     this->stopped = false;
 }
 
-
 // Execute a planning cycle
 void 
 WavefrontNode::doOneCycle()
 {
   if(!this->enable)
   {
+    this->stopRobot();
+    return;
+  }
+  
+  // Get the current robot pose in the map frame
+  libTF::TFPose2D robotPose,global_pose;
+  robotPose.x = 0;
+  robotPose.y = 0;
+  robotPose.yaw = 0;
+  robotPose.frame = FRAMEID_ROBOT;
+  robotPose.time = laserMsg.header.stamp.sec * 1000000000ULL + 
+          laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
+  try
+  {
+    global_pose = this->tf.transformPose2D(FRAMEID_MAP, robotPose);
+  }
+  catch(libTF::TransformReference::LookupException& ex)
+  {
+    puts("no global->local Tx yet");
     this->stopRobot();
     return;
   }
@@ -692,7 +753,7 @@ WavefrontNode::doOneCycle()
       {
         // Are we done?
         if(plan_check_done(this->plan,
-                           this->pose[0], this->pose[1], this->pose[2],
+                           global_pose.x, global_pose.y, global_pose.yaw,
                            this->goal[0], this->goal[1], this->goal[2],
                            this->dist_eps, this->ang_eps))
         {
@@ -709,11 +770,11 @@ WavefrontNode::doOneCycle()
 
         // Try a local plan
         if((this->planner_state == NEW_GOAL) ||
-           (plan_do_local(this->plan, this->pose[0], this->pose[1], 
+           (plan_do_local(this->plan, global_pose.x, global_pose.y,
                          this->plan_halfwidth) < 0))
         {
           // Fallback on global plan
-          if(plan_do_global(this->plan, this->pose[0], this->pose[1], 
+          if(plan_do_global(this->plan, global_pose.x, global_pose.y,
                             this->goal[0], this->goal[1]) < 0)
           {
             // no global plan
@@ -730,7 +791,7 @@ WavefrontNode::doOneCycle()
           {
             // global plan succeeded; now try the local plan again
             this->printed_warning = false;
-            if(plan_do_local(this->plan, this->pose[0], this->pose[1], 
+            if(plan_do_local(this->plan, global_pose.x, global_pose.y, 
                              this->plan_halfwidth) < 0)
             {
               // no local plan; better luck next time through
@@ -747,8 +808,8 @@ WavefrontNode::doOneCycle()
         double vx, va;
         if(plan_compute_diffdrive_cmds(this->plan, &vx, &va,
                                        &this->rotate_dir,
-                                       this->pose[0], this->pose[1],
-                                       this->pose[2],
+                                       global_pose.x, global_pose.y,
+                                       global_pose.yaw,
                                        this->goal[0], this->goal[1],
                                        this->goal[2],
                                        this->dist_eps, this->ang_eps,
@@ -792,9 +853,9 @@ WavefrontNode::doOneCycle()
 			 (this->planner_state == PURSUING_GOAL)) ? 1 : 0;
   this->pstate.valid = (this->plan->path_count > 0) ? 1 : 0;
   this->pstate.done = (this->planner_state == REACHED_GOAL) ? 1 : 0;
-  this->pstate.pos.x = this->pose[0];
-  this->pstate.pos.y = this->pose[1];
-  this->pstate.pos.th = this->pose[2];
+  this->pstate.pos.x = global_pose.x;
+  this->pstate.pos.y = global_pose.y;
+  this->pstate.pos.th = global_pose.yaw;
   this->pstate.goal.x = this->goal[0];
   this->pstate.goal.y = this->goal[1];
   this->pstate.goal.th = this->goal[2];
@@ -894,19 +955,3 @@ read_map_from_image(int* size_x, int* size_y, char** mapdata,
   return(0);
 }
 
-// computes the signed minimum difference between the two angles.
-static double
-angle_diff(double a, double b)
-{
-  double d1, d2;
-  a = ANG_NORM(a);
-  b = ANG_NORM(b);
-  d1 = a-b;
-  d2 = 2*M_PI - fabs(d1);
-  if(d1 > 0)
-    d2 *= -1.0;
-  if(fabs(d1) < fabs(d2))
-    return(d1);
-  else
-    return(d2);
-}
