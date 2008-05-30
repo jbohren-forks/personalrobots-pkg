@@ -122,12 +122,15 @@ class TBK_Node : public ros::node
 };
 
 TBK_Node* tbk;
+int kfd = 0;
+struct termios cooked, raw;
 
 void
 quit(int sig)
 {
   tbk->stopRobot();
   ros::fini();
+  tcsetattr(kfd, TCSANOW, &cooked);
   exit(0);
 }
 
@@ -148,11 +151,9 @@ main(int argc, char** argv)
 void
 TBK_Node::keyboardLoop()
 {
-  int kfd = 0;
   char c;
   double max_tv = max_speed;
   double max_rv = max_turn;
-  struct termios cooked, raw;
   bool dirty=false;
 
   int speed=0;
