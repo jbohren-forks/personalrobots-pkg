@@ -383,203 +383,6 @@ WavefrontNode::goalReceived()
   this->lock.unlock();
 }
 
-#if 0
-void 
-WavefrontNode::odomReceived()
-{
-  this->lock.lock();
-  
-  if(this->firstodom)
-  {
-    this->prevOdom = odomMsg;
-    this->firstodom = false;
-  }
-  else
-  {
-    // Interpolate poses for all buffered scans
-    // TODO: use libTF's interpolation
-    for(std::list<MsgLaserScan*>::iterator it = 
-        this->buffered_laser_scans.begin();
-        it != this->buffered_laser_scans.end();
-        it++)
-    {
-      double t0 = prevOdom.header.stamp.sec + 
-              prevOdom.header.stamp.nsec / 1e9;
-      double t1 = odomMsg.header.stamp.sec + 
-              odomMsg.header.stamp.nsec / 1e9;
-      double tl = (*it)->header.stamp.sec + 
-              (*it)->header.stamp.nsec / 1e9;
-
-      if(tl < t0)
-      {
-        // Too late
-        it = this->buffered_laser_scans.erase(it);
-        it--;
-        continue;
-      }
-
-      if(tl > t1)
-      {
-        // Too early
-        continue;
-      }
-
-      double dt = t1 - t0;
-      double dtl = tl - t0;
-
-      double dx = odomMsg.pos.x - prevOdom.pos.x;
-      double dy = odomMsg.pos.y - prevOdom.pos.y;
-      double da = angle_diff(odomMsg.pos.th, prevOdom.pos.th);
-
-      MsgPose2DFloat32* p = new MsgPose2DFloat32();
-      p->x = prevOdom.pos.x + (dx / dt) * dtl;
-      p->y = prevOdom.pos.y + (dy / dt) * dtl;
-      p->th = ANG_NORM(prevOdom.pos.th + (da / dt) * dtl);
-
-      /*
-      printf("0: %.3f %.3f %.3f\t%.6f\n",
-             prevOdom.pos.x,
-             prevOdom.pos.y,
-             prevOdom.pos.th,
-             t0);
-      printf("I: %.3f %.3f %.3f\t%.6f\n",
-             p->x,p->y,p->th, tl);
-      printf("1: %.3f %.3f %.3f\t%.6f\n",
-             odomMsg.pos.x,
-             odomMsg.pos.y,
-             odomMsg.pos.th,
-             t1);
-             */
-
-      //MsgLaserScan* scan = new MsgLaserScan(**it);
-      MsgLaserScan* scan = new MsgLaserScan();
-      scan->angle_min = (*it)->angle_min;
-      scan->angle_increment = (*it)->angle_increment;
-      scan->range_max = (*it)->range_max;
-      scan->set_ranges_size((*it)->get_ranges_size());
-      scan->header.stamp.sec = (*it)->header.stamp.sec;
-      scan->header.stamp.nsec = (*it)->header.stamp.nsec;
-      memcpy(scan->ranges,(*it)->ranges,
-             sizeof(float)*(*it)->get_ranges_size());
-
-      std::pair<MsgPose2DFloat32*,MsgLaserScan*> item(p,scan);
-
-      this->laser_scans.push_back(item);
-      it = this->buffered_laser_scans.erase(it);
-      it--;
-    }
-
-    //printf("%lu scans\n", laser_scans.size());
-
-    // Remove anything that's too old
-    // Also count how many points we have
-    double currtime = this->odomMsg.header.stamp.sec + 
-            this->odomMsg.header.stamp.nsec / 1e9;
-    unsigned int hitpt_cnt=0;
-    for(std::list<std::pair<MsgPose2DFloat32*,MsgLaserScan*> >::iterator it = this->laser_scans.begin();
-        it != this->laser_scans.end();
-        it++)
-    {
-      double msgtime = it->second->header.stamp.sec + it->second->header.stamp.nsec / 1e9;
-      if((currtime - msgtime) > this->laser_buffer_time)
-      {
-        delete it->first;
-        delete it->second->ranges;
-        delete it->second;
-        it = this->laser_scans.erase(it);
-        it--;
-      }
-      else
-        hitpt_cnt += it->second->get_ranges_size()*2;
-    }
-
-    // allocate more space as necessary
-    if(this->laser_hitpts_size < hitpt_cnt)
-    {
-      this->laser_hitpts_size = hitpt_cnt;
-      this->laser_hitpts = 
-              (double*)realloc(this->laser_hitpts,
-                               this->laser_hitpts_size*sizeof(double));
-      assert(this->laser_hitpts);
-    }
-
-    // project hit points from each scan
-    double* pts = this->laser_hitpts;
-    this->laser_hitpts_len = 0;
-    for(std::list<std::pair<MsgPose2DFloat32*, MsgLaserScan*> >::iterator it = this->laser_scans.begin();
-        it != this->laser_scans.end();
-        it++)
-    {
-      /*
-      printf("%.3f %.3f %.3f: %d\n", 
-             it->first->x,
-             it->first->y,
-             it->first->th,
-             it->second->get_ranges_size());
-             */
-      float b=it->second->angle_min;
-      float* r=it->second->ranges;
-      for(unsigned int j=0;
-          j<it->second->get_ranges_size();
-          j++,r++,b+=it->second->angle_increment)
-      {
-        // TODO: take out the bogus epsilon range_max check, after the
-        // hokuyourg_player node is fixed
-        if(((*r) >= this->laser_maxrange) || 
-           ((it->second->range_max > 0.1) && ((*r) >= it->second->range_max)) ||
-           ((*r) <= 0.01))
-          continue;
-
-        // Project into laser frame
-        double lx, ly;
-        lx = (*r)*cos(b);
-        ly = (*r)*sin(b);
-
-        // Convert into robot frame
-        double rx,ry;
-        double cs,sn;
-        cs = cos(laser_pose[2]);
-        sn = sin(laser_pose[2]);
-        rx = laser_pose[0] + lx*cs - ly*sn;
-        ry = laser_pose[1] + lx*sn + ly*cs;
-
-        // Convert to world frame
-        double wx,wy;
-        cs = cos(it->first->th);
-        sn = sin(it->first->th);
-        wx = it->first->x + cs*rx - sn*ry;
-        wy = it->first->y + sn*rx + cs*ry;
-
-        assert(this->laser_hitpts_len*2 < this->laser_hitpts_size);
-        *pts = wx;
-        pts++;
-        *pts = wy;
-        pts++;
-        this->laser_hitpts_len++;
-      }
-    }
-
-    // Draw the points
-
-    this->pointcloudMsg.set_points_size(hitpt_cnt/2);
-    this->pointcloudMsg.color.a = 0.0;
-    this->pointcloudMsg.color.r = 0.0;
-    this->pointcloudMsg.color.b = 1.0;
-    this->pointcloudMsg.color.g = 0.0;
-    for(unsigned int i=0;i<this->laser_hitpts_len;i++)
-    {
-      this->pointcloudMsg.points[i].x = this->laser_hitpts[2*i];
-      this->pointcloudMsg.points[i].y = this->laser_hitpts[2*i+1];
-    }
-    publish("gui_laser",this->pointcloudMsg);
-
-    prevOdom = odomMsg;
-  }
-
-  this->lock.unlock();
-}
-#endif
-
 void
 WavefrontNode::laserReceived()
 {
@@ -589,13 +392,14 @@ WavefrontNode::laserReceived()
   // to the map frame and store the result in the the laser_scans list
 
   laser_pts_t pts;
-  pts.pts_num = laserMsg.get_ranges_size() * 2;
-  pts.pts = new double[pts.pts_num];
+  pts.pts_num = laserMsg.get_ranges_size();
+  pts.pts = new double[pts.pts_num*2];
   assert(pts.pts);
   pts.ts = laserMsg.header.stamp;
 
   libTF::TFPose2D local,global;
-  local.frame = FRAMEID_LASER;
+  //local.frame = FRAMEID_LASER;
+  local.frame = FRAMEID_ROBOT;
   local.time = laserMsg.header.stamp.sec * 1000000000ULL + 
           laserMsg.header.stamp.nsec;
   float b=laserMsg.angle_min;
@@ -603,6 +407,13 @@ WavefrontNode::laserReceived()
   for(unsigned int i=0;i<laserMsg.get_ranges_size();
       i++,r++,b+=laserMsg.angle_increment)
   {
+    // TODO: take out the bogus epsilon range_max check, after the
+    // hokuyourg_player node is fixed
+    if(((*r) >= this->laser_maxrange) || 
+       ((laserMsg.range_max > 0.1) && ((*r) >= laserMsg.range_max)) ||
+       ((*r) <= 0.01))
+      continue;
+
     local.x = (*r)*cos(b);
     local.y = (*r)*sin(b);
     local.yaw = 0;
@@ -647,7 +458,7 @@ WavefrontNode::laserReceived()
     this->laser_hitpts_size = hitpt_cnt;
     this->laser_hitpts = 
             (double*)realloc(this->laser_hitpts,
-                             this->laser_hitpts_size*sizeof(double));
+                             2*this->laser_hitpts_size*sizeof(double));
     assert(this->laser_hitpts);
   }
 
@@ -659,14 +470,14 @@ WavefrontNode::laserReceived()
       it != this->laser_scans.end();
       it++)
   {
-    memcpy(this->laser_hitpts + this->laser_hitpts_len,
-           it->pts, it->pts_num * sizeof(double));
-    this->laser_hitpts_len += it->pts_num/2;
+    memcpy(this->laser_hitpts + this->laser_hitpts_len * 2,
+           it->pts, it->pts_num * 2 * sizeof(double));
+    this->laser_hitpts_len += it->pts_num;
   }
   
   // Draw the points
 
-  this->pointcloudMsg.set_points_size(hitpt_cnt/2);
+  this->pointcloudMsg.set_points_size(hitpt_cnt);
   this->pointcloudMsg.color.a = 0.0;
   this->pointcloudMsg.color.r = 0.0;
   this->pointcloudMsg.color.b = 1.0;
