@@ -82,6 +82,8 @@ Publishes to (name / type):
 
 // roscpp
 #include <ros/node.h>
+//rosTF
+#include "rosTF/rosTF.h"
 // Messages that I need
 #include <std_msgs/MsgRobotBase2DOdom.h>
 //#include <std_msgs/MsgRobotBase2DCmdVel.h>
@@ -102,7 +104,10 @@ class ErraticNode: public ros::node
     //MsgRobotBase2DCmdVel cmdvel;
     MsgBaseVel cmdvel;
 
-    ErraticNode() : ros::node("erratic_player")
+  rosTF::rosTFServer tf;
+  
+  ErraticNode() : ros::node("erratic_player"),
+		  tf(*this)
     {
       // libplayercore boiler plate
       player_globals_init();
@@ -283,10 +288,28 @@ main(int argc, char** argv)
       en.odom.vel.th = pdata->vel.pa;
       en.odom.stall = pdata->stall;
 
-      en.odom.header.frame_id = 2;
+      en.odom.header.frame_id = FRAMEID_ODOM;
+      
+      en.odom.header.stamp.sec = (long long unsigned int)floor(hdr->timestamp);
+      en.odom.header.stamp.sec = (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL);
+      
 
       // Publish the new data
       en.publish("odom", en.odom);
+
+      tf.sendInverseEuler(FRAMEID_ODOM,
+			  FRAMEID_ROBOT,
+			  pdata->pos.px,
+			  pdata->pos.py,
+			  0.0,
+			  pdata->pos.pa,
+			  0.0,
+			  0.0,
+			  (long long unsigned int)floor(hdr->timestamp),
+			  (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL));
+      
+      std::cout <<"Sent 32" <<std::endl;
+
 
       //printf("Published new odom: (%.3f,%.3f,%.3f)\n", 
              //en.odom.pos.x, en.odom.pos.y, en.odom.pos.th);

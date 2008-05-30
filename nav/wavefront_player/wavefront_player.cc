@@ -229,7 +229,7 @@ class WavefrontNode: public ros::node
 
   public:
     // Transform client
-    rosTFClient* tf;
+    rosTFClient tf;
 
     WavefrontNode(char* fname, double res);
     ~WavefrontNode();
@@ -293,7 +293,7 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         avmax(DTOR(80.0)),
         amin(DTOR(10.0)),
         amax(DTOR(40.0)),
-        tf(NULL)
+        tf(*this, false)
 {
   // TODO: get map via RPC
   char* mapdata;
@@ -331,8 +331,6 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
   // Compute cspace over static map
   plan_compute_cspace(this->plan);
 
-  //this->tf = new rosTFClient(*this);
-
   this->laser_hitpts_size = this->laser_hitpts_len = 0;
   this->laser_hitpts = NULL;
 
@@ -348,16 +346,16 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
   advertise<MsgPolyline2D>("gui_laser");
   advertise<MsgBaseVel>("cmd_vel");
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived);
-  //subscribe("odom", odomMsg, &WavefrontNode::odomReceived);
-  subscribe("localizedpose", odomMsg, &WavefrontNode::odomReceived);
+  subscribe("odom", odomMsg, &WavefrontNode::odomReceived);
+  //subscribe("localizedpose", odomMsg, &WavefrontNode::odomReceived);
   subscribe("scan", laserMsg, &WavefrontNode::laserReceived);
 }
 
 WavefrontNode::~WavefrontNode()
 {
   plan_free(this->plan);
-  if(this->tf)
-    delete this->tf;
+  //  if(this->tf)
+  //  delete this->tf;
 }
 
 void 
@@ -385,19 +383,31 @@ void
 WavefrontNode::odomReceived()
 {
   this->lock.lock();
-  /*
-  libTF::TFPose2D odom_pose;
+  
+  libTF::TFPose2D robotPose;
+  robotPose.x = 0;
+  robotPose.y = 0;
+  robotPose.yaw = 0;
+  robotPose.frame = FRAMEID_ROBOT;
+  //  robotPose.time = myClock.ulltime();
+  robotPose.time = odomMsg.header.stamp.sec * 1000000000ULL + 
+    odomMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
+
+  //  std::cout <<"robotTime"  << robotPose.time << std::endl;
+  /* libTF::TFPose2D pose;
   odom_pose.x = odomMsg.pos.x;
   odom_pose.y = odomMsg.pos.y;
   odom_pose.yaw = odomMsg.pos.th;
   odom_pose.time = odomMsg.header.stamp.sec * 1000000000ULL + 
           odomMsg.header.stamp.nsec;
   odom_pose.frame = odomMsg.header.frame_id;
-
+  */
   try
   {
     libTF::TFPose2D global_pose = 
-            this->tf->transformPose2D(ROSTF_FRAME_MAP, odom_pose);
+      this->tf.transformPose2D(FRAMEID_MAP, robotPose);
+    cout << tf.getMatrix(FRAMEID_MAP, FRAMEID_ROBOT, robotPose.time);
+
     this->pose[0] = global_pose.x;
     this->pose[1] = global_pose.y;
     this->pose[2] = global_pose.yaw;
@@ -416,12 +426,13 @@ WavefrontNode::odomReceived()
   {
     puts("no global->local Tx yet");
   }
-  */
+  
 
+  /*
   this->pose[0] = odomMsg.pos.x;
   this->pose[1] = odomMsg.pos.y;
   this->pose[2] = odomMsg.pos.th;
-  /*
+
   printf("gpose: %.3f %.3f %.3f\n",
          this->pose[0],
          this->pose[1],

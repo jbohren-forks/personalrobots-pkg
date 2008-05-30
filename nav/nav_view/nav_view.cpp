@@ -106,6 +106,9 @@ Publishes to (name / type):
 #include "std_msgs/MsgPose2DFloat32.h"
 #include "sdlgl/sdlgl.h"
 
+#include "rosTF/rosTF.h"
+#include "rostime/clock.h"
+
 class NavView : public ros::node, public ros::SDLGL
 {
 public:
@@ -124,13 +127,17 @@ public:
   bool setting_theta;
   double gx,gy;
 
+  rosTFClient tf;
+  ros::time::clock myClock;
+
   NavView() : ros::node("nav_view",false),
-    view_scale(10), view_x(0), view_y(0)
+	      view_scale(10), view_x(0), view_y(0),
+	      tf(*this,false)
   {
     advertise<MsgPlanner2DGoal>("goal");
     advertise<MsgPose2DFloat32>("initialpose");
     //subscribe("state", pstate, &NavView::pstate_cb);
-    subscribe("odom", odom, &NavView::odom_cb);
+    //    subscribe("odomm", odom, &NavView::odom_cb); //replaced with rosTF
     subscribe("particlecloud", cloud, &NavView::odom_cb);
     subscribe("gui_path", pathline, &NavView::odom_cb);
     subscribe("gui_laser", laserscan, &NavView::odom_cb);
@@ -201,10 +208,24 @@ public:
     }
 
     glPushMatrix();
-      odom.lock();
-      glTranslatef(odom.pos.x, odom.pos.y, 0);
-      glRotatef(odom.pos.th * 180 / M_PI, 0, 0, 1);
-      odom.unlock();
+      libTF::TFPose2D robotPose;
+      robotPose.x = 0;
+      robotPose.y = 0;
+      robotPose.yaw = 0;
+      robotPose.frame = FRAMEID_ROBOT;
+      robotPose.time = 0;//myClock.ulltime();
+
+      libTF::TFPose2D mapPose = tf.transformPose2D(FRAMEID_MAP, robotPose);
+
+      glTranslatef(mapPose.x, mapPose.y, 0);
+      glRotatef(mapPose.yaw * 180 / M_PI, 0, 0, 1);
+
+      /*      printf("lpose: %.3f %.3f %.3f\n",
+           mapPose.x,
+           mapPose.y,
+           mapPose.yaw);
+      */
+
       glColor3f(0.2, 1.0, 0.4);
       glBegin(GL_LINE_LOOP);
         const float robot_rad = 0.3;

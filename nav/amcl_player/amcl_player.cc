@@ -351,22 +351,27 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     player_position2d_data_t* pdata = 
             (player_position2d_data_t*)data;
 
-    /*
+    
     // publish new transform map->odom
     printf("lpose: %.3f %.3f %.3f\n",
            odomMsg.pos.x,
            odomMsg.pos.y,
            RTOD(odomMsg.pos.th));
-    this->tf->sendEuler(ROSTF_FRAME_ODOM,
-                        ROSTF_FRAME_MAP,
-                        pdata->pos.px-this->odomMsg.pos.x,
-                        pdata->pos.py-this->odomMsg.pos.y,
+    this->tf->sendEuler(FRAMEID_ROBOT,
+                        FRAMEID_MAP,
+                        pdata->pos.px,
+                        pdata->pos.py,
                         0.0,
-                        pdata->pos.pa-this->odomMsg.pos.th,
+                        pdata->pos.pa,
                         0.0,
                         0.0,
-                        (long long unsigned int)floor(hdr->timestamp),
-                        (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL));
+			odomMsg.header.stamp.sec,
+			odomMsg.header.stamp.nsec);
+
+			//(long long unsigned int)floor(hdr->timestamp),
+                        //(long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL));
+
+    std::cout <<"Sent 21" <<std::endl;
 
     printf("pose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",
            pdata->pos.px,
@@ -375,7 +380,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
            (long long unsigned int)floor(hdr->timestamp),
            (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 
                           1000000000ULL));
-    */
+    
     localizedOdomMsg.pos.x = pdata->pos.px;
     localizedOdomMsg.pos.y = pdata->pos.py;
     localizedOdomMsg.pos.th = pdata->pos.pa;

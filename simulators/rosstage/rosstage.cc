@@ -87,6 +87,8 @@ Publishes to (name / type):
 #include <std_msgs/MsgRobotBase2DOdom.h>
 #include <std_msgs/MsgBaseVel.h>
 
+#include "rosTF/rosTF.h"
+
 #define USAGE "rosstage <worldfile>"
 
 // Our node
@@ -108,6 +110,8 @@ class StageNode : public ros::node
     // A helper function that is executed for each stage model.  We use it
     // to search for models of interest.
     static void ghfunc(gpointer key, Stg::StgModel* mod, StageNode* node);
+
+  rosTFServer tf;
 
   public:
     // Constructor; stage itself needs argc/argv.  fname is the .world file
@@ -158,7 +162,8 @@ StageNode::cmdvelReceived()
 }
 
 StageNode::StageNode(int argc, char** argv, const char* fname) :
-        ros::node("rosstage")
+  ros::node("rosstage"),
+  tf(*this)
 {
   this->lasermodel = NULL;
   this->positionmodel = NULL;
@@ -255,16 +260,30 @@ StageNode::Update()
   this->odomMsg.vel.th = v.a;
   this->odomMsg.stall = this->positionmodel->Stall();
   // TODO: get the frame ID from somewhere
-  this->odomMsg.header.frame_id = 2;
+  this->odomMsg.header.frame_id = FRAMEID_ODOM;
 
   this->odomMsg.header.stamp.sec = 
-          (unsigned long)floor(world->SimTimeNow() / 1e3);
+          (unsigned long)floor(world->SimTimeNow() / 1e6);
   this->odomMsg.header.stamp.nsec = 
-          (unsigned long)rint(1e6 * (world->SimTimeNow() - 
-                                     this->odomMsg.header.stamp.sec * 1e3));
+          (unsigned long)rint(1e3 * (world->SimTimeNow() - 
+                                     this->odomMsg.header.stamp.sec * 1e6));
   this->odomMsg.__timestamp_override = true;
   publish("odom",this->odomMsg);
 
+  //  printf("%u \n",world->SimTimeNow());
+  printf("time: %u, %u \n",odomMsg.header.stamp.sec, odomMsg.header.stamp.nsec);
+
+  tf.sendInverseEuler(FRAMEID_ODOM,
+		      FRAMEID_ROBOT,
+		      odomMsg.pos.x,
+		      odomMsg.pos.y,
+		      0.0,
+		      odomMsg.pos.th,
+		      0.0,
+		      0.0,
+		      odomMsg.header.stamp.sec,
+		      odomMsg.header.stamp.nsec);
+  
   this->lock.unlock();
 }
 
