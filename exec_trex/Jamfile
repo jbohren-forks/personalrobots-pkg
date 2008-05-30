@@ -1,6 +1,6 @@
-SubDir trex_demo ;
+SubDir exec_trex ;
 
-if ! $(trex_demo_READY) {
+if ! $(exec_trex_READY) {
 
 	# Define Libraries required for ROS:  Can obtain from rospack export/cpp/lflags roscp
    	NEEDLIBS = 	[ FDirName $(ROS_ROOT) core roscpp lib libros.a ]
@@ -42,5 +42,5 @@ if ! $(trex_demo_READY) {
 	NddlModel pr2.model.nddl : System ;
 
 	# Build all
-	Depends trex_demo : rcs ros_exec exec_listener logger ros.exec.xml ros.sim.xml ;
+	Depends exec_trex : rcs ros_exec exec_listener logger ros.exec.xml ros.sim.xml ;
 }	

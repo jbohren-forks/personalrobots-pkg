@@ -1,12 +1,12 @@
 {
- # Extracting a local variable is important.
- local PLASMA = $(PLASMA_HOME) ;
- local trex_demo = [ FDirName $(EXEC_HOME) ] ;
- include [ FDirName $(PLASMA_HOME) Jamrules ] ;
- include [ FDirName  $(TREX_HOME) Jamrules ] ;
+ #local PLASMA_HOME = [ FDirName $(PR2_ROOT) 3rdparty trex PLASMA ] ;
+ #local PLASMA = [ FDirName $(PLASMA_HOME) src PLASMA ] ;
+ local TREX = [ FDirName $(PR2_ROOT) 3rdparty trex TREX ] ;
+ local EXEC_HOME = [ FDirName $(PR2_ROOT) exec_trex ] ;
+ include [ FDirName $(TREX) Jamfile ] ;
  include [ FDirName $(EXEC_HOME) Jamfile ] ;
 
- trex_demo_READY = TRUE ;
+ exec_trex_READY = TRUE ;
 
 }
 
