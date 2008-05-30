@@ -11,7 +11,7 @@ dependency system.
 <license>zlib</license>
 <url>http://irrlicht.sourceforge.net/index.html</url>
 <export>
-  <cpp lflags="-L${prefix}/irrlicht-1.4/lib/Linux -lIrrlicht" cflags="-I${prefix}/irrlicht-1.4/include"/>
+  <cpp lflags="-L${prefix}/irrlicht-1.4/lib/Linux -lIrrlicht -L/usr/X111R6/lib -lGL -lXxf86vm -lXext -lX11" cflags="-I${prefix}/irrlicht-1.4/include /usr/X11R6/include -ffast-math"/>
   <doxymaker external="http://irrlicht.sourceforge.net/docu/index.html" />
 </export>
 </package>
