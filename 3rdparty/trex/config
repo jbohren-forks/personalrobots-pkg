@@ -1,3 +1,3 @@
-export PLASMA_HOME=`pwd`/PLASMA
-export TREX_LOG_DIR=`pwd`/logs
+export PLASMA_HOME=$PR2_ROOT/3rdparty/trex/PLASMA
+export TREX_LOG_DIR=$PR2_ROOT/3rdparty/trex/logs
 export LD_LIBRARY_PATH=$PLASMA_HOME/build/lib:$LD_LIBRARY_PATH
