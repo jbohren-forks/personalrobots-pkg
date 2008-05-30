@@ -98,7 +98,7 @@ Publishes to (name / type):
 #include <GL/gl.h>
 #include <SDL/SDL_image.h>
 #include "ros/node.h"
-#include "std_msgs/MsgRobotBase2DOdom.h"
+//#include "std_msgs/MsgRobotBase2DOdom.h"
 #include "std_msgs/MsgParticleCloud2D.h"
 #include "std_msgs/MsgPlanner2DGoal.h"
 //#include "std_msgs/MsgPlanner2DState.h"
@@ -112,7 +112,7 @@ Publishes to (name / type):
 class NavView : public ros::node, public ros::SDLGL
 {
 public:
-  MsgRobotBase2DOdom odom;
+  //MsgRobotBase2DOdom odom;
   MsgParticleCloud2D cloud;
   MsgPlanner2DGoal goal;
   //MsgPlanner2DState pstate;
@@ -137,7 +137,7 @@ public:
     advertise<MsgPlanner2DGoal>("goal");
     advertise<MsgPose2DFloat32>("initialpose");
     //subscribe("state", pstate, &NavView::pstate_cb);
-    //    subscribe("odomm", odom, &NavView::odom_cb); //replaced with rosTF
+    //subscribe("odom", odom, &NavView::odom_cb); //replaced with rosTF
     subscribe("particlecloud", cloud, &NavView::odom_cb);
     subscribe("gui_path", pathline, &NavView::odom_cb);
     subscribe("gui_laser", laserscan, &NavView::odom_cb);
@@ -213,7 +213,7 @@ public:
       robotPose.y = 0;
       robotPose.yaw = 0;
       robotPose.frame = FRAMEID_ROBOT;
-      robotPose.time = 0;//myClock.ulltime();
+      robotPose.time = 0;
 
       libTF::TFPose2D mapPose = tf.transformPose2D(FRAMEID_MAP, robotPose);
 
