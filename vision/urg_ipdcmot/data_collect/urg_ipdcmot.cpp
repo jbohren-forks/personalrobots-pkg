@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <math.h>
 #include <iostream>
+#include <unistd.h>
+#include <sys/stat.h>
 
 #include "urg_laser.h"
 #include "ros/time.h"
@@ -21,6 +23,7 @@ const int skip = 0;
 bool running = false, bail = false;
 const double left_scan_extent = 5, right_scan_extent = 150;
 const char *ipdcmot_ip = "192.168.1.38";
+char logdir[1000];
 
 int stop();
 
@@ -82,7 +85,7 @@ int grab_scan()
 void *urg_thread_func(void *)
 {
   printf("entering urg thread\n");
-  FILE *urg_log = fopen("urg.txt", "w");
+  FILE *urg_log = fopen((string(logdir) + string("/urg.txt")).c_str(), "w");
   if (!urg_log)
   {
     printf("couldn't open urg log\n");
@@ -110,7 +113,15 @@ void *urg_thread_func(void *)
 
 int main(int argc, char** argv)
 {
-  FILE *mot_log = fopen("mot.txt", "w");
+  time_t t = time(NULL);
+  struct tm *tms = localtime(&t);
+  snprintf(logdir, sizeof(logdir), "%d-%02d-%02d-%02d-%02d-%02d",
+           tms->tm_year+1900, tms->tm_mon+1, tms->tm_mday,
+           tms->tm_hour     , tms->tm_min  , tms->tm_sec);
+  printf("log directory: %s", logdir);
+  mkdir(logdir, 0755);
+  string motlog = logdir + string("/mot.txt");
+  FILE *mot_log = fopen(motlog.c_str(), "w");
   if (!mot_log)
   {
     printf("couldn't open motor log\n");
