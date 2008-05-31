@@ -201,7 +201,7 @@ class WavefrontNode: public ros::node
     // Map update paramters (for adding obstacles)
     double laser_maxrange;
     ros::Duration laser_buffer_time;
-    std::list<MsgLaserScan*> buffered_laser_scans;
+    std::list<MsgLaserScan> buffered_laser_scans;
     std::list<laser_pts_t> laser_scans;
     double* laser_hitpts;
     size_t laser_hitpts_len, laser_hitpts_size;
@@ -358,8 +358,6 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
 WavefrontNode::~WavefrontNode()
 {
   plan_free(this->plan);
-  //  if(this->tf)
-  //  delete this->tf;
 }
 
 void 
@@ -387,16 +385,21 @@ void
 WavefrontNode::laserReceived()
 {
   // Copy and push this scan into the list of buffered scans
-  MsgLaserScan* newscan = new MsgLaserScan(laserMsg);
-  assert(newscan);
-  // Do a deep copy of the range data
-  newscan->set_ranges_size(laserMsg.get_ranges_size());
-  memcpy(newscan->ranges,laserMsg.ranges,laserMsg.get_ranges_size()*sizeof(float));
-  newscan->set_intensities_size(0);
+  MsgLaserScan newscan;
+  // Do a deep copy
+  newscan.header.stamp.sec = laserMsg.header.stamp.sec;
+  newscan.header.stamp.nsec = laserMsg.header.stamp.nsec;
+  newscan.header.frame_id = laserMsg.header.frame_id;
+  newscan.range_max = laserMsg.range_max;
+  newscan.angle_min = laserMsg.angle_min;
+  newscan.angle_max = laserMsg.angle_max;
+  newscan.angle_increment = laserMsg.angle_increment;
+  newscan.set_ranges_size(laserMsg.get_ranges_size());
+  memcpy(newscan.ranges,laserMsg.ranges,laserMsg.get_ranges_size()*sizeof(float));
   this->buffered_laser_scans.push_back(newscan);
 
   // Iterate through the buffered scans, trying to interpolate each one
-  for(std::list<MsgLaserScan*>::iterator it = this->buffered_laser_scans.begin();
+  for(std::list<MsgLaserScan>::iterator it = this->buffered_laser_scans.begin();
       it != this->buffered_laser_scans.end();
       it++)
   {
@@ -404,26 +407,26 @@ WavefrontNode::laserReceived()
     // to the map frame and store the result in the the laser_scans list
 
     laser_pts_t pts;
-    pts.pts_num = (*it)->get_ranges_size();
+    pts.pts_num = it->get_ranges_size();
     pts.pts = new double[pts.pts_num*2];
     assert(pts.pts);
-    pts.ts = (*it)->header.stamp;
+    pts.ts = it->header.stamp;
 
     libTF::TFPose2D local,global;
-    local.frame = FRAMEID_LASER;
-    //local.frame = FRAMEID_ROBOT;
-    local.time = (*it)->header.stamp.sec * 1000000000ULL + 
-            (*it)->header.stamp.nsec;
-    float b=(*it)->angle_min;
-    float* r=(*it)->ranges;
+    local.frame = it->header.frame_id;
+    local.time = it->header.stamp.sec * 1000000000ULL + 
+            it->header.stamp.nsec;
+    float b=it->angle_min;
+    float* r=it->ranges;
     unsigned int i;
-    for(i=0;i<(*it)->get_ranges_size();
-        i++,r++,b+=(*it)->angle_increment)
+    unsigned int cnt=0;
+    for(i=0;i<it->get_ranges_size();
+        i++,r++,b+=it->angle_increment)
     {
       // TODO: take out the bogus epsilon range_max check, after the
       // hokuyourg_player node is fixed
       if(((*r) >= this->laser_maxrange) || 
-         (((*it)->range_max > 0.1) && ((*r) >= (*it)->range_max)) ||
+         ((it->range_max > 0.1) && ((*r) >= it->range_max)) ||
          ((*r) <= 0.01))
         continue;
 
@@ -448,15 +451,18 @@ WavefrontNode::laserReceived()
       }
 
       // Copy in the result
-      pts.pts[2*i] = global.x;
-      pts.pts[2*i+1] = global.y;
+      pts.pts[2*cnt] = global.x;
+      pts.pts[2*cnt+1] = global.y;
+      cnt++;
     }
     // Did we break early?
-    if(i < (*it)->get_ranges_size())
+    if(i < it->get_ranges_size())
       continue;
     else
     {
+      pts.pts_num = cnt;
       this->laser_scans.push_back(pts);
+      delete[] it->ranges;
       it = this->buffered_laser_scans.erase(it);
       it--;
     }
@@ -504,11 +510,10 @@ WavefrontNode::laserReceived()
            it->pts, it->pts_num * 2 * sizeof(double));
     this->laser_hitpts_len += it->pts_num;
   }
-  this->lock.unlock();
   
   // Draw the points
 
-  this->pointcloudMsg.set_points_size(hitpt_cnt);
+  this->pointcloudMsg.set_points_size(this->laser_hitpts_len);
   this->pointcloudMsg.color.a = 0.0;
   this->pointcloudMsg.color.r = 0.0;
   this->pointcloudMsg.color.b = 1.0;
@@ -519,6 +524,7 @@ WavefrontNode::laserReceived()
     this->pointcloudMsg.points[i].y = this->laser_hitpts[2*i+1];
   }
   publish("gui_laser",this->pointcloudMsg);
+  this->lock.unlock();
 }
 
 void
