@@ -88,8 +88,10 @@ public:
     int bpp = 0;
     if (msg->colorspace == "rgb24" || msg->colorspace == "bgr24")
       bpp = 3;
-    if (msg->colorspace == "mono8")
+    else if (msg->colorspace == "mono8")
       bpp = 1;
+    else if (msg->colorspace == "mono16")
+      bpp = 2;
     return msg->width * msg->height * bpp;
   }
 

@@ -75,19 +75,29 @@ public:
       return false;
 
     int channels = 1;
+    int depth = IPL_DEPTH_8U;
+    int elem_size = 1;
 
     if (this->msg->colorspace == "rgb24") {
       channels = 3;
+      elem_size = 1;
+      depth = IPL_DEPTH_8U;
     } else if (this->msg->colorspace == "mono8") {
       channels = 1;
+      elem_size = 1;
+      depth = IPL_DEPTH_8U;
+    } else if (this->msg->colorspace == "mono16") {
+      channels = 1;
+      elem_size = 2;
+      depth = IPL_DEPTH_16U;
     }
 
-    *cv_image = cvCreateImage(cvSize(this->msg->width, this->msg->height), 
-                              IPL_DEPTH_8U, channels);
-    // todo: ensure row alignment is ok (copy in one scanline at a time)
+    *cv_image = cvCreateImage(cvSize(this->msg->width, this->msg->height),
+                              depth, channels);
+    // todo: ensure row alignment is ok (copy in one scanline at a time)                                                      
     for (size_t row = 0; row < this->msg->height; row++)
-      memcpy((*cv_image)->imageData + row * (*cv_image)->widthStep, 
-             this->raster + row * this->msg->width * channels, this->msg->width*channels);
+      memcpy((*cv_image)->imageData + row * (*cv_image)->widthStep,
+             this->raster + row * this->msg->width * channels * elem_size, this->msg->width*channels * elem_size);
     return true;
   }
 };
