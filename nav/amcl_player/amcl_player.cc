@@ -353,10 +353,12 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
 
     
     // publish new transform map->odom
+    /*
     printf("lpose: %.3f %.3f %.3f\n",
            odomMsg.pos.x,
            odomMsg.pos.y,
            RTOD(odomMsg.pos.th));
+           */
     this->tf->sendEuler(FRAMEID_ROBOT,
                         FRAMEID_MAP,
                         pdata->pos.px,
@@ -365,14 +367,16 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
                         pdata->pos.pa,
                         0.0,
                         0.0,
-			odomMsg.header.stamp.sec,
-			odomMsg.header.stamp.nsec);
+			(long long unsigned int)floor(hdr->timestamp),
+                        (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL));
 
-			//(long long unsigned int)floor(hdr->timestamp),
-                        //(long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL));
+			//odomMsg.header.stamp.sec,
+			//odomMsg.header.stamp.nsec);
+
 
     //std::cout <<"Sent 21" <<std::endl;
 
+    /*
     printf("pose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",
            pdata->pos.px,
            pdata->pos.py,
@@ -380,6 +384,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
            (long long unsigned int)floor(hdr->timestamp),
            (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 
                           1000000000ULL));
+                          */
     
     localizedOdomMsg.pos.x = pdata->pos.px;
     localizedOdomMsg.pos.y = pdata->pos.py;
@@ -536,16 +541,15 @@ AmclNode::stop()
   // Unsubscribe from the device, which causes it to shutdown
   if(pdevice->Unsubscribe(this->Driver::InQueue) != 0)
   {
-    puts("Failed to start the driver");
-    return(-1);
+    puts("Failed to stop the driver");
   }
   else
   {
     // Give the driver a chance to shutdown.  Wish there were a way to
     // detect when that happened.
     usleep(1000000);
-    return(0);
   }
+  return(0);
 }
 
 int 
