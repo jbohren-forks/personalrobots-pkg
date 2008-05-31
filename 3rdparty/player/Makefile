@@ -6,7 +6,7 @@ player-svn:
 
 player: player-svn
 	cd player-svn && mkdir -p build
-	cd player-svn/build && cmake -D CMAKE_INSTALL_PREFIX=$(PWD)/player -D BUILD_PLAYERCC_BOOST=OFF ..
+	cd player-svn/build && cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=$(PWD)/player -D BUILD_PLAYERCC_BOOST=OFF ..
 	cd player-svn/build && make install
 	touch player
 
