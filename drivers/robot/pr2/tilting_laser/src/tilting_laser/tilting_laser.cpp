@@ -36,6 +36,7 @@
 #include "std_msgs/MsgEmpty.h"
 #include "std_msgs/MsgLaserScan.h"
 #include "std_msgs/MsgPointCloudFloat32.h"
+#include "std_msgs/MsgImage.h"
 #include "unstable_msgs/MsgActuator.h"
 #include "libTF/libTF.h"
 #include "rostime/clock.h"
@@ -51,7 +52,7 @@ public:
 
   MsgLaserScan scans;
   MsgActuator encoder;
-
+  MsgImage image;
 
   double starttime;
 
@@ -65,12 +66,15 @@ public:
 
   ros::time::clock clock;
 
-  Tilting_Laser() : ros::node("tilting_laser"), next_shutter(0.0)
+  int lines;
+
+  Tilting_Laser() : ros::node("tilting_laser"), next_shutter(0.0), lines(0)
   {
     
     advertise<MsgPointCloudFloat32>("cloud");
     advertise<MsgEmpty>("shutter");
     advertise<MsgActuator>("mot_cmd");
+    advertise<MsgImage>("image");
 
     subscribe("scan", scans, &Tilting_Laser::scans_callback);
     subscribe("mot",  encoder, &Tilting_Laser::encoder_callback);
@@ -89,6 +93,15 @@ public:
 		     0, 0, 0,
 		     0, 0, 0,
 		     time);
+
+
+
+    image.set_data_size(140*4*400*2);
+    image.height = 400;
+    image.width = 140*4;
+
+    image.colorspace = "mono16";
+    image.compression = "raw";
 
     starttime = clock.time();
   }
@@ -136,10 +149,21 @@ public:
       cloud.pts[i].y = rot_points(2,i+1);
       cloud.pts[i].z = rot_points(3,i+1);
       cloud.chan[0].vals[i] = scans.intensities[i];
+
+      if (lines < 400 && i < 4*140)
+	{
+	  if (fmod(next_shutter, 1.0) > 0.49) 
+	  {
+	    *(unsigned short*)(&(image.data[lines * 4*140 * 2 + 4*140*2 - 2 - 2*i])) = scans.intensities[i];
+	  } else {
+	    *(unsigned short*)(&(image.data[(400 - 1 - lines) * 4*140 * 2 + 4*140*2 - 2 - 2*i])) = scans.intensities[i];
+	  }
+	}
     }
 
     encoder.unlock();
 
+    lines++;
     publish("cloud", cloud);
   }
 
@@ -171,7 +195,10 @@ public:
 
     if (elapsed_cycles > next_shutter) {
       next_shutter += 0.5;
+      printf("Scanned %d lines\n", lines);
+      lines = 0;
       publish("shutter", shutter);
+      publish("image", image);
     }
     publish("mot_cmd",cmd);
   }
