@@ -240,6 +240,8 @@ StageNode::Update()
       this->laserMsg.intensities[i] = (uint8_t)samples[i].reflectance;
     }
 
+    // TODO: get the frame ID from somewhere
+    this->laserMsg.header.frame_id = FRAMEID_LASER;
     this->laserMsg.header.stamp.sec = 
             (unsigned long)floor(world->SimTimeNow() / 1e6);
     this->laserMsg.header.stamp.nsec = 
@@ -274,15 +276,15 @@ StageNode::Update()
   printf("time: %u, %u \n",odomMsg.header.stamp.sec, odomMsg.header.stamp.nsec);
 
   tf.sendInverseEuler(FRAMEID_ODOM,
-		      FRAMEID_ROBOT,
-		      odomMsg.pos.x,
-		      odomMsg.pos.y,
-		      0.0,
-		      odomMsg.pos.th,
-		      0.0,
-		      0.0,
-		      odomMsg.header.stamp.sec,
-		      odomMsg.header.stamp.nsec);
+                      FRAMEID_ROBOT,
+                      odomMsg.pos.x,
+                      odomMsg.pos.y,
+                      0.0,
+                      odomMsg.pos.th,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
   
   this->lock.unlock();
 }
