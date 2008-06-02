@@ -1,3 +1,4 @@
+#include <sys/time.h>
 #include <math.h>
 #include <stdio.h>
 #include <libTF/libTF.h>
@@ -11,7 +12,9 @@ int
 main(void)
 {
   libTF::TransformReference mTR(false);
-  unsigned long long atime = mTR.gettime();
+  timeval temp_time_struct;
+  gettimeofday(&temp_time_struct,NULL);
+  unsigned long long atime = temp_time_struct.tv_sec * 1000000000ULL + (unsigned long long)temp_time_struct.tv_usec * 1000ULL;
 
   libTF::TFPose2D mappose;
   libTF::TFPose2D odompose;

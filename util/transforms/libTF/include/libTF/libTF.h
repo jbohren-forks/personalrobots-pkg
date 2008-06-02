@@ -259,13 +259,6 @@ public:
   // TransformReference::MaxDepthException
 
 
-
-  /**** Utility Functions ****/
-  /** \brief Get the system time in ULLtime
-   * This is a function to return the current time in nanooseconds from the beginning of 1970
-   */
-  static  ULLtime gettime(void);
-
   /************ Possible Exceptions ****************************/
 
   /** \brief An exception class to notify of bad frame number 

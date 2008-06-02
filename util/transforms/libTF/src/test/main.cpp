@@ -1,5 +1,5 @@
 #include "libTF/libTF.h"
-#include <time.h>
+#include <sys/time.h>
 
 using namespace std;
 using namespace libTF;
@@ -23,7 +23,12 @@ int main(void)
   dx = dy= dz = 0;
   dyaw = dp = dr = 0.1;
   
-  unsigned long long atime = mTR.gettime();
+  unsigned long long atime;
+
+
+  timeval temp_time_struct;
+  gettimeofday(&temp_time_struct,NULL);
+  atime =  temp_time_struct.tv_sec * 1000000000ULL + (unsigned long long)temp_time_struct.tv_usec * 1000ULL;
 
   
   //Fill in some transforms

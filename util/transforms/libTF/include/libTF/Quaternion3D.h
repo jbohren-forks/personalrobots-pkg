@@ -38,7 +38,7 @@
 #include <newmat10/newmatio.h>
 #include <math.h>
 #include <pthread.h>
-#include <sys/time.h>
+
 
 namespace libTF{
 
