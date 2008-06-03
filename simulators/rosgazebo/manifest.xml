@@ -1,0 +1,10 @@
+<package>
+  <description>A ROS node that wraps up the Gazebo mobile robot simulator.</description>
+  <author>John Hsu, Sachin Chitta</author>
+  <license>GPL</license>
+  <depend package="roscpp" />
+  <depend package="rosthread" />
+  <depend package="gazebo" />
+  <depend package="std_msgs" />
+  <depend package="rosTF" />
+</package>
