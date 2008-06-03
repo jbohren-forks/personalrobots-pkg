@@ -1,0 +1,20 @@
+<package>
+<description brief="Gazebo">
+
+This package contains Gazebo, from the Player Project
+(http://playerstage.sf.net). This package does not modify Gazebo in any
+way; it simply provides a convenient way to download and compile the
+headers and libraries in a way that can be managed by the ROS dependency
+system.
+
+</description>
+<author>Nate Koenig, Andrew Howard, with contributions from many others. See web page for a full credits llist.</author>
+<license>GPL</license>
+<url>http://playerstage.sf.net</url>
+<export>
+  <cpp lflags="-Xlinker -rpath ${prefix}/player/lib -L${prefix}/player/lib -lplayercore -lplayerxdr -lplayerutils -lplayererror" cflags="-I${prefix}/player/include/player-2.2"/>
+  <doxymaker external="http://playerstage.sourceforge.net/doc/Player-cvs/player"/>
+</export>
+</package>
+
+
