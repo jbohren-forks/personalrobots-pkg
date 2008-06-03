@@ -23,7 +23,7 @@ public:
     IplImage *cv_image = cvCreateImage( cvSize( image_msg.width, image_msg.height), IPL_DEPTH_8U, 3);
     memcpy(cv_image->imageData, image_msg.data, cv_image->imageSize);
     cvShowImage("cam_viewer", cv_image);
-    cvWaitKey(3);
+    cvWaitKey(10);
     cvReleaseImage(&cv_image);
   }
 };
