@@ -1,5 +1,6 @@
 all: gazebo
 
+.PHONY: all gazebo clean wipe
 gazebo-git:
 	@if [ ! -d gazebo ]; then git clone /u/pr/simpr/pr2sim.git gazebo-git; fi
 
