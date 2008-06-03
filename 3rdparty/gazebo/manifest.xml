@@ -12,8 +12,8 @@ system.
 <license>GPL</license>
 <url>http://playerstage.sf.net</url>
 <export>
-  <cpp lflags="-Xlinker -rpath ${prefix}/player/lib -L${prefix}/player/lib -lplayercore -lplayerxdr -lplayerutils -lplayererror" cflags="-I${prefix}/player/include/player-2.2"/>
-  <doxymaker external="http://playerstage.sourceforge.net/doc/Player-cvs/player"/>
+  <!--<cpp lflags="-Xlinker -rpath ${prefix}/player/lib -L${prefix}/player/lib -lplayercore -lplayerxdr -lplayerutils -lplayererror" cflags="-I${prefix}/player/include/player-2.2"/> -->
+  <doxymaker external="http://playerstage.sourceforge.net/doc/Gazebo-manual-svn-html/"/>
 </export>
 </package>
 
