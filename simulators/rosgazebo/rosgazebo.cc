@@ -35,7 +35,7 @@
 #include <std_msgs/MsgRobotBase2DOdom.h>
 #include <std_msgs/MsgBaseVel.h>
 // roscpp - arm
-#include <std_msgs/MsgRobotArm.h>
+#include <std_msgs/MsgPR2Arm.h>
 // roscpp - camera
 #include <std_msgs/MsgImage.h>
 
@@ -81,7 +81,7 @@ class GazeboNode : public ros::node
     MsgImage img;
     
     // camera data
-    MsgRobotArm arm;
+    MsgPR2Arm arm;
 
 
     // The main simulator object
