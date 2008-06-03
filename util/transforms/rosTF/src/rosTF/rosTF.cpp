@@ -46,6 +46,39 @@ rosTFClient::rosTFClient(ros::node & rosnode,
 
 };
 
+//MsgPointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target_frame, const MsgPointCloudFloat32 & cloudIn) //todo add back const when get_pts_size() is const ticket:232
+MsgPointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target_frame,  MsgPointCloudFloat32 & cloudIn)
+{
+  NEWMAT::Matrix transform = getMatrix(target_frame, cloudIn.header.frame_id, cloudIn.header.stamp.sec * 1000000000ULL + cloudIn.header.stamp.nsec);
+
+  NEWMAT::Matrix matIn(4,cloudIn.get_pts_size());
+
+
+  //TODO optimize with pointer accessors
+   for (unsigned int i = 1; i <= cloudIn.get_pts_size();i++) 
+    { 
+      matIn(1,i) = cloudIn.pts[i].x;
+      matIn(2,i) = cloudIn.pts[i].y;
+      matIn(3,i) = cloudIn.pts[i].z;
+      matIn(4,i) = 1;
+    };
+
+  NEWMAT::Matrix matOut = transform * matIn;
+
+  MsgPointCloudFloat32 cloudOut = cloudIn; //Get everything from cloudIn
+
+  //Override the positions
+  cloudOut.header.frame_id = target_frame;
+   for (unsigned int i = 1; i <= cloudIn.get_pts_size();i++) 
+    { 
+      cloudOut.pts[i-1].x = matOut(1,i);
+      cloudOut.pts[i-1].y = matOut(2,i);
+      cloudOut.pts[i-1].z = matOut(3,i);
+    };
+
+  return cloudOut;
+};
+
 
 
 void rosTFClient::receiveEuler()
@@ -136,6 +169,8 @@ void rosTFServer::sendInversePose(libTF::TFPose pose, unsigned int parent)
 
 void rosTFServer::sendDH(unsigned int frame, unsigned int parent, double length, double twist, double offset, double angle, unsigned int secs, unsigned int nsecs)
 {
+  MsgTransformDH dhOut;
+
   dhOut.frame = frame;
   dhOut.parent = parent;
   dhOut.length = length;
@@ -152,6 +187,7 @@ void rosTFServer::sendDH(unsigned int frame, unsigned int parent, double length,
 
 void rosTFServer::sendQuaternion(unsigned int frame, unsigned int parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, unsigned int secs, unsigned int nsecs)
 {
+  MsgTransformQuaternion quaternionOut;
   quaternionOut.frame = frame;
   quaternionOut.parent = parent;
   quaternionOut.xt = xt;

@@ -44,6 +44,7 @@
 #include "std_msgs/MsgTransformDH.h"
 #include "std_msgs/MsgTransformQuaternion.h"
 #include "libTF/libTF.h"
+#include "std_msgs/MsgPointCloudFloat32.h"
 
 
 //TODO FIXME REMOVE WHEN FRAME ID SERVER IS IMPLEMENTED
@@ -62,6 +63,9 @@ class rosTFClient : public libTF::TransformReference
  public:
   //Constructor
   rosTFClient(ros::node & rosnode, bool caching = true, bool extrapolate = true);
+
+  //  MsgPointCloudFloat32 transformPointCloud(unsigned int target_frame, const MsgPointCloudFloat32 & cloudIn); // todo switch after ticket:232
+  MsgPointCloudFloat32 transformPointCloud(unsigned int target_frame, MsgPointCloudFloat32 & cloudIn);
 
   //Call back functions
   void receiveEuler();
@@ -103,9 +107,4 @@ class rosTFServer
  private:
   //ros::node reference to allow setting callbacks
   ros::node & myNode;
-  //Temp variables for in transit. (todo check threadsafe? make scoped in call?)
-  //  MsgTransformEuler eulerOut;
-  MsgTransformDH dhOut;
-  MsgTransformQuaternion quaternionOut;
-
 };
