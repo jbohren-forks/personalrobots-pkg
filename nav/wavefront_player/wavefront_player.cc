@@ -298,7 +298,7 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         avmax(DTOR(80.0)),
         amin(DTOR(10.0)),
         amax(DTOR(40.0)),
-        tf(*this, true, false)
+        tf(*this, true, true)
 {
   // TODO: get map via RPC
   char* mapdata;
