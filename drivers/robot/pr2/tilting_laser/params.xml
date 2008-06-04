@@ -4,7 +4,7 @@
   <int name="HK/cluster">1</int>
   <int name="HK/skip">0</int>
   <double name="ED/pulse_per_rad0">9549.29659</double>
-  <double name="TL/period">20.0</double>
+  <int name="TL/num_scans">400</int>
   <double name="TL/min_ang">-1.1</double>
   <double name="TL/max_ang">0.645</double>
 </params>

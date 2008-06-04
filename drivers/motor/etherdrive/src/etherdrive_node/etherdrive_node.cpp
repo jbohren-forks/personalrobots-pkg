@@ -28,7 +28,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ros/node.h"
-#include "unstable_msgs/MsgActuator.h"
+#include "std_msgs/MsgActuator.h"
 #include "etherdrive/etherdrive.h"
 #include <sstream>
 
@@ -138,7 +138,6 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   EtherDrive_Node a;
   while (a.ok()) {
-
     usleep(1000);
     if (!a.do_tick())
     {

@@ -64,11 +64,12 @@ Flea2::Flea2(video_mode_t _video_mode, int n_host) :
   int e;
   if (video_mode == FLEA2_MONO)
     e = dc1394_dma_setup_capture(raw, cam_node, channel, 
-          FORMAT_VGA_NONCOMPRESSED, MODE_640x480_MONO, SPEED_800,
+				 FORMAT_VGA_NONCOMPRESSED, MODE_640x480_MONO, SPEED_400,
+				 //	  FORMAT_SVGA_NONCOMPRESSED_2, MODE_1280x960_MONO, SPEED_400,
           FRAMERATE_30, 8, 1, host_dev, &cam);
   else
     e = dc1394_dma_setup_capture(raw, cam_node, channel, 
-          FORMAT_VGA_NONCOMPRESSED, MODE_640x480_RGB, SPEED_800,
+          FORMAT_VGA_NONCOMPRESSED, MODE_640x480_RGB, SPEED_400,
           FRAMERATE_30, 8, 1, host_dev, &cam);
   if ( e != DC1394_SUCCESS )
   {

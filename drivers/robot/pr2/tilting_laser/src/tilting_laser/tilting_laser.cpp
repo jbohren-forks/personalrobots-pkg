@@ -37,9 +37,8 @@
 #include "std_msgs/MsgLaserScan.h"
 #include "std_msgs/MsgPointCloudFloat32.h"
 #include "std_msgs/MsgImage.h"
-#include "unstable_msgs/MsgActuator.h"
+#include "std_msgs/MsgActuator.h"
 #include "libTF/libTF.h"
-#include "rostime/clock.h"
 #include "math.h"
 
 class Tilting_Laser : public ros::node
@@ -54,21 +53,25 @@ public:
   MsgActuator encoder;
   MsgImage image;
 
-  double starttime;
-
-  double next_shutter;
-  double period;
+  int num_scans;
 
   double min_ang;
   double max_ang;
 
   libTF::TransformReference TR;
 
-  ros::time::clock clock;
+  bool img_ready;
+  int img_ind;
+  int img_dir;
 
-  int lines;
+  double last_ang;
+  double rate_err_up;
+  double rate_err_down;
+  double accum_angle;
 
-  Tilting_Laser() : ros::node("tilting_laser"), next_shutter(0.0), lines(0)
+  ros::Time last_motor_time;
+
+  Tilting_Laser() : ros::node("tilting_laser"), img_ready(false), img_ind(-1), last_ang(1000000), img_dir(1), rate_err_down(0.0), rate_err_up(0.0), accum_angle(0)
   {
     
     advertise<MsgPointCloudFloat32>("cloud");
@@ -76,14 +79,15 @@ public:
     advertise<MsgActuator>("mot_cmd");
     advertise<MsgImage>("image");
 
-    subscribe("scan", scans, &Tilting_Laser::scans_callback);
-    subscribe("mot",  encoder, &Tilting_Laser::encoder_callback);
+    subscribe("scan", scans, &Tilting_Laser::scans_callback,10);
+    subscribe("mot",  encoder, &Tilting_Laser::encoder_callback,10);
 
-    param("period", period, 5.0);
+    param("num_scans", num_scans, 400);
     param("min_ang", min_ang, -1.3);
     param("max_ang", max_ang, 0.6);
 
     unsigned long long time = clock.ulltime();
+
     TR.setWithEulers(3, 2,
 		     0, 0, 0,
 		     0, 0, 0,
@@ -94,16 +98,6 @@ public:
 		     0, 0, 0,
 		     time);
 
-
-
-    image.set_data_size(140*4*400*2);
-    image.height = 400;
-    image.width = 140*4;
-
-    image.colorspace = "mono16";
-    image.compression = "raw";
-
-    starttime = clock.time();
   }
 
   virtual ~Tilting_Laser()
@@ -112,20 +106,24 @@ public:
   }
 
   void scans_callback() {
-    encoder.lock();
+
+    //TODO: Add check for hokuyo changing width!
+    if (!img_ready) {
+      image.height = num_scans;
+      image.width = scans.get_ranges_size();
+      image.set_data_size(2*image.height*image.width);
+      
+      image.colorspace = "mono16";
+      image.compression = "raw";
+
+      img_ready = true;
+    }
+
     cloud.set_pts_size(scans.get_ranges_size());
 
     cloud.set_chan_size(1);
     cloud.chan[0].name = "intensities";
     cloud.chan[0].set_vals_size(scans.get_ranges_size());
-
-    /*
-    for (int i = 0; i < scans.get_ranges_size(); i++) {
-      cloud.x[i] = cos(encoder.val)*cos(scans.angle_min + i*scans.angle_increment) * scans.ranges[i];
-      cloud.y[i] = sin(scans.angle_min + i*scans.angle_increment) * scans.ranges[i];
-      cloud.z[i] = sin(encoder.val)*cos(scans.angle_min + i*scans.angle_increment) * scans.ranges[i];
-    }
-    */
 
     NEWMAT::Matrix points(4,scans.get_ranges_size());
     for (uint32_t i = 0; i < scans.get_ranges_size(); i++) {
@@ -141,66 +139,121 @@ public:
 	points(4,i+1) = 1.0;
       }
     }
+
+    unsigned long long t = scans.header.stamp.to_ull() - 30000000;
     
-    NEWMAT::Matrix rot_points = TR.getMatrix(1,3,clock.ulltime()) * points;
+    NEWMAT::Matrix rot_points = TR.getMatrix(1,3,t) * points;
+
+    libTF::TFVector u;
+    u.x = 1;
+    u.y = 0;
+    u.z = 0;
+    u.time = t;
+    u.frame = 3;
+
+    libTF::TFVector v = TR.transformVector(1,u);
     
+
+    double ang = atan2(v.z,v.x);
+
+    if (ang < max_ang && last_ang > max_ang)
+    {
+      img_dir = 1;
+      img_ind = 0;
+    }
+
+    if (ang > min_ang && last_ang < min_ang)
+    {
+      img_dir = -1;
+      img_ind = 0;
+    }
+
+    last_ang = ang;
+
     for (uint32_t i = 0; i < scans.get_ranges_size(); i++) {
       cloud.pts[i].x = rot_points(1,i+1);
       cloud.pts[i].y = rot_points(2,i+1);
       cloud.pts[i].z = rot_points(3,i+1);
       cloud.chan[0].vals[i] = scans.intensities[i];
 
-      if (lines < 400 && i < 4*140)
-	{
-	  if (fmod(next_shutter, 1.0) > 0.49) 
-	  {
-	    *(unsigned short*)(&(image.data[lines * 4*140 * 2 + 4*140*2 - 2 - 2*i])) = scans.intensities[i];
-	  } else {
-	    *(unsigned short*)(&(image.data[(400 - 1 - lines) * 4*140 * 2 + 4*140*2 - 2 - 2*i])) = scans.intensities[i];
-	  }
-	}
+      if (img_ind >= 0)
+      {
+	if (img_dir == 1)
+	  *(unsigned short*)(&(image.data[img_ind * 2 * image.width + image.width * 2 - 2 - 2*i])) = scans.intensities[i];
+	else
+	  *(unsigned short*)(&(image.data[(num_scans - img_ind - 1) * 2 * image.width + image.width * 2 - 2 - 2*i])) = scans.intensities[i];
+      }
     }
 
-    encoder.unlock();
+    if (img_ind >= 0)
+      img_ind++;
 
-    lines++;
     publish("cloud", cloud);
+
+    if (img_ind == num_scans) {
+      printf("Sending image and shutter\n");
+
+      double ang_err;
+
+      if (img_dir == 1)
+      {
+	ang_err = min_ang - ang;
+	rate_err_down -= ang_err / (0.025 * num_scans);
+      }
+      else
+      {
+	ang_err = max_ang - ang;
+	rate_err_up += ang_err / (0.025 * num_scans);
+      }
+
+      printf("Final scan off by: %g\n", ang_err);
+
+      publish("image", image);
+      publish("shutter",shutter);
+      img_ind = -1;
+    }
   }
 
   void encoder_callback() {
-    unsigned long long time = clock.ulltime();
 
     TR.setWithEulers(3, 2,
 		     .02, 0, .02,
 		     0.0, 0.0, 0.0,
-		     time);
+		     encoder.header.stamp.to_ull());
     TR.setWithEulers(2, 1,
 		     0, 0, 0,
 		     0, -encoder.val, 0,
-		     time);
+		     encoder.header.stamp.to_ull());
 
     motor_control(); // Control on encoder reads sounds reasonable
   }
 
+
   void motor_control() {
-
-    double nowtime = clock.time();
-    
-    double elapsed_cycles = (nowtime - starttime) / (period);
-    double index = fabs(fmod(elapsed_cycles, 1) * 2.0 - 1.0);
-
-    cmd.val = index * (max_ang - min_ang) + min_ang;
     cmd.rel = false;
-    cmd.valid = true;
+    cmd.valid = true;    
 
-    if (elapsed_cycles > next_shutter) {
-      next_shutter += 0.5;
-      printf("Scanned %d lines\n", lines);
-      lines = 0;
-      publish("shutter", shutter);
-      publish("image", image);
-    }
+    ros::Time t = ros::Time::now();
+
+    //This will not go at right rate if hokuyo is skipping scans
+    double rate = (max_ang - min_ang) / (0.025 * num_scans);
+    if (img_dir == 1)
+      rate += rate_err_down;
+    else
+      rate += rate_err_up;
+    
+    double ext_max_ang = max_ang + .025;
+    double ext_min_ang = min_ang - .025;
+
+    accum_angle += (t - last_motor_time).to_double() * rate;
+
+    double index = fabs(fmod( (accum_angle) / (2.0 * (ext_max_ang - ext_min_ang)), 1) * 2.0 - 1.0);
+
+    cmd.val = index * (ext_max_ang - ext_min_ang) + ext_min_ang;
     publish("mot_cmd",cmd);
+
+    last_motor_time = t;
+
   }
 
 };
@@ -209,9 +262,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   Tilting_Laser tl;
-  while (tl.ok()) {
-    usleep(10000);
-  }
+  tl.spin();
   ros::fini();
   return 0;
 }

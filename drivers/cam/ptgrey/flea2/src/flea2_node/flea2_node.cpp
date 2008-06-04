@@ -38,6 +38,10 @@ public:
   MsgImage img;
   Flea2 flea2;
 
+  ros::Time next_time;
+
+  int count;
+
   Flea2_Node() : ros::node("flea2")
   {
     advertise<MsgImage>("image");
@@ -45,6 +49,38 @@ public:
     flea2.set_shutter(0.8);
     flea2.set_gamma(0.24);
     flea2.set_gain(0);
+
+    next_time = ros::Time::now();
+    count = 0;
+  }
+
+  bool get_and_send_raw()
+  {
+    uint8_t *buf;
+    uint32_t buf_size;
+    uint32_t width;
+    uint32_t height;
+
+    flea2.get_frame(&buf, &width, &height);
+
+    buf_size = width*height;
+    img.width = width;
+    img.height = height;
+    img.compression = "raw";
+    img.colorspace = "mono8";
+    img.set_data_size(buf_size);
+    memcpy(img.data, buf, buf_size);
+
+    count++;
+    ros::Time now_time = ros::Time::now();
+    if (now_time > next_time) {
+      std::cout << count << " imgs/sec at " << now_time << std::endl;
+      count = 0;
+      next_time = next_time + ros::Duration(1,0);
+    }
+
+    publish("image", img);
+    return true;
   }
   
   bool get_and_send_jpeg() 
@@ -60,7 +96,14 @@ public:
     img.set_data_size(buf_size);
     memcpy(img.data, buf, buf_size);
 
-    printf("Got %d bytes\n", buf_size);
+
+    count++;
+    ros::Time now_time = ros::Time::now();
+    if (now_time > next_time) {
+      std::cout << count << " imgs/sec at " << now_time << std::endl;
+      count = 0;
+      next_time = next_time + ros::Duration(1,0);
+    }
 
     publish("image", img);
     return true;
@@ -75,6 +118,7 @@ int main(int argc, char **argv)
 
   while (fn.ok()) {
     fn.get_and_send_jpeg();
+    //fn.get_and_send_raw();
   }
 
   ros::fini();
