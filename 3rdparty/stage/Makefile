@@ -1,8 +1,10 @@
 all: stage-build
 
+REVISION = -r {2008-05-26}
+
 stage-checkout:
-	@if [ ! -d stage-svn ]; then svn co https://playerstage.svn.sf.net/svnroot/playerstage/code/stage/trunk stage-svn; fi
-	-cd stage-svn && svn up
+	@if [ ! -d stage-svn ]; then svn co $(REVISION) https://playerstage.svn.sf.net/svnroot/playerstage/code/stage/trunk stage-svn; fi
+	-cd stage-svn && svn up $(REVISION) 
 
 stage-build: stage-checkout
 	cd stage-svn && autoreconf -i -s
