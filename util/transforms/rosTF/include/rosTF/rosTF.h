@@ -62,7 +62,7 @@ class rosTFClient : public libTF::TransformReference
 {
  public:
   //Constructor
-  rosTFClient(ros::node & rosnode, bool caching = true, bool extrapolate = true);
+  rosTFClient(ros::node & rosnode, bool caching = true, unsigned long long max_extrapolation_distance = libTF::TransformReference::DEFAULT_MAX_EXTRAPOLATION_DISTANCE);
 
   //  MsgPointCloudFloat32 transformPointCloud(unsigned int target_frame, const MsgPointCloudFloat32 & cloudIn); // todo switch after ticket:232
   MsgPointCloudFloat32 transformPointCloud(unsigned int target_frame, MsgPointCloudFloat32 & cloudIn);

@@ -197,6 +197,7 @@ public:
   /** The default length of time to cache information
    * 10 seconds in nanoseconds */
   static const ULLtime DEFAULT_CACHE_TIME = 10 * 1000000000ULL;
+  static const ULLtime DEFAULT_MAX_EXTRAPOLATION_DISTANCE = 10 * 1000000000ULL;
 
 
   /** Constructor 
@@ -204,7 +205,7 @@ public:
    */
   TransformReference(bool caching = true, 
                      ULLtime cache_time = DEFAULT_CACHE_TIME,
-                     bool extrapolate = true);
+                     unsigned long long max_extrapolation_distance = DEFAULT_MAX_EXTRAPOLATION_DISTANCE);
   ~TransformReference();
 
   /********** Mutators **************/
@@ -320,7 +321,7 @@ private:
       /** Constructor */
       RefFrame(bool caching = true,  
                unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME,
-               bool extrapolate = true);
+               unsigned long long  max_extrapolation_time = DEFAULT_MAX_EXTRAPOLATION_TIME); 
       
       /** \brief Get the parent nodeID */
       inline unsigned int getParent(){return parent;};
@@ -352,7 +353,7 @@ private:
   bool caching;
   
   /// whether or not to allow extrapolation
-  bool extrapolate;
+  unsigned long long max_extrapolation_distance;
 
  public:
   /** \brief An internal representation of transform chains

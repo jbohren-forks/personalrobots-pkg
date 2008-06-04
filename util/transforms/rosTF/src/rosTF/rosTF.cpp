@@ -34,10 +34,10 @@
 
 rosTFClient::rosTFClient(ros::node & rosnode, 
                          bool caching,
-                         bool extrapolate):
+			 unsigned long long max_extrapolation_distance):
   TransformReference(caching,
                      TransformReference::DEFAULT_CACHE_TIME,
-                     extrapolate),
+                     max_extrapolation_distance),
   myNode(rosnode)
 {
   myNode.subscribe("TransformEuler", eulerIn, &rosTFClient::receiveEuler, this,100);
