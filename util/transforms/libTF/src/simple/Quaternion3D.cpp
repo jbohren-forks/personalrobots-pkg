@@ -47,10 +47,10 @@ Euler3D::Euler3D(double _x, double _y, double _z, double _yaw, double _pitch, do
 
 Quaternion3D::Quaternion3D(bool caching, 
                            unsigned long long max_cache_time,
-                           bool _extrapolate):
+                           unsigned long long _max_extrapolation_time):
   max_storage_time(max_cache_time),
   max_length_linked_list(MAX_LENGTH_LINKED_LIST),
-  extrapolate(_extrapolate),
+  max_extrapolation_time(_max_extrapolation_time),
   first(NULL),
   last(NULL),
   list_length(0)
@@ -681,16 +681,6 @@ int Quaternion3D::findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two
     {
       //Two or more elements
 
-      // Are we allowed to extrapolate?
-      if(!extrapolate)
-      {
-        if(target_time > first->data.time)
-        {
-          pthread_mutex_unlock(&linked_list_mutex);
-          throw NoExtrapolation;
-        }
-      }
-
       //Find the one that just exceeds the time or hits the end
       //and then take the previous one
       p_current = first->next; //Start on the 2nd element so if we fail we fall back to the first one
@@ -705,8 +695,15 @@ int Quaternion3D::findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two
       one = p_current->data;
       two = p_current->previous->data;
       
-      //FIXME this should be the min distance not just one random one.
-      time_diff = target_time - two.time; 
+      
+      // Test Extrapolation Distance
+      if(target_time > one.time + max_extrapolation_time ||  //Future Case
+	 target_time + max_extrapolation_time < two.time) // Previous Case
+        {
+          pthread_mutex_unlock(&linked_list_mutex);
+          throw MaxExtrapolation;
+        }
+      
       return 2;
     }
 };
