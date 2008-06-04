@@ -1,0 +1,5 @@
+<package>
+  <author>Neuronics</author>
+  <description>Control library and demos for the Katana arm</description>
+  <license>GPL</license>
+</package>
