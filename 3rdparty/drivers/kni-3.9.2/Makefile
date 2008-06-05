@@ -7,6 +7,7 @@ download: KNI_3.9.2.tar.gz
 
 KNI_3.9.2: KNI_3.9.2.tar.gz
 	tar xzf KNI_3.9.2.tar.gz
+	cd KNI_3.9.2 && patch -p0 <../lm_boost_cxxflags.patch
 
 KNI_3.9.2/lib/linux/libKNIBase.a: KNI_3.9.2
 	cd KNI_3.9.2 && make
