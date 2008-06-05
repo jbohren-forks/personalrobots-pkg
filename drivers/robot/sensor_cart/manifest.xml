@@ -6,5 +6,7 @@
 <url>http://pr.willowgarage.com</url>
 <depend package="tilting_laser"/>
 <depend package="flea2"/>
+<depend package="cv_view"/>
+<depend package="cloud_viewer"/>
 </package>
 
