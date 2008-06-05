@@ -71,7 +71,9 @@ public:
 
   ros::Time last_motor_time;
 
-  Tilting_Laser() : ros::node("tilting_laser"), img_ready(false), img_ind(-1), last_ang(1000000), img_dir(1), rate_err_down(0.0), rate_err_up(0.0), accum_angle(0)
+  bool scan_received;
+
+  Tilting_Laser() : ros::node("tilting_laser"), img_ready(false), img_ind(-1), last_ang(1000000), img_dir(1), rate_err_down(0.0), rate_err_up(0.0), accum_angle(0), scan_received(false)
   {
     
     advertise<MsgPointCloudFloat32>("cloud");
@@ -106,6 +108,8 @@ public:
   }
 
   void scans_callback() {
+
+    scan_received = true;
 
     //TODO: Add check for hokuyo changing width!
     if (!img_ready) {
@@ -198,12 +202,12 @@ public:
       if (img_dir == 1)
       {
 	ang_err = min_ang - ang;
-	rate_err_down -= ang_err / (0.025 * num_scans);
+	rate_err_down -= ang_err / (scans.scan_time * num_scans);
       }
       else
       {
 	ang_err = max_ang - ang;
-	rate_err_up += ang_err / (0.025 * num_scans);
+	rate_err_up += ang_err / (scans.scan_time * num_scans);
       }
 
       printf("Final scan off by: %g\n", ang_err);
@@ -230,13 +234,16 @@ public:
 
 
   void motor_control() {
+
+    if (!scan_received)
+      return;
+
     cmd.rel = false;
     cmd.valid = true;    
-
+    
     ros::Time t = ros::Time::now();
 
-    //This will not go at right rate if hokuyo is skipping scans
-    double rate = (max_ang - min_ang) / (0.025 * num_scans);
+    double rate = (max_ang - min_ang) / (scans.scan_time * num_scans);
     if (img_dir == 1)
       rate += rate_err_down;
     else

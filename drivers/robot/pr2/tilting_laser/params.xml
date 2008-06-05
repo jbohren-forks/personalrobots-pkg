@@ -1,10 +1,10 @@
 <params>
-  <double name="HK/min_ang">-70</double>
-  <double name="HK/max_ang">70</double>
-  <int name="HK/cluster">1</int>
-  <int name="HK/skip">0</int>
-  <double name="ED/pulse_per_rad0">9549.29659</double>
-  <int name="TL/num_scans">400</int>
-  <double name="TL/min_ang">-1.1</double>
-  <double name="TL/max_ang">0.645</double>
+  <double name="urglaser/min_ang">-70</double>
+  <double name="urglaser/max_ang">70</double>
+  <int name="urglaser/cluster">1</int>
+  <int name="urglaser/skip">0</int>
+  <double name="etherdrive/pulse_per_rad0">9549.29659</double>
+  <int name="tilting_laser/num_scans">400</int>
+  <double name="tilting_laser/min_ang">-1.1</double>
+  <double name="tilting_laser/max_ang">0.645</double>
 </params>

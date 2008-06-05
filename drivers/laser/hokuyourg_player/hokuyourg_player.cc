@@ -197,8 +197,11 @@ class HokuyoNode: public ros::node
 
       scan_msg.angle_min = scan->config.min_angle;
       scan_msg.angle_max = scan->config.max_angle;
-      scan_msg.angle_increment = scan->config.resolution;
-      scan_msg.range_max = cfg.max_range;
+      scan_msg.angle_increment = scan->config.ang_increment;
+      scan_msg.time_increment = scan->config.time_increment;
+      scan_msg.scan_time = scan->config.scan_time;
+      scan_msg.range_min = scan->config.min_range;
+      scan_msg.range_max = scan->config.max_range;
       scan_msg.set_ranges_size(scan->num_readings);
       scan_msg.set_intensities_size(scan->num_readings);
 

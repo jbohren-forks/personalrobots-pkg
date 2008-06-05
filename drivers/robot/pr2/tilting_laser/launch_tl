@@ -1,8 +1,5 @@
 #!/bin/bash
 `rospack find xmlparam`/xmlparam `rospack find tilting_laser`/params.xml
-export ROS_NAMESPACE=HK
-xterm -e `rospack find hokuyourg_player`/hokuyourg_player scan:=/scan&
-export ROS_NAMESPACE=ED
-xterm -e `rospack find etherdrive`/bin/etherdrive  mot0:=/mot0 mot0_cmd:=/mot0_cmd&
-export ROS_NAMESPACE=TL
-xterm -e `rospack find tilting_laser`/bin/tilting_laser mot:=/mot0 mot_cmd:=/mot0_cmd scan:=/scan cloud:=/cloud shutter:=/shutter image:=/image&
+xterm -e `rospack find hokuyourg_player`/hokuyourg_player&
+xterm -e `rospack find etherdrive`/bin/etherdrive&
+xterm -e `rospack find tilting_laser`/bin/tilting_laser mot:=/mot0 mot_cmd:=/mot0_cmd&

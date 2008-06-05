@@ -39,7 +39,11 @@ typedef struct urg_laser_config
   //! Stop angle for the laser scan [rad].
   float max_angle;
   //! Scan resolution [rad].
-  float resolution;
+  float ang_increment;
+  //! Scan resoltuion [s]
+  float time_increment;
+  //! Time between scans
+  float scan_time;
   //! Minimum range [m]
   float min_range;
   //! Maximum range [m]
@@ -185,7 +189,7 @@ private:
   int amin;
   int amax;
   int afrt;
-  int scan;
+  int rate;
 
   FILE * laser_port;
   int laser_fd;

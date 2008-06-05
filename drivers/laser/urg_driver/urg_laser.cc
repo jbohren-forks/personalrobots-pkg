@@ -357,7 +357,7 @@ urg_laser::query_sensor_config()
     sscanf(ind, "%d", &afrt);
 
     ind = urg_readline_after(buf,100,"SCAN:",-1);
-    sscanf(ind, "%d", &scan);
+    sscanf(ind, "%d", &rate);
 
     return 0;
   }
@@ -581,7 +581,10 @@ urg_laser::poll_scan(urg_laser_scan_t* scan, double min_ang, double max_ang, int
     // Populate configuration
     scan->config.min_angle  =  (min_i - afrt) * (2.0*M_PI)/(ares);
     scan->config.max_angle  =  (max_i - afrt) * (2.0*M_PI)/(ares);
-    scan->config.resolution =  cluster*(2.0*M_PI)/(ares);
+    scan->config.ang_increment =  cluster*(2.0*M_PI)/(ares);
+    scan->config.time_increment = (60.0*(double(ares)))/(double)(rate);
+    scan->config.scan_time = 0.0;
+    scan->config.min_range  =  dmin / 1000.0;
     scan->config.max_range  =  dmax / 1000.0;
 
     if (read_data(scan, false, timeout) == 0)
@@ -676,7 +679,10 @@ urg_laser::service_scan(urg_laser_scan_t* scan, int timeout)
 
   scan->config.min_angle  =  (min_i - afrt) * (2.0*M_PI)/(ares);
   scan->config.max_angle  =  (max_i - afrt) * (2.0*M_PI)/(ares);
-  scan->config.resolution =  cluster*(2.0*M_PI)/(ares);
+  scan->config.ang_increment =  cluster*(2.0*M_PI)/(ares);
+  scan->config.time_increment = (60.0*(double(ares)))/(double)(rate);
+  scan->config.scan_time = (60.0 * (skip + 1))/((double)(rate));
+  scan->config.min_range  =  dmin / 1000.0;
   scan->config.max_range  =  dmax / 1000.0;
 
   if (read_data(scan, intensity, timeout) == 0)
