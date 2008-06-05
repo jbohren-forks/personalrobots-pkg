@@ -1,0 +1,10 @@
+#!/bin/bash
+if [ -z $1 ]; then
+    ROS_MASTER_URI=http://localhost:11311
+else
+    ROS_MASTER_URI=$1
+fi
+echo Starting sensors with ROS_MASTER_URI=$ROS_MASTER_URI
+xterm -e `rospack find sensor_cart`/sensor_recorder cam_image:=flea_image&
+
+
