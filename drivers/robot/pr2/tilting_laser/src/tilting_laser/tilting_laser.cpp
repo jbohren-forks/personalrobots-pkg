@@ -82,9 +82,9 @@ public:
     subscribe("scan", scans, &Tilting_Laser::scans_callback,10);
     subscribe("mot",  encoder, &Tilting_Laser::encoder_callback,10);
 
-    param("num_scans", num_scans, 400);
-    param("min_ang", min_ang, -1.3);
-    param("max_ang", max_ang, 0.6);
+    param("tilting_laser/num_scans", num_scans, 400);
+    param("tilting_laser/min_ang", min_ang, -1.3);
+    param("tilting_laser/max_ang", max_ang, 0.6);
 
     unsigned long long time = clock.ulltime();
 

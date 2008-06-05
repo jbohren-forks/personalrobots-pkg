@@ -1,0 +1,10 @@
+<params>
+  <double name="urg_laser/min_ang">-70</double>
+  <double name="urg_laser/max_ang">70</double>
+  <int name="urg_laser/cluster">1</int>
+  <int name="urg_laser/skip">0</int>
+  <double name="etherdrive/pulse_per_rad0">9549.29659</double>
+  <int name="tilting_laser/num_scans">400</int>
+  <double name="tilting_laser/min_ang">-1.1</double>
+  <double name="tilting_laser/max_ang">0.645</double>
+</params>

@@ -117,16 +117,16 @@ class HokuyoNode: public ros::node
     {
       advertise<MsgLaserScan>("scan");
 
-      param("min_ang", min_ang, -90.0);
+      param("urglaser/min_ang", min_ang, -90.0);
       min_ang *= M_PI/180;
 
-      param("max_ang", max_ang, 90.0);
+      param("urglaser/max_ang", max_ang, 90.0);
       max_ang *= M_PI/180;
 
-      param("cluster", cluster, 1);
-      param("skip", skip, 1);
+      param("urglaser/cluster", cluster, 1);
+      param("urglaser/skip", skip, 1);
 
-      param("port", port, string("/dev/ttyACM0"));
+      param("urglaser/port", port, string("/dev/ttyACM0"));
        
       scan = new urg_laser_scan_t;
       assert(scan);

@@ -40,7 +40,6 @@ public:
 
   string host;
   EtherDrive *ed;
-  int frame_id;
 
   float last_mot_val[6];
   double pulse_per_rad[6];
@@ -59,19 +58,13 @@ public:
       last_mot_val[i] = 0;
     }
 
-    if (!get_param(string(".host"), host))
-      host = "192.168.0.100";
+    param("etherdrive/host", host, string("192.168.0.100"));
     printf("EtherDrive host set to [%s]\n", host.c_str());
-
-    if (!get_param(string(".frame_id"), frame_id))
-      frame_id = -1;
-    printf("EtherDrive frame_id set to [%d]\n", frame_id);
 
     for (int i = 0;i < 6;i++) {
       ostringstream oss;
-      oss << "pulse_per_rad" << i;
-      if (!get_param(oss.str().c_str(), pulse_per_rad[i]))
-	pulse_per_rad[i] = 1591.54943;
+      oss << "etherdrive/pulse_per_rad" << i;
+      param(oss.str().c_str(), pulse_per_rad[i], 1591.54943);
       printf("Using %g pulse_per_rad for motor %d\n", pulse_per_rad[i], i);
     }
 
