@@ -1,0 +1,7 @@
+This directory contains "demos," which are combinations of nodes that
+perform some useful or interesting function.  A demo may be specified in a
+number of ways, including:
+ * .xml file that is meant to be passed to the roslaunch tool
+ * bash script that launches the nodes
+ * Text file that describes what to launch
+
