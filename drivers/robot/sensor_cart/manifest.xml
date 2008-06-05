@@ -4,6 +4,7 @@
 <author>Jeremy Leibs</author>
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
+<depend package="xmlparam"/>
 <depend package="tilting_laser"/>
 <depend package="flea2"/>
 <depend package="cv_view"/>
