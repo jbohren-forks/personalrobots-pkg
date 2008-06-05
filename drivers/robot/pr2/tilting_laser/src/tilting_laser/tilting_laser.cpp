@@ -33,25 +33,27 @@
 *********************************************************************/
 
 #include "ros/node.h"
-#include "std_msgs/MsgEmpty.h"
-#include "std_msgs/MsgLaserScan.h"
-#include "std_msgs/MsgPointCloudFloat32.h"
-#include "std_msgs/MsgImage.h"
-#include "std_msgs/MsgActuator.h"
+#include "std_msgs/Empty.h"
+#include "std_msgs/LaserScan.h"
+#include "std_msgs/PointCloudFloat32.h"
+#include "std_msgs/Image.h"
+#include "std_msgs/Actuator.h"
 #include "libTF/libTF.h"
 #include "math.h"
+
+using namespace std_msgs;
 
 class Tilting_Laser : public ros::node
 {
 public:
 
-  MsgPointCloudFloat32 cloud;
-  MsgEmpty shutter;
-  MsgActuator cmd;
+  PointCloudFloat32 cloud;
+  Empty shutter;
+  Actuator cmd;
 
-  MsgLaserScan scans;
-  MsgActuator encoder;
-  MsgImage image;
+  LaserScan scans;
+  Actuator encoder;
+  Image image;
 
   int num_scans;
 
@@ -65,21 +67,21 @@ public:
   int img_dir;
 
   double last_ang;
-  double rate_err_up;
   double rate_err_down;
+  double rate_err_up;
   double accum_angle;
 
   ros::Time last_motor_time;
 
   bool scan_received;
 
-  Tilting_Laser() : ros::node("tilting_laser"), img_ready(false), img_ind(-1), last_ang(1000000), img_dir(1), rate_err_down(0.0), rate_err_up(0.0), accum_angle(0), scan_received(false)
+  Tilting_Laser() : ros::node("tilting_laser"), img_ready(false), img_ind(-1), img_dir(1),last_ang(1000000), rate_err_down(0.0), rate_err_up(0.0), accum_angle(0), scan_received(false)
   {
     
-    advertise<MsgPointCloudFloat32>("cloud");
-    advertise<MsgEmpty>("shutter");
-    advertise<MsgActuator>("mot_cmd");
-    advertise<MsgImage>("image");
+    advertise<PointCloudFloat32>("cloud");
+    advertise<Empty>("shutter");
+    advertise<Actuator>("mot_cmd");
+    advertise<Image>("image");
 
     subscribe("scan", scans, &Tilting_Laser::scans_callback,10);
     subscribe("mot",  encoder, &Tilting_Laser::encoder_callback,10);
@@ -144,6 +146,7 @@ public:
       }
     }
 
+    // Time offset here should not be hardcoded!
     unsigned long long t = scans.header.stamp.to_ull() - 30000000;
     
     NEWMAT::Matrix rot_points = TR.getMatrix(1,3,t) * points;

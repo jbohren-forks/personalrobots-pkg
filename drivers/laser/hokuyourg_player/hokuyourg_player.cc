@@ -86,7 +86,7 @@ Publishes to (name / type):
 #include "urg_laser.h"
 
 #include <ros/node.h>
-#include <std_msgs/MsgLaserScan.h>
+#include <std_msgs/LaserScan.h>
 #include "ros/time.h"
 
 using namespace std;
@@ -104,7 +104,7 @@ class HokuyoNode: public ros::node
 
   public:
     urg_laser urg;
-    MsgLaserScan scan_msg;
+    std_msgs::LaserScan scan_msg;
     double min_ang;
     double max_ang;
 
@@ -115,7 +115,7 @@ class HokuyoNode: public ros::node
 
     HokuyoNode() : ros::node("urglaser"), count(0)
     {
-      advertise<MsgLaserScan>("scan");
+      advertise<std_msgs::LaserScan>("scan");
 
       param("urglaser/min_ang", min_ang, -90.0);
       min_ang *= M_PI/180;

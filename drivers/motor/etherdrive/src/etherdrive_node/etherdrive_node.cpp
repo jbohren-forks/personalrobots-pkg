@@ -28,15 +28,15 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ros/node.h"
-#include "std_msgs/MsgActuator.h"
+#include "std_msgs/Actuator.h"
 #include "etherdrive/etherdrive.h"
 #include <sstream>
 
 class EtherDrive_Node : public ros::node
 {
 public:
-  MsgActuator mot[6];
-  MsgActuator mot_cmd[6];
+  std_msgs::Actuator mot[6];
+  std_msgs::Actuator mot_cmd[6];
 
   string host;
   EtherDrive *ed;
@@ -50,7 +50,7 @@ public:
     for (int i = 0;i < 6;i++) {
       ostringstream oss;
       oss << "mot" << i;
-      advertise<MsgActuator>(oss.str().c_str());
+      advertise<std_msgs::Actuator>(oss.str().c_str());
 
       oss << "_cmd";
       subscribe(oss.str().c_str(), mot_cmd[i], &EtherDrive_Node::mot_callback);

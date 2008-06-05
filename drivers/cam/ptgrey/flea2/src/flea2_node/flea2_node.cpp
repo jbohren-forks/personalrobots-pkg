@@ -30,12 +30,12 @@
 
 #include "flea2/flea2.h"
 #include "ros/node.h"
-#include "std_msgs/MsgImage.h"
+#include "std_msgs/Image.h"
 
 class Flea2_Node : public ros::node
 {
 public:
-  MsgImage img;
+  std_msgs::Image img;
   Flea2 flea2;
 
   ros::Time next_time;
@@ -44,7 +44,7 @@ public:
 
   Flea2_Node() : ros::node("flea2")
   {
-    advertise<MsgImage>("image");
+    advertise<std_msgs::Image>("image");
 
     flea2.set_shutter(0.8);
     flea2.set_gamma(0.24);
