@@ -1,0 +1,8 @@
+<package>
+<description>A ROS node that supports position-mode teleoperation of 
+individual joints of the PR2Arm from keyboard input</description>
+  <author>Advait Jain</author>
+  <license>BSD</license>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+</package>
