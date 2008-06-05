@@ -5,6 +5,6 @@ else
     ROS_MASTER_URI=$1
 fi
 echo Starting sensors with ROS_MASTER_URI=$ROS_MASTER_URI
-`rospack find cv_view`/cv_view __name:=cv_view1 image:=flea_image&
-`rospack find cv_view`/cv_view __name:=cv_view2 image:=laser_image&
-`rospack find cloud_viewer`/bin/cloud_node&
+xterm -e `rospack find cv_view`/cv_view __name:=cv_view1 image:=flea_image&
+xterm -e `rospack find cv_view`/cv_view __name:=cv_view2 image:=laser_image&
+xterm -e `rospack find cloud_viewer`/bin/cloud_node&
