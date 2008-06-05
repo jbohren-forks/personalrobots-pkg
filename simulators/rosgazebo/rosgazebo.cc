@@ -73,6 +73,10 @@ class GazeboNode : public ros::node
     // Message callback for a MsgBaseVel message, which set velocities.
     void cmdvelReceived();
 
+    // Message callback for a MsgPR2Arm message, which sets arm configuration.
+    void cmd_leftarmconfigReceived();
+    void cmd_armconfigReceived_2();
+
     // laser range data
     float    ranges[GZ_LASER_MAX_RANGES];
     uint8_t  intensities[GZ_LASER_MAX_RANGES];
@@ -81,7 +85,7 @@ class GazeboNode : public ros::node
     MsgImage img;
     
     // camera data
-    MsgPR2Arm arm;
+    MsgPR2Arm leftarm;
 
 
     // The main simulator object
@@ -90,6 +94,51 @@ class GazeboNode : public ros::node
 
     static void finalize(int);
 };
+
+void
+GazeboNode::cmd_armconfigReceived_2()
+{
+	printf("Hello World\nFrom the second subscriber\n");
+}
+
+
+void
+GazeboNode::cmd_leftarmconfigReceived()
+{
+  this->lock.lock();
+  printf("turret angle: %.3f\n", this->leftarm.turretAngle);
+  printf("shoulder pitch : %.3f\n", this->leftarm.shoulderLiftAngle);
+  printf("shoulder roll: %.3f\n", this->leftarm.upperarmRollAngle);
+  printf("elbow pitch: %.3f\n", this->leftarm.elbowAngle);
+  printf("elbow roll: %.3f\n", this->leftarm.forearmRollAngle);
+  printf("wrist pitch angle: %.3f\n", this->leftarm.wristPitchAngle);
+  printf("wrist roll: %.3f\n", this->leftarm.wristRollAngle);
+  printf("gripper gap: %.3f\n", this->leftarm.gripperGapCmd);
+	
+	double jointPosition[] = {this->leftarm.turretAngle,
+														this->leftarm.shoulderLiftAngle,
+														this->leftarm.upperarmRollAngle,
+														this->leftarm.elbowAngle,
+														this->leftarm.forearmRollAngle,
+														this->leftarm.wristPitchAngle,
+														this->leftarm.wristRollAngle,
+														this->leftarm.gripperGapCmd};
+	double jointSpeed[] = {0,0,0,0,0,0,0,0};
+
+//	this->myPR2->SetArmJointPosition(PR2::PR2_LEFT_ARM, jointPosition, jointSpeed);
+
+	//*
+	this->myPR2->SetJointServoCmd(PR2::ARM_L_PAN           , this->leftarm.turretAngle,       0);
+	this->myPR2->SetJointServoCmd(PR2::ARM_L_SHOULDER_PITCH, this->leftarm.shoulderLiftAngle, 0);
+	this->myPR2->SetJointServoCmd(PR2::ARM_L_SHOULDER_ROLL , this->leftarm.upperarmRollAngle, 0);
+	this->myPR2->SetJointServoCmd(PR2::ARM_L_ELBOW_PITCH   , this->leftarm.elbowAngle,        0);
+	this->myPR2->SetJointServoCmd(PR2::ARM_L_ELBOW_ROLL    , this->leftarm.forearmRollAngle,  0);
+	this->myPR2->SetJointServoCmd(PR2::ARM_L_WRIST_PITCH   , this->leftarm.wristPitchAngle,   0);
+	this->myPR2->SetJointServoCmd(PR2::ARM_L_WRIST_ROLL    , this->leftarm.wristRollAngle,    0);
+	this->myPR2->SetJointServoCmd(PR2::ARM_L_GRIPPER       , this->leftarm.gripperGapCmd,     0);
+	//*/
+  this->lock.unlock();
+}
 
 void
 GazeboNode::cmdvelReceived()
@@ -130,7 +179,8 @@ GazeboNode::SubscribeModels()
   advertise<MsgLaserScan>("laser");
   advertise<MsgRobotBase2DOdom>("odom");
   advertise<MsgImage>("image");
-  subscribe("cmd_vel", velMsg, &GazeboNode::cmdvelReceived);
+  subscribe("cmd_leftarmconfig", leftarm, &GazeboNode::cmd_leftarmconfigReceived);
+  subscribe("cmd_armconfig_2", leftarm, &GazeboNode::cmd_armconfigReceived_2);
   return(0);
 }
 
@@ -249,21 +299,21 @@ GazeboNode::Update()
   /*  gripper                                                    */
   /*                                                             */
   /***************************************************************/
-  this->arm.turretAngle          = 0.0;
-  this->arm.shoulderLiftAngle    = 0.0;
-  this->arm.upperarmRollAngle    = 0.0;
-  this->arm.elbowAngle           = 0.0;
-  this->arm.forearmRollAngle     = 0.0;
-  this->arm.wristPitchAngle      = 0.0;
-  this->arm.wristRollAngle       = 0.0;
-  this->arm.gripperForceCmd      = 1000.0;
-  this->arm.gripperGapCmd        = 0.0;
-
-  // gripper test
-  this->myPR2->SetGripperGains(PR2::PR2_LEFT_GRIPPER  ,10.0,0.0,0.0);
-  this->myPR2->SetGripperGains(PR2::PR2_RIGHT_GRIPPER ,10.0,0.0,0.0);
-  this->myPR2->OpenGripper(PR2::PR2_LEFT_GRIPPER ,this->arm.gripperGapCmd,this->arm.gripperForceCmd);
-  this->myPR2->CloseGripper(PR2::PR2_RIGHT_GRIPPER,this->arm.gripperGapCmd,this->arm.gripperForceCmd);
+//  this->arm.turretAngle          = 0.0;
+//  this->arm.shoulderLiftAngle    = 0.0;
+//  this->arm.upperarmRollAngle    = 0.0;
+//  this->arm.elbowAngle           = 0.0;
+//  this->arm.forearmRollAngle     = 0.0;
+//  this->arm.wristPitchAngle      = 0.0;
+//  this->arm.wristRollAngle       = 0.0;
+//  this->arm.gripperForceCmd      = 1000.0;
+//  this->arm.gripperGapCmd        = 0.0;
+//
+//  // gripper test
+//  this->myPR2->SetGripperGains(PR2::PR2_LEFT_GRIPPER  ,10.0,0.0,0.0);
+//  this->myPR2->SetGripperGains(PR2::PR2_RIGHT_GRIPPER ,10.0,0.0,0.0);
+//  this->myPR2->OpenGripper(PR2::PR2_LEFT_GRIPPER ,this->arm.gripperGapCmd,this->arm.gripperForceCmd);
+//  this->myPR2->CloseGripper(PR2::PR2_RIGHT_GRIPPER,this->arm.gripperGapCmd,this->arm.gripperForceCmd);
 
 
   this->lock.unlock();
