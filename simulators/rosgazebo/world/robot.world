@@ -421,14 +421,14 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
       </joint>
-
+      <!-- ========================================= -->
       <joint name="torso_spine_slider">
         <saturationTorque>1000</saturationTorque>
         <pGain>1</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
       </joint>
-
+      <!-- ========================================= -->
       <joint name="shoulder_pan_left">
         <saturationTorque>1000</saturationTorque>
         <pGain>1</pGain>
@@ -471,7 +471,7 @@
         <iGain>0</iGain>
         <pGain>1</pGain>
       </joint>
-
+      <!-- ========================================= -->
       <joint name="shoulder_pan_right">
         <saturationTorque>1000</saturationTorque>
         <pGain>1</pGain>
@@ -514,29 +514,30 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
       </joint>
-     
+      <!-- ========================================= -->
       <interface:pr2array name="pr2_iface"/>
+      <!-- ========================================= -->
     </controller:pr2_actarray>
 
-    <controller:pioneer2_gripper name="pr2_gripper_left_controller">
+    <controller:pr2_gripper name="pr2_gripper_left_controller" plugin="libPr2_Gripper.so">
       <leftJoint>finger_2_slider_left</leftJoint>
       <rightJoint>finger_1_slider_left</rightJoint>
       <gripperForce>1000.0</gripperForce>
       <pGain>10.0</pGain>
       <dGain>0.0</dGain>
       <iGain>0.0</iGain>
-      <interface:gripper name="pr2_gripper_left_iface"/>
-    </controller:pioneer2_gripper>
+      <interface:pr2gripper name="pr2_gripper_left_iface"/>
+    </controller:pr2_gripper>
 
-    <controller:pioneer2_gripper name="pr2_gripper_right_controller">
+    <controller:pr2_gripper name="pr2_gripper_right_controller" plugin="libPr2_Gripper.so">
       <leftJoint>finger_2_slider_right</leftJoint>
       <rightJoint>finger_1_slider_right</rightJoint>
       <gripperForce>1000.0</gripperForce>
       <pGain>10.0</pGain>
       <dGain>0.0</dGain>
       <iGain>0.0</iGain>
-      <interface:gripper name="pr2_gripper_right_iface"/>
-    </controller:pioneer2_gripper>
+      <interface:pr2gripper name="pr2_gripper_right_iface"/>
+    </controller:pr2_gripper>
 
   </model:physical>
 
