@@ -50,6 +50,7 @@ public:
     flea2.set_gamma(0.24);
     flea2.set_gain(0);
 
+
     next_time = ros::Time::now();
     count = 0;
   }
@@ -117,8 +118,8 @@ int main(int argc, char **argv)
   Flea2_Node fn;
 
   while (fn.ok()) {
-    fn.get_and_send_jpeg();
-    //fn.get_and_send_raw();
+    //fn.get_and_send_jpeg();
+    fn.get_and_send_raw();
   }
 
   ros::fini();
