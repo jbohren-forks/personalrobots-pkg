@@ -5,7 +5,7 @@ KNI_3.9.2.tar.gz:
 
 download: KNI_3.9.2.tar.gz
 
-KNI_3.9.2:
+KNI_3.9.2: KNI_3.9.2.tar.gz
 	tar xzf KNI_3.9.2.tar.gz
 
 KNI_3.9.2/lib/linux/libKNIBase.a: KNI_3.9.2
