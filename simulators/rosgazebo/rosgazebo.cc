@@ -173,8 +173,8 @@ GazeboNode::cmdvelReceived()
 {
   this->lock.lock();
 
-  printf("received cmd: %.3f %.3f\n",
-         this->velMsg.vx, this->velMsg.vw);
+  //printf("received cmd: %.3f %.3f\n",
+  //       this->velMsg.vx, this->velMsg.vw);
 
   // set base velocity
   this->myPR2->SetBaseCartesianSpeedCmd(this->velMsg.vx, 0.0, this->velMsg.vw);
@@ -217,6 +217,7 @@ GazeboNode::SubscribeModels()
   advertise<MsgLaserScan>("laser");
   advertise<MsgRobotBase2DOdom>("odom");
   advertise<MsgImage>("image");
+  subscribe("cmd_vel", velMsg, &GazeboNode::cmdvelReceived);
   subscribe("cmd_leftarmconfig", leftarm, &GazeboNode::cmd_leftarmconfigReceived);
   subscribe("cmd_rightarmconfig", rightarm, &GazeboNode::cmd_rightarmconfigReceived);
   return(0);
