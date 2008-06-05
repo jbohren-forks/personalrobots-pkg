@@ -56,6 +56,7 @@ public:
       subscribe(oss.str().c_str(), mot_cmd[i], &EtherDrive_Node::mot_callback);
 
       last_mot_val[i] = 0;
+      mot_cmd[i].valid = false;
     }
 
     param("etherdrive/host", host, string("192.168.0.100"));

@@ -36,7 +36,7 @@
 #include "std_msgs/Empty.h"
 #include "std_msgs/LaserScan.h"
 #include "std_msgs/PointCloudFloat32.h"
-#include "std_msgs/Image.h"
+#include "std_msgs/LaserImage.h"
 #include "std_msgs/Actuator.h"
 #include "libTF/libTF.h"
 #include "math.h"
@@ -53,7 +53,9 @@ public:
 
   LaserScan scans;
   Actuator encoder;
-  Image image;
+  LaserImage image;
+
+  PointCloudFloat32 full_cloud;
 
   int num_scans;
 
@@ -62,7 +64,7 @@ public:
 
   libTF::TransformReference TR;
 
-  bool img_ready;
+  bool sizes_ready;
   int img_ind;
   int img_dir;
 
@@ -75,13 +77,15 @@ public:
 
   bool scan_received;
 
-  Tilting_Laser() : ros::node("tilting_laser"), img_ready(false), img_ind(-1), img_dir(1),last_ang(1000000), rate_err_down(0.0), rate_err_up(0.0), accum_angle(0), scan_received(false)
+  Tilting_Laser() : ros::node("tilting_laser"), sizes_ready(false), img_ind(-1), img_dir(1),last_ang(1000000), rate_err_down(0.0), rate_err_up(0.0), accum_angle(0.0), scan_received(false)
   {
     
     advertise<PointCloudFloat32>("cloud");
     advertise<Empty>("shutter");
-    advertise<Actuator>("mot_cmd");
+    advertise<PointCloudFloat32>("full_cloud");
+    advertise<LaserImage>("laser_image");
     advertise<Image>("image");
+    advertise<Actuator>("mot_cmd");
 
     subscribe("scan", scans, &Tilting_Laser::scans_callback,10);
     subscribe("mot",  encoder, &Tilting_Laser::encoder_callback,10);
@@ -102,6 +106,8 @@ public:
 		     0, 0, 0,
 		     time);
 
+    last_motor_time = ros::Time::now();
+
   }
 
   virtual ~Tilting_Laser()
@@ -114,15 +120,28 @@ public:
     scan_received = true;
 
     //TODO: Add check for hokuyo changing width!
-    if (!img_ready) {
-      image.height = num_scans;
-      image.width = scans.get_ranges_size();
-      image.set_data_size(2*image.height*image.width);
-      
-      image.colorspace = "mono16";
-      image.compression = "raw";
+    if (!sizes_ready) {
+      image.range_img.height = num_scans;
+      image.range_img.width = scans.get_ranges_size();
+      image.range_img.set_data_size(2*image.range_img.height*image.range_img.width);
+      image.range_img.colorspace = "mono16";
+      image.range_img.compression = "raw";
 
-      img_ready = true;
+      image.intensity_img.height = num_scans;
+      image.intensity_img.width = scans.get_ranges_size();
+      image.intensity_img.set_data_size(2*image.intensity_img.height*image.intensity_img.width);
+      image.intensity_img.colorspace = "mono16";
+      image.intensity_img.compression = "raw";
+
+      image.set_vert_angles_size(num_scans);
+      image.set_horiz_angles_size(scans.get_ranges_size());
+
+      full_cloud.set_pts_size(scans.get_ranges_size()*num_scans);
+      full_cloud.set_chan_size(1);
+      full_cloud.chan[0].name = "intensities";
+      full_cloud.chan[0].set_vals_size(scans.get_ranges_size()*num_scans);
+
+      sizes_ready = true;
     }
 
     cloud.set_pts_size(scans.get_ranges_size());
@@ -160,7 +179,6 @@ public:
 
     libTF::TFVector v = TR.transformVector(1,u);
     
-
     double ang = atan2(v.z,v.x);
 
     if (ang < max_ang && last_ang > max_ang)
@@ -176,6 +194,13 @@ public:
     }
 
     last_ang = ang;
+    
+    int ind;
+    
+    if (img_dir == 1)
+      ind = img_ind;
+    else
+      ind = (num_scans - img_ind - 1);
 
     for (uint32_t i = 0; i < scans.get_ranges_size(); i++) {
       cloud.pts[i].x = rot_points(1,i+1);
@@ -185,11 +210,17 @@ public:
 
       if (img_ind >= 0)
       {
-	if (img_dir == 1)
-	  *(unsigned short*)(&(image.data[img_ind * 2 * image.width + image.width * 2 - 2 - 2*i])) = scans.intensities[i];
-	else
-	  *(unsigned short*)(&(image.data[(num_scans - img_ind - 1) * 2 * image.width + image.width * 2 - 2 - 2*i])) = scans.intensities[i];
+	full_cloud.pts[img_ind * scans.get_ranges_size() + i].x = rot_points(1,i+1);
+	full_cloud.pts[img_ind * scans.get_ranges_size() + i].y = rot_points(2,i+1);
+	full_cloud.pts[img_ind * scans.get_ranges_size() + i].z = rot_points(3,i+1);
+	full_cloud.chan[0].vals[img_ind * scans.get_ranges_size() + i] = scans.intensities[i];
+
+	*(unsigned short*)(&(image.intensity_img.data[ind * 2 * image.intensity_img.width + image.intensity_img.width * 2 - 2 - 2*i])) = scans.intensities[i];
+	*(unsigned short*)(&(image.range_img.data[ind * 2 * image.range_img.width + image.range_img.width * 2 - 2 - 2*i])) = scans.ranges[i] * 1000.0;
+	image.horiz_angles[i] = scans.angle_min + i*scans.angle_increment;
       }
+
+      image.vert_angles[ind] = ang;
     }
 
     if (img_ind >= 0)
@@ -198,7 +229,7 @@ public:
     publish("cloud", cloud);
 
     if (img_ind == num_scans) {
-      printf("Sending image and shutter\n");
+      printf("Scan completed.\n");
 
       double ang_err;
 
@@ -213,9 +244,9 @@ public:
 	rate_err_up += ang_err / (scans.scan_time * num_scans);
       }
 
-      printf("Final scan off by: %g\n", ang_err);
-
-      publish("image", image);
+      publish("laser_image", image);
+      publish("image", image.intensity_img);
+      publish("full_cloud", full_cloud);
       publish("shutter",shutter);
       img_ind = -1;
     }
