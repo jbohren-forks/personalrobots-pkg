@@ -82,6 +82,7 @@ class TArmK_Node : public ros::node
 {
   private:
     MsgPR2Arm cmd_leftarmconfig;
+    MsgPR2Arm cmd_rightarmconfig;
 
   public:
     TArmK_Node() : ros::node("tarmk")
@@ -96,10 +97,19 @@ class TArmK_Node : public ros::node
 			this->cmd_leftarmconfig.forearmRollAngle  = 0;
 			this->cmd_leftarmconfig.wristPitchAngle   = 0;
 			this->cmd_leftarmconfig.wristRollAngle    = 0;
-			this->cmd_leftarmconfig.gripperForceCmd   = 0;
+			this->cmd_leftarmconfig.gripperForceCmd   = 1000;
 			this->cmd_leftarmconfig.gripperGapCmd     = 0;
+			this->cmd_rightarmconfig.turretAngle = 0;
+			this->cmd_rightarmconfig.shoulderLiftAngle = 0;
+			this->cmd_rightarmconfig.upperarmRollAngle = 0;
+			this->cmd_rightarmconfig.elbowAngle        = 0;
+			this->cmd_rightarmconfig.forearmRollAngle  = 0;
+			this->cmd_rightarmconfig.wristPitchAngle   = 0;
+			this->cmd_rightarmconfig.wristRollAngle    = 0;
+			this->cmd_rightarmconfig.gripperForceCmd   = 1000;
+			this->cmd_rightarmconfig.gripperGapCmd     = 0;
       advertise<MsgPR2Arm>("cmd_leftarmconfig");
-      advertise<MsgPR2Arm>("cmd_armconfig_2");
+      advertise<MsgPR2Arm>("cmd_rightarmconfig");
     }
     ~TArmK_Node() { }
     void keyboardLoop();
@@ -137,8 +147,12 @@ main(int argc, char** argv)
 void TArmK_Node::changeJointAngle(PR2_JOINT_ID jointID, bool increment)
 {
 	float jointCmdStep = 5*M_PI/180;
+	float gripperStep = 0.002;
 	if (increment == false)
+	{
 		jointCmdStep *= -1;
+		gripperStep *= -1;
+	}
 
 	switch(jointID)
 	{
@@ -164,23 +178,31 @@ void TArmK_Node::changeJointAngle(PR2_JOINT_ID jointID, bool increment)
 			this->cmd_leftarmconfig.wristRollAngle += jointCmdStep;
 			break;
 		case ARM_L_GRIPPER:
-			this->cmd_leftarmconfig.gripperGapCmd += jointCmdStep;
+			this->cmd_leftarmconfig.gripperGapCmd += gripperStep;
 			break;
 		case ARM_R_PAN:
+			this->cmd_rightarmconfig.turretAngle += jointCmdStep;
 			break;
 		case ARM_R_SHOULDER_PITCH:
+			this->cmd_rightarmconfig.shoulderLiftAngle += jointCmdStep;
 			break;
 		case ARM_R_SHOULDER_ROLL:
+			this->cmd_rightarmconfig.upperarmRollAngle += jointCmdStep;
 			break;
 		case ARM_R_ELBOW_PITCH:
+			this->cmd_rightarmconfig.elbowAngle += jointCmdStep;
 			break;
 		case ARM_R_ELBOW_ROLL:
+			this->cmd_rightarmconfig.forearmRollAngle += jointCmdStep;
 			break;
 		case ARM_R_WRIST_PITCH:
+			this->cmd_rightarmconfig.wristPitchAngle += jointCmdStep;
 			break;
 		case ARM_R_WRIST_ROLL:
+			this->cmd_rightarmconfig.wristRollAngle += jointCmdStep;
 			break;
 		case ARM_R_GRIPPER:
+			this->cmd_rightarmconfig.gripperGapCmd += gripperStep;
 			break;
 		default:
 			printf("This joint is not handled.\n");
@@ -195,6 +217,7 @@ TArmK_Node::keyboardLoop()
   char c;
   bool dirty=false;
 	PR2_JOINT_ID curr_jointID = ARM_L_PAN; // joint which will be actuated.
+	bool right_arm = false;
 
   // get the console in raw mode
   tcgetattr(kfd, &cooked);
@@ -222,63 +245,118 @@ TArmK_Node::keyboardLoop()
 
 		switch(c)
 		{
-			case '1':
-				curr_jointID = ARM_L_PAN;
-				printf("left turret\n");
+			case 'l':
+			case 'L':
+				right_arm = false;
+				printf("Actuating left arm.\n");
 				break;
-			case '2':
-				curr_jointID = ARM_L_SHOULDER_PITCH;
-				printf("left shoulder pitch\n");
+			case 'r':
+			case 'R':
+				right_arm = true;
+				printf("Actuating right arm.\n");
 				break;
-			case '3':
-				curr_jointID = ARM_L_SHOULDER_ROLL;
-				printf("left shoulder roll\n");
-				break;
-			case '4':
-				curr_jointID = ARM_L_ELBOW_PITCH;
-				printf("left elbow pitch\n");
-				break;
-			case '5':
-				curr_jointID = ARM_L_ELBOW_ROLL;
-				printf("left elbow roll\n");
-				break;
-			case '6':
-				curr_jointID = ARM_L_WRIST_PITCH;
-				printf("left wrist pitch\n");
-				break;
-			case '7':
-				curr_jointID = ARM_L_WRIST_ROLL;
-				printf("left wrist roll\n");
-				break;
-			case '8':
-				curr_jointID = ARM_L_GRIPPER;
-				printf("left gripper\n");
-				break;
-
 			case '+':
 			case '=':
 				changeJointAngle(curr_jointID, true);
 				dirty=true;
 				break;
-
 			case '_':
 			case '-':
 				changeJointAngle(curr_jointID, false);
 				dirty=true;
 				break;
-
 			default:
-				printf("Something else\n");
 				break;
+		}
+
+		if (right_arm==false)
+		{
+			switch(c)
+			{
+				case '1':
+					curr_jointID = ARM_L_PAN;
+					printf("left turret\n");
+					break;
+				case '2':
+					curr_jointID = ARM_L_SHOULDER_PITCH;
+					printf("left shoulder pitch\n");
+					break;
+				case '3':
+					curr_jointID = ARM_L_SHOULDER_ROLL;
+					printf("left shoulder roll\n");
+					break;
+				case '4':
+					curr_jointID = ARM_L_ELBOW_PITCH;
+					printf("left elbow pitch\n");
+					break;
+				case '5':
+					curr_jointID = ARM_L_ELBOW_ROLL;
+					printf("left elbow roll\n");
+					break;
+				case '6':
+					curr_jointID = ARM_L_WRIST_PITCH;
+					printf("left wrist pitch\n");
+					break;
+				case '7':
+					curr_jointID = ARM_L_WRIST_ROLL;
+					printf("left wrist roll\n");
+					break;
+				case '8':
+					curr_jointID = ARM_L_GRIPPER;
+					printf("left gripper\n");
+					break;
+				default:
+					break;
+			}
+		}
+		else
+		{
+			switch(c)
+			{
+				case '1':
+					curr_jointID = ARM_R_PAN;
+					printf("right turret\n");
+					break;
+				case '2':
+					curr_jointID = ARM_R_SHOULDER_PITCH;
+					printf("right shoulder pitch\n");
+					break;
+				case '3':
+					curr_jointID = ARM_R_SHOULDER_ROLL;
+					printf("right shoulder roll\n");
+					break;
+				case '4':
+					curr_jointID = ARM_R_ELBOW_PITCH;
+					printf("right elbow pitch\n");
+					break;
+				case '5':
+					curr_jointID = ARM_R_ELBOW_ROLL;
+					printf("right elbow roll\n");
+					break;
+				case '6':
+					curr_jointID = ARM_R_WRIST_PITCH;
+					printf("right wrist pitch\n");
+					break;
+				case '7':
+					curr_jointID = ARM_R_WRIST_ROLL;
+					printf("right wrist roll\n");
+					break;
+				case '8':
+					curr_jointID = ARM_R_GRIPPER;
+					printf("right gripper\n");
+					break;
+				default:
+					break;
+			}
 		}
 
     if (dirty == true)
     {
 			dirty=false; // Sending the command only once for each key press.
       publish("cmd_leftarmconfig",cmd_leftarmconfig);
-      publish("cmd_armconfig_2",cmd_leftarmconfig);
+      publish("cmd_rightarmconfig",cmd_rightarmconfig);
     }
-
-
   }
 }
+
+
