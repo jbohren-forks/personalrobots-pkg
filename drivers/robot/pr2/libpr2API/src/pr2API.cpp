@@ -564,8 +564,7 @@ PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, NEWMAT::Matrix
       g(3,4) = g(3,4) - SPINE_LEFT_ARM_OFFSET.z;
    }
    theta = 0;
-   theta = myArm.ComputeIK(g,0);
-
+   theta = myArm.ComputeIK(g,0.1);
    for(int jj = 1; jj <= 8; jj++)
    {
       if (theta(8,jj) > -1)
@@ -574,15 +573,14 @@ PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, NEWMAT::Matrix
          break;
       }
    }
-
    if(validSolution <= 8)
    {
       for(int ii = 0; ii < 7; ii++)
       {
          angles[ii] = theta(ii+1,validSolution);
          speeds[ii] = 0;
+         this->SetJointServoCmd((PR2::PR2_JOINT_ID) (JointStart[id]+ii),angles[ii],0);
       }
-      SetArmJointPosition(id,angles,speeds);
    }
    return PR2_ALL_OK;
 };

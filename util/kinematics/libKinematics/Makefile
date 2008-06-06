@@ -23,7 +23,7 @@ $(LIBIK): ik.o kinematics.o
 	ar -rs $@ $^
 
 test_PR2ik: src/test/test_PR2ik.cpp
-	g++ $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	g++ $(CFLAGS) -o $@ $^ -lnewmat
 
 clean:
 	rm -rf test_PR2ik
