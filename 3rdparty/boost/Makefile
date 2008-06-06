@@ -7,6 +7,7 @@ download: boost_1_35_0.tar.gz
 
 boost_1_35_0: boost_1_35_0.tar.gz
 	tar xzf boost_1_35_0.tar.gz
+	touch boost_1_35_0
 
 clean:
 	-rm -rf boost_1_35_0
