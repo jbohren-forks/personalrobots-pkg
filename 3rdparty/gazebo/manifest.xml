@@ -12,7 +12,7 @@ system.
 <license>GPL</license>
 <url>http://playerstage.sf.net</url>
 <export>
-  <cpp lflags="-Wl,-rpath,${prefix}/gazebo-git/root/lib `PKG_CONFIG_PATH=${prefix}/gazebo-git/root/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --libs libgazebo` `PKG_CONFIG_PATH=${prefix}/gazebo-git/root/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --libs libgazeboServer` `PKG_CONFIG_PATH=${prefix}/gazebo-git/root/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --libs libpr2API`" cflags="`PKG_CONFIG_PATH=${prefix}/gazebo-git/root/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --cflags libgazebo` `PKG_CONFIG_PATH=${prefix}/gazebo-git/root/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --cflags libgazeboServer` `PKG_CONFIG_PATH=${prefix}/gazebo-git/root/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --cflags libpr2API`"/>
+  <cpp lflags="-Wl,-rpath,${prefix}/gazebo-git/root/lib `PKG_CONFIG_PATH=${prefix}/gazebo-git/root/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --libs libgazebo` `PKG_CONFIG_PATH=${prefix}/gazebo-git/root/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --libs libgazeboServer`" cflags="`PKG_CONFIG_PATH=${prefix}/gazebo-git/root/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --cflags libgazebo` `PKG_CONFIG_PATH=${prefix}/gazebo-git/root/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --cflags libgazeboServer`"/>
   <doxymaker external="http://playerstage.sourceforge.net/doc/Gazebo-manual-svn-html/"/>
 </export>
 </package>
