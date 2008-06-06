@@ -29,7 +29,7 @@
 
 #include <gazebo/Controller.hh>
 #include <gazebo/Entity.hh>
-#include "PR2.hh"
+#include <pr2Core/pr2Core.h>
 
 namespace gazebo
 {
