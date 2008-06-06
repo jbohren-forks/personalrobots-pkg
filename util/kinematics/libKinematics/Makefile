@@ -22,7 +22,7 @@ $(LIBK): kinematics.o
 $(LIBIK): ik.o kinematics.o
 	ar -rs $@ $^
 
-test_PR2ik: src/test/test_PR2ik.cpp $(LIBK) $(LIBIK)
+test_PR2ik: src/test/test_PR2ik.cpp
 	g++ $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:

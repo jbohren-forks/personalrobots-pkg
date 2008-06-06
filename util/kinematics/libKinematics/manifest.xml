@@ -10,6 +10,6 @@ Library for doing kinematics and inverse kinematics for the PR2 robot
 <depend package="newmat10"/>
 <depend package="pr2Core"/>
 <export>
-<cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lKinematics -lIk -lnewmat"/>
+<cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lKinematics -lIk"/>
 </export>
 </package>
