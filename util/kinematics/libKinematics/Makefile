@@ -10,10 +10,10 @@ LIBIK = lib/libIk.a
 all: $(LIBK) $(LIBIK) test_PR2ik
 
 
-ik.o: src/ik.cpp include/libKinematics/ik.h include/libKinematics/kinematics.h
+ik.o: src/ik.cpp
 	g++  $(CFLAGS) -o $@ -c $< 
 
-kinematics.o: src/kinematics.cpp include/libKinematics/kinematics.h
+kinematics.o: src/kinematics.cpp
 	g++  $(CFLAGS) -o $@ -c $< 
 
 $(LIBK): kinematics.o
