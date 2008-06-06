@@ -1,5 +1,6 @@
 #include <cstdio>
 #include "kniBase.h"
+//#include "KNI/kmlMotBase.h"
 #include "katana/katana.h"
 
 using std::string;
@@ -13,10 +14,14 @@ Katana::Katana(const string &serial_port_str)
   protocol = new CCplSerialCRC();
   protocol->init(device);
   printf("initialized KNI protocol successfully\n");
+  kni_lm = new CLMBase();
+  kni_lm->create("../../cfg/stair1_katana.cfg", protocol);
+  printf("KNI lm base library is up\n");
 }
 
 Katana::~Katana()
 {
+  delete kni_lm;
   delete protocol;
   delete device;
 }

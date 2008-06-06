@@ -14,6 +14,7 @@ public:
 private:
   CCdlCOM *device;
   CCplSerialCRC *protocol;
+  CLMBase *kni_lm;
 };
 
 #endif
