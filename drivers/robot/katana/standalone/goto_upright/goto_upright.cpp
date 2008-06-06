@@ -32,11 +32,7 @@
 
 int main(int argc, char **argv)
 {
-  printf("initializing katana connection...\n");
   Katana *k = new Katana();
-  printf("calibrating...\n");
-  k->calibrate();
-  printf("done!\n");
   delete k;
   return 0;
 }

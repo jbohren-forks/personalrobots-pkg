@@ -29,14 +29,28 @@
 
 #include <cstdio>
 #include "katana/katana.h"
+#include "ros/common.h"
 
 int main(int argc, char **argv)
 {
-  printf("initializing katana connection...\n");
+  if (argc != 2 || (strcmp(argv[1], "on") && strcmp(argv[1], "off")))
+  {
+    printf("usage: motor_power POWER\n");
+    printf("  where POWER is either 'on' or 'off'\n");
+    return 0;
+  }
   Katana *k = new Katana();
-  printf("calibrating...\n");
-  k->calibrate();
-  printf("done!\n");
+  if (!strcmp(argv[1], "on"))
+  {
+    printf("turning motors on\n");
+    k->set_motor_power(true);
+  }
+  else
+  {
+    printf("turning motors off\n");
+    k->set_motor_power(false);
+  }
+  printf("done.\n");
   delete k;
   return 0;
 }

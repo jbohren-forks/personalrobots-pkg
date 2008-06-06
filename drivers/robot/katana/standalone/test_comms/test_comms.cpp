@@ -32,13 +32,9 @@
 
 int main(int argc, char **argv)
 {
-  if (argc != 2)
-  {
-    printf("usage: test_comms SERIAL_DEVICE\n");
-    return 0;
-  }
-  Katana *k = new Katana(argv[1]);
-  printf("ok, about to destruct katana\n");
+  printf("starting katana...\n");
+  Katana *k = new Katana();
+  printf("hooray! comms are OK\n");
   delete k;
   return 0;
 }

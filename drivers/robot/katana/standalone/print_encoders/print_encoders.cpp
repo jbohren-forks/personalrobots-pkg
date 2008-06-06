@@ -29,14 +29,14 @@
 
 #include <cstdio>
 #include "katana/katana.h"
+using std::vector;
 
 int main(int argc, char **argv)
 {
-  printf("initializing katana connection...\n");
   Katana *k = new Katana();
-  printf("calibrating...\n");
-  k->calibrate();
-  printf("done!\n");
+  vector<double> joints = k->get_joint_positions();
+  for (size_t i = 0; i < joints.size(); i++)
+    printf("joint %d = %f\n", i, joints[i]);
   delete k;
   return 0;
 }
