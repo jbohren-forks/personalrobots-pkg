@@ -1,0 +1,10 @@
+--- /home/mquigley/Desktop/KNI_3.9.2/include/KNI/kmlExt.h	2007-08-21 06:01:42.000000000 -0700
++++ include/KNI/kmlExt.h	2008-06-06 16:24:10.000000000 -0700
+@@ -246,6 +246,7 @@
+ 	/// You can provide less values than the number of motors. In that case only the given ones will be moved.
+ 	/// This can be usefull in cases where you want to move the robot but you don't want to move the gripper.
+ 	void moveRobotToEnc(std::vector<int>::const_iterator start, std::vector<int>::const_iterator end, bool waitUntilReached = false, int encTolerance = 100, int waitTimeout = 0);
++	void moveRobotToDeg(std::vector<double>::const_iterator start, std::vector<double>::const_iterator end, bool waitUntilReached = false, int encTolerance = 100, int waitTimeout = 0);
+ 	/// Move to robot to given encoders in the vector-container.
+ 	/// This method is mainly provided for convenience. Catch by value (and not by reference) is intended to avoid
+ 	/// nasty wrapping code.

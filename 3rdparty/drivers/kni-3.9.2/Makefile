@@ -10,6 +10,8 @@ KNI_3.9.2: KNI_3.9.2.tar.gz
 	cd KNI_3.9.2 && patch -p0 <../lm_boost_cxxflags.patch
 	cd KNI_3.9.2 && patch -p0 <../cdlCOM.h_linux_anydevice.patch
 	cd KNI_3.9.2 && patch -p0 <../cdlCOM.cpp_linux_anydevice.patch
+	cd KNI_3.9.2 && patch -p0 <../kmlExt.h.patch
+	cd KNI_3.9.2 && patch -p0 <../kmlExt.cpp.patch
 
 KNI_3.9.2/lib/linux/libKNIBase.a: KNI_3.9.2
 	cd KNI_3.9.2 && make
