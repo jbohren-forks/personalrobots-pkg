@@ -374,7 +374,7 @@
     <body2>dummytorso_body</body2>
     <anchor>dummytorso_body</anchor>
     <axis>  1.0   0.0   0.0 </axis>
-    <cfm>0.0001</cfm>
+    <cfm>0.001</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -383,7 +383,7 @@
     <body2>dummytorso_body</body2>
     <anchor>dummytorso_body</anchor>
     <axis>  0.0   1.0   0.0 </axis>
-    <cfm>0.0001</cfm>
+    <cfm>0.001</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -459,7 +459,7 @@
   </body:cylinder>
 
   <body:cylinder name="upperarm_joint_right">
-    <xyz>  0.35    0.15   0.68 </xyz>
+    <xyz>  0.285    0.15   0.68 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="upperarm_joint_right_geom">
       <size> 0.10  0.05</size>   <!-- radius and length -->
@@ -475,13 +475,13 @@
   </body:cylinder>
 
   <body:box name="upperarm_right">
-    <xyz>  0.55    0.15   0.68 </xyz>
+    <xyz>  0.485    0.15   0.68 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="upperarm_right_geom">
-      <size> 0.2  0.1 0.1</size>
+      <size> 0.25  0.1 0.1</size>
       <mass>1.0</mass>
       <visual>
-        <size> 0.2  0.1 0.1</size>
+        <size> 0.25  0.1 0.1</size>
         <mesh>unit_box</mesh>
         <material>Gazebo/Grey</material>
       </visual>
@@ -489,7 +489,7 @@
   </body:box>
 
   <body:cylinder name="elbow_right">
-    <xyz>  0.70    0.15   0.68 </xyz>
+    <xyz>  0.6850    0.15   0.68 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="elbow_right_geom">
       <size> 0.04  0.1</size>   <!-- radius and length -->
@@ -503,7 +503,7 @@
   </body:cylinder>
 
   <body:box name="forearm_right">
-    <xyz>  0.85    0.15   0.68 </xyz>
+    <xyz>  0.84225    0.15   0.68 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="forearm_right_geom">
       <size> 0.2  0.1 0.1</size>
@@ -517,7 +517,7 @@
   </body:box>
 
   <body:cylinder name="wrist_right">
-    <xyz>  0.98    0.15   0.68 </xyz>
+    <xyz>  0.9995    0.15   0.68 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="wrist_right_geom">
       <size> 0.025  0.1</size>   <!-- radius and length -->
@@ -582,7 +582,7 @@
     <body2>torso_body</body2>
     <anchor>shoulder_pan_body_right</anchor>
     <axis>  0.0   0.0   1.0 </axis>
-    <cfm>0.0001</cfm>
+    <cfm>0.001</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -591,7 +591,7 @@
     <body2>shoulder_pan_body_right</body2>
     <anchor>upperarm_joint_right</anchor>
     <axis>  0.0   1.0   0.0 </axis>
-    <cfm>0.0001</cfm>
+    <cfm>0.001</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -600,7 +600,7 @@
     <body2>upperarm_right</body2>
     <anchor>upperarm_joint_right</anchor>
     <axis>  1.0   0.0   0.0 </axis>
-    <cfm>0.0001</cfm>
+    <cfm>0.001</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -609,7 +609,7 @@
     <body2>upperarm_right</body2>
     <anchor>elbow_right</anchor>
     <axis>  0.0   1.0   0.0 </axis>
-    <cfm>0.0001</cfm>
+    <cfm>0.001</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -618,7 +618,7 @@
     <body2>elbow_right</body2>
     <anchor>elbow_right</anchor>
     <axis>  1.0   0.0   0.0 </axis>
-    <cfm>0.0001</cfm>
+    <cfm>0.001</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -627,7 +627,7 @@
     <body2>forearm_right</body2>
     <anchor>wrist_right</anchor>
     <axis>  0.0   1.0   0.0 </axis>
-    <cfm>0.0001</cfm>
+    <cfm>0.001</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -636,7 +636,7 @@
     <body2>wrist_right</body2>
     <anchor>wrist_right</anchor>
     <axis>  1.0   0.0   0.0 </axis>
-    <cfm>0.0001</cfm>
+    <cfm>0.001</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -677,7 +677,7 @@
   </body:cylinder>
 
   <body:cylinder name="upperarm_joint_left">
-    <xyz>  0.35   -0.15   0.68 </xyz>
+    <xyz>  0.285   -0.15   0.68 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="upperarm_joint_left_geom">
       <size> 0.10  0.05</size>   <!-- radius and length -->
@@ -693,13 +693,13 @@
   </body:cylinder>
 
   <body:box name="upperarm_left">
-    <xyz>  0.55   -0.15   0.68 </xyz>
+    <xyz>  0.485   -0.15   0.68 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="upperarm_left_geom">
-      <size> 0.2  0.1 0.1</size>
+      <size> 0.25 0.1 0.1</size>
       <mass>1.0</mass>
       <visual>
-        <size> 0.2  0.1 0.1</size>
+        <size> 0.25 0.1 0.1</size>
         <mesh>unit_box</mesh>
         <material>Gazebo/Grey</material>
       </visual>
@@ -707,7 +707,7 @@
   </body:box>
 
   <body:cylinder name="elbow_left">
-    <xyz>  0.70   -0.15   0.68 </xyz>
+    <xyz>  0.685   -0.15   0.68 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="elbow_left_geom">
       <size> 0.04  0.1</size>   <!-- radius and length -->
@@ -721,7 +721,7 @@
   </body:cylinder>
 
   <body:box name="forearm_left">
-    <xyz>  0.85   -0.15   0.68 </xyz>
+    <xyz>  0.84225   -0.15   0.68 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="forearm_left_geom">
       <size> 0.2  0.1 0.1</size>
@@ -735,7 +735,7 @@
   </body:box>
 
   <body:cylinder name="wrist_left">
-    <xyz>  0.98   -0.15   0.68 </xyz>
+    <xyz>  0.9995   -0.15   0.68 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="wrist_left_geom">
       <size> 0.025  0.1</size>   <!-- radius and length -->
@@ -796,7 +796,7 @@
     <body2>torso_body</body2>
     <anchor>shoulder_pan_body_left</anchor>
     <axis>  0.0   0.0   1.0 </axis>
-    <cfm>0.0001</cfm>
+    <cfm>0.001</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -805,7 +805,7 @@
     <body2>shoulder_pan_body_left</body2>
     <anchor>upperarm_joint_left</anchor>
     <axis>  0.0   1.0   0.0 </axis>
-    <cfm>0.0001</cfm>
+    <cfm>0.001</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -814,7 +814,7 @@
     <body2>upperarm_left</body2>
     <anchor>upperarm_joint_left</anchor>
     <axis>  1.0   0.0   0.0 </axis>
-    <cfm>0.0001</cfm>
+    <cfm>0.001</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -823,7 +823,7 @@
     <body2>upperarm_left</body2>
     <anchor>elbow_left</anchor>
     <axis>  0.0   1.0   0.0 </axis>
-    <cfm>0.0001</cfm>
+    <cfm>0.001</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -832,7 +832,7 @@
     <body2>elbow_left</body2>
     <anchor>elbow_left</anchor>
     <axis>  1.0   0.0   0.0 </axis>
-    <cfm>0.0001</cfm>
+    <cfm>0.001</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -841,7 +841,7 @@
     <body2>forearm_left</body2>
     <anchor>wrist_left</anchor>
     <axis>  0.0   1.0   0.0 </axis>
-    <cfm>0.0001</cfm>
+    <cfm>0.001</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -850,7 +850,7 @@
     <body2>wrist_left</body2>
     <anchor>wrist_left</anchor>
     <axis>  1.0   0.0   0.0 </axis>
-    <cfm>0.0001</cfm>
+    <cfm>0.001</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -1079,6 +1079,8 @@
     <body2>front_left_wheel_l</body2>
     <anchor>front_left_wheel_l</anchor>
     <axis>0 1 0</axis>
+    <cfm>0.001</cfm>
+    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="front_left_wheel_r_drive">
@@ -1086,6 +1088,8 @@
     <body2>front_left_wheel_r</body2>
     <anchor>front_left_wheel_r</anchor>
     <axis>0 1 0</axis>
+    <cfm>0.001</cfm>
+    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="front_right_wheel_l_drive">
@@ -1093,6 +1097,8 @@
     <body2>front_right_wheel_l</body2>
     <anchor>front_right_wheel_l</anchor>
     <axis>0 1 0</axis>
+    <cfm>0.001</cfm>
+    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="front_right_wheel_r_drive">
@@ -1100,6 +1106,8 @@
     <body2>front_right_wheel_r</body2>
     <anchor>front_right_wheel_r</anchor>
     <axis>0 1 0</axis>
+    <cfm>0.001</cfm>
+    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="rear_left_wheel_l_drive">
@@ -1107,6 +1115,8 @@
     <body2>rear_left_wheel_l</body2>
     <anchor>rear_left_wheel_l</anchor>
     <axis>0 1 0</axis>
+    <cfm>0.001</cfm>
+    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="rear_left_wheel_r_drive">
@@ -1114,6 +1124,8 @@
     <body2>rear_left_wheel_r</body2>
     <anchor>rear_left_wheel_r</anchor>
     <axis>0 1 0</axis>
+    <cfm>0.001</cfm>
+    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="rear_right_wheel_l_drive">
@@ -1121,6 +1133,8 @@
     <body2>rear_right_wheel_l</body2>
     <anchor>rear_right_wheel_l</anchor>
     <axis>0 1 0</axis>
+    <cfm>0.001</cfm>
+    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="rear_right_wheel_r_drive">
@@ -1128,6 +1142,8 @@
     <body2>rear_right_wheel_r</body2>
     <anchor>rear_right_wheel_r</anchor>
     <axis>0 1 0</axis>
+    <cfm>0.001</cfm>
+    <erp>0.6</erp>
   </joint:hinge>
 
 
@@ -1138,6 +1154,8 @@
     <body2>base_body</body2>
     <anchor>front_left_caster_body</anchor>
     <axis>  0.0   0.0   1.0 </axis>
+    <cfm>0.001</cfm>
+    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="front_right_caster_steer">
@@ -1145,6 +1163,8 @@
     <body2>base_body</body2>
     <anchor>front_right_caster_body</anchor>
     <axis>  0.0   0.0   1.0 </axis>
+    <cfm>0.001</cfm>
+    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="rear_left_caster_steer">
@@ -1152,6 +1172,8 @@
     <body2>base_body</body2>
     <anchor>rear_left_caster_body</anchor>
     <axis>  0.0   0.0   1.0 </axis>
+    <cfm>0.001</cfm>
+    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="rear_right_caster_steer">
@@ -1159,6 +1181,8 @@
     <body2>base_body</body2>
     <anchor>rear_right_caster_body</anchor>
     <axis>  0.0   0.0   1.0 </axis>
+    <cfm>0.001</cfm>
+    <erp>0.6</erp>
   </joint:hinge>
 
 
