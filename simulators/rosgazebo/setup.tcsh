@@ -1,7 +1,9 @@
 #!/bin/tcsh
 setenv SIM_TOP `rospack find gazebo`/gazebo-git
+setenv SIM_PLUGIN `rospack find gazebo_plugin`
 
 if (! $?LD_LIBRARY_PATH) setenv LD_LIBRARY_PATH ''
+setenv LD_LIBRARY_PATH $SIM_PLUGIN/lib:$LD_LIBRARY_PATH
 setenv LD_LIBRARY_PATH $SIM_TOP/root/lib:$LD_LIBRARY_PATH
 setenv PATH $SIM_TOP/root/bin:$PATH
 

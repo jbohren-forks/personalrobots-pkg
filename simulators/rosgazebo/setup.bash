@@ -1,6 +1,8 @@
 #!/bin/bash
 export SIM_TOP=`rospack find gazebo`/gazebo-git
+export SIM_PLUGIN=`rospack find gazebo_plugin`
 
+export LD_LIBRARY_PATH=$SIM_PLUGIN/lib:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=$SIM_TOP/root/lib:$LD_LIBRARY_PATH
 export PATH=$SIM_TOP/root/bin:$PATH
 
