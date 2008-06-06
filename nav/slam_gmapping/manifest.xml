@@ -1,0 +1,10 @@
+<package>
+  <description>A SLAM system, using GMapping</description>
+  <author>Brian Gerkey</author>
+  <license>CreativeCommons-by-nc-sa</license>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="gmapping"/>
+  <depend package="rosTF"/>
+  <depend package="rostime"/>
+</package>
