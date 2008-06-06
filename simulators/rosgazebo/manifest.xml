@@ -4,6 +4,8 @@
   <license>TBD</license>
   <depend package="roscpp" />
   <depend package="gazebo" />
+  <depend package="gazebo_plugin" />
+  <depend package="libpr2API" />
   <depend package="std_msgs" />
   <depend package="rosthread" />
 </package>
