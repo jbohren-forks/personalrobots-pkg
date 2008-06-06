@@ -1,3 +1,6 @@
+#ifndef __PR2CORE_H__
+#define __PR2CORE_H__
+
 // TODO: put enum in some Pr2 accessible file e.g. pr2.h and include it here
 #define MAX_JOINT_IDS 256
 
@@ -202,12 +205,15 @@ namespace PR2
    const point BASE_CASTER_OFFSET[NUM_CASTERS] = {{0.25, 0.25}, {0.25, -0.25}, {-0.25,0.25}, {-0.25,-0.25}};
    const point CASTER_DRIVE_OFFSET[NUM_WHEELS] = {{0,AXLE_WIDTH}, {0,-AXLE_WIDTH}, {0,AXLE_WIDTH}, {0,-AXLE_WIDTH},{0,AXLE_WIDTH}, {0,-AXLE_WIDTH},{0,AXLE_WIDTH}, {0,-AXLE_WIDTH}};
 
-   const point3 SPINE_ARM_PAN_OFFSET = {0,0,0};
-   const point3 ARM_PAN_SHOULDER_PITCH_OFFSET = {0.1,0,0};
-   const point3 ARM_SHOULDER_PITCH_ROLL_OFFSET = {0,0,0};
-   const point3 ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET = {0.4,0,0};
-   const point3 ELBOW_PITCH_ELBOW_ROLL_OFFSET = {0.09085,0,0};
-   const point3 ELBOW_ROLL_WRIST_PITCH_OFFSET = {0.2237,0,0};
-   const point3 WRIST_PITCH_WRIST_ROLL_OFFSET = {0,0,0};
-   const point3 WRIST_ROLL_GRIPPER_OFFSET = {0,0,0};
+   const point3 SPINE_ARM_PAN_OFFSET                 = {0       ,0        ,0     };
+   const point3 ARM_PAN_SHOULDER_PITCH_OFFSET        = {0.1     ,0        ,0     };
+   const point3 ARM_SHOULDER_PITCH_ROLL_OFFSET       = {0       ,0        ,0     };
+   const point3 ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET = {0.4     ,0        ,0     };
+   const point3 ELBOW_PITCH_ELBOW_ROLL_OFFSET        = {0.09085 ,0        ,0     };
+   const point3 ELBOW_ROLL_WRIST_PITCH_OFFSET        = {0.2237  ,0        ,0     };
+   const point3 WRIST_PITCH_WRIST_ROLL_OFFSET        = {0       ,0        ,0     };
+   const point3 WRIST_ROLL_GRIPPER_OFFSET            = {0       ,0        ,0     };
+   const point3 SPINE_RIGHT_ARM_OFFSET               = {0.0     ,  0.15   , 0.68 };
+   const point3 SPINE_LEFT_ARM_OFFSET                = {0.0     , -0.15   , 0.68 };
 }
+#endif
