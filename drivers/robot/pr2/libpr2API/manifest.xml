@@ -1,0 +1,16 @@
+<package>
+<description brief='API for baic PR2 controls and sensing'>
+
+An API for baic PR2 controls and sensing: enable, disable, set gains, PD controllers, get sensor data, base cartesian control etc.
+
+</description>
+<author>Sachin Chitta</author>
+<license>BSD</license>
+<url>http://pr.willowgarage.com</url>
+<depend package="gazebo"/>
+<depend package="pr2Core"/>
+<export>
+<cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lpr2API"/>
+</export>
+</package>
+
