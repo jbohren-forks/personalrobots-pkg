@@ -14,10 +14,10 @@ pr2API.o: src/pr2API.cpp
 	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
 
 $(LIBP): pr2API.o
-	ar -rsv $@ $^
+	ar -rv $@ $^
 
-$(LIBS): $(LIBP)
-	$(CXX) -shared -o $@ $^
+$(LIBS): src/pr2API.cpp
+	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LFLAGS)
 
 test_pr2API.o: src/test/test_pr2API.cpp
 	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)

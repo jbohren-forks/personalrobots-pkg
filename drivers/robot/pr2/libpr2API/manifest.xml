@@ -7,12 +7,12 @@ An API for baic PR2 controls and sensing: enable, disable, set gains, PD control
 <author>Sachin Chitta</author>
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
-<depend package="newmat10"/>
 <depend package="gazebo"/>
 <depend package="pr2Core"/>
 <depend package="libKinematics"/>
+<depend package="newmat10"/>
 <export>
-<cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib"/>
+<cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lpr2API"/>
 </export>
 </package>
 

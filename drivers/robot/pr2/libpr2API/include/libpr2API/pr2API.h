@@ -33,11 +33,11 @@
 #ifndef PR2_API_HH
 #define PR2_API_HH
 #include <newmat10/newmat.h>
+#include <libKinematics/ik.h>
 #include <pr2Core/pr2Core.h>
 #include <sys/types.h>
 #include <stdint.h>
 #include <string>
-#include <libKinematics/ik.h>
 
 namespace PR2
 {

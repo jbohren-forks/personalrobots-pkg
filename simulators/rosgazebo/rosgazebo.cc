@@ -25,7 +25,7 @@
 // gazebo
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
-#include "pr2API.hh"
+#include <libpr2API/pr2API.h>
 
 // roscpp
 #include <ros/node.h>

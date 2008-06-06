@@ -24,11 +24,11 @@ $(LIB_ACT): libPr2_Actarray.o
 $(LIB_GRP): libPr2_Gripper.o
 	ar -rs $@ $^
 
-$(LIB_ACT_S): libPr2_Actarray.o
-	g++ -shared -o $@ $^
+$(LIB_ACT_S): src/Pr2_Actarray.cc
+	g++ $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
-$(LIB_GRP_S): libPr2_Gripper.o
-	g++ -shared -o $@ $^
+$(LIB_GRP_S): src/Pr2_Gripper.cc
+	g++ $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
 player_pr2: src/player/Pr2_Player.cc
 	g++ $(CFLAGS) -o $@ $^ $(LDFLAGS)
