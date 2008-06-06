@@ -1,5 +1,5 @@
-SRC = test_comms.cpp
-OUT = test_comms
+SRC = calibrate.cpp
+OUT = calibrate
 CFLAGS = -I../../include
 LFLAGS = -L../../libkatana -lkatana
 PKG = katana

@@ -28,6 +28,7 @@ Katana::~Katana()
 
 bool Katana::calibrate()
 {
+  kni_lm->calibrate();
   return true;
 }
 

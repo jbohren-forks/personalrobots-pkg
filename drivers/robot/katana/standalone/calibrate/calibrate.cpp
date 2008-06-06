@@ -34,11 +34,14 @@ int main(int argc, char **argv)
 {
   if (argc != 2)
   {
-    printf("usage: test_comms SERIAL_DEVICE\n");
+    printf("usage: calibrate SERIAL_DEVICE\n");
     return 0;
   }
+  printf("initializing katana connection on [%s]\n", argv[1]);
   Katana *k = new Katana(argv[1]);
-  printf("ok, about to destruct katana\n");
+  printf("calibrating...\n");
+  k->calibrate();
+  printf("done!\n");
   delete k;
   return 0;
 }
