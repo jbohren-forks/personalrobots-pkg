@@ -1,0 +1,18 @@
+<package>
+<description brief="GMapping">
+
+This package contains GMapping, from OpenSlam.
+This package includes a patch that fixes several build-related problem in
+the SVN version of GMapping, and also removes its GSL dependency.
+
+</description>
+<author>Giorgio Grisetti, Cyrill Stachniss, Wolfram Burgard</author>
+<license>Creative Commons (Attribution-NonCommercial-ShareAlike)</license>
+<url>http://openslam.org/</url>
+<export>
+  <!-- <cpp lflags="-Xlinker -rpath ${prefix}/player/lib -L${prefix}/player/lib -lplayercore -lplayerxdr -lplayerutils -lplayererror" cflags="-I${prefix}/player/include/player-2.2"/> -->
+  <doxymaker external="http://openslam.org"/>
+</export>
+</package>
+
+
