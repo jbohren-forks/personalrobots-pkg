@@ -32,10 +32,12 @@
 
 #ifndef PR2_API_HH
 #define PR2_API_HH
+#include <newmat10/newmat.h>
 #include <pr2Core/pr2Core.h>
 #include <sys/types.h>
 #include <stdint.h>
 #include <string>
+#include <libKinematics/ik.h>
 
 namespace PR2
 {
@@ -422,9 +424,11 @@ namespace PR2
            \param effectorPosition - array of desired position of the end-effector
            \param effectorSpeed - array of desired speed of the end-effector
          */
-      public: PR2_ERROR_CODE SetArmCartesianPosition(PR2_MODEL_ID id, double effectorPosition[], double effectorSpeed[]);
+      //public: PR2_ERROR_CODE SetArmCartesianPosition(PR2_MODEL_ID id, double effectorPosition[], double effectorSpeed[]);
+      public: PR2_ERROR_CODE SetArmCartesianPosition(PR2_MODEL_ID id, NEWMAT::Matrix g);
 
 
+#if 0
          /*! \fn
            \brief Get the commanded position and speed for the end-effector
            \param id - model ID, set pr2Core.h for a list of model IDs
@@ -482,7 +486,7 @@ namespace PR2
            \param force - desired end effector speed
          */
       public: PR2_ERROR_CODE GetArmCartesianSpeedActual(PR2_MODEL_ID id, double speed[]);
-
+#endif
          /*! \fn
            \brief Set a control mode for the base
            \param mode - two choices - Cartesian or Joint control
@@ -577,6 +581,7 @@ namespace PR2
 
       protected: PR2_CONTROL_MODE armControlMode[2];
       protected: PR2_CONTROL_MODE baseControlMode;
-   };
+      protected: PR2Arm myArm; 
+    };
 }
 #endif

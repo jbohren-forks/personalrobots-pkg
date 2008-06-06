@@ -544,6 +544,48 @@ PR2_ERROR_CODE PR2Robot::IsEnabledModel(PR2_MODEL_ID id, int *enabled)
    return PR2_ALL_OK;
 };
 
+PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, NEWMAT::Matrix g)
+{
+   NEWMAT::Matrix theta(8,8);
+   double angles[7], speeds[7];
+   int validSolution;
+
+   if (id == PR2_RIGHT_ARM)
+   {
+      g(1,4) = g(1,4) - SPINE_RIGHT_ARM_OFFSET.x;
+      g(2,4) = g(2,4) - SPINE_RIGHT_ARM_OFFSET.y;
+      g(3,4) = g(3,4) - SPINE_RIGHT_ARM_OFFSET.z;
+   }
+
+   if (id == PR2_LEFT_ARM)
+   {
+      g(1,4) = g(1,4) - SPINE_LEFT_ARM_OFFSET.x;
+      g(2,4) = g(2,4) - SPINE_LEFT_ARM_OFFSET.y;
+      g(3,4) = g(3,4) - SPINE_LEFT_ARM_OFFSET.z;
+   }
+   theta = 0;
+   theta = myArm.ComputeIK(g,0);
+
+   for(int jj = 1; jj <= 8; jj++)
+   {
+      if (theta(8,jj) > -1)
+      {
+         validSolution = jj;
+         break;
+      }
+   }
+
+   if(validSolution <= 8)
+   {
+      for(int ii = 0; ii < 7; ii++)
+      {
+         angles[ii] = theta(ii+1,validSolution);
+         speeds[ii] = 0;
+      }
+      SetArmJointPosition(id,angles,speeds);
+   }
+   return PR2_ALL_OK;
+};
 
 PR2_ERROR_CODE PR2Robot::SetBaseControlMode(PR2_CONTROL_MODE mode)
 {
@@ -1293,7 +1335,7 @@ PR2_ERROR_CODE PR2Robot::GetCameraImage(PR2_SENSOR_ID id ,
     pr2CameraIface->Unlock();
 
     return PR2_ALL_OK;
-}
+};
 
 
 
