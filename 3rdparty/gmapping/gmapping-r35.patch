@@ -1,6 +1,6 @@
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/build_tools/testlib ./build_tools/testlib
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/build_tools/testlib ./build_tools/testlib
 --- /u/gerkey/tmp/gmapping/build_tools/testlib	2008-06-06 10:36:47.668088836 -0700
-+++ ./build_tools/testlib	2008-06-06 10:29:18.139095627 -0700
++++ ./build_tools/testlib	2008-06-06 11:28:24.278103379 -0700
 @@ -3,6 +3,9 @@
  	echo "Syntax: rtestlib <library>"
  	exit 1
@@ -11,9 +11,9 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/build_tools/testlib ./build_t
  FNAME=`mktemp rtestlibXXXXXX`
  echo "int main() { return 0; }" > $FNAME.cpp
  
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/configure ./configure
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/configure ./configure
 --- /u/gerkey/tmp/gmapping/configure	2008-06-06 10:36:49.780588683 -0700
-+++ ./configure	2008-06-06 10:50:01.298089129 -0700
++++ ./configure	2008-06-06 11:28:24.278103379 -0700
 @@ -50,8 +50,11 @@
  	fi ;
  done ;
@@ -90,9 +90,9 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/configure ./configure
  $OTHER
  
  include $MAPPING_ROOT/manual.mk
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/gridfastslam/gfsreader.cpp ./gridfastslam/gfsreader.cpp
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/gridfastslam/gfsreader.cpp ./gridfastslam/gfsreader.cpp
 --- /u/gerkey/tmp/gmapping/gridfastslam/gfsreader.cpp	2008-06-06 10:36:48.060588747 -0700
-+++ ./gridfastslam/gfsreader.cpp	2008-06-06 10:29:18.139095627 -0700
++++ ./gridfastslam/gfsreader.cpp	2008-06-06 11:28:24.278103379 -0700
 @@ -132,23 +132,13 @@
  	  os <<" 4.712389";  // fov
  	  os <<" 0.008727";  // angular res
@@ -120,9 +120,9 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/gridfastslam/gfsreader.cpp ./
  	}
  	os <<" 0.01"; // accuracy	
  	os <<" 0" ;  // remission mode
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/gridfastslam/gridslamprocessor_tree.cpp ./gridfastslam/gridslamprocessor_tree.cpp
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/gridfastslam/gridslamprocessor_tree.cpp ./gridfastslam/gridslamprocessor_tree.cpp
 --- /u/gerkey/tmp/gmapping/gridfastslam/gridslamprocessor_tree.cpp	2008-06-06 10:36:48.060588747 -0700
-+++ ./gridfastslam/gridslamprocessor_tree.cpp	2008-06-06 10:29:18.139095627 -0700
++++ ./gridfastslam/gridslamprocessor_tree.cpp	2008-06-06 11:28:24.291838722 -0700
 @@ -4,7 +4,7 @@
  #include <map>
  #include <set>
@@ -132,9 +132,9 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/gridfastslam/gridslamprocesso
  
  #include <utils/stat.h>
  #include "gridslamprocessor.h"
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/gridfastslam/Makefile ./gridfastslam/Makefile
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/gridfastslam/Makefile ./gridfastslam/Makefile
 --- /u/gerkey/tmp/gmapping/gridfastslam/Makefile	2008-06-06 10:36:48.120588612 -0700
-+++ ./gridfastslam/Makefile	2008-06-06 10:29:18.148088108 -0700
++++ ./gridfastslam/Makefile	2008-06-06 11:28:24.291838722 -0700
 @@ -1,8 +1,10 @@
  OBJS= gridslamprocessor_tree.o motionmodel.o gridslamprocessor.o gfsreader.o
 -APPS= gfs2log gfs2rec gfs2neff gfs2stat
@@ -149,10 +149,36 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/gridfastslam/Makefile ./gridf
  
  -include ../global.mk
  -include ../build_tools/Makefile.generic-shared-object
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/gui/gfs2img.cpp ./gui/gfs2img.cpp
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/gui/gfs2img.cpp ./gui/gfs2img.cpp
 --- /u/gerkey/tmp/gmapping/gui/gfs2img.cpp	2008-06-06 10:36:48.590588663 -0700
-+++ ./gui/gfs2img.cpp	2008-06-06 10:29:18.148088108 -0700
-@@ -203,6 +203,7 @@
++++ ./gui/gfs2img.cpp	2008-06-06 18:40:28.265509098 -0700
+@@ -1,4 +1,5 @@
+ #include <limits.h>
++#include <float.h>
+ #include <scanmatcher/scanmatcher.h>
+ #include <gridfastslam/gfsreader.h>
+ #include <qpixmap.h>
+@@ -37,8 +38,8 @@
+ }
+ 
+ void computeBoundingBox(double& xmin, double& ymin, double& xmax, double& ymax, const RecordList& rl, double maxrange){
+-	xmin = ymin = MAXDOUBLE;
+-	xmax = ymax =-MAXDOUBLE;
++	xmin = ymin = DBL_MAX;
++	xmax = ymax =-DBL_MAX;
+ 	const LaserRecord* lastLaser=0;
+ 	for (RecordList::const_iterator it=rl.begin(); it!=rl.end(); it++){
+ 		const LaserRecord* lr= dynamic_cast<const LaserRecord*>(*it);
+@@ -161,7 +162,7 @@
+ 		cout << "Frame " << frame << " ";
+ 		std::vector<RecordList> paths(particles);
+ 		int bestIdx=0;
+-		double bestWeight=-MAXDOUBLE;
++		double bestWeight=-DBL_MAX;
+ 		for (int p=0; p<particles; p++){
+ 			paths[p]=rl.computePath(p,it);
+ 			double w=rl.getLogWeight(p,it);
+@@ -203,6 +204,7 @@
  				}
  			}
  		
@@ -160,7 +186,7 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/gui/gfs2img.cpp ./gui/gfs2img
  		cout << "painting trajectories" << endl;
  		for (int p=0; p<particles; p++){
  			painter.setPen(QColor(Qt::red));
-@@ -240,6 +241,7 @@
+@@ -240,6 +242,7 @@
  			}
  		}	
  		paths[bestIdx].destroyReferences();;
@@ -168,9 +194,9 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/gui/gfs2img.cpp ./gui/gfs2img
  		cout << " DONE" << endl;
  		cout << "writing image" << endl;
  		QImage img=pixmap.convertToImage();
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/gui/Makefile ./gui/Makefile
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/gui/Makefile ./gui/Makefile
 --- /u/gerkey/tmp/gmapping/gui/Makefile	2008-06-06 10:36:48.690588643 -0700
-+++ ./gui/Makefile	2008-06-06 10:29:18.148088108 -0700
++++ ./gui/Makefile	2008-06-06 11:28:24.291838722 -0700
 @@ -3,7 +3,7 @@
  OBJS= gsp_thread.o qparticleviewer.o qgraphpainter.o qmappainter.o 
  
@@ -180,9 +206,29 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/gui/Makefile ./gui/Makefile
  
  ifeq ($(CARMENSUPPORT),1)
  LDFLAGS+= -lcarmenwrapper 
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/log/carmenconfiguration.cpp ./log/carmenconfiguration.cpp
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/gui/qgraphpainter.cpp ./gui/qgraphpainter.cpp
+--- /u/gerkey/tmp/gmapping/gui/qgraphpainter.cpp	2008-06-06 10:36:48.600588727 -0700
++++ ./gui/qgraphpainter.cpp	2008-06-06 18:40:03.498131508 -0700
+@@ -22,6 +22,7 @@
+ 
+ 
+ #include <iostream>
++#include <float.h>
+ #include "qgraphpainter.h"
+ #include "moc_qgraphpainter.cpp"
+ using namespace std;
+@@ -96,7 +97,7 @@
+ void QGraphPainter::paintEvent ( QPaintEvent * ){
+ 	m_pixmap->fill(Qt::white);
+ 	QPainter painter(m_pixmap);
+-	double _min=MAXDOUBLE, _max=-MAXDOUBLE;
++	double _min=DBL_MAX, _max=-DBL_MAX;
+ 	if (autoscale){
+ 		for (unsigned int i=0; i<(unsigned int)width() && i<values.size(); i++){
+ 			_min=_min<values[i]?_min:values[i];
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/log/carmenconfiguration.cpp ./log/carmenconfiguration.cpp
 --- /u/gerkey/tmp/gmapping/log/carmenconfiguration.cpp	2008-06-06 10:36:48.310588831 -0700
-+++ ./log/carmenconfiguration.cpp	2008-06-06 10:29:18.148088108 -0700
++++ ./log/carmenconfiguration.cpp	2008-06-06 11:28:24.301838592 -0700
 @@ -2,6 +2,7 @@
  #include <iostream>
  #include <sstream>
@@ -191,9 +237,9 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/log/carmenconfiguration.cpp .
  #include <sensor_odometry/odometrysensor.h>
  #include <sensor_range/rangesensor.h>
  
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/log/log_plot.cpp ./log/log_plot.cpp
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/log/log_plot.cpp ./log/log_plot.cpp
 --- /u/gerkey/tmp/gmapping/log/log_plot.cpp	2008-06-06 10:36:48.240588717 -0700
-+++ ./log/log_plot.cpp	2008-06-06 10:29:18.148088108 -0700
++++ ./log/log_plot.cpp	2008-06-06 11:28:24.301838592 -0700
 @@ -1,5 +1,6 @@
  #include <fstream>
  #include <iostream>
@@ -201,9 +247,9 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/log/log_plot.cpp ./log/log_pl
  #include <log/carmenconfiguration.h>
  #include <log/sensorlog.h>
  
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/log/sensorstream.cpp ./log/sensorstream.cpp
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/log/sensorstream.cpp ./log/sensorstream.cpp
 --- /u/gerkey/tmp/gmapping/log/sensorstream.cpp	2008-06-06 10:36:48.270588724 -0700
-+++ ./log/sensorstream.cpp	2008-06-06 10:29:18.148088108 -0700
++++ ./log/sensorstream.cpp	2008-06-06 11:28:24.301838592 -0700
 @@ -1,7 +1,10 @@
  #include <assert.h>
  #include <sstream>
@@ -216,20 +262,61 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/log/sensorstream.cpp ./log/se
  
  namespace GMapping {
  
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/particlefilter/particlefilter.h ./particlefilter/particlefilter.h
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/particlefilter/particlefilter.h ./particlefilter/particlefilter.h
 --- /u/gerkey/tmp/gmapping/particlefilter/particlefilter.h	2008-06-06 10:36:49.470588669 -0700
-+++ ./particlefilter/particlefilter.h	2008-06-06 10:29:18.148088108 -0700
-@@ -1,6 +1,7 @@
++++ ./particlefilter/particlefilter.h	2008-06-06 18:41:38.539500617 -0700
+@@ -1,6 +1,8 @@
  #ifndef PARTICLEFILTER_H
  #define PARTICLEFILTER_H
  #include <stdlib.h>
++#include <float.h>
 +#include <sys/types.h>
  #include<vector>
  #include<utility>
  #include<cmath>
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/scanmatcher/eig3.cpp ./scanmatcher/eig3.cpp
+@@ -22,7 +24,7 @@
+ template <class OutputIterator, class Iterator>
+ double toNormalForm(OutputIterator& out, const Iterator & begin, const Iterator & end){
+ 	//determine the maximum
+-	double lmax=-MAXDOUBLE;
++	double lmax=-DBL_MAX;
+ 	for (Iterator it=begin; it!=end; it++){
+ 		lmax=lmax>((double)(*it))? lmax: (double)(*it);
+ 	}
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/particlefilter/pf.h ./particlefilter/pf.h
+--- /u/gerkey/tmp/gmapping/particlefilter/pf.h	2008-06-06 10:36:49.500588677 -0700
++++ ./particlefilter/pf.h	2008-06-06 18:41:23.779131892 -0700
+@@ -1,6 +1,7 @@
+ #ifndef PARTICLEFILTER_H
+ #define PARTICLEFILTER_H
+ #include <stdlib.h>
++#include <float.h>
+ #include<vector>
+ #include<utility>
+ #include<utils/gvalues.h>
+@@ -22,7 +23,7 @@
+ template <class OutputIterator, class Iterator>
+ double toNormalForm(OutputIterator& out, const Iterator & begin, const Iterator & end){
+ 	//determine the maximum
+-	double lmax=-MAXDOUBLE;
++	double lmax=-DBL_MAX;
+ 	for (Iterator it=begin; it!=end; it++){
+ 		lmax=lmax>((double)(*it))? lmax: (double)(*it);
+ 	}
+@@ -81,8 +82,8 @@
+ 
+ template <typename WeightVector>
+ void normalizeWeights(WeightVector& weights, unsigned int size, double minWeight){
+-	double wmin=MAXDOUBLE;
+-	double wmax=-MAXDOUBLE;
++	double wmin=DBL_MAX;
++	double wmax=-DBL_MAX;
+ 	for (uint i=0; i<size; i++){
+ 		wmin=wmin<weights[i]?wmin:weights[i];
+ 		wmax=wmax>weights[i]?wmax:weights[i];
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/scanmatcher/eig3.cpp ./scanmatcher/eig3.cpp
 --- /u/gerkey/tmp/gmapping/scanmatcher/eig3.cpp	1969-12-31 16:00:00.000000000 -0800
-+++ ./scanmatcher/eig3.cpp	2008-06-06 10:29:18.148088108 -0700
++++ ./scanmatcher/eig3.cpp	2008-06-06 11:28:24.311838685 -0700
 @@ -0,0 +1,270 @@
 +
 +/* Eigen decomposition code for symmetric 3x3 matrices, copied from the public
@@ -501,9 +588,9 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/scanmatcher/eig3.cpp ./scanma
 +  tred2(V, d, e);
 +  tql2(V, d, e);
 +}
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/scanmatcher/eig3.h ./scanmatcher/eig3.h
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/scanmatcher/eig3.h ./scanmatcher/eig3.h
 --- /u/gerkey/tmp/gmapping/scanmatcher/eig3.h	1969-12-31 16:00:00.000000000 -0800
-+++ ./scanmatcher/eig3.h	2008-06-06 10:29:18.161838745 -0700
++++ ./scanmatcher/eig3.h	2008-06-06 11:28:24.311838685 -0700
 @@ -0,0 +1,11 @@
 +
 +/* Eigen-decomposition for symmetric 3x3 real matrices.
@@ -516,9 +603,9 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/scanmatcher/eig3.h ./scanmatc
 +void eigen_decomposition(double A[3][3], double V[3][3], double d[3]);
 +
 +#endif
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/scanmatcher/Makefile ./scanmatcher/Makefile
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/scanmatcher/Makefile ./scanmatcher/Makefile
 --- /u/gerkey/tmp/gmapping/scanmatcher/Makefile	2008-06-06 10:36:48.990588777 -0700
-+++ ./scanmatcher/Makefile	2008-06-06 10:29:18.161838745 -0700
++++ ./scanmatcher/Makefile	2008-06-06 11:28:24.311838685 -0700
 @@ -1,8 +1,10 @@
 -OBJS= smmap.o scanmatcher.o scanmatcherprocessor.o 
 +OBJS= smmap.o scanmatcher.o scanmatcherprocessor.o eig3.o
@@ -533,9 +620,9 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/scanmatcher/Makefile ./scanma
  
  -include ../global.mk
  -include ../build_tools/Makefile.generic-shared-object
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/scanmatcher/scanmatcherprocessor.cpp ./scanmatcher/scanmatcherprocessor.cpp
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/scanmatcher/scanmatcherprocessor.cpp ./scanmatcher/scanmatcherprocessor.cpp
 --- /u/gerkey/tmp/gmapping/scanmatcher/scanmatcherprocessor.cpp	2008-06-06 10:36:48.970588700 -0700
-+++ ./scanmatcher/scanmatcherprocessor.cpp	2008-06-06 10:29:18.161838745 -0700
++++ ./scanmatcher/scanmatcherprocessor.cpp	2008-06-06 11:28:24.311838685 -0700
 @@ -1,5 +1,6 @@
  #include <iostream>
  #include "scanmatcherprocessor.h"
@@ -611,9 +698,9 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/scanmatcher/scanmatcherproces
  		} else {
  			if (useICP){
  				cerr << "USING ICP" << endl;
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/scanmatcher/scanmatcherprocessor.h ./scanmatcher/scanmatcherprocessor.h
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/scanmatcher/scanmatcherprocessor.h ./scanmatcher/scanmatcherprocessor.h
 --- /u/gerkey/tmp/gmapping/scanmatcher/scanmatcherprocessor.h	2008-06-06 10:36:49.000588585 -0700
-+++ ./scanmatcher/scanmatcherprocessor.h	2008-06-06 10:29:18.161838745 -0700
++++ ./scanmatcher/scanmatcherprocessor.h	2008-06-06 11:28:24.311838685 -0700
 @@ -4,7 +4,7 @@
  #include <log/sensorlog.h>
  #include <sensor/sensor_range/rangesensor.h>
@@ -632,9 +719,9 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/scanmatcher/scanmatcherproces
  };
  
  };
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/sensor/sensor_range/rangereading.cpp ./sensor/sensor_range/rangereading.cpp
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/sensor/sensor_range/rangereading.cpp ./sensor/sensor_range/rangereading.cpp
 --- /u/gerkey/tmp/gmapping/sensor/sensor_range/rangereading.cpp	2008-06-06 10:36:49.640588741 -0700
-+++ ./sensor/sensor_range/rangereading.cpp	2008-06-06 10:29:18.161838745 -0700
++++ ./sensor/sensor_range/rangereading.cpp	2008-06-06 11:28:24.321838756 -0700
 @@ -1,5 +1,6 @@
  #include <iostream>
  #include <assert.h>
@@ -642,21 +729,54 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/sensor/sensor_range/rangeread
  #include <utils/gvalues.h>
  #include "rangereading.h"
  
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/utils/gvalues.h ./utils/gvalues.h
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/utils/datasmoother.h ./utils/datasmoother.h
+--- /u/gerkey/tmp/gmapping/utils/datasmoother.h	2008-06-06 10:36:49.130588629 -0700
++++ ./utils/datasmoother.h	2008-06-06 18:40:59.991838341 -0700
+@@ -7,6 +7,7 @@
+ #include <values.h>
+ #include "stat.h"
+ #include <assert.h>
++#include <float.h>
+ 
+ namespace GMapping {
+ 
+@@ -34,8 +35,8 @@
+     m_cummulated.clear();
+     m_int=-1; 
+     m_parzenWindow = parzenWindow;
+-    m_from = MAXDOUBLE;
+-    m_to = -MAXDOUBLE;
++    m_from = DBL_MAX;
++    m_to = -DBL_MAX;
+     m_lastStep = 0.001;
+   };
+ 
+@@ -46,7 +47,7 @@
+ 
+ 
+   void setMinToZero() {
+-    double minval=MAXDOUBLE;
++    double minval=DBL_MAX;
+ 
+     for (Data::const_iterator it = m_data.begin(); it != m_data.end(); it++) {
+       const DataPoint& d = *it;
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/utils/gvalues.h ./utils/gvalues.h
 --- /u/gerkey/tmp/gmapping/utils/gvalues.h	2008-06-06 10:36:49.160588637 -0700
-+++ ./utils/gvalues.h	2008-06-06 10:29:18.171838811 -0700
-@@ -8,7 +8,7 @@
++++ ./utils/gvalues.h	2008-06-06 18:41:08.668088453 -0700
+@@ -7,8 +7,8 @@
+ #ifdef MACOSX
  	#include <limits.h>
  	#include <math.h>
- 	#define MAXDOUBLE 1e1000
+-	#define MAXDOUBLE 1e1000
 -	#define isnan(x) (x==FP_NAN)
++	//#define MAXDOUBLE 1e1000
 +	//#define isnan(x) (x==FP_NAN)
  #endif
  #ifdef _WIN32
    #include <limits>
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/utils/Makefile ./utils/Makefile
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/utils/Makefile ./utils/Makefile
 --- /u/gerkey/tmp/gmapping/utils/Makefile	2008-06-06 10:36:49.230588849 -0700
-+++ ./utils/Makefile	2008-06-06 10:29:18.171838811 -0700
++++ ./utils/Makefile	2008-06-06 11:28:24.321838756 -0700
 @@ -1,8 +1,9 @@
  OBJS= stat.o  movement.o
 -APPS= autoptr_test stat_test
@@ -670,9 +790,9 @@ diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/utils/Makefile ./utils/Makefi
  
  -include ../global.mk
  -include ../build_tools/Makefile.generic-shared-object
-diff --exclude '*svn*' -urN /u/gerkey/tmp/gmapping/utils/stat.cpp ./utils/stat.cpp
+diff -urN --exclude '*svn*' /u/gerkey/tmp/gmapping/utils/stat.cpp ./utils/stat.cpp
 --- /u/gerkey/tmp/gmapping/utils/stat.cpp	2008-06-06 10:36:49.170588630 -0700
-+++ ./utils/stat.cpp	2008-06-06 10:29:18.171838811 -0700
++++ ./utils/stat.cpp	2008-06-06 11:28:24.331838711 -0700
 @@ -1,12 +1,15 @@
 -#include <gsl/gsl_rng.h>
 -#include <gsl/gsl_randist.h>
