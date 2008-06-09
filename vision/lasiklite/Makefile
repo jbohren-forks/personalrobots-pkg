@@ -24,9 +24,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-.PHONY: clean lib apps
+.PHONY: clean lib apps messages
 
-all: depend lib apps
+all: messages depend lib apps
+
+messages:
+	`rospack find rostools`/scripts/genmsg msg/*.msg
 
 apps:
 	cd apps && make && cd ..
@@ -41,5 +44,6 @@ depend:
 clean:
 	cd lib && make clean && cd ..
 	cd apps && make clean && cd ..
+	-rm -rf msg/cpp
 	find -name "*~" -delete
 
