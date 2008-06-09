@@ -31,7 +31,7 @@ $(LIBS): pr2API.o
 	$(CXX) $(CDFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
 test_libpr2API: src/test/test_pr2API.cpp
-	$(CXX) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
 
 clean:
 	rm -f test_pr2API $(LIBP) $(LIBS)

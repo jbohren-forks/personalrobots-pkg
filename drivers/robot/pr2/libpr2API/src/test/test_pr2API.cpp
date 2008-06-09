@@ -9,7 +9,7 @@ using namespace std;
 
 int main()
 {
-//   PR2::PR2Robot *myPR2 = new PR2::PR2Robot();
+   // test pr2API
    PR2::PR2Robot myPR2;
 
    myPR2.InitializeRobot();
@@ -23,6 +23,7 @@ int main()
    NEWMAT::Matrix g(4,4);
    g = 0;
 
+   // test kinematics library through pr2API
    PR2Arm myArm;
 
    // Joint angles (radians) and speeds for testing 
@@ -36,20 +37,24 @@ int main()
    angles[5] = 0.5; // wrist pitch angle
    angles[6] = 0.0; // wrist roll
 
-  NEWMAT::Matrix pose = myArm.ComputeFK(angles);
+   NEWMAT::Matrix pose = myArm.ComputeFK(angles);
    g = pose;
    // offset from the base of the arm,
    // subtracted for PR2 to cancel out effect of offset
    // watchout whether left of right arm is used
+   g(1,4) = g(1,4) - PR2::SPINE_RIGHT_ARM_OFFSET.x;
+   g(2,4) = g(2,4) - PR2::SPINE_RIGHT_ARM_OFFSET.y;
+   g(3,4) = g(3,4) - PR2::SPINE_RIGHT_ARM_OFFSET.z;
  
 
-  // compute analytical solution
+   // compute analytical solution
    NEWMAT::Matrix theta(8,8);
    theta = 0;
    theta = myArm.ComputeIK(g,0.1);
    PrintMatrix(theta,"exact solution for pos/orien of end effector");
 
-    cout << "Main::End-effector Pose:" << endl << g << endl ;
+   cout << "Main::End-effector Pose:" << endl << g << endl ;
+   // remove offset to check results of inverse kinematics
    g(1,4) = g(1,4) + PR2::SPINE_RIGHT_ARM_OFFSET.x;
    g(2,4) = g(2,4) + PR2::SPINE_RIGHT_ARM_OFFSET.y;
    g(3,4) = g(3,4) + PR2::SPINE_RIGHT_ARM_OFFSET.z;
