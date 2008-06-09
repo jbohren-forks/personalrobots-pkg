@@ -356,13 +356,13 @@
         <iGain>0</iGain>
       </joint>
       <joint name="front_left_wheel_l_drive">
-        <saturationTorque>100</saturationTorque>
+        <saturationTorque>1000</saturationTorque>
         <pGain>1</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
       </joint>
       <joint name="front_left_wheel_r_drive">
-        <saturationTorque>100</saturationTorque>
+        <saturationTorque>1000</saturationTorque>
         <pGain>1</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
@@ -374,13 +374,13 @@
         <iGain>0</iGain>
       </joint>
       <joint name="front_right_wheel_l_drive">
-        <saturationTorque>100</saturationTorque>
+        <saturationTorque>1000</saturationTorque>
         <pGain>1</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
       </joint>
       <joint name="front_right_wheel_r_drive">
-        <saturationTorque>100</saturationTorque>
+        <saturationTorque>1000</saturationTorque>
         <pGain>1</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
@@ -392,13 +392,13 @@
         <iGain>0</iGain>
       </joint>
       <joint name="rear_left_wheel_l_drive">
-        <saturationTorque>100</saturationTorque>
+        <saturationTorque>1000</saturationTorque>
         <pGain>1</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
       </joint>
       <joint name="rear_left_wheel_r_drive">
-        <saturationTorque>100</saturationTorque>
+        <saturationTorque>1000</saturationTorque>
         <pGain>1</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
@@ -410,13 +410,13 @@
         <iGain>0</iGain>
       </joint>
       <joint name="rear_right_wheel_l_drive">
-        <saturationTorque>100</saturationTorque>
+        <saturationTorque>1000</saturationTorque>
         <pGain>1</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
       </joint>
       <joint name="rear_right_wheel_r_drive">
-        <saturationTorque>100</saturationTorque>
+        <saturationTorque>1000</saturationTorque>
         <pGain>1</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
@@ -522,8 +522,8 @@
     <controller:pr2_gripper name="pr2_gripper_left_controller" plugin="libPr2_Gripper.so">
       <leftJoint>finger_2_slider_left</leftJoint>
       <rightJoint>finger_1_slider_left</rightJoint>
-      <gripperForce>1000.0</gripperForce>
-      <pGain>10.0</pGain>
+      <gripperForce>100.0</gripperForce>
+      <pGain>1.0</pGain>
       <dGain>0.0</dGain>
       <iGain>0.0</iGain>
       <interface:pr2gripper name="pr2_gripper_left_iface"/>
@@ -532,8 +532,8 @@
     <controller:pr2_gripper name="pr2_gripper_right_controller" plugin="libPr2_Gripper.so">
       <leftJoint>finger_2_slider_right</leftJoint>
       <rightJoint>finger_1_slider_right</rightJoint>
-      <gripperForce>1000.0</gripperForce>
-      <pGain>10.0</pGain>
+      <gripperForce>100.0</gripperForce>
+      <pGain>1.0</pGain>
       <dGain>0.0</dGain>
       <iGain>0.0</iGain>
       <interface:pr2gripper name="pr2_gripper_right_iface"/>
