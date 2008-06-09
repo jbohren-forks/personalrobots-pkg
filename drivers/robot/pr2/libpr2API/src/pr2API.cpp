@@ -879,15 +879,15 @@ PR2_ERROR_CODE PR2Robot::SetJointTorque(PR2_JOINT_ID id, double torque)
 {
    if(IsHead(id))
    {
-   pr2HeadIface->Lock(1);
-   pr2HeadIface->data->actuators[id-JointStart[HEAD]].cmdEffectorForce = torque;
-   pr2HeadIface->Unlock();
+     pr2HeadIface->Lock(1);
+     pr2HeadIface->data->actuators[id-JointStart[HEAD]].cmdEffectorForce = torque;
+     pr2HeadIface->Unlock();
    }
    else
    {
-   pr2Iface->Lock(1);
-   pr2Iface->data->actuators[id].cmdEffectorForce = torque;
-   pr2Iface->Unlock();
+     pr2Iface->Lock(1);
+     pr2Iface->data->actuators[id].cmdEffectorForce = torque;
+     pr2Iface->Unlock();
    }
    return PR2_ALL_OK;
 };
@@ -966,14 +966,15 @@ PR2_ERROR_CODE PR2Robot::SetJointSpeed(PR2_JOINT_ID id, double speed)
 {
    if(IsHead(id))
    {
-   pr2HeadIface->Lock(1);
-   pr2HeadIface->data->actuators[id-JointStart[HEAD]].cmdSpeed = speed;
-   pr2HeadIface->Unlock();
+     pr2HeadIface->Lock(1);
+     pr2HeadIface->data->actuators[id-JointStart[HEAD]].cmdSpeed = speed;
+     pr2HeadIface->Unlock();
    }
-   else{
-   pr2Iface->Lock(1);
-   pr2Iface->data->actuators[id].cmdSpeed = speed;
-   pr2Iface->Unlock();
+   else
+   {
+     pr2Iface->Lock(1);
+     pr2Iface->data->actuators[id].cmdSpeed = speed;
+     pr2Iface->Unlock();
    }
    return PR2_ALL_OK;
 };
@@ -1075,17 +1076,19 @@ PR2_ERROR_CODE PR2Robot::SetBaseCartesianSpeedCmd(double vx, double vy, double v
    }
    for(int ii = 0; ii < NUM_CASTERS; ii++)
    {
-      newDriveCenterL = Rot2D(CASTER_DRIVE_OFFSET[ii*2],steerAngle[ii]);
+      newDriveCenterL = Rot2D(CASTER_DRIVE_OFFSET[ii*2  ],steerAngle[ii]);
       newDriveCenterR = Rot2D(CASTER_DRIVE_OFFSET[ii*2+1],steerAngle[ii]);
 
       ComputePointVelocity(vx,vy,vw,newDriveCenterL.x,newDriveCenterL.y,drivePointVelocityL.x,drivePointVelocityL.y);
       ComputePointVelocity(vx,vy,vw,newDriveCenterR.x,newDriveCenterR.y,drivePointVelocityR.x,drivePointVelocityR.y);
 
-      wheelSpeed[ii*2] = -GetMagnitude(drivePointVelocityL.x,drivePointVelocityL.y)/WHEEL_RADIUS;
+      wheelSpeed[ii*2  ] = -GetMagnitude(drivePointVelocityL.x,drivePointVelocityL.y)/WHEEL_RADIUS;
       wheelSpeed[ii*2+1] = -GetMagnitude(drivePointVelocityR.x,drivePointVelocityR.y)/WHEEL_RADIUS;
 
-      SetJointSpeed((PR2_JOINT_ID) (CASTER_FL_DRIVE_L+3*ii),wheelSpeed[ii*2]);
-      SetJointSpeed((PR2_JOINT_ID) (CASTER_FL_DRIVE_R+3*ii),wheelSpeed[ii*2+1]);
+      this->SetJointSpeed((PR2_JOINT_ID) (CASTER_FL_DRIVE_L+3*ii),wheelSpeed[ii*2  ]);
+      this->SetJointSpeed((PR2_JOINT_ID) (CASTER_FL_DRIVE_R+3*ii),wheelSpeed[ii*2+1]);
+      this->SetJointTorque((PR2_JOINT_ID) (CASTER_FL_DRIVE_L+3*ii),100.0 );
+      this->SetJointTorque((PR2_JOINT_ID) (CASTER_FL_DRIVE_R+3*ii),100.0 );
    }
 
    return PR2_ALL_OK;
