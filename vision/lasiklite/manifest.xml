@@ -9,6 +9,6 @@
   <depend package="image_utils"/>
   <depend package="roscpp"/>
   <export>
-    <cpp cflags="-I${prefix}/lib" lflags="-L${prefix}/bin -llasiklite"/>
+    <cpp cflags="-I${prefix}/lib -I${prefix}/msg/cpp -I${prefix}/srv/cpp" lflags="-L${prefix}/bin -llasiklite"/>
   </export>
 </package>
