@@ -1,6 +1,31 @@
 --- /home/mquigley/Desktop/KNI_3.9.2/src/Base/kmlExt.cpp	2007-09-27 22:38:10.000000000 -0700
-+++ src/Base/kmlExt.cpp	2008-06-06 16:29:05.000000000 -0700
-@@ -514,6 +514,52 @@
++++ src/Base/kmlExt.cpp	2008-06-09 13:29:41.000000000 -0700
+@@ -394,6 +394,24 @@
+ 	return temp;
+ }
+ 
++std::vector<double>
++CKatana::getJointAngles(bool refresh) const 
++{
++	if (refresh)
++		base->recvMPS();
++  std::vector<double> angs;
++  for (int i = 0; i < getNumberOfMotors(); i++)
++  {
++		int enc = getMotorEncoders(i, false);
++    double angoff = base->GetMOT()->arr[i].GetInitialParameters()->angleOffset;
++    double epc    = base->GetMOT()->arr[i].GetInitialParameters()->encodersPerCycle;
++    double encoff = base->GetMOT()->arr[i].GetInitialParameters()->encoderOffset;
++    double rotdir = base->GetMOT()->arr[i].GetInitialParameters()->rotationDirection;
++    angs.push_back(-((enc - encoff) * 2 * M_PI / epc / rotdir - angoff) * 180 / M_PI);
++  }
++  return angs;
++}
++
+ short
+ CKatana::getMotorVelocityLimit(short number) const {
+ 	return base->GetMOT()->arr[number].GetDYL()->maxpspeed_nmp;
+@@ -514,6 +532,52 @@
  }
  
  void
@@ -38,7 +63,7 @@
 +		poll_t.Start();
 +		base->recvMPS(); // get position for all motors
 +		base->recvGMS(); // get status flags for all motors
-+		for (int idx=0; idx<getNumberOfMotors(); idx++) {
++		for (int idx=0; idx < i; idx++) {
 +			if (mot->arr[idx].GetPVP()->msf == 40)
 +				throw MotorCrashException();
 +			pos_reached &= std::abs(mot->arr[idx].GetTPS()->tarpos - mot->arr[idx].GetPVP()->pos) < 100;
