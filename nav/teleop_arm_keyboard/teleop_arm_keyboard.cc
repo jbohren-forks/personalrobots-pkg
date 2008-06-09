@@ -229,6 +229,7 @@ TArmK_Node::keyboardLoop()
 
   puts("Reading from keyboard");
   puts("---------------------------");
+	printf("Press l/r to operate left/right arm.\n");
 	printf("Numbers 1 through 8 to select the joint to operate.\n");
 	printf("+ and - will move the joint in different directions by 5 degrees.\n");
   puts("");
