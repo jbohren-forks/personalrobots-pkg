@@ -48,7 +48,7 @@
 #include "cxcore.h"
 #include "highgui.h"
 #include "ros/node.h"
-#include "std_msgs/MsgImage.h"
+#include "std_msgs/Image.h"
 #include "image_utils/cv_bridge.h"
 
 #include "svlLib.h"
@@ -92,8 +92,8 @@ ros::thread::mutex image_mutex;
 class Classify : public ros::node
 {
 public:
-  MsgImage image_msg;
-  CvBridge<MsgImage> cv_bridge;
+  std_msgs::Image image_msg;
+  CvBridge<std_msgs::Image> cv_bridge;
   Classify() : ros::node("classify"), cv_bridge(&image_msg)
   {
     subscribe("image", image_msg, &Classify::image_cb);
