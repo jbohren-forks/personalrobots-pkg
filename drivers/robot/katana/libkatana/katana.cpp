@@ -66,8 +66,8 @@ bool Katana::set_motor_power(bool on)
   return true;
 }
 
-bool Katana::goto_joint_position(double j1, double j2, double j3,
-                                 double j4, double j5)
+bool Katana::goto_joint_position_deg(double j1, double j2, double j3,
+                                     double j4, double j5)
 {
   vector<double> joints;
   joints.push_back(j1);
@@ -77,6 +77,12 @@ bool Katana::goto_joint_position(double j1, double j2, double j3,
   joints.push_back(j5);
   kni_lm->moveRobotToDeg(joints.begin(), joints.end(), true);
   // todo: catch exceptions and be smart
+  return true;
+}
+
+bool Katana::goto_joint_position_deg(int idx, double pos)
+{
+  kni_lm->movDegrees(idx, pos, true);
   return true;
 }
 
@@ -92,10 +98,11 @@ bool Katana::gripper_fullstop(bool open_gripper)
 
 vector<double> Katana::get_joint_positions()
 {
-  vector<double> ret;
-  vector<int> encs = kni_lm->getRobotEncoders();
-  for (size_t i = 0; i < 6 && i < encs.size(); i++)
-    ret.push_back(encs[i]);
-  return ret;
+  return kni_lm->getJointAngles();
+}
+
+vector<int> Katana::get_joint_encoders()
+{
+  return kni_lm->getRobotEncoders();
 }
 

@@ -28,17 +28,32 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <cstdio>
+#include <cassert>
 #include "katana/katana.h"
 using std::vector;
 
 int main(int argc, char **argv)
 {
+  FILE *f = fopen("log.txt", "w");
+  assert(f);
   Katana *k = new Katana();
-  vector<double> joints = k->get_joint_positions();
-  vector<int> encoders = k->get_joint_encoders();
-  for (size_t i = 0; i < joints.size(); i++)
-    printf("joint %d = %f (%d)\n", i, joints[i], encoders[i]);
+  printf("greetings. press <enter> to save encoders. type q<enter> to quit.\n");
+  while (1)
+  {
+    char c = fgetc(stdin);
+    if (c == 'q')
+      break;
+    vector<double> joints = k->get_joint_positions();
+    vector<int> encoders = k->get_joint_encoders();
+    for (size_t i = 0; i < joints.size(); i++)
+    {
+      printf("joint %d = %f (%d)\n", i, joints[i], encoders[i]);
+      fprintf(f, "%d ", encoders[i]);
+    }
+    fprintf(f, "\n");
+  }
   delete k;
+  fclose(f);
   return 0;
 }
 

@@ -33,12 +33,21 @@ using std::vector;
 
 int main(int argc, char **argv)
 {
+  if (argc != 6)
+  {
+    printf("usage: move_robot_deg JOINT1 JOINT2 JOINT3 JOINT4 JOINT5\n");
+    return 1;
+  }
   Katana *k = new Katana();
-  vector<double> joints = k->get_joint_positions();
-  vector<int> encoders = k->get_joint_encoders();
-  for (size_t i = 0; i < joints.size(); i++)
-    printf("joint %d = %f (%d)\n", i, joints[i], encoders[i]);
+  k->goto_joint_position_deg(atof(argv[1]), atof(argv[2]), atof(argv[3]),
+                             atof(argv[4]), atof(argv[5]));
   delete k;
+  /*
+  vector<double> joints = k->get_joint_positions();
+  for (size_t i = 0; i < joints.size(); i++)
+    printf("joint %d = %f\n", i, joints[i]);
+  delete k;
+  */
   return 0;
 }
 
