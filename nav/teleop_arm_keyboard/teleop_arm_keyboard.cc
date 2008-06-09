@@ -71,7 +71,7 @@ Publishes to (name / type):
 #include <ros/node.h>
 #include <std_msgs/MsgPR2Arm.h>
 
-#include <pr2API.hh>
+#include <libpr2API/pr2API.h>
 
 #define COMMAND_TIMEOUT_SEC 0.2
 
