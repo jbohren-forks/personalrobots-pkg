@@ -1,8 +1,5 @@
 <launch>
 
-  <machine name="localhost" address="localhost" default="true"
-           ros-root="/u/gerkey/code/ros"/>
-
   <ns name="wg">
     <node pkg="rosstage" type="rosstage" args="willow-erratic.world" respawn="true" />
     <node pkg="amcl_player" type="amcl_player" args="willow-full.png 0.1" respawn="true" />
