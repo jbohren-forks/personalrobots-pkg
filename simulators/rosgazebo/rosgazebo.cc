@@ -291,14 +291,16 @@ GazeboNode::Update()
       
       // populating cloud data
       // get laser pitch angle
-	    double laser_yaw, laser_pitch, laser_pitch_rate;
-	    this->myPR2->GetJointServoCmd(PR2::HEAD_LASER_PITCH , &laser_pitch,  &laser_pitch_rate);
+	    double tmp_range, laser_yaw, laser_pitch, laser_pitch_rate;
+	    this->myPR2->GetJointServoActual(PR2::HEAD_LASER_PITCH , &laser_pitch,  &laser_pitch_rate);
       // get laser yaw angle
 	    laser_yaw = angle_min + (double)i * angle_increment;
+	    //std::cout << " pit " << laser_pitch << "yaw " << laser_yaw << " amin " <<  angle_min << " inc " << angle_increment << std::endl;
       // transform from range to x,y,z
-      tmp_cloud_pt.x                = this->ranges[i] * cos(laser_yaw) * cos(laser_pitch);
-      tmp_cloud_pt.y                = this->ranges[i] * sin(laser_yaw) * cos(laser_pitch);
-      tmp_cloud_pt.z                = this->ranges[i]                  * sin(laser_pitch);
+      tmp_range = (this->ranges[i] >= range_max) ? 0 : this->ranges[i];
+      tmp_cloud_pt.x                = tmp_range * cos(laser_yaw) * cos(laser_pitch);
+      tmp_cloud_pt.y                = tmp_range * sin(laser_yaw) * cos(laser_pitch);
+      tmp_cloud_pt.z                = tmp_range                  * sin(laser_pitch);
       this->cloud_pts->add((MsgPoint3DFloat32)tmp_cloud_pt);
 
       this->cloud_ch1->add(this->intensities[i]);
@@ -395,12 +397,12 @@ GazeboNode::Update()
 	double simTime;
 	double simPitchAngle,simPitchRate,simPitchTimeScale,simPitchAmp,simPitchOffset;
 	simPitchTimeScale = 1.0;
-	simPitchAmp    = M_PI / 8.0;
+	simPitchAmp    =  M_PI / 8.0;
 	simPitchOffset = -M_PI / 8.0;
 	simPitchAngle = simPitchOffset + simPitchAmp * sin(simTime * simPitchTimeScale);
 	simPitchRate  = simPitchAmp * simPitchTimeScale * cos(simTime * simPitchTimeScale);
   this->myPR2->GetSimTime(&simTime);
-	std::cout << "sim time: " << simTime << std::endl;
+	//std::cout << "sim time: " << simTime << std::endl;
 	this->myPR2->SetJointServoCmd(PR2::HEAD_LASER_PITCH , simPitchAngle, simPitchRate);
 
 
