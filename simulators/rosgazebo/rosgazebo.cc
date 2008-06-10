@@ -299,8 +299,8 @@ GazeboNode::Update()
       // transform from range to x,y,z
       tmp_range = (this->ranges[i] >= range_max) ? 0 : this->ranges[i];
       tmp_cloud_pt.x                = tmp_range * cos(laser_yaw) * cos(laser_pitch);
-      tmp_cloud_pt.y                = tmp_range * sin(laser_yaw) * cos(laser_pitch);
-      tmp_cloud_pt.z                = tmp_range                  * sin(laser_pitch);
+      tmp_cloud_pt.y                = tmp_range * sin(laser_yaw) ; //* cos(laser_pitch);
+      tmp_cloud_pt.z                = tmp_range * cos(laser_yaw) * sin(laser_pitch);
       this->cloud_pts->add((MsgPoint3DFloat32)tmp_cloud_pt);
 
       this->cloud_ch1->add(this->intensities[i]);
