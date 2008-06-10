@@ -94,18 +94,6 @@ public:
     param("tilting_laser/min_ang", min_ang, -1.3);
     param("tilting_laser/max_ang", max_ang, 0.6);
 
-    unsigned long long time = clock.ulltime();
-
-    TR.setWithEulers(3, 2,
-		     0, 0, 0,
-		     0, 0, 0,
-		     time);
-
-    TR.setWithEulers(2, 1,
-		     0, 0, 0,
-		     0, 0, 0,
-		     time);
-
     last_motor_time = ros::Time::now();
 
   }
@@ -166,7 +154,7 @@ public:
     }
 
     // Time offset here should not be hardcoded!
-    unsigned long long t = scans.header.stamp.to_ull() - 30000000;
+    unsigned long long t = scans.header.stamp.to_ull();// - 30000000;
     
     NEWMAT::Matrix rot_points = TR.getMatrix(1,3,t) * points;
 

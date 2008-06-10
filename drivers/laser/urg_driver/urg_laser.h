@@ -70,8 +70,10 @@ typedef struct urg_laser_scan
   float intensities[MAX_READINGS];
   //! Number of readings
   int num_readings;
-  //! Self reported time
-  int time_stamp;
+  //! Self time stamp
+  unsigned long long self_time_stamp;
+  //! Time stamp
+  unsigned long long system_time_stamp;
   //! Configuration of scan
   urg_laser_config_t config;
 } urg_laser_scan_t;
@@ -212,7 +214,13 @@ public:
   /*!
    * \return Returns the SCIP version in use by the URG.
    */
+
+  int laser_off();
+
+  int laser_on();
   
+  int calc_latency(bool intensity, double min_ang, double max_ang, int clustering = 0, int skip = 0, int num = 0, int timeout = -1);
+
 private:
   //! Query which version of SCIP the URG is using
   int query_SCIP_version();
@@ -235,6 +243,9 @@ private:
   //! Compute the checksum of a given buffer
   int check_sum(const char* buf, int buf_len);
 
+  //! Read in a time value
+  unsigned long long read_time(int timeout = -1);
+
   //! Read in a scan
   int read_data(urg_laser_scan_t* scan, bool has_intensity, int timout = -1);
 
@@ -247,6 +258,12 @@ private:
   int amax;
   int afrt;
   int rate;
+
+  int wrapped;
+
+  unsigned int last_time;
+
+  long long offset;
 
   FILE * laser_port;
   int laser_fd;

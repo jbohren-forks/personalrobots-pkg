@@ -32,8 +32,28 @@
 
 #include "urg_laser.h"
 
-#define URG_ERR(err_code, msg) {printf("urg_laser::%s: " msg "\n", __FUNCTION__); return err_code;}
-#define URG_ERR_ARGS(err_code, msg, ...) {printf("urg_laser::%s: " msg "\n", __FUNCTION__, __VA_ARGS__); return err_code;}
+#include <time.h>
+#if POSIX_TIMERS <= 0
+#include <sys/time.h>
+#endif
+
+unsigned long long time_helper()
+{
+#if POSIX_TIMERS > 0
+  struct timespec curtime;
+  clock_gettime(CLOCK_REALTIME, &curtime);
+  return (unsigned long long)(curtime.tv_sec) * 1000000000 + (unsigned long long)(curtime.tv_nsec);  
+#else
+  struct timeval timeofday;
+  gettimeofday(&timeofday,NULL);
+  return (unsigned long long)(timeofday.tv_sec) * 1000000000 + (unsigned long long)(timeofday.tv_usec) * 1000;  
+#endif
+}
+
+#define URG_WARN(msg) printf("urg_laser::%s: " msg "\n", __FUNCTION__)
+#define URG_WARN_ARGS(msg, ...) printf("urg_laser::%s: " msg "\n", __FUNCTION__, __VA_ARGS__)
+#define URG_RET_ERR(err_code, msg) {printf("urg_laser::%s: " msg "\n", __FUNCTION__); return err_code;}
+#define URG_RET_ERR_ARGS(err_code, msg, ...) {printf("urg_laser::%s: " msg "\n", __FUNCTION__, __VA_ARGS__); return err_code;}
 
 ///////////////////////////////////////////////////////////////////////////////
 urg_laser::urg_laser ()
@@ -42,6 +62,19 @@ urg_laser::urg_laser ()
   SCIP_version = 1;
   laser_port   = NULL;
   laser_fd     = -1;
+
+  dmin = 0;
+  dmax = 0;
+  ares = 0;
+  amin = 0;
+  amin = 0;
+  amax = 0;
+  afrt = 0;
+  rate = 0;
+
+  wrapped = 0;
+
+  last_time = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -61,11 +94,11 @@ urg_laser::open(const char * port_name, bool use_serial, int baud)
 
   laser_port = fopen(port_name, "r+");
   if (laser_port == NULL)
-    URG_ERR_ARGS(-1, "Failed to open Port: %s error = %d: %s\n", port_name, errno, strerror(errno));
+    URG_RET_ERR_ARGS(-1, "Failed to open Port: %s error = %d: %s\n", port_name, errno, strerror(errno));
 
   laser_fd = fileno (laser_port);
   if (laser_fd == -1)
-    URG_ERR_ARGS(-1, "Failed to get file descriptor: error = %d:%s\n", errno, strerror(errno));
+    URG_RET_ERR_ARGS(-1, "Failed to get file descriptor: error = %d:%s\n", errno, strerror(errno));
 
   if (use_serial)
   {
@@ -107,17 +140,18 @@ urg_laser::open(const char * port_name, bool use_serial, int baud)
   // spewing data, we try sending the QT command.
   urg_flush();
   //  urg_write("\n");
+  urg_cmd("TM2");
   urg_cmd("QT", 1000);
   urg_flush();
 
   if (query_SCIP_version() < 0) {
     close();
-    URG_ERR(-1,"Failed to find SCIP information");
+    URG_RET_ERR(-1,"Failed to find SCIP information");
   }
 
   if (query_sensor_config() < 0) {
     close();
-    URG_ERR(-1,"Failed to Query sensor configuration");
+    URG_RET_ERR(-1,"Failed to Query sensor configuration");
   }
 
   return 0;
@@ -152,31 +186,29 @@ urg_laser::close ()
 int urg_laser::urg_cmd(const char* cmd, int timeout)
 {
   if (!port_open())
-    URG_ERR(-1," port not open");
-
-  printf("Sending CMD: %s\n",cmd);
+    URG_RET_ERR(-1," port not open");
 
   char buf[100]; 
 
   if (urg_write(cmd) < 0)
-    URG_ERR(-1, " write error");
+    URG_RET_ERR(-1, " write error");
 
   if (urg_write("\n") < 0)
-    URG_ERR(-1, " write error");
+    URG_RET_ERR(-1, " write error");
 
   if (urg_readline_after(buf, 100, cmd, timeout) == NULL)
-    URG_ERR_ARGS(-1, "CMD: '%s' readline failed while looking for command echo", cmd);
+    URG_RET_ERR_ARGS(-1, "CMD: '%s' readline failed while looking for command echo", cmd);
 
   if (urg_readline(buf,100,timeout) < 0)
-    URG_ERR_ARGS(-1, "CMD: '%s' readline failed while looking for status", cmd);
+    URG_RET_ERR_ARGS(-1, "CMD: '%s' readline failed while looking for status", cmd);
 
   if (check_sum(buf,4) != 0)
-    URG_ERR_ARGS(-1, "CMD: '%s' checksum of status failed.  %s", cmd, buf);
+    URG_RET_ERR_ARGS(-1, "CMD: '%s' checksum of status failed.  %s", cmd, buf);
 
   if (buf[0] - '0' >= 0 && buf[0] - '0' <= 9 && buf[1] - '0' >= 0 && buf[1] - '0' <= 9)
     return (buf[0] - '0')*10 + (buf[1] - '0');
   else
-    URG_ERR_ARGS(100 + buf[0] - 'A', "CMD: '%s' invalid command.  Error code: %s", cmd, buf);
+    URG_RET_ERR_ARGS(100 + buf[0] - 'A', "CMD: '%s' invalid command.  Error code: %s", cmd, buf);
 
 }
 
@@ -209,7 +241,7 @@ int
 urg_laser::urg_readline(char *buf, int len, int timeout)
 {
   if (!port_open())
-    URG_ERR(-1," port not open");
+    URG_RET_ERR(-1," port not open");
 
   char* ret;
   int current=0;
@@ -228,20 +260,20 @@ urg_laser::urg_readline(char *buf, int len, int timeout)
     if(timeout >= 0)
     {
       if ((retval = poll(ufd, 1, timeout)) < 0)
-	URG_ERR_ARGS(-1, " poll error %d %s", errno, strerror(errno));
+	URG_RET_ERR_ARGS(-1, " poll error %d %s", errno, strerror(errno));
 
       if (retval == 0)
-	URG_ERR(-1, " timed out on readline");
+	URG_RET_ERR(-1, " timed out on readline");
     }
 
     ret = fgets(&buf[current], len-current, laser_port);
 
     if (ret != &buf[current])
-      URG_ERR(-1, " fgets returned error");
+      URG_RET_ERR(-1, " fgets returned error");
 
     current += strlen(&buf[current]);
   }
-  URG_ERR(-1, " buffer size reached without finding line termination.");
+  URG_RET_ERR(-1, " buffer size reached without finding line termination.");
 }
 
 
@@ -256,10 +288,10 @@ urg_laser::urg_readline_after(char* buf, int len, const char* str, int timeout)
 
   while ((strncmp(buf, str, strlen(str))) != 0) {
     if ((bytes_read = urg_readline(buf,len,timeout)) < 0)
-      URG_ERR_ARGS(NULL, "failed on readline while searching for: '%s'", str);
+      URG_RET_ERR_ARGS(NULL, "failed on readline while searching for: '%s'", str);
 
     if ((skipped += bytes_read) > MAX_SKIPPED)
-      URG_ERR_ARGS(NULL, "skipped too many bytes while searching for: '%s'", str);
+      URG_RET_ERR_ARGS(NULL, "skipped too many bytes while searching for: '%s'", str);
   }
 
   return ind += strlen(str);
@@ -302,7 +334,7 @@ urg_laser::query_SCIP_version ()
   }
   else
   {
-    URG_ERR(-1, "No response to Version query for SCIP2.0 or SCIP1.1");
+    URG_RET_ERR(-1, "No response to Version query for SCIP2.0 or SCIP1.1");
   }
   return 0;
 }
@@ -317,7 +349,7 @@ urg_laser::query_sensor_config()
   if (SCIP_version == 1)
   {
     if (urg_cmd1("V") != 0)
-      URG_ERR(-1, "Error checking version number\n");
+      URG_RET_ERR(-1, "Error checking version number\n");
 
     // If someone can give me the definition of how this information
     // might is encoded in the V response, I can pull it out, but
@@ -332,7 +364,7 @@ urg_laser::query_sensor_config()
   else if(SCIP_version == 2)
   {
     if (urg_cmd("PP") != 0)
-      URG_ERR(-1, "Error requesting configuration information\n");
+      URG_RET_ERR(-1, "Error requesting configuration information\n");
 
 
     char buf[100];
@@ -438,7 +470,7 @@ urg_laser::change_baud (int curr_baud, int new_baud, int timeout)
     }
 
     if (urg_cmd(buf) != 0)
-      URG_ERR(-1, "urg_laser::change_baud: failed to change baud rate");
+      URG_RET_ERR(-1, "urg_laser::change_baud: failed to change baud rate");
 
   }
 
@@ -479,9 +511,33 @@ int urg_laser::check_sum(const char* buf, int buf_len)
 }
 
 
+unsigned long long urg_laser::read_time(int timeout) {
+
+  char buf[100];
+
+  if (urg_readline(buf, 100, timeout) < 0)
+    URG_RET_ERR(0,"Reading timestamp failed");
+  
+  if (check_sum(buf, 6) != 0)
+    URG_RET_ERR(0,"Timestamp checksum not valid");
+
+  unsigned int urg_time = ((buf[0]-0x30) << 18) | ((buf[1]-0x30) << 12) | ((buf[2]-0x30) << 6) | (buf[3] - 0x30);
+
+  if (urg_time == last_time)
+    URG_WARN("This timestamp is same as the last timestamp.\n  Something is probably going wrong. Try decreasing data rate.");
+  else if (urg_time < last_time)
+    wrapped++;
+
+  last_time = urg_time;
+
+  return (unsigned long long)((wrapped << 24) | urg_time)*(unsigned long long)(1000000);
+
+}
+
 int
 urg_laser::read_data(urg_laser_scan_t* scan, bool has_intensity, int timeout)
 {
+
   scan->num_readings = 0;
 
   int data_size = 3;
@@ -492,22 +548,28 @@ urg_laser::read_data(urg_laser_scan_t* scan, bool has_intensity, int timeout)
 
   int ind = 0;
 
-  // skip over the timestamp
-  if (urg_readline(buf, 100, timeout) < 0)
-    return -1;
+  scan->self_time_stamp = read_time(timeout);
+
+  if (scan->self_time_stamp == 0)
+    URG_RET_ERR(-1, "Reading timestamp failed");
+  
+  int bytes;
 
   for (;;)
   {
-    int bytes = urg_readline(&buf[ind], 100 - ind, timeout);
+    bytes = urg_readline(&buf[ind], 100 - ind, timeout);
     
     if (bytes < 0)
       return -1;
     
     if (bytes == 1)          // This is \n\n so we should be done
+    {
       return 0;
+    }
+    
     
     if (check_sum(&buf[ind], bytes) != 0)
-      URG_ERR_ARGS(-1,"Check_sum is wrong on %d: %s", bytes, &buf[ind]);
+      URG_RET_ERR_ARGS(-1,"Check_sum is wrong on %d: %s", bytes, &buf[ind]);
     
     bytes += ind - 2;
     
@@ -516,9 +578,9 @@ urg_laser::read_data(urg_laser_scan_t* scan, bool has_intensity, int timeout)
     {
       if (scan->num_readings < MAX_READINGS)
       {
-	scan->ranges[scan->num_readings] = (((buf[j]-0x30) << 12) | ((buf[j+1]-0x30) << 6) | (buf[j+2]-0x30)) / 1000.0;
+        scan->ranges[scan->num_readings] = (((buf[j]-0x30) << 12) | ((buf[j+1]-0x30) << 6) | (buf[j+2]-0x30)) / 1000.0;
 	
-	if (has_intensity)
+        if (has_intensity)
 	  scan->intensities[scan->num_readings] = (((buf[j+3]-0x30) << 12) | ((buf[j+4]-0x30) << 6) | (buf[j+5]-0x30));
 	else
 	  scan->intensities[scan->num_readings] = 0;
@@ -526,7 +588,7 @@ urg_laser::read_data(urg_laser_scan_t* scan, bool has_intensity, int timeout)
 	scan->num_readings++;
       }
       else
-	URG_ERR(-1,"Got too many readings.");
+	URG_RET_ERR(-1,"Got too many readings.");
     }
     // Shuffle remaining bytes to front of buffer to get them on the next loop
     ind = 0;
@@ -546,7 +608,7 @@ urg_laser::poll_scan(urg_laser_scan_t* scan, double min_ang, double max_ang, int
   scan->num_readings = 0;
 
   if (!port_open ())
-    URG_ERR(-1, "Port is not open\n");
+    URG_RET_ERR(-1, "Port is not open\n");
 
 
   if (SCIP_version == 1)
@@ -574,9 +636,11 @@ urg_laser::poll_scan(urg_laser_scan_t* scan, double min_ang, double max_ang, int
     sprintf(cmdbuf,"GD%.4d%.4d%.2d", min_i, max_i, cluster);
 
     status = urg_cmd(cmdbuf, timeout);
+    
+    scan->system_time_stamp = time_helper() + offset;
 
     if (status != 0)
-      URG_ERR(status, "Status not 0");
+      URG_RET_ERR_ARGS(status, "Error Status is %d", status);
  
     // Populate configuration
     scan->config.min_angle  =  (min_i - afrt) * (2.0*M_PI)/(ares);
@@ -595,10 +659,19 @@ urg_laser::poll_scan(urg_laser_scan_t* scan, double min_ang, double max_ang, int
   return -1;
 }
 
+int
+urg_laser::laser_on() {
+  return urg_cmd("BM");
+}
+
+int
+urg_laser::laser_off() {
+  return urg_cmd("QT");
+}
 
 int
 urg_laser::stop_scanning() {
-  return urg_cmd("QT");
+  return laser_off();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -610,7 +683,7 @@ urg_laser::request_scans(bool intensity, double min_ang, double max_ang, int clu
 
   // Always set num_readings to 0 so we can return easily in case of erro
   if (!port_open ())
-    URG_ERR(-1, "Port is not open\n");
+    URG_RET_ERR(-1, "Port is not open\n");
 
   if (SCIP_version == 2)
   {
@@ -644,7 +717,7 @@ urg_laser::service_scan(urg_laser_scan_t* scan, int timeout)
   scan->num_readings = 0;
 
   if (!port_open ())
-    URG_ERR(-1, "Port is not open\n");
+    URG_RET_ERR(-1, "Port is not open\n");
 
   char buf[100];
 
@@ -659,6 +732,7 @@ urg_laser::service_scan(urg_laser_scan_t* scan, int timeout)
 
   do {
     ind = urg_readline_after(buf, 100, "M",timeout);
+    scan->system_time_stamp = time_helper() + offset;
 
     if (ind == NULL)
       return -1;
@@ -688,7 +762,7 @@ urg_laser::service_scan(urg_laser_scan_t* scan, int timeout)
   if (read_data(scan, intensity, timeout) == 0)
     return 0;
   else
-    URG_ERR(-1, "Reading scan failed");
+    URG_RET_ERR(-1, "Reading scan failed");
 
 }
 
@@ -703,19 +777,116 @@ urg_laser::get_ID()
 
   if (SCIP_version == 1)
     if (urg_cmd1("V") != 0)
-      URG_ERR(-1, "V command failed");
+      URG_RET_ERR(-1, "V command failed");
 
   if (SCIP_version == 2)
     if (urg_cmd("VV") != 0)
-      URG_ERR(-1, "VV command failed");
+      URG_RET_ERR(-1, "VV command failed");
   
   char buf[100];
   char* num = urg_readline_after(buf, 100, "SERI:");
 
   if (num == NULL)
-    URG_ERR(-1, "'SERI:' field could not be found");
+    URG_RET_ERR(-1, "'SERI:' field could not be found");
 
   sscanf(num, "%d", &id);
 
   return id;
+}
+
+int urg_laser::calc_latency(bool intensity, double min_ang, double max_ang, int clustering, int skip, int num, int timeout)
+{
+  printf("Determining scan latency.\n");
+  offset = 0;
+
+  unsigned long long begin_time = time_helper();
+
+  unsigned long long comp_time = 0;
+  unsigned long long urg_time = 0;
+  long long diff_time = 0;
+  long long diff_sum = 0;
+  long long drift_time = 0;
+  long long tmp_offset1 = 0;
+  long long tmp_offset2 = 0;
+
+  int count = 0;
+ 
+  // Put into timing mode.
+  printf("Putting URG in timing mode.\n");
+  urg_cmd("TM0");
+  count = 100;
+  printf("Estimating constant offset... ");
+  for (int i = 0; i < count;i++)
+  {
+    usleep(1000);
+    urg_cmd("TM1");
+    comp_time = time_helper();
+    urg_time = read_time();
+
+    diff_time = comp_time - urg_time;
+
+    tmp_offset1 += diff_time / count;
+  }
+  printf("%lld nanoseconds\n", tmp_offset1);
+  printf("Estimating drift rate... ");
+  unsigned long long start_time = time_helper();
+  usleep(5000000);
+  urg_cmd("TM1;a");
+  urg_cmd("TM1;b");
+  comp_time = time_helper();
+  drift_time = comp_time - start_time;
+  urg_time = read_time() + tmp_offset1;
+  diff_time = comp_time - urg_time;
+  double drift_rate = double(diff_time) / double(drift_time);
+  printf("%g\n", drift_rate);
+  printf("Leaving timing mode.\n");
+  urg_cmd("TM2");
+  
+  printf("Putting URG in scan mode.\n");
+  if (request_scans(intensity, min_ang, max_ang, clustering, skip, num, timeout) != 0)
+    URG_RET_ERR(-1,"Error requesting scans during latency calculation");
+
+  urg_laser_scan_t scan;
+
+  printf("Estimating latency of scans... ");
+  count = 200;
+  for (int i = 0; i < count;i++)
+  {
+    service_scan(&scan);
+
+    comp_time = scan.system_time_stamp;
+    drift_time = comp_time - start_time;
+    urg_time = scan.self_time_stamp + tmp_offset1 + drift_time*drift_rate;
+    diff_time = urg_time - comp_time;
+
+    tmp_offset2 += diff_time / count;
+  }
+  printf("%lld nanoseconds\n", tmp_offset2);
+
+  offset = tmp_offset2;
+
+  /*
+  long long latency_check = 0;
+
+  printf("Verifying latency of scans... ");
+  count = 1000;
+  for (int i = 0; i < count;i++)
+  {
+    service_scan(&scan);
+
+    comp_time = scan.system_time_stamp;
+    drift_time = comp_time - start_time;
+    urg_time = scan.self_time_stamp + tmp_offset1 + drift_time*drift_rate;
+    diff_time = urg_time - comp_time;
+
+    latency_check += diff_time / count;
+  }
+  printf("%lld nanoseconds\n", latency_check);
+
+  printf("Leaving scanning mode.");
+  */
+
+  stop_scanning();
+
+  return 0;
 }

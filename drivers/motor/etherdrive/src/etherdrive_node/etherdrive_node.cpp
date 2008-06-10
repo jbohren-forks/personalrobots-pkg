@@ -105,10 +105,18 @@ public:
     ed->drive(6,tmp_mot_cmd);
 
     int val[6];
+
+    ros::Time before = ros::Time::now();
     
     if (!ed->tick(6,val)) {
       return false;
     }
+
+    ros::Time after = ros::Time::now();
+
+    ros::Duration delta = after - before;
+
+    ros::Time stamp = before + ros::Duration( after.to_double() / 2.0 );
 
     //    printf("%d %d %d\n",ed->get_enc(0), ed->get_cur(0), ed->get_pwm(0));
    
@@ -116,6 +124,7 @@ public:
       mot[i].val = val[i] / pulse_per_rad[i];
       mot[i].rel = false;
       mot[i].valid = true;
+      mot[i].header.stamp = stamp;
       ostringstream oss;
       oss << "mot" << i;
       publish(oss.str().c_str(), mot[i]);

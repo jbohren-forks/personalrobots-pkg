@@ -93,27 +93,27 @@ using namespace std;
 
 class HokuyoNode: public ros::node
 {
-  private:
-    urg_laser_scan_t* scan;
-    urg_laser_config_t cfg;
-    bool running;
-    unsigned int scanid;
-
-    int count;
-    ros::Time next_time;
-
-  public:
-    urg_laser urg;
-    std_msgs::LaserScan scan_msg;
-    double min_ang;
-    double max_ang;
-
-    int cluster;
-    int skip;
-
-    string port;
-
-    HokuyoNode() : ros::node("urglaser"), count(0)
+private:
+  urg_laser_scan_t* scan;
+  urg_laser_config_t cfg;
+  bool running;
+  unsigned int scanid;
+  
+  int count;
+  ros::Time next_time;
+  
+public:
+  urg_laser urg;
+  std_msgs::LaserScan scan_msg;
+  double min_ang;
+  double max_ang;
+  
+  int cluster;
+  int skip;
+  
+  string port;
+  
+  HokuyoNode() : ros::node("urglaser"), count(0)
     {
       advertise<std_msgs::LaserScan>("scan");
 
@@ -154,12 +154,19 @@ class HokuyoNode: public ros::node
 
       urg.urg_cmd("BM");
 
-      int status = urg.request_scans(true, min_ang, max_ang, cluster, skip);
+      int status = urg.calc_latency(true, min_ang, max_ang, cluster, skip);
+      if (status != 0) {
+        printf("Failed to calculate latency.\n");
+        return -1;
+      }
+
+      status = urg.request_scans(true, min_ang, max_ang, cluster, skip);
 
       if (status != 0) {
         printf("Failed to request scans %d.\n", status);
         return -1;
       }
+
       next_time = ros::Time::now();
 
       return(0);
@@ -204,6 +211,7 @@ class HokuyoNode: public ros::node
       scan_msg.range_max = scan->config.max_range;
       scan_msg.set_ranges_size(scan->num_readings);
       scan_msg.set_intensities_size(scan->num_readings);
+      scan_msg.header.stamp = ros::Time(scan->system_time_stamp);
 
       for(int i = 0; i < scan->num_readings; ++i)
       {
