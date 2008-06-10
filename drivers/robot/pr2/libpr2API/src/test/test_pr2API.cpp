@@ -19,12 +19,18 @@ int main()
    myPR2.SetBaseControlMode(PR2_CARTESIAN_CONTROL);
    myPR2.SetBaseCartesianSpeedCmd(0.0,-0.5,1*M_PI/8);
 
-   // create a end-effector position and orientation for inverse kinematics test
-   NEWMAT::Matrix g(4,4);
-   g = 0;
+
+   // test pitch the hokuyo
+   myPR2.SetJointServoCmd(PR2::HEAD_LASER_PITCH, -M_PI/8.0, 0.0);
+
+
 
    // test kinematics library through pr2API
    PR2Arm myArm;
+
+   // create a end-effector position and orientation for inverse kinematics test
+   NEWMAT::Matrix g(4,4);
+   g = 0;
 
    // Joint angles (radians) and speeds for testing 
    double angles[7] = {0,0,0,0,0,0,0};

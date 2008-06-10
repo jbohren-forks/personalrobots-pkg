@@ -88,6 +88,11 @@ PR2Robot::PR2Robot()
 
 PR2Robot::~PR2Robot(){};
 
+PR2_ERROR_CODE PR2Robot::GetSimTime(double *sim_time)
+{
+   *sim_time = simIface->data->simTime;
+   return PR2_ALL_OK;
+};
 
 PR2_ERROR_CODE PR2Robot::InitializeRobot()
 {

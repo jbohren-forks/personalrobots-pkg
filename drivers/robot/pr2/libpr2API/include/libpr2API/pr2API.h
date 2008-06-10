@@ -582,6 +582,19 @@ namespace PR2
       protected: PR2_CONTROL_MODE armControlMode[2];
       protected: PR2_CONTROL_MODE baseControlMode;
       protected: PR2Arm myArm; 
+
+         /*! \fn
+           \brief - Oscillate the Hokuyo, return point cloud
+         */
+      //public: PR2_ERROR_CODE GetPointCloud();
+
+         /*! \fn
+           \brief - returns simulation time
+         */
+      public:    PR2_ERROR_CODE GetSimTime(double *sim_time);
+
+
+
     };
 }
 #endif
