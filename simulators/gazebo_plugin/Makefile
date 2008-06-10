@@ -2,7 +2,11 @@ PKG = gazebo_plugin
 
 CFLAGS = -g -Wall $(shell rospack export/cpp/cflags $(PKG)) -I/usr/include/libxml2
 
-LDFLAGS = $(shell rospack export/cpp/lflags $(PKG))
+LFLAGS = $(shell rospack export/cpp/lflags $(PKG))
+
+LDFLAGS = $(shell rospack export/cpp/lflags gazebo) \
+          $(shell rospack export/cpp/lflags pr2Core) \
+          $(shell rospack export/cpp/lflags newmat10)
 
 LIB_ACT = lib/libPr2_Actarray.a
 LIB_GRP = lib/libPr2_Gripper.a
@@ -24,16 +28,16 @@ $(LIB_ACT): libPr2_Actarray.o
 $(LIB_GRP): libPr2_Gripper.o
 	ar -rs $@ $^
 
-$(LIB_ACT_S): src/Pr2_Actarray.cc
-	g++ $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
+$(LIB_ACT_S): libPr2_Actarray.o
+	g++ -shared -o $@ $^ $(LDFLAGS)
 
-$(LIB_GRP_S): src/Pr2_Gripper.cc
-	g++ $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
+$(LIB_GRP_S): libPr2_Gripper.o
+	g++ -shared -o $@ $^ $(LDFLAGS)
 
 player_pr2: src/player/Pr2_Player.cc
-	g++ $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	g++ $(CFLAGS) -o $@ $^ $(LFLAGS)
 
 clean:
 	rm -rf player_pr2
-	rm -f *.o *.a lib/*.a
+	rm -f *.o *.a lib/*.a lib/*.so
 
