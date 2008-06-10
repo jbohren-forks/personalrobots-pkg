@@ -15,6 +15,7 @@ static gazebo::PR2ArrayIface    *pr2HeadIface;
 static gazebo::PR2GripperIface  *pr2GripperLeftIface;
 static gazebo::PR2GripperIface  *pr2GripperRightIface;
 static gazebo::LaserIface       *pr2LaserIface;
+static gazebo::LaserIface       *pr2BaseLaserIface;
 static gazebo::CameraIface      *pr2CameraIface;
 static gazebo::CameraIface      *pr2CameraGlobalIface;
 static gazebo::CameraIface      *pr2CameraHeadLeftIface;
@@ -103,6 +104,7 @@ PR2_ERROR_CODE PR2Robot::InitializeRobot()
    pr2GripperLeftIface     = new gazebo::PR2GripperIface();
    pr2GripperRightIface    = new gazebo::PR2GripperIface();
    pr2LaserIface           = new gazebo::LaserIface();
+   pr2BaseLaserIface       = new gazebo::LaserIface();
    pr2CameraGlobalIface    = new gazebo::CameraIface();
    pr2CameraHeadLeftIface  = new gazebo::CameraIface();
    pr2CameraHeadRightIface = new gazebo::CameraIface();
@@ -189,6 +191,20 @@ PR2_ERROR_CODE PR2Robot::InitializeRobot()
     std::cout << "Gazebo error: Unable to connect to the pr2 laser interface\n"
     << e << "\n";
     pr2LaserIface = NULL;
+    //return  PR2_ERROR;
+  }
+
+
+  /// Open the base laser interface for hokuyo
+  try
+  {
+    pr2BaseLaserIface->Open(client, "base_laser_iface_1");
+  }
+  catch (std::string e)
+  {
+    std::cout << "Gazebo error: Unable to connect to the pr2 base laser interface\n"
+    << e << "\n";
+    pr2BaseLaserIface = NULL;
     //return  PR2_ERROR;
   }
 
@@ -1177,55 +1193,69 @@ PR2_ERROR_CODE PR2Robot::GetBasePositionActual(double* x, double* y, double* th)
    return PR2_ALL_OK;
 };
 
-PR2_ERROR_CODE PR2Robot::GetLaserRanges(float* angle_min, float* angle_max, float* angle_increment,
+PR2_ERROR_CODE PR2Robot::GetLaserRanges(PR2_SENSOR_ID id,
+    float* angle_min, float* angle_max, float* angle_increment,
     float* range_max,uint32_t* ranges_size     ,uint32_t* ranges_alloc_size,
                      uint32_t* intensities_size,uint32_t* intensities_alloc_size,
                      float*    ranges          ,uint8_t*  intensities)
 {
-  if (pr2LaserIface == NULL)
+
+  gazebo::LaserIface       *tmpLaserIface;
+  switch (id)
+  {
+    case LASER_HEAD:
+      tmpLaserIface = pr2LaserIface;
+      break;
+    case LASER_BASE:
+      tmpLaserIface = pr2BaseLaserIface;
+      break;
+    default:
+      tmpLaserIface = NULL;
+      break;
+  }
+  if (tmpLaserIface == NULL)
   {
     return PR2_ERROR;
   }
   else
   {
-    *angle_min               = (float)pr2LaserIface->data->min_angle;
-    *angle_max               = (float)pr2LaserIface->data->max_angle;
+    *angle_min               = (float)tmpLaserIface->data->min_angle;
+    *angle_max               = (float)tmpLaserIface->data->max_angle;
 
-    *range_max               = (float)pr2LaserIface->data->max_range;
+    *range_max               = (float)tmpLaserIface->data->max_range;
 
 
-    *ranges_size             = (uint32_t)pr2LaserIface->data->range_count;
+    *ranges_size             = (uint32_t)tmpLaserIface->data->range_count;
     *ranges_alloc_size       = (uint32_t)GZ_LASER_MAX_RANGES;
-    *intensities_size        = (uint32_t)pr2LaserIface->data->range_count;
+    *intensities_size        = (uint32_t)tmpLaserIface->data->range_count;
     *intensities_alloc_size  = (uint32_t)GZ_LASER_MAX_RANGES;
 
 
-    //*angle_increment         = (float)pr2LaserIface->data->res_angle;
+    //*angle_increment         = (float)tmpLaserIface->data->res_angle;
     *angle_increment         = (*angle_max - *angle_min)/((double)(*ranges_size -1));
 
     // std::cout << "max " << *angle_max << std::endl;
     // std::cout << "min " << *angle_min << std::endl;
     // std::cout << "siz " << *ranges_size << std::endl;
     // std::cout << "inc " << *angle_increment << std::endl;
-    // std::cout << "in2 " << (float)pr2LaserIface->data->res_angle << std::endl;
+    // std::cout << "in2 " << (float)tmpLaserIface->data->res_angle << std::endl;
     // std::cout << "getting laser ranges" << std::endl;
 
-    //ranges                   = cast(float*)pr2LaserIface->data->ranges;
-    //intensities              = cast(float*)pr2LaserIface->data->intensity;
+    //ranges                   = cast(float*)tmpLaserIface->data->ranges;
+    //intensities              = cast(float*)tmpLaserIface->data->intensity;
 
     //std::cout << "range count = " << count << std::endl;
     for (int i=0; i<(int)*ranges_size ; i++)
     {
       //std::cout << ranges[i] << " ";
       // fill in the needed messages
-      ranges[i] = (float)pr2LaserIface->data->ranges[i];
-      intensities[i] = (uint8_t)pr2LaserIface->data->intensity[i];
+      ranges[i] = (float)tmpLaserIface->data->ranges[i];
+      intensities[i] = (uint8_t)tmpLaserIface->data->intensity[i];
     }
     //std::cout << std::endl;
     return PR2_ALL_OK;
   }
 };
-
 
 PR2_ERROR_CODE PR2Robot::OpenGripper(PR2_MODEL_ID id,double gap,double force)
 {

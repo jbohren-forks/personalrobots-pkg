@@ -262,42 +262,27 @@ GazeboNode::Update()
 
   /***************************************************************/
   /*                                                             */
-  /*  laser                                                      */
+  /*  laser - pitching                                           */
   /*                                                             */
   /***************************************************************/
-  if (this->myPR2->GetLaserRanges(&angle_min, &angle_max, &angle_increment,
-    &range_max, &ranges_size     , &ranges_alloc_size,
+  if (this->myPR2->GetLaserRanges(PR2::LASER_HEAD,
+                &angle_min, &angle_max, &angle_increment,
+                &range_max, &ranges_size     , &ranges_alloc_size,
                 &intensities_size, &intensities_alloc_size,
                 this->ranges     , this->intensities) == PR2::PR2_ALL_OK)
   {
-    //std::cout << "vx : " << vx << " vy: " << vy << " vw: " << vw << std::endl;
-
-    // Get latest laser data
-    // Stg::stg_laser_sample_t* samples = this->lasermodel->GetSamples();
-    // if(samples)
-    // {
-    //   // Translate into ROS message format and publish
-    //   Stg::stg_laser_cfg_t cfg = this->lasermodel->GetConfig();
-    this->laserMsg.angle_min       = angle_min;
-    this->laserMsg.angle_max       = angle_max;
-    this->laserMsg.angle_increment = angle_increment;
-    this->laserMsg.range_max       = range_max;
-    this->laserMsg.set_ranges_size(ranges_size);
-    this->laserMsg.set_intensities_size(intensities_size);
     for(unsigned int i=0;i<ranges_size;i++)
     {
-      this->laserMsg.ranges[i]      = this->ranges[i];
-      this->laserMsg.intensities[i] = this->intensities[i];
-      
-      // populating cloud data
       // get laser pitch angle
 	    double tmp_range, laser_yaw, laser_pitch, laser_pitch_rate;
 	    this->myPR2->GetJointServoActual(PR2::HEAD_LASER_PITCH , &laser_pitch,  &laser_pitch_rate);
       // get laser yaw angle
 	    laser_yaw = angle_min + (double)i * angle_increment;
-	    //std::cout << " pit " << laser_pitch << "yaw " << laser_yaw << " amin " <<  angle_min << " inc " << angle_increment << std::endl;
-      // transform from range to x,y,z
+	    //std::cout << " pit " << laser_pitch << "yaw " << laser_yaw
+	    //          << " amin " <<  angle_min << " inc " << angle_increment << std::endl;
+      // populating cloud data by range
       tmp_range = (this->ranges[i] >= range_max) ? 0 : this->ranges[i];
+      // transform from range to x,y,z
       tmp_cloud_pt.x                = tmp_range * cos(laser_yaw) * cos(laser_pitch);
       tmp_cloud_pt.y                = tmp_range * sin(laser_yaw) ; //* cos(laser_pitch);
       tmp_cloud_pt.z                = tmp_range * cos(laser_yaw) * sin(laser_pitch);
@@ -305,9 +290,6 @@ GazeboNode::Update()
 
       this->cloud_ch1->add(this->intensities[i]);
     }
-
-    publish("laser",this->laserMsg);
-
     /***************************************************************/
     /*                                                             */
     /*  point cloud from laser image                               */
@@ -330,6 +312,34 @@ GazeboNode::Update()
     publish("cloud",this->cloudMsg);
     //publish("shutter",this->shutterMsg);
   }
+
+  /***************************************************************/
+  /*                                                             */
+  /*  laser - base                                               */
+  /*                                                             */
+  /***************************************************************/
+  if (this->myPR2->GetLaserRanges(PR2::LASER_BASE,
+                &angle_min, &angle_max, &angle_increment,
+                &range_max, &ranges_size     , &ranges_alloc_size,
+                &intensities_size, &intensities_alloc_size,
+                this->ranges     , this->intensities) == PR2::PR2_ALL_OK)
+  {
+    // Get latest laser data
+    this->laserMsg.angle_min       = angle_min;
+    this->laserMsg.angle_max       = angle_max;
+    this->laserMsg.angle_increment = angle_increment;
+    this->laserMsg.range_max       = range_max;
+    this->laserMsg.set_ranges_size(ranges_size);
+    this->laserMsg.set_intensities_size(intensities_size);
+    for(unsigned int i=0;i<ranges_size;i++)
+    {
+      this->laserMsg.ranges[i]      = this->ranges[i];
+      this->laserMsg.intensities[i] = this->intensities[i];
+    }
+
+    publish("laser",this->laserMsg);
+  }
+
 
 
   /***************************************************************/
@@ -391,13 +401,14 @@ GazeboNode::Update()
 
   /***************************************************************/
   /*                                                             */
-  /*  pitch hokuyo                                               */
+  /*  pitching Hokuyo joint                                      */
   /*                                                             */
   /***************************************************************/
 	static double dAngle = -1;
 	double simTime;
-	double simPitchAngle,simPitchRate,simPitchTimeScale,simPitchAmp,simPitchOffset;
-	simPitchTimeScale = 1.0;
+	double simPitchFreq,simPitchAngle,simPitchRate,simPitchTimeScale,simPitchAmp,simPitchOffset;
+	simPitchFreq      = 1.0;
+	simPitchTimeScale = 2.0*M_PI*simPitchFreq;
 	simPitchAmp    =  M_PI / 8.0;
 	simPitchOffset = -M_PI / 8.0;
 	simPitchAngle = simPitchOffset + simPitchAmp * sin(simTime * simPitchTimeScale);

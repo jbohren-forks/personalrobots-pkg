@@ -547,10 +547,11 @@ namespace PR2
          /*! \fn
            \brief - Get laser range data
          */
-      public:    PR2_ERROR_CODE GetLaserRanges(float* angle_min, float* angle_max, float* angle_increment,
-    float* range_max,uint32_t* ranges_size     ,uint32_t* ranges_alloc_size,
-                     uint32_t* intensities_size,uint32_t* intensities_alloc_size,
-                     float*    ranges          ,uint8_t*  intensities);
+      public:    PR2_ERROR_CODE GetLaserRanges(PR2_SENSOR_ID id,
+          float* angle_min, float* angle_max, float* angle_increment,
+          float* range_max,uint32_t* ranges_size     ,uint32_t* ranges_alloc_size,
+                           uint32_t* intensities_size,uint32_t* intensities_alloc_size,
+                           float*    ranges          ,uint8_t*  intensities);
 
          /*! \fn
            \brief - Open gripper
