@@ -6,7 +6,7 @@ LFLAGS  = $(shell rospack export/cpp/lflags $(PKG))
 
 all: pr2
 
-pr2: pr2.cpp
+pr2: pr2.cpp include/kdl_kinematics.h
 	g++ $(CFLAGS) -o $@ $^ $(LFLAGS)
 
 clean:
