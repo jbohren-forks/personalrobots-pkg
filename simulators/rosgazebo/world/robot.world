@@ -50,19 +50,17 @@
     <desiredFPS>100</desiredFPS>
   </rendering:ogre>
 
+
 <!--
   <model:physical name="gbuilding">
     <body:heightmap name="building">
       <geom:heightmap name="building">
-        <image>willowMap.png</image>
-        <worldTexture>willow_texture.jpg</worldTexture>
-        <detailTexture>terrain_detail.jpg</detailTexture>
-        <size>54 54 2.5</size>
+        <image>map.png</image>
+        <worldTexture>map2.jpg</worldTexture>
+        <size>2 2 0.5</size>
       </geom:heightmap>
     </body:heightmap>
   </model:physical>
--->
-<!--
 -->
   <model:physical name="gplane">
     <xyz>0 0 0</xyz>	
@@ -72,13 +70,14 @@
     <body:plane name="plane">
       <geom:plane name="plane">
         <normal>0 0 1</normal>
-        <size>2000 2000</size>
-        <segments>10 10</segments>
-        <uvTile>100 100</uvTile>
-        <material>Gazebo/GrassFloor</material>
+        <size>51.3 51.3</size>
+        <!-- map3.png -->
+        <material>PR2/floor_texture</material>
       </geom:plane>
     </body:plane>
   </model:physical>
+<!--
+-->
 
 
 
@@ -270,7 +269,7 @@
     </body:sphere>
   </model:physical>
 
-  <!-- The large ball -->
+  <!-- The large ball map3.png -->
   <model:physical name="sphere2_model">
     <xyz>   3.5    2.0    1.55</xyz>
     <rpy>   0.0    0.0    0.0</rpy>
@@ -289,6 +288,43 @@
       </geom:sphere>
     </body:sphere>
   </model:physical>
+
+  <!-- The wall in front map3.png -->
+  <model:physical name="wall_2_model">
+    <xyz> 11.6  -1.55   1.0</xyz>
+    <rpy>   0.0    0.0    0.0</rpy>
+    <static>true</static>
+    <body:box name="wall_2_body">
+      <geom:box name="wall_2_geom">
+        <mesh>default</mesh>
+        <size>2.1  32.8 2.0</size>
+        <visual>
+          <size>2.1  32.8 2.0</size>
+          <material>Gazebo/PioneerBody</material>
+          <mesh>unit_box</mesh>
+        </visual>
+      </geom:box>
+    </body:box>
+  </model:physical>
+
+  <!-- The wall behind -->
+  <model:physical name="wall_1_model">
+    <xyz> -11.3   -1.45   1.0</xyz>
+    <rpy>   0.0    0.0    0.0</rpy>
+    <static>true</static>
+    <body:box name="wall_1_body">
+      <geom:box name="wall_1_geom">
+        <mesh>default</mesh>
+        <size>0.4  24.0 2.0</size>
+        <visual>
+          <size>0.4  24.0 2.0</size>
+          <material>Gazebo/PioneerBody</material>
+          <mesh>unit_box</mesh>
+        </visual>
+      </geom:box>
+    </body:box>
+  </model:physical>
+
 
 
   <model:physical name="robot_model1">
