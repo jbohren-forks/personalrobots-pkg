@@ -1,8 +1,10 @@
 all: player
 
+REVISION = -r 6498
+
 player-svn:
-	@if [ ! -d player-svn ]; then svn co https://playerstage.svn.sf.net/svnroot/playerstage/code/player/trunk player-svn; fi
-	-cd player-svn && svn up
+	@if [ ! -d player-svn ]; then svn co $(REVISION) https://playerstage.svn.sf.net/svnroot/playerstage/code/player/trunk player-svn; fi
+	-cd player-svn && svn up $(REVISION) 
 
 player: player-svn
 	cd player-svn && mkdir -p build
