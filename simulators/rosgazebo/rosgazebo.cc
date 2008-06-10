@@ -45,6 +45,9 @@
 // roscpp - camera
 #include <std_msgs/MsgImage.h>
 
+// for frame transforms
+#include <rosTF/rosTF.h>
+
 #include <time.h>
 #include <signal.h>
 
@@ -64,6 +67,8 @@ class GazeboNode : public ros::node
     // A mutex to lock access to fields that are used in message callbacks
     ros::thread::mutex lock;
 
+    // for frame transforms, publish frame transforms
+    rosTFServer tf;
 
   public:
     // Constructor; stage itself needs argc/argv.  fname is the .world file
@@ -193,7 +198,7 @@ GazeboNode::cmdvelReceived()
 }
 
 GazeboNode::GazeboNode(int argc, char** argv, const char* fname) :
-        ros::node("rosgazebo")
+        ros::node("rosgazebo"),tf(*this)
 {
 
   // Initialize robot object
@@ -260,6 +265,7 @@ GazeboNode::Update()
   uint32_t intensities_size;
   uint32_t intensities_alloc_size;
   MsgPoint3DFloat32 tmp_cloud_pt;
+	double simTime;
 
   /***************************************************************/
   /*                                                             */
@@ -314,6 +320,11 @@ GazeboNode::Update()
     //publish("shutter",this->shutterMsg);
   }
 
+
+
+
+  this->myPR2->GetSimTime(&simTime);
+
   /***************************************************************/
   /*                                                             */
   /*  laser - base                                               */
@@ -339,7 +350,15 @@ GazeboNode::Update()
       this->laserMsg.intensities[i] = this->intensities[i];
     }
 
-    publish("laser",this->laserMsg); // for laser_view
+    this->laserMsg.header.frame_id = FRAMEID_LASER;
+    this->laserMsg.header.stamp.sec = 
+      (unsigned long)floor(simTime);
+    this->laserMsg.header.stamp.nsec = 
+      (unsigned long)floor(  1e9 * (  simTime
+                                    - this->odomMsg.header.stamp.sec) );
+    this->laserMsg.__timestamp_override = true;
+
+    publish("laser",this->laserMsg); // for laser_view FIXME: can alias this at the commandline or launch script
     publish("scan",this->laserMsg);  // for rosstage
   }
 
@@ -368,11 +387,32 @@ GazeboNode::Update()
   // this->odomMsg.stall = this->positionmodel->Stall();
 
   // TODO: get the frame ID from somewhere
-  this->odomMsg.header.frame_id = 2;
+  this->odomMsg.header.frame_id = FRAMEID_ODOM;
+
+  this->odomMsg.header.stamp.sec =
+      (unsigned long)floor(simTime);
+  this->odomMsg.header.stamp.nsec =
+      (unsigned long)floor(  1e9 * (  simTime
+                                    - this->odomMsg.header.stamp.sec) );
+  this->odomMsg.__timestamp_override = true;
 
   publish("odom",this->odomMsg);
 
-
+  /***************************************************************/
+  /*                                                             */
+  /*  frame transforms                                           */
+  /*                                                             */
+  /***************************************************************/
+  tf.sendInverseEuler(FRAMEID_ODOM,
+                      FRAMEID_ROBOT,
+                      odomMsg.pos.x,
+                      odomMsg.pos.y,
+                      0.0,
+                      odomMsg.pos.th,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
 
   /***************************************************************/
   /*                                                             */
@@ -408,9 +448,8 @@ GazeboNode::Update()
   /*                                                             */
   /***************************************************************/
 	static double dAngle = -1;
-	double simTime;
 	double simPitchFreq,simPitchAngle,simPitchRate,simPitchTimeScale,simPitchAmp,simPitchOffset;
-	simPitchFreq      = 1.0;
+	simPitchFreq      = 1.0/10.0;
 	simPitchTimeScale = 2.0*M_PI*simPitchFreq;
 	simPitchAmp    =  M_PI / 8.0;
 	simPitchOffset = -M_PI / 8.0;
