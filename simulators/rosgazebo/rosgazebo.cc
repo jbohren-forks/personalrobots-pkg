@@ -19,18 +19,24 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-
+#include <math.h>
 
 // gazebo
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <libpr2API/pr2API.h>
+#include "ringbuffer.h"
 
 // roscpp
 #include <ros/node.h>
 // roscpp - laser
 #include <std_msgs/MsgLaserScan.h>
+// roscpp - laser image (point cloud)
+#include <std_msgs/MsgPointCloudFloat32.h>
+#include <std_msgs/MsgPoint3DFloat32.h>
+#include <std_msgs/MsgChannelFloat32.h>
+// roscpp - used for shutter message right now
+#include <std_msgs/MsgEmpty.h>
 // roscpp - base
 #include <std_msgs/MsgRobotBase2DOdom.h>
 #include <std_msgs/MsgBaseVel.h>
@@ -42,7 +48,7 @@
 #include <time.h>
 #include <signal.h>
 
-#define USAGE "rosgazebo"
+#define MAX_CLOUD_PTS	 100000
 
 // Our node
 class GazeboNode : public ros::node
@@ -51,6 +57,8 @@ class GazeboNode : public ros::node
     // Messages that we'll send or receive
     MsgBaseVel velMsg;
     MsgLaserScan laserMsg;
+    MsgPointCloudFloat32 cloudMsg;
+    MsgEmpty shutterMsg;  // marks end of a cloud message
     MsgRobotBase2DOdom odomMsg;
 
     // A mutex to lock access to fields that are used in message callbacks
@@ -92,6 +100,9 @@ class GazeboNode : public ros::node
     // The main simulator object
     PR2::PR2Robot* myPR2;
 
+    // for the point cloud data
+    ringBuffer<MsgPoint3DFloat32> *cloud_pts;
+    ringBuffer<float>             *cloud_ch1;
 
     static void finalize(int);
 };
@@ -191,7 +202,12 @@ GazeboNode::GazeboNode(int argc, char** argv, const char* fname) :
   this->myPR2->InitializeRobot();
   // Set control mode for the base
   this->myPR2->SetBaseControlMode(PR2::PR2_CARTESIAN_CONTROL);
-	
+
+  // Initialize ring buffer for point cloud data
+  this->cloud_pts->allocate(MAX_CLOUD_PTS);
+  this->cloud_ch1->allocate(MAX_CLOUD_PTS);
+
+
 	/*
 	//-------- This doesn't seem to affect anything:
   // Set control mode for the arms
@@ -217,6 +233,8 @@ GazeboNode::SubscribeModels()
   advertise<MsgLaserScan>("laser");
   advertise<MsgRobotBase2DOdom>("odom");
   advertise<MsgImage>("image");
+  advertise<MsgPointCloudFloat32>("cloud");
+  advertise<MsgEmpty>("shutter");
   subscribe("cmd_vel", velMsg, &GazeboNode::cmdvelReceived);
   subscribe("cmd_leftarmconfig", leftarm, &GazeboNode::cmd_leftarmconfigReceived);
   subscribe("cmd_rightarmconfig", rightarm, &GazeboNode::cmd_rightarmconfigReceived);
@@ -240,6 +258,7 @@ GazeboNode::Update()
   uint32_t ranges_alloc_size;
   uint32_t intensities_size;
   uint32_t intensities_alloc_size;
+  MsgPoint3DFloat32 tmp_cloud_pt;
 
   /***************************************************************/
   /*                                                             */
@@ -269,11 +288,47 @@ GazeboNode::Update()
     {
       this->laserMsg.ranges[i]      = this->ranges[i];
       this->laserMsg.intensities[i] = this->intensities[i];
+      
+      // populating cloud data
+      // get laser pitch angle
+	    double laser_yaw, laser_pitch, laser_pitch_rate;
+	    this->myPR2->GetJointServoCmd(PR2::HEAD_LASER_PITCH , &laser_pitch,  &laser_pitch_rate);
+      // get laser yaw angle
+	    laser_yaw = angle_min + (double)i * angle_increment;
+      // transform from range to x,y,z
+      tmp_cloud_pt.x                = this->ranges[i] * cos(laser_yaw) * cos(laser_pitch);
+      tmp_cloud_pt.y                = this->ranges[i] * sin(laser_yaw) * cos(laser_pitch);
+      tmp_cloud_pt.z                = this->ranges[i]                  * sin(laser_pitch);
+      this->cloud_pts->add((MsgPoint3DFloat32)tmp_cloud_pt);
+
+      this->cloud_ch1->add(this->intensities[i]);
     }
 
     publish("laser",this->laserMsg);
-  // }
+
+    /***************************************************************/
+    /*                                                             */
+    /*  point cloud from laser image                               */
+    /*                                                             */
+    /***************************************************************/
+    //std::cout << " pcd num " << this->cloud_pts->length << std::endl;
+    int    num_channels = 1;
+    this->cloudMsg.set_pts_size(this->cloud_pts->length);
+    this->cloudMsg.set_chan_size(num_channels);
+    this->cloudMsg.chan[0].name = "intensities";
+    this->cloudMsg.chan[0].set_vals_size(this->cloud_ch1->length);
+
+    for(int i=0;i< this->cloud_pts->length ;i++)
+    {
+      this->cloudMsg.pts[i].x  = this->cloud_pts->buffer[i].x;
+      this->cloudMsg.pts[i].y  = this->cloud_pts->buffer[i].y;
+      this->cloudMsg.pts[i].z  = this->cloud_pts->buffer[i].z;
+      this->cloudMsg.chan[0].vals[i]    = this->cloud_ch1->buffer[i];
+    }
+    publish("cloud",this->cloudMsg);
+    publish("shutter",this->shutterMsg);
   }
+
 
   /***************************************************************/
   /*                                                             */
@@ -334,6 +389,24 @@ GazeboNode::Update()
 
   /***************************************************************/
   /*                                                             */
+  /*  pitch hokuyo                                               */
+  /*                                                             */
+  /***************************************************************/
+	double simTime;
+	double simPitchAngle,simPitchRate,simPitchTimeScale,simPitchAmp,simPitchOffset;
+	simPitchTimeScale = 1.0;
+	simPitchAmp    = M_PI / 8.0;
+	simPitchOffset = -M_PI / 8.0;
+	simPitchAngle = simPitchOffset + simPitchAmp * sin(simTime * simPitchTimeScale);
+	simPitchRate  = simPitchAmp * simPitchTimeScale * cos(simTime * simPitchTimeScale);
+  this->myPR2->GetSimTime(&simTime);
+	std::cout << "sim time: " << simTime << std::endl;
+	this->myPR2->SetJointServoCmd(PR2::HEAD_LASER_PITCH , simPitchAngle, simPitchRate);
+
+
+
+  /***************************************************************/
+  /*                                                             */
   /*  arm                                                        */
   /*  gripper                                                    */
   /*                                                             */
@@ -363,12 +436,6 @@ GazeboNode::Update()
 int 
 main(int argc, char** argv)
 { 
-
-  // if( argc < 2 )
-  // {
-  //   puts(USAGE);
-  //   exit(-1);
-  // }
 
   ros::init(argc,argv);
 
