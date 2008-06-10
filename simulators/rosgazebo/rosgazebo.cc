@@ -231,6 +231,7 @@ int
 GazeboNode::SubscribeModels()
 {
   advertise<MsgLaserScan>("laser");
+  advertise<MsgLaserScan>("scan");
   advertise<MsgRobotBase2DOdom>("odom");
   advertise<MsgImage>("image");
   advertise<MsgPointCloudFloat32>("cloud");
@@ -333,11 +334,13 @@ GazeboNode::Update()
     this->laserMsg.set_intensities_size(intensities_size);
     for(unsigned int i=0;i<ranges_size;i++)
     {
-      this->laserMsg.ranges[i]      = this->ranges[i];
+      double tmp_range = (this->ranges[i] >= range_max) ? 0 : this->ranges[i];
+      this->laserMsg.ranges[i]      =tmp_range;
       this->laserMsg.intensities[i] = this->intensities[i];
     }
 
-    publish("laser",this->laserMsg);
+    publish("laser",this->laserMsg); // for laser_view
+    publish("scan",this->laserMsg);  // for rosstage
   }
 
 
