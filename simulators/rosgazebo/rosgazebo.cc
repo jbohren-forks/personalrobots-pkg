@@ -328,7 +328,7 @@ GazeboNode::Update()
       this->cloudMsg.chan[0].vals[i]    = this->cloud_ch1->buffer[i];
     }
     publish("cloud",this->cloudMsg);
-    publish("shutter",this->shutterMsg);
+    //publish("shutter",this->shutterMsg);
   }
 
 
@@ -394,17 +394,28 @@ GazeboNode::Update()
   /*  pitch hokuyo                                               */
   /*                                                             */
   /***************************************************************/
+	static double dAngle = -1;
 	double simTime;
 	double simPitchAngle,simPitchRate,simPitchTimeScale,simPitchAmp,simPitchOffset;
 	simPitchTimeScale = 1.0;
 	simPitchAmp    =  M_PI / 8.0;
 	simPitchOffset = -M_PI / 8.0;
 	simPitchAngle = simPitchOffset + simPitchAmp * sin(simTime * simPitchTimeScale);
-	simPitchRate  = simPitchAmp * simPitchTimeScale * cos(simTime * simPitchTimeScale);
+	simPitchRate  =  simPitchAmp * simPitchTimeScale * cos(simTime * simPitchTimeScale); // TODO: check rate correctness
   this->myPR2->GetSimTime(&simTime);
 	//std::cout << "sim time: " << simTime << std::endl;
+	//std::cout << "ang: " << simPitchAngle*180.0/M_PI << "rate: " << simPitchRate*180.0/M_PI << std::endl;
+	this->myPR2->SetJointTorque(PR2::HEAD_LASER_PITCH , 1000.0);
+  this->myPR2->SetJointGains(PR2::HEAD_LASER_PITCH, 10.0, 0.0, 0.0);
 	this->myPR2->SetJointServoCmd(PR2::HEAD_LASER_PITCH , simPitchAngle, simPitchRate);
 
+  if (dAngle * simPitchRate < 0.0)
+  {
+    dAngle = -dAngle;
+    publish("shutter",this->shutterMsg);
+  }
+	
+  // should send shutter when changing direction, or wait for Tully to implement ring buffer in viewer
 
 
   /***************************************************************/
