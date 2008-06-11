@@ -74,16 +74,16 @@ $ tilting_laser mot:=/mot0 mot_cmd:=/mot0_cmd&
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "scan"/LaserScan : laser scan data
-- @b "mot"/Actuator : encoder data from the tilting stage
+- @b "scan"/<a href="../../std_msgs/html/classstd__msgs_1_1LaserScan.html">LaserScan</a> : laser scan data
+- @b "mot"/<a href="../../std_msgs/html/classstd__msgs_1_1Actuator.html">Actuator</a> : encoder data from the tilting stage
 
 Publishes to (name / type):
-- @b "cloud"/PointCloudFloat32 : Incremental cloud data.  Each scan from the laser is converted into a PointCloud.
-- @b "shutter"/Empty : An empty message is sent to indicate a full sweep has occured
-- @b "full_cloud"/PointCloudFloat32 : A full point cloud containing all of the points between the last two shutters
-- @b "laser_image"/LaserImage : A representation of the full point cloud as a pair of pseudo-images
-- @b "image"/Image : The intensity image from the LaserImage
-- @b "mot_cmd"/Actuator : The commanded position of the tilting stage
+- @b "cloud"/<a href="../../std_msgs/html/classstd__msgs_1_1PointCloudFloat32.html">PointCloudFloat32</a> : Incremental cloud data.  Each scan from the laser is converted into a PointCloud.
+- @b "shutter"/<a href="../../std_msgs/html/classstd__msgs_1_1Empty.html">Empty</a> : An empty message is sent to indicate a full sweep has occured
+- @b "full_cloud"/<a href="../../std_msgs/html/classstd__msgs_1_1PointCloudFloat32.html">PointCloudFloat32</a> : A full point cloud containing all of the points between the last two shutters
+- @b "laser_image"/<a href="../../std_msgs/html/classstd__msgs_1_1LaserImage.html">LaserImage</a> : A representation of the full point cloud as a pair of pseudo-images
+- @b "image"/<a href="../../std_msgs/html/classstd__msgs_1_1Image.html">Image</a> : The intensity image from the LaserImage
+- @b "mot_cmd"/<a href="../../std_msgs/html/classstd__msgs_1_1Actuator.html">Actuator</a> : The commanded position of the tilting stage
 
 <hr>
 

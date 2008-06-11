@@ -7,7 +7,7 @@ tilting stage, such as the one found in the head of PR2.
 </description>
 <author>Jeremy Leibs</author>
 <license>BSD</license>
-<url>http://pr.willowgarage.com</url>
+<url>http://pr.willowgarage.com/wiki/Point_clouds_from_scanning_URG</url>
 <depend package="roscpp"/>
 <depend package="rostime"/>
 <depend package="std_msgs"/>

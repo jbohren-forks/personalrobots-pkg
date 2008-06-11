@@ -67,7 +67,7 @@ Subscribes to (name/type):
 - None
 
 Publishes to (name / type):
-- @b "scan"/LaserScan : scan data from the laser.
+- @b "scan"/<a href="../../std_msgs/html/classstd__msgs_1_1LaserScan.html">LaserScan</a> : scan data from the laser.
 
 <hr>
 
