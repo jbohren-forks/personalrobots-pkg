@@ -298,7 +298,7 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         avmax(DTOR(80.0)),
         amin(DTOR(10.0)),
         amax(DTOR(40.0)),
-        tf(*this, true, 200000000ULL) //nanoseconds
+        tf(*this, true)
 {
   // TODO: get map via RPC
   char* mapdata;
@@ -565,13 +565,16 @@ WavefrontNode::doOneCycle()
   }
   
   // Get the current robot pose in the map frame
-  libTF::TFPose2D robotPose,global_pose;
+  libTF::TFPose2D robotPose, global_pose;
   robotPose.x = 0;
   robotPose.y = 0;
   robotPose.yaw = 0;
   robotPose.frame = FRAMEID_ROBOT;
+  robotPose.time = 0; // request most recent pose
+  /*
   robotPose.time = laserMsg.header.stamp.sec * 1000000000ULL + 
           laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
+          */
   try
   {
     global_pose = this->tf.transformPose2D(FRAMEID_MAP, robotPose);
@@ -584,7 +587,10 @@ WavefrontNode::doOneCycle()
   }
   catch(libTF::Quaternion3D::ExtrapolateException& ex)
   {
-    // no big deal.
+    // this should never happen
+    puts("WARNING: extrapolation failed!");
+    this->stopRobot();
+    return;
   }
 
   this->lock.lock();

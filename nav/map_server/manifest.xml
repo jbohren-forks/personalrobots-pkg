@@ -1,0 +1,13 @@
+<package>
+  <description brief="Static map server">
+
+    This package reads an occupancy grid map from a bitmap file and provides
+    it as a ROS service.
+
+  </description>
+  <author>Brian Gerkey</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <depend package="roscpp"/>
+  <depend package="std_srvs"/>
+</package>
