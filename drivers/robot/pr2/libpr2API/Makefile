@@ -18,7 +18,7 @@ LFLAGS = $(shell rospack export/cpp/lflags $(PKG))
 LIBP = lib/libpr2API.a
 LIBS = lib/libpr2API.so
 
-all: $(LIBP) test_libpr2API
+all: $(LIBP) test_libpr2API bin/pr2_kin_kdl
 
 pr2API.o: src/pr2API.cpp
 	$(CXX) $(CFLAGS) -c -o $@ $?
@@ -33,7 +33,10 @@ $(LIBS): pr2API.o
 test_libpr2API: src/test/test_pr2API.cpp
 	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
 
+bin/pr2_kin_kdl: src/test/pr2_kin_kdl.cpp
+	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
+
 clean:
-	rm -f test_pr2API $(LIBP) $(LIBS)
-	rm -rf *.o $(PKG) $(PKG).dSYM
+	-rm -f test_libpr2API $(LIBP) $(LIBS) bin/*
+	-rm -rf *.o $(PKG) $(PKG).dSYM
 
