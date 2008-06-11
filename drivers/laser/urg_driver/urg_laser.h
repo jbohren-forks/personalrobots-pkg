@@ -26,6 +26,7 @@
 #define URG_LASER_HH
 
 #include <stdexcept>
+#include <termios.h>
 
 //! A namespace containing all URG related things
 namespace URG {
