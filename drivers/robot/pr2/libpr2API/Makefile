@@ -20,8 +20,8 @@ LIBS = lib/libpr2API.so
 
 all: $(LIBP) test_libpr2API bin/pr2_kin_kdl
 
-pr2API.o: src/pr2API.cpp
-	$(CXX) $(CFLAGS) -c -o $@ $?
+pr2API.o: src/pr2API.cpp include/libpr2API/pr2API.h
+	$(CXX) $(CFLAGS) -c -o $@ $<
 
 $(LIBP): pr2API.o
 	ar -rv $@ $^
@@ -30,10 +30,10 @@ $(LIBP): pr2API.o
 $(LIBS): pr2API.o
 	$(CXX) -shared -o $@ $^ $(LDFLAGS)
 
-test_libpr2API: src/test/test_pr2API.cpp
+test_libpr2API: src/test/test_pr2API.cpp $(LIBP)
 	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
 
-bin/pr2_kin_kdl: src/test/pr2_kin_kdl.cpp
+bin/pr2_kin_kdl: src/test/pr2_kin_kdl.cpp $(LIBP)
 	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
 
 clean:
