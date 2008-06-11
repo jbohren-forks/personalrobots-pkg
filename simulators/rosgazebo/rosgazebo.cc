@@ -237,7 +237,7 @@ void GazeboNode::finalize(int)
 int
 GazeboNode::SubscribeModels()
 {
-  advertise<std_msgs::LaserScan>("laser");
+  //advertise<std_msgs::LaserScan>("laser");
   advertise<std_msgs::LaserScan>("scan");
   advertise<std_msgs::RobotBase2DOdom>("odom");
   advertise<std_msgs::Image>("image");
@@ -356,7 +356,7 @@ GazeboNode::Update()
     this->laserMsg.header.stamp.sec = (unsigned long)floor(simTime);
     this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  simTime - this->laserMsg.header.stamp.sec) );
 
-    publish("laser",this->laserMsg); // for laser_view FIXME: can alias this at the commandline or launch script
+    //publish("laser",this->laserMsg); // for laser_view FIXME: can alias this at the commandline or launch script
     publish("scan",this->laserMsg);  // for rosstage
   }
 
@@ -379,8 +379,8 @@ GazeboNode::Update()
   // Get position
   double x,y,th;
   this->myPR2->GetBasePositionActual(&x,&y,&th);
-  this->odomMsg.pos.x  = x;
-  this->odomMsg.pos.y  = y;
+  this->odomMsg.pos.x  = x + 256.5;
+  this->odomMsg.pos.y  = y + 256.5;
   this->odomMsg.pos.th = th;
   // this->odomMsg.stall = this->positionmodel->Stall();
 

@@ -1,6 +1,7 @@
 <launch>
 
   <ns name="wg">
+    <!--node pkg="rosgazebo" type="gazebo" args="world/robot.world" respawn="false" /-->
     <node pkg="rosgazebo" type="rosgazebo" args="" respawn="false" />
     <node pkg="amcl_player" type="amcl_player" args="map3.png 0.1" respawn="false" />
     <node pkg="wavefront_player" type="wavefront_player" args="map3.png 0.1" respawn="false" />
