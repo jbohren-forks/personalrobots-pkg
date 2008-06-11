@@ -36,14 +36,15 @@
 
 @b hokuyourg_player is a driver for the Hokuyo URG line of laser range-finders.
 
-This node uses part of the the Player @b urglaser driver.  For detailed documentation,
-consult <a href="http://playerstage.sourceforge.net/doc/Player-cvs/player/group__driver__urglaser.html">Player urglaser documentation</a>.
-Note that this node does not actually wrap the @b
-urglaser driver, but rather calls into the underlying library, @b
-liburglaser_standalone.
-
-This node should be capable to controlling any of Hokuyo's URG laser.
+This node should be capable of controlling any of Hokuyo's URG laser range-finders.
 However, to date is has only been tested on the TOP-URG.
+
+<hr>
+
+@section information Information
+
+Hokuyo URG devices take scans in a counter-clockwise direction.  Angles are measured
+counter clockwise with 0 pointing directly forward.
 
 <hr>
 
@@ -72,9 +73,13 @@ Publishes to (name / type):
 
 @section parameters ROS parameters
 
-- None
+Reads the following parameters from the parameter server
 
-@todo Expose the various urglaser parameters via ROS.
+- @b "urglaser/min_ang" : @b [double] the angle of the first range measurement in degrees (Default: -90.0)
+- @b "urglaser/max_ang" : @b [double] the angle of the last range measurement in degrees (Default: 90.0)
+- @b "urglaser/cluster" : @b [int]    the number of adjascent range measurements to cluster into a single reading (Default: 1)
+- @b "urglaser/skip"    : @b [int]    the number of scans to skip between each measured scan (Default: 1)
+- @b "urglaser/port"    : @b [string] the port where the hokuyo device can be found (Default: "/dev/ttyACM0")
 
  **/
 
