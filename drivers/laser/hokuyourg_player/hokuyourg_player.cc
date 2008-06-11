@@ -94,8 +94,8 @@ using namespace std;
 class HokuyoNode: public ros::node
 {
 private:
-  urg_laser_scan_t* scan;
-  urg_laser_config_t cfg;
+  URG::laser_scan_t* scan;
+  URG::laser_config_t cfg;
   bool running;
   unsigned int scanid;
   
@@ -103,7 +103,7 @@ private:
   ros::Time next_time;
   
 public:
-  urg_laser urg;
+  URG::laser urg;
   std_msgs::LaserScan scan_msg;
   double min_ang;
   double max_ang;
@@ -128,7 +128,7 @@ public:
 
       param("urglaser/port", port, string("/dev/ttyACM0"));
        
-      scan = new urg_laser_scan_t;
+      scan = new URG::laser_scan_t;
       assert(scan);
       running = false;
       scanid = 0;
@@ -143,27 +143,27 @@ public:
     int start()
     {
       stop();
-      if((urg.open(port.c_str()) < 0))
+
+      try
       {
-        puts("error connecting to laser");
-        return(-1);
-      }
-      running = true;
+        urg.open(port.c_str());
 
-      printf("Connected to URG with ID: %d\n", urg.get_ID());
+        running = true;
 
-      urg.urg_cmd("BM");
+        printf("Connected to URG with ID: %d\n", urg.get_ID());
 
-      int status = urg.calc_latency(true, min_ang, max_ang, cluster, skip);
-      if (status != 0) {
-        printf("Failed to calculate latency.\n");
-        return -1;
-      }
+        urg.laser_on();
+        urg.calc_latency(true, min_ang, max_ang, cluster, skip);
+        
+        int status = urg.request_scans(true, min_ang, max_ang, cluster, skip);
 
-      status = urg.request_scans(true, min_ang, max_ang, cluster, skip);
+        if (status != 0) {
+          printf("Failed to request scans from URG.  Status: %d.\n", status);
+          return -1;
+        }
 
-      if (status != 0) {
-        printf("Failed to request scans %d.\n", status);
+      } catch (URG::exception& e) {
+        printf("Exception thrown while starting urg.\n%s\n", e.what());
         return -1;
       }
 
@@ -176,7 +176,12 @@ public:
     {
       if(running)
       {
-        urg.close();
+        try
+        {
+          urg.close();
+        } catch (URG::exception& e) {
+          printf("%s\n",e.what());
+        }
         running = false;
       }
       return(0);
@@ -184,13 +189,18 @@ public:
 
     int publish_scan()
     {
-
-
-      //      int status = urg.poll_scan(scan, -M_PI/2.0, M_PI/2.0);
-      int status = urg.service_scan(scan);
-      if(status != 0)
+      
+      try
       {
-        printf("error getting scan: %d\n", status);
+        int status = urg.service_scan(scan);
+        
+        if(status != 0)
+        {
+          printf("error getting scan: %d\n", status);
+          return 0;
+        }
+      } catch (URG::exception& e) {
+        printf("Exception thrown while trying to get scan.\n%s\n", e.what());
         return -1;
       }
 
@@ -212,12 +222,13 @@ public:
       scan_msg.set_ranges_size(scan->num_readings);
       scan_msg.set_intensities_size(scan->num_readings);
       scan_msg.header.stamp = ros::Time(scan->system_time_stamp);
-
+      
       for(int i = 0; i < scan->num_readings; ++i)
       {
         scan_msg.ranges[i]  = scan->ranges[i];
         scan_msg.intensities[i] = scan->intensities[i];
       }
+
       publish("scan", scan_msg);
       return(0);
     }
@@ -235,7 +246,7 @@ main(int argc, char** argv)
   {
     do {
       usleep(1000000);
-    } while(hn.start() != 0);
+    } while(hn.ok() && hn.start() != 0);
 
     while(hn.ok()) {
       if(hn.publish_scan() < 0)
