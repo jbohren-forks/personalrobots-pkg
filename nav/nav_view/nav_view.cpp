@@ -130,7 +130,7 @@ public:
   rosTFClient tf;
   ros::time::clock myClock;
 
-  NavView() : ros::node("nav_view",false),
+  NavView() : ros::node("nav_view",ros::node::DONT_HANDLE_SIGINT),
 	      view_scale(10), view_x(0), view_y(0),
 	      tf(*this,false)
   {
