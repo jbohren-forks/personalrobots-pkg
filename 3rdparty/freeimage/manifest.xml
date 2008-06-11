@@ -1,0 +1,16 @@
+<package>
+<description brief="The Open Source Image Manipulator">
+
+FreeImage is an Open Source library project for developers who would like to support popular graphics image formats like PNG, BMP, JPEG, TIFF and others as needed by today's multimedia applications. FreeImage is easy to use, fast, multithreading safe, compatible with all 32-bit versions of Windows, and cross-platform (works both with Linux and Mac OS X).
+
+
+
+</description>
+<author>Hervé Drolon , Floris van den Berg</author>
+<license>GPL</license>
+<url>http://freeimage.sourceforge.net</url>
+<export>
+  <cpp cflags="-I${prefix}/FreeImage/include -I${prefix}/FreeImage/include/FreeImage" lflags="-L${prefix}/FreeImage/lib -Xlinker -rpath -Xlinker ${prefix}/FreeImage/lib -lFreeImage"/>
+</export>
+</package>
+
