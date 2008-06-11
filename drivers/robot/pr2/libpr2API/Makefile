@@ -28,9 +28,9 @@ $(LIBP): pr2API.o
 
 #src/pr2API.cpp
 $(LIBS): pr2API.o
-	$(CXX) $(CDFLAGS) -shared -o $@ $^ $(LDFLAGS)
+	$(CXX) -shared -o $@ $^ $(LDFLAGS)
 
-test_libpr2API: src/test/test_pr2API.cpp pr2API.o
+test_libpr2API: src/test/test_pr2API.cpp
 	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
 
 clean:
