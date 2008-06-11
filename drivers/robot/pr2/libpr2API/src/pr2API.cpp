@@ -591,6 +591,29 @@ PR2_ERROR_CODE PR2Robot::IsEnabledModel(PR2_MODEL_ID id, int *enabled)
    return PR2_ALL_OK;
 };
 
+PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, KDL::Frame f)
+{
+	KDL::JntArray q_init = KDL::JntArray(this->pr2_kin.nJnts);
+	q_init(0) = 0.1, q_init(1) = 0.0, q_init(2) = 0.0, q_init(3) = 0.0;
+	q_init(4) = 0.0, q_init(5) = 0.0, q_init(6) = 0.0;
+	KDL::JntArray q_out = KDL::JntArray(this->pr2_kin.nJnts);
+	if (this->pr2_kin.IK(q_init, f, q_out) == true)
+		cout<<"IK result:"<<q_out<<endl;
+	else
+		cout<<"Could not compute Inv Kin."<<endl;
+
+	//------ checking that IK returned a valid soln -----
+	KDL::Frame f_ik;
+	if (this->pr2_kin.FK(q_out,f_ik))
+		cout<<"End effector after IK:"<<f_ik<<endl;
+	else
+		cout<<"Could not compute Fwd Kin. (After IK)"<<endl;
+
+	for(int ii = 0; ii < 7; ii++)
+		this->SetJointServoCmd((PR2::PR2_JOINT_ID) (JointStart[id]+ii),q_out(ii),0);
+}
+
+
 PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, NEWMAT::Matrix g)
 {
    NEWMAT::Matrix theta(8,8);
