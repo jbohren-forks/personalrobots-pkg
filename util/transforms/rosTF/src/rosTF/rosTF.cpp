@@ -46,8 +46,8 @@ rosTFClient::rosTFClient(ros::node & rosnode,
 
 };
 
-//MsgPointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target_frame, const MsgPointCloudFloat32 & cloudIn) //todo add back const when get_pts_size() is const ticket:232
-MsgPointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target_frame,  MsgPointCloudFloat32 & cloudIn)
+//PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target_frame, const std_msgs::PointCloudFloat32 & cloudIn) //todo add back const when get_pts_size() is const ticket:232
+std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target_frame,  std_msgs::PointCloudFloat32 & cloudIn)
 {
   NEWMAT::Matrix transform = getMatrix(target_frame, cloudIn.header.frame_id, cloudIn.header.stamp.sec * 1000000000ULL + cloudIn.header.stamp.nsec);
 
@@ -65,7 +65,7 @@ MsgPointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target_frame,
 
   NEWMAT::Matrix matOut = transform * matIn;
 
-  MsgPointCloudFloat32 cloudOut = cloudIn; //Get everything from cloudIn
+  std_msgs::PointCloudFloat32 cloudOut = cloudIn; //Get everything from cloudIn
 
   //Override the positions
   cloudOut.header.frame_id = target_frame;
@@ -103,16 +103,16 @@ void rosTFClient::receiveQuaternion()
 rosTFServer::rosTFServer(ros::node & rosnode):
   myNode(rosnode)
 {
-  myNode.advertise<MsgTransformEuler>("TransformEuler");
-  myNode.advertise<MsgTransformDH>("TransformDH");
-  myNode.advertise<MsgTransformQuaternion>("TransformQuaternion");
+  myNode.advertise<std_msgs::TransformEuler>("TransformEuler");
+  myNode.advertise<std_msgs::TransformDH>("TransformDH");
+  myNode.advertise<std_msgs::TransformQuaternion>("TransformQuaternion");
 
 };
 
 
 void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs)
 {
-  MsgTransformEuler eulerOut;
+  std_msgs::TransformEuler eulerOut;
   eulerOut.frame = frame;
   eulerOut.parent = parent;
   eulerOut.x = x;
@@ -123,7 +123,6 @@ void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, d
   eulerOut.roll = roll;
   eulerOut.header.stamp.sec = secs;
   eulerOut.header.stamp.nsec = nsecs;
-  eulerOut.__timestamp_override = true;
 
   myNode.publish("TransformEuler", eulerOut);
 
@@ -131,7 +130,7 @@ void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, d
 
 void rosTFServer::sendInverseEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs)
 { 
-  MsgTransformEuler eulerOut;
+  std_msgs::TransformEuler eulerOut;
   //Invert the transform
   libTF::Euler3D odomeuler = libTF::Pose3D::eulerFromMatrix(libTF::Pose3D::matrixFromEuler(x, y, z, yaw, pitch, roll).i());
   
@@ -145,7 +144,6 @@ void rosTFServer::sendInverseEuler(unsigned int frame, unsigned int parent, doub
   eulerOut.roll = odomeuler.roll;
   eulerOut.header.stamp.sec = secs;
   eulerOut.header.stamp.nsec = nsecs;
-  eulerOut.__timestamp_override = true;
 
   myNode.publish("TransformEuler", eulerOut);
  
@@ -169,7 +167,7 @@ void rosTFServer::sendInversePose(libTF::TFPose pose, unsigned int parent)
 
 void rosTFServer::sendDH(unsigned int frame, unsigned int parent, double length, double twist, double offset, double angle, unsigned int secs, unsigned int nsecs)
 {
-  MsgTransformDH dhOut;
+  std_msgs::TransformDH dhOut;
 
   dhOut.frame = frame;
   dhOut.parent = parent;
@@ -179,7 +177,6 @@ void rosTFServer::sendDH(unsigned int frame, unsigned int parent, double length,
   dhOut.angle = angle;
   dhOut.header.stamp.sec = secs;
   dhOut.header.stamp.nsec = nsecs;
-  dhOut.__timestamp_override = true;
 
   myNode.publish("TransformDH", dhOut);
 
@@ -187,7 +184,7 @@ void rosTFServer::sendDH(unsigned int frame, unsigned int parent, double length,
 
 void rosTFServer::sendQuaternion(unsigned int frame, unsigned int parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, unsigned int secs, unsigned int nsecs)
 {
-  MsgTransformQuaternion quaternionOut;
+  std_msgs::TransformQuaternion quaternionOut;
   quaternionOut.frame = frame;
   quaternionOut.parent = parent;
   quaternionOut.xt = xt;
@@ -199,7 +196,6 @@ void rosTFServer::sendQuaternion(unsigned int frame, unsigned int parent, double
   quaternionOut.w = w;
   quaternionOut.header.stamp.sec = secs;
   quaternionOut.header.stamp.nsec = nsecs;
-  quaternionOut.__timestamp_override = true;
 
   myNode.publish("TransformQuaternion", quaternionOut);
 

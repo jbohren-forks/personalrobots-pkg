@@ -40,11 +40,11 @@
 
 #include <iostream>
 #include "ros/node.h"
-#include "std_msgs/MsgTransformEuler.h"
-#include "std_msgs/MsgTransformDH.h"
-#include "std_msgs/MsgTransformQuaternion.h"
+#include "std_msgs/TransformEuler.h"
+#include "std_msgs/TransformDH.h"
+#include "std_msgs/TransformQuaternion.h"
 #include "libTF/libTF.h"
-#include "std_msgs/MsgPointCloudFloat32.h"
+#include "std_msgs/PointCloudFloat32.h"
 
 
 //TODO FIXME REMOVE WHEN FRAME ID SERVER IS IMPLEMENTED
@@ -64,8 +64,8 @@ class rosTFClient : public libTF::TransformReference
   //Constructor
   rosTFClient(ros::node & rosnode, bool caching = true, unsigned long long max_extrapolation_distance = libTF::TransformReference::DEFAULT_MAX_EXTRAPOLATION_DISTANCE);
 
-  //  MsgPointCloudFloat32 transformPointCloud(unsigned int target_frame, const MsgPointCloudFloat32 & cloudIn); // todo switch after ticket:232
-  MsgPointCloudFloat32 transformPointCloud(unsigned int target_frame, MsgPointCloudFloat32 & cloudIn);
+  //  PointCloudFloat32 transformPointCloud(unsigned int target_frame, const PointCloudFloat32 & cloudIn); // todo switch after ticket:232
+  std_msgs::PointCloudFloat32 transformPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudIn);
 
   //Call back functions
   void receiveEuler();
@@ -76,9 +76,9 @@ class rosTFClient : public libTF::TransformReference
   // A reference to the active ros::node to allow setting callbacks
   ros::node & myNode; 
   //Temporary storage for callbacks(todo check threadsafe? make scoped in call?)
-  MsgTransformEuler eulerIn;
-  MsgTransformDH dhIn;
-  MsgTransformQuaternion quaternionIn;
+  std_msgs::TransformEuler eulerIn;
+  std_msgs::TransformDH dhIn;
+  std_msgs::TransformQuaternion quaternionIn;
 
   pthread_mutex_t cb_mutex;
 
