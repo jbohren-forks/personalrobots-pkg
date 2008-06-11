@@ -30,20 +30,20 @@
 // roscpp
 #include <ros/node.h>
 // roscpp - laser
-#include <std_msgs/MsgLaserScan.h>
+#include <std_msgs/LaserScan.h>
 // roscpp - laser image (point cloud)
-#include <std_msgs/MsgPointCloudFloat32.h>
-#include <std_msgs/MsgPoint3DFloat32.h>
-#include <std_msgs/MsgChannelFloat32.h>
+#include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/Point3DFloat32.h>
+#include <std_msgs/ChannelFloat32.h>
 // roscpp - used for shutter message right now
-#include <std_msgs/MsgEmpty.h>
+#include <std_msgs/Empty.h>
 // roscpp - base
-#include <std_msgs/MsgRobotBase2DOdom.h>
-#include <std_msgs/MsgBaseVel.h>
+#include <std_msgs/RobotBase2DOdom.h>
+#include <std_msgs/BaseVel.h>
 // roscpp - arm
-#include <std_msgs/MsgPR2Arm.h>
+#include <std_msgs/PR2Arm.h>
 // roscpp - camera
-#include <std_msgs/MsgImage.h>
+#include <std_msgs/Image.h>
 
 // for frame transforms
 #include <rosTF/rosTF.h>
@@ -58,11 +58,11 @@ class GazeboNode : public ros::node
 {
   private:
     // Messages that we'll send or receive
-    MsgBaseVel velMsg;
-    MsgLaserScan laserMsg;
-    MsgPointCloudFloat32 cloudMsg;
-    MsgEmpty shutterMsg;  // marks end of a cloud message
-    MsgRobotBase2DOdom odomMsg;
+    std_msgs::BaseVel velMsg;
+    std_msgs::LaserScan laserMsg;
+    std_msgs::PointCloudFloat32 cloudMsg;
+    std_msgs::Empty shutterMsg;  // marks end of a cloud message
+    std_msgs::RobotBase2DOdom odomMsg;
 
     // A mutex to lock access to fields that are used in message callbacks
     ros::thread::mutex lock;
@@ -83,10 +83,10 @@ class GazeboNode : public ros::node
     // has not yet arrived.
     void Update();
 
-    // Message callback for a MsgBaseVel message, which set velocities.
+    // Message callback for a std_msgs::BaseVel message, which set velocities.
     void cmdvelReceived();
 
-    // Message callback for a MsgPR2Arm message, which sets arm configuration.
+    // Message callback for a std_msgs::PR2Arm message, which sets arm configuration.
     void cmd_leftarmconfigReceived();
     void cmd_rightarmconfigReceived();
 
@@ -95,18 +95,18 @@ class GazeboNode : public ros::node
     uint8_t  intensities[GZ_LASER_MAX_RANGES];
 
     // camera data
-    MsgImage img;
+    std_msgs::Image img;
     
     // camera data
-    MsgPR2Arm leftarm;
-    MsgPR2Arm rightarm;
+    std_msgs::PR2Arm leftarm;
+    std_msgs::PR2Arm rightarm;
 
 
     // The main simulator object
     PR2::PR2Robot* myPR2;
 
     // for the point cloud data
-    ringBuffer<MsgPoint3DFloat32> *cloud_pts;
+    ringBuffer<std_msgs::Point3DFloat32> *cloud_pts;
     ringBuffer<float>             *cloud_ch1;
 
     static void finalize(int);
@@ -209,6 +209,8 @@ GazeboNode::GazeboNode(int argc, char** argv, const char* fname) :
   this->myPR2->SetBaseControlMode(PR2::PR2_CARTESIAN_CONTROL);
 
   // Initialize ring buffer for point cloud data
+  this->cloud_pts = new ringBuffer<std_msgs::Point3DFloat32>();
+  this->cloud_ch1 = new ringBuffer<float>();
   this->cloud_pts->allocate(MAX_CLOUD_PTS);
   this->cloud_ch1->allocate(MAX_CLOUD_PTS);
 
@@ -235,12 +237,12 @@ void GazeboNode::finalize(int)
 int
 GazeboNode::SubscribeModels()
 {
-  advertise<MsgLaserScan>("laser");
-  advertise<MsgLaserScan>("scan");
-  advertise<MsgRobotBase2DOdom>("odom");
-  advertise<MsgImage>("image");
-  advertise<MsgPointCloudFloat32>("cloud");
-  advertise<MsgEmpty>("shutter");
+  advertise<std_msgs::LaserScan>("laser");
+  advertise<std_msgs::LaserScan>("scan");
+  advertise<std_msgs::RobotBase2DOdom>("odom");
+  advertise<std_msgs::Image>("image");
+  advertise<std_msgs::PointCloudFloat32>("cloud");
+  advertise<std_msgs::Empty>("shutter");
   subscribe("cmd_vel", velMsg, &GazeboNode::cmdvelReceived);
   subscribe("cmd_leftarmconfig", leftarm, &GazeboNode::cmd_leftarmconfigReceived);
   subscribe("cmd_rightarmconfig", rightarm, &GazeboNode::cmd_rightarmconfigReceived);
@@ -264,7 +266,7 @@ GazeboNode::Update()
   uint32_t ranges_alloc_size;
   uint32_t intensities_size;
   uint32_t intensities_alloc_size;
-  MsgPoint3DFloat32 tmp_cloud_pt;
+  std_msgs::Point3DFloat32 tmp_cloud_pt;
 	double simTime;
 
   /***************************************************************/
@@ -293,7 +295,7 @@ GazeboNode::Update()
       tmp_cloud_pt.x                = tmp_range * cos(laser_yaw) * cos(laser_pitch);
       tmp_cloud_pt.y                = tmp_range * sin(laser_yaw) ; //* cos(laser_pitch);
       tmp_cloud_pt.z                = tmp_range * cos(laser_yaw) * sin(laser_pitch);
-      this->cloud_pts->add((MsgPoint3DFloat32)tmp_cloud_pt);
+      this->cloud_pts->add((std_msgs::Point3DFloat32)tmp_cloud_pt);
 
       this->cloud_ch1->add(this->intensities[i]);
     }
@@ -356,7 +358,6 @@ GazeboNode::Update()
     this->laserMsg.header.stamp.nsec = 
       (unsigned long)floor(  1e9 * (  simTime
                                     - this->odomMsg.header.stamp.sec) );
-    this->laserMsg.__timestamp_override = true;
 
     publish("laser",this->laserMsg); // for laser_view FIXME: can alias this at the commandline or launch script
     publish("scan",this->laserMsg);  // for rosstage
@@ -394,7 +395,6 @@ GazeboNode::Update()
   this->odomMsg.header.stamp.nsec =
       (unsigned long)floor(  1e9 * (  simTime
                                     - this->odomMsg.header.stamp.sec) );
-  this->odomMsg.__timestamp_override = true;
 
   publish("odom",this->odomMsg);
 
