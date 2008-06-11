@@ -9,6 +9,6 @@ Using KDL for fwd and inverse kinematics for the PR2.
 <url>http://pr.willowgarage.com</url>
 <depend package="pr2Core"/>
 <export>
-<cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lorocos-kdl"/>
+<cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lorocos-kdl -lPr2KDL"/>
 </export>
 </package>
