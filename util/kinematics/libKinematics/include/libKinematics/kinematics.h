@@ -101,6 +101,17 @@ namespace kinematics
    NEWMAT::Matrix Translate(double p[]);
 
    /*! \fn
+   \brief Generate the homogeneous transformation matrix corresponding to a translation and roll, pitch and yaw euler angles
+   \param p - translation vector (3 x 1)
+   \param roll - roll angle
+   \param pitch - pitch angle
+   \param yaw - yaw angle
+   \return Output homogeneous transformation matrix corresponding to a translation and roll, pitch and yaw euler angles
+   */   
+   NEWMAT::Matrix Transform(double p[],double roll, double pitch, double yaw);
+
+
+   /*! \fn
    \brief Get the position/translation part of a homogeneous transformation matrix 
    \param p - homogeneous transformation matrix
    \return Output position vector

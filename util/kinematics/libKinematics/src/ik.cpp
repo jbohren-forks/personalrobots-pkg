@@ -12,13 +12,13 @@ using namespace std;
 PR2Arm::PR2Arm()
 {
 /* Link lengths */
-   double p1[3] = {0,0,0}; 
-   double p2[3] = {p1[0]+ARM_PAN_SHOULDER_PITCH_OFFSET.x,0,0};
-   double p3[3] = {p2[0]+ARM_SHOULDER_PITCH_ROLL_OFFSET.x,0,0};
-   double p4[3] = {p3[0]+ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.x,0,0};
-   double p5[3] = {p4[0]+ELBOW_PITCH_ELBOW_ROLL_OFFSET.x,0,0};
-   double p6[3] = {p5[0]+ELBOW_ROLL_WRIST_PITCH_OFFSET.x,0,0};
-   double p7[3] = {p6[0]+WRIST_PITCH_WRIST_ROLL_OFFSET.x,0,0};
+   double p1[3] = {0,0,0};
+   double p2[3] = {p1[0]+ARM_PAN_SHOULDER_PITCH_OFFSET.x,p1[1],p1[2]};
+   double p3[3] = {p2[0]+ARM_SHOULDER_PITCH_ROLL_OFFSET.x,p2[1],p2[2]};
+   double p4[3] = {p3[0]+ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.x,p3[1],p3[2]};
+   double p5[3] = {p4[0]+ELBOW_PITCH_ELBOW_ROLL_OFFSET.x,p4[1],p4[2]};
+   double p6[3] = {p5[0]+ELBOW_ROLL_WRIST_PITCH_OFFSET.x,p5[1],p5[2]};
+   double p7[3] = {p6[0]+WRIST_PITCH_WRIST_ROLL_OFFSET.x,p6[1],p6[2]};
 
    double wristDummy[3] = {0,0,0};
 
@@ -47,7 +47,6 @@ PR2Arm::PR2Arm()
    this->SetHomePosition(g0);
 
 }
-
 
 NEWMAT::Matrix PR2Arm::ComputeIK(NEWMAT::Matrix g, double theta1)
 {

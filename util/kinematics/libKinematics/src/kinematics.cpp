@@ -143,6 +143,32 @@ NEWMAT::Matrix kinematics::Translate(double p[])
    return tM;
 };
 
+
+NEWMAT::Matrix kinematics::Transform(double p[], double roll, double pitch, double yaw)
+{
+   NEWMAT::Matrix tM(4,4);
+   NEWMAT::IdentityMatrix I(4);
+   NEWMAT::Matrix xo(3,1),yo(3,1),zo(3,1);
+
+   tM = I;
+   xo = 0;
+   yo = 0;
+   zo = 0;
+
+   xo(1,1) = 1;
+   yo(2,1) = 1;
+   zo(3,1) = 1;
+
+   tM.SubMatrix(1,3,1,3) = ExpRot(zo,yaw)*ExpRot(yo,pitch)*ExpRot(xo,roll);
+
+   tM(1,4) = p[0];
+   tM(2,4) = p[1];
+   tM(3,4) = p[2];
+
+   return tM;
+};
+
+
 NEWMAT::Matrix kinematics::TwistVectorToMatrix(const NEWMAT::Matrix& xi)
 {
    NEWMAT::Matrix xiHat(4,4);
@@ -516,7 +542,7 @@ void kinematics::SubProblem2(NEWMAT::Matrix pin, NEWMAT::Matrix qin, NEWMAT::Mat
 
    NEWMAT::Matrix alpha,beta,gamma_numerator,gamma_denominator;
 
-   double gamma,th11,th12,th21,th22;
+   double gamma;
 
    p = pin.SubMatrix(1,3,1,1);
    q = qin.SubMatrix(1,3,1,1);

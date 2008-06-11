@@ -213,7 +213,7 @@ namespace PR2
    const point3 ELBOW_ROLL_WRIST_PITCH_OFFSET        = {0.2237  ,0        ,0     };
    const point3 WRIST_PITCH_WRIST_ROLL_OFFSET        = {0       ,0        ,0     };
    const point3 WRIST_ROLL_GRIPPER_OFFSET            = {0       ,0        ,0     };
-   const point3 SPINE_RIGHT_ARM_OFFSET               = {0.0     ,  0.15   , 0.68 };
-   const point3 SPINE_LEFT_ARM_OFFSET                = {0.0     , -0.15   , 0.68 };
+   const point3 SPINE_RIGHT_ARM_OFFSET               = {0.0     ,  -0.15   , 0.68 };
+   const point3 SPINE_LEFT_ARM_OFFSET                = {0.0     , 0.15   , 0.68 };
 }
 #endif

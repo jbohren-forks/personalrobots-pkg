@@ -20,8 +20,8 @@
  */
 /*
  * Desc: Actuator array controller for a Pr2 robot.
- * Author: Nathan Koenig
- * Date: 19 Sep 2007
+ * Author: Sachin Chitta and John Hsu
+ * Date: 1 June 2008
  * SVN info: $Id$
  */
 

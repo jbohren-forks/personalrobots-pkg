@@ -1,7 +1,7 @@
 PKG  = libpr2API
 CXX = g++
 
-CFLAGS = -ggdb -g -Wall $(shell rospack export/cpp/cflags $(PKG))
+CFLAGS = -g -Wall $(shell rospack export/cpp/cflags $(PKG))
 
 CDFLAGS = $(shell rospack export/cpp/cflags gazebo) \
           $(shell rospack export/cpp/cflags pr2Core) \
@@ -30,7 +30,7 @@ $(LIBP): pr2API.o
 $(LIBS): pr2API.o
 	$(CXX) $(CDFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
-test_libpr2API: src/test/test_pr2API.cpp
+test_libpr2API: src/test/test_pr2API.cpp pr2API.o
 	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
 
 clean:

@@ -593,8 +593,17 @@
       <interface:pr2gripper name="pr2_gripper_right_iface"/>
     </controller:pr2_gripper>
 
-  </model:physical>
+    <controller:P3D name="p3d_right_wrist_controller" plugin="libP3D.so">
+        <bodyName>palm_right</bodyName>
+      <interface:position name="p3d_right_wrist_position"/>
+    </controller:P3D>
 
+    <controller:P3D name="p3d_left_wrist_controller" plugin="libP3D.so">
+        <bodyName>palm_left</bodyName>
+      <interface:position name="p3d_left_wrist_position"/>
+    </controller:P3D>
+
+  </model:physical>
 
 
   <!-- White Directional light -->
@@ -608,7 +617,5 @@
     </light>
   </model:renderable>
   
-
-
 
 </gazebo:world>

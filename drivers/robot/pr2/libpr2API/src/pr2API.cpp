@@ -1,8 +1,8 @@
-#include <gazebo/gazebo.h>
-#include <gazebo/GazeboError.hh>
-
 #include <libpr2API/pr2API.h>
 #include <math.h>
+
+#include <gazebo/gazebo.h>
+#include <gazebo/GazeboError.hh>
 
 using namespace gazebo;
 using namespace PR2;
@@ -20,6 +20,9 @@ static gazebo::CameraIface      *pr2CameraIface;
 static gazebo::CameraIface      *pr2CameraGlobalIface;
 static gazebo::CameraIface      *pr2CameraHeadLeftIface;
 static gazebo::CameraIface      *pr2CameraHeadRightIface;
+
+static gazebo::PositionIface      *pr2LeftWristIface;
+static gazebo::PositionIface      *pr2RightWristIface;
 
 
 point Rot2D(point p,double theta)
@@ -108,6 +111,9 @@ PR2_ERROR_CODE PR2Robot::InitializeRobot()
    pr2CameraGlobalIface    = new gazebo::CameraIface();
    pr2CameraHeadLeftIface  = new gazebo::CameraIface();
    pr2CameraHeadRightIface = new gazebo::CameraIface();
+
+   pr2LeftWristIface       = new gazebo::PositionIface();
+   pr2RightWristIface       = new gazebo::PositionIface();
 
   int serverId = 0;
 
@@ -246,8 +252,29 @@ PR2_ERROR_CODE PR2Robot::InitializeRobot()
     //return  PR2_ERROR;
   }
 
+  try
+  {
+    pr2LeftWristIface->Open(client, "p3d_left_wrist_position");
+  }
+  catch (std::string e)
+  {
+    std::cout << "Gazebo error: Unable to connect to the left wrist interface\n"
+    << e << "\n";
+    pr2LeftWristIface = NULL;
+  }
 
-   return PR2_ALL_OK;
+  try
+  {
+    pr2RightWristIface->Open(client, "p3d_right_wrist_position");
+  }
+  catch (std::string e)
+  {
+    std::cout << "Gazebo error: Unable to connect to the right wrist interface\n"
+    << e << "\n";
+    pr2RightWristIface = NULL;
+  }
+
+  return PR2_ALL_OK;
 }
 
 PR2_ERROR_CODE PR2Robot::CalibrateRobot()
@@ -340,8 +367,7 @@ PR2_ERROR_CODE PR2Robot::IsEnabledJoint(PR2_JOINT_ID id, int *enabled)
      pr2Iface->Unlock();
    }
    return PR2_ALL_OK;
-}
-
+};
 
 PR2_ERROR_CODE PR2Robot::EnableModel(PR2_MODEL_ID id)
 {
@@ -584,6 +610,7 @@ PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, NEWMAT::Matrix
       g(2,4) = g(2,4) - SPINE_LEFT_ARM_OFFSET.y;
       g(3,4) = g(3,4) - SPINE_LEFT_ARM_OFFSET.z;
    }
+
    theta = 0;
    theta = myArm.ComputeIK(g,0.1);
    for(int jj = 1; jj <= 8; jj++)
@@ -594,6 +621,7 @@ PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, NEWMAT::Matrix
          break;
       }
    }
+   validSolution = 1;
    if(validSolution <= 8)
    {
       for(int ii = 0; ii < 7; ii++)
@@ -605,6 +633,54 @@ PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, NEWMAT::Matrix
    }
    return PR2_ALL_OK;
 };
+
+NEWMAT::Matrix PR2Robot::ComputeArmInverseKinematics(PR2_MODEL_ID id, NEWMAT::Matrix g)
+{
+   NEWMAT::Matrix theta(8,8);
+   double angles[7], speeds[7];
+   int validSolution;
+
+   if (id == PR2_RIGHT_ARM)
+   {
+      g(1,4) = g(1,4) - SPINE_RIGHT_ARM_OFFSET.x;
+      g(2,4) = g(2,4) - SPINE_RIGHT_ARM_OFFSET.y;
+      g(3,4) = g(3,4) - SPINE_RIGHT_ARM_OFFSET.z;
+   }
+
+   if (id == PR2_LEFT_ARM)
+   {
+      g(1,4) = g(1,4) - SPINE_LEFT_ARM_OFFSET.x;
+      g(2,4) = g(2,4) - SPINE_LEFT_ARM_OFFSET.y;
+      g(3,4) = g(3,4) - SPINE_LEFT_ARM_OFFSET.z;
+   }
+
+   theta = 0;
+   theta = myArm.ComputeIK(g,0.1);
+   return theta;
+};
+
+
+
+NEWMAT::Matrix PR2Robot::ComputeArmForwardKinematics(PR2_MODEL_ID id, double angles[])
+{
+   NEWMAT::Matrix g = myArm.ComputeFK(angles);
+
+   if (id == PR2_RIGHT_ARM)
+   {
+      g(1,4) = g(1,4) + SPINE_RIGHT_ARM_OFFSET.x;
+      g(2,4) = g(2,4) + SPINE_RIGHT_ARM_OFFSET.y;
+      g(3,4) = g(3,4) + SPINE_RIGHT_ARM_OFFSET.z;
+   }
+
+   if (id == PR2_LEFT_ARM)
+   {
+      g(1,4) = g(1,4) + SPINE_LEFT_ARM_OFFSET.x;
+      g(2,4) = g(2,4) + SPINE_LEFT_ARM_OFFSET.y;
+      g(3,4) = g(3,4) + SPINE_LEFT_ARM_OFFSET.z;
+   }
+   return g;
+};
+
 
 PR2_ERROR_CODE PR2Robot::SetBaseControlMode(PR2_CONTROL_MODE mode)
 {
@@ -851,7 +927,7 @@ PR2_ERROR_CODE PR2Robot::GetJointPositionActual(PR2_JOINT_ID id, double *jointPo
 PR2_ERROR_CODE PR2Robot::SetArmJointPosition(PR2_MODEL_ID id, double jointPosition[], double jointSpeed[])
 {
 
-   if (id != PR2_RIGHT_ARM || id != PR2_LEFT_ARM)
+   if (id != PR2_RIGHT_ARM && id != PR2_LEFT_ARM)
       return PR2_ERROR;
 
    pr2Iface->Lock(1);
@@ -867,7 +943,7 @@ PR2_ERROR_CODE PR2Robot::SetArmJointPosition(PR2_MODEL_ID id, double jointPositi
 PR2_ERROR_CODE PR2Robot::GetArmJointPositionCmd(PR2_MODEL_ID id, double jointPosition[], double jointSpeed[])
 {
 
-   if (id != PR2_RIGHT_ARM || id != PR2_LEFT_ARM)
+   if (id != PR2_RIGHT_ARM && id != PR2_LEFT_ARM)
       return PR2_ERROR;
 
    pr2Iface->Lock(1);
@@ -883,14 +959,18 @@ PR2_ERROR_CODE PR2Robot::GetArmJointPositionCmd(PR2_MODEL_ID id, double jointPos
 PR2_ERROR_CODE PR2Robot::GetArmJointPositionActual(PR2_MODEL_ID id, double jointPosition[], double jointSpeed[])
 {
 
-   if (id != PR2_RIGHT_ARM || id != PR2_LEFT_ARM)
+   cout << "Entering joint positions " << endl << endl; 
+
+   if (id != PR2_RIGHT_ARM && id != PR2_LEFT_ARM)
       return PR2_ERROR;
 
+   cout << "Getting joint positions " << endl << endl; 
    pr2Iface->Lock(1);
    for(int ii = JointStart[id]; ii <= JointEnd[id]; ii++)
    {
       jointPosition[ii-JointStart[id]] = pr2Iface->data->actuators[ii].actualPosition;
       jointSpeed[ii-JointStart[id]] = pr2Iface->data->actuators[ii].actualSpeed;
+      cout << "ii" << (ii-JointStart[id]) << endl;
    }
    pr2Iface->Unlock();
    return PR2_ALL_OK;
@@ -949,7 +1029,7 @@ PR2_ERROR_CODE PR2Robot::GetJointTorqueActual(PR2_JOINT_ID id, double *torque)
 
 PR2_ERROR_CODE PR2Robot::SetArmJointTorque(PR2_MODEL_ID id, double torque[])
 {
-   if (id != PR2_RIGHT_ARM || id != PR2_LEFT_ARM)
+   if (id != PR2_RIGHT_ARM && id != PR2_LEFT_ARM)
       return PR2_ERROR;
 
    pr2Iface->Lock(1);
@@ -961,7 +1041,7 @@ PR2_ERROR_CODE PR2Robot::SetArmJointTorque(PR2_MODEL_ID id, double torque[])
 
 PR2_ERROR_CODE PR2Robot::GetArmJointTorqueCmd(PR2_MODEL_ID id, double torque[])
 {
-   if (id != PR2_RIGHT_ARM || id != PR2_LEFT_ARM)
+   if (id != PR2_RIGHT_ARM && id != PR2_LEFT_ARM)
       return PR2_ERROR;
 
    pr2Iface->Lock(1);
@@ -973,7 +1053,7 @@ PR2_ERROR_CODE PR2Robot::GetArmJointTorqueCmd(PR2_MODEL_ID id, double torque[])
 
 PR2_ERROR_CODE PR2Robot::GetArmJointTorqueActual(PR2_MODEL_ID id, double torque[])
 {
-   if (id != PR2_RIGHT_ARM || id != PR2_LEFT_ARM)
+   if (id != PR2_RIGHT_ARM && id != PR2_LEFT_ARM)
       return PR2_ERROR;
 
    pr2Iface->Lock(1);
@@ -1034,7 +1114,7 @@ PR2_ERROR_CODE PR2Robot::GetJointSpeedActual(PR2_JOINT_ID id, double *speed)
 
 PR2_ERROR_CODE PR2Robot::SetArmJointSpeed(PR2_MODEL_ID id, double speed[])
 {
-   if (id != PR2_RIGHT_ARM || id != PR2_LEFT_ARM)
+   if (id != PR2_RIGHT_ARM && id != PR2_LEFT_ARM)
       return PR2_ERROR;
    pr2Iface->Lock(1);
    for(int ii = JointStart[id]; ii <= JointEnd[id]; ii++)
@@ -1045,7 +1125,7 @@ PR2_ERROR_CODE PR2Robot::SetArmJointSpeed(PR2_MODEL_ID id, double speed[])
 
 PR2_ERROR_CODE PR2Robot::GetArmJointSpeedCmd(PR2_MODEL_ID id, double speed[])
 {
-   if (id != PR2_RIGHT_ARM || id != PR2_LEFT_ARM)
+   if (id != PR2_RIGHT_ARM && id != PR2_LEFT_ARM)
       return PR2_ERROR;
    pr2Iface->Lock(1);
    for(int ii = JointStart[id]; ii <= JointEnd[id]; ii++)
@@ -1056,7 +1136,7 @@ PR2_ERROR_CODE PR2Robot::GetArmJointSpeedCmd(PR2_MODEL_ID id, double speed[])
 
 PR2_ERROR_CODE PR2Robot::GetArmJointSpeedActual(PR2_MODEL_ID id, double speed[])
 {
-   if (id != PR2_RIGHT_ARM || id != PR2_LEFT_ARM)
+   if (id != PR2_RIGHT_ARM && id != PR2_LEFT_ARM)
       return PR2_ERROR;
    pr2Iface->Lock(1);
    for(int ii = JointStart[id]; ii <= JointEnd[id]; ii++)
@@ -1114,6 +1194,36 @@ PR2_ERROR_CODE PR2Robot::SetBaseCartesianSpeedCmd(double vx, double vy, double v
 
    return PR2_ALL_OK;
 };
+
+
+
+PR2_ERROR_CODE PR2Robot::SetBaseSteeringAngle(double vx, double vy, double vw)
+{
+   point steerPointVelocity[NUM_CASTERS];
+   double steerAngle[NUM_CASTERS];
+
+   point newDriveCenterL, newDriveCenterR;
+
+
+   for(int ii=0; ii < NUM_CASTERS; ii++)
+   {
+      ComputePointVelocity(vx,vy,vw,BASE_CASTER_OFFSET[ii].x,BASE_CASTER_OFFSET[ii].y,steerPointVelocity[ii].x,steerPointVelocity[ii].y);
+      steerAngle[ii] = atan2(steerPointVelocity[ii].y,steerPointVelocity[ii].x);
+      SetJointServoCmd((PR2_JOINT_ID) (CASTER_FL_STEER+3*ii),steerAngle[ii],0);
+   }
+
+   return PR2_ALL_OK;
+};
+
+
+
+
+
+
+
+
+
+
 
 PR2_ERROR_CODE PR2Robot::GetBaseCartesianSpeedCmd(double* vx, double* vy, double* vw)
 {
@@ -1189,8 +1299,90 @@ PR2_ERROR_CODE PR2Robot::GetBasePositionActual(double* x, double* y, double* th)
    *y = simIface->data->model_pose.pos.y;
    *th = simIface->data->model_pose.yaw;
    simIface->Unlock();
-
    return PR2_ALL_OK;
+};
+
+
+PR2_ERROR_CODE PR2Robot::GetWristPoseGroundTruth(PR2_MODEL_ID id, double *x, double *y, double *z, double *roll, double *pitch, double *yaw)
+{
+   switch(id)
+   {
+      case PR2::PR2_LEFT_ARM:
+         pr2LeftWristIface->Lock(1);
+         *x = pr2LeftWristIface->data->pose.pos.x;
+         *y = pr2LeftWristIface->data->pose.pos.y;
+         *z = pr2LeftWristIface->data->pose.pos.z;
+         *roll = pr2LeftWristIface->data->pose.roll;
+         *pitch = pr2LeftWristIface->data->pose.pitch;
+         *yaw = pr2LeftWristIface->data->pose.yaw;
+         pr2LeftWristIface->Unlock();
+         break;
+      case PR2::PR2_RIGHT_ARM:
+         pr2RightWristIface->Lock(1);
+         *x = pr2RightWristIface->data->pose.pos.x;
+         *y = pr2RightWristIface->data->pose.pos.y;
+         *z = pr2RightWristIface->data->pose.pos.z;
+         *roll = pr2RightWristIface->data->pose.roll;
+         *pitch = pr2RightWristIface->data->pose.pitch;
+         *yaw = pr2RightWristIface->data->pose.yaw;
+         pr2RightWristIface->Unlock();
+         break;
+      default:
+         *x = 0;
+         *y = 0;
+         *z = 0;
+         *roll = 0;
+         *pitch = 0;
+         *yaw = 0;
+         return PR2_ERROR;
+   }
+   return PR2_ALL_OK;
+};
+
+
+NEWMAT::Matrix PR2Robot::GetWristPoseGroundTruth(PR2_MODEL_ID id)
+{
+   NEWMAT::Matrix g(4,4);
+   double *x = new double[3];
+   double roll,pitch,yaw;
+   g = 0;
+   switch(id)
+   {
+      case PR2::PR2_LEFT_ARM:
+         pr2LeftWristIface->Lock(1);
+         x[0] = pr2LeftWristIface->data->pose.pos.x;
+         x[1] = pr2LeftWristIface->data->pose.pos.y;
+         x[2] = pr2LeftWristIface->data->pose.pos.z;
+         roll = pr2LeftWristIface->data->pose.roll;
+         pitch = pr2LeftWristIface->data->pose.pitch;
+         yaw = pr2LeftWristIface->data->pose.yaw;
+
+         pr2LeftWristIface->Unlock();
+         break;
+      case PR2::PR2_RIGHT_ARM:
+         pr2RightWristIface->Lock(1);
+         x[0] = pr2RightWristIface->data->pose.pos.x;
+         x[1] = pr2RightWristIface->data->pose.pos.y;
+         x[2] = pr2RightWristIface->data->pose.pos.z;
+         roll = pr2RightWristIface->data->pose.roll;
+         pitch = pr2RightWristIface->data->pose.pitch;
+         yaw = pr2RightWristIface->data->pose.yaw;
+         pr2RightWristIface->Unlock();
+         break;
+      default:
+         x[0] = 0;
+         x[1] = 0;
+         x[2] = 0;
+         roll = 0;
+         pitch = 0;
+         yaw = 0;
+         break;
+   }
+   cout << "Transform::" << x[0] << "," << x[1] << "," << x[2] << endl;
+   cout << "rpy::" << roll << "," << pitch << "," << yaw << endl;
+   g = Transform(x,roll,pitch,yaw);
+   delete x;
+   return g;
 };
 
 PR2_ERROR_CODE PR2Robot::GetLaserRanges(PR2_SENSOR_ID id,

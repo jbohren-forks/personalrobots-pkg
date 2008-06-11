@@ -38,10 +38,11 @@ headers = Split('PR2.hh');
 
 actarray_sharedLib = env.SharedLibrary('Pr2_Actarray','Pr2_Actarray.cc');
 gripper_sharedLib  = env.SharedLibrary('Pr2_Gripper' ,'Pr2_Gripper.cc' );
+P3D_sharedLib  = env.SharedLibrary('P3D' ,'P3D.cc' );
 
 env.Program('pr2','pr2.cc');
 
-env.Install(LIBROOT, [actarray_sharedLib,gripper_sharedLib]);
+env.Install(LIBROOT, [actarray_sharedLib,gripper_sharedLib,P3D_sharedLib]);
 env.Install(INCROOT,headers);
 
 
