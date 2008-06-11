@@ -1,0 +1,10 @@
+<launch>
+
+  <ns name="wg">
+    <node pkg="rosgazebo" type="rosgazebo" args="robot.world" respawn="true" />
+    <node pkg="amcl_player" type="amcl_player" args="map3.png 0.1" respawn="true" />
+    <node pkg="wavefront_player" type="wavefront_player" args="map3.png 0.1" respawn="true" />
+    <node pkg="nav_view" type="nav_view" args="map3.png 0.1" respawn="true" />
+  </ns>
+</launch>
+
