@@ -20,15 +20,10 @@
 
 
 #include <stdio.h>
-#include <string.h>
-#include <unistd.h>
 #include <errno.h>
-#include <stdlib.h>
-#include <fcntl.h>
 #include <termios.h>
 #include <math.h>
 #include <poll.h>
-#include <stdarg.h>
 
 #include "urg_laser.h"
 

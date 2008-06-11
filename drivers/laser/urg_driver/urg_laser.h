@@ -19,33 +19,27 @@
  */
 
 /*! \mainpage
- *
- * This is a standalone urg driver, primarily for use with the Hokuyo
- * TOP-URG.  Backwards compatibility with other urg devices is not yet
- * complete.
- *
+ *  \htmlinclude manifest.html
  */
 
-#ifndef URG_DRIVER_HH
-#define URG_DRIVER_HH
+#ifndef URG_LASER_HH
+#define URG_LASER_HH
 
-#include <stdio.h>
-#include <termios.h>
 #include <stdexcept>
 
 //! A namespace containing all URG related things
 namespace URG {
 
-//! The maximum number of readings that can be returned from an urg
+  //! The maximum number of readings that can be returned from an urg
   const int MAX_READINGS = 1128;
 
-//! The maximum length a command will ever be
+  //! The maximum length a command will ever be
   const int MAX_CMD_LEN = 100;
 
-//! The maximum number of bytes that should be skipped when looking for a response
+  //! The maximum number of bytes that should be skipped when looking for a response
   const int MAX_SKIPPED = 1000000;
 
-
+  //! Macro for throwing an exception with a message
 #define URG_EXCEPT(except, msg) \
   { \
     char buf[100]; \
@@ -53,6 +47,7 @@ namespace URG {
     throw except(buf); \
   }
 
+  //! Macro for throwing an exception with a message, passing args
 #define URG_EXCEPT_ARGS(except, msg, ...) \
   { \
     char buf[100]; \
@@ -60,6 +55,7 @@ namespace URG {
     throw except(buf); \
   }
   
+  //! Macro for defining an exception with a given parent (std::runtime_error should be top parent)
 #define DEF_EXCEPTION(name, parent) \
   class name  : public parent { \
   public: \
@@ -303,10 +299,10 @@ namespace URG {
     //! Wrapper around tcflush
     int urg_flush();
 
-    //! Wrapper around write
+    //! Wrapper around fputs
     int urg_write(const char* msg);
 
-    //! Read a full line from the urg
+    //! Read a full line from the urg using fgets
     int urg_readline(char *buf, int len, int timeout = -1);
 
     //! Search for a particular sequence and then read the rest of the line
