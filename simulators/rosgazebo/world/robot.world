@@ -151,7 +151,7 @@
 
   <!-- The "desk"-->
   <model:physical name="desk1_model">
-    <xyz>   2.5    0.0   -0.10</xyz>
+    <xyz>   2.28  -0.21  -0.10</xyz>
     <rpy>   0.0    0.0    0.00</rpy>
     <body:box name="desk1_legs_body">
       <geom:box name="desk1_legs_geom">
@@ -185,7 +185,7 @@
 
   <!-- The second "desk"-->
   <model:physical name="desk2_model">
-    <xyz>   2.5   -3.0   -0.10</xyz>
+    <xyz>   2.25  -3.0   -0.10</xyz>
     <rpy>   0.0    0.0    0.00</rpy>
     <body:box name="desk2_legs_body">
       <geom:box name="desk2_legs_geom">
@@ -271,7 +271,7 @@
 
   <!-- The large ball map3.png -->
   <model:physical name="sphere2_model">
-    <xyz>   3.5    2.0    1.55</xyz>
+    <xyz>   5.85  4.35    1.55</xyz>
     <rpy>   0.0    0.0    0.0</rpy>
     <body:sphere name="sphere2_body">
       <geom:sphere name="sphere2_geom">
@@ -319,6 +319,24 @@
         <visual>
           <size>0.4  24.0 2.0</size>
           <material>Gazebo/PioneerBody</material>
+          <mesh>unit_box</mesh>
+        </visual>
+      </geom:box>
+    </body:box>
+  </model:physical>
+
+  <!-- The wall 3 -->
+  <model:physical name="wall_3_model">
+    <xyz>  6.7   8.05   1.0</xyz>
+    <rpy>   0.0    0.0    0.0</rpy>
+    <static>true</static>
+    <body:box name="wall_3_body">
+      <geom:box name="wall_3_geom">
+        <mesh>default</mesh>
+        <size>7.5  1.2 2.0</size>
+        <visual>
+          <size>7.5  1.2 2.0</size>
+          <material>Gazebo/Chrome</material>
           <mesh>unit_box</mesh>
         </visual>
       </geom:box>
