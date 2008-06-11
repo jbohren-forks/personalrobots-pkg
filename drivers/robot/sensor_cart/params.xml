@@ -5,6 +5,6 @@
   <int name="urglaser/skip">0</int>
   <double name="etherdrive/pulse_per_rad0">9549.29659</double>
   <int name="tilting_laser/num_scans">400</int>
-  <double name="tilting_laser/min_ang">-1.1</double>
-  <double name="tilting_laser/max_ang">0.645</double>
+  <double name="tilting_laser/min_ang">-65</double>
+  <double name="tilting_laser/max_ang">35</double>
 </params>

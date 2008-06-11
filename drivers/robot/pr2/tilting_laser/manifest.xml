@@ -14,7 +14,6 @@ tilting stage, such as the one found in the head of PR2.
 <depend package="unstable_msgs"/>
 <depend package="hokuyourg_player"/>
 <depend package="etherdrive"/>
-<depend package="cloud_viewer"/>
 <depend package="libTF"/>
 </package>
 

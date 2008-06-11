@@ -32,6 +32,72 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+
+/**
+
+@mainpage
+
+@htmlinclude manifest.html
+
+@b tilting_laser is a driver for generating 3D Point clouds from a a
+laser range-finder mounted on a tilting stage
+
+<hr>
+
+@section usage Usage
+
+The tilting_laser has runtime dependencies on hokuyourg_player and
+etherdrive nodes to generate laser scans, and control the tilting
+stage respectively.  These must be started in addition to
+tilting_laser node.  A bashscript launch_tl is used to start these
+nodes conveniently.
+
+@verbatim
+$ ./launch_tl [optional path to ros master]
+@endverbatim
+
+@par Example
+
+@verbatim
+$ ./launch_tl http://vnc:11311
+@endverbatim
+
+Note in the bash script that the topic name for the motor input and
+output will often have to be remapped.
+
+@verbatim
+$ tilting_laser mot:=/mot0 mot_cmd:=/mot0_cmd&
+@endverbatim
+
+<hr>
+
+@section topic ROS topics
+
+Subscribes to (name/type):
+- @b "scan"/LaserScan : laser scan data
+- @b "mot"/Actuator : encoder data from the tilting stage
+
+Publishes to (name / type):
+- @b "cloud"/PointCloudFloat32 : Incremental cloud data.  Each scan from the laser is converted into a PointCloud.
+- @b "shutter"/Empty : An empty message is sent to indicate a full sweep has occured
+- @b "full_cloud"/PointCloudFloat32 : A full point cloud containing all of the points between the last two shutters
+- @b "laser_image"/LaserImage : A representation of the full point cloud as a pair of pseudo-images
+- @b "image"/Image : The intensity image from the LaserImage
+- @b "mot_cmd"/Actuator : The commanded position of the tilting stage
+
+<hr>
+
+@section parameters ROS parameters
+
+Reads the following parameters from the parameter server
+
+- @b "tilting_laser/num_scans" : @b [int] the number of scans to take between the min and max angles (Default: 400)
+- @b "tilting_laser/min_ang" : @b [double] the minimum angle of the scan in degrees (Default: -65.0)
+- @b "tilting_laser/max_ang" : @b [double] the maximum angle of the scan in degrees (Default: 35.0)
+
+ **/
+
+
 #include "ros/node.h"
 #include "std_msgs/Empty.h"
 #include "std_msgs/LaserScan.h"
@@ -92,8 +158,10 @@ public:
     subscribe("mot",  encoder, &Tilting_Laser::encoder_callback,40);
 
     param("tilting_laser/num_scans", num_scans, 400);
-    param("tilting_laser/min_ang", min_ang, -1.3);
-    param("tilting_laser/max_ang", max_ang, 0.6);
+    param("tilting_laser/min_ang", min_ang, -65.0);
+    min_ang *= M_PI/180.0;
+    param("tilting_laser/max_ang", max_ang, 35.0);
+    max_ang *= M_PI/180.0;
 
     last_motor_time = ros::Time::now();
   }
