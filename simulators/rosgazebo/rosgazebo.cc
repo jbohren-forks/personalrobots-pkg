@@ -283,14 +283,14 @@ GazeboNode::Update()
     for(unsigned int i=0;i<ranges_size;i++)
     {
       // get laser pitch angle
-	    double tmp_range, laser_yaw, laser_pitch, laser_pitch_rate;
+	    double laser_yaw, laser_pitch, laser_pitch_rate;
 	    this->myPR2->GetJointServoActual(PR2::HEAD_LASER_PITCH , &laser_pitch,  &laser_pitch_rate);
       // get laser yaw angle
 	    laser_yaw = angle_min + (double)i * angle_increment;
 	    //std::cout << " pit " << laser_pitch << "yaw " << laser_yaw
 	    //          << " amin " <<  angle_min << " inc " << angle_increment << std::endl;
       // populating cloud data by range
-      tmp_range = (this->ranges[i] >= range_max) ? 0 : this->ranges[i];
+      double tmp_range = this->ranges[i];
       // transform from range to x,y,z
       tmp_cloud_pt.x                = tmp_range * cos(laser_yaw) * cos(laser_pitch);
       tmp_cloud_pt.y                = tmp_range * sin(laser_yaw) ; //* cos(laser_pitch);
@@ -347,17 +347,14 @@ GazeboNode::Update()
     this->laserMsg.set_intensities_size(intensities_size);
     for(unsigned int i=0;i<ranges_size;i++)
     {
-      double tmp_range = (this->ranges[i] >= range_max) ? 0 : this->ranges[i];
+      double tmp_range = this->ranges[i];
       this->laserMsg.ranges[i]      =tmp_range;
       this->laserMsg.intensities[i] = this->intensities[i];
     }
 
     this->laserMsg.header.frame_id = FRAMEID_LASER;
-    this->laserMsg.header.stamp.sec = 
-      (unsigned long)floor(simTime);
-    this->laserMsg.header.stamp.nsec = 
-      (unsigned long)floor(  1e9 * (  simTime
-                                    - this->odomMsg.header.stamp.sec) );
+    this->laserMsg.header.stamp.sec = (unsigned long)floor(simTime);
+    this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  simTime - this->laserMsg.header.stamp.sec) );
 
     publish("laser",this->laserMsg); // for laser_view FIXME: can alias this at the commandline or launch script
     publish("scan",this->laserMsg);  // for rosstage
@@ -390,11 +387,8 @@ GazeboNode::Update()
   // TODO: get the frame ID from somewhere
   this->odomMsg.header.frame_id = FRAMEID_ODOM;
 
-  this->odomMsg.header.stamp.sec =
-      (unsigned long)floor(simTime);
-  this->odomMsg.header.stamp.nsec =
-      (unsigned long)floor(  1e9 * (  simTime
-                                    - this->odomMsg.header.stamp.sec) );
+  this->odomMsg.header.stamp.sec = (unsigned long)floor(simTime);
+  this->odomMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  simTime - this->odomMsg.header.stamp.sec) );
 
   publish("odom",this->odomMsg);
 
