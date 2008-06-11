@@ -39,7 +39,9 @@
 #include <stdint.h>
 #include <string>
 
+#ifdef KDL_KINEMATICS
 #include <kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
+#endif
 
 namespace PR2
 {
@@ -449,8 +451,11 @@ namespace PR2
       //public: PR2_ERROR_CODE SetArmCartesianPosition(PR2_MODEL_ID id, double effectorPosition[], double effectorSpeed[]);
       public: PR2_ERROR_CODE SetArmCartesianPosition(PR2_MODEL_ID id, NEWMAT::Matrix g);
 
-			// KDL version of SetArmCartesianPosition
+
+#ifdef KDL_KINEMATICS			
+// KDL version of SetArmCartesianPosition
 			public: PR2_ERROR_CODE SetArmCartesianPosition(PR2_MODEL_ID id, KDL::Frame f);
+#endif
 
          /*! \fn
            \brief Get the commanded position and speed for the end-effector
@@ -629,8 +634,10 @@ namespace PR2
       protected: PR2_CONTROL_MODE armControlMode[2];
       protected: PR2_CONTROL_MODE baseControlMode;
       protected: PR2Arm myArm; 
-			public: PR2_kinematics pr2_kin; // for kinematics using KDL.
 
+#ifdef KDL_KINEMATICS
+      public: PR2_kinematics pr2_kin; // for kinematics using KDL.
+#endif
          /*! \fn
            \brief - Oscillate the Hokuyo, return point cloud
          */

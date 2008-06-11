@@ -591,6 +591,8 @@ PR2_ERROR_CODE PR2Robot::IsEnabledModel(PR2_MODEL_ID id, int *enabled)
    return PR2_ALL_OK;
 };
 
+#ifdef KDL_KINEMATICS
+
 PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, KDL::Frame f)
 {
 	KDL::JntArray q_init = KDL::JntArray(this->pr2_kin.nJnts);
@@ -612,7 +614,7 @@ PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, KDL::Frame f)
 	for(int ii = 0; ii < 7; ii++)
 		this->SetJointServoCmd((PR2::PR2_JOINT_ID) (JointStart[id]+ii),q_out(ii),0);
 }
-
+#endif
 
 PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, NEWMAT::Matrix g)
 {
