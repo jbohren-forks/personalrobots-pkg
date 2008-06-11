@@ -116,7 +116,7 @@ public:
 
     ros::Duration delta = after - before;
 
-    ros::Time stamp = before + ros::Duration( after.to_double() / 2.0 );
+    ros::Time stamp = before + ros::Duration( delta.to_double() / 2.0 );
 
     //    printf("%d %d %d\n",ed->get_enc(0), ed->get_cur(0), ed->get_pwm(0));
    

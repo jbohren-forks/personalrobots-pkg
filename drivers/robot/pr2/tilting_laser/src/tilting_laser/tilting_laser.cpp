@@ -138,31 +138,12 @@ public:
     cloud.chan[0].name = "intensities";
     cloud.chan[0].set_vals_size(scans.get_ranges_size());
 
-    NEWMAT::Matrix points(4,scans.get_ranges_size());
-    for (uint32_t i = 0; i < scans.get_ranges_size(); i++) {
-      if (scans.ranges[i] < 20.0) {
-	points(1,i+1) = cos(scans.angle_min + i*scans.angle_increment) * scans.ranges[i];
-	points(2,i+1) = sin(scans.angle_min + i*scans.angle_increment) * scans.ranges[i];
-	points(3,i+1) = 0.0;
-	points(4,i+1) = 1.0;
-      } else {
-	points(1,i+1) = 0.0;
-	points(2,i+1) = 0.0;
-	points(3,i+1) = 0.0;
-	points(4,i+1) = 1.0;
-      }
-    }
-
-    // Time offset here should not be hardcoded!
-    unsigned long long t = scans.header.stamp.to_ull();// - 30000000;
-    
-    NEWMAT::Matrix rot_points = TR.getMatrix(1,3,t) * points;
 
     libTF::TFVector u;
     u.x = 1;
     u.y = 0;
     u.z = 0;
-    u.time = t;
+    u.time = scans.header.stamp.to_ull();
     u.frame = 3;
 
     libTF::TFVector v = TR.transformVector(1,u);
@@ -190,29 +171,50 @@ public:
     else
       ind = (num_scans - img_ind - 1);
 
+
+    NEWMAT::Matrix point(4,1);
+    NEWMAT::Matrix rot_point(4,1);
+
     for (uint32_t i = 0; i < scans.get_ranges_size(); i++) {
-      cloud.pts[i].x = rot_points(1,i+1);
-      cloud.pts[i].y = rot_points(2,i+1);
-      cloud.pts[i].z = rot_points(3,i+1);
+      if (scans.ranges[i] < 20.0) {
+	point(1,1) = cos(scans.angle_min + i*scans.angle_increment) * scans.ranges[i];
+	point(2,1) = sin(scans.angle_min + i*scans.angle_increment) * scans.ranges[i];
+	point(3,1) = 0.0;
+	point(4,1) = 1.0;
+      } else {
+	point(1,1) = 0.0;
+	point(2,1) = 0.0;
+	point(3,1) = 0.0;
+	point(4,1) = 1.0;
+      }
+      
+      long long inc = scans.time_increment * i * 1000000000;
+      unsigned long long t = scans.header.stamp.to_ull() + inc;
+      rot_point = TR.getMatrix(1,3,t) * point;
+
+      cloud.pts[i].x = rot_point(1,1);
+      cloud.pts[i].y = rot_point(2,1);
+      cloud.pts[i].z = rot_point(3,1);
       cloud.chan[0].vals[i] = scans.intensities[i];
 
       if (img_ind >= 0)
       {
-	full_cloud.pts[img_ind * scans.get_ranges_size() + i].x = rot_points(1,i+1);
-	full_cloud.pts[img_ind * scans.get_ranges_size() + i].y = rot_points(2,i+1);
-	full_cloud.pts[img_ind * scans.get_ranges_size() + i].z = rot_points(3,i+1);
+        full_cloud.pts[img_ind * scans.get_ranges_size() + i].x = rot_point(1,1);
+        full_cloud.pts[img_ind * scans.get_ranges_size() + i].y = rot_point(2,1);
+        full_cloud.pts[img_ind * scans.get_ranges_size() + i].z = rot_point(3,1);
 	full_cloud.chan[0].vals[img_ind * scans.get_ranges_size() + i] = scans.intensities[i];
-
+        
 	*(unsigned short*)(&(image.intensity_img.data[ind * 2 * image.intensity_img.width + image.intensity_img.width * 2 - 2 - 2*i])) = scans.intensities[i];
 	*(unsigned short*)(&(image.range_img.data[ind * 2 * image.range_img.width + image.range_img.width * 2 - 2 - 2*i])) = scans.ranges[i] * 1000.0;
 	image.horiz_angles[i] = scans.angle_min + i*scans.angle_increment;
       }
-
-      image.vert_angles[ind] = ang;
     }
 
     if (img_ind >= 0)
+    {
+      image.vert_angles[ind] = ang;
       img_ind++;
+    }
 
     publish("cloud", cloud);
 

@@ -646,14 +646,20 @@ urg_laser::poll_scan(urg_laser_scan_t* scan, double min_ang, double max_ang, int
     scan->config.min_angle  =  (min_i - afrt) * (2.0*M_PI)/(ares);
     scan->config.max_angle  =  (max_i - afrt) * (2.0*M_PI)/(ares);
     scan->config.ang_increment =  cluster*(2.0*M_PI)/(ares);
-    scan->config.time_increment = (60.0*(double(ares)))/(double)(rate);
+    scan->config.time_increment = (60.0)/(double)(rate * ares);
     scan->config.scan_time = 0.0;
     scan->config.min_range  =  dmin / 1000.0;
     scan->config.max_range  =  dmax / 1000.0;
 
-    if (read_data(scan, false, timeout) == 0)
-      return status;
+    if (read_data(scan, false, timeout) != 0)
+      URG_RET_ERR(-1, "Failed to read data.")
 
+  long long inc = min_i * scan->config.time_increment * 1000000000;
+
+  scan->system_time_stamp += inc;
+  scan->self_time_stamp += inc;
+
+    return 0;
   }
 
   return -1;
@@ -754,16 +760,20 @@ urg_laser::service_scan(urg_laser_scan_t* scan, int timeout)
   scan->config.min_angle  =  (min_i - afrt) * (2.0*M_PI)/(ares);
   scan->config.max_angle  =  (max_i - afrt) * (2.0*M_PI)/(ares);
   scan->config.ang_increment =  cluster*(2.0*M_PI)/(ares);
-  scan->config.time_increment = (60.0*(double(ares)))/(double)(rate);
+  scan->config.time_increment = (60.0)/(double)(rate * ares);
   scan->config.scan_time = (60.0 * (skip + 1))/((double)(rate));
   scan->config.min_range  =  dmin / 1000.0;
   scan->config.max_range  =  dmax / 1000.0;
 
-  if (read_data(scan, intensity, timeout) == 0)
-    return 0;
-  else
-    URG_RET_ERR(-1, "Reading scan failed");
+  if (read_data(scan, intensity, timeout) != 0)
+    URG_RET_ERR(-1, "Failed to read data.");
 
+  long long inc = min_i * scan->config.time_increment * 1000000000;
+
+  scan->system_time_stamp += inc;
+  scan->self_time_stamp += inc;
+
+  return 0;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -799,12 +809,9 @@ int urg_laser::calc_latency(bool intensity, double min_ang, double max_ang, int 
   printf("Determining scan latency.\n");
   offset = 0;
 
-  unsigned long long begin_time = time_helper();
-
   unsigned long long comp_time = 0;
   unsigned long long urg_time = 0;
   long long diff_time = 0;
-  long long diff_sum = 0;
   long long drift_time = 0;
   long long tmp_offset1 = 0;
   long long tmp_offset2 = 0;
@@ -864,27 +871,6 @@ int urg_laser::calc_latency(bool intensity, double min_ang, double max_ang, int 
   printf("%lld nanoseconds\n", tmp_offset2);
 
   offset = tmp_offset2;
-
-  /*
-  long long latency_check = 0;
-
-  printf("Verifying latency of scans... ");
-  count = 1000;
-  for (int i = 0; i < count;i++)
-  {
-    service_scan(&scan);
-
-    comp_time = scan.system_time_stamp;
-    drift_time = comp_time - start_time;
-    urg_time = scan.self_time_stamp + tmp_offset1 + drift_time*drift_rate;
-    diff_time = urg_time - comp_time;
-
-    latency_check += diff_time / count;
-  }
-  printf("%lld nanoseconds\n", latency_check);
-
-  printf("Leaving scanning mode.");
-  */
 
   stop_scanning();
 
