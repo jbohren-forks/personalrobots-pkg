@@ -18,8 +18,15 @@ int main()
 	// set random numbers to base cartesian control
 	myPR2.SetBaseControlMode(PR2_CARTESIAN_CONTROL);
 
-/*
 	//------------
+	NEWMAT::Matrix g_wrist(4,4);
+	double x;
+	double y;
+	double z; 
+	double roll;
+	double pitch; 
+	double yaw;
+
 	myPR2.GetWristPoseGroundTruth(PR2::PR2_RIGHT_ARM,&x,&y,&z,&roll,&pitch,&yaw);
 	g_wrist = myPR2.GetWristPoseGroundTruth(PR2::PR2_RIGHT_ARM);
 
@@ -35,7 +42,7 @@ int main()
 
 	for(int ii=0; ii<7; ii++)
 		cout << "Joint ii::" << ii << ":: " << jointPosition[ii] << endl;
-*/
+
 
 	JntArray pr2_config = JntArray(myPR2.pr2_kin.nJnts);
 	pr2_config(0) = 0.1, pr2_config(1) = -1, pr2_config(2)=0.3, pr2_config(3)=0.3;
