@@ -380,71 +380,68 @@ NavView::load_map()
   std_srvs::StaticMap::request  req;
   std_srvs::StaticMap::response resp;
   puts("Requesting the map...");
-  if(ros::service::call("static_map", req, resp))
+  while(!ros::service::call("static_map", req, resp))
   {
-    puts("success");
-    printf("Received a %d X %d map @ %.3f m/pix\n",
-           resp.map.width,
-           resp.map.height,
-           resp.map.resolution);
+    puts("request failed; trying again...");
+    usleep(1000000);
+  }
+  puts("success");
+  printf("Received a %d X %d map @ %.3f m/pix\n",
+         resp.map.width,
+         resp.map.height,
+         resp.map.resolution);
 
-    map_res = resp.map.resolution;
+  map_res = resp.map.resolution;
 
-    // Pad dimensions to power of 2 
-    map_width = (int)pow(2,ceil(log2(resp.map.width)));
-    map_height = (int)pow(2,ceil(log2(resp.map.height)));
+  // Pad dimensions to power of 2 
+  map_width = (int)pow(2,ceil(log2(resp.map.width)));
+  map_height = (int)pow(2,ceil(log2(resp.map.height)));
 
-    printf("Padded dimensions to %d X %d\n", map_width, map_height);
+  printf("Padded dimensions to %d X %d\n", map_width, map_height);
 
-    // Expand it to be RGB data
-    unsigned char* pixels = new unsigned char[map_width * map_height * 3];
-    assert(pixels);
-    memset(pixels,255,map_width*map_height*3);
-    for(unsigned int j=0;j<resp.map.height;j++)
+  // Expand it to be RGB data
+  unsigned char* pixels = new unsigned char[map_width * map_height * 3];
+  assert(pixels);
+  memset(pixels,255,map_width*map_height*3);
+  for(unsigned int j=0;j<resp.map.height;j++)
+  {
+    for(unsigned int i=0;i<resp.map.width;i++)
     {
-      for(unsigned int i=0;i<resp.map.width;i++)
-      {
-        unsigned char val;
-        if(resp.map.data[j*resp.map.width+i] == 100)
-          val = 0;
-        else if(resp.map.data[j*resp.map.width+i] == 0)
-          val = 255;
-        else
-          val = 127;
+      unsigned char val;
+      if(resp.map.data[j*resp.map.width+i] == 100)
+        val = 0;
+      else if(resp.map.data[j*resp.map.width+i] == 0)
+        val = 255;
+      else
+        val = 127;
 
-        int pidx = 3*(j*map_width + i);
-        pixels[pidx+0] = val;
-        pixels[pidx+1] = val;
-        pixels[pidx+2] = val;
-      }
+      int pidx = 3*(j*map_width + i);
+      pixels[pidx+0] = val;
+      pixels[pidx+1] = val;
+      pixels[pidx+2] = val;
     }
-
-    glEnable( GL_TEXTURE_2D ); 
-
-    // Have OpenGL generate a texture object handle for us
-    glGenTextures(1, &map_texture);
-
-    // Bind the texture object
-    glBindTexture(GL_TEXTURE_2D, map_texture);
-
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-    // Set the texture's stretching properties
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    // Edit the texture object's image data
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
-                 map_width, map_height, 0,
-                 GL_RGB, GL_UNSIGNED_BYTE,
-                 pixels);
-    return(true);
   }
-  else
-  {
-    puts("Error!  Failed to get the map.");
-    return(false);
-  }
+
+  glEnable( GL_TEXTURE_2D ); 
+
+  // Have OpenGL generate a texture object handle for us
+  glGenTextures(1, &map_texture);
+
+  // Bind the texture object
+  glBindTexture(GL_TEXTURE_2D, map_texture);
+
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+  // Set the texture's stretching properties
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  // Edit the texture object's image data
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+               map_width, map_height, 0,
+               GL_RGB, GL_UNSIGNED_BYTE,
+               pixels);
+  return(true);
 }
 
 bool

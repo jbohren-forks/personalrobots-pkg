@@ -279,7 +279,11 @@ WavefrontNode::WavefrontNode() :
   std_srvs::StaticMap::request  req;
   std_srvs::StaticMap::response resp;
   puts("Requesting the map...");
-  assert(ros::service::call("static_map", req, resp));
+  while(!ros::service::call("static_map", req, resp))
+  {
+    puts("request failed; trying again...");
+    usleep(1000000);
+  }
   printf("Received a %d X %d map @ %.3f m/pix\n",
          resp.map.width,
          resp.map.height,
