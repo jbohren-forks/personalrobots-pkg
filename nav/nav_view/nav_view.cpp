@@ -124,6 +124,9 @@ public:
   int gwidth, gheight;
   bool setting_theta;
   double gx,gy;
+  
+  // Lock for access to class members in callbacks
+  ros::thread::mutex lock;
 
   rosTFClient tf;
   ros::time::clock myClock;
@@ -277,6 +280,8 @@ NavView::mouse_button(int x, int y, int button, bool is_down)
 void
 NavView::render()
 {
+  lock.lock();
+
   glClear(GL_COLOR_BUFFER_BIT);
   glLoadIdentity();
   glScalef(view_scale, view_scale, view_scale);
@@ -372,6 +377,8 @@ NavView::render()
   pathline.unlock();
 
   SDL_GL_SwapBuffers();
+
+  lock.unlock();
 }
 
 bool
