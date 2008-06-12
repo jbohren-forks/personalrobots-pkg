@@ -443,7 +443,7 @@ GazeboNode::Update()
   /***************************************************************/
 	static double dAngle = -1;
 	double simPitchFreq,simPitchAngle,simPitchRate,simPitchTimeScale,simPitchAmp,simPitchOffset;
-	simPitchFreq      = 1.0/10.0;
+	simPitchFreq      = 1.0/6.0;
 	simPitchTimeScale = 2.0*M_PI*simPitchFreq;
 	simPitchAmp    =  M_PI / 8.0;
 	simPitchOffset = -M_PI / 8.0;
@@ -453,7 +453,7 @@ GazeboNode::Update()
 	//std::cout << "sim time: " << simTime << std::endl;
 	//std::cout << "ang: " << simPitchAngle*180.0/M_PI << "rate: " << simPitchRate*180.0/M_PI << std::endl;
 	this->myPR2->SetJointTorque(PR2::HEAD_LASER_PITCH , 1000.0);
-  this->myPR2->SetJointGains(PR2::HEAD_LASER_PITCH, 10.0, 0.0, 0.0);
+  this->myPR2->SetJointGains(PR2::HEAD_LASER_PITCH, 1.0, 0.0, 0.0);
 	this->myPR2->SetJointServoCmd(PR2::HEAD_LASER_PITCH , simPitchAngle, simPitchRate);
 
   if (dAngle * simPitchRate < 0.0)

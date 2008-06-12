@@ -11,7 +11,7 @@
   xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" 
   >
 
-  <xyz>0.0 0.0 0.0</xyz>
+  <xyz>0.0 0.0 10.0</xyz>
   <rpy>0.0 0.0 0.0</rpy>
 
   <canonicalBody>base_body</canonicalBody>
@@ -317,6 +317,7 @@
       <nearClip>0.1</nearClip>
       <farClip>100</farClip>
       <controller:generic_camera name="head_cam_left_controller">
+        <updateRate>15.0</updateRate>
         <interface:camera name="head_cam_left_iface_0" />
       </controller:generic_camera>
     </sensor:camera>
@@ -360,6 +361,7 @@
       <nearClip>0.1</nearClip>
       <farClip>100</farClip>
       <controller:generic_camera name="head_cam_right_controller">
+        <updateRate>15.0</updateRate>
         <interface:camera name="head_cam_right_iface_0" />
       </controller:generic_camera>
     </sensor:camera>
@@ -433,6 +435,7 @@
       <saveFramePath>frames</saveFramePath>
       <baseline>0.2</baseline>
       <controller:stereo_camera name="stereo_camera_controller">
+        <updateRate>15.0</updateRate>
         <interface:stereocamera name="stereo_iface_0" />
         <interface:camera name="camera_iface_0" />
       </controller:stereo_camera>
