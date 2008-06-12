@@ -40,7 +40,7 @@
 #include <string>
 
 #ifdef KDL_KINEMATICS
-#include <kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
+#include <libKDL/kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
 #endif
 
 namespace PR2

@@ -1,0 +1,35 @@
+PKG  = libpr2API
+CXX = g++
+
+CFLAGS = -g -Wall $(shell rospack export/cpp/cflags $(PKG)) \
+				 $(shell rospack export/cpp/cflags libKDL) \
+				 -DKDL_KINEMATICS
+
+LDFLAGS = $(shell rospack export/cpp/lflags gazebo) \
+          $(shell rospack export/cpp/lflags pr2Core) \
+          $(shell rospack export/cpp/lflags libKinematics) \
+          $(shell rospack export/cpp/lflags newmat10)
+
+LFLAGS = $(shell rospack export/cpp/lflags $(PKG)) \
+          $(shell rospack export/cpp/lflags libKDL)
+
+LIBP = lib/libpr2API.a
+
+all: $(LIBP) test_libpr2API bin/pr2_kin_kdl
+
+pr2API.o: src/pr2API.cpp include/libpr2API/pr2API.h
+	$(CXX) $(CFLAGS) -c -o $@ $<
+
+$(LIBP): pr2API.o
+	ar -rv $@ $^
+
+test_libpr2API: src/test/test_pr2API.cpp $(LIBP)
+	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
+
+bin/pr2_kin_kdl: src/test/pr2_kin_kdl.cpp $(LIBP)
+	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
+
+clean:
+	-rm -f test_libpr2API $(LIBP) bin/*
+	-rm -rf *.o $(PKG) $(PKG).dSYM
+
