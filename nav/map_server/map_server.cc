@@ -28,14 +28,19 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
+#define USAGE "USAGE: map_server <map> <resolution> [<negate>]\n"\
+              "         map: image file to load\n"\
+              "  resolution: map resolution [meters/pixel]\n"\
+              "      negate: if non-zero, black is free, white is occupied"
+
+#include <stdlib.h>
+#include <stdio.h>
+
 // We use gdk-pixbuf to load the image from disk
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
 #include "ros/node.h"
 #include "std_srvs/StaticMap.h"
-
-// compute linear index for given map coords
-#define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
 
 class MapServer : public ros::node
 {
@@ -45,28 +50,57 @@ class MapServer : public ros::node
   public:
     MapServer() : ros::node("map_server")
     {
-      advertise_service("map_server", &MapServer::map_cb);
+      advertise_service("static_map", &MapServer::map_cb);
     }
+
+    // Callback invoked when someone requests our service
     bool map_cb(std_srvs::StaticMap::request  &req,
                 std_srvs::StaticMap::response &res )
     {
+      // request is empty; we ignore it
+
+      // = operator is overloaded to make deep copy (tricky!)
+      res = map_resp;
       return true;
     }
-    bool readMapFromFile(const char* fname, double res, bool negate);
+    // Read the image from file and fill out the map_resp object, 
+    // for later use when our services are requested.
+    bool loadMapFromFile(const char* fname, double res, bool negate);
 };
 
 int main(int argc, char **argv)
 {
   ros::init(argc, argv);
+  if(argc < 3)
+  {
+    puts(USAGE);
+    exit(-1);
+  }
+  const char* fname = argv[1];
+  double res = atof(argv[2]);
+  bool negate = false;
+  if(argc > 3)
+    negate = atoi(argv[3]) ? true : false;
   MapServer ms;
+  if(!ms.loadMapFromFile(fname,res,negate))
+  {
+    printf("failed to load map \"%s\"\n", fname);
+    ros::fini();
+    exit(-1);
+  }
   ms.spin();
   ros::fini();
   return 0;
 }
 
 
+// compute linear index for given map coords
+#define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
+
+// Read the image from file and fill out the map_resp object, for later use
+// when our services are requested.
 bool
-MapServer::readMapFromFile(const char* fname, double res, bool negate)
+MapServer::loadMapFromFile(const char* fname, double res, bool negate)
 {
   GdkPixbuf* pixbuf;
   guchar* pixels;
@@ -82,7 +116,7 @@ MapServer::readMapFromFile(const char* fname, double res, bool negate)
   // Initialize glib
   g_type_init();
 
-  printf("MapFile loading image file: %s...", fname);
+  printf("loading image file: %s...", fname);
   fflush(stdout);
 
   // Read the image
@@ -137,6 +171,6 @@ MapServer::readMapFromFile(const char* fname, double res, bool negate)
   gdk_pixbuf_unref(pixbuf);
 
   puts("Done.");
-  printf("MapFile read a %d X %d map\n", map_resp.map.width, map_resp.map.height);
+  printf("read a %d X %d map\n", map_resp.map.width, map_resp.map.height);
   return(true);
 }
