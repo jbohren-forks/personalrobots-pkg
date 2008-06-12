@@ -61,6 +61,7 @@ class MapServer : public ros::node
 
       // = operator is overloaded to make deep copy (tricky!)
       res = map_resp;
+      puts("sending map");
       return true;
     }
     // Read the image from file and fill out the map_resp object, 
