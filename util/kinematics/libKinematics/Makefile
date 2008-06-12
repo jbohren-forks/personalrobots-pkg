@@ -16,7 +16,7 @@ ik.o: src/ik.cpp
 	g++  $(CFLAGS) -o $@ -c $< 
 
 kinematics.o: src/kinematics.cpp
-	g++  $(CFLAGS) -o $@ -c $< $(LDFLAGS)
+	g++  $(CFLAGS) -o $@ -c $<
 
 $(LIBK): kinematics.o
 	ar -rs $@ $^
@@ -25,7 +25,7 @@ $(LIBIK): ik.o kinematics.o
 	ar -rs $@ $^
 
 test_PR2ik: src/test/test_PR2ik.cpp
-	g++ $(CFLAGS) -o $@ $^ -lnewmat $(LFLAGS)
+	g++ $(CFLAGS) -o $@ $^ $(LFLAGS)
 
 clean:
 	rm -rf test_PR2ik
