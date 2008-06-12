@@ -11,7 +11,7 @@ using namespace libTF;
 int
 main(void)
 {
-  libTF::TransformReference mTR(false);
+  libTF::TransformReference mTR(true, 0);
   timeval temp_time_struct;
   gettimeofday(&temp_time_struct,NULL);
   unsigned long long atime = temp_time_struct.tv_sec * 1000000000ULL + (unsigned long long)temp_time_struct.tv_usec * 1000ULL;

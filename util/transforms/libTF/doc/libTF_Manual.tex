@@ -242,7 +242,10 @@ struct TFPose2D
 \subsubsection{Constructor}
 \index{libTF API!Constructor}
 \begin{verbatim}
-TransformReference(ULLtime cache_time = DEFAULT_CACHE_TIME);
+TransformReference(bool interpolating = true, 
+                   ULLtime cache_time = DEFAULT_CACHE_TIME,
+                   unsigned long long max_extrapolation_distance = DEFAULT_MAX_EXTRAPOLATION_DISTANCE);
+
 \end{verbatim}
 This is the constructor for the class.  It's optional argument is 
 how long to keep a history of the transforms.  It is expressed in 
@@ -292,6 +295,8 @@ NEWMAT::Matrix getMatrix(unsigned int target_frame,
                          unsigned int source_frame,
                          unsigned long long time); 
 \end{verbatim}
+getMatrix will return the homogeneous transformation matrix between the souce frame and the target frame.  
+The standard approach will return the linearly interpolated 
 
 \paragraph{transform[DATA\_TYPE]}
 \index{libTF API!transform[DATA\_TYPE]}

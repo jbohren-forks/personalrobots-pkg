@@ -203,7 +203,7 @@ public:
   /** Constructor 
    * \param How long to keep a history of transforms in nanoseconds
    */
-  TransformReference(bool caching = true, 
+  TransformReference(bool interpolating = true, 
                      ULLtime cache_time = DEFAULT_CACHE_TIME,
                      unsigned long long max_extrapolation_distance = DEFAULT_MAX_EXTRAPOLATION_DISTANCE);
   ~TransformReference();
@@ -319,7 +319,7 @@ private:
     public:
 
       /** Constructor */
-      RefFrame(bool caching = true,  
+      RefFrame(bool interpolating = true,  
                unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME,
                unsigned long long  max_extrapolation_time = DEFAULT_MAX_EXTRAPOLATION_TIME); 
       
@@ -349,8 +349,8 @@ private:
   /// How long to cache transform history
   ULLtime cache_time;
 
-  /// whether or not to cache
-  bool caching;
+  /// whether or not to interpolate or extrapolate
+  bool interpolating;
   
   /// whether or not to allow extrapolation
   unsigned long long max_extrapolation_distance;

@@ -161,7 +161,7 @@ public:
   
   /** Constructors **/
   // Standard constructor max_cache_time is how long to cache transform data
-  Quaternion3D(bool caching = true, 
+  Quaternion3D(bool interpolating = true, 
                unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME,
                unsigned long long  max_extrapolation_time = DEFAULT_MAX_EXTRAPOLATION_TIME); 
   ~Quaternion3D();  
@@ -242,6 +242,9 @@ private:
   data_LL* last;
 
   unsigned int list_length;
+
+  //Whether or not to interpolate
+  bool interpolating;
 
 };
 

@@ -35,21 +35,21 @@
 
 using namespace libTF;
 
-TransformReference::RefFrame::RefFrame(bool caching, 
+TransformReference::RefFrame::RefFrame(bool interpolating, 
                                        unsigned long long max_cache_time,
                                        unsigned long long max_extrapolation_distance) :
-  Quaternion3D(caching, max_cache_time, max_extrapolation_distance),
+  Quaternion3D(interpolating, max_cache_time, max_extrapolation_distance),
   parent(TransformReference::NO_PARENT)
 {
   return;
 }
 
 
-TransformReference::TransformReference(bool caching, 
+TransformReference::TransformReference(bool interpolating, 
                                        ULLtime cache_time,
                                        unsigned long long max_extrapolation_distance):
   cache_time(cache_time),
-  caching (caching),
+  interpolating (interpolating),
   max_extrapolation_distance(max_extrapolation_distance)
 {
 
@@ -83,7 +83,7 @@ void TransformReference::setWithEulers(unsigned int frameID, unsigned int parent
     throw InvalidFrame;
   
   if (frames[frameID] == NULL)
-    frames[frameID] = new RefFrame(caching, cache_time, max_extrapolation_distance);
+    frames[frameID] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
   
   getFrame(frameID)->setParent(parentID);
   getFrame(frameID)->addFromEuler(a,b,c,d,e,f,time);
@@ -95,7 +95,7 @@ void TransformReference::setWithDH(unsigned int frameID, unsigned int parentID, 
     throw InvalidFrame;
   
   if (frames[frameID] == NULL)
-    frames[frameID] = new RefFrame(caching, cache_time, max_extrapolation_distance);
+    frames[frameID] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
   
   getFrame(frameID)->setParent(parentID);
   getFrame(frameID)->addFromDH(a,b,c,d,time);
@@ -109,7 +109,7 @@ void TransformReference::setWithMatrix(unsigned int frameID, unsigned int parent
   
   //TODO check and throw exception if matrix wrong size
   if (frames[frameID] == NULL)
-    frames[frameID] = new RefFrame(caching, cache_time, max_extrapolation_distance);
+    frames[frameID] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
 
   getFrame(frameID)->setParent(parentID);
   getFrame(frameID)->addFromMatrix(matrix_in,time);
@@ -122,7 +122,7 @@ void TransformReference::setWithQuaternion(unsigned int frameID, unsigned int pa
     throw InvalidFrame;
   
   if (frames[frameID] == NULL)
-    frames[frameID] = new RefFrame(caching, cache_time, max_extrapolation_distance);
+    frames[frameID] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
   
   getFrame(frameID)->setParent(parentID);
   getFrame(frameID)->addFromQuaternion(xt, yt, zt, xr, yr, zr, w,time);

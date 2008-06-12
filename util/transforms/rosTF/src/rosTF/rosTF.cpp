@@ -33,10 +33,11 @@
 #include "rosTF/rosTF.h"
 
 rosTFClient::rosTFClient(ros::node & rosnode, 
-                         bool caching,
+                         bool interpolating,
+			 unsigned long long max_cache_time,
 			 unsigned long long max_extrapolation_distance):
-  TransformReference(caching,
-                     TransformReference::DEFAULT_CACHE_TIME,
+  TransformReference(interpolating,
+                     max_cache_time,
                      max_extrapolation_distance),
   myNode(rosnode)
 {

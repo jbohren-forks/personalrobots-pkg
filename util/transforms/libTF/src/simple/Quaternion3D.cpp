@@ -45,7 +45,7 @@ Euler3D::Euler3D(double _x, double _y, double _z, double _yaw, double _pitch, do
 };
 
 
-Quaternion3D::Quaternion3D(bool caching, 
+Quaternion3D::Quaternion3D(bool interpolating, 
                            unsigned long long max_cache_time,
                            unsigned long long _max_extrapolation_time):
   max_storage_time(max_cache_time),
@@ -53,11 +53,12 @@ Quaternion3D::Quaternion3D(bool caching,
   max_extrapolation_time(_max_extrapolation_time),
   first(NULL),
   last(NULL),
-  list_length(0)
+  list_length(0),
+  interpolating(interpolating)
 {
   //Turn of caching, this should only keep a liked list of lenth 1
   // Thus returning only the latest
-  if (!caching) max_length_linked_list = 1;
+  //  if (!caching) max_length_linked_list = 1; //Removed, simply use 0 time to get first value
 
   pthread_mutex_init( &linked_list_mutex, NULL);
   //fixme Normalize();
@@ -504,7 +505,10 @@ bool Quaternion3D::getValue(Quaternion3DStorage& buff, unsigned long long time, 
     }
   else
     {
-      interpolate(p_temp_1, p_temp_2, time, buff); 
+      if(interpolating)
+	interpolate(p_temp_1, p_temp_2, time, buff); 
+      else
+	buff = p_temp_1;
       retval = true;  
     }
   
@@ -669,8 +673,8 @@ int Quaternion3D::findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two
       return 0;
     }
   
-  //Case one element list
-  else if (first->next == NULL)
+  //Case one element list or latest value is wanted.  
+  else if (first->next == NULL || target_time == 0)
     {
       one = first->data;
       time_diff = target_time - first->data.time;

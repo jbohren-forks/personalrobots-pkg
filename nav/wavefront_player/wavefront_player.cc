@@ -298,7 +298,7 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         avmax(DTOR(80.0)),
         amin(DTOR(10.0)),
         amax(DTOR(40.0)),
-        tf(*this, true)
+        tf(*this, true, 200000000ULL, 200000000ULL) //nanoseconds
 {
   // TODO: get map via RPC
   char* mapdata;
@@ -570,9 +570,9 @@ WavefrontNode::doOneCycle()
   robotPose.y = 0;
   robotPose.yaw = 0;
   robotPose.frame = FRAMEID_ROBOT;
-  //robotPose.time = 0; // request most recent pose
-  robotPose.time = laserMsg.header.stamp.sec * 1000000000ULL + 
-          laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
+  robotPose.time = 0; // request most recent pose
+  //robotPose.time = laserMsg.header.stamp.sec * 1000000000ULL + 
+  //        laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
   try
   {
     global_pose = this->tf.transformPose2D(FRAMEID_MAP, robotPose);
