@@ -46,19 +46,7 @@ consult <a href="http://playerstage.sourceforge.net/doc/Player-cvs/player/group_
 
 @section usage Usage
 @verbatim
-$ amcl_player <map> <res> [standard ROS args]
-@endverbatim
-
-@param map An image file to load as an occupancy grid map.  The robot will be localized against this map using laser scans.  The lower-left pixel of the map is assigned the pose (0,0,0).
-@param res The resolution of the map, in meters, pixel.
-
-@todo Remove the map and res arguments in favor map retrieval via ROSRPC.
-@todo Remove the x,y,th arguments and expose the particle filter initialization via a ROS topic.
-
-@par Example
-
-@verbatim
-$ amcl_player mymap.png 0.1 10.4 31.2 90.0
+$ amcl_player
 @endverbatim
 
 <hr>
@@ -99,22 +87,19 @@ Publishes to (name / type):
 #include <ros/node.h>
 
 // Messages that I need
-#include <std_msgs/MsgLaserScan.h>
-#include <std_msgs/MsgRobotBase2DOdom.h>
-#include <std_msgs/MsgParticleCloud2D.h>
-#include <std_msgs/MsgPose2DFloat32.h>
+#include <std_msgs/LaserScan.h>
+#include <std_msgs/RobotBase2DOdom.h>
+#include <std_msgs/ParticleCloud2D.h>
+#include <std_msgs/Pose2DFloat32.h>
+#include <std_srvs/StaticMap.h>
 
 // For transform support
 #include <rosTF/rosTF.h>
 
-#include <gdk-pixbuf/gdk-pixbuf.h>
 // compute linear index for given map coords
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
 // check that given coords are valid (i.e., on the map)
 #define MAP_VALID(mf, i, j) ((i >= 0) && (i < mf->sx) && (j >= 0) && (j < mf->sy))
-double get_time(void);
-int read_map_from_image(int* size_x, int* size_y, char** mapdata, 
-       			const char* fname, int negate);
 
 #define PLAYER_QUEUE_LEN 32
 
@@ -125,7 +110,7 @@ Driver* AdaptiveMCL_Init(ConfigFile* cf, int section);
 class AmclNode: public ros::node, public Driver
 {
   public:
-    AmclNode(char* fname, double res);
+    AmclNode();
     ~AmclNode();
 
     int Setup() {return(0);}
@@ -146,11 +131,11 @@ class AmclNode: public ros::node, public Driver
     ConfigFile* cf;
 
     // incoming messages
-    MsgRobotBase2DOdom localizedOdomMsg;
-    MsgParticleCloud2D particleCloudMsg;
-    MsgRobotBase2DOdom odomMsg;
-    MsgLaserScan laserMsg;
-    MsgPose2DFloat32 initialPoseMsg;
+    std_msgs::RobotBase2DOdom localizedOdomMsg;
+    std_msgs::ParticleCloud2D particleCloudMsg;
+    std_msgs::RobotBase2DOdom odomMsg;
+    std_msgs::LaserScan laserMsg;
+    std_msgs::Pose2DFloat32 initialPoseMsg;
     
     // Message callbacks
     void odomReceived();
@@ -178,20 +163,14 @@ class AmclNode: public ros::node, public Driver
     double resolution;
 };
 
-#define USAGE "USAGE: amcl_player <map.png> <res>"
+#define USAGE "USAGE: amcl_player"
 
 int
 main(int argc, char** argv)
 {
-  if(argc < 3)
-  {
-    puts(USAGE);
-    exit(-1);
-  }
-
   ros::init(argc, argv);
 
-  AmclNode an(argv[1],atof(argv[2]));
+  AmclNode an;
 
   // Start up the robot
   if(an.start() != 0)
@@ -212,7 +191,7 @@ main(int argc, char** argv)
   return(0);
 }
 
-AmclNode::AmclNode(char* fname, double res) : 
+AmclNode::AmclNode() :
         ros::node("amcl_player"), 
         Driver(NULL,-1,false,PLAYER_QUEUE_LEN)
 {
@@ -224,18 +203,41 @@ AmclNode::AmclNode(char* fname, double res) :
   playerxdr_ftable_init();
 
   puts("advertising");
-  advertise<MsgRobotBase2DOdom>("localizedpose");
-  advertise<MsgParticleCloud2D>("particlecloud");
+  advertise<std_msgs::RobotBase2DOdom>("localizedpose");
+  advertise<std_msgs::ParticleCloud2D>("particlecloud");
   puts("subscribing");
   subscribe("odom", odomMsg, &AmclNode::odomReceived);
   subscribe("scan", laserMsg, &AmclNode::laserReceived);
   subscribe("initialpose", initialPoseMsg, &AmclNode::initialPoseReceived);
   puts("done");
 
-  // TODO: get map via RPC
-  assert(read_map_from_image(&this->sx, &this->sy, &this->mapdata, fname, 0)
-         == 0);
-  this->resolution = res;
+  // get map via RPC
+  std_srvs::StaticMap::request  req;
+  std_srvs::StaticMap::response resp;
+  puts("Requesting the map...");
+  assert(ros::service::call("static_map", req, resp));
+  printf("Received a %d X %d map @ %.3f m/pix\n",
+         resp.map.width,
+         resp.map.height,
+         resp.map.resolution);
+
+  this->sx = resp.map.width;
+  this->sy = resp.map.height;
+  this->resolution = resp.map.resolution;
+  // Convert to player format
+  this->mapdata = new char[this->sx*this->sy];
+  for(int i=0;i<this->sx*this->sy;i++)
+  {
+    if(resp.map.data[i] == 0)
+      this->mapdata[i] = -1;
+    else if(resp.map.data[i] == 100)
+      this->mapdata[i] = +1;
+    else
+      this->mapdata[i] = 0;
+  }
+  
+  //assert(read_map_from_image(&this->sx, &this->sy, &this->mapdata, fname, 0)
+         //== 0);
 
   // TODO: automatically convert between string and player_devaddr_t
   // representations
@@ -389,11 +391,12 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     localizedOdomMsg.pos.x = pdata->pos.px;
     localizedOdomMsg.pos.y = pdata->pos.py;
     localizedOdomMsg.pos.th = pdata->pos.pa;
-    localizedOdomMsg.header.stamp.sec = (unsigned long)floor(hdr->timestamp);
-    localizedOdomMsg.header.stamp.nsec = 
-            (unsigned long)rint(1e9 * (hdr->timestamp -
-                                       localizedOdomMsg.header.stamp.sec));
-    localizedOdomMsg.__timestamp_override = true;
+    localizedOdomMsg.header.stamp.from_double(hdr->timestamp);
+    //localizedOdomMsg.header.stamp.sec = (unsigned long)floor(hdr->timestamp);
+    //localizedOdomMsg.header.stamp.nsec = 
+            //(unsigned long)rint(1e9 * (hdr->timestamp -
+                                       //localizedOdomMsg.header.stamp.sec));
+    //localizedOdomMsg.__timestamp_override = true;
     publish("localizedpose", localizedOdomMsg);
 
     // Also request and publish the particle cloud
@@ -619,8 +622,7 @@ AmclNode::laserReceived()
   }
   pdata.id = this->laserMsg.header.seq;
 
-  double timestamp = this->laserMsg.header.stamp.sec + 
-          this->laserMsg.header.stamp.nsec / 1e9;
+  double timestamp = this->laserMsg.header.stamp.to_double();
 
   this->Driver::Publish(this->laser_addr,
                         PLAYER_MSGTYPE_DATA,
@@ -653,8 +655,7 @@ AmclNode::odomReceived()
   pdata.vel.pa = this->odomMsg.vel.th;
   pdata.stall = this->odomMsg.stall;
 
-  double timestamp = this->odomMsg.header.stamp.sec + 
-          this->odomMsg.header.stamp.nsec / 1e9;
+  double timestamp = this->odomMsg.header.stamp.to_double();
 
   this->Driver::Publish(this->position2d_addr,
                         PLAYER_MSGTYPE_DATA,
@@ -663,72 +664,3 @@ AmclNode::odomReceived()
                         &timestamp);
 }
 
-int
-read_map_from_image(int* size_x, int* size_y, char** mapdata, 
-                    const char* fname, int negate)
-{
-  GdkPixbuf* pixbuf;
-  guchar* pixels;
-  guchar* p;
-  int rowstride, n_channels, bps;
-  GError* error = NULL;
-  int i,j,k;
-  double occ;
-  int color_sum;
-  double color_avg;
-
-  // Initialize glib
-  g_type_init();
-
-  printf("MapFile loading image file: %s...", fname);
-  fflush(stdout);
-
-  // Read the image
-  if(!(pixbuf = gdk_pixbuf_new_from_file(fname, &error)))
-  {
-    printf("failed to open image file %s", fname);
-    return(-1);
-  }
-
-  *size_x = gdk_pixbuf_get_width(pixbuf);
-  *size_y = gdk_pixbuf_get_height(pixbuf);
-
-  assert(*mapdata = (char*)malloc(sizeof(char) * (*size_x) * (*size_y)));
-
-  rowstride = gdk_pixbuf_get_rowstride(pixbuf);
-  bps = gdk_pixbuf_get_bits_per_sample(pixbuf)/8;
-  n_channels = gdk_pixbuf_get_n_channels(pixbuf);
-  //if(gdk_pixbuf_get_has_alpha(pixbuf))
-    //n_channels++;
-
-  // Read data
-  pixels = gdk_pixbuf_get_pixels(pixbuf);
-  for(j = 0; j < *size_y; j++)
-  {
-    for (i = 0; i < *size_x; i++)
-    {
-      p = pixels + j*rowstride + i*n_channels*bps;
-      color_sum = 0;
-      for(k=0;k<n_channels;k++)
-        color_sum += *(p + (k * bps));
-      color_avg = color_sum / (double)n_channels;
-
-      if(negate)
-        occ = color_avg / 255.0;
-      else
-        occ = (255 - color_avg) / 255.0;
-      if(occ > 0.95)
-        (*mapdata)[MAP_IDX(*size_x,i,*size_y - j - 1)] = +1;
-      else if(occ < 0.1)
-        (*mapdata)[MAP_IDX(*size_x,i,*size_y - j - 1)] = -1;
-      else
-        (*mapdata)[MAP_IDX(*size_x,i,*size_y - j - 1)] = 0;
-    }
-  }
-
-  gdk_pixbuf_unref(pixbuf);
-
-  puts("Done.");
-  printf("MapFile read a %d X %d map\n", *size_x, *size_y);
-  return(0);
-}

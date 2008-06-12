@@ -64,18 +64,7 @@ time to slow down.
 
 @section usage Usage
 @verbatim
-$ wavefront_player <map> <res> [standard ROS args]
-@endverbatim
-
-@param map An image file to load as an occupancy grid map.  The robot will be localized against this map using laser scans.  The lower-left pixel of the map is assigned the pose (0,0,0).
-@param res The resolution of the map, in meters, pixel.
-
-@todo Remove the map and res arguments in favor map retrieval via ROSRPC.
-
-@par Example
-
-@verbatim
-$ wavefront_player mymap.png 0.1
+$ wavefront_player
 @endverbatim
 
 <hr>
@@ -124,15 +113,16 @@ robot.
 #include <ros/node.h>
 
 // The messages that we'll use
-#include <std_msgs/MsgPlanner2DState.h>
-#include <std_msgs/MsgPlanner2DGoal.h>
-#include <std_msgs/MsgBaseVel.h>
+#include <std_msgs/Planner2DState.h>
+#include <std_msgs/Planner2DGoal.h>
+#include <std_msgs/BaseVel.h>
 //#include <std_msgs/MsgRobotBase2DOdom.h>
-#include <std_msgs/MsgLaserScan.h>
-#include <std_msgs/MsgPose2DFloat32.h>
+#include <std_msgs/LaserScan.h>
+#include <std_msgs/Pose2DFloat32.h>
+#include <std_srvs/StaticMap.h>
 
 // For GUI debug
-#include <std_msgs/MsgPolyline2D.h>
+#include <std_msgs/Polyline2D.h>
 
 // For transform support
 #include <rosTF/rosTF.h>
@@ -144,15 +134,6 @@ robot.
 #define DTOR(a) ((a)*M_PI/180.0)
 #define RTOD(a) ((a)*180.0/M_PI)
 #define SIGN(x) (((x) < 0.0) ? -1 : 1)
-
-//void draw_cspace(plan_t* plan, const char* fname);
-//void draw_path(plan_t* plan, double lx, double ly, const char* fname);
-#include <gdk-pixbuf/gdk-pixbuf.h>
-// compute linear index for given map coords
-#define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
-// computes the signed minimum difference between the two angles.
-int read_map_from_image(int* size_x, int* size_y, char** mapdata, 
-       			const char* fname, int negate);
 
 // A bunch of x,y points, with a timestamp
 typedef struct
@@ -201,7 +182,7 @@ class WavefrontNode: public ros::node
     // Map update paramters (for adding obstacles)
     double laser_maxrange;
     ros::Duration laser_buffer_time;
-    std::list<MsgLaserScan> buffered_laser_scans;
+    std::list<std_msgs::LaserScan> buffered_laser_scans;
     std::list<laser_pts_t> laser_scans;
     double* laser_hitpts;
     size_t laser_hitpts_len, laser_hitpts_size;
@@ -212,13 +193,13 @@ class WavefrontNode: public ros::node
     double tvmin, tvmax, avmin, avmax, amin, amax;
 
     // incoming/outgoing messages
-    MsgPlanner2DGoal goalMsg;
+    std_msgs::Planner2DGoal goalMsg;
     //MsgRobotBase2DOdom odomMsg;
-    MsgLaserScan laserMsg;
-    MsgPolyline2D polylineMsg;
-    MsgPolyline2D pointcloudMsg;
-    MsgPlanner2DState pstate;
-    std::vector<MsgLaserScan> laserScans;
+    std_msgs::LaserScan laserMsg;
+    std_msgs::Polyline2D polylineMsg;
+    std_msgs::Polyline2D pointcloudMsg;
+    std_msgs::Planner2DState pstate;
+    std::vector<std_msgs::LaserScan> laserScans;
     //MsgRobotBase2DOdom prevOdom;
     bool firstodom;
 
@@ -236,7 +217,7 @@ class WavefrontNode: public ros::node
     // Transform client
     rosTFClient tf;
 
-    WavefrontNode(char* fname, double res);
+    WavefrontNode();
     ~WavefrontNode();
     
     // Stop the robot
@@ -247,20 +228,14 @@ class WavefrontNode: public ros::node
     void sleep(double loopstart);
 };
 
-#define USAGE "USAGE: wavefront_player <map.png> <res>"
+#define USAGE "USAGE: wavefront_player"
 
 int
 main(int argc, char** argv)
 {
-  if(argc < 3)
-  {
-    puts(USAGE);
-    exit(-1);
-  }
-
   ros::init(argc,argv);
 
-  WavefrontNode wn(argv[1],atof(argv[2]));
+  WavefrontNode wn;
 
   struct timeval curr;
   while(wn.ok())
@@ -273,7 +248,7 @@ main(int argc, char** argv)
   return(0);
 }
 
-WavefrontNode::WavefrontNode(char* fname, double res) : 
+WavefrontNode::WavefrontNode() :
         ros::node("wavfront_player"),
         planner_state(NO_GOAL),
         enable(true),
@@ -300,10 +275,30 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
         amax(DTOR(40.0)),
         tf(*this, true, 200000000ULL, 200000000ULL) //nanoseconds
 {
-  // TODO: get map via RPC
+  // get map via RPC
+  std_srvs::StaticMap::request  req;
+  std_srvs::StaticMap::response resp;
+  puts("Requesting the map...");
+  assert(ros::service::call("static_map", req, resp));
+  printf("Received a %d X %d map @ %.3f m/pix\n",
+         resp.map.width,
+         resp.map.height,
+         resp.map.resolution);
   char* mapdata;
   int sx, sy;
-  assert(read_map_from_image(&sx, &sy, &mapdata, fname, 0) == 0);
+  sx = resp.map.width;
+  sy = resp.map.height;
+  // Convert to player format
+  mapdata = new char[sx*sy];
+  for(int i=0;i<sx*sy;i++)
+  {
+    if(resp.map.data[i] == 0)
+      mapdata[i] = -1;
+    else if(resp.map.data[i] == 100)
+      mapdata[i] = +1;
+    else
+      mapdata[i] = 0;
+  }
 
   assert((this->plan = plan_alloc(this->robot_radius+this->safety_dist,
                                   this->robot_radius+this->safety_dist,
@@ -322,9 +317,9 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
     for(int i=0;i<sx;i++)
       this->plan->cells[i+j*sx].occ_state = mapdata[i+j*sx];
   }
-  free(mapdata);
+  delete[] mapdata;
 
-  this->plan->scale = res;
+  this->plan->scale = resp.map.resolution;
   this->plan->size_x = sx;
   this->plan->size_y = sy;
   this->plan->origin_x = 0.0;
@@ -347,10 +342,10 @@ WavefrontNode::WavefrontNode(char* fname, double res) :
                          FRAMEID_ROBOT,
                          0.05, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
 
-  advertise<MsgPlanner2DState>("state");
-  advertise<MsgPolyline2D>("gui_path");
-  advertise<MsgPolyline2D>("gui_laser");
-  advertise<MsgBaseVel>("cmd_vel");
+  advertise<std_msgs::Planner2DState>("state");
+  advertise<std_msgs::Polyline2D>("gui_path");
+  advertise<std_msgs::Polyline2D>("gui_laser");
+  advertise<std_msgs::BaseVel>("cmd_vel");
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived);
   subscribe("scan", laserMsg, &WavefrontNode::laserReceived);
 }
@@ -385,8 +380,9 @@ void
 WavefrontNode::laserReceived()
 {
   // Copy and push this scan into the list of buffered scans
-  MsgLaserScan newscan;
+  std_msgs::LaserScan newscan(laserMsg);
   // Do a deep copy
+  /*
   newscan.header.stamp.sec = laserMsg.header.stamp.sec;
   newscan.header.stamp.nsec = laserMsg.header.stamp.nsec;
   newscan.header.frame_id = laserMsg.header.frame_id;
@@ -396,10 +392,11 @@ WavefrontNode::laserReceived()
   newscan.angle_increment = laserMsg.angle_increment;
   newscan.set_ranges_size(laserMsg.get_ranges_size());
   memcpy(newscan.ranges,laserMsg.ranges,laserMsg.get_ranges_size()*sizeof(float));
+  */
   this->buffered_laser_scans.push_back(newscan);
 
   // Iterate through the buffered scans, trying to interpolate each one
-  for(std::list<MsgLaserScan>::iterator it = this->buffered_laser_scans.begin();
+  for(std::list<std_msgs::LaserScan>::iterator it = this->buffered_laser_scans.begin();
       it != this->buffered_laser_scans.end();
       it++)
   {
@@ -414,8 +411,9 @@ WavefrontNode::laserReceived()
 
     libTF::TFPose2D local,global;
     local.frame = it->header.frame_id;
-    local.time = it->header.stamp.sec * 1000000000ULL + 
-            it->header.stamp.nsec;
+    local.time = it->header.stamp.to_ull();
+    //local.time = it->header.stamp.sec * 1000000000ULL + 
+            //it->header.stamp.nsec;
     float b=it->angle_min;
     float* r=it->ranges;
     unsigned int i;
@@ -462,7 +460,10 @@ WavefrontNode::laserReceived()
     {
       pts.pts_num = cnt;
       this->laser_scans.push_back(pts);
-      delete[] it->ranges;
+      // Don't delete ranges here, because the LaserScan destructor does it
+      // when the object falls out of scope after being erased from the
+      // list.
+      //delete[] it->ranges;
       it = this->buffered_laser_scans.erase(it);
       it--;
     }
@@ -540,13 +541,13 @@ WavefrontNode::stopRobot()
 
 // Declare this globally, so that it never gets desctructed (message
 // desctruction causes master disconnect)
-MsgBaseVel* cmdvel;
+std_msgs::BaseVel* cmdvel;
 
 void
 WavefrontNode::sendVelCmd(double vx, double vy, double vth)
 {
   if(!cmdvel)
-    cmdvel = new MsgBaseVel();
+    cmdvel = new std_msgs::BaseVel();
   cmdvel->vx = vx;
   cmdvel->vw = vth;
   this->ros::node::publish("cmd_vel", *cmdvel);
@@ -737,75 +738,5 @@ WavefrontNode::sleep(double loopstart)
     puts("Wavefront missed deadline and not sleeping; check machine load");
   else
     usleep((unsigned int)rint(tdiff*1e6));
-}
-
-int
-read_map_from_image(int* size_x, int* size_y, char** mapdata, 
-                    const char* fname, int negate)
-{
-  GdkPixbuf* pixbuf;
-  guchar* pixels;
-  guchar* p;
-  int rowstride, n_channels, bps;
-  GError* error = NULL;
-  int i,j,k;
-  double occ;
-  int color_sum;
-  double color_avg;
-
-  // Initialize glib
-  g_type_init();
-
-  printf("MapFile loading image file: %s...", fname);
-  fflush(stdout);
-
-  // Read the image
-  if(!(pixbuf = gdk_pixbuf_new_from_file(fname, &error)))
-  {
-    printf("failed to open image file %s", fname);
-    return(-1);
-  }
-
-  *size_x = gdk_pixbuf_get_width(pixbuf);
-  *size_y = gdk_pixbuf_get_height(pixbuf);
-
-  assert(*mapdata = (char*)malloc(sizeof(char) * (*size_x) * (*size_y)));
-
-  rowstride = gdk_pixbuf_get_rowstride(pixbuf);
-  bps = gdk_pixbuf_get_bits_per_sample(pixbuf)/8;
-  n_channels = gdk_pixbuf_get_n_channels(pixbuf);
-  //if(gdk_pixbuf_get_has_alpha(pixbuf))
-    //n_channels++;
-
-  // Read data
-  pixels = gdk_pixbuf_get_pixels(pixbuf);
-  for(j = 0; j < *size_y; j++)
-  {
-    for (i = 0; i < *size_x; i++)
-    {
-      p = pixels + j*rowstride + i*n_channels*bps;
-      color_sum = 0;
-      for(k=0;k<n_channels;k++)
-        color_sum += *(p + (k * bps));
-      color_avg = color_sum / (double)n_channels;
-
-      if(negate)
-        occ = color_avg / 255.0;
-      else
-        occ = (255 - color_avg) / 255.0;
-      if(occ > 0.5)
-        (*mapdata)[MAP_IDX(*size_x,i,*size_y - j - 1)] = +1;
-      else if(occ < 0.1)
-        (*mapdata)[MAP_IDX(*size_x,i,*size_y - j - 1)] = -1;
-      else
-        (*mapdata)[MAP_IDX(*size_x,i,*size_y - j - 1)] = 0;
-    }
-  }
-
-  gdk_pixbuf_unref(pixbuf);
-
-  puts("Done.");
-  printf("MapFile read a %d X %d map\n", *size_x, *size_y);
-  return(0);
 }
 

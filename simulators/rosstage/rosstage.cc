@@ -242,11 +242,12 @@ StageNode::Update()
 
     // TODO: get the frame ID from somewhere
     this->laserMsg.header.frame_id = FRAMEID_LASER;
-    this->laserMsg.header.stamp.sec = 
-            (unsigned long)floor(world->SimTimeNow() / 1e6);
-    this->laserMsg.header.stamp.nsec = 
-            (unsigned long)rint(1e3 * (world->SimTimeNow() - 
-                                       this->laserMsg.header.stamp.sec * 1e6));
+    this->laserMsg.header.stamp.from_double(world->SimTimeNow() / 1e6);
+    //this->laserMsg.header.stamp.sec = 
+            //(unsigned long)floor(world->SimTimeNow() / 1e6);
+    //this->laserMsg.header.stamp.nsec = 
+            //(unsigned long)rint(1e3 * (world->SimTimeNow() - 
+                                       //this->laserMsg.header.stamp.sec * 1e6));
     this->laserMsg.__timestamp_override = true;
     publish("scan",this->laserMsg);
   }
@@ -264,11 +265,12 @@ StageNode::Update()
   // TODO: get the frame ID from somewhere
   this->odomMsg.header.frame_id = FRAMEID_ODOM;
 
-  this->odomMsg.header.stamp.sec = 
-          (unsigned long)floor(world->SimTimeNow() / 1e6);
-  this->odomMsg.header.stamp.nsec = 
-          (unsigned long)rint(1e3 * (world->SimTimeNow() - 
-                                     this->odomMsg.header.stamp.sec * 1e6));
+  this->odomMsg.header.stamp.from_double(world->SimTimeNow() / 1e6);
+  //this->odomMsg.header.stamp.sec = 
+          //(unsigned long)floor(world->SimTimeNow() / 1e6);
+  //this->odomMsg.header.stamp.nsec = 
+          //(unsigned long)rint(1e3 * (world->SimTimeNow() - 
+                                     //this->odomMsg.header.stamp.sec * 1e6));
   this->odomMsg.__timestamp_override = true;
   publish("odom",this->odomMsg);
 

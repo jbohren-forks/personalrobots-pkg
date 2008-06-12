@@ -1,10 +1,11 @@
 <launch>
 
   <ns name="wg">
-    <node pkg="rosstage" type="rosstage" args="willow-erratic.world" respawn="true" />
-    <node pkg="amcl_player" type="amcl_player" args="willow-full.png 0.1" respawn="true" />
-    <node pkg="wavefront_player" type="wavefront_player" args="willow-full.png 0.1" respawn="true" />
-    <node pkg="nav_view" type="nav_view" args="willow-full.png 0.1" respawn="true" />
+    <node pkg="rosstage" type="rosstage" args="willow-erratic.world" respawn="false" />
+    <node pkg="map_server" type="map_server" args="willow-full.png 0.1" respawn="false" />
+    <node pkg="amcl_player" type="amcl_player" respawn="false" />
+    <node pkg="wavefront_player" type="wavefront_player" respawn="false" />
+    <node pkg="nav_view" type="nav_view" respawn="false" />
   </ns>
 </launch>
 

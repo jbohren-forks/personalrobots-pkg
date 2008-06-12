@@ -125,8 +125,6 @@ public:
   bool setting_theta;
   double gx,gy;
 
-  std_srvs::StaticMap::response map_resp;
-
   rosTFClient tf;
   ros::time::clock myClock;
 
@@ -209,8 +207,8 @@ main(int argc, char **argv)
   ros::init(argc, argv);
   
   NavView view;
-  //if(!view.load_map())
-  if(!view.load_map_from_image(argv[1],atof(argv[2])))
+  if(!view.load_map())
+  //if(!view.load_map_from_image(argv[1],atof(argv[2])))
     puts("WARNING: failed to load map");
   view.main_loop();
   ros::fini();
@@ -380,62 +378,66 @@ bool
 NavView::load_map()
 {
   std_srvs::StaticMap::request  req;
-  std_srvs::StaticMap::response res;
+  std_srvs::StaticMap::response resp;
   puts("Requesting the map...");
-  if(ros::service::call("static_map", req, res))
+  if(ros::service::call("static_map", req, resp))
   {
     puts("success");
-    map_resp = res;
-    map_res = map_resp.map.resolution;
-    map_width = map_resp.map.width;
-    map_height = map_resp.map.height;
-
     printf("Received a %d X %d map @ %.3f m/pix\n",
-           map_resp.map.width,
-           map_resp.map.height,
-           map_resp.map.resolution);
+           resp.map.width,
+           resp.map.height,
+           resp.map.resolution);
+
+    map_res = resp.map.resolution;
+
+    // Pad dimensions to power of 2 
+    map_width = (int)pow(2,ceil(log2(resp.map.width)));
+    map_height = (int)pow(2,ceil(log2(resp.map.height)));
+
+    printf("Padded dimensions to %d X %d\n", map_width, map_height);
 
     // Expand it to be RGB data
-    unsigned char* pixels = 
-            new unsigned char[map_resp.map.width * map_resp.map.height * 4];
-    for(unsigned int i=0;i<map_resp.map.width*map_resp.map.height;i++)
+    unsigned char* pixels = new unsigned char[map_width * map_height * 3];
+    assert(pixels);
+    memset(pixels,255,map_width*map_height*3);
+    for(unsigned int j=0;j<resp.map.height;j++)
     {
-      unsigned char val;
-      if(map_resp.map.data[i] == 100)
-        val = 0;
-      else if(map_resp.map.data[i] == 0)
-        val = 255;
-      else
-        val = 127;
+      for(unsigned int i=0;i<resp.map.width;i++)
+      {
+        unsigned char val;
+        if(resp.map.data[j*resp.map.width+i] == 100)
+          val = 0;
+        else if(resp.map.data[j*resp.map.width+i] == 0)
+          val = 255;
+        else
+          val = 127;
 
-      pixels[4*i] = val;
-      pixels[4*i+1] = val;
-      pixels[4*i+2] = val;
-      pixels[4*i+3] = 255;
+        int pidx = 3*(j*map_width + i);
+        pixels[pidx+0] = val;
+        pixels[pidx+1] = val;
+        pixels[pidx+2] = val;
+      }
     }
 
-    GLint nOfColors = 4;
-    GLenum texture_format = GL_RGBA;
+    glEnable( GL_TEXTURE_2D ); 
 
     // Have OpenGL generate a texture object handle for us
-    glGenTextures( 1, &map_texture );
+    glGenTextures(1, &map_texture);
 
     // Bind the texture object
-    glBindTexture( GL_TEXTURE_2D, map_texture );
+    glBindTexture(GL_TEXTURE_2D, map_texture);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     // Set the texture's stretching properties
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                     GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D,
-                     GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    // Edit the texture object's image data using
-    //the information SDL_Surface gives us
-    glTexImage2D( GL_TEXTURE_2D, 0, nOfColors,
-                  map_width, map_height, 0,
-                  texture_format,
-                  GL_UNSIGNED_BYTE,
-                  pixels );
+    // Edit the texture object's image data
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                 map_width, map_height, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE,
+                 pixels);
     return(true);
   }
   else
@@ -464,13 +466,12 @@ NavView::load_map_from_image(const char* fname, double res)
 
   // Check that the image's width is a power of 2
   if((temp->w & (temp->w - 1)) != 0) {
-    printf("warning: image.bmp's width is not a power of 2\n");
+    printf("warning: image width is not a power of 2\n");
   }
   // Also check if the height is a power of 2
   if((temp->h & (temp->h - 1)) != 0) {
-    printf("warning: image.bmp's height is not a power of 2\n");
+    printf("warning: image height is not a power of 2\n");
   }
-
 
   // Flip the image vertically
   map_surface = flip_vert(temp);
