@@ -11,7 +11,7 @@
   xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" 
   >
 
-  <xyz>0.0 0.0 10.0</xyz>
+  <xyz>0.0 0.0 0.0</xyz>
   <rpy>0.0 0.0 0.0</rpy>
 
   <canonicalBody>base_body</canonicalBody>
@@ -129,9 +129,6 @@
 
       <minRange>0.05</minRange>
       <maxRange>10.0</maxRange>
-
-      <updateRate>10.0</updateRate>
-
       <controller:sicklms200_laser name="base_laser_controller_1">
         <interface:laser name="base_laser_iface_1"/>
         <updateRate>10</updateRate>
@@ -151,9 +148,6 @@
 
       <minRange>0.05</minRange>
       <maxRange>10.0</maxRange>
-
-      <updateRate>10.0</updateRate>
-
       <controller:sick2lms200_laser name="laser_controller_1">
         <interface:laser name="laser_iface_1"/>
         <updateRate>10</updateRate>
@@ -1393,9 +1387,6 @@
 
       <minRange>0.05</minRange>
       <maxRange>10.0</maxRange>
-
-      <updateRate>10.0</updateRate>
-
       <controller:sicklms200_laser name="laser_controller_1">
         <interface:laser name="laser_iface_1"/>
         <updateRate>10</updateRate>
@@ -1415,9 +1406,6 @@
 
       <minRange>0.05</minRange>
       <maxRange>10.0</maxRange>
-
-      <updateRate>10.0</updateRate>
-
       <controller:sick2lms200_laser name="laser_controller_1">
         <interface:laser name="laser_iface_1"/>
         <updateRate>10</updateRate>

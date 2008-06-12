@@ -96,7 +96,7 @@
         <saveFrames>false</saveFrames>
         <saveFramePath>frames</saveFramePath>
         <controller:generic_camera name="cam1_controller">
-          <updateRate>8.0</updateRate>
+          <updateRate>10.0</updateRate>
           <interface:camera name="cam1_iface_0" />
         </controller:generic_camera>
       </sensor:camera>
@@ -608,6 +608,12 @@
         <updateRate>100.0</updateRate>
         <bodyName>palm_left</bodyName>
         <interface:position name="p3d_left_wrist_position"/>
+    </controller:P3D>
+
+    <controller:P3D name="p3d_base_controller" plugin="libP3D.so">
+        <updateRate>100.0</updateRate>
+        <bodyName>base_body</bodyName>
+        <interface:position name="p3d_base_position"/>
     </controller:P3D>
 
   </model:physical>
