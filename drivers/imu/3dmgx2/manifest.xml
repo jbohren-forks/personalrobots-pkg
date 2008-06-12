@@ -1,0 +1,13 @@
+<package>
+  <description>
+    A standalone driver for the microstrain 3dmgx2 pulled from player
+  distribution and modified heavily.  Once this driver is merged back
+  into player, this package should be removed to avoid having parallel
+  code.
+  </description>
+  <author>Jeremy Leibs</author>
+  <license>LGPL</license>
+  <export>
+    <cpp cflags="-I${prefix}" lflags="-L${prefix} -limu"/>
+  </export>
+</package>
