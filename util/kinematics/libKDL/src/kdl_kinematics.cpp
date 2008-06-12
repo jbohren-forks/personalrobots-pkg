@@ -66,6 +66,8 @@ double angle_within_mod180(double ang)
 	double rem = modulus_double(ang, 2*M_PI);
 	if (rem>M_PI)
 		rem -= 2*M_PI;
+	else if (rem<-M_PI)
+		rem += 2*M_PI;
 
 	return rem;
 }
