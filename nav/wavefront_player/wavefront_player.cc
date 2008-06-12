@@ -549,7 +549,6 @@ WavefrontNode::sendVelCmd(double vx, double vy, double vth)
     cmdvel = new MsgBaseVel();
   cmdvel->vx = vx;
   cmdvel->vw = vth;
-printf("%.3f %.3f %.3f\n", vx, vy, vth);
   this->ros::node::publish("cmd_vel", *cmdvel);
   if(vx || vy || vth)
     this->stopped = false;
