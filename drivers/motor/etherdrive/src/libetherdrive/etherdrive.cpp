@@ -134,6 +134,7 @@ int EtherDrive::send_cmd(char* cmd, size_t cmd_len, char* buf, size_t buf_len) {
 
 bool EtherDrive::motors_on() {
 
+
   if (ready) {
     int32_t cmd[3];
     cmd[0] = 'm';
@@ -141,16 +142,13 @@ bool EtherDrive::motors_on() {
     cmd[2] = 0;
   
     int32_t res[3];
-  
     size_t res_len = send_cmd((char*)cmd, 3*sizeof(int32_t), (char*)res, 100*sizeof(int32_t));
-  
     if (res_len == 3*sizeof(int32_t)) {
       if (res[1] == 1) {
 	return true;
       } 
     }    
   }
-
   return false;
 }
 
@@ -178,9 +176,7 @@ bool EtherDrive::motors_off() {
 }
 
 bool EtherDrive::set_control_mode(int8_t m) {
-
   if (ready) {
-
     if (m == 0 || m == 1 || m == 2) {
 
       int32_t cmd[3];

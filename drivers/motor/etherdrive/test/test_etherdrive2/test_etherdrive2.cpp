@@ -52,14 +52,17 @@ int main() {
 
   extern EtherDrive e;
   
-  if (!e.init("192.168.1.12")) {
+  //if (!e.init("192.168.1.12")) {
+
+  if (!e.init("10.12.0.103")) {
     cout << "Could not initialize etherdrive." << endl;
     return -1;
   }
+  EDMotor m0 = e.get_motor(5);
 
-  EDMotor m0 = e.get_motor(0);
+  //EDMotor m0 = e.get_motor(0);
   //  EDMotor m1 = e.get_motor(1);
-  EDMotor m2 = e.get_motor(2);
+  //EDMotor m2 = e.get_motor(2);
 
   e.motors_on();
   
@@ -67,7 +70,7 @@ int main() {
   int counter2 = 0;
 
   int wait_time = 1000;
-  int junk = 200;
+  int junk = 1000;
   int drv = junk;
   int max_range = 15000;
   
@@ -76,7 +79,8 @@ int main() {
 
 
   //Kc ~=550 for elbow
-  if (!m0.set_gains(400, 100, 0, 5, 200, 0)) { // P, I, D, Windup, Clamp, Deadzone
+//  if (!m0.set_gains(400, 100, 0, 5, 200, 0)) { // P, I, D, Windup, Clamp, Deadzone
+  if (!m0.set_gains(0, 10, 0, 100, 1004, 1)) { // P, I, D, Windup, Clamp, Deadzone
     printf("Setting gains failed!\n");
     return 0;
   }

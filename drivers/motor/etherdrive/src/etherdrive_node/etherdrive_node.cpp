@@ -28,21 +28,30 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ros/node.h"
-#include "std_msgs/Actuator.h"
+#include "unstable_msgs/MsgActuator.h"
 #include "etherdrive/etherdrive.h"
 #include <sstream>
 
 class EtherDrive_Node : public ros::node
 {
 public:
-  std_msgs::Actuator mot[6];
-  std_msgs::Actuator mot_cmd[6];
+  MsgActuator mot[6];
+  MsgActuator mot_cmd[6];
 
   string host;
   EtherDrive *ed;
+  int frame_id;
 
   float last_mot_val[6];
   double pulse_per_rad[6];
+
+  int lastEncPos[6];
+  int mode; // 0=voltage, 1=current, 2=position, 3=velocity, 4=position on comp
+  bool firstTimeVelCtrl;
+  int fooCounter;
+  int counter;
+  float last_mot_cmd[6];
+  int desPos[6];
 
   EtherDrive_Node() : ros::node("etherdrive"), ed(NULL)
   {
@@ -50,28 +59,61 @@ public:
     for (int i = 0;i < 6;i++) {
       ostringstream oss;
       oss << "mot" << i;
-      advertise<std_msgs::Actuator>(oss.str().c_str());
+      advertise<MsgActuator>(oss.str().c_str());
 
       oss << "_cmd";
       subscribe(oss.str().c_str(), mot_cmd[i], &EtherDrive_Node::mot_callback);
 
       last_mot_val[i] = 0;
-      mot_cmd[i].valid = false;
     }
 
-    param("etherdrive/host", host, string("192.168.0.100"));
+    //if (!get_param(string(".host"), host))
+     // host = "192.168.1.12";
+    host = "10.12.0.103";
     printf("EtherDrive host set to [%s]\n", host.c_str());
+
+    //if (!get_param(string(".frame_id"), frame_id))
+    frame_id = -1;
+    printf("EtherDrive frame_id set to [%d]\n", frame_id);
 
     for (int i = 0;i < 6;i++) {
       ostringstream oss;
-      oss << "etherdrive/pulse_per_rad" << i;
-      param(oss.str().c_str(), pulse_per_rad[i], 1591.54943);
+      oss << "pulse_per_rad" << i;
+      //if (!get_param(oss.str().c_str(), pulse_per_rad[i]))
+	    pulse_per_rad[i] = 1591.54943;
       printf("Using %g pulse_per_rad for motor %d\n", pulse_per_rad[i], i);
     }
 
     ed = new EtherDrive();
     ed->init(host);
+
+// debugging JS: initialize values
+    for (int i = 0; i < 6; i++) {
+      mot_cmd[i].valid = true;
+      mot_cmd[i].rel = 0;
+      mot_cmd[i].val = 0;
+
+      ed->set_gain(i,'P',0); 
+      ed->set_gain(i,'I',10);
+      ed->set_gain(i,'D',0); 
+      ed->set_gain(i,'W',100); 
+      ed->set_gain(i,'M',1004);
+      ed->set_gain(i,'Z',1);   
+
+    }
+ 
+    ed->set_control_mode(1); // 0=voltage, 1=current control
+    
+
+  
+    firstTimeVelCtrl = true;
+    fooCounter = 0;
     ed->motors_on();
+    counter = 0;
+  }
+
+  void mot_callback() { 
+    //printf("received motor 3 command %f\n", mot_cmd[3].val);
   }
 
   virtual ~EtherDrive_Node()
@@ -82,57 +124,114 @@ public:
 
   bool do_tick()
   {
-
+//printf("%i: enc: %i \n", fooCounter, ed->get_enc(5)); 
     int tmp_mot_cmd[6];
+    int currEncPos[6];
 
+    int curVel;
+    float desVel;
+    float k_p[6];
+    float pos_k_p[6];
+    float foo;
+
+
+    k_p[0]= 0.003;
+    k_p[1]= 0.003;
+    k_p[2]= -0.003;
+
+    k_p[3]= 0.003;
+    k_p[4]= 0.003;
+    k_p[5]= -0.003;
+
+    // position control:
+    pos_k_p[0] = 1;
+    pos_k_p[1] = 1;
+    pos_k_p[2] = -3;
+    pos_k_p[3] = 1;
+    pos_k_p[4] = 1;
+    pos_k_p[5] = -3;
+    /*
+    voltage control settings:
+    pos_k_p[3] = -1;
+    pos_k_p[4] = 1;
+    pos_k_p[5] = 1;
+    */
     for (int i = 0; i < 6; i++) {
-
+if(i == 5) printf("counter: %i\n", fooCounter);
       mot_cmd[i].lock();
-      if (mot_cmd[i].valid) {
-	if (mot_cmd[i].rel) {
-	  last_mot_val[i] = mot[i].val + mot_cmd[i].val;
-	} else {
-	  last_mot_val[i] = mot_cmd[i].val;
-	}
+      switch(mot_cmd[i].mode)
+      {
+
+        case 0: // direct
+          tmp_mot_cmd[i] = (int)mot_cmd[i].val; //last_mot_val[i]; //JS  
+          break;
+        case 1: // position control on computer
+
+          desPos[i] = mot_cmd[i].val; //desPos[i]=ed->get_enc(i) + mot[i].val;
+//printf("desPos: %i, enc: %i\n", desPos[i], ed->get_enc(i));
+        
+          tmp_mot_cmd[i] = int(pos_k_p[i]*float(desPos[i] - ed->get_enc(i)));
+        break;
+        case 2: // velocity control    
+         if(fooCounter < 10) { // first couple of encoder readings are messed up for some reason. JS
+            lastEncPos[i] = ed->get_enc(i);
+            last_mot_cmd[i] = 0;
+          }
+          fooCounter++;
+          
+          currEncPos[i] = ed->get_enc(i);
+          curVel =  currEncPos[i] - lastEncPos[i];   //encoder (units/msec) need to calibrate this
+          desVel = mot_cmd[i].val; // enc units/msec.  should be (wheel rev/s)
+          tmp_mot_cmd[i] = int(last_mot_cmd[i] + k_p[i]*(desVel-float(curVel)));
+          if(tmp_mot_cmd[i] > 3000) {
+            tmp_mot_cmd[i] = 3000;
+            printf("Max current\n");
+          }
+          if(tmp_mot_cmd[i] < -3000) {
+            tmp_mot_cmd[i] = -3000;
+            printf("Max current\n");
+          }
+ 
+          lastEncPos[i] = currEncPos[i];
+          last_mot_cmd[i] = last_mot_cmd[i] + k_p[i]*(desVel-float(curVel));
+        break;
+        case 3:  // On board position control? 
+          if (mot_cmd[i].valid) {
+	          if (mot_cmd[i].rel) {
+	            last_mot_val[i] = mot[i].val + mot_cmd[i].val;
+	          } else {
+	            last_mot_val[i] = mot_cmd[i].val;
+	          }
+            tmp_mot_cmd[i] = (int)(last_mot_val[i] * pulse_per_rad[i]);
+          }
+          break;
+        default:
+          // do nothing
+          tmp_mot_cmd[i] = 0;
+          break;
+        
       }
       mot_cmd[i].valid = false;  // set to invalid so we don't re-use
-
-      tmp_mot_cmd[i] = (int)(last_mot_val[i] * pulse_per_rad[i]);
-
       mot_cmd[i].unlock();
-    }
+    }  
 
     ed->drive(6,tmp_mot_cmd);
-
     int val[6];
-
-    ros::Time before = ros::Time::now();
-    
     if (!ed->tick(6,val)) {
       return false;
     }
-
-    ros::Time after = ros::Time::now();
-
-    ros::Duration delta = after - before;
-
-    ros::Time stamp = before + ros::Duration( delta.to_double() / 2.0 );
-
-    //    printf("%d %d %d\n",ed->get_enc(0), ed->get_cur(0), ed->get_pwm(0));
-   
+  
     for (int i = 0; i < 6; i++) {
       mot[i].val = val[i] / pulse_per_rad[i];
       mot[i].rel = false;
       mot[i].valid = true;
-      mot[i].header.stamp = stamp;
+      mot[i].enc = ed->get_enc(i);
       ostringstream oss;
       oss << "mot" << i;
       publish(oss.str().c_str(), mot[i]);
     }
     return true;
-  }
-
-  void mot_callback() { }
+  } // end do_tick()
 
 };
 
