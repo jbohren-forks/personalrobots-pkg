@@ -549,6 +549,7 @@ WavefrontNode::sendVelCmd(double vx, double vy, double vth)
     cmdvel = new MsgBaseVel();
   cmdvel->vx = vx;
   cmdvel->vw = vth;
+printf("%.3f %.3f %.3f\n", vx, vy, vth);
   this->ros::node::publish("cmd_vel", *cmdvel);
   if(vx || vy || vth)
     this->stopped = false;
@@ -570,11 +571,9 @@ WavefrontNode::doOneCycle()
   robotPose.y = 0;
   robotPose.yaw = 0;
   robotPose.frame = FRAMEID_ROBOT;
-  robotPose.time = 0; // request most recent pose
-  /*
+  //robotPose.time = 0; // request most recent pose
   robotPose.time = laserMsg.header.stamp.sec * 1000000000ULL + 
           laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
-          */
   try
   {
     global_pose = this->tf.transformPose2D(FRAMEID_MAP, robotPose);
