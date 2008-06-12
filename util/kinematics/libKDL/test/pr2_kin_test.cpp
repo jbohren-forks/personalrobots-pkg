@@ -1,5 +1,5 @@
 
-#include "kdl_kinematics.h"
+#include "libKDL/kdl_kinematics.h"
 
 using namespace KDL;
 using namespace PR2;
