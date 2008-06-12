@@ -1,6 +1,8 @@
 #!/bin/bash
 if [ -z $1 ]; then
-    ROS_MASTER_URI=http://localhost:11311
+    if [ -z $ROS_MASTER_URI ]; then
+        ROS_MASTER_URI=http://localhost:11311
+    fi
 else
     ROS_MASTER_URI=$1
 fi
