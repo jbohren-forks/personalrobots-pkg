@@ -27,7 +27,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ros/node.h"
-#include "unstable_msgs/MsgActuator.h"
+#include "std_msgs/ActuatorState.h"
+#include "std_msgs/ActuatorCmd.h"
+//#include "unstable_msgs/MsgActuator.h"
 #include <std_msgs/MsgBaseVel.h>
 #include "etherdrive/etherdrive.h"
 #include <sstream>
@@ -43,8 +45,8 @@ int prevDir;
 class EtherDrive_Node_Controller : public ros::node
 {
 public:
-  MsgActuator mot[6];     //in
-  MsgActuator mot_cmd[6]; //out
+  std_msgs::ActuatorState mot[6];     //in
+  std_msgs::ActuatorCmd mot_cmd[6]; //out
   MsgBaseVel cmdvel;
   //int dir;
 
@@ -56,7 +58,7 @@ public:
       ostringstream oss; // bus
       sprintf(name, "mot%d_cmd", i);
       printf("advertising %s\n", name);
-      advertise<MsgActuator>(name);
+      advertise<std_msgs::ActuatorCmd>(name);
    }
    for(int i = 0; i < 6; i++){
       sprintf(name, "mot%d", i);     
@@ -71,13 +73,13 @@ public:
     int pos[6];
     
     for(int i = 0;i < 6 ;i++) {
-      pos[i] = mot[i].enc;
+      pos[i] = mot[i].pos;
        if(i == 4) {
  //         printf("Motor %i pos: %i\n",i, pos[i]);
-         if(mot[i].enc >= 20000) {
+         if(mot[i].pos >= 20000) {
             dir = -1;
         }
-        else if(mot[i].enc <= 0) {
+        else if(mot[i].pos <= 0) {
             dir = 1;
         }
       }
@@ -154,7 +156,7 @@ public:
   }
 
   void sendMotorCommand(int motor, float val, int rel, bool valid, int mode) {
-    mot_cmd[motor].val = val;
+    mot_cmd[motor].cmd = val;
     mot_cmd[motor].rel= rel;
     mot_cmd[motor].valid= valid;
     mot_cmd[motor].mode = mode;
@@ -179,7 +181,7 @@ printf("start\n");
   int fooCounter = 0;
     dir = 1;
     prevDir = 1;
-  int controlMode = 1; //2; //0=command directly, 1=reverse by time interval, 2=switch by encoder count
+  int controlMode = 0; //2; //0=command directly, 1=reverse by time interval, 2=switch by encoder count
   switch(controlMode) {
     case 0:
       while(a.ok()) {

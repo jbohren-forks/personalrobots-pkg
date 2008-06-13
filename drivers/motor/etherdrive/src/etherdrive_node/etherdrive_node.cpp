@@ -28,15 +28,16 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ros/node.h"
-#include "unstable_msgs/MsgActuator.h"
+#include "std_msgs/ActuatorState.h"
+#include "std_msgs/ActuatorCmd.h"
 #include "etherdrive/etherdrive.h"
 #include <sstream>
 
 class EtherDrive_Node : public ros::node
 {
 public:
-  MsgActuator mot[6];
-  MsgActuator mot_cmd[6];
+  std_msgs::ActuatorState mot[6];
+  std_msgs::ActuatorCmd mot_cmd[6];
 
   string host;
   EtherDrive *ed;
@@ -59,7 +60,7 @@ public:
     for (int i = 0;i < 6;i++) {
       ostringstream oss;
       oss << "mot" << i;
-      advertise<MsgActuator>(oss.str().c_str());
+      advertise<std_msgs::ActuatorState>(oss.str().c_str());
 
       oss << "_cmd";
       subscribe(oss.str().c_str(), mot_cmd[i], &EtherDrive_Node::mot_callback);
@@ -91,7 +92,7 @@ public:
     for (int i = 0; i < 6; i++) {
       mot_cmd[i].valid = true;
       mot_cmd[i].rel = 0;
-      mot_cmd[i].val = 0;
+      mot_cmd[i].cmd = 0;
 
       ed->set_gain(i,'P',0); 
       ed->set_gain(i,'I',10);
@@ -128,7 +129,7 @@ public:
     int tmp_mot_cmd[6];
     int currEncPos[6];
 
-    int curVel;
+    float curVel;
     float desVel;
     float k_p[6];
     float pos_k_p[6];
@@ -143,13 +144,22 @@ public:
     k_p[4]= 0.003;
     k_p[5]= -0.003;
 
+
+    k_p[0]= 5;
+    k_p[1]= 5;
+    k_p[2]= -5;
+
+    k_p[3]= 5;
+    k_p[4]= 5;
+    k_p[5]= -5;
+
     // position control:
     pos_k_p[0] = 1;
     pos_k_p[1] = 1;
     pos_k_p[2] = -3;
     pos_k_p[3] = 1;
     pos_k_p[4] = 1;
-    pos_k_p[5] = -3;
+    pos_k_p[5] = -2; // 
     /*
     voltage control settings:
     pos_k_p[3] = -1;
@@ -157,17 +167,17 @@ public:
     pos_k_p[5] = 1;
     */
     for (int i = 0; i < 6; i++) {
-if(i == 5) printf("counter: %i\n", fooCounter);
+      if(i == 5) printf("counter: %i\n", fooCounter);
       mot_cmd[i].lock();
       switch(mot_cmd[i].mode)
       {
 
         case 0: // direct
-          tmp_mot_cmd[i] = (int)mot_cmd[i].val; //last_mot_val[i]; //JS  
+          tmp_mot_cmd[i] = (int)mot_cmd[i].cmd; //last_mot_val[i]; //JS  
           break;
         case 1: // position control on computer
 
-          desPos[i] = mot_cmd[i].val; //desPos[i]=ed->get_enc(i) + mot[i].val;
+          desPos[i] = mot_cmd[i].cmd/360*90000; //desPos[i]=ed->get_enc(i) + mot[i].val;
 //printf("desPos: %i, enc: %i\n", desPos[i], ed->get_enc(i));
         
           tmp_mot_cmd[i] = int(pos_k_p[i]*float(desPos[i] - ed->get_enc(i)));
@@ -180,9 +190,12 @@ if(i == 5) printf("counter: %i\n", fooCounter);
           fooCounter++;
           
           currEncPos[i] = ed->get_enc(i);
-          curVel =  currEncPos[i] - lastEncPos[i];   //encoder (units/msec) need to calibrate this
-          desVel = mot_cmd[i].val; // enc units/msec.  should be (wheel rev/s)
-          tmp_mot_cmd[i] = int(last_mot_cmd[i] + k_p[i]*(desVel-float(curVel)));
+          curVel =  float(currEncPos[i] - lastEncPos[i])/9000*0.48;   //encoder (units/msec) need to calibrate this
+          desVel = mot_cmd[i].cmd; // enc units/msec.  should be (wheel rev/s)
+          if((desVel-float(curVel))>0) tmp_mot_cmd[i] = int(last_mot_cmd[i] + 10*k_p[i]); 
+          if((desVel-float(curVel))<0) tmp_mot_cmd[i] = int(last_mot_cmd[i] - 10*k_p[i]);
+          if(desVel <= 0.0001 && desVel >=-0.0001) tmp_mot_cmd[i] = 0; 
+          //tmp_mot_cmd[i] = int(last_mot_cmd[i] + k_p[i]*(desVel-float(curVel)));
           if(tmp_mot_cmd[i] > 3000) {
             tmp_mot_cmd[i] = 3000;
             printf("Max current\n");
@@ -193,14 +206,14 @@ if(i == 5) printf("counter: %i\n", fooCounter);
           }
  
           lastEncPos[i] = currEncPos[i];
-          last_mot_cmd[i] = last_mot_cmd[i] + k_p[i]*(desVel-float(curVel));
+          last_mot_cmd[i] = last_mot_cmd[i] + k_p[i]*(desVel-curVel);
         break;
         case 3:  // On board position control? 
           if (mot_cmd[i].valid) {
 	          if (mot_cmd[i].rel) {
-	            last_mot_val[i] = mot[i].val + mot_cmd[i].val;
+	            last_mot_val[i] = mot[i].pos + mot_cmd[i].cmd;
 	          } else {
-	            last_mot_val[i] = mot_cmd[i].val;
+	            last_mot_val[i] = mot_cmd[i].cmd;
 	          }
             tmp_mot_cmd[i] = (int)(last_mot_val[i] * pulse_per_rad[i]);
           }
@@ -222,10 +235,9 @@ if(i == 5) printf("counter: %i\n", fooCounter);
     }
   
     for (int i = 0; i < 6; i++) {
-      mot[i].val = val[i] / pulse_per_rad[i];
-      mot[i].rel = false;
+      mot[i].pos = val[i] / pulse_per_rad[i];
       mot[i].valid = true;
-      mot[i].enc = ed->get_enc(i);
+      mot[i].pos = ed->get_enc(i);
       ostringstream oss;
       oss << "mot" << i;
       publish(oss.str().c_str(), mot[i]);
