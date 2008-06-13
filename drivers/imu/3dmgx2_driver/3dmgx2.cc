@@ -322,7 +322,7 @@ MS_3DMGX2::IMU::receive(uint8_t command, void *rep, int rep_len, int timeout, ui
     }
 	
     if (read(this->fd, (uint8_t*) rep, 1) <= 0)
-      IMU_EXCEPT_ARGS(MS_3DMGX2::exception, "read failed", strerror(errno));
+      IMU_EXCEPT_ARGS(MS_3DMGX2::exception, "read failed [%s]", strerror(errno));
 
     skippedbytes++;
   }
