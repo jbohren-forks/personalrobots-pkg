@@ -377,10 +377,10 @@ GazeboNode::Update()
   this->odomMsg.vel.th = vw;
 
   // Get position
-  double x,y,th;
-  this->myPR2->GetBasePositionActual(&x,&y,&th);
-  this->odomMsg.pos.x  = x + 256.5;
-  this->odomMsg.pos.y  = y + 256.5;
+  double x,y,z,roll,pitch,th;
+  this->myPR2->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&th);
+  this->odomMsg.pos.x  = x;
+  this->odomMsg.pos.y  = y;
   this->odomMsg.pos.th = th;
   // this->odomMsg.stall = this->positionmodel->Stall();
 
@@ -496,8 +496,6 @@ GazeboNode::Update()
 int 
 main(int argc, char** argv)
 { 
-
-  usleep(1000000);
   ros::init(argc,argv);
 
   GazeboNode gn(argc,argv,argv[1]);

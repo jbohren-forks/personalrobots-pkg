@@ -582,7 +582,7 @@ namespace PR2
            \param y - sideways (left)
            \param w - upward
          */
-      public: PR2_ERROR_CODE GetBasePositionActual(double* x, double* y, double* z);
+      public: PR2_ERROR_CODE GetBasePositionActual(double* x, double* y, double *z, double *roll, double *pitch, double *yaw);
 
          /*! \fn
            \brief - Run the robot

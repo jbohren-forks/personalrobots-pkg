@@ -149,7 +149,7 @@ void Pr2_Actarray::UpdateChild(UpdateParams &params)
 
    this->myIface->data->actuators_count = this->numJoints;
 
-//   printf("numJoints: %d\n",this->numJoints);
+   //printf("numJoints: %d\n",this->numJoints);
    for (int i=0; i < this->numJoints; i++)
    {
       if(this->joints[i]->GetType() == Joint::SLIDER)
@@ -178,7 +178,7 @@ void Pr2_Actarray::UpdateChild(UpdateParams &params)
                   sjoint->SetParam( dParamVel, this->myIface->data->actuators[i].pGain * positionError + this->myIface->data->actuators[i].dGain * speedError);
                   sjoint->SetParam( dParamFMax, this->myIface->data->actuators[i].saturationTorque );
                }
-//               printf("SLIDER:: pErr: %f, pGain: %f, dGain: %f, sT: %f\n",positionError,this->myIface->data->actuators[i].pGain,this->myIface->data->actuators[i].dGain,this->myIface->data->actuators[i].saturationTorque);            
+               // printf("SLIDER:: pErr: %f, pGain: %f, dGain: %f, sT: %f\n",positionError,this->myIface->data->actuators[i].pGain,this->myIface->data->actuators[i].dGain,this->myIface->data->actuators[i].saturationTorque);            
                break;
             case PR2::SPEED_CONTROL :
                   sjoint->SetParam( dParamVel, cmdSpeed);
