@@ -10,4 +10,5 @@
   <url>http://pr.willowgarage.com</url>
   <depend package="roscpp"/>
   <depend package="std_srvs"/>
+  <depend package="cmake"/>
 </package>
