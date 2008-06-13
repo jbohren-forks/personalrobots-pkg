@@ -1205,6 +1205,12 @@ PR2_ERROR_CODE PR2Robot::SetBaseCartesianSpeedCmd(double vx, double vy, double v
 
    point newDriveCenterL, newDriveCenterR;
 
+  double currentRateCmd[NUM_CASTERS];
+  double currentRateAct[NUM_CASTERS];
+  double currentCmd[NUM_CASTERS];
+  double currentAngle[NUM_CASTERS];
+  double currentError[NUM_CASTERS];
+  const double errorTol = M_PI / 50.0;
 
    for(int ii=0; ii < NUM_CASTERS; ii++)
    {
@@ -1215,19 +1221,30 @@ PR2_ERROR_CODE PR2Robot::SetBaseCartesianSpeedCmd(double vx, double vy, double v
    }
    for(int ii = 0; ii < NUM_CASTERS; ii++)
    {
-      newDriveCenterL = Rot2D(CASTER_DRIVE_OFFSET[ii*2  ],steerAngle[ii]);
-      newDriveCenterR = Rot2D(CASTER_DRIVE_OFFSET[ii*2+1],steerAngle[ii]);
+     // do not move forward unless the wheels are aligned...
+     // this is a goofy hack, should put a more complicated version later
+     GetJointServoCmd((PR2_JOINT_ID)(CASTER_FL_STEER+3*ii),&currentCmd[ii],&currentRateCmd[ii]);
+     GetJointServoActual((PR2_JOINT_ID)(CASTER_FL_STEER+3*ii),&currentAngle[ii],&currentRateAct[ii]);
+     currentError[ii] = fabs(currentCmd[ii] - currentAngle[ii]);
+     //std::cout << " e " << ii << " e " << currentError[ii] << std::endl;
 
-      ComputePointVelocity(vx,vy,vw,newDriveCenterL.x,newDriveCenterL.y,drivePointVelocityL.x,drivePointVelocityL.y);
-      ComputePointVelocity(vx,vy,vw,newDriveCenterR.x,newDriveCenterR.y,drivePointVelocityR.x,drivePointVelocityR.y);
+     if (currentError[ii] < errorTol)
+     {
+       newDriveCenterL = Rot2D(CASTER_DRIVE_OFFSET[ii*2  ],steerAngle[ii]);
+       newDriveCenterR = Rot2D(CASTER_DRIVE_OFFSET[ii*2+1],steerAngle[ii]);
 
-      wheelSpeed[ii*2  ] = -GetMagnitude(drivePointVelocityL.x,drivePointVelocityL.y)/WHEEL_RADIUS;
-      wheelSpeed[ii*2+1] = -GetMagnitude(drivePointVelocityR.x,drivePointVelocityR.y)/WHEEL_RADIUS;
+       ComputePointVelocity(vx,vy,vw,newDriveCenterL.x,newDriveCenterL.y,drivePointVelocityL.x,drivePointVelocityL.y);
+       ComputePointVelocity(vx,vy,vw,newDriveCenterR.x,newDriveCenterR.y,drivePointVelocityR.x,drivePointVelocityR.y);
 
-      this->SetJointSpeed((PR2_JOINT_ID) (CASTER_FL_DRIVE_L+3*ii),wheelSpeed[ii*2  ]);
-      this->SetJointSpeed((PR2_JOINT_ID) (CASTER_FL_DRIVE_R+3*ii),wheelSpeed[ii*2+1]);
-      this->SetJointTorque((PR2_JOINT_ID) (CASTER_FL_DRIVE_L+3*ii),100.0 );
-      this->SetJointTorque((PR2_JOINT_ID) (CASTER_FL_DRIVE_R+3*ii),100.0 );
+       wheelSpeed[ii*2  ] = -GetMagnitude(drivePointVelocityL.x,drivePointVelocityL.y)/WHEEL_RADIUS;
+       wheelSpeed[ii*2+1] = -GetMagnitude(drivePointVelocityR.x,drivePointVelocityR.y)/WHEEL_RADIUS;
+
+       // send command
+       this->SetJointSpeed((PR2_JOINT_ID) (CASTER_FL_DRIVE_L+3*ii),wheelSpeed[ii*2  ]);
+       this->SetJointSpeed((PR2_JOINT_ID) (CASTER_FL_DRIVE_R+3*ii),wheelSpeed[ii*2+1]);
+       this->SetJointTorque((PR2_JOINT_ID) (CASTER_FL_DRIVE_L+3*ii),100.0 );
+       this->SetJointTorque((PR2_JOINT_ID) (CASTER_FL_DRIVE_R+3*ii),100.0 );
+     }
    }
 
    return PR2_ALL_OK;
