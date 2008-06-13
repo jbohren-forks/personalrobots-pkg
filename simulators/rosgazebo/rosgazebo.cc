@@ -497,6 +497,7 @@ int
 main(int argc, char** argv)
 { 
 
+  usleep(1000000);
   ros::init(argc,argv);
 
   GazeboNode gn(argc,argv,argv[1]);
