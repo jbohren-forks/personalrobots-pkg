@@ -48,8 +48,15 @@ class MapServer : public ros::node
     std_srvs::StaticMap::response map_resp;
 
   public:
-    MapServer() : ros::node("map_server")
+    MapServer(const char* fname, double res, bool negate) : 
+            ros::node("map_server")
     {
+      if(!loadMapFromFile(fname,res,negate))
+      {
+        printf("failed to load map \"%s\"\n", fname);
+        ros::fini();
+        exit(-1);
+      }
       advertise_service("static_map", &MapServer::map_cb);
     }
 
@@ -82,13 +89,7 @@ int main(int argc, char **argv)
   bool negate = false;
   if(argc > 3)
     negate = atoi(argv[3]) ? true : false;
-  MapServer ms;
-  if(!ms.loadMapFromFile(fname,res,negate))
-  {
-    printf("failed to load map \"%s\"\n", fname);
-    ros::fini();
-    exit(-1);
-  }
+  MapServer ms(fname,res,negate);
   ms.spin();
   ros::fini();
   return 0;
