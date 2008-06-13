@@ -5,6 +5,8 @@ gazebo-git:
 	@if [ ! -d gazebo ]; then git clone /u/pr/simpr/pr2sim.git gazebo-git; fi
 
 gazebo: gazebo-git
+	(cd gazebo-git && git pull; git-submodule update;)
+	(cd gazebo-git/packages/gazebo && git checkout master;)
 	(cd gazebo-git && /bin/bash -c "source setup.bash; make")
 
 clean:
