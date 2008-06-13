@@ -9,4 +9,5 @@
   <depend package="amcl_player"/>
   <depend package="rosgazebo"/>
   <depend package="wavefront_player"/>
+  <depend package="teleop_base_keyboard"/>
 </package>
