@@ -9,7 +9,7 @@ all: map_server
 
 map_server:
 	mkdir -p build
-	cd build && cmake .. && make
+	cd build && `rospack find cmake`/cmake/bin/cmake .. && make
 
 clean:
 	rm -rf build map_server
