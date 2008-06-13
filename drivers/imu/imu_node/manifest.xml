@@ -1,0 +1,10 @@
+<package>
+  <description>
+  A node that uses the 3dmgx_driver.
+  </description>
+  <author>Jeremy Leibs</author>
+  <license>BSD</license>
+  <depend package='roscpp'/>
+  <depend package='std_msgs'/>
+  <depend package='3dmgx2_driver'/>
+</package>

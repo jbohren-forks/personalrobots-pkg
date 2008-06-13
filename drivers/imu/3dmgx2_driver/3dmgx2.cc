@@ -221,6 +221,35 @@ MS_3DMGX2::IMU::receive_accel_angrate_mag(uint64_t *time, double accel[3], doubl
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+void
+MS_3DMGX2::IMU::receive_accel_angrate(uint64_t *time, double accel[3], double angrate[3])
+{
+  int i, k;
+  uint8_t rep[31];
+
+  receive(CMD_ACCEL_ANGRATE, rep, sizeof(rep), 0, time);
+
+  // Read the acceleration:
+  k = 1;
+  for (i = 0; i < 3; i++)
+  {
+    accel[i] = extract_float(rep + k) * G;
+    k += 4;
+  }
+
+  // Read the angular rates
+  k = 13;
+  for (i = 0; i < 3; i++)
+  {
+    angrate[i] = extract_float(rep + k);
+    k += 4;
+  }
+
+  *time = extract_time(rep+25);
+}
+
+
 
 void
 MS_3DMGX2::IMU::receive_euler(uint64_t *time, double *roll, double *pitch, double *yaw)

@@ -111,6 +111,9 @@ namespace MS_3DMGX2
     // Take out of continuous mode:
     void stop_continuous();
 
+    // Read the ...
+    void receive_accel_angrate(uint64_t *time, double accel[3], double angrate[3]);
+
     // Read the stabilized acceleration vectors
     void receive_accel_angrate_mag(uint64_t *time, double accel[3], double angrate[3], double mag[3]);
 
