@@ -70,6 +70,12 @@ class GazeboNode : public ros::node
     // for frame transforms, publish frame transforms
     rosTFServer tf;
 
+    // time step calculation
+    double lastTime, simTime;
+
+    // smooth vx, vw commands
+    double vxSmooth, vwSmooth;
+
   public:
     // Constructor; stage itself needs argc/argv.  fname is the .world file
     // that stage should load.
@@ -188,12 +194,44 @@ void
 GazeboNode::cmdvelReceived()
 {
   this->lock.lock();
+  double dt;
+  double w11, w21, w12, w22;
+  w11 = 1.0;
+  w21 = 1.0;
+  w12 = 1.0;
+  w22 = 1.0;
 
-  //printf("received cmd: %.3f %.3f\n",
-  //       this->velMsg.vx, this->velMsg.vw);
+  // smooth out the commands by time decay
+  // with w1,w2=1, this means equal weighting for new command every second
+  this->myPR2->GetSimTime(&(this->simTime));
+  dt = simTime - lastTime;
+  //this->vxSmooth = (w11 * this->vxSmooth + w21*dt *this->velMsg.vx)/( w11 + w21*dt);
+  //this->vwSmooth = (w12 * this->vwSmooth + w22*dt *this->velMsg.vw)/( w12 + w22*dt);
 
+  this->vxSmooth = this->velMsg.vx;
+  this->vwSmooth = this->velMsg.vw;
+
+  fprintf(stderr,"received cmd: %.3f %.3f | %.3f %.3f\n", this->velMsg.vx, this->velMsg.vw,this->vxSmooth, this->vwSmooth);
+
+  this->myPR2->SetBaseSteeringAngle    (this->vxSmooth,0.0,this->vwSmooth);
+  while (!this->myPR2->CheckBaseSteeringAngle(M_PI/10.0))
+  {
+    // do nothing and wait...
+    usleep(100000);
+  }
   // set base velocity
-  this->myPR2->SetBaseCartesianSpeedCmd(this->velMsg.vx, 0.0, this->velMsg.vw);
+  this->myPR2->SetJointTorque(PR2::CASTER_FL_DRIVE_L, 1000.0 );
+  this->myPR2->SetJointTorque(PR2::CASTER_FR_DRIVE_L, 1000.0 );
+  this->myPR2->SetJointTorque(PR2::CASTER_RL_DRIVE_L, 1000.0 );
+  this->myPR2->SetJointTorque(PR2::CASTER_RR_DRIVE_L, 1000.0 );
+  this->myPR2->SetJointTorque(PR2::CASTER_FL_DRIVE_R, 1000.0 );
+  this->myPR2->SetJointTorque(PR2::CASTER_FR_DRIVE_R, 1000.0 );
+  this->myPR2->SetJointTorque(PR2::CASTER_RL_DRIVE_R, 1000.0 );
+  this->myPR2->SetJointTorque(PR2::CASTER_RR_DRIVE_R, 1000.0 );
+  this->myPR2->SetBaseCartesianSpeedCmd(this->vxSmooth, 0.0, this->vwSmooth);
+
+  this->lastTime = this->simTime;
+
   this->lock.unlock();
 }
 
@@ -224,6 +262,9 @@ GazeboNode::GazeboNode(int argc, char** argv, const char* fname) :
 	*/
   this->myPR2->EnableGripperLeft();
   this->myPR2->EnableGripperRight();
+
+  this->myPR2->GetSimTime(&(this->lastTime));
+  this->myPR2->GetSimTime(&(this->simTime));
 }
 
 void GazeboNode::finalize(int)
@@ -267,7 +308,6 @@ GazeboNode::Update()
   uint32_t intensities_size;
   uint32_t intensities_alloc_size;
   std_msgs::Point3DFloat32 tmp_cloud_pt;
-	double simTime;
 
   /***************************************************************/
   /*                                                             */
@@ -323,9 +363,7 @@ GazeboNode::Update()
   }
 
 
-
-
-  this->myPR2->GetSimTime(&simTime);
+  this->myPR2->GetSimTime(&(this->simTime));
 
   /***************************************************************/
   /*                                                             */
@@ -353,8 +391,8 @@ GazeboNode::Update()
     }
 
     this->laserMsg.header.frame_id = FRAMEID_LASER;
-    this->laserMsg.header.stamp.sec = (unsigned long)floor(simTime);
-    this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  simTime - this->laserMsg.header.stamp.sec) );
+    this->laserMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
+    this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->laserMsg.header.stamp.sec) );
 
     //publish("laser",this->laserMsg); // for laser_view FIXME: can alias this at the commandline or launch script
     publish("scan",this->laserMsg);  // for rosstage
@@ -387,8 +425,8 @@ GazeboNode::Update()
   // TODO: get the frame ID from somewhere
   this->odomMsg.header.frame_id = FRAMEID_ODOM;
 
-  this->odomMsg.header.stamp.sec = (unsigned long)floor(simTime);
-  this->odomMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  simTime - this->odomMsg.header.stamp.sec) );
+  this->odomMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
+  this->odomMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->odomMsg.header.stamp.sec) );
 
   publish("odom",this->odomMsg);
 
@@ -447,10 +485,10 @@ GazeboNode::Update()
 	simPitchTimeScale = 2.0*M_PI*simPitchFreq;
 	simPitchAmp    =  M_PI / 8.0;
 	simPitchOffset = -M_PI / 8.0;
-	simPitchAngle = simPitchOffset + simPitchAmp * sin(simTime * simPitchTimeScale);
-	simPitchRate  =  simPitchAmp * simPitchTimeScale * cos(simTime * simPitchTimeScale); // TODO: check rate correctness
-  this->myPR2->GetSimTime(&simTime);
-	//std::cout << "sim time: " << simTime << std::endl;
+	simPitchAngle = simPitchOffset + simPitchAmp * sin(this->simTime * simPitchTimeScale);
+	simPitchRate  =  simPitchAmp * simPitchTimeScale * cos(this->simTime * simPitchTimeScale); // TODO: check rate correctness
+  this->myPR2->GetSimTime(&this->simTime);
+	//std::cout << "sim time: " << this->simTime << std::endl;
 	//std::cout << "ang: " << simPitchAngle*180.0/M_PI << "rate: " << simPitchRate*180.0/M_PI << std::endl;
 	this->myPR2->SetJointTorque(PR2::HEAD_LASER_PITCH , 1000.0);
   this->myPR2->SetJointGains(PR2::HEAD_LASER_PITCH, 10.0, 0.0, 0.0);

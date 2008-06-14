@@ -408,73 +408,73 @@
         <updateRate>100.0</updateRate>
         <joint name="front_left_caster_steer">
           <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
+          <pGain>2</pGain>
           <dGain>0</dGain>
           <iGain>0</iGain>
         </joint>
         <joint name="front_left_wheel_l_drive">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
+          <saturationTorque>5</saturationTorque>
+          <pGain>0.5</pGain>
           <dGain>0</dGain>
           <iGain>0</iGain>
         </joint>
         <joint name="front_left_wheel_r_drive">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
+          <saturationTorque>5</saturationTorque>
+          <pGain>0.5</pGain>
           <dGain>0</dGain>
           <iGain>0</iGain>
         </joint>
         <joint name="front_right_caster_steer">
           <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
+          <pGain>2</pGain>
           <dGain>0</dGain>
           <iGain>0</iGain>
         </joint>
         <joint name="front_right_wheel_l_drive">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
+          <saturationTorque>5</saturationTorque>
+          <pGain>0.5</pGain>
           <dGain>0</dGain>
           <iGain>0</iGain>
         </joint>
         <joint name="front_right_wheel_r_drive">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
+          <saturationTorque>5</saturationTorque>
+          <pGain>0.5</pGain>
           <dGain>0</dGain>
           <iGain>0</iGain>
         </joint>
         <joint name="rear_left_caster_steer">
           <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
+          <pGain>2</pGain>
           <dGain>0</dGain>
           <iGain>0</iGain>
         </joint>
         <joint name="rear_left_wheel_l_drive">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
+          <saturationTorque>5</saturationTorque>
+          <pGain>0.5</pGain>
           <dGain>0</dGain>
           <iGain>0</iGain>
         </joint>
         <joint name="rear_left_wheel_r_drive">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
+          <saturationTorque>5</saturationTorque>
+          <pGain>0.5</pGain>
           <dGain>0</dGain>
           <iGain>0</iGain>
         </joint>
         <joint name="rear_right_caster_steer">
           <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
+          <pGain>2</pGain>
           <dGain>0</dGain>
           <iGain>0</iGain>
         </joint>
         <joint name="rear_right_wheel_l_drive">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
+          <saturationTorque>5</saturationTorque>
+          <pGain>0.5</pGain>
           <dGain>0</dGain>
           <iGain>0</iGain>
         </joint>
         <joint name="rear_right_wheel_r_drive">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
+          <saturationTorque>5</saturationTorque>
+          <pGain>0.5</pGain>
           <dGain>0</dGain>
           <iGain>0</iGain>
         </joint>

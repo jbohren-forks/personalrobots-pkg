@@ -1205,33 +1205,23 @@ PR2_ERROR_CODE PR2Robot::SetBaseCartesianSpeedCmd(double vx, double vy, double v
 
    point newDriveCenterL, newDriveCenterR;
 
-  double currentRateCmd[NUM_CASTERS];
-  double currentRateAct[NUM_CASTERS];
-  double currentCmd[NUM_CASTERS];
-  double currentAngle[NUM_CASTERS];
-  double currentError[NUM_CASTERS];
-  const double errorTol = M_PI / 50.0;
-
    for(int ii=0; ii < NUM_CASTERS; ii++)
    {
       ComputePointVelocity(vx,vy,vw,BASE_CASTER_OFFSET[ii].x,BASE_CASTER_OFFSET[ii].y,steerPointVelocity[ii].x,steerPointVelocity[ii].y);
       steerAngle[ii] = atan2(steerPointVelocity[ii].y,steerPointVelocity[ii].x);
       SetJointServoCmd((PR2_JOINT_ID) (CASTER_FL_STEER+3*ii),steerAngle[ii],0);
-//      printf("ii: %d, off: (%f, %f), vel: (%f, %f), angle: %f\n",ii,BASE_CASTER_OFFSET[ii].x,BASE_CASTER_OFFSET[ii].y,steerPointVelocity[ii].x,steerPointVelocity[ii].y,steerAngle[ii]);
+      // printf("ii: %d, off: (%f, %f), vel: (%f, %f), angle: %f\n",ii,BASE_CASTER_OFFSET[ii].x,BASE_CASTER_OFFSET[ii].y,steerPointVelocity[ii].x,steerPointVelocity[ii].y,steerAngle[ii]);
    }
    for(int ii = 0; ii < NUM_CASTERS; ii++)
    {
-     // do not move forward unless the wheels are aligned...
-     // this is a goofy hack, should put a more complicated version later
-     GetJointServoCmd((PR2_JOINT_ID)(CASTER_FL_STEER+3*ii),&currentCmd[ii],&currentRateCmd[ii]);
-     GetJointServoActual((PR2_JOINT_ID)(CASTER_FL_STEER+3*ii),&currentAngle[ii],&currentRateAct[ii]);
-     currentError[ii] = fabs(currentCmd[ii] - currentAngle[ii]);
-     //std::cout << " e " << ii << " e " << currentError[ii] << std::endl;
 
-     if (currentError[ii] < errorTol)
-     {
        newDriveCenterL = Rot2D(CASTER_DRIVE_OFFSET[ii*2  ],steerAngle[ii]);
        newDriveCenterR = Rot2D(CASTER_DRIVE_OFFSET[ii*2+1],steerAngle[ii]);
+
+       newDriveCenterL.x += BASE_CASTER_OFFSET[ii].x;
+       newDriveCenterL.y += BASE_CASTER_OFFSET[ii].y;
+       newDriveCenterR.x += BASE_CASTER_OFFSET[ii].x;
+       newDriveCenterR.y += BASE_CASTER_OFFSET[ii].y;
 
        ComputePointVelocity(vx,vy,vw,newDriveCenterL.x,newDriveCenterL.y,drivePointVelocityL.x,drivePointVelocityL.y);
        ComputePointVelocity(vx,vy,vw,newDriveCenterR.x,newDriveCenterR.y,drivePointVelocityR.x,drivePointVelocityR.y);
@@ -1242,14 +1232,51 @@ PR2_ERROR_CODE PR2Robot::SetBaseCartesianSpeedCmd(double vx, double vy, double v
        // send command
        this->SetJointSpeed((PR2_JOINT_ID) (CASTER_FL_DRIVE_L+3*ii),wheelSpeed[ii*2  ]);
        this->SetJointSpeed((PR2_JOINT_ID) (CASTER_FL_DRIVE_R+3*ii),wheelSpeed[ii*2+1]);
-       this->SetJointTorque((PR2_JOINT_ID) (CASTER_FL_DRIVE_L+3*ii),100.0 );
-       this->SetJointTorque((PR2_JOINT_ID) (CASTER_FL_DRIVE_R+3*ii),100.0 );
-     }
    }
 
    return PR2_ALL_OK;
 };
 
+
+//  PR2_ERROR_CODE PR2Robot::SetBaseUnicycleSpeedCmd(double vx, double vw)
+//  {
+//     point drivePointVelocityL, drivePointVelocityR;
+//     double wheelSpeed[NUM_WHEELS];
+// 
+//     point steerPointVelocity[NUM_CASTERS];
+//     double steerAngle[NUM_CASTERS];
+// 
+//     point newDriveCenterL, newDriveCenterR;
+// 
+//        ComputePointVelocity(vx,vy,vw,BASE_CASTER_OFFSET[0].x,BASE_CASTER_OFFSET[0].y,steerPointVelocity[0].x,steerPointVelocity[0].y);
+//        steerAngle[0] = atan2(steerPointVelocity[0].y,steerPointVelocity[0].x);
+//        ComputePointVelocity(vx,vy,vw,BASE_CASTER_OFFSET[1].x,BASE_CASTER_OFFSET[1].y,steerPointVelocity[1].x,steerPointVelocity[1].y);
+//        steerAngle[1] = atan2(steerPointVelocity[1].y,steerPointVelocity[1].x);
+//        SetJointServoCmd((PR2_JOINT_ID) (CASTER_FL_STEER),steerAngle[0],0);
+//        SetJointServoCmd((PR2_JOINT_ID) (CASTER_FR_STEER),steerAngle[1],0);
+//        SetJointServoCmd((PR2_JOINT_ID) (CASTER_RL_STEER),            0,0);
+//        SetJointServoCmd((PR2_JOINT_ID) (CASTER_RR_STEER),            0,0);
+//        // printf("ii: %d, off: (%f, %f), vel: (%f, %f), angle: %f\n",ii,BASE_CASTER_OFFSET[ii].x,BASE_CASTER_OFFSET[ii].y,steerPointVelocity[ii].x,steerPointVelocity[ii].y,steerAngle[ii]);
+// 
+//     for(int ii = 0; ii < NUM_CASTERS; ii++)
+//     {
+// 
+//         newDriveCenterL = Rot2D(CASTER_DRIVE_OFFSET[ii*2  ],steerAngle[ii]);
+//         newDriveCenterR = Rot2D(CASTER_DRIVE_OFFSET[ii*2+1],steerAngle[ii]);
+// 
+//         ComputePointVelocity(vx,vy,vw,newDriveCenterL.x,newDriveCenterL.y,drivePointVelocityL.x,drivePointVelocityL.y);
+//         ComputePointVelocity(vx,vy,vw,newDriveCenterR.x,newDriveCenterR.y,drivePointVelocityR.x,drivePointVelocityR.y);
+// 
+//         wheelSpeed[ii*2  ] = -GetMagnitude(drivePointVelocityL.x,drivePointVelocityL.y)/WHEEL_RADIUS;
+//         wheelSpeed[ii*2+1] = -GetMagnitude(drivePointVelocityR.x,drivePointVelocityR.y)/WHEEL_RADIUS;
+// 
+//         // send speed command
+//         this->SetJointSpeed((PR2_JOINT_ID) (CASTER_FL_DRIVE_L),wheelSpeed[ii*2  ]);
+//         this->SetJointSpeed((PR2_JOINT_ID) (CASTER_FL_DRIVE_R),wheelSpeed[ii*2+1]);
+//     }
+// 
+//     return PR2_ALL_OK;
+//  };
 
 
 PR2_ERROR_CODE PR2Robot::SetBaseSteeringAngle(double vx, double vy, double vw)
@@ -1270,14 +1297,38 @@ PR2_ERROR_CODE PR2Robot::SetBaseSteeringAngle(double vx, double vy, double vw)
    return PR2_ALL_OK;
 };
 
+bool PR2Robot::CheckBaseSteeringAngle(double errorTol)
+{
+   point steerPointVelocity[NUM_CASTERS];
+   double steerAngle[NUM_CASTERS];
 
+   point newDriveCenterL, newDriveCenterR;
 
+  double currentRateCmd[NUM_CASTERS];
+  double currentRateAct[NUM_CASTERS];
+  double currentCmd[NUM_CASTERS];
+  double currentAngle[NUM_CASTERS];
+  double currentError[NUM_CASTERS];
+  double errorTotal;
 
+  errorTotal = 0.0;
 
+   for(int ii=0; ii < NUM_CASTERS; ii++)
+   {
+     // do not move forward unless the wheels are aligned...
+     // this is a goofy hack, should put a more complicated version later
+     GetJointServoCmd((PR2_JOINT_ID)(CASTER_FL_STEER+3*ii),&currentCmd[ii],&currentRateCmd[ii]);
+     GetJointServoActual((PR2_JOINT_ID)(CASTER_FL_STEER+3*ii),&currentAngle[ii],&currentRateAct[ii]);
+     currentError[ii] = fabs(currentCmd[ii] - currentAngle[ii]);
+     //std::cout << " e " << ii << " e " << currentError[ii] << std::endl;
+     errorTotal = errorTotal + currentError[ii];
+   }
 
-
-
-
+   if (errorTotal < errorTol)
+     return true;
+   else
+     return false;
+};
 
 
 PR2_ERROR_CODE PR2Robot::GetBaseCartesianSpeedCmd(double* vx, double* vy, double* vw)

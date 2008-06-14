@@ -561,6 +561,11 @@ namespace PR2
       public: PR2_ERROR_CODE SetBaseSteeringAngle(double vx, double vy, double vw);
 
          /*! \fn
+           \brief Checks to see if steering angles are lined up
+         */
+      public: bool CheckBaseSteeringAngle(double errorTol);
+
+         /*! \fn
            \brief Retrieve commanded speed for the base in cartesian space in body coordinates 
            \param vx - forward speed
            \param vy - sideways speed
