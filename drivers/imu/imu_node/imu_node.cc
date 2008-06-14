@@ -129,7 +129,7 @@ public:
 
     return(0);
   }
-
+  
   int stop()
   {
     if(running)
@@ -151,9 +151,10 @@ public:
     uint64_t time;
     double accel[3];
     double angrate[3];
- 
+
     try
-    {      
+    {
+
       imu.receive_accel_angrate(&time, accel, angrate);
         
     } catch (MS_3DMGX2::exception& e) {

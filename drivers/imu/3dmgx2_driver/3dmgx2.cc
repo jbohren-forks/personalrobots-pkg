@@ -37,17 +37,28 @@
 #include "poll.h"
 
 
-static inline unsigned short bswap_16(unsigned short x) {
+unsigned short bswap_16(unsigned short x) {
   return (x>>8) | (x<<8);
 }
 
-static inline unsigned int bswap_32(unsigned int x) {
+unsigned int bswap_32(unsigned int x) {
   return (bswap_16(x&0xffff)<<16) | (bswap_16(x>>16));
 }
 
-static inline float extract_float(uint8_t* addr) {
-  uint32_t tmp = bswap_32(*(uint32_t*)addr);
-  return *(float*)((void*)&tmp);
+float extract_float(uint8_t* addr) {
+
+  float tmp;
+
+  *((unsigned char*)(&tmp) + 3) = *(addr);
+  *((unsigned char*)(&tmp) + 2) = *(addr+1);
+  *((unsigned char*)(&tmp) + 1) = *(addr+2);
+  *((unsigned char*)(&tmp)) = *(addr+3);
+
+  
+
+  //  uint32_t tmp = bswap_32(*(uint32_t*)addr);
+  //  return *(float*)(&tmp);
+  return tmp;
 }
 
 static inline unsigned long long time_helper()
@@ -346,8 +357,6 @@ MS_3DMGX2::IMU::receive(uint8_t command, void *rep, int rep_len, int timeout, ui
       
       if (retval == 0)
         IMU_EXCEPT(MS_3DMGX2::timeout_exception, "timeout reached");
-
-      printf("Poll returned with retval %d\n", retval);
     }
 	
     if (read(this->fd, (uint8_t*) rep, 1) <= 0)
@@ -388,7 +397,7 @@ MS_3DMGX2::IMU::receive(uint8_t command, void *rep, int rep_len, int timeout, ui
   for (int i = 0; i < rep_len - 2; i++) {
     checksum += ((uint8_t*)rep)[i];
   }
-  
+
   // If correct, return bytes
   if (checksum != bswap_16(*(uint16_t*)((uint8_t*)rep+rep_len-2)))
     IMU_EXCEPT(MS_3DMGX2::corrupted_data_exception, "invalid checksum");

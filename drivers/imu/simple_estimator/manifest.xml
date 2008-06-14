@@ -1,0 +1,10 @@
+<package>
+  <description>
+  A node that integrates the output of an IMU
+  </description>
+  <author>Jeremy Leibs</author>
+  <license>BSD</license>
+  <depend package='roscpp'/>
+  <depend package='std_msgs'/>
+  <depend package='newmat10'/>
+</package>
