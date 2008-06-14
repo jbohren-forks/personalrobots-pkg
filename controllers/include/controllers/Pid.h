@@ -97,8 +97,10 @@ class Pid
     double dGain;           /**< Derivative gain. */
     double iMax;            /**< Maximum allowable integrator state. */
     double iMin;            /**< Minimum allowable integrator state. */
+    double lastTime;        /**< timestamp of last update. */
     double currentCmd;      /**< Current position command. */
     double cmdMax;          /**< max limit on position command. */
     double cmdMin;          /**< min limit on position command. */
+    bool lastTimeInitialized; /**< timestamp of last update. */
 };
 

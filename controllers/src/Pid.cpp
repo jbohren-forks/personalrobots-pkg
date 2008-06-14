@@ -17,6 +17,8 @@ Pid::Pid(double P,double I, double D, double I1, double I2, double cmdMax, doubl
   dError      = 0.0;
   iError      = 0.0;
   currentCmd  = 0.0;
+  lastTimeInitialized = false;
+  lastTime    = 0.0;
 }
 
 
@@ -39,13 +41,25 @@ void Pid::InitPid( double P,double I, double D, double I1, double I2, double cmd
   currentCmd  = 0.0;
   cmdMax      =  1e16;
   cmdMin      = -1e16;
+  lastTimeInitialized = false;
+  lastTime    = 0.0;
 }
 
 
-double Pid::UpdatePid( double pError, double dt )
+double Pid::UpdatePid( double pError, double currentTime )
 {
   double pTerm, dTerm, iTerm;
+  double dt;
 
+  // initialize lastTime if not set already
+  if (!lastTimeInitialized)
+  {
+    lastTimeInitialized = true;
+    lastTime = currentTime;
+  }
+
+  dt = currentTime - lastTime;
+  
   if (dt == 0)
   {
     throw "dividebyzero";
@@ -71,11 +85,6 @@ double Pid::UpdatePid( double pError, double dt )
   // CALCULATE DERIVATIVE ERROR
   if (dt != 0)
   {
-      // FIXME: (jmh)
-      // very very important to revisit
-      // dt is used here, but I think there might be some missing boundary cases by using dt
-      // it is probably better to keep last time and current time, compute dt on the fly instead
-
       // dError should be d (pError) / dt
       dError     = smooth(dError,(pError - pErrorLast) / dt, dt);
       // save pError for next time
@@ -90,6 +99,10 @@ double Pid::UpdatePid( double pError, double dt )
   // command limits
   currentCmd = (currentCmd > cmdMax) ? cmdMax :
               ((currentCmd < cmdMin) ? cmdMin : currentCmd);
+
+  // save timestamp
+  lastTime = currentTime;
+
   return currentCmd;
 }
 
