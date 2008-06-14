@@ -196,39 +196,37 @@ GazeboNode::cmdvelReceived()
   this->lock.lock();
   double dt;
   double w11, w21, w12, w22;
-  w11 = 1.0;
-  w21 = 1.0;
-  w12 = 1.0;
-  w22 = 1.0;
 
   // smooth out the commands by time decay
   // with w1,w2=1, this means equal weighting for new command every second
   this->myPR2->GetSimTime(&(this->simTime));
   dt = simTime - lastTime;
-  //this->vxSmooth = (w11 * this->vxSmooth + w21*dt *this->velMsg.vx)/( w11 + w21*dt);
-  //this->vwSmooth = (w12 * this->vwSmooth + w22*dt *this->velMsg.vw)/( w12 + w22*dt);
 
-  this->vxSmooth = this->velMsg.vx;
-  this->vwSmooth = this->velMsg.vw;
-
-  fprintf(stderr,"received cmd: %.3f %.3f | %.3f %.3f\n", this->velMsg.vx, this->velMsg.vw,this->vxSmooth, this->vwSmooth);
-
-  this->myPR2->SetBaseSteeringAngle    (this->vxSmooth,0.0,this->vwSmooth);
-  while (!this->myPR2->CheckBaseSteeringAngle(M_PI/10.0))
+  // smooth if dt is larger than zero
+  if (dt > 0.0)
   {
-    // do nothing and wait...
-    usleep(100000);
+    w11 =  0.0;
+    w21 =  1.0;
+    w12 =  0.0;
+    w22 =  1.0;
+    this->vxSmooth = (w11 * this->vxSmooth + w21*dt *this->velMsg.vx)/( w11 + w21*dt);
+    this->vwSmooth = (w12 * this->vwSmooth + w22*dt *this->velMsg.vw)/( w12 + w22*dt);
   }
-  // set base velocity
-  this->myPR2->SetJointTorque(PR2::CASTER_FL_DRIVE_L, 1000.0 );
-  this->myPR2->SetJointTorque(PR2::CASTER_FR_DRIVE_L, 1000.0 );
-  this->myPR2->SetJointTorque(PR2::CASTER_RL_DRIVE_L, 1000.0 );
-  this->myPR2->SetJointTorque(PR2::CASTER_RR_DRIVE_L, 1000.0 );
-  this->myPR2->SetJointTorque(PR2::CASTER_FL_DRIVE_R, 1000.0 );
-  this->myPR2->SetJointTorque(PR2::CASTER_FR_DRIVE_R, 1000.0 );
-  this->myPR2->SetJointTorque(PR2::CASTER_RL_DRIVE_R, 1000.0 );
-  this->myPR2->SetJointTorque(PR2::CASTER_RR_DRIVE_R, 1000.0 );
-  this->myPR2->SetBaseCartesianSpeedCmd(this->vxSmooth, 0.0, this->vwSmooth);
+
+  // if steering angle is wrong, don't move or move slowly
+  std::cout << "received cmd: vx " << this->velMsg.vx << " vw " <<  this->velMsg.vw
+            << " vxsmoo " << this->vxSmooth << " vxsmoo " <<  this->vwSmooth
+            << " | steer erros: " << this->myPR2->BaseSteeringAngleError() << " - " <<  M_PI/100.0
+            << std::endl;
+  if (this->myPR2->BaseSteeringAngleError() > M_PI/100.0)
+  {
+    this->myPR2->SetBaseSteeringAngle    (this->vxSmooth,0.0,this->vwSmooth);
+  }
+  else
+  {
+    // set base velocity
+    this->myPR2->SetBaseCartesianSpeedCmd(this->vxSmooth, 0.0, this->vwSmooth);
+  }
 
   this->lastTime = this->simTime;
 
@@ -265,6 +263,16 @@ GazeboNode::GazeboNode(int argc, char** argv, const char* fname) :
 
   this->myPR2->GetSimTime(&(this->lastTime));
   this->myPR2->GetSimTime(&(this->simTime));
+
+  // set torques for driving the robot wheels
+  this->myPR2->SetJointTorque(PR2::CASTER_FL_DRIVE_L, 1000.0 );
+  this->myPR2->SetJointTorque(PR2::CASTER_FR_DRIVE_L, 1000.0 );
+  this->myPR2->SetJointTorque(PR2::CASTER_RL_DRIVE_L, 1000.0 );
+  this->myPR2->SetJointTorque(PR2::CASTER_RR_DRIVE_L, 1000.0 );
+  this->myPR2->SetJointTorque(PR2::CASTER_FL_DRIVE_R, 1000.0 );
+  this->myPR2->SetJointTorque(PR2::CASTER_FR_DRIVE_R, 1000.0 );
+  this->myPR2->SetJointTorque(PR2::CASTER_RL_DRIVE_R, 1000.0 );
+  this->myPR2->SetJointTorque(PR2::CASTER_RR_DRIVE_R, 1000.0 );
 }
 
 void GazeboNode::finalize(int)

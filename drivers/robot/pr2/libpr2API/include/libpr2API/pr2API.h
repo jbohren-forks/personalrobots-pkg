@@ -563,7 +563,7 @@ namespace PR2
          /*! \fn
            \brief Checks to see if steering angles are lined up
          */
-      public: bool CheckBaseSteeringAngle(double errorTol);
+      public: double BaseSteeringAngleError();
 
          /*! \fn
            \brief Retrieve commanded speed for the base in cartesian space in body coordinates 
