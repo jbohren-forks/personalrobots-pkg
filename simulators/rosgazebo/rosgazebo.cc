@@ -428,8 +428,6 @@ GazeboNode::Update()
   this->odomMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
   this->odomMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->odomMsg.header.stamp.sec) );
 
-  publish("odom",this->odomMsg);
-
   /***************************************************************/
   /*                                                             */
   /*  frame transforms                                           */
@@ -445,6 +443,11 @@ GazeboNode::Update()
                       0.0,
                       odomMsg.header.stamp.sec,
                       odomMsg.header.stamp.nsec);
+
+  // This publish call resets odomMsg.header.stamp.sec and 
+  // odomMsg.header.stamp.nsec to zero.  Thus, it must be called *after*
+  // those values are reused in the sendInverseEuler() call above.
+  publish("odom",this->odomMsg);
 
   /***************************************************************/
   /*                                                             */
