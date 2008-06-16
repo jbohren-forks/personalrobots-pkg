@@ -88,12 +88,18 @@ bool Katana::goto_joint_position_deg(int idx, double pos)
 
 bool Katana::gripper_fullstop(bool open_gripper)
 {
-  // todo: catch exceptions
-  if (open_gripper)
-    kni_lm->openGripper(true); // todo: think about a reasonable timeout
-  else
-    kni_lm->closeGripper(true);
-  return true;
+  try
+  {
+    if (open_gripper)
+      kni_lm->openGripper(true, 5000); // todo: think about a reasonable timeout
+    else
+      kni_lm->closeGripper(true, 5000);
+    return true;
+  }
+  catch(Exception &e)
+  {
+    return false;
+  }
 }
 
 vector<double> Katana::get_joint_positions()
