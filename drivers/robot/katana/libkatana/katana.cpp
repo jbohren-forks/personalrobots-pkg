@@ -96,7 +96,11 @@ bool Katana::gripper_fullstop(bool open_gripper)
       kni_lm->closeGripper(true, 5000);
     return true;
   }
-  catch(Exception &e)
+  catch(MotorTimeoutException &e)
+  {
+    return true;
+  }
+  catch(MotorCrashException &e)
   {
     return false;
   }
