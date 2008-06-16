@@ -11,6 +11,7 @@ A test file for Player interface.
 <depend package="gazebo"/>
 <depend package="pr2Core"/>
 <depend package="newmat10"/>
+<depend package="controllers"/>
 <export>
 <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lPr2_Actarray -lPr2_Gripper -lP3D"/>
 </export>

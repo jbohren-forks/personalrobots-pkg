@@ -31,6 +31,9 @@
 #include <gazebo/Entity.hh>
 #include <pr2Core/pr2Core.h>
 
+// use controllers
+#include <controllers/Pid.h>
+
 namespace gazebo
 {
    class HingeJoint;
@@ -88,6 +91,9 @@ namespace gazebo
       private: float forces[256];
       private: float gains[256];
       private: int numJoints;
+
+      // we'll declare a pid controller for each hinger/slider/... joint
+      private: Pid *pids[256];
    };
 
 /** \} */

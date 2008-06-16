@@ -9,6 +9,6 @@ Library for doing controls.
 <url>http://pr.willowgarage.com</url>
 <repository>http://pr.willowgarage.com/repos</repository>
 <export>
-<cpp cflags='-I${prefix}/include' lflags='-L${prefix}/lib'/>
+<cpp cflags='-I${prefix}/include' lflags='-L${prefix}/lib -lPid '/>
 </export>
 </package>

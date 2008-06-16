@@ -62,43 +62,46 @@ double Pid::UpdatePid( double pError, double currentTime )
   
   if (dt == 0)
   {
-    throw "dividebyzero";
+    // no update except for lastTime
+    //throw "dividebyzero";
   }
-
-  // calculate proportional contribution to command
-  pTerm = pGain * pError;
-
-  // CALCULATE THE INTEGRAL ERROR ACCUMULATION WITH APPROPRIATE LIMITING
-  iError = iError + dt * pError;
-  // limit iError
-  if (iError > iMax)
+  else
   {
-    iError = iMax;
-  }
-  else if (iError < iMin)
-  {
-    iError = iMin;
-  }
-  // calculate integral contribution to command
-  iTerm = iGain * iError;
+    // calculate proportional contribution to command
+    pTerm = pGain * pError;
 
-  // CALCULATE DERIVATIVE ERROR
-  if (dt != 0)
-  {
-      // dError should be d (pError) / dt
-      dError     = smooth(dError,(pError - pErrorLast) / dt, dt);
-      // save pError for next time
-      pErrorLast = pError;
+    // CALCULATE THE INTEGRAL ERROR ACCUMULATION WITH APPROPRIATE LIMITING
+    iError = iError + dt * pError;
+    // limit iError
+    if (iError > iMax)
+    {
+      iError = iMax;
+    }
+    else if (iError < iMin)
+    {
+      iError = iMin;
+    }
+    // calculate integral contribution to command
+    iTerm = iGain * iError;
+
+    // CALCULATE DERIVATIVE ERROR
+    if (dt != 0)
+    {
+        // dError should be d (pError) / dt
+        dError     = smooth(dError,(pError - pErrorLast) / dt, dt);
+        // save pError for next time
+        pErrorLast = pError;
+    }
+    // calculate derivative contribution to command
+    dTerm = dGain * dError;
+
+    // create current command value
+    currentCmd = pTerm + iTerm + dTerm;
+
+    // command limits
+    currentCmd = (currentCmd > cmdMax) ? cmdMax :
+                ((currentCmd < cmdMin) ? cmdMin : currentCmd);
   }
-  // calculate derivative contribution to command
-  dTerm = dGain * dError;
-
-  // create current command value
-  currentCmd = pTerm + iTerm + dTerm;
-
-  // command limits
-  currentCmd = (currentCmd > cmdMax) ? cmdMax :
-              ((currentCmd < cmdMin) ? cmdMin : currentCmd);
 
   // save timestamp
   lastTime = currentTime;
