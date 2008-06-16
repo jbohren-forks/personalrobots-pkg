@@ -49,7 +49,7 @@ class Pid
       * \param I1 The integral upper limit.
       * \param I2 The integral lower limit.
       */
-    Pid(double P = 0.8,double I = 0.5, double D = 0.0, double I1 = 1.0, double I2 =-1.0,double cmdMax = 1e16, double cmdMin = -1e16);
+    Pid(double P = 0.8,double I = 0.5, double D = 0.0, double I1 = 1.0, double I2 =-1.0 );
     
     /*!
       * \brief Destructor of Pid class.
@@ -75,7 +75,7 @@ class Pid
       * \param I1 The integral upper limit.
       * \param I2 The integral lower limit.
       */
-    void   InitPid( double P,double I, double D, double I1, double I2, double cmdMax, double cmdMin );  
+    void   InitPid( double P,double I, double D, double I1, double I2 );
 
     /*!
       * \brief Set current command for this PID controller
@@ -97,10 +97,6 @@ class Pid
     double dGain;           /**< Derivative gain. */
     double iMax;            /**< Maximum allowable integrator state. */
     double iMin;            /**< Minimum allowable integrator state. */
-    double lastTime;        /**< timestamp of last update. */
-    double currentCmd;      /**< Current position command. */
-    double cmdMax;          /**< max limit on position command. */
-    double cmdMin;          /**< min limit on position command. */
-    bool lastTimeInitialized; /**< timestamp of last update. */
+    double currentCmd;      /**< Command to send to motor. */
 };
 

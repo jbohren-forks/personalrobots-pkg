@@ -3,22 +3,13 @@
 
 using namespace std;
 
-double smooth(double v0, double v, double dt)
-{
-  double w1 = 10.0;
-  double w2 =  1.0;
-  return (  w1 * v0 + w2 * dt * v ) / ( w1 + w2 * dt );
-}
-
-Pid::Pid(double P,double I, double D, double I1, double I2, double cmdMax, double cmdMin ):
-  pGain(P),iGain(I),dGain(D),iMax(I1),iMin(I2),cmdMax(cmdMax),cmdMin(cmdMin)
+Pid::Pid(double P,double I, double D, double I1, double I2 ) :
+  pGain(P),iGain(I),dGain(D),iMax(I1),iMin(I2)
 {
   pErrorLast  = 0.0;
   dError      = 0.0;
   iError      = 0.0;
   currentCmd  = 0.0;
-  lastTimeInitialized = false;
-  lastTime    = 0.0;
 }
 
 
@@ -27,7 +18,7 @@ Pid::~Pid( )
 }
 
 
-void Pid::InitPid( double P,double I, double D, double I1, double I2, double cmdMax, double cmdMin )
+void Pid::InitPid( double P,double I, double D, double I1, double I2 )
 {
   //cout << "Retuned=" << P<<" "<<I<<" "<<D << endl;
   pGain       = P;
@@ -39,30 +30,15 @@ void Pid::InitPid( double P,double I, double D, double I1, double I2, double cmd
   dError      = 0.0;
   iError      = 0.0;
   currentCmd  = 0.0;
-  cmdMax      =  1e16;
-  cmdMin      = -1e16;
-  lastTimeInitialized = false;
-  lastTime    = 0.0;
 }
 
 
-double Pid::UpdatePid( double pError, double currentTime )
+double Pid::UpdatePid( double pError, double dt )
 {
   double pTerm, dTerm, iTerm;
-  double dt;
 
-  // initialize lastTime if not set already
-  if (!lastTimeInitialized)
-  {
-    lastTimeInitialized = true;
-    lastTime = currentTime;
-  }
-
-  dt = currentTime - lastTime;
-  
   if (dt == 0)
   {
-    // no update except for lastTime
     //throw "dividebyzero";
   }
   else
@@ -88,7 +64,7 @@ double Pid::UpdatePid( double pError, double currentTime )
     if (dt != 0)
     {
         // dError should be d (pError) / dt
-        dError     = smooth(dError,(pError - pErrorLast) / dt, dt);
+        dError     = (pError - pErrorLast) / dt;
         // save pError for next time
         pErrorLast = pError;
     }
@@ -98,13 +74,7 @@ double Pid::UpdatePid( double pError, double currentTime )
     // create current command value
     currentCmd = pTerm + iTerm + dTerm;
 
-    // command limits
-    currentCmd = (currentCmd > cmdMax) ? cmdMax :
-                ((currentCmd < cmdMin) ? cmdMin : currentCmd);
   }
-
-  // save timestamp
-  lastTime = currentTime;
 
   return currentCmd;
 }
