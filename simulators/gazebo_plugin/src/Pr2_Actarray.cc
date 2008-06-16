@@ -159,9 +159,7 @@ void Pr2_Actarray::InitChild()
                                this->myIface->data->actuators[i].iGain,
                                this->myIface->data->actuators[i].dGain,
                                 1.0,
-                               -1.0,
-                               this->joints[i]->GetHighStop(),
-                               this->joints[i]->GetLowStop()
+                               -1.0
                               );
        this->pids[i]->SetCurrentCmd(0.0);
 
@@ -242,14 +240,14 @@ void Pr2_Actarray::UpdateChild(UpdateParams &params)
                    sjoint->SetSliderForce(this->myIface->data->actuators[i].cmdEffectorForce);
                    break;
                 case PR2::PD_CONTROL :
-                   if (cmdPosition > sjoint->GetHighStop())
-                      cmdPosition = sjoint->GetHighStop();
-                   else if (cmdPosition < sjoint->GetLowStop())
-                      cmdPosition = sjoint->GetLowStop();
+                   //if (cmdPosition > sjoint->GetHighStop())
+                   //   cmdPosition = sjoint->GetHighStop();
+                   //else if (cmdPosition < sjoint->GetLowStop())
+                   //   cmdPosition = sjoint->GetLowStop();
 
                    positionError = cmdPosition - sjoint->GetPosition();
                    speedError = cmdSpeed - sjoint->GetPositionRate();
-                   currentCmd = this->pids[i]->UpdatePid(positionError,currentTime);
+                   currentCmd = this->pids[i]->UpdatePid(positionError, currentTime);
 
                    //if (fabs(positionError) > 0.01)
                    //{
@@ -285,14 +283,14 @@ void Pr2_Actarray::UpdateChild(UpdateParams &params)
                    hjoint->SetTorque(this->myIface->data->actuators[i].cmdEffectorForce);
                    break;
                 case PR2::PD_CONTROL:
-                   if (cmdPosition > hjoint->GetHighStop())
-                      cmdPosition = hjoint->GetHighStop();
-                   else if (cmdPosition < hjoint->GetLowStop())
-                      cmdPosition = hjoint->GetLowStop();
+                   //if (cmdPosition > hjoint->GetHighStop())
+                   //   cmdPosition = hjoint->GetHighStop();
+                   //else if (cmdPosition < hjoint->GetLowStop())
+                   //   cmdPosition = hjoint->GetLowStop();
 
                    positionError = ModNPi2Pi(cmdPosition - hjoint->GetAngle());
                    speedError = cmdSpeed - hjoint->GetAngleRate();
-                   currentCmd = this->pids[i]->UpdatePid(positionError,currentTime);
+                   currentCmd = this->pids[i]->UpdatePid(positionError, currentTime);
 
                    //if (fabs(positionError) > 0.01)
                    //{
