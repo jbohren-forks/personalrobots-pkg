@@ -39,7 +39,7 @@ double Pid::UpdatePid( double pError, double dt )
 
   if (dt == 0)
   {
-    //throw "dividebyzero";
+    throw "dividebyzero";
   }
   else
   {
