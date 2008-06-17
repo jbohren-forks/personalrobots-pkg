@@ -366,6 +366,9 @@ namespace PR2
          */
       public: PR2_ERROR_CODE GetArmJointPositionCmd(PR2_MODEL_ID id, double jointPosition[], double jointSpeed[]);
 
+							// identical to GetArmJointPositionCmd but uses KDL::JntArray
+      				PR2_ERROR_CODE GetArmJointPositionCmd(PR2_MODEL_ID id, KDL::JntArray &q);
+
 
          /*! \fn
            \brief Get the actual wrist pose 
@@ -454,7 +457,7 @@ namespace PR2
 
 #ifdef KDL_KINEMATICS			
 // KDL version of SetArmCartesianPosition
-			public: PR2_ERROR_CODE SetArmCartesianPosition(PR2_MODEL_ID id, KDL::Frame f);
+			public: PR2_ERROR_CODE SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Frame &f,const KDL::JntArray &q_init, KDL::JntArray &q_out);
 #endif
 
          /*! \fn

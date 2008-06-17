@@ -668,12 +668,13 @@ PR2_ERROR_CODE PR2Robot::IsEnabledModel(PR2_MODEL_ID id, int *enabled)
 
 #ifdef KDL_KINEMATICS
 
-PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, KDL::Frame f)
+PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Frame &f, const KDL::JntArray &q_init, KDL::JntArray &q_out)
 {
-	KDL::JntArray q_init = KDL::JntArray(this->pr2_kin.nJnts);
-	q_init(0) = 0.1, q_init(1) = 0.0, q_init(2) = 0.0, q_init(3) = 0.0;
-	q_init(4) = 0.0, q_init(5) = 0.0, q_init(6) = 0.0;
-	KDL::JntArray q_out = KDL::JntArray(this->pr2_kin.nJnts);
+//	KDL::JntArray q_init = KDL::JntArray(this->pr2_kin.nJnts);
+//	q_init(0) = 0.1, q_init(1) = 0.0, q_init(2) = 0.0, q_init(3) = 0.0;
+//	q_init(4) = 0.0, q_init(5) = 0.0, q_init(6) = 0.0;
+
+//	KDL::JntArray q_out = KDL::JntArray(this->pr2_kin.nJnts);
 	if (this->pr2_kin.IK(q_init, f, q_out) == true)
 		cout<<"IK result:"<<q_out<<endl;
 	else
@@ -1055,6 +1056,21 @@ PR2_ERROR_CODE PR2Robot::GetArmJointPositionCmd(PR2_MODEL_ID id, double jointPos
    pr2Iface->Unlock();
    return PR2_ALL_OK;
 };
+
+PR2_ERROR_CODE GetArmJointPositionCmd(PR2_MODEL_ID id, KDL::JntArray &q)
+{
+	if (id != PR2_RIGHT_ARM && id != PR2_LEFT_ARM)
+		return PR2_ERROR;
+
+   pr2Iface->Lock(1);
+   for(int ii = JointStart[id]; ii <= JointEnd[id]; ii++)
+      q(ii-JointStart[id]) = pr2Iface->data->actuators[ii].cmdPosition;
+
+   pr2Iface->Unlock();
+   return PR2_ALL_OK;
+}
+
+
 
 PR2_ERROR_CODE PR2Robot::GetArmJointPositionActual(PR2_MODEL_ID id, double jointPosition[], double jointSpeed[])
 {

@@ -15,10 +15,14 @@ LFLAGS = $(shell rospack export/cpp/lflags $(PKG)) \
 
 LIBP = lib/libpr2API.a
 
-all: $(LIBP) bin/test_libpr2API bin/pr2_kin_kdl
+all: $(LIBP) bin/test_libpr2API bin/pr2_kin_kdl bin/pick_object
 
 pr2API.o: src/pr2API.cpp include/libpr2API/pr2API.h
 	$(CXX) $(CFLAGS) -c -o $@ $<
+
+obj/kinematic_controllers.o: src/kinematic_controllers.cpp include/libpr2API/pr2API.h include/kinematic_controllers.h
+	$(CXX) $(CFLAGS) -c -o $@ $<
+
 
 $(LIBP): pr2API.o
 	ar -rv $@ $^
@@ -26,10 +30,14 @@ $(LIBP): pr2API.o
 bin/test_libpr2API: src/test/test_pr2API.cpp
 	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
 
-bin/pr2_kin_kdl: src/test/pr2_kin_kdl.cpp
+bin/pick_object: src/test/pick_object.cpp $(LIBP) obj/kinematic_controllers.o
+	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
+
+
+bin/pr2_kin_kdl: src/test/pr2_kin_kdl.cpp $(LIBP)
 	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
 
 clean:
-	-rm -f test_libpr2API $(LIBP) bin/*
+	-rm -f test_libpr2API $(LIBP) bin/* obj/*
 	-rm -rf *.o $(PKG) $(PKG).dSYM
 
