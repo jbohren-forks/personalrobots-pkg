@@ -1,3 +1,3 @@
-SUBDIRS = axis_cam libaxis_cam
+SUBDIRS = libaxis_cam axis_cam 
 include $(shell rospack find mk)/recurse_subdirs.mk
 

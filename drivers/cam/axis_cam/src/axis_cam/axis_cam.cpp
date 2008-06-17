@@ -29,6 +29,7 @@
 
 #include "ros/node.h"
 #include "std_msgs/Image.h"
+#include "image_utils/image_codec.h"
 
 #include "axis_cam/axis_cam.h"
 
@@ -36,12 +37,13 @@ class Axis_cam_node : public ros::node
 {
 public:
   std_msgs::Image image;
+  ImageCodec<std_msgs::Image> codec;
 
   string axis_host;
   AxisCam *cam;
   int frame_id;
 
-  Axis_cam_node() : ros::node("axis_ptz"), cam(NULL), frame_id(0)
+  Axis_cam_node() : ros::node("axis_ptz"), codec(&image), cam(NULL), frame_id(0)
   {
     advertise<std_msgs::Image>("image");
 
@@ -71,12 +73,9 @@ public:
     image.set_data_size(jpeg_size);
     memcpy(image.data, jpeg, jpeg_size);
 
-    //TODO: Read width and height from somewhere else
-    image.width = 704;
-    image.height = 480;
     image.compression = "jpeg";
-    image.colorspace = "rgb24";
 
+    codec.inflate_header();
     publish("image", image);
 
     return true;

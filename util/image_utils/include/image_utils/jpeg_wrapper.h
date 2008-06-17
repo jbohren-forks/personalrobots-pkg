@@ -9,6 +9,7 @@ extern "C"
 }
 #include <cstdlib>
 #include <cstring>
+#include <string>
 
 class JpegWrapper
 {
@@ -44,6 +45,18 @@ public:
 
   inline int width()  { return raster_width; }
   inline int height() { return raster_height; }
+
+  std::string color_space() 
+  { 
+    if (raster_type == RT_MONO8)
+      return std::string("mono8");
+    else if (raster_type == RT_RGB24)
+      return std::string("rgb24");
+    else
+      return std::string("unknown");
+  }
+
+
   inline int raster_size()
   {
     if (raster_type == RT_RGB24)
@@ -53,6 +66,7 @@ public:
     else
       return 0;
   }
+
   inline uint8_t *get_raster() { return raster; }
 
   bool decompress_jpeg_buf(char *data, uint32_t data_len)
@@ -86,6 +100,31 @@ public:
     ros_jpeg_mutex_unlock();
     return true;
   }
+
+  bool decompress_jpeg_header(char *data, uint32_t data_len)
+  {
+    ros_jpeg_mutex_lock();
+    jpeg_buffer_src(&dinfo, data, data_len);
+    jpeg_read_header(&dinfo, TRUE);
+    jpeg_start_decompress(&dinfo);
+    if (dinfo.out_color_space == JCS_GRAYSCALE) {
+      raster_type = RT_MONO8;
+    }
+    else if (dinfo.out_color_space == JCS_RGB)
+    {
+      raster_type = RT_RGB24;
+    } 
+    else {
+          printf("woah! this jpeg buffer uses an unexpected color space.\n");
+          return false;
+    }
+    raster_width = dinfo.output_width;
+    raster_height = dinfo.output_height;
+    jpeg_abort_decompress(&dinfo);
+    ros_jpeg_mutex_unlock();
+    return true;
+  }
+
   uint32_t compress_to_jpeg(uint8_t *raster, uint32_t w, uint32_t h, 
                             raster_type_t raster_type = RT_RGB24, 
                             int32_t quality = 95)

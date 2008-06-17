@@ -83,6 +83,24 @@ public:
     return raster;
   }
 
+  bool inflate_header()
+  {
+    msg->lock();
+
+    // perform decompression and/or colorspace conversion if necessary
+    if (msg->compression == string("jpeg"))
+      decompress_jpeg_header();
+    else
+    {
+      printf("unimplemented image header compression: [%s]\n", 
+             msg->compression.c_str());
+      msg->unlock();
+      return false;
+    }
+    msg->unlock();
+    return true;
+  }
+
   uint32_t get_raster_size()
   {
     int bpp = 0;
@@ -92,6 +110,10 @@ public:
       bpp = 1;
     else if (msg->colorspace == "mono16")
       bpp = 2;
+    else {
+      printf("Undefined colorspace [%s].  Defaulting to 3 byte per pixel.\n", msg->colorspace.c_str());
+      bpp = 3;
+    }
     return msg->width * msg->height * bpp;
   }
 
@@ -160,6 +182,21 @@ protected:
     if (!jpeg->decompress_jpeg_buf((char *)msg->data, msg->get_data_size()))
       return false;
     memcpy(raster, jpeg->get_raster(), jpeg->raster_size());
+    return true;
+  }
+
+  bool decompress_jpeg_header()
+  {
+    if (!jpeg)
+      jpeg = new JpegWrapper();
+    if (!jpeg->decompress_jpeg_header((char *)msg->data, msg->get_data_size()))
+      return false;
+
+    msg->width = jpeg->width();
+    msg->height = jpeg->height();
+    msg->compression = "jpeg";
+    msg->colorspace = jpeg->color_space(); 
+
     return true;
   }
   
