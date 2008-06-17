@@ -21,7 +21,7 @@
     <LI>  Iterm  = iGain * iError
     <LI>  Dterm  = dGain * dError
     <LI>  iError = iError + pError * dT
-    <LI>  dError = dError + pError / dT
+    <LI>  dError = dError = dError + (pError - lastpError) / dT
     </UL> 
       
     given:<br> 
