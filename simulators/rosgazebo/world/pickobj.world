@@ -1,0 +1,450 @@
+<?xml version="1.0"?>
+
+<gazebo:world 
+  xmlns:xi="http://www.w3.org/2001/XInclude"
+  xmlns:gazebo="http://playerstage.sourceforge.net/gazebo/xmlschema/#gz" 
+  xmlns:model="http://playerstage.sourceforge.net/gazebo/xmlschema/#model" 
+  xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor" 
+  xmlns:window="http://playerstage.sourceforge.net/gazebo/xmlschema/#window" 
+  xmlns:param="http://playerstage.sourceforge.net/gazebo/xmlschema/#param" 
+  xmlns:body="http://playerstage.sourceforge.net/gazebo/xmlschema/#body" 
+  xmlns:geo="http://willowgarage.com/xmlschema/#geo" 
+  xmlns:geom="http://playerstage.sourceforge.net/gazebo/xmlschema/#geom" 
+  xmlns:joint="http://playerstage.sourceforge.net/gazebo/xmlschema/#joint" 
+  xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" 
+  xmlns:ui="http://playerstage.sourceforge.net/gazebo/xmlschema/#ui"
+  xmlns:rendering="http://playerstage.sourceforge.net/gazebo/xmlschema/#rendering" 
+  xmlns:renderable="http://playerstage.sourceforge.net/gazebo/xmlschema/#renderable" 
+  xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+  xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics" >
+
+  <verbosity>5</verbosity>
+
+<!-- cfm is 1e-5 for single precision -->
+<!-- erp is typically .1-.8 -->
+  <physics:ode>
+    <stepTime>0.01</stepTime>
+    <gravity>0 0 -9.8</gravity>
+    <cfm>0.001</cfm>
+    <erp>0.8</erp>
+    <mu1>100</mu1>
+  </physics:ode>
+
+  <geo:origin>
+    <lat>37.4270909558</lat><lon>-122.077919338</lon>
+  </geo:origin>
+
+  <rendering:gui>
+    <type>fltk</type>
+    <size>1024 800</size>
+    <pos>0 0</pos>
+  </rendering:gui>
+
+
+  <rendering:ogre>
+    <ambient>1.0 1.0 1.0 1.0</ambient>
+    <sky>
+      <material>Gazebo/CloudySky</material>
+    </sky>
+    <gazeboPath>media</gazeboPath>
+    <grid>off</grid>
+    <desiredFPS>100</desiredFPS>
+  </rendering:ogre>
+
+
+  <model:physical name="gplane">
+    <xyz>0 0 0</xyz>	
+    <rpy>0 0 0</rpy>
+    <static>true</static>
+
+    <body:plane name="plane">
+      <geom:plane name="plane">
+        <normal>0 0 1</normal>
+        <size>51.3 51.3</size>
+        <!-- map3.png -->
+        <material>PR2/floor_texture</material>
+      </geom:plane>
+    </body:plane>
+  </model:physical>
+<!--
+-->
+
+  <!-- The camera -->
+  <model:physical name="cam1_model">
+    <xyz>   2.0    0.25    1.17</xyz>
+    <rpy>   5.5    25.71   -152.72</rpy>
+    <static>true</static>
+
+    <body:empty name="cam1_body">
+      <sensor:camera name="cam1_sensor">
+        <imageSize>1024 800</imageSize>
+        <hfov>90</hfov>
+        <nearClip>0.1</nearClip>
+        <farClip>20</farClip>
+        <saveFrames>false</saveFrames>
+        <saveFramePath>frames</saveFramePath>
+        <controller:generic_camera name="cam1_controller">
+          <interface:camera name="cam1_iface_0" />
+        </controller:generic_camera>
+      </sensor:camera>
+    </body:empty>
+  </model:physical>
+
+
+  <!-- The "desk"-->
+  <model:physical name="desk1_model">
+    <xyz>   0.98  -0.21  -0.10</xyz>
+    <rpy>   0.0    0.0    0.00</rpy>
+    <body:box name="desk1_legs_body">
+      <geom:box name="desk1_legs_geom">
+        <xyz>   0.0    0.0    0.50</xyz>
+        <mesh>default</mesh>
+        <size>0.5 1.0  0.75</size>
+        <mass> 10.0</mass>
+        <cfm>0.000001</cfm>
+        <erp>0.8</erp>
+        <visual>
+          <size> 0.5 1.0 0.75</size>
+          <material>Gazebo/Rocky</material>
+          <mesh>unit_box</mesh>
+        </visual>
+      </geom:box>
+      <geom:box name="desk1_top_geom">
+        <xyz>   0.0    0.0    0.90</xyz>
+        <mesh>default</mesh>
+        <size>0.75 1.5  0.05</size>
+        <mass> 10.0</mass>
+        <cfm>0.000001</cfm>
+        <erp>0.8</erp>
+        <visual>
+          <size> 0.75 1.5 0.05</size>
+          <material>Gazebo/Rocky</material>
+          <mesh>unit_box</mesh>
+        </visual>
+      </geom:box>
+    </body:box>
+  </model:physical>
+
+  <!-- The small cuboidal "cup" -->
+  <model:physical name="cylinder1_model">
+    <xyz>   0.78   0.0    0.9</xyz>
+    <rpy>   0.0    0.0    0.0</rpy>
+    <body:box name="cylinder1_body">
+      <geom:box name="cylinder1_geom">
+        <mesh>default</mesh>
+        <size>0.05 0.05 0.15</size>
+        <mass> 0.5</mass>
+        <cfm>0.000001</cfm>
+        <erp>0.8</erp>
+        <visual>
+          <size> 0.05 0.05 0.15</size>
+          <material>Gazebo/PioneerBody</material>
+          <mesh>unit_box</mesh>
+        </visual>
+      </geom:box>
+    </body:box>
+  </model:physical>
+
+  <!-- The small cylindrical "cup" -->
+	<!--
+  <model:physical name="cylinder1_model">
+    <xyz>   0.78   0.0    0.9</xyz>
+    <rpy>   0.0    0.0    0.0</rpy>
+    <body:cylinder name="cylinder1_body">
+      <geom:cylinder name="cylinder1_geom">
+        <mesh>default</mesh>
+        <size>0.05 0.15</size>
+        <mass> 0.5</mass>
+        <cfm>0.000001</cfm>
+        <erp>0.8</erp>
+        <visual>
+          <size> 0.05 0.05 0.15</size>
+          <material>Gazebo/PioneerBody</material>
+          <mesh>unit_cylinder</mesh>
+        </visual>
+      </geom:cylinder>
+    </body:cylinder>
+  </model:physical>
+	-->
+
+
+  <model:physical name="robot_model1">
+    <xyz>0.0 0.0 0.262</xyz>
+    <rpy>0.0 0.0 0.0</rpy>
+
+    <!-- base, torso and arms -->
+    <include embedded="true">
+      <xi:include href="pr2.model" />
+    </include>
+
+    <controller:pr2_actarray name="pr2_head_controller" plugin="libPr2_Actarray.so">
+        <joint name="neck_yaw_joint">
+          <saturationTorque>100</saturationTorque>
+          <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        </joint>
+        <joint name="head_tilt_joint">
+          <saturationTorque>10</saturationTorque>
+          <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        </joint>
+        <joint name="hokuyo_pitch_joint">
+          <saturationTorque>1000</saturationTorque>
+          <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        </joint>
+        <joint name="head_cam_left_yaw_joint">
+          <saturationTorque>100</saturationTorque>
+          <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        </joint>
+        <joint name="head_cam_left_pitch_joint">
+          <saturationTorque>100</saturationTorque>
+          <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        </joint>
+        <joint name="head_cam_right_yaw_joint">
+          <saturationTorque>100</saturationTorque>
+          <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        </joint>
+        <joint name="head_cam_right_pitch_joint">
+          <saturationTorque>100</saturationTorque>
+          <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        </joint>
+      <interface:pr2array name="pr2_head_iface"/>
+    </controller:pr2_actarray>
+
+    <!-- use actarray for the rest of the model -->
+
+    <controller:pr2_actarray name="pr2_controller" plugin="libPr2_Actarray.so">
+      <joint name="front_left_caster_steer">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="front_left_wheel_l_drive">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="front_left_wheel_r_drive">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="front_right_caster_steer">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="front_right_wheel_l_drive">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="front_right_wheel_r_drive">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="rear_left_caster_steer">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="rear_left_wheel_l_drive">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="rear_left_wheel_r_drive">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="rear_right_caster_steer">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="rear_right_wheel_l_drive">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="rear_right_wheel_r_drive">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <!-- ========================================= -->
+      <joint name="torso_spine_slider">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <!-- ========================================= -->
+      <joint name="shoulder_pan_left">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="upperarm_pitch_joint_left">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="upperarm_roll_joint_left">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="elbow_pitch_joint_left">
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="forearm_roll_joint_left">
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="wrist_pitch_joint_left">
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="palm_roll_joint_left">
+        <saturationTorque>100</saturationTorque>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <pGain>1</pGain>
+      </joint>
+      <!-- ========================================= -->
+      <joint name="shoulder_pan_right">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="upperarm_pitch_joint_right">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="upperarm_roll_joint_right">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="elbow_pitch_joint_right">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="forearm_roll_joint_right">
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="wrist_pitch_joint_right">
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <joint name="palm_roll_joint_right">
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+      </joint>
+      <!-- ========================================= -->
+      <interface:pr2array name="pr2_iface"/>
+      <!-- ========================================= -->
+    </controller:pr2_actarray>
+
+    <controller:pr2_gripper name="pr2_gripper_left_controller" plugin="libPr2_Gripper.so">
+      <leftJoint>finger_2_slider_left</leftJoint>
+      <rightJoint>finger_1_slider_left</rightJoint>
+      <gripperForce>100.0</gripperForce>
+      <pGain>1.0</pGain>
+      <dGain>0.0</dGain>
+      <iGain>0.0</iGain>
+      <interface:pr2gripper name="pr2_gripper_left_iface"/>
+    </controller:pr2_gripper>
+
+    <controller:pr2_gripper name="pr2_gripper_right_controller" plugin="libPr2_Gripper.so">
+      <leftJoint>finger_2_slider_right</leftJoint>
+      <rightJoint>finger_1_slider_right</rightJoint>
+      <gripperForce>100.0</gripperForce>
+      <pGain>1.0</pGain>
+      <dGain>0.0</dGain>
+      <iGain>0.0</iGain>
+      <interface:pr2gripper name="pr2_gripper_right_iface"/>
+    </controller:pr2_gripper>
+
+    <controller:P3D name="p3d_right_wrist_controller" plugin="libP3D.so">
+        <bodyName>palm_right</bodyName>
+      <interface:position name="p3d_right_wrist_position"/>
+    </controller:P3D>
+
+    <controller:P3D name="p3d_left_wrist_controller" plugin="libP3D.so">
+        <bodyName>palm_left</bodyName>
+      <interface:position name="p3d_left_wrist_position"/>
+    </controller:P3D>
+
+		<controller:P3D name="p3d_base_controller" plugin="libP3D.so">
+			<updateRate>100.0</updateRate>
+			<bodyName>base_body</bodyName>
+			<interface:position name="p3d_base_position"/>
+		</controller:P3D>
+
+  </model:physical>
+
+
+  <!-- White Directional light -->
+  <model:renderable name="directional_white">
+    <light>
+      <type>directional</type>
+      <direction>0 -0.5 -0.5</direction>
+      <diffuseColor>0.4 0.4 0.4</diffuseColor>
+      <specularColor>0.0 0.0 0.0</specularColor>
+      <attenuation>1 0.0 1.0 0.4</attenuation>
+    </light>
+  </model:renderable>
+  
+
+</gazebo:world>

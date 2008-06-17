@@ -78,7 +78,7 @@ void angle_within_mod180(JntArray &q, int nJnts)
 	for(int i=0;i<nJnts;i++)
 	{
 		q(i) = angle_within_mod180(q(i));
-		printf(".. %f ..", q(i));
+//		printf(".. %f ..", q(i));
 	}	
 }
 

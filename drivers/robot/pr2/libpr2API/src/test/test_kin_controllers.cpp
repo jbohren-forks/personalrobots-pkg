@@ -94,20 +94,20 @@ void top()
 void object_pose()
 {
 	Rotation r = Rotation::RotZ(DTOR(90));
-	Vector v(0.568,0.01,0.06);
+	Vector v(0.578,0.01,0.06);
 	myKinCon.go(v,r,0.05);
 }
 
 void go_down()
 {
 	Rotation r = Rotation::RotZ(DTOR(90))*Rotation::RotY(DTOR(30));
-	Vector v(0.568,0.01,0.01);
+	Vector v(0.578,0.01,-0.01);
 	myKinCon.go(v,r,0.05);
 }
 
 void close_gripper()
 {
-	myKinCon.myPR2->CloseGripper(PR2::PR2_RIGHT_GRIPPER, 0.02, 10000);
+	myKinCon.myPR2->CloseGripper(PR2::PR2_RIGHT_GRIPPER, 0.0, 10000);
 }
 
 void open_gripper()
