@@ -146,6 +146,14 @@ JntArray object_pose()
 	q_init(5) = DTOR(30);  // wrist pitch
 	q_init(6) = 0.0;       // wrist roll
 
+	q_init(0) = DTOR(0); // turret
+	q_init(1) = DTOR(0); // shoulder pitch
+	q_init(2) = DTOR(0);  // shoulder roll
+	q_init(3) = DTOR(0);  // elbow pitch
+	q_init(4) = DTOR(0);  // elbow roll
+	q_init(5) = DTOR(0);  // wrist pitch
+	q_init(6) = 0.0;       // wrist roll
+
 	JntArray q_out = JntArray(myPR2.pr2_kin.nJnts);
 	myPR2.SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f,q_init,q_out);
 	return q_out;

@@ -3,8 +3,6 @@
 
 #include <libpr2API/pr2API.h>
 
-
-
 class kinematic_controllers
 {
 	public:
