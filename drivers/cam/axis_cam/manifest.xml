@@ -11,12 +11,12 @@ In the future, I may add more sophisticated (more efficient) transport methods.
 <author>Morgan Quigley (email: mquigley@cs.stanford.edu)</author>
 <license>BSD</license>
 <url>http://stair.stanford.edu</url>
+<depend package="roscpp"/>
 <depend package="std_msgs"/>
-<!--<depend package="image_viewer"/>-->
 <depend package="rosthread"/>
 <depend package="string_utils"/>
 <export>
-  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -laxis_cam"/>
+  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -laxis_cam -lcurl"/>
 </export>
 </package>
 

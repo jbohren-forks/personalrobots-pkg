@@ -20,13 +20,13 @@ public:
   ros::thread::mutex cv_mutex;
 
   IplImage *cv_image;
-  IplImage *cv_image_sc;
 
   char dir_name[256];
   int img_cnt;
   bool made_dir;
 
-  CvView() : node("cv_view"), cv_bridge(&image_msg), cv_image(0), cv_image_sc(0), img_cnt(0), made_dir(false)
+  CvView() : node("cv_view"), cv_bridge(&image_msg, CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U), 
+             cv_image(0), img_cnt(0), made_dir(false)
   { 
     cvNamedWindow("cv_view", CV_WINDOW_AUTOSIZE);
     subscribe("image", image_msg, &CvView::image_cb, 1);
@@ -43,30 +43,19 @@ public:
 
   ~CvView()
   {
-    free_images();
-  }
-
-  void free_images()
-  {
     if (cv_image)
       cvReleaseImage(&cv_image);
-    if (cv_image_sc)
-      cvReleaseImage(&cv_image_sc);
   }
 
   void image_cb()
   {
     cv_mutex.lock();
-    free_images();
+    if (cv_image)
+      cvReleaseImage(&cv_image);
+
     if (cv_bridge.to_cv(&cv_image))
     {
-      cv_image_sc = cvCreateImage(cvSize(cv_image->width, cv_image->height),
-                                  IPL_DEPTH_8U, 1);
-      if (cv_image->depth == IPL_DEPTH_16U)
-        cvCvtScale(cv_image, cv_image_sc, 0.0625, 0);
-      else
-        cvCvtScale(cv_image, cv_image_sc, 1, 0);
-      cvShowImage("cv_view", cv_image_sc);
+      cvShowImage("cv_view", cv_image);
     }
     cv_mutex.unlock();
   }
@@ -93,7 +82,7 @@ public:
     }
     std::ostringstream oss;
     oss << dir_name << "/Img" << img_cnt++ << ".png";
-    cvSaveImage(oss.str().c_str(), cv_image_sc);
+    cvSaveImage(oss.str().c_str(), cv_image);
   }
 };
 

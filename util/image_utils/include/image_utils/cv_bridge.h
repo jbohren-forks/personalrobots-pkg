@@ -35,11 +35,15 @@
 template <class T>
 class CvBridge : public ImageCodec<T>
 {
+  uint32_t options;
+
 public:
-  CvBridge(T *msg) :
-    ImageCodec<T>(msg)
-  {
-  }
+  static const uint32_t CORRECT_BGR     = 0x0001;
+  static const uint32_t MAXDEPTH_8U     = 0x0002;
+
+  CvBridge(T *msg, uint32_t _options = 0) :
+    ImageCodec<T>(msg),
+    options(_options)  { }
 
   bool from_cv(IplImage *cv_image, int compression_quality = 90)
   {
@@ -77,11 +81,14 @@ public:
     int channels = 1;
     int depth = IPL_DEPTH_8U;
     int elem_size = 1;
+    bool needs_swap_rb = false;
+    bool needs_depth_reduced = false;
 
     if (this->msg->colorspace == "rgb24") {
       channels = 3;
       elem_size = 1;
       depth = IPL_DEPTH_8U;
+      needs_swap_rb = true;
     } else if (this->msg->colorspace == "mono8") {
       channels = 1;
       elem_size = 1;
@@ -90,14 +97,30 @@ public:
       channels = 1;
       elem_size = 2;
       depth = IPL_DEPTH_16U;
+      needs_depth_reduced = true;
     }
 
     *cv_image = cvCreateImage(cvSize(this->msg->width, this->msg->height),
                               depth, channels);
+
     // todo: ensure row alignment is ok (copy in one scanline at a time)                                                      
     for (size_t row = 0; row < this->msg->height; row++)
       memcpy((*cv_image)->imageData + row * (*cv_image)->widthStep,
              this->raster + row * this->msg->width * channels * elem_size, this->msg->width*channels * elem_size);
+
+    if ((options & CORRECT_BGR) && needs_swap_rb)
+      cvCvtColor(*cv_image, *cv_image, CV_RGB2BGR);
+
+    if ((options & MAXDEPTH_8U) && needs_depth_reduced)
+    {
+      IplImage* cv_image_sc = cvCreateImage(cvSize(this->msg->width, this->msg->height),
+                                            IPL_DEPTH_8U, channels);
+      cvCvtScale(*cv_image, cv_image_sc, 0.0625, 0);
+      cvReleaseImage(cv_image);
+      *cv_image = cv_image_sc;
+    }
+
+
     return true;
   }
 };

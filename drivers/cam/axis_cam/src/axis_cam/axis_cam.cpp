@@ -27,68 +27,75 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "ros/ros_slave.h"
-#include "common_flows/FlowImage.h"
+#include "ros/node.h"
+#include "std_msgs/Image.h"
+
 #include "axis_cam/axis_cam.h"
 
-class AxisCamNode : public ROS_Slave
+class Axis_cam_node : public ros::node
 {
 public:
-  FlowImage *image;
+  std_msgs::Image image;
+
   string axis_host;
   AxisCam *cam;
   int frame_id;
 
-  AxisCamNode() : ROS_Slave(), cam(NULL), frame_id(0)
+  Axis_cam_node() : ros::node("axis_ptz"), cam(NULL), frame_id(0)
   {
-    register_source(image = new FlowImage("image"));
-    register_with_master();
-    if (!get_string_param(".host", axis_host))
-    {
-      printf("host parameter not specified; defaulting to 192.168.0.90\n");
-      axis_host = "192.168.0.90";
-    }
+    advertise<std_msgs::Image>("image");
+
+    param("host", axis_host, string("192.168.0.90"));
     printf("axis_cam host set to [%s]\n", axis_host.c_str());
-    get_int_param(".frame_id", &frame_id);
+
     cam = new AxisCam(axis_host);
-    printf("package path is [%s]\n", get_my_package_path().c_str());
   }
-  virtual ~AxisCamNode()
+
+  virtual ~Axis_cam_node()
   { 
     if (cam) 
       delete cam; 
   }
+
   bool take_and_send_image()
   {
     uint8_t *jpeg;
     uint32_t jpeg_size;
+
     if (!cam->get_jpeg(&jpeg, &jpeg_size))
     {
-      log(ROS::ERROR, "woah! AxisCam::get_jpeg returned an error");
+      log(ros::ERROR, "woah! AxisCam::get_jpeg returned an error");
       return false;
     }
-    //printf("sending %d-byte jpeg block\n", jpeg_size);
-    image->set_data_size(jpeg_size);
-    memcpy(image->data, jpeg, jpeg_size);
-    image->width = 704;
-    image->height = 480;
-    image->compression = "jpeg";
-    image->colorspace = "rgb24";
-    image->frame_id = frame_id;
-    image->publish();
+
+    image.set_data_size(jpeg_size);
+    memcpy(image.data, jpeg, jpeg_size);
+
+    //TODO: Read width and height from somewhere else
+    image.width = 704;
+    image.height = 480;
+    image.compression = "jpeg";
+    image.colorspace = "rgb24";
+
+    publish("image", image);
+
     return true;
   }
 };
 
 int main(int argc, char **argv)
 {
-  AxisCamNode a;
-  while (a.happy())
+  ros::init(argc, argv);
+
+  Axis_cam_node a;
+  while (a.ok())
     if (!a.take_and_send_image())
     {
-      a.log(ROS::ERROR,"couldn't take image.");
+      a.log(ros::ERROR,"couldn't take image.");
       break;
     }
+
+  ros::fini();
   return 0;
 }
 

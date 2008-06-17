@@ -64,7 +64,7 @@ public:
     if (dinfo.out_color_space == JCS_GRAYSCALE) {
       raster_type = RT_MONO8;
     }
-    else if (dinfo.out_color_space == JCS_GRAYSCALE)
+    else if (dinfo.out_color_space == JCS_RGB)
     {
       raster_type = RT_RGB24;
     } 
