@@ -26,13 +26,11 @@ void angle_within_mod180(KDL::JntArray &q, int nJnts);
 
 class PR2_kinematics
 {
-	private:
+	public:
 		KDL::Chain *chain;
 		KDL::ChainFkSolverPos_recursive *fk_pos_solver;
 		KDL::ChainIkSolverVel_pinv *ik_vel_solver;
 		KDL::ChainIkSolverPos_NR *ik_pos_solver;
-	
-	public:
 		int nJnts;
 
 	public:

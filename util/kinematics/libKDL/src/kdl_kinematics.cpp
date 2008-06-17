@@ -64,9 +64,10 @@ double modulus_double(double a, double b)
 double angle_within_mod180(double ang)
 {
 	double rem = modulus_double(ang, 2*M_PI);
+
 	if (rem>M_PI)
 		rem -= 2*M_PI;
-	else if (rem<-M_PI)
+	else if (rem<(-1*M_PI))
 		rem += 2*M_PI;
 
 	return rem;
@@ -75,7 +76,10 @@ double angle_within_mod180(double ang)
 void angle_within_mod180(JntArray &q, int nJnts)
 {
 	for(int i=0;i<nJnts;i++)
+	{
 		q(i) = angle_within_mod180(q(i));
+		printf(".. %f ..", q(i));
+	}	
 }
 
 
