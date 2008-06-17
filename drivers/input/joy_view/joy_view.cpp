@@ -2,7 +2,7 @@
 #include <math.h>
 #include <GL/gl.h>
 #include "ros/node.h"
-#include "joy/MsgJoy.h"
+#include "joy/Joy.h"
 #include "sdlgl/sdlgl.h"
 
 using namespace ros;
@@ -10,12 +10,10 @@ using namespace ros;
 class JoyView : public node, public SDLGL
 {
 public:
-  MsgJoy joy;
+  joy::Joy joy;
 
   JoyView() : node("joy_view")
   {
-    joy.buttons = 0;
-    joy.x1 = joy.x2 = joy.y1 = joy.y2 = 0;
     subscribe("joy", joy, &JoyView::joy_cb);
     init_gui(640, 480, "nav view");
   }
@@ -31,17 +29,22 @@ public:
     joy.lock();
     glLineWidth(5);
     glBegin(GL_LINES);
-      glColor3f(1, 0, 0);
-      glVertex2f(-1,0);
-      glVertex2f(-1 + joy.x1, joy.y1);
-
-      glColor3f(0, 1, 0);
-      glVertex2f(1, 0);
-      glVertex2f(1 + joy.x2, joy.y2);
+      if (joy.get_axes_size() >= 2)
+      {
+        glColor3f(1, 0, 0);
+        glVertex2f(-1,0);
+        glVertex2f(-1 + joy.axes[0], joy.axes[1]);
+      }
+      else if (joy.get_axes_size() >= 4)
+      {
+        glColor3f(0, 1, 0);
+        glVertex2f(1, 0);
+        glVertex2f(1 + joy.axes[2], joy.axes[3]);
+      }
     glEnd();
-    for (int i = 0; i < 16; i++)
+    for (size_t i = 0; i < 16 && i < joy.get_buttons_size(); i++)
     {
-      if (joy.buttons & (1 << i))
+      if (joy.buttons[i])
         glColor3f(1, 0.8, 0.4);
       else
         glColor3f(0.5f, 0.5f, 0.5f);

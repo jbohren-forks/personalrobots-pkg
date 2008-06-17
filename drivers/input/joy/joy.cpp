@@ -3,7 +3,7 @@
 #include <linux/joystick.h>
 #include <fcntl.h>
 #include "ros/node.h"
-#include "joy/MsgJoy.h"
+#include "joy/Joy.h"
 
 // This should really go in the .msg
 #define MAX_BUTTONS 4
@@ -17,7 +17,7 @@ using namespace ros;
 class Joy : public node
 {
 public:
-  MsgJoy joy_msg;
+  joy::Joy joy_msg;
 
   int joy_fd;
   string joy_dev;
@@ -30,7 +30,7 @@ public:
     param<int>("joy/deadzone", deadzone, 2000);
     printf("dev:%s\n", joy_dev.c_str());
     printf("deadzone:%d\n", deadzone);
-    advertise<MsgJoy>("joy");
+    advertise<joy::Joy>("joy");
   }
   void start()
   {
@@ -99,7 +99,7 @@ int main(int argc, char **argv)
   joy.spin();
   joy.stop();
   ros::fini();
-  exit(0);
+//  exit(0);
   return 0;
 }
 
