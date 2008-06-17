@@ -1057,6 +1057,7 @@ PR2_ERROR_CODE PR2Robot::GetArmJointPositionCmd(PR2_MODEL_ID id, double jointPos
    return PR2_ALL_OK;
 };
 
+#ifdef KDL_KINEMATICS
 PR2_ERROR_CODE GetArmJointPositionCmd(PR2_MODEL_ID id, KDL::JntArray &q)
 {
 	if (id != PR2_RIGHT_ARM && id != PR2_LEFT_ARM)
@@ -1069,6 +1070,7 @@ PR2_ERROR_CODE GetArmJointPositionCmd(PR2_MODEL_ID id, KDL::JntArray &q)
    pr2Iface->Unlock();
    return PR2_ALL_OK;
 }
+#endif
 
 
 
