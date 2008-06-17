@@ -7,6 +7,7 @@
 */
 
 #include "kinematic_controllers.h"
+#include <kdl/rotational_interpolation_sa.hpp>
 
 using namespace KDL;
 
@@ -32,21 +33,25 @@ void kinematic_controllers::go(KDL::Vector p, KDL::Rotation r, double step_size)
 	Vector move = p-start;
 	double dist = move.Norm();
 	move = move/dist;
-	cout << "Start:"<<start<<", End:"<<p<<", dist: "<<dist<<", direction: "<<move<<endl;
+//cout << "Start:"<<start<<", End:"<<p<<", dist: "<<dist<<", direction: "<<move<<endl;
+
+	RotationalInterpolation_SingleAxis rotInterpolater;
+	rotInterpolater.SetStartEnd(f.M, r);
+	double total_angle = rotInterpolater.Angle();
+//	printf("Angle: %f\n", rotInterpolater.Angle());
 
 	Vector target;
 	int nSteps = (int)(dist/step_size);
+	double angle_step = total_angle/nSteps;
 	for(int i=0;i<nSteps;i++)
 	{
-		target = start+(i+1)*move*step_size;
-		cout<<"Target: "<<target<<endl;
-		f.p = target;
+		f.p = start+(i+1)*move*step_size;
+		f.M = rotInterpolater.Pos(angle_step*(i+1));
 		this->myPR2->SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f,q,q);
 	}
 
-	target = p;
-	cout<<"Target: "<<target<<endl;
-	f.p = target;
+	f.p = p;
+	f.M = r;
 	this->myPR2->SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f,q,q);
 
 }

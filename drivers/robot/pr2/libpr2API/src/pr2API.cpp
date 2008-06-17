@@ -683,7 +683,9 @@ PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Fra
 	//------ checking that IK returned a valid soln -----
 	KDL::Frame f_ik;
 	if (this->pr2_kin.FK(q_out,f_ik))
-		cout<<"End effector after IK:"<<f_ik<<endl;
+	{
+//		cout<<"End effector after IK:"<<f_ik<<endl;
+	}
 	else
 		cout<<"Could not compute Fwd Kin. (After IK)"<<endl;
 
