@@ -51,8 +51,6 @@
 #include <time.h>
 #include <signal.h>
 
-#define MAX_CLOUD_PTS	 100000
-
 // Our node
 class GazeboNode : public ros::node
 {
@@ -61,6 +59,7 @@ class GazeboNode : public ros::node
     std_msgs::BaseVel velMsg;
     std_msgs::LaserScan laserMsg;
     std_msgs::PointCloudFloat32 cloudMsg;
+    std_msgs::PointCloudFloat32 full_cloudMsg;
     std_msgs::Empty shutterMsg;  // marks end of a cloud message
     std_msgs::RobotBase2DOdom odomMsg;
 
@@ -75,6 +74,10 @@ class GazeboNode : public ros::node
 
     // smooth vx, vw commands
     double vxSmooth, vwSmooth;
+
+    // used to generate Gaussian noise (for PCD)
+    double GaussianKernel(double mu,double sigma);
+
 
   public:
     // Constructor; stage itself needs argc/argv.  fname is the .world file
@@ -113,8 +116,12 @@ class GazeboNode : public ros::node
 
     // for the point cloud data
     ringBuffer<std_msgs::Point3DFloat32> *cloud_pts;
-    ringBuffer<float>             *cloud_ch1;
+    ringBuffer<float>                    *cloud_ch1;
 
+    // keep count for full cloud
+    int max_cloud_pts;
+
+    // clean up on interrupt
     static void finalize(int);
 };
 
@@ -213,16 +220,30 @@ GazeboNode::cmdvelReceived()
     this->vwSmooth = (w12 * this->vwSmooth + w22*dt *this->velMsg.vw)/( w12 + w22*dt);
   }
 
-  // if steering angle is wrong, don't move or move slowly
-  std::cout << "received cmd: vx " << this->velMsg.vx << " vw " <<  this->velMsg.vw
-            << " vxsmoo " << this->vxSmooth << " vxsmoo " <<  this->vwSmooth
-            << " | steer erros: " << this->myPR2->BaseSteeringAngleError() << " - " <<  M_PI/100.0
-            << std::endl;
+  // when running with the 2dnav stack, we need to refrain from moving when steering angles are off.
+  // when operating with the keyboard, we need instantaneous setting of both velocity and angular velocity.
+
+  // std::cout << "received cmd: vx " << this->velMsg.vx << " vw " <<  this->velMsg.vw
+  //           << " vxsmoo " << this->vxSmooth << " vxsmoo " <<  this->vwSmooth
+  //           << " | steer erros: " << this->myPR2->BaseSteeringAngleError() << " - " <<  M_PI/100.0
+  //           << std::endl;
+
+
+  // 2dnav: if steering angle is wrong, don't move or move slowly
   if (this->myPR2->BaseSteeringAngleError() > M_PI/100.0)
   {
+    // set steering angle only
     this->myPR2->SetBaseSteeringAngle    (this->vxSmooth,0.0,this->vwSmooth);
   }
   else
+  {
+    // set base velocity
+    this->myPR2->SetBaseCartesianSpeedCmd(this->vxSmooth, 0.0, this->vwSmooth);
+  }
+
+  // TODO: this is a hack, need to rewrite
+  //       if we are trying to stop, send the command through
+  if (this->velMsg.vx == 0.0)
   {
     // set base velocity
     this->myPR2->SetBaseCartesianSpeedCmd(this->vxSmooth, 0.0, this->vwSmooth);
@@ -236,6 +257,8 @@ GazeboNode::cmdvelReceived()
 GazeboNode::GazeboNode(int argc, char** argv, const char* fname) :
         ros::node("rosgazebo"),tf(*this)
 {
+  // initialize random seed
+  srand(time(NULL));
 
   // Initialize robot object
   this->myPR2 = new PR2::PR2Robot();
@@ -247,9 +270,11 @@ GazeboNode::GazeboNode(int argc, char** argv, const char* fname) :
   // Initialize ring buffer for point cloud data
   this->cloud_pts = new ringBuffer<std_msgs::Point3DFloat32>();
   this->cloud_ch1 = new ringBuffer<float>();
-  this->cloud_pts->allocate(MAX_CLOUD_PTS);
-  this->cloud_ch1->allocate(MAX_CLOUD_PTS);
 
+  // FIXME:  move this to Subscribe Models
+  param("tilting_laser/max_cloud_pts",max_cloud_pts, 10000);
+  this->cloud_pts->allocate(this->max_cloud_pts);
+  this->cloud_ch1->allocate(this->max_cloud_pts);
 
 	/*
 	//-------- This doesn't seem to affect anything:
@@ -291,15 +316,33 @@ GazeboNode::SubscribeModels()
   advertise<std_msgs::RobotBase2DOdom>("odom");
   advertise<std_msgs::Image>("image");
   advertise<std_msgs::PointCloudFloat32>("cloud");
+  advertise<std_msgs::PointCloudFloat32>("full_cloud");
   advertise<std_msgs::Empty>("shutter");
   subscribe("cmd_vel", velMsg, &GazeboNode::cmdvelReceived);
   subscribe("cmd_leftarmconfig", leftarm, &GazeboNode::cmd_leftarmconfigReceived);
   subscribe("cmd_rightarmconfig", rightarm, &GazeboNode::cmd_rightarmconfigReceived);
+
+
   return(0);
 }
 
 GazeboNode::~GazeboNode()
 {
+}
+
+double
+GazeboNode::GaussianKernel(double mu,double sigma)
+{
+  // using Box-Muller transform to generate two independent standard normally disbributed normal variables
+  // see wikipedia
+  double U = 2.0*((double)rand()/(double)RAND_MAX-0.5); // normalized uniform random variable
+  double V = 2.0*((double)rand()/(double)RAND_MAX-0.5); // normalized uniform random variable
+  double X = sqrt(-2.0 * ::log(U)) * cos( 2.0*M_PI * V);
+  double Y = sqrt(-2.0 * ::log(U)) * sin( 2.0*M_PI * V);
+  // we'll just use X
+  // scale to our mu and sigma
+  X = sigma * X + mu;
+  return X;
 }
 
 void
@@ -343,8 +386,18 @@ GazeboNode::Update()
       tmp_cloud_pt.x                = tmp_range * cos(laser_yaw) * cos(laser_pitch);
       tmp_cloud_pt.y                = tmp_range * sin(laser_yaw) ; //* cos(laser_pitch);
       tmp_cloud_pt.z                = tmp_range * cos(laser_yaw) * sin(laser_pitch);
-      this->cloud_pts->add((std_msgs::Point3DFloat32)tmp_cloud_pt);
 
+      // add gaussian noise
+      const double sigma = 0.02;  // 2 centimeter sigma
+      tmp_cloud_pt.x                = tmp_cloud_pt.x + GaussianKernel(0,sigma);
+      tmp_cloud_pt.y                = tmp_cloud_pt.y + GaussianKernel(0,sigma);
+      tmp_cloud_pt.z                = tmp_cloud_pt.z + GaussianKernel(0,sigma);
+
+      // add mixed pixel noise
+      // if this point is some threshold away from last, add mixing model
+
+      // push pcd point into structure
+      this->cloud_pts->add((std_msgs::Point3DFloat32)tmp_cloud_pt);
       this->cloud_ch1->add(this->intensities[i]);
     }
     /***************************************************************/
@@ -359,14 +412,25 @@ GazeboNode::Update()
     this->cloudMsg.chan[0].name = "intensities";
     this->cloudMsg.chan[0].set_vals_size(this->cloud_ch1->length);
 
+    this->full_cloudMsg.set_pts_size(this->cloud_pts->length);
+    this->full_cloudMsg.set_chan_size(num_channels);
+    this->full_cloudMsg.chan[0].name = "intensities";
+    this->full_cloudMsg.chan[0].set_vals_size(this->cloud_ch1->length);
+
     for(int i=0;i< this->cloud_pts->length ;i++)
     {
-      this->cloudMsg.pts[i].x  = this->cloud_pts->buffer[i].x;
-      this->cloudMsg.pts[i].y  = this->cloud_pts->buffer[i].y;
-      this->cloudMsg.pts[i].z  = this->cloud_pts->buffer[i].z;
-      this->cloudMsg.chan[0].vals[i]    = this->cloud_ch1->buffer[i];
+      this->cloudMsg.pts[i].x        = this->cloud_pts->buffer[i].x;
+      this->cloudMsg.pts[i].y        = this->cloud_pts->buffer[i].y;
+      this->cloudMsg.pts[i].z        = this->cloud_pts->buffer[i].z;
+      this->cloudMsg.chan[0].vals[i] = this->cloud_ch1->buffer[i];
+
+      this->full_cloudMsg.pts[i].x        = this->cloud_pts->buffer[i].x;
+      this->full_cloudMsg.pts[i].y        = this->cloud_pts->buffer[i].y;
+      this->full_cloudMsg.pts[i].z        = this->cloud_pts->buffer[i].z;
+      this->full_cloudMsg.chan[0].vals[i] = this->cloud_ch1->buffer[i];
     }
     publish("cloud",this->cloudMsg);
+    publish("full_cloud",this->full_cloudMsg);
     //publish("shutter",this->shutterMsg);
   }
 
@@ -468,7 +532,8 @@ GazeboNode::Update()
   static unsigned char  buf[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
 
   // get image
-  this->myPR2->GetCameraImage(PR2::CAMERA_GLOBAL,
+  //this->myPR2->GetCameraImage(PR2::CAMERA_GLOBAL,
+  this->myPR2->GetCameraImage(PR2::CAMERA_HEAD_RIGHT,
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
