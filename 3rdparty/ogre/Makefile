@@ -25,16 +25,16 @@ $(OGRE_VERSION)/Makefile: $(OGRE_VERSION)
 
 Ogre: $(OGRE_VERSION)/Makefile
 	# building OGRE
-	cd $(OGRE_VERSION); make $(JOBC)
-	cd $(OGRE_VERSION); make install
+	cd $(OGRE_VERSION) && make $(JOBC)
+	cd $(OGRE_VERSION) && make install
 	echo "done"
 
 .PHONY: clean wipe
 
 clean: 
-	(cd $(OGRE_VERSION); make clean;)
+	-cd $(OGRE_VERSION) && make clean
 
 wipe: 
-	rm -rf $(OGRE_VERSION)
-	rm -rf Ogre
+	-rm -rf $(OGRE_VERSION)
+	-rm -rf Ogre
 
