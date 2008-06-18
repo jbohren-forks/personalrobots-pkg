@@ -16,7 +16,7 @@ public:
   std_msgs::Image image_msg;
   CvBridge<std_msgs::Image> cv_bridge;
 
-  CvView() : node("cv_view"), cv_bridge(&image_msg)
+  CvView() : node("cv_view"), cv_bridge(&image_msg, CvBridge<std_msgs::Image>::CORRECT_BGR)
   { 
     cvNamedWindow("cv_view", CV_WINDOW_AUTOSIZE);
     subscribe("image", image_msg, &CvView::image_cb);

@@ -29,6 +29,7 @@
 
 #include "ros/node.h"
 #include "std_msgs/Image.h"
+#include "std_srvs/PolledImage.h"
 #include "image_utils/image_codec.h"
 
 #include "axis_cam/axis_cam.h"
@@ -46,6 +47,7 @@ public:
   Axis_cam_node() : ros::node("axis_ptz"), codec(&image), cam(NULL), frame_id(0)
   {
     advertise<std_msgs::Image>("image");
+    advertise_service("polled_image", &Axis_cam_node::polled_image_cb);
 
     param("host", axis_host, string("192.168.0.90"));
     printf("axis_cam host set to [%s]\n", axis_host.c_str());
@@ -57,6 +59,15 @@ public:
   { 
     if (cam) 
       delete cam; 
+  }
+
+  bool polled_image_cb(std_srvs::PolledImage::request  &req,
+                       std_srvs::PolledImage::response &res )
+  {
+    image.lock();
+    res.image = image;
+    image.unlock();
+    return true;
   }
 
   bool take_and_send_image()
@@ -76,6 +87,7 @@ public:
     image.compression = "jpeg";
 
     codec.inflate_header();
+
     publish("image", image);
 
     return true;
@@ -97,4 +109,3 @@ int main(int argc, char **argv)
   ros::fini();
   return 0;
 }
-
