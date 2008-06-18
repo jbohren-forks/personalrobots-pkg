@@ -19,8 +19,10 @@ player: player-checkout
 	touch player
 
 clean:
-	cd player-svn/build && make clean
+	rm -rf player-svn/build
 	rm -rf player
 wipe:
 	rm -rf player-svn player
+
+download: player-checkout
 
