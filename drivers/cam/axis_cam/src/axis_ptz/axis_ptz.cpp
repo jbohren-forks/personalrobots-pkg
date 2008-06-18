@@ -27,62 +27,51 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "ros/ros_slave.h"
-#include "unstable_flows/FlowPTZActuatorNoSub.h"
+#include "ros/node.h"
+#include "std_msgs/PTZActuatorCmd.h"
+#include "std_msgs/PTZActuatorState.h"
 #include "axis_cam/axis_cam.h"
 
-class Axis_PTZ : public ROS_Slave
+class Axis_PTZ_node : public ros::node
 {
 public:
-  FlowPTZActuatorNoSub *ptz;
-  FlowPTZActuatorNoSub *ptz_control;
+  std_msgs::PTZActuatorCmd   ptz_cmd;
+  std_msgs::PTZActuatorState ptz_state;
 
   string axis_host;
   AxisCam *cam;
-  int frame_id;
 
-  float pan;
-  bool pan_rel;
-  bool pan_valid;
+  bool cmd_updated;
 
-  float tilt;
-  bool tilt_rel;
-  bool tilt_valid;
+  std_msgs::PTZActuatorCmd ptz_cmd_saved;
 
-  float zoom;
-  bool zoom_rel;
-  bool zoom_valid;
+  ros::thread::mutex control_mutex;
 
-  float focus;
-  bool focus_rel;
-  bool focus_valid;
-
-  float iris;
-  bool iris_rel;
-  bool iris_valid;
-
-  ROS_Mutex control_mutex;
-
-  Axis_PTZ() : ROS_Slave(), cam(NULL), frame_id(0)
+  Axis_PTZ_node() : node("axis_ptz"), cam(NULL), cmd_updated(false)
   {
-    register_source(ptz = new FlowPTZActuatorNoSub("ptz"));
-    register_sink(ptz_control = new FlowPTZActuatorNoSub("ptz_control"), ROS_CALLBACK(Axis_PTZ, ptz_callback));
-    register_with_master();
-    if (!get_string_param(".host", axis_host))
-    {
-      printf("host parameter not specified; defaulting to 192.168.0.90\n");
-      axis_host = "192.168.0.90";
-    }
+    advertise<std_msgs::PTZActuatorState>("ptz_state");
+
+    subscribe("ptz_cmd", ptz_cmd, &Axis_PTZ_node::ptz_callback);
+
+    param("host", axis_host, string("192.168.0.90"));
     printf("axis_cam host set to [%s]\n", axis_host.c_str());
-    get_int_param(".frame_id", &frame_id);
+
     cam = new AxisCam(axis_host);
-    printf("package path is [%s]\n", get_my_package_path().c_str());
   }
 
-  virtual ~Axis_PTZ()
+  virtual ~Axis_PTZ_node()
   { 
     if (cam) 
       delete cam; 
+  }
+
+  void set_actuator_pos(std_msgs::ActuatorState& act, float  pos) {
+    act.pos = pos;
+    act.pos_valid = 1;
+    act.vel = 0;
+    act.vel_valid = 0;
+    act.torque = 0;
+    act.torque_valid = 0;
   }
 
   bool get_and_send_ptz()
@@ -91,75 +80,33 @@ public:
       return false;
     }
 
-    ptz->frame_id = frame_id;
+    set_actuator_pos(ptz_state.pan, cam->last_pan);
+    set_actuator_pos(ptz_state.tilt, cam->last_tilt);
+    set_actuator_pos(ptz_state.zoom, cam->last_zoom);
+    set_actuator_pos(ptz_state.pan, cam->last_pan);
 
-    ptz->pan_val = cam->last_pan;
-    ptz->pan_rel = false;
-    ptz->pan_valid = true;
-
-    ptz->tilt_val = cam->last_tilt;
-    ptz->tilt_rel = false;
-    ptz->tilt_valid = true;
-
-    ptz->lens_zoom_val = cam->last_zoom;
-    ptz->lens_zoom_rel = false;
-    ptz->lens_zoom_valid = true;
-
-    ptz->lens_focus_val = cam->last_focus;
     if (cam->last_autofocus_enabled)
-      ptz->lens_focus_val = -1;
-    ptz->lens_focus_rel = false;
-    ptz->lens_focus_valid = true;
+      set_actuator_pos(ptz_state.focus, -1.0);
+    else
+      set_actuator_pos(ptz_state.focus, cam->last_focus);
 
-    ptz->lens_iris_val = cam->last_iris;
-    if (cam->last_autoiris_enabled == true)
-      ptz->lens_iris_val = -1;
-    ptz->lens_iris_rel = false;
-    ptz->lens_iris_valid = true;
+    if (cam->last_autoiris_enabled)
+      set_actuator_pos(ptz_state.iris, -1.0);
+    else
+      set_actuator_pos(ptz_state.iris, cam->last_iris);
 
-    ptz->publish();
+    publish("ptz_state", ptz_state);
     return true;
   }
+
 
   void ptz_callback()
   {
     control_mutex.lock();
 
-    if (ptz_control->pan_valid) {
-      pan = ptz_control->pan_val;
-      pan_rel = ptz_control->pan_rel;
-      pan_valid = true;
-    }
+    ptz_cmd_saved = ptz_cmd;
 
-    if (ptz_control->tilt_valid) {
-      tilt = ptz_control->tilt_val;
-      tilt_rel = ptz_control->tilt_rel;
-      tilt_valid = true;
-    }
-
-    if (ptz_control->lens_zoom_valid) {
-      zoom = ptz_control->lens_zoom_val;
-      zoom_rel = ptz_control->lens_zoom_rel;
-      zoom_valid = true;
-    }
-
-    if (ptz_control->lens_focus_valid) {
-      focus = ptz_control->lens_focus_val;
-      focus_rel = ptz_control->lens_focus_rel;
-      focus_valid = true;
-    }
-
-    if (ptz_control->lens_focus_valid) {
-      focus = ptz_control->lens_focus_val;
-      focus_rel = ptz_control->lens_focus_rel;
-      focus_valid = true;
-    }
-
-    if (ptz_control->lens_iris_valid) {
-      iris = ptz_control->lens_iris_val;
-      iris_rel = ptz_control->lens_iris_rel;
-      iris_valid = true;
-    }
+    cmd_updated = true;
 
     control_mutex.unlock();
   }
@@ -168,31 +115,39 @@ public:
 
     control_mutex.lock();
 
-    ostringstream oss;
-    
-    if (pan_valid)
-      oss << (pan_rel ? "r" : "") << string("pan=") << pan << string("&");
-    if (tilt_valid)
-      oss << (tilt_rel ? "r" : "") << string("tilt=") << tilt << string("&");
-    if (zoom_valid)
-      oss << (zoom_rel ? "r" : "") << string("zoom=") << zoom << string("&");
-    if (focus_valid) {
-      if (!focus_rel && focus <= 0)
-	oss << string("autofocus=on&");
-      else 
-	oss << string("autofocus=off&") << (focus_rel ? "r" : "") << string("focus=") << focus << string("&");
-    }
-    if (iris_valid) {
-      if (!iris_rel && iris <= 0)
-	oss << string("autoiris=on&");
-      else 
-	oss << string("autoiris=off&") << (iris_rel ? "r" : "") << string("iris=") << iris << string("&");
-    }
+    if (cmd_updated)
+    {
 
-    if (oss.str().size() > 0) {
-      if (!cam->send_params(oss.str()))
-	return false;
-      pan_valid = tilt_valid = zoom_valid = focus_valid = iris_valid = false;
+      ostringstream oss;
+    
+      if (ptz_cmd_saved.pan.valid)
+        oss << (ptz_cmd_saved.pan.rel ? "r" : "") << string("pan=") << ptz_cmd_saved.pan.cmd << string("&");
+      if (ptz_cmd_saved.tilt.valid)
+        oss << (ptz_cmd_saved.tilt.rel ? "r" : "") << string("tilt=") << ptz_cmd_saved.tilt.cmd << string("&");
+      if (ptz_cmd_saved.zoom.valid)
+        oss << (ptz_cmd_saved.zoom.rel ? "r" : "") << string("zoom=") << ptz_cmd_saved.zoom.cmd << string("&");
+
+      if (ptz_cmd_saved.focus.valid) {
+        if (!ptz_cmd_saved.focus.rel && ptz_cmd_saved.focus.cmd <= 0)
+          oss << string("autofocus=on&");
+        else 
+          oss << string("autofocus=off&") << (ptz_cmd_saved.focus.rel ? "r" : "") << string("focus=") << ptz_cmd_saved.focus.cmd << string("&");
+      }
+
+      if (ptz_cmd_saved.iris.valid) {
+        if (!ptz_cmd_saved.iris.rel && ptz_cmd_saved.iris.cmd <= 0)
+          oss << string("autoiris=on&");
+        else 
+          oss << string("autoiris=off&") << (ptz_cmd_saved.iris.rel ? "r" : "") << string("iris=") << ptz_cmd_saved.iris.cmd << string("&");
+      }
+
+      printf("Sending cmd: %s\n", oss.str().c_str());
+
+      if (oss.str().size() > 0)
+        if (!cam->send_params(oss.str()))
+          return false;
+
+      cmd_updated = false;
     }
 
     control_mutex.unlock();
@@ -200,24 +155,28 @@ public:
     return true;
   }
 
-
 };
 
 int main(int argc, char **argv)
 {
-  Axis_PTZ a;
-  while (a.happy()) {
+  ros::init(argc, argv);
+
+  Axis_PTZ_node a;
+  while (a.ok()) {
     if (!a.get_and_send_ptz())
     {
-      a.log(ROS::ERROR,"Couldn't acquire ptz info.");
+      a.log(ros::ERROR,"Couldn't acquire ptz info.");
       break;
     }
     if (!a.do_ptz_control())
     {
-      a.log(ROS::ERROR,"Couldn't command ptz.");
+      a.log(ros::ERROR,"Couldn't command ptz.");
       break;
     }
   }
+
+  ros::fini();
+
   return 0;
 }
 

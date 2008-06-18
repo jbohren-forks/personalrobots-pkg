@@ -44,7 +44,7 @@ public:
   AxisCam *cam;
   int frame_id;
 
-  Axis_cam_node() : ros::node("axis_ptz"), codec(&image), cam(NULL), frame_id(0)
+  Axis_cam_node() : ros::node("axis_cam"), codec(&image), cam(NULL), frame_id(0)
   {
     advertise<std_msgs::Image>("image");
     advertise_service("polled_image", &Axis_cam_node::polled_image_cb);
