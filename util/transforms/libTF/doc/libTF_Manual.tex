@@ -127,237 +127,8 @@ x,y,z.  However when subject to transformation, a vector will only be subject to
 origin.  For example a point (1,1,1) subject to a translation of 5 in the x direction and yawed by 90 degrees would end
 at (5,1,1), while a vector (1,1,1) subject to the same transformation would be (-1,1,1).  
 
-\subsection{libTF API}
-\label{libTFAPI}
-\index{libTF API}
-The class which provides external functionality is named TransformReference.  
-
 \subsubsection{Data Types}
 \paragraph {Time}
-\begin{verbatim}
-typedef unsigned long long ULLtime;
-\end{verbatim}
-
-\texttt{ULLtime} provides a simple typedef for the timestamp used in this library. 
-\texttt{ULLtime} is the number of nanoseconds since the epoch(1970) expressed as 
-an unsigned long long, which should be equivilant to a \texttt{uint64\_t}. 
-
-\paragraph{Data} The following data structs are available to facilitate simple 
-accessors if the user does not want to use the matrices natively.  
-
-\begin{verbatim}
-/** ** Point ****
- *  \brief A simple point class incorperating the time and frameID
- * 
- * This is a point class designed to interact with libTF.  It 
- * incorperates the timestamp and associated frame to make 
- * association easier for the programmer.    
- */
-struct TFPoint
-{
-  double x,y,z;
-  unsigned long long time;
-  unsigned int frame;
-};
-
-/** ** Point2D ****
- *  \brief A simple point class incorperating the time and frameID
- * 
- * This is a point class designed to interact with libTF.  It 
- * incorperates the timestamp and associated frame to make 
- * association easier for the programmer.    
- */
-struct TFPoint2D
-{
-  double x,y;
-  unsigned long long time;
-  unsigned int frame;
-};
-
-
-/** TFVector
- *  \brief A representation of a vector
- */
-struct TFVector
-{
-  double x,y,z;
-  unsigned long long time;
-  unsigned int frame;
-};
-
-/** TFVector2D
- *  \brief A representation of a 2D vector
- * 
- */
-struct TFVector2D
-{
-  double x,y;
-  unsigned long long time;
-  unsigned int frame;
-};
-
-/** TFEulerYPR
- * \brief A representation of Euler angles
- * Using Yaw, Pitch, Roll
- * commonly known as xyz Euler angles */
-struct TFEulerYPR
-{
-  double yaw, pitch, roll;
-  unsigned long long time;
-  unsigned int frame;
-};
-
-/** TFYaw
- * \brief Rotation about the Z axis.  
- */
-struct TFYaw
-{
-  double yaw;
-  unsigned long long time;
-  unsigned int frame;
-};
-
-/** TFPose
- *  \brief A representation of position in free space
- */
-struct TFPose
-{
-  double x,y,z,yaw,pitch,roll;
-  unsigned long long time;
-  unsigned int frame;
-};
-
-/** TFPose2D
- *  \brief A representation of 2D position
- */
-struct TFPose2D
-{
-  double x,y,yaw;
-  unsigned long long time;
-  unsigned int frame;
-};
-\end{verbatim}
-
-
-\subsubsection{Constructor}
-\index{libTF API!Constructor}
-\begin{verbatim}
-TransformReference(bool interpolating = true, 
-                   ULLtime cache_time = DEFAULT_CACHE_TIME,
-                   unsigned long long max_extrapolation_distance = DEFAULT_MAX_EXTRAPOLATION_DISTANCE);
-
-\end{verbatim}
-This is the constructor for the class.  It's optional argument is 
-how long to keep a history of the transforms.  It is expressed in 
-\texttt{ULLtime}, nanoseconds since the epoch(1970).  
-
-\subsubsection{Mutators}
-
-\paragraph{setWithEulers}
-A method to set the parameters of a coordinate transform with Euler angles. \index{libTF API!setWithEulers}
-\begin{verbatim}
-void setWithEulers(unsigned int framid, unsigned int parentid, 
-                   double x, double y, double z, 
-                   double yaw, double pitch, double roll, 
-                   unsigned long long time);
-\end{verbatim}
-
-\paragraph{setWithDH}
-A method to set the parameters of a coordinate transform using DH Parameters. \index{libTF API!setWithDH}
-\begin{verbatim} 
-void setWithDH(unsigned int framid, unsigned int parentid, 
-               double length, double alpha, 
-               double offset, double theta, 
-               unsigned long long time);
-\end{verbatim}
-
-
-
-\paragraph{setWithMatrix}
-A method to set the parameters of a coordinate transform with a homogeneous transformation matrix. \index{libTF API!setWithMatrix}
-\begin{verbatim}
-unimplemented
-\end{verbatim}
-
-\paragraph{setWithQuaternion}
-A method to set the parameters of a coordinate transform with Quaternions. \index{libTF API!setWithQuaternion}
-\begin{verbatim}
-unimplemented
-\end{verbatim}
-
-
-\subsubsection{Accessors}
-\label{libTFAPI accessors}
-\paragraph{getMatrix}
-\index{libTF API!getMatrix}
-\begin{verbatim}
-NEWMAT::Matrix getMatrix(unsigned int target_frame,
-                         unsigned int source_frame,
-                         unsigned long long time); 
-\end{verbatim}
-getMatrix will return the homogeneous transformation matrix between the souce frame and the target frame.  
-The standard approach will return the linearly interpolated 
-
-\paragraph{transform[DATA\_TYPE]}
-\index{libTF API!transform[DATA\_TYPE]}
-For each of the data types above there are accessors to automatically
-transform the data from one frame to another. They are listed below:
-\begin{verbatim}
-/** Transform a point to a different frame */
-TFPoint transformPoint(unsigned int target_frame, 
-                       const TFPoint & point_in);
-
-/** Transform a 2D point to a different frame */
-TFPoint2D transformPoint2D(unsigned int target_frame, 
-                           const TFPoint2D & point_in);
-
-/** Transform a vector to a different frame */
-TFVector transformVector(unsigned int target_frame, 
-                         const TFVector & vector_in);
-
-/** Transform a 2D vector to a different frame */
-TFVector2D transformVector2D(unsigned int target_frame, 
-                             const TFVector2D & vector_in);
-
-/** Transform Euler angles between frames */
-TFEulerYPR transformEulerYPR(unsigned int target_frame, 
-                             const TFEulerYPR & euler_in);
-
-/** Transform Yaw between frames. Useful for 2D navigation */
-TFYaw transformYaw(unsigned int target_frame, 
-                   const TFYaw & euler_in);
-
-/** Transform a 6DOF pose.  (x, y, z, yaw, pitch, roll). */
-TFPose transformPose(unsigned int target_frame, 
-                     const TFPose & pose_in);
-
-/** Transform a planar pose, x,y,yaw */
-TFPose2D transformPose2D(unsigned int target_frame, 
-                         const TFPose2D & pose_in);
-\end{verbatim}
-
-\paragraph{viewChain}
-\index{libTF API!viewChain}
-\begin{verbatim}
-std::string viewChain(unsigned int target_frame, 
-                      unsigned int source_frame);
-\end{verbatim}
-
-\subsubsection{Constants}
-\begin{verbatim}
-static const unsigned int ROOT_FRAME = 1;  //Hard Value for ROOT_FRAME
-static const unsigned int NO_PARENT = 0;  //Value for NO_PARENT
-
-/* The maximum number of frames possible */
-static const unsigned int MAX_NUM_FRAMES = 10000;   
-/* The maximum number of times to descent before 
- * determining that graph has a loop. */
-static const unsigned int MAX_GRAPH_DEPTH = 100; 
-
-//10 seconds in nanoseconds
-static const ULLtime DEFAULT_CACHE_TIME = 10 * 1000000000ULL; 
-
-\end{verbatim}
 
 \section{ROS Integration}
 The libTF was designed to be used within the ROS architecture and to that end 
@@ -365,65 +136,62 @@ a ROS compatible wrapper has also been written.  This wrapper enables the librar
 to handle all the communication between seperate sources and users of transformations.
 The API for this is defined below.
 
-\subsection{libTF ROS API}
 
-\subsubsection {rosTF Client API}
-\index{rosTF Client API}
-\index{rosTF Client API!Constructor}
-\paragraph {Constructor}
-The constructor is designed to be launched within a ROS node, but be passed a reference to 
-the node so that it can access the nodes public methods.  This is done instead of inheriting
-to prevent interactions between different possible future derivatives of ros::node. 
+
+\section{Summary of Internal Mathematics}
+This libarary uses quaternion notation as the internal representation
+of coordinate transforms.  Transform information is stored in a linked 
+list sorted by time.  When a transform is requested the closest two points 
+on the linked list are found and then interpolated in time to generate the 
+return value.  
+
+\subsection{Storage}
+The internal storage for the transforms consists of:
+\begin{struct}[H]
+\caption{libTF Internal Data Storage}
 \begin{verbatim}
-rosTFClient(ros::node & rosnode);
+  double xtranslation;// The three components of translation
+  double ytranslation;
+  double ztranslation;
+  double xrotation; // The three components of the rotation axis
+  double yrotation;
+  double zrotation;
+  double w; // Omega
+  unsigned long long time; //nano seconds since 1970
 \end{verbatim}
-
-\index{rosTF Client API!Accessors|see{libTF API}}
-\paragraph {Accessors}
-rosTF inherits from libTF, so it gathers all data coming and 
-and all the accessors remain the same see Section \ref{libTFAPI accessors}.
+\end{struct}
 
 
-\subsubsection{rosTF Server}
-\index{rosTF Server API}
-\index{rosTF Server API!Constructor}
-\paragraph {Constructor}
-The constructor is designed to be launched within a ROS node, but be passed a reference to 
-the node so that it can access the nodes public methods.  This is done instead of inheriting
-to prevent interactions between different possible future derivatives of ros::node. 
-\begin{verbatim}
-rosTFServer(ros::node & rosnode);
-\end{verbatim}
+\subsection{Interpolation}
+The interpolation method used in this library is Spherical Linear Interpolation
+(SLERP). \index{SLERP} The standard formula for SLERP is defined in Equation \ref{eq:slerp}.
+The inputs are points $p_0$ and $p_1$, and $t$ is the proportion to interpolate 
+between $p_0$ and $p_1$, and $\Omega$ is the angle between the axis of the two quaternions. 
 
-\paragraph {Mutators}
-The rosTF server class provides three methods to easily broadcast transforms.  
+\begin{equation}
+Slerp(p_0,p_1;t) = \frac{sin((1-t)\Omega)}{sin(\Omega)} * p_0 + \frac{sin(t*\Omega)}{sin(\Omega)} * p_1
+\label{eq:slerp}
+\end{equation}
 
-The transform can be defined using Euler angles: (x, y, z, yaw, pitch, roll).
-\index{rosTF Server API!sendEuler}
-\begin{verbatim}
-void sendEuler(unsigned int frame, unsigned int parent, 
-               double x, double y, double z, 
-               double yaw, double pitch, double roll,
-               unsigned int secs, unsigned int nsecs);
-\end{verbatim}
+\todo{add graphic}
 
-The transform can be defined using DH Parameters: (length, twist, offset, angle).
-\index{rosTF Server API!sendDH}
-\begin{verbatim}
-void sendDH(unsigned int frame, unsigned int parent, 
-            double length, double twist, 
-            double offset, double angle, 
-            unsigned int secs, unsigned int nsecs);
-\end{verbatim}
+\paragraph{Alternatives}
+The SLERP technique was developed in 1985 by Ken Shoemake. \cite{SHOEMAKE} SLERP has been 
+largely adopted in the field of computer graphics, however there have been many alternatives 
+developed.  The advantages of SLERP are that it provides a constant speed solution 
+along the shortest path over the 4D unit sphere.  This is not optimal in all cases however.
+A good discussion of various alternatives is here \url{http://number-none.com/product/Understanding%20Slerp,%20Then%20Not%20Using%20It/index.html}. 
+The approaches discussed above are normalized linear interpolation (nlerp), and 
+log-quaternion linear interpolation (log-quaternion lerp). 
+SLERP can be recursively called to do a cubic interpolation, called SQUAD for short.  
+This is discussed at \url{http://www.sjbrown.co.uk/?article=quaternions}.
 
-Or the transform can be defined using Quaternions: (xt, yt, zt, xr, yr, zr, w).
-\index{rosTF Server API!sendQuaternion}
-\begin{verbatim}
-void sendQuaternion(unsigned int frame, unsigned int parent, 
-                    double xt, double yt, double zt, //Translation
-                    double xr, double yr, double zr, double w, //Rotation
-                    unsigned int secs, unsigned int nsecs);
-\end{verbatim}
+
+\subsection{Data Representation Conversion}
+\subsubsection{Matrix to Quaternion}
+\subsubsection{Quaternion to Matrix}
+\subsubsection{DH Parameters to Matrix}
+\subsubsection{Euler Angles to Matrix}
 
 \section{Example Usage}
 \subsection{Library}
@@ -603,62 +371,6 @@ int main(int argc, char ** argv)
   return 0;
 };
 \end{verbatim}
-
-\section{Summary of Internal Mathematics}
-This libarary uses quaternion notation as the internal representation
-of coordinate transforms.  Transform information is stored in a linked 
-list sorted by time.  When a transform is requested the closest two points 
-on the linked list are found and then interpolated in time to generate the 
-return value.  
-
-\subsection{Storage}
-The internal storage for the transforms consists of:
-\begin{struct}[H]
-\caption{libTF Internal Data Storage}
-\begin{verbatim}
-  double xtranslation;// The three components of translation
-  double ytranslation;
-  double ztranslation;
-  double xrotation; // The three components of the rotation axis
-  double yrotation;
-  double zrotation;
-  double w; // Omega
-  unsigned long long time; //nano seconds since 1970
-\end{verbatim}
-\end{struct}
-
-
-\subsection{Interpolation}
-The interpolation method used in this library is Spherical Linear Interpolation
-(SLERP). \index{SLERP} The standard formula for SLERP is defined in Equation \ref{eq:slerp}.
-The inputs are points $p_0$ and $p_1$, and $t$ is the proportion to interpolate 
-between $p_0$ and $p_1$, and $\Omega$ is the angle between the axis of the two quaternions. 
-
-\begin{equation}
-Slerp(p_0,p_1;t) = \frac{sin((1-t)\Omega)}{sin(\Omega)} * p_0 + \frac{sin(t*\Omega)}{sin(\Omega)} * p_1
-\label{eq:slerp}
-\end{equation}
-
-\todo{add graphic}
-
-\paragraph{Alternatives}
-The SLERP technique was developed in 1985 by Ken Shoemake. \cite{SHOEMAKE} SLERP has been 
-largely adopted in the field of computer graphics, however there have been many alternatives 
-developed.  The advantages of SLERP are that it provides a constant speed solution 
-along the shortest path over the 4D unit sphere.  This is not optimal in all cases however.
-A good discussion of various alternatives is here \url{http://number-none.com/product/Understanding%20Slerp,%20Then%20Not%20Using%20It/index.html}. 
-The approaches discussed above are normalized linear interpolation (nlerp), and 
-log-quaternion linear interpolation (log-quaternion lerp). 
-SLERP can be recursively called to do a cubic interpolation, called SQUAD for short.  
-This is discussed at \url{http://www.sjbrown.co.uk/?article=quaternions}.
-
-
-\subsection{Data Representation Conversion}
-\subsubsection{Matrix to Quaternion}
-\subsubsection{Quaternion to Matrix}
-\subsubsection{DH Parameters to Matrix}
-\subsubsection{Euler Angles to Matrix}
-
 
 \bibliographystyle{plain}
 \bibliography{libTF_Manual}
