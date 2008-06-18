@@ -25,7 +25,7 @@ FreeImage: FreeImage-3.10.0
 	cd FreeImage-3.10.0 ; make ; make install
 
 clean:
-	(cd FreeImage-3.10.0; make clean;)
+	-cd FreeImage-3.10.0 && make clean
 
 wipe:
 	rm -rf FreeImage-3.10.0
