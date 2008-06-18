@@ -1,6 +1,6 @@
 all: player
 
-#REVISION = -r 6497
+REVISION = -r 6641
 
 player-checkout:
 	@if [ ! -d player-svn ]; then svn co $(REVISION) https://playerstage.svn.sf.net/svnroot/playerstage/code/player/trunk player-svn; fi
