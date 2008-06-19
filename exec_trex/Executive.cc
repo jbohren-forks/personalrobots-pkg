@@ -377,8 +377,6 @@ namespace TREX {
   //this doesn't actually generate observations for now
   void Executive::get_laser_obs() {
     lock();
-    WavefrontPlanner::Instance()->SetObstacles(this->laser_hitpts, 
-					       this->laser_hitpts_len);  
     unlock();  
   }
 
@@ -562,6 +560,10 @@ namespace TREX {
 	this->pointcloudMsg.points[i].y = this->laser_hitpts[2*i+1];
       }
     this->ros::node::publish("gui_laser",this->pointcloudMsg);
+
+    WavefrontPlanner::Instance()->SetObstacles(this->laser_hitpts, 
+					       this->laser_hitpts_len);  
+
     unlock(); 
   }
 
@@ -621,7 +623,7 @@ int main(int argc, char **argv)
   DebugMessage::setStream(dbgFile);
 
   // Allocate a real time clock with 1 second per tick
-  agentClock = new RealTimeClock(.25);
+  agentClock = new RealTimeClock(.1);
 
   // Allocate the agent
   debugMsg("Executive", "Initializing the agent");
