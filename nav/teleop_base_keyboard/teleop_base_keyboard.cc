@@ -70,7 +70,7 @@ Publishes to (name / type):
 #include <math.h>
 
 #include <ros/node.h>
-#include <std_msgs/MsgBaseVel.h>
+#include <std_msgs/BaseVel.h>
 
 #define KEYCODE_I 0x69
 #define KEYCODE_J 0x6a
@@ -105,12 +105,12 @@ bool always_command = false;
 class TBK_Node : public ros::node
 {
   private:
-    MsgBaseVel cmdvel;
+    std_msgs::BaseVel cmdvel;
 
   public:
     TBK_Node() : ros::node("tbk")
     {
-      advertise<MsgBaseVel>("cmd_vel");
+      advertise<std_msgs::BaseVel>("cmd_vel");
     }
     ~TBK_Node() { }
     void keyboardLoop();
