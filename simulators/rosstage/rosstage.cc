@@ -83,9 +83,9 @@ Publishes to (name / type):
 
 // roscpp
 #include <ros/node.h>
-#include <std_msgs/MsgLaserScan.h>
-#include <std_msgs/MsgRobotBase2DOdom.h>
-#include <std_msgs/MsgBaseVel.h>
+#include <std_msgs/LaserScan.h>
+#include <std_msgs/RobotBase2DOdom.h>
+#include <std_msgs/BaseVel.h>
 
 #include "rosTF/rosTF.h"
 
@@ -96,9 +96,9 @@ class StageNode : public ros::node
 {
   private:
     // Messages that we'll send or receive
-    MsgBaseVel velMsg;
-    MsgLaserScan laserMsg;
-    MsgRobotBase2DOdom odomMsg;
+    std_msgs::BaseVel velMsg;
+    std_msgs::LaserScan laserMsg;
+    std_msgs::RobotBase2DOdom odomMsg;
 
     // A mutex to lock access to fields that are used in message callbacks
     ros::thread::mutex lock;
@@ -202,8 +202,8 @@ StageNode::SubscribeModels()
     return(-1);
   }
 
-  advertise<MsgLaserScan>("scan");
-  advertise<MsgRobotBase2DOdom>("odom");
+  advertise<std_msgs::LaserScan>("scan");
+  advertise<std_msgs::RobotBase2DOdom>("odom");
   subscribe("cmd_vel", velMsg, &StageNode::cmdvelReceived);
   return(0);
 }
@@ -248,7 +248,6 @@ StageNode::Update()
     //this->laserMsg.header.stamp.nsec = 
             //(unsigned long)rint(1e3 * (world->SimTimeNow() - 
                                        //this->laserMsg.header.stamp.sec * 1e6));
-    this->laserMsg.__timestamp_override = true;
     publish("scan",this->laserMsg);
   }
 
@@ -271,7 +270,6 @@ StageNode::Update()
   //this->odomMsg.header.stamp.nsec = 
           //(unsigned long)rint(1e3 * (world->SimTimeNow() - 
                                      //this->odomMsg.header.stamp.sec * 1e6));
-  this->odomMsg.__timestamp_override = true;
   publish("odom",this->odomMsg);
 
   //  printf("%u \n",world->SimTimeNow());
