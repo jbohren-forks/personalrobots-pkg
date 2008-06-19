@@ -36,6 +36,9 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <string>
+#include <controllers/Pid.h>
+#include <list>
+#include <vector>
 
 namespace PR2
 {
@@ -44,6 +47,11 @@ namespace PR2
    */
    class PR2HW
    {
+      private: int numJoints;
+      // we'll declare a pid controller for each hinger/slider/... joint
+      private: std::vector<Pid*> pids;
+
+
          /*! \fn 
            \brief Constructor
          */

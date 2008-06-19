@@ -1,7 +1,7 @@
 <package>
-<description brief='API for baic PR2 controls and sensing'>
+<description brief='API for baic PR2 Hardware controls'>
 
-An API for baic PR2 controls and sensing: enable, disable, set gains, PD controllers, get sensor data, base cartesian control etc.
+An API for baic PR2 Hardware controls: enable, disable, set gains, PD controllers, talk to hardware via UpdateHW() call.
 
 </description>
 <author>Sachin Chitta</author>
@@ -11,8 +11,9 @@ An API for baic PR2 controls and sensing: enable, disable, set gains, PD control
 <depend package="gazebo"/>
 <depend package="pr2Core"/>
 <depend package="libKinematics"/>
+<depend package="controllers"/>
 <export>
-<cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lpr2API"/>
+<cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lpr2HW"/>
 </export>
 </package>
 

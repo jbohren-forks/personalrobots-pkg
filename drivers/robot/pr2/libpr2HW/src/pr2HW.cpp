@@ -1,21 +1,71 @@
 
-#include <gazebo_plugin/Actuator.h>
+#include <libpr2HW/pr2HW.h>
+#include <math.h>
+#include <list>
+#include <vector>
+
+#include <gazebo/gazebo.h>
+#include <gazebo/GazeboError.hh>
+
+#include <pr2Core/pr2Core.h>
+
+using namespace gazebo;
+using namespace PR2;
+
+////////////////////////////////////////////////////////////////////
+//                                                                //
+//  Gazebo Model and Joint interfaces                             //
+//                                                                //
+////////////////////////////////////////////////////////////////////
+// Gazebo/ODE joints
+// static std::vector<gazebo::Joint> myJoints;
+// Gazebo interface for this actarray
+// static gazebo::PR2ArrayIface *myIface;
+// Gazebo parent model
+// static gazebo::Model *myParent;
+
+////////////////////////////////////////////////////////////////////
+//                                                                //
+//  Gazebo Client Interfaces                                      //
+//                                                                //
+//  these are the "hardware" interfaces                           //
+//                                                                //
+////////////////////////////////////////////////////////////////////
+static gazebo::Client           *client;
+static gazebo::SimulationIface  *simIface;
+static gazebo::PR2ArrayIface    *pr2Iface;
+static gazebo::PR2ArrayIface    *pr2HeadIface;
+static gazebo::PR2GripperIface  *pr2GripperLeftIface;
+static gazebo::PR2GripperIface  *pr2GripperRightIface;
+static gazebo::LaserIface       *pr2LaserIface;
+static gazebo::LaserIface       *pr2BaseLaserIface;
+static gazebo::CameraIface      *pr2CameraIface;
+static gazebo::CameraIface      *pr2CameraGlobalIface;
+static gazebo::CameraIface      *pr2CameraHeadLeftIface;
+static gazebo::CameraIface      *pr2CameraHeadRightIface;
+static gazebo::PositionIface    *pr2LeftWristIface;
+static gazebo::PositionIface    *pr2RightWristIface;
+static gazebo::PositionIface    *pr2BaseIface;
+
+////////////////////////////////////////////////////////////////////
+//                                                                //
+//  Helper functions                                              //
+//                                                                //
+////////////////////////////////////////////////////////////////////
 
 
-      private: int numJoints;
-      private: Joint *joints[256]; //Gazebo/ODE joints
-      // we'll declare a pid controller for each hinger/slider/... joint
-      private: Pid *pids[256];
-
-
-
+////////////////////////////////////////////////////////////////////
+//                                                                //
+//  PR2HW Class                                                   //
+//                                                                //
+////////////////////////////////////////////////////////////////////
 PR2HW::PR2HW()
 {
 
 
 }
 
-virtual PR2HW::~PR2HW()
+PR2HW::~PR2HW()
 {
 
 }
