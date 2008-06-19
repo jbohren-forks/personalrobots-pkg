@@ -69,7 +69,7 @@ Publishes to (name / type):
 #include <math.h>
 
 #include <ros/node.h>
-#include <std_msgs/MsgPR2Arm.h>
+#include <std_msgs/PR2Arm.h>
 
 #include <libpr2API/pr2API.h>
 
@@ -81,8 +81,8 @@ using namespace PR2;
 class TArmK_Node : public ros::node
 {
   private:
-    MsgPR2Arm cmd_leftarmconfig;
-    MsgPR2Arm cmd_rightarmconfig;
+    std_msgs::PR2Arm cmd_leftarmconfig;
+    std_msgs::PR2Arm cmd_rightarmconfig;
 
   public:
     TArmK_Node() : ros::node("tarmk")
@@ -108,8 +108,8 @@ class TArmK_Node : public ros::node
 			this->cmd_rightarmconfig.wristRollAngle    = 0;
 			this->cmd_rightarmconfig.gripperForceCmd   = 1000;
 			this->cmd_rightarmconfig.gripperGapCmd     = 0;
-      advertise<MsgPR2Arm>("cmd_leftarmconfig");
-      advertise<MsgPR2Arm>("cmd_rightarmconfig");
+      advertise<std_msgs::PR2Arm>("cmd_leftarmconfig");
+      advertise<std_msgs::PR2Arm>("cmd_rightarmconfig");
     }
     ~TArmK_Node() { }
     void keyboardLoop();
