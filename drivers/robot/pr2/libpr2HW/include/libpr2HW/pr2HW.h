@@ -49,7 +49,7 @@ namespace PR2
    {
       private: int numJoints;
       // we'll declare a pid controller for each hinger/slider/... joint
-      private: std::vector<Pid*> pids;
+      private: std::vector<Pid> pids;
 
 
          /*! \fn 

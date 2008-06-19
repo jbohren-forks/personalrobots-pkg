@@ -820,9 +820,23 @@ PR2_ERROR_CODE PR2Robot::SetArmControlMode(PR2_MODEL_ID id, PR2_CONTROL_MODE mod
    {
       case PR2_RIGHT_ARM:
          armControlMode[0] = mode;
+         SetJointControlMode(ARM_L_PAN             , PD_CONTROL); 
+         SetJointControlMode(ARM_L_SHOULDER_PITCH  , PD_CONTROL);
+         SetJointControlMode(ARM_L_SHOULDER_ROLL   , PD_CONTROL); 
+         SetJointControlMode(ARM_L_ELBOW_PITCH     , PD_CONTROL);
+         SetJointControlMode(ARM_L_ELBOW_ROLL      , PD_CONTROL); 
+         SetJointControlMode(ARM_L_WRIST_PITCH     , PD_CONTROL);
+         SetJointControlMode(ARM_L_WRIST_ROLL      , PD_CONTROL); 
          break;
       case PR2_LEFT_ARM:
          armControlMode[1] = mode;
+         SetJointControlMode(ARM_R_PAN             , PD_CONTROL); 
+         SetJointControlMode(ARM_R_SHOULDER_PITCH  , PD_CONTROL);
+         SetJointControlMode(ARM_R_SHOULDER_ROLL   , PD_CONTROL); 
+         SetJointControlMode(ARM_R_ELBOW_PITCH     , PD_CONTROL);
+         SetJointControlMode(ARM_R_ELBOW_ROLL      , PD_CONTROL); 
+         SetJointControlMode(ARM_R_WRIST_PITCH     , PD_CONTROL);
+         SetJointControlMode(ARM_R_WRIST_ROLL      , PD_CONTROL); 
          break;
       default:
          break;
@@ -1403,8 +1417,8 @@ double PR2Robot::BaseSteeringAngleError()
      GetJointServoActual((PR2_JOINT_ID)(CASTER_FL_STEER+3*ii),&currentAngle[ii],&currentRateAct[ii]);
      currentError[ii] = fabs(shortest_angular_distance(currentCmd[ii] , currentAngle[ii]));
      //std::cout << " ii " << ii << " e " << currentError[ii] << std::endl;
-     fprintf(stdout," ii %d e %.3f \n", ii , currentError[ii]);
      errorTotal = errorTotal + currentError[ii];
+     fprintf(stdout," ii %d e %.3f - %.3f \n", ii , currentError[ii],errorTotal);
    }
    fprintf(stdout," ----------------------------------\n");
 

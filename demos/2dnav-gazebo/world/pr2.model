@@ -1203,7 +1203,7 @@
     <body2>front_left_wheel_l</body2>
     <anchor>front_left_wheel_l</anchor>
     <axis>0 1 0</axis>
-    <cfm>0.001</cfm>
+    <cfm>0.01</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -1212,7 +1212,7 @@
     <body2>front_left_wheel_r</body2>
     <anchor>front_left_wheel_r</anchor>
     <axis>0 1 0</axis>
-    <cfm>0.001</cfm>
+    <cfm>0.01</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -1221,7 +1221,7 @@
     <body2>front_right_wheel_l</body2>
     <anchor>front_right_wheel_l</anchor>
     <axis>0 1 0</axis>
-    <cfm>0.001</cfm>
+    <cfm>0.01</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -1230,7 +1230,7 @@
     <body2>front_right_wheel_r</body2>
     <anchor>front_right_wheel_r</anchor>
     <axis>0 1 0</axis>
-    <cfm>0.001</cfm>
+    <cfm>0.01</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -1239,7 +1239,7 @@
     <body2>rear_left_wheel_l</body2>
     <anchor>rear_left_wheel_l</anchor>
     <axis>0 1 0</axis>
-    <cfm>0.001</cfm>
+    <cfm>0.01</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -1248,7 +1248,7 @@
     <body2>rear_left_wheel_r</body2>
     <anchor>rear_left_wheel_r</anchor>
     <axis>0 1 0</axis>
-    <cfm>0.001</cfm>
+    <cfm>0.01</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -1257,7 +1257,7 @@
     <body2>rear_right_wheel_l</body2>
     <anchor>rear_right_wheel_l</anchor>
     <axis>0 1 0</axis>
-    <cfm>0.001</cfm>
+    <cfm>0.01</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -1266,7 +1266,7 @@
     <body2>rear_right_wheel_r</body2>
     <anchor>rear_right_wheel_r</anchor>
     <axis>0 1 0</axis>
-    <cfm>0.001</cfm>
+    <cfm>0.01</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -1278,7 +1278,7 @@
     <body2>base_body</body2>
     <anchor>front_left_caster_body</anchor>
     <axis>  0.0   0.0   1.0 </axis>
-    <cfm>0.001</cfm>
+    <cfm>0.01</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -1287,7 +1287,7 @@
     <body2>base_body</body2>
     <anchor>front_right_caster_body</anchor>
     <axis>  0.0   0.0   1.0 </axis>
-    <cfm>0.001</cfm>
+    <cfm>0.01</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -1296,7 +1296,7 @@
     <body2>base_body</body2>
     <anchor>rear_left_caster_body</anchor>
     <axis>  0.0   0.0   1.0 </axis>
-    <cfm>0.001</cfm>
+    <cfm>0.01</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 
@@ -1305,7 +1305,7 @@
     <body2>base_body</body2>
     <anchor>rear_right_caster_body</anchor>
     <axis>  0.0   0.0   1.0 </axis>
-    <cfm>0.001</cfm>
+    <cfm>0.01</cfm>
     <erp>0.6</erp>
   </joint:hinge>
 

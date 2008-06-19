@@ -150,24 +150,31 @@ void Pr2_Actarray::LoadChild(XMLConfigNode *node)
       }
 
       this->myIface->data->actuators[i].saturationTorque =  jNode->GetDouble("saturationTorque",0.0,1);
-      this->myIface->data->actuators[i].pGain            =  jNode->GetDouble("pGain",0.0,1);
-      this->myIface->data->actuators[i].iGain            =  jNode->GetDouble("iGain",0.0,1);
-      this->myIface->data->actuators[i].dGain            =  jNode->GetDouble("dGain",0.0,1);
+      this->myIface->data->actuators[i].pGain            =  jNode->GetDouble("pGain" ,0.0,1);
+      this->myIface->data->actuators[i].iGain            =  jNode->GetDouble("iGain" ,0.0,1);
+      this->myIface->data->actuators[i].dGain            =  jNode->GetDouble("dGain" ,0.0,1);
+      this->myIface->data->actuators[i].iClamp           =  jNode->GetDouble("iClamp",0.0,1);
       //this->myIface->data->actuators[i].cmdPosition      =  0.0;
       //this->myIface->data->actuators[i].cmdSpeed         =  0.0;
 
+      // TODO: link actuatorAPI object to iface
       // add a actuator API
       if (name == "front_left_caster_steer")
+      {
         this->actuatorAPI.AddJoint(PR2::CASTER_FL_STEER);
+      }
       if (name == "front_left_wheel_l_drive")
+      {
         this->actuatorAPI.AddJoint(PR2::CASTER_FL_DRIVE_L);
+      }
 
       // init a new pid for this joint
       this->pids[i] = new Pid();
 
       // get time
       this->myIface->data->actuators[i].timestamp = Simulator::Instance()->GetSimTime();
-      // set default control mode to PD
+      // set default control mode to:
+      //this->myIface->data->actuators[i].controlMode = PR2::TORQUE_CONTROL;
       this->myIface->data->actuators[i].controlMode = PR2::PD_CONTROL;
 
       jNode = jNode->GetNext("joint");
@@ -190,14 +197,15 @@ void Pr2_Actarray::InitChild()
       this->pids[count]->InitPid( this->myIface->data->actuators[count].pGain,
                                   this->myIface->data->actuators[count].iGain,
                                   this->myIface->data->actuators[count].dGain,
-                                  1.0,
-                                  -1.0
+                                  this->myIface->data->actuators[count].iClamp,
+                                 -this->myIface->data->actuators[count].iClamp
                                 );
       this->pids[count]->SetCurrentCmd(0);
       // as a first hack, initialize to zero velocity and saturation torque
       this->joints[count]->SetParam( dParamVel , this->pids[count]->GetCurrentCmd());
       this->joints[count]->SetParam( dParamFMax, this->myIface->data->actuators[count].saturationTorque );
    }
+   lastTime = Simulator::Instance()->GetSimTime();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -268,9 +276,16 @@ void Pr2_Actarray::UpdateChild(UpdateParams &params)
              {
                 case PR2::TORQUE_CONTROL :
                    // No fancy controller, just pass the commanded torque/force in (we are not modeling the motors for now)
-                   sjoint->SetSliderForce(this->myIface->data->actuators[count].cmdEffectorForce);
+                   positionError = cmdPosition - sjoint->GetPosition();
+                   speedError    = cmdSpeed    - sjoint->GetPositionRate();
+                   //std::cout << "slider e:" << speedError << " + " << positionError << std::endl;
+                   currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
+                   currentCmd = (currentCmd >  this->myIface->data->actuators[count].saturationTorque ) ?  this->myIface->data->actuators[count].saturationTorque : currentCmd;
+                   currentCmd = (currentCmd < -this->myIface->data->actuators[count].saturationTorque ) ? -this->myIface->data->actuators[count].saturationTorque : currentCmd;
+                   sjoint->SetSliderForce(currentCmd);
+                   //sjoint->SetSliderForce(this->myIface->data->actuators[count].cmdEffectorForce);
                    break;
-                case PR2::PD_CONTROL :
+                case PR2::PD_CONTROL : // velocity control
                    //if (cmdPosition > sjoint->GetHighStop())
                    //   cmdPosition = sjoint->GetHighStop();
                    //else if (cmdPosition < sjoint->GetLowStop())
@@ -279,7 +294,7 @@ void Pr2_Actarray::UpdateChild(UpdateParams &params)
                    positionError = cmdPosition - sjoint->GetPosition();
                    speedError    = cmdSpeed    - sjoint->GetPositionRate();
                    //std::cout << "slider e:" << speedError << " + " << positionError << std::endl;
-                   currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime);
+                   currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
 
                    sjoint->SetParam( dParamVel , currentCmd );
                    sjoint->SetParam( dParamFMax, this->myIface->data->actuators[count].saturationTorque );
@@ -306,7 +321,14 @@ void Pr2_Actarray::UpdateChild(UpdateParams &params)
              {
                 case PR2::TORQUE_CONTROL:
                    // No fancy controller, just pass the commanded torque/force in (we are not modeling the motors for now)
-                   hjoint->SetTorque(this->myIface->data->actuators[count].cmdEffectorForce);
+                   positionError = ModNPi2Pi(cmdPosition - hjoint->GetAngle());
+                   speedError    = cmdSpeed - hjoint->GetAngleRate();
+                   currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
+                   std::cout << "hinge err:" << positionError << " cmd: " << currentCmd << std::endl;
+                   // limit torque
+                   currentCmd = (currentCmd >  this->myIface->data->actuators[count].saturationTorque ) ?  this->myIface->data->actuators[count].saturationTorque : currentCmd;
+                   currentCmd = (currentCmd < -this->myIface->data->actuators[count].saturationTorque ) ? -this->myIface->data->actuators[count].saturationTorque : currentCmd;
+                   hjoint->SetTorque(currentCmd);
                    break;
                 case PR2::PD_CONTROL:
                    //if (cmdPosition > hjoint->GetHighStop())
@@ -317,7 +339,7 @@ void Pr2_Actarray::UpdateChild(UpdateParams &params)
                    positionError = ModNPi2Pi(cmdPosition - hjoint->GetAngle());
                    speedError    = cmdSpeed - hjoint->GetAngleRate();
                    //std::cout << "hinge e:" << speedError << " + " << positionError << std::endl;
-                   currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime);
+                   currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
 
                    hjoint->SetParam( dParamVel, currentCmd );
                    hjoint->SetParam( dParamFMax,this->myIface->data->actuators[count].saturationTorque );
@@ -342,6 +364,7 @@ void Pr2_Actarray::UpdateChild(UpdateParams &params)
 
    this->myIface->data->new_cmd = 0;
    this->myIface->Unlock();
+   this->lastTime = currentTime;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
