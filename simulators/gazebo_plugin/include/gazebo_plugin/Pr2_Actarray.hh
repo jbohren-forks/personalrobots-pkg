@@ -31,8 +31,11 @@
 #include <gazebo/Entity.hh>
 #include <pr2Core/pr2Core.h>
 
-// use controllers
+#include <vector>
 #include <controllers/Pid.h>
+
+// actuator class, this should have identical calls for SIM and HW
+#include <libpr2HW/pr2HW.h>
 
 namespace gazebo
 {
@@ -87,13 +90,20 @@ namespace gazebo
          /// The parent Model
       private: Model *myParent;
 
-      private: Joint *joints[256]; //Gazebo/ODE joints
-      private: float forces[256];
-      private: float gains[256];
-      private: int numJoints;
+      // Gazebo/ODE joints
+      private: Joint *joints[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
 
       // we'll declare a pid controller for each hinger/slider/... joint
-      private: Pid *pids[256];
+      private: Pid *pids[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+
+      // number of joints in this array
+      private: int num_joints;
+
+      // using the actuator class
+      // this is where the PR2 API links to the Simulator
+      //   same set of calls used for the hardware
+      private: PR2::PR2HW actuatorAPI;
+
    };
 
 /** \} */

@@ -34,6 +34,7 @@
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
+
 #include <gazebo_plugin/Pr2_Actarray.hh>
 
 using namespace gazebo;
@@ -91,47 +92,78 @@ Pr2_Actarray::~Pr2_Actarray()
 ////////////////////////////////////////////////////////////////////////////////
 void Pr2_Actarray::LoadChild(XMLConfigNode *node)
 {
-   XMLConfigNode *jNode;
-   int i =0;
-   this->myIface = dynamic_cast<PR2ArrayIface*>(this->ifaces[0]);
+   // gazebo pr2 actarray interface: connect and check
+   // this->ifaces[0] is inherited from parent class
 
+   XMLConfigNode *jNode;
+   this->myIface = dynamic_cast<PR2ArrayIface*>(this->ifaces[0]);
    if (!this->myIface)
       gzthrow("Pr2_Actarray controller requires a Actarray Iface");
 
+   SliderJoint *sjoint;
+   HingeJoint  *hjoint;
 
+
+   // get children of the actarray, add to actuators object list
+   int i =0;
    for (i=0, jNode = node->GetChild("joint"); jNode; i++)
    {
+      // add each child
+      //actuators.AddJoint();
+
+      // get name of each child, e.g. front_left_caster_steer
       std::string name = jNode->GetString("name","",1);
 
-      this->joints[i] = dynamic_cast<Joint*>(this->myParent->GetJoint(name));
-      if(this->joints[i]->GetType() == Joint::SLIDER)
-      {
-         SliderJoint *sjoint = dynamic_cast<SliderJoint*>(this->joints[i]);
+      // dynamic cast for type checking
+      Joint* tmpJoint = dynamic_cast<Joint*>(this->myParent->GetJoint(name));
 
-         this->joints[i] = dynamic_cast<SliderJoint*>(this->myParent->GetJoint(name));
-         this->myIface->data->actuators[i].actualPosition = sjoint->GetPosition();
-         this->myIface->data->actuators[i].actualSpeed = sjoint->GetPositionRate();
-         this->myIface->data->actuators[i].actualEffectorForce = 0.0;
-         this->myIface->data->actuators[i].jointType = PR2::PRISMATIC;
-      }
-      else
+      // check what type of joint this is
+      switch(tmpJoint->GetType())
       {
-         HingeJoint *hjoint = dynamic_cast<HingeJoint*>(this->joints[i]);
-
-         this->joints[i] = dynamic_cast<HingeJoint*>(this->myParent->GetJoint(name));
-         this->myIface->data->actuators[i].actualPosition = hjoint->GetAngle();
-         this->myIface->data->actuators[i].actualSpeed = hjoint->GetAngleRate();
-         this->myIface->data->actuators[i].actualEffectorForce = 0.0; //this must be modified using the JointFeedback struct at some point
-         this->myIface->data->actuators[i].jointType = PR2::ROTARY;         
+        case Joint::SLIDER:
+          // save joint in list
+          this->joints[i] = tmpJoint;
+          // set joint properties
+          sjoint = dynamic_cast<SliderJoint*>( tmpJoint );
+          // initialize some variables in gazebo.h for PR2, FIXME: re-evaluate, this is probably not necessary
+          this->myIface->data->actuators[i].actualPosition      = sjoint->GetPosition();
+          this->myIface->data->actuators[i].actualSpeed         = sjoint->GetPositionRate();
+          this->myIface->data->actuators[i].actualEffectorForce = 0.0; //TODO: use JointFeedback struct at some point
+          this->myIface->data->actuators[i].jointType           = PR2::PRISMATIC;
+          break;
+        case Joint::HINGE:
+          // save joint in list
+          this->joints[i] = tmpJoint;
+          // set joint properties
+          hjoint = dynamic_cast<HingeJoint*>( tmpJoint );
+          // initialize some variables in gazebo.h for PR2, FIXME: re-evaluate, this is probably not necessary
+          this->myIface->data->actuators[i].actualPosition      = hjoint->GetAngle();
+          this->myIface->data->actuators[i].actualSpeed         = hjoint->GetAngleRate();
+          this->myIface->data->actuators[i].actualEffectorForce = 0.0; //TODO: use JointFeedback struct at some point
+          this->myIface->data->actuators[i].jointType           = PR2::ROTARY;         
+          break;
+        case Joint::HINGE2:
+        case Joint::BALL:
+        case Joint::UNIVERSAL:
+          gzthrow("Pr2_Actarray joint need to be either slider or hinge for now.  Add support in Pr2_Actarray or talk to ");
+          break;
       }
 
       this->myIface->data->actuators[i].saturationTorque =  jNode->GetDouble("saturationTorque",0.0,1);
-      this->myIface->data->actuators[i].pGain =  jNode->GetDouble("pGain",0.0,1);
-      this->myIface->data->actuators[i].iGain =  jNode->GetDouble("iGain",0.0,1);
-      this->myIface->data->actuators[i].dGain =  jNode->GetDouble("dGain",0.0,1);
+      this->myIface->data->actuators[i].pGain            =  jNode->GetDouble("pGain",0.0,1);
+      this->myIface->data->actuators[i].iGain            =  jNode->GetDouble("iGain",0.0,1);
+      this->myIface->data->actuators[i].dGain            =  jNode->GetDouble("dGain",0.0,1);
+      //this->myIface->data->actuators[i].cmdPosition      =  0.0;
+      //this->myIface->data->actuators[i].cmdSpeed         =  0.0;
 
-       // init a new pid for this joint
-       this->pids[i] = new Pid();
+      // add a actuator API
+      if (name == "front_left_caster_steer")
+        this->actuatorAPI.AddJoint(PR2::CASTER_FL_STEER);
+      if (name == "front_left_wheel_l_drive")
+        this->actuatorAPI.AddJoint(PR2::CASTER_FL_DRIVE_L);
+
+      // init a new pid for this joint
+      this->pids[i] = new Pid();
 
       // get time
       this->myIface->data->actuators[i].timestamp = Simulator::Instance()->GetSimTime();
@@ -140,7 +172,7 @@ void Pr2_Actarray::LoadChild(XMLConfigNode *node)
 
       jNode = jNode->GetNext("joint");
    }
-   this->numJoints = i;
+   this->num_joints = i;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -152,20 +184,19 @@ void Pr2_Actarray::LoadChild(XMLConfigNode *node)
 ////////////////////////////////////////////////////////////////////////////////
 void Pr2_Actarray::InitChild()
 {
-   for (int i=0; i < this->numJoints; i++)
+   for (int count = 0; count < this->num_joints ; count++)
    {
-       // initialize pid stuff
-       this->pids[i]->InitPid( this->myIface->data->actuators[i].pGain,
-                               this->myIface->data->actuators[i].iGain,
-                               this->myIface->data->actuators[i].dGain,
-                                1.0,
-                               -1.0
-                              );
-       this->pids[i]->SetCurrentCmd(0.0);
-
-       // as a first hack, initialize to zero velocity and saturation torque
-       this->joints[i]->SetParam( dParamVel , this->pids[i]->GetCurrentCmd());
-       this->joints[i]->SetParam( dParamFMax, this->myIface->data->actuators[i].saturationTorque );
+      // initialize pid stuff
+      this->pids[count]->InitPid( this->myIface->data->actuators[count].pGain,
+                                  this->myIface->data->actuators[count].iGain,
+                                  this->myIface->data->actuators[count].dGain,
+                                  1.0,
+                                  -1.0
+                                );
+      this->pids[count]->SetCurrentCmd(0);
+      // as a first hack, initialize to zero velocity and saturation torque
+      this->joints[count]->SetParam( dParamVel , this->pids[count]->GetCurrentCmd());
+      this->joints[count]->SetParam( dParamFMax, this->myIface->data->actuators[count].saturationTorque );
    }
 }
 
@@ -216,28 +247,28 @@ void Pr2_Actarray::UpdateChild(UpdateParams &params)
    currentTime = Simulator::Instance()->GetSimTime();
    this->myIface->data->head.time = currentTime;
 
-   this->myIface->data->actuators_count = this->numJoints;
-   //printf("numJoints: %d\n",this->numJoints);
+   this->myIface->data->actuators_count = this->num_joints;
+   //printf("number of joints: %d\n",this->num_joints);
 
    //////////////////////////////////////////////////////////////////////
    //
    // LOOP THROUGH ALL THE CONTROLLABLE DOF'S IN THIS INTERFACE
    //
    //////////////////////////////////////////////////////////////////////
-   for (int i=0; i < this->numJoints; i++)
+   for (int count = 0; count < this->num_joints; count++)
    {
-      switch(this->joints[i]->GetType())
+      switch(this->joints[count]->GetType())
       {
          case Joint::SLIDER:
-             sjoint = dynamic_cast<SliderJoint*>(this->joints[i]);
-             cmdPosition = this->myIface->data->actuators[i].cmdPosition;
-             cmdSpeed = this->myIface->data->actuators[i].cmdSpeed;
+             sjoint = dynamic_cast<SliderJoint*>(this->joints[count]);
+             cmdPosition = this->myIface->data->actuators[count].cmdPosition;
+             cmdSpeed = this->myIface->data->actuators[count].cmdSpeed;
 
-             switch(this->myIface->data->actuators[i].controlMode)
+             switch(this->myIface->data->actuators[count].controlMode)
              {
                 case PR2::TORQUE_CONTROL :
                    // No fancy controller, just pass the commanded torque/force in (we are not modeling the motors for now)
-                   sjoint->SetSliderForce(this->myIface->data->actuators[i].cmdEffectorForce);
+                   sjoint->SetSliderForce(this->myIface->data->actuators[count].cmdEffectorForce);
                    break;
                 case PR2::PD_CONTROL :
                    //if (cmdPosition > sjoint->GetHighStop())
@@ -246,41 +277,36 @@ void Pr2_Actarray::UpdateChild(UpdateParams &params)
                    //   cmdPosition = sjoint->GetLowStop();
 
                    positionError = cmdPosition - sjoint->GetPosition();
-                   speedError = cmdSpeed - sjoint->GetPositionRate();
-                   currentCmd = this->pids[i]->UpdatePid(positionError, currentTime);
+                   speedError    = cmdSpeed    - sjoint->GetPositionRate();
+                   //std::cout << "slider e:" << speedError << " + " << positionError << std::endl;
+                   currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime);
 
-                   //if (fabs(positionError) > 0.01)
-                   //{
-                      sjoint->SetParam( dParamVel , currentCmd );
-                      sjoint->SetParam( dParamFMax, this->myIface->data->actuators[i].saturationTorque );
-                   //}
-                   // printf("SLIDER:: pErr: %f, pGain: %f, dGain: %f, sT: %f\n",
-                   //  positionError,this->myIface->data->actuators[i].pGain,this->myIface->data->actuators[i].dGain,
-                   //  this->myIface->data->actuators[i].saturationTorque);            
+                   sjoint->SetParam( dParamVel , currentCmd );
+                   sjoint->SetParam( dParamFMax, this->myIface->data->actuators[count].saturationTorque );
                    break;
                 case PR2::SPEED_CONTROL :
                       sjoint->SetParam( dParamVel, cmdSpeed);
-                      sjoint->SetParam( dParamFMax,this->myIface->data->actuators[i].saturationTorque );
+                      sjoint->SetParam( dParamFMax,this->myIface->data->actuators[count].saturationTorque );
                 break;
 
                 default:
                    break;
              }
 
-             this->myIface->data->actuators[i].actualPosition = sjoint->GetPosition();
-             this->myIface->data->actuators[i].actualSpeed = sjoint->GetPositionRate();
-             this->myIface->data->actuators[i].actualEffectorForce = 0.0; //this must be modified using the JointFeedback struct at some point
+             this->myIface->data->actuators[count].actualPosition      = sjoint->GetPosition();
+             this->myIface->data->actuators[count].actualSpeed         = sjoint->GetPositionRate();
+             this->myIface->data->actuators[count].actualEffectorForce = 0.0; //TODO: use JointFeedback struct at some point
              break;
 
           case Joint::HINGE:
-             hjoint = dynamic_cast<HingeJoint*>(this->joints[i]);
-             cmdPosition = this->myIface->data->actuators[i].cmdPosition;
-             cmdSpeed = this->myIface->data->actuators[i].cmdSpeed;
-             switch(this->myIface->data->actuators[i].controlMode)
+             hjoint = dynamic_cast<HingeJoint*>(this->joints[count]);
+             cmdPosition = this->myIface->data->actuators[count].cmdPosition;
+             cmdSpeed = this->myIface->data->actuators[count].cmdSpeed;
+             switch(this->myIface->data->actuators[count].controlMode)
              {
                 case PR2::TORQUE_CONTROL:
                    // No fancy controller, just pass the commanded torque/force in (we are not modeling the motors for now)
-                   hjoint->SetTorque(this->myIface->data->actuators[i].cmdEffectorForce);
+                   hjoint->SetTorque(this->myIface->data->actuators[count].cmdEffectorForce);
                    break;
                 case PR2::PD_CONTROL:
                    //if (cmdPosition > hjoint->GetHighStop())
@@ -289,25 +315,23 @@ void Pr2_Actarray::UpdateChild(UpdateParams &params)
                    //   cmdPosition = hjoint->GetLowStop();
 
                    positionError = ModNPi2Pi(cmdPosition - hjoint->GetAngle());
-                   speedError = cmdSpeed - hjoint->GetAngleRate();
-                   currentCmd = this->pids[i]->UpdatePid(positionError, currentTime);
+                   speedError    = cmdSpeed - hjoint->GetAngleRate();
+                   //std::cout << "hinge e:" << speedError << " + " << positionError << std::endl;
+                   currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime);
 
-                   //if (fabs(positionError) > 0.01)
-                   //{
-                      hjoint->SetParam( dParamVel, currentCmd );
-                      hjoint->SetParam( dParamFMax,this->myIface->data->actuators[i].saturationTorque );
-                   //}
+                   hjoint->SetParam( dParamVel, currentCmd );
+                   hjoint->SetParam( dParamFMax,this->myIface->data->actuators[count].saturationTorque );
                    break;
                 case PR2::SPEED_CONTROL:
                       hjoint->SetParam( dParamVel, cmdSpeed);
-                      hjoint->SetParam( dParamFMax, this->myIface->data->actuators[i].saturationTorque );
+                      hjoint->SetParam( dParamFMax, this->myIface->data->actuators[count].saturationTorque );
                 break;
                 default:
                    break;
              }
-             this->myIface->data->actuators[i].actualPosition = hjoint->GetAngle();
-             this->myIface->data->actuators[i].actualSpeed = hjoint->GetAngleRate();
-             this->myIface->data->actuators[i].actualEffectorForce = 0.0; //this must be modified using the JointFeedback struct at some point
+             this->myIface->data->actuators[count].actualPosition      = hjoint->GetAngle();
+             this->myIface->data->actuators[count].actualSpeed         = hjoint->GetAngleRate();
+             this->myIface->data->actuators[count].actualEffectorForce = 0.0; //TODO: use JointFeedback struct at some point
              break;
           case Joint::HINGE2:
           case Joint::BALL:
