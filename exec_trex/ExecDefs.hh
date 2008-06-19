@@ -3,9 +3,9 @@
 
 #include "Id.hh"
 #include "ros/node.h"
-#include "std_msgs/MsgPlanner2DState.h"
-#include "std_msgs/MsgPlanner2DGoal.h"
-#include "std_msgs/MsgToken.h"
+#include "std_msgs/Planner2DState.h"
+#include "std_msgs/Planner2DGoal.h"
+//#include "std_msgs/MsgToken.h"
 
 
 using namespace EUROPA;
@@ -25,8 +25,8 @@ namespace TREX {
   typedef Id<Monitor> MonitorId;
   class GoalManager;
 
-  std::string toString(const MsgPlanner2DState& s);
-  std::string toString(const MsgPlanner2DGoal& g);
+  std::string toString(const std_msgs::Planner2DState& s);
+  std::string toString(const std_msgs::Planner2DGoal& g);
 
   void initROSExecutive();
 }

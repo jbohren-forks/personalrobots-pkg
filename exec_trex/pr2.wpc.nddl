@@ -1,0 +1,9 @@
+#include "pr2.model.nddl"
+
+WaypointController wpc = new WaypointController(Internal);
+VelController vcon = new VelController(Internal);
+WaypointActions waypointActions = new WaypointActions();
+VehicleState vs = new VehicleState(External);
+VelCommander vcom = new VelCommander(External);
+
+close();

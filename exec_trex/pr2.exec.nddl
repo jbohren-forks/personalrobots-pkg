@@ -3,8 +3,9 @@
 // Allocate timelines
 Navigator navigator = new Navigator(Internal);
 WaypointController wpc = new WaypointController(External);
-VehicleState vs = new VehicleState(External);
+VehicleState vs = new VehicleState(Ignore);
 Actions actions = new Actions();
+
 
 close();
 
@@ -23,3 +24,24 @@ g2.x = 22.9;
 g2.y = 11.3;
 g2.priority = 2;
 
+/*
+rejectable(navigator.Going g2);
+g2.x = 15.2;
+g2.y = 45.8;
+g2.priority = 2;
+*/
+
+/*
+rejectable(wpc.Active g0);
+g0.x = 24.4;
+g0.y = 18.8;
+*/
+/*
+rejectable(wpc.Active g1);
+g1.x = 21.1;
+g1.y = 14.5;
+
+rejectable(wpc.Active g2);
+g2.x = 22.9;
+g2.y = 11.3;
+*/

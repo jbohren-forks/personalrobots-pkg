@@ -36,7 +36,7 @@ namespace TREX {
 
   void RCSAdapter::handleRequest(const TokenId& goal){
     debugMsg("RCSAdapter:handleRequest", goal->toString());
-    Executive::instance()->dispatch(goal);
+    Executive::instance()->dispatchWaypoint(goal);
   }
 
   // Allocate a Factory

@@ -11,16 +11,27 @@ if ! $(exec_trex_READY) {
 			[ FDirName $(ROS_ROOT) 3rdparty xmlrpc++ libXmlRpc.a ]
 			[ FDirName $(ROS_ROOT) util rosthread lib librosthread.a ]
 			[ FDirName $(ROS_ROOT) util rostime lib librostime.a ]
-			[ FDirName $(PR2_ROOT) 3rdparty player player lib libwavefront_standalone.so ]
-	;
+			[ FDirName $(PR2_ROOT) 3rdparty player player lib libwavefront_standalone.so ]	       
+			[ FDirName $(PR2_ROOT) util transforms rosTF lib
+   			  librosTF.a ]
+			[ FDirName $(PR2_ROOT) util transforms libTF lib libTF.a
+   			]
+			[ FDirName $(PR2_ROOT) 3rdparty newmat10 newmat newmat10
+   			  libnewmat.a ] ;
 
 	# Include directories for ROS. Can obtain from rospack export/cpp/cflags roscpp
    	SubDirHdrs $(ROS_ROOT) core roscpp include ;
    	SubDirHdrs $(ROS_ROOT) util rosthread include ;
    	SubDirHdrs $(ROS_ROOT) util rostime include ;
+	SubDirHdrs $(ROS_ROOT) core rostools msg cpp ;
    	SubDirHdrs $(ROS_ROOT) 3rdparty xmlrpc++ src ;
    	SubDirHdrs $(ROS_ROOT) std_msgs msg cpp ;
-	SubDirHdrs $(PR2_ROOT) 3rdparty player player include player-2.2  ;
+	SubDirHdrs $(ROS_ROOT) std_srvs srv cpp ;		
+	
+	SubDirHdrs $(PR2_ROOT) 3rdparty player player include player-2.2 ;
+	SubDirHdrs $(PR2_ROOT) util transforms rosTF include ;
+	SubDirHdrs $(PR2_ROOT) util transforms libTF include ;
+	SubDirHdrs $(PR2_ROOT) 3rdparty newmat10 newmat ;
 
 	# GNU Library include directories
 	SubDirHdrs / usr include gtk-2.0 ;
@@ -31,8 +42,9 @@ if ! $(exec_trex_READY) {
 	# planner
 	LINKFLAGS = $(LINKFLAGS) -lrt  -lgtk-x11-2.0 ;
 
-	ModuleMain exec_trex : Executive.cc Monitor.cc RCSAdapter.cc ExecDefs.cc Components.cc pr2.model.o : TREX : exec_trex ;
-	Depends exec_trex : pr2.exec.xml ;
+	ModuleMain exec_trex : Executive.cc Monitor.cc RCSVelAdapter.cc RCSAdapter.cc
+	CalcCommandConstraint.cc CalcGlobalPathConstraint.cc WavefrontPlanner.cc map_helpers.cc ExecDefs.cc Components.cc pr2.model.o : TREX : exec_trex ;
+	Depends exec_trex : pr2.exec.xml pr2.wpc.xml ;
 
 	ModuleMain exec_listener : ExecListener.cc : : exec_listener ;
 	ModuleMain rcs : RCS.cc ExecDefs.cc : TREX : rcs ;
@@ -40,11 +52,13 @@ if ! $(exec_trex_READY) {
 
  	# Input file for exec
  	NddlParser pr2.exec.xml : pr2.exec.nddl ;
+	NddlParser pr2.wpc.xml : pr2.wpc.nddl ;
  	NddlParser pr2.sim.xml : pr2.sim.nddl ;
  
  	# Build the model - generates .cc and .hh files from .nddl
 	NddlModel pr2.model.nddl : System ;
 
 	# Build all
-	Depends exec_all : exec_trex rcs exec_listener logger pr2.exec.xml pr2.sim.xml ;
+	Depends exec_all : exec_trex rcs exec_listener logger pr2.exec.xml
+	pr2.wpc.xml pr2.sim.xml ;
 }

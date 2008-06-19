@@ -6,7 +6,10 @@
 # 2. source config
 # 3. make trex
 
-all: exec_trex
+all: exec_trex_opt exec_trex_debug
 
-exec_trex:
+exec_trex_debug:
 	jam exec_trex
+
+exec_trex_opt:
+	jam -sVARIANTS=OPTIMIZED exec_trex

@@ -33,6 +33,7 @@
  * Rules for NDDL based trivial simulation
  ******************************************************************/
 WaypointController::Active{
+	/*
 	if(object.mode == Internal){
 		starts(VehicleState.Holds startPos);
 		float distance;
@@ -49,7 +50,7 @@ WaypointController::Active{
 			eq(endPos.x, x);
 			eq(endPos.y, y);
 		}
-	}
+	}*/
 }
 
 VehicleState::Holds{
@@ -59,7 +60,7 @@ VehicleState::Holds{
 		defaultOnCommit(y, p.y);
 	}
 }
-
+/*
 class SimActions extends AgentActions{
 	predicate StartAction{}
 
@@ -73,3 +74,4 @@ Behavior::Active{
 		starts(SimActions.StartAction);
 	}
 }
+*/

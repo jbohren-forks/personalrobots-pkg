@@ -33,7 +33,7 @@ namespace TREX {
      */
     void notify(const Observation& observation){
       debugMsg("Monitor:notify", "Observed: " << observation.toString());
-      Executive::instance()->publish(observation);
+      Executive::instance()->my_publish(observation);
     }
 
   };

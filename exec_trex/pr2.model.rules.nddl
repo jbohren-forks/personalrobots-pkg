@@ -33,51 +33,99 @@
  * All behaviors will oscillate between active and inactive
  */
 Behavior::Inactive{
-	met_by(Active);
-	meets(Active);
+  met_by(Active);
+  meets(Active);
 }
 
 Behavior::Active{
-	met_by(Inactive);
-	meets(Inactive);
+  met_by(Inactive);
+  meets(Inactive);
 }
 
 Navigator::Going{
-	// If the target is bound then generate behavior to accomplish goal
-	if(x){
-		if(y){
-			ends(Actions.Go a);
-			eq(a.x, x);
-			eq(a.y, y);
-			contains a;
+  // If the target is bound then generate behavior to accomplish goal
+  if(x){
+    if(y){		 
+      any(WaypointController.Inactive pos);
+      precedes(pos.start, start);
+      precedes(start, pos.end); 
+   
+      bool plan_done;
+      calcGlobalPath(plan_done, pos.x, pos.y,  x, y);	     
+      eq(plan_done,true);
+      pos meets(WaypointController.Active wpc);
+      ends wpc;
+      eq(wpc.x, x);
+      eq(wpc.y, y);
+    }
+  }
+}
+
+WaypointController::Inactive {
+  if(object.mode == Internal) {
+    starts(VehicleState.Holds pos);
+    eq(x, pos.x);
+    eq(y, pos.y);
+  }
+}
+WaypointController::Active {
+  if(object.mode == Internal) {
+    ends(WaypointActions.Go a);
+    eq(a.x, x);
+    eq(a.y, y);
+  }
+}
+
+
+WaypointActions::Go {
+	starts(VelController.Active velcon);
+	eq(velcon.goal_x, x);
+	eq(velcon.goal_y, y);
+}
+
+VelController::Inactive {
+	met_by(Active);
+	meets(Active);		
+	starts(VelCommander.Holds velcom);	
+	eq(velcom.cmd_x, 0.0);
+	eq(velcom.cmd_th, 0.0);		
+}
+
+
+VelController::Active {     	
+	eq(duration, 1);
+	if(start){
+		starts(VehicleState.Holds initialPos);
+		float distanceToGo;
+		calcDistance(distanceToGo, initialPos.x, initialPos.y, goal_x, goal_y);
+		bool done;
+		testLEQ(done, distanceToGo, POSITION_ERROR);
+		bool plan_ok;
+		if(done == false){
+			meets(VelCommander.Holds vcom);
+			float cmd_x;
+			float cmd_th;
+			calcCommand(plan_ok, cmd_x, cmd_th, initialPos.x, initialPos.y,
+		            initialPos.th, goal_x, goal_y, 0.0);
+	        	    eq(vcom.cmd_x, cmd_x);
+	        	    eq(vcom.cmd_th, cmd_th);
+			    meets(VelController.Active s);
+			    eq(goal_x,s.goal_x);
+			    eq(goal_y,s.goal_y);
+		}
+
+		// Force termination
+		if(done == true) {
+			meets(VelController.Inactive);
+			ends(WaypointController.Active wp);
+			eq(wp.x, goal_x);
+			eq(wp.y, goal_y);
+		}
+		if(plan_ok == false){
+			meets(VelController.Inactive s);
+			ends(WaypointController.Active);
 		}
 	}
 }
 
-Actions::Go{
-	// If we have a meaningful distance to travel, get going
-	starts(VehicleState.Holds initialPos);
-	float distanceToGo;
-	calcDistance(distanceToGo, initialPos.x, initialPos.y, x, y);
-	bool done;
-	testLEQ(done, distanceToGo, POSITION_ERROR);
-	if(done == false){
-		ends(WaypointController.Active wpc);
-		contains wpc;
-		eq(wpc.x, x);
-		eq(wpc.y, y);
-	}
 
-	// Force termination
-	if(done == true){
-		eq(duration, 1);
-	}
-
-	// When it ends, check the end conditions.
-	ends(VehicleState.Holds vs);
-	float delta;
-	calcDistance(delta, vs.x, vs.y, x, y);
-
-	// Just constrain the vehicle to be within the expected error of position
-	leq(delta, POSITION_ERROR);
-}

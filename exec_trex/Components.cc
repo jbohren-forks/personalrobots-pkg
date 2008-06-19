@@ -8,6 +8,8 @@
 #include "ConstraintLibrary.hh"
 #include "Timeline.hh"
 #include "Agent.hh"
+#include "CalcCommandConstraint.hh"
+#include "CalcGlobalPathConstraint.hh"
 
 
 #include <gdk-pixbuf/gdk-pixbuf.h>
@@ -29,6 +31,8 @@ namespace TREX{
     REGISTER_CONSTRAINT(SubsetOfConstraint, "in", "Default");
     REGISTER_CONSTRAINT(CalcDistanceConstraint, "calcDistance", "Default");
     REGISTER_CONSTRAINT(FloorFunction, "calcFloor", "Default");
+    REGISTER_CONSTRAINT(CalcCommandConstraint, "calcCommand", "Default");
+    REGISTER_CONSTRAINT(CalcGlobalPathConstraint, "calcGlobalPath", "Default");
 
     // Solver Components
     REGISTER_FLAW_FILTER(TREX::GoalsOnlyFilter, GoalsOnly);

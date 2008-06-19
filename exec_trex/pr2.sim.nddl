@@ -11,4 +11,3 @@ fact(vs.Holds f0);
 f0.x = 2.0;
 f0.y = 2.0;
 
-fact(wpc.Inactive f1);

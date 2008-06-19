@@ -38,7 +38,7 @@
 typedef int [0 5] PRIORITY;
 typedef float [0.0 +inff] PFLOAT;
 
-float POSITION_ERROR = 2.0;
+float POSITION_ERROR = 1.0;
 float NOMINAL_SPEED = 1.0;
 
 /**
@@ -48,6 +48,7 @@ class VehicleState extends AgentTimeline {
 	predicate Holds{
 		PFLOAT x;
 		PFLOAT y;
+		float th;
 	}
 
 	VehicleState(Mode _mode){
@@ -73,6 +74,11 @@ class Behavior extends AgentTimeline {
  * a waypoint. This maps to the wave front planner.
  */
 class WaypointController extends Behavior {
+        predicate Inactive{
+		PFLOAT x;
+		PFLOAT y;
+        }
+
 	// Parameters to get to the target
 	predicate Active{
 		PFLOAT x;
@@ -82,6 +88,42 @@ class WaypointController extends Behavior {
 	WaypointController(Mode _mode){
 		super(_mode);
 	}
+}
+
+class WaypointActions extends AgentActions {
+
+      predicate Go {
+      		PFLOAT x;
+		PFLOAT y;
+      }     
+
+}
+
+class VelController extends AgentTimeline {
+
+      predicate Inactive{}
+
+      predicate Active{
+         PFLOAT goal_x;
+	 PFLOAT goal_y;
+      }
+
+      VelController(Mode _mode){
+		super(_mode, "Inactive");
+      }
+
+}
+
+class VelCommander extends AgentTimeline {
+
+      predicate Holds {
+      	 float cmd_x;
+	 float cmd_th;	
+      }     
+
+      VelCommander(Mode _mode){
+         super(_mode);
+      }
 }
 
 /**
@@ -121,4 +163,6 @@ class Actions extends AgentActions {
 		PFLOAT x;
 		PFLOAT y;
 	}
+
+	predicate StartMe{}
 }
