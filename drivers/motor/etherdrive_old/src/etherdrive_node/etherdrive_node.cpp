@@ -44,7 +44,10 @@ public:
   float last_mot_val[6];
   double pulse_per_rad[6];
 
-  EtherDrive_Node() : ros::node("etherdrive"), ed(NULL)
+  int count;
+  ros::Time next_time;
+
+  EtherDrive_Node() : ros::node("etherdrive"), ed(NULL), count(0)
   {
 
     for (int i = 0;i < 6;i++) {
@@ -72,6 +75,8 @@ public:
     ed = new EtherDrive();
     ed->init(host);
     ed->motors_on();
+
+    next_time = ros::Time::now();
   }
 
   virtual ~EtherDrive_Node()
@@ -82,6 +87,14 @@ public:
 
   bool do_tick()
   {
+
+    count++;
+    ros::Time now_time = ros::Time::now();
+    if (now_time > next_time) {
+      std::cout << count << " tics/sec at " << now_time << std::endl;
+      count = 0;
+      next_time = next_time + ros::Duration(1,0);
+    }
 
     int tmp_mot_cmd[6];
 
