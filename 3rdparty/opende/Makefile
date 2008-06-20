@@ -6,7 +6,7 @@ opende-checkout:
 	@if [ ! -d opende-svn ]; then svn co $(REVISION) https://opende.svn.sourceforge.net/svnroot/opende/trunk opende-svn; fi
 	-cd opende-svn && svn up $(REVISION)
 
-CONFIGURE_FLAGS = --with-arch=nocona --enable-release CXXFLAGS='-O3   -I$(ROOT)/include' LDFLAGS='-L$(ROOT)/lib' CFLAGS='-O3   -I$(ROOT)/include -I$(ROOT)/usr/include'
+CONFIGURE_FLAGS = --with-arch=nocona --enable-release --disable-debug --enable-double-precision CXXFLAGS='-O3   -I$(ROOT)/include' LDFLAGS='-L$(ROOT)/lib' CFLAGS='-O3   -I$(ROOT)/include -I$(ROOT)/usr/include'
 
 ROOT = $(shell rospack find opende)/opende
 
