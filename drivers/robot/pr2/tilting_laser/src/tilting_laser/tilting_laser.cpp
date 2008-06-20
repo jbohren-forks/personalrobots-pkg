@@ -164,6 +164,16 @@ public:
     max_ang *= M_PI/180.0;
 
     last_motor_time = ros::Time::now();
+
+    TR.setWithEulers(3, 2,
+		     .02, 0, .02,
+		     0.0, 0.0, 0.0,
+		     last_motor_time.to_ull());
+
+    TR.setWithEulers(2, 1,
+		     0, 0, 0,
+		     0, 0, 0,
+		     last_motor_time.to_ull());
   }
 
   virtual ~Tilting_Laser()
@@ -294,8 +304,6 @@ public:
       img_ind++;
 
       if (img_ind == num_scans) {
-        printf("Scan completed.\n");
-        
         if (img_dir == 1)
           rate_err_down -= (min_ang - ang) / (scans.scan_time * num_scans);
         else
@@ -319,7 +327,6 @@ public:
   }
 
   void encoder_callback() {
-
     TR.setWithEulers(3, 2,
 		     .02, 0, .02,
 		     0.0, 0.0, 0.0,
