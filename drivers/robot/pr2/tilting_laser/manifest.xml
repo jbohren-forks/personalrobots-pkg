@@ -13,7 +13,7 @@ tilting stage, such as the one found in the head of PR2.
 <depend package="std_msgs"/>
 <depend package="unstable_msgs"/>
 <depend package="hokuyourg_player"/>
-<depend package="etherdrive"/>
+<depend package="etherdrive_old"/>
 <depend package="libTF"/>
 </package>
 
