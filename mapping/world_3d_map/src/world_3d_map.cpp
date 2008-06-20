@@ -63,7 +63,8 @@ public:
     {
 	advertise<PointCloudFloat32>(MAP_PUBLISH_TOPIC);
 	advertise<Log>("roserr");
-	
+
+	// subscribe to stereo vision point cloud as well... when it becomes available
 	subscribe("full_cloud", inputCloud, &World3DMap::pointCloudCallback);
 	param((string(MAP_PUBLISH_TOPIC)+"/max_publish_frequency").c_str(), maxPublishFrequency, 0.5);
 	
