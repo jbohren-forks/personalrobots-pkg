@@ -52,5 +52,6 @@ clean:
 
 wipe: 
 	-rm -rf $(OGRE_VERSION)
+	-rm -rf $(OGRE_VERSION).tar.bz2
 	-rm -rf ogre
 
