@@ -1,0 +1,16 @@
+<package>
+<description brief="ois">
+
+This package contains Open Dynamics Engine OpenDE or ODE
+(http://ois.sf.net).
+
+</description>
+<author>See web page for a full credits llist.</author>
+<license>LGPL</license>
+<url>http://ois.sf.net</url>
+<export>
+  <cpp lflags="-Xlinker -rpath ${prefix}/ois/lib -L${prefix}/ois/lib -lOIS" cflags="-I${prefix}/ois/include/OIS"/>
+</export>
+</package>
+
+
