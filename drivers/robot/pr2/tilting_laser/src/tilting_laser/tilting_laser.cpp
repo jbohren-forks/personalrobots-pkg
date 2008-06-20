@@ -144,7 +144,10 @@ public:
 
   bool scan_received;
 
-  Tilting_Laser() : ros::node("tilting_laser"), full_cloud_cnt(0), sizes_ready(false), img_ind(-1), img_dir(1),last_ang(1000000), rate_err_down(0.0), rate_err_up(0.0), accum_angle(0.0), scan_received(false)
+  int count;
+  ros::Time next_time;
+
+  Tilting_Laser() : ros::node("tilting_laser"), full_cloud_cnt(0), sizes_ready(false), img_ind(-1), img_dir(1),last_ang(1000000), rate_err_down(0.0), rate_err_up(0.0), accum_angle(0.0), scan_received(false), count(0)
   {
     
     advertise<PointCloudFloat32>("cloud");
@@ -164,6 +167,7 @@ public:
     max_ang *= M_PI/180.0;
 
     last_motor_time = ros::Time::now();
+    next_time = ros::Time::now();
 
     TR.setWithEulers(3, 2,
 		     .02, 0, .02,
@@ -183,6 +187,14 @@ public:
 
   void scans_callback() {
     scan_received = true;
+
+    count++;
+    ros::Time now_time = ros::Time::now();
+    if (now_time > next_time) {
+      std::cout << count << " scans/sec at " << now_time << std::endl;
+      count = 0;
+      next_time = next_time + ros::Duration(1,0);
+    }
 
     //TODO: Add check for hokuyo changing width!
     if (!sizes_ready)
