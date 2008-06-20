@@ -14,9 +14,11 @@ Cg-checkout:
 
 Cg: Cg-checkout
 	@echo "making dir"
-	mkdir Cg
-	$(shell (if [ $(MTYPE) == "x86_64" ]; then tar xvf $(CG_TAR_X86_64) -C$(ROOT); else tar xvf $(CG_TAR_I686) -C$(ROOT); fi))
+	@if [ ! -d Cg ]; then mkdir Cg; fi
+	if [ "$(MTYPE)" == 'x86_64' ]; then tar xvf $(CG_TAR_X86_64) -C$(ROOT); else tar xvf $(CG_TAR_I686) -C$(ROOT); fi
 	touch $(ROOT)/usr/lib$(BITS)/libCg.so
+	@if [ ! -d $(ROOT)/lib ]; then mkdir $(ROOT)/lib; fi
+	@if [ ! -d $(ROOT)/include ]; then mkdir $(ROOT)/include; fi
 	cd $(ROOT)/lib; ln -sf ../usr/lib$(BITS)/* .
 	cd $(ROOT)/include; ln -sf ../usr/include/* .
 
