@@ -9,11 +9,11 @@ OGRE (Object-Oriented Graphics Rendering Engine) is a scene-oriented, flexible 3
 <url>http://ogre3d.org</url>
 <depend package="freeimage"/>
 <depend package="player"/>
-<depend package="ode"/>
+<depend package="opende"/>
 <depend package="ois"/>
 <depend package="Cg"/>
 <export>
-  <cpp cflags="-I${prefix}/Ogre/include -I${prefix}/Ogre/include/Ogre" lflags="-L${prefix}/Ogre/lib -Xlinker -rpath -Xlinker ${prefix}/Ogre/lib -lOgreMain"/>
+  <cpp lflags="-Xlinker -rpath ${prefix}/ogre/lib -L${prefix}/ogre/lib/OGRE -L${prefix}/ogre/lib -lOgreMain" cflags="-I${prefix}/ogre/include/OGRE"/>
 </export>
 </package>
 
