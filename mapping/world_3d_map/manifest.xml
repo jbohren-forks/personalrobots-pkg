@@ -3,8 +3,8 @@
 <author>Willow Garage</author>
 <license>BSD</license>
 <depend package="roscpp" />
+<depend package="roserr" />
 <depend package="std_msgs" />
-<depend package="std_srvs" />
 <depend package="xmlparam" />
 <export>
   <cpp cflags="-I${prefix}/msg/cpp"/>

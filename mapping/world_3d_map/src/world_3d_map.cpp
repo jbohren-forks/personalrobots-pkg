@@ -38,15 +38,21 @@
 
 @htmlinclude manifest.html
 
-@b world_3d_map is a node capable of building 3D maps out of point
+@b World3dMap is a node capable of building 3D maps out of point
 cloud data. The code is incomplete: it currently only forwards cloud
 data.
 
 **/
 
 #include "ros/node.h"
+#include "rosthread/member_thread.h"
+#include "rosthread/mutex.h"
 #include "std_msgs/PointCloudFloat32.h"
+#include "std_msgs/Log.h"
 using namespace std_msgs;
+using namespace ros::thread::member_thread;
+
+static const char MAP_PUBLISH_TOPIC[] = "world_3d_map";
 
 class World3DMap : public ros::node
 {
@@ -54,22 +60,128 @@ public:
 
     World3DMap(void) : ros::node("World3DMap")
     {
-	subscribe("full_cloud", cloud, &World3DMap::pointCloudCallback);
-	advertise<PointCloudFloat32>("world_3d_map");
+	advertise<PointCloudFloat32>(MAP_PUBLISH_TOPIC);
+	advertise<Log>("roserr");
+	
+	subscribe("full_cloud", inputCloud, &World3DMap::pointCloudCallback);
+	param((string(MAP_PUBLISH_TOPIC)+"/max_publish_frequency").c_str(), maxPublishFrequency, 0.5);
+	
+	/* create a thread that does the processing of the input data.
+	 * and one that handles the publishing of the data */
+	active = true;
+	working = false;
+	shouldPublish = false;
+	
+	processMutex.lock();
+	publishMutex.lock();
+	processingThread = startMemberFunctionThread<World3DMap>(this, &World3DMap::processDataThread);
+	publishingThread = startMemberFunctionThread<World3DMap>(this, &World3DMap::publishDataThread);
+    }
+    
+    ~World3DMap(void)
+    {
+	/* terminate spawned threads */
+	active = false;
+	processMutex.unlock();
+	
+	pthread_join(*publishingThread, NULL);
+	pthread_join(*processingThread, NULL);
     }
     
     void pointCloudCallback(void)
     {
-	printf("received %d points\n", cloud.pts_size);	
-	// this should do something smarter here.... 
+	/* The idea is that if processing of previous input data is
+	   not done, data will be discarded. Hopefully this discarding
+	   of data will not happen, but we don't want the node to
+	   postpone processing latest data just because it is not done
+	   with older data. */
+	
+	flagMutex.lock();
+	bool discard = working;
+	if (!discard)
+	    working = true;
+	
+	if (discard)
+	{
+	    /* log the fact that input was discarded */
+	    Log l;
+	    l.level = 20;
+	    l.name  = get_name();
+	    l.msg   = "Discarded point cloud data (previous input set not done processing)";
+	    publish("roserr", l);
+	}
+	else
+	{
+	    toProcess = inputCloud;  /* copy data to a place where incoming messages do not affect it */
+	    processMutex.unlock();   /* let the processing thread know that there is data to process */
+	}
+	flagMutex.unlock();
+    }
+    
+    void processDataThread(void)
+    {
+	while (active)
+	{
+	    /* This mutex acts as a condition, but is safer (condition
+	       messages may get lost or interrupted by signals) */
+	    processMutex.lock();
+	    if (active)
+	    {
+		worldDataMutex.lock();
+		processData();
+		worldDataMutex.unlock();
+		
+		/* notify the publishing thread that it can send data */
+		shouldPublish = true;
+	    }
+	    
+	    /* make a note that there is no active processing */
+	    flagMutex.lock();
+	    working = false;
+	    flagMutex.unlock();
+	}
+    }
+    
+
+    void publishDataThread(void)
+    {
+	double us = 1000000.0/maxPublishFrequency;
+	
+	/* while everything else is running (map building) check if
+	   there are any updates to send, but do so at most at the
+	   maximally allowed frequency of sending data */
+	while (active)
+	{
+	    // should change from usleep() to some other method when rostime looks better
+	    usleep(us);
+	    if (shouldPublish)
+	    {
+		worldDataMutex.lock();
+		if (active)
+		    publish(MAP_PUBLISH_TOPIC, toProcess);
+		shouldPublish = false;
+		worldDataMutex.unlock();
+	    }
+	}
+    }
+    
+    void processData(void)
+    {
 	// build a 3D representation of the world
-	publish("world_3d_map", cloud);
+	// NEED TO FILL THIS IN
+	printf("processing some cloud data: %d\n", toProcess.pts_size);
     }
     
 private:
     
-    PointCloudFloat32 cloud;
-    
+    PointCloudFloat32  inputCloud;
+    PointCloudFloat32  toProcess;
+    double             maxPublishFrequency;
+
+    pthread_t         *processingThread;
+    pthread_t         *publishingThread;
+    ros::thread::mutex processMutex, publishMutex, worldDataMutex, flagMutex;
+    bool               active, working, shouldPublish;
 };
 
 
@@ -80,5 +192,6 @@ int main(int argc, char **argv)
     World3DMap map;
     map.spin();
     map.shutdown();
+    
     return 0;    
 }
