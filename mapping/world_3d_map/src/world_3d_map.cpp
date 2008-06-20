@@ -45,6 +45,7 @@ data.
 **/
 
 #include "ros/node.h"
+#include "ros/time.h"
 #include "rosthread/member_thread.h"
 #include "rosthread/mutex.h"
 #include "std_msgs/PointCloudFloat32.h"
@@ -145,7 +146,8 @@ public:
 
     void publishDataThread(void)
     {
-	double us = 1000000.0/maxPublishFrequency;
+	ros::Duration *d = new ros::Duration(1.0/maxPublishFrequency);
+	double us = d->to_double() * 1000000.0;
 	
 	/* while everything else is running (map building) check if
 	   there are any updates to send, but do so at most at the
@@ -154,6 +156,7 @@ public:
 	{
 	    // should change from usleep() to some other method when rostime looks better
 	    usleep(us);
+
 	    if (shouldPublish)
 	    {
 		worldDataMutex.lock();
@@ -163,13 +166,14 @@ public:
 		worldDataMutex.unlock();
 	    }
 	}
+	delete d;
     }
     
     void processData(void)
     {
 	// build a 3D representation of the world
 	// NEED TO FILL THIS IN
-	printf("processing some cloud data: %d\n", toProcess.pts_size);
+	//	printf("processing some cloud data: %d\n", toProcess.pts_size);
     }
     
 private:
