@@ -46,7 +46,7 @@ a set of robot models.
 #include "ros/node.h"
 #include "std_msgs/PointCloudFloat32.h"
 #include "std_msgs/KinematicPath.h"
-#include "std_srvs/KinematicPlan.h"
+#include "std_srvs/KinematicMotionPlan.h"
 
 using namespace std_msgs;
 using namespace std_srvs;
@@ -57,10 +57,8 @@ public:
 
     KinematicPlanning(void) : ros::node("KinematicPlanning")
     {
-	advertise_service<KinematicMotionPlan>("plan_kinematic_path", &KinematicPlanning::plan);
-	
+	advertise_service("plan_kinematic_path", &KinematicPlanning::plan);
 	subscribe("world_3d_map", cloud, &KinematicPlanning::pointCloudCallback);
-	
     }
     
     void pointCloudCallback(void)
@@ -71,6 +69,7 @@ public:
     bool plan(KinematicMotionPlan::request &req, KinematicMotionPlan::response &res)
     {
 	
+	return true;	
     }
     
 private:
