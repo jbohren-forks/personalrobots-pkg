@@ -1,0 +1,13 @@
+<package>
+<description>3D Map Construction</description>
+<author>Willow Garage</author>
+<license>BSD</license>
+<depend package="roscpp" />
+<depend package="std_msgs" />
+<depend package="std_srvs" />
+<depend package="xmlparam" />
+<depend package="mpk" />
+<export>
+  <cpp cflags="-I${prefix}/msg/cpp"/>
+</export>
+</package>
