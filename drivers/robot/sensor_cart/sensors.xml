@@ -1,0 +1,23 @@
+<launch>
+  <machine name="prc0" address="prc0" default="true" ros-root="~/ros/" ros-package-path="~/ros-pkg/"/>
+
+  <param name="urglaser/min_ang" type="double" value="-70"/>
+  <param name="urglaser/max_ang" type="double" value="70"/>
+  <param name="urglaser/cluster" type="int" value="1"/>
+  <param name="urglaser/skip" type="int" value="0"/>
+  <param name="etherdrive/pulse_per_rad0" type="double" value="9549"/>
+  <param name="tilting_laser/num_scans" type="int" value="400"/>
+  <param name="tilting_laser/min_ang" type="double" value="-65"/>
+  <param name="tilting_laser/max_ang" type="double" value="35"/>
+
+  <node pkg="hokuyourg_player" type="hokuyourg_player" respawn="false"/>
+  <node pkg="etherdrive_old" type="etherdrive" respawn="false"/>
+  <node pkg="tilting_laser" type="tilting_laser" respawn="false">
+    <remap from="mot" to="mot0"/>
+    <remap from="mot_cmd" to="mot0_cmd"/>
+    <remap from="image" to="intensity_image"/>
+  </node>
+  <node pkg="flea2" type="flea2_node" respawn="false">
+    <remap from="image" to="flea_image"/>
+  </node>
+</launch>
