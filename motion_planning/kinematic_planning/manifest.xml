@@ -6,7 +6,7 @@
 <depend package="std_msgs" />
 <depend package="std_srvs" />
 <depend package="xmlparam" />
-<depend package="mpk" />
+<depend package="MPK" />
 <export>
   <cpp cflags="-I${prefix}/msg/cpp"/>
 </export>

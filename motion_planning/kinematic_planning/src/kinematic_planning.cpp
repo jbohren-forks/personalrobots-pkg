@@ -48,6 +48,10 @@ a set of robot models.
 #include "std_msgs/KinematicPath.h"
 #include "std_srvs/KinematicMotionPlan.h"
 
+// HACK
+#include "rosplan.h"
+// END HACK
+
 using namespace std_msgs;
 using namespace std_srvs;
 
