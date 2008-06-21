@@ -322,7 +322,8 @@ void Pr2_Actarray::UpdateChild(UpdateParams &params)
              switch(this->myIface->data->actuators[count].controlMode)
              {
                 case PR2::TORQUE_CONTROL:
-                   sjoint->SetSliderForce(this->myIface->data->actuators[count].cmdEffectorForce);
+                   hjoint->SetTorque(this->myIface->data->actuators[count].cmdEffectorForce);
+                   //std::cout << count << " " << this->myIface->data->actuators[count].controlMode << std::endl;
                    break;
                 // case PR2::PD_CONTROL1 :
                 //    // No fancy controller, just pass the commanded torque/force in (we are not modeling the motors for now)
