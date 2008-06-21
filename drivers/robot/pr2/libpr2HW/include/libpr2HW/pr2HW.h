@@ -34,7 +34,6 @@
 #define PR2HW_API_HH
 
 #include <pr2Core/pr2Core.h>
-#include <pr2Core/pr2Misc.h>
 
 #include <newmat10/newmat.h>
 #include <libKinematics/kinematics.h>

@@ -39,6 +39,8 @@
 #include <stdint.h>
 #include <string>
 
+#include <libpr2HW/pr2HW.h>
+
 #ifdef KDL_KINEMATICS
 #include <libKDL/kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
 #endif
@@ -51,6 +53,7 @@ namespace PR2
    class PR2Robot
    {
      
+      public: PR2::PR2HW hw;
 
          /*! \fn 
            \brief Constructor
@@ -244,13 +247,6 @@ namespace PR2
 
 
          /*! \fn
-           \brief Enable the model (i.e. enable all actuators corresponding to a particular part of the robot)
-           \param id - modelID, see pr2Core.h for a list of model IDs
-         */
-      public: PR2_ERROR_CODE EnableModel(PR2_MODEL_ID id);
-
-
-         /*! \fn
            \brief Enable the head (i.e. enable all actuators corresponding to the head)
          */
       public: PR2_ERROR_CODE EnableHead();
@@ -290,14 +286,6 @@ namespace PR2
            \brief Enable the spine (i.e. enable all actuators corresponding to the spine)
          */
       public: PR2_ERROR_CODE EnableSpine();
-
-
-         /*! \fn
-           \brief Disable the model (i.e. disable all actuators corresponding to a particular part of the robot)
-           \param id - model ID, see pr2Core.h for a list of model IDs
-         */
-      public: PR2_ERROR_CODE DisableModel(PR2_MODEL_ID id);
-
 
          /*! \fn
            \brief Disable the head (i.e. enable all actuators corresponding to the head)
@@ -342,14 +330,6 @@ namespace PR2
 
 
          /*! \fn
-           \brief Check whether all actuators in a particular part of the robot have been enabled
-           \param id - model ID, see pr2Core.h for a list of model IDs
-           \param enabled - pointer to return value - 0 if any actuator in that part of the robot is disabled, 1 if all actuators in that part of the robot are enabled 
-         */
-      public: PR2_ERROR_CODE IsEnabledModel(PR2_MODEL_ID id, int *enabled);    
-
-
-         /*! \fn
            \brief Command the arm to go to a particular position in joint space
            \param id - model ID, see pr2Core.h for a list of model IDs
            \param jointPosition - array of desired positions of all the joints
@@ -369,25 +349,6 @@ namespace PR2
 #ifdef KDL_KINEMATICS
 			public: PR2_ERROR_CODE GetArmJointPositionCmd(PR2_MODEL_ID id, KDL::JntArray &q);
 #endif
-
-         /*! \fn
-           \brief Get the actual wrist pose 
-           \param id - model ID, see pr2Core.h for a list of model IDs
-           \param *x pointer to return value of x position of the wrist 
-           \param *y pointer to return value of y position of the wrist 
-           \param *z pointer to return value of z position of the wrist
-           \param *roll pointer to return value of roll of the wrist 
-           \param *pitch pointer to return value of pitch of the wrist 
-           \param *yaw pointer to return value of yaw of the wrist
-         */
-     public: PR2_ERROR_CODE GetWristPoseGroundTruth(PR2_MODEL_ID id, double *x, double *y, double *z, double *roll, double *pitch, double *yaw);
-
-
-         /*! \fn
-           \brief Get the actual wrist pose 
-           \param id - model ID, see pr2Core.h for a list of model IDs
-         */
-     public: NEWMAT::Matrix GetWristPoseGroundTruth(PR2_MODEL_ID id);
 
          /*! \fn
            \brief Get the actual joint values for an arm
@@ -603,42 +564,6 @@ namespace PR2
          */
       public: PR2_ERROR_CODE StopRobot();
 
-         /*! \fn
-           \brief - Get laser range data
-         */
-      public:    PR2_ERROR_CODE GetLaserRanges(PR2_SENSOR_ID id,
-          float* angle_min, float* angle_max, float* angle_increment,
-          float* range_max,uint32_t* ranges_size     ,uint32_t* ranges_alloc_size,
-                           uint32_t* intensities_size,uint32_t* intensities_alloc_size,
-                           float*    ranges          ,uint8_t*  intensities);
-
-         /*! \fn
-           \brief - Open gripper
-         */
-      public: PR2_ERROR_CODE OpenGripper(PR2_MODEL_ID id,double gap, double force);
-
-         /*! \fn
-           \brief - Close gripper
-         */
-      public: PR2_ERROR_CODE CloseGripper(PR2_MODEL_ID id,double gap, double force);
-
-         /*! \fn
-           \brief - Set gripper p,i,d gains
-         */
-      public: PR2_ERROR_CODE SetGripperGains(PR2_MODEL_ID id,double p,double i, double d);
-         /*! 
-           \brief - control mode for the arms, possible values are joint space control or cartesian space control
-         */
-
-         /*! \fn
-           \brief - Get camera data
-         */
-      public:    PR2_ERROR_CODE GetCameraImage(PR2_SENSOR_ID id ,
-                     uint32_t*    width                 ,uint32_t*    height                ,
-                     uint32_t*    depth                 ,
-                     std::string* compression           ,std::string* colorspace            ,
-                     uint32_t*    data_size             ,void*        data                  );
-
       protected: PR2_CONTROL_MODE armControlMode[2];
       protected: PR2_CONTROL_MODE baseControlMode;
       protected: PR2Arm myArm; 
@@ -646,17 +571,6 @@ namespace PR2
 #ifdef KDL_KINEMATICS
       public: PR2_kinematics pr2_kin; // for kinematics using KDL.
 #endif
-         /*! \fn
-           \brief - Oscillate the Hokuyo, return point cloud
-         */
-      //public: PR2_ERROR_CODE GetPointCloud();
-
-         /*! \fn
-           \brief - returns simulation time
-         */
-      public:    PR2_ERROR_CODE GetSimTime(double *sim_time);
-
-
 
     };
 }

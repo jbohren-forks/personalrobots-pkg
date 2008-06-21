@@ -9,7 +9,7 @@ namespace PR2
     /* ---------------        TODO       ---------------- */
     /* --------------- move to a library ---------------- */
 
-    point Rot2D(point p,double theta)
+    inline point Rot2D(point p,double theta)
     {
        point q;
        q.x = cos(theta)*p.x - sin(theta)*p.y;
@@ -17,46 +17,46 @@ namespace PR2
        return q;
     }
 
-    bool IsHead(PR2_MODEL_ID id)
+    inline bool IsHead(PR2_MODEL_ID id)
     {
        if(id == HEAD)
           return true;
        return false;
     }
-    bool IsGripperLeft(PR2_MODEL_ID id)
+    inline bool IsGripperLeft(PR2_MODEL_ID id)
     {
        if(id == PR2_LEFT_GRIPPER)
           return true;
        return false;
     }
-    bool IsGripperRight(PR2_MODEL_ID id)
+    inline bool IsGripperRight(PR2_MODEL_ID id)
     {
        if(id == PR2_RIGHT_GRIPPER)
           return true;
        return false;
     }
 
-    bool IsHead(PR2_JOINT_ID id)
+    inline bool IsHead(PR2_JOINT_ID id)
     {
        if(id >= JointStart[HEAD] && id <= JointEnd[HEAD])
           return true;
        return false;
     }
 
-    bool IsGripperLeft(PR2_JOINT_ID id)
+    inline bool IsGripperLeft(PR2_JOINT_ID id)
     {
        if (id >= JointStart[ARM_L_GRIPPER] && id <= JointEnd[ARM_L_GRIPPER])
           return true;
        return false;
     }
-    bool IsGripperRight(PR2_JOINT_ID id)
+    inline bool IsGripperRight(PR2_JOINT_ID id)
     {
        if (id >= JointStart[ARM_R_GRIPPER] && id <= JointEnd[ARM_R_GRIPPER])
           return true;
        return false;
     }
 
-    double GetMagnitude(double xl[], int num)
+    inline double GetMagnitude(double xl[], int num)
     {
        int ii;
        double mag=0;
@@ -65,7 +65,7 @@ namespace PR2
        return sqrt(mag);
     }
 
-    double GetMagnitude(double x, double y)
+    inline double GetMagnitude(double x, double y)
     {
        return sqrt(x*x+y*y);
     }
@@ -79,7 +79,7 @@ namespace PR2
      * It takes and returns native units.
      */
 
-    double normalize_angle_positive(double angle)
+    inline double normalize_angle_positive(double angle)
     {
       return fmod(fmod(angle, FROM_DEGREES(360))+FROM_DEGREES(360), FROM_DEGREES(360));
     }
@@ -91,7 +91,7 @@ namespace PR2
      *
      */
 
-    double normalize_angle(double angle)
+    inline double normalize_angle(double angle)
     {
       double a=normalize_angle_positive(angle);
       if (a>FROM_DEGREES(180))
@@ -110,7 +110,7 @@ namespace PR2
      * to "from" will always get you an equivelent angle to "to".
      */
 
-    double shortest_angular_distance(double from, double to)
+    inline double shortest_angular_distance(double from, double to)
     {
       double result;
       result=normalize_angle_positive(

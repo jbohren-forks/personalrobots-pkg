@@ -1,9 +1,7 @@
-#include <libKinematics/ik.h>
 #include <libpr2HW/pr2HW.h>
 #include <pr2Core/pr2Core.h>
 #include <math.h>
 
-using namespace kinematics;
 using namespace PR2;
 using namespace std;
 

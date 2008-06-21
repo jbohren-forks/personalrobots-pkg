@@ -1,4 +1,4 @@
-PKG = 
+PKG = pr2Core
 
 CFLAGS = -g -Wall -Iinclude `rospack export/cpp/cflags $(PKG)`
 

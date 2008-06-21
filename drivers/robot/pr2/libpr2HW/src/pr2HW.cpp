@@ -1,4 +1,6 @@
 
+#include <pr2Core/pr2Core.h>
+#include <pr2Core/pr2Misc.h>
 #include <libpr2HW/pr2HW.h>
 #include <math.h>
 #include <list>
@@ -6,8 +8,6 @@
 
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
-
-#include <pr2Core/pr2Core.h>
 
 using namespace gazebo;
 using namespace PR2;

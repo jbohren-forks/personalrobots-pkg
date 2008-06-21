@@ -3,20 +3,20 @@ CXX = g++
 
 CFLAGS = -g -Wall $(shell rospack export/cpp/cflags $(PKG))
 
+LFLAGS = $(shell rospack export/cpp/lflags $(PKG))
+
 LDFLAGS = $(shell rospack export/cpp/lflags gazebo) \
           $(shell rospack export/cpp/lflags pr2Core) \
           $(shell rospack export/cpp/lflags libKinematics) \
           $(shell rospack export/cpp/lflags newmat10) \
           $(shell rospack export/cpp/lflags controllers)
 
-LFLAGS = $(shell rospack export/cpp/lflags $(PKG))
-
 LIBP = lib/libpr2HW.a
 LIBS = lib/libpr2HW.so
 
 all: $(LIBP) bin/test_libpr2HW 
 
-pr2HW.o: src/pr2HW.cpp include/libpr2HW/pr2HW.h
+pr2HW.o: src/pr2HW.cpp
 	$(CXX) $(CFLAGS) -c -o $@ $<
 
 $(LIBP): pr2HW.o
@@ -25,8 +25,11 @@ $(LIBP): pr2HW.o
 $(LIBS): pr2HW.o
 	$(CXX) -shared -o $@ $^ $(LDFLAGS)
 
-bin/test_libpr2HW: src/test/test_pr2HW.cpp
-	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
+test_pr2HW.o: src/test/test_pr2HW.cpp
+	$(CXX) $(CFLAGS) -c -o $@ $<
+
+bin/test_libpr2HW: test_pr2HW.o
+	$(CXX) -o $@ $< $(LFLAGS)
 
 clean:
 	-rm -f test_libpr2HW $(LIBP) $(LIBS) bin/*

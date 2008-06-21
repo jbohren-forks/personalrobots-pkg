@@ -152,15 +152,15 @@ GazeboNode::cmd_rightarmconfigReceived()
 //	this->myPR2->SetArmJointPosition(PR2::PR2_LEFT_ARM, jointPosition, jointSpeed);
 	*/
 	//*
-	this->myPR2->SetJointServoCmd(PR2::ARM_R_PAN           , this->rightarm.turretAngle,       0);
-	this->myPR2->SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, this->rightarm.shoulderLiftAngle, 0);
-	this->myPR2->SetJointServoCmd(PR2::ARM_R_SHOULDER_ROLL , this->rightarm.upperarmRollAngle, 0);
-	this->myPR2->SetJointServoCmd(PR2::ARM_R_ELBOW_PITCH   , this->rightarm.elbowAngle,        0);
-	this->myPR2->SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    , this->rightarm.forearmRollAngle,  0);
-	this->myPR2->SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , this->rightarm.wristPitchAngle,   0);
-	this->myPR2->SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , this->rightarm.wristRollAngle,    0);
-	this->myPR2->SetJointServoCmd(PR2::ARM_R_GRIPPER       , this->rightarm.gripperGapCmd,     0);
-	this->myPR2->CloseGripper(PR2::PR2_RIGHT_GRIPPER, this->rightarm.gripperGapCmd, this->rightarm.gripperForceCmd);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_PAN           , this->rightarm.turretAngle,       0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, this->rightarm.shoulderLiftAngle, 0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_ROLL , this->rightarm.upperarmRollAngle, 0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_PITCH   , this->rightarm.elbowAngle,        0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    , this->rightarm.forearmRollAngle,  0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , this->rightarm.wristPitchAngle,   0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , this->rightarm.wristRollAngle,    0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER       , this->rightarm.gripperGapCmd,     0);
+	this->myPR2->hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, this->rightarm.gripperGapCmd, this->rightarm.gripperForceCmd);
 	//*/
   this->lock.unlock();
 }
@@ -184,15 +184,15 @@ GazeboNode::cmd_leftarmconfigReceived()
 	*/
 
 	//*
-	this->myPR2->SetJointServoCmd(PR2::ARM_L_PAN           , this->leftarm.turretAngle,       0);
-	this->myPR2->SetJointServoCmd(PR2::ARM_L_SHOULDER_PITCH, this->leftarm.shoulderLiftAngle, 0);
-	this->myPR2->SetJointServoCmd(PR2::ARM_L_SHOULDER_ROLL , this->leftarm.upperarmRollAngle, 0);
-	this->myPR2->SetJointServoCmd(PR2::ARM_L_ELBOW_PITCH   , this->leftarm.elbowAngle,        0);
-	this->myPR2->SetJointServoCmd(PR2::ARM_L_ELBOW_ROLL    , this->leftarm.forearmRollAngle,  0);
-	this->myPR2->SetJointServoCmd(PR2::ARM_L_WRIST_PITCH   , this->leftarm.wristPitchAngle,   0);
-	this->myPR2->SetJointServoCmd(PR2::ARM_L_WRIST_ROLL    , this->leftarm.wristRollAngle,    0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_PAN           , this->leftarm.turretAngle,       0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_PITCH, this->leftarm.shoulderLiftAngle, 0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_ROLL , this->leftarm.upperarmRollAngle, 0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_PITCH   , this->leftarm.elbowAngle,        0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_ROLL    , this->leftarm.forearmRollAngle,  0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_WRIST_PITCH   , this->leftarm.wristPitchAngle,   0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_WRIST_ROLL    , this->leftarm.wristRollAngle,    0);
 //	this->myPR2->SetJointServoCmd(PR2::ARM_L_GRIPPER       , this->leftarm.gripperGapCmd,     0);
-	this->myPR2->CloseGripper(PR2::PR2_LEFT_GRIPPER, this->leftarm.gripperGapCmd, this->leftarm.gripperForceCmd);
+	this->myPR2->hw.CloseGripper(PR2::PR2_LEFT_GRIPPER, this->leftarm.gripperGapCmd, this->leftarm.gripperForceCmd);
 	//*/
   this->lock.unlock();
 }
@@ -206,7 +206,7 @@ GazeboNode::cmdvelReceived()
 
   // smooth out the commands by time decay
   // with w1,w2=1, this means equal weighting for new command every second
-  this->myPR2->GetSimTime(&(this->simTime));
+  this->myPR2->hw.GetSimTime(&(this->simTime));
   dt = simTime - lastTime;
 
   // smooth if dt is larger than zero
@@ -289,18 +289,18 @@ GazeboNode::GazeboNode(int argc, char** argv, const char* fname) :
   this->myPR2->EnableGripperLeft();
   this->myPR2->EnableGripperRight();
 
-  this->myPR2->GetSimTime(&(this->lastTime));
-  this->myPR2->GetSimTime(&(this->simTime));
+  this->myPR2->hw.GetSimTime(&(this->lastTime));
+  this->myPR2->hw.GetSimTime(&(this->simTime));
 
   // set torques for driving the robot wheels
-  this->myPR2->SetJointTorque(PR2::CASTER_FL_DRIVE_L, 1000.0 );
-  this->myPR2->SetJointTorque(PR2::CASTER_FR_DRIVE_L, 1000.0 );
-  this->myPR2->SetJointTorque(PR2::CASTER_RL_DRIVE_L, 1000.0 );
-  this->myPR2->SetJointTorque(PR2::CASTER_RR_DRIVE_L, 1000.0 );
-  this->myPR2->SetJointTorque(PR2::CASTER_FL_DRIVE_R, 1000.0 );
-  this->myPR2->SetJointTorque(PR2::CASTER_FR_DRIVE_R, 1000.0 );
-  this->myPR2->SetJointTorque(PR2::CASTER_RL_DRIVE_R, 1000.0 );
-  this->myPR2->SetJointTorque(PR2::CASTER_RR_DRIVE_R, 1000.0 );
+  // this->myPR2->hw.SetJointTorque(PR2::CASTER_FL_DRIVE_L, 1000.0 );
+  // this->myPR2->hw.SetJointTorque(PR2::CASTER_FR_DRIVE_L, 1000.0 );
+  // this->myPR2->hw.SetJointTorque(PR2::CASTER_RL_DRIVE_L, 1000.0 );
+  // this->myPR2->hw.SetJointTorque(PR2::CASTER_RR_DRIVE_L, 1000.0 );
+  // this->myPR2->hw.SetJointTorque(PR2::CASTER_FL_DRIVE_R, 1000.0 );
+  // this->myPR2->hw.SetJointTorque(PR2::CASTER_FR_DRIVE_R, 1000.0 );
+  // this->myPR2->hw.SetJointTorque(PR2::CASTER_RL_DRIVE_R, 1000.0 );
+  // this->myPR2->hw.SetJointTorque(PR2::CASTER_RR_DRIVE_R, 1000.0 );
 }
 
 void GazeboNode::finalize(int)
@@ -341,7 +341,7 @@ GazeboNode::GaussianKernel(double mu,double sigma)
   double U = 2.0*((double)rand()/(double)RAND_MAX-0.5); // normalized uniform random variable
   double V = 2.0*((double)rand()/(double)RAND_MAX-0.5); // normalized uniform random variable
   double X = sqrt(-2.0 * ::log(U)) * cos( 2.0*M_PI * V);
-  double Y = sqrt(-2.0 * ::log(U)) * sin( 2.0*M_PI * V);
+  //double Y = sqrt(-2.0 * ::log(U)) * sin( 2.0*M_PI * V); // the other indep. normal variable
   // we'll just use X
   // scale to our mu and sigma
   X = sigma * X + mu;
@@ -368,7 +368,7 @@ GazeboNode::Update()
   /*  laser - pitching                                           */
   /*                                                             */
   /***************************************************************/
-  if (this->myPR2->GetLaserRanges(PR2::LASER_HEAD,
+  if (this->myPR2->hw.GetLaserRanges(PR2::LASER_HEAD,
                 &angle_min, &angle_max, &angle_increment,
                 &range_max, &ranges_size     , &ranges_alloc_size,
                 &intensities_size, &intensities_alloc_size,
@@ -378,7 +378,7 @@ GazeboNode::Update()
     {
       // get laser pitch angle
 	    double laser_yaw, laser_pitch, laser_pitch_rate;
-	    this->myPR2->GetJointServoActual(PR2::HEAD_LASER_PITCH , &laser_pitch,  &laser_pitch_rate);
+	    this->myPR2->hw.GetJointServoActual(PR2::HEAD_LASER_PITCH , &laser_pitch,  &laser_pitch_rate);
       // get laser yaw angle
 	    laser_yaw = angle_min + (double)i * angle_increment;
 	    //std::cout << " pit " << laser_pitch << "yaw " << laser_yaw
@@ -438,14 +438,14 @@ GazeboNode::Update()
   }
 
 
-  this->myPR2->GetSimTime(&(this->simTime));
+  this->myPR2->hw.GetSimTime(&(this->simTime));
 
   /***************************************************************/
   /*                                                             */
   /*  laser - base                                               */
   /*                                                             */
   /***************************************************************/
-  if (this->myPR2->GetLaserRanges(PR2::LASER_BASE,
+  if (this->myPR2->hw.GetLaserRanges(PR2::LASER_BASE,
                 &angle_min, &angle_max, &angle_increment,
                 &range_max, &ranges_size     , &ranges_alloc_size,
                 &intensities_size, &intensities_alloc_size,
@@ -535,8 +535,8 @@ GazeboNode::Update()
   static unsigned char  buf[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
 
   // get image
-  //this->myPR2->GetCameraImage(PR2::CAMERA_GLOBAL,
-  this->myPR2->GetCameraImage(PR2::CAMERA_HEAD_RIGHT,
+  //this->myPR2->hw.GetCameraImage(PR2::CAMERA_GLOBAL,
+  this->myPR2->hw.GetCameraImage(PR2::CAMERA_HEAD_RIGHT,
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
@@ -566,12 +566,12 @@ GazeboNode::Update()
 	simPitchOffset = -M_PI / 8.0;
 	simPitchAngle = simPitchOffset + simPitchAmp * sin(this->simTime * simPitchTimeScale);
 	simPitchRate  =  simPitchAmp * simPitchTimeScale * cos(this->simTime * simPitchTimeScale); // TODO: check rate correctness
-  this->myPR2->GetSimTime(&this->simTime);
+  this->myPR2->hw.GetSimTime(&this->simTime);
 	//std::cout << "sim time: " << this->simTime << std::endl;
 	//std::cout << "ang: " << simPitchAngle*180.0/M_PI << "rate: " << simPitchRate*180.0/M_PI << std::endl;
-	this->myPR2->SetJointTorque(PR2::HEAD_LASER_PITCH , 1000.0);
-  this->myPR2->SetJointGains(PR2::HEAD_LASER_PITCH, 10.0, 0.0, 0.0);
-	this->myPR2->SetJointServoCmd(PR2::HEAD_LASER_PITCH , simPitchAngle, simPitchRate);
+	this->myPR2->hw.SetJointTorque(PR2::HEAD_LASER_PITCH , 1000.0);
+  this->myPR2->hw.SetJointGains(PR2::HEAD_LASER_PITCH, 10.0, 0.0, 0.0);
+	this->myPR2->hw.SetJointServoCmd(PR2::HEAD_LASER_PITCH , simPitchAngle, simPitchRate);
 
   if (dAngle * simPitchRate < 0.0)
   {

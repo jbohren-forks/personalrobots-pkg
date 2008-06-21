@@ -6,11 +6,13 @@ CFLAGS = -g -Wall $(shell rospack export/cpp/cflags $(PKG))
 CDFLAGS = $(shell rospack export/cpp/cflags gazebo) \
           $(shell rospack export/cpp/cflags pr2Core) \
           $(shell rospack export/cpp/cflags libKinematics) \
+          $(shell rospack export/cpp/cflags libpr2HW) \
           $(shell rospack export/cpp/cflags newmat10)
 
 LDFLAGS = $(shell rospack export/cpp/lflags gazebo) \
           $(shell rospack export/cpp/lflags pr2Core) \
           $(shell rospack export/cpp/lflags libKinematics) \
+          $(shell rospack export/cpp/lflags libpr2HW) \
           $(shell rospack export/cpp/lflags newmat10)
 
 LFLAGS = $(shell rospack export/cpp/lflags $(PKG))

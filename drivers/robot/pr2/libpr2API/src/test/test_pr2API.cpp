@@ -18,7 +18,7 @@ int main()
 //   myPR2.SetBaseCartesianSpeedCmd(0.0,-0.5,1*M_PI/8);
 
    // test pitch the hokuyo
-   myPR2.SetJointServoCmd(PR2::HEAD_LASER_PITCH, -M_PI/8.0, 0.0);
+   myPR2.hw.SetJointServoCmd(PR2::HEAD_LASER_PITCH, -M_PI/8.0, 0.0);
 
    // test kinematics library through pr2API
    PR2Arm myArm;
@@ -29,9 +29,9 @@ int main()
 
    // Joint angles (radians) and speeds for testing 
    double angles[7] = {0,0,0,0,0,0,0};
-   double speeds[7] = {0,0,0,0,0,0,0};
+   //double speeds[7] = {0,0,0,0,0,0,0};
 
-   int iii;
+   //int iii;
 /*
    angles[0] = 0.5;
    myPR2.SetArmJointPosition(PR2::PR2_RIGHT_ARM,angles,speeds);    // send command to robot
@@ -336,8 +336,8 @@ int main()
    double pitch; 
    double yaw;
 
-   myPR2.GetWristPoseGroundTruth(PR2::PR2_RIGHT_ARM,&x,&y,&z,&roll,&pitch,&yaw);
-   g_wrist = myPR2.GetWristPoseGroundTruth(PR2::PR2_RIGHT_ARM);
+   myPR2.hw.GetWristPoseGroundTruth(PR2::PR2_RIGHT_ARM,&x,&y,&z,&roll,&pitch,&yaw);
+   g_wrist = myPR2.hw.GetWristPoseGroundTruth(PR2::PR2_RIGHT_ARM);
 
    cout << "Right wrist::" << endl;
    cout << "pos:: (" << x << "," << y << "," << z << ")" << endl;
