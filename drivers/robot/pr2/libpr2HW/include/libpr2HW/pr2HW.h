@@ -32,7 +32,13 @@
 
 #ifndef PR2HW_API_HH
 #define PR2HW_API_HH
+
 #include <pr2Core/pr2Core.h>
+#include <pr2Core/pr2Misc.h>
+
+#include <newmat10/newmat.h>
+#include <libKinematics/kinematics.h>
+
 #include <sys/types.h>
 #include <stdint.h>
 #include <string>
@@ -61,6 +67,30 @@ namespace PR2
            \brief Destructor
          */
       public: virtual ~PR2HW();
+
+         /*! \fn
+           \brief - returns simulation time
+         */
+      public:    PR2_ERROR_CODE GetSimTime(double *sim_time);
+
+         /*! \fn
+           \brief Enable the model (i.e. enable all actuators corresponding to a particular part of the robot)
+           \param id - modelID, see pr2Core.h for a list of model IDs
+         */
+      public: PR2_ERROR_CODE EnableModel(PR2_MODEL_ID id);
+
+         /*! \fn
+           \brief Disable the model (i.e. disable all actuators corresponding to a particular part of the robot)
+           \param id - model ID, see pr2Core.h for a list of model IDs
+         */
+      public: PR2_ERROR_CODE DisableModel(PR2_MODEL_ID id);
+
+         /*! \fn
+           \brief Check whether all actuators in a particular part of the robot have been enabled
+           \param id - model ID, see pr2Core.h for a list of model IDs
+           \param enabled - pointer to return value - 0 if any actuator in that part of the robot is disabled, 1 if all actuators in that part of the robot are enabled 
+         */
+      public: PR2_ERROR_CODE IsEnabledModel(PR2_MODEL_ID id, int *enabled);    
 
          /*! \fn
            \brief Add a joint
@@ -166,6 +196,14 @@ namespace PR2
            \param jointPosition - pointer to desired joint position (in radians or meters)
            \param jointSpeed - desired joint speed (in rad/s or m/s)
          */
+      public: PR2_ERROR_CODE GetJointServoActual(PR2_JOINT_ID id, double *jointPosition, double *jointSpeed);
+
+         /*! \fn
+           \brief Get the actual joint position and speed values 
+           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs and parameter IDs
+           \param jointPosition - pointer to desired joint position (in radians or meters)
+           \param jointSpeed - desired joint speed (in rad/s or m/s)
+         */
       public: PR2_ERROR_CODE GetJointPositionActual(PR2_JOINT_ID id, double *jointPosition, double *jointSpeed);
 
          /*! \fn
@@ -220,6 +258,24 @@ namespace PR2
                            float*    ranges          ,uint8_t*  intensities);
 
          /*! \fn
+           \brief - Open gripper
+         */
+      public: PR2_ERROR_CODE OpenGripper(PR2_MODEL_ID id,double gap, double force);
+
+         /*! \fn
+           \brief - Close gripper
+         */
+      public: PR2_ERROR_CODE CloseGripper(PR2_MODEL_ID id,double gap, double force);
+
+         /*! \fn
+           \brief - Set gripper p,i,d gains
+         */
+      public: PR2_ERROR_CODE SetGripperGains(PR2_MODEL_ID id,double p,double i, double d);
+         /*! 
+           \brief - control mode for the arms, possible values are joint space control or cartesian space control
+         */
+
+         /*! \fn
            \brief - Get camera data
          */
       public:    PR2_ERROR_CODE GetCameraImage(PR2_SENSOR_ID id ,
@@ -228,7 +284,30 @@ namespace PR2
                      std::string* compression           ,std::string* colorspace            ,
                      uint32_t*    data_size             ,void*        data                  );
 
+         /*! \fn
+           \brief Get the actual wrist pose 
+           \param id - model ID, see pr2Core.h for a list of model IDs
+           \param *x pointer to return value of x position of the wrist 
+           \param *y pointer to return value of y position of the wrist 
+           \param *z pointer to return value of z position of the wrist
+           \param *roll pointer to return value of roll of the wrist 
+           \param *pitch pointer to return value of pitch of the wrist 
+           \param *yaw pointer to return value of yaw of the wrist
+         */
+     public: PR2_ERROR_CODE GetWristPoseGroundTruth(PR2_MODEL_ID id, double *x, double *y, double *z, double *roll, double *pitch, double *yaw);
 
+
+         /*! \fn
+           \brief Get the actual wrist pose 
+           \param id - model ID, see pr2Core.h for a list of model IDs
+         */
+     public: NEWMAT::Matrix GetWristPoseGroundTruth(PR2_MODEL_ID id);
+
+
+         /*! \fn
+           \brief - Get ground truth base position
+         */
+     public: PR2_ERROR_CODE GetBasePositionGroundTruth(double* x, double* y, double *z, double *roll, double *pitch, double *yaw);
      public: PR2_ERROR_CODE UpdateHW();
 
     };
