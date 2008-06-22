@@ -72,6 +72,27 @@ public:
     
     bool plan(KinematicMotionPlan::request &req, KinematicMotionPlan::response &res)
     {
+	const int dim = req.start_state.vals_size;
+	
+	std::vector<double*> path;
+	double start[dim];
+	double goal[dim];
+	
+	for (int i = 0 ; i < dim ; ++i)
+	    start[i] = req.start_state.vals[i].data;
+	for (int i = 0 ; i < dim ; ++i)
+	    goal[i] = req.goal_state.vals[i].data;
+
+	plan_motion(start, goal, req.resolution.data, path);
+	
+	res.path.set_states_size(path.size());
+	for (unsigned int i = 0 ; i < path.size() ; ++i)
+	{
+	    res.path.states[i].set_vals_size(dim);
+	    for (int j = 0 ; j < dim ; ++j)
+		res.path.states[i].vals[j].data = path[i][j];
+	    delete[] path[i];
+	}
 	
 	return true;	
     }
@@ -87,6 +108,9 @@ int main(int argc, char **argv)
 {  
     ros::init(argc, argv);
 
+    // hack
+    run_setup("/u/isucan/repos/scratch/MPK/scenes/pr2.iv");
+    
     KinematicPlanning planner;
     planner.spin();
     planner.shutdown();
