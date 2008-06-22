@@ -102,11 +102,6 @@ namespace gazebo
       // save last time for dt calc for pid's
       private: double lastTime;
 
-      // using the actuator class
-      // this is where the PR2 API links to the Simulator
-      //   same set of calls used for the hardware
-      private: PR2::PR2HW actuatorAPI; //*actuatorAPI[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
-
    };
 
 /** \} */

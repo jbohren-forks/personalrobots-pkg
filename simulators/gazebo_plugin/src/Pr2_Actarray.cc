@@ -157,17 +157,6 @@ void Pr2_Actarray::LoadChild(XMLConfigNode *node)
       //this->myIface->data->actuators[i].cmdPosition      =  0.0;
       //this->myIface->data->actuators[i].cmdSpeed         =  0.0;
 
-      // TODO: link actuatorAPI object to iface
-      // add a actuator API
-      if (name == "front_left_caster_steer")
-      {
-        this->actuatorAPI.AddJoint(PR2::CASTER_FL_STEER);
-      }
-      if (name == "front_left_wheel_l_drive")
-      {
-        this->actuatorAPI.AddJoint(PR2::CASTER_FL_DRIVE_L);
-      }
-
       // init a new pid for this joint
       this->pids[i] = new Pid();
 
@@ -351,6 +340,7 @@ void Pr2_Actarray::UpdateChild(UpdateParams &params)
                    hjoint->SetParam( dParamFMax,this->myIface->data->actuators[count].saturationTorque );
                    break;
                 case PR2::SPEED_CONTROL:
+                      //std::cout << "wheel drive: " << cmdSpeed << " i " << count << std::endl;
                       hjoint->SetParam( dParamVel, cmdSpeed);
                       hjoint->SetParam( dParamFMax, this->myIface->data->actuators[count].saturationTorque );
                 break;
