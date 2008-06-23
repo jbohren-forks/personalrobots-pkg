@@ -80,42 +80,40 @@ class Classify : public ros::node
       advertise_service("lasiklite_classify_service", &Classify::doClassify);
     }
 
-    
-    // in client code
-    /*
-    #include "lasiklite/classify_service_defaults.h"
-    lasiklite::classify_srv::request  &req;
-    lasiklite::classify_srv::response &res;
-    lasiklite::initialize_classify_server_defaults(req);
-    // override what you want 
-    req.abc = 456;
-    service::call(req, res);
-    /////////////////////////////////
-    */
-
     bool doClassify(lasiklite::classify_srv::request  &req,
         lasiklite::classify_srv::response &res)
     {
+      printf("colorspace = [%s]\n", req.img.colorspace.c_str());
       CvBridge<std_msgs::Image> cv_bridge(&req.img);
       string lasiklite_pkg_path = ros::get_package_path("lasiklite");
 
+
       cv_bridge.to_cv(&image);
+      
+      // DEBUGGING CODE
+      /*
+			cvNamedWindow("Result", 1);
+			cvShowImage("Result", image);
+			cvWaitKey(-1);
+			cvDestroyAllWindows();
+      */
+			// END OF DEBUGGING CODE
 
       // Set parameter values.
       string objectName = req.objectName;
-      string classifierType;
+      string classifierType = req.classifierType;
       for (int i=0; i<req.classifierType.length(); i++) {
         classifierType[i] = tolower(req.classifierType[i]);
       }
       string rectFile;
       if (req.scanRectFilename.length() > 0) 
           rectFile = lasiklite_pkg_path + "/" + req.scanRectFilename;
-      string dictionaryFilename = lasiklite_pkg_path + "/" + req.dictionaryFilename;
-      string classifierFilename = lasiklite_pkg_path + "/" + req.modelFilename;
-      bool bBaseScaleOnly = req.baseScaleOnly;	//bool bBaseScaleOnly = false;
-      bool bDisplayImage = req.displayImage;  //bool bDisplayImage = false;
-      int width = req.imgResizeDimensions[0];  //int width = -1;
-      int height = req.imgResizeDimensions[1];  //int height = -1;
+      string dictionaryFilename = lasiklite_pkg_path + "/models/" + req.dictionaryFilename;
+      string classifierFilename = lasiklite_pkg_path + "/models/" + req.modelFilename;
+      bool bBaseScaleOnly = req.baseScaleOnly;
+      bool bDisplayImage = req.displayImage; 
+      int width = req.imgResizeDimensions[0]; 
+      int height = req.imgResizeDimensions[1]; 
       double threshold = req.classifierThreshold;
       CvRect region = cvRect(0, 0, 0, 0);
       region.x = req.subregion[0];
@@ -134,6 +132,7 @@ class Classify : public ros::node
         total_rects_initial = rects.size();
       }
 
+			cout << "classifierType: " << classifierType << endl;
       // initialize object detector
       svlObjectDetector *classifier = NULL;
       if (classifierType == string("gabor")) {
@@ -206,7 +205,11 @@ class Classify : public ros::node
         }
       }
 
+      cout << "Number of objects: " << objects.size() << endl; 
+
       res.classifierResult.set_objects_size(objects.size());
+      cout << "Size allocated to res.classifierResult:" << res.classifierResult.get_objects_size() << endl;
+
       for (int i=0; i<objects.size(); i++) {
         lasiklite::Object2D singleObject;
         singleObject.x = objects[i].x;
@@ -216,7 +219,8 @@ class Classify : public ros::node
         singleObject.pr = objects[i].pr;
         res.classifierResult.objects[i] = singleObject;
       }
-
+      cout << "Wrote objects to msg." << endl;
+     
       if (bDisplayImage) {
         IplImage *colourImage = cvCreateImage(cvSize(image->width, image->height),
             IPL_DEPTH_8U, 3);
