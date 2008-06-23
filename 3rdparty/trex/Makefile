@@ -7,11 +7,15 @@
 # 3. make trex
 # 4. make test
 
-all: trex
+all: trex PlanWorks
 
-# GET EUROPA
+# GET PLASMA
 PLASMA:
 	@if [ ! -d PLASMA ]; then svn co -r 4919 https://babelfish.arc.nasa.gov/svn/europa/PLASMA/trunk PLASMA; fi
+
+# GET PlanWorks
+PlanWorks:
+	@if [ ! -d PlanWorks ]; then svn co -r 4919 https://babelfish.arc.nasa.gov/svn/europa/PlanWorks/trunk PlanWorks; fi
 
 # Get TREX
 trex: PLASMA
@@ -23,5 +27,5 @@ test: trex
 	cd TREX && jam agent-inputs && jam run-agent-module-tests
 
 clean:
-	rm -rf PLASMA TREX trex EUROPA logs
+	rm -rf PLASMA TREX trex EUROPA logs PlanWorks
 
