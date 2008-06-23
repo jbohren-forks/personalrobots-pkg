@@ -2,8 +2,8 @@ SubDir exec_trex ;
 
 if ! $(exec_trex_READY) {
 
-	# All this ROS and PR2 related stuff needs to be cleaned up. As it stands, it will not have any make integration
-	# for when ROS or Pr2 change. Also, the declarations at this level force linkage of more than should otherwise
+	# All this ROS and PR related stuff needs to be cleaned up. As it stands, it will not have any make integration
+	# for when ROS or Pr change. Also, the declarations at this level force linkage of more than should otherwise
 	# be necessary
 
 	# Define Libraries required for ROS:  Can obtain from rospack export/cpp/lflags roscp
@@ -11,12 +11,12 @@ if ! $(exec_trex_READY) {
 			[ FDirName $(ROS_ROOT) 3rdparty xmlrpc++ libXmlRpc.a ]
 			[ FDirName $(ROS_ROOT) util rosthread lib librosthread.a ]
 			[ FDirName $(ROS_ROOT) util rostime lib librostime.a ]
-			[ FDirName $(PR2_ROOT) 3rdparty player player lib libwavefront_standalone.so ]	       
-			[ FDirName $(PR2_ROOT) util transforms rosTF lib
+			[ FDirName $(PR_ROOT) 3rdparty player player lib libwavefront_standalone.so ]	       
+			[ FDirName $(PR_ROOT) util transforms rosTF lib
    			  librosTF.a ]
-			[ FDirName $(PR2_ROOT) util transforms libTF lib libTF.a
+			[ FDirName $(PR_ROOT) util transforms libTF lib libTF.a
    			]
-			[ FDirName $(PR2_ROOT) 3rdparty newmat10 newmat newmat10
+			[ FDirName $(PR_ROOT) 3rdparty newmat10 newmat newmat10
    			  libnewmat.a ] ;
 
 	# Include directories for ROS. Can obtain from rospack export/cpp/cflags roscpp
@@ -28,10 +28,10 @@ if ! $(exec_trex_READY) {
    	SubDirHdrs $(ROS_ROOT) std_msgs msg cpp ;
 	SubDirHdrs $(ROS_ROOT) std_srvs srv cpp ;		
 	
-	SubDirHdrs $(PR2_ROOT) 3rdparty player player include player-2.2 ;
-	SubDirHdrs $(PR2_ROOT) util transforms rosTF include ;
-	SubDirHdrs $(PR2_ROOT) util transforms libTF include ;
-	SubDirHdrs $(PR2_ROOT) 3rdparty newmat10 newmat ;
+	SubDirHdrs $(PR_ROOT) 3rdparty player player include player-2.2 ;
+	SubDirHdrs $(PR_ROOT) util transforms rosTF include ;
+	SubDirHdrs $(PR_ROOT) util transforms libTF include ;
+	SubDirHdrs $(PR_ROOT) 3rdparty newmat10 newmat ;
 
 	# GNU Library include directories
 	SubDirHdrs / usr include gtk-2.0 ;
