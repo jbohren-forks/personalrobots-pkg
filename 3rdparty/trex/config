@@ -1,4 +1,5 @@
 export PLASMA_HOME=$PR_ROOT/3rdparty/trex/PLASMA
 export PLASMA=$PLASMA_HOME/src/PLASMA
-export TREX=$PR_ROOT/3rdpart/trex/TREX
+export TREX=$PR_ROOT/3rdparty/trex/TREX
+export TREX_LOG_DIR=$PR_ROOT/3rdparty/trex/logs
 export LD_LIBRARY_PATH=$PLASMA_HOME/build/lib:$LD_LIBRARY_PATH
