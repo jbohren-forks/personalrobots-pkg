@@ -1,0 +1,34 @@
+move_sequence.o: move_sequence.cpp ../../include/katana/katana.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/kniBase.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI/cdlCOM.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/common/dllexport.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI/cdlBase.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI/cdlCOMExceptions.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/common/exception.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/common/dllexport.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI/cplSerial.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI/cplBase.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI/kmlBase.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI/kmlCommon.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI/kmlMotBase.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI/kmlSctBase.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI/cdlCOM.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI/kmlExt.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI/kmlBase.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI/cdlSocket.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/common/Timer.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI_InvKin/ikBase.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/common/exception.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/common/dllexport.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI/kmlExt.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI/kmlCommon.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI_InvKin/KatanaKinematics.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI_LM/lmBase.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI_InvKin/ikBase.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/common/exception.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI/kmlFactories.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/common/MathHelperFunctions.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI_LM/lmBase.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/common/Timer.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI_InvKin/KatanaKinematics6M180.h \
+  /afs/cs.stanford.edu/u/ellenrk/scratch/stair/ros/ros-pkg/3rdparty/drivers/kni-3.9.2/KNI_3.9.2/include/KNI_InvKin/KatanaKinematicsDecisionAlgorithms.h

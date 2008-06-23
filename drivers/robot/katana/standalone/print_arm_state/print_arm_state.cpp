@@ -29,12 +29,41 @@
 
 #include <cstdio>
 #include "katana/katana.h"
+using std::vector;
 
 int main(int argc, char **argv)
 {
   Katana *k = new Katana();
-  k->goto_upright();
+  vector<double> joints = k->get_joint_positions();
+  vector<int> encoders = k->get_joint_encoders();
+  vector<double> pose = k->get_pose();
+ 
+	printf("encoders: ");
+  for (size_t i = 0; i < encoders.size(); i++) {
+    printf("%d  ", encoders[i]);
+	}
+	printf("\n");
+  
+  printf("joints (deg): ");
+  for (size_t i = 0; i < joints.size(); i++) {
+    printf("%f  ", joints[i]);
+	}
+	printf("\n");
+  
+  printf("joints (rad): ");
+  for (size_t i = 0; i < joints.size(); i++) {
+    printf("%f  ", joints[i]*3.14159/180.);
+	}
+	printf("\n");
+
+	printf("pose: ");
+  for (size_t i = 0; i < pose.size(); i++) {
+    printf("%f ", pose[i]);
+	}
+	printf("\n"); 
+  
   delete k;
-  return 0;
+ 
+ return 0;
 }
 

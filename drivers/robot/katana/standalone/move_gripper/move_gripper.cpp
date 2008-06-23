@@ -29,11 +29,28 @@
 
 #include <cstdio>
 #include "katana/katana.h"
+#include "ros/common.h"
 
 int main(int argc, char **argv)
 {
+  if (argc != 2 || (strcmp(argv[1], "open") && strcmp(argv[1], "close")))
+  {
+    printf("usage: move_gripper gripperCommand\n");
+    printf("  where gripperCommand is either 'open' or 'close'\n");
+    return 0;
+  }
   Katana *k = new Katana();
-  k->goto_upright();
+  if (!strcmp(argv[1], "open"))
+  {
+    printf("opening gripper\n");
+    k->gripper_fullstop(true);
+  }
+  else
+  {
+    printf("closing gripper\n");
+    k->gripper_fullstop(false);
+  }
+  printf("done.\n");
   delete k;
   return 0;
 }
