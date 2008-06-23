@@ -1,0 +1,97 @@
+0.001643 log opened
+0.001903 entering XML-RPC server thread
+0.001997 starting XML-RPC server on port 35173
+0.002021 entering tcpros server thread
+0.002052 TCPROS server running on port 54495
+0.004073 preferred IP is guessed to be 172.24.68.71
+0.004135 xmlrpc URI = http://172.24.68.71:35173/
+0.004171 starting up a service server
+0.004264 entering service server thead func
+0.006112 service server running on port 56445
+0.006232 registering service with uri [172.24.68.71:56445]
+0.007691 starting up a service server
+0.007828 entering service server thead func
+0.009833 service server running on port 54180
+0.009911 registering service with uri [172.24.68.71:54180]
+0.010826 starting up a service server
+0.010944 entering service server thead func
+0.012835 service server running on port 34623
+0.012913 registering service with uri [172.24.68.71:34623]
+0.013835 starting up a service server
+0.013959 entering service server thead func
+0.036264 service server running on port 42012
+0.036363 registering service with uri [172.24.68.71:42012]
+0.037292 starting up a service server
+0.037410 entering service server thead func
+0.039917 service server running on port 60399
+0.040002 registering service with uri [172.24.68.71:60399]
+0.040989 starting up a service server
+0.041112 entering service server thead func
+0.042831 service server running on port 53487
+0.042909 registering service with uri [172.24.68.71:53487]
+0.043852 starting up a service server
+0.043972 entering service server thead func
+0.045829 service server running on port 45292
+0.045901 registering service with uri [172.24.68.71:45292]
+0.047800 starting up a service server
+0.047950 entering service server thead func
+0.049930 service server running on port 40069
+0.050015 registering service with uri [172.24.68.71:40069]
+3.664016 service received a conn from 0.0.0.0
+3.664075 ok, md5sums match
+3.664087 expecting a 4-byte request
+18.965795 happy transaction
+18.967136 service received a conn from 0.0.0.0
+18.967188 ok, md5sums match
+18.967200 expecting a 4-byte request
+49.436149 happy transaction
+52.740307 service received a conn from 0.0.0.0
+52.740360 ok, md5sums match
+52.740373 expecting a 4-byte request
+72.426447 happy transaction
+75.351401 unregistering our advertised services
+75.353388 shutting down service /katana_calibrate_service
+75.353505 joining service server thread
+75.353544 joining handler threads
+75.353599 service server thread join OK
+75.355214 shutting down service /katana_move_upright_service
+75.355308 joining service server thread
+75.355347 joining handler threads
+75.355385 service server thread join OK
+75.356854 shutting down service /katana_back_to_upright_service
+75.356953 joining service server thread
+75.356987 joining handler threads
+75.357030 service server thread join OK
+75.358471 shutting down service /katana_move_for_camera_service
+75.358558 joining service server thread
+75.358597 joining handler threads
+75.358669 service server thread join OK
+75.360086 shutting down service /katana_get_joint_angles_service
+75.360175 joining service server thread
+75.360213 joining handler threads
+75.360268 service server thread join OK
+75.363663 shutting down service /katana_move_joints_single_service
+75.363773 joining service server thread
+75.363814 joining handler threads
+75.363875 service server thread join OK
+75.365312 shutting down service /katana_move_joints_sequence_service
+75.365401 joining service server thread
+75.365440 joining handler threads
+75.365496 service server thread join OK
+75.367143 shutting down service /katana_gripper_cmd_service
+75.367229 joining service server thread
+75.367268 joining handler threads
+75.367324 service server thread join OK
+75.367354 unregistering our publishers
+75.367363 unregistering our subscribers
+75.367380 entering ros::node destructor
+75.367387 shutting down xmlrpc server
+75.367576 leaving xmlrpc server thread
+75.367650 joining xml-rpc server thread
+75.367671 xmlrpc server shut down gracefully
+75.367722 joining tcpros server thread
+75.367752 joining handler threads
+75.367761 done joining handler threads
+75.367768 leaving tcpros server thread
+75.367803 tcpros server shut down gracefully
+75.367826 log closed
