@@ -4,8 +4,6 @@
 Navigator navigator = new Navigator(Internal);
 WaypointController wpc = new WaypointController(External);
 VehicleState vs = new VehicleState(Ignore);
-Actions actions = new Actions();
-
 
 close();
 

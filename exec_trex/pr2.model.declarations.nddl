@@ -41,6 +41,8 @@ typedef float [0.0 +inff] PFLOAT;
 float POSITION_ERROR = 1.0;
 float NOMINAL_SPEED = 1.0;
 
+enum CmdResult {SUCCESS, FAILURE};
+
 /**
  * VehicleState will capture position and orientation.
  */
@@ -90,15 +92,6 @@ class WaypointController extends Behavior {
 	}
 }
 
-class WaypointActions extends AgentActions {
-
-      predicate Go {
-      		PFLOAT x;
-		PFLOAT y;
-      }     
-
-}
-
 class VelController extends AgentTimeline {
 
       predicate Inactive{}
@@ -106,6 +99,7 @@ class VelController extends AgentTimeline {
       predicate Active{
          PFLOAT goal_x;
 	 PFLOAT goal_y;
+	 CmdResult result;
       }
 
       VelController(Mode _mode){
@@ -149,20 +143,4 @@ class Navigator extends AgentTimeline {
 	Navigator(Mode _mode){
 		super(_mode, "Inactive");
 	}
-}
-
-
-/**
- * Action class. Drives decomposition into behaviors and mapped to telemetry.
- */
-class Actions extends AgentActions {
-	/**
-	 * Go to a target location
-         */
-	predicate Go{
-		PFLOAT x;
-		PFLOAT y;
-	}
-
-	predicate StartMe{}
 }

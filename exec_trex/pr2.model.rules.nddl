@@ -68,64 +68,87 @@ WaypointController::Inactive {
     eq(y, pos.y);
   }
 }
+
 WaypointController::Active {
   if(object.mode == Internal) {
-    ends(WaypointActions.Go a);
-    eq(a.x, x);
-    eq(a.y, y);
+    starts(VelController.Active vc);
+    eq(vc.goal_x, x);
+    eq(vc.goal_y, y);
   }
 }
 
 
-WaypointActions::Go {
-	starts(VelController.Active velcon);
-	eq(velcon.goal_x, x);
-	eq(velcon.goal_y, y);
+/**
+ * Implementation for Velocity Controller. Produces Velocity Commands to 
+ * bridge gap between current and desried pose. Desired pose is obtained from the WaypointController
+ */
+VelController::Active {
+  // Controller will operate at 1 Hz (cycles per tick)
+  eq(duration, 1);
+  
+  // Bind to prior value
+  met_by(VehicleState.Holds currentPos);
+
+  // Bind to the goal source. Could structre this to be more efficient
+  // by passing arguments and not requiring reference back to master
+  contained_by(WaypointController.Active wp);
+  eq(goal_x, wp.x);
+  eq(goal_y, wp.y);
+
+  float distanceToGo;
+  calcDistance(distanceToGo, currentPos.x, currentPos.y, goal_x, goal_y);
+  bool done;
+  testLEQ(done, distanceToGo, POSITION_ERROR);
+  bool plan_ok;
+  if(done == false){
+    float cmd_x, cmd_th;
+    calcCommand(plan_ok, cmd_x, cmd_th, currentPos.x, currentPos.y,
+		currentPos.th, goal_x, goal_y, 0.0);
+
+    if(plan_ok == true){
+      if( result == SUCCESS){
+	starts(VelCommander.Holds vc);
+	eq(vc.cmd_x, cmd_x);
+	eq(vc.cmd_th, cmd_th);
+
+	// Pass arguments to successor
+	meets(VelController.Active s);
+	eq(goal_x,s.goal_x);
+	eq(goal_y,s.goal_y);
+      }
+    }
+  }
+
+
+  /**
+   * Any of a number of conditions lead to a transition to the inactive state. We should be able to simple state:
+   * if(result == FAILURE || done == true || plan_ok == false){
+   *  meets(VelController.Inactive);
+   * }
+   */
+
+  // First case
+  if(result == FAILURE){
+    meets(VelController.Inactive);
+  }
+
+  // Force termination
+  if(done == true) {
+    meets(VelController.Inactive);
+  }
+
+  if(plan_ok == false){
+    meets(VelController.Inactive);
+  }
 }
 
 VelController::Inactive {
-	met_by(Active);
-	meets(Active);		
-	starts(VelCommander.Holds velcom);	
-	eq(velcom.cmd_x, 0.0);
-	eq(velcom.cmd_th, 0.0);		
+  met_by(Active);
+  meets(Active);
+  equals(VelCommander.Holds vc);
+  eq(vc.cmd_x, 0.0);
+  eq(vc.cmd_th, 0.0);
+
+  // Drives transition of waypoint controller state
+  equals(WaypointController.Inactive);
 }
-
-
-VelController::Active {     	
-	eq(duration, 1);
-	if(start){
-		starts(VehicleState.Holds initialPos);
-		float distanceToGo;
-		calcDistance(distanceToGo, initialPos.x, initialPos.y, goal_x, goal_y);
-		bool done;
-		testLEQ(done, distanceToGo, POSITION_ERROR);
-		bool plan_ok;
-		if(done == false){
-			meets(VelCommander.Holds vcom);
-			float cmd_x;
-			float cmd_th;
-			calcCommand(plan_ok, cmd_x, cmd_th, initialPos.x, initialPos.y,
-		            initialPos.th, goal_x, goal_y, 0.0);
-	        	    eq(vcom.cmd_x, cmd_x);
-	        	    eq(vcom.cmd_th, cmd_th);
-			    meets(VelController.Active s);
-			    eq(goal_x,s.goal_x);
-			    eq(goal_y,s.goal_y);
-		}
-
-		// Force termination
-		if(done == true) {
-			meets(VelController.Inactive);
-			ends(WaypointController.Active wp);
-			eq(wp.x, goal_x);
-			eq(wp.y, goal_y);
-		}
-		if(plan_ok == false){
-			meets(VelController.Inactive s);
-			ends(WaypointController.Active);
-		}
-	}
-}
-
-

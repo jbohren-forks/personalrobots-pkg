@@ -623,7 +623,7 @@ int main(int argc, char **argv)
   DebugMessage::setStream(dbgFile);
 
   // Allocate a real time clock with 1 second per tick
-  agentClock = new RealTimeClock(.1);
+  agentClock = new RealTimeClock(0.10);
 
   // Allocate the agent
   debugMsg("Executive", "Initializing the agent");
