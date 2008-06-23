@@ -152,11 +152,11 @@ PR2_ERROR_CODE PR2Robot::DisableSpine()
 
 PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Frame &f, const KDL::JntArray &q_init, KDL::JntArray &q_out)
 {
-//	KDL::JntArray q_init = KDL::JntArray(this->pr2_kin.nJnts);
-//	q_init(0) = 0.1, q_init(1) = 0.0, q_init(2) = 0.0, q_init(3) = 0.0;
-//	q_init(4) = 0.0, q_init(5) = 0.0, q_init(6) = 0.0;
+	//	KDL::JntArray q_init = KDL::JntArray(this->pr2_kin.nJnts);
+	//	q_init(0) = 0.1, q_init(1) = 0.0, q_init(2) = 0.0, q_init(3) = 0.0;
+	//	q_init(4) = 0.0, q_init(5) = 0.0, q_init(6) = 0.0;
 
-//	KDL::JntArray q_out = KDL::JntArray(this->pr2_kin.nJnts);
+	//	KDL::JntArray q_out = KDL::JntArray(this->pr2_kin.nJnts);
 	if (this->pr2_kin.IK(q_init, f, q_out) == true)
 		cout<<"IK result:"<<q_out<<endl;
 	else
@@ -166,13 +166,15 @@ PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Fra
 	KDL::Frame f_ik;
 	if (this->pr2_kin.FK(q_out,f_ik))
 	{
-//		cout<<"End effector after IK:"<<f_ik<<endl;
+		//		cout<<"End effector after IK:"<<f_ik<<endl;
 	}
 	else
 		cout<<"Could not compute Fwd Kin. (After IK)"<<endl;
 
 	for(int ii = 0; ii < 7; ii++)
 		hw.SetJointServoCmd((PR2::PR2_JOINT_ID) (JointStart[id]+ii),q_out(ii),0);
+
+	return PR2_ALL_OK;
 }
 #endif
 
@@ -377,12 +379,13 @@ PR2_ERROR_CODE PR2Robot::GetArmJointPositionCmd(PR2_MODEL_ID id, KDL::JntArray &
 	if (id != PR2_RIGHT_ARM && id != PR2_LEFT_ARM)
 		return PR2_ERROR;
 
-  KDL::JntArray junk = q; // FIXME: implement PR2HW for position only.
-
-   for(int ii = JointStart[id]; ii <= JointEnd[id]; ii++)
-      hw.GetJointServoCmd((PR2_JOINT_ID)ii,&(q[ii-JointStart[id]]),&junk);
-
-   return PR2_ALL_OK;
+	double pos,vel;
+	for(int ii = JointStart[id]; ii <= JointEnd[id]; ii++)
+	{
+		hw.GetJointServoCmd((PR2_JOINT_ID)ii,&pos,&vel);
+		q(ii-JointStart[id]) = pos;
+	}
+	return PR2_ALL_OK;
 };
 #endif
 

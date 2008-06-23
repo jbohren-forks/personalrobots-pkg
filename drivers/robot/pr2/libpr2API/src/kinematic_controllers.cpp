@@ -9,6 +9,9 @@
 #include "kinematic_controllers.h"
 #include <kdl/rotational_interpolation_sa.hpp>
 
+#include <sys/time.h>
+#include <unistd.h>
+
 using namespace KDL;
 
 kinematic_controllers::kinematic_controllers()
@@ -24,6 +27,9 @@ void kinematic_controllers::init()
 void kinematic_controllers::go(KDL::Vector p, KDL::Rotation r, double step_size)
 {
 	JntArray q = JntArray(this->myPR2->pr2_kin.nJnts);
+	struct timeval t0, t1;
+	gettimeofday(&t0,NULL);
+
 	this->myPR2->GetArmJointPositionCmd(PR2::PR2_RIGHT_ARM, q);
 	cout<<"current joint angles:"<<q<<endl;
 
@@ -53,6 +59,9 @@ void kinematic_controllers::go(KDL::Vector p, KDL::Rotation r, double step_size)
 	f.p = p;
 	f.M = r;
 	this->myPR2->SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f,q,q);
+	gettimeofday(&t1,NULL);
+	double time_taken = (t1.tv_sec*1000000+t1.tv_usec - (t0.tv_sec*1000000+t0.tv_usec))/1000.;
+	printf("Time taken to go: %f ms\n", time_taken);
 
 }
 

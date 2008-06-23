@@ -27,8 +27,8 @@ int main()
 	double pitch; 
 	double yaw;
 
-	myPR2.GetWristPoseGroundTruth(PR2::PR2_RIGHT_ARM,&x,&y,&z,&roll,&pitch,&yaw);
-	g_wrist = myPR2.GetWristPoseGroundTruth(PR2::PR2_RIGHT_ARM);
+	myPR2.hw.GetWristPoseGroundTruth(PR2::PR2_RIGHT_ARM,&x,&y,&z,&roll,&pitch,&yaw);
+	g_wrist = myPR2.hw.GetWristPoseGroundTruth(PR2::PR2_RIGHT_ARM);
 
 	cout << "Right wrist::" << endl;
 	cout << "pos:: (" << x << "," << y << "," << z << ")" << endl;

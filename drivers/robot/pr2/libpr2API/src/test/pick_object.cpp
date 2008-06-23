@@ -101,12 +101,12 @@ void init_robot()
 
 void close_gripper()
 {
-	myPR2.CloseGripper(PR2::PR2_RIGHT_GRIPPER, 0.05, 500);
+	myPR2.hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, 0.05, 500);
 }
 
 void open_gripper()
 {
-	myPR2.CloseGripper(PR2::PR2_RIGHT_GRIPPER, 0.15, 500);
+	myPR2.hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, 0.15, 500);
 }
 
 void go_down(const JntArray &guess)

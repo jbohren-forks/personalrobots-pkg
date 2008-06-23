@@ -15,7 +15,7 @@ LFLAGS = $(shell rospack export/cpp/lflags $(PKG)) \
 
 LIBP = lib/libpr2API.a
 
-all: $(LIBP) bin/test_libpr2API bin/pr2_kin_kdl bin/pick_object bin/test_kin_controllers
+all: $(LIBP) bin/test_libpr2API bin/pr2_kin_kdl bin/pick_object bin/test_kin_controllers bin/torque_test
 
 obj/pr2API.o: src/pr2API.cpp include/libpr2API/pr2API.h
 	$(CXX) $(CFLAGS) -c -o $@ $<
@@ -30,6 +30,9 @@ $(LIBP): obj/pr2API.o
 	ar -rv $@ $^
 
 bin/test_libpr2API: src/test/test_pr2API.cpp
+	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
+
+bin/torque_test: src/test/torque_test.cpp $(LIBP)
 	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
 
 bin/pick_object: src/test/pick_object.cpp $(LIBP)

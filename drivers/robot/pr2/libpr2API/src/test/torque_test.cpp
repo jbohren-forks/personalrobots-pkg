@@ -1,8 +1,10 @@
 
-#include "kinematic_controllers.h"
+#include <libpr2API/pr2API.h>
+#include <pr2Core/pr2Core.h>
 #include <math.h>
 
-using namespace KDL;
+#include <time.h>
+
 using namespace PR2;
 using namespace std;
 
@@ -15,14 +17,7 @@ using namespace std;
 
 int kfd = 0;
 struct termios cooked, raw;
-
-kinematic_controllers myKinCon;
-
-void top();
-void object_pose();
-void go_down();
-void close_gripper();
-void open_gripper();
+PR2::PR2Robot myPR2;
 
 
 void keyboardLoop()
@@ -54,28 +49,15 @@ void keyboardLoop()
 		{
 			case '1':
 				printf("You pressed 1\n");
-				open_gripper();
-				top();
 				break;
 			case '2':
 				printf("You pressed 2\n");
-				object_pose();
 				break;
 			case '3':
 				printf("You pressed 3\n");
-				go_down();
 				break;
 			case '4':
 				printf("You pressed 4\n");
-				close_gripper();
-				break;
-			case '5':
-				printf("You pressed 4\n");
-				object_pose();
-				break;
-			case '6':
-				printf("You pressed 4\n");
-				top();
 				break;
 			default:
 				printf("You pressed Something Else\n");
@@ -84,42 +66,25 @@ void keyboardLoop()
 	}
 }
 
-void top()
-{
-	Rotation r = Rotation::RotZ(DTOR(0));
-	Vector v(0.3,-0.2,0.56);
-	myKinCon.go(v,r,0.05);
-}
-
-void object_pose()
-{
-	Rotation r = Rotation::RotZ(DTOR(90));
-	Vector v(0.578,0.01,0.06);
-	myKinCon.go(v,r,0.05);
-}
-
-void go_down()
-{
-	Rotation r = Rotation::RotZ(DTOR(90))*Rotation::RotY(DTOR(30));
-	Vector v(0.578,0.01,-0.01);
-	myKinCon.go(v,r,0.05);
-}
-
-void close_gripper()
-{
-	myKinCon.myPR2->hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, 0.0, 10000);
-}
-
-void open_gripper()
-{
-	myKinCon.myPR2->hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, 0.15, 500);
-}
 
 void init_robot()
 {
-	myKinCon.init();
-}
+	// test pr2API
+	myPR2.InitializeRobot();
+	// set random numbers to base cartesian control
+	myPR2.SetBaseControlMode(PR2_CARTESIAN_CONTROL);
+	printf("Sleeping\n");
+	usleep(2000000);
+	printf("Awake\n");
+	myPR2.SetArmControlMode(PR2_RIGHT_ARM, PR2_CARTESIAN_CONTROL);
+	myPR2.SetArmControlMode(PR2_LEFT_ARM, PR2_CARTESIAN_CONTROL);
 
+//	myPR2.SetJointControlMode(ARM_R_SHOULDER_PITCH,PD_CONTROL);
+//	myPR2.SetJointServoCmd(ARM_R_SHOULDER_PITCH, 1.5, 0);
+
+	myPR2.hw.SetJointControlMode(ARM_R_SHOULDER_PITCH,TORQUE_CONTROL);
+	myPR2.hw.SetJointTorque(ARM_R_SHOULDER_PITCH, 1000);
+}
 
 
 int main(int argc, char **argv)
