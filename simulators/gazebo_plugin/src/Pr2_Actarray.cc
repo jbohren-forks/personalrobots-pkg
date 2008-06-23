@@ -311,6 +311,7 @@ void Pr2_Actarray::UpdateChild(UpdateParams &params)
              switch(this->myIface->data->actuators[count].controlMode)
              {
                 case PR2::TORQUE_CONTROL:
+									printf("Hinge Torque Control\n");
                    hjoint->SetTorque(this->myIface->data->actuators[count].cmdEffectorForce);
                    //std::cout << count << " " << this->myIface->data->actuators[count].controlMode << std::endl;
                    break;
@@ -340,6 +341,7 @@ void Pr2_Actarray::UpdateChild(UpdateParams &params)
                    hjoint->SetParam( dParamFMax,this->myIface->data->actuators[count].saturationTorque );
                    break;
                 case PR2::SPEED_CONTROL:
+									printf("Hinge Speed Control\n");
                       //std::cout << "wheel drive: " << cmdSpeed << " i " << count << std::endl;
                       hjoint->SetParam( dParamVel, cmdSpeed);
                       hjoint->SetParam( dParamFMax, this->myIface->data->actuators[count].saturationTorque );
