@@ -617,19 +617,19 @@ GazeboNode::Update()
   publish("left_pr2arm_pos", larm);
   
   /* get left arm position */
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_PAN,            &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_R_PAN,            &position, &velocity);
   rarm.turretAngle       = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_SHOULDER_PITCH, &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_R_SHOULDER_PITCH, &position, &velocity);
   rarm.shoulderLiftAngle = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_SHOULDER_ROLL,  &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_R_SHOULDER_ROLL,  &position, &velocity);
   rarm.upperarmRollAngle = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_ELBOW_PITCH,    &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_R_ELBOW_PITCH,    &position, &velocity);
   rarm.elbowAngle        = position; 
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_ELBOW_ROLL,     &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_R_ELBOW_ROLL,     &position, &velocity);
   rarm.forearmRollAngle  = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_WRIST_PITCH,    &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_R_WRIST_PITCH,    &position, &velocity);
   rarm.wristPitchAngle   = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_WRIST_ROLL,     &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_R_WRIST_ROLL,     &position, &velocity);
   rarm.wristRollAngle    = position;
   // JOHN: We need to set the gripperForceCmd and gripperGapCmd as well; I think an API call is missing from libPR2API
   this->myPR2->hw.GetGripperActual  (PR2::PR2_RIGHT_GRIPPER,     &position, &velocity);
