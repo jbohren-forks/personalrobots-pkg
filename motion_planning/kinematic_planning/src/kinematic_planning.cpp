@@ -83,6 +83,7 @@ Provides (name/type):
 
 #include <ros/node.h>
 #include <std_msgs/PointCloudFloat32.h>
+#include <kinematic_planning/util.h>
 #include <std_msgs/KinematicPath.h>
 #include <std_srvs/KinematicMotionPlan.h>
 
