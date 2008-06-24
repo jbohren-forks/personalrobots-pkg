@@ -321,6 +321,9 @@ GazeboNode::SubscribeModels()
   advertise<std_msgs::PointCloudFloat32>("cloud");
   advertise<std_msgs::PointCloudFloat32>("full_cloud");
   advertise<std_msgs::Empty>("shutter");
+  advertise<std_msgs::PR2Arm>("left_pr2arm_pos");
+  advertise<std_msgs::PR2Arm>("right_pr2arm_pos");
+
   subscribe("cmd_vel", velMsg, &GazeboNode::cmdvelReceived);
   subscribe("cmd_leftarmconfig", leftarm, &GazeboNode::cmd_leftarmconfigReceived);
   subscribe("cmd_rightarmconfig", rightarm, &GazeboNode::cmd_rightarmconfigReceived);
@@ -588,6 +591,47 @@ GazeboNode::Update()
   /*  gripper                                                    */
   /*                                                             */
   /***************************************************************/
+
+  double position, velocity;
+  std_msgs::PR2Arm larm, rarm;
+  
+  /* get left arm position */
+  this->myPR2->GetJointPositionActual(PR2::ARM_L_PAN,            &position, &velocity);
+  larm.turretAngle       = position;
+  this->myPR2->GetJointPositionActual(PR2::ARM_L_SHOULDER_PITCH, &position, &velocity);
+  larm.shoulderLiftAngle = position;
+  this->myPR2->GetJointPositionActual(PR2::ARM_L_SHOULDER_ROLL,  &position, &velocity);
+  larm.upperarmRollAngle = position;
+  this->myPR2->GetJointPositionActual(PR2::ARM_L_ELBOW_PITCH,    &position, &velocity);
+  larm.elbowAngle        = position; 
+  this->myPR2->GetJointPositionActual(PR2::ARM_L_ELBOW_ROLL,     &position, &velocity);
+  larm.forearmRollAngle  = position;
+  this->myPR2->GetJointPositionActual(PR2::ARM_L_WRIST_PITCH,    &position, &velocity);
+  larm.wristPitchAngle   = position;
+  this->myPR2->GetJointPositionActual(PR2::ARM_L_WRIST_ROLL,     &position, &velocity);
+  larm.wristRollAngle    = position;
+  // JOHN: We need to set the gripperForceCmd and gripperGapCmd as well; I think an API call is missing from libPR2API
+  publish("left_pr2arm_pos", larm);
+  
+  /* get left arm position */
+  this->myPR2->GetJointPositionActual(PR2::ARM_L_PAN,            &position, &velocity);
+  rarm.turretAngle       = position;
+  this->myPR2->GetJointPositionActual(PR2::ARM_L_SHOULDER_PITCH, &position, &velocity);
+  rarm.shoulderLiftAngle = position;
+  this->myPR2->GetJointPositionActual(PR2::ARM_L_SHOULDER_ROLL,  &position, &velocity);
+  rarm.upperarmRollAngle = position;
+  this->myPR2->GetJointPositionActual(PR2::ARM_L_ELBOW_PITCH,    &position, &velocity);
+  rarm.elbowAngle        = position; 
+  this->myPR2->GetJointPositionActual(PR2::ARM_L_ELBOW_ROLL,     &position, &velocity);
+  rarm.forearmRollAngle  = position;
+  this->myPR2->GetJointPositionActual(PR2::ARM_L_WRIST_PITCH,    &position, &velocity);
+  rarm.wristPitchAngle   = position;
+  this->myPR2->GetJointPositionActual(PR2::ARM_L_WRIST_ROLL,     &position, &velocity);
+  rarm.wristRollAngle    = position;
+  // JOHN: We need to set the gripperForceCmd and gripperGapCmd as well; I think an API call is missing from libPR2API
+  publish("right_pr2arm_pos", rarm);
+  
+
 //  this->arm.turretAngle          = 0.0;
 //  this->arm.shoulderLiftAngle    = 0.0;
 //  this->arm.upperarmRollAngle    = 0.0;
