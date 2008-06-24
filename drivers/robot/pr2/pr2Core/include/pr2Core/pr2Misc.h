@@ -2,6 +2,8 @@
 #define __PR2MISC_H__
 
 #include<math.h>
+#include<stdio.h>
+
 namespace PR2
 {
 
@@ -45,13 +47,14 @@ namespace PR2
 
     inline bool IsGripperLeft(PR2_JOINT_ID id)
     {
-       if (id >= JointStart[ARM_L_GRIPPER] && id <= JointEnd[ARM_L_GRIPPER])
+			printf("in IsGripperLeft:\nid: %d, Start: %d, end:%d\n",id,JointStart[PR2_LEFT_GRIPPER],JointEnd[PR2_LEFT_GRIPPER]);
+       if (id >= JointStart[PR2_LEFT_GRIPPER] && id <= JointEnd[PR2_LEFT_GRIPPER])
           return true;
        return false;
     }
     inline bool IsGripperRight(PR2_JOINT_ID id)
     {
-       if (id >= JointStart[ARM_R_GRIPPER] && id <= JointEnd[ARM_R_GRIPPER])
+       if (id >= JointStart[PR2_RIGHT_GRIPPER] && id <= JointEnd[PR2_RIGHT_GRIPPER])
           return true;
        return false;
     }

@@ -73,9 +73,6 @@ void init_robot()
 	myPR2.InitializeRobot();
 	// set random numbers to base cartesian control
 	myPR2.SetBaseControlMode(PR2_CARTESIAN_CONTROL);
-	printf("Sleeping\n");
-	usleep(2000000);
-	printf("Awake\n");
 	myPR2.SetArmControlMode(PR2_RIGHT_ARM, PR2_CARTESIAN_CONTROL);
 	myPR2.SetArmControlMode(PR2_LEFT_ARM, PR2_CARTESIAN_CONTROL);
 
@@ -83,7 +80,7 @@ void init_robot()
 //	myPR2.SetJointServoCmd(ARM_R_SHOULDER_PITCH, 1.5, 0);
 
 	myPR2.hw.SetJointControlMode(ARM_R_SHOULDER_PITCH,TORQUE_CONTROL);
-	myPR2.hw.SetJointTorque(ARM_R_SHOULDER_PITCH, 1000);
+	myPR2.hw.SetJointTorque(ARM_R_SHOULDER_PITCH, -500);
 }
 
 
