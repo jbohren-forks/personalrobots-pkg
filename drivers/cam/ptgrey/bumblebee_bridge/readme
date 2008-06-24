@@ -1,0 +1,13 @@
+this is an interim hack of a stopgap measure. we have some bumblebee cameras
+that I really have to use for a demo next week. I don't have ROS fully working
+on Windows yet. Thus I have written a silly XML-RPC server that runs on a
+Windows box with a Bumblebee3 connected to it. This directory contains a
+ROS node which connects to the botnet and waits for a service request for a
+stereo image. When it gets a request, it fires off a (nested) request to my
+XML-RPC bumblebee service running on a windows box. The response is forwarded
+along. Yes, it's a total hack. Until Point Grey decides Linux is worth
+supporting, we'll continue to have to jump through such hoops (or, more likely,
+use cameras from Videre or someone else who actually provides Linux drivers).
+Since the Bumblebee3 doesn't show up as a libdc1394-compatible device (unless
+I'm doing something horribly wrong), there is no way to make it work in Linux
+without a driver from Point Grey.

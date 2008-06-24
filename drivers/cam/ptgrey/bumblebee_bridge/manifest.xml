@@ -1,0 +1,11 @@
+<manifest>
+  <description>
+  A really dumb bridge between ROS and an XML-RPC service running on a Windows box which provides stereo clouds from a bumblebee camera which can't run on Linux
+  </description>
+  <author>Morgan Quigley mquigley@cs.stanford.edu</author>
+  <license>BSD</license>
+  <depend package="std_srvs"/>
+  <depend package="roscpp"/>
+  <depend package="image_utils"/>
+  <depend package="opencv"/>
+</manifest>
