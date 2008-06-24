@@ -117,18 +117,18 @@ public:
 	double goal[dim];
 	
 	for (int i = 0 ; i < dim ; ++i)
-	    start[i] = req.start_state.vals[i].data;
+	    start[i] = req.start_state.vals[i];
 	for (int i = 0 ; i < dim ; ++i)
-	    goal[i] = req.goal_state.vals[i].data;
+	    goal[i] = req.goal_state.vals[i];
 
-	plan_motion(start, goal, req.resolution.data, path);
+	plan_motion(start, goal, req.resolution, path);
 	
 	res.path.set_states_size(path.size());
 	for (unsigned int i = 0 ; i < path.size() ; ++i)
 	{
 	    res.path.states[i].set_vals_size(dim);
 	    for (int j = 0 ; j < dim ; ++j)
-		res.path.states[i].vals[j].data = path[i][j];
+		res.path.states[i].vals[j] = path[i][j];
 	    delete[] path[i];
 	}
 	

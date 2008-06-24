@@ -108,29 +108,29 @@ public:
 	KinematicMotionPlan::request  req;
 	KinematicMotionPlan::response res;
 
-	req.model_id        = 0;
-	req.resolution.data = 0.0;
+	req.model_id   = 0;
+	req.resolution = 0.0;
 	req.start_state.set_vals_size(9);
-	req.start_state.vals[0].data = 0.1;
-	req.start_state.vals[1].data = 0.1;
-	req.start_state.vals[2].data = 0.1;
-	req.start_state.vals[3].data = 0.1;
-	req.start_state.vals[4].data = 0.1;
-	req.start_state.vals[5].data = 0.1;
-	req.start_state.vals[6].data = 0.1;
-	req.start_state.vals[7].data = 0.1;
-	req.start_state.vals[8].data = 0.1;
+	req.start_state.vals[0] = 0.1;
+	req.start_state.vals[1] = 0.1;
+	req.start_state.vals[2] = 0.1;
+	req.start_state.vals[3] = 0.1;
+	req.start_state.vals[4] = 0.1;
+	req.start_state.vals[5] = 0.1;
+	req.start_state.vals[6] = 0.1;
+	req.start_state.vals[7] = 0.1;
+	req.start_state.vals[8] = 0.1;
 	
 	req.goal_state.set_vals_size(9);
-	req.goal_state.vals[0].data = 0.9;
-	req.goal_state.vals[1].data = 0.9;
-	req.goal_state.vals[2].data = 0.9;
-	req.goal_state.vals[3].data = 0.9;
-	req.goal_state.vals[4].data = 0.9;
-	req.goal_state.vals[5].data = 0.9;
-	req.goal_state.vals[6].data = 0.9;
-	req.goal_state.vals[7].data = 0.9;
-	req.goal_state.vals[8].data = 0.9;
+	req.goal_state.vals[0] = 0.9;
+	req.goal_state.vals[1] = 0.9;
+	req.goal_state.vals[2] = 0.9;
+	req.goal_state.vals[3] = 0.9;
+	req.goal_state.vals[4] = 0.9;
+	req.goal_state.vals[5] = 0.9;
+	req.goal_state.vals[6] = 0.9;
+	req.goal_state.vals[7] = 0.9;
+	req.goal_state.vals[8] = 0.9;
 	
 	if (ros::service::call("plan_kinematic_path", req, res))
 	{
@@ -138,15 +138,15 @@ public:
 	    for (uint32_t i = 0 ; i < nstates ; ++i)
 	    {
 		PR2Arm cmd;
-		cmd.turretAngle       = res.path.states[i].vals[0].data;
-		cmd.shoulderLiftAngle = res.path.states[i].vals[1].data;
-		cmd.upperarmRollAngle = res.path.states[i].vals[2].data;
-		cmd.elbowAngle        = res.path.states[i].vals[3].data;
-		cmd.forearmRollAngle  = res.path.states[i].vals[4].data;
-		cmd.wristPitchAngle   = res.path.states[i].vals[5].data;
-		cmd.wristRollAngle    = res.path.states[i].vals[6].data;
-		cmd.gripperForceCmd   = res.path.states[i].vals[7].data;
-		cmd.gripperGapCmd     = res.path.states[i].vals[8].data;
+		cmd.turretAngle       = res.path.states[i].vals[0];
+		cmd.shoulderLiftAngle = res.path.states[i].vals[1];
+		cmd.upperarmRollAngle = res.path.states[i].vals[2];
+		cmd.elbowAngle        = res.path.states[i].vals[3];
+		cmd.forearmRollAngle  = res.path.states[i].vals[4];
+		cmd.wristPitchAngle   = res.path.states[i].vals[5];
+		cmd.wristRollAngle    = res.path.states[i].vals[6];
+		cmd.gripperForceCmd   = res.path.states[i].vals[7];
+		cmd.gripperGapCmd     = res.path.states[i].vals[8];
 		publish("cmd_leftarmconfig", cmd);
 
 		usleep(10000);
