@@ -857,6 +857,44 @@ PR2_ERROR_CODE PR2HW::CloseGripper(PR2_MODEL_ID id,double gap,double force)
     return PR2_ALL_OK;
 };
 
+PR2_ERROR_CODE PR2HW::GetGripperCmd(PR2_MODEL_ID id,double *gap,double *force)
+{
+    switch(id)
+    {
+       case PR2_LEFT_GRIPPER:
+          *force = pr2GripperLeftIface->data->cmdForce;
+          *gap   = pr2GripperLeftIface->data->cmdGap  ;
+          break;
+       case PR2_RIGHT_GRIPPER:
+          *force = pr2GripperRightIface->data->cmdForce;
+          *gap   = pr2GripperRightIface->data->cmdGap  ;
+          break;
+       default:
+          break;
+    }
+    return PR2_ALL_OK;
+};
+
+PR2_ERROR_CODE PR2HW::GetGripperActual(PR2_MODEL_ID id,double *gap,double *force)
+{
+    switch(id)
+    {
+       case PR2_LEFT_GRIPPER:
+          *force = pr2GripperLeftIface->data->gripperForce; // FIXME: this is saturation force
+          *gap   = ( pr2GripperLeftIface->data->actualFingerPosition[0] - 0.015)  // FIXME: not debugged
+                  +(-pr2GripperLeftIface->data->actualFingerPosition[1] + 0.015);
+          break;
+       case PR2_RIGHT_GRIPPER:
+          *force = pr2GripperRightIface->data->gripperForce; // FIXME: this is saturation force
+          *gap   = ( pr2GripperRightIface->data->actualFingerPosition[0] - 0.015)  // FIXME: not debugged
+                  +(-pr2GripperRightIface->data->actualFingerPosition[1] + 0.015);
+          break;
+       default:
+          break;
+    }
+    return PR2_ALL_OK;
+};
+
 PR2_ERROR_CODE PR2HW::SetGripperGains(PR2_MODEL_ID id,double p,double i, double d)
 {
     switch(id)

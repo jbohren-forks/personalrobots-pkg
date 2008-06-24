@@ -267,6 +267,16 @@ namespace PR2
       public: PR2_ERROR_CODE CloseGripper(PR2_MODEL_ID id,double gap, double force);
 
          /*! \fn
+           \brief - Get gripper gap and force setpoint
+         */
+      public: PR2_ERROR_CODE GetGripperCmd(PR2_MODEL_ID id,double *gap,double *force);
+
+         /*! \fn
+           \brief - Get gripper gap and force status
+         */
+      public: PR2_ERROR_CODE GetGripperActual(PR2_MODEL_ID id,double *gap,double *force);
+
+         /*! \fn
            \brief - Set gripper p,i,d gains
          */
       public: PR2_ERROR_CODE SetGripperGains(PR2_MODEL_ID id,double p,double i, double d);

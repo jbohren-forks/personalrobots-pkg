@@ -223,10 +223,10 @@ GazeboNode::cmdvelReceived()
   // when running with the 2dnav stack, we need to refrain from moving when steering angles are off.
   // when operating with the keyboard, we need instantaneous setting of both velocity and angular velocity.
 
-  std::cout << "received cmd: vx " << this->velMsg.vx << " vw " <<  this->velMsg.vw
-            << " vxsmoo " << this->vxSmooth << " vxsmoo " <<  this->vwSmooth
-            << " | steer erros: " << this->myPR2->BaseSteeringAngleError() << " - " <<  M_PI/100.0
-            << std::endl;
+  // std::cout << "received cmd: vx " << this->velMsg.vx << " vw " <<  this->velMsg.vw
+  //           << " vxsmoo " << this->vxSmooth << " vxsmoo " <<  this->vwSmooth
+  //           << " | steer erros: " << this->myPR2->BaseSteeringAngleError() << " - " <<  M_PI/100.0
+  //           << std::endl;
 
   // 2dnav: if steering angle is wrong, don't move or move slowly
   if (this->myPR2->BaseSteeringAngleError() > M_PI/100.0)
@@ -596,39 +596,45 @@ GazeboNode::Update()
   std_msgs::PR2Arm larm, rarm;
   
   /* get left arm position */
-  this->myPR2->GetJointPositionActual(PR2::ARM_L_PAN,            &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_PAN,            &position, &velocity);
   larm.turretAngle       = position;
-  this->myPR2->GetJointPositionActual(PR2::ARM_L_SHOULDER_PITCH, &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_SHOULDER_PITCH, &position, &velocity);
   larm.shoulderLiftAngle = position;
-  this->myPR2->GetJointPositionActual(PR2::ARM_L_SHOULDER_ROLL,  &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_SHOULDER_ROLL,  &position, &velocity);
   larm.upperarmRollAngle = position;
-  this->myPR2->GetJointPositionActual(PR2::ARM_L_ELBOW_PITCH,    &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_ELBOW_PITCH,    &position, &velocity);
   larm.elbowAngle        = position; 
-  this->myPR2->GetJointPositionActual(PR2::ARM_L_ELBOW_ROLL,     &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_ELBOW_ROLL,     &position, &velocity);
   larm.forearmRollAngle  = position;
-  this->myPR2->GetJointPositionActual(PR2::ARM_L_WRIST_PITCH,    &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_WRIST_PITCH,    &position, &velocity);
   larm.wristPitchAngle   = position;
-  this->myPR2->GetJointPositionActual(PR2::ARM_L_WRIST_ROLL,     &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_WRIST_ROLL,     &position, &velocity);
   larm.wristRollAngle    = position;
   // JOHN: We need to set the gripperForceCmd and gripperGapCmd as well; I think an API call is missing from libPR2API
+  this->myPR2->hw.GetGripperActual  (PR2::PR2_LEFT_GRIPPER,      &position, &velocity);
+  larm.gripperForceCmd   = velocity;
+  larm.gripperGapCmd     = position;
   publish("left_pr2arm_pos", larm);
   
   /* get left arm position */
-  this->myPR2->GetJointPositionActual(PR2::ARM_L_PAN,            &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_PAN,            &position, &velocity);
   rarm.turretAngle       = position;
-  this->myPR2->GetJointPositionActual(PR2::ARM_L_SHOULDER_PITCH, &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_SHOULDER_PITCH, &position, &velocity);
   rarm.shoulderLiftAngle = position;
-  this->myPR2->GetJointPositionActual(PR2::ARM_L_SHOULDER_ROLL,  &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_SHOULDER_ROLL,  &position, &velocity);
   rarm.upperarmRollAngle = position;
-  this->myPR2->GetJointPositionActual(PR2::ARM_L_ELBOW_PITCH,    &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_ELBOW_PITCH,    &position, &velocity);
   rarm.elbowAngle        = position; 
-  this->myPR2->GetJointPositionActual(PR2::ARM_L_ELBOW_ROLL,     &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_ELBOW_ROLL,     &position, &velocity);
   rarm.forearmRollAngle  = position;
-  this->myPR2->GetJointPositionActual(PR2::ARM_L_WRIST_PITCH,    &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_WRIST_PITCH,    &position, &velocity);
   rarm.wristPitchAngle   = position;
-  this->myPR2->GetJointPositionActual(PR2::ARM_L_WRIST_ROLL,     &position, &velocity);
+  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_WRIST_ROLL,     &position, &velocity);
   rarm.wristRollAngle    = position;
   // JOHN: We need to set the gripperForceCmd and gripperGapCmd as well; I think an API call is missing from libPR2API
+  this->myPR2->hw.GetGripperActual  (PR2::PR2_RIGHT_GRIPPER,     &position, &velocity);
+  rarm.gripperForceCmd   = velocity;
+  rarm.gripperGapCmd     = position;
   publish("right_pr2arm_pos", rarm);
   
 
