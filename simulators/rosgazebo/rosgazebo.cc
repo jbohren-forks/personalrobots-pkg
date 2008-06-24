@@ -610,7 +610,6 @@ GazeboNode::Update()
   larm.wristPitchAngle   = position;
   this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_WRIST_ROLL,     &position, &velocity);
   larm.wristRollAngle    = position;
-  // JOHN: We need to set the gripperForceCmd and gripperGapCmd as well; I think an API call is missing from libPR2API
   this->myPR2->hw.GetGripperActual  (PR2::PR2_LEFT_GRIPPER,      &position, &velocity);
   larm.gripperForceCmd   = velocity;
   larm.gripperGapCmd     = position;
@@ -631,7 +630,6 @@ GazeboNode::Update()
   rarm.wristPitchAngle   = position;
   this->myPR2->hw.GetJointPositionActual(PR2::ARM_R_WRIST_ROLL,     &position, &velocity);
   rarm.wristRollAngle    = position;
-  // JOHN: We need to set the gripperForceCmd and gripperGapCmd as well; I think an API call is missing from libPR2API
   this->myPR2->hw.GetGripperActual  (PR2::PR2_RIGHT_GRIPPER,     &position, &velocity);
   rarm.gripperForceCmd   = velocity;
   rarm.gripperGapCmd     = position;
