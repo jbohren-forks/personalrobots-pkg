@@ -60,7 +60,7 @@ $ world_3d_map
 @section topic ROS topics
 
 Subscribes to (name/type):
-- full_cloud/PointCloudFloat32 : point cloud with data from a complete laser scan (top to bottom)
+- @b full_cloud/PointCloudFloat32 : point cloud with data from a complete laser scan (top to bottom)
 
 Publishes to (name/type):
 - @b "world_3d_map"/PointCloudFloat32 : point cloud describing the 3D environment

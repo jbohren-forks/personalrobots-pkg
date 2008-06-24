@@ -59,7 +59,7 @@ $ kinematic_planning
 @section topic ROS topics
 
 Subscribes to (name/type):
-- world_3d_map/PointCloudFloat32 : point cloud with data describing the 3D environment
+- @b world_3d_map/PointCloudFloat32 : point cloud with data describing the 3D environment
 
 Publishes to (name/type):
 - None
