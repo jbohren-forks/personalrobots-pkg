@@ -81,10 +81,10 @@ Provides (name/type):
 
 **/
 
-#include "ros/node.h"
-#include "std_msgs/PointCloudFloat32.h"
-#include "std_msgs/KinematicPath.h"
-#include "std_srvs/KinematicMotionPlan.h"
+#include <ros/node.h>
+#include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/KinematicPath.h>
+#include <std_srvs/KinematicMotionPlan.h>
 
 // HACK
 #include "rosplan.h"
@@ -120,8 +120,8 @@ public:
 	    start[i] = req.start_state.vals[i];
 	for (int i = 0 ; i < dim ; ++i)
 	    goal[i] = req.goal_state.vals[i];
-
-	plan_motion(start, goal, req.resolution, path);
+	
+	plan_motion(start, goal, req.resolution, &path);
 	
 	res.path.set_states_size(path.size());
 	for (unsigned int i = 0 ; i < path.size() ; ++i)

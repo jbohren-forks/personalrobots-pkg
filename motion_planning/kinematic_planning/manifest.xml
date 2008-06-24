@@ -1,10 +1,13 @@
 <package>
-<description>3D Map Construction</description>
-<author>Ioan A. Sucan</author>
-<license>BSD</license>
-<depend package="roscpp" />
-<depend package="std_msgs" />
-<depend package="std_srvs" />
-<depend package="xmlparam" />
-<depend package="MPK" />
+  <description>3D Map Construction</description>
+  <author>Ioan A. Sucan</author>
+  <license>BSD</license>
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="std_srvs" />
+  <depend package="xmlparam" />
+  <depend package="MPK" />
+  <export>
+    <cpp cflags="-I${prefix}/include"/>
+  </export>
 </package>

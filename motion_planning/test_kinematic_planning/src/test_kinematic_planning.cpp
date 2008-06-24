@@ -59,7 +59,8 @@ $ test_kinematic_planning
 @section topic ROS topics
 
 Subscribes to (name/type):
-- None
+- @b "left_pr2arm_pos"/PR2Arm : retrieve current left arm position
+- @b "right_pr2arm_pos"/PR2Arm : retrieve current right arm position
 
 Publishes to (name/type):
 - @b "cmd_leftarmconfig"/PR2Arm : issue joint angle commands to the left arm
@@ -83,12 +84,10 @@ Provides (name/type):
 
 **/
 
-#include "ros/node.h"
-#include "std_msgs/PointCloudFloat32.h"
-#include "std_msgs/KinematicPath.h"
-#include "std_msgs/PR2Arm.h"
-#include "std_srvs/KinematicMotionPlan.h"
-
+#include <ros/node.h>
+#include <std_msgs/PointCloudFloat32.h>
+#include <std_srvs/KinematicMotionPlan.h>
+#include <kinematic_planning/util.h>
 
 using namespace std_msgs;
 using namespace std_srvs;
@@ -101,61 +100,68 @@ public:
     {
 	advertise<PR2Arm>("cmd_leftarmconfig");
 	advertise<PR2Arm>("cmd_rightarmconfig");
+	subscribe("left_pr2arm_pos",  leftArmPos,  &TestKinematicPlanning::currentLeftArmPos);
+	subscribe("right_pr2arm_pos", rightArmPos, &TestKinematicPlanning::currentRightArmPos);
     }
     
-    void test1(void)
+    void currentLeftArmPos(void)
+    {
+	// don't need to do anything -- we already have the data
+    }
+
+    void currentRightArmPos(void)
+    {
+	// don't need to do anything -- we already have the data
+    }
+    
+    
+    void testLeftArm1(void)
     {
 	KinematicMotionPlan::request  req;
 	KinematicMotionPlan::response res;
-
-	req.model_id   = 0;
-	req.resolution = 0.0;
+	
+	req.model_id   = ros::kinematics::PR2_LEFT_ARM;
+	req.resolution = 0.01;
 	req.start_state.set_vals_size(9);
-	req.start_state.vals[0] = 0.1;
-	req.start_state.vals[1] = 0.1;
-	req.start_state.vals[2] = 0.1;
-	req.start_state.vals[3] = 0.1;
-	req.start_state.vals[4] = 0.1;
-	req.start_state.vals[5] = 0.1;
-	req.start_state.vals[6] = 0.1;
-	req.start_state.vals[7] = 0.1;
-	req.start_state.vals[8] = 0.1;
-	
 	req.goal_state.set_vals_size(9);
-	req.goal_state.vals[0] = 0.9;
-	req.goal_state.vals[1] = 0.9;
-	req.goal_state.vals[2] = 0.9;
-	req.goal_state.vals[3] = 0.9;
-	req.goal_state.vals[4] = 0.9;
-	req.goal_state.vals[5] = 0.9;
-	req.goal_state.vals[6] = 0.9;
-	req.goal_state.vals[7] = 0.9;
-	req.goal_state.vals[8] = 0.9;
 	
+	for (int i = 0 ; i < 9 ; ++i)
+	{
+	    req.start_state.vals[i] = 0.5;
+	    req.goal_state.vals[i] = 0.6;
+	}
+
+	printf("Starting at state: ");
+	ros::kinematics::printKinematicState(req.start_state);
+	
+	printf("Going towards state: ");
+	ros::kinematics::printKinematicState(req.goal_state);
+	
+
 	if (ros::service::call("plan_kinematic_path", req, res))
 	{
 	    uint32_t nstates = res.path.get_states_size();
+	    printf("Received a plan containing %u states\n", nstates);
+	    
 	    for (uint32_t i = 0 ; i < nstates ; ++i)
 	    {
 		PR2Arm cmd;
-		cmd.turretAngle       = res.path.states[i].vals[0];
-		cmd.shoulderLiftAngle = res.path.states[i].vals[1];
-		cmd.upperarmRollAngle = res.path.states[i].vals[2];
-		cmd.elbowAngle        = res.path.states[i].vals[3];
-		cmd.forearmRollAngle  = res.path.states[i].vals[4];
-		cmd.wristPitchAngle   = res.path.states[i].vals[5];
-		cmd.wristRollAngle    = res.path.states[i].vals[6];
-		cmd.gripperForceCmd   = res.path.states[i].vals[7];
-		cmd.gripperGapCmd     = res.path.states[i].vals[8];
+		ros::kinematics::convertKinematicStatePR2Arm(res.path.states[i], cmd);
 		publish("cmd_leftarmconfig", cmd);
-
+		printf("  - sent the state: "); 
+		ros::kinematics::printKinematicState(res.path.states[i]);
 		usleep(10000);
-	    }
-	    printf("'%s' complete\n", __func__);
+	    }	    
 	}
 	else
 	    fprintf(stderr, "Service 'plan_kinematic_path' failed\n");
+	printf("'%s' complete\n", __func__);
     }
+
+private:
+    
+    PR2Arm leftArmPos, rightArmPos;
+    
 };
 
 
@@ -165,7 +171,7 @@ int main(int argc, char **argv)
     
     TestKinematicPlanning test;
 
-    test.test1();
+    test.testLeftArm1();
     
     test.shutdown();
     
