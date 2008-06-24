@@ -4,10 +4,16 @@
   <license>BSD</license>
   <depend package="roscpp" />
   <depend package="xmlrpc++" />
+  <depend package="player" />
   <depend package="std_srvs" />
   <depend package="rostime" />
   <depend package="rosthread" />
+  <depend package="rosstage" />
+  <depend package="nav_view" />
+  <depend package="amcl_player" />
+  <depend package="map_server" />
   <depend package="wavefront_player" />
+  <depend package="teleop_base_keyboard" />
   <depend package="trex" />
   <depend package="rosTF" />
 </package>
