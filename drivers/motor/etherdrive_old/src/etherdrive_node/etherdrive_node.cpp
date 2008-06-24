@@ -28,6 +28,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ros/node.h"
+#include "rosTF/rosTF.h"
 #include "std_msgs/Actuator.h"
 #include "etherdrive/etherdrive.h"
 #include <sstream>
@@ -35,6 +36,8 @@
 class EtherDrive_Node : public ros::node
 {
 public:
+  rosTFServer tf;
+
   std_msgs::Actuator mot[6];
   std_msgs::Actuator mot_cmd[6];
 
@@ -44,10 +47,14 @@ public:
   float last_mot_val[6];
   double pulse_per_rad[6];
 
+  int frame_id[6];
+  int parent_id[6];
+  int rot_axis[6];
+
   int count;
   ros::Time next_time;
 
-  EtherDrive_Node() : ros::node("etherdrive"), ed(NULL), count(0)
+  EtherDrive_Node() : ros::node("etherdrive"), tf(*this), ed(NULL), count(0)
   {
 
     for (int i = 0;i < 6;i++) {
@@ -70,6 +77,20 @@ public:
       oss << "etherdrive/pulse_per_rad" << i;
       param(oss.str().c_str(), pulse_per_rad[i], 1591.54943);
       printf("Using %g pulse_per_rad for motor %d\n", pulse_per_rad[i], i);
+
+      oss.str("");
+      oss << "etherdrive/frame_id" << i;
+      param(oss.str().c_str(), frame_id[i], 0);
+
+      oss.str("");
+      oss << "etherdrive/parent_id" << i;
+      param(oss.str().c_str(), parent_id[i], 0);
+
+      oss.str("");
+      oss << "etherdrive/rot_axis" << i;
+      param(oss.str().c_str(), rot_axis[i], 1);
+
+      printf("Using frame %d and parent %d for motor %d\n", frame_id[i], parent_id[i], i);
     }
 
     ed = new EtherDrive();
@@ -140,6 +161,16 @@ public:
       mot[i].header.stamp = stamp;
       ostringstream oss;
       oss << "mot" << i;
+
+      if (frame_id[i] != 0 && parent_id[i] != 0) 
+      {
+        tf.sendEuler(frame_id[i], parent_id[i],
+                     0, 0, 0,
+                     (rot_axis[i] == 1) ? mot[i].val : 0,
+                     (rot_axis[i] == 2) ? mot[i].val : 0,
+                     (rot_axis[i] == 3) ? mot[i].val : 0,
+                     stamp.sec, stamp.nsec);
+      }
       publish(oss.str().c_str(), mot[i]);
     }
     return true;

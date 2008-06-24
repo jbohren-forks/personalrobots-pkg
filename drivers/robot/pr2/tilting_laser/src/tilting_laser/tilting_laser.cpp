@@ -99,12 +99,12 @@ Reads the following parameters from the parameter server
 
 
 #include "ros/node.h"
+#include "rosTF/rosTF.h"
 #include "std_msgs/Empty.h"
 #include "std_msgs/LaserScan.h"
 #include "std_msgs/PointCloudFloat32.h"
 #include "std_msgs/LaserImage.h"
 #include "std_msgs/Actuator.h"
-#include "libTF/libTF.h"
 #include "math.h"
 
 using namespace std_msgs;
@@ -112,6 +112,8 @@ using namespace std_msgs;
 class Tilting_Laser : public ros::node
 {
 public:
+
+  rosTFClient tf;
 
   PointCloudFloat32 cloud;
   Empty shutter;
@@ -129,8 +131,6 @@ public:
   double min_ang;
   double max_ang;
 
-  libTF::TransformReference TR;
-
   bool sizes_ready;
   int img_ind;
   int img_dir;
@@ -147,7 +147,7 @@ public:
   int count;
   ros::Time next_time;
 
-  Tilting_Laser() : ros::node("tilting_laser"), full_cloud_cnt(0), sizes_ready(false), img_ind(-1), img_dir(1),last_ang(1000000), rate_err_down(0.0), rate_err_up(0.0), accum_angle(0.0), scan_received(false), count(0)
+  Tilting_Laser() : ros::node("tilting_laser"), tf(*this), full_cloud_cnt(0), sizes_ready(false), img_ind(-1), img_dir(1),last_ang(1000000), rate_err_down(0.0), rate_err_up(0.0), accum_angle(0.0), scan_received(false), count(0)
   {
     
     advertise<PointCloudFloat32>("cloud");
@@ -169,15 +169,16 @@ public:
     last_motor_time = ros::Time::now();
     next_time = ros::Time::now();
 
-    TR.setWithEulers(3, 2,
-		     .02, 0, .02,
+    tf.setWithEulers(FRAMEID_LASER2, FRAMEID_TILT_STAGE,
+		     0.0, 0, .02,
 		     0.0, 0.0, 0.0,
 		     last_motor_time.to_ull());
-
-    TR.setWithEulers(2, 1,
+    tf.setWithEulers(FRAMEID_TILT_STAGE, FRAMEID_TILT_BASE,
 		     0, 0, 0,
 		     0, 0, 0,
 		     last_motor_time.to_ull());
+
+
   }
 
   virtual ~Tilting_Laser()
@@ -233,9 +234,9 @@ public:
     u.y = 0;
     u.z = 0;
     u.time = scans.header.stamp.to_ull();
-    u.frame = 3;
+    u.frame = FRAMEID_TILT_STAGE;
 
-    libTF::TFVector v = TR.transformVector(1,u);
+    libTF::TFVector v = tf.transformVector(FRAMEID_TILT_BASE,u);
     
     double ang = atan2(v.z,v.x);
 
@@ -287,7 +288,7 @@ public:
       
         long long inc = scans.time_increment * i * 1000000000;
         unsigned long long t = scans.header.stamp.to_ull() + inc;
-        rot_point = TR.getMatrix(1,3,t) * point;
+        rot_point = tf.getMatrix(FRAMEID_TILT_BASE,FRAMEID_LASER2,t) * point;
 
         if (valid)
         {
@@ -339,15 +340,6 @@ public:
   }
 
   void encoder_callback() {
-    TR.setWithEulers(3, 2,
-		     .02, 0, .02,
-		     0.0, 0.0, 0.0,
-		     encoder.header.stamp.to_ull());
-    TR.setWithEulers(2, 1,
-		     0, 0, 0,
-		     0, -encoder.val, 0,
-		     encoder.header.stamp.to_ull());
-
     motor_control(); // Control on encoder reads sounds reasonable
   }
 
@@ -385,6 +377,8 @@ public:
 
     if (cmd.val < ext_min_ang)
       cmd.val = ext_min_ang;
+
+    cmd.val = -cmd.val;
 
     publish("mot_cmd",cmd);
 

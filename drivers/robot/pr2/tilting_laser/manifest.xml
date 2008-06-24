@@ -9,11 +9,8 @@ tilting stage, such as the one found in the head of PR2.
 <license>BSD</license>
 <url>http://pr.willowgarage.com/wiki/Point_clouds_from_scanning_URG</url>
 <depend package="roscpp"/>
-<depend package="rostime"/>
 <depend package="std_msgs"/>
-<depend package="unstable_msgs"/>
-<depend package="hokuyourg_player"/>
-<depend package="etherdrive_old"/>
+<depend package="rosTF"/>
 <depend package="libTF"/>
 </package>
 

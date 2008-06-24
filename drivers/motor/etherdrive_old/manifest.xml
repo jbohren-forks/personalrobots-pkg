@@ -12,6 +12,7 @@ This is an older (but more stable) package.
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
 <depend package='roscpp'/>
+<depend package='rosTF'/>
 <depend package='std_msgs'/>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -letherdrive"/>
