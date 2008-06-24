@@ -1,0 +1,6 @@
+if [$ROS_PACKAGE_PATH = ""]; then
+    echo "No ROS_PACKAGE_PATH. Please set ROS_PACKAGE_PATH."
+else
+    source config
+    ./exec_trex_o_rt exec_vel.cfg
+fi
