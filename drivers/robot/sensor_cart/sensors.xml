@@ -5,7 +5,10 @@
   <param name="urglaser/max_ang" type="double" value="70"/>
   <param name="urglaser/cluster" type="int" value="1"/>
   <param name="urglaser/skip" type="int" value="0"/>
-  <param name="etherdrive/pulse_per_rad0" type="double" value="9549"/>
+  <param name="etherdrive/pulse_per_rad0" type="double" value="-9549"/>
+  <param name="etherdrive/frame_id0"  type="int" value="6"/>
+  <param name="etherdrive/parent_id0" type="int" value="5"/>
+  <param name="etherdrive/rot_axis0"  type="int" value="2"/>
   <param name="tilting_laser/num_scans" type="int" value="400"/>
   <param name="tilting_laser/min_ang" type="double" value="-65"/>
   <param name="tilting_laser/max_ang" type="double" value="35"/>
