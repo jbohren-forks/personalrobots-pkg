@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <iostream.h>
 
 #include "ringbuffer.h"
 
@@ -44,6 +45,10 @@ class ArmTrajectoryNode : public ros::node
 
     // A mutex to lock access to fields that are used in message callbacks
     ros::thread::mutex lock;
+
+   double currentVelocity[6]; //Encode x,y,z,y,p,r for one time stamp
+
+    
 
   public:
     // Constructor; stage itself needs argc/argv.  fname is the .world file
@@ -67,6 +72,9 @@ class ArmTrajectoryNode : public ros::node
 
     // clean up on interrupt
     static void finalize(int);
+
+    //Early test via keyboard
+   void SendOneVelocity();
 };
 
 
@@ -105,6 +113,44 @@ ArmTrajectoryNode::~ArmTrajectoryNode()
 {
 }
 
+void ArmTrajectoryNode::SendOneVelocity(){
+    char xdot[100];
+    char ydot[100];
+    char zdot[100];
+   std_msgs::ArmTrajectory currentMsg;
+	std_msgs::Float32        tmp_trajectory_v;
+  this->lock.lock();
+
+    cout<<"X dot?:";
+    gets(xdot);
+	cout<<"Y dot?:";
+    gets(ydot);
+	cout<<"Z dot?:";
+    gets(zdot);
+
+
+
+    currentVelocity[0] = atof(xdot);
+    currentVelocity[1] = atof(ydot);
+    currentVelocity[2] = atof(zdot);
+
+    currentVelocity[3] = 0.0;
+    currentVelocity[4] = 0.0;
+    currentVelocity[5] = 0.0;
+	
+	currentMsg.set_pts_size(0);
+ 	currentMsg.set_vel_size(6);
+
+    for(int ii=0;ii<6;ii++){	
+	tmp_trajectory_v.data = currentVelocity[ii];
+	currentMsg.vel[ii] = tmp_trajectory_v;
+	}
+	  publish("arm_trajectory",currentMsg);
+	cout<<"Send!\n"<<endl;
+	this->lock.unlock();
+
+}
+
 void
 ArmTrajectoryNode::SendTrajectory()
 {
@@ -135,7 +181,7 @@ ArmTrajectoryNode::SendTrajectory()
   this->armTrajectoryMsg.set_vel_size(this->trajectory_pts);
 
   for(int i=0;i< this->trajectory_pts ;i++)
-  {
+  { 
     this->armTrajectoryMsg.pts[i].x    = this->trajectory_p->buffer[i].x;
     this->armTrajectoryMsg.pts[i].y    = this->trajectory_p->buffer[i].y;
     this->armTrajectoryMsg.pts[i].z    = this->trajectory_p->buffer[i].z;
@@ -145,6 +191,7 @@ ArmTrajectoryNode::SendTrajectory()
 
   this->lock.unlock();
 }
+
 
 
 
@@ -162,7 +209,10 @@ main(int argc, char** argv)
   if (gn.AdvertiseMessages() != 0)
     exit(-1);
 
-  gn.SendTrajectory();
+  //gn.SendTrajectory();
+
+for(;;)
+  gn.SendOneVelocity();
 
   std::cout << "Trajectory Sent on topic arm_trajectory" << std::endl;
   
