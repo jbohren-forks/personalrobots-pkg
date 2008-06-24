@@ -112,6 +112,9 @@ public:
     {
 	const int dim = req.start_state.vals_size;
 	
+	// hack
+	run_setup("/u/isucan/repos/scratch/MPK/scenes/pr2.iv");
+	
 	std::vector<double*> path;
 	double start[dim];
 	double goal[dim];
@@ -121,6 +124,7 @@ public:
 	for (int i = 0 ; i < dim ; ++i)
 	    goal[i] = req.goal_state.vals[i];
 	
+	// hack
 	plan_motion(start, goal, req.resolution, &path);
 	
 	res.path.set_states_size(path.size());
@@ -131,6 +135,9 @@ public:
 		res.path.states[i].vals[j] = path[i][j];
 	    delete[] path[i];
 	}
+	
+	// hack
+	clear_things();
 	
 	return true;	
     }
@@ -145,9 +152,6 @@ private:
 int main(int argc, char **argv)
 {  
     ros::init(argc, argv);
-
-    // hack
-    run_setup("/u/isucan/repos/scratch/MPK/scenes/pr2.iv");
     
     KinematicPlanning planner;
     planner.spin();
