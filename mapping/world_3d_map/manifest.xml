@@ -6,7 +6,4 @@
 <depend package="roserr" />
 <depend package="std_msgs" />
 <depend package="xmlparam" />
-<export>
-  <cpp cflags="-I${prefix}/msg/cpp"/>
-</export>
 </package>
