@@ -15,6 +15,10 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * 
+ *  Author: John Hsu, David Li 
+ *  Description: A node used to send arm trajectory messages for path following
+ *  Note: This class is for testing purposes only and will be obsoleted by a node that sends kinematic states
  */
 
 #include <stdio.h>
