@@ -127,8 +127,8 @@ public:
 	
 	for (int i = 0 ; i < 9 ; ++i)
 	{
-	    req.start_state.vals[i] = 0.5;
-	    req.goal_state.vals[i] = 0.6;
+	    req.start_state.vals[i] = 0.0;
+	    req.goal_state.vals[i] = 0.5;
 	}
 
 	printf("Starting at state: ");
