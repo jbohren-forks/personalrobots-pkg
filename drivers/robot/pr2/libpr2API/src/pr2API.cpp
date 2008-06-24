@@ -148,8 +148,6 @@ PR2_ERROR_CODE PR2Robot::DisableSpine()
 }
 
 
-#ifdef KDL_KINEMATICS
-
 PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Frame &f, const KDL::JntArray &q_init, KDL::JntArray &q_out)
 {
 	//	KDL::JntArray q_init = KDL::JntArray(this->pr2_kin.nJnts);
@@ -176,7 +174,6 @@ PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Fra
 
 	return PR2_ALL_OK;
 }
-#endif
 
 PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, NEWMAT::Matrix g)
 {
@@ -373,7 +370,6 @@ PR2_ERROR_CODE PR2Robot::GetArmJointPositionCmd(PR2_MODEL_ID id, double jointPos
    return PR2_ALL_OK;
 };
 
-#ifdef KDL_KINEMATICS
 PR2_ERROR_CODE PR2Robot::GetArmJointPositionCmd(PR2_MODEL_ID id, KDL::JntArray &q)
 {
 	if (id != PR2_RIGHT_ARM && id != PR2_LEFT_ARM)
@@ -387,7 +383,6 @@ PR2_ERROR_CODE PR2Robot::GetArmJointPositionCmd(PR2_MODEL_ID id, KDL::JntArray &
 	}
 	return PR2_ALL_OK;
 };
-#endif
 
 
 

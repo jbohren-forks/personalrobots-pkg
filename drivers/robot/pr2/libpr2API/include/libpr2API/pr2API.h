@@ -41,9 +41,7 @@
 
 #include <libpr2HW/pr2HW.h>
 
-#ifdef KDL_KINEMATICS
 #include <libKDL/kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
-#endif
 
 namespace PR2
 {
@@ -345,10 +343,7 @@ namespace PR2
            \param jointSpeed - array of desired speeds of all the joints
          */
       public: PR2_ERROR_CODE GetArmJointPositionCmd(PR2_MODEL_ID id, double jointPosition[], double jointSpeed[]);
-
-#ifdef KDL_KINEMATICS
 			public: PR2_ERROR_CODE GetArmJointPositionCmd(PR2_MODEL_ID id, KDL::JntArray &q);
-#endif
 
          /*! \fn
            \brief Get the actual joint values for an arm
@@ -416,10 +411,8 @@ namespace PR2
       public: PR2_ERROR_CODE SetArmCartesianPosition(PR2_MODEL_ID id, NEWMAT::Matrix g);
 
 
-#ifdef KDL_KINEMATICS			
 // KDL version of SetArmCartesianPosition
 			public: PR2_ERROR_CODE SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Frame &f,const KDL::JntArray &q_init, KDL::JntArray &q_out);
-#endif
 
          /*! \fn
            \brief Get the commanded position and speed for the end-effector
@@ -568,9 +561,7 @@ namespace PR2
       protected: PR2_CONTROL_MODE baseControlMode;
       protected: PR2Arm myArm; 
 
-#ifdef KDL_KINEMATICS
       public: PR2_kinematics pr2_kin; // for kinematics using KDL.
-#endif
 
     };
 }

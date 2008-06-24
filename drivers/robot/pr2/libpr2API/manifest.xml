@@ -12,6 +12,7 @@ An API for baic PR2 controls and sensing: enable, disable, set gains, PD control
 <depend package="pr2Core"/>
 <depend package="libpr2HW"/>
 <depend package="libKinematics"/>
+<depend package="libKDL"/>
 <export>
 <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lpr2API"/>
 </export>
