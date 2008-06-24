@@ -43,6 +43,8 @@
 #include <std_msgs/BaseVel.h>
 // roscpp - arm
 #include <std_msgs/PR2Arm.h>
+//roscpp - trajectory message
+#include <std_msgs/ArmTrajectory.h>
 // roscpp - camera
 #include <std_msgs/Image.h>
 
@@ -79,7 +81,8 @@ class GazeboNode : public ros::node
     // used to generate Gaussian noise (for PCD)
     double GaussianKernel(double mu,double sigma);
 
-    
+    //Current desired velocity
+    float currentVel[6];
 	
   public:	
 
@@ -96,9 +99,9 @@ class GazeboNode : public ros::node
     void Update();
 
     //Sets desired cartesian velocities for the right arm
-    void SetRightArmVelocities(double cartesianVels[]);
+    void SetRightArmVelocities(float cartesianVels[]);
     //Sets desired cartesian velocities for the left arm
-    void SetLeftArmVelocities(double cartesianVels[]);
+    void SetLeftArmVelocities(float cartesianVels[]);
 
     // Message callback for a std_msgs::BaseVel message, which set velocities.
     void cmdvelReceived();
@@ -117,10 +120,12 @@ class GazeboNode : public ros::node
     // camera data
     std_msgs::Image img;
     
-    // camera data
+    // arm config messages
     std_msgs::PR2Arm leftarm;
     std_msgs::PR2Arm rightarm;
 
+    //Trajectory messages
+    std_msgs::ArmTrajectory trajectorymsg;
 
     // The main simulator object
     PR2::PR2Robot* myPR2;
@@ -138,12 +143,14 @@ class GazeboNode : public ros::node
 
 void GazeboNode::cmd_trajectoryReceived(){
 	printf("Trajectory received\n");
-	
+	for(int i = 0;i<6;i++){
+		currentVel[i] = trajectorymsg.vel[i].data;
+	}
 }
 
 
 //Sets desired cartesian velocities for the right arm
-void GazeboNode::SetRightArmVelocities(double cartesianVels[]){
+void GazeboNode::SetRightArmVelocities(float cartesianVels[]){
 	KDL::ChainIkSolverVel_pinv* solver= this->myPR2->pr2_kin.ik_vel_solver;
 	int numJnts = this->myPR2->pr2_kin.nJnts;
 
@@ -328,7 +335,9 @@ GazeboNode::GazeboNode(int argc, char** argv, const char* fname) :
   // this->myPR2->SetJointControlMode(PR2::CASTER_FR_STEER, PR2::TORQUE_CONTROL);
   // this->myPR2->SetJointControlMode(PR2::CASTER_RL_STEER, PR2::TORQUE_CONTROL);
   // this->myPR2->SetJointControlMode(PR2::CASTER_RR_STEER, PR2::TORQUE_CONTROL);
-
+ for (int i=0;i<6;i++){
+	currentVel[i] = 0.0;
+}
 //DEBUG
   //Set arms to speed control
 this->myPR2->SetArmControlMode(PR2::PR2_LEFT_ARM,PR2::PR2_CARTESIAN_CONTROL);
@@ -424,6 +433,8 @@ GazeboNode::SubscribeModels()
   subscribe("cmd_vel", velMsg, &GazeboNode::cmdvelReceived);
   subscribe("cmd_leftarmconfig", leftarm, &GazeboNode::cmd_leftarmconfigReceived);
   subscribe("cmd_rightarmconfig", rightarm, &GazeboNode::cmd_rightarmconfigReceived);
+  
+  subscribe("arm_trajectory", trajectorymsg, &GazeboNode::cmd_trajectoryReceived);
 
 
   return(0);
@@ -466,11 +477,10 @@ GazeboNode::Update()
 //DEBUG
   /***************************************************************/
   /*                                                             */
-  /*  laser - pitching                                           */
+  /*  Update Commanded Velocities                                */
   /*                                                             */
   /***************************************************************/
-	double speeds[] = {0,0.1,0,0,0,0};
-	SetRightArmVelocities(speeds);
+	SetRightArmVelocities(currentVel);
 
   /***************************************************************/
   /*                                                             */
