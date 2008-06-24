@@ -1,0 +1,3 @@
+<params>
+  <double name="world_3d_map/max_publish_frequency">0.5</double> <!-- Hz -->
+</params>
