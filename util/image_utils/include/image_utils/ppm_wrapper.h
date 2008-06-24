@@ -13,8 +13,8 @@ public:
   PpmWrapper();
   ~PpmWrapper();
 
-  static char *write_file(string filename, int width, int height, 
-                          string colorspace, uint8_t *raster)
+  static const char *write_file(string filename, int width, int height, 
+                                string colorspace, uint8_t *raster)
   {
     if (colorspace != string("rgb24") && colorspace != string("bgr24"))
       return "woah! PpmWrapper can only handle rgb24 or bgr24 images";
