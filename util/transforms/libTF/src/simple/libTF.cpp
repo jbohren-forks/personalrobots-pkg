@@ -76,55 +76,47 @@ TransformReference::~TransformReference()
   delete[] frames;
 };
 
+void TransformReference::addFrame(unsigned int frameID, unsigned int parentID) {
+ if (frameID >= MAX_NUM_FRAMES || parentID >= MAX_NUM_FRAMES || frameID == NO_PARENT)
+    throw InvalidFrame;
+
+  if (frames[frameID] == NULL)
+    frames[frameID] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
+
+  if (frames[parentID] == NULL)
+    frames[parentID] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
+
+  getFrame(frameID)->setParent(parentID);
+}
+
 
 void TransformReference::setWithEulers(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d,double e,double f, ULLtime time)
 {
-  if (frameID >= MAX_NUM_FRAMES || parentID >= MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
-    throw InvalidFrame;
-  
-  if (frames[frameID] == NULL)
-    frames[frameID] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
-  
-  getFrame(frameID)->setParent(parentID);
+  addFrame(frameID, parentID);
+
   getFrame(frameID)->addFromEuler(a,b,c,d,e,f,time);
 }
 
 void TransformReference::setWithDH(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d, ULLtime time)
 {
-  if (frameID >= MAX_NUM_FRAMES || parentID >= MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
-    throw InvalidFrame;
-  
-  if (frames[frameID] == NULL)
-    frames[frameID] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
-  
-  getFrame(frameID)->setParent(parentID);
+  addFrame(frameID, parentID);
+
   getFrame(frameID)->addFromDH(a,b,c,d,time);
 }
 
 
 void TransformReference::setWithMatrix(unsigned int frameID, unsigned int parentID, const NEWMAT::Matrix & matrix_in, ULLtime time)
 {
-  if (frameID >=MAX_NUM_FRAMES || parentID >=MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
-    throw InvalidFrame;
-  
-  //TODO check and throw exception if matrix wrong size
-  if (frames[frameID] == NULL)
-    frames[frameID] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
+  addFrame(frameID, parentID);
 
-  getFrame(frameID)->setParent(parentID);
   getFrame(frameID)->addFromMatrix(matrix_in,time);
 }
 
 
 void TransformReference::setWithQuaternion(unsigned int frameID, unsigned int parentID, double xt, double yt, double zt, double xr, double yr, double zr, double w, ULLtime time)
 {
-  if (frameID >=MAX_NUM_FRAMES || parentID >=MAX_NUM_FRAMES || frameID == NO_PARENT || frameID == ROOT_FRAME)
-    throw InvalidFrame;
-  
-  if (frames[frameID] == NULL)
-    frames[frameID] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
-  
-  getFrame(frameID)->setParent(parentID);
+  addFrame(frameID, parentID);
+
   getFrame(frameID)->addFromQuaternion(xt, yt, zt, xr, yr, zr, w,time);
 }
 
@@ -319,8 +311,6 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
       if (frame == NO_PARENT)
 	break;
       mTfLs.inverseTransforms.push_back(frame);
-      if (frame == ROOT_FRAME) //Descend until we reach the root node or don't have a parent
-	break;
 
       //Check that we arn't going somewhere illegal 
       if (getFrame(frame)->getParent() >=MAX_NUM_FRAMES) throw InvalidFrame;
@@ -340,8 +330,6 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
       if (frame == NO_PARENT)
 	break;
       mTfLs.forwardTransforms.push_back(frame);
-      if (frame == ROOT_FRAME) //Descend until we reach the root node or don't have a parent
-	break;
 
       //Check that we aren't going somewhere illegal
       if (getFrame(frame)->getParent() >=MAX_NUM_FRAMES) throw InvalidFrame;

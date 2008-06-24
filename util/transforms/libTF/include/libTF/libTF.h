@@ -184,8 +184,6 @@ public:
   typedef unsigned long long ULLtime;
   
   /************* Constants ***********************/
-  /** Value for ROOT_FRAME */
-  static const unsigned int ROOT_FRAME = 1;  
   /** Value for NO_PARENT */
   static const unsigned int NO_PARENT = 0;  
   
@@ -209,6 +207,12 @@ public:
   ~TransformReference();
 
   /********** Mutators **************/
+  /** Add a new frame and parent
+   * The frame transformatiosn are left unspecified.
+   *  Possible exceptions are: TransformReference::InvaildFrame
+   */
+  void addFrame(unsigned int framid, unsigned int parentid);
+
   /** Set a new frame or update an old one.
    * Use Euler Angles.  X forward, Y to the left, Z up, Yaw about Z, pitch about new Y, Roll about new X 
    *  Possible exceptions are: TransformReference::LookupException

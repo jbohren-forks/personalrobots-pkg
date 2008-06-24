@@ -52,6 +52,9 @@
 #define FRAMEID_ROBOT 2
 #define FRAMEID_ODOM 3
 #define FRAMEID_LASER 4
+#define FRAMEID_TILT_BASE 5
+#define FRAMEID_TILT_STAGE 6
+#define FRAMEID_LASER2 7
 
 /** \brief A basic ROS client library for libTF
  * This inherits from libTF and will automatically
