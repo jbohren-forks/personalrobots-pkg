@@ -1,0 +1,5 @@
+export PLASMA_HOME=$ROS_PACKAGE_PATH/3rdparty/trex/PLASMA
+export PLASMA=$PLASMA_HOME/src/PLASMA
+export TREX=$ROS_PACKAGE_PATH/3rdparty/trex/TREX
+export TREX_LOG_DIR=$ROS_PACKAGE_PATH/3rdparty/trex/logs
+export LD_LIBRARY_PATH=$PLASMA_HOME/build/lib:$ROS_PACKAGE_PATH/3rdparty/player/player/lib:$LD_LIBRARY_PATH
