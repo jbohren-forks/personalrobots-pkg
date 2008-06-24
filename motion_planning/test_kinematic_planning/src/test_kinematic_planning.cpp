@@ -122,15 +122,13 @@ public:
 	
 	req.model_id   = ros::kinematics::PR2_LEFT_ARM;
 	req.resolution = 0.01;
-	req.start_state.set_vals_size(9);
-	req.goal_state.set_vals_size(9);
+
+	ros::kinematics::convertPR2ArmKinematicState(leftArmPos, req.start_state);
+	req.goal_state = req.start_state;
 	
 	for (int i = 0 ; i < 9 ; ++i)
-	{
-	    req.start_state.vals[i] = 0.0;
-	    req.goal_state.vals[i] = 0.5;
-	}
-
+	    req.goal_state.vals[i] += 0.2;
+	
 	printf("Starting at state: ");
 	ros::kinematics::printKinematicState(req.start_state);
 	
@@ -170,7 +168,8 @@ int main(int argc, char **argv)
     ros::init(argc, argv);
     
     TestKinematicPlanning test;
-
+    sleep(1);
+    
     test.testLeftArm1();
     
     test.shutdown();
