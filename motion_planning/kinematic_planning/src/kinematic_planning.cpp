@@ -41,6 +41,44 @@
 @b KinematicPlanning is a node capable of planning kinematic paths for
 a set of robot models.
 
+<hr>
+
+@section usage Usage
+@verbatim
+$ kinematic_planning [standard ROS args]
+@endverbatim
+
+@par Example
+
+@verbatim
+$ kinematic_planning
+@endverbatim
+
+<hr>
+
+@section topic ROS topics
+
+Subscribes to (name/type):
+- world_3d_map/PointCloudFloat32 : point cloud with data describing the 3D environment
+
+Publishes to (name/type):
+- None
+
+<hr>
+
+@section services ROS services
+
+Uses (name/type):
+- None
+
+Provides (name/type):
+- @b "plan_kinematic_path"/KinematicMotionPlan : given a robot model, starting ang goal states, this service computes a collision free path
+
+<hr>
+
+@section parameters ROS parameters
+- None
+
 **/
 
 #include "ros/node.h"
@@ -59,7 +97,7 @@ class KinematicPlanning : public ros::node
 {
 public:
 
-    KinematicPlanning(void) : ros::node("KinematicPlanning")
+    KinematicPlanning(void) : ros::node("kinematic_planning")
     {
 	advertise_service("plan_kinematic_path", &KinematicPlanning::plan);
 	subscribe("world_3d_map", cloud, &KinematicPlanning::pointCloudCallback);

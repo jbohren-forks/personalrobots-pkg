@@ -38,8 +38,48 @@
 
 @htmlinclude manifest.html
 
-@b TestKinematicPlanning is a node that can be used to test a
+@b test_kinematic_planning is a node that can be used to test a
 kinematic planning node.
+
+<hr>
+
+@section usage Usage
+@verbatim
+$ test_kinematic_planning [standard ROS args]
+@endverbatim
+
+@par Example
+
+@verbatim
+$ test_kinematic_planning
+@endverbatim
+
+<hr>
+
+@section topic ROS topics
+
+Subscribes to (name/type):
+- None
+
+Publishes to (name/type):
+- @b "cmd_leftarmconfig"/PR2Arm : issue joint angle commands to the left arm
+- @b "cmd_rightarmconfig"/PR2Arm : issue joint angle commands to the right arm
+
+<hr>
+
+@section services ROS services
+
+Uses (name/type):
+- @b "plan_kinematic_path"/KinematicMotionPlan : given a robot model, starting ang goal states, this service computes a collision free path
+
+Provides (name/type):
+- None
+
+<hr>
+
+@section parameters ROS parameters
+- None
+
 
 **/
 
@@ -57,7 +97,7 @@ class TestKinematicPlanning : public ros::node
 {
 public:
 
-    TestKinematicPlanning(void) : ros::node("TestKinematicPlanning")
+    TestKinematicPlanning(void) : ros::node("test_kinematic_planning")
     {
 	advertise<PR2Arm>("cmd_leftarmconfig");
 	advertise<PR2Arm>("cmd_rightarmconfig");

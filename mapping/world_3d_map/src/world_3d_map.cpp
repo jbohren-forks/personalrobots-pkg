@@ -38,9 +38,46 @@
 
 @htmlinclude manifest.html
 
-@b World3dMap is a node capable of building 3D maps out of point
+@b world_3d_map is a node capable of building 3D maps out of point
 cloud data. The code is incomplete: it currently only forwards cloud
 data.
+
+<hr>
+
+@section usage Usage
+@verbatim
+$ world_3d_map [standard ROS args]
+@endverbatim
+
+@par Example
+
+@verbatim
+$ world_3d_map
+@endverbatim
+
+<hr>
+
+@section topic ROS topics
+
+Subscribes to (name/type):
+- full_cloud/PointCloudFloat32 : point cloud with data from a complete laser scan (top to bottom)
+
+Publishes to (name/type):
+- @b "world_3d_map"/PointCloudFloat32 : point cloud describing the 3D environment
+- @b "roserr"/Log : output log messages
+
+<hr>
+
+Uses (name/type):
+- None
+
+Provides (name/type):
+- None
+
+<hr>
+
+@section parameters ROS parameters
+- @b "world_3d_map/max_publish_frequency" : @b [double] the maximum frequency (Hz) at which the data in the built 3D map is to be sent (default 0.5)
 
 **/
 
@@ -53,20 +90,18 @@ data.
 using namespace std_msgs;
 using namespace ros::thread::member_thread;
 
-static const char MAP_PUBLISH_TOPIC[] = "world_3d_map";
-
 class World3DMap : public ros::node
 {
 public:
 
-    World3DMap(void) : ros::node("World3DMap")
+    World3DMap(void) : ros::node("world_3d_map")
     {
-	advertise<PointCloudFloat32>(MAP_PUBLISH_TOPIC);
+	advertise<PointCloudFloat32>("world_3d_map");
 	advertise<Log>("roserr");
 
 	// subscribe to stereo vision point cloud as well... when it becomes available
 	subscribe("full_cloud", inputCloud, &World3DMap::pointCloudCallback);
-	param((string(MAP_PUBLISH_TOPIC)+"/max_publish_frequency").c_str(), maxPublishFrequency, 0.5);
+	param("world_3d_map/max_publish_frequency", maxPublishFrequency, 0.5);
 	
 	/* create a thread that does the processing of the input data.
 	 * and one that handles the publishing of the data */
@@ -162,7 +197,7 @@ public:
 	    {
 		worldDataMutex.lock();
 		if (active)
-		    publish(MAP_PUBLISH_TOPIC, toProcess);
+		    publish("world_3d_map", toProcess);
 		shouldPublish = false;
 		worldDataMutex.unlock();
 	    }
