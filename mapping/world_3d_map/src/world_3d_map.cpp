@@ -81,12 +81,12 @@ Provides (name/type):
 
 **/
 
-#include "ros/node.h"
-#include "ros/time.h"
-#include "rosthread/member_thread.h"
-#include "rosthread/mutex.h"
-#include "std_msgs/PointCloudFloat32.h"
-#include "std_msgs/Log.h"
+#include <ros/node.h>
+#include <ros/time.h>
+#include <rosthread/member_thread.h>
+#include <rosthread/mutex.h>
+#include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/Log.h>
 using namespace std_msgs;
 using namespace ros::thread::member_thread;
 
@@ -99,7 +99,7 @@ public:
 	advertise<PointCloudFloat32>("world_3d_map");
 	advertise<Log>("roserr");
 
-	// subscribe to stereo vision point cloud as well... when it becomes available
+	// NOTE: subscribe to stereo vision point cloud as well... when it becomes available
 	subscribe("full_cloud", inputCloud, &World3DMap::pointCloudCallback);
 	param("world_3d_map/max_publish_frequency", maxPublishFrequency, 0.5);
 	
