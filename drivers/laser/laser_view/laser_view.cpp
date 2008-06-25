@@ -16,7 +16,7 @@ public:
   LaserView() : node("laser_view"),
     view_scale(50), view_x(0), view_y(0)
   {
-    subscribe("laser", laser, &LaserView::laser_cb);
+    subscribe("scan", laser, &LaserView::laser_cb);
     init_gui(640, 480, "laser view");
   }
   void laser_cb()
