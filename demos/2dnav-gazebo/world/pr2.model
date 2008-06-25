@@ -31,7 +31,8 @@
       <!--color> 0.0  1.0  0.0</color-->
       <visual>
         <xyz>0.0   0.0 -0.15</xyz>
-        <size>0.65  0.65  0.65</size>
+        <!--size>0.65  0.65  0.65</size-->
+        <scale>0.001 0.001 0.001</scale>
         <rpy> 90.0   0.0 90.0 </rpy>
         <mesh>pr2_base.mesh</mesh>
         <material>Gazebo/Grey</material>
@@ -539,8 +540,9 @@
       <mass>1</mass>
       <visual>
         <!--   x    y     z -->
-        <xyz> 0.2  0.0   -0.4 </xyz>
-        <size>0.6  0.8   0.6 </size>
+        <xyz> 0.1  0.0   -0.425 </xyz>
+        <!--size>0.6  0.8   0.6 </size-->
+        <scale>0.001 0.001 0.001</scale>
         <rpy>90.0  0.0   90.0 </rpy>
         <mesh>pr2_body.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
@@ -580,7 +582,8 @@
       <visual>
         <xyz> 0.00  -0.0   0.20 </xyz>
         <rpy> 90.0   0.0   90.0 </rpy>
-        <size> 0.26 0.6 0.36</size>
+        <!--size> 0.26 0.6 0.36</size-->
+        <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_sh_turret.mesh</mesh>
         <material>Gazebo/Fish</material>
       </visual>
@@ -798,7 +801,8 @@
       <visual>
         <xyz> 0.00   0.0   0.20 </xyz>
         <rpy> 90.0   0.0   90.0 </rpy>
-        <size> 0.26 0.6 0.36</size>
+        <!--size> 0.26 0.6 0.36</size-->
+        <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_sh_turret.mesh</mesh>
         <material>Gazebo/Fish</material>
       </visual>
@@ -1319,7 +1323,7 @@
   <!--         Hokuyo laser body             -->
   <canonicalBody>laser_body</canonicalBody>
   <body:box name="laser_body">
-    <xyz>0.4 0.0 1.05</xyz>
+    <xyz>0.3 0.0 1.05</xyz>
     <rpy>0.0 0.0 0.0</rpy>
  
     <geom:box name="laser_box">
