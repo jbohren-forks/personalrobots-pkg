@@ -19,6 +19,14 @@ namespace PR2
        return q;
     }
 
+    inline point Rot2D(point3 p,double theta)
+    {
+       point q;
+       q.x = cos(theta)*p.x - sin(theta)*p.y;
+       q.y = sin(theta)*p.y + cos(theta)*p.x;
+       return q;
+    }
+
     inline bool IsHead(PR2_MODEL_ID id)
     {
        if(id == HEAD)

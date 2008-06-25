@@ -298,6 +298,12 @@ NEWMAT::Matrix PR2Robot::ComputeBodyPose(PR2_JOINT_ID id, PR2::PR2State rS)
    cout << "Id:" << id << endl;
 #endif
 
+   if(IsModel(PR2::PR2_BASE,id))
+   {
+      baseToBody = ComputeBaseBodyPose(id,rS);
+      baseToBody(3,4) += rS.spineExtension;
+   }
+
    if(IsModel(PR2::HEAD,id))
    {
       baseToBody = ComputeHeadBodyPose(id,rS);
@@ -317,13 +323,39 @@ NEWMAT::Matrix PR2Robot::ComputeBodyPose(PR2_JOINT_ID id, PR2::PR2State rS)
 };
 
 
+NEWMAT::Matrix PR2Robot::ComputeBodyPose(PR2_JOINT_ID id, PR2::PR2State rS, NEWMAT::Matrix localPose)
+{
+   NEWMAT::Matrix worldToBody = ComputeBodyPose(id,rS);
+   return (worldToBody*localPose);
+};
+
+
 NEWMAT::Matrix PR2Robot::ComputeHeadBodyPose(PR2_JOINT_ID id, PR2::PR2State rS)
 {
    NEWMAT::Matrix g(4,4);
-   g = myHead.ComputeFK(rS.headJntAngles,id-JointStart[HEAD]);
+   g = myHead.ComputeFK(rS.headJntAngles,id-JointStart[HEAD]+1);
+   g(1,4) = g(1,4) + BASE_HEAD_OFFSET.x;
+   g(2,4) = g(2,4) + BASE_HEAD_OFFSET.y;
+   g(3,4) = g(3,4) + BASE_HEAD_OFFSET.z;
    return g;
 };
 
+NEWMAT::Matrix PR2Robot::ComputeBaseBodyPose(PR2_JOINT_ID id, PR2::PR2State rS)
+{
+   NEWMAT::Matrix  worldToBase(4,4),baseToBody(4,4);
+   NEWMAT::IdentityMatrix I(4);
+
+   worldToBase = GetPose(rS);
+
+   baseToBody = I;
+   if (id != PR2::BASE_6DOF)
+   {
+      baseToBody(1,4) = BASE_BODY_OFFSETS[(int)(id-JointStart[BASE])].x ;
+      baseToBody(2,4) = BASE_BODY_OFFSETS[(int)(id-JointStart[BASE])].y ;
+      baseToBody(3,4) = BASE_BODY_OFFSETS[(int)(id-JointStart[BASE])].z ;
+   }
+   return (worldToBase*baseToBody);
+};
 
 
 NEWMAT::Matrix PR2Robot::ComputeArmBodyPose(PR2_JOINT_ID id, PR2::PR2State rS)
@@ -347,30 +379,6 @@ NEWMAT::Matrix PR2Robot::ComputeArmBodyPose(PR2_JOINT_ID id, PR2::PR2State rS)
    }
 
    return g;
-};
-
-
-NEWMAT::Matrix PR2Robot::ComputeArmBodyPose(PR2_JOINT_ID id, PR2::PR2State rS, NEWMAT::Matrix localPose)
-{
-   NEWMAT::Matrix g(4,4);
-
-   if (IsModel(PR2::PR2_RIGHT_ARM,id))
-   {
-      g      = myArm.ComputeFK(rS.rightArmJntAngles,id-JointStart[PR2_RIGHT_ARM]+1);
-      g(1,4) = g(1,4) + BASE_RIGHT_ARM_OFFSET.x;
-      g(2,4) = g(2,4) + BASE_RIGHT_ARM_OFFSET.y;
-      g(3,4) = g(3,4) + BASE_RIGHT_ARM_OFFSET.z;
-   }
-
-   if (IsModel(PR2::PR2_LEFT_ARM,id))
-   {
-      g      = myArm.ComputeFK(rS.leftArmJntAngles,id-JointStart[PR2_LEFT_ARM]+1);
-      g(1,4) = g(1,4) + BASE_LEFT_ARM_OFFSET.x;
-      g(2,4) = g(2,4) + BASE_LEFT_ARM_OFFSET.y;
-      g(3,4) = g(3,4) + BASE_LEFT_ARM_OFFSET.z;
-   }
-
-   return (g*localPose);
 };
 
 

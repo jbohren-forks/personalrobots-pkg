@@ -56,6 +56,8 @@ namespace PR2
       HEAD_PTZ_L_TILT   ,
       HEAD_PTZ_R_PAN    , 
       HEAD_PTZ_R_TILT   ,
+      BASE_6DOF,
+      PR2_WORLD,
       MAX_JOINTS   
    };
 
@@ -255,8 +257,19 @@ namespace PR2
    const int NUM_CASTERS = 4;
    const int NUM_WHEELS = 8;
 
-   const point BASE_CASTER_OFFSET[NUM_CASTERS] = {{0.25, 0.25}, {0.25, -0.25}, {-0.25,0.25}, {-0.25,-0.25}};
-   const point CASTER_DRIVE_OFFSET[NUM_WHEELS] = {{0,AXLE_WIDTH}, {0,-AXLE_WIDTH}, {0,AXLE_WIDTH}, {0,-AXLE_WIDTH},{0,AXLE_WIDTH}, {0,-AXLE_WIDTH},{0,AXLE_WIDTH}, {0,-AXLE_WIDTH}};
+   const point3 BASE_CASTER_OFFSET[NUM_CASTERS] = {{0.2255, 0.2255,0.08069}, {0.2255, -0.2255, 0.08069}, {-0.2255,0.2255,0.08069}, {-0.2255,-0.2255,0.08069}};
+   const point3 BASE_DRIVE_WHEELS_OFFSET[NUM_WHEELS] = {{0.2255, 0.2745,0.08069},{0.2255, 0.1765,0.08069},{0.2255, -0.1765,0.08069},{0.2255, -0.2745,0.08069},{-0.2255, 0.2745,0.08069},{-0.2255, 0.1765,0.08069},{-0.2255, -0.1765,0.08069},{-0.2255, -0.2745,0.08069}};
+
+   const point3 BASE_BODY_OFFSETS[NUM_CASTERS+NUM_WHEELS] = {{0.2255, 0.2255,0.08069},
+                                                             {0.2255, 0.2745,0.08069},{0.2255, 0.1765,0.08069},
+                                                             {0.2255, -0.2255, 0.08069},
+                                                             {0.2255, -0.1765,0.08069},{0.2255, -0.2745,0.08069},
+                                                             {-0.2255,0.2255,0.08069},
+                                                             {-0.2255, 0.2745,0.08069},{-0.2255, 0.1765,0.08069},
+                                                             {-0.2255,-0.2255,0.08069},
+                                                             {-0.2255, -0.1765,0.08069},{-0.2255, -0.2745,0.08069}};
+
+   const point3 CASTER_DRIVE_OFFSET[NUM_WHEELS] = {{0,AXLE_WIDTH}, {0,-AXLE_WIDTH}, {0,AXLE_WIDTH}, {0,-AXLE_WIDTH},{0,AXLE_WIDTH}, {0,-AXLE_WIDTH},{0,AXLE_WIDTH}, {0,-AXLE_WIDTH}};
 
    const point3 SPINE_ARM_PAN_OFFSET                 = {0       ,0        ,0     };
    const point3 ARM_PAN_SHOULDER_PITCH_OFFSET        = {0.1     ,0        ,0     };
@@ -266,12 +279,14 @@ namespace PR2
    const point3 ELBOW_ROLL_WRIST_PITCH_OFFSET        = {0.2237  ,0        ,0     };
    const point3 WRIST_PITCH_WRIST_ROLL_OFFSET        = {0       ,0        ,0     };
    const point3 WRIST_ROLL_GRIPPER_OFFSET            = {0       ,0        ,0     };
-   const point3 SPINE_RIGHT_ARM_OFFSET               = {0.0     ,  -0.15   , 0.68 };
-   const point3 SPINE_LEFT_ARM_OFFSET                = {0.0     , 0.15   , 0.68 };
+   const point3 SPINE_RIGHT_ARM_OFFSET               = {0.0     ,-0.15    ,0.68  };
+   const point3 SPINE_LEFT_ARM_OFFSET                = {0.0     ,0.15     ,0.68  };
 
-   const point3 BASE_LEFT_ARM_OFFSET                = {-.1829361    , 0.1329361   , 0.80981 };
-   const point3 BASE_RIGHT_ARM_OFFSET                = {-.1829361    , -0.1329361   , 0.80981 };
+   const point3 BASE_LEFT_ARM_OFFSET                 = {-.1829361, 0.1329361, 0.80981 };
+   const point3 BASE_RIGHT_ARM_OFFSET                = {-.1829361, -0.1329361, 0.80981 };
 
-   const point3 HEAD_PAN_HEAD_PITCH_OFFSET          = {0,0,0};
+   const point3 HEAD_PAN_HEAD_PITCH_OFFSET           = {0,0,0};
+
+   const point3 BASE_HEAD_OFFSET                     = {-.1829361, 0, 0.80981};
 }
 #endif
