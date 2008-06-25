@@ -31,8 +31,9 @@
 #include <sys/stat.h>
 #include "ros/node.h"
 #include "ros/time.h"
-
+#include <string>
 using namespace ros;
+using namespace std;
 
 ros::Time start;
 
@@ -46,7 +47,7 @@ public:
   uint8_t *next_msg;
   uint32_t next_msg_size, next_msg_alloc_size;
   bool done;
-  Bag() : msg("*", "*"), log(NULL), next_msg(NULL), next_msg_alloc_size(0), 
+  Bag() : msg(), log(NULL), next_msg(NULL), next_msg_alloc_size(0), 
           done(false) { }
   virtual ~Bag() { fclose(log); if (next_msg) delete[] next_msg; }
   bool open_log(const string &bag_name, ros::Time _start)
@@ -105,14 +106,15 @@ public:
     }
     return true;
   }
-  static string __get_datatype() { return string("*"); }
-  static string __get_md5sum() { return string("*"); }
+  virtual const string __get_datatype() const { return string("*"); }
+  virtual const string __get_md5sum()   const { return string("*"); }
   uint32_t serialization_length() { return next_msg_size; }
-  virtual void serialize(uint8_t *write_ptr)
+  virtual uint8_t *serialize(uint8_t *write_ptr)
   { 
     memcpy(write_ptr, next_msg, next_msg_size);
+    return write_ptr + next_msg_size;
   }
-  virtual void deserialize(uint8_t *read_ptr) { }
+  virtual uint8_t *deserialize(uint8_t *read_ptr) { assert(0); return NULL; }
 };
 
 class Playback : public node

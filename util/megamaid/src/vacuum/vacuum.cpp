@@ -31,7 +31,8 @@
 #include <sys/stat.h>
 #include "ros/node.h"
 #include "ros/time.h"
-
+#include <string>
+using namespace std;
 using namespace ros;
 
 ros::Time start;
@@ -40,7 +41,7 @@ class Bag : public msg
 {
 public:
   FILE *log;
-  Bag() : msg("*", "*"), log(NULL) { }
+  Bag() : msg(), log(NULL) { }
   virtual ~Bag() { fclose(log); }
   bool open_log(const string &log_stem, const string &topic_name)
   {
@@ -50,17 +51,18 @@ public:
     fprintf(log, "%s\n", topic_name.c_str());
     return true;
   }
-  static string __get_datatype() { return string("*"); }
-  static string __get_md5sum() { return string("*"); }
+  virtual const string __get_datatype() const { return string("*"); }
+  virtual const string __get_md5sum()   const { return string("*"); }
   uint32_t serialization_length() { return 0; }
-  virtual void serialize(uint8_t *write_ptr) { }
-  virtual void deserialize(uint8_t *read_ptr)
+  virtual uint8_t *serialize(uint8_t *write_ptr) { assert(0); return NULL; }
+  virtual uint8_t *deserialize(uint8_t *read_ptr)
   {
     ros::Duration elapsed = ros::Time::now() - start;
     fwrite(&elapsed.sec, 4, 1, log);
     fwrite(&elapsed.nsec, 4, 1, log);
     fwrite(&__serialized_length, 4, 1, log);
     fwrite(read_ptr, __serialized_length, 1, log);
+    return read_ptr + __serialized_length;
   }
 };
 
@@ -89,7 +91,7 @@ public:
           vac_topics[i][j] = '_';
       }
       if (!bags[i].open_log(string(logdir) + string("/") + vac_topics[i],
-                            vac_topics[i]))
+                            map_name(vac_topics[i])))
         throw std::runtime_error("couldn't open log file\n");
       subscribe(vac_topics[i], bags[i], &Vacuum::dummy_cb);
     }
