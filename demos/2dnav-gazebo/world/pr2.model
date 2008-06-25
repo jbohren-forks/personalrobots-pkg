@@ -1406,7 +1406,7 @@
 
 
     <sensor:ray name="laser_1">
-      <rayCount>3</rayCount>
+      <rayCount>68</rayCount>
       <rangeCount>683</rangeCount>
       <laserCount>1</laserCount>
       <origin>0.0 0.0 0.05</origin>
