@@ -1,0 +1,15 @@
+<manifest>
+  <description>
+    Like the famed Rosetta stone of ages past, the logsetta package will
+    contain translators to/from every imaginable log file format.
+    
+    But hey, you have to start somewhere. Currently all it can do is write
+    CARMEN log files. So you can use the "megamaid" package to make vacuum bags
+    of your experiment, then play them back (also through "megamaid") while the
+    CARMEN logger is running to do the translation.
+  </description>
+  <author>Morgan Quigley</author>
+  <license>BSD</license>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+</manifest>
