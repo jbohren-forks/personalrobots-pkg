@@ -12,7 +12,6 @@ A test file for Player interface.
 <depend package="pr2Core"/>
 <depend package="newmat10"/>
 <depend package="controllers"/>
-<depend package="libpr2HW"/>
 <export>
 <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lPr2_Actarray -lPr2_Gripper -lP3D"/>
 </export>

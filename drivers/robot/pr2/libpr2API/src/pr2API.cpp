@@ -14,6 +14,8 @@ PR2Robot::~PR2Robot(){};
 
 PR2_ERROR_CODE PR2Robot::InitializeRobot()
 {
+  // initialize robot
+  hw.Init();
   return PR2_ALL_OK;
 }
 

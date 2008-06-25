@@ -34,9 +34,6 @@
 #include <vector>
 #include <controllers/Pid.h>
 
-// actuator class, this should have identical calls for SIM and HW
-#include <libpr2HW/pr2HW.h>
-
 namespace gazebo
 {
    class HingeJoint;
