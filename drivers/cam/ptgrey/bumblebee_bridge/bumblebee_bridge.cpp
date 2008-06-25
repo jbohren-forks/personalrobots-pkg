@@ -87,14 +87,20 @@ public:
         float x, y, z;
         unsigned short row, col;
         res.set_points_size(num_pts);
+        res.set_rows_size(num_pts);
+        res.set_cols_size(num_pts);
         for (int i = 0; i < num_pts; i++)
         {
           x = *((float *)(buf + i*(3*4 + 2*2))); // 3 float, 2 unsigned short
           y = *((float *)(buf + i*(3*4 + 2*2) + 4));
           z = *((float *)(buf + i*(3*4 + 2*2) + 8));
+          row = *((uint16_t *)(buf + i*(3*4 + 2*2) + 12));
+          col = *((uint16_t *)(buf + i*(3*4 + 2*2) + 14));
           res.points[i].x = x;
           res.points[i].y = y;
           res.points[i].z = z;
+          res.rows[i] = row;
+          res.cols[i] = col;
         }
         delete[] buf;
       }
