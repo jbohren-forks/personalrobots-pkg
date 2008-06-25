@@ -30,13 +30,13 @@
 
 #include <cstdio>
 #include "image_utils/image_codec.h"
-#include "std_msgs/MsgImage.h"
+#include "std_msgs/Image.h"
 
 int main(int argc, char **argv)
 {
   // todo: test runtime functionality, not just compilation.
-  MsgImage msg;
-  ImageCodec<MsgImage> codec(&msg);
+  std_msgs::Image msg;
+  ImageCodec<std_msgs::Image> codec(&msg);
 
   return 0;
 }

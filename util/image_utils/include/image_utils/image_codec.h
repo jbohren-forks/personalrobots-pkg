@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// This template wraps MsgImage and friends to provide handy C++ functions to
+// This template wraps Image and friends to provide handy C++ functions to
 // compress/decompress images.
 //
 // Copyright (C) 2008, Morgan Quigley
@@ -44,7 +44,7 @@ using std::string;
 
 extern "C"
 {
-#include "jpeglib.h"
+#include "ijg_libjpeg/jpeglib.h"
 }
 
 template<class T>
