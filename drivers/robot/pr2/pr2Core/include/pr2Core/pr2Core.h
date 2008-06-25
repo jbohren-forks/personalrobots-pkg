@@ -1,7 +1,6 @@
 #ifndef __PR2CORE_H__
 #define __PR2CORE_H__
 
-// TODO: put enum in some Pr2 accessible file e.g. pr2.h and include it here
 #define MAX_JOINT_IDS 256
 
 namespace PR2
@@ -178,10 +177,29 @@ namespace PR2
       double z;
    }point3;
 
+
+   typedef struct{
+         point3 pos;
+         double roll;
+         double pitch;
+         double yaw;
+         double spineExtension;
+
+         double headJntAngles[2];
+         double headJntSpeeds[2];
+
+         double rightArmJntAngles[7];
+         double rightArmJntSpeeds[7];
+
+         double leftArmJntAngles[7];
+         double leftArmJntSpeeds[7];
+   }PR2State;
+
    // JointStart/JointEnd corresponds to the PR2_MODEL_ID, start and end id for each model
    enum PR2_MODEL_ID                  {PR2_BASE          ,PR2_SPINE      ,PR2_LEFT_ARM     ,PR2_RIGHT_ARM    ,PR2_LEFT_GRIPPER ,PR2_RIGHT_GRIPPER ,HEAD             , MAX_MODELS };
    const int JointStart[MAX_MODELS] = {CASTER_FL_STEER   ,SPINE_ELEVATOR ,ARM_L_PAN        ,ARM_R_PAN        ,ARM_L_GRIPPER    ,ARM_R_GRIPPER     ,HEAD_YAW         };
    const int JointEnd[MAX_MODELS]   = {CASTER_RR_DRIVE_R ,SPINE_ELEVATOR ,ARM_L_WRIST_ROLL ,ARM_R_WRIST_ROLL ,ARM_L_GRIPPER    ,ARM_R_GRIPPER     ,HEAD_LASER_PITCH };
+
 
 // Geometric description for the base
    const float CASTER_FL_X_OFFSET = 0.25;
@@ -215,5 +233,10 @@ namespace PR2
    const point3 WRIST_ROLL_GRIPPER_OFFSET            = {0       ,0        ,0     };
    const point3 SPINE_RIGHT_ARM_OFFSET               = {0.0     ,  -0.15   , 0.68 };
    const point3 SPINE_LEFT_ARM_OFFSET                = {0.0     , 0.15   , 0.68 };
+
+   const point3 BASE_LEFT_ARM_OFFSET                = {-.1829361    , 0.1329361   , 0.80981 };
+   const point3 BASE_RIGHT_ARM_OFFSET                = {-.1829361    , -0.1329361   , 0.80981 };
+
+   const point3 HEAD_PAN_HEAD_PITCH_OFFSET          = {0,0,0};
 }
 #endif

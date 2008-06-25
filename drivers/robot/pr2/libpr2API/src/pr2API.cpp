@@ -183,16 +183,16 @@ PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, NEWMAT::Matrix
 
    if (id == PR2_RIGHT_ARM)
    {
-      g(1,4) = g(1,4) - SPINE_RIGHT_ARM_OFFSET.x;
-      g(2,4) = g(2,4) - SPINE_RIGHT_ARM_OFFSET.y;
-      g(3,4) = g(3,4) - SPINE_RIGHT_ARM_OFFSET.z;
+      g(1,4) = g(1,4) - BASE_RIGHT_ARM_OFFSET.x;
+      g(2,4) = g(2,4) - BASE_RIGHT_ARM_OFFSET.y;
+      g(3,4) = g(3,4) - BASE_RIGHT_ARM_OFFSET.z;
    }
 
    if (id == PR2_LEFT_ARM)
    {
-      g(1,4) = g(1,4) - SPINE_LEFT_ARM_OFFSET.x;
-      g(2,4) = g(2,4) - SPINE_LEFT_ARM_OFFSET.y;
-      g(3,4) = g(3,4) - SPINE_LEFT_ARM_OFFSET.z;
+      g(1,4) = g(1,4) - BASE_LEFT_ARM_OFFSET.x;
+      g(2,4) = g(2,4) - BASE_LEFT_ARM_OFFSET.y;
+      g(3,4) = g(3,4) - BASE_LEFT_ARM_OFFSET.z;
    }
 
    theta = 0;
@@ -226,16 +226,16 @@ NEWMAT::Matrix PR2Robot::ComputeArmInverseKinematics(PR2_MODEL_ID id, NEWMAT::Ma
 
    if (id == PR2_RIGHT_ARM)
    {
-      g(1,4) = g(1,4) - SPINE_RIGHT_ARM_OFFSET.x;
-      g(2,4) = g(2,4) - SPINE_RIGHT_ARM_OFFSET.y;
-      g(3,4) = g(3,4) - SPINE_RIGHT_ARM_OFFSET.z;
+      g(1,4) = g(1,4) - BASE_RIGHT_ARM_OFFSET.x;
+      g(2,4) = g(2,4) - BASE_RIGHT_ARM_OFFSET.y;
+      g(3,4) = g(3,4) - BASE_RIGHT_ARM_OFFSET.z;
    }
 
    if (id == PR2_LEFT_ARM)
    {
-      g(1,4) = g(1,4) - SPINE_LEFT_ARM_OFFSET.x;
-      g(2,4) = g(2,4) - SPINE_LEFT_ARM_OFFSET.y;
-      g(3,4) = g(3,4) - SPINE_LEFT_ARM_OFFSET.z;
+      g(1,4) = g(1,4) - BASE_LEFT_ARM_OFFSET.x;
+      g(2,4) = g(2,4) - BASE_LEFT_ARM_OFFSET.y;
+      g(3,4) = g(3,4) - BASE_LEFT_ARM_OFFSET.z;
    }
 
    theta = 0;
@@ -244,6 +244,110 @@ NEWMAT::Matrix PR2Robot::ComputeArmInverseKinematics(PR2_MODEL_ID id, NEWMAT::Ma
 };
 
 
+bool PR2Robot::IsModel(PR2_MODEL_ID modelId, PR2_JOINT_ID jointId)
+{
+   if (jointId >= JointStart[modelId] && jointId <= JointEnd[jointId])
+      return true;
+
+   return false;
+};
+
+NEWMAT::Matrix GetPose(PR2::PR2State rS)
+{
+   NEWMAT::Matrix g(4,4);
+
+   double x[3];
+   x[0] = rS.pos.x;
+   x[1] = rS.pos.y;
+   x[2] = rS.pos.z;
+
+   g = kinematics::Transform(x,rS.roll,rS.pitch,rS.yaw);
+   return g;
+}
+
+NEWMAT::Matrix PR2Robot::ComputeBodyPose(PR2_JOINT_ID id, PR2::PR2State rS)
+{
+   NEWMAT::Matrix worldToBase(4,4), baseToBody(4,4);
+   NEWMAT::IdentityMatrix I(4);
+
+   worldToBase = GetPose(rS);
+   baseToBody = I;
+
+   if(IsModel(PR2::HEAD,id))
+   {
+      baseToBody = ComputeHeadBodyPose(id,rS);
+      baseToBody(3,4) += rS.spineExtension;
+   }
+
+   if(IsModel(PR2::PR2_RIGHT_ARM,id) || IsModel(PR2::PR2_LEFT_ARM,id))
+   {
+      baseToBody = ComputeArmBodyPose(id,rS);
+      baseToBody(3,4) += rS.spineExtension;
+   }
+#ifdef DEBUG
+   PrintMatrix(worldToBase,"ComputeBodyPose::worldToBase");
+   PrintMatrix(baseToBody,"ComputeBodyPose::baseToBody");
+#endif
+   return (worldToBase*baseToBody);
+};
+
+
+NEWMAT::Matrix PR2Robot::ComputeHeadBodyPose(PR2_JOINT_ID id, PR2::PR2State rS)
+{
+   NEWMAT::Matrix g(4,4);
+   g = myHead.ComputeFK(rS.headJntAngles,id-JointStart[HEAD]);
+   return g;
+};
+
+
+
+NEWMAT::Matrix PR2Robot::ComputeArmBodyPose(PR2_JOINT_ID id, PR2::PR2State rS)
+{
+   NEWMAT::Matrix g(4,4);
+
+   if (IsModel(PR2::PR2_RIGHT_ARM,id))
+   {
+      g      = myArm.ComputeFK(rS.rightArmJntAngles,id-JointStart[PR2_RIGHT_ARM]+1);
+      g(1,4) = g(1,4) + BASE_RIGHT_ARM_OFFSET.x;
+      g(2,4) = g(2,4) + BASE_RIGHT_ARM_OFFSET.y;
+      g(3,4) = g(3,4) + BASE_RIGHT_ARM_OFFSET.z;
+   }
+
+   if (IsModel(PR2::PR2_LEFT_ARM,id))
+   {
+      g      = myArm.ComputeFK(rS.leftArmJntAngles,id-JointStart[PR2_LEFT_ARM]+1);
+      g(1,4) = g(1,4) + BASE_LEFT_ARM_OFFSET.x;
+      g(2,4) = g(2,4) + BASE_LEFT_ARM_OFFSET.y;
+      g(3,4) = g(3,4) + BASE_LEFT_ARM_OFFSET.z;
+   }
+
+   return g;
+};
+
+
+NEWMAT::Matrix PR2Robot::ComputeArmBodyPose(PR2_JOINT_ID id, PR2::PR2State rS, NEWMAT::Matrix localPose)
+{
+   NEWMAT::Matrix g(4,4);
+
+   if (IsModel(PR2::PR2_RIGHT_ARM,id))
+   {
+      g      = myArm.ComputeFK(rS.rightArmJntAngles,id-JointStart[PR2_RIGHT_ARM]+1);
+      g(1,4) = g(1,4) + BASE_RIGHT_ARM_OFFSET.x;
+      g(2,4) = g(2,4) + BASE_RIGHT_ARM_OFFSET.y;
+      g(3,4) = g(3,4) + BASE_RIGHT_ARM_OFFSET.z;
+   }
+
+   if (IsModel(PR2::PR2_LEFT_ARM,id))
+   {
+      g      = myArm.ComputeFK(rS.leftArmJntAngles,id-JointStart[PR2_LEFT_ARM]+1);
+      g(1,4) = g(1,4) + BASE_LEFT_ARM_OFFSET.x;
+      g(2,4) = g(2,4) + BASE_LEFT_ARM_OFFSET.y;
+      g(3,4) = g(3,4) + BASE_LEFT_ARM_OFFSET.z;
+   }
+
+   return (g*localPose);
+};
+
 
 NEWMAT::Matrix PR2Robot::ComputeArmForwardKinematics(PR2_MODEL_ID id, double angles[])
 {
@@ -251,16 +355,16 @@ NEWMAT::Matrix PR2Robot::ComputeArmForwardKinematics(PR2_MODEL_ID id, double ang
 
    if (id == PR2_RIGHT_ARM)
    {
-      g(1,4) = g(1,4) + SPINE_RIGHT_ARM_OFFSET.x;
-      g(2,4) = g(2,4) + SPINE_RIGHT_ARM_OFFSET.y;
-      g(3,4) = g(3,4) + SPINE_RIGHT_ARM_OFFSET.z;
+      g(1,4) = g(1,4) + BASE_RIGHT_ARM_OFFSET.x;
+      g(2,4) = g(2,4) + BASE_RIGHT_ARM_OFFSET.y;
+      g(3,4) = g(3,4) + BASE_RIGHT_ARM_OFFSET.z;
    }
 
    if (id == PR2_LEFT_ARM)
    {
-      g(1,4) = g(1,4) + SPINE_LEFT_ARM_OFFSET.x;
-      g(2,4) = g(2,4) + SPINE_LEFT_ARM_OFFSET.y;
-      g(3,4) = g(3,4) + SPINE_LEFT_ARM_OFFSET.z;
+      g(1,4) = g(1,4) + BASE_LEFT_ARM_OFFSET.x;
+      g(2,4) = g(2,4) + BASE_LEFT_ARM_OFFSET.y;
+      g(3,4) = g(3,4) + BASE_LEFT_ARM_OFFSET.z;
    }
    return g;
 };

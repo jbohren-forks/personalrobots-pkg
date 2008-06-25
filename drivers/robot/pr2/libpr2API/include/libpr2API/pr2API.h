@@ -438,6 +438,13 @@ namespace PR2
      public: NEWMAT::Matrix ComputeArmForwardKinematics(PR2_MODEL_ID id, double angles[]);
 
          /*! \fn
+           \brief Forward Kinematics - compute the pose of a particular body/link
+           \param id - model ID, see pr2Core.h for a list of model IDs
+           \param angles - joint angles
+         */
+     public: NEWMAT::Matrix ComputeBodyPose(PR2_BODY_ID id, double angles[]);
+
+         /*! \fn
            \brief Inverse Kinematics - Compute joint angles corresponding to end-effector position and orientation
            \param id - model ID, see pr2Core.h for a list of model IDs
            \param g - representation of end-effector position and orientation
@@ -551,6 +558,43 @@ namespace PR2
          */
       public: PR2_ERROR_CODE RunRobot();
 
+      /* \fn
+         \brief - Compute the pose of a particular link/body on the robot. See pr2Core.h for a list of bodies.
+         \param id - ID of the joint that the body rotates with
+         \param rS - state of the robot. See pr2Core.h for a definition.
+      */
+      public: NEWMAT::Matrix ComputeBodyPose(PR2_JOINT_ID id, PR2::PR2State rS);
+
+      /* \fn
+         \brief - Compute the pose of a particular link/body on the head. See pr2Core.h for a list of bodies.
+         \param id - ID of the joint that the body rotates with
+         \param rS - state of the robot. See pr2Core.h for a definition.
+      */
+     private: NEWMAT::Matrix ComputeHeadBodyPose(PR2_JOINT_ID id, PR2::PR2State rS);
+
+
+      /* \fn
+         \brief - Compute the pose of a particular link/body on the arm. See pr2Core.h for a list of bodies.
+         \param id - ID of the joint that the body rotates with
+         \param rS - state of the robot. See pr2Core.h for a definition.
+      */
+     private: NEWMAT::Matrix ComputeArmBodyPose(PR2_JOINT_ID id, PR2::PR2State rS);
+
+     /* \fn
+         \brief - Compute the global pose of a reference frame of interest attached to a particular link/body on the arm. See pr2Core.h for a list of bodies.
+         \param id - ID of the joint that the body rotates with
+         \param rS - state of the robot. See pr2Core.h for a definition.
+         \param localPose - local pose of a local frame of reference attached to body/link of interest.
+      */
+     private: NEWMAT::Matrix ComputeArmBodyPose(PR2_JOINT_ID id, PR2::PR2State rS, NEWMAT::Matrix localPose);
+
+
+     /* \fn
+         \brief Return true if body belongs to model
+         \param modelId - ID of the model
+         \param jointId - ID of the joint that the body rotates with
+      */
+     private: bool IsModel(PR2_MODEL_ID modelId, PR2_JOINT_ID jointId);
 
          /*! \fn
            \brief - Stop the robot
@@ -560,6 +604,7 @@ namespace PR2
       protected: PR2_CONTROL_MODE armControlMode[2];
       protected: PR2_CONTROL_MODE baseControlMode;
       protected: PR2Arm myArm; 
+      protected: PR2Head myHead;
 
       public: PR2_kinematics pr2_kin; // for kinematics using KDL.
 

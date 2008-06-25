@@ -66,6 +66,11 @@ namespace PR2
            \brief Destructor
          */
       public: virtual ~PR2HW();
+         
+    /*! \fn
+        \brief This is where hardware/gazebo interfaces should be initialized 
+    */
+     public: PR2_ERROR_CODE Init();
 
          /*! \fn
            \brief - returns simulation time
@@ -294,6 +299,34 @@ namespace PR2
                      uint32_t*    data_size             ,void*        data                  );
 
          /*! \fn
+           \brief Retrieve caster/wheel properties and estimate velocity of the base in cartesian space in body coordinates 
+           \param vx - forward speed
+           \param vy - sideways speed
+           \param vw - rotational speed
+         */
+      public: PR2_ERROR_CODE GetBaseCartesianSpeedGroundTruth(double* vx, double* vy, double* vw);
+
+         /*! \fn
+           \brief Retrieve base box position
+           \param x - forward
+           \param y - sideways (left)
+           \param w - upward
+         */
+      public: PR2_ERROR_CODE GetBasePositionGroundTruth(double* x, double* y, double* z);
+
+
+         /*! \fn
+           \brief - Get ground truth base position
+         */
+     public: PR2_ERROR_CODE GetBasePositionGroundTruth(double* x, double* y, double *z, double *roll, double *pitch, double *yaw);
+
+         /*! \fn
+           \brief Send out the commands to the actual robot
+         */
+     public: PR2_ERROR_CODE UpdateHW();
+
+
+         /*! \fn
            \brief Get the actual wrist pose 
            \param id - model ID, see pr2Core.h for a list of model IDs
            \param *x pointer to return value of x position of the wrist 
@@ -311,13 +344,6 @@ namespace PR2
            \param id - model ID, see pr2Core.h for a list of model IDs
          */
      public: NEWMAT::Matrix GetWristPoseGroundTruth(PR2_MODEL_ID id);
-
-
-         /*! \fn
-           \brief - Get ground truth base position
-         */
-     public: PR2_ERROR_CODE GetBasePositionGroundTruth(double* x, double* y, double *z, double *roll, double *pitch, double *yaw);
-     public: PR2_ERROR_CODE UpdateHW();
 
     };
 

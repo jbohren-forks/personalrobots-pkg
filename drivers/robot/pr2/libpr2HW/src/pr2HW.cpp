@@ -62,6 +62,16 @@ static gazebo::PositionIface    *pr2BaseIface;
 PR2HW::PR2HW()
 {
 
+
+}
+
+PR2HW::~PR2HW()
+{
+
+}
+
+PR2_ERROR_CODE PR2HW::Init()
+{
    client                  = new gazebo::Client();
    simIface                = new gazebo::SimulationIface();
    pr2Iface                = new gazebo::PR2ArrayIface();
@@ -236,14 +246,8 @@ PR2HW::PR2HW()
     << e << "\n";
     pr2BaseIface = NULL;
   }
+};
 
-
-}
-
-PR2HW::~PR2HW()
-{
-
-}
 
 PR2_ERROR_CODE PR2HW::GetSimTime(double *sim_time)
 {
