@@ -55,8 +55,7 @@ import rospy
 NAME = 'namelookup_server'
 
 names = {}
-current_val = int(2)
-
+current_val = [1,2]
 
 def nameLookup(req):
     print 'hi '
@@ -66,10 +65,9 @@ def nameLookup(req):
         print "i've got it"
     else:
         print 'new ' + req.name
-        names[req.name] = current_val
+        names[req.name] = current_val[1]
         print 'about to increment'
-        #        current_val = current_val + 1
-        #current_val = 2
+        current_val[1] = current_val[1] + 1
         print 'about to print '
         print names[req.name]
         print 'done printing'
