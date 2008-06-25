@@ -143,6 +143,54 @@ NEWMAT::Matrix kinematics::Translate(double p[])
    return tM;
 };
 
+
+
+void kinematics::MatrixToEuler(NEWMAT::Matrix matrix_in, double &roll, double &pitch, double &yaw, double &roll2, double &pitch2, double &yaw2)
+{
+  double* matrix_pointer = matrix_in.Store(); //get the pointer to the raw data
+ 
+  if (fabs(matrix_pointer[8]) >= 1)  // Check that pitch is not at a singularity
+    {
+      pitch = - asin(matrix_pointer[8]);
+      pitch2 = M_PI - pitch;
+
+      roll = atan2(matrix_pointer[9]/cos(pitch), 
+			     matrix_pointer[10]/cos(pitch));
+      roll2 = atan2(matrix_pointer[9]/cos(pitch2), 
+			      matrix_pointer[10]/cos(pitch2));
+      
+      yaw = atan2(matrix_pointer[4]/cos(pitch), 
+			    matrix_pointer[1]/cos(pitch));
+      yaw2 = atan2(matrix_pointer[4]/cos(pitch2), 
+			     matrix_pointer[1]/cos(pitch2));
+    }
+  else
+    {
+      yaw = 0;
+      yaw2 = 0;
+      double delta = atan2(matrix_pointer[1],matrix_pointer[2]);      // From difference of angles formula
+      if (matrix_pointer[8] > 0)  //gimbal locked up
+	{
+	  pitch = M_PI / 2.0;
+	  pitch2 = M_PI / 2.0;
+	  roll = pitch + delta;
+	  roll2 = pitch + delta;
+	}
+      else // gimbal locked down
+	{
+	  pitch = -M_PI / 2.0;
+	  pitch2 = -M_PI / 2.0;
+	  roll = -pitch + delta;
+	  roll2 = -pitch + delta;
+	}
+    }
+  
+}
+
+
+
+
+
 NEWMAT::Matrix kinematics::Transform(double p[], double roll, double pitch, double yaw)
 {
    NEWMAT::Matrix tM(4,4);

@@ -112,6 +112,16 @@ namespace kinematics
 
 
    /*! \fn
+   \brief Generate roll, pitch and yaw euler angles corresponding to the homogeneous transformation matrix 
+   \param matrix_in - homogeneous matrix representation
+   \param roll_out - roll angle
+   \param pitch_out - pitch angle
+   \param yaw_out - yaw angle
+   */   
+   void MatrixToEuler(NEWMAT::Matrix matrix_in, double &roll, double &pitch, double &yaw, double &roll2, double &pitch2, double &yaw2);
+
+
+   /*! \fn
    \brief Get the position/translation part of a homogeneous transformation matrix 
    \param p - homogeneous transformation matrix
    \return Output position vector
