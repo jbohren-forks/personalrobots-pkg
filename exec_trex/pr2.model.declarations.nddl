@@ -75,10 +75,16 @@ class Behavior extends AgentTimeline {
  * WaypointController will handle active control of vehicle to accomplish 
  * a waypoint. This maps to the wave front planner.
  */
-class WaypointController extends Behavior {
+class WaypointController extends AgentTimeline {
         predicate Inactive{
 		PFLOAT x;
 		PFLOAT y;
+		PFLOAT desX;
+		PFLOAT desY;
+
+		// Require actual and desired values to be within some tolerance
+		addEq(x, [-1.0, 1.0], desX);
+		addEq(y, [-1.0, 1.0], desY);
         }
 
 	// Parameters to get to the target
@@ -88,7 +94,7 @@ class WaypointController extends Behavior {
 	}
 
 	WaypointController(Mode _mode){
-		super(_mode);
+	  super(_mode, "Inactive");
 	}
 }
 
@@ -121,10 +127,9 @@ class VelCommander extends AgentTimeline {
 }
 
 /**
- * Captures high-level navigation state, in terms of moving towards a target
- * waypoint. No consideration is made at this level for the path to the target.
+ * A behavior to Clean something, at a given location. This will drive navigation and arm control.
  */
-class Navigator extends AgentTimeline {
+class CleanBehavior extends Behavior {
 
 	/**
 	 * Inactive
@@ -132,15 +137,19 @@ class Navigator extends AgentTimeline {
 	predicate Inactive{}
 
 	/**
-	 * Navigation to a target position
+	 * When active, it will clean at a specified location in space
          */
-	predicate Going{
+	predicate Active{
 		PFLOAT x;
 		PFLOAT y;
 		PRIORITY priority; // 0 is highest priority
 	}
 
-	Navigator(Mode _mode){
-		super(_mode, "Inactive");
+	CleanBehavior(Mode _mode){
+		super(_mode);
 	}
-}
+};
+
+class Actions extends AgentActions{
+  predicate StartBehavior{eq(duration, 1);}
+};

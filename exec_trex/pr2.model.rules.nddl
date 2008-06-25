@@ -42,26 +42,37 @@ Behavior::Active{
   meets(Inactive);
 }
 
-Navigator::Going{
+/**
+ * This will be a decomposition of things to do cleaning. We will require the robot
+ * to be at the target position within some error.
+ */
+CleanBehavior::Active{
   // If the target is bound then generate behavior to accomplish goal
   if(x){
-    if(y){		 
-      any(WaypointController.Inactive pos);
-      precedes(pos.start, start);
-      precedes(start, pos.end); 
-   
-      bool plan_done;
-      calcGlobalPath(plan_done, pos.x, pos.y,  x, y);	     
-      eq(plan_done,true);
-      pos meets(WaypointController.Active wpc);
-      ends wpc;
-      eq(wpc.x, x);
-      eq(wpc.y, y);
+    if(y){	 
+      // While cleaning, we expect to be at the desired location.
+      contained_by(WaypointController.Inactive wp);
+      eq(wp.desX, x);
+      eq(wp.desY, y);
     }
   }
+
+  // To be proactive, start the behavior as soon as you can. We do this by generating an action
+  // which the agent will start
+  starts(Actions.StartBehavior);
+
+  // For now, we will simply do nothing for 10 ticks
+  eq(duration, 10);
 }
 
 WaypointController::Inactive {
+  met_by(Active p);
+  eq(p.x, desX);
+  eq(p.y, desY);
+
+  meets(Active s);
+
+  // For when we implemenet the controller in NDDL
   if(object.mode == Internal) {
     starts(VehicleState.Holds pos);
     eq(x, pos.x);
@@ -70,7 +81,14 @@ WaypointController::Inactive {
 }
 
 WaypointController::Active {
+  met_by(Inactive p);
+  meets(Inactive s);
+  eq(x, s.desX);
+  eq(y, s.desY);
+
   if(object.mode == Internal) {
+    bool plan_done;
+    calcGlobalPath(plan_done, p.x, p.y, x, y);
     starts(VelController.Active vc);
     eq(vc.goal_x, x);
     eq(vc.goal_y, y);
@@ -80,7 +98,7 @@ WaypointController::Active {
 
 /**
  * Implementation for Velocity Controller. Produces Velocity Commands to 
- * bridge gap between current and desried pose. Desired pose is obtained from the WaypointController
+ * bridge gap between current and desired pose. Desired pose is obtained from the WaypointController
  */
 VelController::Active {
   // Controller will operate at 1 Hz (cycles per tick)
