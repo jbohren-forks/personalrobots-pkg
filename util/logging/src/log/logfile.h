@@ -36,7 +36,7 @@ using std::pair;
 class Logfile : public ros::msg
 {
 public:
-  Logfile() : msg("*", "*"){};
+  Logfile() : msg() { }
   string strip_topic(string topic){
     string stripped_topic = topic;
     size_t pos;
@@ -45,8 +45,6 @@ public:
     }
     return stripped_topic;
   }
-  static string __get_datatype() {return string("*");}
-  static string __get_md5sum() {return string("*");}
 };
 
 class LogfileCapture : public Logfile{
@@ -62,14 +60,17 @@ public:
   ~LogfileCapture(){
     fclose(logfile);
   }
+  inline virtual const string __get_datatype() const {return string("*");}
+  inline virtual const string __get_md5sum()   const {return string("*");}
   uint32_t serialization_length() {return 0;}
-  void serialize(uint8_t *write_ptr){throw "Tried to serialize a capture-only logfile";};
-  void deserialize(uint8_t *read_ptr){
+  uint8_t *serialize(uint8_t *write_ptr){throw "Tried to serialize a capture-only logfile"; return NULL; };
+  uint8_t *deserialize(uint8_t *read_ptr){
     ros::Duration elapsed = ros::Time::now() - start;
     fwrite(&elapsed.sec, 4, 1, logfile);
     fwrite(&elapsed.nsec, 4, 1, logfile);
     fwrite(&__serialized_length, 4, 1, logfile);
     fwrite(read_ptr, __serialized_length, 1, logfile);
+    return read_ptr + __serialized_length;
   }
 private:
   FILE *logfile;
