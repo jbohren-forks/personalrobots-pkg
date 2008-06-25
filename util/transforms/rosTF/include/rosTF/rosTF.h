@@ -45,7 +45,7 @@
 #include "std_msgs/TransformQuaternion.h"
 #include "libTF/libTF.h"
 #include "std_msgs/PointCloudFloat32.h"
-
+#include "namelookup/NameToNumber.h"
 
 //TODO FIXME REMOVE WHEN FRAME ID SERVER IS IMPLEMENTED
 #define FRAMEID_MAP 1
@@ -107,6 +107,8 @@ class rosTFServer
   /** \brief Send a transform using Quaternion notation */
   void sendQuaternion(unsigned int frame, unsigned int parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, unsigned int secs, unsigned int nsecs);
 
+
+  void nameLookup(std::string astring);
  private:
   //ros::node reference to allow setting callbacks
   ros::node & myNode;

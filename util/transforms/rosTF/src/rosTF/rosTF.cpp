@@ -201,3 +201,12 @@ void rosTFServer::sendQuaternion(unsigned int frame, unsigned int parent, double
   myNode.publish("TransformQuaternion", quaternionOut);
 
 };
+
+void rosTFServer::nameLookup(std::string astring)
+{
+  namelookup::NameToNumber::request req;
+  namelookup::NameToNumber::response res;
+  req.name = astring;
+  ros::service::call("nameToNumber", req, res);
+  std::cout << astring << " maps to: " << res.number <<std::endl;
+};

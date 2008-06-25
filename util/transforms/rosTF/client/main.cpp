@@ -36,6 +36,7 @@ int main(int argc, char ** argv)
   //will take care of everything
   while(testListener.ok())
     {
+      std::cout<<testListener.map_name("asdf")<<std::endl;
       sleep(1);
     }
 

@@ -13,4 +13,5 @@ Library for doing transformations within ROS.
 <depend package="libTF"/>
 <depend package="roscpp"/>
 <depend package="std_msgs"/>
+<depend package="namelookup"/>
 </package>
