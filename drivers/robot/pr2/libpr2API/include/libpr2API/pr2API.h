@@ -614,6 +614,21 @@ namespace PR2
          */
       public: PR2_ERROR_CODE StopRobot();
 
+
+      public: PR2_ERROR_CODE GetLeftGripperCmd(double *gap,double *force);
+
+      public: PR2_ERROR_CODE GetLeftGripperActual(double *gap,double *force);
+
+      public: PR2_ERROR_CODE GetRightGripperCmd(double *gap,double *force);
+
+      public: PR2_ERROR_CODE GetRightGripperActual(double *gap,double *force);
+
+         /*! \fn
+           \brief - returns current time from simulator
+         */
+      public: PR2_ERROR_CODE GetTime(double *time);
+
+
       protected: PR2_CONTROL_MODE armControlMode[2];
       protected: PR2_CONTROL_MODE baseControlMode;
       protected: PR2Arm myArm; 

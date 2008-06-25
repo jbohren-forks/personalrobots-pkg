@@ -206,7 +206,7 @@ GazeboNode::cmdvelReceived()
 
   // smooth out the commands by time decay
   // with w1,w2=1, this means equal weighting for new command every second
-  this->myPR2->hw.GetSimTime(&(this->simTime));
+  this->myPR2->GetTime(&(this->simTime));
   dt = simTime - lastTime;
 
   // smooth if dt is larger than zero
@@ -289,8 +289,8 @@ GazeboNode::GazeboNode(int argc, char** argv, const char* fname) :
   this->myPR2->EnableGripperLeft();
   this->myPR2->EnableGripperRight();
 
-  this->myPR2->hw.GetSimTime(&(this->lastTime));
-  this->myPR2->hw.GetSimTime(&(this->simTime));
+  this->myPR2->GetTime(&(this->lastTime));
+  this->myPR2->GetTime(&(this->simTime));
 
   // set torques for driving the robot wheels
   // this->myPR2->hw.SetJointTorque(PR2::CASTER_FL_DRIVE_L, 1000.0 );
@@ -441,7 +441,7 @@ GazeboNode::Update()
   }
 
 
-  this->myPR2->hw.GetSimTime(&(this->simTime));
+  this->myPR2->GetTime(&(this->simTime));
 
   /***************************************************************/
   /*                                                             */
@@ -569,7 +569,7 @@ GazeboNode::Update()
 	simPitchOffset = -M_PI / 8.0;
 	simPitchAngle = simPitchOffset + simPitchAmp * sin(this->simTime * simPitchTimeScale);
 	simPitchRate  =  simPitchAmp * simPitchTimeScale * cos(this->simTime * simPitchTimeScale); // TODO: check rate correctness
-  this->myPR2->hw.GetSimTime(&this->simTime);
+  this->myPR2->GetTime(&this->simTime);
 	//std::cout << "sim time: " << this->simTime << std::endl;
 	//std::cout << "ang: " << simPitchAngle*180.0/M_PI << "rate: " << simPitchRate*180.0/M_PI << std::endl;
 	this->myPR2->hw.SetJointTorque(PR2::HEAD_LASER_PITCH , 1000.0);
@@ -610,7 +610,7 @@ GazeboNode::Update()
   larm.wristPitchAngle   = position;
   this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_WRIST_ROLL,     &position, &velocity);
   larm.wristRollAngle    = position;
-  this->myPR2->hw.GetGripperActual  (PR2::PR2_LEFT_GRIPPER,      &position, &velocity);
+  this->myPR2->GetLeftGripperActual  (                              &position, &velocity);
   larm.gripperForceCmd   = velocity;
   larm.gripperGapCmd     = position;
   publish("left_pr2arm_pos", larm);
@@ -630,7 +630,7 @@ GazeboNode::Update()
   rarm.wristPitchAngle   = position;
   this->myPR2->hw.GetJointPositionActual(PR2::ARM_R_WRIST_ROLL,     &position, &velocity);
   rarm.wristRollAngle    = position;
-  this->myPR2->hw.GetGripperActual  (PR2::PR2_RIGHT_GRIPPER,     &position, &velocity);
+  this->myPR2->GetRightGripperActual  (                             &position, &velocity);
   rarm.gripperForceCmd   = velocity;
   rarm.gripperGapCmd     = position;
   publish("right_pr2arm_pos", rarm);

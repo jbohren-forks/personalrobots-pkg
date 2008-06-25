@@ -804,5 +804,33 @@ PR2_ERROR_CODE PR2Robot::GetBasePositionActual(double* x, double* y, double *z, 
 };
 
 
+PR2_ERROR_CODE PR2Robot::GetLeftGripperCmd(double *gap,double *force)
+{
+   hw.GetGripperCmd((PR2_MODEL_ID)PR2::PR2_LEFT_GRIPPER,gap,force);
+   return PR2_ALL_OK;
+}
 
+PR2_ERROR_CODE PR2Robot::GetLeftGripperActual(double *gap,double *force)
+{
+   hw.GetGripperActual((PR2_MODEL_ID)PR2::PR2_LEFT_GRIPPER,gap,force);
+   return PR2_ALL_OK;
+}
+
+PR2_ERROR_CODE PR2Robot::GetRightGripperCmd(double *gap,double *force)
+{
+   hw.GetGripperCmd((PR2_MODEL_ID)PR2::PR2_RIGHT_GRIPPER,gap,force);
+   return PR2_ALL_OK;
+}
+
+PR2_ERROR_CODE PR2Robot::GetRightGripperActual(double *gap,double *force)
+{
+   hw.GetGripperActual((PR2_MODEL_ID)PR2::PR2_RIGHT_GRIPPER,gap,force);
+   return PR2_ALL_OK;
+}
+
+
+PR2_ERROR_CODE PR2Robot::GetTime(double *time)
+{
+   return hw.GetSimTime(time);
+}
 
