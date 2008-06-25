@@ -1,0 +1,14 @@
+material PR2/floor_texture
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture map3.png
+        tex_address_mode clamp
+      }
+    }
+  }
+}
