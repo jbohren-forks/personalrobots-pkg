@@ -143,7 +143,6 @@ NEWMAT::Matrix kinematics::Translate(double p[])
    return tM;
 };
 
-
 NEWMAT::Matrix kinematics::Transform(double p[], double roll, double pitch, double yaw)
 {
    NEWMAT::Matrix tM(4,4);
@@ -360,7 +359,7 @@ NEWMAT::Matrix SerialRobot::GetLinkPose(int id, double angles[])
    if(id ==0)//ground link
       returnPose = I;
    else
-      returnPose = ComputeFK(angles,id-1);
+      returnPose = ComputeFK(angles,id);
 
    return returnPose;
 };
@@ -392,7 +391,7 @@ NEWMAT::Matrix SerialRobot::GetJointAxis(int id)
 NEWMAT::Matrix SerialRobot::ComputeFK(double jointAngles[])
 {
    NEWMAT::Matrix returnPose;
-   returnPose = ComputeFK(jointAngles,numberJoints-1);
+   returnPose = ComputeFK(jointAngles,numberJoints);
 
    return returnPose;
 };
@@ -404,7 +403,7 @@ NEWMAT::Matrix SerialRobot::ComputeFK(double jointAngles[], int id)
 
    returnPose = I;
 
-   for(int ii = 0; ii <= id; ii++)
+   for(int ii = 0; ii < id; ii++)
    {
       returnPose = returnPose * ExpTwist(joints[ii].twist,jointAngles[ii]);
 #ifdef DEBUG
@@ -418,10 +417,7 @@ NEWMAT::Matrix SerialRobot::ComputeFK(double jointAngles[], int id)
    cout << "ComputeFK::" << "link Pose " << endl << joints[id].linkPose << endl;
    cout << "returnPose::" << endl << returnPose << endl;
 #endif
-   if(id == (numberJoints-1))
-      returnPose = returnPose * joints[id].linkPose;
-   else
-      returnPose = returnPose * joints[id].linkPose;
+      returnPose = returnPose * joints[id-1].linkPose;
 
    return returnPose;
 };

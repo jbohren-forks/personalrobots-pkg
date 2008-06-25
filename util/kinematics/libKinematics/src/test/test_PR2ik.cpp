@@ -9,7 +9,6 @@ using namespace std;
 int main()
 {
    NEWMAT::Matrix g(4,4);
-   double theta1 = 0;
    g = 0;
 
    PR2Arm myArm;

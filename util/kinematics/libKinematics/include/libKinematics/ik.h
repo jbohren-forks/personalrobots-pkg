@@ -50,8 +50,15 @@ namespace PR2
 
          NEWMAT::Matrix ComputeIK(NEWMAT::Matrix g, double theta1);
 
-         SerialRobot Wrist;
    };
+
+   class PR2Head : public kinematics::SerialRobot
+   {
+      public:
+
+         PR2Head();
+   };
+
 }
 
 #endif

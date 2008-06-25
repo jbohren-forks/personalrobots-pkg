@@ -20,7 +20,6 @@ PR2Arm::PR2Arm()
    double p6[3] = {p5[0]+ELBOW_ROLL_WRIST_PITCH_OFFSET.x,p5[1],p5[2]};
    double p7[3] = {p6[0]+WRIST_PITCH_WRIST_ROLL_OFFSET.x,p6[1],p6[2]};
 
-   double wristDummy[3] = {0,0,0};
 
 /* Axis definitions */
    double axis1[3] = {0,0,1};
@@ -52,7 +51,7 @@ NEWMAT::Matrix PR2Arm::ComputeIK(NEWMAT::Matrix g, double theta1)
 {
    /*** A first solution using the shoulder rotation as a parameterization ***/
    /* Find shoulder offset point */
-   int ii, jj, kk, ll;
+   int jj, kk, ll;
 
    double t1,t2,t3,t4,t5,t6,t7;
 
@@ -233,6 +232,29 @@ NEWMAT::Matrix PR2Arm::ComputeIK(NEWMAT::Matrix g, double theta1)
 }
 
 
+PR2Head::PR2Head()
+{
+/* Link lengths */
+   double p1[3] = {0,0,0};
+   double p2[3] = {p1[0]+HEAD_PAN_HEAD_PITCH_OFFSET.x,p1[1]+HEAD_PAN_HEAD_PITCH_OFFSET.y,p1[2]+HEAD_PAN_HEAD_PITCH_OFFSET.z};
+
+/* Axis definitions */
+   double axis1[3] = {0,0,1};
+   double axis2[3] = {0,1,0};
+
+/* Joint angles and speeds for testing */
+   double angles[2] = {0,0};
+
+   this->Initialize(2);
+   this->AddJoint(p1,axis1,kinematics::ROTARY);
+   this->AddJoint(p2,axis2,kinematics::ROTARY);
+
+   NEWMAT::Matrix g0 = this->GetLinkPose(2,angles);
+   this->SetHomePosition(g0);
+}
+
+
+
 /**** List of angles (for reference) *******
 th1 = shoulder/turret pan
 th2 = shoulder/turret lift/pitch
@@ -241,55 +263,4 @@ th4 = elbow pitch
 th5 = elbow roll 
 th6 = wrist pitch
 th7 = wrist roll 
-
-   NEWMAT::Matrix gWrist(4,4);
-   NEWMAT::Matrix pWrist(4,1);
-   NEWMAT::Matrix rWrist(4,1);
-
-   pWrist(1,1) = 0.1;
-   pWrist(2,1) = 0;
-   pWrist(3,1) = 0;
-   pWrist(4,1) = 1;
-
-   rWrist(1,1) = 0;
-   rWrist(2,1) = 0;
-   rWrist(3,1) = 0;
-   rWrist(4,1) = 1;
-
-   gWrist = g;
-
-   gWrist(1,4) = 0;
-   gWrist(2,4) = 0;
-   gWrist(3,4) = 0;
-
-   double *theta_wrist = new double[2];
-
-   NEWMAT::Matrix qWrist = gWrist*g0Wrist.i()*pWrist;
-
-   NEWMAT::Matrix wristxi3 = Wrist.GetJointExponential(2,0);
-
-   NEWMAT::Matrix omega4 = this->GetJointAxis(4);
-   NEWMAT::Matrix omega5 = this->GetJointAxis(5);
-   NEWMAT::Matrix omega6 = this->GetJointAxis(6);
-
-   SubProblem2(pWrist,qWrist,rWrist,omega4,omega5,theta_wrist);
-   
-   theta(5,1) = theta_wrist[0];
-   theta(6,1) = theta_wrist[1];
-
-   NEWMAT::Matrix wristxi1 = Wrist.GetJointExponential(0,theta(5,1));
-   NEWMAT::Matrix wristxi2 = Wrist.GetJointExponential(1,theta(6,1));
-
-   NEWMAT::Matrix rhs = wristxi2.i()*wristxi1.i()*gWrist*g0Wrist.i()*pWrist;
-   theta(7,1) = SubProblem1(pWrist,rhs,rWrist,omega6);
-
-   double wristAngles[3] = {0,0,0};
-   Wrist.Initialize(3);
-   Wrist.AddJoint(wristDummy,axis5,kinematics::ROTARY);
-   Wrist.AddJoint(wristDummy,axis6,kinematics::ROTARY);
-   Wrist.AddJoint(wristDummy,axis7,kinematics::ROTARY);
-
-   NEWMAT::Matrix g0Wrist = this->GetLinkPose(3,wristAngles);
-   Wrist.SetHomePosition(g0Wrist);
-
 ****/
