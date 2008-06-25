@@ -1,0 +1,7 @@
+<launch>
+
+  <group name="wg">
+    <node ns="wg1" pkg="namelookup" type="namelookup_client" args="asdf2" respawn="false" />
+  </group>
+</launch>
+

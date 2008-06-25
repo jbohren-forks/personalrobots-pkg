@@ -55,7 +55,7 @@ from namelookup.srv import *
 
 def nameLookupClient(x):
     try:
-        s = rospy.ServiceProxy('nameToNumber', NameToNumber)
+        s = rospy.ServiceProxy('/nameToNumber', NameToNumber)
         #TODO: try/except
         print "Requesting %s"%(x)
         resp = s.call(NameToNumberRequest(x))
@@ -79,4 +79,5 @@ if __name__ == "__main__":
     else:
         print usage()
         sys.exit(1)
-    print "%s looks up to %s"%(x, str(nameLookupClient(x)))
+
+    print "%s looks up to %s"%(x, str(nameLookupClient(rospy.resolveName(x))))
