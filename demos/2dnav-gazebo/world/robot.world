@@ -25,8 +25,8 @@
   <physics:ode>
     <stepTime>0.01</stepTime>
     <gravity>0 0 -9.8</gravity>
+    <erp>0.99</erp>
     <cfm>0.001</cfm>
-    <erp>0.8</erp>
   </physics:ode>
 
   <geo:origin>
@@ -499,7 +499,7 @@
         </joint>
         <!-- ========================================= -->
         <joint name="torso_spine_slider">
-          <saturationTorque>1000</saturationTorque>
+          <saturationTorque>100</saturationTorque>
           <pGain>1</pGain>
           <dGain>0</dGain>
           <iGain>0</iGain>

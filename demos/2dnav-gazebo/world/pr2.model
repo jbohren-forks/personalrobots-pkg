@@ -30,9 +30,10 @@
       <mul>1</mul>
       <!--color> 0.0  1.0  0.0</color-->
       <visual>
-        <size>0.65   0.65  0.012</size>
-        <rpy>0.0   0.0 0.0 </rpy>
-        <mesh>unit_box</mesh>
+        <xyz>0.0   0.0 -0.15</xyz>
+        <size>0.65  0.65  0.65</size>
+        <rpy> 90.0   0.0 90.0 </rpy>
+        <mesh>pr2_base.mesh</mesh>
         <material>Gazebo/Grey</material>
       </visual>
     </geom:box>
@@ -537,9 +538,12 @@
       <size>0.1  0.2   1.0 </size>
       <mass>1</mass>
       <visual>
-        <size>0.1  0.2   1.0 </size>
-        <mesh>unit_box</mesh>
-        <material>Gazebo/Grey</material>
+        <!--   x    y     z -->
+        <xyz> 0.2  0.0   -0.4 </xyz>
+        <size>0.6  0.8   0.6 </size>
+        <rpy>90.0  0.0   90.0 </rpy>
+        <mesh>pr2_body.mesh</mesh>
+        <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:box>
 
@@ -548,7 +552,8 @@
       <size>0.3  0.65  0.02</size>
       <mass>1</mass>
       <visual>
-        <size>0.3  0.65  0.02</size>
+        <!--size>0.3  0.65  0.02</size-->
+        <size>0.0  0.0  0.0</size>
         <mesh>unit_box</mesh>
         <material>Gazebo/Grey</material>
       </visual>
@@ -573,11 +578,11 @@
       <size> 0.13  0.6</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
-        <xyz>  0.0     0.0    0.0 </xyz>
-        <rpy>  0.0     0.0    0.0 </rpy>
-        <size> 0.26 0.26 0.6</size>   <!-- bounding box -->
-        <mesh>unit_cylinder</mesh>
-        <material>Gazebo/Grey</material>
+        <xyz> 0.00  -0.0   0.20 </xyz>
+        <rpy> 90.0   0.0   90.0 </rpy>
+        <size> 0.26 0.6 0.36</size>
+        <mesh>pr2_sh_turret.mesh</mesh>
+        <material>Gazebo/Fish</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
@@ -711,8 +716,8 @@
   </joint:hinge>
 
   <joint:hinge name="upperarm_pitch_joint_right">
-    <body1>upperarm_joint_right</body1>
     <body2>shoulder_pan_body_right</body2>
+    <body1>upperarm_joint_right</body1>
     <anchor>upperarm_joint_right</anchor>
     <axis>  0.0   1.0   0.0 </axis>
     <cfm>0.001</cfm>
@@ -791,11 +796,11 @@
       <size> 0.13  0.6</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
-        <xyz>  0.0     0.0    0.0 </xyz>
-        <rpy>  0.0     0.0    0.0 </rpy>
-        <size> 0.26 0.26 0.6</size>   <!-- bounding box -->
-        <mesh>unit_cylinder</mesh>
-        <material>Gazebo/Grey</material>
+        <xyz> 0.00   0.0   0.20 </xyz>
+        <rpy> 90.0   0.0   90.0 </rpy>
+        <size> 0.26 0.6 0.36</size>
+        <mesh>pr2_sh_turret.mesh</mesh>
+        <material>Gazebo/Fish</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
