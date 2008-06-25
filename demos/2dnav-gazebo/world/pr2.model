@@ -588,7 +588,7 @@
   </body:cylinder>
 
   <body:cylinder name="upperarm_joint_right">
-    <xyz>  0.285   -0.15   0.68 </xyz>
+    <xyz>  0.285   -0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="upperarm_joint_right_geom">
       <size> 0.10  0.05</size>   <!-- radius and length -->
@@ -604,7 +604,7 @@
   </body:cylinder>
 
   <body:box name="upperarm_right">
-    <xyz>  0.485   -0.15   0.68 </xyz>
+    <xyz>  0.485   -0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="upperarm_right_geom">
       <size> 0.25  0.1 0.1</size>
@@ -618,7 +618,7 @@
   </body:box>
 
   <body:cylinder name="elbow_right">
-    <xyz>  0.6850  -0.15   0.68 </xyz>
+    <xyz>  0.6850  -0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="elbow_right_geom">
       <size> 0.04  0.1</size>   <!-- radius and length -->
@@ -632,7 +632,7 @@
   </body:cylinder>
 
   <body:box name="forearm_right">
-    <xyz>  0.84225 -0.15   0.68 </xyz>
+    <xyz>  0.84225 -0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="forearm_right_geom">
       <size> 0.2  0.1 0.1</size>
@@ -646,7 +646,7 @@
   </body:box>
 
   <body:cylinder name="wrist_right">
-    <xyz>  0.9995  -0.15   0.68 </xyz>
+    <xyz>  0.9995  -0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="wrist_right_geom">
       <size> 0.025  0.1</size>   <!-- radius and length -->
@@ -660,7 +660,7 @@
   </body:cylinder>
 
   <body:box name="palm_right">
-    <xyz>  1.05   -0.15   0.68</xyz>
+    <xyz>  1.05   -0.15   0.86</xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="palm_right_geom">
       <size> 0.05  0.05 0.05</size>
@@ -674,7 +674,7 @@
   </body:box>
 
   <body:box name="finger_1_right">
-    <xyz>  1.15   -0.17   0.68 </xyz>
+    <xyz>  1.15   -0.17   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="finger_1_right_geom">
       <size> 0.05  0.01 0.025</size>
@@ -688,7 +688,7 @@
   </body:box>
 
   <body:box name="finger_2_right">
-    <xyz>  1.15   -0.13   0.68 </xyz>
+    <xyz>  1.15   -0.13   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="finger_2_right_geom">
       <size> 0.05  0.01 0.025</size>
@@ -806,7 +806,7 @@
   </body:cylinder>
 
   <body:cylinder name="upperarm_joint_left">
-    <xyz>  0.285   0.15   0.68 </xyz>
+    <xyz>  0.285   0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="upperarm_joint_left_geom">
       <size> 0.10  0.05</size>   <!-- radius and length -->
@@ -822,7 +822,7 @@
   </body:cylinder>
 
   <body:box name="upperarm_left">
-    <xyz>  0.485   0.15   0.68 </xyz>
+    <xyz>  0.485   0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="upperarm_left_geom">
       <size> 0.25 0.1 0.1</size>
@@ -836,7 +836,7 @@
   </body:box>
 
   <body:cylinder name="elbow_left">
-    <xyz>  0.685   0.15   0.68 </xyz>
+    <xyz>  0.685   0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="elbow_left_geom">
       <size> 0.04  0.1</size>   <!-- radius and length -->
@@ -850,7 +850,7 @@
   </body:cylinder>
 
   <body:box name="forearm_left">
-    <xyz>  0.84225 0.15   0.68 </xyz>
+    <xyz>  0.84225 0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="forearm_left_geom">
       <size> 0.2  0.1 0.1</size>
@@ -864,7 +864,7 @@
   </body:box>
 
   <body:cylinder name="wrist_left">
-    <xyz>  0.9995  0.15   0.68 </xyz>
+    <xyz>  0.9995  0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="wrist_left_geom">
       <size> 0.025  0.1</size>   <!-- radius and length -->
@@ -878,7 +878,7 @@
   </body:cylinder>
 
   <body:box name="palm_left">
-    <xyz>  1.05    0.15   0.68 </xyz>
+    <xyz>  1.05    0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="palm_left_geom">
       <size> 0.05  0.05 0.05</size>
@@ -892,7 +892,7 @@
   </body:box>
 
   <body:box name="finger_1_left">
-    <xyz>  1.15    0.13   0.68 </xyz>
+    <xyz>  1.15    0.13   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="finger_1_left_geom">
       <size> 0.05  0.01 0.025</size>
@@ -906,7 +906,7 @@
   </body:box>
 
   <body:box name="finger_2_left">
-    <xyz>  1.15    0.17   0.68 </xyz>
+    <xyz>  1.15    0.17   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="finger_2_left_geom">
       <size> 0.05  0.01 0.025</size>
@@ -1319,7 +1319,7 @@
   <!--         Hokuyo laser body             -->
   <canonicalBody>laser_body</canonicalBody>
   <body:box name="laser_body">
-    <xyz>0.3 0.0 1.05</xyz>
+    <xyz>0.4 0.0 1.05</xyz>
     <rpy>0.0 0.0 0.0</rpy>
  
     <geom:box name="laser_box">
@@ -1382,7 +1382,7 @@
 
 
     <sensor:ray name="laser_1">
-      <rayCount>68</rayCount>
+      <rayCount>34</rayCount>
       <rangeCount>683</rangeCount>
       <laserCount>1</laserCount>
       <origin>0.0 0.0 0.05</origin>
