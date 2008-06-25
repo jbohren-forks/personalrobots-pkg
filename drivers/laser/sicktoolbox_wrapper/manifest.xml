@@ -1,0 +1,9 @@
+<manifest>
+  <description>
+    A ROS package which is mainly just a wrapper of the outstanding sicktoolbox
+    library for interfacing with the SICK LMS2xx lasers.
+  </description>
+  <author>Morgan Quigley</author>
+  <license>BSD</license>
+  <depend package="sicktoolbox"/>
+</manifest>
