@@ -580,7 +580,7 @@
       <size> 0.13  0.6</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
-        <xyz> 0.00  -0.0   0.20 </xyz>
+        <xyz> 0.00   0.0   0.20 </xyz>
         <rpy> 90.0   0.0   90.0 </rpy>
         <!--size> 0.26 0.6 0.36</size-->
         <scale>0.001 0.001 0.001</scale>
@@ -598,10 +598,10 @@
       <mass>1.0</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
-        <rpy>  0.0     0.0    0.0 </rpy>
-        <size> 0.20 0.20  0.1</size>
-        <mesh>unit_cylinder</mesh>
-        <material>Gazebo/Grey</material>
+        <rpy>  0.0    90.0    0.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_sh_pitch.mesh</mesh>
+        <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
@@ -613,8 +613,10 @@
       <size> 0.25  0.1 0.1</size>
       <mass>1.0</mass>
       <visual>
-        <size> 0.25  0.1 0.1</size>
-        <mesh>unit_box</mesh>
+        <xyz> -0.15    0.0    0.0 </xyz>
+        <rpy>180.0   -90.0    0.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_sh_roll.mesh</mesh>
         <material>Gazebo/Grey</material>
       </visual>
     </geom:box>
@@ -627,9 +629,11 @@
       <size> 0.04  0.1</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
-        <size> 0.08 0.08  0.1</size>   <!-- bounding box -->
-        <mesh>unit_cylinder</mesh>
-        <material>Gazebo/Grey</material>
+        <xyz> -0.18    0.0    0.0 </xyz>
+        <rpy>  0.0   -90.0    0.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_elbow_pitch.mesh</mesh>
+        <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
@@ -641,8 +645,10 @@
       <size> 0.2  0.1 0.1</size>
       <mass>1.0</mass>
       <visual>
-        <size> 0.2  0.1 0.1</size>
-        <mesh>unit_box</mesh>
+        <xyz>  0.1     0.0    0.0 </xyz>
+        <rpy>  0.0   -90.0  -90.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_forearm_roll.mesh</mesh>
         <material>Gazebo/Grey</material>
       </visual>
     </geom:box>
@@ -655,9 +661,11 @@
       <size> 0.025  0.1</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
-        <size>0.05 0.05  0.1</size>   <!-- bounding box -->
-        <mesh>unit_cylinder</mesh>
-        <material>Gazebo/Grey</material>
+        <xyz> -0.06    0.0    0.0 </xyz>
+        <rpy> 90.0     0.0  -90.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_wrist_pitch.mesh</mesh>
+        <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
@@ -669,8 +677,10 @@
       <size> 0.05  0.05 0.05</size>
       <mass>1.0</mass>
       <visual>
-        <size> 0.05  0.05 0.05</size>
-        <mesh>unit_box</mesh>
+        <xyz> -0.06    0.0    0.0 </xyz>
+        <rpy>  0.0    90.0   90.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_wrist_roll.mesh</mesh>
         <material>Gazebo/Grey</material>
       </visual>
     </geom:box>
@@ -699,7 +709,7 @@
       <visual>
         <size> 0.05  0.01 0.025</size>
         <mesh>unit_box</mesh>
-        <material>Gazebo/White</material>
+        <material>Gazebo/Blue</material>
       </visual>
     </geom:box>
   </body:box>
@@ -817,10 +827,10 @@
       <mass>1.0</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
-        <rpy>  0.0     0.0    0.0 </rpy>
-        <size> 0.20 0.20  0.1</size>
-        <mesh>unit_cylinder</mesh>
-        <material>Gazebo/Grey</material>
+        <rpy>  0.0    90.0    0.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_sh_pitch.mesh</mesh>
+        <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
@@ -832,8 +842,10 @@
       <size> 0.25 0.1 0.1</size>
       <mass>1.0</mass>
       <visual>
-        <size> 0.25 0.1 0.1</size>
-        <mesh>unit_box</mesh>
+        <xyz> -0.15    0.0    0.0 </xyz>
+        <rpy>180.0   -90.0    0.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_sh_roll.mesh</mesh>
         <material>Gazebo/Grey</material>
       </visual>
     </geom:box>
@@ -846,9 +858,11 @@
       <size> 0.04  0.1</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
-        <size> 0.08 0.08  0.1</size>   <!-- bounding box -->
-        <mesh>unit_cylinder</mesh>
-        <material>Gazebo/Grey</material>
+        <xyz> -0.18    0.0    0.0 </xyz>
+        <rpy>  0.0   -90.0    0.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_elbow_pitch.mesh</mesh>
+        <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
@@ -860,8 +874,10 @@
       <size> 0.2  0.1 0.1</size>
       <mass>1.0</mass>
       <visual>
-        <size> 0.2  0.1 0.1</size>
-        <mesh>unit_box</mesh>
+        <xyz>  0.1     0.0    0.0 </xyz>
+        <rpy>  0.0   -90.0  -90.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_forearm_roll.mesh</mesh>
         <material>Gazebo/Grey</material>
       </visual>
     </geom:box>
@@ -874,9 +890,11 @@
       <size> 0.025  0.1</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
-        <size>0.05 0.05  0.1</size>   <!-- bounding box -->
-        <mesh>unit_cylinder</mesh>
-        <material>Gazebo/Grey</material>
+        <xyz> -0.06    0.0    0.0 </xyz>
+        <rpy> 90.0     0.0  -90.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_wrist_pitch.mesh</mesh>
+        <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
@@ -888,8 +906,10 @@
       <size> 0.05  0.05 0.05</size>
       <mass>1.0</mass>
       <visual>
-        <size> 0.05  0.05 0.05</size>
-        <mesh>unit_box</mesh>
+        <xyz> -0.06    0.0    0.0 </xyz>
+        <rpy>  0.0    90.0   90.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_wrist_roll.mesh</mesh>
         <material>Gazebo/Grey</material>
       </visual>
     </geom:box>
@@ -918,7 +938,7 @@
       <visual>
         <size> 0.05  0.01 0.025</size>
         <mesh>unit_box</mesh>
-        <material>Gazebo/White</material>
+        <material>Gazebo/Blue</material>
       </visual>
     </geom:box>
   </body:box>
@@ -1386,7 +1406,7 @@
 
 
     <sensor:ray name="laser_1">
-      <rayCount>34</rayCount>
+      <rayCount>3</rayCount>
       <rangeCount>683</rangeCount>
       <laserCount>1</laserCount>
       <origin>0.0 0.0 0.05</origin>
