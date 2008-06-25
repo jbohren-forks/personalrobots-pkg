@@ -73,7 +73,7 @@ namespace TREX {
     DECLARE_STATIC_CLASS_CONST(LabelStr, CFG_POSITION_SOURCE, "positionSource");
     DECLARE_STATIC_CLASS_CONST(LabelStr, CFG_MAP_SOURCE, "mapSource");
     DECLARE_STATIC_CLASS_CONST(LabelStr, CFG_MAX_ITERATIONS, "maxIterations");
-    DECLARE_STATIC_CLASS_CONST(LabelStr, CFG_MAX_PLATEAU, "maxPlateau");
+    DECLARE_STATIC_CLASS_CONST(LabelStr, CFG_PLATEAU, "plateau");
 
   private:   
     /**
@@ -170,7 +170,7 @@ namespace TREX {
 
     // Configuration derived members
     unsigned int m_maxIterations;
-    unsigned int m_maxPlateau;
+    unsigned int m_plateau;
     LabelStr m_positionSourceCfg;
     TimelineId m_positionSource;
 

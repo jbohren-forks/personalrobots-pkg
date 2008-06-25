@@ -83,12 +83,24 @@ namespace TREX{
   GoalManager::GoalManager(const TiXmlElement& configData)
     : OpenConditionManager(configData),
       m_maxIterations(1000),
-      m_maxPlateau(5),
+      m_plateau(5),
       m_positionSourceCfg(""),
       m_cycleCount(0),
       m_lastCycle(0) {
-    // See if there are configuration inputs to over-ride the defaults
-    // TODO: Add error checking
+
+    // Read configuration parameters to override defaults
+
+    // MAX ITERATIONS
+    const char * maxI = configData.Attribute(CFG_MAX_ITERATIONS().c_str());
+    if(maxI != NULL)
+      m_maxIterations = atoi(maxI);
+
+    // PLATEAU
+    const char * plateau = configData.Attribute(CFG_PLATEAU().c_str());
+    if(plateau != NULL)
+      m_plateau = atoi(plateau);
+
+    // POSITION SOURCE
     const char * positionSrc = configData.Attribute(CFG_POSITION_SOURCE().c_str());
     if(positionSrc != NULL)
       m_positionSourceCfg = LabelStr(positionSrc);
@@ -146,7 +158,7 @@ namespace TREX{
    */
   void GoalManager::generateInitialSolution(){
     debugMsg("GoalManager:generateInitialSolution", "Resetting solution");
-
+    
     m_currentSolution.clear();
     m_ommissions.clear();
 
@@ -168,7 +180,9 @@ namespace TREX{
    * @brief For now we use euclidean distance. This is where map integration comes in.
    */
   double GoalManager::computeDistance(const Position& p1, const Position& p2){
-    return sqrt(pow(p1.x-p2.x, 2) + pow(p1.y-p2.y, 2));
+    double result = sqrt(pow(p1.x-p2.x, 2) + pow(p1.y-p2.y, 2));
+    debugMsg("GoalManager:computeDistance", "Distance between (" << p1.x << ", " << p1.y << ") => (" << p2.x << ", " << p2.y << ") == " << result);
+    return result;
   }
 
   /**
@@ -202,6 +216,7 @@ namespace TREX{
 
       pathLength += computeDistance(currentPosition, nextPosition);
       predecessor = candidate;
+      currentPosition = nextPosition;
     }
 
     // Priority is to remove conflicts so a much higher weight is given to that
@@ -235,23 +250,31 @@ namespace TREX{
    *
    * @note There is alot more we can do to exploit temporal constraints and evaluate feasibility. We are not including
    * deadlines and we are not factoring in the possibility that insertion in the solution imposes implied temporal constraints.
+   * @todo Cache feasibility of current solution
    */
   void GoalManager::selectNeighbor(GoalManager::SOLUTION& s, TokenId& delta){
     checkError(!m_currentSolution.empty() || !m_ommissions.empty(), "There must be something to do");
     s = m_currentSolution;
+
+    // Feasibility can be used to avoid moves that are silly. We should be able to cache the feasiblility of the current solution
+    // rather than compute anew.
+    double d1, d2;
+    bool feasible = evaluate(m_currentSolution, d1, d2);
     delta = TokenId::noId();
 
     // Try insertions - could skip if current solution is infeasible.
-    for(TokenSet::const_iterator it = m_ommissions.begin(); it != m_ommissions.end(); ++it){
-      TokenId t = *it;
-      for (unsigned int i = 0; i <= m_currentSolution.size(); i++){
-	SOLUTION c = m_currentSolution;
-	insert(c, t, i);
-	update(s, delta, c, t);
+    if(feasible){
+      for(TokenSet::const_iterator it = m_ommissions.begin(); it != m_ommissions.end(); ++it){
+	TokenId t = *it;
+	for (unsigned int i = 0; i <= m_currentSolution.size(); i++){
+	  SOLUTION c = m_currentSolution;
+	  insert(c, t, i);
+	  update(s, delta, c, t);
+	}
       }
     }
 
-    // Finally, swap
+    // Swapping is always an option for improvin things
     for(unsigned int i=0; i< m_currentSolution.size(); i++){
       for(unsigned int j=i+1; j<m_currentSolution.size(); j++){
 	if(i != j){
@@ -262,16 +285,18 @@ namespace TREX{
       }
     }
 
-    // Try removals
-    for(SOLUTION::const_iterator it = m_currentSolution.begin(); it != m_currentSolution.end(); ++it){
-      TokenId t = *it;
+    // Try removals, assuming it is infeasible
+    if(!feasible){
+      for(SOLUTION::const_iterator it = m_currentSolution.begin(); it != m_currentSolution.end(); ++it){
+	TokenId t = *it;
 
-      if(t->isActive())
-	continue;
+	if(t->isActive())
+	  continue;
 
-      SOLUTION c = m_currentSolution;
-      remove(c, t);
-      update(s, delta, c, t);
+	SOLUTION c = m_currentSolution;
+	remove(c, t);
+	update(s, delta, c, t);
+      }
     }
   }
 
@@ -368,6 +393,8 @@ namespace TREX{
     const IntervalIntDomain& horizon = DeliberationFilter::getHorizon();
     m_startTime = (int) horizon.getLowerBound();
     m_timeBudget = (int) (horizon.getUpperBound() - horizon.getLowerBound());
+
+    // Need to get the position value of the token that is spanning the current tick.
   }
 
   IteratorId GoalManager::createIterator(){
@@ -403,7 +430,7 @@ namespace TREX{
     // Local Search for a max number of iterations, or until we have plateued
     unsigned int watchDog(0);
     unsigned int i(0);
-    while(i < m_maxIterations && watchDog < m_maxPlateau){
+    while(i < m_maxIterations && watchDog < m_plateau){
       // Update counters to handle termination
       i++;
       watchDog++;
@@ -509,7 +536,8 @@ namespace TREX{
   }
 
   /**
-   * @todo Implement this to bind to the current position in the designated timeline where that can be sourced.
+   * @brief We assume the curent position is a token on a given timeline that contains the current tick, and has x and y as arguments
+   * indicating position.
    */
   Position GoalManager::getCurrentPosition() const {
     static Position sl_pos;
