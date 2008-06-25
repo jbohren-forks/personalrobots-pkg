@@ -4,7 +4,7 @@
 #include "opencv/highgui.h"
 #include "ros/node.h"
 #include "simple_options/simple_options.h"
-#include "std_msgs/MsgImage.h"
+#include "std_msgs/Image.h"
 #include "image_utils/cv_bridge.h"
 
 using namespace std;
@@ -13,8 +13,8 @@ using namespace ros;
 class CvMovieStreamer : public node
 {
 public:
-  MsgImage image_msg;
-  CvBridge<MsgImage> cv_bridge;
+  std_msgs::Image image_msg;
+  CvBridge<std_msgs::Image> cv_bridge;
   string movie_fname;
   int delay, loop, qual;
 
@@ -22,7 +22,7 @@ public:
   : node("cv_movie_streamer"), cv_bridge(&image_msg),
     movie_fname(_movie_fname), delay(_delay), loop(_loop), qual(_qual)
   { 
-    advertise<MsgImage>("image");
+    advertise<std_msgs::Image>("image");
   }
   void stream_movie()
   {
