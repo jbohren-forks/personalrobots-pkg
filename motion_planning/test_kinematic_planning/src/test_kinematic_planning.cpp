@@ -102,6 +102,9 @@ public:
 	advertise<PR2Arm>("cmd_rightarmconfig");
 	subscribe("left_pr2arm_pos",  leftArmPos,  &TestKinematicPlanning::currentLeftArmPos);
 	subscribe("right_pr2arm_pos", rightArmPos, &TestKinematicPlanning::currentRightArmPos);
+
+	subscribe("right_pr2arm_set_position", rightArmGoal, &TestKinematicPlanning::moveRightArm);	
+	subscribe("left_pr2arm_set_position", leftArmGoal, &TestKinematicPlanning::moveLeftArm);
     }
     
     void currentLeftArmPos(void)
@@ -113,12 +116,90 @@ public:
     {
 	// don't need to do anything -- we already have the data
     }
+
+    void moveRightArm(void)
+    {
+	KinematicMotionPlan::request  req;
+	
+	printf("Moving right arm:\n");
+	
+	req.model_id   = ros::kinematics::PR2_RIGHT_ARM;
+	req.resolution = 0.01;
+	ros::kinematics::convertPR2ArmKinematicState(rightArmPos, req.start_state);
+	ros::kinematics::convertPR2ArmKinematicState(rightArmGoal, req.goal_state);
+	
+	printf("Starting at state: ");
+	ros::kinematics::printKinematicState(req.start_state);
+	
+	printf("Going towards state: ");
+	ros::kinematics::printKinematicState(req.goal_state);
+	
+	computeAndExecutePlan(req);
+	
+	printf("'%s' complete\n", __func__);
+    }
+
+    void moveLeftArm(void)
+    {
+	KinematicMotionPlan::request  req;
+	
+	printf("Moving right arm:\n");
+	
+	req.model_id   = ros::kinematics::PR2_LEFT_ARM;
+	req.resolution = 0.01;
+	ros::kinematics::convertPR2ArmKinematicState(leftArmPos, req.start_state);
+	ros::kinematics::convertPR2ArmKinematicState(leftArmGoal, req.goal_state);
+	
+	printf("Starting at state: ");
+	ros::kinematics::printKinematicState(req.start_state);
+	
+	printf("Going towards state: ");
+	ros::kinematics::printKinematicState(req.goal_state);
+	
+	computeAndExecutePlan(req);
+	
+	printf("'%s' complete\n", __func__);
+    }
     
+    void computeAndExecutePlan(KinematicMotionPlan::request &req)
+    {
+	KinematicMotionPlan::response res;
+	
+	if (ros::service::call("plan_kinematic_path", req, res))
+	{
+	    uint32_t nstates = res.path.get_states_size();
+	    printf("Received a plan containing %u states\n", nstates);
+	    
+	    for (uint32_t i = 0 ; i < nstates ; ++i)
+	    {
+		PR2Arm cmd;
+		ros::kinematics::convertKinematicStatePR2Arm(res.path.states[i], cmd);
+		switch (req.model_id)
+		{
+		case ros::kinematics::PR2_RIGHT_ARM:
+		    publish("cmd_rightarmconfig", cmd);
+		    break;
+		    
+		case ros::kinematics::PR2_LEFT_ARM:
+		    publish("cmd_leftarmconfig", cmd);
+		    break;
+		    
+		default:
+		    printf("Unknown robot model: %d\n", (int)req.model_id);
+		    break;
+		}
+		printf("  - sent the state: "); 
+		ros::kinematics::printKinematicState(res.path.states[i]);
+		usleep(10000);
+	    }	    
+	}
+	else
+	    fprintf(stderr, "Service 'plan_kinematic_path' failed\n");	
+    }
     
     void testLeftArm1(void)
     {
 	KinematicMotionPlan::request  req;
-	KinematicMotionPlan::response res;
 	
 	req.model_id   = ros::kinematics::PR2_LEFT_ARM;
 	req.resolution = 0.01;
@@ -135,30 +216,15 @@ public:
 	printf("Going towards state: ");
 	ros::kinematics::printKinematicState(req.goal_state);
 	
-
-	if (ros::service::call("plan_kinematic_path", req, res))
-	{
-	    uint32_t nstates = res.path.get_states_size();
-	    printf("Received a plan containing %u states\n", nstates);
-	    
-	    for (uint32_t i = 0 ; i < nstates ; ++i)
-	    {
-		PR2Arm cmd;
-		ros::kinematics::convertKinematicStatePR2Arm(res.path.states[i], cmd);
-		publish("cmd_leftarmconfig", cmd);
-		printf("  - sent the state: "); 
-		ros::kinematics::printKinematicState(res.path.states[i]);
-		usleep(10000);
-	    }	    
-	}
-	else
-	    fprintf(stderr, "Service 'plan_kinematic_path' failed\n");
+	computeAndExecutePlan(req);
+	
 	printf("'%s' complete\n", __func__);
     }
 
 private:
     
     PR2Arm leftArmPos, rightArmPos;
+    PR2Arm leftArmGoal, rightArmGoal;
     
 };
 
@@ -170,8 +236,10 @@ int main(int argc, char **argv)
     TestKinematicPlanning test;
     sleep(1);
     
-    test.testLeftArm1();
-    
+    //    test.testLeftArm1();
+
+    test.spin();
+        
     test.shutdown();
     
     return 0;    
