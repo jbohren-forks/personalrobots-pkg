@@ -2,7 +2,7 @@
 #include <math.h>
 #include <GL/gl.h>
 #include "ros/node.h"
-#include "std_msgs/MsgLaserScan.h"
+#include "std_msgs/LaserScan.h"
 #include "sdlgl/sdlgl.h"
 
 using namespace ros;
@@ -10,7 +10,7 @@ using namespace ros;
 class LaserView : public node, public SDLGL
 {
 public:
-  MsgLaserScan laser;
+  std_msgs::LaserScan laser;
   float view_scale, view_x, view_y;
 
   LaserView() : node("laser_view"),
