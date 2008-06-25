@@ -37,7 +37,7 @@ public:
     FLEA2_RGB
   } video_mode;
 
-  FwCam(FwHost* host, int n_dev = 0, video_mode_t _video_mode = FLEA2_MONO);
+  FwCam(FwHost* host, int n_dev = 0, int chan = -1, video_mode_t _video_mode = FLEA2_MONO);
   ~FwCam();
 
   FwHost* mp_host;

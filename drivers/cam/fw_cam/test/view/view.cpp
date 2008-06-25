@@ -43,10 +43,13 @@ int main(int argc, char **argv)
   SDL_Surface *surf = SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE);
   assert(surf);
   
-  FwHost fw(0);
+  FwHost fw1(0);
+  FwHost fw2(1);
 
-  FwCam cam1(&fw, 0);
-  FwCam cam2(&fw, 1);
+  FwCam cam1(&fw1, 0, 0);
+  FwCam cam2(&fw1, 1, 1);
+  FwCam cam3(&fw2, 0, 0);
+  FwCam cam4(&fw2, 1, 1);
 
   uint8_t *frame1;
   uint32_t w1, h1;
@@ -54,18 +57,26 @@ int main(int argc, char **argv)
   uint8_t *frame2;
   uint32_t w2, h2;
 
-  bool use_cam1 = true;
+  uint8_t *frame3;
+  uint32_t w3, h3;
+
+  uint8_t *frame4;
+  uint32_t w4, h4;
+
+  int use_cam = 0;
 
   bool done = false;
   while (!done)
   {
     cam1.get_frame(&frame1, &w1, &h1);
     cam2.get_frame(&frame2, &w2, &h2);
+    cam3.get_frame(&frame3, &w3, &h3);
+    cam4.get_frame(&frame4, &w4, &h4);
     // I know this looks inefficient, but the compiler & CPU will 
     // speed this up a lot. this is what speculative execution was
     // designed for.
 
-    if (use_cam1) {
+    if (use_cam % 4 == 0) {
       uint8_t *in = frame1, *out = (uint8_t *)surf->pixels;
       for (uint32_t row = 0; row < h1; row++)
         for (uint32_t col = 0; col < w1; col++)
@@ -85,10 +96,50 @@ int main(int argc, char **argv)
             *(out++); // skip the 4th byte
             in++;
           }
-    } else {
+    } else if (use_cam % 4 == 1) {
       uint8_t *in = frame2, *out = (uint8_t *)surf->pixels;
       for (uint32_t row = 0; row < h2; row++)
         for (uint32_t col = 0; col < w2; col++)
+          if (cam1.video_mode == FwCam::FLEA2_RGB)
+          {
+            *(out  ) = *(in+2);
+            *(out+1) = *(in+1);
+            *(out+2) = *(in  );
+            in += 3;
+            out += 4;
+          }
+          else if (cam1.video_mode == FwCam::FLEA2_MONO)
+          {
+            *(out++) = *in;
+            *(out++) = *in;
+            *(out++) = *in;
+            *(out++); // skip the 4th byte
+            in++;
+          }
+    } else if (use_cam % 4 == 2) {
+      uint8_t *in = frame3, *out = (uint8_t *)surf->pixels;
+      for (uint32_t row = 0; row < h3; row++)
+        for (uint32_t col = 0; col < w3; col++)
+          if (cam1.video_mode == FwCam::FLEA2_RGB)
+          {
+            *(out  ) = *(in+2);
+            *(out+1) = *(in+1);
+            *(out+2) = *(in  );
+            in += 3;
+            out += 4;
+          }
+          else if (cam1.video_mode == FwCam::FLEA2_MONO)
+          {
+            *(out++) = *in;
+            *(out++) = *in;
+            *(out++) = *in;
+            *(out++); // skip the 4th byte
+            in++;
+          }
+    } else if (use_cam % 4 == 3) {
+      uint8_t *in = frame4, *out = (uint8_t *)surf->pixels;
+      for (uint32_t row = 0; row < h4; row++)
+        for (uint32_t col = 0; col < w4; col++)
           if (cam1.video_mode == FwCam::FLEA2_RGB)
           {
             *(out  ) = *(in+2);
@@ -109,6 +160,8 @@ int main(int argc, char **argv)
 
     cam1.release_frame();
     cam2.release_frame();
+    cam3.release_frame();
+    cam4.release_frame();
 
     SDL_UpdateRect(surf, 0, 0, 640, 480);
     SDL_Event event;
@@ -120,7 +173,7 @@ int main(int argc, char **argv)
           switch(event.key.keysym.sym)
           {
             case SDLK_ESCAPE: done = true; break;
-            case SDLK_SPACE: use_cam1 = !use_cam1; break;
+            case SDLK_SPACE: use_cam++; break;
             default: break;
           }
           break;

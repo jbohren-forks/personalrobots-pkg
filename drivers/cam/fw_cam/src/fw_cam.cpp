@@ -35,7 +35,7 @@ FwHost::~FwHost() {
 }
 
 
-FwCam::FwCam(FwHost* host, int n_dev, video_mode_t _video_mode) : 
+FwCam::FwCam(FwHost* host, int n_dev, int chan, video_mode_t _video_mode) : 
   video_mode(_video_mode),  
   mp_host(host),
   frame_released(true),
@@ -62,8 +62,12 @@ FwCam::FwCam(FwHost* host, int n_dev, video_mode_t _video_mode) :
     fprintf(stderr, "Unable to get the iso channel number\n" );
     throw std::runtime_error("toast");
   }
+  fprintf(stderr, "Tryign to use channel number %d\n",channel);
 
   dc1394_set_operation_mode(mp_host->raw, cam_node, OPERATION_MODE_1394B);
+
+  if (chan != -1)
+    channel = chan;
 
   int e;
   if (video_mode == FLEA2_MONO)
