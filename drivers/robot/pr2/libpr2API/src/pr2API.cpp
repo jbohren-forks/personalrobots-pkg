@@ -246,7 +246,7 @@ NEWMAT::Matrix PR2Robot::ComputeArmInverseKinematics(PR2_MODEL_ID id, NEWMAT::Ma
 
 bool PR2Robot::IsModel(PR2_MODEL_ID modelId, PR2_JOINT_ID jointId)
 {
-   if (jointId >= JointStart[modelId] && jointId <= JointEnd[jointId])
+   if (jointId >= JointStart[modelId] && jointId <= JointEnd[modelId])
       return true;
 
    return false;
@@ -265,6 +265,25 @@ NEWMAT::Matrix GetPose(PR2::PR2State rS)
    return g;
 }
 
+void PR2Robot::ComputeBodyPose(PR2_JOINT_ID id, PR2::PR2State rS, double *x, double *y, double *z, double *roll, double *pitch, double *yaw)
+{
+   double lR,lP,lY;
+   double lR2,lP2,lY2;
+   NEWMAT::Matrix g(4,4);
+
+   g = ComputeBodyPose(id,rS);
+   kinematics::MatrixToEuler(g,lR,lP,lY,lR2,lP2,lY2);
+
+   *x = g(1,4);
+   *y = g(2,4);
+   *z = g(3,4);
+
+   *roll = lR;
+   *pitch = lP;
+   *yaw = lY;
+};
+
+
 NEWMAT::Matrix PR2Robot::ComputeBodyPose(PR2_JOINT_ID id, PR2::PR2State rS)
 {
    NEWMAT::Matrix worldToBase(4,4), baseToBody(4,4);
@@ -272,6 +291,10 @@ NEWMAT::Matrix PR2Robot::ComputeBodyPose(PR2_JOINT_ID id, PR2::PR2State rS)
 
    worldToBase = GetPose(rS);
    baseToBody = I;
+
+#ifdef DEBUG
+   cout << "Id:" << id << endl;
+#endif
 
    if(IsModel(PR2::HEAD,id))
    {

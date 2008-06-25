@@ -178,22 +178,57 @@ namespace PR2
    }point3;
 
 
-   typedef struct{
+   class PR2State
+   {
+     public: 
+
+      PR2State()      
+      {
+         pos.x = 0;
+         pos.y = 0;
+         pos.z = 0;
+         roll = 0;
+         pitch = 0;
+         yaw = 0;
+         spineExtension = 0;
+         for(int ii =0; ii < 2; ii++)
+         {
+            headJntAngles[ii] = 0.0;
+            headJntSpeeds[ii] = 0.0;
+         }
+         for(int jj =0; jj < 7; jj++)
+         {
+            rightArmJntAngles[jj] = 0;
+            rightArmJntSpeeds[jj] = 0;
+            leftArmJntAngles[jj] = 0;
+            leftArmJntSpeeds[jj] = 0;
+         }
+      }
+
+      virtual ~PR2State(){}
+
          point3 pos;
+
          double roll;
+
          double pitch;
+
          double yaw;
+
          double spineExtension;
 
          double headJntAngles[2];
+
          double headJntSpeeds[2];
 
          double rightArmJntAngles[7];
+
          double rightArmJntSpeeds[7];
 
          double leftArmJntAngles[7];
+
          double leftArmJntSpeeds[7];
-   }PR2State;
+   };
 
    // JointStart/JointEnd corresponds to the PR2_MODEL_ID, start and end id for each model
    enum PR2_MODEL_ID                  {PR2_BASE          ,PR2_SPINE      ,PR2_LEFT_ARM     ,PR2_RIGHT_ARM    ,PR2_LEFT_GRIPPER ,PR2_RIGHT_GRIPPER ,HEAD             , MAX_MODELS };

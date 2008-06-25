@@ -562,6 +562,19 @@ namespace PR2
          \brief - Compute the pose of a particular link/body on the robot. See pr2Core.h for a list of bodies.
          \param id - ID of the joint that the body rotates with
          \param rS - state of the robot. See pr2Core.h for a definition.
+           \param *x pointer to return value of x position of the body
+           \param *y pointer to return value of y position of the body 
+           \param *z pointer to return value of z position of the body
+           \param *roll pointer to return value of roll of the body 
+           \param *pitch pointer to return value of pitch of the body 
+           \param *yaw pointer to return value of yaw of the body
+      */
+      void ComputeBodyPose(PR2_JOINT_ID id, PR2::PR2State rS, double *x, double *y, double *z, double *roll, double *pitch, double *yaw);
+
+      /* \fn
+         \brief - Compute the pose of a particular link/body on the robot. See pr2Core.h for a list of bodies.
+         \param id - ID of the joint that the body rotates with
+         \param rS - state of the robot. See pr2Core.h for a definition.
       */
       public: NEWMAT::Matrix ComputeBodyPose(PR2_JOINT_ID id, PR2::PR2State rS);
 
