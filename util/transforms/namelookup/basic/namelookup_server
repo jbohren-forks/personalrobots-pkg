@@ -33,7 +33,11 @@
 #
 # Revision $Id: gossipbot.py 1013 2008-05-21 01:08:56Z sfkwc $
 
-## Simple talker demo that publishes std_msg/Strings to the 'chatter' topic
+## This provides a service which will return an unsigned integer
+## which uniquely identifies a string.  A new string will recieve
+## a new number, a repeated string will recieve the same number
+## as that string did previously.
+
 
 PKG = 'namelookup'
 
@@ -55,23 +59,16 @@ import rospy
 NAME = 'namelookup_server'
 
 names = {}
-current_val = [1,2]
+current_val = 1
 
 def nameLookup(req):
-    print 'hi '
-    print current_val
-    print 'called lookup'
+    global current_val
     if names.has_key(req.name):
         print 'Repeated Name'
     else:
-        print 'new ' + req.name
-        names[req.name] = current_val[1]
-        print 'about to increment'
-        current_val[1] = current_val[1] + 1
-        print 'about to print '
-        print names[req.name]
-        print 'done printing'
-    print 'Returning: %d for %s \n'%(names[req.name], req.name)
+        names[req.name] = current_val
+        current_val += 1
+    print 'Returning: %d for %s'%(names[req.name], req.name)
     return NameToNumberResponse(names[req.name])
     
 def nameLookupServer():

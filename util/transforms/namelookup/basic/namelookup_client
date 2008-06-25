@@ -33,7 +33,8 @@
 #
 # Revision $Id: gossipbot.py 1013 2008-05-21 01:08:56Z sfkwc $
 
-## Simple talker demo that publishes std_msg/Strings to the 'chatter' topic
+## A test program for the namelookup_server
+## It will pass a string and echo the response number.  
 
 PKG = 'namelookup'
 
@@ -64,7 +65,7 @@ def nameLookupClient(x):
         print "Service call failed: %s"%e
 
 def usage():
-    return "%s [string]"%sys.argv[0]
+    return "Usage: %s [string]"%sys.argv[0]
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
