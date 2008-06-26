@@ -1,6 +1,6 @@
 all: opende
 
-#REVISION = -r 6641
+REVISION = -r 1510
 
 opende-checkout:
 	@if [ ! -d opende-svn ]; then svn co $(REVISION) https://opende.svn.sourceforge.net/svnroot/opende/trunk opende-svn; fi
