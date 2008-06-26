@@ -46,7 +46,7 @@ if ! $(ROS_PACKAGE_PATH) {
 	# planner
 	LINKFLAGS = $(LINKFLAGS) -lrt  -lgtk-x11-2.0 ;
 
-	ModuleMain exec_trex : Executive.cc Monitor.cc RCSVelAdapter.cc RCSAdapter.cc
+	ModuleMain exec_trex : Executive.cc RCSVelAdapter.cc ROSNode.cc 
 	CalcCommandConstraint.cc CalcGlobalPathConstraint.cc WavefrontPlanner.cc map_helpers.cc ExecDefs.cc Components.cc pr2.model.o : TREX : exec_trex ;
 	Depends exec_trex : pr2.exec.xml pr2.wpc.xml ;
 
