@@ -23,7 +23,7 @@ namespace EUROPA {
       return;
     }
 
-    debugMsg("ALWAYS", "Goal x " << m_variables[GOAL_X]->lastDomain().getSingletonValue() 
+    debugMsg("CalcGlobalPathConstraint:handleExecute", "Goal x " << m_variables[GOAL_X]->lastDomain().getSingletonValue() 
 	      << " y " << m_variables[GOAL_Y]->lastDomain().getSingletonValue());
 
 
