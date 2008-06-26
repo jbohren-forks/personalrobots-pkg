@@ -1,14 +1,16 @@
 #ifndef H_RCSVelAdapter
 #define H_RCSVelAdapter
 
-#include "ExecDefs.hh"
+//#include "ExecDefs.hh"
 #include "Adapter.hh"
+#include "ROSNode.hh"
 
 namespace TREX {
 
   class RCSVelAdapter: public Adapter {
   public:
     RCSVelAdapter(const LabelStr& agentName, const TiXmlElement& configData);
+    ~RCSVelAdapter();
 
     void handleInit(TICK initialTick, const std::map<double, ServerId>& serversByTimeline, const ObserverId& observer);
 
@@ -19,7 +21,8 @@ namespace TREX {
     void handleRequest(const TokenId& goal);
 
   private:
-    ObserverId m_observer;
+    ObserverId m_observer; /*! Apointer for publishing observations to the agent. */
+    ROSNodeId m_node; /*! The ROS node. */
   };
 }
 #endif
