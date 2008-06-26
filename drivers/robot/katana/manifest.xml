@@ -3,6 +3,7 @@
   <author>Morgan Quigley</author>
   <license>GPL (necessary since this code links with the KNI library, which is GPL)</license>
   <depend package="std_msgs"/>
+  <depend package="std_srvs"/>
   <depend package="roscpp"/>
   <depend package="kni-3.9.2"/>
 </package>
