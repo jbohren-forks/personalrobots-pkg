@@ -6,4 +6,6 @@
   <author>Morgan Quigley</author>
   <license>BSD</license>
   <depend package="sicktoolbox"/>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
 </manifest>

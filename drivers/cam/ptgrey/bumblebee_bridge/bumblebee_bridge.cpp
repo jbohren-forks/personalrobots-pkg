@@ -39,8 +39,7 @@
 #include "opencv/highgui.h"
 using namespace XmlRpc;
 
-const char *BUMBLEBEE_HOST = "171.66.34.119"; // temporary IP since our SAIL
-                                              // net is trashed right now
+const char *BUMBLEBEE_HOST = "stair-vision";
 const int   BUMBLEBEE_PORT = 11411; // a palindromic prime, naturally
 
 class BumblebeeBridge : public ros::node
