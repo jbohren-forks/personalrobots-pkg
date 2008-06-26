@@ -35,10 +35,12 @@
 #include "TREX.nddl" // TREX base classes
 
 
-typedef int [0 5] PRIORITY;
+typedef int [0 5] PRIORITY; /* Used to assign a priority to goals */
+
 typedef float [0.0 +inff] PFLOAT;
 
 float POSITION_ERROR = 1.0;
+
 float NOMINAL_SPEED = 1.0;
 
 enum CmdResult {SUCCESS, FAILURE};
@@ -56,7 +58,7 @@ class VehicleState extends AgentTimeline {
 	VehicleState(Mode _mode){
 		super(_mode, "Holds");
 	}
-}
+};
 
 /**
  * Encapsulate Behaviors that have a state of active or inactive
@@ -69,51 +71,58 @@ class Behavior extends AgentTimeline {
 	Behavior(Mode _mode){
 		super(_mode, "Inactive");
 	}
-}
+};
 
 /**
  * WaypointController will handle active control of vehicle to accomplish 
- * a waypoint. This maps to the wave front planner.
+ * a waypoint. This maps to the wave front player in the 2D nav stack.
  */
-class WaypointController extends AgentTimeline {
-        predicate Inactive{
-		PFLOAT x;
-		PFLOAT y;
-		PFLOAT desX;
-		PFLOAT desY;
+class WaypointController extends Behavior {
+  predicate Inactive{
+    PFLOAT x;
+    PFLOAT y;
+    PFLOAT desX;
+    PFLOAT desY;
 
-		// Require actual and desired values to be within some tolerance
-		addEq(x, [-1.0, 1.0], desX);
-		addEq(y, [-1.0, 1.0], desY);
-        }
+    // Require actual and desired values to be within some tolerance
+    addEq(x, [-1.0, 1.0], desX);
+    addEq(y, [-1.0, 1.0], desY);
+  }
 
-	// Parameters to get to the target
-	predicate Active{
-		PFLOAT x;
-		PFLOAT y;
-	}
+  // Parameters to get to the target
+  predicate Active{
+    PFLOAT x;
+    PFLOAT y;
+  }
 
-	WaypointController(Mode _mode){
-	  super(_mode, "Inactive");
-	}
-}
+  WaypointController(Mode _mode){
+    super(_mode, "Inactive");
+  }
+};
 
+/**
+ * The VelController implements low level control using current pose, and local planning
+ * to generate velocity commands to the base
+ */
 class VelController extends AgentTimeline {
 
-      predicate Inactive{}
+  predicate Inactive{}
 
-      predicate Active{
-         PFLOAT goal_x;
-	 PFLOAT goal_y;
-	 CmdResult result;
-      }
+  predicate Active{
+    PFLOAT goal_x;
+    PFLOAT goal_y;
+  }
 
-      VelController(Mode _mode){
-		super(_mode, "Inactive");
-      }
+  VelController(Mode _mode){
+    super(_mode, "Inactive");
+  }
 
-}
+};
 
+/**
+ * A PR2 state variable for the commanded velocities. Will be planned by the velocity controller
+ * and dispatched to lower level controllers external to the agent
+ */
 class VelCommander extends AgentTimeline {
 
       predicate Holds {
@@ -124,32 +133,42 @@ class VelCommander extends AgentTimeline {
       VelCommander(Mode _mode){
          super(_mode);
       }
-}
+};
 
 /**
  * A behavior to Clean something, at a given location. This will drive navigation and arm control.
  */
 class CleanBehavior extends Behavior {
 
-	/**
-	 * Inactive
-	 */
-	predicate Inactive{}
+  /**
+   * Inactive
+   */
+  predicate Inactive{}
 
-	/**
-	 * When active, it will clean at a specified location in space
-         */
-	predicate Active{
-		PFLOAT x;
-		PFLOAT y;
-		PRIORITY priority; // 0 is highest priority
-	}
+  /**
+   * When active, it will clean at a specified location in space
+   */
+  predicate Active{
+    PFLOAT x;
+    PFLOAT y;
+    PRIORITY priority; // 0 is highest priority
+  }
 
-	CleanBehavior(Mode _mode){
-		super(_mode);
-	}
+  CleanBehavior(Mode _mode){
+    super(_mode);
+  }
 };
 
+/**
+ * Actions are since they have the unique properties that:
+ * 1. They are explicitly started by the agent when they become startable
+ * 2. Their time bound is always in the future until started.
+ */
 class Actions extends AgentActions{
-  predicate StartBehavior{eq(duration, 1);}
+
+  /**
+   * An event is used as a generic hook to start things
+   */
+  predicate Event{eq(duration, 1);}
+
 };

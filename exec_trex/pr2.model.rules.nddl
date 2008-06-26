@@ -59,7 +59,7 @@ CleanBehavior::Active{
 
   // To be proactive, start the behavior as soon as you can. We do this by generating an action
   // which the agent will start
-  starts(Actions.StartBehavior);
+  starts(Actions.Event);
 
   // For now, we will simply do nothing for 10 ticks
   eq(duration, 10);
@@ -67,13 +67,19 @@ CleanBehavior::Active{
 
 WaypointController::Inactive {
   met_by(Active p);
-  eq(p.x, desX);
-  eq(p.y, desY);
 
-  meets(Active s);
+  // If desired values are set, then they are used to bind parameters of the
+  // predecessor to accomplish the desired position.
+  if(desX){
+    if(desY){
+      eq(p.x, desX);
+      eq(p.y, desY);
+    }
+  }
 
-  // For when we implemenet the controller in NDDL
-  if(object.mode == Internal) {
+  // We will bind position values based on vehicle state timeline. We wait till the start time
+  // is bound before linking in to the vehicle state.
+  if(start){
     starts(VehicleState.Holds pos);
     eq(x, pos.x);
     eq(y, pos.y);
@@ -81,24 +87,37 @@ WaypointController::Inactive {
 }
 
 WaypointController::Active {
-  met_by(Inactive p);
-  meets(Inactive s);
-  eq(x, s.desX);
-  eq(y, s.desY);
 
   if(object.mode == Internal) {
-    bool plan_done;
-    calcGlobalPath(plan_done, p.x, p.y, x, y);
-    starts(VelController.Active vc);
-    eq(vc.goal_x, x);
-    eq(vc.goal_y, y);
+    contains(Actions.Event startEvent);
+    startEvent starts(VehicleState.Holds vs);
+
+    // Test if there is to the goal from the current position. We use the vehicle state at the
+    // current position rather than just picking up the prior values from the start of this active
+    // tokens temporal scope because in the event of a failure in the plan, we can regenerate the
+    // path from current position
+    bool plan_ok;
+    calcGlobalPath(plan_ok, vs.x, vs.y, x, y);
+
+    // If there is a path, then trigger the velocity controller into
+    // an active state
+    if(plan_ok == true){
+      startEvent meets(VelController.Active vc);
+      eq(vc.goal_x, x);
+      eq(vc.goal_y, y);
+    }
+
+    // if there is no path, then terminate the active state. Termination will
+    // result in a successor that is not where we expected it to be!
+    if(plan_ok == false){
+      ends startEvent;
+    }
   }
 }
 
-
 /**
  * Implementation for Velocity Controller. Produces Velocity Commands to 
- * bridge gap between current and desired pose. Desired pose is obtained from the WaypointController
+ * bridge gap between current and desired pose.
  */
 VelController::Active {
   // Controller will operate at 1 Hz (cycles per tick)
@@ -106,12 +125,6 @@ VelController::Active {
   
   // Bind to prior value
   met_by(VehicleState.Holds currentPos);
-
-  // Bind to the goal source. Could structre this to be more efficient
-  // by passing arguments and not requiring reference back to master
-  contained_by(WaypointController.Active wp);
-  eq(goal_x, wp.x);
-  eq(goal_y, wp.y);
 
   float distanceToGo;
   calcDistance(distanceToGo, currentPos.x, currentPos.y, goal_x, goal_y);
@@ -124,49 +137,42 @@ VelController::Active {
 		currentPos.th, goal_x, goal_y, 0.0);
 
     if(plan_ok == true){
-      if( result == SUCCESS){
-	starts(VelCommander.Holds vc);
-	eq(vc.cmd_x, cmd_x);
-	eq(vc.cmd_th, cmd_th);
+      starts(VelCommander.Holds vc);
+      eq(vc.cmd_x, cmd_x);
+      eq(vc.cmd_th, cmd_th);
 
-	// Pass arguments to successor
-	meets(VelController.Active s);
-	eq(goal_x,s.goal_x);
-	eq(goal_y,s.goal_y);
-      }
+      // Pass arguments to successor
+      meets(VelController.Active s);
+      eq(goal_x,s.goal_x);
+      eq(goal_y,s.goal_y);
     }
   }
 
-
   /**
-   * Any of a number of conditions lead to a transition to the inactive state. We should be able to simple state:
-   * if(result == FAILURE || done == true || plan_ok == false){
+   * Any of a number of conditions lead to a transition to the inactive state. We should be able to simply state:
+   * if(try == FAILURE || done == true || plan_ok == false){
    *  meets(VelController.Inactive);
    * }
    */
 
   // First case
-  if(result == FAILURE){
-    meets(VelController.Inactive);
-  }
+  bool terminate;
+  if(done == true){ eq(terminate, true); }
+  if(plan_ok == false){ eq(terminate, true); }
 
   // Force termination
-  if(done == true) {
+  if(terminate == true) {
     meets(VelController.Inactive);
-  }
-
-  if(plan_ok == false){
-    meets(VelController.Inactive);
+    ends(WaypointController.Active wp);
+    eq(goal_x, wp.x);
+    eq(goal_y, wp.y);
   }
 }
 
 VelController::Inactive {
   met_by(Active);
   meets(Active);
-  equals(VelCommander.Holds vc);
+  contained_by(VelCommander.Holds vc);
   eq(vc.cmd_x, 0.0);
   eq(vc.cmd_th, 0.0);
-
-  // Drives transition of waypoint controller state
-  equals(WaypointController.Inactive);
 }

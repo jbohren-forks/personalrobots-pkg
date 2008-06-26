@@ -48,21 +48,30 @@ if ! $(ROS_PACKAGE_PATH) {
 
 	ModuleMain exec_trex : Executive.cc RCSVelAdapter.cc ROSNode.cc 
 	CalcCommandConstraint.cc CalcGlobalPathConstraint.cc WavefrontPlanner.cc map_helpers.cc ExecDefs.cc Components.cc pr2.model.o : TREX : exec_trex ;
-	Depends exec_trex : pr2.exec.xml pr2.wpc.xml ;
+	Depends exec_trex : exec_inputs ;
 
 	ModuleMain exec_listener : ExecListener.cc : : exec_listener ;
 	ModuleMain rcs : RCS.cc ExecDefs.cc : TREX : rcs ;
 	ModuleMain logger : MessageLogger.cc ExecDefs.cc : TREX : logger ;
 
  	# Input file for exec
- 	NddlParser pr2.exec.xml : pr2.exec.nddl ;
-	NddlParser pr2.wpc.xml : pr2.wpc.nddl ;
- 	NddlParser pr2.sim.xml : pr2.sim.nddl ;
+	local TestInputs = 
+		pr2.exec.nddl
+		pr2.wpc.nddl
+		pr2.sim.nddl
+		wpc.0.wpc.nddl
+	;
+
+	local file ;
+ 	for file in [ FGristFiles $(TestInputs) ] {
+  		local xml = $(file:S=.xml:G=) ;
+		LocalDepends exec_inputs : $(xml) ;
+  		NddlParser $(xml) : $(file) ;
+ 	}
  
  	# Build the model - generates .cc and .hh files from .nddl
 	NddlModel pr2.model.nddl : System ;
 
 	# Build all
-	Depends exec_all : exec_trex rcs exec_listener logger pr2.exec.xml
-	pr2.wpc.xml pr2.sim.xml ;
+	Depends exec_all : exec_trex rcs exec_listener logger exec_inputs ;
 }

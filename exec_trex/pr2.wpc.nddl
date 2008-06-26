@@ -1,5 +1,5 @@
 #include "pr2.model.nddl"
-
+Actions actions = new Actions();
 WaypointController wpc = new WaypointController(Internal);
 VelController vcon = new VelController(Internal);
 VehicleState vs = new VehicleState(External);
