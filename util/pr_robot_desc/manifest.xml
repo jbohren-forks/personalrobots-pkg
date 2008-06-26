@@ -1,0 +1,11 @@
+<package>
+  <description brief="PR-2 Robot Description parser">
+  Simple python parser for PR-2 Robot Description format.
+  See: http://pr.willowgarage.com/wiki/RobotDescriptionFormat
+
+  </description>
+  <author>Ken Conley/kwc@willowgarage.com</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com/wiki/RobotDescriptionFormat</url>
+</package>
+
