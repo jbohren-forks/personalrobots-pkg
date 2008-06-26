@@ -1,16 +1,16 @@
 #include <unistd.h>
 #include <math.h>
 #include "ros/node.h"
-#include "joy/MsgJoy.h"
-#include "std_msgs/MsgBaseVel.h"
+#include "joy/Joy.h"
+#include "std_msgs/BaseVel.h"
 
 using namespace ros;
 
 class TeleopBase : public node
 {
 public:
-  MsgBaseVel cmd;
-  MsgJoy joy;
+  std_msgs::BaseVel cmd;
+  joy::Joy joy;
   double req_vx, req_vw, max_vx, max_vw;
   int axis_vx, axis_vw;
   int deadman_button;
