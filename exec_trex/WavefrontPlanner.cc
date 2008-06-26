@@ -162,7 +162,7 @@ int WavefrontPlanner::GenerateGlobalPlan(double curx, double cury,
     pt =  CreateNewPlan(goalx, goaly);
   } else {
     //for now assume we don't need to replan
-    return 1;
+    //return 1;
   }
   
   int res = plan_do_global(pt, curx, cury, goalx, goaly);
