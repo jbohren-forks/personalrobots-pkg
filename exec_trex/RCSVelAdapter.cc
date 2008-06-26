@@ -46,16 +46,22 @@ namespace TREX {
   void RCSVelAdapter::handleNextTick(){}
 
   
-  void RCSVelAdapter::handleRequest(const TokenId& cmd_vel){
-    debugMsg("RCSVelAdapter:handleRequest", cmd_vel->toString());
-    m_node->dispatchVel(cmd_vel);
-    ObservationByReference obs(cmd_vel);
-    m_observer->notify(obs);
+  void RCSVelAdapter::handleRequest(const TokenId& token){
+    // We only dispatch velocity commands
+    static const LabelStr VELOCITY_COMMANDER("VelCommander");
+
+    if(token->getBaseObjectType() == VELOCITY_COMMANDER){
+      debugMsg("RCSVelAdapter:handleRequest", token->toString());
+      m_node->dispatchVel(token);
+      ObservationByReference obs(token);
+      m_observer->notify(obs);
+    }
+
     //Executive::instance()->dispatchWaypoint(goal);
   }
   
-  // void RCSVelAdapter::handleRequest(const TokenId& cmd_vel){
-  //     debugMsg("RCSVelAdapter:handleRequest", cmd_vel->toString());
+  // void RCSVelAdapter::handleRequest(const TokenId& token){
+  //     debugMsg("RCSVelAdapter:handleRequest", token->toString());
 
 //   }
 
