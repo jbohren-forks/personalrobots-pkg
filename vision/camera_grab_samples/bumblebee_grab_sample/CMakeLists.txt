@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 2.6)
+set(CMAKE_MODULE_PATH $ENV{ROS_ROOT}/core/rosbuild)
+include(rosbuild)
+project(bumblebee_grab_sample)
+rospack()
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/)
+add_executable(bumblebee_grab_sample bumblebee_grab_sample.cpp)
+target_link_libraries(bumblebee_grab_sample ${bumblebee_grab_sample_LIBRARIES})

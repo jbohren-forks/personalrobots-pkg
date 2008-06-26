@@ -1,0 +1,16 @@
+<manifest>
+  <author>Morgan Quigley mquigley@cs.stanford.edu</author>
+  <description>
+  Shows how to grab stereo clouds from my Bumblebee daemon which is running 
+  on Windows using the bumblebee_bridge node, which does the actual dirty work.
+
+  Most of the complexity is just in writing the files to disk. Really it just 
+  takes 3 lines to make the service call to bumblebee_bridge.
+  </description>
+  <license>BSD</license>
+  <depend package="std_srvs"/>
+  <depend package="roscpp"/>
+  <depend package="image_utils"/>
+  <depend package="bumblebee_bridge"/>
+</manifest>
+
