@@ -15,7 +15,7 @@ public:
   int axis_vx, axis_vw;
   int deadman_button;
 
-  TeleopBase() : node("teleop_base"), max_vx(1), max_vw(1)
+  TeleopBase() : node("teleop_base"), max_vx(0.3), max_vw(0.3)
   {
     cmd.vx = cmd.vw = 0;
     if (!has_param("max_vx") || !get_param("max_vx", max_vx))
