@@ -8,6 +8,9 @@
   The executables you need are in the "bin" directory of this package. Launch
   them without any parameters to see a syntax reference.
 
+  If the reference still doesn't make sense, please go watch the Spaceballs 
+  movie again.
+
   </description>
   <license>BSD</license>
   <author>Morgan Quigley</author>
