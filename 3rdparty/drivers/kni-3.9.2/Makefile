@@ -12,15 +12,16 @@ KNI_3.9.2: KNI_3.9.2.tar.gz
 	cd KNI_3.9.2 && patch -p0 <../cdlCOM.cpp_linux_anydevice.patch
 	cd KNI_3.9.2 && patch -p0 <../kmlExt.h.patch
 	cd KNI_3.9.2 && patch -p0 <../kmlExt.cpp.patch
+	cd KNI_3.9.2 && patch -p0 <../lmBase.cpp.patch
 	touch KNI_3.9.2
 
 KNI_3.9.2/lib/linux/libKNIBase.a: KNI_3.9.2
 	cd KNI_3.9.2 && make
 
 clean:
-	-rm -rf KNI_3.9.2
+#	-rm -rf KNI_3.9.2
 
 distclean: clean
-	-rm -rf KNI_3.9.2.tar.gz
+	-rm -rf KNI_3.9.2 KNI_3.9.2.tar.gz
 
 .PHONY : clean distclean download

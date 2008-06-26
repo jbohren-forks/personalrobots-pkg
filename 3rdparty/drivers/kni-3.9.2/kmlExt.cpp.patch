@@ -1,6 +1,6 @@
---- /home/mquigley/Desktop/KNI_3.9.2/src/Base/kmlExt.cpp	2007-09-27 22:38:10.000000000 -0700
-+++ src/Base/kmlExt.cpp	2008-06-09 13:29:41.000000000 -0700
-@@ -394,6 +394,24 @@
+--- /afs/cs.stanford.edu/u/ellenrk/scratch/KNI_3.9.2/src/Base/kmlExt.cpp	2007-09-27 22:38:10.000000000 -0700
++++ src/Base/kmlExt.cpp	2008-06-25 18:21:32.000000000 -0700
+@@ -394,6 +394,34 @@
  	return temp;
  }
  
@@ -22,10 +22,20 @@
 +  return angs;
 +}
 +
++TMotInit CKatana::getMotorParameters(int motor)
++{
++  TMotInit motorParams;
++  motorParams.angleOffset = base->GetMOT()->arr[motor].GetInitialParameters()->angleOffset;
++  motorParams.encodersPerCycle    = base->GetMOT()->arr[motor].GetInitialParameters()->encodersPerCycle;
++  motorParams.encoderOffset = base->GetMOT()->arr[motor].GetInitialParameters()->encoderOffset;
++  motorParams.rotationDirection = base->GetMOT()->arr[motor].GetInitialParameters()->rotationDirection;
++  return (motorParams);
++}
++
  short
  CKatana::getMotorVelocityLimit(short number) const {
  	return base->GetMOT()->arr[number].GetDYL()->maxpspeed_nmp;
-@@ -514,6 +532,52 @@
+@@ -514,6 +542,52 @@
  }
  
  void
@@ -78,3 +88,20 @@
  CKatana::moveRobotToEnc(std::vector<int> encoders, bool waitUntilReached, int encTolerance, int waitTimeout) {
  	moveRobotToEnc(encoders.begin(), encoders.end(), waitUntilReached, encTolerance, waitTimeout);
  }
+@@ -559,14 +633,14 @@
+ CKatana::openGripper(bool waitUntilReached, int waitTimeout) {
+ 	if(!_gripperIsPresent)
+ 		return;
+-	moveMotorToEnc( getNumberOfMotors()-1, _gripperOpenEncoders, waitUntilReached, waitTimeout );
++	moveMotorToEnc( getNumberOfMotors()-1, _gripperOpenEncoders, waitUntilReached, 100, waitTimeout );
+ }
+ 
+ void
+ CKatana::closeGripper(bool waitUntilReached, int waitTimeout) {
+ 	if(!_gripperIsPresent)
+ 		return;
+-	moveMotorToEnc( getNumberOfMotors()-1, _gripperCloseEncoders, waitUntilReached, waitTimeout );
++	moveMotorToEnc( getNumberOfMotors()-1, _gripperCloseEncoders, waitUntilReached, 100, waitTimeout );
+ }
+ 
+ 
