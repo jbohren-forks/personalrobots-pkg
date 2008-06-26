@@ -5,7 +5,7 @@
 #include "Token.hh"
 #include "TokenVariable.hh"
 #include "Observer.hh"
-#include "Executive.hh"
+#include "ROSNode.hh"
 
 namespace TREX {
 
@@ -15,13 +15,24 @@ namespace TREX {
 
   void RCSVelAdapter::handleInit(TICK initialTick, const std::map<double, ServerId>& serversByTimeline, const ObserverId& observer){
     m_observer = observer;
-    Executive::instance()->requireROS();
+    m_node = ROSNode::createInstance();
+
+    // Wait till we get a message before starting the agent
+    while(!m_node->isInitialized() && m_node->ok()){
+      debugMsg("RCSVelAdapter:Create", "Waiting...");
+      sleep(1);
+    }
+
+  }
+
+  RCSVelAdapter::~RCSVelAdapter() {
+    m_node->release();
   }
 
   bool RCSVelAdapter::synchronize(){
     debugMsg("RCSVelAdapter:synchronize", nameString() << "Checking..");
     std::vector<Observation*> obsBuffer;
-    Executive::instance()->get_obs(obsBuffer);
+    m_node->get_obs(obsBuffer);
     for(std::vector<Observation*>::const_iterator it = obsBuffer.begin(); it != obsBuffer.end(); ++it){
       Observation* obs = *it;
       debugMsg("RCSVelAdapter:synchronize", nameString() << obs->toString());
@@ -37,7 +48,7 @@ namespace TREX {
   
   void RCSVelAdapter::handleRequest(const TokenId& cmd_vel){
     debugMsg("RCSVelAdapter:handleRequest", cmd_vel->toString());
-    Executive::instance()->dispatchVel(cmd_vel);
+    m_node->dispatchVel(cmd_vel);
     ObservationByReference obs(cmd_vel);
     m_observer->notify(obs);
     //Executive::instance()->dispatchWaypoint(goal);

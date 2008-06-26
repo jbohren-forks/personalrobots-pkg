@@ -41,20 +41,22 @@ namespace EUROPA {
     }
 
     if(!boolDom.isSingleton()) {
-      //std::cout << "Bool unbound\n\n";
+      //debugMsg("CalcCommandConstraint::handleExecute", "Bool unbound");
     }
     
-  //   std::cout << "Local x " << m_variables[LOCAL_X]->lastDomain().getSingletonValue()
+  //   debugMsg("CalcCommandConstraint::handleExecute", "Local x "
+//             << m_variables[LOCAL_X]->lastDomain().getSingletonValue()
 //  	      << " Local y " << m_variables[LOCAL_Y]->lastDomain().getSingletonValue()
-//  	      << " Local th " << m_variables[LOCAL_TH]->lastDomain().getSingletonValue() << std::endl;
+//  	      << " Local th " << m_variables[LOCAL_TH]->lastDomain().getSingletonValue());
     
-//     std::cout << "Goal x " << m_variables[GOAL_X]->lastDomain().getSingletonValue()
+//     debugMsg("CalcCommandConstraint::handleExecute", "Goal x "
+//             << m_variables[GOAL_X]->lastDomain().getSingletonValue()
 // 	      << " Goal y " << m_variables[GOAL_Y]->lastDomain().getSingletonValue()
-// 	      << " Goal th " << m_variables[GOAL_TH]->lastDomain().getSingletonValue() << std::endl;
+// 	      << " Goal th " << m_variables[GOAL_TH]->lastDomain().getSingletonValue());
 //     if(m_variables[COM_VEL_X]->lastDomain().isSingleton() &&
 //        m_variables[COM_VEL_TH]->lastDomain().isSingleton()) {
-//       std::cout << "Pre Cmd vel x " << m_variables[COM_VEL_X]->lastDomain().getSingletonValue()
-// 		<< " th " << m_variables[COM_VEL_TH]->lastDomain().getSingletonValue() << std::endl;
+//         debugMsg("CalcCommandConstraint::handleExecute", "Pre Cmd vel x " << m_variables[COM_VEL_X]->lastDomain().getSingletonValue()
+// 		<< " th " << m_variables[COM_VEL_TH]->lastDomain().getSingletonValue());
 //     }
     
     if(WavefrontPlanner::Instance()->GenerateLocalPlan(m_variables[LOCAL_X]->lastDomain().getSingletonValue(),
@@ -87,28 +89,28 @@ namespace EUROPA {
     boolDom.remove(false);
     check_error(boolDom.isSingleton());
     check_error(boolDom.getSingletonValue() == true);
-    //std::cout << "BoolDom up " << boolDom.getUpperBound() << std::endl;
-    //std::cout << "BoolDom low " << boolDom.getLowerBound() << std::endl;
+    //debugMsg("CalcCommandConstraint::handleExecute", "BoolDom up " << boolDom.getUpperBound());
+    //debugMsg("CalcCommandConstraint::handleExecute", "BoolDom low " << boolDom.getLowerBound());
     if(m_variables[COM_VEL_X]->lastDomain().isSingleton() &&
        m_variables[COM_VEL_TH]->lastDomain().isSingleton()) {
-      //std::cout << "cur_vel_x " << m_variables[COM_VEL_X]->lastDomain().getSingletonValue() 
-      //		<< " cur_vel_th " << m_variables[COM_VEL_TH]->lastDomain().getSingletonValue() << std::endl ; 
+      //debugMsg("CalcCommandConstraint::handleExecute", "cur_vel_x " << m_variables[COM_VEL_X]->lastDomain().getSingletonValue() 
+      //		<< " cur_vel_th " << m_variables[COM_VEL_TH]->lastDomain().getSingletonValue()); 
     }
-    //std::cout << "vx " << vx << " va " << va << std::endl << std::endl;
+    //debugMsg("CalcCommandConstraint::handleExecute", "vx " << vx << " va " << va);
     getCurrentDomain(m_variables[COM_VEL_X]).intersect(vx,vx);
     getCurrentDomain(m_variables[COM_VEL_TH]).intersect(va,va);
-    //std::cout << "BoolDom up " << boolDom.getUpperBound() << std::endl;
-    //std::cout << "BoolDom low " << boolDom.getLowerBound() << std::endl;
-  //   std::cout << "Local x " << m_variables[LOCAL_X]->lastDomain().getSingletonValue()
+    //debugMsg("CalcCommandConstraint::handleExecute", "BoolDom up " << boolDom.getUpperBound());
+    //debugMsg("CalcCommandConstraint::handleExecute", "BoolDom low " << boolDom.getLowerBound());
+  // debugMsg("CalcCommandConstraint::handleExecute", "Local x " << m_variables[LOCAL_X]->lastDomain().getSingletonValue()
 // 	      << " Local y " << m_variables[LOCAL_Y]->lastDomain().getSingletonValue()
-// 	      << " Local th " << m_variables[LOCAL_TH]->lastDomain().getSingletonValue() << std::endl;
+// 	      << " Local th " << m_variables[LOCAL_TH]->lastDomain().getSingletonValue());
 
-//     std::cout << "Goal x " << m_variables[GOAL_X]->lastDomain().getSingletonValue()
+//    debugMsg("CalcCommandConstraint::handleExecute", "Goal x " << m_variables[GOAL_X]->lastDomain().getSingletonValue()
 // 	      << " Goal y " << m_variables[GOAL_Y]->lastDomain().getSingletonValue()
-// 	      << " Goal th " << m_variables[GOAL_TH]->lastDomain().getSingletonValue() << std::endl;
+// 	      << " Goal th " << m_variables[GOAL_TH]->lastDomain().getSingletonValue());
 
-//     std::cout << "Cmd vel x " << m_variables[COM_VEL_X]->lastDomain().getSingletonValue()
-// 	      << " th " << m_variables[COM_VEL_TH]->lastDomain().getSingletonValue() << std::endl;
+//     debugMsg("CalcCommandConstraint::handleExecute", "Cmd vel x " << m_variables[COM_VEL_X]->lastDomain().getSingletonValue()
+// 	      << " th " << m_variables[COM_VEL_TH]->lastDomain().getSingletonValue());
 
     return;
   }

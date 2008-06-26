@@ -1,4 +1,4 @@
-if [$ROS_PACKAGE_PATH = ""]; then
+if [ $ROS_PACKAGE_PATH = "" ]; then
     echo "No ROS_PACKAGE_PATH. Please set ROS_PACKAGE_PATH."
 else
     source config

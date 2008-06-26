@@ -23,8 +23,8 @@ namespace EUROPA {
       return;
     }
 
-    std::cout << "Goal x " << m_variables[GOAL_X]->lastDomain().getSingletonValue() 
-	      << " y " << m_variables[GOAL_Y]->lastDomain().getSingletonValue() << std::endl;
+    debugMsg("ALWAYS", "Goal x " << m_variables[GOAL_X]->lastDomain().getSingletonValue() 
+	      << " y " << m_variables[GOAL_Y]->lastDomain().getSingletonValue());
 
 
 
