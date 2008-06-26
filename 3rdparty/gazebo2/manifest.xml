@@ -1,0 +1,18 @@
+<package>
+<description brief="gazebo2">
+
+This package contains Gazebo, from the Player Project
+(http://playerstage.sf.net).
+
+</description>
+<author>Nate Koenig, with contributions from many others. See web page for a full credits llist.</author>
+<license>LGPL</license>
+<url>http://playerstage.sf.net</url>
+<depend package="opende" />
+<depend package="ogre" />
+<export>
+  <cpp lflags="-Xlinker -rpath ${prefix}/gazebo/lib -L${prefix}/gazebo/lib -lgazebo -lgazeboServer" cflags="-I${prefix}/gazebo/include"/>
+</export>
+</package>
+
+
