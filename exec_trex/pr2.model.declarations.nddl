@@ -96,27 +96,8 @@ class WaypointController extends Behavior {
   }
 
   WaypointController(Mode _mode){
-    super(_mode, "Inactive");
+    super(_mode);
   }
-};
-
-/**
- * The VelController implements low level control using current pose, and local planning
- * to generate velocity commands to the base
- */
-class VelController extends AgentTimeline {
-
-  predicate Inactive{}
-
-  predicate Active{
-    PFLOAT goal_x;
-    PFLOAT goal_y;
-  }
-
-  VelController(Mode _mode){
-    super(_mode, "Inactive");
-  }
-
 };
 
 /**
@@ -171,4 +152,11 @@ class Actions extends AgentActions{
    */
   predicate Event{eq(duration, 1);}
 
+  /**
+   * Set velocity commands for a given goal position using local planning
+   */
+  predicate SetVelocityCommands{
+    PFLOAT goal_x;
+    PFLOAT goal_y;
+  }
 };

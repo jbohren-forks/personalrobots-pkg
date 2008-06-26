@@ -102,7 +102,7 @@ WaypointController::Active {
     // If there is a path, then trigger the velocity controller into
     // an active state
     if(plan_ok == true){
-      startEvent meets(VelController.Active vc);
+      startEvent meets(Actions.SetVelocityCommands vc);
       eq(vc.goal_x, x);
       eq(vc.goal_y, y);
     }
@@ -119,7 +119,7 @@ WaypointController::Active {
  * Implementation for Velocity Controller. Produces Velocity Commands to 
  * bridge gap between current and desired pose.
  */
-VelController::Active {
+Actions::SetVelocityCommands{
   // Controller will operate at 1 Hz (cycles per tick)
   eq(duration, 1);
   
@@ -130,49 +130,29 @@ VelController::Active {
   calcDistance(distanceToGo, currentPos.x, currentPos.y, goal_x, goal_y);
   bool done;
   testLEQ(done, distanceToGo, POSITION_ERROR);
-  bool plan_ok;
+
   if(done == false){
     float cmd_x, cmd_th;
-    calcCommand(plan_ok, cmd_x, cmd_th, currentPos.x, currentPos.y,
+    calcCommand(true, cmd_x, cmd_th, currentPos.x, currentPos.y,
 		currentPos.th, goal_x, goal_y, 0.0);
 
-    if(plan_ok == true){
-      starts(VelCommander.Holds vc);
-      eq(vc.cmd_x, cmd_x);
-      eq(vc.cmd_th, cmd_th);
+    starts(VelCommander.Holds vc);
+    eq(vc.cmd_x, cmd_x);
+    eq(vc.cmd_th, cmd_th);
 
-      // Pass arguments to successor
-      meets(VelController.Active s);
-      eq(goal_x,s.goal_x);
-      eq(goal_y,s.goal_y);
-    }
+    // Pass arguments to successor
+    meets(Actions.SetVelocityCommands s);
+    eq(goal_x,s.goal_x);
+    eq(goal_y,s.goal_y);
   }
 
-  /**
-   * Any of a number of conditions lead to a transition to the inactive state. We should be able to simply state:
-   * if(try == FAILURE || done == true || plan_ok == false){
-   *  meets(VelController.Inactive);
-   * }
-   */
-
-  // First case
-  bool terminate;
-  if(done == true){ eq(terminate, true); }
-  if(plan_ok == false){ eq(terminate, true); }
-
-  // Force termination
-  if(terminate == true) {
-    meets(VelController.Inactive);
+  if(done == true){
     ends(WaypointController.Active wp);
     eq(goal_x, wp.x);
     eq(goal_y, wp.y);
-  }
-}
 
-VelController::Inactive {
-  met_by(Active);
-  meets(Active);
-  contained_by(VelCommander.Holds vc);
-  eq(vc.cmd_x, 0.0);
-  eq(vc.cmd_th, 0.0);
+    meets(VelCommander.Holds vc);
+    eq(vc.cmd_x, 0.0);
+    eq(vc.cmd_th, 0.0);
+  }
 }

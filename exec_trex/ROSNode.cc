@@ -1,7 +1,6 @@
 
 #include "Nddl.hh"
 #include "ROSNode.hh"
-//#include "RCSAdapter.hh"
 #include "Token.hh"
 #include <signal.h>
 #include "WavefrontPlanner.hh"
