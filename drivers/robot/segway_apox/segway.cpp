@@ -2,8 +2,8 @@
 #include <math.h>
 #include <unistd.h>
 #include "ros/node.h"
-#include "std_msgs/MsgBaseVel.h"
-#include "std_msgs/MsgRobotBase2DOdom.h"
+#include "std_msgs/BaseVel.h"
+#include "std_msgs/RobotBase2DOdom.h"
 #include "rmp_frame.h"
 #include "usbcan.h"
 
@@ -11,11 +11,11 @@ using namespace ros;
 
 class Segway : public node
 {
-	public:
-		Segway();
-		virtual ~Segway();
-		void main_loop();
-		void cmd_vel_cb();
+  public:
+    Segway();
+    virtual ~Segway();
+    void main_loop();
+    void cmd_vel_cb();
     void deadman_cb();
 
 		BYTE send_data[20];
@@ -27,8 +27,8 @@ class Segway : public node
 
 		static const int max_x_stepsize = 5, max_yaw_stepsize = 2;
 
-    MsgBaseVel cmd_vel;
-    MsgRobotBase2DOdom odom;
+    std_msgs::BaseVel cmd_vel;
+    std_msgs::RobotBase2DOdom odom;
 		rmp_frame_t rmp;
 		dgc_usbcan_p can;
 		int last_foreaft, last_yaw;
@@ -40,11 +40,11 @@ const float MAX_X_VEL = 1.2;
 const float MAX_YAW_RATE = 0.4;
 
 Segway::Segway() :
+	node("segway"),
 	last_raw_yaw_rate(0),
 	last_raw_x_vel(0),
 	req_x_vel(0),
 	req_yaw_rate(0),
-	node("segway"),
 	can(0),
 	odom_yaw(0),
 	odom_x(0),
@@ -165,7 +165,7 @@ void Segway::main_loop()
 			rmp.AddPacket(can_id, message);
 			if (can_id == RMP_CAN_ID_MSG5)
 			{
-				static int c = 0;
+//				static int c = 0;
 //				if (c++ % 100 == 0)
 //					printf("%d %d\n", rmp.foreaft, rmp.yaw);
 					

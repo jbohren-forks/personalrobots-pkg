@@ -8,7 +8,7 @@
 #endif
 
 
-dgc_usbcan_p dgc_usbcan_initialize(char *device)
+dgc_usbcan_p dgc_usbcan_initialize(const char *device)
 {
   dgc_usbcan_p usbcan;
 

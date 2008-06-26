@@ -7,7 +7,7 @@
 
 /* connect to a serial port at a given speed */
 
-int dgc_serial_connect(int *fd, char *dev_name, int baudrate);
+int dgc_serial_connect(int *fd, const char *dev_name, int baudrate);
 
 /* set the buadrate and the parity of the serial port - doesn't currently
    support flow control.  Uses 8 data bits and 1 stop bit */

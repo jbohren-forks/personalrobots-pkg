@@ -58,7 +58,7 @@ int baudcode(int baudrate)
 
 /* connect to a serial port at a given speed */
 
-int dgc_serial_connect(int *fd, char *dev_name, int baudrate)
+int dgc_serial_connect(int *fd, const char *dev_name, int baudrate)
 {
   struct termios term;
   struct serial_struct serial;

@@ -27,7 +27,7 @@ typedef struct {
 } dgc_usbcan_t, *dgc_usbcan_p;
 
 dgc_usbcan_p
-dgc_usbcan_initialize(char *device);
+dgc_usbcan_initialize(const char *device);
 
 void
 dgc_usbcan_close(dgc_usbcan_p *usbcan);
