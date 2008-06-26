@@ -1,6 +1,6 @@
 all: gazebo2
 
-#REVISION = -r 6641
+REVISION = -r 6696
 
 OGRE_PATH = $(shell rospack find ogre)/ogre
 ODE_PATH = $(shell rospack find opende)/opende
