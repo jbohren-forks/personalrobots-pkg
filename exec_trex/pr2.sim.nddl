@@ -3,7 +3,6 @@
 // Allocate timelines
 WaypointController wpc = new WaypointController(Internal);
 VehicleState vs = new VehicleState(Internal);
-SimActions actions = new SimActions();
 
 close();
 
