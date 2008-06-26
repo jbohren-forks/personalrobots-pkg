@@ -26,19 +26,10 @@ namespace EUROPA {
     debugMsg("CalcGlobalPathConstraint:handleExecute", "Goal x " << m_variables[GOAL_X]->lastDomain().getSingletonValue() 
 	      << " y " << m_variables[GOAL_Y]->lastDomain().getSingletonValue());
 
-
-
-    //if(WavefrontPlanner::Instance()->NeedNewGlobalPlan(m_variables[GOAL_X]->lastDomain().getSingletonValue(),
-    //					       m_variables[GOAL_Y]->lastDomain().getSingletonValue())) {
-    if(WavefrontPlanner::Instance()->GenerateGlobalPlan(m_variables[LOCAL_X]->lastDomain().getSingletonValue(),
-							m_variables[LOCAL_Y]->lastDomain().getSingletonValue(),
-							m_variables[GOAL_X]->lastDomain().getSingletonValue(),  
-							m_variables[GOAL_Y]->lastDomain().getSingletonValue()) < 0) {
-      boolDom.remove(true);
-      check_error(boolDom.isSingleton());
-      return;
-    }
-    boolDom.remove(false);
-    return;
+    bool result = WavefrontPlanner::Instance()->GenerateGlobalPlan(m_variables[LOCAL_X]->lastDomain().getSingletonValue(),
+								   m_variables[LOCAL_Y]->lastDomain().getSingletonValue(),
+								   m_variables[GOAL_X]->lastDomain().getSingletonValue(),  
+								   m_variables[GOAL_Y]->lastDomain().getSingletonValue()) >= 0 ;
+    boolDom.set(result);
   }
 }

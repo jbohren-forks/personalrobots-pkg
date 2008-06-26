@@ -63,8 +63,7 @@ namespace EUROPA {
 						       m_variables[LOCAL_Y]->lastDomain().getSingletonValue(),
 						       m_variables[GOAL_X]->lastDomain().getSingletonValue(),  
 						       m_variables[GOAL_Y]->lastDomain().getSingletonValue()) < 0) {
-      boolDom.remove(true);
-      check_error(boolDom.isSingleton());
+      boolDom.set(false);
       getCurrentDomain(m_variables[COM_VEL_X]).intersect(0.0,0.0);
       getCurrentDomain(m_variables[COM_VEL_TH]).intersect(0.0,0.0);
       return;
@@ -79,14 +78,14 @@ namespace EUROPA {
 							    m_variables[GOAL_X]->lastDomain().getSingletonValue(),  
 							    m_variables[GOAL_Y]->lastDomain().getSingletonValue(), 
 							    m_variables[GOAL_TH]->lastDomain().getSingletonValue()) < 0) {
-      boolDom.remove(true);
+      boolDom.set(false);
       check_error(boolDom.isSingleton());
       getCurrentDomain(m_variables[COM_VEL_X]).intersect(0.0,0.0);
       getCurrentDomain(m_variables[COM_VEL_TH]).intersect(0.0,0.0);
       return;  
     }
 
-    boolDom.remove(false);
+    boolDom.set(true);
     check_error(boolDom.isSingleton());
     check_error(boolDom.getSingletonValue() == true);
     //debugMsg("CalcCommandConstraint::handleExecute", "BoolDom up " << boolDom.getUpperBound());
