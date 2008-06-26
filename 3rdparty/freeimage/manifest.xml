@@ -10,7 +10,7 @@ FreeImage is an Open Source library project for developers who would like to sup
 <license>GPL</license>
 <url>http://freeimage.sourceforge.net</url>
 <export>
-  <cpp cflags="-I${prefix}/FreeImage/include -I${prefix}/FreeImage/include/FreeImage" lflags="-L${prefix}/FreeImage/lib -Xlinker -rpath -Xlinker ${prefix}/FreeImage/lib -lFreeImage"/>
+  <cpp cflags="-I${prefix}/freeimage/include -I${prefix}/freeimage/include/freeimage" lflags="-L${prefix}/freeimage/lib -Xlinker -rpath -Xlinker ${prefix}/freeimage/lib -lfreeimage"/>
 </export>
 </package>
 
