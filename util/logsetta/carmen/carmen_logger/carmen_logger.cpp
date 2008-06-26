@@ -30,19 +30,65 @@
 
 #include "ros/node.h"
 #include "std_msgs/LaserScan.h"
-
-// CamelCase is so ugly.
+#include "std_msgs/RobotBase2DOdom.h"
 
 class CarmenLogger : public ros::node
 {
 public:
   std_msgs::LaserScan laserMsg;
-  CarmenLogger() : ros::node("carmenLogger")
+  std_msgs::RobotBase2DOdom odomMsg;
+  double robot_x, robot_y, robot_th, robot_tv, robot_rv;
+  double start_time;
+  FILE *f;
+  ros::thread::mutex log_mutex;
+  CarmenLogger() : ros::node("carmenLogger"), 
+                   robot_x(0), robot_y(0), robot_th(0), start_time(0)
   {
+    f = fopen("carmen.log", "w");
+    if (!f)
+      assert(0);
     subscribe("scan", laserMsg, &CarmenLogger::scanCB);
+    subscribe("odom", odomMsg,  &CarmenLogger::odomCB);
+  }
+  virtual ~CarmenLogger()
+  {
+    fclose(f);
   }
   void scanCB()
   {
+    const double fov = fabs(laserMsg.angle_max - laserMsg.angle_min);
+    // only make an exception for the SICK LMS2xx running in centimeter mode
+    const double acc = (laserMsg.range_max >= 81 ? 0.01 : 0.001); 
+    log_mutex.lock();
+    fprintf(f, "ROBOTLASER1 0 %f %f %f %f %f 0 %d ",
+            laserMsg.angle_min, fov, fov / laserMsg.angle_increment,
+            laserMsg.range_max, acc, laserMsg.get_ranges_size());
+    for (int i = 0; i < laserMsg.get_ranges_size(); i++)
+      fprintf(f, "%f ", laserMsg.ranges[i]);
+    const double laser_x = 0.30; // in the robot frame
+    const double laser_y = 0;
+    const double laser_th = 0;
+    const double laser_rv = robot_rv;
+    const double laser_tv = robot_tv;
+    if (start_time == 0)
+      start_time = laserMsg.header.stamp.to_double();
+    fprintf(f, " %f %f %f %f %f %f %f %f 0.3 0.3 1000000 %f rosetta %f\n",
+            laser_x, laser_y, laser_th,
+            robot_x, robot_y, robot_th,
+            laser_tv, laser_rv, laserMsg.header.stamp.to_double(), 
+            laserMsg.header.stamp.to_double() - start_time);
+    log_mutex.unlock();
+  }
+  void odomCB()
+  {
+    if (start_time == 0)
+      start_time = odomMsg.header.stamp.to_double();
+    log_mutex.lock();
+    fprintf(f, "ODOM %f %f %f %f %f 0 %f rosetta %f\n",
+            robot_x, robot_y, robot_th, robot_rv, robot_tv,
+            odomMsg.header.stamp.to_double(),
+            odomMsg.header.stamp.to_double() - start_time);
+    log_mutex.unlock();
   }
 };
 
