@@ -33,6 +33,14 @@ namespace TREX {
     debugMsg("RCSVelAdapter:synchronize", nameString() << "Checking..");
     std::vector<Observation*> obsBuffer;
     m_node->get_obs(obsBuffer);
+
+    if(getCurrentTick() == 0){
+      ObservationByValue* obs = new ObservationByValue("vcom", "VelCommander.Holds");
+      obs->push_back("cmd_x", new IntervalDomain(0.0));
+      obs->push_back("cmd_th", new IntervalDomain(0.0));
+      obsBuffer.push_back(obs);
+    }
+
     for(std::vector<Observation*>::const_iterator it = obsBuffer.begin(); it != obsBuffer.end(); ++it){
       Observation* obs = *it;
       debugMsg("RCSVelAdapter:synchronize", nameString() << obs->toString());
