@@ -4,7 +4,6 @@ individual joints of the PR2Arm from keyboard input</description>
   <author>Advait Jain</author>
   <license>BSD</license>
   <depend package="roscpp"/>
-  <depend package="gazebo"/>
   <depend package="libpr2API"/>
   <depend package="std_msgs"/>
 </package>
