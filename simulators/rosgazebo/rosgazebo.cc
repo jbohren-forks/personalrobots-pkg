@@ -212,9 +212,9 @@ GazeboNode::cmdvelReceived()
   // smooth if dt is larger than zero
   if (dt > 0.0)
   {
-    w11 =  0.0;
+    w11 =  1.0;
     w21 =  1.0;
-    w12 =  0.0;
+    w12 =  1.0;
     w22 =  1.0;
     this->vxSmooth = (w11 * this->vxSmooth + w21*dt *this->velMsg.vx)/( w11 + w21*dt);
     this->vwSmooth = (w12 * this->vwSmooth + w22*dt *this->velMsg.vw)/( w12 + w22*dt);

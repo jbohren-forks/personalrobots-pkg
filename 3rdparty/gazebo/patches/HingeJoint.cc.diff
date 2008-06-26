@@ -1,0 +1,12 @@
+Index: gazebo-svn/server/physics/HingeJoint.cc
+===================================================================
+--- gazebo-svn/server/physics/HingeJoint.cc	(revision 6690)
++++ gazebo-svn/server/physics/HingeJoint.cc	(working copy)
+@@ -38,6 +38,7 @@
+     : Joint()
+ {
+   this->jointId = dJointCreateHinge( worldId, NULL );
++  this->type = Joint::HINGE;
+ }
+ 
+ 

@@ -1,0 +1,67 @@
+Index: gazebo-svn/server/gui/GLWindow.cc
+===================================================================
+--- gazebo-svn/server/gui/GLWindow.cc	(revision 6690)
++++ gazebo-svn/server/gui/GLWindow.cc	(working copy)
+@@ -66,7 +66,11 @@
+   this->directionVec.x = 0;
+   this->directionVec.y = 0;
+   this->directionVec.z = 0;
++  this->leftMousePressed = false;
++  this->rightMousePressed = false;
++  this->middleMousePressed = false;
+ 
++
+   this->keys.clear();
+ 
+   if (activeWin == NULL)
+@@ -235,6 +239,21 @@
+       this->activeCamera->RotateYaw(DTOR(-d.x * this->rotateAmount));
+       this->activeCamera->RotatePitch(DTOR(d.y * this->rotateAmount));
+     }
++    if (this->rightMousePressed)
++    {
++      Vector2<int> d = this->mousePos - this->prevMousePos;
++      this->directionVec.x = 0;
++      this->directionVec.y =  d.x * this->moveAmount;
++      this->directionVec.z =  d.y * this->moveAmount;
++    }
++    if (this->middleMousePressed)
++    {
++      Vector2<int> d = this->mousePos - this->prevMousePos;
++      this->directionVec.x =  d.y * this->moveAmount;
++      this->directionVec.y =  0;
++      this->directionVec.z =  0;
++    }
++
+   }
+ 
+   this->mouseDrag = true;
+@@ -247,12 +266,28 @@
+   std::map<int,int>::iterator iter;
+   this->keys[keyNum] = 1;
+ 
++  // loop through the keys to find the modifiers -- swh
++  float moveAmount = this->moveAmount;
+   for (iter = this->keys.begin(); iter!= this->keys.end(); iter++)
+   {
+     if (iter->second == 1)
+     {
+       switch (iter->first)
+       {
++        case FL_Control_L:
++        case FL_Control_R:
++          moveAmount = this->moveAmount * 10;
++          break;
++      }
++    }
++  }
++
++  for (iter = this->keys.begin(); iter!= this->keys.end(); iter++)
++  {
++    if (iter->second == 1)
++    {
++      switch (iter->first)
++      {
+         case '=':
+         case '+':
+           this->moveAmount *= 2;

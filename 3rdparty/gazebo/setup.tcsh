@@ -1,5 +1,5 @@
 #!/bin/tcsh
-setenv GAZ_TOP `rospack find gazebo2`/gazebo
+setenv GAZ_TOP `rospack find gazebo`/gazebo
 setenv OGRE_TOP `rospack find ogre`/ogre
 setenv SIM_PLUGIN `rospack find gazebo_plugin`
 setenv PR2API `rospack find libpr2API`

@@ -230,7 +230,7 @@ void Pr2_Actarray::InitChild()
 //     set torque to saturation torque
 //
 ////////////////////////////////////////////////////////////////////////////////
-void Pr2_Actarray::UpdateChild(UpdateParams &params)
+void Pr2_Actarray::UpdateChild()
 {
    float positionError, speedError;
    HingeJoint *hjoint;

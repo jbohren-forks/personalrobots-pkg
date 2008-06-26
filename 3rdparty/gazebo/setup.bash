@@ -1,5 +1,5 @@
 #!/bin/bash
-export GAZ_TOP=`rospack find gazebo2`/gazebo
+export GAZ_TOP=`rospack find gazebo`/gazebo
 export OGRE_TOP=`rospack find ogre`/ogre
 export SIM_PLUGIN=`rospack find gazebo_plugin`
 export PR2API=`rospack find libpr2API`

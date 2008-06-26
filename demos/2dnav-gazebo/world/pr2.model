@@ -35,7 +35,7 @@
         <scale>0.001 0.001 0.001</scale>
         <rpy> 90.0   0.0 90.0 </rpy>
         <mesh>pr2_base.mesh</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
 
@@ -48,7 +48,7 @@
         <size> 0.01 0.05  1.0  </size>
         <rpy>0.0   0.0 0.0 </rpy>
         <mesh>unit_box</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
 
@@ -114,7 +114,7 @@
         <rpy>0 0 0</rpy>
         <size>0.035 0.035 0.008</size>
         <mesh>unit_cylinder</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
 
     </geom:cylinder>
@@ -268,7 +268,7 @@
         <size>0.165 0.003 0.10</size>
         <rpy>0.0    0.0 0.0 </rpy>
         <mesh>unit_box</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
     <geom:box name="head_tilt_right_geom">
@@ -281,7 +281,7 @@
         <size>0.165  0.003 0.10</size>
         <rpy>0.0   0.0 0.0 </rpy>
         <mesh>unit_box</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
   </body:box>
@@ -342,7 +342,7 @@
         <size>0.05   0.02   0.02</size>
         <rpy>0.0   0.0 0.0 </rpy>
         <mesh>unit_box</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
   </body:box>
@@ -386,7 +386,7 @@
         <size>0.05   0.02   0.02</size>
         <rpy>0.0   0.0 0.0 </rpy>
         <mesh>unit_box</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
   </body:box>
@@ -557,7 +557,7 @@
         <!--size>0.3  0.65  0.02</size-->
         <size>0.0  0.0  0.0</size>
         <mesh>unit_box</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
 
@@ -568,7 +568,7 @@
     <body1>torso_body</body1>
     <anchor>torso_body</anchor>
     <lowStop>  0.0 </lowStop>
-    <hiStop>   0.5 </hiStop>
+    <highStop>   0.5 </highStop>
     <axis>0.0  0.0  1.0 </axis>
   </joint:slider>
 
@@ -585,7 +585,7 @@
         <!--size> 0.26 0.6 0.36</size-->
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_sh_turret.mesh</mesh>
-        <material>Gazebo/Fish</material>
+        <material>Gazebo/Green</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
@@ -617,7 +617,7 @@
         <rpy>180.0   -90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_sh_roll.mesh</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
   </body:box>
@@ -649,7 +649,7 @@
         <rpy>  0.0   -90.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_forearm_roll.mesh</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
   </body:box>
@@ -681,7 +681,7 @@
         <rpy>  0.0    90.0   90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_wrist_roll.mesh</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
   </body:box>
@@ -787,7 +787,7 @@
     <body1>palm_right</body1>
     <anchor>palm_right</anchor>
     <lowStop> -0.02 </lowStop> <!-- red close -->
-    <hiStop>   0.05 </hiStop> <!-- red open -->
+    <highStop>   0.05 </highStop> <!-- red open -->
     <axis>0.0  1.0  0.0 </axis>
   </joint:slider>
 
@@ -796,7 +796,7 @@
     <body1>palm_right</body1>
     <anchor>palm_right</anchor>
     <lowStop> -0.05 </lowStop> <!-- white open -->
-    <hiStop>   0.02 </hiStop> <!-- white close -->
+    <highStop>   0.02 </highStop> <!-- white close -->
     <axis>0.0  1.0  0.0 </axis>
   </joint:slider>
 
@@ -814,7 +814,7 @@
         <!--size> 0.26 0.6 0.36</size-->
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_sh_turret.mesh</mesh>
-        <material>Gazebo/Fish</material>
+        <material>Gazebo/Green</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
@@ -846,7 +846,7 @@
         <rpy>180.0   -90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_sh_roll.mesh</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
   </body:box>
@@ -878,7 +878,7 @@
         <rpy>  0.0   -90.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_forearm_roll.mesh</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
   </body:box>
@@ -910,7 +910,7 @@
         <rpy>  0.0    90.0   90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_wrist_roll.mesh</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
   </body:box>
@@ -1012,7 +1012,7 @@
     <body1>palm_left</body1>
     <anchor>palm_left</anchor>
     <lowStop> -0.02 </lowStop> <!-- red close -->
-    <hiStop>   0.05 </hiStop> <!-- red open -->
+    <highStop>   0.05 </highStop> <!-- red open -->
     <axis>0.0  1.0  0.0 </axis>
   </joint:slider>
 
@@ -1021,7 +1021,7 @@
     <body1>palm_left</body1>
     <anchor>palm_left</anchor>
     <lowStop> -0.05 </lowStop> <!-- white open -->
-    <hiStop>   0.02 </hiStop> <!-- white close -->
+    <highStop>   0.02 </highStop> <!-- white close -->
     <axis>0.0  1.0  0.0 </axis>
   </joint:slider>
 
@@ -1049,7 +1049,7 @@
       <visual>
         <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
         <mesh>unit_box</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
   </body:box>
@@ -1068,7 +1068,7 @@
       <visual>
         <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
         <mesh>unit_box</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
   </body:box>
@@ -1087,7 +1087,7 @@
       <visual>
         <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
         <mesh>unit_box</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
   </body:box>
@@ -1105,7 +1105,7 @@
       <visual>
         <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
         <mesh>unit_box</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
   </body:box>
@@ -1399,7 +1399,7 @@
         <rpy>0 0 0</rpy>
         <size>0.035 0.035 0.008</size>
         <mesh>unit_cylinder</mesh>
-        <material>Gazebo/Grey</material>
+        <material>Gazebo/Shell</material>
       </visual>
 
     </geom:cylinder>

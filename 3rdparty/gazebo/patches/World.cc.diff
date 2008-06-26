@@ -1,0 +1,92 @@
+Index: gazebo-svn/server/World.cc
+===================================================================
+--- gazebo-svn/server/World.cc	(revision 6690)
++++ gazebo-svn/server/World.cc	(working copy)
+@@ -27,6 +27,7 @@
+ #include <assert.h>
+ #include <sstream>
+ #include <fstream>
++#include <sys/time.h> //gettimeofday
+ 
+ #include "Global.hh"
+ #include "GazeboError.hh"
+@@ -57,6 +58,9 @@
+   this->server = NULL;
+   this->simIface = NULL;
+ 
++  this->simTime = 0.0;
++  this->pauseTime = 0.0;
++  this->startTime = 0.0;
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -157,6 +161,7 @@
+ 
+   this->physicsEngine->Init();
+ 
++  this->startTime = this->GetWallTime();
+   this->toAddModels.clear();
+   this->toDeleteModels.clear();
+ 
+@@ -170,6 +175,8 @@
+   std::vector< Model* >::iterator miter;
+   std::vector< Model* >::iterator miter2;
+ 
++  this->simTime += this->physicsEngine->GetStepTime();
++
+   // Update all the models
+   for (miter=this->models.begin(); miter!=this->models.end(); miter++)
+   {
+@@ -183,6 +190,10 @@
+   {
+     this->physicsEngine->Update();
+   }
++  else
++  {
++    this->pauseTime += this->physicsEngine->GetStepTime();
++  }
+ 
+   this->UpdateSimulationIface();
+ 
+@@ -250,6 +261,41 @@
+   return this->physicsEngine;
+ }
+ 
++////////////////////////////////////////////////////////////////////////////////
++// Get the simulation time
++double World::GetSimTime() const
++{
++  return this->simTime;
++}
++////////////////////////////////////////////////////////////////////////////////
++// Get the pause time
++double World::GetPauseTime() const
++{
++  return this->pauseTime;
++}
++
++////////////////////////////////////////////////////////////////////////////////
++/// Get the start time
++double World::GetStartTime() const
++{
++  return this->startTime;
++}
++////////////////////////////////////////////////////////////////////////////////
++/// Get the real time (elapsed time)
++double World::GetRealTime() const
++{
++  return this->GetWallTime() - this->startTime;
++}
++
++////////////////////////////////////////////////////////////////////////////////
++/// Get the wall clock time
++double World::GetWallTime() const
++{
++  struct timeval tv;
++  gettimeofday(&tv, NULL);
++  return tv.tv_sec + tv.tv_usec * 1e-6;
++}
++
+ ///////////////////////////////////////////////////////////////////////////////
+ // Load a model
+ int World::LoadEntities(XMLConfigNode *node, Model *parent)

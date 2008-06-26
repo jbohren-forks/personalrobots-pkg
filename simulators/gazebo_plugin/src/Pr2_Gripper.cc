@@ -107,7 +107,7 @@ void Pr2_Gripper::InitChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void Pr2_Gripper::UpdateChild(UpdateParams &params)
+void Pr2_Gripper::UpdateChild()
 {
   float cmdPosition[2],positionError[2],positionRateError[2];
   float cmdPositionRate;

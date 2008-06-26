@@ -81,7 +81,7 @@ void P3D::InitChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void P3D::UpdateChild(UpdateParams &params)
+void P3D::UpdateChild()
 {
   Quatern rot;
   Vector3 pos;

@@ -246,6 +246,7 @@ PR2_ERROR_CODE PR2HW::Init()
     << e << "\n";
     pr2BaseIface = NULL;
   }
+  return PR2_ALL_OK;
 };
 
 

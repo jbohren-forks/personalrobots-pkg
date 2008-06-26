@@ -9,6 +9,7 @@ A test file for Player interface.
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
 <depend package="gazebo"/>
+<depend package="opende"/>
 <depend package="pr2Core"/>
 <depend package="newmat10"/>
 <depend package="controllers"/>

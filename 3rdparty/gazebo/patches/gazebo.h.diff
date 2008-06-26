@@ -1,0 +1,372 @@
+Index: gazebo-svn/libgazebo/gazebo.h
+===================================================================
+--- gazebo-svn/libgazebo/gazebo.h	(revision 6690)
++++ gazebo-svn/libgazebo/gazebo.h	(working copy)
+@@ -550,7 +550,7 @@
+ 
+ 
+ /// Maximum image pixels (width x height)
+-#define GAZEBO_CAMERA_MAX_IMAGE_SIZE 640 * 480 * 3
++#define GAZEBO_CAMERA_MAX_IMAGE_SIZE 1024 * 1024 * 3
+ 
+ /// \brief Camera interface data
+ class CameraData
+@@ -1057,6 +1057,30 @@
+ 
+   /// Lift down flag
+   public: int lift_down;
++
++  /// Enable flag
++  public: int cmdEnableMotor;
++
++  /// Gripper Position Rate Command
++  public: float cmdPositionRate;
++  /// Gripper Force Command
++  public: float cmdForce;
++  /// Gripper Gap Command
++  public: float cmdGap;
++
++  /// Gripper force
++  public: double gripperForce;
++  /// Gripper controller gains
++  public: double pGain;
++  public: double dGain;
++  public: double iGain;
++
++  /// Position
++  public: float actualFingerPosition[2];
++  /// Position Rate
++  public: float actualFingerPositionRate[2];
++
++
+ };
+ 
+ /// \brief Gripper interface
+@@ -1254,9 +1278,327 @@
+ /// \} */
+ 
+ 
++
++
+ /***************************************************************************/
+ /// \addtogroup libgazebo_iface
+ /// \{
++/** \defgroup gripper_iface gripper
++
++  \brief PR2 Gripper interface
++
++The gripper interface allows control of a simple pseudo-1-DOF PR2 gripper, such as
++that found on the Pioneer series robots.
++
++
++\{
++*/
++
++/** Gripper state: open */
++#define GAZEBO_PR2GRIPPER_STATE_OPEN 1
++/** Gripper state: closed */
++#define GAZEBO_PR2GRIPPER_STATE_CLOSED 2
++/** Gripper state: moving */
++#define GAZEBO_PR2GRIPPER_STATE_MOVING 3
++/** Gripper state: error */
++#define GAZEBO_PR2GRIPPER_STATE_ERROR 4
++
++/** Gripper command: open */
++#define GAZEBO_PR2GRIPPER_CMD_OPEN 1
++/** Gripper command: close */
++#define GAZEBO_PR2GRIPPER_CMD_CLOSE 2
++/** Gripper command: stop */
++#define GAZEBO_PR2GRIPPER_CMD_STOP 3
++/** Gripper command: store */
++#define GAZEBO_PR2GRIPPER_CMD_STORE 4
++/** Gripper command: retrieve */
++#define GAZEBO_PR2GRIPPER_CMD_RETRIEVE 5
++
++
++/// \brief Fudicial interface data
++class PR2GripperData
++{
++  public: GazeboData head;
++
++  /// \brief Current command for the gripper
++  public: int cmd;
++
++  /// Current state of the gripper
++  public: int state;
++
++  /// Gripped limit reached flag
++  public: int grip_limit_reach;
++
++  /// Lift limit reached flag
++  public: int lift_limit_reach;
++
++  /// Outer beam obstruct flag
++  public: int outer_beam_obstruct;
++
++  /// control mode, TODO: yet to be defined
++  public: int controlMode;
++
++  /// Inner beam obstructed flag
++  public: int inner_beam_obstruct;
++
++  /// Left paddle open flag
++  public: int left_paddle_open;
++
++  /// Right paddle open flag
++  public: int right_paddle_open;
++
++  /// Lift up flag
++  public: int lift_up;
++
++  /// Lift down flag
++  public: int lift_down;
++
++  /// Enable flag
++  public: int cmdEnableMotor;
++
++  /// Gripper Position Rate Command
++  public: float cmdPositionRate;
++  /// Gripper Force Command
++  public: float cmdForce;
++  /// Gripper Gap Command
++  public: float cmdGap;
++
++  /// Gripper force
++  public: double gripperForce;
++  /// Gripper controller gains
++  public: double pGain;
++  public: double dGain;
++  public: double iGain;
++
++  /// Position
++  public: float actualFingerPosition[2];
++  /// Position Rate
++  public: float actualFingerPositionRate[2];
++
++
++};
++
++/// \brief Gripper interface
++class PR2GripperIface : public Iface
++{
++  /// \brief Constructor
++  public: PR2GripperIface():Iface("pr2gripper", sizeof(PR2GripperIface)+sizeof(PR2GripperData)) {}
++
++  /// \brief Destructor
++  public: virtual ~PR2GripperIface() {this->data = NULL;}
++
++  /// \brief Create the server
++  public: virtual void Create(Server *server, std::string id)
++          {
++            Iface::Create(server,id); 
++            this->data = (PR2GripperData*)this->mMap; 
++          }
++
++  /// \brief Open the iface 
++  public: virtual void Open(Client *client, std::string id)
++          {
++            Iface::Open(client,id); 
++            this->data = (PR2GripperData*)this->mMap; 
++          }
++
++  /// Pointer to the gripper data
++  public: PR2GripperData *data;
++};
++
++/** \} */
++/// \}
++
++
++/***************************************************************************/
++/// \addtogroup libgazebo_iface 
++/// \{
++/** \defgroup pr2array_iface actarray
++
++  \brief PR2 Array
++
++The PR2 array interface allows a user to control a set of actuators.
++
++\{
++*/
++
++/// maximum number of actuators 
++#define GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS 64
++#define GAZEBO_PR2ARRAY_JOINT_POSITION_MODE 0
++#define GAZEBO_PR2ARRAY_JOINT_SPEED_MODE 1
++#define GAZEBO_PR2ARRAY_JOINT_CURRENT_MODE 2
++
++//Actuator states
++/// Idle state
++#define GAZEBO_PR2ARRAY_ACTSTATE_IDLE     1
++
++/// Moving state 
++#define GAZEBO_PR2ARRAY_ACTSTATE_MOVING   2
++
++/// Braked state 
++#define GAZEBO_PR2ARRAY_ACTSTATE_BRAKED   3
++
++/// Stalled state 
++#define GAZEBO_PR2ARRAY_ACTSTATE_STALLED  4
++
++/// Linear type 
++#define GAZEBO_PR2ARRAY_TYPE_LINEAR       1
++/// Rotary type
++#define GAZEBO_PR2ARRAY_TYPE_ROTARY       2
++
++/// Request subtype: power 
++#define GAZEBO_PR2ARRAY_POWER_REQ         1
++/// Request subtype: brakes 
++#define GAZEBO_PR2ARRAY_BRAKES_REQ        2
++/// Request subtype: get geometry 
++#define GAZEBO_PR2ARRAY_GET_GEOM_REQ      3
++/// Request subtype: speed
++#define GAZEBO_PR2ARRAY_SPEED_REQ         4
++
++/// Command subtype: position 
++#define GAZEBO_PR2ARRAY_POS_CMD           1
++/// Command subtype: speed 
++#define GAZEBO_PR2ARRAY_SPEED_CMD         2
++/// Command subtype: home 
++#define GAZEBO_PR2ARRAY_HOME_CMD          3
++
++
++/// \brief Actuator geometry 
++class PR2ArrayActuatorGeom
++{
++
++/// Data subtype: state
++#define GAZEBO_PR2ARRAY_DATA_STATE        1
++
++
++  /// The type of the actuator - linear or rotary.
++  public: uint8_t type;
++
++  /// Min range of motion (m or rad depending on the type)
++  public: float min;
++
++  /// Center position (m or rad)
++  public: float center;
++
++  /// Max range of motion (m or rad depending on the type)
++  public: float max;
++
++  /// Home position (m or rad depending on the type)
++  public: float home;
++
++  /// The configured speed - different from current speed. 
++  public: float config_speed;
++
++  /// The maximum achievable speed of the actuator.
++  public: float max_speed;
++
++  /// If the actuator has brakes or not. 
++  public: uint8_t hasbrakes;
++};
++
++/// \brief Structure containing a single actuator's information 
++class PR2ArrayActuator
++{
++  /// The position of the actuator in m or rad depending on the type.
++  public: float actualPosition;
++  /// The speed of the actuator in m/s or rad/s depending on the type. 
++  public: float actualSpeed;
++  /// The current state of the actuator. 
++  public: uint8_t state;
++}; 
++
++  typedef struct
++   {
++      double timestamp;
++      double actualPosition;
++      double actualSpeed;
++      double actualEffectorForce;
++
++      int controlMode;
++      int jointType;
++
++      double cmdPosition;
++      double cmdSpeed;
++      double cmdEffectorForce;
++
++      int cmdEnableMotor;
++
++      double pGain;
++      double iGain;
++      double dGain;
++      double iClamp;
++      double saturationTorque;
++   } JointData;
++
++/// \brief The actuator array data packet. 
++class PR2ArrayData
++{
++  public: GazeboData head;
++
++  /// The number of actuators in the array. 
++  public: unsigned int actuators_count;
++  
++  /// The actuator data. 
++//  public: PR2ArrayActuator actuators[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
++    public: JointData actuators[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
++  
++  /// The actuators geoms 
++  public: PR2ArrayActuatorGeom actuator_geoms[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
++  
++  /// position commands
++  public: float cmd_pos[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
++  
++  /// speed commands
++  public: float cmd_speed[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
++  
++  /// bad command flag - (speed to high set for the actuators or position not reachable)
++  public: int bad_cmd;
++
++  /// True if new command
++  public: bool new_cmd;
++  
++  /// position / speed comand
++  public: unsigned int joint_mode[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
++  
++};
++
++/// \brief The PR2Array interface
++class PR2ArrayIface : public Iface
++{
++  /// \brief Create an interface
++  public: PR2ArrayIface():Iface("pr2array", sizeof(PR2ArrayIface)+sizeof(PR2ArrayData)) {}
++
++  /// \brief Destroy and Interface
++  public: virtual ~PR2ArrayIface() {this->data = NULL;}
++
++  /// \brief Create the interface (used by Gazebo server)
++  /// \param server Pointer to the server
++  /// \param id Id of the interface
++  public: virtual void Create(Server *server, std::string id)
++          {
++           Iface::Create(server,id); 
++           this->data = (PR2ArrayData*)this->mMap; 
++          }
++
++  /// \brief Open an existing interface
++  /// \param client Pointer to the client
++  /// \param id Id of the interface
++  public: virtual void Open(Client *client, std::string id)
++          {
++            Iface::Open(client,id); 
++            this->data = (PR2ArrayData*)this->mMap; 
++          }
++
++  /// Pointer to the act array data
++  public: PR2ArrayData *data;
++};
++
++/** \} */
++/// \} */
++
++
++/***************************************************************************/
++/// \addtogroup libgazebo_iface
++/// \{
+ /** \defgroup ptz_iface ptz
+ 
+   \brief PTZ interface

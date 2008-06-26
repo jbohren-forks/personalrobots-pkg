@@ -181,7 +181,9 @@ material Gazebo/Grey
 	{
 		pass
 		{
-			ambient 0 0 0 1.000000
+			ambient 0.5 0.5 0.5 1.0
+			diffuse 1.0 1.0 1.0 1.0
+			specular 0.0 0.0 0.0 1.0 12.5
       texture_unit
       {
         colour_op_ex source1 src_manual src_current 0.8 0.8 0.8
@@ -310,6 +312,44 @@ material Gazebo/Blue
 	}
 }
 
+material Gazebo/Green
+{
+	receive_shadows on
+
+	technique
+	{
+		pass
+		{
+		  ambient 0.000000 0.400000 0.000000 0.300000
+			diffuse 0.100000 0.100000 0.100000 0.300000
+			specular 0.000000 0.000000 0.000000 0.000000
+			emissive 0.000000 0.000000 0.000000 0.000000
+      lighting on
+		}
+	}
+}
+
+material Gazebo/Shell
+{
+	receive_shadows on
+
+	technique
+	{
+		pass
+		{
+		  ambient 0.000000 0.000000 0.200000 0.300000
+			diffuse 0.100000 0.100000 0.100000 0.500000
+			specular 0.000000 0.000000 0.000000 0.000000
+			emissive 0.000000 0.000000 0.000000 0.000000
+      lighting on
+      texture_unit
+      {
+          texture RustedMetal.jpg
+      }
+		}
+	}
+}
+
 material Gazebo/PioneerBody
 {
 	receive_shadows on
@@ -317,8 +357,9 @@ material Gazebo/PioneerBody
 	{
     pass Ambient
     {
-      ambient 0.5 0 0 
-
+			ambient 0.5 0.5 0.5 1.0
+			diffuse 1.0 1.0 1.0 1.0
+			specular 0.0 0.0 0.0 1.0 12.5
 			texture_unit
 			{
 				texture pioneerBody.jpg
@@ -626,6 +667,9 @@ material Gazebo/Fish
   {
     pass
     {
+			ambient 0.5 0.5 0.5 1.0
+			diffuse 1.0 1.0 1.0 1.0
+			specular 0.0 0.0 0.0 1.0 12.5
       texture_unit
       {
         texture steelhead.png
