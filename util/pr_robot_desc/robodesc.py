@@ -24,6 +24,9 @@ class _XObject(object):
         self.tagName = tagName
         self.vprops  = [] #validation properties -- properties that must be not None
         self.aprops  = [] #attribute properties -- properties set from node attribute values
+        self.textprops  = [] #text-based properties
+        self.tripleprops = []
+        self.doubleprops = []        
         
     def propStr(self):
         return ''
@@ -31,6 +34,12 @@ class _XObject(object):
         return "[%s%s]"%(self.tagName, self.propStr())
     
     def loadTag(self, tag, name):
+        if name in self.textprops:
+            setattr(self, name, getText(tag))
+        elif name in self.tripleprops:
+            setattr(self, name, getTriple(tag))
+        elif name in self.doubleprops:
+            setattr(self, name, getDouble(tag))
         raise XmlParseException("unknown tag <%s>"%name)
     def loadDom(self, tag):
         if tag.tagName != self.tagName:
@@ -43,85 +52,50 @@ class _XObject(object):
         for c in [c for c in tag.childNodes if c.nodeType == Node.ELEMENT_NODE]:
             self.loadTag(c, c.tagName)
         return self
-    def _validate(self):
+    def validate(self):
         for p in self.vprops:
             val = getattr(self, p) 
             if val is None:
                 raise XmlParseException("<%s> tag is missing a <%s> spec"%(self.tagName, p))
             if isinstance(val, _XObject):
-                val._validate()
+                val.validate()
 
 class Joint(_XObject):
     def __init__(self):
         super(Joint, self).__init__('joint')
-        self.name        = None
-        self.type        = None
-        self.anchor      = None
-        # optional props
-        self.limit       = None
-        self.axis        = None
-        self.calibration = None
-        
+        self.name = self.type = self.anchor = self.limit = self.axis = self.calibration = None
         self.vprops.append('anchor') #validation
         self.aprops.extend(['name', 'type'])
-
+        self.textprops.append('anchor')
+        self.tripleprops.append('axis')        
+        self.doubleprops.append('limit', 'calibration')
+        
     def propStr(self):
         return super(Joint, self).propStr() + ' name: %s type: %s anchor: %s'%(self.name, self.type, self.anchor)
     
-    def loadTag(self, tag, name):
-        if name == 'anchor':
-            self.anchor = getText(tag)
-        elif name == 'axis':
-            self.axis = getTriple(tag)
-        elif name == 'limit':
-            self.limit = getDouble(tag)
-        elif name == 'calibration':
-            self.calibration = getDouble(tag)
-        else:
-            super(Joint, self).loadTag(tag, name)
-        
 class Geometry(_XObject):
     #TODO: spec is unfinished here
     def __init__(self):
         super(Geometry, self).__init__('geometry')
-        self.name    = None
-        self.type    = None        
+        self.name = self.type = None
         self.aprops.extend(['name', 'type'])
-
+        
     def propStr(self):
         return super(Geometry, self).propStr() + ' name: %s type: %s'%(self.name, self.type)
-
-    def loadTag(self, tag, name):
-        if name == 'mass':
-            self.mass = getText(tag)
-        elif name == 'com':
-            self.com = getTriple(tag)
-        elif name == 'inertia':
-            val = getText(tag).split(' ')
-            if len(val) != 6:
-                raise XmlParseException("Invalid <%s> text: %s"%(name, getText(tag)))
-            self.inertia = val
-        else:
-            pass #currently ignore size, etc...
-            #super(Geometry, self).loadTag(tag, name)
     
 class Inertial(_XObject):
     def __init__(self):
         super(Inertial, self).__init__('inertial')
-        self.mass    = None
-        self.com     = None
-        self.inertia = None
+        self.mass = self.com = self.inertia = None
         self.vprops.extend(['mass', 'com', 'inertia'])
+        self.textprops.append('mass')
+        self.tripleprops.append('com')        
 
     def propStr(self):
         return  super(Inertial, self).propStr() + ' mass: %s com: %s inertia: %s'%(self.mass, ' '.join(self.com), ' '.join(self.inertia))
 
     def loadTag(self, tag, name):
-        if name == 'mass':
-            self.mass = getText(tag)
-        elif name == 'com':
-            self.com = getTriple(tag)
-        elif name == 'inertia':
+        if name == 'inertia':
             val = getText(tag).split(' ')
             if len(val) != 6:
                 raise XmlParseException("Invalid <%s> text: %s"%(name, getText(tag)))
@@ -133,33 +107,24 @@ class Inertial(_XObject):
 class _GObject(_XObject):
     def __init__(self, tagName):
         super(_GObject, self).__init__(tagName)
-        self.xyz        = None
-        self.rpy        = None
-        self.material   = None
+        self.xyz = self.rpy = self.material = None
         self.geometries = []
         self.vprops.extend(['xyz', 'rpy', 'material']) #validation props
+        self.tripleprops.extend('rpy', 'xyz')
+        self.textprops.append('material')
         
     def propStr(self):
         georepr = '\n'.join([str(g) for g in self.geometries])
         return  super(_GObject, self).propStr() + ' xyz: %s rpy: %s material: %s geometries: %s'%(' '.join(self.xyz), ' '.join(self.rpy), self.material, georepr)
 
-    def addGeometry(self, g):
-        self.geometries.append(g)
-
-    def _validate(self):
-        super(_GObject, self)._validate()
+    def validate(self):
+        super(_GObject, self).validate()
         for g in self.geometries:
-            g._validate()
+            g.validate()
 
     def loadTag(self, tag, name):
-        if name == 'material':
-            self.material = getText(tag)
-        elif name == 'rpy':
-            self.rpy = getTriple(tag)
-        elif name == 'xyz':
-            self.xyz = getTriple(tag)
-        elif name == 'geometry':
-            self.addGeometry(Geometry().loadDom(tag))
+        if name == 'geometry':
+            self.geometries.append(Geometry().loadDom(tag))
         else:
             super(_GObject, self).loadTag(tag, name) 
 
@@ -175,35 +140,28 @@ class _RObject(_XObject):
     
     def __init__(self, tagName):
         super(_RObject, self).__init__(tagName)
-        self.name      = None
-        self.parent    = None
-        self.rpy       = None
-        self.inertial  = None
-        self.visual    = None
-        self.collision = None
+        self.name = self.parent = self.rpy = self.inertial = self.visual = self.collision = None
         self.aprops.append('name')
         self.vprops.extend(['parent', 'rpy', 'inertial', 'visual', 'collision'])
-
+        self.textprops.append('parent')
+        self.tripleprops.extend('rpy')
+        
     def propStr(self):
         return super(_RObject, self).propStr() + ' name: %s parent: %s rpy: %s inertial: %s visual: %s collision: %s'%(self.name, self.parent, ' '.join(self.rpy), self.inertial, self.visual, self.collision)
 
-    def _validate(self):
-        super(_RObject, self)._validate()
-        self.visual._validate()
-        self.inertial._validate()
-        self.collision._validate()                
+    def validate(self):
+        super(_RObject, self).validate()
+        self.visual.validate()
+        self.inertial.validate()
+        self.collision.validate()                
 
     def loadTag(self, tag, name):
-        if name == 'parent':
-            self.parent = getText(tag)
-        elif name == 'inertial':
+        if name == 'inertial':
             self.inertial = Inertial().loadDom(tag)
         elif name == 'visual':
             self.visual = Visual().loadDom(tag)
         elif name == 'collision':
             self.collision = Collision().loadDom(tag)
-        elif name == 'rpy':
-            self.rpy = getTriple(tag)
         else:
             super(_RObject, self).loadTag(tag, name)
     
@@ -214,19 +172,13 @@ class Sensor(_RObject):
         self.xyz         = None
         self.calibration = None
         self.vprops.extend(['xyz', 'calibration']) #validation
-        self.aprops.append('type')         
-
+        self.aprops.append('type')
+        self.textprops.append('calibration')
+        self.tripleprops.append('xyz')
+        
     def propStr(self):
         return super(Sensor, self).propStr() + ' type: %s xyz: %s calibration: %s'%(self.type, ' '.join(self.xyz), self.calibration)
     
-    def loadTag(self, tag, name):
-        if name == 'calibration':
-            self.calibration = getText(tag)
-        elif name == 'xyz':
-            self.xyz = getTriple(tag)
-        else:
-            super(Sensor, self).loadTag(tag, name)
-
 class Link(_RObject):
     def __init__(self):
         super(Link, self).__init__('link')
@@ -242,35 +194,30 @@ class Link(_RObject):
         else:
             super(Link, self).loadTag(tag, name)
         
-class RobotDesc(object):
+class RobotDesc(_XObject):
     def __init__(self):
-        self.sensors = {}
-        self.links   = {}
+        super(RobotDesc, self).__init__('robot')
+        self.sensors = []
+        self.links   = []
     def validate(self):
-        for s in self.sensors.itervalues():
-            s._validate()
-        for s in self.links.itervalues():
-            s._validate()
+        super(RobotDesc, self).validate()
+        for s in self.sensors + self.links:
+            s.validate()
 
-    def addSensor(self, s):
-        self.sensors[s.name] = s
-    def addLink(self, s):
-        self.links[s.name] = s
-    def __str__(self):
-        for s in self.sensors:
-            print str(s), repr(s)
-        return "[ROBOT sensors: [%s] links: [%s] ]"%('\n'.join([str(s) for s in self.sensors.itervalues()]), '\n'.join([str(s) for s in self.links.itervalues()]))
+    def loadTag(self, tag, name):
+        if name == 'sensor':
+            self.sensors.append(Sensor().loadDom(tag))
+        elif name == 'link':
+            self.links.append(Link().loadDom(tag))
+        else:
+            super(RobotDesc, self).loadTag(tag, name)
+
+    def propStr(self):
+        return super(RobotDesc, self).propStr() + " sensors: [%s] links: [%s]"%('\n'.join([str(s) for s in self.sensors]), '\n'.join([str(s) for s in self.links]))
 
 def load(filename):
-    desc = RobotDesc()
     dom = parse(filename)
-    root    = dom.getElementsByTagName('robot')[0]
-    links   = root.getElementsByTagName('link')
-    for tag in [t for t in links if t.nodeType == Node.ELEMENT_NODE]:
-        desc.addLink(Link().loadDom(tag))
-    sensors = root.getElementsByTagName('sensor')
-    for tag in [t for t in sensors if t.nodeType == Node.ELEMENT_NODE]:
-        desc.addSensor(Sensor().loadDom(tag))
+    desc = RobotDesc().loadDom(dom.getElementsByTagName('robot')[0])
     desc.validate()
     return desc
 
