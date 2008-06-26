@@ -3,7 +3,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "ros/node.h"
-#include "std_msgs/MsgImage.h"
+#include "std_msgs/Image.h"
 
 using namespace std;
 using namespace ros;
@@ -11,7 +11,7 @@ using namespace ros;
 class CvView : public node
 {
 public:
-  MsgImage image_msg;
+  std_msgs::Image image_msg;
 
   CvView() : node("cam_viewer")
   { 
