@@ -1,0 +1,13 @@
+<package>
+  <description brief='Generic Controller Library'>
+    Library for doing generic controls.
+  </description>
+  <author>Melonee Wise</author>
+  <license>BSD</license>
+  <depend package="pr2Core" />
+  <url>http://pr.willowgarage.com</url>
+  <repository>http://pr.willowgarage.com/repos</repository>
+  <export>
+    <cpp cflags='-I${prefix}/include' lflags='-L${prefix}/lib -lPid '/>
+  </export>
+</package>

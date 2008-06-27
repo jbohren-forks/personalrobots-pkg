@@ -32,7 +32,7 @@
 #include <pr2Core/pr2Core.h>
 
 #include <vector>
-#include <controllers/Pid.h>
+#include <genericControllers/Pid.h>
 
 namespace gazebo
 {

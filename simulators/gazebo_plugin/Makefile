@@ -9,7 +9,7 @@ LFLAGS = $(shell rospack export/cpp/lflags $(PKG))
 LDFLAGS = $(shell rospack export/cpp/lflags gazebo) \
           $(shell rospack export/cpp/lflags opende) \
           $(shell rospack export/cpp/lflags pr2Core) \
-          $(shell rospack export/cpp/lflags controllers) \
+          $(shell rospack export/cpp/lflags genericControllers) \
           $(shell rospack export/cpp/lflags newmat10)
 
 LIB_ACT = lib/libPr2_Actarray.a

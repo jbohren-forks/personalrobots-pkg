@@ -1,0 +1,15 @@
+<package>
+  <description brief='PR2 Specific Controller Library'>
+    Library for controlling PR2 main modules. Namely:
+    Base, Head, Spine, Arm and LaserScanner, with base Joint Controllers as the base class.
+    Also, a controller for the PR2 Gripper.
+  </description>
+  <author>Melonee Wise</author>
+  <license>BSD</license>
+  <depend package="pr2Core" />
+  <url>http://pr.willowgarage.com</url>
+  <repository>http://pr.willowgarage.com/repos</repository>
+  <export>
+    <cpp cflags='-I${prefix}/include' lflags='-L${prefix}/lib -lPr2Controllers'/>
+  </export>
+</package>
