@@ -206,7 +206,7 @@ void rosTFServer::nameLookup(std::string astring)
 {
   namelookup::NameToNumber::request req;
   namelookup::NameToNumber::response res;
-  req.name = astring;
-  ros::service::call("nameToNumber", req, res);
+  req.name = myNode.map_name(astring);
+  ros::service::call("/nameToNumber", req, res);
   std::cout << astring << " maps to: " << res.number <<std::endl;
 };
