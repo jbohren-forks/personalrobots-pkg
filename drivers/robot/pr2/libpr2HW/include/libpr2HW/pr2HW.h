@@ -41,7 +41,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <string>
-#include <controllers/Pid.h>
+#include <genericControllers/Pid.h>
 #include <list>
 #include <vector>
 
