@@ -2,8 +2,11 @@ all: gazebo
 
 REVISION = -r 6696
 
-OGRE_PATH = $(shell rospack find ogre)/ogre
+OGRE_PKG = $(shell rospack find ogre)/ogre/lib/pkgconfig
+PLAYER_PKG = $(shell rospack find player)/player/lib/pkgconfig
 ODE_PATH = $(shell rospack find opende)/opende
+#FI_LD = $(shell rospack export/cpp/lflags freeimage)
+FI_LD = $(shell rospack find freeimage)/freeimage/lib
 ROOT = $(shell rospack find gazebo)/gazebo
 
 gazebo-checkout:
@@ -13,8 +16,12 @@ gazebo-checkout:
 
 gazebo: gazebo-checkout
 	if [ ! -d gazebo ]; then mkdir -p gazebo; fi
-	cd gazebo-svn && export PKG_CONFIG_PATH=${OGRE_PATH}/lib/pkgconfig:${PKG_CONFIG_PATH} && export PATH=${ODE_PATH}/bin:${PATH} && scons prefix=$(ROOT) && scons prefix=$(ROOT) install
+	cd gazebo-svn && export PKG_CONFIG_PATH=${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} && \
+	export LIBPATH="${FI_LD}" && \
+	export PATH=${ODE_PATH}/bin:${PATH} && scons prefix=$(ROOT) && scons prefix=$(ROOT) install
 	touch gazebo
+
+#	export LD_LIBRARY_PATH="/usr/lib" && \
 
 clean:
 	cd gazebo-svn && scons --clean
