@@ -28,74 +28,87 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
+#include <cmath>
 #include "ros/node.h"
 #include "std_msgs/LaserScan.h"
 #include "std_msgs/RobotBase2DOdom.h"
 #include "logsnarf/logsnarf.h"
 #include <vector>
 #include <string>
-using namespace std;
-/*
-class CarmenLogger : public ros::node
+using std::vector;
+using std::string;
+
+std_msgs::RobotBase2DOdom odom;
+std_msgs::LaserScan scan;
+
+FILE *clog = NULL;
+double prev_x = 0, prev_y = 0, prev_th = 0, dumb_rv = 0, dumb_tv = 0, prev_time;
+
+FILE *test_log = NULL;
+
+void odom_message(double rel_time, uint8_t *sermsg, uint32_t sermsg_len)
 {
-public:
-  std_msgs::LaserScan laserMsg;
-  std_msgs::RobotBase2DOdom odomMsg;
-  double robot_x, robot_y, robot_th, robot_tv, robot_rv;
-  double start_time;
-  FILE *f;
-  ros::thread::mutex log_mutex;
-  CarmenLogger() : ros::node("carmenLogger"), 
-                   robot_x(0), robot_y(0), robot_th(0), start_time(0)
+  static bool vel_init = false;
+  static double yaw_offset = 0;
+  odom.deserialize(sermsg);
+  if (!vel_init)
   {
-    f = fopen("carmen.log", "w");
-    if (!f)
-      assert(0);
-    subscribe("scan", laserMsg, &CarmenLogger::scanCB);
-    subscribe("odom", odomMsg,  &CarmenLogger::odomCB);
+    vel_init = true;
+    dumb_rv = dumb_tv = 0;
+    prev_time = rel_time;
+    test_log = fopen("test.txt", "w");
   }
-  virtual ~CarmenLogger()
+  else
   {
-    fclose(f);
+    double next_th = odom.pos.th + yaw_offset;
+    if (fabs(next_th - prev_th) > M_PI)
+    {
+      if (next_th > prev_th)
+        yaw_offset -= 2 * M_PI;
+      else
+        yaw_offset += 2 * M_PI;
+    }
+    odom.pos.th += yaw_offset;
+    double dt = rel_time - prev_time;
+    double dx = odom.pos.x - prev_x;
+    double dy = odom.pos.y - prev_y;
+    dumb_rv = (odom.pos.th - prev_th) / dt;
+    dumb_tv = sqrt(dx*dx + dy*dy) / dt;
+    fprintf(test_log, "%f %f %f %f %f %f\n", 
+            odom.pos.x, odom.pos.y, odom.pos.th, dumb_tv, dumb_rv, dt);
   }
-  void scanCB()
-  {
-    const double fov = fabs(laserMsg.angle_max - laserMsg.angle_min);
-    // only make an exception for the SICK LMS2xx running in centimeter mode
-    const double acc = (laserMsg.range_max >= 81 ? 0.01 : 0.001); 
-    log_mutex.lock();
-    fprintf(f, "ROBOTLASER1 0 %f %f %f %f %f 0 %d ",
-            laserMsg.angle_min, fov, fov / laserMsg.angle_increment,
-            laserMsg.range_max, acc, laserMsg.get_ranges_size());
-    for (int i = 0; i < laserMsg.get_ranges_size(); i++)
-      fprintf(f, "%f ", laserMsg.ranges[i]);
-    const double laser_x = 0.30; // in the robot frame
-    const double laser_y = 0;
-    const double laser_th = 0;
-    const double laser_rv = robot_rv;
-    const double laser_tv = robot_tv;
-    if (start_time == 0)
-      start_time = laserMsg.header.stamp.to_double();
-    fprintf(f, " %f %f %f %f %f %f %f %f 0.3 0.3 1000000 %f rosetta %f\n",
-            laser_x, laser_y, laser_th,
-            robot_x, robot_y, robot_th,
-            laser_tv, laser_rv, laserMsg.header.stamp.to_double(), 
-            laserMsg.header.stamp.to_double() - start_time);
-    log_mutex.unlock();
-  }
-  void odomCB()
-  {
-    if (start_time == 0)
-      start_time = odomMsg.header.stamp.to_double();
-    log_mutex.lock();
-    fprintf(f, "ODOM %f %f %f %f %f 0 %f rosetta %f\n",
-            robot_x, robot_y, robot_th, robot_rv, robot_tv,
-            odomMsg.header.stamp.to_double(),
-            odomMsg.header.stamp.to_double() - start_time);
-    log_mutex.unlock();
-  }
-};
-*/
+  prev_x  = odom.pos.x;
+  prev_y  = odom.pos.y;
+  prev_th = odom.pos.th;
+  prev_time = rel_time;
+  fprintf(clog, "ODOM %f %f %f %f %f 0 %f logsetta %f\n", 
+          odom.pos.x, odom.pos.y, odom.pos.th,
+          dumb_tv, dumb_rv, rel_time, rel_time);
+}
+
+void scan_message(double rel_time, uint8_t *sermsg, uint32_t sermsg_len)
+{
+  scan.deserialize(sermsg);
+  const double fov = fabs(scan.angle_max - scan.angle_min);
+  // only make an exception for the SICK LMS2xx running in centimeter mode
+  const double acc = (scan.range_max >= 81 ? 0.05 : 0.005); 
+  fprintf(clog, "ROBOTLASER1 0 %f %f %f %f %f 0 %d ",
+          scan.angle_min, fov, fov / scan.angle_increment,
+          scan.range_max, acc, scan.get_ranges_size());
+  for (int i = 0; i < scan.get_ranges_size(); i++)
+    fprintf(clog, "%.3f ", scan.ranges[scan.get_ranges_size() - i - 1]);
+  double laser_x = prev_x + 0.30 * cos(prev_th); // in the robot frame
+  double laser_y = prev_y + 0.30 * sin(prev_th);
+  double laser_th = prev_th;
+  double laser_rv = dumb_rv; // not really
+  double laser_tv = dumb_tv; // not really
+  fprintf(clog, " 0 %f %f %f %f %f %f %f %f 0.3 0.3 1000000 %f logsetta %f\n",
+          laser_x, laser_y, laser_th,
+          prev_x, prev_y, prev_th,
+          laser_tv, laser_rv, rel_time,
+          rel_time);
+}
+
 int main(int argc, char **argv)
 {
   if (argc != 3)
@@ -112,11 +125,15 @@ int main(int argc, char **argv)
   double rel_time;
   uint8_t *sermsg;
   uint32_t sermsg_len;
+  clog = fopen("carmen.txt", "w");
   while (s.snarf_one_message(&topic, &rel_time, &sermsg, &sermsg_len))
   {
-    printf("t = %f, snarfed a %d-byte message on topic [%s]\n", 
-           rel_time, sermsg_len, topic.c_str());
+    if (topic == "/odom")
+      odom_message(rel_time, sermsg, sermsg_len);
+    else if (topic == "/scan")
+      scan_message(rel_time, sermsg, sermsg_len);
   }
+  fclose(clog);
 
   return 0;
 }
