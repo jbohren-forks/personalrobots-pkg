@@ -147,10 +147,10 @@ class KatanaServer : public ros::node
     {
       Katana *katana = new Katana();
       bool success = false;
-      for (size_t i=0; i<req.jointAngles.angles_size; i++) {
-        success = katana->goto_joint_position_deg(req.jointAngles.angles[i].angles[0], 
-          req.jointAngles.angles[i].angles[1], req.jointAngles.angles[i].angles[2],
-          req.jointAngles.angles[i].angles[3], req.jointAngles.angles[i].angles[4]);
+      for (size_t i=0; i<req.jointAngles.configs_size; i++) {
+        success = katana->goto_joint_position_deg(req.jointAngles.configs[i].angles[0], 
+          req.jointAngles.configs[i].angles[1], req.jointAngles.configs[i].angles[2],
+          req.jointAngles.configs[i].angles[3], req.jointAngles.configs[i].angles[4]);
         if (!success) break;
       }
       if (success) {
@@ -169,10 +169,10 @@ class KatanaServer : public ros::node
     {
       Katana *katana = new Katana();
       bool success = false;
-      for (size_t i=0; i<req.jointAngles.angles_size; i++) {
-        success = katana->goto_joint_position_rad(req.jointAngles.angles[i].angles[0], 
-          req.jointAngles.angles[i].angles[1], req.jointAngles.angles[i].angles[2],
-          req.jointAngles.angles[i].angles[3], req.jointAngles.angles[i].angles[4]);
+      for (size_t i=0; i<req.jointAngles.configs_size; i++) {
+        success = katana->goto_joint_position_rad(req.jointAngles.configs[i].angles[0], 
+          req.jointAngles.configs[i].angles[1], req.jointAngles.configs[i].angles[2],
+          req.jointAngles.configs[i].angles[3], req.jointAngles.configs[i].angles[4]);
         if (!success) break;
       }
       if (success) {
