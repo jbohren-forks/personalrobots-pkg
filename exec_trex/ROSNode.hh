@@ -11,6 +11,9 @@
 #include <std_msgs/LaserScan.h>
 #include <pthread.h>
 
+// For arms
+#include <std_msgs/PR2Arm.h>
+
 // For GUI debug
 #include <std_msgs/Polyline2D.h>
 
@@ -65,9 +68,19 @@ namespace TREX{
     void dispatchVel(const TokenId& cmd_vel);
 
     /**
+     * Called by Bottom Level Adapter to dispatch arm commands. Needs to translate token into suitable message structure
+     */
+    void dispatchArm(const TokenId& cmd_vel);    
+
+    /**
      * Get all observations.
      */
     void get_obs(std::vector<Observation*>& obsBuffer);
+
+    /**
+     * Get all arm observations.
+     */
+    void get_arm_obs(std::vector<Observation*>& obsBuffer);
 
     /**
      * test if the node is initialized with inbound messages it requires
@@ -93,6 +106,10 @@ namespace TREX{
     Observation* get_wpc_obs();
     
     void get_laser_obs();
+
+    Observation* get_left_arm_obs();
+    Observation* get_right_arm_obs();
+    
 
     /**
      * Adds a reference
@@ -128,6 +145,18 @@ namespace TREX{
     void rcs_cb();
     //void localizedOdomReceived();
     
+    void leftArmPosReceived();
+    void rightArmPosReceived();
+    std_msgs::PR2Arm leftArmPosMsg;
+    std_msgs::PR2Arm rightArmPosMsg;
+    std_msgs::PR2Arm _lastLeftArmGoal;
+    std_msgs::PR2Arm _lastRightArmGoal;
+    bool _leftArmActive;
+    bool _rightArmActive;
+    bool _generateFirstObservation;
+    bool _rightArmInit;
+    bool _leftArmInit;
+
     std_msgs::Planner2DState m_rcs_state;
     std_msgs::Polyline2D polylineMsg;
     std_msgs::Polyline2D pointcloudMsg;

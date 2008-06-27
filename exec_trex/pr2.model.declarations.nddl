@@ -73,6 +73,18 @@ class Behavior extends AgentTimeline {
 	}
 };
 
+// class Mutex extends AgentTimeline {
+//   predicate Uses{
+//     AgentTimeline user;
+//   }
+
+//   predicate Free{}
+
+//   Mutex(Mode _mode){
+//     super(_mode, "Free");
+//   }
+// };
+
 /**
  * WaypointController will handle active control of vehicle to accomplish 
  * a waypoint. This maps to the wave front player in the 2D nav stack.
@@ -160,3 +172,52 @@ class Actions extends AgentActions{
     PFLOAT goal_y;
   }
 };
+
+class ArmController extends AgentTimeline {
+
+  bool _isLeft;
+  
+  predicate Inactive{
+   
+    float acTurretAngle;
+    float acShoulderLiftAngle;
+    float acUpperarmRollAngle;
+    float acElbowAngle;
+    float acForearmRollAngle;
+    float acWristPitchAngle;
+    float acWristRollAngle;
+    float acGripperForceCmd;
+    float acGripperGapCmd;
+
+    float desTurretAngle;
+    float desShoulderLiftAngle;
+    float desUpperarmRollAngle;
+    float desElbowAngle;
+    float desForearmRollAngle;
+    float desWristPitchAngle;
+    float desWristRollAngle;
+    float desGripperForceCmd;
+    float desGripperGapCmd;
+  }
+
+  predicate Active {
+
+    float turretAngle;
+    float shoulderLiftAngle;
+    float upperarmRollAngle;
+    float elbowAngle;
+    float forearmRollAngle;
+    float wristPitchAngle;
+    float wristRollAngle;
+    float gripperForceCmd;
+    float gripperGapCmd;
+  }
+  
+  ArmController(Mode _mode, bool isLeft){
+    super(_mode, "Inactive");
+    _isLeft = isLeft;
+  }
+
+};
+ 
+

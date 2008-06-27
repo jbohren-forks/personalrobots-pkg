@@ -1,20 +1,25 @@
-
-#include "Nddl.hh"
-#include "ROSNode.hh"
-#include "Token.hh"
 #include <signal.h>
-#include "WavefrontPlanner.hh"
-#include <std_srvs/StaticMap.h>
 
+//external ros includes for messages
+#include <std_srvs/StaticMap.h>
 #include <std_msgs/BaseVel.h>
+
+//NDDL includes
+#include "Nddl.hh"
+#include "Token.hh"
+#include "TokenVariable.hh"
+#include "Utilities.hh"
+
+
+#include "ROSNode.hh"
+#include "WavefrontPlanner.hh"
 
 //TiXmlElement* root = NULL;
 //Clock* agentClock = NULL;
 //std::ofstream dbgFile("Debug.log");
 
 using namespace std_msgs;
-
-
+static const double AllowableArmError = .075;
 
 namespace TREX {
   ROSNodeId ROSNode::s_id;
@@ -105,12 +110,20 @@ namespace TREX {
     advertise<Polyline2D>("gui_laser");
     advertise<Planner2DGoal>("goal");
     advertise<BaseVel>("cmd_vel");
+    advertise<PR2Arm>("right_pr2arm_set_position");
+    advertise<PR2Arm>("left_pr2arm_set_position");
     //subscribe("state", m_rcs_obs, &ROSNode::rcs_cb);
     subscribe("scan", laserMsg, &ROSNode::laserReceived);
-    //subscribe("localizedpose", m_localizedOdomMsg, &Executive::localizedOdomReceived);
+    subscribe("left_pr2arm_pos", leftArmPosMsg, &ROSNode::leftArmPosReceived);
+    subscribe("right_pr2arm_pos", rightArmPosMsg, &ROSNode::rightArmPosReceived);
+    //subscribe("localizedpose", m_localizedOdomMsg, &ROSNode::localizedOdomReceived);
     m_initialized = false;
+    _leftArmActive = false;
+    _rightArmActive = false;
+    _generateFirstObservation = true;
+    _leftArmInit = false;
+    _rightArmInit = false;
     
-
   }
 
 
@@ -145,12 +158,24 @@ namespace TREX {
     //debugMsg("ROSNode:Callback", "Received Update:" << toString(m_rcs_obs));
   }
 
+  void ROSNode::leftArmPosReceived() {
+    _leftArmInit = true;
+    //std::cout << "Got left arm message " 
+    //      << " turretAngle " << leftArmPosMsg.turretAngle << std::endl;
+  }
+
+  void ROSNode::rightArmPosReceived() {
+    _rightArmInit = true;
+    //std::cout << "Got right arm message " 
+    //	      << " turretAngle " << leftArmPosMsg.turretAngle << std::endl;
+  }
+
   /**
    * @brief Called when an update is received in the Monitor during synchronization
    */
   void ROSNode::my_publish(const Observation& obs)
   {
-    debugMsg("Executive:publish", obs.toString());
+    debugMsg("ROSNode:publish", obs.toString());
     //MsgToken msg;
     //msg.predicate = obs.toString();
     //ros::node::publish("navigator", msg);
@@ -195,8 +220,8 @@ namespace TREX {
       checkError(cmd_x.isSingleton(), cmd_x.toString());
       checkError(cmd_th.isSingleton(), cmd_th.toString());
 
-      mbv.vx = cmd_x.getSingletonValue();
-      mbv.vw = cmd_th.getSingletonValue();
+      mbv.vx = cmd_x.getSingletonValue()*3.0;
+      mbv.vw = cmd_th.getSingletonValue()*2.0;
       //debugMsg("ROSNode:dispatchVel", "Sending vel x " << mbv.vx << " y " << mbv.vw);
       ros::node::publish("cmd_vel",mbv);
     }
@@ -217,6 +242,40 @@ namespace TREX {
 	  PLAN_WYGY(plan,plan->path[i]->cj);
       }
     publish("gui_path", polylineMsg);
+  }
+
+  void ROSNode::dispatchArm(const TokenId& cmd_arm) {
+    
+    std::cout << "Trying to dispatch arm.\n";
+    
+
+    if(cmd_arm->getPredicateName() == LabelStr("ArmController.Active")) {
+      //figure out if it's left or right
+      PR2Arm armGoal;
+      armGoal.turretAngle = cmd_arm->getVariable("turretAngle")->lastDomain().getSingletonValue();
+      armGoal.shoulderLiftAngle = cmd_arm->getVariable("shoulderLiftAngle")->lastDomain().getSingletonValue();
+      armGoal.upperarmRollAngle = cmd_arm->getVariable("upperarmRollAngle")->lastDomain().getSingletonValue();
+      armGoal.elbowAngle = cmd_arm->getVariable("elbowAngle")->lastDomain().getSingletonValue();
+      armGoal.forearmRollAngle = cmd_arm->getVariable("forearmRollAngle")->lastDomain().getSingletonValue();
+      armGoal.wristPitchAngle = cmd_arm->getVariable("wristPitchAngle")->lastDomain().getSingletonValue();
+      armGoal.wristRollAngle = cmd_arm->getVariable("wristRollAngle")->lastDomain().getSingletonValue();
+      armGoal.gripperForceCmd = cmd_arm->getVariable("gripperForceCmd")->lastDomain().getSingletonValue();
+      armGoal.gripperGapCmd = cmd_arm->getVariable("gripperGapCmd")->lastDomain().getSingletonValue();
+
+      //std::cout << "WTF: " << getObjectName(cmd_arm).toString() << std::endl;
+      
+      if(getObjectName(cmd_arm)==LabelStr("rac")) {
+	debugMsg("ROSNode::Arm", "dispatching command for right arm.");
+	publish("right_pr2arm_set_position",armGoal);
+	_rightArmActive = true;
+	_lastRightArmGoal = armGoal;
+      } else {
+	debugMsg("ROSNode::Arm", "dispatching command for left arm.");
+	publish("left_pr2arm_set_position",armGoal);
+	_leftArmActive = true;
+	_lastLeftArmGoal = armGoal;
+      }
+    }
   }
 
   void ROSNode::get_obs(std::vector<Observation*>& buff){
@@ -336,6 +395,86 @@ namespace TREX {
   void ROSNode::get_laser_obs() {
     lock();
     unlock();  
+  }
+
+  void ROSNode::get_arm_obs(std::vector<Observation*>& buff){
+   
+    if(_rightArmInit && _leftArmInit) {
+
+      Observation* larm = get_left_arm_obs();
+      if(larm != NULL)
+	buff.push_back(larm);
+      
+      Observation* rarm = get_right_arm_obs();
+      if(rarm != NULL)
+	buff.push_back(rarm);
+      
+      _generateFirstObservation = false;
+    }
+  }
+
+  Observation* ROSNode::get_left_arm_obs(){
+    lock();
+    ObservationByValue* obs = NULL;
+    
+    if(_generateFirstObservation || 
+       (_leftArmActive &&
+	fabs(leftArmPosMsg.turretAngle-_lastLeftArmGoal.turretAngle) < AllowableArmError &&
+	fabs(leftArmPosMsg.shoulderLiftAngle-_lastLeftArmGoal.shoulderLiftAngle) < AllowableArmError &&
+	fabs(leftArmPosMsg.upperarmRollAngle-_lastLeftArmGoal.upperarmRollAngle) < AllowableArmError &&
+	fabs(leftArmPosMsg.elbowAngle-_lastLeftArmGoal.elbowAngle) < AllowableArmError &&
+	fabs(leftArmPosMsg.forearmRollAngle-_lastLeftArmGoal.forearmRollAngle) < AllowableArmError &&
+	fabs(leftArmPosMsg.wristPitchAngle-_lastLeftArmGoal.wristPitchAngle) < AllowableArmError &&
+	fabs(leftArmPosMsg.wristRollAngle-_lastLeftArmGoal.wristRollAngle) < AllowableArmError)) {
+      
+      std::cout << "Pushing left arm inactive observation.\n";
+
+      obs = new ObservationByValue("lac", "ArmController.Inactive");
+      obs->push_back("acTurretAngle", new IntervalDomain(leftArmPosMsg.turretAngle));
+      obs->push_back("acShoulderLiftAngle", new IntervalDomain(leftArmPosMsg.shoulderLiftAngle));
+      obs->push_back("acUpperarmRollAngle", new IntervalDomain(leftArmPosMsg.upperarmRollAngle));
+      obs->push_back("acElbowAngle", new IntervalDomain(leftArmPosMsg.elbowAngle));
+      obs->push_back("acForearmRollAngle", new IntervalDomain(leftArmPosMsg.forearmRollAngle));
+      obs->push_back("acWristPitchAngle", new IntervalDomain(leftArmPosMsg.wristPitchAngle));
+      obs->push_back("acWristRollAngle", new IntervalDomain(leftArmPosMsg.wristRollAngle));
+      obs->push_back("acGripperForceCmd", new IntervalDomain(leftArmPosMsg.gripperForceCmd));
+      obs->push_back("acGripperGapCmd", new IntervalDomain(leftArmPosMsg.gripperGapCmd));
+      _leftArmActive = false;
+   }
+    unlock();
+   return obs;
+  }
+    
+  Observation* ROSNode::get_right_arm_obs(){
+    lock();
+    ObservationByValue* obs = NULL;
+    
+    if(_generateFirstObservation ||
+       (_rightArmActive &&
+	fabs(rightArmPosMsg.turretAngle-_lastRightArmGoal.turretAngle) < AllowableArmError &&
+	fabs(rightArmPosMsg.shoulderLiftAngle-_lastRightArmGoal.shoulderLiftAngle) < AllowableArmError &&
+	fabs(rightArmPosMsg.upperarmRollAngle-_lastRightArmGoal.upperarmRollAngle) < AllowableArmError &&
+	fabs(rightArmPosMsg.elbowAngle-_lastRightArmGoal.elbowAngle) < AllowableArmError &&
+	fabs(rightArmPosMsg.forearmRollAngle-_lastRightArmGoal.forearmRollAngle) < AllowableArmError &&
+	fabs(rightArmPosMsg.wristPitchAngle-_lastRightArmGoal.wristPitchAngle) < AllowableArmError &&
+	fabs(rightArmPosMsg.wristRollAngle-_lastRightArmGoal.wristRollAngle) < AllowableArmError)) {
+	 
+      std::cout << "Pushing right arm inactive observation.\n";
+
+      obs = new ObservationByValue("rac", "ArmController.Inactive");
+      obs->push_back("acTurretAngle", new IntervalDomain(rightArmPosMsg.turretAngle));
+      obs->push_back("acShoulderLiftAngle", new IntervalDomain(rightArmPosMsg.shoulderLiftAngle));
+      obs->push_back("acUpperarmRollAngle", new IntervalDomain(rightArmPosMsg.upperarmRollAngle));
+      obs->push_back("acElbowAngle", new IntervalDomain(rightArmPosMsg.elbowAngle));
+      obs->push_back("acForearmRollAngle", new IntervalDomain(rightArmPosMsg.forearmRollAngle));
+      obs->push_back("acWristPitchAngle", new IntervalDomain(rightArmPosMsg.wristPitchAngle));
+      obs->push_back("acWristRollAngle", new IntervalDomain(rightArmPosMsg.wristRollAngle));
+      obs->push_back("acGripperForceCmd", new IntervalDomain(rightArmPosMsg.gripperForceCmd));
+      obs->push_back("acGripperGapCmd", new IntervalDomain(rightArmPosMsg.gripperGapCmd));
+      _rightArmActive = false;
+    }
+    unlock();
+    return obs;
   }
 
   bool ROSNode::isInitialized() const {
@@ -492,7 +631,7 @@ namespace TREX {
 	       it->pts, it->pts_num * 2 * sizeof(double));
 	this->laser_hitpts_len += it->pts_num;
       }
-    
+
     // Draw the points
 
     this->pointcloudMsg.set_points_size(this->laser_hitpts_len);

@@ -146,11 +146,11 @@ ExecutiveId Executive::s_id;
 
 int main(int argc, char **argv)
 {
-  signal(SIGINT,  &signalHandler);
-  signal(SIGTERM, &signalHandler);
-  signal(SIGQUIT, &signalHandler);
-  signal(SIGKILL, &signalHandler);
-  atexit(&cleanup);
+  //signal(SIGINT,  &signalHandler);
+  //signal(SIGTERM, &signalHandler);
+  //signal(SIGQUIT, &signalHandler);
+  //signal(SIGKILL, &signalHandler);
+  //atexit(&cleanup);
 
   if (argc != 2) {
     std::cerr << "Invalid argument list: Usage: ros_exec configFile" << std::endl;

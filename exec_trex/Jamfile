@@ -36,6 +36,7 @@ if ! $(ROS_PACKAGE_PATH) {
 	SubDirHdrs $(ROS_PACKAGE_PATH) util transforms rosTF include ;
 	SubDirHdrs $(ROS_PACKAGE_PATH) util transforms libTF include ;
 	SubDirHdrs $(ROS_PACKAGE_PATH) 3rdparty newmat10 newmat ;
+	SubDirHdrs $(ROS_PACKAGE_PATH) util transforms namelookup srv cpp ;
 
 	# GNU Library include directories
 	SubDirHdrs / usr include gtk-2.0 ;
@@ -46,7 +47,7 @@ if ! $(ROS_PACKAGE_PATH) {
 	# planner
 	LINKFLAGS = $(LINKFLAGS) -lrt  -lgtk-x11-2.0 ;
 
-	ModuleMain exec_trex : Executive.cc RCSVelAdapter.cc ROSNode.cc 
+	ModuleMain exec_trex : Executive.cc RCSVelAdapter.cc RCSArmAdapter.cc ROSNode.cc 
 	CalcCommandConstraint.cc CalcGlobalPathConstraint.cc WavefrontPlanner.cc map_helpers.cc ExecDefs.cc Components.cc pr2.model.o : TREX : exec_trex ;
 	Depends exec_trex : exec_inputs ;
 
@@ -59,7 +60,7 @@ if ! $(ROS_PACKAGE_PATH) {
 		pr2.exec.nddl
 		pr2.wpc.nddl
 		pr2.sim.nddl
-		wpc.0.wpc.nddl
+		#		wpc.0.wpc.nddl
 	;
 
 	local file ;

@@ -165,12 +165,18 @@ int WavefrontPlanner::GenerateGlobalPlan(double curx, double cury,
     //return 1;
   }
   
-  int res = plan_do_global(pt, curx, cury, goalx, goaly);
+  int res = 0;
+  res = plan_do_global(pt, curx, cury, goalx, goaly);
 
   if(res < 0) {
     std::cout << "Global plan failing\n";
-    draw_path(pt, curx, cury, "global_path.png");
-  }
+    //std::cout << " cur x " << curx << " cur y " << cury << std::endl;
+    //std::cout << " goal x " << goalx << " goal y " << goaly << std::endl;
+    //draw_path(pt, curx, cury, "global_path.png");
+    //draw_map(pt, curx, cury, "cur.png");
+    //draw_map(pt, goalx, goaly, "goal.png");
+    //draw_costmap(pt, "cost.png");
+  } 
 
   if(DoTiming) {
     gettimeofday(&timeafter,&tzdummy);
@@ -180,8 +186,7 @@ int WavefrontPlanner::GenerateGlobalPlan(double curx, double cury,
     std::cout << "Global planning took " << best_tt << " seconds\n";
   }
   //draw_path(pt, curx, cury, "global_path.png");
-  //draw_map(_plan, curx, cury, "cur.png");
-  //draw_map(_plan, goalx, goaly, "goal.png");
+
   //if(res >= 0) {
   //  _lastX = goalx;
   //  _lastY = goaly;
