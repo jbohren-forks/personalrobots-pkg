@@ -6,5 +6,8 @@
   <depend package="std_msgs"/>
   <depend package="libdc1394v2"/>
   <depend package="sdl"/>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -ldc1394cam"/>
+  </export>
   <url></url>
 </package>
