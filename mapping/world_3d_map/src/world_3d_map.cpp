@@ -78,7 +78,8 @@ Provides (name/type):
 
 @section parameters ROS parameters
 - @b "world_3d_map/max_publish_frequency" : @b [double] the maximum frequency (Hz) at which the data in the built 3D map is to be sent (default 0.5)
-
+- @b "world_3d_map/retain_pointcloud_duration : @b [double] the time for which a point cloud is retained as part of the current world information (default 10)
+- @b "world_3d_map/verbosity_level" : @b [int] sets the verbosity level (default 1)
 **/
 
 #include <ros/node.h>
@@ -87,6 +88,7 @@ Provides (name/type):
 #include <rosthread/mutex.h>
 #include <std_msgs/PointCloudFloat32.h>
 #include <std_msgs/Log.h>
+#include <deque>
 using namespace std_msgs;
 using namespace ros::thread::member_thread;
 
@@ -102,6 +104,8 @@ public:
 	// NOTE: subscribe to stereo vision point cloud as well... when it becomes available
 	subscribe("full_cloud", inputCloud, &World3DMap::pointCloudCallback);
 	param("world_3d_map/max_publish_frequency", maxPublishFrequency, 0.5);
+	param("world_3d_map/retain_pointcloud_duration", retainPointcloudDuration, 10.0);
+	param("world_3d_map/verbosity_level", verbose, 1);
 	
 	/* create a thread that does the processing of the input data.
 	 * and one that handles the publishing of the data */
@@ -197,7 +201,27 @@ public:
 	    {
 		worldDataMutex.lock();
 		if (active)
-		    publish("world_3d_map", toProcess);
+		{
+		    PointCloudFloat32 toPublish;
+		    unsigned int      npts = 0;
+		    for (unsigned int i = 0 ; i < currentWorld.size() ; ++i)
+			npts += currentWorld[i]->cloud.get_pts_size();
+		    toPublish.set_pts_size(npts);
+		    toPublish.set_chan_size(npts);
+		    unsigned int j = 0;
+		    for (unsigned int i = 0 ; i < currentWorld.size() ; ++i)
+		    {
+			unsigned int n = currentWorld[i]->cloud.get_pts_size();			
+			for (unsigned int k = 0 ; k < n ; ++k, ++j)
+			{
+			    toPublish.pts[j] = currentWorld[i]->cloud.pts[k];
+			    toPublish.chan[j] = currentWorld[i]->cloud.chan[k];
+			}
+		    }
+		    if (verbose > 0)
+			printf("Publishing a point cloud with %u points\n", toPublish.get_pts_size());
+		    publish("world_3d_map", toPublish);
+		}
 		shouldPublish = false;
 		worldDataMutex.unlock();
 	    }
@@ -207,17 +231,43 @@ public:
     
     void processData(void)
     {
-	// build a 3D representation of the world
-	// NEED TO FILL THIS IN
-	//	printf("processing some cloud data: %d\n", toProcess.pts_size);
+	/* remove old data */
+	double now = ros::Time::now().to_double();
+	double time = now - retainPointcloudDuration;
+	while (!currentWorld.empty() && currentWorld.front()->time < time)
+	{
+	    TimedPointCloud* old = currentWorld.front();
+	    currentWorld.pop_front();
+	    delete old;
+	}
+	/* add new data */
+	currentWorld.push_back(new TimedPointCloud(toProcess, now));
+	if (verbose > 0)
+	    printf("World map containing %d point clouds\n", currentWorld.size());	
     }
     
 private:
-    
-    PointCloudFloat32  inputCloud;
-    PointCloudFloat32  toProcess;
-    double             maxPublishFrequency;
 
+    struct TimedPointCloud
+    {
+	TimedPointCloud(PointCloudFloat32 &c, double t)
+	{
+	    cloud = c;
+	    time = t;
+	}
+	
+	PointCloudFloat32 cloud;
+	double            time;
+    };
+    
+    PointCloudFloat32            inputCloud;
+    PointCloudFloat32            toProcess;
+    std::deque<TimedPointCloud*> currentWorld;
+    
+    double             maxPublishFrequency;
+    double             retainPointcloudDuration;
+    int                verbose;
+    
     pthread_t         *processingThread;
     pthread_t         *publishingThread;
     ros::thread::mutex processMutex, publishMutex, worldDataMutex, flagMutex;
