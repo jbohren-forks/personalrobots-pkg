@@ -180,7 +180,8 @@ void Segway::main_loop()
 
 					odom_x += delta_lin * cos(odom_yaw);
 					odom_y += delta_lin * sin(odom_yaw);
-					odom_yaw = normalize_angle(odom_yaw + delta_ang);
+					//odom_yaw = normalize_angle(odom_yaw + delta_ang);
+					odom_yaw = odom_yaw + delta_ang;
 					
 					static int odom_count = 0;
 					if (odom_count++ % 10 == 0) // send it at 5 hz or so
