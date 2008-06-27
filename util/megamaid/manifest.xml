@@ -16,4 +16,7 @@
   <author>Morgan Quigley</author>
   <depend package="roscpp"/>
   <url>http://en.wikipedia.org/wiki/Spaceballs</url>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -llogsnarf"/>
+  </export>
 </package>
