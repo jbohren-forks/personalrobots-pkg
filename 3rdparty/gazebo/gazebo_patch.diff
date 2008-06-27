@@ -733,3 +733,16 @@ Index: gazebo-svn/server/World.cc
  ///////////////////////////////////////////////////////////////////////////////
  // Load a model
  int World::LoadEntities(XMLConfigNode *node, Model *parent)
+Index: gazebo-svn/SConstruct
+===================================================================
+--- gazebo-svn/SConstruct	(revision 6696)
++++ gazebo-svn/SConstruct	(working copy)
+@@ -24,6 +24,8 @@
+ parseConfigs=['pkg-config --cflags --libs OGRE',
+               'xml2-config --cflags --libs', 
+       	      'ode-config --cflags --libs',
++      	      'rospack export/cpp/cflags freeimage',
++      	      'rospack export/cpp/lflags freeimage',
+               'fltk-config --cflags --libs --ldflags --use-gl --use-images',
+               'pkg-config --cflags --libs xft'
+               ]
