@@ -1,0 +1,10 @@
+<package>
+  <description>A node and utilities for connecting to firewire cameras</description>
+  <author>Jeremy Leibs</author>
+  <license>BSD</license>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="libdc1394v2"/>
+  <depend package="sdl"/>
+  <url></url>
+</package>
