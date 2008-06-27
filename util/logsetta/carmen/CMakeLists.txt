@@ -1,1 +1,1 @@
-subdirs(carmen_logger)
+subdirs(genlog_carmen)
