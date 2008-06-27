@@ -1,9 +1,9 @@
 #pragma once
 /***************************************************/
-/*! \brief A PR2 Head controller
+/*! \brief A PR2 Joint controller
     
     This class implements controller loops for
-    PR2 Head Control
+    PR2 Joint Control
 
 */
 /***************************************************/
@@ -13,65 +13,45 @@
 //#include <stdint.h>
 //#include <string>
 //#include <libKDL/kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
-
+#include <iostream>
 #include <pr2Core/pr2Core.h>
 #include <libpr2HW/pr2HW.h>
 
 
-class HeadController : Controller
+class JointController : Controller
 {
   public:
   
     /*!
-      * \brief Constructor,
+      * \brief Constructor of the JointController class.
       *
       * \param 
       */
-    HeadController();
+    JointController();
     
     /*!
-      * \brief Destructor of Pid class.
+      * \brief Destructor of the JointController class.
       */       
-    ~HeadController( );
+    ~JointController( );
+
 
     /*!
-      * \brief Set yaw and pitch of head in Local Head Frame
+      * \brief Set position of the joint: revolute (angle) and prismatic (position).
       * 
       */       
-    PR2::PR2_ERROR_CODE setAngularPos(double yaw , double pitch);
-
+    PR2::PR2_ERROR_CODE setPos(double pos);
     /*!
-      * \brief Drive robot on a course in the Robot Frame
+      * \brief Set the torque of the joint motor.
       * 
-      * Same as setCourse except the inputs are the x and y components of velocities.
       *
       */       
-    PR2::PR2_ERROR_CODE setCourseXY(double vx, double vy);
+    PR2::PR2_ERROR_CODE setTorq(double torq);
 
     /*!
-      * \brief Set target point in Global Frame
+      * \brief Set velocity of the joint: revolute (angular) and prismatic (linear).
       */
-    PR2::PR2_ERROR_CODE setTarget(double x,double y, double yaw, double vx, double vy, double yawDot);
+    PR2::PR2_ERROR_CODE setVel(double vel);
 
-    /*!
-      * \brief Set target points (trajectory list) in Global Frame
-      */       
-    PR2::PR2_ERROR_CODE setTraj(int numPts, double x[],double y[], double yaw[], double vx[], double vy[], double yawDot[]);
-
-    /*!
-      * \brief Heading pose for the robot
-      *
-      * Robot assume a stationary rotation mode, and achieve heading in Global Frame
-      * yaw=0 implies +x-axis direction,
-      * +yaw implies counter-clockwise
-      *
-      */       
-    PR2::PR2_ERROR_CODE setHeading(double yaw);
-
-    /*!
-      * \brief Set force (linear summation of all wheels) in global frame
-      */       
-    PR2::PR2_ERROR_CODE setForce(double fx, double fy);
 
     /*!
       * \brief Set parameters for this controller
@@ -82,12 +62,14 @@ class HeadController : Controller
       *
       * e.g. setParam('maxVel',10);
       *   or setParam('maxAcc',10);
+      *   or setParam('type', 'prismatic');
       *
       */
     PR2::PR2_ERROR_CODE setParam(string label,double value);
-
+    PR2::PR2_ERROR_CODE setParam(string label,string value);
+    
   private:
-    PR2::PR2_CONTROL_MODE controlMode;      /**< Head controller control mode >*/
+    PR2::PR2_CONTROL_MODE controlMode;      /**< Joint controller control mode >*/
 };
 
 
