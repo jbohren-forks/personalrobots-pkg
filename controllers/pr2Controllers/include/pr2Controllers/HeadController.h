@@ -1,9 +1,9 @@
 #pragma once
 /***************************************************/
-/*! \brief A PR2 Base controller
+/*! \brief A PR2 Head controller
     
     This class implements controller loops for
-    PR2 Base Control
+    PR2 Head Control
 
 */
 /***************************************************/
@@ -18,7 +18,7 @@
 #include <libpr2HW/pr2HW.h>
 
 
-class BaseController : Controller
+class HeadController : Controller
 {
   public:
   
@@ -27,22 +27,18 @@ class BaseController : Controller
       *
       * \param 
       */
-    BaseController();
+    HeadController();
     
     /*!
       * \brief Destructor of Pid class.
       */       
-    ~BaseController( );
+    ~HeadController( );
 
     /*!
-      * \brief Drive robot on a course
+      * \brief Set yaw and pitch of head in Local Head Frame
       * 
-      * Give the course in the robot frame, with yaw=0 pointing forward.
-      * e.g. setting yaw=0 puts robot in a car-like mode.
-      *
-      *
       */       
-    PR2::PR2_ERROR_CODE setCourse(double v , double yaw);
+    PR2::PR2_ERROR_CODE setAngularPos(double yaw , double pitch);
 
     /*!
       * \brief Drive robot on a course in the Robot Frame
@@ -91,7 +87,7 @@ class BaseController : Controller
     PR2::PR2_ERROR_CODE setParam(string label,double value);
 
   private:
-    PR2::PR2_CONTROL_MODE controlMode;      /**< Base controller control mode >*/
+    PR2::PR2_CONTROL_MODE controlMode;      /**< Head controller control mode >*/
 };
 
 
