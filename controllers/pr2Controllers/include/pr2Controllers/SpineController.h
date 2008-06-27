@@ -58,12 +58,13 @@ class SpineController : Controller
       * e.g. setParam('maxVel',10);
       *   or setParam('maxAcc',10);
       *   or setParam('maxLimit',10);
+      *   or setParam('minLimit',-10);
       *
       */
     PR2::PR2_ERROR_CODE setParam(string label,double value);
 
   private:
-    PR2::PR2_CONTROL_MODE controlMode;      /**< Spine controller control mode >*/
+    PR2::PR2_CONTROL_MODE controlMode;      /**< SpineController control mode >*/
 };
 
 
