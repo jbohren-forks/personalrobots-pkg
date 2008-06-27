@@ -1,6 +1,7 @@
 #!/bin/tcsh
 setenv GAZ_TOP `rospack find gazebo`/gazebo
 setenv OGRE_TOP `rospack find ogre`/ogre
+setenv FREEIMAGE_TOP `rospack find freeimage`/freeimage
 setenv SIM_PLUGIN `rospack find gazebo_plugin`
 setenv PR2API `rospack find libpr2API`
 setenv PR2HW `rospack find libpr2HW`
@@ -14,6 +15,7 @@ setenv LD_LIBRARY_PATH $SIM_PLUGIN/lib:$LD_LIBRARY_PATH
 setenv LD_LIBRARY_PATH $GAZ_TOP/lib:$LD_LIBRARY_PATH
 setenv LD_LIBRARY_PATH $OGRE_TOP/lib:$LD_LIBRARY_PATH
 setenv LD_LIBRARY_PATH $OGRE_TOP/lib/OGRE:$LD_LIBRARY_PATH
+setenv LD_LIBRARY_PATH $FREEIMAGE_TOP/lib/OGRE:$LD_LIBRARY_PATH
 setenv PATH $GAZ_TOP/bin:$PATH
 
 setenv GAZEBO_RESOURCE_PATH $PR2MEDIA
