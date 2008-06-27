@@ -13,6 +13,7 @@ KNI_3.9.2: KNI_3.9.2.tar.gz
 	cd KNI_3.9.2 && patch -p0 <../kmlExt.h.patch
 	cd KNI_3.9.2 && patch -p0 <../kmlExt.cpp.patch
 	cd KNI_3.9.2 && patch -p0 <../lmBase.cpp.patch
+	cd KNI_3.9.2 && patch -p0 <../lmBase.h.patch
 	touch KNI_3.9.2
 
 KNI_3.9.2/lib/linux/libKNIBase.a: KNI_3.9.2
