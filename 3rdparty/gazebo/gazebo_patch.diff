@@ -1,3 +1,17 @@
+Index: gazebo-svn/player/SConscript
+===================================================================
+--- gazebo-svn/player/SConscript	(revision 6696)
++++ gazebo-svn/player/SConscript	(working copy)
+@@ -1,7 +1,8 @@
+ import os
+ Import('env install_prefix staticObjs sharedObjs subdirs')
+ 
+-parseConfigs = ['pkg-config --cflags --libs playerc++']
++parseConfigs = ['pkg-config --cflags --libs playerc++',
++                'pkg-config --cflags --libs playerc']
+ 
+ sources = ['GazeboDriver.cc',
+            'GazeboClient.cc',
 Index: gazebo-svn/libgazebo/Server.cc
 ===================================================================
 --- gazebo-svn/libgazebo/Server.cc	(revision 6696)
