@@ -14,6 +14,8 @@
 //#include <string>
 //#include <libKDL/kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
 
+#include <iostream>
+
 #include <pr2Core/pr2Core.h>
 #include <libpr2HW/pr2HW.h>
 

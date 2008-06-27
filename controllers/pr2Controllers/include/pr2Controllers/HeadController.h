@@ -14,6 +14,8 @@
 //#include <string>
 //#include <libKDL/kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
 
+#include <iostream>
+
 #include <pr2Core/pr2Core.h>
 #include <libpr2HW/pr2HW.h>
 
@@ -35,43 +37,36 @@ class HeadController : Controller
     ~HeadController( );
 
     /*!
-      * \brief Set yaw and pitch of head in Local Head Frame
+      * \brief Set yaw and pitch of head in Local Frames
       * 
-      */       
-    PR2::PR2_ERROR_CODE setAngularPos(double yaw , double pitch);
-
-    /*!
-      * \brief Drive robot on a course in the Robot Frame
-      * 
-      * Same as setCourse except the inputs are the x and y components of velocities.
+      * angles are defined by robot description file.
+      * angle of 0 is the home position.
       *
       */       
-    PR2::PR2_ERROR_CODE setCourseXY(double vx, double vy);
+    PR2::PR2_ERROR_CODE setPosition(double yaw , double pitch, double yawDot, double pitchDot);
 
     /*!
-      * \brief Set target point in Global Frame
+      * \brief Set yaw rate and pitch rate for the head in Local Frames
+      * 
+      */       
+    PR2::PR2_ERROR_CODE setPositionRate(double yawDot, double pitchDot);
+
+    /*!
+      * \brief Set gaze point in global frame
+      *
+      * omit vx, vy, vz to denote 0 velocity at target point.
+      *
       */
-    PR2::PR2_ERROR_CODE setTarget(double x,double y, double yaw, double vx, double vy, double yawDot);
+    PR2::PR2_ERROR_CODE setGazePoint(double x,double y, double z, double vx, double vy, double vz);
+    PR2::PR2_ERROR_CODE setGazePoint(double x,double y, double z);
 
     /*!
-      * \brief Set target points (trajectory list) in Global Frame
-      */       
-    PR2::PR2_ERROR_CODE setTraj(int numPts, double x[],double y[], double yaw[], double vx[], double vy[], double yawDot[]);
-
-    /*!
-      * \brief Heading pose for the robot
+      * \brief Set seccading speed
       *
-      * Robot assume a stationary rotation mode, and achieve heading in Global Frame
-      * yaw=0 implies +x-axis direction,
-      * +yaw implies counter-clockwise
+      * Not sure how to seccade yet.
       *
       */       
-    PR2::PR2_ERROR_CODE setHeading(double yaw);
-
-    /*!
-      * \brief Set force (linear summation of all wheels) in global frame
-      */       
-    PR2::PR2_ERROR_CODE setForce(double fx, double fy);
+    PR2::PR2_ERROR_CODE setSeccadeSpeed(double vx, double vy, double vz);
 
     /*!
       * \brief Set parameters for this controller
@@ -80,11 +75,14 @@ class HeadController : Controller
       * and maximum acceleration
       * constraints for this controller
       *
-      * e.g. setParam('maxVel',10);
-      *   or setParam('maxAcc',10);
+      * e.g. setParam('maxVel', 1.0);
+      *   or setParam('maxAcc', 1.0);
+      *   or setParam('maxLim', 1.57);
+      *   or setParam('minLim',-1.57);
       *
       */
     PR2::PR2_ERROR_CODE setParam(string label,double value);
+    PR2::PR2_ERROR_CODE setParam(string label,string value);
 
   private:
     PR2::PR2_CONTROL_MODE controlMode;      /**< Head controller control mode >*/
