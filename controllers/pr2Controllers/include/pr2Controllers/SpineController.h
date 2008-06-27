@@ -1,9 +1,9 @@
 #pragma once
 /***************************************************/
-/*! \brief A PR2 Head controller
+/*! \brief A PR2 Spine controller
     
     This class implements controller loops for
-    PR2 Head Control
+    PR2 Spine Control
 
 */
 /***************************************************/
@@ -18,60 +18,33 @@
 #include <libpr2HW/pr2HW.h>
 
 
-class HeadController : Controller
+class SpineController : Controller
 {
   public:
   
     /*!
-      * \brief Constructor,
+      * \brief Constructor of SpineController class.
       *
       * \param 
       */
-    HeadController();
+    SpineController();
     
     /*!
-      * \brief Destructor of Pid class.
+      * \brief Destructor of SpineController class.
       */       
-    ~HeadController( );
+    ~SpineController( );
 
     /*!
-      * \brief Set yaw and pitch of head in Local Head Frame
+      * \brief Set height of the spine in the local spine frame.
       * 
       */       
-    PR2::PR2_ERROR_CODE setAngularPos(double yaw , double pitch);
+    PR2::PR2_ERROR_CODE setPos(double z);
+
 
     /*!
-      * \brief Drive robot on a course in the Robot Frame
-      * 
-      * Same as setCourse except the inputs are the x and y components of velocities.
-      *
+      * \brief Set force of the Spine in the local spine frame.
       */       
-    PR2::PR2_ERROR_CODE setCourseXY(double vx, double vy);
-
-    /*!
-      * \brief Set target point in Global Frame
-      */
-    PR2::PR2_ERROR_CODE setTarget(double x,double y, double yaw, double vx, double vy, double yawDot);
-
-    /*!
-      * \brief Set target points (trajectory list) in Global Frame
-      */       
-    PR2::PR2_ERROR_CODE setTraj(int numPts, double x[],double y[], double yaw[], double vx[], double vy[], double yawDot[]);
-
-    /*!
-      * \brief Heading pose for the robot
-      *
-      * Robot assume a stationary rotation mode, and achieve heading in Global Frame
-      * yaw=0 implies +x-axis direction,
-      * +yaw implies counter-clockwise
-      *
-      */       
-    PR2::PR2_ERROR_CODE setHeading(double yaw);
-
-    /*!
-      * \brief Set force (linear summation of all wheels) in global frame
-      */       
-    PR2::PR2_ERROR_CODE setForce(double fx, double fy);
+    PR2::PR2_ERROR_CODE setForce(double fz);
 
     /*!
       * \brief Set parameters for this controller
@@ -82,12 +55,13 @@ class HeadController : Controller
       *
       * e.g. setParam('maxVel',10);
       *   or setParam('maxAcc',10);
+      *   or setParam('maxLimit',10);
       *
       */
     PR2::PR2_ERROR_CODE setParam(string label,double value);
 
   private:
-    PR2::PR2_CONTROL_MODE controlMode;      /**< Head controller control mode >*/
+    PR2::PR2_CONTROL_MODE controlMode;      /**< Spine controller control mode >*/
 };
 
 
