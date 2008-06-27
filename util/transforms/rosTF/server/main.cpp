@@ -8,7 +8,7 @@ public:
     pTFServer = new rosTFServer(*this);
   };
   //Clean up ros connections
-  ~testServer() {ros::fini();};
+  ~testServer() { }
 
   //A pointer to the rosTFServer class
   rosTFServer * pTFServer;
@@ -40,11 +40,12 @@ int main(int argc, char ** argv)
   testServer myTestServer;
   
   while(myTestServer.ok())
-    {
+  {
       //Send some data
       myTestServer.test();
       usleep(1000);
-    }
+  }
+  ros::fini();
 
   return 0;
 };
