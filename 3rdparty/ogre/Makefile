@@ -13,6 +13,10 @@ $(OGRE_VERSION): $(OGRE_VERSION).tar.bz2
 
 ROOT = $(shell rospack find ogre)/ogre
 
+FIROOT = $(shell rospack find freeimage)/freeimage
+OISROOT = $(shell rospack find ois)/ois
+CGROOT = $(shell rospack find Cg)/Cg
+
 CFLAGS = $(shell rospack export/cpp/cflags freeimage) \
          $(shell rospack export/cpp/cflags player) \
          $(shell rospack export/cpp/cflags opende) \
@@ -25,7 +29,7 @@ LFLAGS = $(shell rospack export/cpp/lflags freeimage) \
          $(shell rospack export/cpp/lflags ois) \
          $(shell rospack export/cpp/lflags Cg)
 
-CONFIGURE_FLAGS = --with-arch=nocona --enable-release CXXFLAGS='-O3   -I$(ROOT)/include' LDFLAGS='-L$(ROOT)/lib' CFLAGS='-O3   -I$(ROOT)/include -I$(ROOT)/usr/include'
+CONFIGURE_FLAGS = --with-arch=nocona --enable-release CXXFLAGS='-O3 -I$(FIROOT)/include -I$(OISROOT)/include -I$(CGROOT)/include' LDFLAGS=' -L$(FIROOT)/lib -L$(OISROOT)/lib -L$(CGROOT)/lib' CFLAGS='-O3 -I$(FIROOT)/include -I$(OISROOT)/include -I$(CGROOT)/include'
 
 $(OGRE_VERSION)/Makefile: $(OGRE_VERSION)
 	cd $(OGRE_VERSION) && \
