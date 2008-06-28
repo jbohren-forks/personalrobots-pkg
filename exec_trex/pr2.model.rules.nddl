@@ -324,13 +324,13 @@ ArmController::Inactive {
   eq(p.gripperGapCmd,desGripperGapCmd);
 
   //checking desired
-  addEq(acTurretAngle, [-.1 , .1], desTurretAngle);
-  addEq(acShoulderLiftAngle, [-.1 , .1], desShoulderLiftAngle);
-  addEq(acUpperarmRollAngle,  [-.1 , .1], desUpperarmRollAngle);
-  addEq(acElbowAngle,  [-.1 , .1], desElbowAngle);
-  addEq(acForearmRollAngle,  [-.1 , .1], desForearmRollAngle);
-  addEq(acWristPitchAngle, [-.1 , .1], desWristPitchAngle);
-  addEq(acWristRollAngle,  [-.1 , .1], desWristRollAngle);
+  addEq(acTurretAngle, [-.15 , .15], desTurretAngle);
+  addEq(acShoulderLiftAngle, [-.15 , .15], desShoulderLiftAngle);
+  addEq(acUpperarmRollAngle,  [-.15 , .15], desUpperarmRollAngle);
+  addEq(acElbowAngle,  [-.15 , .15], desElbowAngle);
+  addEq(acForearmRollAngle,  [-.15 , .15], desForearmRollAngle);
+  addEq(acWristPitchAngle, [-.15 , .15], desWristPitchAngle);
+  addEq(acWristRollAngle,  [-.15 , .15], desWristRollAngle);
   //addEq(acGripperForceCmd,  [-.1 , .1], desGripperForceCmd);
   //addEq(acGripperGapCmd,  [-.1 , .1], desGripperGapCmd);
 

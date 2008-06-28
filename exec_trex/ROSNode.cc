@@ -19,7 +19,7 @@
 //std::ofstream dbgFile("Debug.log");
 
 using namespace std_msgs;
-static const double AllowableArmError = .075;
+static const double AllowableArmError = .12;
 
 namespace TREX {
   ROSNodeId ROSNode::s_id;
@@ -220,8 +220,8 @@ namespace TREX {
       checkError(cmd_x.isSingleton(), cmd_x.toString());
       checkError(cmd_th.isSingleton(), cmd_th.toString());
 
-      mbv.vx = cmd_x.getSingletonValue()*3.0;
-      mbv.vw = cmd_th.getSingletonValue()*2.0;
+      mbv.vx = cmd_x.getSingletonValue();
+      mbv.vw = cmd_th.getSingletonValue();
       //debugMsg("ROSNode:dispatchVel", "Sending vel x " << mbv.vx << " y " << mbv.vw);
       ros::node::publish("cmd_vel",mbv);
     }
