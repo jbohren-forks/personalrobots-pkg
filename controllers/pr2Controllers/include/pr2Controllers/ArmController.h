@@ -37,36 +37,21 @@ class ArmController : Controller
     ~ArmController( );
 
     /*!
-      * \brief Set yaw and pitch of head in Local Arm Frame
+      * 
+      * \brief Set Cartesian position of Hand (end-effector) in Global Frame (Euler Angles)
       * 
       */       
-    PR2::PR2_ERROR_CODE setAngularPos(double yaw , double pitch);
-
+    PR2::PR2_ERROR_CODE setHandCartesianPosition(double x, double y, double z, double roll, double pitch, double yaw);
     /*!
-      * \brief Drive robot on a course in the Robot Frame
       * 
-      * Same as setCourse except the inputs are the x and y components of velocities.
-      *
+      * \brief Set orientation of Hand (end-effector) in Global Frame (Euler Angles)
+      * 
       */       
-    PR2::PR2_ERROR_CODE setCourseXY(double vx, double vy);
+    PR2::PR2_ERROR_CODE setHandOrientation(double roll, double pitch, double yaw);
 
     /*!
-      * \brief Set target point in Global Frame
-      */
-    PR2::PR2_ERROR_CODE setTarget(double x,double y, double yaw, double vx, double vy, double yawDot);
-
-    /*!
-      * \brief Set target points (trajectory list) in Global Frame
-      */       
-    PR2::PR2_ERROR_CODE setTraj(int numPts, double x[],double y[], double yaw[], double vx[], double vy[], double yawDot[]);
-
-    /*!
-      * \brief Set force (linear summation of all wheels) in global frame
-      */       
-    PR2::PR2_ERROR_CODE setForce(double fx, double fy);
-
-    /*!
-      * \brief Set parameters for this controller
+      * 
+      * \brief Set parameters for the hand (end-effector) controller
       *
       * user can set maximum velocity,
       * maximum acceleration, and
@@ -78,8 +63,30 @@ class ArmController : Controller
       * <LI> setParam('maxAcc',10);
       * </UL>
       *
+      */       
+    PR2::PR2_ERROR_CODE setHandParam(string label, double value);
+    PR2::PR2_ERROR_CODE setHandParam(string label, string value);
+
+    /*!
+      *
+      * \brief Set Arm joint positions individually.
+      *
       */
-    PR2::PR2_ERROR_CODE setParam(string label,double value);
+    PR2::PR2_ERROR_CODE setArmJointPosition(int numJoints, double angles[],double speed[]);
+
+    /*!
+      *
+      * \brief Set Arm joint torques individually.
+      *
+      */
+    PR2::PR2_ERROR_CODE setArmJointTorque(int numJoints, double torque[]);
+
+    /*!
+      *
+      * \brief Set Arm joint speeds individually.
+      *
+      */
+    PR2::PR2_ERROR_CODE setArmJointSpeed(int numJoints, double speed[]);
 
   private:
     PR2::PR2_CONTROL_MODE controlMode;      /**< Arm controller control mode >*/
