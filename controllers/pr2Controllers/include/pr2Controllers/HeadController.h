@@ -39,8 +39,8 @@ class HeadController : Controller
     /*!
       * \brief Set yaw and pitch of head in Local Frames
       * 
-      * angles are defined by robot description file.
-      * angle of 0 is the home position.
+      * Angles are defined by robot description file.<br>
+      * Angle of 0 is the home position.
       *
       */       
     PR2::PR2_ERROR_CODE setPosition(double yaw , double pitch, double yawDot, double pitchDot);
@@ -75,10 +75,13 @@ class HeadController : Controller
       * and maximum acceleration
       * constraints for this controller
       *
-      * e.g. setParam('maxVel', 1.0);
-      *   or setParam('maxAcc', 1.0);
-      *   or setParam('maxLim', 1.57);
-      *   or setParam('minLim',-1.57);
+      * e.g.: <br>
+      * <UL type="none">
+      * <LI> setParam('maxVel', 1.0);
+      * <LI> setParam('maxAcc', 1.0);
+      * <LI> setParam('maxLim', 1.57);
+      * <LI> setParam('minLim',-1.57);
+      * </UL>
       *
       */
     PR2::PR2_ERROR_CODE setParam(string label,double value);

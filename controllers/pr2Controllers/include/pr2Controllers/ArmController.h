@@ -25,14 +25,14 @@ class ArmController : Controller
   public:
   
     /*!
-      * \brief Constructor,
+      * \brief Constructor.
       *
       * \param 
       */
     ArmController();
     
     /*!
-      * \brief Destructor of Pid class.
+      * \brief Destructor.
       */       
     ~ArmController( );
 
@@ -68,12 +68,15 @@ class ArmController : Controller
     /*!
       * \brief Set parameters for this controller
       *
-      * user can set maximum velocity
-      * and maximum acceleration
+      * user can set maximum velocity,
+      * maximum acceleration, and
       * constraints for this controller
       *
-      * e.g. setParam('maxVel',10);
-      *   or setParam('maxAcc',10);
+      * e.g.: <br>
+      * <UL type="none">
+      * <LI> setParam('maxVel',10);
+      * <LI> setParam('maxAcc',10);
+      * </UL>
       *
       */
     PR2::PR2_ERROR_CODE setParam(string label,double value);

@@ -25,14 +25,14 @@ class LaserScannerController : Controller
   public:
   
     /*!
-      * \brief Constructor,
+      * \brief Constructor.
       *
       * \param 
       */
     LaserScannerController();
     
     /*!
-      * \brief Destructor of Pid class.
+      * \brief Destructor.
       */       
     ~LaserScannerController( );
 
@@ -61,13 +61,16 @@ class LaserScannerController : Controller
       * and maximum acceleration
       * constraints for this controller
       *
-      * e.g. setParam('maxVel', 1.0);
-      *   or setParam('maxAcc', 1.0);
-      *   or setParam('profile','sawtooth');
-      *   or setParam('profile','sinewave');
-      *   or setParam('maxLim', 1.0);
-      *   or setParam('minLim',-1.0);
-      *   or setParam('rateHz'  , 1);
+      * e.g. <br>
+      * <UL type="none">
+      * <LI> setParam('maxVel', 1.0);
+      * <LI> setParam('maxAcc', 1.0);
+      * <LI> setParam('profile','sawtooth');
+      * <LI> setParam('profile','sinewave');
+      * <LI> setParam('maxLim', 1.0);
+      * <LI> setParam('minLim',-1.0);
+      * <LI> setParam('rateHz'  , 1);
+      * </UL>
       *
       */
     PR2::PR2_ERROR_CODE setParam(string label,double value);

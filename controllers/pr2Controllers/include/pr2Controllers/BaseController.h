@@ -40,8 +40,8 @@ class BaseController : Controller
       * \brief Drive robot on a course
       * 
       * Give the course in the robot frame, with yaw=0 pointing forward.
-      * e.g. setting yaw=0 puts robot in a car-like mode.
       *
+      * e.g. setting yaw=0 puts robot in a car-like mode.
       *
       */       
     PR2::PR2_ERROR_CODE setCourse(double v , double yaw);
@@ -67,9 +67,11 @@ class BaseController : Controller
     /*!
       * \brief Heading pose for the robot
       *
-      * Robot assume a stationary rotation mode, and achieve heading in Global Frame
-      * yaw=0 implies +x-axis direction,
-      * +yaw implies counter-clockwise
+      * Robot assume a stationary rotation mode, and achieve heading in Global Frame<br>
+      * <UL type="none">
+      * <LI> yaw=0 implies +x-axis direction,
+      * <LI> +yaw implies counter-clockwise
+      * </UL>
       *
       */       
     PR2::PR2_ERROR_CODE setHeading(double yaw);
@@ -86,8 +88,11 @@ class BaseController : Controller
       * and maximum acceleration
       * constraints for this controller
       *
-      * e.g. setParam('maxVel',10);
-      *   or setParam('maxAcc',10);
+      * e.g.: <br>
+      * <UL type="none">
+      * <LI> setParam('maxVel',10);
+      * <LI> setParam('maxAcc',10);
+      * </UL>
       *
       */
     PR2::PR2_ERROR_CODE setParam(string label,double value);
