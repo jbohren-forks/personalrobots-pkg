@@ -61,13 +61,14 @@ class GripperController : Controller
       * user can set maximum velocity
       * and maximum acceleration
       * constraints for this controller
-      *
-      * e.g. setParam('maxVel',10);
-      *   or setParam('maxAcc',10);
-      *   or setParam('maxGap',10);
-      *   or setParam('maxForce',10);
-      *   or setParam('closeForce',10);
-      *
+      *<br> 
+      *<UL TYPE="none">
+      *<LI> e.g. setParam('maxVel',10);
+      *<LI>   or setParam('maxAcc',10);
+      *<LI>   or setParam('maxGap',10);
+      *<LI>   or setParam('maxForce',10);
+      *<LI>   or setParam('closeForce',10);
+      *</UL> 
       */
     PR2::PR2_ERROR_CODE setParam(string label,double value);
 
