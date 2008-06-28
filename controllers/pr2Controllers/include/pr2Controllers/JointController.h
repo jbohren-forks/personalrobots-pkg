@@ -59,11 +59,13 @@ class JointController : Controller
       * user can set maximum velocity
       * and maximum acceleration
       * constraints for this controller
-      *
-      * e.g. setParam('maxVel',10);
-      *   or setParam('maxAcc',10);
-      *   or setParam('type', 'prismatic');
-      *
+      *<br> 
+      *<UL TYPE="none">
+      *<LI> e.g. setParam('maxVel',10);
+      *<LI>   or setParam('maxAcc',10);
+      *<LI>   or setParam('maxTorq',1);
+      *<LI>   or setParam('type', 'prismatic');
+      *</UL>
       */
     PR2::PR2_ERROR_CODE setParam(string label,double value);
     PR2::PR2_ERROR_CODE setParam(string label,string value);
