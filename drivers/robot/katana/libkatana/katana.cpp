@@ -10,6 +10,8 @@ using std::vector;
 using std::endl;
 using std::cout;
 
+#define PI 3.14159265358979
+
 Katana::Katana()
 {
   // this constructor will throw exceptions if it doesn't work
@@ -167,6 +169,148 @@ bool Katana::goto_upright()
 	double goal_state[5] = {3.6, 1.57079633, 1.57079633, 1.57079633, 3.14159625};
   return (goto_joint_position_rad(goal_state[0], goal_state[1], goal_state[2],
           goal_state[3], goal_state[4]));
+}
+
+/* Returns joint angle solution in radians. */
+bool Katana::ik_calculate(double x, double y, double z, double phi, double theta, double psi, 
+      vector<double> &solution)
+{
+  int numberOfMotors = get_number_of_motors();
+  vector<int> encoders_solution(numberOfMotors, 0);
+  try {
+    kni_lm->IKCalculate(x, y, z, phi, theta, psi, encoders_solution.begin());
+  } catch(Exception NoSolutionException) {
+    cout << "No joint angle solution found." << endl;
+    return (false);
+  }
+  vector<TMotInit> motorParams = get_motor_parameters();
+	for (int i=0; i<encoders_solution.size(); i++) {
+		solution.push_back(KNI_MHF::enc2rad(encoders_solution[i],
+      		motorParams[i].angleOffset, motorParams[i].encodersPerCycle,
+      		motorParams[i].encoderOffset, motorParams[i].rotationDirection));
+  }
+  return (true);
+}
+
+bool Katana::ik_calculate(double x, double y, double z, double phi, double theta, double psi, 
+      vector<double> &solution, vector<int> currentEncoders)
+{
+  int numberOfMotors = get_number_of_motors();
+  vector<int> encoders_solution(numberOfMotors, 0);
+  try {
+    kni_lm->IKCalculate(x, y, z, phi, theta, psi, encoders_solution.begin(), currentEncoders);
+  } catch(Exception NoSolutionException) {
+    cout << "No joint angle solution found." << endl;
+    return (false);
+  }
+  vector<TMotInit> motorParams = get_motor_parameters();
+	for (int i=0; i<encoders_solution.size(); i++) {
+		solution.push_back(KNI_MHF::enc2rad(encoders_solution[i],
+      		motorParams[i].angleOffset, motorParams[i].encodersPerCycle,
+      		motorParams[i].encoderOffset, motorParams[i].rotationDirection));
+  }
+  return (true);
+}
+
+/* Returns joint angle solution in radians.  If no solution is found for input coordinates and
+ * wrist orientation, wrist orientation (theta) is adjusted within specified maximum deviation 
+ * (max_wrist_dev) in order to find a solution.
+ * Inputs:
+ * x, y, z = coordinates of end-effector in Katana frame (in mm)
+ * theta = angle of last link (wrist) measured from vertical (0 when wrist end-effector pointed 
+ * 		straight up and PI when end-effector pointed straight down) (in radians)
+ * psi = angle of wrist -> angle of fifth joint (in radians)
+ * max_theta_dev = amount wrist orientation is allowed to deviate from desired value if no solution
+ * 		is found for initial orientation (in radians)
+ * solution = empty vector to be populated with joint angle solution
+ * Note: This function queries the arm to get the current encoder positions to compute a 
+ * 		solution. 
+*/
+bool Katana::ik_joint_solution(double x, double y, double z, double theta_init, double psi, 
+		double max_theta_dev, vector<double> &solution)
+{
+	double angle_inc = 1*PI/180.;
+	double phi = 0;		// phi is determined by x and y....doesn't matter what value it's set to!
+	double theta = theta_init;
+	bool success = false;
+	
+	for (theta = theta_init; theta<=(theta_init+max_theta_dev); theta+=angle_inc) 
+	{
+		cout << "theta = " << theta*180/PI << endl;
+  	success = ik_calculate(x,y,z,phi,theta,psi,solution);
+		if (success) {
+   	 	cout << "Solution: ";
+   	 	for (int i=0; i<solution.size(); i++) {
+   	   cout << solution[i]*180./PI << " ";
+   	 	}
+   		cout << endl;
+			return (true);
+  	}
+		cout << "Adjusting wrist orientation....";
+	}
+
+	for (theta = theta_init; theta>=(theta_init-max_theta_dev); theta-=angle_inc) 
+	{
+		cout << "theta = " << theta*180/PI << endl;
+  	success = ik_calculate(x,y,z,phi,theta,psi,solution);
+		if (success) {
+   	 	cout << "Solution: ";
+   	 	for (int i=0; i<solution.size(); i++) {
+   	   cout << solution[i]*180./PI << " ";
+   	 	}
+   		cout << endl;
+			return (true);
+  	}
+		cout << "Adjusting wrist orientation....";
+	}
+
+	cout << "No solution found....exiting ik_joint_solution!" << endl;
+	return (false);
+}
+
+/* Same as above, but currentEncoder values must be input. This function does not need
+ * any communication with the arm.
+*/
+bool Katana::ik_joint_solution(double x, double y, double z, double theta_init, double psi, 
+		double max_theta_dev, vector<double> &solution, vector<int> currentEncoders)
+{
+	double angle_inc = 1*PI/180.;
+	double phi = 0;		// phi is determined by x and y....doesn't matter what value it's set to!
+	double theta = theta_init;
+	bool success = false;
+	
+	for (theta = theta_init; theta<=(theta_init+max_theta_dev); theta+=angle_inc) 
+	{
+		cout << "theta = " << theta*180/PI << endl;
+  	success = ik_calculate(x,y,z,phi,theta,psi,solution,currentEncoders);
+		if (success) {
+   	 	cout << "Solution: ";
+   	 	for (int i=0; i<solution.size(); i++) {
+   	   cout << solution[i]*180./PI << " ";
+   	 	}
+   		cout << endl;
+			return (true);
+  	}
+		cout << "Adjusting wrist orientation....";
+	}
+
+	for (theta = theta_init; theta>=(theta_init-max_theta_dev); theta-=angle_inc) 
+	{
+		cout << "theta = " << theta*180/PI << endl;
+  	success = ik_calculate(x,y,z,phi,theta,psi,solution,currentEncoders);
+		if (success) {
+   	 	cout << "Solution: ";
+   	 	for (int i=0; i<solution.size(); i++) {
+   	   cout << solution[i]*180./PI << " ";
+   	 	}
+   		cout << endl;
+			return (true);
+  	}
+		cout << "Adjusting wrist orientation....";
+	}
+
+	cout << "No solution found....exiting ik_joint_solution!" << endl;
+	return (false);
 }
 
 bool Katana::move_for_camera()
