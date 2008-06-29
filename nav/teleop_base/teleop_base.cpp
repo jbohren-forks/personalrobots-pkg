@@ -9,11 +9,11 @@ using namespace ros;
 class TeleopBase : public node
 {
 public:
-  std_msgs::BaseVel cmd;
+  std_msgs::BaseVel cmd, cmd_passthrough;
   joy::Joy joy;
   double req_vx, req_vw, max_vx, max_vw;
   int axis_vx, axis_vw;
-  int deadman_button;
+  int deadman_button, passthrough_button;
 
   TeleopBase() : node("teleop_base"), max_vx(0.6), max_vw(0.3)
   {
@@ -25,15 +25,18 @@ public:
     param<int>("axis_vx", axis_vx, 1);
     param<int>("axis_vw", axis_vw, 0);
     param<int>("deadman_button", deadman_button, 0);
+    param<int>("passthrough_button", passthrough_button, 1);
 
     printf("max_vx: %.3f m/s\n", max_vx);
     printf("max_vw: %.3f deg/s\n", max_vw*180.0/M_PI);
     printf("axis_vx: %d\n", axis_vx);
     printf("axis_vw: %d\n", axis_vw);
     printf("deadman_button: %d\n", deadman_button);
+    printf("passthrough_button: %d\n", passthrough_button);
 
     advertise("cmd_vel", cmd);
     subscribe("joy", joy, &TeleopBase::joy_cb);
+    subscribe("cmd_passthrough", cmd_passthrough, &TeleopBase::passthrough_cb);
   }
   void joy_cb()
   {
@@ -59,6 +62,7 @@ public:
       req_vw = 0.0;
     joy.unlock();
   }
+  void passthrough_cb() { }
   void send_cmd_vel()
   {
     joy.lock();
@@ -66,8 +70,21 @@ public:
        ((((unsigned int)deadman_button) < joy.get_buttons_size()) &&
         joy.buttons[deadman_button]))
     {
-      cmd.vx = req_vx;
-      cmd.vw = req_vw;
+      if (passthrough_button >= 0 && 
+          passthrough_button < joy.get_buttons_size() &&
+          joy.buttons[passthrough_button])
+      {
+        // pass through commands that we have received (e.g. from wavefront)
+        cmd_passthrough.lock();
+        cmd = cmd_passthrough;
+        cmd_passthrough.unlock();
+      }
+      else
+      {
+        // use commands from the local sticks
+        cmd.vx = req_vx;
+        cmd.vw = req_vw;
+      }
     }
     else
       cmd.vx = cmd.vw = 0;
