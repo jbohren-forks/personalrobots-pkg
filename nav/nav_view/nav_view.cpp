@@ -369,13 +369,13 @@ NavView::render()
   glEnd();
   pathline.unlock();
 
-  pathline.lock();
+  laserscan.lock();
   glColor3f(laserscan.color.r,laserscan.color.g,laserscan.color.b);
   glBegin(GL_POINTS);
   for(unsigned int i=0;i<laserscan.get_points_size();i++)
     glVertex2f(laserscan.points[i].x,laserscan.points[i].y);
   glEnd();
-  pathline.unlock();
+  laserscan.unlock();
 
   SDL_GL_SwapBuffers();
 
