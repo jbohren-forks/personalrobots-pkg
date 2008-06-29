@@ -43,7 +43,7 @@ FleaSharks::FleaSharks(string ipdcmot_ip, bool gui)
     left_scan_extent(-100000), right_scan_extent(-100000),
     manual_calibration_complete(false)
 {
-  cam = new Flea2();
+  cam = new Flea2(Flea2::FLEA2_MONO, 1);
   cam->set_shutter(0.1);
   // make sure we can get an image
   const uint8_t *jpeg_buf;
@@ -58,7 +58,7 @@ FleaSharks::FleaSharks(string ipdcmot_ip, bool gui)
   printf("entering ipdcmot construct\n");
   mot = new IPDCMOT(ipdcmot_ip, 0, false);
   printf("done with ipdcmot construct\n");
-  laser_control = new LightweightSerial("/dev/ttyUSB0", 115200);
+  laser_control = new LightweightSerial("/dev/ttyUSB2", 115200);
   if (!laser_control)
     printf("couldn't open laser control port\n");
   else
@@ -371,6 +371,8 @@ void FleaSharks::loneshark()
   snprintf(fnamebuf, sizeof(fnamebuf), "%s/img_%06d_%012.6f.jpg", 
            logdir, 0, 0.0);
   get_and_save_image(fnamebuf);
+  snprintf(fnamebuf, sizeof(fnamebuf), "start_nolaser.jpg");
+  get_and_save_image(fnamebuf);
   if (laser_control)
     laser_control->write('1'); // turn laser on
   mot->set_patrol(left_scan_extent, right_scan_extent, 1.9, 1);
@@ -405,6 +407,9 @@ void FleaSharks::loneshark()
   if (laser_control)
     laser_control->write('Q'); // turn laser off
   mot->set_pos_deg_blocking(left_laser_bound); // stop the patrol
+  usleep(500000);
+  snprintf(fnamebuf, sizeof(fnamebuf), "end_nolaser.jpg");
+  get_and_save_image(fnamebuf);
   //char c = _getch();
   //printf("you pressed: [%c]\n", c);
   printf("done with loneshark\n");
