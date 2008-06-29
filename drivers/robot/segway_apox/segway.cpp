@@ -4,6 +4,7 @@
 #include "ros/node.h"
 #include "std_msgs/BaseVel.h"
 #include "std_msgs/RobotBase2DOdom.h"
+#include "std_msgs/String.h"
 #include "rmp_frame.h"
 #include "usbcan.h"
 #include "rosTF/rosTF.h"
@@ -17,7 +18,7 @@ class Segway : public node
     virtual ~Segway();
     void main_loop();
     void cmd_vel_cb();
-    void deadman_cb();
+    void op_mode_cb();
 
 		BYTE send_data[20];
 		int last_raw_yaw_rate, last_raw_x_vel;
@@ -30,12 +31,14 @@ class Segway : public node
 
     std_msgs::BaseVel cmd_vel;
     std_msgs::RobotBase2DOdom odom;
+    std_msgs::String op_mode;
 		rmp_frame_t rmp;
 		dgc_usbcan_p can;
 		int last_foreaft, last_yaw;
 		float odom_yaw, odom_x, odom_y;
 		bool odom_init;
-
+    int op_mode_req;
+    enum { RUNNING, SHUTDOWN_REQ, SHUTDOWN } pkt_mode;
     rosTFServer tf;
 };
 
@@ -53,17 +56,53 @@ Segway::Segway() :
 	odom_x(0),
 	odom_y(0),
 	odom_init(false),
+  op_mode_req(0),
+  pkt_mode(RUNNING),
   tf(*this)
 {
   odom.header.frame_id = FRAMEID_ODOM;
   advertise("odom", odom);
   subscribe("cmd_vel", cmd_vel, &Segway::cmd_vel_cb);
+  subscribe("operating_mode", op_mode, &Segway::op_mode_cb);
 }
 
 Segway::~Segway()
 {
 	if (can)
 		dgc_usbcan_close(&can);
+}
+
+void Segway::op_mode_cb()
+{
+  if (op_mode.data == std::string("shutdown"))
+  {
+    printf("shutting down motors\n");
+    pkt_mode = SHUTDOWN_REQ;
+  }
+  else if (op_mode.data == std::string("wtf"))
+  {
+    printf("WTF?\n");
+    pkt_mode = RUNNING;
+    op_mode_req = 4;
+  }
+  else if (op_mode.data == std::string("powerdown"))
+  {
+    printf("powering down\n");
+    op_mode_req = 3;
+    pkt_mode = RUNNING;
+  }
+  else if (op_mode.data == std::string("tractor"))
+  {
+    printf("going into tractor mode\n");
+    op_mode_req = 1;
+    pkt_mode = RUNNING;
+  }
+  else if (op_mode.data == std::string("reset_integrators"))
+  {
+    printf("resetting integrators\n");
+    op_mode_req = -1;
+    pkt_mode = RUNNING;
+  }
 }
 
 void Segway::cmd_vel_cb()
@@ -121,10 +160,36 @@ void Segway::build_vel_pkt(float x_vel, float yaw_rate)
 	send_data[1] = u_raw_x_vel & 0xff;
 	send_data[2] = (u_raw_yaw_rate >> 8) & 0xff;
 	send_data[3] = u_raw_yaw_rate & 0xff;
-	send_data[4] = (((unsigned short)RMP_CAN_CMD_NONE) >> 8) & 0xff;
-	send_data[5] = ((unsigned short)RMP_CAN_CMD_NONE) & 0xff;
-	send_data[6] = 0;
-	send_data[7] = 0;
+  if (op_mode_req)
+  {
+    //if (op_mode_req == 2)
+    //  op_mode_req = 3; // NEVER NEVER NEVER let STAIR1 go into balancing mode!!!
+    int omr = op_mode_req;
+    if (omr == 4)
+      omr = 0;
+    if (omr == 0 || omr == 1 || omr == 3)
+    {
+      send_data[4] = (((unsigned short)RMP_CAN_CMD_SET_OPERATIONAL_MODE) >> 8) & 0xff;
+      send_data[5] = ((unsigned short)RMP_CAN_CMD_SET_OPERATIONAL_MODE) & 0xff;
+      send_data[6] = 0;
+      send_data[7] = omr;
+    }
+    else if (omr == -1)
+    {
+      send_data[4] = (((unsigned short)RMP_CAN_CMD_RST_INT) >> 8) & 0xff;
+      send_data[5] = ((unsigned short)RMP_CAN_CMD_RST_INT) & 0xff;
+      send_data[6] = 0;
+      send_data[7] = 0x0f; // reset all channels
+    }
+    op_mode_req = 0; // only send it once
+  }
+  else
+  {
+	  send_data[4] = (((unsigned short)RMP_CAN_CMD_NONE) >> 8) & 0xff;
+  	send_data[5] = ((unsigned short)RMP_CAN_CMD_NONE) & 0xff;
+	  send_data[6] = 0;
+  	send_data[7] = 0;
+  }
 }
 
 double normalize_angle(double a)
@@ -154,7 +219,7 @@ int rmp_diff(uint32_t from, uint32_t to)
 
 void Segway::main_loop()
 {
-	can = dgc_usbcan_initialize("/dev/ttyUSB0"); // pull from a port someday...
+	can = dgc_usbcan_initialize("/dev/ttyUSB2"); // pull from a port someday...
 
 	if (!can)
 		log(FATAL, "ahh couldn't open the can controller\n");
@@ -162,17 +227,40 @@ void Segway::main_loop()
 	unsigned char message[100];
 	int message_length;
 	unsigned can_id;
+  double last_send_time = ros::Time::now().to_double();
 	
 	while(ok())
 	{
+    if (ros::Time::now().to_double() - last_send_time > 0.01)
+    {
+      if (pkt_mode == RUNNING)
+      {
+    	  req_mutex.lock();
+    		build_vel_pkt(req_x_vel, req_yaw_rate);
+    		req_mutex.unlock();
+    		dgc_usbcan_send_can_message(can, RMP_CAN_ID_COMMAND, send_data, 8);
+      }
+      else if (pkt_mode == SHUTDOWN_REQ)
+      {
+        printf("sending shutdown package\n");
+        pkt_mode = SHUTDOWN;
+        for (int i = 0; i < 8; i++)
+          send_data[i] = 0;
+        dgc_usbcan_send_can_message(can, RMP_CAN_ID_SHUTDOWN, send_data, 8);
+      }
+      last_send_time = ros::Time::now().to_double();
+    }
+
 		if (dgc_usbcan_read_message(can, &can_id, message, &message_length))
 		{
 			rmp.AddPacket(can_id, message);
 			if (can_id == RMP_CAN_ID_MSG5)
 			{
-//				static int c = 0;
-//				if (c++ % 100 == 0)
-//					printf("%d %d\n", rmp.foreaft, rmp.yaw);
+        /*
+				static int c = 0;
+  			if (c++ % 100 == 0)
+					printf("%d %d\n", rmp.foreaft, rmp.yaw);
+        */
 					
 				if (!odom_init)
 					odom_init = true;
@@ -211,11 +299,12 @@ void Segway::main_loop()
 				}
 				last_foreaft = rmp.foreaft;
 				last_yaw = rmp.yaw;
-
+/*
 				req_mutex.lock();
 				build_vel_pkt(req_x_vel, req_yaw_rate);
 				req_mutex.unlock();
 				dgc_usbcan_send_can_message(can, RMP_CAN_ID_COMMAND, send_data, 8);
+*/
 			}
 		}
 		else
