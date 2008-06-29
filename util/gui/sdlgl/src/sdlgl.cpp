@@ -3,7 +3,8 @@
 
 using namespace ros;
 
-SDLGL::SDLGL()
+SDLGL::SDLGL(double _max_frame_rate) 
+: max_frame_rate(_max_frame_rate), last_render_time(0)
 {
 }
 
@@ -13,12 +14,17 @@ SDLGL::~SDLGL()
 
 void SDLGL::request_render()
 {
-  SDL_Event e;
-  e.type = SDL_USEREVENT;
-  e.user.code = RENDER_USER_EVENT;
-  e.user.data1 = NULL;
-  e.user.data2 = NULL;
-  SDL_PushEvent(&e);
+  if (max_frame_rate <= 0 || 
+      (SDL_GetTicks() > last_render_time + (int)(1000.0 / max_frame_rate)))
+  {
+    last_render_time = SDL_GetTicks();
+    SDL_Event e;
+    e.type = SDL_USEREVENT;
+    e.user.code = RENDER_USER_EVENT;
+    e.user.data1 = NULL;
+    e.user.data2 = NULL;
+    SDL_PushEvent(&e);
+  }
 }
 
 bool SDLGL::init_gui(int width, int height, const char *title)

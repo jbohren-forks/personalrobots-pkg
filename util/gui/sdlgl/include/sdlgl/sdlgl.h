@@ -10,7 +10,10 @@ namespace ros
 class SDLGL
 {
 public:
-  SDLGL();
+  /** if max_frame_rate > 0, it is treated as the maximum number of frames
+   *  per second to render. Requests for renderings over this limit will
+   *  be silently ignored. */
+  SDLGL(double max_frame_rate = -1);
   virtual ~SDLGL();
   virtual void mouse_motion(int x, int y, int dx, int dy, int buttons) { }
   virtual void mouse_button(int x, int y, int button, bool is_down) { }
@@ -26,6 +29,10 @@ private:
 /*
   static void *g_main_loop(void *parent);
 */
+  double max_frame_rate;
+  /** uses SDL_GetTicks() to save the last time a render was requested,
+   *  in terms of milliseconds since the program was started. */
+  uint32_t last_render_time;
 };
 
 }
