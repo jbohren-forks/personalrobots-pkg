@@ -43,19 +43,6 @@ Behavior::Active{
 }
 
 /**
- * Force separation between controllers for dispatching. Prevent dispatch until finished
- */
-// Mutex::Uses{
-//   met_by(Free);
-//   meets(Free);
-// }
-
-// Mutex::Free{
-//   met_by(Uses);
-//   meets(Uses);
-// }
-
-/**
  * This will be a decomposition of things to do cleaning. We will require the robot
  * to be at the target position within some error.
  */
@@ -135,6 +122,7 @@ CleanBehavior::Active{
   ArmController nacs;
   
   foreach(nac in nacs) {
+    // There should be an inactive state of interest
     contains(nac.Inactive ract);
     eq(ract.desTurretAngle,0.0);
     eq(ract.desShoulderLiftAngle,0.0);
@@ -145,7 +133,6 @@ CleanBehavior::Active{
     eq(ract.desWristRollAngle,0.0);
     eq(ract.desGripperForceCmd,0.0);
     eq(ract.desGripperGapCmd,0.0);
-    temporalDistance(start, [1 +inf], ract.start);
   }
 
 
@@ -164,9 +151,6 @@ CleanBehavior::Active{
 //   eq(lact.desWristRollAngle,.4);
 //   eq(lact.desGripperForceCmd,.4);
 //   eq(lact.desGripperGapCmd,.4);
-
-  // For now, we will simply do nothing for 10 ticks
-  //eq(duration, 10);
 }
 
 WaypointController::Inactive {
@@ -191,9 +175,6 @@ WaypointController::Inactive {
 }
 
 WaypointController::Active {
-
-  //equals(Mutex.Uses m);
-  //eq(m.user, object);
 
   if(object.mode == Internal) {
     contains(Actions.Event startEvent);
@@ -222,32 +203,6 @@ WaypointController::Active {
     }
   }   
 
-//   contains(ArmController.Inactive f_racs);
-//   contains(ArmController.Inactive f_lacs);
-
-//   eq(f_racs.object._isLeft, false);
-//   eq(f_lacs.object._isLeft, true);
-
-//   eq(f_racs.desTurretAngle,-.9);
-//   eq(f_racs.desShoulderLiftAngle,-1.14);
-//   eq(f_racs.desUpperarmRollAngle,0);
-//   eq(f_racs.desElbowAngle,0);
-//   eq(f_racs.desForearmRollAngle,0);
-//   eq(f_racs.desWristPitchAngle,0);
-//   eq(f_racs.desWristRollAngle,0);
-//   eq(f_racs.desGripperForceCmd,0);
-//   eq(f_racs.desGripperGapCmd,0);
-
-//   eq(f_lacs.desTurretAngle,.9);
-//   eq(f_lacs.desShoulderLiftAngle,1.14);
-//   eq(f_lacs.desUpperarmRollAngle,0);
-//   eq(f_lacs.desElbowAngle,0);
-//   eq(f_lacs.desForearmRollAngle,0);
-//   eq(f_lacs.desWristPitchAngle,0);
-//   eq(f_lacs.desWristRollAngle,0);
-//   eq(f_lacs.desGripperForceCmd,0);
-//   eq(f_lacs.desGripperGapCmd,0);
-
   ArmController acs;
   
   foreach(ac in acs) {
@@ -261,17 +216,12 @@ WaypointController::Active {
     eq(ract.desWristRollAngle,0);
     eq(ract.desGripperForceCmd,0);
     eq(ract.desGripperGapCmd,0);
-    temporalDistance(ract.start, [1 +inf], start); 
-
+    temporalDistance(ract.start, [1 +inf], start);
   }
-
-  contained_by(ArmController.Inactive ac);
-  temporalDistance(ac.start, [1, +inf], start);
 }
 
 /**
- * Implementation for Velocity Controller. Produces Velocity Commands to 
- * bridge gap between current and desired pose.
+ * Produces Velocity Commands to bridge gap between current and desired pose.
  */
 Actions::SetVelocityCommands{
   // Controller will operate at 1 Hz (cycles per tick)
@@ -287,8 +237,7 @@ Actions::SetVelocityCommands{
 
   if(done == false){
     float cmd_x, cmd_th;
-    calcCommand(true, cmd_x, cmd_th, currentPos.x, currentPos.y,
-		currentPos.th, goal_x, goal_y, 0.0);
+    calcCommand(true, cmd_x, cmd_th, currentPos.x, currentPos.y, currentPos.th, goal_x, goal_y, 0.0);
 
     starts(VelCommander.Holds vc);
     eq(vc.cmd_x, cmd_x);
@@ -356,5 +305,15 @@ ArmController::Active {
 //   eq(wristRollAngle,s.desWristRollAngle);
 //   eq(gripperForceCmd,s.desGripperForceCmd);
 //   eq(gripperGapCmd,s.desGripperGapCmd);
+}
+
+/**
+ * FOR SIMULATION ONLY
+ */
+ArmController::Active {
+  if(object.mode == Internal){
+    eq(duration, 50); // Any transition will take 50 ticks. Total hack!
+    starts(Actions.Event);
+  }
 }
 

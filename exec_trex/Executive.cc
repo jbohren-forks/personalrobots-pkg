@@ -171,14 +171,14 @@ int main(int argc, char **argv)
   DebugMessage::setStream(dbgFile);
 
   // Allocate a real time clock with 1 second per tick
-  agentClock = new RealTimeClock(0.25);
+  agentClock = new RealTimeClock(0.2);
 
   // Allocate the agent
   debugMsg("Executive", "Initializing the agent");
   Agent::initialize(*root, *agentClock);
 
-
   debugMsg("Executive", "Starting TREX");
+
   try{
     debugMsg("ALWAYS", "Executing the agent");
     Agent::instance()->run();

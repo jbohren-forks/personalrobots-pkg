@@ -34,7 +34,6 @@
 
 #include "TREX.nddl" // TREX base classes
 
-
 typedef int [0 5] PRIORITY; /* Used to assign a priority to goals */
 
 typedef float [0.0 +inff] PFLOAT;
@@ -72,18 +71,6 @@ class Behavior extends AgentTimeline {
 		super(_mode, "Inactive");
 	}
 };
-
-// class Mutex extends AgentTimeline {
-//   predicate Uses{
-//     AgentTimeline user;
-//   }
-
-//   predicate Free{}
-
-//   Mutex(Mode _mode){
-//     super(_mode, "Free");
-//   }
-// };
 
 /**
  * WaypointController will handle active control of vehicle to accomplish 

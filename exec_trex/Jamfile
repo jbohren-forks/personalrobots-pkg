@@ -60,6 +60,9 @@ if ! $(ROS_PACKAGE_PATH) {
 		pr2.exec.nddl
 		pr2.wpc.nddl
 		pr2.sim.nddl
+		clean.0.exec.nddl
+		clean.0.wpc.nddl
+		clean.0.rcsarm.nddl
 		#		wpc.0.wpc.nddl
 	;
 
