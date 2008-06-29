@@ -4,7 +4,7 @@
 using namespace ros;
 
 SDLGL::SDLGL(double _max_frame_rate) 
-: max_frame_rate(_max_frame_rate), last_render_time(0)
+: max_frame_rate(_max_frame_rate)
 {
 }
 
@@ -45,6 +45,7 @@ bool SDLGL::init_gui(int width, int height, const char *title)
     return false;
   }
   set_view_params(width, height);
+  last_render_time = SDL_GetTicks();
   request_render();
   return true;
 }
