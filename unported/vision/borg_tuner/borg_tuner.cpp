@@ -201,7 +201,6 @@ void generate_cloud()
   }
 }
 
-
 int main(int argc, char **argv)
 {
   printf("LOWER YOUR SHIELDS\n\n");
@@ -309,6 +308,8 @@ int main(int argc, char **argv)
             else
               laser_rotation -= 0.01;
           }
+          else if (event.key.keysym.sym == SDLK_SPACE)
+            cv->write_file("cloud.txt");
           else
             cv->keypress(event.key.keysym.sym);
           generate_cloud();
