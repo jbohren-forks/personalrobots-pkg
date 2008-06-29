@@ -6,6 +6,7 @@
 #include "std_msgs/RobotBase2DOdom.h"
 #include "rmp_frame.h"
 #include "usbcan.h"
+#include "rosTF/rosTF.h"
 
 using namespace ros;
 
@@ -34,6 +35,8 @@ class Segway : public node
 		int last_foreaft, last_yaw;
 		float odom_yaw, odom_x, odom_y;
 		bool odom_init;
+
+    rosTFServer tf;
 };
 
 const float MAX_X_VEL = 1.2;
@@ -49,8 +52,10 @@ Segway::Segway() :
 	odom_yaw(0),
 	odom_x(0),
 	odom_y(0),
-	odom_init(false)
+	odom_init(false),
+  tf(*this)
 {
+  odom.header.frame_id = FRAMEID_ODOM;
   advertise("odom", odom);
   subscribe("cmd_vel", cmd_vel, &Segway::cmd_vel_cb);
 }
@@ -191,6 +196,17 @@ void Segway::main_loop()
             odom.pos.y  = odom_y;
             odom.pos.th = odom_yaw;
             publish("odom", odom);
+
+            tf.sendInverseEuler(FRAMEID_ODOM,
+                                FRAMEID_ROBOT,
+                                odom.pos.x,
+                                odom.pos.y,
+                                0.0,
+                                odom.pos.th,
+                                0,
+                                0,
+                                odom.header.stamp.sec,
+                                odom.header.stamp.nsec);
 					}
 				}
 				last_foreaft = rmp.foreaft;
