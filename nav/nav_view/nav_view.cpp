@@ -135,13 +135,14 @@ public:
 	      view_scale(10), view_x(0), view_y(0),
 	      tf(*this,false)
   {
+    param("max_frame_rate", max_frame_rate, 5.0);
     advertise<std_msgs::Planner2DGoal>("goal");
     advertise<std_msgs::Pose2DFloat32>("initialpose");
     subscribe("particlecloud", cloud, &NavView::generic_cb);
     subscribe("gui_path", pathline, &NavView::generic_cb);
     subscribe("gui_laser", laserscan, &NavView::generic_cb);
-    gwidth = 1024;
-    gheight = 768;
+    gwidth = 640;
+    gheight = 480;
     init_gui(gwidth, gheight, "nav view");
     glClearColor(1.0,1.0,1.0,0);
     map_surface = NULL;
