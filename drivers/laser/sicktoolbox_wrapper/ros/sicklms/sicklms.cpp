@@ -33,6 +33,7 @@
 #include <sicklms-1.0/SickLMS.hh>
 #include "ros/node.h"
 #include "std_msgs/LaserScan.h"
+#include "rosTF/rosTF.h"
 using namespace SickToolbox;
 using namespace std;
 
@@ -52,6 +53,7 @@ public:
   double last_print_time;
   SickNode() : ros::node("sicklms"), scan_count(0), last_print_time(0)
   {
+    scan_msg.header.frame_id = FRAMEID_LASER;
     advertise<std_msgs::LaserScan>("scan");
     param("sicklms/port", port, string("/dev/ttyUSB1"));
     param("sicklms/baud", baud, 500000);

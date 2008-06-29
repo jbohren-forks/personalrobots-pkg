@@ -8,4 +8,5 @@
   <depend package="sicktoolbox"/>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
+  <depend package="rosTF"/>
 </manifest>
