@@ -25,11 +25,11 @@ public:
 protected:
   static const int RENDER_USER_EVENT = 0xdeadbeef; // ha ha
   virtual void render() = 0;
+  double max_frame_rate;
 private:  
 /*
   static void *g_main_loop(void *parent);
 */
-  double max_frame_rate;
   /** uses SDL_GetTicks() to save the last time a render was requested,
    *  in terms of milliseconds since the program was started. */
   uint32_t last_render_time;
