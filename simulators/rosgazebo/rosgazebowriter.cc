@@ -28,6 +28,9 @@
 #include <libpr2HW/pr2HW.h>
 #include "ringbuffer.h"
 
+#include <fstream>
+#include <iostream>
+
 // roscpp
 #include <ros/node.h>
 // roscpp - laser
@@ -54,6 +57,7 @@
 #include <time.h>
 #include <signal.h>
 
+#define SERVOTIME 2 //Sim time to wait for servoing to hanging position
 // Our node
 class GazeboNode : public ros::node
 {
@@ -84,7 +88,17 @@ class GazeboNode : public ros::node
     //Current desired velocity
     float currentVel[6];
 	
+     //Declare steam for writing to file
+  ofstream datafile;
   public:	
+    //Commands arms to servo to hang downwards
+    void LowerArms(void);
+
+    //Command torques to be zero in right arm
+    void DisableRightArm();
+
+    //Command torques to be zero in left arm
+    void DisableLeftArm();
 
     // Constructor; stage itself needs argc/argv.  fname is the .world file
     // that stage should load.
@@ -148,9 +162,33 @@ void GazeboNode::cmd_trajectoryReceived(){
 	}
 }
 
+//Command arms to be facing down
+void GazeboNode::LowerArms(){
+
+this->myPR2->SetArmControlMode(PR2::PR2_LEFT_ARM,PR2::PR2_JOINT_CONTROL);
+this->myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM,PR2::PR2_JOINT_CONTROL);
+
+this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_PAN           , 0,0);
+this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_PITCH, 90,0);
+this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_ROLL , 0,0);
+this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_PITCH   , 0,0);
+this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_ROLL    , 0,0);
+this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_WRIST_PITCH   , 0,0);
+this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_WRIST_ROLL    , 0,0);
+
+this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_PAN           , 0,0);
+this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, 90.0,0);
+this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_ROLL , 0,0);
+this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_PITCH   , 0,0);
+this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    , 0,0);
+this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , 0,0);
+this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , 0,0);
+
+}
 
 //Sets desired cartesian velocities for the right arm
 void GazeboNode::SetRightArmVelocities(float cartesianVels[]){
+
 	KDL::ChainIkSolverVel_pinv* solver= this->myPR2->pr2_kin.ik_vel_solver;
 	int numJnts = this->myPR2->pr2_kin.nJnts;
 
@@ -175,18 +213,68 @@ void GazeboNode::SetRightArmVelocities(float cartesianVels[]){
 	KDL:: JntArray cmdVels = KDL::JntArray(numJnts);
 	if(solver->KDL::ChainIkSolverVel_pinv::CartToJnt(currentPosition,velocity,cmdVels)>=0){
 	
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_PAN           , this->rightarm.turretAngle,       cmdVels(0));
+	//DEBUG
+	
+
+/*	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_PAN           , this->rightarm.turretAngle,       cmdVels(0));
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, this->rightarm.shoulderLiftAngle, cmdVels(1));
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_ROLL , this->rightarm.upperarmRollAngle, cmdVels(2));
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_PITCH   , this->rightarm.elbowAngle,        cmdVels(3));
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    , this->rightarm.forearmRollAngle,  cmdVels(4));
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , this->rightarm.wristPitchAngle,   cmdVels(5));
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , this->rightarm.wristRollAngle,    cmdVels(6));
-	
-	//printf(" %f %f %f %f %f %f",cmdVels(0),cmdVels(1),cmdVels(2),cmdVels(3),cmdVels(4),cmdVels(5),cmdVels(6));
+
 	cout<<"J1:"<<cmdVels(0)<<endl<<"J2:"<<cmdVels(1)<<endl<<"J3:"<<cmdVels(2)<<endl<<"J4:"<<cmdVels(3)<<endl<<"J5:"<<cmdVels(4)		<<endl<<"J6:"<<cmdVels	(5)<<endl<<"J7:"<<cmdVels(6)<<endl;}
+
+*/
+
+//TUNE
+
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_PAN           , this->rightarm.turretAngle,       0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, this->rightarm.shoulderLiftAngle, 0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_ROLL , this->rightarm.upperarmRollAngle, 0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_PITCH   , this->rightarm.elbowAngle,        0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    , this->rightarm.forearmRollAngle,  0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , this->rightarm.wristPitchAngle,   0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , this->rightarm.wristRollAngle,    1);
+
+	double speed[7];
+	//PR2_ERROR_CODE PR2Robot::GetArmJointSpeedCmd(PR2_MODEL_ID id, double speed[])
+	this->myPR2->GetArmJointSpeedCmd(PR2::PR2_RIGHT_ARM,speed);
+	
+	cout<<"S1:"<<speed[0]<<endl<<"S2:"<<speed[1]<<endl<<"S3:"<<speed[2]<<endl<<"S4:"<<speed[3]<<endl<<"S5:"<<speed[4]<<endl<<"S6:"<<speed[5]<<endl<<"S7:"<<speed[6]<<endl;	
+
+
+	//PR2_ERROR_CODE PR2Robot::GetArmJointSpeedCmd(PR2_MODEL_ID id, double speed[])
+	this->myPR2->GetArmJointSpeedActual(PR2::PR2_RIGHT_ARM,speed);
+	
+	cout<<"AS1:"<<speed[0]<<endl<<"AS2:"<<speed[1]<<endl<<"AS3:"<<speed[2]<<endl<<"AS4:"<<speed[3]<<endl<<"AS5:"<<speed[4]<<endl<<"AS6:"<<speed[5]<<endl<<"AS7:"<<speed[6]<<endl;	
+}
+	//printf(" %f %f %f %f %f %f",cmdVels(0),cmdVels(1),cmdVels(2),cmdVels(3),cmdVels(4),cmdVels(5),cmdVels(6));
 	else {cout<<"*****ERROR IN INVERSE VELOCITIES*****"<<endl;
 	}
+/*
+	double t1,t2,t3,t4,t5,t6,t7;
+
+	this->myPR2->hw.GetJointTorqueCmd(PR2::ARM_R_PAN, &t1);	
+	this->myPR2->hw.GetJointTorqueCmd(PR2::ARM_R_SHOULDER_PITCH, &t2);	
+	this->myPR2->hw.GetJointTorqueCmd(PR2::ARM_R_SHOULDER_ROLL, &t3);	
+	this->myPR2->hw.GetJointTorqueCmd(PR2::ARM_R_ELBOW_PITCH, &t4);	
+	this->myPR2->hw.GetJointTorqueCmd(PR2::ARM_R_ELBOW_ROLL, &t5);	
+	this->myPR2->hw.GetJointTorqueCmd(PR2::ARM_R_WRIST_PITCH, &t6);	
+	this->myPR2->hw.GetJointTorqueCmd(PR2::ARM_R_WRIST_ROLL, &t7);
+	cout<<"T1"<<t1<<endl<<"T2"<<t2<<endl<<"T3"<<t3<<endl<<"T4"<<t4<<endl<<"T5"<<t5<<endl<<"T6"<<t6<<endl<<"T7"<<t7<<endl;
+
+	//PR2_ERROR_CODE PR2Robot::GetArmJointTorqueActual(PR2_MODEL_ID id, double torque[])
+
+	
+	double torques[7];
+	this->myPR2->GetArmJointTorqueActual(PR2::PR2_RIGHT_ARM,torques);
+	for (int i = 0;i<7;i++){
+	cout<<i<<":"<<torques[i]<<endl;
+
+	}
+*/
 }
 
 void
@@ -319,9 +407,33 @@ GazeboNode::cmdvelReceived()
   this->lock.unlock();
 }
 
+void GazeboNode::DisableRightArm(){
+ 	  this->myPR2->hw.SetJointControlMode(PR2::ARM_R_PAN             , PR2::DISABLED); 
+          this->myPR2->hw.SetJointControlMode(PR2::ARM_R_SHOULDER_PITCH  , PR2::DISABLED);
+          this->myPR2->hw.SetJointControlMode(PR2::ARM_R_SHOULDER_ROLL   , PR2::DISABLED); 
+          this->myPR2->hw.SetJointControlMode(PR2::ARM_R_ELBOW_PITCH     , PR2::DISABLED);
+          this->myPR2->hw.SetJointControlMode(PR2::ARM_R_ELBOW_ROLL      , PR2::DISABLED); 
+          this->myPR2->hw.SetJointControlMode(PR2::ARM_R_WRIST_PITCH     , PR2::DISABLED);
+          this->myPR2->hw.SetJointControlMode(PR2::ARM_R_WRIST_ROLL      , PR2::DISABLED); 
+
+}
+
+void GazeboNode::DisableLeftArm(){
+ 	  this->myPR2->hw.SetJointControlMode(PR2::ARM_L_PAN             , PR2::DISABLED); 
+          this->myPR2->hw.SetJointControlMode(PR2::ARM_L_SHOULDER_PITCH  , PR2::DISABLED);
+          this->myPR2->hw.SetJointControlMode(PR2::ARM_L_SHOULDER_ROLL   , PR2::DISABLED); 
+          this->myPR2->hw.SetJointControlMode(PR2::ARM_L_ELBOW_PITCH     , PR2::DISABLED);
+          this->myPR2->hw.SetJointControlMode(PR2::ARM_L_ELBOW_ROLL      , PR2::DISABLED); 
+          this->myPR2->hw.SetJointControlMode(PR2::ARM_L_WRIST_PITCH     , PR2::DISABLED);
+          this->myPR2->hw.SetJointControlMode(PR2::ARM_L_WRIST_ROLL      , PR2::DISABLED); 
+}
+
+
+//CONSTRUCTOR
 GazeboNode::GazeboNode(int argc, char** argv, const char* fname) :
         ros::node("rosgazebo"),tf(*this)
 {
+double currentTime;
   // initialize random seed
   srand(time(NULL));
 
@@ -338,45 +450,52 @@ GazeboNode::GazeboNode(int argc, char** argv, const char* fname) :
  for (int i=0;i<6;i++){
 	currentVel[i] = 0.0;
 }
+
+/*
+  //Get log file name
+  char name[256];
+  cout << "Enter filename: ";
+  cin.getline (name,256);
+  datafile.open (name);
+*/
+
+//Lower arms, wait for SERVOTIME seconds of sim time to elapse
+LowerArms();
+currentTime = 0.0;
+while(currentTime<SERVOTIME){
+this->myPR2->hw.GetSimTime(&currentTime);
+}
+
 //DEBUG
-  //Set arms to speed control
+  //Set arms to speed control via torque
+//this->myPR2->SetArmControlMode(PR2::PR2_LEFT_ARM,PR2::PR2_SPEED_TORQUE_CONTROL);
+//this->myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM,PR2::PR2_SPEED_TORQUE_CONTROL);
+
+//TUNE
+//Uncomment to restore speed control
 this->myPR2->SetArmControlMode(PR2::PR2_LEFT_ARM,PR2::PR2_CARTESIAN_CONTROL);
 this->myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM,PR2::PR2_CARTESIAN_CONTROL);
 
+//DisableRightArm(); //Set all torques on right arm to zero.
+DisableLeftArm();
+PR2::PR2_JOINT_CONTROL_MODE mode;
+
+//GetJointControlMode(PR2_JOINT_ID id, PR2_JOINT_CONTROL_MODE *mode);
+this->myPR2->hw.GetJointControlMode(PR2::ARM_R_PAN,&mode);
+cout<<"****************First Joint mode set to: "<<mode<<endl;
+  //cin.getline (name,256);
 /*
-KDL::JntArray qdot_out = KDL::JntArray(this->myPR2->pr2_kin.nJnts); //Create array to hold resulting values
-KDL::ChainIkSolverVel_pinv* solver= this->myPR2->pr2_kin.ik_vel_solver;
-
-//Define desired cartesian velocities
-KDL::Twist velocity;
-velocity(0) = 1; //x y z
-velocity(1)= 1;
-velocity(2)= 1;
-velocity(3) = 0; // no yaw, pitch, roll
-velocity(4)= 0;
-velocity(5)= 0;
-
-double jointPosition[7];
-double jointSpeed[7];
-
-this->myPR2->GetArmJointPositionActual(PR2::PR2_RIGHT_ARM,jointPosition,jointSpeed);
-
-int numJnts = this->myPR2->pr2_kin.nJnts;
-KDL::JntArray currentPosition = KDL::JntArray(numJnts);
-for (int ii = 0;ii<7;ii++){
-	currentPosition(ii) = jointPosition[ii];
-}
-KDL:: JntArray cmdVels = KDL::JntArray(numJnts);
-solver->KDL::ChainIkSolverVel_pinv::CartToJnt(currentPosition,velocity,cmdVels);
-
-  printf("Solver finished\n");
-
-//  ChainIkSolverVel_pinv (const Chain &chain, double eps=0.00001, int maxiter=150)
- 
-//virtual int 	CartToJnt (const JntArray &q_in, const Twist &v_in, JntArray &qdot_out)
-// 	Calculate inverse velocity kinematics, from joint positions and cartesian velocity to joint velocities. 
-
+  this->myPR2->hw.SetJointControlMode(PR2::ARM_R_PAN             , PR2::SPEED_TORQUE_CONTROL); 
+  this->myPR2->hw.SetJointControlMode(PR2::ARM_R_SHOULDER_PITCH  , PR2::SPEED_TORQUE_CONTROL);
+  this->myPR2->hw.SetJointControlMode(PR2::ARM_R_SHOULDER_ROLL   , PR2::SPEED_TORQUE_CONTROL); 
+  this->myPR2->hw.SetJointControlMode(PR2::ARM_R_ELBOW_PITCH     , PR2::SPEED_TORQUE_CONTROL);
+  this->myPR2->hw.SetJointControlMode(PR2::ARM_R_ELBOW_ROLL      , PR2::SPEED_TORQUE_CONTROL); 
+  this->myPR2->hw.SetJointControlMode(PR2::ARM_R_WRIST_PITCH     , PR2::SPEED_TORQUE_CONTROL);
+  this->myPR2->hw.SetJointControlMode(PR2::ARM_R_WRIST_ROLL      , PR2::SPEED_TORQUE_CONTROL); 
 */
+this->myPR2->hw.GetJointControlMode(PR2::ARM_R_PAN,&mode);
+cout<<"*************Second Joint mode set to: "<<mode<<endl;
+//cin.getline(name,256);
   // Initialize ring buffer for point cloud data
   this->cloud_pts = new ringBuffer<std_msgs::Point3DFloat32>();
   this->cloud_ch1 = new ringBuffer<float>();
@@ -442,6 +561,7 @@ GazeboNode::SubscribeModels()
 
 GazeboNode::~GazeboNode()
 {
+// 	datafile.close(); //Ensure we shut down the stream for writing to file
 }
 
 double
@@ -474,7 +594,50 @@ GazeboNode::Update()
   uint32_t intensities_alloc_size;
   std_msgs::Point3DFloat32 tmp_cloud_pt;
 
-//DEBUG
+
+  /***************************************************************/
+  /*                                                             */
+  /*  Record data                                                */
+  /*                                                             */
+  /***************************************************************/
+
+
+	datafile<<this->simTime<<" ";
+
+	double jointPosition[6];
+	double jointSpeed[6];
+
+	/*this->myPR2->GetArmJointPositionActual(PR2::PR2_RIGHT_ARM,jointPosition,jointSpeed);
+	
+	KDL::JntArray pr2_config = KDL::JntArray(this->myPR2->pr2_kin.nJnts);
+	for(int i=0;i<7;i++){
+		pr2_config(i) = jointPosition[i];
+	}
+	*/
+	double myx;
+	double myy;
+	double myz;
+	double myr;
+	double myp;
+	double myyaw;
+	this->myPR2->hw.GetWristPoseGroundTruth(PR2::PR2_RIGHT_ARM, &myx,&myy,&myz,&myr,&myp,&myyaw);
+	datafile<<myx<<" ";
+	datafile<<myy<<" ";
+	datafile<<myz<<" ";
+	datafile<<endl<<" ";
+/*
+	//perform forward kinematics for when we move out of simulation
+	KDL::Frame f;
+	if (this->myPR2->pr2_kin.FK(pr2_config,f)){
+		//Get cartesian coordinates- last column of 4x4 frame
+		datafile<<f(3,0)<<" "; //x
+		datafile<<f(3,1)<<" "; //y
+		datafile<<f(3,2)<<" "; //z
+		datafile<<endl;
+	}
+*/	
+
+
   /***************************************************************/
   /*                                                             */
   /*  Update Commanded Velocities                                */
@@ -677,7 +840,7 @@ GazeboNode::Update()
   /*  pitching Hokuyo joint                                      */
   /*                                                             */
   /***************************************************************/
-	static double dAngle = -1;
+	/*static double dAngle = -1;
 	double simPitchFreq,simPitchAngle,simPitchRate,simPitchTimeScale,simPitchAmp,simPitchOffset;
 	simPitchFreq      = 1.0/10.0;
 	simPitchTimeScale = 2.0*M_PI*simPitchFreq;
@@ -699,8 +862,8 @@ GazeboNode::Update()
   }
 	
   // should send shutter when changing direction, or wait for Tully to implement ring buffer in viewer
-
-
+*/
+this->myPR2->hw.SetJointServoCmd(PR2::HEAD_LASER_PITCH , 0.0, 0.0); //Hold the laser still
   /***************************************************************/
   /*                                                             */
   /*  arm                                                        */
@@ -798,8 +961,18 @@ main(int argc, char** argv)
   
   // have to call this explicitly for some reason.  probably interference
   // from signal handling in Stage / FLTK?
+
+
   ros::msg_destruct();
 
   exit(0);
 
 }
+
+/*
+void GazeboNode::RecordData(PR2_JOINT_ID id, ofstream data){
+	double jointPosition, jointSpeed;
+	double 
+
+}
+*/
