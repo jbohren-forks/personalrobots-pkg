@@ -192,6 +192,7 @@ bool Katana::ik_calculate(double x, double y, double z, double phi, double theta
   return (true);
 }
 
+/*
 bool Katana::ik_calculate(double x, double y, double z, double phi, double theta, double psi, 
       vector<double> &solution, vector<int> currentEncoders)
 {
@@ -211,6 +212,7 @@ bool Katana::ik_calculate(double x, double y, double z, double phi, double theta
   }
   return (true);
 }
+*/
 
 /* Returns joint angle solution in radians.  If no solution is found for input coordinates and
  * wrist orientation, wrist orientation (theta) is adjusted within specified maximum deviation 
@@ -271,6 +273,7 @@ bool Katana::ik_joint_solution(double x, double y, double z, double theta_init, 
 /* Same as above, but currentEncoder values must be input. This function does not need
  * any communication with the arm.
 */
+/*
 bool Katana::ik_joint_solution(double x, double y, double z, double theta_init, double psi, 
 		double max_theta_dev, vector<double> &solution, vector<int> currentEncoders)
 {
@@ -312,6 +315,7 @@ bool Katana::ik_joint_solution(double x, double y, double z, double theta_init, 
 	cout << "No solution found....exiting ik_joint_solution!" << endl;
 	return (false);
 }
+*/
 
 bool Katana::move_for_camera()
 {
