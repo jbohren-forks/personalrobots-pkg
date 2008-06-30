@@ -9,8 +9,9 @@
 #include "KNI_LM/lmBase.h"
 #include "common/Timer.h"
 #include "KNI_InvKin/KatanaKinematics6M180.h"
+#include "katana/ik_hook.h"
 
-class Katana
+class Katana : public IKHook
 {
 public:
   Katana();
@@ -36,7 +37,12 @@ public:
   void linear_move(std::vector<double> dstPose, int waitTimeout);
   std::vector<TMotInit> get_motor_parameters();
 	std::vector<double> rad_to_enc(std::vector<double> joints_rad);
-	//std::vector<double> Katana::computeForwardKin(std::vector<double> joints_rad);
+	bool ik_calculate(double x, double y, double z, double psi, double theta, double psi, 
+    std::vector<double> &solution);
+	bool ik_calculate(double x, double y, double z, double psi, double theta, double psi, 
+    std::vector<double> &solution, std::vector<int> currentEncoders);
+	bool ik_joint_solution(double x, double y, double z, double theta_init, double psi, 
+		double max_theta_dev, std::vector<double> &solution);
 
 private:
   CCdlCOM *device;
