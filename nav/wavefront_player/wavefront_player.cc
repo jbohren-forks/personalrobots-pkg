@@ -275,6 +275,10 @@ WavefrontNode::WavefrontNode() :
         amax(DTOR(40.0)),
         tf(*this, true, 200000000ULL, 200000000ULL) //nanoseconds
 {
+  // set a few parameters. leave defaults just as in the ctor initializer list
+  param("dist_eps", dist_eps, 1.0);
+  param("robot_radius", robot_radius, 0.175);
+
   // get map via RPC
   std_srvs::StaticMap::request  req;
   std_srvs::StaticMap::response resp;

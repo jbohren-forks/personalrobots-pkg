@@ -1,0 +1,10 @@
+<package>
+  <description>
+    A simple dead-reckoning node.
+  </description>
+  <author>Morgan Quigley</author>
+  <license>BSD</license>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+</package>
+
