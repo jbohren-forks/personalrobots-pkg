@@ -2,7 +2,7 @@
 // The katana package provides a simple wrapper library around the KNI library
 // and a small suite of standalone executables and ROS nodes.
 //
-// Copyright (C) 2008, Morgan Quigley
+// Copyright (C) 2008, Morgan Quigley, Ellen Klingbeil
 //
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -36,6 +36,20 @@ using std::cout;
 using std::endl;
 
 #define PI 3.14159265358979
+
+
+/* This standalone uses the kni-3.9.2 inverse kinematics function (ik_calculate) to 
+ * compute a joint angle solution for the given pose.
+ * x,y,z = end-effector coordinates in katana frame in mm
+ * theta = orientation of wrist (last link) measure from vertical in radians
+ * psi = rotation angle of wrist (motor 4) in radians; note that, although psi and joint
+ *        angle 4 correspond to exactly the same degree of freedom, these
+ *        angles will not be equal for a give wrist position (one is measured
+ *        positive CW and the other CCW).
+ * max_theta_dev = amount that theta is allowed to deviate from the specified value
+ *        in the positive and negative direction in order to find a solution if one is
+ *        not found for the specified wrist orientation.
+*/
 
 int main(int argc, char **argv)
 {
