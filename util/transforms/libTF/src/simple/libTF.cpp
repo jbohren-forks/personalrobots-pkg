@@ -302,6 +302,7 @@ TFPose2D TransformReference::transformPose2D(unsigned int target_frame, const TF
 TransformReference::TransformLists TransformReference::lookUpList(unsigned int target_frame, unsigned int source_frame)
 {
   TransformLists mTfLs;
+  if (source_frame == NO_PARENT) throw InvalidFrame; 
   if (target_frame == NO_PARENT) throw InvalidFrame; 
 
   unsigned int frame = source_frame;
