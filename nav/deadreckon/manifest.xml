@@ -6,5 +6,8 @@
   <license>BSD</license>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
+  <export>
+    <cpp cflags="-I${prefix}/srv/cpp" />
+  </export>
 </package>
 

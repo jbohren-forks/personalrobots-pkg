@@ -1,0 +1,5 @@
+float32 dist
+float32 bearing
+float32 finalRelHeading
+---
+string status
