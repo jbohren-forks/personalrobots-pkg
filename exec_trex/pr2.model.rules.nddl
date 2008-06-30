@@ -165,6 +165,8 @@ WaypointController::Inactive {
     }
   }
 
+  contains(Actions.StopTheBase);
+
   // We will bind position values based on vehicle state timeline. We wait till the start time
   // is bound before linking in to the vehicle state.
   if(start){
@@ -258,6 +260,15 @@ Actions::SetVelocityCommands{
     eq(vc.cmd_x, 0.0);
     eq(vc.cmd_th, 0.0);
   }
+}
+
+/**
+ * Stops the base
+ */
+Actions::StopTheBase{
+    starts(VelCommander.Holds vc);
+    eq(vc.cmd_x, 0.0);
+    eq(vc.cmd_th, 0.0);
 }
 
 ArmController::Inactive {

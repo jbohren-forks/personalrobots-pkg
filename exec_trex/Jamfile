@@ -63,7 +63,7 @@ if ! $(ROS_PACKAGE_PATH) {
 		clean.0.exec.nddl
 		clean.0.wpc.nddl
 		clean.0.rcsarm.nddl
-		#		wpc.0.wpc.nddl
+		wpc.0.wpc.nddl
 	;
 
 	local file ;

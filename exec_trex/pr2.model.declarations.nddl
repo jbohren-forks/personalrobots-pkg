@@ -158,6 +158,12 @@ class Actions extends AgentActions{
     PFLOAT goal_x;
     PFLOAT goal_y;
   }
+
+  /**
+   * Stop the base
+   */
+  predicate StopTheBase{}
+
 };
 
 class ArmController extends AgentTimeline {
