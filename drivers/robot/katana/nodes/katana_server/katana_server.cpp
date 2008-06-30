@@ -11,6 +11,8 @@
 #include "std_srvs/ArmCSpaceString.h"
 #include "std_srvs/ArmCSpaceSeqString.h"
 #include "std_srvs/UInt32String.h"
+#include "std_srvs/KatanaIK.h"
+#include "std_srvs/KatanaPose.h"
 
 using std::vector;
 using std::cout;
@@ -30,6 +32,55 @@ class KatanaServer : public ros::node
       advertise_service("katana_move_joint_sequence_rad_service", &KatanaServer::moveJointsSeqRad);
       advertise_service("katana_move_joint_sequence_deg_service", &KatanaServer::moveJointsSeqDeg);
       advertise_service("katana_gripper_cmd_service", &KatanaServer::gripperCmd);
+      advertise_service("katana_ik_calculate_service", &KatanaServer::ik_calculate_srv);
+      advertise_service("katana_get_pose_service", &KatanaServer::get_current_pose);
+    }
+    
+    bool get_current_pose(std_srvs::KatanaPose::request &req,
+                    std_srvs::KatanaPose::response &res)
+    {
+      Katana *katana = new Katana();
+      vector<double> katana_pose = katana->get_pose();
+      res.pose.x = katana_pose[0];
+      res.pose.y = katana_pose[1];
+      res.pose.z = katana_pose[2];
+      res.phi = katana_pose[3];
+      res.theta = katana_pose[4];
+      res.psi = katana_pose[5];
+
+      delete katana;
+      return (true);
+    }
+
+/* This function uses the kni-3.9.2 inverse kinematics function (ik_calculate) to 
+ * compute a joint angle solution for the given pose.
+ * x,y,z = end-effector coordinates in katana frame in mm
+ * theta = orientation of wrist (last link) measure from vertical in radians
+ * psi = rotation angle of wrist (motor 4) in radians; note that, although psi and joint
+ *        angle 4 correspond to exactly the same degree of freedom, these
+ *        angles will not be equal for a give wrist position (one is measured
+ *        positive CW and the other CCW).
+ * max_theta_dev = amount that theta is allowed to deviate from the specified value
+ *        in the positive and negative direction in order to find a solution if one is
+ *        not found for the specified wrist orientation.
+*/
+    bool ik_calculate_srv(std_srvs::KatanaIK::request &req,
+                    std_srvs::KatanaIK::response &res)
+    {
+      cout << "Using ik calculate for pose: " << req.pose.x << " " << req.pose.y << " "
+            << req.pose.z << " " << req.theta << " " << req.psi << endl;
+      Katana *katana = new Katana();
+      vector<double> solution;
+      bool success = katana->ik_joint_solution(req.pose.x, req.pose.y, req.pose.z,
+          req.theta, req.psi, req.max_theta_dev, solution);
+      if (success) {
+        res.solution.set_angles_size(solution.size());
+        for (size_t i=0; i<solution.size(); i++) {
+          res.solution.angles[i] = solution[i];
+        }
+      } else res.solution.set_angles_size(0);
+      
+      return (success);
     }
 
     bool calibrateSrv(std_srvs::StringString::request &req,
@@ -170,6 +221,11 @@ class KatanaServer : public ros::node
       Katana *katana = new Katana();
       bool success = false;
       for (size_t i=0; i<req.jointAngles.configs_size; i++) {
+        cout << "Moving arm to: " << req.jointAngles.configs[i].angles[0] << " "
+          << req.jointAngles.configs[i].angles[1] << " " 
+          << req.jointAngles.configs[i].angles[2] << " "
+          << req.jointAngles.configs[i].angles[3]<< " " 
+          << req.jointAngles.configs[i].angles[4] << endl;
         success = katana->goto_joint_position_rad(req.jointAngles.configs[i].angles[0], 
           req.jointAngles.configs[i].angles[1], req.jointAngles.configs[i].angles[2],
           req.jointAngles.configs[i].angles[3], req.jointAngles.configs[i].angles[4]);
