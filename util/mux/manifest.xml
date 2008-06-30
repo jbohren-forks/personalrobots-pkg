@@ -1,0 +1,14 @@
+<package>
+  <description>
+  A generic multiplexer; it can take a bunch of arbitrary-typed nodes and
+  multiplex between them. Useful anywhere a mux is useful in circuits or HDL...
+  as one example, deciding which algorithm gets control of the drive system of
+  the robot. You only want one algorithm to drive the robot at any time, and
+  need a nice way to switch between who is actually passing messages to
+  the robot and whose messages are getting ignored.
+  </description>
+  <author>Morgan Quigley</author>
+  <license>BSD</license>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+</package>

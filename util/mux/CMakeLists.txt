@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 2.6)
+set(CMAKE_MODULE_PATH $ENV{ROS_ROOT}/core/rosbuild)
+include(rosbuild)
+project(mux)
+rospack()
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
+add_executable(mux mux.cpp)
+target_link_libraries(mux ${mux_LIBRARIES})
