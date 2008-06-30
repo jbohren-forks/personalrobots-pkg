@@ -78,7 +78,7 @@ Provides (name/type):
 
 @section parameters ROS parameters
 - @b "world_3d_map/max_publish_frequency" : @b [double] the maximum frequency (Hz) at which the data in the built 3D map is to be sent (default 0.5)
-- @b "world_3d_map/retain_pointcloud_duration : @b [double] the time for which a point cloud is retained as part of the current world information (default 10)
+- @b "world_3d_map/retain_pointcloud_duration : @b [double] the time for which a point cloud is retained as part of the current world information (default 2)
 - @b "world_3d_map/verbosity_level" : @b [int] sets the verbosity level (default 1)
 **/
 
@@ -104,7 +104,7 @@ public:
 	// NOTE: subscribe to stereo vision point cloud as well... when it becomes available
 	subscribe("full_cloud", inputCloud, &World3DMap::pointCloudCallback);
 	param("world_3d_map/max_publish_frequency", maxPublishFrequency, 0.5);
-	param("world_3d_map/retain_pointcloud_duration", retainPointcloudDuration, 10.0);
+	param("world_3d_map/retain_pointcloud_duration", retainPointcloudDuration, 2.0);
 	param("world_3d_map/verbosity_level", verbose, 1);
 	
 	/* create a thread that does the processing of the input data.
@@ -127,6 +127,8 @@ public:
 	
 	pthread_join(*publishingThread, NULL);
 	pthread_join(*processingThread, NULL);
+	for (unsigned int i = 0 ; i < currentWorld.size() ; ++i)
+	    delete currentWorld[i];
     }
     
     void pointCloudCallback(void)
@@ -203,24 +205,37 @@ public:
 		if (active)
 		{
 		    PointCloudFloat32 toPublish;
-		    unsigned int      npts = 0;
+		    
+		    unsigned int      npts  = 0;
+		    unsigned int      nchan = 0;
 		    for (unsigned int i = 0 ; i < currentWorld.size() ; ++i)
+		    {
 			npts += currentWorld[i]->cloud.get_pts_size();
+			nchan += currentWorld[i]->cloud.get_chan_size();
+		    }
+		    
 		    toPublish.set_pts_size(npts);
-		    toPublish.set_chan_size(npts);
+		    toPublish.set_chan_size(nchan);
+		    
 		    unsigned int j = 0;
 		    for (unsigned int i = 0 ; i < currentWorld.size() ; ++i)
 		    {
 			unsigned int n = currentWorld[i]->cloud.get_pts_size();			
-			for (unsigned int k = 0 ; k < n ; ++k, ++j)
-			{
-			    toPublish.pts[j] = currentWorld[i]->cloud.pts[k];
-			    toPublish.chan[j] = currentWorld[i]->cloud.chan[k];
-			}
+			for (unsigned int k = 0 ; k < n ; ++k)
+			    toPublish.pts[j+k] = currentWorld[i]->cloud.pts[k];
+			/* chan should not have more elements than pts */
+			n = currentWorld[i]->cloud.get_chan_size();
+			for (unsigned int k = 0 ; k < n ; ++k)
+			    toPublish.chan[j+k] = currentWorld[i]->cloud.chan[k];
+			j += n;
 		    }
-		    if (verbose > 0)
-			printf("Publishing a point cloud with %u points\n", toPublish.get_pts_size());
-		    publish("world_3d_map", toPublish);
+		    
+		    if (ok())
+		    {
+			if (verbose > 0)
+			    printf("Publishing a point cloud with %u points\n", toPublish.get_pts_size());
+			publish("world_3d_map", toPublish);
+		    }
 		}
 		shouldPublish = false;
 		worldDataMutex.unlock();

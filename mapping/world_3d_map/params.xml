@@ -1,4 +1,4 @@
 <params>
   <double name="world_3d_map/max_publish_frequency">0.5</double> <!-- Hz -->
-  <double name="world_3d_map/retain_pointcloud_duration">10</double> <!-- seconds -->
+  <double name="world_3d_map/retain_pointcloud_duration">1</double> <!-- seconds -->
 </params>
