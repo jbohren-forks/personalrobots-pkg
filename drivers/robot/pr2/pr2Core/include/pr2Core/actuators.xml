@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+
+
+<pr2>
+<joint name="joint_left_shoulder">
+<actuator name="">
+  <motor>MAXON</motor>
+  <ip> </ip> 
+  <port> </port>
+  <reduction>10</reduction>
+<polymap>-1 -0.2 -0.5 </polymap>
+</actuator> 
+
+<actuator name="">
+  <motor>MAXON</motor>
+  <ip> </ip> 
+  <port> </port>
+  <reduction>10</reduction>
+<polymap>1 0.2 0.5 </polymap>
+</actuator> 
+
+</joint>
+
+
+<joint name="left_gripper">
+<actuator name="">
+  <motor>MAXON</motor>
+  <ip> </ip> 
+  <port> </port>
+  <reduction>10</reduction>
+<lookup> gripper_lookup </lookup>
+</actuator> 
+</joint>
+</pr2>

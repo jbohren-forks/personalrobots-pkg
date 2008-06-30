@@ -1,0 +1,795 @@
+<?xml version="1.0"?>pwd
+
+<robot name="pr2"><!-- name of the robot-->
+
+<!-- Begin template definitions for ease of reuse -->
+
+
+<!-- Begin constant dimensions -->
+<constants>
+               <wheel_length>0.03</wheel_length>
+               <wheel_radius>0.08</wheel_radius>
+
+               <shoulder_pan_length>0.4</shoulder_pan_length>
+               <shoulder_pan_radius>0.05</shoulder_pan_radius>
+
+               <shoulder_pitch_length>0.01</shoulder_pitch_length>
+               <shoulder_pitch_radius>0.01</shoulder_pitch_radius>
+
+               <shoulder_roll_length>0.4</shoulder_roll_length>
+               <shoulder_roll_radius>0.05</shoulder_roll_radius>
+
+               <elbow_pitch_length>0.09085</elbow_pitch_length>
+               <elbow_pitch_radius>0.05</elbow_pitch_radius>
+
+               <forearm_roll_length>0.2237</forearm_roll_length>
+               <forearm_roll_radius>0.05</forearm_roll_radius>
+
+               <wrist_pitch_length>0.01</wrist_pitch_length>
+               <wrist_pitch_radius>0.01</wrist_pitch_radius>
+
+               <wrist_roll_length>0.01</wrist_roll_length>
+               <wrist_roll_radius>0.01</wrist_roll_radius>
+
+               <base_length>0.5</base_length>
+               <base_width>0.5</base_width>
+               <base_height>0.1</base_height>
+
+               <torso_length>0.3 </torso_length>
+               <torso_width>0.05 </torso_width>
+               <torso_height>0.8 </torso_height>
+
+</constants>
+<!-- End constant dimensions -->
+
+
+<templates>
+		<define name="pr2_caster_visual">
+			<xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material>Gazebo/Grey</material>
+			<geometry type="cylinder"><!-- geometry specified using a simple geometric object -->
+				<size>0 0</size> 
+			</geometry>
+		</pr2_caster_visual> 
+
+		<define name="pr2_caster_inertial">
+			<mass> 3.473082 </mass>
+			<com> 0.007342 0.00015 0.095236 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+			<inertia> 0.012411765597 -0.000711733678 0.00050272983 0.015218160428 -0.000004273467 0.011763977943 </inertia>
+		</pr2_caster_inertial> 
+
+
+		<define name="pr2_caster_joint"> 
+                        <type> revolute </type>
+			<axis> 0 0 1 </axis> <!-- direction of the joint in the local coordinate frame -->
+			<anchor>0 0 0</anchor> <!-- point on the joint relative to the local coordinate frame -->
+			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+		</pr2_caster_joint>
+
+	        <define name="pr2_wheel_visual">
+			<xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material>Gazebo/Grey</material>
+			<geometry type="cylinder"><!-- geometry specified using a simple geometric object -->
+				<size>wheel_length wheel_radius</size> 
+			</geometry>
+		</pr2_wheel_visual> 
+
+		<define name="pr2_wheel_inertial">
+			<mass> 0.44036 </mass>
+			<com> 0.000008	0.000008 0.008475 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+			<inertia> 0.012411765597 -0.000711733678 0.00050272983 0.015218160428 -0.000004273467 0.011763977943 </inertia>
+		</pr2_wheel_inertial> 
+
+		<define name="pr2_wheel_joint"> 
+                        <type> revolute </type>
+			<axis> 0 1 0 </axis> <!-- direction of the joint in the local coordinate frame -->
+			<anchor>0 0 0</anchor> <!-- point on the joint relative to the local coordinate frame -->
+			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+		</pr2_wheel_joint>
+
+                 <define name="pr2_shoulder_pan_joint">
+                        <type> revolute </type>
+			<axis> 0 0 1 </axis> <!-- direction of the joint in a global coordinate frame -->
+			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+			<limit> -M_PI/2 M_PI/2 </limit>
+			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+                 </pr2_shoulder_pan_joint>
+
+		<define name="pr2_shoulder_pan_inertial">
+			<mass> 16.29553  </mass>
+			<com> -0.005215 -0.030552 -0.175743 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+			<inertia>0.793291393007	0.003412032973	0.0096614481	0.818419457224	-0.033999499551	0.13915007406 </inertia>
+		</pr2_shoulder_pan_inertial> 
+
+		<define name="pr2_shoulder_pan_visual">
+			<xyz>>0 0 -shoulder_pan_length/2 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material>Gazebo/Grey</material>
+			<geometry type="cylinder">
+                                <size> shoulder_pan_length shoulder_pan_radius </size>
+			</geometry>
+		</pr2_shoulder_pan_visual> 
+
+                 <define name="pr2_shoulder_pitch_joint">
+                        <type> revolute </type>
+			<axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
+			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+			<limit> -0.6109 1.3090 </limit>
+			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+                 </pr2_shoulder_pitch_joint>
+
+		<define name="pr2_shoulder_pitch_inertial">
+			<mass> 2.41223  </mass>
+			<com> -0.035895	0.014422 -0.028263</com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+                        <inertia> 0.016640333585 0.002696462583	0.001337742275	0.017232603914	-0.003605106514	0.018723553425</inertia>
+		</pr2_shoulder_pitch_inertial> 
+
+		<define name="pr2_shoulder_pitch_visual">
+			<xyz>>shoulder_pitch_length/2 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<rpy>M_PI/2 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material>Gazebo/Grey</material>
+			<geometry type="cylinder">
+                                <size> shoulder_pitch_length shoulder_pitch_radius </size>
+			</geometry>
+		</pr2_shoulder_pitch_visual> 
+
+                 <define name="pr2_shoulder_roll_joint">
+                        <type> revolute </type>
+			<axis> 1 0 0 </axis> <!-- direction of the joint in a global coordinate frame -->
+			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+			<limit> -2.3562 2.3562 </limit>
+			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+                 </pr2_shoulder_roll_joint>
+
+		<define name="pr2_shoulder_roll_inertial">
+			<mass> 4.9481 </mass>
+			<com> 0.001205 -0.016293 0.21227 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+                        <inertia> 0.073060715309 0.000547745916	0.000119476885	0.072124510748	0.001544932307	0.013383284908</inertia>
+		</pr2_shoulder_roll_inertial> 
+
+		<define name="pr2_shoulder_roll_visual">
+			<xyz>shoulder_roll_length/2 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material>Gazebo/Grey</material>
+			<geometry type="cylinder">
+                                <size> shoulder_roll_length shoulder_roll_radius </size>
+			</geometry>
+		</pr2_shoulder_roll_visual> 
+
+                 <define name="pr2_elbow_pitch_joint">
+                        <type> revolute </type>
+			<axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
+			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+			<limit>  -M_PI/2 0.8727 </limit>
+			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+                 </pr2_elbow_pitch_joint>
+
+		<define name="pr2_elbow_pitch_inertial">
+			<mass> 1.689246 </mass>
+			<com> -0.011638	0.013173 0.001228 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+                        <inertia> 0.003275298548 0.000292046674	-0.000077359282	0.003236815206	-0.000001162155	0.00410053774 </inertia>
+		</pr2_elbow_pitch_inertial> 
+
+		<define name="pr2_elbow_pitch_visual">
+			<xyz>elbow_pitch/2 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material>Gazebo/Grey</material>
+			<geometry type="cylinder">
+                                <size>elbow_pitch_length elbow_pitch_radius </size>
+			</geometry>
+		</pr2_elbow_pitch_visual> 
+
+                <define name="pr2_forearm_roll_joint">
+                        <type> revolute </type>
+			<axis> 1 0 0 </axis> <!-- direction of the joint in a global coordinate frame -->
+			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+                 </pr2_forearm_roll_joint>
+
+		<define name="pr2_forearm_roll_inertial">
+			<mass> 1.804155 </mass>
+			<com> -0.000058	0.013779 0.179474 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+                        <inertia> 0.012430552544 -0.000003671102 0.000029379389	0.013567548848 -0.000427679042 0.001755089866 </inertia>
+		</pr2_forearm_roll_inertial> 
+
+		<define name="pr2_forearm_roll_visual">
+			<xyz>forearm_roll_length/2 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material>Gazebo/Grey</material>
+			<geometry type="cylinder">
+                                <size>forearm_roll_length forearm_roll_radius </size>
+			</geometry>
+		</pr2_forearm_roll_visual> 
+
+                 <define name="pr2_wrist_pitch_joint">
+                        <type> revolute </type>
+			<axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
+			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+                 </pr2_wrist_pitch_joint>
+
+		<define name="pr2_wrist_pitch_inertial">
+			<mass> 1.804155 </mass>
+			<com> -0.000058	0.013779 0.179474 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+                        <inertia> 0.012430552544 -0.000003671102 0.000029379389	0.013567548848 -0.000427679042 0.001755089866 </inertia>
+		</pr2_wrist_pitch_inertial> 
+
+		<define name="pr2_wrist_pitch_visual">
+			<xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material>Gazebo/Grey</material>
+			<geometry type="cylinder">
+                                <size>wrist_pitch_length wrist_pitch_radius </size>
+			</geometry>
+		</pr2_wrist_pitch_visual> 
+
+
+                 <define name="pr2_wrist_roll_joint">
+                        <type> revolute </type>
+			<axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
+			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+                 </pr2_wrist_roll_joint>
+
+		<define name="pr2_wrist_roll_inertial">
+			<mass> 1.804155 </mass>
+			<com> -0.000058	0.013779 0.179474 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+                        <inertia> 0.012430552544 -0.000003671102 0.000029379389	0.013567548848 -0.000427679042 0.001755089866 </inertia>
+		</pr2_wrist_roll_inertial> 
+
+		<define name="pr2_wrist_roll_visual">
+			<xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material>Gazebo/Grey</material>
+			<geometry type="cylinder">
+                                <size>wrist_roll_length wrist_roll_radius </size>
+			</geometry>
+		</pr2_wrist_roll_visual> 
+</templates>
+<!-- End template definitions for ease of reuse -->
+
+
+
+<!-- Begin base definition -->
+
+	<link name="base"><!-- link specifying the base of the robot -->
+
+		<parent> world</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
+		<xyz> 0 0 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
+
+		<joint type="floating" name="joint_base"> 
+			<anchor>0.25 0.1 0.3  </anchor> <!-- Initial position of the base in a global coordinate frame -->
+		</joint>
+
+		<inertial>
+			<mass> 70750.964  </mass>
+			<com> -0.061523	0.000942 0.293569 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+			<inertia>5.652232699207	-0.009719934438	1.293988226423 5.669473158652 -0.007379583694 3.683196351726 </inertia>
+		</inertial> 
+
+		<visual>
+			<xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material>Gazebo/Grey</material>
+			<geometry type="box">
+                                      <size>base_length base_width base_height</size>
+			</geometry>
+		</visual> 
+
+		<collision>
+			<xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material>Gazebo/Grey</material> 
+			<geometry type="box">
+                                      <size>base_length base_width base_height</size>
+			</geometry>
+		</collision>
+
+	</link>
+
+	<link name="caster_front_left">
+		<parent> base</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0.2255 0.2255 0.08069 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_caster_joint"/>
+                <inertial clone="pr2_caster_inertial"/>
+                <visual clone="pr2_caster_visual"/>
+		<collision clone="pr2_caster_visual"/>
+	</link>
+
+
+	<link name="caster_front_right">
+		<parent> base</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0.2255 -0.2255 0.08069 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_caster_joint"/>
+                <inertial clone="pr2_caster_inertial"/>
+                <visual clone="pr2_caster_visual"/>
+		<collision clone="pr2_caster_visual"/>
+	</link>
+
+	<link name="caster_rear_left">
+		<parent> base</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> -0.2255 0.2255 0.08069 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_caster_joint"/>
+                <inertial clone="pr2_caster_inertial"/>
+                <visual clone="pr2_caster_visual"/>
+		<collision clone="pr2_caster_visual"/>
+	</link>
+
+	<link name="caster_rear_right">
+		<parent> base</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> -0.2255 -0.2255 0.08069 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_caster_joint"/>
+                <inertial clone="pr2_caster_inertial"/>
+                <visual clone="pr2_caster_visual"/>
+		<collision clone="pr2_caster_visual"/>
+	</link>
+
+	<link name="wheel_front_left_l">
+		<parent> caster_front_left</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0 0.049 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_wheel_joint"/>
+                <inertial clone="pr2_wheel_inertial"/>
+                <visual clone="pr2_wheel_visual"/>
+		<collision clone="pr2_wheel_visual"/>
+	</link>
+
+	<link name="wheel_front_left_r">
+		<parent> caster_front_left</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0 -0.049 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_wheel_joint"/>
+                <inertial clone="pr2_wheel_inertial"/>
+                <visual clone="pr2_wheel_visual"/>
+		<collision clone="pr2_wheel_visual"/>
+	</link>
+
+	<link name="wheel_front_right_l">
+		<parent> caster_front_right</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0 0.049 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_wheel_joint"/>
+                <inertial clone="pr2_wheel_inertial"/>
+                <visual clone="pr2_wheel_visual"/>
+		<collision clone="pr2_wheel_visual"/>
+	</link>
+
+
+	<link name="wheel_front_right_r">
+		<parent> caster_front_right</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0 -0.049 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_wheel_joint"/>
+                <inertial clone="pr2_wheel_inertial"/>
+                <visual clone="pr2_wheel_visual"/>
+		<collision clone="pr2_wheel_visual"/>
+	</link>
+
+	<link name="wheel_rear_left_l">
+		<parent> caster_rear_left</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0 0.049 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_wheel_joint"/>
+                <inertial clone="pr2_wheel_inertial"/>
+                <visual clone="pr2_wheel_visual"/>
+		<collision clone="pr2_wheel_visual"/>
+	</link>
+
+	<link name="wheel_rear_left_r">
+		<parent> caster_rear_left</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0 -0.049 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_wheel_joint"/>
+                <inertial clone="pr2_wheel_inertial"/>
+                <visual clone="pr2_wheel_visual"/>
+		<collision clone="pr2_wheel_visual"/>
+	</link>
+
+	<link name="wheel_rear_right_l">
+		<parent> caster_rear_right</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0 0.049 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_wheel_joint"/>
+                <inertial clone="pr2_wheel_inertial"/>
+                <visual clone="pr2_wheel_visual"/>
+		<collision clone="pr2_wheel_visual"/>
+	</link>
+
+	<link name="wheel_rear_right_r">
+		<parent> caster_rear_right</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0 -0.049 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_wheel_joint"/>
+                <inertial clone="pr2_wheel_inertial"/>
+                <visual clone="pr2_wheel_visual"/>
+		<collision clone="pr2_wheel_visual"/>
+	</link>
+
+<!-- End base definition -->
+
+
+<!-- Begin torso definition -->
+
+        <link name="torso">
+                <parent> base </parent>
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> -0.05 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+		<joint type="prismatic"> 
+			<axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
+			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+                        <limit> -0.030 0.396 </limit>
+		</joint>
+
+		<inertial>
+			<mass> 36.248046  </mass>
+			<com> -0.085285	-0.002393 -0.149724 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+                        <inertia> 2.771653750257 0.004284522609	-0.160418504506	2.510019507959 0.029664468704 0.526432355569</inertia>
+		</inertial>
+
+		<visual>
+			<xyz> 0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material>Gazebo/Grey</material>
+			<geometry type="box">
+                                   <size> torso_length torso_width torso_height </size>
+			</geometry>
+		</visual> 
+
+		<collision>
+			<xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material></material> 
+			<geometry type="box">
+                                   <size> torso_length torso_width torso_height </size>
+			</geometry>
+		</collision> 
+        </link>
+
+<!-- End torso definition -->
+
+
+
+<!-- Begin arm definitions -->
+
+
+	<link name="shoulder_pan_left"><!-- link specifying the shoulder of the robot -->
+		<parent> torso</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> -.1329361 0.1329361 0.80981</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_shoulder_pan_joint"/>
+                <inertial clone="pr2_shoulder_pan_inertial"/>
+                <visual clone="pr2_shoulder_pan_visual"/>
+		<collision clone="pr2_shoulder_pan_visual"/>
+	</link>
+
+	<link name="shoulder_pan_right"><!-- link specifying the shoulder of the robot -->
+		<parent> torso</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> -.1329361 -0.1329361 0.80981</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_shoulder_pan_joint"/>
+                <inertial clone="pr2_shoulder_pan_inertial"/>
+                <visual clone="pr2_shoulder_pan_visual"/>
+		<collision clone="pr2_shoulder_pan_visual"/>
+	</link>
+
+
+
+
+
+
+	<link name="shoulder_pitch_left"><!-- link specifying the shoulder of the robot -->
+		<parent> shoulder_pan_left</parent>
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> .1 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_shoulder_pitch_joint"/>
+                <inertial clone="pr2_shoulder_pitch_inertial"/>
+                <visual clone="pr2_shoulder_pitch_visual"/>
+		<collision clone="pr2_shoulder_pitch_visual"/>
+	</link>
+
+	<link name="shoulder_pitch_right"><!-- link specifying the shoulder of the robot -->
+		<parent> shoulder_pan_right</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> .1 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_shoulder_pitch_joint"/>
+                <inertial clone="pr2_shoulder_pitch_inertial"/>
+                <visual clone="pr2_shoulder_pitch_visual"/>
+		<collision clone="pr2_shoulder_pitch_visual"/>
+	</link>
+
+
+
+
+	<link name="shoulder_roll_left"><!-- link specifying the shoulder of the robot -->
+		<parent> shoulder_pitch_left</parent>
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_shoulder_roll_joint"/>
+                <inertial clone="pr2_shoulder_roll_inertial"/>
+                <visual clone="pr2_shoulder_roll_visual"/>
+		<collision clone="pr2_shoulder_roll_visual"/>
+	</link>
+
+	<link name="shoulder_roll_right"><!-- link specifying the shoulder of the robot -->
+		<parent> shoulder_pitch_right</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_shoulder_roll_joint"/>
+                <inertial clone="pr2_shoulder_roll_inertial"/>
+                <visual clone="pr2_shoulder_roll_visual"/>
+		<collision clone="pr2_shoulder_roll_visual"/>
+	</link>
+
+
+
+	<link name="elbow_pitch_left"><!-- link specifying the shoulder of the robot -->
+		<parent> shoulder_roll_left</parent>
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0.4 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_elbow_pitch_joint"/>
+                <inertial clone="pr2_elbow_pitch_inertial"/>
+                <visual clone="pr2_elbow_pitch_visual"/>
+		<collision clone="pr2_elbow_pitch_visual"/>
+	</link>
+
+	<link name="elbow_pitch_right"><!-- link specifying the shoulder of the robot -->
+		<parent> shoulder_roll_right</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0.4 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_elbow_pitch_joint"/>
+                <inertial clone="pr2_elbow_pitch_inertial"/>
+                <visual clone="pr2_elbow_pitch_visual"/>
+		<collision clone="pr2_elbow_pitch_visual"/>
+	</link>
+
+
+
+
+	<link name="forearm_roll_left"><!-- link specifying the shoulder of the robot -->
+		<parent> elbow_pitch_left</parent>
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0.09085 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_forearm_roll_joint"/>
+                <inertial clone="pr2_forearm_roll_inertial"/>
+                <visual clone="pr2_forearm_roll_visual"/>
+		<collision clone="pr2_forearm_roll_visual"/>
+	</link>
+
+	<link name="forearm_roll_right"><!-- link specifying the shoulder of the robot -->
+		<parent> elbow_pitch_right</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0.09085 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_forearm_roll_joint"/>
+                <inertial clone="pr2_forearm_roll_inertial"/>
+                <visual clone="pr2_forearm_roll_visual"/>
+		<collision clone="pr2_forearm_roll_visual"/>
+	</link>
+
+
+
+
+	<link name="wrist_pitch_left"><!-- link specifying the shoulder of the robot -->
+		<parent> forearm_roll_left</parent>
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0.2237 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_wrist_pitch_joint"/>
+                <inertial clone="pr2_wrist_pitch_inertial"/>
+                <visual clone="pr2_wrist_pitch_visual"/>
+		<collision clone="pr2_wrist_pitch_visual"/>
+	</link>
+
+	<link name="wrist_pitch_right"><!-- link specifying the shoulder of the robot -->
+		<parent> forearm_roll_right</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0.2237 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_wrist_pitch_joint"/>
+                <inertial clone="pr2_wrist_pitch_inertial"/>
+                <visual clone="pr2_wrist_pitch_visual"/>
+		<collision clone="pr2_wrist_pitch_visual"/>
+	</link>
+
+
+
+	<link name="wrist_roll_left"><!-- link specifying the shoulder of the robot -->
+		<parent> wrist_pitch_left</parent>
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_wrist_roll_joint"/>
+                <inertial clone="pr2_wrist_roll_inertial"/>
+                <visual clone="pr2_wrist_roll_visual"/>
+		<collision clone="pr2_wrist_roll_visual"/>
+	</link>
+
+	<link name="wrist_roll_right"><!-- link specifying the shoulder of the robot -->
+		<parent> wrist_pitch_right</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+                <joint clone="pr2_wrist_roll_joint"/>
+                <inertial clone="pr2_wrist_roll_inertial"/>
+                <visual clone="pr2_wrist_roll_visual"/>
+		<collision clone="pr2_wrist_roll_visual"/>
+	</link>
+
+<!-- End arm definitions -->
+
+
+<!-- Begin head definition -->
+
+
+	<link name="head_pan"><!-- link specifying the shoulder of the robot -->
+		<parent>torso</parent>
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+
+		<joint type="revolute"> 
+			<axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
+			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+                        <limit> -2.9322 2.9322 </limit>
+		</joint>
+
+		<inertial>
+			<mass> 1.611118  </mass>
+			<com> -0.005717	0.010312 -0.029649 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+                        <inertia>0.00482611007	-0.000144683999	0.000110076136	0.005218991412	-0.000314239509	0.008618784925 </inertia>
+		</inertial>
+
+		<visual>
+			<xyz>0 0 head_pan_length/2</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material>Gazebo/Grey</material>
+			<geometry type="cylinder">
+                                <size>head_pan_length head_pan_radius</size>
+			</geometry>
+		</visual> 
+
+		<collision>
+			<xyz> 0 0 head_pan_length/2 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material></material> 
+			<geometry type="cylinder">
+                                <size>head_pan_length head_pan_radius</size>
+			</geometry>
+		</collision> 
+
+	</link>
+
+	<link name="head_tilt"><!-- link specifying the shoulder of the robot -->
+		<parent> head_pan</parent>
+
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+                <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+
+		<joint type="revolute"> 
+			<axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
+			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+                        <limit> -M_PI/6 M_PI/3 </limit>
+		</joint>
+
+		<inertial>
+			<mass>1.749727 </mass>
+			<com> 0.041935 0.003569 0.028143 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+                        <inertia>0.010602303435	-0.000408814235	0.00198303894	0.011874383747	0.000197908779	0.005516790626</inertia>
+		</inertial>
+
+		<visual>
+			<xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material>Gazebo/Grey</material>
+			<geometry type="box">
+                                <size>head_tilt_length head_tilt_width head_tilt_height</size>
+			</geometry>
+		</visual> 
+
+		<collision>
+			<xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material></material> 
+			<geometry type="box">
+                                <size>head_tilt_length head_tilt_width head_tilt_height</size>
+			</geometry>
+		</collision> 
+	</link>
+
+<!-- End head definition -->
+
+
+
+<!-- Begin sensor definitions -->
+
+	<sensor name="left_forearm_camera" type="camera"> 
+
+		<calibration> filename </calibration>
+		<parent>left_forearm</parent>
+		<xyz> 10 1 10 </xyz> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+		<inertial>
+			<mass> 10.0  </mass>
+			<com> 0.5 0.1 2 </com> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
+			<inertia>0 0 0 0 0 </inertia>
+		</inertial> 
+		<visual>
+			<xyz> </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material>Gazebo/Grey</material>
+			<geometry type="box" name="visual_left_forearm_camera"><!-- geometry specified using a simple geometric object -->
+				<size> </size> 
+			</geometry>
+
+			<geometry type="mesh" name="visual_left_forearm_camera">
+				<filename></filename><!-- mesh specified using an obj file --> 
+			</geometry>
+		</visual> 
+		<collision>
+			<xyz> </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+			<material></material> 
+			<geometry type="box" name="collision_left_forearm_camera"><!-- geometry specified using a simple geometric object -->
+				<size> </size> 
+			</geometry>
+
+			<geometry type="mesh" name="collision_left_forearm_camera">
+				<filename></filename><!-- mesh specified using an obj file --> 
+			</geometry>
+		</collision>
+	</sensor>
+
+<!-- End sensor definitions -->
+
+</robot>
