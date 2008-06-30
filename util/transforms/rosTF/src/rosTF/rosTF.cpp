@@ -113,6 +113,9 @@ rosTFServer::rosTFServer(ros::node & rosnode):
 
 void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs)
 {
+  if (!checkInvalidFrame(frame))
+    return;
+
   std_msgs::TransformEuler eulerOut;
   eulerOut.frame = frame;
   eulerOut.parent = parent;
@@ -131,6 +134,9 @@ void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, d
 
 void rosTFServer::sendInverseEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs)
 { 
+  if (!checkInvalidFrame(frame))
+    return;
+
   std_msgs::TransformEuler eulerOut;
   //Invert the transform
   libTF::Euler3D odomeuler = libTF::Pose3D::eulerFromMatrix(libTF::Pose3D::matrixFromEuler(x, y, z, yaw, pitch, roll).i());
@@ -168,6 +174,9 @@ void rosTFServer::sendInversePose(libTF::TFPose pose, unsigned int parent)
 
 void rosTFServer::sendDH(unsigned int frame, unsigned int parent, double length, double twist, double offset, double angle, unsigned int secs, unsigned int nsecs)
 {
+  if (!checkInvalidFrame(frame))
+    return;
+
   std_msgs::TransformDH dhOut;
 
   dhOut.frame = frame;
@@ -185,6 +194,9 @@ void rosTFServer::sendDH(unsigned int frame, unsigned int parent, double length,
 
 void rosTFServer::sendQuaternion(unsigned int frame, unsigned int parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, unsigned int secs, unsigned int nsecs)
 {
+  if (!checkInvalidFrame(frame))
+    return;
+  
   std_msgs::TransformQuaternion quaternionOut;
   quaternionOut.frame = frame;
   quaternionOut.parent = parent;
@@ -209,4 +221,14 @@ void rosTFServer::nameLookup(std::string astring)
   req.name = myNode.map_name(astring);
   ros::service::call("/nameToNumber", req, res);
   std::cout << astring << " maps to: " << res.number <<std::endl;
+};
+
+bool rosTFServer::checkInvalidFrame(unsigned int frameID)
+{
+  if (frameID == 0)
+    {
+      std::cerr<<"Attempted to send frameID = 0, this is not valid!" << std::endl;
+      return false;
+    }
+  return true;
 };

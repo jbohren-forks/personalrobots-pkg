@@ -112,4 +112,7 @@ class rosTFServer
  private:
   //ros::node reference to allow setting callbacks
   ros::node & myNode;
+  
+  bool checkInvalidFrame(unsigned int);
+  
 };
