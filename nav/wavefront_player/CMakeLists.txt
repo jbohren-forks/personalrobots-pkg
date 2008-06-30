@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 2.6)
+set(CMAKE_MODULE_PATH $ENV{ROS_ROOT}/core/rosbuild)
+include(rosbuild)
+project(wavefront_player)
+rospack()
+gensrv()
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
+# the service provider
+add_executable(wavefront_player wavefront_player.cc)
+target_link_libraries(wavefront_player ${wavefront_player_LIBRARIES} wavefront_standalone)
+add_executable(send_goal send_goal.cc)
+target_link_libraries(send_goal ${wavefront_player_LIBRARIES})
+# a dumb test client
+#add_executable(test_deadreckon_service test_deadreckon_service.cpp)
+#target_link_libraries(test_deadreckon_service ${deadreckon_LIBRARIES})
