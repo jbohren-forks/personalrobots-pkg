@@ -61,12 +61,12 @@ class HeadController : Controller
     PR2::PR2_ERROR_CODE setGazePoint(double x,double y, double z);
 
     /*!
-      * \brief Set seccading speed
+      * \brief Set saccading speed
       *
-      * Not sure how to seccade yet.
+      * Not sure how to saccade yet.
       *
       */       
-    PR2::PR2_ERROR_CODE setSeccadeSpeed(double vx, double vy, double vz);
+    PR2::PR2_ERROR_CODE setSaccadeSpeed(double vx, double vy, double vz);
 
     /*!
       * \brief Set parameters for this controller
