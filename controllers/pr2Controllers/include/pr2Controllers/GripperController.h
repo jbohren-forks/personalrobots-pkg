@@ -71,7 +71,7 @@ class GripperController : Controller
       *</UL> 
       */
     PR2::PR2_ERROR_CODE setParam(string label,double value);
-
+    PR2::PR2_ERROR_CODE setParam(string label,string value);
   private:
     PR2::PR2_CONTROL_MODE controlMode;      /**< Gripper controller control mode >*/
 };

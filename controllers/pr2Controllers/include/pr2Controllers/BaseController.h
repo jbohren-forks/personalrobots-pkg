@@ -25,14 +25,14 @@ class BaseController : Controller
   public:
   
     /*!
-      * \brief Constructor,
+      * \brief Constructor of the BaseController class.
       *
       * \param 
       */
     BaseController();
     
     /*!
-      * \brief Destructor of Pid class.
+      * \brief Destructor of the BaseController class.
       */       
     ~BaseController( );
 
@@ -87,16 +87,15 @@ class BaseController : Controller
       * user can set maximum velocity
       * and maximum acceleration
       * constraints for this controller
-      *
-      * e.g.: <br>
-      * <UL type="none">
-      * <LI> setParam('maxVel',10);
-      * <LI> setParam('maxAcc',10);
-      * </UL>
+      *<br> 
+      *<UL TYPE="none">
+      *<LI> e.g. setParam('maxVel',10);
+      *<LI>   or setParam('maxAcc',10);
+      *</UL>
       *
       */
     PR2::PR2_ERROR_CODE setParam(string label,double value);
-
+		PR2::PR2_ERROR_CODE setParam(string label,string value);
   private:
     PR2::PR2_CONTROL_MODE controlMode;      /**< Base controller control mode >*/
 };
