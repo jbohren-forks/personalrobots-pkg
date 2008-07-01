@@ -23,7 +23,7 @@ HeadController::setPositionRate(double yawDot, double pitchDot)
 }
 
 PR2::PR2_ERROR_CODE
-HeadController::setGazePoint(double x,double y, double z, double vx, double vy, double vz)
+HeadController::setGazePoint(double x,double y, double z, double xDot, double yDot, double zDot)
 {
 
   return PR2::PR2_ALL_OK;
@@ -37,7 +37,7 @@ HeadController::setGazePoint(double x,double y, double z)
 }
 
 PR2::PR2_ERROR_CODE
-HeadController::setSaccadeSpeed(double vx, double vy, double vz)
+HeadController::setSaccadeSpeed(double xDot, double yDot, double zDot)
 {
 
   return PR2::PR2_ALL_OK;

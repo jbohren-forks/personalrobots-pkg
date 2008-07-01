@@ -19,21 +19,21 @@ BaseController::setCourse(double v , double yaw)
 }
 
 PR2::PR2_ERROR_CODE
-BaseController::setCourseXY(double vx, double vy)
+BaseController::setVelocity(double xDot, double yDot)
 {
 
   return PR2::PR2_ALL_OK;
 }
 
 PR2::PR2_ERROR_CODE
-BaseController::setTarget(double x,double y, double yaw, double vx, double vy, double yawDot)
+BaseController::setTarget(double x,double y, double yaw, double xDot, double yDot, double yawDot)
 {
 
   return PR2::PR2_ALL_OK;
 }
 
 PR2::PR2_ERROR_CODE
-BaseController::setTraj(int num_pts, double x[],double y[], double yaw[], double vx[], double vy[], double yawDot[])
+BaseController::setTraj(int num_pts, double x[],double y[], double yaw[], double xDot[], double yDot[], double yawDot[])
 {
 
   return PR2::PR2_ALL_OK;

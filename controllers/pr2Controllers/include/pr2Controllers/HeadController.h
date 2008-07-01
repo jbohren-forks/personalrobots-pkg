@@ -55,10 +55,10 @@ class HeadController : Controller
     /*!
       * \brief Set gaze point in global frame
       *
-      * omit vx, vy, vz to denote 0 velocity at target point.
+      * omit xDot, yDot, zDot to denote 0 velocity at target point.
       *
       */
-    PR2::PR2_ERROR_CODE setGazePoint(double x,double y, double z, double vx, double vy, double vz);
+    PR2::PR2_ERROR_CODE setGazePoint(double x,double y, double z, double xDot, double yDot, double zDot);
     PR2::PR2_ERROR_CODE setGazePoint(double x,double y, double z);
 
     /*!
@@ -67,7 +67,7 @@ class HeadController : Controller
       * Not sure how to saccade yet.
       *
       */       
-    PR2::PR2_ERROR_CODE setSaccadeSpeed(double vx, double vy, double vz);
+    PR2::PR2_ERROR_CODE setSaccadeSpeed(double xDot, double yDot, double zDot);
 
     /*!
       * \brief Set parameters for this controller

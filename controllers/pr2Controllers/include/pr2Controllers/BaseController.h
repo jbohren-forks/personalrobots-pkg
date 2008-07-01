@@ -54,23 +54,23 @@ class BaseController : Controller
       * \brief Drive robot on a course in the Robot Frame
       * 
       * Same as setCourse except the inputs are the x and y components of velocities.
-      * \param vx   The velocity of the robot in the x-direction relative to the global 										frame.
-      * \param vy   The velocity of the robot in the y-direction relative to the global 										frame.
+      * \param xDot The velocity of the robot in the x-direction relative to the global frame.
+      * \param yDot The velocity of the robot in the y-direction relative to the global frame.
       *
       */       
-    PR2::PR2_ERROR_CODE setCourseXY(double vx, double vy);
+    PR2::PR2_ERROR_CODE setVelocity(double xDot, double yDot);
 
     /*!
       * \brief Set target point in Global Frame
       *
       * \param x  The 
       */
-    PR2::PR2_ERROR_CODE setTarget(double x,double y, double yaw, double vx, double vy, double yawDot);
+    PR2::PR2_ERROR_CODE setTarget(double x,double y, double yaw, double xDot, double yDot, double yawDot);
 
     /*!
       * \brief Set target points (trajectory list) in Global Frame
       */       
-    PR2::PR2_ERROR_CODE setTraj(int numPts, double x[],double y[], double yaw[], double vx[], double vy[], double yawDot[]);
+    PR2::PR2_ERROR_CODE setTraj(int numPts, double x[],double y[], double yaw[], double xDot[], double yDot[], double yawDot[]);
 
     /*!
       * \brief Heading pose for the robot
@@ -103,7 +103,7 @@ class BaseController : Controller
       *
       */
     PR2::PR2_ERROR_CODE setParam(string label,double value);
-		PR2::PR2_ERROR_CODE setParam(string label,string value);
+    PR2::PR2_ERROR_CODE setParam(string label,string value);
   private:
     PR2::PR2_CONTROL_MODE controlMode;      /**< Base controller control mode >*/
 };
