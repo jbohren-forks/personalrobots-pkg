@@ -37,6 +37,7 @@ if ! $(ROS_PACKAGE_PATH) {
 	SubDirHdrs $(ROS_PACKAGE_PATH) util transforms libTF include ;
 	SubDirHdrs $(ROS_PACKAGE_PATH) 3rdparty newmat10 newmat ;
 	SubDirHdrs $(ROS_PACKAGE_PATH) util transforms namelookup srv cpp ;
+   	SubDirHdrs $(ROS_PACKAGE_PATH) util transforms namelookup include ;
 
 	# GNU Library include directories
 	SubDirHdrs / usr include gtk-2.0 ;
