@@ -6,7 +6,8 @@
 
 
 <!-- Begin constant dimensions -->
-<constants>
+        <constants>
+
                <wheel_length>0.03</wheel_length>
                <wheel_radius>0.08</wheel_radius>
 
@@ -39,11 +40,10 @@
                <torso_width>0.05 </torso_width>
                <torso_height>0.8 </torso_height>
 
-</constants>
+        </constants>
 <!-- End constant dimensions -->
 
-
-<templates>
+        <templates>
 		<define name="pr2_caster_visual">
 			<xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
 			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
@@ -51,13 +51,13 @@
 			<geometry type="cylinder"><!-- geometry specified using a simple geometric object -->
 				<size>0 0</size> 
 			</geometry>
-		</pr2_caster_visual> 
+		</define> 
 
 		<define name="pr2_caster_inertial">
 			<mass> 3.473082 </mass>
 			<com> 0.007342 0.00015 0.095236 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
 			<inertia> 0.012411765597 -0.000711733678 0.00050272983 0.015218160428 -0.000004273467 0.011763977943 </inertia>
-		</pr2_caster_inertial> 
+		</define> 
 
 
 		<define name="pr2_caster_joint"> 
@@ -65,7 +65,7 @@
 			<axis> 0 0 1 </axis> <!-- direction of the joint in the local coordinate frame -->
 			<anchor>0 0 0</anchor> <!-- point on the joint relative to the local coordinate frame -->
 			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
-		</pr2_caster_joint>
+		</define>
 
 	        <define name="pr2_wheel_visual">
 			<xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
@@ -74,20 +74,20 @@
 			<geometry type="cylinder"><!-- geometry specified using a simple geometric object -->
 				<size>wheel_length wheel_radius</size> 
 			</geometry>
-		</pr2_wheel_visual> 
+		</define> 
 
 		<define name="pr2_wheel_inertial">
 			<mass> 0.44036 </mass>
 			<com> 0.000008	0.000008 0.008475 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
 			<inertia> 0.012411765597 -0.000711733678 0.00050272983 0.015218160428 -0.000004273467 0.011763977943 </inertia>
-		</pr2_wheel_inertial> 
+		</define> 
 
 		<define name="pr2_wheel_joint"> 
                         <type> revolute </type>
 			<axis> 0 1 0 </axis> <!-- direction of the joint in the local coordinate frame -->
 			<anchor>0 0 0</anchor> <!-- point on the joint relative to the local coordinate frame -->
 			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
-		</pr2_wheel_joint>
+		</define>
 
                  <define name="pr2_shoulder_pan_joint">
                         <type> revolute </type>
@@ -95,13 +95,13 @@
 			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
 			<limit> -M_PI/2 M_PI/2 </limit>
 			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
-                 </pr2_shoulder_pan_joint>
+                 </define>
 
 		<define name="pr2_shoulder_pan_inertial">
 			<mass> 16.29553  </mass>
 			<com> -0.005215 -0.030552 -0.175743 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
 			<inertia>0.793291393007	0.003412032973	0.0096614481	0.818419457224	-0.033999499551	0.13915007406 </inertia>
-		</pr2_shoulder_pan_inertial> 
+		</define> 
 
 		<define name="pr2_shoulder_pan_visual">
 			<xyz>>0 0 -shoulder_pan_length/2 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
@@ -110,21 +110,21 @@
 			<geometry type="cylinder">
                                 <size> shoulder_pan_length shoulder_pan_radius </size>
 			</geometry>
-		</pr2_shoulder_pan_visual> 
+		</define> 
 
-                 <define name="pr2_shoulder_pitch_joint">
+                <define name="pr2_shoulder_pitch_joint">
                         <type> revolute </type>
 			<axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
 			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
 			<limit> -0.6109 1.3090 </limit>
 			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
-                 </pr2_shoulder_pitch_joint>
+                </define>
 
 		<define name="pr2_shoulder_pitch_inertial">
 			<mass> 2.41223  </mass>
 			<com> -0.035895	0.014422 -0.028263</com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
                         <inertia> 0.016640333585 0.002696462583	0.001337742275	0.017232603914	-0.003605106514	0.018723553425</inertia>
-		</pr2_shoulder_pitch_inertial> 
+		</define> 
 
 		<define name="pr2_shoulder_pitch_visual">
 			<xyz>>shoulder_pitch_length/2 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
@@ -133,21 +133,21 @@
 			<geometry type="cylinder">
                                 <size> shoulder_pitch_length shoulder_pitch_radius </size>
 			</geometry>
-		</pr2_shoulder_pitch_visual> 
+		</define> 
 
-                 <define name="pr2_shoulder_roll_joint">
+                <define name="pr2_shoulder_roll_joint">
                         <type> revolute </type>
 			<axis> 1 0 0 </axis> <!-- direction of the joint in a global coordinate frame -->
 			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
 			<limit> -2.3562 2.3562 </limit>
 			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
-                 </pr2_shoulder_roll_joint>
+                </define>
 
 		<define name="pr2_shoulder_roll_inertial">
 			<mass> 4.9481 </mass>
 			<com> 0.001205 -0.016293 0.21227 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
                         <inertia> 0.073060715309 0.000547745916	0.000119476885	0.072124510748	0.001544932307	0.013383284908</inertia>
-		</pr2_shoulder_roll_inertial> 
+		</define> 
 
 		<define name="pr2_shoulder_roll_visual">
 			<xyz>shoulder_roll_length/2 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
@@ -156,21 +156,21 @@
 			<geometry type="cylinder">
                                 <size> shoulder_roll_length shoulder_roll_radius </size>
 			</geometry>
-		</pr2_shoulder_roll_visual> 
+		</define> 
 
-                 <define name="pr2_elbow_pitch_joint">
+                <define name="pr2_elbow_pitch_joint">
                         <type> revolute </type>
 			<axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
 			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
 			<limit>  -M_PI/2 0.8727 </limit>
 			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
-                 </pr2_elbow_pitch_joint>
+                </define>
 
 		<define name="pr2_elbow_pitch_inertial">
 			<mass> 1.689246 </mass>
 			<com> -0.011638	0.013173 0.001228 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
                         <inertia> 0.003275298548 0.000292046674	-0.000077359282	0.003236815206	-0.000001162155	0.00410053774 </inertia>
-		</pr2_elbow_pitch_inertial> 
+		</define> 
 
 		<define name="pr2_elbow_pitch_visual">
 			<xyz>elbow_pitch/2 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
@@ -179,20 +179,20 @@
 			<geometry type="cylinder">
                                 <size>elbow_pitch_length elbow_pitch_radius </size>
 			</geometry>
-		</pr2_elbow_pitch_visual> 
+		</define> 
 
                 <define name="pr2_forearm_roll_joint">
                         <type> revolute </type>
 			<axis> 1 0 0 </axis> <!-- direction of the joint in a global coordinate frame -->
 			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
 			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
-                 </pr2_forearm_roll_joint>
+                 </define>
 
 		<define name="pr2_forearm_roll_inertial">
 			<mass> 1.804155 </mass>
 			<com> -0.000058	0.013779 0.179474 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
                         <inertia> 0.012430552544 -0.000003671102 0.000029379389	0.013567548848 -0.000427679042 0.001755089866 </inertia>
-		</pr2_forearm_roll_inertial> 
+		</define> 
 
 		<define name="pr2_forearm_roll_visual">
 			<xyz>forearm_roll_length/2 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
@@ -201,20 +201,20 @@
 			<geometry type="cylinder">
                                 <size>forearm_roll_length forearm_roll_radius </size>
 			</geometry>
-		</pr2_forearm_roll_visual> 
+		</define> 
 
                  <define name="pr2_wrist_pitch_joint">
                         <type> revolute </type>
 			<axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
 			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
 			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
-                 </pr2_wrist_pitch_joint>
+                 </define>
 
 		<define name="pr2_wrist_pitch_inertial">
 			<mass> 1.804155 </mass>
 			<com> -0.000058	0.013779 0.179474 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
                         <inertia> 0.012430552544 -0.000003671102 0.000029379389	0.013567548848 -0.000427679042 0.001755089866 </inertia>
-		</pr2_wrist_pitch_inertial> 
+		</define> 
 
 		<define name="pr2_wrist_pitch_visual">
 			<xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
@@ -223,7 +223,7 @@
 			<geometry type="cylinder">
                                 <size>wrist_pitch_length wrist_pitch_radius </size>
 			</geometry>
-		</pr2_wrist_pitch_visual> 
+		</define> 
 
 
                  <define name="pr2_wrist_roll_joint">
@@ -231,13 +231,13 @@
 			<axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
 			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
 			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
-                 </pr2_wrist_roll_joint>
+                 </define>
 
 		<define name="pr2_wrist_roll_inertial">
 			<mass> 1.804155 </mass>
 			<com> -0.000058	0.013779 0.179474 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
                         <inertia> 0.012430552544 -0.000003671102 0.000029379389	0.013567548848 -0.000427679042 0.001755089866 </inertia>
-		</pr2_wrist_roll_inertial> 
+		</define> 
 
 		<define name="pr2_wrist_roll_visual">
 			<xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
@@ -246,10 +246,9 @@
 			<geometry type="cylinder">
                                 <size>wrist_roll_length wrist_roll_radius </size>
 			</geometry>
-		</pr2_wrist_roll_visual> 
-</templates>
+		</define> 
+        </templates>
 <!-- End template definitions for ease of reuse -->
-
 
 
 <!-- Begin base definition -->
