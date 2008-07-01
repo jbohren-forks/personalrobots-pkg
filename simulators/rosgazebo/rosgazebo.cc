@@ -132,7 +132,7 @@ void
 GazeboNode::cmd_rightarmconfigReceived()
 {
   this->lock.lock();
-	/*
+  /*
   printf("turret angle: %.3f\n", this->rightarm.turretAngle);
   printf("shoulder pitch : %.3f\n", this->rightarm.shoulderLiftAngle);
   printf("shoulder roll: %.3f\n", this->rightarm.upperarmRollAngle);
@@ -141,30 +141,30 @@ GazeboNode::cmd_rightarmconfigReceived()
   printf("wrist pitch angle: %.3f\n", this->rightarm.wristPitchAngle);
   printf("wrist roll: %.3f\n", this->rightarm.wristRollAngle);
   printf("gripper gap: %.3f\n", this->rightarm.gripperGapCmd);
-	
-	double jointPosition[] = {this->rightarm.turretAngle,
-														this->rightarm.shoulderLiftAngle,
-														this->rightarm.upperarmRollAngle,
-														this->rightarm.elbowAngle,
-														this->rightarm.forearmRollAngle,
-														this->rightarm.wristPitchAngle,
-														this->rightarm.wristRollAngle,
-														this->rightarm.gripperGapCmd};
-	double jointSpeed[] = {0,0,0,0,0,0,0,0};
+  
+  double jointPosition[] = {this->rightarm.turretAngle,
+                            this->rightarm.shoulderLiftAngle,
+                            this->rightarm.upperarmRollAngle,
+                            this->rightarm.elbowAngle,
+                            this->rightarm.forearmRollAngle,
+                            this->rightarm.wristPitchAngle,
+                            this->rightarm.wristRollAngle,
+                            this->rightarm.gripperGapCmd};
+  double jointSpeed[] = {0,0,0,0,0,0,0,0};
 
-//	this->myPR2->SetArmJointPosition(PR2::PR2_LEFT_ARM, jointPosition, jointSpeed);
-	*/
-	//*
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_PAN           , this->rightarm.turretAngle,       0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, this->rightarm.shoulderLiftAngle, 0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_ROLL , this->rightarm.upperarmRollAngle, 0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_PITCH   , this->rightarm.elbowAngle,        0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    , this->rightarm.forearmRollAngle,  0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , this->rightarm.wristPitchAngle,   0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , this->rightarm.wristRollAngle,    0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER       , this->rightarm.gripperGapCmd,     0);
-	this->myPR2->hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, this->rightarm.gripperGapCmd, this->rightarm.gripperForceCmd);
-	//*/
+//  this->myPR2->SetArmJointPosition(PR2::PR2_LEFT_ARM, jointPosition, jointSpeed);
+  */
+  //*
+  this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_PAN           , this->rightarm.turretAngle,       0);
+  this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, this->rightarm.shoulderLiftAngle, 0);
+  this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_ROLL , this->rightarm.upperarmRollAngle, 0);
+  this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_PITCH   , this->rightarm.elbowAngle,        0);
+  this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    , this->rightarm.forearmRollAngle,  0);
+  this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , this->rightarm.wristPitchAngle,   0);
+  this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , this->rightarm.wristRollAngle,    0);
+  this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER       , this->rightarm.gripperGapCmd,     0);
+  this->myPR2->hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, this->rightarm.gripperGapCmd, this->rightarm.gripperForceCmd);
+  //*/
   this->lock.unlock();
 }
 
@@ -173,30 +173,30 @@ void
 GazeboNode::cmd_leftarmconfigReceived()
 {
   this->lock.lock();
-	/*
-	double jointPosition[] = {this->leftarm.turretAngle,
-														this->leftarm.shoulderLiftAngle,
-														this->leftarm.upperarmRollAngle,
-														this->leftarm.elbowAngle,
-														this->leftarm.forearmRollAngle,
-														this->leftarm.wristPitchAngle,
-														this->leftarm.wristRollAngle,
-														this->leftarm.gripperGapCmd};
-	double jointSpeed[] = {0,0,0,0,0,0,0,0};
-	this->myPR2->SetArmJointPosition(PR2::PR2_LEFT_ARM, jointPosition, jointSpeed);
-	*/
+  /*
+  double jointPosition[] = {this->leftarm.turretAngle,
+                            this->leftarm.shoulderLiftAngle,
+                            this->leftarm.upperarmRollAngle,
+                            this->leftarm.elbowAngle,
+                            this->leftarm.forearmRollAngle,
+                            this->leftarm.wristPitchAngle,
+                            this->leftarm.wristRollAngle,
+                            this->leftarm.gripperGapCmd};
+  double jointSpeed[] = {0,0,0,0,0,0,0,0};
+  this->myPR2->SetArmJointPosition(PR2::PR2_LEFT_ARM, jointPosition, jointSpeed);
+  */
 
-	//*
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_PAN           , this->leftarm.turretAngle,       0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_PITCH, this->leftarm.shoulderLiftAngle, 0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_ROLL , this->leftarm.upperarmRollAngle, 0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_PITCH   , this->leftarm.elbowAngle,        0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_ROLL    , this->leftarm.forearmRollAngle,  0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_WRIST_PITCH   , this->leftarm.wristPitchAngle,   0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_WRIST_ROLL    , this->leftarm.wristRollAngle,    0);
-//	this->myPR2->SetJointServoCmd(PR2::ARM_L_GRIPPER       , this->leftarm.gripperGapCmd,     0);
-	this->myPR2->hw.CloseGripper(PR2::PR2_LEFT_GRIPPER, this->leftarm.gripperGapCmd, this->leftarm.gripperForceCmd);
-	//*/
+  //*
+  this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_PAN           , this->leftarm.turretAngle,       0);
+  this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_PITCH, this->leftarm.shoulderLiftAngle, 0);
+  this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_ROLL , this->leftarm.upperarmRollAngle, 0);
+  this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_PITCH   , this->leftarm.elbowAngle,        0);
+  this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_ROLL    , this->leftarm.forearmRollAngle,  0);
+  this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_WRIST_PITCH   , this->leftarm.wristPitchAngle,   0);
+  this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_WRIST_ROLL    , this->leftarm.wristRollAngle,    0);
+//  this->myPR2->SetJointServoCmd(PR2::ARM_L_GRIPPER       , this->leftarm.gripperGapCmd,     0);
+  this->myPR2->hw.CloseGripper(PR2::PR2_LEFT_GRIPPER, this->leftarm.gripperGapCmd, this->leftarm.gripperForceCmd);
+  //*/
   this->lock.unlock();
 }
 
@@ -287,7 +287,7 @@ GazeboNode::GazeboNode(int argc, char** argv, const char* fname) :
   // FIXME: right now this just sets default to pd control
   //this->myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM, PR2::PR2_JOINT_CONTROL);
   //this->myPR2->SetArmControlMode(PR2::PR2_LEFT_ARM, PR2::PR2_JOINT_CONTROL);
-	//------------------------------------------------------------
+  //------------------------------------------------------------
 
   this->myPR2->EnableGripperLeft();
   this->myPR2->EnableGripperRight();
@@ -384,12 +384,12 @@ GazeboNode::Update()
     for(unsigned int i=0;i<ranges_size;i++)
     {
       // get laser pitch angle
-	    double laser_yaw, laser_pitch, laser_pitch_rate;
-	    this->myPR2->hw.GetJointServoActual(PR2::HEAD_LASER_PITCH , &laser_pitch,  &laser_pitch_rate);
+      double laser_yaw, laser_pitch, laser_pitch_rate;
+      this->myPR2->hw.GetJointServoActual(PR2::HEAD_LASER_PITCH , &laser_pitch,  &laser_pitch_rate);
       // get laser yaw angle
-	    laser_yaw = angle_min + (double)i * angle_increment;
-	    //std::cout << " pit " << laser_pitch << "yaw " << laser_yaw
-	    //          << " amin " <<  angle_min << " inc " << angle_increment << std::endl;
+      laser_yaw = angle_min + (double)i * angle_increment;
+      //std::cout << " pit " << laser_pitch << "yaw " << laser_yaw
+      //          << " amin " <<  angle_min << " inc " << angle_increment << std::endl;
       // populating cloud data by range
       double tmp_range = this->ranges[i];
       // transform from range to x,y,z
@@ -561,39 +561,42 @@ GazeboNode::Update()
   this->img.compression = compression;
   this->img.colorspace  = colorspace;
 
-  this->img.set_data_size(buf_size);
+  if(buf_size >0)
+  {
+    this->img.set_data_size(buf_size);
 
-  this->img.data        = buf;
-  //memcpy(this->img.data,buf,data_size);
+    this->img.data        = buf;
+    //memcpy(this->img.data,buf,data_size);
 
-  publish("image",this->img);
+    publish("image",this->img);
+  }
 
   /***************************************************************/
   /*                                                             */
   /*  pitching Hokuyo joint                                      */
   /*                                                             */
   /***************************************************************/
-	static double dAngle = -1;
-	double simPitchFreq,simPitchAngle,simPitchRate,simPitchTimeScale,simPitchAmp,simPitchOffset;
-	simPitchFreq      = 1.0/10.0;
-	simPitchTimeScale = 2.0*M_PI*simPitchFreq;
-	simPitchAmp    =  M_PI / 8.0;
-	simPitchOffset = -M_PI / 8.0;
-	simPitchAngle = simPitchOffset + simPitchAmp * sin(this->simTime * simPitchTimeScale);
-	simPitchRate  =  simPitchAmp * simPitchTimeScale * cos(this->simTime * simPitchTimeScale); // TODO: check rate correctness
+  static double dAngle = -1;
+  double simPitchFreq,simPitchAngle,simPitchRate,simPitchTimeScale,simPitchAmp,simPitchOffset;
+  simPitchFreq      = 1.0/10.0;
+  simPitchTimeScale = 2.0*M_PI*simPitchFreq;
+  simPitchAmp    =  M_PI / 8.0;
+  simPitchOffset = -M_PI / 8.0;
+  simPitchAngle = simPitchOffset + simPitchAmp * sin(this->simTime * simPitchTimeScale);
+  simPitchRate  =  simPitchAmp * simPitchTimeScale * cos(this->simTime * simPitchTimeScale); // TODO: check rate correctness
   this->myPR2->GetTime(&this->simTime);
-	//std::cout << "sim time: " << this->simTime << std::endl;
-	//std::cout << "ang: " << simPitchAngle*180.0/M_PI << "rate: " << simPitchRate*180.0/M_PI << std::endl;
-	this->myPR2->hw.SetJointTorque(PR2::HEAD_LASER_PITCH , 1000.0);
+  //std::cout << "sim time: " << this->simTime << std::endl;
+  //std::cout << "ang: " << simPitchAngle*180.0/M_PI << "rate: " << simPitchRate*180.0/M_PI << std::endl;
+  this->myPR2->hw.SetJointTorque(PR2::HEAD_LASER_PITCH , 1000.0);
   this->myPR2->hw.SetJointGains(PR2::HEAD_LASER_PITCH, 10.0, 0.0, 0.0);
-	this->myPR2->hw.SetJointServoCmd(PR2::HEAD_LASER_PITCH , simPitchAngle, simPitchRate);
+  this->myPR2->hw.SetJointServoCmd(PR2::HEAD_LASER_PITCH , simPitchAngle, simPitchRate);
 
   if (dAngle * simPitchRate < 0.0)
   {
     dAngle = -dAngle;
     publish("shutter",this->shutterMsg);
   }
-	
+
   // should send shutter when changing direction, or wait for Tully to implement ring buffer in viewer
 
 

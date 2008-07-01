@@ -47,7 +47,7 @@
     </sky>
     <gazeboPath>media</gazeboPath>
     <grid>off</grid>
-    <desiredFPS>10</desiredFPS>
+    <maxUpdateRate>100</maxUpdateRate>
   </rendering:ogre>
 
 
@@ -95,6 +95,7 @@
         <farClip>20</farClip>
         <saveFrames>false</saveFrames>
         <saveFramePath>frames</saveFramePath>
+        <updateRate>10.0</updateRate>
         <controller:generic_camera name="cam1_controller">
           <updateRate>10.0</updateRate>
           <interface:camera name="cam1_iface_0" />

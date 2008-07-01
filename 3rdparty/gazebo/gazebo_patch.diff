@@ -1,6 +1,6 @@
 Index: gazebo-svn/player/SConscript
 ===================================================================
---- gazebo-svn/player/SConscript	(revision 6696)
+--- gazebo-svn/player/SConscript	(revision 6715)
 +++ gazebo-svn/player/SConscript	(working copy)
 @@ -1,7 +1,8 @@
  import os
@@ -14,7 +14,7 @@ Index: gazebo-svn/player/SConscript
             'GazeboClient.cc',
 Index: gazebo-svn/libgazebo/Server.cc
 ===================================================================
---- gazebo-svn/libgazebo/Server.cc	(revision 6696)
+--- gazebo-svn/libgazebo/Server.cc	(revision 6715)
 +++ gazebo-svn/libgazebo/Server.cc	(working copy)
 @@ -38,6 +38,7 @@
  #include <sys/sem.h>
@@ -103,7 +103,7 @@ Index: gazebo-svn/libgazebo/Server.cc
    {
 Index: gazebo-svn/libgazebo/Iface.cc
 ===================================================================
---- gazebo-svn/libgazebo/Iface.cc	(revision 6696)
+--- gazebo-svn/libgazebo/Iface.cc	(revision 6715)
 +++ gazebo-svn/libgazebo/Iface.cc	(working copy)
 @@ -55,6 +55,8 @@
  GZ_REGISTER_IFACE("factory", FactoryIface);
@@ -116,7 +116,7 @@ Index: gazebo-svn/libgazebo/Iface.cc
  
 Index: gazebo-svn/libgazebo/gazebo.h
 ===================================================================
---- gazebo-svn/libgazebo/gazebo.h	(revision 6696)
+--- gazebo-svn/libgazebo/gazebo.h	(revision 6715)
 +++ gazebo-svn/libgazebo/gazebo.h	(working copy)
 @@ -550,7 +550,7 @@
  
@@ -127,7 +127,79 @@ Index: gazebo-svn/libgazebo/gazebo.h
  
  /// \brief Camera interface data
  class CameraData
-@@ -1057,6 +1057,30 @@
+@@ -578,6 +578,9 @@
+   /// Pose of the camera
+   public: Pose camera_pose;
+   
++  /// Is camera stream opened?
++  public: bool opened;
++  
+ };
+ 
+ /// \brief The camera interface
+@@ -596,6 +599,7 @@
+           {
+             Iface::Create(server,id); 
+             this->data = (CameraData*)this->mMap; 
++            this->data->opened=false;
+           }
+ 
+   /// \brief Open an existing interface
+@@ -605,8 +609,18 @@
+           {
+             Iface::Open(client,id); 
+             this->data = (CameraData*)this->mMap; 
++            this->data->opened=true;
+           }
+ 
++  /// \brief Close an existing interface
++  /// \param client Pointer to the client
++  /// \param id Id of the interface
++  public: virtual void Close()
++          {
++            Iface::Close();
++            this->data->opened=false;
++          }
++
+   /// Pointer to the camera data
+   public: CameraData *data;
+ };
+@@ -825,6 +839,9 @@
+ 
+   /// Commaned range count
+   public: int cmd_range_count;
++
++  /// is laser interface opened?
++  public: bool opened;
+ };
+ 
+ /// \brief Laser interface
+@@ -843,6 +860,7 @@
+           {
+             Iface::Create(server,id); 
+             this->data = (LaserData*)this->mMap; 
++            this->data->opened=false;
+           }
+ 
+   /// \brief Open an existing interface
+@@ -852,8 +870,16 @@
+           {
+             Iface::Open(client,id); 
+             this->data = (LaserData*)this->mMap; 
++            this->data->opened=true;
+           }
+ 
++  /// \brief Close an existing interface
++  public: virtual void Close()
++          {
++            Iface::Close();
++            this->data->opened=false;
++          }
++
+   /// Pointer to the laser data
+   public: LaserData *data;
+ };
+@@ -1057,6 +1083,30 @@
  
    /// Lift down flag
    public: int lift_down;
@@ -158,7 +230,7 @@ Index: gazebo-svn/libgazebo/gazebo.h
  };
  
  /// \brief Gripper interface
-@@ -1254,9 +1278,327 @@
+@@ -1254,9 +1304,327 @@
  /// \} */
  
  
@@ -486,9 +558,53 @@ Index: gazebo-svn/libgazebo/gazebo.h
  /** \defgroup ptz_iface ptz
  
    \brief PTZ interface
+@@ -1334,7 +1702,7 @@
+ \{
+ */
+ 
+-#define GAZEBO_STEREO_CAMERA_MAX_RGB_SIZE 640 * 480 * 3
++#define GAZEBO_STEREO_CAMERA_MAX_RGB_SIZE 640 * 480 * 9
+ #define GAZEBO_STEREO_CAMERA_MAX_DISPARITY_SIZE 640 * 480
+ 
+ /// \brief Stereo data
+@@ -1384,6 +1752,9 @@
+   /// Right disparity (float)
+   public: float right_disparity[GAZEBO_STEREO_CAMERA_MAX_DISPARITY_SIZE];
+ 
++  /// Is camera stream opened?
++  public: bool opened;
++  
+ }; 
+ 
+ 
+@@ -1401,6 +1772,7 @@
+           {
+             Iface::Create(server,id); 
+             this->data = (StereoCameraData*)this->mMap; 
++            this->data->opened=false;
+           }
+ 
+   /// \brief Open the iface 
+@@ -1408,8 +1780,16 @@
+           {
+             Iface::Open(client,id); 
+             this->data = (StereoCameraData*)this->mMap; 
++            this->data->opened=true;
+           }
+ 
++  /// \brief Close the iface 
++  public: virtual void Close()
++          {
++            Iface::Close();
++            this->data->opened=false;
++          }
++
+   /// Pointer to the stereo data
+   public: StereoCameraData *data;
+ };
 Index: gazebo-svn/server/physics/HingeJoint.cc
 ===================================================================
---- gazebo-svn/server/physics/HingeJoint.cc	(revision 6696)
+--- gazebo-svn/server/physics/HingeJoint.cc	(revision 6715)
 +++ gazebo-svn/server/physics/HingeJoint.cc	(working copy)
 @@ -38,6 +38,7 @@
      : Joint()
@@ -500,7 +616,7 @@ Index: gazebo-svn/server/physics/HingeJoint.cc
  
 Index: gazebo-svn/server/physics/SliderJoint.cc
 ===================================================================
---- gazebo-svn/server/physics/SliderJoint.cc	(revision 6696)
+--- gazebo-svn/server/physics/SliderJoint.cc	(revision 6715)
 +++ gazebo-svn/server/physics/SliderJoint.cc	(working copy)
 @@ -35,6 +35,8 @@
      : Joint()
@@ -511,9 +627,355 @@ Index: gazebo-svn/server/physics/SliderJoint.cc
  }
  
  
+Index: gazebo-svn/server/sensors/Sensor.hh
+===================================================================
+--- gazebo-svn/server/sensors/Sensor.hh	(revision 6715)
++++ gazebo-svn/server/sensors/Sensor.hh	(working copy)
+@@ -63,6 +63,7 @@
+ 
+     /// \brief Set whether the sensor is active or not
+     public: void SetActive(bool value);
++    public: bool IsActive();
+ 
+     /// \brief  Load the child sensor
+     protected: virtual void LoadChild(XMLConfigNode * /*node*/) {};
+@@ -88,8 +89,14 @@
+ 
+     /// \brief True if active
+     protected: bool active;
++
++    /// \brief Update period 
++    protected: double updatePeriod;
++
++    /// \brief Last update time
++    protected: double lastUpdate;
++
+   };
+-  
+   /// \}
+ }
+ #endif
+Index: gazebo-svn/server/sensors/camera/MonoCameraSensor.cc
+===================================================================
+--- gazebo-svn/server/sensors/camera/MonoCameraSensor.cc	(revision 6715)
++++ gazebo-svn/server/sensors/camera/MonoCameraSensor.cc	(working copy)
+@@ -49,6 +49,7 @@
+ MonoCameraSensor::MonoCameraSensor(Body *body)
+     : Sensor(body), OgreCamera("Mono")
+ {
++  this->active = false;
+ }
+ 
+ 
+@@ -120,46 +121,50 @@
+ // Update the drawing
+ void MonoCameraSensor::UpdateChild()
+ {
+-  this->UpdateCam();
+ 
+-  this->renderTarget->update();
+-
+-  Ogre::HardwarePixelBufferSharedPtr mBuffer;
++  // Allocate buffer
+   size_t size;
+-
+-  // Get access to the buffer and make an image and write it to file
+-  mBuffer = this->renderTexture->getBuffer(0, 0);
+-
+   size = this->imageWidth * this->imageHeight * 3;
+-
+-  // Allocate buffer
+   if (!this->saveFrameBuffer)
+     this->saveFrameBuffer = new unsigned char[size];
+ 
+-  mBuffer->lock(Ogre::HardwarePixelBuffer::HBL_READ_ONLY);
++  if (this->active)
++  {
++    this->UpdateCam();
+ 
+-  int top = (int)((mBuffer->getHeight() - this->imageHeight) / 2.0);
+-  int left = (int)((mBuffer->getWidth() - this->imageWidth) / 2.0);
+-  int right = left + this->imageWidth;
+-  int bottom = top + this->imageHeight;
++    this->renderTarget->update();
+ 
+-  // Get the center of the texture in RGB 24 bit format
+-  mBuffer->blitToMemory(
+-    Ogre::Box(left, top, right, bottom),
++    Ogre::HardwarePixelBufferSharedPtr mBuffer;
+ 
+-    Ogre::PixelBox(
+-      this->imageWidth,
+-      this->imageHeight,
+-      1,
+-      Ogre::PF_B8G8R8,
+-      this->saveFrameBuffer)
+-  );
++    // Get access to the buffer and make an image and write it to file
++    mBuffer = this->renderTexture->getBuffer(0, 0);
+ 
+-  mBuffer->unlock();
+ 
++    mBuffer->lock(Ogre::HardwarePixelBuffer::HBL_READ_ONLY);
+ 
+-  if (this->saveFrames)
+-    this->SaveFrame();
++    int top = (int)((mBuffer->getHeight() - this->imageHeight) / 2.0);
++    int left = (int)((mBuffer->getWidth() - this->imageWidth) / 2.0);
++    int right = left + this->imageWidth;
++    int bottom = top + this->imageHeight;
++
++    // Get the center of the texture in RGB 24 bit format
++    mBuffer->blitToMemory(
++      Ogre::Box(left, top, right, bottom),
++
++      Ogre::PixelBox(
++        this->imageWidth,
++        this->imageHeight,
++        1,
++        Ogre::PF_B8G8R8,
++        this->saveFrameBuffer)
++    );
++
++    mBuffer->unlock();
++
++
++    if (this->saveFrames)
++      this->SaveFrame();
++  }
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+Index: gazebo-svn/server/sensors/camera/StereoCameraSensor.cc
+===================================================================
+--- gazebo-svn/server/sensors/camera/StereoCameraSensor.cc	(revision 6715)
++++ gazebo-svn/server/sensors/camera/StereoCameraSensor.cc	(working copy)
+@@ -58,6 +58,7 @@
+   this->depthBuffer[1] = NULL;
+   this->rgbBuffer[0] = NULL;
+   this->rgbBuffer[1] = NULL;
++  this->active = false;
+ }
+ 
+ 
+@@ -195,87 +196,90 @@
+   Ogre::SceneNode *gridNode = NULL;
+   int i;
+ 
+-  this->UpdateCam();
+-
+-  try
++  if (this->active)
+   {
+-    gridNode = sceneMgr->getSceneNode("__OGRE_GRID_NODE__");
+-  }
+-  catch (...)
+-  {
+-    gridNode = NULL;
+-  }
++    this->UpdateCam();
+ 
+-  sceneMgr->_suppressRenderStateChanges(true);
++    try
++    {
++      gridNode = sceneMgr->getSceneNode("__OGRE_GRID_NODE__");
++    }
++    catch (...)
++    {
++      gridNode = NULL;
++    }
+ 
+-  //prev_pass = sceneMgr->getPass();
++    sceneMgr->_suppressRenderStateChanges(true);
+ 
+-  // Get pointer to the material pass
+-  pass = this->depthMaterial->getBestTechnique()->getPass(0);
++    //prev_pass = sceneMgr->getPass();
+ 
+-  if (gridNode)
+-    gridNode->setVisible(false);
++    // Get pointer to the material pass
++    pass = this->depthMaterial->getBestTechnique()->getPass(0);
+ 
+-  // Render the depth texture
+-  for (i=2; i<4; i++)
+-  {
++    if (gridNode)
++      gridNode->setVisible(false);
+ 
+-    // OgreSceneManager::_render function automatically sets farClip to 0.
+-    // Which normally equates to infinite distance. We don't want this. So
+-    // we have to set the distance every time.
+-    this->GetOgreCamera()->setFarClipDistance( this->farClip );
++    // Render the depth texture
++    for (i=2; i<4; i++)
++    {
+ 
++      // OgreSceneManager::_render function automatically sets farClip to 0.
++      // Which normally equates to infinite distance. We don't want this. So
++      // we have to set the distance every time.
++      this->GetOgreCamera()->setFarClipDistance( this->farClip );
+ 
+-    Ogre::AutoParamDataSource autoParamDataSource;
+ 
+-    vp = this->renderTargets[i]->getViewport(0);
++      Ogre::AutoParamDataSource autoParamDataSource;
+ 
+-    // Need this line to render the ground plane. No idea why it's necessary.
+-    renderSys->_setViewport(vp);
+-    sceneMgr->_setPass(pass, true, false); 
+-    autoParamDataSource.setCurrentPass(pass);
+-    autoParamDataSource.setCurrentViewport(vp);
+-    autoParamDataSource.setCurrentRenderTarget(this->renderTargets[i]);
+-    autoParamDataSource.setCurrentSceneManager(sceneMgr);
+-    autoParamDataSource.setCurrentCamera(this->GetOgreCamera());
+-    pass->_updateAutoParamsNoLights(autoParamDataSource);
++      vp = this->renderTargets[i]->getViewport(0);
+ 
+-    // These two lines don't seem to do anything useful
+-    renderSys->_setProjectionMatrix(this->GetOgreCamera()->getProjectionMatrixRS()); 
+-    renderSys->_setViewMatrix(this->GetOgreCamera()->getViewMatrix(true));
++      // Need this line to render the ground plane. No idea why it's necessary.
++      renderSys->_setViewport(vp);
++      sceneMgr->_setPass(pass, true, false); 
++      autoParamDataSource.setCurrentPass(pass);
++      autoParamDataSource.setCurrentViewport(vp);
++      autoParamDataSource.setCurrentRenderTarget(this->renderTargets[i]);
++      autoParamDataSource.setCurrentSceneManager(sceneMgr);
++      autoParamDataSource.setCurrentCamera(this->GetOgreCamera());
++      pass->_updateAutoParamsNoLights(autoParamDataSource);
+ 
+-    // NOTE: We MUST bind parameters AFTER updating the autos
+-    if (pass->hasVertexProgram())
++      // These two lines don't seem to do anything useful
++      renderSys->_setProjectionMatrix(this->GetOgreCamera()->getProjectionMatrixRS()); 
++      renderSys->_setViewMatrix(this->GetOgreCamera()->getViewMatrix(true));
++
++      // NOTE: We MUST bind parameters AFTER updating the autos
++      if (pass->hasVertexProgram())
++      {
++        renderSys->bindGpuProgram( pass->getVertexProgram()->_getBindingDelegate() );
++        renderSys->bindGpuProgramParameters(Ogre::GPT_VERTEX_PROGRAM,
++            pass->getVertexProgramParameters());
++      }
++
++      if (pass->hasFragmentProgram())
++      {   
++        renderSys->bindGpuProgram( pass->getFragmentProgram()->_getBindingDelegate() );
++        renderSys->bindGpuProgramParameters(Ogre::GPT_FRAGMENT_PROGRAM, 
++            pass->getFragmentProgramParameters());
++      }   
++      this->renderTargets[i]->update();
++    }
++
++    sceneMgr->_suppressRenderStateChanges(false); 
++
++    // Render the image texture
++    for (i=0; i<2; i++)
+     {
+-      renderSys->bindGpuProgram( pass->getVertexProgram()->_getBindingDelegate() );
+-      renderSys->bindGpuProgramParameters(Ogre::GPT_VERTEX_PROGRAM,
+-          pass->getVertexProgramParameters());
++      this->renderTargets[i]->update();
+     }
+ 
+-    if (pass->hasFragmentProgram())
+-    {   
+-      renderSys->bindGpuProgram( pass->getFragmentProgram()->_getBindingDelegate() );
+-      renderSys->bindGpuProgramParameters(Ogre::GPT_FRAGMENT_PROGRAM, 
+-          pass->getFragmentProgramParameters());
+-    }   
+-    this->renderTargets[i]->update();
+-  }
++    if (gridNode)
++      gridNode->setVisible(true);
+ 
+-  sceneMgr->_suppressRenderStateChanges(false); 
++    this->FillBuffers();
+ 
+-  // Render the image texture
+-  for (i=0; i<2; i++)
+-  {
+-    this->renderTargets[i]->update();
++    if (this->saveFrames)
++      this->SaveFrame();
+   }
+-
+-  if (gridNode)
+-    gridNode->setVisible(true);
+-
+-  this->FillBuffers();
+-
+-  if (this->saveFrames)
+-    this->SaveFrame();
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+Index: gazebo-svn/server/sensors/ray/RaySensor.cc
+===================================================================
+--- gazebo-svn/server/sensors/ray/RaySensor.cc	(revision 6715)
++++ gazebo-svn/server/sensors/ray/RaySensor.cc	(working copy)
+@@ -237,7 +237,7 @@
+ // Update the sensor information
+ void RaySensor::UpdateChild()
+ {
+-//  if (this->active)
++  if (this->active)
+   {
+     std::vector<RayGeom*>::iterator iter;
+     Pose3d poseDelta;
+Index: gazebo-svn/server/sensors/Sensor.cc
+===================================================================
+--- gazebo-svn/server/sensors/Sensor.cc	(revision 6715)
++++ gazebo-svn/server/sensors/Sensor.cc	(working copy)
+@@ -32,6 +32,7 @@
+ #include "World.hh"
+ #include "ControllerFactory.hh"
+ #include "Sensor.hh"
++#include "Simulator.hh"
+ 
+ using namespace gazebo;
+ 
+@@ -58,6 +59,10 @@
+   this->SetName(node->GetString("name","",1));
+   this->LoadController( node->GetChildByNSPrefix("controller") );
+   this->LoadChild(node);
++
++  this->updatePeriod = 1.0 / (node->GetDouble("updateRate", 10) + 1e-6);
++  this->lastUpdate = -1e6;
++
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -71,7 +76,12 @@
+ /// Update the sensor
+ void Sensor::Update()
+ {
+-  this->UpdateChild();
++  if (this->lastUpdate + updatePeriod <= Simulator::Instance()->GetSimTime())
++  {
++    this->UpdateChild();
++    this->lastUpdate = Simulator::Instance()->GetSimTime();
++  }
++  // controller has its own updatRate control
+   if (this->controller)
+     this->controller->Update();
+ }
+@@ -147,4 +157,11 @@
+   this->active = value;
+ }
+ 
++////////////////////////////////////////////////////////////////////////////////
++/// \brief Set whether the sensor is active or not
++bool Sensor::IsActive()
++{
++  return this->active;
++}
+ 
++
 Index: gazebo-svn/server/GazeboConfig.cc
 ===================================================================
---- gazebo-svn/server/GazeboConfig.cc	(revision 6696)
+--- gazebo-svn/server/GazeboConfig.cc	(revision 6715)
 +++ gazebo-svn/server/GazeboConfig.cc	(working copy)
 @@ -56,6 +56,17 @@
  
@@ -535,7 +997,7 @@ Index: gazebo-svn/server/GazeboConfig.cc
      XMLConfig rc;
 Index: gazebo-svn/server/gui/GLWindow.cc
 ===================================================================
---- gazebo-svn/server/gui/GLWindow.cc	(revision 6696)
+--- gazebo-svn/server/gui/GLWindow.cc	(revision 6715)
 +++ gazebo-svn/server/gui/GLWindow.cc	(working copy)
 @@ -66,7 +66,11 @@
    this->directionVec.x = 0;
@@ -602,7 +1064,7 @@ Index: gazebo-svn/server/gui/GLWindow.cc
            this->moveAmount *= 2;
 Index: gazebo-svn/server/World.hh
 ===================================================================
---- gazebo-svn/server/World.hh	(revision 6696)
+--- gazebo-svn/server/World.hh	(revision 6715)
 +++ gazebo-svn/server/World.hh	(working copy)
 @@ -91,6 +91,26 @@
    /// \return Pointer to the physics engine
@@ -641,9 +1103,166 @@ Index: gazebo-svn/server/World.hh
    private: friend class DestroyerT<World>;
    private: friend class SingletonT<World>;
  };
+Index: gazebo-svn/server/controllers/camera/stereo/Stereo_Camera.cc
+===================================================================
+--- gazebo-svn/server/controllers/camera/stereo/Stereo_Camera.cc	(revision 6715)
++++ gazebo-svn/server/controllers/camera/stereo/Stereo_Camera.cc	(working copy)
+@@ -87,26 +87,59 @@
+ // Update the controller
+ void Stereo_Camera::UpdateChild()
+ {
+-  if (this->cameraIface)
++  bool cameraOpen = false;
++  bool stereoOpen = false;
++
++
++  // do this first so there's chance for sensor to run 1 frame after activate
++  if (this->myParent->IsActive())
+   {
+-    this->cameraIface->Lock(1);
+-    if (this->cameraIface->data->head.openCount > 0)
+-      this->PutCameraData();
+-    this->cameraIface->Unlock();
++    if (this->cameraIface)
++    {
++      this->cameraIface->Lock(1);
++      if (this->cameraIface->data->head.openCount > 0)
++        this->PutCameraData();
++      this->cameraIface->Unlock();
+ 
+-    // New data is available
+-    this->cameraIface->Post();
++      // New data is available
++      this->cameraIface->Post();
++    }
++
++    if (this->stereoIface)
++    {
++      this->stereoIface->Lock(1);
++      if (this->stereoIface->data->head.openCount > 0)
++        this->PutStereoData();
++      this->stereoIface->Unlock();
++
++      this->stereoIface->Post();
++    }
+   }
+ 
+-  if (this->stereoIface)
++
++  // activate if iface open
++  if (this->cameraIface->Lock(1))
+   {
+-    this->stereoIface->Lock(1);
+-    if (this->stereoIface->data->head.openCount > 0)
+-      this->PutStereoData();
++    cameraOpen = (this->cameraIface->GetOpenCount() > 0);
++    //std::cout << " stereo camera open count " << this->cameraIface->GetOpenCount() << std::endl;
++    this->cameraIface->Unlock();
++  }
++
++  if (this->stereoIface->Lock(1))
++  {
++    stereoOpen = (this->stereoIface->GetOpenCount() > 0);
++    //std::cout << " stereo depth  open count " << this->stereoIface->GetOpenCount() << std::endl;
+     this->stereoIface->Unlock();
++  }
+ 
+-    this->stereoIface->Post();
+-  }
++  if (cameraOpen || stereoOpen)
++    this->myParent->SetActive(true);
++  else
++    this->myParent->SetActive(false);
++
++  //std::cout << " stereo     active " << this->myParent->IsActive() << std::endl;
++
++
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+Index: gazebo-svn/server/controllers/camera/generic/Generic_Camera.cc
+===================================================================
+--- gazebo-svn/server/controllers/camera/generic/Generic_Camera.cc	(revision 6715)
++++ gazebo-svn/server/controllers/camera/generic/Generic_Camera.cc	(working copy)
+@@ -79,7 +79,24 @@
+ // Update the controller
+ void Generic_Camera::UpdateChild()
+ {
+-  this->PutCameraData();
++
++  // do this first so there's chance for sensor to run 1 frame after activate
++  if (this->myParent->IsActive())
++    this->PutCameraData();
++
++  // activate if iface open
++  if (this->cameraIface->Lock(1))
++  {
++    if (this->cameraIface->GetOpenCount() > 0)
++      this->myParent->SetActive(true);
++    else
++      this->myParent->SetActive(false);
++
++    //std::cout << " camera open count " << this->cameraIface->GetOpenCount() << std::endl;
++    this->cameraIface->Unlock();
++  }
++  //std::cout << " camera     active " << this->myParent->IsActive() << std::endl;
++
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+Index: gazebo-svn/server/controllers/ControllerFactory.cc
+===================================================================
+--- gazebo-svn/server/controllers/ControllerFactory.cc	(revision 6715)
++++ gazebo-svn/server/controllers/ControllerFactory.cc	(working copy)
+@@ -42,6 +42,7 @@
+ // Register a controller class.  Use by dynamically loaded modules
+ void ControllerFactory::RegisterController(std::string type, std::string classname, ControllerFactoryFn factoryfn)
+ {
++  std::cout << " controllers " << classname << " registered " << std::endl;
+   controllers[classname] = factoryfn;
+ }
+ 
+Index: gazebo-svn/server/controllers/laser/sicklms200/SickLMS200_Laser.cc
+===================================================================
+--- gazebo-svn/server/controllers/laser/sicklms200/SickLMS200_Laser.cc	(revision 6715)
++++ gazebo-svn/server/controllers/laser/sicklms200/SickLMS200_Laser.cc	(working copy)
+@@ -98,6 +98,7 @@
+   if (this->laserIface->Lock(1))
+   {
+     laserOpened = this->laserIface->GetOpenCount() > 0;
++    //std::cout << " laser open count " << this->laserIface->GetOpenCount() << std::endl;
+     this->laserIface->Unlock();
+   }
+ 
+@@ -123,6 +124,8 @@
+   {
+     this->myParent->SetActive(false);
+   }
++  //std::cout << "            active " << this->myParent->IsActive() << std::endl;
++
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+Index: gazebo-svn/server/controllers/Controller.cc
+===================================================================
+--- gazebo-svn/server/controllers/Controller.cc	(revision 6715)
++++ gazebo-svn/server/controllers/Controller.cc	(working copy)
+@@ -141,10 +141,10 @@
+ /// Update the controller. Called every cycle.
+ void Controller::Update()
+ {
+-  if (lastUpdate + updatePeriod <= Simulator::Instance()->GetSimTime())
++  if (this->lastUpdate + updatePeriod <= Simulator::Instance()->GetSimTime())
+   {
+     this->UpdateChild();
+-    lastUpdate = Simulator::Instance()->GetSimTime();
++    this->lastUpdate = Simulator::Instance()->GetSimTime();
+   }
+ }
+ 
 Index: gazebo-svn/server/World.cc
 ===================================================================
---- gazebo-svn/server/World.cc	(revision 6696)
+--- gazebo-svn/server/World.cc	(revision 6715)
 +++ gazebo-svn/server/World.cc	(working copy)
 @@ -27,6 +27,7 @@
  #include <assert.h>
@@ -735,7 +1354,7 @@ Index: gazebo-svn/server/World.cc
  int World::LoadEntities(XMLConfigNode *node, Model *parent)
 Index: gazebo-svn/SConstruct
 ===================================================================
---- gazebo-svn/SConstruct	(revision 6696)
+--- gazebo-svn/SConstruct	(revision 6715)
 +++ gazebo-svn/SConstruct	(working copy)
 @@ -24,6 +24,8 @@
  parseConfigs=['pkg-config --cflags --libs OGRE',
@@ -746,3 +1365,20 @@ Index: gazebo-svn/SConstruct
                'fltk-config --cflags --libs --ldflags --use-gl --use-images',
                'pkg-config --cflags --libs xft'
                ]
+Index: gazebo-svn/worlds/stereocamera.world
+===================================================================
+--- gazebo-svn/worlds/stereocamera.world	(revision 6715)
++++ gazebo-svn/worlds/stereocamera.world	(working copy)
+@@ -105,10 +105,10 @@
+         <saveFramePath>frames</saveFramePath>
+         <baseline>0.2</baseline>
+ 
+-        <controller:stereo_camera name="stereo_camera_controller">
++        <controller:stereocamera name="stereo_camera_controller">
+           <interface:stereocamera name="stereo_iface_0" />
+           <interface:camera name="camera_iface_0" />
+-        </controller:stereo_camera>
++        </controller:stereocamera>
+       </sensor:stereocamera>
+     </body:empty>
+   </model:physical>

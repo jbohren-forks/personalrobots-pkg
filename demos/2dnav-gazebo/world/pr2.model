@@ -131,6 +131,7 @@
 
       <minRange>0.05</minRange>
       <maxRange>10.0</maxRange>
+      <updateRate>10.0</updateRate>
       <controller:sicklms200_laser name="base_laser_controller_1">
         <interface:laser name="base_laser_iface_1"/>
         <updateRate>10</updateRate>
@@ -312,6 +313,7 @@
       <hfov>60</hfov>
       <nearClip>0.1</nearClip>
       <farClip>100</farClip>
+      <updateRate>15.0</updateRate>
       <controller:generic_camera name="head_cam_left_controller">
         <updateRate>15.0</updateRate>
         <interface:camera name="head_cam_left_iface_0" />
@@ -356,6 +358,7 @@
       <hfov>60</hfov>
       <nearClip>0.1</nearClip>
       <farClip>100</farClip>
+      <updateRate>15.0</updateRate>
       <controller:generic_camera name="head_cam_right_controller">
         <updateRate>15.0</updateRate>
         <interface:camera name="head_cam_right_iface_0" />
@@ -430,13 +433,12 @@
       <saveFrames>false</saveFrames>
       <saveFramePath>frames</saveFramePath>
       <baseline>0.2</baseline>
-
+      <updateRate>15.0</updateRate>
       <controller:stereocamera name="stereo_camera_controller">
         <updateRate>15.0</updateRate>
         <interface:stereocamera name="stereo_iface_0" />
         <interface:camera name="camera_iface_0" />
       </controller:stereocamera>
-
     </sensor:stereocamera>
     <geom:box name="stereo_camera_geom">
       <xyz> 0.00   0.00   0.00</xyz>
@@ -1417,6 +1419,7 @@
 
       <minRange>0.05</minRange>
       <maxRange>10.0</maxRange>
+      <updateRate>10</updateRate>
       <controller:sicklms200_laser name="laser_controller_1">
         <interface:laser name="laser_iface_1"/>
         <updateRate>10</updateRate>
