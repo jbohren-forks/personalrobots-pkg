@@ -1,0 +1,3 @@
+std_msgs/Pose2DFloat32 pose
+---
+string result

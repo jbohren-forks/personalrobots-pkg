@@ -6,18 +6,18 @@
 #include <ros/node.h>
 
 // The messages that we'll use
-#include <std_msgs/MsgPlanner2DGoal.h>
+#include <std_msgs/Planner2DGoal.h>
 
 #define USAGE "send_goal <x> <y> <a>"
 
 class SendGoalNode : public ros::node
 {
   public:
-    MsgPlanner2DGoal goalMsg;
+    std_msgs::Planner2DGoal goalMsg;
 
     SendGoalNode() : ros::node("send_goal")
     {
-      advertise<MsgPlanner2DGoal>("goal");
+      advertise<std_msgs::Planner2DGoal>("goal");
     }
 
     void sendGoal(double x, double y, double a)

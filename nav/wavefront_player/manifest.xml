@@ -6,4 +6,7 @@
   <depend package="player" />
   <depend package="std_srvs" />
   <depend package="rosTF" />
+  <export>
+    <cpp cflags="-I${prefix}/srv/cpp"/>
+  </export>
 </package>

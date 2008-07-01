@@ -121,6 +121,9 @@ robot.
 #include <std_msgs/Pose2DFloat32.h>
 #include <std_srvs/StaticMap.h>
 
+// Provides a blocking navigation service for higher-level sequencing
+#include "wavefront_player/NavigateToPoint.h"
+
 // For GUI debug
 #include <std_msgs/Polyline2D.h>
 
@@ -218,7 +221,7 @@ class WavefrontNode: public ros::node
     rosTFClient tf;
 
     WavefrontNode();
-    ~WavefrontNode();
+    virtual ~WavefrontNode();
     
     // Stop the robot
     void stopRobot();
@@ -226,6 +229,9 @@ class WavefrontNode: public ros::node
     void doOneCycle();
     // Sleep for the remaining time of the cycle
     void sleep(double loopstart);
+    // Handle a navigation transaction
+    bool navToPointCB(wavefront_player::NavigateToPoint::request  &req,
+                      wavefront_player::NavigateToPoint::response &res);
 };
 
 #define USAGE "USAGE: wavefront_player"
@@ -354,6 +360,7 @@ WavefrontNode::WavefrontNode() :
   advertise<std_msgs::Polyline2D>("gui_path");
   advertise<std_msgs::Polyline2D>("gui_laser");
   advertise<std_msgs::BaseVel>("cmd_vel");
+  advertise_service("NavigateToPoint", &WavefrontNode::navToPointCB);
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived);
   subscribe("scan", laserMsg, &WavefrontNode::laserReceived);
 }
@@ -746,5 +753,13 @@ WavefrontNode::sleep(double loopstart)
     puts("Wavefront missed deadline and not sleeping; check machine load");
   else
     usleep((unsigned int)rint(tdiff*1e6));
+}
+
+bool WavefrontNode::navToPointCB(
+          wavefront_player::NavigateToPoint::request  &req,
+          wavefront_player::NavigateToPoint::response &res)
+{
+  printf("navigating to (%f, %f, %f)\n", req.pose.x, req.pose.y, req.pose.th);
+  return true;
 }
 

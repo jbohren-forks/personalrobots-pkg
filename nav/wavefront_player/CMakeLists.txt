@@ -10,6 +10,6 @@ add_executable(wavefront_player wavefront_player.cc)
 target_link_libraries(wavefront_player ${wavefront_player_LIBRARIES} wavefront_standalone)
 add_executable(send_goal send_goal.cc)
 target_link_libraries(send_goal ${wavefront_player_LIBRARIES})
-# a dumb test client
-#add_executable(test_deadreckon_service test_deadreckon_service.cpp)
-#target_link_libraries(test_deadreckon_service ${deadreckon_LIBRARIES})
+
+add_executable(query_wavefront query_wavefront.cpp)
+target_link_libraries(query_wavefront ${wavefront_player_LIBRARIES})
