@@ -14,7 +14,7 @@ LDFLAGS = $(shell rospack export/cpp/lflags gazebo) \
 LIBP = lib/libpr2HW.a
 LIBS = lib/libpr2HW.so
 
-all: $(LIBP) bin/test_libpr2HW 
+all: $(LIBS) bin/test_libpr2HW 
 
 pr2HW.o: src/pr2HW.cpp
 	$(CXX) $(CFLAGS) -c -o $@ $<
