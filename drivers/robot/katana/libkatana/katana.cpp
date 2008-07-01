@@ -175,6 +175,7 @@ bool Katana::goto_upright()
 bool Katana::ik_calculate(double x, double y, double z, double phi, double theta, double psi, 
       vector<double> &solution)
 {
+  solution.clear();
   int numberOfMotors = get_number_of_motors();
   vector<int> encoders_solution(numberOfMotors, 0);
   try {
