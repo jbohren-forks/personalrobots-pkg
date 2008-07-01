@@ -1,8 +1,26 @@
-## mainpage
-# \htmlinclude manifest.html
-#
-# This node provides a name lookup service.  It takes in a string
-# and returns a number.  It will return a unique number for every 
-# new unique string.  A repeated string will recieve the same number.
-#
-#
+/**
+
+@mainpage
+
+@htmlinclude manifest.html
+
+@b This node provides a name lookup service.  It takes in a string and returns a number.  
+
+It will return a unique number for every new unique string.  A repeated string will recieve the same number.
+
+This was developed 
+
+@section Usage
+run namelookup_server and this will enable rosTF to lookup frames based on strings.  
+
+
+@section topics ROS topics
+
+Service Provided:
+- @b "nameToNumber"/NameToNumber : return a unique number for each unique string submitted
+\ul 
+\li Python: namelookup::srv::NameToNumber
+\li C++: namelookup::NameToNumber
+
+*/      
+
