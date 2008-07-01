@@ -16,8 +16,8 @@ public:
   {
     namelookup::NameToNumber::request req;
     namelookup::NameToNumber::response res;
-    req.name = str_in;
-    if (ros::service::call("nameToNumber", req, res))
+    req.name = myNode.map_name(str_in);
+    if (ros::service::call("/nameToNumber", req, res))
       return res.number;
     else 
       return 0;

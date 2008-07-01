@@ -9,7 +9,7 @@ public:
   //constructor with name
   testListener() : 
     ros::node("client"),  
-    tf(*this) 
+    tf(*this)
   {
   
   };
@@ -36,7 +36,8 @@ int main(int argc, char ** argv)
   //will take care of everything
   while(testListener.ok())
     {
-      std::cout<<testListener.map_name("asdf")<<std::endl;
+      std::cout<<testListener.map_name("asdf")<< " Looks up to" <<std::endl;
+      std::cout << testListener.tf.lookup("asdf")<< std::endl;
       sleep(1);
     }
 

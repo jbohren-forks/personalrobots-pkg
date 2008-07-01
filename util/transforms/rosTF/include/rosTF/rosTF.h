@@ -45,6 +45,7 @@
 #include "std_msgs/TransformQuaternion.h"
 #include "libTF/libTF.h"
 #include "std_msgs/PointCloudFloat32.h"
+#include "namelookup/nameLookupClient.hh"
 #include "namelookup/NameToNumber.h"
 
 //TODO FIXME REMOVE WHEN FRAME ID SERVER IS IMPLEMENTED
@@ -61,7 +62,7 @@
  * push incoming date into the library.  
  * The accessors remain available as before.  
  */
-class rosTFClient : public libTF::TransformReference
+class rosTFClient : public libTF::TransformReference, public nameLookupClient
 {
  public:
   //Constructor
@@ -92,7 +93,7 @@ class rosTFClient : public libTF::TransformReference
  * requiring the user to deal with any communication
  * beyond a function call.
  */
-class rosTFServer
+class rosTFServer : public nameLookupClient
 {
  public:
   //Constructor
@@ -108,7 +109,6 @@ class rosTFServer
   void sendQuaternion(unsigned int frame, unsigned int parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, unsigned int secs, unsigned int nsecs);
 
 
-  void nameLookup(std::string astring);
  private:
   //ros::node reference to allow setting callbacks
   ros::node & myNode;

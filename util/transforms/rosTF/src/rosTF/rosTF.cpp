@@ -39,6 +39,7 @@ rosTFClient::rosTFClient(ros::node & rosnode,
   TransformReference(interpolating,
                      max_cache_time,
                      max_extrapolation_distance),
+  nameLookupClient(rosnode),
   myNode(rosnode)
 {
   myNode.subscribe("TransformEuler", eulerIn, &rosTFClient::receiveEuler, this,100);
@@ -102,6 +103,7 @@ void rosTFClient::receiveQuaternion()
 
 
 rosTFServer::rosTFServer(ros::node & rosnode):
+  nameLookupClient(rosnode),
   myNode(rosnode)
 {
   myNode.advertise<std_msgs::TransformEuler>("TransformEuler");
@@ -212,15 +214,6 @@ void rosTFServer::sendQuaternion(unsigned int frame, unsigned int parent, double
 
   myNode.publish("TransformQuaternion", quaternionOut);
 
-};
-
-void rosTFServer::nameLookup(std::string astring)
-{
-  namelookup::NameToNumber::request req;
-  namelookup::NameToNumber::response res;
-  req.name = myNode.map_name(astring);
-  ros::service::call("/nameToNumber", req, res);
-  std::cout << astring << " maps to: " << res.number <<std::endl;
 };
 
 bool rosTFServer::checkInvalidFrame(unsigned int frameID)
