@@ -15,4 +15,10 @@ pkg_check_modules(GDKPIXBUF REQUIRED gdk-pixbuf-2.0)
 include_directories(${GDKPIXBUF_INCLUDE_DIRS})
 link_directories(${GDKPIXBUF_LIBRARY_DIRS})
 target_link_libraries(map_server ${GDKPIXBUF_LIBRARIES} ${map_server_LIBRARIES})
+message("cflags: ${map_server_CFLAGS_OTHER}")
+message("ldflags: ${map_server_LDFLAGS_OTHER}")
+set_target_properties(map_server 
+                      PROPERTIES COMPILE_FLAGS "${map_server_CFLAGS_OTHER}")
+set_target_properties(map_server 
+                      PROPERTIES LINK_FLAGS "${map_server_LDFLAGS_OTHER}")
 
