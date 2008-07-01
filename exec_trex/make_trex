@@ -1,0 +1,3 @@
+export PLASMA_HOME=$ROS_PACKAGE_PATH/3rdparty/trex/PLASMA/
+jam exec_trex
+jam -sVARIANTS=OPTIMIZED exec_trex
