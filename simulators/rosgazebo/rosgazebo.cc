@@ -345,8 +345,8 @@ GazeboNode::GaussianKernel(double mu,double sigma)
 {
   // using Box-Muller transform to generate two independent standard normally disbributed normal variables
   // see wikipedia
-  double U = 2.0*((double)rand()/(double)RAND_MAX-0.5); // normalized uniform random variable
-  double V = 2.0*((double)rand()/(double)RAND_MAX-0.5); // normalized uniform random variable
+  double U = (double)rand()/(double)RAND_MAX; // normalized uniform random variable
+  double V = (double)rand()/(double)RAND_MAX; // normalized uniform random variable
   double X = sqrt(-2.0 * ::log(U)) * cos( 2.0*M_PI * V);
   //double Y = sqrt(-2.0 * ::log(U)) * sin( 2.0*M_PI * V); // the other indep. normal variable
   // we'll just use X

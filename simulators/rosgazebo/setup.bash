@@ -9,7 +9,7 @@ export PR2HW=`rospack find libpr2HW`
 export PR2MEDIA=`rospack find 2dnav-gazebo`/world
 
 
-export LD_LIBRARY_PATH ''
+export LD_LIBRARY_PATH=''
 export LD_LIBRARY_PATH=$PR2API/lib:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=$PR2HW/lib:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=$SIM_PLUGIN/lib:$LD_LIBRARY_PATH
