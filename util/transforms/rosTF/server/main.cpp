@@ -23,7 +23,7 @@ public:
     if (count > 9000)
       count = 0;
     std::cerr<<count<<std::endl;
-    pTFServer->nameLookup("asdf");
+    pTFServer->lookup("asdf");
   };
 
 private:
