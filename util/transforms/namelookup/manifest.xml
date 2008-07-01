@@ -10,7 +10,7 @@ A server which will provide unique numbers based on incoming strings.
   <depend package="std_srvs"/>
   <depend package="std_msgs"/>
 <export>
-<cpp cflags="-I${prefix}/srv/cpp" />
+<cpp cflags="-I${prefix}/srv/cpp -I${prefix}/include" />
 </export>
 </package>
 
