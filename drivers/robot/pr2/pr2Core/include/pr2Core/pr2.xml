@@ -60,8 +60,7 @@
 		</define> 
 
 
-		<define name="pr2_caster_joint"> 
-                        <type> revolute </type>
+		<define name="pr2_caster_joint" type="revolute"> 
 			<axis> 0 0 1 </axis> <!-- direction of the joint in the local coordinate frame -->
 			<anchor>0 0 0</anchor> <!-- point on the joint relative to the local coordinate frame -->
 			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
@@ -82,15 +81,13 @@
 			<inertia> 0.012411765597 -0.000711733678 0.00050272983 0.015218160428 -0.000004273467 0.011763977943 </inertia>
 		</define> 
 
-		<define name="pr2_wheel_joint"> 
-                        <type> revolute </type>
+		<define name="pr2_wheel_joint" type="revolute"> 
 			<axis> 0 1 0 </axis> <!-- direction of the joint in the local coordinate frame -->
 			<anchor>0 0 0</anchor> <!-- point on the joint relative to the local coordinate frame -->
 			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
 		</define>
 
-                 <define name="pr2_shoulder_pan_joint">
-                        <type> revolute </type>
+                 <define name="pr2_shoulder_pan_joint" type="revolute">
 			<axis> 0 0 1 </axis> <!-- direction of the joint in a global coordinate frame -->
 			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
 			<limit> -M_PI/2 M_PI/2 </limit>
@@ -112,8 +109,7 @@
 			</geometry>
 		</define> 
 
-                <define name="pr2_shoulder_pitch_joint">
-                        <type> revolute </type>
+                <define name="pr2_shoulder_pitch_joint" type="revolute">
 			<axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
 			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
 			<limit> -0.6109 1.3090 </limit>
@@ -135,8 +131,7 @@
 			</geometry>
 		</define> 
 
-                <define name="pr2_shoulder_roll_joint">
-                        <type> revolute </type>
+                <define name="pr2_shoulder_roll_joint" type="revolute">
 			<axis> 1 0 0 </axis> <!-- direction of the joint in a global coordinate frame -->
 			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
 			<limit> -2.3562 2.3562 </limit>
@@ -158,8 +153,7 @@
 			</geometry>
 		</define> 
 
-                <define name="pr2_elbow_pitch_joint">
-                        <type> revolute </type>
+                <define name="pr2_elbow_pitch_joint" type="revolute">
 			<axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
 			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
 			<limit>  -M_PI/2 0.8727 </limit>
@@ -181,8 +175,7 @@
 			</geometry>
 		</define> 
 
-                <define name="pr2_forearm_roll_joint">
-                        <type> revolute </type>
+                <define name="pr2_forearm_roll_joint" type="revolute">
 			<axis> 1 0 0 </axis> <!-- direction of the joint in a global coordinate frame -->
 			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
 			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
@@ -203,8 +196,7 @@
 			</geometry>
 		</define> 
 
-                 <define name="pr2_wrist_pitch_joint">
-                        <type> revolute </type>
+                 <define name="pr2_wrist_pitch_joint" type="revolute">
 			<axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
 			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
 			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
@@ -226,8 +218,7 @@
 		</define> 
 
 
-                 <define name="pr2_wrist_roll_joint">
-                        <type> revolute </type>
+                 <define name="pr2_wrist_roll_joint" type="revolute">
 			<axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
 			<anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
 			<calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
@@ -790,5 +781,9 @@
 	</sensor>
 
 <!-- End sensor definitions -->
+
+<!-- Include actuators definition -->
+
+        <include>actuators.xml</include>
 
 </robot>
