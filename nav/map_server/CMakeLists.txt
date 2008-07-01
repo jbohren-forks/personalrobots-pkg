@@ -1,49 +1,18 @@
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
+set(CMAKE_MODULE_PATH $ENV{ROS_ROOT}/core/rosbuild)
+set(EXECUTABLE_OUTPUT_PATH ..)
+include(rosbuild)
+project(map_server)
+rospack()
 
-###############################################################################
-# Macro to turn a list into a string (why doesn't CMake have this
-# built-in?)
-MACRO (LIST_TO_STRING _string _list)
-  SET (${_string})
-  FOREACH (_item ${_list})
-    SET (${_string} "${${_string}} ${_item}")
-  ENDFOREACH (_item)
-ENDMACRO (LIST_TO_STRING)
+add_executable(map_server map_server.cc)
 
-
-include(FindPkgConfig)
+# Search for gdk-pixbuf using pkg-config (we don't redistribute gdk-pixbuf,
+# because that's a deep deep hole of dependencies).
 # pkg_check_modules is defined in the FindPkgConfig module
+include(FindPkgConfig)
 pkg_check_modules(GDKPIXBUF REQUIRED gdk-pixbuf-2.0)
+include_directories(${GDKPIXBUF_INCLUDE_DIRS})
+link_directories(${GDKPIXBUF_LIBRARY_DIRS})
+target_link_libraries(map_server ${GDKPIXBUF_LIBRARIES} ${map_server_LIBRARIES})
 
-set(cflags ${GDKPIXBUF_CFLAGS})
-set(lflags ${GDKPIXBUF_LDFLAGS})
-
-set(pkg map_server)
-set(exe map_server)
-set(srcs map_server.cc)
-set(rospackexe rospack)
-
-execute_process(COMMAND ${rospackexe} export/cpp/cflags ${pkg}
-                OUTPUT_VARIABLE rospackCflags
-                RESULT_VARIABLE rospack_failed
-                OUTPUT_STRIP_TRAILING_WHITESPACE)
-execute_process(COMMAND ${rospackexe} export/cpp/lflags ${pkg}
-                OUTPUT_VARIABLE rospackLflags
-                RESULT_VARIABLE rospack_failed
-                OUTPUT_STRIP_TRAILING_WHITESPACE)
-if(${rospack_failed})
- message(SEND_ERROR "rospack failed")
-endif(${rospack_failed})
-
-set(cflags "${cflags} ${rospackCflags}")
-set(lflags "${lflags} ${rospackLflags}")
-
-LIST_TO_STRING(cflags "${cflags}")
-LIST_TO_STRING(lflags "${lflags}")
-
-
-add_executable(${exe} ${srcs})
-set_target_properties(${exe} 
-                      PROPERTIES COMPILE_FLAGS "${cflags}")
-set_target_properties(${exe} 
-                      PROPERTIES LINK_FLAGS "${lflags}")
