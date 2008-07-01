@@ -89,6 +89,7 @@ Provides (name/type):
 
 // HACK
 #include "rosplan.h"
+#include <fstream>
 // END HACK
 
 using namespace std_msgs;
@@ -102,16 +103,44 @@ public:
     {
 	advertise_service("plan_kinematic_path", &KinematicPlanning::plan);
 	subscribe("world_3d_map", cloud, &KinematicPlanning::pointCloudCallback);
+	active = false;
     }
     
     void pointCloudCallback(void)
     {
-	printf("received %d points\n", cloud.pts_size);
+	if (active)
+	    return;
+	
+	unsigned int n = cloud.get_pts_size();
+	printf("received %u points\n", n);
+
+	std::ofstream obs("/u/isucan/repos/scratch/MPK/ivmodels/pr2arm-obstacles.iv");
+	obs << "#Inventor V2.0 ascii" << std::endl << std::endl;
+	double sz = 0.01;
+	
+	for (unsigned int i = 0 ; i < n ; ++i)
+	{
+	    obs << "Separator {" << std::endl;
+	    obs << "  Transform {" << std::endl;
+	    obs << "    translation " << cloud.pts[i].x << " " <<  cloud.pts[i].y << " " << cloud.pts[i].z << std::endl;
+	    obs << "  }" << std::endl;
+	    obs << "  DEF floor mpkObstacle {" << std::endl;
+	    obs << "    DEF __triangulate__ Cube {" << std::endl;
+	    obs << "      height " << sz << std::endl;
+	    obs << "      width " << sz << std::endl;
+	    obs << "      depth " << sz << std::endl;
+	    obs << "    }" << std::endl;
+	    obs << "  }" << std::endl;
+	    obs << "}" << std::endl << std::endl;
+	}
+	obs.close();
     }
     
     bool plan(KinematicMotionPlan::request &req, KinematicMotionPlan::response &res)
     {
 	const int dim = req.start_state.vals_size;
+	
+	active = true;
 	
 	// hack
 	run_setup("/u/isucan/repos/scratch/MPK/scenes/pr2.iv");
@@ -139,6 +168,7 @@ public:
 	
 	// hack
 	clear_things();
+	active = false;
 	
 	return true;	
     }
@@ -146,6 +176,7 @@ public:
 private:
     
     PointCloudFloat32 cloud;
+    bool              active;
     
 };
 
