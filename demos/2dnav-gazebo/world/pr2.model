@@ -184,7 +184,7 @@
     <rpy>0.0 0.0 0.0</rpy-->
     <geom:box name="neck_geom">
       <size>.20 .38 .14</size>
-      <mass>0</mass>
+      <mass>0.01</mass>
       <visual>
         <mesh>unit_box</mesh>
         <size>.20 .38 .14</size>
@@ -422,7 +422,7 @@
   <body:empty name="stereo_camera_body">
     <xyz> 0.15 0.0   1.3  </xyz>
     <rpy> 0.0  0.0   0.0  </rpy>
-    <!--sensor:stereocamera name="stereo_camera_sensor">
+    <sensor:stereocamera name="stereo_camera_sensor">
       <imageSize>640 480</imageSize>
       <hfov>60</hfov>
       <nearClip>0.1</nearClip>
@@ -430,17 +430,18 @@
       <saveFrames>false</saveFrames>
       <saveFramePath>frames</saveFramePath>
       <baseline>0.2</baseline>
-      <controller:stereo_camera name="stereo_camera_controller">
+
+      <controller:stereocamera name="stereo_camera_controller">
         <updateRate>15.0</updateRate>
         <interface:stereocamera name="stereo_iface_0" />
         <interface:camera name="camera_iface_0" />
-      </controller:stereo_camera>
-    </sensor:stereocamera-->
+      </controller:stereocamera>
+
+    </sensor:stereocamera>
     <geom:box name="stereo_camera_geom">
       <xyz> 0.00   0.00   0.00</xyz>
       <size>0.10   0.15   0.10</size>
       <mass>0.1</mass>
-      <!--color> 0.0  1.0  0.0</color-->
       <visual>
         <size>0.10   0.15   0.10</size>
         <rpy>0.0   0.0 0.0 </rpy>
