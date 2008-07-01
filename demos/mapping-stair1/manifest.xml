@@ -2,4 +2,6 @@
   <description>A demo of the STAIR1 robot being teleoperated while dumping laser and odometry data to disk, and then a script which builds a map of this data log using GMapping.</description>
   <author>Morgan Quigley</author>
   <license>BSD</license>
+  <depend package="logsetta"/>
+  <depend package="gmapping"/>
 </package>
