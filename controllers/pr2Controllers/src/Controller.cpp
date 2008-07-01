@@ -1,4 +1,3 @@
-
 #include <pr2Controllers/Controller.h>
 
 /*

@@ -1,5 +1,4 @@
-
-#include <controller/HeadController.h>
+#include <pr2Controllers/HeadController.h>
 
 HeadController::HeadController()
 {
@@ -38,7 +37,7 @@ HeadController::setGazePoint(double x,double y, double z)
 }
 
 PR2::PR2_ERROR_CODE
-HeadController::setSeccadeSpeed(double vx, double vy, double vz)
+HeadController::setSaccadeSpeed(double vx, double vy, double vz)
 {
 
   return PR2::PR2_ALL_OK;

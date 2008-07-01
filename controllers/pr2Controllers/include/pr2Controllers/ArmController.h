@@ -18,6 +18,8 @@
 
 #include <pr2Core/pr2Core.h>
 #include <libpr2HW/pr2HW.h>
+#include <pr2Controllers/Controller.h>
+
 
 
 class ArmController : Controller
@@ -87,6 +89,22 @@ class ArmController : Controller
       *
       */
     PR2::PR2_ERROR_CODE setArmJointSpeed(int numJoints, double speed[]);
+
+    /*!
+      *
+      * \brief Set arm joint maximum torques individually.
+      *
+      */
+    PR2::PR2_ERROR_CODE setArmJointMaxTorque(int numJoints, double maxTorque[]);
+
+    /*!
+      *
+      * \brief Set forearm camera gazepoints.
+      *
+      * TODO:  global frame???
+      *
+      */
+    PR2::PR2_ERROR_CODE setArmCamGazePoint(double x, double y, double z);
 
   private:
     PR2::PR2_CONTROL_MODE controlMode;      /**< Arm controller control mode >*/

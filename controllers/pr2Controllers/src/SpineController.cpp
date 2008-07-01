@@ -1,4 +1,4 @@
-#include <controller/SpineController.h>
+#include <pr2Controllers/SpineController.h>
 
 SpineController::SpineController()
 {

@@ -1,6 +1,4 @@
-
-#include <controller/ArmController.h>
-
+#include <pr2Controllers/ArmController.h>
 
 ArmController::ArmController()
 {
@@ -58,4 +56,17 @@ ArmController::setArmJointSpeed(int numJoints, double speed[])
   return PR2::PR2_ALL_OK;
 }
 
+PR2::PR2_ERROR_CODE
+ArmController::setArmJointMaxTorque(int numJoints, double maxTorque[])
+{
+
+  return PR2::PR2_ALL_OK;
+}
+
+PR2::PR2_ERROR_CODE
+ArmController::setArmCamGazePoint(double x, double y, double z)
+{
+
+  return PR2::PR2_ALL_OK;
+}
 

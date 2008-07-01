@@ -1,5 +1,4 @@
-
-#include <controller/LaserScannerController.h>
+#include <pr2Controllers/LaserScannerController.h>
 
 
 LaserScannerController::LaserScannerController()

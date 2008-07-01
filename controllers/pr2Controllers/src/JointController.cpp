@@ -1,19 +1,11 @@
-#include <controller/JointController.h>
+#include <pr2Controllers/JointController.h>
 
 JointController::JointController()
 {
-	return PR2::PR2_ALL_OK;
 }
     
 JointController::~JointController( )
 {
-	return PR2::PR2_ALL_OK;
-}
-
-PR2::PR2_ERROR_CODE
-JointController::setCourse(double v , double yaw)
-{
-	return PR2::PR2_ALL_OK;
 }
 
 PR2::PR2_ERROR_CODE
@@ -35,7 +27,7 @@ JointController::setVel(double vel)
 }
 
 PR2::PR2_ERROR_CODE
-JointController::setParam(string label,double value);
+JointController::setParam(string label,double value)
 {
 	return PR2::PR2_ALL_OK;
 }
