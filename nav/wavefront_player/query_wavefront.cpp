@@ -41,9 +41,10 @@ public:
   {
     wavefront_player::NavigateToPoint::request  req;
     wavefront_player::NavigateToPoint::response res;
-    req.pose.x = x;
-    req.pose.y = y;
-    req.pose.th = th;
+    req.goal.goal.x = x;
+    req.goal.goal.y = y;
+    req.goal.goal.th = th;
+    req.goal.enable = 1;
     bool ok = service::call("NavigateToPoint", req, res);
     if (ok)
     {

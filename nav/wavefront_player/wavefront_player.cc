@@ -653,6 +653,7 @@ WavefrontNode::doOneCycle()
             //if(!this->printed_warning)
             //{
               puts("global plan failed");
+            this->planner_state = NO_GOAL;
               //this->printed_warning = true;
             //}
             break;
@@ -759,7 +760,29 @@ bool WavefrontNode::navToPointCB(
           wavefront_player::NavigateToPoint::request  &req,
           wavefront_player::NavigateToPoint::response &res)
 {
-  printf("navigating to (%f, %f, %f)\n", req.pose.x, req.pose.y, req.pose.th);
+  printf("got new goal: (%f, %f, %f)\n", 
+         req.goal.goal.x, req.goal.goal.y, RTOD(req.goal.goal.th));
+  this->lock.lock();
+  // Got a new goal message; handle it
+  this->enable = req.goal.enable;
+  if(this->enable)
+  {
+    this->goal[0] = req.goal.goal.x;
+    this->goal[1] = req.goal.goal.y;
+    this->goal[2] = RTOD(req.goal.goal.th);
+    this->planner_state = NEW_GOAL;
+  }
+  this->lock.unlock();
+  while (planner_state != REACHED_GOAL &&
+         planner_state != NO_GOAL)
+  {
+    printf("pursuing goal\n");
+    usleep(1000000); // spin here...
+  }
+  if (planner_state == REACHED_GOAL)
+    res.result = "success";
+  else
+    res.result = "failure";
   return true;
 }
 
