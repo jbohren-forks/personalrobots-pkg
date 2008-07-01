@@ -44,8 +44,12 @@ if ! $(ROS_PACKAGE_PATH) {
 	SubDirHdrs / usr lib glib-2.0 include ;
 
 	# Need to add this to obtain clock get time. Also need gtk for pix buf image loading when using wavefront
-	# planner
+	# planner. 
 	LINKFLAGS = $(LINKFLAGS) -lrt  -lgtk-x11-2.0 ;
+	# PLASMA & TREX libraries found here
+	LINKFLAGS = $(LINKFLAGS) -Wl,-rpath,$(PLASMA_HOME)/build/lib ;
+	# Wavefront player libraries found here
+	LINKFLAGS = $(LINKFLAGS) -lrt  -lgtk-x11-2.0 -Wl,-rpath,$(ROS_PACKAGE_PATH)/3rdparty/player/player/lib ;
 
 	ModuleMain exec_trex : Executive.cc RCSVelAdapter.cc RCSArmAdapter.cc ROSNode.cc 
 	CalcCommandConstraint.cc CalcGlobalPathConstraint.cc WavefrontPlanner.cc map_helpers.cc ExecDefs.cc Components.cc pr2.model.o : TREX : exec_trex ;

@@ -1,8 +1,8 @@
 {
- #local PLASMA_HOME = [ FDirName $(ROS_PACKAGE_PATH) 3rdparty trex PLASMA ] ;
- #local PLASMA = [ FDirName $(PLASMA_HOME) src PLASMA ] ;
- local TREX = [ FDirName $(ROS_PACKAGE_PATH) 3rdparty trex TREX ] ;
- local EXEC_HOME = [ FDirName $(ROS_PACKAGE_PATH) exec_trex ] ;
+ PLASMA_HOME = [ FDirName $(ROS_PACKAGE_PATH) 3rdparty trex PLASMA ] ;
+ PLASMA = [ FDirName $(PLASMA_HOME) src PLASMA ] ;
+ TREX = [ FDirName $(ROS_PACKAGE_PATH) 3rdparty trex TREX ] ;
+ EXEC_HOME = [ FDirName $(ROS_PACKAGE_PATH) exec_trex ] ;
  include [ FDirName $(TREX) Jamfile ] ;
  include [ FDirName $(EXEC_HOME) Jamfile ] ;
 
