@@ -89,6 +89,7 @@ Provides (name/type):
 #include <std_msgs/PointCloudFloat32.h>
 #include <std_msgs/Log.h>
 #include <deque>
+#include <cmath>
 using namespace std_msgs;
 using namespace ros::thread::member_thread;
 
@@ -207,29 +208,25 @@ public:
 		    PointCloudFloat32 toPublish;
 		    
 		    unsigned int      npts  = 0;
-		    unsigned int      nchan = 0;
 		    for (unsigned int i = 0 ; i < currentWorld.size() ; ++i)
-		    {
 			npts += currentWorld[i]->cloud.get_pts_size();
-			nchan += currentWorld[i]->cloud.get_chan_size();
-		    }
 		    
 		    toPublish.set_pts_size(npts);
-		    toPublish.set_chan_size(nchan);
 		    
 		    unsigned int j = 0;
 		    for (unsigned int i = 0 ; i < currentWorld.size() ; ++i)
 		    {
 			unsigned int n = currentWorld[i]->cloud.get_pts_size();			
 			for (unsigned int k = 0 ; k < n ; ++k)
-			    toPublish.pts[j+k] = currentWorld[i]->cloud.pts[k];
-			/* chan should not have more elements than pts */
-			n = currentWorld[i]->cloud.get_chan_size();
-			for (unsigned int k = 0 ; k < n ; ++k)
-			    toPublish.chan[j+k] = currentWorld[i]->cloud.chan[k];
-			j += n;
+			{
+			    std_msgs::Point3DFloat32 &point = currentWorld[i]->cloud.pts[k];
+			    if (isnormal(point.x) && isnormal(point.y) && isnormal(point.z))
+				toPublish.pts[j++] = point;
+			}
+			
 		    }
 		    
+		    toPublish.set_pts_size(j);
 		    if (ok())
 		    {
 			if (verbose > 0)
