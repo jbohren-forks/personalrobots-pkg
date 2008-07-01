@@ -37,6 +37,8 @@
 #include <std_msgs/ChannelFloat32.h>
 // roscpp - used for shutter message right now
 #include <std_msgs/Empty.h>
+// roscpp - used for broadcasting time over ros
+#include <rostools/Time.h>
 // roscpp - base
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/BaseVel.h>
@@ -62,6 +64,7 @@ class GazeboNode : public ros::node
     std_msgs::PointCloudFloat32 full_cloudMsg;
     std_msgs::Empty shutterMsg;  // marks end of a cloud message
     std_msgs::RobotBase2DOdom odomMsg;
+    rostools::Time timeMsg;
 
     // A mutex to lock access to fields that are used in message callbacks
     ros::thread::mutex lock;
@@ -323,6 +326,7 @@ GazeboNode::SubscribeModels()
   advertise<std_msgs::Empty>("shutter");
   advertise<std_msgs::PR2Arm>("left_pr2arm_pos");
   advertise<std_msgs::PR2Arm>("right_pr2arm_pos");
+  advertise<rostools::Time>("time");
 
   subscribe("cmd_vel", velMsg, &GazeboNode::cmdvelReceived);
   subscribe("cmd_leftarmconfig", leftarm, &GazeboNode::cmd_leftarmconfigReceived);
@@ -441,7 +445,15 @@ GazeboNode::Update()
   }
 
 
+  /***************************************************************/
+  /*                                                             */
+  /*  publish time                                               */
+  /*                                                             */
+  /***************************************************************/
   this->myPR2->GetTime(&(this->simTime));
+  timeMsg.rostime.sec  = (unsigned long)floor(this->simTime);
+  timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->laserMsg.header.stamp.sec) );
+  publish("time",timeMsg);
 
   /***************************************************************/
   /*                                                             */
