@@ -1,0 +1,2 @@
+#!/bin/bash
+`rospack find gmapping`/gmapping-svn/bin/gfs2log firstpass.gfs secondpass.gfs
