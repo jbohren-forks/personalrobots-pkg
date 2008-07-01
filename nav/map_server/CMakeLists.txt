@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
-set(CMAKE_MODULE_PATH $ENV{ROS_ROOT}/core/rosbuild)
-set(EXECUTABLE_OUTPUT_PATH ..)
 include(rosbuild)
-project(map_server)
-rospack()
+rospack(map_server)
 
 rospack_add_executable(map_server map_server.cc)
 

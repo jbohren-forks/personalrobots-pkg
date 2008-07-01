@@ -1,15 +1,11 @@
 cmake_minimum_required(VERSION 2.6)
-set(CMAKE_MODULE_PATH $ENV{ROS_ROOT}/core/rosbuild)
 include(rosbuild)
-project(wavefront_player)
-rospack()
+rospack(wavefront_player)
 gensrv()
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 # the service provider
 rospack_add_executable(wavefront_player wavefront_player.cc)
-target_link_libraries(wavefront_player ${wavefront_player_LIBRARIES} wavefront_standalone)
+target_link_libraries(wavefront_player wavefront_standalone)
+
 rospack_add_executable(send_goal send_goal.cc)
-target_link_libraries(send_goal ${wavefront_player_LIBRARIES})
 
 rospack_add_executable(query_wavefront query_wavefront.cpp)
-target_link_libraries(query_wavefront ${wavefront_player_LIBRARIES})

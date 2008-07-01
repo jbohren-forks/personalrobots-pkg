@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
-set(CMAKE_MODULE_PATH $ENV{ROS_ROOT}/core/rosbuild)
 include(rosbuild)
-project(sicktoolbox_wrapper)
-rospack()
+rospack(sicktoolbox_wrapper)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 subdirs(standalone ros)
