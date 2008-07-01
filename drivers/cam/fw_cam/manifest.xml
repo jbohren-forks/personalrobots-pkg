@@ -1,9 +1,0 @@
-<package>
-  <author>Jeremy Leibs</author>
-  <license>BSD</license>
-  <depend package="sdl"/>
-  <depend package="roscpp"/>
-  <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lfwcam -ldc1394_control -lraw1394"/>
-  </export>
-</package>

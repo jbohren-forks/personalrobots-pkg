@@ -122,7 +122,7 @@ dc1394_cam::Cam::Cam(uint64_t guid,
   if (!dcCam)
     throw CamException("Could not create camera");
 
-  CHECK_ERR_CLEAN( dc1394_reset_bus(dcCam), "Could not rset bus" );
+  //  CHECK_ERR_CLEAN( dc1394_reset_bus(dcCam), "Could not rset bus" );
 
   CHECK_ERR_CLEAN( dc1394_video_set_iso_speed(dcCam, speed), "Could not set iso speed");
   

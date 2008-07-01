@@ -70,7 +70,10 @@ int main(int argc, char **argv)
   int ind = 0;
 
   uint64_t guid = dc1394_cam::getGuid(ind % num);
-  dc1394_cam::Cam* c = new dc1394_cam::Cam(guid);
+  dc1394_cam::Cam* c = new dc1394_cam::Cam(guid,
+                                           DC1394_ISO_SPEED_400,
+                                           DC1394_VIDEO_MODE_640x480_MONO8,
+                                           DC1394_FRAMERATE_30);
 
   printf("Using camera with guid: %llx\n", guid);
   snprintf(winName, 256, "%llx", guid);
