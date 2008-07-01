@@ -772,6 +772,7 @@ PR2_ERROR_CODE PR2HW::GetLaserRanges(PR2_SENSOR_ID id,
   }
   else
   {
+    tmpLaserIface->Lock(1);
     *angle_min               = (float)tmpLaserIface->data->min_angle;
     *angle_max               = (float)tmpLaserIface->data->max_angle;
 
@@ -806,6 +807,7 @@ PR2_ERROR_CODE PR2HW::GetLaserRanges(PR2_SENSOR_ID id,
       intensities[i] = (uint8_t)tmpLaserIface->data->intensity[i];
     }
     //std::cout << std::endl;
+    tmpLaserIface->Unlock();
     return PR2_ALL_OK;
   }
 };
@@ -949,24 +951,29 @@ PR2_ERROR_CODE PR2HW::GetCameraImage(PR2_SENSOR_ID id ,
     *compression  = "jpeg";
     *colorspace   = "rgb"; //"mono";
     *data_size    = pr2CameraIface->data->image_size;
-    *depth        = (*data_size)/((*width)*(*height));
 
-    uint32_t       buf_size = (*width) * (*height) * (*depth);
-
-    // copy the image into local buffer
-#if 0
-    //buf = (void*)(pr2CameraIface->data->image);
-    memcpy(buf,pr2CameraIface->data->image,buf_size);
-#else
-    for (uint32_t i = 0; i < buf_size ; i=i+3)
+    // on first pass, the sensor does not update after cameraIface is opened.
+    if (*data_size > 0)
     {
-      // flip red and blue
-      ((unsigned char*)buf)[i  ] = pr2CameraIface->data->image[i+2];
-      ((unsigned char*)buf)[i+1] = pr2CameraIface->data->image[i+1];
-      ((unsigned char*)buf)[i+2] = pr2CameraIface->data->image[i  ];
-      //printf("%d %d\n",i,pr2CameraIface->data->image[i]);
-    }
+      *depth        = (*data_size)/((*width)*(*height));
+
+      uint32_t       buf_size = (*width) * (*height) * (*depth);
+
+      // copy the image into local buffer
+#if 0
+      //buf = (void*)(pr2CameraIface->data->image);
+      memcpy(buf,pr2CameraIface->data->image,buf_size);
+#else
+      for (uint32_t i = 0; i < buf_size ; i=i+3)
+      {
+        // flip red and blue
+        ((unsigned char*)buf)[i  ] = pr2CameraIface->data->image[i+2];
+        ((unsigned char*)buf)[i+1] = pr2CameraIface->data->image[i+1];
+        ((unsigned char*)buf)[i+2] = pr2CameraIface->data->image[i  ];
+        //printf("%d %d\n",i,pr2CameraIface->data->image[i]);
+      }
 #endif
+    }
     pr2CameraIface->Unlock();
 
     return PR2_ALL_OK;
