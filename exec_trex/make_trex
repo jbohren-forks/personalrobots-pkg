@@ -1,3 +1,8 @@
+# PLASMA_HOME is required to build the PLASMA NDDL.jar
 export PLASMA_HOME=$ROS_PACKAGE_PATH/3rdparty/trex/PLASMA/
+
+# Build the debug version
 jam exec_trex
+
+# Build the optimized version
 jam -sVARIANTS=OPTIMIZED exec_trex
