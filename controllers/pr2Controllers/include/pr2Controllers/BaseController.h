@@ -43,6 +43,9 @@ class BaseController : Controller
       * Give the course in the robot frame, with yaw=0 pointing forward.
       *
       * e.g. setting yaw=0 puts robot in a car-like mode.
+      * 
+      * \param v    The velocity of the robot.
+      * \param yaw  The angle of the robot x-axis relative to the globe x-axis.
       *
       */       
     PR2::PR2_ERROR_CODE setCourse(double v , double yaw);
@@ -51,12 +54,16 @@ class BaseController : Controller
       * \brief Drive robot on a course in the Robot Frame
       * 
       * Same as setCourse except the inputs are the x and y components of velocities.
+      * \param vx   The velocity of the robot in the x-direction relative to the global 										frame.
+      * \param vy   The velocity of the robot in the y-direction relative to the global 										frame.
       *
       */       
     PR2::PR2_ERROR_CODE setCourseXY(double vx, double vy);
 
     /*!
       * \brief Set target point in Global Frame
+      *
+      * \param x  The 
       */
     PR2::PR2_ERROR_CODE setTarget(double x,double y, double yaw, double vx, double vy, double yawDot);
 
