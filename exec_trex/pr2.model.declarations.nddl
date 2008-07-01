@@ -100,7 +100,7 @@ class WaypointController extends Behavior {
 };
 
 /**
- * A PR2 state variable for the commanded velocities. Will be planned by the velocity controller
+ * A PR2 state variable for the commanded velocities. Will be planned by the waypoint controller
  * and dispatched to lower level controllers external to the agent
  */
 class VelCommander extends AgentTimeline {
@@ -210,7 +210,6 @@ class ArmController extends AgentTimeline {
     super(_mode, "Inactive");
     _isLeft = isLeft;
   }
-
 };
  
 

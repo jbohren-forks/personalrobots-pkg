@@ -255,10 +255,6 @@ Actions::SetVelocityCommands{
     ends(WaypointController.Active wp);
     eq(goal_x, wp.x);
     eq(goal_y, wp.y);
-
-    meets(VelCommander.Holds vc);
-    eq(vc.cmd_x, 0.0);
-    eq(vc.cmd_th, 0.0);
   }
 }
 
@@ -323,7 +319,7 @@ ArmController::Active {
  */
 ArmController::Active {
   if(object.mode == Internal){
-    eq(duration, 50); // Any transition will take 50 ticks. Total hack!
+    eq(duration, 10); // Any transition will take 50 ticks. Total hack!
     starts(Actions.Event);
   }
 }
