@@ -1,4 +1,10 @@
+CFLAGS = `rospack export/cpp/cflags namelookup`
+LFLAGS = `rospack export/cpp/lflags namelookup`
+
 all:
 	`rospack find rostools`/scripts/gensrv srv/*.srv
 clean: 
 	-rm -rf srv/cpp src/namelookup/srv
+
+test: testClient.cc
+	g++ $(CFLAGS) $^ -o testClient $(LFLAGS)

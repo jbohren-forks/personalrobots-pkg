@@ -5,6 +5,7 @@ A server which will provide unique numbers based on incoming strings.
   <author>Tully Foote</author>
   <license>BSD</license>
   <url>http://pr.willowgarage.com</url>
+  <depend package="roscpp"/>
   <depend package="rospy"/>
   <depend package="std_srvs"/>
   <depend package="std_msgs"/>
