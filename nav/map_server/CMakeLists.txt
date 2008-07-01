@@ -5,7 +5,7 @@ include(rosbuild)
 project(map_server)
 rospack()
 
-add_executable(map_server map_server.cc)
+rospack_add_executable(map_server map_server.cc)
 
 # Search for gdk-pixbuf using pkg-config (we don't redistribute gdk-pixbuf,
 # because that's a deep deep hole of dependencies).
@@ -14,11 +14,4 @@ include(FindPkgConfig)
 pkg_check_modules(GDKPIXBUF REQUIRED gdk-pixbuf-2.0)
 include_directories(${GDKPIXBUF_INCLUDE_DIRS})
 link_directories(${GDKPIXBUF_LIBRARY_DIRS})
-target_link_libraries(map_server ${GDKPIXBUF_LIBRARIES} ${map_server_LIBRARIES})
-message("cflags: ${map_server_CFLAGS_OTHER}")
-message("ldflags: ${map_server_LDFLAGS_OTHER}")
-set_target_properties(map_server 
-                      PROPERTIES COMPILE_FLAGS "${map_server_CFLAGS_OTHER}")
-set_target_properties(map_server 
-                      PROPERTIES LINK_FLAGS "${map_server_LDFLAGS_OTHER}")
-
+target_link_libraries(map_server ${GDKPIXBUF_LIBRARIES})

@@ -6,8 +6,6 @@ rospack()
 gensrv()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 # the service provider
-add_executable(deadreckon deadreckon.cpp)
-target_link_libraries(deadreckon ${deadreckon_LIBRARIES})
+rospack_add_executable(deadreckon deadreckon.cpp)
 # a dumb test client
-add_executable(test_deadreckon_service test_deadreckon_service.cpp)
-target_link_libraries(test_deadreckon_service ${deadreckon_LIBRARIES})
+rospack_add_executable(test_deadreckon_service test_deadreckon_service.cpp)

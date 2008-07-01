@@ -6,10 +6,10 @@ rospack()
 gensrv()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 # the service provider
-add_executable(wavefront_player wavefront_player.cc)
+rospack_add_executable(wavefront_player wavefront_player.cc)
 target_link_libraries(wavefront_player ${wavefront_player_LIBRARIES} wavefront_standalone)
-add_executable(send_goal send_goal.cc)
+rospack_add_executable(send_goal send_goal.cc)
 target_link_libraries(send_goal ${wavefront_player_LIBRARIES})
 
-add_executable(query_wavefront query_wavefront.cpp)
+rospack_add_executable(query_wavefront query_wavefront.cpp)
 target_link_libraries(query_wavefront ${wavefront_player_LIBRARIES})
