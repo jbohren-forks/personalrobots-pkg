@@ -49,6 +49,7 @@ void keyboardLoop()
 		{
 			case '1':
 				printf("You pressed 1\n");
+				myPR2.hw.SetJointServoCmd(ARM_R_SHOULDER_PITCH, -M_PI/2, 0);
 				break;
 			case '2':
 				printf("You pressed 2\n");
@@ -72,15 +73,9 @@ void init_robot()
 	// test pr2API
 	myPR2.InitializeRobot();
 	// set random numbers to base cartesian control
-	myPR2.SetBaseControlMode(PR2_CARTESIAN_CONTROL);
-	myPR2.SetArmControlMode(PR2_RIGHT_ARM, PR2_CARTESIAN_CONTROL);
-	myPR2.SetArmControlMode(PR2_LEFT_ARM, PR2_CARTESIAN_CONTROL);
-
-//	myPR2.SetJointControlMode(ARM_R_SHOULDER_PITCH,PD_CONTROL);
-//	myPR2.SetJointServoCmd(ARM_R_SHOULDER_PITCH, 1.5, 0);
-
-	myPR2.hw.SetJointControlMode(ARM_R_SHOULDER_PITCH,TORQUE_CONTROL);
-	myPR2.hw.SetJointTorque(ARM_R_SHOULDER_PITCH, -500);
+	myPR2.hw.SetJointControlMode(CASTER_FL_STEER,TORQUE_CONTROL);
+//	myPR2.hw.SetJointControlMode(ARM_R_SHOULDER_PITCH,PD_CONTROL);
+	myPR2.hw.SetJointTorque(CASTER_FL_STEER, 0.5);
 }
 
 

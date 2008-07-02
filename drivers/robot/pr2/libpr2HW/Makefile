@@ -11,16 +11,12 @@ LDFLAGS = $(shell rospack export/cpp/lflags gazebo) \
           $(shell rospack export/cpp/lflags newmat10) \
           $(shell rospack export/cpp/lflags genericControllers)
 
-LIBP = lib/libpr2HW.a
 LIBS = lib/libpr2HW.so
 
 all: $(LIBS) bin/test_libpr2HW 
 
 pr2HW.o: src/pr2HW.cpp
 	$(CXX) $(CFLAGS) -c -o $@ $<
-
-$(LIBP): pr2HW.o
-	ar -rv $@ $^
 
 $(LIBS): pr2HW.o
 	$(CXX) -shared -o $@ $^ $(LDFLAGS)
