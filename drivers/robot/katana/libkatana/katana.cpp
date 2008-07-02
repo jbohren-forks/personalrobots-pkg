@@ -233,11 +233,12 @@ bool Katana::ik_calculate(double x, double y, double z, double phi, double theta
 bool Katana::ik_joint_solution(double x, double y, double z, double theta_init, double psi, 
 		double max_theta_dev, vector<double> &solution)
 {
-	double angle_inc = 1.*PI/180.;
-	double phi = atan2((-1.*y),(-1.*x));		// phi is determined by x and y
+	double angle_inc = 1*PI/180.;
+	double phi = atan2((-1.*y),(-1.*x));		// phi is determined by x and y.
   if (phi < 0) {
-    phi =+ 2*PI;
+    phi += 2.*PI;
   }
+  cout << "computed phi for given x and y: " << phi << endl;
 	double theta = theta_init;
 	bool success = false;
 	
