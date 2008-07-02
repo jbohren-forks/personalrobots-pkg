@@ -52,8 +52,11 @@ if ! $(ROS_PACKAGE_PATH) {
 	# Wavefront player libraries found here
 	LINKFLAGS = $(LINKFLAGS) -lrt  -lgtk-x11-2.0 -Wl,-rpath,$(ROS_PACKAGE_PATH)/3rdparty/player/player/lib ;
 
-	ModuleMain exec_trex : Executive.cc RCSVelAdapter.cc RCSArmAdapter.cc ROSNode.cc 
-	CalcCommandConstraint.cc CalcGlobalPathConstraint.cc WavefrontPlanner.cc map_helpers.cc ExecDefs.cc Components.cc pr2.model.o : TREX : exec_trex ;
+
+	ModuleMain exec_trex : Executive.cc RCSVelAdapter.cc RCSArmAdapter.cc ROSNode.cc Logger.cc RCSVelAdapterPlayback.cc LogClock.cc
+	CalcCommandConstraintPlayback.cc CalcGlobalPathConstraintPlayback.cc CalcCommandConstraint.cc Playback.cc
+	CalcGlobalPathConstraint.cc WavefrontPlanner.cc map_helpers.cc ExecDefs.cc Components.cc pr2.model.o : TREX : exec_trex ;
+	
 	Depends exec_trex : exec_inputs ;
 
 	ModuleMain exec_listener : ExecListener.cc : : exec_listener ;

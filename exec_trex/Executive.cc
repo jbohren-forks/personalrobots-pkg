@@ -82,10 +82,12 @@ Publishes to (name/type):
 #include "Nddl.hh"
 #include "Executive.hh"
 #include "RCSAdapter.hh"
+#include "Logger.hh"
 #include "Token.hh"
 #include <signal.h>
 #include "WavefrontPlanner.hh"
 #include <std_srvs/StaticMap.h>
+#include "LogClock.hh"
 
 #include <std_msgs/BaseVel.h>
 
@@ -95,7 +97,7 @@ std::ofstream dbgFile("Debug.log");
 
 using namespace std_msgs;
 
-
+LoggerId logger;
 
 
 namespace TREX {
@@ -128,6 +130,7 @@ void signalHandler(int signalNo){
   exit(0);
 }
 
+
 /**
  * @brief Handle cleanup on exit
  */
@@ -140,27 +143,47 @@ void cleanup(){
   Clock::sleep(3);
 
   Agent::cleanupLog();
+
+  if (logger != LoggerId::noId()) {
+    FILE* file = logger->getFile();
+    if (file) { fprintf(file, "\n</log>\n"); }
+    logger->release();
+  }
 }
 
 ExecutiveId Executive::s_id;
 
+
 int main(int argc, char **argv)
 {
-  //signal(SIGINT,  &signalHandler);
-  //signal(SIGTERM, &signalHandler);
-  //signal(SIGQUIT, &signalHandler);
-  //signal(SIGKILL, &signalHandler);
-  //atexit(&cleanup);
+  signal(SIGINT,  &signalHandler);
+  signal(SIGTERM, &signalHandler);
+  signal(SIGQUIT, &signalHandler);
+  signal(SIGKILL, &signalHandler);
+  atexit(&cleanup);
 
-  if (argc != 2) {
-    std::cerr << "Invalid argument list: Usage: ros_exec configFile" << std::endl;
+  bool playback = false;
+
+  if (argc != 2 && argc != 3) {
+    std::cerr << "Invalid argument list: Usage: exec_trex_o_rt configfile <playback>" 
+	      << std::endl << "Include \"playback\" for playback of logs." << std::endl;
     return -1;
+  }
+
+  if (argc == 3) {
+    std::cout << "Playback enabled" << endl;
+    playback = true;
   }
 
   
   LogManager::instance();
 
-  initROSExecutive();
+  if (!playback) {
+    logger = Logger::request();
+    logger->setEnabled(true);
+  }
+
+  initROSExecutive(playback);
 
   Executive t;
 
@@ -170,8 +193,12 @@ int main(int argc, char **argv)
   root = LogManager::initXml( configFile );
   DebugMessage::setStream(dbgFile);
 
-  // Allocate a real time clock with 1 second per tick
-  agentClock = new RealTimeClock(0.2);
+  if (playback) {
+    agentClock = new PlaybackClock(0.25);
+  } else {
+    // Allocate a real time clock with 1 second per tick
+    agentClock = new LogClock(0.25);
+  }
 
   // Allocate the agent
   debugMsg("Executive", "Initializing the agent");
@@ -187,7 +214,6 @@ int main(int argc, char **argv)
     debugMsg("Executive", "Caught unexpected exception.");
   }
 
-  
   //delete WavefrontPlanner::Instance();
 
   return 0;

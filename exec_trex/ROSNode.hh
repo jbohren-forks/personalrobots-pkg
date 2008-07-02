@@ -40,7 +40,7 @@ namespace TREX{
     /**
      * Creates and instance of the singleton and adds a reference.
      */
-    static ROSNodeId createInstance();
+    static ROSNodeId request();
     /**
      * Releases a reference to the singleton.
      */

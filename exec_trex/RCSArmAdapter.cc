@@ -19,7 +19,7 @@ namespace TREX {
 
   void RCSArmAdapter::handleInit(TICK initialTick, const std::map<double, ServerId>& serversByTimeline, const ObserverId& observer){
     m_observer = observer;
-    m_node = ROSNode::createInstance();
+    m_node = ROSNode::request();
     
     // Wait till we get a message before starting the agent
     while(!m_node->isInitialized() && m_node->ok()){

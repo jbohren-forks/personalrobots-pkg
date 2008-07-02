@@ -28,7 +28,7 @@ namespace TREX {
   std::string toString(const std_msgs::Planner2DState& s);
   std::string toString(const std_msgs::Planner2DGoal& g);
 
-  void initROSExecutive();
+  void initROSExecutive(bool playback);
 }
 
 using namespace TREX;

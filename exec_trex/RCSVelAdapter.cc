@@ -6,6 +6,7 @@
 #include "TokenVariable.hh"
 #include "Observer.hh"
 #include "ROSNode.hh"
+#include "Logger.hh"
 
 namespace TREX {
 
@@ -13,9 +14,11 @@ namespace TREX {
     : Adapter(agentName, "rcsvel", 1, 0, "rcsvel.cfg"){
   }
 
-  void RCSVelAdapter::handleInit(TICK initialTick, const std::map<double, ServerId>& serversByTimeline, const ObserverId& observer){
+  void RCSVelAdapter::handleInit(TICK initialTick, const std::map<double, ServerId>& serversByTimeline, 
+				 const ObserverId& observer){
     m_observer = observer;
-    m_node = ROSNode::createInstance();
+    m_node = ROSNode::request();
+    m_logger = Logger::request();
 
     // Wait till we get a message before starting the agent
     while(!m_node->isInitialized() && m_node->ok()){
@@ -27,6 +30,7 @@ namespace TREX {
 
   RCSVelAdapter::~RCSVelAdapter() {
     m_node->release();
+    m_logger->release();
   }
 
   bool RCSVelAdapter::synchronize(){
@@ -44,6 +48,7 @@ namespace TREX {
     for(std::vector<Observation*>::const_iterator it = obsBuffer.begin(); it != obsBuffer.end(); ++it){
       Observation* obs = *it;
       debugMsg("RCSVelAdapter:synchronize", nameString() << obs->toString());
+      m_logger->writeObservation(obs, Agent::instance()->getCurrentTick(), "RCSAdapterSynchronize");
       m_observer->notify(*obs);
       delete obs;
     }
@@ -57,11 +62,11 @@ namespace TREX {
   void RCSVelAdapter::handleRequest(const TokenId& token){
     // We only dispatch velocity commands
     static const LabelStr VELOCITY_COMMANDER("VelCommander");
-
     if(token->getBaseObjectType() == VELOCITY_COMMANDER){
       debugMsg("RCSVelAdapter:handleRequest", token->toString());
       m_node->dispatchVel(token);
-      ObservationByReference obs(token);
+      ObservationByReference obs(token); 
+      m_logger->writeObservation(&obs, Agent::instance()->getCurrentTick(), "RCSAdapterHandleRequest");
       m_observer->notify(obs);
     }
 

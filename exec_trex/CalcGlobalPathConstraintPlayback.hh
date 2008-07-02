@@ -1,5 +1,5 @@
-#ifndef _CALCGLOBALPATHCONSTRAINT_H_
-#define _CALCGLOBALPATHCONSTRAINT_H_
+#ifndef _CALCGLOBALPATHCONSTRAINTPLAYBACK_H_
+#define _CALCGLOBALPATHCONSTRAINTPLAYBACK_H_
 
 #include "ConstraintEngineDefs.hh"
 #include "Variable.hh"
@@ -11,34 +11,26 @@
 #include "IntervalDomain.hh"
 #include "IntervalIntDomain.hh"
 #include "BoolDomain.hh"
-#include "Logger.hh"
+#include "Playback.hh"
 
 using namespace EUROPA;
 namespace TREX {
   
-  class CalcGlobalPathConstraint : public Constraint {
+  class CalcGlobalPathConstraintPlayback : public Constraint {
     
   public:
     
-    CalcGlobalPathConstraint(const LabelStr& name,
+    CalcGlobalPathConstraintPlayback(const LabelStr& name,
 			     const LabelStr& propagatorName,
 			     const ConstraintEngineId& constraintEngine,
 			     const std::vector<ConstrainedVariableId>& variables);
     
-    ~CalcGlobalPathConstraint();
+    ~CalcGlobalPathConstraintPlayback();
     
     void handleExecute();
     
   private:
-    LoggerId m_logger;
-    
-    static const unsigned int ARG_COUNT = 5;
-    static const unsigned int PLAN_SUCC = 0;
-    //static const unsigned int PLAN_DONE = 1;
-    static const unsigned int LOCAL_X = 1;
-    static const unsigned int LOCAL_Y = 2;
-    static const unsigned int GOAL_X = 3;
-    static const unsigned int GOAL_Y = 4;
+    PlaybackId m_playback;
 
   };
 }

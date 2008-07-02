@@ -1,5 +1,5 @@
-#ifndef _CALCCOMMANDCONSTRAINT_H_
-#define _CALCCOMMANDCONSTRAINT_H_
+#ifndef _CALCCOMMANDCONSTRAINTPLAYBACK_H_
+#define _CALCCOMMANDCONSTRAINTPLAYBACK_H_
 
 #include "ConstraintEngineDefs.hh"
 #include "Variable.hh"
@@ -11,28 +11,26 @@
 #include "IntervalDomain.hh"
 #include "IntervalIntDomain.hh"
 #include "BoolDomain.hh"
-#include "Logger.hh"
+#include "Playback.hh"
 
 using namespace EUROPA;
 namespace TREX {
   
-  class CalcCommandConstraint : public Constraint {
+  class CalcCommandConstraintPlayback : public Constraint {
     
   public:
     
-    CalcCommandConstraint(const LabelStr& name,
+    CalcCommandConstraintPlayback(const LabelStr& name,
 			  const LabelStr& propagatorName,
 			  const ConstraintEngineId& constraintEngine,
 			  const std::vector<ConstrainedVariableId>& variables);
     
-    ~CalcCommandConstraint();
+    ~CalcCommandConstraintPlayback();
     
     void handleExecute();
     
   private:
-    LoggerId m_logger;
-    void logData(const unsigned int cycles, const bool bd, 
-		 const double x_value, const double th_value);
+    PlaybackId m_playback;
     
     static const unsigned int ARG_COUNT = 9;
     static const unsigned int PLAN_SUCC = 0;

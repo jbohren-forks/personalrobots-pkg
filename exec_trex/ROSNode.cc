@@ -25,19 +25,20 @@ namespace TREX {
   ROSNodeId ROSNode::s_id;
 
   /**
-   * Executive class implementation.
+   * ROSNode class implementation.
    */
 
 
   /**
    * @brief Singleton accessor
    */
-  ROSNodeId ROSNode::createInstance(){
+  ROSNodeId ROSNode::request(){
     if(s_id == ROSNodeId::noId()){
       int argc = 0;
       ros::init(argc, NULL);
       new ROSNode();
     }
+    s_id->addRef();
     return s_id;
   }
 
@@ -54,7 +55,6 @@ namespace TREX {
 			   laser_buffer_time(3.0) {
 
     
-
 
     debugMsg("ROSNode:Create", "ROSNode created.");
     s_id = m_id; m_refCount = 0;
@@ -98,6 +98,7 @@ namespace TREX {
 	 mapdata[i] = 0;
      }
      
+
      //so we don't take up a lot of time during the cycle for map initialization
      WavefrontPlanner::Instance(mapdata, sx, sy);
      
@@ -118,6 +119,7 @@ namespace TREX {
     subscribe("right_pr2arm_pos", rightArmPosMsg, &ROSNode::rightArmPosReceived);
     //subscribe("localizedpose", m_localizedOdomMsg, &ROSNode::localizedOdomReceived);
     m_initialized = false;
+    
     _leftArmActive = false;
     _rightArmActive = false;
     _generateFirstObservation = true;
@@ -646,6 +648,7 @@ namespace TREX {
       }
     this->ros::node::publish("gui_laser",this->pointcloudMsg);
 
+    
     WavefrontPlanner::Instance()->SetObstacles(this->laser_hitpts, 
 					       this->laser_hitpts_len);  
 
