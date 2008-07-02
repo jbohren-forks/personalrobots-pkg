@@ -91,6 +91,9 @@ class GazeboNode : public ros::node
      //Declare steam for writing to file
   ofstream datafile;
   public:	
+
+    void PrintRightArm();
+
     //Commands arms to servo to hang downwards
     void LowerArms(void);
 
@@ -214,7 +217,7 @@ void GazeboNode::SetRightArmVelocities(float cartesianVels[]){
 	if(solver->KDL::ChainIkSolverVel_pinv::CartToJnt(currentPosition,velocity,cmdVels)>=0){
 	
 	//DEBUG
-	
+	//Uncomment here to command the resulting joint velocities
 
 /*	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_PAN           , this->rightarm.turretAngle,       cmdVels(0));
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, this->rightarm.shoulderLiftAngle, cmdVels(1));
@@ -227,29 +230,31 @@ void GazeboNode::SetRightArmVelocities(float cartesianVels[]){
 	cout<<"J1:"<<cmdVels(0)<<endl<<"J2:"<<cmdVels(1)<<endl<<"J3:"<<cmdVels(2)<<endl<<"J4:"<<cmdVels(3)<<endl<<"J5:"<<cmdVels(4)		<<endl<<"J6:"<<cmdVels	(5)<<endl<<"J7:"<<cmdVels(6)<<endl;}
 
 */
+	//Simpler code for commanding constant joint velocities
+	//TUNE
 
-//TUNE
-
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_PAN           , this->rightarm.turretAngle,       0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, this->rightarm.shoulderLiftAngle, 0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_ROLL , this->rightarm.upperarmRollAngle, 0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_PITCH   , this->rightarm.elbowAngle,        0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    , this->rightarm.forearmRollAngle,  0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , this->rightarm.wristPitchAngle,   0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , this->rightarm.wristRollAngle,    1);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_PAN           , 0,       0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, 0, 0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_ROLL , 0, 0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_PITCH   ,0,        0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    ,0,  0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , 0,   0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , 0,   1);
 
 	double speed[7];
 	//PR2_ERROR_CODE PR2Robot::GetArmJointSpeedCmd(PR2_MODEL_ID id, double speed[])
+
+	//Write joint speed commands 
 	this->myPR2->GetArmJointSpeedCmd(PR2::PR2_RIGHT_ARM,speed);
 	
 	cout<<"S1:"<<speed[0]<<endl<<"S2:"<<speed[1]<<endl<<"S3:"<<speed[2]<<endl<<"S4:"<<speed[3]<<endl<<"S5:"<<speed[4]<<endl<<"S6:"<<speed[5]<<endl<<"S7:"<<speed[6]<<endl;	
 
-
+	//Write actual joint speeds
 	//PR2_ERROR_CODE PR2Robot::GetArmJointSpeedCmd(PR2_MODEL_ID id, double speed[])
 	this->myPR2->GetArmJointSpeedActual(PR2::PR2_RIGHT_ARM,speed);
 	
-	cout<<"AS1:"<<speed[0]<<endl<<"AS2:"<<speed[1]<<endl<<"AS3:"<<speed[2]<<endl<<"AS4:"<<speed[3]<<endl<<"AS5:"<<speed[4]<<endl<<"AS6:"<<speed[5]<<endl<<"AS7:"<<speed[6]<<endl;	
-}
+	cout<<"AS1:"<<speed[0]<<endl<<"AS2:"<<speed[1]<<endl<<"AS3:"<<speed[2]<<endl<<"AS4:"<<speed[3]<<endl<<"AS5:"<<speed[4]<<endl<<"AS6:"<<speed[5]	<<endl<<"AS7:"<<speed[6]<<endl;	
+	}
 	//printf(" %f %f %f %f %f %f",cmdVels(0),cmdVels(1),cmdVels(2),cmdVels(3),cmdVels(4),cmdVels(5),cmdVels(6));
 	else {cout<<"*****ERROR IN INVERSE VELOCITIES*****"<<endl;
 	}
@@ -311,8 +316,9 @@ GazeboNode::cmd_rightarmconfigReceived()
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    , this->rightarm.forearmRollAngle,  0);
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , this->rightarm.wristPitchAngle,   0);
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , this->rightarm.wristRollAngle,    0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER       , this->rightarm.gripperGapCmd,     0);
-	this->myPR2->hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, this->rightarm.gripperGapCmd, this->rightarm.gripperForceCmd);
+//Ignore gripper commands for now	
+	//this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER       , this->rightarm.gripperGapCmd,     0);
+	//this->myPR2->hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, this->rightarm.gripperGapCmd, this->rightarm.gripperForceCmd);
 	//*/
 	
   this->lock.unlock();
@@ -344,8 +350,9 @@ GazeboNode::cmd_leftarmconfigReceived()
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_ROLL    , this->leftarm.forearmRollAngle,  0);
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_WRIST_PITCH   , this->leftarm.wristPitchAngle,   0);
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_WRIST_ROLL    , this->leftarm.wristRollAngle,    0);
+//Ignore gripper commands for now
 //	this->myPR2->SetJointServoCmd(PR2::ARM_L_GRIPPER       , this->leftarm.gripperGapCmd,     0);
-	this->myPR2->hw.CloseGripper(PR2::PR2_LEFT_GRIPPER, this->leftarm.gripperGapCmd, this->leftarm.gripperForceCmd);
+	//this->myPR2->hw.CloseGripper(PR2::PR2_LEFT_GRIPPER, this->leftarm.gripperGapCmd, this->leftarm.gripperForceCmd);
 	//*/
   this->lock.unlock();
 }
@@ -428,6 +435,21 @@ void GazeboNode::DisableLeftArm(){
           this->myPR2->hw.SetJointControlMode(PR2::ARM_L_WRIST_ROLL      , PR2::DISABLED); 
 }
 
+void GazeboNode::PrintRightArm(){
+	double speed[7],fake[7];
+	//PR2_ERROR_CODE PR2Robot::GetArmJointSpeedCmd(PR2_MODEL_ID id, double speed[])
+
+	//Write joint speed commands 
+	this->myPR2->GetArmJointPositionCmd(PR2::PR2_RIGHT_ARM,speed,fake);
+	
+	cout<<"S1:"<<speed[0]<<endl<<"S2:"<<speed[1]<<endl<<"S3:"<<speed[2]<<endl<<"S4:"<<speed[3]<<endl<<"S5:"<<speed[4]<<endl<<"S6:"<<speed[5]<<endl<<"S7:"<<speed[6]<<endl;	
+
+	//Write actual joint speeds
+	//PR2_ERROR_CODE PR2Robot::GetArmJointSpeedCmd(PR2_MODEL_ID id, double speed[])
+	this->myPR2->GetArmJointPositionActual(PR2::PR2_RIGHT_ARM,speed,fake);
+	
+	cout<<"AS1:"<<speed[0]<<endl<<"AS2:"<<speed[1]<<endl<<"AS3:"<<speed[2]<<endl<<"AS4:"<<speed[3]<<endl<<"AS5:"<<speed[4]<<endl<<"AS6:"<<speed[5]	<<endl<<"AS7:"<<speed[6]<<endl;	
+}
 
 //CONSTRUCTOR
 GazeboNode::GazeboNode(int argc, char** argv, const char* fname) :
@@ -447,10 +469,13 @@ double currentTime;
   // this->myPR2->SetJointControlMode(PR2::CASTER_FR_STEER, PR2::TORQUE_CONTROL);
   // this->myPR2->SetJointControlMode(PR2::CASTER_RL_STEER, PR2::TORQUE_CONTROL);
   // this->myPR2->SetJointControlMode(PR2::CASTER_RR_STEER, PR2::TORQUE_CONTROL);
+
+//Make initial commanded velocities 0
  for (int i=0;i<6;i++){
 	currentVel[i] = 0.0;
 }
 
+//Logging at higher level
 /*
   //Get log file name
   char name[256];
@@ -459,25 +484,38 @@ double currentTime;
   datafile.open (name);
 */
 
+//Call to lower the arms to a hanging position
+/*
 //Lower arms, wait for SERVOTIME seconds of sim time to elapse
 LowerArms();
 currentTime = 0.0;
 while(currentTime<SERVOTIME){
 this->myPR2->hw.GetSimTime(&currentTime);
 }
+*/
 
 //DEBUG
   //Set arms to speed control via torque
 //this->myPR2->SetArmControlMode(PR2::PR2_LEFT_ARM,PR2::PR2_SPEED_TORQUE_CONTROL);
 //this->myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM,PR2::PR2_SPEED_TORQUE_CONTROL);
 
+//Set arms to position control via torque
+this->myPR2->SetArmControlMode(PR2::PR2_LEFT_ARM,PR2::PR2_CARTESIAN_TORQUE_CONTROL);
+this->myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM,PR2::PR2_CARTESIAN_TORQUE_CONTROL);
+
 //TUNE
 //Uncomment to restore speed control
-this->myPR2->SetArmControlMode(PR2::PR2_LEFT_ARM,PR2::PR2_CARTESIAN_CONTROL);
-this->myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM,PR2::PR2_CARTESIAN_CONTROL);
+//this->myPR2->SetArmControlMode(PR2::PR2_LEFT_ARM,PR2::PR2_CARTESIAN_CONTROL);
+//this->myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM,PR2::PR2_CARTESIAN_CONTROL);
+
+//Position control via PD controllers
+//this->myPR2->SetArmControlMode(PR2::PR2_LEFT_ARM,PR2::PR2_JOINT_CONTROL);
+//this->myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM,PR2::PR2_JOINT_CONTROL);
 
 //DisableRightArm(); //Set all torques on right arm to zero.
-DisableLeftArm();
+//DisableLeftArm();  //Set all torques on left arm to zero
+
+//Sanity check for joint type
 PR2::PR2_JOINT_CONTROL_MODE mode;
 
 //GetJointControlMode(PR2_JOINT_ID id, PR2_JOINT_CONTROL_MODE *mode);
@@ -493,10 +531,24 @@ cout<<"****************First Joint mode set to: "<<mode<<endl;
   this->myPR2->hw.SetJointControlMode(PR2::ARM_R_WRIST_PITCH     , PR2::SPEED_TORQUE_CONTROL);
   this->myPR2->hw.SetJointControlMode(PR2::ARM_R_WRIST_ROLL      , PR2::SPEED_TORQUE_CONTROL); 
 */
+
+
 this->myPR2->hw.GetJointControlMode(PR2::ARM_R_PAN,&mode);
 cout<<"*************Second Joint mode set to: "<<mode<<endl;
 //cin.getline(name,256);
+
+//Set all to 0
+//Command servo to zero location, no speed
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_PAN           , 0,0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, 0, 0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_ROLL , 0, 0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_PITCH   ,0,0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    ,0,0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , 0,0);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , 0,0);
+
   // Initialize ring buffer for point cloud data
+
   this->cloud_pts = new ringBuffer<std_msgs::Point3DFloat32>();
   this->cloud_ch1 = new ringBuffer<float>();
 
@@ -511,8 +563,8 @@ cout<<"*************Second Joint mode set to: "<<mode<<endl;
   //this->myPR2->SetArmControlMode(PR2::PR2_LEFT_ARM, PR2::PR2_JOINT_CONTROL);
 	//------------------------------------------------------------
 
-  this->myPR2->EnableGripperLeft();
-  this->myPR2->EnableGripperRight();
+//  this->myPR2->EnableGripperLeft();
+//  this->myPR2->EnableGripperRight();
 
   this->myPR2->hw.GetSimTime(&(this->lastTime));
   this->myPR2->hw.GetSimTime(&(this->simTime));
@@ -601,19 +653,12 @@ GazeboNode::Update()
   /*                                                             */
   /***************************************************************/
 
-
+/*
 	datafile<<this->simTime<<" ";
 
 	double jointPosition[6];
 	double jointSpeed[6];
 
-	/*this->myPR2->GetArmJointPositionActual(PR2::PR2_RIGHT_ARM,jointPosition,jointSpeed);
-	
-	KDL::JntArray pr2_config = KDL::JntArray(this->myPR2->pr2_kin.nJnts);
-	for(int i=0;i<7;i++){
-		pr2_config(i) = jointPosition[i];
-	}
-	*/
 	double myx;
 	double myy;
 	double myz;
@@ -625,6 +670,7 @@ GazeboNode::Update()
 	datafile<<myy<<" ";
 	datafile<<myz<<" ";
 	datafile<<endl<<" ";
+*/
 /*
 	//perform forward kinematics for when we move out of simulation
 	KDL::Frame f;
@@ -643,7 +689,8 @@ GazeboNode::Update()
   /*  Update Commanded Velocities                                */
   /*                                                             */
   /***************************************************************/
-	SetRightArmVelocities(currentVel);
+//	SetRightArmVelocities(currentVel);
+	PrintRightArm();
 
   /***************************************************************/
   /*                                                             */
