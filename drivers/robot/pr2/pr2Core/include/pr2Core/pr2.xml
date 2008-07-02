@@ -752,7 +752,7 @@
 		<inertial>
 			<mass> 10.0  </mass>
 			<com> 0.5 0.1 2 </com> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
-			<inertia>0 0 0 0 0 </inertia>
+			<inertia>0 0 0 0 0 0 </inertia>
 		</inertial> 
 		<visual>
 			<xyz> </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
