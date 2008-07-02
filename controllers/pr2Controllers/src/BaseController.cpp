@@ -53,6 +53,13 @@ BaseController::setForce(double fx, double fy)
   return PR2::PR2_ALL_OK;
 }
 
+PR2::PR2_ERROR_CODE
+BaseController::setWrench(double yaw)
+{
+
+  return PR2::PR2_ALL_OK;
+}
+
 
 PR2::PR2_ERROR_CODE
 BaseController::setParam(string label,double value)

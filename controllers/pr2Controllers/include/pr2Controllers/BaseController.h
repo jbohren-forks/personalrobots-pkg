@@ -5,6 +5,8 @@
     This class implements controller loops for
     PR2 Base Control
 
+    TODO:  naming configuration specification.
+
 */
 /***************************************************/
 //#include <newmat10/newmat.h>
@@ -57,18 +59,24 @@ class BaseController : Controller
       * \param xDot The velocity of the robot in the x-direction relative to the global frame.
       * \param yDot The velocity of the robot in the y-direction relative to the global frame.
       *
+      * TODO:  is setVelocity a good name?
+      *
       */       
     PR2::PR2_ERROR_CODE setVelocity(double xDot, double yDot);
 
     /*!
       * \brief Set target point in Global Frame
       *
-      * \param x  The 
+      * TODO: this is a single point version of the setTrajectory function.
+      *
       */
     PR2::PR2_ERROR_CODE setTarget(double x,double y, double yaw, double xDot, double yDot, double yawDot);
 
     /*!
       * \brief Set target points (trajectory list) in Global Frame
+      *
+      * TODO: define design requirements, see meeting notes (Mechanism Control minutes 2008-06-30.
+      *
       */       
     PR2::PR2_ERROR_CODE setTraj(int numPts, double x[],double y[], double yaw[], double xDot[], double yDot[], double yawDot[]);
 
@@ -85,9 +93,17 @@ class BaseController : Controller
     PR2::PR2_ERROR_CODE setHeading(double yaw);
 
     /*!
-      * \brief Set force (linear summation of all wheels) in global frame
+      * \brief Set force (linear summation of contributions from all wheels) in global frame
       */       
     PR2::PR2_ERROR_CODE setForce(double fx, double fy);
+
+    /*!
+      * \brief Set wrench (linear summation of contributions from all wheels) in global frame
+      *
+      * Use to apply a wrenching torque usig the base wheels.
+      *
+      */       
+    PR2::PR2_ERROR_CODE setWrench(double yaw);
 
     /*!
       * \brief Set parameters for this controller

@@ -19,6 +19,7 @@
 #include <pr2Core/pr2Core.h>
 #include <libpr2HW/pr2HW.h>
 #include <pr2Controllers/Controller.h>
+#include <rosTF/rosTF.h>
 
 
 class HeadController : Controller
@@ -57,9 +58,12 @@ class HeadController : Controller
       *
       * omit xDot, yDot, zDot to denote 0 velocity at target point.
       *
+      * TODO: fix how to pass transforms or keep track of them in the RT loop, efficiently.
+      *
       */
     PR2::PR2_ERROR_CODE setGazePoint(double x,double y, double z, double xDot, double yDot, double zDot);
     PR2::PR2_ERROR_CODE setGazePoint(double x,double y, double z);
+    PR2::PR2_ERROR_CODE setGazePoint(double x,double y, double z, rosTFServer tf);
 
     /*!
       * \brief Set saccading speed
