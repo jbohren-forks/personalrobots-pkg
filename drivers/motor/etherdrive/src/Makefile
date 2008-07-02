@@ -1,2 +1,2 @@
-SUBDIRS = libetherdrive etherdrive_node etherdrive_node_controller encoder_monitor
+SUBDIRS = libetherdrive etherdrive_node etherdrive_node_controller encoder_monitor caster_node base_node caster_keyboard
 include $(shell rospack find mk)/recurse_subdirs.mk

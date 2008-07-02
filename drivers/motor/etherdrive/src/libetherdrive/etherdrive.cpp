@@ -53,7 +53,7 @@ EtherDrive::~EtherDrive()
   shutdown();
 }
 
-bool EtherDrive::init(string ip) {
+bool EtherDrive::init(string ip, string bind_ip) {
 
   if (ready) {
     shutdown();
@@ -67,6 +67,11 @@ bool EtherDrive::init(string ip) {
   cmd_addr.sin_family = AF_INET;
   cmd_addr.sin_port = htons(4950);
   cmd_addr.sin_addr.s_addr = INADDR_ANY;
+  if (bind_ip != string("")) {
+    cmd_addr.sin_addr.s_addr = inet_addr(bind_ip.c_str());
+    printf("Setting command port ip to: %s\n", bind_ip.c_str());
+  }
+  
 
   if (bind(cmd_sock, (struct sockaddr *)&cmd_addr, sizeof(cmd_addr)) < 0) {
     printf("ERROR on binding to command port: 4950\n");
@@ -77,6 +82,11 @@ bool EtherDrive::init(string ip) {
   mot_addr.sin_family = AF_INET;
   mot_addr.sin_port = htons(4900);
   mot_addr.sin_addr.s_addr = INADDR_ANY;
+  if (bind_ip != string("")) {
+    mot_addr.sin_addr.s_addr = inet_addr(bind_ip.c_str());
+    printf("Motor port ip to: %s\n", bind_ip.c_str());
+  }
+
  
   if (bind(mot_sock, (struct sockaddr *)&mot_addr, sizeof(mot_addr)) < 0) {
     printf("ERROR on binding to motor port: 4900\n");

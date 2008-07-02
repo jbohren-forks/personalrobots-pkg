@@ -77,7 +77,7 @@ public:
    * 
    * \param ip  The IP address of the EtherDrive board to connect to.
    */
-  bool init(string ip);
+  bool init(string ip, string bind_ip = "");
   
   /*! Close the UDP sockets */
   void shutdown();

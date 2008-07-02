@@ -52,7 +52,7 @@ public:
   int fooCounter;
   int counter;
   float last_mot_cmd[6];
-  int desPos[6];
+
 
   EtherDrive_Node() : ros::node("etherdrive"), ed(NULL)
   {
@@ -70,7 +70,7 @@ public:
 
     //if (!get_param(string(".host"), host))
      // host = "192.168.1.12";
-    host = "10.12.0.103";
+    host = "10.12.0.102";
     printf("EtherDrive host set to [%s]\n", host.c_str());
 
     //if (!get_param(string(".frame_id"), frame_id))
@@ -131,10 +131,16 @@ public:
 
     float curVel;
     float desVel;
+    float desPos[6];
     float k_p[6];
     float pos_k_p[6];
+    float pos_k_i[6];
+    float pos_k_d[6];
     float foo;
 
+    float posError[6];
+    float intPosError[6];
+    float lastPosError[6];
 
     k_p[0]= 0.003;
     k_p[1]= 0.003;
@@ -157,9 +163,23 @@ public:
     pos_k_p[0] = 1;
     pos_k_p[1] = 1;
     pos_k_p[2] = -3;
-    pos_k_p[3] = 1;
-    pos_k_p[4] = 1;
-    pos_k_p[5] = -2; // 
+    pos_k_p[3] = 1.2;
+    pos_k_p[4] = 1.2;
+    pos_k_p[5] = -1.2; // 
+
+    pos_k_i[0] = 0;
+    pos_k_i[1] = 0;
+    pos_k_i[2] = 0;
+    pos_k_i[3] = 0.01;
+    pos_k_i[4] = 0.01;//0;
+    pos_k_i[5] =-0.01; // 4.8;
+
+    pos_k_d[0] = 1;
+    pos_k_d[1] = 1;
+    pos_k_d[2] = -3;
+    pos_k_d[3] = 0.075; //1;
+    pos_k_d[4] = 0.075; //-0.075; //1;
+    pos_k_d[5] = -0.075;//-0.075; // 
     /*
     voltage control settings:
     pos_k_p[3] = -1;
@@ -176,11 +196,13 @@ public:
           tmp_mot_cmd[i] = (int)mot_cmd[i].cmd; //last_mot_val[i]; //JS  
           break;
         case 1: // position control on computer
-
-          desPos[i] = mot_cmd[i].cmd/360*90000; //desPos[i]=ed->get_enc(i) + mot[i].val;
+          desPos[i] = float(mot_cmd[i].cmd)/360*90000; //desPos[i]=ed->get_enc(i) + mot[i].val;
 //printf("desPos: %i, enc: %i\n", desPos[i], ed->get_enc(i));
-        
-          tmp_mot_cmd[i] = int(pos_k_p[i]*float(desPos[i] - ed->get_enc(i)));
+          posError[i] =   desPos[i] - float(ed->get_enc(i));
+          tmp_mot_cmd[i] = int(pos_k_p[i]*posError[i]) + int(pos_k_d[i]*(posError[i]-lastPosError[i])/0.001) + int(pos_k_i[i]*intPosError[i]);
+
+          lastPosError[i] = posError[i];
+          intPosError[i] += posError[i];
         break;
         case 2: // velocity control    
          if(fooCounter < 10) { // first couple of encoder readings are messed up for some reason. JS
@@ -196,14 +218,7 @@ public:
           if((desVel-float(curVel))<0) tmp_mot_cmd[i] = int(last_mot_cmd[i] - 10*k_p[i]);
           if(desVel <= 0.0001 && desVel >=-0.0001) tmp_mot_cmd[i] = 0; 
           //tmp_mot_cmd[i] = int(last_mot_cmd[i] + k_p[i]*(desVel-float(curVel)));
-          if(tmp_mot_cmd[i] > 3000) {
-            tmp_mot_cmd[i] = 3000;
-            printf("Max current\n");
-          }
-          if(tmp_mot_cmd[i] < -3000) {
-            tmp_mot_cmd[i] = -3000;
-            printf("Max current\n");
-          }
+
  
           lastEncPos[i] = currEncPos[i];
           last_mot_cmd[i] = last_mot_cmd[i] + k_p[i]*(desVel-curVel);
@@ -226,6 +241,14 @@ public:
       }
       mot_cmd[i].valid = false;  // set to invalid so we don't re-use
       mot_cmd[i].unlock();
+      if(tmp_mot_cmd[i] > 3000) {
+        tmp_mot_cmd[i] = 3000;
+        printf("Max current\n");
+      }
+      if(tmp_mot_cmd[i] < -3000) {
+        tmp_mot_cmd[i] = -3000;
+        printf("Max current\n");
+      }
     }  
 
     ed->drive(6,tmp_mot_cmd);
