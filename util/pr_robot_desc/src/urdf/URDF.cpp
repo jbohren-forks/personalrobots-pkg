@@ -56,8 +56,33 @@ void URDF::clear(void)
     m_links.clear();
     m_paths.clear();
     m_paths.push_back("");
+    m_roots.clear();
+    m_collision.clear();
+    m_joints.clear();
+    m_inertial.clear();
+    m_visual.clear();
+    m_geoms.clear();
+    m_actuators.clear();
 }
 
+const std::string& URDF::getRobotName(void) const
+{
+    return m_name;
+}
+
+unsigned int URDF::getDisjointPartCount(void) const
+{
+    return m_roots.size();
+}
+
+URDF::Link* URDF::getDisjointPart(unsigned int index) const
+{
+    if (index < m_roots.size())
+	return m_roots[index];
+    else
+	return NULL;
+}
+    
 void URDF::print(FILE *out)
 {
     fprintf(out, "\nList of root links in robot '%s' (%u):\n", m_name.c_str(), m_roots.size());
@@ -147,6 +172,16 @@ void URDF::Sensor::print(FILE *out, std::string indent)
     fprintf(out, "%s  - type: %d\n", indent.c_str(), (int)type);
     fprintf(out, "%s  - calibration: %s\n", indent.c_str(), calibration.c_str());
     Link::print(out, indent + "  ");
+}
+
+bool URDF::Link::canSense(void) const
+{
+    return false;
+}
+
+bool URDF::Sensor::canSense(void) const
+{
+    return true;
 }
 
 void URDF::ignoreNode(const void *data)

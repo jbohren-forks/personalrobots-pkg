@@ -218,7 +218,8 @@ class URDF
 	    if (joint)
 		delete joint;
 	}
-	
+
+	virtual bool canSense(void) const;
 	virtual void print(FILE *out = stdout, std::string indent = "");
 	
 	Link              *parent;
@@ -247,6 +248,7 @@ class URDF
 	{
 	}
 	
+	virtual bool canSense(void) const;
 	virtual void print(FILE *out = stdout, std::string indent = "");
 	
 	enum
@@ -272,6 +274,10 @@ class URDF
     virtual bool load(const char *filename);
     virtual void print(FILE *out = stdout);
     
+    const std::string& getRobotName(void) const;
+    unsigned int getDisjointPartCount(void) const;
+    Link* getDisjointPart(unsigned int index) const;
+
  protected:
 
     /* free the memory allocate in this class */
