@@ -12,7 +12,7 @@
   <depend package="tinyxml"/>
   
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lURDF"/>
+    <cpp cflags="-I${prefix}/include -W -Wall -Wextra -pedantic" lflags="-L${prefix}/lib -lURDF"/>
   </export>
   
 </package>

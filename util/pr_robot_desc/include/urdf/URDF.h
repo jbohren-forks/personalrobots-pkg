@@ -22,6 +22,12 @@ class URDF
 		size[0] = size[1] = size[2] = 0.0;
 	    }
 	    
+	    virtual ~Geometry(void)
+	    {
+	    }
+	    
+	    virtual void print(FILE *out = stdout, std::string indent = "");
+	    
 	    enum
 		{
 		    UNKNOWN, SPHERE, BOX, CYLINDER, MESH
@@ -36,7 +42,15 @@ class URDF
 	    Actuator(void)
 	    {
 		polymap[0] = polymap[1] = polymap[2] = 0.0;
+		reduction = 0.0;
+		port = 0;
 	    }
+	    
+	    virtual ~Actuator(void)
+	    {
+	    }
+	    
+	    virtual void print(FILE *out = stdout, std::string indent = "");
 	    
 	    std::string  name;
 	    std::string  motor;
@@ -57,11 +71,13 @@ class URDF
 		type = UNKNOWN;
 	    }
 	    
-	    ~Joint(void)
+	    virtual ~Joint(void)
 	    {
 		for (unsigned int i = 0 ; i < actuators.size() ; ++i)
 		    delete actuators[i];
 	    }
+	    
+	    virtual void print(FILE *out = stdout, std::string indent = "");
 	    
 	    enum
 		{
@@ -84,12 +100,14 @@ class URDF
 		geometry = new Geometry();
 	    }
 	    
-	    ~Collision(void)
+	    virtual ~Collision(void)
 	    {
 		if (geometry)
 		    delete geometry;
 	    }
 
+	    virtual void print(FILE *out = stdout, std::string indent = "");
+	    
 	    std::string  name;	    
 	    double       xyz[3];
 	    double       rpy[3];
@@ -105,6 +123,13 @@ class URDF
 		com[0] = com[1] = com[2] = 0.0;
 		inertia[0] = inertia[1] = inertia[2] = inertia[3] = inertia[4] = inertia[5] = 0.0;
 	    }
+	    
+	    virtual ~Inertial(void)
+	    {
+	    }
+	    
+	    virtual void print(FILE *out = stdout, std::string indent = "");
+
 	    std::string name;
 	    double      mass;
 	    double      inertia[6];
@@ -120,11 +145,13 @@ class URDF
 		geometry = new Geometry();
 	    }
 	    
-	    ~Visual(void)
+	    virtual ~Visual(void)
 	    {
 		if (geometry)
 		    delete geometry;
 	    }
+	    
+	    virtual void print(FILE *out = stdout, std::string indent = "");
 
 	    std::string  name;
 	    double       xyz[3];
@@ -156,6 +183,8 @@ class URDF
 		delete joint;
 	}
 	
+	virtual void print(FILE *out = stdout, std::string indent = "");
+	
 	Link              *parent;
 	std::string        parentName;
 	std::string        name;
@@ -175,15 +204,18 @@ class URDF
 	
 	Sensor(void)
 	{
+	    type = UNKNOWN;
 	}
 	
 	virtual ~Sensor(void)
 	{
 	}
 	
+	virtual void print(FILE *out = stdout, std::string indent = "");
+	
 	enum
 	{
-	    CAMERA
+	    UNKNOWN, CAMERA
 	}           type;
 	std::string calibration;
     };
@@ -202,7 +234,8 @@ class URDF
     
     virtual void clear(void);
     virtual bool load(const char *filename);
-
+    virtual void print(FILE *out = stdout);
+    
  protected:
 
     /* free the memory allocate in this class */

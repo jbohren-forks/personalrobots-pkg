@@ -4,7 +4,6 @@
 #include <fstream>
 #include <sstream>
 #include <cstring>
-#include <cmath>
 
 // need to change this depending on OS (different on windows)
 static const char PATH_SEPARATOR = '/';
@@ -23,6 +22,97 @@ void URDF::clear(void)
     m_links.clear();
     m_paths.clear();
     m_paths.push_back("");
+}
+
+void URDF::print(FILE *out)
+{
+    fprintf(out, "\nList of root links in robot '%s' (%u):\n", m_name.c_str(), m_roots.size());
+    for (unsigned int i = 0 ; i < m_roots.size() ; ++i)
+	m_roots[i]->print(out, "  ");
+    fprintf(out, "\n");
+}
+
+void URDF::Link::Geometry::print(FILE *out, std::string indent)
+{
+    fprintf(out, "%sGeometry [%s]:\n", indent.c_str(), name.c_str());
+    fprintf(out, "%s  - type: %d\n", indent.c_str(), (int)type);
+    fprintf(out, "%s  - size: (%f, %f, %f)\n", indent.c_str(), size[0], size[1], size[2]);
+    fprintf(out, "%s  - filename: %s\n", indent.c_str(), filename.c_str());
+}
+
+void URDF::Link::Actuator::print(FILE *out, std::string indent)
+{
+    fprintf(out, "%sActuator [%s]:\n", indent.c_str(), name.c_str());
+    fprintf(out, "%s  - motor: %s\n", indent.c_str(), motor.c_str());
+    fprintf(out, "%s  - reduction: %f\n", indent.c_str(), reduction);
+    fprintf(out, "%s  - polymap: (%f, %f, %f)\n", indent.c_str(), polymap[0], polymap[1], polymap[2]);
+    fprintf(out, "%s  - ip: %s\n", indent.c_str(), ip.c_str());
+    fprintf(out, "%s  - port: %u\n", indent.c_str(), port);
+}
+
+void URDF::Link::Joint::print(FILE *out, std::string indent)
+{
+    fprintf(out, "%sJoint [%s]:\n", indent.c_str(), name.c_str());
+    fprintf(out, "%s  - type: %d\n", indent.c_str(), (int)type);
+    fprintf(out, "%s  - axis: (%f, %f, %f)\n", indent.c_str(), axis[0], axis[1], axis[2]);
+    fprintf(out, "%s  - anchor: (%f, %f, %f)\n", indent.c_str(), anchor[0], anchor[1], anchor[2]);
+    fprintf(out, "%s  - limit: (%f, %f)\n", indent.c_str(), limit[0], limit[1]);
+    fprintf(out, "%s  - calibration: (%f, %f)\n", indent.c_str(), calibration[0], calibration[1]);
+    for (unsigned int i = 0 ; i < actuators.size() ; ++i)
+	actuators[i]->print(out, indent + "  ");
+}
+
+void URDF::Link::Collision::print(FILE *out, std::string indent)
+{
+    fprintf(out, "%sCollision [%s]:\n", indent.c_str(), name.c_str());
+    fprintf(out, "%s  - material: %s\n", indent.c_str(), material.c_str());
+    fprintf(out, "%s  - rpy: (%f, %f, %f)\n", indent.c_str(), rpy[0], rpy[1], rpy[2]);
+    fprintf(out, "%s  - xyz: (%f, %f, %f)\n", indent.c_str(), xyz[0], xyz[1], xyz[2]);
+    geometry->print(out, indent + "  ");
+}
+
+void URDF::Link::Inertial::print(FILE *out, std::string indent)
+{
+    fprintf(out, "%sInertial [%s]:\n", indent.c_str(), name.c_str());
+    fprintf(out, "%s  - mass: %f\n", indent.c_str(), mass);
+    fprintf(out, "%s  - com: (%f, %f, %f)\n", indent.c_str(), com[0], com[1], com[2]);
+    fprintf(out, "%s  - inertia: (%f, %f, %f, %f, %f, %f)\n", indent.c_str(), 
+	    inertia[0], inertia[1], inertia[2], inertia[3], inertia[4],  inertia[5]);
+}
+
+void URDF::Link::Visual::print(FILE *out, std::string indent)
+{
+    fprintf(out, "%sVisual [%s]:\n", indent.c_str(), name.c_str());
+    fprintf(out, "%s  - material: %s\n", indent.c_str(), material.c_str());
+    fprintf(out, "%s  - rpy: (%f, %f, %f)\n", indent.c_str(), rpy[0], rpy[1], rpy[2]);
+    fprintf(out, "%s  - xyz: (%f, %f, %f)\n", indent.c_str(), xyz[0], xyz[1], xyz[2]);
+    geometry->print(out, indent + "  ");
+}
+
+void URDF::Link::print(FILE *out, std::string indent)
+{
+    fprintf(out, "%sLink [%s]:\n", indent.c_str(), name.c_str());
+    fprintf(out, "%s  - parent link: %s\n", indent.c_str(), parentName.c_str());
+    fprintf(out, "%s  - rpy: (%f, %f, %f)\n", indent.c_str(), rpy[0], rpy[1], rpy[2]);
+    fprintf(out, "%s  - xyz: (%f, %f, %f)\n", indent.c_str(), xyz[0], xyz[1], xyz[2]);
+    joint->print(out, indent+ "  ");
+    collision->print(out, indent+ "  ");
+    inertial->print(out, indent+ "  ");
+    visual->print(out, indent+ "  ");
+    fprintf(out, "%s  - children links: ", indent.c_str());
+    for (unsigned int i = 0 ; i < children.size() ; ++i)
+	fprintf(out, "%s ", children[i]->name.c_str());
+    fprintf(out, "\n");
+    for (unsigned int i = 0 ; i < children.size() ; ++i)
+	children[i]->print(out, indent + "  ");
+}
+
+void URDF::Sensor::print(FILE *out, std::string indent)
+{
+    fprintf(out, "%sSensor:\n", indent.c_str());
+    fprintf(out, "%s  - type: %d\n", indent.c_str(), (int)type);
+    fprintf(out, "%s  - calibration: %s\n", indent.c_str(), calibration.c_str());
+    Link::print(out, indent + "  ");
 }
 
 void URDF::ignoreNode(const void *data)
@@ -71,7 +161,7 @@ void URDF::getChildrenAndAttributes(const void *data, std::vector<const void *> 
 
 void URDF::defaultConstants(void)
 {
-    m_constants["M_PI"] = M_PI;
+    m_constants["M_PI"] = "3.14159265358979323846";
 }
 
 bool URDF::load(const char *filename)
@@ -164,7 +254,7 @@ unsigned int URDF::loadValues(const void *data, unsigned int count, double *vals
     std::stringstream ss(node->ValueStr());
     unsigned int read = 0;
     
-    for (int i = 0 ; ss.good() && i < count ; ++i)
+    for (unsigned int i = 0 ; ss.good() && i < count ; ++i)
     {
 	std::string value;
 	ss >> value;
@@ -691,7 +781,7 @@ bool URDF::parse(const void *data)
 		{
 		    Link *parent =  m_links[i->second->parentName];
 		    i->second->parent = parent;
-		    parent->children.push_back(parent);
+		    parent->children.push_back(i->second);
 		}
 	    }
 	}
