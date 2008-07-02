@@ -6,6 +6,7 @@ SDL_image-1.2.6.tar.gz:
 download: SDL_image-1.2.6.tar.gz
 
 SDL_image-1.2.6: SDL_image-1.2.6.tar.gz
+	md5sum -c SDL_image-1.2.6.tar.gz.md5sum
 	tar xzf SDL_image-1.2.6.tar.gz
 
 SDL_image: SDL_image-1.2.6
