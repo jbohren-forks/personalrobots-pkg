@@ -1,0 +1,7 @@
+<launch>
+  <node pkg="joy" type="joy"/>
+  <node pkg="segway_apox" type="segway_apox"/>
+  <node pkg="teleop_base" type="teleop_base"/>
+  <node pkg="deadreckon" type="deadreckon" args="cmd_vel:=cmd_passthrough"/>
+  <node pkg="bumblebee_bridge" type="bumblebee_bridge"/>
+</launch>
