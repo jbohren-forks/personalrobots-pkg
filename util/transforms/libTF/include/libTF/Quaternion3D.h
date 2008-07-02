@@ -43,11 +43,6 @@
 namespace libTF{
 
 
-struct PoseYPR
-{
-  double x,y,z,yaw, pitch, roll;
-};
-
 struct Position
 {
   double x,y,z;
@@ -56,11 +51,6 @@ struct Position
 struct Quaternion
 {
   double x,y,z,w;
-};
-
-struct EulerYPR
-{
-  double yaw, pitch, roll;
 };
 
 
