@@ -32,8 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "urdf/URDF.h"
-#include "urdf/MathExpression.h"
+#include <urdf/URDF.h>
+#include <urdf/MathExpression.h>
 #include <tinyxml-2.5.3/tinyxml.h>
 #include <fstream>
 #include <sstream>
@@ -378,6 +378,9 @@ void URDF::loadJoint(const void *data, Link::Joint *joint)
 	const TiXmlAttribute *attr = reinterpret_cast<const TiXmlAttribute*>(attributes[i]);
 	if (strcmp(attr->Name(), "type") == 0)
 	{
+	    if (attr->ValueStr() == "fixed")
+		joint->type = Link::Joint::FIXED;
+	    else
 	    if (attr->ValueStr() == "revolute")
 		joint->type = Link::Joint::REVOLUTE;
 	    else

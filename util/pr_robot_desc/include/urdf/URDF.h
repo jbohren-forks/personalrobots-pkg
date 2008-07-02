@@ -117,7 +117,7 @@ class URDF
 	    
 	    enum
 		{
-		    UNKNOWN, REVOLUTE, PRISMATIC, FLOATING
+		    UNKNOWN, FIXED, REVOLUTE, PRISMATIC, FLOATING
 		}                  type;
 	    std::string            name;
 	    double                 axis[3];
