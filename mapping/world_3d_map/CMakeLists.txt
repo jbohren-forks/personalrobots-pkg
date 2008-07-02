@@ -1,0 +1,4 @@
+cmake_minimum_required(VERSION 2.6)
+include(rosbuild)
+rospack(world_3d_map)
+rospack_add_executable(world_3d_map src/world_3d_map.cpp)
