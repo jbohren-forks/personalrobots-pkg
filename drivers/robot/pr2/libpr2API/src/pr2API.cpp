@@ -432,6 +432,7 @@ PR2_ERROR_CODE PR2Robot::GetBaseControlMode(PR2_CONTROL_MODE *mode)
    return PR2_ALL_OK;
 };
 
+
 PR2_ERROR_CODE PR2Robot::SetArmControlMode(PR2_MODEL_ID id, PR2_CONTROL_MODE mode)
 {
    switch(id)
@@ -477,8 +478,6 @@ PR2_ERROR_CODE PR2Robot::GetArmControlMode(PR2_MODEL_ID id, PR2_CONTROL_MODE *mo
    }
    return PR2_ALL_OK;
 };
-
-
 
 
 PR2_ERROR_CODE PR2Robot::SetArmJointPosition(PR2_MODEL_ID id, double jointPosition[], double jointSpeed[])

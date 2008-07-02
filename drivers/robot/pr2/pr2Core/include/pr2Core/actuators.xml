@@ -2,8 +2,8 @@
 
 <robot name="pr2">
 
-  <joint name="joint_left_shoulder">
-    <actuator name="">
+  <joint name="joint_shoulder_pan_left">
+    <actuator name="actuator_shoulder_pan_left_1">
       <motor>MAXON</motor>
       <ip> </ip> 
       <port> </port>
@@ -11,7 +11,7 @@
       <polymap>-1 -0.2 -0.5 </polymap>
     </actuator> 
     
-    <actuator name="">
+    <actuator name="actuator_shoulder_pan_left_2">
       <motor>MAXON</motor>
       <ip> </ip> 
       <port> </port>
@@ -22,7 +22,7 @@
   </joint>
   
   
-  <joint name="left_gripper">
+  <joint name="joint_left_gripper">
     <actuator name="">
       <motor>MAXON</motor>
       <ip> </ip> 

@@ -40,6 +40,14 @@
                <torso_width>0.05</torso_width>
                <torso_height>0.8</torso_height>
 
+               <head_pan_length>0.1</head_pan_length>
+               <head_pan_radius>0.5</head_pan_radius>
+
+               <head_tilt_length>0.25</head_tilt_length>
+               <head_tilt_width>0.1</head_tilt_width>
+               <head_tilt_height>0.15</head_tilt_height>
+
+
         </constants>
 <!-- End constant dimensions -->
 
@@ -167,7 +175,7 @@
 		</define> 
 
 		<define template="pr2_elbow_pitch_visual">
-			<xyz>elbow_pitch/2 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+			<xyz>elbow_pitch_length/2 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
 			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
 			<material>Gazebo/Grey</material>
 			<geometry type="cylinder">
@@ -461,7 +469,7 @@
 		<collision>
 			<xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
 			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-			<material></material> 
+			<material>Gazebo/Grey</material> 
 			<geometry type="box">
                                    <size> torso_length torso_width torso_height </size>
 			</geometry>
@@ -481,7 +489,7 @@
 		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
                 <xyz> -.1329361 0.1329361 0.80981</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-                <joint clone="pr2_shoulder_pan_joint"/>
+                <joint clone="pr2_shoulder_pan_joint" name="joint_shoulder_pan_left"/>
                 <inertial clone="pr2_shoulder_pan_inertial"/>
                 <visual clone="pr2_shoulder_pan_visual"/>
 		<collision clone="pr2_shoulder_pan_visual"/>
@@ -691,7 +699,7 @@
 		<collision>
 			<xyz> 0 0 head_pan_length/2 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
 			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-			<material></material> 
+			<material>Gazebo/Grey</material> 
 			<geometry type="cylinder">
                                 <size>head_pan_length head_pan_radius</size>
 			</geometry>
@@ -730,7 +738,7 @@
 		<collision>
 			<xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
 			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-			<material></material> 
+			<material>Gazebo/Grey</material> 
 			<geometry type="box">
                                 <size>head_tilt_length head_tilt_width head_tilt_height</size>
 			</geometry>
@@ -745,8 +753,8 @@
 
 	<sensor name="left_forearm_camera" type="camera"> 
 
-		<calibration> filename </calibration>
-		<parent>left_forearm</parent>
+		<calibration> calib_filename </calibration>
+		<parent>forearm_roll_left</parent>
 		<xyz> 10 1 10 </xyz> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
 		<rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
 		<inertial>
@@ -763,19 +771,19 @@
 			</geometry>
 
 			<geometry type="mesh" name="visual_left_forearm_camera">
-				<filename></filename><!-- mesh specified using an obj file --> 
+				<filename>visual_left_forearm_camera</filename><!-- mesh specified using an obj file --> 
 			</geometry>
 		</visual> 
 		<collision>
 			<xyz> </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
 			<rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-			<material></material> 
+			<material>Gazebo/Grey</material> 
 			<geometry type="box" name="collision_left_forearm_camera"><!-- geometry specified using a simple geometric object -->
 				<size> </size> 
 			</geometry>
 
 			<geometry type="mesh" name="collision_left_forearm_camera">
-				<filename></filename><!-- mesh specified using an obj file --> 
+				<filename>visual_left_forearm_camera</filename><!-- mesh specified using an obj file --> 
 			</geometry>
 		</collision>
 	</sensor>

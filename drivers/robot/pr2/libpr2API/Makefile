@@ -13,8 +13,8 @@ LIBS = lib/libpr2API.so
 
 all: $(LIBS) bin/test_libpr2API bin/pr2_kin_kdl bin/pick_object bin/test_kin_controllers bin/torque_test bin/test_FK
 
-$(LIBP): obj/pr2API.o
-	ar -rv $@ $^
+#$(LIBP): obj/pr2API.o
+#	ar -rv $@ $^
 
 $(LIBS): obj/pr2API.o
 	$(CXX) -shared -o $@ $^ $(LFLAGS)
@@ -49,7 +49,7 @@ bin/test_FK: src/test/test_FK.cpp
 	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)
 
 clean:
-	-rm -f $(LIBP) $(LIBS) bin/* obj/*
+	-rm -f $(LIBS) bin/* obj/*
 	-rm -rf *.o $(PKG) $(PKG).dSYM
 
 

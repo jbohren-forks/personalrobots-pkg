@@ -32,6 +32,6 @@ bin/test_libpr2HW: test_pr2HW.o
 	$(CXX) -o $@ $< $(LFLAGS)
 
 clean:
-	-rm -f test_libpr2HW $(LIBP) $(LIBS) bin/*
+	-rm -f test_libpr2HW $(LIBS) bin/*
 	-rm -rf *.o $(PKG) $(PKG).dSYM
 
