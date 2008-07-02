@@ -24,7 +24,7 @@ trex: PLASMA
 
 # Build library and run regression tests
 test: trex
-	cd TREX && jam agent-inputs && jam run-agent-module-tests
+	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else cd TREX && jam agent-inputs && jam run-agent-module-tests; fi
 
 clean:
 	rm -rf PLASMA TREX trex EUROPA logs PlanWorks
