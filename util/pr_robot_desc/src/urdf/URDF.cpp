@@ -173,9 +173,58 @@ unsigned int URDF::loadValues(const void *data, unsigned int count, double *vals
     }
 
     if (read != count)
-	fprintf(stderr, "Not all values were read\n");
+	fprintf(stderr, "Not all values were read: '%s'\n", node->Value());
     
     return read;
+}
+
+void URDF::loadActuator(const void *data, Link::Actuator *actuator)
+{
+    std::vector<const void*> children;
+    std::vector<const void*> attributes;
+    getChildrenAndAttributes(data, children, attributes);
+    
+    std::string name = extractName(attributes);
+    
+    if (!actuator)
+    {
+	if (m_actuators.find(name) == m_actuators.end())
+	{
+	    fprintf(stderr, "Attempting to add information to an undefined actuator: '%s'\n", name.c_str());
+	    return;
+	}
+	else
+	    actuator = m_actuators[name];
+    }
+    
+    actuator->name = name;
+    m_actuators[name] = actuator;
+    
+    for (unsigned int i = 0 ; i < children.size() ; ++i)
+    {
+	const TiXmlNode *node = reinterpret_cast<const TiXmlNode*>(children[i]);
+	if (node->Type() == TiXmlNode::ELEMENT)
+	{
+	    if (node->ValueStr() == "motor" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+		actuator->motor = node->FirstChild()->ValueStr(); 
+	    else
+	    if (node->ValueStr() == "ip" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+		actuator->ip = node->FirstChild()->ValueStr(); 
+	    else
+	    if (node->ValueStr() == "port" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+		actuator->port = atoi(node->FirstChild()->Value());
+	    else
+	    if (node->ValueStr() == "reduction")
+		loadValues(node, 1, &actuator->reduction);
+	    else
+	    if (node->ValueStr() == "polymap")
+		loadValues(node, 3, actuator->polymap);
+	    else
+		ignoreNode(node);
+	}
+	else
+	    ignoreNode(node);
+    }    
 }
 
 void URDF::loadJoint(const void *data, Link::Joint *joint)
@@ -234,6 +283,13 @@ void URDF::loadJoint(const void *data, Link::Joint *joint)
 	    else
 	    if (node->ValueStr() == "calibration")
 		loadValues(node, 2, joint->calibration);
+	    else
+	    if (node->ValueStr() == "actuator")
+	    {
+		Link::Actuator *actuator = new Link::Actuator();
+		joint->actuators.push_back(actuator);
+		loadActuator(node, actuator);
+	    }
 	    else
 		ignoreNode(node);
 	}
@@ -561,6 +617,9 @@ void URDF::loadSensor(const void *data)
 	    if (node->ValueStr() == "visual")
 		loadVisual(node, sensor->visual);
 	    else
+	    if (node->ValueStr() == "calibration" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+		sensor->calibration =  node->FirstChild()->ValueStr();
+	    else
 		ignoreNode(node); 
 	}
 	else
@@ -608,6 +667,9 @@ bool URDF::parse(const void *data)
 			loadVisual(m_stage2[i], NULL);
 		    else
 		    if (name == "inertial")
+			loadInertial(m_stage2[i], NULL);
+		    else
+		    if (name == "actuator")
 			loadInertial(m_stage2[i], NULL);
 		    else
 			ignoreNode(m_stage2[i]);

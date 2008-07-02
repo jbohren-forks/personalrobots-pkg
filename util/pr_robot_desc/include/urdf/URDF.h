@@ -31,6 +31,21 @@ class URDF
 	    std::string filename;
 	};
 	
+	struct Actuator
+	{
+	    Actuator(void)
+	    {
+		polymap[0] = polymap[1] = polymap[2] = 0.0;
+	    }
+	    
+	    std::string  name;
+	    std::string  motor;
+	    std::string  ip;
+	    unsigned int port;
+	    double       reduction;
+	    double       polymap[3];
+	};
+	
 	struct Joint
 	{
 	    Joint(void)
@@ -42,15 +57,22 @@ class URDF
 		type = UNKNOWN;
 	    }
 	    
+	    ~Joint(void)
+	    {
+		for (unsigned int i = 0 ; i < actuators.size() ; ++i)
+		    delete actuators[i];
+	    }
+	    
 	    enum
 		{
 		    UNKNOWN, REVOLUTE, PRISMATIC, FLOATING
-		}       type;
-	    std::string name;
-	    double      axis[3];
-	    double      anchor[3];
-	    double      limit[2];
-	    double      calibration[2];
+		}                  type;
+	    std::string            name;
+	    double                 axis[3];
+	    double                 anchor[3];
+	    double                 limit[2];
+	    double                 calibration[2];
+	    std::vector<Actuator*> actuators;
 	};
 	
 	struct Collision
@@ -162,8 +184,9 @@ class URDF
 	enum
 	{
 	    CAMERA
-	}       type;
-    };    
+	}           type;
+	std::string calibration;
+    };
     
     explicit URDF(const char *filename = NULL)
     {   
@@ -204,12 +227,14 @@ class URDF
     std::map<std::string, Link::Inertial*>  m_inertial;
     std::map<std::string, Link::Visual*>    m_visual;
     std::map<std::string, Link::Geometry*>  m_geoms;
+    std::map<std::string, Link::Actuator*>  m_actuators;
 
  private:
     
     /* utility functions for parsing */
     void loadLink(const void *data);
     void loadSensor(const void *data);
+    void loadActuator(const void *data, Link::Actuator *actuator);
     void loadJoint(const void *data, Link::Joint *joint);
     void loadGeometry(const void *data, Link::Geometry *geometry);
     void loadCollision(const void *data, Link::Collision *collision);
