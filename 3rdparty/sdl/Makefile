@@ -6,6 +6,7 @@ SDL-1.2.13.tar.gz:
 download: SDL-1.2.13.tar.gz
 
 SDL-1.2.13: SDL-1.2.13.tar.gz
+	md5sum -c SDL-1.2.13.tar.gz.md5sum
 	tar xzf SDL-1.2.13.tar.gz
 
 SDL: SDL-1.2.13
