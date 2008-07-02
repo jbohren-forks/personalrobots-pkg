@@ -4,6 +4,7 @@
 #include "katana/katana.h"
 #include "ros/common.h"
 #include <iostream>
+#include <math.h>
 
 using std::string;
 using std::vector;
@@ -232,8 +233,11 @@ bool Katana::ik_calculate(double x, double y, double z, double phi, double theta
 bool Katana::ik_joint_solution(double x, double y, double z, double theta_init, double psi, 
 		double max_theta_dev, vector<double> &solution)
 {
-	double angle_inc = 1*PI/180.;
-	double phi = 0;		// phi is determined by x and y....doesn't matter what value it's set to!
+	double angle_inc = 1.*PI/180.;
+	double phi = atan2((-1.*y),(-1.*x));		// phi is determined by x and y
+  if (phi < 0) {
+    phi =+ 2*PI;
+  }
 	double theta = theta_init;
 	bool success = false;
 	
