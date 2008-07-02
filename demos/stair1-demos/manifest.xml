@@ -1,5 +1,5 @@
 <package>
-  <description>Some demos of 2d planar navigation using the STAIR1 robot</description>
+  <description>Some demos that are specific to the STAIR1 robot. Most of these could easily be ported to other robots if the desire/hardware was there.</description>
   <author>Morgan Quigley</author>
   <license>BSD</license>
   <depend package="nav_view"/>
@@ -10,4 +10,6 @@
   <depend package="wavefront_player"/>
   <depend package="joy"/>
   <depend package="teleop_base"/>
+  <depend package="logsetta"/>
+  <depend package="gmapping"/>
 </package>
