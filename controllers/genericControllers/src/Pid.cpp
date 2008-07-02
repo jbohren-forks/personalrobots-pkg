@@ -72,7 +72,7 @@ double Pid::UpdatePid( double pError, double dt )
     dTerm = dGain * dError;
 
     // create current command value
-    currentCmd = pTerm + iTerm + dTerm;
+    currentCmd = pTerm + iTerm - dTerm;
 
   }
 
