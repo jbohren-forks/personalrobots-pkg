@@ -35,35 +35,33 @@
 
 #include "ros/node.h"
 #include "SDL/SDL.h"
-#include "common_flows/FlowImage.h"
-#include "common_flows/ImageCodec.h"
-#include "simple_sdl_gui/FlowSDLKeyEvent.h"
+#include "std_msgs/Image.h"
+#include "image_utils/image_codec.h"
+#include "simple_sdl_gui/SDLKeyEvent.h"
 
-class Simple_SDL_GUI : public ROS_Slave
+class Simple_SDL_GUI : public ros::node
 {
 public:
-  FlowImage *image;
-  ImageCodec<FlowImage> *codec;
+  std_msgs::Image image;
+  ImageCodec<std_msgs::Image> codec;
   
-  FlowSDLKeyEvent *key;
+  simple_sdl_gui::SDLKeyEvent key;
 
   SDL_Surface *screen, *blit_prep;
   SDL_Event event;
 
   bool new_image;
 
-  Simple_SDL_GUI() : ROS_Slave(), blit_prep(NULL)
+  Simple_SDL_GUI() : ros::node("simple_sdl_gui"), codec(&image), blit_prep(NULL)
   {
-    register_sink(image = new FlowImage("image"), ROS_CALLBACK(Simple_SDL_GUI, image_received));
-    codec = new ImageCodec<FlowImage>(image);
-
-    register_source(key = new FlowSDLKeyEvent("key"));
+    subscribe("image", image, &Simple_SDL_GUI::image_received);
+    advertise<simple_sdl_gui::SDLKeyEvent>("key");
 
     new_image = false;
-
-    register_with_master();
   }
+
   virtual ~Simple_SDL_GUI() { if (blit_prep) SDL_FreeSurface(blit_prep); }
+
   bool sdl_init()
   {
     screen = SDL_SetVideoMode(320, 240, 24, 0);
@@ -72,7 +70,6 @@ public:
   }
 
   void refresh() {
-    // SDL (and Xlib) don't handle threads well, so we do both of these
     check_keyboard();
     display_image();
   }
@@ -81,10 +78,10 @@ public:
     while(SDL_PollEvent(&event)) {
       if ((event.type == SDL_KEYDOWN) || (event.type == SDL_KEYUP))
 	{
-	  key->state = event.key.state;
-	  key->sym = event.key.keysym.sym;
-	  key->mod = event.key.keysym.mod;
-	  key->publish();
+	  key.state = event.key.state;
+	  key.sym = event.key.keysym.sym;
+	  key.mod = event.key.keysym.mod;
+	  publish("key", key);
       }
     }
   }
@@ -92,40 +89,42 @@ public:
   void image_received() {
     new_image = true;
   }
-
+ 
   void display_image()
   {
     if (!screen)
       return; // paranoia. shouldn't happen. we should have bailed by now.
 
-    //Only show the image if a new one has arrived
+   //Only show the image if a new one has arrived
     if (new_image) {
+      uint8_t *raster = codec.inflate();
       
       //There is some thread unsafeness here if image changes size
-      if (screen->h != image->height || screen->w != image->width)
+      if (screen->h != image.height || screen->w != image.width)
 	{
-	  screen = SDL_SetVideoMode(image->width, image->height, 24, 0);
+	  screen = SDL_SetVideoMode(image.width, image.height, 24, 0);
 	  if (!screen)
 	    {
 	      fprintf(stderr, "woah! couldn't resize the screen to (%d,%d)\n",
-		      image->width, image->height);
+		      image.width, image.height);
 	      exit(1);
 	    }
 	}
-      if (!blit_prep || blit_prep->w != image->width || blit_prep->h != image->width)
+
+      if (!blit_prep || blit_prep->w != image.width || blit_prep->h != image.width)
 	{
 	  if (blit_prep)
 	    SDL_FreeSurface(blit_prep);
 	  blit_prep = SDL_CreateRGBSurface(SDL_HWSURFACE | SDL_SRCCOLORKEY, 
-					   image->width, image->height, 24, 
+					   image.width, image.height, 24, 
 					   0x0000ff, 0x00ff00, 0xff0000, 0);
 	}
 
       // NOTE: get_raster internally locks the image mutex
-      uint8_t *raster = codec->get_raster();
+      //
       int row_offset = 0;
-      for (int row = 0; row < image->height; row++, row_offset += screen->pitch)
-	memcpy((char *)blit_prep->pixels + row_offset, raster + (row * image->width * 3), image->width * 3);
+      for (int row = 0; row < image.height; row++, row_offset += screen->pitch)
+	memcpy((char *)blit_prep->pixels + row_offset, raster + (row * image.width * 3), image.width * 3);
       
       if (SDL_MUSTLOCK(screen))
 	if (SDL_LockSurface(screen) < 0)
@@ -149,6 +148,8 @@ public:
 
 int main(int argc, char **argv)
 {
+  ros::init(argc, argv);
+
   if (SDL_Init(SDL_INIT_VIDEO) < 0)
   {
     fprintf(stderr, "SDL initialization error: %s\n", SDL_GetError());
@@ -157,17 +158,20 @@ int main(int argc, char **argv)
   atexit(SDL_Quit);
 
   Simple_SDL_GUI s;
+
   if (!s.sdl_init())
   {
     fprintf(stderr, "SDL video startup error: %s\n", SDL_GetError());
     exit(1);
   }
 
-  while (s.happy())
+  while (s.ok())
   {
     s.refresh();
     usleep(1000);
   }
   return 0;
+
+  ros::fini();
 }
 

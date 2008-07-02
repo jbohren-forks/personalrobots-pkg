@@ -35,12 +35,12 @@
 
 #include "ros/node.h"
 #include "SDL/SDL.h"
-#include "simple_sdl_gui/MsgSDLKeyEvent.h"
+#include "simple_sdl_gui/SDLKeyEvent.h"
 
 class Key_Monitor : public ros::node
 {
 public:
-  MsgSDLKeyEvent key;
+  simple_sdl_gui::SDLKeyEvent key;
 
   Key_Monitor() : ros::node("key_monitor")
   {
@@ -60,5 +60,6 @@ int main(int argc, char **argv)
   Key_Monitor k;
   k.spin();
   return 0;
+  ros::fini();
 }
 
