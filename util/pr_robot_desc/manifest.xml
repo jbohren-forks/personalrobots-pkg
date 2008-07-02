@@ -1,11 +1,16 @@
 <package>
-  <description brief="PR-2 Robot Description parser">
-  Simple python parser for PR-2 Robot Description format.
+  <description brief="Universal Robot Description Format parser">
+  Parsers for Universal Robot Description Format.
+  Both Python and C++ versions are available.
   See: http://pr.willowgarage.com/wiki/RobotDescriptionFormat
 
   </description>
-  <author>Ken Conley/kwc@willowgarage.com</author>
+  <author>Ken Conley/kwc@willowgarage.com, Ioan Sucan/isucan@willowgarage.com</author>
   <license>BSD</license>
   <url>http://pr.willowgarage.com/wiki/RobotDescriptionFormat</url>
-</package>
 
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lURDF"/>
+  </export>
+  
+</package>

@@ -5,7 +5,7 @@
 #include <vector>
 #include <map>
 
-/* Universal Robot Description File (URDF) parser */
+/* Universal Robot Description Format (URDF) parser */
 
 class URDF
 {
