@@ -34,11 +34,15 @@
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
+#include <fstream>
+#include <iostream>
 
 #include <gazebo_plugin/Pr2_Actarray.hh>
 
 using namespace gazebo;
 using namespace PR2;
+
+
 
 //GZ_REGISTER_STATIC_CONTROLLER("pr2_actarray", Pr2_Actarray);
 GZ_REGISTER_DYNAMIC_CONTROLLER("pr2_actarray", Pr2_Actarray);
@@ -65,10 +69,15 @@ double ModNPi2Pi(double angle)
 Pr2_Actarray::Pr2_Actarray(Entity *parent )
    : Controller(parent)
 {
+
    this->myParent = dynamic_cast<Model*>(this->parent);
 
    if (!this->myParent)
       gzthrow("Pr2_Actarray controller requires a Model as its parent");
+
+
+
+
 
 }
 
@@ -238,6 +247,9 @@ void Pr2_Actarray::UpdateChild()
    double cmdPosition, cmdSpeed;
    double currentTime;
    double currentCmd;
+   double currentRate;
+double currentAngle;
+
 
    this->myIface->Lock(1);
 
@@ -310,44 +322,75 @@ void Pr2_Actarray::UpdateChild()
              cmdSpeed = this->myIface->data->actuators[count].cmdSpeed;
              switch(this->myIface->data->actuators[count].controlMode)
              {
-               case PR2::TORQUE_CONTROL:
-                 //printf("Hinge Torque Control\n");
-                 hjoint->SetTorque(this->myIface->data->actuators[count].cmdEffectorForce);
-                 //std::cout << count << " " << this->myIface->data->actuators[count].controlMode << std::endl;
-                 break;
-                 // case PR2::PD_CONTROL1 :
-                 //    // No fancy controller, just pass the commanded torque/force in (we are not modeling the motors for now)
-                 //    positionError = ModNPi2Pi(cmdPosition - hjoint->GetAngle());
-                 //    speedError    = cmdSpeed - hjoint->GetAngleRate();
-                 //    currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
-                 //    std::cout << "hinge err:" << positionError << " cmd: " << currentCmd << std::endl;
-                 //    // limit torque
-                 //    currentCmd = (currentCmd >  this->myIface->data->actuators[count].saturationTorque ) ?  this->myIface->data->actuators[count].saturationTorque : currentCmd;
-                 //    currentCmd = (currentCmd < -this->myIface->data->actuators[count].saturationTorque ) ? -this->myIface->data->actuators[count].saturationTorque : currentCmd;
-                 //    hjoint->SetTorque(currentCmd);
-                 //    break;
-               case PR2::PD_CONTROL:
-                 //if (cmdPosition > hjoint->GetHighStop())
-                 //   cmdPosition = hjoint->GetHighStop();
-                 //else if (cmdPosition < hjoint->GetLowStop())
-                 //   cmdPosition = hjoint->GetLowStop();
+                case PR2::TORQUE_CONTROL:
+									printf("Hinge Torque Control\n");
+                   hjoint->SetTorque(this->myIface->data->actuators[count].cmdEffectorForce);
+                   //std::cout << count << " " << this->myIface->data->actuators[count].controlMode << std::endl;
+                   break;
+                 case PR2::PD_TORQUE_CONTROL :
+		     currentAngle = hjoint->GetAngle();
+                    // No fancy controller, just pass the commanded torque/force in (we are not modeling the motors for now)
+                    positionError = ModNPi2Pi(cmdPosition - currentAngle);
+                    speedError    = cmdSpeed - hjoint->GetAngleRate();
+                    currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
+//                   if(count==PR2::ARM_R_SHOULDER_PITCH ) std::cout << "hinge err:" << positionError << " cmd: " << currentCmd << std::endl;
+		//Write out data
+                   if(count==PR2::ARM_R_SHOULDER_PITCH ) std::cout << currentTime<<" "<<cmdPosition<<" "<<currentAngle<<" "<<positionError<< " "<<currentCmd << std::endl;
+
+                    // limit torque
+        	    currentCmd = (currentCmd >  100) ?  100: currentCmd;
+                    currentCmd = (currentCmd < -100 ) ? -100: currentCmd;
+/*
+                    currentCmd = (currentCmd >  this->myIface->data->actuators[count].saturationTorque ) ?  this->myIface->data->actuators[count].saturationTorque : currentCmd;
+                    currentCmd = (currentCmd < -this->myIface->data->actuators[count].saturationTorque ) ? -this->myIface->data->actuators[count].saturationTorque : currentCmd;
+*/
+                hjoint->SetParam( dParamFMax, 0);
+                hjoint->SetTorque(currentCmd);
+
+                    break;
+	        case PR2::SPEED_TORQUE_CONTROL :
+	 	    currentRate = hjoint->GetAngleRate();
+                    speedError    = cmdSpeed - currentRate;
+                    currentCmd    = this->pids[count]->UpdatePid(speedError, currentTime-this->lastTime);
+		    //if(count==PR2::ARM_R_PAN)std::cout<<"Joint:" <<count << " Desired:" << cmdSpeed << " Current speed"<<currentRate<<" Error"<<speedError<<" cmd: " << currentCmd << std::endl;
+		    if(count==PR2::ARM_R_ELBOW_PITCH )std::cout<<currentTime<<" "<<currentRate<<" "<<speedError<<" " << currentCmd << std::endl;
+                    // limit torque
+			
+                    currentCmd = (currentCmd >  100) ?  100: currentCmd;
+                    currentCmd = (currentCmd < -100 ) ? -100: currentCmd;
+	
+		//Needs to be set to 0 1x for every joint
+         	    hjoint->SetParam( dParamFMax, 0);
+                    hjoint->SetTorque(currentCmd);
+		
+
+                    break;
+                case PR2::PD_CONTROL:
+                   //if (cmdPosition > hjoint->GetHighStop())
+                   //   cmdPosition = hjoint->GetHighStop();
+                   //else if (cmdPosition < hjoint->GetLowStop())
+                   //   cmdPosition = hjoint->GetLowStop();
 
                  positionError = ModNPi2Pi(cmdPosition - hjoint->GetAngle());
                  speedError    = cmdSpeed - hjoint->GetAngleRate();
                  //std::cout << "hinge e:" << speedError << " + " << positionError << std::endl;
                  currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
+                   hjoint->SetParam( dParamVel, currentCmd );
+                   hjoint->SetParam( dParamFMax,this->myIface->data->actuators[count].saturationTorque );
+                   break;
+                case PR2::SPEED_CONTROL:
+//									printf("Hinge Speed Control\n");
+                      //std::cout << "wheel drive: " << cmdSpeed << " i " << count << std::endl;
+                      hjoint->SetParam( dParamVel, cmdSpeed);
+                      hjoint->SetParam( dParamFMax, this->myIface->data->actuators[count].saturationTorque );
+                break;
+		case PR2::DISABLED:
+			 hjoint->SetParam( dParamFMax, 0);
+			hjoint->SetTorque(0); //disable the joint
+			break;
+                default:
+                   break;
 
-                 hjoint->SetParam( dParamVel, currentCmd );
-                 hjoint->SetParam( dParamFMax,this->myIface->data->actuators[count].saturationTorque );
-                 break;
-               case PR2::SPEED_CONTROL:
-                 //printf("Hinge Speed Control\n");
-                 //std::cout << "wheel drive: " << cmdSpeed << " i " << count << std::endl;
-                 hjoint->SetParam( dParamVel, cmdSpeed);
-                 hjoint->SetParam( dParamFMax, this->myIface->data->actuators[count].saturationTorque );
-               break;
-               default:
-                  break;
              }
              this->myIface->data->actuators[count].actualPosition      = hjoint->GetAngle();
              this->myIface->data->actuators[count].actualSpeed         = hjoint->GetAngleRate();
@@ -372,4 +415,5 @@ void Pr2_Actarray::UpdateChild()
 ////////////////////////////////////////////////////////////////////////////////
 void Pr2_Actarray::FiniChild()
 {
+ 
 }
