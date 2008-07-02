@@ -157,6 +157,10 @@ class Actions extends AgentActions{
   predicate SetVelocityCommands{
     PFLOAT goal_x;
     PFLOAT goal_y;
+    // Controller will operate at 1 Hz (cycles per tick)
+    eq(duration, 1);
+    // Constraint to be in the mission
+    precedes(end, missionEnd);
   }
 
   /**

@@ -165,14 +165,14 @@ WaypointController::Inactive {
     }
   }
 
-  contains(Actions.StopTheBase);
-
   // We will bind position values based on vehicle state timeline. We wait till the start time
   // is bound before linking in to the vehicle state.
   if(start){
     starts(VehicleState.Holds pos);
     eq(x, pos.x);
     eq(y, pos.y);
+
+    contains(Actions.StopTheBase);
   }
 }
 
@@ -226,9 +226,6 @@ WaypointController::Active {
  * Produces Velocity Commands to bridge gap between current and desired pose.
  */
 Actions::SetVelocityCommands{
-  // Controller will operate at 1 Hz (cycles per tick)
-  eq(duration, 1);
-  
   // Bind to prior value
   met_by(VehicleState.Holds currentPos);
 
@@ -246,7 +243,7 @@ Actions::SetVelocityCommands{
     eq(vc.cmd_th, cmd_th);
 
     // Pass arguments to successor
-    meets(Actions.SetVelocityCommands s);
+    before(Actions.SetVelocityCommands s);
     eq(goal_x,s.goal_x);
     eq(goal_y,s.goal_y);
   }
