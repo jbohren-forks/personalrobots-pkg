@@ -1,6 +1,6 @@
 Index: gazebo-svn/player/SConscript
 ===================================================================
---- gazebo-svn/player/SConscript	(revision 6715)
+--- gazebo-svn/player/SConscript	(revision 6696)
 +++ gazebo-svn/player/SConscript	(working copy)
 @@ -1,7 +1,8 @@
  import os
@@ -14,7 +14,7 @@ Index: gazebo-svn/player/SConscript
             'GazeboClient.cc',
 Index: gazebo-svn/libgazebo/Server.cc
 ===================================================================
---- gazebo-svn/libgazebo/Server.cc	(revision 6715)
+--- gazebo-svn/libgazebo/Server.cc	(revision 6696)
 +++ gazebo-svn/libgazebo/Server.cc	(working copy)
 @@ -38,6 +38,7 @@
  #include <sys/sem.h>
@@ -103,7 +103,7 @@ Index: gazebo-svn/libgazebo/Server.cc
    {
 Index: gazebo-svn/libgazebo/Iface.cc
 ===================================================================
---- gazebo-svn/libgazebo/Iface.cc	(revision 6715)
+--- gazebo-svn/libgazebo/Iface.cc	(revision 6696)
 +++ gazebo-svn/libgazebo/Iface.cc	(working copy)
 @@ -55,6 +55,8 @@
  GZ_REGISTER_IFACE("factory", FactoryIface);
@@ -116,7 +116,7 @@ Index: gazebo-svn/libgazebo/Iface.cc
  
 Index: gazebo-svn/libgazebo/gazebo.h
 ===================================================================
---- gazebo-svn/libgazebo/gazebo.h	(revision 6715)
+--- gazebo-svn/libgazebo/gazebo.h	(revision 6696)
 +++ gazebo-svn/libgazebo/gazebo.h	(working copy)
 @@ -550,7 +550,7 @@
  
@@ -604,7 +604,7 @@ Index: gazebo-svn/libgazebo/gazebo.h
  };
 Index: gazebo-svn/server/physics/HingeJoint.cc
 ===================================================================
---- gazebo-svn/server/physics/HingeJoint.cc	(revision 6715)
+--- gazebo-svn/server/physics/HingeJoint.cc	(revision 6696)
 +++ gazebo-svn/server/physics/HingeJoint.cc	(working copy)
 @@ -38,6 +38,7 @@
      : Joint()
@@ -614,9 +614,29 @@ Index: gazebo-svn/server/physics/HingeJoint.cc
  }
  
  
+Index: gazebo-svn/server/physics/ode/ODEPhysics.cc
+===================================================================
+--- gazebo-svn/server/physics/ode/ODEPhysics.cc	(revision 6696)
++++ gazebo-svn/server/physics/ode/ODEPhysics.cc	(working copy)
+@@ -266,13 +266,12 @@
+         // Compute the CFM and ERP by assuming the two bodies form a
+         // spring-damper system.
+         h = self->stepTime;
+-        kp = 1 / (1 / geom1->contact->kp + 1 / geom2->contact->kp);
++        kp = 1.0 / (1.0 / geom1->contact->kp + 1.0 / geom2->contact->kp);
+         kd = geom1->contact->kd + geom2->contact->kd;
+         contact.surface.mode |= dContactSoftERP | dContactSoftCFM;
+         contact.surface.soft_erp = h * kp / (h * kp + kd);
+-        contact.surface.soft_cfm = 1 / (h * kp + kd);
++        contact.surface.soft_cfm = 1.0 / (h * kp + kd);
+ 
+-
+         //contacts[i].surface.mode |= dContactBounce | dContactSoftCFM;
+         contact.surface.mode |= dContactApprox1;
+         contact.surface.mu = MIN(geom1->contact->mu1, geom2->contact->mu1);
 Index: gazebo-svn/server/physics/SliderJoint.cc
 ===================================================================
---- gazebo-svn/server/physics/SliderJoint.cc	(revision 6715)
+--- gazebo-svn/server/physics/SliderJoint.cc	(revision 6696)
 +++ gazebo-svn/server/physics/SliderJoint.cc	(working copy)
 @@ -35,6 +35,8 @@
      : Joint()
@@ -629,7 +649,7 @@ Index: gazebo-svn/server/physics/SliderJoint.cc
  
 Index: gazebo-svn/server/sensors/Sensor.hh
 ===================================================================
---- gazebo-svn/server/sensors/Sensor.hh	(revision 6715)
+--- gazebo-svn/server/sensors/Sensor.hh	(revision 6696)
 +++ gazebo-svn/server/sensors/Sensor.hh	(working copy)
 @@ -63,6 +63,7 @@
  
@@ -657,7 +677,7 @@ Index: gazebo-svn/server/sensors/Sensor.hh
  #endif
 Index: gazebo-svn/server/sensors/camera/MonoCameraSensor.cc
 ===================================================================
---- gazebo-svn/server/sensors/camera/MonoCameraSensor.cc	(revision 6715)
+--- gazebo-svn/server/sensors/camera/MonoCameraSensor.cc	(revision 6696)
 +++ gazebo-svn/server/sensors/camera/MonoCameraSensor.cc	(working copy)
 @@ -49,6 +49,7 @@
  MonoCameraSensor::MonoCameraSensor(Body *body)
@@ -748,7 +768,7 @@ Index: gazebo-svn/server/sensors/camera/MonoCameraSensor.cc
  ////////////////////////////////////////////////////////////////////////////////
 Index: gazebo-svn/server/sensors/camera/StereoCameraSensor.cc
 ===================================================================
---- gazebo-svn/server/sensors/camera/StereoCameraSensor.cc	(revision 6715)
+--- gazebo-svn/server/sensors/camera/StereoCameraSensor.cc	(revision 6696)
 +++ gazebo-svn/server/sensors/camera/StereoCameraSensor.cc	(working copy)
 @@ -58,6 +58,7 @@
    this->depthBuffer[1] = NULL;
@@ -913,7 +933,7 @@ Index: gazebo-svn/server/sensors/camera/StereoCameraSensor.cc
  ////////////////////////////////////////////////////////////////////////////////
 Index: gazebo-svn/server/sensors/ray/RaySensor.cc
 ===================================================================
---- gazebo-svn/server/sensors/ray/RaySensor.cc	(revision 6715)
+--- gazebo-svn/server/sensors/ray/RaySensor.cc	(revision 6696)
 +++ gazebo-svn/server/sensors/ray/RaySensor.cc	(working copy)
 @@ -237,7 +237,7 @@
  // Update the sensor information
@@ -926,7 +946,7 @@ Index: gazebo-svn/server/sensors/ray/RaySensor.cc
      Pose3d poseDelta;
 Index: gazebo-svn/server/sensors/Sensor.cc
 ===================================================================
---- gazebo-svn/server/sensors/Sensor.cc	(revision 6715)
+--- gazebo-svn/server/sensors/Sensor.cc	(revision 6696)
 +++ gazebo-svn/server/sensors/Sensor.cc	(working copy)
 @@ -32,6 +32,7 @@
  #include "World.hh"
@@ -975,7 +995,7 @@ Index: gazebo-svn/server/sensors/Sensor.cc
 +
 Index: gazebo-svn/server/GazeboConfig.cc
 ===================================================================
---- gazebo-svn/server/GazeboConfig.cc	(revision 6715)
+--- gazebo-svn/server/GazeboConfig.cc	(revision 6696)
 +++ gazebo-svn/server/GazeboConfig.cc	(working copy)
 @@ -56,6 +56,17 @@
  
@@ -997,7 +1017,7 @@ Index: gazebo-svn/server/GazeboConfig.cc
      XMLConfig rc;
 Index: gazebo-svn/server/gui/GLWindow.cc
 ===================================================================
---- gazebo-svn/server/gui/GLWindow.cc	(revision 6715)
+--- gazebo-svn/server/gui/GLWindow.cc	(revision 6696)
 +++ gazebo-svn/server/gui/GLWindow.cc	(working copy)
 @@ -66,7 +66,11 @@
    this->directionVec.x = 0;
@@ -1011,7 +1031,18 @@ Index: gazebo-svn/server/gui/GLWindow.cc
    this->keys.clear();
  
    if (activeWin == NULL)
-@@ -235,6 +239,21 @@
+@@ -91,8 +95,9 @@
+   this->userCamera = new UserCamera( this );
+   this->userCamera->Load(NULL);
+   this->userCamera->Init();
++  this->userCamera->Translate( Vector3(5, 0, 3) );
++  this->userCamera->RotateYaw( DTOR(180) );
+   this->userCamera->RotatePitch( DTOR(30) );
+-  this->userCamera->Translate( Vector3(-5, 0, 1) );
+ 
+   this->activeCamera = this->userCamera;
+ }
+@@ -235,6 +240,21 @@
        this->activeCamera->RotateYaw(DTOR(-d.x * this->rotateAmount));
        this->activeCamera->RotatePitch(DTOR(d.y * this->rotateAmount));
      }
@@ -1033,7 +1064,7 @@ Index: gazebo-svn/server/gui/GLWindow.cc
    }
  
    this->mouseDrag = true;
-@@ -247,12 +266,28 @@
+@@ -247,12 +267,28 @@
    std::map<int,int>::iterator iter;
    this->keys[keyNum] = 1;
  
@@ -1064,7 +1095,7 @@ Index: gazebo-svn/server/gui/GLWindow.cc
            this->moveAmount *= 2;
 Index: gazebo-svn/server/World.hh
 ===================================================================
---- gazebo-svn/server/World.hh	(revision 6715)
+--- gazebo-svn/server/World.hh	(revision 6696)
 +++ gazebo-svn/server/World.hh	(working copy)
 @@ -91,6 +91,26 @@
    /// \return Pointer to the physics engine
@@ -1105,7 +1136,7 @@ Index: gazebo-svn/server/World.hh
  };
 Index: gazebo-svn/server/controllers/camera/stereo/Stereo_Camera.cc
 ===================================================================
---- gazebo-svn/server/controllers/camera/stereo/Stereo_Camera.cc	(revision 6715)
+--- gazebo-svn/server/controllers/camera/stereo/Stereo_Camera.cc	(revision 6696)
 +++ gazebo-svn/server/controllers/camera/stereo/Stereo_Camera.cc	(working copy)
 @@ -87,26 +87,59 @@
  // Update the controller
@@ -1182,7 +1213,7 @@ Index: gazebo-svn/server/controllers/camera/stereo/Stereo_Camera.cc
  ////////////////////////////////////////////////////////////////////////////////
 Index: gazebo-svn/server/controllers/camera/generic/Generic_Camera.cc
 ===================================================================
---- gazebo-svn/server/controllers/camera/generic/Generic_Camera.cc	(revision 6715)
+--- gazebo-svn/server/controllers/camera/generic/Generic_Camera.cc	(revision 6696)
 +++ gazebo-svn/server/controllers/camera/generic/Generic_Camera.cc	(working copy)
 @@ -79,7 +79,24 @@
  // Update the controller
@@ -1212,7 +1243,7 @@ Index: gazebo-svn/server/controllers/camera/generic/Generic_Camera.cc
  ////////////////////////////////////////////////////////////////////////////////
 Index: gazebo-svn/server/controllers/ControllerFactory.cc
 ===================================================================
---- gazebo-svn/server/controllers/ControllerFactory.cc	(revision 6715)
+--- gazebo-svn/server/controllers/ControllerFactory.cc	(revision 6696)
 +++ gazebo-svn/server/controllers/ControllerFactory.cc	(working copy)
 @@ -42,6 +42,7 @@
  // Register a controller class.  Use by dynamically loaded modules
@@ -1224,7 +1255,7 @@ Index: gazebo-svn/server/controllers/ControllerFactory.cc
  
 Index: gazebo-svn/server/controllers/laser/sicklms200/SickLMS200_Laser.cc
 ===================================================================
---- gazebo-svn/server/controllers/laser/sicklms200/SickLMS200_Laser.cc	(revision 6715)
+--- gazebo-svn/server/controllers/laser/sicklms200/SickLMS200_Laser.cc	(revision 6696)
 +++ gazebo-svn/server/controllers/laser/sicklms200/SickLMS200_Laser.cc	(working copy)
 @@ -98,6 +98,7 @@
    if (this->laserIface->Lock(1))
@@ -1245,7 +1276,7 @@ Index: gazebo-svn/server/controllers/laser/sicklms200/SickLMS200_Laser.cc
  ////////////////////////////////////////////////////////////////////////////////
 Index: gazebo-svn/server/controllers/Controller.cc
 ===================================================================
---- gazebo-svn/server/controllers/Controller.cc	(revision 6715)
+--- gazebo-svn/server/controllers/Controller.cc	(revision 6696)
 +++ gazebo-svn/server/controllers/Controller.cc	(working copy)
 @@ -141,10 +141,10 @@
  /// Update the controller. Called every cycle.
@@ -1262,7 +1293,7 @@ Index: gazebo-svn/server/controllers/Controller.cc
  
 Index: gazebo-svn/server/World.cc
 ===================================================================
---- gazebo-svn/server/World.cc	(revision 6715)
+--- gazebo-svn/server/World.cc	(revision 6696)
 +++ gazebo-svn/server/World.cc	(working copy)
 @@ -27,6 +27,7 @@
  #include <assert.h>
@@ -1354,7 +1385,7 @@ Index: gazebo-svn/server/World.cc
  int World::LoadEntities(XMLConfigNode *node, Model *parent)
 Index: gazebo-svn/SConstruct
 ===================================================================
---- gazebo-svn/SConstruct	(revision 6715)
+--- gazebo-svn/SConstruct	(revision 6696)
 +++ gazebo-svn/SConstruct	(working copy)
 @@ -24,6 +24,8 @@
  parseConfigs=['pkg-config --cflags --libs OGRE',
@@ -1367,7 +1398,7 @@ Index: gazebo-svn/SConstruct
                ]
 Index: gazebo-svn/worlds/stereocamera.world
 ===================================================================
---- gazebo-svn/worlds/stereocamera.world	(revision 6715)
+--- gazebo-svn/worlds/stereocamera.world	(revision 6696)
 +++ gazebo-svn/worlds/stereocamera.world	(working copy)
 @@ -105,10 +105,10 @@
          <saveFramePath>frames</saveFramePath>

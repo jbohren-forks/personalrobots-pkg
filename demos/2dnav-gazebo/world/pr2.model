@@ -503,8 +503,6 @@
     <body2>dummytorso_body</body2>
     <anchor>dummytorso_body</anchor>
     <axis>  1.0   0.0   0.0 </axis>
-    <cfm>0.001</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="tmp2dummy">
@@ -512,8 +510,6 @@
     <body2>dummytorso_body</body2>
     <anchor>dummytorso_body</anchor>
     <axis>  0.0   1.0   0.0 </axis>
-    <cfm>0.001</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="tmp3dummy">
@@ -521,8 +517,6 @@
     <body2>dummytorso_body</body2>
     <anchor>dummytorso_body</anchor>
     <axis>  0.0   0.0   1.0 </axis>
-    <cfm>0.001</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
 
@@ -580,6 +574,8 @@
     <xyz>  0.185  -0.15   0.68 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:cylinder name="shoulder_pan_body_right_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.13  0.6</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
@@ -597,6 +593,8 @@
     <xyz>  0.285   -0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="upperarm_joint_right_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.10  0.05</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
@@ -613,6 +611,8 @@
     <xyz>  0.485   -0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="upperarm_right_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.25  0.1 0.1</size>
       <mass>1.0</mass>
       <visual>
@@ -629,6 +629,8 @@
     <xyz>  0.6850  -0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="elbow_right_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.04  0.1</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
@@ -645,6 +647,8 @@
     <xyz>  0.84225 -0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="forearm_right_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.2  0.1 0.1</size>
       <mass>1.0</mass>
       <visual>
@@ -661,6 +665,8 @@
     <xyz>  0.9995  -0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="wrist_right_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.025  0.1</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
@@ -677,6 +683,8 @@
     <xyz>  1.05   -0.15   0.86</xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="palm_right_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.05  0.05 0.05</size>
       <mass>1.0</mass>
       <visual>
@@ -693,6 +701,8 @@
     <xyz>  1.15   -0.17   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="finger_1_right_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.05  0.01 0.025</size>
       <mass>1.0</mass>
       <visual>
@@ -707,6 +717,8 @@
     <xyz>  1.15   -0.13   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="finger_2_right_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.05  0.01 0.025</size>
       <mass>1.0</mass>
       <visual>
@@ -727,8 +739,6 @@
     <body2>torso_body</body2>
     <anchor>shoulder_pan_body_right</anchor>
     <axis>  0.0   0.0   1.0 </axis>
-    <cfm>0.001</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="upperarm_pitch_joint_right">
@@ -736,8 +746,6 @@
     <body1>upperarm_joint_right</body1>
     <anchor>upperarm_joint_right</anchor>
     <axis>  0.0   1.0   0.0 </axis>
-    <cfm>0.001</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="upperarm_roll_joint_right">
@@ -745,8 +753,6 @@
     <body2>upperarm_joint_right</body2>
     <anchor>upperarm_joint_right</anchor>
     <axis>  1.0   0.0   0.0 </axis>
-    <cfm>0.001</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="elbow_pitch_joint_right">
@@ -754,8 +760,6 @@
     <body2>upperarm_right</body2>
     <anchor>elbow_right</anchor>
     <axis>  0.0   1.0   0.0 </axis>
-    <cfm>0.001</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="forearm_roll_joint_right">
@@ -763,8 +767,6 @@
     <body2>elbow_right</body2>
     <anchor>elbow_right</anchor>
     <axis>  1.0   0.0   0.0 </axis>
-    <cfm>0.001</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="wrist_pitch_joint_right">
@@ -772,8 +774,6 @@
     <body2>forearm_right</body2>
     <anchor>wrist_right</anchor>
     <axis>  0.0   1.0   0.0 </axis>
-    <cfm>0.001</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="palm_roll_joint_right">
@@ -781,8 +781,6 @@
     <body2>wrist_right</body2>
     <anchor>wrist_right</anchor>
     <axis>  1.0   0.0   0.0 </axis>
-    <cfm>0.001</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:slider name="finger_1_slider_right">
@@ -809,6 +807,8 @@
     <xyz>  0.185   0.15   0.68 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:cylinder name="shoulder_pan_body_left_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.13  0.6</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
@@ -826,6 +826,8 @@
     <xyz>  0.285   0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="upperarm_joint_left_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.10  0.05</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
@@ -842,6 +844,8 @@
     <xyz>  0.485   0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="upperarm_left_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.25 0.1 0.1</size>
       <mass>1.0</mass>
       <visual>
@@ -858,6 +862,8 @@
     <xyz>  0.685   0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="elbow_left_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.04  0.1</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
@@ -874,6 +880,8 @@
     <xyz>  0.84225 0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="forearm_left_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.2  0.1 0.1</size>
       <mass>1.0</mass>
       <visual>
@@ -890,6 +898,8 @@
     <xyz>  0.9995  0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="wrist_left_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.025  0.1</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
@@ -906,6 +916,8 @@
     <xyz>  1.05    0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="palm_left_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.05  0.05 0.05</size>
       <mass>1.0</mass>
       <visual>
@@ -922,6 +934,8 @@
     <xyz>  1.15    0.13   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="finger_1_left_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.05  0.01 0.025</size>
       <mass>1.0</mass>
       <visual>
@@ -936,6 +950,8 @@
     <xyz>  1.15    0.17   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="finger_2_left_geom">
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
       <size> 0.05  0.01 0.025</size>
       <mass>1.0</mass>
       <visual>
@@ -952,8 +968,6 @@
     <body2>torso_body</body2>
     <anchor>shoulder_pan_body_left</anchor>
     <axis>  0.0   0.0   1.0 </axis>
-    <cfm>0.001</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="upperarm_pitch_joint_left">
@@ -961,8 +975,6 @@
     <body2>shoulder_pan_body_left</body2>
     <anchor>upperarm_joint_left</anchor>
     <axis>  0.0   1.0   0.0 </axis>
-    <cfm>0.001</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="upperarm_roll_joint_left">
@@ -970,8 +982,6 @@
     <body2>upperarm_joint_left</body2>
     <anchor>upperarm_joint_left</anchor>
     <axis>  1.0   0.0   0.0 </axis>
-    <cfm>0.001</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="elbow_pitch_joint_left">
@@ -979,8 +989,6 @@
     <body2>upperarm_left</body2>
     <anchor>elbow_left</anchor>
     <axis>  0.0   1.0   0.0 </axis>
-    <cfm>0.001</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="forearm_roll_joint_left">
@@ -988,8 +996,6 @@
     <body2>elbow_left</body2>
     <anchor>elbow_left</anchor>
     <axis>  1.0   0.0   0.0 </axis>
-    <cfm>0.001</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="wrist_pitch_joint_left">
@@ -997,8 +1003,6 @@
     <body2>forearm_left</body2>
     <anchor>wrist_left</anchor>
     <axis>  0.0   1.0   0.0 </axis>
-    <cfm>0.001</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="palm_roll_joint_left">
@@ -1006,8 +1010,6 @@
     <body2>wrist_left</body2>
     <anchor>wrist_left</anchor>
     <axis>  1.0   0.0   0.0 </axis>
-    <cfm>0.001</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:slider name="finger_1_slider_left">
@@ -1046,6 +1048,10 @@
     <reportStaticCollision>true</reportStaticCollision>
 
     <geom:box name="front_left_caster_geom">
+      <kp>10000000.0</kp>
+      <kd>1.0</kd>
+      <mu1>10.0</mu1>
+      <mu2>10.0</mu2>
       <xyz> 0.0 0.0 0.0</xyz>
       <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
       <mass>1.0</mass>
@@ -1065,6 +1071,10 @@
     <reportStaticCollision>true</reportStaticCollision>
 
     <geom:box name="front_right_caster_geom">
+      <kp>10000000.0</kp>
+      <kd>1.0</kd>
+      <mu1>10.0</mu1>
+      <mu2>10.0</mu2>
       <xyz>0 0 0.0</xyz>
       <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
       <mass>1.0</mass>
@@ -1084,6 +1094,10 @@
     <reportStaticCollision>true</reportStaticCollision>
 
     <geom:box name="rear_left_caster_geom">
+      <kp>10000000.0</kp>
+      <kd>1.0</kd>
+      <mu1>10.0</mu1>
+      <mu2>10.0</mu2>
       <xyz>0 0 0.0</xyz>
       <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
       <mass>1.0</mass>
@@ -1102,6 +1116,10 @@
     <reportStaticCollision>true</reportStaticCollision>
 
     <geom:box name="rear_right_caster_geom">
+      <kp>10000000.0</kp>
+      <kd>1.0</kd>
+      <mu1>10.0</mu1>
+      <mu2>10.0</mu2>
       <xyz>0 0 0.0</xyz>
       <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
       <mass>1.0</mass>
@@ -1119,6 +1137,10 @@
     <xyz>  0.425   0.305 -0.17</xyz>
     <rpy> 90.0     0.0    1.0 </rpy>
     <geom:cylinder name="front_left_wheel_l_geom">
+      <kp>10000000.0</kp>
+      <kd>1.0</kd>
+      <mu1>10.0</mu1>
+      <mu2>10.0</mu2>
       <size> 0.08  0.03</size>   <!-- radius and width -->
       <mass>0.5</mass>
       <visual>
@@ -1133,6 +1155,10 @@
     <xyz>  0.425   0.195 -0.17</xyz>
     <rpy> 90.0     0.0    1.0 </rpy>
     <geom:cylinder name="front_left_wheel_r_geom">
+      <kp>10000000.0</kp>
+      <kd>1.0</kd>
+      <mu1>10.0</mu1>
+      <mu2>10.0</mu2>
       <size> 0.08  0.03</size>   <!-- radius and width -->
       <mass>0.5</mass>
       <visual>
@@ -1147,6 +1173,10 @@
     <xyz>  0.425  -0.195 -0.17</xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="front_right_wheel_l_geom">
+      <kp>10000000.0</kp>
+      <kd>1.0</kd>
+      <mu1>10.0</mu1>
+      <mu2>10.0</mu2>
       <size> 0.08  0.03</size>   <!-- radius and width -->
       <mass>0.5</mass>
       <visual>
@@ -1161,6 +1191,10 @@
     <xyz>  0.425  -0.305 -0.17</xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="front_right_wheel_r_geom">
+      <kp>10000000.0</kp>
+      <kd>1.0</kd>
+      <mu1>10.0</mu1>
+      <mu2>10.0</mu2>
       <size> 0.08  0.03</size>   <!-- radius and width -->
       <mass>0.5</mass>
       <visual>
@@ -1175,6 +1209,10 @@
     <xyz> -0.075  0.305 -0.17</xyz>
     <rpy> 90.0    0.0    0.0 </rpy>
     <geom:cylinder name="rear_left_wheel_l_geom">
+      <kp>10000000.0</kp>
+      <kd>1.0</kd>
+      <mu1>10.0</mu1>
+      <mu2>10.0</mu2>
       <size> 0.08  0.03</size>   <!-- radius and width -->
       <mass>0.5</mass>
       <visual>
@@ -1189,6 +1227,10 @@
     <xyz> -0.075  0.195 -0.17</xyz>
     <rpy> 90.0    0.0    0.0 </rpy>
     <geom:cylinder name="rear_left_wheel_r_geom">
+      <kp>10000000.0</kp>
+      <kd>1.0</kd>
+      <mu1>10.0</mu1>
+      <mu2>10.0</mu2>
       <size> 0.08  0.03</size>   <!-- radius and width -->
       <mass>0.5</mass>
       <visual>
@@ -1203,6 +1245,10 @@
     <xyz> -0.075 -0.195 -0.17</xyz>
     <rpy> 90.0    0.0    0.0 </rpy>
     <geom:cylinder name="rear_right_wheel_l_geom">
+      <kp>10000000.0</kp>
+      <kd>1.0</kd>
+      <mu1>10.0</mu1>
+      <mu2>10.0</mu2>
       <size> 0.08  0.03</size>   <!-- radius and width -->
       <mass>0.5</mass>
       <visual>
@@ -1217,6 +1263,10 @@
     <xyz> -0.075 -0.305 -0.17</xyz>
     <rpy> 90.0    0.0    0.0 </rpy>
     <geom:cylinder name="rear_right_wheel_r_geom">
+      <kp>10000000.0</kp>
+      <kd>1.0</kd>
+      <mu1>10.0</mu1>
+      <mu2>10.0</mu2>
       <size> 0.08  0.03</size>   <!-- radius and width -->
       <mass>0.5</mass>
       <visual>
@@ -1235,8 +1285,6 @@
     <body2>front_left_wheel_l</body2>
     <anchor>front_left_wheel_l</anchor>
     <axis>0 1 0</axis>
-    <cfm>0.01</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="front_left_wheel_r_drive">
@@ -1244,8 +1292,6 @@
     <body2>front_left_wheel_r</body2>
     <anchor>front_left_wheel_r</anchor>
     <axis>0 1 0</axis>
-    <cfm>0.01</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="front_right_wheel_l_drive">
@@ -1253,8 +1299,6 @@
     <body2>front_right_wheel_l</body2>
     <anchor>front_right_wheel_l</anchor>
     <axis>0 1 0</axis>
-    <cfm>0.01</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="front_right_wheel_r_drive">
@@ -1262,8 +1306,6 @@
     <body2>front_right_wheel_r</body2>
     <anchor>front_right_wheel_r</anchor>
     <axis>0 1 0</axis>
-    <cfm>0.01</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="rear_left_wheel_l_drive">
@@ -1271,8 +1313,6 @@
     <body2>rear_left_wheel_l</body2>
     <anchor>rear_left_wheel_l</anchor>
     <axis>0 1 0</axis>
-    <cfm>0.01</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="rear_left_wheel_r_drive">
@@ -1280,8 +1320,6 @@
     <body2>rear_left_wheel_r</body2>
     <anchor>rear_left_wheel_r</anchor>
     <axis>0 1 0</axis>
-    <cfm>0.01</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="rear_right_wheel_l_drive">
@@ -1289,8 +1327,6 @@
     <body2>rear_right_wheel_l</body2>
     <anchor>rear_right_wheel_l</anchor>
     <axis>0 1 0</axis>
-    <cfm>0.01</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="rear_right_wheel_r_drive">
@@ -1298,8 +1334,6 @@
     <body2>rear_right_wheel_r</body2>
     <anchor>rear_right_wheel_r</anchor>
     <axis>0 1 0</axis>
-    <cfm>0.01</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
 
@@ -1310,8 +1344,6 @@
     <body2>base_body</body2>
     <anchor>front_left_caster_body</anchor>
     <axis>  0.0   0.0   1.0 </axis>
-    <cfm>0.01</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="front_right_caster_steer">
@@ -1319,8 +1351,6 @@
     <body2>base_body</body2>
     <anchor>front_right_caster_body</anchor>
     <axis>  0.0   0.0   1.0 </axis>
-    <cfm>0.01</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="rear_left_caster_steer">
@@ -1328,8 +1358,6 @@
     <body2>base_body</body2>
     <anchor>rear_left_caster_body</anchor>
     <axis>  0.0   0.0   1.0 </axis>
-    <cfm>0.01</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
   <joint:hinge name="rear_right_caster_steer">
@@ -1337,8 +1365,6 @@
     <body2>base_body</body2>
     <anchor>rear_right_caster_body</anchor>
     <axis>  0.0   0.0   1.0 </axis>
-    <cfm>0.01</cfm>
-    <erp>0.6</erp>
   </joint:hinge>
 
 
