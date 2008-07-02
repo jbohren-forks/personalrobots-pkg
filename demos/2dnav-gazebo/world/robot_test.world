@@ -27,7 +27,7 @@
     <stepTime>0.01</stepTime>
     <gravity>0 0 -9.8</gravity>
     <cfm>0.0000000001</cfm>
-    <erp>0.2</erp>
+    <erp>0.9999999999</erp>
   </physics:ode>
 
   <geo:origin>
@@ -514,18 +514,18 @@
         <!-- ========================================= -->
         <joint name="shoulder_pan_left">
           <saturationTorque>1000</saturationTorque>
-          <pGain>10000</pGain>
+          <pGain>1</pGain>
           <dGain>0</dGain>
-          <iGain>500</iGain>
-          <iClamp>500</iClamp>
-          <controlMode>PD_TORQUE_CONTROL</controlMode>
+          <iGain>0</iGain>
+          <iClamp>0</iClamp>
+          <controlMode>PD_CONTROL</controlMode>
         </joint>
         <joint name="upperarm_pitch_joint_left">
           <saturationTorque>1000</saturationTorque>
-          <pGain>5000</pGain>
-          <dGain>0</dGain>
-          <iGain>500</iGain>
-          <iClamp>500</iClamp>
+          <pGain>1500</pGain><!--700-->
+          <dGain>.2</dGain><!--35-->
+          <iGain>2</iGain><!--10-->
+          <iClamp>50</iClamp><!--300-->
           <controlMode>PD_TORQUE_CONTROL</controlMode>
         </joint>
         <joint name="upperarm_roll_joint_left">
@@ -537,11 +537,11 @@
           <controlMode>PD_CONTROL</controlMode>
         </joint>
         <joint name="elbow_pitch_joint_left">
-          <saturationTorque>100</saturationTorque>
-          <pGain>500</pGain>
-          <dGain>0</dGain>
-          <iGain>100</iGain>
-          <iClamp>100</iClamp>
+          <saturationTorque>1000</saturationTorque>
+          <pGain>2000</pGain>
+          <dGain>.2</dGain>
+          <iGain>2</iGain>
+          <iClamp>50</iClamp>
           <controlMode>PD_TORQUE_CONTROL</controlMode>
         </joint>
         <joint name="forearm_roll_joint_left">
@@ -554,11 +554,11 @@
         </joint>
         <joint name="wrist_pitch_joint_left">
           <saturationTorque>100</saturationTorque>
-          <pGain>100</pGain>
+          <pGain>1</pGain>
           <dGain>0</dGain>
-          <iGain>10</iGain>
-          <iClamp>10</iClamp>
-          <controlMode>PD_TORQUE_CONTROL</controlMode>
+          <iGain>0</iGain>
+          <iClamp>0</iClamp>
+          <controlMode>PD_CONTROL</controlMode>
         </joint>
         <joint name="palm_roll_joint_left">
           <saturationTorque>100</saturationTorque>
@@ -571,19 +571,17 @@
         <!-- ========================================= -->
         <joint name="shoulder_pan_right">
           <saturationTorque>1000</saturationTorque>
-          <pGain>10000</pGain>
+          <pGain>1</pGain>
           <dGain>0</dGain>
-          <iGain>500</iGain>
-          <iClamp>500</iClamp>
-          <controlMode>PD_TORQUE_CONTROL</controlMode>
+          <iGain>0</iGain>
+          <iClamp>0</iClamp>
         </joint>
         <joint name="upperarm_pitch_joint_right">
           <saturationTorque>1000</saturationTorque>
-          <pGain>5000</pGain>
+          <pGain>1</pGain>
           <dGain>0</dGain>
-          <iGain>500</iGain>
-          <iClamp>500</iClamp>
-          <controlMode>PD_TORQUE_CONTROL</controlMode>
+          <iGain>0</iGain>
+          <iClamp>0</iClamp>
         </joint>
         <joint name="upperarm_roll_joint_right">
           <saturationTorque>1000</saturationTorque>
@@ -591,15 +589,13 @@
           <dGain>0</dGain>
           <iGain>0</iGain>
           <iClamp>0</iClamp>
-          <controlMode>PD_CONTROL</controlMode>
         </joint>
         <joint name="elbow_pitch_joint_right">
-          <saturationTorque>100</saturationTorque>
-          <pGain>500</pGain>
+          <saturationTorque>1000</saturationTorque>
+          <pGain>1</pGain>
           <dGain>0</dGain>
-          <iGain>100</iGain>
-          <iClamp>100</iClamp>
-          <controlMode>PD_TORQUE_CONTROL</controlMode>
+          <iGain>0</iGain>
+          <iClamp>0</iClamp>
         </joint>
         <joint name="forearm_roll_joint_right">
           <saturationTorque>100</saturationTorque>
@@ -607,15 +603,13 @@
           <dGain>0</dGain>
           <iGain>0</iGain>
           <iClamp>0</iClamp>
-          <controlMode>PD_CONTROL</controlMode>
         </joint>
         <joint name="wrist_pitch_joint_right">
           <saturationTorque>100</saturationTorque>
-          <pGain>100</pGain>
+          <pGain>1</pGain>
           <dGain>0</dGain>
-          <iGain>10</iGain>
-          <iClamp>10</iClamp>
-          <controlMode>PD_TORQUE_CONTROL</controlMode>
+          <iGain>0</iGain>
+          <iClamp>0</iClamp>
         </joint>
         <joint name="palm_roll_joint_right">
           <saturationTorque>100</saturationTorque>
@@ -623,7 +617,6 @@
           <dGain>0</dGain>
           <iGain>0</iGain>
           <iClamp>0</iClamp>
-          <controlMode>PD_CONTROL</controlMode>
         </joint>
         <!-- ========================================= -->
         <interface:pr2array name="pr2_iface"/>
