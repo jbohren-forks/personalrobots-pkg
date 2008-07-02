@@ -9,6 +9,8 @@
   <license>BSD</license>
   <url>http://pr.willowgarage.com/wiki/RobotDescriptionFormat</url>
 
+  <depend package="tinyxml"/>
+  
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lURDF"/>
   </export>
