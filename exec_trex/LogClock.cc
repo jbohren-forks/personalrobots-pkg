@@ -2,7 +2,7 @@
 #include <errno.h>
 #include <time.h>
 #include "LogClock.hh"
-
+#include "Agent.hh"
 #include "LogManager.hh"
 
 namespace TREX {
@@ -60,14 +60,94 @@ namespace TREX {
     }
   }
 
+  void PlaybackClock::printHelp() {
+    std::cout << "Options:" << std::endl;
+    std::cout << " Q :- Quit" << std::endl;
+    std::cout << " N :- Next" << std::endl;
+    std::cout << " G :- Goto <tick> e.g. g100" << std::endl;
+    std::cout << " R :- Reload Debug.cfg" << std::endl;
+    std::cout << " + :- Enable pattern e.g. '+Agent'" << std::endl;
+    std::cout << " - :- Disable pattern e.g. '-Agent'" << std::endl;
+    std::cout << " ! :- Disable all debug messages" << std::endl;
+    std::cout << " PW :- Start PlanWorks output" << std::endl;
+    std::cout << " EPW :- End PlanWorks output" << std::endl;
+    std::cout << " H :- Help" << std::endl;
+  }
+
+  void PlaybackClock::consolePopup() {
+    std::string cmdString;
+    bool cmdValid = false;
+    std::cout << "At tick " << m_tick << ", H for help." << std::endl;
+    while (!cmdValid) {
+      std::cout << "> ";
+      getline(std::cin, cmdString);
+      const char cmd = cmdString.length() == 0 ? 0 : cmdString.at(0);
+      if (!cmd) {
+	cmdValid = false;
+      } else if(cmd == 'H' || cmd == 'h'){
+	printHelp();
+	cmdValid = false;
+      } else if(cmd == 'Q' || cmd == 'q'){
+	std::cout << "Goodbye :-)" << std::endl;
+	cmdValid = true;
+	exit(0);
+      } else if(cmd == 'N' || cmd == 'n'){
+	m_stopTick = m_tick + 1;
+	cmdValid = true;
+      } else if(cmd == 'G' || cmd == 'g'){
+	std::string tickStr = cmdString.substr(1);
+	if (atoi(tickStr.c_str()) > 0) {
+	  m_stopTick = (TICK)atoi(tickStr.c_str());
+	  cmdValid = true;
+	  if (m_tick >= m_stopTick) {
+	    cmdValid = false;
+	    std::cout << "Please enter a future tick." << std::endl;
+	  }
+	} else {
+	  std::cout << "Please enter a number." << std::endl;
+	  cmdValid = false;
+	}
+      } else if(cmd == 'R' || cmd == 'r'){
+	std::ifstream config("Debug.cfg");
+	DebugMessage::readConfigFile(config);
+	cmdValid = false;
+      } else if(cmdString == "PW"){
+	DebugMessage::enableMatchingMsgs("", "PlanWorks");
+      } else if(cmdString == "EPW"){
+	DebugMessage::disableMatchingMsgs("", "PlanWorks");
+      } else if(cmd == '+'){
+	std::string pattern = cmdString.substr(1);
+	DebugMessage::enableMatchingMsgs("", pattern);
+	cmdValid = false;
+      } else if(cmd == '-'){
+	std::string pattern = cmdString.substr(1);
+	DebugMessage::disableMatchingMsgs("", pattern);
+	cmdValid = false;
+      } else if(cmd == '!'){
+	DebugMessage::disableAll();
+	cmdValid = false;
+      } else {
+	cmdValid = false;
+      }
+    }
+    
+
+  }
+
+
   void PlaybackClock::start(){
     fscanf(m_file, "%u\n", &m_gets);
+    printHelp();
+    consolePopup();
   }
 
   TICK PlaybackClock::getNextTick() {
     unsigned int timeout = 0;
     while (m_gets == 0 && timeout < 1000) {
       advanceTick(m_tick);
+      if (m_tick == m_stopTick) {
+	consolePopup();
+      }
       fscanf(m_file, "%u\n", &m_gets);
       timeout++;
     }

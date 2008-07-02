@@ -56,11 +56,19 @@ namespace TREX {
      * @brief Retrieve the tick
      */
     TICK getNextTick();
-
   private:
+    /**
+     * @brief Generate help console popup.
+     */
+    void printHelp();
+    /**
+     * @brief Wit for user input.
+     */
+    void consolePopup();
+
     unsigned int m_gets;
     FILE* m_file;
-    TICK m_tick;
+    TICK m_tick, m_stopTick;
   };
 }
 
