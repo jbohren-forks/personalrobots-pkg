@@ -274,6 +274,7 @@ class URDF
     virtual bool load(const char *filename);
     virtual void print(FILE *out = stdout);
     
+    bool containsCycle(unsigned int index) const;
     const std::string& getRobotName(void) const;
     unsigned int getDisjointPartCount(void) const;
     Link* getDisjointPart(unsigned int index) const;

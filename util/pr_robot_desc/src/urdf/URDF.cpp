@@ -35,9 +35,10 @@
 #include <urdf/URDF.h>
 #include <urdf/MathExpression.h>
 #include <tinyxml-2.5.3/tinyxml.h>
+#include <cstring>
 #include <fstream>
 #include <sstream>
-#include <cstring>
+#include <queue>
 
 // need to change this depending on OS (different on windows)
 static const char PATH_SEPARATOR = '/';
@@ -82,7 +83,32 @@ URDF::Link* URDF::getDisjointPart(unsigned int index) const
     else
 	return NULL;
 }
+
+bool URDF::containsCycle(unsigned int index) const
+{
+    if (index >= m_roots.size())
+	return false;
     
+    std::map<Link*, bool> seen;
+    
+    std::queue<Link*> queue;
+    queue.push(m_roots[index]);
+    
+    while (!queue.empty())
+    {
+	Link* link = queue.front();
+	queue.pop();
+	seen[link] = true;
+	for (unsigned int i = 0 ; i < link->children.size() ; ++i)
+	    if (seen.find(link->children[i]) != seen.end())
+		return true;
+	    else
+		queue.push(link->children[i]);
+    }
+
+    return false;
+}
+
 void URDF::print(FILE *out)
 {
     fprintf(out, "\nList of root links in robot '%s' (%u):\n", m_name.c_str(), m_roots.size());
