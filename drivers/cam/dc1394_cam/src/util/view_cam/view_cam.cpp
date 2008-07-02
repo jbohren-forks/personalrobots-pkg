@@ -133,25 +133,36 @@ int main(int argc, char **argv)
         case SDL_KEYDOWN:
           switch(event.key.keysym.sym)
           {
-            case SDLK_ESCAPE: done = true; break;
+          case SDLK_ESCAPE: done = true; break;
+            
+          case SDLK_SPACE: 
 
-            case SDLK_SPACE: 
+            ind++;
 
-              delete c;
+            delete c;
+            
+            guid = dc1394_cam::getGuid(ind % num);
+            c = new dc1394_cam::Cam(guid);
+            
+            printf("Using camera with guid: %llx\n", guid);
+            snprintf(winName, 256, "%llx", guid);
+            SDL_WM_SetCaption(winName, winName);
+            
+            break;
+            
+          case SDLK_c: 
+            colorize = !colorize;
+            break;
+            
+          case SDLK_RETURN:
+            
+            dc1394featureset_t features;
+            
+            dc1394_feature_get_all(c->dcCam, &features);
+            dc1394_feature_print_all(&features, stdout);
 
-              guid = dc1394_cam::getGuid(ind % num);
-              c = new dc1394_cam::Cam(guid);
-
-              printf("Using camera with guid: %llx\n", guid);
-              snprintf(winName, 256, "%llx", guid);
-              SDL_WM_SetCaption(winName, winName);
-
-              break;
-
-            case SDLK_c: 
-              colorize = !colorize;
-              break;
             default: break;
+
           }
           break;
         case SDL_QUIT:

@@ -61,6 +61,37 @@ public:
   
   int count;
 
+
+  void checkAndSetFeature(camData& cd, string paramName, dc1394feature_t feature)
+  {
+    ostringstream oss;
+    
+    oss.str("");
+    oss << paramName << cd.index;
+    if (has_param(oss.str()))
+    {
+      XmlRpc::XmlRpcValue val;
+      get_param(oss.str(), val);
+      
+      if (val.getType() == XmlRpc::XmlRpcValue::TypeString)
+        if (val == string("auto"))
+          cd.cam->setFeatureMode(feature, DC1394_FEATURE_MODE_AUTO);
+      
+      if (val.getType() == XmlRpc::XmlRpcValue::TypeInt)
+      {
+        cd.cam->setFeatureMode(feature, DC1394_FEATURE_MODE_MANUAL);
+        cd.cam->setFeature(feature, (int)(val));
+      }
+
+      if (val.getType() == XmlRpc::XmlRpcValue::TypeDouble)
+      {
+        cd.cam->setFeatureMode(feature, DC1394_FEATURE_MODE_MANUAL);
+        cd.cam->setFeatureAbsolute(feature, (double)(val));
+      }
+    }
+  }
+
+
   Dc1394Node() : ros::node("dc1394_node")
   {
 
@@ -94,14 +125,82 @@ public:
       }
 
       oss.str("");
-      oss << "bayer" << i;
+      oss << "speed" << i;
+      string strSpeed;
+      dc1394speed_t speed;
+      param(oss.str(), strSpeed, string("S400"));
+      if (strSpeed == string("S100"))
+        speed = DC1394_ISO_SPEED_100;
+      else if (strSpeed == string("S200"))
+        speed = DC1394_ISO_SPEED_200;
+      else
+        speed = DC1394_ISO_SPEED_400;
+
+      oss.str("");
+      oss << "fps" << i;
+      double dblFps;
+      dc1394framerate_t fps;
+      param(oss.str(), dblFps, 30.0);
+      if (dblFps >= 240.0)
+        fps = DC1394_FRAMERATE_240;
+      else if (dblFps >= 120.0)
+        fps = DC1394_FRAMERATE_120;
+      else if (dblFps >= 60.0)
+        fps = DC1394_FRAMERATE_60;
+      else if (dblFps >= 30.0)
+        fps = DC1394_FRAMERATE_30;
+      else if (dblFps >= 15.0)
+        fps = DC1394_FRAMERATE_15;
+      else if (dblFps >= 7.5)
+        fps = DC1394_FRAMERATE_7_5;
+      else if (dblFps >= 3.75)
+        fps = DC1394_FRAMERATE_3_75;
+      else
+        fps = DC1394_FRAMERATE_1_875;
+
+
+      oss.str("");
+      oss << "videoMode" << i;
+      string strMode;
+      dc1394video_mode_t mode;
+      param(oss.str(), strMode, string("640x480mono8"));
+      if (strMode == string("640x480rgb24"))
+        mode = DC1394_VIDEO_MODE_640x480_RGB8;
+      else if (strMode == string("1024x768rgb24"))
+        mode = DC1394_VIDEO_MODE_1024x768_RGB8;
+      else if (strMode == string("1280x960rgb24"))
+        mode = DC1394_VIDEO_MODE_1280x960_RGB8;
+      else if (strMode == string("1600x1200rgb24"))
+        mode = DC1394_VIDEO_MODE_1600x1200_RGB8;
+      else if (strMode == string("640x480mono8"))
+        mode = DC1394_VIDEO_MODE_640x480_MONO8;
+      else if (strMode == string("1024x768mono8"))
+        mode = DC1394_VIDEO_MODE_1024x768_MONO8;
+      else if (strMode == string("1280x960mono8"))
+        mode = DC1394_VIDEO_MODE_1280x960_MONO8;
+      else if (strMode == string("1600x1200mono8"))
+        mode = DC1394_VIDEO_MODE_1600x1200_MONO8;
+      else
+        mode = DC1394_VIDEO_MODE_640x480_MONO8;
+
+      oss.str("");
+      oss << "bufferSize" << i;
+      int bufferSize;
+      param(oss.str(), bufferSize, 8);
 
       cd.colorize = false;
-      if (has_param(oss.str()))
+
+      if ( mode == DC1394_VIDEO_MODE_640x480_MONO8 ||
+           mode == DC1394_VIDEO_MODE_1024x768_MONO8 ||
+           mode == DC1394_VIDEO_MODE_1280x960_MONO8 ||
+           mode == DC1394_VIDEO_MODE_1600x1200_MONO8)
       {
         cd.colorize = true;
+        oss.str("");
+        oss << "bayer" << i;
         string bayer;
-        get_param(oss.str(), bayer);
+        param(oss.str(), bayer, string("none"));
+
         if (bayer == string("rggb"))
           cd.bayer = DC1394_COLOR_FILTER_RGGB;
         else if (bayer == string("gbrg"))
@@ -116,13 +215,17 @@ public:
 
       printf("Opening camera with guid: %llx\n", guid);
       
-      cd.cam = new dc1394_cam::Cam(guid);
+      cd.cam = new dc1394_cam::Cam(guid,
+                                   speed,
+                                   mode,
+                                   fps,
+                                   bufferSize);
 
-      /*
-        set_shutter(0.8);
-        set_gamma(0.24);
-        set_gain(0);
-      */      
+      checkAndSetFeature(cd, "brightness", DC1394_FEATURE_BRIGHTNESS);
+      checkAndSetFeature(cd, "exposure", DC1394_FEATURE_EXPOSURE);
+      checkAndSetFeature(cd, "shutter", DC1394_FEATURE_SHUTTER);
+      checkAndSetFeature(cd, "gamma", DC1394_FEATURE_GAMMA);
+      checkAndSetFeature(cd, "gain", DC1394_FEATURE_GAIN);
 
       cd.cam->start();
 
@@ -132,6 +235,10 @@ public:
     next_time = ros::Time::now();
     count = 0;
   }
+
+
+  
+        
 
   ~Dc1394Node()
   {
@@ -146,56 +253,63 @@ public:
   bool getAndSend()
   {
 
+    dc1394_cam::waitForData(1000000);
+
     for (vector<camData>::iterator i = cams.begin(); i != cams.end(); i++)
     {
 
-      dc1394video_frame_t *in_frame = i->cam->getFrame();
+      dc1394video_frame_t *in_frame = i->cam->getFrame(DC1394_CAPTURE_POLICY_POLL);
       dc1394video_frame_t *frame;
 
-      if (i->colorize)
+      if (in_frame != NULL)
       {
-        frame = (dc1394video_frame_t*)calloc(1,sizeof(dc1394video_frame_t));
-        in_frame->color_filter = i->bayer;
 
-        if (dc1394_debayer_frames(in_frame, frame, DC1394_BAYER_METHOD_BILINEAR) != DC1394_SUCCESS)
-          printf("Debayering failed!\n");
-      } else {
-        frame = in_frame;
+        if (i->colorize)
+        {
+          frame = (dc1394video_frame_t*)calloc(1,sizeof(dc1394video_frame_t));
+          in_frame->color_filter = i->bayer;
+
+          if (dc1394_debayer_frames(in_frame, frame, DC1394_BAYER_METHOD_BILINEAR) != DC1394_SUCCESS)
+            printf("Debayering failed!\n");
+        } else {
+          frame = in_frame;
+        }
+
+        uint8_t *buf      = frame->image;
+        uint32_t width    = frame->size[0];
+        uint32_t height   = frame->size[1];
+        uint32_t buf_size = width*height;
+
+        i->img.width = width;
+        i->img.height = height;
+        i->img.compression = "raw";
+
+        if (frame->color_coding == DC1394_COLOR_CODING_RGB8)
+        {
+          i->img.colorspace = "rgb24";
+          buf_size *= 3;
+        } else {
+          i->img.colorspace = "mono8";
+        }
+
+        i->img.set_data_size(buf_size);
+        memcpy(i->img.data, buf, buf_size);
+
+        ostringstream oss;
+        oss << "image" << i->index;
+
+        publish(oss.str(), i->img);
+
+        if (i->colorize) {
+          free(frame->image);
+          free(frame);
+        }
+
+        i->cam->releaseFrame(in_frame);
+
+        count++;
+
       }
-
-      uint8_t *buf      = frame->image;
-      uint32_t width    = frame->size[0];
-      uint32_t height   = frame->size[1];
-      uint32_t buf_size = width*height;
-
-      i->img.width = width;
-      i->img.height = height;
-      i->img.compression = "raw";
-
-      if (frame->color_coding == DC1394_COLOR_CODING_RGB8)
-      {
-        i->img.colorspace = "rgb24";
-        buf_size *= 3;
-      } else {
-        i->img.colorspace = "mono8";
-      }
-
-      i->img.set_data_size(buf_size);
-      memcpy(i->img.data, buf, buf_size);
-
-      ostringstream oss;
-      oss << "image" << i->index;
-
-      publish(oss.str(), i->img);
-
-      if (i->colorize) {
-        free(frame->image);
-        free(frame);
-      }
-
-      i->cam->releaseFrame(in_frame);
-
-      count++;
     }
 
     ros::Time now_time = ros::Time::now();

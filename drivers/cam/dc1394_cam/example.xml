@@ -1,0 +1,24 @@
+<launch>
+  <param name="numCams" type="int" value="2"/>
+
+  <param name="guid0"       type="str"    value="b09d01006cf628"/>
+  <param name="speed0"      type="str"    value="S400"/>
+  <param name="videoMode0"  type="str"    value="640x480mono8"/>
+  <param name="bayer0"      type="str"    value="gbrg"/>
+  <param name="fps0"        type="double" value="60.0"/>
+  <param name="brightness0" type="int"    value="170"/>
+  <param name="exposure0"   type="int"    value="30"/>
+  <param name="shutter0"    type="double" value="0.2"/>
+  <param name="gamma0"      type="double" value="1"/>
+  <param name="gain0"       type="double" value="10.0"/>
+
+  <param name="guid1"       type="str"    value="81443610263766b"/>
+  <param name="speed1"      type="str"    value="S100"/>
+  <param name="videoMode1"  type="str"    value="640x480mono8"/>
+  <param name="bayer1"      type="str"    value="bggr"/>
+  <param name="fps1"        type="double" value="7.5"/>
+  <param name="brightness1" type="str"    value="auto"/>
+  <param name="exposure1"   type="str"    value="auto"/>
+
+  <node pkg="dc1394_cam" type="dc1394_node" respawn="false"/>
+</launch>

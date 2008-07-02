@@ -33,9 +33,10 @@
 *********************************************************************/
 
 #include "dc1394_cam/dc1394_cam.h"
-
+#include <errno.h>
 
 dc1394_t* dc1394_cam::Cam::dcRef = NULL;
+fd_set dc1394_cam::Cam::camFds;
 
 
 void
@@ -46,7 +47,10 @@ dc1394_cam::init() {
 void
 dc1394_cam::Cam::init() {
   if (dcRef == NULL)
+  {
     dcRef = dc1394_new();
+    FD_ZERO(&camFds);
+  }
 }
 
 
@@ -61,7 +65,9 @@ void
 dc1394_cam::Cam::fini()
 {
   if (dcRef != NULL)
+  {
     dc1394_free(dcRef);
+  }
 }
 
 
@@ -107,6 +113,32 @@ uint64_t dc1394_cam::Cam::getGuid(size_t i)
   return guid;
 }
 
+bool dc1394_cam::waitForData(int usec)
+{
+  return Cam::waitForData(usec);
+}
+
+bool
+dc1394_cam::Cam::waitForData(int usec)
+{
+  struct timeval timeout;
+  timeout.tv_sec = 0;     // If you want to sleep long than a second, you're probably doing something bad...
+  timeout.tv_usec = usec;
+
+  fd_set fds = camFds;
+
+  int retval = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
+  
+  if (retval < 0)
+  {
+    fprintf(stderr, "Select() returned error: %s", strerror(errno));
+  }
+
+  if (retval <= 0)
+    return false;
+
+  return true;
+}
 
 
 dc1394_cam::Cam::Cam(uint64_t guid, 
@@ -122,7 +154,7 @@ dc1394_cam::Cam::Cam(uint64_t guid,
   if (!dcCam)
     throw CamException("Could not create camera");
 
-  //  CHECK_ERR_CLEAN( dc1394_reset_bus(dcCam), "Could not rset bus" );
+  //  CHECK_ERR_CLEAN( dc1394_reset_bus(dcCam), "Could not reset bus" );
 
   CHECK_ERR_CLEAN( dc1394_video_set_iso_speed(dcCam, speed), "Could not set iso speed");
   
@@ -131,6 +163,8 @@ dc1394_cam::Cam::Cam(uint64_t guid,
   CHECK_ERR_CLEAN( dc1394_video_set_framerate(dcCam, fps), "Could not set framerate");
 
   CHECK_ERR_CLEAN( dc1394_capture_setup(dcCam, bufferSize, DC1394_CAPTURE_FLAGS_DEFAULT), "Could not setup camera.");
+
+  FD_SET(dc1394_capture_get_fileno(dcCam), &camFds);
 }
 
 
@@ -159,7 +193,6 @@ void
 dc1394_cam::Cam::stop()
 {
   CHECK_READY();
-
   CHECK_ERR_CLEAN( dc1394_video_set_transmission(dcCam, DC1394_OFF), "Could not stop camera iso transmission");
 
   started = false;
@@ -190,8 +223,51 @@ dc1394_cam::Cam::releaseFrame(dc1394video_frame_t* f)
 
 
 void
+dc1394_cam::Cam::setFeature(dc1394feature_t feature, uint32_t value)
+{
+  CHECK_READY();
+  dc1394bool_t present;
+  CHECK_ERR_CLEAN( dc1394_feature_is_present(dcCam, feature, &present), "Could not check if feature was present");
+  if (present)
+    CHECK_ERR_CLEAN( dc1394_feature_set_value(dcCam, feature, value), "Could not set feature");
+}
+
+void
+dc1394_cam::Cam::setFeatureAbsolute(dc1394feature_t feature, float value)
+{
+  CHECK_READY();
+  dc1394bool_t present;
+  CHECK_ERR_CLEAN( dc1394_feature_is_present(dcCam, feature, &present), "Could not check if feature was present");
+  if (present)
+  {
+    CHECK_ERR_CLEAN( dc1394_feature_set_absolute_control(dcCam, feature,  DC1394_ON), "Could not enable absolute control.");
+    CHECK_ERR_CLEAN( dc1394_feature_set_absolute_value(dcCam, feature, value), "Could not set feature");
+  }
+}
+
+void
+dc1394_cam::Cam::setFeatureMode(dc1394feature_t feature, dc1394feature_mode_t mode)
+{
+  CHECK_READY();
+  dc1394bool_t present;
+  CHECK_ERR_CLEAN( dc1394_feature_is_present(dcCam, feature, &present), "Could not check if feature was present");
+  if (present)
+  {
+    CHECK_ERR_CLEAN( dc1394_feature_set_absolute_control(dcCam, feature,  DC1394_ON), "Could not disable absolute control.");
+    CHECK_ERR_CLEAN( dc1394_feature_set_mode(dcCam, feature, mode), "Could not set feature");
+  }
+}
+
+
+
+
+void
 dc1394_cam::Cam::cleanup() {
   CHECK_READY();
+
+  if (FD_ISSET(dc1394_capture_get_fileno(dcCam), &camFds))
+    FD_CLR(dc1394_capture_get_fileno(dcCam), &camFds);
+
   dc1394_video_set_transmission(dcCam, DC1394_OFF);
   dc1394_capture_stop(dcCam);
   dc1394_camera_free(dcCam);

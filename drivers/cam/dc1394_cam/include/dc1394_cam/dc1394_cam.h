@@ -82,11 +82,13 @@ namespace dc1394_cam
   void fini();
   size_t numCams();
   uint64_t getGuid(size_t i);
+  bool waitForData(int usec);
 
   class Cam
   {
   private:
     static dc1394_t* dcRef;
+    static fd_set camFds;
 
     void cleanup();
     bool started;
@@ -100,6 +102,8 @@ namespace dc1394_cam
     static size_t numCams();
 
     static uint64_t getGuid(size_t i);
+
+    static bool waitForData(int usec);
 
     Cam(uint64_t guid,
         dc1394speed_t speed = DC1394_ISO_SPEED_400,
@@ -116,6 +120,12 @@ namespace dc1394_cam
     dc1394video_frame_t* getFrame(dc1394capture_policy_t policy = DC1394_CAPTURE_POLICY_WAIT);
 
     void releaseFrame(dc1394video_frame_t* f);
+
+    void setFeature(dc1394feature_t feature, uint32_t value);
+
+    void setFeatureAbsolute(dc1394feature_t feature, float value);
+
+    void setFeatureMode(dc1394feature_t feature, dc1394feature_mode_t mode);
 
     dc1394camera_t* dcCam;
 
