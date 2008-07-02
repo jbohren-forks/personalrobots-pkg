@@ -437,28 +437,99 @@ PR2_ERROR_CODE PR2Robot::SetArmControlMode(PR2_MODEL_ID id, PR2_CONTROL_MODE mod
 {
    switch(id)
    {
-      case PR2_RIGHT_ARM:
-         armControlMode[0] = mode;
-         hw.SetJointControlMode(ARM_L_PAN             , PD_CONTROL); 
-         hw.SetJointControlMode(ARM_L_SHOULDER_PITCH  , PD_CONTROL);
-         hw.SetJointControlMode(ARM_L_SHOULDER_ROLL   , PD_CONTROL); 
-         hw.SetJointControlMode(ARM_L_ELBOW_PITCH     , PD_CONTROL);
-         hw.SetJointControlMode(ARM_L_ELBOW_ROLL      , PD_CONTROL); 
-         hw.SetJointControlMode(ARM_L_WRIST_PITCH     , PD_CONTROL);
-         hw.SetJointControlMode(ARM_L_WRIST_ROLL      , PD_CONTROL); 
-         break;
+	
       case PR2_LEFT_ARM:
-         armControlMode[1] = mode;
-         hw.SetJointControlMode(ARM_R_PAN             , PD_CONTROL); 
-         hw.SetJointControlMode(ARM_R_SHOULDER_PITCH  , PD_CONTROL);
-         hw.SetJointControlMode(ARM_R_SHOULDER_ROLL   , PD_CONTROL); 
-         hw.SetJointControlMode(ARM_R_ELBOW_PITCH     , PD_CONTROL);
-         hw.SetJointControlMode(ARM_R_ELBOW_ROLL      , PD_CONTROL); 
-         hw.SetJointControlMode(ARM_R_WRIST_PITCH     , PD_CONTROL);
-         hw.SetJointControlMode(ARM_R_WRIST_ROLL      , PD_CONTROL); 
+	if(mode == PR2_CARTESIAN_CONTROL){
+         armControlMode[0] = mode;
+         hw.SetJointControlMode(ARM_L_PAN             , SPEED_CONTROL); 
+         hw.SetJointControlMode(ARM_L_SHOULDER_PITCH  , SPEED_CONTROL);
+          hw.SetJointControlMode(ARM_L_SHOULDER_ROLL   , SPEED_CONTROL); 
+          hw.SetJointControlMode(ARM_L_ELBOW_PITCH     , SPEED_CONTROL);
+          hw.SetJointControlMode(ARM_L_ELBOW_ROLL      , SPEED_CONTROL); 
+          hw.SetJointControlMode(ARM_L_WRIST_PITCH     , SPEED_CONTROL);
+          hw.SetJointControlMode(ARM_L_WRIST_ROLL      , SPEED_CONTROL); 
          break;
-      default:
+	}
+	else if(mode == PR2_SPEED_TORQUE_CONTROL){
+         armControlMode[0] = mode;
+         hw.SetJointControlMode(ARM_L_PAN             , SPEED_TORQUE_CONTROL); 
+         hw.SetJointControlMode(ARM_L_SHOULDER_PITCH  , SPEED_TORQUE_CONTROL);
+          hw.SetJointControlMode(ARM_L_SHOULDER_ROLL   , SPEED_TORQUE_CONTROL); 
+          hw.SetJointControlMode(ARM_L_ELBOW_PITCH     , SPEED_TORQUE_CONTROL);
+          hw.SetJointControlMode(ARM_L_ELBOW_ROLL      , SPEED_TORQUE_CONTROL); 
+          hw.SetJointControlMode(ARM_L_WRIST_PITCH     , SPEED_TORQUE_CONTROL);
+          hw.SetJointControlMode(ARM_L_WRIST_ROLL      , SPEED_TORQUE_CONTROL); 
          break;
+	}
+	else if(mode==PR2_CARTESIAN_TORQUE_CONTROL){
+	  armControlMode[0] = mode;
+          hw.SetJointControlMode(ARM_L_PAN             , PD_TORQUE_CONTROL); 
+          hw.SetJointControlMode(ARM_L_SHOULDER_PITCH  , PD_TORQUE_CONTROL);
+          hw.SetJointControlMode(ARM_L_SHOULDER_ROLL   , PD_TORQUE_CONTROL); 
+          hw.SetJointControlMode(ARM_L_ELBOW_PITCH     , PD_TORQUE_CONTROL);
+          hw.SetJointControlMode(ARM_L_ELBOW_ROLL      , PD_TORQUE_CONTROL); 
+          hw.SetJointControlMode(ARM_L_WRIST_PITCH     , PD_TORQUE_CONTROL);
+          hw.SetJointControlMode(ARM_L_WRIST_ROLL      , PD_TORQUE_CONTROL); 
+         break;
+	}
+	else{ //Default to joint control mode
+	 armControlMode[0] = mode;
+          hw.SetJointControlMode(ARM_L_PAN             , PD_CONTROL); 
+          hw.SetJointControlMode(ARM_L_SHOULDER_PITCH  , PD_CONTROL);
+          hw.SetJointControlMode(ARM_L_SHOULDER_ROLL   , PD_CONTROL); 
+          hw.SetJointControlMode(ARM_L_ELBOW_PITCH     , PD_CONTROL);
+          hw.SetJointControlMode(ARM_L_ELBOW_ROLL      , PD_CONTROL); 
+          hw.SetJointControlMode(ARM_L_WRIST_PITCH     , PD_CONTROL);
+          hw.SetJointControlMode(ARM_L_WRIST_ROLL      , PD_CONTROL); 
+         break;
+	} 
+      case PR2_RIGHT_ARM:
+        if(mode == PR2_CARTESIAN_CONTROL){
+         armControlMode[0] = mode;
+          hw.SetJointControlMode(ARM_R_PAN             , SPEED_CONTROL); 
+          hw.SetJointControlMode(ARM_R_SHOULDER_PITCH  , SPEED_CONTROL);
+          hw.SetJointControlMode(ARM_R_SHOULDER_ROLL   , SPEED_CONTROL); 
+          hw.SetJointControlMode(ARM_R_ELBOW_PITCH     , SPEED_CONTROL);
+          hw.SetJointControlMode(ARM_R_ELBOW_ROLL      , SPEED_CONTROL); 
+          hw.SetJointControlMode(ARM_R_WRIST_PITCH     , SPEED_CONTROL);
+          hw.SetJointControlMode(ARM_R_WRIST_ROLL      , SPEED_CONTROL); 
+         break;
+	}
+	else if(mode == PR2_SPEED_TORQUE_CONTROL){
+         armControlMode[0] = mode;
+          hw.SetJointControlMode(ARM_R_PAN             , SPEED_TORQUE_CONTROL); 
+          hw.SetJointControlMode(ARM_R_SHOULDER_PITCH  , SPEED_TORQUE_CONTROL);
+          hw.SetJointControlMode(ARM_R_SHOULDER_ROLL   , SPEED_TORQUE_CONTROL); 
+          hw.SetJointControlMode(ARM_R_ELBOW_PITCH     , SPEED_TORQUE_CONTROL);
+          hw.SetJointControlMode(ARM_R_ELBOW_ROLL      , SPEED_TORQUE_CONTROL); 
+          hw.SetJointControlMode(ARM_R_WRIST_PITCH     , SPEED_TORQUE_CONTROL);
+          hw.SetJointControlMode(ARM_R_WRIST_ROLL      , SPEED_TORQUE_CONTROL); 
+         break;
+	}
+	else if(mode==PR2_CARTESIAN_TORQUE_CONTROL){
+	  armControlMode[0] = mode;
+          hw.SetJointControlMode(ARM_R_PAN             , PD_TORQUE_CONTROL); 
+          hw.SetJointControlMode(ARM_R_SHOULDER_PITCH  , PD_TORQUE_CONTROL);
+          hw.SetJointControlMode(ARM_R_SHOULDER_ROLL   , PD_TORQUE_CONTROL); 
+          hw.SetJointControlMode(ARM_R_ELBOW_PITCH     , PD_TORQUE_CONTROL);
+          hw.SetJointControlMode(ARM_R_ELBOW_ROLL      , PD_TORQUE_CONTROL); 
+          hw.SetJointControlMode(ARM_R_WRIST_PITCH     , PD_TORQUE_CONTROL);
+          hw.SetJointControlMode(ARM_R_WRIST_ROLL      , PD_TORQUE_CONTROL); 
+         break;
+	}
+	else { //Default to joint control mode
+	 armControlMode[0] = mode;
+          hw.SetJointControlMode(ARM_R_PAN             , PD_CONTROL); 
+          hw.SetJointControlMode(ARM_R_SHOULDER_PITCH  , PD_CONTROL);
+          hw.SetJointControlMode(ARM_R_SHOULDER_ROLL   , PD_CONTROL); 
+          hw.SetJointControlMode(ARM_R_ELBOW_PITCH     , PD_CONTROL);
+          hw.SetJointControlMode(ARM_R_ELBOW_ROLL      , PD_CONTROL); 
+          hw.SetJointControlMode(ARM_R_WRIST_PITCH     , PD_CONTROL);
+          hw.SetJointControlMode(ARM_R_WRIST_ROLL      , PD_CONTROL); 
+         break;
+	} 
+	default: 
+       break;	
    }
    return PR2_ALL_OK;
 };
