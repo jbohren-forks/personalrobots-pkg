@@ -128,16 +128,16 @@ class Pose3D
 class Quaternion3D {
 
 public:
-  static const int MIN_INTERPOLATION_DISTANCE = 5; //Number of nano-seconds to not interpolate below.
-  static const unsigned int MAX_LENGTH_LINKED_LIST = 1000000; // Maximum length of linked list, to make sure not to be able to use unlimited memory.
-  static const unsigned long long DEFAULT_MAX_STORAGE_TIME = 10ULL * 1000000000ULL; // default value of 10 seconds storage
-  static const unsigned long long DEFAULT_MAX_EXTRAPOLATION_TIME = 10000000000ULL; // default max extrapolation of 10 seconds
+  static const int MIN_INTERPOLATION_DISTANCE = 5; //!< Number of nano-seconds to not interpolate below.
+  static const unsigned int MAX_LENGTH_LINKED_LIST = 1000000; //!< Maximum length of linked list, to make sure not to be able to use unlimited memory.
+  static const unsigned long long DEFAULT_MAX_STORAGE_TIME = 10ULL * 1000000000ULL; //!< default value of 10 seconds storage
+  static const unsigned long long DEFAULT_MAX_EXTRAPOLATION_TIME = 10000000000ULL; //!< default max extrapolation of 10 seconds
   // Storage class
   class Quaternion3DStorage : public Pose3D
   {
   public:
     Quaternion3DStorage & operator=(const Quaternion3DStorage & input);
-    unsigned long long time; //nanoseconds since 1970
+    unsigned long long time; //!<nanoseconds since 1970
   };
 
   /** \brief An exception class to notify that the requested value would have required extrapolation, and extrapolation is not allowed.
@@ -167,19 +167,24 @@ public:
   void addFromDH(double length, double alpha, double offset, double theta, unsigned long long time);
 
   
-  /** Interpolated Accessors **/
-  // Return a Quaternion
+  /* Interpolated Accessors */
+  /** \breif Return a Quaternion
+   * \param time The desired time for the transformation */
   Quaternion3D::Quaternion3DStorage getQuaternion(unsigned long long time);
-  // Return a Matrix
+  /** \brief Return the transform as a Matrix  
+   * \param time The desired time for the transformation */
   NEWMAT::Matrix getMatrix(unsigned long long time);
-  // Return the inverse matrix
+  /** \breif Return the inverse matrix 
+   * \param time The desired time for the transformation */
   NEWMAT::Matrix getInverseMatrix(unsigned long long time);
   
-  //Print as a matrix
+  /** \brief Print the stored value at a time as a matrix */
   void printMatrix(unsigned long long time);  //Not a critical part either
+  /** \brief Print the value of a specific storage unit */
   void printStorage(const Quaternion3DStorage &storage); //Do i need this now that i've got the ostream method??
 
-  // Remove all nodes from the list
+  /** \brief Remove all nodes from the list
+   * This will clear all cached transformations.   */
   void clearList();
   
   
@@ -187,59 +192,64 @@ private:
   /**** Linked List stuff ****/
 
   struct data_LL;
-
+  /// The data structure for the linked list
   struct data_LL{
     Quaternion3DStorage data;
     struct data_LL * next;
     struct data_LL * previous;
   };
-
+  /** \brief The internal method for getting data out of the linked list */
   bool getValue(Quaternion3DStorage& buff, unsigned long long time, long long  &time_diff);
-  void add_value(const Quaternion3DStorage&);//todo fixme finish implementing this
+  /** \brief The internal method for adding to the linked list 
+   * by all the specific add functions.  */
+  void add_value(const Quaternion3DStorage&);
 
 
   ExtrapolateException MaxExtrapolation;
 
-  // insert a node into the sorted linked list
+  /** \brief insert a node into the sorted linked list   */
   void insertNode(const Quaternion3DStorage & );
-  // prune data older than max_storage_time from the list
+
+  /** \brief prune data older than max_storage_time from the list   */
   void pruneList();
 
-  //Find the closest two points in the list  
-  //Return the distance to the closest one
+  /** \brief Find the closest two points in the list  
+   *Return the distance to the closest one*/
   int findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two, const unsigned long long target_time, long long &time_diff);
 
-  //Interpolate between two nodes and return the interpolated value
-  // This must always take two valid points!!!!!!
-  // Only Cpose version implemented
+  /** \brief Interpolate between two nodes and return the interpolated value
+   * This must always take two valid points!!!!!! */
   void interpolate(const Quaternion3DStorage &one, const Quaternion3DStorage &two, const unsigned long long target_time, Quaternion3DStorage& output);
 
-  //Used by interpolate to interpolate between double values
+  /** Linearly interpolate two doubles 
+   *Used by interpolate to interpolate between double values */
   double interpolateDouble(const double, const unsigned long long, const double, const unsigned long long, const unsigned long long);
 
-  //How long to cache incoming values
+  ///How long to cache incoming values
   unsigned long long max_storage_time;
-  //Max length of linked list
+  ///Max length of linked list
   unsigned long long max_length_linked_list;
-  //Whether to allow extrapolation
+  ///Whether to allow extrapolation
   unsigned long long max_extrapolation_time;
 
-  //A mutex to prevent linked list collisions
+  ///A mutex to prevent linked list collisions
   pthread_mutex_t linked_list_mutex;
 
-  //Pointers for the start and end of a sorted linked list.
+  ///Pointer for the start of a sorted linked list.
   data_LL* first;
+  ///Pointer for the end of a sorted linked list.
   data_LL* last;
 
+  ///The length of the list
   unsigned int list_length;
 
-  //Whether or not to interpolate
+  ///Whether or not to interpolate
   bool interpolating;
 
 };
 
 
-//A namespace ostream overload for displaying storage
+/** \brief A namespace ostream overload for displaying storage */
 std::ostream & operator<<(std::ostream& mystream,const Quaternion3D::Quaternion3DStorage & storage);    
 
 };
