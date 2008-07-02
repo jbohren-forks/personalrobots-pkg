@@ -165,6 +165,7 @@ void Pr2_Actarray::LoadChild(XMLConfigNode *node)
       this->myIface->data->actuators[i].iClamp           =  jNode->GetDouble("iClamp",0.0,1);
       //this->myIface->data->actuators[i].cmdPosition      =  0.0;
       //this->myIface->data->actuators[i].cmdSpeed         =  0.0;
+      std::string tmpControlMode                         =  jNode->GetString("controlMode","PD_CONTROL",0);
 
       // init a new pid for this joint
       this->pids[i] = new Pid();
@@ -172,8 +173,14 @@ void Pr2_Actarray::LoadChild(XMLConfigNode *node)
       // get time
       this->myIface->data->actuators[i].timestamp = Simulator::Instance()->GetSimTime();
       // set default control mode to:
-      //this->myIface->data->actuators[i].controlMode = PR2::TORQUE_CONTROL;
-      this->myIface->data->actuators[i].controlMode = PR2::PD_CONTROL;
+      if (tmpControlMode == "TORQUE_CONTROL")
+          this->myIface->data->actuators[i].controlMode = PR2::TORQUE_CONTROL;
+      else if (tmpControlMode == "PD_TORQUE_CONTROL")
+          this->myIface->data->actuators[i].controlMode = PR2::PD_TORQUE_CONTROL;
+      else if (tmpControlMode == "PD_CONTROL")
+          this->myIface->data->actuators[i].controlMode = PR2::PD_CONTROL;
+      else
+          this->myIface->data->actuators[i].controlMode = PR2::PD_CONTROL;
 
       jNode = jNode->GetNext("joint");
    }
@@ -277,40 +284,41 @@ double currentAngle;
 
              switch(this->myIface->data->actuators[count].controlMode)
              {
-                case PR2::TORQUE_CONTROL :
-                    sjoint->SetSliderForce(this->myIface->data->actuators[count].cmdEffectorForce);
+                 case PR2::TORQUE_CONTROL :
+                     sjoint->SetSliderForce(this->myIface->data->actuators[count].cmdEffectorForce);
+                     break;
+                     // case PR2::PD_CONTROL1 :
+                     //    // No fancy controller, just pass the commanded torque/force in (we are not modeling the motors for now)
+                     //    positionError = cmdPosition - sjoint->GetPosition();
+                     //    speedError    = cmdSpeed    - sjoint->GetPositionRate();
+                     //    //std::cout << "slider e:" << speedError << " + " << positionError << std::endl;
+                     //    currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
+                     //    currentCmd = (currentCmd >  this->myIface->data->actuators[count].saturationTorque ) ?  this->myIface->data->actuators[count].saturationTorque : currentCmd;
+                     //    currentCmd = (currentCmd < -this->myIface->data->actuators[count].saturationTorque ) ? -this->myIface->data->actuators[count].saturationTorque : currentCmd;
+                     //    sjoint->SetSliderForce(currentCmd);
+                     //    break;
+                 case PR2::PD_TORQUE_CONTROL :
+                 case PR2::PD_CONTROL : // velocity control
+                     //if (cmdPosition > sjoint->GetHighStop())
+                     //   cmdPosition = sjoint->GetHighStop();
+                     //else if (cmdPosition < sjoint->GetLowStop())
+                     //   cmdPosition = sjoint->GetLowStop();
+  
+                     positionError = cmdPosition - sjoint->GetPosition();
+                     speedError    = cmdSpeed    - sjoint->GetPositionRate();
+                     //std::cout << "slider e:" << speedError << " + " << positionError << std::endl;
+                     currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
+  
+                     sjoint->SetParam( dParamVel , currentCmd );
+                     sjoint->SetParam( dParamFMax, this->myIface->data->actuators[count].saturationTorque );
+                     break;
+                 case PR2::SPEED_CONTROL :
+                     sjoint->SetParam( dParamVel, cmdSpeed);
+                     sjoint->SetParam( dParamFMax,this->myIface->data->actuators[count].saturationTorque );
+                     break;
+  
+                 default:
                     break;
-                    // case PR2::PD_CONTROL1 :
-                    //    // No fancy controller, just pass the commanded torque/force in (we are not modeling the motors for now)
-                    //    positionError = cmdPosition - sjoint->GetPosition();
-                    //    speedError    = cmdSpeed    - sjoint->GetPositionRate();
-                    //    //std::cout << "slider e:" << speedError << " + " << positionError << std::endl;
-                    //    currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
-                    //    currentCmd = (currentCmd >  this->myIface->data->actuators[count].saturationTorque ) ?  this->myIface->data->actuators[count].saturationTorque : currentCmd;
-                    //    currentCmd = (currentCmd < -this->myIface->data->actuators[count].saturationTorque ) ? -this->myIface->data->actuators[count].saturationTorque : currentCmd;
-                    //    sjoint->SetSliderForce(currentCmd);
-                    //    break;
-                case PR2::PD_CONTROL : // velocity control
-                    //if (cmdPosition > sjoint->GetHighStop())
-                    //   cmdPosition = sjoint->GetHighStop();
-                    //else if (cmdPosition < sjoint->GetLowStop())
-                    //   cmdPosition = sjoint->GetLowStop();
-
-                    positionError = cmdPosition - sjoint->GetPosition();
-                    speedError    = cmdSpeed    - sjoint->GetPositionRate();
-                    //std::cout << "slider e:" << speedError << " + " << positionError << std::endl;
-                    currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
-
-                    sjoint->SetParam( dParamVel , currentCmd );
-                    sjoint->SetParam( dParamFMax, this->myIface->data->actuators[count].saturationTorque );
-                    break;
-                case PR2::SPEED_CONTROL :
-                    sjoint->SetParam( dParamVel, cmdSpeed);
-                    sjoint->SetParam( dParamFMax,this->myIface->data->actuators[count].saturationTorque );
-                break;
-
-                default:
-                   break;
              }
 
              this->myIface->data->actuators[count].actualPosition      = sjoint->GetPosition();
@@ -324,7 +332,7 @@ double currentAngle;
              cmdSpeed = this->myIface->data->actuators[count].cmdSpeed;
              switch(this->myIface->data->actuators[count].controlMode)
              {
-                case PR2::TORQUE_CONTROL:
+                 case PR2::TORQUE_CONTROL:
                     printf("Hinge Torque Control\n");
                     hjoint->SetTorque(this->myIface->data->actuators[count].cmdEffectorForce);
                     //std::cout << count << " " << this->myIface->data->actuators[count].controlMode << std::endl;
