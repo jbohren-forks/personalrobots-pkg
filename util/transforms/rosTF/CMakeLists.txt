@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 2.6)
+include(rosbuild)
+rospack(rosTF)
+add_definitions(-Wall)
+rospack_add_library(rosTF src/rosTF.cpp)
+rospack_add_executable(testServer src/testServer.cc)
+rospack_add_executable(testClient src/testClient.cc)
