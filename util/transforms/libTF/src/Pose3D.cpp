@@ -293,7 +293,7 @@ Pose3D::Position Pose3D::positionFromMatrix(const NEWMAT::Matrix & matrix_in)
   return position;
 };
 
-void Pose3D::Normalize()
+void Pose3D::normalize()
 {
   double mag = getMagnitude();
   xr /= mag;

@@ -78,7 +78,7 @@ namespace libTF
              double xr, double yt, double zt, double w);
   
       // Utility functions to normalize and get magnitude.
-      void Normalize(void);
+      void normalize(void);
       double getMagnitude(void);
       Pose3D & operator=(const Pose3D & input);
   
