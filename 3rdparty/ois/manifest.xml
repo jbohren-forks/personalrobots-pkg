@@ -9,7 +9,7 @@ This package contains Open Dynamics Engine OpenDE or ODE
 <license>LGPL</license>
 <url>http://ois.sf.net</url>
 <export>
-  <cpp lflags="-Xlinker -rpath ${prefix}/ois/lib -L${prefix}/ois/lib -lOIS" cflags="-I${prefix}/ois/include/OIS"/>
+  <cpp lflags="-Wl,-rpath,${prefix}/ois/lib -L${prefix}/ois/lib -lOIS" cflags="-I${prefix}/ois/include/OIS"/>
 </export>
 </package>
 
