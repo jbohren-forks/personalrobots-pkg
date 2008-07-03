@@ -1,10 +1,6 @@
 SubDir exec_trex ;
 
-if ! $(ROS_PACKAGE_PATH) {
-     	echo "" ; echo "" ;
-        echo "ERROR: You need to set ROS_PACKAGE_PATH." ;
-	echo "" ; echo "" ;
-} else if ! $(exec_trex_READY) {
+if ! $(exec_trex_READY) {
 
 	# All this ROS and PR related stuff needs to be cleaned up. As it stands, it will not have any make integration
 	# for when ROS or Pr change. Also, the declarations at this level force linkage of more than should otherwise
@@ -15,12 +11,12 @@ if ! $(ROS_PACKAGE_PATH) {
 			[ FDirName $(ROS_ROOT) 3rdparty xmlrpc++ libXmlRpc.a ]
 			[ FDirName $(ROS_ROOT) util rosthread lib librosthread.a ]
 			[ FDirName $(ROS_ROOT) util rostime lib librostime.a ]
-			[ FDirName $(ROS_PACKAGE_PATH) 3rdparty player player lib libwavefront_standalone.so ]	       
-			[ FDirName $(ROS_PACKAGE_PATH) util transforms rosTF lib
+			[ FDirName $(PR_ROOT) 3rdparty player player lib libwavefront_standalone.so ]	       
+			[ FDirName $(PR_ROOT) util transforms rosTF lib
    			  librosTF.a ]
-			[ FDirName $(ROS_PACKAGE_PATH) util transforms libTF lib libTF.a
+			[ FDirName $(PR_ROOT) util transforms libTF lib libTF.a
    			]
-			[ FDirName $(ROS_PACKAGE_PATH) 3rdparty newmat10 newmat newmat10
+			[ FDirName $(PR_ROOT) 3rdparty newmat10 newmat newmat10
    			  libnewmat.a ] ;
 
 	# Include directories for ROS. Can obtain from rospack export/cpp/cflags roscpp
@@ -32,12 +28,12 @@ if ! $(ROS_PACKAGE_PATH) {
    	SubDirHdrs $(ROS_ROOT) std_msgs msg cpp ;
 	SubDirHdrs $(ROS_ROOT) std_srvs srv cpp ;		
 	
-	SubDirHdrs $(ROS_PACKAGE_PATH) 3rdparty player player include player-2.2 ;
-	SubDirHdrs $(ROS_PACKAGE_PATH) util transforms rosTF include ;
-	SubDirHdrs $(ROS_PACKAGE_PATH) util transforms libTF include ;
-	SubDirHdrs $(ROS_PACKAGE_PATH) 3rdparty newmat10 newmat ;
-	SubDirHdrs $(ROS_PACKAGE_PATH) util transforms namelookup srv cpp ;
-   	SubDirHdrs $(ROS_PACKAGE_PATH) util transforms namelookup include ;
+	SubDirHdrs $(PR_ROOT) 3rdparty player player include player-2.2 ;
+	SubDirHdrs $(PR_ROOT) util transforms rosTF include ;
+	SubDirHdrs $(PR_ROOT) util transforms libTF include ;
+	SubDirHdrs $(PR_ROOT) 3rdparty newmat10 newmat ;
+	SubDirHdrs $(PR_ROOT) util transforms namelookup srv cpp ;
+   	SubDirHdrs $(PR_ROOT) util transforms namelookup include ;
 
 	# GNU Library include directories
 	SubDirHdrs / usr include gtk-2.0 ;
@@ -50,7 +46,7 @@ if ! $(ROS_PACKAGE_PATH) {
 	# PLASMA & TREX libraries found here
 	LINKFLAGS = $(LINKFLAGS) -Wl,-rpath,$(PLASMA_HOME)/build/lib ;
 	# Wavefront player libraries found here
-	LINKFLAGS = $(LINKFLAGS) -lrt  -lgtk-x11-2.0 -Wl,-rpath,$(ROS_PACKAGE_PATH)/3rdparty/player/player/lib ;
+	LINKFLAGS = $(LINKFLAGS) -lrt  -lgtk-x11-2.0 -Wl,-rpath,$(PR_ROOT)/3rdparty/player/player/lib ;
 
 
 	ModuleMain exec_trex : Executive.cc RCSVelAdapter.cc RCSArmAdapter.cc ROSNode.cc Logger.cc RCSVelAdapterPlayback.cc LogClock.cc
@@ -60,8 +56,8 @@ if ! $(ROS_PACKAGE_PATH) {
 	Depends exec_trex : exec_inputs ;
 
 	ModuleMain exec_listener : ExecListener.cc : : exec_listener ;
-	ModuleMain rcs : RCS.cc ExecDefs.cc : TREX : rcs ;
-	ModuleMain logger : MessageLogger.cc ExecDefs.cc : TREX : logger ;
+	ModuleMain rcs : RCS.cc ExecDefs.o : TREX : rcs ;
+	ModuleMain logger : MessageLogger.cc ExecDefs.o : TREX : logger ;
 
  	# Input file for exec
 	local TestInputs = 
