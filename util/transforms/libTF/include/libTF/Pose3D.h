@@ -44,7 +44,9 @@
 
 namespace libTF
 {
-
+  /** \brief A class used to store and do basic minipulations of 3D transformations
+   * 
+   */
   class Pose3D 
   {
       friend class Pose3DCache;

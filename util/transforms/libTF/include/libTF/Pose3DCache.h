@@ -44,7 +44,22 @@
 
 namespace libTF{
 
- 
+  /** \brief A class to provide a linked list cache of Pose3D over time.
+   *
+   * This will maintain a linked list of Pose3D data types for max_cache_time.
+   * It provides random access with a parameter of time.  It has protections 
+   * on the max length of the linked list, the max storage time, the max extrapolation
+   * time.  
+   * 
+   * This class will provide SLERP between the internal Quaternion representations 
+   * of transformations.  It has a minimum interpolation distance which prevents interpolation if there
+   * exists nearby data points, if computational time is an issue.  
+   * 
+   * time = 0 in accessors will produce the lastest value.  
+   *
+   * 
+   *
+   */
   class Pose3DCache {
 
   public:
@@ -69,26 +84,30 @@ namespace libTF{
         virtual const char* what() const throw()    { return "Disallowed extrapolation required."; }
       };
   
-    /** Constructors **/
-    // Standard constructor max_cache_time is how long to cache transform data
+    /** \brief The constructor 
+     * \param interpolating Whether or not to interpolating when accessing 
+     * \param max_cache_time How long to cache past data (nanoseconds)
+     * \param max_extrapolation_time How far to extrapolate before throwing an exception
+     */
     Pose3DCache(bool interpolating = true, 
                 unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME,
                 unsigned long long  max_extrapolation_time = DEFAULT_MAX_EXTRAPOLATION_TIME); 
+    /** \brief Destructor */
     ~Pose3DCache();  
 
-    /** Mutators **/
-    // Set the values manually
+    /* Mutators */
+    /** \brief Set the values with translation and quaternion notation */
     void addFromQuaternion(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time);
-    //Set the values from a matrix
+    /** \brief Set the values from a matrix */
     void addFromMatrix(const NEWMAT::Matrix& matIn, unsigned long long time);
-    // Set the values using Euler angles
+    /** \brief  Set the values using translation and Euler angles */
     void addFromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll, unsigned long long time);
-    // Set the values using DH Parameters
+    /** \brief Set the values using DH Parameters */
     void addFromDH(double length, double alpha, double offset, double theta, unsigned long long time);
 
   
     /* Interpolated Accessors */
-    /** \breif Return a Pose
+    /** \brief Return a Pose
      * \param time The desired time for the transformation */
     Pose3DStorage getPoseStorage(unsigned long long time);
     /** \brief Return the transform as a Matrix  
@@ -121,7 +140,7 @@ namespace libTF{
     /** \brief The internal method for getting data out of the linked list */
     bool getValue(Pose3DStorage& buff, unsigned long long time, long long  &time_diff);
     /** \brief The internal method for adding to the linked list 
-     * by all the specific add functions.  */
+     * which is by all the specific add functions.  */
     void add_value(const Pose3DStorage&);
 
 
