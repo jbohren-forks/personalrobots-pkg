@@ -14,7 +14,7 @@ OGRE (Object-Oriented Graphics Rendering Engine) is a scene-oriented, flexible 3
 <depend package="ois"/>
 <depend package="Cg"/>
 <export>
-  <cpp lflags="-Xlinker -rpath ${prefix}/ogre/lib -L${prefix}/ogre/lib/OGRE -L${prefix}/ogre/lib -lOgreMain" cflags="-I${prefix}/ogre/include/OGRE"/>
+  <cpp lflags="-Wl,-rpath,${prefix}/ogre/lib -L${prefix}/ogre/lib/OGRE -L${prefix}/ogre/lib -lOgreMain" cflags="-I${prefix}/ogre/include/OGRE"/>
 </export>
 </package>
 

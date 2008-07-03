@@ -32,21 +32,37 @@ LFLAGS = $(shell rospack export/cpp/lflags freeimage) \
 CONFIGURE_FLAGS = --with-arch=nocona --enable-release CXXFLAGS='-O3 -I$(FIROOT)/include -I$(OISROOT)/include -I$(CGROOT)/include' LDFLAGS=' -L$(FIROOT)/lib -L$(OISROOT)/lib -L$(CGROOT)/lib' CFLAGS='-O3 -I$(FIROOT)/include -I$(OISROOT)/include -I$(CGROOT)/include'
 
 $(OGRE_VERSION)/Makefile: $(OGRE_VERSION)
-	cd $(OGRE_VERSION) && \
-	export LIB="$(LFLAGS)" && \
-	export CFLAGS="$(CFLAGS)" && \
-	./configure --prefix=$(ROOT) --enable-threading --with-pic --with-platform=GLX --with-gui=gtk  --disable-ogre-demos $(CONFIGURE_FLAGS)
-	touch $(OGRE_VERSION)/Makefile
-	mkdir -p ogre
-	mkdir -p ogre/lib
-	mkdir -p ogre/include
-	mkdir -p ogre/share
-	mkdir -p ogre/bin
+	if [ `uname` = Darwin ]; then \
+	  touch $(OGRE_VERSION)/Makefile; \
+	else \
+	  cd $(OGRE_VERSION) && \
+	  export LIB="$(LFLAGS)" && \
+	  export CFLAGS="$(CFLAGS)" && \
+	  ./configure --prefix=$(ROOT) --enable-threading --with-pic --with-platform=GLX --with-gui=gtk  --disable-ogre-demos $(CONFIGURE_FLAGS); \
+	  touch $(OGRE_VERSION)/Makefile; \
+	  mkdir -p ogre; \
+	  mkdir -p ogre/lib; \
+	  mkdir -p ogre/include; \
+	  mkdir -p ogre/share; \
+	  mkdir -p ogre/bin; \
+	fi
 
 ogre: $(OGRE_VERSION)/Makefile
 	# building OGRE
-	cd $(OGRE_VERSION) && make $(JOBC)
-	cd $(OGRE_VERSION) && make install
+	if [ `uname` = Darwin ]; then \
+	  cd $(OGRE_VERSION)/Mac/Ogre && \
+	  export CPATH=Developer/SDKs/MacOSX10.5.sdk/usr/X11/include:/Developer/SDKs/MacOSX10.5.sdk/usr/X11/include/freetype2:`rospack find freeimage`/freeimage/include:/opt/local/include && \
+	  export LIBRARY_PATH=`rospack find freeimage`/freeimage/lib:/opt/local/lib && \
+	  xcodebuild ARCHS=i386 -target Ogre && \
+	  xcodebuild ARCHS=i386 -target "GL Render System" && \
+	  xcodebuild ARCHS=i386 -target "ParticleFX Plugin" && \
+	  xcodebuild ARCHS=i386 -target "BSPSceneManager Plugin" && \
+	  xcodebuild ARCHS=i386 -target "OctreeSceneManager Plugin" && \
+	  xcodebuild ARCHS=i386 -target "Bundle Resources"; \
+	else \
+	  cd $(OGRE_VERSION) && make $(JOBC); \
+	  cd $(OGRE_VERSION) && make install; \
+	fi
 	@echo "done"
 
 .PHONY: clean wipe
