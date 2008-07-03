@@ -56,8 +56,17 @@
       <xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
-      <geometry type="cylinder"><!-- geometry specified using a simple geometric object -->
-        <size>0 0</size> 
+      <geometry type="mesh" name="pr2_caster_mesh_file">
+        <filename>{ROS_PKG}/demos/2dnav-gazebo/world/Media/models/pr2_caster.mesh</filename><!-- mesh specified using an obj file --> 
+      </geometry>
+    </define> 
+
+    <define template="pr2_caster_collision">
+      <xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <material>Gazebo/Grey</material>
+      <geometry type="box"><!-- geometry specified using a simple geometric object -->
+        <size>0.1 0.08 0.1</size> 
       </geometry>
     </define> 
 
@@ -292,11 +301,11 @@
   <link name="caster_front_left">
     <parent> base</parent>
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-      <xyz> 0.2255 0.2255 0.08069 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
-      <joint clone="pr2_caster_joint"/>
-      <inertial clone="pr2_caster_inertial"/>
-      <visual clone="pr2_caster_visual"/>
-    <collision clone="pr2_caster_visual"/>
+    <xyz> 0.2255 0.2255 0.08069 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <joint clone="pr2_caster_joint"/>
+    <inertial clone="pr2_caster_inertial"/>
+    <visual clone="pr2_caster_visual"/>
+    <collision clone="pr2_caster_collision"/>
   </link>
 
 
@@ -308,7 +317,7 @@
     <joint clone="pr2_caster_joint"/>
     <inertial clone="pr2_caster_inertial"/>
     <visual clone="pr2_caster_visual"/>
-    <collision clone="pr2_caster_visual"/>
+    <collision clone="pr2_caster_collision"/>
   </link>
 
   <link name="caster_rear_left">
@@ -320,7 +329,7 @@
       <joint clone="pr2_caster_joint"/>
       <inertial clone="pr2_caster_inertial"/>
       <visual clone="pr2_caster_visual"/>
-    <collision clone="pr2_caster_visual"/>
+    <collision clone="pr2_caster_collision"/>
   </link>
 
   <link name="caster_rear_right">
@@ -332,7 +341,7 @@
       <joint clone="pr2_caster_joint"/>
       <inertial clone="pr2_caster_inertial"/>
       <visual clone="pr2_caster_visual"/>
-    <collision clone="pr2_caster_visual"/>
+    <collision clone="pr2_caster_collision"/>
   </link>
 
   <link name="wheel_front_left_l">
