@@ -109,6 +109,7 @@ WavefrontPlanner::WavefrontPlanner(char* ex_mapdata, int ex_sx, int ex_sy)
   }
 
   _activePlan = _masterPlan;
+  _lastObs = NULL;
 
   // if(DoTiming) {
 //     gettimeofday(&timeafter,&tzdummy);
@@ -157,16 +158,18 @@ int WavefrontPlanner::GenerateGlobalPlan(double curx, double cury,
   }
 
   //check if we already have a plan for this
-  plan_t* pt = GetPlan(goalx,goaly);
+  PlanEntry* pt = GetPlan(goalx,goaly);
   if(pt == NULL) {
     pt =  CreateNewPlan(goalx, goaly);
   } else {
     //for now assume we don't need to replan
     //return 1;
   }
+
+  UpdatePlanEntryObsIfNeeded(pt);
   
   int res = 0;
-  res = plan_do_global(pt, curx, cury, goalx, goaly);
+  res = plan_do_global(pt->plan, curx, cury, goalx, goaly);
 
   if(res < 0) {
     std::cout << "Global plan failing\n";
@@ -205,12 +208,14 @@ int WavefrontPlanner::GenerateLocalPlan(double curx, double cury,
     gettimeofday(&timebefore,&tzdummy);
   }
 
-  plan_t* pt = GetPlan(goalx,goaly);
+  PlanEntry* pt = GetPlan(goalx,goaly);
   if(pt == NULL) return -1;
 
-  _activePlan = pt;
+  _activePlan = pt->plan;
 
-  int res = plan_do_local(pt, curx, cury, PlanHalfwidth);
+  UpdatePlanEntryObsIfNeeded(pt);
+
+  int res = plan_do_local(pt->plan, curx, cury, PlanHalfwidth);
 
   if(res < 0) {
     std::cout << "Local planning failed.\n";
@@ -240,10 +245,12 @@ int WavefrontPlanner::DetermineDiffDriveCmds(double& vx, double& va,
     gettimeofday(&timebefore,&tzdummy);
   }
 
-  plan_t* pt = GetPlan(goalx,goaly);
+  PlanEntry* pt = GetPlan(goalx,goaly);
   if(pt == NULL) return -1;
 
-  int res = plan_compute_diffdrive_cmds(pt,&vx,&va,
+  //assume we've already inserted obstacles if needed
+
+  int res = plan_compute_diffdrive_cmds(pt->plan,&vx,&va,
 					&rotateDir,
 					curx, cury, curTh,
 					goalx, goaly, goalth,
@@ -288,13 +295,13 @@ plan_t* WavefrontPlanner::GetActivePlan() const {
   return _activePlan;
 }
 
-plan_t* WavefrontPlanner::GetPlan(double gx, double gy) {
+WavefrontPlanner::PlanEntry* WavefrontPlanner::GetPlan(double gx, double gy) {
   for(std::list<PlanEntry*>::iterator it = _planEntries.begin();
       it != _planEntries.end();
       it++) {
     if(abs(gx-(*it)->goal_x) < VerySmall &&
        abs(gy-(*it)->goal_y) < VerySmall) {
-      return ((*it)->plan);
+      return ((*it));
     }
   }
   return NULL;
@@ -305,10 +312,10 @@ plan_t* WavefrontPlanner::GetPlan(double gx, double gy) {
 //   return true;
 // }
 
-plan_t* WavefrontPlanner::CreateNewPlan(double gx, double gy) {
+WavefrontPlanner::PlanEntry* WavefrontPlanner::CreateNewPlan(double gx, double gy) {
   PlanEntry* pe = new PlanEntry(gx, gy, _masterPlan);
   _planEntries.push_back(pe);
-  return pe->plan;
+  return pe;
 }
 
 WavefrontPlanner::PlanEntry::PlanEntry(double gx, double gy, const plan_t* mp) {
@@ -321,7 +328,14 @@ WavefrontPlanner::PlanEntry::~PlanEntry() {
   plan_free(plan);
 }
 
-void WavefrontPlanner::SetObstacles(double* obs, size_t num) {
+void WavefrontPlanner::UpdatePlanEntryObsIfNeeded(PlanEntry* pe) {
+  //if we have newer data
+  if(_lastTs > pe->obsTime) {
+    plan_set_obstacles(pe->plan, _lastObs, _lastNum);
+  }
+}
+
+void WavefrontPlanner::SetObstacles(unsigned long long obstime, double* obs, size_t num) {
   struct timeval timebefore;
   struct timeval timeafter;
   struct timezone tzdummy;
@@ -330,13 +344,23 @@ void WavefrontPlanner::SetObstacles(double* obs, size_t num) {
     gettimeofday(&timebefore,&tzdummy);
   }
 
-  plan_set_obstacles(_masterPlan, obs, num);
-
-  for(std::list<PlanEntry*>::iterator it = _planEntries.begin();
-      it != _planEntries.end();
-      it++) {
-    plan_set_obstacles((*it)->plan, obs, num);
+  if(_lastObs) {
+    delete[] _lastObs;
+    _lastObs = NULL;
   }
+  //two points per num
+  _lastObs = new double[num*2];
+  _lastNum = num;
+  memcpy(_lastObs, obs, num*2*sizeof(double));
+  _lastTs = obstime;
+
+  // plan_set_obstacles(_masterPlan, obs, num);
+
+  //  for(std::list<PlanEntry*>::iterator it = _planEntries.begin();
+  //    it != _planEntries.end();
+  //    it++) {
+  //  plan_set_obstacles((*it)->plan, obs, num);
+  // }
 
   if(DoTiming) {
     gettimeofday(&timeafter,&tzdummy);

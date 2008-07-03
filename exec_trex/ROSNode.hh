@@ -70,7 +70,7 @@ namespace TREX{
     /**
      * Called by Bottom Level Adapter to dispatch arm commands. Needs to translate token into suitable message structure
      */
-    void dispatchArm(const TokenId& cmd_vel);    
+    void dispatchArm(const TokenId& cmd_vel, TICK currentTick);    
 
     /**
      * Get all observations.
@@ -80,7 +80,7 @@ namespace TREX{
     /**
      * Get all arm observations.
      */
-    void get_arm_obs(std::vector<Observation*>& obsBuffer);
+    void get_arm_obs(std::vector<Observation*>& obsBuffer, TICK currentTick);
 
     /**
      * test if the node is initialized with inbound messages it requires
@@ -156,6 +156,8 @@ namespace TREX{
     bool _generateFirstObservation;
     bool _rightArmInit;
     bool _leftArmInit;
+    TICK _lastActiveLeftArmDispatch;
+    TICK _lastActiveRightArmDispatch;
 
     std_msgs::Planner2DState m_rcs_state;
     std_msgs::Polyline2D polylineMsg;

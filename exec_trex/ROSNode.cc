@@ -125,7 +125,8 @@ namespace TREX {
     _generateFirstObservation = true;
     _leftArmInit = false;
     _rightArmInit = false;
-    
+    _lastActiveLeftArmDispatch = 10000;
+    _lastActiveRightArmDispatch = 10000;
   }
 
 
@@ -246,11 +247,9 @@ namespace TREX {
     publish("gui_path", polylineMsg);
   }
 
-  void ROSNode::dispatchArm(const TokenId& cmd_arm) {
+  void ROSNode::dispatchArm(const TokenId& cmd_arm, TICK currentTick) {
     
     std::cout << "Trying to dispatch arm.\n";
-    
-
     if(cmd_arm->getPredicateName() == LabelStr("ArmController.Active")) {
       //figure out if it's left or right
       PR2Arm armGoal;
@@ -269,12 +268,14 @@ namespace TREX {
       if(getObjectName(cmd_arm)==LabelStr("rac")) {
 	debugMsg("ROSNode::Arm", "dispatching command for right arm.");
 	publish("right_pr2arm_set_position",armGoal);
+	_lastActiveRightArmDispatch = currentTick;
 	_rightArmActive = true;
 	_lastRightArmGoal = armGoal;
       } else {
 	debugMsg("ROSNode::Arm", "dispatching command for left arm.");
 	publish("left_pr2arm_set_position",armGoal);
 	_leftArmActive = true;
+	_lastActiveLeftArmDispatch = currentTick;
 	_lastLeftArmGoal = armGoal;
       }
     }
@@ -315,9 +316,9 @@ namespace TREX {
     } catch(libTF::TransformReference::LookupException& ex) {
       debugMsg("ROSNode::VS", "no global->local Tx yet");
       return NULL;
-    } catch(libTF::Pose3DCache::ExtrapolateException& ex) {
+    } catch(libTF::Quaternion3D::ExtrapolateException& ex) {
       debugMsg("ROSNode::VS", 
-	       "libTF::Pose3DCache::ExtrapolateException occured");
+	       "libTF::Quaternion3D::ExtrapolateException occured");
     }
 
     
@@ -399,18 +400,22 @@ namespace TREX {
     unlock();  
   }
 
-  void ROSNode::get_arm_obs(std::vector<Observation*>& buff){
+  void ROSNode::get_arm_obs(std::vector<Observation*>& buff, TICK currentTick){
    
     if(_rightArmInit && _leftArmInit) {
 
-      Observation* larm = get_left_arm_obs();
-      if(larm != NULL)
-	buff.push_back(larm);
+      if(currentTick != _lastActiveLeftArmDispatch) {
+	Observation* larm = get_left_arm_obs();
+	if(larm != NULL)
+	  buff.push_back(larm);
+      }
       
-      Observation* rarm = get_right_arm_obs();
-      if(rarm != NULL)
-	buff.push_back(rarm);
-      
+      if(currentTick != _lastActiveRightArmDispatch) {
+	Observation* rarm = get_right_arm_obs();
+	if(rarm != NULL)
+	  buff.push_back(rarm);
+      }
+	
       _generateFirstObservation = false;
     }
   }
@@ -521,6 +526,8 @@ namespace TREX {
     */
     this->buffered_laser_scans.push_back(newscan);
     
+    unsigned long long newScanTime = newscan.header.stamp.to_ull();
+
     // Iterate through the buffered scans, trying to interpolate each one
     for(std::list<LaserScan>::iterator it = this->buffered_laser_scans.begin();
 	it != this->buffered_laser_scans.end();
@@ -567,7 +574,7 @@ namespace TREX {
 		delete[] pts.pts;
 		return;
 	      }
-	    catch(libTF::Pose3DCache::ExtrapolateException& ex)
+	    catch(libTF::Quaternion3D::ExtrapolateException& ex)
 	      {
 		puts("extrapolation required");
 		delete[] pts.pts;
@@ -649,7 +656,8 @@ namespace TREX {
     this->ros::node::publish("gui_laser",this->pointcloudMsg);
 
     
-    WavefrontPlanner::Instance()->SetObstacles(this->laser_hitpts, 
+    WavefrontPlanner::Instance()->SetObstacles(newScanTime,
+					       this->laser_hitpts, 
 					       this->laser_hitpts_len);  
 
     unlock(); 

@@ -31,7 +31,7 @@ class WavefrontPlanner {
 	
   //bool NeedNewGlobalPlan(double gx, double gy);
 
-  void SetObstacles(double* obs, size_t num);
+  void SetObstacles(unsigned long long obstime, double* obs, size_t num);
 
   double WorldCenterX() const;
   double WorldCenterY() const;
@@ -56,6 +56,7 @@ class WavefrontPlanner {
 
     double goal_x;
     double goal_y;
+    unsigned long long obsTime;
     plan_t* plan;
   };
 
@@ -63,15 +64,21 @@ class WavefrontPlanner {
   plan_t* _masterPlan;
   plan_t* _activePlan;
 
-  plan_t* GetPlan(double x, double y);
+  void UpdatePlanEntryObsIfNeeded(PlanEntry* pe);
 
-  plan_t* CreateNewPlan(double gx, double gy);
+  PlanEntry* GetPlan(double x, double y);
+
+  PlanEntry* CreateNewPlan(double gx, double gy);
   
   static WavefrontPlanner* _minstance;
 
   double _cenx;
   double _ceny;
   
+  double* _lastObs;
+  size_t _lastNum;
+  unsigned long long _lastTs;
+
   //double _lastX;
   //double _lastY;
 

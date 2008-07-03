@@ -31,7 +31,7 @@ namespace TREX {
   bool RCSArmAdapter::synchronize(){
     debugMsg("RCSArmAdapter:synchronize", nameString() << "Checking..");
     std::vector<Observation*> obsBuffer;
-    m_node->get_arm_obs(obsBuffer);
+    m_node->get_arm_obs(obsBuffer, getCurrentTick());
     for(std::vector<Observation*>::const_iterator it = obsBuffer.begin(); it != obsBuffer.end(); ++it){
       Observation* obs = *it;
       debugMsg("RCSArmAdapter:synchronize", nameString() << obs->toString());
@@ -52,7 +52,7 @@ namespace TREX {
     debugMsg("RCSArmAdapter:handlerRequest matching: ",arm_command->getBaseObjectType().toString());
     if(arm_command->getBaseObjectType() == ARM_CONTROLLER) {
       debugMsg("RCSArmAdapter:handleRequest", arm_command->toString());
-      m_node->dispatchArm(arm_command);
+      m_node->dispatchArm(arm_command, getCurrentTick());
       //assuming instantly active
       if(arm_command->getPredicateName() == LabelStr("ArmController.Active")) {
 	ObservationByReference obs(arm_command);
