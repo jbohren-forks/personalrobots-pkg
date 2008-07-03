@@ -126,6 +126,13 @@ public:
       res.str = selectedTopic->topicName;
     else
       res.str = string("");
+    // see if it's the magical '__none' topic, in which case we do an open circuit
+    if (req.str == string("__none"))
+    {
+      printf("mux selected to no input.\n");
+      selectedTopic = NULL;
+      return true;
+    }
     // spin through our vector of inputs and find this guy
     for (size_t i = 0; i < numInTopics; i++)
       if (inMsgs[i].topicName == req.str)
