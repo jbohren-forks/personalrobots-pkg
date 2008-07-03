@@ -505,7 +505,7 @@
         </joint>
         <!-- ========================================= -->
         <joint name="torso_spine_slider">
-          <saturationTorque>100</saturationTorque>
+          <saturationTorque>1000</saturationTorque>
           <pGain>100</pGain>
           <dGain>0</dGain>
           <iGain>0</iGain>
