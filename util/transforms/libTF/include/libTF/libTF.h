@@ -36,11 +36,11 @@
 #include <iomanip>
 #include <newmat10/newmat.h>
 #include <newmat10/newmatio.h>
-#include <math.h>
+#include <cmath>
 #include <vector>
 #include <sstream>
 
-#include "Quaternion3D.h"
+#include "libTF/Pose3DCache.h"
 
 /** \mainpage libTF a transformation library
  *
@@ -401,5 +401,5 @@ private:
   NEWMAT::Matrix computeTransformFromList(const TransformLists & list, ULLtime time);
 
 };
-};
+}
 #endif //LIBTF_HH

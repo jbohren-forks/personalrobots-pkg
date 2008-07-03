@@ -456,7 +456,7 @@ WavefrontNode::laserReceived()
         delete[] pts.pts;
         return;
       }
-      catch(libTF::Quaternion3D::ExtrapolateException& ex)
+      catch(libTF::Pose3DCache::ExtrapolateException& ex)
       {
         //puts("extrapolation required");
         delete[] pts.pts;
@@ -599,7 +599,7 @@ WavefrontNode::doOneCycle()
     this->stopRobot();
     return;
   }
-  catch(libTF::Quaternion3D::ExtrapolateException& ex)
+  catch(libTF::Pose3DCache::ExtrapolateException& ex)
   {
     // this should never happen
     puts("WARNING: extrapolation failed!");

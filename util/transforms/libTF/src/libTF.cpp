@@ -31,7 +31,7 @@
 //POSSIBILITY OF SUCH DAMAGE.
 
 #include "libTF/libTF.h"
-#include <assert.h>
+#include <cassert>
 
 using namespace libTF;
 
@@ -52,10 +52,10 @@ TransformReference::TransformReference(bool interpolating,
   interpolating (interpolating),
   max_extrapolation_distance(max_extrapolation_distance)
 {
-
+  
   frames = new RefFrame*[MAX_NUM_FRAMES];
   assert(frames);
-
+  
   /* initialize pointers to NULL */
   for (unsigned int i = 0; i < MAX_NUM_FRAMES; i++)
     {
@@ -77,7 +77,7 @@ TransformReference::~TransformReference()
 };
 
 void TransformReference::addFrame(unsigned int frameID, unsigned int parentID) {
- if (frameID >= MAX_NUM_FRAMES || parentID >= MAX_NUM_FRAMES || frameID == NO_PARENT)
+  if (frameID >= MAX_NUM_FRAMES || parentID >= MAX_NUM_FRAMES || frameID == NO_PARENT)
     throw InvalidFrame;
 
   if (frames[frameID] == NULL)
@@ -379,7 +379,7 @@ NEWMAT::Matrix TransformReference::computeTransformFromList(const TransformLists
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
       retMat *= getFrame(lists.inverseTransforms[lists.inverseTransforms.size() -1 - i])->getMatrix(time); //Reverse to get left multiply
-   }
+    }
   for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
     {
       retMat *= getFrame(lists.forwardTransforms[i])->getInverseMatrix(time); //Do this list backwards(from backwards) for it was generated traveling the wrong way
