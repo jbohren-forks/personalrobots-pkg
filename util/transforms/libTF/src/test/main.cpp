@@ -6,10 +6,12 @@ using namespace libTF;
 
 int main(void)
 {
-
-  
+    /*  
   Pose3D pz;
-  pz.setFromEuler(0,0,0, M_PI/2, 0, 0);
+  pz.setFromEuler(0,0,0,   0, 0, M_PI/2);
+  NEWMAT::Matrix m = pz.asMatrix();
+  cout << m;
+    
   Pose3D::Position p;
   p.x = 0;
   p.y = 0;
@@ -18,7 +20,8 @@ int main(void)
   pz.applyToPosition(p);
   printf("After rotate: %f %f %f\n", p.x, p.y, p.z);
     
-
+  exit(0);
+    */
     
   for (int ind = 0; ind < 2;ind++)
     {

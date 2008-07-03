@@ -187,10 +187,6 @@ namespace libTF{
 
   };
 
-
-  /** \brief A namespace ostream overload for displaying storage */
-  std::ostream & operator<<(std::ostream& mystream,const Pose3DCache::Pose3DStorage & storage);    
-
 };
 
 

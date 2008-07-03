@@ -143,6 +143,9 @@ namespace libTF
   };
 
 
+  /** \brief A namespace ostream overload for displaying poses */
+  std::ostream & operator<<(std::ostream& mystream, const Pose3D &pose);
+
 }
 
 

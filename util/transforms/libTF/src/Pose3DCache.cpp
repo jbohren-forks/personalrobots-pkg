@@ -111,16 +111,6 @@ Pose3DCache::Pose3DStorage& Pose3DCache::Pose3DStorage::operator=(const Pose3DSt
 };
 
 
-
-//Note not member function
-std::ostream & libTF::operator<<(std::ostream& mystream, const Pose3DCache::Pose3DStorage& storage)
-{
-    Pose3D::Quaternion q = storage.getQuaternion();
-    Pose3D::Position   p = storage.getPosition();
-    mystream << "Storage: " << p.x << ", " << p.y << ", " << p.z << ", " << q.x << ", " << q.y << ", " << q.z << ", " << q.w << std::endl; 
-    return mystream;
-};
-
 Pose3DCache::Pose3DStorage Pose3DCache::getPoseStorage(unsigned long long time)
 {
   Pose3DStorage temp;

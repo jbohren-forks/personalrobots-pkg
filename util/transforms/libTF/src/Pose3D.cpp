@@ -405,9 +405,9 @@ void Pose3D::applyToPosition(Position &pos) const
 	   xs = 2.0 * xr * w,  yy = 2.0 * yr * yr, yz = 2.0 * yr * zr,                 
 	   ys = 2.0 * yr * w,  zz = 2.0 * zr * zr, zs = 2.0 * zr * w;
     
-    double t0 = pos.x * (2.0 - yy - zz) + pos.y * (xy - zs) + pos.z * (xz + ys);
-    double t1 = pos.x * (xy + zs) + pos.y * (2.0 - xx - zz) + pos.z * (yz - xs);
-    pos.z     = pos.x * (xz - ys) + pos.y * (yz + xs) + pos.z * (2.0 - xx - yy);
+    double t0 = pos.x * (1.0 - yy - zz) + pos.y * (xy - zs) + pos.z * (xz + ys);
+    double t1 = pos.x * (xy + zs) + pos.y * (1.0 - xx - zz) + pos.z * (yz - xs);
+    pos.z     = pos.x * (xz - ys) + pos.y * (yz + xs) + pos.z * (1.0 - xx - yy);
     pos.y     = t1;
     pos.x     = t0;
 }
@@ -428,3 +428,12 @@ void Pose3D::applyToPositions(std::vector<Position*> &posv) const
 	pos.x     = t0;
     }
 }
+
+//Note not member function
+std::ostream & libTF::operator<<(std::ostream& mystream, const Pose3D &storage)
+{
+    Pose3D::Quaternion q = storage.getQuaternion();
+    Pose3D::Position   p = storage.getPosition();
+    mystream << "Storage: " << p.x << ", " << p.y << ", " << p.z << ", " << q.x << ", " << q.y << ", " << q.z << ", " << q.w << std::endl; 
+    return mystream;
+};
