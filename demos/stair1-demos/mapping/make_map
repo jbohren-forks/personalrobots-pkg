@@ -1,2 +1,2 @@
 #!/bin/bash
-`rospack find gmapping`/gmapping-svn/bin/gfs2img -delta 0.05 -skip 2 -filename firstpass.gfs
+`rospack find gmapping`/gmapping-svn/bin/gfs2img -delta 0.05 -skip 10 -filename secondpass-out.gfs
