@@ -38,10 +38,12 @@
 #include <iostream>
 
 #include <gazebo_plugin/Pr2_Actarray.hh>
+#include <math.h>
+
+#include <unistd.h>
 
 using namespace gazebo;
 using namespace PR2;
-
 
 
 //GZ_REGISTER_STATIC_CONTROLLER("pr2_actarray", Pr2_Actarray);
@@ -215,6 +217,75 @@ void Pr2_Actarray::InitChild()
    lastTime = Simulator::Instance()->GetSimTime();
 }
 
+
+#ifdef ADVAIT
+void Pr2_Actarray::UpdateChild()
+{
+	HingeJoint *hjoint;
+	double cmdPosition;
+	double currentTime;
+
+	double curr_ang;
+	double mass, length;
+	double g;
+	double gravity_torque;
+	static double error, error_prev=-200;
+	double kp,kd;
+	double apply_torque;
+
+	this->myIface->Lock(1);
+
+	currentTime = Simulator::Instance()->GetSimTime();
+	this->myIface->data->head.time = currentTime;
+	this->myIface->data->actuators_count = this->num_joints;
+
+	//--------- loop through all the controllable dof's in this interface ----------
+	for (int count = 0; count < this->num_joints; count++)
+	{
+		switch(this->joints[count]->GetType())
+		{
+			case Joint::HINGE:
+				hjoint = dynamic_cast<HingeJoint*>(this->joints[count]);
+				cmdPosition = this->myIface->data->actuators[count].cmdPosition;
+				cmdPosition = DTOR(60.0);
+				curr_ang = hjoint->GetAngle();
+				mass = 5;
+				length = 0.25;
+				g = 9.8;
+				gravity_torque = -mass*g*cos(curr_ang)*length;
+				error = cmdPosition-curr_ang;
+				if (error_prev == -200)
+					error_prev = error;
+
+				kp = 1.;
+				kd = 50.0;
+				printf("---------------\n");
+				printf("error: %f\t error_prev: %f\n", RTOD(error), RTOD(error_prev));
+				printf("kp term: %.3f\tkd term: %.3f\t", kp*error, kd*(error-error_prev));
+				apply_torque = -gravity_torque + kp*error + kd*(error-error_prev);
+				error_prev = error;
+				printf("error: %.2f\tapplied torque:%f\n", RTOD(error), apply_torque);
+				hjoint->SetTorque(apply_torque);
+
+				this->myIface->data->actuators[count].actualPosition      = hjoint->GetAngle();
+				this->myIface->data->actuators[count].actualSpeed         = hjoint->GetAngleRate();
+				this->myIface->data->actuators[count].actualEffectorForce = 0.0; //TODO: use JointFeedback struct at some point
+				break;
+
+			case Joint::SLIDER:
+			case Joint::HINGE2:
+			case Joint::BALL:
+			case Joint::UNIVERSAL:
+				break;
+		}
+	}
+
+	this->myIface->data->new_cmd = 0;
+	this->myIface->Unlock();
+	this->lastTime = currentTime;
+}
+
+#else
 ////////////////////////////////////////////////////////////////////////////////
 // 
 // Update the controller
@@ -415,6 +486,8 @@ double currentAngle;
    this->myIface->Unlock();
    this->lastTime = currentTime;
 }
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 //
