@@ -1,23 +1,24 @@
-all: libdc1394v2
+all: libdc1394v2-build
 
-libdc1394-2.0.2.tar.gz:
-	wget http://downloads.sourceforge.net/libdc1394/libdc1394-2.0.2.tar.gz
+libdc1394v2:
+	svn co https://libdc1394.svn.sourceforge.net/svnroot/libdc1394/trunk/libdc1394/ libdc1394v2
+	cd libdc1394v2 && patch -p0 < ../conversions_fix.patch
+	cd libdc1394v2 && autoreconf -i -s
+	cd libdc1394v2 && ./configure --prefix=`rospack find libdc1394v2` --enable-shared=no
 
-download: libdc1394-2.0.2.tar.gz
+download: libdc1394v2
 
-libdc1394v2: libdc1394-2.0.2.tar.gz
-	tar xzf libdc1394-2.0.2.tar.gz
-	cd libdc1394-2.0.2 && ./configure --prefix=`rospack find libdc1394v2` --enable-shared=no
-	cd libdc1394-2.0.2 && make install
+libdc1394v2-build: libdc1394v2
+	cd libdc1394v2 && make
+	cd libdc1394v2 && make install
 
 clean: 
-	rm -rf libdc1394-2.0.2
 	rm -rf include
 	rm -rf lib
 	rm -rf share
 	rm -rf bin
 
 wipe: clean
-	rm -rf libdc1394-2.0.2.tar.gz
+	rm -rf libdc1394v2
 
 .PHONY : clean wipe
