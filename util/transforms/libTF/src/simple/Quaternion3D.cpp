@@ -36,16 +36,7 @@
 
 using namespace libTF;
 
-Euler3D::Euler3D():x(0),y(0),z(0),yaw(0),pitch(0),roll(0) {;};
-
-Euler3D::Euler3D(double _x, double _y, double _z, double _yaw, double _pitch, double _roll) :
-  x(_x),y(_y),z(_z),yaw(_yaw),pitch(_pitch),roll(_roll)
-{
-  return;
-};
-
-
-Quaternion3D::Quaternion3D(bool interpolating, 
+Pose3DCache::Pose3DCache(bool interpolating, 
                            unsigned long long max_cache_time,
                            unsigned long long _max_extrapolation_time):
   max_storage_time(max_cache_time),
@@ -65,14 +56,14 @@ Quaternion3D::Quaternion3D(bool interpolating,
   return;
 };
 
-Quaternion3D::~Quaternion3D()
+Pose3DCache::~Pose3DCache()
 {
   clearList();
 };
 
-void Quaternion3D::addFromQuaternion(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time)
+void Pose3DCache::addFromQuaternion(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time)
 {
- Quaternion3DStorage temp;
+ Pose3DStorage temp;
  temp.xt = _xt; temp.yt = _yt; temp.zt = _zt; temp.xr = _xr; temp.yr = _yr; temp.zr = _zr; temp.w = _w; temp.time = time;
 
  add_value(temp);
@@ -80,9 +71,9 @@ void Quaternion3D::addFromQuaternion(double _xt, double _yt, double _zt, double 
 } ;
 
 
-void Quaternion3D::addFromMatrix(const NEWMAT::Matrix& matIn, unsigned long long time)
+void Pose3DCache::addFromMatrix(const NEWMAT::Matrix& matIn, unsigned long long time)
 {
-  Quaternion3DStorage temp;
+  Pose3DStorage temp;
   temp.setFromMatrix(matIn);
   temp.time = time;  
 
@@ -177,9 +168,9 @@ void Pose3D::setFromMatrix(const NEWMAT::Matrix& matIn)
 
 };
 
-void Quaternion3D::addFromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll, unsigned long long time)
+void Pose3DCache::addFromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll, unsigned long long time)
 {
-  Quaternion3DStorage temp;
+  Pose3DStorage temp;
   temp.setFromEuler(_x,_y,_z,_yaw,_pitch,_roll);
   temp.time = time;
 
@@ -191,7 +182,7 @@ void Pose3D::setFromEuler(double _x, double _y, double _z, double _yaw, double _
   setFromMatrix(Pose3D::matrixFromEuler(_x,_y,_z,_yaw,_pitch,_roll));
 };
 
-void Quaternion3D::addFromDH(double length, double alpha, double offset, double theta, unsigned long long time)
+void Pose3DCache::addFromDH(double length, double alpha, double offset, double theta, unsigned long long time)
 {
   addFromMatrix(Pose3D::matrixFromDH(length, alpha, offset, theta),time);
 };
@@ -290,7 +281,7 @@ Pose3D& Pose3D::operator=(const Pose3D & input)
   return *this;
 };
 
-Quaternion3D::Quaternion3DStorage& Quaternion3D::Quaternion3DStorage::operator=(const Quaternion3DStorage & input)
+Pose3DCache::Pose3DStorage& Pose3DCache::Pose3DStorage::operator=(const Pose3DStorage & input)
 {
   xt = input.xt;
   yt = input.yt;
@@ -306,18 +297,14 @@ Quaternion3D::Quaternion3DStorage& Quaternion3D::Quaternion3DStorage::operator=(
 
 
 
-Euler3D Pose3D::eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned int solution_number)
+Pose3D::Euler Pose3D::eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned int solution_number)
 {
 
-  Euler3D euler_out;
-  Euler3D euler_out2; //second solution
+  Euler euler_out;
+  Euler euler_out2; //second solution
   //get the pointer to the raw data
   double* matrix_pointer = matrix_in.Store();
-  //Pass through translations
-  euler_out.x = matrix_pointer[3];
-  euler_out.y = matrix_pointer[7];
-  euler_out.z = matrix_pointer[11];
-  
+
   // Check that pitch is not at a singularity
   if (fabs(matrix_pointer[8]) >= 1)
     {
@@ -363,6 +350,18 @@ Euler3D Pose3D::eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned int s
     return euler_out2;
 };
 
+Pose3D::Position Pose3D::positionFromMatrix(const NEWMAT::Matrix & matrix_in)
+{
+
+  Position position;
+  //get the pointer to the raw data
+  double* matrix_pointer = matrix_in.Store();
+  //Pass through translations
+  position.x = matrix_pointer[3];
+  position.y = matrix_pointer[7];
+  position.z = matrix_pointer[11];
+  return position;
+};
 
 void Pose3D::Normalize()
 {
@@ -379,25 +378,25 @@ double Pose3D::getMagnitude()
 };
 
 //Note not member function
-std::ostream & libTF::operator<<(std::ostream& mystream, const Quaternion3D::Quaternion3DStorage& storage)
+std::ostream & libTF::operator<<(std::ostream& mystream, const Pose3DCache::Pose3DStorage& storage)
 {
 
   mystream << "Storage: " << storage.xt <<", " << storage.yt <<", " << storage.zt<<", " << storage.xr<<", " << storage.yr <<", " << storage.zr <<", " << storage.w<<std::endl; 
   return mystream;
 };
 
-Quaternion3D::Quaternion3DStorage Quaternion3D::getQuaternion(unsigned long long time)
+Pose3DCache::Pose3DStorage Pose3DCache::getPoseStorage(unsigned long long time)
 {
-  Quaternion3DStorage temp;
+  Pose3DStorage temp;
   long long diff_time; //todo Find a way to use this offset. pass storage by reference and return diff_time??
   getValue(temp, time, diff_time);
   return temp;
 };
 
 
-NEWMAT::Matrix Quaternion3D::getMatrix(unsigned long long time)
+NEWMAT::Matrix Pose3DCache::getMatrix(unsigned long long time)
 {
-  Quaternion3DStorage temp;
+  Pose3DStorage temp;
   long long diff_time;
   getValue(temp, time, diff_time);
 
@@ -407,7 +406,7 @@ NEWMAT::Matrix Quaternion3D::getMatrix(unsigned long long time)
   return temp.asMatrix();
 }  
 
-NEWMAT::Matrix Quaternion3D::getInverseMatrix(unsigned long long time)
+NEWMAT::Matrix Pose3DCache::getInverseMatrix(unsigned long long time)
 {
   return getMatrix(time).i();
 
@@ -454,7 +453,7 @@ NEWMAT::Matrix Pose3D::getInverseMatrix()
   return asMatrix().i();
 };
 
-Quaternion Pose3D::asQuaternion()
+Pose3D::Quaternion Pose3D::asQuaternion()
 {
   Quaternion quat;
   quat.x = xr;
@@ -464,7 +463,7 @@ Quaternion Pose3D::asQuaternion()
   return quat;
 };
 
-Position Pose3D::asPosition()
+Pose3D::Position Pose3D::asPosition()
 {
   Position pos;
   pos.x = xt;
@@ -473,21 +472,21 @@ Position Pose3D::asPosition()
   return pos;
 };
 
-void Quaternion3D::printMatrix(unsigned long long time)
+void Pose3DCache::printMatrix(unsigned long long time)
 {
   std::cout << getMatrix(time);
 };
 
-void Quaternion3D::printStorage(const Quaternion3DStorage& storage)
+void Pose3DCache::printStorage(const Pose3DStorage& storage)
 {
   std::cout << storage;
 };
 
 
-bool Quaternion3D::getValue(Quaternion3DStorage& buff, unsigned long long time, long long  &time_diff)
+bool Pose3DCache::getValue(Pose3DStorage& buff, unsigned long long time, long long  &time_diff)
 {
-  Quaternion3DStorage p_temp_1;
-  Quaternion3DStorage p_temp_2;
+  Pose3DStorage p_temp_1;
+  Pose3DStorage p_temp_2;
   //  long long temp_time;
   int num_nodes;
 
@@ -500,7 +499,7 @@ bool Quaternion3D::getValue(Quaternion3DStorage& buff, unsigned long long time, 
     retval= false;
   else if (num_nodes == 1)
     {
-      memcpy(&buff, &p_temp_1, sizeof(Quaternion3DStorage));
+      memcpy(&buff, &p_temp_1, sizeof(Pose3DStorage));
       retval = true;  
     }
   else
@@ -519,7 +518,7 @@ bool Quaternion3D::getValue(Quaternion3DStorage& buff, unsigned long long time, 
 
 };
 
-void Quaternion3D::add_value(const Quaternion3DStorage &dataIn)
+void Pose3DCache::add_value(const Pose3DStorage &dataIn)
 {
   pthread_mutex_lock(&linked_list_mutex);
   insertNode(dataIn);
@@ -528,7 +527,7 @@ void Quaternion3D::add_value(const Quaternion3DStorage &dataIn)
 };
 
 
-void Quaternion3D::insertNode(const Quaternion3DStorage & new_val)
+void Pose3DCache::insertNode(const Pose3DStorage & new_val)
 {
   data_LL* p_current;
   data_LL* p_old;
@@ -604,7 +603,7 @@ void Quaternion3D::insertNode(const Quaternion3DStorage & new_val)
   
 };
 
-void Quaternion3D::pruneList()
+void Pose3DCache::pruneList()
 {
   data_LL* p_current = last;
 
@@ -638,7 +637,7 @@ void Quaternion3D::pruneList()
   
 };
 
-void Quaternion3D::clearList()
+void Pose3DCache::clearList()
 {
   pthread_mutex_lock(&linked_list_mutex);  
   
@@ -661,7 +660,7 @@ void Quaternion3D::clearList()
 };
 
 
-int Quaternion3D::findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two, const unsigned long long target_time, long long &time_diff)
+int Pose3DCache::findClosest(Pose3DStorage& one, Pose3DStorage& two, const unsigned long long target_time, long long &time_diff)
 {
 
   data_LL* p_current = first;
@@ -713,7 +712,7 @@ int Quaternion3D::findClosest(Quaternion3DStorage& one, Quaternion3DStorage& two
 };
 
 // Quaternion slerp algorithm from http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp/index.htm
-void Quaternion3D::interpolate(const Quaternion3DStorage &one, const Quaternion3DStorage &two,unsigned long long target_time, Quaternion3DStorage& output)
+void Pose3DCache::interpolate(const Pose3DStorage &one, const Pose3DStorage &two,unsigned long long target_time, Pose3DStorage& output)
 {
   output.time = target_time;
 
@@ -765,7 +764,7 @@ void Quaternion3D::interpolate(const Quaternion3DStorage &one, const Quaternion3
   return;
 };
 
-double Quaternion3D::interpolateDouble(const double first, const unsigned long long first_time, const double second, const unsigned long long second_time, const unsigned long long target_time)
+double Pose3DCache::interpolateDouble(const double first, const unsigned long long first_time, const double second, const unsigned long long second_time, const unsigned long long target_time)
 {
   if ( first_time == second_time ) {
     return first;

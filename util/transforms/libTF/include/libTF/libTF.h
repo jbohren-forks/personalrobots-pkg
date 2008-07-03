@@ -327,12 +327,12 @@ private:
    * An instance of this class is created for each frame in the system.
    * This class natively handles the relationship between frames.  
    *
-   * The derived class Quaternion3D provides a buffered history of positions
+   * The derived class Pose3DCache provides a buffered history of positions
    * with interpolation.
    * 
    */
   
-  class RefFrame: public Quaternion3D 
+  class RefFrame: public Pose3DCache 
     {
     public:
 

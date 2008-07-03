@@ -38,7 +38,7 @@ using namespace libTF;
 TransformReference::RefFrame::RefFrame(bool interpolating, 
                                        unsigned long long max_cache_time,
                                        unsigned long long max_extrapolation_distance) :
-  Quaternion3D(interpolating, max_cache_time, max_extrapolation_distance),
+  Pose3DCache(interpolating, max_cache_time, max_extrapolation_distance),
   parent(TransformReference::NO_PARENT)
 {
   return;
@@ -215,7 +215,7 @@ TFEulerYPR TransformReference::transformEulerYPR(unsigned int target_frame, cons
   
   NEWMAT::Matrix output = local.i() * Transform;
 
-  Euler3D eulers = Pose3D::eulerFromMatrix(output,1); 
+  Pose3D::Euler eulers = Pose3D::eulerFromMatrix(output,1); 
 
   TFEulerYPR retEuler;
   retEuler.yaw = eulers.yaw;

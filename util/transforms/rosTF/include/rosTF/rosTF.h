@@ -102,6 +102,7 @@ class rosTFServer : public nameLookupClient
   void sendEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs);
   void sendInverseEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs);
   void sendPose(libTF::TFPose pose, unsigned int parent);
+  void sendPose(libTF::TFPose pose, std::string parent);
   void sendInversePose(libTF::TFPose pose, unsigned int parent);
   /** \brief Send a transform using DH Parameters */
   void sendDH(unsigned int frame, unsigned int parent, double length, double twist, double offset, double angle, unsigned int secs, unsigned int nsecs);
