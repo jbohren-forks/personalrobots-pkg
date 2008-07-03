@@ -8,12 +8,20 @@ class Stair1 < Rubot
   end
   def navigate(x, y, th)
     puts "stair1 navigate to #{x}, #{y}, #{th}"
-    system "#{`rospack find mux`.strip}/switch mux:=velMux wavefrontVel"
+    system "#{`rospack find mux`.strip}/switch mux:=velMuxSrv wavefrontVel"
     system "#{`rospack find wavefront_player`.strip}/query_wavefront #{x} #{y} #{th}"
+  end
+  def borgscan
+    puts "borgscanning"
+    system "#{`rospack find mux`.strip}/switch mux:=finalVelMuxSrv __none"
+    sleep 1 # allow the segway to halt
+    system 'ssh stair@stair1 "bash -i -c \"cd /home/stair/ros/ros-pkg/unported/vision/sharks/src/lonefleashark && ./patientshark\""'
+    system "#{`rospack find mux`.strip}/switch mux:=finalVelMuxSrv activeVel"
+    sleep 0.5
   end
   def deadreckon(range, bearing, final_heading)
     puts "stair1 deadreckon to #{range}, #{bearing}, #{final_heading}"
-    system "#{`rospack find mux`.strip}/switch mux:=velMux deadReckonVel"
+    system "#{`rospack find mux`.strip}/switch mux:=velMuxSrv deadReckonVel"
     system "#{`rospack find deadreckon`.strip}/test_deadreckon_service #{range} #{bearing} #{final_heading}"
   end
   def inventory
@@ -26,6 +34,7 @@ class Stair1 < Rubot
     puts "stereo camera"
     puts "PTZ camera"
     puts "mono camera"
+    puts "badass borg laser"
     puts "-----------------"
     puts ""
   end

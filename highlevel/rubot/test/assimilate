@@ -3,6 +3,23 @@ $:.push(`rospack find rubot`.strip)
 require 'rubot/stair1.rb'
 
 r = Stair1.new
-r.navigate(24, 19, 0.6)
+r.navigate(37.845, 8.610, -2.220)
+r.navigate(36.498, 4.86, 2.645)
+r.borgscan
+r.navigate(37.034, 3.236, -2.045)
+r.borgscan
+r.navigate(38.560, 2.619, -0.588)
+r.borgscan
+r.navigate(38.625, 3.593, 0.887)
+r.borgscan
+r.navigate(36.287, 9.568, -2.114)
+r.navigate(34.809, 8.026, 2.544)
+r.borgscan
+r.navigate(33.738, 6.483, 2.565)
+r.borgscan
+r.navigate(33.429, 5.834, -2.29)
+r.borgscan
+r.navigate(33.592, 11.224, 2.494)
+
 #r.deadreckon(1,2,3)
 #r.drive(4,5,6)
