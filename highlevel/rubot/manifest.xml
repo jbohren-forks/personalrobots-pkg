@@ -1,0 +1,13 @@
+<package>
+  <description>
+  A rubot is a ruby-controlled abstract robot. The concept is just to have a
+  few dumb ruby files for scripting lower-level (not necessarily simple)
+  actions together to make demos. For example, "drive to XY, then open the door
+  in front of you, then drive to another XY." This is not trying to compete
+  with more sophisticated algorithsm like TR or whatever; it's just a way to 
+  slap together a few actions to show them off for a demo.
+  </description>
+  <author>Morgan Quigley</author>
+  <license>BSD</license>
+</package>
+

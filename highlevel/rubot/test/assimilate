@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+$:.push(`rospack find rubot`.strip)
+require 'rubot/stair1.rb'
+
+r = Stair1.new
+r.navigate(24, 19, 0.6)
+#r.deadreckon(1,2,3)
+#r.drive(4,5,6)

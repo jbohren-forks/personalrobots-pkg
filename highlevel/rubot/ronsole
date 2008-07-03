@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+$:.push(`rospack find rubot`.strip)
+require 'rubot/stair1.rb'
+puts "You are now operating a STAIR1 robot"
+r = Stair1.new
+r.console
+

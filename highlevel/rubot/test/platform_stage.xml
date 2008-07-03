@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="rosstage" type="rosstage" args="$(find 2dnav-stage)/willow-erratic.world"/>
+  <node pkg="map_server" type="map_server" args="$(find 2dnav-stage)/willow-full.png 0.1"/>
+  <node pkg="amcl_player" type="amcl_player"/>
+  <node pkg="wavefront_player" type="wavefront_player cmd_vel:=wavefrontVel"/>
+  <node pkg="nav_view" type="nav_view"/>
+  <node pkg="mux" type="mux" args="cmd_vel velMux wavefrontVel deadReckonVel"/>
+</launch>

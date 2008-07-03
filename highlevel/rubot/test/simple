@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+$:.push(`rospack find rubot`.strip)
+require 'rubot/stair1.rb'
+
+r = Stair1.new
+r.deadreckon(1,2,3)
+r.drive(4,5,6)
