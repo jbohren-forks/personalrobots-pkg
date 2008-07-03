@@ -55,6 +55,7 @@ void URDF::clear(void)
     m_name   = "";
     m_source = "";
     m_links.clear();
+    m_groups.clear();
     m_paths.clear();
     m_paths.push_back("");
     m_roots.clear();
@@ -184,6 +185,10 @@ void URDF::Link::print(FILE *out, std::string indent)
     collision->print(out, indent+ "  ");
     inertial->print(out, indent+ "  ");
     visual->print(out, indent+ "  ");
+    fprintf(out, "%s  - groups: ", indent.c_str());
+    for (unsigned int i = 0 ; i < groups.size() ; ++i)
+	fprintf(out, "%s ", groups[i].c_str());
+    fprintf(out, "\n");
     fprintf(out, "%s  - children links: ", indent.c_str());
     for (unsigned int i = 0 ; i < children.size() ; ++i)
 	fprintf(out, "%s ", children[i]->name.c_str());
@@ -882,6 +887,15 @@ bool URDF::parse(const void *data)
 		    parent->children.push_back(i->second);
 		}
 	    }
+	    
+	    for (std::map< std::string, std::vector<std::string> >::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
+	    {
+		for (unsigned int j = 0 ; j < i->second.size() ; ++j)
+		    if (m_links.find(i->second[j]) == m_links.end())
+			fprintf(stderr, "Group '%s': link '%s' is undefined\n", i->first.c_str(), i->second[j].c_str());
+		    else
+			m_links[i->second[j]]->groups.push_back(i->first);
+	    }
 	}
 	
 	m_constants.clear();
@@ -953,7 +967,24 @@ bool URDF::parse(const void *data)
 				ignoreNode(child);
 		    }
 		    else
-			m_stage2.push_back(node);
+			if (node->ValueStr() == "group" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+			{
+			    std::string group;
+			    for (const TiXmlAttribute *attr = node->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
+				if (strcmp(attr->Name(), "name") == 0)
+				{
+				    group = attr->ValueStr();
+				    break;
+				}
+			    std::stringstream ss(node->FirstChild()->ValueStr());
+			    while (ss.good())
+			    {
+				std::string value; ss >> value;
+				m_groups[group].push_back(value);
+			    }
+			}
+			else
+			    m_stage2.push_back(node);
 	break;
     default:
 	ignoreNode(node);

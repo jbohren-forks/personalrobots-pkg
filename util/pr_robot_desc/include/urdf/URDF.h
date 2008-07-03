@@ -234,6 +234,8 @@ class URDF
 	
 	double             rpy[3];
 	double             xyz[3];
+	
+	std::vector<std::string> groups;
     };
     
     struct Sensor : public Link
@@ -297,7 +299,7 @@ class URDF
     std::string                  m_name;
     std::map<std::string, Link*> m_links; // contains sensors too (casted down)
     std::vector<Link*>           m_roots; // contains the links that are connected to the world (have no parent)    
-
+    
     std::map<std::string, Link::Collision*> m_collision;
     std::map<std::string, Link::Joint*>     m_joints;
     std::map<std::string, Link::Inertial*>  m_inertial;
@@ -305,6 +307,8 @@ class URDF
     std::map<std::string, Link::Geometry*>  m_geoms;
     std::map<std::string, Link::Actuator*>  m_actuators;
 
+    std::map<std::string, std::vector<std::string> > m_groups;
+    
  private:
     
     /* utility functions for parsing */
