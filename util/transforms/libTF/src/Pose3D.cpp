@@ -58,8 +58,8 @@ Pose3D::Pose3D(double xr, double yr, double zr, double w):
   /// Trans and Quat constructor
 Pose3D::Pose3D(double xt, double yt, double zt, 
 	       double xr, double yr, double zr, double w):
-  xt(xt), yt(yt),zt(zt),
-  xr(xr), yr(yr), zr(zr),w(w)
+  xt(xt), yt(yt), zt(zt),
+  xr(xr), yr(yr), zr(zr), w(w)
 {
 }; 
 
@@ -343,7 +343,7 @@ NEWMAT::Matrix Pose3D::getInverseMatrix()
   return asMatrix().i();
 };
 
-Pose3D::Quaternion Pose3D::asQuaternion()
+Pose3D::Quaternion Pose3D::getQuaternion(void) const
 {
   Quaternion quat;
   quat.x = xr;
@@ -353,7 +353,7 @@ Pose3D::Quaternion Pose3D::asQuaternion()
   return quat;
 };
 
-Pose3D::Position Pose3D::asPosition()
+Pose3D::Position Pose3D::getPosition(void) const
 {
   Position pos;
   pos.x = xt;
