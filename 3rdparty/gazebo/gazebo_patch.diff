@@ -602,6 +602,125 @@ Index: gazebo-svn/libgazebo/gazebo.h
    /// Pointer to the stereo data
    public: StereoCameraData *data;
  };
+Index: gazebo-svn/server/physics/SphereGeom.cc
+===================================================================
+--- gazebo-svn/server/physics/SphereGeom.cc	(revision 6696)
++++ gazebo-svn/server/physics/SphereGeom.cc	(working copy)
+@@ -56,7 +56,11 @@
+   dMassSetSphereTotal(&this->mass, this->dblMass, radius);
+ 
+   // Create the sphere geometry
+-  this->SetGeom(dCreateSphere(0, radius ), true);
++  if (this->massMatrix)
++    dMassSetParameters(&this->mass, this->dblMass, this->cx, this->cy, this->cz,
++                       this->ixx,this->iyy,this->izz,this->ixy,this->ixz,this->iyz);
++  else
++    this->SetGeom(dCreateSphere(0, radius ), true);
+ 
+   //to be able to show physics
+   /*  this->visualNode->AttachMesh("unit_sphere"); // unit_sphere radius=1 diameter=2
+Index: gazebo-svn/server/physics/BoxGeom.cc
+===================================================================
+--- gazebo-svn/server/physics/BoxGeom.cc	(revision 6696)
++++ gazebo-svn/server/physics/BoxGeom.cc	(working copy)
+@@ -55,7 +55,13 @@
+   size = node->GetVector3("size",Vector3(1,1,1));
+ 
+   // Initialize box mass matrix
+-  dMassSetBoxTotal(&this->mass, this->dblMass, size.x, size.y, size.z);
++  // set mass matrix if user provides some info
++  // pending a tag <massMatrix>true</massMatrix> in geom:
++  if (this->massMatrix)
++    dMassSetParameters(&this->mass, this->dblMass, this->cx, this->cy, this->cz,
++                       this->ixx,this->iyy,this->izz,this->ixy,this->ixz,this->iyz);
++  else
++    dMassSetBoxTotal(&this->mass, this->dblMass, size.x, size.y, size.z);
+ 
+   // Create a box geometry with box mass matrix
+   this->SetGeom(dCreateBox( 0, size.x, size.y, size.z), true );
+Index: gazebo-svn/server/physics/Geom.hh
+===================================================================
+--- gazebo-svn/server/physics/Geom.hh	(revision 6696)
++++ gazebo-svn/server/physics/Geom.hh	(working copy)
+@@ -170,6 +170,10 @@
+     ///  Mass as a double
+     protected: double dblMass;
+ 
++    ///  User specified Mass Matrix
++    protected: bool massMatrix;
++    protected: double cx,cy,cz,ixx,iyy,izz,ixy,ixz,iyz;
++
+     /// Special bounding box visual
+     private: OgreVisual *bbVisual;
+ 
+Index: gazebo-svn/server/physics/CylinderGeom.cc
+===================================================================
+--- gazebo-svn/server/physics/CylinderGeom.cc	(revision 6696)
++++ gazebo-svn/server/physics/CylinderGeom.cc	(working copy)
+@@ -51,7 +51,12 @@
+   double length = node->GetTupleDouble("size",1,1.0);
+ 
+   // Initialize mass matrix
+-  dMassSetCylinderTotal(&this->mass, this->dblMass, 3, radius, length);
++  // pending a tag <massMatrix>true</massMatrix> in geom:
++  if (this->massMatrix)
++    dMassSetParameters(&this->mass, this->dblMass, this->cx, this->cy, this->cz,
++                       this->ixx,this->iyy,this->izz,this->ixy,this->ixz,this->iyz);
++  else
++    dMassSetCylinderTotal(&this->mass, this->dblMass, 3, radius, length);
+ 
+   this->SetGeom( dCreateCylinder( 0, radius, length ), true );
+ 
+Index: gazebo-svn/server/physics/Geom.cc
+===================================================================
+--- gazebo-svn/server/physics/Geom.cc	(revision 6696)
++++ gazebo-svn/server/physics/Geom.cc	(working copy)
+@@ -102,6 +102,21 @@
+     this->dblMass = 0.001;
+   }
+ 
++  // option to enter full maxx matrix
++  std::string tmpMassMatrix = node->GetString("massMatrix","false",0);
++  if (tmpMassMatrix == "true") this->massMatrix = true;
++  else                         this->massMatrix = false;
++  this->cx = node->GetDouble("cx",0.0,0);
++  this->cy = node->GetDouble("cy",0.0,0);
++  this->cz = node->GetDouble("cz",0.0,0);
++  this->ixx = node->GetDouble("ixx",0.001,0);
++  this->iyy = node->GetDouble("iyy",0.001,0);
++  this->izz = node->GetDouble("izz",0.001,0);
++  this->ixy = node->GetDouble("ixy",0.001,0);
++  this->ixz = node->GetDouble("ixz",0.001,0);
++  this->iyz = node->GetDouble("iyz",0.001,0);
++
++
+   this->contact->Load(node);
+ 
+   this->LoadChild(node);
+@@ -398,18 +413,21 @@
+   if (!this->placeable)
+     return NULL;
+ 
+-  pose = this->GetPose();
++  pose = this->GetPose(); // get pose of the geometry
+ 
+   q[0] = pose.rot.u;
+   q[1] = pose.rot.x;
+   q[2] = pose.rot.y;
+   q[3] = pose.rot.z;
+ 
+-  dQtoR(q,r);
++  dQtoR(q,r); // turn quaternion into rotation matrix
+ 
+ 
++  // this->mass was init to zero at start,
++  // read user specified mass into this->dblMass and dMassAdd in this->mass
+   this->bodyMass = this->mass;
+ 
++
+   if (dMassCheck(&this->bodyMass))
+   {
+     dMassRotate(&this->bodyMass, r);
 Index: gazebo-svn/server/physics/HingeJoint.cc
 ===================================================================
 --- gazebo-svn/server/physics/HingeJoint.cc	(revision 6696)
@@ -634,6 +753,23 @@ Index: gazebo-svn/server/physics/ode/ODEPhysics.cc
          //contacts[i].surface.mode |= dContactBounce | dContactSoftCFM;
          contact.surface.mode |= dContactApprox1;
          contact.surface.mu = MIN(geom1->contact->mu1, geom2->contact->mu1);
+Index: gazebo-svn/server/physics/TrimeshGeom.cc
+===================================================================
+--- gazebo-svn/server/physics/TrimeshGeom.cc	(revision 6696)
++++ gazebo-svn/server/physics/TrimeshGeom.cc	(working copy)
+@@ -208,7 +208,11 @@
+ 
+   this->geomId = dCreateTriMesh( this->spaceId, this->odeData,0,0,0 );
+ 
+-  dMassSetTrimesh(&this->mass, this->dblMass, this->geomId);
++  if (this->massMatrix)
++    dMassSetParameters(&this->mass, this->dblMass, this->cx, this->cy, this->cz,
++                       this->ixx,this->iyy,this->izz,this->ixy,this->ixz,this->iyz);
++  else
++    dMassSetTrimesh(&this->mass, this->dblMass, this->geomId);
+ 
+   // Create the trimesh geometry
+   this->SetGeom(this->geomId, true);
 Index: gazebo-svn/server/physics/SliderJoint.cc
 ===================================================================
 --- gazebo-svn/server/physics/SliderJoint.cc	(revision 6696)
