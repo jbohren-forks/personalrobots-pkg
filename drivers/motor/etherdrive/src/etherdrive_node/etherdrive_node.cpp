@@ -259,7 +259,7 @@ public:
   
     for (int i = 0; i < 6; i++) {
       mot[i].pos = val[i] / pulse_per_rad[i];
-      mot[i].valid = true;
+      mot[i].pos_valid = true;
       mot[i].pos = ed->get_enc(i);
       ostringstream oss;
       oss << "mot" << i;

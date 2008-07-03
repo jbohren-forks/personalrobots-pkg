@@ -31,9 +31,9 @@
 #include "ros/node.h"
 #include "std_msgs/ActuatorState.h"
 #include "std_msgs/ActuatorCmd.h"
-#include "std_msgs/Joy.h"
+#include <joy/Joy.h>
 //#include "unstable_msgs/MsgActuator.h"
-#include <std_msgs/MsgBaseVel.h>
+#include <std_msgs/BaseVel.h>
 #include "etherdrive/etherdrive.h"
 #include <sstream>
 
@@ -53,7 +53,7 @@ class EtherDrive_Node_Controller : public ros::node
 public:
   std_msgs::ActuatorState mot[12];     //in
   std_msgs::ActuatorCmd mot_cmd[12]; //out
-  std_msgs::Joy joy_msg;
+  joy::Joy joy_msg;
   // MsgBaseVel cmdvel;
  // std_msgs::ActuatorCmd mot_cmd[6];
   //int dir;

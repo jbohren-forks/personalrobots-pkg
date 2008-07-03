@@ -234,7 +234,7 @@ if(i==11) printf("posError: %f, despos: %f, enc: %i\n", posError[i], desPos[i], 
 
   
     for (int i = 0; i < 6; i++) {
-      mot[i].valid = true;
+      mot[i].pos_valid = true;
       mot[i].pos = edLeft->get_enc(i);
       mot[i+6].pos = edRight->get_enc(i);
       ostringstream oss;
