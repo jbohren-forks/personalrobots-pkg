@@ -24,9 +24,22 @@
     <reportStaticCollision>true</reportStaticCollision>
 
     <geom:box name="base_body_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass>70.750964</mass>
+      <ixx>5.6522326992070</ixx>
+      <ixy>-0.009719934438</ixy>
+      <ixz>1.2939882264230</ixz>
+      <iyy>5.6694731586520</iyy>
+      <iyz>-0.007379583694</iyz>
+      <izz>3.6831963517260</izz>
+      <cx>-0.061523</cx>
+      <cy> 0.000942</cy>
+      <cz> 0.293569</cz>
+
+
       <xyz> 0.0    0.00  0.000</xyz>
       <size>0.65   0.65  0.012</size>
-      <mass>100.0</mass>
       <mul>1</mul>
       <!--color> 0.0  1.0  0.0</color-->
       <visual>

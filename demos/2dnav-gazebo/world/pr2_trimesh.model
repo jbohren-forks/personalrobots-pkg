@@ -20,15 +20,29 @@
     <!-- report when this body collides with static bodies -->
     <reportStaticCollision>true</reportStaticCollision>
     <geom:trimesh name="base_body_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass>70.750964</mass>
+      <ixx>5.6522326992070</ixx>
+      <ixy>-0.009719934438</ixy>
+      <ixz>1.2939882264230</ixz>
+      <iyy>5.6694731586520</iyy>
+      <iyz>-0.007379583694</iyz>
+      <izz>3.6831963517260</izz>
+      <cx>-0.061523</cx>
+      <cy> 0.000942</cy>
+      <cz> 0.293569</cz>
+
+
       <kp>10000000.0</kp>
       <kd>1.0</kd>
-      <mass>300.0</mass>
       <scale>0.001 0.001 0.001</scale>
       <mesh>pr2_base.mesh</mesh>
-      <xyz>  0.008  0.08    0.15</xyz> <!-- y z x after rotation???-->
-      <rpy> 90.0    0.0    90.0 </rpy> <!-- strange rotation behavior, fix -->
+      <xyz> -0.15   0.0     0.1 </xyz> <!-- x y z after rotation???-->
+      <rpy> 90.0    0.0    90.0 </rpy> <!-- strange rotation behavior, fix in gazebo -->
       <visual>
-        <rpy>   0.0  -90.0    -90.0 </rpy> <!-- strange rotation behavior, fix -->
+        <xyz>  0.0    0.15    0.15</xyz> <!-- z x y after rotation???-->
+        <rpy>  0.0  -90.0   -90.0 </rpy> <!-- strange rotation behavior, fix in gazebo -->
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_base.mesh</mesh>
         <material>Gazebo/Shell</material>
@@ -40,7 +54,7 @@
   <!--         Hokuyo laser body             -->
   <canonicalBody>base_laser_body</canonicalBody>
   <body:box name="base_laser_body">
-    <xyz>0.5 0.0 0.00</xyz>
+    <xyz>0.45 0.0 0.05</xyz>
     <rpy>0.0 0.0 0.0</rpy>
  
     <geom:box name="base_laser_box">
