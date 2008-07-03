@@ -65,6 +65,16 @@ Pose3D::Pose3D(double xt, double yt, double zt,
 {
 }; 
 
+void Pose3D::setAxisAngle(double ax, double ay, double az, double angle)
+{
+    double h = angle / 2.0;
+    double s = sin(h);
+    
+    xr = ax * s;
+    yr = ay * s;
+    zr = az * s;
+    w  = cos(h);
+}
 
 void Pose3D::setFromMatrix(const NEWMAT::Matrix& matIn)
 {
@@ -405,9 +415,9 @@ void Pose3D::applyToPosition(Position &pos) const
 	   xs = 2.0 * xr * w,  yy = 2.0 * yr * yr, yz = 2.0 * yr * zr,                 
 	   ys = 2.0 * yr * w,  zz = 2.0 * zr * zr, zs = 2.0 * zr * w;
     
-    double t0 = pos.x * (1.0 - yy - zz) + pos.y * (xy - zs) + pos.z * (xz + ys);
-    double t1 = pos.x * (xy + zs) + pos.y * (1.0 - xx - zz) + pos.z * (yz - xs);
-    pos.z     = pos.x * (xz - ys) + pos.y * (yz + xs) + pos.z * (1.0 - xx - yy);
+    double t0 = xt + pos.x * (1.0 - yy - zz) + pos.y * (xy - zs) + pos.z * (xz + ys);
+    double t1 = yt + pos.x * (xy + zs) + pos.y * (1.0 - xx - zz) + pos.z * (yz - xs);
+    pos.z     = zt + pos.x * (xz - ys) + pos.y * (yz + xs) + pos.z * (1.0 - xx - yy);
     pos.y     = t1;
     pos.x     = t0;
 }
@@ -421,9 +431,9 @@ void Pose3D::applyToPositions(std::vector<Position*> &posv) const
     for (unsigned int i = 0 ; i < posv.size() ; ++i)
     {
 	Position &pos = *(posv[i]);
-	double t0 = pos.x * (2.0 - yy - zz) + pos.y * (xy - zs) + pos.z * (xz + ys);
-	double t1 = pos.x * (xy + zs) + pos.y * (2.0 - xx - zz) + pos.z * (yz - xs);
-	pos.z     = pos.x * (xz - ys) + pos.y * (yz + xs) + pos.z * (2.0 - xx - yy);
+	double t0 = xt + pos.x * (1.0 - yy - zz) + pos.y * (xy - zs) + pos.z * (xz + ys);
+	double t1 = yt + pos.x * (xy + zs) + pos.y * (1.0 - xx - zz) + pos.z * (yz - xs);
+	pos.z     = zt + pos.x * (xz - ys) + pos.y * (yz + xs) + pos.z * (1.0 - xx - yy);
 	pos.y     = t1;
 	pos.x     = t0;
     }

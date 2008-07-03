@@ -119,6 +119,8 @@ namespace libTF
       void setQuaternion(double x, double y, double z, double w);
       /** \brief Set the rotational components */
       void setQuaternion(Quaternion &quat);
+      /** \brief Set the quaterion from an axis-angle representation */
+      void setAxisAngle(double ax, double ay, double az, double angle);
       
       /* Application of the transform */
       void applyToPosition(Position &pos) const;
