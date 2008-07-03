@@ -58,7 +58,7 @@
   <!--         Hokuyo laser body             -->
   <canonicalBody>base_laser_body</canonicalBody>
   <body:box name="base_laser_body">
-    <xyz>0.5 0.0 0.00</xyz>
+    <xyz>0.45 0.0 0.05</xyz>
     <rpy>0.0 0.0 0.0</rpy>
  
     <geom:box name="base_laser_box">
