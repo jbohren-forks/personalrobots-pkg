@@ -77,6 +77,8 @@ namespace libTF
       /** \brief  Quaternion only constructor */
       Pose3D(double xr, double yt, double zt, double w);
       /** \brief Translation and Quaturnion constructor */
+      Pose3D(Position &pos, Quaternion &quat);
+      /** \brief Translation and Quaturnion constructor */
       Pose3D(double xt, double yt, double zt, 
              double xr, double yt, double zt, double w);
   
@@ -122,8 +124,23 @@ namespace libTF
       /** \brief Set the quaterion from an axis-angle representation */
       void setAxisAngle(double ax, double ay, double az, double angle);
       
-      /* Application of the transform */
+      /** \brief Set the translational components */
+      void addPosition(double x, double y, double z);
+      /** \brief Set the translational components */
+      void addPosition(Position &pos);
+      /** \brief Set the rotational components */
+      void multiplyQuaternion(double x, double y, double z, double w);
+      /** \brief Set the rotational components */
+      void multiplyQuaternion(Quaternion &quat);
+      
+      /** \brief Apply another pose to the transform contained in the current pose (transform multiplication) */
+      void multiplyPose(Pose3D &pose);
+      
+
+      /** Application of the transform **/
+      /** \brief Apply the stored transform to a point */
       void applyToPosition(Position &pos) const;
+      /** \brief Apply the stored transform to a vector of points */
       void applyToPositions(std::vector<Position*> &posv) const;
       
       /**************** Static Helper Functions ***********************/
@@ -136,7 +153,7 @@ namespace libTF
       static Euler    eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned int solution_number=1);
       /** \brief isolate translational change from a homogeneous transform matrix */
       static Position positionFromMatrix(const NEWMAT::Matrix & matrix_in);
-    
+      
   protected:
       
       /** Internal Data Storage*/    

@@ -65,6 +65,13 @@ Pose3D::Pose3D(double xt, double yt, double zt,
 {
 }; 
 
+Pose3D::Pose3D(Position &pos, Quaternion &quat)
+{
+    xt = pos.x; yt = pos.y; zt = pos.z;
+    xr = quat.x;yr = quat.y;zr = quat.z;
+    w  = quat.w;
+}
+
 void Pose3D::setAxisAngle(double ax, double ay, double az, double angle)
 {
     double h = angle / 2.0;
@@ -438,6 +445,45 @@ void Pose3D::applyToPositions(std::vector<Position*> &posv) const
 	pos.x     = t0;
     }
 }
+
+void Pose3D::addPosition(double x, double y, double z)
+{
+    xt += x;
+    yt += y;
+    zt += z;
+}
+
+void Pose3D::addPosition(Position &pos)
+{
+    xt += pos.x;
+    yt += pos.y;
+    zt += pos.z;
+}
+
+void Pose3D::multiplyQuaternion(double x, double y, double z, double _w)
+{
+    double t0 =  xr * _w + yr * z - zr * y + w * x;
+    double t1 =  - xr * z + yr * _w + zr * x + w * y;
+    double t2 = xr * y - yr * x + zr * _w + w * z;
+    w  = - xr * x - yr * y - zr * z + w * _w;
+    xr = t0;
+    yr = t1;                                                                                                                                                                              
+    zr = t2;
+}
+
+void Pose3D::multiplyQuaternion(Quaternion &quat)
+{
+    multiplyQuaternion(quat.x, quat.y, quat.z, quat.w);
+}
+
+void Pose3D::multiplyPose(Pose3D &pose)
+{
+    Position p = { pose.xt, pose.yt, pose.zt };
+    applyToPosition(p);
+    xt = p.x; yt = p.y; zt = p.z;
+    multiplyQuaternion(pose.xr, pose.yr, pose.zr, pose.w);
+}
+
 
 //Note not member function
 std::ostream & libTF::operator<<(std::ostream& mystream, const Pose3D &storage)

@@ -7,9 +7,16 @@ using namespace libTF;
 int main(void)
 {
     
-  Pose3D pz;
-  pz.setAxisAngle(0,1,0, M_PI/3);
-  pz.setPosition(0,3,0);
+    Pose3D pz;
+    pz.setAxisAngle(0,1,0, M_PI/3);
+    pz.setPosition(0,2,0);
+    
+    Pose3D pz2;
+    pz2.setAxisAngle(0,1,0, M_PI/2 - M_PI/3);
+    pz2.setPosition(0,1,0);
+    
+    pz.multiplyPose(pz2);
+    
   cout << pz;
   NEWMAT::Matrix m = pz.asMatrix();
   cout << m;
