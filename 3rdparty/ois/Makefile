@@ -11,10 +11,25 @@ CONFIGURE_FLAGS = --with-arch=nocona --enable-release CXXFLAGS='-O3   -I$(ROOT)/
 ROOT = $(shell rospack find ois)/ois
 
 ois: ois-checkout
-	cd ois-cvs && ./bootstrap
-	cd ois-cvs && ./configure --prefix=$(ROOT) --with-trimesh=opcode $(CONFIGURE_FLAGS)
-	cd ois-cvs && make
-	cd ois-cvs && make install
+	# The bootstrap breaks on OS X.  Use autoreconf instead.
+	#cd ois-cvs && ./bootstrap
+	#
+	# automake, as invoked by autoreconf, requires these files to be
+	# present
+	if [ `uname` == Darwin ]; then \
+	  unset LIBRARY_PATH;\
+	  cd ois-cvs/Mac/Xcode-2.2 && xcodebuild && cd ../../..; \
+	  mkdir -p ois/lib; \
+	  mkdir -p ois/include/OIS;\
+	  cp ois-cvs/Mac/XCode-2.2/build/Release/OIS.framework/Versions/A/Headers/*.h ois/include/OIS; \
+	  cp ois-cvs/Mac/XCode-2.2/build/Release/libOIS.a ois/lib; \
+	else \
+	  cd ois-cvs && touch NEWS README AUTHORS ChangeLog; \
+	  cd ois-cvs && autoreconf -i -s; \
+	  cd ois-cvs && ./configure --prefix=$(ROOT) --with-trimesh=opcode $(CONFIGURE_FLAGS); \
+	  cd ois-cvs && make; \
+	  cd ois-cvs && make install; \
+	fi
 	touch ois
 
 clean:
