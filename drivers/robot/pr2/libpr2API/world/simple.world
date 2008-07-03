@@ -22,11 +22,12 @@
 
 <!-- cfm is 1e-5 for single precision -->
 <!-- erp is typically .1-.8 -->
+<!-- here's the global contact cfm/erp -->
   <physics:ode>
     <stepTime>0.01</stepTime>
-    <gravity>0 0 -1.0</gravity>
-    <erp>0.800</erp>
-    <cfm>0.00001</cfm>
+    <gravity>0 0 -9.8</gravity>
+    <cfm>0.0000000001</cfm>
+    <erp>0.9999999999</erp>
   </physics:ode>
 
   <geo:origin>
@@ -47,7 +48,7 @@
     </sky>
     <gazeboPath>media</gazeboPath>
     <grid>off</grid>
-    <desiredFPS>10</desiredFPS>
+    <maxUpdateRate>100</maxUpdateRate>
   </rendering:ogre>
 
 
@@ -58,6 +59,8 @@
 
     <body:plane name="plane">
       <geom:plane name="plane">
+        <kp>1000000.0</kp>
+        <kd>1.0</kd>
         <normal>0 0 1</normal>
         <size>51.3 51.3</size>
         <!-- map3.png -->
@@ -78,9 +81,6 @@
     <!-- use actarray for the rest of the model -->
 
     <controller:pr2_actarray name="pr2_controller" plugin="libPr2_Actarray.so">
-			<!--
-			<controller:onelink_actarray name="onelink_controller" plugin="libonelink_actarray.so"> 
-				-->
         <updateRate>100.0</updateRate>
        <!-- ========================================= -->
         <joint name="upperarm_pitch_joint_right">
@@ -91,14 +91,8 @@
           <iClamp>0</iClamp>
         </joint>
         <!-- ========================================= -->
-				<!--  
-        <interface:onelinkarray name="onelink_iface"/>
-				-->
-				<interface:pr2array name="pr2_iface"/> 
+        <interface:pr2array name="pr2_iface"/>
         <!-- ========================================= -->
-		<!--  
-    </controller:onelink_actarray>
-		-->
     </controller:pr2_actarray>
 
   </model:physical>
