@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// The megamaid package provides logging and playback
+// The mux package provides a generic multiplexer
 //
 // Copyright (C) 2008, Morgan Quigley
 //
@@ -29,6 +29,7 @@
 
 #include "ros/node.h"
 #include "std_msgs/String.h"
+#include "std_srvs/StringString.h"
 using namespace std;
 using namespace ros;
 
@@ -85,6 +86,7 @@ public:
   {
     subscribe(selTopic, topicSelMsg, &Mux::sel_cb);
     advertise<ShapeShifter>(outTopic);
+    advertise_service(selTopic + string("Srv"), &Mux::selSrvCB);
     numInTopics = inTopics.size();
     inMsgs = new ShapeShifter[numInTopics];
     for (size_t i = 0; i < numInTopics; i++)
@@ -92,6 +94,9 @@ public:
       inMsgs[i].topicName = inTopics[i];
       subscribe(inTopics[i], inMsgs[i], &Mux::in_cb, &inMsgs[i]);
     }
+    // by default, select the first topic
+    if (numInTopics > 0)
+      selectedTopic = &inMsgs[0];
   }
   virtual ~Mux()
   {
@@ -113,6 +118,23 @@ public:
         printf("mux selected input %d: [%s]\n", i, inMsgs[i].topicName.c_str());
         break;
       }
+  }
+  bool selSrvCB(std_srvs::StringString::request  &req,
+                std_srvs::StringString::response &res)
+  {
+    if (selectedTopic)
+      res.str = selectedTopic->topicName;
+    else
+      res.str = string("");
+    // spin through our vector of inputs and find this guy
+    for (size_t i = 0; i < numInTopics; i++)
+      if (inMsgs[i].topicName == req.str)
+      {
+        selectedTopic = &inMsgs[i];
+        printf("mux selected input %d: [%s]\n", i, inMsgs[i].topicName.c_str());
+        return true;
+      }
+    return false;
   }
 };
 
