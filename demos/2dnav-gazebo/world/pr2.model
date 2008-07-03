@@ -1052,13 +1052,15 @@
       <kd>1.0</kd>
       <mu1>10.0</mu1>
       <mu2>10.0</mu2>
-      <xyz> 0.0 0.0 0.0</xyz>
+      <xyz> 0.0 0.0 -0.08</xyz>
       <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
       <mass>1.0</mass>
       <visual>
-        <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
-        <mesh>unit_box</mesh>
-        <material>Gazebo/Shell</material>
+        <xyz>  0.0     0.0    0.0 </xyz>
+        <rpy> 90.0     0.0   90.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_caster.mesh</mesh>
+        <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:box>
   </body:box>
@@ -1075,13 +1077,15 @@
       <kd>1.0</kd>
       <mu1>10.0</mu1>
       <mu2>10.0</mu2>
-      <xyz>0 0 0.0</xyz>
+      <xyz>0 0 -0.08</xyz>
       <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
       <mass>1.0</mass>
       <visual>
-        <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
-        <mesh>unit_box</mesh>
-        <material>Gazebo/Shell</material>
+        <xyz>  0.0     0.0    0.0 </xyz>
+        <rpy> 90.0     0.0   90.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_caster.mesh</mesh>
+        <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:box>
   </body:box>
@@ -1098,13 +1102,15 @@
       <kd>1.0</kd>
       <mu1>10.0</mu1>
       <mu2>10.0</mu2>
-      <xyz>0 0 0.0</xyz>
+      <xyz>0 0 -0.08</xyz>
       <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
       <mass>1.0</mass>
       <visual>
-        <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
-        <mesh>unit_box</mesh>
-        <material>Gazebo/Shell</material>
+        <xyz>  0.0     0.0    0.0 </xyz>
+        <rpy> 90.0     0.0   90.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_caster.mesh</mesh>
+        <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:box>
   </body:box>
@@ -1120,13 +1126,15 @@
       <kd>1.0</kd>
       <mu1>10.0</mu1>
       <mu2>10.0</mu2>
-      <xyz>0 0 0.0</xyz>
+      <xyz>0 0 -0.08</xyz>
       <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
       <mass>1.0</mass>
       <visual>
-        <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
-        <mesh>unit_box</mesh>
-        <material>Gazebo/Shell</material>
+        <xyz>  0.0     0.0    0.0 </xyz>
+        <rpy> 90.0     0.0   90.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_caster.mesh</mesh>
+        <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:box>
   </body:box>
@@ -1134,8 +1142,8 @@
 
   <!--=========================== wheels ===========================-->
   <body:cylinder name="front_left_wheel_l">
-    <xyz>  0.425   0.305 -0.17</xyz>
-    <rpy> 90.0     0.0    1.0 </rpy>
+    <xyz>  0.425   0.305 -0.15</xyz>
+    <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="front_left_wheel_l_geom">
       <kp>1000000000.0</kp>
       <kd>1.0</kd>
@@ -1144,16 +1152,18 @@
       <size> 0.08  0.03</size>   <!-- radius and width -->
       <mass>0.5</mass>
       <visual>
-        <size>0.16 0.16  0.03</size>   <!-- bounding box -->
-        <mesh>unit_cylinder</mesh>
+        <xyz>  0.0     0.0    0.0 </xyz>
+        <rpy>  0.0     0.0    0.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
 
   <body:cylinder name="front_left_wheel_r">
-    <xyz>  0.425   0.195 -0.17</xyz>
-    <rpy> 90.0     0.0    1.0 </rpy>
+    <xyz>  0.425   0.195 -0.15</xyz>
+    <rpy> 90.0     0.0  180.0 </rpy>
     <geom:cylinder name="front_left_wheel_r_geom">
       <kp>1000000000.0</kp>
       <kd>1.0</kd>
@@ -1162,15 +1172,17 @@
       <size> 0.08  0.03</size>   <!-- radius and width -->
       <mass>0.5</mass>
       <visual>
-        <size>0.16 0.16  0.03</size>   <!-- bounding box -->
-        <mesh>unit_cylinder</mesh>
+        <xyz>  0.0     0.0    0.0 </xyz>
+        <rpy>  0.0     0.0    0.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
 
   <body:cylinder name="front_right_wheel_l">
-    <xyz>  0.425  -0.195 -0.17</xyz>
+    <xyz>  0.425  -0.195 -0.15</xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="front_right_wheel_l_geom">
       <kp>1000000000.0</kp>
@@ -1180,16 +1192,18 @@
       <size> 0.08  0.03</size>   <!-- radius and width -->
       <mass>0.5</mass>
       <visual>
-        <size>0.16 0.16  0.03</size>   <!-- bounding box -->
-        <mesh>unit_cylinder</mesh>
+        <xyz>  0.0     0.0    0.0 </xyz>
+        <rpy>  0.0     0.0    0.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
 
   <body:cylinder name="front_right_wheel_r">
-    <xyz>  0.425  -0.305 -0.17</xyz>
-    <rpy> 90.0     0.0    0.0 </rpy>
+    <xyz>  0.425  -0.305 -0.15</xyz>
+    <rpy> 90.0     0.0  180.0 </rpy>
     <geom:cylinder name="front_right_wheel_r_geom">
       <kp>1000000000.0</kp>
       <kd>1.0</kd>
@@ -1198,15 +1212,17 @@
       <size> 0.08  0.03</size>   <!-- radius and width -->
       <mass>0.5</mass>
       <visual>
-        <size>0.16 0.16  0.03</size>   <!-- bounding box -->
-        <mesh>unit_cylinder</mesh>
+        <xyz>  0.0     0.0    0.0 </xyz>
+        <rpy>  0.0     0.0    0.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
 
   <body:cylinder name="rear_left_wheel_l">
-    <xyz> -0.075  0.305 -0.17</xyz>
+    <xyz> -0.075  0.305 -0.15</xyz>
     <rpy> 90.0    0.0    0.0 </rpy>
     <geom:cylinder name="rear_left_wheel_l_geom">
       <kp>1000000000.0</kp>
@@ -1216,16 +1232,18 @@
       <size> 0.08  0.03</size>   <!-- radius and width -->
       <mass>0.5</mass>
       <visual>
-        <size>0.16 0.16  0.03</size>   <!-- bounding box -->
-        <mesh>unit_cylinder</mesh>
+        <xyz>  0.0     0.0    0.0 </xyz>
+        <rpy>  0.0     0.0    0.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
 
   <body:cylinder name="rear_left_wheel_r">
-    <xyz> -0.075  0.195 -0.17</xyz>
-    <rpy> 90.0    0.0    0.0 </rpy>
+    <xyz> -0.075  0.195 -0.15</xyz>
+    <rpy> 90.0    0.0  180.0 </rpy>
     <geom:cylinder name="rear_left_wheel_r_geom">
       <kp>1000000000.0</kp>
       <kd>1.0</kd>
@@ -1234,15 +1252,17 @@
       <size> 0.08  0.03</size>   <!-- radius and width -->
       <mass>0.5</mass>
       <visual>
-        <size>0.16 0.16  0.03</size>   <!-- bounding box -->
-        <mesh>unit_cylinder</mesh>
+        <xyz>  0.0     0.0    0.0 </xyz>
+        <rpy>  0.0     0.0    0.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
 
   <body:cylinder name="rear_right_wheel_l">
-    <xyz> -0.075 -0.195 -0.17</xyz>
+    <xyz> -0.075 -0.195 -0.15</xyz>
     <rpy> 90.0    0.0    0.0 </rpy>
     <geom:cylinder name="rear_right_wheel_l_geom">
       <kp>1000000000.0</kp>
@@ -1252,16 +1272,18 @@
       <size> 0.08  0.03</size>   <!-- radius and width -->
       <mass>0.5</mass>
       <visual>
-        <size>0.16 0.16  0.03</size>   <!-- bounding box -->
-        <mesh>unit_cylinder</mesh>
+        <xyz>  0.0     0.0    0.0 </xyz>
+        <rpy>  0.0     0.0    0.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
 
   <body:cylinder name="rear_right_wheel_r">
-    <xyz> -0.075 -0.305 -0.17</xyz>
-    <rpy> 90.0    0.0    0.0 </rpy>
+    <xyz> -0.075 -0.305 -0.15</xyz>
+    <rpy> 90.0    0.0  180.0 </rpy>
     <geom:cylinder name="rear_right_wheel_r_geom">
       <kp>1000000000.0</kp>
       <kd>1.0</kd>
@@ -1270,8 +1292,10 @@
       <size> 0.08  0.03</size>   <!-- radius and width -->
       <mass>0.5</mass>
       <visual>
-        <size>0.16 0.16  0.03</size>   <!-- bounding box -->
-        <mesh>unit_cylinder</mesh>
+        <xyz>  0.0     0.0    0.0 </xyz>
+        <rpy>  0.0     0.0    0.0 </rpy>
+        <scale>0.001 0.001 0.001</scale>
+        <mesh>pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
