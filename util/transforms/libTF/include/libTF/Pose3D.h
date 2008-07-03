@@ -78,8 +78,8 @@ namespace libTF
              double xr, double yt, double zt, double w);
   
       // Utility functions to normalize and get magnitude.
-      void Normalize();
-      double getMagnitude();
+      void Normalize(void);
+      double getMagnitude(void);
       Pose3D & operator=(const Pose3D & input);
   
     
@@ -95,11 +95,14 @@ namespace libTF
       void setFromMatrix(const NEWMAT::Matrix& matIn);
       // Set the values using Euler angles
       void setFromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll);
+      void setFromEuler(Position &pos, Euler &euler);
       // Set the values using DH Parameters
       void setFromDH(double length, double alpha, double offset, double theta);
 
-
-
+      void setPosition(double x, double y, double z);
+      void setPosition(Position &pos);
+      void setQuaternion(double x, double y, double z, double w);
+      void setQuaternion(Quaternion &quat);
 
 
 

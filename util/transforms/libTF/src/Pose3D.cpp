@@ -127,6 +127,11 @@ void Pose3D::setFromEuler(double _x, double _y, double _z, double _yaw, double _
   setFromMatrix(Pose3D::matrixFromEuler(_x,_y,_z,_yaw,_pitch,_roll));
 };
 
+void Pose3D::setFromEuler(Position &pos, Euler &euler)
+{
+    setFromEuler(pos.x, pos.y, pos.z, euler.yaw, euler.pitch, euler.roll);
+}
+
 void Pose3D::setFromDH(double length, double alpha, double offset, double theta)
 {
   setFromMatrix(Pose3D::matrixFromDH(length, alpha, offset, theta));
@@ -361,3 +366,34 @@ Pose3D::Position Pose3D::getPosition(void) const
   pos.z = zt;
   return pos;
 };
+
+void Pose3D::setPosition(double x, double y, double z)
+{
+    xt = x;
+    yt = y;
+    zt = z;
+}
+
+void Pose3D::setPosition(Position &pos)
+{
+    xt = pos.x;
+    yt = pos.y;
+    zt = pos.z;
+}
+
+void Pose3D::setQuaternion(double x, double y, double z, double _w)
+{
+    xr = x;
+    yr = y;
+    zr = z;
+    w  = _w;
+}
+
+void Pose3D::setQuaternion(Quaternion &quat)
+{
+    xr = quat.x;
+    yr = quat.y;
+    zr = quat.z;
+    w  = quat.w;
+}
+
