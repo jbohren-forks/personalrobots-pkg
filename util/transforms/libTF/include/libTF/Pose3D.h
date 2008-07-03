@@ -50,76 +50,91 @@ namespace libTF
       friend class Pose3DCache;
       
   public:
-
+      /** \brief A struct to return the translational component */
       struct Position
       {
         double x,y,z;
       };
   
+      /** \brief A struct to return the quaternion component */
       struct Quaternion
       {
         double x,y,z,w;
       };
-
+      /** \brief A struct to return the Euler angles */
       struct Euler
       {
         double yaw, pitch, roll;
       };
   
       /* Constructors */
-      ///Empty Constructor initialize to zero
+      /** \brief Empty Constructor initialize to zero */
       Pose3D();
-      ///Translation only constructor
+      /** \brief Translation only constructor */
       Pose3D(double xt, double yt, double zt); 
-      /// Quaternion only constructor
+      /** \brief  Quaternion only constructor */
       Pose3D(double xr, double yt, double zt, double w);
-      /// Trans and Quat constructor
+      /** \brief Translation and Quaturnion constructor */
       Pose3D(double xt, double yt, double zt, 
              double xr, double yt, double zt, double w);
   
       // Utility functions to normalize and get magnitude.
+      /** \brief Normalize the quaternion */
       void normalize(void);
+      /** \brief Get the magnitude of the Quaternion 
+       * used for normalization */
       double getMagnitude(void);
+      /** \brief Assignment operator overload*/
       Pose3D & operator=(const Pose3D & input);
   
     
       /* accessors */
+      /** \brief Return the transform as a matrix */
       NEWMAT::Matrix asMatrix();
+      /** \brief Return the inverse of the transform as a matrix */
       NEWMAT::Matrix getInverseMatrix();
+      /** \brief Return the rotation as a quaternion */
       Quaternion getQuaternion(void) const;
+      /** \brief Return the translation as a position */
       Position   getPosition(void) const;
     
 
       /** Mutators **/
-      //Set the values from a matrix
+      /** \brief Set the values from a matrix */
       void setFromMatrix(const NEWMAT::Matrix& matIn);
-      // Set the values using Euler angles
+      /** \brief Set the values using Euler angles */
       void setFromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll);
+      /** \brief Set the values using Euler angles */
       void setFromEuler(Position &pos, Euler &euler);
-      // Set the values using DH Parameters
+      /** \brief Set the values using DH Parameters */
       void setFromDH(double length, double alpha, double offset, double theta);
 
+      /** \brief Set the translational components */
       void setPosition(double x, double y, double z);
+      /** \brief Set the translational components */
       void setPosition(Position &pos);
+      /** \brief Set the rotational components */
       void setQuaternion(double x, double y, double z, double w);
+      /** \brief Set the rotational components */
       void setQuaternion(Quaternion &quat);
 
 
 
       /**************** Static Helper Functions ***********************/
-      // Convert DH Parameters to a Homogeneous Transformation Matrix
+      /** \brief Convert DH Parameters to a Homogeneous Transformation Matrix */
       static NEWMAT::Matrix matrixFromDH(double length, double alpha, double offset, double theta);
-      // Convert Euler Angles to a Homogeneous Transformation Matrix
+      /** \brief Convert Euler Angles to a Homogeneous Transformation Matrix */
       static NEWMAT::Matrix matrixFromEuler(double ax,
                                             double ay, double az, double yaw,
                                             double pitch, double roll);
-
+      /** \brief isolate Euler Angles from a homogenous transform matrix */
       static Euler    eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned int solution_number=1);
+      /** \brief isolate translational change from a homogeneous transform matrix */
       static Position positionFromMatrix(const NEWMAT::Matrix & matrix_in);
     
   protected:
       
-      /* Internal Data */    
+      /** Internal Data Storage*/    
       double xt, yt, zt, xr, yr, zr, w;
 
   };
