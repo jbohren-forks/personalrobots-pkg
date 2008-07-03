@@ -25,7 +25,7 @@ public:
   int img_cnt;
   bool made_dir;
 
-  CvView() : node("cv_view"), cv_bridge(&image_msg, CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U), 
+  CvView() : node("cv_view", ros::node::ANONYMOUS_NAME), cv_bridge(&image_msg, CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U), 
              cv_image(0), img_cnt(0), made_dir(false)
   { 
     cvNamedWindow("cv_view", CV_WINDOW_AUTOSIZE);
