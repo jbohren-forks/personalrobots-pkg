@@ -48,6 +48,7 @@ struct camData
   dc1394_cam::Cam* cam;
   std_msgs::Image img;
   bool colorize;
+  int32_t videreMode;
   dc1394color_filter_t bayer;
   int index;
 };
@@ -159,6 +160,8 @@ public:
         fps = DC1394_FRAMERATE_1_875;
 
 
+      cd.videreMode = 0;
+
       oss.str("");
       oss << "videoMode" << i;
       string strMode;
@@ -180,6 +183,25 @@ public:
         mode = DC1394_VIDEO_MODE_1280x960_MONO8;
       else if (strMode == string("1600x1200mono8"))
         mode = DC1394_VIDEO_MODE_1600x1200_MONO8;
+      else if (strMode == string("640x480videre"))
+      {
+        mode = DC1394_VIDEO_MODE_640x480_YUV422;
+
+        oss.str("");
+        oss << "videreMode" << i;
+        string strVidereMode;
+        param(oss.str(), strVidereMode, string("none"));
+        if (strVidereMode == string("none"))
+          cd.videreMode = 1;
+        else if (strVidereMode == string("rectified"))
+          cd.videreMode = 3;
+        else if (strVidereMode == string("disparity"))
+          cd.videreMode = 4;
+        else if (strVidereMode == string("disparity_raw"))
+          cd.videreMode = 5;
+        else
+          cd.videreMode = 4;
+      }
       else
         mode = DC1394_VIDEO_MODE_640x480_MONO8;
 
@@ -229,6 +251,17 @@ public:
 
       cd.cam->start();
 
+      //  VIDERE mode setup has to happen AFTER starting the camera
+
+      if (cd.videreMode != 0)
+      {
+        usleep(50000);
+        uint32_t qval1 = 0x08000000 | (0x90 << 16) | ((cd.videreMode & 0x7) << 16);
+        uint32_t qval2 = 0x08000000 | (0x9C << 16);
+        cd.cam->setControlRegister(0xFF000, qval1);
+        cd.cam->setControlRegister(0xFF000, qval2);
+      }
+
       cams.push_back(cd);
     }
 
@@ -271,15 +304,19 @@ public:
 
           if (dc1394_debayer_frames(in_frame, frame, DC1394_BAYER_METHOD_BILINEAR) != DC1394_SUCCESS)
             printf("Debayering failed!\n");
+        } else if (i->videreMode != 0) {
+          frame = (dc1394video_frame_t*)calloc(1,sizeof(dc1394video_frame_t));
+
+          dc1394_deinterlace_stereo_frames(in_frame, frame, DC1394_STEREO_METHOD_INTERLACED);
         } else {
           frame = in_frame;
-        }
+        } 
 
         uint8_t *buf      = frame->image;
         uint32_t width    = frame->size[0];
         uint32_t height   = frame->size[1];
         uint32_t buf_size = width*height;
-
+        
         i->img.width = width;
         i->img.height = height;
         i->img.compression = "raw";
@@ -300,7 +337,7 @@ public:
 
         publish(oss.str(), i->img);
 
-        if (i->colorize) {
+        if (i->colorize || i->videreMode != 0) {
           free(frame->image);
           free(frame);
         }

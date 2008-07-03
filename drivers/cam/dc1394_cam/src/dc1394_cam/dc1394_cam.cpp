@@ -259,6 +259,21 @@ dc1394_cam::Cam::setFeatureMode(dc1394feature_t feature, dc1394feature_mode_t mo
 }
 
 
+void
+dc1394_cam::Cam::setControlRegister(uint64_t offset, uint32_t value)
+{
+  CHECK_READY();
+  CHECK_ERR_CLEAN( dc1394_set_control_register(dcCam, offset, value), "Could not set control register");
+}
+
+uint32_t
+dc1394_cam::Cam::getControlRegister(uint64_t offset)
+{
+  CHECK_READY();
+  uint32_t value;
+  CHECK_ERR_CLEAN( dc1394_get_control_register(dcCam, offset, &value), "Could not get control register");
+  return value;
+}
 
 
 void

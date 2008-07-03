@@ -127,6 +127,9 @@ namespace dc1394_cam
 
     void setFeatureMode(dc1394feature_t feature, dc1394feature_mode_t mode);
 
+    void setControlRegister(uint64_t offset, uint32_t value);
+    uint32_t getControlRegister(uint64_t offset);
+
     dc1394camera_t* dcCam;
 
 
