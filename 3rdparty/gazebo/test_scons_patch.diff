@@ -1,0 +1,28 @@
+Index: test-gazebo-svn/SConstruct
+===================================================================
+--- test-gazebo-svn/SConstruct	(revision 6696)
++++ test-gazebo-svn/SConstruct	(working copy)
+@@ -24,6 +24,8 @@
+ parseConfigs=['pkg-config --cflags --libs OGRE',
+               'xml2-config --cflags --libs', 
+       	      'ode-config --cflags --libs',
++      	      'rospack export/cpp/cflags freeimage',
++      	      'rospack export/cpp/lflags freeimage',
+               'fltk-config --cflags --libs --ldflags --use-gl --use-images',
+               'pkg-config --cflags --libs xft'
+               ]
+Index: test-gazebo-svn/player/SConscript
+===================================================================
+--- test-gazebo-svn/player/SConscript	(revision 6696)
++++ test-gazebo-svn/player/SConscript	(working copy)
+@@ -1,7 +1,8 @@
+ import os
+ Import('env install_prefix staticObjs sharedObjs subdirs')
+ 
+-parseConfigs = ['pkg-config --cflags --libs playerc++']
++parseConfigs = ['pkg-config --cflags --libs playerc++',
++                'pkg-config --cflags --libs playerc']
+ 
+ sources = ['GazeboDriver.cc',
+            'GazeboClient.cc',
+

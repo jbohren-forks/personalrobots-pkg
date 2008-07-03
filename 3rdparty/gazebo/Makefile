@@ -8,6 +8,7 @@ ODE_PATH = $(shell rospack find opende)/opende
 #FI_LD = $(shell rospack export/cpp/lflags freeimage)
 FI_LD = $(shell rospack find freeimage)/freeimage/lib
 ROOT = $(shell rospack find gazebo)/gazebo
+TESTROOT = $(shell rospack find gazebo)/test-gazebo
 
 gazebo-checkout:
 	@if [ ! -d gazebo-svn ]; then svn co $(REVISION) https://playerstage.svn.sf.net/svnroot/playerstage/code/gazebo/trunk gazebo-svn; fi
@@ -22,6 +23,18 @@ gazebo: gazebo-checkout
 	export LIBPATH="${FI_LD}" && \
 	export PATH=${ODE_PATH}/bin:${PATH} && scons prefix=$(ROOT) && scons prefix=$(ROOT) install
 	touch gazebo
+
+test-gazebo-checkout:
+	@if [ ! -d test-gazebo-svn ]; then svn co $(REVISION) https://playerstage.svn.sf.net/svnroot/playerstage/code/gazebo/trunk test-gazebo-svn; fi
+	-cd test-gazebo-svn && svn up #$(REVISION) 
+	#-patch -N -p0 < gazebo_patch.diff
+
+test-gazebo: test-gazebo-checkout
+	if [ ! -d test-gazebo ]; then mkdir -p test-gazebo; fi
+	cd test-gazebo-svn && export PKG_CONFIG_PATH=${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} && \
+	export LIBPATH="${FI_LD}" && \
+	export PATH=${ODE_PATH}/bin:${PATH} && scons prefix=$(TESTROOT) && scons prefix=$(TESTROOT) install
+	touch test-gazebo
 
 #	export LD_LIBRARY_PATH="/usr/lib" && \
 
