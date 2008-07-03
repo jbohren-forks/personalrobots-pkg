@@ -1,3 +1,0 @@
-<launch>
-<node ns="wg" pkg="rosTF" type="testServer" args="" respawn="false" />
-</launch>
