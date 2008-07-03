@@ -36,11 +36,11 @@
 #define POSE3D_HH
 
 #include <iostream>
+#include <vector>
 #include <newmat10/newmat.h>
 #include <newmat10/newmatio.h>
 #include <cmath>
 #include <pthread.h>
-
 
 namespace libTF
 {
@@ -90,7 +90,7 @@ namespace libTF
       Pose3D & operator=(const Pose3D & input);
   
     
-      /* accessors */
+      /* Accessors */
       /** \brief Return the transform as a matrix */
       NEWMAT::Matrix asMatrix();
       /** \brief Return the inverse of the transform as a matrix */
@@ -119,16 +119,17 @@ namespace libTF
       void setQuaternion(double x, double y, double z, double w);
       /** \brief Set the rotational components */
       void setQuaternion(Quaternion &quat);
-
-
-
+      
+      /* Application of the transform */
+      void applyToPosition(Position &pos) const;
+      void applyToPositions(std::vector<Position*> &posv) const;
+      
       /**************** Static Helper Functions ***********************/
       /** \brief Convert DH Parameters to a Homogeneous Transformation Matrix */
       static NEWMAT::Matrix matrixFromDH(double length, double alpha, double offset, double theta);
       /** \brief Convert Euler Angles to a Homogeneous Transformation Matrix */
-      static NEWMAT::Matrix matrixFromEuler(double ax,
-                                            double ay, double az, double yaw,
-                                            double pitch, double roll);
+      static NEWMAT::Matrix matrixFromEuler(double ax, double ay, double az,
+					    double yaw, double pitch, double roll);
       /** \brief isolate Euler Angles from a homogenous transform matrix */
       static Euler    eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned int solution_number=1);
       /** \brief isolate translational change from a homogeneous transform matrix */

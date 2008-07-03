@@ -7,6 +7,19 @@ using namespace libTF;
 int main(void)
 {
 
+    
+    Pose3D pz;
+    pz.setFromEuler(0,0,0, M_PI/2, 0, 0);
+    Pose3D::Position p;
+    p.x = 0;
+    p.y = 0;
+    p.z = 1;
+    
+    pz.applyToPosition(p);
+    printf("After rotate: %f %f %f\n", p.x, p.y, p.z);
+    
+
+    
   for (int ind = 0; ind < 2;ind++)
     {
       bool caching;
@@ -165,6 +178,7 @@ int main(void)
 
 
     }
+  
 
   std::cout <<"Congratulations! You reached the end of the test program without errors." <<std::endl;
   
