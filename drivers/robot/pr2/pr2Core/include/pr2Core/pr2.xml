@@ -14,8 +14,8 @@
     <shoulder_pan_length>0.4</shoulder_pan_length>
     <shoulder_pan_radius>0.05</shoulder_pan_radius>
 
-    <shoulder_pitch_length>0.01</shoulder_pitch_length>
-    <shoulder_pitch_radius>0.01</shoulder_pitch_radius>
+    <shoulder_pitch_length>0.1</shoulder_pitch_length>
+    <shoulder_pitch_radius>0.12</shoulder_pitch_radius>
 
     <shoulder_roll_length>0.4</shoulder_roll_length>
     <shoulder_roll_radius>0.05</shoulder_roll_radius>
@@ -273,7 +273,7 @@
     </joint>
 
     <inertial>
-      <mass> 70750.964  </mass>
+      <mass> 70.750964  </mass>
       <com> -0.061523  0.000942 0.293569 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
       <inertia>5.652232699207  -0.009719934438  1.293988226423 5.669473158652 -0.007379583694 3.683196351726 </inertia>
     </inertial> 
