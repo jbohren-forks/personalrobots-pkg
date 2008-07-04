@@ -157,10 +157,11 @@ class KinematicModel
 	unsigned int stateDimension;
     };
     
-    KinematicModel(URDF *model = NULL)
+    explicit
+    KinematicModel(URDF *model = NULL, const char *group = NULL)
     {
 	if (model)
-	    build(*model);
+	    build(*model, group);
     }
     
     virtual ~KinematicModel(void)
@@ -169,7 +170,7 @@ class KinematicModel
 	    delete m_robots[i];
     }
     
-    void build(URDF &model);
+    void build(URDF &model, const char *group = NULL);
     
     unsigned int getRobotCount(void) const;
     Robot* getRobot(unsigned int index) const;
@@ -178,6 +179,8 @@ class KinematicModel
     
     std::vector<Robot*> m_robots;
     
+ private:
+
     void buildChain(Link *parent, unsigned int *usedParams, Joint* joint, URDF::Link* urdfLink);
     void buildChain(Joint *parent, unsigned int *usedParams, Link* link, URDF::Link* urdfLink);
     

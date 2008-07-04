@@ -34,15 +34,30 @@
 
 #include <robotmodels/kinematic.h>
 
-void KinematicModel::build(URDF &model)
+void KinematicModel::build(URDF &model, const char *group)
 {
-    for (unsigned int i = 0 ; i < model.getDisjointPartCount() ; ++i)
+    if (group)
     {
-	URDF::Link *link = model.getDisjointPart(i);
-	Robot *rb = new Robot();
-	rb->chain = new Joint();
-	buildChain(NULL, &rb->stateDimension, rb->chain, link);
-	m_robots.push_back(rb);
+	URDF::Group *g = model.getGroup(group);
+	for (unsigned int i = 0 ; i < g->linkRoots.size() ; ++i)
+	{
+	    URDF::Link *link = g->linkRoots[i];
+	    Robot *rb = new Robot();
+	    rb->chain = new Joint();
+	    buildChain(NULL, &rb->stateDimension, rb->chain, link);
+	    m_robots.push_back(rb);
+	}
+    }
+    else
+    {
+	for (unsigned int i = 0 ; i < model.getDisjointPartCount() ; ++i)
+	{
+	    URDF::Link *link = model.getDisjointPart(i);
+	    Robot *rb = new Robot();
+	    rb->chain = new Joint();
+	    buildChain(NULL, &rb->stateDimension, rb->chain, link);
+	    m_robots.push_back(rb);
+	}
     }
 }
     
