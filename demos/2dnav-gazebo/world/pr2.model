@@ -11,14 +11,14 @@
   xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface" 
   >
 
-  <xyz>0.0 0.0 0.0</xyz>
-  <rpy>0.0 0.0 0.0</rpy>
+  <xyz>0.0 0.0 0.02</xyz>
+  <rpy>0.0 0.0 0.0 </rpy>
 
   <canonicalBody>base_body</canonicalBody>
 
   <body:box name="base_body">
-    <xyz>0.175 0.0 -0.006</xyz>
-    <rpy>0.0   0.0 0.0 </rpy>
+    <xyz>0.175 0.0 0.15 </xyz> <!-- base bottom is h/2 + some height for wheel clearance-->
+    <rpy>0.0   0.0 0.0  </rpy>
 
     <!-- report when this body collides with static bodies -->
     <reportStaticCollision>true</reportStaticCollision>
@@ -39,28 +39,15 @@
 
 
       <xyz> 0.0    0.00  0.000</xyz>
-      <size>0.65   0.65  0.012</size>
+      <size>0.65   0.65  0.26</size>
       <mul>1</mul>
       <!--color> 0.0  1.0  0.0</color-->
       <visual>
-        <xyz>0.0   0.0 -0.15</xyz>
+        <xyz>0.0   0.0 -0.13</xyz> <!-- shift center of model to match the actual model -->
         <!--size>0.65  0.65  0.65</size-->
         <scale>0.001 0.001 0.001</scale>
         <rpy> 90.0   0.0 90.0 </rpy>
         <mesh>pr2_base.mesh</mesh>
-        <material>Gazebo/Shell</material>
-      </visual>
-    </geom:box>
-
-    <geom:box name="base_spine_geom">
-      <xyz> -0.175 0.00  0.5  </xyz>
-      <size> 0.01 0.05  1.0  </size>
-      <mass>0.01</mass>
-      <mul>1</mul>
-      <visual>
-        <size> 0.01 0.05  1.0  </size>
-        <rpy>0.0   0.0 0.0 </rpy>
-        <mesh>unit_box</mesh>
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
@@ -71,8 +58,8 @@
   <!--         Hokuyo laser body             -->
   <canonicalBody>base_laser_body</canonicalBody>
   <body:box name="base_laser_body">
-    <xyz>0.45 0.0 0.05</xyz>
-    <rpy>0.0 0.0 0.0</rpy>
+    <xyz>0.45 0.0 0.27</xyz> <!-- from the robot coordinate system (center bottom of base box)-->
+    <rpy>0.0  0.0 0.0</rpy>
  
     <geom:box name="base_laser_box">
       <xyz>0.0 0.0 0.02</xyz>
@@ -608,7 +595,7 @@
     <geom:cylinder name="upperarm_joint_right_geom">
       <kp>1000000.0</kp>
       <kd>1.0</kd>
-      <size> 0.10  0.05</size>   <!-- radius and length -->
+      <size> 0.12  0.10</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
@@ -621,15 +608,15 @@
   </body:cylinder>
 
   <body:box name="upperarm_right">
-    <xyz>  0.485   -0.15   0.86 </xyz>
+    <xyz>  0.575   -0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="upperarm_right_geom">
       <kp>1000000.0</kp>
       <kd>1.0</kd>
-      <size> 0.25  0.1 0.1</size>
+      <size> 0.35  0.12 0.15</size>
       <mass>1.0</mass>
       <visual>
-        <xyz> -0.15    0.0    0.0 </xyz>
+        <xyz> -0.20    0.0    0.0 </xyz>
         <rpy>180.0   -90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_sh_roll.mesh</mesh>
@@ -644,10 +631,10 @@
     <geom:cylinder name="elbow_right_geom">
       <kp>1000000.0</kp>
       <kd>1.0</kd>
-      <size> 0.04  0.1</size>   <!-- radius and length -->
+      <size> 0.08  0.1</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
-        <xyz> -0.18    0.0    0.0 </xyz>
+        <xyz> -0.135   0.0    0.0 </xyz>
         <rpy>  0.0   -90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_elbow_pitch.mesh</mesh>
@@ -657,15 +644,15 @@
   </body:cylinder>
 
   <body:box name="forearm_right">
-    <xyz>  0.84225 -0.15   0.86 </xyz>
+    <xyz>  0.90225 -0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="forearm_right_geom">
       <kp>1000000.0</kp>
       <kd>1.0</kd>
-      <size> 0.2  0.1 0.1</size>
+      <size> 0.27  0.12 0.08</size>
       <mass>1.0</mass>
       <visual>
-        <xyz>  0.1     0.0    0.0 </xyz>
+        <xyz>  0.11    0.0    0.0 </xyz>
         <rpy>  0.0   -90.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_forearm_roll.mesh</mesh>
@@ -675,15 +662,15 @@
   </body:box>
 
   <body:cylinder name="wrist_right">
-    <xyz>  0.9995  -0.15   0.86 </xyz>
+    <xyz>  1.008   -0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="wrist_right_geom">
       <kp>1000000.0</kp>
       <kd>1.0</kd>
-      <size> 0.025  0.1</size>   <!-- radius and length -->
+      <size> 0.031  0.1</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
-        <xyz> -0.06    0.0    0.0 </xyz>
+        <xyz>  0.003   0.0    0.0 </xyz>
         <rpy> 90.0     0.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_wrist_pitch.mesh</mesh>
@@ -693,15 +680,15 @@
   </body:cylinder>
 
   <body:box name="palm_right">
-    <xyz>  1.05   -0.15   0.86</xyz>
+    <xyz>  1.10   -0.15   0.86</xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="palm_right_geom">
       <kp>1000000.0</kp>
       <kd>1.0</kd>
-      <size> 0.05  0.05 0.05</size>
+      <size> 0.11  0.10 0.05</size>
       <mass>1.0</mass>
       <visual>
-        <xyz> -0.06    0.0    0.0 </xyz>
+        <xyz> -0.035   0.0    0.0 </xyz>
         <rpy>  0.0    90.0   90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_wrist_roll.mesh</mesh>
@@ -711,7 +698,7 @@
   </body:box>
 
   <body:box name="finger_1_right">
-    <xyz>  1.15   -0.17   0.86 </xyz>
+    <xyz>  1.18   -0.17   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="finger_1_right_geom">
       <kp>100000000.0</kp>
@@ -727,7 +714,7 @@
   </body:box>
 
   <body:box name="finger_2_right">
-    <xyz>  1.15   -0.13   0.86 </xyz>
+    <xyz>  1.18   -0.13   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="finger_2_right_geom">
       <kp>100000000.0</kp>
@@ -815,7 +802,6 @@
   </joint:slider>
 
   <!-- ========== Left Arm =========== -->
-
   <body:cylinder name="shoulder_pan_body_left">
     <xyz>  0.185   0.15   0.68 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
@@ -836,12 +822,12 @@
   </body:cylinder>
 
   <body:cylinder name="upperarm_joint_left">
-    <xyz>  0.285   0.15   0.86 </xyz>
+    <xyz>  0.285    0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="upperarm_joint_left_geom">
       <kp>1000000.0</kp>
       <kd>1.0</kd>
-      <size> 0.10  0.05</size>   <!-- radius and length -->
+      <size> 0.12  0.10</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
@@ -854,15 +840,15 @@
   </body:cylinder>
 
   <body:box name="upperarm_left">
-    <xyz>  0.485   0.15   0.86 </xyz>
+    <xyz>  0.575    0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="upperarm_left_geom">
       <kp>1000000.0</kp>
       <kd>1.0</kd>
-      <size> 0.25 0.1 0.1</size>
+      <size> 0.35  0.12 0.15</size>
       <mass>1.0</mass>
       <visual>
-        <xyz> -0.15    0.0    0.0 </xyz>
+        <xyz> -0.20    0.0    0.0 </xyz>
         <rpy>180.0   -90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_sh_roll.mesh</mesh>
@@ -872,15 +858,15 @@
   </body:box>
 
   <body:cylinder name="elbow_left">
-    <xyz>  0.685   0.15   0.86 </xyz>
+    <xyz>  0.6850   0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="elbow_left_geom">
       <kp>1000000.0</kp>
       <kd>1.0</kd>
-      <size> 0.04  0.1</size>   <!-- radius and length -->
+      <size> 0.08  0.1</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
-        <xyz> -0.18    0.0    0.0 </xyz>
+        <xyz> -0.135   0.0    0.0 </xyz>
         <rpy>  0.0   -90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_elbow_pitch.mesh</mesh>
@@ -890,15 +876,15 @@
   </body:cylinder>
 
   <body:box name="forearm_left">
-    <xyz>  0.84225 0.15   0.86 </xyz>
+    <xyz>  0.90225  0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="forearm_left_geom">
       <kp>1000000.0</kp>
       <kd>1.0</kd>
-      <size> 0.2  0.1 0.1</size>
+      <size> 0.27  0.12 0.08</size>
       <mass>1.0</mass>
       <visual>
-        <xyz>  0.1     0.0    0.0 </xyz>
+        <xyz>  0.11    0.0    0.0 </xyz>
         <rpy>  0.0   -90.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_forearm_roll.mesh</mesh>
@@ -908,15 +894,15 @@
   </body:box>
 
   <body:cylinder name="wrist_left">
-    <xyz>  0.9995  0.15   0.86 </xyz>
+    <xyz>  1.008    0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="wrist_left_geom">
       <kp>1000000.0</kp>
       <kd>1.0</kd>
-      <size> 0.025  0.1</size>   <!-- radius and length -->
+      <size> 0.031  0.1</size>   <!-- radius and length -->
       <mass>1.0</mass>
       <visual>
-        <xyz> -0.06    0.0    0.0 </xyz>
+        <xyz>  0.003   0.0    0.0 </xyz>
         <rpy> 90.0     0.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_wrist_pitch.mesh</mesh>
@@ -926,15 +912,15 @@
   </body:cylinder>
 
   <body:box name="palm_left">
-    <xyz>  1.05    0.15   0.86 </xyz>
+    <xyz>  1.10    0.15   0.86</xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="palm_left_geom">
       <kp>1000000.0</kp>
       <kd>1.0</kd>
-      <size> 0.05  0.05 0.05</size>
+      <size> 0.11  0.10 0.05</size>
       <mass>1.0</mass>
       <visual>
-        <xyz> -0.06    0.0    0.0 </xyz>
+        <xyz> -0.035   0.0    0.0 </xyz>
         <rpy>  0.0    90.0   90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_wrist_roll.mesh</mesh>
@@ -944,10 +930,10 @@
   </body:box>
 
   <body:box name="finger_1_left">
-    <xyz>  1.15    0.13   0.86 </xyz>
+    <xyz>  1.18    0.13   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="finger_1_left_geom">
-      <kp>10000000000.0</kp>
+      <kp>100000000.0</kp>
       <kd>1.0</kd>
       <size> 0.05  0.01 0.025</size>
       <mass>1.0</mass>
@@ -960,10 +946,10 @@
   </body:box>
 
   <body:box name="finger_2_left">
-    <xyz>  1.15    0.17   0.86 </xyz>
+    <xyz>  1.18    0.17   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="finger_2_left_geom">
-      <kp>10000000000.0</kp>
+      <kp>100000000.0</kp>
       <kd>1.0</kd>
       <size> 0.05  0.01 0.025</size>
       <mass>1.0</mass>
@@ -974,6 +960,7 @@
       </visual>
     </geom:box>
   </body:box>
+
 
 
   <joint:hinge name="shoulder_pan_left">
@@ -1054,7 +1041,7 @@
 
   <!--=========================== caster body ===========================-->
   <body:box name="front_left_caster_body">
-    <xyz> 0.425  0.25  -0.062 </xyz>
+    <xyz>0.425  0.25   0.16069 </xyz> <!-- caster height + height off ground of base bottom -->
     <rpy> 0.0    0.0    0.0 </rpy>
 
     <!-- report when this body collides with static bodies -->
@@ -1079,7 +1066,7 @@
   </body:box>
 
   <body:box name="front_right_caster_body">
-    <xyz> 0.425 -0.25 -0.062</xyz>
+    <xyz> 0.425 -0.25  0.16069</xyz>
     <rpy> 0.0    0.0  0.0</rpy>
 
     <!-- report when this body collides with static bodies -->
@@ -1104,7 +1091,7 @@
   </body:box>
 
   <body:box name="rear_left_caster_body">
-    <xyz>-0.075 0.25 -0.062</xyz>
+    <xyz> -0.075 0.25  0.16069</xyz>
     <rpy> 0.0   0.0  0.0</rpy>
 
     <!-- report when this body collides with static bodies -->
@@ -1129,7 +1116,7 @@
   </body:box>
 
   <body:box name="rear_right_caster_body">
-    <xyz>-0.075 -0.25 -0.062</xyz>
+    <xyz>-0.075 -0.25  0.16069</xyz>
     <rpy> 0.0   0.0  0.0</rpy>
     <!-- report when this body collides with static bodies -->
     <reportStaticCollision>true</reportStaticCollision>
@@ -1155,7 +1142,7 @@
 
   <!--=========================== wheels ===========================-->
   <body:cylinder name="front_left_wheel_l">
-    <xyz>  0.425   0.305 -0.15</xyz>
+    <xyz>  0.425   0.305  0.08</xyz>  <!-- basically wheel radius height -->
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="front_left_wheel_l_geom">
       <kp>1000000000.0</kp>
@@ -1175,7 +1162,7 @@
   </body:cylinder>
 
   <body:cylinder name="front_left_wheel_r">
-    <xyz>  0.425   0.195 -0.15</xyz>
+    <xyz>  0.425   0.195  0.08</xyz>
     <rpy> 90.0     0.0  180.0 </rpy>
     <geom:cylinder name="front_left_wheel_r_geom">
       <kp>1000000000.0</kp>
@@ -1195,7 +1182,7 @@
   </body:cylinder>
 
   <body:cylinder name="front_right_wheel_l">
-    <xyz>  0.425  -0.195 -0.15</xyz>
+    <xyz>  0.425  -0.195  0.08</xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="front_right_wheel_l_geom">
       <kp>1000000000.0</kp>
@@ -1215,7 +1202,7 @@
   </body:cylinder>
 
   <body:cylinder name="front_right_wheel_r">
-    <xyz>  0.425  -0.305 -0.15</xyz>
+    <xyz>  0.425  -0.305  0.08</xyz>
     <rpy> 90.0     0.0  180.0 </rpy>
     <geom:cylinder name="front_right_wheel_r_geom">
       <kp>1000000000.0</kp>
@@ -1235,7 +1222,7 @@
   </body:cylinder>
 
   <body:cylinder name="rear_left_wheel_l">
-    <xyz> -0.075  0.305 -0.15</xyz>
+    <xyz> -0.075  0.305  0.08</xyz>
     <rpy> 90.0    0.0    0.0 </rpy>
     <geom:cylinder name="rear_left_wheel_l_geom">
       <kp>1000000000.0</kp>
@@ -1255,7 +1242,7 @@
   </body:cylinder>
 
   <body:cylinder name="rear_left_wheel_r">
-    <xyz> -0.075  0.195 -0.15</xyz>
+    <xyz> -0.075  0.195  0.08</xyz>
     <rpy> 90.0    0.0  180.0 </rpy>
     <geom:cylinder name="rear_left_wheel_r_geom">
       <kp>1000000000.0</kp>
@@ -1275,7 +1262,7 @@
   </body:cylinder>
 
   <body:cylinder name="rear_right_wheel_l">
-    <xyz> -0.075 -0.195 -0.15</xyz>
+    <xyz> -0.075 -0.195  0.08</xyz>
     <rpy> 90.0    0.0    0.0 </rpy>
     <geom:cylinder name="rear_right_wheel_l_geom">
       <kp>1000000000.0</kp>
@@ -1295,7 +1282,7 @@
   </body:cylinder>
 
   <body:cylinder name="rear_right_wheel_r">
-    <xyz> -0.075 -0.305 -0.15</xyz>
+    <xyz> -0.075 -0.305  0.08</xyz>
     <rpy> 90.0    0.0  180.0 </rpy>
     <geom:cylinder name="rear_right_wheel_r_geom">
       <kp>1000000000.0</kp>

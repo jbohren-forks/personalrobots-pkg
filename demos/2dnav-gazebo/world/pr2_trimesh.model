@@ -39,10 +39,10 @@
       <scale>0.001 0.001 0.001</scale>
       <mesh>pr2_base.mesh</mesh>
       <xyz> -0.15   0.0     0.1 </xyz> <!-- x y z after rotation???-->
-      <rpy> 90.0    0.0    90.0 </rpy> <!-- strange rotation behavior, fix in gazebo -->
+      <rpy> 90.0    0.0    90.0 </rpy> <!-- r p y strange rotation behavior, fix in gazebo -->
       <visual>
         <xyz>  0.0    0.15    0.15</xyz> <!-- z x y after rotation???-->
-        <rpy>  0.0  -90.0   -90.0 </rpy> <!-- strange rotation behavior, fix in gazebo -->
+        <rpy>  0.0  -90.0   -90.0 </rpy> <!-- r p y strange rotation behavior, fix in gazebo -->
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_base.mesh</mesh>
         <material>Gazebo/Shell</material>
