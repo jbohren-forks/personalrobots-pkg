@@ -86,3 +86,8 @@ dGeomID KinematicModelODE::buildODEGeom(Geometry *geom)
     
     return g;
 }
+
+dSpaceID KinematicModelODE::getODESpace(void) const
+{
+    return m_space;
+}
