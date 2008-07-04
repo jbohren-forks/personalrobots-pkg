@@ -722,7 +722,7 @@
   </body:box>
 
   <body:cylinder name="wrist_right">
-    <xyz>  1.008   -0.15   0.86 </xyz>
+    <xyz>  1.008   -0.15   0.84 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="wrist_right_geom">
 
@@ -734,15 +734,15 @@
       <iyy>  0.013567548848     </iyy>
       <iyz>  -0.000427679042    </iyz>
       <izz>   0.001755089866    </izz>
-      <cx>   -0.000058   </cx>
+      <cx>   0.179474    </cx>
       <cy>   0.013779    </cy>
-      <cz>   0.179474    </cz>
+      <cz>   -0.000058   </cz>
  
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.031  0.1</size>   <!-- radius and length -->
       <visual>
-        <xyz>  0.003   0.0    0.0 </xyz>
+        <xyz>  0.008   0.02   0.0 </xyz>
         <rpy> 90.0     0.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_wrist_pitch.mesh</mesh>
@@ -764,9 +764,9 @@
       <iyy>  0.013567548848     </iyy>
       <iyz>  -0.000427679042    </iyz>
       <izz>   0.001755089866    </izz>
-      <cx>   -0.000058   </cx>
+      <cx>   0.179474    </cx>
       <cy>   0.013779    </cy>
-      <cz>   0.179474    </cz>
+      <cz>   -0.000058   </cz>
  
       <kp>1000000.0</kp>
       <kd>1.0</kd>
@@ -861,10 +861,11 @@
   </joint:hinge>
 
   <joint:hinge name="palm_roll_joint_right">
-    <body1>palm_right</body1>
-    <body2>wrist_right</body2>
-    <anchor>wrist_right</anchor>
+    <body2>palm_right</body2>
+    <body1>wrist_right</body1>
+    <anchor>palm_right</anchor>
     <axis>  1.0   0.0   0.0 </axis>
+    <axisOffset>  0.0   0.0   0.0 </axisOffset>
   </joint:hinge>
 
   <joint:slider name="finger_1_slider_right">
@@ -1038,7 +1039,7 @@
   </body:box>
 
   <body:cylinder name="wrist_left">
-    <xyz>  1.008    0.15   0.86 </xyz>
+    <xyz>  1.008    0.15   0.84 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="wrist_left_geom">
 
@@ -1050,15 +1051,15 @@
       <iyy>  0.013567548848     </iyy>
       <iyz>  -0.000427679042    </iyz>
       <izz>   0.001755089866    </izz>
-      <cx>   -0.000058   </cx>
+      <cx>   0.179474    </cx>
       <cy>   0.013779    </cy>
-      <cz>   0.179474    </cz>
+      <cz>   -0.000058   </cz>
  
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.031  0.1</size>   <!-- radius and length -->
       <visual>
-        <xyz>  0.003   0.0    0.0 </xyz>
+        <xyz>  0.003   0.02   0.0 </xyz>
         <rpy> 90.0     0.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_wrist_pitch.mesh</mesh>
@@ -1080,9 +1081,9 @@
       <iyy>  0.013567548848     </iyy>
       <iyz>  -0.000427679042    </iyz>
       <izz>   0.001755089866    </izz>
-      <cx>   -0.000058   </cx>
+      <cx>   0.179474    </cx>
       <cy>   0.013779    </cy>
-      <cz>   0.179474    </cz>
+      <cz>   -0.000058   </cz>
  
       <kp>1000000.0</kp>
       <kd>1.0</kd>
@@ -1176,7 +1177,7 @@
   <joint:hinge name="palm_roll_joint_left">
     <body1>palm_left</body1>
     <body2>wrist_left</body2>
-    <anchor>wrist_left</anchor>
+    <anchor>palm_left</anchor>
     <axis>  1.0   0.0   0.0 </axis>
   </joint:hinge>
 

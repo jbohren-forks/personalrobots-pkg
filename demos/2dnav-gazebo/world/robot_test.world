@@ -353,8 +353,8 @@
 
 
   <model:physical name="robot_model1">
-    <xyz>0.0 0.0 0.262</xyz>
-    <rpy>0.0 0.0 0.0</rpy>
+    <xyz>0.0 0.0 0.02</xyz> <!-- bottom of base off the ground by this much, basically wheel height below skirt -->
+    <rpy>0.0 0.0 0.0 </rpy>
 
     <!-- base, torso and arms -->
     <include embedded="true">
