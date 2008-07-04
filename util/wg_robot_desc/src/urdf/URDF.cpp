@@ -47,6 +47,8 @@ void URDF::freeMemory(void)
 {
     for (std::map<std::string, Link*>::iterator i = m_links.begin() ; i != m_links.end() ; i++)
 	delete i->second;
+    for (std::map<std::string, Group*>::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
+	delete i->second;
 }
 
 void URDF::clear(void)
@@ -84,6 +86,19 @@ URDF::Link* URDF::getDisjointPart(unsigned int index) const
     else
 	return NULL;
 }
+
+void URDF::getGroupNames(std::vector<std::string> &groups) const
+{
+    for (std::map<std::string, Group*>::const_iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
+	groups.push_back(i->first);
+}
+
+URDF::Group* URDF::getGroup(const std::string &name) const
+{
+    std::map<std::string, Group*>::const_iterator it = m_groups.find(name);
+    return (it == m_groups.end()) ? NULL : it->second;
+}
+
 
 bool URDF::containsCycle(unsigned int index) const
 {
@@ -187,7 +202,7 @@ void URDF::Link::print(FILE *out, std::string indent)
     visual->print(out, indent+ "  ");
     fprintf(out, "%s  - groups: ", indent.c_str());
     for (unsigned int i = 0 ; i < groups.size() ; ++i)
-	fprintf(out, "%s ", groups[i].c_str());
+	fprintf(out, "%s ", groups[i]->name.c_str());
     fprintf(out, "\n");
     fprintf(out, "%s  - children links: ", indent.c_str());
     for (unsigned int i = 0 ; i < children.size() ; ++i)
@@ -888,14 +903,35 @@ bool URDF::parse(const void *data)
 		}
 	    }
 	    
-	    for (std::map< std::string, std::vector<std::string> >::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
-	    {
-		for (unsigned int j = 0 ; j < i->second.size() ; ++j)
-		    if (m_links.find(i->second[j]) == m_links.end())
-			fprintf(stderr, "Group '%s': link '%s' is undefined\n", i->first.c_str(), i->second[j].c_str());
+	    /* for each group, compute the pointers to the links they contain, and for every link,
+	     * compute the list of pointers to the groups they are part of */
+	    for (std::map<std::string, Group*>::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
+		for (unsigned int j = 0 ; j < i->second->linkNames.size() ; ++j)
+		    if (m_links.find(i->second->linkNames[j]) == m_links.end())
+			fprintf(stderr, "Group '%s': link '%s' is undefined\n", i->first.c_str(), i->second->linkNames[j].c_str());
 		    else
-			m_links[i->second[j]]->groups.push_back(i->first);
-	    }
+		    {
+			Link* l = m_links[i->second->linkNames[j]];
+			l->groups.push_back(i->second);
+			i->second->links.push_back(l);
+		    }
+	    
+	    /* for every group, find the set of links that are roots in this group (their parent is not in the group) */
+	    for (std::map<std::string, Group*>::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
+		for (unsigned int j = 0 ; j < i->second->links.size() ; ++j)
+		{
+		    Link *parent = i->second->links[j]->parent;
+		    bool outside = true;
+		    if (parent)
+			for (unsigned int k = 0 ; k < parent->groups.size() ; ++k)
+			    if (parent->groups[k] == i->second)
+			    {
+				outside = false;
+				break;
+			    }
+		    if (outside)
+			i->second->linkRoots.push_back(i->second->links[j]);
+		}
 	}
 	
 	m_constants.clear();
@@ -976,11 +1012,21 @@ bool URDF::parse(const void *data)
 				    group = attr->ValueStr();
 				    break;
 				}
+			    Group *g = NULL;
+			    if (m_groups.find(group) == m_groups.end())
+			    {
+				g = new Group();
+				g->name = group;
+				m_groups[group] = g;
+			    }
+			    else
+				g = m_groups[group];
+			    
 			    std::stringstream ss(node->FirstChild()->ValueStr());
 			    while (ss.good())
 			    {
 				std::string value; ss >> value;
-				m_groups[group].push_back(value);
+				g->linkNames.push_back(value);
 			    }
 			}
 			else

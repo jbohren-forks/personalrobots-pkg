@@ -47,6 +47,8 @@ class URDF
 {
  public:
     
+    struct Group;
+    
     struct Link
     {
 	
@@ -222,20 +224,20 @@ class URDF
 	virtual bool canSense(void) const;
 	virtual void print(FILE *out = stdout, std::string indent = "");
 	
-	Link              *parent;
-	std::string        parentName;
-	std::string        name;
-	std::vector<Link*> children;
+	Link               *parent;
+	std::string         parentName;
+	std::string         name;
+	std::vector<Link*>  children;
 	
-	Inertial          *inertial;
-	Visual            *visual;
-	Collision         *collision;
-	Joint             *joint;
+	Inertial           *inertial;
+	Visual             *visual;
+	Collision          *collision;
+	Joint              *joint;
 	
-	double             rpy[3];
-	double             xyz[3];
+	double              rpy[3];
+	double              xyz[3];
 	
-	std::vector<std::string> groups;
+	std::vector<Group*> groups;
     };
     
     struct Sensor : public Link
@@ -260,6 +262,22 @@ class URDF
 	std::string calibration;
     };
     
+    struct Group
+    {
+	Group(void)
+	{
+	}
+	
+	virtual ~Group(void)
+	{
+	}
+	
+	std::string              name;
+	std::vector<std::string> linkNames;
+	std::vector<Link*>       links;
+	std::vector<Link*>       linkRoots;
+    };
+    
     explicit URDF(const char *filename = NULL)
     {   
 	m_paths.push_back("");
@@ -281,6 +299,9 @@ class URDF
     unsigned int getDisjointPartCount(void) const;
     Link* getDisjointPart(unsigned int index) const;
 
+    void getGroupNames(std::vector<std::string> &groups) const;
+    Group* getGroup(const std::string &name) const;
+    
  protected:
 
     /* free the memory allocate in this class */
@@ -306,8 +327,8 @@ class URDF
     std::map<std::string, Link::Visual*>    m_visual;
     std::map<std::string, Link::Geometry*>  m_geoms;
     std::map<std::string, Link::Actuator*>  m_actuators;
-
-    std::map<std::string, std::vector<std::string> > m_groups;
+				    
+    std::map<std::string, Group*>           m_groups;
     
  private:
     
