@@ -810,5 +810,47 @@
     wheel_rear_right_l
     wheel_rear_right_r    
   </group>
+
+  <group name="leftArm">
+    shoulder_pan_left
+    shoulder_pitch_left
+    shoulder_roll_left
+    elbow_pitch_left
+    forearm_roll_left
+    wrist_pitch_left
+    wrist_roll_left
+  </group>
   
+  <group name="rightArm">
+    shoulder_pan_right
+    shoulder_pitch_right
+    shoulder_roll_right
+    elbow_pitch_right
+    forearm_roll_right
+    wrist_pitch_right
+    wrist_roll_right
+  </group>
+  
+  <group name="arms">
+    shoulder_pan_left
+    shoulder_pitch_left
+    shoulder_roll_left
+    elbow_pitch_left
+    forearm_roll_left
+    wrist_pitch_left
+    wrist_roll_left
+    shoulder_pan_right
+    shoulder_pitch_right
+    shoulder_roll_right
+    elbow_pitch_right
+    forearm_roll_right
+    wrist_pitch_right
+    wrist_roll_right
+  </group>
+  
+  <group name="head">
+    head_pan
+    head_tilt    
+  </group>
+
 </robot>
