@@ -722,7 +722,7 @@
   </body:box>
 
   <body:cylinder name="wrist_right">
-    <xyz>  1.008   -0.15   0.84 </xyz>
+    <xyz>  1.008   -0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="wrist_right_geom">
 
@@ -734,15 +734,15 @@
       <iyy>  0.013567548848     </iyy>
       <iyz>  -0.000427679042    </iyz>
       <izz>   0.001755089866    </izz>
-      <cx>   0.179474    </cx>
-      <cy>   0.013779    </cy>
-      <cz>   -0.000058   </cz>
+      <cx>   0.0 </cx>
+      <cy>   0.0 </cy>
+      <cz>   0.0 </cz>
  
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.031  0.1</size>   <!-- radius and length -->
       <visual>
-        <xyz>  0.008   0.02   0.0 </xyz>
+        <xyz>  0.008   0.0    0.0 </xyz>
         <rpy> 90.0     0.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_wrist_pitch.mesh</mesh>
@@ -764,9 +764,9 @@
       <iyy>  0.013567548848     </iyy>
       <iyz>  -0.000427679042    </iyz>
       <izz>   0.001755089866    </izz>
-      <cx>   0.179474    </cx>
-      <cy>   0.013779    </cy>
-      <cz>   -0.000058   </cz>
+      <cx>  0.0  </cx>
+      <cy>  0.0  </cy>
+      <cz>  0.0  </cz>
  
       <kp>1000000.0</kp>
       <kd>1.0</kd>
@@ -1039,7 +1039,7 @@
   </body:box>
 
   <body:cylinder name="wrist_left">
-    <xyz>  1.008    0.15   0.84 </xyz>
+    <xyz>  1.008    0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="wrist_left_geom">
 
@@ -1051,15 +1051,15 @@
       <iyy>  0.013567548848     </iyy>
       <iyz>  -0.000427679042    </iyz>
       <izz>   0.001755089866    </izz>
-      <cx>   0.179474    </cx>
-      <cy>   0.013779    </cy>
-      <cz>   -0.000058   </cz>
+      <cx>   0.0 </cx>
+      <cy>   0.0 </cy>
+      <cz>   0.0 </cz>
  
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.031  0.1</size>   <!-- radius and length -->
       <visual>
-        <xyz>  0.003   0.02   0.0 </xyz>
+        <xyz>  0.003   0.0    0.0 </xyz>
         <rpy> 90.0     0.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
         <mesh>pr2_wrist_pitch.mesh</mesh>
@@ -1081,9 +1081,9 @@
       <iyy>  0.013567548848     </iyy>
       <iyz>  -0.000427679042    </iyz>
       <izz>   0.001755089866    </izz>
-      <cx>   0.179474    </cx>
-      <cy>   0.013779    </cy>
-      <cz>   -0.000058   </cz>
+      <cx>   0.0 </cx>
+      <cy>   0.0 </cy>
+      <cz>   0.0 </cz>
  
       <kp>1000000.0</kp>
       <kd>1.0</kd>
