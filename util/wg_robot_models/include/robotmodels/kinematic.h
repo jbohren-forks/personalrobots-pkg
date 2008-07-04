@@ -37,6 +37,7 @@
 
 #include <urdf/URDF.h>
 #include <libTF/Pose3D.h>
+#include <vector>
 
 /** @htmlinclude ../../manifest.html
 
@@ -117,10 +118,13 @@ class KinematicModel
 	Link(void)
 	{
 	    before = NULL;
+	    geom = new Geometry();
 	}
 	
 	~Link(void)
 	{
+	    if (geom)
+		delete geom;
 	    for (unsigned int i = 0 ; i < after.size() ; ++i)
 		delete after[i];
 	}
@@ -135,7 +139,7 @@ class KinematicModel
 	libTF::Pose3D       constTrans;
 	
 	/* the geometry of the link */
-	Geometry            geom;
+	Geometry           *geom;
 	
 	/* ----------------- Computed data -------------------*/
 	
@@ -160,6 +164,9 @@ class KinematicModel
 	}
 	
 	void computeTransforms(const double *params);
+	
+	/* List of links in the robot */
+	std::vector<Link*>  links;
 	
 	/* The first joint in the robot -- the root */
 	Joint              *chain;

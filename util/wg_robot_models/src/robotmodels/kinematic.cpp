@@ -168,26 +168,27 @@ void KinematicModel::buildChain(Robot *robot, Link *parent, Joint* joint, URDF::
 void KinematicModel::buildChain(Robot *robot, Joint *parent, Link* link, URDF::Link* urdfLink)
 {
     link->before = parent;
+    robot->links.push_back(link);
     
     /* copy relevant data */ 
     switch (urdfLink->collision->geometry->type)
     {
     case URDF::Link::Geometry::UNKNOWN:
-	link->geom.type = Geometry::UNKNOWN; break;
+	link->geom->type = Geometry::UNKNOWN; break;
     case URDF::Link::Geometry::BOX:
-	link->geom.type = Geometry::BOX; break;
+	link->geom->type = Geometry::BOX; break;
     case URDF::Link::Geometry::SPHERE:
-	link->geom.type = Geometry::SPHERE; break;
+	link->geom->type = Geometry::SPHERE; break;
     case URDF::Link::Geometry::CYLINDER:
-	link->geom.type = Geometry::CYLINDER; break;
+	link->geom->type = Geometry::CYLINDER; break;
     default:
 	break;
     }
     
     /* copy the geometry of the link */
-    link->geom.size[0] = urdfLink->collision->geometry->size[0];
-    link->geom.size[1] = urdfLink->collision->geometry->size[1];
-    link->geom.size[2] = urdfLink->collision->geometry->size[2];
+    link->geom->size[0] = urdfLink->collision->geometry->size[0];
+    link->geom->size[1] = urdfLink->collision->geometry->size[1];
+    link->geom->size[2] = urdfLink->collision->geometry->size[2];
     
     /* compute the constant transform for this link */
     double *xyz = urdfLink->xyz;

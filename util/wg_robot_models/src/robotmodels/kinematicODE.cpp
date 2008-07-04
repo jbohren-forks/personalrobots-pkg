@@ -37,6 +37,7 @@
 void KinematicModelODE::build(URDF &model, const char *group)
 {
     KinematicModel::build(model, group);
+    m_space = dHashSpaceCreate(0);
     for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
 	buildODEGeoms(m_robots[i]);
 }
@@ -52,7 +53,36 @@ void KinematicModelODE::setGeomPose(dGeomID geom, libTF::Pose3D &pose) const
 
 void KinematicModelODE::buildODEGeoms(Robot *robot)
 {
-    const unsigned int nparams = robot->stateDimension;
-    double params[nparams];
+    double params[robot->stateDimension];
+    for (unsigned int i = 0 ; i < robot->stateDimension ; ++i)
+	params[i] = 0.0;
+    robot->computeTransforms(params);
+    for (unsigned int i = 0 ; i < robot->links.size() ; ++i)
+    {
+	dGeomID g = buildODEGeom(robot->links[i]->geom);
+	if (!g) continue;
+	setGeomPose(g, robot->links[i]->globalTrans);
+    }
+}
+
+dGeomID KinematicModelODE::buildODEGeom(Geometry *geom)
+{
+    dGeomID g = NULL;
     
+    switch (geom->type)
+    {
+    case Geometry::SPHERE:
+	g = dCreateSphere(m_space, geom->size[0]);
+	break;
+    case Geometry::BOX:
+	g = dCreateBox(m_space, geom->size[0], geom->size[1], geom->size[2]);
+	break;
+    case Geometry::CYLINDER:
+	g = dCreateCylinder(m_space, geom->size[0], geom->size[1]);
+	break;
+    default:
+	break;
+    }
+    
+    return g;
 }

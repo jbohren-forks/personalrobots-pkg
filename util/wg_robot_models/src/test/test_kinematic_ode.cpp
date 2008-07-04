@@ -32,42 +32,20 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef KINEMATIC_ROBOT_ODE_MODEL_
-#define KINEMATIC_ROBOT_ODE_MODEL_
+#include <robotmodels/kinematicODE.h>
 
-#include <robotmodels/kinematic.h>
-#include <ode/ode.h>
-
-/** @htmlinclude ../../manifest.html
-
-    A class describing a kinematic robot model loaded from URDF.
-    This class also provides collision detection with ODE. */
-
-class KinematicModelODE : public KinematicModel
+int main(int argc, char **argv)
 {
- public:
     
-    KinematicModelODE(void) : KinematicModel()
-    {
-	m_space = NULL;
-    }
+    URDF model;
+    model.load("/u/isucan/ros/ros-pkg/drivers/robot/pr2/pr2Core/include/pr2Core/pr2.xml");
     
-    virtual ~KinematicModelODE(void)
-    {
-	if (m_space)
-	    dSpaceDestroy(m_space);
-    }
-
-    virtual void build(URDF &model, const char *group = NULL);
+    KinematicModelODE km;
+    km.build(model, "leftArm");
+    printf("number of robots = %d\n", km.getRobotCount());
     
- protected:
+    KinematicModel::Robot *r = km.getRobot(0);    
+    printf("state dimension = %d\n", r->stateDimension);
     
-    dSpaceID m_space;
-    
-    void buildODEGeoms(Robot *robot);
-    dGeomID buildODEGeom(Geometry *geom);
-    void setGeomPose(dGeomID geom, libTF::Pose3D &pose) const;
-    
-};
-
-#endif
+    return 0;    
+}
