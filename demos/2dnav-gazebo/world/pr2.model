@@ -574,10 +574,22 @@
     <xyz>  0.185  -0.15   0.68 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:cylinder name="shoulder_pan_body_right_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 16.29553 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.793291393007 </ixx>
+      <ixy>  0.003412032973 </ixy>
+      <ixz>   0.0096614481  </ixz>
+      <iyy>   0.818419457224</iyy>
+      <iyz>  -0.033999499551</iyz>
+      <izz>   0.13915007406 </izz>
+      <cx>  -0.005215  </cx>
+      <cy>  -0.030552  </cy>
+      <cz>  -0.175743 </cz>
+ 
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.13  0.6</size>   <!-- radius and length -->
-      <mass>1.0</mass>
       <visual>
         <xyz> 0.00   0.0   0.20 </xyz>
         <rpy> 90.0   0.0   90.0 </rpy>
@@ -593,10 +605,22 @@
     <xyz>  0.285   -0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="upperarm_joint_right_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 2.41223</mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.016640333585 </ixx>
+      <ixy> 0.002696462583   </ixy>
+      <ixz>   0.001337742275 </ixz>
+      <iyy>   0.017232603914 </iyy>
+      <iyz>  -0.003605106514 </iyz>
+      <izz>   0.018723553425 </izz>
+      <cx>  -0.035895   </cx>
+      <cy>   0.014422 </cy>
+      <cz>   -0.028263</cz>
+ 
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.12  0.10</size>   <!-- radius and length -->
-      <mass>1.0</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0    90.0    0.0 </rpy>
@@ -611,10 +635,22 @@
     <xyz>  0.575   -0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="upperarm_right_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 4.9481 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.073060715309 </ixx>
+      <ixy> 0.000547745916  </ixy>
+      <ixz>   0.000119476885 </ixz>
+      <iyy>   0.072124510748 </iyy>
+      <iyz>  0.001544932307  </iyz>
+      <izz>   0.013383284908 </izz>
+      <cx>  0.001205  </cx>
+      <cy>  -0.016293  </cy>
+      <cz>   0.21227</cz>
+
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.35  0.12 0.15</size>
-      <mass>1.0</mass>
       <visual>
         <xyz> -0.20    0.0    0.0 </xyz>
         <rpy>180.0   -90.0    0.0 </rpy>
@@ -629,10 +665,22 @@
     <xyz>  0.6850  -0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="elbow_right_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 1.689246</mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.003275298548 </ixx>
+      <ixy> 0.000292046674  </ixy>
+      <ixz>   -0.000077359282 </ixz>
+      <iyy>   0.003236815206  </iyy>
+      <iyz>  -0.000001162155  </iyz>
+      <izz>   0.00410053774 </izz>
+      <cx>  -0.011638   </cx>
+      <cy>   0.013173 </cy>
+      <cz>   0.001228</cz>
+
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.08  0.1</size>   <!-- radius and length -->
-      <mass>1.0</mass>
       <visual>
         <xyz> -0.135   0.0    0.0 </xyz>
         <rpy>  0.0   -90.0    0.0 </rpy>
@@ -647,10 +695,22 @@
     <xyz>  0.90225 -0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="forearm_right_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 1.804155 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.012430552544     </ixx>
+      <ixy>   -0.000003671102   </ixy>
+      <ixz>  0.000029379389     </ixz>
+      <iyy>  0.013567548848     </iyy>
+      <iyz>  -0.000427679042    </iyz>
+      <izz>   0.001755089866    </izz>
+      <cx>   -0.000058   </cx>
+      <cy>   0.013779    </cy>
+      <cz>   0.179474    </cz>
+ 
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.27  0.12 0.08</size>
-      <mass>1.0</mass>
       <visual>
         <xyz>  0.11    0.0    0.0 </xyz>
         <rpy>  0.0   -90.0  -90.0 </rpy>
@@ -665,10 +725,22 @@
     <xyz>  1.008   -0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="wrist_right_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 1.804155 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.012430552544     </ixx>
+      <ixy>   -0.000003671102   </ixy>
+      <ixz>  0.000029379389     </ixz>
+      <iyy>  0.013567548848     </iyy>
+      <iyz>  -0.000427679042    </iyz>
+      <izz>   0.001755089866    </izz>
+      <cx>   -0.000058   </cx>
+      <cy>   0.013779    </cy>
+      <cz>   0.179474    </cz>
+ 
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.031  0.1</size>   <!-- radius and length -->
-      <mass>1.0</mass>
       <visual>
         <xyz>  0.003   0.0    0.0 </xyz>
         <rpy> 90.0     0.0  -90.0 </rpy>
@@ -683,10 +755,22 @@
     <xyz>  1.10   -0.15   0.86</xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="palm_right_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 1.804155 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.012430552544     </ixx>
+      <ixy>   -0.000003671102   </ixy>
+      <ixz>  0.000029379389     </ixz>
+      <iyy>  0.013567548848     </iyy>
+      <iyz>  -0.000427679042    </iyz>
+      <izz>   0.001755089866    </izz>
+      <cx>   -0.000058   </cx>
+      <cy>   0.013779    </cy>
+      <cz>   0.179474    </cz>
+ 
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.11  0.10 0.05</size>
-      <mass>1.0</mass>
       <visual>
         <xyz> -0.035   0.0    0.0 </xyz>
         <rpy>  0.0    90.0   90.0 </rpy>
@@ -704,7 +788,7 @@
       <kp>100000000.0</kp>
       <kd>1.0</kd>
       <size> 0.05  0.01 0.025</size>
-      <mass>1.0</mass>
+      <mass>0.1</mass>
       <visual>
         <size> 0.05  0.01 0.025</size>
         <mesh>unit_box</mesh>
@@ -720,7 +804,7 @@
       <kp>100000000.0</kp>
       <kd>1.0</kd>
       <size> 0.05  0.01 0.025</size>
-      <mass>1.0</mass>
+      <mass>0.1</mass>
       <visual>
         <size> 0.05  0.01 0.025</size>
         <mesh>unit_box</mesh>
@@ -806,10 +890,22 @@
     <xyz>  0.185   0.15   0.68 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:cylinder name="shoulder_pan_body_left_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 16.29553 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.793291393007 </ixx>
+      <ixy>  0.003412032973 </ixy>
+      <ixz>   0.0096614481  </ixz>
+      <iyy>   0.818419457224</iyy>
+      <iyz>  -0.033999499551</iyz>
+      <izz>   0.13915007406 </izz>
+      <cx>  -0.005215  </cx>
+      <cy>  -0.030552  </cy>
+      <cz>  -0.175743 </cz>
+ 
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.13  0.6</size>   <!-- radius and length -->
-      <mass>1.0</mass>
       <visual>
         <xyz> 0.00   0.0   0.20 </xyz>
         <rpy> 90.0   0.0   90.0 </rpy>
@@ -825,10 +921,22 @@
     <xyz>  0.285    0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="upperarm_joint_left_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 2.41223</mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.016640333585 </ixx>
+      <ixy> 0.002696462583   </ixy>
+      <ixz>   0.001337742275 </ixz>
+      <iyy>   0.017232603914 </iyy>
+      <iyz>  -0.003605106514 </iyz>
+      <izz>   0.018723553425 </izz>
+      <cx>  -0.035895   </cx>
+      <cy>   0.014422 </cy>
+      <cz>   -0.028263</cz>
+  
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.12  0.10</size>   <!-- radius and length -->
-      <mass>1.0</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0    90.0    0.0 </rpy>
@@ -843,10 +951,22 @@
     <xyz>  0.575    0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="upperarm_left_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 4.9481 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.073060715309 </ixx>
+      <ixy> 0.000547745916  </ixy>
+      <ixz>   0.000119476885 </ixz>
+      <iyy>   0.072124510748 </iyy>
+      <iyz>  0.001544932307  </iyz>
+      <izz>   0.013383284908 </izz>
+      <cx>  0.001205  </cx>
+      <cy>  -0.016293  </cy>
+      <cz>   0.21227</cz>
+
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.35  0.12 0.15</size>
-      <mass>1.0</mass>
       <visual>
         <xyz> -0.20    0.0    0.0 </xyz>
         <rpy>180.0   -90.0    0.0 </rpy>
@@ -861,10 +981,22 @@
     <xyz>  0.6850   0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="elbow_left_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 1.689246</mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.003275298548 </ixx>
+      <ixy> 0.000292046674  </ixy>
+      <ixz>   -0.000077359282 </ixz>
+      <iyy>   0.003236815206  </iyy>
+      <iyz>  -0.000001162155  </iyz>
+      <izz>   0.00410053774 </izz>
+      <cx>  -0.011638   </cx>
+      <cy>   0.013173 </cy>
+      <cz>   0.001228</cz>
+
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.08  0.1</size>   <!-- radius and length -->
-      <mass>1.0</mass>
       <visual>
         <xyz> -0.135   0.0    0.0 </xyz>
         <rpy>  0.0   -90.0    0.0 </rpy>
@@ -879,10 +1011,22 @@
     <xyz>  0.90225  0.15   0.86 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="forearm_left_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 1.804155 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.012430552544     </ixx>
+      <ixy>   -0.000003671102   </ixy>
+      <ixz>  0.000029379389     </ixz>
+      <iyy>  0.013567548848     </iyy>
+      <iyz>  -0.000427679042    </iyz>
+      <izz>   0.001755089866    </izz>
+      <cx>   -0.000058   </cx>
+      <cy>   0.013779    </cy>
+      <cz>   0.179474    </cz>
+ 
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.27  0.12 0.08</size>
-      <mass>1.0</mass>
       <visual>
         <xyz>  0.11    0.0    0.0 </xyz>
         <rpy>  0.0   -90.0  -90.0 </rpy>
@@ -897,10 +1041,22 @@
     <xyz>  1.008    0.15   0.86 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="wrist_left_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 1.804155 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.012430552544     </ixx>
+      <ixy>   -0.000003671102   </ixy>
+      <ixz>  0.000029379389     </ixz>
+      <iyy>  0.013567548848     </iyy>
+      <iyz>  -0.000427679042    </iyz>
+      <izz>   0.001755089866    </izz>
+      <cx>   -0.000058   </cx>
+      <cy>   0.013779    </cy>
+      <cz>   0.179474    </cz>
+ 
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.031  0.1</size>   <!-- radius and length -->
-      <mass>1.0</mass>
       <visual>
         <xyz>  0.003   0.0    0.0 </xyz>
         <rpy> 90.0     0.0  -90.0 </rpy>
@@ -915,10 +1071,22 @@
     <xyz>  1.10    0.15   0.86</xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="palm_left_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 1.804155 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.012430552544     </ixx>
+      <ixy>   -0.000003671102   </ixy>
+      <ixz>  0.000029379389     </ixz>
+      <iyy>  0.013567548848     </iyy>
+      <iyz>  -0.000427679042    </iyz>
+      <izz>   0.001755089866    </izz>
+      <cx>   -0.000058   </cx>
+      <cy>   0.013779    </cy>
+      <cz>   0.179474    </cz>
+ 
       <kp>1000000.0</kp>
       <kd>1.0</kd>
       <size> 0.11  0.10 0.05</size>
-      <mass>1.0</mass>
       <visual>
         <xyz> -0.035   0.0    0.0 </xyz>
         <rpy>  0.0    90.0   90.0 </rpy>
@@ -936,7 +1104,7 @@
       <kp>100000000.0</kp>
       <kd>1.0</kd>
       <size> 0.05  0.01 0.025</size>
-      <mass>1.0</mass>
+      <mass>0.1</mass>
       <visual>
         <size> 0.05  0.01 0.025</size>
         <mesh>unit_box</mesh>
@@ -952,7 +1120,7 @@
       <kp>100000000.0</kp>
       <kd>1.0</kd>
       <size> 0.05  0.01 0.025</size>
-      <mass>1.0</mass>
+      <mass>0.1</mass>
       <visual>
         <size> 0.05  0.01 0.025</size>
         <mesh>unit_box</mesh>
@@ -1048,13 +1216,25 @@
     <reportStaticCollision>true</reportStaticCollision>
 
     <geom:box name="front_left_caster_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass>3.473082</mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx> 0.012411765597 </ixx>
+      <ixy> -0.000711733678 </ixy>
+      <ixz> 0.00050272983 </ixz>
+      <iyy> 0.015218160428 </iyy>
+      <iyz> -0.000004273467 </iyz>
+      <izz> 0.011763977943 </izz>
+      <cx> 0.007342 </cx>
+      <cy> 0.00015 </cy>
+      <cz> 0.095236 </cz>
+
       <kp>10000000.0</kp>
       <kd>1.0</kd>
       <mu1>10.0</mu1>
       <mu2>10.0</mu2>
       <xyz> 0.0 0.0 -0.08</xyz>
       <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
-      <mass>1.0</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy> 90.0     0.0   90.0 </rpy>
@@ -1073,13 +1253,25 @@
     <reportStaticCollision>true</reportStaticCollision>
 
     <geom:box name="front_right_caster_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass>3.473082</mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx> 0.012411765597 </ixx>
+      <ixy> -0.000711733678 </ixy>
+      <ixz> 0.00050272983 </ixz>
+      <iyy> 0.015218160428 </iyy>
+      <iyz> -0.000004273467 </iyz>
+      <izz> 0.011763977943 </izz>
+      <cx> 0.007342 </cx>
+      <cy> 0.00015 </cy>
+      <cz> 0.095236 </cz>
+
       <kp>10000000.0</kp>
       <kd>1.0</kd>
       <mu1>10.0</mu1>
       <mu2>10.0</mu2>
       <xyz>0 0 -0.08</xyz>
       <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
-      <mass>1.0</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy> 90.0     0.0   90.0 </rpy>
@@ -1098,13 +1290,25 @@
     <reportStaticCollision>true</reportStaticCollision>
 
     <geom:box name="rear_left_caster_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass>3.473082</mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx> 0.012411765597 </ixx>
+      <ixy> -0.000711733678 </ixy>
+      <ixz> 0.00050272983 </ixz>
+      <iyy> 0.015218160428 </iyy>
+      <iyz> -0.000004273467 </iyz>
+      <izz> 0.011763977943 </izz>
+      <cx> 0.007342 </cx>
+      <cy> 0.00015 </cy>
+      <cz> 0.095236 </cz>
+
       <kp>10000000.0</kp>
       <kd>1.0</kd>
       <mu1>10.0</mu1>
       <mu2>10.0</mu2>
       <xyz>0 0 -0.08</xyz>
       <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
-      <mass>1.0</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy> 90.0     0.0   90.0 </rpy>
@@ -1122,13 +1326,25 @@
     <reportStaticCollision>true</reportStaticCollision>
 
     <geom:box name="rear_right_caster_geom">
+
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass>3.473082</mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx> 0.012411765597 </ixx>
+      <ixy> -0.000711733678 </ixy>
+      <ixz> 0.00050272983 </ixz>
+      <iyy> 0.015218160428 </iyy>
+      <iyz> -0.000004273467 </iyz>
+      <izz> 0.011763977943 </izz>
+      <cx> 0.007342 </cx>
+      <cy> 0.00015 </cy>
+      <cz> 0.095236 </cz>
+
       <kp>10000000.0</kp>
       <kd>1.0</kd>
       <mu1>10.0</mu1>
       <mu2>10.0</mu2>
       <xyz>0 0 -0.08</xyz>
       <size>0.1 0.08 0.1</size>   <!-- dx, dy, dz -->
-      <mass>1.0</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy> 90.0     0.0   90.0 </rpy>
@@ -1145,12 +1361,23 @@
     <xyz>  0.425   0.305  0.08</xyz>  <!-- basically wheel radius height -->
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="front_left_wheel_l_geom">
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 0.44036 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.012411765597 </ixx>
+      <ixy> -0.000711733678 </ixy>
+      <ixz>  0.00050272983  </ixz>
+      <iyy>  0.015218160428 </iyy>
+      <iyz> -0.000004273467 </iyz>
+      <izz>  0.011763977943 </izz>
+      <cx>  0.000008 </cx>
+      <cy>  0.000008 </cy>
+      <cz>  0.008475 </cz>
+ 
       <kp>1000000000.0</kp>
       <kd>1.0</kd>
       <mu1>10.0</mu1>
       <mu2>10.0</mu2>
       <size> 0.08  0.03</size>   <!-- radius and width -->
-      <mass>0.5</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
@@ -1165,12 +1392,23 @@
     <xyz>  0.425   0.195  0.08</xyz>
     <rpy> 90.0     0.0  180.0 </rpy>
     <geom:cylinder name="front_left_wheel_r_geom">
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 0.44036 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.012411765597 </ixx>
+      <ixy> -0.000711733678 </ixy>
+      <ixz>  0.00050272983  </ixz>
+      <iyy>  0.015218160428 </iyy>
+      <iyz> -0.000004273467 </iyz>
+      <izz>  0.011763977943 </izz>
+      <cx>  0.000008 </cx>
+      <cy>  0.000008 </cy>
+      <cz>  0.008475 </cz>
+ 
       <kp>1000000000.0</kp>
       <kd>1.0</kd>
       <mu1>10.0</mu1>
       <mu2>10.0</mu2>
       <size> 0.08  0.03</size>   <!-- radius and width -->
-      <mass>0.5</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
@@ -1185,12 +1423,23 @@
     <xyz>  0.425  -0.195  0.08</xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="front_right_wheel_l_geom">
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 0.44036 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.012411765597 </ixx>
+      <ixy> -0.000711733678 </ixy>
+      <ixz>  0.00050272983  </ixz>
+      <iyy>  0.015218160428 </iyy>
+      <iyz> -0.000004273467 </iyz>
+      <izz>  0.011763977943 </izz>
+      <cx>  0.000008 </cx>
+      <cy>  0.000008 </cy>
+      <cz>  0.008475 </cz>
+ 
       <kp>1000000000.0</kp>
       <kd>1.0</kd>
       <mu1>10.0</mu1>
       <mu2>10.0</mu2>
       <size> 0.08  0.03</size>   <!-- radius and width -->
-      <mass>0.5</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
@@ -1205,12 +1454,23 @@
     <xyz>  0.425  -0.305  0.08</xyz>
     <rpy> 90.0     0.0  180.0 </rpy>
     <geom:cylinder name="front_right_wheel_r_geom">
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 0.44036 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.012411765597 </ixx>
+      <ixy> -0.000711733678 </ixy>
+      <ixz>  0.00050272983  </ixz>
+      <iyy>  0.015218160428 </iyy>
+      <iyz> -0.000004273467 </iyz>
+      <izz>  0.011763977943 </izz>
+      <cx>  0.000008 </cx>
+      <cy>  0.000008 </cy>
+      <cz>  0.008475 </cz>
+ 
       <kp>1000000000.0</kp>
       <kd>1.0</kd>
       <mu1>10.0</mu1>
       <mu2>10.0</mu2>
       <size> 0.08  0.03</size>   <!-- radius and width -->
-      <mass>0.5</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
@@ -1225,12 +1485,23 @@
     <xyz> -0.075  0.305  0.08</xyz>
     <rpy> 90.0    0.0    0.0 </rpy>
     <geom:cylinder name="rear_left_wheel_l_geom">
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 0.44036 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.012411765597 </ixx>
+      <ixy> -0.000711733678 </ixy>
+      <ixz>  0.00050272983  </ixz>
+      <iyy>  0.015218160428 </iyy>
+      <iyz> -0.000004273467 </iyz>
+      <izz>  0.011763977943 </izz>
+      <cx>  0.000008 </cx>
+      <cy>  0.000008 </cy>
+      <cz>  0.008475 </cz>
+ 
       <kp>1000000000.0</kp>
       <kd>1.0</kd>
       <mu1>10.0</mu1>
       <mu2>10.0</mu2>
       <size> 0.08  0.03</size>   <!-- radius and width -->
-      <mass>0.5</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
@@ -1245,12 +1516,23 @@
     <xyz> -0.075  0.195  0.08</xyz>
     <rpy> 90.0    0.0  180.0 </rpy>
     <geom:cylinder name="rear_left_wheel_r_geom">
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 0.44036 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.012411765597 </ixx>
+      <ixy> -0.000711733678 </ixy>
+      <ixz>  0.00050272983  </ixz>
+      <iyy>  0.015218160428 </iyy>
+      <iyz> -0.000004273467 </iyz>
+      <izz>  0.011763977943 </izz>
+      <cx>  0.000008 </cx>
+      <cy>  0.000008 </cy>
+      <cz>  0.008475 </cz>
+ 
       <kp>1000000000.0</kp>
       <kd>1.0</kd>
       <mu1>10.0</mu1>
       <mu2>10.0</mu2>
       <size> 0.08  0.03</size>   <!-- radius and width -->
-      <mass>0.5</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
@@ -1265,12 +1547,23 @@
     <xyz> -0.075 -0.195  0.08</xyz>
     <rpy> 90.0    0.0    0.0 </rpy>
     <geom:cylinder name="rear_right_wheel_l_geom">
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 0.44036 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.012411765597 </ixx>
+      <ixy> -0.000711733678 </ixy>
+      <ixz>  0.00050272983  </ixz>
+      <iyy>  0.015218160428 </iyy>
+      <iyz> -0.000004273467 </iyz>
+      <izz>  0.011763977943 </izz>
+      <cx>  0.000008 </cx>
+      <cy>  0.000008 </cy>
+      <cz>  0.008475 </cz>
+ 
       <kp>1000000000.0</kp>
       <kd>1.0</kd>
       <mu1>10.0</mu1>
       <mu2>10.0</mu2>
       <size> 0.08  0.03</size>   <!-- radius and width -->
-      <mass>0.5</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
@@ -1285,12 +1578,23 @@
     <xyz> -0.075 -0.305  0.08</xyz>
     <rpy> 90.0    0.0  180.0 </rpy>
     <geom:cylinder name="rear_right_wheel_r_geom">
+      <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
+      <mass> 0.44036 </mass> <!-- who would have thought we have 6 digits of precision!? -->
+      <ixx>  0.012411765597 </ixx>
+      <ixy> -0.000711733678 </ixy>
+      <ixz>  0.00050272983  </ixz>
+      <iyy>  0.015218160428 </iyy>
+      <iyz> -0.000004273467 </iyz>
+      <izz>  0.011763977943 </izz>
+      <cx>  0.000008 </cx>
+      <cy>  0.000008 </cy>
+      <cz>  0.008475 </cz>
+ 
       <kp>1000000000.0</kp>
       <kd>1.0</kd>
       <mu1>10.0</mu1>
       <mu2>10.0</mu2>
       <size> 0.08  0.03</size>   <!-- radius and width -->
-      <mass>0.5</mass>
       <visual>
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
