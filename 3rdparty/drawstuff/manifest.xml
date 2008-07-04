@@ -1,0 +1,15 @@
+<package>
+<description brief="drawstuff">
+
+This package contains a library for displaying ODE spaces.
+(http://opende.sf.net).
+
+</description>
+<author>Russel Smith</author>
+<license>LGPL</license>
+<url>http://opende.sf.net</url>
+<depend package="opende" />
+<export>
+  <cpp lflags="-Xlinker -rpath ${prefix}/lib -L${prefix}/lib -ldrawstuff -lGL -lglut" cflags="-I${prefix}/include"/>
+</export>
+</package>

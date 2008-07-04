@@ -3,14 +3,12 @@ WITH_DRAWSTUFF = yes
 
 CFG_OPTIONS = --with-arch=nocona --enable-release --disable-debug --enable-double-precision
 REVISION = -r 1520
-TARGETS = opende
 
 ifeq ($(WITH_DRAWSTUFF), yes)
-TARGETS += drawstuff
 CFG_OPTIONS += --with-drawstuff=X11
 endif
 
-all: $(TARGETS)
+all: opende
 
 opende-checkout:
 	@if [ ! -d opende-svn ]; then svn co $(REVISION) https://opende.svn.sourceforge.net/svnroot/opende/trunk opende-svn; fi
@@ -26,10 +24,6 @@ opende: opende-checkout
 	cd opende-svn && make
 	cd opende-svn && make install
 	touch opende
-
-drawstuff:	opende
-	-mkdir -p opende/include/drawstuff && cp opende-svn/include/drawstuff/*.h opende/include/drawstuff/
-	-cp opende-svn/drawstuff/src/.libs/* opende/lib/ && chmod +x opende/lib/libdrawstuff.la
 
 clean:
 	cd opende-svn && make clean
