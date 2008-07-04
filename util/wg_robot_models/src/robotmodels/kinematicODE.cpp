@@ -33,3 +33,16 @@
 *********************************************************************/
 
 #include <robotmodels/kinematicODE.h>
+    
+void KinematicModelODE::setGeomPose(dGeomID geom, libTF::Pose3D &pose) const
+{
+    libTF::Pose3D::Position pos = pose.getPosition();
+    dGeomSetPosition(geom, pos.x, pos.y, pos.z);
+    libTF::Pose3D::Quaternion quat = pose.getQuaternion();
+    dQuaternion q; q[0] = quat.w; q[1] = quat.x; q[2] = quat.y; q[3] = quat.z;
+    dGeomSetQuaternion(geom, q);
+}
+
+void KinematicModelODE::buildODEGeoms(Robot *robot)
+{
+}

@@ -47,15 +47,24 @@ class KinematicModelODE : public KinematicModel
 {
  public:
     
-    KinematicModelODE(URDF *model = NULL, const char *group = NULL) : KinematicModel(model, group)
+    KinematicModelODE(void) : KinematicModel()
     {
     }
     
     virtual ~KinematicModelODE(void)
     {
     }
+    virtual void build(URDF &model, const char *group = NULL)
+    {
+	KinematicModel::build(model, group);
+	for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
+	    buildODEGeoms(m_robots[i]);
+    }
     
  protected:
+    
+    void buildODEGeoms(Robot *robot);
+    void setGeomPose(dGeomID geom, libTF::Pose3D &pose) const;
     
 };
 

@@ -34,6 +34,62 @@
 
 #include <robotmodels/kinematic.h>
 
+void KinematicModel::computeTransforms(const double *params)
+{
+    unsigned int pos = 0;
+    for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
+    {
+	m_robots[i]->computeTransforms(params + pos);
+	pos += m_robots[i]->stateDimension;
+    }
+}
+
+void KinematicModel::Robot::computeTransforms(const double *params)
+{
+    chain->computeTransform(params);
+}
+
+// we can optimize things here... (when we use identity transforms, for example)
+void KinematicModel::Joint::computeTransform(const double *params)
+{
+    switch (type)
+    {
+    case Joint::REVOLUTE:
+	varTrans.setAxisAngle(axis, params[usedParamStart]);
+	break;
+    case Joint::PRISMATIC:
+	{
+	    double p  = params[usedParamStart];
+	    double dx = axis[0] * p;
+	    double dy = axis[1] * p;
+	    double dz = axis[2] * p;
+	    varTrans.setPosition(dx, dy, dz);
+	}
+	break;
+    case Joint::FLOATING:
+	varTrans.setPosition(params[usedParamStart], params[usedParamStart + 1], params[usedParamStart + 2]);
+	break;
+    default:
+	break;
+    }
+    if (before)
+    {
+	globalTrans = before->globalTrans;
+	globalTrans.multiplyPose(varTrans);
+    }
+    else
+	globalTrans = varTrans;
+    after->computeTransform(params);
+}
+
+void KinematicModel::Link::computeTransform(const double *params)
+{
+    globalTrans = before->globalTrans;
+    globalTrans.multiplyPose(constTrans);
+    for (unsigned int i = 0 ; i < after.size() ; ++i)
+	after[i]->computeTransform(params);
+}
+
 void KinematicModel::build(URDF &model, const char *group)
 {
     if (group)
@@ -109,6 +165,7 @@ void KinematicModel::buildChain(Link *parent, unsigned int *usedParams, Joint* j
 	joint->usedParamEnd = joint->usedParamStart;
 	break;
     }
+    joint->active = joint->usedParamEnd > joint->usedParamStart;
     *usedParams = joint->usedParamEnd;	    
     buildChain(joint, usedParams, joint->after, urdfLink);
 }

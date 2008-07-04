@@ -91,6 +91,7 @@ class KinematicModel
 	   joint */
 	unsigned int  usedParamStart;
 	unsigned int  usedParamEnd;
+	bool          active;
 	
 	/* relevant joint information */
 	enum
@@ -104,7 +105,11 @@ class KinematicModel
 	/* ----------------- Computed data -------------------*/
 	
 	/* the local transform (computed by forward kinematics) */
-	libTF::Pose3D trans;
+	libTF::Pose3D varTrans;
+	libTF::Pose3D globalTrans;
+
+	void computeTransform(const double *params);
+	
     };
     
     struct Link
@@ -136,7 +141,8 @@ class KinematicModel
 	
 	/* the global transform for this link (computed by forward kinematics) */
 	libTF::Pose3D       globalTrans;
-	
+
+	void computeTransform(const double *params);	
     };
     
     struct Robot
@@ -153,15 +159,15 @@ class KinematicModel
 		delete chain;
 	}
 	
+	void computeTransforms(const double *params);
+	
 	Joint       *chain;
 	unsigned int stateDimension;
     };
     
     explicit
-    KinematicModel(URDF *model = NULL, const char *group = NULL)
+    KinematicModel(void)
     {
-	if (model)
-	    build(*model, group);
     }
     
     virtual ~KinematicModel(void)
@@ -170,7 +176,8 @@ class KinematicModel
 	    delete m_robots[i];
     }
     
-    void build(URDF &model, const char *group = NULL);
+    virtual void build(URDF &model, const char *group = NULL);
+    void computeTransforms(const double *params);
     
     unsigned int getRobotCount(void) const;
     Robot* getRobot(unsigned int index) const;
