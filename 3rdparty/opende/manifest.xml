@@ -5,12 +5,10 @@ This package contains Open Dynamics Engine OpenDE or ODE
 (http://opende.sf.net).
 
 </description>
-<author>Brian Gerkey, with contributions from many others. See web page for a full credits llist.</author>
+<author>Russel Smith</author>
 <license>LGPL</license>
 <url>http://opende.sf.net</url>
 <export>
-  <cpp lflags="-Xlinker -rpath ${prefix}/opende/lib -L${prefix}/opende/lib -lode" cflags="-I${prefix}/opende/include"/>
+  <cpp lflags="-Xlinker -rpath ${prefix}/opende/lib -L${prefix}/opende/lib -lode -ldrawstuff" cflags="-I${prefix}/opende/include"/>
 </export>
 </package>
-
-
