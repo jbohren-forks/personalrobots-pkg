@@ -11,7 +11,8 @@ $(OGRE_VERSION): $(OGRE_VERSION).tar.bz2
 	tar xf $(OGRE_VERSION).tar.bz2
 	mv ogre $(OGRE_VERSION)
 
-ROOT = $(shell rospack find ogre)/ogre
+ROOT = $(shell rospack find ogre)
+OGREROOT = $(shell rospack find ogre)/ogre
 
 FIROOT = $(shell rospack find freeimage)/freeimage
 OISROOT = $(shell rospack find ois)/ois
@@ -38,19 +39,19 @@ $(OGRE_VERSION)/Makefile: $(OGRE_VERSION)
 	  cd $(OGRE_VERSION) && \
 	  export LIB="$(LFLAGS)" && \
 	  export CFLAGS="$(CFLAGS)" && \
-	  ./configure --prefix=$(ROOT) --enable-threading --with-pic --with-platform=GLX --with-gui=gtk  --disable-ogre-demos $(CONFIGURE_FLAGS); \
-	  touch $(OGRE_VERSION)/Makefile; \
-	  mkdir -p ogre; \
-	  mkdir -p ogre/lib; \
-	  mkdir -p ogre/include; \
-	  mkdir -p ogre/share; \
-	  mkdir -p ogre/bin; \
+	  ./configure --prefix=$(OGREROOT) --enable-threading --with-pic --with-platform=GLX --with-gui=gtk  --disable-ogre-demos $(CONFIGURE_FLAGS); \
+	  touch $(ROOT)/$(OGRE_VERSION)/Makefile; \
+	  mkdir -p $(ROOT)/ogre; \
+	  mkdir -p $(ROOT)/ogre/lib; \
+	  mkdir -p $(ROOT)/ogre/include; \
+	  mkdir -p $(ROOT)/ogre/share; \
+	  mkdir -p $(ROOT)/ogre/bin; \
 	fi
 
 ogre: $(OGRE_VERSION)/Makefile
 	# building OGRE
 	if [ `uname` = Darwin ]; then \
-	  cd $(OGRE_VERSION)/Mac/Ogre && \
+	  cd $(ROOT)/$(OGRE_VERSION)/Mac/Ogre && \
 	  export CPATH=Developer/SDKs/MacOSX10.5.sdk/usr/X11/include:/Developer/SDKs/MacOSX10.5.sdk/usr/X11/include/freetype2:`rospack find freeimage`/freeimage/include:/opt/local/include && \
 	  export LIBRARY_PATH=`rospack find freeimage`/freeimage/lib:/opt/local/lib && \
 	  xcodebuild ARCHS=i386 -target Ogre && \
@@ -60,15 +61,15 @@ ogre: $(OGRE_VERSION)/Makefile
 	  xcodebuild ARCHS=i386 -target "OctreeSceneManager Plugin" && \
 	  xcodebuild ARCHS=i386 -target "Bundle Resources"; \
 	else \
-	  cd $(OGRE_VERSION) && make $(JOBC); \
-	  cd $(OGRE_VERSION) && make install; \
+	  cd $(ROOT)/$(OGRE_VERSION) && make $(JOBC); \
+	  cd $(ROOT)/$(OGRE_VERSION) && make install; \
 	fi
 	@echo "done"
 
 .PHONY: clean wipe
 
 clean: 
-	-cd $(OGRE_VERSION) && make clean
+	-cd $(ROOT)/$(OGRE_VERSION) && make clean
 
 wipe: 
 	-rm -rf $(OGRE_VERSION)
