@@ -54,12 +54,8 @@ class KinematicModelODE : public KinematicModel
     virtual ~KinematicModelODE(void)
     {
     }
-    virtual void build(URDF &model, const char *group = NULL)
-    {
-	KinematicModel::build(model, group);
-	for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
-	    buildODEGeoms(m_robots[i]);
-    }
+
+    virtual void build(URDF &model, const char *group = NULL);
     
  protected:
     

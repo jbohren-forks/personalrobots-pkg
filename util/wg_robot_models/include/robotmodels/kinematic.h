@@ -161,8 +161,18 @@ class KinematicModel
 	
 	void computeTransforms(const double *params);
 	
-	Joint       *chain;
-	unsigned int stateDimension;
+	/* The first joint in the robot -- the root */
+	Joint              *chain;
+	
+	/* Number of parameters needed to define the joints */
+	unsigned int        stateDimension;
+
+	/* The bounding box for the set of parameters describing the
+	 * joints.  This array contains 2 * stateDimension elements:
+	 * positions 2*i and 2*i+1 define the minimum and maximum
+	 * values for the parameter. If both minimum and maximum are
+	 * set to 0, the parameter is unbounded. */
+	std::vector<double> stateBounds;
     };
     
     explicit
@@ -177,8 +187,7 @@ class KinematicModel
     }
     
     virtual void build(URDF &model, const char *group = NULL);
-    void computeTransforms(const double *params);
-    
+
     unsigned int getRobotCount(void) const;
     Robot* getRobot(unsigned int index) const;
     
@@ -188,8 +197,8 @@ class KinematicModel
     
  private:
 
-    void buildChain(Link *parent, unsigned int *usedParams, Joint* joint, URDF::Link* urdfLink);
-    void buildChain(Joint *parent, unsigned int *usedParams, Link* link, URDF::Link* urdfLink);
+    void buildChain(Robot *robot, Link  *parent, Joint *joint, URDF::Link *urdfLink);
+    void buildChain(Robot *robot, Joint *parent, Link  *link,  URDF::Link *urdfLink);
     
 };
 

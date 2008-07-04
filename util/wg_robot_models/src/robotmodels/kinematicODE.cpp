@@ -33,7 +33,14 @@
 *********************************************************************/
 
 #include <robotmodels/kinematicODE.h>
-    
+
+void KinematicModelODE::build(URDF &model, const char *group)
+{
+    KinematicModel::build(model, group);
+    for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
+	buildODEGeoms(m_robots[i]);
+}
+
 void KinematicModelODE::setGeomPose(dGeomID geom, libTF::Pose3D &pose) const
 {
     libTF::Pose3D::Position pos = pose.getPosition();
@@ -45,4 +52,7 @@ void KinematicModelODE::setGeomPose(dGeomID geom, libTF::Pose3D &pose) const
 
 void KinematicModelODE::buildODEGeoms(Robot *robot)
 {
+    const unsigned int nparams = robot->stateDimension;
+    double params[nparams];
+    
 }
