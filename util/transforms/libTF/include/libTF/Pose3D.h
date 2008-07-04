@@ -39,7 +39,6 @@
 #include <vector>
 #include <newmat10/newmat.h>
 #include <newmat10/newmatio.h>
-#include <cmath>
 #include <pthread.h>
 
 namespace libTF
@@ -96,14 +95,17 @@ namespace libTF
       /** \brief Return the transform as a matrix */
       NEWMAT::Matrix asMatrix();
       /** \brief Return the inverse of the transform as a matrix */
-      NEWMAT::Matrix getInverseMatrix();
+      NEWMAT::Matrix getInverseMatrix(void);
       /** \brief Return the rotation as a quaternion */
       Quaternion getQuaternion(void) const;
       /** \brief Return the translation as a position */
       Position   getPosition(void) const;
-    
-
+      /** \brief Return the rotation as an axis angle pair */
+      void getAxisAngle(double axis[3], double *angle) const;
+      
       /** Mutators **/
+      /** \brief Set the values to the identity transform */
+      void setIdentity(void);      
       /** \brief Set the values from a matrix */
       void setFromMatrix(const NEWMAT::Matrix& matIn);
       /** \brief Set the values using Euler angles */
@@ -123,6 +125,8 @@ namespace libTF
       void setQuaternion(Quaternion &quat);
       /** \brief Set the quaterion from an axis-angle representation */
       void setAxisAngle(double ax, double ay, double az, double angle);
+      /** \brief Set the quaterion from an axis-angle representation */
+      void setAxisAngle(double axis[3], double angle);
       
       /** \brief Set the translational components */
       void addPosition(double x, double y, double z);

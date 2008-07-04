@@ -33,22 +33,21 @@
 *********************************************************************/
 
 #include "libTF/Pose3D.h"
-
+#include <cmath>
 #include <cassert>
 
 using namespace libTF;
 
-Pose3D::Pose3D():
-    xt(0), yt(0),zt(0),
-    xr(1), yr(0), zr(0),w(0)
+Pose3D::Pose3D()
 {
+    setIdentity();
 };
 
 
 ///Translation only constructor
 Pose3D::Pose3D(double xt, double yt, double zt):
     xt(xt), yt(yt),zt(zt),
-    xr(1), yr(0), zr(0),w(0)
+    xr(0), yr(0), zr(0),w(1)
 {
 }; 
 /// Quaternion only constructor
@@ -70,6 +69,18 @@ Pose3D::Pose3D(Position &pos, Quaternion &quat)
     xt = pos.x; yt = pos.y; zt = pos.z;
     xr = quat.x;yr = quat.y;zr = quat.z;
     w  = quat.w;
+}
+
+void Pose3D::setIdentity(void)
+{
+    xt = yt = zt = 0.0;
+    xr = yr = zr = 0.0;
+    w  = 1.0;
+}
+
+void Pose3D::setAxisAngle(double axis[3], double angle)
+{
+    setAxisAngle(axis[0], axis[1], axis[2], angle);
 }
 
 void Pose3D::setAxisAngle(double ax, double ay, double az, double angle)
@@ -362,10 +373,20 @@ NEWMAT::Matrix Pose3D::asMatrix()
     return outMat;
 };
 
-NEWMAT::Matrix Pose3D::getInverseMatrix()
+NEWMAT::Matrix Pose3D::getInverseMatrix(void)
 {
     return asMatrix().i();
 };
+
+void Pose3D::getAxisAngle(double axis[3], double *angle) const
+{
+    *angle = 2.0 * acos(w);
+    double d = sqrt(1.0 - w*w);
+    // there could be singularities ....
+    axis[0] = xr / d;
+    axis[1] = yr / d;
+    axis[2] = zr / d;
+}
 
 Pose3D::Quaternion Pose3D::getQuaternion(void) const
 {
