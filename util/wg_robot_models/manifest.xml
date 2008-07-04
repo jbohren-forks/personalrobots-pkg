@@ -10,6 +10,7 @@
   <depend package="wg_robot_desc"/>
   <depend package="libTF"/>
   <depend package="opende"/>
+  <depend package="drawstuff"/>
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lRobotModels"/>

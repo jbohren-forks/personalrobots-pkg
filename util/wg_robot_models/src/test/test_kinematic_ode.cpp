@@ -33,10 +33,8 @@
 *********************************************************************/
 
 #include <robotmodels/kinematicODE.h>
-
-/*
-
 #include <drawstuff/drawstuff.h>
+
 
 #ifdef dDOUBLE
 #define dsDrawBox dsDrawBoxD
@@ -48,25 +46,29 @@
 #define dsDrawConvex dsDrawConvexD
 #endif
 
-namespace gz2ode
-{
-    
-    void drawBox(dGeomID geom)
-    {
-	dVector3 sides;	
-	dGeomBoxGetLengths(geom, sides);	
-	dsDrawBox(dGeomGetPosition(geom), dGeomGetRotation(geom), sides);
-    }
+static dSpaceID robotSpace = NULL;
 
-    void drawCylinder(dGeomID geom)
-    {
-	dReal radius, length;
-	dGeomCylinderGetParams(geom, &radius, &length);	
-	dsDrawCylinder(dGeomGetPosition(geom), dGeomGetRotation(geom), length, radius);
-    }
+static void drawSphere(dGeomID geom)
+{
+    dReal radius = dGeomSphereGetRadius(geom);
+    dsDrawSphere(dGeomGetPosition(geom), dGeomGetRotation(geom), radius);    
 }
 
-void gz2ode::displaySpace(dSpaceID space)
+static void drawBox(dGeomID geom)
+{
+    dVector3 sides;	
+    dGeomBoxGetLengths(geom, sides);	
+    dsDrawBox(dGeomGetPosition(geom), dGeomGetRotation(geom), sides);
+}
+
+static void drawCylinder(dGeomID geom)
+{
+    dReal radius, length;
+    dGeomCylinderGetParams(geom, &radius, &length);	
+    dsDrawCylinder(dGeomGetPosition(geom), dGeomGetRotation(geom), length, radius);
+}
+
+static void displaySpace(dSpaceID space)
 {
     int ngeoms = dSpaceGetNumGeoms(space);
     for (int i = 0 ; i < ngeoms ; ++i)
@@ -75,6 +77,9 @@ void gz2ode::displaySpace(dSpaceID space)
 	int cls = dGeomGetClass(geom);
 	switch (cls)
 	{
+	case dSphereClass:
+	    drawSphere(geom);
+	    break;
 	case dBoxClass:
 	    drawBox(geom);
 	    break;
@@ -87,13 +92,33 @@ void gz2ode::displaySpace(dSpaceID space)
 	}
     }
 }
-*/
+
+static void start(void)
+{
+    static float xyz[3] = {0, .7404, .47};
+    static float hpr[3] = {-90, 0.0000, 0.0000};
+    
+    dsSetViewpoint(xyz, hpr);
+}
+
+static void command(int cmd)
+{
+}
+
+static void simLoop(int)
+{
+    displaySpace(robotSpace);
+}
+
 int main(int argc, char **argv)
 {
+    dInitODE();
+    dWorldID world = dWorldCreate();
+    
     
     URDF model;
     model.load("/u/isucan/ros/ros-pkg/drivers/robot/pr2/pr2Core/include/pr2Core/pr2.xml");
-    
+        
     KinematicModelODE km;
     km.build(model, "leftArm");
     printf("number of robots = %d\n", km.getRobotCount());
@@ -101,5 +126,20 @@ int main(int argc, char **argv)
     KinematicModel::Robot *r = km.getRobot(0);    
     printf("state dimension = %d\n", r->stateDimension);
     
+    robotSpace = km.getODESpace();
+    
+    dsFunctions fn;
+    fn.version = DS_VERSION;
+    fn.start   = &start;
+    fn.step    = &simLoop;
+    fn.command = &command;
+    fn.stop = 0;
+    fn.path_to_textures = "./res";
+    
+    dsSimulationLoop(argc, argv, 640, 480, &fn);
+    
+    dCloseODE();
+    
     return 0;    
 }
+
