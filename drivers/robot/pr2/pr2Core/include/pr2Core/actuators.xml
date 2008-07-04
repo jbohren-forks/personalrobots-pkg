@@ -5,16 +5,16 @@
   <joint name="joint_shoulder_pan_left">
     <actuator name="actuator_shoulder_pan_left_1">
       <motor>MAXON</motor>
-      <ip> </ip> 
-      <port> </port>
+      <ip> IP_ADDRESS </ip> 
+      <port> 0 </port>
       <reduction>10</reduction>
       <polymap>-1 -0.2 -0.5 </polymap>
     </actuator> 
     
     <actuator name="actuator_shoulder_pan_left_2">
       <motor>MAXON</motor>
-      <ip> </ip> 
-      <port> </port>
+      <ip> IP_ADDRESS </ip> 
+      <port> 0 </port>
       <reduction>10</reduction>
       <polymap>1 0.2 0.5 </polymap>
     </actuator> 
@@ -25,8 +25,8 @@
   <joint name="joint_left_gripper">
     <actuator name="">
       <motor>MAXON</motor>
-      <ip> </ip> 
-      <port> </port>
+      <ip> IP_ADDRESS </ip> 
+      <port> 0 </port>
       <reduction>10</reduction>
       <lookup> gripper_lookup </lookup>
     </actuator> 
