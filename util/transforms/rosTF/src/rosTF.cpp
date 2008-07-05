@@ -59,9 +59,9 @@ std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target
   //TODO optimize with pointer accessors
    for (unsigned int i = 1; i <= cloudIn.get_pts_size();i++) 
     { 
-      matIn(1,i) = cloudIn.pts[i].x;
-      matIn(2,i) = cloudIn.pts[i].y;
-      matIn(3,i) = cloudIn.pts[i].z;
+      matIn(1,i) = cloudIn.pts[i-1].x;
+      matIn(2,i) = cloudIn.pts[i-1].y;
+      matIn(3,i) = cloudIn.pts[i-1].z;
       matIn(4,i) = 1;
     };
 
