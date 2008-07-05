@@ -290,6 +290,7 @@ NavView::render()
 
   if(map_texture)
   {
+    glEnable(GL_TEXTURE_2D); 
     // Draw the map
     glColor3f(1.0,1.0,1.0);
     glBindTexture( GL_TEXTURE_2D, map_texture );
@@ -312,6 +313,8 @@ NavView::render()
     glVertex3f( 0, map_res*map_height, 0 );
     glEnd();
   }
+  // don't texture-map the vector graphics
+  glDisable(GL_TEXTURE_2D); 
 
   const float robot_rad = 0.3;
   try
@@ -441,8 +444,9 @@ NavView::load_map()
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
   // Set the texture's stretching properties
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  // explicitly show the granularity of the underlying grid-map
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
   // Edit the texture object's image data
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
