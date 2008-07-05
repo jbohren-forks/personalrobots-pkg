@@ -157,8 +157,11 @@ class WavefrontNode: public ros::node
       NO_GOAL,
       NEW_GOAL,
       PURSUING_GOAL,
+      STUCK,
       REACHED_GOAL
     } planner_state;
+    // If we can't reach the goal, note when it happened and keep trying a bit
+    ros::Time stuck_time;
     // Are we enabled?
     bool enable;
     // Current goal
@@ -261,12 +264,12 @@ WavefrontNode::WavefrontNode() :
         rotate_dir(0),
         printed_warning(false),
         stopped(false),
-        robot_radius(0.175),
+        robot_radius(0.175), // overridden by param retrieval below!
         safety_dist(0.05),
         max_radius(2.0),
-        dist_penalty(2.0),
+        dist_penalty(2.0),   // overridden by param retrieval below!
         plan_halfwidth(5.0),
-        dist_eps(1.0),
+        dist_eps(1.0),       // overridden by param retrieval below!
         ang_eps(DTOR(10.0)),
         cycletime(0.1),
         laser_maxrange(4.0),
@@ -284,6 +287,7 @@ WavefrontNode::WavefrontNode() :
   // set a few parameters. leave defaults just as in the ctor initializer list
   param("dist_eps", dist_eps, 1.0);
   param("robot_radius", robot_radius, 0.175);
+  param("dist_penalty", dist_penalty, 2.0);
 
   // get map via RPC
   std_srvs::StaticMap::request  req;
@@ -344,6 +348,7 @@ WavefrontNode::WavefrontNode() :
 
   // Compute cspace over static map
   plan_compute_cspace(this->plan);
+  printf("done computing c-space\n");
 
   this->laser_hitpts_size = this->laser_hitpts_len = 0;
   this->laser_hitpts = NULL;
@@ -351,10 +356,11 @@ WavefrontNode::WavefrontNode() :
   this->firstodom = true;
 
   // Static robot->laser transform
-  // TODO: get this info via ROS somehow
+  double laser_x_offset;
+  param("laser_x_offset", laser_x_offset, 0.05);
   this->tf.setWithEulers(FRAMEID_LASER,
                          FRAMEID_ROBOT,
-                         0.05, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+                         laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
 
   advertise<std_msgs::Planner2DState>("state");
   advertise<std_msgs::Polyline2D>("gui_path");
@@ -620,6 +626,7 @@ WavefrontNode::doOneCycle()
       break;
     case NEW_GOAL:
     case PURSUING_GOAL:
+    case STUCK:
       {
         // Are we done?
         if(plan_check_done(this->plan,
@@ -650,12 +657,22 @@ WavefrontNode::doOneCycle()
             // no global plan
             this->stopRobot();
 
-            //if(!this->printed_warning)
-            //{
-              puts("global plan failed");
-            this->planner_state = NO_GOAL;
-              //this->printed_warning = true;
-            //}
+            if (this->planner_state != STUCK)
+            {
+              printf("we're stuck. let's let the laser buffer empty "
+                     "and see if that will free us.\n");
+              this->planner_state = STUCK;
+              this->stuck_time = ros::Time::now();
+            }
+            else
+            {
+              if (ros::Time::now() > 
+                  this->stuck_time + 1.5 * this->laser_buffer_time.to_double())
+              {
+                puts("global plan failed");
+                this->planner_state = NO_GOAL; //NO_GOAL;
+              }
+            }
             break;
           }
           else
@@ -672,7 +689,8 @@ WavefrontNode::doOneCycle()
           }
         }
 
-        if(this->planner_state == NEW_GOAL)
+        if(this->planner_state == NEW_GOAL ||
+           this->planner_state == STUCK)
           this->planner_state = PURSUING_GOAL;
 
         // We have a valid local plan.  Now compute controls
@@ -776,7 +794,10 @@ bool WavefrontNode::navToPointCB(
   while (planner_state != REACHED_GOAL &&
          planner_state != NO_GOAL)
   {
-    printf("pursuing goal\n");
+    if (planner_state == STUCK)
+      printf("stuck!\n");
+    else
+      printf("pursuing goal\n");
     usleep(1000000); // spin here...
   }
   if (planner_state == REACHED_GOAL)
