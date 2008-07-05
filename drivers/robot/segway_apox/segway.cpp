@@ -25,6 +25,7 @@ class Segway : public node
 		void build_vel_pkt(float x_vel, float yaw_rate);
 
 		float req_x_vel, req_yaw_rate;
+    double req_time;
     thread::mutex req_mutex;
 
 		static const int max_x_stepsize = 5, max_yaw_stepsize = 2;
@@ -39,6 +40,7 @@ class Segway : public node
 		bool odom_init;
     int op_mode_req;
     enum { RUNNING, SHUTDOWN_REQ, SHUTDOWN } pkt_mode;
+    bool req_timeout;
     rosTFServer tf;
 };
 
@@ -51,6 +53,7 @@ Segway::Segway() :
 	last_raw_x_vel(0),
 	req_x_vel(0),
 	req_yaw_rate(0),
+  req_time(0),
 	can(0),
 	odom_yaw(0),
 	odom_x(0),
@@ -58,7 +61,8 @@ Segway::Segway() :
 	odom_init(false),
   op_mode_req(0),
   pkt_mode(RUNNING),
-  tf(*this)
+  tf(*this),
+  req_timeout(false)
 {
   odom.header.frame_id = FRAMEID_ODOM;
   advertise("odom", odom);
@@ -108,6 +112,7 @@ void Segway::op_mode_cb()
 void Segway::cmd_vel_cb()
 {
   req_mutex.lock();
+  req_time = ros::Time::now().to_double();
   req_x_vel = cmd_vel.vx;
 	req_yaw_rate = cmd_vel.vw;
 	req_mutex.unlock();
@@ -219,7 +224,7 @@ int rmp_diff(uint32_t from, uint32_t to)
 
 void Segway::main_loop()
 {
-	can = dgc_usbcan_initialize("/dev/ttyUSB2"); // pull from a port someday...
+	can = dgc_usbcan_initialize("/dev/ttyUSB3"); // pull from a port someday...
 
 	if (!can)
 		log(FATAL, "ahh couldn't open the can controller\n");
@@ -233,20 +238,29 @@ void Segway::main_loop()
 	{
     if (ros::Time::now().to_double() - last_send_time > 0.01)
     {
-      if (pkt_mode == RUNNING)
+      double time_since_last_cmd = ros::Time::now().to_double() - req_time;
+      if (time_since_last_cmd > 0.5)
+        req_timeout = true;
+      else
+        req_timeout = false;
+
+      if (!req_timeout)
       {
-    	  req_mutex.lock();
-    		build_vel_pkt(req_x_vel, req_yaw_rate);
-    		req_mutex.unlock();
-    		dgc_usbcan_send_can_message(can, RMP_CAN_ID_COMMAND, send_data, 8);
-      }
-      else if (pkt_mode == SHUTDOWN_REQ)
-      {
-        printf("sending shutdown package\n");
-        pkt_mode = SHUTDOWN;
-        for (int i = 0; i < 8; i++)
-          send_data[i] = 0;
-        dgc_usbcan_send_can_message(can, RMP_CAN_ID_SHUTDOWN, send_data, 8);
+        if (pkt_mode == RUNNING)
+        {
+      	  req_mutex.lock();
+      		build_vel_pkt(req_x_vel, req_yaw_rate);
+      		req_mutex.unlock();
+      		dgc_usbcan_send_can_message(can, RMP_CAN_ID_COMMAND, send_data, 8);
+        }
+        else if (pkt_mode == SHUTDOWN_REQ)
+        {
+          printf("sending shutdown package\n");
+          pkt_mode = SHUTDOWN;
+          for (int i = 0; i < 8; i++)
+            send_data[i] = 0;
+          dgc_usbcan_send_can_message(can, RMP_CAN_ID_SHUTDOWN, send_data, 8);
+        }
       }
       last_send_time = ros::Time::now().to_double();
     }
