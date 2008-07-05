@@ -53,29 +53,33 @@ std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target
 {
   NEWMAT::Matrix transform = getMatrix(target_frame, cloudIn.header.frame_id, cloudIn.header.stamp.sec * 1000000000ULL + cloudIn.header.stamp.nsec);
 
-  NEWMAT::Matrix matIn(4,cloudIn.get_pts_size());
+  int length = cloudIn.get_pts_size();
 
-
-  //TODO optimize with pointer accessors
-   for (unsigned int i = 1; i <= cloudIn.get_pts_size();i++) 
+  NEWMAT::Matrix matIn(4,length);
+  
+  double * matrixPtr = matIn.Store();
+  
+  for (unsigned int i = 0; i < cloudIn.get_pts_size();i++) 
     { 
-      matIn(1,i) = cloudIn.pts[i-1].x;
-      matIn(2,i) = cloudIn.pts[i-1].y;
-      matIn(3,i) = cloudIn.pts[i-1].z;
-      matIn(4,i) = 1;
+      matrixPtr[i] = cloudIn.pts[i].x;
+      matrixPtr[length +i] = cloudIn.pts[i].y;
+      matrixPtr[2 * length + i] = cloudIn.pts[i].z;
+      matrixPtr[3 * length + i] = 1;
     };
-
+  
   NEWMAT::Matrix matOut = transform * matIn;
-
+  
   std_msgs::PointCloudFloat32 cloudOut = cloudIn; //Get everything from cloudIn
-
+  
+  matrixPtr = matOut.Store();
+  
   //Override the positions
   cloudOut.header.frame_id = target_frame;
-   for (unsigned int i = 1; i <= cloudIn.get_pts_size();i++) 
+  for (unsigned int i = 0; i < cloudIn.get_pts_size();i++) 
     { 
-      cloudOut.pts[i-1].x = matOut(1,i);
-      cloudOut.pts[i-1].y = matOut(2,i);
-      cloudOut.pts[i-1].z = matOut(3,i);
+      cloudOut.pts[i].x = matrixPtr[i];
+      cloudOut.pts[i].y = matrixPtr[1*length + i];
+      cloudOut.pts[i].z = matrixPtr[2*length + i];
     };
 
   return cloudOut;
