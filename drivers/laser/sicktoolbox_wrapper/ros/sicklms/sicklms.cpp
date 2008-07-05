@@ -55,7 +55,7 @@ public:
   {
     scan_msg.header.frame_id = FRAMEID_LASER;
     advertise<std_msgs::LaserScan>("scan");
-    param("sicklms/port", port, string("/dev/ttyUSB0"));
+    param("sicklms/port", port, string("/dev/ttyUSB1"));
     param("sicklms/baud", baud, 500000);
   }
   void publish_scan(uint32_t *values, uint32_t num_values, double scale)
