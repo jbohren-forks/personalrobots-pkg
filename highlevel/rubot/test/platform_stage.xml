@@ -1,8 +1,14 @@
 <launch>
-<!--  <node pkg="rosstage" type="rosstage" args="$(find 2dnav-stage)/willow-erratic.world"/>-->
-  <node pkg="map_server" type="map_server" args="$(find stair1-demos)/maps/gates_a_bigger 0.5"/>
+  <param name="amcl_initial_x" value="35.94"/>
+  <param name="amcl_initial_y" value=" 9.73"/>
+  <param name="amcl_initial_th" value="-33.48"/>
+  <param name="dist_eps" value="0.3"/>
+  <param name="dist_penalty" value="20.0"/>
+  <param name="laser_x_offset" value="0.25"/>
+  <node pkg="rosstage" type="rosstage" args="$(find stair1-demos)/maps/first-two-offices.world"/>
+  <node pkg="map_server" type="map_server" args="$(find stair1-demos)/maps/first-two-offices.png 0.05"/>
   <node pkg="amcl_player" type="amcl_player"/>
-  <node pkg="wavefront_player" type="wavefront_player cmd_vel:=wavefrontVel"/>
+  <!--<node pkg="wavefront_player" type="wavefront_player" args="cmd_vel:=wavefrontVel"/>-->
   <node pkg="nav_view" type="nav_view"/>
   <node pkg="mux" type="mux" args="cmd_vel velMux wavefrontVel deadReckonVel"/>
 </launch>
