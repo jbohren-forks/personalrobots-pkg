@@ -161,6 +161,8 @@ class AmclNode: public ros::node, public Driver
     char* mapdata;
     int sx, sy;
     double resolution;
+    // static laser transform (todo: make this cleaner)
+    double laser_x_offset;
 };
 
 #define USAGE "USAGE: amcl_player"
@@ -239,6 +241,9 @@ AmclNode::AmclNode() :
     else
       this->mapdata[i] = 0;
   }
+
+  // retrieve static laser transform, if it's available
+  param("laser_x_offset", laser_x_offset, 0.05);
   
   //assert(read_map_from_image(&this->sx, &this->sy, &this->mapdata, fname, 0)
          //== 0);
@@ -498,7 +503,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
   {
     player_laser_geom_t geom;
     memset(&geom, 0, sizeof(geom));
-    geom.pose.px = 0.05;
+    geom.pose.px = laser_x_offset;
     geom.pose.py = 0;
     geom.pose.pyaw = 0;
     geom.size.sl = 0.06;
