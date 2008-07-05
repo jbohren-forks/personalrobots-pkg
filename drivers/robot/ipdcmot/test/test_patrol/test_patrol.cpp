@@ -51,12 +51,12 @@ int main(int argc, char **argv)
   mot = new IPDCMOT("192.168.1.38", 0);
   printf("press enter to patrol\n");
   fgetc(stdin);
-  mot->set_patrol(10, 30, .5, 1);
+  mot->set_patrol(10, 50, 1, 1);
   printf("press enter to quit\n");
 //  fgetc(stdin);
   while(1)
   {
-    usleep(50000);
+    usleep(10000);
     double pos_deg;
     mot->get_pos_blocking(&pos_deg, NULL, 1);
     pos_deg *= 3.1415926/180.0;

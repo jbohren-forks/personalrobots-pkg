@@ -6,6 +6,7 @@ This is an IP-based motor controller.
 <license>BSD</license>
 <url>http://stair.stanford.edu</url>
 <depend package="roscpp"/>
+<depend package="rosthread"/>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lipdcmot"/>
 </export>

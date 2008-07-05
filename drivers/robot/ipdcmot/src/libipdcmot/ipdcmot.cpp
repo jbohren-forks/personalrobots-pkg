@@ -45,10 +45,9 @@ const double IPDCMOT::RAD_TO_DEG = 180.0 / M_PI;
 const double IPDCMOT::DEG_TO_RAD = M_PI / 180.0;
 
 IPDCMOT::IPDCMOT(string host, double mount_bias_deg, bool home_myself) : 
-  host(host), max_ang_vel(500), ok(true), mount_bias_deg(mount_bias_deg),
-  homing_in_progress(false), awaiting_response(false),
-  reg_mode(UNKNOWN), last_pos_deg(0), last_pos_enc(0), sock(0),
-  servo_mode(IDLE)
+  max_ang_vel(500), mount_bias_deg(mount_bias_deg), ok(true),
+  homing_in_progress(false), awaiting_response(false), awaiting_position(false),
+  servo_mode(IDLE), host(host), reg_mode(UNKNOWN), last_pos_deg(0), last_pos_enc(0), sock(0)
 {
   if (clock_gettime(CLOCK_REALTIME, &init_time) == -1)
   {
@@ -124,6 +123,7 @@ IPDCMOT::~IPDCMOT()
 
 void IPDCMOT::home()
 {
+  net_mutex.lock();
   servo_mode = IDLE;
 	unsigned char pkt[10];
 	pkt[0] = 0x00;
@@ -162,16 +162,20 @@ void IPDCMOT::home()
 	{
 		printf("homed OK\n");
 	}
+  net_mutex.unlock();
 }
 
 bool IPDCMOT::get_pos_blocking(double *position, int *position_enc, int max_wait_secs)
 {
-  struct timespec wait_ts;
-  int wait_result;
+  //struct timespec wait_ts;
+  //int wait_result;
 
   if ((!position && !position_enc) || max_wait_secs <= 0)
     return false;
+  
+  net_mutex.lock();
 
+  awaiting_position = true;
   request_pos();
 /*
   if (clock_gettime(CLOCK_REALTIME, &wait_ts) == -1)
@@ -182,13 +186,12 @@ bool IPDCMOT::get_pos_blocking(double *position, int *position_enc, int max_wait
   wait_ts.tv_sec += max_wait_secs;
   */
   //pthread_mutex_lock(&pos_mutex);
-  awaiting_position = true;
   //printf("going into wait loop\n");
-  for (int req_sent = 0; req_sent < 5 && awaiting_position; req_sent++) // (awaiting_position)
+  for (int req_sent = 0; req_sent < 20 && awaiting_position; req_sent++) // (awaiting_position)
   {
 //    wait_result = pthread_cond_timedwait(&pos_cond, &pos_mutex, &wait_ts);
-    for (int i = 0; i < 500 && awaiting_position; i++)
-      usleep(1000);
+    for (int i = 0; i < 10 && awaiting_position; i++)
+      usleep(10000);
     if (awaiting_position)
       request_pos();
   }
@@ -201,6 +204,7 @@ bool IPDCMOT::get_pos_blocking(double *position, int *position_enc, int max_wait
   if (awaiting_position)
   {
     printf("still awaiting position. BAILING\n");
+    net_mutex.unlock();
     return false;
   }
 
@@ -208,6 +212,7 @@ bool IPDCMOT::get_pos_blocking(double *position, int *position_enc, int max_wait
     *position = local_pos;
   if (position_enc)
     *position_enc = local_pos_enc;
+  net_mutex.unlock();
   return true;
 }
 
@@ -260,7 +265,7 @@ int IPDCMOT::calc_checksum(uint8_t *pkt, unsigned len)
 {
 	unsigned sum = 0;
 	bool add_high_byte = true;
-	for (int i = 0; i < len; i++)
+	for (unsigned i = 0; i < len; i++)
 	{
 		sum += (pkt[i] << (add_high_byte ? 8 : 0)) ^ (add_high_byte ? 0xff00 : 0x00ff);
 		add_high_byte = !add_high_byte;
@@ -281,28 +286,30 @@ void IPDCMOT::place_checksum(uint8_t *pkt, unsigned len)
 
 void IPDCMOT::set_regulation_mode(reg_mode_t mode)
 {
-	uint8_t pkt[20];
-	pkt[0] = 0x00;
-	pkt[1] = 0x22;
-	pkt[2] = 0x12;
-	pkt[3] = 0x34;
-	pkt[4] = 0x00;
-	pkt[5] = 0x02;
-	pkt[6] = 0x20;
-	pkt[7] = mode;
-	place_checksum(pkt, 8);
-	send_packet(pkt, 10);
-	double send_time = get_runtime();
-	awaiting_response = true;
-	while (awaiting_response && get_runtime() < send_time + 1.0)
-		usleep(10000);
-	if (awaiting_response)
-		printf("no acknowledgement of new regulation mode.\n");
-	else
-	{
-		printf("regulation mode set to %d\n", mode);
-		reg_mode = mode;
-	}
+  net_mutex.lock();
+  uint8_t pkt[20];
+  pkt[0] = 0x00;
+  pkt[1] = 0x22;
+  pkt[2] = 0x12;
+  pkt[3] = 0x34;
+  pkt[4] = 0x00;
+  pkt[5] = 0x02;
+  pkt[6] = 0x20;
+  pkt[7] = mode;
+  place_checksum(pkt, 8);
+  send_packet(pkt, 10);
+  double send_time = get_runtime();
+  awaiting_response = true;
+  while (awaiting_response && get_runtime() < send_time + 1.0)
+    usleep(10000);
+  if (awaiting_response)
+    printf("no acknowledgement of new regulation mode.\n");
+  else
+  {
+    printf("regulation mode set to %d\n", mode);
+    reg_mode = mode;
+  }
+  net_mutex.unlock();
 }
 
 void IPDCMOT::set_input(int input)
@@ -455,6 +462,7 @@ void IPDCMOT::patrol_thread()
     if (!get_pos_blocking(&pos, NULL, 1))
     {
       // set speed to zero
+      printf("couldn't get position for patrol thread. bailing.\n");
       set_vel(0);
       break;
     }

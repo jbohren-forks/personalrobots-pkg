@@ -35,6 +35,7 @@
 #include <arpa/inet.h>
 #include <time.h>
 #include <pthread.h>
+#include "rosthread/mutex.h"
 using namespace std;
 
 class IPDCMOT
@@ -52,6 +53,7 @@ public:
   inline int get_patrol_dir() { return (patrol.dir == INCREASING ? 1 : -1); }
   
 private:
+  ros::thread::mutex net_mutex;
   double max_ang_vel, mount_bias_deg;
   bool ok, homing_in_progress, awaiting_response, awaiting_position;
   enum patrol_dir_t { INCREASING = 0, DECREASING };
