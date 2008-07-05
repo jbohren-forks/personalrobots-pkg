@@ -35,6 +35,9 @@
 #include "ipdcmot/ipdcmot.h"
 #include "kbhit.h"
 #include <unistd.h>
+#include <cassert>
+
+//#define USE_RAW_KEYBOARD
 
 FleaSharks::FleaSharks(string ipdcmot_ip, bool gui)
   : cam_ok(true), mot_ok(true), gui(gui), ipdcmot_ip(ipdcmot_ip),
@@ -58,7 +61,7 @@ FleaSharks::FleaSharks(string ipdcmot_ip, bool gui)
   printf("entering ipdcmot construct\n");
   mot = new IPDCMOT(ipdcmot_ip, 0, false);
   printf("done with ipdcmot construct\n");
-  laser_control = new LightweightSerial("/dev/ttyUSB2", 115200);
+  laser_control = new LightweightSerial("/dev/ttyUSB0", 115200);
   if (!laser_control)
     printf("couldn't open laser control port\n");
   else
@@ -356,7 +359,9 @@ void FleaSharks::loneshark()
     return;
   }
   int image_count = 1;
+#ifdef USE_RAW_KEYBOARD
   init_keyboard();
+#endif
   char logdir[500];
   time_t t = time(NULL);
   struct tm *tms = localtime(&t);
@@ -368,6 +373,10 @@ void FleaSharks::loneshark()
   mot->set_pos_deg_blocking(left_scan_extent);
   usleep(500000);
   char fnamebuf[800];
+  FILE *dirnamelog = fopen("logdirname", "w");
+  assert(dirnamelog);
+  fprintf(dirnamelog, "%s\n", logdir);
+  fclose(dirnamelog);
   snprintf(fnamebuf, sizeof(fnamebuf), "%s/img_%06d_%012.6f.jpg", 
            logdir, 0, 0.0);
   get_and_save_image(fnamebuf);
@@ -378,7 +387,11 @@ void FleaSharks::loneshark()
   mot->set_patrol(left_scan_extent, right_scan_extent, 1.9, 1);
   usleep(100000);
   printf("press any key to stop scanning\n");
+#ifdef USE_RAW_KEYBOARD
   while (!_kbhit())
+#else
+  while (1)
+#endif
   {
     double pos;
     if (!mot->get_pos_blocking(&pos, NULL, 1))
@@ -391,8 +404,8 @@ void FleaSharks::loneshark()
       printf("scan complete.\n");
       break;
     }
-    printf(".");
-    fflush(stdout);
+    //printf(".");
+    //fflush(stdout);
 
     char fnamebuf[800];
     snprintf(fnamebuf, sizeof(fnamebuf), "%s/img_%06d_%012.6f.jpg", 
@@ -413,7 +426,9 @@ void FleaSharks::loneshark()
   //char c = _getch();
   //printf("you pressed: [%c]\n", c);
   printf("done with loneshark\n");
+#ifdef USE_RAW_KEYBOARD
   close_keyboard();
+#endif
 }
 
 void FleaSharks::pump_gui_event_loop()
