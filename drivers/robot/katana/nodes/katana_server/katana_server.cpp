@@ -21,6 +21,7 @@ using std::endl;
 class KatanaServer : public ros::node
 {
   public:
+    Katana *katana;
     KatanaServer() : ros::node("katana_server")
     {
       advertise_service("katana_calibrate_service", &KatanaServer::calibrateSrv);
@@ -34,12 +35,14 @@ class KatanaServer : public ros::node
       advertise_service("katana_gripper_cmd_service", &KatanaServer::gripperCmd);
       advertise_service("katana_ik_calculate_service", &KatanaServer::ik_calculate_srv);
       advertise_service("katana_get_pose_service", &KatanaServer::get_current_pose);
+      advertise_service("katana_move_linear_service", &KatanaServer::move_robot_linear);
+      katana = new Katana();
     }
+    virtual ~KatanaServer() { delete katana; }
     
     bool get_current_pose(std_srvs::KatanaPose::request &req,
                     std_srvs::KatanaPose::response &res)
     {
-      Katana *katana = new Katana();
       vector<double> katana_pose = katana->get_pose();
       res.pose.x = katana_pose[0];
       res.pose.y = katana_pose[1];
@@ -47,9 +50,23 @@ class KatanaServer : public ros::node
       res.phi = katana_pose[3];
       res.theta = katana_pose[4];
       res.psi = katana_pose[5];
+      return true;
+    }
 
-      delete katana;
-      return (true);
+    bool move_robot_linear(std_srvs::KatanaPose::request &req,
+                    std_srvs::KatanaPose::response &res)
+    {
+      vector<double> dst_pose;
+      dst_pose.push_back(req.pose.x);
+      dst_pose.push_back(req.pose.y);
+      dst_pose.push_back(req.pose.z);
+      dst_pose.push_back(req.phi);
+      dst_pose.push_back(req.theta);
+      dst_pose.push_back(req.psi);
+      bool status = katana->linear_move(dst_pose, 10000);
+      cout << "done. status = " << status;
+      //catch (KNI::NoSolutionException)
+      return status;
     }
 
 /* This function uses the kni-3.9.2 inverse kinematics function (ik_calculate) to 
@@ -69,7 +86,6 @@ class KatanaServer : public ros::node
     {
       cout << "Using ik calculate for pose: " << req.pose.x << " " << req.pose.y << " "
             << req.pose.z << " " << req.theta << " " << req.psi << endl;
-      Katana *katana = new Katana();
       vector<double> solution;
       bool success = katana->ik_joint_solution(req.pose.x, req.pose.y, req.pose.z,
           req.theta, req.psi, req.max_theta_dev, solution);
@@ -79,14 +95,13 @@ class KatanaServer : public ros::node
           res.solution.angles[i] = solution[i];
         }
       } else res.solution.set_angles_size(0);
-      
       return (success);
     }
 
     bool calibrateSrv(std_srvs::StringString::request &req,
                    std_srvs::StringString::response &res)
     {
-      Katana *katana = new Katana();
+      katana->allow_crash_limits(true);
       bool success = katana->calibrate();
       if (success) {
         res.str = "Done";
@@ -95,14 +110,13 @@ class KatanaServer : public ros::node
 				res.str = "Error";
 				cout << "Error!" << endl;
 			}
-      delete katana;
       return(success);
     }
 
     bool move_to_upright(std_srvs::StringString::request &req,
                    std_srvs::StringString::response &res)
     {
-      Katana *katana = new Katana();
+      katana->allow_crash_limits(true);
       bool success = katana->goto_upright();
       if (success) {
         res.str = "Done";
@@ -111,14 +125,13 @@ class KatanaServer : public ros::node
 				res.str = "Error";
 				cout << "Error!" << endl;
 			}
-      delete katana;
       return(success);
     }
     
     bool move_for_camera(std_srvs::StringString::request &req,
                    std_srvs::StringString::response &res)
     {
-      Katana *katana = new Katana();
+      katana->allow_crash_limits(true);
       bool success = katana->move_for_camera();
       if (success) {
         res.str = "Done";
@@ -127,14 +140,13 @@ class KatanaServer : public ros::node
 				res.str = "Error";
 				cout << "Error!" << endl;
 			}
-      delete katana;
       return(success);
     }
     
     bool move_back_to_upright(std_srvs::StringString::request &req,
                    std_srvs::StringString::response &res)
     {
-      Katana *katana = new Katana();
+      katana->allow_crash_limits(true);
       bool success = katana->move_back_to_upright();
       if (success) {
         res.str = "Done";
@@ -143,27 +155,24 @@ class KatanaServer : public ros::node
 				res.str = "Error";
 				cout << "Error!" << endl;
 			}
-      delete katana;
       return(success);
     }
 
     bool get_current_joint_angles(std_srvs::StringArmCSpace::request &req,
                    std_srvs::StringArmCSpace::response &res)
     {
-      Katana *katana = new Katana();
       vector<double> jointPositions = katana->get_joint_positions();
       res.jointAngles.set_angles_size(jointPositions.size());
       for (unsigned int i=0; i<jointPositions.size(); i++) {
         res.jointAngles.angles[i] = jointPositions.at(i);
       }
-      delete katana;
       return (jointPositions.size() > 0);
     }
     
     bool moveJointsSingle(std_srvs::ArmCSpaceString::request &req,
                    std_srvs::ArmCSpaceString::response &res)
     {
-      Katana *katana = new Katana();
+      katana->allow_crash_limits(false);
       bool success = katana->goto_joint_position_deg(req.jointAngles.angles[0], req.jointAngles.angles[1],
         req.jointAngles.angles[2], req.jointAngles.angles[3], req.jointAngles.angles[4]);
       if (success) {
@@ -173,14 +182,12 @@ class KatanaServer : public ros::node
 				res.str = "Error";
 				cout << "Error!" << endl;
 			}
-      delete katana;
       return (success);
     }
     
     bool gripperCmd(std_srvs::UInt32String::request &req,
                    std_srvs::UInt32String::response &res)
     {
-      Katana *katana = new Katana();
       bool success = katana->gripper_fullstop(req.value);
       if (success) {
         res.str = "Done";
@@ -189,14 +196,13 @@ class KatanaServer : public ros::node
 				res.str = "Error";
 				cout << "Error!" << endl;
 			}
-      delete katana;
       return (success);
     }
     
     bool moveJointsSeqDeg(std_srvs::ArmCSpaceSeqString::request &req,
                    std_srvs::ArmCSpaceSeqString::response &res)
     {
-      Katana *katana = new Katana();
+      katana->allow_crash_limits(false);
       bool success = false;
       for (size_t i=0; i<req.jointAngles.configs_size; i++) {
         success = katana->goto_joint_position_deg(req.jointAngles.configs[i].angles[0], 
@@ -211,14 +217,13 @@ class KatanaServer : public ros::node
 				res.str = "Error";
 				cout << "Error!" << endl;
 			}
-      delete katana;
       return (success);
     }
     
     bool moveJointsSeqRad(std_srvs::ArmCSpaceSeqString::request &req,
                    std_srvs::ArmCSpaceSeqString::response &res)
     {
-      Katana *katana = new Katana();
+      katana->allow_crash_limits(false);
       bool success = false;
       for (size_t i=0; i<req.jointAngles.configs_size; i++) {
         cout << "Moving arm to: " << req.jointAngles.configs[i].angles[0] << " "
@@ -238,7 +243,6 @@ class KatanaServer : public ros::node
 				res.str = "Error";
 				cout << "Error!" << endl;
 			}
-      delete katana;
       return (success);
     }
 

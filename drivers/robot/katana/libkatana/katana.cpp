@@ -71,6 +71,15 @@ bool Katana::set_motor_power(bool on)
   return true;
 }
 
+bool Katana::allow_crash_limits(bool allow)
+{
+  if (allow)
+    kni_lm->enableCrashLimits();
+  else
+    kni_lm->disableCrashLimits();
+  return true;
+}
+
 bool Katana::goto_joint_position_deg(double j1, double j2, double j3,
                                      double j4, double j5)
 {
@@ -186,7 +195,7 @@ bool Katana::ik_calculate(double x, double y, double z, double phi, double theta
     return (false);
   }
   vector<TMotInit> motorParams = get_motor_parameters();
-	for (int i=0; i<encoders_solution.size(); i++) {
+	for (size_t i=0; i<encoders_solution.size(); i++) {
 		solution.push_back(KNI_MHF::enc2rad(encoders_solution[i],
       		motorParams[i].angleOffset, motorParams[i].encodersPerCycle,
       		motorParams[i].encoderOffset, motorParams[i].rotationDirection));
@@ -241,6 +250,8 @@ bool Katana::ik_joint_solution(double x, double y, double z, double theta_init, 
   cout << "computed phi for given x and y: " << phi << endl;
 	double theta = theta_init;
 	bool success = false;
+  printf("ik_joint_solution arguments:\n");
+  printf("x = %f\ny = %f\nz = %f\ntheta = %f\npsi = %f\n", x, y, z, theta, psi);
 	
 	for (theta = theta_init; theta<=(theta_init+max_theta_dev); theta+=angle_inc) 
 	{
@@ -248,7 +259,7 @@ bool Katana::ik_joint_solution(double x, double y, double z, double theta_init, 
   	success = ik_calculate(x,y,z,phi,theta,psi,solution);
 		if (success) {
    	 	cout << "Solution: ";
-   	 	for (int i=0; i<solution.size(); i++) {
+   	 	for (size_t i=0; i<solution.size(); i++) {
    	   cout << solution[i]*180./PI << " ";
    	 	}
    		cout << endl;
@@ -263,7 +274,7 @@ bool Katana::ik_joint_solution(double x, double y, double z, double theta_init, 
   	success = ik_calculate(x,y,z,phi,theta,psi,solution);
 		if (success) {
    	 	cout << "Solution: ";
-   	 	for (int i=0; i<solution.size(); i++) {
+   	 	for (size_t i=0; i<solution.size(); i++) {
    	   cout << solution[i]*180./PI << " ";
    	 	}
    		cout << endl;
@@ -328,8 +339,10 @@ bool Katana::move_for_camera()
 	printf("moving out of way for camera...\n");
 	//double goal_state1[5] = {5.24, 1.57079633, 1.57079633, 1.57079633, 3.14159625};
 //	double goal_state2[5] = {5.24, -.05, 4.02, 2.52, 3.14159625};
-	double goal_state1[5] = {5.24, 1.57079633, 1.57079633, 1.57079633, 3.14159625};
-	double goal_state2[5] = {5.24, 1.57079633, 4.02, 2.52, 3.14159625};
+	//double goal_state1[5] = {5.24, 1.57079633, 1.57079633, 1.57079633, 3.14159625};
+	double goal_state1[5] = {5.24, 1.57079633, 2.8, 1.57079633, 3.14159625};
+	//double goal_state2[5] = {5.24, 1.57079633, 4.02, 2.52, 3.14159625};
+	double goal_state2[5] = {5.24, 0.8, 4.02, 2.52, 3.14159625};
 	double goal_state3[5] = {5.24, 0.0, 4.02, 2.52, 3.14159625};
   if (goto_joint_position_rad(goal_state1[0], goal_state1[1], goal_state1[2],
   goal_state1[3], goal_state1[4])) {
@@ -358,9 +371,17 @@ int Katana::get_number_of_motors()
   return(kni_lm->getNumberOfMotors());
 }
 
-void Katana::linear_move(vector<double> dstPose, int waitTimeout)
+bool Katana::linear_move(vector<double> dstPose, int waitTimeout)
 {
-  kni_lm->moveRobotLinearTo(dstPose, true, waitTimeout);
+  try
+  {
+    kni_lm->moveRobotLinearTo(dstPose, true, waitTimeout);
+  }
+  catch(KNI::NoSolutionException)
+  {
+    return false;
+  }
+  return true;
 }
 
 /* jointAngles in radians, timeperspline in seconds. */
