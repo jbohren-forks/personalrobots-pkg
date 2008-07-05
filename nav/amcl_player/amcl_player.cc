@@ -322,6 +322,12 @@ AmclNode::AmclNode() :
 
   // Options
   //this->cf->InsertFieldValue(0,"enable_gui","1");
+  //this->cf->InsertFieldValue(0,"odom_drift[0]","0.001");
+  //this->cf->InsertFieldValue(1,"odom_drift[1]","0.001");
+  //this->cf->InsertFieldValue(0,"odom_drift[2]","0.001");
+  //this->cf->InsertFieldValue(2,"odom_drift[2]","0.001");
+  //this->cf->InsertFieldValue(0,"update_thresh","10.0");
+  //this->cf->InsertFieldValue(1,"update_thresh","180.0");
 
   // Create an instance of the driver, passing it the ConfigFile object.
   // The -1 tells it to look into the "global" section of the ConfigFile,
@@ -364,12 +370,6 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
 
     
     // publish new transform map->odom
-    /*
-    printf("lpose: %.3f %.3f %.3f\n",
-           odomMsg.pos.x,
-           odomMsg.pos.y,
-           RTOD(odomMsg.pos.th));
-           */
     this->tf->sendEuler(FRAMEID_ROBOT,
                         FRAMEID_MAP,
                         pdata->pos.px,
@@ -381,14 +381,8 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
 			(long long unsigned int)floor(hdr->timestamp),
                         (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL));
 
-			//odomMsg.header.stamp.sec,
-			//odomMsg.header.stamp.nsec);
-
-
-    //std::cout <<"Sent 21" <<std::endl;
-
     /*
-    printf("pose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",
+    printf("lpose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",
            pdata->pos.px,
            pdata->pos.py,
            RTOD(pdata->pos.pa),
@@ -401,11 +395,6 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     localizedOdomMsg.pos.y = pdata->pos.py;
     localizedOdomMsg.pos.th = pdata->pos.pa;
     localizedOdomMsg.header.stamp.from_double(hdr->timestamp);
-    //localizedOdomMsg.header.stamp.sec = (unsigned long)floor(hdr->timestamp);
-    //localizedOdomMsg.header.stamp.nsec = 
-            //(unsigned long)rint(1e9 * (hdr->timestamp -
-                                       //localizedOdomMsg.header.stamp.sec));
-    //localizedOdomMsg.__timestamp_override = true;
     publish("localizedpose", localizedOdomMsg);
 
     // Also request and publish the particle cloud
@@ -671,5 +660,15 @@ AmclNode::odomReceived()
                         PLAYER_POSITION2D_DATA_STATE,
                         (void*)&pdata,0,
                         &timestamp);
+
+  /*
+  printf("opose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",
+         pdata.pos.px,
+         pdata.pos.py,
+         RTOD(pdata.pos.pa),
+         (long long unsigned int)floor(timestamp),
+         (long long unsigned int)((timestamp - floor(timestamp)) * 
+                                  1000000000ULL));
+                                  */
 }
 
