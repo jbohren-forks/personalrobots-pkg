@@ -116,7 +116,7 @@ robot.
 #include <std_msgs/Planner2DState.h>
 #include <std_msgs/Planner2DGoal.h>
 #include <std_msgs/BaseVel.h>
-//#include <std_msgs/MsgRobotBase2DOdom.h>
+#include <std_msgs/PointCloudFloat32.h>
 #include <std_msgs/LaserScan.h>
 #include <std_msgs/Pose2DFloat32.h>
 #include <std_srvs/StaticMap.h>
@@ -282,7 +282,8 @@ WavefrontNode::WavefrontNode() :
         avmax(DTOR(80.0)),
         amin(DTOR(10.0)),
         amax(DTOR(40.0)),
-        tf(*this, true, 200000000ULL, 200000000ULL) //nanoseconds
+        tf(*this, true, 1 * 1000000000ULL, 0ULL)
+        //tf(*this, true, 200000000ULL, 200000000ULL) //nanoseconds
 {
   // set a few parameters. leave defaults just as in the ctor initializer list
   param("dist_eps", dist_eps, 1.0);
@@ -402,18 +403,6 @@ WavefrontNode::laserReceived()
 {
   // Copy and push this scan into the list of buffered scans
   std_msgs::LaserScan newscan(laserMsg);
-  // Do a deep copy
-  /*
-  newscan.header.stamp.sec = laserMsg.header.stamp.sec;
-  newscan.header.stamp.nsec = laserMsg.header.stamp.nsec;
-  newscan.header.frame_id = laserMsg.header.frame_id;
-  newscan.range_max = laserMsg.range_max;
-  newscan.angle_min = laserMsg.angle_min;
-  newscan.angle_max = laserMsg.angle_max;
-  newscan.angle_increment = laserMsg.angle_increment;
-  newscan.set_ranges_size(laserMsg.get_ranges_size());
-  memcpy(newscan.ranges,laserMsg.ranges,laserMsg.get_ranges_size()*sizeof(float));
-  */
   this->buffered_laser_scans.push_back(newscan);
 
   // Iterate through the buffered scans, trying to interpolate each one
@@ -421,20 +410,21 @@ WavefrontNode::laserReceived()
       it != this->buffered_laser_scans.end();
       it++)
   {
-    // For each beam, convert to cartesian in the laser's frame, then convert
-    // to the map frame and store the result in the the laser_scans list
+    // Is this scan too old?
+    if((laserMsg.header.stamp - it->header.stamp) > this->laser_buffer_time)
+    {
+      it = this->buffered_laser_scans.erase(it);
+      it--;
+      continue;
+    }
 
-    laser_pts_t pts;
-    pts.pts_num = it->get_ranges_size();
-    pts.pts = new double[pts.pts_num*2];
-    assert(pts.pts);
-    pts.ts = it->header.stamp;
+    // Assemble a point cloud, in the laser's frame
+    std_msgs::PointCloudFloat32 local_cloud;
+    local_cloud.header.frame_id = it->header.frame_id;
+    local_cloud.header.stamp = it->header.stamp;
+    local_cloud.set_pts_size(it->get_ranges_size());
 
-    libTF::TFPose2D local,global;
-    local.frame = it->header.frame_id;
-    local.time = it->header.stamp.to_ull();
-    //local.time = it->header.stamp.sec * 1000000000ULL + 
-            //it->header.stamp.nsec;
+    // Iterate through the scan, adding points to the local cloud
     float b=it->angle_min;
     float* r=it->ranges;
     unsigned int i;
@@ -449,45 +439,50 @@ WavefrontNode::laserReceived()
          ((*r) <= 0.01))
         continue;
 
-      local.x = (*r)*cos(b);
-      local.y = (*r)*sin(b);
-      local.yaw = 0;
-      try
-      {
-        global = this->tf.transformPose2D(FRAMEID_MAP, local);
-      }
-      catch(libTF::TransformReference::LookupException& ex)
-      {
-        puts("no global->local Tx yet");
-        delete[] pts.pts;
-        return;
-      }
-      catch(libTF::Pose3DCache::ExtrapolateException& ex)
-      {
-        //puts("extrapolation required");
-        delete[] pts.pts;
-        break;
-      }
-
-      // Copy in the result
-      pts.pts[2*cnt] = global.x;
-      pts.pts[2*cnt+1] = global.y;
+      local_cloud.pts[cnt].x = (*r)*cos(b);
+      local_cloud.pts[cnt].y = (*r)*sin(b);
+      local_cloud.pts[cnt].z = 0.0;
       cnt++;
     }
-    // Did we break early?
-    if(i < it->get_ranges_size())
-      continue;
-    else
+
+    // Resize, because we may have thrown out some points
+    local_cloud.set_pts_size(cnt);
+
+    // Convert to a point cloud in the map frame
+    std_msgs::PointCloudFloat32 global_cloud;
+
+    try
     {
-      pts.pts_num = cnt;
-      this->laser_scans.push_back(pts);
-      // Don't delete ranges here, because the LaserScan destructor does it
-      // when the object falls out of scope after being erased from the
-      // list.
-      //delete[] it->ranges;
-      it = this->buffered_laser_scans.erase(it);
-      it--;
+      global_cloud = this->tf.transformPointCloud(FRAMEID_MAP, local_cloud);
     }
+    catch(libTF::TransformReference::LookupException& ex)
+    {
+      puts("no global->local Tx yet");
+      return;
+    }
+    catch(libTF::Pose3DCache::ExtrapolateException& ex)
+    {
+      //puts("extrapolation required");
+      continue;
+    }
+
+    // Convert from point cloud to array of doubles formatted XYXYXY...
+    // TODO: increase efficiency by reducing number of data transformations
+    laser_pts_t pts;
+    pts.pts_num = global_cloud.get_pts_size();
+    pts.pts = new double[pts.pts_num*2];
+    assert(pts.pts);
+    pts.ts = global_cloud.header.stamp;
+    for(int i=0;i<global_cloud.get_pts_size();i++)
+    {
+      pts.pts[2*i] = global_cloud.pts[i].x;
+      pts.pts[2*i+1] = global_cloud.pts[i].y;
+    }
+
+    // Add the new point set to our list
+    this->laser_scans.push_back(pts);
+    it = this->buffered_laser_scans.erase(it);
+    it--;
   }
 
   // Remove anything that's too old from the laser_scans list
