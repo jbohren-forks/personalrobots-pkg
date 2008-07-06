@@ -358,7 +358,7 @@
 
     <!-- base, torso and arms -->
     <include embedded="true">
-      <xi:include href="pr2.model" />
+      <xi:include href="pr2_tray_hand.model" />
     </include>
 
     <controller:pr2_actarray name="pr2_head_controller" plugin="libPr2_Actarray.so">
@@ -656,41 +656,6 @@
         <interface:position name="p3d_base_position"/>
     </controller:P3D>
 
-  </model:physical>
-
-  <model:physical name="pioneer2dx_model1">
-    <xyz>0 2 0.145</xyz>
-    <rpy>0.0 0.0 0.0</rpy>
-
-    <controller:differential_position2d name="controller1">
-      <leftJoint>left_wheel_hinge</leftJoint>
-      <rightJoint>right_wheel_hinge</rightJoint>
-      <wheelSeparation>0.39</wheelSeparation>
-      <wheelDiameter>0.15</wheelDiameter>
-      <torque>5</torque>
-      <interface:position name="position_iface_0"/>
-    </controller:differential_position2d>
-
-    <model:physical name="laser">
-      <xyz>0.15 0 0.18</xyz>
-
-      <attach>
-        <parentBody>chassis_body</parentBody>
-        <myBody>laser_body</myBody>
-      </attach>
-
-      <include embedded="true">
-        <xi:include href="models/sicklms200.model" />
-      </include>
-    </model:physical>
-
-    <!-- 
-    The include should be last within a model. All previous statements
-    will override those in the included file 
-    -->
-    <include embedded="true">
-      <xi:include href="models/pioneer2dx.model" />
-    </include>
   </model:physical>
 
 
