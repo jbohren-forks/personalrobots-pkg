@@ -33,24 +33,6 @@ class JointController : Controller
       * \brief Destructor of the JointController class.
       */       
     ~JointController( );
-
-    /*!
-      * \brief Set position of the joint: revolute (angle) and prismatic (position).
-      * 
-      */       
-    CONTROLLER::CONTROLLER_ERROR_CODE setPos(double pos);
-    
-    /*!
-      * \brief Set position of the joint: revolute (angle) and prismatic (position).
-      * 
-      */       
-    CONTROLLER::CONTROLLER_ERROR_CODE getPosCmd(double *pos);
-    
-    /*!
-      * \brief Set position of the joint: revolute (angle) and prismatic (position).
-      * 
-      */       
-    CONTROLLER::CONTROLLER_ERROR_CODE getPosAct(double pos);
     
     /*!
       * \brief Set the torque of the joint motor.
@@ -72,12 +54,39 @@ class JointController : Controller
       *
       */  
     CONTROLLER::CONTROLLER_ERROR_CODE getTorqueAct(double *torque);
+
+    /*!
+      * \brief Set position of the joint: revolute (angle) and prismatic (position).
+      * 
+      */       
+    CONTROLLER::CONTROLLER_ERROR_CODE setPos(double pos);
+    
+    /*!
+      * \brief Set position of the joint: revolute (angle) and prismatic (position).
+      * 
+      */       
+    CONTROLLER::CONTROLLER_ERROR_CODE getPosCmd(double *pos);
+    
+    /*!
+      * \brief Set position of the joint: revolute (angle) and prismatic (position).
+      * 
+      */       
+    CONTROLLER::CONTROLLER_ERROR_CODE getPosAct(double *pos);    
     
     /*!
       * \brief Set velocity of the joint: revolute (angular) and prismatic (linear).
       */
     CONTROLLER::CONTROLLER_ERROR_CODE setVel(double vel);
-
+    
+    /*!
+      * \brief Set velocity of the joint: revolute (angular) and prismatic (linear).
+      */
+    CONTROLLER::CONTROLLER_ERROR_CODE getVelCmd(double *vel);
+    
+    /*!
+      * \brief Set velocity of the joint: revolute (angular) and prismatic (linear).
+      */
+    CONTROLLER::CONTROLLER_ERROR_CODE getVelAct(double *vel);
 
     /*!
       * \brief Set parameters for this controller

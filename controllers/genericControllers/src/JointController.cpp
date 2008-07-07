@@ -8,22 +8,9 @@ JointController::~JointController( )
 {
 }
 
-CONTROLLER::CONTROLLER_ERROR_CODE
-JointController::setPos(double pos)
-{
-  return CONTROLLER::CONTROLLER_ALL_OK;
-}
-
-CONTROLLER::CONTROLLER_ERROR_CODE
-JointController::getPosCmd(double *pos)
-{
-  return CONTROLLER::CONTROLLER_ALL_OK;
-}
-
-JointController::getPosAct(double *pos)
-{
-  return CONTROLLER::CONTROLLER_ALL_OK;
-}
+//-
+//Torque
+//-
 
 CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::setTorque(double torque)
@@ -43,12 +30,50 @@ JointController::getTorqueAct(double *torque)
   return CONTROLLER::CONTROLLER_ALL_OK;
 }
 
+//-
+//Position
+//-
+CONTROLLER::CONTROLLER_ERROR_CODE
+JointController::setPos(double pos)
+{
+  return CONTROLLER::CONTROLLER_ALL_OK;
+}
+
+CONTROLLER::CONTROLLER_ERROR_CODE
+JointController::getPosCmd(double *pos)
+{
+  return CONTROLLER::CONTROLLER_ALL_OK;
+}
+
+JointController::getPosAct(double *pos)
+{
+  return CONTROLLER::CONTROLLER_ALL_OK;
+}
+
+//-
+//Velocity
+//-
 CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::setVel(double vel)
 {
   return CONTROLLER::CONTROLLER_ALL_OK;
 }
 
+CONTROLLER::CONTROLLER_ERROR_CODE
+JointController::getVelCmd(double *vel)
+{
+  return CONTROLLER::CONTROLLER_ALL_OK;
+}
+
+CONTROLLER::CONTROLLER_ERROR_CODE
+JointController::getVelAct(double *vel)
+{
+  return CONTROLLER::CONTROLLER_ALL_OK;
+}
+
+//-
+//Params
+//-
 CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::setParam(string label,double value)
 {
