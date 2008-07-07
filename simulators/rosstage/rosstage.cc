@@ -216,7 +216,7 @@ void
 StageNode::Update()
 {
   // Wait until it's time to update
-  //this->world->PauseUntilNextUpdateTime();
+  this->world->PauseUntilNextUpdateTime();
   this->lock.lock();
 
   // Let the simulator update (it will sleep if there's time)
