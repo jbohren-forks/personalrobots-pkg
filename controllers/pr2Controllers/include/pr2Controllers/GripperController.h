@@ -25,7 +25,6 @@ class GripperController : CONTROLLER::Controller
     /*!
       * \brief Constructor of the GripperController class.
       *
-      * \param 
       */
     GripperController();
     
@@ -36,12 +35,15 @@ class GripperController : CONTROLLER::Controller
 
     /*!
       * \brief Set gap between the two finger tips.
-      * 
+      *
+      * \param  distance The distance between the finger tips.
       */       
     PR2::PR2_ERROR_CODE setGap(double distance);
 
     /*!
       * \brief Set force between the two finger tips.
+      * 
+      * \param force The force between the finger tips.
       */       
     PR2::PR2_ERROR_CODE setForce(double force);
     
