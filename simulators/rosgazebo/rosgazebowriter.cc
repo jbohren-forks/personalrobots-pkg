@@ -91,6 +91,7 @@ class GazeboNode : public ros::node
      //Declare steam for writing to file
   ofstream datafile;
   public:	
+    void PrintRightArmPosition(void);
 
     void PrintRightArm();
 
@@ -189,6 +190,23 @@ this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , 0,0);
 
 }
 
+//Print out right arm position
+void GazeboNode::PrintRightArmPosition(){
+	double position[7],cmd[7];
+	//PR2_ERROR_CODE PR2Robot::GetArmJointSpeedCmd(PR2_MODEL_ID id, double speed[])
+
+	//Write joint speed commands 
+	this->myPR2->GetArmJointPositionCmd(PR2::PR2_RIGHT_ARM,position,cmd);
+	
+	cout<<"S1:"<<position[0]<<endl<<"S2:"<<position[1]<<endl<<"S3:"<<position[2]<<endl<<"S4:"<<position[3]<<endl<<"S5:"<<position[4]<<endl<<"S6:"<<position[5]<<endl<<"S7:"<<position[6]<<endl;	
+
+	//Write actual joint positions
+	this->myPR2->GetArmJointPositionActual(PR2::PR2_RIGHT_ARM,position,cmd);
+	
+	cout<<"AS1:"<<position[0]<<endl<<"AS2:"<<position[1]<<endl<<"AS3:"<<position[2]<<endl<<"AS4:"<<position[3]<<endl<<"AS5:"<<position[4]<<endl<<"AS6:"<<position[5]<<endl<<"AS7:"<<position[6]<<endl;	
+
+}
+
 //Sets desired cartesian velocities for the right arm
 void GazeboNode::SetRightArmVelocities(float cartesianVels[]){
 
@@ -239,7 +257,7 @@ void GazeboNode::SetRightArmVelocities(float cartesianVels[]){
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_PITCH   ,0,        0);
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    ,0,  0);
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , 0,   0);
-	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , 0,   1);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , 0,   0);
 
 	double speed[7];
 	//PR2_ERROR_CODE PR2Robot::GetArmJointSpeedCmd(PR2_MODEL_ID id, double speed[])
@@ -436,6 +454,7 @@ void GazeboNode::DisableLeftArm(){
 }
 
 void GazeboNode::PrintRightArm(){
+	/*
 	double speed[7],fake[7];
 	//PR2_ERROR_CODE PR2Robot::GetArmJointSpeedCmd(PR2_MODEL_ID id, double speed[])
 
@@ -449,7 +468,21 @@ void GazeboNode::PrintRightArm(){
 	this->myPR2->GetArmJointPositionActual(PR2::PR2_RIGHT_ARM,speed,fake);
 	
 	cout<<"AS1:"<<speed[0]<<endl<<"AS2:"<<speed[1]<<endl<<"AS3:"<<speed[2]<<endl<<"AS4:"<<speed[3]<<endl<<"AS5:"<<speed[4]<<endl<<"AS6:"<<speed[5]	<<endl<<"AS7:"<<speed[6]<<endl;	
-}
+*/
+	
+	double speed[7];
+	//Write joint speed commands 
+	this->myPR2->GetArmJointSpeedCmd(PR2::PR2_RIGHT_ARM,speed);
+	
+	cout<<"S1:"<<speed[0]<<endl<<"S2:"<<speed[1]<<endl<<"S3:"<<speed[2]<<endl<<"S4:"<<speed[3]<<endl<<"S5:"<<speed[4]<<endl<<"S6:"<<speed[5]<<endl<<"S7:"<<speed[6]<<endl;	
+
+	//Write actual joint speeds
+	//PR2_ERROR_CODE PR2Robot::GetArmJointSpeedCmd(PR2_MODEL_ID id, double speed[])
+	this->myPR2->GetArmJointSpeedActual(PR2::PR2_RIGHT_ARM,speed);
+	
+	cout<<"AS1:"<<speed[0]<<endl<<"AS2:"<<speed[1]<<endl<<"AS3:"<<speed[2]<<endl<<"AS4:"<<speed[3]<<endl<<"AS5:"<<speed[4]<<endl<<"AS6:"<<speed[5]	<<endl<<"AS7:"<<speed[6]<<endl;	
+
+	}
 
 //CONSTRUCTOR
 GazeboNode::GazeboNode(int argc, char** argv, const char* fname) :
@@ -463,13 +496,7 @@ double currentTime;
   this->myPR2 = new PR2::PR2Robot();
   // Initialize connections
   this->myPR2->InitializeRobot();
-  // Set control mode for the base
-  this->myPR2->SetBaseControlMode(PR2::PR2_CARTESIAN_CONTROL);
-  // this->myPR2->SetJointControlMode(PR2::CASTER_FL_STEER, PR2::TORQUE_CONTROL);
-  // this->myPR2->SetJointControlMode(PR2::CASTER_FR_STEER, PR2::TORQUE_CONTROL);
-  // this->myPR2->SetJointControlMode(PR2::CASTER_RL_STEER, PR2::TORQUE_CONTROL);
-  // this->myPR2->SetJointControlMode(PR2::CASTER_RR_STEER, PR2::TORQUE_CONTROL);
-
+ 
 //Make initial commanded velocities 0
  for (int i=0;i<6;i++){
 	currentVel[i] = 0.0;
@@ -485,8 +512,9 @@ double currentTime;
 */
 
 //Call to lower the arms to a hanging position
-/*
+
 //Lower arms, wait for SERVOTIME seconds of sim time to elapse
+/*
 LowerArms();
 currentTime = 0.0;
 while(currentTime<SERVOTIME){
@@ -500,8 +528,8 @@ this->myPR2->hw.GetSimTime(&currentTime);
 //this->myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM,PR2::PR2_SPEED_TORQUE_CONTROL);
 
 //Set arms to position control via torque
-this->myPR2->SetArmControlMode(PR2::PR2_LEFT_ARM,PR2::PR2_CARTESIAN_TORQUE_CONTROL);
-this->myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM,PR2::PR2_CARTESIAN_TORQUE_CONTROL);
+//this->myPR2->SetArmControlMode(PR2::PR2_LEFT_ARM,PR2::PR2_CARTESIAN_TORQUE_CONTROL);
+//this->myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM,PR2::PR2_CARTESIAN_TORQUE_CONTROL);
 
 //TUNE
 //Uncomment to restore speed control
@@ -515,11 +543,14 @@ this->myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM,PR2::PR2_CARTESIAN_TORQUE_CONT
 //DisableRightArm(); //Set all torques on right arm to zero.
 //DisableLeftArm();  //Set all torques on left arm to zero
 
+//Conrol a single joint
+//this->myPR2->hw.SetJointControlMode(PR2::ARM_R_SHOULDER_PITCH, PR2::PD_TORQUE_CONTROL);
+
 //Sanity check for joint type
 PR2::PR2_JOINT_CONTROL_MODE mode;
 
 //GetJointControlMode(PR2_JOINT_ID id, PR2_JOINT_CONTROL_MODE *mode);
-this->myPR2->hw.GetJointControlMode(PR2::ARM_R_PAN,&mode);
+this->myPR2->hw.GetJointControlMode(PR2::ARM_R_WRIST_ROLL,&mode);
 cout<<"****************First Joint mode set to: "<<mode<<endl;
   //cin.getline (name,256);
 /*
@@ -533,12 +564,12 @@ cout<<"****************First Joint mode set to: "<<mode<<endl;
 */
 
 
-this->myPR2->hw.GetJointControlMode(PR2::ARM_R_PAN,&mode);
+this->myPR2->hw.GetJointControlMode(PR2::ARM_R_SHOULDER_PITCH,&mode);
 cout<<"*************Second Joint mode set to: "<<mode<<endl;
 //cin.getline(name,256);
 
 //Set all to 0
-//Command servo to zero location, no speed
+//Command servo
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_PAN           , 0,0);
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, 0, 0);
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_ROLL , 0, 0);
@@ -547,27 +578,15 @@ cout<<"*************Second Joint mode set to: "<<mode<<endl;
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , 0,0);
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , 0,0);
 
-  // Initialize ring buffer for point cloud data
-
-  this->cloud_pts = new ringBuffer<std_msgs::Point3DFloat32>();
-  this->cloud_ch1 = new ringBuffer<float>();
-
-  // FIXME:  move this to Subscribe Models
-  param("tilting_laser/max_cloud_pts",max_cloud_pts, 10000);
-  this->cloud_pts->allocate(this->max_cloud_pts);
-  this->cloud_ch1->allocate(this->max_cloud_pts);
-
   // Set control mode for the arms
   // FIXME: right now this just sets default to pd control
   //this->myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM, PR2::PR2_JOINT_CONTROL);
   //this->myPR2->SetArmControlMode(PR2::PR2_LEFT_ARM, PR2::PR2_JOINT_CONTROL);
 	//------------------------------------------------------------
 
-//  this->myPR2->EnableGripperLeft();
-//  this->myPR2->EnableGripperRight();
-
   this->myPR2->hw.GetSimTime(&(this->lastTime));
   this->myPR2->hw.GetSimTime(&(this->simTime));
+
 
   // set torques for driving the robot wheels
   // this->myPR2->hw.SetJointTorque(PR2::CASTER_FL_DRIVE_L, 1000.0 );
@@ -578,6 +597,7 @@ cout<<"*************Second Joint mode set to: "<<mode<<endl;
   // this->myPR2->hw.SetJointTorque(PR2::CASTER_FR_DRIVE_R, 1000.0 );
   // this->myPR2->hw.SetJointTorque(PR2::CASTER_RL_DRIVE_R, 1000.0 );
   // this->myPR2->hw.SetJointTorque(PR2::CASTER_RR_DRIVE_R, 1000.0 );
+
 }
 
 void GazeboNode::finalize(int)
@@ -607,7 +627,7 @@ GazeboNode::SubscribeModels()
   
   subscribe("arm_trajectory", trajectorymsg, &GazeboNode::cmd_trajectoryReceived);
 
-
+  cout<<"Subscribed models"<<endl;
   return(0);
 }
 
@@ -656,7 +676,7 @@ GazeboNode::Update()
 /*
 	datafile<<this->simTime<<" ";
 
-	double jointPosition[6];
+	double jointPosition[6];
 	double jointSpeed[6];
 
 	double myx;
@@ -690,296 +710,11 @@ GazeboNode::Update()
   /*                                                             */
   /***************************************************************/
 //	SetRightArmVelocities(currentVel);
-	PrintRightArm();
-
-  /***************************************************************/
-  /*                                                             */
-  /*  laser - pitching                                           */
-  /*                                                             */
-  /***************************************************************/
-  if (this->myPR2->hw.GetLaserRanges(PR2::LASER_HEAD,
-                &angle_min, &angle_max, &angle_increment,
-                &range_max, &ranges_size     , &ranges_alloc_size,
-                &intensities_size, &intensities_alloc_size,
-                this->ranges     , this->intensities) == PR2::PR2_ALL_OK)
-  {
-    for(unsigned int i=0;i<ranges_size;i++)
-    {
-      // get laser pitch angle
-	    double laser_yaw, laser_pitch, laser_pitch_rate;
-	    this->myPR2->hw.GetJointServoActual(PR2::HEAD_LASER_PITCH , &laser_pitch,  &laser_pitch_rate);
-      // get laser yaw angle
-	    laser_yaw = angle_min + (double)i * angle_increment;
-	    //std::cout << " pit " << laser_pitch << "yaw " << laser_yaw
-	    //          << " amin " <<  angle_min << " inc " << angle_increment << std::endl;
-      // populating cloud data by range
-      double tmp_range = this->ranges[i];
-      // transform from range to x,y,z
-      tmp_cloud_pt.x                = tmp_range * cos(laser_yaw) * cos(laser_pitch);
-      tmp_cloud_pt.y                = tmp_range * sin(laser_yaw) ; //* cos(laser_pitch);
-      tmp_cloud_pt.z                = tmp_range * cos(laser_yaw) * sin(laser_pitch);
-
-      // add gaussian noise
-      const double sigma = 0.02;  // 2 centimeter sigma
-      tmp_cloud_pt.x                = tmp_cloud_pt.x + GaussianKernel(0,sigma);
-      tmp_cloud_pt.y                = tmp_cloud_pt.y + GaussianKernel(0,sigma);
-      tmp_cloud_pt.z                = tmp_cloud_pt.z + GaussianKernel(0,sigma);
-
-      // add mixed pixel noise
-      // if this point is some threshold away from last, add mixing model
-
-      // push pcd point into structure
-      this->cloud_pts->add((std_msgs::Point3DFloat32)tmp_cloud_pt);
-      this->cloud_ch1->add(this->intensities[i]);
-    }
-    /***************************************************************/
-    /*                                                             */
-    /*  point cloud from laser image                               */
-    /*                                                             */
-    /***************************************************************/
-    //std::cout << " pcd num " << this->cloud_pts->length << std::endl;
-    int    num_channels = 1;
-    this->cloudMsg.set_pts_size(this->cloud_pts->length);
-    this->cloudMsg.set_chan_size(num_channels);
-    this->cloudMsg.chan[0].name = "intensities";
-    this->cloudMsg.chan[0].set_vals_size(this->cloud_ch1->length);
-
-    this->full_cloudMsg.set_pts_size(this->cloud_pts->length);
-    this->full_cloudMsg.set_chan_size(num_channels);
-    this->full_cloudMsg.chan[0].name = "intensities";
-    this->full_cloudMsg.chan[0].set_vals_size(this->cloud_ch1->length);
-
-    for(int i=0;i< this->cloud_pts->length ;i++)
-    {
-      this->cloudMsg.pts[i].x        = this->cloud_pts->buffer[i].x;
-      this->cloudMsg.pts[i].y        = this->cloud_pts->buffer[i].y;
-      this->cloudMsg.pts[i].z        = this->cloud_pts->buffer[i].z;
-      this->cloudMsg.chan[0].vals[i] = this->cloud_ch1->buffer[i];
-
-      this->full_cloudMsg.pts[i].x        = this->cloud_pts->buffer[i].x;
-      this->full_cloudMsg.pts[i].y        = this->cloud_pts->buffer[i].y;
-      this->full_cloudMsg.pts[i].z        = this->cloud_pts->buffer[i].z;
-      this->full_cloudMsg.chan[0].vals[i] = this->cloud_ch1->buffer[i];
-    }
-    publish("cloud",this->cloudMsg);
-    publish("full_cloud",this->full_cloudMsg);
-    //publish("shutter",this->shutterMsg);
-  }
+//PrintRightArm();
+PrintRightArmPosition();
 
 
-  this->myPR2->hw.GetSimTime(&(this->simTime));
-
-  /***************************************************************/
-  /*                                                             */
-  /*  laser - base                                               */
-  /*                                                             */
-  /***************************************************************/
-  if (this->myPR2->hw.GetLaserRanges(PR2::LASER_BASE,
-                &angle_min, &angle_max, &angle_increment,
-                &range_max, &ranges_size     , &ranges_alloc_size,
-                &intensities_size, &intensities_alloc_size,
-                this->ranges     , this->intensities) == PR2::PR2_ALL_OK)
-  {
-    // Get latest laser data
-    this->laserMsg.angle_min       = angle_min;
-    this->laserMsg.angle_max       = angle_max;
-    this->laserMsg.angle_increment = angle_increment;
-    this->laserMsg.range_max       = range_max;
-    this->laserMsg.set_ranges_size(ranges_size);
-    this->laserMsg.set_intensities_size(intensities_size);
-    for(unsigned int i=0;i<ranges_size;i++)
-    {
-      double tmp_range = this->ranges[i];
-      this->laserMsg.ranges[i]      =tmp_range;
-      this->laserMsg.intensities[i] = this->intensities[i];
-    }
-
-    this->laserMsg.header.frame_id = FRAMEID_LASER;
-    this->laserMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
-    this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->laserMsg.header.stamp.sec) );
-
-    //publish("laser",this->laserMsg); // for laser_view FIXME: can alias this at the commandline or launch script
-    publish("scan",this->laserMsg);  // for rosstage
-  }
-
-
-
-  /***************************************************************/
-  /*                                                             */
-  /*  odometry                                                   */
-  /*                                                             */
-  /***************************************************************/
-  // Get latest odometry data
-  // Get velocities
-  double vx,vy,vw;
-  this->myPR2->GetBaseCartesianSpeedActual(&vx,&vy,&vw);
-  // Translate into ROS message format and publish
-  this->odomMsg.vel.x  = vx;
-  this->odomMsg.vel.y  = vy;
-  this->odomMsg.vel.th = vw;
-
-  // Get position
-  double x,y,z,roll,pitch,th;
-  this->myPR2->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&th);
-  this->odomMsg.pos.x  = x;
-  this->odomMsg.pos.y  = y;
-  this->odomMsg.pos.th = th;
-  // this->odomMsg.stall = this->positionmodel->Stall();
-
-  // TODO: get the frame ID from somewhere
-  this->odomMsg.header.frame_id = FRAMEID_ODOM;
-
-  this->odomMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
-  this->odomMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->odomMsg.header.stamp.sec) );
-
-  /***************************************************************/
-  /*                                                             */
-  /*  frame transforms                                           */
-  /*                                                             */
-  /***************************************************************/
-  tf.sendInverseEuler(FRAMEID_ODOM,
-                      FRAMEID_ROBOT,
-                      odomMsg.pos.x,
-                      odomMsg.pos.y,
-                      0.0,
-                      odomMsg.pos.th,
-                      0.0,
-                      0.0,
-                      odomMsg.header.stamp.sec,
-                      odomMsg.header.stamp.nsec);
-
-  // This publish call resets odomMsg.header.stamp.sec and 
-  // odomMsg.header.stamp.nsec to zero.  Thus, it must be called *after*
-  // those values are reused in the sendInverseEuler() call above.
-  publish("odom",this->odomMsg);
-
-  /***************************************************************/
-  /*                                                             */
-  /*  camera                                                     */
-  /*                                                             */
-  /***************************************************************/
-  uint32_t              width, height, depth;
-  std::string           compression, colorspace;
-  uint32_t              buf_size;
-  static unsigned char  buf[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
-
-  // get image
-  //this->myPR2->hw.GetCameraImage(PR2::CAMERA_GLOBAL,
-  this->myPR2->hw.GetCameraImage(PR2::CAMERA_HEAD_RIGHT,
-          &width           ,         &height               ,
-          &depth           ,
-          &compression     ,         &colorspace           ,
-          &buf_size        ,         buf                   );
-  this->img.width       = width;
-  this->img.height      = height;
-  this->img.compression = compression;
-  this->img.colorspace  = colorspace;
-
-  this->img.set_data_size(buf_size);
-
-  this->img.data        = buf;
-  //memcpy(this->img.data,buf,data_size);
-
-  publish("image",this->img);
-
-  /***************************************************************/
-  /*                                                             */
-  /*  pitching Hokuyo joint                                      */
-  /*                                                             */
-  /***************************************************************/
-	/*static double dAngle = -1;
-	double simPitchFreq,simPitchAngle,simPitchRate,simPitchTimeScale,simPitchAmp,simPitchOffset;
-	simPitchFreq      = 1.0/10.0;
-	simPitchTimeScale = 2.0*M_PI*simPitchFreq;
-	simPitchAmp    =  M_PI / 8.0;
-	simPitchOffset = -M_PI / 8.0;
-	simPitchAngle = simPitchOffset + simPitchAmp * sin(this->simTime * simPitchTimeScale);
-	simPitchRate  =  simPitchAmp * simPitchTimeScale * cos(this->simTime * simPitchTimeScale); // TODO: check rate correctness
-  this->myPR2->hw.GetSimTime(&this->simTime);
-	//std::cout << "sim time: " << this->simTime << std::endl;
-	//std::cout << "ang: " << simPitchAngle*180.0/M_PI << "rate: " << simPitchRate*180.0/M_PI << std::endl;
-	this->myPR2->hw.SetJointTorque(PR2::HEAD_LASER_PITCH , 1000.0);
-  this->myPR2->hw.SetJointGains(PR2::HEAD_LASER_PITCH, 10.0, 0.0, 0.0);
-	this->myPR2->hw.SetJointServoCmd(PR2::HEAD_LASER_PITCH , simPitchAngle, simPitchRate);
-
-  if (dAngle * simPitchRate < 0.0)
-  {
-    dAngle = -dAngle;
-    publish("shutter",this->shutterMsg);
-  }
-	
-  // should send shutter when changing direction, or wait for Tully to implement ring buffer in viewer
-*/
 this->myPR2->hw.SetJointServoCmd(PR2::HEAD_LASER_PITCH , 0.0, 0.0); //Hold the laser still
-  /***************************************************************/
-  /*                                                             */
-  /*  arm                                                        */
-  /*  gripper                                                    */
-  /*                                                             */
-  /***************************************************************/
-
-  double position, velocity;
-  std_msgs::PR2Arm larm, rarm;
-  
-  /* get left arm position */
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_PAN,            &position, &velocity);
-  larm.turretAngle       = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_SHOULDER_PITCH, &position, &velocity);
-  larm.shoulderLiftAngle = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_SHOULDER_ROLL,  &position, &velocity);
-  larm.upperarmRollAngle = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_ELBOW_PITCH,    &position, &velocity);
-  larm.elbowAngle        = position; 
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_ELBOW_ROLL,     &position, &velocity);
-  larm.forearmRollAngle  = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_WRIST_PITCH,    &position, &velocity);
-  larm.wristPitchAngle   = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_WRIST_ROLL,     &position, &velocity);
-  larm.wristRollAngle    = position;
-  // JOHN: We need to set the gripperForceCmd and gripperGapCmd as well; I think an API call is missing from libPR2API
-  this->myPR2->hw.GetGripperActual  (PR2::PR2_LEFT_GRIPPER,      &position, &velocity);
-  larm.gripperForceCmd   = velocity;
-  larm.gripperGapCmd     = position;
-  publish("left_pr2arm_pos", larm);
-  
-  /* get left arm position */
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_PAN,            &position, &velocity);
-  rarm.turretAngle       = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_SHOULDER_PITCH, &position, &velocity);
-  rarm.shoulderLiftAngle = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_SHOULDER_ROLL,  &position, &velocity);
-  rarm.upperarmRollAngle = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_ELBOW_PITCH,    &position, &velocity);
-  rarm.elbowAngle        = position; 
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_ELBOW_ROLL,     &position, &velocity);
-  rarm.forearmRollAngle  = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_WRIST_PITCH,    &position, &velocity);
-  rarm.wristPitchAngle   = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_WRIST_ROLL,     &position, &velocity);
-  rarm.wristRollAngle    = position;
-  // JOHN: We need to set the gripperForceCmd and gripperGapCmd as well; I think an API call is missing from libPR2API
-  this->myPR2->hw.GetGripperActual  (PR2::PR2_RIGHT_GRIPPER,     &position, &velocity);
-  rarm.gripperForceCmd   = velocity;
-  rarm.gripperGapCmd     = position;
-  publish("right_pr2arm_pos", rarm);
-  
-
-//  this->arm.turretAngle          = 0.0;
-//  this->arm.shoulderLiftAngle    = 0.0;
-//  this->arm.upperarmRollAngle    = 0.0;
-//  this->arm.elbowAngle           = 0.0;
-//  this->arm.forearmRollAngle     = 0.0;
-//  this->arm.wristPitchAngle      = 0.0;
-//  this->arm.wristRollAngle       = 0.0;
-//  this->arm.gripperForceCmd      = 1000.0;
-//  this->arm.gripperGapCmd        = 0.0;
-//
-//  // gripper test
-//  this->myPR2->SetGripperGains(PR2::PR2_LEFT_GRIPPER  ,10.0,0.0,0.0);
-//  this->myPR2->SetGripperGains(PR2::PR2_RIGHT_GRIPPER ,10.0,0.0,0.0);
-//  this->myPR2->OpenGripper(PR2::PR2_LEFT_GRIPPER ,this->arm.gripperGapCmd,this->arm.gripperForceCmd);
-//  this->myPR2->CloseGripper(PR2::PR2_RIGHT_GRIPPER,this->arm.gripperGapCmd,this->arm.gripperForceCmd);
-
 
   this->lock.unlock();
 }
