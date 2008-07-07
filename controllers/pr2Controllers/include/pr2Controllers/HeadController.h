@@ -18,11 +18,11 @@
 
 #include <pr2Core/pr2Core.h>
 #include <libpr2HW/pr2HW.h>
-#include <pr2Controllers/Controller.h>
+#include <genericControllers/Controller.h>
 #include <rosTF/rosTF.h>
 
 
-class HeadController : Controller
+class HeadController : CONTROLLER::Controller
 {
   public:
   

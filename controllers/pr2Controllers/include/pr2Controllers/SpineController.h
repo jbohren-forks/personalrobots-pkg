@@ -18,10 +18,10 @@
 
 #include <pr2Core/pr2Core.h>
 #include <libpr2HW/pr2HW.h>
-#include <pr2Controllers/Controller.h>
+#include <genericControllers/Controller.h>
 
 
-class SpineController : Controller
+class SpineController : CONTROLLER::Controller
 {
   public:
   
