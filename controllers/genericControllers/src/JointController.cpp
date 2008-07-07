@@ -1,5 +1,6 @@
 #include <genericControllers/JointController.h>
 
+
 JointController::JointController()
 {
 }
@@ -45,6 +46,7 @@ JointController::getPosCmd(double *pos)
   return CONTROLLER::CONTROLLER_ALL_OK;
 }
 
+CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::getPosAct(double *pos)
 {
   return CONTROLLER::CONTROLLER_ALL_OK;

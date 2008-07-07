@@ -1,27 +1,33 @@
 #pragma once
 /***************************************************/
-/*! \brief A PR2 Base controller
-    
-    This class implements controller loops for
-    PR2 Base Control
+/*! \brief A base level controller class.
 
 */
 /***************************************************/
 
-#include <pr2Core/pr2Core.h>
-#include <libpr2HW/pr2HW.h>
-
-#include <genericControllers/Pid.h>
-
-class Controller
+namespace CONTROLLER
 {
-  public:
-    Controller();
-    ~Controller();
 
-  private:
+  enum CONTROLLER_ERROR_CODE
+  {
+    CONTROLLER_ALL_OK,
+    CONTROLLER_JOINT_LIMIT,
+    CONTROLLER_TORQUE_LIMIT
+  };
+  enum CONTROLLER_CONTROL_MODE
+  {
+    CONTROLLER_ON,
+    CONTROLLER_OFF,
+    CONTROLLER_TORQUE,
+    CONTROLLER_POSITION,
+    CONTROLLER_VELOCITY
+  };
+  class Controller
+  {
+    public:
+      Controller();
+      ~Controller();
 
-
-
-};
-
+    private:
+  };
+}
