@@ -34,19 +34,45 @@ class JointController : Controller
       */       
     ~JointController( );
 
-
     /*!
       * \brief Set position of the joint: revolute (angle) and prismatic (position).
       * 
       */       
     CONTROLLER::CONTROLLER_ERROR_CODE setPos(double pos);
+    
+    /*!
+      * \brief Set position of the joint: revolute (angle) and prismatic (position).
+      * 
+      */       
+    CONTROLLER::CONTROLLER_ERROR_CODE getPosCmd(double *pos);
+    
+    /*!
+      * \brief Set position of the joint: revolute (angle) and prismatic (position).
+      * 
+      */       
+    CONTROLLER::CONTROLLER_ERROR_CODE getPosAct(double pos);
+    
     /*!
       * \brief Set the torque of the joint motor.
       * 
       *
       */       
-    CONTROLLER::CONTROLLER_ERROR_CODE setTorq(double torq);
-
+    CONTROLLER::CONTROLLER_ERROR_CODE setTorque(double torque);
+    
+		/*!
+      * \brief Get the torque command of the joint motor.
+      * 
+      *
+      */ 
+    CONTROLLER::CONTROLLER_ERROR_CODE getTorqueCmd(double *torque);
+    
+    /*!
+      * \brief Get the actual torque of the joint motor.
+      * 
+      *
+      */  
+    CONTROLLER::CONTROLLER_ERROR_CODE getTorqueAct(double *torque);
+    
     /*!
       * \brief Set velocity of the joint: revolute (angular) and prismatic (linear).
       */

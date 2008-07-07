@@ -15,7 +15,30 @@ JointController::setPos(double pos)
 }
 
 CONTROLLER::CONTROLLER_ERROR_CODE
-JointController::setTorq(double torq)
+JointController::getPosCmd(double *pos)
+{
+  return CONTROLLER::CONTROLLER_ALL_OK;
+}
+
+JointController::getPosAct(double *pos)
+{
+  return CONTROLLER::CONTROLLER_ALL_OK;
+}
+
+CONTROLLER::CONTROLLER_ERROR_CODE
+JointController::setTorque(double torque)
+{
+  return CONTROLLER::CONTROLLER_ALL_OK;
+}
+
+CONTROLLER::CONTROLLER_ERROR_CODE
+JointController::getTorqueCmd(double *torque)
+{
+  return CONTROLLER::CONTROLLER_ALL_OK;
+}
+
+CONTROLLER::CONTROLLER_ERROR_CODE
+JointController::getTorqueAct(double *torque)
 {
   return CONTROLLER::CONTROLLER_ALL_OK;
 }
