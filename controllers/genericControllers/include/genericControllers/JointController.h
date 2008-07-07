@@ -39,18 +39,18 @@ class JointController : Controller
       * \brief Set position of the joint: revolute (angle) and prismatic (position).
       * 
       */       
-    PR2::PR2_ERROR_CODE setPos(double pos);
+    CONTROLLER::CONTROLLER_ERROR_CODE setPos(double pos);
     /*!
       * \brief Set the torque of the joint motor.
       * 
       *
       */       
-    PR2::PR2_ERROR_CODE setTorq(double torq);
+    CONTROLLER::CONTROLLER_ERROR_CODE setTorq(double torq);
 
     /*!
       * \brief Set velocity of the joint: revolute (angular) and prismatic (linear).
       */
-    PR2::PR2_ERROR_CODE setVel(double vel);
+    CONTROLLER::CONTROLLER_ERROR_CODE setVel(double vel);
 
 
     /*!
@@ -67,11 +67,11 @@ class JointController : Controller
       *<LI>   or setParam('type', 'prismatic');
       *</UL>
       */
-    PR2::PR2_ERROR_CODE setParam(string label,double value);
-    PR2::PR2_ERROR_CODE setParam(string label,string value);
+    CONTROLLER::CONTROLLER_ERROR_CODE setParam(string label,double value);
+    CONTROLLER::CONTROLLER_ERROR_CODE setParam(string label,string value);
     
   private:
-    PR2::PR2_CONTROL_MODE controlMode;      /**< Joint controller control mode >*/
+    CONTROLLER::CONTROLLER_CONTROL_MODE controlMode;      /**< Joint controller control mode >*/
 };
 
 
