@@ -135,7 +135,9 @@ void signalHandler(int signalNo){
  * @brief Handle cleanup on exit
  */
 void cleanup(){
-    debugMsg("Executive", "Cleaning up...");
+  debugMsg("Executive", "Cleaning up...");
+  std::cout << "Shutting down at tick: "
+	    << Agent::instance()->getCurrentTick() << std::endl;
 
   // Terminate the agent
   Agent::terminate();
@@ -193,6 +195,7 @@ int main(int argc, char **argv)
   root = LogManager::initXml( configFile );
   DebugMessage::setStream(dbgFile);
 
+  //agentClock = new RealTimeClock(0.25);
   if (playback) {
     agentClock = new PlaybackClock(0.25);
   } else {

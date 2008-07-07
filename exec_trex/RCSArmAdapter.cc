@@ -10,7 +10,7 @@
 namespace TREX {
 
   RCSArmAdapter::RCSArmAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-    : Adapter(agentName, "rcsarm", 1, 0, "rcsarm.cfg"){
+    : Adapter(agentName, "rcsarm", 1, 0, "rcsarm.cfg", true){
   }
   
   RCSArmAdapter::~RCSArmAdapter() {

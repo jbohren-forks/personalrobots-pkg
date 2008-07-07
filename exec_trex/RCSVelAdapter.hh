@@ -1,7 +1,6 @@
 #ifndef H_RCSVelAdapter
 #define H_RCSVelAdapter
 
-#include "Logger.hh"
 #include "Adapter.hh"
 #include "ROSNode.hh"
 
@@ -23,7 +22,6 @@ namespace TREX {
   private:
     ObserverId m_observer; /*! Apointer for publishing observations to the agent. */
     ROSNodeId m_node; /*! The ROS node. */
-    LoggerId m_logger; /*! The logger */
   };
 }
 #endif

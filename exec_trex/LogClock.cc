@@ -149,6 +149,10 @@ namespace TREX {
 	consolePopup();
       }
       fscanf(m_file, "%u\n", &m_gets);
+      if (m_gets == 0) {
+	Agent::terminate();
+	return m_tick;
+      }
       timeout++;
     }
     m_gets--;

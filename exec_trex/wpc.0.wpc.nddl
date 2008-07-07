@@ -4,6 +4,8 @@ WaypointController wpc = new WaypointController(Internal);
 VehicleState vs = new VehicleState(External);
 VelCommander vcom = new VelCommander(External);
 Actions actions = new Actions();
+ArmController lac = new ArmController(Ignore,true);
+ArmController rac = new ArmController(Ignore,false);
 
 close();
 
