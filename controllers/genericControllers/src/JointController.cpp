@@ -1,4 +1,4 @@
-#include <pr2Controllers/JointController.h>
+#include <genericControllers/JointController.h>
 
 JointController::JointController()
 {
