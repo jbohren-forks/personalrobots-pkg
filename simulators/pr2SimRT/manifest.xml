@@ -1,11 +1,15 @@
 <package>
-  <description>A ROS node that wraps up the Gazebo robot simulator.</description>
+  <description>
+    Setup robot actuator and sensor interfaces.
+    Start real time control loops.
+    Start api interfaces for non-RT control in a ros node.
+  </description>
   <author>John M. Hsu</author>
   <license>TBD</license>
   <depend package="roscpp" />
-  <depend package="gazebo" />
-  <depend package="gazebo_plugin" />
-  <depend package="libpr2API" />
+  <depend package="libpr2GZ" />
+  <depend package="genericControllers" />
+  <depend package="pr2Controllers" />
   <depend package="pr2Core" />
   <depend package="std_msgs" />
   <depend package="rosthread" />

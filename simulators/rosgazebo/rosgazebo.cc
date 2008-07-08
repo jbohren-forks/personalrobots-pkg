@@ -690,7 +690,7 @@ main(int argc, char** argv)
   while(1)
   {
     gn.Update();
-    usleep(100000);
+    gn.myPR2->hw.ClientWait();
   }
   
   // have to call this explicitly for some reason.  probably interference
