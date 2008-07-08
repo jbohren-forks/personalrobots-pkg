@@ -680,7 +680,7 @@
       </attach>
 
       <include embedded="true">
-        <xi:include href="models/sicklms200.model" />
+        <xi:include href="sicklms200.model" />
       </include>
     </model:physical>
 
@@ -689,7 +689,7 @@
     will override those in the included file 
     -->
     <include embedded="true">
-      <xi:include href="models/pioneer2dx.model" />
+      <xi:include href="pioneer2dx.model" />
     </include>
   </model:physical>
 
