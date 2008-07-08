@@ -103,7 +103,7 @@ int main(int argc, char **argv)
     if (!a.take_and_send_image())
     {
       a.log(ros::ERROR,"couldn't take image.");
-      break;
+      //      break;
     }
 
   ros::fini();

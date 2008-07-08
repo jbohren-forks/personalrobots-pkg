@@ -103,8 +103,20 @@ bool AxisCam::get_jpeg(uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_size
     if (jpeg_buf[0] == 0 && jpeg_buf[1] == 0)
       printf("[axis_cam] ODD...first two bytes are zero...\n");
   } while (jpeg_buf[0] == 0 && jpeg_buf[1] == 0);
-  *fetch_jpeg_buf = jpeg_buf;
-  *fetch_buf_size = jpeg_file_size;
+
+  int i = 0;
+  while (jpeg_buf[i] != 0xFF && jpeg_buf[i+1] != 0xD8 && i < jpeg_file_size - 1) {
+    i++;
+  }
+
+  if (i == jpeg_file_size - 1)
+  {
+    printf("[axis_cam] Searched through %d bytes.  Not a jpeg (image probably corrupt!)\n", i);
+    return false;
+  }
+
+  *fetch_jpeg_buf = jpeg_buf + i;
+  *fetch_buf_size = jpeg_file_size - i;
   return true;
 }
 
