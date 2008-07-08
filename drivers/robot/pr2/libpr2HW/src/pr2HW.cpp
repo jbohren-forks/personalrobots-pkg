@@ -258,8 +258,6 @@ PR2_ERROR_CODE PR2HW::GetSimTime(double *sim_time)
 
 PR2_ERROR_CODE PR2HW::AddJoint(PR2_JOINT_ID id)
 {
-  Pid tmpPid;
-  this->pids.push_back(tmpPid);
   return PR2_ALL_OK;
 }
 
