@@ -1,23 +1,45 @@
 #include <genericControllers/JointController.h>
-/*
-#ifdef SIMULATOR
-//What happens if we're set in velocity mode and we set position>? and vice versa?
 
-JointController::JointController(double pGain, double iGain, double dGain, double iMax, double iMin)
+
+//Simulator mode constructor
+JointController::JointController(PR2::PR2Robot* robot, PR2::PR2_JOINT_ID jointID, CONTROLLER::CONTROLLER_CONTROL_MODE mode, double pGain, double iGain, double dGain, double iMax, double iMin)
 {	//Instantiate PID class
-	pidController(pGain,iGain,dGain,iMax,iMin); //Constructor for pid controller
+	pidController.InitPid(pGain,iGain,dGain,iMax,iMin); //Constructor for pid controller
 
-	//Set dParamFMax = 0 if we're in the simulator mode
+	myPR2 = robot; //Set the robot 
+	joint = jointID; //Set joint id
 
-	//Member variables
-	//Robot * robot;
-	//Motor * motor;
+	//Set commands to zero
+	cmdTorque = 0;
+	cmdPos = 0;
+	cmdVel = 0;
+
+	//Initialize the time
+	GetTime(&lastTime);
+
+	//Set the control mode
+	controlMode = mode;
+
 }
     
 JointController::~JointController( )
 {
 }
 
+//Returns the current time. Will eventually mode to use ROS::TIME
+PR2::PR2_ERROR_CODE JointController::GetTime(double *time){
+	return(myPR2->hw.GetSimTime(time));
+}
+
+//Set the controller control mode
+void JointController::SetMode(CONTROLLER::CONTROLLER_CONTROL_MODE mode){
+	controlMode = mode;
+}
+
+//Getter for control mode
+CONTROLLER::CONTROLLER_CONTROL_MODE JointController::GetMode(){
+	return controlMode;
+}
 //-
 //Torque
 //-
@@ -26,29 +48,28 @@ JointController::~JointController( )
 //Accesses the robot model to read the maximum and minimum torques
 //Sets flag to indicate torque saturation
 CONTROLLER::CONTROLLER_ERROR_CODE
-JointController::setTorque(double torque)
+JointController::SetTorque(double torque)
 {	CONTROLLER::CONTROLLER_ERROR_CODE status = CONTROLLER::CONTROLLER_ALL_OK;
 	double newTorque, maxPositiveTorque, maxNegativeTorque;
 
 	if(GetMode() == CONTROLLER::CONTROLLER_TORQUE){ //Make sure we're in torque control mode
 		
 		//Read the max positive and max negative torque once
-		maxPositiveTorque = robot->actuator[id]->MaxPositiveTorque;
-		maxNegativeTorque = robot->actuator[id]->MaxNegativeTorque;
+		maxPositiveTorque = GetMaxPosTorque();
+		maxNegativeTorque = GetMaxNegTorque(); 
 
 		if(torque>maxPositiveTorque){
 			newTorque = maxPositiveTorque;
 			status = CONTROLLER::CONTROLLER_TORQUE_LIMIT; //Hit the positive torque limit
 		}
 		else if (torque< maxNegativeTorque) {
-			newTorque = maxNegativeTorque
+			newTorque = maxNegativeTorque;
 			status = CONTROLLER::CONTROLLER_TORQUE_LIMIT; //Hit the negative torque limit
 		}
 		else newTorque = torque;
 
-		//Actually set the torque value
-		motor->SetTorque(newTorque);
-		
+		//Set torque command 
+		myPR2->hw.SetJointTorque(joint,newTorque);
 		return status;
 	}
 	else return CONTROLLER::CONTROLLER_MODE_ERROR;
@@ -66,15 +87,16 @@ JointController::getTorqueCmd(double *torque)
 CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::getTorqueAct(double *torque)
 {
-
+	if(myPR2->hw.GetJointTorqueActual(joint,torque) == PR2::PR2_ALL_OK)
 	return CONTROLLER::CONTROLLER_ALL_OK;
+	else return CONTROLLER::CONTROLLER_MODE_ERROR;
 }
 
 //-
 //Position
 //-
 
-//Give a position setpoint
+//Query mode, then set desired position 
 CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::setPos(double pos)
 {
@@ -93,33 +115,46 @@ JointController::getPosCmd(double *pos)
 	return CONTROLLER::CONTROLLER_ALL_OK;
 }
 
-//
+//Query the joint for the actual position
 CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::getPosAct(double *pos)
 {
-	SliderJoint *sjoint;
+	double *fake; //Query velocity at the same time, but we don't care
+
+	if(myPR2->hw.GetJointPositionActual(joint,pos,fake)==PR2::PR2_ALL_OK) return CONTROLLER::CONTROLLER_ALL_OK;
+	else return CONTROLLER::CONTROLLER_JOINT_ERROR;
+			/*	SliderJoint *sjoint;
 	HingeJoint *hjoint;
 	switch(myJoint->GetType()){
 		case Joint::SLIDER:
 			sjoint = dynamic_cast<SliderJoint*>( tmpJoint );
-			*pos = 
+			*pos = sjoint->GetPosition();
+			return CONTROLLER::CONTROLLER_ALL_OK;
 			break;
 		case Joint::HINGE:
+			hjoint = dynamic_cast<HingeJoint*>(this->joints[count]);
+			*pos = hjoint->GetAngle();
+			return CONTROLLER::CONTROLLER_ALL_OK;
 			break;
-		case Joint::HINGE2:
+		case Joint::HINGE2: //Not implemented yet. Return a joint error
+			return CONTROLLER::CONTROLLER_JOINT_ERROR;
 			break;
 		case Joint::BALL:
+			return CONTROLLER::CONTROLLER_JOINT_ERROR;
 			break;
 		case Joint::UNIVERSAL:
+			return CONTROLLER::CONTROLLER_JOINT_ERROR;
 			break;
 		
 		return CONTROLLER::CONTROLLER_ALL_OK;
+		*/
 }
 
-//TODO
+//
 //-
 //Velocity
 //-
+//Check mode, then set the commanded velocity
 CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::setVel(double vel)
 {
@@ -130,6 +165,7 @@ JointController::setVel(double vel)
 	else return CONTROLLER::CONTROLLER_MODE_ERROR;
 }
 
+//Return the internally stored commanded velocity
 CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::getVelCmd(double *vel)
 {
@@ -137,12 +173,40 @@ JointController::getVelCmd(double *vel)
 	return CONTROLLER::CONTROLLER_ALL_OK;
 }
 
+//Query our joint for velocity
 CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::getVelAct(double *vel)
 {
+	double *fake; //Query position at the same time, but we don't care
+
+	if(myPR2->hw.GetJointPositionActual(joint,fake,vel)==PR2::PR2_ALL_OK) return CONTROLLER::CONTROLLER_ALL_OK;
+	else return CONTROLLER::CONTROLLER_JOINT_ERROR;
+/*
 	SliderJoint *sjoint;
 	HingeJoint *hjoint;
-  return CONTROLLER::CONTROLLER_ALL_OK;
+	switch(myJoint->GetType()){
+		case Joint::SLIDER:
+			sjoint = dynamic_cast<SliderJoint*>( tmpJoint );
+			*pos = sjoint->GetPositionRate();
+			return CONTROLLER::CONTROLLER_ALL_OK;
+			break;
+		case Joint::HINGE:
+			hjoint = dynamic_cast<HingeJoint*>(this->joints[count]);
+			*pos = hjoint->GetAngleRate();
+			return CONTROLLER::CONTROLLER_ALL_OK;
+			break;
+		case Joint::HINGE2: //Not implemented yet. Return a joint error
+			return CONTROLLER::CONTROLLER_JOINT_ERROR;
+			break;
+		case Joint::BALL:
+			return CONTROLLER::CONTROLLER_JOINT_ERROR;
+			break;
+		case Joint::UNIVERSAL:
+			return CONTROLLER::CONTROLLER_JOINT_ERROR;
+			break;
+		
+		return CONTROLLER::CONTROLLER_ALL_OK;
+		*/
 }
 
 //-
@@ -161,18 +225,48 @@ JointController::setParam(string label,string value)
   return CONTROLLER::CONTROLLER_ALL_OK;
 }
 
-virtual void Update(void){
-	double error, torqueCmd;
-	//Read position, get error
-	positionError = Controller.ModNPi2Pi(pos-motor->GetAngle()); 
+ void JointController::Update(void){
+	double error, currentTorqueCmd, time, cmd, act;
+	GetTime(&time);
+	CONTROLLER_CONTROL_MODE type = GetMode();
+	if(type==CONTROLLER::CONTROLLER_TORQUE){
+		currentTorqueCmd = cmdTorque; //In torque mode, we pass along the commanded torque
+	}
+	else if (type==CONTROLLER::CONTROLLER_POSITION){
+		getPosCmd(&cmd);
+		getPosAct(&act);
+		//Read position, get error
+		error = CONTROLLER::Controller::ModNPi2Pi(cmd-act); 
 	
-	//Update the controller
-	pidController->UpdatePid(positionError,robot->GetTime());
+		//Update the controller
+		currentTorqueCmd = pidController.UpdatePid(error,time); //Close the loop around position
+	}
+	else if (type==CONTROLLER::CONTROLLER_VELOCITY){
+		getVelCmd(&cmd);
+		getVelCmd(&act);
+		//Read velocity, get error
+		error = cmd - act; 
+	
+		//Update the controller
+		currentTorqueCmd = pidController.UpdatePid(error,time); //Close the loop around velocity
 
+	}
+	else currentTorqueCmd = 0; //On error, set torque to zero
 	//Issue the torque command
-	SetTorque(torqueCmd); 	
+	SetTorque(currentTorqueCmd); 	
 
 }
 
-#endif
-*/
+//The following functions are stubs until we access the robot object properly
+//TODO
+
+//Returns max positive torque
+double GetMaxPosTorque(void){
+	return 100;
+}
+
+//Returns max negative torque
+double GetMaxNegTorque(void){
+	return 100;
+}
+
