@@ -1,5 +1,5 @@
 /*
- * wavefront_player
+ * TREX Process
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
  * 
@@ -34,12 +34,11 @@
 
 @htmlinclude manifest.html
 
-@b exec_trex is a bare bones demonstration of using the TREX hybrid executive
+@b exec_trex is a demonstration of using the TREX hybrid executive
 for planning and control. It uses the EUROPA-2 constraint-based temporal planning library
 to represent plan state, do planning, write models etc. Right now this is
 a crude integration which will evolve to include more generalized integration patterns to
-ROS nodes. Also, the build structure uses jam, and that allows builds for a variety
-of versions. For now we will use the default development build.
+ROS nodes.
 
 <hr>
 

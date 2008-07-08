@@ -2,52 +2,51 @@ SubDir exec_trex ;
 
 if ! $(exec_trex_READY) {
 
-	# All this ROS and PR related stuff needs to be cleaned up. As it stands, it will not have any make integration
-	# for when ROS or Pr change. Also, the declarations at this level force linkage of more than should otherwise
-	# be necessary
-
-	# Define Libraries required for ROS:  Can obtain from rospack export/cpp/lflags roscp
-   	NEEDLIBS = 	[ FDirName $(ROS_ROOT) core roscpp lib libros.a ]
-			[ FDirName $(ROS_ROOT) 3rdparty xmlrpc++ libXmlRpc.a ]
+   	on exec_trex {
+		# All this ROS and PR related stuff needs to be cleaned up. As it stands, it will not have any make integration
+		# for when ROS or Pr change. Also, the declarations at this level force linkage of more than should otherwise
+		# be necessary
+		# Define Libraries required for ROS:  Can obtain from rospack export/cpp/lflags roscp
+		NEEDLIBS = 	
+			[ FDirName $(ROS_ROOT) core roscpp lib libros.a ]
+			[ FDirName $(ROS_ROOT) 3rdparty xmlrpc++ lib libXmlRpc.a ]
 			[ FDirName $(ROS_ROOT) util rosthread lib librosthread.a ]
 			[ FDirName $(ROS_ROOT) util rostime lib librostime.a ]
 			[ FDirName $(PR_ROOT) 3rdparty player player lib libwavefront_standalone.so ]	       
-			[ FDirName $(PR_ROOT) util transforms rosTF lib
-   			  librosTF.a ]
-			[ FDirName $(PR_ROOT) util transforms libTF lib libTF.a
-   			]
-			[ FDirName $(PR_ROOT) 3rdparty newmat10 newmat newmat10
-   			  libnewmat.a ] ;
+			[ FDirName $(PR_ROOT) util transforms rosTF lib	librosTF.a ]
+			[ FDirName $(PR_ROOT) util transforms libTF lib libTF.a	]
+			[ FDirName $(PR_ROOT) 3rdparty newmat10 newmat newmat10  libnewmat.a ] ;
 
-	# Include directories for ROS. Can obtain from rospack export/cpp/cflags roscpp
-   	SubDirHdrs $(ROS_ROOT) core roscpp include ;
-   	SubDirHdrs $(ROS_ROOT) util rosthread include ;
-   	SubDirHdrs $(ROS_ROOT) util rostime include ;
-	SubDirHdrs $(ROS_ROOT) core rostools msg cpp ;
-   	SubDirHdrs $(ROS_ROOT) 3rdparty xmlrpc++ src ;
-   	SubDirHdrs $(ROS_ROOT) std_msgs msg cpp ;
-	SubDirHdrs $(ROS_ROOT) std_srvs srv cpp ;		
+		# Include directories for ROS. Can obtain from rospack export/cpp/cflags roscpp
+		SubDirHdrs $(ROS_ROOT) core roscpp include ;
+   		SubDirHdrs $(ROS_ROOT) util rosthread include ;
+
+   		SubDirHdrs $(ROS_ROOT) util rostime include ;
+   		SubDirHdrs $(ROS_ROOT) core rostools msg cpp ;
+   		SubDirHdrs $(ROS_ROOT) 3rdparty xmlrpc++ src ;
+   		SubDirHdrs $(ROS_ROOT) std_msgs msg cpp ;
+		SubDirHdrs $(ROS_ROOT) std_srvs srv cpp ;		
 	
-	SubDirHdrs $(PR_ROOT) 3rdparty player player include player-2.2 ;
-	SubDirHdrs $(PR_ROOT) util transforms rosTF include ;
-	SubDirHdrs $(PR_ROOT) util transforms libTF include ;
-	SubDirHdrs $(PR_ROOT) 3rdparty newmat10 newmat ;
-	SubDirHdrs $(PR_ROOT) util transforms namelookup srv cpp ;
-   	SubDirHdrs $(PR_ROOT) util transforms namelookup include ;
+		SubDirHdrs $(PR_ROOT) 3rdparty player player include player-2.2 ;
+		SubDirHdrs $(PR_ROOT) util transforms rosTF include ;
+		SubDirHdrs $(PR_ROOT) util transforms libTF include ;
+		SubDirHdrs $(PR_ROOT) 3rdparty newmat10 newmat ;
+		SubDirHdrs $(PR_ROOT) util transforms namelookup srv cpp ;
+   		SubDirHdrs $(PR_ROOT) util transforms namelookup include ;
 
-	# GNU Library include directories
-	SubDirHdrs / usr include gtk-2.0 ;
-	SubDirHdrs / usr include glib-2.0 ;
-	SubDirHdrs / usr lib glib-2.0 include ;
+		# GNU Library include directories
+		SubDirHdrs / usr include gtk-2.0 ;
+		SubDirHdrs / usr include glib-2.0 ;
+		SubDirHdrs / usr lib glib-2.0 include ;
 
-	# Need to add this to obtain clock get time. Also need gtk for pix buf image loading when using wavefront
-	# planner. 
-	LINKFLAGS = $(LINKFLAGS) -lrt  -lgtk-x11-2.0 ;
-	# PLASMA & TREX libraries found here
-	LINKFLAGS = $(LINKFLAGS) -Wl,-rpath,$(PLASMA_HOME)/build/lib ;
-	# Wavefront player libraries found here
-	LINKFLAGS = $(LINKFLAGS) -lrt  -lgtk-x11-2.0 -Wl,-rpath,$(PR_ROOT)/3rdparty/player/player/lib ;
-
+		# Need to add this to obtain clock get time. Also need gtk for pix buf image loading when using wavefront
+		# planner. 
+		LINKFLAGS = $(LINKFLAGS) -lrt  -lgtk-x11-2.0 ;
+		# PLASMA & TREX libraries found here
+		LINKFLAGS = $(LINKFLAGS) -Wl,-rpath,$(PLASMA_HOME)/build/lib ;
+		# Wavefront player libraries found here
+		LINKFLAGS = $(LINKFLAGS) -lrt  -lgtk-x11-2.0 -Wl,-rpath,$(PR_ROOT)/3rdparty/player/player/lib ;
+	}
 
 	ModuleMain exec_trex : Executive.cc RCSVelAdapter.cc RCSArmAdapter.cc ROSNode.cc Logger.cc LogClock.cc
 	CalcCommandConstraintPlayback.cc CalcGlobalPathConstraintPlayback.cc CalcCommandConstraint.cc Playback.cc
