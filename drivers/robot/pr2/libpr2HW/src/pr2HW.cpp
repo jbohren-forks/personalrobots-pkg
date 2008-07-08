@@ -31,21 +31,21 @@ using namespace PR2;
 //  these are the "hardware" interfaces                           //
 //                                                                //
 ////////////////////////////////////////////////////////////////////
-static gazebo::Client           *client;
-static gazebo::SimulationIface  *simIface;
-static gazebo::PR2ArrayIface    *pr2Iface;
-static gazebo::PR2ArrayIface    *pr2HeadIface;
-static gazebo::PR2GripperIface  *pr2GripperLeftIface;
-static gazebo::PR2GripperIface  *pr2GripperRightIface;
-static gazebo::LaserIface       *pr2LaserIface;
-static gazebo::LaserIface       *pr2BaseLaserIface;
-static gazebo::CameraIface      *pr2CameraIface;
-static gazebo::CameraIface      *pr2CameraGlobalIface;
-static gazebo::CameraIface      *pr2CameraHeadLeftIface;
-static gazebo::CameraIface      *pr2CameraHeadRightIface;
-static gazebo::PositionIface    *pr2LeftWristIface;
-static gazebo::PositionIface    *pr2RightWristIface;
-static gazebo::PositionIface    *pr2BaseIface;
+gazebo::Client           *client;
+gazebo::SimulationIface  *simIface;
+gazebo::PR2ArrayIface    *pr2Iface;
+gazebo::PR2ArrayIface    *pr2HeadIface;
+gazebo::PR2GripperIface  *pr2GripperLeftIface;
+gazebo::PR2GripperIface  *pr2GripperRightIface;
+gazebo::LaserIface       *pr2LaserIface;
+gazebo::LaserIface       *pr2BaseLaserIface;
+gazebo::CameraIface      *pr2CameraIface;
+gazebo::CameraIface      *pr2CameraGlobalIface;
+gazebo::CameraIface      *pr2CameraHeadLeftIface;
+gazebo::CameraIface      *pr2CameraHeadRightIface;
+gazebo::PositionIface    *pr2LeftWristIface;
+gazebo::PositionIface    *pr2RightWristIface;
+gazebo::PositionIface    *pr2BaseIface;
 
 ////////////////////////////////////////////////////////////////////
 //                                                                //
@@ -812,7 +812,12 @@ PR2_ERROR_CODE PR2HW::GetLaserRanges(PR2_SENSOR_ID id,
   }
 };
 
-
+PR2_ERROR_CODE PR2HW::ClientWait()
+{
+  // block until simulator update.
+  client->Wait();
+  return PR2_ALL_OK;
+}
 
 PR2_ERROR_CODE PR2HW::UpdateHW()
 {
