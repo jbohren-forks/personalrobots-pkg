@@ -27,7 +27,10 @@ namespace CONTROLLER
     public:
       Controller();
       ~Controller();
-
+  
+      static double ModNPi2Pi(double angle); 
     private:
+
+
   };
 }
