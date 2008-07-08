@@ -1,3 +1,4 @@
+
 #pragma once
 /***************************************************/
 /*! \brief A PR2 Joint controller
@@ -13,10 +14,19 @@
 //#include <stdint.h>
 //#include <string>
 //#include <libKDL/kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
+
+
 #include <iostream>
 #include <genericControllers/Controller.h>
-#include <genericControllers/pid.h>
+//#include <genericControllers/pid.h>
 
+
+//#define SIMULATOR //Set flag to determine whether we're in the simulator 
+
+#ifdef SIMULATOR
+#include <gazebo/HingeJoint.hh>
+#include <gazebo/SliderJoint.hh>
+#endif
 using namespace std;
 using namespace CONTROLLER;
 
@@ -125,28 +135,49 @@ class JointController : Controller
     CONTROLLER::CONTROLLER_ERROR_CODE getParam(string label, double value);
     CONTROLLER::CONTROLLER_ERROR_CODE getParam(string label, string value);
     
+    //Issues commands to the joint. Should be called at regular intervals
+    virtual void Update(void);
+	
+    //Returns the current mode of the controller
+    CONTROLLER::CONTROLLER_CONTROL_MODE GetMode(void);
   private:
+/*	
+    //Fetches the current time
+    double GetTime(void);
 
+//    //Joint of interest
+//    Joint* myJoint;
     
+    //Internal PID controller
+    pid pidController;
+
+    //Last time stamp of update
+    double lastTime;
+
     //General parameters
     double maxVel; //max velocity
     double maxAcc; //max acceleration
-    double maxTorq; //max torque 
-    string type;
-    CONTROLLER::CONTROLLER_CONTROL_MODE controlMode;      /**< Joint controller control mode >*/
+    double maxTorq; //max torque
 
-    //Control loop parameters
+    string type;
+    CONTROLLER::CONTROLLER_CONTROL_MODE controlMode;      
+    //Control loop parameters- 
     double PGain;
     double IGain;
     double DGain;
     double IMax;
     double IMin;
 
-    Robot* robot;
-    Motor* motor;
+    //Command parameters
+    double cmdTorque;
+    double cmdPos;
+    double cmdVel;
 
-    pid pidController;
+    //Possibly needed interfaces
+//    Robot* robot;
+ //   Motor* motor;
 
+*/
 };
 
 

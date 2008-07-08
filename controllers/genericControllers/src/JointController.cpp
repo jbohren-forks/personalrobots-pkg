@@ -1,12 +1,12 @@
 #include <genericControllers/JointController.h>
-
+/*
+#ifdef SIMULATOR
 //What happens if we're set in velocity mode and we set position>? and vice versa?
 
 JointController::JointController(double pGain, double iGain, double dGain, double iMax, double iMin)
 {	//Instantiate PID class
-	pidController = 
-	//Read in gains for controller
-	//Get motor object in here 
+	pidController(pGain,iGain,dGain,iMax,iMin); //Constructor for pid controller
+
 	//Set dParamFMax = 0 if we're in the simulator mode
 
 	//Member variables
@@ -30,26 +30,26 @@ JointController::setTorque(double torque)
 {	CONTROLLER::CONTROLLER_ERROR_CODE status = CONTROLLER::CONTROLLER_ALL_OK;
 	double newTorque, maxPositiveTorque, maxNegativeTorque;
 
-	if(GetMode == CONTROLLER::CONTROLLER_TORQUE){ //Make sure we're in torque control mode
+	if(GetMode() == CONTROLLER::CONTROLLER_TORQUE){ //Make sure we're in torque control mode
 		
-	//Read the max positive and max negative torque once
-	maxPositiveTorque = robot->actuator[id]->MaxPositiveTorque;
-	maxNegativeTorque = robot->actuator[id]->MaxNegativeTorque;
+		//Read the max positive and max negative torque once
+		maxPositiveTorque = robot->actuator[id]->MaxPositiveTorque;
+		maxNegativeTorque = robot->actuator[id]->MaxNegativeTorque;
 
-	if(torque>maxPositiveTorque){
-		newTorque = maxPositiveTorque;
-		status = CONTROLLER::CONTROLLER_TORQUE_LIMIT; //Hit the positive torque limit
-	}
-	else if (torque< maxNegativeTorque) {
-		newTorque = maxNegativeTorque
-		status = CONTROLLER::CONTROLLER_TORQUE_LIMIT; //Hit the negative torque limit
-	}
-	else newTorque = torque;
+		if(torque>maxPositiveTorque){
+			newTorque = maxPositiveTorque;
+			status = CONTROLLER::CONTROLLER_TORQUE_LIMIT; //Hit the positive torque limit
+		}
+		else if (torque< maxNegativeTorque) {
+			newTorque = maxNegativeTorque
+			status = CONTROLLER::CONTROLLER_TORQUE_LIMIT; //Hit the negative torque limit
+		}
+		else newTorque = torque;
 
-	//Actually set the torque value
-	motor->SetTorque(newTorque);
+		//Actually set the torque value
+		motor->SetTorque(newTorque);
 		
-	return status;
+		return status;
 	}
 	else return CONTROLLER::CONTROLLER_MODE_ERROR;
 }
@@ -66,6 +66,7 @@ JointController::getTorqueCmd(double *torque)
 CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::getTorqueAct(double *torque)
 {
+
 	return CONTROLLER::CONTROLLER_ALL_OK;
 }
 
@@ -77,21 +78,42 @@ JointController::getTorqueAct(double *torque)
 CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::setPos(double pos)
 {
-	
-	return CONTROLLER::CONTROLLER_ALL_OK;
+	if(GetMode() == CONTROLLER::CONTROLLER_POSITION){ //Make sure we're in position command mode
+		cmdPos = pos;	
+		return CONTROLLER::CONTROLLER_ALL_OK;
+	}
+	else return CONTROLLER::CONTROLLER_MODE_ERROR;
 }
 
+//Return the current position command
 CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::getPosCmd(double *pos)
 {
 	*pos = cmdPos;
 	return CONTROLLER::CONTROLLER_ALL_OK;
 }
-//TODO
+
+//
 CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::getPosAct(double *pos)
 {
-	return CONTROLLER::CONTROLLER_ALL_OK;
+	SliderJoint *sjoint;
+	HingeJoint *hjoint;
+	switch(myJoint->GetType()){
+		case Joint::SLIDER:
+			sjoint = dynamic_cast<SliderJoint*>( tmpJoint );
+			*pos = 
+			break;
+		case Joint::HINGE:
+			break;
+		case Joint::HINGE2:
+			break;
+		case Joint::BALL:
+			break;
+		case Joint::UNIVERSAL:
+			break;
+		
+		return CONTROLLER::CONTROLLER_ALL_OK;
 }
 
 //TODO
@@ -101,7 +123,11 @@ JointController::getPosAct(double *pos)
 CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::setVel(double vel)
 {
-	return CONTROLLER::CONTROLLER_ALL_OK;
+	if(GetMode() == CONTROLLER::CONTROLLER_VELOCITY){ //Make sure we're in velocity command mode
+		cmdVel = vel;	
+		return CONTROLLER::CONTROLLER_ALL_OK;
+	}
+	else return CONTROLLER::CONTROLLER_MODE_ERROR;
 }
 
 CONTROLLER::CONTROLLER_ERROR_CODE
@@ -114,6 +140,8 @@ JointController::getVelCmd(double *vel)
 CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::getVelAct(double *vel)
 {
+	SliderJoint *sjoint;
+	HingeJoint *hjoint;
   return CONTROLLER::CONTROLLER_ALL_OK;
 }
 
@@ -146,3 +174,5 @@ virtual void Update(void){
 
 }
 
+#endif
+*/
