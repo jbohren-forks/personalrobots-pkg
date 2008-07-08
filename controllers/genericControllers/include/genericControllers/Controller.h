@@ -12,7 +12,8 @@ namespace CONTROLLER
   {
     CONTROLLER_ALL_OK,
     CONTROLLER_JOINT_LIMIT,
-    CONTROLLER_TORQUE_LIMIT
+    CONTROLLER_TORQUE_LIMIT,
+    CONTROLLER_MODE_INCORRECT //e.g. Position command given while in CONTROLLER_VELOCITY mode
   };
   enum CONTROLLER_CONTROL_MODE
   {
@@ -27,7 +28,8 @@ namespace CONTROLLER
     public:
       Controller();
       ~Controller();
-  
+       
+     virtual void Update();
       static double ModNPi2Pi(double angle); 
     private:
 

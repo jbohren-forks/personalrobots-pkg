@@ -24,3 +24,7 @@ Controller::~Controller()
 {
 }
 
+//Intended to be overwritten by child classes
+virtual void Controller::Update(){
+
+}

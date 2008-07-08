@@ -15,6 +15,7 @@
 //#include <libKDL/kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
 #include <iostream>
 #include <genericControllers/Controller.h>
+#include <genericControllers/pid.h>
 
 using namespace std;
 using namespace CONTROLLER;
@@ -105,9 +106,47 @@ class JointController : Controller
       */
     CONTROLLER::CONTROLLER_ERROR_CODE setParam(string label,double value);
     CONTROLLER::CONTROLLER_ERROR_CODE setParam(string label,string value);
+
+   /*!
+      * \brief Get parameters for this controller
+      *
+      * user can get maximum velocity
+      * and maximum acceleration
+      * constraints for this controller
+      *<br> 
+      *<UL TYPE="none">
+      *<LI> e.g. getParam('maxVel',value);
+      *<LI>   or getParam('maxAcc',value);
+      *<LI>   or getParam('maxTorq',value);
+      *<LI>   or getParam('type', stringValue);
+      *</UL>
+      */
+
+    CONTROLLER::CONTROLLER_ERROR_CODE getParam(string label, double value);
+    CONTROLLER::CONTROLLER_ERROR_CODE getParam(string label, string value);
     
   private:
+
+    
+    //General parameters
+    double maxVel; //max velocity
+    double maxAcc; //max acceleration
+    double maxTorq; //max torque 
+    string type;
     CONTROLLER::CONTROLLER_CONTROL_MODE controlMode;      /**< Joint controller control mode >*/
+
+    //Control loop parameters
+    double PGain;
+    double IGain;
+    double DGain;
+    double IMax;
+    double IMin;
+
+    Robot* robot;
+    Motor* motor;
+
+    pid pidController;
+
 };
 
 
