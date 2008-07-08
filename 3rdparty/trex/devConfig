@@ -1,0 +1,5 @@
+export TREX=`pwd`/TREX
+export PLASMA_HOME=`pwd`/PLASMA
+export PLASMA=$PLASMA_HOME/src/PLASMA
+export TREX_LOG_DIR=$TREX/logs
+export LD_LIBRARY_PATH=$PLASMA_HOME/build/lib:$LD_LIBRARY_PATH
