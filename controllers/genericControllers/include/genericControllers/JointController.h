@@ -18,15 +18,25 @@
 
 #include <iostream>
 #include <genericControllers/Controller.h>
-//#include <genericControllers/pid.h>
+#include <genericControllers/Pid.h>
+#include <libpr2API/pr2API.h>
+#include <libpr2HW/pr2HW.h>
 
-
-//#define SIMULATOR //Set flag to determine whether we're in the simulator 
+/*
+#define SIMULATOR //Set flag to determine whether we're in the simulator 
 
 #ifdef SIMULATOR
+
+#include "gazebo/include/gazebo/Global.hh"
+#include <gazebo/Model.hh>
 #include <gazebo/HingeJoint.hh>
 #include <gazebo/SliderJoint.hh>
+#include <gazebo/Simulator.hh>
+#include <gazebo/gazebo.h>
+#include <gazebo/GazeboError.hh>
+
 #endif
+*/
 using namespace std;
 using namespace CONTROLLER;
 
@@ -45,13 +55,17 @@ class JointController : Controller
       * \brief Destructor of the JointController class.
       */       
     ~JointController( );
-    
+   
+
+    JointController(PR2::PR2Robot* robot, PR2::PR2_JOINT_ID jointID, CONTROLLER::CONTROLLER_CONTROL_MODE mode, double pGain, double iGain, double dGain, double iMax, double iMin);
+
+
     /*!
       * \brief Set the torque of the joint motor.
       * 
       *
       */       
-    CONTROLLER::CONTROLLER_ERROR_CODE setTorque(double torque);
+    CONTROLLER::CONTROLLER_ERROR_CODE SetTorque(double torque);
     
 		/*!
       * \brief Get the torque command of the joint motor.
@@ -140,26 +154,37 @@ class JointController : Controller
 	
     //Returns the current mode of the controller
     CONTROLLER::CONTROLLER_CONTROL_MODE GetMode(void);
-  private:
-/*	
-    //Fetches the current time
-    double GetTime(void);
 
-//    //Joint of interest
-//    Joint* myJoint;
+    //TODO: Get the actual time
+    //Returns the current time
+    PR2::PR2_ERROR_CODE GetTime(double* time);
+
+    //Switches command mode type
+    void SetMode(CONTROLLER::CONTROLLER_CONTROL_MODE mode);
+
+  private:
+
+    //TODO Return from the robot object. For now, just hardcode
+    double GetMaxPosTorque(void);
+    double GetMaxNegTorque(void);
+
+    //Pointer to robot
+    PR2::PR2Robot* myPR2;
+
+    //Joint of interest
+    PR2::PR2_JOINT_ID joint;
     
     //Internal PID controller
-    pid pidController;
+    Pid pidController;
 
     //Last time stamp of update
     double lastTime;
 
     //General parameters
-    double maxVel; //max velocity
+/*    double maxVel; //max velocity
     double maxAcc; //max acceleration
     double maxTorq; //max torque
-
-    string type;
+*/
     CONTROLLER::CONTROLLER_CONTROL_MODE controlMode;      
     //Control loop parameters- 
     double PGain;
@@ -174,10 +199,8 @@ class JointController : Controller
     double cmdVel;
 
     //Possibly needed interfaces
-//    Robot* robot;
  //   Motor* motor;
 
-*/
 };
 
 
