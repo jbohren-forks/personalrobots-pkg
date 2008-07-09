@@ -45,7 +45,7 @@ namespace TREX {
    */
   class PlaybackClock: public Clock {
   public:
-    PlaybackClock(double secondsPerTick, bool stats = true);
+    PlaybackClock(unsigned int finalTick, bool stats = true);
 
     /**
      * @brief Will idle till this is called.
@@ -66,7 +66,7 @@ namespace TREX {
      */
     void consolePopup();
 
-    unsigned int m_gets;
+    unsigned int m_gets, m_finalTick;
     FILE* m_file;
     TICK m_tick, m_stopTick;
   };
