@@ -342,9 +342,16 @@ std::string URDF::extractName(std::vector<const TiXmlAttribute*> &attributes)
     return name;
 }
 
+struct getConstantData
+{
+    std::map<std::string, std::string> *m;
+    std::map<std::string, bool>         s;
+};
+
 static double getConstant(void *data, std::string &name)
 {
-    std::map<std::string, std::string> *m = reinterpret_cast<std::map<std::string, std::string>*>(data);
+    getConstantData *d = reinterpret_cast<getConstantData*>(data);
+    std::map<std::string, std::string> *m = d->m;
     if (m->find(name) == m->end())
     {
 	fprintf(stderr, "Request for undefined constant: '%s'\n", name.c_str());
@@ -353,7 +360,18 @@ static double getConstant(void *data, std::string &name)
     else
     {
 	if (meval::ContainsOperators((*m)[name]))
-	    return meval::EvaluateMathExpression((*m)[name], &getConstant, data);
+	{
+	    std::map<std::string, bool>::iterator pos = d->s.find((*m)[name]);
+	    if (pos != d->s.end() && pos->second == true)
+	    {
+		fprintf(stderr, "Recursive definition of constant '%s'\n", name.c_str());
+		return 0.0;
+	    }
+	    d->s[(*m)[name]] = true;
+	    double result = meval::EvaluateMathExpression((*m)[name], &getConstant, data);
+	    d->s[(*m)[name]] = false;
+	    return result;
+	}
 	else
 	    return atof((*m)[name].c_str());
     }
@@ -373,7 +391,9 @@ unsigned int URDF::loadValues(const TiXmlNode *node, unsigned int count, double 
     {
 	std::string value;
 	ss >> value;
-	vals[i] = meval::EvaluateMathExpression(value, &getConstant, reinterpret_cast<void*>(&m_constants));
+	getConstantData data;
+	data.m = &m_constants;
+	vals[i] = meval::EvaluateMathExpression(value, &getConstant, reinterpret_cast<void*>(&data));
 	read++;
     }
 
