@@ -871,6 +871,14 @@ GazeboNode::Update()
 
   /***************************************************************/
   // for the casters
+  double tmpSteerFL, tmpVelFL;
+  double tmpSteerFR, tmpVelFR;
+  double tmpSteerRL, tmpVelRL;
+  double tmpSteerRR, tmpVelRR;
+  this->myPR2->hw.GetJointServoCmd(PR2::CASTER_FL_STEER, &tmpSteerFL, &tmpVelFL );
+  this->myPR2->hw.GetJointServoCmd(PR2::CASTER_FR_STEER, &tmpSteerFR, &tmpVelFR );
+  this->myPR2->hw.GetJointServoCmd(PR2::CASTER_RL_STEER, &tmpSteerRL, &tmpVelRL );
+  this->myPR2->hw.GetJointServoCmd(PR2::CASTER_RR_STEER, &tmpSteerRR, &tmpVelRR );
   tf.sendInverseEuler(PR2::FRAMEID_CASTER_FL_BODY,
                       PR2::FRAMEID_BASE,
                       PR2::BASE_BODY_OFFSETS[0].x,
@@ -878,7 +886,7 @@ GazeboNode::Update()
                       PR2::BASE_BODY_OFFSETS[0].z,
                       0.0,
                       0.0,
-                      rarm.wristRollAngle,
+                      tmpSteerFL,
                       odomMsg.header.stamp.sec,
                       odomMsg.header.stamp.nsec);
   tf.sendInverseEuler(PR2::FRAMEID_CASTER_FL_WHEEL_L,
@@ -909,7 +917,7 @@ GazeboNode::Update()
                       PR2::BASE_BODY_OFFSETS[3].z,
                       0.0,
                       0.0,
-                      rarm.wristRollAngle,
+                      tmpSteerFR,
                       odomMsg.header.stamp.sec,
                       odomMsg.header.stamp.nsec);
   tf.sendInverseEuler(PR2::FRAMEID_CASTER_FR_WHEEL_L,
@@ -940,7 +948,7 @@ GazeboNode::Update()
                       PR2::BASE_BODY_OFFSETS[6].z,
                       0.0,
                       0.0,
-                      rarm.wristRollAngle,
+                      tmpSteerRL,
                       odomMsg.header.stamp.sec,
                       odomMsg.header.stamp.nsec);
   tf.sendInverseEuler(PR2::FRAMEID_CASTER_RL_WHEEL_L,
@@ -971,7 +979,7 @@ GazeboNode::Update()
                       PR2::BASE_BODY_OFFSETS[9].z,
                       0.0,
                       0.0,
-                      rarm.wristRollAngle,
+                      tmpSteerRR,
                       odomMsg.header.stamp.sec,
                       odomMsg.header.stamp.nsec);
   tf.sendInverseEuler(PR2::FRAMEID_CASTER_RR_WHEEL_L,
