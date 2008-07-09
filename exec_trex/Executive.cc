@@ -165,19 +165,17 @@ int main(int argc, char **argv)
 
   bool playback = false;
 
-  if (argc != 2 && argc != 3) {
-    std::cerr << "Invalid argument list: Usage: exec_trex_o_rt configfile <playback>" 
-	      << std::endl << "Include \"playback\" for playback of logs." << std::endl;
+  if (argc != 2) {
+    std::cerr << "Invalid argument list: Usage: exec_trex_o_rt configfile" << std::endl;
     return -1;
   }
 
-  if (argc == 3) {
-    std::cout << "Playback enabled" << endl;
-    playback = true;
-  }
-
-  
   LogManager::instance();
+
+  char * configFile = argv[1];
+  root = LogManager::initXml( configFile );
+
+  playback = root->Attribute("playback") ? true : false;
 
   if (!playback) {
     logger = Logger::request();
@@ -190,13 +188,14 @@ int main(int argc, char **argv)
 
   NDDL::loadSchema();
 
-  char * configFile = argv[1];
-  root = LogManager::initXml( configFile );
   DebugMessage::setStream(dbgFile);
+
+  int finalTick = 1;
+  root->Attribute("finalTick", &finalTick);
 
   //agentClock = new RealTimeClock(0.25);
   if (playback) {
-    agentClock = new PlaybackClock(0.25);
+    agentClock = new PlaybackClock(finalTick);
   } else {
     // Allocate a real time clock with 1 second per tick
     agentClock = new LogClock(0.25);

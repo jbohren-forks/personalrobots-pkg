@@ -50,9 +50,9 @@ namespace TREX {
   /**
    * Playback clock.
    */
-  PlaybackClock::PlaybackClock(double secondsPerTick, bool stats)
+  PlaybackClock::PlaybackClock(unsigned int finalTick, bool stats)
     : Clock(0, stats),
-      m_gets(0), m_tick(0) {
+      m_gets(0), m_finalTick(finalTick), m_tick(0) {
     m_file = fopen("clock.log", "r");
     if (!m_file) {
       std::cerr << "No clock.log file for playback." << std::endl;
@@ -149,7 +149,7 @@ namespace TREX {
 	consolePopup();
       }
       fscanf(m_file, "%u\n", &m_gets);
-      if (m_gets == 0) {
+      if (m_tick == m_finalTick) {
 	Agent::terminate();
 	return m_tick;
       }
