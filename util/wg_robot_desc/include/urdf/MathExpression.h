@@ -41,25 +41,34 @@
     
     Evaluate simple mathematical expressions */
 
-/** \brief Callback for evaluating a variable */
-typedef double (*ExpressionVariableFn)(void *, std::string&);
-
-/** Given a mathematical expression in string format, compute
- * what this expression evaluates to.  The expression can be
- * arbitrarily parenthesised, but can only include the +, -, *, /
- * mathematical operators. In addition to floating point constants,
- * this function allows the use of named constants, if a callback is
- * provided to evaluate those named constants. A data pointer for the
- * callback is provided for convenience. */
-double EvaluateMathExpression(const char        *expression, ExpressionVariableFn var = NULL, void *data = NULL);
-
-/** Given a mathematical expression in string format, compute
- * what this expression evaluates to.  The expression can be
- * arbitrarily parenthesised, but can only include the +, -, *, /
- * mathematical operators. In addition to floating point constants,
- * this function allows the use of named constants, if a callback is
- * provided to evaluate those named constants. A data pointer for the
- * callback is provided for convenience. */
-double EvaluateMathExpression(const std::string &expression, ExpressionVariableFn var = NULL, void *data = NULL);
+namespace meval
+{
+    
+    /** \brief Callback for evaluating a variable */
+    typedef double (*ExpressionVariableFn)(void *, std::string&);
+    
+    /** Given a mathematical expression in string format, compute
+     * what this expression evaluates to.  The expression can be
+     * arbitrarily parenthesised, but can only include the +, -, *, /
+     * mathematical operators. In addition to floating point constants,
+     * this function allows the use of named constants, if a callback is
+     * provided to evaluate those named constants. A data pointer for the
+     * callback is provided for convenience. */
+    double EvaluateMathExpression(const char        *expression, ExpressionVariableFn var = NULL, void *data = NULL);
+    
+    /** Given a mathematical expression in string format, compute
+     * what this expression evaluates to.  The expression can be
+     * arbitrarily parenthesised, but can only include the +, -, *, /
+     * mathematical operators. In addition to floating point constants,
+     * this function allows the use of named constants, if a callback is
+     * provided to evaluate those named constants. A data pointer for the
+     * callback is provided for convenience. */
+    double EvaluateMathExpression(const std::string &expression, ExpressionVariableFn var = NULL, void *data = NULL);
+    
+    bool   ContainsOperators(const char        *expression);
+    bool   ContainsOperators(const std::string &expression);
+    
+}
 
 #endif
+

@@ -37,12 +37,22 @@
 #include <cmath>
 #include <deque>
 
-double EvaluateMathExpression(const char  *expression, ExpressionVariableFn var, void *data)
+bool meval::ContainsOperators(const char        *expression)
+{
+    return ContainsOperators(std::string(expression));
+}
+
+bool meval::ContainsOperators(const std::string &expression)
+{
+    return expression.find_first_of("+-*/") != std::string::npos;
+}
+
+double meval::EvaluateMathExpression(const char  *expression, ExpressionVariableFn var, void *data)
 {
     return EvaluateMathExpression(std::string(expression), var, data);
 }
 
-double EvaluateMathExpression(const std::string &expression, ExpressionVariableFn var, void *data)
+double meval::EvaluateMathExpression(const std::string &expression, ExpressionVariableFn var, void *data)
 {
     std::string exp = expression;
     while (!exp.empty())

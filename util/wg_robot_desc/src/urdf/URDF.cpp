@@ -351,7 +351,12 @@ static double getConstant(void *data, std::string &name)
 	return 0.0;
     }
     else
-        return atof((*m)[name].c_str());
+    {
+	if (meval::ContainsOperators((*m)[name]))
+	    return meval::EvaluateMathExpression((*m)[name], &getConstant, data);
+	else
+	    return atof((*m)[name].c_str());
+    }
 }
 
 unsigned int URDF::loadValues(const TiXmlNode *node, unsigned int count, double *vals)
@@ -368,7 +373,7 @@ unsigned int URDF::loadValues(const TiXmlNode *node, unsigned int count, double 
     {
 	std::string value;
 	ss >> value;
-	vals[i] = EvaluateMathExpression(value, &getConstant, reinterpret_cast<void*>(&m_constants));
+	vals[i] = meval::EvaluateMathExpression(value, &getConstant, reinterpret_cast<void*>(&m_constants));
 	read++;
     }
 
