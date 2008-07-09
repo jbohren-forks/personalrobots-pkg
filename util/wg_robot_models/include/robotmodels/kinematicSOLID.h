@@ -32,70 +32,69 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include <robotmodels/kinematicODE.h>
+#ifndef KINEMATIC_ROBOT_SOLID_MODEL_
+#define KINEMATIC_ROBOT_SOLID_MODEL_
 
-void KinematicModelODE::build(URDF &model, const char *group)
-{
-    KinematicModel::build(model, group);
-    m_space = dHashSpaceCreate(0);
-    for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
-	buildODEGeoms(m_robots[i]);
-}
+#include <robotmodels/kinematic.h>
+#include <SOLID/solid.h>
 
-void KinematicModelODE::setGeomPose(dGeomID geom, libTF::Pose3D &pose) const
-{
-    libTF::Pose3D::Position pos = pose.getPosition();
-    dGeomSetPosition(geom, pos.x, pos.y, pos.z);
-    libTF::Pose3D::Quaternion quat = pose.getQuaternion();
-    dQuaternion q; q[0] = quat.w; q[1] = quat.x; q[2] = quat.y; q[3] = quat.z;
-    dGeomSetQuaternion(geom, q);
-}
+/** @htmlinclude ../../manifest.html
 
-void KinematicModelODE::updateCollisionPositions(void)
-{
-    for (unsigned int i = 0 ; i < m_kgeoms.size() ; ++i)
-	setGeomPose(m_kgeoms[i].geom, m_kgeoms[i].link->globalTrans);
-}
+    A class describing a kinematic robot model loaded from URDF.
+    This class also provides collision detection with FreeSOLID. */
 
-void KinematicModelODE::buildODEGeoms(Robot *robot)
+class KinematicModelSOLID : public KinematicModel
 {
-    //   double params[robot->stateDimension];
-    //    for (unsigned int i = 0 ; i < robot->stateDimension ; ++i)
-    //	params[i] = (robot->stateBounds[i * 2] + robot->stateBounds[i * 2 + 1]) / 2.0;
-    //    robot->computeTransforms(params);
-    for (unsigned int i = 0 ; i < robot->links.size() ; ++i)
-    {
-	kGeom kg;
-	kg.link = robot->links[i];
-	kg.geom = buildODEGeom(robot->links[i]->geom);
-	if (!kg.geom) continue;
-	m_kgeoms.push_back(kg);
-    }
-}
-
-dGeomID KinematicModelODE::buildODEGeom(Geometry *geom)
-{
-    dGeomID g = NULL;
+ public:
     
-    switch (geom->type)
+    struct kObject
     {
-    case Geometry::SPHERE:
-	g = dCreateSphere(m_space, geom->size[0]);
-	break;
-    case Geometry::BOX:
-	g = dCreateBox(m_space, geom->size[0], geom->size[1], geom->size[2]);
-	break;
-    case Geometry::CYLINDER:
-	g = dCreateCylinder(m_space, geom->size[0], geom->size[1]);
-	break;
-    default:
-	break;
+	unsigned int id;	
+    };
+    
+    KinematicModelSOLID(void) : KinematicModel()
+    {
     }
     
-    return g;
-}
+    virtual ~KinematicModelSOLID(void)
+    {
 
-dSpaceID KinematicModelODE::getODESpace(void) const
-{
-    return m_space;
-}
+    }
+
+    virtual void build(URDF &model, const char *group = NULL);
+
+ protected:
+    
+    struct kShape
+    {
+	kShape(void)
+	{
+	    obj = new kObject();
+            shape = NULL;
+	    link = NULL;
+	}
+
+	~kShape(void)
+	{
+	    dtDeleteObject(obj);
+	    dtDeleteShape(shape);
+	    if (obj)
+		delete obj;
+	}	
+	
+        kObject   *obj;	
+	DtShapeRef shape;
+	Link      *link;	
+    };
+
+    std::vector<kShape> m_kshapes;
+    
+    void buildSOLIDShapes(Robot *robot);
+    DtShapeRef buildSOLIDShape(Geometry *geom);
+    
+
+
+    
+};
+
+#endif

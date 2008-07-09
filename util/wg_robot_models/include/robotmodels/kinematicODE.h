@@ -60,11 +60,21 @@ class KinematicModelODE : public KinematicModel
 
     virtual void build(URDF &model, const char *group = NULL);
     dSpaceID getODESpace(void) const;
+    void updateCollisionPositions(void);
     
+
  protected:
     
     dSpaceID m_space;
     
+    struct kGeom
+    {
+	dGeomID geom;
+	Link   *link;
+    };
+    
+    std::vector<kGeom> m_kgeoms;    
+
     void buildODEGeoms(Robot *robot);
     dGeomID buildODEGeom(Geometry *geom);
     void setGeomPose(dGeomID geom, libTF::Pose3D &pose) const;

@@ -157,7 +157,7 @@ class KinematicModel
 	    stateDimension = 0;
 	}
 	
-	~Robot(void)
+	virtual ~Robot(void)
 	{
 	    if (chain)
 		delete chain;

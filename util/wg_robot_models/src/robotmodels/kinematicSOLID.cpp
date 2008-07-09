@@ -32,70 +32,47 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include <robotmodels/kinematicODE.h>
+#include <robotmodels/kinematicSOLID.h>
 
-void KinematicModelODE::build(URDF &model, const char *group)
+void KinematicModelSOLID::build(URDF &model, const char *group)
 {
     KinematicModel::build(model, group);
-    m_space = dHashSpaceCreate(0);
     for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
-	buildODEGeoms(m_robots[i]);
+	buildSOLIDShapes(m_robots[i]);  
+    dtDisableCaching();
 }
 
-void KinematicModelODE::setGeomPose(dGeomID geom, libTF::Pose3D &pose) const
+void KinematicModelSOLID::buildSOLIDShapes(Robot *robot)
 {
-    libTF::Pose3D::Position pos = pose.getPosition();
-    dGeomSetPosition(geom, pos.x, pos.y, pos.z);
-    libTF::Pose3D::Quaternion quat = pose.getQuaternion();
-    dQuaternion q; q[0] = quat.w; q[1] = quat.x; q[2] = quat.y; q[3] = quat.z;
-    dGeomSetQuaternion(geom, q);
-}
-
-void KinematicModelODE::updateCollisionPositions(void)
-{
-    for (unsigned int i = 0 ; i < m_kgeoms.size() ; ++i)
-	setGeomPose(m_kgeoms[i].geom, m_kgeoms[i].link->globalTrans);
-}
-
-void KinematicModelODE::buildODEGeoms(Robot *robot)
-{
-    //   double params[robot->stateDimension];
-    //    for (unsigned int i = 0 ; i < robot->stateDimension ; ++i)
-    //	params[i] = (robot->stateBounds[i * 2] + robot->stateBounds[i * 2 + 1]) / 2.0;
-    //    robot->computeTransforms(params);
     for (unsigned int i = 0 ; i < robot->links.size() ; ++i)
     {
-	kGeom kg;
-	kg.link = robot->links[i];
-	kg.geom = buildODEGeom(robot->links[i]->geom);
-	if (!kg.geom) continue;
-	m_kgeoms.push_back(kg);
+	kShape ks;
+	ks.link = robot->links[i];
+	ks.shape = buildSOLIDShape(robot->links[i]->geom);
+	if (!ks.shape) continue;
+	dtCreateObject(ks.obj, ks.shape);	
+	m_kshapes.push_back(ks);
     }
 }
 
-dGeomID KinematicModelODE::buildODEGeom(Geometry *geom)
+DtShapeRef KinematicModelSOLID::buildSOLIDShape(Geometry *geom)
 {
-    dGeomID g = NULL;
+    DtShapeRef g = NULL;
     
     switch (geom->type)
     {
     case Geometry::SPHERE:
-	g = dCreateSphere(m_space, geom->size[0]);
+	g = dtSphere(geom->size[0]);
 	break;
     case Geometry::BOX:
-	g = dCreateBox(m_space, geom->size[0], geom->size[1], geom->size[2]);
+	g = dtBox(geom->size[0], geom->size[1], geom->size[2]);
 	break;
     case Geometry::CYLINDER:
-	g = dCreateCylinder(m_space, geom->size[0], geom->size[1]);
+	g = dtCylinder(geom->size[0], geom->size[1]);
 	break;
     default:
 	break;
     }
     
     return g;
-}
-
-dSpaceID KinematicModelODE::getODESpace(void) const
-{
-    return m_space;
 }

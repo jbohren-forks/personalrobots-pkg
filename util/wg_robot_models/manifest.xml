@@ -9,6 +9,7 @@
 
   <depend package="wg_robot_desc"/>
   <depend package="libTF"/>
+  <depend package="freesolid"/>
   <depend package="opende"/>
   <depend package="drawstuff"/>
 
