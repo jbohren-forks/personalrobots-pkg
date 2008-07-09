@@ -1,3 +1,3 @@
-SRC = pr2SimRT.cc
-OUT = pr2SimRT
+SRC = pr2MechCon.cc
+OUT = pr2MechCon
 include $(shell rospack find mk)/cmake.mk
