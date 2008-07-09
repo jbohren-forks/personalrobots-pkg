@@ -25,6 +25,12 @@
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <libpr2API/pr2API.h>
+#include <pr2Controllers/GripperController.h>
+#include <pr2Controllers/ArmController.h>
+#include <pr2Controllers/HeadController.h>
+#include <pr2Controllers/SpineController.h>
+#include <pr2Controllers/LaserScannerController.h>
+#include <pr2Controllers/BaseController.h>
 #include "ringbuffer.h"
 
 // roscpp
@@ -54,7 +60,7 @@
 #include <signal.h>
 
 // Our node
-class GazeboNode : public ros::node
+class RosGazeboNode : public ros::node
 {
   private:
     // Messages that we'll send or receive
@@ -81,15 +87,17 @@ class GazeboNode : public ros::node
     // used to generate Gaussian noise (for PCD)
     double GaussianKernel(double mu,double sigma);
 
+    // used to generate Gaussian noise (for PCD)
+    PR2::PR2Robot *PR2Copy;
 
   public:
     // Constructor; stage itself needs argc/argv.  fname is the .world file
     // that stage should load.
-    GazeboNode(int argc, char** argv, const char* fname);
-    ~GazeboNode();
+    RosGazeboNode(int argc, char** argv, const char* fname,PR2::PR2Robot *myPR2);
+    ~RosGazeboNode();
 
     // advertise / subscribe models
-    int SubscribeModels();
+    int AdvertiseSubscribeMessages();
 
     // Do one update of the simulator.  May pause if the next update time
     // has not yet arrived.
@@ -113,10 +121,6 @@ class GazeboNode : public ros::node
     std_msgs::PR2Arm leftarm;
     std_msgs::PR2Arm rightarm;
 
-
-    // The main simulator object
-    PR2::PR2Robot* myPR2;
-
     // for the point cloud data
     ringBuffer<std_msgs::Point3DFloat32> *cloud_pts;
     ringBuffer<float>                    *cloud_ch1;
@@ -129,7 +133,7 @@ class GazeboNode : public ros::node
 };
 
 void
-GazeboNode::cmd_rightarmconfigReceived()
+RosGazeboNode::cmd_rightarmconfigReceived()
 {
   this->lock.lock();
   /*
@@ -152,25 +156,25 @@ GazeboNode::cmd_rightarmconfigReceived()
                             this->rightarm.gripperGapCmd};
   double jointSpeed[] = {0,0,0,0,0,0,0,0};
 
-//  this->myPR2->SetArmJointPosition(PR2::PR2_LEFT_ARM, jointPosition, jointSpeed);
+  //  this->PR2Copy->SetArmJointPosition(PR2::PR2_LEFT_ARM, jointPosition, jointSpeed);
   */
   //*
-  this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_PAN           , this->rightarm.turretAngle,       0);
-  this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, this->rightarm.shoulderLiftAngle, 0);
-  this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_ROLL , this->rightarm.upperarmRollAngle, 0);
-  this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_PITCH   , this->rightarm.elbowAngle,        0);
-  this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    , this->rightarm.forearmRollAngle,  0);
-  this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , this->rightarm.wristPitchAngle,   0);
-  this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , this->rightarm.wristRollAngle,    0);
-  this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER       , this->rightarm.gripperGapCmd,     0);
-  this->myPR2->hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, this->rightarm.gripperGapCmd, this->rightarm.gripperForceCmd);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_PAN           , this->rightarm.turretAngle,       0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, this->rightarm.shoulderLiftAngle, 0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_ROLL , this->rightarm.upperarmRollAngle, 0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_PITCH   , this->rightarm.elbowAngle,        0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    , this->rightarm.forearmRollAngle,  0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , this->rightarm.wristPitchAngle,   0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , this->rightarm.wristRollAngle,    0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER       , this->rightarm.gripperGapCmd,     0);
+  this->PR2Copy->hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, this->rightarm.gripperGapCmd, this->rightarm.gripperForceCmd);
   //*/
   this->lock.unlock();
 }
 
 
 void
-GazeboNode::cmd_leftarmconfigReceived()
+RosGazeboNode::cmd_leftarmconfigReceived()
 {
   this->lock.lock();
   /*
@@ -183,25 +187,25 @@ GazeboNode::cmd_leftarmconfigReceived()
                             this->leftarm.wristRollAngle,
                             this->leftarm.gripperGapCmd};
   double jointSpeed[] = {0,0,0,0,0,0,0,0};
-  this->myPR2->SetArmJointPosition(PR2::PR2_LEFT_ARM, jointPosition, jointSpeed);
+  this->PR2Copy->SetArmJointPosition(PR2::PR2_LEFT_ARM, jointPosition, jointSpeed);
   */
 
   //*
-  this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_PAN           , this->leftarm.turretAngle,       0);
-  this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_PITCH, this->leftarm.shoulderLiftAngle, 0);
-  this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_ROLL , this->leftarm.upperarmRollAngle, 0);
-  this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_PITCH   , this->leftarm.elbowAngle,        0);
-  this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_ROLL    , this->leftarm.forearmRollAngle,  0);
-  this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_WRIST_PITCH   , this->leftarm.wristPitchAngle,   0);
-  this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_WRIST_ROLL    , this->leftarm.wristRollAngle,    0);
-//  this->myPR2->SetJointServoCmd(PR2::ARM_L_GRIPPER       , this->leftarm.gripperGapCmd,     0);
-  this->myPR2->hw.CloseGripper(PR2::PR2_LEFT_GRIPPER, this->leftarm.gripperGapCmd, this->leftarm.gripperForceCmd);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_PAN           , this->leftarm.turretAngle,       0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_PITCH, this->leftarm.shoulderLiftAngle, 0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_ROLL , this->leftarm.upperarmRollAngle, 0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_PITCH   , this->leftarm.elbowAngle,        0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_ROLL    , this->leftarm.forearmRollAngle,  0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_WRIST_PITCH   , this->leftarm.wristPitchAngle,   0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_WRIST_ROLL    , this->leftarm.wristRollAngle,    0);
+  // this->PR2Copy->SetJointServoCmd(PR2::ARM_L_GRIPPER       , this->leftarm.gripperGapCmd,     0);
+  this->PR2Copy->hw.CloseGripper(PR2::PR2_LEFT_GRIPPER, this->leftarm.gripperGapCmd, this->leftarm.gripperForceCmd);
   //*/
   this->lock.unlock();
 }
 
 void
-GazeboNode::cmdvelReceived()
+RosGazeboNode::cmdvelReceived()
 {
   this->lock.lock();
   double dt;
@@ -209,7 +213,7 @@ GazeboNode::cmdvelReceived()
 
   // smooth out the commands by time decay
   // with w1,w2=1, this means equal weighting for new command every second
-  this->myPR2->GetTime(&(this->simTime));
+  this->PR2Copy->GetTime(&(this->simTime));
   dt = simTime - lastTime;
 
   // smooth if dt is larger than zero
@@ -228,19 +232,19 @@ GazeboNode::cmdvelReceived()
 
   // std::cout << "received cmd: vx " << this->velMsg.vx << " vw " <<  this->velMsg.vw
   //           << " vxsmoo " << this->vxSmooth << " vxsmoo " <<  this->vwSmooth
-  //           << " | steer erros: " << this->myPR2->BaseSteeringAngleError() << " - " <<  M_PI/100.0
+  //           << " | steer erros: " << this->PR2Copy->BaseSteeringAngleError() << " - " <<  M_PI/100.0
   //           << std::endl;
 
   // 2dnav: if steering angle is wrong, don't move or move slowly
-  if (this->myPR2->BaseSteeringAngleError() > M_PI/100.0)
+  if (this->PR2Copy->BaseSteeringAngleError() > M_PI/100.0)
   {
     // set steering angle only
-    this->myPR2->SetBaseSteeringAngle    (this->vxSmooth,0.0,this->vwSmooth);
+    this->PR2Copy->SetBaseSteeringAngle    (this->vxSmooth,0.0,this->vwSmooth);
   }
   else
   {
     // set base velocity
-    this->myPR2->SetBaseCartesianSpeedCmd(this->vxSmooth, 0.0, this->vwSmooth);
+    this->PR2Copy->SetBaseCartesianSpeedCmd(this->vxSmooth, 0.0, this->vwSmooth);
   }
 
   // TODO: this is a hack, need to rewrite
@@ -248,7 +252,7 @@ GazeboNode::cmdvelReceived()
   if (this->velMsg.vx == 0.0)
   {
     // set base velocity
-    this->myPR2->SetBaseCartesianSpeedCmd(this->vxSmooth, 0.0, this->vwSmooth);
+    this->PR2Copy->SetBaseCartesianSpeedCmd(this->vxSmooth, 0.0, this->vwSmooth);
   }
 
   this->lastTime = this->simTime;
@@ -256,23 +260,14 @@ GazeboNode::cmdvelReceived()
   this->lock.unlock();
 }
 
-GazeboNode::GazeboNode(int argc, char** argv, const char* fname) :
-        ros::node("pr2SimRT"),tf(*this)
+RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname, PR2::PR2Robot *myPR2) :
+        ros::node("rosgazebo"),tf(*this)
 {
+  // accept passed in robot
+  this->PR2Copy = myPR2;
+
   // initialize random seed
   srand(time(NULL));
-
-  // Initialize robot object
-  this->myPR2 = new PR2::PR2Robot();
-  // Initialize connections
-  this->myPR2->InitializeRobot();
-  // Set control mode for the base
-  this->myPR2->SetBaseControlMode(PR2::PR2_CARTESIAN_CONTROL);
-  // this->myPR2->SetJointControlMode(PR2::CASTER_FL_STEER, PR2::TORQUE_CONTROL);
-  // this->myPR2->SetJointControlMode(PR2::CASTER_FR_STEER, PR2::TORQUE_CONTROL);
-  // this->myPR2->SetJointControlMode(PR2::CASTER_RL_STEER, PR2::TORQUE_CONTROL);
-  // this->myPR2->SetJointControlMode(PR2::CASTER_RR_STEER, PR2::TORQUE_CONTROL);
-
 
   // Initialize ring buffer for point cloud data
   this->cloud_pts = new ringBuffer<std_msgs::Point3DFloat32>();
@@ -283,30 +278,13 @@ GazeboNode::GazeboNode(int argc, char** argv, const char* fname) :
   this->cloud_pts->allocate(this->max_cloud_pts);
   this->cloud_ch1->allocate(this->max_cloud_pts);
 
-  // Set control mode for the arms
-  // FIXME: right now this just sets default to pd control
-  //this->myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM, PR2::PR2_JOINT_CONTROL);
-  //this->myPR2->SetArmControlMode(PR2::PR2_LEFT_ARM, PR2::PR2_JOINT_CONTROL);
-  //------------------------------------------------------------
+  // initialize times
+  this->PR2Copy->GetTime(&(this->lastTime));
+  this->PR2Copy->GetTime(&(this->simTime));
 
-  this->myPR2->EnableGripperLeft();
-  this->myPR2->EnableGripperRight();
-
-  this->myPR2->GetTime(&(this->lastTime));
-  this->myPR2->GetTime(&(this->simTime));
-
-  // set torques for driving the robot wheels
-  // this->myPR2->hw.SetJointTorque(PR2::CASTER_FL_DRIVE_L, 1000.0 );
-  // this->myPR2->hw.SetJointTorque(PR2::CASTER_FR_DRIVE_L, 1000.0 );
-  // this->myPR2->hw.SetJointTorque(PR2::CASTER_RL_DRIVE_L, 1000.0 );
-  // this->myPR2->hw.SetJointTorque(PR2::CASTER_RR_DRIVE_L, 1000.0 );
-  // this->myPR2->hw.SetJointTorque(PR2::CASTER_FL_DRIVE_R, 1000.0 );
-  // this->myPR2->hw.SetJointTorque(PR2::CASTER_FR_DRIVE_R, 1000.0 );
-  // this->myPR2->hw.SetJointTorque(PR2::CASTER_RL_DRIVE_R, 1000.0 );
-  // this->myPR2->hw.SetJointTorque(PR2::CASTER_RR_DRIVE_R, 1000.0 );
 }
 
-void GazeboNode::finalize(int)
+void RosGazeboNode::finalize(int)
 {
   fprintf(stderr,"Caught sig, clean-up and exit\n");
   sleep(1);
@@ -315,7 +293,7 @@ void GazeboNode::finalize(int)
 
 
 int
-GazeboNode::SubscribeModels()
+RosGazeboNode::AdvertiseSubscribeMessages()
 {
   //advertise<std_msgs::LaserScan>("laser");
   advertise<std_msgs::LaserScan>("scan");
@@ -328,20 +306,19 @@ GazeboNode::SubscribeModels()
   advertise<std_msgs::PR2Arm>("right_pr2arm_pos");
   advertise<rostools::Time>("time");
 
-  subscribe("cmd_vel", velMsg, &GazeboNode::cmdvelReceived);
-  subscribe("cmd_leftarmconfig", leftarm, &GazeboNode::cmd_leftarmconfigReceived);
-  subscribe("cmd_rightarmconfig", rightarm, &GazeboNode::cmd_rightarmconfigReceived);
-
+  subscribe("cmd_vel", velMsg, &RosGazeboNode::cmdvelReceived);
+  subscribe("cmd_leftarmconfig", leftarm, &RosGazeboNode::cmd_leftarmconfigReceived);
+  subscribe("cmd_rightarmconfig", rightarm, &RosGazeboNode::cmd_rightarmconfigReceived);
 
   return(0);
 }
 
-GazeboNode::~GazeboNode()
+RosGazeboNode::~RosGazeboNode()
 {
 }
 
 double
-GazeboNode::GaussianKernel(double mu,double sigma)
+RosGazeboNode::GaussianKernel(double mu,double sigma)
 {
   // using Box-Muller transform to generate two independent standard normally disbributed normal variables
   // see wikipedia
@@ -356,7 +333,7 @@ GazeboNode::GaussianKernel(double mu,double sigma)
 }
 
 void
-GazeboNode::Update()
+RosGazeboNode::Update()
 {
   this->lock.lock();
 
@@ -375,7 +352,7 @@ GazeboNode::Update()
   /*  laser - pitching                                           */
   /*                                                             */
   /***************************************************************/
-  if (this->myPR2->hw.GetLaserRanges(PR2::LASER_HEAD,
+  if (this->PR2Copy->hw.GetLaserRanges(PR2::LASER_HEAD,
                 &angle_min, &angle_max, &angle_increment,
                 &range_max, &ranges_size     , &ranges_alloc_size,
                 &intensities_size, &intensities_alloc_size,
@@ -385,7 +362,7 @@ GazeboNode::Update()
     {
       // get laser pitch angle
       double laser_yaw, laser_pitch, laser_pitch_rate;
-      this->myPR2->hw.GetJointServoActual(PR2::HEAD_LASER_PITCH , &laser_pitch,  &laser_pitch_rate);
+      this->PR2Copy->hw.GetJointServoActual(PR2::HEAD_LASER_PITCH , &laser_pitch,  &laser_pitch_rate);
       // get laser yaw angle
       laser_yaw = angle_min + (double)i * angle_increment;
       //std::cout << " pit " << laser_pitch << "yaw " << laser_yaw
@@ -450,7 +427,7 @@ GazeboNode::Update()
   /*  publish time                                               */
   /*                                                             */
   /***************************************************************/
-  this->myPR2->GetTime(&(this->simTime));
+  this->PR2Copy->GetTime(&(this->simTime));
   timeMsg.rostime.sec  = (unsigned long)floor(this->simTime);
   timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->laserMsg.header.stamp.sec) );
   publish("time",timeMsg);
@@ -460,7 +437,7 @@ GazeboNode::Update()
   /*  laser - base                                               */
   /*                                                             */
   /***************************************************************/
-  if (this->myPR2->hw.GetLaserRanges(PR2::LASER_BASE,
+  if (this->PR2Copy->hw.GetLaserRanges(PR2::LASER_BASE,
                 &angle_min, &angle_max, &angle_increment,
                 &range_max, &ranges_size     , &ranges_alloc_size,
                 &intensities_size, &intensities_alloc_size,
@@ -498,18 +475,18 @@ GazeboNode::Update()
   // Get latest odometry data
   // Get velocities
   double vx,vy,vw;
-  this->myPR2->GetBaseCartesianSpeedActual(&vx,&vy,&vw);
+  this->PR2Copy->GetBaseCartesianSpeedActual(&vx,&vy,&vw);
   // Translate into ROS message format and publish
   this->odomMsg.vel.x  = vx;
   this->odomMsg.vel.y  = vy;
   this->odomMsg.vel.th = vw;
 
   // Get position
-  double x,y,z,roll,pitch,th;
-  this->myPR2->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&th);
+  double x,y,z,roll,pitch,yaw;
+  this->PR2Copy->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw);
   this->odomMsg.pos.x  = x;
   this->odomMsg.pos.y  = y;
-  this->odomMsg.pos.th = th;
+  this->odomMsg.pos.th = yaw;
   // this->odomMsg.stall = this->positionmodel->Stall();
 
   // TODO: get the frame ID from somewhere
@@ -550,8 +527,8 @@ GazeboNode::Update()
   static unsigned char  buf[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
 
   // get image
-  //this->myPR2->hw.GetCameraImage(PR2::CAMERA_GLOBAL,
-  this->myPR2->hw.GetCameraImage(PR2::CAMERA_HEAD_RIGHT,
+  //this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_GLOBAL,
+  this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_HEAD_RIGHT,
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
@@ -584,12 +561,12 @@ GazeboNode::Update()
   simPitchOffset = -M_PI / 8.0;
   simPitchAngle = simPitchOffset + simPitchAmp * sin(this->simTime * simPitchTimeScale);
   simPitchRate  =  simPitchAmp * simPitchTimeScale * cos(this->simTime * simPitchTimeScale); // TODO: check rate correctness
-  this->myPR2->GetTime(&this->simTime);
+  this->PR2Copy->GetTime(&this->simTime);
   //std::cout << "sim time: " << this->simTime << std::endl;
   //std::cout << "ang: " << simPitchAngle*180.0/M_PI << "rate: " << simPitchRate*180.0/M_PI << std::endl;
-  this->myPR2->hw.SetJointTorque(PR2::HEAD_LASER_PITCH , 1000.0);
-  this->myPR2->hw.SetJointGains(PR2::HEAD_LASER_PITCH, 10.0, 0.0, 0.0);
-  this->myPR2->hw.SetJointServoCmd(PR2::HEAD_LASER_PITCH , simPitchAngle, simPitchRate);
+  this->PR2Copy->hw.SetJointTorque(PR2::HEAD_LASER_PITCH , 1000.0);
+  this->PR2Copy->hw.SetJointGains(PR2::HEAD_LASER_PITCH, 10.0, 0.0, 0.0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::HEAD_LASER_PITCH , simPitchAngle, simPitchRate);
 
   if (dAngle * simPitchRate < 0.0)
   {
@@ -611,61 +588,493 @@ GazeboNode::Update()
   std_msgs::PR2Arm larm, rarm;
   
   /* get left arm position */
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_PAN,            &position, &velocity);
+  this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_L_PAN,            &position, &velocity);
   larm.turretAngle       = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_SHOULDER_PITCH, &position, &velocity);
+  this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_L_SHOULDER_PITCH, &position, &velocity);
   larm.shoulderLiftAngle = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_SHOULDER_ROLL,  &position, &velocity);
+  this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_L_SHOULDER_ROLL,  &position, &velocity);
   larm.upperarmRollAngle = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_ELBOW_PITCH,    &position, &velocity);
+  this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_L_ELBOW_PITCH,    &position, &velocity);
   larm.elbowAngle        = position; 
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_ELBOW_ROLL,     &position, &velocity);
+  this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_L_ELBOW_ROLL,     &position, &velocity);
   larm.forearmRollAngle  = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_WRIST_PITCH,    &position, &velocity);
+  this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_L_WRIST_PITCH,    &position, &velocity);
   larm.wristPitchAngle   = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_L_WRIST_ROLL,     &position, &velocity);
+  this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_L_WRIST_ROLL,     &position, &velocity);
   larm.wristRollAngle    = position;
-  this->myPR2->GetLeftGripperActual  (                              &position, &velocity);
+  this->PR2Copy->GetLeftGripperActual  (                              &position, &velocity);
   larm.gripperForceCmd   = velocity;
   larm.gripperGapCmd     = position;
   publish("left_pr2arm_pos", larm);
   
   /* get left arm position */
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_R_PAN,            &position, &velocity);
+  this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_R_PAN,            &position, &velocity);
   rarm.turretAngle       = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_R_SHOULDER_PITCH, &position, &velocity);
+  this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_R_SHOULDER_PITCH, &position, &velocity);
   rarm.shoulderLiftAngle = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_R_SHOULDER_ROLL,  &position, &velocity);
+  this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_R_SHOULDER_ROLL,  &position, &velocity);
   rarm.upperarmRollAngle = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_R_ELBOW_PITCH,    &position, &velocity);
+  this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_R_ELBOW_PITCH,    &position, &velocity);
   rarm.elbowAngle        = position; 
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_R_ELBOW_ROLL,     &position, &velocity);
+  this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_R_ELBOW_ROLL,     &position, &velocity);
   rarm.forearmRollAngle  = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_R_WRIST_PITCH,    &position, &velocity);
+  this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_R_WRIST_PITCH,    &position, &velocity);
   rarm.wristPitchAngle   = position;
-  this->myPR2->hw.GetJointPositionActual(PR2::ARM_R_WRIST_ROLL,     &position, &velocity);
+  this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_R_WRIST_ROLL,     &position, &velocity);
   rarm.wristRollAngle    = position;
-  this->myPR2->GetRightGripperActual  (                             &position, &velocity);
+  this->PR2Copy->GetRightGripperActual  (                             &position, &velocity);
   rarm.gripperForceCmd   = velocity;
   rarm.gripperGapCmd     = position;
   publish("right_pr2arm_pos", rarm);
   
 
-//  this->arm.turretAngle          = 0.0;
-//  this->arm.shoulderLiftAngle    = 0.0;
-//  this->arm.upperarmRollAngle    = 0.0;
-//  this->arm.elbowAngle           = 0.0;
-//  this->arm.forearmRollAngle     = 0.0;
-//  this->arm.wristPitchAngle      = 0.0;
-//  this->arm.wristRollAngle       = 0.0;
-//  this->arm.gripperForceCmd      = 1000.0;
-//  this->arm.gripperGapCmd        = 0.0;
-//
-//  // gripper test
-//  this->myPR2->SetGripperGains(PR2::PR2_LEFT_GRIPPER  ,10.0,0.0,0.0);
-//  this->myPR2->SetGripperGains(PR2::PR2_RIGHT_GRIPPER ,10.0,0.0,0.0);
-//  this->myPR2->OpenGripper(PR2::PR2_LEFT_GRIPPER ,this->arm.gripperGapCmd,this->arm.gripperForceCmd);
-//  this->myPR2->CloseGripper(PR2::PR2_RIGHT_GRIPPER,this->arm.gripperGapCmd,this->arm.gripperForceCmd);
+  //  this->arm.turretAngle          = 0.0;
+  //  this->arm.shoulderLiftAngle    = 0.0;
+  //  this->arm.upperarmRollAngle    = 0.0;
+  //  this->arm.elbowAngle           = 0.0;
+  //  this->arm.forearmRollAngle     = 0.0;
+  //  this->arm.wristPitchAngle      = 0.0;
+  //  this->arm.wristRollAngle       = 0.0;
+  //  this->arm.gripperForceCmd      = 1000.0;
+  //  this->arm.gripperGapCmd        = 0.0;
+  //
+  //  // gripper test
+  //  this->PR2Copy->SetGripperGains(PR2::PR2_LEFT_GRIPPER  ,10.0,0.0,0.0);
+  //  this->PR2Copy->SetGripperGains(PR2::PR2_RIGHT_GRIPPER ,10.0,0.0,0.0);
+  //  this->PR2Copy->OpenGripper(PR2::PR2_LEFT_GRIPPER ,this->arm.gripperGapCmd,this->arm.gripperForceCmd);
+  //  this->PR2Copy->CloseGripper(PR2::PR2_RIGHT_GRIPPER,this->arm.gripperGapCmd,this->arm.gripperForceCmd);
+
+  /***************************************************************/
+  /*                                                             */
+  /*  frame transforms                                           */
+  /*                                                             */
+  /*  x,y,z,yaw,pitch,roll                                       */
+  /*                                                             */
+  /***************************************************************/
+  //this->PR2Copy->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw); // actual CoM of base
+  tf.sendInverseEuler(PR2::FRAMEID_BASE,
+                      FRAMEID_ODOM,
+                      x,
+                      y,
+                      z-0.13, /* half height of base box */
+                      yaw,
+                      pitch,
+                      roll,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // base = center of the bottom of the base box
+  // torso = midpoint of bottom of turrets
+  tf.sendInverseEuler(PR2::FRAMEID_TORSO,
+                      PR2::FRAMEID_BASE,
+                      PR2::BASE_LEFT_ARM_OFFSET.x,
+                      0.0,
+                      PR2::BASE_LEFT_ARM_OFFSET.z, /* FIXME: spine elevator not accounted for */
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_l_turret = bottom of left turret
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_L_TURRET,
+                      PR2::FRAMEID_TORSO,
+                      0.0,
+                      PR2::BASE_LEFT_ARM_OFFSET.y,
+                      0.0,
+                      larm.turretAngle,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_l_shoulder = center of left shoulder pitch bracket
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_L_SHOULDER,
+                      PR2::FRAMEID_ARM_L_TURRET,
+                      PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.x,
+                      PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.y,
+                      PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.z,
+                      0.0,
+                      larm.shoulderLiftAngle,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_l_upperarm = upper arm with roll DOF, at shoulder pitch center
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_L_UPPERARM,
+                      PR2::FRAMEID_ARM_L_SHOULDER,
+                      PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.x,
+                      PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.y,
+                      PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.z,
+                      0.0,
+                      0.0,
+                      larm.upperarmRollAngle,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  //frameid_arm_l_elbow = elbow pitch bracket center of rotation
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_L_ELBOW,
+                      PR2::FRAMEID_ARM_L_UPPERARM,
+                      PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.x,
+                      PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.y,
+                      PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.z,
+                      0.0,
+                      larm.elbowAngle,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  //frameid_arm_l_forearm = forearm roll DOR, at elbow pitch center
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_L_FOREARM,
+                      PR2::FRAMEID_ARM_L_ELBOW,
+                      PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.x,
+                      PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.y,
+                      PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.z,
+                      0.0,
+                      0.0,
+                      larm.forearmRollAngle,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_l_wrist = wrist pitch DOF.
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_L_WRIST,
+                      PR2::FRAMEID_ARM_L_FOREARM,
+                      PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.x,
+                      PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.y,
+                      PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.z,
+                      0.0,
+                      larm.wristPitchAngle,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_l_hand = hand roll DOF, center at wrist pitch center
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_L_HAND,
+                      PR2::FRAMEID_ARM_L_WRIST,
+                      PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.x,
+                      PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.y,
+                      PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.z,
+                      0.0,
+                      0.0,
+                      larm.wristRollAngle,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // FIXME: not implemented
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_L_FINGER_1,
+                      PR2::FRAMEID_ARM_L_HAND,
+                      0.05,
+                      0.025,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // FIXME: not implemented
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_L_FINGER_2,
+                      PR2::FRAMEID_ARM_L_HAND,
+                      0.05,
+                      -0.025,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+
+  // arm_r_turret = bottom of right turret
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_R_TURRET,
+                      PR2::FRAMEID_TORSO,
+                      0.0,
+                      PR2::BASE_RIGHT_ARM_OFFSET.y,
+                      0.0,
+                      rarm.turretAngle,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_r_shoulder = center of right shoulder pitch bracket
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_R_SHOULDER,
+                      PR2::FRAMEID_ARM_R_TURRET,
+                      PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.x,
+                      PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.y,
+                      PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.z,
+                      0.0,
+                      rarm.shoulderLiftAngle,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_r_upperarm = upper arm with roll DOF, at shoulder pitch center
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_R_UPPERARM,
+                      PR2::FRAMEID_ARM_R_SHOULDER,
+                      PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.x,
+                      PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.y,
+                      PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.z,
+                      0.0,
+                      0.0,
+                      rarm.upperarmRollAngle,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  //frameid_arm_r_elbow = elbow pitch bracket center of rotation
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_R_ELBOW,
+                      PR2::FRAMEID_ARM_R_UPPERARM,
+                      PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.x,
+                      PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.y,
+                      PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.z,
+                      0.0,
+                      rarm.elbowAngle,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  //frameid_arm_r_forearm = forearm roll DOR, at elbow pitch center
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_R_FOREARM,
+                      PR2::FRAMEID_ARM_R_ELBOW,
+                      PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.x,
+                      PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.y,
+                      PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.z,
+                      0.0,
+                      0.0,
+                      rarm.forearmRollAngle,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_r_wrist = wrist pitch DOF.
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_R_WRIST,
+                      PR2::FRAMEID_ARM_R_FOREARM,
+                      PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.x,
+                      PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.y,
+                      PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.z,
+                      0.0,
+                      rarm.wristPitchAngle,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_r_hand = hand roll DOF, center at wrist pitch center
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_R_HAND,
+                      PR2::FRAMEID_ARM_R_WRIST,
+                      PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.x,
+                      PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.y,
+                      PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.z,
+                      0.0,
+                      0.0,
+                      rarm.wristRollAngle,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // FIXME: not implemented
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_R_FINGER_1,
+                      PR2::FRAMEID_ARM_R_HAND,
+                      0.05,
+                      0.025,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // FIXME: not implemented
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_R_FINGER_2,
+                      PR2::FRAMEID_ARM_R_HAND,
+                      0.05,
+                      -0.025,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // FIXME: not implemented
+  tf.sendInverseEuler(PR2::FRAMEID_HEAD_BASE,
+                      PR2::FRAMEID_TORSO,
+                      0.0,
+                      0.0,
+                      1.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // FIXME: not implemented
+  tf.sendInverseEuler(PR2::FRAMEID_LASER_BLOCK,
+                      PR2::FRAMEID_TORSO,
+                      0.0,
+                      0.0,
+                      1.05,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // FIXME: not implemented
+  tf.sendInverseEuler(PR2::FRAMEID_STEREO_BLOCK,
+                      PR2::FRAMEID_TORSO,
+                      0.0,
+                      0.0,
+                      1.10,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // FIXME: not implemented
+  tf.sendInverseEuler(PR2::FRAMEID_LASERBLOCK,
+                      PR2::FRAMEID_BASE,
+                      0.035,
+                      0.0,
+                      0.26,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  /***************************************************************/
+  // for the casters
+  double tmpSteerFL, tmpVelFL;
+  double tmpSteerFR, tmpVelFR;
+  double tmpSteerRL, tmpVelRL;
+  double tmpSteerRR, tmpVelRR;
+  this->PR2Copy->hw.GetJointServoCmd(PR2::CASTER_FL_STEER, &tmpSteerFL, &tmpVelFL );
+  this->PR2Copy->hw.GetJointServoCmd(PR2::CASTER_FR_STEER, &tmpSteerFR, &tmpVelFR );
+  this->PR2Copy->hw.GetJointServoCmd(PR2::CASTER_RL_STEER, &tmpSteerRL, &tmpVelRL );
+  this->PR2Copy->hw.GetJointServoCmd(PR2::CASTER_RR_STEER, &tmpSteerRR, &tmpVelRR );
+  tf.sendInverseEuler(PR2::FRAMEID_CASTER_FL_BODY,
+                      PR2::FRAMEID_BASE,
+                      PR2::BASE_BODY_OFFSETS[0].x,
+                      PR2::BASE_BODY_OFFSETS[0].y,
+                      PR2::BASE_BODY_OFFSETS[0].z,
+                      0.0,
+                      0.0,
+                      tmpSteerFL,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+  tf.sendInverseEuler(PR2::FRAMEID_CASTER_FL_WHEEL_L,
+                      PR2::FRAMEID_CASTER_FL_BODY,
+                      0.0,
+                      PR2::CASTER_DRIVE_OFFSET[0].y,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+  tf.sendInverseEuler(PR2::FRAMEID_CASTER_FL_WHEEL_R,
+                      PR2::FRAMEID_CASTER_FL_BODY,
+                      0.0,
+                      PR2::CASTER_DRIVE_OFFSET[1].y,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  tf.sendInverseEuler(PR2::FRAMEID_CASTER_FR_BODY,
+                      PR2::FRAMEID_BASE,
+                      PR2::BASE_BODY_OFFSETS[3].x,
+                      PR2::BASE_BODY_OFFSETS[3].y,
+                      PR2::BASE_BODY_OFFSETS[3].z,
+                      0.0,
+                      0.0,
+                      tmpSteerFR,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+  tf.sendInverseEuler(PR2::FRAMEID_CASTER_FR_WHEEL_L,
+                      PR2::FRAMEID_CASTER_FR_BODY,
+                      0.0,
+                      PR2::CASTER_DRIVE_OFFSET[2].y,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+  tf.sendInverseEuler(PR2::FRAMEID_CASTER_FR_WHEEL_R,
+                      PR2::FRAMEID_CASTER_FR_BODY,
+                      0.0,
+                      PR2::CASTER_DRIVE_OFFSET[3].y,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  tf.sendInverseEuler(PR2::FRAMEID_CASTER_RL_BODY,
+                      PR2::FRAMEID_BASE,
+                      PR2::BASE_BODY_OFFSETS[6].x,
+                      PR2::BASE_BODY_OFFSETS[6].y,
+                      PR2::BASE_BODY_OFFSETS[6].z,
+                      0.0,
+                      0.0,
+                      tmpSteerRL,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+  tf.sendInverseEuler(PR2::FRAMEID_CASTER_RL_WHEEL_L,
+                      PR2::FRAMEID_CASTER_RL_BODY,
+                      0.0,
+                      PR2::CASTER_DRIVE_OFFSET[4].y,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+  tf.sendInverseEuler(PR2::FRAMEID_CASTER_RL_WHEEL_R,
+                      PR2::FRAMEID_CASTER_RL_BODY,
+                      0.0,
+                      PR2::CASTER_DRIVE_OFFSET[5].y,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  tf.sendInverseEuler(PR2::FRAMEID_CASTER_RR_BODY,
+                      PR2::FRAMEID_BASE,
+                      PR2::BASE_BODY_OFFSETS[9].x,
+                      PR2::BASE_BODY_OFFSETS[9].y,
+                      PR2::BASE_BODY_OFFSETS[9].z,
+                      0.0,
+                      0.0,
+                      tmpSteerRR,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+  tf.sendInverseEuler(PR2::FRAMEID_CASTER_RR_WHEEL_L,
+                      PR2::FRAMEID_CASTER_RR_BODY,
+                      0.0,
+                      PR2::CASTER_DRIVE_OFFSET[6].y,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+  tf.sendInverseEuler(PR2::FRAMEID_CASTER_RR_WHEEL_R,
+                      PR2::FRAMEID_CASTER_RR_BODY,
+                      0.0,
+                      PR2::CASTER_DRIVE_OFFSET[7].y,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
 
 
   this->lock.unlock();
@@ -678,25 +1087,100 @@ main(int argc, char** argv)
 { 
   ros::init(argc,argv);
 
-  GazeboNode gn(argc,argv,argv[1]);
+  /***************************************************************************************/
+  /*                                                                                     */
+  /*                           The main simulator object                                 */
+  /*                                                                                     */
+  /***************************************************************************************/
+  PR2::PR2Robot* myPR2;
+  // Initialize robot object
+  myPR2 = new PR2::PR2Robot();
+  // Initialize connections
+  myPR2->InitializeRobot();
+  // Set control mode for the base
+  myPR2->SetBaseControlMode(PR2::PR2_CARTESIAN_CONTROL);
+  // myPR2->SetJointControlMode(PR2::CASTER_FL_STEER, PR2::TORQUE_CONTROL);
+  // myPR2->SetJointControlMode(PR2::CASTER_FR_STEER, PR2::TORQUE_CONTROL);
+  // myPR2->SetJointControlMode(PR2::CASTER_RL_STEER, PR2::TORQUE_CONTROL);
+  // myPR2->SetJointControlMode(PR2::CASTER_RR_STEER, PR2::TORQUE_CONTROL);
 
-  signal(SIGINT,  (&gn.finalize));
-  signal(SIGQUIT, (&gn.finalize));
-  signal(SIGTERM, (&gn.finalize));
+  myPR2->EnableGripperLeft();
+  myPR2->EnableGripperRight();
 
-  if (gn.SubscribeModels() != 0)
+
+  // Set control mode for the arms
+  // FIXME: right now this just sets default to pd control
+  //myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM, PR2::PR2_JOINT_CONTROL);
+  //myPR2->SetArmControlMode(PR2::PR2_LEFT_ARM, PR2::PR2_JOINT_CONTROL);
+  //------------------------------------------------------------
+
+  // set torques for driving the robot wheels
+  // myPR2->hw.SetJointTorque(PR2::CASTER_FL_DRIVE_L, 1000.0 );
+  // myPR2->hw.SetJointTorque(PR2::CASTER_FR_DRIVE_L, 1000.0 );
+  // myPR2->hw.SetJointTorque(PR2::CASTER_RL_DRIVE_L, 1000.0 );
+  // myPR2->hw.SetJointTorque(PR2::CASTER_RR_DRIVE_L, 1000.0 );
+  // myPR2->hw.SetJointTorque(PR2::CASTER_FL_DRIVE_R, 1000.0 );
+  // myPR2->hw.SetJointTorque(PR2::CASTER_FR_DRIVE_R, 1000.0 );
+  // myPR2->hw.SetJointTorque(PR2::CASTER_RL_DRIVE_R, 1000.0 );
+  // myPR2->hw.SetJointTorque(PR2::CASTER_RR_DRIVE_R, 1000.0 );
+
+  /***************************************************************************************/
+  /*                                                                                     */
+  /*                        build actuators from pr2Actuators.xml                        */
+  /*                                                                                     */
+  /***************************************************************************************/
+  //Actuators myActuators(myPR2);
+  
+  /***************************************************************************************/
+  /*                                                                                     */
+  /*                            initialize controllers                                   */
+  /*                                                                                     */
+  /***************************************************************************************/
+  //ArmController          myArm(myPR2);
+  //HeadController         myHead(myPR2);
+  //SpineController        mySpine(myPR2);
+  //LaserScannerController myLaserScanner(myPR2);
+  //BaseController         myBase(myPR2);
+  
+  /***************************************************************************************/
+  /*                                                                                     */
+  /*                            initialize ROS Gazebo Nodes                              */
+  /*                                                                                     */
+  /***************************************************************************************/
+  RosGazeboNode rgn(argc,argv,argv[1],myPR2);
+
+  /***************************************************************************************/
+  /*                                                                                     */
+  /*                                on termination...                                    */
+  /*                                                                                     */
+  /***************************************************************************************/
+  signal(SIGINT,  (&rgn.finalize));
+  signal(SIGQUIT, (&rgn.finalize));
+  signal(SIGTERM, (&rgn.finalize));
+
+  // see if we can subscribe models needed
+  if (rgn.AdvertiseSubscribeMessages() != 0)
     exit(-1);
 
-  // this is the 'RT' loop
+  /***************************************************************************************/
+  /*                                                                                     */
+  /*      RealTime loop using Gazebo ClientWait function call                            */
+  /*        this is updated once every gazebo timestep (world time step size)            */
+  /*                                                                                     */
+  /***************************************************************************************/
   while(1)
   {
-    gn.Update();
-    gn.myPR2->hw.ClientWait();
-    //usleep(100000);
+    rgn.Update();
+
+    myPR2->hw.ClientWait(); // wait for Gazebo time step
   }
   
-  // have to call this explicitly for some reason.  probably interference
-  // from signal handling in Stage / FLTK?
+  /***************************************************************************************/
+  /*                                                                                     */
+  /* have to call this explicitly for some reason.  probably interference                */
+  /* from signal handling in Stage / FLTK?                                               */
+  /*                                                                                     */
+  /***************************************************************************************/
   ros::msg_destruct();
 
   exit(0);

@@ -296,7 +296,7 @@ namespace PR2
    const float CASTER_RR_X_OFFSET = -0.25;
    const float CASTER_RR_Y_OFFSET = -0.25;
 
-   const float AXLE_WIDTH = 0.1;
+   const float AXLE_WIDTH = 0.049;
    const float WHEEL_RADIUS = 0.08;
 
    const int NUM_CASTERS = 4;

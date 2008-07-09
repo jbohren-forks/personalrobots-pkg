@@ -38,6 +38,8 @@
  * subdirectories.  
  */
 
+#ifndef ROSTF_HH
+#define ROSTF_HH
 #include <iostream>
 #include "ros/node.h"
 #include "std_msgs/TransformEuler.h"
@@ -117,3 +119,4 @@ class rosTFServer : public nameLookupClient
   bool checkInvalidFrame(unsigned int);
   
 };
+#endif //ROSTF_HH
