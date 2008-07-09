@@ -29,39 +29,39 @@
  */
 
 /**
-
+ 
 @mainpage
-
+ 
 @htmlinclude manifest.html
-
+ 
 @b teleop_arm_keyboard teleoperates the arms of the PR2 by mapping
 key presses into joint angle set points.
-
+ 
 <hr>
-
+ 
 @section usage Usage
 @verbatim
 $ teleop_arm_keyboard [standard ROS args]
 @endverbatim
-
+ 
 Key mappings are printed to screen on startup.
-
+ 
 <hr>
-
+ 
 @section topic ROS topics
-
+ 
 Subscribes to (name/type):
 - None
-
+ 
 Publishes to (name / type):
 - @b "cmd_leftarmconfig"/PR2Arm : configuration of the left arm (all the joint angles); sent on every keypress.
-
+ 
 <hr>
-
+ 
 @section parameters ROS parameters
-
+ 
 - None
-
+ 
  **/
 
 #include <termios.h>
@@ -80,40 +80,40 @@ using namespace PR2;
 
 class TArmK_Node : public ros::node
 {
-  private:
+private:
     std_msgs::PR2Arm cmd_leftarmconfig;
     std_msgs::PR2Arm cmd_rightarmconfig;
 
-  public:
+public:
     TArmK_Node() : ros::node("tarmk")
     {
-			// cmd_armconfig should probably be initialised
-			// with the current joint angles of the arm rather
-			// than zeros.
-			this->cmd_leftarmconfig.turretAngle = 0;
-			this->cmd_leftarmconfig.shoulderLiftAngle = 0;
-			this->cmd_leftarmconfig.upperarmRollAngle = 0;
-			this->cmd_leftarmconfig.elbowAngle        = 0;
-			this->cmd_leftarmconfig.forearmRollAngle  = 0;
-			this->cmd_leftarmconfig.wristPitchAngle   = 0;
-			this->cmd_leftarmconfig.wristRollAngle    = 0;
-			this->cmd_leftarmconfig.gripperForceCmd   = 1000;
-			this->cmd_leftarmconfig.gripperGapCmd     = 0;
-			this->cmd_rightarmconfig.turretAngle = 0;
-			this->cmd_rightarmconfig.shoulderLiftAngle = 0;
-			this->cmd_rightarmconfig.upperarmRollAngle = 0;
-			this->cmd_rightarmconfig.elbowAngle        = 0;
-			this->cmd_rightarmconfig.forearmRollAngle  = 0;
-			this->cmd_rightarmconfig.wristPitchAngle   = 0;
-			this->cmd_rightarmconfig.wristRollAngle    = 0;
-			this->cmd_rightarmconfig.gripperForceCmd   = 1000;
-			this->cmd_rightarmconfig.gripperGapCmd     = 0;
-      advertise<std_msgs::PR2Arm>("cmd_leftarmconfig");
-      advertise<std_msgs::PR2Arm>("cmd_rightarmconfig");
+        // cmd_armconfig should probably be initialised
+        // with the current joint angles of the arm rather
+        // than zeros.
+        this->cmd_leftarmconfig.turretAngle = 0;
+        this->cmd_leftarmconfig.shoulderLiftAngle = 0;
+        this->cmd_leftarmconfig.upperarmRollAngle = 0;
+        this->cmd_leftarmconfig.elbowAngle        = 0;
+        this->cmd_leftarmconfig.forearmRollAngle  = 0;
+        this->cmd_leftarmconfig.wristPitchAngle   = 0;
+        this->cmd_leftarmconfig.wristRollAngle    = 0;
+        this->cmd_leftarmconfig.gripperForceCmd   = 1000;
+        this->cmd_leftarmconfig.gripperGapCmd     = 0;
+        this->cmd_rightarmconfig.turretAngle = 0;
+        this->cmd_rightarmconfig.shoulderLiftAngle = 0;
+        this->cmd_rightarmconfig.upperarmRollAngle = 0;
+        this->cmd_rightarmconfig.elbowAngle        = 0;
+        this->cmd_rightarmconfig.forearmRollAngle  = 0;
+        this->cmd_rightarmconfig.wristPitchAngle   = 0;
+        this->cmd_rightarmconfig.wristRollAngle    = 0;
+        this->cmd_rightarmconfig.gripperForceCmd   = 1000;
+        this->cmd_rightarmconfig.gripperGapCmd     = 0;
+        advertise<std_msgs::PR2Arm>("cmd_leftarmconfig");
+        advertise<std_msgs::PR2Arm>("cmd_rightarmconfig");
     }
     ~TArmK_Node() { }
     void keyboardLoop();
-		void changeJointAngle(PR2_JOINT_ID jointID, bool increment);
+    void changeJointAngle(PR2_JOINT_ID jointID, bool increment);
 };
 
 TArmK_Node* tarmk;
@@ -124,240 +124,240 @@ void
 quit(int sig)
 {
 //  tbk->stopRobot();
-  ros::fini();
-  tcsetattr(kfd, TCSANOW, &cooked);
-  exit(0);
+    ros::fini();
+    tcsetattr(kfd, TCSANOW, &cooked);
+    exit(0);
 }
 
 int
 main(int argc, char** argv)
 {
-  ros::init(argc,argv);
+    ros::init(argc,argv);
 
-  tarmk = new TArmK_Node();
+    tarmk = new TArmK_Node();
 
-  signal(SIGINT,quit);
+    signal(SIGINT,quit);
 
-  tarmk->keyboardLoop();
+    tarmk->keyboardLoop();
 
-  return(0);
+    return(0);
 }
 
 
 void TArmK_Node::changeJointAngle(PR2_JOINT_ID jointID, bool increment)
 {
-	float jointCmdStep = 5*M_PI/180;
-	float gripperStep = 0.002;
-	if (increment == false)
-	{
-		jointCmdStep *= -1;
-		gripperStep *= -1;
-	}
+    float jointCmdStep = 5*M_PI/180;
+    float gripperStep = 0.002;
+    if (increment == false)
+    {
+        jointCmdStep *= -1;
+        gripperStep *= -1;
+    }
 
-	switch(jointID)
-	{
-		case ARM_L_PAN:
-			this->cmd_leftarmconfig.turretAngle += jointCmdStep;
-			break;
-		case ARM_L_SHOULDER_PITCH:
-			this->cmd_leftarmconfig.shoulderLiftAngle += jointCmdStep;
-			break;
-		case ARM_L_SHOULDER_ROLL:
-			this->cmd_leftarmconfig.upperarmRollAngle += jointCmdStep;
-			break;
-		case ARM_L_ELBOW_PITCH:
-			this->cmd_leftarmconfig.elbowAngle += jointCmdStep;
-			break;
-		case ARM_L_ELBOW_ROLL:
-			this->cmd_leftarmconfig.forearmRollAngle += jointCmdStep;
-			break;
-		case ARM_L_WRIST_PITCH:
-			this->cmd_leftarmconfig.wristPitchAngle += jointCmdStep;
-			break;
-		case ARM_L_WRIST_ROLL:
-			this->cmd_leftarmconfig.wristRollAngle += jointCmdStep;
-			break;
-		case ARM_L_GRIPPER:
-			this->cmd_leftarmconfig.gripperGapCmd += gripperStep;
-			break;
-		case ARM_R_PAN:
-			this->cmd_rightarmconfig.turretAngle += jointCmdStep;
-			break;
-		case ARM_R_SHOULDER_PITCH:
-			this->cmd_rightarmconfig.shoulderLiftAngle += jointCmdStep;
-			break;
-		case ARM_R_SHOULDER_ROLL:
-			this->cmd_rightarmconfig.upperarmRollAngle += jointCmdStep;
-			break;
-		case ARM_R_ELBOW_PITCH:
-			this->cmd_rightarmconfig.elbowAngle += jointCmdStep;
-			break;
-		case ARM_R_ELBOW_ROLL:
-			this->cmd_rightarmconfig.forearmRollAngle += jointCmdStep;
-			break;
-		case ARM_R_WRIST_PITCH:
-			this->cmd_rightarmconfig.wristPitchAngle += jointCmdStep;
-			break;
-		case ARM_R_WRIST_ROLL:
-			this->cmd_rightarmconfig.wristRollAngle += jointCmdStep;
-			break;
-		case ARM_R_GRIPPER:
-			this->cmd_rightarmconfig.gripperGapCmd += gripperStep;
-			break;
-		default:
-			printf("This joint is not handled.\n");
-			break;
-	}
+    switch(jointID)
+    {
+    case ARM_L_PAN:
+        this->cmd_leftarmconfig.turretAngle += jointCmdStep;
+        break;
+    case ARM_L_SHOULDER_PITCH:
+        this->cmd_leftarmconfig.shoulderLiftAngle += jointCmdStep;
+        break;
+    case ARM_L_SHOULDER_ROLL:
+        this->cmd_leftarmconfig.upperarmRollAngle += jointCmdStep;
+        break;
+    case ARM_L_ELBOW_PITCH:
+        this->cmd_leftarmconfig.elbowAngle += jointCmdStep;
+        break;
+    case ARM_L_ELBOW_ROLL:
+        this->cmd_leftarmconfig.forearmRollAngle += jointCmdStep;
+        break;
+    case ARM_L_WRIST_PITCH:
+        this->cmd_leftarmconfig.wristPitchAngle += jointCmdStep;
+        break;
+    case ARM_L_WRIST_ROLL:
+        this->cmd_leftarmconfig.wristRollAngle += jointCmdStep;
+        break;
+    case ARM_L_GRIPPER:
+        this->cmd_leftarmconfig.gripperGapCmd += gripperStep;
+        break;
+    case ARM_R_PAN:
+        this->cmd_rightarmconfig.turretAngle += jointCmdStep;
+        break;
+    case ARM_R_SHOULDER_PITCH:
+        this->cmd_rightarmconfig.shoulderLiftAngle += jointCmdStep;
+        break;
+    case ARM_R_SHOULDER_ROLL:
+        this->cmd_rightarmconfig.upperarmRollAngle += jointCmdStep;
+        break;
+    case ARM_R_ELBOW_PITCH:
+        this->cmd_rightarmconfig.elbowAngle += jointCmdStep;
+        break;
+    case ARM_R_ELBOW_ROLL:
+        this->cmd_rightarmconfig.forearmRollAngle += jointCmdStep;
+        break;
+    case ARM_R_WRIST_PITCH:
+        this->cmd_rightarmconfig.wristPitchAngle += jointCmdStep;
+        break;
+    case ARM_R_WRIST_ROLL:
+        this->cmd_rightarmconfig.wristRollAngle += jointCmdStep;
+        break;
+    case ARM_R_GRIPPER:
+        this->cmd_rightarmconfig.gripperGapCmd += gripperStep;
+        break;
+    default:
+        printf("This joint is not handled.\n");
+        break;
+    }
 }
 
 
 void
 TArmK_Node::keyboardLoop()
 {
-  char c;
-  bool dirty=false;
-	PR2_JOINT_ID curr_jointID = ARM_L_PAN; // joint which will be actuated.
-	bool right_arm = false;
+    char c;
+    bool dirty=false;
+    PR2_JOINT_ID curr_jointID = ARM_L_PAN; // joint which will be actuated.
+    bool right_arm = false;
 
-  // get the console in raw mode
-  tcgetattr(kfd, &cooked);
-  memcpy(&raw, &cooked, sizeof(struct termios));
-  raw.c_lflag &=~ (ICANON | ECHO);
-  raw.c_cc[VEOL] = 1;
-  raw.c_cc[VEOF] = 2;
-  tcsetattr(kfd, TCSANOW, &raw);
+    // get the console in raw mode
+    tcgetattr(kfd, &cooked);
+    memcpy(&raw, &cooked, sizeof(struct termios));
+    raw.c_lflag &=~ (ICANON | ECHO);
+    raw.c_cc[VEOL] = 1;
+    raw.c_cc[VEOF] = 2;
+    tcsetattr(kfd, TCSANOW, &raw);
 
-  puts("Reading from keyboard");
-  puts("---------------------------");
-	printf("Press l/r to operate left/right arm.\n");
-	printf("Numbers 1 through 8 to select the joint to operate.\n");
-	printf("+ and - will move the joint in different directions by 5 degrees.\n");
-  puts("");
-  puts("---------------------------");
+    puts("Reading from keyboard");
+    puts("---------------------------");
+    printf("Press l/r to operate left/right arm.\n");
+    printf("Numbers 1 through 8 to select the joint to operate.\n");
+    printf("+ and - will move the joint in different directions by 5 degrees.\n");
+    puts("");
+    puts("---------------------------");
 
-  for(;;)
-  {
-    // get the next event from the keyboard
-    if(read(kfd, &c, 1) < 0)
+    for(;;)
     {
-      perror("read():");
-      exit(-1);
+        // get the next event from the keyboard
+        if(read(kfd, &c, 1) < 0)
+        {
+            perror("read():");
+            exit(-1);
+        }
+
+        switch(c)
+        {
+        case 'l':
+        case 'L':
+            right_arm = false;
+            printf("Actuating left arm.\n");
+            break;
+        case 'r':
+        case 'R':
+            right_arm = true;
+            printf("Actuating right arm.\n");
+            break;
+        case '+':
+        case '=':
+            changeJointAngle(curr_jointID, true);
+            dirty=true;
+            break;
+        case '_':
+        case '-':
+            changeJointAngle(curr_jointID, false);
+            dirty=true;
+            break;
+        default:
+            break;
+        }
+
+        if (right_arm==false)
+        {
+            switch(c)
+            {
+            case '1':
+                curr_jointID = ARM_L_PAN;
+                printf("left turret\n");
+                break;
+            case '2':
+                curr_jointID = ARM_L_SHOULDER_PITCH;
+                printf("left shoulder pitch\n");
+                break;
+            case '3':
+                curr_jointID = ARM_L_SHOULDER_ROLL;
+                printf("left shoulder roll\n");
+                break;
+            case '4':
+                curr_jointID = ARM_L_ELBOW_PITCH;
+                printf("left elbow pitch\n");
+                break;
+            case '5':
+                curr_jointID = ARM_L_ELBOW_ROLL;
+                printf("left elbow roll\n");
+                break;
+            case '6':
+                curr_jointID = ARM_L_WRIST_PITCH;
+                printf("left wrist pitch\n");
+                break;
+            case '7':
+                curr_jointID = ARM_L_WRIST_ROLL;
+                printf("left wrist roll\n");
+                break;
+            case '8':
+                curr_jointID = ARM_L_GRIPPER;
+                printf("left gripper\n");
+                break;
+            default:
+                break;
+            }
+        }
+        else
+        {
+            switch(c)
+            {
+            case '1':
+                curr_jointID = ARM_R_PAN;
+                printf("right turret\n");
+                break;
+            case '2':
+                curr_jointID = ARM_R_SHOULDER_PITCH;
+                printf("right shoulder pitch\n");
+                break;
+            case '3':
+                curr_jointID = ARM_R_SHOULDER_ROLL;
+                printf("right shoulder roll\n");
+                break;
+            case '4':
+                curr_jointID = ARM_R_ELBOW_PITCH;
+                printf("right elbow pitch\n");
+                break;
+            case '5':
+                curr_jointID = ARM_R_ELBOW_ROLL;
+                printf("right elbow roll\n");
+                break;
+            case '6':
+                curr_jointID = ARM_R_WRIST_PITCH;
+                printf("right wrist pitch\n");
+                break;
+            case '7':
+                curr_jointID = ARM_R_WRIST_ROLL;
+                printf("right wrist roll\n");
+                break;
+            case '8':
+                curr_jointID = ARM_R_GRIPPER;
+                printf("right gripper\n");
+                break;
+            default:
+                break;
+            }
+        }
+
+        if (dirty == true)
+        {
+            dirty=false; // Sending the command only once for each key press.
+            publish("cmd_leftarmconfig",cmd_leftarmconfig);
+            publish("cmd_rightarmconfig",cmd_rightarmconfig);
+        }
     }
-
-		switch(c)
-		{
-			case 'l':
-			case 'L':
-				right_arm = false;
-				printf("Actuating left arm.\n");
-				break;
-			case 'r':
-			case 'R':
-				right_arm = true;
-				printf("Actuating right arm.\n");
-				break;
-			case '+':
-			case '=':
-				changeJointAngle(curr_jointID, true);
-				dirty=true;
-				break;
-			case '_':
-			case '-':
-				changeJointAngle(curr_jointID, false);
-				dirty=true;
-				break;
-			default:
-				break;
-		}
-
-		if (right_arm==false)
-		{
-			switch(c)
-			{
-				case '1':
-					curr_jointID = ARM_L_PAN;
-					printf("left turret\n");
-					break;
-				case '2':
-					curr_jointID = ARM_L_SHOULDER_PITCH;
-					printf("left shoulder pitch\n");
-					break;
-				case '3':
-					curr_jointID = ARM_L_SHOULDER_ROLL;
-					printf("left shoulder roll\n");
-					break;
-				case '4':
-					curr_jointID = ARM_L_ELBOW_PITCH;
-					printf("left elbow pitch\n");
-					break;
-				case '5':
-					curr_jointID = ARM_L_ELBOW_ROLL;
-					printf("left elbow roll\n");
-					break;
-				case '6':
-					curr_jointID = ARM_L_WRIST_PITCH;
-					printf("left wrist pitch\n");
-					break;
-				case '7':
-					curr_jointID = ARM_L_WRIST_ROLL;
-					printf("left wrist roll\n");
-					break;
-				case '8':
-					curr_jointID = ARM_L_GRIPPER;
-					printf("left gripper\n");
-					break;
-				default:
-					break;
-			}
-		}
-		else
-		{
-			switch(c)
-			{
-				case '1':
-					curr_jointID = ARM_R_PAN;
-					printf("right turret\n");
-					break;
-				case '2':
-					curr_jointID = ARM_R_SHOULDER_PITCH;
-					printf("right shoulder pitch\n");
-					break;
-				case '3':
-					curr_jointID = ARM_R_SHOULDER_ROLL;
-					printf("right shoulder roll\n");
-					break;
-				case '4':
-					curr_jointID = ARM_R_ELBOW_PITCH;
-					printf("right elbow pitch\n");
-					break;
-				case '5':
-					curr_jointID = ARM_R_ELBOW_ROLL;
-					printf("right elbow roll\n");
-					break;
-				case '6':
-					curr_jointID = ARM_R_WRIST_PITCH;
-					printf("right wrist pitch\n");
-					break;
-				case '7':
-					curr_jointID = ARM_R_WRIST_ROLL;
-					printf("right wrist roll\n");
-					break;
-				case '8':
-					curr_jointID = ARM_R_GRIPPER;
-					printf("right gripper\n");
-					break;
-				default:
-					break;
-			}
-		}
-
-    if (dirty == true)
-    {
-			dirty=false; // Sending the command only once for each key press.
-      publish("cmd_leftarmconfig",cmd_leftarmconfig);
-      publish("cmd_rightarmconfig",cmd_rightarmconfig);
-    }
-  }
 }
 
 
