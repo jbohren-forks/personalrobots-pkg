@@ -34,18 +34,24 @@
 #include <vector>
 #include <stdint.h>
 
-class Bag;
+#include "logging/LogPlayer.h"
+
+struct LogAndCallback
+{
+  LogPlayerBase* log;
+  void (*fp)(ros::Time);
+};
 
 class LogSnarfer
 {
+  std::vector<LogAndCallback> logs;
 public:
-  Bag *bags;
-  size_t num_bags;
-  LogSnarfer(const std::vector<std::string> &bag_names);
+  LogSnarfer();
   ~LogSnarfer();
 
-  bool snarf_one_message(std::string *topic, double *rel_time,
-                         uint8_t **data, uint32_t *data_len);
+  void addLog(LogPlayerBase&, std::string, void (*fp)(ros::Time));
+
+  void snarf();
 };
 
 #endif

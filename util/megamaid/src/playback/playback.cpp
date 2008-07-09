@@ -32,100 +32,20 @@
 #include "ros/node.h"
 #include "ros/time.h"
 #include <string>
-using namespace ros;
+
+#include "logging/LogPlayer.h"
+
 using namespace std;
 
-ros::Time start;
-
-class Bag : public msg
+class Playback : public ros::node
 {
 public:
-  FILE *log;
-  ros::Time playback_start;
-  ros::Duration next_msg_dur;
-  string topic_name;
-  uint8_t *next_msg;
-  uint32_t next_msg_size, next_msg_alloc_size;
-  bool done;
-  Bag() : msg(), log(NULL), next_msg(NULL), next_msg_alloc_size(0), 
-          done(false) { }
-  virtual ~Bag() { fclose(log); if (next_msg) delete[] next_msg; }
-  bool open_log(const string &bag_name, ros::Time _start)
-  {
-    playback_start = _start;
-    log = fopen(bag_name.c_str(), "r");
-    if (!log)
-    {
-      done = true;
-      return false;
-    }
-    char topic_cstr[4096];
-    fgets(topic_cstr, 4096, log);
-    topic_cstr[strlen(topic_cstr)-1] = 0;
-    topic_name = string(topic_cstr);
-    printf("topic: [%s]\n", topic_cstr);
-    if (!read_next_msg())
-      return false;
-    return true;
-  }
-  int32_t usecs_to_next_msg()
-  {
-    if (done)
-      assert(0); // bad bad bad
-    ros::Duration cur_log_dur = ros::Time::now() - playback_start;
-    ros::Duration delta = next_msg_dur - cur_log_dur;
-    return delta.sec * 1000000 + delta.nsec / 1000;
-  }
-  bool read_next_msg()
-  {
-    if (!log)
-    {
-      done = true;
-      return false;
-    }
-    fread(&next_msg_dur.sec, 4, 1, log);
-    fread(&next_msg_dur.nsec, 4, 1, log);
-    fread(&next_msg_size, 4, 1, log);
-    if (feof(log))
-    {
-      done = true;
-      return false;
-    }
-    if (next_msg_size > next_msg_alloc_size)
-    {
-      if (next_msg)
-        delete[] next_msg;
-      next_msg_alloc_size = next_msg_size * 2;
-      next_msg = new uint8_t[next_msg_alloc_size];
-    }
-    fread(next_msg, next_msg_size, 1, log);
-    if (feof(log))
-    {
-      done = true;
-      return false;
-    }
-    return true;
-  }
-  virtual const string __get_datatype() const { return string("*"); }
-  virtual const string __get_md5sum()   const { return string("*"); }
-  uint32_t serialization_length() { return next_msg_size; }
-  virtual uint8_t *serialize(uint8_t *write_ptr)
-  { 
-    memcpy(write_ptr, next_msg, next_msg_size);
-    return write_ptr + next_msg_size;
-  }
-  virtual uint8_t *deserialize(uint8_t *read_ptr) { assert(0); return NULL; }
-};
-
-class Playback : public node
-{
-public:
-  Bag *bags;
+  LogPlayer<> *bags;
   size_t num_bags;
   Playback(vector<string> bag_names) : node("playback"), num_bags(0)
   { 
     num_bags = bag_names.size();
-    bags = new Bag[num_bags];
+    bags = new LogPlayer<>[num_bags];
     ros::Time t = ros::Time::now();
     for (size_t i = 0; i < num_bags; i++)
     {
@@ -147,41 +67,47 @@ public:
     while (ok())
     {
       bool keep_going = false;
-      int32_t min_usecs = 1234567890;
+      ros::Time min_t(-1,0);
+      ros::Time soon = ros::Time::now() + ros::Duration(0,5000);
+
+      vector<size_t> inds;
+
       for (size_t i = 0; i < num_bags; i++)
       {
         if (!bags[i].done)
         {
           keep_going = true;
-          int32_t usecs = bags[i].usecs_to_next_msg();
-          if (usecs < 5)
+          ros::Time next = bags[i].time_of_msg();
+          if (next < soon)
           {
-            // send message
-            publish(bags[i].topic_name, bags[i]);
-            if (!bags[i].read_next_msg())
-              bags[i].done = true;
-            min_usecs = 0;
+            min_t = next;
+            inds.push_back(i);
+          } else if (next < min_t)
+          {
+            min_t = next;
           }
-          else if (usecs < min_usecs)
-            min_usecs = usecs;
         }
       }
       if (!keep_going)
         break;
-      if (min_usecs > 5)
-        usleep(min_usecs - 5);
+
+      ros::Duration delta = min_t - soon;
+
+      if (delta > ros::Duration(0,5000))
+        usleep(delta.to_ll()/1000 - 5);
+
+      for (vector<size_t>::iterator i = inds.begin(); i != inds.end(); i++)
+      {
+        publish(bags[*i].topic_name, bags[*i]);
+        if (!bags[*i].read_next_msg())
+          bags[*i].done = true;
+      }
     }
   }
 };
 
-void sigint_handler(int sig)
-{
-  g_node->self_destruct();
-}
-
 int main(int argc, char **argv)
 {
-  signal(SIGINT, sigint_handler);
   ros::init(argc, argv);
   if (argc <= 1)
   {

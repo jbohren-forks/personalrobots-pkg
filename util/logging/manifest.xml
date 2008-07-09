@@ -9,6 +9,8 @@ expect to use it to log video over a wireless link.
 <url>http://pr.willowgarage.com</url>
 <depend package="roscpp"/>
 <depend package="std_msgs"/>
-<depend package="megamaid"/>
+<export>
+  <cpp cflags="-I${prefix}/include"/>
+</export>
 </package>
 

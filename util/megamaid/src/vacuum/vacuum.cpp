@@ -30,49 +30,18 @@
 #include <time.h>
 #include <sys/stat.h>
 #include "ros/node.h"
-#include "ros/time.h"
+#include "logging/LogRecorder.h"
 #include <string>
+
 using namespace std;
-using namespace ros;
 
-ros::Time start;
-
-class Bag : public msg
+class Vacuum : public ros::node
 {
 public:
-  FILE *log;
-  Bag() : msg(), log(NULL) { }
-  virtual ~Bag() { fclose(log); }
-  bool open_log(const string &log_stem, const string &topic_name)
-  {
-    log = fopen((log_stem + string(".bag")).c_str(), "w");
-    if (!log)
-      return false;
-    fprintf(log, "%s\n", topic_name.c_str());
-    return true;
-  }
-  virtual const string __get_datatype() const { return string("*"); }
-  virtual const string __get_md5sum()   const { return string("*"); }
-  uint32_t serialization_length() { return 0; }
-  virtual uint8_t *serialize(uint8_t *write_ptr) { assert(0); return NULL; }
-  virtual uint8_t *deserialize(uint8_t *read_ptr)
-  {
-    ros::Duration elapsed = ros::Time::now() - start;
-    fwrite(&elapsed.sec, 4, 1, log);
-    fwrite(&elapsed.nsec, 4, 1, log);
-    fwrite(&__serialized_length, 4, 1, log);
-    fwrite(read_ptr, __serialized_length, 1, log);
-    return read_ptr + __serialized_length;
-  }
-};
-
-class Vacuum : public node
-{
-public:
-  Bag *bags;
+  LogRecorder<> *bags;
   Vacuum(vector<string> vac_topics) : node("vacuum")
   { 
-    bags = new Bag[vac_topics.size()];
+    bags = new LogRecorder<>[vac_topics.size()];
     time_t t = ::time(NULL);
     struct tm *tms = localtime(&t);
     char logdir[500];
@@ -80,7 +49,7 @@ public:
              tms->tm_year+1900, tms->tm_mon+1, tms->tm_mday,
              tms->tm_hour     , tms->tm_min  , tms->tm_sec);
     mkdir(logdir, 0755);
-    start = ros::Time::now();
+    ros::Time start = ros::Time::now();
     for (size_t i = 0; i < vac_topics.size(); i++)
     {
       printf("vacuum up [%s]\n", vac_topics[i].c_str());
@@ -90,8 +59,9 @@ public:
         if (c == '\\' || c == '/' || c == '#' || c == '&' || c == ';')
           vac_topics[i][j] = '_';
       }
-      if (!bags[i].open_log(string(logdir) + string("/") + vac_topics[i],
-                            map_name(vac_topics[i])))
+      if (!bags[i].open_log(std::string(logdir) + std::string("/") + vac_topics[i] + string(".bag"),
+                            map_name(vac_topics[i]),
+                            start))
         throw std::runtime_error("couldn't open log file\n");
       subscribe(vac_topics[i], bags[i], &Vacuum::dummy_cb);
     }
@@ -112,7 +82,7 @@ int main(int argc, char **argv)
     printf("\nusage: vacuum TOPIC1 [TOPIC2] ...\n\n");
     return 1;
   }
-  vector<string> topics;
+  vector<std::string> topics;
   for (int i = 1; i < argc; i++)
     topics.push_back(argv[i]);
   Vacuum vac(topics);

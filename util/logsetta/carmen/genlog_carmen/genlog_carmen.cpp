@@ -38,19 +38,20 @@
 using std::vector;
 using std::string;
 
-std_msgs::RobotBase2DOdom odom;
-std_msgs::LaserScan scan;
-
 FILE *clog = NULL;
+FILE *test_log = NULL;
 double prev_x = 0, prev_y = 0, prev_th = 0, dumb_rv = 0, dumb_tv = 0, prev_time;
 
-FILE *test_log = NULL;
+LogPlayer<std_msgs::RobotBase2DOdom> odom;
+LogPlayer<std_msgs::LaserScan> scan;
 
-void odom_message(double rel_time, uint8_t *sermsg, uint32_t sermsg_len)
+void odom_callback(ros::Time t)
 {
+  double rel_time = t.to_double();
+
   static bool vel_init = false;
   static double yaw_offset = 0;
-  odom.deserialize(sermsg);
+
   if (!vel_init)
   {
     vel_init = true;
@@ -86,9 +87,10 @@ void odom_message(double rel_time, uint8_t *sermsg, uint32_t sermsg_len)
           dumb_tv, dumb_rv, rel_time, rel_time);
 }
 
-void scan_message(double rel_time, uint8_t *sermsg, uint32_t sermsg_len)
+void scan_callback(ros::Time t)
 {
-  scan.deserialize(sermsg);
+  double rel_time = t.to_double();
+
   const double fov = fabs(scan.angle_max - scan.angle_min);
   // only make an exception for the SICK LMS2xx running in centimeter mode
   const double acc = (scan.range_max >= 81 ? 0.05 : 0.005); 
@@ -117,22 +119,16 @@ int main(int argc, char **argv)
            "  The logs must have been vacuumed up with megamaid's vacuum.\n");
     return 1;
   }
-  vector<string> bags;
-  bags.push_back(argv[1]);
-  bags.push_back(argv[2]);
-  LogSnarfer s(bags);
-  string topic;
-  double rel_time;
-  uint8_t *sermsg;
-  uint32_t sermsg_len;
+
+  LogSnarfer s;
+
+  s.addLog(odom, string(argv[1]), &odom_callback);
+  s.addLog(scan, string(argv[2]), &scan_callback);
+
   clog = fopen("carmen.txt", "w");
-  while (s.snarf_one_message(&topic, &rel_time, &sermsg, &sermsg_len))
-  {
-    if (topic == "/odom")
-      odom_message(rel_time, sermsg, sermsg_len);
-    else if (topic == "/scan")
-      scan_message(rel_time, sermsg, sermsg_len);
-  }
+
+  s.snarf();
+
   fclose(clog);
 
   return 0;

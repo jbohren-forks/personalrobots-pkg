@@ -35,115 +35,48 @@
 using namespace ros;
 using namespace std;
 
-ros::Time start;
-
-class Bag 
-{
-public:
-  FILE *log;
-  ros::Duration next_msg_dur;
-  string topic_name;
-  uint8_t *next_msg;
-  uint32_t next_msg_size, next_msg_alloc_size;
-  bool done;
-  Bag() : log(NULL), next_msg(NULL), next_msg_alloc_size(0), 
-          done(false) { }
-  virtual ~Bag() { fclose(log); if (next_msg) delete[] next_msg; }
-  bool open_log(const string &bag_name)
-  {
-    log = fopen(bag_name.c_str(), "r");
-    if (!log)
-    {
-      done = true;
-      return false;
-    }
-    char topic_cstr[4096];
-    fgets(topic_cstr, 4096, log);
-    topic_cstr[strlen(topic_cstr)-1] = 0;
-    topic_name = string(topic_cstr);
-    printf("topic: [%s]\n", topic_cstr);
-    if (!read_next_msg())
-      return false;
-    return true;
-  }
-  bool read_next_msg()
-  {
-    if (!log)
-    {
-      done = true;
-      return false;
-    }
-    fread(&next_msg_dur.sec, 4, 1, log);
-    fread(&next_msg_dur.nsec, 4, 1, log);
-    fread(&next_msg_size, 4, 1, log);
-    if (feof(log))
-    {
-      done = true;
-      return false;
-    }
-    if (next_msg_size > next_msg_alloc_size)
-    {
-      if (next_msg)
-        delete[] next_msg;
-      next_msg_alloc_size = next_msg_size * 2;
-      next_msg = new uint8_t[next_msg_alloc_size];
-    }
-    fread(next_msg, next_msg_size, 1, log);
-    if (feof(log))
-    {
-      done = true;
-      return false;
-    }
-    return true;
-  }
-};
-
-LogSnarfer::LogSnarfer(const vector<string> &bag_names) : num_bags(0)
-{ 
-  num_bags = bag_names.size();
-  bags = new Bag[num_bags];
-  for (size_t i = 0; i < num_bags; i++)
-  {
-    printf("%s\n", bag_names[i].c_str());
-    if (!bags[i].open_log(bag_names[i]))
-      throw std::runtime_error("couldn't open bag file\n");
-  }
-}
+LogSnarfer::LogSnarfer()
+{}
 
 LogSnarfer::~LogSnarfer()
+{ }
+
+void LogSnarfer::addLog(LogPlayerBase &l, string file_name, void (*fp)(ros::Time))
 {
-  delete[] bags;
-  bags = NULL;
+  l.open_log(file_name, ros::Time(0,0), true);
+  LogAndCallback lcb;
+  lcb.log = &l;
+  lcb.fp  = fp;
+  logs.push_back(lcb);
 }
 
-bool LogSnarfer::snarf_one_message(std::string *topic, double *rel_time,
-                                   uint8_t **data, uint32_t *data_len)
+void LogSnarfer::snarf()
 {
-  double min_time = 1e100;
-  int min_idx = -1;
-  bool keep_going = false;
-  for (size_t i = 0; i < num_bags; i++)
+  bool keep_going = true;
+  while (keep_going)
   {
-    if (!bags[i].done)
+    bool keep_going = false;
+    ros::Time min_t(-1,0);
+    vector<LogAndCallback>::iterator l;
+    for (vector<LogAndCallback>::iterator i = logs.begin(); i != logs.end(); i++)
     {
-      keep_going = true;
-      if (bags[i].next_msg_dur.to_double() < min_time)
+      if (!i->log->done)
       {
-        min_idx = i;
-        min_time = bags[i].next_msg_dur.to_double();
+        keep_going = true;
+        if (i->log->time_of_msg() < min_t)
+        {
+          l = i;
+          min_t = i->log->time_of_msg();
+        }
       }
     }
+
+    if (!keep_going)
+      return;
+
+    (*(l->fp))(min_t);
+
+    l->log->read_next_msg(true);
   }
-  if (!keep_going)
-    return false;
-  assert(min_idx >= 0);
-  Bag *b = &bags[min_idx];
-  *topic = b->topic_name;
-  *rel_time = min_time;
-  *data = b->next_msg;
-  *data_len = b->next_msg_size;
-  if (!b->read_next_msg())
-    b->done = true;
-  return true;
 };
 
