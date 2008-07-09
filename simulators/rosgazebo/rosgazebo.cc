@@ -676,11 +676,11 @@ GazeboNode::Update()
   /***************************************************************/
   //double x,y,z,roll,pitch,yaw;
   //this->myPR2->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw); // actual CoM of base
-  tf.sendInverseEuler(FRAMEID_ROBOT,
+  tf.sendInverseEuler(FRAMEID_ODOM,
                       PR2::FRAMEID_BASE,
-                      0.0,
-                      0.0,
-                      -0.13, /* half height of base box */
+                      x,
+                      y,
+                      z-0.13, /* half height of base box */
                       yaw,
                       pitch,
                       roll,
