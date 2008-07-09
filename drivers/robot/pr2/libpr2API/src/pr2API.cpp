@@ -804,9 +804,9 @@ double PR2Robot::BaseSteeringAngleError()
      currentError[ii] = fabs(shortest_angular_distance(currentCmd[ii] , currentAngle[ii]));
      //std::cout << " ii " << ii << " e " << currentError[ii] << std::endl;
      errorTotal = errorTotal + currentError[ii];
-     fprintf(stdout," ii %d e %.3f - %.3f \n", ii , currentError[ii],errorTotal);
+     //fprintf(stdout," ii %d e %.3f - %.3f \n", ii , currentError[ii],errorTotal);
    }
-   fprintf(stdout," ----------------------------------\n");
+   //fprintf(stdout," ----------------------------------\n");
 
    return errorTotal;
 };
