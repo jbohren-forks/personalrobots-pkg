@@ -20,7 +20,7 @@
     <remap from="mot_cmd" to="mot0_cmd"/>
     <remap from="image" to="intensity_image"/>
   </node>
-  <node pkg="flea2" type="flea2_node" respawn="false">
-    <remap from="image" to="flea_image"/>
+  <node pkg="dc1394_cam" type="dc1394_node" respawn="false">
+    <remap from="image0" to="flea_image"/>
   </node>
 </launch>
