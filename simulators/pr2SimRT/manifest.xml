@@ -7,7 +7,7 @@
   <author>John M. Hsu</author>
   <license>TBD</license>
   <depend package="roscpp" />
-  <depend package="libpr2GZ" />
+  <depend package="libpr2API" />
   <depend package="genericControllers" />
   <depend package="pr2Controllers" />
   <depend package="pr2Core" />

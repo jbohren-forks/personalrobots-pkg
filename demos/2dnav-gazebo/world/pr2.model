@@ -179,16 +179,18 @@
   <!-- neck body -->
   <canonicalBody>neck_body</canonicalBody>
   <body:box name="neck_body">
-    <xyz>0.10 0.0 1.08</xyz>
+    <xyz>0.10 0.0 1.03</xyz>
     <rpy>0.0 0.0 0.0</rpy>
     <!--xyz>0.0 0.0 0.0</xyz>
     <rpy>0.0 0.0 0.0</rpy-->
     <geom:box name="neck_geom">
-      <size>.20 .38 .14</size>
+      <!--size>.20 .38 .14</size-->
+      <size>0.01 0.01 0.01</size>
       <mass>0.01</mass>
       <visual>
         <mesh>unit_box</mesh>
-        <size>.20 .38 .14</size>
+        <!--size>.20 .38 .14</size-->
+        <size>0.01 0.01 0.01</size>
         <material>Gazebo/Black</material>
       </visual>
     </geom:box>
@@ -221,7 +223,7 @@
 
   <canonicalBody>head_base_body</canonicalBody>
   <body:box name="head_base_body">
-    <xyz>0.10 0.0 1.18 </xyz>
+    <xyz>0.10 0.0 1.13 </xyz>
     <rpy>0.0 0.0 0.0 </rpy>
     <!-- report when this body collides with static bodies -->
     <reportStaticCollision>true</reportStaticCollision>
@@ -242,7 +244,7 @@
 
   <canonicalBody>head_tilt_body</canonicalBody>
   <body:box name="head_tilt_body">
-    <xyz>0.10 0.0 1.12 </xyz>
+    <xyz>0.10 0.0 1.07 </xyz>
     <rpy>0.0 0.0 0.0 </rpy>
     <!-- report when this body collides with static bodies -->
     <reportStaticCollision>true</reportStaticCollision>
@@ -306,7 +308,7 @@
 
   <!-- left camera -->
   <body:box name="head_cam_left_body">
-    <xyz> 0.15  0.23  1.12 </xyz>
+    <xyz> 0.15  0.23  1.07 </xyz>
     <rpy> 0.00  0.0   0.00 </rpy>
     <sensor:camera name="head_cam_left_sensor">
       <imageSize>640 480</imageSize>
@@ -333,7 +335,7 @@
     </geom:box>
   </body:box>
   <body:box name="head_cam_base_left_body">
-    <xyz> 0.15  0.20  1.12 </xyz>
+    <xyz> 0.15  0.20  1.07 </xyz>
     <rpy> 0.00  0.0   0.00 </rpy>
     <geom:box name="head_cam_base_left_geom">
       <xyz> 0.00   0.00   0.00</xyz>
@@ -351,7 +353,7 @@
 
   <!-- right camera -->
   <body:empty name="head_cam_right_body">
-    <xyz> 0.15 -0.23  1.12 </xyz>
+    <xyz> 0.15 -0.23  1.07 </xyz>
     <rpy> 0.00  0.0   0.00 </rpy>
     <sensor:camera name="head_cam_right_sensor">
       <imageSize>640 480</imageSize>
@@ -378,7 +380,7 @@
     </geom:box>
   </body:empty>
   <body:box name="head_cam_base_right_body">
-    <xyz> 0.15 -0.20  1.12 </xyz>
+    <xyz> 0.15 -0.20  1.07 </xyz>
     <rpy> 0.00  0.0   0.00 </rpy>
     <geom:box name="head_cam_base_right_geom">
       <xyz> 0.00   0.00   0.00</xyz>
@@ -423,7 +425,7 @@
 
   <!-- stereo camera -->
   <body:empty name="stereo_camera_body">
-    <xyz> 0.10 0.0   1.3  </xyz>
+    <xyz> 0.10 0.0   1.25  </xyz>
     <rpy> 0.0  0.0   0.0  </rpy>
     <sensor:stereocamera name="stereo_camera_sensor">
       <imageSize>640 480</imageSize>
@@ -525,7 +527,7 @@
   <canonicalBody>torso_body</canonicalBody>
 
   <body:box name="torso_body">
-    <xyz>0.056 0.0  0.5</xyz>
+    <xyz>0.056 0.0  0.45</xyz>
     <rpy>0.0   0.0  0.0</rpy>
 
     <!-- report when this body collides with static bodies -->
@@ -533,7 +535,7 @@
 
     <geom:box name="torso_geom">
       <xyz> 0.0  0.0   0.0 </xyz>
-      <size>0.1  0.2   0.8 </size>
+      <size>0.1  0.2   0.6 </size>
       <mass>1</mass>
       <visual>
         <!--   x    y     z -->
@@ -547,7 +549,7 @@
     </geom:box>
 
     <geom:box name="shoulder_geom">
-      <xyz> 0.1  0.00  0.51</xyz>
+      <xyz> 0.1  0.00  0.54</xyz>
       <size>0.3  0.65  0.02</size>
       <mass>1</mass>
       <visual>
@@ -571,7 +573,7 @@
 
   <!-- ========== Right Arm =========== -->
   <body:cylinder name="shoulder_pan_body_right">
-    <xyz>  0.185  -0.15   0.68 </xyz>
+    <xyz>  0.1829361  -0.1329361   0.64 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:cylinder name="shoulder_pan_body_right_geom">
 
@@ -589,9 +591,9 @@
  
       <kp>1000000.0</kp>
       <kd>1.0</kd>
-      <size> 0.13  0.6</size>   <!-- radius and length -->
+      <size> 0.13  0.60</size>   <!-- radius and length -->
       <visual>
-        <xyz> 0.00   0.0   0.20 </xyz>
+        <xyz> 0.00   0.0   0.185 </xyz>
         <rpy> 90.0   0.0   90.0 </rpy>
         <!--size> 0.26 0.6 0.36</size-->
         <scale>0.001 0.001 0.001</scale>
@@ -602,7 +604,7 @@
   </body:cylinder>
 
   <body:cylinder name="upperarm_joint_right">
-    <xyz>  0.285   -0.15   0.86 </xyz>
+    <xyz>  0.285   -0.15   0.8269 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="upperarm_joint_right_geom">
 
@@ -632,7 +634,7 @@
   </body:cylinder>
 
   <body:box name="upperarm_right">
-    <xyz>  0.575   -0.15   0.86 </xyz>
+    <xyz>  0.575   -0.15   0.8269 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="upperarm_right_geom">
 
@@ -662,7 +664,7 @@
   </body:box>
 
   <body:cylinder name="elbow_right">
-    <xyz>  0.6850  -0.15   0.86 </xyz>
+    <xyz>  0.6850  -0.15   0.8269 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="elbow_right_geom">
 
@@ -692,7 +694,7 @@
   </body:cylinder>
 
   <body:box name="forearm_right">
-    <xyz>  0.90225 -0.15   0.86 </xyz>
+    <xyz>  0.90225 -0.15   0.8269 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="forearm_right_geom">
 
@@ -722,7 +724,7 @@
   </body:box>
 
   <body:cylinder name="wrist_right">
-    <xyz>  1.008   -0.15   0.86 </xyz>
+    <xyz>  1.008   -0.15   0.8269 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="wrist_right_geom">
 
@@ -752,7 +754,7 @@
   </body:cylinder>
 
   <body:box name="palm_right">
-    <xyz>  1.10   -0.15   0.86</xyz>
+    <xyz>  1.10   -0.15   0.8269</xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="palm_right_geom">
 
@@ -782,7 +784,7 @@
   </body:box>
 
   <body:box name="finger_1_right">
-    <xyz>  1.18   -0.17   0.86 </xyz>
+    <xyz>  1.18   -0.17   0.8269 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="finger_1_right_geom">
       <kp>100000000.0</kp>
@@ -798,7 +800,7 @@
   </body:box>
 
   <body:box name="finger_2_right">
-    <xyz>  1.18   -0.13   0.86 </xyz>
+    <xyz>  1.18   -0.13   0.8269 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="finger_2_right_geom">
       <kp>100000000.0</kp>
@@ -888,7 +890,7 @@
 
   <!-- ========== Left Arm =========== -->
   <body:cylinder name="shoulder_pan_body_left">
-    <xyz>  0.185   0.15   0.68 </xyz>
+    <xyz>  0.1829361   0.1329361   0.64 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:cylinder name="shoulder_pan_body_left_geom">
 
@@ -908,7 +910,7 @@
       <kd>1.0</kd>
       <size> 0.13  0.6</size>   <!-- radius and length -->
       <visual>
-        <xyz> 0.00   0.0   0.20 </xyz>
+        <xyz> 0.00   0.0   0.185 </xyz>
         <rpy> 90.0   0.0   90.0 </rpy>
         <!--size> 0.26 0.6 0.36</size-->
         <scale>0.001 0.001 0.001</scale>
@@ -919,7 +921,7 @@
   </body:cylinder>
 
   <body:cylinder name="upperarm_joint_left">
-    <xyz>  0.285    0.15   0.86 </xyz>
+    <xyz>  0.285    0.15   0.8269 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="upperarm_joint_left_geom">
 
@@ -949,7 +951,7 @@
   </body:cylinder>
 
   <body:box name="upperarm_left">
-    <xyz>  0.575    0.15   0.86 </xyz>
+    <xyz>  0.575    0.15   0.8269 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="upperarm_left_geom">
 
@@ -979,7 +981,7 @@
   </body:box>
 
   <body:cylinder name="elbow_left">
-    <xyz>  0.6850   0.15   0.86 </xyz>
+    <xyz>  0.6850   0.15   0.8269 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="elbow_left_geom">
 
@@ -1009,7 +1011,7 @@
   </body:cylinder>
 
   <body:box name="forearm_left">
-    <xyz>  0.90225  0.15   0.86 </xyz>
+    <xyz>  0.90225  0.15   0.8269 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="forearm_left_geom">
 
@@ -1039,7 +1041,7 @@
   </body:box>
 
   <body:cylinder name="wrist_left">
-    <xyz>  1.008    0.15   0.86 </xyz>
+    <xyz>  1.008    0.15   0.8269 </xyz>
     <rpy> 90.0     0.0    0.0 </rpy>
     <geom:cylinder name="wrist_left_geom">
 
@@ -1069,7 +1071,7 @@
   </body:cylinder>
 
   <body:box name="palm_left">
-    <xyz>  1.10    0.15   0.86</xyz>
+    <xyz>  1.10    0.15   0.8269</xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="palm_left_geom">
 
@@ -1099,7 +1101,7 @@
   </body:box>
 
   <body:box name="finger_1_left">
-    <xyz>  1.18    0.13   0.86 </xyz>
+    <xyz>  1.18    0.13   0.8269 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="finger_1_left_geom">
       <kp>100000000.0</kp>
@@ -1115,7 +1117,7 @@
   </body:box>
 
   <body:box name="finger_2_left">
-    <xyz>  1.18    0.17   0.86 </xyz>
+    <xyz>  1.18    0.17   0.8269 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <geom:box name="finger_2_left_geom">
       <kp>100000000.0</kp>
@@ -1693,7 +1695,7 @@
   <!--         Hokuyo laser body             -->
   <canonicalBody>laser_body</canonicalBody>
   <body:box name="laser_body">
-    <xyz>0.23 0.0 1.05</xyz>
+    <xyz>0.23 0.0 1.0</xyz>
     <rpy>0.0 0.0 0.0</rpy>
  
     <geom:box name="laser_box">

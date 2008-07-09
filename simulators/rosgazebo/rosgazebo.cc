@@ -505,11 +505,11 @@ GazeboNode::Update()
   this->odomMsg.vel.th = vw;
 
   // Get position
-  double x,y,z,roll,pitch,th;
-  this->myPR2->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&th);
+  double x,y,z,roll,pitch,yaw;
+  this->myPR2->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw);
   this->odomMsg.pos.x  = x;
   this->odomMsg.pos.y  = y;
-  this->odomMsg.pos.th = th;
+  this->odomMsg.pos.th = yaw;
   // this->odomMsg.stall = this->positionmodel->Stall();
 
   // TODO: get the frame ID from somewhere
@@ -666,6 +666,210 @@ GazeboNode::Update()
 //  this->myPR2->SetGripperGains(PR2::PR2_RIGHT_GRIPPER ,10.0,0.0,0.0);
 //  this->myPR2->OpenGripper(PR2::PR2_LEFT_GRIPPER ,this->arm.gripperGapCmd,this->arm.gripperForceCmd);
 //  this->myPR2->CloseGripper(PR2::PR2_RIGHT_GRIPPER,this->arm.gripperGapCmd,this->arm.gripperForceCmd);
+
+  /***************************************************************/
+  /*                                                             */
+  /*  frame transforms                                           */
+  /*                                                             */
+  /*  x,y,z,yaw,pitch,roll                                       */
+  /*                                                             */
+  /***************************************************************/
+  //double x,y,z,roll,pitch,yaw;
+  //this->myPR2->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw); // actual CoM of base
+  tf.sendInverseEuler(FRAMEID_ROBOT,
+                      PR2::FRAMEID_BASE,
+                      0.0,
+                      0.0,
+                      -0.13, /* half height of base box */
+                      yaw,
+                      pitch,
+                      roll,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // base = center of the bottom of the base box
+  // torso = midpoint of bottom of turrets
+  tf.sendInverseEuler(PR2::FRAMEID_BASE,
+                      PR2::FRAMEID_TORSO,
+                      PR2::BASE_LEFT_ARM_OFFSET.x,
+                      0.0,
+                      PR2::BASE_LEFT_ARM_OFFSET.z, /* FIXME: spine elevator not accounted for */
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_l_turret = bottom of left turret
+  tf.sendInverseEuler(PR2::FRAMEID_TORSO,
+                      PR2::FRAMEID_ARM_L_TURRET,
+                      0.0,
+                      PR2::BASE_LEFT_ARM_OFFSET.y,
+                      0.0,
+                      larm.turretAngle,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_l_shoulder = center of left shoulder pitch bracket
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_L_TURRET,
+                      PR2::FRAMEID_ARM_L_SHOULDER,
+                      PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.x,
+                      PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.y,
+                      PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.z,
+                      0.0,
+                      larm.shoulderLiftAngle,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_l_upperarm = upper arm with roll DOF, at shoulder pitch center
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_L_SHOULDER,
+                      PR2::FRAMEID_ARM_L_UPPERARM,
+                      PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.x,
+                      PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.y,
+                      PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.z,
+                      0.0,
+                      0.0,
+                      larm.upperarmRollAngle,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  //frameid_arm_l_elbow = elbow pitch bracket center of rotation
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_L_UPPERARM,
+                      PR2::FRAMEID_ARM_L_ELBOW,
+                      PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.x,
+                      PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.y,
+                      PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.z,
+                      0.0,
+                      larm.elbowAngle,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  //frameid_arm_l_forearm = forearm roll DOR, at elbow pitch center
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_L_ELBOW,
+                      PR2::FRAMEID_ARM_L_FOREARM,
+                      PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.x,
+                      PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.y,
+                      PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.z,
+                      0.0,
+                      0.0,
+                      larm.forearmRollAngle,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_l_wrist = wrist pitch DOF.
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_L_FOREARM,
+                      PR2::FRAMEID_ARM_L_WRIST,
+                      PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.x,
+                      PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.y,
+                      PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.z,
+                      0.0,
+                      larm.wristPitchAngle,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_l_hand = hand roll DOF, center at wrist pitch center
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_L_WRIST,
+                      PR2::FRAMEID_ARM_L_HAND,
+                      PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.x,
+                      PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.y,
+                      PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.z,
+                      0.0,
+                      0.0,
+                      larm.wristRollAngle,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+
+  // arm_r_turret = bottom of right turret
+  tf.sendInverseEuler(PR2::FRAMEID_TORSO,
+                      PR2::FRAMEID_ARM_R_TURRET,
+                      0.0,
+                      PR2::BASE_RIGHT_ARM_OFFSET.y,
+                      0.0,
+                      rarm.turretAngle,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_r_shoulder = center of right shoulder pitch bracket
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_R_TURRET,
+                      PR2::FRAMEID_ARM_R_SHOULDER,
+                      PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.x,
+                      PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.y,
+                      PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.z,
+                      0.0,
+                      rarm.shoulderLiftAngle,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_r_upperarm = upper arm with roll DOF, at shoulder pitch center
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_R_SHOULDER,
+                      PR2::FRAMEID_ARM_R_UPPERARM,
+                      PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.x,
+                      PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.y,
+                      PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.z,
+                      0.0,
+                      0.0,
+                      rarm.upperarmRollAngle,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  //frameid_arm_r_elbow = elbow pitch bracket center of rotation
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_R_UPPERARM,
+                      PR2::FRAMEID_ARM_R_ELBOW,
+                      PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.x,
+                      PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.y,
+                      PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.z,
+                      0.0,
+                      rarm.elbowAngle,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  //frameid_arm_r_forearm = forearm roll DOR, at elbow pitch center
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_R_ELBOW,
+                      PR2::FRAMEID_ARM_R_FOREARM,
+                      PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.x,
+                      PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.y,
+                      PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.z,
+                      0.0,
+                      0.0,
+                      rarm.forearmRollAngle,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_r_wrist = wrist pitch DOF.
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_R_FOREARM,
+                      PR2::FRAMEID_ARM_R_WRIST,
+                      PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.x,
+                      PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.y,
+                      PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.z,
+                      0.0,
+                      rarm.wristPitchAngle,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // arm_r_hand = hand roll DOF, center at wrist pitch center
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_R_WRIST,
+                      PR2::FRAMEID_ARM_R_HAND,
+                      PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.x,
+                      PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.y,
+                      PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.z,
+                      0.0,
+                      0.0,
+                      rarm.wristRollAngle,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+
 
 
   this->lock.unlock();

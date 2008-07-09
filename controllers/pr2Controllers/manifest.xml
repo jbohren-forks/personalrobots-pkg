@@ -13,6 +13,6 @@
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
-    <cpp cflags='-I${prefix}/include' lflags='-L${prefix}/lib -lPr2Controllers'/>
+    <cpp cflags='-I${prefix}/include' lflags='-L${prefix}/lib -lpr2Controllers'/>
   </export>
 </package>

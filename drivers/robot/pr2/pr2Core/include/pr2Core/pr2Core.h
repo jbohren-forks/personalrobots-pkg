@@ -6,6 +6,46 @@
 namespace PR2
 {
 
+   enum PR2_FRAMEID{
+      FRAMEID_CASTER_FL_WHEEL_L = 101 ,  // FIXME: this is a hack until we have a frameid server
+      FRAMEID_CASTER_FL_WHEEL_R , 
+      FRAMEID_CASTER_FL_BODY    ,
+      FRAMEID_CASTER_FR_WHEEL_L , 
+      FRAMEID_CASTER_FR_WHEEL_R , 
+      FRAMEID_CASTER_FR_BODY    ,
+      FRAMEID_CASTER_RL_WHEEL_L , 
+      FRAMEID_CASTER_RL_WHEEL_R , 
+      FRAMEID_CASTER_RL_BODY    ,
+      FRAMEID_CASTER_RR_WHEEL_L , 
+      FRAMEID_CASTER_RR_WHEEL_R , 
+      FRAMEID_CASTER_RR_BODY    ,
+      FRAMEID_BASE              ,
+      FRAMEID_TORSO             ,
+      FRAMEID_ARM_L_TURRET      , 
+      FRAMEID_ARM_L_SHOULDER    ,
+      FRAMEID_ARM_L_UPPERARM    , 
+      FRAMEID_ARM_L_ELBOW       ,
+      FRAMEID_ARM_L_FOREARM     , 
+      FRAMEID_ARM_L_WRIST       ,
+      FRAMEID_ARM_L_HAND        , 
+      FRAMEID_ARM_L_FINGER_1    ,
+      FRAMEID_ARM_L_FINGER_2    ,
+      FRAMEID_ARM_R_TURRET      , 
+      FRAMEID_ARM_R_SHOULDER    ,
+      FRAMEID_ARM_R_UPPERARM    , 
+      FRAMEID_ARM_R_ELBOW       ,
+      FRAMEID_ARM_R_FOREARM     , 
+      FRAMEID_ARM_R_WRIST       ,
+      FRAMEID_ARM_R_HAND        , 
+      FRAMEID_ARM_R_FINGER_1    ,
+      FRAMEID_ARM_R_FINGER_2    ,
+      FRAMEID_HEAD_BASE         , 
+      FRAMEID_LASER_BLOCK       ,
+      FRAMEID_STEREO_BLOCK      , 
+      FRAMEID_LASERBLOCK        ,
+      MAX_FRAMEIDS 
+   };
+
    enum PR2_JOINT_CONTROL_MODE{ 
       TORQUE_CONTROL, 
       PD_CONTROL, 
@@ -100,7 +140,7 @@ namespace PR2
       ARM_L_ELBOW       ,
       ARM_L_FOREARM     , 
       ARM_L_WRIST       ,
-      ARM_L_GRIPPER_TMP , 
+      ARM_L_HAND        , 
       ARM_L_FINGER_1    ,
       ARM_L_FINGER_2    ,
       ARM_R_TURRET      , 
@@ -109,7 +149,7 @@ namespace PR2
       ARM_R_ELBOW       ,
       ARM_R_FOREARM     , 
       ARM_R_WRIST       ,
-      ARM_R_GRIPPER_TMP , 
+      ARM_R_HAND        , 
       ARM_R_FINGER_1    ,
       ARM_R_FINGER_2    ,
       HEAD_BASE         , 
@@ -243,7 +283,7 @@ namespace PR2
    const int JointEnd[MAX_MODELS]   = {CASTER_RR_DRIVE_R ,SPINE_ELEVATOR ,ARM_L_WRIST_ROLL ,ARM_R_WRIST_ROLL ,ARM_L_GRIPPER    ,ARM_R_GRIPPER     ,HEAD_LASER_PITCH };
 
 
-// Geometric description for the base
+   // Geometric description for the base
    const float CASTER_FL_X_OFFSET = 0.25;
    const float CASTER_FL_Y_OFFSET = 0.25;
 
