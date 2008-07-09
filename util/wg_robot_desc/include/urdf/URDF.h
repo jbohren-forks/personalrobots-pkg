@@ -35,6 +35,7 @@
 #ifndef URDF_PARSER_
 #define URDF_PARSER_
 
+#include <tinyxml-2.5.3/tinyxml.h>
 #include <string>
 #include <vector>
 #include <map>
@@ -311,8 +312,8 @@ class URDF
     char* findFile(const char *filename);
 
     /* parse the URDF document */
-    virtual bool parse(const void *data);
-    virtual void ignoreNode(const void *data);
+    virtual bool parse(const TiXmlNode *node);
+    virtual void ignoreNode(const TiXmlNode* node);
     
     std::string                  m_source;
     std::vector<std::string>     m_paths;
@@ -333,25 +334,25 @@ class URDF
  private:
     
     /* utility functions for parsing */
-    void loadLink(const void *data);
-    void loadSensor(const void *data);
-    void loadActuator(const void *data, Link::Actuator *actuator);
-    void loadJoint(const void *data, Link::Joint *joint);
-    void loadGeometry(const void *data, Link::Geometry *geometry);
-    void loadCollision(const void *data, Link::Collision *collision);
-    void loadVisual(const void *data, Link::Visual *visual);
-    void loadInertial(const void *data, Link::Inertial *inertial);
+    void loadLink(const TiXmlNode *node);
+    void loadSensor(const TiXmlNode *node);
+    void loadActuator(const TiXmlNode *node, Link::Actuator *actuator);
+    void loadJoint(const TiXmlNode *node, Link::Joint *joint);
+    void loadGeometry(const TiXmlNode *node, Link::Geometry *geometry);
+    void loadCollision(const TiXmlNode *node, Link::Collision *collision);
+    void loadVisual(const TiXmlNode *node, Link::Visual *visual);
+    void loadInertial(const TiXmlNode *node, Link::Inertial *inertial);
     void defaultConstants(void);
-    void getChildrenAndAttributes(const void *data, std::vector<const void *> &children, std::vector<const void *> &attributes) const;
-    unsigned int loadValues(const void *data, unsigned int count, double *vals);
-    std::string  extractName(std::vector<const void *> &attributes);    
+    void getChildrenAndAttributes(const TiXmlNode* node, std::vector<const TiXmlNode*> &children, std::vector<const TiXmlAttribute*> &attributes) const;
+    unsigned int loadValues(const TiXmlNode *node, unsigned int count, double *vals);
+    std::string  extractName(std::vector<const TiXmlAttribute*> &attributes);    
     
     
     /* temporary storage for information during parsing; should not be used elsewhere */
-    std::map<std::string, std::string> m_constants;  // constants 
-    std::map<std::string, const void*> m_templates;  // templates
-    std::vector<const void*>           m_stage2;     // xml nodes that should be processed after all templates and constants are read
-    std::vector<void*>                 m_docs;       // pointer to loaded documents
+    std::map<std::string, std::string>      m_constants;  // constants 
+    std::map<std::string, const TiXmlNode*> m_templates;  // templates
+    std::vector<const TiXmlNode*>           m_stage2;     // xml nodes that should be processed after all templates and constants are read
+    std::vector<TiXmlDocument*>             m_docs;       // pointer to loaded documents
     
 };
 

@@ -34,7 +34,6 @@
 
 #include <urdf/URDF.h>
 #include <urdf/MathExpression.h>
-#include <tinyxml-2.5.3/tinyxml.h>
 #include <cstring>
 #include <fstream>
 #include <sstream>
@@ -230,9 +229,8 @@ bool URDF::Sensor::canSense(void) const
     return true;
 }
 
-void URDF::ignoreNode(const void *data)
-{	
-    const TiXmlNode *node = reinterpret_cast<const TiXmlNode*>(data);
+void URDF::ignoreNode(const TiXmlNode* node)
+{
     switch (node->Type())
     {
     case TiXmlNode::ELEMENT:
@@ -251,9 +249,8 @@ void URDF::ignoreNode(const void *data)
     }
 }
 
-void URDF::getChildrenAndAttributes(const void *data, std::vector<const void *> &children, std::vector<const void *> &attributes) const
+void URDF::getChildrenAndAttributes(const TiXmlNode *node, std::vector<const TiXmlNode*> &children, std::vector<const TiXmlAttribute*> &attributes) const
 {
-    const TiXmlNode *node = reinterpret_cast<const TiXmlNode*>(data);
     for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
 	children.push_back(child);
     if (node->Type() == TiXmlNode::ELEMENT)
@@ -262,7 +259,7 @@ void URDF::getChildrenAndAttributes(const void *data, std::vector<const void *> 
 	{
 	    if (strcmp(attr->Name(), "clone") == 0)
 	    {
-		std::map<std::string, const void *>::const_iterator pos = m_templates.find(attr->ValueStr());
+		std::map<std::string, const TiXmlNode*>::const_iterator pos = m_templates.find(attr->ValueStr());
 		if (pos == m_templates.end())
 		    fprintf(stderr, "Template '%s' is not defined\n", attr->Value());
 		else
@@ -298,7 +295,7 @@ bool URDF::load(const char *filename)
     
     /* clear memory allocated for loaded documents */
     for (unsigned int i = 0 ; i < m_docs.size() ; ++i)
-	delete reinterpret_cast<TiXmlDocument*>(m_docs[i]);
+	delete m_docs[i];
     m_docs.clear();
     
     return result;
@@ -330,15 +327,14 @@ char* URDF::findFile(const char *filename)
     return NULL;
 }
 
-std::string URDF::extractName(std::vector<const void *> &attributes)
+std::string URDF::extractName(std::vector<const TiXmlAttribute*> &attributes)
 { 
     std::string name;    
     for (unsigned int i = 0 ; i < attributes.size() ; ++i)
     {
-	const TiXmlAttribute *attr = reinterpret_cast<const TiXmlAttribute*>(attributes[i]);
-	if (strcmp(attr->Name(), "name") == 0)
+	if (strcmp(attributes[i]->Name(), "name") == 0)
 	{
-	    name = attr->ValueStr();
+	    name = attributes[i]->ValueStr();
 	    attributes.erase(attributes.begin() + i);
 	    break;
 	}
@@ -358,9 +354,8 @@ static double getConstant(void *data, std::string &name)
         return atof((*m)[name].c_str());
 }
 
-unsigned int URDF::loadValues(const void *data, unsigned int count, double *vals)
+unsigned int URDF::loadValues(const TiXmlNode *node, unsigned int count, double *vals)
 {
-    const TiXmlNode *node = reinterpret_cast<const TiXmlNode*>(data);
     if (node && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 	node = node->FirstChild();
     else
@@ -383,11 +378,11 @@ unsigned int URDF::loadValues(const void *data, unsigned int count, double *vals
     return read;
 }
 
-void URDF::loadActuator(const void *data, Link::Actuator *actuator)
+void URDF::loadActuator(const TiXmlNode *node, Link::Actuator *actuator)
 {
-    std::vector<const void*> children;
-    std::vector<const void*> attributes;
-    getChildrenAndAttributes(data, children, attributes);
+    std::vector<const TiXmlNode*> children;
+    std::vector<const TiXmlAttribute*> attributes;
+    getChildrenAndAttributes(node, children, attributes);
     
     std::string name = extractName(attributes);
     
@@ -407,7 +402,7 @@ void URDF::loadActuator(const void *data, Link::Actuator *actuator)
     
     for (unsigned int i = 0 ; i < children.size() ; ++i)
     {
-	const TiXmlNode *node = reinterpret_cast<const TiXmlNode*>(children[i]);
+	const TiXmlNode *node = children[i];
 	if (node->Type() == TiXmlNode::ELEMENT)
 	{
 	    if (node->ValueStr() == "motor" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
@@ -432,11 +427,11 @@ void URDF::loadActuator(const void *data, Link::Actuator *actuator)
     }    
 }
 
-void URDF::loadJoint(const void *data, Link::Joint *joint)
+void URDF::loadJoint(const TiXmlNode *node, Link::Joint *joint)
 {
-    std::vector<const void*> children;
-    std::vector<const void*> attributes;
-    getChildrenAndAttributes(data, children, attributes);
+    std::vector<const TiXmlNode*> children;
+    std::vector<const TiXmlAttribute*> attributes;
+    getChildrenAndAttributes(node, children, attributes);
     
     std::string name = extractName(attributes);
     
@@ -456,7 +451,7 @@ void URDF::loadJoint(const void *data, Link::Joint *joint)
     
     for (unsigned int i = 0 ; i < attributes.size() ; ++i)
     {
-	const TiXmlAttribute *attr = reinterpret_cast<const TiXmlAttribute*>(attributes[i]);
+	const TiXmlAttribute *attr = attributes[i];
 	if (strcmp(attr->Name(), "type") == 0)
 	{
 	    if (attr->ValueStr() == "fixed")
@@ -477,7 +472,7 @@ void URDF::loadJoint(const void *data, Link::Joint *joint)
     
     for (unsigned int i = 0 ; i < children.size() ; ++i)
     {
-	const TiXmlNode *node = reinterpret_cast<const TiXmlNode*>(children[i]);
+	const TiXmlNode *node = children[i];
 	if (node->Type() == TiXmlNode::ELEMENT)
 	{
 	    if (node->ValueStr() == "axis")
@@ -507,12 +502,12 @@ void URDF::loadJoint(const void *data, Link::Joint *joint)
     
 }
 
-void URDF::loadGeometry(const void *data, Link::Geometry *geometry)
+void URDF::loadGeometry(const TiXmlNode *node, Link::Geometry *geometry)
 {
-    std::vector<const void*> children;
-    std::vector<const void*> attributes;
-    getChildrenAndAttributes(data, children, attributes);
-    
+    std::vector<const TiXmlNode*> children;
+    std::vector<const TiXmlAttribute*> attributes;
+    getChildrenAndAttributes(node, children, attributes);
+
     std::string name = extractName(attributes);
     
     if (!geometry)
@@ -531,7 +526,7 @@ void URDF::loadGeometry(const void *data, Link::Geometry *geometry)
     
     for (unsigned int i = 0 ; i < attributes.size() ; ++i)
     {
-	const TiXmlAttribute *attr = reinterpret_cast<const TiXmlAttribute*>(attributes[i]);
+	const TiXmlAttribute *attr = attributes[i];
 	if (strcmp(attr->Name(), "type") == 0)
 	{
 	    if (attr->ValueStr() == "box")
@@ -552,7 +547,7 @@ void URDF::loadGeometry(const void *data, Link::Geometry *geometry)
 
     for (unsigned int i = 0 ; i < children.size() ; ++i)
     {
-	const TiXmlNode *node = reinterpret_cast<const TiXmlNode*>(children[i]);
+	const TiXmlNode *node = children[i];
 	if (node->Type() == TiXmlNode::ELEMENT)
 	{
 	    if (node->ValueStr() == "size")
@@ -584,12 +579,12 @@ void URDF::loadGeometry(const void *data, Link::Geometry *geometry)
     }
 }
 
-void URDF::loadCollision(const void *data, Link::Collision *collision)
+void URDF::loadCollision(const TiXmlNode *node, Link::Collision *collision)
 {  
-    std::vector<const void*> children;
-    std::vector<const void*> attributes;
-    getChildrenAndAttributes(data, children, attributes);
-    
+    std::vector<const TiXmlNode*> children;
+    std::vector<const TiXmlAttribute*> attributes;
+    getChildrenAndAttributes(node, children, attributes);
+
     std::string name = extractName(attributes);
     
     if (!collision)
@@ -608,7 +603,7 @@ void URDF::loadCollision(const void *data, Link::Collision *collision)
     
     for (unsigned int i = 0 ; i < children.size() ; ++i)
     {
-	const TiXmlNode *node = reinterpret_cast<const TiXmlNode*>(children[i]);
+	const TiXmlNode *node = children[i];
 	if (node->Type() == TiXmlNode::ELEMENT)
 	{
 	    if (node->ValueStr() == "rpy")
@@ -630,12 +625,12 @@ void URDF::loadCollision(const void *data, Link::Collision *collision)
     }    
 }
 
-void URDF::loadVisual(const void *data, Link::Visual *visual)
+void URDF::loadVisual(const TiXmlNode *node, Link::Visual *visual)
 {  
-    std::vector<const void*> children;
-    std::vector<const void*> attributes;
-    getChildrenAndAttributes(data, children, attributes);
-    
+    std::vector<const TiXmlNode*> children;
+    std::vector<const TiXmlAttribute*> attributes;
+    getChildrenAndAttributes(node, children, attributes);
+
     std::string name = extractName(attributes);
     
     if (!visual)
@@ -654,7 +649,7 @@ void URDF::loadVisual(const void *data, Link::Visual *visual)
     
     for (unsigned int i = 0 ; i < children.size() ; ++i)
     {
-	const TiXmlNode *node = reinterpret_cast<const TiXmlNode*>(children[i]);
+	const TiXmlNode *node = children[i];
 	if (node->Type() == TiXmlNode::ELEMENT)
 	{
 	    if (node->ValueStr() == "rpy")
@@ -676,11 +671,11 @@ void URDF::loadVisual(const void *data, Link::Visual *visual)
     }   
 }
 
-void URDF::loadInertial(const void *data, Link::Inertial *inertial)
+void URDF::loadInertial(const TiXmlNode *node, Link::Inertial *inertial)
 { 
-    std::vector<const void*> children;
-    std::vector<const void*> attributes;
-    getChildrenAndAttributes(data, children, attributes);
+    std::vector<const TiXmlNode*> children;
+    std::vector<const TiXmlAttribute*> attributes;
+    getChildrenAndAttributes(node, children, attributes);
     
     std::string name = extractName(attributes);
     
@@ -700,7 +695,7 @@ void URDF::loadInertial(const void *data, Link::Inertial *inertial)
     
     for (unsigned int i = 0 ; i < children.size() ; ++i)
     {
-	const TiXmlNode *node = reinterpret_cast<const TiXmlNode*>(children[i]);
+	const TiXmlNode *node = children[i];
 	if (node->Type() == TiXmlNode::ELEMENT)
 	{
 	    if (node->ValueStr() == "mass")
@@ -719,12 +714,12 @@ void URDF::loadInertial(const void *data, Link::Inertial *inertial)
     }
 }
 
-void URDF::loadLink(const void *data)
+void URDF::loadLink(const TiXmlNode *node)
 {
-    std::vector<const void*> children;
-    std::vector<const void*> attributes;
-    getChildrenAndAttributes(data, children, attributes);
-    
+    std::vector<const TiXmlNode*> children;
+    std::vector<const TiXmlAttribute*> attributes;
+    getChildrenAndAttributes(node, children, attributes);
+
     std::string name = extractName(attributes);    
     Link *link = (m_links.find(name) != m_links.end()) ? m_links[name] : new Link();
     link->name = name;
@@ -734,7 +729,7 @@ void URDF::loadLink(const void *data)
     
     for (unsigned int i = 0 ; i < children.size() ; ++i)
     {
-	const TiXmlNode *node = reinterpret_cast<const TiXmlNode*>(children[i]);
+	const TiXmlNode *node = children[i];
 	if (node->Type() == TiXmlNode::ELEMENT)
 	{
 	    if (node->ValueStr() == "parent" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
@@ -765,11 +760,11 @@ void URDF::loadLink(const void *data)
     }
 }
 
-void URDF::loadSensor(const void *data)
+void URDF::loadSensor(const TiXmlNode *node)
 {
-    std::vector<const void*> children;
-    std::vector<const void*> attributes;
-    getChildrenAndAttributes(data, children, attributes);
+    std::vector<const TiXmlNode*> children;
+    std::vector<const TiXmlAttribute*> attributes;
+    getChildrenAndAttributes(node, children, attributes);
 
     std::string name = extractName(attributes);    
     Sensor *sensor = (m_links.find(name) != m_links.end()) ? dynamic_cast<Sensor*>(m_links[name]) : new Sensor();
@@ -789,7 +784,7 @@ void URDF::loadSensor(const void *data)
     
     for (unsigned int i = 0 ; i < attributes.size() ; ++i)
     {
-	const TiXmlAttribute *attr = reinterpret_cast<const TiXmlAttribute*>(attributes[i]);
+	const TiXmlAttribute *attr = attributes[i];
 	if (strcmp(attr->Name(), "type") == 0)
 	{
 	    if (attr->ValueStr() == "camera")
@@ -801,7 +796,7 @@ void URDF::loadSensor(const void *data)
 
     for (unsigned int i = 0 ; i < children.size() ; ++i)
     {
-	const TiXmlNode *node = reinterpret_cast<const TiXmlNode*>(children[i]);
+	const TiXmlNode *node = children[i];
 	if (node->Type() == TiXmlNode::ELEMENT)
 	{
 	    if (node->ValueStr() == "parent" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
@@ -835,9 +830,8 @@ void URDF::loadSensor(const void *data)
     }
 }
 
-bool URDF::parse(const void *data)
+bool URDF::parse(const TiXmlNode *node)
 {
-    const TiXmlNode *node = reinterpret_cast<const TiXmlNode*>(data);
     if (!node) return false;
     
     int type =  node->Type();
@@ -849,7 +843,7 @@ bool URDF::parse(const void *data)
 	{
 	    for (unsigned int i = 0 ; i < m_stage2.size() ; ++i)
 	    {
-		const TiXmlElement *elem = reinterpret_cast<const TiXmlNode*>(m_stage2[i])->ToElement(); 
+		const TiXmlElement *elem = m_stage2[i]->ToElement(); 
 		if (!elem)
 		    fprintf(stderr, "Non-element node found in second stage of parsing\n");
 		else
