@@ -651,21 +651,21 @@ GazeboNode::Update()
   publish("right_pr2arm_pos", rarm);
   
 
-//  this->arm.turretAngle          = 0.0;
-//  this->arm.shoulderLiftAngle    = 0.0;
-//  this->arm.upperarmRollAngle    = 0.0;
-//  this->arm.elbowAngle           = 0.0;
-//  this->arm.forearmRollAngle     = 0.0;
-//  this->arm.wristPitchAngle      = 0.0;
-//  this->arm.wristRollAngle       = 0.0;
-//  this->arm.gripperForceCmd      = 1000.0;
-//  this->arm.gripperGapCmd        = 0.0;
-//
-//  // gripper test
-//  this->myPR2->SetGripperGains(PR2::PR2_LEFT_GRIPPER  ,10.0,0.0,0.0);
-//  this->myPR2->SetGripperGains(PR2::PR2_RIGHT_GRIPPER ,10.0,0.0,0.0);
-//  this->myPR2->OpenGripper(PR2::PR2_LEFT_GRIPPER ,this->arm.gripperGapCmd,this->arm.gripperForceCmd);
-//  this->myPR2->CloseGripper(PR2::PR2_RIGHT_GRIPPER,this->arm.gripperGapCmd,this->arm.gripperForceCmd);
+  //  this->arm.turretAngle          = 0.0;
+  //  this->arm.shoulderLiftAngle    = 0.0;
+  //  this->arm.upperarmRollAngle    = 0.0;
+  //  this->arm.elbowAngle           = 0.0;
+  //  this->arm.forearmRollAngle     = 0.0;
+  //  this->arm.wristPitchAngle      = 0.0;
+  //  this->arm.wristRollAngle       = 0.0;
+  //  this->arm.gripperForceCmd      = 1000.0;
+  //  this->arm.gripperGapCmd        = 0.0;
+  //
+  //  // gripper test
+  //  this->myPR2->SetGripperGains(PR2::PR2_LEFT_GRIPPER  ,10.0,0.0,0.0);
+  //  this->myPR2->SetGripperGains(PR2::PR2_RIGHT_GRIPPER ,10.0,0.0,0.0);
+  //  this->myPR2->OpenGripper(PR2::PR2_LEFT_GRIPPER ,this->arm.gripperGapCmd,this->arm.gripperForceCmd);
+  //  this->myPR2->CloseGripper(PR2::PR2_RIGHT_GRIPPER,this->arm.gripperGapCmd,this->arm.gripperForceCmd);
 
   /***************************************************************/
   /*                                                             */
@@ -784,6 +784,30 @@ GazeboNode::Update()
                       odomMsg.header.stamp.sec,
                       odomMsg.header.stamp.nsec);
 
+  // FIXME: not implemented
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_L_FINGER_1,
+                      PR2::FRAMEID_ARM_L_HAND,
+                      0.05,
+                      0.025,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // FIXME: not implemented
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_L_FINGER_2,
+                      PR2::FRAMEID_ARM_L_HAND,
+                      0.05,
+                      -0.025,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
 
   // arm_r_turret = bottom of right turret
   tf.sendInverseEuler(PR2::FRAMEID_ARM_R_TURRET,
@@ -866,6 +890,78 @@ GazeboNode::Update()
                       0.0,
                       0.0,
                       rarm.wristRollAngle,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // FIXME: not implemented
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_R_FINGER_1,
+                      PR2::FRAMEID_ARM_R_HAND,
+                      0.05,
+                      0.025,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // FIXME: not implemented
+  tf.sendInverseEuler(PR2::FRAMEID_ARM_R_FINGER_2,
+                      PR2::FRAMEID_ARM_R_HAND,
+                      0.05,
+                      -0.025,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // FIXME: not implemented
+  tf.sendInverseEuler(PR2::FRAMEID_HEAD_BASE,
+                      PR2::FRAMEID_TORSO,
+                      0.0,
+                      0.0,
+                      1.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // FIXME: not implemented
+  tf.sendInverseEuler(PR2::FRAMEID_LASER_BLOCK,
+                      PR2::FRAMEID_TORSO,
+                      0.0,
+                      0.0,
+                      1.05,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // FIXME: not implemented
+  tf.sendInverseEuler(PR2::FRAMEID_STEREO_BLOCK,
+                      PR2::FRAMEID_TORSO,
+                      0.0,
+                      0.0,
+                      1.10,
+                      0.0,
+                      0.0,
+                      0.0,
+                      odomMsg.header.stamp.sec,
+                      odomMsg.header.stamp.nsec);
+
+  // FIXME: not implemented
+  tf.sendInverseEuler(PR2::FRAMEID_LASERBLOCK,
+                      PR2::FRAMEID_BASE,
+                      0.035,
+                      0.0,
+                      0.26,
+                      0.0,
+                      0.0,
+                      0.0,
                       odomMsg.header.stamp.sec,
                       odomMsg.header.stamp.nsec);
 
