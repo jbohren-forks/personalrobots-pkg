@@ -119,9 +119,9 @@ JointController::getPosCmd(double *pos)
 CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::getPosAct(double *pos)
 {
-	double *fake; //Query velocity at the same time, but we don't care
+	double fake; //Query velocity at the same time, but we don't care
 
-	if(myPR2->hw.GetJointPositionActual(joint,pos,fake)==PR2::PR2_ALL_OK) return CONTROLLER::CONTROLLER_ALL_OK;
+	if(myPR2->hw.GetJointPositionActual(joint,pos,&fake)==PR2::PR2_ALL_OK) return CONTROLLER::CONTROLLER_ALL_OK;
 	else return CONTROLLER::CONTROLLER_JOINT_ERROR;
 			/*	SliderJoint *sjoint;
 	HingeJoint *hjoint;
@@ -177,9 +177,9 @@ JointController::getVelCmd(double *vel)
 CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::getVelAct(double *vel)
 {
-	double *fake; //Query position at the same time, but we don't care
+	double fake; //Query position at the same time, but we don't care
 
-	if(myPR2->hw.GetJointPositionActual(joint,fake,vel)==PR2::PR2_ALL_OK) return CONTROLLER::CONTROLLER_ALL_OK;
+	if(myPR2->hw.GetJointPositionActual(joint,&fake,vel)==PR2::PR2_ALL_OK) return CONTROLLER::CONTROLLER_ALL_OK;
 	else return CONTROLLER::CONTROLLER_JOINT_ERROR;
 /*
 	SliderJoint *sjoint;
