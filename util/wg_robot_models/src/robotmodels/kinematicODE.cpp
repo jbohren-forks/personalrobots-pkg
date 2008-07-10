@@ -54,21 +54,17 @@ void KinematicModelODE::setGeomPose(dGeomID geom, libTF::Pose3D &pose) const
 void KinematicModelODE::updateCollisionPositions(void)
 {
     for (unsigned int i = 0 ; i < m_kgeoms.size() ; ++i)
-	setGeomPose(m_kgeoms[i].geom, m_kgeoms[i].link->globalTrans);
+	setGeomPose(m_kgeoms[i]->geom, m_kgeoms[i]->link->globalTrans);
 }
 
 void KinematicModelODE::buildODEGeoms(Robot *robot)
 {
-    //   double params[robot->stateDimension];
-    //    for (unsigned int i = 0 ; i < robot->stateDimension ; ++i)
-    //	params[i] = (robot->stateBounds[i * 2] + robot->stateBounds[i * 2 + 1]) / 2.0;
-    //    robot->computeTransforms(params);
     for (unsigned int i = 0 ; i < robot->links.size() ; ++i)
     {
-	kGeom kg;
-	kg.link = robot->links[i];
-	kg.geom = buildODEGeom(robot->links[i]->geom);
-	if (!kg.geom) continue;
+	kGeom *kg = new kGeom();
+	kg->link = robot->links[i];
+	kg->geom = buildODEGeom(robot->links[i]->geom);
+	if (!kg->geom) continue;
 	m_kgeoms.push_back(kg);
     }
 }
@@ -98,4 +94,14 @@ dGeomID KinematicModelODE::buildODEGeom(Geometry *geom)
 dSpaceID KinematicModelODE::getODESpace(void) const
 {
     return m_space;
+}
+
+unsigned int KinematicModelODE::getGeomCount(void) const
+{
+    return m_kgeoms.size();
+}
+
+dGeomID KinematicModelODE::getGeom(unsigned index) const
+{
+    return m_kgeoms[index]->geom;    
 }

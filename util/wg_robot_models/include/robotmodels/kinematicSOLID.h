@@ -52,16 +52,25 @@ class KinematicModelSOLID : public KinematicModel
 	unsigned int id;	
     };
     
+    typedef kObject* kObjectRef;
+    
     KinematicModelSOLID(void) : KinematicModel()
     {
     }
     
     virtual ~KinematicModelSOLID(void)
     {
-
+	for (unsigned int i = 0 ; i < m_kshapes.size() ; ++i)
+	    delete m_kshapes[i];
     }
 
     virtual void build(URDF &model, const char *group = NULL);
+    
+    unsigned int getGeomCount(void) const;
+    DtShapeRef getShape(unsigned int index) const;
+    kObjectRef getObject(unsigned int index) const;
+
+    void updateCollisionPositions(void);
 
  protected:
     
@@ -87,7 +96,7 @@ class KinematicModelSOLID : public KinematicModel
 	Link      *link;	
     };
 
-    std::vector<kShape> m_kshapes;
+    std::vector<kShape*> m_kshapes;
     
     void buildSOLIDShapes(Robot *robot);
     DtShapeRef buildSOLIDShape(Geometry *geom);

@@ -56,10 +56,16 @@ class KinematicModelODE : public KinematicModel
     {
 	if (m_space)
 	    dSpaceDestroy(m_space);
+	for (unsigned int i = 0 ; i < m_kgeoms.size() ; ++i)
+	    delete m_kgeoms[i];
     }
 
     virtual void build(URDF &model, const char *group = NULL);
+
     dSpaceID getODESpace(void) const;
+    unsigned int getGeomCount(void) const;
+    dGeomID getGeom(unsigned index) const;
+
     void updateCollisionPositions(void);
     
 
@@ -73,7 +79,7 @@ class KinematicModelODE : public KinematicModel
 	Link   *link;
     };
     
-    std::vector<kGeom> m_kgeoms;    
+    std::vector<kGeom*> m_kgeoms;    
 
     void buildODEGeoms(Robot *robot);
     dGeomID buildODEGeom(Geometry *geom);

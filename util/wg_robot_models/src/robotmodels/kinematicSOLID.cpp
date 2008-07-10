@@ -46,11 +46,11 @@ void KinematicModelSOLID::buildSOLIDShapes(Robot *robot)
 {
     for (unsigned int i = 0 ; i < robot->links.size() ; ++i)
     {
-	kShape ks;
-	ks.link = robot->links[i];
-	ks.shape = buildSOLIDShape(robot->links[i]->geom);
-	if (!ks.shape) continue;
-	dtCreateObject(ks.obj, ks.shape);	
+	kShape *ks = new kShape();
+	ks->link = robot->links[i];
+	ks->shape = buildSOLIDShape(robot->links[i]->geom);
+	if (!ks->shape) continue;
+	dtCreateObject(ks->obj, ks->shape);	
 	m_kshapes.push_back(ks);
     }
 }
@@ -76,3 +76,34 @@ DtShapeRef KinematicModelSOLID::buildSOLIDShape(Geometry *geom)
     
     return g;
 }
+
+void KinematicModelSOLID::updateCollisionPositions(void)
+{
+    for (unsigned int i = 0 ; i < m_kshapes.size() ; ++i)
+    {
+	dtSelectObject(m_kshapes[i]->obj);
+	libTF::Pose3D::Position pos;
+	m_kshapes[i]->link->globalTrans.getPosition(pos);
+	libTF::Pose3D::Quaternion quat;
+	m_kshapes[i]->link->globalTrans.getQuaternion(quat);
+	dtLoadIdentity();
+	dtTranslate(pos.x, pos.y, pos.z);
+	dtRotate(quat.x, quat.y, quat.z, quat.w);	
+    }
+}
+
+unsigned int KinematicModelSOLID::getGeomCount(void) const
+{
+    return m_kshapes.size();
+}
+
+DtShapeRef KinematicModelSOLID::getShape(unsigned int index) const
+{
+    return m_kshapes[index]->shape;
+}
+
+KinematicModelSOLID::kObjectRef KinematicModelSOLID::getObject(unsigned int index) const
+{
+    return m_kshapes[index]->obj;
+}
+
