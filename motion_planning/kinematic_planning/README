@@ -12,9 +12,3 @@ Then you should append this directory to your ROS_PACKAGE_PATH.  E.g.,:
 To verify that MPK can be found:
 
   rospack find MPK
-
-In turn, MPK requires PQP, which must be retrieved from UNC:
-
-  http://www.cs.unc.edu/~geom/SSV/
-
-You must first build and install PQP yourself.
