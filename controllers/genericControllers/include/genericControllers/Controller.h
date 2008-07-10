@@ -28,10 +28,10 @@ namespace CONTROLLER
   {
     public:
       Controller();
-      ~Controller();
+      virtual ~Controller();
        
      virtual void Update(void);
-     static double ModNPi2Pi(double angle); 
+     double ModNPi2Pi(double angle); 
     private:
 
 

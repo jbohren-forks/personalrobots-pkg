@@ -1,9 +1,11 @@
 #include <genericControllers/Controller.h>
 
+#include <math.h>
+
 using namespace CONTROLLER;
 
 //Static function for angle conversion
-static double Controller::ModNPi2Pi(double angle)
+double Controller::ModNPi2Pi(double angle)
 {
    double theta = angle - ((int)(angle/(2*M_PI))*2*M_PI);
    //double theta = fmod(angle,2*M_PI);
@@ -26,6 +28,6 @@ Controller::~Controller()
 }
 
 //Intended to be overwritten by child classes
-virtual void Controller::Update(){
+void Controller::Update(){
 
 }
