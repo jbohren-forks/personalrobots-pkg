@@ -7,14 +7,21 @@
 #include <std_msgs/PointCloudFloat32.h>
 #include <std_msgs/Empty.h>
 
+/**
+   @mainpage 
 
-/*
-  This class listens for point clouds coming out of ROS and processes them into a
-  scan_utils::SmartScan
-*/
+   @b This is a thin ROS node that can create instances of the
+   SmartScan class in the library Scan Utils from point clouds received
+   as ROS messages. See Scan Utils package and its SmartScan class for
+   details of the available tools.
+ **/
 
 class SmartScan;
 
+/*!
+  This class listens for point clouds coming out of ROS and processes them into a
+  scan_utils::SmartScan. It is a thin ROS wrapper for the Scan Utils library.
+*/
 class ScanListenNode : public ros::node
 {
  private:

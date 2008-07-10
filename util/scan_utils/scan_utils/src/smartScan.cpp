@@ -94,8 +94,10 @@ void SmartScan::applyTransform(const NEWMAT::Matrix &M)
 	for (int i=0; i<mNumPoints; i++) {
 		mNativePoints[i] = transformPoint( mNativePoints[i], tr );
 	}
-
-
+	if (hasVtkData()) {
+		deleteVtkData();
+		createVtkData();
+	}
 }
 
 void SmartScan::applyTransform(float *t)
@@ -129,7 +131,7 @@ void SmartScan::writeToFile(std::iostream &output)
 
 /*!  
   Reads in data from an input stream. Format is expected to be
-  identical to the one created by writeToFile(...)
+  identical to the one created by \a writeToFile(...)
 */
 bool SmartScan::readFromFile(std::iostream &input)
 {
@@ -231,7 +233,7 @@ vtkPointLocator* SmartScan::getVtkLocator()
     will be joined by a triangle
 
     The output lists the triangles produced by triangulation.  It is
-  the responsability of the caller to free this memory.
+    the responsability of the caller to free this memory.
  */
 std::vector<Triangle> *SmartScan::delaunayTriangulation(double tolerance, double alpha)
 {
@@ -336,10 +338,10 @@ std::vector<Triangle> *SmartScan::delaunayTriangulation3D(double tolerance, doub
 
 /*! Crops the point cloud to a 3D bounding box
 
-  \param x \param y \param z The location of the center of the crop
+  \param x, y, z The location of the center of the crop
   bounding box
 
-  \param dx \param \dy \param dz The dimensions of the crop bounding
+  \param dx, dy, dz The dimensions of the crop bounding
   box.
 */
 void SmartScan::crop(float x, float y, float z, float dx, float dy, float dz)
@@ -398,12 +400,15 @@ void SmartScan::crop(float x, float y, float z, float dx, float dy, float dz)
   row-major order. It is the responsability of the caller to free this
   memory.
 
-  THIS FUNCTION HAS NOT BEEN EXTENSIVELY TESTED YET.
+  Uses a VTK implementation which is very simple. For example it
+  requires well cleaned scans so that all objects present in one scan
+  are also present in the other.
  */
 float* SmartScan::ICPTo(SmartScan* target)
 {
 	vtkIterativeClosestPointTransform *vtkTransform = vtkIterativeClosestPointTransform::New();
 	vtkTransform->SetMaximumNumberOfIterations(1000);
+	vtkTransform->SetMaximumNumberOfLandmarks(500);
 	fprintf(stderr,"max iterations: %d\n",vtkTransform->GetMaximumNumberOfIterations());
 
 	vtkTransform->SetSource( getVtkData() );
@@ -414,28 +419,6 @@ float* SmartScan::ICPTo(SmartScan* target)
 	fprintf(stderr,"Points: %d and %d\n",this->getVtkData()->GetNumberOfPoints(), 
 		target->getVtkData()->GetNumberOfPoints() );
 
-	/*
-	int nb_points = getVtkData()->GetNumberOfPoints();
-	vtkCellLocator *loc = vtkCellLocator::New();
-	loc->SetDataSet( target->getVtkData() );
-	loc->SetNumberOfCellsPerBucket(1);
-	loc->BuildLocator();
-
-	vtkIdType cell_id;
-	int sub_id;
-	double outPoint[3], dist2;
-
-	// Fill points with the closest points to each vertex in input
-	for(int i = 0; i < nb_points; i++){
-		loc->FindClosestPoint(this->getVtkData()->GetPoint(i),
-				      outPoint,
-				      cell_id,
-				      sub_id,
-				      dist2);
-		fprintf(stderr,"Closest found: %f %f %f\n",outPoint[0], outPoint[1], outPoint[2]);
-		//closestp->SetPoint(i, outPoint);
-	}
-	*/
 
 	float* transf = new float[16];
 	vtkMatrix4x4 *vtkMat = vtkMatrix4x4::New();
@@ -447,30 +430,18 @@ float* SmartScan::ICPTo(SmartScan* target)
 		}
 	}
 
-	//transpose the rotation
-	for (int i=0; i<3; i++) {
-		for (int j=0; j<3; j++) {
-			transf[4*i+j] = vtkMat->GetElement(j,i);
-		}
-	}
-
 	fprintf(stderr,"ICP done. Result:\n");
 	vtkMat->Print(std::cerr);
 	fprintf(stderr,"Iterations used: %d. Mean dist: %f\n",vtkTransform->GetNumberOfIterations(),
 		vtkTransform->GetMeanDistance());
-
-	//	fprintf(stderr,"%f %f %f %f\n",transf[0], transf[1], transf[2], transf[3]);
-	//fprintf(stderr,"%f %f %f %f\n",transf[4], transf[5], transf[6], transf[7]);
-	//fprintf(stderr,"%f %f %f %f\n",transf[8], transf[9], transf[10], transf[11]);
-	//fprintf(stderr,"%f %f %f %f\n",transf[12], transf[13], transf[14], transf[15]);
 
 	vtkTransform->Delete();
 	vtkMat->Delete();
 	return transf;
 }
 
-/*! Removes all points that have fewer than \param nbrs neighbors
-    within a sphere of radius \param radius.
+/*! Removes all points that have fewer than \a nbrs neighbors
+    within a sphere of radius \a radius.
  */
 void SmartScan::removeOutliers(float radius, int nbrs)
 {
@@ -520,8 +491,8 @@ void SmartScan::removeOutliers(float radius, int nbrs)
   neighbors to compute normals: if this flag is true, these points are
   removed (as in removeOutliers(...) )
 
-  For computing point normals we look for at least \param nbrs neighbors
-  within a sphere of radius \param radius.
+  For computing point normals we look for at least \a nbrs neighbors
+  within a sphere of radius \a radius.
  */
 void SmartScan::removeGrazingPoints(float threshold, bool removeOutliers, float radius, int nbrs)
 {
@@ -580,10 +551,10 @@ void SmartScan::removeGrazingPoints(float threshold, bool removeOutliers, float 
   transform as it performs a 2D histogram and a 1D histogram rather
   than a 3D histogram. However, it is also less accurate.
 
-  \param planePoint \param planeNormal Output values, holding the plane found by the function
+  \param planePoint, planeNormal Output values, holding the plane found by the function
 
-  For computing point normals we look for at least \nbrs neighbors
-  within a sphere of radius \radius.
+  For computing point normals we look for at least \a nbrs neighbors
+  within a sphere of radius \a radius.
 */
 void SmartScan::normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Point3DFloat32 &planeNormal,
 				     float radius, int nbrs)
@@ -674,11 +645,11 @@ void SmartScan::normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_m
 
 /*! Computes the dominant plane in the scan using RANSAC.
 
-  \param planePoint \param planeNormal Output values, holding the plane found by the function
+  \param planePoint, planeNormal Output values, holding the plane found by the function
 
   \param iterations Number of RANSAC iterations to be performed
 
-  \param distThresh Internal RANSAC threshold: point that are closer
+  \param distThresh Internal RANSAC threshold: points that are closer
   than this value to a hypothesis plane are considered inliers
 
  */
@@ -785,8 +756,8 @@ void SmartScan::ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Poin
 	fprintf(stderr,"RANSAC consensus: %d\n",maxConsensus);
 }
 
-/*!  Removes all points that are closer than \param thres to the plane
-  defined by \param planePoint and \param planeNormal
+/*!  Removes all points that are closer than \a thresh to the plane
+  defined by \a planePoint and \a planeNormal
  */
 void SmartScan::removePlane(const std_msgs::Point3DFloat32 &planePoint, 
 			    const std_msgs::Point3DFloat32 &planeNormal, float thresh)
@@ -814,9 +785,9 @@ void SmartScan::removePlane(const std_msgs::Point3DFloat32 &planePoint,
 	delete [] newPoints;
 }
 
-/*!Computes the normal of the point with index \param id by fitting a
+/*!Computes the normal of the point with index \a id by fitting a
    plane to neighboring points. It uses all neighbors within a sphere
-   of radius \param radius. If less than \param nbrs such neighbors
+   of radius \a radius. If less than \a nbrs such neighbors
    are found, the normal is considered unreliable and the function
    returns (0,0,0)
 
@@ -870,7 +841,7 @@ std_msgs::Point3DFloat32 SmartScan::computePointNormal(int id, float radius, int
 	return SVDPlaneNormal(&M,n);
 }
 
-/*! Given an \param n by 3 matrix \param M in NEWMAT format, performs
+/*! Given an \a n by 3 matrix \a M in NEWMAT format, performs
   SVD and returns the direction of the least significant singular
   vector. If the matrix is a list of vertices, this corresponds to the
   direction of the normal of a plane fit to those points. Vertices are

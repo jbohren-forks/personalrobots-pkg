@@ -21,6 +21,11 @@ namespace libTF {
 	class TransformReference;
 }
 
+/**
+   @mainpage
+   @b A library of tools for processing and manipulating point clouds. See SmartScan class for details.
+ **/
+
 /*!
   This class holds most of the functionality of the Scan_Utils library.
 
@@ -115,7 +120,7 @@ class SmartScan {
 	void removeOutliers(float radius, int nbrs);
 	//! Removes points whose normals are perpendicular to the direction of the scanner
 	void removeGrazingPoints(float threshold, bool removeOutliers = true, float radius = 0.01, int nbrs = 5);
-	//! Registers this point cloud using ICP to another scan.
+	//! Returns the transform that registers this point cloud (computed using ICP).
 	float* ICPTo(SmartScan *target);
 	//! Finds the dominant plane in the point cloud by histograming point normals
 	void normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Point3DFloat32 &planeNormal,
