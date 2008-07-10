@@ -1,5 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // This package provides a library to take OpenCV images and track blobs.
+// It follows the camshiftdemo.c from the OpenCV samples.
 //
 // Copyright (C) 2008, Jimmy Sastra
 //                     
@@ -30,10 +31,6 @@
 #include <sstream>
 #include <iostream>
 #include "blob_tracker/blob_tracker.h"
-
-
-int foo1;
-
 
 IplImage *image = 0, *hsv = 0, *hue = 0, *mask = 0, *backproject = 0, *histimg = 0;
 CvHistogram *hist = 0;
@@ -192,7 +189,7 @@ void Blob_Tracker::processFrame(IplImage** cv_image) {
                   cvTermCriteria( CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1 ),
                   &track_comp, &track_box );
       track_window = track_comp.rect;
-      
+printf("x: %f, y: %f\n", track_box.center.x, track_box.center.y);
       if( backproject_mode )
           cvCvtColor( backproject, image, CV_GRAY2BGR );
       if( !image->origin )
@@ -233,9 +230,6 @@ void Blob_Tracker::processFrame(IplImage** cv_image) {
       ;
   }
   cvWaitKey(10);
-  cvReleaseImage(&image);
-  cvReleaseImage(&histimg);
-
 
 }
 
@@ -248,5 +242,8 @@ void Blob_Tracker::showFrame(IplImage** cv_image) {
 }
 
 
-void Blob_Tracker::foo() {}
+void Blob_Tracker::saveFrame(const char* fileName, IplImage* cv_image) {
+  cvSaveImage(fileName, cv_image);
+}
+
 
