@@ -4,9 +4,13 @@
   <license>TBD</license>
   <depend package="roscpp" />
   <depend package="genericControllers" />
+  <depend package="pr2Controllers" />
   <depend package="libpr2API" />
   <depend package="pr2Core" />
   <depend package="std_msgs" />
   <depend package="rosthread" />
   <depend package="rosTF" />
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lRosGazeboNode"/>
+  </export>
 </package>

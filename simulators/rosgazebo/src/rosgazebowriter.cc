@@ -26,7 +26,7 @@
 #include <gazebo/GazeboError.hh>
 #include <libpr2API/pr2API.h>
 #include <libpr2HW/pr2HW.h>
-#include "ringbuffer.h"
+#include <RosGazeboNode/ringbuffer.h>
 
 #include <fstream>
 #include <iostream>
