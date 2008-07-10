@@ -5,10 +5,10 @@
 // roscpp
 #include <ros/node.h>
 
-// The messages that we'll use
-#include <std_msgs/Planner2DGoal.h>
+// Provides a blocking navigation service for higher-level sequencing
+#include "wavefront_player/NavigateToPoint.h"
 
-#define USAGE "send_goal <x> <y> <a>"
+#define USAGE "send_goal <x> <y> <a> [stuck_time]"
 
 class SendGoalNode : public ros::node
 {
@@ -20,13 +20,22 @@ class SendGoalNode : public ros::node
       advertise<std_msgs::Planner2DGoal>("goal");
     }
 
-    void sendGoal(double x, double y, double a)
+    void sendGoal(double x, double y, double a, ros::Duration stuck_time)
     {
-      goalMsg.goal.x = x;
-      goalMsg.goal.y = y;
-      goalMsg.goal.th = a;
-      goalMsg.enable = true;
-      publish("goal", goalMsg);
+      wavefront_player::NavigateToPoint::request req;
+      req.goal.goal.x = x;
+      req.goal.goal.y = y;
+      req.goal.goal.th = a;
+      req.goal.enable = true;
+      req.stuck_time = stuck_time;
+      wavefront_player::NavigateToPoint::response rep;
+
+      if(!ros::service::call("NavigateToPoint", req, rep))
+        puts("plan service failed");
+      if(rep.result == "failure")
+        puts("planning failed");
+      else
+        puts("planning succeeded; robot is on the move");
     }
 };
 
@@ -40,12 +49,19 @@ main(int argc, char** argv)
   }
   ros::init(argc,argv);
 
+  ros::Duration stuck_time;
+  if(argc > 4)
+    stuck_time = ros::Duration(atof(argv[4]));
+  else
+    stuck_time = ros::Duration(1.0);
+
+
   SendGoalNode n;
 
   usleep(1000000);
-  n.sendGoal(atof(argv[1]),atof(argv[2]),atof(argv[3])*M_PI/180.0);
+  n.sendGoal(atof(argv[1]),atof(argv[2]),atof(argv[3])*M_PI/180.0,stuck_time);
 
-  n.spin();
+  //n.spin();
 
   ros::fini();
   

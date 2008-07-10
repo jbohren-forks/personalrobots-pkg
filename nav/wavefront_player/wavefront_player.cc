@@ -157,11 +157,11 @@ class WavefrontNode: public ros::node
       NO_GOAL,
       NEW_GOAL,
       PURSUING_GOAL,
-      STUCK,
+      //STUCK,
       REACHED_GOAL
     } planner_state;
     // If we can't reach the goal, note when it happened and keep trying a bit
-    ros::Time stuck_time;
+    //ros::Time stuck_time;
     // Are we enabled?
     bool enable;
     // Current goal
@@ -235,6 +235,12 @@ class WavefrontNode: public ros::node
     // Handle a navigation transaction
     bool navToPointCB(wavefront_player::NavigateToPoint::request  &req,
                       wavefront_player::NavigateToPoint::response &res);
+    // Compare two poses, tell whether they are close enough to be
+    // considered the same, with tolerance
+    static const double _xy_tolerance = 1e-3;
+    static const double _th_tolerance = 1e-3;
+    bool comparePoses(double x1, double y1, double a1,
+                      double x2, double y2, double a2);
 };
 
 #define USAGE "USAGE: wavefront_player"
@@ -621,7 +627,7 @@ WavefrontNode::doOneCycle()
       break;
     case NEW_GOAL:
     case PURSUING_GOAL:
-    case STUCK:
+    //case STUCK:
       {
         // Are we done?
         if(plan_check_done(this->plan,
@@ -630,6 +636,7 @@ WavefrontNode::doOneCycle()
                            this->dist_eps, this->ang_eps))
         {
           puts("done");
+          this->rotate_dir = 0;
           this->stopRobot();
           this->planner_state = REACHED_GOAL;
           break;
@@ -639,6 +646,8 @@ WavefrontNode::doOneCycle()
         plan_set_obstacles(this->plan, 
                            this->laser_hitpts, 
                            this->laser_hitpts_len);
+
+        bool plan_valid = true;
 
         // Try a local plan
         if((this->planner_state == NEW_GOAL) ||
@@ -650,8 +659,10 @@ WavefrontNode::doOneCycle()
                             this->goal[0], this->goal[1]) < 0)
           {
             // no global plan
+            plan_valid = false;
             this->stopRobot();
 
+            /*
             if (this->planner_state != STUCK)
             {
               printf("we're stuck. let's let the laser buffer empty "
@@ -668,7 +679,7 @@ WavefrontNode::doOneCycle()
                 this->planner_state = NO_GOAL; //NO_GOAL;
               }
             }
-            break;
+            */
           }
           else
           {
@@ -679,14 +690,16 @@ WavefrontNode::doOneCycle()
             {
               // no local plan; better luck next time through
               this->stopRobot();
-              break;
+              plan_valid = false;
             }
           }
         }
 
-        if(this->planner_state == NEW_GOAL ||
-           this->planner_state == STUCK)
+        if(this->planner_state == NEW_GOAL) // || this->planner_state == STUCK)
           this->planner_state = PURSUING_GOAL;
+
+        if(!plan_valid)
+          break;
 
         // We have a valid local plan.  Now compute controls
         double vx, va;
@@ -769,12 +782,29 @@ WavefrontNode::sleep(double loopstart)
     usleep((unsigned int)rint(tdiff*1e6));
 }
 
+bool 
+WavefrontNode::comparePoses(double x1, double y1, double a1,
+                            double x2, double y2, double a2)
+{
+  bool res;
+  if((fabs(x2-x1) <= _xy_tolerance) && 
+     (fabs(y2-y1) <= _xy_tolerance) &&
+     (fabs(ANG_NORM(ANG_NORM(a2)-ANG_NORM(a1))) <= _th_tolerance))
+    res = true;
+  else
+    res = false;
+  return(res);
+}
+
 bool WavefrontNode::navToPointCB(
           wavefront_player::NavigateToPoint::request  &req,
           wavefront_player::NavigateToPoint::response &res)
 {
   printf("got new goal: (%f, %f, %f)\n", 
          req.goal.goal.x, req.goal.goal.y, RTOD(req.goal.goal.th));
+
+  ros::Time start = ros::Time::now();
+
   this->lock.lock();
   // Got a new goal message; handle it
   this->enable = req.goal.enable;
@@ -782,23 +812,39 @@ bool WavefrontNode::navToPointCB(
   {
     this->goal[0] = req.goal.goal.x;
     this->goal[1] = req.goal.goal.y;
-    this->goal[2] = RTOD(req.goal.goal.th);
+    this->goal[2] = req.goal.goal.th;
     this->planner_state = NEW_GOAL;
   }
   this->lock.unlock();
-  while (planner_state != REACHED_GOAL &&
-         planner_state != NO_GOAL)
+
+  while((ros::Time::now() - start) < req.stuck_time)
   {
-    if (planner_state == STUCK)
-      printf("stuck!\n");
-    else
-      printf("pursuing goal\n");
-    usleep(1000000); // spin here...
+    this->lock.lock();
+    // Has our new goal has been taken up by the planner?
+    if(comparePoses(req.goal.goal.x,
+                    req.goal.goal.y,
+                    req.goal.goal.th,
+                    pstate.goal.x,
+                    pstate.goal.y,
+                    pstate.goal.th))
+    {
+      if(pstate.valid == 1)
+      {
+        res.result = "success";
+        this->lock.unlock();
+        return true;
+      }
+    }
+
+    this->lock.unlock();
+    usleep(100000); // spin here...
   }
-  if (planner_state == REACHED_GOAL)
-    res.result = "success";
-  else
-    res.result = "failure";
+
+  // In the failure case, we give up on this goal, on the assumption
+  // that the caller will come back with another, hopefully feasible, 
+  // goal
+  planner_state = NO_GOAL;
+  res.result = "failure";
   return true;
 }
 
