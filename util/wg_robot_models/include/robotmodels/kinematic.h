@@ -182,7 +182,6 @@ class KinematicModel
 	std::vector<double> stateBounds;
     };
     
-    explicit
     KinematicModel(void)
     {
     }

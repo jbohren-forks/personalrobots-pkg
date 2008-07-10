@@ -126,6 +126,13 @@ int main(int argc, char **argv)
     KinematicModel::Robot *r = km.getRobot(0);    
     printf("state dimension = %d\n", r->stateDimension);
     
+    double *param = new double[r->stateDimension];
+    for (unsigned int i = 0 ; i < r->stateDimension ; ++i)
+	param[i] = 0.0;
+    delete[] param;
+    r->computeTransforms(param);
+    km.updateCollisionPositions();
+    
     robotSpace = km.getODESpace();
     
     dsFunctions fn;
