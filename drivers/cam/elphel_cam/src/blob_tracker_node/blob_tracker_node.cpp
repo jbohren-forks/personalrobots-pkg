@@ -1,4 +1,7 @@
 /*********************************************************************
+* This node takes OpenCV images and tracks blobs 
+*
+*
 * Software License Agreement (BSD License)
 * 
 *  Copyright (c) 2008, Jimmy Sastra
