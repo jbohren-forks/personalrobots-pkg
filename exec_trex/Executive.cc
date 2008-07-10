@@ -79,16 +79,11 @@ Publishes to (name/type):
  **/
 
 #include "Nddl.hh"
-#include "Executive.hh"
-#include "RCSAdapter.hh"
+#include "ExecDefs.hh"
 #include "Logger.hh"
-#include "Token.hh"
-#include <signal.h>
-#include "WavefrontPlanner.hh"
-#include <std_srvs/StaticMap.h>
+#include "Agent.hh"
 #include "LogClock.hh"
-
-#include <std_msgs/BaseVel.h>
+#include <signal.h>
 
 TiXmlElement* root = NULL;
 Clock* agentClock = NULL;
@@ -97,28 +92,6 @@ std::ofstream dbgFile("Debug.log");
 using namespace std_msgs;
 
 LoggerId logger;
-
-
-namespace TREX {
-
-
-  /**
-   * @brief Singleton accessor
-   */
-  ExecutiveId Executive::instance(){
-    return s_id;
-  }
-
-  Executive::Executive() : m_id(this) {
-  }
-  Executive::~Executive(){
-    m_id.remove();
-    s_id = ExecutiveId::noId();
-  }
-  bool Executive::isInitialized() const{
-    return  m_initialized;
-  }
-};
 
 
 /**
@@ -152,9 +125,6 @@ void cleanup(){
   }
 }
 
-ExecutiveId Executive::s_id;
-
-
 int main(int argc, char **argv)
 {
   signal(SIGINT,  &signalHandler);
@@ -184,8 +154,6 @@ int main(int argc, char **argv)
 
   initROSExecutive(playback);
 
-  Executive t;
-
   NDDL::loadSchema();
 
   DebugMessage::setStream(dbgFile);
@@ -214,8 +182,6 @@ int main(int argc, char **argv)
   catch(void*){
     debugMsg("Executive", "Caught unexpected exception.");
   }
-
-  //delete WavefrontPlanner::Instance();
 
   return 0;
 }

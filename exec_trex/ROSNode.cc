@@ -3,6 +3,7 @@
 //external ros includes for messages
 #include <std_srvs/StaticMap.h>
 #include <std_msgs/BaseVel.h>
+#include "WavefrontPlanner.hh"
 
 //NDDL includes
 #include "Nddl.hh"
@@ -10,13 +11,12 @@
 #include "TokenVariable.hh"
 #include "Utilities.hh"
 
+// TREX Includes 
+#include "Agent.hh"
+#include "Debug.hh"
 
 #include "ROSNode.hh"
-#include "WavefrontPlanner.hh"
-
-//TiXmlElement* root = NULL;
-//Clock* agentClock = NULL;
-//std::ofstream dbgFile("Debug.log");
+#include "LogManager.hh"
 
 using namespace std_msgs;
 static const double AllowableArmError = .12;

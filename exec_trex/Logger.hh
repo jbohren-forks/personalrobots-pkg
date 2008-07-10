@@ -1,6 +1,8 @@
 #ifndef H_Logger
 #define H_Logger
 
+#include "Observer.hh"
+#include "LogManager.hh"
 #include <stdio.h>
 #include "Id.hh"
 

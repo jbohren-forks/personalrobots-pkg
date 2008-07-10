@@ -5,13 +5,12 @@
 #include "LogManager.hh"
 #include "Debug.hh"
 #include "ExecDefs.hh"
-#include "Observer.hh"
 
 #include <pthread.h>
 
 
 
-namespace TREX{
+namespace TREX {
 
   class Executive
   {

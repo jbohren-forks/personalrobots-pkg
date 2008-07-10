@@ -1,9 +1,6 @@
 #ifndef H_ROSNode
 #define H_ROSNode
 
-#include "Agent.hh"
-#include "LogManager.hh"
-#include "Debug.hh"
 #include "ExecDefs.hh"
 #include "Observer.hh"
 

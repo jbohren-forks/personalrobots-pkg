@@ -1,9 +1,7 @@
 #ifndef H_LogClock
 #define H_LogClock
 
-#include "TREXDefs.hh"
-#include "TeleoReactor.hh"
-#include "RStat.hh"
+#include "Clock.hh"
 #include <pthread.h>
 
 /**

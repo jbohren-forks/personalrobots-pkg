@@ -54,9 +54,6 @@ if ! $(exec_trex_READY) {
 	GoalManager.cc map_helpers.cc ExecDefs.cc Components.cc pr2.model.o : TREX : exec_trex ;
 	
 	Depends exec_trex : exec_inputs ;
-
-	ModuleMain exec_listener : ExecListener.cc : : exec_listener ;
-	ModuleMain rcs : RCS.cc ExecDefs.o : TREX : rcs ;
 	ModuleMain logger : MessageLogger.cc ExecDefs.o : TREX : logger ;
 
  	# Input file for exec
