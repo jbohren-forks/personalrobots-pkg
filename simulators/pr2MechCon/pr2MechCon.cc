@@ -28,7 +28,6 @@
 #include <gazebo/GazeboError.hh>
 #include <libpr2API/pr2API.h>
 
-#include <genericControllers/Controller.h>
 #include <pr2Controllers/ArmController.h>
 #include <pr2Controllers/HeadController.h>
 #include <pr2Controllers/SpineController.h>
@@ -146,9 +145,6 @@ class RosGazeboNode : public ros::node
 
     // keep count for full cloud
     int max_cloud_pts;
-
-    // clean up on interrupt
-    static void finalize(int);
 };
 
 void
@@ -310,7 +306,7 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
 
 }
 
-void RosGazeboNode::finalize(int)
+void finalize(int)
 {
   fprintf(stderr,"Caught sig, clean-up and exit\n");
   sleep(1);
@@ -1108,6 +1104,7 @@ RosGazeboNode::Update()
 
 void *nonRealtimeLoop(void *rgn)
 {
+  std::cout << "Started nonRT loop" << std::endl;
   while (1)
   {
     ((RosGazeboNode*)rgn)->Update();
@@ -1192,9 +1189,9 @@ main(int argc, char** argv)
   /*                                on termination...                                    */
   /*                                                                                     */
   /***************************************************************************************/
-  signal(SIGINT,  (&rgn.finalize));
-  signal(SIGQUIT, (&rgn.finalize));
-  signal(SIGTERM, (&rgn.finalize));
+  signal(SIGINT,  (&finalize));
+  signal(SIGQUIT, (&finalize));
+  signal(SIGTERM, (&finalize));
 
   // see if we can subscribe models needed
   if (rgn.AdvertiseSubscribeMessages() != 0)
@@ -1209,7 +1206,7 @@ main(int argc, char** argv)
   int rgnt = pthread_create(&threads[0],NULL, nonRealtimeLoop, (void *) (&rgn));
   if (rgnt)
   {
-    printf("Could not start ROSGazeboNode (code=%d)\n",rgnt);
+    printf("Could not start a separate thread for ROS Gazebo Node (code=%d)\n",rgnt);
     exit(-1);
   }
 
@@ -1223,12 +1220,16 @@ main(int argc, char** argv)
   {
 
     // Update Controllers
+    //   each controller will try to read new commands from shared memory with nonRT hooks,
+    //   and skip update if locked by nonRT loop.
     myArm.Update();
     myHead.Update();
     mySpine.Update();
     myBase.Update();
     myLaserScanner.Update();
     myGripper.Update();
+
+    // TODO: Safety codes should go here...
 
     // Send updated controller commands to hardware
     // myPR2->hw.UpdateHW();

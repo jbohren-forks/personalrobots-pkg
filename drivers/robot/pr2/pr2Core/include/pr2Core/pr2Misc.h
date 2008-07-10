@@ -55,7 +55,6 @@ namespace PR2
 
     inline bool IsGripperLeft(PR2_JOINT_ID id)
     {
-			printf("in IsGripperLeft:\nid: %d, Start: %d, end:%d\n",id,JointStart[PR2_LEFT_GRIPPER],JointEnd[PR2_LEFT_GRIPPER]);
        if (id >= JointStart[PR2_LEFT_GRIPPER] && id <= JointEnd[PR2_LEFT_GRIPPER])
           return true;
        return false;

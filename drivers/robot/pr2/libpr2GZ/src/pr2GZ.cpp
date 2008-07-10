@@ -360,12 +360,6 @@ PR2_ERROR_CODE PR2GZ::IsEnabledModel(PR2_MODEL_ID id, int *enabled)
 
 PR2_ERROR_CODE PR2GZ::SetJointControlMode(PR2_JOINT_ID id, PR2_JOINT_CONTROL_MODE mode)
 {
-	printf("Called SetJointControlMode\n");
-	printf("id: %d, mode: %d\n", id, mode);
-	printf("IsHead: %d\n", IsHead(id));
-	printf("IsGripperLeft: %d\n", IsGripperLeft(id));
-	printf("IsGripperRight: %d\n", IsGripperRight(id));
-
    if(IsHead(id))
    {
      pr2HeadIface->Lock(1);
@@ -387,7 +381,6 @@ PR2_ERROR_CODE PR2GZ::SetJointControlMode(PR2_JOINT_ID id, PR2_JOINT_CONTROL_MOD
    else
    {
      pr2Iface->Lock(1);
-		 printf("id: %d, mode: %d\n", id, mode);
      pr2Iface->data->actuators[id].controlMode = mode;
      pr2Iface->Unlock();
    }
