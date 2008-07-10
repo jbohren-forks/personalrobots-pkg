@@ -1,9 +1,9 @@
 <launch>
 
   <group name="wg">
-    <node pkg="rosgazebo" type="run-gazebo.sh" args="$(find 2dnav-gazebo)/world/robot.world" respawn="true" />
+    <node pkg="pr2MechCon" type="run-gazebo.sh" args="$(find 2dnav-gazebo)/world/robot.world" respawn="true" />
     <node pkg="map_server" type="map_server" args="$(find 2dnav-gazebo)/world/Media/materials/textures/map3.png 0.1" respawn="false" />
-    <node pkg="rosgazebo" type="run-rosgazebo.sh" args="" respawn="true" />
+    <node pkg="pr2MechCon" type="run-pr2MechCon.sh" args="" respawn="true" />
     <node pkg="amcl_player" type="amcl_player" respawn="false" />
     <node pkg="wavefront_player" type="wavefront_player" respawn="false" />
     <node pkg="nav_view" type="nav_view" respawn="true" />
