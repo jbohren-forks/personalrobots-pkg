@@ -21,16 +21,20 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include <pthread.h>
+
 // gazebo
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <libpr2API/pr2API.h>
+
 #include <pr2Controllers/GripperController.h>
 #include <pr2Controllers/ArmController.h>
 #include <pr2Controllers/HeadController.h>
 #include <pr2Controllers/SpineController.h>
 #include <pr2Controllers/LaserScannerController.h>
 #include <pr2Controllers/BaseController.h>
+
 #include "ringbuffer.h"
 
 // roscpp
@@ -89,11 +93,23 @@ class RosGazeboNode : public ros::node
 
     // used to generate Gaussian noise (for PCD)
     PR2::PR2Robot *PR2Copy;
+    CONTROLLER::ArmController          *armCopy;
+    CONTROLLER::HeadController         *headCopy;
+    CONTROLLER::SpineController        *spineCopy;
+    CONTROLLER::BaseController         *baseCopy;
+    CONTROLLER::LaserScannerController *laserScannerCopy;
 
   public:
     // Constructor; stage itself needs argc/argv.  fname is the .world file
     // that stage should load.
-    RosGazeboNode(int argc, char** argv, const char* fname,PR2::PR2Robot *myPR2);
+    RosGazeboNode(int argc, char** argv, const char* fname,
+         PR2::PR2Robot          *myPR2,
+         CONTROLLER::ArmController          *myArm,
+         CONTROLLER::HeadController         *myHead,
+         CONTROLLER::SpineController        *mySpine,
+         CONTROLLER::BaseController         *myBase,
+         CONTROLLER::LaserScannerController *myLaserScanner
+         );
     ~RosGazeboNode();
 
     // advertise / subscribe models
@@ -260,7 +276,13 @@ RosGazeboNode::cmdvelReceived()
   this->lock.unlock();
 }
 
-RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname, PR2::PR2Robot *myPR2) :
+RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
+         PR2::PR2Robot          *myPR2,
+         CONTROLLER::ArmController          *myArm,
+         CONTROLLER::HeadController         *myHead,
+         CONTROLLER::SpineController        *mySpine,
+         CONTROLLER::BaseController         *myBase,
+         CONTROLLER::LaserScannerController *myLaserScanner) :
         ros::node("rosgazebo"),tf(*this)
 {
   // accept passed in robot
@@ -1080,11 +1102,23 @@ RosGazeboNode::Update()
   this->lock.unlock();
 }
 
+void *nonRealtimeLoop(void *rgn)
+{
+  while (1)
+  {
+    ((RosGazeboNode*)rgn)->Update();
+    // some time out for publishing ros info
+    usleep(10000);
+  }
 
+}
 
 int 
 main(int argc, char** argv)
 { 
+  // we need 2 threads, one for RT and one for nonRT
+  pthread_t threads[2];
+
   ros::init(argc,argv);
 
   /***************************************************************************************/
@@ -1106,7 +1140,6 @@ main(int argc, char** argv)
 
   myPR2->EnableGripperLeft();
   myPR2->EnableGripperRight();
-
 
   // Set control mode for the arms
   // FIXME: right now this just sets default to pd control
@@ -1136,18 +1169,24 @@ main(int argc, char** argv)
   /*                            initialize controllers                                   */
   /*                                                                                     */
   /***************************************************************************************/
-  //ArmController          myArm(myPR2);
-  //HeadController         myHead(myPR2);
-  //SpineController        mySpine(myPR2);
-  //LaserScannerController myLaserScanner(myPR2);
-  //BaseController         myBase(myPR2);
+  CONTROLLER::ArmController          myArm;
+  CONTROLLER::HeadController         myHead;
+  CONTROLLER::SpineController        mySpine;
+  CONTROLLER::BaseController         myBase;
+  CONTROLLER::LaserScannerController myLaserScanner;
+
+  //myArm          = new CONTROLLER::ArmController          ();
+  //myHead         = new CONTROLLER::HeadController         ();
+  //mySpine        = new CONTROLLER::SpineController        ();
+  //myBase         = new CONTROLLER::BaseController         ();
+  //myLaserScanner = new CONTROLLER::LaserScannerController ();
   
   /***************************************************************************************/
   /*                                                                                     */
   /*                            initialize ROS Gazebo Nodes                              */
   /*                                                                                     */
   /***************************************************************************************/
-  RosGazeboNode rgn(argc,argv,argv[1],myPR2);
+  RosGazeboNode rgn(argc,argv,argv[1],myPR2,&myArm,&myHead,&mySpine,&myBase,&myLaserScanner);
 
   /***************************************************************************************/
   /*                                                                                     */
@@ -1168,11 +1207,30 @@ main(int argc, char** argv)
   /*        this is updated once every gazebo timestep (world time step size)            */
   /*                                                                                     */
   /***************************************************************************************/
+  // Update ROS Gazebo Node
+  //   contains controller pointers for the non-RT setpoints
+  int rgnt = pthread_create(&threads[0],NULL, nonRealtimeLoop, (void *) (&rgn));
+  if (rgnt)
+  {
+    printf("Could not start ROSGazeboNode (code=%d)\n",rgnt);
+    exit(-1);
+  }
+
   while(1)
   {
-    rgn.Update();
 
-    myPR2->hw.ClientWait(); // wait for Gazebo time step
+    // Update Controllers
+    myArm.Update();
+    myHead.Update();
+    mySpine.Update();
+    myLaserScanner.Update();
+    myBase.Update();
+
+    // Send updated controller commands to hardware
+    // myPR2->hw.UpdateHW();
+
+    // wait for Gazebo time step
+    myPR2->hw.ClientWait();
   }
   
   /***************************************************************************************/

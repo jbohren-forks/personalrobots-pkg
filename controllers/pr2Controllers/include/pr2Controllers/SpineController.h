@@ -20,52 +20,58 @@
 #include <libpr2HW/pr2HW.h>
 #include <genericControllers/Controller.h>
 
-
-class SpineController : CONTROLLER::Controller
+namespace CONTROLLER
 {
-  public:
-  
-    /*!
-      * \brief Constructor of SpineController class.
-      *
-      * \param 
-      */
-    SpineController();
+  class SpineController : Controller
+  {
+    public:
     
-    /*!
-      * \brief Destructor of SpineController class.
-      */       
-    ~SpineController( );
+      /*!
+        * \brief Constructor of SpineController class.
+        *
+        * \param 
+        */
+      SpineController();
+      
+      /*!
+        * \brief Destructor of SpineController class.
+        */       
+      ~SpineController( );
 
-    /*!
-      * \brief Set height of the spine in the local spine frame.
-      * 
-      */       
-    PR2::PR2_ERROR_CODE setPos(double z);
+      /*!
+        * \brief Update controller
+        */       
+      void Update( );
+
+      /*!
+        * \brief Set height of the spine in the local spine frame.
+        * 
+        */       
+      PR2::PR2_ERROR_CODE setPos(double z);
 
 
-    /*!
-      * \brief Set force of the Spine in the local spine frame.
-      */       
-    PR2::PR2_ERROR_CODE setForce(double fz);
+      /*!
+        * \brief Set force of the Spine in the local spine frame.
+        */       
+      PR2::PR2_ERROR_CODE setForce(double fz);
 
-    /*!
-      * \brief Set parameters for this controller
-      *
-      * user can set maximum velocity
-      * and maximum acceleration
-      * constraints for this controller
-      *
-      * e.g. setParam('maxVel',10);
-      *   or setParam('maxAcc',10);
-      *   or setParam('maxLimit',10);
-      *   or setParam('minLimit',-10);
-      *
-      */
-    PR2::PR2_ERROR_CODE setParam(string label,double value);
+      /*!
+        * \brief Set parameters for this controller
+        *
+        * user can set maximum velocity
+        * and maximum acceleration
+        * constraints for this controller
+        *
+        * e.g. setParam('maxVel',10);
+        *   or setParam('maxAcc',10);
+        *   or setParam('maxLimit',10);
+        *   or setParam('minLimit',-10);
+        *
+        */
+      PR2::PR2_ERROR_CODE setParam(string label,double value);
 
-  private:
-    PR2::PR2_CONTROL_MODE controlMode;      /**< SpineController control mode >*/
-};
-
+    private:
+      PR2::PR2_CONTROL_MODE controlMode;      /**< SpineController control mode >*/
+  };
+}
 

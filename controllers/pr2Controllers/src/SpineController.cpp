@@ -1,11 +1,19 @@
 #include <pr2Controllers/SpineController.h>
 
+using namespace CONTROLLER;
+
 SpineController::SpineController()
 {
 
 }
     
 SpineController::~SpineController( )
+{
+
+}
+
+void
+SpineController::Update( )
 {
 
 }

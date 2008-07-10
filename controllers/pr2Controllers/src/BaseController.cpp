@@ -1,5 +1,6 @@
 #include <pr2Controllers/BaseController.h>
 
+using namespace CONTROLLER;
 
 BaseController::BaseController()
 {
@@ -7,6 +8,12 @@ BaseController::BaseController()
 }
     
 BaseController::~BaseController( )
+{
+
+}
+
+void
+BaseController::Update( )
 {
 
 }

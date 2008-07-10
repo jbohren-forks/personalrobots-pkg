@@ -1,11 +1,19 @@
 #include <pr2Controllers/GripperController.h>
 
+using namespace CONTROLLER;
+
 GripperController::GripperController()
 {
 }
     
 GripperController::~GripperController( )
 {
+}
+
+void
+GripperController::Update( )
+{
+
 }
 
 PR2::PR2_ERROR_CODE

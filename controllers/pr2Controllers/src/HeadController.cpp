@@ -1,11 +1,19 @@
 #include <pr2Controllers/HeadController.h>
 
+using namespace CONTROLLER;
+
 HeadController::HeadController()
 {
 }
     
 HeadController::~HeadController( )
 {
+}
+
+void
+HeadController::Update( )
+{
+
 }
 
 PR2::PR2_ERROR_CODE

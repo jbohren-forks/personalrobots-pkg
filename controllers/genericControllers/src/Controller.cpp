@@ -20,6 +20,7 @@ static double Controller::ModNPi2Pi(double angle)
 Controller::Controller()
 {
 }
+
 Controller::~Controller()
 {
 }

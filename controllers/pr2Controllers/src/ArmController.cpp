@@ -1,11 +1,19 @@
 #include <pr2Controllers/ArmController.h>
 
+using namespace CONTROLLER;
+
 ArmController::ArmController()
 {
 }
     
 ArmController::~ArmController( )
 {
+}
+
+void
+ArmController::Update( )
+{
+
 }
 
 PR2::PR2_ERROR_CODE
