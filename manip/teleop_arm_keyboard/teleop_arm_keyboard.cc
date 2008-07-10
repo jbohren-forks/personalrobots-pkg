@@ -110,10 +110,76 @@ public:
         this->cmd_rightarmconfig.gripperGapCmd     = 0;
         advertise<std_msgs::PR2Arm>("cmd_leftarmconfig");
         advertise<std_msgs::PR2Arm>("cmd_rightarmconfig");
+
+	_leftInit = false;
+	_rightInit = false;
+	
+	//for getting positions
+	subscribe("left_pr2arm_pos", leftArmPosMsg, &TArmK_Node::leftArmPosReceived);
+	subscribe("right_pr2arm_pos", rightArmPosMsg, &TArmK_Node::rightArmPosReceived);
     }
     ~TArmK_Node() { }
+
+  void printCurrentJointValues() {
+    std::cout << "Left joint angles:" << std::endl;
+    std::cout << "turretAngle " << leftArmPosMsg.turretAngle << std::endl;
+    std::cout << "shoulderLiftAngle " << leftArmPosMsg.shoulderLiftAngle << std::endl;
+    std::cout << "upperarmRollAngle " << leftArmPosMsg.upperarmRollAngle << std::endl;
+    std::cout << "elbowAngle        " << leftArmPosMsg.elbowAngle << std::endl;
+    std::cout << "forearmRollAngle  " << leftArmPosMsg.forearmRollAngle << std::endl;
+    std::cout << "wristPitchAngle   " << leftArmPosMsg.wristPitchAngle << std::endl;
+    std::cout << "wristRollAngle    " << leftArmPosMsg.wristRollAngle << std::endl;
+    std::cout << "gripperForceCmd   " << leftArmPosMsg.gripperForceCmd << std::endl;
+    std::cout << "gripperGapCmd     " << leftArmPosMsg.gripperGapCmd << std::endl;
+
+    std::cout << "Right joint angles:" << std::endl;
+    std::cout << "turretAngle " << rightArmPosMsg.turretAngle << std::endl;
+    std::cout << "shoulderLiftAngle " << rightArmPosMsg.shoulderLiftAngle << std::endl;
+    std::cout << "upperarmRollAngle " << rightArmPosMsg.upperarmRollAngle << std::endl;
+    std::cout << "elbowAngle        " << rightArmPosMsg.elbowAngle << std::endl;
+    std::cout << "forearmRollAngle  " << rightArmPosMsg.forearmRollAngle << std::endl;
+    std::cout << "wristPitchAngle   " << rightArmPosMsg.wristPitchAngle << std::endl;
+    std::cout << "wristRollAngle    " << rightArmPosMsg.wristRollAngle << std::endl;
+    std::cout << "gripperForceCmd   " << rightArmPosMsg.gripperForceCmd << std::endl;
+    std::cout << "gripperGapCmd     " << rightArmPosMsg.gripperGapCmd << std::endl;
+  }
+
+ void leftArmPosReceived() {
+    if(_leftInit == false) {
+      this->cmd_leftarmconfig.turretAngle = leftArmPosMsg.turretAngle;
+      this->cmd_leftarmconfig.shoulderLiftAngle = leftArmPosMsg.shoulderLiftAngle;
+      this->cmd_leftarmconfig.upperarmRollAngle = leftArmPosMsg.upperarmRollAngle;
+      this->cmd_leftarmconfig.elbowAngle        = leftArmPosMsg.elbowAngle;
+      this->cmd_leftarmconfig.forearmRollAngle  = leftArmPosMsg.forearmRollAngle;
+      this->cmd_leftarmconfig.wristPitchAngle   = leftArmPosMsg.wristPitchAngle;
+      this->cmd_leftarmconfig.wristRollAngle    = leftArmPosMsg.wristRollAngle;
+      this->cmd_leftarmconfig.gripperForceCmd   = leftArmPosMsg.gripperForceCmd;
+      this->cmd_leftarmconfig.gripperGapCmd     = leftArmPosMsg.gripperGapCmd;
+      _leftInit = true;
+    }
+  }
+
+  void rightArmPosReceived() {
+    if(_rightInit == false) {
+      this->cmd_rightarmconfig.turretAngle = rightArmPosMsg.turretAngle;
+      this->cmd_rightarmconfig.shoulderLiftAngle = rightArmPosMsg.shoulderLiftAngle;
+      this->cmd_rightarmconfig.upperarmRollAngle = rightArmPosMsg.upperarmRollAngle;
+      this->cmd_rightarmconfig.elbowAngle        = rightArmPosMsg.elbowAngle;
+      this->cmd_rightarmconfig.forearmRollAngle  = rightArmPosMsg.forearmRollAngle;
+      this->cmd_rightarmconfig.wristPitchAngle   = rightArmPosMsg.wristPitchAngle;
+      this->cmd_rightarmconfig.wristRollAngle    = rightArmPosMsg.wristRollAngle;
+      this->cmd_rightarmconfig.gripperForceCmd   = rightArmPosMsg.gripperForceCmd;
+      this->cmd_rightarmconfig.gripperGapCmd     = rightArmPosMsg.gripperGapCmd;
+      _rightInit = true;
+    }
+  }
+
     void keyboardLoop();
     void changeJointAngle(PR2_JOINT_ID jointID, bool increment);
+
+  bool _leftInit;
+  bool _rightInit;
+  std_msgs::PR2Arm leftArmPosMsg, rightArmPosMsg;
 };
 
 TArmK_Node* tarmk;
@@ -266,6 +332,9 @@ TArmK_Node::keyboardLoop()
             changeJointAngle(curr_jointID, false);
             dirty=true;
             break;
+	case 'q':
+	  printCurrentJointValues();
+	  break;
         default:
             break;
         }
