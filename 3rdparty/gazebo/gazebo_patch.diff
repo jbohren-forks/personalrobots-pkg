@@ -230,7 +230,7 @@ Index: gazebo-svn/libgazebo/gazebo.h
  };
  
  /// \brief Gripper interface
-@@ -1254,9 +1304,327 @@
+@@ -1254,9 +1304,328 @@
  /// \} */
  
  
@@ -483,6 +483,7 @@ Index: gazebo-svn/libgazebo/gazebo.h
 +      double dGain;
 +      double iClamp;
 +      double saturationTorque;
++      double dampingCoefficient;
 +   } JointData;
 +
 +/// \brief The actuator array data packet. 
@@ -558,7 +559,7 @@ Index: gazebo-svn/libgazebo/gazebo.h
  /** \defgroup ptz_iface ptz
  
    \brief PTZ interface
-@@ -1334,7 +1702,7 @@
+@@ -1334,7 +1703,7 @@
  \{
  */
  
@@ -567,7 +568,7 @@ Index: gazebo-svn/libgazebo/gazebo.h
  #define GAZEBO_STEREO_CAMERA_MAX_DISPARITY_SIZE 640 * 480
  
  /// \brief Stereo data
-@@ -1384,6 +1752,9 @@
+@@ -1384,6 +1753,9 @@
    /// Right disparity (float)
    public: float right_disparity[GAZEBO_STEREO_CAMERA_MAX_DISPARITY_SIZE];
  
@@ -577,7 +578,7 @@ Index: gazebo-svn/libgazebo/gazebo.h
  }; 
  
  
-@@ -1401,6 +1772,7 @@
+@@ -1401,6 +1773,7 @@
            {
              Iface::Create(server,id); 
              this->data = (StereoCameraData*)this->mMap; 
@@ -585,7 +586,7 @@ Index: gazebo-svn/libgazebo/gazebo.h
            }
  
    /// \brief Open the iface 
-@@ -1408,8 +1780,16 @@
+@@ -1408,8 +1781,16 @@
            {
              Iface::Open(client,id); 
              this->data = (StereoCameraData*)this->mMap; 

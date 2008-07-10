@@ -160,14 +160,15 @@ void Pr2_Actarray::LoadChild(XMLConfigNode *node)
           break;
       }
 
-      this->myIface->data->actuators[i].saturationTorque =  jNode->GetDouble("saturationTorque",0.0,1);
-      this->myIface->data->actuators[i].pGain            =  jNode->GetDouble("pGain" ,0.0,1);
-      this->myIface->data->actuators[i].iGain            =  jNode->GetDouble("iGain" ,0.0,1);
-      this->myIface->data->actuators[i].dGain            =  jNode->GetDouble("dGain" ,0.0,1);
-      this->myIface->data->actuators[i].iClamp           =  jNode->GetDouble("iClamp",0.0,1);
-      //this->myIface->data->actuators[i].cmdPosition      =  0.0;
-      //this->myIface->data->actuators[i].cmdSpeed         =  0.0;
-      std::string tmpControlMode                         =  jNode->GetString("controlMode","PD_CONTROL",0);
+      this->myIface->data->actuators[i].saturationTorque   =  jNode->GetDouble("saturationTorque",0.0,1);
+      this->myIface->data->actuators[i].pGain              =  jNode->GetDouble("pGain" ,0.0,1);
+      this->myIface->data->actuators[i].iGain              =  jNode->GetDouble("iGain" ,0.0,1);
+      this->myIface->data->actuators[i].dGain              =  jNode->GetDouble("dGain" ,0.0,1);
+      this->myIface->data->actuators[i].iClamp             =  jNode->GetDouble("iClamp",0.0,1);
+      //this->myIface->data->actuators[i].cmdPosition        =  0.0;
+      //this->myIface->data->actuators[i].cmdSpeed           =  0.0;
+      std::string tmpControlMode                           =  jNode->GetString("controlMode","PD_CONTROL",0);
+      this->myIface->data->actuators[i].dampingCoefficient =  jNode->GetDouble("explicitDampingCoefficient",0.0,0);
 
       // init a new pid for this joint
       this->pids[i] = new Pid();
@@ -221,68 +222,68 @@ void Pr2_Actarray::InitChild()
 #ifdef ADVAIT
 void Pr2_Actarray::UpdateChild()
 {
-	HingeJoint *hjoint;
-	double cmdPosition;
-	double currentTime;
+  HingeJoint *hjoint;
+  double cmdPosition;
+  double currentTime;
 
-	double curr_ang;
-	double mass, length;
-	double g;
-	double gravity_torque;
-	static double error, error_prev=-200;
-	double kp,kd;
-	double apply_torque;
+  double curr_ang;
+  double mass, length;
+  double g;
+  double gravity_torque;
+  static double error, error_prev=-200;
+  double kp,kd;
+  double apply_torque;
 
-	this->myIface->Lock(1);
+  this->myIface->Lock(1);
 
-	currentTime = Simulator::Instance()->GetSimTime();
-	this->myIface->data->head.time = currentTime;
-	this->myIface->data->actuators_count = this->num_joints;
+  currentTime = Simulator::Instance()->GetSimTime();
+  this->myIface->data->head.time = currentTime;
+  this->myIface->data->actuators_count = this->num_joints;
 
-	//--------- loop through all the controllable dof's in this interface ----------
-	for (int count = 0; count < this->num_joints; count++)
-	{
-		switch(this->joints[count]->GetType())
-		{
-			case Joint::HINGE:
-				hjoint = dynamic_cast<HingeJoint*>(this->joints[count]);
-				cmdPosition = this->myIface->data->actuators[count].cmdPosition;
-				cmdPosition = DTOR(60.0);
-				curr_ang = hjoint->GetAngle();
-				mass = 5;
-				length = 0.25;
-				g = 9.8;
-				gravity_torque = -mass*g*cos(curr_ang)*length;
-				error = cmdPosition-curr_ang;
-				if (error_prev == -200)
-					error_prev = error;
+  //--------- loop through all the controllable dof's in this interface ----------
+  for (int count = 0; count < this->num_joints; count++)
+  {
+    switch(this->joints[count]->GetType())
+    {
+      case Joint::HINGE:
+        hjoint = dynamic_cast<HingeJoint*>(this->joints[count]);
+        cmdPosition = this->myIface->data->actuators[count].cmdPosition;
+        cmdPosition = DTOR(60.0);
+        curr_ang = hjoint->GetAngle();
+        mass = 5;
+        length = 0.25;
+        g = 9.8;
+        gravity_torque = -mass*g*cos(curr_ang)*length;
+        error = cmdPosition-curr_ang;
+        if (error_prev == -200)
+          error_prev = error;
 
-				kp = 1.;
-				kd = 50.0;
-				printf("---------------\n");
-				printf("error: %f\t error_prev: %f\n", RTOD(error), RTOD(error_prev));
-				printf("kp term: %.3f\tkd term: %.3f\t", kp*error, kd*(error-error_prev));
-				apply_torque = -gravity_torque + kp*error + kd*(error-error_prev);
-				error_prev = error;
-				printf("error: %.2f\tapplied torque:%f\n", RTOD(error), apply_torque);
-				hjoint->SetTorque(apply_torque);
+        kp = 1.;
+        kd = 50.0;
+        printf("---------------\n");
+        printf("error: %f\t error_prev: %f\n", RTOD(error), RTOD(error_prev));
+        printf("kp term: %.3f\tkd term: %.3f\t", kp*error, kd*(error-error_prev));
+        apply_torque = -gravity_torque + kp*error + kd*(error-error_prev);
+        error_prev = error;
+        printf("error: %.2f\tapplied torque:%f\n", RTOD(error), apply_torque);
+        hjoint->SetTorque(apply_torque);
 
-				this->myIface->data->actuators[count].actualPosition      = hjoint->GetAngle();
-				this->myIface->data->actuators[count].actualSpeed         = hjoint->GetAngleRate();
-				this->myIface->data->actuators[count].actualEffectorForce = 0.0; //TODO: use JointFeedback struct at some point
-				break;
+        this->myIface->data->actuators[count].actualPosition      = hjoint->GetAngle();
+        this->myIface->data->actuators[count].actualSpeed         = hjoint->GetAngleRate();
+        this->myIface->data->actuators[count].actualEffectorForce = 0.0; //TODO: use JointFeedback struct at some point
+        break;
 
-			case Joint::SLIDER:
-			case Joint::HINGE2:
-			case Joint::BALL:
-			case Joint::UNIVERSAL:
-				break;
-		}
-	}
+      case Joint::SLIDER:
+      case Joint::HINGE2:
+      case Joint::BALL:
+      case Joint::UNIVERSAL:
+        break;
+    }
+  }
 
-	this->myIface->data->new_cmd = 0;
-	this->myIface->Unlock();
-	this->lastTime = currentTime;
+  this->myIface->data->new_cmd = 0;
+  this->myIface->Unlock();
+  this->lastTime = currentTime;
 }
 
 #else
@@ -328,8 +329,10 @@ void Pr2_Actarray::UpdateChild()
    double currentTime;
    double currentCmd;
    double currentRate;
-double currentAngle;
+   double currentAngle;
 
+   // TODO: EXPERIMENTAL: add explicit damping
+   double dampForce;
 
    this->myIface->Lock(1);
 
@@ -404,15 +407,29 @@ double currentAngle;
              switch(this->myIface->data->actuators[count].controlMode)
              {
                  case PR2::TORQUE_CONTROL:
-                    printf("Hinge Torque Control\n");
-                    hjoint->SetTorque(this->myIface->data->actuators[count].cmdEffectorForce);
+                    // TODO: EXPERIMENTAL: add explicit damping
+                    currentRate = hjoint->GetAngleRate();
+                    dampForce = - this->myIface->data->actuators[count].dampingCoefficient * currentRate;
+                    dampForce = (dampForce >  this->myIface->data->actuators[count].saturationTorque ) ?  this->myIface->data->actuators[count].saturationTorque : dampForce;
+                    dampForce = (dampForce < -this->myIface->data->actuators[count].saturationTorque ) ? -this->myIface->data->actuators[count].saturationTorque : dampForce;
+                    printf("Damping f %f v %f\n",dampForce,currentRate);
+
+                    // simply set torque
+                    hjoint->SetTorque(this->myIface->data->actuators[count].cmdEffectorForce + dampForce);
                     //std::cout << count << " " << this->myIface->data->actuators[count].controlMode << std::endl;
                     break;
                  case PR2::PD_TORQUE_CONTROL :
+                    // TODO: EXPERIMENTAL: add explicit damping
+                    currentRate = hjoint->GetAngleRate();
+                    dampForce = - this->myIface->data->actuators[count].dampingCoefficient * currentRate;
+                    dampForce = (dampForce >  this->myIface->data->actuators[count].saturationTorque ) ?  this->myIface->data->actuators[count].saturationTorque : dampForce;
+                    dampForce = (dampForce < -this->myIface->data->actuators[count].saturationTorque ) ? -this->myIface->data->actuators[count].saturationTorque : dampForce;
+                    printf("Damping f %f v %f\n",dampForce,currentRate);
+
                     currentAngle = hjoint->GetAngle();
                     // No fancy controller, just pass the commanded torque/force in (we are not modeling the motors for now)
                     positionError = ModNPi2Pi(cmdPosition - currentAngle);
-                    speedError    = cmdSpeed - hjoint->GetAngleRate();
+                    speedError    = cmdSpeed - currentRate;
                     currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
                     // if(count==PR2::ARM_R_SHOULDER_PITCH ) std::cout << "hinge err:" << positionError << " cmd: " << currentCmd << std::endl;
                     //Write out data
@@ -424,7 +441,7 @@ double currentAngle;
                     //currentCmd = (currentCmd >  this->myIface->data->actuators[count].saturationTorque ) ?  this->myIface->data->actuators[count].saturationTorque : currentCmd;
                     //currentCmd = (currentCmd < -this->myIface->data->actuators[count].saturationTorque ) ? -this->myIface->data->actuators[count].saturationTorque : currentCmd;
                     hjoint->SetParam( dParamFMax, 0);
-                    hjoint->SetTorque(currentCmd);
+                    hjoint->SetTorque(currentCmd + dampForce);
 
                     break;
                 case PR2::SPEED_TORQUE_CONTROL :
@@ -450,8 +467,10 @@ double currentAngle;
                     //else if (cmdPosition < hjoint->GetLowStop())
                     //   cmdPosition = hjoint->GetLowStop();
  
-                    positionError = ModNPi2Pi(cmdPosition - hjoint->GetAngle());
-                    speedError    = cmdSpeed - hjoint->GetAngleRate();
+                    currentAngle  = hjoint->GetAngle();
+                    currentRate   = hjoint->GetAngleRate();
+                    positionError = ModNPi2Pi(cmdPosition - currentAngle);
+                    speedError    = cmdSpeed - currentRate;
                     //std::cout << "hinge e:" << speedError << " + " << positionError << std::endl;
                     currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
                     hjoint->SetParam( dParamVel, currentCmd );

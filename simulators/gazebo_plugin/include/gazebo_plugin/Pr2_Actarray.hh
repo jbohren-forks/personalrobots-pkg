@@ -99,6 +99,9 @@ namespace gazebo
       // save last time for dt calc for pid's
       private: double lastTime;
 
+      // explicit damping coefficient for the joint
+      private: double dampCoef;
+
    };
 
 /** \} */
