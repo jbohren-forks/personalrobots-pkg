@@ -10,6 +10,7 @@ This package contains Gazebo, from the Player Project
 <url>http://playerstage.sf.net</url>
 <depend package="opende" />
 <depend package="ogre" />
+<depend package="player" />
 <export>
   <cpp lflags="-Xlinker -rpath ${prefix}/gazebo/lib -L${prefix}/gazebo/lib -lgazebo -lgazeboServer" cflags="-I${prefix}/gazebo/include"/>
 </export>
