@@ -37,16 +37,11 @@ SmartScan::SmartScan()
 	mNativePoints = NULL;
 	mVtkData = NULL;
 	mVtkPointLocator = NULL;
-	mVtkTransform = NULL;
-	mVtkTransformFilter = NULL;
-	mTransform = new libTF::TransformReference();
-	clearTransform();
 }
 
 SmartScan::~SmartScan()
 {
 	clearData();
-	delete mTransform;
 }
 
 void SmartScan::clearData()
@@ -57,11 +52,6 @@ void SmartScan::clearData()
 	}
 	deleteVtkData();
 	mNumPoints = 0;
-}
-
-void SmartScan::clearTransform()
-{
-	mTransform->setWithEulers(TFMF, TFRT,0,0,0,0,0,0,0);
 }
 
 void SmartScan::setPoints(int numPoints, const std_msgs::Point3DFloat32 *points)
@@ -76,48 +66,36 @@ void SmartScan::setPoints(int numPoints, const std_msgs::Point3DFloat32 *points)
 	}
 }
 
-void SmartScan::setTransform(const NEWMAT::Matrix &M)
+
+std_msgs::Point3DFloat32 SmartScan::transformPoint(const std_msgs::Point3DFloat32 &p_in,
+						   libTF::TransformReference &tr) const
 {
-	mTransform->setWithMatrix(TFMF, TFRT, M, 0);
-	if (hasVtkData()) {
-		setVtkTransform();
-	}
+
+	libTF::TFPoint p;
+	p.x = p_in.x; p.y = p_in.y; p.z = p_in.z;
+	p.frame = TFMF;	p.time = 0;
+	p = tr.transformPoint(TFRT, p);
+
+	std_msgs::Point3DFloat32 p_out;
+	p_out.x = p.x; p_out.y = p.y; p_out.z = p.z;
+	//fprintf(stderr,"Transformed: %f %f %f\n",p.x, p.y, p.z);
+	return p_out;
 }
 
-void SmartScan::setTransform(float *t)
-{
-	NEWMAT::Matrix M(4,4);
-	for (int i=0; i<4; i++) {
-		for (int j=0; j<4; j++) {
-			M.element(i,j) = t[i*4+j];
-		}
-	}
-	setTransform(M);
-}
 
-void SmartScan::getTransform(NEWMAT::Matrix &M)
-{
-	M = mTransform->getMatrix(TFRT, TFMF, 0);
-}
-
-void SmartScan::getTransform(float *t)
-{
-	NEWMAT::Matrix M(4,4);
-	getTransform(M);
-	for (int i=0; i<4; i++) {
-		for (int j=0; j<4; j++) {
-			t[i*4+j] = M.element(i,j);
-		}
-	}
-}
-
-void SmartScan::applyTransform(NEWMAT::Matrix &M)
+void SmartScan::applyTransform(const NEWMAT::Matrix &M)
 {
 	//we could take advantage of the fact that libTF can do these things for us
 	//but for now I'll just multiply the matrices myself because I'm still a bit
 	//unsure about how to use libTF
 
-	setTransform( M * mTransform->getMatrix(TFRT, TFMF, 0) );
+	libTF::TransformReference tr;
+	tr.setWithMatrix( TFMF, TFRT, M, 0);
+	for (int i=0; i<mNumPoints; i++) {
+		mNativePoints[i] = transformPoint( mNativePoints[i], tr );
+	}
+
+
 }
 
 void SmartScan::applyTransform(float *t)
@@ -158,7 +136,6 @@ bool SmartScan::readFromFile(std::iostream &input)
 	int n;
 	float x,y,z,intensity;
 	clearData();
-	clearTransform();
 	//read number of points
 	input >> n;
 	if (n <= 0) {
@@ -200,8 +177,8 @@ void SmartScan::createVtkData()
 	vtkPoints* points = vtkPoints::New();
 	points->SetData(pcoords);
 	// Create vtkPointSet and assign vtkPoints as internal data
-	mVtkNativeData = vtkPolyData::New();
-	mVtkNativeData->SetPoints(points);
+	mVtkData = vtkPolyData::New();
+	mVtkData->SetPoints(points);
 
 	//for some functions it seems we also need the points represented as "cells"...
 	vtkCellArray *cells = vtkCellArray::New();
@@ -209,15 +186,7 @@ void SmartScan::createVtkData()
 		cells->InsertNextCell(1);
 		cells->InsertCellPoint(i);
 	}
-	mVtkNativeData->SetVerts(cells);
-
-	//set the transform and apply to to native data to get the ready-to-use mVtkData
-	mVtkTransform = vtkTransform::New();
-	mVtkTransformFilter = vtkTransformFilter::New();
-	mVtkTransformFilter->SetTransform(mVtkTransform);
-	mVtkTransformFilter->SetInput(mVtkNativeData);
-	mVtkData = mVtkTransformFilter->GetPolyDataOutput();
-	setVtkTransform();
+	mVtkData->SetVerts(cells);
 
 	//also create and populate point locator
 	mVtkPointLocator = vtkPointLocator::New();
@@ -225,36 +194,14 @@ void SmartScan::createVtkData()
 	mVtkPointLocator->BuildLocator();
 }
 
-void SmartScan::setVtkTransform()
-{
-	assert(mVtkTransform);
-	vtkMatrix4x4 *VM = vtkMatrix4x4::New();
-	NEWMAT::Matrix M(4,4);
-	getTransform(M);
-	for (int i=0; i<4; i++) {
-		for(int j=0; j<4; j++) {
-			VM->SetElement(i,j, M.element(i,j) );
-		}
-	}
-	mVtkTransform->SetMatrix(VM);
-	mVtkTransformFilter->Update();
-	// I don't know if VTK uses this instance directly or copies the matrix
-	// VM->Delete();
-}
-
 void SmartScan::deleteVtkData()
 {
 	if (!mVtkData) return;
-	mVtkNativeData->Delete();
-	mVtkNativeData = NULL;
+	mVtkData->Delete();
 	mVtkData = NULL;
 	assert(mVtkPointLocator);
 	mVtkPointLocator->Delete();
 	mVtkPointLocator = NULL;
-	mVtkTransformFilter->Delete();
-	mVtkTransformFilter = NULL;
-	mVtkTransform->Delete();
-	mVtkTransform = NULL;
 }
 
 vtkPolyData* SmartScan::getVtkData()
@@ -269,37 +216,6 @@ vtkPointLocator* SmartScan::getVtkLocator()
 	if (!hasVtkData()) createVtkData();
 	assert(mVtkPointLocator);
 	return mVtkPointLocator;
-}
-
-std_msgs::Point3DFloat32 SmartScan::transformPoint(const std_msgs::Point3DFloat32 &p_in) const
-{
-	// we can either get the point from VTK of perform the transform ourselves. In order to keep 
-	// VTK dependency at a minimum we will do the transform ourselves. VTK *might* be faster.
-
-	libTF::TFPoint p;
-	p.x = p_in.x; p.y = p_in.y; p.z = p_in.z;
-	p.frame = TFMF;	p.time = 0;
-	p = mTransform->transformPoint(TFRT, p);
-
-	std_msgs::Point3DFloat32 p_out;
-	p_out.x = p.x; p_out.y = p.y; p_out.z = p.z;
-	//fprintf(stderr,"Transformed: %f %f %f\n",p.x, p.y, p.z);
-	return p_out;
-}
-
-std_msgs::Point3DFloat32 SmartScan::getPoint(int i) const
-{
-	// we have to make sure the inner transform is applied. As this is fairly expensive
-	// we might want to add a flag at some point that disables the inner transform is the user
-	// does not want it
-
-	// we could also inline this function for better performance, but that would require including
-	// the libTF header or a VTK header in our header file which I don't want to do for now to keep
-	// compiling fast
-
-	assert(i>=0 && i<mNumPoints);
-	//fprintf(stderr,"original: %f %f %f\n",mNativePoints[i].x, mNativePoints[i].y, mNativePoints[i].z);
-	return transformPoint( mNativePoints[i] );
 }
 
 /*! Performs a 2D Delaunay triangulation of the point cloud. This is
@@ -428,12 +344,8 @@ std::vector<Triangle> *SmartScan::delaunayTriangulation3D(double tolerance, doub
 */
 void SmartScan::crop(float x, float y, float z, float dx, float dy, float dz)
 {
-	std_msgs::Point3DFloat32 *newPoints;
+	std_msgs::Point3DFloat32 *newPoints,p;
 	int numNewPoints = 0;
-
-	//use VTK to handle transform, easiest to implement
-	if (!hasVtkData()) createVtkData();
-	double p[3];
 	
 	//we are passed the overall size of the crop box; let's get the halves
 	dx = dx/2; dy = dy/2; dz = dz/2;
@@ -444,34 +356,32 @@ void SmartScan::crop(float x, float y, float z, float dx, float dy, float dz)
 	for (int i=0; i<mNumPoints; i++) {
 		//we are getting the point already transformed by the inner transform
 		//here we use VTK to transform the point instead of our own this->getPoint(...)
-		getVtkData()->GetPoint(i,p);
-		if (p[0] > x + dx) continue;
-		if (p[0] < x - dx) continue;
-		if (p[1] > y + dy) continue;
-		if (p[1] < y - dy) continue;
-		if (p[2] > z + dz) continue;
-		if (p[2] < z - dz) continue;
+		p = getPoint(i);
+		if (p.x > x + dx) continue;
+		if (p.x < x - dx) continue;
+		if (p.y > y + dy) continue;
+		if (p.y < y - dy) continue;
+		if (p.z > z + dz) continue;
+		if (p.z < z - dz) continue;
 		numNewPoints++;
 	}
 	newPoints = new std_msgs::Point3DFloat32[numNewPoints];
 	int j=0;
 	for (int i=0; i<mNumPoints; i++) {
-		getVtkData()->GetPoint(i,p);
-		if (p[0] > x + dx) continue;
-		if (p[0] < x - dx) continue;
-		if (p[1] > y + dy) continue;
-		if (p[1] < y - dy) continue;
-		if (p[2] > z + dz) continue;
-		if (p[2] < z - dz) continue;
-		newPoints[j] = mNativePoints[i];
+		p = getPoint(i);
+		if (p.x > x + dx) continue;
+		if (p.x < x - dx) continue;
+		if (p.y > y + dy) continue;
+		if (p.y < y - dy) continue;
+		if (p.z > z + dz) continue;
+		if (p.z < z - dz) continue;
+		newPoints[j] = getPoint(i);
 		j++;
 	}
 	assert(j==numNewPoints);
 	fprintf(stderr,"Cropped from %d to %d points\n",mNumPoints, numNewPoints);
 
-	mNumPoints = numNewPoints;
-	delete [] mNativePoints;
-	mNativePoints = newPoints;
+	setPoints(numNewPoints, newPoints);
 
 	if ( hasVtkData() ) {
 		deleteVtkData();
@@ -537,6 +447,13 @@ float* SmartScan::ICPTo(SmartScan* target)
 		}
 	}
 
+	//transpose the rotation
+	for (int i=0; i<3; i++) {
+		for (int j=0; j<3; j++) {
+			transf[4*i+j] = vtkMat->GetElement(j,i);
+		}
+	}
+
 	fprintf(stderr,"ICP done. Result:\n");
 	vtkMat->Print(std::cerr);
 	fprintf(stderr,"Iterations used: %d. Mean dist: %f\n",vtkTransform->GetNumberOfIterations(),
@@ -571,7 +488,7 @@ void SmartScan::removeOutliers(float radius, int nbrs)
 		//there is always at least one point in the result (the point itself)
 		if (result->GetNumberOfIds() > nbrs) {
 			//keep this point
-			newPoints[numNewPoints] = mNativePoints[i];
+			newPoints[numNewPoints] = getPoint(i);
 			numNewPoints++;
 		}
 	}
@@ -589,10 +506,9 @@ void SmartScan::removeOutliers(float radius, int nbrs)
 }
 
 /*!  Removes all points whose normals are perpendicular to the scanner
-  direction. For now, we assume the scanner is at location (0,0,0)
-  *after* applying the inner transform. The assumption is that points
-  with this characteristic are scanned with high error or are
-  "ghosting" or "veil" artifacts.
+  direction. For now, we assume the scanner is at location
+  (0,0,0). The assumption is that points with this characteristic are
+  scanned with high error or are "ghosting" or "veil" artifacts.
 
   \param threshold The minimum difference in degrees between normal
   direction and scanner perpendicular direction for keeping
@@ -618,22 +534,16 @@ void SmartScan::removeGrazingPoints(float threshold, bool removeOutliers, float 
 	threshold = fabs( cos(M_PI / 2 - threshold) );
 
 	std_msgs::Point3DFloat32 scanner;
-	//scanner is at (0,0,0) in native coordinate system
 	scanner.x = 0; scanner.y = 0; scanner.z = 0;
-	//apply inner transfrom
-	scanner = transformPoint(scanner);
 
 	for (int i=0; i<mNumPoints; i++) {
-		//we get the normal with the inner transform already applied
 		std_msgs::Point3DFloat32 normal = computePointNormal(i,radius,nbrs);
 		//check for outliers
 		if ( norm(normal) < 0.5 && removeOutliers) continue;
 	
 		//compute direction to scanner
 		std_msgs::Point3DFloat32 scannerDirection;
-		//get the point with inner transform applied
 		std_msgs::Point3DFloat32 p = getPoint(i);
-		//the scanner already has the inner transform applied
 		scannerDirection.x = p.x - scanner.x;
 		scannerDirection.y = p.y - scanner.y;
 		scannerDirection.z = p.z - scanner.z;
@@ -644,7 +554,7 @@ void SmartScan::removeGrazingPoints(float threshold, bool removeOutliers, float 
 	
 		if ( norm(normal) > 0.5 && d < threshold) continue; 
 		//keep the point
-		newPoints[numNewPoints] = mNativePoints[i];
+		newPoints[numNewPoints] = getPoint(i);
 		numNewPoints++;
 	}
 
@@ -895,7 +805,7 @@ void SmartScan::removePlane(const std_msgs::Point3DFloat32 &planePoint,
 		if ( fabs(dist) < thresh ) continue;
 
 		//keep this point
-		newPoints[numNewPoints] = mNativePoints[i];
+		newPoints[numNewPoints] = getPoint(i);
 		numNewPoints++;
 	}
 

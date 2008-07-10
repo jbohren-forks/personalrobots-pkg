@@ -13,8 +13,6 @@
 class vtkPolyData;
 class vtkPointLocator;
 class vtkTransform;
-class vtkTransformPolyDataFilter;
-class vtkTransformFilter;
 
 namespace NEWMAT {
 	class Matrix;
@@ -57,21 +55,13 @@ class SmartScan {
 	std_msgs::Point3DFloat32 *mNativePoints;
 	//! The number of vertices in the cloud
 	int mNumPoints;
-	//! A transform associated with this point cloud
-	libTF::TransformReference *mTransform;
 
 	//! Copy of the 3D cloud in VTK format
-	vtkPolyData *mVtkNativeData, *mVtkData;
+	vtkPolyData *mVtkData;
 	//! Spatial structure similar to a kd-tree that VTK uses for fast neighbor searches in the cloud
 	vtkPointLocator *mVtkPointLocator;
-	//! Copy of the inner transform in VTK format
-	vtkTransform *mVtkTransform;
-	//! VTK Filter for applying the VTK transform to the VTK Data
-	vtkTransformFilter *mVtkTransformFilter;
 	//! Copies the native data into a VTK-compatible structure
 	void createVtkData();
-	//! Sets the VTK version of the transform to match the libTF version
-	void setVtkTransform();
 	//! Deletes the VTK version of the native data
 	void deleteVtkData();
 	//! Returns true if the VTK version of the native data exists and the class is ready to use VTK-based tools
@@ -83,11 +73,10 @@ class SmartScan {
 
 	//! Clears all the data held by this class and frees all memory footprint. Does not change inner transform.
 	void clearData();
-	//! Sets the inner transform to identity
-	void clearTransform();
 
 	//! Apply the inner transform to a point
-	std_msgs::Point3DFloat32 transformPoint(const std_msgs::Point3DFloat32 &p) const;
+	std_msgs::Point3DFloat32 transformPoint(const std_msgs::Point3DFloat32 &p,
+						libTF::TransformReference &tr) const;
 	//! Fit plane to normalized points using SVD and return normal direction.
 	std_msgs::Point3DFloat32 SVDPlaneNormal(NEWMAT::Matrix *M, int n);
  public:
@@ -105,20 +94,15 @@ class SmartScan {
 	//! Returns the number of points in the cloud
 	int size() const {return mNumPoints;}
 	//! Returns the i-th point in the cloud.
-	std_msgs::Point3DFloat32 getPoint(int i) const;
+	inline std_msgs::Point3DFloat32 getPoint(int i) const{
+		assert( i>=0 && i<mNumPoints);
+		return mNativePoints[i];
+	}
 
 
-	//! Set the inner transform using a NEWMAT matrix
-	void setTransform(const NEWMAT::Matrix &M);
-	//! Set the inner transform using a row-major float[16]
-	void setTransform(float *t);
-	//! Get the inner transform in a NEWMAT matrix
-	void getTransform(NEWMAT::Matrix &M);
-	//! Get the inner transform in a row-major float[16]
-	void getTransform(float *t);
-	//! Apply a transform on top to the existing inner transform
-	void applyTransform(NEWMAT::Matrix &M);
-	//! Apply a transform on top to the existing inner transform
+	//! Apply a transform to each point in the cloud using a NEWMAT matrix
+	void applyTransform(const NEWMAT::Matrix &M);
+	//! Apply a transform to each point in the cloud using a row-major float[16]
 	void applyTransform(float *t);
 
 	//! Performs 2D Delaunay Triangulation on the point cloud.
