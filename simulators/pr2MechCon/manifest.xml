@@ -14,4 +14,5 @@
   <depend package="std_msgs" />
   <depend package="rosthread" />
   <depend package="rosTF" />
+  <depend package="rosgazebo" />
 </package>
