@@ -50,9 +50,14 @@
 
 
 #include "blob_tracker/blob_tracker.h"
+#include <string.h>
+#include <stdlib.h>
+#include <iostream.h>
+
 
 using namespace std;
 
+static int i;
 
 class Blob_Tracker_Node : public ros::node
 {
@@ -66,6 +71,7 @@ public:
   uint8_t* jpeg;
   uint32_t jpeg_size;
   Blob_Tracker b;
+  
   
   Blob_Tracker_Node() : ros::node("blobtracker"), cv_bridge(&image_msg, CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U)
   {
@@ -82,7 +88,12 @@ public:
   {
     if (cv_bridge.to_cv(&cv_image))
     {
-      b.processFrame(&cv_image);
+/* to save frames as png's:      
+        std::stringstream ss;
+        ss << "test" << i++ << ".png";
+        b.saveFrame(cv_image);
+*/
+        b.processFrame(&cv_image);
     }
   } 
 };
@@ -95,7 +106,6 @@ int main(int argc, char **argv)
 
   ros::init(argc, argv);
   Blob_Tracker_Node n;
-
   while(n.ok()) {
     usleep(1000);      
   }
