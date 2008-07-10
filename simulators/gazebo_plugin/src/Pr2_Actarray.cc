@@ -412,7 +412,7 @@ void Pr2_Actarray::UpdateChild()
                     dampForce = - this->myIface->data->actuators[count].dampingCoefficient * currentRate;
                     dampForce = (dampForce >  this->myIface->data->actuators[count].saturationTorque ) ?  this->myIface->data->actuators[count].saturationTorque : dampForce;
                     dampForce = (dampForce < -this->myIface->data->actuators[count].saturationTorque ) ? -this->myIface->data->actuators[count].saturationTorque : dampForce;
-                    printf("Damping f %f v %f\n",dampForce,currentRate);
+                    //printf("Damping f %f v %f\n",dampForce,currentRate);
 
                     // simply set torque
                     hjoint->SetTorque(this->myIface->data->actuators[count].cmdEffectorForce + dampForce);
@@ -424,7 +424,7 @@ void Pr2_Actarray::UpdateChild()
                     dampForce = - this->myIface->data->actuators[count].dampingCoefficient * currentRate;
                     dampForce = (dampForce >  this->myIface->data->actuators[count].saturationTorque ) ?  this->myIface->data->actuators[count].saturationTorque : dampForce;
                     dampForce = (dampForce < -this->myIface->data->actuators[count].saturationTorque ) ? -this->myIface->data->actuators[count].saturationTorque : dampForce;
-                    printf("Damping f %f v %f\n",dampForce,currentRate);
+                    //printf("Damping f %f v %f\n",dampForce,currentRate);
 
                     currentAngle = hjoint->GetAngle();
                     // No fancy controller, just pass the commanded torque/force in (we are not modeling the motors for now)
