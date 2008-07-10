@@ -32,29 +32,76 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef KINEMATIC_ENVIRONMENT_MODEL_SOLID_
-#define KINEMATIC_ENVIRONMENT_MODEL_SOLID_
+#include <collisionspace/kinematicODE.h>
 
-#include <collisionspace/kinematicSOLID.h>
-
-/** @htmlinclude ../../manifest.html
-
-    A class describing an environment for a kinematic robot using SOLID */
-
-class EnvironmentModelSOLID
+void KinematicModelODE::build(URDF &model, const char *group)
 {
- public:
-    
-    EnvironmentModelSOLID(void)
-    {
-    }
-    
-    ~EnvironmentModelSOLID(void)
-    {
-    }
-    
-    KinematicModelSOLID model;    
-    
-};
+    KinematicModel::build(model, group);
+    m_space = dHashSpaceCreate(0);
+    for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
+	buildODEGeoms(m_robots[i]);
+}
 
-#endif
+void KinematicModelODE::setGeomPose(dGeomID geom, libTF::Pose3D &pose) const
+{
+    libTF::Pose3D::Position pos = pose.getPosition();
+    dGeomSetPosition(geom, pos.x, pos.y, pos.z);
+    libTF::Pose3D::Quaternion quat = pose.getQuaternion();
+    dQuaternion q; q[0] = quat.w; q[1] = quat.x; q[2] = quat.y; q[3] = quat.z;
+    dGeomSetQuaternion(geom, q);
+}
+
+void KinematicModelODE::updateCollisionPositions(void)
+{
+    for (unsigned int i = 0 ; i < m_kgeoms.size() ; ++i)
+	setGeomPose(m_kgeoms[i]->geom, m_kgeoms[i]->link->globalTrans);
+}
+
+void KinematicModelODE::buildODEGeoms(Robot *robot)
+{
+    for (unsigned int i = 0 ; i < robot->links.size() ; ++i)
+    {
+	kGeom *kg = new kGeom();
+	kg->link = robot->links[i];
+	kg->geom = buildODEGeom(robot->links[i]->geom);
+	if (!kg->geom) continue;
+	m_kgeoms.push_back(kg);
+    }
+}
+
+dGeomID KinematicModelODE::buildODEGeom(Geometry *geom)
+{
+    dGeomID g = NULL;
+    
+    switch (geom->type)
+    {
+    case Geometry::SPHERE:
+	g = dCreateSphere(m_space, geom->size[0]);
+	break;
+    case Geometry::BOX:
+	g = dCreateBox(m_space, geom->size[0], geom->size[1], geom->size[2]);
+	break;
+    case Geometry::CYLINDER:
+	g = dCreateCylinder(m_space, geom->size[0], geom->size[1]);
+	break;
+    default:
+	break;
+    }
+    
+    return g;
+}
+
+dSpaceID KinematicModelODE::getODESpace(void) const
+{
+    return m_space;
+}
+
+unsigned int KinematicModelODE::getGeomCount(void) const
+{
+    return m_kgeoms.size();
+}
+
+dGeomID KinematicModelODE::getGeom(unsigned index) const
+{
+    return m_kgeoms[index]->geom;    
+}

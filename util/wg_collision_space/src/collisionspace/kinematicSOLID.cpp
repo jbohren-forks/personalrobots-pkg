@@ -32,29 +32,78 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef KINEMATIC_ENVIRONMENT_MODEL_SOLID_
-#define KINEMATIC_ENVIRONMENT_MODEL_SOLID_
-
 #include <collisionspace/kinematicSOLID.h>
 
-/** @htmlinclude ../../manifest.html
-
-    A class describing an environment for a kinematic robot using SOLID */
-
-class EnvironmentModelSOLID
+void KinematicModelSOLID::build(URDF &model, const char *group)
 {
- public:
-    
-    EnvironmentModelSOLID(void)
-    {
-    }
-    
-    ~EnvironmentModelSOLID(void)
-    {
-    }
-    
-    KinematicModelSOLID model;    
-    
-};
+    KinematicModel::build(model, group);
+    for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
+	buildSOLIDShapes(m_robots[i]);  
+    dtDisableCaching();
+}
 
-#endif
+void KinematicModelSOLID::buildSOLIDShapes(Robot *robot)
+{
+    for (unsigned int i = 0 ; i < robot->links.size() ; ++i)
+    {
+	kShape *ks = new kShape();
+	ks->link = robot->links[i];
+	ks->shape = buildSOLIDShape(robot->links[i]->geom);
+	if (!ks->shape) continue;
+	dtCreateObject(ks->obj, ks->shape);	
+	m_kshapes.push_back(ks);
+    }
+}
+
+DtShapeRef KinematicModelSOLID::buildSOLIDShape(Geometry *geom)
+{
+    DtShapeRef g = NULL;
+    
+    switch (geom->type)
+    {
+    case Geometry::SPHERE:
+	g = dtSphere(geom->size[0]);
+	break;
+    case Geometry::BOX:
+	g = dtBox(geom->size[0], geom->size[1], geom->size[2]);
+	break;
+    case Geometry::CYLINDER:
+	g = dtCylinder(geom->size[0], geom->size[1]);
+	break;
+    default:
+	break;
+    }
+    
+    return g;
+}
+
+void KinematicModelSOLID::updateCollisionPositions(void)
+{
+    for (unsigned int i = 0 ; i < m_kshapes.size() ; ++i)
+    {
+	dtSelectObject(m_kshapes[i]->obj);
+	libTF::Pose3D::Position pos;
+	m_kshapes[i]->link->globalTrans.getPosition(pos);
+	libTF::Pose3D::Quaternion quat;
+	m_kshapes[i]->link->globalTrans.getQuaternion(quat);
+	dtLoadIdentity();
+	dtTranslate(pos.x, pos.y, pos.z);
+	dtRotate(quat.x, quat.y, quat.z, quat.w);	
+    }
+}
+
+unsigned int KinematicModelSOLID::getGeomCount(void) const
+{
+    return m_kshapes.size();
+}
+
+DtShapeRef KinematicModelSOLID::getShape(unsigned int index) const
+{
+    return m_kshapes[index]->shape;
+}
+
+KinematicModelSOLID::kObjectRef KinematicModelSOLID::getObject(unsigned int index) const
+{
+    return m_kshapes[index]->obj;
+}
+
