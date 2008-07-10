@@ -15,6 +15,11 @@
 #include "vtkMatrix4x4.h"
 #include "vtkCellLocator.h"
 #include "vtkLandmarkTransform.h"
+#include "vtkTransform.h"
+#include "vtkTransformPolyDataFilter.h"
+#include "vtkTransformFilter.h"
+
+#include <libTF/libTF.h> //for transforms
 
 #include "newmat10/newmatap.h"
 #include <iomanip>
@@ -24,6 +29,7 @@ using namespace scan_utils;
 
 #define TFNP libTF::TransformReference::NO_PARENT
 #define TFRT libTF::TransformReference::ROOT_FRAME
+#define TFMF 2
 
 SmartScan::SmartScan()
 {
@@ -31,11 +37,16 @@ SmartScan::SmartScan()
 	mNativePoints = NULL;
 	mVtkData = NULL;
 	mVtkPointLocator = NULL;
+	mVtkTransform = NULL;
+	mVtkTransformFilter = NULL;
+	mTransform = new libTF::TransformReference();
+	clearTransform();
 }
 
 SmartScan::~SmartScan()
 {
 	clearData();
+	delete mTransform;
 }
 
 void SmartScan::clearData()
@@ -46,8 +57,11 @@ void SmartScan::clearData()
 	}
 	deleteVtkData();
 	mNumPoints = 0;
-	//set transform to identity
-	mTransform.setWithEulers(TFRT, TFNP,0,0,0,0,0,0,0);
+}
+
+void SmartScan::clearTransform()
+{
+	mTransform->setWithEulers(TFMF, TFRT,0,0,0,0,0,0,0);
 }
 
 void SmartScan::setPoints(int numPoints, const std_msgs::Point3DFloat32 *points)
@@ -62,14 +76,70 @@ void SmartScan::setPoints(int numPoints, const std_msgs::Point3DFloat32 *points)
 	}
 }
 
+void SmartScan::setTransform(const NEWMAT::Matrix &M)
+{
+	mTransform->setWithMatrix(TFMF, TFRT, M, 0);
+	if (hasVtkData()) {
+		setVtkTransform();
+	}
+}
+
+void SmartScan::setTransform(float *t)
+{
+	NEWMAT::Matrix M(4,4);
+	for (int i=0; i<4; i++) {
+		for (int j=0; j<4; j++) {
+			M.element(i,j) = t[i*4+j];
+		}
+	}
+	setTransform(M);
+}
+
+void SmartScan::getTransform(NEWMAT::Matrix &M)
+{
+	M = mTransform->getMatrix(TFRT, TFMF, 0);
+}
+
+void SmartScan::getTransform(float *t)
+{
+	NEWMAT::Matrix M(4,4);
+	getTransform(M);
+	for (int i=0; i<4; i++) {
+		for (int j=0; j<4; j++) {
+			t[i*4+j] = M.element(i,j);
+		}
+	}
+}
+
+void SmartScan::applyTransform(NEWMAT::Matrix &M)
+{
+	//we could take advantage of the fact that libTF can do these things for us
+	//but for now I'll just multiply the matrices myself because I'm still a bit
+	//unsure about how to use libTF
+
+	setTransform( M * mTransform->getMatrix(TFRT, TFMF, 0) );
+}
+
+void SmartScan::applyTransform(float *t)
+{
+	NEWMAT::Matrix M(4,4);
+	for (int i=0; i<4; i++) {
+		for (int j=0; j<4; j++) {
+			M.element(i,j) = t[i*4+j];
+		}
+	}
+	applyTransform(M);
+}
+
 /*!
   Writes the data in this scan to an output stream. Format is:
   
-  number of points on the first line
+  number of points
   one point per line as  x y z intensity
 */
 void SmartScan::writeToFile(std::iostream &output)
 {
+	//write points
 	float intensity = 0;
 	output << mNumPoints << std::endl;
 	for (int i=0; i < mNumPoints; i++) {
@@ -87,13 +157,14 @@ bool SmartScan::readFromFile(std::iostream &input)
 {
 	int n;
 	float x,y,z,intensity;
+	clearData();
+	clearTransform();
+	//read number of points
 	input >> n;
 	if (n <= 0) {
 		return false;
 	}
-
-	clearData();
-
+	//read point data
 	mNumPoints = n;
 	mNativePoints =  new std_msgs::Point3DFloat32[mNumPoints];
 
@@ -112,7 +183,7 @@ bool SmartScan::readFromFile(std::iostream &input)
 
 void SmartScan::createVtkData()
 {
-	if (mVtkData) deleteVtkData();
+	if (hasVtkData()) deleteVtkData();
 
 	// Create a float array which represents the points.
 	vtkFloatArray* pcoords = vtkFloatArray::New();
@@ -129,8 +200,8 @@ void SmartScan::createVtkData()
 	vtkPoints* points = vtkPoints::New();
 	points->SetData(pcoords);
 	// Create vtkPointSet and assign vtkPoints as internal data
-	mVtkData = vtkPolyData::New();
-	mVtkData->SetPoints(points);
+	mVtkNativeData = vtkPolyData::New();
+	mVtkNativeData->SetPoints(points);
 
 	//for some functions it seems we also need the points represented as "cells"...
 	vtkCellArray *cells = vtkCellArray::New();
@@ -138,23 +209,52 @@ void SmartScan::createVtkData()
 		cells->InsertNextCell(1);
 		cells->InsertCellPoint(i);
 	}
-	mVtkData->SetVerts(cells);
+	mVtkNativeData->SetVerts(cells);
+
+	//set the transform and apply to to native data to get the ready-to-use mVtkData
+	mVtkTransform = vtkTransform::New();
+	mVtkTransformFilter = vtkTransformFilter::New();
+	mVtkTransformFilter->SetTransform(mVtkTransform);
+	mVtkTransformFilter->SetInput(mVtkNativeData);
+	mVtkData = mVtkTransformFilter->GetPolyDataOutput();
+	setVtkTransform();
 
 	//also create and populate point locator
 	mVtkPointLocator = vtkPointLocator::New();
 	mVtkPointLocator->SetDataSet(mVtkData);
 	mVtkPointLocator->BuildLocator();
+}
 
+void SmartScan::setVtkTransform()
+{
+	assert(mVtkTransform);
+	vtkMatrix4x4 *VM = vtkMatrix4x4::New();
+	NEWMAT::Matrix M(4,4);
+	getTransform(M);
+	for (int i=0; i<4; i++) {
+		for(int j=0; j<4; j++) {
+			VM->SetElement(i,j, M.element(i,j) );
+		}
+	}
+	mVtkTransform->SetMatrix(VM);
+	mVtkTransformFilter->Update();
+	// I don't know if VTK uses this instance directly or copies the matrix
+	// VM->Delete();
 }
 
 void SmartScan::deleteVtkData()
 {
 	if (!mVtkData) return;
-	mVtkData->Delete();
+	mVtkNativeData->Delete();
+	mVtkNativeData = NULL;
 	mVtkData = NULL;
 	assert(mVtkPointLocator);
 	mVtkPointLocator->Delete();
 	mVtkPointLocator = NULL;
+	mVtkTransformFilter->Delete();
+	mVtkTransformFilter = NULL;
+	mVtkTransform->Delete();
+	mVtkTransform = NULL;
 }
 
 vtkPolyData* SmartScan::getVtkData()
@@ -170,6 +270,38 @@ vtkPointLocator* SmartScan::getVtkLocator()
 	assert(mVtkPointLocator);
 	return mVtkPointLocator;
 }
+
+std_msgs::Point3DFloat32 SmartScan::transformPoint(const std_msgs::Point3DFloat32 &p_in) const
+{
+	// we can either get the point from VTK of perform the transform ourselves. In order to keep 
+	// VTK dependency at a minimum we will do the transform ourselves. VTK *might* be faster.
+
+	libTF::TFPoint p;
+	p.x = p_in.x; p.y = p_in.y; p.z = p_in.z;
+	p.frame = TFMF;	p.time = 0;
+	p = mTransform->transformPoint(TFRT, p);
+
+	std_msgs::Point3DFloat32 p_out;
+	p_out.x = p.x; p_out.y = p.y; p_out.z = p.z;
+	//fprintf(stderr,"Transformed: %f %f %f\n",p.x, p.y, p.z);
+	return p_out;
+}
+
+std_msgs::Point3DFloat32 SmartScan::getPoint(int i) const
+{
+	// we have to make sure the inner transform is applied. As this is fairly expensive
+	// we might want to add a flag at some point that disables the inner transform is the user
+	// does not want it
+
+	// we could also inline this function for better performance, but that would require including
+	// the libTF header or a VTK header in our header file which I don't want to do for now to keep
+	// compiling fast
+
+	assert(i>=0 && i<mNumPoints);
+	//fprintf(stderr,"original: %f %f %f\n",mNativePoints[i].x, mNativePoints[i].y, mNativePoints[i].z);
+	return transformPoint( mNativePoints[i] );
+}
+
 /*! Performs a 2D Delaunay triangulation of the point cloud. This is
     equivalent to projecting all point onto the x-y plane (by dropping
     the z coordinate), performing the 2D triangulation then pushing
@@ -299,6 +431,10 @@ void SmartScan::crop(float x, float y, float z, float dx, float dy, float dz)
 	std_msgs::Point3DFloat32 *newPoints;
 	int numNewPoints = 0;
 
+	//use VTK to handle transform, easiest to implement
+	if (!hasVtkData()) createVtkData();
+	double p[3];
+	
 	//we are passed the overall size of the crop box; let's get the halves
 	dx = dx/2; dy = dy/2; dz = dz/2;
 
@@ -306,23 +442,27 @@ void SmartScan::crop(float x, float y, float z, float dx, float dy, float dz)
 	//(so we can allocate memory) and one to actually copy the points
 
 	for (int i=0; i<mNumPoints; i++) {
-		if (mNativePoints[i].x > x + dx) continue;
-		if (mNativePoints[i].x < x - dx) continue;
-		if (mNativePoints[i].y > y + dy) continue;
-		if (mNativePoints[i].y < y - dy) continue;
-		if (mNativePoints[i].z > z + dz) continue;
-		if (mNativePoints[i].z < z - dz) continue;
+		//we are getting the point already transformed by the inner transform
+		//here we use VTK to transform the point instead of our own this->getPoint(...)
+		getVtkData()->GetPoint(i,p);
+		if (p[0] > x + dx) continue;
+		if (p[0] < x - dx) continue;
+		if (p[1] > y + dy) continue;
+		if (p[1] < y - dy) continue;
+		if (p[2] > z + dz) continue;
+		if (p[2] < z - dz) continue;
 		numNewPoints++;
 	}
 	newPoints = new std_msgs::Point3DFloat32[numNewPoints];
 	int j=0;
 	for (int i=0; i<mNumPoints; i++) {
-		if (mNativePoints[i].x > x + dx) continue;
-		if (mNativePoints[i].x < x - dx) continue;
-		if (mNativePoints[i].y > y + dy) continue;
-		if (mNativePoints[i].y < y - dy) continue;
-		if (mNativePoints[i].z > z + dz) continue;
-		if (mNativePoints[i].z < z - dz) continue;
+		getVtkData()->GetPoint(i,p);
+		if (p[0] > x + dx) continue;
+		if (p[0] < x - dx) continue;
+		if (p[1] > y + dy) continue;
+		if (p[1] < y - dy) continue;
+		if (p[2] > z + dz) continue;
+		if (p[2] < z - dz) continue;
 		newPoints[j] = mNativePoints[i];
 		j++;
 	}
@@ -344,13 +484,13 @@ void SmartScan::crop(float x, float y, float z, float dx, float dy, float dz)
   
   \param target Scan that we are registering against
 
-  Returns the transform as a 4x4 matrix saved in a double[16] in
+  Returns the transform as a 4x4 matrix saved in a float[16] in
   row-major order. It is the responsability of the caller to free this
   memory.
 
   THIS FUNCTION HAS NOT BEEN EXTENSIVELY TESTED YET.
  */
-double* SmartScan::ICPTo(SmartScan* target)
+float* SmartScan::ICPTo(SmartScan* target)
 {
 	vtkIterativeClosestPointTransform *vtkTransform = vtkIterativeClosestPointTransform::New();
 	vtkTransform->SetMaximumNumberOfIterations(1000);
@@ -387,7 +527,7 @@ double* SmartScan::ICPTo(SmartScan* target)
 	}
 	*/
 
-	double* transf = new double[16];
+	float* transf = new float[16];
 	vtkMatrix4x4 *vtkMat = vtkMatrix4x4::New();
 	vtkTransform->GetMatrix(vtkMat);
 
@@ -412,12 +552,12 @@ double* SmartScan::ICPTo(SmartScan* target)
 	return transf;
 }
 
-/*! Removes all point that have fewer than \param nbrs neighbors
+/*! Removes all points that have fewer than \param nbrs neighbors
     within a sphere of radius \param radius.
  */
 void SmartScan::removeOutliers(float radius, int nbrs)
 {
-
+	std_msgs::Point3DFloat32 p;
 	if (! hasVtkData() ) createVtkData();
 	vtkIdList *result = vtkIdList::New();
 
@@ -426,11 +566,8 @@ void SmartScan::removeOutliers(float radius, int nbrs)
 	int numNewPoints = 0;
 	for (int i=0; i<mNumPoints; i++) {
 		result->Reset();
-		getVtkLocator()->FindPointsWithinRadius( radius, 
-							  mNativePoints[i].x,
-							  mNativePoints[i].y,
-							  mNativePoints[i].z,
-							  result );
+		p = getPoint(i);
+		getVtkLocator()->FindPointsWithinRadius( radius,p.x, p.y, p.z, result );
 		//there is always at least one point in the result (the point itself)
 		if (result->GetNumberOfIds() > nbrs) {
 			//keep this point
@@ -449,13 +586,13 @@ void SmartScan::removeOutliers(float radius, int nbrs)
 	delete [] newPoints;
 	//and re-create vtk data (which does yet another copy...)
 	createVtkData();
-
 }
 
 /*!  Removes all points whose normals are perpendicular to the scanner
-  direction. For now, we assume the scanner is at location
-  (0,0,0). The assumption is that points with this characteristic are
-  scanned with high error or are "ghosting" or "veil" artifacts.
+  direction. For now, we assume the scanner is at location (0,0,0)
+  *after* applying the inner transform. The assumption is that points
+  with this characteristic are scanned with high error or are
+  "ghosting" or "veil" artifacts.
 
   \param threshold The minimum difference in degrees between normal
   direction and scanner perpendicular direction for keeping
@@ -463,22 +600,15 @@ void SmartScan::removeOutliers(float radius, int nbrs)
   normal is closer than 10 degrees to beeing perpendicular to the
   scanner direction are removed.
 
-  \param removeOutliers What do we do with points that have to few
-  neighbors top compute normals: if this flag is true, these points are
+  \param removeOutliers What do we do with points that have too few
+  neighbors to compute normals: if this flag is true, these points are
   removed (as in removeOutliers(...) )
 
-  For computing point normals we look for at least \nbrs neighbors
-  within a sphere of radius \radius.
+  For computing point normals we look for at least \param nbrs neighbors
+  within a sphere of radius \param radius.
  */
 void SmartScan::removeGrazingPoints(float threshold, bool removeOutliers, float radius, int nbrs)
 {
-	//this function removes all points whose normals point away from the scanner
-	//for now we assume the scanner is at (0,0,0)
-	//the threshold is in degrees, between point normal and direction to scanner
-	//normals are computed based on point neighbors within radius 
-	//if less then nbrs are available, the point is considered an outlier with ill-defined normal
-	//depending on flag, outliers are deleted or kept
-
 	// allocate memory as if we will keep all points, but later we'll do a copy and a delete
 	std_msgs::Point3DFloat32 *newPoints = new std_msgs::Point3DFloat32[mNumPoints];
 	int numNewPoints = 0;
@@ -487,18 +617,32 @@ void SmartScan::removeGrazingPoints(float threshold, bool removeOutliers, float 
 	threshold = fabs( threshold * M_PI / 180.0 );
 	threshold = fabs( cos(M_PI / 2 - threshold) );
 
+	std_msgs::Point3DFloat32 scanner;
+	//scanner is at (0,0,0) in native coordinate system
+	scanner.x = 0; scanner.y = 0; scanner.z = 0;
+	//apply inner transfrom
+	scanner = transformPoint(scanner);
+
 	for (int i=0; i<mNumPoints; i++) {
+		//we get the normal with the inner transform already applied
 		std_msgs::Point3DFloat32 normal = computePointNormal(i,radius,nbrs);
 		//check for outliers
 		if ( norm(normal) < 0.5 && removeOutliers) continue;
 	
 		//compute direction to scanner
-		std_msgs::Point3DFloat32 scanner(mNativePoints[i]);
-		scanner = normalize(scanner);
+		std_msgs::Point3DFloat32 scannerDirection;
+		//get the point with inner transform applied
+		std_msgs::Point3DFloat32 p = getPoint(i);
+		//the scanner already has the inner transform applied
+		scannerDirection.x = p.x - scanner.x;
+		scannerDirection.y = p.y - scanner.y;
+		scannerDirection.z = p.z - scanner.z;
+		scannerDirection = normalize(scannerDirection);
+
 		//we don't care about direction; will check dot product in absolute value
-		float d = fabs( dot(normal, scanner) );
+		float d = fabs( dot(normal, scannerDirection) );
 	
-		if (d < threshold) continue; 
+		if ( norm(normal) > 0.5 && d < threshold) continue; 
 		//keep the point
 		newPoints[numNewPoints] = mNativePoints[i];
 		numNewPoints++;
@@ -597,7 +741,7 @@ void SmartScan::normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_m
 			normal.y = -normal.y;
 			normal.z = -normal.z;
 		}
-		dist = dot(planeNormal, mNativePoints[i]);
+		dist = dot(planeNormal, getPoint(i) );
 		if (dist < -maxDist) dist = -maxDist;
 		if (dist > maxDist) dist = maxDist;
 		b1 = floor( (dist + maxDist)/distBinSize );
@@ -642,7 +786,7 @@ void SmartScan::ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Poin
 	float dist;
 
 	NEWMAT::Matrix M(selPoints,3);
-	std_msgs::Point3DFloat32 mean, consMean, normal, dif;
+	std_msgs::Point3DFloat32 mean, consMean, normal, dif, p;
 	std_msgs::Point3DFloat32 zero; zero.x = zero.y = zero.z = 0.0;
 	std::list<std_msgs::Point3DFloat32> consList;
 
@@ -656,12 +800,10 @@ void SmartScan::ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Poin
 		for (i=0; i<selPoints; i++) {
 			int index = floor( ((double)(mNumPoints-1)) * ( (double)rand() / RAND_MAX ) );
 			assert (index >=0 && index < mNumPoints);
-			mean.x += mNativePoints[index].x;
-			mean.y += mNativePoints[index].y;
-			mean.z += mNativePoints[index].z;
-			M.element(i,0) = mNativePoints[index].x;
-			M.element(i,1) = mNativePoints[index].y;
-			M.element(i,2) = mNativePoints[index].z;
+			p = getPoint(index);
+
+			mean.x += p.x; mean.y += p.y; mean.z += p.z;
+			M.element(i,0) = p.x; M.element(i,1) = p.y; M.element(i,2) = p.z;
 		}
 		mean.x = mean.x / selPoints; mean.y = mean.y / selPoints; mean.z = mean.z / selPoints;
 		for (i=0; i<selPoints; i++) {
@@ -680,18 +822,19 @@ void SmartScan::ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Poin
 			consMean = zero;
 		}
 		for(int i=0; i<mNumPoints; i++) {
-			dif.x = mNativePoints[i].x - mean.x;
-			dif.y = mNativePoints[i].y - mean.y;
-			dif.z = mNativePoints[i].z - mean.z;
+			p = getPoint(i);
+			dif.x = p.x - mean.x;
+			dif.y = p.y - mean.y;
+			dif.z = p.z - mean.z;
 			dist = dot(dif,normal);
 			if ( fabs(dist) > distThresh ) continue;
 
 			consensus++;
 			if (refitToConsensus) {
-				consList.push_back(mNativePoints[i]);
-				consMean.x += mNativePoints[i].x;
-				consMean.y += mNativePoints[i].y;
-				consMean.z += mNativePoints[i].z;
+				consList.push_back(p);
+				consMean.x += p.x;
+				consMean.y += p.y;
+				consMean.z += p.z;
 			}
 		}
 		if (refitToConsensus) {
@@ -740,13 +883,14 @@ void SmartScan::removePlane(const std_msgs::Point3DFloat32 &planePoint,
 {
 	//remove points that are close to plane
 	std_msgs::Point3DFloat32 *newPoints = new std_msgs::Point3DFloat32[mNumPoints];
-	std_msgs::Point3DFloat32 dif;
+	std_msgs::Point3DFloat32 dif, p;
 	int numNewPoints = 0;
 	float dist;
 	for(int i=0; i<mNumPoints; i++) {
-		dif.x = mNativePoints[i].x - planePoint.x;
-		dif.y = mNativePoints[i].y - planePoint.y;
-		dif.z = mNativePoints[i].z - planePoint.z;
+		p = getPoint(i);
+		dif.x = p.x - planePoint.x;
+		dif.y = p.y - planePoint.y;
+		dif.z = p.z - planePoint.z;
 		dist = dot(dif,planeNormal);
 		if ( fabs(dist) < thresh ) continue;
 
@@ -776,12 +920,9 @@ std_msgs::Point3DFloat32 SmartScan::computePointNormal(int id, float radius, int
 
 	vtkIdList *result = vtkIdList::New();
 	std_msgs::Point3DFloat32 zero; zero.x = zero.y = zero.z = 0.0;
+	std_msgs::Point3DFloat32 p = getPoint(id);
 
-	getVtkLocator()->FindPointsWithinRadius( radius,
-						  mNativePoints[id].x,
-						  mNativePoints[id].y,
-						  mNativePoints[id].z,
-						  result );
+	getVtkLocator()->FindPointsWithinRadius( radius, p.x, p.y, p.z, result );
 	//we don't have enough nbrs for a reliable normal
 	int n = result->GetNumberOfIds();
 	if ( n < nbrs ) {
@@ -794,9 +935,11 @@ std_msgs::Point3DFloat32 SmartScan::computePointNormal(int id, float radius, int
 	for (int i=0; i<n; i++) {
 		nbrId = result->GetId(i);
 		assert(nbrId >= 0 && nbrId < mNumPoints);
-		mean.x += mNativePoints[nbrId].x;
-		mean.y += mNativePoints[nbrId].y;
-		mean.z += mNativePoints[nbrId].z;
+		p = getPoint(nbrId);
+
+		mean.x += p.x;
+		mean.y += p.y;
+		mean.z += p.z;
 	}
 	mean.x = mean.x / n; mean.y = mean.y / n; mean.z = mean.z / n;
 	//fprintf(stderr,"%f %f %f \n",mean.x, mean.y, mean.z);
@@ -806,12 +949,11 @@ std_msgs::Point3DFloat32 SmartScan::computePointNormal(int id, float radius, int
 	for (int i=0; i<n; i++) {
 		nbrId = result->GetId(i);
 		assert(nbrId >= 0 && nbrId < mNumPoints);
-		//we are assuming the points in the vtk data match the id's of the 
-		//mNativePoints perfectly
+		p = getPoint(nbrId);
 
-		M.element(i,0) = mNativePoints[nbrId].x - mean.x;
-		M.element(i,1) = mNativePoints[nbrId].y - mean.y;
-		M.element(i,2) = mNativePoints[nbrId].z - mean.z;
+		M.element(i,0) = p.x - mean.x;
+		M.element(i,1) = p.y - mean.y;
+		M.element(i,2) = p.z - mean.z;
 	}
 	result->Delete();
 

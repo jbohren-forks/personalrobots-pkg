@@ -5,7 +5,6 @@
 #include <dataTypes.h> //my own data types defined in this library; probably just placeholder
 //until ROS gets similar types
 
-#include <libTF/libTF.h> //for transforms
 
 #include <vector>
 #include <iostream>
@@ -13,9 +12,15 @@
 
 class vtkPolyData;
 class vtkPointLocator;
+class vtkTransform;
+class vtkTransformPolyDataFilter;
+class vtkTransformFilter;
 
 namespace NEWMAT {
 	class Matrix;
+}
+namespace libTF {
+	class TransformReference;
 }
 
 /*!
@@ -53,15 +58,20 @@ class SmartScan {
 	//! The number of vertices in the cloud
 	int mNumPoints;
 	//! A transform associated with this point cloud
-	libTF::TransformReference mTransform;
+	libTF::TransformReference *mTransform;
 
 	//! Copy of the 3D cloud in VTK format
-	vtkPolyData *mVtkData;
+	vtkPolyData *mVtkNativeData, *mVtkData;
 	//! Spatial structure similar to a kd-tree that VTK uses for fast neighbor searches in the cloud
-
 	vtkPointLocator *mVtkPointLocator;
+	//! Copy of the inner transform in VTK format
+	vtkTransform *mVtkTransform;
+	//! VTK Filter for applying the VTK transform to the VTK Data
+	vtkTransformFilter *mVtkTransformFilter;
 	//! Copies the native data into a VTK-compatible structure
 	void createVtkData();
+	//! Sets the VTK version of the transform to match the libTF version
+	void setVtkTransform();
 	//! Deletes the VTK version of the native data
 	void deleteVtkData();
 	//! Returns true if the VTK version of the native data exists and the class is ready to use VTK-based tools
@@ -71,9 +81,13 @@ class SmartScan {
 	//! Returns a pointer to the VTK spatial search structure
 	vtkPointLocator *getVtkLocator();
 
-	//! Clears all the data held by this class and frees all memory footprint
+	//! Clears all the data held by this class and frees all memory footprint. Does not change inner transform.
 	void clearData();
+	//! Sets the inner transform to identity
+	void clearTransform();
 
+	//! Apply the inner transform to a point
+	std_msgs::Point3DFloat32 transformPoint(const std_msgs::Point3DFloat32 &p) const;
 	//! Fit plane to normalized points using SVD and return normal direction.
 	std_msgs::Point3DFloat32 SVDPlaneNormal(NEWMAT::Matrix *M, int n);
  public:
@@ -90,11 +104,22 @@ class SmartScan {
 	bool readFromFile(std::iostream &input);
 	//! Returns the number of points in the cloud
 	int size() const {return mNumPoints;}
-	//! Returns the i-th point in the cloud
-	const std_msgs::Point3DFloat32 getPoint(int i) const {
-		assert(i<mNumPoints); 
-		return mNativePoints[i];
-	}
+	//! Returns the i-th point in the cloud.
+	std_msgs::Point3DFloat32 getPoint(int i) const;
+
+
+	//! Set the inner transform using a NEWMAT matrix
+	void setTransform(const NEWMAT::Matrix &M);
+	//! Set the inner transform using a row-major float[16]
+	void setTransform(float *t);
+	//! Get the inner transform in a NEWMAT matrix
+	void getTransform(NEWMAT::Matrix &M);
+	//! Get the inner transform in a row-major float[16]
+	void getTransform(float *t);
+	//! Apply a transform on top to the existing inner transform
+	void applyTransform(NEWMAT::Matrix &M);
+	//! Apply a transform on top to the existing inner transform
+	void applyTransform(float *t);
 
 	//! Performs 2D Delaunay Triangulation on the point cloud.
 	std::vector<scan_utils::Triangle> *delaunayTriangulation(double tolerance, double alpha);
@@ -107,7 +132,7 @@ class SmartScan {
 	//! Removes points whose normals are perpendicular to the direction of the scanner
 	void removeGrazingPoints(float threshold, bool removeOutliers = true, float radius = 0.01, int nbrs = 5);
 	//! Registers this point cloud using ICP to another scan.
-	double* ICPTo(SmartScan *target);
+	float* ICPTo(SmartScan *target);
 	//! Finds the dominant plane in the point cloud by histograming point normals
 	void normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Point3DFloat32 &planeNormal,
 				  float radius = 0.01, int nbrs = 5);
@@ -120,5 +145,6 @@ class SmartScan {
 	//! Computes the normal of a point by looking at its neighbors
 	std_msgs::Point3DFloat32 computePointNormal(int id, float radius = 0.01, int nbrs = 5);
 };
+
 
 #endif
