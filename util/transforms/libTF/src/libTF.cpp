@@ -258,11 +258,21 @@ TFPose TransformReference::transformPose(unsigned int target_frame, const TFPose
   TFEulerYPR eulers_in;
   eulers_in.yaw = pose_in.yaw;
   eulers_in.pitch = pose_in.pitch;
-  eulers_in.pitch = pose_in.roll;
+  eulers_in.roll = pose_in.roll;
   eulers_in.frame = pose_in.frame;
   eulers_in.time = pose_in.time;
 
+  printf("eulers_in: %.3f %.3f %.3f\n",
+         eulers_in.yaw,
+         eulers_in.roll,
+         eulers_in.pitch);
+
   TFEulerYPR eulers_out = transformEulerYPR(target_frame, eulers_in);
+
+  printf("eulers_out: %.3f %.3f %.3f\n",
+         eulers_out.yaw,
+         eulers_out.roll,
+         eulers_out.pitch);
 
   pose_out.yaw = eulers_out.yaw;
   pose_out.pitch = eulers_out.pitch;
