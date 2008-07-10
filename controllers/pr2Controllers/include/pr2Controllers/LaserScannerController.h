@@ -19,7 +19,9 @@
 #include <pr2Core/pr2Core.h>
 #include <libpr2HW/pr2HW.h>
 #include <genericControllers/Controller.h>
+#include <math.h>
 
+#define EPSILON 0.001 //Threshold value for floating point comparisons in waveform generation
 namespace CONTROLLER
 {
   class LaserScannerController : Controller
@@ -82,6 +84,32 @@ namespace CONTROLLER
         */
       PR2::PR2_ERROR_CODE setParam(string label,double value);
       PR2::PR2_ERROR_CODE setParam(string label,string value);
+  
+
+      /*!
+        * \brief Generate a sawtooth wave
+        * 
+        * 
+        *
+        */       
+void GenerateSawtooth(double *&x, double *&t, double period, double amplitude, double dt, double offset, unsigned int numElements);
+	
+      /*!
+        * \brief Generate a sine wave
+        * 
+        * 
+        *
+        */       
+
+void GenerateSinewave(double *&x, double *&t, double period, double amplitude,double dt, double offset, unsigned int numElements);
+
+      /*!
+        * \brief Generate a square wave
+        * 
+        * 
+        *
+        */       
+void GenerateSquarewave(double *&x, double *&t, double period, double amplitude, double dt, double offset, unsigned int numElements);
 
     private:
       PR2::PR2_CONTROL_MODE controlMode;      /**< Pitching Hokuyo laser scanner controller control mode >*/
