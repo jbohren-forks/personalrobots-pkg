@@ -28,12 +28,13 @@
 #include <gazebo/GazeboError.hh>
 #include <libpr2API/pr2API.h>
 
-#include <pr2Controllers/GripperController.h>
+#include <genericControllers/Controller.h>
 #include <pr2Controllers/ArmController.h>
 #include <pr2Controllers/HeadController.h>
 #include <pr2Controllers/SpineController.h>
-#include <pr2Controllers/LaserScannerController.h>
 #include <pr2Controllers/BaseController.h>
+#include <pr2Controllers/LaserScannerController.h>
+#include <pr2Controllers/GripperController.h>
 
 #include "ringbuffer.h"
 
@@ -98,6 +99,7 @@ class RosGazeboNode : public ros::node
     CONTROLLER::SpineController        *spineCopy;
     CONTROLLER::BaseController         *baseCopy;
     CONTROLLER::LaserScannerController *laserScannerCopy;
+    CONTROLLER::GripperController      *gripperCopy;
 
   public:
     // Constructor; stage itself needs argc/argv.  fname is the .world file
@@ -108,7 +110,8 @@ class RosGazeboNode : public ros::node
          CONTROLLER::HeadController         *myHead,
          CONTROLLER::SpineController        *mySpine,
          CONTROLLER::BaseController         *myBase,
-         CONTROLLER::LaserScannerController *myLaserScanner
+         CONTROLLER::LaserScannerController *myLaserScanner,
+         CONTROLLER::GripperController      *myGripper
          );
     ~RosGazeboNode();
 
@@ -282,7 +285,8 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
          CONTROLLER::HeadController         *myHead,
          CONTROLLER::SpineController        *mySpine,
          CONTROLLER::BaseController         *myBase,
-         CONTROLLER::LaserScannerController *myLaserScanner) :
+         CONTROLLER::LaserScannerController *myLaserScanner,
+         CONTROLLER::GripperController      *myGripper) :
         ros::node("rosgazebo"),tf(*this)
 {
   // accept passed in robot
@@ -1174,19 +1178,14 @@ main(int argc, char** argv)
   CONTROLLER::SpineController        mySpine;
   CONTROLLER::BaseController         myBase;
   CONTROLLER::LaserScannerController myLaserScanner;
+  CONTROLLER::GripperController      myGripper;
 
-  //myArm          = new CONTROLLER::ArmController          ();
-  //myHead         = new CONTROLLER::HeadController         ();
-  //mySpine        = new CONTROLLER::SpineController        ();
-  //myBase         = new CONTROLLER::BaseController         ();
-  //myLaserScanner = new CONTROLLER::LaserScannerController ();
-  
   /***************************************************************************************/
   /*                                                                                     */
   /*                            initialize ROS Gazebo Nodes                              */
   /*                                                                                     */
   /***************************************************************************************/
-  RosGazeboNode rgn(argc,argv,argv[1],myPR2,&myArm,&myHead,&mySpine,&myBase,&myLaserScanner);
+  RosGazeboNode rgn(argc,argv,argv[1],myPR2,&myArm,&myHead,&mySpine,&myBase,&myLaserScanner,&myGripper);
 
   /***************************************************************************************/
   /*                                                                                     */
@@ -1203,12 +1202,10 @@ main(int argc, char** argv)
 
   /***************************************************************************************/
   /*                                                                                     */
-  /*      RealTime loop using Gazebo ClientWait function call                            */
-  /*        this is updated once every gazebo timestep (world time step size)            */
+  /* Update ROS Gazebo Node                                                              */
+  /*   contains controller pointers for the non-RT setpoints                             */
   /*                                                                                     */
   /***************************************************************************************/
-  // Update ROS Gazebo Node
-  //   contains controller pointers for the non-RT setpoints
   int rgnt = pthread_create(&threads[0],NULL, nonRealtimeLoop, (void *) (&rgn));
   if (rgnt)
   {
@@ -1216,6 +1213,12 @@ main(int argc, char** argv)
     exit(-1);
   }
 
+  /***************************************************************************************/
+  /*                                                                                     */
+  /*      RealTime loop using Gazebo ClientWait function call                            */
+  /*        this is updated once every gazebo timestep (world time step size)            */
+  /*                                                                                     */
+  /***************************************************************************************/
   while(1)
   {
 
@@ -1223,8 +1226,9 @@ main(int argc, char** argv)
     myArm.Update();
     myHead.Update();
     mySpine.Update();
-    myLaserScanner.Update();
     myBase.Update();
+    myLaserScanner.Update();
+    myGripper.Update();
 
     // Send updated controller commands to hardware
     // myPR2->hw.UpdateHW();
