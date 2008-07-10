@@ -98,6 +98,10 @@ namespace libTF
       NEWMAT::Matrix getInverseMatrix(void);
       /** \brief Return the rotation as a quaternion */
       Quaternion getQuaternion(void) const;
+      /** \brief Return the rotation as a quaternion */
+      void getQuaternion(Quaternion &quat) const;
+      /** \brief Return the translation as a position */
+      void getPosition(Position &pos) const;
       /** \brief Return the translation as a position */
       Position   getPosition(void) const;
       /** \brief Return the rotation as an axis angle pair */

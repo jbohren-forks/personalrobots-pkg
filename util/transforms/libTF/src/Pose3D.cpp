@@ -407,6 +407,21 @@ Pose3D::Position Pose3D::getPosition(void) const
     return pos;
 };
 
+void Pose3D::getQuaternion(Quaternion &quat) const
+{
+    quat.x = xr;
+    quat.y = yr;
+    quat.z = zr;
+    quat.w = w; 
+}
+
+void Pose3D::getPosition(Position &pos) const
+{
+    pos.x = xt;
+    pos.y = yt;
+    pos.z = zt;
+}
+
 void Pose3D::setPosition(double x, double y, double z)
 {
     xt = x;
