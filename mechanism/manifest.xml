@@ -1,0 +1,13 @@
+<package>
+<description brief="Mechanism control stub">
+</description>
+<author>Eric Berger berger@willowgarage.com</author>
+<license>BSD</license>
+<url>http://pr.willowgarage.com</url>
+<depend package="roscpp"/>
+<depend package="std_msgs"/>
+<export>
+  <cpp cflags="-I${prefix}/include"/>
+</export>
+</package>
+
