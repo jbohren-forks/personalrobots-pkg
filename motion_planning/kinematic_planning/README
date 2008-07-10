@@ -1,13 +1,13 @@
 This package depends on MPK, which is available as a ROS package by
 checking out the Willow Garage scratch repository at:
 
-  http://prdev/svn/scratch/
+  http://prdev/svn/scratch/MPK
 
 Then you should append this directory to your ROS_PACKAGE_PATH.  E.g.,:
 
   cd $HOME/code
-  svn co http://prdev/svn/scratch scratch
-  export ROS_PACKAGE_PATH=$HOME/code/scratch:$ROS_PACKAGE_PATH
+  svn co http://prdev/svn/scratch/MPK MPK
+  export ROS_PACKAGE_PATH=$HOME/code/MPK:$ROS_PACKAGE_PATH
 
 To verify that MPK can be found:
 
