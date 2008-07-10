@@ -212,10 +212,10 @@ void Pr2_Gripper::UpdateChild()
           positionError[RIGHT]      = cmdPosition[RIGHT] - this->joints[RIGHT]->GetPosition();
           positionRateError[LEFT]   = cmdPositionRate    - this->joints[LEFT] ->GetPositionRate();
           positionRateError[RIGHT]  = cmdPositionRate    - this->joints[RIGHT]->GetPositionRate();
-          std::cout << " closing " << positionError[LEFT]  << " "
-                                   << positionError[RIGHT] << " "
-                                   << positionRateError[LEFT]  << " "
-                                   << positionRateError[RIGHT] << std::endl;
+          //std::cout << " closing " << positionError[LEFT]  << " "
+          //                         << positionError[RIGHT] << " "
+          //                         << positionRateError[LEFT]  << " "
+          //                         << positionRateError[RIGHT] << std::endl;
           // send joint position control command
           //if (fabs(positionError[LEFT] ) > 0.01)
           {
