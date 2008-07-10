@@ -11,6 +11,8 @@
 #include <kdl/kinfam_io.hpp>
 #include <kdl/frames_io.hpp>
 #include <kdl/framevel_io.hpp>
+#include <kdl/utilities/utility.h>
+
 #include <stdio.h>
 #include <iostream>
 #include <math.h>
