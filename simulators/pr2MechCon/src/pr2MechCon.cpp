@@ -181,7 +181,7 @@ main(int argc, char** argv)
     // TODO: Safety codes should go here...
 
     // Send updated controller commands to hardware
-    // myPR2->hw.UpdateHW();
+    myPR2->hw.UpdateHW();
 
     // wait for Gazebo time step
     myPR2->hw.ClientWait();

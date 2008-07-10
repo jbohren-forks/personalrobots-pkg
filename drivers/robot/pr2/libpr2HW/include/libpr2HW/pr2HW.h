@@ -346,6 +346,16 @@ namespace PR2
          */
      public: NEWMAT::Matrix GetWristPoseGroundTruth(PR2_MODEL_ID id);
 
+        /*!
+         *  \brief Joint Data for Arm
+         *
+         *  FIXME: all this stuff will be in the robot data structure, constructed by XML
+         *
+         */
+     public: PR2::JointData jointData[MAX_JOINT_IDS];
+
+
+
     };
 
 }

@@ -188,6 +188,13 @@ namespace PR2
          double dGain;
          double iClamp;
          double saturationTorque;
+
+         // gripper specific
+         double cmdGap;
+         double actualFingerPosition[2];
+         double actualFingerPositionRate[2];
+         double actualGap;
+         int cmdMode; // only use is GAZEBO_PR2GRIPPER_CMD_OPEN and _CLOSE for now, see libpr2HW
    } JointData;
 
    enum PR2_ERROR_CODE { 

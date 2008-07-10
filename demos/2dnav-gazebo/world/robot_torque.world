@@ -538,7 +538,7 @@
           <dGain>0</dGain>
           <iGain>500</iGain>
           <iClamp>500</iClamp>
-          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
+          <explicitDampingCoefficient>50.0</explicitDampingCoefficient>
           <controlMode>PD_TORQUE_CONTROL</controlMode>
         </joint>
         <joint name="upperarm_pitch_joint_left">
@@ -552,11 +552,11 @@
         </joint>
         <joint name="upperarm_roll_joint_left">
           <saturationTorque>1000</saturationTorque>
-          <pGain>100</pGain>
-          <dGain>0</dGain>
-          <iGain>10</iGain>
-          <iClamp>10</iClamp>
-          <explicitDampingCoefficient>2.0</explicitDampingCoefficient>
+          <pGain>1000</pGain>
+          <dGain>10</dGain>
+          <iGain>100</iGain>
+          <iClamp>100</iClamp>
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
           <controlMode>PD_TORQUE_CONTROL</controlMode>
         </joint>
         <joint name="elbow_pitch_joint_left">
@@ -602,7 +602,7 @@
           <dGain>0</dGain>
           <iGain>500</iGain>
           <iClamp>500</iClamp>
-          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
+          <explicitDampingCoefficient>50.0</explicitDampingCoefficient>
           <controlMode>PD_TORQUE_CONTROL</controlMode>
         </joint>
         <joint name="upperarm_pitch_joint_right">

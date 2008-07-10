@@ -14,7 +14,7 @@ gazebo-checkout:
 	@if [ ! -d gazebo-svn ]; then svn co $(REVISION) https://playerstage.svn.sf.net/svnroot/playerstage/code/gazebo/trunk gazebo-svn; fi
 	-cd gazebo-svn && svn up $(REVISION) 
 	-svn diff gazebo-svn > tmp.diff
-	#-cd gazebo-svn && svn revert -R *
+	-cd gazebo-svn && svn revert -R *
 	-patch -N -p0 < gazebo_patch.diff
 
 gazebo: gazebo-checkout
