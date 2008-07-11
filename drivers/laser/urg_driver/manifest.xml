@@ -7,6 +7,6 @@
   <author>Jeremy Leibs</author>
   <license>LGPL</license>
   <export>
-    <cpp cflags="-I${prefix}" lflags="-L${prefix} -lurg"/>
+    <cpp cflags="-I${prefix}" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lurg"/>
   </export>
 </package>
