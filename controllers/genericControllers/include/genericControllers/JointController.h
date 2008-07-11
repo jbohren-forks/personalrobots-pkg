@@ -24,6 +24,8 @@
     3. EnableController()
     4. Set appropriate command (position, torque, velocity)
     5. Call Update from Real Time loop
+
+    
 */
 /***************************************************/
 #include <newmat10/newmat.h>
@@ -55,6 +57,13 @@ namespace CONTROLLER
         */       
       ~JointController( );
     
+       /*!
+        * \brief   Initialization routine for the controller
+        * \param Joint* joint The joint we are interacting with
+        * \param string name The namespace identification in ROS
+        */
+//      CONTROLLER::CONTROLLER_ERROR_CODE Init(Joint* joint, string name);
+    
       /*!
        * \brief Default Constructor of the JointController class.
        *
@@ -62,7 +71,11 @@ namespace CONTROLLER
        * \param name A string identifying the joint and its namespace (e.g. ElbowPitch)
        */
 
-      //Pass in robot model and namespace identification
+      /*!
+       *\brief Fetches gains from the param server
+       */
+        void InitGains();
+
       // JointController(Joint* joint, string name);
 
         /*!
@@ -72,7 +85,7 @@ namespace CONTROLLER
         */
 
       CONTROLLER::CONTROLLER_ERROR_CODE SetTorqueCmd(double torque);
-
+      
        /*!
         * \brief Fetch the latest user issued torque command 
         * 

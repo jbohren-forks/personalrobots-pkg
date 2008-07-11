@@ -4,32 +4,23 @@
 //1. Get and set params via server
 //2. Integrate Joint and robot objects
 //3. Integrate Motor controller time
-//4. Subscribe to setpoints
 
-//How to initialize the controller
-//1. PID gains
+//How to initialize the controller (Init())
+//1. PID gains (InitGains())
 //2. Set controller mode
 //3. Enable controller
 
 using namespace CONTROLLER;
 
 /*
-JointController::JointController(Joint* joint, string name)
+JointController::Init(Joint* joint, string name)
 {  
-  //Record namespace and robot pointer
+  //Record namespace and joint pointer
   jointName = name; 
-  // myRobot = robot;
+  thisJoint = joint;
 
-  //Access the param server to fill in gains
-  //TODO: Put in 
-  
-  PGain = GetParam("PGain");
-  IGain = GetParam("IGain");
-  DGain = GetParam("DGain");
-  IMax = GetParam("IMax");
-  IMin = GetParam("IMin");
-  controlMode = GetParam("ControlMode");
-  
+  InitGains();
+   
   
   pidController.InitPid(PGain,IGain,DGain,IMax,IMin); //Initializer for pid controller  
 
@@ -46,6 +37,17 @@ JointController::JointController(Joint* joint, string name)
 }
 */  
 
+
+void JointController::InitGains(){
+  /* 
+  PGain = GetParam("PGain");
+  IGain = GetParam("IGain");
+  DGain = GetParam("DGain");
+  IMax = GetParam("IMax");
+  IMin = GetParam("IMin");
+  controlMode = GetParam("ControlMode");
+  */
+}
    
 JointController::JointController( )
 {
