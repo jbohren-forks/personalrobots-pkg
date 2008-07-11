@@ -36,6 +36,7 @@ IplImage *image = 0, *hsv = 0, *hue = 0, *mask = 0, *backproject = 0, *histimg =
 CvHistogram *hist = 0;
 
 int backproject_mode = 0;
+int squares_mode = 0;
 int select_object = 0;
 int track_object = 0;
 int show_hist = 1;
@@ -48,6 +49,7 @@ int hdims = 16;
 float hranges_arr[] = {0,180};
 float* hranges = hranges_arr;
 int vmin = 10, vmax = 256, smin = 30;
+
 
 // constructor
 Blob_Tracker::Blob_Tracker() {}
@@ -192,16 +194,27 @@ void Blob_Tracker::processFrame(IplImage** cv_image) {
 printf("x: %f, y: %f\n", track_box.center.x, track_box.center.y);
       if( backproject_mode )
           cvCvtColor( backproject, image, CV_GRAY2BGR );
+
       if( !image->origin )
           track_box.angle = -track_box.angle;
       cvEllipseBox( image, track_box, CV_RGB(255,0,0), 3, CV_AA, 0 );
   }
   
+
   if( select_object && selection.width > 0 && selection.height > 0 )
   {
       cvSetImageROI( image, selection );
       cvXorS( image, cvScalarAll(255), image, 0 );
       cvResetImageROI( image );
+  }
+
+  if( squares_mode) { 
+    int pattern_was_found;
+    CvPoint2D32f corners[4];
+    CvSize pattern_size = cvSize(3,3);
+    int corner_count = 0;
+    pattern_was_found = cvFindChessboardCorners(image, pattern_size, corners, &corner_count, 0);
+    cvDrawChessboardCorners(image, pattern_size, corners, corner_count, pattern_was_found);
   }
 
   cvShowImage( "BlobTracker", image );
@@ -226,10 +239,15 @@ printf("x: %f, y: %f\n", track_box.center.x, track_box.center.y);
       else
           cvNamedWindow( "Histogram", 1 );
       break;
+  case 'q':
+    squares_mode ^= 1;
+    break;
+  case 's':
+    // setHomography();
+    break;
   default:
       ;
   }
-  cvWaitKey(10);
 
 }
 
