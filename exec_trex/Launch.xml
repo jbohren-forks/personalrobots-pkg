@@ -1,5 +1,5 @@
 <launch>
-
+  <!--master auto="start"/-->
   <group name="wg">
     <node pkg="rosstage" type="rosstage" args="$(find 2dnav-stage)/willow-erratic.world" respawn="false" />
     <node pkg="map_server" type="map_server" args="$(find 2dnav-stage)/willow-full.png 0.1" respawn="false" />

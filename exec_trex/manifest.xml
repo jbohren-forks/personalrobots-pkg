@@ -6,7 +6,6 @@
   <depend package="xmlrpc++" />
   <depend package="player" />
   <depend package="std_srvs" />
-  <depend package="rostime" />
   <depend package="rosthread" />
   <depend package="rosstage" />
   <depend package="nav_view" />
