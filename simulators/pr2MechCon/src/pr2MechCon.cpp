@@ -175,7 +175,8 @@ main(int argc, char** argv)
     myHead.Update();
     mySpine.Update();
     myBase.Update();
-    myLaserScanner.Update();
+    // Commenting out because it crashes
+    //myLaserScanner.Update();
     myGripper.Update();
 
     // TODO: Safety codes should go here...
