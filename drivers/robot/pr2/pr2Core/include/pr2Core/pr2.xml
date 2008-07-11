@@ -11,26 +11,29 @@
     <wheel_length>0.03</wheel_length>
     <wheel_radius>0.08</wheel_radius>
 
-    <shoulder_pan_length>0.4</shoulder_pan_length>
-    <shoulder_pan_radius>0.05</shoulder_pan_radius>
+    <shoulder_pan_length>0.60</shoulder_pan_length>
+    <shoulder_pan_radius>0.13</shoulder_pan_radius>
 
-    <shoulder_pitch_length>0.1</shoulder_pitch_length>
+    <shoulder_pitch_length>0.10</shoulder_pitch_length>
     <shoulder_pitch_radius>0.12</shoulder_pitch_radius>
 
-    <shoulder_roll_length>0.4</shoulder_roll_length>
-    <shoulder_roll_radius>0.05</shoulder_roll_radius>
+    <shoulder_roll_x>0.35</shoulder_roll_x>
+    <shoulder_roll_y>0.12</shoulder_roll_y>
+    <shoulder_roll_z>0.15</shoulder_roll_z>
 
-    <elbow_pitch_length>0.09085</elbow_pitch_length>
-    <elbow_pitch_radius>0.05</elbow_pitch_radius>
+    <elbow_pitch_length>0.08</elbow_pitch_length>
+    <elbow_pitch_radius>0.1</elbow_pitch_radius>
 
-    <forearm_roll_length>0.2237</forearm_roll_length>
-    <forearm_roll_radius>0.05</forearm_roll_radius>
+    <forearm_roll_x>0.27</forearm_roll_x>
+    <forearm_roll_y>0.12</forearm_roll_y>
+    <forearm_roll_z>0.08</forearm_roll_z>
 
-    <wrist_pitch_length>0.01</wrist_pitch_length>
-    <wrist_pitch_radius>0.01</wrist_pitch_radius>
+    <wrist_pitch_length>0.031</wrist_pitch_length>
+    <wrist_pitch_radius>0.1</wrist_pitch_radius>
 
-    <wrist_roll_length>0.01</wrist_roll_length>
-    <wrist_roll_radius>0.01</wrist_roll_radius>
+    <wrist_roll_x>0.11</wrist_roll_x>
+    <wrist_roll_y>0.10</wrist_roll_y>
+    <wrist_roll_z>0.05</wrist_roll_z>
 
     <base_length>0.5</base_length>
     <base_width>0.5</base_width>
@@ -165,8 +168,8 @@
       <xyz>shoulder_roll_length/2 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
-      <geometry type="cylinder">
-      <size> shoulder_roll_length shoulder_roll_radius </size>
+      <geometry type="box">
+      <size> shoulder_roll_x shoulder_roll_y shoulder_roll_z </size>
       </geometry>
     </define> 
 
@@ -208,7 +211,7 @@
       <xyz>forearm_roll_length/2 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
-      <geometry type="cylinder">
+      <geometry type="box">
       <size>forearm_roll_length forearm_roll_radius </size>
       </geometry>
     </define> 
@@ -251,8 +254,8 @@
       <xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
-      <geometry type="cylinder">
-      <size>wrist_roll_length wrist_roll_radius </size>
+      <geometry type="box">
+      <size>wrist_roll_x wrist_roll_y wrist_roll_z </size>
       </geometry>
     </define> 
   </templates>
@@ -449,7 +452,7 @@
   <link name="torso">
     <parent> base </parent>
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> -0.05 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> -0.05 0 0.80981</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint type="prismatic"> 
       <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
@@ -464,7 +467,7 @@
     </inertial>
 
     <visual>
-      <xyz> 0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <xyz>0.0 0.0 0.0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <geometry type="box">
@@ -492,7 +495,7 @@
   <link name="shoulder_pan_left"><!-- link specifying the shoulder of the robot -->
     <parent> torso</parent>
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> -.1329361 0.1329361 0.80981</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> -.1329361 0.1329361 0.0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_shoulder_pan_joint" name="joint_shoulder_pan_left"/>
     <inertial clone="pr2_shoulder_pan_inertial"/>
