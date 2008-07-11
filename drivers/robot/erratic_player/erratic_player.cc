@@ -104,7 +104,7 @@ class ErraticNode: public ros::node
     //MsgRobotBase2DCmdVel cmdvel;
     MsgBaseVel cmdvel;
 
-  rosTF::rosTFServer tf;
+  rosTFServer tf;
   
   ErraticNode() : ros::node("erratic_player"),
 		  tf(*this)
@@ -297,7 +297,7 @@ main(int argc, char** argv)
       // Publish the new data
       en.publish("odom", en.odom);
 
-      tf.sendInverseEuler(FRAMEID_ODOM,
+      en.tf.sendInverseEuler(FRAMEID_ODOM,
 			  FRAMEID_ROBOT,
 			  pdata->pos.px,
 			  pdata->pos.py,
