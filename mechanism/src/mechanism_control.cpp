@@ -26,29 +26,69 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-MechanismController::MechanismController(HardwareInterface *hw){
+#include "mechanism_control.h"
+
+MechanismControl::MechanismControl(HardwareInterface *hw){
   this->hw = hw;
   //Needs to learn pr2.xml filename or get it from param server
-  //Create robot model
+  //Create robot modeli
+  r = new Robot();
   //Set up transmissions, joints, and links
-  
+
+  for(int i = 0; i < MAX_NUM_CONTROLLERS; i++){
+    controller[i] = NULL;
+  }
   //Set up ROS
-  //Subscribe to "n
-  //Advertise "new controller" service
+  //Subscribe to "new controller request" topic
+  //(Should be Advertise "new controller" service)
 }
 
-void MechanismController::update(){
+void MechanismControl::registerControllerType(const char *type, ControllerAllocationFunc f){
+  controllerLibrary[type] = f;
+}
+
+//This function will be exported as a ROS service and called externally to set up all the control loops on system startup.
+void MechanismControl::requestController(const char *type, const char *ns){
+  Controller *c;
+  ControllerAllocationFunc f = controllerLibrary[type];
+  c = f(ns);
+  //At this point, the controller is fully initialized and has created the ROS interface, etc.
+
+  //Add controller to list of controllers in realtime-safe manner;
+  controllerListMutex.lock(); //This lock is only to prevent us from other non-realtime threads.  The realtime thread may be spinning through the list of controllers while we are in here, so we need to keep that list always in a valid state.  This is why we fully allocate and set up the controller before adding it into the list of active controllers.
+  for(int i = 0; i < MAX_NUM_CONTROLLERS; i++){
+    if(controller[i] == NULL){
+      controller[i] = c;
+    }
+    break;
+  }
+  controllerListMutex.unlock();
+}
+
+//This function is called only from the realtime loop.  Everything it calls must also be realtime safe.
+void MechanismControl::update(){
   //Clear actuator commands
-  for(int i = 0; i < numTransmissions; i++){
+
+  //Process robot model transmissions
+  for(int i = 0; i < r->numTransmissions; i++){
     r->transmission[i].propagatePosition();
   }
+
   //update KDL model with new joint position/velocities
   //
-  //update controllers
-  for(int i = 0; i < numJoints; i++){
+
+  //update all controllers
+  for(int i = 0; i < MAX_NUM_CONTROLLERS; i++){
+    if(controller[i] != NULL){
+      controller[i]->update();
+    }
+  }
+
+  for(int i = 0; i < r->numJoints; i++){
     r->joint[i].enforceLimits();
   }
-  for(int i = 0; i < numTransmissions; i++){
+
+  for(int i = 0; i < r->numTransmissions; i++){
     r->transmission[i].propagateEffort();
   }
 }

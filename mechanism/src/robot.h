@@ -28,6 +28,13 @@
 
 //The robot model is populated by the control code infrastructure and used by all the controllers to read mechanism state and command mechanism motion.
 
+#ifndef ROBOT_H
+#define ROBOT_H
+
+#include "link.h"
+#include "joint.h"
+#include "transmission.h"
+
 class Robot{
   public:
   Robot(char *namespace);
@@ -39,4 +46,6 @@ class Robot{
   int numJoints;
   Transmission *transmission;
   int numTransmissions;
-}
+};
+
+#endif

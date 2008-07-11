@@ -25,15 +25,35 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
-#ifndef MECHANISM_CONTROLL_H
-#define MECHANISM_CONTROLLER_H
+#ifndef MECHANISM_CONTROL_H
+#define MECHANISM_CONTROL_H
 
 #include "hardware_interface.h"
+#include "robot.h"
+#include "rosthread/mutex.h"
+#include <map>
+using std::map;
 
 //Base requirements for a piece of code that will control a full mechanism
-class MechanismController{
+const int MAX_NUM_CONTROLLERS = 1000;
+
+typedef class Controller{
+};
+
+typedef Controller*(*ControllerAllocationFunc)(const char *);
+
+class MechanismControl{
   public:
+  MechanismControl(HardwareInterface *hw);
   void update(); //Must be realtime safe
+  void registerControllerType(const char *type, ControllerAllocationFunc f);
+  void requestController(const char *type, const char *ns);
+  private:
+  map<const char *, ControllerAllocationFunc> controllerLibrary;
+  Controller *controller[MAX_NUM_CONTROLLERS];
+  ros::thread::mutex controllerListMutex;
+  HardwareInterface *hw;
+  Robot *r;
 };
 
 #endif

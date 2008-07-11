@@ -30,7 +30,7 @@
 #define NULL_HARDWARE_H
 
 #include "hardware_interface.h"
-#include "null_mechanism_controller.h"
+#include "mechanism_control.h"
 
 class NullHardware{
   public:
@@ -38,7 +38,7 @@ class NullHardware{
   private:
     void updateState(ActuatorState *state);
     void readCommand(ActuatorCommand *command);
-    NullMechanismController *controller;
+    MechanismControl *controller;
 };
 
 #endif

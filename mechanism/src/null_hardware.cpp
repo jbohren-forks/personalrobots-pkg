@@ -30,14 +30,14 @@
 //Creates empty robot and runs it with null controller
 
 #include "null_hardware.h"
-#include "null_mechanism_controller.h"
+#include "mechanism_control.h"
 
 NullHardware::NullHardware(){
   //Read actuators.xml and initialize hardware
   int numActuators = 10;
   HardwareInterface *hw = new HardwareInterface(numActuators);
 
-  controller = new NullMechanismController(hw);
+  controller = new MechanismControl(hw);
   for(int i = 0; i < 100; i++){
     //Read in data from hardware
     for(int i = 0; i < hw->numActuators; i++){
@@ -59,10 +59,11 @@ void NullHardware::updateState(ActuatorState *state){
 }
 
 void NullHardware::readCommand(ActuatorCommand *command){
-  double current = command->current;
+  //double current = command->current;
   //writeMotor(current);
 }
 
 int main(int argc, char *argv[]){
   NullHardware *h = new NullHardware();
+  delete(h);
 }
