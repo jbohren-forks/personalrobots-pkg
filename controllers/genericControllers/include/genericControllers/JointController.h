@@ -6,6 +6,24 @@
     This class implements controller loops for
     PR2 Joint Control
 
+    Parameters to be set by SetParam
+    PGain
+    IGain
+    DGain
+    IMax
+    IMin
+
+    Parameters fetched from joint
+    Time
+    SaturationEffort
+    MaxEffort
+
+    Steps to bring a JointController online
+    1. Initialize gains via SetParam
+    2. Set the controller mode (SetMode(mode))
+    3. EnableController()
+    4. Set appropriate command (position, torque, velocity)
+    5. Call Update from Real Time loop
 */
 /***************************************************/
 #include <newmat10/newmat.h>
@@ -15,11 +33,10 @@
 #include <string>
 #include <libKDL/kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
 
-//#include <genericControllers/input_msg.h>
 #include <iostream>
 #include <genericControllers/Controller.h>
 #include <genericControllers/Pid.h>
-#include <libpr2API/pr2API.h>
+#include <math_utils/angles.h>
 
 namespace CONTROLLER
 {
@@ -37,13 +54,6 @@ namespace CONTROLLER
         * \brief Destructor of the JointController class.
         */       
       ~JointController( );
-
-      /*!
-       * \brief Temporary constructor for the simulator version. 
-       *
-       *
-       */
-      JointController(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER::CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort);
     
       /*!
        * \brief Default Constructor of the JointController class.
@@ -53,9 +63,7 @@ namespace CONTROLLER
        */
 
       //Pass in robot model and namespace identification
-      // JointController(Robot* robot, string name);
-      JointController(string name);
-
+      // JointController(Joint* joint, string name);
 
         /*!
         * \brief Give a torque command to be issue on update (if in torque mode)
@@ -169,22 +177,13 @@ namespace CONTROLLER
       //Issues commands to the joint. Should be called at regular intervals
       virtual void Update(void);
 
-     
-  /*!
-   *
-   *\brief Manual update for simulator
-   *
-   *
-   */
-      double SimUpdate(double position, double velocity, double time);
-
         /*!
         * \brief TODO: Get the actual time
         *  
         *
         * \param double* time Pointer to value to change 
         */
-         PR2::PR2_ERROR_CODE GetTime(double* time);
+      PR2::PR2_ERROR_CODE GetTime(double* time);
     
          /*!
         * \brief Returns the current mode of the controller
@@ -215,7 +214,7 @@ namespace CONTROLLER
 
 
    /*!
-        * \brief Set torque to zero. NOW.
+        * \brief Set torque to zero. Prevent controller from running
         *
         *  
         */
@@ -230,21 +229,7 @@ namespace CONTROLLER
         *
         */       
      double SetTorque(double torque);
-    /*!
-        * \brief Callback for subscription to input_msg
-        * 
-        *
-        */  
-     // void InputCallback(void);
-    /*!
-        * \brief 
-        * 
-        *\param string name Identify the name of the subscription
-        */  
-     // void SubscribeToInput(string name);
-
-      //genericControllers::input_msg inputBus; /*!< Provide a bus to read commands*/
-   
+     
       string jointName; /*!< Namespace ID for this controller*/  
       Joint* thisJoint; /*!< Joint we're controlling*/  
       Pid pidController; /*!< Internal PID controller*/  
@@ -268,9 +253,5 @@ namespace CONTROLLER
 
       bool enabled; /*!<Can controller issue commands?>*/
 
-      //Limits
-      double maxPositiveTorque;
-      double maxNegativeTorque;
-      double maxEffort;
-  };
+       };
 }
