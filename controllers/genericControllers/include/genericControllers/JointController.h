@@ -32,7 +32,7 @@ class JointController : Controller
       * \brief Default Constructor of the JointController class.
       *
       */
-    JointController();
+    JointController() { }
     
     /*!
       * \brief Destructor of the JointController class.

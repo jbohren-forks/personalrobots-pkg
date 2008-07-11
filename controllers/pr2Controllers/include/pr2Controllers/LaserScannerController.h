@@ -181,7 +181,10 @@ void GenerateSquarewave(double *&x, double *&t, double period, double amplitude,
       */
     CONTROLLER::CONTROLLER_ERROR_CODE GetVelAct(double *vel);
 
-    CONTROLLER::CONTROLLER_CONTROL_MODE GetMode(void);
+    CONTROLLER::CONTROLLER_CONTROL_MODE GetMode(void) 
+    { 
+      return((CONTROLLER::CONTROLLER_CONTROL_MODE)(0)); 
+    }
     private:
 
 	CONTROLLER::CONTROLLER_CONTROL_MODE controlMode; /**Allow different control modes for hokuyo>*/
