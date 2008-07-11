@@ -39,10 +39,11 @@ namespace PR2
       FRAMEID_ARM_R_HAND        , 
       FRAMEID_ARM_R_FINGER_1    ,
       FRAMEID_ARM_R_FINGER_2    ,
-      FRAMEID_HEAD_BASE         , 
-      FRAMEID_LASER_BLOCK       ,
+      FRAMEID_HEAD_PAN_BASE     , 
+      FRAMEID_HEAD_TILT_BASE    ,
       FRAMEID_STEREO_BLOCK      , 
-      FRAMEID_LASERBLOCK        ,
+      FRAMEID_TILT_LASER_BLOCK  ,
+      FRAMEID_BASE_LASER_BLOCK  ,
       MAX_FRAMEIDS 
    };
 
@@ -152,10 +153,11 @@ namespace PR2
       ARM_R_HAND        , 
       ARM_R_FINGER_1    ,
       ARM_R_FINGER_2    ,
-      HEAD_BASE         , 
-      LASER_BLOCK       ,
+      HEAD_PAN_BASE     , 
+      HEAD_TILT_BASE    ,
       STEREO_BLOCK      , 
-      LASERBLOCK        ,
+      TILT_LASER_BLOCK  ,
+      BASE_LASER_BLOCK  ,
       MAX_BODY_IDS 
    };
 
