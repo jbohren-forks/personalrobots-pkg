@@ -9,6 +9,6 @@ Library for doing transformations.
 <url>http://pr.willowgarage.com</url>
 <depend package="newmat10"/>
 <export>
-<cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lTF -lnewmat"/>
+<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lTF -lnewmat"/>
 </export>
 </package>

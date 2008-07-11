@@ -11,7 +11,7 @@
   <depend package="drawstuff"/>
 
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lCollisionSpace"/>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lCollisionSpace"/>
   </export>
   
 </package>

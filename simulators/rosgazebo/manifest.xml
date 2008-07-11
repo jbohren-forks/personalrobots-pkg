@@ -11,6 +11,6 @@
   <depend package="rosthread" />
   <depend package="rosTF" />
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lRosGazeboNode"/>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lRosGazeboNode"/>
   </export>
 </package>
