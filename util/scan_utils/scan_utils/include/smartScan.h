@@ -94,6 +94,8 @@ class SmartScan {
 
 	//! Write point cloud to an output stream
 	void writeToFile(std::iostream &output);
+	//! Write point cloud in vrml format to an output stream
+	void writeToFileAsVrml(std::iostream &output);
 	//! Read point cloud from an input stream. 
 	bool readFromFile(std::iostream &input);
 	//! Returns the number of points in the cloud

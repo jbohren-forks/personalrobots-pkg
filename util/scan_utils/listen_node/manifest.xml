@@ -1,6 +1,6 @@
 <package>
 <description>A thin ROS node that listens for scans and converts them to scan_utils::SmartScan.</description>
-<author>Matei Cioacrlie</author>
+<author>Matei Ciocarlie</author>
 <license>BSD</license>
 <depend package="roscpp" />
 <depend package="std_msgs" />

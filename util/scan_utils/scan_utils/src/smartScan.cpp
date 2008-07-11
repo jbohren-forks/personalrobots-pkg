@@ -27,8 +27,8 @@
 
 using namespace scan_utils;
 
-#define TFNP libTF::TransformReference::NO_PARENT
-#define TFRT libTF::TransformReference::ROOT_FRAME
+//#define TFRT libTF::TransformReference::ROOT_FRAME
+#define TFRT 1
 #define TFMF 2
 
 SmartScan::SmartScan()
@@ -127,6 +127,27 @@ void SmartScan::writeToFile(std::iostream &output)
 		       << mNativePoints[i].z << " " << intensity << std::endl;
 	}
 	fprintf(stderr,"Written %d points to file\n", mNumPoints);
+}
+
+/*!
+  Writes the data in this scan to an output stream in VRML format
+ */
+void SmartScan::writeToFileAsVrml(std::iostream &output)
+{
+	std_msgs::Point3DFloat32 p;
+	output << "VRML V2.0 utf8" << std::endl;
+	output << "Shape" << std::endl << "{" << std::endl;
+	output << "geometry PointSet" << std::endl << "{" << std::endl;
+	output << "coord Coordinate" << std::endl << "{" << std::endl;
+	output << "point[" << std::endl;
+	for (int i=0; i < mNumPoints; i++) {
+		p = getPoint(i);
+		output << p.x << " " << p.y << " " << p.z << std::endl;
+	}
+	output << "]" << std::endl; //point[
+	output << "}" << std::endl; //Coordinate{
+	output << "}" << std::endl; //PointSet{
+	output << "}" << std::endl; //Shape{
 }
 
 /*!  

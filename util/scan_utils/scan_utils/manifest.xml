@@ -6,8 +6,9 @@
 <depend package="std_msgs" />
 <depend package="newmat10" />
 <depend package="libTF" />
+<depend package="VTK" />
 <!--<depend package="xmlparam" />-->
 <export>
-  <cpp cflags="-I${prefix}/include -I/usr/local/include/vtk-5.0" lflags=" -L${prefix}/lib -lscanutils -L/usr/local/lib -lstdc++ -rdynamic -L/usr/local/sbin/../lib -lvtkRendering -lvtkGraphics -lvtkImaging -lvtkIO -lvtkFiltering -lvtkCommon -lvtksys -lpthread -ldl -lm -lvtkDICOMParser -lvtkpng -lvtktiff -lvtkzlib -lvtkjpeg -lvtkexpat -lvtkftgl -lvtkfreetype -lvtkHybrid -lGL -lXt -lSM -lICE -lSM -lICE -lX11 -lXext -lX11 -lXext -Wl,-rpath,/usr/local/lib"/>
+  <cpp cflags="-I${prefix}/include" lflags=" -L${prefix}/lib -lscanutils -Wl,-rpath,${prefix}/lib"/>
 </export>
 </package>
