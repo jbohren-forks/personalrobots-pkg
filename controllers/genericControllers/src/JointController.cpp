@@ -23,7 +23,35 @@ void JointController::InputCallback(){
 		SetVelCmd(inputBus.VelocityCommand);
 	}
 }
+
 */
+
+JointController::JointController(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER::CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort){
+	//Instantiate PID class
+	pidController.InitPid(PGain,IGain,DGain,IMax,IMin); //Constructor for pid controller	
+
+	//Set commands to zero
+	cmdTorque = 0;
+	cmdPos = 0;
+	cmdVel = 0;
+	
+	lastTime = time;
+
+	this->PGain = PGain;
+	this->IGain = IGain;
+	this->DGain = DGain;
+	this->IMax = IMax;
+	this->IMin = IMin;
+
+	this->maxPositiveTorque = maxPositiveTorque;
+	this->maxNegativeTorque = maxNegativeTorque;
+	this->maxEffort = maxEffort;
+
+	EnableController();
+
+	controlMode = mode;
+}
+
 //JointController::JointController(Robot* robot, string name)
 JointController::JointController(string name)
 {	
@@ -54,7 +82,13 @@ JointController::JointController(string name)
 	GetTime(&lastTime);
 
 }
-    
+     
+JointController::JointController( )
+{
+	
+}
+
+
 JointController::~JointController( )
 {
 	
@@ -92,14 +126,14 @@ void JointController::DisableController(){
 //-
 
 //Truncates (if needed), then sets the torque
-void JointController::SetTorque(double torque)
-{	
+double JointController::SetTorque(double torque)
+{
+	double newTorque;
 	CONTROLLER::CONTROLLER_ERROR_CODE status = CONTROLLER::CONTROLLER_ALL_OK;
-	double newTorque, maxPositiveTorque, maxNegativeTorque;
 		
 	//Read the max positive and max negative torque once
-//	maxPositiveTorque = thisJoint->effortLimit;
-//	maxNegativeTorque = -1*thisJoint->effortLimit; 
+	//maxPositiveTorque = thisJoint->effortLimit;
+	//maxNegativeTorque = -1*thisJoint->effortLimit; 
 
 	if(torque>maxPositiveTorque){
 		newTorque = maxPositiveTorque;
@@ -114,18 +148,21 @@ void JointController::SetTorque(double torque)
 		SaturationFlag = false;
 	}
 
+	
 	//Set torque command 
 //	thisJoint->commandedEffort = newTorque; 
+	
+	return newTorque;
 }
 
 CONTROLLER::CONTROLLER_ERROR_CODE JointController::SetTorqueCmd(double torque){
-	double maxEffort;
 //	maxEffort = thisJoint->effortLimit;
 	
 	if(GetMode() != CONTROLLER::CONTROLLER_TORQUE)  //Make sure we're in torque command mode
 	return CONTROLLER::CONTROLLER_MODE_ERROR;
 	
 	cmdTorque = torque;	
+	
 	if(cmdTorque > maxEffort){ //Truncate to positive limit
 		cmdTorque = maxEffort;
 		return CONTROLLER::CONTROLLER_TORQUE_LIMIT;
@@ -134,6 +171,7 @@ CONTROLLER::CONTROLLER_ERROR_CODE JointController::SetTorqueCmd(double torque){
 		cmdTorque = -1*maxEffort;
 		return CONTROLLER::CONTROLLER_TORQUE_LIMIT;
 	}
+	
 	return CONTROLLER::CONTROLLER_ALL_OK;
 
 }
@@ -260,6 +298,37 @@ bool JointController::CheckForSaturation(void){
 	//Issue the torque command
 	if(enabled) SetTorque(currentTorqueCmd); 	
 	else SetTorque(0); //Send a zero command if disabled
+
+}
+
+double JointController::SimUpdate(double position, double velocity, double time){
+	double error, currentTorqueCmd, cmd, act;
+	CONTROLLER_CONTROL_MODE type = GetMode();
+	if(type==CONTROLLER::CONTROLLER_TORQUE){
+		currentTorqueCmd = cmdTorque; //In torque mode, we pass along the commanded torque
+	}
+	else if (type==CONTROLLER::CONTROLLER_POSITION){
+		GetPosCmd(&cmd);
+		//Read position, get error
+		error = CONTROLLER::Controller::ModNPi2Pi(cmd-position); 
+	
+		//Update the controller
+		currentTorqueCmd = pidController.UpdatePid(error,time); //Close the loop around position
+	}
+	else if (type==CONTROLLER::CONTROLLER_VELOCITY){
+		GetVelCmd(&cmd);
+		//Read velocity, get error
+		error = cmd - velocity; 
+	
+		//Update the controller
+		currentTorqueCmd = pidController.UpdatePid(error,time); //Close the loop around velocity
+
+	}
+	else currentTorqueCmd = 0; //On error, set torque to zero
+	//Issue the torque command
+	if(enabled) return SetTorque(currentTorqueCmd); 	
+	else return 0; //Send a zero command if disabled
+
 
 }
 

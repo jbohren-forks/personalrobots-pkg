@@ -32,15 +32,21 @@ class JointController : Controller
       * \brief Default Constructor of the JointController class.
       *
       */
-    JointController() { }
+    JointController();
     
     /*!
       * \brief Destructor of the JointController class.
       */       
     ~JointController( );
-   
 
-  /*!
+    /*!
+     * \brief Temporary constructor for the simulator version. 
+     *
+     *
+     */
+JointController(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER::CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort);
+  
+ /*!
       * \brief Default Constructor of the JointController class.
       *
       * \param robot A pointer to the robot object
@@ -164,7 +170,15 @@ class JointController : Controller
     //Issues commands to the joint. Should be called at regular intervals
     virtual void Update(void);
 
-    
+   
+/*!
+ *
+ *\brief Manual update for simulator
+ *
+ *
+ */
+    double SimUpdate(double position, double velocity, double time);
+
       /*!
       * \brief TODO: Get the actual time
       *  
@@ -216,7 +230,7 @@ class JointController : Controller
       * 
       *
       */       
-   void SetTorque(double torque);
+   double SetTorque(double torque);
   /*!
       * \brief Callback for subscription to input_msg
       * 
@@ -254,6 +268,11 @@ class JointController : Controller
     double cmdVel;/*!< Last commanded Velocity */
 
     bool enabled; /*!<Can controller issue commands?>*/
+
+    //Limits
+    double maxPositiveTorque;
+    double maxNegativeTorque;
+    double maxEffort;
 };
 
 
