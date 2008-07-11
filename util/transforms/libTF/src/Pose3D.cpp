@@ -268,21 +268,6 @@ Pose3D::Euler Pose3D::eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned
     // Check that pitch is not at a singularity
     if (fabs(matrix_pointer[8]) >= 1)
     {
-	euler_out.pitch = - asin(matrix_pointer[8]);
-	euler_out2.pitch = M_PI - euler_out.pitch;
-	
-	euler_out.roll = atan2(matrix_pointer[9]/cos(euler_out.pitch), 
-			       matrix_pointer[10]/cos(euler_out.pitch));
-	euler_out2.roll = atan2(matrix_pointer[9]/cos(euler_out2.pitch), 
-				matrix_pointer[10]/cos(euler_out2.pitch));
-	
-	euler_out.yaw = atan2(matrix_pointer[4]/cos(euler_out.pitch), 
-			      matrix_pointer[1]/cos(euler_out.pitch));
-	euler_out2.yaw = atan2(matrix_pointer[4]/cos(euler_out2.pitch), 
-			       matrix_pointer[1]/cos(euler_out2.pitch));
-    }
-    else
-    {
 	euler_out.yaw = 0;
 	euler_out2.yaw = 0;
 	
@@ -302,6 +287,21 @@ Pose3D::Euler Pose3D::eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned
 	    euler_out.roll = -euler_out.pitch + delta;
 	    euler_out2.roll = -euler_out.pitch + delta;
 	}
+    }
+    else
+    {
+	euler_out.pitch = - asin(matrix_pointer[8]);
+	euler_out2.pitch = M_PI - euler_out.pitch;
+	
+	euler_out.roll = atan2(matrix_pointer[9]/cos(euler_out.pitch), 
+			       matrix_pointer[10]/cos(euler_out.pitch));
+	euler_out2.roll = atan2(matrix_pointer[9]/cos(euler_out2.pitch), 
+				matrix_pointer[10]/cos(euler_out2.pitch));
+	
+	euler_out.yaw = atan2(matrix_pointer[4]/cos(euler_out.pitch), 
+			      matrix_pointer[1]/cos(euler_out.pitch));
+	euler_out2.yaw = atan2(matrix_pointer[4]/cos(euler_out2.pitch), 
+			       matrix_pointer[1]/cos(euler_out2.pitch));
     }
     
     if (solution_number == 1)
