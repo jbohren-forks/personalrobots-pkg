@@ -36,8 +36,10 @@
 
 bool EnvironmentModelSOLID::isCollision(void)
 {
+    return dtTest();
 }
     
 void EnvironmentModelSOLID::addPointCloud(void)
 {
+    
 }
