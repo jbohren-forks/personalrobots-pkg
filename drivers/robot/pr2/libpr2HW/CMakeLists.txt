@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 2.6)
+include(rosbuild)
+add_definitions(-Wall)
+rospack(libpr2HW)
+#set(ROS_BUILD_STATIC_EXES true)
+rospack_add_library(pr2HW src/pr2HW.cpp)
+rospack_add_executable(test_pr2HW src/test/test_pr2HW.cpp)
