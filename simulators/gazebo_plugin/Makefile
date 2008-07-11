@@ -19,7 +19,7 @@ LIB_GRP_S = lib/libPr2_Gripper.so
 LIB_P3D = lib/libP3D.a
 LIB_P3D_S = lib/libP3D.so
 
-all: $(LIB_ACT) $(LIB_GRP) $(LIB_ACT_S) $(LIB_GRP_S)  $(LIB_P3D_S)  $(LIB_P3D) #player_pr2
+all: $(LIB_ACT_S) $(LIB_GRP_S)  $(LIB_P3D_S)  #player_pr2
 
 
 libPr2_Actarray.o: src/Pr2_Actarray.cc
