@@ -181,10 +181,11 @@ void GenerateSquarewave(double *&x, double *&t, double period, double amplitude,
       */
     CONTROLLER::CONTROLLER_ERROR_CODE GetVelAct(double *vel);
 
-    CONTROLLER::CONTROLLER_CONTROL_MODE GetMode(void) 
-    { 
-      return((CONTROLLER::CONTROLLER_CONTROL_MODE)(0)); 
-    }
+    CONTROLLER::CONTROLLER_CONTROL_MODE GetMode(void);
+
+    void EnableProfile();
+
+    void DisableProfile();
     private:
 
 	CONTROLLER::CONTROLLER_CONTROL_MODE controlMode; /**Allow different control modes for hokuyo>*/
@@ -198,11 +199,11 @@ void GenerateSquarewave(double *&x, double *&t, double period, double amplitude,
       bool automaticProfile; //**<Indicate whether we desired to follow a profile>*/
       double lastCycleStart; //**<Start of the last cycle>*/
 
-      JointController lowerControl; /**< Lower level control done by JointController>*/
+      CONTROLLER::JointController lowerControl; /**< Lower level control done by JointController>*/
 
-      double cmdPos;
-      double cmdVel;
-      double cmdTorque;
+      double cmdPos; /**<Last commanded position>*/
+      double cmdVel; /**<Last commanded velocity>*/
+      double cmdTorque; /**<Last commanded torque>*/
 
   };
 }

@@ -8,7 +8,7 @@ LaserScannerController::LaserScannerController()
 	profileX = NULL;
 	profileT = NULL; 
 
-	lowerControl.GetTime(&lastCycleStart); //Mark this time as beginning of cycle
+//	lowerControl.GetTime(&lastCycleStart); //Mark this time as beginning of cycle
 }
     
 LaserScannerController::~LaserScannerController( )
@@ -32,6 +32,7 @@ LaserScannerController::LaserScannerController(){
 void
 LaserScannerController::Update( )
 {
+/*
 	double currentTime;
 	lowerControl.GetTime(&currentTime);
 	//Check for automatic scan mode
@@ -60,6 +61,7 @@ LaserScannerController::Update( )
 	}
 	
 	lowerControl.Update();
+	*/
 }
 
 PR2::PR2_ERROR_CODE
@@ -183,7 +185,7 @@ void LaserScannerController::GenerateSquarewave(double *&x, double *&t, double p
 
 
 CONTROLLER::CONTROLLER_ERROR_CODE LaserScannerController::SetTorqueCmd(double torque){
-	lowerControl.SetTorqueCmd(torque);
+	//lowerControl.SetTorqueCmd(torque);
 }
 
 //Return current torque command
@@ -194,7 +196,7 @@ LaserScannerController::GetTorqueCmd(double *torque)
 	return CONTROLLER::CONTROLLER_MODE_ERROR;
 	
 
-	lowerControl.GetTorqueCmd(torque);
+//	lowerControl.GetTorqueCmd(torque);
 	return CONTROLLER::CONTROLLER_ALL_OK;
 }
 
@@ -202,7 +204,7 @@ LaserScannerController::GetTorqueCmd(double *torque)
 CONTROLLER::CONTROLLER_ERROR_CODE
  LaserScannerController::GetTorqueAct(double *torque)
 {
-	lowerControl.GetTorqueAct(torque);
+//	lowerControl.GetTorqueAct(torque);
 	return CONTROLLER::CONTROLLER_ALL_OK;
 }
 
@@ -217,7 +219,7 @@ CONTROLLER::CONTROLLER_ERROR_CODE
 	if(GetMode() != CONTROLLER::CONTROLLER_POSITION)  //Make sure we're in position command mode
 	return CONTROLLER::CONTROLLER_MODE_ERROR;
 	
-	lowerControl.SetPosCmd(pos);
+//	lowerControl.SetPosCmd(pos);
 
 	return CONTROLLER::CONTROLLER_ALL_OK;
 	
@@ -227,7 +229,7 @@ CONTROLLER::CONTROLLER_ERROR_CODE
 CONTROLLER::CONTROLLER_ERROR_CODE
 LaserScannerController::GetPosCmd(double *pos)
 {
-	lowerControl.GetPosCmd(pos);
+//	lowerControl.GetPosCmd(pos);
 	return CONTROLLER::CONTROLLER_ALL_OK;
 }
 
@@ -235,7 +237,7 @@ LaserScannerController::GetPosCmd(double *pos)
 CONTROLLER::CONTROLLER_ERROR_CODE
 LaserScannerController::GetPosAct(double *pos)
 {
-	lowerControl.GetPosAct(pos);
+//	lowerControl.GetPosAct(pos);
 	return CONTROLLER::CONTROLLER_ALL_OK;
 }
 
@@ -250,7 +252,7 @@ LaserScannerController::SetVelCmd(double vel)
 	if(GetMode() != CONTROLLER::CONTROLLER_VELOCITY)  //Make sure we're in velocity command mode
 	return CONTROLLER::CONTROLLER_MODE_ERROR;
 	
-	lowerControl.SetVelCmd(vel);
+//	lowerControl.SetVelCmd(vel);
 
 	return CONTROLLER::CONTROLLER_MODE_ERROR;
 }
@@ -259,7 +261,7 @@ LaserScannerController::SetVelCmd(double vel)
 CONTROLLER::CONTROLLER_ERROR_CODE
 LaserScannerController::GetVelCmd(double *vel)
 {
-	lowerControl.GetVelCmd(vel);
+//	lowerControl.GetVelCmd(vel);
 	return CONTROLLER::CONTROLLER_ALL_OK;
 }
 
@@ -267,7 +269,18 @@ LaserScannerController::GetVelCmd(double *vel)
 CONTROLLER::CONTROLLER_ERROR_CODE
 LaserScannerController::GetVelAct(double *vel)
 {
-	lowerControl.GetVelAct(vel);
+//	lowerControl.GetVelAct(vel);
 	return CONTROLLER::CONTROLLER_ALL_OK;
 }
 
+void LaserScannerController::EnableProfile(){
+	automaticProfile = true;
+}
+
+void LaserScannerController::DisableProfile(){
+	automaticProfile = false;
+}
+
+CONTROLLER::CONTROLLER_CONTROL_MODE LaserScannerController::GetMode(void){
+	return controlMode;
+}
