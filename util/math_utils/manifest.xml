@@ -1,12 +1,12 @@
 <package>
   <description brief="Math Utilities">
-      This package provides basic math utilities, such as angle conversions   
-
+      This package provides misc. math utilities,
+        such as angle conversions and unit conversions.
   </description>
   <author>John Hsu</author>
   <license>BSD</license>
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lstring_utils"/>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib"/>
   </export>
 </package>
 
