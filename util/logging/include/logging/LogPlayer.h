@@ -84,7 +84,7 @@ public:
     getline(log,datatype);
 
     if (M::__get_md5sum() != md5sum && 
-        M::__get_md5sum() != std::string("*") && md5sum != std::string("*"))
+        md5sum != std::string("*"))
     {
       return false;
     }
