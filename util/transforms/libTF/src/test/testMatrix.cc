@@ -16,23 +16,17 @@ int main(int argc, char ** argv)
 	  }
 	  else if (j == 1){
 	    yaw = 0.0;
-	    roll = 0.1*i ;
-	    pitch = 0.0;
-	  }
-	  else {
-	    yaw = 0.0 ;
 	    roll = 0.0;
 	    pitch = 0.1*i;
 	  }
+	  else {
+	    yaw = 0.0 ;
+	    roll = 0.1*i ;
+	    pitch = 0.0;
+	  }
 
 
-
-
-
-
-	  printf("in: %.3f %.3f %.3f\n",
-		 yaw, roll, pitch);
-
+	  	      
 	  NEWMAT::Matrix m = libTF::Pose3D::matrixFromEuler(0.0,
 							    0.0,
 							    0.0,
@@ -42,19 +36,28 @@ int main(int argc, char ** argv)
 
 	  libTF::Pose3D::Euler out = libTF::Pose3D::eulerFromMatrix(m);
 
-	  printf("out: %.3f %.3f %.3f\n\n",
-		 out.yaw, out.roll, out.pitch);
-	  
 	  //TODO add +- 2PI checking/redundant angles checking
-	  if ((out.yaw != yaw || out.pitch != pitch || out.roll !=roll))
+	  if (fabs(out.yaw - yaw) > 0.001 || fabs(out.pitch - pitch) > 0.001 || fabs(out.roll -roll) > 0.0001)
+	    {
+
+	      printf("in: %.3f %.3f %.3f\n",
+		     yaw, pitch, roll);
+
+	      std::cout << m;
+
+
+	      printf("out: %.3f %.3f %.3f\n\n",
+		     out.yaw, out.pitch, out.roll);
+	  
+
 	      success = false;
+	      printf("FAILURE!!!!!!!!!!\n\n");
+	    }
 
 	}
     }
   if (success)
-    printf("Success\n");
-  else
-    printf("Failure\n");
-
+    printf("Success\nAll tests Passed\n");
+ 
   return(0);
 }

@@ -299,9 +299,9 @@ Pose3D::Euler Pose3D::eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned
 				matrix_pointer[10]/cos(euler_out2.pitch));
 	
 	euler_out.yaw = atan2(matrix_pointer[4]/cos(euler_out.pitch), 
-			      matrix_pointer[1]/cos(euler_out.pitch));
+			      matrix_pointer[0]/cos(euler_out.pitch));
 	euler_out2.yaw = atan2(matrix_pointer[4]/cos(euler_out2.pitch), 
-			       matrix_pointer[1]/cos(euler_out2.pitch));
+			       matrix_pointer[0]/cos(euler_out2.pitch));
     }
     
     if (solution_number == 1)

@@ -158,7 +158,7 @@ int main(void)
       x = 30.0;
       y = 10.0;
       z = 0.0;
-      yaw = 0.0;
+      yaw = 0.1;
       pitch = 0.0;
       roll = 0.0;
 
