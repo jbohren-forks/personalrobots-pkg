@@ -35,68 +35,70 @@
 
 */
 /***************************************************/
-class Pid
+namespace CONTROLLER
 {
-  public:
-  
-    /*!
-      * \brief Constructor, zeros out Pid values when created and 
-      * initialize Pid-gains and integral term limits:[iMax:iMin]-[I1:I2].
-      *
-      * \param P  The proportional gain.
-      * \param I  The integral gain. 
-      * \param D  The derivative gain.
-      * \param I1 The integral upper limit.
-      * \param I2 The integral lower limit.
-      */
-    Pid(double P = 0.8,double I = 0.5, double D = 0.0, double I1 = 1.0, double I2 =-1.0 );
+  class Pid
+  {
+    public:
     
-    /*!
-      * \brief Destructor of Pid class.
-      */       
-    ~Pid( );
+      /*!
+        * \brief Constructor, zeros out Pid values when created and 
+        * initialize Pid-gains and integral term limits:[iMax:iMin]-[I1:I2].
+        *
+        * \param P  The proportional gain.
+        * \param I  The integral gain. 
+        * \param D  The derivative gain.
+        * \param I1 The integral upper limit.
+        * \param I2 The integral lower limit.
+        */
+      Pid(double P = 0.8,double I = 0.5, double D = 0.0, double I1 = 1.0, double I2 =-1.0 );
+      
+      /*!
+        * \brief Destructor of Pid class.
+        */       
+      ~Pid( );
 
-    /*!
-      * \brief Update the Pid loop with nonuniform time step size.
-      *
-      * \param pState  This is the current measured state or position of the object 
-      * being controlled.
-      * \param pTarget This is the set point the controller is trying to reach.
-      * \param fixedTime Set to a value for fixed time step of that value
-      */
-    double UpdatePid( double pError, double dt );  
-    
-    /*!
-      * \brief Initialize PID-gains and integral term limits:[iMax:iMin]-[I1:I2]
-      *
-      * \param P  The proportional gain.
-      * \param I  The integral gain. 
-      * \param D  The derivative gain.
-      * \param I1 The integral upper limit.
-      * \param I2 The integral lower limit.
-      */
-    void   InitPid( double P,double I, double D, double I1, double I2 );
+      /*!
+        * \brief Update the Pid loop with nonuniform time step size.
+        *
+        * \param pState  This is the current measured state or position of the object 
+        * being controlled.
+        * \param pTarget This is the set point the controller is trying to reach.
+        * \param fixedTime Set to a value for fixed time step of that value
+        */
+      double UpdatePid( double pError, double dt );  
+      
+      /*!
+        * \brief Initialize PID-gains and integral term limits:[iMax:iMin]-[I1:I2]
+        *
+        * \param P  The proportional gain.
+        * \param I  The integral gain. 
+        * \param D  The derivative gain.
+        * \param I1 The integral upper limit.
+        * \param I2 The integral lower limit.
+        */
+      void InitPid( double P,double I, double D, double I1, double I2 );
 
-    /*!
-      * \brief Set current command for this PID controller
-      */
-    void SetCurrentCmd(double cmd);
+      /*!
+        * \brief Set current command for this PID controller
+        */
+      void SetCurrentCmd(double cmd);
 
-    /*!
-      * \brief Return current command for this PID controller
-      */
-    double GetCurrentCmd();
+      /*!
+        * \brief Return current command for this PID controller
+        */
+      double GetCurrentCmd();
 
 
-  private:
-    double pErrorLast;      /**< Save position state for derivative state calculation. */
-    double dError;          /**< Derivative state. */
-    double iError;          /**< Integrator state. */    
-    double pGain;           /**< Proportional gain. */
-    double iGain;           /**< Integral gain. */
-    double dGain;           /**< Derivative gain. */
-    double iMax;            /**< Maximum allowable integrator state. */
-    double iMin;            /**< Minimum allowable integrator state. */
-    double currentCmd;      /**< Command to send to motor. */
-};
-
+    private:
+      double pErrorLast;      /**< Save position state for derivative state calculation. */
+      double dError;          /**< Derivative state. */
+      double iError;          /**< Integrator state. */    
+      double pGain;           /**< Proportional gain. */
+      double iGain;           /**< Integral gain. */
+      double dGain;           /**< Derivative gain. */
+      double iMax;            /**< Maximum allowable integrator state. */
+      double iMin;            /**< Minimum allowable integrator state. */
+      double currentCmd;      /**< Command to send to motor. */
+  };
+}
