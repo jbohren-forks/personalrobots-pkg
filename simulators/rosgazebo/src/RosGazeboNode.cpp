@@ -780,7 +780,7 @@ RosGazeboNode::Update()
                odomMsg.header.stamp.nsec);
 
   // FIXME: not implemented
-  tf.sendEuler(PR2::FRAMEID_HEAD_BASE,
+  tf.sendEuler(PR2::FRAMEID_HEAD_PAN_BASE,
                PR2::FRAMEID_TORSO,
                0.0,
                0.0,
@@ -792,7 +792,7 @@ RosGazeboNode::Update()
                odomMsg.header.stamp.nsec);
 
   // FIXME: not implemented
-  tf.sendEuler(PR2::FRAMEID_LASER_BLOCK,
+  tf.sendEuler(PR2::FRAMEID_HEAD_TILT_BASE,
                PR2::FRAMEID_TORSO,
                0.0,
                0.0,
@@ -816,7 +816,19 @@ RosGazeboNode::Update()
                odomMsg.header.stamp.nsec);
 
   // FIXME: not implemented
-  tf.sendEuler(PR2::FRAMEID_LASERBLOCK,
+  tf.sendEuler(PR2::FRAMEID_TILT_LASER_BLOCK,
+               PR2::FRAMEID_BASE,
+               0.035,
+               0.0,
+               0.26,
+               0.0,
+               0.0,
+               0.0,
+               odomMsg.header.stamp.sec,
+               odomMsg.header.stamp.nsec);
+
+  // FIXME: not implemented
+  tf.sendEuler(PR2::FRAMEID_BASE_LASER_BLOCK,
                PR2::FRAMEID_BASE,
                0.035,
                0.0,
