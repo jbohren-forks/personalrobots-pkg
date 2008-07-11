@@ -274,6 +274,7 @@ class URDF
 	}
 	
 	std::string              name;
+	std::string              flags;
 	std::vector<std::string> linkNames;
 	std::vector<Link*>       links;
 	std::vector<Link*>       linkRoots;

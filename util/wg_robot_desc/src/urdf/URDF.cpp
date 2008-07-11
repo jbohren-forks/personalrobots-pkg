@@ -201,7 +201,7 @@ void URDF::Link::print(FILE *out, std::string indent)
     visual->print(out, indent+ "  ");
     fprintf(out, "%s  - groups: ", indent.c_str());
     for (unsigned int i = 0 ; i < groups.size() ; ++i)
-	fprintf(out, "%s ", groups[i]->name.c_str());
+	fprintf(out, "%s (%s) ", groups[i]->name.c_str(), groups[i]->flags.c_str());
     fprintf(out, "\n");
     fprintf(out, "%s  - children links: ", indent.c_str());
     for (unsigned int i = 0 ; i < children.size() ; ++i)
@@ -1025,12 +1025,16 @@ bool URDF::parse(const TiXmlNode *node)
 			if (node->ValueStr() == "group" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 			{
 			    std::string group;
+			    std::string flags;
+			    
 			    for (const TiXmlAttribute *attr = node->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
+			    {
 				if (strcmp(attr->Name(), "name") == 0)
-				{
 				    group = attr->ValueStr();
-				    break;
-				}
+				else
+				    if (strcmp(attr->Name(), "flags") == 0)
+					flags = attr->ValueStr();
+			    }
 			    Group *g = NULL;
 			    if (m_groups.find(group) == m_groups.end())
 			    {
@@ -1040,7 +1044,10 @@ bool URDF::parse(const TiXmlNode *node)
 			    }
 			    else
 				g = m_groups[group];
-			    
+			    if (g->flags.empty())
+				g->flags = flags;
+			    else
+				g->flags += " " + flags;
 			    std::stringstream ss(node->FirstChild()->ValueStr());
 			    while (ss.good())
 			    {
