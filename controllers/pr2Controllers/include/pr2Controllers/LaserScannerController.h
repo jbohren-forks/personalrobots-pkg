@@ -17,7 +17,6 @@
 #include <iostream>
 
 #include <pr2Core/pr2Core.h>
-#include <libpr2HW/pr2HW.h>
 #include <genericControllers/Controller.h>
 #include <genericControllers/JointController.h>
 #include <math.h>
@@ -57,14 +56,6 @@ namespace CONTROLLER
       PR2::PR2_ERROR_CODE setProfile(double *&t, double *&x, int numElements);
 
       /*!
-        * \brief Set pitch angle of the pitching Hokuyo joint
-        * 
-        * pitch=0 means home position of horizontal scan.
-        *
-        */       
-      PR2::PR2_ERROR_CODE SetPosition(double pitch);
-
-      /*!
         * \brief Set parameters for this controller
         *
         * user can set maximum velocity
@@ -86,30 +77,49 @@ namespace CONTROLLER
       PR2::PR2_ERROR_CODE setParam(string label,double value);
       PR2::PR2_ERROR_CODE setParam(string label,string value);
   
-void SetSawtoothProfile(double period, double amplitude, double dt, double offset);
+        /*!
+        * \brief Set automatic profile to sawtooth
+        *
+        */
+
+      void SetSawtoothProfile(double period, double amplitude, double dt, double offset);
 
 
-      /*!
+       /*!
         * \brief Generate a sawtooth wave
         * 
         * 
         *
-        */       
-void GenerateSawtooth(double *&x, double *&t, double period, double amplitude, double dt, double offset, unsigned int numElements);
+        */      
+      void GenerateSawtooth(double *&x, double *&t, double period, double amplitude, double dt, double offset, unsigned int numElements);
 	
-      /*!
-        * \brief Generate a sine wave
+        /*!
+        * \brief Generate a sawtooth wave
         * 
         * 
         *
-        */       
- 
-void SetSinewaveProfile(double period, double amplitude, double dt, double offset);
+        */         
+      void SetSinewaveProfile(double period, double amplitude, double dt, double offset);
 
+   
 
-void GenerateSinewave(double *&x, double *&t, double period, double amplitude,double dt, double offset, unsigned int numElements);
- 
-void SetSquarewaveProfile(double period, double amplitude, double dt, double offset);
+        /*!
+        * \brief Generate a sawtooth wave
+        * 
+        * 
+        *
+        */         
+
+      void GenerateSinewave(double *&x, double *&t, double period, double amplitude,double dt, double offset, unsigned int numElements);
+      
+        /*!
+        * \brief Generate a sawtooth wave
+        * 
+        * 
+        *
+        */         
+
+      void SetSquarewaveProfile(double period, double amplitude, double dt, double offset);
 
 
       /*!
@@ -118,8 +128,7 @@ void SetSquarewaveProfile(double period, double amplitude, double dt, double off
         * 
         *
         */       
-void GenerateSquarewave(double *&x, double *&t, double period, double amplitude, double dt, double offset, unsigned int numElements);
-
+      void GenerateSquarewave(double *&x, double *&t, double period, double amplitude, double dt, double offset, unsigned int numElements);
 
 
       /*!
@@ -127,76 +136,92 @@ void GenerateSquarewave(double *&x, double *&t, double period, double amplitude,
       *
       * \param torque Torque command to issue
       */
+    
+      CONTROLLER::CONTROLLER_ERROR_CODE SetTorqueCmd(double torque);
 
-    CONTROLLER::CONTROLLER_ERROR_CODE SetTorqueCmd(double torque);
-
-	/*!
+	    /*!
       * \brief Fetch the latest user issued torque command 
       * 
       * \param double* torque Pointer to value to change 
       */ 
-    CONTROLLER::CONTROLLER_ERROR_CODE GetTorqueCmd(double *torque);
+      CONTROLLER::CONTROLLER_ERROR_CODE GetTorqueCmd(double *torque);
     
-    /*!
+      /*!
       * \brief Get the actual torque of the joint motor.
       * 
       * \param double* torque Pointer to value to change
       */  
-    CONTROLLER::CONTROLLER_ERROR_CODE GetTorqueAct(double *torque);
+      CONTROLLER::CONTROLLER_ERROR_CODE GetTorqueAct(double *torque);
 
-    /*!
+      /*!
       * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
       * 
-      * \param double pos Position command to issue
+      * \param double pos Position command to issue. Pos = 0 is home position of horizontal scan
       */       
-    CONTROLLER::CONTROLLER_ERROR_CODE SetPosCmd(double pos);
+      CONTROLLER::CONTROLLER_ERROR_CODE SetPosCmd(double pos);
     
-    /*!
+      /*!
       * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
       * \param double* pos Pointer to value to change
       */       
-    CONTROLLER::CONTROLLER_ERROR_CODE GetPosCmd(double *pos);
+      CONTROLLER::CONTROLLER_ERROR_CODE GetPosCmd(double *pos);
     
-    /*!
+      /*!
       * \brief Read the torque of the motor
       * \param double* pos Pointer to value to change
       */       
-    CONTROLLER::CONTROLLER_ERROR_CODE GetPosAct(double *pos);    
+      CONTROLLER::CONTROLLER_ERROR_CODE GetPosAct(double *pos);    
     
-    /*!
+      /*!
       * \brief Set velocity command to the joint to be issue next update
       * \param double vel Velocity to issue next command
       */
-    CONTROLLER::CONTROLLER_ERROR_CODE SetVelCmd(double vel);
+      CONTROLLER::CONTROLLER_ERROR_CODE SetVelCmd(double vel);
     
-    /*!
+      /*!
       * \brief Get latest velocity command to the joint
       * \param double* vel Pointer to value to change
       */
-    CONTROLLER::CONTROLLER_ERROR_CODE GetVelCmd(double *vel);
+      CONTROLLER::CONTROLLER_ERROR_CODE GetVelCmd(double *vel);
     
-    /*!
+      /*!
       * \brief Get actual velocity of the joint
       * \param double* vel Pointer to value to change
       */
-    CONTROLLER::CONTROLLER_ERROR_CODE GetVelAct(double *vel);
+      CONTROLLER::CONTROLLER_ERROR_CODE GetVelAct(double *vel);
+      
+        /*!
+      * \brief Allow controller to send commands
+      *      
+      */
+      void EnableController(void);
 
-    CONTROLLER::CONTROLLER_CONTROL_MODE GetMode(void);
+        /*!
+      * \brief Shut down controller.
+      * 
+      *       
+      */
+      void DisableController(void);
+      
 
-    void EnableProfile();
+        /*!
+      * \brief Return controller mode
+      * 
+      */
+    
+      CONTROLLER::CONTROLLER_CONTROL_MODE GetMode(void);
 
-    void DisableProfile();
-    private:
+        private:
+  
+      CONTROLLER::CONTROLLER_CONTROL_MODE controlMode; /**Allow different control modes for hokuyo>*/
 
-	CONTROLLER::CONTROLLER_CONTROL_MODE controlMode; /**Allow different control modes for hokuyo>*/
-
+      string name; /**<Namespace identifier for ROS>*/      
 
       double* profileX; /**<Contains locations for profile>*/
       double* profileT; /**<Contains target times for profile>*/
       int profileIndex; /**<Track location in profile>*/
       int profileLength; /**<Number of points in one cycle>*/
 
-      bool automaticProfile; //**<Indicate whether we desired to follow a profile>*/
       double lastCycleStart; //**<Start of the last cycle>*/
 
       CONTROLLER::JointController lowerControl; /**< Lower level control done by JointController>*/
@@ -204,7 +229,6 @@ void GenerateSquarewave(double *&x, double *&t, double period, double amplitude,
       double cmdPos; /**<Last commanded position>*/
       double cmdVel; /**<Last commanded velocity>*/
       double cmdTorque; /**<Last commanded torque>*/
-
   };
 }
 
