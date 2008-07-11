@@ -41,6 +41,7 @@
 #include <newmat10/newmatio.h>
 #include <pthread.h>
 
+
 namespace libTF
 {
   /** \brief A class used to store and do basic minipulations of 3D transformations
