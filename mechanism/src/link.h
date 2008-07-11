@@ -25,9 +25,15 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
+#ifndef LINK_H
+#define LINK_H
+
+#include "joint.h"
 
 class Link{
   char *name;
   //Pointer to KDL link
   Joint *joint;
 };
+
+#endif

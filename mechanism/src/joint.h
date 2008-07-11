@@ -25,8 +25,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
+#ifndef JOINT_H
+#define JOINT_H
 
 class Joint{
+  public:
+
+  void enforceLimits();
+
   char *name;
   int type;
 
@@ -45,3 +51,5 @@ class Joint{
   double effortLimit;
   double velocityLimit;
 };
+
+#endif

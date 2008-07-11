@@ -30,15 +30,14 @@
 
 #include "hardware_interface.h"
 #include "robot.h"
+#include "genericControllers/Controller.h"
 #include "rosthread/mutex.h"
 #include <map>
 using std::map;
+using CONTROLLER::Controller;
 
 //Base requirements for a piece of code that will control a full mechanism
 const int MAX_NUM_CONTROLLERS = 1000;
-
-typedef class Controller{
-};
 
 typedef Controller*(*ControllerAllocationFunc)(const char *);
 

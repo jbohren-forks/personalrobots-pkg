@@ -26,13 +26,19 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-class Transmission(){
+#ifndef TRANSMISSION_H
+#define TRANSMISSION_H
+
+#include "joint.h"
+#include "hardware_interface.h"
+
+class Transmission{
   public:
-    void propagatePositions(); //Use encoder data to fill out joint position and velocities
-    void propagateEfforts(); //Use commanded joint efforts to fill out commanded motor currents
+    void propagatePosition(); //Use encoder data to fill out joint position and velocities
+    void propagateEffort(); //Use commanded joint efforts to fill out commanded motor currents
 };
 
-class SimpleTransmission : public Transmision{
+class SimpleTransmission : public Transmission{
   public:
     Actuator *actuator;
     Joint *joint;
@@ -50,3 +56,5 @@ class NonlinearTransmission : public Transmission{
   Joint *joint;
   //Lookup table
 };
+
+#endif

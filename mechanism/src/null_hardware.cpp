@@ -35,6 +35,7 @@
 NullHardware::NullHardware(){
   //Read actuators.xml and initialize hardware
   int numActuators = 10;
+  
   HardwareInterface *hw = new HardwareInterface(numActuators);
 
   controller = new MechanismControl(hw);

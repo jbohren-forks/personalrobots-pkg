@@ -37,7 +37,7 @@
 
 class Robot{
   public:
-  Robot(char *namespace);
+  Robot(char *ns);
   ~Robot();
   char *name;
   Link *link;

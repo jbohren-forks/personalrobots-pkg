@@ -32,7 +32,7 @@ MechanismControl::MechanismControl(HardwareInterface *hw){
   this->hw = hw;
   //Needs to learn pr2.xml filename or get it from param server
   //Create robot modeli
-  r = new Robot();
+  r = new Robot("robot"); //Should actually be name-space
   //Set up transmissions, joints, and links
 
   for(int i = 0; i < MAX_NUM_CONTROLLERS; i++){
