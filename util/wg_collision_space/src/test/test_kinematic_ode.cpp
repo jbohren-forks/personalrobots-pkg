@@ -128,9 +128,10 @@ int main(int argc, char **argv)
     
     double *param = new double[r->stateDimension];
     for (unsigned int i = 0 ; i < r->stateDimension ; ++i)
-	param[i] = 0.0;
-    delete[] param;
+	param[i] = 0.0;    
     r->computeTransforms(param);
+    delete[] param;
+    
     km.updateCollisionPositions();
     
     robotSpace = km.getODESpace();
