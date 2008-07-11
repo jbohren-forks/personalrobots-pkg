@@ -237,12 +237,12 @@ class WavefrontNode: public ros::node
                       wavefront_player::NavigateToPoint::response &res);
     // Compare two poses, tell whether they are close enough to be
     // considered the same, with tolerance
-    static const double _xy_tolerance = 1e-3;
-    static const double _th_tolerance = 1e-3;
     bool comparePoses(double x1, double y1, double a1,
                       double x2, double y2, double a2);
 };
 
+#define _xy_tolerance 1e-3
+#define _th_tolerance 1e-3
 #define USAGE "USAGE: wavefront_player"
 
 int
