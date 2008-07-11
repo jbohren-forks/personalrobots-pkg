@@ -1,5 +1,5 @@
 
-
+#include <math.h>
 
 #define FROM_DEGREES(degrees)	(((double)(degrees))/180*M_PI)
 /*
@@ -9,10 +9,7 @@
  * It takes and returns native units.
  */
 
-double normalize_angle_positive(double angle)
-{
-  return fmod(fmod(angle, FROM_DEGREES(360))+FROM_DEGREES(360), FROM_DEGREES(360));
-}
+double normalize_angle_positive(double angle);
 /*
  * normalize
  *
@@ -21,13 +18,8 @@ double normalize_angle_positive(double angle)
  *
  */
 
-double normalize_angle(double angle)
-{
-  double a=normalize_angle_positive(angle);
-  if (a>FROM_DEGREES(180))
-      a-=FROM_DEGREES(360);
-  return(a);
-}
+double normalize_angle(double angle);
+
 /*
  * shortest_angular_distance
  *
@@ -40,18 +32,7 @@ double normalize_angle(double angle)
  * to "from" will always get you an equivelent angle to "to".
  */
 
-double shortest_angular_distance(double from, double to)
-{
-  double result;
-  result=normalize_angle_positive(
-      normalize_angle_positive(to) - normalize_angle_positive(from));
-
-  if ( result > FROM_DEGREES(180) ) {  // If the result > 180,
-                                       // It's shorter the other way.
-      result=-(FROM_DEGREES(360)-result);   
-  }
-  return normalize_angle(result);
-}
+double shortest_angular_distance(double from, double to);
 
 
 
