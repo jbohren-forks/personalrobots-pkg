@@ -7,7 +7,7 @@
   <depend package="roslaunch"/>
   <depend package="map_server"/>
   <depend package="amcl_player"/>
-  <depend package="rosgazebo"/>
+  <depend package="pr2MechCon"/>
   <depend package="wavefront_player"/>
   <depend package="teleop_base_keyboard"/>
 </package>
