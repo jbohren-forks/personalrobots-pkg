@@ -32,39 +32,36 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef KINEMATIC_ENVIRONMENT_MODEL_ODE_
-#define KINEMATIC_ENVIRONMENT_MODEL_ODE_
+#ifndef KINEMATIC_ENVIRONMENT_MODEL_
+#define KINEMATIC_ENVIRONMENT_MODEL_
 
-#include <collisionspace/environment.h>
-#include <collisionspace/kinematicODE.h>
+#include <robotmodels/kinematic.h>
 
 /** @htmlinclude ../../manifest.html
 
-    A class describing an environment for a kinematic robot using ODE */
+    A class describing an environment for a kinematic robot */
 
-class EnvironmentModelODE : public EnvironmentModel
+class EnvironmentModel
 {
  public:
     
-    EnvironmentModelODE(void) : EnvironmentModel()
+    EnvironmentModel(void)
     {
-	model = dynamic_cast<KinematicModel*>(&modelODE);
+	model = NULL;
     }
     
-    ~EnvironmentModelODE(void)
+    virtual ~EnvironmentModel(void)
     {
     }
-
+    
     /** Check if the model is in collision */
-    virtual bool isCollision(void);
+    virtual bool isCollision(void) = 0;
     
     /** Add a point cloud to the collision space */
-    virtual void addPointCloud(void); 
+    virtual void addPointCloud(void) = 0;    
 
- protected:
-
-    KinematicModelODE modelODE;
-    
+    KinematicModel *model;    
+        
 };
 
 #endif

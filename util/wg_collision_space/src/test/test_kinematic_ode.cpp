@@ -118,7 +118,7 @@ int main(int argc, char **argv)
     
     URDF model;
     model.load("/u/isucan/ros/ros-pkg/drivers/robot/pr2/pr2Core/include/pr2Core/pr2.xml");
-        
+    
     KinematicModelODE km;
     km.build(model, "leftArm");
     printf("number of robots = %d\n", km.getRobotCount());

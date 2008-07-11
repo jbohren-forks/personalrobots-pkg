@@ -35,25 +35,35 @@
 #ifndef KINEMATIC_ENVIRONMENT_MODEL_SOLID_
 #define KINEMATIC_ENVIRONMENT_MODEL_SOLID_
 
+#include <collisionspace/environment.h>
 #include <collisionspace/kinematicSOLID.h>
 
 /** @htmlinclude ../../manifest.html
 
     A class describing an environment for a kinematic robot using SOLID */
 
-class EnvironmentModelSOLID
+class EnvironmentModelSOLID : public EnvironmentModel
 {
  public:
     
-    EnvironmentModelSOLID(void)
+    EnvironmentModelSOLID(void) : EnvironmentModel()
     {
+	model = dynamic_cast<KinematicModel*>(&modelSOLID);
     }
     
     ~EnvironmentModelSOLID(void)
     {
     }
     
-    KinematicModelSOLID model;    
+    /** Check if the model is in collision */
+    virtual bool isCollision(void);
+    
+    /** Add a point cloud to the collision space */
+    virtual void addPointCloud(void); 
+    
+ protected:
+    
+    KinematicModelSOLID modelSOLID;    
     
 };
 
