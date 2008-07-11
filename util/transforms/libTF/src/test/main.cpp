@@ -188,9 +188,18 @@ int main(void)
           std::cout << "transformPose2D(0,in): Caught " << ex.what()<<std::endl;
         }
 
-
+      libTF::TFEulerYPR ypr_in;
+      ypr_in.yaw = 0;
+      ypr_in.pitch = 0;
+      ypr_in.roll = 0;
+      ypr_in.time = atime;
+      ypr_in.frame = 1;
+      std::cout <<"YPR in:"<< ypr_in.yaw<<","<<ypr_in.pitch <<"," <<ypr_in.roll<<std::endl;
+      
+      libTF::TFEulerYPR ypr_out = mTR.transformEulerYPR(2, ypr_in);
+      std::cout <<"YPR out:"<< ypr_out.yaw<<","<<ypr_out.pitch <<"," <<ypr_out.roll<<std::endl;
+      
     }
-  
 
   std::cout <<"Congratulations! You reached the end of the test program without errors." <<std::endl;
   
