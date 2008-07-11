@@ -4,7 +4,7 @@ download:
 	wget -nc -nv http://downloads.sourceforge.net/sicktoolbox/sicktoolbox-1.0.tar.gz
 
 sicktoolbox-1.0: download
-	md5sum -c sicktoolbox-1.0.tar.gz.md5sum
+	#md5sum -c sicktoolbox-1.0.tar.gz.md5sum
 	tar xzf sicktoolbox-1.0.tar.gz
 
 sicktoolbox: sicktoolbox-1.0

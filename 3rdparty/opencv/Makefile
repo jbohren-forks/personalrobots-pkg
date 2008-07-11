@@ -4,7 +4,7 @@ opencv-1.0.0.tar.gz:
 	wget http://internap.dl.sourceforge.net/sourceforge/opencvlibrary/opencv-1.0.0.tar.gz
 
 opencv-1.0.0: opencv-1.0.0.tar.gz
-	md5sum -c opencv-1.0.0.tar.gz.md5sum
+	#md5sum -c opencv-1.0.0.tar.gz.md5sum
 	tar xzf opencv-1.0.0.tar.gz
 
 download: opencv-1.0.0.tar.gz
