@@ -6,6 +6,5 @@
   <depend package="std_srvs"/>
   <depend package="sdlgl"/>
   <depend package="rosTF"/>
-  <depend package="rostime"/>
   <depend package="sdl_image"/>
 </package>

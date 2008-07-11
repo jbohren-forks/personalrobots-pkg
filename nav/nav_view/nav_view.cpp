@@ -98,7 +98,6 @@ Publishes to (name / type):
 // roscpp and friends
 #include "ros/node.h"
 #include "rosTF/rosTF.h"
-#include "rostime/clock.h"
 
 // messages and services
 #include "std_msgs/ParticleCloud2D.h"
@@ -129,7 +128,6 @@ public:
   ros::thread::mutex lock;
 
   rosTFClient tf;
-  ros::time::clock myClock;
 
   NavView() : ros::node("nav_view",ros::node::DONT_HANDLE_SIGINT),
 	      view_scale(10), view_x(0), view_y(0),
