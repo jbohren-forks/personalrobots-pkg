@@ -22,6 +22,8 @@ if ! $(exec_trex_READY) {
 		SubDirHdrs $(PR_ROOT) 3rdparty newmat10 newmat ;
 		SubDirHdrs $(PR_ROOT) util transforms namelookup srv cpp ;
    		SubDirHdrs $(PR_ROOT) util transforms namelookup include ;
+   		SubDirHdrs $(PR_ROOT) util kinematics libKDL include ;
+   		SubDirHdrs $(PR_ROOT) drivers robot pr2 pr2Core include ;
 
 		# GNU Library include directories
 		SubDirHdrs / usr include gtk-2.0 ;
@@ -30,15 +32,23 @@ if ! $(exec_trex_READY) {
 
 		# PLASMA & TREX libraries found here
 		LINKFLAGS = $(LINKFLAGS) -Wl,-rpath,$(PLASMA_HOME)/build/lib ;
+		
 	}
 
-	ModuleMain exec_trex : Executive.cc RCSVelAdapter.cc RCSArmAdapter.cc ROSNode.cc Logger.cc
-	LogClock.cc CalcCommandConstraintPlayback.cc CalcGlobalPathConstraintPlayback.cc 
-	CalcCommandConstraint.cc Playback.cc CalcGlobalPathConstraint.cc WavefrontPlanner.cc 
-	GoalManager.cc map_helpers.cc ExecDefs.cc Components.cc pr2.model.o : TREX : exec_trex ;
+	ModuleMain exec_trex : Executive.cc RCSVelAdapter.cc RCSArmAdapter.cc
+	ROSNode.cc Logger.cc LogClock.cc CalcCommandConstraintPlayback.cc
+	CalcGlobalPathConstraintPlayback.cc CalcCommandConstraint.cc Playback.cc
+	CalcGlobalPathConstraint.cc CalcArmInverseKinematicsConstraint.cc
+	CalcGraspPositionConstraint.cc CalcAngleDiffConstraint.cc GoalManager.cc
+	WavefrontPlanner.cc map_helpers.cc ExecDefs.cc Components.cc pr2.model.o
+	: TREX : exec_trex ;
 	
 	Depends exec_trex : exec_inputs ;
 	ModuleMain logger : MessageLogger.cc ExecDefs.o : TREX : logger ;
+	ModuleMain testCalcArmInverseKinematicsConstraint :
+	testCalcArmInverseKinematicsConstraint.cc CalcArmInverseKinematicsConstraint.cc Logger.cc LogClock.cc : TREX : testCalcArmInverseKinematicsConstraint
+	;
+
 
  	# Input file for exec
 	local TestInputs = 

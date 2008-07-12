@@ -11,6 +11,9 @@
 #include "Agent.hh"
 #include "CalcCommandConstraint.hh"
 #include "CalcGlobalPathConstraint.hh"
+#include "CalcArmInverseKinematicsConstraint.hh"
+#include "CalcGraspPositionConstraint.hh"
+#include "CalcAngleDiffConstraint.hh"
 #include "CalcCommandConstraintPlayback.hh"
 #include "CalcGlobalPathConstraintPlayback.hh"
 
@@ -39,6 +42,9 @@ namespace TREX{
     } else {
       REGISTER_CONSTRAINT(CalcCommandConstraint, "calcCommand", "Default");
       REGISTER_CONSTRAINT(CalcGlobalPathConstraint, "calcGlobalPath", "Default");
+      REGISTER_CONSTRAINT(CalcArmInverseKinematicsConstraint, "calcArmInverseKinematics", "Default");
+      REGISTER_CONSTRAINT(CalcGraspPositionConstraint, "calcGraspPosition", "Default");
+      REGISTER_CONSTRAINT(CalcAngleDiffConstraint, "calcAngleDiff", "Default");
     }
 
     // Solver Components

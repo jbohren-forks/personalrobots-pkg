@@ -39,6 +39,7 @@ typedef int [0 5] PRIORITY; /* Used to assign a priority to goals */
 typedef float [0.0 +inff] PFLOAT;
 
 float POSITION_ERROR = 1.0;
+float ANGLE_ERROR = .2;
 
 float NOMINAL_SPEED = 1.0;
 
@@ -80,18 +81,17 @@ class WaypointController extends Behavior {
   predicate Inactive{
     PFLOAT x;
     PFLOAT y;
+    float th;
     PFLOAT desX;
     PFLOAT desY;
-
-    // Require actual and desired values to be within some tolerance
-    addEq(x, [-1.0, 1.0], desX);
-    addEq(y, [-1.0, 1.0], desY);
+    float desTh;
   }
 
   // Parameters to get to the target
   predicate Active{
     PFLOAT x;
     PFLOAT y;
+    float th;
   }
 
   WaypointController(Mode _mode){
@@ -131,7 +131,22 @@ class CleanBehavior extends Behavior {
   predicate Active{
     PFLOAT x;
     PFLOAT y;
+    float th;
     PRIORITY priority; // 0 is highest priority
+
+    //will eventually take a target location and then calculate these
+    float rot1_1;
+    float rot1_2;
+    float rot1_3;
+    float rot2_1;
+    float rot2_2;
+    float rot2_3;
+    float rot3_1;
+    float rot3_2;
+    float rot3_3;
+    float trans_1;
+    float trans_2;
+    float trans_3;
   }
 
   CleanBehavior(Mode _mode){
@@ -157,8 +172,9 @@ class Actions extends AgentActions{
   predicate SetVelocityCommands{
     PFLOAT goal_x;
     PFLOAT goal_y;
-    // Constraint to be in the mission
-    //precedes(end, missionEnd);
+    float goal_th;
+    // Controller will operate at 1 Hz (cycles per tick)
+    eq(duration, 1);
   }
 
   /**

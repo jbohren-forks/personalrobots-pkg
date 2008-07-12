@@ -15,4 +15,7 @@
   <depend package="teleop_base_keyboard" />
   <depend package="trex" />
   <depend package="rosTF" />
+  <depend package="pr2Core" />
+  <depend package="libpr2API" />
+  <depend package="libKDL" />
 </package>

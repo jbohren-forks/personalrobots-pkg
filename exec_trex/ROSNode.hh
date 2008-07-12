@@ -4,6 +4,9 @@
 #include "ExecDefs.hh"
 #include "Observer.hh"
 
+// roscpp
+#include <ros/node.h>
+
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/LaserScan.h>
 #include <pthread.h>
@@ -84,7 +87,6 @@ namespace TREX{
      */
     bool isInitialized() const;
 
-
   private:
     
     /**
@@ -121,12 +123,11 @@ namespace TREX{
     ROSNodeId m_id;
     unsigned int m_refCount;
 
-    
     bool m_initialized;
     PlannerState m_state;
 
     rosTFClient tf;
-    
+        
     // Map update paramters (for adding obstacles)
     double laser_maxrange;
     ros::Duration laser_buffer_time;

@@ -19,7 +19,8 @@
 #include "LogManager.hh"
 
 using namespace std_msgs;
-static const double AllowableArmError = .12;
+static const double AllowableArmError = .05;
+static const double AllowableGraspError = .01;
 
 namespace TREX {
   ROSNodeId ROSNode::s_id;
@@ -47,14 +48,14 @@ namespace TREX {
    * at the top to publish Execution Status updates and at the bottom to dispatch 
    * commands to the RCS and receive updates
    */
-  ROSNode::ROSNode() : ros::node("trex"), m_id(this),
-			   m_initialized(1), 
-			   m_state(UNDEFINED),
-			   tf(*this, true, 200000000ULL), //nanoseconds
-			   laser_maxrange(4.0),
-			   laser_buffer_time(3.0) {
-
-    
+  ROSNode::ROSNode() : ros::node("trex"), 
+		       m_id(this),
+		       m_initialized(1), 
+		       m_state(UNDEFINED),
+		       tf(*this, true), //nanoseconds
+		       laser_maxrange(4.0),
+		       laser_buffer_time(3.0)
+  {
 
     debugMsg("ROSNode:Create", "ROSNode created.");
     s_id = m_id; m_refCount = 0;
@@ -311,7 +312,7 @@ namespace TREX {
     try {
       global_pose = this->tf.transformPose2D(FRAMEID_MAP, robotPose);
 
-      //debugMsg("ROSNode::VS", ""New global pose x " << global_pose.x << " y " << global_pose.y);
+      debugMsg("ROSNode::VS", "New global pose x " << global_pose.x << " y " << global_pose.y);
 
     } catch(libTF::TransformReference::LookupException& ex) {
       debugMsg("ROSNode::VS", "no global->local Tx yet");
@@ -432,7 +433,8 @@ namespace TREX {
 	fabs(leftArmPosMsg.elbowAngle-_lastLeftArmGoal.elbowAngle) < AllowableArmError &&
 	fabs(leftArmPosMsg.forearmRollAngle-_lastLeftArmGoal.forearmRollAngle) < AllowableArmError &&
 	fabs(leftArmPosMsg.wristPitchAngle-_lastLeftArmGoal.wristPitchAngle) < AllowableArmError &&
-	fabs(leftArmPosMsg.wristRollAngle-_lastLeftArmGoal.wristRollAngle) < AllowableArmError)) {
+	fabs(leftArmPosMsg.wristRollAngle-_lastLeftArmGoal.wristRollAngle) < AllowableArmError &&
+	fabs(leftArmPosMsg.gripperGapCmd-_lastLeftArmGoal.gripperGapCmd) < AllowableGraspError)) {
       
       std::cout << "Pushing left arm inactive observation.\n";
 
@@ -464,8 +466,8 @@ namespace TREX {
 	fabs(rightArmPosMsg.elbowAngle-_lastRightArmGoal.elbowAngle) < AllowableArmError &&
 	fabs(rightArmPosMsg.forearmRollAngle-_lastRightArmGoal.forearmRollAngle) < AllowableArmError &&
 	fabs(rightArmPosMsg.wristPitchAngle-_lastRightArmGoal.wristPitchAngle) < AllowableArmError &&
-	fabs(rightArmPosMsg.wristRollAngle-_lastRightArmGoal.wristRollAngle) < AllowableArmError)) {
-	 
+	fabs(rightArmPosMsg.wristRollAngle-_lastRightArmGoal.wristRollAngle) < AllowableArmError &&
+	fabs(rightArmPosMsg.gripperGapCmd-_lastRightArmGoal.gripperGapCmd) < AllowableGraspError)) {
       std::cout << "Pushing right arm inactive observation.\n";
 
       obs = new ObservationByValue("rac", "ArmController.Inactive");

@@ -28,6 +28,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+float OPEN_GRIPPER_GAP = 0.10;
+float OPEN_GRIPPER_FORCE = 100.0;
+
+float CLOSED_GRIPPER_GAP = 0.03;
+float CLOSED_GRIPPER_FORCE = 100.0;
+
+
 
 /**
  * All behaviors will oscillate between active and inactive
@@ -49,11 +56,14 @@ Behavior::Active{
 CleanBehavior::Active{
   // If the target is bound then generate behavior to accomplish goal
   if(x){
-    if(y){	 
-      // While cleaning, we expect to be at the desired location.
-      contained_by(WaypointController.Inactive wp);
-      eq(wp.desX, x);
-      eq(wp.desY, y);
+    if(y) {
+      if(th) {	 
+	// While cleaning, we expect to be at the desired location.
+	contained_by(WaypointController.Inactive wp);
+	eq(wp.desX, x);
+	eq(wp.desY, y);
+	eq(wp.desTh, th);
+      }
     }
   }
 
@@ -63,56 +73,101 @@ CleanBehavior::Active{
 
   contains(ArmController.Inactive f_racs);
   contains(ArmController.Inactive s_racs);
-  contains(ArmController.Inactive f_lacs);
-  contains(ArmController.Inactive s_lacs);
+  contains(ArmController.Inactive grip_racs);
+  //contains(ArmController.Inactive f_lacs);
+  //contains(ArmController.Inactive s_lacs);
 
   f_racs before s_racs;
-  f_lacs before s_lacs;
+  s_racs before grip_racs;
+  //f_lacs before s_lacs;
 
   eq(f_racs.object._isLeft, false);
   eq(s_racs.object._isLeft, false);
-  eq(f_lacs.object._isLeft, true);
-  eq(s_lacs.object._isLeft, true);
+  eq(grip_racs.object._isLeft, false);
+  //eq(f_lacs.object._isLeft, true);
+  //eq(s_lacs.object._isLeft, true);
 
-  eq(f_racs.desTurretAngle,-.9);
-  eq(f_racs.desShoulderLiftAngle,-.15);
-  eq(f_racs.desUpperarmRollAngle,0);
-  eq(f_racs.desElbowAngle,0);
-  eq(f_racs.desForearmRollAngle,0);
-  eq(f_racs.desWristPitchAngle,0);
+  eq(f_racs.desTurretAngle,.1);
+  eq(f_racs.desShoulderLiftAngle,-1);
+  eq(f_racs.desUpperarmRollAngle,0.3);
+  eq(f_racs.desElbowAngle,0.3);
+  eq(f_racs.desForearmRollAngle,0.2);
+  eq(f_racs.desWristPitchAngle,0.5);
   eq(f_racs.desWristRollAngle,0);
-  eq(f_racs.desGripperForceCmd,0);
-  eq(f_racs.desGripperGapCmd,0);
+  eq(f_racs.desGripperForceCmd,OPEN_GRIPPER_FORCE);
+  eq(f_racs.desGripperGapCmd,OPEN_GRIPPER_GAP);
 
-  eq(f_lacs.desTurretAngle,.9);
-  eq(f_lacs.desShoulderLiftAngle,-.15);
-  eq(f_lacs.desUpperarmRollAngle,0);
-  eq(f_lacs.desElbowAngle,0);
-  eq(f_lacs.desForearmRollAngle,0);
-  eq(f_lacs.desWristPitchAngle,0);
-  eq(f_lacs.desWristRollAngle,0);
-  eq(f_lacs.desGripperForceCmd,0);
-  eq(f_lacs.desGripperGapCmd,0);
+ //  eq(f_lacs.desTurretAngle,0);
+//   eq(f_lacs.desShoulderLiftAngle,-.4);
+//   eq(f_lacs.desUpperarmRollAngle,0);
+//   eq(f_lacs.desElbowAngle,0);
+//   eq(f_lacs.desForearmRollAngle,0);
+//   eq(f_lacs.desWristPitchAngle,0);
+//   eq(f_lacs.desWristRollAngle,0);
+//   eq(f_lacs.desGripperForceCmd,0);
+//   eq(f_lacs.desGripperGapCmd,0);
 
-  eq(s_racs.desTurretAngle,0);
-  eq(s_racs.desShoulderLiftAngle,0);
-  eq(s_racs.desUpperarmRollAngle,0);
-  eq(s_racs.desElbowAngle,0);
-  eq(s_racs.desForearmRollAngle,0);
-  eq(s_racs.desWristPitchAngle,0);
-  eq(s_racs.desWristRollAngle,0);
-  eq(s_racs.desGripperForceCmd,0);
-  eq(s_racs.desGripperGapCmd,0);
+  if(start) {
 
-  eq(s_lacs.desTurretAngle,0);
-  eq(s_lacs.desShoulderLiftAngle,0);
-  eq(s_lacs.desUpperarmRollAngle,0);
-  eq(s_lacs.desElbowAngle,0);
-  eq(s_lacs.desForearmRollAngle,0);
-  eq(s_lacs.desWristPitchAngle,0);
-  eq(s_lacs.desWristRollAngle,0);
-  eq(s_lacs.desGripperForceCmd,0);
-  eq(s_lacs.desGripperGapCmd,0);
+    bool graspPosOk;
+    
+    calcGraspPosition(graspPosOk, 
+		      0.0, 0.0, 0.0,
+		      rot1_1, rot1_2, rot1_3,
+		      rot2_1, rot2_2, rot2_3,
+		      rot3_1, rot3_2, rot3_3,
+		      trans_1, trans_2, trans_3);
+    if(graspPosOk == true) {
+      bool invKinOk;
+      
+      //now we have to figure out to get there
+      calcArmInverseKinematics(invKinOk,
+			       rot1_1, rot1_2, rot1_3,
+			       rot2_1, rot2_2, rot2_3,
+			       rot3_1, rot3_2, rot3_3,
+			       trans_1, trans_2, trans_3,
+			       s_racs.desTurretAngle,
+			       s_racs.desShoulderLiftAngle,
+			       s_racs.desUpperarmRollAngle,
+			       s_racs.desElbowAngle,
+			       s_racs.desForearmRollAngle,
+			       s_racs.desWristPitchAngle,
+			       s_racs.desWristRollAngle);
+      eq(s_racs.desGripperForceCmd,OPEN_GRIPPER_FORCE);
+      eq(s_racs.desGripperGapCmd,OPEN_GRIPPER_GAP);
+    }
+    eq(s_racs.desTurretAngle,grip_racs.desTurretAngle);
+    eq(s_racs.desShoulderLiftAngle,grip_racs.desShoulderLiftAngle);
+    eq(s_racs.desUpperarmRollAngle,grip_racs.desUpperarmRollAngle);
+    eq(s_racs.desElbowAngle,grip_racs.desElbowAngle);
+    eq(s_racs.desForearmRollAngle,grip_racs.desForearmRollAngle);
+    eq(s_racs.desWristPitchAngle,grip_racs.desWristPitchAngle);
+    eq(s_racs.desWristRollAngle, grip_racs.desWristRollAngle);
+    eq(grip_racs.desGripperForceCmd, CLOSED_GRIPPER_FORCE);
+    eq(grip_racs.desGripperGapCmd, CLOSED_GRIPPER_GAP);  
+  }
+				     
+  //TODO - need to actually close the gripper last
+		    
+ //  eq(s_racs.desTurretAngle,0);
+//   eq(s_racs.desShoulderLiftAngle,0);
+//   eq(s_racs.desUpperarmRollAngle,0);
+//   eq(s_racs.desElbowAngle,0);
+//   eq(s_racs.desForearmRollAngle,0);
+//   eq(s_racs.desWristPitchAngle,0);
+//   eq(s_racs.desWristRollAngle,0);
+//   eq(s_racs.desGripperForceCmd,0);
+//   eq(s_racs.desGripperGapCmd,0);
+
+//   eq(s_lacs.desTurretAngle,0);
+//   eq(s_lacs.desShoulderLiftAngle,0);
+//   eq(s_lacs.desUpperarmRollAngle,0);
+//   eq(s_lacs.desElbowAngle,0);
+//   eq(s_lacs.desForearmRollAngle,0);
+//   eq(s_lacs.desWristPitchAngle,0);
+//   eq(s_lacs.desWristRollAngle,0);
+//   eq(s_lacs.desGripperForceCmd,0);
+//   eq(s_lacs.desGripperGapCmd,0);
 
  //  ArmController nacs;
   
@@ -138,18 +193,32 @@ WaypointController::Inactive {
   // If desired values are set, then they are used to bind parameters of the
   // predecessor to accomplish the desired position.
   if(desX){
-    if(desY){
-      eq(p.x, desX);
-      eq(p.y, desY);
+    if(desY) {
+      if(desTh) {
+	eq(p.x, desX);
+	eq(p.y, desY);
+	eq(p.th, desTh);
+      }
     }
   }
 
+  // Require actual and desired values to be within some tolerance
+  addEq(x, [-1.5, 1.5], desX);
+  addEq(y, [-1.5, 1.5], desY);
+  //no theta test for now
+  float dt;
+  calcAngleDiff(dt, th, desTh);
+  addEq(dt, [-.25, .25], 0);
+
+  //calcAngleDiff(dt, currentPos.th, goal_th);
+  
   // We will bind position values based on vehicle state timeline. We wait till the start time
   // is bound before linking in to the vehicle state.
   if(start){
     starts(VehicleState.Holds pos);
     eq(x, pos.x);
     eq(y, pos.y);
+    eq(th, pos.th);
 
     contains(Actions.StopTheBase);
   }
@@ -174,6 +243,7 @@ WaypointController::Active {
       startEvent before (Actions.SetVelocityCommands vc);
       eq(vc.goal_x, x);
       eq(vc.goal_y, y);
+      eq(vc.goal_th, th);
       contains vc;
     }
 
@@ -190,28 +260,48 @@ WaypointController::Active {
   eq(f_racs.object._isLeft, false);
   eq(f_lacs.object._isLeft, true);
 
-  eq(f_racs.desTurretAngle,-.9);
-  eq(f_racs.desShoulderLiftAngle,1.22);
+//   eq(f_racs.desTurretAngle,-.9);
+//   eq(f_racs.desShoulderLiftAngle,1.22);
+//   eq(f_racs.desUpperarmRollAngle,0);
+//   eq(f_racs.desElbowAngle,-.45);
+//   eq(f_racs.desForearmRollAngle,0);
+//   eq(f_racs.desWristPitchAngle,0);
+//   eq(f_racs.desWristRollAngle,0);
+//   eq(f_racs.desGripperForceCmd,0);
+//   eq(f_racs.desGripperGapCmd,0);
+
+//   eq(f_lacs.desTurretAngle,.9);
+//   eq(f_lacs.desShoulderLiftAngle,1.22);
+//   eq(f_lacs.desUpperarmRollAngle,0);
+//   eq(f_lacs.desElbowAngle,-.45);
+//   eq(f_lacs.desForearmRollAngle,0);
+//   eq(f_lacs.desWristPitchAngle,0);
+//   eq(f_lacs.desWristRollAngle,0);
+//   eq(f_lacs.desGripperForceCmd,0);
+//   eq(f_lacs.desGripperGapCmd,0);
+
+  eq(f_racs.desTurretAngle,0);
+  eq(f_racs.desShoulderLiftAngle,0);
   eq(f_racs.desUpperarmRollAngle,0);
-  eq(f_racs.desElbowAngle,-.45);
+  eq(f_racs.desElbowAngle,0);
   eq(f_racs.desForearmRollAngle,0);
   eq(f_racs.desWristPitchAngle,0);
   eq(f_racs.desWristRollAngle,0);
-  eq(f_racs.desGripperForceCmd,0);
-  eq(f_racs.desGripperGapCmd,0);
+  eq(f_racs.desGripperForceCmd,CLOSED_GRIPPER_FORCE);
+  eq(f_racs.desGripperGapCmd,CLOSED_GRIPPER_GAP);
 
-  eq(f_lacs.desTurretAngle,.9);
-  eq(f_lacs.desShoulderLiftAngle,1.22);
+  eq(f_lacs.desTurretAngle,0);
+  eq(f_lacs.desShoulderLiftAngle,0);
   eq(f_lacs.desUpperarmRollAngle,0);
-  eq(f_lacs.desElbowAngle,-.45);
+  eq(f_lacs.desElbowAngle,0);
   eq(f_lacs.desForearmRollAngle,0);
   eq(f_lacs.desWristPitchAngle,0);
   eq(f_lacs.desWristRollAngle,0);
-  eq(f_lacs.desGripperForceCmd,0);
-  eq(f_lacs.desGripperGapCmd,0);
+  eq(f_lacs.desGripperForceCmd,CLOSED_GRIPPER_FORCE);
+  eq(f_lacs.desGripperGapCmd,CLOSED_GRIPPER_GAP);
 
-  temporalDistance(f_racs.start, [1 +inf], start);
-  temporalDistance(f_lacs.start, [1 +inf], start);
+  //temporalDistance(f_racs.start, [1 +inf], start);
+  //temporalDistance(f_lacs.start, [1 +inf], start);
 
  //  ArmController acs;
   
@@ -234,20 +324,35 @@ WaypointController::Active {
  * Produces Velocity Commands to bridge gap between current and desired pose.
  */
 Actions::SetVelocityCommands{
-  // Controller will operate at 1 Hz (cycles per tick)
-  eq(duration, 1);
   
   // Bind to prior value
   met_by(VehicleState.Holds currentPos);
 
   float distanceToGo;
   calcDistance(distanceToGo, currentPos.x, currentPos.y, goal_x, goal_y);
+  bool donePos;
+  testLEQ(donePos, distanceToGo, POSITION_ERROR);
+
+  //testing theta
+  float dt;
+  calcAngleDiff(dt, currentPos.th, goal_th);
+ 
+  float abs_dt;
+  absVal(abs_dt, dt);
+  
+  bool doneTh; 
+  testLEQ(doneTh, abs_dt, ANGLE_ERROR);
+
+  int numDone;
+  addEq(donePos, doneTh, numDone);
+
   bool done;
-  testLEQ(done, distanceToGo, POSITION_ERROR);
+  //see if they're both done
+  testEQ(done, 2, numDone);
 
   if(done == false){
     float cmd_x, cmd_th;
-    calcCommand(true, cmd_x, cmd_th, currentPos.x, currentPos.y, currentPos.th, goal_x, goal_y, 0.0);
+    calcCommand(true, cmd_x, cmd_th, currentPos.x, currentPos.y, currentPos.th, goal_x, goal_y, goal_th);
 
     starts(VelCommander.Holds vc);
     eq(vc.cmd_x, cmd_x);
@@ -257,12 +362,14 @@ Actions::SetVelocityCommands{
     before(Actions.SetVelocityCommands s);
     eq(goal_x,s.goal_x);
     eq(goal_y,s.goal_y);
+    eq(goal_th,s.goal_th);
   }
 
   if(done == true){
     ends(WaypointController.Active wp);
     eq(goal_x, wp.x);
     eq(goal_y, wp.y);
+    eq(goal_th, wp.th); 
   }
 }
 
@@ -295,15 +402,15 @@ ArmController::Inactive {
   addEq(acForearmRollAngle,  [-.15 , .15], desForearmRollAngle);
   addEq(acWristPitchAngle, [-.15 , .15], desWristPitchAngle);
   addEq(acWristRollAngle,  [-.15 , .15], desWristRollAngle);
-  //addEq(acGripperForceCmd,  [-.1 , .1], desGripperForceCmd);
-  //addEq(acGripperGapCmd,  [-.1 , .1], desGripperGapCmd);
+  addEq(acGripperForceCmd,  [-25 , 25], desGripperForceCmd);
+  addEq(acGripperGapCmd,  [-.03 , .03], desGripperGapCmd);
 
 }
 
 ArmController::Active {
 
   contained_by(WaypointController.Inactive wp);
-  temporalDistance(wp.start, [1, +inf], start);
+  //temporalDistance(wp.start, [1, +inf], start);
   
  //  equals(Mutex.Uses m);
 //   eq(m.user, object);

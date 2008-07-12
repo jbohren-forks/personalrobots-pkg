@@ -11,7 +11,7 @@ static const double VerySmall = .01;
 
 //hardcoding in parameters
 static const double PlanHalfwidth = 5.0;
-static const double DistEps = 1.0;
+static const double DistEps = .6;
 static const double AngEps = DTOR(10.0);
 static const double LookaheadMaxdist = 2.0;
 static const double LookaheadDistweight = 5.0;
@@ -22,7 +22,7 @@ static const double AvMax = DTOR(80.0);
 static const double AMin = DTOR(10.0);
 static const double AMax = DTOR(40.0);
 
-static const double RobotRadius = .175;
+static const double RobotRadius = .5;
 static const double MaxRadius = 1.0;
 static const double SafetyDist = 0.05;
 static const double DistPenalty = 2.0;
