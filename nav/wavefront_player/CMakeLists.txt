@@ -9,3 +9,4 @@ target_link_libraries(wavefront_player wavefront_standalone)
 rospack_add_executable(send_goal send_goal.cc)
 
 rospack_add_executable(query_wavefront query_wavefront.cpp)
+include_directories(srv/cpp)

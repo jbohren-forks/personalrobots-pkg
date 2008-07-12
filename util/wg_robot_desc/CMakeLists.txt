@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 rospack(wg_robot_desc)
-include_directories(${wg_robot_desc_INCLUDE_DIRS})
 rospack_add_library(URDF src/urdf/URDF.cpp src/urdf/MathExpression.cpp)
-link_directories(${wg_robot_desc_LIBRARY_DIRS})
 rospack_add_executable(parse src/test/parse.cpp)
+target_link_libraries(parse URDF)
