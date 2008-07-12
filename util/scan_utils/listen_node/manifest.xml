@@ -7,6 +7,6 @@
 <depend package="xmlparam" />
 <depend package="scan_utils" />
 <export>
-  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -llistennode"/>
+  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -llistennode -Wl,-rpath,${prefix}/lib"/>
 </export>
 </package>

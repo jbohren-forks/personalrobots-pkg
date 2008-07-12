@@ -135,7 +135,7 @@ void SmartScan::writeToFile(std::iostream &output)
 void SmartScan::writeToFileAsVrml(std::iostream &output)
 {
 	std_msgs::Point3DFloat32 p;
-	output << "VRML V2.0 utf8" << std::endl;
+	output << "#VRML V2.0 utf8" << std::endl;
 	output << "Shape" << std::endl << "{" << std::endl;
 	output << "geometry PointSet" << std::endl << "{" << std::endl;
 	output << "coord Coordinate" << std::endl << "{" << std::endl;
@@ -240,6 +240,26 @@ vtkPointLocator* SmartScan::getVtkLocator()
 	assert(mVtkPointLocator);
 	return mVtkPointLocator;
 }
+
+/*! Adds the points in the scan \a target to this one. Does not check
+    for duplicate points.
+ */
+void SmartScan::addScan(const SmartScan *target)
+{
+	if ( !target->size() ) return;
+
+	std_msgs::Point3DFloat32 *newPoints = new std_msgs::Point3DFloat32[mNumPoints + target->size()];
+
+	int i;
+	for (i=0; i<mNumPoints; i++) {
+		newPoints[i] = getPoint(i);
+	}
+	for (i=0; i<target->size(); i++) {
+		newPoints[mNumPoints+i] = target->getPoint(i);
+	}
+	setPoints(mNumPoints + target->size(), newPoints);
+}
+
 
 /*! Performs a 2D Delaunay triangulation of the point cloud. This is
     equivalent to projecting all point onto the x-y plane (by dropping

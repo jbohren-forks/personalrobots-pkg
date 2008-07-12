@@ -106,6 +106,8 @@ class SmartScan {
 		return mNativePoints[i];
 	}
 
+	//!Adds the points from another scan to this one
+	void addScan(const SmartScan *target);
 
 	//! Apply a transform to each point in the cloud using a NEWMAT matrix
 	void applyTransform(const NEWMAT::Matrix &M);
