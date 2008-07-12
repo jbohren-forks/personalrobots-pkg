@@ -826,6 +826,28 @@ void SmartScan::removePlane(const std_msgs::Point3DFloat32 &planePoint,
 	delete [] newPoints;
 }
 
+/*!  Returns all the points in this cloud that are within \a radius of
+  the 3D point at( \a x \a y \a z ). Result is returned as a \a
+  std::vector<Point3DFloat32>* - it is the responsability of the
+  caller to free this memory.
+*/
+std::vector<std_msgs::Point3DFloat32>* SmartScan::getPointsWithinRadius(float x, float y, float z, float radius)
+{
+	std::vector<std_msgs::Point3DFloat32> *resPts = new std::vector<std_msgs::Point3DFloat32>;
+	vtkIdList *result = vtkIdList::New();
+
+	getVtkLocator()->FindPointsWithinRadius( radius, x, y, z, result );
+	int n = result->GetNumberOfIds();
+	for (int i=0; i<n; i++){
+		int nbrId = result->GetId(i);
+		std_msgs::Point3DFloat32 p = getPoint(nbrId);
+		resPts->push_back(p);
+	}
+
+	result->Delete();
+	return resPts;
+}
+
 /*!Computes the normal of the point with index \a id by fitting a
    plane to neighboring points. It uses all neighbors within a sphere
    of radius \a radius. If less than \a nbrs such neighbors

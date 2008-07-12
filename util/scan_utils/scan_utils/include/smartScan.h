@@ -120,6 +120,8 @@ class SmartScan {
 	std::vector<scan_utils::Triangle> *delaunayTriangulation3D(double tolerance, double alpha);
 	//! Crops the point cloud to a 3D bounding box
 	void crop(float x, float y, float z, float dx, float dy, float dz);
+	//! Returns all the points in the scan that are within a given sphere
+	std::vector<std_msgs::Point3DFloat32> *getPointsWithinRadius(float x, float y, float z, float radius);
 	//! Removes outliers - points that have few neighbors
 	void removeOutliers(float radius, int nbrs);
 	//! Removes points whose normals are perpendicular to the direction of the scanner
