@@ -121,11 +121,11 @@
     </define> 
 
     <define template="pr2_shoulder_pan_visual">
-      <xyz>0 0 -shoulder_pan_length/2 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <xyz>0 0 shoulder_pan_length/2 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <geometry type="cylinder">
-      <size> shoulder_pan_length shoulder_pan_radius </size>
+      <size> shoulder_pan_radius shoulder_pan_length  </size>
       </geometry>
     </define> 
 
