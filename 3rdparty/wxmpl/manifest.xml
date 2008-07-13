@@ -1,0 +1,18 @@
+<package>
+<description brief="WxMpl">
+WxMpl is a library of wxPython widgets which provide interactive
+plotting capabilities via the matplotlib 2D plotting library. Although
+matplotlib excels at generating a variety of publication quality
+figures, its wxPython widgetry compares poorly with BLT's interactive
+features. WxMpl aims to remedy this situation by providing
+out-of-the-box support for basic user interactions while supporting as
+many of matplotlib's figures and features as possible.
+</description>
+<author>Ken McIvor</author>
+<license>MIT</license>
+<url>http://agni.phys.iit.edu/~kmcivor/wxmpl/</url>
+<export>
+  <doxymaker external="http://agni.phys.iit.edu/~kmcivor/wxmpl/documentation/reference/" />
+</export>
+</package>
+
