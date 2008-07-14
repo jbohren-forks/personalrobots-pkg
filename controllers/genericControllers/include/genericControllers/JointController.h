@@ -65,19 +65,17 @@
     
 */
 /***************************************************/
-#include <newmat10/newmat.h>
-#include <libKinematics/ik.h>
 #include <sys/types.h>
 #include <stdint.h>
-#include <string>
-#include <libKDL/kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
+
 
 #include <iostream>
 
 #include <genericControllers/Controller.h>
 #include <genericControllers/Pid.h>
 #include <math_utils/angles.h>
-
+#include <mechanism/joint.h>
+#include <string>
 namespace CONTROLLER
 {
   class JointController : Controller
@@ -123,7 +121,7 @@ namespace CONTROLLER
         *
         * \param double* time Pointer to value to change 
         */
-      PR2::PR2_ERROR_CODE GetTime(double* time);
+       void GetTime(double* time);
 
      
 //---------------------------------------------------------------------------------//
@@ -270,10 +268,10 @@ namespace CONTROLLER
         *<LI>   or SetParam('IMin',-100);
         *</UL>
         */
-      CONTROLLER::CONTROLLER_ERROR_CODE SetParam(string label,double value);
+      CONTROLLER::CONTROLLER_ERROR_CODE SetParam(std::string label,double value);
 
    
-   //  CONTROLLER::CONTROLLER_ERROR_CODE SetParam(string label,string value);
+   //  CONTROLLER::CONTROLLER_ERROR_CODE SetParam(std::string label,std::string value);
 
      /*!
         * \brief Get parameters for this controller
@@ -291,8 +289,8 @@ namespace CONTROLLER
         *<LI>   or GetParam('IMin', value);
         *</UL>
         */
-      CONTROLLER::CONTROLLER_ERROR_CODE GetParam(string label, double* value);
-      //CONTROLLER::CONTROLLER_ERROR_CODE GetParam(string label, string value);
+      CONTROLLER::CONTROLLER_ERROR_CODE GetParam(std::string label, double* value);
+      //CONTROLLER::CONTROLLER_ERROR_CODE GetParam(std::string label, std::string value);
 
     private:
 
@@ -307,7 +305,7 @@ namespace CONTROLLER
         */       
      double SafelySetTorqueInternal(double torque);
      
-      string jointName; /*!< Namespace ID for this controller*/  
+      std::string jointName; /*!< Namespace ID for this controller*/  
       Joint* thisJoint; /*!< Joint we're controlling*/  
       Pid pidController; /*!< Internal PID controller*/  
 

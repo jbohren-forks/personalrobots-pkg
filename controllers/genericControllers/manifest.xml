@@ -9,6 +9,7 @@
   <depend package="libpr2API" />
   <depend package="rosTF" />
   <depend package="math_utils" />
+  <depend package="mechanism" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
