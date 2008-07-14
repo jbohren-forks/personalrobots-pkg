@@ -1,10 +1,10 @@
 #include <unistd.h>
 #include <math.h>
 #include "ros/node.h"
-#include "rosrand/rosrand.h"
-#include "std_msgs/MsgRobotBase2DOdom.h"
-#include "std_msgs/MsgBaseVel.h"
-#include "std_msgs/MsgLaserScan.h"
+#include "random_utils/random_utils.h"
+#include "std_msgs/RobotBase2DOdom.h"
+#include "std_msgs/BaseVel.h"
+#include "std_msgs/LaserScan.h"
 
 class FlatlandRobot
 {
@@ -13,11 +13,12 @@ public:
   double odom_x, odom_y, odom_th;
   double v, w; // linear and angular velocity
   double v_bias, w_bias;
-  FlatlandRobot() : x(0), y(0), th(0), v(0), w(0),
-    odom_x(0), odom_y(0), odom_th(0)
+  FlatlandRobot() : x(0), y(0), th(0), 
+    odom_x(0), odom_y(0), odom_th(0),
+    v(0), w(0)
   {
-    v_bias = ros::rand::gaussian(0, 0.001);
-    w_bias = ros::rand::gaussian(0, 0.001);
+    v_bias = random_utils::gaussian(0, 0.01);
+    w_bias = random_utils::gaussian(0, 0.01);
   }
   inline double clamp(double d, double l, double u)
   {
@@ -31,14 +32,14 @@ public:
       a += 2 * M_PI;
     return a;
   }
-  double tic(double dt)
+  void tic(double dt)
   {
     double xn = x + dt * v * cos(th);
     double yn = y + dt * v * sin(th);
     double vn = (fabs(v) > 0.001 ? v * (1.0 + v_bias) : v);
     double wn = (fabs(w) > 0.001 ? w * (1.0 + w_bias) : w);
-    v_bias += ros::rand::uniform(-0.0001, 0.0001);
-    w_bias += ros::rand::uniform(-0.0001, 0.0001);
+    v_bias += random_utils::uniform(-0.0001, 0.0001);
+    w_bias += random_utils::uniform(-0.0001, 0.0001);
     // clamp to sane values
     v_bias = clamp(v_bias, -0.1, 0.1);
     w_bias = clamp(w_bias, -0.1, 0.1);
@@ -55,9 +56,9 @@ public:
 class Flatland : public ros::node
 {
 public:
-  MsgRobotBase2DOdom odom;
-  MsgBaseVel cmd_vel;
-  MsgLaserScan laser;
+  std_msgs::RobotBase2DOdom odom;
+  std_msgs::BaseVel cmd_vel;
+  std_msgs::LaserScan laser;
 
   FlatlandRobot robot;
   double last_odom_t, last_laser_t, last_t;
@@ -71,8 +72,8 @@ public:
     laser.angle_increment = M_PI/99;
     laser.range_max = 10;
 
-    advertise<MsgRobotBase2DOdom>("odom");
-    advertise<MsgLaserScan>("laser");
+    advertise<std_msgs::RobotBase2DOdom>("odom");
+    advertise<std_msgs::LaserScan>("laser");
     subscribe("cmd_vel", cmd_vel, &Flatland::cmd_vel_cb);
   }
   void cmd_vel_cb()
@@ -84,23 +85,23 @@ public:
   }
   void tic()
   {
-    double t = clock.time();
+    double t = ros::Time::now().to_double();
     double dt = t - last_t;
     last_t = t;
     robot.tic(dt);
     if (t > last_odom_t + 0.05)
     {
       // send odom message
-      odom.px   = robot.odom_x;
-      odom.py   = robot.odom_y;
-      odom.pyaw = robot.odom_th;
+      odom.pos.x  = robot.odom_x;
+      odom.pos.y  = robot.odom_y;
+      odom.pos.th = robot.odom_th;
       publish("odom", odom);
       last_odom_t = t;
     }
     if (t > last_laser_t + 0.5)
     {
-      for (int i = 0; i < laser.get_ranges_size(); i++)
-        laser.ranges[i] = ros::rand::gaussian(2, 0.5);
+      for (size_t i = 0; i < laser.get_ranges_size(); i++)
+        laser.ranges[i] = random_utils::gaussian(2, 0.5);
       publish("laser", laser);
     }
   }
@@ -115,6 +116,7 @@ int main(int argc, char **argv)
     usleep(10000);
     flatland.tic();
   }
+  ros::fini();
   return 0;
 }
 
