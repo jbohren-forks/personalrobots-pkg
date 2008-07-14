@@ -1,6 +1,5 @@
-
 ///////////////////////////////////////////////////////////////////////////////
-// Copyright (C) 2008, Eric Berger
+// Copyright (C) 2008, Sachin Chitta, Jimmy Sastra
 //
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -26,35 +25,21 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-#ifndef TRANSMISSION_H
-#define TRANSMISSION_H
+// Simple transmission implementation
 
-#include "joint.h"
-#include "hardware_interface.h"
+SimpleTransmission(Actuator *actuator, Joint *joint, double mechanicalReduction, double motorTorqueConstant){
+   this->actuator = actuator;
+   this->joint = joint;
+   this->mechanicalReduction = mechanicalReduction;
+   this->motorTorqueConstant = motorTorqueConstant;
+   this->ticksPerRadian = ticksPerRadian;
+}
 
-class Transmission{
-  public:
-    void propagatePosition(); //Use encoder data to fill out joint position and velocities
-    void propagateEffort(); //Use commanded joint efforts to fill out commanded motor currents
-};
+void propagatePosition(){
+   this->joint.position = this->ticksPerRadian * this->actuator.state.encoderCount;
+   this->joint.appliedEffort = this->actuator.lastMeasuredCurrent * (motorTorqueConstant * mechanicalReduction);
+}
 
-class SimpleTransmission : public Transmission{
-  public:
-    Actuator *actuator;
-    Joint *joint;
-    double mechanicalReduction;
-    double motorTorqueConstant;
-};
-
-class CoupledTransmission : public Transmission{
-  public:
-
-};
-
-class NonlinearTransmission : public Transmission{
-  Actuator *actuator;
-  Joint *joint;
-  //Lookup table
-};
-
-#endif
+void propagateEffort(){
+   this->actuator.command.current = this->joint.commandedEffort/(motorTorqueConstant * mechanicalReduction);
+}

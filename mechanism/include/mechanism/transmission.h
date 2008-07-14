@@ -26,62 +26,55 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-#ifndef HARDWARE_INTERFACE_H
-#define HARDWARE_INTERFACE_H
+#ifndef TRANSMISSION_H
+#define TRANSMISSION_H
 
-class ActuatorState{
+#include "mechanism/joint.h"
+#include "mechanism/hardware_interface.h"
+
+class Transmission{
+
   public:
-    ActuatorState(){
-      lastCalibrationHighTransition = 0;
-      lastCalibrationLowTransition = 0;
-      isEnabled = 0;
-      runStopHit = 0;
-      lastRequestedCurrent = 0;
-      lastCommandedCurrent = 0;
-      lastMeasuredCurrent = 0;
-      numEncoderErrors = 0;
-    }
-  int encoderCount;
-  int timestamp;
-  double encoderVelocity;
-  bool calibrationReading;
-  int lastCalibrationHighTransition;
-  int lastCalibrationLowTransition;
-  bool isEnabled;
-  bool runStopHit;
 
-  double lastRequestedCurrent;
-  double lastCommandedCurrent;
-  double lastMeasuredCurrent;
+    void propagatePosition(); //Use encoder data to fill out joint position and velocities
 
-  int numEncoderErrors;
-  int numCommunicationErrors;
+    void propagateEffort(); //Use commanded joint efforts to fill out commanded motor currents
 };
 
-class ActuatorCommand{
+class SimpleTransmission : public Transmission{
+
   public:
-  ActuatorCommand(){
-    enable = 0;
-    current = 0;
-  }
-  bool enable;
-  double current;
+
+   SimpleTransmission(Actuator * actuator, Joint *joint);
+
+    Actuator *actuator;
+
+    Joint *joint;
+
+    double mechanicalReduction;
+
+    double motorTorqueConstant;
 };
 
-class Actuator{
+class CoupledTransmission : public Transmission{
+
   public:
-  ActuatorState state;
-  ActuatorCommand command;
+
+   CoupledTransmission(Actuator * actuator, Joint *joint);
+
 };
 
-class HardwareInterface{
+class NonlinearTransmission : public Transmission{
+
   public:
-  HardwareInterface(int numActuators){
-    actuator = new Actuator[numActuators];
-    this->numActuators = numActuators;  
-  }
+
+  NonlinearTransmission(Actuator * actuator, Joint *joint);
+
   Actuator *actuator;
-  int numActuators;
+
+  Joint *joint;
+
+  //Lookup table
 };
 
 #endif
