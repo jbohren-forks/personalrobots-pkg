@@ -116,8 +116,8 @@ CONTROLLER_ERROR_CODE JointController::SetTorqueCmd(double torque){
     cmdTorque = maxEffort;
     return CONTROLLER_TORQUE_LIMIT;
   }
-  else if (cmdPos < -1*maxEffort){ //Truncate to negative limit
-    cmdTorque = -1*maxEffort;
+  else if (cmdPos < -maxEffort){ //Truncate to negative limit
+    cmdTorque = -maxEffort;
     return CONTROLLER_TORQUE_LIMIT;
   }
   
@@ -181,10 +181,9 @@ JointController::GetPosAct(double *pos)
   return CONTROLLER_ALL_OK;
 }
 
-//
-//-
-//Velocity
-//-
+//---------------------------------------------------------------------------------//
+//VELOCITY CALLS
+//---------------------------------------------------------------------------------//
 //Check mode, then set the commanded velocity
 CONTROLLER_ERROR_CODE
 JointController::SetVelCmd(double vel)
@@ -216,43 +215,42 @@ bool JointController::CheckForSaturation(void){
   return SaturationFlag;
 }
 
-//Call each tick. Based on controller mode, will close the correct loop then call SetTorque to issue command
- void JointController::Update(void){
+//---------------------------------------------------------------------------------//
+//UPDATE CALLS
+//---------------------------------------------------------------------------------//
+void JointController::Update(void)
+{
   double error, currentTorqueCmd, time, cmd, act;
-  GetTime(&time);
+  GetPosCmd(&cmd);
+  GetPosAct(&act);
+  GetTime(&time); //TODO: figure out how to deal with this
   CONTROLLER_CONTROL_MODE type = GetMode();
-  if(type==CONTROLLER_TORQUE){
-    currentTorqueCmd = cmdTorque; //In torque mode, we pass along the commanded torque
-  }
-  else if (type==CONTROLLER_POSITION){
-    GetPosCmd(&cmd);
-    GetPosAct(&act);
-    //Read position, get error
-    error = Controller::ModNPi2Pi(cmd-act); 
-  
-    //Update the controller
-    currentTorqueCmd = pidController.UpdatePid(error,time); //Close the loop around position
-  }
-  else if (type==CONTROLLER_VELOCITY){
-    GetVelCmd(&cmd);
-    GetVelCmd(&act);
-    //Read velocity, get error
-    error = cmd - act; 
-  
-    //Update the controller
-    currentTorqueCmd = pidController.UpdatePid(error,time); //Close the loop around velocity
 
-  }
-  else currentTorqueCmd = 0; //On error, set torque to zero
-  //Issue the torque command
+  switch (type)
+  {
+    case CONTROLLER_TORQUE: //Pass through torque command
+      currentTorqueCmd = cmdTorque;
+      break;
+    case CONTROLLER_POSITION: //Close the loop around position
+      error = shortest_angular_distance(act, cmd); 
+      currentTorqueCmd = pidController.UpdatePid(error,time); 
+      break;
+    case CONTROLLER_VELOCITY: //Close the loop around velocity
+      error = cmd - act; 
+      currentTorqueCmd = pidController.UpdatePid(error,time); 
+      break;
+    default: //On error (no mode), set torque to zero
+      currentTorqueCmd = 0; 
+      //TODO:put somekind of error here for no mode
+    }
+
   if(enabled) SetTorqueInternal(currentTorqueCmd);   
   else SetTorqueInternal(0); //Send a zero command if disabled
-
 }
 
-//-
-// Interact with param server
-//-
+//---------------------------------------------------------------------------------//
+//PARAM SERVER STUFF
+//---------------------------------------------------------------------------------//
 
 //TODO: Case statement to effect changes when parameters are set here
 CONTROLLER_ERROR_CODE
