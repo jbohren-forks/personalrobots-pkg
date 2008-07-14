@@ -41,7 +41,43 @@ bool EnvironmentModelSOLID::isCollision(void)
 
 void EnvironmentModelSOLID::addPointCloud(unsigned int n, const double *points)
 {
+    Object *obj = new Object();
+    obj->shape = dtNewComplexShape();
+
+    for (unsigned int i = 0 ; i < n ; ++i)
+    {
+	unsigned int i3 = i * 3;
+	double x = points[i3    ];
+	double y = points[i3 + 1];
+	double z = points[i3 + 2];
+	
+	dtBegin(DT_SIMPLEX);
+	dtVertex(x,                         y, z + m_pcDelta);
+	dtVertex(x - m_pcDelta, y - m_pcDelta, z - m_pcDelta);
+	dtVertex(x + m_pcDelta, y - m_pcDelta, z - m_pcDelta);
+	dtEnd();
+
+	dtBegin(DT_SIMPLEX);
+	dtVertex(x - m_pcDelta, y - m_pcDelta, z - m_pcDelta);
+	dtVertex(x + m_pcDelta, y - m_pcDelta, z - m_pcDelta);
+	dtVertex(x + m_pcDelta, y + m_pcDelta, z - m_pcDelta);
+	dtEnd();
+
+	dtBegin(DT_SIMPLEX);
+	dtVertex(x,                         y, z + m_pcDelta);
+	dtVertex(x + m_pcDelta, y - m_pcDelta, z - m_pcDelta);
+	dtVertex(x + m_pcDelta, y + m_pcDelta, z - m_pcDelta);
+	dtEnd();
+
+	dtBegin(DT_SIMPLEX);
+	dtVertex(x,                         y, z + m_pcDelta);
+	dtVertex(x + m_pcDelta, y - m_pcDelta, z - m_pcDelta);
+	dtVertex(x - m_pcDelta, y - m_pcDelta, z - m_pcDelta);
+	dtEnd();
+    }
     
+    dtEndComplexShape();
+    dtCreateObject(obj->obj, obj->shape);
 }
 
 void EnvironmentModelSOLID::KinematicModelSOLID::build(URDF &model, const char *group)

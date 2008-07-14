@@ -129,6 +129,7 @@ class EnvironmentModelSOLID : public EnvironmentModel
     EnvironmentModelSOLID(void) : EnvironmentModel()
     {
 	model = dynamic_cast<KinematicModel*>(&m_modelSOLID);
+	m_pcDelta = 0.01;
     }
     
     ~EnvironmentModelSOLID(void)
@@ -147,6 +148,7 @@ class EnvironmentModelSOLID : public EnvironmentModel
     
     KinematicModelSOLID  m_modelSOLID;    
     std::vector<Object*> m_obstacles;
+    double               m_pcDelta;    
     
 };
 
