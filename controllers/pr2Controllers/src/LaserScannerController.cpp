@@ -19,7 +19,7 @@ LaserScannerController::~LaserScannerController( )
 }
 
 /*
-LaserScannerController::LaserScannerController(Joint* joint, string name);
+LaserScannerController::LaserScannerController(Joint* joint, std::string name);
 	//Pass in joint* when we get it
 	lowerControl.Init(joint,name);
   this->name = name;
@@ -70,14 +70,14 @@ PR2::PR2_ERROR_CODE LaserScannerController::setProfile(double *&t, double *&x, i
 }
 
 PR2::PR2_ERROR_CODE
-LaserScannerController::setParam(string label,double value)
+LaserScannerController::setParam(std::string label,double value)
 {
 
   return PR2::PR2_ALL_OK;
 }
 
 PR2::PR2_ERROR_CODE
-LaserScannerController::setParam(string label,string value)
+LaserScannerController::setParam(std::string label,std::string value)
 {
 
   return PR2::PR2_ALL_OK;
@@ -85,7 +85,7 @@ LaserScannerController::setParam(string label,string value)
 
 void LaserScannerController::SetSawtoothProfile(double period, double amplitude, double dt, double offset){
 
-	unsigned int elements = (unsigned int) period/dt;
+	unsigned int elements = (unsigned int) (period/dt);
 	setParam("profile" , "sawtooth");
 	GenerateSawtooth(profileX,profileT,period,amplitude,dt,offset,elements);
 	profileLength = elements;

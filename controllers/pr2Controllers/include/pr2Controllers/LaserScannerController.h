@@ -74,8 +74,8 @@ namespace CONTROLLER
         * </UL>
         *
         */
-      PR2::PR2_ERROR_CODE setParam(string label,double value);
-      PR2::PR2_ERROR_CODE setParam(string label,string value);
+      PR2::PR2_ERROR_CODE setParam(std::string label,     double value);
+      PR2::PR2_ERROR_CODE setParam(std::string label,std::string value);
   
         /*!
         * \brief Set automatic profile to sawtooth
@@ -215,7 +215,7 @@ namespace CONTROLLER
   
       CONTROLLER::CONTROLLER_CONTROL_MODE controlMode; /**Allow different control modes for hokuyo>*/
 
-      string name; /**<Namespace identifier for ROS>*/      
+      std::string name; /**<Namespace identifier for ROS>*/      
 
       double* profileX; /**<Contains locations for profile>*/
       double* profileT; /**<Contains target times for profile>*/
