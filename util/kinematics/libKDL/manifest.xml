@@ -1,8 +1,5 @@
 <package>
-<description brief='Kinematics for PR2 using KDL'>
-
-Using KDL for fwd and inverse kinematics for the PR2.
-
+<description brief='Kinematics and Dynamics for using KDL'>
 </description>
 <author>Advait Jain</author>
 <license>BSD</license>
