@@ -560,7 +560,7 @@ class LaserPointerDetector:
     MAX_BLOB_AREA              = 20*20
     LASER_POINT_SIZE           = 40.0
     MIN_AGE                    = 5
-    NUMBER_OF_LEARNERS         = 2
+    NUMBER_OF_LEARNERS         = 50
 
     TRACKER_MAX_PIX_TRESHOLD   = 30.0
     TRACKER_MAX_TIME_THRESHOLD = 3
@@ -600,7 +600,7 @@ class LaserPointerDetector:
     def get_motion_intensity_images(self):
         return (self.motion_filter.get_thresholded_image(), self.intensity_filter.get_thresholded_image())
 
-    def detect(self, image):
+    def detect(self, image, verbose=False):
         cv.cvCopy(image, self.copy)
         image = self.copy
 
@@ -636,14 +636,13 @@ class LaserPointerDetector:
         if self.classifier is not None:
             number_components_before = len(components)
             components = self.classifier.classify(image, components)
-            if number_components_before != len(components):
+            if number_components_before != len(components) and verbose:
                 print '         PatchClassifier: %d -> %d' % (number_components_before, len(components))
         laser_blob    = select_laser_blob(components, approx_laser_point_size=self.LASER_POINT_SIZE)
         if laser_blob != None:
-
             tracks        = self.tracker.track(components_to_detections([laser_blob]))
             laser_track   = select_laser_track(tracks, self.MIN_AGE)
-            if laser_blob != None and laser_track == None:
+            if laser_blob != None and laser_track == None and verbose:
                 print '         Tracker: image motion filter activated.'
             if laser_track is not None:
                 #print 'LASER: moved', laser_track.dist_moved, 'age', laser_track.age()

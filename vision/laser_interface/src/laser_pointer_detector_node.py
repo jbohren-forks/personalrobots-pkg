@@ -73,7 +73,7 @@ class GatherExamples:
         self.examples = []
         self.type     = type
 
-    def run(self, frames, display=True):
+    def run(self, images, display=True, verbose=False, debug=False):
         image                 = None
         combined              = None
         motion                = None
@@ -118,18 +118,18 @@ class DetectState:
             self.detector.detect(frames[0])
             self.detector_right.detect(frames[1])
 
-    def run(self, images, display=True, debug=False):
+    def run(self, images, display=True, verbose=False, debug=False):
         l, r = images
 
         #Detect right image
-        _, _, right_cam_detection, stats = self.detector_right.detect(r)
+        _, _, right_cam_detection, stats = self.detector_right.detect(r, verbose=verbose)
         if debug:
             draw_blobs(r, stats)
             draw_detection(r, right_cam_detection)
             hg.cvShowImage('right', r)
 
         #Detect left image
-        image, combined, left_cam_detection, stats = self.detector.detect(l)
+        image, combined, left_cam_detection, stats = self.detector.detect(l, verbose=verbose)
         if debug: 
             motion, intensity = self.detector.get_motion_intensity_images()
             show_processed(l, [combined, motion, intensity], left_cam_detection, stats, self.detector)
@@ -166,6 +166,8 @@ class LaserPointerDetectorNode:
         self.state_object     = None
         self.set_state(self.DETECT)
         self.display = True
+        self.verbose = False
+        self.debug   = False
         self._make_windows()
 
         #Publish
@@ -173,6 +175,23 @@ class LaserPointerDetectorNode:
 
         #Ready
         rospy.ready(sys.argv[0])
+
+        print '======================================================'
+        print '= Usage'
+        print '======================================================'
+        print """
+                if k == 'p':
+                    self.set_state(self.GATHER_POSITIVE_EXAMPLES)
+                if k == 'n':
+                    self.set_state(self.GATHER_NEGATIVE_EXAMPLES)
+                if k == ' ':
+                    self.set_state(self.DETECT)
+                if k == 'd':
+                    self.display = not self.display
+                if k == 'v':
+                    self.verbose = not self.verbose
+                if k == 'g':
+                    self.debug   = not self.debug"""
 
     def _make_windows(self):
         windows = ['video', 'right', 'thresholded', 'motion', 'intensity']
@@ -185,19 +204,22 @@ class LaserPointerDetectorNode:
         hg.cvMoveWindow("motion",      800, 600)
 
     def run(self):
+        count = 0
         try:
             while not rospy.isShutdown():
                 self.video_lock.acquire()
                 start_time = time.time()
                 frames = self.video.next()
-                result = self.state_object.run(frames, display=self.display)
+                result = self.state_object.run(frames, display=self.display, verbose=self.verbose, debug=self.debug)
                 self.video_lock.release()
                 if result != None:
                     p = result['point']
                     self.topic.publish(Point3DFloat64(p[0,0], p[1,0], p[2,0]))
 
-                diff = time.time() - start_time
-                print 'Main: Running at %.2f fps, took %.4f s' % (1.0 / diff, diff)
+                if count % (2*30) == 0:
+                    diff = time.time() - start_time
+                    print 'Main: Running at %.2f fps, took %.4f s' % (1.0 / diff, diff)
+                count = count + 1
                 k = hg.cvWaitKey(10)
                 if k == 'p':
                     self.set_state(self.GATHER_POSITIVE_EXAMPLES)
@@ -207,12 +229,20 @@ class LaserPointerDetectorNode:
                     self.set_state(self.DETECT)
                 if k == 'd':
                     self.display = not self.display
+                if k == 'v':
+                    self.verbose = not self.verbose
+                if k == 'g':
+                    self.debug   = not self.debug
+
         except StopIteration, e:
             pass
 
 
     def set_state(self, new_state):
         self.video_lock.acquire()
+        print '======================================================'
+        print '=  Changing Mode to', new_state
+        print '======================================================'
         if self.state_object.__class__ == GatherExamples:
             self.state_object.write()
 
