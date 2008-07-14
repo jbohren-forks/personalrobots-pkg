@@ -221,7 +221,6 @@ bool JointController::CheckForSaturation(void){
 void JointController::Update(void)
 {
   double error, currentTorqueCmd, time, cmd, act;
-  GetPosCmd(&cmd);
   GetPosAct(&act);
   GetTime(&time); //TODO: figure out how to deal with this
   CONTROLLER_CONTROL_MODE type = GetMode();
@@ -232,12 +231,12 @@ void JointController::Update(void)
       currentTorqueCmd = cmdTorque;
       break;
     case CONTROLLER_POSITION: //Close the loop around position
-      error = shortest_angular_distance(act, cmd); 
-      currentTorqueCmd = pidController.UpdatePid(error,time); 
+      error = shortest_angular_distance(act, cmdPos); //TODO:replace act with thisJoint->position
+      currentTorqueCmd = pidController.UpdatePid(error,time); //TODO:replace time with thisJoint->timStep
       break;
     case CONTROLLER_VELOCITY: //Close the loop around velocity
-      error = cmd - act; 
-      currentTorqueCmd = pidController.UpdatePid(error,time); 
+      error = cmdVel - act; //TODO:replace act with thisJoint->velocity
+      currentTorqueCmd = pidController.UpdatePid(error,time);//TODO:replace time with thisJoint->timStep 
       break;
     default: //On error (no mode), set torque to zero
       currentTorqueCmd = 0; 
