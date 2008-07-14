@@ -70,11 +70,11 @@ void BaseController::InitJointControllers()
    this->baseJointControllers = new JointController[BASE_NUM_JOINTS];
    for(int ii = 0; ii < NUM_CASTERS; ii++) 
    {
-      baseJointControllers[ii].Init(PGain, IGain, DGain, IMax, IMin, CONTROLLER_POSITION, ns.getTime(), maxPositiveTorque, maxNegativeTorque, maxEffort);
+      //baseJointControllers[ii].Init(PGain, IGain, DGain, IMax, IMin, CONTROLLER_POSITION, ns.getTime(), maxPositiveTorque, maxNegativeTorque, maxEffort);
    }
    for(int ii = NUM_CASTERS; ii < BASE_NUM_JOINTS; ii++) 
    {
-      baseJointControllers[ii].Init(PGain, IGain, DGain, IMax, IMin, CONTROLLER_VELOCITY, ns.getTime(), maxPositiveTorque, maxNegativeTorque, maxEffort);
+      //baseJointControllers[ii].Init(PGain, IGain, DGain, IMax, IMin, CONTROLLER_VELOCITY, ns.getTime(), maxPositiveTorque, maxNegativeTorque, maxEffort);
    }
 }  
 
