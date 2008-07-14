@@ -6,9 +6,9 @@ This package uses opencv to calibrate a camera with readings from an image flow.
 <license>BSD</license>
 <depend package='roscpp'/>
 <depend package='axis_cam'/>
-<depend package='common_flows'/>
+<!--<depend package='common_flows'/>
 <depend package='unstable_flows'/>
-<depend package='yamlgraph'/>
+<depend package='yamlgraph'/>-->
 <depend package='sdl'/>
 <depend package='simple_sdl_gui'/>
 <repository>http://pr.willowgarage.com/repos</repository>
