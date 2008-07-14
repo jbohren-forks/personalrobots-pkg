@@ -10,5 +10,6 @@ endif(NOT HAVE_LINUX_JOYSTICK_H)
 include(rosbuild)
 rospack(joy)
 genmsg()
+include_directories(msg/cpp)
 rospack_add_executable(joy joy.cpp)
 
