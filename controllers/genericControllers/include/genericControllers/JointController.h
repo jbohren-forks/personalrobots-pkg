@@ -243,7 +243,7 @@ namespace CONTROLLER
         * 
         *
         */       
-     double SetTorque(double torque);
+     double SetTorqueInternal(double torque);
      
       string jointName; /*!< Namespace ID for this controller*/  
       Joint* thisJoint; /*!< Joint we're controlling*/  
@@ -267,6 +267,10 @@ namespace CONTROLLER
       double cmdVel;/*!< Last commanded Velocity */
 
       bool enabled; /*!<Can controller issue commands?>*/
+
+      double maxPositiveTorque; /*!<Temporary (until param server) : local copy of max Positive Torque.*/
+      double maxNegativeTorque; /*!<Temporary (until param server): local copy of max neg torque .*/
+      double maxEffort; /*!<Temporary (until param server): local copy of max possible commanded effort.*/
 
        };
 }

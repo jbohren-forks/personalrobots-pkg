@@ -4,88 +4,9 @@
 //1. Get and set params via server
 //2. Integrate Joint and robot objects
 //3. Integrate Motor controller time
-//4. Subscribe to setpoints
-/*
-void JointController::SubscribeToInput(string name){
-     // Subscribe to the input messages
-      subscribe(name, inputBus, &JointController::InputCallback())
-}
-  
-void JointController::InputCallback(){
-  if(controlMode == CONTROLLER_TORQUE){ //Issue torque command
-    SetTorqueCmd(inputBus.TorqueCommand);
-  }
-  else if (controlMode == CONTROLLER_POSITION){ //Issue position command
-    SetPosCmd(inputBus.PositionCommand);
-  }
-  else if (controlMode == CONTROLLER:CONTROLLER_VELOCITY){ //Issue velocity command
-
-    SetVelCmd(inputBus.VelocityCommand);
-  }
-}
-
-*/
 
 using namespace CONTROLLER;
-
-JointController::JointController(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort)
-{
-  //Instantiate PID class
-  pidController.InitPid(PGain,IGain,DGain,IMax,IMin); //Constructor for pid controller  
-
-  //Set commands to zero
-  cmdTorque = 0;
-  cmdPos = 0;
-  cmdVel = 0;
-  
-  lastTime = time;
-
-  this->PGain = PGain;
-  this->IGain = IGain;
-  this->DGain = DGain;
-  this->IMax = IMax;
-  this->IMin = IMin;
-
-  this->maxPositiveTorque = maxPositiveTorque;
-  this->maxNegativeTorque = maxNegativeTorque;
-  this->maxEffort = maxEffort;
-
-  EnableController();
-
-  controlMode = mode;
-}
-
-//JointController::JointController(Robot* robot, string name)
-JointController::JointController(string name)
-{  
-  //Record namespace and robot pointer
-  jointName = name; 
-  // myRobot = robot;
-
-  //Access the param server to fill in gains
-  //TODO: Put in 
-  /*
-  PGain = GetParam("PGain");
-  IGain = GetParam("IGain");
-  DGain = GetParam("DGain");
-  IMax = GetParam("IMax");
-  IMin = GetParam("IMin");
-  controlMode = GetParam("ControlMode");
-  */
-  
-  //Instantiate PID class
-  pidController.InitPid(PGain,IGain,DGain,IMax,IMin); //Constructor for pid controller  
-
-  //Set commands to zero
-  cmdTorque = 0;
-  cmdPos = 0;
-  cmdVel = 0;
-
-  //Initialize the time
-  GetTime(&lastTime);
-
-}
-     
+ 
 JointController::JointController( )
 {
   
@@ -154,7 +75,7 @@ void JointController::DisableController(){
 //-
 
 //Truncates (if needed), then sets the torque
-double JointController::SetTorque(double torque)
+double JointController::SetTorqueInternal(double torque)
 {
   double newTorque;
   CONTROLLER_ERROR_CODE status = CONTROLLER_ALL_OK;
@@ -324,42 +245,8 @@ bool JointController::CheckForSaturation(void){
   }
   else currentTorqueCmd = 0; //On error, set torque to zero
   //Issue the torque command
-  if(enabled) SetTorque(currentTorqueCmd);   
-  else SetTorque(0); //Send a zero command if disabled
-
-}
-
-double JointController::SimUpdate(double position, double velocity, double time){
-  double error, currentTorqueCmd, cmd, act;
-  CONTROLLER_CONTROL_MODE type = GetMode();
-  if(type==CONTROLLER_TORQUE)
-  {
-    currentTorqueCmd = cmdTorque; //In torque mode, we pass along the commanded torque
-  }
-  else if (type==CONTROLLER_POSITION)
-  {
-    GetPosCmd(&cmd);
-    //Read position, get error
-    error = Controller::ModNPi2Pi(cmd-position); 
-  
-    //Update the controller
-    currentTorqueCmd = pidController.UpdatePid(error,time); //Close the loop around position
-  }
-  else if (type==CONTROLLER_VELOCITY)
-  {
-    GetVelCmd(&cmd);
-    //Read velocity, get error
-    error = cmd - velocity; 
-  
-    //Update the controller
-    currentTorqueCmd = pidController.UpdatePid(error,time); //Close the loop around velocity
-
-  }
-  else currentTorqueCmd = 0; //On error, set torque to zero
-  //Issue the torque command
-  if(enabled) return SetTorque(currentTorqueCmd);   
-  else return 0; //Send a zero command if disabled
-
+  if(enabled) SetTorqueInternal(currentTorqueCmd);   
+  else SetTorqueInternal(0); //Send a zero command if disabled
 
 }
 
