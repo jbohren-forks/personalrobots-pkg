@@ -6,6 +6,9 @@
     This class implements controller loops for
     PR2 Joint Control
 
+    ASSUMES:
+      Rotary joint
+
     Parameters to be set by SetParam
     PGain
     IGain
@@ -45,7 +48,10 @@ namespace CONTROLLER
   class JointController : Controller
   {
     public:
-    
+    //---------------------------------------------------------------------------------//
+    //CONSTRUCTION/DESTRUCTION CALLS
+    //---------------------------------------------------------------------------------//
+
       /*!
         * \brief Default Constructor of the JointController class.
         *
@@ -62,22 +68,74 @@ namespace CONTROLLER
         * \param Joint* joint The joint we are interacting with
         * \param string name The namespace identification in ROS
         */
-      CONTROLLER::CONTROLLER_ERROR_CODE Init(Joint* joint, string name);
+  // CONTROLLER::CONTROLLER_ERROR_CODE Init(Joint* joint, string name);
     
-      /*!
-       * \brief Default Constructor of the JointController class.
-       *
-       * \param robot A pointer to the robot object
-       * \param name A string identifying the joint and its namespace (e.g. ElbowPitch)
-       */
-
-      /*!
-       *\brief Fetches gains from the param server
-       */
-        void InitGains();
-
       // JointController(Joint* joint, string name);
 
+        //TEMPORARY
+        /*! 
+        * \brief Temporary way to initialize limits and gains
+        *
+        */
+      void Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort);
+
+//---------------------------------------------------------------------------------//
+//TIME CALLS
+//---------------------------------------------------------------------------------//
+    /*!
+        * \brief TODO: Get the actual time
+        *  
+        *
+        * \param double* time Pointer to value to change 
+        */
+      PR2::PR2_ERROR_CODE GetTime(double* time);
+
+     
+//---------------------------------------------------------------------------------//
+//MODE/ENABLE CALLS
+//---------------------------------------------------------------------------------//
+    
+    /*!
+        * \brief Switches command mode type (Torque, position, velocity control)
+        *  
+        */
+      void SetMode(CONTROLLER::CONTROLLER_CONTROL_MODE mode);
+
+        /*!
+        * \brief Returns the current mode of the controller
+        *  
+        */
+      CONTROLLER::CONTROLLER_CONTROL_MODE GetMode(void);
+
+        /*!
+        * \brief Allow controller to run
+        * 
+        *  
+        */
+
+      void EnableController();
+
+
+        /*!
+        * \brief Set torque to zero. Prevent controller from running
+        *
+        *  
+        */
+
+      void DisableController();
+
+        /*!
+        * \brief Return true if last command saturated the torque 
+        *
+        *  
+        */
+      bool CheckForSaturation(void);
+
+
+
+//---------------------------------------------------------------------------------//
+//TORQUE CALLS
+//---------------------------------------------------------------------------------//
         /*!
         * \brief Give a torque command to be issue on update (if in torque mode)
         *
@@ -100,6 +158,10 @@ namespace CONTROLLER
         */  
       CONTROLLER::CONTROLLER_ERROR_CODE GetTorqueAct(double *torque);
 
+//---------------------------------------------------------------------------------//
+//POSITION CALLS
+//---------------------------------------------------------------------------------//
+
       /*!
         * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
         * 
@@ -118,7 +180,11 @@ namespace CONTROLLER
         * \param double* pos Pointer to value to change
         */       
       CONTROLLER::CONTROLLER_ERROR_CODE GetPosAct(double *pos);    
-      
+
+//---------------------------------------------------------------------------------//
+//VELOCITY CALLS
+//---------------------------------------------------------------------------------//
+   
       /*!
         * \brief Set velocity command to the joint to be issue next update
         * \param double vel Velocity to issue next command
@@ -137,6 +203,21 @@ namespace CONTROLLER
         */
       CONTROLLER::CONTROLLER_ERROR_CODE GetVelAct(double *vel);
 
+//---------------------------------------------------------------------------------//
+//UPDATE CALLS
+//---------------------------------------------------------------------------------//
+    /*!
+        * \brief Issues commands to joint based on control mode
+        *
+        * 
+        */
+
+      //Issues commands to the joint. Should be called at regular intervals
+      virtual void Update(void);
+
+//---------------------------------------------------------------------------------//
+//PARAM SERVER CALLS
+//---------------------------------------------------------------------------------//
       /*!
         * \brief Set parameters for this controller
         *
@@ -178,95 +259,51 @@ namespace CONTROLLER
       CONTROLLER::CONTROLLER_ERROR_CODE GetParam(string label, double* value);
       //CONTROLLER::CONTROLLER_ERROR_CODE GetParam(string label, string value);
 
-      //Subscribe to receive setpoints
-      
-    
-    /*!
-        * \brief Issues commands to joint based on control mode
-        *
-        * 
-        */
-
-      //Issues commands to the joint. Should be called at regular intervals
-      virtual void Update(void);
-
-        /*!
-        * \brief TODO: Get the actual time
-        *  
-        *
-        * \param double* time Pointer to value to change 
-        */
-      PR2::PR2_ERROR_CODE GetTime(double* time);
-    
-         /*!
-        * \brief Returns the current mode of the controller
-        *  
-        */
-      CONTROLLER::CONTROLLER_CONTROL_MODE GetMode(void);
-
-    /*!
-        * \brief Switches command mode type (Torque, position, velocity control)
-        *  
-        */
-      void SetMode(CONTROLLER::CONTROLLER_CONTROL_MODE mode);
-    /*!
-        * \brief Return true if last command saturated the torque 
-        *
-        *  
-        */
-      bool CheckForSaturation(void);
-
-
-   /*!
-        * \brief Allow controller to run
-        * 
-        *  
-        */
-
-      void EnableController();
-
-
-   /*!
-        * \brief Set torque to zero. Prevent controller from running
-        *
-        *  
-        */
-
-      void DisableController();
-
-      void Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort);
-
     private:
+
+//---------------------------------------------------------------------------------//
+//SAFETY CALLS
+//---------------------------------------------------------------------------------//
 
           /*!
         * \brief Actually issue torque set command of the joint motor.
         * 
         *
         */       
-     double SetTorqueInternal(double torque);
+     double SafelySetTorqueInternal(double torque);
      
       string jointName; /*!< Namespace ID for this controller*/  
       Joint* thisJoint; /*!< Joint we're controlling*/  
       Pid pidController; /*!< Internal PID controller*/  
 
-      bool SaturationFlag; /*!< Flag to indicate last command exceed torque limits and was truncated*/  
-
-      //Control loop parameters- 
-      CONTROLLER::CONTROLLER_CONTROL_MODE controlMode;    /*!< Indicate current controller mode (torque, position, velocity)*/  
-      double PGain; /*!< Proportional gain*/
-      double IGain;/*!< Integral gain */
-      double DGain;/*!< Derivative gain */
-      double IMax;/*!< Upper integral clamp */
-      double IMin;/*!< Lower integral clamp */
-
+     
       double lastTime;/*!< Last time stamp of update */
+//---------------------------------------------------------------------------------//
+// Command parameters
+//---------------------------------------------------------------------------------//
 
       //Command parameters
       double cmdTorque;/*!< Last commanded torque*/
       double cmdPos;/*!< Last commanded position */
       double cmdVel;/*!< Last commanded Velocity */
 
+//---------------------------------------------------------------------------------//
+// Mode flags/parameters
+//---------------------------------------------------------------------------------//
+
+      bool SaturationFlag; /*!< Flag to indicate last command exceed torque limits and was truncated*/  
       bool enabled; /*!<Can controller issue commands?>*/
+      CONTROLLER::CONTROLLER_CONTROL_MODE controlMode;    /*!< Indicate current controller mode (torque, position, velocity)*/  
+
+//---------------------------------------------------------------------------------//
+//TEMPORARY: To be replaced by calls to param server
+//---------------------------------------------------------------------------------//
+
+          double PGain; /*!< Proportional gain*/
+      double IGain;/*!< Integral gain */
+      double DGain;/*!< Derivative gain */
+      double IMax;/*!< Upper integral clamp */
+      double IMin;/*!< Lower integral clamp */
 
       double maxPositiveTorque; /*!<Temporary (until param server) : local copy of max Positive Torque.*/
       double maxNegativeTorque; /*!<Temporary (until param server): local copy of max neg torque .*/
