@@ -6,5 +6,4 @@
   <depend package="std_msgs"/>
   <depend package="gmapping"/>
   <depend package="rosTF"/>
-  <depend package="rostime"/>
 </package>
