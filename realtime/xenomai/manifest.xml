@@ -4,7 +4,7 @@ properly installed on the system and provides the build flags to create realtime
 depend on Xenomai. </description>
  <author>Philippe Gerum</author>
  <license>GPL</license>
- <url>http://xenomai.org</license>
+ <url>http://xenomai.org</url>
  <export>
   <cpp
    cflags="-I/usr/xenomai/include -I/usr/xenomai/src/include -D_GNU_SOURCE -D_REENTRANT -D__XENO__"
