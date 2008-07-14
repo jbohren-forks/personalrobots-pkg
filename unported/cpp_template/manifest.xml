@@ -8,6 +8,6 @@ Until CPP scaffolder is working, this will do the trick.
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
 <depend package="roscpp"/>
-<depend package="common_flows"/>
+<!--<depend package="common_flows"/>-->
 </package>
 
