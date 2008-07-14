@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////////
 //Software License Agreement (BSD License)
 //
-//Copyright (c) 2008, Melonee Wise
+//Copyright (c) 2008, David Li, Melonee Wise, John Hsu
 //All rights reserved.
 //
 //Redistribution and use in source and binary forms, with or without
