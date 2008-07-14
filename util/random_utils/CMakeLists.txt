@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.6)
+include(rosbuild)
+rospack(random_utils)
+rospack_add_library(random_utils src/random_utils.cpp)
+rospack_add_executable(test_random_utils src/test.cpp)
+target_link_libraries(test_random_utils random_utils)

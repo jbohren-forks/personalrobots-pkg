@@ -1,0 +1,8 @@
+<package>
+  <license>BSD</license>
+  <author>Morgan Quigley, Ioan Sucan</author>
+  <depend package="rosthread" />
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrandom_utils"/>
+  </export>
+</package>
