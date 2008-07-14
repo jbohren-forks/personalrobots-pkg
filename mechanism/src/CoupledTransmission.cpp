@@ -1,6 +1,5 @@
-
 ///////////////////////////////////////////////////////////////////////////////
-// Copyright (C) 2008, Eric Berger
+// Copyright (C) 2008, Sachin Chitta, Jimmy Sastra
 //
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -26,55 +25,22 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-#ifndef TRANSMISSION_H
-#define TRANSMISSION_H
+// Simple transmission implementation
+#include <mechanism/transmission.h>
 
-#include "mechanism/joint.h"
-#include "mechanism/hardware_interface.h"
+CoupledTransmission(Actuator *actuator, Joint *joint, double mechanicalReduction, double motorTorqueConstant){
+   this->actuator = actuator;
+   this->joint = joint;
+   this->mechanicalReduction = mechanicalReduction;
+   this->motorTorqueConstant = motorTorqueConstant;
+   this->ticksPerRadian = ticksPerRadian;
+}
 
-class Transmission{
+void CoupledTransmission::propagatePosition(){
+   this->joint.position = this->ticksPerRadian * this->actuator.state.encoderCount;
+   this->joint.appliedEffort = this->actuator.lastMeasuredCurrent * (motorTorqueConstant * mechanicalReduction);
+}
 
-  public:
-
-   void propagatePosition(); //Use encoder data to fill out joint position and velocities
-
-   void propagateEffort(); //Use commanded joint efforts to fill out commanded motor currents
-};
-
-class SimpleTransmission : public Transmission{
-
-  public:
-
-   SimpleTransmission(Actuator * actuator, Joint *joint);
-
-   Actuator *actuator;
-
-   Joint *joint;
-
-   double mechanicalReduction;
-
-   double motorTorqueConstant;
-};
-
-class CoupledTransmission : public Transmission{
-
-  public:
-
-   CoupledTranmission(Actuator *actuator, Joint *joint, double mechanicalReduction, double motorTorqueConstant);
-
-};
-
-class NonlinearTransmission : public Transmission{
-
-  public:
-
-   NonlinearTransmission(Actuator *actuator, Joint *joint, double mechanicalReduction, double motorTorqueConstant);
-
-   Actuator *actuator;
-
-   Joint *joint;
-
-   // ?? Lookup table
-};
-
-#endif
+void CoupledTransmission::propagateEffort(){
+   this->actuator.command.current = this->joint.commandedEffort/(motorTorqueConstant * mechanicalReduction);
+}
