@@ -1,0 +1,9 @@
+<package>
+  <description brief="Detect red laser pointers in the world.">
+      Detector that finds red laser points in the world representing clicks.
+  </description>
+  <author>Hai Nguyen/hai@gatech.edu</author>
+  <license>BSD</license>
+  <depend package="rospy" />
+  <depend package="std_msgs" />  
+</package>
