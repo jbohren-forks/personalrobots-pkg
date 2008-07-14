@@ -34,7 +34,8 @@
 
 #pragma once
 /***************************************************/
-/*! \brief A PR2 Joint controller
+/*! \class CONTROLLER::JointController
+    \brief A Joint controller
     
     This class implements controller loops for
     PR2 Joint Control

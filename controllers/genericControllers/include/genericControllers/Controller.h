@@ -1,6 +1,10 @@
 #pragma once
 /***************************************************/
-/*! \brief A base level controller class.
+/*! \namespace CONTROLLER
+    \brief The CONTROLLER namespace
+    
+    \class CONTROLLER::Controller
+    \brief A base level controller class.
 
 */
 /***************************************************/
@@ -25,6 +29,7 @@ namespace CONTROLLER
     CONTROLLER_VELOCITY,
     CONTROLLER_AUTOMATIC
   };
+  
   class Controller
   {
     public:

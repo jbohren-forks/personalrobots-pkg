@@ -35,7 +35,8 @@
 #pragma once
 
 /***************************************************/
-/*! \brief A basic pid class.
+/*! \class CONTROLLER::Pid
+    \brief A basic pid class.
     
     This class implements a generic structure that
     can be used to create a wide range of pid 
