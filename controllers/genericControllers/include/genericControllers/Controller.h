@@ -39,7 +39,6 @@ namespace CONTROLLER
      virtual void Update(void);
      virtual void Init(void);
 
-     double ModNPi2Pi(double angle); 
     private:
 
 
