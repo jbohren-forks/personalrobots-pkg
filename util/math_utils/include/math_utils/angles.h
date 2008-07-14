@@ -1,6 +1,6 @@
+#pragma once 
 #include <math.h>
 
-#define FROM_DEGREES(degrees)	(((double)(degrees))/180*M_PI)
 /*
  * normalize_angle_positive
  *
