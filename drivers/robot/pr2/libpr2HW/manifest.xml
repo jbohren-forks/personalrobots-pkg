@@ -1,5 +1,5 @@
 <package>
-<description brief='API for baic PR2 Hardware controls'>
+<description brief='API for basic PR2 Hardware controls'>
 
 An API for baic PR2 Hardware controls: enable, disable, set gains, PD controllers, talk to hardware via UpdateHW() call.
 
@@ -12,7 +12,7 @@ An API for baic PR2 Hardware controls: enable, disable, set gains, PD controller
 <depend package="pr2Core"/>
 <depend package="libKinematics"/>
 <export>
-<cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lpr2HW"/>
+<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lpr2HW"/>
 </export>
 </package>
 
