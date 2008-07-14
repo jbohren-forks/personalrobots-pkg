@@ -36,7 +36,8 @@
 #define KINEMATIC_ENVIRONMENT_MODEL_SOLID_
 
 #include <collisionspace/environment.h>
-#include <collisionspace/kinematicSOLID.h>
+#include <robotmodels/kinematic.h>
+#include <SOLID/solid.h>
 
 /** @htmlinclude ../../manifest.html
 
@@ -45,25 +46,107 @@
 class EnvironmentModelSOLID : public EnvironmentModel
 {
  public:
+
+    /* dummy object for SOLID object references */
+    struct SOLIDObject
+    {
+	unsigned int id;	
+    };
+    
+    /* an object in the world */
+    struct Object
+    {
+	Object(void)
+	{
+	    obj = new SOLIDObject();
+	    shape = NULL;
+	}
+	
+	~Object(void)
+	{
+	    if (obj && shape)
+	    {
+		dtDeleteObject(obj);
+		dtDeleteShape(shape);
+	    }
+	    if (obj)
+		delete obj;
+	}
+	
+	SOLIDObject *obj;
+	DtShapeRef   shape;
+    };
+    
+    class KinematicModelSOLID : public KinematicModel
+    {
+    public:
+       	
+        KinematicModelSOLID(void) : KinematicModel()
+	{
+	}
+	
+	virtual ~KinematicModelSOLID(void)
+	{
+	    for (unsigned int i = 0 ; i < m_kshapes.size() ; ++i)
+		delete m_kshapes[i];
+	}
+	
+	virtual void build(URDF &model, const char *group = NULL);
+	
+	unsigned int getObjectCount(void) const;
+	Object*      getObject(unsigned int index) const;
+	
+	void updateCollisionPositions(void);
+	
+    protected:
+	
+	struct kShape
+	{
+	    kShape(void)
+	    {
+		obj = new Object();
+		link = NULL;
+	    }
+	    
+	    ~kShape(void)
+	    {
+		if (obj)
+		    delete obj;
+	    }	
+	    
+	    Object *obj;	
+	    Link   *link;	
+	};
+	
+	std::vector<kShape*> m_kshapes;
+	
+	void buildSOLIDShapes(Robot *robot);
+	DtShapeRef buildSOLIDShape(Geometry *geom);
+	
+    };
+    
     
     EnvironmentModelSOLID(void) : EnvironmentModel()
     {
-	model = dynamic_cast<KinematicModel*>(&modelSOLID);
+	model = dynamic_cast<KinematicModel*>(&m_modelSOLID);
     }
     
     ~EnvironmentModelSOLID(void)
     {
+	for (unsigned int i = 0 ; i < m_obstacles.size() ; ++i)
+	    delete m_obstacles[i];
     }
     
     /** Check if the model is in collision */
     virtual bool isCollision(void);
     
     /** Add a point cloud to the collision space */
-    virtual void addPointCloud(void); 
+    virtual void addPointCloud(unsigned int n, const double *points); 
     
  protected:
     
-    KinematicModelSOLID modelSOLID;    
+    KinematicModelSOLID  m_modelSOLID;    
+    std::vector<Object*> m_obstacles;
     
 };
 

@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include <collisionspace/kinematicODE.h>
+#include <collisionspace/environmentODE.h>
 #include <drawstuff/drawstuff.h>
 
 
@@ -119,11 +119,11 @@ int main(int argc, char **argv)
     URDF model;
     model.load("/u/isucan/ros/ros-pkg/drivers/robot/pr2/pr2Core/include/pr2Core/pr2.xml");
     
-    KinematicModelODE km;
-    km.build(model);
-    printf("number of robots = %d\n", km.getRobotCount());
+    EnvironmentModelODE km;
+    km.model->build(model);
+    printf("number of robots = %d\n", km.model->getRobotCount());
     
-    KinematicModel::Robot *r = km.getRobot(0);    
+    KinematicModel::Robot *r = km.model->getRobot(0);    
     printf("state dimension = %d\n", r->stateDimension);
     
     double *param = new double[r->stateDimension];
@@ -132,9 +132,9 @@ int main(int argc, char **argv)
     r->computeTransforms(param);
     delete[] param;
     
-    km.updateCollisionPositions();
+    dynamic_cast<EnvironmentModelODE::KinematicModelODE*>(km.model)->updateCollisionPositions();
     
-    robotSpace = km.getODESpace();
+    robotSpace = dynamic_cast<EnvironmentModelODE::KinematicModelODE*>(km.model)->getODESpace();
     
     dsFunctions fn;
     fn.version = DS_VERSION;

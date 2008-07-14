@@ -38,8 +38,81 @@ bool EnvironmentModelSOLID::isCollision(void)
 {
     return dtTest();
 }
-    
-void EnvironmentModelSOLID::addPointCloud(void)
+
+void EnvironmentModelSOLID::addPointCloud(unsigned int n, const double *points)
 {
     
+}
+
+void EnvironmentModelSOLID::KinematicModelSOLID::build(URDF &model, const char *group)
+{
+    KinematicModel::build(model, group);
+    for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
+	buildSOLIDShapes(m_robots[i]);  
+    dtDisableCaching();
+}
+
+void EnvironmentModelSOLID::KinematicModelSOLID::buildSOLIDShapes(Robot *robot)
+{
+    for (unsigned int i = 0 ; i < robot->links.size() ; ++i)
+    {
+	kShape *ks = new kShape();
+	ks->link = robot->links[i];
+	ks->obj->shape = buildSOLIDShape(robot->links[i]->geom);
+	if (!ks->obj->shape)
+	{
+	    delete ks;
+	    continue;
+	}
+	
+	dtCreateObject(ks->obj->obj, ks->obj->shape);	
+	m_kshapes.push_back(ks);
+    }
+}
+
+DtShapeRef EnvironmentModelSOLID::KinematicModelSOLID::buildSOLIDShape(Geometry *geom)
+{
+    DtShapeRef g = NULL;
+    
+    switch (geom->type)
+    {
+    case Geometry::SPHERE:
+	g = dtSphere(geom->size[0]);
+	break;
+    case Geometry::BOX:
+	g = dtBox(geom->size[0], geom->size[1], geom->size[2]);
+	break;
+    case Geometry::CYLINDER:
+	g = dtCylinder(geom->size[0], geom->size[1]);
+	break;
+    default:
+	break;
+    }
+    
+    return g;
+}
+
+void EnvironmentModelSOLID::KinematicModelSOLID::updateCollisionPositions(void)
+{
+    for (unsigned int i = 0 ; i < m_kshapes.size() ; ++i)
+    {
+	dtSelectObject(m_kshapes[i]->obj->obj);
+	libTF::Pose3D::Position pos;
+	m_kshapes[i]->link->globalTrans.getPosition(pos);
+	libTF::Pose3D::Quaternion quat;
+	m_kshapes[i]->link->globalTrans.getQuaternion(quat);
+	dtLoadIdentity();
+	dtTranslate(pos.x, pos.y, pos.z);
+	dtRotate(quat.x, quat.y, quat.z, quat.w);	
+    }
+}
+
+unsigned int EnvironmentModelSOLID::KinematicModelSOLID::getObjectCount(void) const
+{
+    return m_kshapes.size();
+}
+
+EnvironmentModelSOLID::Object* EnvironmentModelSOLID::KinematicModelSOLID::getObject(unsigned int index) const
+{
+    return m_kshapes[index]->obj;
 }

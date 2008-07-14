@@ -36,7 +36,8 @@
 #define KINEMATIC_ENVIRONMENT_MODEL_ODE_
 
 #include <collisionspace/environment.h>
-#include <collisionspace/kinematicODE.h>
+#include <robotmodels/kinematic.h>
+#include <ode/ode.h>
 
 /** @htmlinclude ../../manifest.html
 
@@ -44,11 +45,55 @@
 
 class EnvironmentModelODE : public EnvironmentModel
 {
- public:
-    
+public:
+
+    class KinematicModelODE : public KinematicModel
+    {
+    public:
+	
+        KinematicModelODE(void) : KinematicModel()
+	{
+	    m_space = NULL;
+	}
+	
+	virtual ~KinematicModelODE(void)
+	{
+	    if (m_space)
+		dSpaceDestroy(m_space);
+	    for (unsigned int i = 0 ; i < m_kgeoms.size() ; ++i)
+		delete m_kgeoms[i];
+	}
+	
+	virtual void build(URDF &model, const char *group = NULL);
+	
+	dSpaceID getODESpace(void) const;
+	unsigned int getGeomCount(void) const;
+	dGeomID getGeom(unsigned index) const;
+	
+	void updateCollisionPositions(void);
+	
+	
+    protected:
+	
+	dSpaceID m_space;
+	
+	struct kGeom
+	{
+	    dGeomID geom;
+	    Link   *link;
+	};
+	
+	std::vector<kGeom*> m_kgeoms;    
+	
+	void buildODEGeoms(Robot *robot);
+	dGeomID buildODEGeom(Geometry *geom);
+	void setGeomPose(dGeomID geom, libTF::Pose3D &pose) const;
+	
+    };
+
     EnvironmentModelODE(void) : EnvironmentModel()
     {
-	model = dynamic_cast<KinematicModel*>(&modelODE);
+	model = dynamic_cast<KinematicModel*>(&m_modelODE);
     }
     
     ~EnvironmentModelODE(void)
@@ -59,11 +104,12 @@ class EnvironmentModelODE : public EnvironmentModel
     virtual bool isCollision(void);
     
     /** Add a point cloud to the collision space */
-    virtual void addPointCloud(void); 
+    virtual void addPointCloud(unsigned int n, const double *points); 
 
  protected:
 
-    KinematicModelODE modelODE;
+    KinematicModelODE    m_modelODE;
+    std::vector<dGeomID> m_obstacles;
     
 };
 

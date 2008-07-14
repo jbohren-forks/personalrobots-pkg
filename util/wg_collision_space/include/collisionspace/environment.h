@@ -58,8 +58,8 @@ class EnvironmentModel
     virtual bool isCollision(void) = 0;
     
     /** Add a point cloud to the collision space */
-    virtual void addPointCloud(void) = 0;    
-
+    virtual void addPointCloud(unsigned int n, const double* points) = 0;
+    
     KinematicModel *model;    
         
 };
