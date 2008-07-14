@@ -31,3 +31,7 @@ Controller::~Controller()
 void Controller::Update(){
 
 }
+
+void Controller::Init(){
+
+}

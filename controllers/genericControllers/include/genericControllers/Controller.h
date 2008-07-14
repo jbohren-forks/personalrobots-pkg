@@ -22,8 +22,7 @@ namespace CONTROLLER
     CONTROLLER_OFF,
     CONTROLLER_TORQUE,
     CONTROLLER_POSITION,
-    CONTROLLER_VELOCITY,
-    CONTROLLER_AUTOMATIC //e.g. Automatic scan mode for hokuyo
+    CONTROLLER_VELOCITY
   };
   class Controller
   {
@@ -32,6 +31,8 @@ namespace CONTROLLER
       virtual ~Controller();
        
      virtual void Update(void);
+     virtual void Init(void);
+
      double ModNPi2Pi(double angle); 
     private:
 

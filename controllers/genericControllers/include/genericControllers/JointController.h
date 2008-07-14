@@ -62,7 +62,7 @@ namespace CONTROLLER
         * \param Joint* joint The joint we are interacting with
         * \param string name The namespace identification in ROS
         */
-//      CONTROLLER::CONTROLLER_ERROR_CODE Init(Joint* joint, string name);
+      CONTROLLER::CONTROLLER_ERROR_CODE Init(Joint* joint, string name);
     
       /*!
        * \brief Default Constructor of the JointController class.
@@ -233,6 +233,8 @@ namespace CONTROLLER
         */
 
       void DisableController();
+
+      void Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort);
 
     private:
 
