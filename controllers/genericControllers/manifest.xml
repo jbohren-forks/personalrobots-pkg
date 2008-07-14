@@ -13,7 +13,7 @@
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
-    <cpp cflags='-I${prefix}/include' lflags='-L${prefix}/lib -lgenericControllers'/>
+    <cpp cflags='-I${prefix}/include' lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lgenericControllers'/>
   </export>
   
 </package>

@@ -1,9 +1,1 @@
-SRC = src/Pid.cpp src/Controller.cpp src/JointController.cpp
-OUT = lib/libgenericControllers.a
-PKG = genericControllers
-include $(shell rospack find mk)/lib.mk
-
-
-
-
-
+include $(shell rospack find mk)/cmake.mk
