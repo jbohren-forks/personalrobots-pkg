@@ -3,5 +3,5 @@
   <author>Tully Foote tfoote at willowgarage.com</author>
   <license>BSD</license>
   <depend package="rospy" />
-  <depend package="common_flows" />
+<!--  <depend package="common_flows" />-->
 </package>
