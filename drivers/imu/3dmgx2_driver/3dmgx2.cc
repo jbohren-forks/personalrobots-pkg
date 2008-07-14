@@ -37,15 +37,15 @@
 #include "poll.h"
 
 
-unsigned short bswap_16(unsigned short x) {
+static inline unsigned short bswap_16(unsigned short x) {
   return (x>>8) | (x<<8);
 }
 
-unsigned int bswap_32(unsigned int x) {
+static inline unsigned int bswap_32(unsigned int x) {
   return (bswap_16(x&0xffff)<<16) | (bswap_16(x>>16));
 }
 
-float extract_float(uint8_t* addr) {
+static float extract_float(uint8_t* addr) {
 
   float tmp;
 
@@ -54,14 +54,10 @@ float extract_float(uint8_t* addr) {
   *((unsigned char*)(&tmp) + 1) = *(addr+2);
   *((unsigned char*)(&tmp)) = *(addr+3);
 
-  
-
-  //  uint32_t tmp = bswap_32(*(uint32_t*)addr);
-  //  return *(float*)(&tmp);
   return tmp;
 }
 
-static inline unsigned long long time_helper()
+static unsigned long long time_helper()
 {
 #if POSIX_TIMERS > 0
   struct timespec curtime;
@@ -73,6 +69,7 @@ static inline unsigned long long time_helper()
   return (unsigned long long)(timeofday.tv_sec) * 1000000000 + (unsigned long long)(timeofday.tv_usec) * 1000;  
 #endif
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 MS_3DMGX2::IMU::IMU() : fd(-1), continuous(false)  { }
@@ -148,6 +145,23 @@ MS_3DMGX2::IMU::init_time()
   int k = 25;
   offset_ticks = bswap_32(*(uint32_t*)(rep + k));
   last_ticks = offset_ticks;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void
+MS_3DMGX2::IMU::init_gyros()
+{
+  wraps = 0;
+
+  uint8_t cmd[5];
+  uint8_t rep[19];
+
+  cmd[0] = CMD_CAPTURE_GYRO_BIAS;
+  cmd[1] = 0xC1;
+  cmd[2] = 0x29;
+  *(unsigned short*)(&cmd[3]) = bswap_16(10000);
+  
+  transact(cmd, sizeof(cmd), rep, sizeof(rep));
 }
 
 
