@@ -38,6 +38,7 @@
 #include <urdf/URDF.h>
 #include <libTF/Pose3D.h>
 #include <vector>
+#include <string>
 
 /** @htmlinclude ../../manifest.html
 
@@ -167,7 +168,10 @@ class KinematicModel
 	
 	/* List of links in the robot */
 	std::vector<Link*>  links;
-	
+
+	/* List of leaf links (have no child links) */
+	std::vector<Link*>  leafs;
+		
 	/* The first joint in the robot -- the root */
 	Joint              *chain;
 	
@@ -180,6 +184,10 @@ class KinematicModel
 	 * values for the parameter. If both minimum and maximum are
 	 * set to 0, the parameter is unbounded. */
 	std::vector<double> stateBounds;
+	
+	/* Group of links corresponding to this robot (if any) */
+	std::string         tag;
+	
     };
     
     KinematicModel(void)

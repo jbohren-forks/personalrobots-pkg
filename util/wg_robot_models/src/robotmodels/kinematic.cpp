@@ -89,6 +89,7 @@ void KinematicModel::build(URDF &model, const char *group)
 	{
 	    URDF::Link *link = g->linkRoots[i];
 	    Robot *rb = new Robot();
+	    rb->tag = g->name;
 	    rb->chain = new Joint();
 	    buildChain(rb, NULL, rb->chain, link);
 	    m_robots.push_back(rb);
@@ -203,8 +204,24 @@ void KinematicModel::buildChain(Robot *robot, Joint *parent, Link* link, URDF::L
     
     for (unsigned int i = 0 ; i < urdfLink->children.size() ; ++i)
     {
+	/* if building from a group of links, make sure we do not exit the group */
+	if (!robot->tag.empty())
+	{
+	    bool found = false;
+	    for (unsigned int k = 0 ; k < urdfLink->children[i]->groups.size() ; ++k)
+		if (urdfLink->children[i]->groups[k]->name == robot->tag)
+		{
+		    found = true;
+		    break;
+		}
+	    if (!found)
+		continue;
+	}
 	Joint *newJoint = new Joint();
 	buildChain(robot, link, newJoint, urdfLink->children[i]);
 	link->after.push_back(newJoint);
-    }	    
+    }
+
+    if (link->after.size() == 0)
+	robot->leafs.push_back(link);
 }
