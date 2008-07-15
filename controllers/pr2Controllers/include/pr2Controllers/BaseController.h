@@ -13,19 +13,22 @@
 //#include <libKinematics/ik.h>
 //#include <sys/types.h>
 //#include <stdint.h>
-//#include <string>
 //#include <libKDL/kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
 
+#include <string>
 #include <iostream>
 
 #include <pr2Core/pr2Core.h>
 #include <pr2Core/pr2Misc.h>
 
-#include <libpr2HW/pr2HW.h>
+//#include <libpr2HW/pr2HW.h>
 #include <genericControllers/Controller.h>
 #include <genericControllers/JointController.h>
+#include <robot_model/joint.h>
 
 #define BASE_NUM_JOINTS 12
+
+using namespace std;
 
 namespace CONTROLLER
 {
@@ -151,6 +154,8 @@ namespace CONTROLLER
 
       JointController *baseJointControllers;
 
+      Joint *baseJoints;
+
       char *ns;
 
       PR2::PR2_CONTROL_MODE controlMode; /*!< Base controller control mode */
@@ -188,7 +193,9 @@ namespace CONTROLLER
       double yDotNew; /**< New sideways speed cmd (motion to the left is positive) */
 
       double yawDotNew; /**< New rotational speed cmd (motion counter-clockwise is positive) */
+
+      double GetTime();
+
   };
 }
-
 

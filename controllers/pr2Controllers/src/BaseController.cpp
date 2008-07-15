@@ -2,7 +2,11 @@
 #include <pthread.h>
 
 // roscpp
-#include <ros/node.h>
+//#include <ros/node.h>
+
+#include <sys/time.h>
+
+#include <robot_model/joint.h>
 
 using namespace CONTROLLER;
 
@@ -10,27 +14,27 @@ using namespace PR2;
 
 static pthread_mutex_t dataMutex = PTHREAD_MUTEX_INITIALIZER;
 
-const double PGain = 2.5; /**< Proportional gain for speed control */
+const double BaseController::PGain = 2.5; /**< Proportional gain for speed control */
 
-const double IGain = 0; /**< Integral gain for speed control */
+const double BaseController::IGain = 0; /**< Integral gain for speed control */
 
-const double DGain = 0; /**< Derivative gain for speed control */
+const double BaseController::DGain = 0; /**< Derivative gain for speed control */
 
-const double IMax  = 0; /**< Max integral error term */
+const double BaseController::IMax  = 0; /**< Max integral error term */
 
-const double IMin  = 0; /**< Min integral error term */
+const double BaseController::IMin  = 0; /**< Min integral error term */
 
-const double maxPositiveTorque = 0.0528; /**< (in Nm) max current = 0.75 A. Torque constant = 70.4 mNm/A.Max Torque = 70.4*0.75 = 52.8 mNm */
+const double BaseController::maxPositiveTorque = 0.0528; /**< (in Nm) max current = 0.75 A. Torque constant = 70.4 mNm/A.Max Torque = 70.4*0.75 = 52.8 mNm */
 
-const double maxNegativeTorque = -0.0528; /**< max negative torque */
+const double BaseController::maxNegativeTorque = -0.0528; /**< max negative torque */
 
-const double maxEffort = 0.0528; /**< maximum effort */
+const double BaseController::maxEffort = 0.0528; /**< maximum effort */
       
-const double PGain_Pos = 0.5; /**< Proportional gain for position control */
+const double BaseController::PGain_Pos = 0.5; /**< Proportional gain for position control */
 
-const double IGain_Pos = 0; /**< Integral gain for position control */
+const double BaseController::IGain_Pos = 0; /**< Integral gain for position control */
 
-const double DGain_Pos = 0.04; /**< Derivative gain for position control */
+const double BaseController::DGain_Pos = 0.04; /**< Derivative gain for position control */
 
 void ComputePointVelocity(double vx, double vy, double vw, double x_offset, double y_offset, double &pvx, double &pvy)
 {
@@ -44,12 +48,12 @@ BaseController::BaseController()
 
 BaseController::BaseController(char *ns)
 {
-   this->ns = strdup(ns);
 }
   
 BaseController::~BaseController( )
 {
    delete (this->baseJointControllers);
+   delete (this->baseJoints);
 }
 
 void BaseController::Init()
@@ -63,20 +67,35 @@ void BaseController::Init()
    yawDotNew = 0;
 
    InitJointControllers();
+
+   this->baseJoints = new Joint[BASE_NUM_JOINTS];
+   this->baseTransmissions = new SimpleTransmission[BASE_NUM_JOINTS];
+
 }
+
 
 void BaseController::InitJointControllers() 
 {
    this->baseJointControllers = new JointController[BASE_NUM_JOINTS];
+
    for(int ii = 0; ii < NUM_CASTERS; ii++) 
    {
-      //baseJointControllers[ii].Init(PGain, IGain, DGain, IMax, IMin, CONTROLLER_POSITION, ns.getTime(), maxPositiveTorque, maxNegativeTorque, maxEffort);
+      baseJointControllers[ii].Init(PGain, IGain, DGain, IMax, IMin, CONTROLLER_POSITION, GetTime(), maxPositiveTorque, maxNegativeTorque, maxEffort, &baseJoints[ii]);
+      baseTransmissions[ii].Init(Actuator *actuator, Joint *joint, 1, 0.074);
    }
    for(int ii = NUM_CASTERS; ii < BASE_NUM_JOINTS; ii++) 
    {
-      //baseJointControllers[ii].Init(PGain, IGain, DGain, IMax, IMin, CONTROLLER_VELOCITY, ns.getTime(), maxPositiveTorque, maxNegativeTorque, maxEffort);
+      baseJointControllers[ii].Init(PGain, IGain, DGain, IMax, IMin, CONTROLLER_VELOCITY, GetTime(), maxPositiveTorque, maxNegativeTorque, maxEffort,&baseJoints[ii]);
    }
 }  
+
+double BaseController::GetTime()
+{
+   struct timeval t;
+   gettimeofday( &t, 0);
+   return (double) (t.tv_usec *1e-6 + t.tv_sec);
+}
+
 
 void BaseController::Update( )
 {
