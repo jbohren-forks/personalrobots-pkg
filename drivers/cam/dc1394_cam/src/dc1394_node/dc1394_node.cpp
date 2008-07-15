@@ -39,6 +39,7 @@
 #include "dc1394_cam/dc1394_cam.h"
 
 #include <vector>
+#include <list>
 #include <sstream>
 
 using namespace std;
@@ -88,7 +89,7 @@ class Dc1394Node : public ros::node
 public:
   ros::Time next_time;
 
-  vector<CamData> cams;
+  list<CamData> cams;
   
   int count;
 
@@ -137,28 +138,22 @@ public:
 
       param(oss.str(), cd.name, oss.str());
 
-      cams.push_back(cd);
-    }
-
-    int nextCam = 0;
-    for (vector<CamData>::iterator cd = cams.begin(); cd != cams.end(); cd++)
-    {
-      advertise<std_msgs::Image>(cd->name + string("/image")); //Do this later?
+      advertise<std_msgs::Image>(cd.name + string("/image")); //Do this later?
 
       uint64_t guid;
-      if (has_param(cd->name + string("/guid")))
+      if (has_param(cd.name + string("/guid")))
       {
         string guidStr;
-        get_param(cd->name + string("/guid"), guidStr);
+        get_param(cd.name + string("/guid"), guidStr);
         
         guid = strtoll(guidStr.c_str(), NULL, 16);
       } else {
-        guid = dc1394_cam::getGuid(nextCam++);
+        guid = dc1394_cam::getGuid(i);
       }
 
       string strSpeed;
       dc1394speed_t speed;
-      param(cd->name + string("/speed"), strSpeed, string("S400"));
+      param(cd.name + string("/speed"), strSpeed, string("S400"));
       if (strSpeed == string("S100"))
         speed = DC1394_ISO_SPEED_100;
       else if (strSpeed == string("S200"))
@@ -168,7 +163,7 @@ public:
 
       double dblFps;
       dc1394framerate_t fps;
-      param(cd->name + string("/fps"), dblFps, 30.0);
+      param(cd.name + string("/fps"), dblFps, 30.0);
       if (dblFps >= 240.0)
         fps = DC1394_FRAMERATE_240;
       else if (dblFps >= 120.0)
@@ -186,11 +181,11 @@ public:
       else
         fps = DC1394_FRAMERATE_1_875;
 
-      cd->camType = NORMAL;
+      cd.camType = NORMAL;
 
       string strMode;
       dc1394video_mode_t mode;
-      param(cd->name + string("/videoMode"), strMode, string("640x480mono8"));
+      param(cd.name + string("/videoMode"), strMode, string("640x480mono8"));
       if (strMode == string("640x480rgb24"))
         mode = DC1394_VIDEO_MODE_640x480_RGB8;
       else if (strMode == string("1024x768rgb24"))
@@ -210,107 +205,128 @@ public:
       else if (strMode == string("640x480videre"))
       {
         mode = DC1394_VIDEO_MODE_640x480_YUV422;
-        cd->camType = VIDERE;
+        cd.camType = VIDERE;
       }
       else
         mode = DC1394_VIDEO_MODE_640x480_MONO8;
 
       int bufferSize;
-      param(cd->name + string("/bufferSize"), bufferSize, 8);
+      param(cd.name + string("/bufferSize"), bufferSize, 8);
 
-      cd->colorize = false;
+      cd.colorize = false;
 
       if ( mode == DC1394_VIDEO_MODE_640x480_MONO8 ||
            mode == DC1394_VIDEO_MODE_1024x768_MONO8 ||
            mode == DC1394_VIDEO_MODE_1280x960_MONO8 ||
            mode == DC1394_VIDEO_MODE_1600x1200_MONO8)
       {
-        cd->colorize = true;
+        cd.colorize = true;
         string bayer;
-        param(cd->name + string("/bayer"), bayer, string("none"));
+        param(cd.name + string("/bayer"), bayer, string("none"));
 
         if (bayer == string("rggb"))
-          cd->bayer = DC1394_COLOR_FILTER_RGGB;
+          cd.bayer = DC1394_COLOR_FILTER_RGGB;
         else if (bayer == string("gbrg"))
-          cd->bayer = DC1394_COLOR_FILTER_GBRG;
+          cd.bayer = DC1394_COLOR_FILTER_GBRG;
         else if (bayer == string("grbg"))
-          cd->bayer = DC1394_COLOR_FILTER_GRBG;
+          cd.bayer = DC1394_COLOR_FILTER_GRBG;
         else if (bayer == string("bggr"))
-          cd->bayer = DC1394_COLOR_FILTER_BGGR;
+          cd.bayer = DC1394_COLOR_FILTER_BGGR;
         else
-          cd->colorize = false;
+          cd.colorize = false;
       }
 
-      if (cd->camType == VIDERE)
+      if (cd.camType == VIDERE)
       {
-        cd->otherData = new VidereData;
+        cd.otherData = new VidereData;
 
         string strVidereMode;
-        param(cd->name + string("/videreParam/mode"), strVidereMode, string("none"));
+        param(cd.name + string("/videreParam/mode"), strVidereMode, string("none"));
         if (strVidereMode == string("none"))
-          ((VidereData*)(cd->otherData))->mode = 1;
+          ((VidereData*)(cd.otherData))->mode = 1;
         else if (strVidereMode == string("rectified"))
-          ((VidereData*)(cd->otherData))->mode = 3;
+          ((VidereData*)(cd.otherData))->mode = 3;
         else if (strVidereMode == string("disparity"))
-          ((VidereData*)(cd->otherData))->mode = 4;
+          ((VidereData*)(cd.otherData))->mode = 4;
         else if (strVidereMode == string("disparity_raw"))
-          ((VidereData*)(cd->otherData))->mode = 5;
+          ((VidereData*)(cd.otherData))->mode = 5;
         else
-          ((VidereData*)(cd->otherData))->mode = 4;
+          ((VidereData*)(cd.otherData))->mode = 4;
 
         int textureThresh;
-        param(cd->name + string("/videreParam/textureThresh"), textureThresh, 12);
+        param(cd.name + string("/videreParam/textureThresh"), textureThresh, 12);
         if (textureThresh < 0)
           textureThresh = 0;
         if (textureThresh > 63)
           textureThresh = 63;
-        ((VidereData*)(cd->otherData))->textureThresh = textureThresh;
+        ((VidereData*)(cd.otherData))->textureThresh = textureThresh;
 
         int uniqueThresh;
-        param(cd->name + string("/videreParam/uniqueThresh"), uniqueThresh, 12);
+        param(cd.name + string("/videreParam/uniqueThresh"), uniqueThresh, 12);
         if (uniqueThresh < 0)
           uniqueThresh = 0;
         if (uniqueThresh > 63)
           uniqueThresh = 63;
-        ((VidereData*)(cd->otherData))->uniqueThresh = uniqueThresh;
+        ((VidereData*)(cd.otherData))->uniqueThresh = uniqueThresh;
       }
 
       printf("Opening camera with guid: %llx\n", guid);
       
-      cd->cam = new dc1394_cam::Cam(guid,
+      try
+      {
+
+      cd.cam = new dc1394_cam::Cam(guid,
                                    speed,
                                    mode,
                                    fps,
                                    bufferSize);
+      } catch(dc1394_cam::CamException e)
+      {
+        printf("Failed opening camera: %s\n", e.what());
+        cd.cleanup();
+        continue;
+      }
 
-      checkAndSetFeature(*cd, "brightness", DC1394_FEATURE_BRIGHTNESS);
-      checkAndSetFeature(*cd, "exposure", DC1394_FEATURE_EXPOSURE);
-      checkAndSetFeature(*cd, "shutter", DC1394_FEATURE_SHUTTER);
-      checkAndSetFeature(*cd, "gamma", DC1394_FEATURE_GAMMA);
-      checkAndSetFeature(*cd, "gain", DC1394_FEATURE_GAIN);
+      // Make sure camera is actually a videre...
+      if (cd.camType == VIDERE)
+      {
+        if (cd.cam->dcCam->vendor_id != 0x5505)
+        {
+          printf("Not a videre camera!\n");
+          cd.cleanup();
+          continue;
+        }
+      }
 
-      cd->cam->start();
+      checkAndSetFeature(cd, "brightness", DC1394_FEATURE_BRIGHTNESS);
+      checkAndSetFeature(cd, "exposure", DC1394_FEATURE_EXPOSURE);
+      checkAndSetFeature(cd, "shutter", DC1394_FEATURE_SHUTTER);
+      checkAndSetFeature(cd, "gamma", DC1394_FEATURE_GAMMA);
+      checkAndSetFeature(cd, "gain", DC1394_FEATURE_GAIN);
+
+      cd.cam->start();
 
       //  VIDERE mode setup has to happen AFTER starting the camera
 
-      if (cd->camType == VIDERE)
+      if (cd.camType == VIDERE)
       {
         usleep(50000);
-        uint32_t t_thresh = 0x08000000 | (0x40 << 16) | ( ((VidereData*)(cd->otherData))->textureThresh << 16);
-        cd->cam->setControlRegister(0xFF000, t_thresh);
+        uint32_t t_thresh = 0x08000000 | (0x40 << 16) | ( ((VidereData*)(cd.otherData))->textureThresh << 16);
+        cd.cam->setControlRegister(0xFF000, t_thresh);
 
         usleep(50000);
-        uint32_t u_thresh = 0x08000000 | (0x00 << 16) | ( ((VidereData*)(cd->otherData))->uniqueThresh << 16);
-        cd->cam->setControlRegister(0xFF000, u_thresh);
+        uint32_t u_thresh = 0x08000000 | (0x00 << 16) | ( ((VidereData*)(cd.otherData))->uniqueThresh << 16);
+        cd.cam->setControlRegister(0xFF000, u_thresh);
 
         usleep(50000);
-        uint32_t qval1 = 0x08000000 | (0x90 << 16) | ( ( ((VidereData*)(cd->otherData))->mode & 0x7) << 16);
+        uint32_t qval1 = 0x08000000 | (0x90 << 16) | ( ( ((VidereData*)(cd.otherData))->mode & 0x7) << 16);
         uint32_t qval2 = 0x08000000 | (0x9C << 16);
 
-        cd->cam->setControlRegister(0xFF000, qval1);
-        cd->cam->setControlRegister(0xFF000, qval2);
+        cd.cam->setControlRegister(0xFF000, qval1);
+        cd.cam->setControlRegister(0xFF000, qval2);
       }
 
+      cams.push_back(cd);
     }
 
     next_time = ros::Time::now();
@@ -323,7 +339,7 @@ public:
 
   ~Dc1394Node()
   {
-    for (vector<CamData>::iterator i = cams.begin(); i != cams.end(); i++)
+    for (list<CamData>::iterator i = cams.begin(); i != cams.end(); i++)
       i->cleanup();
 
     dc1394_cam::fini();  
@@ -334,7 +350,7 @@ public:
 
     dc1394_cam::waitForData(1000000);
 
-    for (vector<CamData>::iterator i = cams.begin(); i != cams.end(); i++)
+    for (list<CamData>::iterator i = cams.begin(); i != cams.end(); i++)
     {
 
       dc1394video_frame_t *in_frame = i->cam->getFrame(DC1394_CAPTURE_POLICY_POLL);
@@ -439,7 +455,7 @@ int main(int argc, char **argv)
   
   Dc1394Node dc;
 
-  while (dc.ok()) {
+  while (dc.ok() && dc.cams.size() > 0) {
     dc.getAndSend();
   }
 
