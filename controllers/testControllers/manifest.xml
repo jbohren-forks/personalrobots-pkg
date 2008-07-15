@@ -1,0 +1,16 @@
+<package>
+  <description brief='Controller test using etherdrive'>
+  </description>
+  <author>Jimmy Sastra, Sachin Chitta</author>
+  <license>BSD</license>
+  <depend package="etherdrive_hardware" />
+  <depend package="pr2Controllers" />
+  <depend package="genericControllers" />  
+  <depend package="hw_interface" />
+  <depend package="robot_model" />
+  <url>http://pr.willowgarage.com</url>
+  <repository>http://pr.willowgarage.com/repos</repository>
+  <export>
+    <cpp cflags='-I${prefix}/include' lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib '/>
+  </export>
+</package>

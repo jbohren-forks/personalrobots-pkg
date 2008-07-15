@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.6)
+include(rosbuild)
+rospack(testControllers)
+add_definitions(-Wall)
+rospack_add_executable(testControllers src/test_base.cpp)
+target_link_libraries(testControllers etherdrive_hardware pr2Controllers)
