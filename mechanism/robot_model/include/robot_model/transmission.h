@@ -32,49 +32,51 @@
 #include "mechanism/joint.h"
 #include "mechanism/hardware_interface.h"
 
-class Transmission{
+namespace mechanism {
+  class Transmission{
 
-  public:
+    public:
 
-   void propagatePosition(); //Use encoder data to fill out joint position and velocities
+     void propagatePosition(); //Use encoder data to fill out joint position and velocities
 
-   void propagateEffort(); //Use commanded joint efforts to fill out commanded motor currents
-};
+     void propagateEffort(); //Use commanded joint efforts to fill out commanded motor currents
+  };
 
-class SimpleTransmission : public Transmission{
+  class SimpleTransmission : public Transmission{
 
-  public:
+    public:
 
-   SimpleTransmission(Actuator * actuator, Joint *joint);
+     SimpleTransmission(Actuator * actuator, Joint *joint);
 
-   Actuator *actuator;
+     Actuator *actuator;
 
-   Joint *joint;
+     Joint *joint;
 
-   double mechanicalReduction;
+     double mechanicalReduction;
 
-   double motorTorqueConstant;
-};
+     double motorTorqueConstant;
+  };
 
-class CoupledTransmission : public Transmission{
+  class CoupledTransmission : public Transmission{
 
-  public:
+    public:
 
-   void CoupledTranmission(Actuator *actuator, Joint *joint, double mechanicalReduction, double motorTorqueConstant);
+     void CoupledTranmission(Actuator *actuator, Joint *joint, double mechanicalReduction, double motorTorqueConstant);
 
-};
+  };
 
-class NonlinearTransmission : public Transmission{
+  class NonlinearTransmission : public Transmission{
 
-  public:
+    public:
 
-   NonlinearTransmission(Actuator *actuator, Joint *joint, double mechanicalReduction, double motorTorqueConstant);
+     NonlinearTransmission(Actuator *actuator, Joint *joint, double mechanicalReduction, double motorTorqueConstant);
 
-   Actuator *actuator;
+     Actuator *actuator;
 
-   Joint *joint;
+     Joint *joint;
 
-   // ?? Lookup table
-};
+     // ?? Lookup table
+  };
+}
 
 #endif

@@ -35,17 +35,19 @@
 #include "joint.h"
 #include "transmission.h"
 
-class Robot{
-  public:
-  Robot(char *ns);
-  ~Robot();
-  char *name;
-  Link *link;
-  int numLinks;
-  Joint *joint;
-  int numJoints;
-  Transmission *transmission;
-  int numTransmissions;
-};
+namespace mechanism {
+  class Robot{
+    public:
+    Robot(char *ns);
+    ~Robot();
+    char *name;
+    Link *link;
+    int numLinks;
+    Joint *joint;
+    int numJoints;
+    Transmission *transmission;
+    int numTransmissions;
+  };
+}
 
 #endif

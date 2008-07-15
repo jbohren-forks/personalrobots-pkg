@@ -28,28 +28,30 @@
 #ifndef JOINT_H
 #define JOINT_H
 
-class Joint{
-  public:
+namespace mechanism {
+  class Joint{
+    public:
 
-  void enforceLimits();
+    void enforceLimits();
 
-  char *name;
-  int type;
+    char *name;
+    int type;
 
-  //Update every cycle from input data
-  bool initialized;
-  double position;
-  double velocity;
-  double appliedEffort;
+    //Update every cycle from input data
+    bool initialized;
+    double position;
+    double velocity;
+    double appliedEffort;
 
-  //Written every cycle out to motor boards
-  double commandedEffort;
-  
-  //Never changes
-  double jointLimitMin;
-  double jointLimitMax;
-  double effortLimit;
-  double velocityLimit;
-};
+    //Written every cycle out to motor boards
+    double commandedEffort;
+    
+    //Never changes
+    double jointLimitMin;
+    double jointLimitMax;
+    double effortLimit;
+    double velocityLimit;
+  };
+}
 
 #endif

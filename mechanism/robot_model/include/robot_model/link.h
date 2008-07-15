@@ -30,10 +30,12 @@
 
 #include "joint.h"
 
-class Link{
-  char *name;
-  //Pointer to KDL link
-  Joint *joint;
-};
+namespace mechanism {
+  class Link{
+    char *name;
+    //Pointer to KDL link
+    Joint *joint;
+  };
+}
 
 #endif
