@@ -12,13 +12,11 @@
 //#include <libKinematics/ik.h>
 //#include <sys/types.h>
 //#include <stdint.h>
-//#include <string>
 //#include <libKDL/kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
 
 #include <iostream>
 
 #include <pr2Core/pr2Core.h>
-#include <libpr2HW/pr2HW.h>
 #include <genericControllers/Controller.h>
 
 namespace CONTROLLER
@@ -69,7 +67,7 @@ namespace CONTROLLER
         *   or setParam('minLimit',-10);
         *
         */
-      PR2::PR2_ERROR_CODE setParam(string label,double value);
+      PR2::PR2_ERROR_CODE setParam(std::string label,double value);
 
     private:
       PR2::PR2_CONTROL_MODE controlMode;      /**< SpineController control mode >*/

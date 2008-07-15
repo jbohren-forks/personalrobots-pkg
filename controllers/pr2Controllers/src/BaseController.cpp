@@ -181,13 +181,13 @@ PR2::PR2_ERROR_CODE BaseController::setWrench(double yaw)
    return PR2::PR2_ALL_OK;
 }
 
-PR2::PR2_ERROR_CODE BaseController::setParam(string label,double value)
+PR2::PR2_ERROR_CODE BaseController::setParam(std::string label,double value)
 {
 
    return PR2::PR2_ALL_OK;
 }
 
-PR2::PR2_ERROR_CODE BaseController::setParam(string label,string value)
+PR2::PR2_ERROR_CODE BaseController::setParam(std::string label,std::string value)
 {
 
    return PR2::PR2_ALL_OK;

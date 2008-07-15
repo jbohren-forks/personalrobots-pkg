@@ -12,7 +12,6 @@
 //#include <libKinematics/ik.h>
 //#include <sys/types.h>
 //#include <stdint.h>
-//#include <string>
 //#include <libKDL/kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
 
 #include <iostream>

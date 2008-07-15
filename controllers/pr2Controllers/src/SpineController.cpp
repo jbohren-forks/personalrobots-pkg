@@ -34,7 +34,7 @@ SpineController::setForce(double fz)
 
 
 PR2::PR2_ERROR_CODE
-SpineController::setParam(string label,double value)
+SpineController::setParam(std::string label,double value)
 {
 
   return PR2::PR2_ALL_OK;

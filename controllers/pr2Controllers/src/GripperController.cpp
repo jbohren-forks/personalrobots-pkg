@@ -41,13 +41,13 @@ GripperController::open()
 }
 
 PR2::PR2_ERROR_CODE
-GripperController::setParam(string label,double value)
+GripperController::setParam(std::string label,double value)
 {
   return PR2::PR2_ALL_OK;
 }
 
 PR2::PR2_ERROR_CODE
-GripperController::setParam(string label,string value)
+GripperController::setParam(std::string label,std::string value)
 {
   return PR2::PR2_ALL_OK;
 }

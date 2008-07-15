@@ -16,13 +16,11 @@
 //#include <stdint.h>
 //#include <libKDL/kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
 
-#include <string>
 #include <iostream>
 
 #include <pr2Core/pr2Core.h>
 #include <pr2Core/pr2Misc.h>
 
-//#include <libpr2HW/pr2HW.h>
 #include <genericControllers/Controller.h>
 #include <genericControllers/JointController.h>
 #include <robot_model/joint.h>
@@ -148,8 +146,8 @@ namespace CONTROLLER
         *</UL>
         *
         */
-      PR2::PR2_ERROR_CODE setParam(string label,double value);
-      PR2::PR2_ERROR_CODE setParam(string label,string value);
+      PR2::PR2_ERROR_CODE setParam(std::string label,double value);
+      PR2::PR2_ERROR_CODE setParam(std::string label,std::string value);
 
     private:
 

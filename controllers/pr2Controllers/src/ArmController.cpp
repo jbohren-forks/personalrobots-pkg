@@ -55,26 +55,26 @@ ArmController::getHandOrientationAct(double *roll, double *pitch, double *yaw)
 }
 
 PR2::PR2_ERROR_CODE
-ArmController::setHandParam(string label, double value)
+ArmController::setHandParam(std::string label, double value)
 {
 
   return PR2::PR2_ALL_OK;
 }
 PR2::PR2_ERROR_CODE
-ArmController::getHandParam(string label, double *value)
+ArmController::getHandParam(std::string label, double *value)
 {
 
   return PR2::PR2_ALL_OK;
 }
 
 PR2::PR2_ERROR_CODE
-ArmController::setHandParam(string label, string value)
+ArmController::setHandParam(std::string label, std::string value)
 {
 
   return PR2::PR2_ALL_OK;
 }
 PR2::PR2_ERROR_CODE
-ArmController::getHandParam(string label, string *value)
+ArmController::getHandParam(std::string label, std::string *value)
 {
 
   return PR2::PR2_ALL_OK;

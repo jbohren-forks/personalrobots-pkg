@@ -52,7 +52,7 @@ HeadController::setSaccadeSpeed(double xDot, double yDot, double zDot)
 }
 
 PR2::PR2_ERROR_CODE
-HeadController::setParam(string label,double value)
+HeadController::setParam(std::string label,double value)
 {
 
   return PR2::PR2_ALL_OK;

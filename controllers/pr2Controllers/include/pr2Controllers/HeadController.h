@@ -12,7 +12,6 @@
 //#include <libKinematics/ik.h>
 //#include <sys/types.h>
 //#include <stdint.h>
-//#include <string>
 //#include <libKDL/kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
 
 #include <iostream>
@@ -95,8 +94,8 @@ namespace CONTROLLER
         * </UL>
         *
         */
-      PR2::PR2_ERROR_CODE setParam(string label,double value);
-      PR2::PR2_ERROR_CODE setParam(string label,string value);
+      PR2::PR2_ERROR_CODE setParam(std::string label,double value);
+      PR2::PR2_ERROR_CODE setParam(std::string label,std::string value);
 
     private:
       PR2::PR2_CONTROL_MODE controlMode;      /**< Head controller control mode >*/
