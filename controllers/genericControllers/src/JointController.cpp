@@ -57,7 +57,7 @@ JointController::~JointController( )
   
 }
 
-void JointController::Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, Joint *joint) {
+void JointController::Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint) {
   //Instantiate PID class
   pidController.InitPid(PGain,IGain,DGain,IMax,IMin); //Constructor for pid controller  
 
