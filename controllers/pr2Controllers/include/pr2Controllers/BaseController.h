@@ -155,7 +155,7 @@ namespace CONTROLLER
 
       JointController *baseJointControllers;
 
-      Joint *baseJoints;
+      //mechanism::Joint *baseJoints;
 
       char *ns;
 

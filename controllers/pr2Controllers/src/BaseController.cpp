@@ -42,6 +42,10 @@ void ComputePointVelocity(double vx, double vy, double vw, double x_offset, doub
    pvy = vy + x_offset*vw;
 };
 
+BaseController::BaseController()
+{
+}
+
 BaseController::BaseController(Robot *r)
 {
    this->robot = r;
