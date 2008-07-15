@@ -93,6 +93,21 @@ void EtherdriveHardware::setControlMode(int controlMode)
       edBoard[ii].set_control_mode(controlMode);
 }
 
+int main(int argc, char *argv[]) {
+  int numBoards = 1;
+  int numActuators = 1;
+  int boardLookUp[] ={0}; 
+  int portLookUp[] = {0};
+  int jointId[]={0};
+  string etherIP[] = "10.11.0.3";
+  string hostIP[] = "10.11.0.102";
+
+  EtherdriveHardware* EDtest = new EtherdriveHardware(numBoards, numActuators, boardLookUp, portLookUp, jointId, etherIP, hostIP);
+
+  EDtest->init();
+  return 0;
+}
+
 /*int main(int argc, char *argv[]){
    EtherdriveHardware *h = new NullHardware();
    delete(h);
