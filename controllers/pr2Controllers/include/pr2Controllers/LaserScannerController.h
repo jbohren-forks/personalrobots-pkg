@@ -1,6 +1,6 @@
 #pragma once
 /***************************************************/
-/*! \class LaserScannerController
+/*! \class CONTROLLER::LaserScannerController
     \brief A PR2 Pitching Laser Scanner Joint controller
     
     This class implements controller loops for
