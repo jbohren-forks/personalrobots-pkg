@@ -66,7 +66,7 @@
 
     <body:empty name="cam1_body">
       <sensor:camera name="cam1_sensor">
-        <imageSize>1024 800</imageSize>
+        <imageSize>640 480</imageSize>
         <hfov>90</hfov>
         <nearClip>0.1</nearClip>
         <farClip>20</farClip>
