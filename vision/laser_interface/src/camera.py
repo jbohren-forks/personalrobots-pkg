@@ -4,6 +4,7 @@ from opencv import highgui as hg
 import numpy as np
 import util as ut
 import math as m
+from pkg import *
 
 ###################################################################################################
 # Cameras
@@ -194,46 +195,20 @@ class StereoCamera:
         p = (left_estimate + right_estimate)/2.0
         return {'point': p, 'error':np.linalg.norm(left_estimate- right_estimate)}
 
-    #def triangulate_3d(self, x, xprime):
-    #    K_left  = self.camera_left.intrinsic_mat
-    #    K_right = self.camera_right.intrinsic_mat
-    #    x_ideal      = np.linalg.inv(K_left)  * point_to_homo(x)
-    #    xprime_ideal = np.linalg.inv(K_right) * point_to_homo(xprime)
-    #
-    #    w1    = x_ideal
-    #    w2    = self.R * xprime_ideal 
-    #    A     = np.concatenate((w1, w2), axis=1)
-    #    b     = self.T
-    #
-    #    x_hat = np.linalg.inv(A.T * A) * A.T * b
-    #
-    #    alpha =  x_hat[0,0]
-    #    beta  = -x_hat[1,0]
-    #
-    #    left_estimate  = alpha * x_ideal
-    #    right_estimate = beta  * self.R * xprime_ideal + self.T
-    #    p = (left_estimate + right_estimate)/2.0
-    #    return {'point': p, 'error':np.linalg.norm(left_estimate- right_estimate)}
 
-###################################################################################################
-# Geometric Cameras Settings
-###################################################################################################
 class ProjectiveCamera:
     def __init__(self, calibration_image_size, focal_length_pixels,
-                  optical_center_pixels, lens_distortion_radial,
-                  lens_distortion_tangential):
+                  optical_center_pixels, lens_distortion_radial):
         '''
            Format for parameters:
                 focal_length_pixels        = (720.511045, 724.498871),
                 optical_center_pixels      = (324.277843, 236.260833),
                 lens_distortion_radial     = (-0.428665, 0.300025, -0.230655),
-                lens_distortion_tangential = (0.0, 0.0))
         '''
         self.calibration_image_size     =  calibration_image_size     
         self.focal_length_pixels        =  focal_length_pixels           
         self.optical_center_pixels      =  optical_center_pixels        
         self.lens_distortion_radial     =  lens_distortion_radial       
-        self.lens_distortion_tangential =  lens_distortion_tangential   
         self.intrinsic_mat        =    np.array([[focal_length_pixels[0], 0,                        optical_center_pixels[0]],
  			                                     [0,                        focal_length_pixels[1], optical_center_pixels[1]],
 			                                     [0,                        0,                      1]]) 
@@ -273,6 +248,28 @@ class ProjectiveCamera:
         cv.cvRemap(image, self.temp, self.mapx, self.mapy)
         return self.temp
 
+class ROSProjectiveCamera(ProjectiveCamera):
+    def __init__(self, name):
+        master = rospy.getMaster()
+        prefix = '/camera_models/' + name + '/'
+        ProjectiveCamera.__init__(self, 
+                (master[prefix + 'width'],    master[prefix + 'height']),
+                (master[prefix + 'focal_x'],  master[prefix + 'focal_y']),
+                (master[prefix + 'center_x'], master[prefix + 'center_y']),
+                (master[prefix + 'radial_1'], master[prefix + 'radial_2']))
+
+class ROSStereoCamera(StereoCamera):
+    def __init__(self, name):
+        master = rospy.getMaster()
+        prefix = '/camera_models/' + name + '/'
+        T      = np.matrix([master[prefix + 'translation_x'], master[prefix + 'translation_y'], master[prefix + 'translation_z']]).T
+        R      = np.matrix([[master[prefix + 'rotation_0_0'], master[prefix + 'rotation_0_1'], master[prefix + 'rotation_0_2']],
+                            [master[prefix + 'rotation_1_0'], master[prefix + 'rotation_1_1'], master[prefix + 'rotation_1_2']],
+                            [master[prefix + 'rotation_2_0'], master[prefix + 'rotation_2_1'], master[prefix + 'rotation_2_2']]])
+        left_cam  = master[prefix + 'left_cam']
+        right_cam = master[prefix + 'right_cam'] 
+        StereoCamera.__init__(self, ROSProjectiveCamera(left_cam), ROSProjectiveCamera(right_cam), R, T)
+
 ###################################################################################################
 # HDR experiments
 ###################################################################################################
@@ -308,66 +305,6 @@ class VidereHDR:
 # Camera calibrations 
 ###################################################################################################
 KNOWN_CAMERAS = {}
-KNOWN_CAMERAS['videre_left']    = ProjectiveCamera(calibration_image_size        = (640.0, 480.0), 
-                                                      focal_length_pixels        = (945.598886, 950.594644),
-                                                      optical_center_pixels      = (332.544501, 254.563215),
-                                                      lens_distortion_radial     = (-0.454865, 1.196744, -7.878979),
-                                                      lens_distortion_tangential = (0.0, 0.0))
-KNOWN_CAMERAS['videre_right']   = ProjectiveCamera(calibration_image_size        = (640.0, 480.0), 
-                                                      focal_length_pixels        = (927.703322, 931.820423),
-                                                      optical_center_pixels      = (339.749173, 234.137828),
-                                                      lens_distortion_radial     = (-0.375167, -0.607004, 3.778784),
-                                                      lens_distortion_tangential = (0.0, 0.0))
-KNOWN_CAMERAS['videre_stereo']  = StereoCamera(KNOWN_CAMERAS['videre_left'], KNOWN_CAMERAS['videre_right'], 
-                                     R = rodrigues(np.matrix([-0.009049, -0.003935, -0.000145])),
-                                     T = np.matrix([59.934176, 0.281676, -1.578173]).T/1000.0)
-
-
-KNOWN_CAMERAS['videre_left2']   = ProjectiveCamera(calibration_image_size       = (640.0, 480.0), 
-                                                   focal_length_pixels          = (962.472, 962.961),
-                                                   optical_center_pixels        = (312.410, 242.114),
-                                                   lens_distortion_radial       = (-0.441686, 0.302547, 0),
-                                                   lens_distortion_tangential = (0.0, 0.0))
-KNOWN_CAMERAS['videre_right2']  = ProjectiveCamera(calibration_image_size       = (640.0, 480.0), 
-                                                     focal_length_pixels        = (947.233, 946.236),
-                                                     optical_center_pixels      = (337.313, 223.764),
-                                                     lens_distortion_radial     = (-0.419809, 0.246824, 0),
-                                                     lens_distortion_tangential = (0.0, 0.0))
-KNOWN_CAMERAS['videre_stereo2'] = StereoCamera(KNOWN_CAMERAS['videre_left2'], KNOWN_CAMERAS['videre_right2'], 
-                                                R = np.matrix([[ 0.999802, 0.000869400, -0.0198607],
-                                                               [-0.000745101, 0.999980, 0.00626513],
-                                                               [0.0198657, -0.00624909, 0.999783]]),
-                                                T = np.matrix([60.6940, -0.401150, -2.25697]).T/1000.0)
-
-
-KNOWN_CAMERAS['f_left']         = ProjectiveCamera(calibration_image_size        = (640.0, 480.0), 
-                                                           focal_length_pixels          = (943.421, 952.346),
-                                                           optical_center_pixels      = (324.277843, 236.260833),
-                                                           lens_distortion_radial     = (-0.428665, 0.300025, -0.230655),
-                                                           lens_distortion_tangential = (0.0, 0.0))
-KNOWN_CAMERAS['f_right']        = ProjectiveCamera(calibration_image_size        = (640.0, 480.0), 
-                                                           focal_length_pixels        = (947.324, 952.822),
-                                                           optical_center_pixels      = (344.965592, 255.324928),
-                                                           lens_distortion_radial     = (-0.381364, -0.029894, 0.450772),
-                                                           lens_distortion_tangential = (0.0, 0.0))
-KNOWN_CAMERAS['f_stereo']       = StereoCamera(KNOWN_CAMERAS['f_left'], KNOWN_CAMERAS['f_right'], 
-                                          R = rodrigues(np.matrix([0,0,0.0])),
-                                          T = np.matrix([59.934176, 0.281676, -1.578173]).T/1000.0)
-
-
-KNOWN_CAMERAS['perfect-left']   = ProjectiveCamera(calibration_image_size        = (640.0, 480.0), 
-                                                      focal_length_pixels        = (720, 720),
-                                                      optical_center_pixels      = (320, 240),
-                                                      lens_distortion_radial     = (0.0, 0, 0),
-                                                      lens_distortion_tangential = (0.0, 0.0))
-KNOWN_CAMERAS['perfect-right']  = ProjectiveCamera(calibration_image_size        = (640.0, 480.0), 
-                                                     focal_length_pixels        = (720, 720),
-                                                     optical_center_pixels      = (320, 240),
-                                                     lens_distortion_radial     = (0.0, 0, 0),
-                                                     lens_distortion_tangential = (0.0, 0.0))
-KNOWN_CAMERAS['perfect-stereo'] = StereoCamera(KNOWN_CAMERAS['perfect-left'], KNOWN_CAMERAS['perfect-right'], 
-                                    R = rodrigues(np.matrix([0,0,0.0])),
-                                    T = np.matrix([60, 0, 0.0]).T/1000.0)
 
 
 if __name__ == "__main__":
@@ -499,6 +436,58 @@ if __name__ == "__main__":
 
 
 
+#KNOWN_CAMERAS['videre_left']    = ProjectiveCamera(calibration_image_size        = (640.0, 480.0), 
+#                                                      focal_length_pixels        = (945.598886, 950.594644),
+#                                                      optical_center_pixels      = (332.544501, 254.563215),
+#                                                      lens_distortion_radial     = (-0.454865, 1.196744, -7.878979))
+#KNOWN_CAMERAS['videre_right']   = ProjectiveCamera(calibration_image_size        = (640.0, 480.0), 
+#                                                      focal_length_pixels        = (927.703322, 931.820423),
+#                                                      optical_center_pixels      = (339.749173, 234.137828),
+#                                                      lens_distortion_radial     = (-0.375167, -0.607004, 3.778784))
+#KNOWN_CAMERAS['videre_stereo']  = StereoCamera(KNOWN_CAMERAS['videre_left'], KNOWN_CAMERAS['videre_right'], 
+#                                     R = rodrigues(np.matrix([-0.009049, -0.003935, -0.000145])),
+#                                     T = np.matrix([59.934176, 0.281676, -1.578173]).T/1000.0)
+#
+#
+#KNOWN_CAMERAS['videre_left2']   = ProjectiveCamera(calibration_image_size       = (640.0, 480.0), 
+#                                                   focal_length_pixels          = (962.472, 962.961),
+#                                                   optical_center_pixels        = (312.410, 242.114),
+#                                                   lens_distortion_radial       = (-0.441686, 0.302547, 0))
+#KNOWN_CAMERAS['videre_right2']  = ProjectiveCamera(calibration_image_size       = (640.0, 480.0), 
+#                                                     focal_length_pixels        = (947.233, 946.236),
+#                                                     optical_center_pixels      = (337.313, 223.764),
+#                                                     lens_distortion_radial     = (-0.419809, 0.246824, 0))
+#KNOWN_CAMERAS['videre_stereo2'] = StereoCamera(KNOWN_CAMERAS['videre_left2'], KNOWN_CAMERAS['videre_right2'], 
+#                                                R = np.matrix([[ 0.999802, 0.000869400, -0.0198607],
+#                                                               [-0.000745101, 0.999980, 0.00626513],
+#                                                               [0.0198657, -0.00624909, 0.999783]]),
+#                                                T = np.matrix([60.6940, -0.401150, -2.25697]).T/1000.0)
+#
+#
+#KNOWN_CAMERAS['f_left']         = ProjectiveCamera(calibration_image_size        = (640.0, 480.0), 
+#                                                           focal_length_pixels          = (943.421, 952.346),
+#                                                           optical_center_pixels      = (324.277843, 236.260833),
+#                                                           lens_distortion_radial     = (-0.428665, 0.300025, -0.230655))
+#KNOWN_CAMERAS['f_right']        = ProjectiveCamera(calibration_image_size        = (640.0, 480.0), 
+#                                                           focal_length_pixels        = (947.324, 952.822),
+#                                                           optical_center_pixels      = (344.965592, 255.324928),
+#                                                           lens_distortion_radial     = (-0.381364, -0.029894, 0.450772))
+#KNOWN_CAMERAS['f_stereo']       = StereoCamera(KNOWN_CAMERAS['f_left'], KNOWN_CAMERAS['f_right'], 
+#                                          R = rodrigues(np.matrix([0,0,0.0])),
+#                                          T = np.matrix([59.934176, 0.281676, -1.578173]).T/1000.0)
+#
+#
+#KNOWN_CAMERAS['perfect-left']   = ProjectiveCamera(calibration_image_size        = (640.0, 480.0), 
+#                                                      focal_length_pixels        = (720, 720),
+#                                                      optical_center_pixels      = (320, 240),
+#                                                      lens_distortion_radial     = (0.0, 0, 0))
+#KNOWN_CAMERAS['perfect-right']  = ProjectiveCamera(calibration_image_size        = (640.0, 480.0), 
+#                                                     focal_length_pixels        = (720, 720),
+#                                                     optical_center_pixels      = (320, 240),
+#                                                     lens_distortion_radial     = (0.0, 0, 0))
+#KNOWN_CAMERAS['perfect-stereo'] = StereoCamera(KNOWN_CAMERAS['perfect-left'], KNOWN_CAMERAS['perfect-right'], 
+#                                    R = rodrigues(np.matrix([0,0,0.0])),
+#                                    T = np.matrix([60, 0, 0.0]).T/1000.0)
 
 
 

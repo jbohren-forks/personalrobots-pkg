@@ -69,4 +69,7 @@ def cv2np(im, format='RGB'):
             count=im.height*im.width*nchannels*(im.depth/8))
 	return np.reshape(np_im, array_size)
 
+def list_mat_to_mat(list_mat, axis=0):
+	return np.concatenate(tuple(list_mat), axis=axis)
+
 

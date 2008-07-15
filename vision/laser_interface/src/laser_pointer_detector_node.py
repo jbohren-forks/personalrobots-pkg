@@ -29,16 +29,6 @@ def show_processed(image, masks, detection, blobs, detector):
     hg.cvShowImage('motion',      masks[1])
     hg.cvShowImage('intensity',   masks[2])
 
-    #key = hg.cvWaitKey(10)
-    #if detector != None:
-    #    if key == 'T': #down
-    #        detector.intensity_filter.thres_high = detector.intensity_filter.thres_high - 5
-    #        print 'detector.intensity_filter.thres =', detector.intensity_filter.thres_high
-    #    if key == 'R':
-    #        detector.intensity_filter.thres_high = detector.intensity_filter.thres_high + 5
-    #        print 'detector.intensity_filter.thres =', detector.intensity_filter.thres_high
-    #    if key == ' ':
-    #        hg.cvWaitKey()
 
 def confirmation_prompt(confirm_phrase):
     print confirm_phrase
@@ -49,22 +39,23 @@ def confirmation_prompt(confirm_phrase):
     else:
         return False
 
-def append_examples_to_file(dataset, file = PatchClassifier.DEFAULT_DATASET_FILE):
+def append_examples_to_file(dataset, file = LaserPointerDetector.DEFAULT_DATASET_FILE):
     try:
         loaded_set = load_pickle(file)
         dataset.append(loaded_set)
     except IOError:
         pass
     dump_pickle(dataset, file)
+    return dataset.num_examples()
 
 class GatherExamples:
     def __init__(self, hardware_camera, type = 1):
         frames         = hardware_camera.next()
         self.detector  = LaserPointerDetector(frames[0], exposure=exposure, 
-                                         dataset=PatchClassifier.DEFAULT_DATASET_FILE,
+                                         dataset=LaserPointerDetector.DEFAULT_DATASET_FILE,
                                          use_color=False, use_learning=False)
         self.detector2 = LaserPointerDetector(frames[1], exposure=exposure, 
-                                         dataset=PatchClassifier.DEFAULT_DATASET_FILE,
+                                         dataset=LaserPointerDetector.DEFAULT_DATASET_FILE,
                                          use_color=False, use_learning=False)
         for i in xrange(10):
             frames = hardware_camera.next()
@@ -81,7 +72,7 @@ class GatherExamples:
         laser_blob            = None
         intensity_motion_blob = None
 
-        for raw_image, detect in zip(frames, [self.detector, self.detector2]):
+        for raw_image, detect in zip(images, [self.detector, self.detector2]):
             #before = time.time()
             image, combined, laser_blob, intensity_motion_blob = detect.detect(raw_image)
             #diff = time.time() - before
@@ -98,18 +89,19 @@ class GatherExamples:
 
 
     def write(self):
-        append_examples_to_file(
+        n = append_examples_to_file(
                 matrix_to_dataset(
                     ut.list_mat_to_mat(
                         self.examples, axis=1), type=self.type))
+        print 'GatherExamples: recorded examples to disk.  Total in dataset', n
 
 class DetectState:
-    def __init__(self, geometric_camera, hardware_camera):
+    def __init__(self, geometric_camera, hardware_camera, exposure_setting):
         self.stereo_cam     = geometric_camera
         frames              = hardware_camera.next()
-        self.detector       = LaserPointerDetector(frames[0], LaserPointerDetector.SUN_EXPOSURE, 
+        self.detector       = LaserPointerDetector(frames[0], exposure_setting, 
                                                    use_color=False, use_learning=True)
-        self.detector_right = LaserPointerDetector(frames[1], LaserPointerDetector.SUN_EXPOSURE, 
+        self.detector_right = LaserPointerDetector(frames[1], exposure_setting, 
                                                    use_color=False, use_learning=True, 
                                                    classifier=self.detector.classifier)
 
@@ -152,7 +144,6 @@ class LaserPointerDetectorNode:
     GATHER_POSITIVE_EXAMPLES = 'GATHER_POSITIVE_EXAMPLES'
     GATHER_NEGATIVE_EXAMPLES = 'GATHER_NEGATIVE_EXAMPLES'
     DETECT                   = 'DETECT'
-    CURSOR_TOPIC             = 'cursor3d'
 
     def __init__(self, exposure = LaserPointerDetector.SUN_EXPOSURE, video = None):
         if video is None:
@@ -160,8 +151,9 @@ class LaserPointerDetectorNode:
             self.video    = cam.StereoFile('measuring_tape_red_left.avi','measuring_tape_red_right.avi')
         else:
             self.video = video
+        self.exposure         = exposure
         self.video_lock       = RLock()
-        self.camera_model     = cam.KNOWN_CAMERAS['videre_stereo2']
+        self.camera_model     = cam.ROSStereoCamera('videre_stereo')
         self.state            = None
         self.state_object     = None
         self.set_state(self.DETECT)
@@ -171,7 +163,7 @@ class LaserPointerDetectorNode:
         self._make_windows()
 
         #Publish
-        self.topic = rospy.TopicPub(self.CURSOR_TOPIC, Point3DFloat64)
+        self.topic = rospy.TopicPub(CURSOR_TOPIC, Point3DFloat64)
 
         #Ready
         rospy.ready(sys.argv[0])
@@ -235,8 +227,8 @@ class LaserPointerDetectorNode:
                     self.debug   = not self.debug
 
         except StopIteration, e:
-            pass
-
+            if self.state_object.__class__ == GatherExamples:
+                self.state_object.write()
 
     def set_state(self, new_state):
         self.video_lock.acquire()
@@ -253,7 +245,7 @@ class LaserPointerDetectorNode:
             self.state_object = GatherExamples(self.video, type = 0)
 
         if new_state == self.DETECT:
-            self.state_object = DetectState(self.camera_model, self.video)
+            self.state_object = DetectState(self.camera_model, self.video, self.exposure)
         self.state = new_state
         self.video_lock.release()
 
@@ -262,7 +254,7 @@ if __name__ == '__main__':
     if sys.argv[1] == 'sun':
         exposure = LaserPointerDetector.SUN_EXPOSURE
     else:
-        exposure = LaserPointerDetector.NO_SUN_EXPOSURE
+        exposure = LaserPointerDetector.SHADE_EXPOSURE
     LaserPointerDetectorNode(exposure = exposure).run()
 
 
@@ -302,6 +294,34 @@ if __name__ == '__main__':
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    #key = hg.cvWaitKey(10)
+    #if detector != None:
+    #    if key == 'T': #down
+    #        detector.intensity_filter.thres_high = detector.intensity_filter.thres_high - 5
+    #        print 'detector.intensity_filter.thres =', detector.intensity_filter.thres_high
+    #    if key == 'R':
+    #        detector.intensity_filter.thres_high = detector.intensity_filter.thres_high + 5
+    #        print 'detector.intensity_filter.thres =', detector.intensity_filter.thres_high
+    #    if key == ' ':
+    #        hg.cvWaitKey()
 
 #class GatherNegativeExamplesState:
 #    def __init__(self, frames):

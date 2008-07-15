@@ -11,6 +11,7 @@ import camera as cam
 import util as ut
 import random_forest as rf
 import functools as ft
+from pkg import *
 
 class Rect:
     def __init__(self, x, y, width, height):
@@ -444,158 +445,62 @@ class ColorFilter(ColorLearner):
                 cv.cvFloodFill(self.mask, cv.cvPoint(point[0], point[1]), cv.cvScalar(0)) 
         return {'binary': self.mask, 'components': valid}
 
-class PatchClassifier:
-    CLASSIFICATION_WINDOW_WIDTH = 7
-    DEFAULT_DATASET_FILE        = 'PatchClassifier.dataset.pickle'
 
-    def __init__(self, dataset=None, number_of_learners=30):
-        if dataset is not None:
-            self.learn(dataset, number_of_learners=number_of_learners)
-
-    def classify(self, image, components):
-        def predict_all(c):
-            instance = blob_to_input_instance(image, c, classification_window_width=self.CLASSIFICATION_WINDOW_WIDTH)
-            if instance == None:
-                classification = np.matrix([False])
-                return (classification, None, c)
-            classification, votes = self.classifier.predict(instance)
-            return (classification, votes, c)
-
-        def select_valid(c):
-            classification, votes, component = c
-            if classification[0,0] == 0:
-                return False
-            else:
-                return True
-
-        def hide_votes_in_object(c):
-            classification, votes, component = c
-            component['votes'] = votes
-            return component
-
-        return map(hide_votes_in_object, filter(select_valid, map(predict_all, components)))
-
-    def learn(self, dataset=None, positive_examples = None, negative_examples = None, 
-            number_of_learners=30, file=None):
-        if file == None:
-            file = PatchClassifier.DEFAULT_DATASET_FILE
-        if dataset == None and positive_examples != None and negative_examples != None:
-            dataset = classifier_matrix(positive_examples, negative_examples)
-        if dataset == None and file != None:
-            dataset = load_pickle(file)
-        dump_pickle(dataset, file)
-        print 'PatchClassifier: building classifier...'
-        self.classifier = rf.RFBreiman(dataset, number_of_learners=number_of_learners)
-        print 'PatchClassifier: done building.'
-        return self
-
-def blob_to_rect(blob, classification_window_width=PatchClassifier.CLASSIFICATION_WINDOW_WIDTH):
-    x_center, y_center = blob['centroid']
-    x_center           = int(x_center)
-    y_center           = int(y_center)
-    x_start            = x_center - classification_window_width
-    y_start            = y_center - classification_window_width
-    patch_size         = classification_window_width*2+1
-    r                  = Rect(x_start, y_start, patch_size, patch_size).keep_inside(0, 639, 0,479)
-    if r.width < patch_size or r.height < patch_size:
-        #print "classified_stream_to_classifier_matrix: not using connected comp", 
-        #print blob['centroid'], 'w', r.width, 'h', r.height, 'preferred', patch_size
-        return None
-    else:
-        return r
-
-def blob_to_input_instance(image, blob, 
-        classification_window_width=PatchClassifier.CLASSIFICATION_WINDOW_WIDTH):
-    patch_size = classification_window_width*2+1
-    small_r    = blob_to_rect(blob, classification_window_width=classification_window_width)
-    big_r      = blob_to_rect(blob, classification_window_width=classification_window_width*2)
-    if big_r == None or small_r == None:
-        return None
-    small_patch        = cv.cvGetSubRect(image, small_r.as_cv_rect())
-    big_patch          = cv.cvGetSubRect(image, big_r.as_cv_rect())
-    big_patch_rescaled = cv.cvCreateImage(cv.cvSize(int(classification_window_width/2), int(classification_window_width/2)), 8, 3)
-    cv.cvResize(big_patch, big_patch_rescaled, cv.CV_INTER_LINEAR );
-
-    np_patch_small   = ut.cv2np(small_patch)
-    np_patch_big     = ut.cv2np(big_patch_rescaled)
-    np_resized_small = np.matrix(np_patch_small.reshape(patch_size*patch_size*3, 1))
-    np_resized_big   = np.matrix(np_patch_big.reshape(np_patch_big.shape[0] * np_patch_big.shape[1] * 3, 1))
-    return np.concatenate((np_resized_small, np_resized_big), axis=0)
-
-def blobs_list_to_classifier_matrix(img_blobs_list, 
-        classification_window_width=PatchClassifier.CLASSIFICATION_WINDOW_WIDTH):
-    instance_list = []
-    for img, blobs in img_blobs_list:
-        for blob in blobs:
-            instance = blob_to_input_instance(img, blob, classification_window_width)
-            if instance is not None:
-                instance_list.append(instance)
-    return ut.list_mat_to_mat(instance_list, axis=1)
-
-def matrix_to_dataset(examples, type=1):
-    outputs_mat      = np.matrix(np.zeros((1, examples.shape[1]), dtype='int'))
-    outputs_mat[:,:] = type
-    return rf.Dataset(examples, outputs_mat)
-
-#def matrices_to_dataset(positive_examples_mat, negative_examples_mat):
-#    print 'positive_examples_mat.shape', positive_examples_mat.shape
-#    print 'negative_examples_mat.shape', negative_examples_mat.shape
-#    outputs_mat = np.matrix(np.zeros((1, positive_examples_mat.shape[1] + negative_examples_mat.shape[1]), dtype='int'))
-#    outputs_mat[0, 0:positive_examples_mat.shape[1]] = 1
-#    dataset = rf.Dataset(np.concatenate((positive_examples_mat, negative_examples_mat), axis=1), outputs_mat)
-#    return dataset
-
-def classifier_matrix(positive_examples_list, negative_examples_list):
-    '''
-        positive_examples_list - [(image1, blobs), (image2, blobs)...]
-        negative_examples_list - [(image1, blobs), (image2, blobs)...]
-    '''
-    positive_examples_mat = blobs_list_to_classifier_matrix(positive_examples_list)
-    negative_examples_mat = blobs_list_to_classifier_matrix(negative_examples_list)
-    return matrices_to_dataset(positive_examples_list, negative_examples_list)
-    
 class LaserPointerDetector:
-    NO_SUN_EXPOSURE            = 200
-    SUN_EXPOSURE               = 56
-    MAX_BLOB_AREA              = 20*20
-    LASER_POINT_SIZE           = 40.0
-    MIN_AGE                    = 5
-    NUMBER_OF_LEARNERS         = 50
+    SHADE_EXPOSURE               = rospy.getMaster()['laser_pointer_detector/SHADE_EXPOSURE'] 
+    SHADE_DARK_IMAGE_THRESHOLD   = rospy.getMaster()['laser_pointer_detector/SHADE_DARK_IMAGE_THRESHOLD'] 
+    SHADE_BRIGHT_IMAGE_THRESHOLD = rospy.getMaster()['laser_pointer_detector/SHADE_BRIGHT_IMAGE_THRESHOLD'] 
 
-    TRACKER_MAX_PIX_TRESHOLD   = 30.0
-    TRACKER_MAX_TIME_THRESHOLD = 3
+    SUN_EXPOSURE                 = rospy.getMaster()['laser_pointer_detector/SUN_EXPOSURE'] 
+    SUN_DARK_IMAGE_THRESHOLD     = rospy.getMaster()['laser_pointer_detector/SUN_DARK_IMAGE_THRESHOLD'] 
+    SUN_BRIGHT_IMAGE_THRESHOLD   = rospy.getMaster()['laser_pointer_detector/SUN_BRIGHT_IMAGE_THRESHOLD'] 
 
-    def __init__(self, sample_frame, exposure, channel='red', 
-            dataset=PatchClassifier.DEFAULT_DATASET_FILE, 
-            use_color=False, use_learning=False, classifier=None):
-        if exposure == self.NO_SUN_EXPOSURE:
-            self.threshold        = (100, 240)
+    MAX_BLOB_AREA               = rospy.getMaster()['laser_pointer_detector/MAX_BLOB_AREA'] 
+    LASER_POINT_SIZE            = rospy.getMaster()['laser_pointer_detector/LASER_POINT_SIZE'] 
+    MIN_AGE                     = rospy.getMaster()['laser_pointer_detector/MIN_AGE'] 
+    NUMBER_OF_LEARNERS          = rospy.getMaster()['laser_pointer_detector/NUMBER_OF_LEARNERS'] 
+
+    TRACKER_MAX_PIX_TRESHOLD    = rospy.getMaster()['laser_pointer_detector/TRACKER_MAX_PIX_TRESHOLD'] 
+    TRACKER_MAX_TIME_THRESHOLD  = rospy.getMaster()['laser_pointer_detector/TRACKER_MAX_TIME_THRESHOLD'] 
+
+    CLASSIFICATION_WINDOW_WIDTH = rospy.getMaster()['laser_pointer_detector/CLASSIFICATION_WINDOW_WIDTH'] 
+    DEFAULT_DATASET_FILE        = rospy.getMaster()['laser_pointer_detector/DEFAULT_DATASET_FILE'] 
+
+    def __init__(self, sample_frame, exposure, 
+            channel      = 'red', 
+            dataset      = None, 
+            use_color    = False, 
+            use_learning = False, 
+            classifier   = None):
+
+        if dataset == None:
+            dataset = self.DEFAULT_DATASET_FILE
+        if exposure == self.SHADE_EXPOSURE:
+            self.threshold = (self.SHADE_DARK_IMAGE_THRESHOLD, self.SHADE_BRIGHT_IMAGE_THRESHOLD)
         elif exposure == self.SUN_EXPOSURE:
-            self.threshold        = (60, 215)
+            self.threshold = (self.SUN_DARK_IMAGE_THRESHOLD, self.SUN_BRIGHT_IMAGE_THRESHOLD)
         else:
-            self.threshold        = (60, 215)
+            self.threshold = (self.SUN_DARK_IMAGE_THRESHOLD, self.SUN_BRIGHT_IMAGE_THRESHOLD)
 
-        self.intensity_filter = BrightnessThreshold(sample_frame, thres_low=self.threshold[0], 
+        self.intensity_filter    = BrightnessThreshold(sample_frame, thres_low=self.threshold[0], 
                                                     thres_high=self.threshold[1])
-        self.motion_filter    = MotionSubtract(sample_frame)
+        self.motion_filter       = MotionSubtract(sample_frame)
         if use_color:
-            self.color_filter = ColorFilter(cvsize_to_list(cv.cvGetSize(sample_frame)))
+            self.color_filter    = ColorFilter(cvsize_to_list(cv.cvGetSize(sample_frame)))
         else:
-            self.color_filter = None
+            self.color_filter    = None
 
-        self.combine          = CombineMasks(sample_frame)
+        self.combine             = CombineMasks(sample_frame)
         if use_learning and classifier is None:
-            self.classifier   = PatchClassifier(load_pickle(dataset), number_of_learners=self.NUMBER_OF_LEARNERS)
+            self.classifier      = PatchClassifier(load_pickle(dataset), number_of_learners=self.NUMBER_OF_LEARNERS)
         else:
-            self.classifier   = classifier
-        self.copy             = cv.cvCreateImage(cv.cvGetSize(sample_frame), 8, 3)
-        self.tracker          = Tracker(self.TRACKER_MAX_PIX_TRESHOLD, self.TRACKER_MAX_TIME_THRESHOLD)
-        self.splitter         = SplitColors(sample_frame)
+            self.classifier      = classifier
+        self.copy                = cv.cvCreateImage(cv.cvGetSize(sample_frame), 8, 3)
+        self.tracker             = Tracker(self.TRACKER_MAX_PIX_TRESHOLD, self.TRACKER_MAX_TIME_THRESHOLD)
+        self.splitter            = SplitColors(sample_frame)
         self.combined_grey_scale = cv.cvCreateImage(cv.cvGetSize(sample_frame), 8, 1)
-        #self.masker           = Mask(sample_frame)
-        self.channel          = channel
-
-        self.copy = cv.cvCreateImage(cv.cvGetSize(sample_frame), 8, 3)
+        self.channel             = channel
+        self.copy                = cv.cvCreateImage(cv.cvGetSize(sample_frame), 8, 3)
 
     def get_motion_intensity_images(self):
         return (self.motion_filter.get_thresholded_image(), self.intensity_filter.get_thresholded_image())
@@ -651,19 +556,106 @@ class LaserPointerDetector:
             else:
                 laser_blob    = None
 
-        #if self.color_filter is not None and self.classifier is not None:
-        #    print 'detector: detected', len(intensity_motion_blob),
-        #    print 'color',      abs(len(intensity_motion_blob) - len(color_results['components'])),
-        #    print 'classified', abs(len(components)            - len(color_results['components']))
-        #select_track_time = time.time()
-
-        #print '   split_time         took %.4f s' % (split_time     - start_time)
-        #print '   intensity_time     took %.4f s' % (intensity_time - split_time)
-        #print '   motion_time        took %.4f s' % (motion_time    - intensity_time)
-        #print '   combine_time       took %.4f s' % (combine_time   - motion_time)
-        #print '   threshold_time     took %.4f s' % (threshold_time - combine_time)
-        #print '   total              took %.4f s' % (time.time()    - start_time)
         return image, combined, laser_blob, intensity_motion_blob
+
+class PatchClassifier:
+    def __init__(self, dataset=None, number_of_learners=30, classification_window_width=7):
+        if dataset is not None:
+            self.learn(dataset, number_of_learners=number_of_learners)
+            self.classification_window_width = classification_window_width
+
+    def classify(self, image, components):
+        def predict_all(c):
+            instance = blob_to_input_instance(image, c, 
+                    classification_window_width=self.classification_window_width)
+            if instance == None:
+                classification = np.matrix([False])
+                return (classification, None, c)
+            classification, votes = self.classifier.predict(instance)
+            return (classification, votes, c)
+
+        def select_valid(c):
+            classification, votes, component = c
+            if classification[0,0] == 0:
+                return False
+            else:
+                return True
+
+        def hide_votes_in_object(c):
+            classification, votes, component = c
+            component['votes'] = votes
+            return component
+
+        return map(hide_votes_in_object, filter(select_valid, map(predict_all, components)))
+
+    def learn(self, dataset=None, positive_examples = None, negative_examples = None, 
+            number_of_learners=30, write_file=LaserPointerDetector.DEFAULT_DATASET_FILE):
+        if dataset == None and positive_examples != None and negative_examples != None:
+            dataset = classifier_matrix(positive_examples, negative_examples)
+        #if dataset == None and file != None:
+        #    dataset = load_pickle(file)
+        dump_pickle(dataset, write_file)
+        print 'PatchClassifier: building classifier...'
+        self.classifier = rf.RFBreiman(dataset, number_of_learners=number_of_learners)
+        print 'PatchClassifier: done building.'
+        return self
+
+def blob_to_rect(blob, classification_window_width=LaserPointerDetector.CLASSIFICATION_WINDOW_WIDTH):
+    x_center, y_center = blob['centroid']
+    x_center           = int(x_center)
+    y_center           = int(y_center)
+    x_start            = x_center - classification_window_width
+    y_start            = y_center - classification_window_width
+    patch_size         = classification_window_width*2+1
+    r                  = Rect(x_start, y_start, patch_size, patch_size).keep_inside(0, 639, 0,479)
+    if r.width < patch_size or r.height < patch_size:
+        #print "classified_stream_to_classifier_matrix: not using connected comp", 
+        #print blob['centroid'], 'w', r.width, 'h', r.height, 'preferred', patch_size
+        return None
+    else:
+        return r
+
+def blob_to_input_instance(image, blob, 
+        classification_window_width=LaserPointerDetector.CLASSIFICATION_WINDOW_WIDTH):
+    patch_size = classification_window_width*2+1
+    small_r    = blob_to_rect(blob, classification_window_width=classification_window_width)
+    big_r      = blob_to_rect(blob, classification_window_width=classification_window_width*2)
+    if big_r == None or small_r == None:
+        return None
+    small_patch        = cv.cvGetSubRect(image, small_r.as_cv_rect())
+    big_patch          = cv.cvGetSubRect(image, big_r.as_cv_rect())
+    big_patch_rescaled = cv.cvCreateImage(cv.cvSize(int(classification_window_width/2), int(classification_window_width/2)), 8, 3)
+    cv.cvResize(big_patch, big_patch_rescaled, cv.CV_INTER_LINEAR );
+
+    np_patch_small   = ut.cv2np(small_patch)
+    np_patch_big     = ut.cv2np(big_patch_rescaled)
+    np_resized_small = np.matrix(np_patch_small.reshape(patch_size*patch_size*3, 1))
+    np_resized_big   = np.matrix(np_patch_big.reshape(np_patch_big.shape[0] * np_patch_big.shape[1] * 3, 1))
+    return np.concatenate((np_resized_small, np_resized_big), axis=0)
+
+def blobs_list_to_classifier_matrix(img_blobs_list, 
+        classification_window_width=LaserPointerDetector.CLASSIFICATION_WINDOW_WIDTH):
+    instance_list = []
+    for img, blobs in img_blobs_list:
+        for blob in blobs:
+            instance = blob_to_input_instance(img, blob, classification_window_width)
+            if instance is not None:
+                instance_list.append(instance)
+    return ut.list_mat_to_mat(instance_list, axis=1)
+
+def matrix_to_dataset(examples, type=1):
+    outputs_mat      = np.matrix(np.zeros((1, examples.shape[1]), dtype='int'))
+    outputs_mat[:,:] = type
+    return rf.Dataset(examples, outputs_mat)
+
+def classifier_matrix(positive_examples_list, negative_examples_list):
+    '''
+        positive_examples_list - [(image1, blobs), (image2, blobs)...]
+        negative_examples_list - [(image1, blobs), (image2, blobs)...]
+    '''
+    positive_examples_mat = blobs_list_to_classifier_matrix(positive_examples_list)
+    negative_examples_mat = blobs_list_to_classifier_matrix(negative_examples_list)
+    return matrices_to_dataset(positive_examples_list, negative_examples_list)
 
 class Track:
     def __init__(self, id, pos, cur_time):
@@ -847,8 +839,27 @@ class Tracker:
 
 
 
+        #if self.color_filter is not None and self.classifier is not None:
+        #    print 'detector: detected', len(intensity_motion_blob),
+        #    print 'color',      abs(len(intensity_motion_blob) - len(color_results['components'])),
+        #    print 'classified', abs(len(components)            - len(color_results['components']))
+        #select_track_time = time.time()
+
+        #print '   split_time         took %.4f s' % (split_time     - start_time)
+        #print '   intensity_time     took %.4f s' % (intensity_time - split_time)
+        #print '   motion_time        took %.4f s' % (motion_time    - intensity_time)
+        #print '   combine_time       took %.4f s' % (combine_time   - motion_time)
+        #print '   threshold_time     took %.4f s' % (threshold_time - combine_time)
+        #print '   total              took %.4f s' % (time.time()    - start_time)
 
 
+#def matrices_to_dataset(positive_examples_mat, negative_examples_mat):
+#    print 'positive_examples_mat.shape', positive_examples_mat.shape
+#    print 'negative_examples_mat.shape', negative_examples_mat.shape
+#    outputs_mat = np.matrix(np.zeros((1, positive_examples_mat.shape[1] + negative_examples_mat.shape[1]), dtype='int'))
+#    outputs_mat[0, 0:positive_examples_mat.shape[1]] = 1
+#    dataset = rf.Dataset(np.concatenate((positive_examples_mat, negative_examples_mat), axis=1), outputs_mat)
+#    return dataset
 
         #import os
         #import sys
