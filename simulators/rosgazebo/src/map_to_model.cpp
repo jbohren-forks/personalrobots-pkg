@@ -3,10 +3,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-// We use gdk-pixbuf to load the image from disk
-// I would use SDL_image, but it doesn't provide the capability to save an
-// image file (doh!)
-#include <gdk-pixbuf/gdk-pixbuf.h>
+#include <SDL/SDL_image.h>
 
 #define USAGE "USAGE: heightmap-simplifier <img_in> <res>"
 
@@ -29,23 +26,24 @@ typedef struct
   rect_size_t size;
 } rect_t; // axis-aligned rectangle
 
-static unsigned char* get_pixel(GdkPixbuf* img, int x, int y );
-static bool pixel_is_set( GdkPixbuf* img, int x, int y, int threshold );
-static void set_rect( GdkPixbuf* pb, int x, int y, int width, int height, unsigned char val );
-GdkPixbuf* rects_from_image_file( const char* filename, 
-                                  rect_t** rects, 
-                                  unsigned int* rect_count,
-                                  unsigned int* widthp, 
-                                  unsigned int* heightp );
+static unsigned char* get_pixel(SDL_Surface* img, int x, int y );
+static bool pixel_is_set( SDL_Surface* img, int x, int y, int threshold );
+static void set_rect( SDL_Surface* pb, int x, int y, int width, int height, unsigned char val );
+SDL_Surface* rects_from_image_file( const char* filename, 
+                                    rect_t** rects, 
+                                    unsigned int* rect_count,
+                                    unsigned int* widthp, 
+                                    unsigned int* heightp );
 
 int save_rects_to_image_file(const char* outfile, 
-                             GdkPixbuf* pixbuf,
+                             SDL_Surface* pixbuf,
                              rect_t* rects, 
                              unsigned int rect_count, 
                              unsigned int width, 
                              unsigned int height);
 
-int create_gazebo_obstacles(rect_t* rects, 
+int create_gazebo_obstacles(int width, int height,
+                            rect_t* rects, 
                             unsigned int rect_count,
                             double res);
 
@@ -66,14 +64,15 @@ main(int argc, char** argv)
   unsigned int rect_count;
   unsigned int width, height;
 
-  GdkPixbuf* pixbuf; 
+  SDL_Surface* pixbuf; 
   pixbuf = rects_from_image_file(infile, &rects, &rect_count, 
                                         &width, &height);
   assert(pixbuf);
 
-  //save_rects_to_image_file(outfile, pixbuf, rects, rect_count, width, height);
+  //save_rects_to_image_file("foo.png", pixbuf, rects, rect_count, width, height);
 
-  create_gazebo_obstacles(rects, 
+  create_gazebo_obstacles(width, height,
+                          rects, 
                           rect_count,
                           res);
 
@@ -83,71 +82,32 @@ main(int argc, char** argv)
 }
 
 
-int 
-save_rects_to_image_file(const char* outfile, 
-                         GdkPixbuf* pixbuf,
-                         rect_t* rects, 
-                         unsigned int rect_count, 
-                         unsigned int width, 
-                         unsigned int height)
-{
-  GdkPixbuf* newpixbuf;
-  GError* error = NULL;
-
-  newpixbuf = gdk_pixbuf_new(gdk_pixbuf_get_colorspace(pixbuf),
-                          gdk_pixbuf_get_has_alpha(pixbuf),
-                          gdk_pixbuf_get_bits_per_sample(pixbuf),
-                          gdk_pixbuf_get_width(pixbuf),
-                          gdk_pixbuf_get_height(pixbuf));
-  assert(newpixbuf);
-
-  int bytes_per_sample = gdk_pixbuf_get_bits_per_sample (newpixbuf) / 8;
-  int num_samples = gdk_pixbuf_get_n_channels(newpixbuf);
-
-  // pixbuf starts out empty (all black), so just add the rectangles
-  for(int i=0;i<(int)rect_count;i++)
-  {
-    fprintf(stderr,"x: %d y: %d w: %d h: %d\n",
-           rects[i].pose.x,
-           rects[i].pose.y,
-           rects[i].size.x,
-           rects[i].size.y);
-
-    // Assuming axis-aligned rectangles
-    int x0, y0;
-    x0 = rects[i].pose.x;
-    y0 = rects[i].pose.y;
-    for(int y=y0;(y-y0)<rects[i].size.y;y++)
-    {
-      unsigned char* pix = get_pixel(newpixbuf, x0, y);
-      memset(pix, 255, rects[i].size.x * num_samples * bytes_per_sample);
-    }
-  }
-
-  if(!gdk_pixbuf_save(newpixbuf,
-                      outfile,
-                      "png",
-                      &error, NULL))
-  {
-    fprintf(stderr,"failed to save output image to %s\n", outfile);
-  }
-  
-
-  return(0);
-}
-
 int
-create_gazebo_obstacles(rect_t* rects, 
+create_gazebo_obstacles(int width,
+                        int height,
+                        rect_t* rects, 
                         unsigned int rect_count,
                         double res)
 {
+  printf("<?xml version=\"1.0\"?>\n"
+         "<model:physical name=\"willow-walls\"\n"
+         "xmlns:model=\"http://playerstage.sourceforge.net/gazebo/xmlschema/#model\"\n"
+         "xmlns:sensor=\"http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor\"\n"
+         "xmlns:body=\"http://playerstage.sourceforge.net/gazebo/xmlschema/#body\"\n"
+         "xmlns:geom=\"http://playerstage.sourceforge.net/gazebo/xmlschema/#geom\"\n"
+         "xmlns:joint=\"http://playerstage.sourceforge.net/gazebo/xmlschema/#joint\"\n"
+         "xmlns:controller=\"http://playerstage.sourceforge.net/gazebo/xmlschema/#controller\"\n"
+         "xmlns:interface=\"http://playerstage.sourceforge.net/gazebo/xmlschema/#interface\"\n"
+         ">\n"
+         "    <xyz>  0.0 0.0 0.0</xyz>\n"
+         "    <rpy>   0.0    0.0    0.0</rpy>\n"
+         "    <static>true</static>\n");
   for(unsigned int i=0;i<rect_count;i++)
   {
-    printf("\n\n  <model:physical name=\"wall_%d_model\">\n"
+    printf("\n\n  <body:box name=\"wall_%d_body\">\n"
            "    <xyz>  %.3f   %.3f  1.0</xyz>\n"
            "    <rpy>   0.0    0.0    0.0</rpy>\n"
            "    <static>true</static>\n"
-           "    <body:box name=\"wall_%d_body\">\n"
            "      <geom:box name=\"wall_%d_geom\">\n"
            "        <mesh>default</mesh>\n"
            "        <size> %.3f   %.3f  2.0</size>\n"
@@ -157,51 +117,68 @@ create_gazebo_obstacles(rect_t* rects,
            "          <mesh>unit_box</mesh>\n"
            "        </visual>\n"
            "      </geom:box>\n"
-           "     </body:box>\n"
-           "  </model:physical>\n",
-
+           "     </body:box>\n",
            i,
-           rects[i].pose.x*res, rects[i].pose.y*res,
-           i,
+           (rects[i].pose.x+rects[i].size.x/2.0-width/2.0)*res, 
+           (rects[i].pose.y+rects[i].size.y/2.0-height/2.0)*res,
            i,
            rects[i].size.x*res, rects[i].size.y*res,
            rects[i].size.x*res, rects[i].size.y*res);
+
   }
+
+  // Also add the ground
+  printf("<model:physical name=\"gplane\">\n"
+          "<xyz>%.3f %.3f 0</xyz>    \n"
+          "<rpy>0 0 0</rpy>\n"
+          "<static>true</static>\n"
+          "<body:plane name=\"plane\">\n"
+          "<geom:plane name=\"plane\">\n"
+          "<kp>1000000.0</kp>\n"
+          "<kd>1.0</kd>\n"
+          "<normal>0 0 1</normal>\n"
+          "<size>%.3f %.3f</size>\n"
+          "<material>PR2/floor_texture</material>\n"
+          "</geom:plane>\n"
+          "</body:plane>\n"
+          "</model:physical>\n",
+         0.0,
+         0.0,
+         width*res, height*res);
+  printf("</model:physical>\n");
+           
   return(0);
 }
 
-static unsigned char* get_pixel( GdkPixbuf* img, int x, int y )
+static unsigned char* get_pixel( SDL_Surface* img, int x, int y )
 {
   //unsigned char* pixels = (unsigned char*)(img->data()[0]);
-  unsigned char* pixels = (unsigned char*)(gdk_pixbuf_get_pixels(img));
-  int rs = gdk_pixbuf_get_rowstride(img);
-  int ch = gdk_pixbuf_get_n_channels(img);
+  unsigned char* pixels = (unsigned char*)(img->pixels);
+  int rs = img->pitch;
+  int ch = img->format->BytesPerPixel;
 
   unsigned int index = (y * rs) + (x * ch);
   return( pixels + index );
 }
 
-static bool pixel_is_set( GdkPixbuf* img, int x, int y, int threshold )
+static bool pixel_is_set( SDL_Surface* img, int x, int y, int threshold )
 {
   unsigned char* pixel = get_pixel( img,x,y );
   return( pixel[0] < threshold );
 }
 
 // set all the pixels in a rectangle 
-static void set_rect( GdkPixbuf* pb, int x, int y, int width, int height, unsigned char val )
+static void set_rect( SDL_Surface* pb, int x, int y, int width, int height, unsigned char val )
 {
-  int bytes_per_sample = gdk_pixbuf_get_bits_per_sample (pb) / 8;
-  int num_samples = gdk_pixbuf_get_n_channels(pb);
-
   int a;
   for( a = y; a < y+height; a++ )
   {
     unsigned char* pix = get_pixel( pb, x, a );
-    memset(pix, val, num_samples * bytes_per_sample * (int)width);
+    memset(pix, val, pb->format->BytesPerPixel * (int)width);
   }
 }  
 
-GdkPixbuf* rects_from_image_file( const char* filename, 
+SDL_Surface* rects_from_image_file( const char* filename, 
                                          rect_t** rects, 
                                          unsigned int* rect_count,
                                          unsigned int* widthp, 
@@ -210,22 +187,16 @@ GdkPixbuf* rects_from_image_file( const char* filename,
   // TODO: make this a parameter
   const int threshold = 1;
 
-  GdkPixbuf* img;
-  GError* error = NULL;
-
-  // Initialize glib
-  g_type_init();
+  SDL_Surface* img;
 
   fprintf(stderr,"opening %s\n", filename);
-  if(!(img = gdk_pixbuf_new_from_file(filename, &error)))
+  if(!(img = IMG_Load(filename)))
   {
     fprintf(stderr,"failed to open image file %s", filename);
     return(NULL);
   }
 
-  fprintf(stderr, "loaded image %s w %d h %d rs %d n_chan %d\n",
-    filename, gdk_pixbuf_get_width(img), gdk_pixbuf_get_height(img),
-    gdk_pixbuf_get_rowstride(img), gdk_pixbuf_get_n_channels(img));
+  fprintf(stderr, "loaded image %s %d X %d\n", filename, img->w, img->h);
 
   *rect_count = 0;
   size_t allocation_unit = 1000;
@@ -233,8 +204,8 @@ GdkPixbuf* rects_from_image_file( const char* filename,
   *rects = (rect_t*)malloc(sizeof(rect_t)*rects_allocated);
   assert(*rects);
 
-  int img_width = gdk_pixbuf_get_width(img);
-  int img_height = gdk_pixbuf_get_height(img);
+  int img_width = img->w;
+  int img_height = img->h;
 
   // if the caller wanted to know the dimensions
   if( widthp ) *widthp = img_width;
@@ -292,9 +263,9 @@ GdkPixbuf* rects_from_image_file( const char* filename,
       latest->size.x = x-startx;
       latest->size.y = height;
 
-      fprintf(stderr, "rect %d (%d %d %d %d) \n", 
-        *rect_count, 
-        latest->pose.x, latest->pose.y, latest->size.x, latest->size.y);
+      //fprintf(stderr, "rect %d (%d %d %d %d) \n", 
+        //*rect_count, 
+        //latest->pose.x, latest->pose.y, latest->size.x, latest->size.y);
 
     }
   }
