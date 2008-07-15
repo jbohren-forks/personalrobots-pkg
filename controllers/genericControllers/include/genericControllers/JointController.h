@@ -306,7 +306,7 @@ namespace CONTROLLER
      double SafelySetTorqueInternal(double torque);
      
       std::string jointName; /*!< Namespace ID for this controller*/  
-      Joint* thisJoint; /*!< Joint we're controlling*/  
+      mechanism::Joint* thisJoint; /*!< Joint we're controlling*/  
       Pid pidController; /*!< Internal PID controller*/  
 
      
