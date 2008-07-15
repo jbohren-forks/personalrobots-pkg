@@ -171,13 +171,13 @@ main(int argc, char** argv)
     // Update Controllers
     //   each controller will try to read new commands from shared memory with nonRT hooks,
     //   and skip update if locked by nonRT loop.
-    myArm.Update();
-    myHead.Update();
-    mySpine.Update();
-    myBase.Update();
+    //myArm.Update();
+    //myHead.Update();
+    //mySpine.Update();
+    //myBase.Update();
     // Commenting out because it crashes
     //myLaserScanner.Update();
-    myGripper.Update();
+    //myGripper.Update();
 
     // TODO: Safety codes should go here...
 
