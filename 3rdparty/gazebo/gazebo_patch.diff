@@ -1232,18 +1232,16 @@ Index: gazebo-svn/server/gui/GLWindow.cc
    this->keys.clear();
  
    if (activeWin == NULL)
-@@ -91,8 +95,9 @@
+@@ -91,8 +95,6 @@
    this->userCamera = new UserCamera( this );
    this->userCamera->Load(NULL);
    this->userCamera->Init();
-+  this->userCamera->Translate( Vector3(5, 0, 3) );
-+  this->userCamera->RotateYaw( DTOR(180) );
-   this->userCamera->RotatePitch( DTOR(30) );
+-  this->userCamera->RotatePitch( DTOR(30) );
 -  this->userCamera->Translate( Vector3(-5, 0, 1) );
  
    this->activeCamera = this->userCamera;
  }
-@@ -235,6 +240,21 @@
+@@ -235,6 +237,21 @@
        this->activeCamera->RotateYaw(DTOR(-d.x * this->rotateAmount));
        this->activeCamera->RotatePitch(DTOR(d.y * this->rotateAmount));
      }
@@ -1265,7 +1263,7 @@ Index: gazebo-svn/server/gui/GLWindow.cc
    }
  
    this->mouseDrag = true;
-@@ -247,12 +267,28 @@
+@@ -247,12 +264,28 @@
    std::map<int,int>::iterator iter;
    this->keys[keyNum] = 1;
  
