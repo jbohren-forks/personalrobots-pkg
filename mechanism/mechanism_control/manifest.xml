@@ -7,6 +7,10 @@
 <depend package="roscpp"/>
 <depend package="rosthread"/>
 <depend package="std_msgs"/>
+<depend package="hw_interface"/>
+<depend package="robot_model"/>
+<depend package="pr2Controllers"/>
+
 <export>
   <cpp cflags="-I${prefix}/include"/>
 </export>

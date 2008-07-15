@@ -45,7 +45,7 @@ namespace mechanism {
     int numLinks;
     Joint *joint;
     int numJoints;
-    Transmission *transmission;
+    SimpleTransmission *transmission;
     int numTransmissions;
   };
 }

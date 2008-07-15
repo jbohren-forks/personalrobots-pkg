@@ -29,10 +29,11 @@
 #ifndef TRANSMISSION_H
 #define TRANSMISSION_H
 
-#include "mechanism/joint.h"
-#include "mechanism/hardware_interface.h"
+#include "robot_model/joint.h"
+#include "hw_interface/hardware_interface.h"
 
 namespace mechanism {
+
   class Transmission{
 
     public:
@@ -40,13 +41,12 @@ namespace mechanism {
      void propagatePosition(); //Use encoder data to fill out joint position and velocities
 
      void propagateEffort(); //Use commanded joint efforts to fill out commanded motor currents
+
   };
 
   class SimpleTransmission : public Transmission{
 
     public:
-
-     SimpleTransmission(Actuator * actuator, Joint *joint);
 
      Actuator *actuator;
 
