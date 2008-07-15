@@ -32,7 +32,7 @@ using namespace std;
 
 namespace CONTROLLER
 {
-  class BaseController : Controller
+  class BaseController : public Controller
   {
     public:
     
