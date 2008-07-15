@@ -39,6 +39,8 @@
     <base_width>0.5</base_width>
     <base_height>0.1</base_height>
 
+    <wheel_clearance_offset>0.02</wheel_clearance_offset> <!-- wheel clearance from bottom of base to ground-->
+
     <torso_length>0.3</torso_length>
     <torso_width>0.05</torso_width>
     <torso_height>0.8</torso_height>
@@ -50,7 +52,13 @@
     <head_tilt_width>0.1</head_tilt_width>
     <head_tilt_height>0.15</head_tilt_height>
 
+    <base_torso_offset_x>-0.05</base_torso_offset_x>
+    <base_torso_offset_y>0.0</base_torso_offset_y>
+    <base_torso_offset_z>0.30981</base_torso_offset_z>
 
+    <torso_head_pan_offset_x>-0.1829361-base_torso_offset_x</torso_head_pan_offset_x>
+    <torso_head_pan_offset_y>0</torso_head_pan_offset_y>
+    <torso_head_pan_offset_z>0.80981-base_torso_offset_z</torso_head_pan_offset_z>
   </constants>
 <!-- End constant dimensions -->
 
@@ -88,10 +96,10 @@
 
     <define template="pr2_wheel_visual">
       <xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
-      <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <rpy>M_PI/2 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <geometry type="cylinder"><!-- geometry specified using a simple geometric object -->
-        <size>wheel_length wheel_radius</size> 
+        <size>wheel_radius wheel_length</size> 
       </geometry>
     </define> 
 
@@ -125,7 +133,7 @@
       <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <geometry type="cylinder">
-      <size> shoulder_pan_radius shoulder_pan_length  </size>
+      <size> shoulder_pan_radius shoulder_pan_length</size>
       </geometry>
     </define> 
 
@@ -147,7 +155,7 @@
       <rpy>M_PI/2 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <geometry type="cylinder">
-      <size> shoulder_pitch_length shoulder_pitch_radius </size>
+      <size> shoulder_pitch_radius shoulder_pitch_length </size>
       </geometry>
     </define> 
 
@@ -191,7 +199,7 @@
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <geometry type="cylinder">
-      <size>elbow_pitch_length elbow_pitch_radius </size>
+      <size>elbow_pitch_radius elbow_pitch_length </size>
       </geometry>
     </define> 
 
@@ -233,7 +241,7 @@
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <geometry type="cylinder">
-      <size>wrist_pitch_length wrist_pitch_radius </size>
+      <size>wrist_pitch_radius wrist_pitch_length</size>
       </geometry>
     </define> 
 
@@ -269,7 +277,7 @@
     <parent> world</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
-    <xyz> 0 0 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
+    <xyz> 0 0 wheel_clearance_offset</xyz> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
 
     <joint type="floating" name="joint_base"> 
       <anchor>0.25 0.1 0.3  </anchor> <!-- Initial position of the base in a global coordinate frame -->
@@ -282,7 +290,7 @@
     </inertial> 
 
     <visual>
-      <xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <xyz>0 0 base_height/2</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <geometry type="box">
@@ -291,7 +299,7 @@
     </visual> 
 
     <collision>
-      <xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <xyz>0 0 base_height/2</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material> 
       <geometry type="box">
@@ -452,7 +460,7 @@
   <link name="torso">
     <parent> base </parent>
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> -0.05 0 0.80981</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> base_torso_offset_x base_torso_offset_y base_torso_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint type="prismatic"> 
       <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
@@ -495,7 +503,7 @@
   <link name="shoulder_pan_left"><!-- link specifying the shoulder of the robot -->
     <parent> torso</parent>
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> -.1329361 0.1329361 0.0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 0.1329361 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_shoulder_pan_joint" name="joint_shoulder_pan_left"/>
     <inertial clone="pr2_shoulder_pan_inertial"/>
@@ -507,7 +515,7 @@
     <parent> torso</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> -.1329361 -0.1329361 0.0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 -0.1329361 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_shoulder_pan_joint"/>
     <inertial clone="pr2_shoulder_pan_inertial"/>
@@ -680,7 +688,7 @@
   <link name="head_pan"><!-- link specifying the shoulder of the robot -->
     <parent>torso</parent>
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 0 torso_head_pan_offset_z+head_pan_length/2</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
 
     <joint type="revolute"> 
@@ -696,20 +704,20 @@
     </inertial>
 
     <visual>
-      <xyz>0 0 head_pan_length/2</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <geometry type="cylinder">
-        <size>head_pan_length head_pan_radius</size>
+        <size>head_pan_radius head_pan_length </size>
       </geometry>
     </visual> 
 
     <collision>
-      <xyz> 0 0 head_pan_length/2 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <xyz> 0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material> 
       <geometry type="cylinder">
-        <size>head_pan_length head_pan_radius</size>
+        <size>head_pan_radius head_pan_length </size>
       </geometry>
     </collision> 
 
