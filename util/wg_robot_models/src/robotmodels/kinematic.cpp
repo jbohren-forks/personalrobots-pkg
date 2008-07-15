@@ -33,6 +33,7 @@
 *********************************************************************/
 
 #include <robotmodels/kinematic.h>
+#include <cstdio>
 
 void KinematicModel::Robot::computeTransforms(const double *params)
 {
@@ -171,6 +172,9 @@ void KinematicModel::buildChain(Robot *robot, Joint *parent, Link* link, URDF::L
     link->before = parent;
     robot->links.push_back(link);
     
+    if (m_verbose)
+	printf("Created link '%s'\n", urdfLink->name.c_str());
+    
     /* copy relevant data */ 
     switch (urdfLink->collision->geometry->type)
     {
@@ -217,6 +221,8 @@ void KinematicModel::buildChain(Robot *robot, Joint *parent, Link* link, URDF::L
 	    if (!found)
 		continue;
 	}
+	if (m_verbose)
+	    printf("Connecting to link '%s'\n", urdfLink->children[i]->name.c_str());
 	Joint *newJoint = new Joint();
 	buildChain(robot, link, newJoint, urdfLink->children[i]);
 	link->after.push_back(newJoint);

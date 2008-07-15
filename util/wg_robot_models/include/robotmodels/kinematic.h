@@ -192,6 +192,7 @@ class KinematicModel
     
     KinematicModel(void)
     {
+	m_verbose = true;
     }
     
     virtual ~KinematicModel(void)
@@ -208,6 +209,7 @@ class KinematicModel
  protected:
     
     std::vector<Robot*> m_robots;
+    bool                m_verbose;    
     
  private:
 
