@@ -507,7 +507,7 @@
     <parent> torso</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> -.1329361 -0.1329361 0.80981</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> -.1329361 -0.1329361 0.0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_shoulder_pan_joint"/>
     <inertial clone="pr2_shoulder_pan_inertial"/>
