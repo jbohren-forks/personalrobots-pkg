@@ -359,7 +359,7 @@
 
     <!-- base, torso and arms -->
     <include embedded="true">
-      <xi:include href="pr2_torque.model" />
+      <xi:include href="pr2_torque_control.model" />
     </include>
 
   </model:physical>
