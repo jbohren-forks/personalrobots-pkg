@@ -6,6 +6,6 @@
 <url>http://pr.willowgarage.com</url>
 <depend package="pr2Core"/>
 <export>
-<cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lorocos-kdl -lPr2KDL"/>
+<cpp cflags="-I${prefix}/include" lflags="-Wl,rpath,${prefix}/lib -L${prefix}/lib -lorocos-kdl -lKDL"/>
 </export>
 </package>
