@@ -259,7 +259,7 @@ public:
           ((VidereData*)(cd->otherData))->mode = 4;
 
         int textureThresh;
-        param(cd->name + string("/videreParam/textureThresh"), textureThresh, 0);
+        param(cd->name + string("/videreParam/textureThresh"), textureThresh, 12);
         if (textureThresh < 0)
           textureThresh = 0;
         if (textureThresh > 63)
@@ -267,7 +267,7 @@ public:
         ((VidereData*)(cd->otherData))->textureThresh = textureThresh;
 
         int uniqueThresh;
-        param(cd->name + string("/videreParam/uniqueThresh"), uniqueThresh, 0);
+        param(cd->name + string("/videreParam/uniqueThresh"), uniqueThresh, 12);
         if (uniqueThresh < 0)
           uniqueThresh = 0;
         if (uniqueThresh > 63)
