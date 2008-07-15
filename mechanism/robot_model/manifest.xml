@@ -1,11 +1,11 @@
 <package>
-<description brief="Hardware Interface stub">
+<description brief="Robot model">
 </description>
 <author>Eric Berger berger@willowgarage.com</author>
 <license>BSD</license>
+<depend package='hw_interface'/>
 <url>http://pr.willowgarage.com</url>
 <export>
-  <cpp cflags="-I${prefix}/include"/>
+  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lrobot_model -Wl,-rpath,${prefix}/lib"/>
 </export>
 </package>
-

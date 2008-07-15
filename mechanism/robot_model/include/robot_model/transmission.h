@@ -38,9 +38,9 @@ namespace mechanism {
 
     public:
 
-     void propagatePosition(); //Use encoder data to fill out joint position and velocities
+    virtual void propagatePosition(); //Use encoder data to fill out joint position and velocities
 
-     void propagateEffort(); //Use commanded joint efforts to fill out commanded motor currents
+    virtual void propagateEffort(); //Use commanded joint efforts to fill out commanded motor currents
 
   };
 
@@ -55,6 +55,12 @@ namespace mechanism {
      double mechanicalReduction;
 
      double motorTorqueConstant;
+
+     double ticksPerRadian;
+
+     void propagatePosition();
+
+     void propagateEffort();
   };
 
   class CoupledTransmission : public Transmission{

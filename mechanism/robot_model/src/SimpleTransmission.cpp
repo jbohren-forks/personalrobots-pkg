@@ -26,21 +26,16 @@
 //////////////////////////////////////////////////////////////////////////////
 
 // Simple transmission implementation
-#include <mechanism/transmission.h>
+#include <robot_model/transmission.h>
+#include <robot_model/joint.h>
 
-SimpleTransmission(Actuator *actuator, Joint *joint, double mechanicalReduction, double motorTorqueConstant){
-   this->actuator = actuator;
-   this->joint = joint;
-   this->mechanicalReduction = mechanicalReduction;
-   this->motorTorqueConstant = motorTorqueConstant;
-   this->ticksPerRadian = ticksPerRadian;
-}
+using namespace mechanism;
 
 void SimpleTransmission::propagatePosition(){
-   this->joint.position = this->ticksPerRadian * this->actuator.state.encoderCount;
-   this->joint.appliedEffort = this->actuator.lastMeasuredCurrent * (motorTorqueConstant * mechanicalReduction);
+   this->joint->position = this->ticksPerRadian * this->actuator->state.encoderCount;
+   this->joint->appliedEffort = this->actuator->state.lastMeasuredCurrent * (motorTorqueConstant * mechanicalReduction);
 }
 
 void SimpleTransmission::propagateEffort(){
-   this->actuator.command.current = this->joint.commandedEffort/(motorTorqueConstant * mechanicalReduction);
+   this->actuator->command.current = this->joint->commandedEffort/(motorTorqueConstant * mechanicalReduction);
 }
