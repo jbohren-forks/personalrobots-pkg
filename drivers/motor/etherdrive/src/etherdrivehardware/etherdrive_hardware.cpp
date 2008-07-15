@@ -32,83 +32,111 @@
 #include "etherdrive/etherdrive_hardware.h"
 
 EtherdriveHardware::EtherdriveHardware(int numBoards, int numActuators, int boardLookUp[], int portLookUp[], int jointId[], string etherIP[], string hostIP[]){
-   this->numBoards = numBoards;
-   this->numActuators = numActuators;
-   for(int ii = 0; ii < numActuators; ii++)
-   {
+  this->numBoards = numBoards;
+  this->numActuators = numActuators;
+  for(int ii = 0; ii < numActuators; ii++)
+    {
       this->boardLookUp[ii] = boardLookUp[ii];
       this->portLookUp[ii] = portLookUp[ii];
       this->jointId[ii] = jointId[ii];
       this->etherIP[ii] = etherIP[ii];
       this->hostIP[ii] = hostIP[ii];
-   }
+    }
  
-   edBoard = new EtherDrive[numBoards];
+  edBoard = new EtherDrive[numBoards];
 };
 
 void EtherdriveHardware::init(){
-   for(int ii=0; ii<numBoards; ii++)
-      edBoard[ii].init(etherIP[ii],hostIP[ii]);
-   setControlMode(ETHERDRIVE_CURRENT_MODE);
+  for(int ii=0; ii<numBoards; ii++)
+    edBoard[ii].init(etherIP[ii],hostIP[ii]);
    setGains(0,10,0,100,1004,1); // hard-coded for all the boards and all the motors for now
+   setControlMode(ETHERDRIVE_CURRENT_MODE);
+   setMotorsOn(true);
 };
 
 void EtherdriveHardware::updateState(HardwareInterface *hw){
-   for(int ii = 0; ii < numActuators; ii++)
-   {
+  for(int ii = 0; ii < numActuators; ii++)
+    {
       hw->actuator[jointId[ii]].state.timestamp++;
       hw->actuator[jointId[ii]].state.encoderCount = edBoard[boardLookUp[ii]].get_enc(portLookUp[ii]);
-   }
+    }
 };
 
 void EtherdriveHardware::sendCommand(HardwareInterface *hw){
-   int command = 0;
-   for(int ii = 0; ii < numActuators; ii++)
-   {
+  int command = 0;
+  for(int ii = 0; ii < numActuators; ii++)
+    {
       if( hw->actuator[ii].command.enable){
-         command = ETHERDRIVE_CURRENT_TO_CMD*(int)hw->actuator[ii].command.current;
-         edBoard[boardLookUp[ii]].set_drv(portLookUp[ii], command);
+	command = (int)(ETHERDRIVE_CURRENT_TO_CMD*hw->actuator[ii].command.current);
+	edBoard[boardLookUp[ii]].set_drv(portLookUp[ii], command);
       }
-   }
+    }
 }
-
-
 
 void EtherdriveHardware::setGains(int P, int I, int D, int W, int M, int Z)
 {
-   for(int ii = 0; ii < numActuators; ii++)
-   {
+  for(int ii = 0; ii < numActuators; ii++)
+    {
       edBoard[boardLookUp[ii]].set_gain(portLookUp[ii],'P',P);
       edBoard[boardLookUp[ii]].set_gain(portLookUp[ii],'I',I);
       edBoard[boardLookUp[ii]].set_gain(portLookUp[ii],'D',D);
       edBoard[boardLookUp[ii]].set_gain(portLookUp[ii],'W',W);
       edBoard[boardLookUp[ii]].set_gain(portLookUp[ii],'M',M);
       edBoard[boardLookUp[ii]].set_gain(portLookUp[ii],'Z',Z);
-   }
+    }
 }
 
 void EtherdriveHardware::setControlMode(int controlMode)
 {
-   for(int ii=0; ii < numBoards; ii++)
-      edBoard[ii].set_control_mode(controlMode);
+  for(int ii=0; ii < numBoards; ii++)
+    edBoard[ii].set_control_mode(controlMode);
 }
 
-int main(int argc, char *argv[]) {
-  int numBoards = 1;
-  int numActuators = 1;
-  int boardLookUp[] ={0}; 
-  int portLookUp[] = {0};
-  int jointId[]={0};
-  string etherIP[] = "10.11.0.3";
-  string hostIP[] = "10.11.0.102";
-
-  EtherdriveHardware* EDtest = new EtherdriveHardware(numBoards, numActuators, boardLookUp, portLookUp, jointId, etherIP, hostIP);
-
-  EDtest->init();
-  return 0;
+void EtherdriveHardware::setMotorsOn(bool motorsOn)
+{
+  for(int ii = 0; ii < numBoards; ii++)
+  { 
+    if(motorsOn)
+      edBoard[ii].motors_on();
+    else
+      edBoard[ii].motors_off();
+  }
 }
 
-/*int main(int argc, char *argv[]){
-   EtherdriveHardware *h = new NullHardware();
-   delete(h);
-   }*/
+void EtherdriveHardware::update() {
+  for(int ii = 0; ii < numBoards; ii++)
+    edBoard[ii].tick();
+}
+
+EtherdriveHardware::~EtherdriveHardware()
+{
+};
+
+int main(int argc, char *argv[]){
+
+  int numBoards = 2;
+  int numActuators = 2;
+  int boardLookUp[] ={0, 1}; 
+  int portLookUp[] = {0, 0};
+  int jointId[]={0, 1};
+  string etherIP[] = {"10.12.0.103", "10.11.0.102"};
+  string hostIP[] = {"10.12.0.2", "10.11.0.3"};
+
+  EtherdriveHardware *h = new EtherdriveHardware(numBoards, numActuators, boardLookUp, portLookUp, jointId, etherIP, hostIP);
+  HardwareInterface *hi = new HardwareInterface(1);
+  h->init();
+  hi->actuator[0].command.enable = true;
+  hi->actuator[0].command.current = 0.5;
+  
+  hi->actuator[1].command.enable = true;
+  hi->actuator[1].command.current = 0.5;
+
+  h->sendCommand(hi);
+  for(;;) {
+    h->update();
+    usleep(1000);
+  }  
+
+  delete(h);
+  delete(hi);
+}
