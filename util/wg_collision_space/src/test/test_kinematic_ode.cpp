@@ -117,7 +117,7 @@ int main(int argc, char **argv)
     
     
     URDF model;
-    model.load("/u/isucan/ros/ros-pkg/drivers/robot/pr2/pr2Core/include/pr2Core/pr2.xml");
+    model.loadFile("/u/isucan/ros/ros-pkg/drivers/robot/pr2/pr2Core/include/pr2Core/pr2.xml");
     
     EnvironmentModelODE km;
     km.model->build(model);

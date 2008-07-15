@@ -284,7 +284,7 @@ class URDF
     {   
 	m_paths.push_back("");
 	if (filename)
-	    load(filename);
+	    loadFile(filename);
     }
     
     virtual ~URDF(void)
@@ -293,7 +293,9 @@ class URDF
     }
     
     virtual void clear(void);
-    virtual bool load(const char *filename);
+    virtual bool loadFile(const char *filename);
+    virtual bool loadFile(FILE *file);
+    virtual bool loadString(const char *data);
     virtual void print(FILE *out = stdout);
     
     bool containsCycle(unsigned int index) const;
@@ -308,7 +310,7 @@ class URDF
 
     /* free the memory allocate in this class */
     void freeMemory(void);
-    
+
     void  addPath(const char *filename);
     char* findFile(const char *filename);
 
@@ -347,7 +349,7 @@ class URDF
     void getChildrenAndAttributes(const TiXmlNode* node, std::vector<const TiXmlNode*> &children, std::vector<const TiXmlAttribute*> &attributes) const;
     unsigned int loadValues(const TiXmlNode *node, unsigned int count, double *vals);
     std::string  extractName(std::vector<const TiXmlAttribute*> &attributes);    
-    
+    void clearDocs(void);    
     
     /* temporary storage for information during parsing; should not be used elsewhere */
     std::map<std::string, std::string>      m_constants;  // constants 

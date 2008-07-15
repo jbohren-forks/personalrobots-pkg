@@ -276,7 +276,55 @@ void URDF::defaultConstants(void)
     m_constants["M_PI"] = "3.14159265358979323846";
 }
 
-bool URDF::load(const char *filename)
+void URDF::clearDocs(void)
+{
+    /* clear memory allocated for loaded documents */
+    for (unsigned int i = 0 ; i < m_docs.size() ; ++i)
+	delete m_docs[i];
+    m_docs.clear();
+}
+
+bool URDF::loadString(const char *data)
+{
+    clear();
+    bool result = false;
+
+    TiXmlDocument *doc = new TiXmlDocument();
+    m_docs.push_back(doc);
+    if (doc->Parse(data))
+    {
+	defaultConstants();
+	result = parse(dynamic_cast<const TiXmlNode*>(doc));
+    }
+    else
+	fprintf(stderr, "%s\n", doc->ErrorDesc());
+    
+    clearDocs();
+    
+    return result;
+}  
+
+bool URDF::loadFile(FILE *file)
+{
+    clear();
+    bool result = false;
+
+    TiXmlDocument *doc = new TiXmlDocument();
+    m_docs.push_back(doc);
+    if (doc->LoadFile(file))
+    {
+	defaultConstants();
+	result = parse(dynamic_cast<const TiXmlNode*>(doc));
+    }
+    else
+	fprintf(stderr, "%s\n", doc->ErrorDesc());
+    
+    clearDocs();
+    
+    return result;
+}
+
+bool URDF::loadFile(const char *filename)
 {
     clear();
     bool result = false;
@@ -293,10 +341,7 @@ bool URDF::load(const char *filename)
     else
 	fprintf(stderr, "%s\n", doc->ErrorDesc());
     
-    /* clear memory allocated for loaded documents */
-    for (unsigned int i = 0 ; i < m_docs.size() ; ++i)
-	delete m_docs[i];
-    m_docs.clear();
+    clearDocs();
     
     return result;
 }
