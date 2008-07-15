@@ -60,7 +60,7 @@ class CoupledTransmission : public Transmission{
 
   public:
 
-   CoupledTranmission(Actuator *actuator, Joint *joint, double mechanicalReduction, double motorTorqueConstant);
+   void CoupledTranmission(Actuator *actuator, Joint *joint, double mechanicalReduction, double motorTorqueConstant);
 
 };
 

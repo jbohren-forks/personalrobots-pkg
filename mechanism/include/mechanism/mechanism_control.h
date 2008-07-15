@@ -28,10 +28,10 @@
 #ifndef MECHANISM_CONTROL_H
 #define MECHANISM_CONTROL_H
 
-#include "hardware_interface.h"
-#include "robot.h"
-#include "genericControllers/Controller.h"
-#include "rosthread/mutex.h"
+#include <mechanism/hardware_interface.h>
+#include <mechanism/robot.h>
+//#include <genericControllers/Controller.h>
+#include <rosthread/mutex.h>
 #include <map>
 using std::map;
 using CONTROLLER::Controller;

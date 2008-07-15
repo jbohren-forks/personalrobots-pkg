@@ -26,7 +26,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-#include "mechanism_control.h"
+#include "mechanism/mechanism_control.h"
 
 MechanismControl::MechanismControl(HardwareInterface *hw){
   this->hw = hw;

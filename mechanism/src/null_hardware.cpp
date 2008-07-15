@@ -29,8 +29,8 @@
 //Null hardware implementation
 //Creates empty robot and runs it with null controller
 
-#include "null_hardware.h"
-#include "mechanism_control.h"
+#include <mechanism/null_hardware.h>
+#include <mechanism/mechanism_control.h>
 
 NullHardware::NullHardware(){
   //Read actuators.xml and initialize hardware
