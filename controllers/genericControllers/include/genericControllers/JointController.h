@@ -76,6 +76,9 @@
 #include <math_utils/angles.h>
 #include <robot_model/joint.h>
 #include <string>
+
+using namespace mechanism;
+
 namespace CONTROLLER
 {
   class JointController : Controller
