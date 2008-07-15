@@ -26,6 +26,7 @@
 #include <genericControllers/Controller.h>
 #include <genericControllers/JointController.h>
 #include <robot_model/joint.h>
+#include <robot_model/robot.h>
 
 #define BASE_NUM_JOINTS 12
 
@@ -51,6 +52,7 @@ namespace CONTROLLER
         */
       BaseController(char *nbc);
 
+      BaseController(Robot *r);
 
       /*!
         * \brief Destructor of the BaseController class.
@@ -196,6 +198,8 @@ namespace CONTROLLER
       double yawDotNew; /**< New rotational speed cmd (motion counter-clockwise is positive) */
 
       double GetTime();
+
+      Robot *robot;
 
   };
 }

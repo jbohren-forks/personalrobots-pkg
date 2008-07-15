@@ -9,6 +9,7 @@
   <depend package="pr2Core" />
   <depend package="genericControllers" />
   <depend package="rosTF" />
+  <depend package="hw_interface" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

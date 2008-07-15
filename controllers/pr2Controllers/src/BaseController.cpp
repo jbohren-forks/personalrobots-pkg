@@ -42,8 +42,9 @@ void ComputePointVelocity(double vx, double vy, double vw, double x_offset, doub
    pvy = vy + x_offset*vw;
 };
 
-BaseController::BaseController()
+BaseController::BaseController(Robot *r)
 {
+   this->robot = r;
 }
 
 BaseController::BaseController(char *ns)
@@ -53,7 +54,6 @@ BaseController::BaseController(char *ns)
 BaseController::~BaseController( )
 {
    delete (this->baseJointControllers);
-   delete (this->baseJoints);
 }
 
 void BaseController::Init()
@@ -68,25 +68,17 @@ void BaseController::Init()
 
    InitJointControllers();
 
-   this->baseJoints = new Joint[BASE_NUM_JOINTS];
-   this->baseTransmissions = new SimpleTransmission[BASE_NUM_JOINTS];
-
 }
-
 
 void BaseController::InitJointControllers() 
 {
    this->baseJointControllers = new JointController[BASE_NUM_JOINTS];
 
-   for(int ii = 0; ii < NUM_CASTERS; ii++) 
-   {
-      baseJointControllers[ii].Init(PGain, IGain, DGain, IMax, IMin, CONTROLLER_POSITION, GetTime(), maxPositiveTorque, maxNegativeTorque, maxEffort, &baseJoints[ii]);
-      baseTransmissions[ii].Init(Actuator *actuator, Joint *joint, 1, 0.074);
-   }
-   for(int ii = NUM_CASTERS; ii < BASE_NUM_JOINTS; ii++) 
-   {
-      baseJointControllers[ii].Init(PGain, IGain, DGain, IMax, IMin, CONTROLLER_VELOCITY, GetTime(), maxPositiveTorque, maxNegativeTorque, maxEffort,&baseJoints[ii]);
-   }
+   for(int ii = 0; ii < NUM_CASTERS; ii++)
+      baseJointControllers[ii].Init(PGain_Pos, IGain_Pos, DGain_Pos, IMax, IMin, CONTROLLER_POSITION, GetTime(), maxPositiveTorque, maxNegativeTorque, maxEffort, &(robot->joint[ii]));
+  
+   for(int ii = NUM_CASTERS; ii < BASE_NUM_JOINTS; ii++)
+      baseJointControllers[ii].Init(PGain, IGain, DGain, IMax, IMin, CONTROLLER_VELOCITY, GetTime(), maxPositiveTorque, maxNegativeTorque, maxEffort,&(robot->joint[ii]));
 }  
 
 double BaseController::GetTime()
@@ -99,31 +91,27 @@ double BaseController::GetTime()
 
 void BaseController::Update( )
 {
- 
    point drivePointVelocityL, drivePointVelocityR;
    double wheelSpeed[NUM_WHEELS];
    point steerPointVelocity[NUM_CASTERS];
    double steerAngle[NUM_CASTERS];
    point newDriveCenterL, newDriveCenterR;
 
-   if (pthread_mutex_trylock(&dataMutex) == 0)
-   {
+   if (pthread_mutex_trylock(&dataMutex) == 0){
       xDotCmd = xDotNew;
       yDotCmd = yDotNew;
       yawDotCmd = yawDotNew;
    }
  
-   for(int ii=0; ii < NUM_CASTERS; ii++)
-   {
+   for(int ii=0; ii < NUM_CASTERS; ii++){
       ComputePointVelocity(xDotCmd,yDotCmd,yawDotCmd,BASE_CASTER_OFFSET[ii].x,BASE_CASTER_OFFSET[ii].y,steerPointVelocity[ii].x,steerPointVelocity[ii].y);
       steerAngle[ii] = atan2(steerPointVelocity[ii].y,steerPointVelocity[ii].x);
       // hw.SetJointServoCmd((PR2_JOINT_ID) (CASTER_FL_STEER+3*ii),steerAngle[ii],0);
       // printf("ii: %d, off: (%f, %f), vel: (%f, %f), angle: %f\n",ii,BASE_CASTER_OFFSET[ii].x,BASE_CASTER_OFFSET[ii].y,steerPointVelocity[ii].x,steerPointVelocity[ii].y,steerAngle[ii]);
       baseJointControllers[ii].SetPosCmd(steerAngle[ii]);     
    }
-   for(int ii = 0; ii < NUM_CASTERS; ii++)
-   {
 
+   for(int ii = 0; ii < NUM_CASTERS; ii++){
       newDriveCenterL = Rot2D(CASTER_DRIVE_OFFSET[ii*2  ],steerAngle[ii]);
       newDriveCenterR = Rot2D(CASTER_DRIVE_OFFSET[ii*2+1],steerAngle[ii]);
 
@@ -150,7 +138,6 @@ void BaseController::Update( )
 
 PR2::PR2_ERROR_CODE BaseController::setCourse(double v , double yaw)
 {
-
    return PR2::PR2_ALL_OK;
 }
 
