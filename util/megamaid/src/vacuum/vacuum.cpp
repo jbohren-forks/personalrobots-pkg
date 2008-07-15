@@ -52,14 +52,15 @@ public:
     ros::Time start = ros::Time::now();
     for (size_t i = 0; i < vac_topics.size(); i++)
     {
+      string sanitized = vac_topics[i];
       printf("vacuum up [%s]\n", vac_topics[i].c_str());
       for (size_t j = 0; j < vac_topics[i].length(); j++)
       {
-        char c = vac_topics[i][j]; // sanitize it a bit
+        char c = sanitized[j]; // sanitize it a bit
         if (c == '\\' || c == '/' || c == '#' || c == '&' || c == ';')
-          vac_topics[i][j] = '_';
+          sanitized[j] = '_';
       }
-      if (!bags[i].open_log(std::string(logdir) + std::string("/") + vac_topics[i] + string(".bag"),
+      if (!bags[i].open_log(std::string(logdir) + std::string("/") + sanitized + string(".bag"),
                             map_name(vac_topics[i]),
                             start))
         throw std::runtime_error("couldn't open log file\n");
