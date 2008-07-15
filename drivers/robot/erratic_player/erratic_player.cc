@@ -85,9 +85,9 @@ Publishes to (name / type):
 //rosTF
 #include "rosTF/rosTF.h"
 // Messages that I need
-#include <std_msgs/MsgRobotBase2DOdom.h>
-//#include <std_msgs/MsgRobotBase2DCmdVel.h>
-#include <std_msgs/MsgBaseVel.h>
+#include <std_msgs/RobotBase2DOdom.h>
+//#include <std_msgs/RobotBase2DCmdVel.h>
+#include <std_msgs/BaseVel.h>
 
 #define PLAYER_QUEUE_LEN 32
 
@@ -100,9 +100,9 @@ class ErraticNode: public ros::node
   public:
     QueuePointer q;
 
-    MsgRobotBase2DOdom odom;
-    //MsgRobotBase2DCmdVel cmdvel;
-    MsgBaseVel cmdvel;
+    std_msgs::RobotBase2DOdom odom;
+    //RobotBase2DCmdVel cmdvel;
+    std_msgs::BaseVel cmdvel;
 
   rosTFServer tf;
   
@@ -117,7 +117,7 @@ class ErraticNode: public ros::node
       // TODO: remove XDR dependency
       playerxdr_ftable_init();
 
-      advertise<MsgRobotBase2DOdom>("odom");
+      advertise<std_msgs::RobotBase2DOdom>("odom");
 
       // The Player address that will be assigned to this device.  The format
       // is interface:index.  The interface must match what the driver is
