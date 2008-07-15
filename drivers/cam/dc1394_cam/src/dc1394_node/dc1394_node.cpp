@@ -299,9 +299,11 @@ public:
         uint32_t t_thresh = 0x08000000 | (0x40 << 16) | ( ((VidereData*)(cd->otherData))->textureThresh << 16);
         cd->cam->setControlRegister(0xFF000, t_thresh);
 
+        usleep(50000);
         uint32_t u_thresh = 0x08000000 | (0x00 << 16) | ( ((VidereData*)(cd->otherData))->uniqueThresh << 16);
         cd->cam->setControlRegister(0xFF000, u_thresh);
 
+        usleep(50000);
         uint32_t qval1 = 0x08000000 | (0x90 << 16) | ( ( ((VidereData*)(cd->otherData))->mode & 0x7) << 16);
         uint32_t qval2 = 0x08000000 | (0x9C << 16);
 
