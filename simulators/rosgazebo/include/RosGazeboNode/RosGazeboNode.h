@@ -35,7 +35,7 @@
 #include <pr2Controllers/GripperController.h>
 
 #include "ringbuffer.h"
-
+#include "robot_model/joint.h"
 // roscpp
 #include <ros/node.h>
 // roscpp - laser
@@ -111,6 +111,18 @@ class RosGazeboNode : public ros::node
          CONTROLLER::GripperController      *myGripper
          );
     ~RosGazeboNode();
+   // Constructor; stage itself needs argc/argv.  fname is the .world file
+    // that stage should load.
+    RosGazeboNode(int argc, char** argv, const char* fname,
+         PR2::PR2Robot          *myPR2,
+         CONTROLLER::ArmController          *myArm,
+         CONTROLLER::HeadController         *myHead,
+         CONTROLLER::SpineController        *mySpine,
+         CONTROLLER::BaseController         *myBase,
+         CONTROLLER::LaserScannerController *myLaserScanner,
+         CONTROLLER::GripperController      *myGripper,
+         mechanism::Joint**                  JointArray
+         );
 
     // advertise / subscribe models
     int AdvertiseSubscribeMessages();
@@ -143,6 +155,9 @@ class RosGazeboNode : public ros::node
 
     // keep count for full cloud
     int max_cloud_pts;
+
+    //Keep track of joint array
+    mechanism::Joint** JointArray;
 };
 
 

@@ -13,6 +13,9 @@
   <depend package="rosTF" />
   <depend package="math_utils" />
   <depend package="string_utils" />
+  <depend package="libKDL" />
+  <depend package="robot_model" />
+  <depend package="hw_interface" />
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lRosGazeboNode"/>
   </export>
