@@ -1232,16 +1232,18 @@ Index: gazebo-svn/server/gui/GLWindow.cc
    this->keys.clear();
  
    if (activeWin == NULL)
-@@ -91,6 +95,8 @@
+@@ -91,8 +95,9 @@
    this->userCamera = new UserCamera( this );
    this->userCamera->Load(NULL);
    this->userCamera->Init();
 +  this->userCamera->Translate( Vector3(5, 0, 3) );
 +  this->userCamera->RotateYaw( DTOR(180) );
    this->userCamera->RotatePitch( DTOR(30) );
-   this->userCamera->Translate( Vector3(-5, 0, 1) );
+-  this->userCamera->Translate( Vector3(-5, 0, 1) );
  
-@@ -235,6 +241,21 @@
+   this->activeCamera = this->userCamera;
+ }
+@@ -235,6 +240,21 @@
        this->activeCamera->RotateYaw(DTOR(-d.x * this->rotateAmount));
        this->activeCamera->RotatePitch(DTOR(d.y * this->rotateAmount));
      }
@@ -1263,7 +1265,7 @@ Index: gazebo-svn/server/gui/GLWindow.cc
    }
  
    this->mouseDrag = true;
-@@ -247,12 +268,28 @@
+@@ -247,12 +267,28 @@
    std::map<int,int>::iterator iter;
    this->keys[keyNum] = 1;
  
@@ -1612,6 +1614,14 @@ Index: gazebo-svn/server/World.cc
  ///////////////////////////////////////////////////////////////////////////////
  // Load a model
  int World::LoadEntities(XMLConfigNode *node, Model *parent)
+@@ -498,7 +559,6 @@
+   //TODO: Move this method to simulator? Hard because of the models
+   this->simIface->Lock(1);
+ 
+-  if (this->simIface->GetOpenCount() > 0)
+   {
+     this->simIface->data->simTime = Simulator::Instance()->GetSimTime();
+     this->simIface->data->pauseTime = Simulator::Instance()->GetPauseTime();
 Index: gazebo-svn/SConstruct
 ===================================================================
 --- gazebo-svn/SConstruct	(revision 6870)
