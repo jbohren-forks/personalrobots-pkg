@@ -79,6 +79,7 @@ void KinematicModel::Link::computeTransform(const double *params)
     globalTrans.multiplyPose(constTrans);
     for (unsigned int i = 0 ; i < after.size() ; ++i)
 	after[i]->computeTransform(params);
+    globalTrans.multiplyPose(constGeomTrans);
 }
 
 void KinematicModel::build(URDF &model, const char *group)
@@ -202,9 +203,7 @@ void KinematicModel::buildChain(Robot *robot, Joint *parent, Link* link, URDF::L
     
     xyz = urdfLink->collision->xyz;
     rpy = urdfLink->collision->rpy;
-    libTF::Pose3D auxTransf;
-    auxTransf.setFromEuler(xyz[0], xyz[1], xyz[2], rpy[2], rpy[1], rpy[0]);	    
-    link->constTrans.multiplyPose(auxTransf);
+    link->constGeomTrans.setFromEuler(xyz[0], xyz[1], xyz[2], rpy[2], rpy[1], rpy[0]);	    
     
     for (unsigned int i = 0 ; i < urdfLink->children.size() ; ++i)
     {

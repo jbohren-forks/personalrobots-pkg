@@ -48,6 +48,8 @@ class KinematicModel
 {
  public:
     
+
+    /** Possible geometry elements. These are assumed to be centered at origin (similar to ODE) */
     struct Geometry
     {
 	Geometry(void)
@@ -66,6 +68,7 @@ class KinematicModel
     struct Joint;
     struct Link;	
     
+    /** A joint from the robot. Contains the transform applied by the joint type */
     struct Joint
     {
 	Joint(void)
@@ -114,6 +117,7 @@ class KinematicModel
 	
     };
     
+    /** A link from the robot. Contains the constant transform applied to the link and its geometry */
     struct Link
     {
 	Link(void)
@@ -138,7 +142,10 @@ class KinematicModel
 	
 	/* the constant transform applied to the link (local) */
 	libTF::Pose3D       constTrans;
-	
+
+	/* the constant transform applied to the collision geometry of the link (local) */
+	libTF::Pose3D       constGeomTrans;
+
 	/* the geometry of the link */
 	Geometry           *geom;
 	
@@ -150,6 +157,7 @@ class KinematicModel
 	void computeTransform(const double *params);	
     };
     
+    /** A robot structure */
     struct Robot
     {
 	Robot(void)
@@ -166,33 +174,33 @@ class KinematicModel
 	
 	void computeTransforms(const double *params);
 	
-	/* List of links in the robot */
+	/** List of links in the robot */
 	std::vector<Link*>  links;
 
-	/* List of leaf links (have no child links) */
+	/** List of leaf links (have no child links) */
 	std::vector<Link*>  leafs;
 		
-	/* The first joint in the robot -- the root */
+	/** The first joint in the robot -- the root */
 	Joint              *chain;
 	
-	/* Number of parameters needed to define the joints */
+	/** Number of parameters needed to define the joints */
 	unsigned int        stateDimension;
 
-	/* The bounding box for the set of parameters describing the
-	 * joints.  This array contains 2 * stateDimension elements:
-	 * positions 2*i and 2*i+1 define the minimum and maximum
-	 * values for the parameter. If both minimum and maximum are
-	 * set to 0, the parameter is unbounded. */
+	/** The bounding box for the set of parameters describing the
+	 *  joints.  This array contains 2 * stateDimension elements:
+	 *  positions 2*i and 2*i+1 define the minimum and maximum
+	 *  values for the parameter. If both minimum and maximum are
+	 *  set to 0, the parameter is unbounded. */
 	std::vector<double> stateBounds;
 	
-	/* Group of links corresponding to this robot (if any) */
+	/** Group of links corresponding to this robot (if any) */
 	std::string         tag;
 	
     };
     
     KinematicModel(void)
     {
-	m_verbose = true;
+	m_verbose = false;
     }
     
     virtual ~KinematicModel(void)
