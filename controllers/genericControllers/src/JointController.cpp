@@ -33,7 +33,7 @@
 /////////////////////////////////////////////////////////////////////////////////////
 
 #include <genericControllers/JointController.h>
-//#include <iostream>
+#include <iostream.h>
 //Todo: 
 //1. Get and set params via server
 //2. Integrate Joint and robot objects
@@ -250,7 +250,8 @@ void JointController::Update(void)
     case CONTROLLER_POSITION: //Close the loop around position
       //ASSUME ROTARY JOINT FOR NOW
       error = shortest_angular_distance(joint->position, cmdPos); 
-      currentTorqueCmd = pidController.UpdatePid(error,time-lastTime); 
+     currentTorqueCmd = pidController.UpdatePid(error,time-lastTime); 
+     cout << "JC:: " << joint->position << " cmd:: " << cmdPos << "error:: " << error << "cTC:: " << currentTorqueCmd << endl; 
       break;
     case CONTROLLER_VELOCITY: //Close the loop around velocity
       error = joint->velocity - cmdVel; 
@@ -324,6 +325,7 @@ double JointController::SafelySetTorqueInternal(double torque)
 
   
   //Set torque command 
+  printf("JC::cE:: %f,%f\n",torque,newTorque);
   joint->commandedEffort = newTorque; 
   return newTorque;
 }
