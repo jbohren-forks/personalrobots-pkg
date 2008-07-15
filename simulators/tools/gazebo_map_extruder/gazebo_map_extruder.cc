@@ -138,7 +138,7 @@ create_gazebo_obstacles(int width,
           "<kd>1.0</kd>\n"
           "<normal>0 0 1</normal>\n"
           "<size>%.3f %.3f</size>\n"
-          "<material>PR2/floor_texture</material>\n"
+          "<material>PR2/wall_texture</material>\n"
           "</geom:plane>\n"
           "</body:plane>\n"
           "</model:physical>\n",

@@ -12,3 +12,18 @@ material PR2/floor_texture
     }
   }
 }
+
+material PR2/wall_texture
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture willowMap.png
+        tex_address_mode clamp
+      }
+    }
+  }
+}

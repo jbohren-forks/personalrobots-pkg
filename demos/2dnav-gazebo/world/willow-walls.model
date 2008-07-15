@@ -11190,7 +11190,7 @@ xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
 <kd>1.0</kd>
 <normal>0 0 1</normal>
 <size>51.300 51.300</size>
-<material>PR2/floor_texture</material>
+<material>PR2/wall_texture</material>
 </geom:plane>
 </body:plane>
 </model:physical>
