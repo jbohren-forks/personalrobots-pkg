@@ -1614,14 +1614,6 @@ Index: gazebo-svn/server/World.cc
  ///////////////////////////////////////////////////////////////////////////////
  // Load a model
  int World::LoadEntities(XMLConfigNode *node, Model *parent)
-@@ -498,7 +559,6 @@
-   //TODO: Move this method to simulator? Hard because of the models
-   this->simIface->Lock(1);
- 
--  if (this->simIface->GetOpenCount() > 0)
-   {
-     this->simIface->data->simTime = Simulator::Instance()->GetSimTime();
-     this->simIface->data->pauseTime = Simulator::Instance()->GetPauseTime();
 Index: gazebo-svn/SConstruct
 ===================================================================
 --- gazebo-svn/SConstruct	(revision 6870)
