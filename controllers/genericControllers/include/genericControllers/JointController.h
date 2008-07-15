@@ -110,7 +110,7 @@ namespace CONTROLLER
         * \brief Temporary way to initialize limits and gains
         *
         */
-      void Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort);
+      void Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, Joint *joint);
 
 //---------------------------------------------------------------------------------//
 //TIME CALLS
@@ -306,7 +306,7 @@ namespace CONTROLLER
      double SafelySetTorqueInternal(double torque);
      
       std::string jointName; /*!< Namespace ID for this controller*/  
-      mechanism::Joint* thisJoint; /*!< Joint we're controlling*/  
+      Joint* joint; /*!< Joint we're controlling*/  
       Pid pidController; /*!< Internal PID controller*/  
 
      

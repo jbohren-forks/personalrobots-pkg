@@ -5,9 +5,6 @@
   <author>Melonee Wise, John Hsu, David Li</author>
   <license>BSD</license>
   <depend package="pr2Core" />
-  <depend package="libpr2HW" />
-  <depend package="libpr2API" />
-  <depend package="rosTF" />
   <depend package="math_utils" />
   <depend package="robot_model" />
   <url>http://pr.willowgarage.com</url>

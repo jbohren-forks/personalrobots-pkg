@@ -57,7 +57,7 @@ JointController::~JointController( )
   
 }
 
-void JointController::Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort) {
+void JointController::Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, Joint *joint) {
   //Instantiate PID class
   pidController.InitPid(PGain,IGain,DGain,IMax,IMin); //Constructor for pid controller  
 
@@ -80,6 +80,8 @@ void JointController::Init(double PGain, double IGain, double DGain, double IMax
   this->maxNegativeTorque = maxNegativeTorque;
   this->maxEffort = maxEffort;
   
+  this->joint = joint;
+
   controlMode = mode;
 
   //Turn on controller
@@ -121,7 +123,7 @@ void JointController::EnableController(){
 //Disable functioning. Set joint torque to zero.
 void JointController::DisableController(){
   enabled = false;
-  thisJoint->commandedEffort = 0; //Immediately set commanded Effort to 0
+  joint->commandedEffort = 0; //Immediately set commanded Effort to 0
 }
 
 bool JointController::CheckForSaturation(void){ 
@@ -134,7 +136,7 @@ bool JointController::CheckForSaturation(void){
 //TORQUE CALLS
 //---------------------------------------------------------------------------------//
 CONTROLLER_ERROR_CODE JointController::SetTorqueCmd(double torque){
- double maxEffort = thisJoint->effortLimit;
+ double maxEffort = joint->effortLimit;
   
   if(controlMode != CONTROLLER_TORQUE)  //Make sure we're in torque command mode
   return CONTROLLER_MODE_ERROR;
@@ -164,7 +166,7 @@ CONTROLLER_ERROR_CODE JointController::GetTorqueCmd(double *torque)
 //Query motor for actual torque 
 CONTROLLER_ERROR_CODE JointController::GetTorqueAct(double *torque)
 {
-  *torque = thisJoint->appliedEffort; //Read torque from joint
+  *torque = joint->appliedEffort; //Read torque from joint
   return CONTROLLER_ALL_OK;
 }
 
@@ -180,12 +182,12 @@ CONTROLLER_ERROR_CODE JointController::SetPosCmd(double pos)
   return CONTROLLER_MODE_ERROR;
   
   cmdPos = pos;  
-  if(cmdPos > thisJoint->jointLimitMax){ //Truncate to positive limit
-    cmdPos = thisJoint->jointLimitMax;
+  if(cmdPos > joint->jointLimitMax){ //Truncate to positive limit
+    cmdPos = joint->jointLimitMax;
     return CONTROLLER_JOINT_LIMIT;
   }
-  else if (cmdPos < thisJoint->jointLimitMin){ //Truncate to negative limit
-    cmdPos = thisJoint->jointLimitMin;
+  else if (cmdPos < joint->jointLimitMin){ //Truncate to negative limit
+    cmdPos = joint->jointLimitMin;
     return CONTROLLER_JOINT_LIMIT;
   }
   return CONTROLLER_ALL_OK;
@@ -202,7 +204,7 @@ CONTROLLER_ERROR_CODE JointController::GetPosCmd(double *pos)
 //Query the joint for the actual position
 CONTROLLER_ERROR_CODE JointController::GetPosAct(double *pos)
 {
-  *pos = thisJoint->position;
+  *pos = joint->position;
   return CONTROLLER_ALL_OK;
 }
 
@@ -229,7 +231,7 @@ CONTROLLER_ERROR_CODE JointController::GetVelCmd(double *vel)
 //Query our joint for velocity
 CONTROLLER_ERROR_CODE JointController::GetVelAct(double *vel)
 {
-  *vel = thisJoint->velocity;
+  *vel = joint->velocity;
   return CONTROLLER_ALL_OK;
 }
 //---------------------------------------------------------------------------------//
@@ -238,7 +240,7 @@ CONTROLLER_ERROR_CODE JointController::GetVelAct(double *vel)
 void JointController::Update(void)
 {
   double error,time,currentTorqueCmd;
-  GetTime(&time); //TODO: Replace time with thisJoint->timeStep
+  GetTime(&time); //TODO: Replace time with joint->timeStep
 
   switch (controlMode)
   {
@@ -247,11 +249,11 @@ void JointController::Update(void)
       break;
     case CONTROLLER_POSITION: //Close the loop around position
       //ASSUME ROTARY JOINT FOR NOW
-      error = shortest_angular_distance(thisJoint->position, cmdPos); 
+      error = shortest_angular_distance(joint->position, cmdPos); 
       currentTorqueCmd = pidController.UpdatePid(error,time-lastTime); 
       break;
     case CONTROLLER_VELOCITY: //Close the loop around velocity
-      error = thisJoint->velocity - cmdVel; 
+      error = joint->velocity - cmdVel; 
       currentTorqueCmd = pidController.UpdatePid(error,time-lastTime); 
       break;
     default: //On error (no mode), set torque to zero
@@ -303,8 +305,8 @@ double JointController::SafelySetTorqueInternal(double torque)
   double newTorque;
     
   //Read the max positive and max negative torque once
-  maxPositiveTorque = thisJoint->effortLimit;
-  maxNegativeTorque = -thisJoint->effortLimit; 
+  maxPositiveTorque = joint->effortLimit;
+  maxNegativeTorque = -joint->effortLimit; 
 
   if(torque>maxPositiveTorque){
     newTorque = maxPositiveTorque;
@@ -321,7 +323,7 @@ double JointController::SafelySetTorqueInternal(double torque)
 
   
   //Set torque command 
-  thisJoint->commandedEffort = newTorque; 
+  joint->commandedEffort = newTorque; 
   
   return newTorque;
 }
