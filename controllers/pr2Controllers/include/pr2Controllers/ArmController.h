@@ -1,6 +1,7 @@
 #pragma once
 /***************************************************/
-/*! \brief A PR2 Arm controller
+/*! \class ArmController
+    \brief A PR2 Arm controller
     
     This class implements controller loops for
     PR2 Arm Control

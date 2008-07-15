@@ -1,6 +1,7 @@
 #pragma once
 /***************************************************/
-/*! \brief A PR2 Base controller
+/*! \class BaseController
+    \brief A PR2 Base controller
     
     This class implements controller loops for
     PR2 Base Control

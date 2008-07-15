@@ -1,6 +1,7 @@
 #pragma once
 /***************************************************/
-/*! \brief A PR2 Spine controller
+/*! \class SpineController
+    \brief A PR2 Spine controller
     
     This class implements controller loops for
     PR2 Spine Control

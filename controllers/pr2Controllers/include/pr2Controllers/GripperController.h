@@ -1,6 +1,7 @@
 #pragma once
 /***************************************************/
-/*! \brief A PR2 Gripper controller
+/*! \class GripperController
+    \brief A PR2 Gripper controller
     
     This class implements controller loops for
     PR2 Gripper Control

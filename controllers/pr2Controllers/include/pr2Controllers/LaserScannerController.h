@@ -1,9 +1,10 @@
 #pragma once
 /***************************************************/
-/*! \brief A PR2 Pitching Hokuyo Joint controller
+/*! \class LaserScannerController
+    \brief A PR2 Pitching Laser Scanner Joint controller
     
     This class implements controller loops for
-    PR2 Pitching Hokuyo Joint
+    PR2 Pitching Laser Scanner Joint
 
 */
 /***************************************************/

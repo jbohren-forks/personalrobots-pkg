@@ -1,6 +1,7 @@
 #pragma once
 /***************************************************/
-/*! \brief A PR2 Head controller
+/*! \class HeadController
+    \brief A PR2 Head controller
     
     This class implements controller loops for
     PR2 Head Control
