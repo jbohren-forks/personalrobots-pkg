@@ -33,7 +33,7 @@
 /////////////////////////////////////////////////////////////////////////////////////
 
 #include <genericControllers/JointController.h>
-
+//#include <iostream>
 //Todo: 
 //1. Get and set params via server
 //2. Integrate Joint and robot objects
@@ -136,7 +136,7 @@ bool JointController::CheckForSaturation(void){
 //TORQUE CALLS
 //---------------------------------------------------------------------------------//
 CONTROLLER_ERROR_CODE JointController::SetTorqueCmd(double torque){
- double maxEffort = joint->effortLimit;
+// double maxEffort = joint->effortLimit;
   
   if(controlMode != CONTROLLER_TORQUE)  //Make sure we're in torque command mode
   return CONTROLLER_MODE_ERROR;
@@ -304,9 +304,10 @@ double JointController::SafelySetTorqueInternal(double torque)
 {
   double newTorque;
     
+  //std::cout<<"Effort:"<<torque<<std::endl; 
   //Read the max positive and max negative torque once
-  maxPositiveTorque = joint->effortLimit;
-  maxNegativeTorque = -joint->effortLimit; 
+//  maxPositiveTorque = joint->effortLimit;
+ // maxNegativeTorque = -joint->effortLimit; 
 
   if(torque>maxPositiveTorque){
     newTorque = maxPositiveTorque;
@@ -324,7 +325,6 @@ double JointController::SafelySetTorqueInternal(double torque)
   
   //Set torque command 
   joint->commandedEffort = newTorque; 
-  
   return newTorque;
 }
 
