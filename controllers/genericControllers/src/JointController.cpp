@@ -251,7 +251,9 @@ void JointController::Update(void)
       //ASSUME ROTARY JOINT FOR NOW
       error = shortest_angular_distance(joint->position, cmdPos); 
      currentTorqueCmd = pidController.UpdatePid(error,time-lastTime); 
+#ifdef DEBUG
      cout << "JC:: " << joint->position << " cmd:: " << cmdPos << "error:: " << error << "cTC:: " << currentTorqueCmd << endl; 
+#endif
       break;
     case CONTROLLER_VELOCITY: //Close the loop around velocity
       error = joint->velocity - cmdVel; 
@@ -325,7 +327,7 @@ double JointController::SafelySetTorqueInternal(double torque)
 
   
   //Set torque command 
-  printf("JC::cE:: %f,%f\n",torque,newTorque);
+  //  printf("JC::cE:: %f,%f\n",torque,newTorque);
   joint->commandedEffort = newTorque; 
   return newTorque;
 }
