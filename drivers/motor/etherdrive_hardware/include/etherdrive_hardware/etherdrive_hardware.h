@@ -68,9 +68,9 @@ class EtherdriveHardware{
    void updateState();
 
    /*! 
-    * \brief Update send most recent motor commands and retrieve updates. This command must be run at a sufficient rate or else the motors will be disabled.
+    * \brief tick send most recent motor commands and retrieve updates. This command must be run at a sufficient rate or else the motors will be disabled.
    */
-   void update();
+   void tick();
 
    /*! 
     * \brief Read the command values from the hardware interface and send them out to the actual motors

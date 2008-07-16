@@ -31,6 +31,8 @@
 
 #include "etherdrive_hardware/etherdrive_hardware.h"
 
+using namespace std;
+
 EtherdriveHardware::EtherdriveHardware(int numBoards, int numActuators, int boardLookUp[], int portLookUp[], int jointId[], string etherIP[], string hostIP[],HardwareInterface *hw){
   this->numBoards = numBoards;
   this->numActuators = numActuators;
@@ -43,7 +45,6 @@ EtherdriveHardware::EtherdriveHardware(int numBoards, int numActuators, int boar
       this->etherIP[ii] = etherIP[ii];
       this->hostIP[ii] = hostIP[ii];
     }
- 
   edBoard = new EtherDrive[numBoards];
 };
 
@@ -60,7 +61,9 @@ void EtherdriveHardware::updateState(){
     {
       hw->actuator[jointId[ii]].state.timestamp++;
       hw->actuator[jointId[ii]].state.encoderCount = edBoard[boardLookUp[ii]].get_enc(portLookUp[ii]);
+      printf("edh:: %d\n",hw->actuator[jointId[ii]].state.encoderCount);
     }
+
 };
 
 void EtherdriveHardware::sendCommand(){
@@ -104,7 +107,7 @@ void EtherdriveHardware::setMotorsOn(bool motorsOn)
   }
 }
 
-void EtherdriveHardware::update() {
+void EtherdriveHardware::tick() {
   for(int ii = 0; ii < numBoards; ii++)
     edBoard[ii].tick();
 }
