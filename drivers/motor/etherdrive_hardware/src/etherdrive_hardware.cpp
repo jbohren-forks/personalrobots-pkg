@@ -72,6 +72,7 @@ void EtherdriveHardware::sendCommand(){
     {
       if( hw->actuator[ii].command.enable){
 	command = (int)(ETHERDRIVE_CURRENT_TO_CMD*hw->actuator[ii].command.current);
+	printf("command: %i\n", command);
 	edBoard[boardLookUp[ii]].set_drv(portLookUp[ii], command);
       }
     }
@@ -114,6 +115,8 @@ void EtherdriveHardware::tick() {
 
 EtherdriveHardware::~EtherdriveHardware()
 {
+  //  printf("Switching off motors \n");
+  setMotorsOn(false);
 };
 
 /*int main(int argc, char *argv[]){
