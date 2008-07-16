@@ -15,10 +15,10 @@ const double IMin  = 0;
 //const double maxPositiveTorque = 0.0528; 
 //const double maxNegativeTorque = -0.0528; 
 //const double maxEffort = 0.0528;
-const double maxPositiveTorque = 0.75; 
-const double maxNegativeTorque = -0.75; 
 const double maxEffort = 0.75;
-const double PGain_Pos = 0.5; 
+const double maxPositiveTorque = maxEffort; 
+const double maxNegativeTorque = -maxEffort; 
+const double PGain_Pos = 2.0; 
 const double IGain_Pos = 0; 
 const double DGain_Pos = 0.04; 
 
@@ -47,40 +47,46 @@ int main(int argc, char *argv[]){
   int numBoards = 1;
   int numActuators = 1;
   int boardLookUp[] ={0}; 
-  int portLookUp[] = {0};
+  int portLookUp[] = {2};
   int jointId[]={0};
   string etherIP[] = {"10.12.0.103"};
   string hostIP[] = {"10.12.0.2"};
-
 
   HardwareInterface *hi = new HardwareInterface(1);
   EtherdriveHardware *h = new EtherdriveHardware(numBoards, numActuators, boardLookUp, portLookUp, jointId, etherIP, hostIP,hi);
   JointController *jc = new JointController();
   Joint *joint = new Joint();
 
+  SimpleTransmission *sc = new SimpleTransmission(joint,&hi->actuator[0],1,-1,14000);
+
   //  BaseController *b = new BaseController();
   //  float pos[] = {0,0,0,0,0,0,0,0,0,0,0,0};
 
   h->init();
   jc->Init(PGain_Pos, IGain_Pos, DGain_Pos, IMax, IMin, CONTROLLER_POSITION, GetTime(), maxPositiveTorque, maxNegativeTorque, maxEffort, joint);
-  hi->actuator[0].command.enable = true;
+  //jc->Init(PGain_Pos, IGain_Pos, DGain_Pos, IMax, IMin, CONTROLLER_VELOCITY, GetTime(), maxPositiveTorque, maxNegativeTorque, maxEffort, joint);
+hi->actuator[0].command.enable = true;
   jc->EnableController();
   joint->effortLimit = maxPositiveTorque;
 
   for(int ii =0; ii < 100000; ii++) {
 
   h->updateState();
-  joint->position = ((double)hi->actuator[0].state.encoderCount)/14000.0;
+  sc->propagatePosition();
+  //  joint->position = ((double)hi->actuator[0].state.encoderCount)/14000.0;
 
   jc->SetPosCmd(0);
+  //jc->SetVelCmd(0);
   jc->Update();
 
   cout << "pos:: " << joint->position << ", eff:: " << joint->commandedEffort << endl;
 
-  hi->actuator[0].command.current = joint->commandedEffort;
+    sc->propagateEffort();
+  //  hi->actuator[0].command.current = joint->commandedEffort;
+  //hi->actuator[0].command.current = 0;
   h->sendCommand();
   //  h->sendCommand(jc->CommandedEffort);
-  h->update();
+  h->tick();
 
 
   usleep(1000);
