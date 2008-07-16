@@ -220,6 +220,9 @@ void TArmK_Node::changeJointAngle(PR2_JOINT_ID jointID, bool increment)
         gripperStep *= -1;
     }
 
+    this->cmd_leftarmconfig.gripperForceCmd = 10; // FIXME: why is this getting reset to 0?
+    this->cmd_rightarmconfig.gripperForceCmd = 10; // FIXME: why is this getting reset to 0?
+
     switch(jointID)
     {
     case ARM_L_PAN:
