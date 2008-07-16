@@ -40,6 +40,7 @@ SmartScan::SmartScan()
 	mNativePoints = NULL;
 	mVtkData = NULL;
 	mVtkPointLocator = NULL;
+	setScanner(0,0,0,  1,0,0,  0,0,1);
 }
 
 SmartScan::~SmartScan()
@@ -55,7 +56,6 @@ void SmartScan::clearData()
 	}
 	deleteVtkData();
 	mNumPoints = 0;
-	setScanner(0,0,0,  1,0,0,  0,0,1);
 }
 
 /*! Set scanner position and orientation
@@ -147,6 +147,9 @@ void SmartScan::applyTransform(const NEWMAT::Matrix &M)
 	mScannerPos = tr.transformPoint(TFRT, mScannerPos);
 	mScannerDir = tr.transformVector(TFRT, mScannerDir);
 	mScannerUp = tr.transformVector(TFRT, mScannerUp);
+	mScannerPos.frame = TFMF; mScannerPos.time = 0;
+	mScannerDir.frame = TFMF; mScannerDir.time = 0;
+	mScannerUp.frame = TFMF; mScannerUp.time = 0;
 
 	if (hasVtkData()) {
 		deleteVtkData();
@@ -213,6 +216,8 @@ bool SmartScan::readFromFile(std::iostream &input)
 	int n;
 	float x,y,z,intensity;
 	clearData();
+	//we alse reset scanner position here
+	setScanner(0,0,0,  1,0,0,  0,0,1);
 	//read number of points
 	input >> n;
 	if (n <= 0) {
