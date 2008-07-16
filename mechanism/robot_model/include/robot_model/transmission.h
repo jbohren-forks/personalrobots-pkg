@@ -34,19 +34,29 @@
 
 namespace mechanism {
 
-  class Transmission{
+  /*  class Transmission{
 
     public:
+
+    Transmission(){};
+
+    virtual ~Transmission(){};
 
     virtual void propagatePosition(); //Use encoder data to fill out joint position and velocities
 
     virtual void propagateEffort(); //Use commanded joint efforts to fill out commanded motor currents
 
   };
-
-  class SimpleTransmission : public Transmission{
+  */
+  class SimpleTransmission{
 
     public:
+
+    SimpleTransmission(Joint *joint, Actuator *actuator, double mechanicalReduction, double motorTorqueConstant, double ticksPerRadian);
+    
+    SimpleTransmission(){};
+
+    ~SimpleTransmission(){};
 
      Actuator *actuator;
 
@@ -62,7 +72,7 @@ namespace mechanism {
 
      void propagateEffort();
   };
-
+  /*
   class CoupledTransmission : public Transmission{
 
     public:
@@ -83,6 +93,7 @@ namespace mechanism {
 
      // ?? Lookup table
   };
+  */
 }
 
 #endif

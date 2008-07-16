@@ -31,8 +31,18 @@
 
 using namespace mechanism;
 
+SimpleTransmission::SimpleTransmission(Joint *joint, Actuator *actuator, double mechanicalReduction, double motorTorqueConstant, double ticksPerRadian)
+{
+  this->joint = joint;
+  this->actuator = actuator;
+  this->mechanicalReduction = mechanicalReduction;
+  this->motorTorqueConstant = motorTorqueConstant;
+  this->ticksPerRadian = ticksPerRadian;
+}
+
+
 void SimpleTransmission::propagatePosition(){
-   this->joint->position = this->ticksPerRadian * this->actuator->state.encoderCount;
+  this->joint->position = ((double)this->actuator->state.encoderCount)/this->ticksPerRadian;
    this->joint->appliedEffort = this->actuator->state.lastMeasuredCurrent * (motorTorqueConstant * mechanicalReduction);
 }
 
