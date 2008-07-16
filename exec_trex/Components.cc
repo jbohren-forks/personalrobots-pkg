@@ -16,6 +16,7 @@
 #include "CalcAngleDiffConstraint.hh"
 #include "CalcCommandConstraintPlayback.hh"
 #include "CalcGlobalPathConstraintPlayback.hh"
+#include "OrienteeringSolver.hh"
 
 
 #include <gdk-pixbuf/gdk-pixbuf.h>
@@ -50,8 +51,10 @@ namespace TREX{
     // Solver Components
     REGISTER_FLAW_FILTER(TREX::GoalsOnlyFilter, GoalsOnly);
     REGISTER_FLAW_FILTER(TREX::NoGoalsFilter, NoGoals);
+    REGISTER_FLAW_FILTER(TREX::DynamicGoalFilter, DynamicGoalFilter);
     REGISTER_FLAW_MANAGER(TREX::GoalManager, GoalManager);
     REGISTER_COMPONENT_FACTORY(TREX::EuclideanCostEstimator, EuclideanCostEstimator);
+    REGISTER_COMPONENT_FACTORY(TREX::OrienteeringSolver, OrienteeringSolver); 
   }
 
   FloorFunction::FloorFunction(const LabelStr& name,

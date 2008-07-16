@@ -1,3 +1,9 @@
+#ifndef H_GOALMANAGER
+#define H_GOALMANAGER
+
+#include "FlawManager.hh"
+#include "FlawFilter.hh"
+
 /**
  * @brief The goal manager.
  */
@@ -5,6 +11,10 @@
 using namespace EUROPA::SOLVERS;
 
 namespace TREX {
+  struct Position {
+    double x;
+    double y;
+  };
   class CostEstimator;
 
   class GoalsOnlyFilter: public FlawFilter {
@@ -39,10 +49,6 @@ namespace TREX {
      */
     GoalManager(const TiXmlElement& configData);
 
-    /**
-     * @brief Handles the iteration. Will always impose a limit of the next goal
-     */
-    IteratorId createIterator();
 
     /**
      * @brief Destructor
@@ -59,20 +65,19 @@ namespace TREX {
     DECLARE_STATIC_CLASS_CONST(LabelStr, CFG_MAP_SOURCE, "mapSource");
     DECLARE_STATIC_CLASS_CONST(LabelStr, CFG_MAX_ITERATIONS, "maxIterations");
     DECLARE_STATIC_CLASS_CONST(LabelStr, CFG_PLATEAU, "plateau");
-
-  private:   
     /**
-     * @brief A Trivial iterator - one goal only. Used to return a goal to the solver
+     * @brief True if the token is the next in the plan.
      */
-    class Iterator : public FlawIterator {
-    public:
-      Iterator(GoalManager& manager, const TokenId& nextGoal);
-
-    private:
-      const EntityId nextCandidate();
-      TokenId m_nextGoal;
-    };
-
+    bool isNextToken(TokenId token);
+    /**
+     * @brief True if the planner has no more work to do.
+     */
+    bool noMoreFlaws();
+    /**
+     * @brief Steps the solver.
+     */
+    void step();
+  private:
     /**
      * @brief Used to synch mark current goal value as dirty
      * @see OpenConditionManager::addFlaw
@@ -94,11 +99,6 @@ namespace TREX {
      * @brief Generate an initial solution. May not be feasible.
      */
     void generateInitialSolution();
-
-    /**
-     * @brief Search for best solution
-     */
-    void search();
 
     /**
      * @brief Helper method
@@ -153,21 +153,31 @@ namespace TREX {
 
     std::string toString(const SOLUTION& s);
 
+    /** The state of the system. */
+    enum State {
+      STATE_DONE, STATE_PLANNING, STATE_REQUIRE_PLANNING
+    };
+
+
     // Configuration derived members
     unsigned int m_maxIterations;
     unsigned int m_plateau;
     LabelStr m_positionSourceCfg;
     TimelineId m_positionSource;
 
-    unsigned int m_cycleCount;
-    unsigned int m_lastCycle;
+    State m_state;
     SOLUTION m_currentSolution;
     TokenSet m_ommissions;
     CostEstimatorId m_costEstimator;
 
+    // Iteration variables.
+    unsigned int m_iteration, m_watchDog;
+
     /*!< INITIAL CONDITIONS */
     int m_startTime;
-    double m_timeBudget;
+    double m_timeBudget;  
+
+
 
     // Integration with wavefront planner
     //plan_t* wv_plan;
@@ -177,6 +187,8 @@ namespace TREX {
     static const int BETTER = 1;
   }; 
 
+
+  typedef Id<GoalManager> GoalManagerId;
 
   class CostEstimator : public Component {
   public:
@@ -192,4 +204,7 @@ namespace TREX {
     double computeDistance(const Position& p1, const Position& p2);
     
   };
+
 }
+
+#endif

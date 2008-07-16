@@ -25,10 +25,6 @@ namespace TREX {
 
 
 
-  struct Position {
-    double x;
-    double y;
-  };
 
 
 

@@ -46,8 +46,7 @@ namespace TREX{
       m_maxIterations(1000),
       m_plateau(5),
       m_positionSourceCfg(""),
-      m_cycleCount(0),
-      m_lastCycle(0) {
+      m_state(STATE_DONE) {
     // Read configuration parameters to override defaults
 
 
@@ -80,6 +79,87 @@ namespace TREX{
       m_positionSourceCfg = LabelStr(positionSrc);
   }
 
+  void GoalManager::step() {
+    if (noMoreFlaws()) {
+      return;
+    }  
+
+    if(m_state == STATE_REQUIRE_PLANNING){
+      generateInitialSolution();
+      
+      m_iteration = m_watchDog = 0;
+    }
+    
+    m_state = STATE_PLANNING;
+    if(m_iteration < m_maxIterations && m_watchDog < m_plateau) {    
+      // Update counters to handle termination
+      m_iteration++;
+      m_watchDog++;
+      
+      // Get best neighbor
+      TokenId delta;
+      GoalManager::SOLUTION candidate;
+      selectNeighbor(candidate, delta);
+      
+      // In the event that the candidate is the same solution, we have hit the end of exploration unless
+      // we escape somehow. The algorithm does not include such random walks to explore beyond the immediate
+      // neighborhood
+      if(candidate == m_currentSolution) {
+	m_state = STATE_DONE;
+      } else {
+	// Promote if not worse. Allos for some exploration
+	int result = compare(candidate, m_currentSolution);
+	if(result >= 0) {
+	  // If a token was removed, insert into ommitted token list, and opposite if appended
+	  if(m_currentSolution.size() > candidate.size())
+	    m_ommissions.insert(delta);
+	  else if(m_currentSolution.size() < candidate.size())
+	    m_ommissions.erase(delta);
+	  
+	  // Update current solution Values
+	  m_currentSolution = candidate;
+	  
+	  // Only pet the watchdog if we have improved the score. This allows us to terminate when
+	  // we have plateaued
+	  if(result == 1)
+	    m_watchDog = 0;
+	  
+	  debugMsg("GoalManager:search", "Switching to new solution: " << toString(m_currentSolution));
+	} else {
+	  m_state = STATE_DONE;
+	}
+      }
+    } else {
+      m_state = STATE_DONE;
+    }
+    if ( m_state == STATE_DONE) {
+      debugMsg("GoalManager:search", "Returning: " << toString(m_currentSolution));
+    }
+  }
+
+
+  bool GoalManager::noMoreFlaws() {
+    return m_state == STATE_DONE;
+  }
+
+  bool GoalManager::isNextToken(TokenId token) {
+    if (!noMoreFlaws()) {
+      return false;
+    }
+    TokenId nextGoal = TokenId::noId();
+    for(SOLUTION::const_iterator it = m_currentSolution.begin(); it != m_currentSolution.end(); ++it){
+      TokenId t = *it;
+      if(t->isInactive()){
+	nextGoal = t;
+	break;
+      }
+    }
+    return (nextGoal == token);
+  }
+
+
+
+
   /**
    * @brief When a new flaw is added we will re-evaluate all the options. This is accomplished
    * by incrementing a cycle count which makes existing solution stale.
@@ -89,7 +169,7 @@ namespace TREX{
 
     if(token->getState()->baseDomain().isMember(Token::REJECTED)){
       debugMsg("GoalManager:addFlaw", token->toString());
-      m_cycleCount++;
+      m_state = STATE_REQUIRE_PLANNING;
     }
   }
 
@@ -97,8 +177,9 @@ namespace TREX{
     OpenConditionManager::removeFlaw(token);
 
     // If the flaw was rejected, come up with a revised solution to get better utility
-    if(token->isRejected())
-      m_cycleCount++;
+    if(token->isRejected()) {
+      m_state = STATE_REQUIRE_PLANNING;
+    }
 
     // If the token is active, remove it from the current solution if present
     if(token->isActive()) {
@@ -120,7 +201,7 @@ namespace TREX{
   void GoalManager::handleInitialize(){
     static const LabelStr sl_nullLabel("");
     OpenConditionManager::handleInitialize();
-    m_cycleCount++;
+    m_state = STATE_REQUIRE_PLANNING;
     if(m_positionSourceCfg != sl_nullLabel){
       debugMsg("GoalManager:handleInitialize", "Looking to source position information from '" << m_positionSourceCfg.toString() << "'");
       m_positionSource = getPlanDatabase()->getObject(m_positionSourceCfg);
@@ -152,7 +233,7 @@ namespace TREX{
 
 
   GoalManager::~GoalManager(){
-    delete (CostEstimator*)m_costEstimator;
+    m_costEstimator.release();
   }
 
 
@@ -374,80 +455,6 @@ namespace TREX{
     // Need to get the position value of the token that is spanning the current tick.
   }
 
-  IteratorId GoalManager::createIterator(){
-    if(m_lastCycle < m_cycleCount){
-      generateInitialSolution();
-
-      search();
-
-      m_lastCycle = m_cycleCount;
-
-      // Now we allocate a trivial iterator with just a single goal - the first available inactive token
-      debugMsg("GoalManager:search", "Solution: " << toString(m_currentSolution));
-    }
-
-    TokenId nextGoal;
-    for(SOLUTION::const_iterator it = m_currentSolution.begin(); it != m_currentSolution.end(); ++it){
-      TokenId t = *it;
-      if(t->isInactive()){
-	nextGoal = t;
-	debugMsg("GoalManager:search", "Selecting " << nextGoal->toString() << " in " << toString(m_currentSolution));
-	break;
-      }
-    }
-
-    return (new GoalManager::Iterator(*this, nextGoal))->getId();
-  }
-
-  void GoalManager::search(){
-    // If nothing to be done, quit
-    if(m_currentSolution.empty() && m_ommissions.empty())
-      return;
-
-    // Local Search for a max number of iterations, or until we have plateued
-    unsigned int watchDog(0);
-    unsigned int i(0);
-    while(i < m_maxIterations && watchDog < m_plateau){
-      // Update counters to handle termination
-      i++;
-      watchDog++;
-
-      // Get best neighbor
-      TokenId delta;
-      GoalManager::SOLUTION candidate;
-      selectNeighbor(candidate, delta);
-
-      // In the event that the candidate is the same solution, we have hit the end of exploration unless
-      // we escape somehow. The algorithm does not include such random walks to explore beyond the immediate
-      // neighborhood
-      if(candidate == m_currentSolution)
-	break;
-
-      // Promote if not worse. Allos for some exploration
-      int result = compare(candidate, m_currentSolution);
-      if(result >= 0){
-	// If a token was removed, insert into ommitted token list, and opposite if appended
-	if(m_currentSolution.size() > candidate.size())
-	  m_ommissions.insert(delta);
-	else if(m_currentSolution.size() < candidate.size())
-	  m_ommissions.erase(delta);
-
-	// Update current solution Values
-	m_currentSolution = candidate;
-
-	// Only pet the watchdog if we have improved the score. This allows us to terminate when
-	// we have plateaued
-	if(result == 1)
-	  watchDog = 0;
-
-	debugMsg("GoalManager:search", "Switching to new solution: " << toString(m_currentSolution));
-      }
-      else
-	break;
-    }
-
-    debugMsg("GoalManager:search", "Completed after " << i << " iterations.");
-  }
 
   /**
    * @brief is s1 better than s2
@@ -484,15 +491,6 @@ namespace TREX{
       return WORSE;
     else
       return EQUAL;
-  }
-
-  GoalManager::Iterator::Iterator(GoalManager& manager, const TokenId& nextGoal)
-    : FlawIterator(manager), m_nextGoal(nextGoal){ advance();}
-
-  const EntityId GoalManager::Iterator::nextCandidate(){
-    EntityId nextGoal = (EntityId) m_nextGoal;
-    m_nextGoal = EntityId::noId();
-    return nextGoal;
   }
 
   Position GoalManager::getPosition(const TokenId& token){
