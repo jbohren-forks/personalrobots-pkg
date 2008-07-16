@@ -198,6 +198,36 @@ printf("start\n");
         a.sendMotorCommand(10,500,0,true, 2);
         a.sendMotorCommand(11,0,0,true, 1);
         sleep(3);
+/*      square
+        a.sendMotorCommand(0,0,0,true, 2);
+        a.sendMotorCommand(1,0,0,true, 2);
+        a.sendMotorCommand(2,90,0,true, 1);
+        a.sendMotorCommand(3,0,0,true, 2);
+        a.sendMotorCommand(4,0,0,true, 2);
+        a.sendMotorCommand(5,90,0,true, 1);
+        a.sendMotorCommand(6,0,0,true, 2);
+        a.sendMotorCommand(7,0,0,true, 2);
+        a.sendMotorCommand(8,90,0,true, 1);
+        a.sendMotorCommand(9,0,0,true, 2);
+        a.sendMotorCommand(10,0,0,true, 2);
+        a.sendMotorCommand(11,90,0,true, 1);
+        sleep(3);
+*/
+/*
+        a.sendMotorCommand(0,200,0,true, 2);
+        a.sendMotorCommand(1,-200,0,true, 2);
+        a.sendMotorCommand(2,0,0,true, 1);
+=======
+        a.sendMotorCommand(3,500,0,true, 2);
+        a.sendMotorCommand(4,-500,0,true, 2);
+        a.sendMotorCommand(5,0,0,true, 1);
+        a.sendMotorCommand(6,-500,0,true, 2);
+        a.sendMotorCommand(7,500,0,true, 2);
+        a.sendMotorCommand(8,0,0,true, 1);
+        a.sendMotorCommand(9,-500,0,true, 2);
+        a.sendMotorCommand(10,500,0,true, 2);
+        a.sendMotorCommand(11,0,0,true, 1);
+        sleep(3);
 /*
         a.sendMotorCommand(0,0,0,true, 2);
         a.sendMotorCommand(1,0,0,true, 2);
@@ -217,6 +247,7 @@ printf("start\n");
         a.sendMotorCommand(0,200,0,true, 2);
         a.sendMotorCommand(1,-200,0,true, 2);
         a.sendMotorCommand(2,0,0,true, 1);
+>>>>>>> .r1604
         a.sendMotorCommand(3,-200,0,true, 2);
         a.sendMotorCommand(4,200,0,true, 2);
         a.sendMotorCommand(5,0,0,true, 1);
@@ -309,13 +340,28 @@ printf("start\n");
         a.sendMotorCommand(1,500,0,true, 2);
         a.sendMotorCommand(2,500,0,true, 2);
         a.sendMotorCommand(3,500,0,true, 2);
-        a.sendMotorCommand(4,500,0,true, 2);
+        a.sendMotorCommand(4,-500,0,true, 2);
         a.sendMotorCommand(5,0,0,true, 1);
+        a.sendMotorCommand(6,-500,0,true, 2);
+        a.sendMotorCommand(7,500,0,true, 2);
+        a.sendMotorCommand(8,0,0,true, 1);
+        a.sendMotorCommand(9,-500,0,true, 2);
+        a.sendMotorCommand(10,500,0,true, 2);
+        a.sendMotorCommand(11,0,0,true, 1);
         }
       else { // dir == -1
-        a.sendMotorCommand(4,500,0,true, 2);
+        a.sendMotorCommand(0,-500,0,true, 2);
+        a.sendMotorCommand(1,500,0,true, 2);
+        a.sendMotorCommand(2,0,0,true, 1);
         a.sendMotorCommand(3,-500,0,true, 2);
+        a.sendMotorCommand(4,500,0,true, 2);
         a.sendMotorCommand(5,0,0,true, 1);
+        a.sendMotorCommand(6,500,0,true, 2);
+        a.sendMotorCommand(7,-500,0,true, 2);
+        a.sendMotorCommand(8,0,0,true, 1);
+        a.sendMotorCommand(9,500,0,true, 2);
+        a.sendMotorCommand(10,-500,0,true, 2);
+        a.sendMotorCommand(11,0,0,true, 1);
 //      a.sendMotorCommand(5,34009,0,true, 1); rotate 180
 
        }
