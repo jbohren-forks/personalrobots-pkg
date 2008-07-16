@@ -294,6 +294,15 @@ void JointController::Update(void)
 #endif
       break;
     case CONTROLLER_VELOCITY: //Close the loop around velocity
+      //idea how to limit the velocity near limit
+      //disToMin = shortest_angular_distance(joint->position, joint->jointLimitMin);
+      //disToMax = shortest_angular_distance(joint->position, joint->jointLimitMax);
+      //closestLimit =  (disToMin<disToMax)?disToMin:disToMax //min
+      //if(joint->velocity^2/(2*maxAcc)-closestLimit<0.1 && accLimit) 
+      //{
+      //  cmdVel=2*maxAcc*closestLimit;
+      //}      
+      
       error = cmdVel-joint->velocity; 
       currentTorqueCmd = pidController.UpdatePid(error,dt); 
       break;
