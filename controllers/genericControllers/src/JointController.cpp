@@ -34,6 +34,7 @@
 
 #include <genericControllers/JointController.h>
 #include <iostream>
+#include <sys/time.h>
 //Todo: 
 //1. Get and set params via server
 //2. Integrate Joint and robot objects
@@ -135,6 +136,11 @@ void JointController::Init(double PGain, double IGain, double DGain, double IMax
 
 //Returns the current time. Will eventually mode to use motor board controller time TODO
 void JointController::GetTime(double *time){
+
+  struct timeval t;
+  gettimeofday( &t, 0);
+  *time =  (double) (t.tv_usec *1e-6 + t.tv_sec);
+
 //  return PR2::PR2_ALL_OK;
 //  return(myPR2->hw.GetSimTime(time));
 }
@@ -278,7 +284,7 @@ CONTROLLER_ERROR_CODE JointController::GetVelAct(double *vel)
 //---------------------------------------------------------------------------------//
 void JointController::Update(void)
 {
-  double error,time,currentTorqueCmd;
+  double error(0),time(0),currentTorqueCmd(0);
   GetTime(&time); //TODO: Replace time with joint->timeStep
   switch (controlMode)
   {
@@ -294,6 +300,9 @@ void JointController::Update(void)
 #endif
       break;
     case CONTROLLER_VELOCITY: //Close the loop around velocity
+      printf("vel. control \n");
+      error = cmdVel-joint->velocity; 
+      currentTorqueCmd = pidController.UpdatePid(error,time-lastTime);
       //idea how to limit the velocity near limit
       //disToMin = shortest_angular_distance(joint->position, joint->jointLimitMin);
       //disToMax = shortest_angular_distance(joint->position, joint->jointLimitMax);
@@ -302,15 +311,12 @@ void JointController::Update(void)
       //{
       //  cmdVel=2*maxAcc*closestLimit;
       //}      
-      
-      error = cmdVel-joint->velocity; 
-      currentTorqueCmd = pidController.UpdatePid(error,dt); 
       break;
     default: //On error (no mode), set torque to zero
       currentTorqueCmd = 0; 
       //TODO:put somekind of error here for no mode
     }
-
+  lastTime = time;
   //Make sure we're enabled. If not, send a 0 torque command
   if(enabled) SafelySetTorqueInternal(currentTorqueCmd);   
   else SafelySetTorqueInternal(0); //Send a zero command if disabled
