@@ -84,6 +84,8 @@ void Pr2_Gripper::LoadChild(XMLConfigNode *node)
   this->myIface->data->actualFingerPosition[RIGHT]      = this->joints[RIGHT]->GetPosition();
   this->myIface->data->actualFingerPositionRate[RIGHT]  = this->joints[RIGHT]->GetPositionRate();
 
+  this->myIface->data->cmd                              = GAZEBO_PR2GRIPPER_CMD_OPEN;
+
   if (!this->myIface->data->gripperForce)
     gzthrow("couldn't get gripperForce");
 
@@ -116,6 +118,12 @@ void Pr2_Gripper::UpdateChild()
   this->myIface->Lock(1);
   this->myIface->data->head.time = Simulator::Instance()->GetSimTime();
 
+  // std::cout << " left hi " << this->joints[LEFT]->GetHighStop()
+  //           <<      " lo " << this->joints[LEFT]->GetLowStop()
+  //           << " rght hi " << this->joints[RIGHT]->GetHighStop()
+  //           <<      " lo " << this->joints[RIGHT]->GetLowStop() << std::endl;
+  // std::cout << " cmd " << this->myIface->data->cmd - GAZEBO_PR2GRIPPER_CMD_OPEN << " left gap " << this->myIface->data->cmdGap << std::endl;
+
   switch (this->myIface->data->cmd)
   {
       case GAZEBO_PR2GRIPPER_CMD_OPEN:
@@ -124,11 +132,6 @@ void Pr2_Gripper::UpdateChild()
           // TODO: move preset of 0.015 due to geometry of the robot gripper into PR2.hh.
           cmdPosition[LEFT]  =  0.015 - 0.5*this->myIface->data->cmdGap;
           cmdPosition[RIGHT] = -0.015 + 0.5*this->myIface->data->cmdGap;
-
-          std::cout << " left hi " << this->joints[LEFT]->GetHighStop()
-                    <<      " lo " << this->joints[LEFT]->GetLowStop()
-                    << " rght hi " << this->joints[RIGHT]->GetHighStop()
-                    <<      " lo " << this->joints[RIGHT]->GetLowStop() << std::endl;
 
           // limit by specified stops
           if (cmdPosition[LEFT] > this->joints[LEFT]->GetHighStop())
@@ -156,26 +159,25 @@ void Pr2_Gripper::UpdateChild()
           positionError[RIGHT]      = cmdPosition[RIGHT] - this->joints[RIGHT]->GetPosition();
           positionRateError[LEFT]   = cmdPositionRate    - this->joints[LEFT] ->GetPositionRate();
           positionRateError[RIGHT]  = cmdPositionRate    - this->joints[RIGHT]->GetPositionRate();
-          std::cout << " opening " << " left cmd " << cmdPosition[LEFT] << " jnt " << this->joints[LEFT] ->GetPosition() << " err " << positionError[LEFT]  << std::endl;
-          std::cout << " opening " << " rght cmd " << cmdPosition[RIGHT]<< " jnt " << this->joints[RIGHT]->GetPosition() << " err " << positionError[RIGHT] << std::endl;
-          std::cout << " opening rate " << positionRateError[LEFT]  << std::endl;
-          std::cout << " opening rate " << positionRateError[RIGHT] << std::endl;
+
+          // std::cout << " opening " << " left cmd " << cmdPosition[LEFT] << " jnt " << this->joints[LEFT] ->GetPosition() << " err " << positionError[LEFT]  << std::endl;
+          // std::cout << " opening " << " rght cmd " << cmdPosition[RIGHT]<< " jnt " << this->joints[RIGHT]->GetPosition() << " err " << positionError[RIGHT] << std::endl;
+          // std::cout << " opening rate " << positionRateError[LEFT]  << std::endl;
+          // std::cout << " opening rate " << positionRateError[RIGHT] << std::endl;
           // send joint position control command
           //if (fabs(positionError[LEFT] ) > 0.01)
           {
             float tmpPosition =  this->myIface->data->pGain * positionError[LEFT]
                                 +this->myIface->data->dGain * positionRateError[LEFT] ;
-            float tmpForce    =  (tmpPosition > 0.0) ? cmdForce : -cmdForce ;
             this->joints[LEFT] ->SetParam( dParamVel , tmpPosition );
-            this->joints[LEFT] ->SetParam( dParamFMax, tmpForce  );
+            this->joints[LEFT] ->SetParam( dParamFMax, cmdForce  );
           }
           //if (fabs(positionError[RIGHT]) > 0.01)
           {
             float tmpPosition =  this->myIface->data->pGain * positionError[RIGHT]
                                 +this->myIface->data->dGain * positionRateError[RIGHT] ;
-            float tmpForce    =  (tmpPosition > 0.0) ? cmdForce : -cmdForce ;
             this->joints[RIGHT]->SetParam( dParamVel , tmpPosition );
-            this->joints[RIGHT]->SetParam( dParamFMax, tmpForce );
+            this->joints[RIGHT]->SetParam( dParamFMax, cmdForce );
           }
 
           break;
