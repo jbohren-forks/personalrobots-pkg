@@ -18,8 +18,12 @@
 #include "vtkTransform.h"
 #include "vtkTransformPolyDataFilter.h"
 #include "vtkTransformFilter.h"
+#include "vtkImplicitModeller.h"
+#include "vtkPolyDataMapper.h"
+#include "vtkContourFilter.h"
+#include "vtkSurfaceReconstructionFilter.h"
+#include "vtkMarchingCubes.h"
 
-#include <libTF/libTF.h> //for transforms
 
 #include "newmat10/newmatap.h"
 #include <iomanip>
@@ -27,7 +31,6 @@
 
 using namespace scan_utils;
 
-//#define TFRT libTF::TransformReference::ROOT_FRAME
 #define TFRT 1
 #define TFMF 2
 
@@ -52,6 +55,35 @@ void SmartScan::clearData()
 	}
 	deleteVtkData();
 	mNumPoints = 0;
+	setScanner(0,0,0,  1,0,0,  0,0,1);
+}
+
+/*! Set scanner position and orientation
+  \param px \param py \param pz - new scanner position
+  \param dx \param dy \param dz - new scanner orientation
+  \param ux \param uy \param uz - new "up" direction for scanner
+  Please pass already normalised vectors for "orientation" and "up".
+*/
+void SmartScan::setScanner(float px, float py, float pz,
+			   float dx, float dy, float dz,
+			   float ux, float uy, float uz)
+{
+	mScannerPos.x = px; mScannerPos.y = py; mScannerPos.z = pz;
+	mScannerPos.frame = TFMF; mScannerPos.time = 0;
+	//should normalize them too...
+	mScannerDir.x = dx; mScannerDir.y = dy; mScannerDir.z = dz;
+	mScannerDir.frame = TFMF; mScannerDir.time = 0;
+	mScannerUp.x = ux; mScannerUp.y = uy; mScannerUp.z = uz;
+	mScannerUp.frame = TFMF; mScannerUp.time = 0;
+}
+
+void SmartScan::getScanner(float &px, float &py, float &pz, 
+			   float &dx, float &dy, float &dz,
+			   float &ux, float &uy, float &uz)
+{
+	px = mScannerPos.x; py = mScannerPos.y; pz = mScannerPos.z;
+	dx = mScannerDir.x; dy = mScannerDir.y; dz = mScannerDir.z;
+	ux = mScannerUp.x; uy = mScannerUp.y; uz = mScannerUp.z;
 }
 
 void SmartScan::setPoints(int numPoints, const std_msgs::Point3DFloat32 *points)
@@ -63,6 +95,22 @@ void SmartScan::setPoints(int numPoints, const std_msgs::Point3DFloat32 *points)
 	mNativePoints = new std_msgs::Point3DFloat32[mNumPoints];
 	for (int i=0; i<mNumPoints; i++) {
 		mNativePoints[i] = points[i];
+	}
+}
+
+/*!  Set the points using an array of floats.  
+  \param numPoints - number of 3D vertices 
+  \param points - float array of size 3 * \a numPoints, holding each vertex as x,y,z
+*/
+void SmartScan::setPoints(int numPoints, const float *points)
+{
+	clearData();
+	mNumPoints = numPoints;
+	mNativePoints = new std_msgs::Point3DFloat32[mNumPoints];
+	for (int i=0; i<mNumPoints; i++) {
+		mNativePoints[i].x = points[3*i+0];
+		mNativePoints[i].y = points[3*i+1];
+		mNativePoints[i].z = points[3*i+2];
 	}
 }
 
@@ -91,9 +139,15 @@ void SmartScan::applyTransform(const NEWMAT::Matrix &M)
 
 	libTF::TransformReference tr;
 	tr.setWithMatrix( TFMF, TFRT, M, 0);
+
 	for (int i=0; i<mNumPoints; i++) {
 		mNativePoints[i] = transformPoint( mNativePoints[i], tr );
 	}
+
+	mScannerPos = tr.transformPoint(TFRT, mScannerPos);
+	mScannerDir = tr.transformVector(TFRT, mScannerDir);
+	mScannerUp = tr.transformVector(TFRT, mScannerUp);
+
 	if (hasVtkData()) {
 		deleteVtkData();
 		createVtkData();
@@ -518,9 +572,10 @@ void SmartScan::removeOutliers(float radius, int nbrs)
 }
 
 /*!  Removes all points whose normals are perpendicular to the scanner
-  direction. For now, we assume the scanner is at location
-  (0,0,0). The assumption is that points with this characteristic are
-  scanned with high error or are "ghosting" or "veil" artifacts.
+  direction. Scanner position is set using \a setScanner(...);
+  default is \a (0,0,0) which is the case for native Hokuyo scans. The
+  assumption is that points with this characteristic are scanned with
+  high error or are "ghosting" or "veil" artifacts.
 
   \param threshold The minimum difference in degrees between normal
   direction and scanner perpendicular direction for keeping
@@ -546,7 +601,9 @@ void SmartScan::removeGrazingPoints(float threshold, bool removeOutliers, float 
 	threshold = fabs( cos(M_PI / 2 - threshold) );
 
 	std_msgs::Point3DFloat32 scanner;
-	scanner.x = 0; scanner.y = 0; scanner.z = 0;
+	scanner.x = mScannerPos.x; 
+	scanner.y = mScannerPos.y; 
+	scanner.z = mScannerPos.z;
 
 	for (int i=0; i<mNumPoints; i++) {
 		std_msgs::Point3DFloat32 normal = computePointNormal(i,radius,nbrs);
@@ -929,3 +986,161 @@ std_msgs::Point3DFloat32 SmartScan::SVDPlaneNormal(NEWMAT::Matrix *M, int n)
 	return normal;
 }
 
+std::vector<scan_utils::Triangle>* SmartScan::createMesh()
+{
+	std::vector<scan_utils::Triangle> *triangles = new std::vector<scan_utils::Triangle>;
+
+	vtkImplicitModeller *modeller = vtkImplicitModeller::New();
+	modeller->SetInput( getVtkData() );
+	//	modeller->SetSampleDimensions(100, 100, 100);
+	modeller->SetMaximumDistance(0.2);
+	//	modeller->SetModelBounds(-1,-1,-1,1,1,1);
+
+	vtkSurfaceReconstructionFilter *surface = vtkSurfaceReconstructionFilter::New();
+	surface->SetSampleSpacing(0.01);
+	surface->SetInput( getVtkData() );
+
+	vtkContourFilter *filter = vtkContourFilter::New();
+	filter->SetValue(0,0.0);
+	vtkMarchingCubes *cubes = vtkMarchingCubes::New();
+	cubes->SetValue(0,0.0);
+	vtkPolyData *output;
+
+	/*
+	output = filter->GetOutput();
+	//filter->SetInputConnection( modeller->GetOutputPort() );
+	filter->SetInputConnection( surface->GetOutputPort() );
+	filter->Update();
+	*/
+
+	output = cubes->GetOutput();
+	//cubes->SetInputConnection( modeller->GetOutputPort() );
+	cubes->SetInputConnection( surface->GetOutputPort() );
+	cubes->Update();
+
+	
+	fprintf(stderr,"Filter has updated and has %d cells\n", output->GetNumberOfCells() );
+	
+	vtkCellArray *cells = output->GetPolys();
+	cells->InitTraversal();
+	int nPts, *pts;
+	double c1[3], c2[3], c3[3];
+
+	while( cells->GetNextCell(nPts,pts) ){
+		if (nPts != 3) {
+			//not a triangle
+			fprintf(stderr,"Warning: cell does not have 3 points!\n");
+			continue;
+		}
+		output->GetPoint( pts[0], c1 );
+		output->GetPoint( pts[1], c2 );
+		output->GetPoint( pts[2], c3 );
+		triangles->push_back( Triangle(c1, c2, c3) );
+	}
+	
+	modeller->Delete();
+	return triangles;
+}
+
+/*!  Return the connected components of this scan. Two components are
+  considered connected if the minimum distance between them is less
+  than \a thresh.
+
+  Speed of implementation has been favored over speed of execution -
+  multiple optimizations are possible.
+ */
+std::vector<SmartScan*> *SmartScan::connectedComponents(float thresh)
+{
+	std::vector<SmartScan*> *result = new std::vector<SmartScan*>;
+	std::list<std_msgs::Point3DFloat32> currentList;
+
+	if (!hasVtkData()) createVtkData();
+
+	//create a temporary array where we will store all indices
+	int *indices = new int[size()];
+
+	//initialize all component indices to zero
+	for (int i=0; i<size(); i++) {
+		indices[i] = 0;
+	}
+
+	std_msgs::Point3DFloat32 p;
+	int nbr;
+	vtkIdList *points = vtkIdList::New();
+
+	int id  = 0;
+	//process all the points
+	for (int i=0; i<size();i++) {
+
+		//an unassigned point
+		if (indices[i] == 0) {
+			id++;
+			//assign a new index
+			indices[i] = id;
+			//process its neighbors
+			currentList.push_back( getPoint(i) );
+		}
+		//recursively assign same index to all neighbors
+		while ( !currentList.empty() ) {
+			p = currentList.front();
+			currentList.pop_front();
+
+			//get all nbrs of p within thresh
+			points->Reset();
+			getVtkLocator()->FindPointsWithinRadius( thresh, p.x, p.y, p.z, points );
+
+			for (int k = 0; k < points->GetNumberOfIds(); k++) {
+				nbr = points->GetId(k);
+				assert(nbr >= 0 && nbr < mNumPoints);
+
+				if ( indices[nbr] == 0 ) {
+					//an unassigned neighbor
+					indices[nbr]=id;
+					currentList.push_back(getPoint(nbr));
+				} else if ( indices[nbr] != id ) {
+					//a nbr already assigned to somebody else ?!?
+					fprintf(stderr,"Wrong index!\n");
+				}
+			}
+		}
+	}
+
+	//we now have the connected indices. Let's separate the scan into new scans
+	int maxId = id;
+	fprintf(stderr,"Found %d connected components. Copying...\n",maxId);
+
+	int nPoints, totalPoints = 0;
+	std_msgs::Point3DFloat32 *scanPoints = NULL;
+	//we do multiple passes because we don't really care about performance right now
+	for (id = 1; id <= maxId; id++) {
+		//first we count how many points there are in this component
+		nPoints = 0;
+		for (int i=0; i<size(); i++) {
+			if (indices[i]==id) nPoints++;
+		}
+		//then we allocate memory
+		scanPoints = new std_msgs::Point3DFloat32[nPoints];
+		//then we copy the points
+		int count = 0;
+		for (int i=0; i<size(); i++) {
+			if (indices[i]==id) {
+				assert(count < nPoints);
+				scanPoints[count] = getPoint(i);
+				count++;
+			}
+		}
+		//then we create the scan
+		SmartScan *scan = new SmartScan();
+		scan->setPoints(nPoints, scanPoints);
+		result->push_back(scan);
+		//and free the memory
+		delete [] scanPoints;
+		//and add to the sanity check
+		totalPoints += nPoints;
+	}
+
+	points->Delete();
+	delete [] indices;
+	fprintf(stderr,"Started with %d and finished with %d points\n",size(),totalPoints);
+	return result;
+}

@@ -5,6 +5,7 @@
 #include <dataTypes.h> //my own data types defined in this library; probably just placeholder
 //until ROS gets similar types
 
+#include <libTF/libTF.h> //for transforms
 
 #include <vector>
 #include <iostream>
@@ -17,9 +18,10 @@ class vtkTransform;
 namespace NEWMAT {
 	class Matrix;
 }
-namespace libTF {
-	class TransformReference;
-}
+
+//namespace libTF {
+//	class TransformReference;
+//}
 
 /**
    @mainpage
@@ -60,6 +62,10 @@ class SmartScan {
 	std_msgs::Point3DFloat32 *mNativePoints;
 	//! The number of vertices in the cloud
 	int mNumPoints;
+	//! The location of the scanner itself. Defaults to (0,0,0).
+	libTF::TFPoint mScannerPos;
+	//! The orientation of the scanner. Defaults to look towards (1,0,0) with (0,0,1) pointing up
+	libTF::TFVector mScannerDir, mScannerUp;
 
 	//! Copy of the 3D cloud in VTK format
 	vtkPolyData *mVtkData;
@@ -91,6 +97,14 @@ class SmartScan {
 
 	//! Set the native data of the point cloud
 	void setPoints(int numPoints, const std_msgs::Point3DFloat32 *points);
+	//! Set the native data as an array of floats; no ROS data type needed
+	void setPoints(int numPoints, const float *points);
+	//! Set scanner position and orientation
+	void setScanner(float px, float py, float pz, float dx, float dy, float dz,
+			float ux, float uy, float uz);
+	//! Get scanner position and orientation
+	void getScanner(float &px, float &py, float &pz, float &dx, float &dy, float &dz,
+			float &ux, float &uy, float &uz);
 
 	//! Write point cloud to an output stream
 	void writeToFile(std::iostream &output);
@@ -139,6 +153,11 @@ class SmartScan {
 			 const std_msgs::Point3DFloat32 &planeNormal, float thresh = 0.02);
 	//! Computes the normal of a point by looking at its neighbors
 	std_msgs::Point3DFloat32 computePointNormal(int id, float radius = 0.01, int nbrs = 5);
+
+	//! Returns the connected components in this scan, each in its own SmartScan
+	std::vector<SmartScan*> *connectedComponents(float thresh);
+
+	std::vector<scan_utils::Triangle> *createMesh();
 };
 
 
