@@ -277,7 +277,7 @@ PR2_ERROR_CODE PR2HW::Init()
       this->jointData[id].iGain                                     =  pr2GripperLeftIface->data->iGain            ;
       this->jointData[id].dGain                                     =  pr2GripperLeftIface->data->dGain            ;
       this->jointData[id].cmdGap                                    =  pr2GripperLeftIface->data->cmdGap           ;
-      this->jointData[id].cmdEffectorForce                          =  pr2GripperLeftIface->data->cmdForce           ;
+      this->jointData[id].cmdEffectorForce                          =  10; //pr2GripperLeftIface->data->cmdForce           ;
       this->jointData[id].cmdSpeed                                  =  pr2GripperLeftIface->data->cmdPositionRate      ;
       pr2GripperLeftIface->Unlock();
     }
@@ -290,7 +290,7 @@ PR2_ERROR_CODE PR2HW::Init()
       this->jointData[id].iGain                                    =  pr2GripperRightIface->data->iGain            ;
       this->jointData[id].dGain                                    =  pr2GripperRightIface->data->dGain            ;
       this->jointData[id].cmdGap                                   =  pr2GripperRightIface->data->cmdGap           ;
-      this->jointData[id].cmdEffectorForce                         =  pr2GripperRightIface->data->cmdForce           ;
+      this->jointData[id].cmdEffectorForce                         =  10; //pr2GripperRightIface->data->cmdForce           ;
       this->jointData[id].cmdSpeed                                 =  pr2GripperRightIface->data->cmdPositionRate      ;
       pr2GripperRightIface->Unlock();
     }
@@ -550,7 +550,7 @@ PR2_ERROR_CODE PR2HW::OpenGripper(PR2_MODEL_ID id,double gap,double force)
           for (int ii = JointStart[id];ii < JointEnd[ii];ii++)
           {
             this->jointData[ii].cmdMode          = GAZEBO_PR2GRIPPER_CMD_OPEN;
-            this->jointData[ii].cmdSpeed         = 1.0;
+            this->jointData[ii].cmdSpeed         = 5.0;
             this->jointData[ii].cmdEffectorForce = force;
             this->jointData[ii].cmdGap           = gap;
           }
@@ -567,10 +567,13 @@ PR2_ERROR_CODE PR2HW::CloseGripper(PR2_MODEL_ID id,double gap,double force)
     {
        case PR2_LEFT_GRIPPER:
        case PR2_RIGHT_GRIPPER:
-          this->jointData[id].cmdMode          = GAZEBO_PR2GRIPPER_CMD_OPEN;
-          this->jointData[id].cmdSpeed         = 1.0;
-          this->jointData[id].cmdEffectorForce = force;
-          this->jointData[id].cmdGap           = gap;
+          for (int ii = JointStart[id];ii < JointEnd[ii];ii++)
+          {
+            this->jointData[ii].cmdMode          = GAZEBO_PR2GRIPPER_CMD_CLOSE;
+            this->jointData[ii].cmdSpeed         = 5.0;
+            this->jointData[ii].cmdEffectorForce = force;
+            this->jointData[ii].cmdGap           = gap;
+          }
           break;
        default:
           break;
@@ -602,8 +605,11 @@ PR2_ERROR_CODE PR2HW::GetGripperActual(PR2_MODEL_ID id,double *gap,double *force
     {
        case PR2_LEFT_GRIPPER:
        case PR2_RIGHT_GRIPPER:
-          *force = this->jointData[id].cmdEffectorForce;
-          *gap   = this->jointData[id].cmdGap          ;
+          for (int ii = JointStart[id];ii < JointEnd[ii];ii++)
+          {
+            *force = this->jointData[id].actualEffectorForce;
+            *gap   = this->jointData[id].actualGap          ;
+          }
           break;
        default:
           break;
@@ -791,7 +797,7 @@ PR2_ERROR_CODE PR2HW::ClientWait()
 
 PR2_ERROR_CODE PR2HW::UpdateHW()
 {
-  std::cout << "updating HW receive\n" << std::endl;
+  //std::cout << "updating HW receive\n" << std::endl;
   // receive data from hardware
   for (int id = PR2::CASTER_FL_STEER; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
@@ -812,8 +818,6 @@ PR2_ERROR_CODE PR2HW::UpdateHW()
                                                        +(-pr2GripperLeftIface->data->actualFingerPosition[1] + 0.015);
       this->jointData[id].actualSpeed                 = ( pr2GripperLeftIface->data->actualFingerPositionRate[0])  // FIXME: not debugged
                                                        +(-pr2GripperLeftIface->data->actualFingerPositionRate[1]);
-      this->jointData[id].actualSpeed                 = pr2GripperLeftIface->data->actualFingerPositionRate[0]; // FIXME: temporary numbers
-
       this->jointData[id].actualEffectorForce         = pr2GripperLeftIface->data->gripperForce;
       this->jointData[id].actualFingerPosition[0]     = pr2GripperLeftIface->data->actualFingerPosition[0];
       this->jointData[id].actualFingerPosition[1]     = pr2GripperLeftIface->data->actualFingerPosition[1];
@@ -830,8 +834,6 @@ PR2_ERROR_CODE PR2HW::UpdateHW()
                                                        +(-pr2GripperRightIface->data->actualFingerPosition[1] + 0.015);
       this->jointData[id].actualSpeed                 = ( pr2GripperRightIface->data->actualFingerPositionRate[0])  // FIXME: not debugged
                                                        +(-pr2GripperRightIface->data->actualFingerPositionRate[1]);
-      this->jointData[id].actualSpeed                 = pr2GripperRightIface->data->actualFingerPositionRate[0]; // FIXME: temporary numbers
-
       this->jointData[id].actualEffectorForce         = pr2GripperRightIface->data->gripperForce;
       this->jointData[id].actualFingerPosition[0]     = pr2GripperRightIface->data->actualFingerPosition[0];
       this->jointData[id].actualFingerPosition[1]     = pr2GripperRightIface->data->actualFingerPosition[1];
@@ -850,7 +852,7 @@ PR2_ERROR_CODE PR2HW::UpdateHW()
   }
 
 
-  std::cout << "updating HW send\n" << std::endl;
+  //std::cout << "updating HW send\n" << std::endl;
   // send commands to hardware
   for (int id = PR2::CASTER_FL_STEER; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
