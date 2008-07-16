@@ -4,7 +4,7 @@
     Base, Head, Spine, Arm and LaserScanner, with base Joint Controllers as the base class.
     Also, a controller for the PR2 Gripper.
   </description>
-  <author>Melonee Wise</author>
+  <author>Sachin Chita, John Hsu, David Li, Jimmy Sastra, Melonee Wise</author>
   <license>BSD</license>
   <depend package="pr2Core" />
   <depend package="genericControllers" />
