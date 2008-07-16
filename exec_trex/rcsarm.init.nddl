@@ -1,0 +1,34 @@
+#include "pr2.model.nddl"
+
+// Allocate timelines
+WaypointController wpc = new WaypointController(Ignore);
+ArmController rac = new ArmController(Internal, false);
+ArmController lac = new ArmController(Internal, true);
+// Actions
+Actions actions = new Actions();
+
+close();
+
+// initial conditions for arms
+fact(rac.Inactive rightArm);
+fact(lac.Inactive leftArm);
+
+eq(rightArm.desTurretAngle,0.0);
+eq(rightArm.desShoulderLiftAngle,0.0);
+eq(rightArm.desUpperarmRollAngle,0.0);
+eq(rightArm.desElbowAngle,0.0);
+eq(rightArm.desForearmRollAngle,0.0);
+eq(rightArm.desWristPitchAngle,0.0);
+eq(rightArm.desWristRollAngle,0.0);
+eq(rightArm.desGripperForceCmd,0.0);
+eq(rightArm.desGripperGapCmd,0.0);
+
+eq(leftArm.desTurretAngle,0.0);
+eq(leftArm.desShoulderLiftAngle,0.0);
+eq(leftArm.desUpperarmRollAngle,0.0);
+eq(leftArm.desElbowAngle,0.0);
+eq(leftArm.desForearmRollAngle,0.0);
+eq(leftArm.desWristPitchAngle,0.0);
+eq(leftArm.desWristRollAngle,0.0);
+eq(leftArm.desGripperForceCmd,0.0);
+eq(leftArm.desGripperGapCmd,0.0);

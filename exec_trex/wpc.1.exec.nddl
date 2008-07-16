@@ -1,0 +1,28 @@
+#include "pr2.model.nddl"
+
+// Allocate timelines
+WaypointController wpc = new WaypointController(External);
+ArmController rac = new ArmController(External, false);
+ArmController lac = new ArmController(External, true);
+
+// Actions
+Actions actions = new Actions();
+
+VehicleState vs = new VehicleState(Ignore);
+
+close();
+
+rejectable(wpc.Active g0);
+g0.x = 24.4;
+g0.y = 18.8;
+g0.th = 3.14;
+
+rejectable(wpc.Active g1);
+g1.x = 21.1;
+g1.y = 14.5;
+g1.th = 0.0;
+
+rejectable(wpc.Active g2);
+g2.x = 22.9;
+g2.y = 11.3;
+g2.th = 3.14;
