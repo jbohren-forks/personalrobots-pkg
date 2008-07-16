@@ -33,7 +33,7 @@
 /////////////////////////////////////////////////////////////////////////////////////
 
 #include <genericControllers/JointController.h>
-#include <iostream.h>
+#include <iostream>
 //Todo: 
 //1. Get and set params via server
 //2. Integrate Joint and robot objects
@@ -55,6 +55,41 @@ JointController::JointController( )
 JointController::~JointController( )
 {
   
+}
+
+void JointController::Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint, double dt) {
+  //Instantiate PID class
+  pidController.InitPid(PGain,IGain,DGain,IMax,IMin); //Constructor for pid controller  
+
+  //Set commands to zero
+  cmdTorque = 0;
+  cmdPos = 0;
+  cmdVel = 0;
+  
+  //Init time
+  lastTime = time;
+
+  //Temporary: will transition to use param server
+  this->PGain = PGain;
+  this->IGain = IGain;
+  this->DGain = DGain;
+  this->IMax = IMax;
+  this->IMin = IMin;
+
+  this->maxPositiveTorque = maxPositiveTorque;
+  this->maxNegativeTorque = maxNegativeTorque;
+  this->maxEffort = maxEffort;
+  
+  this->joint = joint;
+
+  controlMode = mode;
+
+  //set dt if included
+  this->dt = dt;
+
+  //Turn on controller
+  EnableController();
+
 }
 
 void JointController::Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint) {
@@ -84,10 +119,14 @@ void JointController::Init(double PGain, double IGain, double DGain, double IMax
 
   controlMode = mode;
 
+  
+  dt=0.001;
+
   //Turn on controller
   EnableController();
 
 }
+
 
 //---------------------------------------------------------------------------------//
 //TIME CALLS
@@ -241,7 +280,6 @@ void JointController::Update(void)
 {
   double error,time,currentTorqueCmd;
   GetTime(&time); //TODO: Replace time with joint->timeStep
-
   switch (controlMode)
   {
     case CONTROLLER_TORQUE: //Pass through torque command
@@ -250,14 +288,14 @@ void JointController::Update(void)
     case CONTROLLER_POSITION: //Close the loop around position
       //ASSUME ROTARY JOINT FOR NOW
       error = shortest_angular_distance(joint->position, cmdPos); 
-     currentTorqueCmd = pidController.UpdatePid(error,time-lastTime); 
+        currentTorqueCmd = pidController.UpdatePid(error,dt);
 #ifdef DEBUG
-     cout << "JC:: " << joint->position << " cmd:: " << cmdPos << "error:: " << error << "cTC:: " << currentTorqueCmd << endl; 
+     std::cout << "JC:: " << joint->position << " cmd:: " << cmdPos << "error:: " << error << "cTC:: " << currentTorqueCmd << std::endl; 
 #endif
       break;
     case CONTROLLER_VELOCITY: //Close the loop around velocity
-      error = joint->velocity - cmdVel; 
-      currentTorqueCmd = pidController.UpdatePid(error,time-lastTime); 
+      error = cmdVel-joint->velocity; 
+      currentTorqueCmd = pidController.UpdatePid(error,dt); 
       break;
     default: //On error (no mode), set torque to zero
       currentTorqueCmd = 0; 
@@ -307,7 +345,7 @@ double JointController::SafelySetTorqueInternal(double torque)
 {
   double newTorque;
     
-  //std::cout<<"Effort:"<<torque<<std::endl; 
+//  std::cout<<"Effort:"<<torque<<std::endl; 
   //Read the max positive and max negative torque once
 //  maxPositiveTorque = joint->effortLimit;
  // maxNegativeTorque = -joint->effortLimit; 

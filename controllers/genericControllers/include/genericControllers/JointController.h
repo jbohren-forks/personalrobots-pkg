@@ -110,13 +110,30 @@ namespace CONTROLLER
 
         //TEMPORARY
         /*! 
-        * \brief Temporary way to initialize limits and gains
+        * \brief Temporary way to initialize limits and gains. Default argument for dt is 1 ms
+        *
+        */
+      void Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint, double dt);
+
+   /*!
+        * \brief   Initialization routine for the controller
+        * \param Joint* joint The joint we are interacting with
+        * \param string name The namespace identification in ROS
+        */
+  // CONTROLLER::CONTROLLER_ERROR_CODE Init(Joint* joint, string name);
+    
+      // JointController(Joint* joint, string name);
+
+        //TEMPORARY
+        /*! 
+        * \brief Temporary way to initialize limits and gains. Default argument for dt is 1 ms
         *
         */
       void Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint);
 
 //---------------------------------------------------------------------------------//
-//TIME CALLS
+//TIME CALLS:w
+//
 //---------------------------------------------------------------------------------//
     /*!
         * \brief TODO: Get the actual time
@@ -308,12 +325,12 @@ namespace CONTROLLER
         */       
      double SafelySetTorqueInternal(double torque);
      
-      std::string jointName; /*!< Namespace ID for this controller*/  
-      mechanism::Joint* joint; /*!< Joint we're controlling*/  
-      Pid pidController; /*!< Internal PID controller*/  
+      std::string jointName; /*!< Namespace ID for this controller>*/  
+      mechanism::Joint* joint; /*!< Joint we're controlling>*/  
+      Pid pidController; /*!< Internal PID controller>*/  
 
      
-      double lastTime;/*!< Last time stamp of update */
+      double lastTime;/*!< Last time stamp of update> */
 //---------------------------------------------------------------------------------//
 // Command parameters
 //---------------------------------------------------------------------------------//
@@ -335,7 +352,7 @@ namespace CONTROLLER
 //TEMPORARY: To be replaced by calls to param server
 //---------------------------------------------------------------------------------//
 
-          double PGain; /*!< Proportional gain*/
+      double PGain; /*!< Proportional gain*/
       double IGain;/*!< Integral gain */
       double DGain;/*!< Derivative gain */
       double IMax;/*!< Upper integral clamp */
@@ -345,5 +362,6 @@ namespace CONTROLLER
       double maxNegativeTorque; /*!<Temporary (until param server): local copy of max neg torque .*/
       double maxEffort; /*!<Temporary (until param server): local copy of max possible commanded effort.*/
 
+      double dt; /*!<Timestep amount. */
        };
 }
