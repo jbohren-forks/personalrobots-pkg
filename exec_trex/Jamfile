@@ -46,8 +46,7 @@ if ! $(exec_trex_READY) {
 	Depends exec_trex : exec_inputs ;
 	ModuleMain logger : MessageLogger.cc ExecDefs.o : TREX : logger ;
 	ModuleMain testCalcArmInverseKinematicsConstraint :
-	testCalcArmInverseKinematicsConstraint.cc CalcArmInverseKinematicsConstraint.cc Logger.cc LogClock.cc : TREX : testCalcArmInverseKinematicsConstraint
-	;
+	testCalcArmInverseKinematicsConstraint.cc CalcArmInverseKinematicsConstraint.cc Logger.cc LogClock.cc : TREX : testCalcArmInverseKinematicsConstraint ;
 
 
  	# Input file for exec
@@ -59,6 +58,9 @@ if ! $(exec_trex_READY) {
 		clean.0.wpc.nddl
 		clean.0.rcsarm.nddl
 		wpc.0.wpc.nddl
+		wpc.1.exec.nddl
+		wpc.1.wpc.nddl
+		wpc.1.rcsarm.nddl
 	;
 
 	local file ;
@@ -72,5 +74,5 @@ if ! $(exec_trex_READY) {
 	NddlModel pr2.model.nddl : System ;
 
 	# Build all
-	Depends exec_all : exec_trex rcs exec_listener logger exec_inputs ;
+	Depends exec_all : exec_trex logger exec_inputs ;
 }
