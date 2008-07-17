@@ -45,26 +45,17 @@ GazeboHardware::GazeboHardware(int numBoards, int numActuators, int boardLookUp[
       this->hostIP[ii] = hostIP[ii];
     }
   //edBoard = new EtherDrive[numBoards];
+  client                  = new gazebo::Client();
   edBoard                 = new gazebo::PR2ArrayIface[numBoards];
   pr2GripperLeftIface     = new gazebo::PR2GripperIface();
   pr2GripperRightIface    = new gazebo::PR2GripperIface();
 
-  // instantiate other Iface connections
-  client                  = new gazebo::Client();
-  simIface                = new gazebo::SimulationIface();
-  pr2LaserIface           = new gazebo::LaserIface();
-  pr2BaseLaserIface       = new gazebo::LaserIface();
-  pr2CameraGlobalIface    = new gazebo::CameraIface();
-  pr2CameraHeadLeftIface  = new gazebo::CameraIface();
-  pr2CameraHeadRightIface = new gazebo::CameraIface();
-  pr2LeftWristIface       = new gazebo::PositionIface();
-  pr2RightWristIface      = new gazebo::PositionIface();
-  pr2BaseIface            = new gazebo::PositionIface();
-
 };
 
 void GazeboHardware::init(){
+
   int serverId = 0;
+
   /// Connect to the libgazebo server
   try
   {
@@ -75,17 +66,8 @@ void GazeboHardware::init(){
     std::cout << "Gazebo error: Unable to connect\n" << e << "\n";
   }
 
-  /// Open the Simulation Interface
-  try
-  {
-    simIface->Open(client, "default");
-  }
-  catch (gazebo::GazeboError e)
-  {
-    std::cout << "Gazebo error: Unable to connect to the sim interface\n" << e << "\n";
-  }
 
-  /// Open the Position interface
+  /// Open the actuator arrays for casters spine arm interface
   try
   {
     edBoard[1].Open(client, "pr2_iface");
@@ -96,7 +78,7 @@ void GazeboHardware::init(){
     << e << "\n";
   }
 
-  /// Open the Position interface
+  /// Open the actuator arrays for head interface
   try
   {
     edBoard[0].Open(client, "pr2_head_iface");
@@ -107,7 +89,7 @@ void GazeboHardware::init(){
     << e << "\n";
   }
 
-  /// Open the Position interface for gripper left
+  /// Open the interface for gripper left
   try
   {
     pr2GripperLeftIface->Open(client, "pr2_gripper_left_iface");
@@ -118,7 +100,7 @@ void GazeboHardware::init(){
     << e << "\n";
   }
 
-  /// Open the Position interface for gripper right
+  /// Open the interface for gripper right
   try
   {
     pr2GripperRightIface->Open(client, "pr2_gripper_right_iface");
@@ -127,99 +109,6 @@ void GazeboHardware::init(){
   {
     std::cout << "Gazebo error: Unable to connect to the pr2 gripper right interface\n"
     << e << "\n";
-  }
-
-  /// Open the laser interface for hokuyo
-  try
-  {
-    pr2LaserIface->Open(client, "laser_iface_1");
-  }
-  catch (std::string e)
-  {
-    std::cout << "Gazebo error: Unable to connect to the pr2 laser interface\n"
-    << e << "\n";
-    pr2LaserIface = NULL;
-  }
-
-
-  /// Open the base laser interface for hokuyo
-  try
-  {
-    pr2BaseLaserIface->Open(client, "base_laser_iface_1");
-  }
-  catch (std::string e)
-  {
-    std::cout << "Gazebo error: Unable to connect to the pr2 base laser interface\n"
-    << e << "\n";
-    pr2BaseLaserIface = NULL;
-  }
-
-
-  /// Open the camera interface for hokuyo
-  try
-  {
-    pr2CameraGlobalIface->Open(client, "cam1_iface_0");
-  }
-  catch (std::string e)
-  {
-    std::cout << "Gazebo error: Unable to connect to the pr2 camera interface\n"
-    << e << "\n";
-    pr2CameraGlobalIface = NULL;
-  }
-
-  try
-  {
-    pr2CameraHeadLeftIface->Open(client, "head_cam_left_iface_0");
-  }
-  catch (std::string e)
-  {
-    std::cout << "Gazebo error: Unable to connect to the pr2 camera interface\n"
-    << e << "\n";
-    pr2CameraHeadLeftIface = NULL;
-  }
-
-  try
-  {
-    pr2CameraHeadRightIface->Open(client, "head_cam_right_iface_0");
-  }
-  catch (std::string e)
-  {
-    std::cout << "Gazebo error: Unable to connect to the pr2 camera interface\n"
-    << e << "\n";
-    pr2CameraHeadRightIface = NULL;
-  }
-
-  try
-  {
-    pr2LeftWristIface->Open(client, "p3d_left_wrist_position");
-  }
-  catch (std::string e)
-  {
-    std::cout << "Gazebo error: Unable to connect to the left wrist interface\n"
-    << e << "\n";
-    pr2LeftWristIface = NULL;
-  }
-
-  try
-  {
-    pr2RightWristIface->Open(client, "p3d_right_wrist_position");
-  }
-  catch (std::string e)
-  {
-    std::cout << "Gazebo error: Unable to connect to the right wrist interface\n"
-    << e << "\n";
-    pr2RightWristIface = NULL;
-  }
-
-  try
-  {
-    pr2BaseIface->Open(client, "p3d_base_position");
-  }
-  catch (std::string e)
-  {
-    std::cout << "Gazebo error: Unable to connect to the base position interface\n"
-    << e << "\n";
-    pr2BaseIface = NULL;
   }
 
   setGains(1,0,0,0,0,0);               // hard-coded for all the boards and all the motors for now

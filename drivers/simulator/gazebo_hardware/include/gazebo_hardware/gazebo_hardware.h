@@ -126,35 +126,24 @@ class GazeboHardware{
 
   string hostIP[MAX_NUM_ACTUATORS]; /**< TBD for simulation (host address of etherdrive module for the actuator) */
 
-  gazebo::PR2ArrayIface *edBoard; /**< pointer to the actuator actarrays */
-
-  HardwareInterface *hw; /**< a class holding an array of actuators */
-  gazebo::PR2GripperIface  *pr2GripperLeftIface;
-  gazebo::PR2GripperIface  *pr2GripperRightIface;
-
-   enum GAZEBO_CONTROL_MODE{
-      GAZEBO_VOLTAGE_MODE,
-      GAZEBO_CURRENT_MODE
-   };
-
   ////////////////////////////////////////////////////////////////////
   //                                                                //
   //  Gazebo Client Interfaces                                      //
-  //                                                                //
   //  these are the "hardware" interfaces                           //
   //                                                                //
   ////////////////////////////////////////////////////////////////////
-  gazebo::Client           *client;
-  gazebo::SimulationIface  *simIface;
-  gazebo::LaserIface       *pr2LaserIface;
-  gazebo::LaserIface       *pr2BaseLaserIface;
-  gazebo::CameraIface      *pr2CameraIface;
-  gazebo::CameraIface      *pr2CameraGlobalIface;
-  gazebo::CameraIface      *pr2CameraHeadLeftIface;
-  gazebo::CameraIface      *pr2CameraHeadRightIface;
-  gazebo::PositionIface    *pr2LeftWristIface;
-  gazebo::PositionIface    *pr2RightWristIface;
-  gazebo::PositionIface    *pr2BaseIface;
+  gazebo::Client           *client;  /**< connect to simulation as a client */
+  gazebo::PR2ArrayIface    *edBoard; /**< pointer to the actuator actarrays */
+  gazebo::PR2GripperIface  *pr2GripperLeftIface; /**< pointer to left gripper iface */
+  gazebo::PR2GripperIface  *pr2GripperRightIface; /**< pointer to right gripper iface */
+
+  HardwareInterface *hw; /**< a class holding an array of actuators */
+
+  enum GAZEBO_CONTROL_MODE{
+       GAZEBO_VOLTAGE_MODE,
+       GAZEBO_CURRENT_MODE
+  };
+
 };
 
 #endif
