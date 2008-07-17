@@ -3,6 +3,7 @@
   <author>John M. Hsu</author>
   <license>TBD</license>
   <depend package="roscpp" />
+  <depend package="gazebo" />
   <depend package="gazebo_plugin" />
   <depend package="genericControllers" />
   <depend package="pr2Controllers" />
