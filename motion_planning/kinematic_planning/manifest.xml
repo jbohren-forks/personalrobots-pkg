@@ -7,7 +7,7 @@
   <depend package="std_srvs" />
   <depend package="xmlparam" />
   <depend package="ompl" />
-  <depend package="wg_collision_space" />
+  <depend package="collision_space" />
   <export>
     <cpp cflags="-I${prefix}/include"/>
   </export>

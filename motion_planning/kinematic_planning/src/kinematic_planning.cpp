@@ -87,7 +87,7 @@ Provides (name/type):
 #include <std_srvs/KinematicMotionPlan.h>
 
 #include <kinematic_planning/definitions.h>
-#include <collisionspace/environmentODE.h>
+#include <collision_space/environmentODE.h>
 #include <ompl/extension/samplingbased/kinematic/extension/rrt/RRT.h>
 
 using namespace std_msgs;
