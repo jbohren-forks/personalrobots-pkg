@@ -1,4 +1,4 @@
-//Software License Agreement (BSD License)
+
 
 //Copyright (c) 2008, Willow Garage, Inc.
 //All rights reserved.
@@ -43,6 +43,7 @@
 #include <string>
 #include <list>
 #include <vector>
+#include <robot_model/joint.h>
 
 namespace PR2
 {
@@ -325,6 +326,11 @@ namespace PR2
            \brief Send out the commands to the actual robot
          */
      public: PR2_ERROR_CODE UpdateHW();
+
+         /*! \fn
+           \brief Use new controls archiecture to bypass JointData array. Pass data by writing to and reading from jointArray
+         */
+     public: PR2_ERROR_CODE UpdateJointArray(mechanism::Joint** jointArray);
 
 
          /*! \fn
