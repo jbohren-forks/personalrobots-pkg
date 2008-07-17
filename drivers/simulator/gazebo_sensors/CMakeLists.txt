@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.6)
+include(rosbuild)
+add_definitions(-Wall)
+rospack(gazebo_sensors)
+rospack_add_library(gazebo_sensors src/gazebo_sensors.cpp)
