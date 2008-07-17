@@ -64,6 +64,7 @@ public:
                             map_name(vac_topics[i]),
                             start))
         throw std::runtime_error("couldn't open log file\n");
+      
       subscribe(vac_topics[i], bags[i], &Vacuum::dummy_cb);
     }
   }

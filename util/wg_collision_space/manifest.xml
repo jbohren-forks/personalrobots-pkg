@@ -7,7 +7,6 @@
   <license>BSD</license>
 
   <depend package="wg_robot_models"/>
-  <depend package="freesolid"/>
   <depend package="opende"/>
   <depend package="drawstuff"/>
 
