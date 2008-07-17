@@ -86,9 +86,9 @@ int newtonEulerSolver(const Chain &chain, const JntArray &q, const JntArray &q_d
 		a_c[i] = _iRi_minus_one*a_e + alpha[i]*r_c[i-1] + omega[i]*(omega[i]*r_c[i-1]);
 		a_e = _iRi_minus_one*a_e + alpha[i]*r + omega[i]*(omega[i]*r);
 
-//		printf("-------------------------\n");
-//		cout<<"omega["<<i<<"]: "<<omega[i]<<endl<<"alpha["<<i<<"]: "<<alpha[i]<<endl;
-//		cout<<"a_c["<<i<<"]: "<<a_c[i]<<endl;
+		printf("-------------------------\ni: %d\n", i);
+		cout<<"omega["<<i<<"]: "<<omega[i]<<endl<<"alpha["<<i<<"]: "<<alpha[i]<<endl;
+		cout<<"a_c["<<i<<"]: "<<a_c[i]<<endl;
 //		cout<<"_iRi_minus_one: "<<_iRi_minus_one<<endl;
 //		cout<<"_iTi_minus_one.M: "<<_iTi_minus_one.M<<endl;
 
@@ -127,11 +127,16 @@ int newtonEulerSolver(const Chain &chain, const JntArray &q, const JntArray &q_d
 
 		g = rot*g;
 
-		f[i] = rot*f[i+1] + m*a_c[i+1] - m*g;
+		f[i] = rot*f[i+1] + m*a_c[i+1] - m*g; // MINE: + a_c
+//		f[i] = rot*f[i+1] - m*a_c[i+1] - m*g;
 		t[i] = rot*t[i+1] - f[i]*r_c[i] + (rot*f[i+1])*r_iplusone_c+I*alpha[i+1]
 					 + omega[i+1]*(I*omega[i+1]);
 
 		rot = T.M*T_tip.M.Inverse();
+
+		printf("----------------------------------\ni: %d\n", i);
+		cout<<"g: "<<g<<endl;
+		cout<<"f[i]: "<<f[i]<<endl;
 	}
 
 	return 0;
@@ -322,7 +327,7 @@ void checkPUMA560_akb()
 	chain.addSegment(Segment(Joint(Joint::RotZ),Frame(Vector(0.0,0.0,0.0))));
 
 	//----- check kinematics -----
-	checkPUMA560_akb_fk(chain);
+//	checkPUMA560_akb_fk(chain);
 
 	//----- now for the dynamics ------
 	int n = chain.getNrOfJoints();
@@ -349,18 +354,16 @@ void checkPUMA560_akb()
 	r_c[4][0]=0.0 , r_c[4][1]=0.0 , r_c[4][2]=0    ;
 	r_c[5][0]=0.0 , r_c[5][1]=0.0 , r_c[5][2]=.032 ;
 
-	q(0)=deg2rad*74,q(1)=deg2rad*23,q(2)=deg2rad*-30;
-	q(3)=deg2rad*0,q(4)=deg2rad*24,q(5)=deg2rad*0;
-//	q(0)=deg2rad*11,q(1)=deg2rad*54,q(2)=deg2rad*22;
-//	q(3)=deg2rad*20,q(4)=deg2rad*-7,q(5)=deg2rad*40;
-//	q(0)=deg2rad*-21,q(1)=deg2rad*13,q(2)=deg2rad*48;
-//	q(3)=deg2rad*-20,q(4)=deg2rad*7,q(5)=deg2rad*85;
+	q(0)=deg2rad*0,q(1)=deg2rad*-30,q(2)=deg2rad*0;
+	q(3)=deg2rad*0,q(4)=deg2rad*0,q(5)=deg2rad*0;
+//	q(0)=deg2rad*74,q(1)=deg2rad*23,q(2)=deg2rad*-30;
+//	q(3)=deg2rad*43,q(4)=deg2rad*24,q(5)=deg2rad*-61;
 
-	q_dot(0)=deg2rad*20,q_dot(1)=deg2rad*-33,q_dot(2)=deg2rad*41;
-	q_dot(3)=deg2rad*37,q_dot(4)=deg2rad*0,q_dot(5)=deg2rad*0;
+	q_dot(0)=deg2rad*0,q_dot(1)=-2.,q_dot(2)=deg2rad*0.0;
+	q_dot(3)=deg2rad*0,q_dot(4)=deg2rad*0.0,q_dot(5)=deg2rad*0;
 
-	q_dotdot(0)=deg2rad*45,q_dotdot(1)=deg2rad*50,q_dotdot(2)=deg2rad*62;
-	q_dotdot(3)=deg2rad*38,q_dotdot(4)=deg2rad*0,q_dotdot(5)=deg2rad*0;
+	q_dotdot(0)=deg2rad*0,q_dotdot(1)=deg2rad*0,q_dotdot(2)=deg2rad*0;
+	q_dotdot(3)=deg2rad*0,q_dotdot(4)=deg2rad*0,q_dotdot(5)=deg2rad*0;
 
 	newtonEulerSolver(chain, q, q_dot, q_dotdot, gen_mass, r_c,f,t);
 	printf("====================================\n");
@@ -377,15 +380,27 @@ void checkPUMA560_akb()
 
 int main( int argc, char** argv )
 {
-//	checkOneLink_static();
+	checkOneLink_static();
 //	checkTwoLinkPlanar();
 //	checkTwoLinkPlanar_2();
-	checkPUMA560_akb();
+//	checkPUMA560_akb();
 }
 
 
 
 /*
+
+	q(0)=deg2rad*74,q(1)=deg2rad*23,q(2)=deg2rad*-30;
+	q(3)=deg2rad*43,q(4)=deg2rad*24,q(5)=deg2rad*-61;
+
+	q_dot(0)=deg2rad*0,q_dot(1)=deg2rad*-33.0,q_dot(2)=deg2rad*41.0;
+	q_dot(3)=deg2rad*37.0,q_dot(4)=deg2rad*27.5,q_dot(5)=deg2rad*-61.2;
+
+	q_dotdot(0)=deg2rad*0,q_dotdot(1)=deg2rad*50,q_dotdot(2)=deg2rad*62;
+	q_dotdot(3)=deg2rad*38,q_dotdot(4)=deg2rad*-33,q_dotdot(5)=deg2rad*47;
+
+
+ 
 void checkPUMA560()
 {
 	//------- define the PUMA560 kinematics to match pytb-18 --------
