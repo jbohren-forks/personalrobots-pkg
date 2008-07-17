@@ -24,11 +24,11 @@ const double BaseController::IMax  = 0; /**< Max integral error term */
 
 const double BaseController::IMin  = 0; /**< Min integral error term */
 
-const double BaseController::maxPositiveTorque = 0.0528; /**< (in Nm) max current = 0.75 A. Torque constant = 70.4 mNm/A.Max Torque = 70.4*0.75 = 52.8 mNm */
+const double BaseController::maxPositiveTorque = 0.75; /**< (in Nm) max current = 0.75 A. Torque constant = 70.4 mNm/A.Max Torque = 70.4*0.75 = 52.8 mNm */
 
-const double BaseController::maxNegativeTorque = -0.0528; /**< max negative torque */
+const double BaseController::maxNegativeTorque = -0.75; /**< max negative torque */
 
-const double BaseController::maxEffort = 0.0528; /**< maximum effort */
+const double BaseController::maxEffort = 0.75; /**< maximum effort */
       
 const double BaseController::PGain_Pos = 0.5; /**< Proportional gain for position control */
 
@@ -78,11 +78,14 @@ void BaseController::InitJointControllers()
 {
    this->baseJointControllers = new JointController[BASE_NUM_JOINTS];
 
-   for(int ii = 0; ii < NUM_CASTERS; ii++)
-      baseJointControllers[ii].Init(PGain_Pos, IGain_Pos, DGain_Pos, IMax, IMin, CONTROLLER_POSITION, GetTime(), maxPositiveTorque, maxNegativeTorque, maxEffort, &(robot->joint[ii]));
-  
-   for(int ii = NUM_CASTERS; ii < BASE_NUM_JOINTS; ii++)
-      baseJointControllers[ii].Init(PGain, IGain, DGain, IMax, IMin, CONTROLLER_VELOCITY, GetTime(), maxPositiveTorque, maxNegativeTorque, maxEffort,&(robot->joint[ii]));
+   for(int ii = 0; ii < NUM_CASTERS; ii++){
+      baseJointControllers[ii].Init(PGain_Pos, IGain_Pos, DGain_Pos, IMax, IMin, ETHERDRIVE_SPEED, GetTime(), maxPositiveTorque, maxNegativeTorque, maxEffort, &(robot->joint[ii]));
+    baseJointControllers[ii].EnableController();
+   }
+   for(int ii = NUM_CASTERS; ii < BASE_NUM_JOINTS; ii++){
+      baseJointControllers[ii].Init(PGain, IGain, DGain, IMax, IMin, ETHERDRIVE_SPEED, GetTime(), maxPositiveTorque, maxNegativeTorque, maxEffort,&(robot->joint[ii]));
+      baseJointControllers[ii].EnableController();
+   }
 }  
 
 double BaseController::GetTime()
@@ -92,6 +95,14 @@ double BaseController::GetTime()
    return (double) (t.tv_usec *1e-6 + t.tv_sec);
 }
 
+double ModNPiBy2(double angle)
+{
+  if (angle < -M_PI/2) 
+    angle += M_PI;
+  if(angle > M_PI/2)
+    angle -= M_PI;
+  return angle;
+}
 
 void BaseController::Update( )
 {
@@ -100,6 +111,9 @@ void BaseController::Update( )
    point steerPointVelocity[NUM_CASTERS];
    double steerAngle[NUM_CASTERS];
    point newDriveCenterL, newDriveCenterR;
+   double errorSteer[NUM_CASTERS];
+   double kp_local = 10;
+   double cmdVel = 0;
 
    if (pthread_mutex_trylock(&dataMutex) == 0){
       xDotCmd = xDotNew;
@@ -110,9 +124,14 @@ void BaseController::Update( )
    for(int ii=0; ii < NUM_CASTERS; ii++){
       ComputePointVelocity(xDotCmd,yDotCmd,yawDotCmd,BASE_CASTER_OFFSET[ii].x,BASE_CASTER_OFFSET[ii].y,steerPointVelocity[ii].x,steerPointVelocity[ii].y);
       steerAngle[ii] = atan2(steerPointVelocity[ii].y,steerPointVelocity[ii].x);
+      steerAngle[ii] = ModNPiBy2(steerAngle[ii]);//Clean steer Angle
       // hw.SetJointServoCmd((PR2_JOINT_ID) (CASTER_FL_STEER+3*ii),steerAngle[ii],0);
       // printf("ii: %d, off: (%f, %f), vel: (%f, %f), angle: %f\n",ii,BASE_CASTER_OFFSET[ii].x,BASE_CASTER_OFFSET[ii].y,steerPointVelocity[ii].x,steerPointVelocity[ii].y,steerAngle[ii]);
-      baseJointControllers[ii].SetPosCmd(steerAngle[ii]);     
+      steerAngle[ii] = 0;
+      errorSteer[ii] = robot->joint[3*ii].position - steerAngle[ii];
+      cmdVel = kp_local * errorSteer[ii];
+      baseJointControllers[3*ii].SetVelCmd(0);     
+      printf("CASTER:: %d, cmdVel:: %f\n",ii,cmdVel);
    }
 
    for(int ii = 0; ii < NUM_CASTERS; ii++){
@@ -127,16 +146,31 @@ void BaseController::Update( )
       ComputePointVelocity(xDotCmd,yDotCmd,yawDotCmd,newDriveCenterL.x,newDriveCenterL.y,drivePointVelocityL.x,drivePointVelocityL.y);
       ComputePointVelocity(xDotCmd,yDotCmd,yawDotCmd,newDriveCenterR.x,newDriveCenterR.y,drivePointVelocityR.x,drivePointVelocityR.y);
 
-      wheelSpeed[ii*2  ] = -GetMagnitude(drivePointVelocityL.x,drivePointVelocityL.y)/WHEEL_RADIUS;
-      wheelSpeed[ii*2+1] = -GetMagnitude(drivePointVelocityR.x,drivePointVelocityR.y)/WHEEL_RADIUS;
+      double steerXComponent = cos(robot->joint[ii*3+1].position);
+      double steerYComponent = sin(robot->joint[ii*3+2].position);
+      double dotProdL = steerXComponent*drivePointVelocityL.x + steerYComponent*drivePointVelocityL.y;
+      double dotProdR = steerXComponent*drivePointVelocityR.x + steerYComponent*drivePointVelocityR.y;
 
-      baseJointControllers[ii*2+NUM_CASTERS].SetVelCmd(wheelSpeed[ii*2]);
-      baseJointControllers[ii*2+NUM_CASTERS+1].SetVelCmd(wheelSpeed[ii*2+1]);
+      wheelSpeed[ii*2  ] = dotProdL/WHEEL_RADIUS;
+      wheelSpeed[ii*2+1] = dotProdR/WHEEL_RADIUS;
+
+      //      wheelSpeed[ii*2  ] = -GetMagnitude(drivePointVelocityL.x,drivePointVelocityL.y)/WHEEL_RADIUS;
+      //      wheelSpeed[ii*2+1] = -GetMagnitude(drivePointVelocityR.x,drivePointVelocityR.y)/WHEEL_RADIUS;
+
+      wheelSpeed[ii*2] = 0;
+      wheelSpeed[ii*2+1] = 0;
+      if(ii == 2)
+	wheelSpeed[ii*2] = 10;
+
+      baseJointControllers[ii*3+1].SetVelCmd(wheelSpeed[ii*2]);
+      baseJointControllers[ii*3+2].SetVelCmd(wheelSpeed[ii*2+1]);
+      printf("DRIVE::L:: %d, cmdVel:: %f\n",ii,wheelSpeed[ii*2]);
+      printf("DRIVE::R:: %d, cmdVel:: %f\n",ii,wheelSpeed[ii*2+1]);
       // send command
       //hw.SetJointSpeed((PR2_JOINT_ID) (CASTER_FL_DRIVE_L+3*ii),wheelSpeed[ii*2  ]);
       //hw.SetJointSpeed((PR2_JOINT_ID) (CASTER_FL_DRIVE_R+3*ii),wheelSpeed[ii*2+1]);
    }
-   for(int ii = NUM_CASTERS; ii < BASE_NUM_JOINTS; ii++) 
+   for(int ii = 0; ii < BASE_NUM_JOINTS; ii++) 
       baseJointControllers[ii].Update();
 }
 
