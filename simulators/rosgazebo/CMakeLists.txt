@@ -4,9 +4,6 @@ rospack(rosgazebo)
 add_definitions(-Wall)
 rospack_add_library(RosGazeboNode src/RosGazeboNode.cpp)
 
-rospack_add_executable(rosgazebo2 src/rosgazebo2.cc)
-target_link_libraries(rosgazebo2 RosGazeboNode)
-
 rospack_add_executable(rosgazebo src/rosgazebo.cc)
 target_link_libraries(rosgazebo RosGazeboNode)
 
