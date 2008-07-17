@@ -132,7 +132,7 @@ namespace CONTROLLER
       void Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint);
 
 //---------------------------------------------------------------------------------//
-//TIME CALLS:w
+//TIME CALLS
 //
 //---------------------------------------------------------------------------------//
     /*!

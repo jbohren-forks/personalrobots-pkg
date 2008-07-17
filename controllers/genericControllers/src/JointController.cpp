@@ -48,8 +48,17 @@ using namespace CONTROLLER;
 
 
 JointController::JointController( )
-{
-  
+{ 
+//Instantiate PID class
+  pidController.InitPid(0,0,0,0,0); //Constructor for pid controller  
+
+  //Set commands to zero
+  cmdTorque = 0;
+  cmdPos = 0;
+  cmdVel = 0;
+ 
+  controlMode = CONTROLLER::CONTROLLER_DISABLED;
+
 }
 
 
@@ -171,6 +180,7 @@ CONTROLLER_CONTROL_MODE JointController::EnableController(){
 CONTROLLER_CONTROL_MODE JointController::DisableController(){
   enabled = false;
   joint->commandedEffort = 0; //Immediately set commanded Effort to 0
+  controlMode = CONTROLLER_DISABLED;
   return CONTROLLER_DISABLED;
 }
 
@@ -288,6 +298,8 @@ CONTROLLER::CONTROLLER_ERROR_CODE JointController::GetVelAct(double *vel)
 void JointController::Update(void)
 {
   double error(0),time(0),currentTorqueCmd(0);
+  if(controlMode==CONTROLLER::CONTROLLER_DISABLED)return; //If we're not initialized, don't try to interact
+
   GetTime(&time); //TODO: Replace time with joint->timeStep
   switch (controlMode)
   {
