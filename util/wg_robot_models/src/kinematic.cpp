@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include <robotmodels/kinematic.h>
+#include <robot_models/kinematic.h>
 #include <cstdio>
 
 void KinematicModel::Robot::computeTransforms(const double *params)
