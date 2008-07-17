@@ -33,11 +33,12 @@
 *********************************************************************/
 
 #include <collisionspace/environmentODE.h>
+#include <cassert>
 
 void EnvironmentModelODE::KinematicModelODE::build(URDF &model, const char *group)
 {
     KinematicModel::build(model, group);
-    m_space = dHashSpaceCreate(0);
+    assert(m_space);
     for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
 	buildODEGeoms(m_robots[i]);
 }
@@ -100,6 +101,11 @@ dSpaceID EnvironmentModelODE::KinematicModelODE::getODESpace(void) const
     return m_space;
 }
 
+void EnvironmentModelODE::KinematicModelODE::setODESpace(dSpaceID space)
+{
+    m_space = space;
+}
+
 unsigned int EnvironmentModelODE::KinematicModelODE::getGeomCount(void) const
 {
     return m_kgeoms.size();
@@ -110,10 +116,99 @@ dGeomID EnvironmentModelODE::KinematicModelODE::getGeom(unsigned index) const
     return m_kgeoms[index]->geom;    
 }
 
-bool EnvironmentModelODE::isCollision(void)
+void EnvironmentModelODE::ODECollide2::registerSpace(dSpaceID space)
 {
+    int n = dSpaceGetNumGeoms(space);
+    for (int i = 0 ; i < n ; ++i)
+	registerGeom(dSpaceGetGeom(space, i));
 }
 
-void EnvironmentModelODE::addPointCloud(unsigned int n, const double *points)
+void EnvironmentModelODE::ODECollide2::registerGeom(dGeomID geom)
 {
+    Geom g;
+    g.id = geom;
+    dGeomGetAABB(geom, g.aabb);
+    m_geoms.push_back(g);
+    m_setup = false;
+}
+	
+void EnvironmentModelODE::ODECollide2::clear(void)
+{
+    m_geoms.clear();
+    m_setup = false;
+}
+
+void EnvironmentModelODE::ODECollide2::setup(void)
+{
+    if (!m_setup)
+    {
+	sort(m_geoms.begin(), m_geoms.end(), SortByXYZLow());
+	m_setup = true;
+    }	    
+}
+
+void EnvironmentModelODE::ODECollide2::collide(dGeomID geom, void *data, dNearCallback *nearCallback)
+{
+    assert(m_setup);
+    
+    Geom g;
+    g.id = geom;
+    dGeomGetAABB(geom, g.aabb);
+    
+    std::vector<Geom>::iterator pos = lower_bound(m_geoms.begin(), m_geoms.end(), g, SortByX());
+    
+    /* pos now identifies the first geom which has an AABB that
+       could overlap the AABB of geom on the X axis */
+    
+    while (pos != m_geoms.end())
+    {
+	/* we no longer overlap on X */
+	if (pos->aabb[0] > g.aabb[1])
+	    break;
+	
+	/* if the boxes are not disjoint along Y, Z, check further */
+	if (!(pos->aabb[2] > g.aabb[3] ||
+	      pos->aabb[3] < g.aabb[2] ||
+	      pos->aabb[4] > g.aabb[5] ||
+	      pos->aabb[5] < g.aabb[4]))
+	    dSpaceCollide2(geom, pos->id, NULL, nearCallback);
+	pos++;
+    }
+}
+
+struct CollisionData
+{
+    bool collides;
+};
+    
+static void nearCallbackFn(void *data, dGeomID o1, dGeomID o2)
+{
+    static const int MAX_CONTACTS = 1;    
+    dContact contact[MAX_CONTACTS];
+    int numc = dCollide (o1, o2, MAX_CONTACTS,
+			 &contact[0].geom, sizeof(dContact));
+    if (numc)
+	reinterpret_cast<CollisionData*>(data)->collides = true;
+}
+
+bool EnvironmentModelODE::isCollision(void)
+{
+    CollisionData cdata;
+    cdata.collides = false;
+    m_collide2.setup();
+    for (int i = m_modelODE.getGeomCount() - 1 ; i >= 0 && !cdata.collides ; --i)
+	m_collide2.collide(m_modelODE.getGeom(i), reinterpret_cast<void*>(&cdata), nearCallbackFn);
+    return cdata.collides;
+}
+
+void EnvironmentModelODE::addPointCloud(unsigned int n, const double *points, double radius)
+{
+    for (unsigned int i = 0 ; i < n ; ++i)
+    {
+	unsigned int i3 = i * 3;
+	dGeomID g = dCreateSphere(m_space, radius);
+	dGeomSetPosition(g, points[i3], points[i3 + 1], points[i3 + 2]);
+	m_collide2.registerGeom(g);
+    }
+    m_collide2.setup();
 }

@@ -113,8 +113,6 @@ static void simLoop(int)
 int main(int argc, char **argv)
 {
     dInitODE();
-    dWorldID world = dWorldCreate();
-    
     
     URDF model;
     model.loadFile("/u/isucan/ros/ros-pkg/drivers/robot/pr2/pr2Core/include/pr2Core/pr2.xml");

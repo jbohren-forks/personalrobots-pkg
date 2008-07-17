@@ -39,7 +39,7 @@ bool EnvironmentModelSOLID::isCollision(void)
     return dtTest();
 }
 
-void EnvironmentModelSOLID::addPointCloud(unsigned int n, const double *points)
+void EnvironmentModelSOLID::addPointCloud(unsigned int n, const double *points, double radius)
 {
     Object *obj = new Object();
     obj->shape = dtNewComplexShape();
@@ -52,27 +52,27 @@ void EnvironmentModelSOLID::addPointCloud(unsigned int n, const double *points)
 	double z = points[i3 + 2];
 	
 	dtBegin(DT_SIMPLEX);
-	dtVertex(x,                         y, z + m_pcDelta);
-	dtVertex(x - m_pcDelta, y - m_pcDelta, z - m_pcDelta);
-	dtVertex(x + m_pcDelta, y - m_pcDelta, z - m_pcDelta);
+	dtVertex(x,                   y, z + radius);
+	dtVertex(x - radius, y - radius, z - radius);
+	dtVertex(x + radius, y - radius, z - radius);
 	dtEnd();
 
 	dtBegin(DT_SIMPLEX);
-	dtVertex(x - m_pcDelta, y - m_pcDelta, z - m_pcDelta);
-	dtVertex(x + m_pcDelta, y - m_pcDelta, z - m_pcDelta);
-	dtVertex(x + m_pcDelta, y + m_pcDelta, z - m_pcDelta);
+	dtVertex(x - radius, y - radius, z - radius);
+	dtVertex(x + radius, y - radius, z - radius);
+	dtVertex(x + radius, y + radius, z - radius);
 	dtEnd();
 
 	dtBegin(DT_SIMPLEX);
-	dtVertex(x,                         y, z + m_pcDelta);
-	dtVertex(x + m_pcDelta, y - m_pcDelta, z - m_pcDelta);
-	dtVertex(x + m_pcDelta, y + m_pcDelta, z - m_pcDelta);
+	dtVertex(x,                   y, z + radius);
+	dtVertex(x + radius, y - radius, z - radius);
+	dtVertex(x + radius, y + radius, z - radius);
 	dtEnd();
 
 	dtBegin(DT_SIMPLEX);
-	dtVertex(x,                         y, z + m_pcDelta);
-	dtVertex(x + m_pcDelta, y - m_pcDelta, z - m_pcDelta);
-	dtVertex(x - m_pcDelta, y - m_pcDelta, z - m_pcDelta);
+	dtVertex(x,                   y, z + radius);
+	dtVertex(x + radius, y - radius, z - radius);
+	dtVertex(x - radius, y - radius, z - radius);
 	dtEnd();
     }
     

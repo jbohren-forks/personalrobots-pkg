@@ -58,8 +58,6 @@ public:
 	
 	virtual ~KinematicModelODE(void)
 	{
-	    if (m_space)
-		dSpaceDestroy(m_space);
 	    for (unsigned int i = 0 ; i < m_kgeoms.size() ; ++i)
 		delete m_kgeoms[i];
 	}
@@ -67,8 +65,10 @@ public:
 	virtual void build(URDF &model, const char *group = NULL);
 	
 	dSpaceID getODESpace(void) const;
+	void     setODESpace(dSpaceID space);
+
 	unsigned int getGeomCount(void) const;
-	dGeomID getGeom(unsigned index) const;
+	dGeomID      getGeom(unsigned index) const;
 	
 	void updateCollisionPositions(void);
 	
@@ -94,17 +94,21 @@ public:
     EnvironmentModelODE(void) : EnvironmentModel()
     {
 	model = dynamic_cast<KinematicModel*>(&m_modelODE);
+	m_space = dHashSpaceCreate(0);
+	m_modelODE.setODESpace(m_space);
     }
     
     ~EnvironmentModelODE(void)
     {
+	if (m_space)
+	    dSpaceDestroy(m_space);
     }
 
     /** Check if the model is in collision */
     virtual bool isCollision(void);
     
     /** Add a point cloud to the collision space */
-    virtual void addPointCloud(unsigned int n, const double *points); 
+    virtual void addPointCloud(unsigned int n, const double *points, double radius = 0.01); 
 
  protected:
     
@@ -123,64 +127,12 @@ public:
 	{
 	}
 	
-	void registerSpace(dSpaceID space)
-	{
-	    int n = dSpaceGetNumGeoms(space);
-	    for (int i = 0 ; i < n ; ++i)
-		registerGeom(dSpaceGetGeom(space, i));
-	}
-	
-	void registerGeom(dGeomID geom)
-	{
-	    Geom g;
-	    g.id = geom;
-	    dGeomGetAABB(geom, g.aabb);
-	    m_geoms.push_back(g);
-	    m_setup = false;
-	}
-	
-	void clear(void)
-	{
-	    m_geoms.clear();
-	    m_setup = false;
-	}
-	
-	void setup(void)
-	{
-	    sort(m_geoms.begin(), m_geoms.end(), SortByXYZLow());
-	    m_setup = true;
-	}
-        
-	void collide(dGeomID geom, void *data, dNearCallback *nearCallback)
-	{
-	    assert(m_setup);
-	    
-	    Geom g;
-	    g.id = geom;
-	    dGeomGetAABB(geom, g.aabb);
-	    
-	    std::vector<Geom>::iterator pos = lower_bound(m_geoms.begin(), m_geoms.end(), g, SortByX());
-	    
-	    /* pos now identifies the first geom which has an AABB that
-	       could overlap the AABB of geom on the X axis */
-	    
-	    while (pos != m_geoms.end())
-	    {
-		/* we no longer overlap on X */
-		if (pos->aabb[0] > g.aabb[1])
-		    break;
+	void registerSpace(dSpaceID space);
+	void registerGeom(dGeomID geom);
+	void clear(void);
+	void setup(void);
+	void collide(dGeomID geom, void *data, dNearCallback *nearCallback);
 		
-		/* if the boxes are not disjoint along Y, Z, check further */
-		if (!(pos->aabb[2] > g.aabb[3] ||
-		      pos->aabb[3] < g.aabb[2] ||
-		      pos->aabb[4] > g.aabb[5] ||
-		      pos->aabb[5] < g.aabb[4]))
-		    dSpaceCollide2(geom, pos->id, NULL, nearCallback);
-		pos++;
-	    }
-	}
-	
-	
     private:
 	
 	struct Geom
@@ -224,6 +176,7 @@ public:
 	
     };
 
+    dSpaceID             m_space;
     ODECollide2          m_collide2;
     KinematicModelODE    m_modelODE;
     std::vector<dGeomID> m_obstacles;

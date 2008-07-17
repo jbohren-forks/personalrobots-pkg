@@ -129,7 +129,6 @@ class EnvironmentModelSOLID : public EnvironmentModel
     EnvironmentModelSOLID(void) : EnvironmentModel()
     {
 	model = dynamic_cast<KinematicModel*>(&m_modelSOLID);
-	m_pcDelta = 0.01;
     }
     
     ~EnvironmentModelSOLID(void)
@@ -142,13 +141,13 @@ class EnvironmentModelSOLID : public EnvironmentModel
     virtual bool isCollision(void);
     
     /** Add a point cloud to the collision space */
-    virtual void addPointCloud(unsigned int n, const double *points); 
+    virtual void addPointCloud(unsigned int n, const double *points, double radius = 0.01); 
     
  protected:
     
     KinematicModelSOLID  m_modelSOLID;    
     std::vector<Object*> m_obstacles;
-    double               m_pcDelta;    
+
     
 };
 
