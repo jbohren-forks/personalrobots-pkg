@@ -97,15 +97,15 @@ main(int argc, char** argv)
   /*                                                                                     */
   /***************************************************************************************/
   printf("Creating robot\n");
-  PR2::PR2Robot* myPR2;
+  //PR2::PR2Robot* myPR2;
   // Initialize robot object
-  myPR2 = new PR2::PR2Robot();
+  //myPR2 = new PR2::PR2Robot();
   // Initialize connections
-  myPR2->InitializeRobot();
+  //myPR2->InitializeRobot();
   // Set control mode for the base
-  myPR2->SetBaseControlMode(PR2::PR2_CARTESIAN_CONTROL);
-  myPR2->EnableGripperLeft();
-  myPR2->EnableGripperRight();
+  //myPR2->SetBaseControlMode(PR2::PR2_CARTESIAN_CONTROL);
+  //myPR2->EnableGripperLeft();
+  //myPR2->EnableGripperRight();
 
   /***************************************************************************************/
   /*                                                                                     */
@@ -118,6 +118,7 @@ main(int argc, char** argv)
   int numActuators = PR2::MAX_JOINTS-2; // total number of actuators for both boards, last 2 in pr2Core (BASE_6DOF and PR2_WORLD don't count)
 
   int boardLookUp[] ={1,1,1,1,1,1,1,1,1,1,1,1, // casters
+                      1,                       // spine elevator
                       1,1,1,1,1,1,1,           // left arm
                       1,1,1,1,1,1,1,           // right arm
                       2,                       // left gripper
@@ -154,7 +155,7 @@ main(int argc, char** argv)
       PR2::ARM_R_WRIST_PITCH   ,
       PR2::ARM_R_WRIST_ROLL    ,
       PR2::ARM_L_GRIPPER      - PR2::ARM_L_GRIPPER ,
-      PR2::ARM_R_GRIPPER      - PR2::ARM_L_GRIPPER ,
+      PR2::ARM_R_GRIPPER      - PR2::ARM_R_GRIPPER ,
       PR2::HEAD_YAW           - PR2::HEAD_YAW ,
       PR2::HEAD_PITCH         - PR2::HEAD_YAW ,
       PR2::HEAD_LASER_PITCH   - PR2::HEAD_YAW ,
@@ -202,8 +203,80 @@ main(int argc, char** argv)
       PR2::HEAD_PTZ_R_PAN      ,
       PR2::HEAD_PTZ_R_TILT     };
 
-  string etherIP[] = {"10.12.0.103"};
-  string hostIP[]  = {"10.12.0.2  "};
+  string etherIP[] = {"10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103",
+                      "10.12.0.103"
+                     };
+  string hostIP[]  = {"10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  ",
+                      "10.12.0.2  "
+                     };
   /***************************************************************************************/
   /*                                                                                     */
   /*                        initialize hardware                                          */
@@ -211,6 +284,8 @@ main(int argc, char** argv)
   /***************************************************************************************/
   HardwareInterface *hi = new HardwareInterface(numActuators);
   GazeboHardware    *h  = new GazeboHardware(numBoards,numActuators, boardLookUp, portLookUp, jointId, etherIP, hostIP, hi);
+  // connect to hardware
+  h->init();
 
   /***************************************************************************************/
   /*                                                                                     */
@@ -244,7 +319,7 @@ main(int argc, char** argv)
   /***************************************************************************************/
   SimpleTransmission *st = new SimpleTransmission(joint,&hi->actuator[0],1,1,14000);
   
-  myPR2->hw.GetSimTime(&time);
+  //myPR2->hw.GetSimTime(&time);
 
   /***************************************************************************************/
   /*                                                                                     */
@@ -252,7 +327,7 @@ main(int argc, char** argv)
   /*                                                                                     */
   /***************************************************************************************/
   printf("Creating node \n");
-  RosGazeboNode rgn(argc,argv,argv[1],myPR2,&myArm,&myHead,&mySpine,&myBase,&myLaserScanner,&myGripper,JointArray);
+  //RosGazeboNode rgn(argc,argv,argv[1],myPR2,&myArm,&myHead,&mySpine,&myBase,&myLaserScanner,&myGripper,JointArray);
 
   /***************************************************************************************/
   /*                                                                                     */
@@ -264,8 +339,8 @@ main(int argc, char** argv)
   signal(SIGTERM, (&finalize));
 
   // see if we can subscribe models needed
-  if (rgn.AdvertiseSubscribeMessages() != 0)
-    exit(-1);
+  //if (rgn.AdvertiseSubscribeMessages() != 0)
+  //  exit(-1);
 
   /***************************************************************************************/
   /*                                                                                     */
@@ -273,12 +348,12 @@ main(int argc, char** argv)
   /*   contains controller pointers for the non-RT setpoints                             */
   /*                                                                                     */
   /***************************************************************************************/
-  int rgnt = pthread_create(&threads[0],NULL, nonRealtimeLoop, (void *) (&rgn));
-  if (rgnt)
-  {
-    printf("Could not start a separate thread for ROS Gazebo Node (code=%d)\n",rgnt);
-    exit(-1);
-  }
+  //int rgnt = pthread_create(&threads[0],NULL, nonRealtimeLoop, (void *) (&rgn));
+  //if (rgnt)
+  //{
+  //  printf("Could not start a separate thread for ROS Gazebo Node (code=%d)\n",rgnt);
+  //  exit(-1);
+  //}
 
   /***************************************************************************************/
   /*                                                                                     */
@@ -290,10 +365,10 @@ main(int argc, char** argv)
   double pos;
   while(1)
   { 
-    myPR2->hw.GetSimTime(&time);
-    std::cout<<"Time:"<<time<<std::endl;
+    //myPR2->hw.GetSimTime(&time);
+    //std::cout<<"Time:"<<time<<std::endl;
 
-    pthread_mutex_trylock(&simMutex); //Try to lock here. But continue on if fails to enforce real time
+    //pthread_mutex_trylock(&simMutex); //Try to lock here. But continue on if fails to enforce real time
     // Update Controllers
     //   each controller will try to read new commands from shared memory with nonRT hooks,
     //   and skip update if locked by nonRT loop.
@@ -306,19 +381,45 @@ main(int argc, char** argv)
     myLaserScanner.Update();
     myGripper.Update();
     */
-      jc->Update();
+
 
     // jc.GetTorqueCmd(&torque);
     //   std::cout<<"*"<<torque<<std::endl;
-    std::cout<<JointArray[PR2::ARM_L_SHOULDER_PITCH]->position<<std::endl;
+    // std::cout<<JointArray[PR2::ARM_L_SHOULDER_PITCH]->position<<std::endl;
     // TODO: Safety codes should go here...
 
-    // Send updated controller commands to hardware
-    myPR2->hw.UpdateJointArray(JointArray);
+    // old:  Send updated controller commands to hardware
+    // myPR2->hw.UpdateJointArray(JointArray);
 
-    pthread_mutex_unlock(&simMutex); //Unlock after we're done with r/w
+
+
+
+    // get encoder counts from hardware
+    h->updateState();
+
+    // setup joint state from encoder counts
+    st->propagatePosition();
+
+    //update controller
+    jc->Update();
+
+    //cout << "pos:: " << joint->position << ", eff:: " << joint->commandedEffort << endl;
+
+    // update command current from joint command
+    st->propagateEffort();
+
+    // send command to hardware
+    h->sendCommand();
+
+    // refresh hardware
+    h->tick();
+
+    //pthread_mutex_unlock(&simMutex); //Unlock after we're done with r/w
+
     // wait for Gazebo time step
-    myPR2->hw.ClientWait();
+    //myPR2->hw.ClientWait();
+    usleep(1000);
+
   }
   
   /***************************************************************************************/

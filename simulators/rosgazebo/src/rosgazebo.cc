@@ -222,7 +222,7 @@ main(int argc, char** argv)
 
     pthread_mutex_unlock(&simMutex); //Unlock after we're done with r/w
     // wait for Gazebo time step
-    myPR2->hw.ClientWait();
+    //myPR2->hw.ClientWait();
   }
   
   /***************************************************************************************/

@@ -16,6 +16,7 @@
   <depend package="libKDL" />
   <depend package="robot_model" />
   <depend package="hw_interface" />
+  <depend package="gazebo_hardware" />
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lRosGazeboNode"/>
   </export>
