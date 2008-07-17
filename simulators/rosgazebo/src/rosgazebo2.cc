@@ -22,14 +22,17 @@
 #include <math.h>
 
 #include <pthread.h>
+
+// robot model
 #include <pr2Core/pr2Core.h>
 #include <robot_model/joint.h>
 
-// gazebo
-#include <libpr2API/pr2API.h>
+// gazebo hardware, sensors
+#include <gazebo_hardware/gazebo_hardware.h>
+#include <gazebo_sensors/gazebo_sensors.h>
 
 
-// controller
+// controller objects
 #include <pr2Controllers/ArmController.h>
 #include <pr2Controllers/HeadController.h>
 #include <pr2Controllers/SpineController.h>
@@ -37,8 +40,6 @@
 #include <pr2Controllers/LaserScannerController.h>
 #include <pr2Controllers/GripperController.h>
 
-// hardware
-#include <gazebo_hardware/gazebo_hardware.h>
 
 // roscpp
 #include <ros/node.h>
@@ -46,7 +47,7 @@
 #include <time.h>
 #include <signal.h>
 
-#include <RosGazeboNode/RosGazeboNode.h>
+//#include <RosGazeboNode/RosGazeboNode.h>
 
  pthread_mutex_t simMutex; //Mutex for sim R/W
 mechanism::Joint* JointArray[PR2::MAX_JOINTS]; //Joint pointer array
@@ -65,7 +66,7 @@ void *nonRealtimeLoop(void *rgn)
   while (1)
   {
     pthread_mutex_lock(&simMutex); //Lock for r/w
-    ((RosGazeboNode*)rgn)->Update();
+    //((RosGazeboNode*)rgn)->Update();
     pthread_mutex_unlock(&simMutex); //Unlock when done
     // some time out for publishing ros info
     usleep(10000);
@@ -286,6 +287,9 @@ main(int argc, char** argv)
   GazeboHardware    *h  = new GazeboHardware(numBoards,numActuators, boardLookUp, portLookUp, jointId, etherIP, hostIP, hi);
   // connect to hardware
   h->init();
+
+  // access to all the gazebo sensors
+  GazeboSensors    *s  = new GazeboSensors();
 
   /***************************************************************************************/
   /*                                                                                     */
