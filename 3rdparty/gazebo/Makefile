@@ -1,6 +1,6 @@
 all: gazebo
 
-REVISION = -r 6870
+REVISION = -r 6874
 
 OGRE_PKG = $(shell rospack find ogre)/ogre/lib/pkgconfig
 PLAYER_PKG = $(shell rospack find player)/player/lib/pkgconfig
