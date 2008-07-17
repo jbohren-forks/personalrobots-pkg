@@ -87,7 +87,7 @@ Provides (name/type):
 #include <rosthread/member_thread.h>
 #include <rosthread/mutex.h>
 #include <std_msgs/PointCloudFloat32.h>
-#include <std_msgs/Log.h>
+#include <rostools/Log.h>
 #include <deque>
 #include <cmath>
 using namespace std_msgs;
@@ -100,7 +100,7 @@ public:
     World3DMap(void) : ros::node("world_3d_map")
     {
 	advertise<PointCloudFloat32>("world_3d_map");
-	advertise<Log>("roserr");
+	advertise<rostools::Log>("roserr");
 
 	// NOTE: subscribe to stereo vision point cloud as well... when it becomes available
 	subscribe("full_cloud", inputCloud, &World3DMap::pointCloudCallback);
@@ -148,7 +148,7 @@ public:
 	if (discard)
 	{
 	    /* log the fact that input was discarded */
-	    Log l;
+	    rostools::Log l;
 	    l.level = 20;
 	    l.name  = get_name();
 	    l.msg   = "Discarded point cloud data (previous input set not done processing)";
