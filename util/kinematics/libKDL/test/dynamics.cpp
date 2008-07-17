@@ -57,7 +57,8 @@ int newtonEulerSolver(const Chain &chain, const JntArray &q, const JntArray &q_d
 
 	Frame _iT0 = Frame::Identity();
 	Frame _iTi_minus_one, _i_minus_oneTi;
-	Rotation _iRi_minus_one;
+	Rotation _iRi_minus_one = Rotation::Identity();
+	Frame T_tip = Frame::Identity();
 
 	Vector z_i_minus_one, b_i, r;
 	Segment link_i;
@@ -70,27 +71,33 @@ int newtonEulerSolver(const Chain &chain, const JntArray &q, const JntArray &q_d
 		link_i = chain.getSegment(i-1);
 		z_i_minus_one = jointAxis(link_i.getJoint());
 
+		_iRi_minus_one = T_tip.M.Inverse();
+
+		b_i = z_i_minus_one;
+		T_tip = link_i.getFrameToTip();
+		r = T_tip.p; // I want vector in body coordinates.
+
 		_iTi_minus_one = link_i.pose(q(i-1)).Inverse();
 		_iT0 = _iTi_minus_one*_iT0;
-		b_i = z_i_minus_one;
-		_iRi_minus_one = _iTi_minus_one.M;
-		r = link_i.pose(0).p; // I want vector in body coordinates.
-
-//		r_c = r/2; // Center of mass is currently fixed, need a clean solution for this.
+		_iRi_minus_one = T_tip.M*_iTi_minus_one.M * _iRi_minus_one;
 
 		omega[i] = _iRi_minus_one*omega[i-1] + b_i*q_dot(i-1);
 		alpha[i] = _iRi_minus_one*alpha[i-1] + b_i*q_dotdot(i-1) + omega[i]*b_i*q_dot(i-1);
 		a_c[i] = _iRi_minus_one*a_e + alpha[i]*r_c[i-1] + omega[i]*(omega[i]*r_c[i-1]);
 		a_e = _iRi_minus_one*a_e + alpha[i]*r + omega[i]*(omega[i]*r);
 
-		cout<<"omega["<<i<<"]: "<<omega[i]<<endl<<"alpha["<<i<<"]: "<<alpha[i]<<endl;
-		cout<<"a_c["<<i<<"]: "<<a_c[i]<<endl;
+//		printf("-------------------------\n");
+//		cout<<"omega["<<i<<"]: "<<omega[i]<<endl<<"alpha["<<i<<"]: "<<alpha[i]<<endl;
+//		cout<<"a_c["<<i<<"]: "<<a_c[i]<<endl;
+//		cout<<"_iRi_minus_one: "<<_iRi_minus_one<<endl;
+//		cout<<"_iTi_minus_one.M: "<<_iTi_minus_one.M<<endl;
+
 	}
 
 	// now for joint forces and torques.
 	Vector g(0.,0.,-9.8);
 	Rotation rot, rot_g;
-	Frame T, T_tip;
+	Frame T;
 
 	InertiaMatrix I;
 	double m;
@@ -100,7 +107,6 @@ int newtonEulerSolver(const Chain &chain, const JntArray &q, const JntArray &q_d
 	// _iT0 is now _nT0
 	rot_g = _iT0.M;
 	g = rot_g*g;
-	cout<<"g: "<<g<<endl;
 
 	Vector r_iplusone_c; // Vector from o_{i+1} to c_i
 	rot = Rotation::Identity(); // should be rotation matrix for end-effector forces to coord frame of last link.
@@ -125,16 +131,8 @@ int newtonEulerSolver(const Chain &chain, const JntArray &q, const JntArray &q_d
 		t[i] = rot*t[i+1] - f[i]*r_c[i] + (rot*f[i+1])*r_iplusone_c+I*alpha[i+1]
 					 + omega[i+1]*(I*omega[i+1]);
 
-		printf("-------------------------------\n");
-		cout<<"i: "<<i<<endl;
-		cout<<"T_tip: "<<T_tip<<endl;
-		cout<<"rot: "<<rot<<endl;
-		cout<<"g: "<<g<<endl;
-		cout<<"f[i]: "<<f[i]<<endl;
 		rot = T.M*T_tip.M.Inverse();
 	}
-
-	// Assuming frame 0 and global are aligned (parallel)
 
 	return 0;
 }
@@ -178,11 +176,11 @@ void checkOneLink_static()
 }
 
 
-void planarTwoLink_solution(double l1, double l2, JntArray &q, JntArray &q_dot, JntArray &q_dotdot, Inertia *gen_mass)
+void planarTwoLink_solution(double l1,double l2,JntArray &q,JntArray &q_dot,JntArray &q_dotdot,double m1,double m2,double I1,double I2)
 {
-	double I1 = gen_mass[0].I.data[0];
-	double I2 = gen_mass[1].I.data[0];
-	double m1 = gen_mass[0].m, m2 = gen_mass[1].m;
+//	double I1 = gen_mass[0].I.data[0];
+//	double I2 = gen_mass[1].I.data[0];
+//	double m1 = gen_mass[0].m, m2 = gen_mass[1].m;
 	double q1 = q(0), q2 = q(1);
 	double q1_dot = q_dot(0), q2_dot = q_dot(1);
 	double q1_dotdot = q_dotdot(0), q2_dotdot = q_dotdot(1);
@@ -237,7 +235,7 @@ void checkTwoLinkPlanar()
 
 	newtonEulerSolver(chain, q, q_dot, q_dotdot, gen_mass, r_c,f,t);
 	printf("====================================\n");
-	planarTwoLink_solution(l1, l2, q, q_dot, q_dotdot, gen_mass);
+	planarTwoLink_solution(l1, l2, q, q_dot, q_dotdot, m1, m2, I1, I2);
 	cout<<"Calculated Force 1 (Code):"<<f[0]<<endl;
 	cout<<"Calculated Force 2 (Code):"<<f[1]<<endl;
 	cout<<"Calculated Torque 1 (Code):"<<t[0]<<endl;
@@ -248,9 +246,9 @@ void checkTwoLinkPlanar()
 void checkTwoLinkPlanar_2()
 {
 //-------- one link ---------
-	double q1 = deg2rad*-20, q2 = deg2rad*30;
-	double q1_dot = deg2rad*0, q2_dot = deg2rad*0;
-	double q1_dotdot = deg2rad*0, q2_dotdot = deg2rad*0;
+	double q1 = deg2rad*30, q2 = deg2rad*-48;
+	double q1_dot = deg2rad*63, q2_dot = deg2rad*-52;
+	double q1_dotdot = deg2rad*20, q2_dotdot = deg2rad*73;
 	double m1 = 1., m2 = 1.;
 	double I1 = 1., I2 = 1.;
 	double l1 = 1.0, l2 = 2.0;
@@ -280,7 +278,7 @@ void checkTwoLinkPlanar_2()
 
 	newtonEulerSolver(chain, q, q_dot, q_dotdot, gen_mass, r_c,f,t);
 	printf("====================================\n");
-	planarTwoLink_solution(l1, l2, q, q_dot, q_dotdot, gen_mass);
+	planarTwoLink_solution(l1, l2, q, q_dot, q_dotdot, m1, m2, I1, I2);
 	cout<<"Calculated Force 1 (Code):"<<f[0]<<endl;
 	cout<<"Calculated Force 2 (Code):"<<f[1]<<endl;
 	cout<<"Calculated Torque 1 (Code):"<<t[0]<<endl;
@@ -316,13 +314,6 @@ void checkPUMA560_akb()
 	//------- define the PUMA560 kinematics to match pytb-18, puma560akb.py --------
 	Chain chain;
 
-//	chain.addSegment(Segment(Joint(Joint::RotZ),Frame(Rotation::Identity(),Vector(0.0,0.2435,0.0))));
-//	chain.addSegment(Segment(Joint(Joint::RotZ),Frame(Rotation::RotX(deg2rad*-90),Vector(0.4318,0.0,-0.0934))));
-//	chain.addSegment(Segment(Joint(Joint::RotZ),Frame(Rotation::Identity(),Vector(-0.0203,-0.4331,0.0))));
-//	chain.addSegment(Segment(Joint(Joint::RotZ),Frame(Rotation::RotX(deg2rad*90),Vector(0.0,0.0,0.0))));
-//	chain.addSegment(Segment(Joint(Joint::RotZ),Frame(Rotation::RotX(deg2rad*-90),Vector(0.0,0.0,0.0))));
-//	chain.addSegment(Segment(Joint(Joint::RotZ),Frame(Rotation::RotX(deg2rad*90),Vector(0.0,0.0,0.0))));
-
 	chain.addSegment(Segment(Joint(Joint::RotZ),Frame(Rotation::RotX(deg2rad*-90),Vector(0.0,0.2435,0.0))));
 	chain.addSegment(Segment(Joint(Joint::RotZ),Frame(Rotation::Identity(),Vector(0.4318,0.0,-0.0934))));
 	chain.addSegment(Segment(Joint(Joint::RotZ),Frame(Rotation::RotX(deg2rad*90),Vector(-0.0203,-0.4331,0.0))));
@@ -350,13 +341,6 @@ void checkPUMA560_akb()
 	gen_mass[li].m=0.34,gen_mass[li].I.data[li]=0.3e-3,gen_mass[li].I.data[3]=0.3e-3,gen_mass[li].I.data[6]=0.4e-3;li++;
 	gen_mass[li].m=0.09,gen_mass[li].I.data[li]=.15e-3,gen_mass[li].I.data[3]=.15e-3,gen_mass[li].I.data[6]=.15e-3;li++;
 
-//	gen_mass[li++].m=0;
-//	gen_mass[li++].m=17.4;
-//	gen_mass[li++].m=4.8;
-//	gen_mass[li++].m=0.82;
-//	gen_mass[li++].m=0.34;
-//	gen_mass[li++].m=0.09;
-
 	Vector r_c[6];
 	r_c[0][0]=0.0 , r_c[0][1]=0.0 , r_c[0][2]=0    ;
 	r_c[1][0]=.068, r_c[1][1]=.006, r_c[1][2]=-.016;
@@ -365,18 +349,18 @@ void checkPUMA560_akb()
 	r_c[4][0]=0.0 , r_c[4][1]=0.0 , r_c[4][2]=0    ;
 	r_c[5][0]=0.0 , r_c[5][1]=0.0 , r_c[5][2]=.032 ;
 
-//	q(0)=deg2rad*0,q(1)=deg2rad*0,q(2)=deg2rad*0;
-//	q(3)=deg2rad*0,q(4)=deg2rad*0,q(5)=deg2rad*0;
+	q(0)=deg2rad*74,q(1)=deg2rad*23,q(2)=deg2rad*-30;
+	q(3)=deg2rad*0,q(4)=deg2rad*24,q(5)=deg2rad*0;
 //	q(0)=deg2rad*11,q(1)=deg2rad*54,q(2)=deg2rad*22;
 //	q(3)=deg2rad*20,q(4)=deg2rad*-7,q(5)=deg2rad*40;
-	q(0)=deg2rad*-21,q(1)=deg2rad*13,q(2)=deg2rad*48;
-	q(3)=deg2rad*-20,q(4)=deg2rad*7,q(5)=deg2rad*85;
+//	q(0)=deg2rad*-21,q(1)=deg2rad*13,q(2)=deg2rad*48;
+//	q(3)=deg2rad*-20,q(4)=deg2rad*7,q(5)=deg2rad*85;
 
-	q_dot(0)=deg2rad*0,q_dot(1)=deg2rad*0,q_dot(2)=deg2rad*0;
-	q_dot(3)=deg2rad*0,q_dot(4)=deg2rad*0,q_dot(5)=deg2rad*0;
+	q_dot(0)=deg2rad*20,q_dot(1)=deg2rad*-33,q_dot(2)=deg2rad*41;
+	q_dot(3)=deg2rad*37,q_dot(4)=deg2rad*0,q_dot(5)=deg2rad*0;
 
-	q_dotdot(0)=deg2rad*0,q_dotdot(1)=deg2rad*0,q_dotdot(2)=deg2rad*0;
-	q_dotdot(3)=deg2rad*0,q_dotdot(4)=deg2rad*0,q_dotdot(5)=deg2rad*0;
+	q_dotdot(0)=deg2rad*45,q_dotdot(1)=deg2rad*50,q_dotdot(2)=deg2rad*62;
+	q_dotdot(3)=deg2rad*38,q_dotdot(4)=deg2rad*0,q_dotdot(5)=deg2rad*0;
 
 	newtonEulerSolver(chain, q, q_dot, q_dotdot, gen_mass, r_c,f,t);
 	printf("====================================\n");
