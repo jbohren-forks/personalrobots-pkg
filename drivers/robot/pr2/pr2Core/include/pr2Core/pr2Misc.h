@@ -15,7 +15,15 @@ namespace PR2
     {
        point q;
        q.x = cos(theta)*p.x - sin(theta)*p.y;
-       q.y = sin(theta)*p.y + cos(theta)*p.x;
+       q.y = sin(theta)*p.x + cos(theta)*p.y;
+       return q;
+    }
+
+    inline point Rot2D(double x, double y, double theta)
+    {
+       point q;
+       q.x = cos(theta)*x - sin(theta)*y;
+       q.y = sin(theta)*x + cos(theta)*y;
        return q;
     }
 
@@ -23,7 +31,7 @@ namespace PR2
     {
        point q;
        q.x = cos(theta)*p.x - sin(theta)*p.y;
-       q.y = sin(theta)*p.y + cos(theta)*p.x;
+       q.y = sin(theta)*p.x + cos(theta)*p.y;
        return q;
     }
 

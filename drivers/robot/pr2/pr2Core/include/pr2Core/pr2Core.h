@@ -64,19 +64,19 @@ namespace PR2
    };
 
    enum PR2_JOINT_ID{
-      CASTER_FL_STEER   , 
-      CASTER_FL_DRIVE_L , 
-      CASTER_FL_DRIVE_R ,
-      CASTER_FR_STEER   , 
-      CASTER_FR_DRIVE_L , 
-      CASTER_FR_DRIVE_R ,
-      CASTER_RL_STEER   , 
-      CASTER_RL_DRIVE_L , 
-      CASTER_RL_DRIVE_R ,
-      CASTER_RR_STEER   , 
-      CASTER_RR_DRIVE_L , 
-      CASTER_RR_DRIVE_R ,
-      SPINE_ELEVATOR    ,
+     CASTER_FL_STEER   , // 0
+     CASTER_FL_DRIVE_L , // 1 
+     CASTER_FL_DRIVE_R , // 2
+     CASTER_FR_STEER   , // 3
+     CASTER_FR_DRIVE_L , // 4
+     CASTER_FR_DRIVE_R , // 5
+     CASTER_RL_STEER   , // 6
+     CASTER_RL_DRIVE_L , // 7 
+     CASTER_RL_DRIVE_R , // 8
+     CASTER_RR_STEER   , // 9 
+     CASTER_RR_DRIVE_L , // 10
+     CASTER_RR_DRIVE_R , // 11
+     SPINE_ELEVATOR    ,
       ARM_L_PAN         , 
       ARM_L_SHOULDER_PITCH, 
       ARM_L_SHOULDER_ROLL,
