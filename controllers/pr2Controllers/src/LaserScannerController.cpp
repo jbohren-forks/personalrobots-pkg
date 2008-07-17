@@ -116,7 +116,7 @@ void LaserScannerController::GenerateSawtooth(double *&x, double *&t, double per
 
 void LaserScannerController::SetSinewaveProfile(double period, double amplitude, double dt, double offset){
 	setParam("profile", "sinewave");
-	unsigned int elements = (unsigned int) period/dt;
+	unsigned int elements = (unsigned int) (period/dt);
 	GenerateSinewave(profileX,profileT,period,amplitude,dt,offset,elements);
 	profileLength = elements;
 }
@@ -140,7 +140,7 @@ void LaserScannerController::GenerateSinewave(double *&x, double *&t, double per
 
 void LaserScannerController::SetSquarewaveProfile(double period, double amplitude, double dt, double offset){
 	setParam("profile", "squarewave");
-	unsigned int elements = (unsigned int) period/dt;
+	unsigned int elements = (unsigned int) (period/dt);
 	GenerateSquarewave(profileX,profileT,period,amplitude,dt,offset,elements);
 	profileLength = elements;
 }
@@ -189,7 +189,7 @@ LaserScannerController::GetTorqueCmd(double *torque)
 
 //Query motor for actual torque 
 CONTROLLER::CONTROLLER_ERROR_CODE
- LaserScannerController::GetTorqueAct(double *torque)
+LaserScannerController::GetTorqueAct(double *torque)
 {
 	return lowerControl.GetTorqueAct(torque);
 }

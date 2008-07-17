@@ -204,15 +204,18 @@ CONTROLLER_ERROR_CODE JointController::SetTorqueCmd(double torque){
 }
 
 //Return current torque command
-void JointController::GetTorqueCmd(double *torque)
+CONTROLLER::CONTROLLER_ERROR_CODE
+JointController::GetTorqueCmd(double *torque)
 {
   *torque = cmdTorque;
 }
 
 //Query motor for actual torque 
-void JointController::GetTorqueAct(double *torque)
+CONTROLLER::CONTROLLER_ERROR_CODE
+JointController::GetTorqueAct(double *torque)
 {
   *torque = joint->appliedEffort; //Read torque from joint
+  return CONTROLLER::CONTROLLER_ALL_OK; 
 }
 
 //---------------------------------------------------------------------------------//
@@ -240,16 +243,17 @@ CONTROLLER_ERROR_CODE JointController::SetPosCmd(double pos)
 }
 
 //Return the current position command
-void JointController::GetPosCmd(double *pos)
+CONTROLLER::CONTROLLER_ERROR_CODE JointController::GetPosCmd(double *pos)
 {
   *pos = cmdPos;
-
+  return CONTROLLER::CONTROLLER_ALL_OK; 
 }
 
 //Query the joint for the actual position
-void JointController::GetPosAct(double *pos)
+CONTROLLER::CONTROLLER_ERROR_CODE JointController::GetPosAct(double *pos)
 {
   *pos = joint->position;
+  return CONTROLLER::CONTROLLER_ALL_OK; 
 }
 
 //---------------------------------------------------------------------------------//
@@ -266,15 +270,17 @@ CONTROLLER_ERROR_CODE JointController::SetVelCmd(double vel)
 }
 
 //Return the internally stored commanded velocity
-void JointController::GetVelCmd(double *vel)
+CONTROLLER::CONTROLLER_ERROR_CODE JointController::GetVelCmd(double *vel)
 {
   *vel = cmdVel;
+  return CONTROLLER::CONTROLLER_ALL_OK; 
 }
 
 //Query our joint for velocity
-void JointController::GetVelAct(double *vel)
+CONTROLLER::CONTROLLER_ERROR_CODE JointController::GetVelAct(double *vel)
 {
   *vel = joint->velocity;
+  return CONTROLLER::CONTROLLER_ALL_OK; 
 }
 //---------------------------------------------------------------------------------//
 //UPDATE CALLS
