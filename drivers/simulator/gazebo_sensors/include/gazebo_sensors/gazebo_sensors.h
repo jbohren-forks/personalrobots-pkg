@@ -30,39 +30,66 @@
 //ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 //POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef PR2HW_API_HH
-#define PR2HW_API_HH
+#ifndef GAZEBO_SENSORS_API_HH
+#define GAZEBO_SENSORS_API_HH
 
 #include <pr2Core/pr2Core.h>
+#include <pr2Core/pr2Misc.h>
+#include <math.h>
+#include <list>
+#include <vector>
 
-#include <newmat10/newmat.h>
-#include <libKinematics/kinematics.h>
+#include <gazebo/gazebo.h>
+#include <gazebo/GazeboError.hh>
 
 #include <sys/types.h>
 #include <stdint.h>
 #include <string>
 #include <list>
 #include <vector>
-#include <robot_model/joint.h>
 
 namespace PR2
 {
-   /*! \class 
-     \brief A low-level function call based API for PR2
-   */
-   class PR2HW
-   {
-      private: int numJoints;
+  /*! \class 
+    \brief A low-level function call based API for PR2
+  */
+  class GazeboSensors
+  {
+
+
+  private:
+    ////////////////////////////////////////////////////////////////////
+    //                                                                //
+    //  Gazebo Client Interfaces                                      //
+    //                                                                //
+    //  these are the "hardware" interfaces                           //
+    //                                                                //
+    ////////////////////////////////////////////////////////////////////
+    gazebo::Client           *client;
+    gazebo::SimulationIface  *simIface;
+
+    gazebo::LaserIface       *pr2LaserIface;
+    gazebo::LaserIface       *pr2BaseLaserIface;
+
+    gazebo::CameraIface      *pr2CameraIface;
+    gazebo::CameraIface      *pr2CameraGlobalIface;
+    gazebo::CameraIface      *pr2CameraHeadLeftIface;
+    gazebo::CameraIface      *pr2CameraHeadRightIface;
+
+    gazebo::PositionIface    *pr2LeftWristIface;
+    gazebo::PositionIface    *pr2RightWristIface;
+    gazebo::PositionIface    *pr2BaseIface;
+
 
          /*! \fn 
            \brief Constructor
          */
-      public: PR2HW();
+      public: GazeboSensors();
 
          /*! \fn 
            \brief Destructor
          */
-      public: virtual ~PR2HW();
+      public: virtual ~GazeboSensors();
          
     /*! \fn
         \brief This is where hardware/gazebo interfaces should be initialized 
@@ -94,162 +121,6 @@ namespace PR2
       public: PR2_ERROR_CODE IsEnabledModel(PR2_MODEL_ID id, int *enabled);    
 
          /*! \fn
-           \brief Add a joint
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs
-         */
-     public: PR2_ERROR_CODE AddJoint(PR2_JOINT_ID id);
-
-         /*! \fn
-           \brief Set the joint control mode
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs
-           \param mode - mode for joint control, possible options are torque control, position control or speed control
-         */
-      public: PR2_ERROR_CODE SetJointControlMode(PR2_JOINT_ID id, PR2_JOINT_CONTROL_MODE mode);
-
-
-         /*! \fn
-           \brief Get the joint control mode
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs
-           \param mode - pointer to return value (mode for joint control, possible values are torque control, position control or speed control)
-         */
-      public: PR2_ERROR_CODE GetJointControlMode(PR2_JOINT_ID id, PR2_JOINT_CONTROL_MODE *mode);
-
-
-         /*! \fn
-           \brief Set the controller gains
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs
-           \param pGain - proportional gain
-           \param iGain - integral gain
-           \param dGain - derivative gain
-         */
-      public: PR2_ERROR_CODE SetJointGains(PR2_JOINT_ID id, double pGain, double iGain, double dGain);
-
-
-         /*! \fn
-           \brief Get the controller gains
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs
-           \param pGain - pointer to proportional gain
-           \param iGain - pointer to integral gain
-           \param dGain - pointer to derivative gain
-         */
-      public: PR2_ERROR_CODE GetJointGains(PR2_JOINT_ID id, double *pGain, double *iGain, double *dGain);
-
-
-         /*! \fn
-           \brief Enable the joint
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs
-         */
-      public: PR2_ERROR_CODE EnableJoint(PR2_JOINT_ID id);
-
-
-         /*! \fn
-           \brief Disable the joint
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs
-         */
-      public: PR2_ERROR_CODE DisableJoint(PR2_JOINT_ID id);
-
-
-         /*! \fn
-           \brief Return value corresponding to whether the joint is enabled or not, 0 - disabled, 1 - enabled
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs
-         */
-      public: PR2_ERROR_CODE IsEnabledJoint(PR2_JOINT_ID id, int *enabled);
-
-
-         /*! \fn
-           \brief Set particular parameters for the joint (NOT IMPLEMENTED YET)
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs and parameter IDs
-           \param pId - parameter ID corresponding to the parameter for the joint, see pr2Core.h for a list of joint IDs and parameter IDs
-           \param value - parameter value
-         */
-      public: PR2_ERROR_CODE SetJointParams(PR2_JOINT_ID id, PR2_JOINT_PARAM_ID pId, double value);
-
-
-         /*! \fn
-           \brief Get particular parameters for the joint  (NOT IMPLEMENTED YET)
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs and parameter IDs
-           \param pId - parameter ID corresponding to the parameter for the joint, see pr2Core.h for a list of joint IDs and parameter IDs
-         */
-      public: PR2_ERROR_CODE GetJointParams(PR2_JOINT_ID id, PR2_JOINT_PARAM_ID pId, double *value);
-
-
-         /*! \fn
-           \brief Command a desired joint position and speed 
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs and parameter IDs
-           \param jointPosition - desired joint position (in radians or meters)
-           \param jointSpeed - desired joint speed (in rad/s or m/s)
-         */
-      public: PR2_ERROR_CODE SetJointServoCmd(PR2_JOINT_ID id, double jointPosition, double jointSpeed);
-
-
-         /*! \fn
-           \brief Get the commanded joint position and speed values 
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs and parameter IDs
-           \param jointPosition - pointer to desired joint position (in radians or meters)
-           \param jointSpeed - desired joint speed (in rad/s or m/s)
-         */
-      public: PR2_ERROR_CODE GetJointServoCmd(PR2_JOINT_ID id, double *jointPosition, double *jointSpeed);
-
-
-         /*! \fn
-           \brief Get the actual joint position and speed values 
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs and parameter IDs
-           \param jointPosition - pointer to desired joint position (in radians or meters)
-           \param jointSpeed - desired joint speed (in rad/s or m/s)
-         */
-      public: PR2_ERROR_CODE GetJointServoActual(PR2_JOINT_ID id, double *jointPosition, double *jointSpeed);
-
-         /*! \fn
-           \brief Get the actual joint position and speed values 
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs and parameter IDs
-           \param jointPosition - pointer to desired joint position (in radians or meters)
-           \param jointSpeed - desired joint speed (in rad/s or m/s)
-         */
-      public: PR2_ERROR_CODE GetJointPositionActual(PR2_JOINT_ID id, double *jointPosition, double *jointSpeed);
-
-         /*! \fn
-           \brief Command a desired joint torque or force (for prismatic joints)
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs and parameter IDs
-           \param torque - desired torque (Nm or N)
-         */
-      public: PR2_ERROR_CODE SetJointTorque(PR2_JOINT_ID id, double torque);
-
-         /*! \fn
-           \brief Get the commanded joint torque or force (for prismatic joints)
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs and parameter IDs
-           \param torque - pointer to return value for commanded torque (Nm or N)
-         */
-      public: PR2_ERROR_CODE GetJointTorqueCmd(PR2_JOINT_ID id, double *torque);
-
-         /*! \fn
-           \brief Get the actual joint torque or force (for prismatic joints)
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs and parameter IDs
-           \param torque - pointer to return value for actual torque (Nm or N)
-         */
-      public: PR2_ERROR_CODE GetJointTorqueActual(PR2_JOINT_ID id, double *torque);
-
-         /*! \fn
-           \brief Command a desired joint speed
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs and parameter IDs
-           \param torque - desired speed (rad/s or m/s)
-         */
-      public: PR2_ERROR_CODE SetJointSpeed(PR2_JOINT_ID id, double speed);
-
-         /*! \fn
-           \brief Get the commanded joint speed
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs and parameter IDs
-           \param torque - desired speed (rad/s or m/s)
-         */
-      public: PR2_ERROR_CODE GetJointSpeedCmd(PR2_JOINT_ID id, double *speed);
-
-         /*! \fn
-           \brief Get the actual joint speed
-           \param id - jointId corresponding to the joint, see pr2Core.h for a list of joint IDs and parameter IDs
-           \param torque - desired speed (rad/s or m/s)
-         */
-      public: PR2_ERROR_CODE GetJointSpeedActual(PR2_JOINT_ID id, double *speed);
-
-         /*! \fn
            \brief - Get laser range data
          */
       public:    PR2_ERROR_CODE GetLaserRanges(PR2_SENSOR_ID id,
@@ -257,34 +128,6 @@ namespace PR2
           float* range_max,uint32_t* ranges_size     ,uint32_t* ranges_alloc_size,
                            uint32_t* intensities_size,uint32_t* intensities_alloc_size,
                            float*    ranges          ,uint8_t*  intensities);
-
-         /*! \fn
-           \brief - Open gripper
-         */
-      public: PR2_ERROR_CODE OpenGripper(PR2_MODEL_ID id,double gap, double force);
-
-         /*! \fn
-           \brief - Close gripper
-         */
-      public: PR2_ERROR_CODE CloseGripper(PR2_MODEL_ID id,double gap, double force);
-
-         /*! \fn
-           \brief - Get gripper gap and force setpoint
-         */
-      public: PR2_ERROR_CODE GetGripperCmd(PR2_MODEL_ID id,double *gap,double *force);
-
-         /*! \fn
-           \brief - Get gripper gap and force status
-         */
-      public: PR2_ERROR_CODE GetGripperActual(PR2_MODEL_ID id,double *gap,double *force);
-
-         /*! \fn
-           \brief - Set gripper p,i,d gains
-         */
-      public: PR2_ERROR_CODE SetGripperGains(PR2_MODEL_ID id,double p,double i, double d);
-         /*! 
-           \brief - control mode for the arms, possible values are joint space control or cartesian space control
-         */
 
          /*! \fn
            \brief - Get camera data
@@ -318,22 +161,6 @@ namespace PR2
      public: PR2_ERROR_CODE GetBasePositionGroundTruth(double* x, double* y, double *z, double *roll, double *pitch, double *yaw);
 
          /*! \fn
-           \brief Wait for Gazebo to update
-           TODO: put this in UpdateHW()?
-         */
-     public: PR2_ERROR_CODE ClientWait();
-         /*! \fn
-           \brief Send out the commands to the actual robot
-         */
-     public: PR2_ERROR_CODE UpdateHW();
-
-         /*! \fn
-           \brief Use new controls archiecture to bypass JointData array. Pass data by writing to and reading from jointArray
-         */
-     public: PR2_ERROR_CODE UpdateJointArray(mechanism::Joint** jointArray);
-
-
-         /*! \fn
            \brief Get the actual wrist pose 
            \param id - model ID, see pr2Core.h for a list of model IDs
            \param *x pointer to return value of x position of the wrist 
@@ -347,18 +174,10 @@ namespace PR2
 
 
          /*! \fn
-           \brief Get the actual wrist pose 
-           \param id - model ID, see pr2Core.h for a list of model IDs
+           \brief Wait for Gazebo to update
+           TODO: put this in UpdateHW()?
          */
-     public: NEWMAT::Matrix GetWristPoseGroundTruth(PR2_MODEL_ID id);
-
-        /*!
-         *  \brief Joint Data for Arm
-         *
-         *  FIXME: all this stuff will be in the robot data structure, constructed by XML
-         *
-         */
-     public: PR2::JointData jointData[MAX_JOINT_IDS];
+     public: PR2_ERROR_CODE ClientWait();
 
 
 
