@@ -1,0 +1,14 @@
+<package>
+  <description>Kinematic motion planning using OMPL</description>
+  <author>Ioan A. Sucan</author>
+  <license>BSD</license>
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="std_srvs" />
+  <depend package="xmlparam" />
+  <depend package="ompl" />
+  <depend package="wg_collision_space" />
+  <export>
+    <cpp cflags="-I${prefix}/include"/>
+  </export>
+</package>
