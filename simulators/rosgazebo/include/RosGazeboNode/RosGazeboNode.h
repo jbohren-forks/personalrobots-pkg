@@ -98,6 +98,10 @@ class RosGazeboNode : public ros::node
     CONTROLLER::LaserScannerController *laserScannerCopy;
     CONTROLLER::GripperController      *gripperCopy;
 
+    //Copy data from message to Joint Array. Required to be in update for thread locking.
+    void UpdateLeftArm();
+    void UpdateRightArm();
+
   public:
     // Constructor; stage itself needs argc/argv.  fname is the .world file
     // that stage should load.
@@ -121,7 +125,7 @@ class RosGazeboNode : public ros::node
          CONTROLLER::BaseController         *myBase,
          CONTROLLER::LaserScannerController *myLaserScanner,
          CONTROLLER::GripperController      *myGripper,
-         mechanism::Joint**                  JointArray
+         CONTROLLER::JointController** ControllerArray
          );
 
     // advertise / subscribe models
@@ -149,6 +153,10 @@ class RosGazeboNode : public ros::node
     std_msgs::PR2Arm leftarm;
     std_msgs::PR2Arm rightarm;
 
+    //Flags to indicate that a new message has arrived
+    bool newRightArmPos;
+    bool newLeftArmPos;
+
     // for the point cloud data
     ringBuffer<std_msgs::Point3DFloat32> *cloud_pts;
     ringBuffer<float>                    *cloud_ch1;
@@ -156,8 +164,8 @@ class RosGazeboNode : public ros::node
     // keep count for full cloud
     int max_cloud_pts;
 
-    //Keep track of joint array
-    mechanism::Joint** JointArray;
+    //Keep track of controllers
+    CONTROLLER::JointController** ControllerArray;
 };
 
 

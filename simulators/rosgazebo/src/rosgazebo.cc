@@ -45,6 +45,10 @@
 
 #include <RosGazeboNode/RosGazeboNode.h>
 
+//Joint defaults
+#define DEFAULTJOINTMAX 1
+#define DEFAULTJOINTMIN -1
+
  pthread_mutex_t simMutex; //Mutex for sim R/W
 mechanism::Joint* JointArray[PR2::MAX_JOINTS]; //Joint pointer array
 
@@ -74,23 +78,36 @@ int
 main(int argc, char** argv)
 { double time;
   double torque;
+  /***************************************************************************************/
+  /*                                                                                     */
+  /*                           Init Threads                                              */
+  /*                                                                                     */
+  /***************************************************************************************/
 
   // we need 2 threads, one for RT and one for nonRT
   pthread_t threads[2];
 
   pthread_mutex_init(&simMutex, NULL);
-  
+
+  /***************************************************************************************/
+  /*                                                                                     */
+  /*                           Init Joints                                               */
+  /*                                                                                     */
+  /***************************************************************************************/
+
   for (int i = 0;i<PR2::MAX_JOINTS;i++){
     JointArray[i] = new mechanism::Joint();
+    JointArray[i]->jointLimitMax = DEFAULTJOINTMAX;
+    JointArray[i]->jointLimitMin = DEFAULTJOINTMIN;
   }
 
-  ros::init(argc,argv);
 
   /***************************************************************************************/
   /*                                                                                     */
   /*                           The main simulator object                                 */
   /*                                                                                     */
   /***************************************************************************************/
+  ros::init(argc,argv);
   printf("Creating robot\n");
   PR2::PR2Robot* myPR2;
   // Initialize robot object
@@ -141,13 +158,62 @@ main(int argc, char** argv)
   CONTROLLER::BaseController         myBase;
   CONTROLLER::LaserScannerController myLaserScanner;
   CONTROLLER::GripperController      myGripper;
-  CONTROLLER::JointController        test; //Test jointController
+  
+  /***************************************************************************************/
+  /*                                                                                     */
+  /*                            Joint Controllers                                        */
+  /*                                                                                     */
+  /***************************************************************************************/
+  CONTROLLER::JointController* ControllerArray[PR2::MAX_JOINTS]; //Create array of pointers to controllers
+  for(int i = 0;i<PR2::MAX_JOINTS;i++){
+      ControllerArray[i] = new CONTROLLER::JointController(); //Initialize blank controller
+  }
+ 
+  //Explicitly initialize the controllers we wish to use. Don't forget to set the controllers to torque mode in the world file! 
+   ControllerArray[PR2::ARM_L_PAN]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,JointArray[PR2::ARM_L_PAN]);
+ ControllerArray[PR2::ARM_L_SHOULDER_PITCH]->Init(1000,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,1000,-1000,1000,JointArray[PR2::ARM_L_SHOULDER_PITCH]);
+  ControllerArray[PR2::ARM_L_SHOULDER_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,JointArray[PR2::ARM_L_SHOULDER_ROLL]);
+  ControllerArray[PR2::ARM_L_ELBOW_PITCH]->Init(300,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,JointArray[PR2::ARM_L_ELBOW_PITCH]);
+  ControllerArray[PR2::ARM_L_ELBOW_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,JointArray[PR2::ARM_L_ELBOW_ROLL]);
+  ControllerArray[PR2::ARM_L_WRIST_PITCH]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,JointArray[PR2::ARM_L_WRIST_PITCH]);
+  ControllerArray[PR2::ARM_L_WRIST_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,JointArray[PR2::ARM_L_WRIST_ROLL]);
 
+
+//  std::cout<<"Arm check:"<< ControllerArray[PR2::ARM_L_SHOULDER_PITCH]->GetMode()<<std::endl;
+//  std::cout<<"Wrist check:"<< ControllerArray[PR2::ARM_L_WRIST_ROLL]->GetMode()<<std::endl;
+
+  //Set initial Commands
+//  std::cout<<"Position:"<<  ControllerArray[PR2::ARM_L_SHOULDER_PITCH]->SetPosCmd(-1.0)<<std::endl;
+// ControllerArray[PR2::ARM_L_WRIST_ROLL]->SetPosCmd(2.0);
+//  std::cout<<"Torque:"<<ControllerArray[PR2::ARM_L_WRIST_ROLL]->SetTorqueCmd(5)<<std::endl;
+
+ /***************************************************************************************/
+  /*                                                                                     */
+  /*                           Laser  Controllers                                        */
+  /*                                                                                     */
+  /***************************************************************************************/
+  CONTROLLER::LaserScannerController*  laser = new CONTROLLER::LaserScannerController();
+  laser->Init(0.01,0,0,100,-100,CONTROLLER::CONTROLLER_VELOCITY,time,100,-100,100, JointArray[PR2::HEAD_LASER_PITCH]);
+ // laser->SetVelCmd(0.5);
+  
+
+      //Set profiles
+    laser->SetSinewaveProfile(1,0.5,0.01,0);
+//      laser->SetSawtoothProfile(1,0.5,0.01,0);
+  laser->SetMode(CONTROLLER::CONTROLLER_AUTOMATIC);
+
+
+/*
+  CONTROLLER::JointController        leftShoulderPitch; //Test jointController
+  CONTROLLER::JointController        leftWristRoll; //Test jointController
   myPR2->hw.GetSimTime(&time);
-  test.Init(1000,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,1000,-1000,1000,JointArray[PR2::ARM_L_SHOULDER_PITCH]);
+  leftShoulderPitch.Init(1000,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,1000,-1000,1000,JointArray[PR2::ARM_L_SHOULDER_PITCH]);
+  leftWristRoll.Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,JointArray[PR2::ARM_L_WRIST_ROLL]);
  // std::cout<<"****************"<<test.SetTorqueCmd(-500.0)<<std::endl;
- // std::cout<<"****************"<<test.SetPosCmd(0.0)<<std::endl;
-
+  std::cout<<"****************"<<leftShoulderPitch.SetPosCmd(-1.0)<<std::endl;
+  std::cout<<"****************"<<leftWristRoll.SetPosCmd(2.0)<<std::endl;  
+//std::cout<<"****************"<<leftWristRoll.SetTorqueCmd(50.0)<<std::endl;
+*/
 //void JointController::Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint) {
 
   /***************************************************************************************/
@@ -156,7 +222,7 @@ main(int argc, char** argv)
   /*                                                                                     */
   /***************************************************************************************/
   printf("Creating node \n");
-  RosGazeboNode rgn(argc,argv,argv[1],myPR2,&myArm,&myHead,&mySpine,&myBase,&myLaserScanner,&myGripper,JointArray);
+  RosGazeboNode rgn(argc,argv,argv[1],myPR2,&myArm,&myHead,&mySpine,&myBase,&myLaserScanner,&myGripper,ControllerArray);
 
   /***************************************************************************************/
   /*                                                                                     */
@@ -191,13 +257,14 @@ main(int argc, char** argv)
   /*                                                                                     */
   /***************************************************************************************/
   printf("Entering realtime loop\n");
-  double pos;
+  double pos,effort;
   while(1)
   { 
- myPR2->hw.GetSimTime(&time);
+    myPR2->hw.GetSimTime(&time);
     std::cout<<"Time:"<<time<<std::endl;
 
-    pthread_mutex_trylock(&simMutex); //Try to lock here. But continue on if fails to enforce real time
+    if(pthread_mutex_trylock(&simMutex) != 0) continue; //Try to lock here. But continue on if fails to enforce real time
+//Check here? branch based on outcome?
     // Update Controllers
     //   each controller will try to read new commands from shared memory with nonRT hooks,
     //   and skip update if locked by nonRT loop.
@@ -210,11 +277,21 @@ main(int argc, char** argv)
     myLaserScanner.Update();
     myGripper.Update();
     */
-      test.Update();
+  //Update all the joint controllers
 
-  // test.GetTorqueCmd(&torque);
+ for(int i = 0;i<PR2::MAX_JOINTS;i++){
+      ControllerArray[i]->Update();
+  }
+
+     
+    laser->Update();
+
 //   std::cout<<"*"<<torque<<std::endl;
-    std::cout<<JointArray[PR2::ARM_L_SHOULDER_PITCH]->position<<std::endl;
+//    std::cout<<JointArray[PR2::ARM_L_SHOULDER_PITCH]->velocity<<std::endl;
+//    ControllerArray[PR2::ARM_L_SHOULDER_PITCH]->GetPosCmd(&pos);
+//    std::cout<<JointArray[PR2::ARM_L_SHOULDER_PITCH]->appliedEffort<<std::endl;
+//    std::cout<<pos<<std::endl;
+//
     // TODO: Safety codes should go here...
 
     // Send updated controller commands to hardware
@@ -222,7 +299,7 @@ main(int argc, char** argv)
 
     pthread_mutex_unlock(&simMutex); //Unlock after we're done with r/w
     // wait for Gazebo time step
-    //myPR2->hw.ClientWait();
+  //  myPR2->hw.ClientWait();
   }
   
   /***************************************************************************************/

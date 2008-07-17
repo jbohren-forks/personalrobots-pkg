@@ -23,6 +23,7 @@ void
 RosGazeboNode::cmd_rightarmconfigReceived()
 {
   this->lock.lock();
+  newRightArmPos = true;
   /*
   printf("turret angle: %.3f\n", this->rightarm.turretAngle);
   printf("shoulder pitch : %.3f\n", this->rightarm.shoulderLiftAngle);
@@ -46,6 +47,7 @@ RosGazeboNode::cmd_rightarmconfigReceived()
   //  this->PR2Copy->SetArmJointPosition(PR2::PR2_LEFT_ARM, jointPosition, jointSpeed);
   */
   //*
+  /*
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_PAN           , this->rightarm.turretAngle,       0);
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, this->rightarm.shoulderLiftAngle, 0);
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_ROLL , this->rightarm.upperarmRollAngle, 0);
@@ -55,6 +57,7 @@ RosGazeboNode::cmd_rightarmconfigReceived()
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , this->rightarm.wristRollAngle,    0);
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER       , this->rightarm.gripperGapCmd,     0);
   this->PR2Copy->hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, this->rightarm.gripperGapCmd, this->rightarm.gripperForceCmd);
+*/
   //*/
   this->lock.unlock();
 }
@@ -64,6 +67,8 @@ void
 RosGazeboNode::cmd_leftarmconfigReceived()
 {
   this->lock.lock();
+  newLeftArmPos = true;
+  printf("Left arm command received\n");
   /*
   double jointPosition[] = {this->leftarm.turretAngle,
                             this->leftarm.shoulderLiftAngle,
@@ -78,6 +83,7 @@ RosGazeboNode::cmd_leftarmconfigReceived()
   */
 
   //*
+  /*
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_PAN           , this->leftarm.turretAngle,       0);
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_PITCH, this->leftarm.shoulderLiftAngle, 0);
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_ROLL , this->leftarm.upperarmRollAngle, 0);
@@ -87,6 +93,7 @@ RosGazeboNode::cmd_leftarmconfigReceived()
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_WRIST_ROLL    , this->leftarm.wristRollAngle,    0);
   // this->PR2Copy->SetJointServoCmd(PR2::ARM_L_GRIPPER       , this->leftarm.gripperGapCmd,     0);
   this->PR2Copy->hw.CloseGripper(PR2::PR2_LEFT_GRIPPER, this->leftarm.gripperGapCmd, this->leftarm.gripperForceCmd);
+  */
   //*/
   this->lock.unlock();
 }
@@ -176,6 +183,10 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
   this->PR2Copy->GetTime(&(this->lastTime));
   this->PR2Copy->GetTime(&(this->simTime));
 
+  //No new messages
+  newRightArmPos = false;
+  newLeftArmPos = false;
+
 }
 
 RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
@@ -186,13 +197,14 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
          CONTROLLER::BaseController         *myBase,
          CONTROLLER::LaserScannerController *myLaserScanner,
          CONTROLLER::GripperController      *myGripper,
-         mechanism::Joint**                   JointArray) :
+         CONTROLLER::JointController** ControllerArray):
         ros::node("rosgazebo"),tf(*this)
 {
   // accept passed in robot
   this->PR2Copy = myPR2;
 
-  this->JointArray = JointArray;
+  //Store copy of Controller Array. Only interact with it during Update() calls.
+  this->ControllerArray = ControllerArray;
   // initialize random seed
   srand(time(NULL));
 
@@ -209,6 +221,9 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
   this->PR2Copy->GetTime(&(this->lastTime));
   this->PR2Copy->GetTime(&(this->simTime));
 
+  //No new messages
+  newRightArmPos = false;
+  newLeftArmPos = false;
 }
 
 int
@@ -252,6 +267,34 @@ RosGazeboNode::GaussianKernel(double mu,double sigma)
 }
 
 void
+RosGazeboNode::UpdateRightArm(){
+  ControllerArray[PR2::ARM_R_PAN]->SetPosCmd(this->rightarm.turretAngle); 
+  ControllerArray[PR2::ARM_R_SHOULDER_PITCH]->SetPosCmd(this->rightarm.shoulderLiftAngle);
+  ControllerArray[PR2::ARM_R_SHOULDER_ROLL]->SetPosCmd(this->rightarm.upperarmRollAngle);
+  ControllerArray[PR2::ARM_R_ELBOW_PITCH]->SetPosCmd(this->rightarm.elbowAngle);
+  ControllerArray[PR2::ARM_R_ELBOW_ROLL]->SetPosCmd(this->rightarm.forearmRollAngle);
+  ControllerArray[PR2::ARM_R_WRIST_PITCH]->SetPosCmd(this->rightarm.wristPitchAngle);
+  ControllerArray[PR2::ARM_R_WRIST_ROLL]->SetPosCmd(this->rightarm.wristRollAngle);
+
+  //Mark that we've consumed the right arm message
+  newRightArmPos=false; 
+}
+
+void
+RosGazeboNode::UpdateLeftArm(){
+  ControllerArray[PR2::ARM_L_PAN]->SetPosCmd(this->leftarm.turretAngle); 
+  ControllerArray[PR2::ARM_L_SHOULDER_PITCH]->SetPosCmd(this->leftarm.shoulderLiftAngle);
+  ControllerArray[PR2::ARM_L_SHOULDER_ROLL]->SetPosCmd(this->leftarm.upperarmRollAngle);
+  ControllerArray[PR2::ARM_L_ELBOW_PITCH]->SetPosCmd(this->leftarm.elbowAngle);
+  ControllerArray[PR2::ARM_L_ELBOW_ROLL]->SetPosCmd(this->leftarm.forearmRollAngle);
+  ControllerArray[PR2::ARM_L_WRIST_PITCH]->SetPosCmd(this->leftarm.wristPitchAngle);
+  ControllerArray[PR2::ARM_L_WRIST_ROLL]->SetPosCmd(this->leftarm.wristRollAngle);
+
+  //Mark that we've consumed the left arm message
+  newLeftArmPos = false;
+}
+
+void
 RosGazeboNode::Update()
 {
   this->lock.lock();
@@ -265,6 +308,15 @@ RosGazeboNode::Update()
   uint32_t intensities_size;
   uint32_t intensities_alloc_size;
   std_msgs::Point3DFloat32 tmp_cloud_pt;
+
+  /***************************************************************/
+  /*                                                             */
+  /*  Arm Updates                                                */
+  /*                                                             */
+  /***************************************************************/
+  if(newLeftArmPos)UpdateLeftArm();
+  if(newRightArmPos)UpdateRightArm();
+  
 
   /***************************************************************/
   /*                                                             */
@@ -505,8 +557,9 @@ RosGazeboNode::Update()
 
   double position, velocity;
   std_msgs::PR2Arm larm, rarm;
-  
+  //NOTE: JointData structure deprecated in libpr2HW
   /* get left arm position */
+/*
   this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_L_PAN,            &position, &velocity);
   larm.turretAngle       = position;
   this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_L_SHOULDER_PITCH, &position, &velocity);
@@ -525,8 +578,9 @@ RosGazeboNode::Update()
   larm.gripperForceCmd   = velocity;
   larm.gripperGapCmd     = position;
   publish("left_pr2arm_pos", larm);
-  
+ */ 
   /* get left arm position */
+/*
   this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_R_PAN,            &position, &velocity);
   rarm.turretAngle       = position;
   this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_R_SHOULDER_PITCH, &position, &velocity);
@@ -545,7 +599,7 @@ RosGazeboNode::Update()
   rarm.gripperForceCmd   = velocity;
   rarm.gripperGapCmd     = position;
   publish("right_pr2arm_pos", rarm);
-  
+ */ 
 
   //  this->arm.turretAngle          = 0.0;
   //  this->arm.shoulderLiftAngle    = 0.0;
