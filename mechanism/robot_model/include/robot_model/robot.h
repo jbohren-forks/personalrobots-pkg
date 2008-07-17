@@ -38,8 +38,8 @@
 namespace mechanism {
   class Robot{
     public:
-    Robot(char *ns);
-    ~Robot();
+    Robot(char *ns){};
+    ~Robot(){};
     char *name;
     Link *link;
     int numLinks;

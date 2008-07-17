@@ -66,7 +66,7 @@ namespace mechanism {
 
      double motorTorqueConstant;
 
-     double ticksPerRadian;
+     double pulsesPerRevolution;
 
      void propagatePosition();
 

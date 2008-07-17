@@ -10,6 +10,7 @@
 <depend package="hw_interface"/>
 <depend package="robot_model"/>
 <depend package="pr2Controllers"/>
+<depend package="etherdrive_hardware"/>
 
 <export>
   <cpp cflags="-I${prefix}/include"/>

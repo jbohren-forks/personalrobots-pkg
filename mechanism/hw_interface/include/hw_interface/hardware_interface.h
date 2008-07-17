@@ -42,7 +42,7 @@ class ActuatorState{
       numEncoderErrors = 0;
     }
   int encoderCount;
-  int timestamp;
+  double timestamp;
   double encoderVelocity;
   bool calibrationReading;
   int lastCalibrationHighTransition;

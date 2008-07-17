@@ -60,13 +60,15 @@ class MechanismControl{
 
   void Init();
 
+  BaseController *controller;
+
+  //JointController *controller;
+
   private:
 
 //map<const char *, ControllerAllocationFunc> controllerLibrary;
 
 //Controller *controller[MAX_NUM_CONTROLLERS];
-
-  BaseController *controller;
 
 //ros::thread::mutex controllerListMutex;
 

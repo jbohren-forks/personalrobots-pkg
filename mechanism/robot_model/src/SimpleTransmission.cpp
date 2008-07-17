@@ -28,24 +28,30 @@
 // Simple transmission implementation
 #include <robot_model/transmission.h>
 #include <robot_model/joint.h>
+#include <math.h>
+#include <stdio.h>
 
 using namespace mechanism;
 
-SimpleTransmission::SimpleTransmission(Joint *joint, Actuator *actuator, double mechanicalReduction, double motorTorqueConstant, double ticksPerRadian)
+SimpleTransmission::SimpleTransmission(Joint *joint, Actuator *actuator, double mechanicalReduction, double motorTorqueConstant, double pulsesPerRevolution)
 {
   this->joint = joint;
   this->actuator = actuator;
   this->mechanicalReduction = mechanicalReduction;
   this->motorTorqueConstant = motorTorqueConstant;
-  this->ticksPerRadian = ticksPerRadian;
+  this->pulsesPerRevolution = pulsesPerRevolution;
 }
 
 
 void SimpleTransmission::propagatePosition(){
-  this->joint->position = ((double)this->actuator->state.encoderCount)/this->ticksPerRadian;
+  this->joint->position = ((double)this->actuator->state.encoderCount*2*M_PI)/(pulsesPerRevolution * mechanicalReduction);
+  this->joint->velocity = ((double)this->actuator->state.encoderVelocity*2*M_PI)/(pulsesPerRevolution * mechanicalReduction); 
    this->joint->appliedEffort = this->actuator->state.lastMeasuredCurrent * (motorTorqueConstant * mechanicalReduction);
 }
 
 void SimpleTransmission::propagateEffort(){
    this->actuator->command.current = this->joint->commandedEffort/(motorTorqueConstant * mechanicalReduction);
+#ifdef DEBUG
+   printf("Transmission:: %f , %f\n",this->joint->commandedEffort, this->actuator->command.current);
+#endif
 }
