@@ -2,6 +2,7 @@
   <description brief="A set of collision spaces">
     A set of robot models that can do collision checking
   </description>
+
   <author>Ioan Sucan/isucan@willowgarage.com</author>
   <license>BSD</license>
 
