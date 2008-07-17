@@ -37,6 +37,9 @@
 #include <pr2Controllers/LaserScannerController.h>
 #include <pr2Controllers/GripperController.h>
 
+// hardware
+#include <gazebo_hardware/gazebo_hardware.h>
+
 // roscpp
 #include <ros/node.h>
 
@@ -123,81 +126,81 @@ main(int argc, char** argv)
                       };  // 0 for head, 1 for caster+arm
   //int numJointsLookUp[]   ={7, 28};  // joints per actuator array
   int portLookUp[] = {    // the way joints are listed in pr2.model
-      CASTER_FL_STEER     ,
-      CASTER_FL_DRIVE_L   ,
-      CASTER_FL_DRIVE_R   ,
-      CASTER_FR_STEER     ,
-      CASTER_FR_DRIVE_L   ,
-      CASTER_FR_DRIVE_R   ,
-      CASTER_RL_STEER     ,
-      CASTER_RL_DRIVE_L   ,
-      CASTER_RL_DRIVE_R   ,
-      CASTER_RR_STEER     ,
-      CASTER_RR_DRIVE_L   ,
-      CASTER_RR_DRIVE_R   ,
-      SPINE_ELEVATOR      ,
-      ARM_L_PAN           ,
-      ARM_L_SHOULDER_PITCH,
-      ARM_L_SHOULDER_ROLL ,
-      ARM_L_ELBOW_PITCH   ,
-      ARM_L_ELBOW_ROLL    ,
-      ARM_L_WRIST_PITCH   ,
-      ARM_L_WRIST_ROLL    ,
-      ARM_R_PAN           ,
-      ARM_R_SHOULDER_PITCH,
-      ARM_R_SHOULDER_ROLL ,
-      ARM_R_ELBOW_PITCH   ,
-      ARM_R_ELBOW_ROLL    ,
-      ARM_R_WRIST_PITCH   ,
-      ARM_R_WRIST_ROLL    ,
-      ARM_L_GRIPPER      - ARM_L_GRIPPER ,
-      ARM_R_GRIPPER      - ARM_L_GRIPPER ,
-      HEAD_YAW           - HEAD_YAW ,
-      HEAD_PITCH         - HEAD_YAW ,
-      HEAD_LASER_PITCH   - HEAD_YAW ,
-      HEAD_PTZ_L_PAN     - HEAD_YAW ,
-      HEAD_PTZ_L_TILT    - HEAD_YAW ,
-      HEAD_PTZ_R_PAN     - HEAD_YAW ,
-      HEAD_PTZ_R_TILT    - HEAD_YAW };
+      PR2::CASTER_FL_STEER     ,
+      PR2::CASTER_FL_DRIVE_L   ,
+      PR2::CASTER_FL_DRIVE_R   ,
+      PR2::CASTER_FR_STEER     ,
+      PR2::CASTER_FR_DRIVE_L   ,
+      PR2::CASTER_FR_DRIVE_R   ,
+      PR2::CASTER_RL_STEER     ,
+      PR2::CASTER_RL_DRIVE_L   ,
+      PR2::CASTER_RL_DRIVE_R   ,
+      PR2::CASTER_RR_STEER     ,
+      PR2::CASTER_RR_DRIVE_L   ,
+      PR2::CASTER_RR_DRIVE_R   ,
+      PR2::SPINE_ELEVATOR      ,
+      PR2::ARM_L_PAN           ,
+      PR2::ARM_L_SHOULDER_PITCH,
+      PR2::ARM_L_SHOULDER_ROLL ,
+      PR2::ARM_L_ELBOW_PITCH   ,
+      PR2::ARM_L_ELBOW_ROLL    ,
+      PR2::ARM_L_WRIST_PITCH   ,
+      PR2::ARM_L_WRIST_ROLL    ,
+      PR2::ARM_R_PAN           ,
+      PR2::ARM_R_SHOULDER_PITCH,
+      PR2::ARM_R_SHOULDER_ROLL ,
+      PR2::ARM_R_ELBOW_PITCH   ,
+      PR2::ARM_R_ELBOW_ROLL    ,
+      PR2::ARM_R_WRIST_PITCH   ,
+      PR2::ARM_R_WRIST_ROLL    ,
+      PR2::ARM_L_GRIPPER      - PR2::ARM_L_GRIPPER ,
+      PR2::ARM_R_GRIPPER      - PR2::ARM_L_GRIPPER ,
+      PR2::HEAD_YAW           - PR2::HEAD_YAW ,
+      PR2::HEAD_PITCH         - PR2::HEAD_YAW ,
+      PR2::HEAD_LASER_PITCH   - PR2::HEAD_YAW ,
+      PR2::HEAD_PTZ_L_PAN     - PR2::HEAD_YAW ,
+      PR2::HEAD_PTZ_L_TILT    - PR2::HEAD_YAW ,
+      PR2::HEAD_PTZ_R_PAN     - PR2::HEAD_YAW ,
+      PR2::HEAD_PTZ_R_TILT    - PR2::HEAD_YAW };
 
   
   int jointId[]    = {    // numbering system
-      CASTER_FL_STEER     ,
-      CASTER_FL_DRIVE_L   ,
-      CASTER_FL_DRIVE_R   ,
-      CASTER_FR_STEER     ,
-      CASTER_FR_DRIVE_L   ,
-      CASTER_FR_DRIVE_R   ,
-      CASTER_RL_STEER     ,
-      CASTER_RL_DRIVE_L   ,
-      CASTER_RL_DRIVE_R   ,
-      CASTER_RR_STEER     ,
-      CASTER_RR_DRIVE_L   ,
-      CASTER_RR_DRIVE_R   ,
-      SPINE_ELEVATOR      ,
-      ARM_L_PAN           ,
-      ARM_L_SHOULDER_PITCH,
-      ARM_L_SHOULDER_ROLL ,
-      ARM_L_ELBOW_PITCH   ,
-      ARM_L_ELBOW_ROLL    ,
-      ARM_L_WRIST_PITCH   ,
-      ARM_L_WRIST_ROLL    ,
-      ARM_R_PAN           ,
-      ARM_R_SHOULDER_PITCH,
-      ARM_R_SHOULDER_ROLL ,
-      ARM_R_ELBOW_PITCH   ,
-      ARM_R_ELBOW_ROLL    ,
-      ARM_R_WRIST_PITCH   ,
-      ARM_R_WRIST_ROLL    ,
-      ARM_L_GRIPPER       ,
-      ARM_R_GRIPPER       ,
-      HEAD_YAW            ,
-      HEAD_PITCH          ,
-      HEAD_LASER_PITCH    ,
-      HEAD_PTZ_L_PAN      ,
-      HEAD_PTZ_L_TILT     ,
-      HEAD_PTZ_R_PAN      ,
-      HEAD_PTZ_R_TILT     };
+      PR2::CASTER_FL_STEER     ,
+      PR2::CASTER_FL_DRIVE_L   ,
+      PR2::CASTER_FL_DRIVE_R   ,
+      PR2::CASTER_FR_STEER     ,
+      PR2::CASTER_FR_DRIVE_L   ,
+      PR2::CASTER_FR_DRIVE_R   ,
+      PR2::CASTER_RL_STEER     ,
+      PR2::CASTER_RL_DRIVE_L   ,
+      PR2::CASTER_RL_DRIVE_R   ,
+      PR2::CASTER_RR_STEER     ,
+      PR2::CASTER_RR_DRIVE_L   ,
+      PR2::CASTER_RR_DRIVE_R   ,
+      PR2::SPINE_ELEVATOR      ,
+      PR2::ARM_L_PAN           ,
+      PR2::ARM_L_SHOULDER_PITCH,
+      PR2::ARM_L_SHOULDER_ROLL ,
+      PR2::ARM_L_ELBOW_PITCH   ,
+      PR2::ARM_L_ELBOW_ROLL    ,
+      PR2::ARM_L_WRIST_PITCH   ,
+      PR2::ARM_L_WRIST_ROLL    ,
+      PR2::ARM_R_PAN           ,
+      PR2::ARM_R_SHOULDER_PITCH,
+      PR2::ARM_R_SHOULDER_ROLL ,
+      PR2::ARM_R_ELBOW_PITCH   ,
+      PR2::ARM_R_ELBOW_ROLL    ,
+      PR2::ARM_R_WRIST_PITCH   ,
+      PR2::ARM_R_WRIST_ROLL    ,
+      PR2::ARM_L_GRIPPER       ,
+      PR2::ARM_R_GRIPPER       ,
+      PR2::HEAD_YAW            ,
+      PR2::HEAD_PITCH          ,
+      PR2::HEAD_LASER_PITCH    ,
+      PR2::HEAD_PTZ_L_PAN      ,
+      PR2::HEAD_PTZ_L_TILT     ,
+      PR2::HEAD_PTZ_R_PAN      ,
+      PR2::HEAD_PTZ_R_TILT     };
 
   string etherIP[] = {"10.12.0.103"};
   string hostIP[]  = {"10.12.0.2  "};
@@ -222,7 +225,7 @@ main(int argc, char** argv)
   CONTROLLER::GripperController      myGripper;
 
   CONTROLLER::JointController        *jc =new CONTROLLER::JointController(); //Test jointController
-  jc.Init(1000,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,1000,-1000,1000,JointArray[PR2::ARM_L_SHOULDER_PITCH]);
+  jc->Init(1000,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,1000,-1000,1000,JointArray[PR2::ARM_L_SHOULDER_PITCH]);
   //void JointController::Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint) {
   // std::cout<<"****************"<<jc.SetTorqueCmd(-500.0)<<std::endl;
   // std::cout<<"****************"<<jc.SetPosCmd(0.0)<<std::endl;
@@ -303,7 +306,7 @@ main(int argc, char** argv)
     myLaserScanner.Update();
     myGripper.Update();
     */
-      jc.Update();
+      jc->Update();
 
     // jc.GetTorqueCmd(&torque);
     //   std::cout<<"*"<<torque<<std::endl;
