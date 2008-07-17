@@ -1,7 +1,7 @@
 <package>
-<description brief='API for baic PR2 Hardware controls'>
+<description brief='API for basic PR2 Hardware controls'>
 
-An API for baic PR2 Hardware controls: enable, disable, set gains, PD controllers, talk to hardware via UpdateGZ() call.
+An API for baic PR2 Hardware controls: enable, disable, set gains, PD controllers, talk to hardware via UpdateHW() call.
 
 </description>
 <author>Sachin Chitta</author>
@@ -11,8 +11,9 @@ An API for baic PR2 Hardware controls: enable, disable, set gains, PD controller
 <depend package="gazebo"/>
 <depend package="pr2Core"/>
 <depend package="libKinematics"/>
+<depend package="robot_model"/>
 <export>
-<cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lpr2GZ"/>
+<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lpr2HW"/>
 </export>
 </package>
 
