@@ -46,6 +46,7 @@ using namespace std;
 #include <string>
 
 #define GAZEBO_CURRENT_TO_CMD 1.0
+#define MAX_NUM_ACTUATORS 1000
 
 class GazeboHardware{
   /*! \class 

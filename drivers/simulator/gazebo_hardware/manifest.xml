@@ -6,6 +6,7 @@ This package interfaces to the gazebo simulated robot
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
 <depend package='gazebo'/>
+<depend package='pr2Core'/>
 <depend package='hw_interface'/>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lgazebo_hardware -Wl,-rpath,${prefix}/lib"/>
