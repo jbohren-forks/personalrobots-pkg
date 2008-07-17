@@ -22,21 +22,20 @@ LaserScannerController::~LaserScannerController( )
 	if(profileX!=NULL) delete[] profileX;
 	if(profileT!=NULL) delete[] profileT;
 
-  delete lowerControl;
 }
 
 /*
 LaserScannerController::LaserScannerController(Joint* joint, std::string name);
 	//Pass in joint* when we get it
-	lowerControl->Init(joint,name);
+	lowerControl.Init(joint,name);
   this->name = name;
 	//Set gains
 	
 	// Set control mode 
-	lowerControl->SetMode(CONTROLLER_POSITION);
+	lowerControl.SetMode(CONTROLLER_POSITION);
 	
 	//Enable controller
-	//lowerControl->EnableController();
+	//lowerControl.EnableController();
 	
 	
 }
@@ -53,8 +52,7 @@ void LaserScannerController::Init(double PGain, double IGain, double DGain, doub
   }
   else newMode = mode;
 
-  lowerControl = new JointController();
-  lowerControl->Init(PGain,IGain,DGain,IMax,IMin,mode,time,maxPositiveTorque,maxNegativeTorque,maxEffort,joint);
+  lowerControl.Init(PGain,IGain,DGain,IMax,IMin,mode,time,maxPositiveTorque,maxNegativeTorque,maxEffort,joint);
 
   EnableController();
 }
@@ -164,10 +162,10 @@ void LaserScannerController::SetMode(CONTROLLER_CONTROL_MODE mode){
 
   //Want the lower level controller to be set to position control if we're providing an automatic profile
   if(mode==CONTROLLER_AUTOMATIC) {
-    lowerControl->SetMode(CONTROLLER_POSITION);
+    lowerControl.SetMode(CONTROLLER_POSITION);
   }
   else{
-    lowerControl->SetMode(mode);
+    lowerControl.SetMode(mode);
   }
 }
 
@@ -180,18 +178,18 @@ CONTROLLER_CONTROL_MODE LaserScannerController::GetMode(void){
 //Allow controller to function
 void LaserScannerController::EnableController(){
   enabled = true;
-  lowerControl->EnableController();
+  lowerControl.EnableController();
 }
 
 //Disable functioning. Set joint torque to zero.
 void LaserScannerController::DisableController(){
   enabled = false;
-  lowerControl->DisableController();   
+  lowerControl.DisableController();   
 }
 
 //Check for saturation of last command
 bool LaserScannerController::CheckForSaturation(void){ 
-  return lowerControl->CheckForSaturation();
+  return lowerControl.CheckForSaturation();
 }
 
 
@@ -204,7 +202,7 @@ CONTROLLER_ERROR_CODE LaserScannerController::SetTorqueCmd(double torque){
 	if(controlMode != CONTROLLER_TORQUE)  //Make sure we're in torque command mode
 	return CONTROLLER_MODE_ERROR;
 	
-  return lowerControl->SetTorqueCmd(torque);
+  return lowerControl.SetTorqueCmd(torque);
   }
 
 //Return current torque command
@@ -219,7 +217,7 @@ LaserScannerController::GetTorqueCmd(double *torque)
 CONTROLLER_ERROR_CODE
 LaserScannerController::GetTorqueAct(double *torque)
 {
-	return lowerControl->GetTorqueAct(torque);
+	return lowerControl.GetTorqueAct(torque);
 }
 
 //---------------------------------------------------------------------------------//
@@ -232,7 +230,7 @@ CONTROLLER_ERROR_CODE LaserScannerController::SetPosCmd(double pos)
 	if(controlMode != CONTROLLER_POSITION)  //Make sure we're in position command mode
 	return CONTROLLER_MODE_ERROR;
 	
-  return lowerControl->SetPosCmd(pos);
+  return lowerControl.SetPosCmd(pos);
 
 	
 }
@@ -247,7 +245,7 @@ CONTROLLER_ERROR_CODE LaserScannerController::GetPosCmd(double *pos)
 //Query the joint for the actual position
 CONTROLLER_ERROR_CODE LaserScannerController::GetPosAct(double *pos)
 {
-  return	lowerControl->GetPosAct(pos);
+  return	lowerControl.GetPosAct(pos);
 }
 
  
@@ -260,19 +258,19 @@ CONTROLLER_ERROR_CODE LaserScannerController::SetVelCmd(double vel)
 	if( controlMode != CONTROLLER_VELOCITY)  //Make sure we're in velocity command mode
 	return CONTROLLER_MODE_ERROR;
 
-  return  lowerControl->SetVelCmd(vel);
+  return  lowerControl.SetVelCmd(vel);
 }
 
 //Return the internally stored commanded velocity
 CONTROLLER_ERROR_CODE LaserScannerController::GetVelCmd(double *vel)
 {
-  return lowerControl->GetVelCmd(vel);
+  return lowerControl.GetVelCmd(vel);
 }
 
 //Query our joint for velocity
 CONTROLLER_ERROR_CODE LaserScannerController::GetVelAct(double *vel)
 {
-//	lowerControl->GetVelAct(vel);
+//	lowerControl.GetVelAct(vel);
 	return CONTROLLER_ALL_OK;
 }
       
@@ -284,11 +282,11 @@ void LaserScannerController::Update( )
 {
   if(!enabled) return; //Check for enabled
  /* 	double currentTime;
-	lowerControl->GetTime(&currentTime);
+	lowerControl.GetTime(&currentTime);
 	//Check for automatic scan mode
 	if(controlMode == CONTROLLER_AUTOMATIC){
 		if(currentTime-lastCycleStart > profileT[profileIndex]){ //Check to see whether it's time for a new setpoint
-			lowerControl->SetPosCmd(profileX[profileIndex]); 
+			lowerControl.SetPosCmd(profileX[profileIndex]); 
 			
 			//Advance time index. Reset if necessary
 			if(profileIndex == profileLength-1){
@@ -302,7 +300,7 @@ void LaserScannerController::Update( )
 	*/
 
     if(controlMode == CONTROLLER_AUTOMATIC){
-			lowerControl->SetPosCmd(profileX[profileIndex]);
+			lowerControl.SetPosCmd(profileX[profileIndex]);
       //Every x calls, advance profile Index
       if(counter==1000){ //Hardcoded for now...
        counter = 0;			
@@ -320,11 +318,11 @@ void LaserScannerController::Update( )
   /*
   double torque;
   //Print torque
-  lowerControl->GetTorqueCmd(&torque);
+  lowerControl.GetTorqueCmd(&torque);
   std::cout<<"Torque:"<<torque<<std::endl;
  //Instruct lower level controller to update
  */
-	lowerControl->Update();
+	lowerControl.Update();
 
 }
 

@@ -284,7 +284,7 @@ namespace CONTROLLER
 
       double lastCycleStart; //**<Start of the last cycle>*/      
 
-      JointController*  lowerControl; /**< Lower level control done by JointController>*/
+      JointController  lowerControl; /**< Lower level control done by JointController>*/
 
       double cmdPos; /**<Last commanded position>*/
       double cmdVel; /**<Last commanded velocity>*/
