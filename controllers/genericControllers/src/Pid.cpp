@@ -55,7 +55,6 @@ Pid::~Pid( )
 
 void Pid::InitPid( double P,double I, double D, double I1, double I2 )
 {
-
   pGain       = P;
   iGain       = I;
   dGain       = D;
@@ -95,6 +94,8 @@ double Pid::UpdatePid( double pError, double dt )
     // calculate integral contribution to command
     iTerm = iGain * iError;
 
+    //    printf("Pid.cpp:: %f, %f, %f, %f, %f\n",iTerm,iGain,iError,iMax,iMin);
+
     // CALCULATE DERIVATIVE ERROR
     if (dt != 0)
     {
@@ -107,10 +108,8 @@ double Pid::UpdatePid( double pError, double dt )
     dTerm = dGain * dError;
 
     // create current command value
-    currentCmd = pTerm + iTerm - dTerm;
-
+    currentCmd = -pTerm -iTerm -dTerm;
   }
-
   return currentCmd;
 }
 

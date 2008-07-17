@@ -35,6 +35,8 @@
 #include <genericControllers/JointController.h>
 #include <iostream>
 #include <sys/time.h>
+
+#define DEBUG 1
 //Todo: 
 //1. Get and set params via server
 //2. Integrate Joint and robot objects
@@ -70,7 +72,7 @@ JointController::~JointController( )
 void JointController::Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint, double dt) {
   //Instantiate PID class
   pidController.InitPid(PGain,IGain,DGain,IMax,IMin); //Constructor for pid controller  
-
+  //  printf("JointController:: %f, %f\n",IMax,IMin); 
   //Set commands to zero
   cmdTorque = 0;
   cmdPos = 0;
@@ -148,7 +150,7 @@ void JointController::GetTime(double *time){
 
   struct timeval t;
   gettimeofday( &t, 0);
-  *time =  (double) (t.tv_usec *1e-6 + t.tv_sec);
+  *time = ((double)t.tv_usec*1e-6 + (double) t.tv_sec);
 
 //  return PR2::PR2_ALL_OK;
 //  return(myPR2->hw.GetSimTime(time));
@@ -272,7 +274,7 @@ CONTROLLER::CONTROLLER_ERROR_CODE JointController::GetPosAct(double *pos)
 //Check mode, then set the commanded velocity
 CONTROLLER_ERROR_CODE JointController::SetVelCmd(double vel)
 {
-  if(controlMode == CONTROLLER_VELOCITY){ //Make sure we're in velocity command mode
+  if(controlMode == CONTROLLER_VELOCITY || controlMode == ETHERDRIVE_SPEED){ //Make sure we're in velocity command mode
     cmdVel = vel;  
     return CONTROLLER_CMD_SET;
   }
@@ -292,32 +294,37 @@ CONTROLLER::CONTROLLER_ERROR_CODE JointController::GetVelAct(double *vel)
   *vel = joint->velocity;
   return CONTROLLER::CONTROLLER_ALL_OK; 
 }
-//---------------------------------------------------------------------------------//
-//UPDATE CALLS
-//---------------------------------------------------------------------------------//
+
+
 void JointController::Update(void)
 {
   double error(0),time(0),currentTorqueCmd(0);
   if(controlMode==CONTROLLER::CONTROLLER_DISABLED)return; //If we're not initialized, don't try to interact
 
   GetTime(&time); //TODO: Replace time with joint->timeStep
+
+
+  double  currentVoltageCmd,v_backemf, v_clamp_min,v_clamp_max,k;      
+
+
   switch (controlMode)
-  {
+    {
     case CONTROLLER_TORQUE: //Pass through torque command
       currentTorqueCmd = cmdTorque;
       break;
     case CONTROLLER_POSITION: //Close the loop around position
       //ASSUME ROTARY JOINT FOR NOW
-      error = shortest_angular_distance(joint->position, cmdPos); 
-      currentTorqueCmd = pidController.UpdatePid(error,dt);
+      error = shortest_angular_distance(cmdPos, joint->position); 
+      currentTorqueCmd = pidController.UpdatePid(error,time-lastTime);
 #ifdef DEBUG
-     std::cout << "JC:: " << joint->position << " cmd:: " << cmdPos << "error:: " << error << "cTC:: " << currentTorqueCmd << std::endl; 
+      std::cout << "JC:: " << joint->position << ", cmdPos:: " << cmdPos << ", error:: " << error << ", cTC:: " << currentTorqueCmd << std::endl; 
 #endif
       break;
     case CONTROLLER_VELOCITY: //Close the loop around velocity
-      printf("vel. control \n");
-      error = cmdVel-joint->velocity; 
+      error = joint->velocity - cmdVel;
       currentTorqueCmd = pidController.UpdatePid(error,time-lastTime);
+      // currentTorqueCmd = 0.5;
+      //      printf("JointController.cpp:: error:: %f, dT:: %f \n", error, time-lastTime);
       //idea how to limit the velocity near limit
       //disToMin = shortest_angular_distance(joint->position, joint->jointLimitMin);
       //disToMax = shortest_angular_distance(joint->position, joint->jointLimitMax);
@@ -327,6 +334,26 @@ void JointController::Update(void)
       //  cmdVel=2*maxAcc*closestLimit;
       //}      
       break;
+    case ETHERDRIVE_SPEED: // Use hack to contol speed in voltage control mode for the etherdrive
+      printf("JC:: %f\n",cmdVel);
+      currentVoltageCmd = cmdVel*20*60/(136*2*M_PI); 
+      v_backemf = joint->velocity*20*60/(136*2*M_PI);
+
+      v_clamp_min = v_backemf - 3;// 0.655*16.7;      
+      v_clamp_max = v_backemf + 3;//0.655*16.7;
+
+      k = 1.0/ 36.0;
+
+      printf("JC::%f\t%f\t%f\n", v_clamp_min, currentVoltageCmd, v_clamp_max);
+
+      if (currentVoltageCmd > v_clamp_max)
+	currentVoltageCmd = v_clamp_max;
+
+      if (currentVoltageCmd < v_clamp_min)
+	currentVoltageCmd = v_clamp_min;
+
+      currentTorqueCmd = currentVoltageCmd * k; //Convert to match PWM conversion inside boards
+	break;
     default: //On error (no mode), set torque to zero
       currentTorqueCmd = 0; 
       //TODO:put somekind of error here for no mode
@@ -396,7 +423,7 @@ double JointController::SafelySetTorqueInternal(double torque)
 
   
   //Set torque command 
-  //  printf("JC::cE:: %f,%f\n",torque,newTorque);
+  printf("JC:: torque:: %f,%f\n",torque,newTorque);
   joint->commandedEffort = newTorque; 
   return newTorque;
 }
