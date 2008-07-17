@@ -236,29 +236,29 @@ void GazeboHardware::updateState(){
   for(int ii = 0; ii < numActuators; ii++)
     {
       hw->actuator[jointId[ii]].state.timestamp++;
-      if (IsGripperLeft((PR2::PR2_JOINT_ID)ii))
+      if (boardLookUp[ii] == 2)
       {
         pr2GripperLeftIface->Lock(1);
-        hw->actuator[jointId[ii]].state.encoderCount = 
+        hw->actuator[jointId[ii]].state.encoderCount = GAZEBO_POS_TO_ENCODER*(
           ( pr2GripperLeftIface->data->actualFingerPosition[0] - 0.015)  // FIXME: not debugged
-         +(-pr2GripperLeftIface->data->actualFingerPosition[1] + 0.015);
+         +(-pr2GripperLeftIface->data->actualFingerPosition[1] + 0.015)     );
         pr2GripperLeftIface->Unlock();
       }
-      else if (IsGripperRight((PR2::PR2_JOINT_ID)ii))
+      else if (boardLookUp[ii] == 3)
       {
         pr2GripperRightIface->Lock(1);
-        hw->actuator[jointId[ii]].state.encoderCount =
+        hw->actuator[jointId[ii]].state.encoderCount = GAZEBO_POS_TO_ENCODER*(
           ( pr2GripperRightIface->data->actualFingerPosition[0] - 0.015)  // FIXME: not debugged
-         +(-pr2GripperRightIface->data->actualFingerPosition[1] + 0.015);
+         +(-pr2GripperRightIface->data->actualFingerPosition[1] + 0.015)    );
         pr2GripperRightIface->Unlock();
       }
       else
       {
         edBoard[boardLookUp[ii]].Lock(1);
-        hw->actuator[jointId[ii]].state.encoderCount = edBoard[boardLookUp[ii]].data->actuators[portLookUp[ii]].actualPosition;
+        hw->actuator[jointId[ii]].state.encoderCount = GAZEBO_POS_TO_ENCODER*edBoard[boardLookUp[ii]].data->actuators[portLookUp[ii]].actualPosition;
         edBoard[boardLookUp[ii]].Unlock();
       }
-      printf("edh:: %d\n",hw->actuator[jointId[ii]].state.encoderCount);
+      fprintf(stderr,"edh:: %d\n",hw->actuator[jointId[ii]].state.encoderCount);
     }
 
 };
@@ -269,14 +269,14 @@ void GazeboHardware::sendCommand(){
     {
       if( hw->actuator[ii].command.enable){
         command = (GAZEBO_CURRENT_TO_CMD*hw->actuator[ii].command.current);
-        printf("command: %f\n", command);
-        if (IsGripperLeft((PR2::PR2_JOINT_ID)ii))
+        fprintf(stderr,"command: %f\n", command);
+        if (boardLookUp[ii] == 2)
         {
           pr2GripperLeftIface->Lock(1);
           pr2GripperLeftIface->data->cmdForce             = command;
           pr2GripperLeftIface->Unlock();
         }
-        else if (IsGripperRight((PR2::PR2_JOINT_ID)ii))
+        else if (boardLookUp[ii] == 3)
         {
           pr2GripperRightIface->Lock(1);
           pr2GripperRightIface->data->cmdForce            = command;
@@ -296,13 +296,13 @@ void GazeboHardware::setGains(int P, int I, int D, int W, int M, int Z)
 {
   for(int ii = 0; ii < numActuators; ii++)
   {
-    if (IsGripperLeft((PR2::PR2_JOINT_ID)ii))
+    if (boardLookUp[ii] == 2)
     {
       pr2GripperLeftIface->data->pGain     = P;
       pr2GripperLeftIface->data->iGain     = I;
       pr2GripperLeftIface->data->dGain     = D;
     }
-    else if (IsGripperRight((PR2::PR2_JOINT_ID)ii))
+    else if (boardLookUp[ii] == 3)
     {
       pr2GripperRightIface->data->pGain    = P;
       pr2GripperRightIface->data->iGain    = I;
@@ -323,13 +323,13 @@ void GazeboHardware::setControlMode(int controlMode)
 {
   for(int ii = 0; ii < numActuators; ii++)
   {
-    if (IsGripperLeft((PR2::PR2_JOINT_ID)ii))
+    if (boardLookUp[ii] == 2)
     {
       pr2GripperLeftIface->Lock(1);
       pr2GripperLeftIface->data->controlMode     = controlMode;
       pr2GripperLeftIface->Unlock();
     }
-    else if (IsGripperRight((PR2::PR2_JOINT_ID)ii))
+    else if (boardLookUp[ii] == 3)
     {
       pr2GripperRightIface->Lock(1);
       pr2GripperRightIface->data->controlMode    = controlMode;
@@ -348,13 +348,14 @@ void GazeboHardware::setMotorsOn(bool motorsOn)
 {
   for(int ii = 0; ii < numActuators; ii++)
   { 
-    if (IsGripperLeft((PR2::PR2_JOINT_ID)ii))
+    hw->actuator[ii].command.enable = true;
+    if (boardLookUp[ii] == 2)
     {
       pr2GripperLeftIface->Lock(1);
       pr2GripperLeftIface->data->cmdEnableMotor     = motorsOn;
       pr2GripperLeftIface->Unlock();
     }
-    else if (IsGripperRight((PR2::PR2_JOINT_ID)ii))
+    else if (boardLookUp[ii] == 3)
     {
       pr2GripperRightIface->Lock(1);
       pr2GripperRightIface->data->cmdEnableMotor    = motorsOn;
@@ -372,13 +373,13 @@ void GazeboHardware::setMotorsOn(bool motorsOn)
 void GazeboHardware::tick() {
   for(int ii = 0; ii < numActuators; ii++)
   {
-    if (IsGripperLeft((PR2::PR2_JOINT_ID)ii))
+    if (boardLookUp[ii] == 2)
     {
       //pr2GripperLeftIface->Lock(1);
       //pr2GripperLeftIface->data->cmdEnableMotor     = motorsOn;
       //pr2GripperLeftIface->Unlock();
     }
-    else if (IsGripperRight((PR2::PR2_JOINT_ID)ii))
+    else if (boardLookUp[ii] == 3)
     {
       //pr2GripperRightIface->Lock(1);
       //pr2GripperRightIface->data->cmdEnableMotor    = motorsOn;

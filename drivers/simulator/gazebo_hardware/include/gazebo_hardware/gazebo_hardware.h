@@ -46,6 +46,7 @@ using namespace std;
 #include <string>
 
 #define GAZEBO_CURRENT_TO_CMD 1.0
+#define GAZEBO_POS_TO_ENCODER 1000000.0
 #define MAX_NUM_ACTUATORS 1000
 
 class GazeboHardware{
