@@ -122,6 +122,8 @@ class EtherdriveHardware{
       ETHERDRIVE_VOLTAGE_MODE,
       ETHERDRIVE_CURRENT_MODE
    };
+
+   double GetTimeHardware();
 };
 
 #endif

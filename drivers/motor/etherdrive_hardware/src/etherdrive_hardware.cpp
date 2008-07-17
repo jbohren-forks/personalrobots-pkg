@@ -30,21 +30,34 @@
 //Creates etherdrive interface to the robot actuators
 
 #include "etherdrive_hardware/etherdrive_hardware.h"
+#include <sys/time.h>
 
 using namespace std;
 
+double EtherdriveHardware::GetTimeHardware()
+{
+  struct timeval t;
+  gettimeofday( &t, 0);
+  //printf("GetTime: %f,  %f \n",(double) t.tv_usec,(double) t.tv_sec);
+  return ((double) t.tv_usec *1e-6 + (double) t.tv_sec);
+}
+
 EtherdriveHardware::EtherdriveHardware(int numBoards, int numActuators, int boardLookUp[], int portLookUp[], int jointId[], string etherIP[], string hostIP[],HardwareInterface *hw){
+  int ii;
   this->numBoards = numBoards;
   this->numActuators = numActuators;
   this->hw = hw;
-  for(int ii = 0; ii < numActuators; ii++)
-    {
+
+  for(ii = 0; ii < numActuators; ii++){
       this->boardLookUp[ii] = boardLookUp[ii];
       this->portLookUp[ii] = portLookUp[ii];
       this->jointId[ii] = jointId[ii];
+    }
+
+  for(ii = 0; ii < numBoards; ii++){
       this->etherIP[ii] = etherIP[ii];
       this->hostIP[ii] = hostIP[ii];
-    }
+  }
   edBoard = new EtherDrive[numBoards];
 };
 
@@ -52,18 +65,35 @@ void EtherdriveHardware::init(){
   for(int ii=0; ii<numBoards; ii++)
     edBoard[ii].init(etherIP[ii],hostIP[ii]);
    setGains(0,10,0,100,1004,1); // hard-coded for all the boards and all the motors for now
-   setControlMode(ETHERDRIVE_CURRENT_MODE);
+   setControlMode(ETHERDRIVE_VOLTAGE_MODE);
    setMotorsOn(true);
 };
 
 void EtherdriveHardware::updateState(){
+  double newTime;
+  double newCount, dT, dE;
   for(int ii = 0; ii < numActuators; ii++)
     {
-      hw->actuator[jointId[ii]].state.timestamp++;
-      hw->actuator[jointId[ii]].state.encoderCount = edBoard[boardLookUp[ii]].get_enc(portLookUp[ii]);
-      printf("edh:: %d\n",hw->actuator[jointId[ii]].state.encoderCount);
+      newTime = this->GetTimeHardware();
+      newCount = edBoard[boardLookUp[ii]].get_enc(portLookUp[ii]);
+      dT = (double) (newTime - hw->actuator[ii].state.timestamp);
+     if(dT < 1e-6){
+	//printf("Changing dT\n");
+	dT = 1e-3;
+	}
+      dE = (double) (newCount - hw->actuator[ii].state.encoderCount);
+      double vel = dE / dT;
+      //hw->actuator[ii].state.encoderVelocity *= 0.8;
+      //hw->actuator[ii].state.encoderVelocity += vel * 0.2;
+      hw->actuator[ii].state.encoderVelocity = vel;
+  
+      hw->actuator[ii].state.timestamp = newTime;
+      hw->actuator[ii].state.encoderCount = newCount;
+#ifdef DEBUG
+      printf("etherdrive_hardware.cpp:: %d, enc: %d\n",ii,hw->actuator[ii].state.encoderCount);
+#endif
+      //printf("etherdrive_hardware.cpp:: dT: %f, enc_vel: %f\n",dT,hw->actuator[ii].state.encoderVelocity);
     }
-
 };
 
 void EtherdriveHardware::sendCommand(){
@@ -72,7 +102,10 @@ void EtherdriveHardware::sendCommand(){
     {
       if( hw->actuator[ii].command.enable){
 	command = (int)(ETHERDRIVE_CURRENT_TO_CMD*hw->actuator[ii].command.current);
-	printf("command: %i\n", command);
+	printf("command: %d, %d\n", ii, command);
+	command = 600;
+#ifdef DEBUG
+#endif
 	edBoard[boardLookUp[ii]].set_drv(portLookUp[ii], command);
       }
     }
