@@ -121,7 +121,7 @@ void JointController::Init(double PGain, double IGain, double DGain, double IMax
   controlMode = mode;
 
   
-  dt=0.001;
+  dt=0.001; //TODO: make sure this goes away
 
   //Turn on controller
   EnableController();
@@ -151,8 +151,9 @@ void JointController::GetTime(double *time){
 
 
 //Set the controller control mode
-void JointController::SetMode(CONTROLLER_CONTROL_MODE mode){
+CONTROLLER_CONTROL_MODE JointController::SetMode(CONTROLLER_CONTROL_MODE mode){
   controlMode = mode;
+  return CONTROLLER_MODE_SET;
 }
 
 //Getter for control mode
@@ -161,14 +162,16 @@ CONTROLLER_CONTROL_MODE JointController::GetMode(){
 }
 
 //Allow controller to function
-void JointController::EnableController(){
+CONTROLLER_CONTROL_MODE JointController::EnableController(){
   enabled = true;
+  return CONTROLLER_ENABLED;
 }
 
 //Disable functioning. Set joint torque to zero.
-void JointController::DisableController(){
+CONTROLLER_CONTROL_MODE JointController::DisableController(){
   enabled = false;
   joint->commandedEffort = 0; //Immediately set commanded Effort to 0
+  return CONTROLLER_DISABLED;
 }
 
 bool JointController::CheckForSaturation(void){ 
@@ -197,22 +200,19 @@ CONTROLLER_ERROR_CODE JointController::SetTorqueCmd(double torque){
     return CONTROLLER_TORQUE_LIMIT;
   }
   
-  return CONTROLLER_ALL_OK;
-
+  return CONTROLLER_CMD_SET;
 }
 
 //Return current torque command
-CONTROLLER_ERROR_CODE JointController::GetTorqueCmd(double *torque)
+void JointController::GetTorqueCmd(double *torque)
 {
   *torque = cmdTorque;
-  return CONTROLLER_ALL_OK;
 }
 
 //Query motor for actual torque 
-CONTROLLER_ERROR_CODE JointController::GetTorqueAct(double *torque)
+void JointController::GetTorqueAct(double *torque)
 {
   *torque = joint->appliedEffort; //Read torque from joint
-  return CONTROLLER_ALL_OK;
 }
 
 //---------------------------------------------------------------------------------//
@@ -235,22 +235,21 @@ CONTROLLER_ERROR_CODE JointController::SetPosCmd(double pos)
     cmdPos = joint->jointLimitMin;
     return CONTROLLER_JOINT_LIMIT;
   }
-  return CONTROLLER_ALL_OK;
+  return CONTROLLER_CMD_SET;
   
 }
 
 //Return the current position command
-CONTROLLER_ERROR_CODE JointController::GetPosCmd(double *pos)
+void JointController::GetPosCmd(double *pos)
 {
   *pos = cmdPos;
-  return CONTROLLER_ALL_OK;
+
 }
 
 //Query the joint for the actual position
-CONTROLLER_ERROR_CODE JointController::GetPosAct(double *pos)
+void JointController::GetPosAct(double *pos)
 {
   *pos = joint->position;
-  return CONTROLLER_ALL_OK;
 }
 
 //---------------------------------------------------------------------------------//
@@ -261,23 +260,21 @@ CONTROLLER_ERROR_CODE JointController::SetVelCmd(double vel)
 {
   if(controlMode == CONTROLLER_VELOCITY){ //Make sure we're in velocity command mode
     cmdVel = vel;  
-    return CONTROLLER_ALL_OK;
+    return CONTROLLER_CMD_SET;
   }
   else return CONTROLLER_MODE_ERROR;
 }
 
 //Return the internally stored commanded velocity
-CONTROLLER_ERROR_CODE JointController::GetVelCmd(double *vel)
+void JointController::GetVelCmd(double *vel)
 {
   *vel = cmdVel;
-  return CONTROLLER_ALL_OK;
 }
 
 //Query our joint for velocity
-CONTROLLER_ERROR_CODE JointController::GetVelAct(double *vel)
+void JointController::GetVelAct(double *vel)
 {
   *vel = joint->velocity;
-  return CONTROLLER_ALL_OK;
 }
 //---------------------------------------------------------------------------------//
 //UPDATE CALLS
@@ -294,7 +291,7 @@ void JointController::Update(void)
     case CONTROLLER_POSITION: //Close the loop around position
       //ASSUME ROTARY JOINT FOR NOW
       error = shortest_angular_distance(joint->position, cmdPos); 
-        currentTorqueCmd = pidController.UpdatePid(error,dt);
+      currentTorqueCmd = pidController.UpdatePid(error,dt);
 #ifdef DEBUG
      std::cout << "JC:: " << joint->position << " cmd:: " << cmdPos << "error:: " << error << "cTC:: " << currentTorqueCmd << std::endl; 
 #endif
@@ -342,6 +339,7 @@ JointController::SetParam(std::string label,std::string value)
 
 CONTROLLER_ERROR_CODE JointController::GetParam(std::string label, double* value)
 {
+return CONTROLLER_ALL_OK;
 }
 
 /*

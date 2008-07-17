@@ -152,7 +152,7 @@ namespace CONTROLLER
         * \brief Switches command mode type (Torque, position, velocity control)
         *  
         */
-      void SetMode(CONTROLLER::CONTROLLER_CONTROL_MODE mode);
+      CONTROLLER_CONTROL_MODE SetMode(CONTROLLER::CONTROLLER_CONTROL_MODE mode);
 
         /*!
         * \brief Returns the current mode of the controller
@@ -166,7 +166,7 @@ namespace CONTROLLER
         *  
         */
 
-      void EnableController();
+      CONTROLLER::CONTROLLER_CONTROL_MODE EnableController();
 
 
         /*!
@@ -175,7 +175,7 @@ namespace CONTROLLER
         *  
         */
 
-      void DisableController();
+      CONTROLLER::CONTROLLER_CONTROL_MODE DisableController();
 
         /*!
         * \brief Return true if last command saturated the torque 
@@ -202,14 +202,14 @@ namespace CONTROLLER
         * 
         * \param double* torque Pointer to value to change 
         */ 
-      CONTROLLER::CONTROLLER_ERROR_CODE GetTorqueCmd(double *torque);
+      void GetTorqueCmd(double *torque);
       
       /*!
         * \brief Get the actual torque of the joint motor.
         * 
         * \param double* torque Pointer to value to change
         */  
-      CONTROLLER::CONTROLLER_ERROR_CODE GetTorqueAct(double *torque);
+      void GetTorqueAct(double *torque);
 
 //---------------------------------------------------------------------------------//
 //POSITION CALLS
@@ -226,13 +226,13 @@ namespace CONTROLLER
         * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
         * \param double* pos Pointer to value to change
         */       
-      CONTROLLER::CONTROLLER_ERROR_CODE GetPosCmd(double *pos);
+      void GetPosCmd(double *pos);
       
       /*!
         * \brief Read the torque of the motor
         * \param double* pos Pointer to value to change
         */       
-      CONTROLLER::CONTROLLER_ERROR_CODE GetPosAct(double *pos);    
+      void GetPosAct(double *pos);    
 
 //---------------------------------------------------------------------------------//
 //VELOCITY CALLS
@@ -248,13 +248,13 @@ namespace CONTROLLER
         * \brief Get latest velocity command to the joint
         * \param double* vel Pointer to value to change
         */
-      CONTROLLER::CONTROLLER_ERROR_CODE GetVelCmd(double *vel);
+      void GetVelCmd(double *vel);
       
       /*!
         * \brief Get actual velocity of the joint
         * \param double* vel Pointer to value to change
         */
-      CONTROLLER::CONTROLLER_ERROR_CODE GetVelAct(double *vel);
+      void GetVelAct(double *vel);
 
 //---------------------------------------------------------------------------------//
 //UPDATE CALLS
