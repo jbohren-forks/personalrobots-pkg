@@ -2,15 +2,13 @@
 #include <gazebo_sensors/gazebo_sensors.h>
 
 using namespace gazebo;
-using namespace PR2;
 
 ////////////////////////////////////////////////////////////////////
 //                                                                //
 //  TODOS:                                                        //
 //                                                                //
 //    IMPLEMENT TIME STAMP IN THE MESSAGES RETURNED BY SENSORS    //
-//    CHECK TO SEE IF MULTIPLE INSTANCES OF CLIENT AND            //
-//    SIMULATIONIFACE IS OK                                       //
+//    CHECK TO SEE IF MULTIPLE INSTANCES OF CLIENT IS OK          //
 //                                                                //
 ////////////////////////////////////////////////////////////////////
 
@@ -42,7 +40,7 @@ GazeboSensors::~GazeboSensors()
 
 }
 
-PR2_ERROR_CODE GazeboSensors::Init()
+PR2::PR2_ERROR_CODE GazeboSensors::Init()
 {
   int serverId = 0;
 
@@ -161,17 +159,17 @@ PR2_ERROR_CODE GazeboSensors::Init()
   }
 
 
-  return PR2_ALL_OK;
+  return PR2::PR2_ALL_OK;
 };
 
 
-PR2_ERROR_CODE GazeboSensors::GetSimTime(double *sim_time)
+PR2::PR2_ERROR_CODE GazeboSensors::GetSimTime(double *sim_time)
 {
    *sim_time = simIface->data->simTime;
-   return PR2_ALL_OK;
+   return PR2::PR2_ALL_OK;
 };
 
-PR2_ERROR_CODE GazeboSensors::GetLaserRanges(PR2_SENSOR_ID id,
+PR2::PR2_ERROR_CODE GazeboSensors::GetLaserRanges(PR2::PR2_SENSOR_ID id,
     float* angle_min, float* angle_max, float* angle_increment,
     float* range_max,uint32_t* ranges_size     ,uint32_t* ranges_alloc_size,
                      uint32_t* intensities_size,uint32_t* intensities_alloc_size,
@@ -181,10 +179,10 @@ PR2_ERROR_CODE GazeboSensors::GetLaserRanges(PR2_SENSOR_ID id,
   gazebo::LaserIface       *tmpLaserIface;
   switch (id)
   {
-    case LASER_HEAD:
+    case PR2::LASER_HEAD:
       tmpLaserIface = pr2LaserIface;
       break;
-    case LASER_BASE:
+    case PR2::LASER_BASE:
       tmpLaserIface = pr2BaseLaserIface;
       break;
     default:
@@ -193,7 +191,7 @@ PR2_ERROR_CODE GazeboSensors::GetLaserRanges(PR2_SENSOR_ID id,
   }
   if (tmpLaserIface == NULL)
   {
-    return PR2_ERROR;
+    return PR2::PR2_ERROR;
   }
   else
   {
@@ -233,12 +231,12 @@ PR2_ERROR_CODE GazeboSensors::GetLaserRanges(PR2_SENSOR_ID id,
     }
     //std::cout << std::endl;
     tmpLaserIface->Unlock();
-    return PR2_ALL_OK;
+    return PR2::PR2_ALL_OK;
   }
 };
 
 
-PR2_ERROR_CODE GazeboSensors::GetCameraImage(PR2_SENSOR_ID id ,
+PR2::PR2_ERROR_CODE GazeboSensors::GetCameraImage(PR2::PR2_SENSOR_ID id ,
                      uint32_t*    width                 ,uint32_t*    height                ,
                      uint32_t*    depth                 ,
                      std::string* compression           ,std::string* colorspace            ,
@@ -247,13 +245,13 @@ PR2_ERROR_CODE GazeboSensors::GetCameraImage(PR2_SENSOR_ID id ,
 
     switch(id)
     {
-      case CAMERA_GLOBAL:
+      case PR2::CAMERA_GLOBAL:
           pr2CameraIface = pr2CameraGlobalIface;
           break;
-      case CAMERA_HEAD_LEFT:
+      case PR2::CAMERA_HEAD_LEFT:
           pr2CameraIface = pr2CameraHeadLeftIface;
           break;
-      case CAMERA_HEAD_RIGHT:
+      case PR2::CAMERA_HEAD_RIGHT:
           pr2CameraIface = pr2CameraHeadRightIface;
           break;
       default:
@@ -292,7 +290,7 @@ PR2_ERROR_CODE GazeboSensors::GetCameraImage(PR2_SENSOR_ID id ,
     }
     pr2CameraIface->Unlock();
 
-    return PR2_ALL_OK;
+    return PR2::PR2_ALL_OK;
 };
 
 
@@ -304,7 +302,7 @@ PR2_ERROR_CODE GazeboSensors::GetCameraImage(PR2_SENSOR_ID id ,
 /*                                                                                */
 /*                                                                                */
 /**********************************************************************************/
-PR2_ERROR_CODE GazeboSensors::GetWristPoseGroundTruth(PR2_MODEL_ID id, double *x, double *y, double *z, double *roll, double *pitch, double *yaw)
+PR2::PR2_ERROR_CODE GazeboSensors::GetWristPoseGroundTruth(PR2::PR2_MODEL_ID id, double *x, double *y, double *z, double *roll, double *pitch, double *yaw)
 {
    switch(id)
    {
@@ -335,13 +333,13 @@ PR2_ERROR_CODE GazeboSensors::GetWristPoseGroundTruth(PR2_MODEL_ID id, double *x
          *roll = 0;
          *pitch = 0;
          *yaw = 0;
-         return PR2_ERROR;
+         return PR2::PR2_ERROR;
    }
-   return PR2_ALL_OK;
+   return PR2::PR2_ALL_OK;
 };
 
 
-PR2_ERROR_CODE GazeboSensors::GetBasePositionGroundTruth(double* x, double* y, double *z, double *roll, double *pitch, double *yaw)
+PR2::PR2_ERROR_CODE GazeboSensors::GetBasePositionGroundTruth(double* x, double* y, double *z, double *roll, double *pitch, double *yaw)
 {
    pr2BaseIface->Lock(1);
    *x     = pr2BaseIface->data->pose.pos.x;
@@ -351,14 +349,14 @@ PR2_ERROR_CODE GazeboSensors::GetBasePositionGroundTruth(double* x, double* y, d
    *pitch = pr2BaseIface->data->pose.pitch;
    *yaw   = pr2BaseIface->data->pose.yaw;
    pr2BaseIface->Unlock();
-   return PR2_ALL_OK;
+   return PR2::PR2_ALL_OK;
 };
 
-PR2_ERROR_CODE GazeboSensors::ClientWait()
+PR2::PR2_ERROR_CODE GazeboSensors::ClientWait()
 {
   // block until simulator update.
   client->Wait();
-  return PR2_ALL_OK;
+  return PR2::PR2_ALL_OK;
 }
 
 
