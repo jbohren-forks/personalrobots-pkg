@@ -6,20 +6,35 @@ using namespace PR2;
 
 ////////////////////////////////////////////////////////////////////
 //                                                                //
-//  Helper functions                                              //
+//  TODOS:                                                        //
+//                                                                //
+//    IMPLEMENT TIME STAMP IN THE MESSAGES RETURNED BY SENSORS    //
+//    CHECK TO SEE IF MULTIPLE INSTANCES OF CLIENT AND            //
+//    SIMULATIONIFACE IS OK                                       //
 //                                                                //
 ////////////////////////////////////////////////////////////////////
 
 
-////////////////////////////////////////////////////////////////////
-//                                                                //
-//  GazeboSensors Class                                                   //
-//                                                                //
-////////////////////////////////////////////////////////////////////
 GazeboSensors::GazeboSensors()
 {
+  ////////////////////////////////////////////////////////////////////
+  //                                                                //
+  //  GazeboSensors Class                                           //
+  //                                                                //
+  ////////////////////////////////////////////////////////////////////
+  client                  = new gazebo::Client();
+  simIface                = new gazebo::SimulationIface();
 
+  pr2LaserIface           = new gazebo::LaserIface();
+  pr2BaseLaserIface       = new gazebo::LaserIface();
 
+  pr2CameraGlobalIface    = new gazebo::CameraIface();
+  pr2CameraHeadLeftIface  = new gazebo::CameraIface();
+  pr2CameraHeadRightIface = new gazebo::CameraIface();
+
+  pr2LeftWristIface       = new gazebo::PositionIface();
+  pr2RightWristIface      = new gazebo::PositionIface();
+  pr2BaseIface            = new gazebo::PositionIface();
 }
 
 GazeboSensors::~GazeboSensors()
@@ -29,18 +44,6 @@ GazeboSensors::~GazeboSensors()
 
 PR2_ERROR_CODE GazeboSensors::Init()
 {
-  client                  = new gazebo::Client();
-  simIface                = new gazebo::SimulationIface();
-  pr2LaserIface           = new gazebo::LaserIface();
-  pr2BaseLaserIface       = new gazebo::LaserIface();
-  pr2CameraGlobalIface    = new gazebo::CameraIface();
-  pr2CameraHeadLeftIface  = new gazebo::CameraIface();
-  pr2CameraHeadRightIface = new gazebo::CameraIface();
-
-  pr2LeftWristIface       = new gazebo::PositionIface();
-  pr2RightWristIface      = new gazebo::PositionIface();
-  pr2BaseIface            = new gazebo::PositionIface();
-
   int serverId = 0;
 
   /// Connect to the libgazebo server
