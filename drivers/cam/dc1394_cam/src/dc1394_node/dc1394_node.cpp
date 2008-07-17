@@ -296,6 +296,44 @@ public:
           cd.cleanup();
           continue;
         }
+
+        // Extract the Videre calibration file:
+        // check for calibration
+        uint32_t qval = cd.cam->getControlRegister(0xFF800);
+        if (qval == 0xffffffff)
+        {
+          printf("No calibration parameters found for Videre");
+          cd.cleanup();
+          continue;
+        }
+
+        char buf[4096*4];
+        int n = 4096*4;
+        char* bb = buf;
+
+        // read in each byte
+        int pos = 0;
+        uint32_t quad;
+        quad = cd.cam->getControlRegister(0xFF800+pos);
+
+        while (quad != 0x0 && quad != 0xffffffff && n > 3)
+        {
+          int val;
+          pos += 4;
+          n -= 4;
+          val = (quad >> 24) & 0xff;
+          *bb++ = val;
+          val = (quad >> 16) & 0xff;
+          *bb++ = val;
+          val = (quad >> 8) & 0xff;
+          *bb++ = val;
+          val = quad & 0xff;
+          *bb++ = val;
+          quad = cd.cam->getControlRegister(0xFF800+pos);
+        }
+        *bb = 0;                      // just in case we missed the last zero
+
+        printf("Read %d bytes:\n%s", pos, buf);
       }
 
       checkAndSetFeature(cd, "brightness", DC1394_FEATURE_BRIGHTNESS);
