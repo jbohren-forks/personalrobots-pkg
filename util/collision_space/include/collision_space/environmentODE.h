@@ -35,7 +35,7 @@
 #ifndef KINEMATIC_ENVIRONMENT_MODEL_ODE_
 #define KINEMATIC_ENVIRONMENT_MODEL_ODE_
 
-#include <collisionspace/environment.h>
+#include <collision_space/environment.h>
 #include <ode/ode.h>
 
 /** @htmlinclude ../../manifest.html

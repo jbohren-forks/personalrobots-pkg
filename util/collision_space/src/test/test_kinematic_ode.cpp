@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include <collisionspace/environmentODE.h>
+#include <collision_space/environmentODE.h>
 #include <drawstuff/drawstuff.h>
 
 
