@@ -26,7 +26,6 @@
 #include <robot_model/joint.h>
 #include <robot_model/robot.h>
 
-#define BASE_NUM_JOINTS 12
 
 using namespace std;
 

@@ -8,21 +8,23 @@
 
 #include <robot_model/joint.h>
 
+#define BASE_NUM_JOINTS 12
+
 using namespace CONTROLLER;
 
 using namespace PR2;
 
 static pthread_mutex_t dataMutex = PTHREAD_MUTEX_INITIALIZER;
 
-const double BaseController::PGain = 2.5; /**< Proportional gain for speed control */
+const double BaseController::PGain = 0.1; /**< Proportional gain for speed control */
 
-const double BaseController::IGain = 0; /**< Integral gain for speed control */
+const double BaseController::IGain = 0.1; /**< Integral gain for speed control */
 
 const double BaseController::DGain = 0; /**< Derivative gain for speed control */
 
-const double BaseController::IMax  = 0; /**< Max integral error term */
+const double BaseController::IMax  = 10; /**< Max integral error term */
 
-const double BaseController::IMin  = 0; /**< Min integral error term */
+const double BaseController::IMin  = -10; /**< Min integral error term */
 
 const double BaseController::maxPositiveTorque = 0.75; /**< (in Nm) max current = 0.75 A. Torque constant = 70.4 mNm/A.Max Torque = 70.4*0.75 = 52.8 mNm */
 
@@ -30,11 +32,12 @@ const double BaseController::maxNegativeTorque = -0.75; /**< max negative torque
 
 const double BaseController::maxEffort = 0.75; /**< maximum effort */
       
-const double BaseController::PGain_Pos = 0.5; /**< Proportional gain for position control */
+const double BaseController::PGain_Pos = 0.1; /**< Proportional gain for position control */
 
-const double BaseController::IGain_Pos = 0; /**< Integral gain for position control */
+const double BaseController::IGain_Pos = 0.1; /**< Integral gain for position control */
 
-const double BaseController::DGain_Pos = 0.04; /**< Derivative gain for position control */
+const double BaseController::DGain_Pos = 0; /**< Derivative gain for position control */
+
 
 void ComputePointVelocity(double vx, double vy, double vw, double x_offset, double y_offset, double &pvx, double &pvy)
 {
@@ -127,17 +130,20 @@ void BaseController::Update( )
       steerAngle[ii] = ModNPiBy2(steerAngle[ii]);//Clean steer Angle
       // hw.SetJointServoCmd((PR2_JOINT_ID) (CASTER_FL_STEER+3*ii),steerAngle[ii],0);
       // printf("ii: %d, off: (%f, %f), vel: (%f, %f), angle: %f\n",ii,BASE_CASTER_OFFSET[ii].x,BASE_CASTER_OFFSET[ii].y,steerPointVelocity[ii].x,steerPointVelocity[ii].y,steerAngle[ii]);
-      steerAngle[ii] = 0;
+      //steerAngle[ii] = 0;
       errorSteer[ii] = robot->joint[3*ii].position - steerAngle[ii];
       cmdVel = kp_local * errorSteer[ii];
-      baseJointControllers[3*ii].SetVelCmd(0);     
-      printf("CASTER:: %d, cmdVel:: %f\n",ii,cmdVel);
+      baseJointControllers[3*ii].SetVelCmd(cmdVel);     
+      //      printf("CASTER:: %d, %f, cmdVel:: %f\n",ii,steerAngle[ii],cmdVel);
    }
 
    for(int ii = 0; ii < NUM_CASTERS; ii++){
-      newDriveCenterL = Rot2D(CASTER_DRIVE_OFFSET[ii*2  ],steerAngle[ii]);
-      newDriveCenterR = Rot2D(CASTER_DRIVE_OFFSET[ii*2+1],steerAngle[ii]);
+     //     printf("offset:: %d, %f, %f, %f, %f\n",ii,CASTER_DRIVE_OFFSET[ii*2].x,CASTER_DRIVE_OFFSET[ii*2].y,CASTER_DRIVE_OFFSET[ii*2+1].x,CASTER_DRIVE_OFFSET[ii*2+1].y);
 
+     newDriveCenterL = Rot2D(CASTER_DRIVE_OFFSET[ii*2].x,CASTER_DRIVE_OFFSET[ii*2].y,steerAngle[ii]);
+     newDriveCenterR = Rot2D(CASTER_DRIVE_OFFSET[ii*2+1].x,CASTER_DRIVE_OFFSET[ii*2+1].y,steerAngle[ii]);
+
+     //      printf("offset:: %f, %f, %f, %f\n",newDriveCenterL.x,newDriveCenterL.y,newDriveCenterR.x,newDriveCenterR.y);
       newDriveCenterL.x += BASE_CASTER_OFFSET[ii].x;
       newDriveCenterL.y += BASE_CASTER_OFFSET[ii].y;
       newDriveCenterR.x += BASE_CASTER_OFFSET[ii].x;
@@ -146,31 +152,34 @@ void BaseController::Update( )
       ComputePointVelocity(xDotCmd,yDotCmd,yawDotCmd,newDriveCenterL.x,newDriveCenterL.y,drivePointVelocityL.x,drivePointVelocityL.y);
       ComputePointVelocity(xDotCmd,yDotCmd,yawDotCmd,newDriveCenterR.x,newDriveCenterR.y,drivePointVelocityR.x,drivePointVelocityR.y);
 
-      double steerXComponent = cos(robot->joint[ii*3+1].position);
-      double steerYComponent = sin(robot->joint[ii*3+2].position);
+      //      printf("CPV1:: %f, %f, %f, %f, %f, %f, %f\n",xDotCmd,yDotCmd,yawDotCmd,newDriveCenterL.x,newDriveCenterL.y,drivePointVelocityL.x,drivePointVelocityL.y);
+      //      printf("CPV2:: %f, %f, %f, %f, %f, %f, %f\n",xDotCmd,yDotCmd,yawDotCmd,newDriveCenterR.x,newDriveCenterR.y,drivePointVelocityR.x,drivePointVelocityR.y);
+
+      double steerXComponent = cos(robot->joint[ii*3].position);
+      double steerYComponent = sin(robot->joint[ii*3].position);
       double dotProdL = steerXComponent*drivePointVelocityL.x + steerYComponent*drivePointVelocityL.y;
       double dotProdR = steerXComponent*drivePointVelocityR.x + steerYComponent*drivePointVelocityR.y;
-
-      wheelSpeed[ii*2  ] = dotProdL/WHEEL_RADIUS;
+      //      printf("Actual CASTER:: %d, %f, %f, %f\n",ii,robot->joint[ii*3].position,drivePointVelocityL.x,drivePointVelocityR.x);
+      wheelSpeed[ii*2  ] = -dotProdL/WHEEL_RADIUS;
       wheelSpeed[ii*2+1] = dotProdR/WHEEL_RADIUS;
 
       //      wheelSpeed[ii*2  ] = -GetMagnitude(drivePointVelocityL.x,drivePointVelocityL.y)/WHEEL_RADIUS;
       //      wheelSpeed[ii*2+1] = -GetMagnitude(drivePointVelocityR.x,drivePointVelocityR.y)/WHEEL_RADIUS;
 
-      wheelSpeed[ii*2] = 0;
-      wheelSpeed[ii*2+1] = 0;
-      if(ii == 2)
-	wheelSpeed[ii*2] = 10;
+      //   wheelSpeed[ii*2] = 0;
+      //wheelSpeed[ii*2+1] = 0;
+      
 
+           wheelSpeed[ii*2] = -10;
+           wheelSpeed[ii*2+1] = 10;
       baseJointControllers[ii*3+1].SetVelCmd(wheelSpeed[ii*2]);
       baseJointControllers[ii*3+2].SetVelCmd(wheelSpeed[ii*2+1]);
-      printf("DRIVE::L:: %d, cmdVel:: %f\n",ii,wheelSpeed[ii*2]);
-      printf("DRIVE::R:: %d, cmdVel:: %f\n",ii,wheelSpeed[ii*2+1]);
+      //      printf("DRIVE::L:: %d, cmdVel:: %f\n",ii,wheelSpeed[ii*2]);
+      //printf("DRIVE::R:: %d, cmdVel:: %f\n",ii,wheelSpeed[ii*2+1]);
       // send command
-      //hw.SetJointSpeed((PR2_JOINT_ID) (CASTER_FL_DRIVE_L+3*ii),wheelSpeed[ii*2  ]);
-      //hw.SetJointSpeed((PR2_JOINT_ID) (CASTER_FL_DRIVE_R+3*ii),wheelSpeed[ii*2+1]);
    }
-   for(int ii = 0; ii < BASE_NUM_JOINTS; ii++) 
+  
+      for(int ii = 0; ii < BASE_NUM_JOINTS; ii++) 
       baseJointControllers[ii].Update();
 }
 
@@ -196,6 +205,10 @@ PR2::PR2_ERROR_CODE BaseController::setTarget(double x,double y, double yaw, dou
 }
 
 PR2::PR2_ERROR_CODE BaseController::setTraj(int num_pts, double x[],double y[], double yaw[], double xDot[], double yDot[], double yawDot[])
+  //int test_ii = 8;
+ 
+  //baseJointControllers[test_ii].SetVelCmd(10);
+  //baseJointControllers[test_ii].Update();
 {
 
    return PR2::PR2_ALL_OK;

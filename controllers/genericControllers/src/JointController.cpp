@@ -36,7 +36,7 @@
 #include <iostream>
 #include <sys/time.h>
 
-#define DEBUG 1
+//#define DEBUG 1
 //Todo: 
 //1. Get and set params via server
 //2. Integrate Joint and robot objects
@@ -302,10 +302,7 @@ void JointController::Update(void)
   if(controlMode==CONTROLLER::CONTROLLER_DISABLED)return; //If we're not initialized, don't try to interact
 
   GetTime(&time); //TODO: Replace time with joint->timeStep
-
-
-  double  currentVoltageCmd,v_backemf, v_clamp_min,v_clamp_max,k;      
-
+  double  currentVoltageCmd,v_backemf, v_clamp_min,v_clamp_max,k;
 
   switch (controlMode)
     {
@@ -335,7 +332,9 @@ void JointController::Update(void)
       //}      
       break;
     case ETHERDRIVE_SPEED: // Use hack to contol speed in voltage control mode for the etherdrive
+#ifdef DEBUG
       printf("JC:: %f\n",cmdVel);
+#endif
       currentVoltageCmd = cmdVel*20*60/(136*2*M_PI); 
       v_backemf = joint->velocity*20*60/(136*2*M_PI);
 
@@ -343,9 +342,9 @@ void JointController::Update(void)
       v_clamp_max = v_backemf + 3;//0.655*16.7;
 
       k = 1.0/ 36.0;
-
+#ifdef DEBUG
       printf("JC::%f\t%f\t%f\n", v_clamp_min, currentVoltageCmd, v_clamp_max);
-
+#endif
       if (currentVoltageCmd > v_clamp_max)
 	currentVoltageCmd = v_clamp_max;
 
@@ -421,9 +420,10 @@ double JointController::SafelySetTorqueInternal(double torque)
     SaturationFlag = false;
   }
 
-  
   //Set torque command 
+#ifdef DEBUG
   printf("JC:: torque:: %f,%f\n",torque,newTorque);
+#endif
   joint->commandedEffort = newTorque; 
   return newTorque;
 }
