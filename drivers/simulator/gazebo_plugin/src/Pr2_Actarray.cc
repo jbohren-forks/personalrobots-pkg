@@ -379,8 +379,8 @@ void Pr2_Actarray::UpdateChild()
                      //else if (cmdPosition < sjoint->GetLowStop())
                      //   cmdPosition = sjoint->GetLowStop();
   
-                     positionError = cmdPosition - sjoint->GetPosition();
-                     speedError    = cmdSpeed    - sjoint->GetPositionRate();
+                     positionError = sjoint->GetPosition() - cmdPosition; //Error defined as actual - desired
+                     speedError    = sjoint->GetPositionRate() - cmdSpeed;
                      //std::cout << "slider e:" << speedError << " + " << positionError << std::endl;
                      currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
   
@@ -414,7 +414,7 @@ void Pr2_Actarray::UpdateChild()
                     dampForce = (dampForce >  this->myIface->data->actuators[count].saturationTorque ) ?  this->myIface->data->actuators[count].saturationTorque : dampForce;
                     dampForce = (dampForce < -this->myIface->data->actuators[count].saturationTorque ) ? -this->myIface->data->actuators[count].saturationTorque : dampForce;
                     //printf("Damping f %f v %f\n",dampForce,currentRate);
-
+                    //std::cout<<"Force is:"<< this->myIface->data->actuators[count].cmdEffectorForce + dampForce<<std::endl;
                     // simply set torque
                     hjoint->SetTorque(this->myIface->data->actuators[count].cmdEffectorForce + dampForce);
                     //std::cout << count << " " << this->myIface->data->actuators[count].controlMode << std::endl;
@@ -429,8 +429,8 @@ void Pr2_Actarray::UpdateChild()
 
                     currentAngle = hjoint->GetAngle();
                     // No fancy controller, just pass the commanded torque/force in (we are not modeling the motors for now)
-                    positionError = ModNPi2Pi(cmdPosition - currentAngle);
-                    speedError    = cmdSpeed - currentRate;
+                    positionError = ModNPi2Pi( currentAngle - cmdPosition);
+                    speedError    =  currentRate- cmdSpeed;
                     currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
                     // if(count==PR2::ARM_R_SHOULDER_PITCH ) std::cout << "hinge err:" << positionError << " cmd: " << currentCmd << std::endl;
                     //Write out data
@@ -447,7 +447,7 @@ void Pr2_Actarray::UpdateChild()
                     break;
                 case PR2::SPEED_TORQUE_CONTROL :
                     currentRate = hjoint->GetAngleRate();
-                    speedError    = cmdSpeed - currentRate;
+                    speedError    = currentRate - cmdSpeed;
                     currentCmd    = this->pids[count]->UpdatePid(speedError, currentTime-this->lastTime);
                     //if(count==PR2::ARM_R_PAN)std::cout<<"Joint:" <<count << " Desired:" << cmdSpeed << " Current speed"<<currentRate<<" Error"<<speedError<<" cmd: " << currentCmd << std::endl;
                     if(count==PR2::ARM_R_ELBOW_PITCH )std::cout<<currentTime<<" "<<currentRate<<" "<<speedError<<" " << currentCmd << std::endl;
@@ -470,8 +470,8 @@ void Pr2_Actarray::UpdateChild()
  
                     currentAngle  = hjoint->GetAngle();
                     currentRate   = hjoint->GetAngleRate();
-                    positionError = ModNPi2Pi(cmdPosition - currentAngle);
-                    speedError    = cmdSpeed - currentRate;
+                    positionError = ModNPi2Pi(currentAngle - cmdPosition);
+                    speedError    = currentRate - cmdSpeed;
                     //std::cout << "hinge e:" << speedError << " + " << positionError << std::endl;
                     currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
                     hjoint->SetParam( dParamVel, currentCmd );
