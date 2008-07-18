@@ -8,7 +8,7 @@ int main(int argc, char **argv)
 {  
   ros::init(argc, argv);
 
-  ros::node mynode("easy_kin_con_test");
+  ros::node mynode("test_inter+kin_con");
   mynode.advertise<rosgazebo::EndEffectorState>("right_pr2arm_set_end_effector");
 
   //In shoulder frame x 0.562689

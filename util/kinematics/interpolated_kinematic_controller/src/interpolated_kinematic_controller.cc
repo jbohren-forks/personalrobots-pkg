@@ -17,7 +17,7 @@ static const double step_size = .05;
 class InterpolatedKinematicController : public ros::node {
 public:
   
-  InterpolatedKinematicController(void) : ros::node("easy_kinematic_controller") {
+  InterpolatedKinematicController(void) : ros::node("interpolated_kinematic_controller") {
     advertise<rosgazebo::EndEffectorState>("cmd_leftarm_cartesian");
     advertise<rosgazebo::EndEffectorState>("cmd_rightarm_cartesian");
     subscribe("right_pr2arm_set_end_effector", _rightEndEffectorGoal, &InterpolatedKinematicController::setRightEndEffector);	
