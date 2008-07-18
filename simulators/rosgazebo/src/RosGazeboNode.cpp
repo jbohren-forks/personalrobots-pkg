@@ -96,6 +96,42 @@ RosGazeboNode::cmd_leftarmconfigReceived()
   this->lock.unlock();
 }
 
+void RosGazeboNode::cmd_leftarmcartesianReceived() {
+  this->lock.lock();
+
+  KDL::Frame f;
+  for(int i = 0; i < 9; i++) {
+    f.M.data[i] = cmd_leftarmcartesian.rot[i];
+  }
+  for(int i = 0; i < 3; i++) {
+    f.p.data[i] = cmd_leftarmcartesian.trans[i];
+  }
+
+  KDL::JntArray q = KDL::JntArray(this->PR2Copy->pr2_kin.nJnts);
+  this->PR2Copy->GetArmJointPositionCmd(PR2::PR2_LEFT_ARM, q);
+  this->PR2Copy->SetArmCartesianPosition(PR2::PR2_LEFT_ARM,f,q,q);
+
+  this->lock.unlock();
+}
+
+void RosGazeboNode::cmd_rightarmcartesianReceived() {
+  this->lock.lock();
+
+  KDL::Frame f;
+  for(int i = 0; i < 9; i++) {
+    f.M.data[i] = cmd_rightarmcartesian.rot[i];
+  }
+  for(int i = 0; i < 3; i++) {
+    f.p.data[i] = cmd_rightarmcartesian.trans[i];
+  }
+
+  KDL::JntArray q = KDL::JntArray(this->PR2Copy->pr2_kin.nJnts);
+  this->PR2Copy->GetArmJointPositionCmd(PR2::PR2_RIGHT_ARM, q);
+  this->PR2Copy->SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f, q,q);
+
+  this->lock.unlock();
+}
+
 void
 RosGazeboNode::cmdvelReceived()
 {
@@ -277,6 +313,8 @@ RosGazeboNode::AdvertiseSubscribeMessages()
   subscribe("cmd_vel", velMsg, &RosGazeboNode::cmdvelReceived);
   subscribe("cmd_leftarmconfig", leftarm, &RosGazeboNode::cmd_leftarmconfigReceived);
   subscribe("cmd_rightarmconfig", rightarm, &RosGazeboNode::cmd_rightarmconfigReceived);
+  subscribe("cmd_leftarm_cartesian", cmd_leftarmcartesian, &RosGazeboNode::cmd_leftarmcartesianReceived);
+  subscribe("cmd_rightarm_cartesian", cmd_rightarmcartesian, &RosGazeboNode::cmd_rightarmcartesianReceived);
 
   return(0);
 }

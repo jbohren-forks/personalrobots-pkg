@@ -53,6 +53,8 @@
 #include <std_msgs/BaseVel.h>
 // roscpp - arm
 #include <std_msgs/PR2Arm.h>
+#include <std_msgs/EndEffectorState.h>
+
 // roscpp - camera
 #include <std_msgs/Image.h>
 
@@ -144,6 +146,9 @@ class RosGazeboNode : public ros::node
     void cmd_leftarmconfigReceived();
     void cmd_rightarmconfigReceived();
 
+    void cmd_leftarmcartesianReceived();
+    void cmd_rightarmcartesianReceived();
+
     // laser range data
     float    ranges[GZ_LASER_MAX_RANGES];
     uint8_t  intensities[GZ_LASER_MAX_RANGES];
@@ -151,9 +156,13 @@ class RosGazeboNode : public ros::node
     // camera data
     std_msgs::Image img;
     
-    // camera data
+    // arm joint data
     std_msgs::PR2Arm leftarm;
     std_msgs::PR2Arm rightarm;
+
+    // end effector cmds
+    std_msgs::EndEffectorState cmd_leftarmcartesian;
+    std_msgs::EndEffectorState cmd_rightarmcartesian;
 
     //Flags to indicate that a new message has arrived
     bool newRightArmPos;
