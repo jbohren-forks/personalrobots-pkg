@@ -79,4 +79,4 @@ CONFIG_RTNET_ADDON_RTCAP=y
 # Examples
 #
 CONFIG_RTNET_EXAMPLES=y
-CONFIG_RTNET_RTEXT_CONFIG_PATH="`rospack find xeno`/xenomai/bin/xeno-config"
+CONFIG_RTNET_RTEXT_CONFIG_PATH="`rospack find xenomai`/xenomai/bin/xeno-config"
