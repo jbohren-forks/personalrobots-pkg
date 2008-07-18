@@ -44,7 +44,7 @@
 
     A class describing a kinematic robot model loaded from URDF */
 
-namespace robot_models
+namespace planning_models
 {
     
     

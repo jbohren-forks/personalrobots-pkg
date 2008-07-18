@@ -35,13 +35,13 @@
 #include <planning_models/kinematic.h>
 #include <cstdio>
 
-void robot_models::KinematicModel::Robot::computeTransforms(const double *params)
+void planning_models::KinematicModel::Robot::computeTransforms(const double *params)
 {
     chain->computeTransform(params);
 }
 
 // we can optimize things here... (when we use identity transforms, for example)
-void robot_models::KinematicModel::Joint::computeTransform(const double *params)
+void planning_models::KinematicModel::Joint::computeTransform(const double *params)
 {
     switch (type)
     {
@@ -73,7 +73,7 @@ void robot_models::KinematicModel::Joint::computeTransform(const double *params)
     after->computeTransform(params);
 }
 
-void robot_models::KinematicModel::Link::computeTransform(const double *params)
+void planning_models::KinematicModel::Link::computeTransform(const double *params)
 {
     globalTrans = before->globalTrans;
     globalTrans.multiplyPose(constTrans);
@@ -82,7 +82,7 @@ void robot_models::KinematicModel::Link::computeTransform(const double *params)
     globalTrans.multiplyPose(constGeomTrans);
 }
 
-void robot_models::KinematicModel::build(robot_desc::URDF &model, const char *group)
+void planning_models::KinematicModel::build(robot_desc::URDF &model, const char *group)
 {
     if (group)
     {
@@ -110,17 +110,17 @@ void robot_models::KinematicModel::build(robot_desc::URDF &model, const char *gr
     }
 }
     
-unsigned int robot_models::KinematicModel::getRobotCount(void) const
+unsigned int planning_models::KinematicModel::getRobotCount(void) const
 {
     return m_robots.size();
 }
 
-robot_models::KinematicModel::Robot* robot_models::KinematicModel::getRobot(unsigned int index) const
+planning_models::KinematicModel::Robot* planning_models::KinematicModel::getRobot(unsigned int index) const
 {
     return m_robots[index];
 }
 
-void robot_models::KinematicModel::buildChain(Robot *robot, Link *parent, Joint* joint, robot_desc::URDF::Link* urdfLink)
+void planning_models::KinematicModel::buildChain(Robot *robot, Link *parent, Joint* joint, robot_desc::URDF::Link* urdfLink)
 {
     joint->usedParamStart = robot->stateDimension;
     joint->before = parent;
@@ -168,7 +168,7 @@ void robot_models::KinematicModel::buildChain(Robot *robot, Link *parent, Joint*
     buildChain(robot, joint, joint->after, urdfLink);
 }
 
-void robot_models::KinematicModel::buildChain(Robot *robot, Joint *parent, Link* link, robot_desc::URDF::Link* urdfLink)
+void planning_models::KinematicModel::buildChain(Robot *robot, Joint *parent, Link* link, robot_desc::URDF::Link* urdfLink)
 {
     link->before = parent;
     robot->links.push_back(link);
