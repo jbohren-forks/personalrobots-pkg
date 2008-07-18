@@ -91,8 +91,10 @@ Provides (name/type):
 #include <collision_space/environmentODE.h>
 #include <ompl/extension/samplingbased/kinematic/extension/rrt/RRT.h>
 
-using namespace std_msgs;
-using namespace std_srvs;
+#include <vector>
+#include <string>
+#include <map>
+
 
 class KinematicPlanning : public ros::node
 {
@@ -100,38 +102,40 @@ public:
 
     KinematicPlanning(void) : ros::node("kinematic_planning")
     {
-	//	m_si  = new ompl::SpaceInformationKinematic();
-	//	m_rrt = new ompl::RRT(m_si);
-	
 	advertise_service("plan_kinematic_path", &KinematicPlanning::plan);
-	subscribe("world_3d_map", cloud, &KinematicPlanning::pointCloudCallback);
+	subscribe("world_3d_map", m_cloud, &KinematicPlanning::pointCloudCallback);
+
+	m_collisionSpace = new collision_space::EnvironmentModelODE();
     }
     
     ~KinematicPlanning(void)
     {
 	for (unsigned int i = 0 ; i < m_robotDescriptions.size() ; ++i)
 	    delete m_robotDescriptions[i];
-	
+	for (std::map<std::string, Model*>::iterator i = m_models.begin() ; i != m_models.end() ; i++)
+	    delete i->second;
+	if (m_collisionSpace)
+	    delete m_collisionSpace;
     }
     
     void pointCloudCallback(void)
     {
-	unsigned int n = cloud.get_pts_size();
+	unsigned int n = m_cloud.get_pts_size();
 	printf("received %u points\n", n);
 
 	double *data = new double[3 * n];	
 	for (unsigned int i = 0 ; i < n ; ++i)
 	{
 	    unsigned int i3 = i * 3;	    
-	    data[i3    ] = cloud.pts[i].x;
-	    data[i3 + 1] = cloud.pts[i].y;
-	    data[i3 + 2] = cloud.pts[i].z;
+	    data[i3    ] = m_cloud.pts[i].x;
+	    data[i3 + 1] = m_cloud.pts[i].y;
+	    data[i3 + 2] = m_cloud.pts[i].z;
 	}
 	delete[] data;
 	
     }
     
-    bool plan(KinematicMotionPlan::request &req, KinematicMotionPlan::response &res)
+    bool plan(std_srvs::KinematicMotionPlan::request &req, std_srvs::KinematicMotionPlan::response &res)
     {
 	//	const int dim = req.start_state.vals_size;
 	//	ompl::SpaceInformationKinematic::GoalStateKinematic_t goal = new ompl::SpaceInformationKinematic::GoalStateKinematic(m_si);
@@ -170,11 +174,22 @@ public:
 
 	std::vector<std::string> groups;
 	file->getGroupNames(groups);
-
-	// also create a model for the whole robot (with the name given in the file)
-
+	std::string name = file->getRobotName();
+	
+	/* create a model for the whole robot (with the name given in the file) */
+	Model *model = new Model();
+	model->collisionSpaceID = m_collisionSpace->addRobotModel(*file);
+	m_models[name] = model;
+	createMotionPlanningInstances(model);
+	
+	/* create a model for each group */
 	for (unsigned int i = 0 ; i < groups.size() ; ++i)
 	{
+	    Model *model = new Model();
+	    model->collisionSpaceID = m_collisionSpace->addRobotModel(*file, groups[i].c_str());
+	    m_models[name + "::" + groups[i]] = model;
+	    createMotionPlanningInstances(model);
+
 	    // pass it to the collision space to create one more kinematic model
 	    // find the state dimension & bounding box, set up the space information
 	    // create a motion planner for this space info
@@ -182,25 +197,69 @@ public:
 
 	    // todo: kinematic model should print what each state dimension means
 
-	    // construct a map of id's to robot models we can plan for.
-	    // the id should be given in the xml, as the group name (?)
-	    // better: send the group name as string (id) in the request
 	}
 	
     }
         
 private:
-    
-    PointCloudFloat32 cloud;
-
+      
+    struct Planner
+    {
+	ompl::MotionPlanner_t             mp;
+	ompl::SpaceInformationKinematic_t si;
+	int                               type;
+    };
+    	
     struct Model
     {
-	ompl::SpaceInformationKinematic_t si;
-	ompl::MotionPlanner_t             mp;
+	Model(void)
+	{
+	    collisionSpaceID = 0;
+	    collisionSpace   = NULL;	    
+	}
+	
+	~Model(void)
+	{
+	    for (unsigned int i = 0 ; i < planners.size() ; ++i)
+	    {
+		delete planners[i].mp;
+		delete planners[i].si;
+	    }
+	}
+	
+	std::vector<Planner>               planners;
+	collision_space::EnvironmentModel *collisionSpace;    	
+	unsigned int                       collisionSpaceID;	
     };
     
-    std::vector<Model> models; 
-    std::vector<robot_desc::URDF*> m_robotDescriptions;    
+    std_msgs::PointCloudFloat32        m_cloud;
+    collision_space::EnvironmentModel *m_collisionSpace;    
+    std::map<std::string, Model*>      m_models;
+    std::vector<robot_desc::URDF*>     m_robotDescriptions;    
+
+    static bool isStateValid(const ompl::SpaceInformationKinematic::StateKinematic_t state, void *data)
+    {
+	Model *model = reinterpret_cast<Model*>(data);
+	
+	return false;
+    }
+    
+    void createMotionPlanningInstances(Model* model)
+    {
+	Planner p;
+	p.si   = new ompl::SpaceInformationKinematic();
+	p.mp   = new ompl::RRT(p.si);
+	p.type = 0;
+	
+	model->planners.push_back(p);
+	model->collisionSpace = m_collisionSpace;
+	
+	planning_models::KinematicModel *km = m_collisionSpace->models[model->collisionSpaceID];
+	p.si->setStateValidFn(isStateValid, reinterpret_cast<void*>(model));
+	
+	
+    }
+
 };
 
 
