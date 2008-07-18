@@ -74,7 +74,7 @@
 #include <genericControllers/Controller.h>
 #include <genericControllers/Pid.h>
 #include <math_utils/angles.h>
-#include <robot_model/joint.h>
+#include <mechanism_model/joint.h>
 #include <string>
 
 using namespace mechanism;

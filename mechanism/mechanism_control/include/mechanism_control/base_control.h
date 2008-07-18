@@ -28,7 +28,7 @@
 #ifndef MECHANISM_CONTROL_H
 #define MECHANISM_CONTROL_H
 
-#include <robot_model/robot.h>
+#include <mechanism_model/robot.h>
 #include <rosthread/mutex.h>
 #include <map>
 #include <pr2Controllers/BaseController.h>

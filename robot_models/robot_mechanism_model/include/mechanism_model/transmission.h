@@ -29,7 +29,7 @@
 #ifndef TRANSMISSION_H
 #define TRANSMISSION_H
 
-#include "robot_model/joint.h"
+#include "mechanism_model/joint.h"
 #include "hw_interface/hardware_interface.h"
 
 namespace mechanism {

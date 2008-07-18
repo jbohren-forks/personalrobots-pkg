@@ -7,7 +7,7 @@
   <depend package="pr2Controllers" />
   <depend package="genericControllers" />  
   <depend package="hw_interface" />
-  <depend package="robot_model" />
+  <depend package="robot_mechanism_model" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

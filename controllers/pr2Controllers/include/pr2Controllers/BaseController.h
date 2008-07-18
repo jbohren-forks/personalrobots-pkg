@@ -23,8 +23,8 @@
 
 #include <genericControllers/Controller.h>
 #include <genericControllers/JointController.h>
-#include <robot_model/joint.h>
-#include <robot_model/robot.h>
+#include <mechanism_model/joint.h>
+#include <mechanism_model/robot.h>
 
 
 using namespace std;

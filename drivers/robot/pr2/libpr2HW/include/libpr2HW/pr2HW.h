@@ -43,7 +43,7 @@
 #include <string>
 #include <list>
 #include <vector>
-#include <robot_model/joint.h>
+#include <mechanism_model/joint.h>
 
 namespace PR2
 {

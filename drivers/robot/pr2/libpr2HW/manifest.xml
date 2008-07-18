@@ -11,7 +11,7 @@ An API for baic PR2 Hardware controls: enable, disable, set gains, PD controller
 <depend package="gazebo"/>
 <depend package="pr2Core"/>
 <depend package="libKinematics"/>
-<depend package="robot_model"/>
+<depend package="robot_mechanism_model"/>
 <export>
 <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lpr2HW"/>
 </export>

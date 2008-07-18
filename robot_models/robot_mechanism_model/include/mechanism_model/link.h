@@ -28,7 +28,7 @@
 #ifndef LINK_H
 #define LINK_H
 
-#include "joint.h"
+#include "mechanism_model/joint.h"
 
 namespace mechanism {
   class Link{

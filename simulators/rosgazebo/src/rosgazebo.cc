@@ -23,7 +23,7 @@
 
 #include <pthread.h>
 #include <pr2Core/pr2Core.h>
-#include <robot_model/joint.h>
+#include <mechanism_model/joint.h>
 
 // gazebo
 #include <libpr2API/pr2API.h>

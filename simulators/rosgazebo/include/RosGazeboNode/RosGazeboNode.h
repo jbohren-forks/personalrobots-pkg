@@ -35,7 +35,7 @@
 #include <pr2Controllers/GripperController.h>
 
 #include "ringbuffer.h"
-#include "robot_model/joint.h"
+#include "mechanism_model/joint.h"
 // roscpp
 #include <ros/node.h>
 // roscpp - laser

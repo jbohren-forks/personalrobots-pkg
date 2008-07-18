@@ -12,7 +12,7 @@
   <depend package="math_utils" />
   <depend package="string_utils" />
   <depend package="libKDL" />
-  <depend package="robot_model" />
+  <depend package="robot_mechanism_model" />
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lRosJointController"/>
   </export>

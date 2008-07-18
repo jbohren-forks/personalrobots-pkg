@@ -31,9 +31,9 @@
 #ifndef ROBOT_H
 #define ROBOT_H
 
-#include "link.h"
-#include "joint.h"
-#include "transmission.h"
+#include "mechanism_model/link.h"
+#include "mechanism_model/joint.h"
+#include "mechanism_model/transmission.h"
 
 namespace mechanism {
   class Robot{

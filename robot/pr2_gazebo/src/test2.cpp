@@ -25,7 +25,7 @@
 
 // robot model
 #include <pr2Core/pr2Core.h>
-#include <robot_model/joint.h>
+#include <mechanism_model/joint.h>
 
 // gazebo hardware, sensors
 #include <gazebo_hardware/gazebo_hardware.h>

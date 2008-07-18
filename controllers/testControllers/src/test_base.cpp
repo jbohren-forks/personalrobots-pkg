@@ -2,7 +2,7 @@
 #include <hw_interface/hardware_interface.h>
 #include <pr2Controllers/BaseController.h>
 #include <genericControllers/JointController.h>
-#include <robot_model/joint.h>
+#include <mechanism_model/joint.h>
 #include <sys/time.h>
 #include <signal.h>
 

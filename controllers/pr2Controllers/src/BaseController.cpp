@@ -6,7 +6,7 @@
 
 #include <sys/time.h>
 
-#include <robot_model/joint.h>
+#include <mechanism_model/joint.h>
 
 #define BASE_NUM_JOINTS 12
 

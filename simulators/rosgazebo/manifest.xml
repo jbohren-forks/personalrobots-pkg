@@ -15,7 +15,7 @@
   <depend package="math_utils" />
   <depend package="string_utils" />
   <depend package="libKDL" />
-  <depend package="robot_model" />
+  <depend package="robot_mechanism_model" />
   <depend package="hw_interface" />
   <depend package="gazebo_hardware" />
   <depend package="gazebo_sensors" />

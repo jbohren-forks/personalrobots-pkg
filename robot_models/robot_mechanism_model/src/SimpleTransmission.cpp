@@ -26,8 +26,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 // Simple transmission implementation
-#include <robot_model/transmission.h>
-#include <robot_model/joint.h>
+#include <mechanism_model/transmission.h>
+#include <mechanism_model/joint.h>
 #include <math.h>
 #include <stdio.h>
 
