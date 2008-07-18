@@ -309,6 +309,10 @@ namespace robot_desc
 	void getGroupNames(std::vector<std::string> &groups) const;
 	Group* getGroup(const std::string &name) const;
 	
+	void getDataTagTypes(std::vector<std::string> &types) const;
+	void getDataTagNames(const std::string &type, std::vector<std::string> &names) const;
+	const std::map<std::string, std::string>& getDataTagValues(const std::string &type, const std::string &name);
+
     protected:
 	
 	/* free the memory allocate in this class */
@@ -336,6 +340,9 @@ namespace robot_desc
 	std::map<std::string, Link::Actuator*>  m_actuators;
 	
 	std::map<std::string, Group*>           m_groups;
+
+	// information loaded from data tags
+	std::map<std::string, std::map<std::string, std::map<std::string, std::string > > > m_data;
 	
     private:
 	

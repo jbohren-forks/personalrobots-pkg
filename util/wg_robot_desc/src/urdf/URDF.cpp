@@ -98,6 +98,25 @@ robot_desc::URDF::Group* robot_desc::URDF::getGroup(const std::string &name) con
     return (it == m_groups.end()) ? NULL : it->second;
 }
 
+void robot_desc::URDF::getDataTagTypes(std::vector<std::string> &types) const
+{
+    for (std::map<std::string, std::map<std::string, std::map<std::string, std::string > > >::const_iterator i = m_data.begin() ; i != m_data.end() ; ++i)
+	types.push_back(i->first);
+}
+
+void robot_desc::URDF::getDataTagNames(const std::string &type, std::vector<std::string> &names) const
+{
+    std::map<std::string, std::map<std::string, std::map<std::string, std::string > > >::const_iterator pos = m_data.find(type);
+    if (pos != m_data.end())
+    {
+	for (std::map<std::string, std::map<std::string, std::string > >::const_iterator i = pos->second.begin() ; i != pos->second.end() ; ++i)
+	    names.push_back(i->first);
+    }
+}
+const std::map<std::string, std::string>& robot_desc::URDF::getDataTagValues(const std::string &type, const std::string &name)
+{
+    return m_data[type][name];
+}
 
 bool robot_desc::URDF::containsCycle(unsigned int index) const
 {
@@ -130,6 +149,17 @@ void robot_desc::URDF::print(FILE *out)
     for (unsigned int i = 0 ; i < m_roots.size() ; ++i)
 	m_roots[i]->print(out, "  ");
     fprintf(out, "\n");
+
+    for (std::map<std::string, std::map<std::string, std::map<std::string, std::string > > >::const_iterator i = m_data.begin() ; i != m_data.end() ; ++i)
+    {
+	fprintf(out, "%s:\n", i->first.c_str());
+	for (std::map<std::string, std::map<std::string, std::string > >::const_iterator j = i->second.begin() ; j != i->second.end() ; ++j)
+	{
+	    fprintf(out, "  [%s]\n", j->first.c_str());
+	    for (std::map<std::string, std::string>::const_iterator k = j->second.begin() ; k != j->second.end() ; ++k)
+		fprintf(out, "    %s = %s\n", k->first.c_str(), k->second.c_str());
+	}
+    }   
 }
 
 void robot_desc::URDF::Link::Geometry::print(FILE *out, std::string indent)
@@ -1101,7 +1131,28 @@ bool robot_desc::URDF::parse(const TiXmlNode *node)
 			    }
 			}
 			else
-			    m_stage2.push_back(node);
+			    if (node->ValueStr() == "data")
+			    {
+				std::string name = "";
+				std::string type = "";
+
+				for (const TiXmlAttribute *attr = node->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
+				{
+				    if (strcmp(attr->Name(), "name") == 0)
+					name = attr->ValueStr();
+				    else
+					if (strcmp(attr->Name(), "type") == 0)
+					    type = attr->ValueStr();
+				}
+
+				for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
+				    if (child->Type() == TiXmlNode::ELEMENT && child->FirstChild() && child->FirstChild()->Type() == TiXmlNode::TEXT)
+					m_data[type][name][child->ValueStr()] = child->FirstChild()->ValueStr();
+				    else
+					ignoreNode(child);
+			    }
+			    else
+				m_stage2.push_back(node);
 	break;
     default:
 	ignoreNode(node);
