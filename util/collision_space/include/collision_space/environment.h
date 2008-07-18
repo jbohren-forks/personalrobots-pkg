@@ -35,7 +35,7 @@
 #ifndef KINEMATIC_ENVIRONMENT_MODEL_
 #define KINEMATIC_ENVIRONMENT_MODEL_
 
-#include <robot_models/kinematic.h>
+#include <planning_models/kinematic.h>
 
 /** @htmlinclude ../../manifest.html
 
