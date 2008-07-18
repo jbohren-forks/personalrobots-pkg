@@ -127,6 +127,7 @@ void BaseController::Update( )
    for(int ii=0; ii < NUM_CASTERS; ii++){
       ComputePointVelocity(xDotCmd,yDotCmd,yawDotCmd,BASE_CASTER_OFFSET[ii].x,BASE_CASTER_OFFSET[ii].y,steerPointVelocity[ii].x,steerPointVelocity[ii].y);
       steerAngle[ii] = atan2(steerPointVelocity[ii].y,steerPointVelocity[ii].x);
+
       steerAngle[ii] = ModNPiBy2(steerAngle[ii]);//Clean steer Angle
       // hw.SetJointServoCmd((PR2_JOINT_ID) (CASTER_FL_STEER+3*ii),steerAngle[ii],0);
       // printf("ii: %d, off: (%f, %f), vel: (%f, %f), angle: %f\n",ii,BASE_CASTER_OFFSET[ii].x,BASE_CASTER_OFFSET[ii].y,steerPointVelocity[ii].x,steerPointVelocity[ii].y,steerAngle[ii]);
@@ -138,12 +139,12 @@ void BaseController::Update( )
    }
 
    for(int ii = 0; ii < NUM_CASTERS; ii++){
-     //     printf("offset:: %d, %f, %f, %f, %f\n",ii,CASTER_DRIVE_OFFSET[ii*2].x,CASTER_DRIVE_OFFSET[ii*2].y,CASTER_DRIVE_OFFSET[ii*2+1].x,CASTER_DRIVE_OFFSET[ii*2+1].y);
+          printf("offset %d: %f, %f, %f, %f\n",ii,CASTER_DRIVE_OFFSET[ii*2].x,CASTER_DRIVE_OFFSET[ii*2].y,CASTER_DRIVE_OFFSET[ii*2+1].x,CASTER_DRIVE_OFFSET[ii*2+1].y);
 
      newDriveCenterL = Rot2D(CASTER_DRIVE_OFFSET[ii*2].x,CASTER_DRIVE_OFFSET[ii*2].y,steerAngle[ii]);
      newDriveCenterR = Rot2D(CASTER_DRIVE_OFFSET[ii*2+1].x,CASTER_DRIVE_OFFSET[ii*2+1].y,steerAngle[ii]);
 
-     //      printf("offset:: %f, %f, %f, %f\n",newDriveCenterL.x,newDriveCenterL.y,newDriveCenterR.x,newDriveCenterR.y);
+           printf("offset:: %f, %f, %f, %f\n",newDriveCenterL.x,newDriveCenterL.y,newDriveCenterR.x,newDriveCenterR.y);
       newDriveCenterL.x += BASE_CASTER_OFFSET[ii].x;
       newDriveCenterL.y += BASE_CASTER_OFFSET[ii].y;
       newDriveCenterR.x += BASE_CASTER_OFFSET[ii].x;
@@ -170,8 +171,8 @@ void BaseController::Update( )
       //wheelSpeed[ii*2+1] = 0;
       
 
-           wheelSpeed[ii*2] = -10;
-           wheelSpeed[ii*2+1] = 10;
+      //       wheelSpeed[ii*2] = -10;
+      //     wheelSpeed[ii*2+1] = 10;
       baseJointControllers[ii*3+1].SetVelCmd(wheelSpeed[ii*2]);
       baseJointControllers[ii*3+2].SetVelCmd(wheelSpeed[ii*2+1]);
       //      printf("DRIVE::L:: %d, cmdVel:: %f\n",ii,wheelSpeed[ii*2]);
