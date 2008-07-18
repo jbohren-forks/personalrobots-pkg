@@ -87,6 +87,9 @@ int newtonEulerSolver(const Chain &chain, const JntArray &q, const JntArray &q_d
 		alpha[i] = _iRi_minus_one*alpha[i-1] + b_i*q_dotdot(i-1) + omega[i]*b_i*q_dot(i-1);
 		a_c[i] = _iRi_minus_one*a_e + alpha[i]*r_cm + omega[i]*(omega[i]*r_cm);
 		a_e = _iRi_minus_one*a_e + alpha[i]*r + omega[i]*(omega[i]*r);
+
+//		printf("-----------------------------\ni: %d\n", i);
+//		cout<<"omega[i]: "<<omega[i]<<endl<<"alpha[i]: "<<alpha[i]<<endl<<"a_c[i]: "<<a_c[i]<<endl;
 	}
 
 	// now for joint forces and torques.
@@ -128,6 +131,9 @@ int newtonEulerSolver(const Chain &chain, const JntArray &q, const JntArray &q_d
 		f[i] = rot*f[i+1] + m*a_c[i+1] - m*g;
 		t[i] = rot*t[i+1] - f[i]*r_cm + (rot*f[i+1])*r_iplusone_c+I*alpha[i+1]
 					 + omega[i+1]*(I*omega[i+1]);
+
+//		printf("-----------------------------\ni: %d\n", i);
+//		cout<<"g: "<<g<<endl<<"f[i]: "<<f[i]<<endl;
 
 		rot = T.M*T_tip.M.Inverse();
 	}
@@ -322,12 +328,12 @@ void checkPUMA560_akb()
 
 	int li=0;
 	Inertia gen_mass[6];
-	gen_mass[li].m=0,   gen_mass[li].I.data[li]=0,     gen_mass[li].I.data[3]=0,     gen_mass[li].I.data[6]=0.35;  li++;
-	gen_mass[li].m=17.4,gen_mass[li].I.data[li]=0.13,  gen_mass[li].I.data[3]=0.524, gen_mass[li].I.data[6]=0.539; li++;
-	gen_mass[li].m=4.8, gen_mass[li].I.data[li]=0.066, gen_mass[li].I.data[3]=.0125, gen_mass[li].I.data[6]=0.066; li++;
-	gen_mass[li].m=0.82,gen_mass[li].I.data[li]=1.8e-3,gen_mass[li].I.data[3]=1.8e-3,gen_mass[li].I.data[6]=1.3e-3;li++;
-	gen_mass[li].m=0.34,gen_mass[li].I.data[li]=0.3e-3,gen_mass[li].I.data[3]=0.3e-3,gen_mass[li].I.data[6]=0.4e-3;li++;
-	gen_mass[li].m=0.09,gen_mass[li].I.data[li]=.15e-3,gen_mass[li].I.data[3]=.15e-3,gen_mass[li].I.data[6]=.15e-3;li++;
+	gen_mass[li].m=0,   gen_mass[li].I.data[0]=0,     gen_mass[li].I.data[4]=0,     gen_mass[li].I.data[8]=0.35;  li++;
+	gen_mass[li].m=17.4,gen_mass[li].I.data[0]=0.13,  gen_mass[li].I.data[4]=0.524, gen_mass[li].I.data[8]=0.539; li++;
+	gen_mass[li].m=4.8, gen_mass[li].I.data[0]=0.066, gen_mass[li].I.data[4]=.0125, gen_mass[li].I.data[8]=0.066; li++;
+	gen_mass[li].m=0.82,gen_mass[li].I.data[0]=1.8e-3,gen_mass[li].I.data[4]=1.8e-3,gen_mass[li].I.data[8]=1.3e-3;li++;
+	gen_mass[li].m=0.34,gen_mass[li].I.data[0]=0.3e-3,gen_mass[li].I.data[4]=0.3e-3,gen_mass[li].I.data[8]=0.4e-3;li++;
+	gen_mass[li].m=0.09,gen_mass[li].I.data[0]=.15e-3,gen_mass[li].I.data[4]=.15e-3,gen_mass[li].I.data[8]=0.04e-3;li++;
 
 	Vector r_c[6];
 	r_c[0][0]=0.0 , r_c[0][1]=0.0 , r_c[0][2]=0    ;
@@ -350,16 +356,14 @@ void checkPUMA560_akb()
 	//----- check kinematics -----
 //	checkPUMA560_akb_fk(chain);
 
-	q(0)=deg2rad*0,q(1)=deg2rad*-30,q(2)=deg2rad*0;
-	q(3)=deg2rad*0,q(4)=deg2rad*0,q(5)=deg2rad*0;
-//	q(0)=deg2rad*74,q(1)=deg2rad*23,q(2)=deg2rad*-30;
-//	q(3)=deg2rad*43,q(4)=deg2rad*24,q(5)=deg2rad*-61;
+	q(0)=deg2rad*0,q(1)=deg2rad*-30,q(2)=deg2rad*62;
+	q(3)=deg2rad*43,q(4)=deg2rad*-28,q(5)=deg2rad*-53;
 
-	q_dot(0)=deg2rad*0,q_dot(1)=-2.,q_dot(2)=deg2rad*0.0;
-	q_dot(3)=deg2rad*0,q_dot(4)=deg2rad*0.0,q_dot(5)=deg2rad*0;
+	q_dot(0)=0,q_dot(1)=-2.,q_dot(2)=-7.2;
+	q_dot(3)=4.3,q_dot(4)=8.2,q_dot(5)=-2.2;
 
-	q_dotdot(0)=deg2rad*0,q_dotdot(1)=deg2rad*0,q_dotdot(2)=deg2rad*0;
-	q_dotdot(3)=deg2rad*0,q_dotdot(4)=deg2rad*0,q_dotdot(5)=deg2rad*0;
+	q_dotdot(0)=0,q_dotdot(1)=5,q_dotdot(2)=3.4;
+	q_dotdot(3)=-2.7,q_dotdot(4)=1.7,q_dotdot(5)=-3.;
 
 
 	newtonEulerSolver(chain, q, q_dot, q_dotdot, f,t);
