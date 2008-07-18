@@ -1,14 +1,16 @@
-all: SDL
+all: check_done
 
-SDL-1.2.13.tar.gz:
-	wget http://libsdl.org/release/SDL-1.2.13.tar.gz
+BUILD_TARGET = SDL
+include $(shell rospack find mk)/check_done.mk
 
-download: SDL-1.2.13.tar.gz
+TARBALL = SDL-1.2.13.tar.gz
+TARBALL_URL = http://libsdl.org/release/SDL-1.2.13.tar.gz
+SOURCE_DIR = SDL-1.2.13
+MD5SUM_FILE = SDL-1.2.13.tar.gz.md5sum
+UNPACK_CMD = tar xzf
+include $(shell rospack find mk)/download_unpack.mk
 
-SDL-1.2.13: SDL-1.2.13.tar.gz
-	#md5sum -c SDL-1.2.13.tar.gz.md5sum
-	tar xzf SDL-1.2.13.tar.gz
-
+.PHONY: SDL
 SDL: SDL-1.2.13
 	@if [ ! -d /usr/include/X11 ]; then echo "you don't appear to have X. On Ubuntu, this is fixed with 'sudo apt-get install xorg-dev'"; false; fi ## THis check doens't fail correctly
 	@if [ ! -f /usr/include/GL/gl.h -a ! -f /usr/X11/include/GL/gl.h ]; then echo "you don't appear to have OpenGL. On Ubuntu, this is fixed with 'sudo apt-get install libgl1-mesa-dev'"; false; fi
@@ -16,7 +18,7 @@ SDL: SDL-1.2.13
 	cd SDL-1.2.13 && ./configure --prefix=$(PWD)/SDL
 	cd SDL-1.2.13 && make && make install
 
-clean:
+clean: check_done_clean
 	-rm -rf SDL-1.2.13 SDL 
 
 wipe: clean
