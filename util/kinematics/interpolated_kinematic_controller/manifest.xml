@@ -1,0 +1,12 @@
+<package>
+<description brief='Basic controller for moving arms to desired end effector frame'>
+</description>
+<author>E. Gil Jones</author>
+<license>BSD</license>
+<url>http://pr.willowgarage.com</url>
+<depend package="roscpp"/>
+<depend package="std_msgs"/>
+<depend package="pr2Core"/>
+<depend package="libpr2API"/>
+<depend package="libKDL"/>
+</package>
