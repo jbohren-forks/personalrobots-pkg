@@ -22,6 +22,15 @@ float dot(const std_msgs::Point3DFloat32 &f1, const std_msgs::Point3DFloat32 &f2
 	return f1.x*f2.x + f1.y*f2.y + f1.z*f2.z;
 }
 
+std_msgs::Point3DFloat32 cross(const std_msgs::Point3DFloat32 &f1, const std_msgs::Point3DFloat32 &f2)
+{
+	std_msgs::Point3DFloat32 c;
+	c.x = f1.y * f2.z - f1.z * f2.y;
+	c.y = f1.z * f2.x - f1.x * f2.z;
+	c.z = f1.x * f2.y - f1.y * f2.x;
+	return c;
+}
+
 static int mask1d[5] = {0,1,2,1,0};
 const Grid1D Grid1D::MASK(5,mask1d);
 

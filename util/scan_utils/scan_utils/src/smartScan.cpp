@@ -92,6 +92,7 @@ void SmartScan::setPoints(int numPoints, const std_msgs::Point3DFloat32 *points)
 	// copy the data but just store it
 	clearData();
 	mNumPoints = numPoints;
+	assert(mNumPoints >= 0);
 	mNativePoints = new std_msgs::Point3DFloat32[mNumPoints];
 	for (int i=0; i<mNumPoints; i++) {
 		mNativePoints[i] = points[i];
@@ -106,6 +107,7 @@ void SmartScan::setPoints(int numPoints, const float *points)
 {
 	clearData();
 	mNumPoints = numPoints;
+	assert(mNumPoints >= 0);
 	mNativePoints = new std_msgs::Point3DFloat32[mNumPoints];
 	for (int i=0; i<mNumPoints; i++) {
 		mNativePoints[i].x = points[3*i+0];
@@ -274,6 +276,9 @@ void SmartScan::createVtkData()
 	mVtkPointLocator = vtkPointLocator::New();
 	mVtkPointLocator->SetDataSet(mVtkData);
 	mVtkPointLocator->BuildLocator();
+
+	//fprintf(stderr,"Automatic: %d\n",mVtkPointLocator->GetAutomatic());
+	//fprintf(stderr,"p per b: %d\n",mVtkPointLocator->GetNumberOfPointsPerBucket());
 }
 
 void SmartScan::deleteVtkData()
@@ -298,6 +303,57 @@ vtkPointLocator* SmartScan::getVtkLocator()
 	if (!hasVtkData()) createVtkData();
 	assert(mVtkPointLocator);
 	return mVtkPointLocator;
+}
+
+std_msgs::Point3DFloat32 SmartScan::centroid() const
+{
+	std_msgs::Point3DFloat32 c,p;
+	c.x = c.y = c.z = 0;
+	if (size()==0) return c;
+	for (int i=0; i<size(); i++) {
+		p = getPoint(i);
+		c.x += p.x; c.y += p.y; c.z += p.z;
+	}
+	c.x = c.x / size();
+	c.y = c.y / size();
+	c.z = c.z / size();
+	return c;
+}
+
+/*!  Returns the principal axes of the point cloud in \a a1, \a a2 and
+  \a a3, ordered from most significant to least significant.
+
+  Principal axes are computed by doing SVD on the normalized matrix of
+  components.
+
+  WARNING: singular vectors are orthonormal, but there's no guarantee
+  they form a right-handed coordinate system. This function might flip
+  \a a3 in order to ensure a right-handed coord. system.
+
+  Future work: make this more robust by disregarding outliers.
+ */
+void SmartScan::principalAxes(std_msgs::Point3DFloat32 &a1, std_msgs::Point3DFloat32 &a2,
+			      std_msgs::Point3DFloat32 &a3)
+{
+	std_msgs::Point3DFloat32 c = centroid(),p;
+
+	//asemble normalized NEWMAT matrix
+	NEWMAT::Matrix M(size(),3);
+	for (int i=0; i<size(); i++) {
+		p = getPoint(i);
+		M.element(i,0) = p.x - c.x;
+		M.element(i,1) = p.y - c.y;
+		M.element(i,2) = p.z - c.z;
+	}
+
+	//do SVD decomposition
+	singularVectors(&M,size(),a1,a2,a3);
+
+	//  singular vectors are orthonormal, but there's no guarantee
+	//  they form a right-handed coordinate system! We might need to flip one of the vectors.
+	if ( dot ( cross(a1,a2) , a3 ) < 0) {
+		a3.x = -a3.x; a3.y = -a3.y; a3.z = -a3.z;
+	}
 }
 
 /*! Adds the points in the scan \a target to this one. Does not check
@@ -329,7 +385,7 @@ void SmartScan::addScan(const SmartScan *target)
     \param tolerance Points that are closer than this value (after
     projection on x-y plane) will be merged together
 
-    \param alpha No points that are further apart than this values
+    \param alpha No points that are further apart than this value
     will be joined by a triangle
 
     The output lists the triangles produced by triangulation.  It is
@@ -545,6 +601,7 @@ float* SmartScan::ICPTo(SmartScan* target)
  */
 void SmartScan::removeOutliers(float radius, int nbrs)
 {
+	if ( size() == 0) return;
 	std_msgs::Point3DFloat32 p;
 	if (! hasVtkData() ) createVtkData();
 	vtkIdList *result = vtkIdList::New();
@@ -584,19 +641,20 @@ void SmartScan::removeOutliers(float radius, int nbrs)
 
   \param threshold The minimum difference in degrees between normal
   direction and scanner perpendicular direction for keeping
-  points. For example, if \param threshold = 10 all points whose
+  points. For example, if \a threshold = 10 all points whose
   normal is closer than 10 degrees to beeing perpendicular to the
   scanner direction are removed.
 
   \param removeOutliers What do we do with points that have too few
   neighbors to compute normals: if this flag is true, these points are
-  removed (as in removeOutliers(...) )
+  removed (as in \a removeOutliers(...) )
 
   For computing point normals we look for at least \a nbrs neighbors
   within a sphere of radius \a radius.
  */
 void SmartScan::removeGrazingPoints(float threshold, bool removeOutliers, float radius, int nbrs)
 {
+	if ( size() == 0) return;
 	// allocate memory as if we will keep all points, but later we'll do a copy and a delete
 	std_msgs::Point3DFloat32 *newPoints = new std_msgs::Point3DFloat32[mNumPoints];
 	int numNewPoints = 0;
@@ -662,6 +720,11 @@ void SmartScan::removeGrazingPoints(float threshold, bool removeOutliers, float 
 void SmartScan::normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Point3DFloat32 &planeNormal,
 				     float radius, int nbrs)
 {
+	std_msgs::Point3DFloat32 zero; zero.x = zero.y = zero.z = 0.0;
+	if ( size() == 0) {
+		planeNormal = zero; planePoint = zero; return;
+	}
+
 	float binSize = 1.0 * M_PI / 180.0;
 
 	float maxDist = 10.0;
@@ -759,6 +822,11 @@ void SmartScan::normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_m
 void SmartScan::ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Point3DFloat32 &planeNormal,
 			    int iterations, float distThresh)
 {
+	std_msgs::Point3DFloat32 foo,zero; zero.x = zero.y = zero.z = 0.0;
+
+	if ( size() == 0) {
+		planeNormal = zero; planePoint = zero; return;
+	}
 	int selPoints = 3;
 
 	//if this is true, each plane is re-fit to all inliers after inliers are calulated
@@ -771,7 +839,6 @@ void SmartScan::ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Poin
 
 	NEWMAT::Matrix M(selPoints,3);
 	std_msgs::Point3DFloat32 mean, consMean, normal, dif, p;
-	std_msgs::Point3DFloat32 zero; zero.x = zero.y = zero.z = 0.0;
 	std::list<std_msgs::Point3DFloat32> consList;
 
 	//seed random generator
@@ -797,7 +864,7 @@ void SmartScan::ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Poin
 		}
 
 		//fit a plane to the points
-		normal = SVDPlaneNormal(&M, selPoints);
+		singularVectors(&M, selPoints, foo, foo, normal);
 
 		//find all other consensus points
 		consensus = 0;
@@ -843,7 +910,7 @@ void SmartScan::ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Poin
 					CM->element(k,1) = (*it).y - consMean.y;
 					CM->element(k,2) = (*it).z - consMean.z;
 				}
-				planeNormal = SVDPlaneNormal(CM,consensus);
+				singularVectors(CM,consensus, foo, foo, planeNormal);
 				planePoint = consMean;
 				delete CM;
 			} else {
@@ -963,32 +1030,35 @@ std_msgs::Point3DFloat32 SmartScan::computePointNormal(int id, float radius, int
 	}
 	result->Delete();
 
-	return SVDPlaneNormal(&M,n);
+	std_msgs::Point3DFloat32 foo, normal;
+	singularVectors(&M, n, foo, foo, normal);
+	return normal;
 }
 
 /*! Given an \a n by 3 matrix \a M in NEWMAT format, performs
-  SVD and returns the direction of the least significant singular
-  vector. If the matrix is a list of vertices, this corresponds to the
-  direction of the normal of a plane fit to those points. Vertices are
-  expected to be normalized first (of mean 0).
+  SVD and returns the singular vectors in decreasing order of the singular values.
+
+  If the matrix is a list of vertices, the last singular vector
+  corresponds to the direction of the normal of a plane fit to those
+  points. Vertices should be normalized first (of mean 0).
 */
-std_msgs::Point3DFloat32 SmartScan::SVDPlaneNormal(NEWMAT::Matrix *M, int n)
+void SmartScan::singularVectors(NEWMAT::Matrix *M, int n, std_msgs::Point3DFloat32 &sv1, 
+				std_msgs::Point3DFloat32 &sv2, std_msgs::Point3DFloat32 &sv3)
+
 {
 	NEWMAT::Matrix U(n,3);
 	NEWMAT::DiagonalMatrix D(3);
 	NEWMAT::Matrix V(3,3);
 	SVD(*M, D, U, V);
 
-	std_msgs::Point3DFloat32 normal;
-	normal.x = V.element(0,2);
-	normal.y = V.element(1,2);
-	normal.z = V.element(2,2);
+	sv1.x = V.element(0,0); sv1.y = V.element(1,0); sv1.z = V.element(2,0);
+	sv2.x = V.element(0,1); sv2.y = V.element(1,1); sv2.z = V.element(2,1);
+	sv3.x = V.element(0,2); sv3.y = V.element(1,2); sv3.z = V.element(2,2);
 	//std::cout << *M << std::endl;
 	//std::cout << U << std::endl;
 	//std::cout << D << std::endl;
 	//std::cout << V << std::endl;
 	//fprintf(stderr,"%f %f %f \n",normal.x, normal.y, normal.z);
-	return normal;
 }
 
 std::vector<scan_utils::Triangle>* SmartScan::createMesh()
@@ -1148,4 +1218,54 @@ std::vector<SmartScan*> *SmartScan::connectedComponents(float thresh)
 	delete [] indices;
 	fprintf(stderr,"Started with %d and finished with %d points\n",size(),totalPoints);
 	return result;
+}
+
+/*!  Subtracts scan \a target from this one. More specifically, any
+  point in this scan is removed if there exists a point in \a target
+  which is closer to it than \a thresh.
+*/
+void SmartScan::subtractScan(const SmartScan *target, float thresh)
+{
+	if (!hasVtkData()) createVtkData();
+
+	// let's try another approach: keep track of points we keep in a separate array
+	char *indices = new char[size()];
+	vtkIdList *points = vtkIdList::New();
+
+	for (int i=0; i<size(); i++) {
+		// start by marking all poins as if we will keep them
+		indices[i] = 1;
+	}
+
+	int keptPoints = size();
+	for (int i=0; i<target->size(); i++) {
+		//a point from the target
+		std_msgs::Point3DFloat32 p = target->getPoint(i);
+		//find all neighbors in this scan
+		points->Reset();
+		getVtkLocator()->FindPointsWithinRadius( thresh, p.x, p.y, p.z, points );
+		for (int k = 0; k < points->GetNumberOfIds(); k++) {
+			//mark that we don't want to keep them
+			int nbr = points->GetId(k);
+			if (indices[nbr]==1) keptPoints--;
+			indices[nbr] = 0;
+		}
+	}
+
+	fprintf(stderr,"Keeping %d points\n",keptPoints);
+	assert(keptPoints>=0);
+
+	std_msgs::Point3DFloat32 *newPoints = new std_msgs::Point3DFloat32[keptPoints];
+	int count = 0;
+	for (int i=0; i<size(); i++) {
+		if (indices[i]==1) {
+			newPoints[count] = getPoint(i);
+			count++;
+		}
+	}
+	assert(count==keptPoints);
+	setPoints(keptPoints, newPoints);
+
+	points->Delete();
+	delete [] indices;
 }

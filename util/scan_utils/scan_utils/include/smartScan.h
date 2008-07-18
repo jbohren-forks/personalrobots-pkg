@@ -88,8 +88,9 @@ class SmartScan {
 	//! Apply the inner transform to a point
 	std_msgs::Point3DFloat32 transformPoint(const std_msgs::Point3DFloat32 &p,
 						libTF::TransformReference &tr) const;
-	//! Fit plane to normalized points using SVD and return normal direction.
-	std_msgs::Point3DFloat32 SVDPlaneNormal(NEWMAT::Matrix *M, int n);
+	//! Return the singular vectors of a Newmat matrix sorted in decreasing order of singular values
+	void singularVectors(NEWMAT::Matrix *M, int n, std_msgs::Point3DFloat32 &sv1, 
+			     std_msgs::Point3DFloat32 &sv2, std_msgs::Point3DFloat32 &sv3);
  public:
 	//! Empty constructor for a new point cloud that does not hold any data
 	SmartScan();
@@ -113,15 +114,22 @@ class SmartScan {
 	//! Read point cloud from an input stream. 
 	bool readFromFile(std::iostream &input);
 	//! Returns the number of points in the cloud
-	int size() const {return mNumPoints;}
+	inline int size() const {return mNumPoints;}
 	//! Returns the i-th point in the cloud.
 	inline std_msgs::Point3DFloat32 getPoint(int i) const{
 		assert( i>=0 && i<mNumPoints);
 		return mNativePoints[i];
 	}
+	//! Returns the centroid of the point cloud
+	std_msgs::Point3DFloat32 centroid() const;
+	//! Get the principal axes of the point cloud
+	void principalAxes(std_msgs::Point3DFloat32 &a1, std_msgs::Point3DFloat32 &a2,
+			   std_msgs::Point3DFloat32 &a3);
 
-	//!Adds the points from another scan to this one
+	//! Adds the points from another scan to this one
 	void addScan(const SmartScan *target);
+	//! Removes points from this scan that are also present in another scan
+	void subtractScan(const SmartScan *target, float thresh);
 
 	//! Apply a transform to each point in the cloud using a NEWMAT matrix
 	void applyTransform(const NEWMAT::Matrix &M);
@@ -157,6 +165,7 @@ class SmartScan {
 	//! Returns the connected components in this scan, each in its own SmartScan
 	std::vector<SmartScan*> *connectedComponents(float thresh);
 
+	//! Under construction...
 	std::vector<scan_utils::Triangle> *createMesh();
 };
 

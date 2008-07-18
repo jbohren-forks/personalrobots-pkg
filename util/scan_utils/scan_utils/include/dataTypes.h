@@ -41,6 +41,7 @@ class Triangle{
  float norm(const std_msgs::Point3DFloat32 &f);
  std_msgs::Point3DFloat32 normalize(const std_msgs::Point3DFloat32 &f);
  float dot(const std_msgs::Point3DFloat32 &f1, const std_msgs::Point3DFloat32 &f2);
+ std_msgs::Point3DFloat32 cross(const std_msgs::Point3DFloat32 &f1, const std_msgs::Point3DFloat32 &f2);
 
 /*! A 1D histogram.
  */
