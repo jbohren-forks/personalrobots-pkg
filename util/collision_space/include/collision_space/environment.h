@@ -41,27 +41,32 @@
 
     A class describing an environment for a kinematic robot */
 
-class EnvironmentModel
+namespace collision_space
 {
- public:
     
-    EnvironmentModel(void)
+    class EnvironmentModel
     {
-	model = NULL;
-    }
-    
-    virtual ~EnvironmentModel(void)
-    {
-    }
-    
-    /** Check if the model is in collision */
-    virtual bool isCollision(void) = 0;
-    
-    /** Add a point cloud to the collision space */
-    virtual void addPointCloud(unsigned int n, const double* points, double radius = 0.01) = 0;
-    
-    robot_models::KinematicModel *model;    
+    public:
+	
+	EnvironmentModel(void)
+	{
+	    model = NULL;
+	}
+	
+	virtual ~EnvironmentModel(void)
+	{
+	}
+	
+	/** Check if the model is in collision */
+	virtual bool isCollision(void) = 0;
+	
+	/** Add a point cloud to the collision space */
+	virtual void addPointCloud(unsigned int n, const double* points, double radius = 0.01) = 0;
+	
+	robot_models::KinematicModel *model;    
         
-};
+    };
+}
 
 #endif
+    

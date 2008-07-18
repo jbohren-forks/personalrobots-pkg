@@ -42,144 +42,149 @@
 
     A class describing an environment for a kinematic robot using ODE */
 
-class EnvironmentModelODE : public EnvironmentModel
+namespace collision_space
 {
-public:
-
-    class KinematicModelODE : public robot_models::KinematicModel
+    
+    class EnvironmentModelODE : public EnvironmentModel
     {
     public:
 	
-        KinematicModelODE(void) : KinematicModel()
+	class KinematicModelODE : public robot_models::KinematicModel
 	{
-	    m_space = NULL;
+	public:
+	    
+            KinematicModelODE(void) : KinematicModel()
+	    {
+		m_space = NULL;
+	    }
+	    
+	    virtual ~KinematicModelODE(void)
+	    {
+		for (unsigned int i = 0 ; i < m_kgeoms.size() ; ++i)
+		    delete m_kgeoms[i];
+	    }
+	    
+	    virtual void build(URDF &model, const char *group = NULL);
+	    
+	    dSpaceID getODESpace(void) const;
+	    void     setODESpace(dSpaceID space);
+	    
+	    unsigned int getGeomCount(void) const;
+	    dGeomID      getGeom(unsigned index) const;
+	    
+	    void updateCollisionPositions(void);
+	    
+	    
+	protected:
+	    
+	    dSpaceID m_space;
+	    
+	    struct kGeom
+	    {
+		dGeomID geom;
+		Link   *link;
+	    };
+	    
+	    std::vector<kGeom*> m_kgeoms;    
+	    
+	    void buildODEGeoms(Robot *robot);
+	    dGeomID buildODEGeom(Geometry *geom);
+	    void setGeomPose(dGeomID geom, libTF::Pose3D &pose) const;
+	    
+	};
+	
+        EnvironmentModelODE(void) : EnvironmentModel()
+	{
+	    model = dynamic_cast<robot_models::KinematicModel*>(&m_modelODE);
+	    m_space = dHashSpaceCreate(0);
+	    m_modelODE.setODESpace(m_space);
 	}
 	
-	virtual ~KinematicModelODE(void)
+	~EnvironmentModelODE(void)
 	{
-	    for (unsigned int i = 0 ; i < m_kgeoms.size() ; ++i)
-		delete m_kgeoms[i];
+	    if (m_space)
+		dSpaceDestroy(m_space);
 	}
 	
-	virtual void build(URDF &model, const char *group = NULL);
+	/** Check if the model is in collision */
+	virtual bool isCollision(void);
 	
-	dSpaceID getODESpace(void) const;
-	void     setODESpace(dSpaceID space);
-
-	unsigned int getGeomCount(void) const;
-	dGeomID      getGeom(unsigned index) const;
-	
-	void updateCollisionPositions(void);
-	
+	/** Add a point cloud to the collision space */
+	virtual void addPointCloud(unsigned int n, const double *points, double radius = 0.01); 
 	
     protected:
 	
-	dSpaceID m_space;
-	
-	struct kGeom
+	class ODECollide2
 	{
-	    dGeomID geom;
-	    Link   *link;
+	public:
+	    
+	    ODECollide2(dSpaceID space = NULL)
+	    {	
+		m_setup = false;
+		if (space)
+		    registerSpace(space);
+	    }
+	    
+	    ~ODECollide2(void)
+	    {
+	    }
+	    
+	    void registerSpace(dSpaceID space);
+	    void registerGeom(dGeomID geom);
+	    void clear(void);
+	    void setup(void);
+	    void collide(dGeomID geom, void *data, dNearCallback *nearCallback);
+	    
+	private:
+	    
+	    struct Geom
+	    {
+		dGeomID id;
+		dReal   aabb[6];
+	    };
+	    
+	    struct SortByXYZLow
+	    {
+		bool operator()(const Geom &a, const Geom &b) 
+		{
+		    if (a.aabb[0] < b.aabb[0])
+			return true;
+		    if (a.aabb[0] > b.aabb[0])
+			return false;
+		    
+		    if (a.aabb[2] < b.aabb[2])
+			return true;
+		    if (a.aabb[2] > b.aabb[2])
+			return false;
+		    
+		    if (a.aabb[4] < b.aabb[4])
+			return true;
+		    return false;	
+		}
+	    };
+	    
+	    struct SortByX
+	    {
+		bool operator()(const Geom &a, const Geom &b)
+		{
+		    if (a.aabb[1] < b.aabb[0])
+			return true;
+		    return false;
+		}
+	    };
+	    
+	    bool              m_setup;
+	    std::vector<Geom> m_geoms;
+	    
 	};
 	
-	std::vector<kGeom*> m_kgeoms;    
-	
-	void buildODEGeoms(Robot *robot);
-	dGeomID buildODEGeom(Geometry *geom);
-	void setGeomPose(dGeomID geom, libTF::Pose3D &pose) const;
+	dSpaceID             m_space;
+	ODECollide2          m_collide2;
+	KinematicModelODE    m_modelODE;
+	std::vector<dGeomID> m_obstacles;
 	
     };
-
-    EnvironmentModelODE(void) : EnvironmentModel()
-    {
-	model = dynamic_cast<robot_models::KinematicModel*>(&m_modelODE);
-	m_space = dHashSpaceCreate(0);
-	m_modelODE.setODESpace(m_space);
-    }
-    
-    ~EnvironmentModelODE(void)
-    {
-	if (m_space)
-	    dSpaceDestroy(m_space);
-    }
-
-    /** Check if the model is in collision */
-    virtual bool isCollision(void);
-    
-    /** Add a point cloud to the collision space */
-    virtual void addPointCloud(unsigned int n, const double *points, double radius = 0.01); 
-
- protected:
-    
-    class ODECollide2
-    {
-    public:
-	
-	ODECollide2(dSpaceID space = NULL)
-	{	
-	    m_setup = false;
-	    if (space)
-		registerSpace(space);
-	}
-	
-	~ODECollide2(void)
-	{
-	}
-	
-	void registerSpace(dSpaceID space);
-	void registerGeom(dGeomID geom);
-	void clear(void);
-	void setup(void);
-	void collide(dGeomID geom, void *data, dNearCallback *nearCallback);
-		
-    private:
-	
-	struct Geom
-	{
-	    dGeomID id;
-	    dReal   aabb[6];
-	};
-	
-	struct SortByXYZLow
-	{
-	    bool operator()(const Geom &a, const Geom &b) 
-	    {
-		if (a.aabb[0] < b.aabb[0])
-		    return true;
-		if (a.aabb[0] > b.aabb[0])
-		    return false;
-		
-		if (a.aabb[2] < b.aabb[2])
-		    return true;
-		if (a.aabb[2] > b.aabb[2])
-		    return false;
-		
-		if (a.aabb[4] < b.aabb[4])
-		    return true;
-		return false;	
-	    }
-	};
-	
-	struct SortByX
-	{
-	    bool operator()(const Geom &a, const Geom &b)
-	    {
-		if (a.aabb[1] < b.aabb[0])
-		    return true;
-		return false;
-	    }
-	};
-	
-	bool              m_setup;
-	std::vector<Geom> m_geoms;
-	
-    };
-
-    dSpaceID             m_space;
-    ODECollide2          m_collide2;
-    KinematicModelODE    m_modelODE;
-    std::vector<dGeomID> m_obstacles;
-    
-};
+}
 
 #endif
+    

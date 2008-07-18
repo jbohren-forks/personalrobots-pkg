@@ -35,7 +35,7 @@
 #include <collision_space/environmentODE.h>
 #include <cassert>
 
-void EnvironmentModelODE::KinematicModelODE::build(URDF &model, const char *group)
+void collision_space::EnvironmentModelODE::KinematicModelODE::build(URDF &model, const char *group)
 {
     robot_models::KinematicModel::build(model, group);
     assert(m_space);
@@ -43,7 +43,7 @@ void EnvironmentModelODE::KinematicModelODE::build(URDF &model, const char *grou
 	buildODEGeoms(m_robots[i]);
 }
 
-void EnvironmentModelODE::KinematicModelODE::setGeomPose(dGeomID geom, libTF::Pose3D &pose) const
+void collision_space::EnvironmentModelODE::KinematicModelODE::setGeomPose(dGeomID geom, libTF::Pose3D &pose) const
 {
     libTF::Pose3D::Position pos = pose.getPosition();
     dGeomSetPosition(geom, pos.x, pos.y, pos.z);
@@ -52,13 +52,13 @@ void EnvironmentModelODE::KinematicModelODE::setGeomPose(dGeomID geom, libTF::Po
     dGeomSetQuaternion(geom, q);
 }
 
-void EnvironmentModelODE::KinematicModelODE::updateCollisionPositions(void)
+void collision_space::EnvironmentModelODE::KinematicModelODE::updateCollisionPositions(void)
 {
     for (unsigned int i = 0 ; i < m_kgeoms.size() ; ++i)
 	setGeomPose(m_kgeoms[i]->geom, m_kgeoms[i]->link->globalTrans);
 }
 
-void EnvironmentModelODE::KinematicModelODE::buildODEGeoms(Robot *robot)
+void collision_space::EnvironmentModelODE::KinematicModelODE::buildODEGeoms(Robot *robot)
 {
     for (unsigned int i = 0 ; i < robot->links.size() ; ++i)
     {
@@ -74,7 +74,7 @@ void EnvironmentModelODE::KinematicModelODE::buildODEGeoms(Robot *robot)
     }
 }
 
-dGeomID EnvironmentModelODE::KinematicModelODE::buildODEGeom(Geometry *geom)
+dGeomID collision_space::EnvironmentModelODE::KinematicModelODE::buildODEGeom(Geometry *geom)
 {
     dGeomID g = NULL;
     
@@ -96,34 +96,34 @@ dGeomID EnvironmentModelODE::KinematicModelODE::buildODEGeom(Geometry *geom)
     return g;
 }
 
-dSpaceID EnvironmentModelODE::KinematicModelODE::getODESpace(void) const
+dSpaceID collision_space::EnvironmentModelODE::KinematicModelODE::getODESpace(void) const
 {
     return m_space;
 }
 
-void EnvironmentModelODE::KinematicModelODE::setODESpace(dSpaceID space)
+void collision_space::EnvironmentModelODE::KinematicModelODE::setODESpace(dSpaceID space)
 {
     m_space = space;
 }
 
-unsigned int EnvironmentModelODE::KinematicModelODE::getGeomCount(void) const
+unsigned int collision_space::EnvironmentModelODE::KinematicModelODE::getGeomCount(void) const
 {
     return m_kgeoms.size();
 }
 
-dGeomID EnvironmentModelODE::KinematicModelODE::getGeom(unsigned index) const
+dGeomID collision_space::EnvironmentModelODE::KinematicModelODE::getGeom(unsigned index) const
 {
     return m_kgeoms[index]->geom;    
 }
 
-void EnvironmentModelODE::ODECollide2::registerSpace(dSpaceID space)
+void collision_space::EnvironmentModelODE::ODECollide2::registerSpace(dSpaceID space)
 {
     int n = dSpaceGetNumGeoms(space);
     for (int i = 0 ; i < n ; ++i)
 	registerGeom(dSpaceGetGeom(space, i));
 }
 
-void EnvironmentModelODE::ODECollide2::registerGeom(dGeomID geom)
+void collision_space::EnvironmentModelODE::ODECollide2::registerGeom(dGeomID geom)
 {
     Geom g;
     g.id = geom;
@@ -132,13 +132,13 @@ void EnvironmentModelODE::ODECollide2::registerGeom(dGeomID geom)
     m_setup = false;
 }
 	
-void EnvironmentModelODE::ODECollide2::clear(void)
+void collision_space::EnvironmentModelODE::ODECollide2::clear(void)
 {
     m_geoms.clear();
     m_setup = false;
 }
 
-void EnvironmentModelODE::ODECollide2::setup(void)
+void collision_space::EnvironmentModelODE::ODECollide2::setup(void)
 {
     if (!m_setup)
     {
@@ -147,7 +147,7 @@ void EnvironmentModelODE::ODECollide2::setup(void)
     }	    
 }
 
-void EnvironmentModelODE::ODECollide2::collide(dGeomID geom, void *data, dNearCallback *nearCallback)
+void collision_space::EnvironmentModelODE::ODECollide2::collide(dGeomID geom, void *data, dNearCallback *nearCallback)
 {
     assert(m_setup);
     
@@ -191,7 +191,7 @@ static void nearCallbackFn(void *data, dGeomID o1, dGeomID o2)
 	reinterpret_cast<CollisionData*>(data)->collides = true;
 }
 
-bool EnvironmentModelODE::isCollision(void)
+bool collision_space::EnvironmentModelODE::isCollision(void)
 {
     CollisionData cdata;
     cdata.collides = false;
@@ -201,7 +201,7 @@ bool EnvironmentModelODE::isCollision(void)
     return cdata.collides;
 }
 
-void EnvironmentModelODE::addPointCloud(unsigned int n, const double *points, double radius)
+void collision_space::EnvironmentModelODE::addPointCloud(unsigned int n, const double *points, double radius)
 {
     for (unsigned int i = 0 ; i < n ; ++i)
     {

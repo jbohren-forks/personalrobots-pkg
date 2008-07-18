@@ -34,6 +34,7 @@
 
 #include <collision_space/environmentODE.h>
 #include <drawstuff/drawstuff.h>
+using namespace collision_space;
 
 
 #ifdef dDOUBLE
