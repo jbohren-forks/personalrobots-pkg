@@ -2,7 +2,6 @@ import time
 import threading
 import numpy
 import sys
-import urg
 import math
 import fun
 from transforms2d import *
@@ -411,7 +410,6 @@ class V_Laser(Node):
             scans[0,i] = self.max_range
         return scans
 
-import transforms as tr
 class V_EuclidOfLaser_V(Node):
     def __init__(self, laser, urg_number=0):
         """ Gets laser points in base's reference frame """
@@ -425,7 +423,6 @@ class V_EuclidOfLaser_V(Node):
 		urg0_global      = tr.globalTurg0(urg0_natural)
 		return urg0_global[:2, :]
 
-import transforms as tr
 def Obj_ConnectedComp_V(laser, max_range=3.9):
     """
         Construct a node that gives connected components
