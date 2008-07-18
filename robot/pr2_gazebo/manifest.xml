@@ -10,6 +10,7 @@
   <depend package="libpr2API" />
   <depend package="genericControllers" />
   <depend package="pr2Controllers" />
+  <depend package="rosControllers" />
   <depend package="pr2Core" />
   <depend package="std_msgs" />
   <depend package="rosthread" />

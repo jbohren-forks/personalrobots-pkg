@@ -31,7 +31,6 @@
 #include <gazebo_hardware/gazebo_hardware.h>
 #include <gazebo_sensors/gazebo_sensors.h>
 
-
 // controller objects
 #include <pr2Controllers/ArmController.h>
 #include <pr2Controllers/HeadController.h>
@@ -40,14 +39,16 @@
 #include <pr2Controllers/LaserScannerController.h>
 #include <pr2Controllers/GripperController.h>
 
+// ros node for controllers
+#include <rosControllers/RosJointController.h>
 
 // roscpp
-#include <ros/node.h>
+//#include <ros/node.h>
 
 #include <time.h>
 #include <signal.h>
 
-pthread_mutex_t simMutex; //Mutex for sim R/W
+pthread_mutex_t simMutex[PR2::MAX_JOINTS]; //Mutex for sim R/W
 
 void finalize(int)
 {
@@ -57,14 +58,16 @@ void finalize(int)
 }
 
 
-void *nonRealtimeLoop(void *rgn)
+void *nonRealtimeLoop(void *rjc)
 {
   std::cout << "Started nonRT loop" << std::endl;
   while (1)
   {
-    pthread_mutex_lock(&simMutex); //Lock for r/w
-    //((RosGazeboNode*)rgn)->Update();
-    pthread_mutex_unlock(&simMutex); //Unlock when done
+    for (int i = 0;i<PR2::MAX_JOINTS;i++){
+      pthread_mutex_lock(&simMutex[i]); //Lock for r/w
+      ((RosJointController*)rjc)->update();
+      pthread_mutex_unlock(&simMutex[i]); //Unlock when done
+    }
     // some time out for publishing ros info
     usleep(10000);
   }
@@ -81,8 +84,10 @@ main(int argc, char** argv)
   // we need 2 threads, one for RT and one for nonRT
   pthread_t threads[2];
 
-  pthread_mutex_init(&simMutex, NULL);
-  
+  for (int i = 0;i<PR2::MAX_JOINTS;i++){
+    pthread_mutex_init(&(simMutex[i]), NULL);
+  }
+
   ros::init(argc,argv);
 
   /***************************************************************************************/
@@ -223,9 +228,10 @@ main(int argc, char** argv)
 
   // initialize each jointController jc[i], associate with a joint joint[i]
   for (int i = 0;i<PR2::MAX_JOINTS;i++){
-    jc[i] = new CONTROLLER::JointController();
+    jc[i]  = new CONTROLLER::JointController();
     jc[i]->Init(1000,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,1000,-1000,1000,joint[i]);
   }
+
   //Explicitly initialize the controllers we wish to use. Don't forget to set the controllers to torque mode in the world file! 
   jc[PR2::ARM_L_PAN]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_L_PAN]);
   jc[PR2::ARM_L_SHOULDER_PITCH]->Init(1000,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,1000,-1000,1000,joint[PR2::ARM_L_SHOULDER_PITCH]);
@@ -234,6 +240,14 @@ main(int argc, char** argv)
   jc[PR2::ARM_L_ELBOW_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_L_ELBOW_ROLL]);
   jc[PR2::ARM_L_WRIST_PITCH]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_L_WRIST_PITCH]);
   jc[PR2::ARM_L_WRIST_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_L_WRIST_ROLL]);
+
+  jc[PR2::ARM_R_PAN]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_R_PAN]);
+  jc[PR2::ARM_R_SHOULDER_PITCH]->Init(1000,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,1000,-1000,1000,joint[PR2::ARM_R_SHOULDER_PITCH]);
+  jc[PR2::ARM_R_SHOULDER_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_R_SHOULDER_ROLL]);
+  jc[PR2::ARM_R_ELBOW_PITCH]->Init(300,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_R_ELBOW_PITCH]);
+  jc[PR2::ARM_R_ELBOW_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_R_ELBOW_ROLL]);
+  jc[PR2::ARM_R_WRIST_PITCH]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_R_WRIST_PITCH]);
+  jc[PR2::ARM_R_WRIST_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_R_WRIST_ROLL]);
 
   //JointController::Init(double PGain, double IGain, double DGain, double IMax,
   //                      double IMin, CONTROLLER_CONTROL_MODE mode, double time,
@@ -259,8 +273,19 @@ main(int argc, char** argv)
   /*                            initialize ROS Gazebo Nodes                              */
   /*                                                                                     */
   /***************************************************************************************/
-  printf("Creating node \n");
-  //RosGazeboNode rgn(argc,argv,argv[1],myPR2,&myArm,&myHead,&mySpine,&myBase,&myLaserScanner,&myGripper,JointArray);
+  RosJointController*               rjc[PR2::MAX_JOINTS];  // One ros node per controller
+  for (int i = 0;i<PR2::MAX_JOINTS;i++){
+    // name for controller
+    char tmp[21];
+    sprintf(tmp,"joint_controller_%04d", i);
+    // instantiate
+    rjc[i] = new RosJointController(tmp);
+    rjc[i]->init(jc[i]);
+    // see if we can subscribe models needed
+    if (rjc[i]->advertiseSubscribeMessages() != 0)
+      exit(-1);
+  }
+
 
   /***************************************************************************************/
   /*                                                                                     */
@@ -271,22 +296,21 @@ main(int argc, char** argv)
   signal(SIGQUIT, (&finalize));
   signal(SIGTERM, (&finalize));
 
-  // see if we can subscribe models needed
-  //if (rgn.AdvertiseSubscribeMessages() != 0)
-  //  exit(-1);
-
   /***************************************************************************************/
   /*                                                                                     */
   /* Update ROS Gazebo Node                                                              */
   /*   contains controller pointers for the non-RT setpoints                             */
   /*                                                                                     */
   /***************************************************************************************/
-  //int rgnt = pthread_create(&threads[0],NULL, nonRealtimeLoop, (void *) (&rgn));
-  //if (rgnt)
-  //{
-  //  printf("Could not start a separate thread for ROS Gazebo Node (code=%d)\n",rgnt);
-  //  exit(-1);
-  //}
+  int rjct[PR2::MAX_JOINTS];
+  for (int i=0;i<PR2::MAX_JOINTS;i++) {
+    rjct[i] = pthread_create(&threads[0],NULL, nonRealtimeLoop, (void *) (&(rjc[i])));
+    if (rjct[i])
+    {
+      printf("Could not start a separate thread for %d-th ROS Gazebo Node (code=%d)\n",i,rjct[i]);
+      exit(-1);
+    }
+  }
 
   /***************************************************************************************/
   /*                                                                                     */
@@ -301,7 +325,6 @@ main(int argc, char** argv)
     //myPR2->hw.GetSimTime(&time);
     //std::cout<<"Time:"<<time<<std::endl;
 
-    //pthread_mutex_trylock(&simMutex); //Try to lock here. But continue on if fails to enforce real time
     // Update Controllers
     //   each controller will try to read new commands from shared memory with nonRT hooks,
     //   and skip update if locked by nonRT loop.
@@ -315,18 +338,6 @@ main(int argc, char** argv)
     myGripper.Update();
     */
 
-
-    // jc.GetTorqueCmd(&torque);
-    //   std::cout<<"*"<<torque<<std::endl;
-    // std::cout<<JointArray[PR2::ARM_L_SHOULDER_PITCH]->position<<std::endl;
-    // TODO: Safety codes should go here...
-
-    // old:  Send updated controller commands to hardware
-    // myPR2->hw.UpdateJointArray(JointArray);
-
-
-
-
     // get encoder counts from hardware
     h->updateState();
 
@@ -335,7 +346,11 @@ main(int argc, char** argv)
       // setup joint state from encoder counts
       st[i]->propagatePosition();
       //update controller
-      jc[i]->Update();
+      if (pthread_mutex_trylock(&simMutex[i])==0)
+      {
+        jc[i]->Update();
+        pthread_mutex_unlock(&simMutex[i]); //Unlock after we're done with r/w
+      }
       // update command current from joint command
       st[i]->propagateEffort();
     }
@@ -348,7 +363,6 @@ main(int argc, char** argv)
     // refresh hardware
     h->tick();
 
-    //pthread_mutex_unlock(&simMutex); //Unlock after we're done with r/w
 
     // wait for Gazebo time step
     //myPR2->hw.ClientWait();
