@@ -360,7 +360,8 @@ namespace PR2
          */
      public: PR2::JointData jointData[MAX_JOINT_IDS];
 
-
+     private: double lastTiltLaserTime;
+     private: double lastBaseLaserTime;
 
     };
 

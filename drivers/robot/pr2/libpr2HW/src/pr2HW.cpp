@@ -62,7 +62,6 @@ gazebo::PositionIface    *pr2BaseIface;
 PR2HW::PR2HW()
 {
 
-
 }
 
 PR2HW::~PR2HW()
@@ -306,6 +305,8 @@ PR2_ERROR_CODE PR2HW::Init()
   }
 
 
+  GetSimTime(&(this->lastTiltLaserTime));
+  GetSimTime(&(this->lastBaseLaserTime));
 
   return PR2_ALL_OK;
 };
@@ -479,13 +480,29 @@ PR2_ERROR_CODE PR2HW::GetLaserRanges(PR2_SENSOR_ID id,
 {
 
   gazebo::LaserIface       *tmpLaserIface;
+
+  double tmpTime;
+  GetSimTime(&tmpTime);
+
   switch (id)
   {
     case LASER_HEAD:
-      tmpLaserIface = pr2LaserIface;
+      if (tmpTime == this->lastTiltLaserTime)
+        tmpLaserIface = NULL;
+      else
+      {
+        tmpLaserIface = pr2LaserIface;
+        this->lastTiltLaserTime = tmpTime;
+      }
       break;
     case LASER_BASE:
-      tmpLaserIface = pr2BaseLaserIface;
+      if (tmpTime == this->lastBaseLaserTime)
+        tmpLaserIface = NULL;
+      else
+      {
+        tmpLaserIface = pr2BaseLaserIface;
+        this->lastBaseLaserTime = tmpTime;
+      }
       break;
     default:
       tmpLaserIface = NULL;
