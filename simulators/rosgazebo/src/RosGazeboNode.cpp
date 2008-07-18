@@ -46,18 +46,23 @@ RosGazeboNode::cmd_rightarmconfigReceived()
 
   //  this->PR2Copy->SetArmJointPosition(PR2::PR2_LEFT_ARM, jointPosition, jointSpeed);
   */
-  if (ControllerArray == NULL)
-  {
-    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_PAN           , this->rightarm.turretAngle,       0);
-    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, this->rightarm.shoulderLiftAngle, 0);
-    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_ROLL , this->rightarm.upperarmRollAngle, 0);
-    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_PITCH   , this->rightarm.elbowAngle,        0);
-    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    , this->rightarm.forearmRollAngle,  0);
-    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , this->rightarm.wristPitchAngle,   0);
-    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , this->rightarm.wristRollAngle,    0);
-    //this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER       , this->rightarm.gripperGapCmd,     0);
-    this->PR2Copy->hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, this->rightarm.gripperGapCmd, this->rightarm.gripperForceCmd);
+/*
+  if(!useControllerArray){
+  
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_PAN           , this->rightarm.turretAngle,       0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, this->rightarm.shoulderLiftAngle, 0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_ROLL , this->rightarm.upperarmRollAngle, 0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_PITCH   , this->rightarm.elbowAngle,        0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    , this->rightarm.forearmRollAngle,  0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , this->rightarm.wristPitchAngle,   0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , this->rightarm.wristRollAngle,    0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER       , this->rightarm.gripperGapCmd,     0);
   }
+*/
+  //Leave a way to communicate with the grippers
+  this->PR2Copy->hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, this->rightarm.gripperGapCmd, this->rightarm.gripperForceCmd);
+
+  //*/
   this->lock.unlock();
 }
 
@@ -67,7 +72,7 @@ RosGazeboNode::cmd_leftarmconfigReceived()
 {
   this->lock.lock();
   newLeftArmPos = true;
-  printf("Left arm command received\n");
+  //printf("Left arm command received\n");
   /*
   double jointPosition[] = {this->leftarm.turretAngle,
                             this->leftarm.shoulderLiftAngle,
@@ -81,18 +86,24 @@ RosGazeboNode::cmd_leftarmconfigReceived()
   this->PR2Copy->SetArmJointPosition(PR2::PR2_LEFT_ARM, jointPosition, jointSpeed);
   */
 
-  if (ControllerArray == NULL)
-  {
-    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_PAN           , this->leftarm.turretAngle,       0);
-    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_PITCH, this->leftarm.shoulderLiftAngle, 0);
-    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_ROLL , this->leftarm.upperarmRollAngle, 0);
-    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_PITCH   , this->leftarm.elbowAngle,        0);
-    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_ROLL    , this->leftarm.forearmRollAngle,  0);
-    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_WRIST_PITCH   , this->leftarm.wristPitchAngle,   0);
-    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_WRIST_ROLL    , this->leftarm.wristRollAngle,    0);
-    // this->PR2Copy->SetJointServoCmd(PR2::ARM_L_GRIPPER       , this->leftarm.gripperGapCmd,     0);
-    this->PR2Copy->hw.CloseGripper(PR2::PR2_LEFT_GRIPPER, this->leftarm.gripperGapCmd, this->leftarm.gripperForceCmd);
+/*
+  if(!useControllerArray){
+  
+  
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_PAN           , this->leftarm.turretAngle,       0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_PITCH, this->leftarm.shoulderLiftAngle, 0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_ROLL , this->leftarm.upperarmRollAngle, 0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_PITCH   , this->leftarm.elbowAngle,        0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_ROLL    , this->leftarm.forearmRollAngle,  0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_WRIST_PITCH   , this->leftarm.wristPitchAngle,   0);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_WRIST_ROLL    , this->leftarm.wristRollAngle,    0);
+   this->PR2Copy->SetJointServoCmd(PR2::ARM_L_GRIPPER       , this->leftarm.gripperGapCmd,     0);
   }
+*/
+  //Leave a way to communicate with the grippers
+  this->PR2Copy->hw.CloseGripper(PR2::PR2_LEFT_GRIPPER, this->leftarm.gripperGapCmd, this->leftarm.gripperForceCmd);
+  
+  
   this->lock.unlock();
 }
 
@@ -190,39 +201,6 @@ RosGazeboNode::cmdvelReceived()
 
 RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
          PR2::PR2Robot          *myPR2,
-         CONTROLLER::JointController** ControllerArray):
-        ros::node("rosgazebo"),tf(*this)
-{
-  // accept passed in robot
-  this->PR2Copy = myPR2;
-
-  //Store copy of Controller Array. Only interact with it during Update() calls.
-  this->ControllerArray = ControllerArray;
-
-  // initialize random seed
-  srand(time(NULL));
-
-  // Initialize ring buffer for point cloud data
-  this->cloud_pts = new ringBuffer<std_msgs::Point3DFloat32>();
-  this->cloud_ch1 = new ringBuffer<float>();
-
-  // FIXME:  move this to Subscribe Models
-  param("tilting_laser/max_cloud_pts",max_cloud_pts, 10000);
-  this->cloud_pts->allocate(this->max_cloud_pts);
-  this->cloud_ch1->allocate(this->max_cloud_pts);
-
-  // initialize times
-  this->PR2Copy->GetTime(&(this->lastTime));
-  this->PR2Copy->GetTime(&(this->simTime));
-
-  //No new messages
-  newRightArmPos = false;
-  newLeftArmPos = false;
-
-}
-
-RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
-         PR2::PR2Robot          *myPR2,
          CONTROLLER::ArmController          *myArm,
          CONTROLLER::HeadController         *myHead,
          CONTROLLER::SpineController        *mySpine,
@@ -234,9 +212,6 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
   // accept passed in robot
   this->PR2Copy = myPR2;
 
-  //did not receive an controller array.
-  this->ControllerArray = NULL;
-
   // initialize random seed
   srand(time(NULL));
 
@@ -257,6 +232,8 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
   newRightArmPos = false;
   newLeftArmPos = false;
 
+  //Don't use new architecture
+  useControllerArray = false;
 }
 
 RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
@@ -294,6 +271,9 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
   //No new messages
   newRightArmPos = false;
   newLeftArmPos = false;
+
+  //Use new architecture
+  useControllerArray = true;
 }
 
 int
@@ -381,29 +361,15 @@ RosGazeboNode::Update()
   uint32_t intensities_alloc_size;
   std_msgs::Point3DFloat32 tmp_cloud_pt;
 
-
-  /***************************************************************/
-  /*                                                             */
-  /*  publish time                                               */
-  /*                                                             */
-  /***************************************************************/
-  this->PR2Copy->GetTime(&(this->simTime));
-  timeMsg.rostime.sec  = (unsigned long)floor(this->simTime);
-  timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->laserMsg.header.stamp.sec) );
-  publish("time",timeMsg);
-
-
   /***************************************************************/
   /*                                                             */
   /*  Arm Updates                                                */
   /*                                                             */
   /***************************************************************/
-  if (ControllerArray)
-  {
+  if(useControllerArray){
     if(newLeftArmPos)UpdateLeftArm();
     if(newRightArmPos)UpdateRightArm();
   }
-  
 
   /***************************************************************/
   /*                                                             */
@@ -433,7 +399,7 @@ RosGazeboNode::Update()
       tmp_cloud_pt.z                = tmp_range * cos(laser_yaw) * sin(laser_pitch);
 
       // add gaussian noise
-      const double sigma = 0.002;  // 2 centimeter sigma
+      const double sigma = 0.02;  // 2 centimeter sigma
       tmp_cloud_pt.x                = tmp_cloud_pt.x + GaussianKernel(0,sigma);
       tmp_cloud_pt.y                = tmp_cloud_pt.y + GaussianKernel(0,sigma);
       tmp_cloud_pt.z                = tmp_cloud_pt.z + GaussianKernel(0,sigma);
@@ -474,20 +440,21 @@ RosGazeboNode::Update()
       this->full_cloudMsg.pts[i].z        = this->cloud_pts->buffer[i].z;
       this->full_cloudMsg.chan[0].vals[i] = this->cloud_ch1->buffer[i];
     }
-
-    this->cloudMsg.header.frame_id = PR2::FRAMEID_TILT_LASER_BLOCK;
-    this->cloudMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
-    this->cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->laserMsg.header.stamp.sec) );
-
-    this->full_cloudMsg.header.frame_id = PR2::FRAMEID_TILT_LASER_BLOCK;
-    this->full_cloudMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
-    this->full_cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->laserMsg.header.stamp.sec) );
-
     publish("cloud",this->cloudMsg);
     publish("full_cloud",this->full_cloudMsg);
     //publish("shutter",this->shutterMsg);
   }
 
+
+  /***************************************************************/
+  /*                                                             */
+  /*  publish time                                               */
+  /*                                                             */
+  /***************************************************************/
+  this->PR2Copy->GetTime(&(this->simTime));
+  timeMsg.rostime.sec  = (unsigned long)floor(this->simTime);
+  timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->laserMsg.header.stamp.sec) );
+  publish("time",timeMsg);
 
   /***************************************************************/
   /*                                                             */
@@ -643,9 +610,8 @@ RosGazeboNode::Update()
 
   double position, velocity;
   std_msgs::PR2Arm larm, rarm;
-  //NOTE: JointData structure deprecated in libpr2HW
   /* get left arm position */
-/*
+
   this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_L_PAN,            &position, &velocity);
   larm.turretAngle       = position;
   this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_L_SHOULDER_PITCH, &position, &velocity);
@@ -664,9 +630,7 @@ RosGazeboNode::Update()
   larm.gripperForceCmd   = velocity;
   larm.gripperGapCmd     = position;
   publish("left_pr2arm_pos", larm);
- */ 
   /* get left arm position */
-/*
   this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_R_PAN,            &position, &velocity);
   rarm.turretAngle       = position;
   this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_R_SHOULDER_PITCH, &position, &velocity);
@@ -685,7 +649,7 @@ RosGazeboNode::Update()
   rarm.gripperForceCmd   = velocity;
   rarm.gripperGapCmd     = position;
   publish("right_pr2arm_pos", rarm);
- */ 
+  
 
   //  this->arm.turretAngle          = 0.0;
   //  this->arm.shoulderLiftAngle    = 0.0;

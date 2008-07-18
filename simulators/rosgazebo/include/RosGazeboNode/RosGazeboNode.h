@@ -26,6 +26,7 @@
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <libpr2API/pr2API.h>
+#include <libpr2HW/pr2HW.h>
 
 #include <pr2Controllers/ArmController.h>
 #include <pr2Controllers/HeadController.h>
@@ -109,10 +110,6 @@ class RosGazeboNode : public ros::node
     // that stage should load.
     RosGazeboNode(int argc, char** argv, const char* fname,
          PR2::PR2Robot          *myPR2,
-         CONTROLLER::JointController** ControllerArray
-         );
-    RosGazeboNode(int argc, char** argv, const char* fname,
-         PR2::PR2Robot          *myPR2,
          CONTROLLER::ArmController          *myArm,
          CONTROLLER::HeadController         *myHead,
          CONTROLLER::SpineController        *mySpine,
@@ -120,6 +117,9 @@ class RosGazeboNode : public ros::node
          CONTROLLER::LaserScannerController *myLaserScanner,
          CONTROLLER::GripperController      *myGripper
          );
+    ~RosGazeboNode();
+   // Constructor; stage itself needs argc/argv.  fname is the .world file
+    // that stage should load.
     RosGazeboNode(int argc, char** argv, const char* fname,
          PR2::PR2Robot          *myPR2,
          CONTROLLER::ArmController          *myArm,
@@ -131,7 +131,6 @@ class RosGazeboNode : public ros::node
          CONTROLLER::JointController** ControllerArray
          );
 
-    ~RosGazeboNode();
     // advertise / subscribe models
     int AdvertiseSubscribeMessages();
 
@@ -167,6 +166,9 @@ class RosGazeboNode : public ros::node
     //Flags to indicate that a new message has arrived
     bool newRightArmPos;
     bool newLeftArmPos;
+
+    //Flag set to indicate that we should use new controls architecture
+    bool useControllerArray; 
 
     // for the point cloud data
     ringBuffer<std_msgs::Point3DFloat32> *cloud_pts;

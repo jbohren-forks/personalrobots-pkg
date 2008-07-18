@@ -170,20 +170,22 @@ main(int argc, char** argv)
   }
  
   //Explicitly initialize the controllers we wish to use. Don't forget to set the controllers to torque mode in the world file! 
-   ControllerArray[PR2::ARM_L_PAN]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,JointArray[PR2::ARM_L_PAN]);
- ControllerArray[PR2::ARM_L_SHOULDER_PITCH]->Init(1000,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,1000,-1000,1000,JointArray[PR2::ARM_L_SHOULDER_PITCH]);
+  ControllerArray[PR2::ARM_L_PAN]->Init(1000,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,1000,-1000,1000,JointArray[PR2::ARM_L_PAN]);
+  ControllerArray[PR2::ARM_L_SHOULDER_PITCH]->Init(1000,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,1000,-1000,1000,JointArray[PR2::ARM_L_SHOULDER_PITCH]);
   ControllerArray[PR2::ARM_L_SHOULDER_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,JointArray[PR2::ARM_L_SHOULDER_ROLL]);
   ControllerArray[PR2::ARM_L_ELBOW_PITCH]->Init(300,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,JointArray[PR2::ARM_L_ELBOW_PITCH]);
   ControllerArray[PR2::ARM_L_ELBOW_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,JointArray[PR2::ARM_L_ELBOW_ROLL]);
   ControllerArray[PR2::ARM_L_WRIST_PITCH]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,JointArray[PR2::ARM_L_WRIST_PITCH]);
-  ControllerArray[PR2::ARM_L_WRIST_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,JointArray[PR2::ARM_L_WRIST_ROLL]);
+  ControllerArray[PR2::ARM_L_WRIST_ROLL]->Init(0.5,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,JointArray[PR2::ARM_L_WRIST_ROLL]);
 
-
+  
+//  ControllerArray[PR2::ARM_L_WRIST_ROLL]->capAccel = true;
+//  ControllerArray[PR2::ARM_L_WRIST_ROLL]->maxAccel = 0.5;
 //  std::cout<<"Arm check:"<< ControllerArray[PR2::ARM_L_SHOULDER_PITCH]->GetMode()<<std::endl;
 //  std::cout<<"Wrist check:"<< ControllerArray[PR2::ARM_L_WRIST_ROLL]->GetMode()<<std::endl;
 
   //Set initial Commands
-//  std::cout<<"Position:"<<  ControllerArray[PR2::ARM_L_SHOULDER_PITCH]->SetPosCmd(-1.0)<<std::endl;
+//  std::cout<<"Velocity:"<<  ControllerArray[PR2::ARM_L_WRIST_ROLL]->SetVelCmd(-0.5)<<std::endl;
 // ControllerArray[PR2::ARM_L_WRIST_ROLL]->SetPosCmd(2.0);
 //  std::cout<<"Torque:"<<ControllerArray[PR2::ARM_L_WRIST_ROLL]->SetTorqueCmd(5)<<std::endl;
 
@@ -261,7 +263,7 @@ main(int argc, char** argv)
   while(1)
   { 
     myPR2->hw.GetSimTime(&time);
-    std::cout<<"Time:"<<time<<std::endl;
+//    std::cout<<"Time:"<<time<<std::endl;
 
     if(pthread_mutex_trylock(&simMutex) != 0) continue; //Try to lock here. But continue on if fails to enforce real time
 //Check here? branch based on outcome?
@@ -285,6 +287,12 @@ main(int argc, char** argv)
 
      
     laser->Update();
+
+    double cmdvel;
+      ControllerArray[PR2::ARM_L_WRIST_ROLL]->GetVelAct(&cmdvel);
+      ControllerArray[PR2::ARM_L_WRIST_ROLL]->GetPosAct(&pos);
+      std::cout<<pos<<" "<<cmdvel<<std::endl;
+//      std::cout<<"Mode:"<<ControllerArray[PR2::ARM_L_PAN]->GetMode()<<std::endl;
 
 //   std::cout<<"*"<<torque<<std::endl;
 //    std::cout<<JointArray[PR2::ARM_L_SHOULDER_PITCH]->velocity<<std::endl;
