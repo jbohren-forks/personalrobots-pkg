@@ -1,8 +1,7 @@
 #include <ros/node.h>
 #include <libpr2API/pr2API.h>
-#include <std_msgs/EndEffectorState.h>
+#include <rosgazebo/EndEffectorState.h>
 
-using namespace std_msgs;
 using namespace KDL;
 
 int main(int argc, char **argv)
@@ -10,7 +9,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
 
   ros::node mynode("easy_kin_con_test");
-  mynode.advertise<EndEffectorState>("right_pr2arm_set_end_effector");
+  mynode.advertise<rosgazebo::EndEffectorState>("right_pr2arm_set_end_effector");
 
   //In shoulder frame x 0.562689
   //In shoulder frame y -0.367447
@@ -20,7 +19,7 @@ int main(int argc, char **argv)
 
   sleep(1);
 
-  EndEffectorState efs;
+  rosgazebo::EndEffectorState efs;
   efs.set_rot_size(9);
   efs.set_trans_size(3);
   for(int i = 0; i < 9; i++) {

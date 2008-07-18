@@ -1,8 +1,8 @@
 #include <ros/node.h>
 #include <rosthread/mutex.h>
 
-#include <std_msgs/EndEffectorState.h>
 #include <std_msgs/PR2Arm.h>
+#include <rosgazebo/EndEffectorState.h>
 
 #include <libpr2API/pr2API.h>
 
@@ -18,8 +18,8 @@ class InterpolatedKinematicController : public ros::node {
 public:
   
   InterpolatedKinematicController(void) : ros::node("easy_kinematic_controller") {
-    advertise<std_msgs::EndEffectorState>("cmd_leftarm_cartesian");
-    advertise<std_msgs::EndEffectorState>("cmd_rightarm_cartesian");
+    advertise<rosgazebo::EndEffectorState>("cmd_leftarm_cartesian");
+    advertise<rosgazebo::EndEffectorState>("cmd_rightarm_cartesian");
     subscribe("right_pr2arm_set_end_effector", _rightEndEffectorGoal, &InterpolatedKinematicController::setRightEndEffector);	
     subscribe("left_pr2arm_set_end_effector", _leftEndEffectorGoal, &InterpolatedKinematicController::setLeftEndEffector);
     subscribe("left_pr2arm_pos",  leftArmPosMsg,  &InterpolatedKinematicController::currentLeftArmPos);
@@ -58,7 +58,7 @@ public:
   }
 
   void publishFrame(bool isRightArm, const Frame& f) {
-    EndEffectorState efs;
+    rosgazebo::EndEffectorState efs;
     efs.set_rot_size(9);
     efs.set_trans_size(3);
     for(int i = 0; i < 9; i++) {
@@ -115,8 +115,8 @@ public:
 
 private:
 
-  EndEffectorState _leftEndEffectorGoal;
-  EndEffectorState _rightEndEffectorGoal;
+  rosgazebo::EndEffectorState _leftEndEffectorGoal;
+  rosgazebo::EndEffectorState _rightEndEffectorGoal;
   std_msgs::PR2Arm leftArmPosMsg, rightArmPosMsg;
 
 };
