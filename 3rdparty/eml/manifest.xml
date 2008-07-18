@@ -1,0 +1,14 @@
+<package>
+<description brief="EtherCAT Master Library">
+
+EtherCAT Master Library
+An Open Source implementation of the EtherCAT protocol
+
+</description>
+<author>Tom Panis</author>
+<license>GPL</license>
+<url>http://ethercatmaster.berlios.de/</url>
+<depend package="rtnet"/>
+<export>
+</export>
+</package>
