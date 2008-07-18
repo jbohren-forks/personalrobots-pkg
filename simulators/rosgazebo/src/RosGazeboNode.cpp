@@ -395,7 +395,7 @@ RosGazeboNode::Update()
       tmp_cloud_pt.z                = tmp_range * cos(laser_yaw) * sin(laser_pitch);
 
       // add gaussian noise
-      const double sigma = 0.02;  // 2 centimeter sigma
+      const double sigma = 0.002;  // 2 centimeter sigma
       tmp_cloud_pt.x                = tmp_cloud_pt.x + GaussianKernel(0,sigma);
       tmp_cloud_pt.y                = tmp_cloud_pt.y + GaussianKernel(0,sigma);
       tmp_cloud_pt.z                = tmp_cloud_pt.z + GaussianKernel(0,sigma);
