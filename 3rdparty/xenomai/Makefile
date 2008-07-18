@@ -11,7 +11,7 @@ LINUX_ARCHIVE = linux-$(LINUX_VERSION).tar.bz2
 download: xenomai-checkout $(LINUX_ARCHIVE)
 
 xenomai-checkout: 
-	@if [ ! -d xenomai-svn ]; then svn co $(XENOMAI_REVISION) http://svn.gna.org/svn/xenomai/trunk xenomai-svn; fi
+	@if [ ! -d xenomai-svn ]; then svn co $(XENOMAI_REVISION) http://svn.gna.org/svn/xenomai/trunk xenomai-svn && cd xenomai-svn && patch -p0 < ../xenomai-r4053.patch; fi
 	-cd xenomai-svn && svn up $(XENOMAI_REVISION)
 
 xenomai: xenomai-checkout linux
