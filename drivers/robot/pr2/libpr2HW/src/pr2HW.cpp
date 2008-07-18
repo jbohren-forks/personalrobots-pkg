@@ -560,7 +560,7 @@ PR2_ERROR_CODE PR2HW::OpenGripper(PR2_MODEL_ID id,double gap,double force)
     {
        case PR2_LEFT_GRIPPER:
        case PR2_RIGHT_GRIPPER:
-          for (int ii = JointStart[id];ii < JointEnd[ii];ii++)
+          for (int ii = JointStart[id];ii <= JointEnd[id];ii++)
           {
             this->jointData[ii].cmdMode          = GAZEBO_PR2GRIPPER_CMD_OPEN;
             this->jointData[ii].cmdSpeed         = 1.0;
@@ -580,12 +580,14 @@ PR2_ERROR_CODE PR2HW::CloseGripper(PR2_MODEL_ID id,double gap,double force)
     {
        case PR2_LEFT_GRIPPER:
        case PR2_RIGHT_GRIPPER:
-          for (int ii = JointStart[id];ii < JointEnd[ii];ii++)
+	 std::cout << "JointStart " << JointStart[id] << " joint end " << JointEnd[id] << std::endl;
+         for (int ii = JointStart[id];ii <= JointEnd[id];ii++)
           {
             this->jointData[ii].cmdMode          = GAZEBO_PR2GRIPPER_CMD_OPEN;
             this->jointData[ii].cmdSpeed         = 1.0;
             this->jointData[ii].cmdEffectorForce = force;
             this->jointData[ii].cmdGap           = gap;
+	    std::cout << "Setting gap for " << ii << " " << gap << std::endl;
           }
           break;
        default:
@@ -600,7 +602,7 @@ PR2_ERROR_CODE PR2HW::GetGripperCmd(PR2_MODEL_ID id,double *gap,double *force)
     {
        case PR2_LEFT_GRIPPER:
        case PR2_RIGHT_GRIPPER:
-          for (int ii = JointStart[id];ii < JointEnd[ii];ii++)
+          for (int ii = JointStart[id];ii <= JointEnd[id];ii++)
           {
             *force = this->jointData[ii].cmdEffectorForce;
             *gap   = this->jointData[ii].cmdGap          ;
@@ -618,10 +620,10 @@ PR2_ERROR_CODE PR2HW::GetGripperActual(PR2_MODEL_ID id,double *gap,double *force
     {
        case PR2_LEFT_GRIPPER:
        case PR2_RIGHT_GRIPPER:
-          for (int ii = JointStart[id];ii < JointEnd[ii];ii++)
+          for (int ii = JointStart[id];ii <= JointEnd[id];ii++)
           {
-            *force = this->jointData[ii].cmdEffectorForce;
-            *gap   = this->jointData[ii].cmdGap          ;
+            *force = this->jointData[ii].actualEffectorForce;
+            *gap   = this->jointData[ii].actualGap          ;
           }
           break;
        default:
@@ -636,7 +638,7 @@ PR2_ERROR_CODE PR2HW::SetGripperGains(PR2_MODEL_ID id,double p,double i, double 
     {
        case PR2_LEFT_GRIPPER:
        case PR2_RIGHT_GRIPPER:
-          for (int ii = JointStart[id];ii < JointEnd[ii];ii++)
+          for (int ii = JointStart[id];ii <= JointEnd[id];ii++)
           {
             this->jointData[ii].pGain = p;
             this->jointData[ii].iGain = i;
@@ -810,7 +812,7 @@ PR2_ERROR_CODE PR2HW::ClientWait()
 
 PR2_ERROR_CODE PR2HW::UpdateHW()
 {
-  std::cout << "updating HW receive\n" << std::endl;
+  //std::cout << "updating HW receive\n" << std::endl;
   // receive data from hardware
   for (int id = PR2::CASTER_FL_STEER; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
@@ -869,7 +871,7 @@ PR2_ERROR_CODE PR2HW::UpdateHW()
   }
 
 
-  std::cout << "updating HW send\n" << std::endl;
+  //std::cout << "updating HW send\n" << std::endl;
   // send commands to hardware
   for (int id = PR2::CASTER_FL_STEER; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
