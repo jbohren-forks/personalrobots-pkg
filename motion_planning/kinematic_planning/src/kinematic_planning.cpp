@@ -139,7 +139,7 @@ public:
     {
 	//	const int dim = req.start_state.vals_size;
 	//	ompl::SpaceInformationKinematic::GoalStateKinematic_t goal = new ompl::SpaceInformationKinematic::GoalStateKinematic(m_si);
-	//	m_si->setGoal(goal);
+	//m_si->setGoal(goal);
 	
 	/*
 	std::vector<double*> path;
@@ -189,16 +189,7 @@ public:
 	    model->collisionSpaceID = m_collisionSpace->addRobotModel(*file, groups[i].c_str());
 	    m_models[name + "::" + groups[i]] = model;
 	    createMotionPlanningInstances(model);
-
-	    // pass it to the collision space to create one more kinematic model
-	    // find the state dimension & bounding box, set up the space information
-	    // create a motion planner for this space info
-
-
-	    // todo: kinematic model should print what each state dimension means
-
-	}
-	
+	}	
     }
         
 private:
@@ -232,6 +223,30 @@ private:
 	unsigned int                       collisionSpaceID;	
     };
     
+    class SpaceInformationNode : public ompl::SpaceInformationKinematic
+    {
+    public:
+	SpaceInformationNode(planning_models::KinematicModel *km) : SpaceInformationKinematic()
+	{
+	    m_stateDimension = km->stateDimension;
+	    m_stateComponent.resize(m_stateDimension);
+	    
+	    for (unsigned int i = 0 ; i < m_stateDimension ; ++i)
+	    {	
+		m_stateComponent[i].type       = StateComponent::NORMAL;
+		m_stateComponent[i].minValue   = km->stateBounds[i*2    ];
+		m_stateComponent[i].maxValue   = km->stateBounds[i*2 + 1];
+		m_stateComponent[i].resolution = (m_stateComponent[i].maxValue - m_stateComponent[i].minValue) / 20.0;
+		if (m_stateComponent[i].resolution == 0.0)
+		    m_stateComponent[i].resolution = 0.1; // this happens for floating joints
+	    }
+	}
+
+	virtual ~SpaceInformationNode(void)
+	{
+	}
+    };    
+	
     std_msgs::PointCloudFloat32        m_cloud;
     collision_space::EnvironmentModel *m_collisionSpace;    
     std::map<std::string, Model*>      m_models;
@@ -240,24 +255,19 @@ private:
     static bool isStateValid(const ompl::SpaceInformationKinematic::StateKinematic_t state, void *data)
     {
 	Model *model = reinterpret_cast<Model*>(data);
-	
-	return false;
+	return model->collisionSpace->isCollision(model->collisionSpaceID);
     }
     
     void createMotionPlanningInstances(Model* model)
     {
-	Planner p;
-	p.si   = new ompl::SpaceInformationKinematic();
-	p.mp   = new ompl::RRT(p.si);
-	p.type = 0;
-	
-	model->planners.push_back(p);
 	model->collisionSpace = m_collisionSpace;
-	
-	planning_models::KinematicModel *km = m_collisionSpace->models[model->collisionSpaceID];
+
+	Planner p;
+	p.si   = new SpaceInformationNode(m_collisionSpace->models[model->collisionSpaceID]);
 	p.si->setStateValidFn(isStateValid, reinterpret_cast<void*>(model));
-	
-	
+	p.mp   = new ompl::RRT(p.si);
+	p.type = 0;	
+	model->planners.push_back(p);
     }
 
 };

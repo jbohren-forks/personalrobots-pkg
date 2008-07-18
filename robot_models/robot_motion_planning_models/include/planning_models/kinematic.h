@@ -204,7 +204,8 @@ namespace planning_models
 	
 	KinematicModel(void)
 	{
-	    m_verbose = false;
+	    stateDimension = 0;
+	    m_verbose = true;
 	}
 	
 	virtual ~KinematicModel(void)
@@ -215,14 +216,23 @@ namespace planning_models
 	
 	virtual void build(robot_desc::URDF &model, const char *group = NULL);
 	
+	void setVerbose(bool verbose);
+	
 	unsigned int getRobotCount(void) const;
 	Robot* getRobot(unsigned int index) const;
+	void computeTransforms(const double *params);
+
+	/** Cumulative state dimension */
+	unsigned int        stateDimension;
 	
+	/** Cumulative state bounds */
+	std::vector<double> stateBounds;
+
     protected:
 	
 	std::vector<Robot*> m_robots;
 	bool                m_verbose;    
-	
+
     private:
 	
 	void buildChain(Robot *robot, Link  *parent, Joint *joint, robot_desc::URDF::Link *urdfLink);

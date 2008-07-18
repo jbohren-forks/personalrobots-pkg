@@ -40,6 +40,12 @@ void planning_models::KinematicModel::Robot::computeTransforms(const double *par
     chain->computeTransform(params);
 }
 
+void planning_models::KinematicModel::computeTransforms(const double *params)
+{
+    for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
+	m_robots[i]->chain->computeTransform(params + i);
+}
+
 // we can optimize things here... (when we use identity transforms, for example)
 void planning_models::KinematicModel::Joint::computeTransform(const double *params)
 {
@@ -82,6 +88,11 @@ void planning_models::KinematicModel::Link::computeTransform(const double *param
     globalTrans.multiplyPose(constGeomTrans);
 }
 
+void planning_models::KinematicModel::setVerbose(bool verbose)
+{
+    m_verbose = verbose;
+}
+
 void planning_models::KinematicModel::build(robot_desc::URDF &model, const char *group)
 {
     if (group)
@@ -108,6 +119,12 @@ void planning_models::KinematicModel::build(robot_desc::URDF &model, const char 
 	    m_robots.push_back(rb);
 	}
     }
+
+    for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
+    {
+	stateDimension += m_robots[i]->stateDimension;
+	stateBounds.insert(stateBounds.end(), m_robots[i]->stateBounds.begin(), m_robots[i]->stateBounds.end());
+    }    
 }
     
 unsigned int planning_models::KinematicModel::getRobotCount(void) const
@@ -164,6 +181,15 @@ void planning_models::KinematicModel::buildChain(Robot *robot, Link *parent, Joi
 	break;
     }
     joint->active = joint->usedParamEnd > joint->usedParamStart;
+    if (m_verbose && joint->usedParamEnd > joint->usedParamStart)
+    {
+	printf("Joint '%s' connects link '%s' to link '%s' and uses state coordinates: ",
+	       urdfLink->joint->name.c_str(), urdfLink->parentName.c_str(), urdfLink->name.c_str());
+	for (unsigned int i = joint->usedParamStart ; i < joint->usedParamEnd ; ++i)
+	    printf("%d ", i);
+	printf("\n");
+    }
+    
     robot->stateDimension = joint->usedParamEnd;	    
     buildChain(robot, joint, joint->after, urdfLink);
 }
@@ -172,9 +198,6 @@ void planning_models::KinematicModel::buildChain(Robot *robot, Joint *parent, Li
 {
     link->before = parent;
     robot->links.push_back(link);
-    
-    if (m_verbose)
-	printf("Created link '%s'\n", urdfLink->name.c_str());
     
     /* copy relevant data */ 
     switch (urdfLink->collision->geometry->type)
@@ -220,8 +243,6 @@ void planning_models::KinematicModel::buildChain(Robot *robot, Joint *parent, Li
 	    if (!found)
 		continue;
 	}
-	if (m_verbose)
-	    printf("Connecting to link '%s'\n", urdfLink->children[i]->name.c_str());
 	Joint *newJoint = new Joint();
 	buildChain(robot, link, newJoint, urdfLink->children[i]);
 	link->after.push_back(newJoint);
