@@ -103,7 +103,6 @@ void EtherdriveHardware::sendCommand(){
       if( hw->actuator[ii].command.enable){
 	command = (int)(ETHERDRIVE_CURRENT_TO_CMD*hw->actuator[ii].command.current);
 	printf("command: %d, %d\n", ii, command);
-	command = 600;
 #ifdef DEBUG
 #endif
 	edBoard[boardLookUp[ii]].set_drv(portLookUp[ii], command);
