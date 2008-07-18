@@ -1,21 +1,19 @@
-all: vtk
+all: check_done
 
-vtk-5.0.4.tar.gz:
-	wget http://www.vtk.org/files/release/5.0/vtk-5.0.4.tar.gz
+BUILD_TARGET = vtk
+include $(shell rospack find mk)/check_done.mk
 
-vtk-5.0.4: vtk-5.0.4.tar.gz
-	#md5sum -c vtk-5.0.4.tar.gz.md5sum
-	tar xfz vtk-5.0.4.tar.gz
-	mv VTK vtk-5.0.4
-	touch vtk-5.0.4
+TARBALL = vtk-5.0.4.tar.gz
+TARBALL_URL = http://www.vtk.org/files/release/5.0/vtk-5.0.4.tar.gz
+SOURCE_DIR = VTK
+UNPACK_CMD = tar zxf
+include $(shell rospack find mk)/download_unpack.mk
 
-vtk: vtk-5.0.4
+vtk: $(SOURCE_DIR)
 	mkdir -p vtk-build
-	cd vtk-build && `rospack find cmake`/cmake/bin/cmake -D CMAKE_INSTALL_PREFIX=$(PWD)/vtk-install ../vtk-5.0.4 && make install
+	cd vtk-build && `rospack find cmake`/cmake/bin/cmake -D CMAKE_INSTALL_PREFIX=$(PWD)/vtk-install ../$(SOURCE_DIR) && make install
 
-clean:
+clean: check_done_clean
 	rm -rf vtk-build vtk-install
 wipe: clean
 	rm -rf vtk-5.0.4 vtk-5.0.4.tar.gz
-
-download: vtk-5.0.4.tar.gz
