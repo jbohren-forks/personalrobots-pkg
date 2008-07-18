@@ -1,0 +1,17 @@
+<package>
+<description brief="Xenomai">
+
+This package contains Xenomai and the Linux Kernel.
+
+This package includes a kernel configuration file for building Xenomai
+over Linux 2.6.24.19 for the AOpen system
+
+</description>
+<author>Xenomai - Philippe Gerum et al, Linux - Linus Torvaalds et al</author>
+<license>Xenomai: LGPL, Linux: GPL</license>
+<url>http://www.xenomai.org/ http://www.kernel.org</url>
+<export>
+</export>
+</package>
+
+
