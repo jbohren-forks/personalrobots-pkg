@@ -864,4 +864,9 @@
     head_tilt    
   </group>
 
+
+  <data type="controller" name="test">
+    <pGain> 1 </pGain>
+  </data>
+
 </robot>
