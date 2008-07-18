@@ -86,6 +86,7 @@ Provides (name/type):
 #include <std_msgs/KinematicPath.h>
 #include <std_srvs/KinematicMotionPlan.h>
 
+#include <urdf/URDF.h>
 #include <kinematic_planning/definitions.h>
 #include <collision_space/environmentODE.h>
 #include <ompl/extension/samplingbased/kinematic/extension/rrt/RRT.h>
@@ -104,6 +105,13 @@ public:
 	
 	advertise_service("plan_kinematic_path", &KinematicPlanning::plan);
 	subscribe("world_3d_map", cloud, &KinematicPlanning::pointCloudCallback);
+    }
+    
+    ~KinematicPlanning(void)
+    {
+	for (unsigned int i = 0 ; i < m_robotDescriptions.size() ; ++i)
+	    delete m_robotDescriptions[i];
+	
     }
     
     void pointCloudCallback(void)
@@ -154,7 +162,33 @@ public:
 	
 	return true;	
     }
-    
+
+    void addRobotDescriptionFromFile(const char *filename)
+    {
+	robot_desc::URDF *file = new robot_desc::URDF(filename);
+	m_robotDescriptions.push_back(file);
+
+	std::vector<std::string> groups;
+	file->getGroupNames(groups);
+
+	// also create a model for the whole robot (with the name given in the file)
+
+	for (unsigned int i = 0 ; i < groups.size() ; ++i)
+	{
+	    // pass it to the collision space to create one more kinematic model
+	    // find the state dimension & bounding box, set up the space information
+	    // create a motion planner for this space info
+
+
+	    // todo: kinematic model should print what each state dimension means
+
+	    // construct a map of id's to robot models we can plan for.
+	    // the id should be given in the xml, as the group name (?)
+	    // better: send the group name as string (id) in the request
+	}
+	
+    }
+        
 private:
     
     PointCloudFloat32 cloud;
@@ -166,7 +200,7 @@ private:
     };
     
     std::vector<Model> models; 
-    
+    std::vector<robot_desc::URDF*> m_robotDescriptions;    
 };
 
 
