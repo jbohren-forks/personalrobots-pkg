@@ -47,7 +47,6 @@ RosGazeboNode::cmd_rightarmconfigReceived()
   //  this->PR2Copy->SetArmJointPosition(PR2::PR2_LEFT_ARM, jointPosition, jointSpeed);
   */
   //*
-  /*
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_PAN           , this->rightarm.turretAngle,       0);
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, this->rightarm.shoulderLiftAngle, 0);
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_ROLL , this->rightarm.upperarmRollAngle, 0);
@@ -55,9 +54,8 @@ RosGazeboNode::cmd_rightarmconfigReceived()
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    , this->rightarm.forearmRollAngle,  0);
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , this->rightarm.wristPitchAngle,   0);
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , this->rightarm.wristRollAngle,    0);
-  this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER       , this->rightarm.gripperGapCmd,     0);
+  //this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER       , this->rightarm.gripperGapCmd,     0);
   this->PR2Copy->hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, this->rightarm.gripperGapCmd, this->rightarm.gripperForceCmd);
-*/
   //*/
   this->lock.unlock();
 }
@@ -83,7 +81,6 @@ RosGazeboNode::cmd_leftarmconfigReceived()
   */
 
   //*
-  /*
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_PAN           , this->leftarm.turretAngle,       0);
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_PITCH, this->leftarm.shoulderLiftAngle, 0);
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_SHOULDER_ROLL , this->leftarm.upperarmRollAngle, 0);
@@ -93,7 +90,6 @@ RosGazeboNode::cmd_leftarmconfigReceived()
   this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_WRIST_ROLL    , this->leftarm.wristRollAngle,    0);
   // this->PR2Copy->SetJointServoCmd(PR2::ARM_L_GRIPPER       , this->leftarm.gripperGapCmd,     0);
   this->PR2Copy->hw.CloseGripper(PR2::PR2_LEFT_GRIPPER, this->leftarm.gripperGapCmd, this->leftarm.gripperForceCmd);
-  */
   //*/
   this->lock.unlock();
 }
@@ -156,6 +152,39 @@ RosGazeboNode::cmdvelReceived()
 
 RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
          PR2::PR2Robot          *myPR2,
+         CONTROLLER::JointController** ControllerArray):
+        ros::node("rosgazebo"),tf(*this)
+{
+  // accept passed in robot
+  this->PR2Copy = myPR2;
+
+  //Store copy of Controller Array. Only interact with it during Update() calls.
+  this->ControllerArray = ControllerArray;
+
+  // initialize random seed
+  srand(time(NULL));
+
+  // Initialize ring buffer for point cloud data
+  this->cloud_pts = new ringBuffer<std_msgs::Point3DFloat32>();
+  this->cloud_ch1 = new ringBuffer<float>();
+
+  // FIXME:  move this to Subscribe Models
+  param("tilting_laser/max_cloud_pts",max_cloud_pts, 10000);
+  this->cloud_pts->allocate(this->max_cloud_pts);
+  this->cloud_ch1->allocate(this->max_cloud_pts);
+
+  // initialize times
+  this->PR2Copy->GetTime(&(this->lastTime));
+  this->PR2Copy->GetTime(&(this->simTime));
+
+  //No new messages
+  newRightArmPos = false;
+  newLeftArmPos = false;
+
+}
+
+RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
+         PR2::PR2Robot          *myPR2,
          CONTROLLER::ArmController          *myArm,
          CONTROLLER::HeadController         *myHead,
          CONTROLLER::SpineController        *mySpine,
@@ -166,6 +195,9 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
 {
   // accept passed in robot
   this->PR2Copy = myPR2;
+
+  //did not receive an controller array.
+  this->ControllerArray = NULL;
 
   // initialize random seed
   srand(time(NULL));
@@ -314,8 +346,11 @@ RosGazeboNode::Update()
   /*  Arm Updates                                                */
   /*                                                             */
   /***************************************************************/
-  if(newLeftArmPos)UpdateLeftArm();
-  if(newRightArmPos)UpdateRightArm();
+  if (ControllerArray)
+  {
+    if(newLeftArmPos)UpdateLeftArm();
+    if(newRightArmPos)UpdateRightArm();
+  }
   
 
   /***************************************************************/

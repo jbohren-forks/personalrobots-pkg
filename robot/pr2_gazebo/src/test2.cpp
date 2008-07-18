@@ -47,10 +47,7 @@
 #include <time.h>
 #include <signal.h>
 
-//#include <RosGazeboNode/RosGazeboNode.h>
-
- pthread_mutex_t simMutex; //Mutex for sim R/W
-mechanism::Joint* JointArray[PR2::MAX_JOINTS]; //Joint pointer array
+pthread_mutex_t simMutex; //Mutex for sim R/W
 
 void finalize(int)
 {
@@ -86,10 +83,6 @@ main(int argc, char** argv)
 
   pthread_mutex_init(&simMutex, NULL);
   
-  for (int i = 0;i<PR2::MAX_JOINTS;i++){
-    JointArray[i] = new mechanism::Joint();
-  }
-
   ros::init(argc,argv);
 
   /***************************************************************************************/
@@ -98,15 +91,6 @@ main(int argc, char** argv)
   /*                                                                                     */
   /***************************************************************************************/
   printf("Creating robot\n");
-  //PR2::PR2Robot* myPR2;
-  // Initialize robot object
-  //myPR2 = new PR2::PR2Robot();
-  // Initialize connections
-  //myPR2->InitializeRobot();
-  // Set control mode for the base
-  //myPR2->SetBaseControlMode(PR2::PR2_CARTESIAN_CONTROL);
-  //myPR2->EnableGripperLeft();
-  //myPR2->EnableGripperRight();
 
   /***************************************************************************************/
   /*                                                                                     */
@@ -128,32 +112,16 @@ main(int argc, char** argv)
                       };  // 0 for head, 1 for caster+arm
   //int numJointsLookUp[]   ={7, 28};  // joints per actuator array
   int portLookUp[] = {    // the way joints are listed in pr2.model
-      PR2::CASTER_FL_STEER     ,
-      PR2::CASTER_FL_DRIVE_L   ,
-      PR2::CASTER_FL_DRIVE_R   ,
-      PR2::CASTER_FR_STEER     ,
-      PR2::CASTER_FR_DRIVE_L   ,
-      PR2::CASTER_FR_DRIVE_R   ,
-      PR2::CASTER_RL_STEER     ,
-      PR2::CASTER_RL_DRIVE_L   ,
-      PR2::CASTER_RL_DRIVE_R   ,
-      PR2::CASTER_RR_STEER     ,
-      PR2::CASTER_RR_DRIVE_L   ,
-      PR2::CASTER_RR_DRIVE_R   ,
+      PR2::CASTER_FL_STEER     , PR2::CASTER_FL_DRIVE_L   , PR2::CASTER_FL_DRIVE_R   ,
+      PR2::CASTER_FR_STEER     , PR2::CASTER_FR_DRIVE_L   , PR2::CASTER_FR_DRIVE_R   ,
+      PR2::CASTER_RL_STEER     , PR2::CASTER_RL_DRIVE_L   , PR2::CASTER_RL_DRIVE_R   ,
+      PR2::CASTER_RR_STEER     , PR2::CASTER_RR_DRIVE_L   , PR2::CASTER_RR_DRIVE_R   ,
       PR2::SPINE_ELEVATOR      ,
-      PR2::ARM_L_PAN           ,
-      PR2::ARM_L_SHOULDER_PITCH,
-      PR2::ARM_L_SHOULDER_ROLL ,
-      PR2::ARM_L_ELBOW_PITCH   ,
-      PR2::ARM_L_ELBOW_ROLL    ,
-      PR2::ARM_L_WRIST_PITCH   ,
+      PR2::ARM_L_PAN           , PR2::ARM_L_SHOULDER_PITCH, PR2::ARM_L_SHOULDER_ROLL ,
+      PR2::ARM_L_ELBOW_PITCH   , PR2::ARM_L_ELBOW_ROLL    , PR2::ARM_L_WRIST_PITCH   ,
       PR2::ARM_L_WRIST_ROLL    ,
-      PR2::ARM_R_PAN           ,
-      PR2::ARM_R_SHOULDER_PITCH,
-      PR2::ARM_R_SHOULDER_ROLL ,
-      PR2::ARM_R_ELBOW_PITCH   ,
-      PR2::ARM_R_ELBOW_ROLL    ,
-      PR2::ARM_R_WRIST_PITCH   ,
+      PR2::ARM_R_PAN           , PR2::ARM_R_SHOULDER_PITCH, PR2::ARM_R_SHOULDER_ROLL ,
+      PR2::ARM_R_ELBOW_PITCH   , PR2::ARM_R_ELBOW_ROLL    , PR2::ARM_R_WRIST_PITCH   ,
       PR2::ARM_R_WRIST_ROLL    ,
       PR2::ARM_L_GRIPPER      - PR2::ARM_L_GRIPPER ,
       PR2::ARM_R_GRIPPER      - PR2::ARM_R_GRIPPER ,
@@ -167,32 +135,16 @@ main(int argc, char** argv)
 
   
   int jointId[]    = {    // numbering system
-      PR2::CASTER_FL_STEER     ,
-      PR2::CASTER_FL_DRIVE_L   ,
-      PR2::CASTER_FL_DRIVE_R   ,
-      PR2::CASTER_FR_STEER     ,
-      PR2::CASTER_FR_DRIVE_L   ,
-      PR2::CASTER_FR_DRIVE_R   ,
-      PR2::CASTER_RL_STEER     ,
-      PR2::CASTER_RL_DRIVE_L   ,
-      PR2::CASTER_RL_DRIVE_R   ,
-      PR2::CASTER_RR_STEER     ,
-      PR2::CASTER_RR_DRIVE_L   ,
-      PR2::CASTER_RR_DRIVE_R   ,
+      PR2::CASTER_FL_STEER     , PR2::CASTER_FL_DRIVE_L   , PR2::CASTER_FL_DRIVE_R   ,
+      PR2::CASTER_FR_STEER     , PR2::CASTER_FR_DRIVE_L   , PR2::CASTER_FR_DRIVE_R   ,
+      PR2::CASTER_RL_STEER     , PR2::CASTER_RL_DRIVE_L   , PR2::CASTER_RL_DRIVE_R   ,
+      PR2::CASTER_RR_STEER     , PR2::CASTER_RR_DRIVE_L   , PR2::CASTER_RR_DRIVE_R   ,
       PR2::SPINE_ELEVATOR      ,
-      PR2::ARM_L_PAN           ,
-      PR2::ARM_L_SHOULDER_PITCH,
-      PR2::ARM_L_SHOULDER_ROLL ,
-      PR2::ARM_L_ELBOW_PITCH   ,
-      PR2::ARM_L_ELBOW_ROLL    ,
-      PR2::ARM_L_WRIST_PITCH   ,
+      PR2::ARM_L_PAN           , PR2::ARM_L_SHOULDER_PITCH, PR2::ARM_L_SHOULDER_ROLL ,
+      PR2::ARM_L_ELBOW_PITCH   , PR2::ARM_L_ELBOW_ROLL    , PR2::ARM_L_WRIST_PITCH   ,
       PR2::ARM_L_WRIST_ROLL    ,
-      PR2::ARM_R_PAN           ,
-      PR2::ARM_R_SHOULDER_PITCH,
-      PR2::ARM_R_SHOULDER_ROLL ,
-      PR2::ARM_R_ELBOW_PITCH   ,
-      PR2::ARM_R_ELBOW_ROLL    ,
-      PR2::ARM_R_WRIST_PITCH   ,
+      PR2::ARM_R_PAN           , PR2::ARM_R_SHOULDER_PITCH, PR2::ARM_R_SHOULDER_ROLL ,
+      PR2::ARM_R_ELBOW_PITCH   , PR2::ARM_R_ELBOW_ROLL    , PR2::ARM_R_WRIST_PITCH   ,
       PR2::ARM_R_WRIST_ROLL    ,
       PR2::ARM_L_GRIPPER       ,
       PR2::ARM_R_GRIPPER       ,
@@ -204,88 +156,48 @@ main(int argc, char** argv)
       PR2::HEAD_PTZ_R_PAN      ,
       PR2::HEAD_PTZ_R_TILT     };
 
-  string etherIP[] = {"10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103",
-                      "10.12.0.103"
+  string etherIP[] = {"10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103",
+                      "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103",
+                      "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103",
+                      "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103",
+                      "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103",
+                      "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103"
                      };
-  string hostIP[]  = {"10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  ",
-                      "10.12.0.2  "
+  string hostIP[]  = {"10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ",
+                      "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ",
+                      "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ",
+                      "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ",
+                      "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ",
+                      "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  "
                      };
+  /***************************************************************************************/
+  /*                                                                                     */
+  /*                        initialize robot model                                       */
+  /*                                                                                     */
+  /*    in Robot                                                                         */
+  /*                                                                                     */
+  /***************************************************************************************/
+  mechanism::Joint* joint[PR2::MAX_JOINTS]; //Joint pointer array
+  for (int i = 0;i<PR2::MAX_JOINTS;i++){
+    joint[i] = new mechanism::Joint();
+  }
+
   /***************************************************************************************/
   /*                                                                                     */
   /*                        initialize hardware                                          */
   /*                                                                                     */
+  /*   User initialized                                                                  */
+  /*                                                                                     */
+  /*  single hardware interface object, containing array of actuators                    */
+  /*  single gazebo hardware object                                                      */
+  /*                                                                                     */
   /***************************************************************************************/
+  // a single HardwareInterface objects with numActuators actuators
   HardwareInterface *hi = new HardwareInterface(numActuators);
+  // hi is passed to h during construction of h,
+  // mapping between actuators in h and actuators in hi defined by boardLookUp, portLookUp and jointId
   GazeboHardware    *h  = new GazeboHardware(numBoards,numActuators, boardLookUp, portLookUp, jointId, etherIP, hostIP, hi);
-  // connect to hardware
+  // connect to hardware (gazebo in this case)
   h->init();
 
   // access to all the gazebo sensors
@@ -295,7 +207,10 @@ main(int argc, char** argv)
   /*                                                                                     */
   /*                            initialize controllers                                   */
   /*                                                                                     */
+  /*         TODO: move to mechanism_control                                             */
+  /*                                                                                     */
   /***************************************************************************************/
+  // stubs
   CONTROLLER::ArmController          myArm;
   CONTROLLER::HeadController         myHead;
   CONTROLLER::SpineController        mySpine;
@@ -303,25 +218,39 @@ main(int argc, char** argv)
   CONTROLLER::LaserScannerController myLaserScanner;
   CONTROLLER::GripperController      myGripper;
 
-  CONTROLLER::JointController        *jc =new CONTROLLER::JointController(); //Test jointController
-  jc->Init(1000,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,1000,-1000,1000,JointArray[PR2::ARM_L_SHOULDER_PITCH]);
-  //void JointController::Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint) {
-  // std::cout<<"****************"<<jc.SetTorqueCmd(-500.0)<<std::endl;
-  // std::cout<<"****************"<<jc.SetPosCmd(0.0)<<std::endl;
+  // used here in this test
+  CONTROLLER::JointController*       jc[PR2::MAX_JOINTS];  // One controller per joint
 
-  /***************************************************************************************/
-  /*                                                                                     */
-  /*                        initialize robot model                                       */
-  /*                                                                                     */
-  /***************************************************************************************/
-  mechanism::Joint *joint = new mechanism::Joint();
+  // initialize each jointController jc[i], associate with a joint joint[i]
+  for (int i = 0;i<PR2::MAX_JOINTS;i++){
+    jc[i] = new CONTROLLER::JointController();
+    jc[i]->Init(1000,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,1000,-1000,1000,joint[i]);
+  }
+  //Explicitly initialize the controllers we wish to use. Don't forget to set the controllers to torque mode in the world file! 
+  jc[PR2::ARM_L_PAN]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_L_PAN]);
+  jc[PR2::ARM_L_SHOULDER_PITCH]->Init(1000,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,1000,-1000,1000,joint[PR2::ARM_L_SHOULDER_PITCH]);
+  jc[PR2::ARM_L_SHOULDER_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_L_SHOULDER_ROLL]);
+  jc[PR2::ARM_L_ELBOW_PITCH]->Init(300,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_L_ELBOW_PITCH]);
+  jc[PR2::ARM_L_ELBOW_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_L_ELBOW_ROLL]);
+  jc[PR2::ARM_L_WRIST_PITCH]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_L_WRIST_PITCH]);
+  jc[PR2::ARM_L_WRIST_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_L_WRIST_ROLL]);
+
+  //JointController::Init(double PGain, double IGain, double DGain, double IMax,
+  //                      double IMin, CONTROLLER_CONTROL_MODE mode, double time,
+  //                      double maxPositiveTorque, double maxNegativeTorque,
+  //                      double maxEffort, mechanism::Joint *joint)
 
   /***************************************************************************************/
   /*                                                                                     */
   /*                        initialize transmission                                      */
   /*                                                                                     */
+  /*       TODO: in Robot                                                                */
+  /*                                                                                     */
   /***************************************************************************************/
-  SimpleTransmission *st = new SimpleTransmission(joint,&hi->actuator[0],1,1,14000);
+  SimpleTransmission* st[PR2::MAX_JOINTS];
+  for (int i = 0;i<PR2::MAX_JOINTS;i++){
+    st[i] = new SimpleTransmission(joint[i],&hi->actuator[0],1,1,1);
+  }
   
   //myPR2->hw.GetSimTime(&time);
 
@@ -401,16 +330,17 @@ main(int argc, char** argv)
     // get encoder counts from hardware
     h->updateState();
 
-    // setup joint state from encoder counts
-    st->propagatePosition();
 
-    //update controller
-    jc->Update();
+    for (int i = 0;i<PR2::MAX_JOINTS;i++){
+      // setup joint state from encoder counts
+      st[i]->propagatePosition();
+      //update controller
+      jc[i]->Update();
+      // update command current from joint command
+      st[i]->propagateEffort();
+    }
 
     //cout << "pos:: " << joint->position << ", eff:: " << joint->commandedEffort << endl;
-
-    // update command current from joint command
-    st->propagateEffort();
 
     // send command to hardware
     h->sendCommand();

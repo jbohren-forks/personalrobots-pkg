@@ -107,6 +107,10 @@ class RosGazeboNode : public ros::node
     // that stage should load.
     RosGazeboNode(int argc, char** argv, const char* fname,
          PR2::PR2Robot          *myPR2,
+         CONTROLLER::JointController** ControllerArray
+         );
+    RosGazeboNode(int argc, char** argv, const char* fname,
+         PR2::PR2Robot          *myPR2,
          CONTROLLER::ArmController          *myArm,
          CONTROLLER::HeadController         *myHead,
          CONTROLLER::SpineController        *mySpine,
@@ -114,9 +118,6 @@ class RosGazeboNode : public ros::node
          CONTROLLER::LaserScannerController *myLaserScanner,
          CONTROLLER::GripperController      *myGripper
          );
-    ~RosGazeboNode();
-   // Constructor; stage itself needs argc/argv.  fname is the .world file
-    // that stage should load.
     RosGazeboNode(int argc, char** argv, const char* fname,
          PR2::PR2Robot          *myPR2,
          CONTROLLER::ArmController          *myArm,
@@ -128,6 +129,7 @@ class RosGazeboNode : public ros::node
          CONTROLLER::JointController** ControllerArray
          );
 
+    ~RosGazeboNode();
     // advertise / subscribe models
     int AdvertiseSubscribeMessages();
 

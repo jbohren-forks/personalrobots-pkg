@@ -96,8 +96,8 @@
         <hfov>90</hfov>
         <nearClip>0.1</nearClip>
         <farClip>20</farClip>
-        <saveFrames>false</saveFrames>
-        <saveFramePath>frames</saveFramePath>
+        <saveFrames>true</saveFrames>
+        <saveFramePath>frames_0</saveFramePath>
         <updateRate>10.0</updateRate>
         <controller:generic_camera name="cam1_controller">
           <updateRate>10.0</updateRate>
