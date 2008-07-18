@@ -112,6 +112,18 @@ namespace CONTROLLER
       void GenerateSquarewave(double *&x, double *&t, double period, double amplitude, double dt, double offset, unsigned int numElements);
  
 //---------------------------------------------------------------------------------//
+//TIME CALLS
+//
+//---------------------------------------------------------------------------------//
+   /*!
+        * \brief TODO: Get the actual time
+        *  
+        *
+        * \param double* time Pointer to value to change 
+        */
+       void GetTime(double* time);
+
+//---------------------------------------------------------------------------------//
 //MODE/ENABLE CALLS
 //---------------------------------------------------------------------------------//
  
@@ -119,20 +131,20 @@ namespace CONTROLLER
         * \brief Switches command mode type (Automatic, Torque, position, velocity control)
         *  
         */
-      void SetMode(CONTROLLER_CONTROL_MODE mode);
+      CONTROLLER_CONTROL_MODE SetMode(CONTROLLER_CONTROL_MODE mode);
 
     /*!
       * \brief Allow controller to send commands
       *      
       */
-      void EnableController(void);
+      CONTROLLER_CONTROL_MODE EnableController(void);
 
         /*!
       * \brief Shut down controller.
       * 
       *       
       */
-      void DisableController(void);
+      CONTROLLER_CONTROL_MODE DisableController(void);
       
 
         /*!
@@ -231,7 +243,7 @@ namespace CONTROLLER
         */
 
       //Issues commands to the joint. Should be called at regular intervals
-       void Update();
+       virtual void Update();
 
 //---------------------------------------------------------------------------------//
 //PARAM SERVER CALLS
@@ -245,7 +257,7 @@ namespace CONTROLLER
         * Consider also, using setParam('profile','sawtooth')
         *
         */       
-      PR2::PR2_ERROR_CODE setProfile(double *&t, double *&x, int numElements);
+      CONTROLLER::CONTROLLER_ERROR_CODE setProfile(double *&t, double *&x, int numElements);
 
       /*!
         * \brief Set parameters for this controller
@@ -265,9 +277,9 @@ namespace CONTROLLER
         * <LI> setParam('rateHz'  , 1);
         * </UL>
         *
-        */
-      PR2::PR2_ERROR_CODE setParam(std::string label,     double value);
-      PR2::PR2_ERROR_CODE setParam(std::string label,std::string value);
+        */      
+      CONTROLLER::CONTROLLER_ERROR_CODE setParam(std::string label,     double value);
+      CONTROLLER::CONTROLLER_ERROR_CODE setParam(std::string label,std::string value);
 
     
         private:

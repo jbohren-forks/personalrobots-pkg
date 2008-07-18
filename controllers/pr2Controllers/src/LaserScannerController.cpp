@@ -142,21 +142,29 @@ void LaserScannerController::GenerateSquarewave(double *&x, double *&t, double p
 	}
 }
  
-PR2::PR2_ERROR_CODE LaserScannerController::setProfile(double *&t, double *&x, int numElements)
+CONTROLLER::CONTROLLER_ERROR_CODE LaserScannerController::setProfile(double *&t, double *&x, int numElements)
 {
 	profileX = x;
 	profileT = t;
 	profileLength = numElements; //Set length of profile
 	profileIndex = 0; //Start at beginning of profile
-  return PR2::PR2_ALL_OK;
+  return CONTROLLER::CONTROLLER_ALL_OK;
 }
+ 
+//---------------------------------------------------------------------------------//
+//TIME CALLS
+//
+//---------------------------------------------------------------------------------//
+void LaserScannerController::GetTime(double* time){
+        lowerControl.GetTime(time);
+      }
 
 //---------------------------------------------------------------------------------//
 //MODE/ENABLE CALLS
 //---------------------------------------------------------------------------------//
 
 //Set the controller control mode
-void LaserScannerController::SetMode(CONTROLLER_CONTROL_MODE mode){
+CONTROLLER_CONTROL_MODE LaserScannerController::SetMode(CONTROLLER_CONTROL_MODE mode){
   //Record top level of control mode
   controlMode = mode;
 
@@ -167,6 +175,8 @@ void LaserScannerController::SetMode(CONTROLLER_CONTROL_MODE mode){
   else{
     lowerControl.SetMode(mode);
   }
+  
+  return CONTROLLER_MODE_SET;
 }
 
 
@@ -176,15 +186,16 @@ CONTROLLER_CONTROL_MODE LaserScannerController::GetMode(void){
 
 
 //Allow controller to function
-void LaserScannerController::EnableController(){
+CONTROLLER_CONTROL_MODE LaserScannerController::EnableController(){
   enabled = true;
-  lowerControl.EnableController();
+  return lowerControl.EnableController();
+  
 }
 
 //Disable functioning. Set joint torque to zero.
-void LaserScannerController::DisableController(){
+CONTROLLER_CONTROL_MODE LaserScannerController::DisableController(){
   enabled = false;
-  lowerControl.DisableController();   
+  return lowerControl.DisableController();   
 }
 
 //Check for saturation of last command
@@ -330,19 +341,17 @@ void LaserScannerController::Update( )
 //PARAM SERVER CALLS
 //---------------------------------------------------------------------------------//
 
-
-PR2::PR2_ERROR_CODE
+CONTROLLER::CONTROLLER_ERROR_CODE
 LaserScannerController::setParam(std::string label,double value)
 {
 
-  return PR2::PR2_ALL_OK;
+  return CONTROLLER::CONTROLLER_ALL_OK;
 }
-
-PR2::PR2_ERROR_CODE
+CONTROLLER::CONTROLLER_ERROR_CODE
 LaserScannerController::setParam(std::string label,std::string value)
 {
 
-  return PR2::PR2_ALL_OK;
+  return CONTROLLER::CONTROLLER_ALL_OK;
 }
 
 
