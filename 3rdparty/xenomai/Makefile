@@ -26,9 +26,9 @@ xenomai: xenomai-checkout linux
 
 
 install: xenomai
-	make -C xenomai-svn/build devices
-	make -C linux install modules_install
-	cd /boot && update-initramfs -c -k 2.6.24.3 && update-grub
+	sudo make -C xenomai-svn/build devices
+	sudo make -C linux install modules_install
+	cd /boot && sudo update-initramfs -c -k 2.6.24.3 && sudo update-grub
 
 $(LINUX_ARCHIVE): 
 	wget http://www.us.kernel.org/pub/linux/kernel/$(MAJOR_VERSION)/$(LINUX_ARCHIVE)
