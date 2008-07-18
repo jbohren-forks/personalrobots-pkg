@@ -3,6 +3,7 @@
 #include <linux/joystick.h>
 #include <fcntl.h>
 #include "ros/node.h"
+//#include "std_msgs/Joy.h"
 #include "joy/Joy.h"
 
 // This should really go in the .msg
@@ -18,7 +19,7 @@ class Joy : public node
 {
 public:
   joy::Joy joy_msg;
-
+  //std_msgs::Joy joy_msg;
   int joy_fd;
   string joy_dev;
   int deadzone;
