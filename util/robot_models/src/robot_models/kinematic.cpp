@@ -82,14 +82,14 @@ void robot_models::KinematicModel::Link::computeTransform(const double *params)
     globalTrans.multiplyPose(constGeomTrans);
 }
 
-void robot_models::KinematicModel::build(URDF &model, const char *group)
+void robot_models::KinematicModel::build(robot_desc::URDF &model, const char *group)
 {
     if (group)
     {
-	URDF::Group *g = model.getGroup(group);
+	robot_desc::URDF::Group *g = model.getGroup(group);
 	for (unsigned int i = 0 ; i < g->linkRoots.size() ; ++i)
 	{
-	    URDF::Link *link = g->linkRoots[i];
+	    robot_desc::URDF::Link *link = g->linkRoots[i];
 	    Robot *rb = new Robot();
 	    rb->tag = g->name;
 	    rb->chain = new Joint();
@@ -101,7 +101,7 @@ void robot_models::KinematicModel::build(URDF &model, const char *group)
     {
 	for (unsigned int i = 0 ; i < model.getDisjointPartCount() ; ++i)
 	{
-	    URDF::Link *link = model.getDisjointPart(i);
+	    robot_desc::URDF::Link *link = model.getDisjointPart(i);
 	    Robot *rb = new Robot();
 	    rb->chain = new Joint();
 	    buildChain(rb, NULL, rb->chain, link);
@@ -120,7 +120,7 @@ robot_models::KinematicModel::Robot* robot_models::KinematicModel::getRobot(unsi
     return m_robots[index];
 }
 
-void robot_models::KinematicModel::buildChain(Robot *robot, Link *parent, Joint* joint, URDF::Link* urdfLink)
+void robot_models::KinematicModel::buildChain(Robot *robot, Link *parent, Joint* joint, robot_desc::URDF::Link* urdfLink)
 {
     joint->usedParamStart = robot->stateDimension;
     joint->before = parent;
@@ -137,22 +137,22 @@ void robot_models::KinematicModel::buildChain(Robot *robot, Link *parent, Joint*
     joint->anchor[2] = urdfLink->joint->anchor[2];
     switch (urdfLink->joint->type)
     {
-    case URDF::Link::Joint::FLOATING:
+    case robot_desc::URDF::Link::Joint::FLOATING:
 	joint->type = Joint::FLOATING;
 	joint->usedParamEnd = joint->usedParamStart + 3;
 	robot->stateBounds.insert(robot->stateBounds.end(), 6, 0.0);
 	break;
-    case URDF::Link::Joint::FIXED:
+    case robot_desc::URDF::Link::Joint::FIXED:
 	joint->type = Joint::FIXED; 
 	joint->usedParamEnd = joint->usedParamStart;
 	break;
-    case URDF::Link::Joint::REVOLUTE:
+    case robot_desc::URDF::Link::Joint::REVOLUTE:
 	joint->type = Joint::REVOLUTE;
 	joint->usedParamEnd = joint->usedParamStart + 1;
 	robot->stateBounds.push_back(joint->limit[0]);
 	robot->stateBounds.push_back(joint->limit[1]);
 	break;
-    case URDF::Link::Joint::PRISMATIC:
+    case robot_desc::URDF::Link::Joint::PRISMATIC:
 	joint->type = Joint::PRISMATIC;
 	joint->usedParamEnd = joint->usedParamStart + 1;
 	robot->stateBounds.push_back(joint->limit[0]);
@@ -168,7 +168,7 @@ void robot_models::KinematicModel::buildChain(Robot *robot, Link *parent, Joint*
     buildChain(robot, joint, joint->after, urdfLink);
 }
 
-void robot_models::KinematicModel::buildChain(Robot *robot, Joint *parent, Link* link, URDF::Link* urdfLink)
+void robot_models::KinematicModel::buildChain(Robot *robot, Joint *parent, Link* link, robot_desc::URDF::Link* urdfLink)
 {
     link->before = parent;
     robot->links.push_back(link);
@@ -179,13 +179,13 @@ void robot_models::KinematicModel::buildChain(Robot *robot, Joint *parent, Link*
     /* copy relevant data */ 
     switch (urdfLink->collision->geometry->type)
     {
-    case URDF::Link::Geometry::UNKNOWN:
+    case robot_desc::URDF::Link::Geometry::UNKNOWN:
 	link->geom->type = Geometry::UNKNOWN; break;
-    case URDF::Link::Geometry::BOX:
+    case robot_desc::URDF::Link::Geometry::BOX:
 	link->geom->type = Geometry::BOX; break;
-    case URDF::Link::Geometry::SPHERE:
+    case robot_desc::URDF::Link::Geometry::SPHERE:
 	link->geom->type = Geometry::SPHERE; break;
-    case URDF::Link::Geometry::CYLINDER:
+    case robot_desc::URDF::Link::Geometry::CYLINDER:
 	link->geom->type = Geometry::CYLINDER; break;
     default:
 	break;

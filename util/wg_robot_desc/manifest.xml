@@ -10,6 +10,7 @@
   <url>http://pr.willowgarage.com/wiki/RobotDescriptionFormat</url>
 
   <depend package="tinyxml"/>
+  <depend package="math_utils"/>
   
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lURDF"/>

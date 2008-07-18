@@ -35,7 +35,7 @@
 #include <collision_space/environmentODE.h>
 #include <cassert>
 
-void collision_space::EnvironmentModelODE::KinematicModelODE::build(URDF &model, const char *group)
+void collision_space::EnvironmentModelODE::KinematicModelODE::build(robot_desc::URDF &model, const char *group)
 {
     robot_models::KinematicModel::build(model, group);
     assert(m_space);

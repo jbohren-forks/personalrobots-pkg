@@ -213,7 +213,7 @@ namespace robot_models
 		delete m_robots[i];
 	}
 	
-	virtual void build(URDF &model, const char *group = NULL);
+	virtual void build(robot_desc::URDF &model, const char *group = NULL);
 	
 	unsigned int getRobotCount(void) const;
 	Robot* getRobot(unsigned int index) const;
@@ -225,8 +225,8 @@ namespace robot_models
 	
     private:
 	
-	void buildChain(Robot *robot, Link  *parent, Joint *joint, URDF::Link *urdfLink);
-	void buildChain(Robot *robot, Joint *parent, Link  *link,  URDF::Link *urdfLink);
+	void buildChain(Robot *robot, Link  *parent, Joint *joint, robot_desc::URDF::Link *urdfLink);
+	void buildChain(Robot *robot, Joint *parent, Link  *link,  robot_desc::URDF::Link *urdfLink);
 	
     };
 

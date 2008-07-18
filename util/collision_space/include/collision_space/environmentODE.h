@@ -64,7 +64,7 @@ namespace collision_space
 		    delete m_kgeoms[i];
 	    }
 	    
-	    virtual void build(URDF &model, const char *group = NULL);
+	    virtual void build(robot_desc::URDF &model, const char *group = NULL);
 	    
 	    dSpaceID getODESpace(void) const;
 	    void     setODESpace(dSpaceID space);

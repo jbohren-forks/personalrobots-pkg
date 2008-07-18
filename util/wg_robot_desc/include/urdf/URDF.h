@@ -44,320 +44,325 @@
     
     Universal Robot Description Format (URDF) parser */
 
-class URDF
+namespace robot_desc
 {
- public:
     
-    struct Group;
-    
-    struct Link
+    class URDF
     {
+    public:
 	
-	struct Geometry
+	struct Group;
+	
+	struct Link
 	{
-	    Geometry(void)
+	    
+	    struct Geometry
+	    {
+		Geometry(void)
+		{
+		    type = UNKNOWN;
+		    size[0] = size[1] = size[2] = 0.0;
+		}
+		
+		virtual ~Geometry(void)
+		{
+		}
+		
+		virtual void print(FILE *out = stdout, std::string indent = "");
+		
+		enum
+		    {
+			UNKNOWN, SPHERE, BOX, CYLINDER, MESH
+		    }       type;
+		std::string name;
+		double      size[3];
+		std::string filename;
+	    };
+	    
+	    struct Actuator
+	    {
+		Actuator(void)
+		{
+		    polymap[0] = polymap[1] = polymap[2] = 0.0;
+		    reduction = 0.0;
+		    port = 0;
+		}
+		
+		virtual ~Actuator(void)
+		{
+		}
+		
+		virtual void print(FILE *out = stdout, std::string indent = "");
+		
+		std::string  name;
+		std::string  motor;
+		std::string  ip;
+		unsigned int port;
+		double       reduction;
+		double       polymap[3];
+	    };
+	    
+	    struct Joint
+	    {
+		Joint(void)
+		{
+		    axis[0] = axis[1] = axis[2] = 0.0;
+		    anchor[0] = anchor[1] = anchor[2] = 0.0;
+		    calibration[0] = calibration[1] = 0.0;
+		    limit[0] = limit[1] = 0.0;
+		    type = UNKNOWN;
+		}
+		
+		virtual ~Joint(void)
+		{
+		    for (unsigned int i = 0 ; i < actuators.size() ; ++i)
+			delete actuators[i];
+		}
+		
+		virtual void print(FILE *out = stdout, std::string indent = "");
+		
+		enum
+		    {
+			UNKNOWN, FIXED, REVOLUTE, PRISMATIC, FLOATING
+		    }                  type;
+		std::string            name;
+		double                 axis[3];
+		double                 anchor[3];
+		double                 limit[2];
+		double                 calibration[2];
+		std::vector<Actuator*> actuators;
+	    };
+	    
+	    struct Collision
+	    {
+		Collision(void)
+		{
+		    xyz[0] = xyz[1] = xyz[2] = 0.0;
+		    rpy[0] = rpy[1] = rpy[2] = 0.0;
+		    geometry = new Geometry();
+		}
+		
+		virtual ~Collision(void)
+		{
+		    if (geometry)
+			delete geometry;
+		}
+		
+		virtual void print(FILE *out = stdout, std::string indent = "");
+		
+		std::string  name;	    
+		double       xyz[3];
+		double       rpy[3];
+		std::string  material;
+		Geometry    *geometry;
+	    };
+	    
+	    struct Inertial
+	    {
+		Inertial(void)
+		{
+		    mass = 0.0;
+		    com[0] = com[1] = com[2] = 0.0;
+		    inertia[0] = inertia[1] = inertia[2] = inertia[3] = inertia[4] = inertia[5] = 0.0;
+		}
+		
+		virtual ~Inertial(void)
+		{
+		}
+		
+		virtual void print(FILE *out = stdout, std::string indent = "");
+		
+		std::string name;
+		double      mass;
+		double      inertia[6];
+		double      com[3];
+	    };
+	    
+	    struct Visual
+	    {
+		Visual(void)
+		{
+		    xyz[0] = xyz[1] = xyz[2] = 0.0;
+		    rpy[0] = rpy[1] = rpy[2] = 0.0;
+		    geometry = new Geometry();
+		}
+		
+		virtual ~Visual(void)
+		{
+		    if (geometry)
+			delete geometry;
+		}
+		
+		virtual void print(FILE *out = stdout, std::string indent = "");
+		
+		std::string  name;
+		double       xyz[3];
+		double       rpy[3];
+		std::string  material;
+		Geometry    *geometry;
+	    };
+	    
+	    Link(void)
+	    {
+		parent = NULL;
+		xyz[0] = xyz[1] = xyz[2] = 0.0;
+		rpy[0] = rpy[1] = rpy[2] = 0.0;
+		inertial  = new Inertial();
+		visual    = new Visual();
+		collision = new Collision();
+		joint     = new Joint();
+	    }
+	    
+	    virtual ~Link(void)
+	    {
+		if (inertial)
+		    delete inertial;
+		if (visual)
+		    delete visual;
+		if (collision)
+		    delete collision;
+		if (joint)
+		    delete joint;
+	    }
+	    
+	    virtual bool canSense(void) const;
+	    virtual void print(FILE *out = stdout, std::string indent = "");
+	    
+	    Link               *parent;
+	    std::string         parentName;
+	    std::string         name;
+	    std::vector<Link*>  children;
+	    
+	    Inertial           *inertial;
+	    Visual             *visual;
+	    Collision          *collision;
+	    Joint              *joint;
+	    
+	    double              rpy[3];
+	    double              xyz[3];
+	    
+	    std::vector<Group*> groups;
+	};
+	
+	struct Sensor : public Link
+	{
+	    
+	    Sensor(void)
 	    {
 		type = UNKNOWN;
-		size[0] = size[1] = size[2] = 0.0;
 	    }
 	    
-	    virtual ~Geometry(void)
+	    virtual ~Sensor(void)
 	    {
 	    }
 	    
+	    virtual bool canSense(void) const;
 	    virtual void print(FILE *out = stdout, std::string indent = "");
 	    
 	    enum
-		{
-		    UNKNOWN, SPHERE, BOX, CYLINDER, MESH
-		}       type;
-	    std::string name;
-	    double      size[3];
-	    std::string filename;
+	    {
+		UNKNOWN, CAMERA
+	    }           type;
+	    std::string calibration;
 	};
 	
-	struct Actuator
+	struct Group
 	{
-	    Actuator(void)
-	    {
-		polymap[0] = polymap[1] = polymap[2] = 0.0;
-		reduction = 0.0;
-		port = 0;
-	    }
-	    
-	    virtual ~Actuator(void)
+	    Group(void)
 	    {
 	    }
 	    
-	    virtual void print(FILE *out = stdout, std::string indent = "");
+	    virtual ~Group(void)
+	    {
+	    }
 	    
-	    std::string  name;
-	    std::string  motor;
-	    std::string  ip;
-	    unsigned int port;
-	    double       reduction;
-	    double       polymap[3];
+	    std::string              name;
+	    std::string              flags;
+	    std::vector<std::string> linkNames;
+	    std::vector<Link*>       links;
+	    std::vector<Link*>       linkRoots;
 	};
 	
-	struct Joint
-	{
-	    Joint(void)
-	    {
-		axis[0] = axis[1] = axis[2] = 0.0;
-		anchor[0] = anchor[1] = anchor[2] = 0.0;
-		calibration[0] = calibration[1] = 0.0;
-		limit[0] = limit[1] = 0.0;
-		type = UNKNOWN;
-	    }
-	    
-	    virtual ~Joint(void)
-	    {
-		for (unsigned int i = 0 ; i < actuators.size() ; ++i)
-		    delete actuators[i];
-	    }
-	    
-	    virtual void print(FILE *out = stdout, std::string indent = "");
-	    
-	    enum
-		{
-		    UNKNOWN, FIXED, REVOLUTE, PRISMATIC, FLOATING
-		}                  type;
-	    std::string            name;
-	    double                 axis[3];
-	    double                 anchor[3];
-	    double                 limit[2];
-	    double                 calibration[2];
-	    std::vector<Actuator*> actuators;
-	};
-	
-	struct Collision
-	{
-	    Collision(void)
-	    {
-		xyz[0] = xyz[1] = xyz[2] = 0.0;
-		rpy[0] = rpy[1] = rpy[2] = 0.0;
-		geometry = new Geometry();
-	    }
-	    
-	    virtual ~Collision(void)
-	    {
-		if (geometry)
-		    delete geometry;
-	    }
-
-	    virtual void print(FILE *out = stdout, std::string indent = "");
-	    
-	    std::string  name;	    
-	    double       xyz[3];
-	    double       rpy[3];
-	    std::string  material;
-	    Geometry    *geometry;
-	};
-	
-	struct Inertial
-	{
-	    Inertial(void)
-	    {
-		mass = 0.0;
-		com[0] = com[1] = com[2] = 0.0;
-		inertia[0] = inertia[1] = inertia[2] = inertia[3] = inertia[4] = inertia[5] = 0.0;
-	    }
-	    
-	    virtual ~Inertial(void)
-	    {
-	    }
-	    
-	    virtual void print(FILE *out = stdout, std::string indent = "");
-
-	    std::string name;
-	    double      mass;
-	    double      inertia[6];
-	    double      com[3];
-	};
-	
-	struct Visual
-	{
-	    Visual(void)
-	    {
-		xyz[0] = xyz[1] = xyz[2] = 0.0;
-		rpy[0] = rpy[1] = rpy[2] = 0.0;
-		geometry = new Geometry();
-	    }
-	    
-	    virtual ~Visual(void)
-	    {
-		if (geometry)
-		    delete geometry;
-	    }
-	    
-	    virtual void print(FILE *out = stdout, std::string indent = "");
-
-	    std::string  name;
-	    double       xyz[3];
-	    double       rpy[3];
-	    std::string  material;
-	    Geometry    *geometry;
-	};
-	
-	Link(void)
-	{
-	    parent = NULL;
-	    xyz[0] = xyz[1] = xyz[2] = 0.0;
-	    rpy[0] = rpy[1] = rpy[2] = 0.0;
-	    inertial  = new Inertial();
-	    visual    = new Visual();
-	    collision = new Collision();
-	    joint     = new Joint();
+	explicit URDF(const char *filename = NULL)
+	{   
+	    m_paths.push_back("");
+	    if (filename)
+		loadFile(filename);
 	}
 	
-	virtual ~Link(void)
+	virtual ~URDF(void)
 	{
-	    if (inertial)
-		delete inertial;
-	    if (visual)
-		delete visual;
-	    if (collision)
-		delete collision;
-	    if (joint)
-		delete joint;
+	    freeMemory();
 	}
-
-	virtual bool canSense(void) const;
-	virtual void print(FILE *out = stdout, std::string indent = "");
 	
-	Link               *parent;
-	std::string         parentName;
-	std::string         name;
-	std::vector<Link*>  children;
+	virtual void clear(void);
+	virtual bool loadFile(const char *filename);
+	virtual bool loadFile(FILE *file);
+	virtual bool loadString(const char *data);
+	virtual void print(FILE *out = stdout);
 	
-	Inertial           *inertial;
-	Visual             *visual;
-	Collision          *collision;
-	Joint              *joint;
+	bool containsCycle(unsigned int index) const;
+	const std::string& getRobotName(void) const;
+	unsigned int getDisjointPartCount(void) const;
+	Link* getDisjointPart(unsigned int index) const;
 	
-	double              rpy[3];
-	double              xyz[3];
+	void getGroupNames(std::vector<std::string> &groups) const;
+	Group* getGroup(const std::string &name) const;
 	
-	std::vector<Group*> groups;
+    protected:
+	
+	/* free the memory allocate in this class */
+	void freeMemory(void);
+	
+	void  addPath(const char *filename);
+	char* findFile(const char *filename);
+	
+	/* parse the URDF document */
+	virtual bool parse(const TiXmlNode *node);
+	virtual void ignoreNode(const TiXmlNode* node);
+	
+	std::string                  m_source;
+	std::vector<std::string>     m_paths;
+	
+	std::string                  m_name;
+	std::map<std::string, Link*> m_links; // contains sensors too (casted down)
+	std::vector<Link*>           m_roots; // contains the links that are connected to the world (have no parent)    
+	
+	std::map<std::string, Link::Collision*> m_collision;
+	std::map<std::string, Link::Joint*>     m_joints;
+	std::map<std::string, Link::Inertial*>  m_inertial;
+	std::map<std::string, Link::Visual*>    m_visual;
+	std::map<std::string, Link::Geometry*>  m_geoms;
+	std::map<std::string, Link::Actuator*>  m_actuators;
+	
+	std::map<std::string, Group*>           m_groups;
+	
+    private:
+	
+	/* utility functions for parsing */
+	void loadLink(const TiXmlNode *node);
+	void loadSensor(const TiXmlNode *node);
+	void loadActuator(const TiXmlNode *node, Link::Actuator *actuator);
+	void loadJoint(const TiXmlNode *node, Link::Joint *joint);
+	void loadGeometry(const TiXmlNode *node, Link::Geometry *geometry);
+	void loadCollision(const TiXmlNode *node, Link::Collision *collision);
+	void loadVisual(const TiXmlNode *node, Link::Visual *visual);
+	void loadInertial(const TiXmlNode *node, Link::Inertial *inertial);
+	void defaultConstants(void);
+	void getChildrenAndAttributes(const TiXmlNode* node, std::vector<const TiXmlNode*> &children, std::vector<const TiXmlAttribute*> &attributes) const;
+	unsigned int loadValues(const TiXmlNode *node, unsigned int count, double *vals);
+	std::string  extractName(std::vector<const TiXmlAttribute*> &attributes);    
+	void clearDocs(void);    
+	
+	/* temporary storage for information during parsing; should not be used elsewhere */
+	std::map<std::string, std::string>      m_constants;  // constants 
+	std::map<std::string, const TiXmlNode*> m_templates;  // templates
+	std::vector<const TiXmlNode*>           m_stage2;     // xml nodes that should be processed after all templates and constants are read
+	std::vector<TiXmlDocument*>             m_docs;       // pointer to loaded documents
+	
     };
     
-    struct Sensor : public Link
-    {
-	
-	Sensor(void)
-	{
-	    type = UNKNOWN;
-	}
-	
-	virtual ~Sensor(void)
-	{
-	}
-	
-	virtual bool canSense(void) const;
-	virtual void print(FILE *out = stdout, std::string indent = "");
-	
-	enum
-	{
-	    UNKNOWN, CAMERA
-	}           type;
-	std::string calibration;
-    };
-    
-    struct Group
-    {
-	Group(void)
-	{
-	}
-	
-	virtual ~Group(void)
-	{
-	}
-	
-	std::string              name;
-	std::string              flags;
-	std::vector<std::string> linkNames;
-	std::vector<Link*>       links;
-	std::vector<Link*>       linkRoots;
-    };
-    
-    explicit URDF(const char *filename = NULL)
-    {   
-	m_paths.push_back("");
-	if (filename)
-	    loadFile(filename);
-    }
-    
-    virtual ~URDF(void)
-    {
-	freeMemory();
-    }
-    
-    virtual void clear(void);
-    virtual bool loadFile(const char *filename);
-    virtual bool loadFile(FILE *file);
-    virtual bool loadString(const char *data);
-    virtual void print(FILE *out = stdout);
-    
-    bool containsCycle(unsigned int index) const;
-    const std::string& getRobotName(void) const;
-    unsigned int getDisjointPartCount(void) const;
-    Link* getDisjointPart(unsigned int index) const;
-
-    void getGroupNames(std::vector<std::string> &groups) const;
-    Group* getGroup(const std::string &name) const;
-    
- protected:
-
-    /* free the memory allocate in this class */
-    void freeMemory(void);
-
-    void  addPath(const char *filename);
-    char* findFile(const char *filename);
-
-    /* parse the URDF document */
-    virtual bool parse(const TiXmlNode *node);
-    virtual void ignoreNode(const TiXmlNode* node);
-    
-    std::string                  m_source;
-    std::vector<std::string>     m_paths;
-    
-    std::string                  m_name;
-    std::map<std::string, Link*> m_links; // contains sensors too (casted down)
-    std::vector<Link*>           m_roots; // contains the links that are connected to the world (have no parent)    
-    
-    std::map<std::string, Link::Collision*> m_collision;
-    std::map<std::string, Link::Joint*>     m_joints;
-    std::map<std::string, Link::Inertial*>  m_inertial;
-    std::map<std::string, Link::Visual*>    m_visual;
-    std::map<std::string, Link::Geometry*>  m_geoms;
-    std::map<std::string, Link::Actuator*>  m_actuators;
-				    
-    std::map<std::string, Group*>           m_groups;
-    
- private:
-    
-    /* utility functions for parsing */
-    void loadLink(const TiXmlNode *node);
-    void loadSensor(const TiXmlNode *node);
-    void loadActuator(const TiXmlNode *node, Link::Actuator *actuator);
-    void loadJoint(const TiXmlNode *node, Link::Joint *joint);
-    void loadGeometry(const TiXmlNode *node, Link::Geometry *geometry);
-    void loadCollision(const TiXmlNode *node, Link::Collision *collision);
-    void loadVisual(const TiXmlNode *node, Link::Visual *visual);
-    void loadInertial(const TiXmlNode *node, Link::Inertial *inertial);
-    void defaultConstants(void);
-    void getChildrenAndAttributes(const TiXmlNode* node, std::vector<const TiXmlNode*> &children, std::vector<const TiXmlAttribute*> &attributes) const;
-    unsigned int loadValues(const TiXmlNode *node, unsigned int count, double *vals);
-    std::string  extractName(std::vector<const TiXmlAttribute*> &attributes);    
-    void clearDocs(void);    
-    
-    /* temporary storage for information during parsing; should not be used elsewhere */
-    std::map<std::string, std::string>      m_constants;  // constants 
-    std::map<std::string, const TiXmlNode*> m_templates;  // templates
-    std::vector<const TiXmlNode*>           m_stage2;     // xml nodes that should be processed after all templates and constants are read
-    std::vector<TiXmlDocument*>             m_docs;       // pointer to loaded documents
-    
-};
-
+}
 
 #endif
+    

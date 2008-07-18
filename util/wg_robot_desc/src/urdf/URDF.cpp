@@ -33,7 +33,7 @@
 *********************************************************************/
 
 #include <urdf/URDF.h>
-#include <urdf/MathExpression.h>
+#include <math_utils/MathExpression.h>
 #include <cstring>
 #include <fstream>
 #include <sstream>
@@ -42,7 +42,7 @@
 // need to change this depending on OS (different on windows)
 static const char PATH_SEPARATOR = '/';
 
-void URDF::freeMemory(void)
+void robot_desc::URDF::freeMemory(void)
 {
     for (std::map<std::string, Link*>::iterator i = m_links.begin() ; i != m_links.end() ; i++)
 	delete i->second;
@@ -50,7 +50,7 @@ void URDF::freeMemory(void)
 	delete i->second;
 }
 
-void URDF::clear(void)
+void robot_desc::URDF::clear(void)
 {
     freeMemory();
     m_name   = "";
@@ -68,17 +68,17 @@ void URDF::clear(void)
     m_actuators.clear();
 }
 
-const std::string& URDF::getRobotName(void) const
+const std::string& robot_desc::URDF::getRobotName(void) const
 {
     return m_name;
 }
 
-unsigned int URDF::getDisjointPartCount(void) const
+unsigned int robot_desc::URDF::getDisjointPartCount(void) const
 {
     return m_roots.size();
 }
 
-URDF::Link* URDF::getDisjointPart(unsigned int index) const
+robot_desc::URDF::Link* robot_desc::URDF::getDisjointPart(unsigned int index) const
 {
     if (index < m_roots.size())
 	return m_roots[index];
@@ -86,20 +86,20 @@ URDF::Link* URDF::getDisjointPart(unsigned int index) const
 	return NULL;
 }
 
-void URDF::getGroupNames(std::vector<std::string> &groups) const
+void robot_desc::URDF::getGroupNames(std::vector<std::string> &groups) const
 {
     for (std::map<std::string, Group*>::const_iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
 	groups.push_back(i->first);
 }
 
-URDF::Group* URDF::getGroup(const std::string &name) const
+robot_desc::URDF::Group* robot_desc::URDF::getGroup(const std::string &name) const
 {
     std::map<std::string, Group*>::const_iterator it = m_groups.find(name);
     return (it == m_groups.end()) ? NULL : it->second;
 }
 
 
-bool URDF::containsCycle(unsigned int index) const
+bool robot_desc::URDF::containsCycle(unsigned int index) const
 {
     if (index >= m_roots.size())
 	return false;
@@ -124,7 +124,7 @@ bool URDF::containsCycle(unsigned int index) const
     return false;
 }
 
-void URDF::print(FILE *out)
+void robot_desc::URDF::print(FILE *out)
 {
     fprintf(out, "\nList of root links in robot '%s' (%u):\n", m_name.c_str(), m_roots.size());
     for (unsigned int i = 0 ; i < m_roots.size() ; ++i)
@@ -132,7 +132,7 @@ void URDF::print(FILE *out)
     fprintf(out, "\n");
 }
 
-void URDF::Link::Geometry::print(FILE *out, std::string indent)
+void robot_desc::URDF::Link::Geometry::print(FILE *out, std::string indent)
 {
     fprintf(out, "%sGeometry [%s]:\n", indent.c_str(), name.c_str());
     fprintf(out, "%s  - type: %d\n", indent.c_str(), (int)type);
@@ -140,7 +140,7 @@ void URDF::Link::Geometry::print(FILE *out, std::string indent)
     fprintf(out, "%s  - filename: %s\n", indent.c_str(), filename.c_str());
 }
 
-void URDF::Link::Actuator::print(FILE *out, std::string indent)
+void robot_desc::URDF::Link::Actuator::print(FILE *out, std::string indent)
 {
     fprintf(out, "%sActuator [%s]:\n", indent.c_str(), name.c_str());
     fprintf(out, "%s  - motor: %s\n", indent.c_str(), motor.c_str());
@@ -150,7 +150,7 @@ void URDF::Link::Actuator::print(FILE *out, std::string indent)
     fprintf(out, "%s  - port: %u\n", indent.c_str(), port);
 }
 
-void URDF::Link::Joint::print(FILE *out, std::string indent)
+void robot_desc::URDF::Link::Joint::print(FILE *out, std::string indent)
 {
     fprintf(out, "%sJoint [%s]:\n", indent.c_str(), name.c_str());
     fprintf(out, "%s  - type: %d\n", indent.c_str(), (int)type);
@@ -162,7 +162,7 @@ void URDF::Link::Joint::print(FILE *out, std::string indent)
 	actuators[i]->print(out, indent + "  ");
 }
 
-void URDF::Link::Collision::print(FILE *out, std::string indent)
+void robot_desc::URDF::Link::Collision::print(FILE *out, std::string indent)
 {
     fprintf(out, "%sCollision [%s]:\n", indent.c_str(), name.c_str());
     fprintf(out, "%s  - material: %s\n", indent.c_str(), material.c_str());
@@ -171,7 +171,7 @@ void URDF::Link::Collision::print(FILE *out, std::string indent)
     geometry->print(out, indent + "  ");
 }
 
-void URDF::Link::Inertial::print(FILE *out, std::string indent)
+void robot_desc::URDF::Link::Inertial::print(FILE *out, std::string indent)
 {
     fprintf(out, "%sInertial [%s]:\n", indent.c_str(), name.c_str());
     fprintf(out, "%s  - mass: %f\n", indent.c_str(), mass);
@@ -180,7 +180,7 @@ void URDF::Link::Inertial::print(FILE *out, std::string indent)
 	    inertia[0], inertia[1], inertia[2], inertia[3], inertia[4],  inertia[5]);
 }
 
-void URDF::Link::Visual::print(FILE *out, std::string indent)
+void robot_desc::URDF::Link::Visual::print(FILE *out, std::string indent)
 {
     fprintf(out, "%sVisual [%s]:\n", indent.c_str(), name.c_str());
     fprintf(out, "%s  - material: %s\n", indent.c_str(), material.c_str());
@@ -189,7 +189,7 @@ void URDF::Link::Visual::print(FILE *out, std::string indent)
     geometry->print(out, indent + "  ");
 }
 
-void URDF::Link::print(FILE *out, std::string indent)
+void robot_desc::URDF::Link::print(FILE *out, std::string indent)
 {
     fprintf(out, "%sLink [%s]:\n", indent.c_str(), name.c_str());
     fprintf(out, "%s  - parent link: %s\n", indent.c_str(), parentName.c_str());
@@ -211,7 +211,7 @@ void URDF::Link::print(FILE *out, std::string indent)
 	children[i]->print(out, indent + "  ");
 }
 
-void URDF::Sensor::print(FILE *out, std::string indent)
+void robot_desc::URDF::Sensor::print(FILE *out, std::string indent)
 {
     fprintf(out, "%sSensor:\n", indent.c_str());
     fprintf(out, "%s  - type: %d\n", indent.c_str(), (int)type);
@@ -219,17 +219,17 @@ void URDF::Sensor::print(FILE *out, std::string indent)
     Link::print(out, indent + "  ");
 }
 
-bool URDF::Link::canSense(void) const
+bool robot_desc::URDF::Link::canSense(void) const
 {
     return false;
 }
 
-bool URDF::Sensor::canSense(void) const
+bool robot_desc::URDF::Sensor::canSense(void) const
 {
     return true;
 }
 
-void URDF::ignoreNode(const TiXmlNode* node)
+void robot_desc::URDF::ignoreNode(const TiXmlNode* node)
 {
     switch (node->Type())
     {
@@ -249,7 +249,7 @@ void URDF::ignoreNode(const TiXmlNode* node)
     }
 }
 
-void URDF::getChildrenAndAttributes(const TiXmlNode *node, std::vector<const TiXmlNode*> &children, std::vector<const TiXmlAttribute*> &attributes) const
+void robot_desc::URDF::getChildrenAndAttributes(const TiXmlNode *node, std::vector<const TiXmlNode*> &children, std::vector<const TiXmlAttribute*> &attributes) const
 {
     for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
 	children.push_back(child);
@@ -271,12 +271,12 @@ void URDF::getChildrenAndAttributes(const TiXmlNode *node, std::vector<const TiX
     }
 }
 
-void URDF::defaultConstants(void)
+void robot_desc::URDF::defaultConstants(void)
 {
     m_constants["M_PI"] = "3.14159265358979323846";
 }
 
-void URDF::clearDocs(void)
+void robot_desc::URDF::clearDocs(void)
 {
     /* clear memory allocated for loaded documents */
     for (unsigned int i = 0 ; i < m_docs.size() ; ++i)
@@ -284,7 +284,7 @@ void URDF::clearDocs(void)
     m_docs.clear();
 }
 
-bool URDF::loadString(const char *data)
+bool robot_desc::URDF::loadString(const char *data)
 {
     clear();
     bool result = false;
@@ -304,7 +304,7 @@ bool URDF::loadString(const char *data)
     return result;
 }  
 
-bool URDF::loadFile(FILE *file)
+bool robot_desc::URDF::loadFile(FILE *file)
 {
     clear();
     bool result = false;
@@ -324,7 +324,7 @@ bool URDF::loadFile(FILE *file)
     return result;
 }
 
-bool URDF::loadFile(const char *filename)
+bool robot_desc::URDF::loadFile(const char *filename)
 {
     clear();
     bool result = false;
@@ -346,7 +346,7 @@ bool URDF::loadFile(const char *filename)
     return result;
 }
 
-void URDF::addPath(const char *filename)
+void robot_desc::URDF::addPath(const char *filename)
 {
     if (!filename)
 	return;
@@ -357,7 +357,7 @@ void URDF::addPath(const char *filename)
     m_paths.push_back(name + PATH_SEPARATOR);
 }
 
-char* URDF::findFile(const char *filename)
+char* robot_desc::URDF::findFile(const char *filename)
 {
     for (unsigned int i = 0 ; i < m_paths.size() ; ++i)
     {
@@ -372,7 +372,7 @@ char* URDF::findFile(const char *filename)
     return NULL;
 }
 
-std::string URDF::extractName(std::vector<const TiXmlAttribute*> &attributes)
+std::string robot_desc::URDF::extractName(std::vector<const TiXmlAttribute*> &attributes)
 { 
     std::string name;    
     for (unsigned int i = 0 ; i < attributes.size() ; ++i)
@@ -422,7 +422,7 @@ static double getConstant(void *data, std::string &name)
     }
 }
 
-unsigned int URDF::loadValues(const TiXmlNode *node, unsigned int count, double *vals)
+unsigned int robot_desc::URDF::loadValues(const TiXmlNode *node, unsigned int count, double *vals)
 {
     if (node && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 	node = node->FirstChild();
@@ -448,7 +448,7 @@ unsigned int URDF::loadValues(const TiXmlNode *node, unsigned int count, double 
     return read;
 }
 
-void URDF::loadActuator(const TiXmlNode *node, Link::Actuator *actuator)
+void robot_desc::URDF::loadActuator(const TiXmlNode *node, Link::Actuator *actuator)
 {
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
@@ -497,7 +497,7 @@ void URDF::loadActuator(const TiXmlNode *node, Link::Actuator *actuator)
     }    
 }
 
-void URDF::loadJoint(const TiXmlNode *node, Link::Joint *joint)
+void robot_desc::URDF::loadJoint(const TiXmlNode *node, Link::Joint *joint)
 {
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
@@ -572,7 +572,7 @@ void URDF::loadJoint(const TiXmlNode *node, Link::Joint *joint)
     
 }
 
-void URDF::loadGeometry(const TiXmlNode *node, Link::Geometry *geometry)
+void robot_desc::URDF::loadGeometry(const TiXmlNode *node, Link::Geometry *geometry)
 {
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
@@ -649,7 +649,7 @@ void URDF::loadGeometry(const TiXmlNode *node, Link::Geometry *geometry)
     }
 }
 
-void URDF::loadCollision(const TiXmlNode *node, Link::Collision *collision)
+void robot_desc::URDF::loadCollision(const TiXmlNode *node, Link::Collision *collision)
 {  
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
@@ -695,7 +695,7 @@ void URDF::loadCollision(const TiXmlNode *node, Link::Collision *collision)
     }    
 }
 
-void URDF::loadVisual(const TiXmlNode *node, Link::Visual *visual)
+void robot_desc::URDF::loadVisual(const TiXmlNode *node, Link::Visual *visual)
 {  
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
@@ -741,7 +741,7 @@ void URDF::loadVisual(const TiXmlNode *node, Link::Visual *visual)
     }   
 }
 
-void URDF::loadInertial(const TiXmlNode *node, Link::Inertial *inertial)
+void robot_desc::URDF::loadInertial(const TiXmlNode *node, Link::Inertial *inertial)
 { 
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
@@ -784,7 +784,7 @@ void URDF::loadInertial(const TiXmlNode *node, Link::Inertial *inertial)
     }
 }
 
-void URDF::loadLink(const TiXmlNode *node)
+void robot_desc::URDF::loadLink(const TiXmlNode *node)
 {
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
@@ -830,7 +830,7 @@ void URDF::loadLink(const TiXmlNode *node)
     }
 }
 
-void URDF::loadSensor(const TiXmlNode *node)
+void robot_desc::URDF::loadSensor(const TiXmlNode *node)
 {
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
@@ -900,7 +900,7 @@ void URDF::loadSensor(const TiXmlNode *node)
     }
 }
 
-bool URDF::parse(const TiXmlNode *node)
+bool robot_desc::URDF::parse(const TiXmlNode *node)
 {
     if (!node) return false;
     
