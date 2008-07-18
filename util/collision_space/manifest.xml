@@ -6,7 +6,7 @@
   <author>Ioan Sucan/isucan@willowgarage.com</author>
   <license>BSD</license>
 
-  <depend package="robot_models"/>
+  <depend package="robot_motion_planning_models"/>
   <depend package="opende"/>
   <depend package="drawstuff"/>
 
