@@ -46,7 +46,7 @@ class EnvironmentModelODE : public EnvironmentModel
 {
 public:
 
-    class KinematicModelODE : public KinematicModel
+    class KinematicModelODE : public robot_models::KinematicModel
     {
     public:
 	
@@ -92,7 +92,7 @@ public:
 
     EnvironmentModelODE(void) : EnvironmentModel()
     {
-	model = dynamic_cast<KinematicModel*>(&m_modelODE);
+	model = dynamic_cast<robot_models::KinematicModel*>(&m_modelODE);
 	m_space = dHashSpaceCreate(0);
 	m_modelODE.setODESpace(m_space);
     }

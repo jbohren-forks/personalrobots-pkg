@@ -163,7 +163,6 @@ private:
     {
 	ompl::SpaceInformationKinematic_t si;
 	ompl::MotionPlanner_t             mp;
-	// collision space
     };
     
     std::vector<Model> models; 

@@ -60,7 +60,7 @@ class EnvironmentModel
     /** Add a point cloud to the collision space */
     virtual void addPointCloud(unsigned int n, const double* points, double radius = 0.01) = 0;
     
-    KinematicModel *model;    
+    robot_models::KinematicModel *model;    
         
 };
 

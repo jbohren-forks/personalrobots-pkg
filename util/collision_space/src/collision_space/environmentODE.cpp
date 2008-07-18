@@ -37,7 +37,7 @@
 
 void EnvironmentModelODE::KinematicModelODE::build(URDF &model, const char *group)
 {
-    KinematicModel::build(model, group);
+    robot_models::KinematicModel::build(model, group);
     assert(m_space);
     for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
 	buildODEGeoms(m_robots[i]);

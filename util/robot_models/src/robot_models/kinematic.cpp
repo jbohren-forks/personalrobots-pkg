@@ -35,13 +35,13 @@
 #include <robot_models/kinematic.h>
 #include <cstdio>
 
-void KinematicModel::Robot::computeTransforms(const double *params)
+void robot_models::KinematicModel::Robot::computeTransforms(const double *params)
 {
     chain->computeTransform(params);
 }
 
 // we can optimize things here... (when we use identity transforms, for example)
-void KinematicModel::Joint::computeTransform(const double *params)
+void robot_models::KinematicModel::Joint::computeTransform(const double *params)
 {
     switch (type)
     {
@@ -73,7 +73,7 @@ void KinematicModel::Joint::computeTransform(const double *params)
     after->computeTransform(params);
 }
 
-void KinematicModel::Link::computeTransform(const double *params)
+void robot_models::KinematicModel::Link::computeTransform(const double *params)
 {
     globalTrans = before->globalTrans;
     globalTrans.multiplyPose(constTrans);
@@ -82,7 +82,7 @@ void KinematicModel::Link::computeTransform(const double *params)
     globalTrans.multiplyPose(constGeomTrans);
 }
 
-void KinematicModel::build(URDF &model, const char *group)
+void robot_models::KinematicModel::build(URDF &model, const char *group)
 {
     if (group)
     {
@@ -110,17 +110,17 @@ void KinematicModel::build(URDF &model, const char *group)
     }
 }
     
-unsigned int KinematicModel::getRobotCount(void) const
+unsigned int robot_models::KinematicModel::getRobotCount(void) const
 {
     return m_robots.size();
 }
 
-KinematicModel::Robot* KinematicModel::getRobot(unsigned int index) const
+robot_models::KinematicModel::Robot* robot_models::KinematicModel::getRobot(unsigned int index) const
 {
     return m_robots[index];
 }
 
-void KinematicModel::buildChain(Robot *robot, Link *parent, Joint* joint, URDF::Link* urdfLink)
+void robot_models::KinematicModel::buildChain(Robot *robot, Link *parent, Joint* joint, URDF::Link* urdfLink)
 {
     joint->usedParamStart = robot->stateDimension;
     joint->before = parent;
@@ -168,7 +168,7 @@ void KinematicModel::buildChain(Robot *robot, Link *parent, Joint* joint, URDF::
     buildChain(robot, joint, joint->after, urdfLink);
 }
 
-void KinematicModel::buildChain(Robot *robot, Joint *parent, Link* link, URDF::Link* urdfLink)
+void robot_models::KinematicModel::buildChain(Robot *robot, Joint *parent, Link* link, URDF::Link* urdfLink)
 {
     link->before = parent;
     robot->links.push_back(link);

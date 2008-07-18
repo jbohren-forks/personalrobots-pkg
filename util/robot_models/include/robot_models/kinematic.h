@@ -44,186 +44,192 @@
 
     A class describing a kinematic robot model loaded from URDF */
 
-class KinematicModel
+namespace robot_models
 {
- public:
     
-
-    /** Possible geometry elements. These are assumed to be centered at origin (similar to ODE) */
-    struct Geometry
+    
+    class KinematicModel
     {
-	Geometry(void)
-	{
-	    type = UNKNOWN;
-	    size[0] = size[1] = size[2] = 0.0;
-	}
+    public:
 	
-	enum 
+	
+	/** Possible geometry elements. These are assumed to be centered at origin (similar to ODE) */
+	struct Geometry
+	{
+	    Geometry(void)
 	    {
-		UNKNOWN, BOX, CYLINDER, SPHERE
-	    }  type;
-	double size[3];
-    };
-    
-    struct Joint;
-    struct Link;	
-    
-    /** A joint from the robot. Contains the transform applied by the joint type */
-    struct Joint
-    {
-	Joint(void)
+		type = UNKNOWN;
+		size[0] = size[1] = size[2] = 0.0;
+	    }
+	    
+	    enum 
+		{
+		    UNKNOWN, BOX, CYLINDER, SPHERE
+		}  type;
+	    double size[3];
+	};
+	
+	struct Joint;
+	struct Link;	
+	
+	/** A joint from the robot. Contains the transform applied by the joint type */
+	struct Joint
 	{
-	    before = after = NULL;
-	    usedParamStart = usedParamEnd = 0;
-	    axis[0] = axis[1] = axis[2] = 0.0;
-	    anchor[0] = anchor[1] = anchor[2] = 0.0;
-	    limit[0] = limit[1] = 0.0;
-	    type = UNKNOWN;
-	}
-	
-	~Joint(void)
-	{
-	    if (after)
-		delete after;
-	}
-	
-	/* the links that this joint connects */	    
-	Link         *before;
-	Link         *after;
-	
-	/* the range of indices in the parameter vector that
-	   needed to access information about the position of this
-	   joint */
-	unsigned int  usedParamStart;
-	unsigned int  usedParamEnd;
-	bool          active;
-	
-	/* relevant joint information */
-	enum
+	    Joint(void)
 	    {
-		UNKNOWN, FIXED, REVOLUTE, PRISMATIC, FLOATING
-	    }         type;
-	double        axis[3];
-	double        anchor[3];
-	double        limit[2];
+		before = after = NULL;
+		usedParamStart = usedParamEnd = 0;
+		axis[0] = axis[1] = axis[2] = 0.0;
+		anchor[0] = anchor[1] = anchor[2] = 0.0;
+		limit[0] = limit[1] = 0.0;
+		type = UNKNOWN;
+	    }
+	    
+	    ~Joint(void)
+	    {
+		if (after)
+		    delete after;
+	    }
+	    
+	    /* the links that this joint connects */	    
+	    Link         *before;
+	    Link         *after;
+	    
+	    /* the range of indices in the parameter vector that
+	       needed to access information about the position of this
+	       joint */
+	    unsigned int  usedParamStart;
+	    unsigned int  usedParamEnd;
+	    bool          active;
+	    
+	    /* relevant joint information */
+	    enum
+		{
+		    UNKNOWN, FIXED, REVOLUTE, PRISMATIC, FLOATING
+		}         type;
+	    double        axis[3];
+	    double        anchor[3];
+	    double        limit[2];
+	    
+	    /* ----------------- Computed data -------------------*/
+	    
+	    /* the local transform (computed by forward kinematics) */
+	    libTF::Pose3D varTrans;
+	    libTF::Pose3D globalTrans;
+	    
+	    void computeTransform(const double *params);
+	    
+	};
 	
-	/* ----------------- Computed data -------------------*/
+	/** A link from the robot. Contains the constant transform applied to the link and its geometry */
+	struct Link
+	{
+	    Link(void)
+	    {
+		before = NULL;
+		geom = new Geometry();
+	    }
+	    
+	    ~Link(void)
+	    {
+		if (geom)
+		    delete geom;
+		for (unsigned int i = 0 ; i < after.size() ; ++i)
+		    delete after[i];
+	    }
+	    
+	    /* joint that connects this link to the parent link */
+	    Joint              *before;
+	    
+	    /* list of descending joints (each connects to a child link) */
+	    std::vector<Joint*> after;
+	    
+	    /* the constant transform applied to the link (local) */
+	    libTF::Pose3D       constTrans;
+	    
+	    /* the constant transform applied to the collision geometry of the link (local) */
+	    libTF::Pose3D       constGeomTrans;
+	    
+	    /* the geometry of the link */
+	    Geometry           *geom;
+	    
+	    /* ----------------- Computed data -------------------*/
+	    
+	    /* the global transform for this link (computed by forward kinematics) */
+	    libTF::Pose3D       globalTrans;
+	    
+	    void computeTransform(const double *params);	
+	};
 	
-	/* the local transform (computed by forward kinematics) */
-	libTF::Pose3D varTrans;
-	libTF::Pose3D globalTrans;
-
-	void computeTransform(const double *params);
+	/** A robot structure */
+	struct Robot
+	{
+	    Robot(void)
+	    {
+		chain = NULL;
+		stateDimension = 0;
+	    }
+	    
+	    virtual ~Robot(void)
+	    {
+		if (chain)
+		    delete chain;
+	    }
+	    
+	    void computeTransforms(const double *params);
+	    
+	    /** List of links in the robot */
+	    std::vector<Link*>  links;
+	    
+	    /** List of leaf links (have no child links) */
+	    std::vector<Link*>  leafs;
+	    
+	    /** The first joint in the robot -- the root */
+	    Joint              *chain;
+	    
+	    /** Number of parameters needed to define the joints */
+	    unsigned int        stateDimension;
+	    
+	    /** The bounding box for the set of parameters describing the
+	     *  joints.  This array contains 2 * stateDimension elements:
+	     *  positions 2*i and 2*i+1 define the minimum and maximum
+	     *  values for the parameter. If both minimum and maximum are
+	     *  set to 0, the parameter is unbounded. */
+	    std::vector<double> stateBounds;
+	    
+	    /** Group of links corresponding to this robot (if any) */
+	    std::string         tag;
+	    
+	};
+	
+	KinematicModel(void)
+	{
+	    m_verbose = false;
+	}
+	
+	virtual ~KinematicModel(void)
+	{
+	    for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
+		delete m_robots[i];
+	}
+	
+	virtual void build(URDF &model, const char *group = NULL);
+	
+	unsigned int getRobotCount(void) const;
+	Robot* getRobot(unsigned int index) const;
+	
+    protected:
+	
+	std::vector<Robot*> m_robots;
+	bool                m_verbose;    
+	
+    private:
+	
+	void buildChain(Robot *robot, Link  *parent, Joint *joint, URDF::Link *urdfLink);
+	void buildChain(Robot *robot, Joint *parent, Link  *link,  URDF::Link *urdfLink);
 	
     };
-    
-    /** A link from the robot. Contains the constant transform applied to the link and its geometry */
-    struct Link
-    {
-	Link(void)
-	{
-	    before = NULL;
-	    geom = new Geometry();
-	}
-	
-	~Link(void)
-	{
-	    if (geom)
-		delete geom;
-	    for (unsigned int i = 0 ; i < after.size() ; ++i)
-		delete after[i];
-	}
-	
-	/* joint that connects this link to the parent link */
-	Joint              *before;
-	
-	/* list of descending joints (each connects to a child link) */
-	std::vector<Joint*> after;
-	
-	/* the constant transform applied to the link (local) */
-	libTF::Pose3D       constTrans;
 
-	/* the constant transform applied to the collision geometry of the link (local) */
-	libTF::Pose3D       constGeomTrans;
-
-	/* the geometry of the link */
-	Geometry           *geom;
-	
-	/* ----------------- Computed data -------------------*/
-	
-	/* the global transform for this link (computed by forward kinematics) */
-	libTF::Pose3D       globalTrans;
-
-	void computeTransform(const double *params);	
-    };
-    
-    /** A robot structure */
-    struct Robot
-    {
-	Robot(void)
-	{
-	    chain = NULL;
-	    stateDimension = 0;
-	}
-	
-	virtual ~Robot(void)
-	{
-	    if (chain)
-		delete chain;
-	}
-	
-	void computeTransforms(const double *params);
-	
-	/** List of links in the robot */
-	std::vector<Link*>  links;
-
-	/** List of leaf links (have no child links) */
-	std::vector<Link*>  leafs;
-		
-	/** The first joint in the robot -- the root */
-	Joint              *chain;
-	
-	/** Number of parameters needed to define the joints */
-	unsigned int        stateDimension;
-
-	/** The bounding box for the set of parameters describing the
-	 *  joints.  This array contains 2 * stateDimension elements:
-	 *  positions 2*i and 2*i+1 define the minimum and maximum
-	 *  values for the parameter. If both minimum and maximum are
-	 *  set to 0, the parameter is unbounded. */
-	std::vector<double> stateBounds;
-	
-	/** Group of links corresponding to this robot (if any) */
-	std::string         tag;
-	
-    };
-    
-    KinematicModel(void)
-    {
-	m_verbose = false;
-    }
-    
-    virtual ~KinematicModel(void)
-    {
-	for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
-	    delete m_robots[i];
-    }
-    
-    virtual void build(URDF &model, const char *group = NULL);
-
-    unsigned int getRobotCount(void) const;
-    Robot* getRobot(unsigned int index) const;
-    
- protected:
-    
-    std::vector<Robot*> m_robots;
-    bool                m_verbose;    
-    
- private:
-
-    void buildChain(Robot *robot, Link  *parent, Joint *joint, URDF::Link *urdfLink);
-    void buildChain(Robot *robot, Joint *parent, Link  *link,  URDF::Link *urdfLink);
-    
-};
+}
 
 #endif

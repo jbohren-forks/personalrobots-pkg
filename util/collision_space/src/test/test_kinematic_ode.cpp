@@ -121,7 +121,7 @@ int main(int argc, char **argv)
     km.model->build(model);
     printf("number of robots = %d\n", km.model->getRobotCount());
     
-    KinematicModel::Robot *r = km.model->getRobot(0);    
+    robot_models::KinematicModel::Robot *r = km.model->getRobot(0);    
     printf("state dimension = %d\n", r->stateDimension);
     
     double *param = new double[r->stateDimension];
