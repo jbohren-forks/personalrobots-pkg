@@ -83,7 +83,7 @@ int main(int argc, char *argv[]){
   double iGain = IGain;
   double dGain = DGain;
 
-  if(argc > 4){
+  if(argc > 6){
     pGain = atof(argv[4]);
     iGain = atof(argv[5]);
     dGain = atof(argv[6]);

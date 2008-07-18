@@ -56,6 +56,7 @@ BaseController::BaseController(Robot *r)
 
 BaseController::BaseController(char *ns)
 {
+
 }
   
 BaseController::~BaseController( )
@@ -116,12 +117,13 @@ void BaseController::Update( )
    point newDriveCenterL, newDriveCenterR;
    double errorSteer[NUM_CASTERS];
    double kp_local = 10;
-   double cmdVel = 0;
+   double cmdVel[NUM_CASTERS];
 
    if (pthread_mutex_trylock(&dataMutex) == 0){
       xDotCmd = xDotNew;
       yDotCmd = yDotNew;
       yawDotCmd = yawDotNew;
+      pthread_mutex_unlock(&dataMutex);
    }
  
    for(int ii=0; ii < NUM_CASTERS; ii++){
@@ -133,18 +135,18 @@ void BaseController::Update( )
       // printf("ii: %d, off: (%f, %f), vel: (%f, %f), angle: %f\n",ii,BASE_CASTER_OFFSET[ii].x,BASE_CASTER_OFFSET[ii].y,steerPointVelocity[ii].x,steerPointVelocity[ii].y,steerAngle[ii]);
       //steerAngle[ii] = 0;
       errorSteer[ii] = robot->joint[3*ii].position - steerAngle[ii];
-      cmdVel = kp_local * errorSteer[ii];
-      baseJointControllers[3*ii].SetVelCmd(cmdVel);     
+      cmdVel[ii] = kp_local * errorSteer[ii];
+      baseJointControllers[3*ii].SetVelCmd(cmdVel[ii]);     
       //      printf("CASTER:: %d, %f, cmdVel:: %f\n",ii,steerAngle[ii],cmdVel);
    }
 
    for(int ii = 0; ii < NUM_CASTERS; ii++){
-          printf("offset %d: %f, %f, %f, %f\n",ii,CASTER_DRIVE_OFFSET[ii*2].x,CASTER_DRIVE_OFFSET[ii*2].y,CASTER_DRIVE_OFFSET[ii*2+1].x,CASTER_DRIVE_OFFSET[ii*2+1].y);
+     //          printf("offset %d: %f, %f, %f, %f\n",ii,CASTER_DRIVE_OFFSET[ii*2].x,CASTER_DRIVE_OFFSET[ii*2].y,CASTER_DRIVE_OFFSET[ii*2+1].x,CASTER_DRIVE_OFFSET[ii*2+1].y);
 
      newDriveCenterL = Rot2D(CASTER_DRIVE_OFFSET[ii*2].x,CASTER_DRIVE_OFFSET[ii*2].y,steerAngle[ii]);
      newDriveCenterR = Rot2D(CASTER_DRIVE_OFFSET[ii*2+1].x,CASTER_DRIVE_OFFSET[ii*2+1].y,steerAngle[ii]);
 
-           printf("offset:: %f, %f, %f, %f\n",newDriveCenterL.x,newDriveCenterL.y,newDriveCenterR.x,newDriveCenterR.y);
+     //           printf("offset:: %f, %f, %f, %f\n",newDriveCenterL.x,newDriveCenterL.y,newDriveCenterR.x,newDriveCenterR.y);
       newDriveCenterL.x += BASE_CASTER_OFFSET[ii].x;
       newDriveCenterL.y += BASE_CASTER_OFFSET[ii].y;
       newDriveCenterR.x += BASE_CASTER_OFFSET[ii].x;
@@ -161,8 +163,9 @@ void BaseController::Update( )
       double dotProdL = steerXComponent*drivePointVelocityL.x + steerYComponent*drivePointVelocityL.y;
       double dotProdR = steerXComponent*drivePointVelocityR.x + steerYComponent*drivePointVelocityR.y;
       //      printf("Actual CASTER:: %d, %f, %f, %f\n",ii,robot->joint[ii*3].position,drivePointVelocityL.x,drivePointVelocityR.x);
-      wheelSpeed[ii*2  ] = -dotProdL/WHEEL_RADIUS;
-      wheelSpeed[ii*2+1] = dotProdR/WHEEL_RADIUS;
+
+      wheelSpeed[ii*2  ] = (-dotProdL - cmdVel[ii] * CASTER_DRIVE_OFFSET[ii*2].y)/WHEEL_RADIUS;
+      wheelSpeed[ii*2+1] = (dotProdR  +cmdVel[ii] * CASTER_DRIVE_OFFSET[ii*2+1].y)/WHEEL_RADIUS;
 
       //      wheelSpeed[ii*2  ] = -GetMagnitude(drivePointVelocityL.x,drivePointVelocityL.y)/WHEEL_RADIUS;
       //      wheelSpeed[ii*2+1] = -GetMagnitude(drivePointVelocityR.x,drivePointVelocityR.y)/WHEEL_RADIUS;
@@ -191,6 +194,7 @@ PR2::PR2_ERROR_CODE BaseController::setCourse(double v , double yaw)
 
 PR2::PR2_ERROR_CODE BaseController::setVelocity(double xDotNew, double yDotNew, double yawDotNew)
 {
+
    pthread_mutex_lock(&dataMutex);
    this->xDotNew = xDotNew;
    this->yDotNew = yDotNew;
