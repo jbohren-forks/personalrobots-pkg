@@ -2,6 +2,7 @@
   <description>A node and utilities for connecting to firewire cameras</description>
   <author>Jeremy Leibs</author>
   <license>BSD</license>
+  <depend package="newmat10"/>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
   <depend package="libdc1394v2"/>

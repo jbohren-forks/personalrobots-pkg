@@ -36,7 +36,12 @@
 
 #include "ros/node.h"
 #include "std_msgs/Image.h"
+#include "std_msgs/PointCloudFloat32.h"
+#include "std_msgs/Empty.h"
 #include "dc1394_cam/dc1394_cam.h"
+
+#include <newmat10/newmat.h>
+#include <newmat10/newmatio.h>
 
 #include <vector>
 #include <list>
@@ -59,6 +64,9 @@ public:
   int32_t mode;
   int32_t textureThresh;
   int32_t uniqueThresh;
+  NEWMAT::Matrix reproj;
+  std_msgs::PointCloudFloat32 cloud;
+  VidereData() : reproj(4,4) {}
   virtual ~VidereData() {}
 };
 
@@ -77,7 +85,8 @@ public:
 
   string name;
   dc1394_cam::Cam* cam;
-  std_msgs::Image img;
+  std_msgs::Image img1;
+  std_msgs::Image img2;
   dc1394color_filter_t bayer;
   bool colorize;
   CamTypes  camType;
@@ -137,8 +146,6 @@ public:
       oss << "cam" << i;
 
       param(oss.str(), cd.name, oss.str());
-
-      advertise<std_msgs::Image>(cd.name + string("/image")); //Do this later?
 
       uint64_t guid;
       if (has_param(cd.name + string("/guid")))
@@ -299,7 +306,7 @@ public:
 
         // Extract the Videre calibration file:
         // check for calibration
-        uint32_t qval = cd.cam->getControlRegister(0xFF800);
+        uint32_t qval = cd.cam->getControlRegister(0xF0800);
         if (qval == 0xffffffff)
         {
           printf("No calibration parameters found for Videre");
@@ -314,7 +321,7 @@ public:
         // read in each byte
         int pos = 0;
         uint32_t quad;
-        quad = cd.cam->getControlRegister(0xFF800+pos);
+        quad = cd.cam->getControlRegister(0xF0800+pos);
 
         while (quad != 0x0 && quad != 0xffffffff && n > 3)
         {
@@ -329,11 +336,38 @@ public:
           *bb++ = val;
           val = quad & 0xff;
           *bb++ = val;
-          quad = cd.cam->getControlRegister(0xFF800+pos);
+          quad = cd.cam->getControlRegister(0xF0800+pos);
         }
         *bb = 0;                      // just in case we missed the last zero
 
-        printf("Read %d bytes:\n%s", pos, buf);
+        string params(buf);
+
+        NEWMAT::Matrix lproj(3,4);
+        NEWMAT::Matrix rproj(3,4);
+
+        istringstream iss( params.substr( params.find("proj", params.find("[left camera]") ) + strlen("proj")) );
+        
+        for (int i = 1; i <= 3; i++)
+          for (int j = 1; j <= 4; j++)
+            iss >> lproj(i,j);
+
+        iss.str( params.substr( params.find("proj", params.find("[right camera]") ) + strlen("proj")) );
+        
+        for (int i = 1; i <= 3; i++)
+          for (int j = 1; j <= 4; j++)
+            iss >> rproj(i,j);
+
+        ((VidereData*)(cd.otherData))->reproj
+          << 1 << 0 << 0 << -lproj(1,3)
+          << 0 << 1 << 0 << -lproj(2,3)
+          << 0 << 0 << 0 << lproj(1,1)
+          << 0 << 0 << lproj(1,1)/rproj(1,4) << -(lproj(1,3) - rproj(1,3))*lproj(1,1)/rproj(1,4);
+
+        printf("Read in file: %s\n", params.c_str());
+        std::cout << lproj << std::endl << std::endl;
+        std::cout << rproj << std::endl << std::endl;
+        std::cout << ((VidereData*)(cd.otherData))->reproj;
+
       }
 
       checkAndSetFeature(cd, "brightness", DC1394_FEATURE_BRIGHTNESS);
@@ -364,6 +398,29 @@ public:
         cd.cam->setControlRegister(0xFF000, qval2);
       }
 
+
+      if (cd.camType == VIDERE)
+      {
+        switch (((VidereData*)(cd.otherData))->mode)
+        {
+        case 4:
+          advertise<std_msgs::PointCloudFloat32>(cd.name + string("/cloud"));
+          advertise<std_msgs::Empty>(cd.name + string("/shutter"));
+          advertise<std_msgs::Image>(cd.name + string("/ldisparity"));
+          advertise<std_msgs::Image>(cd.name + string("/rimage"));          
+          break;
+        case 5:
+          advertise<std_msgs::Image>(cd.name + string("/ldisparity"));
+          advertise<std_msgs::Image>(cd.name + string("/rimage"));
+          break;
+        default:
+          advertise<std_msgs::Image>(cd.name + string("/limage"));
+          advertise<std_msgs::Image>(cd.name + string("/rimage"));
+        }
+      } else {
+        advertise<std_msgs::Image>(cd.name + string("/image"));
+      }
+
       cams.push_back(cd);
     }
 
@@ -377,8 +434,8 @@ public:
 
   ~Dc1394Node()
   {
-    for (list<CamData>::iterator i = cams.begin(); i != cams.end(); i++)
-      i->cleanup();
+    for (list<CamData>::iterator c = cams.begin(); c != cams.end(); c++)
+      c->cleanup();
 
     dc1394_cam::fini();  
   }
@@ -388,23 +445,23 @@ public:
 
     dc1394_cam::waitForData(1000000);
 
-    for (list<CamData>::iterator i = cams.begin(); i != cams.end(); i++)
+    for (list<CamData>::iterator c = cams.begin(); c != cams.end(); c++)
     {
 
-      dc1394video_frame_t *in_frame = i->cam->getFrame(DC1394_CAPTURE_POLICY_POLL);
+      dc1394video_frame_t *in_frame = c->cam->getFrame(DC1394_CAPTURE_POLICY_POLL);
       dc1394video_frame_t *frame;
 
       if (in_frame != NULL)
       {
 
-        if (i->colorize)
+        if (c->colorize)
         {
           frame = (dc1394video_frame_t*)calloc(1,sizeof(dc1394video_frame_t));
-          in_frame->color_filter = i->bayer;
+          in_frame->color_filter = c->bayer;
 
           if (dc1394_debayer_frames(in_frame, frame, DC1394_BAYER_METHOD_BILINEAR) != DC1394_SUCCESS)
             printf("Debayering failed!\n");
-        } else if (i->camType == VIDERE) {
+        } else if (c->camType == VIDERE) {
           frame = (dc1394video_frame_t*)calloc(1,sizeof(dc1394video_frame_t));
 
           dc1394_deinterlace_stereo_frames(in_frame, frame, DC1394_STEREO_METHOD_INTERLACED);
@@ -412,34 +469,121 @@ public:
           frame = in_frame;
         } 
 
-        uint8_t *buf      = frame->image;
-        uint32_t width    = frame->size[0];
-        uint32_t height   = frame->size[1];
-        uint32_t buf_size = width*height;
-        
-        i->img.width = width;
-        i->img.height = height;
-        i->img.compression = "raw";
-
-        if (frame->color_coding == DC1394_COLOR_CODING_RGB8)
+        if (c->camType == VIDERE)
         {
-          i->img.colorspace = "rgb24";
-          buf_size *= 3;
+          uint8_t *buf      = frame->image;
+          uint32_t width    = frame->size[0];
+          uint32_t height   = frame->size[1]/2;
+          uint32_t buf_size = width*height;
+        
+          c->img1.width = width;
+          c->img1.height = height;
+          c->img1.colorspace = "mono8";
+          c->img1.compression = "raw";
+
+          c->img2.width = width;
+          c->img2.height = height;
+          c->img2.colorspace = "mono8";
+          c->img2.compression = "raw";
+
+          c->img1.set_data_size(buf_size);
+          memcpy(c->img1.data, buf, buf_size);
+
+          c->img2.set_data_size(buf_size);
+          memcpy(c->img2.data, buf + buf_size, buf_size);
+
+          switch (((VidereData*)(c->otherData))->mode)
+          {
+          case 4:
+            {
+            int goodPixCount = 0;
+            for (uint32_t i = 0; i < buf_size; i++)
+              if (buf[i] != 0)
+                goodPixCount++;
+
+            int j = 1;
+            NEWMAT::Matrix Pts(4,goodPixCount);
+            for (uint32_t i = 0; i < buf_size; i++)
+              if (buf[i] != 0)
+              {
+                Pts(1, j) = i % width;
+                Pts(2, j) = i / width;
+                Pts(3, j) = buf[i];
+                Pts(4, j) = 1;
+                j++;
+              }
+            NEWMAT::Matrix Pts3D = ((VidereData*)(c->otherData))->reproj * Pts;
+
+            ((VidereData*)(c->otherData))->cloud.set_pts_size(goodPixCount);
+            ((VidereData*)(c->otherData))->cloud.set_chan_size(1);
+            ((VidereData*)(c->otherData))->cloud.chan[0].name = "intensity";
+            ((VidereData*)(c->otherData))->cloud.chan[0].set_vals_size(goodPixCount);
+            
+
+            for (int i = 0; i < goodPixCount; i++)
+            {
+              float X = Pts3D(1, i+1);
+              float Y = Pts3D(2, i+1);
+              float Z = Pts3D(3, i+1);
+              float W = Pts3D(4, i+1);
+
+              //                            printf("Added point with disparity: %f %f %f %f %f\n", Pts(3,i+1), X, Y, Z, W);
+
+              ((VidereData*)(c->otherData))->cloud.pts[i].y = -X/W/1000.0;
+              ((VidereData*)(c->otherData))->cloud.pts[i].z = -Y/W/1000.0;
+              ((VidereData*)(c->otherData))->cloud.pts[i].x = Z/W/1000.0;
+              ((VidereData*)(c->otherData))->cloud.chan[0].vals[i] = 2000;
+            }
+              
+
+            std_msgs::Empty e;
+            publish(c->name + string("/cloud"), ((VidereData*)(c->otherData))->cloud);
+            publish(c->name + string("/shutter"), e);
+
+            publish(c->name + string("/ldisparity"), c->img1);
+            publish(c->name + string("/rimage"), c->img2);
+            }
+            break;
+          case 5:
+            publish(c->name + string("/ldisparity"), c->img1);
+            publish(c->name + string("/rimage"), c->img2);
+            break;
+          default:
+            publish(c->name + string("/limage"), c->img1);
+            publish(c->name + string("/rimage"), c->img2);
+          }
         } else {
-          i->img.colorspace = "mono8";
+
+          uint8_t *buf      = frame->image;
+          uint32_t width    = frame->size[0];
+          uint32_t height   = frame->size[1];
+          uint32_t buf_size = width*height;
+        
+          c->img1.width = width;
+          c->img1.height = height;
+          c->img1.compression = "raw";
+
+          if (frame->color_coding == DC1394_COLOR_CODING_RGB8)
+          {
+            c->img1.colorspace = "rgb24";
+            buf_size *= 3;
+          } else {
+            c->img1.colorspace = "mono8";
+          }
+
+          c->img1.set_data_size(buf_size);
+          memcpy(c->img1.data, buf, buf_size);
+
+          publish(c->name + string("/image"), c->img1);
+
         }
 
-        i->img.set_data_size(buf_size);
-        memcpy(i->img.data, buf, buf_size);
-
-        publish(i->name + string("/image"), i->img);
-
-        if (i->colorize || i->camType == VIDERE) {
+        if (c->colorize || c->camType == VIDERE) {
           free(frame->image);
           free(frame);
         }
 
-        i->cam->releaseFrame(in_frame);
+        c->cam->releaseFrame(in_frame);
 
         count++;
 
