@@ -33,6 +33,8 @@
 #include <map>
 #include <pr2Controllers/BaseController.h>
 #include <hw_interface/hardware_interface.h>
+#include <ros/node.h>
+#include <joy/Joy.h>
 
 using std::map;
 
@@ -75,6 +77,21 @@ class MechanismControl{
   HardwareInterface *hw;
 
   Robot *r;
+};
+
+class BaseTest : public ros::node{ 
+
+public:
+
+  BaseTest(MechanismControl *mbcl);
+
+  joy::Joy joy_msg;
+
+  void wiiInput();
+
+  float vx, vy, vw;
+
+  MechanismControl *mbc;
 };
 
 #endif

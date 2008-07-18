@@ -31,31 +31,14 @@
 #include <etherdrive_hardware/etherdrive_hardware.h>
 #include <sys/time.h>
 
+
 #define BASE_NUM_JOINTS 12
 
-/*const double PGain = 10.0;
-const double IGain = 0; 
-const double DGain = 0;
-
-const double pGain = 0.1;
-const double iGain = 0.1;
-const double dGain = 0;
-
-//const double maxPositiveTorque = 0.0528; 
-//const double maxNegativeTorque = -0.0528; 
-//const double maxEffort = 0.0528;
-const double maxEffort = 0.75;
-const double maxPositiveTorque = maxEffort; 
-const double maxNegativeTorque = -maxEffort; 
-const double PGain_Pos = 10.0; 
-const double IGain_Pos = 0; 
-const double DGain_Pos = 0.1; 
-
-const double IMax  = 10;
-const double IMin  = -10;
-*/
-
 const double maxPositiveTorque = 0.75; 
+
+const double maxXDot = 1;
+const double maxYDot = 1;
+const double maxYawDot = 1;
 
 MechanismControl::MechanismControl(HardwareInterface *hw){
   this->hw = hw;
@@ -128,10 +111,39 @@ void MechanismControl::update()//This function is called only from the realtime 
   }
 }
 
+BaseTest::BaseTest(MechanismControl *mbc) : ros::node("BaseTest"){
+  subscribe("joy", joy_msg, &BaseTest::wiiInput); 
+  this->mbc = mbc;
+} 
+
+void BaseTest::wiiInput() {
+  vy = joy_msg.axes[0];
+  vx = -joy_msg.axes[1];
+  vw = joy_msg.axes[2];
+  if(vx > maxXDot)
+    vx = maxXDot;
+  if(vx < -maxXDot)
+    vx = -maxXDot;
+
+  if(vy > maxYDot)
+    vy = maxYDot;
+  if(vy < -maxYDot)
+    vy = -maxYDot;
+
+  if(vw > maxYawDot)
+    vw = maxYawDot;
+  if(vw < -maxYawDot)
+    vw = -maxYawDot;
+
+  mbc->controller->setVelocity(vx,vy,vw);
+  printf("vx: %f, vy: %f, vw: %f\n", vx, vy, vw);
+}
 
 int main(int argc, char *argv[]){
 
- 
+  ros::init(argc,argv);
+
+  
   signal(SIGINT,  (&finalize));
   signal(SIGQUIT, (&finalize));
   signal(SIGTERM, (&finalize));
@@ -150,36 +162,35 @@ int main(int argc, char *argv[]){
   string etherIP[] = {"10.12.0.103", "10.11.0.102"};
   string hostIP[] = {"10.12.0.2", "10.11.0.3"};
   
-  /*
-  int numBoards = 1;
-  int numActuators = 1;
-  string etherIP[] = {"10.12.0.103"};
-  string hostIP[] = {"10.12.0.2"};
-  int boardLookUp[] ={0}; 
-  int portLookUp[] = {0};
-  int jointId[] = {0};
-  */
   HardwareInterface *hi = new HardwareInterface(numActuators);
   EtherdriveHardware *h = new EtherdriveHardware(numBoards, numActuators, boardLookUp, portLookUp, jointId, etherIP, hostIP,hi);
+  
   MechanismControl *mc = new MechanismControl(hi);
-
-  h->init();
+ 
+    h->init();
 
   mc->Init();
-  mc->controller->setVelocity(0,0,-1);
-  //  mc->controller->SetVelCmd(5);
-  while(notDone) {
+  mc->controller->setVelocity(-0,0,0);
+  
 
+
+  BaseTest *b = new BaseTest(mc);
+
+  while(notDone) {
+    
     h->updateState();
     mc->update();
     h->sendCommand();
     h->tick();
+    
     //        nanosleep(&req,&rem);
     usleep(1000);
     // notDone = 0;
   }  
-
+  ros::fini();
+  
   delete(mc);
   delete(h);
   delete(hi);
+
 }
