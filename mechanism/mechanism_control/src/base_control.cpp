@@ -142,7 +142,7 @@ int main(int argc, char *argv[]){
   // int portLookUp[] = {0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5};
 
   int boardLookUp[] = {0,0,0,1,1,1,0,0,0,1,1,1};
-  int portLookUp[]  = {2,0,1,2,0,1,5,3,4,5,3,4};
+  int portLookUp[]  = {2,0,1,2,1,0,5,3,4,5,4,3};
 
   //int jointId[]={1,2, 0, 7, 8, 6, 4, 5, 3, 10, 11, 9};
   int jointId[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]){
   h->init();
 
   mc->Init();
-  mc->controller->setVelocity(1,0,0);
+  mc->controller->setVelocity(0,0,-1);
   //  mc->controller->SetVelCmd(5);
   while(notDone) {
 
