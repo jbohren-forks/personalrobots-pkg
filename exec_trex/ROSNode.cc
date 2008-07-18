@@ -433,8 +433,8 @@ namespace TREX {
 	fabs(leftArmPosMsg.elbowAngle-_lastLeftArmGoal.elbowAngle) < AllowableArmError &&
 	fabs(leftArmPosMsg.forearmRollAngle-_lastLeftArmGoal.forearmRollAngle) < AllowableArmError &&
 	fabs(leftArmPosMsg.wristPitchAngle-_lastLeftArmGoal.wristPitchAngle) < AllowableArmError &&
-	fabs(leftArmPosMsg.wristRollAngle-_lastLeftArmGoal.wristRollAngle) < AllowableArmError &&
-	fabs(leftArmPosMsg.gripperGapCmd-_lastLeftArmGoal.gripperGapCmd) < AllowableGraspError)) {
+	fabs(leftArmPosMsg.wristRollAngle-_lastLeftArmGoal.wristRollAngle) < AllowableArmError)) { //&&
+	//fabs(leftArmPosMsg.gripperGapCmd-_lastLeftArmGoal.gripperGapCmd) < AllowableGraspError)) {
       
       std::cout << "Pushing left arm inactive observation.\n";
 
@@ -466,8 +466,8 @@ namespace TREX {
 	fabs(rightArmPosMsg.elbowAngle-_lastRightArmGoal.elbowAngle) < AllowableArmError &&
 	fabs(rightArmPosMsg.forearmRollAngle-_lastRightArmGoal.forearmRollAngle) < AllowableArmError &&
 	fabs(rightArmPosMsg.wristPitchAngle-_lastRightArmGoal.wristPitchAngle) < AllowableArmError &&
-	fabs(rightArmPosMsg.wristRollAngle-_lastRightArmGoal.wristRollAngle) < AllowableArmError &&
-	fabs(rightArmPosMsg.gripperGapCmd-_lastRightArmGoal.gripperGapCmd) < AllowableGraspError)) {
+	fabs(rightArmPosMsg.wristRollAngle-_lastRightArmGoal.wristRollAngle) < AllowableArmError)) { //&&
+      //fabs(rightArmPosMsg.gripperGapCmd-_lastRightArmGoal.gripperGapCmd) < AllowableGraspError)) {
       std::cout << "Pushing right arm inactive observation.\n";
 
       obs = new ObservationByValue("rac", "ArmController.Inactive");

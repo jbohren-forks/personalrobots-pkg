@@ -4,6 +4,11 @@
 //kinematics includes
 #include "libKDL/kdl_kinematics.h"
 
+//for transform
+#include <rosTF/rosTF.h>
+#include "ROSNode.hh"
+#include <pr2Core/pr2Core.h>
+
 using namespace KDL;
 using namespace PR2;
 using namespace std;
@@ -36,10 +41,51 @@ namespace TREX {
       return;
     }
 
-    Rotation r = Rotation::RotZ(DTOR(0));
-    Vector v(.75,-.25,-.15);
+    //getting shoulder origin in world coordinates
+    libTF::TFPose aPose;
+    aPose.x = 0;
+    aPose.y = 0;
+    aPose.z = 0;
+    aPose.roll = 0;
+    aPose.pitch = 0;
+    aPose.yaw = 0;
+    aPose.time = 0;
+    aPose.frame = FRAMEID_ARM_R_SHOULDER;
 
-    //for now we hard-code
+    ROSNodeId rni = ROSNode::request();
+    libTF::TFPose inShoulderFrame = rni->tf.transformPose(FRAMEID_ODOM, aPose);
+
+    //std::cout << "In shoulder frame in base x " << inShoulderFrame.x << std::endl;
+    //std::cout << "In shoulder frame in base y " << inShoulderFrame.y << std::endl;
+    //std::cout << "In shoulder frame in base z " << inShoulderFrame.z << std::endl;
+
+
+    //now we have the shoulder translation in world coordinates
+    double objPosX = m_variables[OBJECT_POS_X]->lastDomain().getSingletonValue()-inShoulderFrame.x;
+    double objPosY = m_variables[OBJECT_POS_Y]->lastDomain().getSingletonValue()-inShoulderFrame.y;
+    double objPosZ = m_variables[OBJECT_POS_Z]->lastDomain().getSingletonValue()-inShoulderFrame.z;
+
+    //take object x,y,z in world and convert to shoulder coordinates
+  //   libTF::TFPose aPose;
+//     aPose.x = m_variables[OBJECT_POS_X]->lastDomain().getSingletonValue();
+//     aPose.y = m_variables[OBJECT_POS_Y]->lastDomain().getSingletonValue();
+//     aPose.z = m_variables[OBJECT_POS_Z]->lastDomain().getSingletonValue();
+//     aPose.roll = 0;
+//     aPose.pitch = 0;
+//     aPose.yaw = 0;
+//     aPose.time = 0;
+//     aPose.frame = FRAMEID_ODOM;
+
+    //ROSNodeId rni = ROSNode::request();
+    //libTF::TFPose inShoulderFrame = rni->tf.transformPose(FRAMEID_ARM_R_SHOULDER, aPose);
+    
+    Rotation r = Rotation::RotZ(DTOR(0));
+    Vector v(objPosX,objPosY,objPosZ);
+
+    //std::cout << "In shoulder frame x " << objPosX << std::endl;
+    //std::cout << "In shoulder frame y " << objPosY << std::endl;
+    //std::cout << "In shoulder frame z " << objPosZ << std::endl;
+
     getCurrentDomain(m_variables[ROT_FRAME_1_1]).set(r.data[0]);
     getCurrentDomain(m_variables[ROT_FRAME_1_2]).set(r.data[1]);
     getCurrentDomain(m_variables[ROT_FRAME_1_3]).set(r.data[2]);

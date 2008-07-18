@@ -87,6 +87,8 @@ namespace TREX{
      */
     bool isInitialized() const;
 
+    rosTFClient tf;
+       
   private:
     
     /**
@@ -126,8 +128,6 @@ namespace TREX{
     bool m_initialized;
     PlannerState m_state;
 
-    rosTFClient tf;
-        
     // Map update paramters (for adding obstacles)
     double laser_maxrange;
     ros::Duration laser_buffer_time;
