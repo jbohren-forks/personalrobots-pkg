@@ -36,6 +36,7 @@
 #define KINEMATIC_ENVIRONMENT_MODEL_
 
 #include <planning_models/kinematic.h>
+#include <vector>
 
 /** @htmlinclude ../../manifest.html
 
@@ -50,20 +51,28 @@ namespace collision_space
 	
 	EnvironmentModel(void)
 	{
-	    model = NULL;
 	}
 	
 	virtual ~EnvironmentModel(void)
 	{
+	    for (unsigned int i = 0 ; i < models.size() ; ++i)
+		delete models[i];
 	}
 	
-	/** Check if the model is in collision */
-	virtual bool isCollision(void) = 0;
+	/** Check if a model is in collision */
+	virtual bool isCollision(unsigned int model_id) = 0;
 	
 	/** Add a point cloud to the collision space */
 	virtual void addPointCloud(unsigned int n, const double* points, double radius = 0.01) = 0;
-	
-	robot_models::KinematicModel *model;    
+
+	/** Add a robot model */
+	virtual unsigned int addRobotModel(robot_desc::URDF &pmodel, const char *group = NULL);
+
+	/** Update the positions of the geometry used in collision detection */
+	virtual void updateRobotModel(unsigned int model_id) = 0;
+
+	/** List of loaded robot models */	
+	std::vector<planning_models::KinematicModel*> models;
         
     };
 }

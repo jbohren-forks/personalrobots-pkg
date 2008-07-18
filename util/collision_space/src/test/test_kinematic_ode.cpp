@@ -119,10 +119,10 @@ int main(int argc, char **argv)
     model.loadFile("/u/isucan/ros/ros-pkg/drivers/robot/pr2/pr2Core/include/pr2Core/pr2.xml");
     
     EnvironmentModelODE km;
-    km.model->build(model);
-    printf("number of robots = %d\n", km.model->getRobotCount());
+    km.addRobotModel(model);
+    printf("number of robots = %d\n", km.models[0]->getRobotCount());
     
-    robot_models::KinematicModel::Robot *r = km.model->getRobot(0);    
+    planning_models::KinematicModel::Robot *r = km.models[0]->getRobot(0);    
     printf("state dimension = %d\n", r->stateDimension);
     
     double *param = new double[r->stateDimension];
@@ -131,9 +131,9 @@ int main(int argc, char **argv)
     r->computeTransforms(param);
     delete[] param;
     
-    dynamic_cast<EnvironmentModelODE::KinematicModelODE*>(km.model)->updateCollisionPositions();
+    km.updateRobotModel(0);
     
-    robotSpace = dynamic_cast<EnvironmentModelODE::KinematicModelODE*>(km.model)->getODESpace();
+    robotSpace = km.getODESpace();
     
     dsFunctions fn;
     fn.version = DS_VERSION;

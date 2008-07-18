@@ -33,87 +33,64 @@
 *********************************************************************/
 
 #include <collision_space/environmentODE.h>
-#include <cassert>
 
-void collision_space::EnvironmentModelODE::KinematicModelODE::build(robot_desc::URDF &model, const char *group)
+unsigned int collision_space::EnvironmentModelODE::addRobotModel(robot_desc::URDF &pmodel, const char *group)
 {
-    robot_models::KinematicModel::build(model, group);
-    assert(m_space);
-    for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
-	buildODEGeoms(m_robots[i]);
-}
+    unsigned int id = collision_space::EnvironmentModel::addRobotModel(pmodel, group);
 
-void collision_space::EnvironmentModelODE::KinematicModelODE::setGeomPose(dGeomID geom, libTF::Pose3D &pose) const
-{
-    libTF::Pose3D::Position pos = pose.getPosition();
-    dGeomSetPosition(geom, pos.x, pos.y, pos.z);
-    libTF::Pose3D::Quaternion quat = pose.getQuaternion();
-    dQuaternion q; q[0] = quat.w; q[1] = quat.x; q[2] = quat.y; q[3] = quat.z;
-    dGeomSetQuaternion(geom, q);
-}
-
-void collision_space::EnvironmentModelODE::KinematicModelODE::updateCollisionPositions(void)
-{
-    for (unsigned int i = 0 ; i < m_kgeoms.size() ; ++i)
-	setGeomPose(m_kgeoms[i]->geom, m_kgeoms[i]->link->globalTrans);
-}
-
-void collision_space::EnvironmentModelODE::KinematicModelODE::buildODEGeoms(Robot *robot)
-{
-    for (unsigned int i = 0 ; i < robot->links.size() ; ++i)
+    if (m_kgeoms.size() <= id)
+	m_kgeoms.resize(id + 1);	    
+    
+    for (unsigned int j = 0 ; j < models[id]->getRobotCount() ; ++j)
     {
-	kGeom *kg = new kGeom();
-	kg->link = robot->links[i];
-	kg->geom = buildODEGeom(robot->links[i]->geom);
-	if (!kg->geom)
+	planning_models::KinematicModel::Robot *robot = models[id]->getRobot(j);
+	for (unsigned int i = 0 ; i < robot->links.size() ; ++i)
 	{
-	    delete kg;
-	    continue;
+	    kGeom *kg = new kGeom();
+	    kg->link = robot->links[i];
+	    planning_models::KinematicModel::Geometry *geom = robot->links[i]->geom;
+	    dGeomID g = NULL;
+	    switch (geom->type)
+	    {
+	    case planning_models::KinematicModel::Geometry::SPHERE:
+		g = dCreateSphere(m_space, geom->size[0]);
+		break;
+	    case planning_models::KinematicModel::Geometry::BOX:
+		g = dCreateBox(m_space, geom->size[0], geom->size[1], geom->size[2]);
+		break;
+	    case planning_models::KinematicModel::Geometry::CYLINDER:
+		g = dCreateCylinder(m_space, geom->size[0], geom->size[1]);
+		break;
+	    default:
+		break;
+	    }
+	    if (g)
+	    {
+		kg->geom = g;
+		m_kgeoms[id].push_back(kg);
+	    }
+	    else
+		delete kg;
 	}
-	m_kgeoms.push_back(kg);
     }
+    return id;
 }
 
-dGeomID collision_space::EnvironmentModelODE::KinematicModelODE::buildODEGeom(Geometry *geom)
-{
-    dGeomID g = NULL;
+void collision_space::EnvironmentModelODE::updateRobotModel(unsigned int model_id)
+{ 
+    const unsigned int n = m_kgeoms[model_id].size();
     
-    switch (geom->type)
+    for (unsigned int i = 0 ; i < n ; ++i)
     {
-    case Geometry::SPHERE:
-	g = dCreateSphere(m_space, geom->size[0]);
-	break;
-    case Geometry::BOX:
-	g = dCreateBox(m_space, geom->size[0], geom->size[1], geom->size[2]);
-	break;
-    case Geometry::CYLINDER:
-	g = dCreateCylinder(m_space, geom->size[0], geom->size[1]);
-	break;
-    default:
-	break;
-    }
-    
-    return g;
-}
-
-dSpaceID collision_space::EnvironmentModelODE::KinematicModelODE::getODESpace(void) const
-{
-    return m_space;
-}
-
-void collision_space::EnvironmentModelODE::KinematicModelODE::setODESpace(dSpaceID space)
-{
-    m_space = space;
-}
-
-unsigned int collision_space::EnvironmentModelODE::KinematicModelODE::getGeomCount(void) const
-{
-    return m_kgeoms.size();
-}
-
-dGeomID collision_space::EnvironmentModelODE::KinematicModelODE::getGeom(unsigned index) const
-{
-    return m_kgeoms[index]->geom;    
+	libTF::Pose3D &pose = m_kgeoms[model_id][i]->link->globalTrans;
+	dGeomID        geom = m_kgeoms[model_id][i]->geom;
+	
+	libTF::Pose3D::Position pos = pose.getPosition();
+	dGeomSetPosition(geom, pos.x, pos.y, pos.z);
+	libTF::Pose3D::Quaternion quat = pose.getQuaternion();
+	dQuaternion q; q[0] = quat.w; q[1] = quat.x; q[2] = quat.y; q[3] = quat.z;
+	dGeomSetQuaternion(geom, q);
+    }    
 }
 
 void collision_space::EnvironmentModelODE::ODECollide2::registerSpace(dSpaceID space)
@@ -176,6 +153,11 @@ void collision_space::EnvironmentModelODE::ODECollide2::collide(dGeomID geom, vo
     }
 }
 
+dSpaceID collision_space::EnvironmentModelODE::getODESpace(void) const
+{
+    return m_space;
+}
+
 struct CollisionData
 {
     bool collides;
@@ -191,13 +173,13 @@ static void nearCallbackFn(void *data, dGeomID o1, dGeomID o2)
 	reinterpret_cast<CollisionData*>(data)->collides = true;
 }
 
-bool collision_space::EnvironmentModelODE::isCollision(void)
+bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
 {
     CollisionData cdata;
     cdata.collides = false;
     m_collide2.setup();
-    for (int i = m_modelODE.getGeomCount() - 1 ; i >= 0 && !cdata.collides ; --i)
-	m_collide2.collide(m_modelODE.getGeom(i), reinterpret_cast<void*>(&cdata), nearCallbackFn);
+    for (int i = m_kgeoms[model_id].size() - 1 ; i >= 0 && !cdata.collides ; --i)
+	m_collide2.collide(m_kgeoms[model_id][i]->geom, reinterpret_cast<void*>(&cdata), nearCallbackFn);
     return cdata.collides;
 }
 
