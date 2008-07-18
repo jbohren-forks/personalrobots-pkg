@@ -147,7 +147,7 @@ void GazeboHardware::updateState(){
         hw->actuator[jointId[ii]].state.encoderCount = GAZEBO_POS_TO_ENCODER*edBoard[boardLookUp[ii]].data->actuators[portLookUp[ii]].actualPosition;
         edBoard[boardLookUp[ii]].Unlock();
       }
-      fprintf(stderr,"edh:: %d\n",hw->actuator[jointId[ii]].state.encoderCount);
+      //fprintf(stderr,"edh:: %d\n",hw->actuator[jointId[ii]].state.encoderCount);
     }
 
 };
@@ -158,7 +158,7 @@ void GazeboHardware::sendCommand(){
     {
       if( hw->actuator[ii].command.enable){
         command = (GAZEBO_CURRENT_TO_CMD*hw->actuator[ii].command.current);
-        fprintf(stderr,"command: %f\n", command);
+        //fprintf(stderr,"command: %f\n", command);
         if (boardLookUp[ii] == 2)
         {
           pr2GripperLeftIface->Lock(1);
