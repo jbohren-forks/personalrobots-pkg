@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 rospack(rosgazebo)
+genmsg()
+include_directories(msg/cpp)
 add_definitions(-Wall)
 rospack_add_library(RosGazeboNode src/RosGazeboNode.cpp)
 

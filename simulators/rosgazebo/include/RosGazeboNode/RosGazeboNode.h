@@ -54,7 +54,8 @@
 #include <std_msgs/BaseVel.h>
 // roscpp - arm
 #include <std_msgs/PR2Arm.h>
-#include <std_msgs/EndEffectorState.h>
+
+#include "rosgazebo/EndEffectorState.h"
 
 // roscpp - camera
 #include <std_msgs/Image.h>
@@ -160,8 +161,8 @@ class RosGazeboNode : public ros::node
     std_msgs::PR2Arm rightarm;
 
     // end effector cmds
-    std_msgs::EndEffectorState cmd_leftarmcartesian;
-    std_msgs::EndEffectorState cmd_rightarmcartesian;
+    rosgazebo::EndEffectorState cmd_leftarmcartesian;
+    rosgazebo::EndEffectorState cmd_rightarmcartesian;
 
     //Flags to indicate that a new message has arrived
     bool newRightArmPos;
