@@ -1,0 +1,14 @@
+<package>
+<description brief="RTnet">
+
+This package contains the RTnet real-time networking stack.
+
+</description>
+<author>See http://www.rts.uni-hannover.de/rtnet/team.html</author>
+<license>GPL</license>
+<url>http://www.rtnet.org/</url>
+<export>
+</export>
+</package>
+
+
