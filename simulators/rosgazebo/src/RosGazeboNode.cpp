@@ -343,6 +343,18 @@ RosGazeboNode::Update()
   uint32_t intensities_alloc_size;
   std_msgs::Point3DFloat32 tmp_cloud_pt;
 
+
+  /***************************************************************/
+  /*                                                             */
+  /*  publish time                                               */
+  /*                                                             */
+  /***************************************************************/
+  this->PR2Copy->GetTime(&(this->simTime));
+  timeMsg.rostime.sec  = (unsigned long)floor(this->simTime);
+  timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->laserMsg.header.stamp.sec) );
+  publish("time",timeMsg);
+
+
   /***************************************************************/
   /*                                                             */
   /*  Arm Updates                                                */
@@ -424,21 +436,20 @@ RosGazeboNode::Update()
       this->full_cloudMsg.pts[i].z        = this->cloud_pts->buffer[i].z;
       this->full_cloudMsg.chan[0].vals[i] = this->cloud_ch1->buffer[i];
     }
+
+    this->cloudMsg.header.frame_id = PR2::FRAMEID_TILT_LASER_BLOCK;
+    this->cloudMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
+    this->cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->laserMsg.header.stamp.sec) );
+
+    this->full_cloudMsg.header.frame_id = PR2::FRAMEID_TILT_LASER_BLOCK;
+    this->full_cloudMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
+    this->full_cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->laserMsg.header.stamp.sec) );
+
     publish("cloud",this->cloudMsg);
     publish("full_cloud",this->full_cloudMsg);
     //publish("shutter",this->shutterMsg);
   }
 
-
-  /***************************************************************/
-  /*                                                             */
-  /*  publish time                                               */
-  /*                                                             */
-  /***************************************************************/
-  this->PR2Copy->GetTime(&(this->simTime));
-  timeMsg.rostime.sec  = (unsigned long)floor(this->simTime);
-  timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->laserMsg.header.stamp.sec) );
-  publish("time",timeMsg);
 
   /***************************************************************/
   /*                                                             */
