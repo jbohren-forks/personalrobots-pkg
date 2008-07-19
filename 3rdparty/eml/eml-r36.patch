@@ -1,0 +1,13 @@
+Index: src/al/ethercat_AL.cxx
+===================================================================
+--- src/al/ethercat_AL.cxx	(revision 36)
++++ src/al/ethercat_AL.cxx	(working copy)
+@@ -177,7 +177,7 @@
+       else { // No such slave found...
+ 	log(EC_LOG_WARNING, "EC_AL Warning: No such slave in db, creating dummy slave\n");
+ 	// Create slave handler
+-	m_slave_handler[i] = new EtherCAT_SlaveHandler(adp2ringpos(adp),productcode,revision,adp2ringpos(adp),NULL,NULL);
++	m_slave_handler[i] = new EtherCAT_SlaveHandler(adp2ringpos(adp),productcode,revision,(i+1),NULL,NULL);
+ 	log(EC_LOG_INFO, "AL creating SlaveHandler: pos=%d, Product Code=0x%x, rev=0x%x\n", 
+ 	       adp2ringpos(adp),productcode,revision);
+       }

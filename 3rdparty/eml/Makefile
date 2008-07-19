@@ -1,12 +1,16 @@
 all: eml
 
-EML_REVISION = -r 36
+EML_REVISION = 36
 
 download: eml-checkout
 
 eml-checkout:
-	@if [ ! -d eml-svn ]; then svn co $(EML_REVISION) svn://svn.berlios.de/ethercatmaster/trunk eml-svn; fi
-	-cd eml-svn && svn up $(EML_REVISION)
+	@if [ ! -d eml-svn ]; then \
+		svn co -r $(EML_REVISION) svn://svn.berlios.de/ethercatmaster/trunk eml-svn ; \
+	else \
+		cd eml-svn && svn up -r $(EML_REVISION) ; \
+	fi
+	-cd eml-svn && patch -N -p0 < ../eml-r$(EML_REVISION).patch
 
 eml: eml-checkout
 	cd eml-svn && \
