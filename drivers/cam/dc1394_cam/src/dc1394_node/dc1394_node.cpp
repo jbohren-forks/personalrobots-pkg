@@ -64,9 +64,14 @@ public:
   int32_t mode;
   int32_t textureThresh;
   int32_t uniqueThresh;
-  NEWMAT::Matrix reproj;
+  double Cx;
+  double Cy;
+  double Tx;
+  double f;
+  NEWMAT::Matrix lproj;
+  NEWMAT::Matrix rproj;
   std_msgs::PointCloudFloat32 cloud;
-  VidereData() : reproj(4,4) {}
+  VidereData() : lproj(3,4), rproj(3,4) {}
   virtual ~VidereData() {}
 };
 
@@ -297,6 +302,8 @@ public:
       // Make sure camera is actually a videre...
       if (cd.camType == VIDERE)
       {
+        VidereData* v = ((VidereData*)(cd.otherData));
+
         if (cd.cam->dcCam->vendor_id != 0x5505)
         {
           printf("Not a videre camera!\n");
@@ -342,32 +349,27 @@ public:
 
         string params(buf);
 
-        NEWMAT::Matrix lproj(3,4);
-        NEWMAT::Matrix rproj(3,4);
-
         istringstream iss( params.substr( params.find("proj", params.find("[left camera]") ) + strlen("proj")) );
         
         for (int i = 1; i <= 3; i++)
           for (int j = 1; j <= 4; j++)
-            iss >> lproj(i,j);
+            iss >> v->lproj(i,j);
 
         iss.str( params.substr( params.find("proj", params.find("[right camera]") ) + strlen("proj")) );
         
         for (int i = 1; i <= 3; i++)
           for (int j = 1; j <= 4; j++)
-            iss >> rproj(i,j);
+            iss >> v->rproj(i,j);
 
-        ((VidereData*)(cd.otherData))->reproj
-          << 1 << 0 << 0 << -lproj(1,3)
-          << 0 << 1 << 0 << -lproj(2,3)
-          << 0 << 0 << 0 << lproj(1,1)
-          << 0 << 0 << lproj(1,1)/rproj(1,4) << -(lproj(1,3) - rproj(1,3))*lproj(1,1)/rproj(1,4);
+        v->Cx = v->lproj(1,3);
+        v->Cy = v->lproj(2,3);
+        v->Tx = -v->rproj(1,4)/v->lproj(1,1) / 1000.0;
+        v->f = v->lproj(1,1);
+
 
         printf("Read in file: %s\n", params.c_str());
-        std::cout << lproj << std::endl << std::endl;
-        std::cout << rproj << std::endl << std::endl;
-        std::cout << ((VidereData*)(cd.otherData))->reproj;
-
+        std::cout << v->lproj << std::endl << std::endl;
+        std::cout << v->rproj << std::endl << std::endl;
       }
 
       checkAndSetFeature(cd, "brightness", DC1394_FEATURE_BRIGHTNESS);
@@ -471,6 +473,8 @@ public:
 
         if (c->camType == VIDERE)
         {
+          VidereData* v = (VidereData*)(c->otherData);
+
           uint8_t *buf      = frame->image;
           uint32_t width    = frame->size[0];
           uint32_t height   = frame->size[1]/2;
@@ -492,7 +496,7 @@ public:
           c->img2.set_data_size(buf_size);
           memcpy(c->img2.data, buf + buf_size, buf_size);
 
-          switch (((VidereData*)(c->otherData))->mode)
+          switch (v->mode)
           {
           case 4:
             {
@@ -501,43 +505,35 @@ public:
               if (buf[i] != 0)
                 goodPixCount++;
 
-            int j = 1;
-            NEWMAT::Matrix Pts(4,goodPixCount);
+            v->cloud.set_pts_size(goodPixCount);
+            v->cloud.set_chan_size(1);
+            v->cloud.chan[0].name = "intensities";
+            v->cloud.chan[0].set_vals_size(goodPixCount);
+
+            int j = 0;
             for (uint32_t i = 0; i < buf_size; i++)
               if (buf[i] != 0)
               {
-                Pts(1, j) = i % width;
-                Pts(2, j) = i / width;
-                Pts(3, j) = buf[i];
-                Pts(4, j) = 1;
+                double X = v->Tx * ( (double)(i % width) - v->Cx ) / ((double)(buf[i]) / 4.0);
+                double Y = v->Tx * ( (double)(i / width) - v->Cy ) / ((double)(buf[i]) / 4.0);
+                double Z = v->Tx * ( v->f ) / ((double)(buf[i]) / 4.0);
+
+                int pu = v->f*X/Z + v->Cx;
+                //int pu = v->f*(X - v->Tx)/Z + v->Cx;
+                int pv = v->f*Y/Z + v->Cy;
+
+                v->cloud.pts[j].y = - X;
+                v->cloud.pts[j].z = - Y;
+                v->cloud.pts[j].x = Z;
+
+                v->cloud.chan[0].vals[j] = buf[buf_size + pv*width + pu];// * 16;
+                //                printf("Point with disparity: %d has depth: %f and coords %d %d to intensity: %f\n", buf[i], v->cloud.pts[j].x, pu, pv, v->cloud.chan[0].vals[j]);
+                
                 j++;
               }
-            NEWMAT::Matrix Pts3D = ((VidereData*)(c->otherData))->reproj * Pts;
-
-            ((VidereData*)(c->otherData))->cloud.set_pts_size(goodPixCount);
-            ((VidereData*)(c->otherData))->cloud.set_chan_size(1);
-            ((VidereData*)(c->otherData))->cloud.chan[0].name = "intensity";
-            ((VidereData*)(c->otherData))->cloud.chan[0].set_vals_size(goodPixCount);
-            
-
-            for (int i = 0; i < goodPixCount; i++)
-            {
-              float X = Pts3D(1, i+1);
-              float Y = Pts3D(2, i+1);
-              float Z = Pts3D(3, i+1);
-              float W = Pts3D(4, i+1);
-
-              //                            printf("Added point with disparity: %f %f %f %f %f\n", Pts(3,i+1), X, Y, Z, W);
-
-              ((VidereData*)(c->otherData))->cloud.pts[i].y = -X/W/1000.0;
-              ((VidereData*)(c->otherData))->cloud.pts[i].z = -Y/W/1000.0;
-              ((VidereData*)(c->otherData))->cloud.pts[i].x = Z/W/1000.0;
-              ((VidereData*)(c->otherData))->cloud.chan[0].vals[i] = 2000;
-            }
-              
 
             std_msgs::Empty e;
-            publish(c->name + string("/cloud"), ((VidereData*)(c->otherData))->cloud);
+            publish(c->name + string("/cloud"), v->cloud);
             publish(c->name + string("/shutter"), e);
 
             publish(c->name + string("/ldisparity"), c->img1);
