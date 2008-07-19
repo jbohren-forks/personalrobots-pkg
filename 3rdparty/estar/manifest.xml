@@ -1,0 +1,19 @@
+<package>
+  <description brief="E* Interpolated Graph Replanner">
+    The E* algorithm is a path planner for (mobile) robotics. Unlike
+    A*, which constrains movements to graph edges, it produces smooth
+    trajectories by interpolating between edges. Like D*, it supports
+    dynamic replanning after local path cost changes. E* was
+    originally developed at the Autonomous Systems Lab of the Swiss
+    Federal Institute of Technology.
+  </description>
+  <author>Roland Philippsen</author>
+  <license>GPL</license>
+  <url>http://estar.sourceforge.net/</url>
+  <export>
+    <cpp cflags="-I${prefix}/local/include" lflags="-L${prefix}/local/lib -lestar" />
+  </export>
+  <depend package="boost"/>
+<!--   <depend package="std_msgs"/> -->
+<!--   <depend package="std_srvs"/> -->
+</package>
