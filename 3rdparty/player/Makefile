@@ -1,9 +1,14 @@
-all: player
+all: check_svn
+
+BUILD_TARGET = player
+SVN_TARGET = player-checkout
+SVN_DIR = player-svn
+include $(shell rospack find mk)/check_svn.mk
 
 REVISION = -r 6833
 
-player-checkout:
-	@if [ ! -d player-svn ]; then svn co $(REVISION) https://playerstage.svn.sf.net/svnroot/playerstage/code/player/trunk player-svn; fi
+$(SVN_TARGET):
+	@if [ ! -d player-svn ]; then svn co $(REVISION) https://playerstage.svn.sf.net/svnroot/playerstage/code/player/trunk $(SVN_DIR); fi
 	-cd player-svn && svn up $(REVISION) 
 
 CMAKE = `rospack find cmake`/cmake/bin/cmake 
@@ -12,13 +17,13 @@ CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
 	     -D BUILD_PLAYERCC_BOOST=OFF \
 	     -D ENABLE_DRIVER_CAMERA1394=OFF
 
-player: player-checkout
-	cd player-svn && mkdir -p build
-	cd player-svn/build &&  $(CMAKE) $(CMAKE_ARGS) ..
+.PHONY: $(BUILD_TARGET)
+$(BUILD_TARGET):
+	mkdir -p player-svn/build
+	cd player-svn/build && $(CMAKE) $(CMAKE_ARGS) ..
 	cd player-svn/build && make install
-	touch player
 
-clean:
+clean: check_svn_clean
 	rm -rf player-svn/build
 	rm -rf player
 wipe:
