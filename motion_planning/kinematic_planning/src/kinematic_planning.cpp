@@ -95,7 +95,6 @@ Provides (name/type):
 #include <string>
 #include <map>
 
-
 class KinematicPlanning : public ros::node
 {
 public:
@@ -104,7 +103,7 @@ public:
     {
 	advertise_service("plan_kinematic_path", &KinematicPlanning::plan);
 	subscribe("world_3d_map", m_cloud, &KinematicPlanning::pointCloudCallback);
-
+	
 	m_collisionSpace = new collision_space::EnvironmentModelODE();
     }
     
@@ -131,14 +130,19 @@ public:
 	    data[i3 + 1] = m_cloud.pts[i].y;
 	    data[i3 + 2] = m_cloud.pts[i].z;
 	}
+
+	m_collisionSpace->addPointCloud(n, data, 0.01);
+	
 	delete[] data;
 	
     }
     
     bool plan(std_srvs::KinematicMotionPlan::request &req, std_srvs::KinematicMotionPlan::response &res)
     {
-	//	const int dim = req.start_state.vals_size;
-	//	ompl::SpaceInformationKinematic::GoalStateKinematic_t goal = new ompl::SpaceInformationKinematic::GoalStateKinematic(m_si);
+	Model *m =  m_models[req.model_id];
+	
+	const int dim = req.start_state.vals_size;
+	ompl::SpaceInformationKinematic::GoalStateKinematic_t goal = new ompl::SpaceInformationKinematic::GoalStateKinematic(m->planners[0].si);
 	//m_si->setGoal(goal);
 	
 	/*
