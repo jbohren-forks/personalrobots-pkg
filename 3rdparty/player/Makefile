@@ -8,8 +8,8 @@ include $(shell rospack find mk)/check_svn.mk
 REVISION = -r 6833
 
 $(SVN_TARGET):
-	@if [ ! -d player-svn ]; then svn co $(REVISION) https://playerstage.svn.sf.net/svnroot/playerstage/code/player/trunk $(SVN_DIR); fi
-	-cd player-svn && svn up $(REVISION) 
+	@if [ ! -d $(SVN_DIR) ]; then svn co $(REVISION) https://playerstage.svn.sf.net/svnroot/playerstage/code/player/trunk $(SVN_DIR); fi
+	-cd $(SVN_DIR) && svn up $(REVISION) 
 
 CMAKE = `rospack find cmake`/cmake/bin/cmake 
 CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
@@ -27,7 +27,7 @@ clean: check_svn_clean
 	rm -rf player-svn/build
 	rm -rf player
 wipe:
-	rm -rf player-svn player
+	rm -rf $(SVN_DIR) player
 
 download: player-checkout
 
