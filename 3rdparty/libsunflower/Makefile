@@ -1,9 +1,7 @@
 SRCDIR= $(PWD)/sunflower
 BUILDDIR= $(PWD)/build
 INSTDIR= $(PWD)/sfl
-
-#CMAKE= `rospack find cmake`/cmake/bin/cmake 
-#CMAKE_ARGS= -Wno-dev -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=$(INSTDIR)
+ESTARDIR= `rospack find estar`/local
 
 all: $(SRCDIR) $(SRCDIR)/configure $(BUILDDIR)/config.h
 	$(MAKE) -C $(BUILDDIR) install
@@ -17,7 +15,7 @@ $(SRCDIR)/configure: $(SRCDIR)/configure.ac $(SRCDIR)/bootstrap-buildsystem.sh
 
 $(BUILDDIR)/config.h: $(SRCDIR)/configure $(SRCDIR)/config.h.in
 	test -d $(BUILDDIR) || mkdir -p $(BUILDDIR)
-	cd $(BUILDDIR) && $(SRCDIR)/configure --prefix=$(INSTDIR)
+	cd $(BUILDDIR) && $(SRCDIR)/configure --prefix=$(INSTDIR) --with-estar=$(ESTARDIR)
 
 clean:
 	$(MAKE) -C $(BUILDDIR) clean
@@ -26,4 +24,6 @@ distclean:
 	$(MAKE) -C $(BUILDDIR) distclean
 
 wipe:
-	rm -rf $(SRCDIR) $(BUILDDIR) $(INSTDIR)
+	svn revert -R $(SRCDIR)
+	svn st --no-ignore $(SRCDIR) | awk '{print $2}' | xargs rm -rvf
+	rm -rf $(BUILDDIR) $(INSTDIR)
