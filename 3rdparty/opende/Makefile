@@ -30,7 +30,6 @@ $(BUILD_TARGET):
 	cd $(SVN_DIR) && ./configure --prefix=$(ROOT) --with-trimesh=opcode $(CONFIGURE_FLAGS)
 	cd $(SVN_DIR) && make
 	cd $(SVN_DIR) && make install
-	touch opende
 
 clean: check_svn_clean
 	cd $(SVN_DIR) && make clean
