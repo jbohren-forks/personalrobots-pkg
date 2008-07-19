@@ -1,0 +1,19 @@
+<package>
+  <description brief="A ROS wrapper for libsunflower.sourceforge.net">
+    Libsunflower contains mobile robotic programming abstractions
+    developed at the Autonomous Systems Lab of the Swiss Federal
+    Institute of Technology. It is written in C++ and provides a
+    framework of classes and utilities for common tasks and patterns
+    in mobile robotics. As a concrete application of those
+    abstractions, libsunflower contains obstacle avoidance code.
+  </description>
+  <author>Roland Philippsen</author>
+  <license>GPL</license>
+  <url>http://libsunflower.sourceforge.net/</url>
+  <export>
+    <cpp cflags="-I${prefix}/sfl/include" lflags="-L${prefix}/sfl/lib -lsfl" />
+  </export>
+<!--   <depend package="roscpp"/> -->
+<!--   <depend package="std_msgs"/> -->
+<!--   <depend package="std_srvs"/> -->
+</package>
