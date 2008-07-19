@@ -8,28 +8,35 @@ ifeq ($(WITH_DRAWSTUFF), yes)
 CFG_OPTIONS += --with-drawstuff=X11
 endif
 
-all: opende
+#all: opende
+all: check_svn
 
-opende-checkout:
-	@if [ ! -d opende-svn ]; then svn co $(REVISION) https://opende.svn.sourceforge.net/svnroot/opende/trunk opende-svn; fi
-	-cd opende-svn && svn up $(REVISION)
+BUILD_TARGET = opende
+SVN_TARGET = opende-checkout
+SVN_DIR = opende-svn
+include $(shell rospack find mk)/check_svn.mk
+
+$(SVN_TARGET):
+	@if [ ! -d $(SVN_DIR) ]; then svn co $(REVISION) https://opende.svn.sourceforge.net/svnroot/opende/trunk $(SVN_DIR); fi
+	-cd $(SVN_DIR) && svn up $(REVISION)
 
 CONFIGURE_FLAGS = $(CFG_OPTIONS) CXXFLAGS='-O3   -I$(ROOT)/include' LDFLAGS='-L$(ROOT)/lib' CFLAGS='-O3   -I$(ROOT)/include -I$(ROOT)/usr/include'
 
 ROOT = $(shell rospack find opende)/opende
 
-opende: opende-checkout
-	cd opende-svn && sh ./autogen.sh
-	cd opende-svn && ./configure --prefix=$(ROOT) --with-trimesh=opcode $(CONFIGURE_FLAGS)
-	cd opende-svn && make
-	cd opende-svn && make install
+.PHONY: $(BUILD_TARGET)
+$(BUILD_TARGET):
+	cd $(SVN_DIR) && sh ./autogen.sh
+	cd $(SVN_DIR) && ./configure --prefix=$(ROOT) --with-trimesh=opcode $(CONFIGURE_FLAGS)
+	cd $(SVN_DIR) && make
+	cd $(SVN_DIR) && make install
 	touch opende
 
-clean:
-	cd opende-svn && make clean
+clean: check_svn_clean
+	cd $(SVN_DIR) && make clean
 	rm -rf opende
 wipe:
-	rm -rf opende-svn opende
+	rm -rf $(SVN_DIR) opende
 
 download: opende-checkout
 
