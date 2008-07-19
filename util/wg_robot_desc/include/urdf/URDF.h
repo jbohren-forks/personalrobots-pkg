@@ -36,6 +36,7 @@
 #define URDF_PARSER_
 
 #include <tinyxml-2.5.3/tinyxml.h>
+#include <istream>
 #include <string>
 #include <vector>
 #include <map>
@@ -299,6 +300,7 @@ namespace robot_desc
 	virtual bool loadFile(const char *filename);
 	virtual bool loadFile(FILE *file);
 	virtual bool loadString(const char *data);
+	virtual bool loadStream(std::istream &is);
 	virtual void print(FILE *out = stdout);
 	
 	bool containsCycle(unsigned int index) const;

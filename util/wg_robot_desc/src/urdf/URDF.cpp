@@ -314,6 +314,26 @@ void robot_desc::URDF::clearDocs(void)
     m_docs.clear();
 }
 
+bool robot_desc::URDF::loadStream(std::istream &is)
+{
+    if (!is.good())
+	return false;
+    
+    is.seekg(0, std::ios::end);
+    std::streampos length = is.tellg();
+    is.seekg(0, std::ios::beg);
+    if (length >= 0)
+    {
+	char *buffer = new char[length];
+	is.read(buffer, length);
+	bool result = (is.gcount() == length) ? loadString(buffer) : false;
+	delete[] buffer;
+	return result;
+    }
+    else
+	return false;
+}
+
 bool robot_desc::URDF::loadString(const char *data)
 {
     clear();
