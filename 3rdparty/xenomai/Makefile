@@ -1,6 +1,6 @@
 all: xenomai
 
-XENOMAI_REVISION = -r 4007
+XENOMAI_REVISION = 4007
 LINUX_VERSION = 2.6.24.3
 
 empty :=
@@ -11,8 +11,11 @@ LINUX_ARCHIVE = linux-$(LINUX_VERSION).tar.bz2
 download: xenomai-checkout $(LINUX_ARCHIVE)
 
 xenomai-checkout: 
-	@if [ ! -d xenomai-svn ]; then svn co $(XENOMAI_REVISION) http://svn.gna.org/svn/xenomai/trunk xenomai-svn && cd xenomai-svn && patch -p0 < ../xenomai-r4007.patch; fi
-	-cd xenomai-svn && svn up $(XENOMAI_REVISION)
+	@if [ ! -d xenomai-svn ]; then svn co -r $(XENOMAI_REVISION) http://svn.gna.org/svn/xenomai/trunk xenomai-svn ; \
+	else \
+		cd xenomai-svn && svn up -r $(XENOMAI_REVISION) ; \
+	fi
+	-cd xenomai-svn && patch -N -p0 < ../xenomai-r$(XENOMAI_REVISION).patch
 
 xenomai: xenomai-checkout linux
 	cd xenomai-svn && \
