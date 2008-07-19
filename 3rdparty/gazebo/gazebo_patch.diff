@@ -1162,25 +1162,6 @@ Index: gazebo-svn/server/Simulator.cc
      // Update the rendering
      if (renderUpdateRate == 0 || 
          currTime - this->prevRenderTime >= renderUpdatePeriod)
-@@ -291,11 +297,14 @@
- 
-     elapsedTime = (this->GetRealTime() - currTime);
- 
-+    //double tmpT3 = this->GetWallTime();
-+    //fprintf(stderr, " gui dt %.5f \n",tmpT3-tmpT2);
-+
-     // Wait if we're going too fast
--    if ( elapsedTime < 1.0/MAX_FRAME_RATE )
--    {
--      usleep( (int)((1.0/MAX_FRAME_RATE - elapsedTime) * 1e6)  );
--    }
-+    // if ( elapsedTime < 1.0/MAX_FRAME_RATE )
-+    // {
-+    //   usleep( (int)((1.0/MAX_FRAME_RATE - elapsedTime) * 1e6)  );
-+    // }
- 
-     if (this->timeout > 0 && this->GetRealTime() > this->timeout)
-       break;
 Index: gazebo-svn/server/GazeboConfig.cc
 ===================================================================
 --- gazebo-svn/server/GazeboConfig.cc	(revision 6874)
