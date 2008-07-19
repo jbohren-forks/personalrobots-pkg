@@ -26,4 +26,6 @@ distclean:
 	$(MAKE) -C $(BUILDDIR) distclean
 
 wipe:
-	rm -rf $(SRCDIR) $(BUILDDIR) $(INSTDIR)
+	svn revert -R $(SRCDIR)
+	svn st --no-ignore $(SRCDIR) | awk '{print $2}' | xargs rm -rvf
+	rm -rf $(BUILDDIR) $(INSTDIR)
