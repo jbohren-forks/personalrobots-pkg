@@ -159,6 +159,11 @@ namespace TREX {
     };
 
 
+    /**
+     * @brief Set the state. Encapsulate all change.
+     */
+    void setState(const State& s);
+
     // Configuration derived members
     unsigned int m_maxIterations;
     unsigned int m_plateau;

@@ -90,7 +90,8 @@ namespace TREX{
       m_iteration = m_watchDog = 0;
     }
     
-    m_state = STATE_PLANNING;
+    setState(STATE_PLANNING);
+
     if(m_iteration < m_maxIterations && m_watchDog < m_plateau) {    
       // Update counters to handle termination
       m_iteration++;
@@ -105,7 +106,7 @@ namespace TREX{
       // we escape somehow. The algorithm does not include such random walks to explore beyond the immediate
       // neighborhood
       if(candidate == m_currentSolution) {
-	m_state = STATE_DONE;
+	setState(STATE_DONE);
       } else {
 	// Promote if not worse. Allos for some exploration
 	int result = compare(candidate, m_currentSolution);
@@ -126,11 +127,11 @@ namespace TREX{
 	  
 	  debugMsg("GoalManager:search", "Switching to new solution: " << toString(m_currentSolution));
 	} else {
-	  m_state = STATE_DONE;
+	  setState(STATE_DONE);
 	}
       }
     } else {
-      m_state = STATE_DONE;
+	  setState(STATE_DONE);
     }
     if ( m_state == STATE_DONE) {
       debugMsg("GoalManager:search", "Returning: " << toString(m_currentSolution));
@@ -169,7 +170,7 @@ namespace TREX{
 
     if(token->getState()->baseDomain().isMember(Token::REJECTED)){
       debugMsg("GoalManager:addFlaw", token->toString());
-      m_state = STATE_REQUIRE_PLANNING;
+      setState(STATE_REQUIRE_PLANNING);
     }
   }
 
@@ -178,7 +179,7 @@ namespace TREX{
 
     // If the flaw was rejected, come up with a revised solution to get better utility
     if(token->isRejected()) {
-      m_state = STATE_REQUIRE_PLANNING;
+      setState(STATE_REQUIRE_PLANNING);
     }
 
     // If the token is active, remove it from the current solution if present
@@ -201,7 +202,7 @@ namespace TREX{
   void GoalManager::handleInitialize(){
     static const LabelStr sl_nullLabel("");
     OpenConditionManager::handleInitialize();
-    m_state = STATE_REQUIRE_PLANNING;
+
     if(m_positionSourceCfg != sl_nullLabel){
       debugMsg("GoalManager:handleInitialize", "Looking to source position information from '" << m_positionSourceCfg.toString() << "'");
       m_positionSource = getPlanDatabase()->getObject(m_positionSourceCfg);
@@ -296,6 +297,10 @@ namespace TREX{
     }
     ss << "(" << cost << "/" << utility << ")";
     return ss.str();
+  }
+
+  void GoalManager::setState(const State& s){
+    m_state = s;
   }
 
   /**
