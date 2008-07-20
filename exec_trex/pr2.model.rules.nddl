@@ -320,6 +320,42 @@ WaypointController::Active {
 //   }
 }
 
+
+TaskTimeline::HandWave{
+  // Be at the desired location if specified. Do not be moving. If no location specified
+  // then the location will be unconstrained, but we will still be required to be stationary
+  contained_by(WaypointController.Inactive wp);
+  eq(wp.desX, x);
+  eq(wp.desY, y);
+  eq(wp.desTh, th);
+
+  contains(ArmController.Inactive right);
+  contains(ArmController.Inactive left);
+ 
+  eq(right.object._isLeft, false);
+  eq(left.object._isLeft, true);
+
+  eq(right.desTurretAngle,.1);
+  eq(right.desShoulderLiftAngle,-1);
+  eq(right.desUpperarmRollAngle,0.3);
+  eq(right.desElbowAngle,0.3);
+  eq(right.desForearmRollAngle,0.2);
+  eq(right.desWristPitchAngle,0.5);
+  eq(right.desWristRollAngle,0);
+  eq(right.desGripperForceCmd,OPEN_GRIPPER_FORCE);
+  eq(right.desGripperGapCmd,OPEN_GRIPPER_GAP);
+ 
+  eq(left.desTurretAngle,.1);
+  eq(left.desShoulderLiftAngle,-1);
+  eq(left.desUpperarmRollAngle,0.3);
+  eq(left.desElbowAngle,0.3);
+  eq(left.desForearmRollAngle,0.2);
+  eq(left.desWristPitchAngle,0.5);
+  eq(left.desWristRollAngle,0);
+  eq(left.desGripperForceCmd,OPEN_GRIPPER_FORCE);
+  eq(left.desGripperGapCmd,OPEN_GRIPPER_GAP);
+}
+
 /**
  * Produces Velocity Commands to bridge gap between current and desired pose.
  */
@@ -408,25 +444,9 @@ ArmController::Inactive {
 }
 
 ArmController::Active {
-
   contained_by(WaypointController.Inactive wp);
-  //temporalDistance(wp.start, [1, +inf], start);
-  
- //  equals(Mutex.Uses m);
-//   eq(m.user, object);
-
   met_by(Inactive p);
   meets(Inactive s);
- 
-  // eq(turretAngle,s.desTurretAngle);
-//   eq(shoulderLiftAngle,s.desShoulderLiftAngle);
-//   eq(upperarmRollAngle,s.desUpperarmRollAngle);
-//   eq(elbowAngle,s.desElbowAngle);
-//   eq(forearmRollAngle,s.desForearmRollAngle);
-//   eq(wristPitchAngle,s.desWristPitchAngle);
-//   eq(wristRollAngle,s.desWristRollAngle);
-//   eq(gripperForceCmd,s.desGripperForceCmd);
-//   eq(gripperGapCmd,s.desGripperGapCmd);
 }
 
 /**
@@ -434,7 +454,7 @@ ArmController::Active {
  */
 ArmController::Active {
   if(object.mode == Internal){
-    eq(duration, 10); // Any transition will take 50 ticks. Total hack!
+    eq(duration, 10); // Any transition will take 10 ticks. Total hack!
     starts(Actions.Event);
   }
 }

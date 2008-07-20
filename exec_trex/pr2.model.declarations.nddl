@@ -155,6 +155,32 @@ class CleanBehavior extends Behavior {
 };
 
 /**
+ * Declare high-level tasks for execution here. We use a singlet timeline for
+ * all such tasks, restricting them to be mutually exclusive.
+ */
+class TaskTimeline extends AgentTimeline {
+
+  /**
+   * By default it will be inactive
+   */
+  predicate Inactive{}
+
+  /**
+   * A trivial task to handwave at a fixed position
+   */
+  predicate HandWave{
+    PFLOAT x;
+    PFLOAT y;
+    float th;
+    PRIORITY priority; // 0 is highest priority
+  }
+
+  TaskTimeline(Mode _mode){
+    super(_mode, "Inactive");
+  }
+};
+
+/**
  * Actions are since they have the unique properties that:
  * 1. They are explicitly started by the agent when they become startable
  * 2. Their time bound is always in the future until started.
@@ -175,6 +201,9 @@ class Actions extends AgentActions{
     float goal_th;
     // Controller will operate at 1 Hz (cycles per tick)
     eq(duration, 1);
+
+    // Set a default value for the theta desired position
+    default(goal_th, 0.0);
   }
 
   /**
@@ -189,7 +218,6 @@ class ArmController extends AgentTimeline {
   bool _isLeft;
   
   predicate Inactive{
-   
     float acTurretAngle;
     float acShoulderLiftAngle;
     float acUpperarmRollAngle;
@@ -212,7 +240,6 @@ class ArmController extends AgentTimeline {
   }
 
   predicate Active {
-
     float turretAngle;
     float shoulderLiftAngle;
     float upperarmRollAngle;
