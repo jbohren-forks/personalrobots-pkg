@@ -11,6 +11,7 @@ over Linux 2.6.24.19 for the AOpen system
 <license>Xenomai: LGPL, Linux: GPL</license>
 <url>http://www.xenomai.org/ http://www.kernel.org</url>
 <export>
+  <doxymaker external="http://www.xenomai.org/documentation/trunk/html/api/index.html"/>
 </export>
 </package>
 

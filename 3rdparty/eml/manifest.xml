@@ -10,5 +10,6 @@ An Open Source implementation of the EtherCAT protocol
 <url>http://ethercatmaster.berlios.de/</url>
 <depend package="rtnet"/>
 <export>
+  <doxymaker external="http://ethercatmaster.berlios.de/doxygen/html/index.html"/>
 </export>
 </package>

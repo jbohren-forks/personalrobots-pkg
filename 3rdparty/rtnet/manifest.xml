@@ -9,6 +9,7 @@ This package contains the RTnet real-time networking stack.
 <url>http://www.rtnet.org/</url>
 <depend package="xenomai"/>
 <export>
+  <doxymaker external="http://www.rts.uni-hannover.de/rtnet/doc.html" />
 </export>
 </package>
 
