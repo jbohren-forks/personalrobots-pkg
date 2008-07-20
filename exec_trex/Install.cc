@@ -18,6 +18,16 @@ int main(int argc, char **argv)
     inFile.close();
   }
 
+
+  {
+    system("rospack export/cpp/cflags exec_trex > env.scratch");
+    std::ifstream inFile("env.scratch");
+    std::string s;
+    getline(inFile, s);
+    of << "PKG_CPP_FLAGS = " << s << " ;" << std::endl << std::endl;
+    inFile.close();
+  }
+
   {
     system("rospack export/cpp/lflags exec_trex > env.scratch");
     std::ifstream inFile("env.scratch");

@@ -3,39 +3,15 @@ SubDir exec_trex ;
 if ! $(exec_trex_READY) {
 
    	on exec_trex {
+		SUBDIRC++FLAGS = $(SUBDIRC++FLAGS) $(PKG_CPP_FLAGS) ;
 		LINKFLAGS = $(LINKFLAGS) -Wl,-rpath,$(PLASMA_HOME)/build/lib ;
-		LINKFLAGS = $(LINKFLAS) $(PKG_LINK_FLAGS) ;
-
-		# Include directories for ROS. Can obtain from rospack export/cpp/cflags roscpp
-		SubDirHdrs $(ROS_ROOT) core roscpp include ;
-   		SubDirHdrs $(ROS_ROOT) util rosthread include ;
-
-   		SubDirHdrs $(ROS_ROOT) util rostime include ;
-   		SubDirHdrs $(ROS_ROOT) core rostools msg cpp ;
-   		SubDirHdrs $(ROS_ROOT) 3rdparty xmlrpc++ src ;
-   		SubDirHdrs $(ROS_ROOT) std_msgs msg cpp ;
-		SubDirHdrs $(ROS_ROOT) std_srvs srv cpp ;		
-	
-		SubDirHdrs $(PR_ROOT) 3rdparty player player include player-2.2 ;
-		SubDirHdrs $(PR_ROOT) util transforms rosTF include ;
-		SubDirHdrs $(PR_ROOT) util transforms libTF include ;
-		SubDirHdrs $(PR_ROOT) 3rdparty newmat10 newmat ;
-		SubDirHdrs $(PR_ROOT) util transforms namelookup srv cpp ;
-   		SubDirHdrs $(PR_ROOT) util transforms namelookup include ;
-   		SubDirHdrs $(PR_ROOT) util kinematics libKDL include ;
-   		SubDirHdrs $(PR_ROOT) drivers robot pr2 pr2Core include ;
-
-		# GNU Library include directories
-		SubDirHdrs / usr include gtk-2.0 ;
-		SubDirHdrs / usr include glib-2.0 ;
-		SubDirHdrs / usr lib glib-2.0 include ;
+		LINKFLAGS = $(LINKFLAGS) $(PKG_LINK_FLAGS) ;
 
 		# PLASMA & TREX libraries found here
-		LINKFLAGS = $(LINKFLAGS) -Wl,-rpath,$(PLASMA_HOME)/build/lib ;
-		
+		LINKFLAGS = $(LINKFLAGS) -Wl,-rpath,$(PLASMA_HOME)/build/lib ;	
 	}
 
-	ModuleMain exec_trex : Executive.cc RCSVelAdapter.cc RCSArmAdapter.cc
+	ModuleMain exec_trex : Executive.cc ROSAdapter.cc
 	ROSNode.cc Logger.cc LogClock.cc CalcCommandConstraintPlayback.cc
 	CalcGlobalPathConstraintPlayback.cc CalcCommandConstraint.cc Playback.cc
 	CalcGlobalPathConstraint.cc CalcArmInverseKinematicsConstraint.cc OrienteeringSolver.cc
@@ -51,16 +27,18 @@ if ! $(exec_trex_READY) {
 
  	# Input file for exec
 	local TestInputs = 
-		pr2.exec.nddl
-		pr2.wpc.nddl
-		pr2.sim.nddl
 		clean.0.exec.nddl
 		clean.0.wpc.nddl
-		clean.0.rcsarm.nddl
+		clean.0.ac.nddl
+		wpc.0.exec.nddl
 		wpc.0.wpc.nddl
+		wpc.0.ac.nddl
 		wpc.1.exec.nddl
 		wpc.1.wpc.nddl
-		wpc.1.rcsarm.nddl
+		wpc.1.ac.nddl
+		handwave.exec.nddl
+		handwave.wpc.nddl
+		handwave.ac.nddl
 	;
 
 	local file ;
