@@ -1,0 +1,15 @@
+#include "pr2.model.nddl"
+
+// Internal Timelines
+WaypointController wpc = new WaypointController(Internal);
+
+// External Timelines
+VehicleState vs = new VehicleState(External);
+ArmController lac = new ArmController(Ignore,true);
+ArmController rac = new ArmController(Ignore,false);
+VelCommander vcom = new VelCommander(External);
+
+// Actions
+Actions actions = new Actions();
+
+close();

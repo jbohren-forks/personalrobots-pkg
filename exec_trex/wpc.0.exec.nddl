@@ -1,0 +1,7 @@
+#include "exec.init.nddl"
+
+rejectable(wpc.Active g0);
+//g0.x = 24.4;
+//g0.y = 18.8;
+g0.x = 15.2;
+g0.y = 45.8;
