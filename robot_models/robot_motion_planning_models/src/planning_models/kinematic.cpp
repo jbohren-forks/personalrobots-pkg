@@ -37,13 +37,17 @@
 
 void planning_models::KinematicModel::Robot::computeTransforms(const double *params)
 {
+    chain->globalTrans = owner->rootTransform;
     chain->computeTransform(params);
 }
 
 void planning_models::KinematicModel::computeTransforms(const double *params)
 {
     for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
+    {
+	m_robots[i]->chain->globalTrans = rootTransform;
 	m_robots[i]->chain->computeTransform(params + i);
+    } 
 }
 
 // we can optimize things here... (when we use identity transforms, for example)
@@ -70,12 +74,8 @@ void planning_models::KinematicModel::Joint::computeTransform(const double *para
 	break;
     }
     if (before)
-    {
-	globalTrans = before->globalTrans;
-	globalTrans.multiplyPose(varTrans);
-    }
-    else
-	globalTrans = varTrans;
+	globalTrans = before->globalTrans; // otherwise, the caller initialized globalTrans already
+    globalTrans.multiplyPose(varTrans);
     after->computeTransform(params);
 }
 
@@ -101,7 +101,7 @@ void planning_models::KinematicModel::build(robot_desc::URDF &model, const char 
 	for (unsigned int i = 0 ; i < g->linkRoots.size() ; ++i)
 	{
 	    robot_desc::URDF::Link *link = g->linkRoots[i];
-	    Robot *rb = new Robot();
+	    Robot *rb = new Robot(this);
 	    rb->tag = g->name;
 	    rb->chain = new Joint();
 	    buildChain(rb, NULL, rb->chain, link);
@@ -113,7 +113,7 @@ void planning_models::KinematicModel::build(robot_desc::URDF &model, const char 
 	for (unsigned int i = 0 ; i < model.getDisjointPartCount() ; ++i)
 	{
 	    robot_desc::URDF::Link *link = model.getDisjointPart(i);
-	    Robot *rb = new Robot();
+	    Robot *rb = new Robot(this);
 	    rb->chain = new Joint();
 	    buildChain(rb, NULL, rb->chain, link);
 	    m_robots.push_back(rb);

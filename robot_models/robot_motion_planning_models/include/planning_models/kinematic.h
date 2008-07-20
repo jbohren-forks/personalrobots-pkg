@@ -46,8 +46,7 @@
 
 namespace planning_models
 {
-    
-    
+        
     class KinematicModel
     {
     public:
@@ -164,8 +163,9 @@ namespace planning_models
 	/** A robot structure */
 	struct Robot
 	{
-	    Robot(void)
+	    Robot(KinematicModel *model)
 	    {
+		owner = model;	  
 		chain = NULL;
 		stateDimension = 0;
 	    }
@@ -197,6 +197,9 @@ namespace planning_models
 	     *  set to 0, the parameter is unbounded. */
 	    std::vector<double> stateBounds;
 	    
+	    /** The model that owns this robot */
+	    KinematicModel     *owner;
+	    
 	    /** Group of links corresponding to this robot (if any) */
 	    std::string         tag;
 	    
@@ -214,14 +217,18 @@ namespace planning_models
 		delete m_robots[i];
 	}
 	
-	virtual void build(robot_desc::URDF &model, const char *group = NULL);
+	virtual void build(robot_desc::URDF &model, const char *group = NULL);	
+	void         setVerbose(bool verbose);
 	
-	void setVerbose(bool verbose);
-	
+
 	unsigned int getRobotCount(void) const;
-	Robot* getRobot(unsigned int index) const;
+	Robot*       getRobot(unsigned int index) const;
+	
 	void computeTransforms(const double *params);
 
+	/** A transform that is applied to the entire model */
+	libTF::Pose3D       rootTransform;
+	
 	/** Cumulative state dimension */
 	unsigned int        stateDimension;
 	
