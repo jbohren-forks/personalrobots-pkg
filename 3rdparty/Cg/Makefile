@@ -10,12 +10,20 @@ BITS = $(shell (if [ `uname -m` = "x86_64" ]; then echo 64; fi))
 ROOT = $(shell rospack find Cg)/Cg
 
 Cg-checkout:
-	$(shell (if [ $(MTYPE) == "x86_64" ]; then wget -nc $(CG_SOURCE_X86_64); else wget -nc $(CG_SOURCE_I686); fi))
+	if [ `uname -m` = x86_64 ]; then \
+	  wget -nc $(CG_SOURCE_X86_64); \
+	else \
+	  wget -nc $(CG_SOURCE_I686); \
+	fi
 
 Cg: Cg-checkout
 	@echo "making dir"
 	@if [ ! -d Cg ]; then mkdir Cg; fi
-	if [ "$(MTYPE)" == 'x86_64' ]; then tar xvf $(CG_TAR_X86_64) -C$(ROOT); else tar xvf $(CG_TAR_I686) -C$(ROOT); fi
+	if [ `uname -m` = x86_64 ]; then \
+	  tar xvf $(CG_TAR_X86_64) -C$(ROOT); \
+	else \
+	  tar xvf $(CG_TAR_I686) -C$(ROOT); \
+	fi
 	touch $(ROOT)/usr/lib$(BITS)/libCg.so
 	@if [ ! -d $(ROOT)/lib ]; then mkdir $(ROOT)/lib; fi
 	@if [ ! -d $(ROOT)/include ]; then mkdir $(ROOT)/include; fi
