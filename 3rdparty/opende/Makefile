@@ -20,7 +20,7 @@ $(SVN_TARGET):
 	@if [ ! -d $(SVN_DIR) ]; then svn co $(REVISION) https://opende.svn.sourceforge.net/svnroot/opende/trunk $(SVN_DIR); fi
 	-cd $(SVN_DIR) && svn up $(REVISION)
 
-CONFIGURE_FLAGS = $(CFG_OPTIONS) CXXFLAGS='-O3   -I$(ROOT)/include' LDFLAGS='-L$(ROOT)/lib' CFLAGS='-O3   -I$(ROOT)/include -I$(ROOT)/usr/include'
+CONFIGURE_FLAGS = $(CFG_OPTIONS) CXXFLAGS='-O3 -fPIC -I$(ROOT)/include' LDFLAGS='-L$(ROOT)/lib' CFLAGS='-O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include'
 
 ROOT = $(shell rospack find opende)/opende
 
