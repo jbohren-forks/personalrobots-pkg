@@ -139,34 +139,56 @@ public:
     
     bool plan(std_srvs::KinematicMotionPlan::request &req, std_srvs::KinematicMotionPlan::response &res)
     {
-	Model *m =  m_models[req.model_id];
+	Model   *m = m_models[req.model_id];
+	Planner &p = m->planners[0];
 	
 	const int dim = req.start_state.vals_size;
-	ompl::SpaceInformationKinematic::GoalStateKinematic_t goal = new ompl::SpaceInformationKinematic::GoalStateKinematic(m->planners[0].si);
-	//m_si->setGoal(goal);
-	
+	if ((int)p.si->getStateDimension() != dim)
+	    return false;
 	/*
-	std::vector<double*> path;
-	double start[dim];
-	double goal[dim];
-	
-	for (int i = 0 ; i < dim ; ++i)
-	    start[i] = req.start_state.vals[i];
-	for (int i = 0 ; i < dim ; ++i)
-	    goal[i] = req.goal_state.vals[i];
-	
-	/////////////////
-	
-	res.path.set_states_size(path.size());
-	for (unsigned int i = 0 ; i < path.size() ; ++i)
-	{
-	    res.path.states[i].set_vals_size(dim);
-	    for (int j = 0 ; j < dim ; ++j)
-		res.path.states[i].vals[j] = path[i][j];
-	    delete[] path[i];
-	}
+	libTF::Pose3D &tf = m->collisionSpace->models[m->collisionSpaceID]->rootTransform;  
+	tf.setPosition(req.transform.xt, req.transform.yt, req.transform.zt);
+	tf.setQuaternion(req.transform.xr, req.transform.yr, req.transform.zr, req.transform.w);
 	*/
-	//	m_si->clearGoal();	
+
+	// set the 3D space bounding box for planning.
+	// if not specified in the request, infer it based on start + goal positions
+	// need to know where floating joints are and set these there. also update resolution
+
+
+	
+	/* set the starting state */
+	ompl::SpaceInformationKinematic::StateKinematic_t start = new ompl::SpaceInformationKinematic::StateKinematic(dim);
+	for (int i = 0 ; i < dim ; ++i)
+	    start->values[i] = req.start_state.vals[i];
+	p.si->addStartState(start);
+	
+	/* set the goal */
+	ompl::SpaceInformationKinematic::GoalStateKinematic_t goal = new ompl::SpaceInformationKinematic::GoalStateKinematic(p.si);
+	goal->state = new ompl::SpaceInformationKinematic::StateKinematic(dim);
+	for (int i = 0 ; i < dim ; ++i)
+	    goal->state->values[i] = req.goal_state.vals[i];
+	p.si->setGoal(goal);
+	
+	//	bool ok = p.mp->solve(req.allowed_time); 
+
+	/* copy the solution to the result */
+	//	if (ok)
+	{
+	    ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());	    
+	    res.path.set_states_size(path->states.size());
+	    for (unsigned int i = 0 ; i < path->states.size() ; ++i)
+	    {
+		res.path.states[i].set_vals_size(dim);
+		for (int j = 0 ; j < dim ; ++j)
+		    res.path.states[i].vals[j] = path->states[i]->values[j];
+	    }
+	}
+
+	/* cleanup */
+	p.si->clearGoal();	
+	p.si->clearStartStates(true);
+	p.mp->clear();
 	
 	return true;	
     }
@@ -174,6 +196,11 @@ public:
     void addRobotDescriptionFromFile(const char *filename)
     {
 	robot_desc::URDF *file = new robot_desc::URDF(filename);
+	addRobotDescription(file);   
+    }
+    
+    void addRobotDescription(robot_desc::URDF *file)
+    {
 	m_robotDescriptions.push_back(file);
 
 	std::vector<std::string> groups;
