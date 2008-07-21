@@ -1,0 +1,16 @@
+uint32_t ControlMode
+string JointName
+uint8_t Saturated
+double PGain
+double IGain
+double DGain
+double IMax
+double IMin
+double SaturationEffort
+double MaxEffort
+double TorqueCmd
+double TorqueAct
+double PosCmd
+double PosAct
+double VelCmd
+double VelAct
