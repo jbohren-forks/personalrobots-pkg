@@ -1,5 +1,6 @@
 <launch>
-  
+
+  <param name="robotdesc_list" value="robotdesc/pr2" />
   <param name="robotdesc/pr2" textfile="$(find wg_robot_description)/pr2/pr2.xml" />
     
 </launch>
