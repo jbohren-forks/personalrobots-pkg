@@ -6,7 +6,7 @@ SVN_TARGET = gazebo-checkout
 SVN_DIR = gazebo-svn
 include $(shell rospack find mk)/check_svn.mk
 
-REVISION = -r 6874
+REVISION = -r 6897
 
 OGRE_PKG = $(shell rospack find ogre)/ogre/lib/pkgconfig
 PLAYER_PKG = $(shell rospack find player)/player/lib/pkgconfig
