@@ -1,0 +1,15 @@
+<package>
+  <description brief="The ROSified Nepumuk simulator from libsunflower.sourceforge.net">
+    Nepumuk is a simple kinematic 2D simulator for robots with some
+    simple sensors. It was originally developed to test the
+    libsunflower code and has been later used as integration sandbox
+    in some other mobile robotics projects.
+  </description>
+  <author>Roland Philippsen</author>
+  <license>GPL</license>
+  <url>http://libsunflower.sourceforge.net/</url>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="boost"/>
+  <depend package="libsunflower"/>
+</package>
