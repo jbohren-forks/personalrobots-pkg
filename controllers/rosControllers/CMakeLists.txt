@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 rospack(rosControllers)
+genmsg()
 add_definitions(-Wall)
-rospack_add_library(RosJointController src/RosJointController.cpp)
+include_directories(msg/cpp)
+rospack_add_library(rosControllers src/RosJointController.cpp)

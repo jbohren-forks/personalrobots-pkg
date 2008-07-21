@@ -52,6 +52,9 @@
 
 #include <time.h>
 #include <iostream>
+#include <cassert>
+// Header created from the message
+#include <rosControllers/RotaryJointState.h>
 
 // Our node
 class RosJointController : public ros::node
@@ -65,6 +68,8 @@ class RosJointController : public ros::node
     std_msgs::Empty shutterMsg;  // marks end of a cloud message
     std_msgs::RobotBase2DOdom odomMsg;
     rostools::Time timeMsg;
+    
+    rosControllers::RotaryJointState jointStateMsg;
 
     // A mutex to lock access to fields that are used in message callbacks
     ros::thread::mutex lock;
@@ -79,6 +84,7 @@ class RosJointController : public ros::node
     ~RosJointController();
 
     // advertise / subscribe models
+    // TODO: return significant return value?
     int advertiseSubscribeMessages();
 
     void init(CONTROLLER::JointController *jc);
@@ -91,6 +97,11 @@ class RosJointController : public ros::node
 
     //Keep track of controllers
     CONTROLLER::JointController* jc;
+  
+  private:
+    std::string mJointName; //we keep the name of the joint
+    std::string mCmdBusName; //The name of the bus that will accept commands
+    std::string mStateBusName; //The name of the bus that will send state
 };
 
 
