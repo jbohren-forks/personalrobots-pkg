@@ -42,9 +42,10 @@ Pid::Pid(double P,double I, double D, double I1, double I2 ) :
   pGain(P),iGain(I),dGain(D),iMax(I1),iMin(I2)
 {
   pErrorLast  = 0.0;
+  pError      = 0.0;
   dError      = 0.0;
   iError      = 0.0;
-  currentCmd  = 0.0;
+  motorCmd    = 0.0;
 }
 
 
@@ -61,15 +62,17 @@ void Pid::InitPid( double P,double I, double D, double I1, double I2 )
   iMax        = I1;
   iMin        = I2;
   pErrorLast  = 0.0;
+  pError      = 0.0;
   dError      = 0.0;
   iError      = 0.0;
-  currentCmd  = 0.0;
+  motorCmd    = 0.0;
 }
 
 
-double Pid::UpdatePid( double pError, double dt )
+double Pid::UpdatePid( double error, double dt )
 {
   double pTerm, dTerm, iTerm;
+  pError = error;
 
   if (dt == 0)
   {
@@ -107,20 +110,26 @@ double Pid::UpdatePid( double pError, double dt )
     // calculate derivative contribution to command
     dTerm = dGain * dError;
 
-    // create current command value
-    currentCmd = -pTerm -iTerm -dTerm;
+    // create current command value TODO: rename as motor command?
+    motorCmd = -pTerm -iTerm -dTerm;
   }
-  return currentCmd;
+  return motorCmd;
 }
 
 void Pid::SetCurrentCmd(double cmd)
 {
-  currentCmd = cmd;
+  motorCmd = cmd;
 }
 
 double Pid::GetCurrentCmd()
 {
-  return currentCmd;
+  return motorCmd;
 }
 
+void Pid::GetCurrentPIDErrors(double *pe, double *ie, double *de)
+{
+  *pe = this->pError;
+  *ie = this->iError;
+  *de = this->dError;
+}
 

@@ -123,9 +123,14 @@ namespace CONTROLLER
         */
       double GetCurrentCmd();
 
+      /*!
+        * \brief Return PID error terms for the controller.
+        */
+      void GetCurrentPIDErrors(double *pe, double *ie, double *de);
 
     private:
       double pErrorLast;      /**< Save position state for derivative state calculation. */
+      double pError;          /**< position state. */
       double dError;          /**< Derivative state. */
       double iError;          /**< Integrator state. */    
       double pGain;           /**< Proportional gain. */
@@ -133,6 +138,6 @@ namespace CONTROLLER
       double dGain;           /**< Derivative gain. */
       double iMax;            /**< Maximum allowable integrator state. */
       double iMin;            /**< Minimum allowable integrator state. */
-      double currentCmd;      /**< Command to send to motor. */
+      double motorCmd;        /**< Command to send to motor. */
   };
 }
