@@ -1263,11 +1263,11 @@
           <iClamp>0</iClamp>
         </joint>
         <joint name="hokuyo_pitch_joint">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
+          <saturationTorque>500</saturationTorque>
+          <pGain>2</pGain>
           <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
+          <iGain>1</iGain>
+          <iClamp>20</iClamp>
         </joint>
         <joint name="head_cam_left_yaw_joint">
           <saturationTorque>100</saturationTorque>

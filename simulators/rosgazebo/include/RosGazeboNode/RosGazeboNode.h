@@ -175,8 +175,12 @@ class RosGazeboNode : public ros::node
     ringBuffer<std_msgs::Point3DFloat32> *cloud_pts;
     ringBuffer<float>                    *cloud_ch1;
 
+    vector<std_msgs::Point3DFloat32> *full_cloud_pts;
+    vector<float>                    *full_cloud_ch1;
+
     // keep count for full cloud
     int max_cloud_pts;
+    int max_full_cloud_pts;
 
     //Keep track of controllers
     CONTROLLER::JointController** ControllerArray;

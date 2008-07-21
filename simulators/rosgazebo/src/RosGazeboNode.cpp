@@ -217,9 +217,11 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
   // Initialize ring buffer for point cloud data
   this->cloud_pts = new ringBuffer<std_msgs::Point3DFloat32>();
   this->cloud_ch1 = new ringBuffer<float>();
+  this->full_cloud_pts = new vector<std_msgs::Point3DFloat32>();
+  this->full_cloud_ch1 = new vector<float>();
 
   // FIXME:  move this to Subscribe Models
-  param("tilting_laser/max_cloud_pts",max_cloud_pts, 10000);
+  param("tilting_laser/max_cloud_pts",max_cloud_pts, 683); // number of point in one scan line
   this->cloud_pts->allocate(this->max_cloud_pts);
   this->cloud_ch1->allocate(this->max_cloud_pts);
 
@@ -257,9 +259,11 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
   // Initialize ring buffer for point cloud data
   this->cloud_pts = new ringBuffer<std_msgs::Point3DFloat32>();
   this->cloud_ch1 = new ringBuffer<float>();
+  this->full_cloud_pts = new vector<std_msgs::Point3DFloat32>();
+  this->full_cloud_ch1 = new vector<float>();
 
   // FIXME:  move this to Subscribe Models
-  param("tilting_laser/max_cloud_pts",max_cloud_pts, 10000);
+  param("tilting_laser/max_cloud_pts",max_cloud_pts, 683); // number of point in one scan line
   this->cloud_pts->allocate(this->max_cloud_pts);
   this->cloud_ch1->allocate(this->max_cloud_pts);
 
@@ -398,7 +402,7 @@ RosGazeboNode::Update()
       tmp_cloud_pt.z                = tmp_range * cos(laser_yaw) * sin(laser_pitch);
 
       // add gaussian noise
-      const double sigma = 0.02;  // 2 centimeter sigma
+      const double sigma = 0.002;  // 2 millimeters sigma
       tmp_cloud_pt.x                = tmp_cloud_pt.x + GaussianKernel(0,sigma);
       tmp_cloud_pt.y                = tmp_cloud_pt.y + GaussianKernel(0,sigma);
       tmp_cloud_pt.z                = tmp_cloud_pt.z + GaussianKernel(0,sigma);
@@ -409,6 +413,9 @@ RosGazeboNode::Update()
       // push pcd point into structure
       this->cloud_pts->add((std_msgs::Point3DFloat32)tmp_cloud_pt);
       this->cloud_ch1->add(this->intensities[i]);
+
+      this->full_cloud_pts->push_back((std_msgs::Point3DFloat32)tmp_cloud_pt);
+      this->full_cloud_ch1->push_back(this->intensities[i]);
     }
     /***************************************************************/
     /*                                                             */
@@ -422,10 +429,10 @@ RosGazeboNode::Update()
     this->cloudMsg.chan[0].name = "intensities";
     this->cloudMsg.chan[0].set_vals_size(this->cloud_ch1->length);
 
-    this->full_cloudMsg.set_pts_size(this->cloud_pts->length);
+    this->full_cloudMsg.set_pts_size(this->full_cloud_pts->size());
     this->full_cloudMsg.set_chan_size(num_channels);
     this->full_cloudMsg.chan[0].name = "intensities";
-    this->full_cloudMsg.chan[0].set_vals_size(this->cloud_ch1->length);
+    this->full_cloudMsg.chan[0].set_vals_size(this->full_cloud_ch1->size());
 
     for(int i=0;i< this->cloud_pts->length ;i++)
     {
@@ -433,15 +440,16 @@ RosGazeboNode::Update()
       this->cloudMsg.pts[i].y        = this->cloud_pts->buffer[i].y;
       this->cloudMsg.pts[i].z        = this->cloud_pts->buffer[i].z;
       this->cloudMsg.chan[0].vals[i] = this->cloud_ch1->buffer[i];
+    }
 
-      this->full_cloudMsg.pts[i].x        = this->cloud_pts->buffer[i].x;
-      this->full_cloudMsg.pts[i].y        = this->cloud_pts->buffer[i].y;
-      this->full_cloudMsg.pts[i].z        = this->cloud_pts->buffer[i].z;
-      this->full_cloudMsg.chan[0].vals[i] = this->cloud_ch1->buffer[i];
+    for(int i=0;i< this->full_cloud_pts->size() ;i++)
+    {
+      this->full_cloudMsg.pts[i].x        = (this->full_cloud_pts->at(i)).x;
+      this->full_cloudMsg.pts[i].y        = (this->full_cloud_pts->at(i)).y;
+      this->full_cloudMsg.pts[i].z        = (this->full_cloud_pts->at(i)).z;
+      this->full_cloudMsg.chan[0].vals[i] = (this->full_cloud_ch1->at(i));
     }
     publish("cloud",this->cloudMsg);
-    publish("full_cloud",this->full_cloudMsg);
-    //publish("shutter",this->shutterMsg);
   }
 
 
@@ -587,14 +595,17 @@ RosGazeboNode::Update()
   this->PR2Copy->GetTime(&this->simTime);
   //std::cout << "sim time: " << this->simTime << std::endl;
   //std::cout << "ang: " << simPitchAngle*180.0/M_PI << "rate: " << simPitchRate*180.0/M_PI << std::endl;
-  this->PR2Copy->hw.SetJointTorque(PR2::HEAD_LASER_PITCH , 1000.0);
-  this->PR2Copy->hw.SetJointGains(PR2::HEAD_LASER_PITCH, 10.0, 0.0, 0.0);
+  this->PR2Copy->hw.SetJointTorque(PR2::HEAD_LASER_PITCH , 200.0);
+  this->PR2Copy->hw.SetJointGains(PR2::HEAD_LASER_PITCH, 3.0, 1.0, 0.0);
   this->PR2Copy->hw.SetJointServoCmd(PR2::HEAD_LASER_PITCH , simPitchAngle, simPitchRate);
 
   if (dAngle * simPitchRate < 0.0)
   {
     dAngle = -dAngle;
+    publish("full_cloud",this->full_cloudMsg);
     publish("shutter",this->shutterMsg);
+    this->full_cloud_pts->clear();
+    this->full_cloud_ch1->clear();
   }
 
   // should send shutter when changing direction, or wait for Tully to implement ring buffer in viewer
