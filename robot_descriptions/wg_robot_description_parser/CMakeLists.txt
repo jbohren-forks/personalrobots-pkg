@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
-rospack(wg_robot_desc)
+rospack(wg_robot_description_parser)
 rospack_add_library(URDF src/urdf/URDF.cpp)
 rospack_add_executable(parse src/test/parse.cpp)
 target_link_libraries(parse URDF)

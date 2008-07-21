@@ -7,7 +7,7 @@
   <license>BSD</license>
   <url>http://pr.willowgarage.com/wiki/RobotDescriptionFormat</url>
 
-  <depend package="wg_robot_desc"/>
+  <depend package="wg_robot_description_parser"/>
   <depend package="libTF"/>
 
   <export>
