@@ -6,7 +6,7 @@ setenv CG_TOP `rospack find Cg`/Cg
 setenv SIM_PLUGIN `rospack find gazebo_plugin`
 setenv PR2API `rospack find libpr2API`
 setenv PR2HW `rospack find libpr2HW`
-setenv PR2MEDIA `rospack find 2dnav-gazebo`/world
+setenv PR2MEDIA `rospack find gazebo_robot_description`/world
 
 if (! $?LD_LIBRARY_PATH) setenv LD_LIBRARY_PATH ''
 setenv LD_LIBRARY_PATH ''

@@ -6,7 +6,7 @@ export CG_TOP=`rospack find Cg`/Cg
 export SIM_PLUGIN=`rospack find gazebo_plugin`
 export PR2API=`rospack find libpr2API`
 export PR2HW=`rospack find libpr2HW`
-export PR2MEDIA=`rospack find 2dnav-gazebo`/world
+export PR2MEDIA=`rospack find gazebo_robot_description`/world
 
 
 export LD_LIBRARY_PATH=''
