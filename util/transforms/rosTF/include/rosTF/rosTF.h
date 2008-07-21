@@ -78,6 +78,57 @@ class rosTFClient : public libTF::TransformReference, public nameLookupClient
   void receiveDH();
   void receiveQuaternion();
 
+
+  /*********** Accessors *************/
+  /* Unhide base class functions which I'm about to hide otherwise*/
+  using TransformReference::getMatrix;
+  using TransformReference::transformPoint;
+  using TransformReference::transformPoint2D;
+  using TransformReference::transformVector;
+  using TransformReference::transformVector2D;
+  using TransformReference::transformEulerYPR;
+  using TransformReference::transformYaw;
+  using TransformReference::transformPose;
+  using TransformReference::transformPose2D;
+  using TransformReference::viewChain;
+
+  /** \brief Get the transform between two frames by frame name
+   * \param target_frame The frame to which data should be transformed
+   * \param source_frame The frame where the data originated
+   * \param time The time at which the value of the transform is desired. (0 will get the latest)
+   * 
+   * Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
+   * TransformReference::MaxDepthException
+   */
+  NEWMAT::Matrix getMatrix(std::string target_frame, std::string source_frame, ros::Time time);
+
+
+  
+  /** \brief Transform a point to a different frame */
+  libTF::TFPoint transformPoint(std::string target_frame, const libTF::TFPoint & point_in);
+  /** \brief Transform a 2D point to a different frame */
+  libTF::TFPoint2D transformPoint2D(std::string target_frame, const libTF::TFPoint2D & point_in);
+  /** \brief Transform a vector to a different frame */
+  libTF::TFVector transformVector(std::string target_frame, const libTF::TFVector & vector_in);
+  /** \brief Transform a 2D vector to a different frame */
+  libTF::TFVector2D transformVector2D(std::string target_frame, const libTF::TFVector2D & vector_in);
+  /** \brief Transform Euler angles between frames */
+  libTF::TFEulerYPR transformEulerYPR(std::string target_frame, const libTF::TFEulerYPR & euler_in);
+  /** \brief Transform Yaw between frames. Useful for 2D navigation */
+  libTF::TFYaw transformYaw(std::string target_frame, const libTF::TFYaw & euler_in);
+  /** \brief Transform a 6DOF pose.  (x, y, z, yaw, pitch, roll). */
+  libTF::TFPose transformPose(std::string target_frame, const libTF::TFPose & pose_in);
+  /** \brief Transform a planar pose, x,y,yaw */
+  libTF::TFPose2D transformPose2D(std::string target_frame, const libTF::TFPose2D & pose_in);
+
+  /** \brief Debugging function that will print the spanning chain of transforms.
+   * Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
+   * TransformReference::MaxDepthException
+   */
+  std::string viewChain(std::string target_frame, std::string source_frame);
+
+
+
  private:
   // A reference to the active ros::node to allow setting callbacks
   ros::node & myNode; 

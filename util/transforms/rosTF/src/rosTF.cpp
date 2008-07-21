@@ -51,7 +51,7 @@ rosTFClient::rosTFClient(ros::node & rosnode,
 //PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target_frame, const std_msgs::PointCloudFloat32 & cloudIn) //todo add back const when get_pts_size() is const ticket:232
 std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target_frame,  std_msgs::PointCloudFloat32 & cloudIn)
 {
-  NEWMAT::Matrix transform = getMatrix(target_frame, cloudIn.header.frame_id, cloudIn.header.stamp.sec * 1000000000ULL + cloudIn.header.stamp.nsec);
+  NEWMAT::Matrix transform = TransformReference::getMatrix(target_frame, cloudIn.header.frame_id, cloudIn.header.stamp.sec * 1000000000ULL + cloudIn.header.stamp.nsec);
 
   int length = cloudIn.get_pts_size();
 
@@ -104,6 +104,40 @@ void rosTFClient::receiveQuaternion()
   setWithQuaternion(quaternionIn.frame, quaternionIn.parent, quaternionIn.xt, quaternionIn.yt, quaternionIn.zt, quaternionIn.xr, quaternionIn.yr, quaternionIn.zr, quaternionIn.w, quaternionIn.header.stamp.sec * 1000000000ULL + quaternionIn.header.stamp.nsec);
   std::cout << "recieved quaternion frame: " << quaternionIn.frame << " with parent:" << quaternionIn.parent << std::endl;
 };
+
+
+NEWMAT::Matrix rosTFClient::getMatrix(std::string target_frame, std::string source_frame, ros::Time time)
+{ return getMatrix(lookup(target_frame), lookup(source_frame), time.to_ull());};
+
+
+libTF::TFPoint rosTFClient::transformPoint(std::string target_frame, const libTF::TFPoint & point_in)
+{ return transformPoint(lookup(target_frame), point_in);};
+
+libTF::TFPoint2D rosTFClient::transformPoint2D(std::string target_frame, const libTF::TFPoint2D & point_in)
+{ return transformPoint2D(lookup(target_frame), point_in);};
+
+libTF::TFVector rosTFClient::transformVector(std::string target_frame, const libTF::TFVector & vector_in)
+{ return transformVector(lookup(target_frame), vector_in);};
+
+libTF::TFVector2D rosTFClient::transformVector2D(std::string target_frame, const libTF::TFVector2D & vector_in)
+{ return transformVector2D(lookup(target_frame), vector_in);};
+
+libTF::TFEulerYPR rosTFClient::transformEulerYPR(std::string target_frame, const libTF::TFEulerYPR & euler_in)
+{ return transformEulerYPR(lookup(target_frame), euler_in);};
+
+libTF::TFYaw rosTFClient::transformYaw(std::string target_frame, const libTF::TFYaw & euler_in)
+{ return transformYaw(lookup(target_frame), euler_in);};
+
+libTF::TFPose rosTFClient::transformPose(std::string target_frame, const libTF::TFPose & pose_in)
+{ return transformPose(lookup(target_frame), pose_in);};
+
+libTF::TFPose2D rosTFClient::transformPose2D(std::string target_frame, const libTF::TFPose2D & pose_in)
+{ return transformPose2D(lookup(target_frame), pose_in);};
+
+std::string rosTFClient::viewChain(std::string target_frame, std::string source_frame)
+{ return viewChain(lookup(target_frame), lookup(source_frame));};
+
+
 
 
 rosTFServer::rosTFServer(ros::node & rosnode):
