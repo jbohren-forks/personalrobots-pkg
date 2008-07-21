@@ -2,6 +2,7 @@
 #define _smartscan_h_
 
 #include <std_msgs/Point3DFloat32.h> //ROS native format for a point cloud
+#include <std_msgs/PointCloudFloat32.h>
 #include <dataTypes.h> //my own data types defined in this library; probably just placeholder
 //until ROS gets similar types
 
@@ -163,10 +164,13 @@ class SmartScan {
 	std_msgs::Point3DFloat32 computePointNormal(int id, float radius = 0.01, int nbrs = 5);
 
 	//! Returns the connected components in this scan, each in its own SmartScan
-	std::vector<SmartScan*> *connectedComponents(float thresh);
+	std::vector<SmartScan*> *connectedComponents(float thresh, float minPts = 0);
 
 	//! Under construction...
 	std::vector<scan_utils::Triangle> *createMesh();
+
+	//! Returns a PointCloudFloat32 ros msg.
+	std_msgs::PointCloudFloat32 getPointCloud();
 };
 
 

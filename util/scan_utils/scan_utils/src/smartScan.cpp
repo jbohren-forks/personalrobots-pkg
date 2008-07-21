@@ -1124,7 +1124,7 @@ std::vector<scan_utils::Triangle>* SmartScan::createMesh()
   Speed of implementation has been favored over speed of execution -
   multiple optimizations are possible.
  */
-std::vector<SmartScan*> *SmartScan::connectedComponents(float thresh)
+std::vector<SmartScan*> *SmartScan::connectedComponents(float thresh, float minPts)
 {
 	std::vector<SmartScan*> *result = new std::vector<SmartScan*>;
 	std::list<std_msgs::Point3DFloat32> currentList;
@@ -1193,6 +1193,10 @@ std::vector<SmartScan*> *SmartScan::connectedComponents(float thresh)
 		for (int i=0; i<size(); i++) {
 			if (indices[i]==id) nPoints++;
 		}
+		if(nPoints < minPts) {
+		  continue;
+		}
+
 		//then we allocate memory
 		scanPoints = new std_msgs::Point3DFloat32[nPoints];
 		//then we copy the points
@@ -1269,3 +1273,22 @@ void SmartScan::subtractScan(const SmartScan *target, float thresh)
 	points->Delete();
 	delete [] indices;
 }
+
+/*!  Returns the SmartScan as a ROS PointCloudFloat32 message.  Currently, this sets the intensity channel to all zeros.  */
+std_msgs::PointCloudFloat32 SmartScan::getPointCloud() {
+  std_msgs::PointCloudFloat32 cloud;
+  cloud.set_pts_size(mNumPoints);
+  cloud.set_chan_size(1);
+  cloud.chan[0].name = "intensities";
+  cloud.chan[0].set_vals_size(mNumPoints);
+  for(int i=0; i<mNumPoints; i++) {
+    std_msgs::Point3DFloat32 pt = getPoint(i);
+    cloud.pts[i].x = pt.x;
+    cloud.pts[i].y = pt.y;
+    cloud.pts[i].z = pt.z;
+    cloud.chan[0].vals[i] = 0;
+  }
+  return cloud;
+}
+
+
