@@ -5,8 +5,10 @@
   <license>BSD</license>
   <depend package="etherdrive_hardware" />
   <depend package="pr2Controllers" />
-  <depend package="genericControllers" />  
+  <depend package="genericControllers" />
+  <depend package="rosControllers" />
   <depend package="hw_interface" />
+  <depend package="std_msgs" />
   <depend package="robot_mechanism_model" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>

@@ -10,6 +10,8 @@
 
 
 #include <iostream>
+
+#include <pthread.h>
 using namespace CONTROLLER;
 
 const double PGain = 10.0;
@@ -37,6 +39,20 @@ double GetTime()
   struct timeval t;
   gettimeofday( &t, 0);
   return (double) (t.tv_usec *1e-6 + t.tv_sec);
+}
+
+
+void *nonRealtimeLoop(void *rjc)
+{
+  std::cout << "Started nonRT loop" << std::endl;
+  while (1)
+  {
+      ((RosJointController*)rjc)->update();
+    
+    // some time out for publishing ros info
+    usleep(10000);
+  }
+
 }
 
 void finalize(int dummy){
@@ -106,11 +122,11 @@ int main(int argc, char *argv[]){
   jc->setName("DUMMY_JOINT");
   Joint *joint = new Joint();
   
-  std::cout<<__FILE__<<' '<<__LINE__<<std::endl;
+  
   RosJointController * rjc = new RosJointController(jc->name());
-  std::cout<<__FILE__<<' '<<__LINE__<<std::endl;
+  rjc->advertiseSubscribeMessages();
   rjc->init(jc);
-  std::cout<<__FILE__<<' '<<__LINE__<<std::endl;
+  
   SimpleTransmission *sc = new SimpleTransmission(joint,&hi->actuator[0],1,1,90000);
 
   //  BaseController *b = new BaseController();
@@ -124,7 +140,16 @@ int main(int argc, char *argv[]){
   joint->effortLimit = maxPositiveTorque;
   double lcmd;
   //  for(;;) 
-  return 0;
+  
+  pthread_t rosThread;
+  int rjct = pthread_create(&rosThread,NULL, nonRealtimeLoop, (void *) (rjc));
+    if (rjct)
+    {
+      printf("Could not start a separate thread for ROS Gazebo Node (code=%d)\n",rjct);
+      exit(-1);
+    }
+  
+
   while(notDone) {
 
     h->updateState();
@@ -136,7 +161,7 @@ int main(int argc, char *argv[]){
     jc->Update();
 
     //cout << "pos:: " << joint->position << ", eff:: " << joint->commandedEffort << endl;
-    cout << "test_base.cpp:: vel:: " << joint->velocity << ", eff:: " << joint->commandedEffort << endl;
+//     cout << "test_base.cpp:: vel:: " << joint->velocity << ", eff:: " << joint->commandedEffort << endl;
     //int print_n = (int)(joint->velocity * 5);
     //if(print_n > 1000)
     //  print_n = 1000;
