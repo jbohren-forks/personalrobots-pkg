@@ -118,11 +118,11 @@ int main(int argc, char **argv)
     robot_desc::URDF model;
     model.loadFile("/u/isucan/ros/ros-pkg/drivers/robot/pr2/pr2Core/include/pr2Core/pr2.xml");
     
-    EnvironmentModelODE km;
-    km.addRobotModel(model);
-    printf("number of robots = %d\n", km.models[0]->getRobotCount());
+    EnvironmentModel *km = new EnvironmentModelODE();
+    km->addRobotModel(model);
+    printf("number of robots = %d\n", km->models[0]->getRobotCount());
     
-    planning_models::KinematicModel::Robot *r = km.models[0]->getRobot(0);    
+    planning_models::KinematicModel::Robot *r = km->models[0]->getRobot(0);    
     printf("state dimension = %d\n", r->stateDimension);
     
     double *param = new double[r->stateDimension];
@@ -131,9 +131,9 @@ int main(int argc, char **argv)
     r->computeTransforms(param);
     delete[] param;
     
-    km.updateRobotModel(0);
+    km->updateRobotModel(0);
     
-    robotSpace = km.getODESpace();
+    robotSpace = dynamic_cast<EnvironmentModelODE*>(km)->getODESpace();
     
     dsFunctions fn;
     fn.version = DS_VERSION;
@@ -144,6 +144,8 @@ int main(int argc, char **argv)
     fn.path_to_textures = "./res";
     
     dsSimulationLoop(argc, argv, 640, 480, &fn);
+    
+    delete km;
     
     dCloseODE();
     

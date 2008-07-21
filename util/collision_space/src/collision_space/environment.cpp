@@ -38,7 +38,12 @@ unsigned int collision_space::EnvironmentModel::addRobotModel(robot_desc::URDF &
 {
     planning_models::KinematicModel *m = new planning_models::KinematicModel();
     m->build(pmodel, group);
+    return addRobotModel(m);
+}
+
+unsigned int collision_space::EnvironmentModel::addRobotModel(planning_models::KinematicModel *model)
+{
     unsigned int pos = models.size();
-    models.push_back(m);
+    models.push_back(model);
     return pos;
 }

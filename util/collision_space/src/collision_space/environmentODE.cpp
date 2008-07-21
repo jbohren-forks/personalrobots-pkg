@@ -34,9 +34,9 @@
 
 #include <collision_space/environmentODE.h>
 
-unsigned int collision_space::EnvironmentModelODE::addRobotModel(robot_desc::URDF &pmodel, const char *group)
+unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models::KinematicModel *model)
 {
-    unsigned int id = collision_space::EnvironmentModel::addRobotModel(pmodel, group);
+    unsigned int id = collision_space::EnvironmentModel::addRobotModel(model);
 
     if (m_kgeoms.size() <= id)
 	m_kgeoms.resize(id + 1);	    

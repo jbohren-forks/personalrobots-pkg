@@ -72,7 +72,7 @@ namespace collision_space
 	virtual void addPointCloud(unsigned int n, const double *points, double radius = 0.01); 
 
 	/** Add a robot model */
-	virtual unsigned int addRobotModel(robot_desc::URDF &pmodel, const char *group = NULL);
+	virtual unsigned int addRobotModel(planning_models::KinematicModel *model);
 
 	/** Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(unsigned int model_id);

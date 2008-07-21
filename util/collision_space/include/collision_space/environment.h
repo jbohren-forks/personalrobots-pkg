@@ -67,6 +67,8 @@ namespace collision_space
 
 	/** Add a robot model */
 	virtual unsigned int addRobotModel(robot_desc::URDF &pmodel, const char *group = NULL);
+	/** Add a robot model */
+	virtual unsigned int addRobotModel(planning_models::KinematicModel *model);
 
 	/** Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(unsigned int model_id) = 0;
