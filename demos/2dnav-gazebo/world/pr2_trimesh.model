@@ -1092,6 +1092,9 @@
           <updateRate>15.0</updateRate>
           <interface:stereocamera name="stereo_iface_0" />
           <interface:camera name="camera_iface_0" />
+          <interface:camera name="camera_iface_1" />
+          <leftcamera>camera_iface_0</leftcamera>
+          <rightcamera>camera_iface_1</rightcamera>
         </controller:stereocamera>
       </sensor:stereocamera>
       <geom:box name="stereo_camera_geom">
