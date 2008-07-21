@@ -116,6 +116,10 @@ rosTFServer::rosTFServer(ros::node & rosnode):
 
 };
 
+void rosTFServer::sendEuler(std::string frame, std::string parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime)
+{
+  sendEuler(lookup(frame), lookup(parent), x,y,z,yaw,pitch,roll, rostime.sec, rostime.nsec);
+};
 
 void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs)
 {
@@ -136,6 +140,11 @@ void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, d
 
   myNode.publish("TransformEuler", eulerOut);
 
+};
+
+void rosTFServer::sendInverseEuler(std::string frame, std::string parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime)
+{
+  sendInverseEuler(lookup(frame), lookup(parent), x,y,z,yaw,pitch,roll, rostime.sec, rostime.nsec);
 };
 
 void rosTFServer::sendInverseEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs)
@@ -177,6 +186,10 @@ void rosTFServer::sendPose(libTF::TFPose pose, std::string parent)
   sendEuler(pose.frame, lookup(parent), pose.x, pose.y, pose.z, pose.yaw, pose.pitch, pose.roll, secs, nsecs);  
 };
 
+void rosTFServer::sendInversePose(libTF::TFPose pose, std::string parent)
+{
+  sendInversePose(pose, lookup(parent));
+};
 
 void rosTFServer::sendInversePose(libTF::TFPose pose, unsigned int parent)
 {
@@ -185,6 +198,11 @@ void rosTFServer::sendInversePose(libTF::TFPose pose, unsigned int parent)
   sendInverseEuler(pose.frame, parent, pose.x, pose.y, pose.z, pose.yaw, pose.pitch, pose.roll, secs, nsecs);  
 };
 
+
+void rosTFServer::sendDH(std::string frame, std::string parent, double length, double twist, double offset, double angle, ros::Time rostime)
+{
+  sendDH(lookup(frame), lookup(parent), length, twist, offset, angle, rostime.sec, rostime.nsec);
+};
 
 void rosTFServer::sendDH(unsigned int frame, unsigned int parent, double length, double twist, double offset, double angle, unsigned int secs, unsigned int nsecs)
 {
@@ -204,6 +222,11 @@ void rosTFServer::sendDH(unsigned int frame, unsigned int parent, double length,
 
   myNode.publish("TransformDH", dhOut);
 
+};
+
+void rosTFServer::sendQuaternion(std::string frame, std::string parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, ros::Time rostime)
+{
+  sendQuaternion(lookup(frame), lookup(parent), xt, yt, zt, xr, yr, zr, w, rostime.sec, rostime.nsec);
 };
 
 void rosTFServer::sendQuaternion(unsigned int frame, unsigned int parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, unsigned int secs, unsigned int nsecs)

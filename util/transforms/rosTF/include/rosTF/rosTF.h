@@ -101,14 +101,33 @@ class rosTFServer : public nameLookupClient
   //Constructor
   rosTFServer(ros::node & rosnode);
   /** \brief Send a Transform with Euler Angles */
+  void sendEuler(std::string frame, std::string parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime);
+  /** \brief Send a Transform with Euler Angles using libTF syntax */
   void sendEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs);
+
+  /** \brief Send a transform from parent to frame when frame to parent is known */
+  void sendInverseEuler(std::string frame, std::string parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime);
+  /** \brief Send a transform from parent to frame when frame to parent is known using libTF syntax */
   void sendInverseEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs);
-  void sendPose(libTF::TFPose pose, unsigned int parent);
+
+  /** \brief Send a transform using TFPose syntax */
   void sendPose(libTF::TFPose pose, std::string parent);
+  /** \brief Send a transform using TFPose and libTF syntax */
+  void sendPose(libTF::TFPose pose, unsigned int parent);
+
+  /** \brief Send a transform using TFPose when frame to parent is known*/
+  void sendInversePose(libTF::TFPose pose, std::string parent);
+  /** \brief Send a transform using TFPose and libTF syntax when frame to parent is known*/
   void sendInversePose(libTF::TFPose pose, unsigned int parent);
+
   /** \brief Send a transform using DH Parameters */
+  void sendDH(std::string frame, std::string parent, double length, double twist, double offset, double angle, ros::Time rostime);
+  /** \brief Send a transform using DH Parameters and libTF syntax*/
   void sendDH(unsigned int frame, unsigned int parent, double length, double twist, double offset, double angle, unsigned int secs, unsigned int nsecs);
+
   /** \brief Send a transform using Quaternion notation */
+  void sendQuaternion(std::string frame, std::string parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, ros::Time rostime);
+  /** \brief Send a transform using Quaternion notation and libTF syntax*/
   void sendQuaternion(unsigned int frame, unsigned int parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, unsigned int secs, unsigned int nsecs);
 
 
