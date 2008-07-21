@@ -1,8 +1,8 @@
 <launch>
 
   <group name="wg">
-    <node pkg="pr2_gazebo" type="run-gazebo.sh" args="$(find 2dnav-gazebo)/world/robot.world" respawn="true" />
-    <node pkg="map_server" type="map_server" args="$(find 2dnav-gazebo)/world/Media/materials/textures/map3.png 0.1" respawn="false" />
+    <node pkg="pr2_gazebo" type="run-gazebo.sh" args="$(find gazebo_robot_description)/world/robot.world" respawn="true" />
+    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" />
     <node pkg="pr2_gazebo" type="run-pr2_gazebo.sh" args="" respawn="true" />
     <node pkg="amcl_player" type="amcl_player" respawn="false" />
     <node pkg="wavefront_player" type="wavefront_player" respawn="false" />
