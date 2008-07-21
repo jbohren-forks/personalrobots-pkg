@@ -63,7 +63,7 @@ void
 RosJointController::init(CONTROLLER::JointController *jc)
 {
   assert(jc);
-  assert(jc->name() == mJointName);
+  assert(jc->jointName == mJointName);
   this->jc = jc;
 }
 
