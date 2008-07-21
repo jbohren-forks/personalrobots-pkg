@@ -1,8 +1,9 @@
 <package>
   <description>Gazebo world and model files for pr2.</description>
-  <author>John Hsu</author>
+  <author>John Hsu, Ioan Sucan</author>
   <license>BSD</license>
   <url>http://pr.willowgarage.com/wiki/FIXME</url>
   <depend package="gazebo"/>
   <depend package="gazebo_plugin"/>
+  <depend package="wg_robot_description_parser"/>
 </package>
