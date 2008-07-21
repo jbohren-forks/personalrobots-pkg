@@ -1,0 +1,13 @@
+<package>
+
+  <description brief="Robot Descriptions">
+    
+    This package contains XML descriptions of robots in the format
+    defined at Willow Garage.
+    
+  </description>
+  <author>Sachin Chitta, John Hsu, Ioan Sucan</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com/wiki/RobotDescriptionFormat</url>
+
+</package>
