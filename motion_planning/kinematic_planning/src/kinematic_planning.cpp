@@ -87,12 +87,12 @@ Provides (name/type):
 #include <std_srvs/KinematicMotionPlan.h>
 
 #include <urdf/URDF.h>
-#include <kinematic_planning/definitions.h>
 #include <collision_space/environmentODE.h>
 #include <ompl/extension/samplingbased/kinematic/extension/rrt/RRT.h>
 
 #include <vector>
 #include <string>
+#include <sstream>
 #include <map>
 
 class KinematicPlanning : public ros::node
@@ -105,6 +105,8 @@ public:
 	subscribe("world_3d_map", m_cloud, &KinematicPlanning::pointCloudCallback);
 	
 	m_collisionSpace = new collision_space::EnvironmentModelODE();
+	
+	loadRobotDescriptions();
     }
     
     ~KinematicPlanning(void)
@@ -115,6 +117,22 @@ public:
 	    delete i->second;
 	if (m_collisionSpace)
 	    delete m_collisionSpace;
+    }
+    
+
+    void loadRobotDescriptions(void)
+    {
+	std::string description_files;
+	get_param("robotdesc_list", description_files);
+	std::stringstream sdf(description_files);
+	while (sdf.good())
+	{
+	    std::string file;
+	    std::string content;
+	    sdf >> file;
+	    get_param(file, content);
+	    addRobotDescriptionFromData(content.c_str());
+	}
     }
     
     void pointCloudCallback(void)
@@ -198,6 +216,13 @@ public:
 	robot_desc::URDF *file = new robot_desc::URDF(filename);
 	addRobotDescription(file);   
     }
+
+    void addRobotDescriptionFromData(const char *data)
+    {
+	robot_desc::URDF *file = new robot_desc::URDF();
+	file->loadString(data);
+	addRobotDescription(file);
+    }
     
     void addRobotDescription(robot_desc::URDF *file)
     {
@@ -222,7 +247,13 @@ public:
 	    createMotionPlanningInstances(model);
 	}	
     }
-        
+    
+    void knownModels(std::vector<std::string> &model_ids)
+    {
+	for (std::map<std::string, Model*>::const_iterator i = m_models.begin() ; i != m_models.end() ; ++i)
+	    model_ids.push_back(i->first);
+    }
+    
 private:
       
     struct Planner
@@ -309,6 +340,13 @@ int main(int argc, char **argv)
     ros::init(argc, argv);
     
     KinematicPlanning planner;
+    
+    std::vector<std::string> mlist;    
+    planner.knownModels(mlist);
+    printf("Known models:\n");    
+    for (unsigned int i = 0 ; i < mlist.size() ; ++i)
+	printf("  * %s\n", mlist[i].c_str());    
+    
     planner.spin();
     planner.shutdown();
     
