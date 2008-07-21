@@ -28,29 +28,21 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-#include <time.h>
-#include <sys/stat.h>
-#include "ros/node.h"
-#include "logging/LogRecorder.h"
-#include <string>
+#include <dustbuster/dustbuster.h>
 
 using namespace std;
 
+dustbuster::dustbuster(vector<string> &db_topics, string dirname, string filebase) : node("dustbuster")
+{ 
+  done = false;
+  nTopics = db_topics.size();
+  bags = new LogRecorder<>[db_topics.size()];
+  //    time_t t = ::time(NULL);
+  //    struct tm *tms = localtime(&t);
+  mkdir(dirname.c_str(), 0755);
 
-class dustbuster : public ros::node
-{
-public:
-  dustbuster(vector<string> &vac_topics, string dirname, string filebase) : node("dustbuster")
-  { 
-    done = false;
-    nTopics = vac_topics.size();
-    bags = new LogRecorder<>[vac_topics.size()];
-    //    time_t t = ::time(NULL);
-    //    struct tm *tms = localtime(&t);
-    mkdir(dirname.c_str(), 0755);
-
-    ros::Time start = ros::Time::now();
-    for (size_t i = 0; i < vac_topics.size(); i++)
+  ros::Time start = ros::Time::now();
+  for (size_t i = 0; i < db_topics.size(); i++)
     {
 
       //Find the next file name in dirname.
@@ -60,9 +52,9 @@ public:
       do {
 	char prefix[200];
 	sprintf(prefix, "%03d-%s-", filenum, filebase.c_str());
-	string sanitized = std::string(prefix) + vac_topics[i];
+	string sanitized = std::string(prefix) + db_topics[i];
 	//Sanitize.
-	for (size_t j = 0; j < vac_topics[i].length(); j++)
+	for (size_t j = 0; j < db_topics[i].length(); j++)
 	  {
 	    char c = sanitized[j]; // sanitize it a bit
 	    if (c == '\\' || c == '/' || c == '#' || c == '&' || c == ';')
@@ -76,50 +68,44 @@ public:
 
       printf("dustbustering up [%s]\n", final.c_str());
       if (!bags[i].open_log(final,
-                            map_name(vac_topics[i]),
+                            map_name(db_topics[i]),
                             start))
         throw std::runtime_error("couldn't open log file\n");
 
-      subscribe(vac_topics[i], bags[i], &dustbuster::unsub_cb, &vac_topics[i]);
+      subscribe(db_topics[i], bags[i], &dustbuster::unsub_cb, &db_topics[i]);
     }
+}
+
+dustbuster::~dustbuster()
+{
+  delete[] bags;
+  bags = NULL;
+}
+
+bool dustbuster::isDone() const {
+  return done;
+}    
+
+void dustbuster::unsub_cb(void *data) {
+  static unsigned int nUnsubscribedFrom = 0;
+  string *topic = static_cast<string*>(data);
+  unsubscribe(*topic);
+  cout << "Done with " << *topic << endl;
+  nUnsubscribedFrom++;
+  if(nUnsubscribedFrom == nTopics) {
+    cout << "Collected one message of each.  Dustbuster is full." << endl;
+    done = true;
   }
-
-  virtual ~dustbuster()
-  {
-    delete[] bags;
-    bags = NULL;
-  }
-
-  void unsub_cb(void *data) {
-    static unsigned int nUnsubscribedFrom = 0;
-    string *topic = static_cast<string*>(data);
-    unsubscribe(*topic);
-    cout << "Done with " << *topic << endl;
-    nUnsubscribedFrom++;
-    if(nUnsubscribedFrom == nTopics) {
-      cout << "Collected one message of each.  Dustbuster is full." << endl;
-      done = true;
-    }
-  }
-
-  bool isDone() const {
-    return done;
-  }    
-
-private:
-  unsigned int nTopics;
-  bool done;
-  LogRecorder<> *bags;
-};
+}
 
 int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   if (argc < 3)
-  {
-    printf("\nusage: dustbuster SAVEDIR FILENAME TOPIC [TOPIC] ... \n FILENAME will have a number and a .bag appended to it.\n\n");
-    return 1;
-  }
+    {
+      printf("\nusage: dustbuster SAVEDIR FILENAME TOPIC [TOPIC] ... \n FILENAME will have a number and a .bag appended to it.\n\n");
+      return 1;
+    }
 
   string dirname = argv[1];
   string filebase = argv[2];
@@ -129,12 +115,12 @@ int main(int argc, char **argv)
   for (int i = 3; i < argc; i++)
     topics.push_back(argv[i]);
   
-  dustbuster *vac = new dustbuster(topics, dirname, filebase);
-  while(!vac->isDone() && vac->ok()) {
-    usleep(100);
+  dustbuster *db = new dustbuster(topics, dirname, filebase);
+  while(!db->isDone() && db->ok()) {
+    usleep(1000);
   }
 
   ros::fini();
-  delete vac;
+  delete db;
   return 0;
 }
