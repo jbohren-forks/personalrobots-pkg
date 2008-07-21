@@ -1,0 +1,7 @@
+<launch>
+  
+  <!--  <param name="robotdesc/pr2" textfile="$(find robot_desc_files)/pr2.xml" collapse="yes" /> -->
+  
+  <param name="robotdesc/pr2" textfile="/u/isucan/ros/ros-pkg/drivers/robot/pr2/pr2Core/include/pr2Core/pr2.xml" />
+  
+</launch>
