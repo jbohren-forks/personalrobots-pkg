@@ -6,8 +6,9 @@ ESTARDIR= `rospack find estar`/local
 all: $(SRCDIR) $(SRCDIR)/configure $(BUILDDIR)/config.h
 	$(MAKE) -C $(BUILDDIR) install
 
-$(SRCDIR):
-	@ echo "SRCDIR should be handled by svn:externals"
+.PHONY: checkout
+checkout:
+	@ echo "checkout SHOULD be handled by svn:externals"
 	svn co https://libsunflower.svn.sourceforge.net/svnroot/libsunflower/trunk/sunflower
 
 $(SRCDIR)/configure: $(SRCDIR)/configure.ac $(SRCDIR)/bootstrap-buildsystem.sh
