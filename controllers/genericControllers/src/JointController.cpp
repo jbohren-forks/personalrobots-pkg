@@ -35,7 +35,7 @@
 #include <genericControllers/JointController.h>
 #include <iostream>
 #include <sys/time.h>
-
+#define DEFAULTMAXACCEL 5
 //#define DEBUG 1
 //Todo: 
 //1. Get and set params via server
@@ -60,7 +60,6 @@ JointController::JointController( )
   cmdVel = 0;
  
   controlMode = CONTROLLER::CONTROLLER_DISABLED;
-
 }
 
 
@@ -220,6 +219,7 @@ CONTROLLER::CONTROLLER_ERROR_CODE
 JointController::GetTorqueCmd(double *torque)
 {
   *torque = cmdTorque;
+  return CONTROLLER::CONTROLLER_ALL_OK;
 }
 
 //Query motor for actual torque 
@@ -296,13 +296,33 @@ CONTROLLER::CONTROLLER_ERROR_CODE JointController::GetVelAct(double *vel)
 }
 
 
+double JointController::GetMaxVelocity(){
+      double disToMin,disToMax,closestLimit;
+      disToMin = fabs(shortest_angular_distance(joint->position, joint->jointLimitMin));
+      disToMax = fabs(shortest_angular_distance(joint->position, joint->jointLimitMax));
+      closestLimit =  (disToMin<disToMax)?disToMin:disToMax; //min
+      //std::cout<<"Dis to min"<<disToMin<<" Dist to Max"<<disToMax<<" Closest limit"<<closestLimit<<std::endl;
+
+      return sqrt(fabs(closestLimit*maxAccel));
+
+}
+
+//---------------------------------------------------------------------------------//
+//UPDATE CALLS
+//---------------------------------------------------------------------------------//
+
+
 void JointController::Update(void)
 {
   double error(0),time(0),currentTorqueCmd(0);
+  double maxVelocity = cmdVel;
   if(controlMode==CONTROLLER::CONTROLLER_DISABLED)return; //If we're not initialized, don't try to interact
 
   GetTime(&time); //TODO: Replace time with joint->timeStep
-  double  currentVoltageCmd,v_backemf, v_clamp_min,v_clamp_max,k;
+
+
+  double  currentVoltageCmd,v_backemf, v_clamp_min,v_clamp_max,k;      
+
 
   switch (controlMode)
     {
@@ -314,13 +334,20 @@ void JointController::Update(void)
       error = shortest_angular_distance(cmdPos, joint->position); 
       currentTorqueCmd = pidController.UpdatePid(error,time-lastTime);
 #ifdef DEBUG
-      std::cout << "JC:: " << joint->position << ", cmdPos:: " << cmdPos << ", error:: " << error << ", cTC:: " << currentTorqueCmd << std::endl; 
+//      std::cout << "JC:: " << joint->position << ", cmdPos:: " << cmdPos << ", error:: " << error << ", cTC:: " << currentTorqueCmd << std::endl; 
 #endif
       break;
     case CONTROLLER_VELOCITY: //Close the loop around velocity
+      if(capAccel){
+        maxVelocity = GetMaxVelocity(); //Check max velocity coming into wall
+        if(fabs(cmdVel)>maxVelocity){
+           cmdVel = -maxVelocity; //Truncate velocity smoothly
+           //  std::cout<<"*******************"<<cmdVel<<std::endl;
+        }
+      }
       error = joint->velocity - cmdVel;
       currentTorqueCmd = pidController.UpdatePid(error,time-lastTime);
-      // currentTorqueCmd = 0.5;
+           // currentTorqueCmd = 0.5;
       //      printf("JointController.cpp:: error:: %f, dT:: %f \n", error, time-lastTime);
       //idea how to limit the velocity near limit
       //disToMin = shortest_angular_distance(joint->position, joint->jointLimitMin);
@@ -332,9 +359,7 @@ void JointController::Update(void)
       //}      
       break;
     case ETHERDRIVE_SPEED: // Use hack to contol speed in voltage control mode for the etherdrive
-#ifdef DEBUG
       printf("JC:: %f\n",cmdVel);
-#endif
       currentVoltageCmd = cmdVel*20*60/(136*2*M_PI); 
       v_backemf = joint->velocity*20*60/(136*2*M_PI);
 
@@ -342,9 +367,9 @@ void JointController::Update(void)
       v_clamp_max = v_backemf + 3;//0.655*16.7;
 
       k = 1.0/ 36.0;
-#ifdef DEBUG
+
       printf("JC::%f\t%f\t%f\n", v_clamp_min, currentVoltageCmd, v_clamp_max);
-#endif
+
       if (currentVoltageCmd > v_clamp_max)
 	currentVoltageCmd = v_clamp_max;
 
@@ -420,10 +445,11 @@ double JointController::SafelySetTorqueInternal(double torque)
     SaturationFlag = false;
   }
 
+  
   //Set torque command 
-#ifdef DEBUG
+  #ifdef DEBUG
   printf("JC:: torque:: %f,%f\n",torque,newTorque);
-#endif
+  #endif
   joint->commandedEffort = newTorque; 
   return newTorque;
 }

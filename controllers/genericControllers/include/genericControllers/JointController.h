@@ -76,6 +76,7 @@
 #include <math_utils/angles.h>
 #include <mechanism_model/joint.h>
 #include <string>
+#include <math.h>
 
 using namespace mechanism;
 
@@ -255,6 +256,12 @@ namespace CONTROLLER
         * \param double* vel Pointer to value to change
         */
       CONTROLLER::CONTROLLER_ERROR_CODE GetVelAct(double *vel);
+ 
+      /*!
+        * \brief Compute max velocity coming into the end stop to stop with linear velocity in endstop.
+        *
+        */
+        double GetMaxVelocity(void);
 
 //---------------------------------------------------------------------------------//
 //UPDATE CALLS
@@ -312,6 +319,8 @@ namespace CONTROLLER
       CONTROLLER::CONTROLLER_ERROR_CODE GetParam(std::string label, double* value);
       //CONTROLLER::CONTROLLER_ERROR_CODE GetParam(std::string label, std::string value);
 
+      bool capAccel;  /*!<Flag to indicate whether we should cap acceleration.>*/
+      double maxAccel; /*!<Maximum allowed acceleration/deceleration.>*/
     private:
 
 //---------------------------------------------------------------------------------//
@@ -336,32 +345,32 @@ namespace CONTROLLER
 //---------------------------------------------------------------------------------//
 
       //Command parameters
-      double cmdTorque;/*!< Last commanded torque*/
-      double cmdPos;/*!< Last commanded position */
-      double cmdVel;/*!< Last commanded Velocity */
+      double cmdTorque;/*!< Last commanded torque>*/
+      double cmdPos;/*!< Last commanded position> */
+      double cmdVel;/*!< Last commanded Velocity> */
 
 //---------------------------------------------------------------------------------//
 // Mode flags/parameters
 //---------------------------------------------------------------------------------//
 
-      bool SaturationFlag; /*!< Flag to indicate last command exceed torque limits and was truncated*/  
+      bool SaturationFlag; /*!< Flag to indicate last command exceed torque limits and was truncated>*/  
       bool enabled; /*!<Can controller issue commands?>*/
-      CONTROLLER::CONTROLLER_CONTROL_MODE controlMode;    /*!< Indicate current controller mode (torque, position, velocity)*/  
+      CONTROLLER::CONTROLLER_CONTROL_MODE controlMode;    /*!< Indicate current controller mode (torque, position, velocity)>*/  
 
 //---------------------------------------------------------------------------------//
 //TEMPORARY: To be replaced by calls to param server
 //---------------------------------------------------------------------------------//
 
-      double PGain; /*!< Proportional gain*/
-      double IGain;/*!< Integral gain */
-      double DGain;/*!< Derivative gain */
-      double IMax;/*!< Upper integral clamp */
-      double IMin;/*!< Lower integral clamp */
+      double PGain; /*!< Proportional gain>*/
+      double IGain;/*!< Integral gain >*/
+      double DGain;/*!< Derivative gain> */
+      double IMax;/*!< Upper integral clamp> */
+      double IMin;/*!< Lower integral clamp> */
 
-      double maxPositiveTorque; /*!<Temporary (until param server) : local copy of max Positive Torque.*/
-      double maxNegativeTorque; /*!<Temporary (until param server): local copy of max neg torque .*/
-      double maxEffort; /*!<Temporary (until param server): local copy of max possible commanded effort.*/
+      double maxPositiveTorque; /*!<Temporary (until param server) : local copy of max Positive Torque.>*/
+      double maxNegativeTorque; /*!<Temporary (until param server): local copy of max neg torque .>*/
+      double maxEffort; /*!<Temporary (until param server): local copy of max possible commanded effort.>*/
 
-      double dt; /*!<Timestep amount. */
+      double dt; /*!<Timestep amount. >*/
        };
 }
