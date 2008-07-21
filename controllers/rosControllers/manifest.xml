@@ -14,7 +14,6 @@
   <depend package="libKDL" />
   <depend package="robot_mechanism_model" />
   <export>
-    <!-- Hack to get the message in the path--->
     <cpp cflags="-I${prefix}/msg/cpp/ -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrosControllers"/>
   </export>
 </package>

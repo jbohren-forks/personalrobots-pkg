@@ -78,11 +78,11 @@ RosJointController::update()
   jointStateMsg.JointName = mJointName;
   // FIXME: does this function change the state of the controller?
   jointStateMsg.Saturated = jc->CheckForSaturation();
-  jc->GetParam("PGain", &(jointStateMsg.PGain));
-  jc->GetParam("IGain", &(jointStateMsg.IGain));
-  jc->GetParam("DGain", &(jointStateMsg.DGain));
-  jc->GetParam("IMax", &(jointStateMsg.IMax));
-  jc->GetParam("IMin", &(jointStateMsg.IMin));
+  jc->GetParam(std::string("PGain"), &(jointStateMsg.PGain));
+//   jc->GetParam("IGain", &(jointStateMsg.IGain));
+//   jc->GetParam("DGain", &(jointStateMsg.DGain));
+//   jc->GetParam("IMax", &(jointStateMsg.IMax));
+//   jc->GetParam("IMin", &(jointStateMsg.IMin));
   //TODO: add Time, SaturationEffort, MaxEffort from the joint
   
   //The commands:
