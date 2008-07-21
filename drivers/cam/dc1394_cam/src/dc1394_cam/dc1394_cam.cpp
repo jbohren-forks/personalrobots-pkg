@@ -41,47 +41,34 @@ fd_set dc1394_cam::Cam::camFds;
 
 void
 dc1394_cam::init() {
-  Cam::init();
-}
-
-void
-dc1394_cam::Cam::init() {
-  if (dcRef == NULL)
+  if (dc1394_cam::Cam::dcRef == NULL)
   {
-    dcRef = dc1394_new();
-    FD_ZERO(&camFds);
+    dc1394_cam::Cam::dcRef = dc1394_new();
+    FD_ZERO(&Cam::camFds);
   }
 }
-
 
 
 void
 dc1394_cam::fini()
 {
-  Cam::fini();
-}
-
-void
-dc1394_cam::Cam::fini()
-{
-  if (dcRef != NULL)
+  if (dc1394_cam::Cam::dcRef != NULL)
   {
-    dc1394_free(dcRef);
+    dc1394_free(dc1394_cam::Cam::dcRef);
   }
 }
 
 
-
 size_t dc1394_cam::numCams()
 {
-  return Cam::numCams();
-}
-
-size_t dc1394_cam::Cam::numCams() {
-  CHECK_READY();
+  if (!dc1394_cam::Cam::dcRef) {
+    char msg[256];
+    snprintf(msg, 256, "Tried to call %s before calling dc1394_cam::Cam::init()", __FUNCTION__);
+    throw CamException(msg);
+  }
 
   dc1394camera_list_t * list;
-  CHECK_ERR( dc1394_camera_enumerate(dcRef, &list), "Could not enumerate cameras" );
+  CHECK_ERR( dc1394_camera_enumerate(dc1394_cam::Cam::dcRef, &list), "Could not enumerate cameras" );
 
   size_t num = list->num;
 
@@ -93,15 +80,14 @@ size_t dc1394_cam::Cam::numCams() {
 
 uint64_t dc1394_cam::getGuid(size_t i)
 {
-  return Cam::getGuid(i);
-}
-
-uint64_t dc1394_cam::Cam::getGuid(size_t i)
-{
-  CHECK_READY();
+  if (!dc1394_cam::Cam::dcRef) {
+    char msg[256];
+    snprintf(msg, 256, "Tried to call %s before calling dc1394_cam::Cam::init()", __FUNCTION__);
+    throw CamException(msg);
+  }
 
   dc1394camera_list_t * list;
-  CHECK_ERR( dc1394_camera_enumerate(dcRef, &list), "Could not enumerate cameras" );
+  CHECK_ERR( dc1394_camera_enumerate(dc1394_cam::Cam::dcRef, &list), "Could not enumerate cameras" );
 
   if (i > list->num)
     throw CamException("Tried to get Guid of non-existant camera");
@@ -113,19 +99,14 @@ uint64_t dc1394_cam::Cam::getGuid(size_t i)
   return guid;
 }
 
+
 bool dc1394_cam::waitForData(int usec)
 {
-  return Cam::waitForData(usec);
-}
-
-bool
-dc1394_cam::Cam::waitForData(int usec)
-{
   struct timeval timeout;
-  timeout.tv_sec = 0;     // If you want to sleep long than a second, you're probably doing something bad...
+  timeout.tv_sec = 0;     // If you want to sleep longer than a second, you're probably doing something bad...
   timeout.tv_usec = usec;
 
-  fd_set fds = camFds;
+  fd_set fds = dc1394_cam::Cam::camFds;
 
   int retval = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
   
@@ -139,7 +120,6 @@ dc1394_cam::Cam::waitForData(int usec)
 
   return true;
 }
-
 
 dc1394_cam::Cam::Cam(uint64_t guid, 
                      dc1394speed_t speed, 
@@ -209,17 +189,38 @@ dc1394_cam::Cam::getFrame(dc1394capture_policy_t policy)
 
     dc1394video_frame_t* f;
     CHECK_ERR_CLEAN( dc1394_capture_dequeue(dcCam, policy, &f), "Could not capture frame");
+
     return f;
 }
-
 
 void
 dc1394_cam::Cam::releaseFrame(dc1394video_frame_t* f)
 {
     CHECK_READY();
-    CHECK_ERR_CLEAN( dc1394_capture_enqueue(dcCam, f), "Could not releaseframe");
+    CHECK_ERR_CLEAN( dc1394_capture_enqueue(dcCam, f), "Could not release frame");
 }
 
+
+dc1394video_frame_t* 
+dc1394_cam::Cam::debayerFrame(dc1394video_frame_t* f, dc1394color_filter_t bayer, dc1394bayer_method_t method)
+{
+  CHECK_READY();
+
+  dc1394video_frame_t* f2 = (dc1394video_frame_t*)calloc(1,sizeof(dc1394video_frame_t));
+  f->color_filter = bayer;
+
+  CHECK_ERR_CLEAN( dc1394_debayer_frames(f, f2, DC1394_BAYER_METHOD_BILINEAR), "Debayering failed");
+
+  return f2;
+}
+
+
+void
+dc1394_cam::Cam::freeFrame(dc1394video_frame_t* f)
+{  
+  free(f->image);
+  free(f);
+}
 
 
 void

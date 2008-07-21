@@ -86,24 +86,19 @@ namespace dc1394_cam
 
   class Cam
   {
-  private:
+    friend void init();
+    friend void fini();
+    friend size_t numCams();
+    friend uint64_t getGuid(size_t i);
+    friend bool waitForData(int usec);
+
+  protected:
     static dc1394_t* dcRef;
     static fd_set camFds;
 
     void cleanup();
-    bool started;
 
   public:
-
-    static void init();
-
-    static void fini();
-
-    static size_t numCams();
-
-    static uint64_t getGuid(size_t i);
-
-    static bool waitForData(int usec);
 
     Cam(uint64_t guid,
         dc1394speed_t speed = DC1394_ISO_SPEED_400,
@@ -121,6 +116,10 @@ namespace dc1394_cam
 
     void releaseFrame(dc1394video_frame_t* f);
 
+    dc1394video_frame_t* debayerFrame(dc1394video_frame_t* f, dc1394color_filter_t bayer, dc1394bayer_method_t method = DC1394_BAYER_METHOD_BILINEAR);
+
+    void freeFrame(dc1394video_frame_t* f);
+
     void setFeature(dc1394feature_t feature, uint32_t value);
 
     void setFeatureAbsolute(dc1394feature_t feature, float value);
@@ -130,6 +129,7 @@ namespace dc1394_cam
     void setControlRegister(uint64_t offset, uint32_t value);
     uint32_t getControlRegister(uint64_t offset);
 
+    bool started;
     dc1394camera_t* dcCam;
 
 

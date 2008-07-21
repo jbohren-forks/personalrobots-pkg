@@ -68,6 +68,7 @@ public:
   double Cy;
   double Tx;
   double f;
+  std_msgs::Image img;
   NEWMAT::Matrix lproj;
   NEWMAT::Matrix rproj;
   std_msgs::PointCloudFloat32 cloud;
@@ -90,10 +91,9 @@ public:
 
   string name;
   dc1394_cam::Cam* cam;
-  std_msgs::Image img1;
-  std_msgs::Image img2;
-  dc1394color_filter_t bayer;
+  std_msgs::Image img;
   bool colorize;
+  dc1394color_filter_t bayer;
   CamTypes  camType;
   OtherData* otherData;
 };
@@ -106,7 +106,6 @@ public:
   list<CamData> cams;
   
   int count;
-
 
   void checkAndSetFeature(CamData& cd, string paramName, dc1394feature_t feature)
   {
@@ -409,15 +408,15 @@ public:
           advertise<std_msgs::PointCloudFloat32>(cd.name + string("/cloud"));
           advertise<std_msgs::Empty>(cd.name + string("/shutter"));
           advertise<std_msgs::Image>(cd.name + string("/ldisparity"));
-          advertise<std_msgs::Image>(cd.name + string("/rimage"));          
+          advertise<std_msgs::Image>(cd.name + string("/limage"));          
           break;
         case 5:
           advertise<std_msgs::Image>(cd.name + string("/ldisparity"));
-          advertise<std_msgs::Image>(cd.name + string("/rimage"));
+          advertise<std_msgs::Image>(cd.name + string("/limage"));
           break;
         default:
-          advertise<std_msgs::Image>(cd.name + string("/limage"));
           advertise<std_msgs::Image>(cd.name + string("/rimage"));
+          advertise<std_msgs::Image>(cd.name + string("/limage"));
         }
       } else {
         advertise<std_msgs::Image>(cd.name + string("/image"));
@@ -458,12 +457,8 @@ public:
 
         if (c->colorize)
         {
-          frame = (dc1394video_frame_t*)calloc(1,sizeof(dc1394video_frame_t));
-          in_frame->color_filter = c->bayer;
-
-          if (dc1394_debayer_frames(in_frame, frame, DC1394_BAYER_METHOD_BILINEAR) != DC1394_SUCCESS)
-            printf("Debayering failed!\n");
-        } else if (c->camType == VIDERE) {
+          frame = c->cam->debayerFrame(in_frame, c->bayer);
+        } else if (c->camType == VIDERE) {  // THIS IS HACK TO avoid frame being set equal to in_frame again...
           frame = (dc1394video_frame_t*)calloc(1,sizeof(dc1394video_frame_t));
 
           dc1394_deinterlace_stereo_frames(in_frame, frame, DC1394_STEREO_METHOD_INTERLACED);
@@ -480,21 +475,21 @@ public:
           uint32_t height   = frame->size[1]/2;
           uint32_t buf_size = width*height;
         
-          c->img1.width = width;
-          c->img1.height = height;
-          c->img1.colorspace = "mono8";
-          c->img1.compression = "raw";
+          c->img.width = width;
+          c->img.height = height;
+          c->img.colorspace = "mono8";
+          c->img.compression = "raw";
 
-          c->img2.width = width;
-          c->img2.height = height;
-          c->img2.colorspace = "mono8";
-          c->img2.compression = "raw";
+          v->img.width = width;
+          v->img.height = height;
+          v->img.colorspace = "mono8";
+          v->img.compression = "raw";
 
-          c->img1.set_data_size(buf_size);
-          memcpy(c->img1.data, buf, buf_size);
+          c->img.set_data_size(buf_size);
+          memcpy(c->img.data, buf, buf_size);
 
-          c->img2.set_data_size(buf_size);
-          memcpy(c->img2.data, buf + buf_size, buf_size);
+          v->img.set_data_size(buf_size);
+          memcpy(v->img.data, buf + buf_size, buf_size);
 
           switch (v->mode)
           {
@@ -518,17 +513,11 @@ public:
                 double Y = v->Tx * ( (double)(i / width) - v->Cy ) / ((double)(buf[i]) / 4.0);
                 double Z = v->Tx * ( v->f ) / ((double)(buf[i]) / 4.0);
 
-                int pu = v->f*X/Z + v->Cx;
-                //int pu = v->f*(X - v->Tx)/Z + v->Cx;
-                int pv = v->f*Y/Z + v->Cy;
-
                 v->cloud.pts[j].y = - X;
                 v->cloud.pts[j].z = - Y;
                 v->cloud.pts[j].x = Z;
 
-                v->cloud.chan[0].vals[j] = buf[buf_size + pv*width + pu];// * 16;
-                //                printf("Point with disparity: %d has depth: %f and coords %d %d to intensity: %f\n", buf[i], v->cloud.pts[j].x, pu, pv, v->cloud.chan[0].vals[j]);
-                
+                v->cloud.chan[0].vals[j] = buf[buf_size + i];
                 j++;
               }
 
@@ -536,17 +525,17 @@ public:
             publish(c->name + string("/cloud"), v->cloud);
             publish(c->name + string("/shutter"), e);
 
-            publish(c->name + string("/ldisparity"), c->img1);
-            publish(c->name + string("/rimage"), c->img2);
+            publish(c->name + string("/ldisparity"), c->img);
+            publish(c->name + string("/limage"), v->img);
             }
             break;
           case 5:
-            publish(c->name + string("/ldisparity"), c->img1);
-            publish(c->name + string("/rimage"), c->img2);
+            publish(c->name + string("/ldisparity"), c->img);
+            publish(c->name + string("/limage"), v->img);
             break;
           default:
-            publish(c->name + string("/limage"), c->img1);
-            publish(c->name + string("/rimage"), c->img2);
+            publish(c->name + string("/rimage"), c->img);
+            publish(c->name + string("/limage"), v->img);
           }
         } else {
 
@@ -555,31 +544,34 @@ public:
           uint32_t height   = frame->size[1];
           uint32_t buf_size = width*height;
         
-          c->img1.width = width;
-          c->img1.height = height;
-          c->img1.compression = "raw";
+          c->img.width = width;
+          c->img.height = height;
+          c->img.compression = "raw";
 
           if (frame->color_coding == DC1394_COLOR_CODING_RGB8)
           {
-            c->img1.colorspace = "rgb24";
+            c->img.colorspace = "rgb24";
             buf_size *= 3;
           } else {
-            c->img1.colorspace = "mono8";
+            c->img.colorspace = "mono8";
           }
 
-          c->img1.set_data_size(buf_size);
-          memcpy(c->img1.data, buf, buf_size);
+          c->img.set_data_size(buf_size);
+          memcpy(c->img.data, buf, buf_size);
 
-          publish(c->name + string("/image"), c->img1);
+          publish(c->name + string("/image"), c->img);
 
         }
 
-        if (c->colorize || c->camType == VIDERE) {
+        if (c->camType == VIDERE) {
           free(frame->image);
           free(frame);
         }
 
         c->cam->releaseFrame(in_frame);
+
+        if (c->colorize)
+          c->cam->freeFrame(frame);
 
         count++;
 
@@ -597,34 +589,6 @@ public:
 
   }
   
-  /*
-  bool get_and_send_jpeg() 
-  {
-    const uint8_t *buf;
-    uint32_t buf_size;
-    flea2.get_jpeg(&buf, &buf_size);
-
-    img.width = flea2.cam.frame_width;
-    img.height = flea2.cam.frame_height;
-    img.compression = "jpeg";
-    img.colorspace = "mono8";
-    img.set_data_size(buf_size);
-    memcpy(img.data, buf, buf_size);
-
-
-    count++;
-    ros::Time now_time = ros::Time::now();
-    if (now_time > next_time) {
-      std::cout << count << " imgs/sec at " << now_time << std::endl;
-      count = 0;
-      next_time = next_time + ros::Duration(1,0);
-    }
-
-    publish("image", img);
-    return true;
-  }
-  */
-
 };
 
 int main(int argc, char **argv)
