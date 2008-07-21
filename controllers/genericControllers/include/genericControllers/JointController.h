@@ -318,6 +318,9 @@ namespace CONTROLLER
         */
       CONTROLLER::CONTROLLER_ERROR_CODE GetParam(std::string label, double* value);
       //CONTROLLER::CONTROLLER_ERROR_CODE GetParam(std::string label, std::string value);
+      
+      std::string name(void) const { return jointName; }
+      void setName( const std::string & name ) { jointName = name; }
 
       bool capAccel;  /*!<Flag to indicate whether we should cap acceleration.>*/
       double maxAccel; /*!<Maximum allowed acceleration/deceleration.>*/
