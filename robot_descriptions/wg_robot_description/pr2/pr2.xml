@@ -811,16 +811,6 @@
   <include>actuators.xml</include>
   
   <!-- Define groups of links; a link may be part of multiple groups -->
-  <group name="wheels" flags="some flag">
-    wheel_front_left_l
-    wheel_front_left_r
-    wheel_front_right_l
-    wheel_front_right_r
-    wheel_rear_left_l
-    wheel_rear_left_r
-    wheel_rear_right_l
-    wheel_rear_right_r    
-  </group>
 
   <group name="leftArm">
     shoulder_pan_left
