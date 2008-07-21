@@ -158,25 +158,20 @@ class CleanBehavior extends Behavior {
  * Declare high-level tasks for execution here. We use a singlet timeline for
  * all such tasks, restricting them to be mutually exclusive.
  */
-class TaskTimeline extends AgentTimeline {
-
-  /**
-   * By default it will be inactive
-   */
-  predicate Inactive{}
+class HandWave extends Behavior {
 
   /**
    * A trivial task to handwave at a fixed position
    */
-  predicate HandWave{
+  predicate Active{
     PFLOAT x;
     PFLOAT y;
     float th;
     PRIORITY priority; // 0 is highest priority
   }
 
-  TaskTimeline(Mode _mode){
-    super(_mode, "Inactive");
+  HandWave(Mode _mode){
+    super(_mode);
   }
 };
 
@@ -254,6 +249,23 @@ class ArmController extends AgentTimeline {
   ArmController(Mode _mode, bool isLeft){
     super(_mode, "Inactive");
     _isLeft = isLeft;
+  }
+};
+
+/**
+ * GraspController will grasp an object given by a position, and orientation
+ */
+class GraspController extends AgentTimeline {
+  
+  predicate Inactive{
+    int objectId; // Identifier of object in the world model. 0 if
+  }
+
+  predicate Active {
+  }
+  
+  GraspController(Mode _mode){
+    super(_mode, "Inactive");
   }
 };
  

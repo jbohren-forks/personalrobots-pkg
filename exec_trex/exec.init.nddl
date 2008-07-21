@@ -2,7 +2,7 @@
 
 // Internal Timelines
 CleanBehavior clean = new CleanBehavior(Internal);
-TaskTimeline tasks = new TaskTimeline(Internal);
+HandWave handwave = new HandWave(Internal);
 
 // External Timelines
 WaypointController wpc = new WaypointController(External);

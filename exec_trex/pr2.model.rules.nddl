@@ -321,7 +321,7 @@ WaypointController::Active {
 }
 
 
-TaskTimeline::HandWave{
+HandWave::Active{
   // Be at the desired location if specified. Do not be moving. If no location specified
   // then the location will be unconstrained, but we will still be required to be stationary
   contained_by(WaypointController.Inactive wp);
