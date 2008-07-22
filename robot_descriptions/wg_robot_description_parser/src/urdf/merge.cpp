@@ -80,8 +80,11 @@ private:
 	
 	std::string name = filename;
 	std::string::size_type pos = name.find_last_of('/');
-	name.erase(pos);
-	m_paths.push_back(name + '/');
+	if (pos != std::string::npos)
+	{
+	    name.erase(pos);
+	    m_paths.push_back(name + '/');
+	}	
     }
 
     char* findFile(const char *filename)

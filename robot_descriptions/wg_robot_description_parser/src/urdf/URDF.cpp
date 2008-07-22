@@ -453,8 +453,11 @@ void robot_desc::URDF::addPath(const char *filename)
     
     std::string name = filename;
     std::string::size_type pos = name.find_last_of(PATH_SEPARATOR);
-    name.erase(pos);
-    m_paths.push_back(name + PATH_SEPARATOR);
+    if (pos != std::string::npos)
+    {
+	name.erase(pos);
+	m_paths.push_back(name + PATH_SEPARATOR);
+    }    
 }
 
 char* robot_desc::URDF::findFile(const char *filename)
