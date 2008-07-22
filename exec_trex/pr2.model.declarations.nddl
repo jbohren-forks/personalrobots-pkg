@@ -83,6 +83,8 @@ class BaseGoal extends AgentTimeline {
  * Timeline structure for End Effector state
  */
 class EndEffectorState extends AgentTimeline {
+  bool isLeft;
+
   predicate Holds{
     float rot1_1;
     float rot1_2;
@@ -98,8 +100,9 @@ class EndEffectorState extends AgentTimeline {
     float z;
   }
 
-  EndEffectorState(Mode _mode){
+  EndEffectorState(Mode _mode, bool _isLeft){
     super(_mode, "Holds");
+    isLeft = _isLeft;
   }
 }
 
@@ -108,6 +111,8 @@ class EndEffectorState extends AgentTimeline {
  * A PR2 state variable for commanded end effector positions
  */
 class EndEffectorGoal extends AgentTimeline {
+
+  bool isLeft;
 
   predicate Holds {
     float cmd_rot1_1;
@@ -124,11 +129,36 @@ class EndEffectorGoal extends AgentTimeline {
     float cmd_z;
   }
 
-  EndEffectorGoal(Mode _mode){
+  EndEffectorGoal(Mode _mode, bool _isLeft){
     super(_mode);
+    isLeft = _isLeft;
   }
 }
 
+/**
+ * ArmState will capture position and orientation.
+ */
+class ArmState extends AgentTimeline {
+
+  bool isLeft; // true if the left arm
+
+  predicate Holds{
+    float acTurretAngle;
+    float acShoulderLiftAngle;
+    float acUpperarmRollAngle;
+    float acElbowAngle;
+    float acForearmRollAngle;
+    float acWristPitchAngle;
+    float acWristRollAngle;
+    float acGripperForceCmd;
+    float acGripperGapCmd;
+  }
+
+  ArmState(Mode _mode, bool _isLeft){
+    super(_mode, "Holds");
+    isLeft = _isLeft;
+  }
+};
 
 /**
  * Encapsulate Behaviors that have a state of active or inactive
@@ -283,7 +313,7 @@ class Actions extends AgentActions{
 
 class MoveArm extends AgentTimeline {
 
-  bool _isLeft;
+  bool isLeft;
   
   predicate Inactive{
     float acTurretAngle;
@@ -319,9 +349,9 @@ class MoveArm extends AgentTimeline {
     float gripperGapCmd;
   }
   
-  MoveArm(Mode _mode, bool isLeft){
+  MoveArm(Mode _mode, bool _isLeft){
     super(_mode, "Inactive");
-    _isLeft = isLeft;
+    isLeft = _isLeft;
   }
 };
 
@@ -330,7 +360,7 @@ class MoveArm extends AgentTimeline {
  */
 class  MoveEndEffector extends Behavior {
 
-  bool _isLeft;
+  bool isLeft;
 
   predicate Inactive{
     float ac_rot1_1;
@@ -374,8 +404,8 @@ class  MoveEndEffector extends Behavior {
     float z;
   }
   
-  MoveEndEffector(Mode _mode, bool isLeft){
+  MoveEndEffector(Mode _mode, bool _isLeft){
     super(_mode);
-    _isLeft = isLeft;
+    isLeft = _isLeft;
   }
 };

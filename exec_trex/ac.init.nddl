@@ -6,37 +6,24 @@
 #include "pr2.model.nddl"
 
 // Internal Timelines
-MoveArm moveRightArm = new MoveArm(Internal, false);
-MoveArm moveLeftArm = new MoveArm(Internal, true);
+MoveEndEffector moveRightEndEffector = new MoveEndEffector(Internal, false);
+MoveEndEffector moveLeftEndEffector = new MoveEndEffector(Internal, true);
+
+// External timelines for arm state and controller
+MoveArm moveRightArm = new MoveArm(External, false);
+MoveArm moveLeftArm = new MoveArm(External, true);
+ArmState rightArmState = new ArmState(External, false);
+ArmState leftArmState = new ArmState(External, true);
+
+// Acternal timelines for end effector state and goal
+EndEffectorState rightEndEffectorState = new EndEffectorState(External, false);
+EndEffectorGoal rightEndEffectorGoal = new EndEffectorGoal(External, false);
+EndEffectorState leftEndEffectorState = new EndEffectorState(External, true);
+EndEffectorGoal leftEndEffectorGoal = new EndEffectorGoal(External, true);
 
 // Actions
 Actions actions = new Actions();
 
 // Ignored Timelines
-MoveBase moveBase = new MoveBase(Ignore);
 
 close();
-
-// initial conditions for arms
-fact(moveRightArm.Inactive rightArm);
-fact(moveLeftArm.Inactive leftArm);
-
-eq(rightArm.desTurretAngle,0.0);
-eq(rightArm.desShoulderLiftAngle,0.0);
-eq(rightArm.desUpperarmRollAngle,0.0);
-eq(rightArm.desElbowAngle,0.0);
-eq(rightArm.desForearmRollAngle,0.0);
-eq(rightArm.desWristPitchAngle,0.0);
-eq(rightArm.desWristRollAngle,0.0);
-eq(rightArm.desGripperForceCmd,0.0);
-eq(rightArm.desGripperGapCmd,0.0);
-
-eq(leftArm.desTurretAngle,0.0);
-eq(leftArm.desShoulderLiftAngle,0.0);
-eq(leftArm.desUpperarmRollAngle,0.0);
-eq(leftArm.desElbowAngle,0.0);
-eq(leftArm.desForearmRollAngle,0.0);
-eq(leftArm.desWristPitchAngle,0.0);
-eq(leftArm.desWristRollAngle,0.0);
-eq(leftArm.desGripperForceCmd,0.0);
-eq(leftArm.desGripperGapCmd,0.0);

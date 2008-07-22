@@ -33,12 +33,15 @@ if ! $(exec_trex_READY) {
 		wpc.0.exec.nddl
 		wpc.0.wpc.nddl
 		wpc.0.ac.nddl
+		wpc.0.sim.nddl
 		wpc.1.exec.nddl
 		wpc.1.wpc.nddl
 		wpc.1.ac.nddl
+		wpc.1.sim.nddl
 		handwave.exec.nddl
 		handwave.wpc.nddl
 		handwave.ac.nddl
+		handwave.sim.nddl
 	;
 
 	local file ;

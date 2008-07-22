@@ -81,11 +81,11 @@ CleanBehavior::Active{
   s_racs before grip_racs;
   //f_lacs before s_lacs;
 
-  eq(f_racs.object._isLeft, false);
-  eq(s_racs.object._isLeft, false);
-  eq(grip_racs.object._isLeft, false);
-  //eq(f_lacs.object._isLeft, true);
-  //eq(s_lacs.object._isLeft, true);
+  eq(f_racs.object.isLeft, false);
+  eq(s_racs.object.isLeft, false);
+  eq(grip_racs.object.isLeft, false);
+  //eq(f_lacs.object.isLeft, true);
+  //eq(s_lacs.object.isLeft, true);
 
   eq(f_racs.desTurretAngle,.1);
   eq(f_racs.desShoulderLiftAngle,-1);
@@ -257,8 +257,8 @@ MoveBase::Active {
   contained_by(MoveArm.Inactive f_racs);
   contained_by(MoveArm.Inactive f_lacs);
 
-  eq(f_racs.object._isLeft, false);
-  eq(f_lacs.object._isLeft, true);
+  eq(f_racs.object.isLeft, false);
+  eq(f_lacs.object.isLeft, true);
 
 //   eq(f_racs.desTurretAngle,-.9);
 //   eq(f_racs.desShoulderLiftAngle,1.22);
@@ -332,8 +332,8 @@ HandWave::Active{
   contains(MoveArm.Inactive right);
   contains(MoveArm.Inactive left);
  
-  eq(right.object._isLeft, false);
-  eq(left.object._isLeft, true);
+  eq(right.object.isLeft, false);
+  eq(left.object.isLeft, true);
 
   eq(right.desTurretAngle,.1);
   eq(right.desShoulderLiftAngle,-1);
@@ -462,21 +462,21 @@ MoveEndEffector::Inactive{
   addEq(ac_x, [-0.1, 0.1], des_x);
   addEq(ac_y, [-0.1, 0.1], des_y);
   addEq(ac_z, [-0.1, 0.1], des_z);
-  addEq(ac_rot_1_1, [-0.1, 0.1], des_rot1_1);
-  addEq(ac_rot_1_2, [-0.1, 0.1], des_rot1_2);
-  addEq(ac_rot_1_3, [-0.1, 0.1], des_rot1_3);
-  addEq(ac_rot_2_1, [-0.1, 0.1], des_rot2_1);
-  addEq(ac_rot_2_2, [-0.1, 0.1], des_rot2_2);
-  addEq(ac_rot_2_3, [-0.1, 0.1], des_rot2_3);
-  addEq(ac_rot_3_1, [-0.1, 0.1], des_rot3_1);
-  addEq(ac_rot_3_2, [-0.1, 0.1], des_rot3_2);
-  addEq(ac_rot_3_3, [-0.1, 0.1], des_rot3_3);
+  addEq(ac_rot1_1, [-0.1, 0.1], des_rot1_1);
+  addEq(ac_rot1_2, [-0.1, 0.1], des_rot1_2);
+  addEq(ac_rot1_3, [-0.1, 0.1], des_rot1_3);
+  addEq(ac_rot2_1, [-0.1, 0.1], des_rot2_1);
+  addEq(ac_rot2_2, [-0.1, 0.1], des_rot2_2);
+  addEq(ac_rot2_3, [-0.1, 0.1], des_rot2_3);
+  addEq(ac_rot3_1, [-0.1, 0.1], des_rot3_1);
+  addEq(ac_rot3_2, [-0.1, 0.1], des_rot3_2);
+  addEq(ac_rot3_3, [-0.1, 0.1], des_rot3_3);
 
   // We will bind  values based on vehicle state timeline. We wait till the start time
   // is bound before linking in to the vehicle state.
   if(start){
     starts(EndEffectorState.Holds pos);
-    eq(pos.object._isLeft,object._isLeft);
+    eq(pos.object.isLeft,object.isLeft);
     eq(ac_x, pos.x);
     eq(ac_y, pos.y);
     eq(ac_z, pos.z);
@@ -496,7 +496,7 @@ MoveEndEffector::Active {
   if(object.mode == Internal) {
     // Generate an action to get to the goal position. This will be iterative
     contains(Actions.SetEndEffectorGoal a);
-    eq(a.isLeft, object._isLeft);
+    eq(a.isLeft, object.isLeft);
     eq(a.x, x);
     eq(a.y, y);
     eq(a.z, z);
@@ -554,7 +554,7 @@ Actions::SetEndEffectorGoal{
 
   if(done == true){
     ends(MoveEndEffector.Active m);
-    eq(m.object._isLeft, isLeft);
+    eq(m.object.isLeft, isLeft);
     eq(x, m.x);
     eq(y, m.y);
     eq(z, m.z); 
