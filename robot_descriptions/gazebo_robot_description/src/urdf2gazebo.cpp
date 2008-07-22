@@ -26,6 +26,14 @@ double rad2deg(double v)
     return v * 180.0 / M_PI;
 }
 
+void addKeyValue(TiXmlElement *elem, const std::string& key, const std::string &value)
+{
+    TiXmlElement *ekey      = new TiXmlElement(key);
+    TiXmlText    *text_ekey = new TiXmlText(value);
+    ekey->LinkEndChild(text_ekey);    
+    elem->LinkEndChild(ekey); 
+}
+
 void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
 {
     TiXmlDeclaration *decl = new TiXmlDeclaration("1.0", "", "");
@@ -43,15 +51,9 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
     doc.LinkEndChild(root);
     
     /* set the transform for the whole model to identity */
-    TiXmlElement *xyz      = new TiXmlElement("xyz");
-    TiXmlText    *text_xyz = new TiXmlText("0 0 0");
-    xyz->LinkEndChild(text_xyz);    
-    root->LinkEndChild(xyz);
-    TiXmlElement *rpy = new TiXmlElement("rpy");
-    TiXmlText    *text_rpy = new TiXmlText("0 0 0");
-    rpy->LinkEndChild(text_rpy);
-    root->LinkEndChild(rpy);    
-
+    addKeyValue(root, "xyz", "0 0 0");
+    addKeyValue(root, "rpy", "0 0 0");
+    
     std::vector<robot_desc::URDF::Link*> links;
     wgxml.getLinks(links);
     
@@ -86,17 +88,9 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
 	    /* set body name */
 	    elem->SetAttribute("name", links[i]->name);
 	    
-	    /* set translation */
-	    TiXmlElement *xyz      = new TiXmlElement("xyz");
-	    TiXmlText    *text_xyz = new TiXmlText(values2str(3, links[i]->xyz));
-	    xyz->LinkEndChild(text_xyz);    
-	    elem->LinkEndChild(xyz);
-
-	    /* set rotation */
-	    TiXmlElement *rpy      = new TiXmlElement("rpy");
-	    TiXmlText    *text_rpy = new TiXmlText(values2str(3, links[i]->rpy, rad2deg));
-	    rpy->LinkEndChild(text_rpy);    
-	    elem->LinkEndChild(rpy);	    
+	    /* set transform */
+	    addKeyValue(elem, "xyz", values2str(3, links[i]->xyz));
+	    addKeyValue(elem, "rpy", values2str(3, links[i]->rpy, rad2deg));
 	    
 	    /* create geometry node */
 	    TiXmlElement *geom     = new TiXmlElement("geom:" + type);
@@ -104,61 +98,29 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
 	    {		
 		/* set its name */
 		geom->SetAttribute("name", links[i]->collision->geometry->name);
-		
-		/* set geometry translation */
-		TiXmlElement *xyz      = new TiXmlElement("xyz");
-		TiXmlText    *text_xyz = new TiXmlText(values2str(3, links[i]->collision->xyz));
-		xyz->LinkEndChild(text_xyz);
-		geom->LinkEndChild(xyz);
-		
-		/* set geometry rotation */
-		TiXmlElement *rpy      = new TiXmlElement("rpy");
-		TiXmlText    *text_rpy = new TiXmlText(values2str(3, links[i]->collision->rpy, rad2deg));
-		rpy->LinkEndChild(text_rpy);    
-		geom->LinkEndChild(rpy);
+
+		/* set transform */
+		addKeyValue(geom, "xyz", values2str(3, links[i]->collision->xyz));
+		addKeyValue(geom, "rpy", values2str(3, links[i]->collision->rpy, rad2deg));
 
 		/* set mass properties */
-		TiXmlElement *massMatrix      = new TiXmlElement("massMatrix");
-		TiXmlText    *text_massMatrix = new TiXmlText("true");
-		massMatrix->LinkEndChild(text_massMatrix);
-		geom->LinkEndChild(massMatrix);
-		TiXmlElement *mass            = new TiXmlElement("mass");
-		TiXmlText    *text_mass       = new TiXmlText(values2str(1, &links[i]->inertial->mass));
-		mass->LinkEndChild(text_mass);
-		geom->LinkEndChild(mass);
- 		static const char tagList1[6][4] = {"ixx", "ixy", "ixz", "iyy", "iyz", "izz"};
+		addKeyValue(geom, "massMatrix", "true");
+		addKeyValue(geom, "mass", values2str(1, &links[i]->inertial->mass));
+		static const char tagList1[6][4] = {"ixx", "ixy", "ixz", "iyy", "iyz", "izz"};
 		for (int j = 0 ; j < 6 ; ++j)
-		{
-		    TiXmlElement *ie      = new TiXmlElement(tagList1[j]);
-		    TiXmlText    *text_ie = new TiXmlText(values2str(1, links[i]->inertial->inertia + j));
-		    ie->LinkEndChild(text_ie);
-		    geom->LinkEndChild(ie); 
-		}
+		    addKeyValue(geom, tagList1[j], values2str(1, links[i]->inertial->inertia + j));
 		static const char tagList2[3][3] = {"cx", "cy", "cz"};
 		for (int j = 0 ; j < 3 ; ++j)
-		{
-		    TiXmlElement *ie      = new TiXmlElement(tagList2[j]);
-		    TiXmlText    *text_ie = new TiXmlText(values2str(1, links[i]->inertial->com + j));
-		    ie->LinkEndChild(text_ie);
-		    geom->LinkEndChild(ie); 
-		}
-		
+		    addKeyValue(geom, tagList2[j], values2str(1, links[i]->inertial->com + j));
+
 		/* set additional data */
 		static const char tagList3[4][4] = {"kp", "kd", "mu1", "mu2"};
 		for (int j = 0 ; j < 4 ; ++j)
 		    if (links[i]->collision->data.hasDefaultValue(tagList3[j]))
-		    {
-			TiXmlElement *ie      = new TiXmlElement(tagList3[j]);
-			TiXmlText    *text_ie = new TiXmlText(links[i]->collision->data.getDefaultValue(tagList3[j]));
-			ie->LinkEndChild(text_ie);
-			geom->LinkEndChild(ie);
-		    }
+			addKeyValue(geom, tagList3[j], links[i]->collision->data.getDefaultValue(tagList3[j]));
 		
 		/* set geometry size */
-		TiXmlElement *size      = new TiXmlElement("size");
-		TiXmlText    *text_size = new TiXmlText(values2str(nsize, links[i]->collision->geometry->size));
-		size->LinkEndChild(text_size);
-		geom->LinkEndChild(size);
+		addKeyValue(geom, "size", values2str(nsize, links[i]->collision->geometry->size));
 		
 		/* create visual node */
 		TiXmlElement *visual = new TiXmlElement("visual");
@@ -184,41 +146,20 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
 		    coll.getEuler(eu);
 		    double crot[3] = { eu.roll, eu.pitch, eu.yaw };		    
 		    
-		    /* set geometry translation */
-		    TiXmlElement *xyz      = new TiXmlElement("xyz");
-		    TiXmlText    *text_xyz = new TiXmlText(values2str(3, cpos));
-		    xyz->LinkEndChild(text_xyz);
-		    visual->LinkEndChild(xyz);
+		    /* set geometry transform */
+		    addKeyValue(visual, "xyz", values2str(3, cpos));
+		    addKeyValue(visual, "rpy", values2str(3, crot, rad2deg));
 		    
-		    /* set geometry rotation */
-		    TiXmlElement *rpy      = new TiXmlElement("rpy");
-		    TiXmlText    *text_rpy = new TiXmlText(values2str(3, crot, rad2deg));
-		    rpy->LinkEndChild(text_rpy);    
-		    visual->LinkEndChild(rpy); 
-
 		    /* set geometry scale */
-		    TiXmlElement *scale      = new TiXmlElement("scale");
-		    TiXmlText    *text_scale = new TiXmlText(values2str(3, links[i]->visual->scale));
-		    scale->LinkEndChild(text_scale);    
-		    visual->LinkEndChild(scale);
-		    
+		    addKeyValue(visual, "scale", values2str(3, links[i]->visual->scale));
+
+		    /* set geometry mesh file */
 		    if (!links[i]->visual->geometry->filename.empty())
-		    {
-			/* set geometry mesh file */
-			TiXmlElement *mesh      = new TiXmlElement("mesh");
-			TiXmlText    *text_mesh = new TiXmlText(links[i]->visual->geometry->filename);
-			mesh->LinkEndChild(text_mesh);
-			visual->LinkEndChild(mesh);
-		    }
-		    
+			addKeyValue(visual, "mesh", links[i]->visual->geometry->filename);
+
+		    /* set geometry material */		    
 		    if (!links[i]->visual->material.empty())
-		    {
-			/* set geometry material */
-			TiXmlElement *material      = new TiXmlElement("material");
-			TiXmlText    *text_material = new TiXmlText(links[i]->visual->material);
-			material->LinkEndChild(text_material);
-			visual->LinkEndChild(material);
-		    }
+			addKeyValue(visual, "material", links[i]->visual->material);
 		}
 		
 		geom->LinkEndChild(visual);
@@ -231,10 +172,37 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
 	    root->LinkEndChild(elem);
 
 	    /* compute the joint tag */
-	    TiXmlElement *joint = new TiXmlElement("joint");
+	    std::string jtype;
+	    switch (links[i]->joint->type)
+	    {
+	    case robot_desc::URDF::Link::Joint::REVOLUTE:
+		jtype = "hinge";
+		break;
+	    case robot_desc::URDF::Link::Joint::PRISMATIC:
+		jtype = "slider";
+		break;
+	    default:
+		printf("Unknown joint type: %d in link '%s'\n", links[i]->joint->type, links[i]->name.c_str());
+		break;
+	    }
 	    
-	    /* add joint to document */
-	    root->LinkEndChild(joint);	    
+	    if (!jtype.empty())
+	    {
+		TiXmlElement *joint = new TiXmlElement("joint:" + jtype);
+		
+		addKeyValue(joint, "body1", links[i]->parentName);
+		addKeyValue(joint, "body2", links[i]->name);
+		addKeyValue(joint, "anchor", links[i]->name);
+		
+		addKeyValue(joint, "axis", values2str(3, links[i]->joint->axis));
+		addKeyValue(joint, "axisOffset", values2str(3, links[i]->joint->anchor));
+		
+		addKeyValue(joint, "lowStop", values2str(1, links[i]->joint->limit));
+		addKeyValue(joint, "highStop", values2str(1, links[i]->joint->limit + 1));
+
+		/* add joint to document */
+		root->LinkEndChild(joint);
+	    }	    
 	}	
     }
 }
