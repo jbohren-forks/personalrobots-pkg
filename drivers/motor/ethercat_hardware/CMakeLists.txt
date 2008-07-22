@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.6)
+include(rosbuild)
+rospack(ethercat_hardware)
+add_definitions(-Wall)
+rospack_add_executable(ethercat_hardware src/ethercat_hardware.cpp src/boards.cpp src/mk1000.cpp src/mk1001.cpp src/wg05.cpp)
