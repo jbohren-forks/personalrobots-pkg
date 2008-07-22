@@ -59,7 +59,7 @@ void robot_desc::URDF::clear(void)
     m_groups.clear();
     m_paths.clear();
     m_paths.push_back("");
-    m_roots.clear();
+    m_linkRoots.clear();
     m_collision.clear();
     m_joints.clear();
     m_inertial.clear();
@@ -73,15 +73,21 @@ const std::string& robot_desc::URDF::getRobotName(void) const
     return m_name;
 }
 
+void robot_desc::URDF::getLinks(std::vector<Link*> &links) const
+{
+    for (std::map<std::string, Link*>::const_iterator i = m_links.begin() ; i != m_links.end() ; i++)
+	links.push_back(i->second);
+}
+
 unsigned int robot_desc::URDF::getDisjointPartCount(void) const
 {
-    return m_roots.size();
+    return m_linkRoots.size();
 }
 
 robot_desc::URDF::Link* robot_desc::URDF::getDisjointPart(unsigned int index) const
 {
-    if (index < m_roots.size())
-	return m_roots[index];
+    if (index < m_linkRoots.size())
+	return m_linkRoots[index];
     else
 	return NULL;
 }
@@ -139,13 +145,13 @@ std::map<std::string, std::string> robot_desc::URDF::Data::getDataTagValues(cons
 
 bool robot_desc::URDF::containsCycle(unsigned int index) const
 {
-    if (index >= m_roots.size())
+    if (index >= m_linkRoots.size())
 	return false;
     
     std::map<Link*, bool> seen;
     
     std::queue<Link*> queue;
-    queue.push(m_roots[index]);
+    queue.push(m_linkRoots[index]);
     
     while (!queue.empty())
     {
@@ -164,9 +170,9 @@ bool robot_desc::URDF::containsCycle(unsigned int index) const
 
 void robot_desc::URDF::print(FILE *out) const
 {
-    fprintf(out, "\nList of root links in robot '%s' (%u):\n", m_name.c_str(), m_roots.size());
-    for (unsigned int i = 0 ; i < m_roots.size() ; ++i)
-	m_roots[i]->print(out, "  ");
+    fprintf(out, "\nList of root links in robot '%s' (%u):\n", m_name.c_str(), m_linkRoots.size());
+    for (unsigned int i = 0 ; i < m_linkRoots.size() ; ++i)
+	m_linkRoots[i]->print(out, "  ");
     fprintf(out, "\n");
     fprintf(out, "Data types:\n");
     m_data.print(out, "  ");
@@ -1124,7 +1130,7 @@ bool robot_desc::URDF::parse(const TiXmlNode *node)
 	    {
 		if (i->second->parentName.empty() || i->second->parentName == "world")
 		{
-		    m_roots.push_back(i->second);
+		    m_linkRoots.push_back(i->second);
 		    continue;
 		}
 		if (m_links.find(i->second->parentName) == m_links.end())

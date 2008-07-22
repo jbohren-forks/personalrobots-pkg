@@ -323,7 +323,8 @@ namespace robot_desc
 	    std::vector<Link*>       linkRoots;
 	};
 		
-	explicit URDF(const char *filename = NULL)
+	explicit
+	URDF(const char *filename = NULL)
 	{   
 	    m_paths.push_back("");
 	    if (filename)
@@ -346,6 +347,7 @@ namespace robot_desc
 	const std::string& getRobotName(void) const;
 	unsigned int getDisjointPartCount(void) const;
 	Link* getDisjointPart(unsigned int index) const;
+	void getLinks(std::vector<Link*> &links) const;
 	
 	void getGroupNames(std::vector<std::string> &groups) const;
 	Group* getGroup(const std::string &name) const;
@@ -368,8 +370,8 @@ namespace robot_desc
 	std::vector<std::string>     m_paths;
 	
 	std::string                  m_name;
-	std::map<std::string, Link*> m_links; // contains sensors too (casted down)
-	std::vector<Link*>           m_roots; // contains the links that are connected to the world (have no parent)    
+	std::map<std::string, Link*> m_links;     // contains sensors too (casted down)
+	std::vector<Link*>           m_linkRoots; // contains the links that are connected to the world (have no parent)
 	
 	std::map<std::string, Link::Collision*> m_collision;
 	std::map<std::string, Link::Joint*>     m_joints;
