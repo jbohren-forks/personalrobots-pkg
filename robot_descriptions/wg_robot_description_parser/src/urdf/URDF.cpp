@@ -114,6 +114,17 @@ void robot_desc::URDF::Data::add(const std::string &type, const std::string &nam
     m_data[type][name][key] = value;
 }
 
+bool robot_desc::URDF::Data::hasDefaultValue(const std::string &key) const
+{
+    std::map<std::string, std::string> m = getDataTagValues("", "");
+    return m.find(key) != m.end();
+}
+
+std::string robot_desc::URDF::Data::getDefaultValue(const std::string &key) const
+{
+    return getDataTagValues("", "")[key];
+}
+
 void robot_desc::URDF::Data::getDataTagTypes(std::vector<std::string> &types) const
 {
     for (std::map<std::string, std::map<std::string, std::map<std::string, std::string > > >::const_iterator i = m_data.begin() ; i != m_data.end() ; ++i)
