@@ -1,10 +1,14 @@
-#ifndef INTEGRAL_H
-#define INTEGRAL_H
+#ifndef FEATURES_INTEGRAL_H
+#define FEATURES_INTEGRAL_H
 
 #include <cv.h>
 
+/*!
+  Generates the tilted and "flat-tilted" integral images using dynamic programming.
+ */
 void TiltedIntegral(IplImage* source, IplImage* tilted, IplImage* flat_tilted);
 
+//! Calculates the sum of pixels within a rectangle using the integral image.
 inline int UprightAreaSum(IplImage* upright, CvPoint top_left, CvPoint bottom_right)
 {
     assert(upright && upright->depth == (int)IPL_DEPTH_32S);
@@ -16,6 +20,7 @@ inline int UprightAreaSum(IplImage* upright, CvPoint top_left, CvPoint bottom_ri
         CV_IMAGE_ELEM(upright, int, top_left.y, top_left.x);
 }
 
+//! Calculates the sum of pixels within a tilted square using the tilted integral images.
 inline int TiltedAreaSum(IplImage* tilted, IplImage* flat_tilted, CvPoint center, int offset)
 {
     assert(tilted && tilted->depth == (int) IPL_DEPTH_32S);
