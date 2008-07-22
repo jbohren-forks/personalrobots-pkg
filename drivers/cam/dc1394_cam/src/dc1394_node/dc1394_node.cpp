@@ -36,6 +36,7 @@
 
 #include "ros/node.h"
 #include "std_msgs/Image.h"
+#include "std_msgs/ImageArray.h"
 #include "std_msgs/PointCloudFloat32.h"
 #include "std_msgs/Empty.h"
 #include "dc1394_cam/dc1394_cam.h"
@@ -68,7 +69,7 @@ public:
   double Cy;
   double Tx;
   double f;
-  std_msgs::Image img;
+  std_msgs::ImageArray imgs;
   NEWMAT::Matrix lproj;
   NEWMAT::Matrix rproj;
   std_msgs::PointCloudFloat32 cloud;
@@ -400,23 +401,49 @@ public:
       }
 
 
+      /*
+        if (strVidereMode == string("none"))
+          ((VidereData*)(cd.otherData))->mode = 1;
+        else if (strVidereMode == string("rectified"))
+          ((VidereData*)(cd.otherData))->mode = 3;
+        else if (strVidereMode == string("disparity"))
+          ((VidereData*)(cd.otherData))->mode = 4;
+        else if (strVidereMode == string("disparity_raw"))
+          ((VidereData*)(cd.otherData))->mode = 5;
+        else
+          ((VidereData*)(cd.otherData))->mode = 4;
+      */
+
+
       if (cd.camType == VIDERE)
       {
-        switch (((VidereData*)(cd.otherData))->mode)
+        VidereData* v = ((VidereData*)(cd.otherData));
+
+        advertise<std_msgs::ImageArray>(cd.name + string("/images"));
+        v->imgs.set_images_size(2);
+
+        switch (v->mode)
         {
+        case 3:
+          v->imgs.images[0].label = string("right_rectified");
+          v->imgs.images[1].label = string("left_rectified");
+          break;
         case 4:
           advertise<std_msgs::PointCloudFloat32>(cd.name + string("/cloud"));
           advertise<std_msgs::Empty>(cd.name + string("/shutter"));
-          advertise<std_msgs::Image>(cd.name + string("/ldisparity"));
-          advertise<std_msgs::Image>(cd.name + string("/limage"));          
+          
+          v->imgs.set_images_size(2);
+          v->imgs.images[0].label = string("left_disparity");
+          v->imgs.images[1].label = string("left_rectified");
+
           break;
-        case 5:
-          advertise<std_msgs::Image>(cd.name + string("/ldisparity"));
-          advertise<std_msgs::Image>(cd.name + string("/limage"));
+       case 5:
+          v->imgs.images[0].label = string("left_disparity");
+          v->imgs.images[1].label = string("left_rectified");
           break;
         default:
-          advertise<std_msgs::Image>(cd.name + string("/rimage"));
-          advertise<std_msgs::Image>(cd.name + string("/limage"));
+          v->imgs.images[0].label = string("right");
+          v->imgs.images[1].label = string("left");
         }
       } else {
         advertise<std_msgs::Image>(cd.name + string("/image"));
@@ -475,21 +502,21 @@ public:
           uint32_t height   = frame->size[1]/2;
           uint32_t buf_size = width*height;
         
-          c->img.width = width;
-          c->img.height = height;
-          c->img.colorspace = "mono8";
-          c->img.compression = "raw";
+          v->imgs.images[0].width = width;
+          v->imgs.images[0].height = height;
+          v->imgs.images[0].colorspace = "mono8";
+          v->imgs.images[0].compression = "raw";
 
-          v->img.width = width;
-          v->img.height = height;
-          v->img.colorspace = "mono8";
-          v->img.compression = "raw";
+          v->imgs.images[1].width = width;
+          v->imgs.images[1].height = height;
+          v->imgs.images[1].colorspace = "mono8";
+          v->imgs.images[1].compression = "raw";
 
-          c->img.set_data_size(buf_size);
-          memcpy(c->img.data, buf, buf_size);
+          v->imgs.images[0].set_data_size(buf_size);
+          memcpy(v->imgs.images[0].data, buf, buf_size);
 
-          v->img.set_data_size(buf_size);
-          memcpy(v->img.data, buf + buf_size, buf_size);
+          v->imgs.images[1].set_data_size(buf_size);
+          memcpy(v->imgs.images[1].data, buf + buf_size, buf_size);
 
           switch (v->mode)
           {
@@ -525,17 +552,12 @@ public:
             publish(c->name + string("/cloud"), v->cloud);
             publish(c->name + string("/shutter"), e);
 
-            publish(c->name + string("/ldisparity"), c->img);
-            publish(c->name + string("/limage"), v->img);
+            publish(c->name + string("/images"), v->imgs);
             }
             break;
-          case 5:
-            publish(c->name + string("/ldisparity"), c->img);
-            publish(c->name + string("/limage"), v->img);
-            break;
           default:
-            publish(c->name + string("/rimage"), c->img);
-            publish(c->name + string("/limage"), v->img);
+            publish(c->name + string("/images"), v->imgs);
+            break;
           }
         } else {
 
