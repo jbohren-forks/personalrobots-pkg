@@ -9,7 +9,8 @@ except ImportError:
     print >> sys.stderr, "\nERROR: Cannot locate rostools"
     sys.exit(1)  
 
-from pkg import *
+#from pkg import *
+import rospy
 from std_msgs.msg import Point3DFloat64
 from std_msgs.msg import RobotBase2DOdom
 from std_msgs.msg import Pose2DFloat32
