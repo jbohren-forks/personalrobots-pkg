@@ -226,17 +226,17 @@
 
   <!-- The small cuboidal "cup" -->
   <model:physical name="cylinder1_model">
-    <xyz>   .99   -.53    0.25</xyz>
+    <xyz>   .95   -.53    0.225</xyz>
     <rpy>   0.0    0.0    0.0</rpy>
     <body:box name="cylinder1_body">
       <geom:box name="cylinder1_geom">
         <mesh>default</mesh>
-        <size>0.03 0.03 .5</size>
+        <size>0.03 0.03 .45</size>
         <mass> 0.1</mass>
         <cfm>0.000001</cfm>
         <erp>0.8</erp>
         <visual>
-          <size> 0.03 0.03 .5</size>
+          <size> 0.03 0.03 .45</size>
           <material>Gazebo/PioneerBody</material>
           <mesh>unit_box</mesh>
         </visual>
