@@ -44,10 +44,10 @@ test-gazebo: test-$(SVN_TARGET)
 
 #	export LD_LIBRARY_PATH="/usr/lib" && \
 
-clean:
-	cd $(SVN_DIR) && scons --clean
+clean: check_svn_clean
+	-cd $(SVN_DIR) && scons --clean
 	rm -rf gazebo
-wipe:
+wipe: clean
 	rm -rf $(SVN_DIR) gazebo
 
 download: $(SVN_TARGET)
