@@ -854,12 +854,6 @@
     head_tilt    
   </group>
 
-
-  <data type="controller" name="test">
-    <pGain> 1 </pGain>
-  </data>
-
-
   <data type="pr2_actarray_joint" name="pr2_head_controller">
     <name>neck_yaw_joint</name>
     <saturationTorque>100</saturationTorque>
@@ -1162,7 +1156,7 @@
       <pGain>1.0</pGain>
       <dGain>0.0</dGain>
       <iGain>0.0</iGain>
-      <interface:pr2gripper>pr2_gripper_right_iface"</interface:pr2gripper>
+      <interface:pr2gripper>pr2_gripper_right_iface</interface:pr2gripper>
   </data>
 
   <data type="P3D_controller" name="p3d_right_wrist_controller">
