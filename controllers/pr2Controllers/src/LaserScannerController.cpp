@@ -96,6 +96,7 @@ void LaserScannerController::SetSinewaveProfile(double period, double amplitude,
 	unsigned int elements = (unsigned int) (period/dt);
 	GenerateSinewave(profileX,profileT,period,amplitude,dt,offset,elements);
 	profileLength = elements;
+	profileIndex = 0; //Start at beginning of profile
 }
 
 
@@ -112,6 +113,7 @@ void LaserScannerController::GenerateSinewave(double *&x, double *&t, double per
 		x[i] = amplitude* sin(2*M_PI*currentTime/period) + offset;
 	}
 
+
 }
 
 void LaserScannerController::SetSquarewaveProfile(double period, double amplitude, double dt, double offset){
@@ -119,6 +121,7 @@ void LaserScannerController::SetSquarewaveProfile(double period, double amplitud
 	unsigned int elements = (unsigned int) (period/dt);
 	GenerateSquarewave(profileX,profileT,period,amplitude,dt,offset,elements);
 	profileLength = elements;
+	profileIndex = 0; //Start at beginning of profile
 }
 
 
@@ -309,7 +312,6 @@ void LaserScannerController::Update( )
 		//No new setpoint necessary
 	}
 	*/
-
     if(controlMode == CONTROLLER_AUTOMATIC){
 			lowerControl.SetPosCmd(profileX[profileIndex]);
       //Every x calls, advance profile Index
@@ -333,6 +335,7 @@ void LaserScannerController::Update( )
   std::cout<<"Torque:"<<torque<<std::endl;
  //Instruct lower level controller to update
  */
+
 	lowerControl.Update();
 
 }
