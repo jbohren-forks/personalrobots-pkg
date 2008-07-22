@@ -94,13 +94,17 @@ namespace libTF
     
       /* Accessors */
       /** \brief Return the transform as a matrix */
-      NEWMAT::Matrix asMatrix();
+      NEWMAT::Matrix asMatrix() const;
       /** \brief Return the inverse of the transform as a matrix */
-      NEWMAT::Matrix getInverseMatrix(void);
+      NEWMAT::Matrix getInverseMatrix(void) const;
       /** \brief Return the rotation as a quaternion */
       Quaternion getQuaternion(void) const;
       /** \brief Return the rotation as a quaternion */
       void getQuaternion(Quaternion &quat) const;
+      /** \brief Return the rotation as a Euler angles */
+      Euler getEuler(void) const;
+      /** \brief Return the rotation as a Euler angles */
+      void getEuler(Euler &eu) const;
       /** \brief Return the translation as a position */
       void getPosition(Position &pos) const;
       /** \brief Return the translation as a position */

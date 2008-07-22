@@ -337,7 +337,7 @@ double Pose3D::getMagnitude()
     return sqrt(xr*xr + yr*yr + zr*zr + w*w);
 };
 
-NEWMAT::Matrix Pose3D::asMatrix()
+NEWMAT::Matrix Pose3D::asMatrix() const
 {
     
     NEWMAT::Matrix outMat(4,4);
@@ -373,7 +373,7 @@ NEWMAT::Matrix Pose3D::asMatrix()
     return outMat;
 };
 
-NEWMAT::Matrix Pose3D::getInverseMatrix(void)
+NEWMAT::Matrix Pose3D::getInverseMatrix(void) const
 {
     return asMatrix().i();
 };
@@ -391,6 +391,16 @@ void Pose3D::getAxisAngle(double axis[3], double *angle) const
     axis[0] = xr / d;
     axis[1] = yr / d;
     axis[2] = zr / d;
+}
+
+Pose3D::Euler Pose3D::getEuler(void) const
+{
+    return eulerFromMatrix(asMatrix());
+}
+
+void Pose3D::getEuler(Euler &eu) const
+{
+    eu = eulerFromMatrix(asMatrix());
 }
 
 Pose3D::Quaternion Pose3D::getQuaternion(void) const
