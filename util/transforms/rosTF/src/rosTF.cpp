@@ -48,6 +48,12 @@ rosTFClient::rosTFClient(ros::node & rosnode,
 
 };
 
+std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(std::string target_frame,  std_msgs::PointCloudFloat32 & cloudIn)
+{
+  return transformPointCloud(lookup(target_frame), cloudIn);
+};
+
+
 //PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target_frame, const std_msgs::PointCloudFloat32 & cloudIn) //todo add back const when get_pts_size() is const ticket:232
 std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target_frame,  std_msgs::PointCloudFloat32 & cloudIn)
 {
