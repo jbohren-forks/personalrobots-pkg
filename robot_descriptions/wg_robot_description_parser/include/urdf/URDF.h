@@ -169,7 +169,6 @@ namespace robot_desc
 		{
 		    xyz[0] = xyz[1] = xyz[2] = 0.0;
 		    rpy[0] = rpy[1] = rpy[2] = 0.0;
-		    scale[0] = scale[1] = scale[2] = 1.0;
 		    verbose = false;
 		    geometry = new Geometry();
 		}
@@ -186,7 +185,6 @@ namespace robot_desc
 		bool         verbose;
 		double       xyz[3];
 		double       rpy[3];
-		double       scale[3];
 		std::string  material;
 		Geometry    *geometry;
 		Data         data;	
