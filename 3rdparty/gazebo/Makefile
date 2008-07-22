@@ -17,7 +17,7 @@ ROOT = $(shell rospack find gazebo)/gazebo
 TESTROOT = $(shell rospack find gazebo)/test-gazebo
 
 $(SVN_TARGET):
-	@if [ ! -d $(SVN_DIR) ]; then svn co $(REVISION) https://playerstage.svn.sf.net/svnroot/playerstage/code/gazebo/trunk $(SVN_DIR); fi
+	@if [ ! -d $(SVN_DIR) ]; then svn co $(REVISION) https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk $(SVN_DIR); fi
 	-cd $(SVN_DIR) && svn up $(REVISION) 
 	-svn diff $(SVN_DIR) > tmp.diff
 	-cd $(SVN_DIR) && svn revert -R *
@@ -31,7 +31,7 @@ $(BUILD_TARGET): $(SVN_TARGET)
 	export PATH=${ODE_PATH}/bin:${PATH} && scons prefix=$(ROOT) && scons prefix=$(ROOT) install
 
 test-$(SVN_TARGET):
-	@if [ ! -d test-$(SVN_DIR) ]; then svn co $(REVISION) https://playerstage.svn.sf.net/svnroot/playerstage/code/gazebo/trunk test-$(SVN_DIR); fi
+	@if [ ! -d test-$(SVN_DIR) ]; then svn co $(REVISION) https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk test-$(SVN_DIR); fi
 	-cd test-$(SVN_DIR) && svn up #$(REVISION) 
 	#-patch -N -p0 < gazebo_patch.diff
 

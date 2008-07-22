@@ -4,7 +4,7 @@ all: stage-build
 
 #	@if [ ! -d stage-svn ]; then svn co $(REVISION) https://playerstage.svn.sf.net/svnroot/playerstage/code/stage/trunk stage-svn; fi
 stage-checkout:
-	@if [ ! -d stage-svn ]; then svn co $(REVISION) https://playerstage.svn.sf.net/svnroot/playerstage/code/stage/branches/stage-ros stage-svn; fi
+	@if [ ! -d stage-svn ]; then svn co $(REVISION) https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/stage/branches/stage-ros stage-svn; fi
 	-cd stage-svn && svn up $(REVISION) 
 
 CMAKE = `rospack find cmake`/cmake/bin/cmake 

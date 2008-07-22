@@ -8,7 +8,7 @@ include $(shell rospack find mk)/check_svn.mk
 REVISION = -r 6833
 
 $(SVN_TARGET):
-	@if [ ! -d $(SVN_DIR) ]; then svn co $(REVISION) https://playerstage.svn.sf.net/svnroot/playerstage/code/player/trunk $(SVN_DIR); fi
+	@if [ ! -d $(SVN_DIR) ]; then svn co $(REVISION) https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/player/trunk $(SVN_DIR); fi
 	-cd $(SVN_DIR) && svn up $(REVISION) 
 
 CMAKE = `rospack find cmake`/cmake/bin/cmake 
