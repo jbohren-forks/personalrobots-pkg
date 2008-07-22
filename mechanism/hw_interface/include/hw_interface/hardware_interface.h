@@ -54,6 +54,8 @@ class ActuatorState{
   double lastCommandedCurrent;
   double lastMeasuredCurrent;
 
+  int motorVoltage;
+
   int numEncoderErrors;
   int numCommunicationErrors;
 };
