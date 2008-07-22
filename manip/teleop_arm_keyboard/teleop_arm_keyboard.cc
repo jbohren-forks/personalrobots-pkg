@@ -73,6 +73,9 @@ Publishes to (name / type):
 
 #include <libpr2API/pr2API.h>
 
+// For transform support
+#include <rosTF/rosTF.h>
+
 #define COMMAND_TIMEOUT_SEC 0.2
 
 using namespace PR2;
@@ -85,7 +88,7 @@ private:
     std_msgs::PR2Arm cmd_rightarmconfig;
 
 public:
-    TArmK_Node() : ros::node("tarmk")
+  TArmK_Node() : ros::node("tarmk"), tf(*this, true)
     {
         // cmd_armconfig should probably be initialised
         // with the current joint angles of the arm rather
@@ -144,6 +147,42 @@ public:
     std::cout << "gripperGapCmd     " << rightArmPosMsg.gripperGapCmd << std::endl;
   }
 
+  void printCurrentEndEffectorWorldCoord() {
+    libTF::TFPose aPose;
+    aPose.x = 0.0;
+    aPose.y = 0.0;
+    aPose.z = 0.0;
+    aPose.roll = 0;
+    aPose.pitch = 0;
+    aPose.yaw = 0;
+    aPose.time = 0;
+    aPose.frame = FRAMEID_ARM_R_HAND;
+
+    libTF::TFPose inOdomFrame = tf.transformPose(FRAMEID_ODOM, aPose);
+
+    std::cout << "In odom frame x " << inOdomFrame.x << std::endl;
+    std::cout << "In odom frame y " << inOdomFrame.y << std::endl;
+    std::cout << "In odom frame z " << inOdomFrame.z << std::endl;
+  }
+
+  void printCurrentEndEffectorShoulderCoord() {
+    libTF::TFPose aPose;
+    aPose.x = .64;
+    aPose.y = -.37;
+    aPose.z = 1.76;
+    aPose.roll = 0;
+    aPose.pitch = 0;
+    aPose.yaw = 0;
+    aPose.time = 0;
+    aPose.frame = FRAMEID_ODOM;
+
+    libTF::TFPose inOdomFrame = tf.transformPose(FRAMEID_ARM_R_SHOULDER, aPose);
+
+    std::cout << "In shoulder frame x " << inOdomFrame.x << std::endl;
+    std::cout << "In shoulder frame y " << inOdomFrame.y << std::endl;
+    std::cout << "In shoulder frame z " << inOdomFrame.z << std::endl;
+  }
+
  void leftArmPosReceived() {
     if(_leftInit == false) {
       this->cmd_leftarmconfig.turretAngle = leftArmPosMsg.turretAngle;
@@ -176,10 +215,14 @@ public:
 
     void keyboardLoop();
     void changeJointAngle(PR2_JOINT_ID jointID, bool increment);
+  void openGripper(PR2_JOINT_ID jointID);
+  void closeGripper(PR2_JOINT_ID jointID);
+
 
   bool _leftInit;
   bool _rightInit;
   std_msgs::PR2Arm leftArmPosMsg, rightArmPosMsg;
+  rosTFClient tf;
 };
 
 TArmK_Node* tarmk;
@@ -209,9 +252,43 @@ main(int argc, char** argv)
     return(0);
 }
 
+void TArmK_Node::openGripper(PR2_JOINT_ID jointID) {
+  if(jointID != ARM_R_GRIPPER && jointID != ARM_L_GRIPPER) return;
+  if(_leftInit == false || _rightInit == false) {
+    printf("No init, so not sending command.\n");
+    return;
+  }
+  if(jointID == ARM_R_GRIPPER) {
+    this->cmd_rightarmconfig.gripperForceCmd = 50;
+    this->cmd_rightarmconfig.gripperGapCmd = .1;
+  } else { 
+    this->cmd_leftarmconfig.gripperForceCmd = 50;
+    this->cmd_leftarmconfig.gripperGapCmd = .1;
+  }
+}
+
+void TArmK_Node::closeGripper(PR2_JOINT_ID jointID) {
+  if(jointID != ARM_R_GRIPPER && jointID != ARM_L_GRIPPER) return;
+  if(_leftInit == false || _rightInit == false) {
+    printf("No init, so not sending command.\n");
+    return;
+  }
+  if(jointID == ARM_R_GRIPPER) {
+    this->cmd_rightarmconfig.gripperForceCmd = 50;
+    this->cmd_rightarmconfig.gripperGapCmd = 0;
+  } else { 
+    this->cmd_leftarmconfig.gripperForceCmd = 50;
+    this->cmd_leftarmconfig.gripperGapCmd = 0;
+  }
+}
+
 
 void TArmK_Node::changeJointAngle(PR2_JOINT_ID jointID, bool increment)
 {
+  if(_leftInit == false || _rightInit == false) {
+    printf("No init, so not sending command.\n");
+    return;
+  }
     float jointCmdStep = 5*M_PI/180;
     float gripperStep = 0.002;
     if (increment == false)
@@ -335,8 +412,28 @@ TArmK_Node::keyboardLoop()
             changeJointAngle(curr_jointID, false);
             dirty=true;
             break;
+	case '.':
+	  _rightInit = false;
+	  _leftInit = false;
+	  sleep(1);
+	  openGripper(curr_jointID);
+	  dirty = true;
+	  break;
+	case '/':
+	  _rightInit = false;
+	  _leftInit = false;
+	  sleep(1);
+	  closeGripper(curr_jointID);
+	  dirty = true;
+	  break;
 	case 'q':
 	  printCurrentJointValues();
+	  break;
+	case 'k':
+	  printCurrentEndEffectorWorldCoord();
+	  break;
+	case 'j':
+	  printCurrentEndEffectorShoulderCoord();
 	  break;
         default:
             break;
@@ -378,6 +475,9 @@ TArmK_Node::keyboardLoop()
                 curr_jointID = ARM_L_GRIPPER;
                 printf("left gripper\n");
                 break;
+	    case '9':
+	      _leftInit = false;
+	      printf("Resetting left commands to current position.\n");
             default:
                 break;
             }
@@ -418,16 +518,21 @@ TArmK_Node::keyboardLoop()
                 curr_jointID = ARM_R_GRIPPER;
                 printf("right gripper\n");
                 break;
+	    case '9':
+	      _rightInit = false;
+	      printf("Resetting right commands to current position.\n");
             default:
                 break;
             }
         }
 
-        if (dirty == true)
-        {
-            dirty=false; // Sending the command only once for each key press.
-            publish("cmd_leftarmconfig",cmd_leftarmconfig);
-            publish("cmd_rightarmconfig",cmd_rightarmconfig);
+        if (dirty == true) {
+	  dirty=false; // Sending the command only once for each key press.
+	  if(!right_arm) {
+	    publish("cmd_leftarmconfig",cmd_leftarmconfig);
+	  } else {
+	    publish("cmd_rightarmconfig",cmd_rightarmconfig);
+	  }
         }
     }
 }
