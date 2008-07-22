@@ -1,4 +1,7 @@
-all: xenomai
+all: check_done
+
+BUILD_TARGET = xenomai
+include $(shell rospack find mk)/check_done.mk
 
 XENOMAI_REVISION = 4007
 LINUX_VERSION = 2.6.24.3
@@ -41,11 +44,11 @@ linux: $(LINUX_ARCHIVE)
 	mv $(subst .tar.bz2,,$(LINUX_ARCHIVE)) $@
 	touch linux
 
-clean:
+clean: check_done_clean
 	cd xenomai-svn/build && make clean
 	cd linux && make clean
 	
-wipe:
+wipe: check_done_clean
 	rm -rf xenomai-svn xenomai
 	rm -rf $(LINUX_ARCHIVE) linux
 
