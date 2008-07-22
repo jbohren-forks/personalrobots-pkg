@@ -859,4 +859,294 @@
     <pGain> 1 </pGain>
   </data>
 
+
+  <data type="pr2_actarray_joint" name="neck_yaw_joint">
+    <saturationTorque>100</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="head_tilt_joint">
+    <saturationTorque>10</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="hokuyo_pitch_joint">
+    <saturationTorque>500</saturationTorque>
+    <pGain>2</pGain>
+    <dGain>0</dGain>
+    <iGain>1</iGain>
+    <iClamp>20</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="head_cam_left_yaw_joint">
+    <saturationTorque>100</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="head_cam_left_pitch_joint">
+    <saturationTorque>100</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="head_cam_right_yaw_joint">
+    <saturationTorque>100</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="head_cam_right_pitch_joint">
+    <saturationTorque>100</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+
+
+
+  <data type="pr2_actarray_joint" name="front_left_caster_steer">
+    <saturationTorque>1000</saturationTorque>
+    <pGain>2</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="front_left_wheel_l_drive">
+    <saturationTorque>5</saturationTorque>
+    <pGain>0.5</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="front_left_wheel_r_drive">
+    <saturationTorque>5</saturationTorque>
+    <pGain>0.5</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="front_right_caster_steer">
+    <saturationTorque>1000</saturationTorque>
+    <pGain>2</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="front_right_wheel_l_drive">
+    <saturationTorque>5</saturationTorque>
+    <pGain>0.5</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="front_right_wheel_r_drive">
+    <saturationTorque>5</saturationTorque>
+    <pGain>0.5</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="rear_left_caster_steer">
+    <saturationTorque>1000</saturationTorque>
+    <pGain>2</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="rear_left_wheel_l_drive">
+    <saturationTorque>5</saturationTorque>
+    <pGain>0.5</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="rear_left_wheel_r_drive">
+    <saturationTorque>5</saturationTorque>
+    <pGain>0.5</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="rear_right_caster_steer">
+    <saturationTorque>1000</saturationTorque>
+    <pGain>2</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="rear_right_wheel_l_drive">
+    <saturationTorque>5</saturationTorque>
+    <pGain>0.5</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="rear_right_wheel_r_drive">
+    <saturationTorque>5</saturationTorque>
+    <pGain>0.5</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <!-- ========================================= -->
+  <data type="pr2_actarray_joint" name="torso_spine_slider">
+    <saturationTorque>1000</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <!-- ========================================= -->
+  <data type="pr2_actarray_joint" name="shoulder_pan_left">
+    <saturationTorque>1000</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="upperarm_pitch_joint_left">
+    <saturationTorque>1000</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="upperarm_roll_joint_left">
+    <saturationTorque>1000</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="elbow_pitch_joint_left">
+    <saturationTorque>100</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="forearm_roll_joint_left">
+    <saturationTorque>100</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="wrist_pitch_joint_left">
+    <saturationTorque>100</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="palm_roll_joint_left">
+    <saturationTorque>100</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <!-- ========================================= -->
+  <data type="pr2_actarray_joint" name="shoulder_pan_right">
+    <saturationTorque>1000</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="upperarm_pitch_joint_right">
+    <saturationTorque>1000</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="upperarm_roll_joint_right">
+    <saturationTorque>1000</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="elbow_pitch_joint_right">
+    <saturationTorque>1000</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="forearm_roll_joint_right">
+    <saturationTorque>100</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="wrist_pitch_joint_right">
+    <saturationTorque>100</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+  <data type="pr2_actarray_joint" name="palm_roll_joint_right">
+    <saturationTorque>100</saturationTorque>
+    <pGain>1</pGain>
+    <dGain>0</dGain>
+    <iGain>0</iGain>
+    <iClamp>0</iClamp>
+  </data>
+
+  <!-- ========================================= -->
+
+  <data type="pr2_gripper_controller" name="pr2_gripper_left_controller" plugin="libPr2_Gripper.so">
+      <updateRate>100.0</updateRate>
+      <leftJoint>finger_2_slider_left</leftJoint>
+      <rightJoint>finger_1_slider_left</rightJoint>
+      <gripperForce>100.0</gripperForce>
+      <pGain>1.0</pGain>
+      <dGain>0.0</dGain>
+      <iGain>0.0</iGain>
+      <interface:pr2gripper name="pr2_gripper_left_iface"/>
+  </data>
+
+  <data type="pr2_gripper_controller" name="pr2_gripper_right_controller" plugin="libPr2_Gripper.so">
+      <updateRate>100.0</updateRate>
+      <leftJoint>finger_2_slider_right</leftJoint>
+      <rightJoint>finger_1_slider_right</rightJoint>
+      <gripperForce>100.0</gripperForce>
+      <pGain>1.0</pGain>
+      <dGain>0.0</dGain>
+      <iGain>0.0</iGain>
+      <interface:pr2gripper name="pr2_gripper_right_iface"/>
+  </data>
+
+  <data type="P3D_controller" name="p3d_right_wrist_controller" plugin="libP3D.so">
+      <updateRate>100.0</updateRate>
+      <bodyName>palm_right</bodyName>
+      <interface:position name="p3d_right_wrist_position"/>
+  </data>
+
+  <data type="P3D_controller" name="p3d_left_wrist_controller" plugin="libP3D.so">
+      <updateRate>100.0</updateRate>
+      <bodyName>palm_left</bodyName>
+      <interface:position name="p3d_left_wrist_position"/>
+  </data>
+
+  <data type="P3D_controller" name="p3d_base_controller" plugin="libP3D.so">
+      <updateRate>100.0</updateRate>
+      <bodyName>base_body</bodyName>
+      <interface:position name="p3d_base_position"/>
+  </data>
+
+
+
 </robot>
