@@ -24,7 +24,15 @@ public:
     it = nameMap.find(str_in);
     if ( it == nameMap.end())
       {
-        int value = lookupOnServer(str_in);
+        
+        int value = 0;
+        value = lookupOnServer(str_in);
+        while (value == 0)
+          {
+            printf("Waiting for namelookup_server\n");
+            usleep(500000);//wait for service to come up
+            value = lookupOnServer(str_in);
+          };
         nameMap[str_in] = value;
         //  printf("NOT FOUND\n");
         return value;
@@ -32,8 +40,9 @@ public:
     else
       {
         //printf("FOUDN\n");
-        return      (*it).second;
+        return (*it).second;
       }
+    
   }  
       
   

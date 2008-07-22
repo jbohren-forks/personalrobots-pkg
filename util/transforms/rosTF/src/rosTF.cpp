@@ -39,9 +39,10 @@ rosTFClient::rosTFClient(ros::node & rosnode,
   TransformReference(interpolating,
                      max_cache_time,
                      max_extrapolation_distance),
-  nameLookupClient(rosnode),
-  myNode(rosnode)
+  myNode(rosnode),
+  nameLookupClient(rosnode)
 {
+  // printf("Constructed rosTF");
   myNode.subscribe("TransformEuler", eulerIn, &rosTFClient::receiveEuler, this,100);
   myNode.subscribe("TransformDH", dhIn, &rosTFClient::receiveDH, this);
   myNode.subscribe("TransformQuaternion", quaternionIn, &rosTFClient::receiveQuaternion, this);
