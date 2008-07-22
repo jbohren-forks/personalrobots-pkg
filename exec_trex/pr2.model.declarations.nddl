@@ -38,27 +38,79 @@ typedef int [0 5] PRIORITY; /* Used to assign a priority to goals */
 
 typedef float [0.0 +inff] PFLOAT;
 
-float POSITION_ERROR = 1.0;
+float BASE_POSITION_ERROR = 1.0;
 float ANGLE_ERROR = .2;
+float END_EFFECTOR_POSITION_ERROR = 0.1;
+float END_EFFECTOR_STEP_SIZE = 0.5;
 
+// Bogus
 float NOMINAL_SPEED = 1.0;
 
 enum CmdResult {SUCCESS, FAILURE};
 
+
 /**
- * VehicleState will capture position and orientation.
+ * BaseState will capture position and orientation.
  */
-class VehicleState extends AgentTimeline {
+class BaseState extends AgentTimeline {
 	predicate Holds{
 		PFLOAT x;
 		PFLOAT y;
 		float th;
 	}
 
-	VehicleState(Mode _mode){
+	BaseState(Mode _mode){
 		super(_mode, "Holds");
 	}
 };
+
+/**
+ * A PR2 state variable for commanded rotation and translation
+ */
+class BaseGoal extends AgentTimeline {
+
+      predicate Holds {
+      	 float cmd_x;
+	 float cmd_th;	
+      }     
+
+      BaseGoal(Mode _mode){
+         super(_mode);
+      }
+};
+
+/**
+ * Timeline structure for End Effector state
+ */
+class EndEffectorState extends AgentTimeline {
+  predicate Holds{
+    PFLOAT x;
+    PFLOAT y;
+    PFLOAT z;
+  }
+
+  EndEffectorState(Mode _mode){
+    super(_mode, "Holds");
+  }
+}
+
+
+/**
+ * A PR2 state variable for commanded end effector positions
+ */
+class EndEffectorGoal extends AgentTimeline {
+
+  predicate Holds {
+    PFLOAT cmd_x;
+    PFLOAT cmd_y;
+    PFLOAT cmd_z;
+  }
+
+  EndEffectorGoal(Mode _mode){
+    super(_mode);
+  }
+}
+
 
 /**
  * Encapsulate Behaviors that have a state of active or inactive
@@ -74,10 +126,10 @@ class Behavior extends AgentTimeline {
 };
 
 /**
- * WaypointController will handle active control of vehicle to accomplish 
+ * MoveBase behavior will handle active control of vehicle to accomplish 
  * a waypoint. This maps to the wave front player in the 2D nav stack.
  */
-class WaypointController extends Behavior {
+class MoveBase extends Behavior {
   predicate Inactive{
     PFLOAT x;
     PFLOAT y;
@@ -94,25 +146,9 @@ class WaypointController extends Behavior {
     float th;
   }
 
-  WaypointController(Mode _mode){
+  MoveBase(Mode _mode){
     super(_mode);
   }
-};
-
-/**
- * A PR2 state variable for the commanded velocities. Will be planned by the waypoint controller
- * and dispatched to lower level controllers external to the agent
- */
-class VelCommander extends AgentTimeline {
-
-      predicate Holds {
-      	 float cmd_x;
-	 float cmd_th;	
-      }     
-
-      VelCommander(Mode _mode){
-         super(_mode);
-      }
 };
 
 /**
@@ -190,7 +226,7 @@ class Actions extends AgentActions{
   /**
    * Set velocity commands for a given goal position using local planning
    */
-  predicate SetVelocityCommands{
+  predicate SetBaseGoal{
     PFLOAT goal_x;
     PFLOAT goal_y;
     float goal_th;
@@ -206,9 +242,18 @@ class Actions extends AgentActions{
    */
   predicate StopTheBase{}
 
+  /**
+   * Move the end effector. Will compute next target based on linear interpolation
+   */
+  predicate SetEndEffectorGoal{
+    EndEffectorState endEffectorState;
+    PFLOAT x;
+    PFLOAT y;
+    PFLOAT z;
+  }
 };
 
-class ArmController extends AgentTimeline {
+class MoveArm extends AgentTimeline {
 
   bool _isLeft;
   
@@ -246,27 +291,36 @@ class ArmController extends AgentTimeline {
     float gripperGapCmd;
   }
   
-  ArmController(Mode _mode, bool isLeft){
+  MoveArm(Mode _mode, bool isLeft){
     super(_mode, "Inactive");
     _isLeft = isLeft;
   }
 };
 
 /**
- * GraspController will grasp an object given by a position, and orientation
+ * MoveEndEfector will position the end effector to a desired position.
  */
-class GraspController extends AgentTimeline {
+class  MoveEndEffector extends Behavior {
+
+  EndEffectorState endEffectorState;
   
   predicate Inactive{
-    int objectId; // Identifier of object in the world model. 0 if
+    float acX;
+    float acY;
+    float acZ;
+    float desX;
+    float desY;
+    float desZ;
   }
 
   predicate Active {
+    float x;
+    float y;
+    float z;
   }
   
-  GraspController(Mode _mode){
-    super(_mode, "Inactive");
+  MoveEndEffector(Mode _mode, EndEffectorState _endEffectorState){
+    super(_mode);
+    endEffectorState = _endEffectorState;
   }
 };
- 
-

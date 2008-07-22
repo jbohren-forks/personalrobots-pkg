@@ -99,12 +99,12 @@ namespace TREX{
     /**
      * Get Observation for vehicle velocities if available
      */
-    Observation* get_vc_obs();
+    //Observation* get_vc_obs();
     
     /**
      * Get Observation for planner state if available
      */
-    Observation* get_wpc_obs();
+    //Observation* get_wpc_obs();
     
     void get_laser_obs();
 

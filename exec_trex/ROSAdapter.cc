@@ -39,8 +39,8 @@ namespace TREX {
 
     // Because the VelCommander is an abstracted timeline we are generating a value for it
     // that is hardwired
-    if(getCurrentTick() == 0 && Agent::instance()->getOwner("vcom") == getId()){
-      ObservationByValue* obs = new ObservationByValue("vcom", "VelCommander.Holds");
+    if(getCurrentTick() == 0 && Agent::instance()->getOwner("baseGoal") == getId()){
+      ObservationByValue* obs = new ObservationByValue("baseGoal", "BaseGoal.Holds");
       obs->push_back("cmd_x", new IntervalDomain(0.0));
       obs->push_back("cmd_th", new IntervalDomain(0.0));
       obsBuffer.push_back(obs);
@@ -60,22 +60,22 @@ namespace TREX {
 
   void ROSAdapter::handleRequest(const TokenId& token){
     // Constants for Timelines handled
-    static const LabelStr VELOCITY_COMMANDER("VelCommander");
-    static const LabelStr ARM_CONTROLLER("ArmController");
+    static const LabelStr BASE_GOAL("BaseGoal");
+    static const LabelStr MOVE_ARM_BEHAVIOR("MoveArm");
 
     bool returnObservation = false;
 
-    if(token->getBaseObjectType() == VELOCITY_COMMANDER){
+    if(token->getBaseObjectType() == BASE_GOAL){
       debugMsg("ROSAdapter:handleRequest", token->toString());
       m_node->dispatchVel(token);
       returnObservation = true;
     }
-    else if(token->getBaseObjectType() == ARM_CONTROLLER) {
+    else if(token->getBaseObjectType() == MOVE_ARM_BEHAVIOR) {
       debugMsg("RCSArmAdapter:handleRequest", token->toString());
       m_node->dispatchArm(token, getCurrentTick());
 
       //assuming instantly active
-      if(token->getPredicateName() == LabelStr("ArmController.Active"))
+      if(token->getPredicateName() == LabelStr("MoveArm.Active"))
 	returnObservation = true;
     }
 

@@ -49,10 +49,10 @@ namespace TREX {
    * commands to the RCS and receive updates
    */
   ROSNode::ROSNode() : ros::node("trex"), 
+		       tf(*this, true), //nanoseconds
 		       m_id(this),
 		       m_initialized(1), 
 		       m_state(UNDEFINED),
-		       tf(*this, true), //nanoseconds
 		       laser_maxrange(4.0),
 		       laser_buffer_time(3.0)
   {
@@ -189,7 +189,7 @@ namespace TREX {
    * @brief Dispatch a token
    */
   void ROSNode::dispatchWaypoint(const TokenId& goal){
-    static const LabelStr ACTIVE("WaypointController.Active");
+    static const LabelStr ACTIVE("MoveBase.Active");
     static const LabelStr X2("x");
     static const LabelStr Y2("y");
 
@@ -212,7 +212,7 @@ namespace TREX {
   }
 
   void ROSNode::dispatchVel(const TokenId& cmd_vel){
-    static const LabelStr HOLDS("VelCommander.Holds");
+    static const LabelStr HOLDS("BaseGoal.Holds");
     static const LabelStr CMD_X("cmd_x");
     static const LabelStr CMD_TH("cmd_th");
 
@@ -251,7 +251,7 @@ namespace TREX {
   void ROSNode::dispatchArm(const TokenId& cmd_arm, TICK currentTick) {
     
     std::cout << "Trying to dispatch arm.\n";
-    if(cmd_arm->getPredicateName() == LabelStr("ArmController.Active")) {
+    if(cmd_arm->getPredicateName() == LabelStr("MoveArm.Active")) {
       //figure out if it's left or right
       PR2Arm armGoal;
       armGoal.turretAngle = cmd_arm->getVariable("turretAngle")->lastDomain().getSingletonValue();
@@ -266,7 +266,7 @@ namespace TREX {
 
       //std::cout << "WTF: " << getObjectName(cmd_arm).toString() << std::endl;
       
-      if(getObjectName(cmd_arm)==LabelStr("rac")) {
+      if(getObjectName(cmd_arm)==LabelStr("moveRightArm")) {
 	debugMsg("ROSNode::Arm", "dispatching command for right arm.");
 	publish("right_pr2arm_set_position",armGoal);
 	_lastActiveRightArmDispatch = currentTick;
@@ -296,6 +296,12 @@ namespace TREX {
     //Observation* velc = get_vc_obs();
     //if(velc != NULL) 
       //  buff.push_back(velc);
+  }
+
+  //this doesn't actually generate observations for now
+  void ROSNode::get_laser_obs() {
+    lock();
+    unlock();
   }
 
   Observation* ROSNode::get_vs_obs(){
@@ -345,60 +351,12 @@ namespace TREX {
     this->ros::node::publish("state",this->m_rcs_state);
 
     ObservationByValue* obs = NULL;
-    obs = new ObservationByValue("vs", "VehicleState.Holds");
+    obs = new ObservationByValue("baseState", "BaseState.Holds");
     obs->push_back("x", new IntervalDomain(m_rcs_state.pos.x));
     obs->push_back("y", new IntervalDomain(m_rcs_state.pos.y));
     obs->push_back("th", new IntervalDomain(m_rcs_state.pos.th));
     unlock();
     return obs;
-  }
-
-  Observation* ROSNode::get_vc_obs(){
-    lock();
-    //ObservationByValue* obs = NULL;
-    //obs = new ObservationByValue("vcom", "VelCommander.Holds");
-    //obs->push_back("cmd_x", new IntervalDomain(m_localizedOdomMsg.vel.x));
-    //obs->push_back("cmd_th", new IntervalDomain(m_localizedOdomMsg.vel.th));
-    unlock();
-    //debugMsg("ROSNode:VC", "Received Observation:" << obs->toString() << std::endl;
-    return NULL;
-  }
-  
-
-  Observation* ROSNode::get_wpc_obs(){
-    return NULL;
-    //lock();
-   //  ObservationByValue* obs = NULL;
-//     // Determine current obseved state
-//     PlannerState observedState = INACTIVE;
-
-//     if(m_rcs_obs.active == 1)
-//       observedState = ACTIVE;
-
-//     // If there is a state change we have work to do
-//     if(m_state != observedState){
-
-//       m_state = observedState;
-//       if(m_state == INACTIVE){
-// 	obs = new ObservationByValue("wpc", "WaypointController.Inactive");
-//       }
-//       else {
-// 	obs = new ObservationByValue("wpc", "WaypointController.Active");
-// 	obs->push_back("x", new IntervalDomain(m_rcs_obs.goal.x));
-// 	obs->push_back("y", new IntervalDomain(m_rcs_obs.goal.y));
-//       }
-
-//       debugMsg("ROSNode:WPC", "Received Observation:" << obs->toString());
-//     }
-
-//     unlock();
-    // return obs;
-  }
-
-  //this doesn't actually generate observations for now
-  void ROSNode::get_laser_obs() {
-    lock();
-    unlock();  
   }
 
   void ROSNode::get_arm_obs(std::vector<Observation*>& buff, TICK currentTick){
@@ -438,7 +396,7 @@ namespace TREX {
       
       std::cout << "Pushing left arm inactive observation.\n";
 
-      obs = new ObservationByValue("lac", "ArmController.Inactive");
+      obs = new ObservationByValue("moveLeftArm", "MoveArm.Inactive");
       obs->push_back("acTurretAngle", new IntervalDomain(leftArmPosMsg.turretAngle));
       obs->push_back("acShoulderLiftAngle", new IntervalDomain(leftArmPosMsg.shoulderLiftAngle));
       obs->push_back("acUpperarmRollAngle", new IntervalDomain(leftArmPosMsg.upperarmRollAngle));
@@ -470,7 +428,7 @@ namespace TREX {
       //fabs(rightArmPosMsg.gripperGapCmd-_lastRightArmGoal.gripperGapCmd) < AllowableGraspError)) {
       std::cout << "Pushing right arm inactive observation.\n";
 
-      obs = new ObservationByValue("rac", "ArmController.Inactive");
+      obs = new ObservationByValue("moveRightArm", "MoveArm.Inactive");
       obs->push_back("acTurretAngle", new IntervalDomain(rightArmPosMsg.turretAngle));
       obs->push_back("acShoulderLiftAngle", new IntervalDomain(rightArmPosMsg.shoulderLiftAngle));
       obs->push_back("acUpperarmRollAngle", new IntervalDomain(rightArmPosMsg.upperarmRollAngle));
@@ -665,4 +623,47 @@ namespace TREX {
     unlock(); 
   }
 
+  /* Deprecated
+  Observation* ROSNode::get_vc_obs(){
+    lock();
+    //ObservationByValue* obs = NULL;
+    //obs = new ObservationByValue("baseGoal", "BaseGoal.Holds");
+    //obs->push_back("cmd_x", new IntervalDomain(m_localizedOdomMsg.vel.x));
+    //obs->push_back("cmd_th", new IntervalDomain(m_localizedOdomMsg.vel.th));
+    unlock();
+    //debugMsg("ROSNode:VC", "Received Observation:" << obs->toString() << std::endl;
+    return NULL;
+  }
+  
+
+  Observation* ROSNode::get_wpc_obs(){
+    return NULL;
+    //lock();
+   //  ObservationByValue* obs = NULL;
+//     // Determine current obseved state
+//     PlannerState observedState = INACTIVE;
+
+//     if(m_rcs_obs.active == 1)
+//       observedState = ACTIVE;
+
+//     // If there is a state change we have work to do
+//     if(m_state != observedState){
+
+//       m_state = observedState;
+//       if(m_state == INACTIVE){
+// 	obs = new ObservationByValue("wpc", "MoveBase.Inactive");
+//       }
+//       else {
+// 	obs = new ObservationByValue("wpc", "MoveBase.Active");
+// 	obs->push_back("x", new IntervalDomain(m_rcs_obs.goal.x));
+// 	obs->push_back("y", new IntervalDomain(m_rcs_obs.goal.y));
+//       }
+
+//       debugMsg("ROSNode:WPC", "Received Observation:" << obs->toString());
+//     }
+
+//     unlock();
+    // return obs;
+  }
+  */
 }

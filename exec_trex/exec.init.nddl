@@ -5,14 +5,16 @@ CleanBehavior clean = new CleanBehavior(Internal);
 HandWave handwave = new HandWave(Internal);
 
 // External Timelines
-WaypointController wpc = new WaypointController(External);
-ArmController rac = new ArmController(External, false);
-ArmController lac = new ArmController(External, true);
+MoveBase moveBase = new MoveBase(External);
+MoveArm moveRightArm = new MoveArm(External, false);
+MoveArm moveLeftArm = new MoveArm(External, true);
 
 // Actions
 Actions actions = new Actions();
 
-// Timelines to 
-VehicleState vs = new VehicleState(Ignore);
+// Timelines to ignore
+BaseState baseState = new BaseState(Ignore);
+EndEffectorState rightEndEffectorState = new EndEffectorState(Ignore);
+EndEffectorState leftEndEffectorState = new EndEffectorState(Ignore);
 
 close();

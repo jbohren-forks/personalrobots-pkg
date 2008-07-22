@@ -32,10 +32,10 @@
 /*******************************************************************
  * Rules for NDDL based trivial simulation
  ******************************************************************/
-WaypointController::Active{
+MoveBase::Active{
 	/*
 	if(object.mode == Internal){
-		starts(VehicleState.Holds startPos);
+		starts(BaseState.Holds startPos);
 		float distance;
 		calcDistance(distance, startPos.x, startPos.y, x, y);
 
@@ -46,16 +46,16 @@ WaypointController::Active{
 
 		// End up where we wanted to
 		if(end){
-			ends(VehicleState.Holds endPos);
+			ends(BaseState.Holds endPos);
 			eq(endPos.x, x);
 			eq(endPos.y, y);
 		}
 	}*/
 }
 
-VehicleState::Holds{
+BaseState::Holds{
 	if(object.mode == Internal){
-		met_by(VehicleState.Holds p);
+		met_by(BaseState.Holds p);
 		defaultOnCommit(x, p.x);
 		defaultOnCommit(y, p.y);
 	}

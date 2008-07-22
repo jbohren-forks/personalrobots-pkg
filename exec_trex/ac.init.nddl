@@ -6,20 +6,20 @@
 #include "pr2.model.nddl"
 
 // Internal Timelines
-ArmController rac = new ArmController(Internal, false);
-ArmController lac = new ArmController(Internal, true);
+MoveArm moveRightArm = new MoveArm(Internal, false);
+MoveArm moveLeftArm = new MoveArm(Internal, true);
 
 // Actions
 Actions actions = new Actions();
 
 // Ignored Timelines
-WaypointController wpc = new WaypointController(Ignore);
+MoveBase moveBase = new MoveBase(Ignore);
 
 close();
 
 // initial conditions for arms
-fact(rac.Inactive rightArm);
-fact(lac.Inactive leftArm);
+fact(moveRightArm.Inactive rightArm);
+fact(moveLeftArm.Inactive leftArm);
 
 eq(rightArm.desTurretAngle,0.0);
 eq(rightArm.desShoulderLiftAngle,0.0);
