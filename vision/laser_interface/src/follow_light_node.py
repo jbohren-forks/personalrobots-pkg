@@ -1,46 +1,62 @@
 from pkg import *
 from std_msgs.msg import Point3DFloat64
 from std_msgs.msg import BaseVel
+from std_msgs.msg import RobotBase2DOdom
 import sys
 import numpy as np
 import nodes as n
+import camera as cam
+import math
 
 class FollowBehavior:
     def __init__(self, velocity_topic):
         self.velocity_topic = velocity_topic
+        R = cam.Rx(math.radians(90)) * cam.Ry(math.radians(-90))
+        T = np.matrix([-.095, 0,.162]).T
+        self.base_T_camera = cam.homo_transform3d(R, T)
         self.robot_pose     = n.ConstNode(n.Pose2D(0, 0, 0))
         self.local_pos      = n.nav.V_KeepLocal_P2d_V(self.robot_pose, n.ConstNode(np.matrix([0,0]).T))
         self.attr	        = n.nav.V_LinearAttract_V(self.local_pos, dead_zone = 0.02, far_dist = 1.0)
         self.cmd            = n.nav.R_Conv_V(self.attr, allow_backwards_driving = False)
         self.should_stop    = self.attr.is_done()
-        #self.attr.verbosity = -1
+        self.has_stopped   = False
+        self.attr.verbosity = -1
 
     def cursor_moved(self, point):
         #Transform into base's coordinate frame
         point3d   = np.matrix([point.x, point.y, point.z, 1.0]).T
+        print 'FollowBehavior.cursor_moved: got point', point3d.T
         new_point = self.base_T_camera * point3d
 
         #Drop the z, store as homogeneous coordinates
         goal2d = new_point[0:2, 0]
+        print 'FollowBehavior.cursor_moved: 2d goal', goal2d.T
         self.local_pos.remember(n.ConstNode(goal2d))
+        self.has_stopped = False
 
     def robot_moved(self, update):
+        print 'FollowBehavior.robot_moved:', update.pos.x, update.pos.y, update.pos.th
         self.robot_pose.const = Pose2D(update.pos.x, update.pos.y, update.pos.th)
 
     def run(self):
         count = 0
-        if self.should_stop.val(count):
+        if self.should_stop.val(count) and not self.has_stopped:
             self.velocity_topic.publish(BaseVel(0,0))
+            self.has_stopped = True 
         else:
-            base_command = cmd.val(count)
-            self.velocity_topic.publish(BaseVel(base_command.forward_vel, base_command.rot_vel))
+            base_command = self.cmd.val(count)
+            msg = BaseVel(base_command.forward_vel, base_command.rot_vel)
+            #print 'publishing', base_command.forward_vel, base_command.rot_vel
+            #self.velocity_topic.publish(msg)
         count = count + 1
 
 class FakeTopic:
     def publish(self, something):
         pass
 
-if True:
+
+if __name__ == '__main__':
+    import time
     pub = rospy.TopicPub('cmd_vel', BaseVel)
     follow_behavior = FollowBehavior(pub)
     rospy.TopicSub('odom', RobotBase2DOdom, follow_behavior.robot_moved)
@@ -48,10 +64,9 @@ if True:
     rospy.ready(sys.argv[0])
     while (True):
         follow_behavior.run()
-else:
-    follow_behavior = FollowBehavior(FakeTopic())
-    while (True):
-        follow_behavior.run()
+        time.sleep(0.016)
+
+#follow_behavior = FollowBehavior(FakeTopic())
 
 
 

@@ -145,10 +145,10 @@ class LaserPointerDetectorNode:
     GATHER_NEGATIVE_EXAMPLES = 'GATHER_NEGATIVE_EXAMPLES'
     DETECT                   = 'DETECT'
 
-    def __init__(self, exposure = LaserPointerDetector.SUN_EXPOSURE, video = None):
+    def __init__(self, exposure = LaserPointerDetector.SUN_EXPOSURE, video = None, display=False):
         if video is None:
-            #video    = cam.VidereStereo(0, gain=96, exposure=exposure)
-            self.video    = cam.StereoFile('measuring_tape_red_left.avi','measuring_tape_red_right.avi')
+            self.video    = cam.VidereStereo(0, gain=96, exposure=exposure)
+            #self.video    = cam.StereoFile('measuring_tape_red_left.avi','measuring_tape_red_right.avi')
         else:
             self.video = video
         self.exposure         = exposure
@@ -157,10 +157,11 @@ class LaserPointerDetectorNode:
         self.state            = None
         self.state_object     = None
         self.set_state(self.DETECT)
-        self.display = True
+        if display:
+            self._make_windows()
+        self.display = display
         self.verbose = False
         self.debug   = False
-        self._make_windows()
 
         #Publish
         self.topic = rospy.TopicPub(CURSOR_TOPIC, Point3DFloat64)
@@ -201,7 +202,9 @@ class LaserPointerDetectorNode:
             while not rospy.isShutdown():
                 self.video_lock.acquire()
                 start_time = time.time()
-                frames = self.video.next()
+                frames = list(self.video.next())
+                frames[0] = self.camera_model.camera_left.undistort_img(frames[0])
+                frames[1] = self.camera_model.camera_right.undistort_img(frames[1])
                 result = self.state_object.run(frames, display=self.display, verbose=self.verbose, debug=self.debug)
                 self.video_lock.release()
                 if result != None:
@@ -251,11 +254,32 @@ class LaserPointerDetectorNode:
 
 
 if __name__ == '__main__':
-    if sys.argv[1] == 'sun':
-        exposure = LaserPointerDetector.SUN_EXPOSURE
+    import optparse
+    p = optparse.OptionParser()
+    p.add_option('-o', '--office', action='store', dest='office', 
+                 help='true for operating robot in office environments')
+    p.add_option('-d', '--display',  action='store_true', dest='display', help='show display')
+    opt, args = p.parse_args()
+
+    if opt.display == None:
+        display = False
     else:
+        display = opt.display
+
+    if opt.office == None:
+        office = False
+    else:
+        office = opt.office
+
+    if office:
         exposure = LaserPointerDetector.SHADE_EXPOSURE
-    LaserPointerDetectorNode(exposure = exposure).run()
+    else:
+        exposure = LaserPointerDetector.SUN_EXPOSURE
+
+    print 'Display set to', display
+    print 'Exposure set to', exposure
+    LaserPointerDetectorNode(exposure = exposure, display=display).run()
+
 
 
 
