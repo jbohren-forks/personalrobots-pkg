@@ -1001,6 +1001,12 @@ void robot_desc::URDF::loadSensor(const TiXmlNode *node)
 	    if (attr->ValueStr() == "camera")
 		sensor->type = Sensor::CAMERA;
 	    else
+	    if (attr->ValueStr() == "laser")
+		sensor->type = Sensor::LASER;
+	    else
+	    if (attr->ValueStr() == "stereocamera")
+		sensor->type = Sensor::STEREO_CAMERA;
+	    else
 		fprintf(stderr, "Unknown sensor type: '%s'\n", attr->Value());
 	}
     }
