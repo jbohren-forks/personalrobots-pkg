@@ -1123,6 +1123,8 @@ bool robot_desc::URDF::parse(const TiXmlNode *node)
 		    m_linkRoots.push_back(i->second);
 		    continue;
 		}
+		if (i->second->joint->type == Link::Joint::FLOATING)
+		    fprintf(stderr, "Link '%s' uses a floating joint but its parent is not the environment!\n", i->second->name.c_str());
 		if (m_links.find(i->second->parentName) == m_links.end())
 		    fprintf(stderr, "Parent of link '%s' is undefined: '%s'\n", i->second->name.c_str(),
 			    i->second->parentName.c_str());
