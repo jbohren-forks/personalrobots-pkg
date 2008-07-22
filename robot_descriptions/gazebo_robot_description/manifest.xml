@@ -5,5 +5,6 @@
   <url>http://pr.willowgarage.com/wiki/FIXME</url>
   <depend package="gazebo"/>
   <depend package="gazebo_plugin"/>
+  <depend package="wg_robot_description"/>
   <depend package="wg_robot_description_parser"/>
 </package>

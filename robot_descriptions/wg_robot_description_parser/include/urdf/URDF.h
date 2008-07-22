@@ -140,6 +140,7 @@ namespace robot_desc
 		{
 		    xyz[0] = xyz[1] = xyz[2] = 0.0;
 		    rpy[0] = rpy[1] = rpy[2] = 0.0;
+		    verbose = false;
 		    geometry = new Geometry();
 		}
 		
@@ -151,11 +152,12 @@ namespace robot_desc
 		
 		virtual void print(FILE *out = stdout, std::string indent = "");
 		
-		std::string  name;	    
+		std::string  name;	
+		bool         verbose;
 		double       xyz[3];
 		double       rpy[3];
 		std::string  material;
-		Geometry    *geometry;
+		Geometry    *geometry;		
 	    };
 	    
 	    struct Inertial
@@ -357,10 +359,16 @@ namespace robot_desc
 	void loadCollision(const TiXmlNode *node, Link::Collision *collision);
 	void loadVisual(const TiXmlNode *node, Link::Visual *visual);
 	void loadInertial(const TiXmlNode *node, Link::Inertial *inertial);
+
 	void defaultConstants(void);
+
 	void getChildrenAndAttributes(const TiXmlNode* node, std::vector<const TiXmlNode*> &children, std::vector<const TiXmlAttribute*> &attributes) const;
-	unsigned int loadValues(const TiXmlNode *node, unsigned int count, double *vals);
+
+	unsigned int loadDoubleValues(const TiXmlNode *node, unsigned int count, double *vals);
+	unsigned int loadBoolValues  (const TiXmlNode *node, unsigned int count, bool   *vals);
+
 	std::string  extractName(std::vector<const TiXmlAttribute*> &attributes);    
+
 	void clearDocs(void);    
 	
 	/* temporary storage for information during parsing; should not be used elsewhere */

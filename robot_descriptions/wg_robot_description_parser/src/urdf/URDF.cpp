@@ -472,7 +472,7 @@ static double getConstant(void *data, std::string &name)
     }
 }
 
-unsigned int robot_desc::URDF::loadValues(const TiXmlNode *node, unsigned int count, double *vals)
+unsigned int robot_desc::URDF::loadDoubleValues(const TiXmlNode *node, unsigned int count, double *vals)
 {
     if (node && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 	node = node->FirstChild();
@@ -489,6 +489,33 @@ unsigned int robot_desc::URDF::loadValues(const TiXmlNode *node, unsigned int co
 	getConstantData data;
 	data.m = &m_constants;
 	vals[i] = meval::EvaluateMathExpression(value, &getConstant, reinterpret_cast<void*>(&data));
+	read++;
+    }
+
+    if (read != count)
+	fprintf(stderr, "Not all values were read: '%s'\n", node->Value());
+    
+    return read;
+}
+
+unsigned int robot_desc::URDF::loadBoolValues(const TiXmlNode *node, unsigned int count, bool *vals)
+{
+    if (node && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+	node = node->FirstChild();
+    else
+	return 0;
+    
+    std::stringstream ss(node->ValueStr());
+    unsigned int read = 0;
+    
+    for (unsigned int i = 0 ; ss.good() && i < count ; ++i)
+    {
+	std::string value;
+	ss >> value;
+	const unsigned int length = value.length();
+	for(unsigned int j = 0 ; j != length ; ++j)
+	    value[j] = std::tolower(value[j]);	
+	vals[i] = (value == "true" || value == "yes" || value == "1");
 	read++;
     }
 
@@ -535,10 +562,10 @@ void robot_desc::URDF::loadActuator(const TiXmlNode *node, Link::Actuator *actua
 		actuator->port = atoi(node->FirstChild()->Value());
 	    else
 	    if (node->ValueStr() == "reduction")
-		loadValues(node, 1, &actuator->reduction);
+		loadDoubleValues(node, 1, &actuator->reduction);
 	    else
 	    if (node->ValueStr() == "polymap")
-		loadValues(node, 3, actuator->polymap);
+		loadDoubleValues(node, 3, actuator->polymap);
 	    else
 		ignoreNode(node);
 	}
@@ -596,16 +623,16 @@ void robot_desc::URDF::loadJoint(const TiXmlNode *node, Link::Joint *joint)
 	if (node->Type() == TiXmlNode::ELEMENT)
 	{
 	    if (node->ValueStr() == "axis")
-		loadValues(node, 3, joint->axis);
+		loadDoubleValues(node, 3, joint->axis);
 	    else
 	    if (node->ValueStr() == "anchor")
-		loadValues(node, 3, joint->anchor);
+		loadDoubleValues(node, 3, joint->anchor);
 	    else
 	    if (node->ValueStr() == "limit")
-		loadValues(node, 2, joint->limit);
+		loadDoubleValues(node, 2, joint->limit);
 	    else
 	    if (node->ValueStr() == "calibration")
-		loadValues(node, 2, joint->calibration);
+		loadDoubleValues(node, 2, joint->calibration);
 	    else
 	    if (node->ValueStr() == "actuator")
 	    {
@@ -675,13 +702,13 @@ void robot_desc::URDF::loadGeometry(const TiXmlNode *node, Link::Geometry *geome
 		switch (geometry->type)
 		{
 		case Link::Geometry::BOX:
-		    loadValues(node, 3, geometry->size);
+		    loadDoubleValues(node, 3, geometry->size);
 		    break;
 		case Link::Geometry::CYLINDER:
-		    loadValues(node, 2, geometry->size);
+		    loadDoubleValues(node, 2, geometry->size);
 		    break;
 		case Link::Geometry::SPHERE:
-		    loadValues(node, 1, geometry->size);
+		    loadDoubleValues(node, 1, geometry->size);
 		    break;
 		default:
 		    ignoreNode(node);
@@ -727,10 +754,13 @@ void robot_desc::URDF::loadCollision(const TiXmlNode *node, Link::Collision *col
 	if (node->Type() == TiXmlNode::ELEMENT)
 	{
 	    if (node->ValueStr() == "rpy")
-		loadValues(node, 3, collision->rpy);
+		loadDoubleValues(node, 3, collision->rpy);
 	    else
 	    if (node->ValueStr() == "xyz")
-		loadValues(node, 3, collision->xyz);
+		loadDoubleValues(node, 3, collision->xyz);
+	    else
+	    if (node->ValueStr() == "verbose")
+		loadBoolValues(node, 1, &collision->verbose);
 	    else
 	    if (node->ValueStr() == "material" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 		collision->material = node->FirstChild()->ValueStr();
@@ -773,10 +803,10 @@ void robot_desc::URDF::loadVisual(const TiXmlNode *node, Link::Visual *visual)
 	if (node->Type() == TiXmlNode::ELEMENT)
 	{
 	    if (node->ValueStr() == "rpy")
-		loadValues(node, 3, visual->rpy);
+		loadDoubleValues(node, 3, visual->rpy);
 	    else
 	    if (node->ValueStr() == "xyz")
-		loadValues(node, 3, visual->xyz);
+		loadDoubleValues(node, 3, visual->xyz);
 	    else
 	    if (node->ValueStr() == "material" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 		visual->material = node->FirstChild()->ValueStr();
@@ -819,13 +849,13 @@ void robot_desc::URDF::loadInertial(const TiXmlNode *node, Link::Inertial *inert
 	if (node->Type() == TiXmlNode::ELEMENT)
 	{
 	    if (node->ValueStr() == "mass")
-		loadValues(node, 1, &inertial->mass);
+		loadDoubleValues(node, 1, &inertial->mass);
 	    else
 	    if (node->ValueStr() == "com")
-		loadValues(node, 3, inertial->com);
+		loadDoubleValues(node, 3, inertial->com);
 	    else
 	    if (node->ValueStr() == "inertia")
-		loadValues(node, 6, inertial->inertia);
+		loadDoubleValues(node, 6, inertial->inertia);
 	    else
 		ignoreNode(node);
 	}
@@ -856,10 +886,10 @@ void robot_desc::URDF::loadLink(const TiXmlNode *node)
 		link->parentName = node->FirstChild()->ValueStr();
 	    else
 	    if (node->ValueStr() == "rpy")
-		loadValues(node, 3, link->rpy);
+		loadDoubleValues(node, 3, link->rpy);
 	    else
 	    if (node->ValueStr() == "xyz")
-		loadValues(node, 3, link->xyz);
+		loadDoubleValues(node, 3, link->xyz);
 	    else
 	    if (node->ValueStr() == "joint")
 		loadJoint(node, link->joint);
@@ -923,10 +953,10 @@ void robot_desc::URDF::loadSensor(const TiXmlNode *node)
 		sensor->parentName = node->FirstChild()->ValueStr();
 	    else
 	    if (node->ValueStr() == "rpy")
-		loadValues(node, 3, sensor->rpy);
+		loadDoubleValues(node, 3, sensor->rpy);
 	    else
 	    if (node->ValueStr() == "xyz")
-		loadValues(node, 3, sensor->xyz);
+		loadDoubleValues(node, 3, sensor->xyz);
 	    else
 	    if (node->ValueStr() == "joint")
 		loadJoint(node, sensor->joint);
