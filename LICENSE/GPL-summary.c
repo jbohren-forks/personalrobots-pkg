@@ -1,5 +1,4 @@
 /*
- *  <PACKAGE_NAME>
  *  Copyright (c) <YEAR>, <OWNER>
  *
  *  This program is free software; you can redistribute it and/or modify

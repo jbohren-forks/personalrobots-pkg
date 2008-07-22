@@ -1,5 +1,4 @@
 /*
- *  <PACKAGE_NAME>
  *  Copyright (c) <YEAR>, <OWNER>
  *
  *  This library is free software; you can redistribute it and/or
