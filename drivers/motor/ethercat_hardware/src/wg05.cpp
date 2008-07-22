@@ -104,11 +104,13 @@ WG05::convertCommand(ActuatorCommand &command, unsigned char *buffer)
 
 	memset(&c, 0, sizeof(c));
 
+	c.currentLoopKp = Kp;
+    c.currentLoopKi = Ki;
 
-	c.programmed_current = command.current;
-    c.current_loop_ki = 2; //PWM and enabled
-    c.mode = 3; //PWM and enabled
-	memcpy(buffer + sizeof(WG05Status), &c, sizeof(c));
+	c.programmedCurrent = command.current;
+    c.mode = command.enable ? (MODE_ENABLE | MODE_CURRENT) : MODE_OFF;
+
+    memcpy(buffer + sizeof(WG05Status), &c, sizeof(c));
 }
 
 void
@@ -120,12 +122,21 @@ WG05::convertState(ActuatorState &state, unsigned char *buffer)
 	memcpy(&s, buffer, sizeof(s));
 	memcpy(&c, buffer + sizeof(s), sizeof(c));
 
-#if 0
-	state.isEnabled = c.mode != MODE_OFF;
-	state.timestamp = s.timestamp;
-	state.encoderCount = s.qei_pos;
-	state.encoderVelocity = s.qei_velocity;
-	state.lastMeasuredCurrent = s.adc_current;
-#endif
+	state.encoderCount = s.encoderCount;
+	state.encoderVelocity = 0;//delta count / delta time (in seconds);
+	state.calibrationReading = s.calibrationReading;
+	state.lastCalibrationHighTransition = s.lastCalibrationHighTransition;
+	state.lastCalibrationLowTransition = s.lastCalibrationLowTransition;
+	state.isEnabled = s.mode != MODE_OFF;
+	state.runStopHit = (s.mode & MODE_UNDERVOLTAGE) != 0;
+
+	state.lastRequestedCurrent = c.programmedCurrent; // Should be actual request, before safety
+	state.lastCommandedCurrent = s.programmedCurrent;
+	state.lastMeasuredCurrent = s.measuredCurrent;
+
+	state.numEncoderErrors = s.numEncoderErrors;
+	state.numCommunicationErrors = s.pdiTimeoutErrorCount + s.pdiChecksumErrorCount;
+
+	state.motorVoltage = s.motorVoltage;
 }
 

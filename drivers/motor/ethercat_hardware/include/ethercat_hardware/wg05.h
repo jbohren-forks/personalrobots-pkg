@@ -38,34 +38,34 @@
 #include <ethercat_hardware/motor_control_board.h>
 
 struct WG05Status {
-	uint16_t device_type_id;
-	uint16_t device_rev;
+	uint16_t deviceTypeId;
+	uint16_t deviceRev;
 	uint8_t  mode;
-	uint8_t  digital_out;
-	uint16_t pwm_duty;
-	uint16_t programmed_current;
-	uint8_t  current_loop_kp;
-	uint8_t  current_loop_ki;
-	uint16_t measured_current;
-	uint16_t empty1;
+	uint8_t  digitalOut;
+	uint16_t pwmDuty;
+	uint16_t programmedCurrent;
+	uint8_t  currentLoopKp;
+	uint8_t  currentLoopKi;
+	uint16_t measuredCurrent;
+	uint16_t pad1;
 	uint32_t timestamp;
-	uint32_t encoder_pos;
-	uint32_t encoder_index_pos;
-	uint16_t encoder_invalid_count;
-	uint8_t  encoder_status;
-	uint8_t  limit_status;
-	uint32_t limit_on_off_pos;
-	uint32_t limit_off_on_pos;
-	uint16_t supply_voltage;
-	uint16_t motor_voltage;
-	uint16_t board_temperature;
-	uint16_t bridge_temperature;
-	uint8_t  pdo_command_irq_count;
-	uint8_t  mbx_command_irq_count;
-	uint16_t ecat_packet_count;
-	uint16_t pdi_timeout_error_count;
-	uint16_t pdi_checksum_error_count;;
-	uint8_t  empty2;
+	uint32_t encoderCount;
+	uint32_t encoderIndexPos;
+	uint16_t numEncoderErrors;
+	uint8_t  encoderStatus;
+	uint8_t  calibrationReading;
+	uint32_t lastCalibrationHighTransition;
+	uint32_t lastCalibrationLowTransition;
+	uint16_t supplyVoltage;
+	uint16_t motorVoltage;
+	uint16_t boardTemperature;
+	uint16_t bridgeTemperature;
+	uint8_t  pdoCommandIrqCount;
+	uint8_t  mbxCommandIrqCount;
+	uint16_t packetCount;
+	uint16_t pdiTimeoutErrorCount;
+	uint16_t pdiChecksumErrorCount;
+	uint8_t  pad2;
 	uint8_t  checksum;
 } __attribute__ ((__packed__));
 
@@ -75,8 +75,15 @@ class WG05: public MotorControlBoard {
 	static const int STATUS_PHY_ADDR = 0x2000;
 	static const int COMMAND_PHY_ADDR = 0x1000;
 
+	static const int Ki = 8;
+	static const int Kp = 4;
+
 	enum {
-		MODE_OFF, MODE_PWM, MODE_PID
+		MODE_OFF = 0x00,
+		MODE_CURRENT = 0x01,
+		MODE_ENABLE = 0x02,
+		MODE_UNDERVOLTAGE = 0x04,
+		MODE_RESET = 0x80
 	};
 
 public:
