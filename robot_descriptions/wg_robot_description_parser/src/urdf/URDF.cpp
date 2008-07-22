@@ -215,11 +215,6 @@ void robot_desc::URDF::Link::Geometry::print(FILE *out, std::string indent) cons
 void robot_desc::URDF::Link::Actuator::print(FILE *out, std::string indent) const
 {
     fprintf(out, "%sActuator [%s]:\n", indent.c_str(), name.c_str());
-    fprintf(out, "%s  - motor: %s\n", indent.c_str(), motor.c_str());
-    fprintf(out, "%s  - reduction: %f\n", indent.c_str(), reduction);
-    fprintf(out, "%s  - polymap: (%f, %f, %f)\n", indent.c_str(), polymap[0], polymap[1], polymap[2]);
-    fprintf(out, "%s  - ip: %s\n", indent.c_str(), ip.c_str());
-    fprintf(out, "%s  - port: %u\n", indent.c_str(), port);
     data.print(out, indent + "  ");
 }
 
@@ -605,21 +600,6 @@ void robot_desc::URDF::loadActuator(const TiXmlNode *node, Link::Actuator *actua
 	const TiXmlNode *node = children[i];
 	if (node->Type() == TiXmlNode::ELEMENT)
 	{
-	    if (node->ValueStr() == "motor" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
-		actuator->motor = node->FirstChild()->ValueStr(); 
-	    else
-	    if (node->ValueStr() == "ip" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
-		actuator->ip = node->FirstChild()->ValueStr(); 
-	    else
-	    if (node->ValueStr() == "port" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
-		actuator->port = atoi(node->FirstChild()->Value());
-	    else
-	    if (node->ValueStr() == "reduction")
-		loadDoubleValues(node, 1, &actuator->reduction);
-	    else
-	    if (node->ValueStr() == "polymap")
-		loadDoubleValues(node, 3, actuator->polymap);
-	    else
 	    if (node->ValueStr() == "data")
 		loadData(node, &actuator->data);
 	    else

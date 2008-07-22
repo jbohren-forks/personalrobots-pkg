@@ -113,9 +113,6 @@ namespace robot_desc
 	    {
 		Actuator(void)
 		{
-		    polymap[0] = polymap[1] = polymap[2] = 0.0;
-		    reduction = 0.0;
-		    port = 0;
 		}
 		
 		virtual ~Actuator(void)
@@ -125,11 +122,6 @@ namespace robot_desc
 		virtual void print(FILE *out = stdout, std::string indent = "") const;
 		
 		std::string  name;
-		std::string  motor;
-		std::string  ip;
-		unsigned int port;
-		double       reduction;
-		double       polymap[3];
 		Data         data;
 	    };
 	    
