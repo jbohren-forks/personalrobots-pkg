@@ -421,29 +421,74 @@ Actions::StopTheBase{
 MoveEndEffector::Inactive{
   met_by(Active p);
 
-  if(desX){
-    if(desY){
-      if(desZ){
-	eq(p.x, desX);
-	eq(p.y, desY);
-	eq(p.z, desZ);
+  if(des_x){
+    if(des_y){
+      if(des_y){
+	if(des_rot1_1) {
+	  if(des_rot1_2) {
+	    if(des_rot1_3) {
+	      if(des_rot2_1) {
+		if(des_rot2_2) {
+		  if(des_rot2_3) {
+		    if(des_rot3_1) {
+		      if(des_rot3_2) {
+			if(des_rot3_3) {
+			  eq(p.x, des_x);
+			  eq(p.y, des_y);
+			  eq(p.z, des_z);
+			  eq(p.rot1_1, des_rot1_1);
+			  eq(p.rot1_2, des_rot1_2);
+			  eq(p.rot1_3, des_rot1_3);
+			  eq(p.rot2_1, des_rot2_1);
+			  eq(p.rot2_2, des_rot2_2);
+			  eq(p.rot2_3, des_rot2_3);
+			  eq(p.rot3_1, des_rot3_1);
+			  eq(p.rot3_2, des_rot3_2);
+			  eq(p.rot3_3, des_rot3_3);
+			}
+		      }
+		    }
+		  }
+		}
+	      }
+	    }
+	  }
+	}
       }
     }
   }
 
   // Check for proxmity to target
-  addEq(acX, [-0.1, 0.1], desX);
-  addEq(acX, [-0.1, 0.1], desY);
-  addEq(acX, [-0.1, 0.1], desZ);
+  addEq(ac_x, [-0.1, 0.1], des_x);
+  addEq(ac_y, [-0.1, 0.1], des_y);
+  addEq(ac_z, [-0.1, 0.1], des_z);
+  addEq(ac_rot_1_1, [-0.1, 0.1], des_rot1_1);
+  addEq(ac_rot_1_2, [-0.1, 0.1], des_rot1_2);
+  addEq(ac_rot_1_3, [-0.1, 0.1], des_rot1_3);
+  addEq(ac_rot_2_1, [-0.1, 0.1], des_rot2_1);
+  addEq(ac_rot_2_2, [-0.1, 0.1], des_rot2_2);
+  addEq(ac_rot_2_3, [-0.1, 0.1], des_rot2_3);
+  addEq(ac_rot_3_1, [-0.1, 0.1], des_rot3_1);
+  addEq(ac_rot_3_2, [-0.1, 0.1], des_rot3_2);
+  addEq(ac_rot_3_3, [-0.1, 0.1], des_rot3_3);
 
   // We will bind  values based on vehicle state timeline. We wait till the start time
   // is bound before linking in to the vehicle state.
   if(start){
     starts(EndEffectorState.Holds pos);
-    eq(pos.object, object.endEffectorState);
-    eq(acX, pos.x);
-    eq(acY, pos.y);
-    eq(acX, pos.z);
+    eq(pos.object._isLeft,object._isLeft);
+    eq(ac_x, pos.x);
+    eq(ac_y, pos.y);
+    eq(ac_z, pos.z);
+    eq(ac_rot1_1, pos.rot1_1);
+    eq(ac_rot1_2, pos.rot1_2);
+    eq(ac_rot1_3, pos.rot1_3);
+    eq(ac_rot2_1, pos.rot2_1);
+    eq(ac_rot2_2, pos.rot2_2);
+    eq(ac_rot2_3, pos.rot2_3);
+    eq(ac_rot3_1, pos.rot3_1);
+    eq(ac_rot3_2, pos.rot3_2);
+    eq(ac_rot3_3, pos.rot3_3);
   }
 }
 
@@ -451,16 +496,25 @@ MoveEndEffector::Active {
   if(object.mode == Internal) {
     // Generate an action to get to the goal position. This will be iterative
     contains(Actions.SetEndEffectorGoal a);
-    eq(a.endEffectorState, object.endEffectorState);
+    eq(a.isLeft, object._isLeft);
     eq(a.x, x);
     eq(a.y, y);
     eq(a.z, z);
+    eq(a.rot1_1, rot1_1);
+    eq(a.rot1_2, rot1_2);
+    eq(a.rot1_3, rot1_3);
+    eq(a.rot2_1, rot2_1);
+    eq(a.rot2_2, rot2_2);
+    eq(a.rot2_3, rot2_3);
+    eq(a.rot3_1, rot3_1);
+    eq(a.rot3_2, rot3_2);
+    eq(a.rot3_3, rot3_3);
   }
 }
 
 Actions::SetEndEffectorGoal{
   // Bind to prior state to obtain current distance from target pose
-  met_by(endEffectorState.Holds pos);
+  met_by(EndEffectorState.Holds pos);
   float distanceToGo;
   bool done;
   calcDistance(distanceToGo, pos.x, pos.y, pos.z, x, y, z);
@@ -468,21 +522,51 @@ Actions::SetEndEffectorGoal{
 
   if(done == false){
     starts(EndEffectorGoal.Holds g);
-    calcCommandedPose(g.cmd_x, g.cmd_y, g.cmd_z, END_EFFECTOR_STEP_SIZE, pos.x, pos.y, pos.z, x, y, z);
-
-
+    calcInterpolatedEndEffectorPos(END_EFFECTOR_STEP_SIZE,
+				   pos.rot1_1, pos.rot1_2, pos.rot1_3,
+				   pos.rot2_1, pos.rot2_2, pos.rot2_3,
+				   pos.rot3_1, pos.rot3_2, pos.rot3_3,
+				   pos.x, pos.y, pos.z,
+				   rot1_1, rot1_2, rot1_3,
+				   rot2_1, rot2_2, rot2_3,
+				   rot3_1, rot3_2, rot3_3,
+				   x, y, z,
+				   g.cmd_rot1_1, g.cmd_rot1_2, g.cmd_rot1_3,
+				   g.cmd_rot2_1, g.cmd_rot2_2, g.cmd_rot2_3,
+				   g.cmd_rot3_1, g.cmd_rot3_2, g.cmd_rot3_3,
+				   g.cmd_x, g.cmd_y, g.cmd_z);
     // Pass arguments to successor
     before(Actions.SetEndEffectorGoal s);
+    eq(s.isLeft, isLeft);
     eq(x, s.x);
     eq(y, s.y);
     eq(z, s.z);
+    eq(rot1_1, s.rot1_1);
+    eq(rot1_2, s.rot1_2);
+    eq(rot1_3, s.rot1_3);
+    eq(rot2_1, s.rot2_1);
+    eq(rot2_2, s.rot2_2);
+    eq(rot2_3, s.rot2_3);
+    eq(rot3_1, s.rot3_1);
+    eq(rot3_2, s.rot3_2);
+    eq(rot3_3, s.rot3_3);
   }
 
   if(done == true){
     ends(MoveEndEffector.Active m);
+    eq(m.object._isLeft, isLeft);
     eq(x, m.x);
     eq(y, m.y);
     eq(z, m.z); 
+    eq(rot1_1, m.rot1_1);
+    eq(rot1_2, m.rot1_2);
+    eq(rot1_3, m.rot1_3);
+    eq(rot2_1, m.rot2_1);
+    eq(rot2_2, m.rot2_2);
+    eq(rot2_3, m.rot2_3);
+    eq(rot3_1, m.rot3_1);
+    eq(rot3_2, m.rot3_2);
+    eq(rot3_3, m.rot3_3);
   }
 }
 

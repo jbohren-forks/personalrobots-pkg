@@ -84,9 +84,18 @@ class BaseGoal extends AgentTimeline {
  */
 class EndEffectorState extends AgentTimeline {
   predicate Holds{
-    PFLOAT x;
-    PFLOAT y;
-    PFLOAT z;
+    float rot1_1;
+    float rot1_2;
+    float rot1_3;
+    float rot2_1;
+    float rot2_2;
+    float rot2_3;
+    float rot3_1;
+    float rot3_2;
+    float rot3_3;
+    float x;
+    float y;
+    float z;
   }
 
   EndEffectorState(Mode _mode){
@@ -101,9 +110,18 @@ class EndEffectorState extends AgentTimeline {
 class EndEffectorGoal extends AgentTimeline {
 
   predicate Holds {
-    PFLOAT cmd_x;
-    PFLOAT cmd_y;
-    PFLOAT cmd_z;
+    float cmd_rot1_1;
+    float cmd_rot1_2;
+    float cmd_rot1_3;
+    float cmd_rot2_1;
+    float cmd_rot2_2;
+    float cmd_rot2_3;
+    float cmd_rot3_1;
+    float cmd_rot3_2;
+    float cmd_rot3_3;
+    float cmd_x;
+    float cmd_y;
+    float cmd_z;
   }
 
   EndEffectorGoal(Mode _mode){
@@ -246,10 +264,20 @@ class Actions extends AgentActions{
    * Move the end effector. Will compute next target based on linear interpolation
    */
   predicate SetEndEffectorGoal{
-    EndEffectorState endEffectorState;
-    PFLOAT x;
-    PFLOAT y;
-    PFLOAT z;
+    EndEffectorGoal endEffectorGoal;
+    bool isLeft;
+    float rot1_1;
+    float rot1_2;
+    float rot1_3;
+    float rot2_1;
+    float rot2_2;
+    float rot2_3;
+    float rot3_1;
+    float rot3_2;
+    float rot3_3;
+    float x;
+    float y;
+    float z;
   }
 };
 
@@ -302,25 +330,52 @@ class MoveArm extends AgentTimeline {
  */
 class  MoveEndEffector extends Behavior {
 
-  EndEffectorState endEffectorState;
-  
+  bool _isLeft;
+
   predicate Inactive{
-    float acX;
-    float acY;
-    float acZ;
-    float desX;
-    float desY;
-    float desZ;
+    float ac_rot1_1;
+    float ac_rot1_2;
+    float ac_rot1_3;
+    float ac_rot2_1;
+    float ac_rot2_2;
+    float ac_rot2_3;
+    float ac_rot3_1;
+    float ac_rot3_2;
+    float ac_rot3_3;
+    float ac_x;
+    float ac_y;
+    float ac_z;
+    float des_rot1_1;
+    float des_rot1_2;
+    float des_rot1_3;
+    float des_rot2_1;
+    float des_rot2_2;
+    float des_rot2_3;
+    float des_rot3_1;
+    float des_rot3_2;
+    float des_rot3_3;
+    float des_x;
+    float des_y;
+    float des_z;
   }
 
   predicate Active {
+    float rot1_1;
+    float rot1_2;
+    float rot1_3;
+    float rot2_1;
+    float rot2_2;
+    float rot2_3;
+    float rot3_1;
+    float rot3_2;
+    float rot3_3;
     float x;
     float y;
     float z;
   }
   
-  MoveEndEffector(Mode _mode, EndEffectorState _endEffectorState){
+  MoveEndEffector(Mode _mode, bool isLeft){
     super(_mode);
-    endEffectorState = _endEffectorState;
+    _isLeft = isLeft;
   }
 };
