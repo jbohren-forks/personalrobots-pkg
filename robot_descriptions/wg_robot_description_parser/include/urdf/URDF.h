@@ -52,6 +52,32 @@ namespace robot_desc
     {
     public:
 	
+	/* This class encapsulates data that can be attached to various tags in the format */
+	class Data
+	{
+	public:
+	    
+	    Data(void)
+	    {
+	    }
+	    
+	    virtual ~Data(void)
+	    {
+	    }
+	    
+	    void getDataTagTypes(std::vector<std::string> &types) const;
+	    void getDataTagNames(const std::string &type, std::vector<std::string> &names) const;
+	    std::map<std::string, std::string> getDataTagValues(const std::string &type, const std::string &name) const;
+	    
+	    virtual void print(FILE *out = stdout, std::string indent = "") const;
+
+	    void add(const std::string &type, const std::string &name, const std::string &key, const std::string &value);
+	    
+	protected:
+	    
+	    std::map<std::string, std::map<std::string, std::map<std::string, std::string > > > m_data;
+	};
+	
 	struct Group;
 	
 	struct Link
@@ -69,7 +95,7 @@ namespace robot_desc
 		{
 		}
 		
-		virtual void print(FILE *out = stdout, std::string indent = "");
+		virtual void print(FILE *out = stdout, std::string indent = "") const;
 		
 		enum
 		    {
@@ -78,6 +104,7 @@ namespace robot_desc
 		std::string name;
 		double      size[3];
 		std::string filename;
+		Data        data;
 	    };
 	    
 	    struct Actuator
@@ -93,7 +120,7 @@ namespace robot_desc
 		{
 		}
 		
-		virtual void print(FILE *out = stdout, std::string indent = "");
+		virtual void print(FILE *out = stdout, std::string indent = "") const;
 		
 		std::string  name;
 		std::string  motor;
@@ -101,6 +128,7 @@ namespace robot_desc
 		unsigned int port;
 		double       reduction;
 		double       polymap[3];
+		Data         data;
 	    };
 	    
 	    struct Joint
@@ -120,7 +148,7 @@ namespace robot_desc
 			delete actuators[i];
 		}
 		
-		virtual void print(FILE *out = stdout, std::string indent = "");
+		virtual void print(FILE *out = stdout, std::string indent = "") const;
 		
 		enum
 		    {
@@ -132,6 +160,7 @@ namespace robot_desc
 		double                 limit[2];
 		double                 calibration[2];
 		std::vector<Actuator*> actuators;
+		Data                   data;
 	    };
 	    
 	    struct Collision
@@ -140,6 +169,7 @@ namespace robot_desc
 		{
 		    xyz[0] = xyz[1] = xyz[2] = 0.0;
 		    rpy[0] = rpy[1] = rpy[2] = 0.0;
+		    scale[0] = scale[1] = scale[2] = 1.0;
 		    verbose = false;
 		    geometry = new Geometry();
 		}
@@ -150,14 +180,16 @@ namespace robot_desc
 			delete geometry;
 		}
 		
-		virtual void print(FILE *out = stdout, std::string indent = "");
+		virtual void print(FILE *out = stdout, std::string indent = "") const;
 		
 		std::string  name;	
 		bool         verbose;
 		double       xyz[3];
 		double       rpy[3];
+		double       scale[3];
 		std::string  material;
-		Geometry    *geometry;		
+		Geometry    *geometry;
+		Data         data;	
 	    };
 	    
 	    struct Inertial
@@ -173,12 +205,13 @@ namespace robot_desc
 		{
 		}
 		
-		virtual void print(FILE *out = stdout, std::string indent = "");
+		virtual void print(FILE *out = stdout, std::string indent = "") const;
 		
 		std::string name;
 		double      mass;
 		double      inertia[6];
 		double      com[3];
+		Data        data;
 	    };
 	    
 	    struct Visual
@@ -187,6 +220,7 @@ namespace robot_desc
 		{
 		    xyz[0] = xyz[1] = xyz[2] = 0.0;
 		    rpy[0] = rpy[1] = rpy[2] = 0.0;
+		    scale[0] = scale[1] = scale[2] = 1.0;
 		    geometry = new Geometry();
 		}
 		
@@ -196,13 +230,15 @@ namespace robot_desc
 			delete geometry;
 		}
 		
-		virtual void print(FILE *out = stdout, std::string indent = "");
+		virtual void print(FILE *out = stdout, std::string indent = "") const;
 		
 		std::string  name;
 		double       xyz[3];
 		double       rpy[3];
+		double       scale[3];
 		std::string  material;
 		Geometry    *geometry;
+		Data         data;
 	    };
 	    
 	    Link(void)
@@ -229,7 +265,7 @@ namespace robot_desc
 	    }
 	    
 	    virtual bool canSense(void) const;
-	    virtual void print(FILE *out = stdout, std::string indent = "");
+	    virtual void print(FILE *out = stdout, std::string indent = "") const;
 	    
 	    Link               *parent;
 	    std::string         parentName;
@@ -243,7 +279,8 @@ namespace robot_desc
 	    
 	    double              rpy[3];
 	    double              xyz[3];
-	    
+	    Data                data;
+
 	    std::vector<Group*> groups;
 	};
 	
@@ -260,11 +297,11 @@ namespace robot_desc
 	    }
 	    
 	    virtual bool canSense(void) const;
-	    virtual void print(FILE *out = stdout, std::string indent = "");
+	    virtual void print(FILE *out = stdout, std::string indent = "") const;
 	    
 	    enum
 	    {
-		UNKNOWN, CAMERA
+		UNKNOWN, LASER, CAMERA, STEREO_CAMERA
 	    }           type;
 	    std::string calibration;
 	};
@@ -285,7 +322,7 @@ namespace robot_desc
 	    std::vector<Link*>       links;
 	    std::vector<Link*>       linkRoots;
 	};
-	
+		
 	explicit URDF(const char *filename = NULL)
 	{   
 	    m_paths.push_back("");
@@ -303,7 +340,7 @@ namespace robot_desc
 	virtual bool loadFile(FILE *file);
 	virtual bool loadString(const char *data);
 	virtual bool loadStream(std::istream &is);
-	virtual void print(FILE *out = stdout);
+	virtual void print(FILE *out = stdout) const;
 	
 	bool containsCycle(unsigned int index) const;
 	const std::string& getRobotName(void) const;
@@ -313,10 +350,8 @@ namespace robot_desc
 	void getGroupNames(std::vector<std::string> &groups) const;
 	Group* getGroup(const std::string &name) const;
 	
-	void getDataTagTypes(std::vector<std::string> &types) const;
-	void getDataTagNames(const std::string &type, std::vector<std::string> &names) const;
-	const std::map<std::string, std::string>& getDataTagValues(const std::string &type, const std::string &name);
-
+	const Data& getData(void) const;
+	
     protected:
 	
 	/* free the memory allocate in this class */
@@ -344,9 +379,8 @@ namespace robot_desc
 	std::map<std::string, Link::Actuator*>  m_actuators;
 	
 	std::map<std::string, Group*>           m_groups;
-
-	// information loaded from data tags
-	std::map<std::string, std::map<std::string, std::map<std::string, std::string > > > m_data;
+	
+	Data                                    m_data; // information from data tags
 	
     private:
 	
@@ -359,7 +393,8 @@ namespace robot_desc
 	void loadCollision(const TiXmlNode *node, Link::Collision *collision);
 	void loadVisual(const TiXmlNode *node, Link::Visual *visual);
 	void loadInertial(const TiXmlNode *node, Link::Inertial *inertial);
-
+	void loadData(const TiXmlNode *node, Data *data);
+	
 	void defaultConstants(void);
 
 	void getChildrenAndAttributes(const TiXmlNode* node, std::vector<const TiXmlNode*> &children, std::vector<const TiXmlAttribute*> &attributes) const;
