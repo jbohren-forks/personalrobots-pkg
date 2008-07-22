@@ -8,6 +8,9 @@
   </description>
   <author>Sachin Chitta, John Hsu, Ioan Sucan</author>
   <license>BSD</license>
+  
+  <depend package="wg_robot_description_parser" />
+  
   <url>http://pr.willowgarage.com/wiki/RobotDescriptionFormat</url>
 
 </package>
