@@ -58,6 +58,7 @@ public:
 	    fprintf(stderr, "%s\n", m_doc->ErrorDesc());
 	    return false;
 	}
+	addPath(filename);
 	fixIncludes(m_doc->RootElement());
 	return true;	
     }
