@@ -13,6 +13,7 @@
   <depend package="std_msgs" />
   <depend package="rosthread" />
   <depend package="rosTF" />
+  <depend package="gazebo_plugin" />
   <depend package="math_utils" />
   <depend package="string_utils" />
   <depend package="libKDL" />

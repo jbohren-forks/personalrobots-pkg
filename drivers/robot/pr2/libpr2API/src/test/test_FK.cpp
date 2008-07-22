@@ -62,11 +62,10 @@ int main(int argc, char** argv)
   unsigned long time_now_nsec;
 
   // get time from robot
-/*  myPR2.InitializeRobot();
-  myPR2.GetTime(&time_now);
-  time_now_sec  = (unsigned long)floor(time_now);
-  time_now_nsec = (unsigned long)floor(  1e9 * (  time_now - (double)time_now_sec) );
-*/
+  //  myPR2.InitializeRobot();
+  // myPR2.GetTime(&time_now);
+  // time_now_sec  = (unsigned long)floor(time_now);
+  // time_now_nsec = (unsigned long)floor(  1e9 * (  time_now - (double)time_now_sec) );
   // unsigned long time_now_sec  = 0;
   // unsigned long time_now_nsec = 0;
 
@@ -81,24 +80,36 @@ int main(int argc, char** argv)
       for(ii = (int) PR2::CASTER_FL_STEER; ii <= (int) PR2::CASTER_RR_DRIVE_R; ii++) 
       {
          myPR2.ComputeBodyPose((PR2::PR2_JOINT_ID)ii,rS,&x,&y,&z,&roll,&pitch,&yaw);
-//         tfServer.sendEuler((unsigned int) ii,(unsigned int) PR2::PR2_WORLD,x,y,z,yaw,pitch,roll,time_now_sec,time_now_nsec);
-         tfServer.sendEuler((unsigned int) ii,(unsigned int) PR2::PR2_WORLD,x,y,z,yaw,pitch,roll,0,0);
-      }
+	 //         tfServer.sendEuler((unsigned int) ii,(unsigned int) PR2::PR2_WORLD,x,y,z,yaw,pitch,roll,time_now_sec,time_now_nsec);
+         //tfServer.sendEuler((unsigned int) ii+1,(unsigned int) PR2::PR2_WORLD+1,x,y,z,yaw,pitch,roll,0,0);
+         tfServer.sendEuler((unsigned int) ii+1,(unsigned int) PR2::PR2_WORLD+1,ii,0,0,0,0,0,0,0);
+         cout << "Base:: " << ii << endl;
+   cout << "pos:: (" << x << "," << y << "," << z << ")" << endl;
+   cout << "rot:: (" << roll << "," << pitch << "," << yaw << ")" << endl;
+     }
 
       // Publish the arms
       for(ii = (int) PR2::ARM_L_PAN; ii <= (int) PR2::ARM_R_WRIST_ROLL; ii++) 
       {
          myPR2.ComputeBodyPose((PR2::PR2_JOINT_ID)ii,rS,&x,&y,&z,&roll,&pitch,&yaw);
-//         tfServer.sendEuler((unsigned int) ii,(unsigned int) PR2::PR2_WORLD,x,y,z,yaw,pitch,roll,time_now_sec,time_now_nsec);
-         tfServer.sendEuler((unsigned int) ii,(unsigned int) PR2::PR2_WORLD,x,y,z,yaw,pitch,roll,0,0);
-       }
+	 //         tfServer.sendEuler((unsigned int) ii,(unsigned int) PR2::PR2_WORLD,x,y,z,yaw,pitch,roll,time_now_sec,time_now_nsec);
+         //tfServer.sendEuler((unsigned int) ii+1,(unsigned int) PR2::PR2_WORLD+1,x,y,z,yaw,pitch,roll,0,0);
+         tfServer.sendEuler((unsigned int) ii+1,(unsigned int) PR2::PR2_WORLD+1,0,0,0,0,0,0,0,0);
+         cout << "Arm:: " << ii << endl;
+   cout << "pos:: (" << x << "," << y << "," << z << ")" << endl;
+   cout << "rot:: (" << roll << "," << pitch << "," << yaw << ")" << endl;
+      }
 
       // Publish the head
       for(ii = (int) PR2::HEAD_YAW; ii <= (int) PR2::HEAD_PITCH; ii++) 
       {
          myPR2.ComputeBodyPose((PR2::PR2_JOINT_ID)ii,rS,&x,&y,&z,&roll,&pitch,&yaw);
-//         tfServer.sendEuler((unsigned int) ii,(unsigned int) PR2::PR2_WORLD,x,y,z,yaw,pitch,roll,time_now_sec,time_now_nsec);
-         tfServer.sendEuler((unsigned int) ii,(unsigned int) PR2::PR2_WORLD,x,y,z,yaw,pitch,roll,0,0);
+	 //         tfServer.sendEuler((unsigned int) ii,(unsigned int) PR2::PR2_WORLD,x,y,z,yaw,pitch,roll,time_now_sec,time_now_nsec);
+	 //tfServer.sendEuler((unsigned int) ii+1,(unsigned int) PR2::PR2_WORLD+1,x,y,z,yaw,pitch,roll,0,0);
+	 tfServer.sendEuler((unsigned int) ii+1,(unsigned int) PR2::PR2_WORLD+1,0,0,0,0,0,0,0,0);
+         cout << "Head:: " << ii << endl;
+   cout << "pos:: (" << x << "," << y << "," << z << ")" << endl;
+   cout << "rot:: (" << roll << "," << pitch << "," << yaw << ")" << endl;
       }
     usleep(1000000);
     cout << "Publishing:: " << endl;

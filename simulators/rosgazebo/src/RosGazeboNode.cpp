@@ -288,10 +288,12 @@ RosGazeboNode::AdvertiseSubscribeMessages()
   advertise<std_msgs::Image>("image");
   advertise<std_msgs::PointCloudFloat32>("cloud");
   advertise<std_msgs::PointCloudFloat32>("full_cloud");
+  advertise<std_msgs::PointCloudFloat32>("cloudStereo");
   advertise<std_msgs::Empty>("shutter");
   advertise<std_msgs::PR2Arm>("left_pr2arm_pos");
   advertise<std_msgs::PR2Arm>("right_pr2arm_pos");
   advertise<rostools::Time>("time");
+  advertise<std_msgs::Empty>("transform");
 
   subscribe("cmd_vel", velMsg, &RosGazeboNode::cmdvelReceived);
   subscribe("cmd_leftarmconfig", leftarm, &RosGazeboNode::cmd_leftarmconfigReceived);
@@ -402,7 +404,7 @@ RosGazeboNode::Update()
       tmp_cloud_pt.z                = tmp_range * cos(laser_yaw) * sin(laser_pitch);
 
       // add gaussian noise
-      const double sigma = 0.002;  // 2 millimeters sigma
+      const double sigma = 0.002;  // 2 millimeter sigma
       tmp_cloud_pt.x                = tmp_cloud_pt.x + GaussianKernel(0,sigma);
       tmp_cloud_pt.y                = tmp_cloud_pt.y + GaussianKernel(0,sigma);
       tmp_cloud_pt.z                = tmp_cloud_pt.z + GaussianKernel(0,sigma);
@@ -695,14 +697,15 @@ RosGazeboNode::Update()
                roll,
                odomMsg.header.stamp.sec,
                odomMsg.header.stamp.nsec);
+  //std::cout << "base y p r " << yaw << " " << pitch << " " << roll << std::endl;
 
   // base = center of the bottom of the base box
   // torso = midpoint of bottom of turrets
   tf.sendEuler(PR2::FRAMEID_TORSO,
                PR2::FRAMEID_BASE,
-               PR2::BASE_LEFT_ARM_OFFSET.x,
-               0.0,
-               PR2::BASE_LEFT_ARM_OFFSET.z, /* FIXME: spine elevator not accounted for */
+               PR2::BASE_TORSO_OFFSET.x,
+               PR2::BASE_TORSO_OFFSET.y,
+               PR2::BASE_TORSO_OFFSET.z, /* FIXME: spine elevator not accounted for */
                0.0,
                0.0,
                0.0,
@@ -712,14 +715,16 @@ RosGazeboNode::Update()
   // arm_l_turret = bottom of left turret
   tf.sendEuler(PR2::FRAMEID_ARM_L_TURRET,
                PR2::FRAMEID_TORSO,
-               0.0,
-               PR2::BASE_LEFT_ARM_OFFSET.y,
-               0.0,
+               PR2::TORSO_LEFT_ARM_PAN_OFFSET.x,
+               PR2::TORSO_LEFT_ARM_PAN_OFFSET.y,
+               PR2::TORSO_LEFT_ARM_PAN_OFFSET.z,
                larm.turretAngle,
+               //0.0,
                0.0,
                0.0,
                odomMsg.header.stamp.sec,
                odomMsg.header.stamp.nsec);
+  //std::cout << "left pan angle " << larm.turretAngle << std::endl;
 
   // arm_l_shoulder = center of left shoulder pitch bracket
   tf.sendEuler(PR2::FRAMEID_ARM_L_SHOULDER,
@@ -821,9 +826,9 @@ RosGazeboNode::Update()
   // arm_r_turret = bottom of right turret
   tf.sendEuler(PR2::FRAMEID_ARM_R_TURRET,
                PR2::FRAMEID_TORSO,
-               0.0,
-               PR2::BASE_RIGHT_ARM_OFFSET.y,
-               0.0,
+               PR2::TORSO_RIGHT_ARM_PAN_OFFSET.x,
+               PR2::TORSO_RIGHT_ARM_PAN_OFFSET.y,
+               PR2::TORSO_RIGHT_ARM_PAN_OFFSET.z,
                rarm.turretAngle,
                0.0,
                0.0,
@@ -929,9 +934,9 @@ RosGazeboNode::Update()
   // FIXME: not implemented
   tf.sendEuler(PR2::FRAMEID_HEAD_PAN_BASE,
                PR2::FRAMEID_TORSO,
+               PR2::TORSO_HEAD_OFFSET.x,
                0.0,
-               0.0,
-               1.0,
+               PR2::TORSO_HEAD_OFFSET.z,
                0.0,
                0.0,
                0.0,
@@ -964,10 +969,10 @@ RosGazeboNode::Update()
 
   // FIXME: not implemented
   tf.sendEuler(PR2::FRAMEID_TILT_LASER_BLOCK,
-               PR2::FRAMEID_BASE,
-               0.035,
+               PR2::FRAMEID_TORSO,
+               PR2::TORSO_TILT_LASER_OFFSET.x,
                0.0,
-               0.26,
+               PR2::TORSO_TILT_LASER_OFFSET.z,
                0.0,
                0.0,
                0.0,
@@ -977,9 +982,9 @@ RosGazeboNode::Update()
   // FIXME: not implemented
   tf.sendEuler(PR2::FRAMEID_BASE_LASER_BLOCK,
                PR2::FRAMEID_BASE,
-               0.035,
+               PR2::BASE_BASE_LASER_OFFSET.x,
                0.0,
-               0.26,
+               PR2::BASE_BASE_LASER_OFFSET.z,
                0.0,
                0.0,
                0.0,
@@ -1001,9 +1006,9 @@ RosGazeboNode::Update()
                PR2::BASE_BODY_OFFSETS[0].x,
                PR2::BASE_BODY_OFFSETS[0].y,
                PR2::BASE_BODY_OFFSETS[0].z,
-               0.0,
-               0.0,
                tmpSteerFL,
+               0.0,
+               0.0,
                odomMsg.header.stamp.sec,
                odomMsg.header.stamp.nsec);
   tf.sendEuler(PR2::FRAMEID_CASTER_FL_WHEEL_L,
@@ -1032,9 +1037,9 @@ RosGazeboNode::Update()
                PR2::BASE_BODY_OFFSETS[3].x,
                PR2::BASE_BODY_OFFSETS[3].y,
                PR2::BASE_BODY_OFFSETS[3].z,
-               0.0,
-               0.0,
                tmpSteerFR,
+               0.0,
+               0.0,
                odomMsg.header.stamp.sec,
                odomMsg.header.stamp.nsec);
   tf.sendEuler(PR2::FRAMEID_CASTER_FR_WHEEL_L,
@@ -1063,9 +1068,9 @@ RosGazeboNode::Update()
                PR2::BASE_BODY_OFFSETS[6].x,
                PR2::BASE_BODY_OFFSETS[6].y,
                PR2::BASE_BODY_OFFSETS[6].z,
-               0.0,
-               0.0,
                tmpSteerRL,
+               0.0,
+               0.0,
                odomMsg.header.stamp.sec,
                odomMsg.header.stamp.nsec);
   tf.sendEuler(PR2::FRAMEID_CASTER_RL_WHEEL_L,
@@ -1094,9 +1099,9 @@ RosGazeboNode::Update()
                PR2::BASE_BODY_OFFSETS[9].x,
                PR2::BASE_BODY_OFFSETS[9].y,
                PR2::BASE_BODY_OFFSETS[9].z,
-               0.0,
-               0.0,
                tmpSteerRR,
+               0.0,
+               0.0,
                odomMsg.header.stamp.sec,
                odomMsg.header.stamp.nsec);
   tf.sendEuler(PR2::FRAMEID_CASTER_RR_WHEEL_L,
@@ -1121,7 +1126,7 @@ RosGazeboNode::Update()
                odomMsg.header.stamp.nsec);
 
 
-
+	publish("transform",this->shutterMsg);
   this->lock.unlock();
 }
 

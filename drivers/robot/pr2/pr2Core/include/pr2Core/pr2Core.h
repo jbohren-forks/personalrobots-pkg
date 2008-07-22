@@ -331,9 +331,9 @@ namespace PR2
    const point3 TORSO_RIGHT_ARM_PAN_OFFSET           = {     0   , -0.1329361,    0    };
    const point3 ARM_PAN_SHOULDER_PITCH_OFFSET        = {0.1     ,0        ,0.5   }; // FIXME: what is z?
    const point3 ARM_SHOULDER_PITCH_ROLL_OFFSET       = {0       ,0        ,0     };
-   const point3 ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET = {0.475     ,0        ,0     };
+   const point3 ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET = {0.385     ,0        ,0     };//{0.475     ,0        ,0     };
    const point3 ELBOW_PITCH_ELBOW_ROLL_OFFSET        = {0		,0        ,0     };//{0.09085 ,0        ,0     };
-   const point3 ELBOW_ROLL_WRIST_PITCH_OFFSET        = {0.2237  ,0        ,0     };
+   const point3 ELBOW_ROLL_WRIST_PITCH_OFFSET        = {0.3137  ,0        ,0     };
    const point3 WRIST_PITCH_WRIST_ROLL_OFFSET        = {0       ,0        ,0     };
    const point3 WRIST_ROLL_GRIPPER_OFFSET            = {0       ,0        ,0     };
    const point3 SPINE_RIGHT_ARM_OFFSET               = {0.0     ,-0.15    ,0.68  };
@@ -344,6 +344,8 @@ namespace PR2
 
    const point3 HEAD_PAN_HEAD_PITCH_OFFSET           = {0,0,0};
 
-   const point3 BASE_HEAD_OFFSET                     = {-.1829361, 0, 0.80981};
+   const point3 TORSO_HEAD_OFFSET                    = {-.02, 0, 0.80981};
+   const point3 TORSO_TILT_LASER_OFFSET				 = {.07, 0, .68};
+   const point3 BASE_BASE_LASER_OFFSET				 = {.26, 0,.28};
 }
 #endif

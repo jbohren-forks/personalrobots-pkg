@@ -677,8 +677,8 @@ PR2_ERROR_CODE PR2HW::GetCameraImage(PR2_SENSOR_ID id ,
     pr2CameraIface->Lock(1);
     *width        = (uint32_t)pr2CameraIface->data->width;
     *height       = (uint32_t)pr2CameraIface->data->height;
-    *compression  = "jpeg";
-    *colorspace   = "rgb"; //"mono";
+    *compression  = "raw";
+    *colorspace   = "rgb24"; //"mono";
     *data_size    = pr2CameraIface->data->image_size;
 
     // on first pass, the sensor does not update after cameraIface is opened.
@@ -689,7 +689,7 @@ PR2_ERROR_CODE PR2HW::GetCameraImage(PR2_SENSOR_ID id ,
       uint32_t       buf_size = (*width) * (*height) * (*depth);
 
       // copy the image into local buffer
-#if 0
+#if 1
       //buf = (void*)(pr2CameraIface->data->image);
       memcpy(buf,pr2CameraIface->data->image,buf_size);
 #else

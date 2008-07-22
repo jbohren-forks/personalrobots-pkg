@@ -334,9 +334,9 @@ NEWMAT::Matrix PR2Robot::ComputeHeadBodyPose(PR2_JOINT_ID id, PR2::PR2State rS)
 {
    NEWMAT::Matrix g(4,4);
    g = myHead.ComputeFK(rS.headJntAngles,id-JointStart[HEAD]+1);
-   g(1,4) = g(1,4) + BASE_HEAD_OFFSET.x;
-   g(2,4) = g(2,4) + BASE_HEAD_OFFSET.y;
-   g(3,4) = g(3,4) + BASE_HEAD_OFFSET.z;
+   g(1,4) = g(1,4) + BASE_TORSO_OFFSET.x + TORSO_HEAD_OFFSET.x;
+   g(2,4) = g(2,4) + BASE_TORSO_OFFSET.y + TORSO_HEAD_OFFSET.y;
+   g(3,4) = g(3,4) + BASE_TORSO_OFFSET.z + TORSO_HEAD_OFFSET.z;
    return g;
 };
 
