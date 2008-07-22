@@ -10,7 +10,7 @@ CONFIG_RTNET_VERSION="0.9.10"
 #
 # CONFIG_RTNET_RTEXT_CLASSIC is not set
 CONFIG_RTNET_RTEXT_INKERNEL=y
-CONFIG_RTNET_LINUX_DIR="/lib/modules/2.6.24.3/build"
+CONFIG_RTNET_LINUX_DIR="`rospack find xenomai`/linux"
 
 #
 # RTnet Parameters
