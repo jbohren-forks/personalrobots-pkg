@@ -35,33 +35,115 @@
 #ifndef LOGRECORDER_H
 #define LOGRECORDER_H
 
-#include "ros/node.h"
 #include "ros/time.h"
+#include "rosthread/mutex.h"
 #include "logging/AnyMsg.h"
 
 #include <fstream>
+#include <iomanip>
 
-template <class M = AnyMsg>
-class LogRecorder : public M
+class LogWriter : public std::ofstream
 {
-  std::ofstream log;
-  bool first;
-  std::string topic_name;
-  ros::Time start;
+  ros::thread::mutex m;
+  uint32_t count;
+
 public:
 
-  LogRecorder() : M(), first(true) { }
-  virtual ~LogRecorder() { log.close(); }
-  bool open_log(const std::string &file_name, std::string _topic_name, ros::Time _start)
+  LogWriter() : std::ofstream() , count(0) { }
+
+  bool openOld(std::string fname, std::string topic_name, std::string data_type, std::string md5sum) 
   {
-    topic_name = _topic_name;
-    start = _start;
-    log.open(file_name.c_str());
-    if (log.fail())
+    std::ofstream::open(fname.c_str());
+    if (std::ofstream::fail())
     {
       printf("Failed to open log\n");
       return false;
     }
+
+    *this << topic_name << std::endl;
+    *this << data_type  << std::endl;
+    *this << md5sum     << std::endl;
+
+    return true;
+  }
+
+  bool open(std::string fname) 
+  {
+    std::ofstream::open(fname.c_str());
+    if (std::ofstream::fail())
+    {
+      fprintf(stderr, "Failed to open log\n");
+      return false;
+    }
+
+    *this << "##MULTILOG##" << std::endl << std::setw(4) << std::setfill('0') << 0 << std::endl;
+
+    return true;
+  }
+
+  void addLog(std::string topic_name, std::string data_type, std::string md5sum)
+  {
+    seekp(0, ios_base::beg);
+
+    *this << "##MULTILOG##" << std::endl << std::setw(4) << std::setfill('0') << ++count << std::endl;
+
+    seekp(0, ios_base::end);
+
+    *this << topic_name << std::endl;
+    *this << data_type  << std::endl;
+    *this << md5sum     << std::endl;
+  }
+
+  void lock() {
+    m.lock();
+  }
+
+  void unlock() {
+    m.unlock();
+  }
+};
+
+template <class M = AnyMsg>
+class LogRecorder : public M
+{
+
+  bool oldFormat;
+  LogWriter* log;
+  std::string topic_name;
+  ros::Time start;
+public:
+
+  LogRecorder() : M(), oldFormat(false), log(NULL) { }
+  virtual ~LogRecorder()
+  {
+    if (oldFormat)
+      delete log;
+  }
+  bool open_log(const std::string &file_name, std::string _topic_name, ros::Time _start)
+  {
+    oldFormat = true;
+
+    topic_name = _topic_name;
+    start = _start;
+    log = new LogWriter;
+
+    if (!log->openOld(file_name, __get_topic_name(), M::__get_datatype(), M::__get_md5sum()))
+      return false;
+
+    return true;
+  }
+
+  bool open_log(LogWriter* _log, std::string _topic_name, ros::Time _start)
+  {
+    log = _log;
+
+    topic_name = _topic_name;
+    start = _start;
+
+    log->lock();
+    log->addLog(__get_topic_name(), M::__get_datatype(), M::__get_md5sum());
+    log->unlock();
+
     return true;
   }
 
@@ -70,23 +152,20 @@ public:
   virtual uint8_t *serialize(uint8_t *write_ptr) { assert(0); return NULL; }
   virtual uint8_t *deserialize(uint8_t *read_ptr)
   {
-
-    if (first)
-    {
-      log << __get_topic_name() << std::endl;
-      log << M::__get_datatype() << std::endl;
-      log << M::__get_md5sum() << std::endl;
-      first = false;
-    }
     ros::Duration elapsed = ros::Time::now() - start;
-    log.write((char*)&elapsed.sec, 4);
-    log.write((char*)&elapsed.nsec, 4);
+    log->lock();
+
+    if (!oldFormat)
+      *log << topic_name << std::endl;
+
+    log->write((char*)&elapsed.sec, 4);
+    log->write((char*)&elapsed.nsec, 4);
 
     uint32_t tmp = M::__serialized_length;
-    log.write((char*)&(tmp), 4);
-    //    log.write((char*)&(M::__serialized_length), 4);
+    log->write((char*)&(tmp), 4);
 
-    log.write((char*)read_ptr, M::__serialized_length);
+    log->write((char*)read_ptr, M::__serialized_length);
+    log->unlock();
     return read_ptr + M::__serialized_length;
   }
 };
