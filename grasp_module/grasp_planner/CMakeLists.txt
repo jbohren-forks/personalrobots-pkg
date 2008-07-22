@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.6)
+include(rosbuild)
+rospack(object_detector)
+add_definitions(-Wall)
+rospack_add_library(graspplanner src/graspPoint.cpp src/graspPlanner.cpp)
