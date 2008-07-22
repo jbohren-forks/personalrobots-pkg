@@ -378,6 +378,11 @@ NEWMAT::Matrix Pose3D::getInverseMatrix(void)
     return asMatrix().i();
 };
 
+void Pose3D::invert(void) // not very fast :(
+{
+    setFromMatrix(getInverseMatrix());
+}
+
 void Pose3D::getAxisAngle(double axis[3], double *angle) const
 {
     *angle = 2.0 * acos(w);

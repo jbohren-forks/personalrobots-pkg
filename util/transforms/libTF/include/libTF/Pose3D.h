@@ -145,6 +145,8 @@ namespace libTF
       /** \brief Apply another pose to the transform contained in the current pose (transform multiplication) */
       void multiplyPose(Pose3D &pose);
       
+      /** \brief Invert this transfrom */
+      void invert(void);      
 
       /** Application of the transform **/
       /** \brief Apply the stored transform to a point */
