@@ -280,7 +280,6 @@
     <xyz> 0 0 wheel_clearance_offset</xyz> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
 
     <joint type="floating" name="joint_base"> 
-      <anchor>0.25 0.1 0.3  </anchor> <!-- Initial position of the base in a global coordinate frame -->
     </joint>
 
     <inertial>
