@@ -381,12 +381,12 @@ namespace robot_desc
 	/* utility functions for parsing */
 	void loadLink(const TiXmlNode *node);
 	void loadSensor(const TiXmlNode *node);
-	void loadActuator(const TiXmlNode *node, Link::Actuator *actuator);
-	void loadJoint(const TiXmlNode *node, Link::Joint *joint);
-	void loadGeometry(const TiXmlNode *node, Link::Geometry *geometry);
-	void loadCollision(const TiXmlNode *node, Link::Collision *collision);
-	void loadVisual(const TiXmlNode *node, Link::Visual *visual);
-	void loadInertial(const TiXmlNode *node, Link::Inertial *inertial);
+	void loadActuator(const TiXmlNode *node, const std::string &defaultName, Link::Actuator *actuator);
+	void loadJoint(const TiXmlNode *node, const std::string &defaultName, Link::Joint *joint);
+	void loadGeometry(const TiXmlNode *node, const std::string &defaultName, Link::Geometry *geometry);
+	void loadCollision(const TiXmlNode *node, const std::string &defaultName, Link::Collision *collision);
+	void loadVisual(const TiXmlNode *node, const std::string &defaultName, Link::Visual *visual);
+	void loadInertial(const TiXmlNode *node, const std::string &defaultName, Link::Inertial *inertial);
 	void loadData(const TiXmlNode *node, Data *data);
 	
 	void defaultConstants(void);
@@ -396,7 +396,7 @@ namespace robot_desc
 	unsigned int loadDoubleValues(const TiXmlNode *node, unsigned int count, double *vals);
 	unsigned int loadBoolValues  (const TiXmlNode *node, unsigned int count, bool   *vals);
 
-	std::string  extractName(std::vector<const TiXmlAttribute*> &attributes);    
+	std::string  extractName(std::vector<const TiXmlAttribute*> &attributes, const std::string &defaultName);    
 
 	void clearDocs(void);    
 	

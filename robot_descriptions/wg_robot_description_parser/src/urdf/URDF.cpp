@@ -470,9 +470,9 @@ char* robot_desc::URDF::findFile(const char *filename)
     return NULL;
 }
 
-std::string robot_desc::URDF::extractName(std::vector<const TiXmlAttribute*> &attributes)
+std::string robot_desc::URDF::extractName(std::vector<const TiXmlAttribute*> &attributes, const std::string &defaultName)
 { 
-    std::string name;    
+    std::string name = defaultName;
     for (unsigned int i = 0 ; i < attributes.size() ; ++i)
     {
 	if (strcmp(attributes[i]->Name(), "name") == 0)
@@ -573,13 +573,13 @@ unsigned int robot_desc::URDF::loadBoolValues(const TiXmlNode *node, unsigned in
     return read;
 }
 
-void robot_desc::URDF::loadActuator(const TiXmlNode *node, Link::Actuator *actuator)
+void robot_desc::URDF::loadActuator(const TiXmlNode *node, const std::string &defaultName, Link::Actuator *actuator)
 {
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
     getChildrenAndAttributes(node, children, attributes);
     
-    std::string name = extractName(attributes);
+    std::string name = extractName(attributes, defaultName);
     
     if (!actuator)
     {
@@ -610,13 +610,13 @@ void robot_desc::URDF::loadActuator(const TiXmlNode *node, Link::Actuator *actua
     }    
 }
 
-void robot_desc::URDF::loadJoint(const TiXmlNode *node, Link::Joint *joint)
+void robot_desc::URDF::loadJoint(const TiXmlNode *node, const std::string& defaultName, Link::Joint *joint)
 {
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
     getChildrenAndAttributes(node, children, attributes);
     
-    std::string name = extractName(attributes);
+    std::string name = extractName(attributes, defaultName);
     
     if (!joint)
     {
@@ -677,7 +677,7 @@ void robot_desc::URDF::loadJoint(const TiXmlNode *node, Link::Joint *joint)
 	    {
 		Link::Actuator *actuator = new Link::Actuator();
 		joint->actuators.push_back(actuator);
-		loadActuator(node, actuator);
+		loadActuator(node, name + "_actuator", actuator);
 	    }
 	    else
 		ignoreNode(node);
@@ -688,13 +688,13 @@ void robot_desc::URDF::loadJoint(const TiXmlNode *node, Link::Joint *joint)
     
 }
 
-void robot_desc::URDF::loadGeometry(const TiXmlNode *node, Link::Geometry *geometry)
+void robot_desc::URDF::loadGeometry(const TiXmlNode *node, const std::string &defaultName, Link::Geometry *geometry)
 {
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
     getChildrenAndAttributes(node, children, attributes);
 
-    std::string name = extractName(attributes);
+    std::string name = extractName(attributes, defaultName);
     
     if (!geometry)
     {
@@ -768,13 +768,13 @@ void robot_desc::URDF::loadGeometry(const TiXmlNode *node, Link::Geometry *geome
     }
 }
 
-void robot_desc::URDF::loadCollision(const TiXmlNode *node, Link::Collision *collision)
+void robot_desc::URDF::loadCollision(const TiXmlNode *node, const std::string &defaultName, Link::Collision *collision)
 {  
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
     getChildrenAndAttributes(node, children, attributes);
 
-    std::string name = extractName(attributes);
+    std::string name = extractName(attributes, defaultName);
     
     if (!collision)
     {
@@ -811,7 +811,7 @@ void robot_desc::URDF::loadCollision(const TiXmlNode *node, Link::Collision *col
 		loadData(node, &collision->data);
 	    else
 	    if (node->ValueStr() == "geometry")
-		loadGeometry(node, collision->geometry);
+		loadGeometry(node, name + "_geom", collision->geometry);
 	    else
 		ignoreNode(node);
 	}
@@ -820,13 +820,13 @@ void robot_desc::URDF::loadCollision(const TiXmlNode *node, Link::Collision *col
     }    
 }
 
-void robot_desc::URDF::loadVisual(const TiXmlNode *node, Link::Visual *visual)
+void robot_desc::URDF::loadVisual(const TiXmlNode *node, const std::string &defaultName, Link::Visual *visual)
 {  
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
     getChildrenAndAttributes(node, children, attributes);
 
-    std::string name = extractName(attributes);
+    std::string name = extractName(attributes, defaultName);
     
     if (!visual)
     {
@@ -863,7 +863,7 @@ void robot_desc::URDF::loadVisual(const TiXmlNode *node, Link::Visual *visual)
 		loadData(node, &visual->data);
 	    else
 	    if (node->ValueStr() == "geometry")
-		loadGeometry(node, visual->geometry);
+		loadGeometry(node, name + "_geom", visual->geometry);
 	    else
 		ignoreNode(node);
 	}
@@ -872,13 +872,13 @@ void robot_desc::URDF::loadVisual(const TiXmlNode *node, Link::Visual *visual)
     }   
 }
 
-void robot_desc::URDF::loadInertial(const TiXmlNode *node, Link::Inertial *inertial)
+void robot_desc::URDF::loadInertial(const TiXmlNode *node, const std::string &defaultName, Link::Inertial *inertial)
 { 
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
     getChildrenAndAttributes(node, children, attributes);
     
-    std::string name = extractName(attributes);
+    std::string name = extractName(attributes, defaultName);
     
     if (!inertial)
     {
@@ -924,7 +924,7 @@ void robot_desc::URDF::loadLink(const TiXmlNode *node)
     std::vector<const TiXmlAttribute*> attributes;
     getChildrenAndAttributes(node, children, attributes);
 
-    std::string name = extractName(attributes);    
+    std::string name = extractName(attributes, "");    
     Link *link = (m_links.find(name) != m_links.end()) ? m_links[name] : new Link();
     link->name = name;
     if (link->name == "")
@@ -946,16 +946,16 @@ void robot_desc::URDF::loadLink(const TiXmlNode *node)
 		loadDoubleValues(node, 3, link->xyz);
 	    else
 	    if (node->ValueStr() == "joint")
-		loadJoint(node, link->joint);
+		loadJoint(node, name + "_joint", link->joint);
 	    else
 	    if (node->ValueStr() == "collision")
-		loadCollision(node, link->collision);
+		loadCollision(node, name + "_collision", link->collision);
 	    else
 	    if (node->ValueStr() == "inertial")
-		loadInertial(node, link->inertial);
+		loadInertial(node, name + "_inertial", link->inertial);
 	    else
 	    if (node->ValueStr() == "visual")
-		loadVisual(node, link->visual);
+		loadVisual(node, name + "_visual", link->visual);
 	    else
 	    if (node->ValueStr() == "data")
 		loadData(node, &link->data);
@@ -973,7 +973,7 @@ void robot_desc::URDF::loadSensor(const TiXmlNode *node)
     std::vector<const TiXmlAttribute*> attributes;
     getChildrenAndAttributes(node, children, attributes);
 
-    std::string name = extractName(attributes);    
+    std::string name = extractName(attributes, "");    
     Sensor *sensor = (m_links.find(name) != m_links.end()) ? dynamic_cast<Sensor*>(m_links[name]) : new Sensor();
     if (!sensor)
     {
@@ -1022,16 +1022,16 @@ void robot_desc::URDF::loadSensor(const TiXmlNode *node)
 		loadDoubleValues(node, 3, sensor->xyz);
 	    else
 	    if (node->ValueStr() == "joint")
-		loadJoint(node, sensor->joint);
+		loadJoint(node, name + "_joint", sensor->joint);
 	    else
 	    if (node->ValueStr() == "collision")
-		loadCollision(node, sensor->collision);
+		loadCollision(node, name + "_collision", sensor->collision);
 	    else
 	    if (node->ValueStr() == "inertial")
-		loadInertial(node, sensor->inertial);
+		loadInertial(node, name + "_inertial", sensor->inertial);
 	    else
 	    if (node->ValueStr() == "visual")
-		loadVisual(node, sensor->visual);
+		loadVisual(node, name + "_visual", sensor->visual);
 	    else
 	    if (node->ValueStr() == "data")
 		loadData(node, &sensor->data);
@@ -1094,22 +1094,22 @@ bool robot_desc::URDF::parse(const TiXmlNode *node)
 			loadSensor(m_stage2[i]);
 		    else
 		    if (name == "joint")
-			loadJoint(m_stage2[i], NULL);
+			loadJoint(m_stage2[i], "", NULL);
 		    else
 		    if (name == "geometry")
-			loadGeometry(m_stage2[i], NULL);
+			loadGeometry(m_stage2[i], "", NULL);
 		    else
 		    if (name == "collision")
-			loadCollision(m_stage2[i], NULL);
+			loadCollision(m_stage2[i], "", NULL);
 		    else
 		    if (name == "visual")
-			loadVisual(m_stage2[i], NULL);
+			loadVisual(m_stage2[i], "", NULL);
 		    else
 		    if (name == "inertial")
-			loadInertial(m_stage2[i], NULL);
+			loadInertial(m_stage2[i], "", NULL);
 		    else
 		    if (name == "actuator")
-			loadInertial(m_stage2[i], NULL);
+			loadInertial(m_stage2[i], "", NULL);
 		    else
 			ignoreNode(m_stage2[i]);
 		}
