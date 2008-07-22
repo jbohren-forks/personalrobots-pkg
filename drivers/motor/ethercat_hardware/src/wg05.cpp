@@ -41,28 +41,29 @@ WG05::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 	static unsigned int phyCommandAddress(COMMAND_PHY_ADDR);
 
 	printf("configure WG05\n");
-	EC_FMMU *statusFMMU = new EC_FMMU (startAddress,   //Logical start address
-									   sizeof(WG05Status),       //Logical length
-									   0x00,         //Logical StartBit
-									   0x07,         //Logical EndBit
-									   STATUS_PHY_ADDR, //Physical Start address
-									   0x00,         //Physical StartBit
-									   true,         //Read Enable
-									   false,        //Write Enable
-									   true          //Enable
-									   );
+	EC_FMMU *statusFMMU = new EC_FMMU (
+        startAddress,       // Logical start address
+        sizeof(WG05Status), // Logical length
+        0x00,               // Logical StartBit
+        0x07,               // Logical EndBit
+        STATUS_PHY_ADDR,    // Physical Start address
+        0x00,               // Physical StartBit
+        true,               // Read Enable
+        false,              // Write Enable
+        true);              // Enable
 
 	startAddress += sizeof(WG05Status);
 
-	EC_FMMU *commandFMMU = new EC_FMMU (startAddress,   //Logical start address
-										sizeof(WG05Command),       //Logical length
-										0x00,         //Logical StartBit
-										0x07,         //Logical EndBit
-										COMMAND_PHY_ADDR,       //Physical Start address
-										0x00,         //Physical StartBit
-										false,        //Read Enable
-										true,         //Write Enable
-										true          //Enable
+	EC_FMMU *commandFMMU = new EC_FMMU (
+        startAddress,       // Logical start address
+        sizeof(WG05Command),// Logical length
+        0x00,               // Logical StartBit
+        0x07,               // Logical EndBit
+        COMMAND_PHY_ADDR,   // Physical Start address
+        0x00,               // Physical StartBit
+        false,              // Read Enable
+        true,               // Write Enable
+        true                // Enable
 										);
 
 	startAddress += sizeof(WG05Command);
@@ -76,29 +77,19 @@ WG05::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 	EtherCAT_PD_Config *pd = new EtherCAT_PD_Config(2);
 
 	// Sync manager for read data
-	EC_SyncMan *statusSM = new EC_SyncMan (phyStatusAddress,
-										   sizeof(WG05Status),
-										   EC_BUFFERED,
-										   EC_READ_FROM_MASTER,
-										   true,
-										   false,
-										   false,
-										   false,
-										   false,
-										   false,
-										   EC_FIRST_BUFFER,
-										   true);
+	EC_SyncMan *statusSM = new EC_SyncMan(
+        phyStatusAddress,
+        sizeof(WG05Status));
+    statusSM->ChannelEnable = true;
+    statusSM->ALEventEnable = true;
 
-	//phyStatusAddress += Meka_WG05_PDO_Status_PhySize;
-
-	EC_SyncMan *commandSM = new EC_SyncMan (
-		phyCommandAddress,
-		sizeof(WG05Command),
-		EC_BUFFERED,
-		EC_WRITTEN_FROM_MASTER,
-		true,false,false,false,false,false,EC_FIRST_BUFFER,true);
-
-	//phyCommandAddress += Meka_WG05_PDO_Command_PhySize;
+	EC_SyncMan *commandSM = new EC_SyncMan(
+        phyCommandAddress,
+        sizeof(WG05Command),
+        EC_BUFFERED,
+        EC_WRITTEN_FROM_MASTER);
+    commandSM->ChannelEnable = true;
+    commandSM->ALEventEnable = true;
 
 	(*pd)[0] = *commandSM;
 	(*pd)[1] = *statusSM;

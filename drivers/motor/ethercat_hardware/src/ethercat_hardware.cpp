@@ -64,8 +64,6 @@ EthercatHardware::init(char *interface, HardwareInterface *hw)
         return;
     }
 
-    //set_socket_timeout(ni, 4000000);
-
     // Initialize Application Layer (AL)
     EtherCAT_DataLinkLayer::instance()->attach(ni);
     if ((al = EtherCAT_AL::instance()) == NULL) {
