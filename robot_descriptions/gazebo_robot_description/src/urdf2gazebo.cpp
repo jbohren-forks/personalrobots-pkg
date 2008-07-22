@@ -7,6 +7,7 @@
 #include <sstream>
 
 #include <urdf/URDF.h>
+#include <libTF/Pose3D.h>
 
 std::string values2str(unsigned int count, const double *values, double (*conv)(double) = NULL)
 {
@@ -162,17 +163,62 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
 		/* create visual node */
 		TiXmlElement *visual = new TiXmlElement("visual");
 		{
+		    /* compute the visualisation transfrom */
+		    libTF::Pose3D coll;
+		    const double *pos = links[i]->collision->xyz;
+		    const double *rot = links[i]->collision->rpy;
+		    coll.setFromEuler(pos[0], pos[1], pos[2], rot[2], rot[1], rot[0]);
+		    coll.invert();
+		    
+		    libTF::Pose3D vis;
+		    pos = links[i]->visual->xyz;
+		    rot = links[i]->visual->rpy;
+		    vis.setFromEuler(pos[0], pos[1], pos[2], rot[2], rot[1], rot[0]);
+		    coll.multiplyPose(vis);
+		    
+		    libTF::Pose3D::Position pz;
+		    coll.getPosition(pz);
+		    double cpos[3] = { pz.x, pz.y, pz.z };
+		    
+		    libTF::Pose3D::Euler eu;
+		    coll.getEuler(eu);
+		    double crot[3] = { eu.roll, eu.pitch, eu.yaw };		    
+		    
 		    /* set geometry translation */
 		    TiXmlElement *xyz      = new TiXmlElement("xyz");
-		    TiXmlText    *text_xyz = new TiXmlText(values2str(3, links[i]->visual->xyz));
+		    TiXmlText    *text_xyz = new TiXmlText(values2str(3, cpos));
 		    xyz->LinkEndChild(text_xyz);
-		    geom->LinkEndChild(xyz);
+		    visual->LinkEndChild(xyz);
 		    
 		    /* set geometry rotation */
 		    TiXmlElement *rpy      = new TiXmlElement("rpy");
-		    TiXmlText    *text_rpy = new TiXmlText(values2str(3, links[i]->visual->rpy, rad2deg));
+		    TiXmlText    *text_rpy = new TiXmlText(values2str(3, crot, rad2deg));
 		    rpy->LinkEndChild(text_rpy);    
-		    geom->LinkEndChild(rpy); 
+		    visual->LinkEndChild(rpy); 
+
+		    /* set geometry scale */
+		    TiXmlElement *scale      = new TiXmlElement("scale");
+		    TiXmlText    *text_scale = new TiXmlText(values2str(3, links[i]->visual->scale));
+		    scale->LinkEndChild(text_scale);    
+		    visual->LinkEndChild(scale);
+		    
+		    if (!links[i]->visual->geometry->filename.empty())
+		    {
+			/* set geometry mesh file */
+			TiXmlElement *mesh      = new TiXmlElement("mesh");
+			TiXmlText    *text_mesh = new TiXmlText(links[i]->visual->geometry->filename);
+			mesh->LinkEndChild(text_mesh);
+			visual->LinkEndChild(mesh);
+		    }
+		    
+		    if (!links[i]->visual->material.empty())
+		    {
+			/* set geometry material */
+			TiXmlElement *material      = new TiXmlElement("material");
+			TiXmlText    *text_material = new TiXmlText(links[i]->visual->material);
+			material->LinkEndChild(text_material);
+			visual->LinkEndChild(material);
+		    }
 		}
 		
 		geom->LinkEndChild(visual);
@@ -183,6 +229,12 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
 	    
 	    /* add body to document */
 	    root->LinkEndChild(elem);
+
+	    /* compute the joint tag */
+	    TiXmlElement *joint = new TiXmlElement("joint");
+	    
+	    /* add joint to document */
+	    root->LinkEndChild(joint);	    
 	}	
     }
 }
