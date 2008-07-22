@@ -106,7 +106,7 @@ public:
       f.p = start+(i+1)*move*step_size;
       f.M = rotInterpolater.Pos(angle_step*(i+1));
       publishFrame(isRightArm, f);
-      usleep(100000);
+      usleep(1000000);
     }
     f.p = r.p;
     f.M = r.M;
