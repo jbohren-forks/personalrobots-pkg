@@ -62,7 +62,7 @@
         <kd>1.0</kd>
         <normal>0 0 1</normal>
         <size>51.3 51.3</size>
-        <material>PR2/wall_texture</material>
+        <material>Gazebo/GrassFloor</material>
       </geom:plane>
     </body:plane>
   </model:physical>
@@ -90,31 +90,8 @@
   </body:map>
  </model:physical>
 
-  <!-- The camera -->
-  <model:physical name="cam1_model">
-    <xyz>   3.0    0.0    1.0</xyz>
-    <rpy>   0.0    0.0  180.0</rpy>
-    <static>true</static>
-
-    <body:empty name="cam1_body">
-      <sensor:camera name="cam1_sensor">
-        <imageSize>1024 800</imageSize>
-        <hfov>90</hfov>
-        <nearClip>0.1</nearClip>
-        <farClip>20</farClip>
-        <saveFrames>false</saveFrames>
-        <saveFramePath>frames</saveFramePath>
-        <updateRate>10.0</updateRate>
-        <controller:generic_camera name="cam1_controller">
-          <updateRate>10.0</updateRate>
-          <interface:camera name="cam1_iface_0" />
-        </controller:generic_camera>
-      </sensor:camera>
-    </body:empty>
-  </model:physical>
-
   <model:physical name="robot_model1">
-    <xyz>10.0 10.0 0.02</xyz> <!-- bottom of base off the ground by this much, basically wheel height below skirt -->
+    <xyz>10.0 12.0 0.02</xyz> <!-- bottom of base off the ground by this much, basically wheel height below skirt -->
     <rpy>0.0 0.0 0.0 </rpy>
 
     <!-- base, torso and arms -->

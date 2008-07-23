@@ -52,17 +52,6 @@
   </rendering:ogre>
 
 
-<!--
-  <model:physical name="gbuilding">
-    <body:heightmap name="building">
-      <geom:heightmap name="building">
-        <image>map.png</image>
-        <worldTexture>map2.jpg</worldTexture>
-        <size>2 2 0.5</size>
-      </geom:heightmap>
-    </body:heightmap>
-  </model:physical>
--->
   <model:physical name="gplane">
     <xyz>0 0 0</xyz>	
     <rpy>0 0 0</rpy>
@@ -79,80 +68,7 @@
       </geom:plane>
     </body:plane>
   </model:physical>
-<!--
--->
 
-
-
-  <!-- The camera -->
-  <model:physical name="cam1_model">
-    <xyz>   3.0    0.0    1.0</xyz>
-    <rpy>   0.0    0.0  180.0</rpy>
-    <static>true</static>
-
-    <body:empty name="cam1_body">
-      <sensor:camera name="cam1_sensor">
-        <imageSize>1024 800</imageSize>
-        <hfov>90</hfov>
-        <nearClip>0.1</nearClip>
-        <farClip>20</farClip>
-        <saveFrames>true</saveFrames>
-        <saveFramePath>frames_0</saveFramePath>
-        <updateRate>10.0</updateRate>
-        <controller:generic_camera name="cam1_controller">
-          <updateRate>10.0</updateRate>
-          <interface:camera name="cam1_iface_0" />
-        </controller:generic_camera>
-      </sensor:camera>
-    </body:empty>
-  </model:physical>
-
-
-  <!-- test laser model -->
-        <!--
-  <model:physical name="test_laser_model">
-    <xyz>  -2.0    0.0    0.15</xyz>
-    <rpy>   0.0    0.0   90.0</rpy>
-    <static>true</static>
-    <body:box name="test_laser_body">
-      <xyz>0.0 0.0 0.0</xyz>
-      <rpy>0.0 0.0 0.0</rpy>
-
-      <geom:box name="test_laser_box">
-        <xyz>0.0 0.0 -0.05</xyz>
-        <rpy>0 0 0</rpy>
-        <size>0.05 0.15 0.02</size>
-        <mass>0.0</mass>
-        <visual>
-          <scale>0.05 0.15 0.02</scale>
-          <mesh>unit_box</mesh>
-          <material>Gazebo/Blue</material>
-        </visual>
-      </geom:box>
-
-      <sensor:ray name="laser_1">
-        <rayCount>100</rayCount>
-        <rangeCount>100</rangeCount>
-        <laserCount>1</laserCount>
-        <origin>0.0 0.0 0.10</origin>
-
-        <minAngle>-135</minAngle>
-        <maxAngle>135</maxAngle>
-
-        <minRange>0.036</minRange>
-        <maxRange>10.0</maxRange>
-
-        <updateRate>10.0</updateRate>
-
-        <controller:sicklms200_laser name="laser_controller_1">
-          <interface:laser name="laser_iface_1"/>
-          <updateRate>10</updateRate>
-        </controller:sicklms200_laser>
-      </sensor:ray>
-
-    </body:box>
-  </model:physical>
-        -->
 
   <!-- The "desk"-->
   <model:physical name="desk1_model">

@@ -84,29 +84,6 @@
 
 
 
-  <!-- The camera -->
-  <model:physical name="cam1_model">
-    <xyz>   3.0    0.0    1.0</xyz>
-    <rpy>   0.0    0.0  180.0</rpy>
-    <static>true</static>
-
-    <body:empty name="cam1_body">
-      <sensor:camera name="cam1_sensor">
-        <imageSize>1024 800</imageSize>
-        <hfov>90</hfov>
-        <nearClip>0.1</nearClip>
-        <farClip>20</farClip>
-        <saveFrames>false</saveFrames>
-        <saveFramePath>frames</saveFramePath>
-        <updateRate>10.0</updateRate>
-        <controller:generic_camera name="cam1_controller">
-          <updateRate>10.0</updateRate>
-          <interface:camera name="cam1_iface_0" />
-        </controller:generic_camera>
-      </sensor:camera>
-    </body:empty>
-  </model:physical>
-
 
   <!-- test laser model -->
         <!--
