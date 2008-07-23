@@ -175,6 +175,8 @@ class SmartScan {
 	//! Under construction...
 	std::vector<scan_utils::Triangle> *createMesh();
 
+	//! Computes a spin image at x, y, z with fixed orientation, i.e. the surface normal is set to point up.
+	void computeSpinImageFixedOrientation(scan_utils::Grid2D &si, float x, float y, float z, float support, float pixelsPerMeter);
 };
 
 

@@ -29,6 +29,8 @@
 #include <iomanip>
 #include "newmat10/newmatio.h"
 
+#include <cmath>
+
 using namespace scan_utils;
 
 #define SU_TFRT 1
@@ -1178,8 +1180,8 @@ std::vector<scan_utils::Triangle>* SmartScan::createMesh()
   considered connected if the minimum distance between them is less
   than \a thresh.
 
-  \param minPts - only returns components which have more then this
-  number of points. Defaults to 0.
+  \param minPts - The minimum number of points in a connected component for 
+  it to be returned.
 
   Speed of implementation has been favored over speed of execution -
   multiple optimizations are possible.
@@ -1304,17 +1306,20 @@ void SmartScan::subtractScan(const SmartScan *target, float thresh)
 
 	int keptPoints = size();
 	for (int i=0; i<target->size(); i++) {
-		//a point from the target
-		std_msgs::Point3DFloat32 p = target->getPoint(i);
-		//find all neighbors in this scan
-		points->Reset();
-		getVtkLocator()->FindPointsWithinRadius( thresh, p.x, p.y, p.z, points );
-		for (int k = 0; k < points->GetNumberOfIds(); k++) {
-			//mark that we don't want to keep them
-			int nbr = points->GetId(k);
-			if (indices[nbr]==1) keptPoints--;
-			indices[nbr] = 0;
-		}
+	  if(i%1000==1) 
+	    cout << "point " << i << " of " << target->size() << endl;
+	  
+	  //a point from the target
+	  std_msgs::Point3DFloat32 p = target->getPoint(i);
+	  //find all neighbors in this scan
+	  points->Reset();
+	  getVtkLocator()->FindPointsWithinRadius( thresh, p.x, p.y, p.z, points );
+	  for (int k = 0; k < points->GetNumberOfIds(); k++) {
+	    //mark that we don't want to keep them
+	    int nbr = points->GetId(k);
+	    if (indices[nbr]==1) keptPoints--;
+	    indices[nbr] = 0;
+	  }
 	}
 
 	fprintf(stderr,"Keeping %d points\n",keptPoints);
@@ -1335,5 +1340,52 @@ void SmartScan::subtractScan(const SmartScan *target, float thresh)
 	delete [] indices;
 }
 
+/*! 
+  The choice of \a support and \a pixelsPerMeter determines how many pixels are in the spin image.  \a si is filled with the relevant data.
 
+  \param si A Grid2D which will hold the spin image data.
+  \param x, y, z The location of the spin image center.
+  \param support The support of the spin image, i.e. the "radius" it cares about.
+  \param pixelsPerMeter Discretization of the spin image.
+
+*/
+void SmartScan::computeSpinImageFixedOrientation(Grid2D &si, float x, float y, float z, float support, float pixelsPerMeter) {
+
+  //Make sure si has the appropriate dimensions.
+  int height, width, hsi, wsi;
+  height = (int)(2*support*pixelsPerMeter);
+  width = (int)(support*pixelsPerMeter);
+  si.getSize(hsi, wsi);
+  assert(height==hsi && width==wsi);
+  if(height!=hsi || width!=wsi) {
+    cerr << "The size of the spin image does not match that specified by support and pixelsPerMeter." << endl;
+    return;
+  }
+
+  //Get a first cut at points close enough to care about.
+  std::vector<std_msgs::Point3DFloat32> *point;
+  point = getPointsWithinRadius(x, y, z, support*sqrt(2));
+  
+  //Iterate over those points.
+  for (unsigned int i=0; i<point->size(); i++) {
+    std_msgs::Point3DFloat32 pt;
+    pt = (*point)[i];
+    float beta = -(pt.z - z - support);
+    if(beta > 2*support || beta < 0)
+      continue;
+    float alpha = sqrt(pow(x - pt.x, 2) + pow(y - pt.y, 2));
+    if(alpha > support)
+      continue;
+
+    if(beta < 0) {
+      cerr << "Beta is " << beta << " ... it should be pos." << endl;
+      return;
+    }
+
+    int n1, n2;
+    n1 = (int)(beta*pixelsPerMeter);
+    n2 = (int)(alpha*pixelsPerMeter);
+    si.addElement(n1, n2, 1);
+  }
+}
 
