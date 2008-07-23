@@ -187,6 +187,7 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
 	if (!jtype.empty())
 	{
 	    TiXmlElement *joint = new TiXmlElement("joint:" + jtype);
+	    joint->SetAttribute("name", link->joint->name);
 	    
 	    addKeyValue(joint, "body1", link->parentName);
 	    addKeyValue(joint, "body2", link->name);

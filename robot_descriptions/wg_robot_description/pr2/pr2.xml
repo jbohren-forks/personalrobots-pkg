@@ -68,7 +68,7 @@
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <geometry type="mesh" name="pr2_caster_mesh_file">
-        <filename>{ROS_PKG}/demos/2dnav-gazebo/world/Media/models/pr2_caster.mesh</filename><!-- mesh specified using an obj file --> 
+        <filename>models/pr2_caster.mesh</filename><!-- mesh specified using an obj file --> 
       </geometry>
     </define> 
 
