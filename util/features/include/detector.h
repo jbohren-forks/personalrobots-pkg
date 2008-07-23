@@ -60,9 +60,9 @@ private:
     //! Line response threshold
     float m_line_threshold;
     //! Non-maximal suppression functor
-    NonmaxSuppress<float, LineSuppress> m_nonmax;
+    NonmaxSuppress3x3xN<float, LineSuppress> m_nonmax;
     //! Non-minimal suppression functor
-    NonmaxSuppress<float, LineSuppress, std::less_equal<float> > m_nonmin;
+    NonmaxSuppress3x3xN<float, LineSuppress, std::less_equal<float> > m_nonmin;
     // TODO: Keep intermediate star sum images for reuse?
 
     //! Calculate sum of all pixel values in the "star" shape.
