@@ -224,6 +224,8 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
   param("tilting_laser/max_cloud_pts",max_cloud_pts, 683); // number of point in one scan line
   this->cloud_pts->allocate(this->max_cloud_pts);
   this->cloud_ch1->allocate(this->max_cloud_pts);
+  this->full_cloud_pts->clear();
+  this->full_cloud_ch1->clear();
 
   // initialize times
   this->PR2Copy->GetTime(&(this->lastTime));
@@ -266,6 +268,8 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
   param("tilting_laser/max_cloud_pts",max_cloud_pts, 683); // number of point in one scan line
   this->cloud_pts->allocate(this->max_cloud_pts);
   this->cloud_ch1->allocate(this->max_cloud_pts);
+  this->full_cloud_pts->clear();
+  this->full_cloud_ch1->clear();
 
   // initialize times
   this->PR2Copy->GetTime(&(this->lastTime));
@@ -601,8 +605,17 @@ RosGazeboNode::Update()
     this->full_cloudMsg.chan[0].name = "intensities";
     this->full_cloudMsg.chan[0].set_vals_size(this->full_cloud_ch1->size());
     // TODO: make sure this is doing the right memcopy stuff
-    memcpy(this->full_cloudMsg.pts          , &(this->full_cloud_pts->front()), this->full_cloud_pts->size());
-    memcpy(this->full_cloudMsg.chan[0].vals , &(this->full_cloud_ch1->front()), this->full_cloud_ch1->size());
+    //memcpy(this->full_cloudMsg.pts          , &(this->full_cloud_pts->front()), this->full_cloud_pts->size());
+    //memcpy(this->full_cloudMsg.chan[0].vals , &(this->full_cloud_ch1->front()), this->full_cloud_ch1->size());
+
+    for(int i=0;i< this->full_cloud_pts->size() ;i++)
+    {
+      this->full_cloudMsg.pts[i].x        = (this->full_cloud_pts->at(i)).x;
+      this->full_cloudMsg.pts[i].y        = (this->full_cloud_pts->at(i)).y;
+      this->full_cloudMsg.pts[i].z        = (this->full_cloud_pts->at(i)).z;
+      this->full_cloudMsg.chan[0].vals[i] = (this->full_cloud_ch1->at(i));
+    }
+
     publish("full_cloud",this->full_cloudMsg);
     this->full_cloud_pts->clear();
     this->full_cloud_ch1->clear();
