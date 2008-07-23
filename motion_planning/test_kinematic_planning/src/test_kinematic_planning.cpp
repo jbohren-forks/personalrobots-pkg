@@ -85,9 +85,11 @@ Provides (name/type):
 **/
 
 #include <ros/node.h>
+#include <rosthread/mutex.h>
 #include <std_msgs/PointCloudFloat32.h>
 #include <std_srvs/KinematicMotionPlan.h>
 #include <kinematic_planning/util.h>
+
 
 using namespace std_msgs;
 using namespace std_srvs;
@@ -123,7 +125,7 @@ public:
 	
 	printf("Moving right arm:\n");
 	
-	req.model_id   = ros::kinematics::PR2_RIGHT_ARM;
+	req.model_id   = "Right";//ros::kinematics::PR2_RIGHT_ARM;
 	req.resolution = 0.01;
 	ros::kinematics::convertPR2ArmKinematicState(rightArmPos, req.start_state);
 	ros::kinematics::convertPR2ArmKinematicState(rightArmGoal, req.goal_state);
@@ -143,9 +145,9 @@ public:
     {
 	KinematicMotionPlan::request  req;
 	
-	printf("Moving right arm:\n");
+	printf("Moving left arm:\n");
 	
-	req.model_id   = ros::kinematics::PR2_LEFT_ARM;
+	req.model_id   = "Left";//ros::kinematics::PR2_LEFT_ARM;
 	req.resolution = 0.01;
 	ros::kinematics::convertPR2ArmKinematicState(leftArmPos, req.start_state);
 	ros::kinematics::convertPR2ArmKinematicState(leftArmGoal, req.goal_state);
@@ -165,36 +167,47 @@ public:
     {
 	KinematicMotionPlan::response res;
 	
+	std::cout << "Trying to get plan\n" << std::endl;
+	service_mutex.lock();
 	if (ros::service::call("plan_kinematic_path", req, res))
 	{
+	  service_mutex.unlock();
 	    uint32_t nstates = res.path.get_states_size();
 	    printf("Received a plan containing %u states\n", nstates);
-	    
+	
 	    for (uint32_t i = 0 ; i < nstates ; ++i)
 	    {
 		PR2Arm cmd;
 		ros::kinematics::convertKinematicStatePR2Arm(res.path.states[i], cmd);
-		switch (req.model_id)
-		{
-		case ros::kinematics::PR2_RIGHT_ARM:
-		    publish("cmd_rightarmconfig", cmd);
-		    break;
-		    
-		case ros::kinematics::PR2_LEFT_ARM:
-		    publish("cmd_leftarmconfig", cmd);
-		    break;
-		    
-		default:
-		    printf("Unknown robot model: %d\n", (int)req.model_id);
-		    break;
+		if(req.model_id == "Right") {
+		  publish("cmd_rightarmconfig", cmd);
+		} else {
+		  publish("cmd_leftarmconfig", cmd);
 		}
+		/*
+		  switch (req.model_id)
+		  {
+		  case ros::kinematics::PR2_RIGHT_ARM:
+		  
+		  break;
+		  
+		  case ros::kinematics::PR2_LEFT_ARM:
+		  publish("cmd_leftarmconfig", cmd);
+		  break;
+		  
+		  default:
+		  printf("Unknown robot model: %d\n", (int)req.model_id);
+		  break;
+		  }
+		*/
 		printf("  - sent the state: "); 
 		ros::kinematics::printKinematicState(res.path.states[i]);
 		usleep(10000);
-	    }	    
-	}
-	else
-	    fprintf(stderr, "Service 'plan_kinematic_path' failed\n");	
+		}   
+	} else {
+	  service_mutex.unlock();
+	  fprintf(stderr, "Service 'plan_kinematic_path' failed\n");
+	}	
     }
     
     void testLeftArm1(void)
@@ -208,7 +221,31 @@ public:
 	req.goal_state = req.start_state;
 	
 	for (int i = 0 ; i < 9 ; ++i)
-	    req.goal_state.vals[i] += 0.2;
+	    req.goal_state.vals[i] -= .5;
+	
+	printf("Starting at state: ");
+	ros::kinematics::printKinematicState(req.start_state);
+	
+	printf("Going towards state: ");
+	ros::kinematics::printKinematicState(req.goal_state);
+	
+	computeAndExecutePlan(req);
+	
+	printf("'%s' complete\n", __func__);
+    }
+  
+  void testRightArm1(void)
+    {
+	KinematicMotionPlan::request  req;
+	
+	req.model_id   = ros::kinematics::PR2_RIGHT_ARM;
+	req.resolution = 0.01;
+
+	ros::kinematics::convertPR2ArmKinematicState(rightArmPos, req.start_state);
+	req.goal_state = req.start_state;
+	
+	for (int i = 0 ; i < 9 ; ++i)
+	    req.goal_state.vals[i] -= .5;
 	
 	printf("Starting at state: ");
 	ros::kinematics::printKinematicState(req.start_state);
@@ -225,7 +262,8 @@ private:
     
     PR2Arm leftArmPos, rightArmPos;
     PR2Arm leftArmGoal, rightArmGoal;
-    
+  ros::thread::mutex service_mutex;
+
 };
 
 
@@ -235,9 +273,28 @@ int main(int argc, char **argv)
     
     TestKinematicPlanning test;
     sleep(1);
-    
-    //    test.testLeftArm1();
 
+    /*
+    for(int i = 0; i < 100; i++) {
+      test.testLeftArm1();
+      test.testRightArm1();
+      sleep(1);
+    }
+    */
+    
+    //std::cout << "All done\n";
+    
+    /*
+    sleep(15);
+    test.testLeftArm1();
+    test.testRightArm1();
+    sleep(15);
+    test.testLeftArm1();
+    test.testRightArm1();
+    sleep(15);
+    test.testLeftArm1();
+    test.testRightArm1();
+    */
     test.spin();
         
     test.shutdown();
