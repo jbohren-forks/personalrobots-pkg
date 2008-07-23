@@ -39,11 +39,10 @@
 #include <sstream>
 #include <queue>
 
-// need to change this depending on OS (different on windows)
-static const char PATH_SEPARATOR = '/';
-
 void robot_desc::URDF::freeMemory(void)
 {
+    clearDocs();
+    
     for (std::map<std::string, Link*>::iterator i = m_links.begin() ; i != m_links.end() ; i++)
 	delete i->second;
     for (std::map<std::string, Group*>::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
@@ -111,10 +110,15 @@ const robot_desc::URDF::Data& robot_desc::URDF::getData(void) const
 
 void robot_desc::URDF::Data::add(const std::string &type, const std::string &name, const std::string &key, const std::string &value)
 {
-    m_data[type][name][key] = value;
+    m_data[type][name][key].str = value;
 }
 
-bool robot_desc::URDF::Data::hasDefaultValue(const std::string &key) const
+void robot_desc::URDF::Data::add(const std::string &type, const std::string &name, const std::string &key, const TiXmlElement *value)
+{
+    m_data[type][name][key].xml = value;
+}
+
+bool robot_desc::URDF::Data::hasDefault(const std::string &key) const
 {
     std::map<std::string, std::string> m = getDataTagValues("", "");
     return m.find(key) != m.end();
@@ -125,18 +129,23 @@ std::string robot_desc::URDF::Data::getDefaultValue(const std::string &key) cons
     return getDataTagValues("", "")[key];
 }
 
+const TiXmlElement* robot_desc::URDF::Data::getDefaultXML(const std::string &key) const
+{
+    return getDataTagXML("", "")[key];
+}
+
 void robot_desc::URDF::Data::getDataTagTypes(std::vector<std::string> &types) const
 {
-    for (std::map<std::string, std::map<std::string, std::map<std::string, std::string > > >::const_iterator i = m_data.begin() ; i != m_data.end() ; ++i)
+    for (std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator i = m_data.begin() ; i != m_data.end() ; ++i)
 	types.push_back(i->first);
 }
 
 void robot_desc::URDF::Data::getDataTagNames(const std::string &type, std::vector<std::string> &names) const
 {
-    std::map<std::string, std::map<std::string, std::map<std::string, std::string > > >::const_iterator pos = m_data.find(type);
+    std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator pos = m_data.find(type);
     if (pos != m_data.end())
     {
-	for (std::map<std::string, std::map<std::string, std::string > >::const_iterator i = pos->second.begin() ; i != pos->second.end() ; ++i)
+	for (std::map<std::string, std::map<std::string, Element > >::const_iterator i = pos->second.begin() ; i != pos->second.end() ; ++i)
 	    names.push_back(i->first);
     }
 }
@@ -144,12 +153,32 @@ std::map<std::string, std::string> robot_desc::URDF::Data::getDataTagValues(cons
 {    
     std::map<std::string, std::string> result;
     
-    std::map<std::string, std::map<std::string, std::map<std::string, std::string > > >::const_iterator pos = m_data.find(type);
+    std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator pos = m_data.find(type);
     if (pos != m_data.end())
     {
-	std::map<std::string, std::map<std::string, std::string > >::const_iterator m = pos->second.find(name);
+	std::map<std::string, std::map<std::string, Element > >::const_iterator m = pos->second.find(name);
 	if (m != pos->second.end())
-	    result = m->second;
+	{
+	    for (std::map<std::string, Element>::const_iterator it = m->second.begin() ; it != m->second.end() ; it++)
+		result[it->first] = it->second.str;	    
+	}
+    }
+    return result;
+}
+
+std::map<std::string, const TiXmlElement*> robot_desc::URDF::Data::getDataTagXML(const std::string &type, const std::string &name) const
+{    
+    std::map<std::string, const TiXmlElement*> result;
+    
+    std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator pos = m_data.find(type);
+    if (pos != m_data.end())
+    {
+	std::map<std::string, std::map<std::string, Element > >::const_iterator m = pos->second.find(name);
+	if (m != pos->second.end())
+	{
+	    for (std::map<std::string, Element>::const_iterator it = m->second.begin() ; it != m->second.end() ; it++)
+		result[it->first] = it->second.xml;
+	}
     }
     return result;
 }
@@ -191,14 +220,14 @@ void robot_desc::URDF::print(FILE *out) const
 
 void robot_desc::URDF::Data::print(FILE *out, std::string indent) const
 {
-    for (std::map<std::string, std::map<std::string, std::map<std::string, std::string > > >::const_iterator i = m_data.begin() ; i != m_data.end() ; ++i)
+    for (std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator i = m_data.begin() ; i != m_data.end() ; ++i)
     {
 	fprintf(out, "%sData of type '%s':\n", indent.c_str(), i->first.c_str());
-	for (std::map<std::string, std::map<std::string, std::string > >::const_iterator j = i->second.begin() ; j != i->second.end() ; ++j)
+	for (std::map<std::string, std::map<std::string, Element > >::const_iterator j = i->second.begin() ; j != i->second.end() ; ++j)
 	{
 	    fprintf(out, "%s  [%s]\n", indent.c_str(), j->first.c_str());
-	    for (std::map<std::string, std::string>::const_iterator k = j->second.begin() ; k != j->second.end() ; ++k)
-		fprintf(out, "%s    %s = %s\n", indent.c_str(), k->first.c_str(), k->second.c_str());
+	    for (std::map<std::string, Element>::const_iterator k = j->second.begin() ; k != j->second.end() ; ++k)
+		fprintf(out, "%s    %s = %s%s\n", indent.c_str(), k->first.c_str(), k->second.str.c_str(), k->second.xml != NULL ? " [XML]" : "");
 	}
     }
 }
@@ -394,8 +423,6 @@ bool robot_desc::URDF::loadString(const char *data)
     else
 	fprintf(stderr, "%s\n", doc->ErrorDesc());
     
-    clearDocs();
-    
     return result;
 }  
 
@@ -413,8 +440,6 @@ bool robot_desc::URDF::loadFile(FILE *file)
     }
     else
 	fprintf(stderr, "%s\n", doc->ErrorDesc());
-    
-    clearDocs();
     
     return result;
 }
@@ -436,8 +461,6 @@ bool robot_desc::URDF::loadFile(const char *filename)
     else
 	fprintf(stderr, "%s\n", doc->ErrorDesc());
     
-    clearDocs();
-    
     return result;
 }
 
@@ -447,11 +470,12 @@ void robot_desc::URDF::addPath(const char *filename)
 	return;
     
     std::string name = filename;
-    std::string::size_type pos = name.find_last_of(PATH_SEPARATOR);
+    std::string::size_type pos = name.find_last_of("/\\");
     if (pos != std::string::npos)
     {
+	char sep = name[pos];
 	name.erase(pos);
-	m_paths.push_back(name + PATH_SEPARATOR);
+	m_paths.push_back(name + sep);
     }    
 }
 
@@ -1048,8 +1072,8 @@ void robot_desc::URDF::loadSensor(const TiXmlNode *node)
 
 void robot_desc::URDF::loadData(const TiXmlNode *node, Data *data)
 {
-    std::string name = "";
-    std::string type = "";
+    std::string name;
+    std::string type;
     
     for (const TiXmlAttribute *attr = node->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
     {
@@ -1064,7 +1088,18 @@ void robot_desc::URDF::loadData(const TiXmlNode *node, Data *data)
 	if (child->Type() == TiXmlNode::ELEMENT && child->FirstChild() && child->FirstChild()->Type() == TiXmlNode::TEXT)
 	    data->add(type, name, child->ValueStr(), child->FirstChild()->ValueStr());
 	else
-	    ignoreNode(child);
+	    if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "xml")
+	    {
+		std::string key;
+		for (const TiXmlAttribute *attr = child->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
+		{
+		    if (strcmp(attr->Name(), "key") == 0)
+			key = attr->ValueStr();
+		}
+		data->add(type, name, key, child->ToElement());
+	    }
+	    else
+		ignoreNode(child);
 }
 
 bool robot_desc::URDF::parse(const TiXmlNode *node)

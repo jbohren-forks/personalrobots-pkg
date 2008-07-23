@@ -79,11 +79,12 @@ private:
 	    return;
 	
 	std::string name = filename;
-	std::string::size_type pos = name.find_last_of('/');
+	std::string::size_type pos = name.find_last_of("/\\");
 	if (pos != std::string::npos)
 	{
+	    char sep = name[pos];
 	    name.erase(pos);
-	    m_paths.push_back(name + '/');
+	    m_paths.push_back(name + sep);
 	}	
     }
 

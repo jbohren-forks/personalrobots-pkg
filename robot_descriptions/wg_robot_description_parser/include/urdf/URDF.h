@@ -68,12 +68,16 @@ namespace robot_desc
 	    void getDataTagTypes(std::vector<std::string> &types) const;
 	    void getDataTagNames(const std::string &type, std::vector<std::string> &names) const;
 	    std::map<std::string, std::string> getDataTagValues(const std::string &type, const std::string &name) const;
-	    bool hasDefaultValue(const std::string &key) const;
+	    std::map<std::string, const TiXmlElement*> getDataTagXML(const std::string &type, const std::string &name) const;
+
+	    bool hasDefault(const std::string &key) const;
 	    std::string getDefaultValue(const std::string &key) const;
+	    const TiXmlElement* getDefaultXML(const std::string &key) const;
 
 	    virtual void print(FILE *out = stdout, std::string indent = "") const;
-
+	    
 	    void add(const std::string &type, const std::string &name, const std::string &key, const std::string &value);
+	    void add(const std::string &type, const std::string &name, const std::string &key, const TiXmlElement *value);
 	    
 	    Data& operator=(const Data &rhs)
 	    { 
@@ -82,7 +86,18 @@ namespace robot_desc
 	    }
 	protected:
 	    
-	    std::map<std::string, std::map<std::string, std::map<std::string, std::string > > > m_data;
+	    struct Element
+	    {
+		Element(void)
+		{
+		    xml = NULL;
+		}
+		
+		std::string         str;
+		const TiXmlElement *xml;
+	    };
+	    
+	    std::map < std::string, std::map < std::string, std::map < std::string, Element > > > m_data;
 	};
 	
 	struct Group;
