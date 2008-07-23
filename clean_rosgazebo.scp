@@ -33,3 +33,8 @@
 (cd visualization/irrlicht_viewer             ; rm -f lib/* ;make clean)
 (cd visualization/cloud_viewer                ; rm -f lib/* ;make clean)
 
+# note for users
+echo "if gazebo still functions incorrectly, please perform a make wipe in 3rdparty/gazebo directory."
+echo "now, to rebuild everything again, do rosmake 2dnav-gazebo, or some subset of stuff."
+
+
