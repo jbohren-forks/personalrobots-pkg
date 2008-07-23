@@ -31,6 +31,7 @@
 #include <etherdrive_hardware/etherdrive_hardware.h>
 #include <sys/time.h>
 
+using namespace std;
 
 #define BASE_NUM_JOINTS 12
 
@@ -79,7 +80,10 @@ void MechanismControl::init(HardwareInterface *hw){
      r->joint[ii].effortLimit = maxPositiveTorque;
   }
   controller = new BaseController(r,"baseController");
-  controller->LoadXML("/u/sachinc/projects/pr2/ros-pkg/robot_descriptions/wg_robot_description/pr2/pr2.xml");
+    char *c_filename = getenv("ROS_PACKAGE_PATH");
+    std::stringstream filename;
+    filename << c_filename << "/robot_descriptions/wg_robot_description/pr2/pr2.xml" ;
+    controller->LoadXML(filename.str());
   controller->Init();
 }
 
