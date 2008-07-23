@@ -431,11 +431,6 @@ RosGazeboNode::Update()
     this->cloudMsg.chan[0].name = "intensities";
     this->cloudMsg.chan[0].set_vals_size(this->cloud_ch1->length);
 
-    this->full_cloudMsg.set_pts_size(this->full_cloud_pts->size());
-    this->full_cloudMsg.set_chan_size(num_channels);
-    this->full_cloudMsg.chan[0].name = "intensities";
-    this->full_cloudMsg.chan[0].set_vals_size(this->full_cloud_ch1->size());
-
     for(int i=0;i< this->cloud_pts->length ;i++)
     {
       this->cloudMsg.pts[i].x        = this->cloud_pts->buffer[i].x;
@@ -444,13 +439,6 @@ RosGazeboNode::Update()
       this->cloudMsg.chan[0].vals[i] = this->cloud_ch1->buffer[i];
     }
 
-    for(int i=0;i< this->full_cloud_pts->size() ;i++)
-    {
-      this->full_cloudMsg.pts[i].x        = (this->full_cloud_pts->at(i)).x;
-      this->full_cloudMsg.pts[i].y        = (this->full_cloud_pts->at(i)).y;
-      this->full_cloudMsg.pts[i].z        = (this->full_cloud_pts->at(i)).z;
-      this->full_cloudMsg.chan[0].vals[i] = (this->full_cloud_ch1->at(i));
-    }
     publish("cloud",this->cloudMsg);
   }
 
@@ -604,10 +592,20 @@ RosGazeboNode::Update()
   if (dAngle * simPitchRate < 0.0)
   {
     dAngle = -dAngle;
+
+    int    num_channels = 1;
+    this->full_cloudMsg.set_pts_size(this->full_cloud_pts->size());
+    this->full_cloudMsg.set_chan_size(num_channels);
+    this->full_cloudMsg.chan[0].name = "intensities";
+    this->full_cloudMsg.chan[0].set_vals_size(this->full_cloud_ch1->size());
+    // TODO: make sure this is doing the right memcopy stuff
+    this->full_cloudMsg.pts          = &(this->full_cloud_pts->front());
+    this->full_cloudMsg.chan[0].vals = &(this->full_cloud_ch1->front());
     publish("full_cloud",this->full_cloudMsg);
-    publish("shutter",this->shutterMsg);
     this->full_cloud_pts->clear();
     this->full_cloud_ch1->clear();
+
+    publish("shutter",this->shutterMsg);
   }
 
   // should send shutter when changing direction, or wait for Tully to implement ring buffer in viewer
