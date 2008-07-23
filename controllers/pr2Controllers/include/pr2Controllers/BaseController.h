@@ -233,7 +233,7 @@ namespace CONTROLLER
 
     Robot *robot;
 
-    std::map<std::string,std::string> param_map;
+    std::map<std::string,std::string> paramMap;
 
     std::string name;
 

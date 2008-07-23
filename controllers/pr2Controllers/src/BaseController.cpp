@@ -89,7 +89,7 @@ CONTROLLER::CONTROLLER_ERROR_CODE BaseController::loadXML(std::string filename)
       break;
     }
   }
-  param_map = data.getDataTagValues("controller",this->name);   
+  paramMap = data.getDataTagValues("controller",this->name);   
 
   loadParam("pGain",pGain);
 
@@ -291,14 +291,14 @@ PR2::PR2_ERROR_CODE BaseController::setWrench(double yaw)
 
 void BaseController::loadParam(std::string label, double &param)
 {
-  if(param_map.find(label) != param_map.end()) // if parameter value has been initialized in the xml file, set internal parameter value
-    param = atof(param_map[label].c_str());
+  if(paramMap.find(label) != paramMap.end()) // if parameter value has been initialized in the xml file, set internal parameter value
+    param = atof(paramMap[label].c_str());
 }
 
 void BaseController::loadParam(std::string label, int &param)
 {
-  if(param_map.find(label) != param_map.end())
-    param = atoi(param_map[label].c_str());
+  if(paramMap.find(label) != paramMap.end())
+    param = atoi(paramMap[label].c_str());
 }
 
 PR2::PR2_ERROR_CODE BaseController::setParam(std::string label,double value)
