@@ -35,32 +35,32 @@
 #pragma once
 /***************************************************/
 /*! \class CONTROLLER::JointController
-    \brief A Joint controller
+  \brief A Joint controller
     
-    This class implements controller loops for
-    PR2 Joint Control
+  This class implements controller loops for
+  PR2 Joint Control
 
-    ASSUMES:
-      Rotary joint
+  ASSUMES:
+  Rotary joint
 
-    Parameters to be set by SetParam
-    PGain
-    IGain
-    DGain
-    IMax
-    IMin
+  Parameters to be set by SetParam
+  PGain
+  IGain
+  DGain
+  IMax
+  IMin
 
-    Parameters fetched from joint
-    Time
-    SaturationEffort
-    MaxEffort
+  Parameters fetched from joint
+  Time
+  SaturationEffort
+  MaxEffort
 
-    Steps to bring a JointController online
-    1. Initialize gains via SetParam
-    2. Set the controller mode (SetMode(mode))
-    3. EnableController()
-    4. Set appropriate command (position, torque, velocity)
-    5. Call Update from Real Time loop
+  Steps to bring a JointController online
+  1. Initialize gains via SetParam
+  2. Set the controller mode (SetMode(mode))
+  3. EnableController()
+  4. Set appropriate command (position, torque, velocity)
+  5. Call Update from Real Time loop
 
     
 */
@@ -91,60 +91,60 @@ namespace CONTROLLER
     //CONSTRUCTION/DESTRUCTION CALLS
     //---------------------------------------------------------------------------------//
 
-      /*!
-        * \brief Default Constructor of the JointController class.
-        *
-        */
-      JointController();
+    /*!
+     * \brief Default Constructor of the JointController class.
+     *
+     */
+    JointController();
       
-      /*!
-        * \brief Destructor of the JointController class.
-        */       
-      ~JointController( );
+    /*!
+     * \brief Destructor of the JointController class.
+     */       
+    ~JointController( );
     
-       /*!
-        * \brief   Initialization routine for the controller
-        * \param Joint* joint The joint we are interacting with
-        * \param string name The namespace identification in ROS
-        */
-  // CONTROLLER::CONTROLLER_ERROR_CODE Init(Joint* joint, string name);
+    /*!
+     * \brief   Initialization routine for the controller
+     * \param Joint* joint The joint we are interacting with
+     * \param string name The namespace identification in ROS
+     */
+    // CONTROLLER::CONTROLLER_ERROR_CODE Init(Joint* joint, string name);
     
-      // JointController(Joint* joint, string name);
+    // JointController(Joint* joint, string name);
 
-        //TEMPORARY
-        /*! 
-        * \brief Temporary way to initialize limits and gains. Default argument for dt is 1 ms
-        *
-        */
-      void Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint, double dt);
+    //TEMPORARY
+    /*! 
+     * \brief Temporary way to initialize limits and gains. Default argument for dt is 1 ms
+     *
+     */
+    void Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint, double dt);
 
-   /*!
-        * \brief   Initialization routine for the controller
-        * \param Joint* joint The joint we are interacting with
-        * \param string name The namespace identification in ROS
-        */
-  // CONTROLLER::CONTROLLER_ERROR_CODE Init(Joint* joint, string name);
+    /*!
+     * \brief   Initialization routine for the controller
+     * \param Joint* joint The joint we are interacting with
+     * \param string name The namespace identification in ROS
+     */
+    // CONTROLLER::CONTROLLER_ERROR_CODE Init(Joint* joint, string name);
     
-      // JointController(Joint* joint, string name);
+    // JointController(Joint* joint, string name);
 
-        //TEMPORARY
-        /*! 
-        * \brief Temporary way to initialize limits and gains. Default argument for dt is 1 ms
-        *
-        */
-      void Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint);
+    //TEMPORARY
+    /*! 
+     * \brief Temporary way to initialize limits and gains. Default argument for dt is 1 ms
+     *
+     */
+    void Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint);
 
 //---------------------------------------------------------------------------------//
 //TIME CALLS
 //
 //---------------------------------------------------------------------------------//
     /*!
-        * \brief TODO: Get the actual time
-        *  
-        *
-        * \param double* time Pointer to value to change 
-        */
-       void GetTime(double* time);
+     * \brief TODO: Get the actual time
+     *  
+     *
+     * \param double* time Pointer to value to change 
+     */
+    void GetTime(double* time);
 
      
 //---------------------------------------------------------------------------------//
@@ -152,183 +152,183 @@ namespace CONTROLLER
 //---------------------------------------------------------------------------------//
     
     /*!
-        * \brief Switches command mode type (Torque, position, velocity control)
-        *  
-        */
-      CONTROLLER_CONTROL_MODE SetMode(CONTROLLER::CONTROLLER_CONTROL_MODE mode);
+     * \brief Switches command mode type (Torque, position, velocity control)
+     *  
+     */
+    CONTROLLER_CONTROL_MODE SetMode(CONTROLLER::CONTROLLER_CONTROL_MODE mode);
 
-        /*!
-        * \brief Returns the current mode of the controller
-        *  
-        */
-      CONTROLLER::CONTROLLER_CONTROL_MODE GetMode(void);
+    /*!
+     * \brief Returns the current mode of the controller
+     *  
+     */
+    CONTROLLER::CONTROLLER_CONTROL_MODE GetMode(void);
 
-        /*!
-        * \brief Allow controller to run
-        * 
-        *  
-        */
+    /*!
+     * \brief Allow controller to run
+     * 
+     *  
+     */
 
-      CONTROLLER::CONTROLLER_CONTROL_MODE EnableController();
+    CONTROLLER::CONTROLLER_CONTROL_MODE EnableController();
 
 
-        /*!
-        * \brief Set torque to zero. Prevent controller from running
-        *
-        *  
-        */
+    /*!
+     * \brief Set torque to zero. Prevent controller from running
+     *
+     *  
+     */
 
-      CONTROLLER::CONTROLLER_CONTROL_MODE DisableController();
+    CONTROLLER::CONTROLLER_CONTROL_MODE DisableController();
 
-        /*!
-        * \brief Return true if last command saturated the torque 
-        *
-        *  
-        */
-      bool CheckForSaturation(void);
+    /*!
+     * \brief Return true if last command saturated the torque 
+     *
+     *  
+     */
+    bool CheckForSaturation(void);
 
 
 
 //---------------------------------------------------------------------------------//
 //TORQUE CALLS
 //---------------------------------------------------------------------------------//
-        /*!
-        * \brief Give a torque command to be issue on update (if in torque mode)
-        *
-        * \param torque Torque command to issue
-        */
+    /*!
+     * \brief Give a torque command to be issue on update (if in torque mode)
+     *
+     * \param torque Torque command to issue
+     */
 
-      CONTROLLER::CONTROLLER_ERROR_CODE SetTorqueCmd(double torque);
+    CONTROLLER::CONTROLLER_ERROR_CODE SetTorqueCmd(double torque);
       
-       /*!
-        * \brief Fetch the latest user issued torque command 
-        * 
-        * \param double* torque Pointer to value to change 
-        */ 
-      CONTROLLER::CONTROLLER_ERROR_CODE GetTorqueCmd(double *torque);
+    /*!
+     * \brief Fetch the latest user issued torque command 
+     * 
+     * \param double* torque Pointer to value to change 
+     */ 
+    CONTROLLER::CONTROLLER_ERROR_CODE GetTorqueCmd(double *torque);
       
-      /*!
-        * \brief Get the actual torque of the joint motor.
-        * 
-        * \param double* torque Pointer to value to change
-        */  
-      CONTROLLER::CONTROLLER_ERROR_CODE GetTorqueAct(double *torque);
+    /*!
+     * \brief Get the actual torque of the joint motor.
+     * 
+     * \param double* torque Pointer to value to change
+     */  
+    CONTROLLER::CONTROLLER_ERROR_CODE GetTorqueAct(double *torque);
 
 //---------------------------------------------------------------------------------//
 //POSITION CALLS
 //---------------------------------------------------------------------------------//
 
-      /*!
-        * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
-        * 
-        * \param double pos Position command to issue
-        */       
-      CONTROLLER::CONTROLLER_ERROR_CODE SetPosCmd(double pos);
+    /*!
+     * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
+     * 
+     * \param double pos Position command to issue
+     */       
+    CONTROLLER::CONTROLLER_ERROR_CODE SetPosCmd(double pos);
       
-      /*!
-        * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
-        * \param double* pos Pointer to value to change
-        */       
-      CONTROLLER::CONTROLLER_ERROR_CODE GetPosCmd(double *pos);
+    /*!
+     * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
+     * \param double* pos Pointer to value to change
+     */       
+    CONTROLLER::CONTROLLER_ERROR_CODE GetPosCmd(double *pos);
       
-      /*!
-        * \brief Read the torque of the motor
-        * \param double* pos Pointer to value to change
-        */       
-      CONTROLLER::CONTROLLER_ERROR_CODE GetPosAct(double *pos);    
+    /*!
+     * \brief Read the torque of the motor
+     * \param double* pos Pointer to value to change
+     */       
+    CONTROLLER::CONTROLLER_ERROR_CODE GetPosAct(double *pos);    
 
 //---------------------------------------------------------------------------------//
 //VELOCITY CALLS
 //---------------------------------------------------------------------------------//
    
-      /*!
-        * \brief Set velocity command to the joint to be issue next update
-        * \param double vel Velocity to issue next command
-        */
-      CONTROLLER::CONTROLLER_ERROR_CODE SetVelCmd(double vel);
+    /*!
+     * \brief Set velocity command to the joint to be issue next update
+     * \param double vel Velocity to issue next command
+     */
+    CONTROLLER::CONTROLLER_ERROR_CODE SetVelCmd(double vel);
       
-      /*!
-        * \brief Get latest velocity command to the joint
-        * \param double* vel Pointer to value to change
-        */
-      CONTROLLER::CONTROLLER_ERROR_CODE GetVelCmd(double *vel);
+    /*!
+     * \brief Get latest velocity command to the joint
+     * \param double* vel Pointer to value to change
+     */
+    CONTROLLER::CONTROLLER_ERROR_CODE GetVelCmd(double *vel);
       
-      /*!
-        * \brief Get actual velocity of the joint
-        * \param double* vel Pointer to value to change
-        */
-      CONTROLLER::CONTROLLER_ERROR_CODE GetVelAct(double *vel);
+    /*!
+     * \brief Get actual velocity of the joint
+     * \param double* vel Pointer to value to change
+     */
+    CONTROLLER::CONTROLLER_ERROR_CODE GetVelAct(double *vel);
  
-      /*!
-        * \brief Compute max velocity coming into the end stop to stop with linear velocity in endstop.
-        *
-        */
-        double GetMaxVelocity(void);
+    /*!
+     * \brief Compute max velocity coming into the end stop to stop with linear velocity in endstop.
+     *
+     */
+    double GetMaxVelocity(void);
 
 //---------------------------------------------------------------------------------//
 //UPDATE CALLS
 //---------------------------------------------------------------------------------//
     /*!
-        * \brief Issues commands to joint based on control mode
-        *
-        * 
-        */
+     * \brief Issues commands to joint based on control mode
+     *
+     * 
+     */
 
-      //Issues commands to the joint. Should be called at regular intervals
-      virtual void Update(void);
+    //Issues commands to the joint. Should be called at regular intervals
+    virtual void Update(void);
 
 //---------------------------------------------------------------------------------//
 //PARAM SERVER CALLS
 //---------------------------------------------------------------------------------//
-      /*!
-        * \brief Set parameters for this controller
-        *
-        * user can set maximum velocity
-        * and maximum acceleration
-        * constraints for this controller
-        * \param string label Name of param to change
-        * \param double value New value
-        *<br> 
-        *<UL TYPE="none">
-        *<LI> e.g. SetParam('PGain',10);
-        *<LI>   or SetParam('IGain',10);
-        *<LI>   or SetParam('DGain',1);
-        *<LI>   or SetParam('IMax', 100);
-        *<LI>   or SetParam('IMin',-100);
-        *</UL>
-        */
-      CONTROLLER::CONTROLLER_ERROR_CODE SetParam(std::string label,double value);
+    /*!
+     * \brief Set parameters for this controller
+     *
+     * user can set maximum velocity
+     * and maximum acceleration
+     * constraints for this controller
+     * \param string label Name of param to change
+     * \param double value New value
+     *<br> 
+     *<UL TYPE="none">
+     *<LI> e.g. SetParam('PGain',10);
+     *<LI>   or SetParam('IGain',10);
+     *<LI>   or SetParam('DGain',1);
+     *<LI>   or SetParam('IMax', 100);
+     *<LI>   or SetParam('IMin',-100);
+     *</UL>
+     */
+    CONTROLLER::CONTROLLER_ERROR_CODE SetParam(std::string label,double value);
 
    
-   //  CONTROLLER::CONTROLLER_ERROR_CODE SetParam(std::string label,std::string value);
+    //  CONTROLLER::CONTROLLER_ERROR_CODE SetParam(std::string label,std::string value);
 
-     /*!
-        * \brief Get parameters for this controller
-        *
-        * user can get maximum velocity
-        * and maximum acceleration
-        * constraints for this controller
-        *<br> 
-        *<UL TYPE="none">
-        *<UL TYPE="none">
-        *<LI> e.g. GetParam('PGain',value);
-        *<LI>   or GetParam('IGain',value);
-        *<LI>   or GetParam('DGain',value);
-        *<LI>   or GetParam('IMax', value);
-        *<LI>   or GetParam('IMin', value);
-        *</UL>
-        */
-      CONTROLLER::CONTROLLER_ERROR_CODE GetParam(std::string label, double* value);
-      //CONTROLLER::CONTROLLER_ERROR_CODE GetParam(std::string label, std::string value);
+    /*!
+     * \brief Get parameters for this controller
+     *
+     * user can get maximum velocity
+     * and maximum acceleration
+     * constraints for this controller
+     *<br> 
+     *<UL TYPE="none">
+     *<UL TYPE="none">
+     *<LI> e.g. GetParam('PGain',value);
+     *<LI>   or GetParam('IGain',value);
+     *<LI>   or GetParam('DGain',value);
+     *<LI>   or GetParam('IMax', value);
+     *<LI>   or GetParam('IMin', value);
+     *</UL>
+     */
+    CONTROLLER::CONTROLLER_ERROR_CODE GetParam(std::string label, double* value);
+    //CONTROLLER::CONTROLLER_ERROR_CODE GetParam(std::string label, std::string value);
       
-      std::string name(void) const { return jointName; }
-      void setName( const std::string & name ) { jointName = name; }
+    std::string name(void) const { return jointName; }
+    void setName( const std::string & name ) { jointName = name; }
 
-      bool capAccel;  /*!<Flag to indicate whether we should cap acceleration.>*/
-      double maxAccel; /*!<Maximum allowed acceleration/deceleration.>*/
-      std::string jointName; /*!< Namespace ID for this controller>*/  
+    bool capAccel;  /*!<Flag to indicate whether we should cap acceleration.>*/
+    double maxAccel; /*!<Maximum allowed acceleration/deceleration.>*/
+    std::string jointName; /*!< Namespace ID for this controller>*/  
 
-      CONTROLLER::CONTROLLER_ERROR_CODE LoadXML(std::string filename);
+    CONTROLLER::CONTROLLER_ERROR_CODE LoadXML(std::string filename);
 
     private:
 
@@ -336,56 +336,56 @@ namespace CONTROLLER
 //SAFETY CALLS
 //---------------------------------------------------------------------------------//
 
-          /*!
-        * \brief Actually issue torque set command of the joint motor.
-        * 
-        *
-        */       
-     double SafelySetTorqueInternal(double torque);
+    /*!
+     * \brief Actually issue torque set command of the joint motor.
+     * 
+     *
+     */       
+    double SafelySetTorqueInternal(double torque);
      
-      mechanism::Joint* joint; /*!< Joint we're controlling>*/  
-      Pid pidController; /*!< Internal PID controller>*/  
+    mechanism::Joint* joint; /*!< Joint we're controlling>*/  
+    Pid pidController; /*!< Internal PID controller>*/  
 
      
-      double lastTime;/*!< Last time stamp of update> */
+    double lastTime;/*!< Last time stamp of update> */
 //---------------------------------------------------------------------------------//
 // Command parameters
 //---------------------------------------------------------------------------------//
 
-      //Command parameters
-      double cmdTorque;/*!< Last commanded torque>*/
-      double cmdPos;/*!< Last commanded position> */
-      double cmdVel;/*!< Last commanded Velocity> */
+    //Command parameters
+    double cmdTorque;/*!< Last commanded torque>*/
+    double cmdPos;/*!< Last commanded position> */
+    double cmdVel;/*!< Last commanded Velocity> */
 
 //---------------------------------------------------------------------------------//
 // Mode flags/parameters
 //---------------------------------------------------------------------------------//
 
-      bool SaturationFlag; /*!< Flag to indicate last command exceed torque limits and was truncated>*/  
-      bool enabled; /*!<Can controller issue commands?>*/
-      CONTROLLER::CONTROLLER_CONTROL_MODE controlMode;    /*!< Indicate current controller mode (torque, position, velocity)>*/  
+    bool SaturationFlag; /*!< Flag to indicate last command exceed torque limits and was truncated>*/  
+    bool enabled; /*!<Can controller issue commands?>*/
+    CONTROLLER::CONTROLLER_CONTROL_MODE controlMode;    /*!< Indicate current controller mode (torque, position, velocity)>*/  
 
 //---------------------------------------------------------------------------------//
 //TEMPORARY: To be replaced by calls to param server
 //---------------------------------------------------------------------------------//
 
-      double PGain; /*!< Proportional gain>*/
-      double IGain;/*!< Integral gain >*/
-      double DGain;/*!< Derivative gain> */
-      double IMax;/*!< Upper integral clamp> */
-      double IMin;/*!< Lower integral clamp> */
+    double PGain; /*!< Proportional gain>*/
+    double IGain;/*!< Integral gain >*/
+    double DGain;/*!< Derivative gain> */
+    double IMax;/*!< Upper integral clamp> */
+    double IMin;/*!< Lower integral clamp> */
 
-      double maxPositiveTorque; /*!<Temporary (until param server) : local copy of max Positive Torque.>*/
-      double maxNegativeTorque; /*!<Temporary (until param server): local copy of max neg torque .>*/
-      double maxEffort; /*!<Temporary (until param server): local copy of max possible commanded effort.>*/
+    double maxPositiveTorque; /*!<Temporary (until param server) : local copy of max Positive Torque.>*/
+    double maxNegativeTorque; /*!<Temporary (until param server): local copy of max neg torque .>*/
+    double maxEffort; /*!<Temporary (until param server): local copy of max possible commanded effort.>*/
 
-      double dt; /*!<Timestep amount. >*/
+    double dt; /*!<Timestep amount. >*/
 
-      std::map<std::string,std::string> param_map;
+    std::map<std::string,std::string> param_map;
 
-      void LoadParam(std::string label, double &value);
+    void LoadParam(std::string label, double &value);
 
-      void LoadParam(std::string label, int &value);
+    void LoadParam(std::string label, int &value);
 
-       };
+  };
 }
