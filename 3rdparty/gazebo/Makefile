@@ -25,7 +25,7 @@ $(SVN_TARGET):
 
 .PHONY: $(BUILD_TARGET)
 $(BUILD_TARGET): $(SVN_TARGET)
-	if [ ! -d $(BUILD_TARGET) ]; then mkdir -p $(BUILD_TARGET); fi
+	if [ ! -d $(BUILD_TARGET) ]; then mkdir -p $(BUILD_TARGET); mkdir -p $(BUILD_TARGET)/share; mkdir -p $(BUILD_TARGET)/share/gazebo; mkdir -p $(BUILD_TARGET)/share/gazebo/Media; fi
 	cd $(SVN_DIR) && export PKG_CONFIG_PATH=${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} && \
 	export LIBPATH="${FI_LD}" && \
 	export PATH=${ODE_PATH}/bin:${PATH} && scons prefix=$(ROOT) && scons prefix=$(ROOT) install
