@@ -359,7 +359,9 @@ void JointController::Update(void)
       //}      
       break;
     case ETHERDRIVE_SPEED: // Use hack to contol speed in voltage control mode for the etherdrive
+#ifdef DEBUG
       printf("JC:: %f\n",cmdVel);
+#endif
       currentVoltageCmd = cmdVel*20*60/(136*2*M_PI); 
       v_backemf = joint->velocity*20*60/(136*2*M_PI);
 
@@ -367,9 +369,9 @@ void JointController::Update(void)
       v_clamp_max = v_backemf + 3;//0.655*16.7;
 
       k = 1.0/ 36.0;
-
+#ifdef DEBUG
       printf("JC::%f\t%f\t%f\n", v_clamp_min, currentVoltageCmd, v_clamp_max);
-
+#endif
       if (currentVoltageCmd > v_clamp_max)
 	currentVoltageCmd = v_clamp_max;
 
