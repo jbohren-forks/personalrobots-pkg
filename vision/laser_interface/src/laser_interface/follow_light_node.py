@@ -18,7 +18,7 @@ class FollowBehavior:
         T = np.matrix([-.095, 0,.162]).T
         self.base_T_camera = cam.homo_transform3d(R, T)
         self.robot_pose     = n.ConstNode(robot_pose)
-        self.local_pos      = n.nav.V_KeepLocal_P2d_V(self.robot_pose, np.matrix([0.0, 0.0]).T)
+        self.local_pos      = n.nav.V_KeepLocal_P2d_V(self.robot_pose, n.ConstNode(np.matrix([0.0, 0.0]).T))
         self.attr	        = n.nav.V_LinearAttract_V(self.local_pos, dead_zone = 0.05, far_dist = 1.0)
         self.cmd            = n.nav.R_Conv_V(self.attr, allow_backwards_driving = False)
         self.should_stop    = self.attr.is_done()
@@ -40,12 +40,15 @@ class FollowBehavior:
         self.has_stopped = False
 
     def robot_moved(self, update):
-        #print 'FollowBehavior.robot_moved:', update.pos.x, update.pos.y, update.pos.th
-        self.robot_pose.const = n.Pose2D(update.pos.x, update.pos.y, update.pos.th)
+        if self.not_inited:
+            self.init_pose(n.Pose2D(update.pos.x, update.pos.y, update.pos.th))
+        else:
+            self.robot_pose.const = n.Pose2D(update.pos.x, update.pos.y, update.pos.th)
 
     def run(self):
         if self.not_inited:
             return
+
         #base_command = self.cmd.val(self.count)
         #print 'publishing', base_command.forward_vel, base_command.rot_vel
         if self.should_stop.val(self.count) and not self.has_stopped:
