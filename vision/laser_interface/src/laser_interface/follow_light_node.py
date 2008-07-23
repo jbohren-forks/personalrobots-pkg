@@ -11,9 +11,9 @@ import math
 class FollowBehavior:
     def __init__(self, velocity_topic):
         self.not_inited     = True
+        self.velocity_topic = velocity_topic
 
     def init_pose(self, robot_pose):
-        self.velocity_topic = velocity_topic
         R = cam.Rx(math.radians(90)) * cam.Ry(math.radians(-90))
         T = np.matrix([-.095, 0,.162]).T
         self.base_T_camera = cam.homo_transform3d(R, T)
@@ -26,6 +26,8 @@ class FollowBehavior:
         self.cmd.max_vel    = .5
         self.has_stopped    = False
         self.count          = 0
+        self.attr.verbosity = -1
+        print 'FollowBehavior: ready!'
 
     def cursor_moved(self, point):
         #Transform into base's coordinate frame
@@ -42,20 +44,21 @@ class FollowBehavior:
     def robot_moved(self, update):
         if self.not_inited:
             self.init_pose(n.Pose2D(update.pos.x, update.pos.y, update.pos.th))
+            self.not_inited = False
         else:
             self.robot_pose.const = n.Pose2D(update.pos.x, update.pos.y, update.pos.th)
 
     def run(self):
         if self.not_inited:
             return
-
         #base_command = self.cmd.val(self.count)
         #print 'publishing', base_command.forward_vel, base_command.rot_vel
         if self.should_stop.val(self.count) and not self.has_stopped:
             self.velocity_topic.publish(BaseVel(0,0))
             #print 'stoppping'
-            #self.has_stopped = True 
+            self.has_stopped = True 
         elif not self.has_stopped:
+            #print 'HAS STOPPED'
             base_command = self.cmd.val(self.count)
             msg = BaseVel(base_command.forward_vel, base_command.rot_vel)
             #print 'publishing', base_command.forward_vel, base_command.rot_vel
