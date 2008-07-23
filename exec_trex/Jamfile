@@ -16,12 +16,16 @@ if ! $(exec_trex_READY) {
 	CalcGlobalPathConstraintPlayback.cc CalcCommandConstraint.cc Playback.cc
 	CalcGlobalPathConstraint.cc CalcArmInverseKinematicsConstraint.cc
 	CalcInterpolatedEndEffectorPosConstraint.cc OrienteeringSolver.cc
-	CalcGraspPositionConstraint.cc CalcAngleDiffConstraint.cc GoalManager.cc
-	WavefrontPlanner.cc map_helpers.cc ExecDefs.cc Components.cc pr2.model.o
+	CalcGraspPositionConstraint.cc CalcAngleDiffConstraint.cc CalcDistanceConstraint.cc GoalManager.cc
+	WavefrontPlanner.cc map_helpers.cc ExecDefs.cc Components.cc pr2.model.cc
 	: TREX : exec_trex ;
 	
 	Depends exec_trex : exec_inputs ;
-	ModuleMain logger : MessageLogger.cc ExecDefs.o : TREX : logger ;
+	ModuleMain logger : MessageLogger.cc ExecDefs.cc : TREX : logger ;
+
+	# Test Targets
+ 	RunModuleMain run-exec-module-tests : exec-module-tests ;
+	ModuleMain exec-module-tests : module-tests.cc CalcDistanceConstraint.cc : TREX : exec_trex_module-tests ;
 	ModuleMain testCalcArmInverseKinematicsConstraint :
 	testCalcArmInverseKinematicsConstraint.cc CalcArmInverseKinematicsConstraint.cc Logger.cc LogClock.cc : TREX : testCalcArmInverseKinematicsConstraint ;
 

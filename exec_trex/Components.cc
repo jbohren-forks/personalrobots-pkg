@@ -36,7 +36,7 @@ namespace TREX{
 
     // Constraint Registration
     REGISTER_CONSTRAINT(SubsetOfConstraint, "in", "Default");
-    REGISTER_CONSTRAINT(CalcDistanceConstraint, "calcDistance", "Default");
+    REGISTER_CONSTRAINT(TREX::CalcDistanceConstraint, "calcDistance", "Default");
     REGISTER_CONSTRAINT(FloorFunction, "calcFloor", "Default");
     if (playback) {
       REGISTER_CONSTRAINT(CalcCommandConstraintPlayback, "calcCommand", "Default");
