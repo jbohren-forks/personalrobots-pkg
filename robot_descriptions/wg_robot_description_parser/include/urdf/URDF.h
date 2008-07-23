@@ -75,6 +75,11 @@ namespace robot_desc
 
 	    void add(const std::string &type, const std::string &name, const std::string &key, const std::string &value);
 	    
+	    Data& operator=(const Data &rhs)
+	    { 
+		m_data = rhs.m_data;
+		return *this;
+	    }
 	protected:
 	    
 	    std::map<std::string, std::map<std::string, std::map<std::string, std::string > > > m_data;
