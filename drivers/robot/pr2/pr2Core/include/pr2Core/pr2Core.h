@@ -5,46 +5,47 @@
 
 namespace PR2
 {
+   static const int PR2_FRAMEID_COUNT = 37; //TODO: replace with the xml file
 
-   enum PR2_FRAMEID{
-      FRAMEID_CASTER_FL_WHEEL_L = 101 ,  // FIXME: this is a hack until we have a frameid server
-      FRAMEID_CASTER_FL_WHEEL_R , 
-      FRAMEID_CASTER_FL_BODY    ,
-      FRAMEID_CASTER_FR_WHEEL_L , 
-      FRAMEID_CASTER_FR_WHEEL_R , 
-      FRAMEID_CASTER_FR_BODY    ,
-      FRAMEID_CASTER_RL_WHEEL_L , 
-      FRAMEID_CASTER_RL_WHEEL_R , 
-      FRAMEID_CASTER_RL_BODY    ,
-      FRAMEID_CASTER_RR_WHEEL_L , 
-      FRAMEID_CASTER_RR_WHEEL_R , 
-      FRAMEID_CASTER_RR_BODY    ,
-      FRAMEID_BASE              ,
-      FRAMEID_TORSO             ,
-      FRAMEID_ARM_L_TURRET      , 
-      FRAMEID_ARM_L_SHOULDER    ,
-      FRAMEID_ARM_L_UPPERARM    , 
-      FRAMEID_ARM_L_ELBOW       ,
-      FRAMEID_ARM_L_FOREARM     , 
-      FRAMEID_ARM_L_WRIST       ,
-      FRAMEID_ARM_L_HAND        , 
-      FRAMEID_ARM_L_FINGER_1    ,
-      FRAMEID_ARM_L_FINGER_2    ,
-      FRAMEID_ARM_R_TURRET      , 
-      FRAMEID_ARM_R_SHOULDER    ,
-      FRAMEID_ARM_R_UPPERARM    , 
-      FRAMEID_ARM_R_ELBOW       ,
-      FRAMEID_ARM_R_FOREARM     , 
-      FRAMEID_ARM_R_WRIST       ,
-      FRAMEID_ARM_R_HAND        , 
-      FRAMEID_ARM_R_FINGER_1    ,
-      FRAMEID_ARM_R_FINGER_2    ,
-      FRAMEID_HEAD_PAN_BASE     , 
-      FRAMEID_HEAD_TILT_BASE    ,
-      FRAMEID_STEREO_BLOCK      , 
-      FRAMEID_TILT_LASER_BLOCK  ,
-      FRAMEID_BASE_LASER_BLOCK  ,
-      MAX_FRAMEIDS 
+   static const char *PR2_FRAMEID[] = { //TODO: replace with the xml file
+      "FRAMEID_CASTER_FL_WHEEL_L" ,//0
+      "FRAMEID_CASTER_FL_WHEEL_R" ,//1
+      "FRAMEID_CASTER_FL_BODY"    ,//2
+      "FRAMEID_CASTER_FR_WHEEL_L" ,//3 
+      "FRAMEID_CASTER_FR_WHEEL_R" ,//4 
+      "FRAMEID_CASTER_FR_BODY"    ,//5
+      "FRAMEID_CASTER_RL_WHEEL_L" ,//6 
+      "FRAMEID_CASTER_RL_WHEEL_R" ,//7 
+      "FRAMEID_CASTER_RL_BODY"    ,//8
+      "FRAMEID_CASTER_RR_WHEEL_L" ,//9 
+      "FRAMEID_CASTER_RR_WHEEL_R" ,//10 
+      "FRAMEID_CASTER_RR_BODY"    ,//11
+      "FRAMEID_BASE"              ,//12
+      "FRAMEID_TORSO"             ,//13
+      "FRAMEID_ARM_L_TURRET"      ,//14
+      "FRAMEID_ARM_L_SHOULDER"    ,//15
+      "FRAMEID_ARM_L_UPPERARM"    ,//16
+      "FRAMEID_ARM_L_ELBOW"       ,//17
+      "FRAMEID_ARM_L_FOREARM"     ,//18
+      "FRAMEID_ARM_L_WRIST"       ,//19
+      "FRAMEID_ARM_L_HAND"        ,//20
+      "FRAMEID_ARM_L_FINGER_1"    ,//21
+      "FRAMEID_ARM_L_FINGER_2"    ,//22
+      "FRAMEID_ARM_R_TURRET"      ,//23
+      "FRAMEID_ARM_R_SHOULDER"    ,//24
+      "FRAMEID_ARM_R_UPPERARM"    ,//25
+      "FRAMEID_ARM_R_ELBOW"       ,//26
+      "FRAMEID_ARM_R_FOREARM"     ,//27
+      "FRAMEID_ARM_R_WRIST"       ,//28
+      "FRAMEID_ARM_R_HAND"        ,//29
+      "FRAMEID_ARM_R_FINGER_1"    ,//30
+      "FRAMEID_ARM_R_FINGER_2"    ,//31
+      "FRAMEID_HEAD_PAN_BASE"     ,//32
+      "FRAMEID_HEAD_TILT_BASE"    ,//33
+      "FRAMEID_STEREO_BLOCK"      ,//34
+      "FRAMEID_TILT_LASER_BLOCK"  ,//35
+      "FRAMEID_BASE_LASER_BLOCK"  ,//36
+      "END" 
    };
 
    enum PR2_JOINT_CONTROL_MODE{ 

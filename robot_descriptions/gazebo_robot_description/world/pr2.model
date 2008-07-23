@@ -1198,8 +1198,8 @@
       <laserCount>1</laserCount>
       <origin>0.0 0.0 0.05</origin>
 
-      <minAngle>-135</minAngle>
-      <maxAngle> 135</maxAngle>
+      <minAngle>-45</minAngle>
+      <maxAngle> 45</maxAngle>
 
       <minRange>0.05</minRange>
       <maxRange>10.0</maxRange>
