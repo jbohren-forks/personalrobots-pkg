@@ -1,4 +1,3 @@
-
 ///////////////////////////////////////////////////////////////////////////////
 // Copyright (C) 2008, Willow Garage, Inc.
 //
@@ -42,7 +41,6 @@ using namespace CONTROLLER;
 
 //using CONTROLLER::Controller;
 
-
 //Base requirements for a piece of code that will control a full mechanism
 const int MAX_NUM_CONTROLLERS = 1000;
 
@@ -78,22 +76,5 @@ class MechanismControl{
 
   Robot *r;
 };
-
-/*
-class BaseTest : public ros::node{ 
-
-public:
-
-   //BaseTest(MechanismControl *mbcl);
-
-   //joy::Joy joy_msg;
-
-   //void wiiInput();
-
-  float vx, vy, vw;
-
-  MechanismControl *mbc;
-};
-*/
 
 #endif

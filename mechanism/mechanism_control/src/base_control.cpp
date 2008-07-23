@@ -45,12 +45,6 @@ MechanismControl::MechanismControl(){
   this->hw = NULL;
 }
 
-int notDone = 1;
-
-void finalize(int dummy){
-  notDone = 0;
-}
-
 double GetTime()
 {
   struct timeval t;
