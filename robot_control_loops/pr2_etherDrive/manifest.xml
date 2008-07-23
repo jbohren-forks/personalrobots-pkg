@@ -7,6 +7,7 @@ Main loop that runs the robot.
   <depend package="roscpp" />
   <depend package="mechanism_control"/>
   <depend package="etherdrive_hardware"/>
+  <depend package="hw_interface"/>
 
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>

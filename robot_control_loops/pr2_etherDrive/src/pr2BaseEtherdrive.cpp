@@ -40,10 +40,10 @@
 #include <sys/time.h>
 #include <signal.h>
 
-bool notDone = true;
+int notDone = 1;
 
-void finalize(){
-   notDone = false;
+void finalize(int dummy){
+   notDone = 0;
 }
 
 int main(int argc, char *argv[]){
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]){
    //Realtime loop would spawn a thread and make it realtime to run this loop
 
    while(notDone){ //Decide if this is how we want to do this
-      h.update();
+//      h.update();
       mc.update();
       //read out fingertip sensor data from etherCAT hardware
       usleep(1000); //clock_nanosleep();
@@ -91,9 +91,9 @@ int main(int argc, char *argv[]){
    //mc.fini();   //If needed
    //h.fini();    //If needed
 
-   delete(node); //Before ros::fini
 
    ros::fini();
+   delete(node); //Before ros::fini
 
    return 0;
 }
