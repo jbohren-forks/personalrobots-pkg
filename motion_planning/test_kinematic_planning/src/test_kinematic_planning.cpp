@@ -112,11 +112,15 @@ public:
     void currentLeftArmPos(void)
     {
 	// don't need to do anything -- we already have the data
+	leftArmPos.gripperForceCmd = 0;
+	leftArmPos.gripperGapCmd = 0;
     }
 
     void currentRightArmPos(void)
     {
 	// don't need to do anything -- we already have the data
+	rightArmPos.gripperForceCmd = 0;
+	rightArmPos.gripperGapCmd = 0;
     }
 
     void moveRightArm(void)
@@ -202,7 +206,7 @@ public:
 		*/
 		printf("  - sent the state: "); 
 		ros::kinematics::printKinematicState(res.path.states[i]);
-		usleep(10000);
+		sleep(1);
 		}   
 	} else {
 	  service_mutex.unlock();
