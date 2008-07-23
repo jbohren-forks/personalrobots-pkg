@@ -117,21 +117,21 @@ namespace CONTROLLER
         * \brief Set Cartesian position of Hand (end-effector) in Global Frame (Euler Angles)
         * 
         */       
-      CONTROLLER_ERROR_CODE setHandCartesianPosition   (double  x, double  y, double  z, double  roll, double  pitch, double  yaw);
+      CONTROLLER_ERROR_CODE setHandCartesianPos(double  x, double  y, double  z, double  roll, double  pitch, double  yaw);
 
         /*!
         * 
         * \brief Get commanded Cartesian position of Hand (end-effector) in Global Frame (Euler Angles)
         * 
         */      
-       CONTROLLER_ERROR_CODE getHandCartesianPositionCmd(double *x, double *y, double *z, double *roll, double *pitch, double *yaw);
+       CONTROLLER_ERROR_CODE getHandCartesianPosCmd(double *x, double *y, double *z, double *roll, double *pitch, double *yaw);
 
         /*!
         * 
         * \brief Get Cartesian position of Hand (end-effector) in Global Frame (Euler Angles)
         * 
         */      
-       CONTROLLER_ERROR_CODE getHandCartesianPositionAct(double *x, double *y, double *z, double *roll, double *pitch, double *yaw);
+       CONTROLLER_ERROR_CODE getHandCartesianPosAct(double *x, double *y, double *z, double *roll, double *pitch, double *yaw);
 
         /*!
         * 
@@ -183,20 +183,40 @@ namespace CONTROLLER
         * \brief Set all arm joint positions 
         *
         */
-       CONTROLLER_ERROR_CODE setArmJointPosition(int numJoints, double angles[],double speed[]);
+       CONTROLLER_ERROR_CODE setArmJointPos(int numJoints, double angles[]);
   /*!
         *
         * \brief Get all commanded arm joint positions 
         *
         */
 
-       CONTROLLER_ERROR_CODE getArmJointPositionCmd(int *numJoints, double *angles[],double *speed[]);
+       CONTROLLER_ERROR_CODE getArmJointPosCmd(int numJoints, double *angles[]);
      /*!
         *
         * \brief Get all arm joint positions 
         *
         */
-      CONTROLLER_ERROR_CODE getArmJointPositionAct(int *numJoints, double *angles[],double *speed[]);
+       CONTROLLER_ERROR_CODE getArmJointPosAct(int numJoints, double *angles[]);
+
+   /*!
+        *
+        * \brief Set one arm joint position 
+        *
+        */
+       CONTROLLER_ERROR_CODE setOneArmJointPos(int numJoint, double angle);
+  /*!
+        *
+        * \brief Get one commanded arm joint position 
+        *
+        */
+
+       CONTROLLER_ERROR_CODE getOneArmJointPosCmd(int numJoint, double *angle);
+     /*!
+        *
+        * \brief Get one arm joint position 
+        *
+        */
+       CONTROLLER_ERROR_CODE getOneArmJointPosAct(int numJoint, double *angle);
 
 //---------------------------------------------------------------------------------//
 //ARM JOINT TORQUE CALLS
@@ -214,14 +234,34 @@ namespace CONTROLLER
         *
         */
 
-       CONTROLLER_ERROR_CODE getArmJointTorqueCmd(int *numJoints, double *torque[]);
+       CONTROLLER_ERROR_CODE getArmJointTorqueCmd(int numJoints, double *torque[]);
        /*!
         *
         * \brief Get all arm joint torques 
         *
         */
 
-       CONTROLLER_ERROR_CODE getArmJointTorqueAct(int *numJoints, double *torque[]);
+       CONTROLLER_ERROR_CODE getArmJointTorqueAct(int numJoints, double *torque[]);
+   /*!
+        *
+        * \brief Set one arm joint torque
+        *
+        */
+       CONTROLLER_ERROR_CODE setOneArmJointTorque(int numJoint,double torque);
+       /*!
+        *
+        * \brief Get one commanded arm joint torque
+        *
+        */
+
+       CONTROLLER_ERROR_CODE getArmJointTorqueCmd(int numJoint, double *torque);
+       /*!
+        *
+        * \brief Get one arm joint torque
+        *
+        */
+
+       CONTROLLER_ERROR_CODE getArmJointTorqueAct(int numJoint, double *torque);
 
 //---------------------------------------------------------------------------------//
 //ARM JOINT VELOCITY CALLS
@@ -240,13 +280,33 @@ namespace CONTROLLER
         *
         */
 
-       CONTROLLER_ERROR_CODE getArmJointSpeedCmd(int *numJoints, double *speed[]);
+       CONTROLLER_ERROR_CODE getArmJointSpeedCmd(int numJoints, double *speed[]);
       /*!
         *
         * \brief Get all arm joint speeds 
         *
         */
-        CONTROLLER_ERROR_CODE getArmJointSpeedAct(int *numJoints, double *speed[]);
+        CONTROLLER_ERROR_CODE getArmJointSpeedAct(int numJoints, double *speed[]);
+ /*!
+        *
+        * \brief Set one arm joint speed
+        *
+        */
+       CONTROLLER_ERROR_CODE setOneArmJointSpeed(int numJoint, double speed);
+  
+        /*!
+        *
+        * \brief Get one commanded arm joint speed
+        *
+        */
+
+       CONTROLLER_ERROR_CODE getOneArmJointSpeedCmd(int numJoint, double *speed);
+      /*!
+        *
+        * \brief Get one arm joint speed
+        *
+        */
+        CONTROLLER_ERROR_CODE getOneArmJointSpeedAct(int numJoint, double *speed);
 
 //---------------------------------------------------------------------------------//
 // GAZE POINT CALLS
@@ -305,14 +365,3 @@ namespace CONTROLLER
       PR2::PR2Robot* robot; /**<Track robot for kinematics>*/ 
   };
 }
-
-
-      /*!
-        *
-        * \brief Set arm joint maximum torques individually.
-        *
-        */
-     // PR2::PR2_ERROR_CODE setArmJointMaxTorque(int numJoints, double maxTorque[]);
-      //PR2::PR2_ERROR_CODE getArmJointMaxTorqueCmd(int *numJoints, double *maxTorque[]);
-      //PR2::PR2_ERROR_CODE getArmJointMaxTorqueAct(int *numJoints, double *maxTorque[]);
-
