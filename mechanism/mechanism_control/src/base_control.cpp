@@ -45,13 +45,6 @@ MechanismControl::MechanismControl(){
   this->hw = NULL;
 }
 
-double GetTime()
-{
-  struct timeval t;
-  gettimeofday( &t, 0);
-  return (double) (t.tv_usec *1e-6 + t.tv_sec);
-}
-
 void MechanismControl::init(HardwareInterface *hw){
   this->hw = hw;
   r = new Robot("robot"); 
@@ -77,8 +70,8 @@ void MechanismControl::init(HardwareInterface *hw){
     char *c_filename = getenv("ROS_PACKAGE_PATH");
     std::stringstream filename;
     filename << c_filename << "/robot_descriptions/wg_robot_description/pr2/pr2.xml" ;
-    controller->LoadXML(filename.str());
-  controller->Init();
+    controller->loadXML(filename.str());
+  controller->init();
 }
 
 void MechanismControl::update()//This function is called only from the realtime loop.  Everything it calls must also be realtime safe.
@@ -91,7 +84,7 @@ void MechanismControl::update()//This function is called only from the realtime 
   }
 
   //update KDL model with new joint position/velocities
-  controller->Update();
+  controller->update();
 #ifdef DEBUG
   for(int i = 0; i < r->numJoints; i++){
     printf("base_control:: cmd:: %d, %f\n",i,r->joint[i].commandedEffort);
