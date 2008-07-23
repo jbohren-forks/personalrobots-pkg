@@ -362,6 +362,13 @@ namespace PR2
 
      private: double lastTiltLaserTime;
      private: double lastBaseLaserTime;
+     private: double lastCameraGlobalTime;
+     private: double lastPTZCameraLeftTime;
+     private: double lastPTZCameraRightTime;
+     private: double lastWristCameraLeftTime;
+     private: double lastWristCameraRightTime;
+     private: double lastForearmCameraLeftTime;
+     private: double lastForearmCameraRightTime;
 
     };
 

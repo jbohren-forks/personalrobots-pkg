@@ -155,6 +155,12 @@ class RosGazeboNode : public ros::node
 
     // camera data
     std_msgs::Image img;
+    std_msgs::Image img_ptz_right;
+    std_msgs::Image img_ptz_left;
+    std_msgs::Image img_wrist_right;
+    std_msgs::Image img_wrist_left;
+    std_msgs::Image img_forearm_right;
+    std_msgs::Image img_forearm_left;
     
     // arm joint data
     std_msgs::PR2Arm leftarm;

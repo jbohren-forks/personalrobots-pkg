@@ -290,6 +290,12 @@ RosGazeboNode::AdvertiseSubscribeMessages()
   advertise<std_msgs::LaserScan>("scan");
   advertise<std_msgs::RobotBase2DOdom>("odom");
   advertise<std_msgs::Image>("image");
+  advertise<std_msgs::Image>("image_ptz_right");
+  advertise<std_msgs::Image>("image_ptz_left");
+  advertise<std_msgs::Image>("image_wrist_right");
+  advertise<std_msgs::Image>("image_wrist_left");
+  advertise<std_msgs::Image>("image_forearm_right");
+  advertise<std_msgs::Image>("image_forearm_left");
   advertise<std_msgs::PointCloudFloat32>("cloud");
   advertise<std_msgs::PointCloudFloat32>("full_cloud");
   advertise<std_msgs::PointCloudFloat32>("cloudStereo");
@@ -548,28 +554,144 @@ RosGazeboNode::Update()
   uint32_t              width, height, depth;
   std::string           compression, colorspace;
   uint32_t              buf_size;
-  static unsigned char  buf[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
+  static unsigned char  buf_ptz_right[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
+  static unsigned char  buf_ptz_left[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
+  static unsigned char  buf_wrist_right[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
+  static unsigned char  buf_wrist_left[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
+  static unsigned char  buf_forearm_right[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
+  static unsigned char  buf_forearm_left[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
 
-  // get image
   //this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_GLOBAL,
-  this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_HEAD_RIGHT,
+  // ----------------------- get image ----------------------------
+  if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_HEAD_RIGHT,
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf                   );
-  this->img.width       = width;
-  this->img.height      = height;
-  this->img.compression = compression;
-  this->img.colorspace  = colorspace;
+          &buf_size        ,         buf_ptz_right         )) {
+    this->img_ptz_right.width       = width;
+    this->img_ptz_right.height      = height;
+    this->img_ptz_right.compression = compression;
+    this->img_ptz_right.colorspace  = colorspace;
 
-  if(buf_size >0)
-  {
-    this->img.set_data_size(buf_size);
+    if(buf_size >0)
+    {
+      this->img_ptz_right.set_data_size(buf_size);
 
-    this->img.data        = buf;
-    //memcpy(this->img.data,buf,data_size);
+      this->img_ptz_right.data        = buf_ptz_right;
+      //memcpy(this->img_ptz_right.data,buf,data_size);
 
-    publish("image",this->img);
+      publish("image",this->img_ptz_right);
+      publish("image_ptz_right",this->img_ptz_right);
+    }
+  }
+  // ----------------------- get image ----------------------------
+  if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_HEAD_LEFT,
+          &width           ,         &height               ,
+          &depth           ,
+          &compression     ,         &colorspace           ,
+          &buf_size        ,         buf_ptz_left          )) {
+    this->img_ptz_left .width       = width;
+    this->img_ptz_left .height      = height;
+    this->img_ptz_left .compression = compression;
+    this->img_ptz_left .colorspace  = colorspace;
+
+    if(buf_size >0)
+    {
+      this->img_ptz_left .set_data_size(buf_size);
+
+      this->img_ptz_left .data        = buf_ptz_left ;
+      //memcpy(this->img_ptz_left .data,buf,data_size);
+
+      publish("image_ptz_left",this->img_ptz_left);
+    }
+  }
+
+  // ----------------------- get image ----------------------------
+  if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_WRIST_RIGHT,
+          &width           ,         &height               ,
+          &depth           ,
+          &compression     ,         &colorspace           ,
+          &buf_size        ,         buf_wrist_right         )) {
+    this->img_wrist_right.width       = width;
+    this->img_wrist_right.height      = height;
+    this->img_wrist_right.compression = compression;
+    this->img_wrist_right.colorspace  = colorspace;
+
+    if(buf_size >0)
+    {
+      this->img_wrist_right.set_data_size(buf_size);
+
+      this->img_wrist_right.data        = buf_wrist_right;
+      //memcpy(this->img_wrist_right.data,buf,data_size);
+
+      publish("image_wrist_right",this->img_wrist_right);
+    }
+  }
+
+  // ----------------------- get image ----------------------------
+  if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_WRIST_LEFT,
+          &width           ,         &height               ,
+          &depth           ,
+          &compression     ,         &colorspace           ,
+          &buf_size        ,         buf_wrist_left          )) {
+    this->img_wrist_left .width       = width;
+    this->img_wrist_left .height      = height;
+    this->img_wrist_left .compression = compression;
+    this->img_wrist_left .colorspace  = colorspace;
+
+    if(buf_size >0)
+    {
+      this->img_wrist_left .set_data_size(buf_size);
+
+      this->img_wrist_left .data        = buf_wrist_left ;
+      //memcpy(this->img_wrist_left .data,buf,data_size);
+
+      publish("image_wrist_left",this->img_wrist_left);
+    }
+  }
+
+  // ----------------------- get image ----------------------------
+  if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_FOREARM_RIGHT,
+          &width           ,         &height               ,
+          &depth           ,
+          &compression     ,         &colorspace           ,
+          &buf_size        ,         buf_forearm_right         )) {
+    this->img_forearm_right.width       = width;
+    this->img_forearm_right.height      = height;
+    this->img_forearm_right.compression = compression;
+    this->img_forearm_right.colorspace  = colorspace;
+
+    if(buf_size >0)
+    {
+      this->img_forearm_right.set_data_size(buf_size);
+
+      this->img_forearm_right.data        = buf_forearm_right;
+      //memcpy(this->img_forearm_right.data,buf,data_size);
+
+      publish("image_forearm_right",this->img_forearm_right);
+    }
+  }
+
+  // ----------------------- get image ----------------------------
+  if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_FOREARM_LEFT,
+          &width           ,         &height               ,
+          &depth           ,
+          &compression     ,         &colorspace           ,
+          &buf_size        ,         buf_forearm_left          )) {
+    this->img_forearm_left .width       = width;
+    this->img_forearm_left .height      = height;
+    this->img_forearm_left .compression = compression;
+    this->img_forearm_left .colorspace  = colorspace;
+
+    if(buf_size >0)
+    {
+      this->img_forearm_left .set_data_size(buf_size);
+
+      this->img_forearm_left .data        = buf_forearm_left ;
+      //memcpy(this->img_forearm_left .data,buf,data_size);
+
+      publish("image_forearm_left",this->img_forearm_left);
+    }
   }
 
   /***************************************************************/

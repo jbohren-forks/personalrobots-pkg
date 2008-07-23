@@ -38,7 +38,6 @@ gazebo::PR2GripperIface  *pr2GripperLeftIface;
 gazebo::PR2GripperIface  *pr2GripperRightIface;
 gazebo::LaserIface       *pr2LaserIface;
 gazebo::LaserIface       *pr2BaseLaserIface;
-gazebo::CameraIface      *pr2CameraIface;
 gazebo::CameraIface      *pr2CameraGlobalIface;
 gazebo::CameraIface      *pr2PTZCameraLeftIface;
 gazebo::CameraIface      *pr2PTZCameraRightIface;
@@ -47,6 +46,10 @@ gazebo::PTZIface         *pr2PTZRightIface;
 gazebo::PositionIface    *pr2LeftWristIface;
 gazebo::PositionIface    *pr2RightWristIface;
 gazebo::PositionIface    *pr2BaseIface;
+gazebo::CameraIface      *pr2WristCameraLeftIface;
+gazebo::CameraIface      *pr2WristCameraRightIface;
+gazebo::CameraIface      *pr2ForearmCameraLeftIface;
+gazebo::CameraIface      *pr2ForearmCameraRightIface;
 
 ////////////////////////////////////////////////////////////////////
 //                                                                //
@@ -84,6 +87,10 @@ PR2_ERROR_CODE PR2HW::Init()
    pr2PTZCameraRightIface  = new gazebo::CameraIface();
    pr2PTZLeftIface         = new gazebo::PTZIface();
    pr2PTZRightIface        = new gazebo::PTZIface();
+   pr2WristCameraLeftIface     = new gazebo::CameraIface();
+   pr2WristCameraRightIface    = new gazebo::CameraIface();
+   pr2ForearmCameraLeftIface   = new gazebo::CameraIface();
+   pr2ForearmCameraRightIface  = new gazebo::CameraIface();
 
    pr2LeftWristIface       = new gazebo::PositionIface();
    pr2RightWristIface      = new gazebo::PositionIface();
@@ -141,6 +148,47 @@ PR2_ERROR_CODE PR2HW::Init()
   catch (std::string e)
   {
     std::cout << "Gazebo error: Unable to connect to the pr2 Right PTZ interface\n"
+    << e << "\n";
+  }
+
+  /// Open the wrist and forearm cameras
+  try
+  {
+    pr2WristCameraLeftIface->Open(client, "wrist_cam_left_iface");
+  }
+  catch (std::string e)
+  {
+    std::cout << "Gazebo error: Unable to connect to the pr2 Left wrist camera interface\n"
+    << e << "\n";
+  }
+
+  try
+  {
+    pr2WristCameraRightIface->Open(client, "wrist_cam_right_iface");
+  }
+  catch (std::string e)
+  {
+    std::cout << "Gazebo error: Unable to connect to the pr2 Right wrist camera interface\n"
+    << e << "\n";
+  }
+
+  try
+  {
+    pr2ForearmCameraLeftIface->Open(client, "forearm_cam_left_iface");
+  }
+  catch (std::string e)
+  {
+    std::cout << "Gazebo error: Unable to connect to the pr2 Left forearm camera interface\n"
+    << e << "\n";
+  }
+
+  try
+  {
+    pr2ForearmCameraRightIface->Open(client, "forearm_cam_right_iface");
+  }
+  catch (std::string e)
+  {
+    std::cout << "Gazebo error: Unable to connect to the pr2 Right forearm camera interface\n"
     << e << "\n";
   }
 
@@ -307,6 +355,13 @@ PR2_ERROR_CODE PR2HW::Init()
 
   GetSimTime(&(this->lastTiltLaserTime));
   GetSimTime(&(this->lastBaseLaserTime));
+  GetSimTime(&(this->lastCameraGlobalTime       ));
+  GetSimTime(&(this->lastPTZCameraLeftTime      ));
+  GetSimTime(&(this->lastPTZCameraRightTime     ));
+  GetSimTime(&(this->lastWristCameraLeftTime    ));
+  GetSimTime(&(this->lastWristCameraRightTime   ));
+  GetSimTime(&(this->lastForearmCameraLeftTime  ));
+  GetSimTime(&(this->lastForearmCameraRightTime ));
 
   return PR2_ALL_OK;
 };
@@ -671,28 +726,153 @@ PR2_ERROR_CODE PR2HW::GetCameraImage(PR2_SENSOR_ID id ,
                      uint32_t*    data_size             ,void*        buf                   )
 {
 
+    gazebo::CameraIface      *tmpCameraIface;
+
     switch(id)
     {
       case CAMERA_GLOBAL:
-          pr2CameraIface = pr2CameraGlobalIface;
+          if (pr2CameraGlobalIface && pr2CameraGlobalIface->Lock(1))
+          {
+            if (pr2CameraGlobalIface->data->head.time == this->lastCameraGlobalTime)
+            {
+              tmpCameraIface = NULL;
+            }
+            else
+            {
+              tmpCameraIface = pr2CameraGlobalIface;
+              this->lastCameraGlobalTime = pr2CameraGlobalIface->data->head.time;
+            }
+            pr2CameraGlobalIface->Unlock();
+          }
+          else
+            tmpCameraIface = NULL;
+
           break;
       case CAMERA_HEAD_LEFT:
-          pr2CameraIface = pr2PTZCameraLeftIface;
+          if (pr2PTZCameraLeftIface && pr2PTZCameraLeftIface->Lock(1))
+          {
+            if (pr2PTZCameraLeftIface->data->head.time == this->lastPTZCameraLeftTime)
+            {
+              tmpCameraIface = NULL;
+            }
+            else
+            {
+              tmpCameraIface = pr2PTZCameraLeftIface;
+              this->lastPTZCameraLeftTime = pr2PTZCameraLeftIface->data->head.time;
+            }
+            pr2PTZCameraLeftIface->Unlock();
+          }
+          else
+            tmpCameraIface = NULL;
+
           break;
       case CAMERA_HEAD_RIGHT:
-          pr2CameraIface = pr2PTZCameraRightIface;
+          if (pr2PTZCameraRightIface && pr2PTZCameraRightIface->Lock(1))
+          {
+            if (pr2PTZCameraRightIface->data->head.time == this->lastPTZCameraRightTime)
+            {
+              tmpCameraIface = NULL;
+            }
+            else
+            {
+              tmpCameraIface = pr2PTZCameraRightIface;
+              this->lastPTZCameraRightTime = pr2PTZCameraRightIface->data->head.time;
+            }
+            pr2PTZCameraRightIface->Unlock();
+          }
+          else
+            tmpCameraIface = NULL;
+
+          break;
+      case CAMERA_WRIST_LEFT:
+          if (pr2WristCameraLeftIface && pr2WristCameraLeftIface->Lock(1))
+          {
+            if (pr2WristCameraLeftIface->data->head.time == this->lastWristCameraLeftTime)
+            {
+              tmpCameraIface = NULL;
+            }
+            else
+            {
+              tmpCameraIface = pr2WristCameraLeftIface;
+              this->lastWristCameraLeftTime = pr2WristCameraLeftIface->data->head.time;
+            }
+            pr2WristCameraLeftIface->Unlock();
+          }
+          else
+            tmpCameraIface = NULL;
+
+          break;
+      case CAMERA_WRIST_RIGHT:
+          if (pr2WristCameraRightIface && pr2WristCameraRightIface->Lock(1))
+          {
+            if (pr2WristCameraRightIface->data->head.time == this->lastWristCameraRightTime)
+            {
+              tmpCameraIface = NULL;
+            }
+            else
+            {
+              tmpCameraIface = pr2WristCameraRightIface;
+              this->lastWristCameraRightTime = pr2WristCameraRightIface->data->head.time;
+            }
+            pr2WristCameraRightIface->Unlock();
+          }
+          else
+            tmpCameraIface = NULL;
+
+          break;
+      case CAMERA_FOREARM_LEFT:
+          if (pr2ForearmCameraLeftIface && pr2ForearmCameraLeftIface->Lock(1))
+          {
+            if (pr2ForearmCameraLeftIface->data->head.time == this->lastForearmCameraLeftTime)
+            {
+              tmpCameraIface = NULL;
+            }
+            else
+            {
+              tmpCameraIface = pr2ForearmCameraLeftIface;
+              this->lastForearmCameraLeftTime = pr2ForearmCameraLeftIface->data->head.time;
+            }
+            pr2ForearmCameraLeftIface->Unlock();
+          }
+          else
+            tmpCameraIface = NULL;
+
+          break;
+      case CAMERA_FOREARM_RIGHT:
+          if (pr2ForearmCameraRightIface && pr2ForearmCameraRightIface->Lock(1))
+          {
+            if (pr2ForearmCameraRightIface->data->head.time == this->lastForearmCameraRightTime)
+            {
+              tmpCameraIface = NULL;
+            }
+            else
+            {
+              tmpCameraIface = pr2ForearmCameraRightIface;
+              this->lastForearmCameraRightTime = pr2ForearmCameraRightIface->data->head.time;
+            }
+            pr2ForearmCameraRightIface->Unlock();
+          }
+          else
+            tmpCameraIface = NULL;
+
           break;
       default:
-          pr2CameraIface = pr2CameraGlobalIface;
+          tmpCameraIface = NULL;
           break;
     }
 
-    pr2CameraIface->Lock(1);
-    *width        = (uint32_t)pr2CameraIface->data->width;
-    *height       = (uint32_t)pr2CameraIface->data->height;
+  if (tmpCameraIface == NULL)
+  {
+    return PR2_ERROR;
+  }
+  else
+  {
+    tmpCameraIface->Lock(1);
+    *width        = (uint32_t)tmpCameraIface->data->width;
+    *height       = (uint32_t)tmpCameraIface->data->height;
     *compression  = "raw";
     *colorspace   = "rgb24"; //"mono";
-    *data_size    = pr2CameraIface->data->image_size;
+    *data_size    = tmpCameraIface->data->image_size;
 
     // on first pass, the sensor does not update after cameraIface is opened.
     if (*data_size > 0)
@@ -703,22 +883,23 @@ PR2_ERROR_CODE PR2HW::GetCameraImage(PR2_SENSOR_ID id ,
 
       // copy the image into local buffer
 #if 1
-      //buf = (void*)(pr2CameraIface->data->image);
-      memcpy(buf,pr2CameraIface->data->image,buf_size);
+      //buf = (void*)(tmpCameraIface->data->image);
+      memcpy(buf,tmpCameraIface->data->image,buf_size);
 #else
       for (uint32_t i = 0; i < buf_size ; i=i+3)
       {
         // flip red and blue
-        ((unsigned char*)buf)[i  ] = pr2CameraIface->data->image[i+2];
-        ((unsigned char*)buf)[i+1] = pr2CameraIface->data->image[i+1];
-        ((unsigned char*)buf)[i+2] = pr2CameraIface->data->image[i  ];
-        //printf("%d %d\n",i,pr2CameraIface->data->image[i]);
+        ((unsigned char*)buf)[i  ] = tmpCameraIface->data->image[i+2];
+        ((unsigned char*)buf)[i+1] = tmpCameraIface->data->image[i+1];
+        ((unsigned char*)buf)[i+2] = tmpCameraIface->data->image[i  ];
+        //printf("%d %d\n",i,tmpCameraIface->data->image[i]);
       }
 #endif
     }
-    pr2CameraIface->Unlock();
+    tmpCameraIface->Unlock();
 
     return PR2_ALL_OK;
+  }
 };
 
 PR2_ERROR_CODE PR2HW::GetWristPoseGroundTruth(PR2_MODEL_ID id, double *x, double *y, double *z, double *roll, double *pitch, double *yaw)

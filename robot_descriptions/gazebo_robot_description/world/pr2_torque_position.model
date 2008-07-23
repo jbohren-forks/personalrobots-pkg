@@ -15,8 +15,6 @@
   <xyz>0.0 0.0 0.02</xyz>
   <rpy>0.0 0.0 0.0 </rpy>
 
-  <canonicalBody>base_body</canonicalBody>
-
   <body:box name="base_body">
     <xyz>0.175 0.0 0.15 </xyz> <!-- base bottom is h/2 + some height for wheel clearance-->
     <rpy>0.0   0.0 0.0  </rpy>
@@ -57,123 +55,122 @@
 
 
   <!--         Hokuyo laser body             -->
-  <model:physical name="base_laser_model">
-    <canonicalBody>base_laser_body</canonicalBody>
-    <body:box name="base_laser_body">
-      <xyz>0.45 0.0 0.27</xyz> <!-- from the robot coordinate system (center bottom of base box)-->
-      <rpy>0.0  0.0 0.0</rpy>
-   
-      <geom:box name="base_laser_box">
-        <xyz>0.0 0.0 0.02</xyz>
+  <body:box name="base_laser_body">
+    <xyz>0.45 0.0 0.27</xyz> <!-- from the robot coordinate system (center bottom of base box)-->
+    <rpy>0.0  0.0 0.0</rpy>
+ 
+    <geom:box name="base_laser_box">
+      <xyz>0.0 0.0 0.02</xyz>
+      <rpy>0 0 0</rpy>
+      <size>0.05 0.05 0.041</size>
+      <mass>0.12</mass>
+
+      <visual>
+        <scale>0.05 0.05 0.041</scale>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Blue</material>
+      </visual>
+
+    </geom:box>
+    <geom:cylinder name="base_laser_cylinder1">
+      <xyz>0.0 0.0 0.041</xyz>
+      <rpy>0 0 0</rpy>
+      <size>0.02 0.013</size>
+      <mass>0.02</mass>
+     
+      <visual>
         <rpy>0 0 0</rpy>
-        <size>0.05 0.05 0.041</size>
-        <mass>0.12</mass>
+        <scale>0.04 0.04 0.013</scale>
+        <mesh>unit_cylinder</mesh>
+        <material>Gazebo/Black</material>
+      </visual>
 
-        <visual>
-          <scale>0.05 0.05 0.041</scale>
-          <mesh>unit_box</mesh>
-          <material>Gazebo/Blue</material>
-        </visual>
+    </geom:cylinder>
 
-      </geom:box>
-      <geom:cylinder name="base_laser_cylinder1">
-        <xyz>0.0 0.0 0.041</xyz>
+    <geom:cylinder name="base_laser_cylinder2">
+      <xyz>0.0 0.0 0.054</xyz>
+      <rpy>0 0 0</rpy>
+      <size>0.018 0.009</size>
+      <mass>0.02</mass>
+     
+      <visual>
         <rpy>0 0 0</rpy>
-        <size>0.02 0.013</size>
-        <mass>0.02</mass>
-       
-        <visual>
-          <rpy>0 0 0</rpy>
-          <scale>0.04 0.04 0.013</scale>
-          <mesh>unit_cylinder</mesh>
-          <material>Gazebo/Black</material>
-        </visual>
+        <size>0.036 0.036 0.009</size>
+        <mesh>unit_cylinder</mesh>
+        <material>Gazebo/Black</material>
+      </visual>
 
-      </geom:cylinder>
+    </geom:cylinder>
 
-      <geom:cylinder name="base_laser_cylinder2">
-        <xyz>0.0 0.0 0.054</xyz>
+    <geom:cylinder name="base_laser_cylinder3">
+      <xyz>0.0 0.0 0.063</xyz>
+      <rpy>0 0 0</rpy>
+      <size>0.0175 0.008</size>
+      <mass>0.02</mass>
+     
+      <visual>
         <rpy>0 0 0</rpy>
-        <size>0.018 0.009</size>
-        <mass>0.02</mass>
-       
-        <visual>
-          <rpy>0 0 0</rpy>
-          <size>0.036 0.036 0.009</size>
-          <mesh>unit_cylinder</mesh>
-          <material>Gazebo/Black</material>
-        </visual>
+        <size>0.035 0.035 0.008</size>
+        <mesh>unit_cylinder</mesh>
+        <material>Gazebo/Shell</material>
+      </visual>
 
-      </geom:cylinder>
-
-      <geom:cylinder name="base_laser_cylinder3">
-        <xyz>0.0 0.0 0.063</xyz>
-        <rpy>0 0 0</rpy>
-        <size>0.0175 0.008</size>
-        <mass>0.02</mass>
-       
-        <visual>
-          <rpy>0 0 0</rpy>
-          <size>0.035 0.035 0.008</size>
-          <mesh>unit_cylinder</mesh>
-          <material>Gazebo/Shell</material>
-        </visual>
-
-      </geom:cylinder>
+    </geom:cylinder>
 
 
-      <sensor:ray name="base_laser_1">
-        <rayCount>68</rayCount>
-        <rangeCount>683</rangeCount>
-        <laserCount>1</laserCount>
-        <origin>0.0 0.0 0.05</origin>
+    <sensor:ray name="base_laser_1">
+      <rayCount>68</rayCount>
+      <rangeCount>683</rangeCount>
+      <laserCount>1</laserCount>
+      <origin>0.0 0.0 0.05</origin>
 
-        <minAngle>-135</minAngle>
-        <maxAngle>135</maxAngle>
+      <minAngle>-135</minAngle>
+      <maxAngle>135</maxAngle>
 
-        <minRange>0.05</minRange>
-        <maxRange>10.0</maxRange>
-        <updateRate>10.0</updateRate>
-        <controller:sicklms200_laser name="base_laser_controller_1">
-          <interface:laser name="base_laser_iface_1"/>
-          <updateRate>10</updateRate>
-        </controller:sicklms200_laser>
-      </sensor:ray>
-        <!--
-        -->
-        <!--
-      <sensor:ray2 name="laser_1">
-        <rayCount>683</rayCount>
-        <rangeCount>683</rangeCount>
-        <laserCount>1</laserCount>
-        <origin>0.0 0.0 0.05</origin>
+      <minRange>0.05</minRange>
+      <maxRange>10.0</maxRange>
+      <updateRate>10.0</updateRate>
+      <controller:sicklms200_laser name="base_laser_controller_1">
+        <interface:laser name="base_laser_iface_1"/>
+        <updateRate>10</updateRate>
+      </controller:sicklms200_laser>
+    </sensor:ray>
+      <!--
+      -->
+      <!--
+    <sensor:ray2 name="laser_1">
+      <rayCount>683</rayCount>
+      <rangeCount>683</rangeCount>
+      <laserCount>1</laserCount>
+      <origin>0.0 0.0 0.05</origin>
 
-        <minAngle>-135</minAngle>
-        <maxAngle>135</maxAngle>
+      <minAngle>-135</minAngle>
+      <maxAngle>135</maxAngle>
 
-        <minRange>0.05</minRange>
-        <maxRange>10.0</maxRange>
-        <controller:sick2lms200_laser name="laser_controller_1">
-          <interface:laser name="laser_iface_1"/>
-          <updateRate>10</updateRate>
-        </controller:sick2lms200_laser>
-      </sensor:ray2>
-        -->
+      <minRange>0.05</minRange>
+      <maxRange>10.0</maxRange>
+      <controller:sick2lms200_laser name="laser_controller_1">
+        <interface:laser name="laser_iface_1"/>
+        <updateRate>10</updateRate>
+      </controller:sick2lms200_laser>
+    </sensor:ray2>
+      -->
 
-    </body:box>
+  </body:box>
 
-    <!-- attach hokuyo to torso -->
-    <attach>
-      <parentBody>base_body</parentBody>
-      <myBody>base_laser_body</myBody>
-    </attach>
-  </model:physical>
+  <!-- attach hokuyo to torso -->
+  <joint:hinge name="tiltlaser_torso_attach_joint">
+    <body1>base_body</body1>
+    <body2>base_laser_body</body2>
+    <anchor>base_laser_body</anchor>
+    <axis>  1.0   0.0   0.0 </axis>
+    <lowStop> 0.0 </lowStop>
+    <highStop> 0.0 </highStop>
+  </joint:hinge>
 
 
 
   <!-- ========== spine and shoulder =========== -->
-  <canonicalBody>torso_body</canonicalBody>
-
   <body:box name="torso_body">
     <xyz>0.056 0.0  0.45</xyz>
     <rpy>0.0   0.0  0.0</rpy>
@@ -852,468 +849,394 @@
 
 
   <!-- neck body -->
-  <model:physical name="neck_model">
-    <body:box name="neck_body">
-      <xyz>0.10 0.0 1.03</xyz>
-      <rpy>0.0 0.0 0.0</rpy>
-      <!--xyz>0.0 0.0 0.0</xyz>
-      <rpy>0.0 0.0 0.0</rpy-->
-      <geom:box name="neck_geom">
+  <body:box name="neck_body">
+    <xyz>0.10 0.0 1.03</xyz>
+    <rpy>0.0 0.0 0.0</rpy>
+    <!--xyz>0.0 0.0 0.0</xyz>
+    <rpy>0.0 0.0 0.0</rpy-->
+    <geom:box name="neck_geom">
+      <!--size>.20 .38 .14</size-->
+      <size>0.01 0.01 0.01</size>
+      <mass>0.01</mass>
+      <visual>
+        <mesh>unit_box</mesh>
         <!--size>.20 .38 .14</size-->
         <size>0.01 0.01 0.01</size>
-        <mass>0.01</mass>
-        <visual>
-          <mesh>unit_box</mesh>
-          <!--size>.20 .38 .14</size-->
-          <size>0.01 0.01 0.01</size>
-          <material>Gazebo/Black</material>
-        </visual>
-      </geom:box>
-    </body:box>
+        <material>Gazebo/Black</material>
+      </visual>
+    </geom:box>
+  </body:box>
 
-    <!-- attach neck to torso -->
-    <attach>
-      <parentBody>torso_body</parentBody>
-      <myBody>neck_body</myBody>
-    </attach>
+  <!-- attach neck to torso -->
+  <joint:hinge name="neck_torso_attach_joint">
+    <body1>torso_body</body1>
+    <body2>neck_body</body2>
+    <anchor>neck_body</anchor>
+    <axis>  1.0   0.0   0.0 </axis>
+    <lowStop> 0.0 </lowStop>
+    <highStop> 0.0 </highStop>
+  </joint:hinge>
 
-    <canonicalBody>head_base_body</canonicalBody>
-    <body:box name="head_base_body">
-      <xyz>0.10 0.0 1.13 </xyz>
-      <rpy>0.0 0.0 0.0 </rpy>
-      <!-- report when this body collides with static bodies -->
-      <reportStaticCollision>true</reportStaticCollision>
-      <geom:box name="head_base_geom">
-        <xyz> 0.0    0.00  0.000</xyz>
+  <body:box name="head_base_body">
+    <xyz>0.10 0.0 1.13 </xyz>
+    <rpy>0.0 0.0 0.0 </rpy>
+    <!-- report when this body collides with static bodies -->
+    <reportStaticCollision>true</reportStaticCollision>
+    <geom:box name="head_base_geom">
+      <xyz> 0.0    0.00  0.000</xyz>
+      <size>0.165   0.21  0.003</size>
+      <mass>0.1</mass>
+      <mul>1</mul>
+      <!--color> 0.0  1.0  0.0</color-->
+      <visual>
         <size>0.165   0.21  0.003</size>
-        <mass>0.1</mass>
-        <mul>1</mul>
-        <!--color> 0.0  1.0  0.0</color-->
-        <visual>
-          <size>0.165   0.21  0.003</size>
-          <rpy>0.0   0.0 0.0 </rpy>
-          <mesh>unit_box</mesh>
-          <material>Gazebo/PioneerBody</material>
-        </visual>
-      </geom:box>
-    </body:box>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/PioneerBody</material>
+      </visual>
+    </geom:box>
+  </body:box>
 
-    <canonicalBody>head_tilt_body</canonicalBody>
-    <body:box name="head_tilt_body">
-      <xyz>0.10 0.0 1.07 </xyz>
-      <rpy>0.0 0.0 0.0 </rpy>
-      <!-- report when this body collides with static bodies -->
-      <reportStaticCollision>true</reportStaticCollision>
-      <geom:box name="head_tilt_geom">
-        <xyz> 0.0    0.00  0.150</xyz>
+  <body:box name="head_tilt_body">
+    <xyz>0.10 0.0 1.07 </xyz>
+    <rpy>0.0 0.0 0.0 </rpy>
+    <!-- report when this body collides with static bodies -->
+    <reportStaticCollision>true</reportStaticCollision>
+    <geom:box name="head_tilt_geom">
+      <xyz> 0.0    0.00  0.150</xyz>
+      <size>0.165   0.21  0.003</size>
+      <mass>0.1</mass>
+      <mul>1</mul>
+      <!--color> 0.0  1.0  0.0</color-->
+      <visual>
         <size>0.165   0.21  0.003</size>
-        <mass>0.1</mass>
-        <mul>1</mul>
-        <!--color> 0.0  1.0  0.0</color-->
-        <visual>
-          <size>0.165   0.21  0.003</size>
-          <rpy>0.0   0.0 0.0 </rpy>
-          <mesh>unit_box</mesh>
-          <material>Gazebo/Black</material>
-        </visual>
-      </geom:box>
-      <geom:box name="head_tilt_left_geom">
-        <xyz> 0.0   -0.105  0.10</xyz>
-        <size>0.165  0.003  0.10</size>
-        <mass>0.1</mass>
-        <mul>1</mul>
-        <!--color> 0.0  1.0  0.0</color-->
-        <visual>
-          <size>0.165 0.003 0.10</size>
-          <rpy>0.0    0.0 0.0 </rpy>
-          <mesh>unit_box</mesh>
-          <material>Gazebo/Shell</material>
-        </visual>
-      </geom:box>
-      <geom:box name="head_tilt_right_geom">
-        <xyz> 0.0    0.105  0.10</xyz>
-        <size>0.165  0.003  0.10</size>
-        <mass>0.1</mass>
-        <mul>1</mul>
-        <!--color> 0.0  1.0  0.0</color-->
-        <visual>
-          <size>0.165  0.003 0.10</size>
-          <rpy>0.0   0.0 0.0 </rpy>
-          <mesh>unit_box</mesh>
-          <material>Gazebo/Shell</material>
-        </visual>
-      </geom:box>
-    </body:box>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Black</material>
+      </visual>
+    </geom:box>
+    <geom:box name="head_tilt_left_geom">
+      <xyz> 0.0   -0.105  0.10</xyz>
+      <size>0.165  0.003  0.10</size>
+      <mass>0.1</mass>
+      <mul>1</mul>
+      <!--color> 0.0  1.0  0.0</color-->
+      <visual>
+        <size>0.165 0.003 0.10</size>
+        <rpy>0.0    0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Shell</material>
+      </visual>
+    </geom:box>
+    <geom:box name="head_tilt_right_geom">
+      <xyz> 0.0    0.105  0.10</xyz>
+      <size>0.165  0.003  0.10</size>
+      <mass>0.1</mass>
+      <mul>1</mul>
+      <!--color> 0.0  1.0  0.0</color-->
+      <visual>
+        <size>0.165  0.003 0.10</size>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Shell</material>
+      </visual>
+    </geom:box>
+  </body:box>
 
-    <!-- attach head_base to head_tilt -->
-    <joint:hinge name="head_tilt_joint">
-      <body2>head_tilt_body</body2>
-      <body1>head_base_body</body1>
-      <anchor>head_tilt_body</anchor>
-      <axis>  0.0   1.0   0.0 </axis>
-    </joint:hinge>
+  <!-- attach head_base to head_tilt -->
+  <joint:hinge name="head_tilt_joint">
+    <body2>head_tilt_body</body2>
+    <body1>head_base_body</body1>
+    <anchor>head_tilt_body</anchor>
+    <axis>  0.0   1.0   0.0 </axis>
+  </joint:hinge>
 
-    <!-- attach head to neck -->
-    <joint:hinge name="neck_yaw_joint">
-      <body1>neck_body</body1>
-      <body2>head_base_body</body2>
-      <anchor>head_base_body</anchor>
-      <axis>  0.0   0.0   1.0 </axis>
-    </joint:hinge>
+  <!-- attach head to neck -->
+  <joint:hinge name="neck_yaw_joint">
+    <body1>neck_body</body1>
+    <body2>head_base_body</body2>
+    <anchor>head_base_body</anchor>
+    <axis>  0.0   0.0   1.0 </axis>
+  </joint:hinge>
 
 
-    <!-- left camera -->
-    <body:box name="head_cam_left_body">
-      <xyz> 0.15  0.23  1.07 </xyz>
-      <rpy> 0.00  0.0   0.00 </rpy>
-      <sensor:camera name="head_cam_left_sensor">
-        <imageSize>640 480</imageSize>
-        <hfov>60</hfov>
-        <nearClip>0.1</nearClip>
-        <farClip>100</farClip>
+  <!-- left camera -->
+  <body:box name="ptz_cam_left_body">
+    <xyz> 0.15  0.23  1.07 </xyz>
+    <rpy> 0.00  0.0   0.00 </rpy>
+    <sensor:camera name="ptz_cam_left_sensor">
+      <imageSize>640 480</imageSize>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <updateRate>15.0</updateRate>
+      <controller:generic_camera name="ptz_cam_left_controller">
         <updateRate>15.0</updateRate>
-        <controller:generic_camera name="head_cam_left_controller">
-          <updateRate>15.0</updateRate>
-          <interface:camera name="head_cam_left_iface_0" />
-        </controller:generic_camera>
-      </sensor:camera>
-      <geom:box name="head_cam_left_geom">
-        <xyz> 0.00   0.00   0.00</xyz>
+        <interface:camera name="ptz_cam_left_iface" />
+      </controller:generic_camera>
+    </sensor:camera>
+    <geom:box name="ptz_cam_left_geom">
+      <xyz> 0.00   0.00   0.00</xyz>
+      <size>0.05   0.03   0.04</size>
+      <mass>0.1</mass>
+      <!--color> 0.0  1.0  0.0</color-->
+      <visual>
         <size>0.05   0.03   0.04</size>
-        <mass>0.1</mass>
-        <!--color> 0.0  1.0  0.0</color-->
-        <visual>
-          <size>0.05   0.03   0.04</size>
-          <rpy>0.0   0.0 0.0 </rpy>
-          <mesh>unit_box</mesh>
-          <material>Gazebo/PioneerBody</material>
-        </visual>
-      </geom:box>
-    </body:box>
-    <body:box name="head_cam_base_left_body">
-      <xyz> 0.15  0.20  1.07 </xyz>
-      <rpy> 0.00  0.0   0.00 </rpy>
-      <geom:box name="head_cam_base_left_geom">
-        <xyz> 0.00   0.00   0.00</xyz>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/PioneerBody</material>
+      </visual>
+    </geom:box>
+  </body:box>
+  <body:box name="ptz_cam_base_left_body">
+    <xyz> 0.15  0.20  1.07 </xyz>
+    <rpy> 0.00  0.0   0.00 </rpy>
+    <geom:box name="ptz_cam_base_left_geom">
+      <xyz> 0.00   0.00   0.00</xyz>
+      <size>0.05   0.02   0.02</size>
+      <mass>0.1</mass>
+      <!--color> 0.0  1.0  0.0</color-->
+      <visual>
         <size>0.05   0.02   0.02</size>
-        <mass>0.1</mass>
-        <!--color> 0.0  1.0  0.0</color-->
-        <visual>
-          <size>0.05   0.02   0.02</size>
-          <rpy>0.0   0.0 0.0 </rpy>
-          <mesh>unit_box</mesh>
-          <material>Gazebo/Shell</material>
-        </visual>
-      </geom:box>
-    </body:box>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Shell</material>
+      </visual>
+    </geom:box>
+  </body:box>
 
-    <!-- right camera -->
-    <body:empty name="head_cam_right_body">
-      <xyz> 0.15 -0.23  1.07 </xyz>
-      <rpy> 0.00  0.0   0.00 </rpy>
-      <sensor:camera name="head_cam_right_sensor">
-        <imageSize>640 480</imageSize>
-        <hfov>60</hfov>
-        <nearClip>0.1</nearClip>
-        <farClip>100</farClip>
+  <!-- right camera -->
+  <body:empty name="ptz_cam_right_body">
+    <xyz> 0.15 -0.23  1.07 </xyz>
+    <rpy> 0.00  0.0   0.00 </rpy>
+    <sensor:camera name="ptz_cam_right_sensor">
+      <imageSize>640 480</imageSize>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <updateRate>15.0</updateRate>
+      <controller:generic_camera name="ptz_cam_right_controller">
         <updateRate>15.0</updateRate>
-        <controller:generic_camera name="head_cam_right_controller">
-          <updateRate>15.0</updateRate>
-          <interface:camera name="head_cam_right_iface_0" />
-        </controller:generic_camera>
-      </sensor:camera>
-      <geom:box name="head_cam_right_geom">
-        <xyz> 0.00   0.00   0.00</xyz>
+        <interface:camera name="ptz_cam_right_iface" />
+      </controller:generic_camera>
+    </sensor:camera>
+    <geom:box name="ptz_cam_right_geom">
+      <xyz> 0.00   0.00   0.00</xyz>
+      <size>0.05   0.03   0.04</size>
+      <mass>0.1</mass>
+      <!--color> 0.0  1.0  0.0</color-->
+      <visual>
         <size>0.05   0.03   0.04</size>
-        <mass>0.1</mass>
-        <!--color> 0.0  1.0  0.0</color-->
-        <visual>
-          <size>0.05   0.03   0.04</size>
-          <rpy>0.0   0.0 0.0 </rpy>
-          <mesh>unit_box</mesh>
-          <material>Gazebo/PioneerBody</material>
-        </visual>
-      </geom:box>
-    </body:empty>
-    <body:box name="head_cam_base_right_body">
-      <xyz> 0.15 -0.20  1.07 </xyz>
-      <rpy> 0.00  0.0   0.00 </rpy>
-      <geom:box name="head_cam_base_right_geom">
-        <xyz> 0.00   0.00   0.00</xyz>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/PioneerBody</material>
+      </visual>
+    </geom:box>
+  </body:empty>
+  <body:box name="ptz_cam_base_right_body">
+    <xyz> 0.15 -0.20  1.07 </xyz>
+    <rpy> 0.00  0.0   0.00 </rpy>
+    <geom:box name="ptz_cam_base_right_geom">
+      <xyz> 0.00   0.00   0.00</xyz>
+      <size>0.05   0.02   0.02</size>
+      <mass>0.1</mass>
+      <!--color> 0.0  1.0  0.0</color-->
+      <visual>
         <size>0.05   0.02   0.02</size>
-        <mass>0.1</mass>
-        <!--color> 0.0  1.0  0.0</color-->
-        <visual>
-          <size>0.05   0.02   0.02</size>
-          <rpy>0.0   0.0 0.0 </rpy>
-          <mesh>unit_box</mesh>
-          <material>Gazebo/Shell</material>
-        </visual>
-      </geom:box>
-    </body:box>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Shell</material>
+      </visual>
+    </geom:box>
+  </body:box>
 
-    <!-- attach neck_body to ptz cameras -->
-    <joint:hinge name="head_cam_left_yaw_joint">
-      <body1>head_cam_left_body</body1>
-      <body2>head_cam_base_left_body</body2>
-      <anchor>head_cam_left_body</anchor>
-      <axis>  0.0   0.0   1.0 </axis>
-    </joint:hinge>
-    <joint:hinge name="head_cam_left_pitch_joint">
-      <body1>head_cam_base_left_body</body1>
-      <body2>neck_body</body2>
-      <anchor>head_cam_base_left_body</anchor>
-      <axis>  0.0   1.0   0.0 </axis>
-    </joint:hinge>
-    <joint:hinge name="head_cam_right_yaw_joint">
-      <body2>head_cam_right_body</body2>
-      <body1>head_cam_base_right_body</body1>
-      <anchor>head_cam_right_body</anchor>
-      <axis>  0.0   0.0   1.0 </axis>
-    </joint:hinge>
-    <joint:hinge name="head_cam_right_pitch_joint">
-      <body2>head_cam_base_right_body</body2>
-      <body1>neck_body</body1>
-      <anchor>head_cam_base_right_body</anchor>
-      <axis>  0.0   1.0   0.0 </axis>
-    </joint:hinge>
+  <!-- attach neck_body to ptz cameras -->
+  <joint:hinge name="ptz_cam_left_yaw_joint">
+    <body1>ptz_cam_left_body</body1>
+    <body2>ptz_cam_base_left_body</body2>
+    <anchor>ptz_cam_left_body</anchor>
+    <axis>  0.0   0.0   1.0 </axis>
+  </joint:hinge>
+  <joint:hinge name="ptz_cam_left_pitch_joint">
+    <body1>ptz_cam_base_left_body</body1>
+    <body2>neck_body</body2>
+    <anchor>ptz_cam_base_left_body</anchor>
+    <axis>  0.0   1.0   0.0 </axis>
+  </joint:hinge>
+  <joint:hinge name="ptz_cam_right_yaw_joint">
+    <body2>ptz_cam_right_body</body2>
+    <body1>ptz_cam_base_right_body</body1>
+    <anchor>ptz_cam_right_body</anchor>
+    <axis>  0.0   0.0   1.0 </axis>
+  </joint:hinge>
+  <joint:hinge name="ptz_cam_right_pitch_joint">
+    <body2>ptz_cam_base_right_body</body2>
+    <body1>neck_body</body1>
+    <anchor>ptz_cam_base_right_body</anchor>
+    <axis>  0.0   1.0   0.0 </axis>
+  </joint:hinge>
 
 
-    <!-- stereo camera -->
-    <body:empty name="stereo_camera_body">
-      <xyz> 0.10 0.0   1.25 </xyz>
-      <rpy> 0.0  0.0   0.0  </rpy>
-      <sensor:stereocamera name="stereo_camera_sensor">
-        <imageSize>640 480</imageSize>
-        <hfov>60</hfov>
-        <nearClip>0.1</nearClip>
-        <farClip>100</farClip>
-        <saveFrames>false</saveFrames>
-        <saveFramePath>frames</saveFramePath>
-        <baseline>0.2</baseline>
+  <!-- stereo camera -->
+  <body:empty name="stereo_camera_body">
+    <xyz> 0.10 0.0   1.25 </xyz>
+    <rpy> 0.0  0.0   0.0  </rpy>
+    <sensor:stereocamera name="stereo_camera_sensor">
+      <imageSize>640 480</imageSize>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <saveFrames>false</saveFrames>
+      <saveFramePath>frames</saveFramePath>
+      <baseline>0.2</baseline>
+      <updateRate>15.0</updateRate>
+      <controller:stereocamera name="stereo_camera_controller">
         <updateRate>15.0</updateRate>
-        <controller:stereocamera name="stereo_camera_controller">
-          <updateRate>15.0</updateRate>
-          <interface:stereocamera name="stereo_iface_0" />
-          <interface:camera name="camera_iface_0" />
-          <interface:camera name="camera_iface_1" />
-          <leftcamera>camera_iface_0</leftcamera>
-          <rightcamera>camera_iface_1</rightcamera>
-        </controller:stereocamera>
-      </sensor:stereocamera>
-      <geom:box name="stereo_camera_geom">
-        <xyz> 0.00   0.00   0.00</xyz>
+        <interface:stereocamera name="stereo_iface_0" />
+        <interface:camera name="camera_iface_0" />
+        <interface:camera name="camera_iface_1" />
+        <leftcamera>camera_iface_0</leftcamera>
+        <rightcamera>camera_iface_1</rightcamera>
+      </controller:stereocamera>
+    </sensor:stereocamera>
+    <geom:box name="stereo_camera_geom">
+      <xyz> 0.00   0.00   0.00</xyz>
+      <size>0.10   0.15   0.10</size>
+      <mass>0.1</mass>
+      <visual>
         <size>0.10   0.15   0.10</size>
-        <mass>0.1</mass>
-        <visual>
-          <size>0.10   0.15   0.10</size>
-          <rpy>0.0   0.0 0.0 </rpy>
-          <mesh>unit_box</mesh>
-          <material>Gazebo/PioneerBody</material>
-        </visual>
-      </geom:box>
-    </body:empty>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/PioneerBody</material>
+      </visual>
+    </geom:box>
+  </body:empty>
 
-    <!-- attach stereo_camera to head_tilt -->
-    <joint:hinge name="stereo_camera_roll_joint">
-      <body2>head_tilt_body</body2>
-      <body1>stereo_camera_body</body1>
-      <anchor>head_tilt_body</anchor>
-      <axis>  1.0   0.0   0.0 </axis>
-    </joint:hinge>
-    <joint:hinge name="stereo_camera_pitch_joint">
-      <body2>head_tilt_body</body2>
-      <body1>stereo_camera_body</body1>
-      <anchor>head_tilt_body</anchor>
-      <axis>  0.0   1.0   0.0 </axis>
-    </joint:hinge>
-    <joint:hinge name="stereo_camera_yaw_joint">
-      <body2>head_tilt_body</body2>
-      <body1>stereo_camera_body</body1>
-      <anchor>head_tilt_body</anchor>
-      <axis>  0.0   0.0   010 </axis>
-    </joint:hinge>
+  <!-- attach stereo_camera to head_tilt -->
+  <joint:hinge name="stereo_camera_attach_joint">
+    <body2>head_tilt_body</body2>
+    <body1>stereo_camera_body</body1>
+    <anchor>head_tilt_body</anchor>
+    <axis>  1.0   0.0   0.0 </axis>
+    <lowStop> 0.0 </lowStop>
+    <highStop> 0.0 </highStop>
+  </joint:hinge>
 
-    <!--         Hokuyo laser body             -->
-    <canonicalBody>laser_body</canonicalBody>
-    <body:box name="laser_body">
-      <xyz>0.23 0.0 1.0</xyz>
-      <rpy>0.0 0.0 0.0</rpy>
-   
-      <geom:box name="laser_box">
-        <xyz>0.0 0.0 0.02</xyz>
+  <!--         Hokuyo laser body             -->
+  <body:box name="laser_body">
+    <xyz>0.23 0.0 1.0</xyz>
+    <rpy>0.0 0.0 0.0</rpy>
+ 
+    <geom:box name="laser_box">
+      <xyz>0.0 0.0 0.02</xyz>
+      <rpy>0 0 0</rpy>
+      <size>0.05 0.05 0.041</size>
+      <mass>0.12</mass>
+
+      <visual>
+        <scale>0.05 0.05 0.041</scale>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Blue</material>
+      </visual>
+
+    </geom:box>
+    <geom:cylinder name="laser_cylinder1">
+      <xyz>0.0 0.0 0.041</xyz>
+      <rpy>0 0 0</rpy>
+      <size>0.02 0.013</size>
+      <mass>0.02</mass>
+     
+      <visual>
         <rpy>0 0 0</rpy>
-        <size>0.05 0.05 0.041</size>
-        <mass>0.12</mass>
+        <scale>0.04 0.04 0.013</scale>
+        <mesh>unit_cylinder</mesh>
+        <material>Gazebo/Black</material>
+      </visual>
 
-        <visual>
-          <scale>0.05 0.05 0.041</scale>
-          <mesh>unit_box</mesh>
-          <material>Gazebo/Blue</material>
-        </visual>
+    </geom:cylinder>
 
-      </geom:box>
-      <geom:cylinder name="laser_cylinder1">
-        <xyz>0.0 0.0 0.041</xyz>
+    <geom:cylinder name="laser_cylinder2">
+      <xyz>0.0 0.0 0.054</xyz>
+      <rpy>0 0 0</rpy>
+      <size>0.018 0.009</size>
+      <mass>0.02</mass>
+     
+      <visual>
         <rpy>0 0 0</rpy>
-        <size>0.02 0.013</size>
-        <mass>0.02</mass>
-       
-        <visual>
-          <rpy>0 0 0</rpy>
-          <scale>0.04 0.04 0.013</scale>
-          <mesh>unit_cylinder</mesh>
-          <material>Gazebo/Black</material>
-        </visual>
+        <size>0.036 0.036 0.009</size>
+        <mesh>unit_cylinder</mesh>
+        <material>Gazebo/Black</material>
+      </visual>
 
-      </geom:cylinder>
+    </geom:cylinder>
 
-      <geom:cylinder name="laser_cylinder2">
-        <xyz>0.0 0.0 0.054</xyz>
+    <geom:cylinder name="laser_cylinder3">
+      <xyz>0.0 0.0 0.063</xyz>
+      <rpy>0 0 0</rpy>
+      <size>0.0175 0.008</size>
+      <mass>0.02</mass>
+     
+      <visual>
         <rpy>0 0 0</rpy>
-        <size>0.018 0.009</size>
-        <mass>0.02</mass>
-       
-        <visual>
-          <rpy>0 0 0</rpy>
-          <size>0.036 0.036 0.009</size>
-          <mesh>unit_cylinder</mesh>
-          <material>Gazebo/Black</material>
-        </visual>
+        <size>0.035 0.035 0.008</size>
+        <mesh>unit_cylinder</mesh>
+        <material>Gazebo/Shell</material>
+      </visual>
 
-      </geom:cylinder>
-
-      <geom:cylinder name="laser_cylinder3">
-        <xyz>0.0 0.0 0.063</xyz>
-        <rpy>0 0 0</rpy>
-        <size>0.0175 0.008</size>
-        <mass>0.02</mass>
-       
-        <visual>
-          <rpy>0 0 0</rpy>
-          <size>0.035 0.035 0.008</size>
-          <mesh>unit_cylinder</mesh>
-          <material>Gazebo/Shell</material>
-        </visual>
-
-      </geom:cylinder>
+    </geom:cylinder>
 
 
-      <sensor:ray name="laser_1">
-        <rayCount>68</rayCount>
-        <rangeCount>683</rangeCount>
-        <laserCount>1</laserCount>
-        <origin>0.0 0.0 0.05</origin>
+    <sensor:ray name="laser_1">
+      <rayCount>68</rayCount>
+      <rangeCount>683</rangeCount>
+      <laserCount>1</laserCount>
+      <origin>0.0 0.0 0.05</origin>
 
-        <minAngle>-45</minAngle>
-        <maxAngle>45</maxAngle>
+      <minAngle>-45</minAngle>
+      <maxAngle>45</maxAngle>
 
-        <minRange>0.05</minRange>
-        <maxRange>10.0</maxRange>
+      <minRange>0.05</minRange>
+      <maxRange>10.0</maxRange>
+      <updateRate>10</updateRate>
+      <controller:sicklms200_laser name="laser_controller_1">
+        <interface:laser name="laser_iface_1"/>
         <updateRate>10</updateRate>
-        <controller:sicklms200_laser name="laser_controller_1">
-          <interface:laser name="laser_iface_1"/>
-          <updateRate>10</updateRate>
-        </controller:sicklms200_laser>
-      </sensor:ray>
-        <!--
-        -->
-        <!--
-      <sensor:ray2 name="laser_1">
-        <rayCount>683</rayCount>
-        <rangeCount>683</rangeCount>
-        <laserCount>1</laserCount>
-        <origin>0.0 0.0 0.05</origin>
+      </controller:sicklms200_laser>
+    </sensor:ray>
+      <!--
+      -->
+      <!--
+    <sensor:ray2 name="laser_1">
+      <rayCount>683</rayCount>
+      <rangeCount>683</rangeCount>
+      <laserCount>1</laserCount>
+      <origin>0.0 0.0 0.05</origin>
 
-        <minAngle>-135</minAngle>
-        <maxAngle>135</maxAngle>
+      <minAngle>-135</minAngle>
+      <maxAngle>135</maxAngle>
 
-        <minRange>0.05</minRange>
-        <maxRange>10.0</maxRange>
-        <controller:sick2lms200_laser name="laser_controller_1">
-          <interface:laser name="laser_iface_1"/>
-          <updateRate>10</updateRate>
-        </controller:sick2lms200_laser>
-      </sensor:ray2>
-        -->
+      <minRange>0.05</minRange>
+      <maxRange>10.0</maxRange>
+      <controller:sick2lms200_laser name="laser_controller_1">
+        <interface:laser name="laser_iface_1"/>
+        <updateRate>10</updateRate>
+      </controller:sick2lms200_laser>
+    </sensor:ray2>
+      -->
 
-    </body:box>
+  </body:box>
 
-    <!-- attach hokuyo to torso -->
-    <joint:hinge name="hokuyo_pitch_joint">
-      <body1>neck_body</body1>
-      <body2>laser_body</body2>
-      <anchor>laser_body</anchor>
-      <axis>  0.0   1.0   0.0 </axis>
-    </joint:hinge>
-
-    <controller:pr2_actarray name="pr2_head_controller" plugin="libPr2_Actarray.so">
-        <updateRate>100.0</updateRate>
-        <joint name="neck_yaw_joint">
-          <saturationTorque>100</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="head_tilt_joint">
-          <saturationTorque>10</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="hokuyo_pitch_joint">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="head_cam_left_yaw_joint">
-          <saturationTorque>100</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="head_cam_left_pitch_joint">
-          <saturationTorque>100</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="head_cam_right_yaw_joint">
-          <saturationTorque>100</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="head_cam_right_pitch_joint">
-          <saturationTorque>100</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <interface:pr2array name="pr2_head_iface"/>
-    </controller:pr2_actarray>
-
-
-  </model:physical>
-
+  <!-- attach hokuyo to torso -->
+  <joint:hinge name="hokuyo_pitch_joint">
+    <body1>neck_body</body1>
+    <body2>laser_body</body2>
+    <anchor>laser_body</anchor>
+    <axis>  0.0   1.0   0.0 </axis>
+  </joint:hinge>
 
 
 
   <!--=========================== caster ===========================-->
-
-  <canonicalBody>front_left_caster_body</canonicalBody>
-  <canonicalBody>front_right_caster_body</canonicalBody>
-  <canonicalBody>rear_left_caster_body</canonicalBody>
-  <canonicalBody>rear_right_caster_body</canonicalBody>
-
   <!--=========================== caster body ===========================-->
   <body:box name="front_left_caster_body">
     <xyz>0.425  0.25   0.16069 </xyz> <!-- caster height + height off ground of base bottom -->
@@ -1798,13 +1721,40 @@
 
   <!-- PR2_ACTARRAY -->
   <controller:pr2_actarray name="pr2_controller" plugin="libPr2_Actarray.so">
-      <updateRate>1000.0</updateRate>
+      <updateRate>100.0</updateRate>
+      <!-- head and above array -->
+      <joint name="neck_yaw_joint">
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>0.01</explicitDampingCoefficient>
+      </joint>
+      <joint name="head_tilt_joint">
+        <saturationTorque>10</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>0.01</explicitDampingCoefficient>
+      </joint>
+      <joint name="hokuyo_pitch_joint">
+        <saturationTorque>500</saturationTorque>
+        <pGain>2</pGain>
+        <dGain>0</dGain>
+        <iGain>1</iGain>
+        <iClamp>20</iClamp>
+        <explicitDampingCoefficient>0.01</explicitDampingCoefficient>
+      </joint>
+      <!-- caster array -->
       <joint name="front_left_caster_steer">
         <saturationTorque>1000</saturationTorque>
         <pGain>2</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <joint name="front_left_wheel_l_drive">
         <saturationTorque>5</saturationTorque>
@@ -1812,6 +1762,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <joint name="front_left_wheel_r_drive">
         <saturationTorque>5</saturationTorque>
@@ -1819,6 +1770,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <joint name="front_right_caster_steer">
         <saturationTorque>1000</saturationTorque>
@@ -1826,6 +1778,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <joint name="front_right_wheel_l_drive">
         <saturationTorque>5</saturationTorque>
@@ -1833,6 +1786,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <joint name="front_right_wheel_r_drive">
         <saturationTorque>5</saturationTorque>
@@ -1840,6 +1794,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <joint name="rear_left_caster_steer">
         <saturationTorque>1000</saturationTorque>
@@ -1847,6 +1802,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <joint name="rear_left_wheel_l_drive">
         <saturationTorque>5</saturationTorque>
@@ -1854,6 +1810,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <joint name="rear_left_wheel_r_drive">
         <saturationTorque>5</saturationTorque>
@@ -1861,6 +1818,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <joint name="rear_right_caster_steer">
         <saturationTorque>1000</saturationTorque>
@@ -1868,6 +1826,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <joint name="rear_right_wheel_l_drive">
         <saturationTorque>5</saturationTorque>
@@ -1875,6 +1834,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <joint name="rear_right_wheel_r_drive">
         <saturationTorque>5</saturationTorque>
@@ -1882,6 +1842,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <!-- ========================================= -->
       <joint name="torso_spine_slider">
@@ -1890,6 +1851,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <!-- ========================================= -->
       <joint name="shoulder_pan_left">
@@ -1899,6 +1861,7 @@
         <dGain>-100</dGain>
         <iGain>50</iGain>
         <iClamp>100</iClamp>
+        <explicitDampingCoefficient>50.0</explicitDampingCoefficient>
         <controlMode>PD_TORQUE_CONTROL</controlMode> 
 
         <!--
@@ -1907,6 +1870,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>100</iClamp>
+        <explicitDampingCoefficient>50.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode> 
         -->
       </joint>
@@ -1919,6 +1883,7 @@
         <dGain>-150</dGain>
         <iGain>300</iGain>
         <iClamp>500</iClamp>
+        <explicitDampingCoefficient>100.0</explicitDampingCoefficient>
         <controlMode>PD_TORQUE_CONTROL</controlMode> 
         <!--      
         <saturationTorque>1000</saturationTorque>
@@ -1926,6 +1891,7 @@
         <dGain>-0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode> 
         --> 
       </joint>
@@ -1936,6 +1902,7 @@
         <dGain>-5</dGain>
         <iGain>2</iGain>
         <iClamp>100</iClamp>
+        <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
         <controlMode>PD_TORQUE_CONTROL</controlMode> 
 
         <!--
@@ -1944,6 +1911,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode> 
         -->
       </joint>
@@ -1955,6 +1923,7 @@
         <dGain>-25</dGain>
         <iGain>5</iGain>
         <iClamp>50</iClamp>
+        <explicitDampingCoefficient>2.0</explicitDampingCoefficient>
         <controlMode>PD_TORQUE_CONTROL</controlMode> 
         <!--
         <saturationTorque>1000</saturationTorque>
@@ -1962,6 +1931,7 @@
         <dGain>-0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>2.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode>
         -->
 
@@ -1973,6 +1943,7 @@
         <dGain>-0.5</dGain>
         <iGain>2</iGain>
         <iClamp>100</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
         <controlMode>PD_TORQUE_CONTROL</controlMode> 
         <!--
         <saturationTorque>0</saturationTorque>
@@ -1980,6 +1951,7 @@
         <dGain>-5</dGain>
         <iGain>2</iGain>
         <iClamp>100</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
         <controlMode>PD_TORQUE_CONTROL</controlMode> 
         -->
 
@@ -1990,6 +1962,7 @@
         <dGain>-10</dGain>
         <iGain>200</iGain>
         <iClamp>250</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
         <controlMode>PD_TORQUE_CONTROL</controlMode>
       </joint>
       <joint name="palm_roll_joint_left">
@@ -1999,6 +1972,7 @@
         <dGain>-0.25</dGain>
         <iGain>0.5</iGain>
         <iClamp>50</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
         <controlMode>PD_TORQUE_CONTROL</controlMode> 
         <!--
         <saturationTorque>100</saturationTorque>
@@ -2006,6 +1980,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain><saturationTorque>0</saturationTorque>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
         -->
       </joint>
       <!-- ========================================= -->
@@ -2016,6 +1991,7 @@
         <dGain>-100</dGain>
         <iGain>50</iGain>
         <iClamp>100</iClamp>
+        <explicitDampingCoefficient>50.0</explicitDampingCoefficient>
         <controlMode>PD_TORQUE_CONTROL</controlMode> 
 
         <!--
@@ -2024,6 +2000,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>100</iClamp>
+        <explicitDampingCoefficient>50.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode> 
         -->
       </joint>
@@ -2036,6 +2013,7 @@
         <dGain>-150</dGain>
         <iGain>300</iGain>
         <iClamp>500</iClamp>
+        <explicitDampingCoefficient>100.0</explicitDampingCoefficient>
         <controlMode>PD_TORQUE_CONTROL</controlMode> 
         <!--      
         <saturationTorque>1000</saturationTorque>
@@ -2043,6 +2021,7 @@
         <dGain>-0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>100.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode> 
          --> 
       </joint>
@@ -2052,6 +2031,7 @@
         <dGain>-5</dGain>
         <iGain>2</iGain>
         <iClamp>100</iClamp>
+        <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
         <controlMode>PD_TORQUE_CONTROL</controlMode> 
 
         <!--
@@ -2060,6 +2040,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode> 
         -->
       </joint>
@@ -2070,6 +2051,7 @@
         <dGain>-25</dGain>
         <iGain>5</iGain>
         <iClamp>50</iClamp>
+        <explicitDampingCoefficient>2.0</explicitDampingCoefficient>
         <controlMode>PD_TORQUE_CONTROL</controlMode> 
         <!--
         <saturationTorque>1000</saturationTorque>
@@ -2077,6 +2059,7 @@
         <dGain>-0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>2.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode>
         -->
       </joint>
@@ -2086,6 +2069,7 @@
         <dGain>-0.5</dGain>
         <iGain>2</iGain>
         <iClamp>100</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
         <controlMode>PD_TORQUE_CONTROL</controlMode> 
         <!--
         <saturationTorque>0</saturationTorque>
@@ -2093,6 +2077,7 @@
         <dGain>-5</dGain>
         <iGain>2</iGain>
         <iClamp>100</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
         <controlMode>PD_TORQUE_CONTROL</controlMode> 
         -->
 
@@ -2103,6 +2088,7 @@
         <dGain>-10</dGain>
         <iGain>200</iGain>
         <iClamp>250</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
         <controlMode>PD_TORQUE_CONTROL</controlMode>
       </joint>
       <joint name="palm_roll_joint_right">
@@ -2111,6 +2097,7 @@
         <dGain>-0.25</dGain>
         <iGain>0.5</iGain>
         <iClamp>50</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
         <controlMode>PD_TORQUE_CONTROL</controlMode> 
         <!--
         <saturationTorque>100</saturationTorque>
@@ -2118,6 +2105,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain><saturationTorque>0</saturationTorque>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
         -->
       </joint>
       <!-- ========================================= -->
@@ -2164,6 +2152,21 @@
       <bodyName>base_body</bodyName>
       <interface:position name="p3d_base_position"/>
   </controller:P3D>
+
+  <!-- ptz camera controls -->
+  <controller:generic_ptz name="ptz_cam_left_controller">
+    <updateRate>15.0</updateRate> <!-- rate not implemented in gazebo yet-->
+    <panJoint>ptz_cam_left_pitch_joint</panJoint>
+    <tiltJoint>ptz_cam_left_yaw_joint</tiltJoint>
+    <interface:ptz name="ptz_left_iface" />
+  </controller:generic_ptz>
+
+  <controller:generic_ptz name="ptz_cam_right_controller">
+    <updateRate>15.0</updateRate> <!-- rate not implemented in gazebo yet-->
+    <panJoint>ptz_cam_right_pitch_joint</panJoint>
+    <tiltJoint>ptz_cam_right_yaw_joint</tiltJoint>
+    <interface:ptz name="ptz_right_iface" />
+  </controller:generic_ptz>
 
 
 

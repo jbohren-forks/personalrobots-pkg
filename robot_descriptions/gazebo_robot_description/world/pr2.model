@@ -326,6 +326,17 @@
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
+    <sensor:camera name="forearm_cam_right_sensor">
+      <imageSize>640 480</imageSize>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <updateRate>15.0</updateRate>
+      <controller:generic_camera name="forearm_cam_right_controller">
+        <updateRate>15.0</updateRate>
+        <interface:camera name="forearm_cam_right_iface" />
+      </controller:generic_camera>
+    </sensor:camera>
   </body:box>
 
   <body:cylinder name="wrist_right">
@@ -356,6 +367,17 @@
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
+    <sensor:camera name="wrist_cam_right_sensor">
+      <imageSize>640 480</imageSize>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <updateRate>15.0</updateRate>
+      <controller:generic_camera name="wrist_cam_right_controller">
+        <updateRate>15.0</updateRate>
+        <interface:camera name="wrist_cam_right_iface" />
+      </controller:generic_camera>
+    </sensor:camera>
   </body:cylinder>
 
   <body:box name="palm_right">
@@ -643,6 +665,17 @@
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
+    <sensor:camera name="forearm_cam_left_sensor">
+      <imageSize>640 480</imageSize>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <updateRate>15.0</updateRate>
+      <controller:generic_camera name="forearm_cam_left_controller">
+        <updateRate>15.0</updateRate>
+        <interface:camera name="forearm_cam_left_iface" />
+      </controller:generic_camera>
+    </sensor:camera>
   </body:box>
 
   <body:cylinder name="wrist_left">
@@ -673,6 +706,17 @@
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
+    <sensor:camera name="wrist_cam_left_sensor">
+      <imageSize>640 480</imageSize>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <updateRate>15.0</updateRate>
+      <controller:generic_camera name="wrist_cam_left_controller">
+        <updateRate>15.0</updateRate>
+        <interface:camera name="wrist_cam_left_iface" />
+      </controller:generic_camera>
+    </sensor:camera>
   </body:cylinder>
 
   <body:box name="palm_left">

@@ -15,8 +15,6 @@
   <rpy>0.0 0.0 0.0 </rpy>
 
 
-  <canonicalBody>base_body</canonicalBody>
-
   <body:box name="base_body">
     <xyz>0.175 0.0 0.15 </xyz> <!-- base bottom is h/2 + some height for wheel clearance-->
     <rpy>0.0   0.0 0.0  </rpy>
