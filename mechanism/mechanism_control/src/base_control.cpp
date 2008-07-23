@@ -26,7 +26,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-#include "mechanism_control/base_control.h"
+#include <mechanism_control/base_control.h>
 #include <signal.h>
 #include <etherdrive_hardware/etherdrive_hardware.h>
 #include <sys/time.h>
@@ -56,7 +56,6 @@ double GetTime()
   gettimeofday( &t, 0);
   return (double) (t.tv_usec *1e-6 + t.tv_sec);
 }
-
 
 void MechanismControl::init(HardwareInterface *hw){
   this->hw = hw;
