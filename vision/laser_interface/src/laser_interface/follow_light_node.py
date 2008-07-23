@@ -10,17 +10,22 @@ import math
 
 class FollowBehavior:
     def __init__(self, velocity_topic):
+        self.not_inited     = True
+
+    def init_pose(self, robot_pose):
         self.velocity_topic = velocity_topic
         R = cam.Rx(math.radians(90)) * cam.Ry(math.radians(-90))
         T = np.matrix([-.095, 0,.162]).T
         self.base_T_camera = cam.homo_transform3d(R, T)
-        self.robot_pose     = n.ConstNode(n.Pose2D(0, 0, 0))
-        self.local_pos      = n.nav.V_KeepLocal_P2d_V(self.robot_pose, n.ConstNode(np.matrix([0,0]).T))
-        self.attr	        = n.nav.V_LinearAttract_V(self.local_pos, dead_zone = 0.02, far_dist = 1.0)
+        self.robot_pose     = n.ConstNode(robot_pose)
+        self.local_pos      = n.nav.V_KeepLocal_P2d_V(self.robot_pose, np.matrix([0.0, 0.0]).T)
+        self.attr	        = n.nav.V_LinearAttract_V(self.local_pos, dead_zone = 0.05, far_dist = 1.0)
         self.cmd            = n.nav.R_Conv_V(self.attr, allow_backwards_driving = False)
         self.should_stop    = self.attr.is_done()
-        self.has_stopped   = False
-        self.attr.verbosity = -1
+
+        self.cmd.max_vel    = .5
+        self.has_stopped    = False
+        self.count          = 0
 
     def cursor_moved(self, point):
         #Transform into base's coordinate frame
@@ -35,24 +40,34 @@ class FollowBehavior:
         self.has_stopped = False
 
     def robot_moved(self, update):
-        print 'FollowBehavior.robot_moved:', update.pos.x, update.pos.y, update.pos.th
-        self.robot_pose.const = Pose2D(update.pos.x, update.pos.y, update.pos.th)
+        #print 'FollowBehavior.robot_moved:', update.pos.x, update.pos.y, update.pos.th
+        self.robot_pose.const = n.Pose2D(update.pos.x, update.pos.y, update.pos.th)
 
     def run(self):
-        count = 0
-        if self.should_stop.val(count) and not self.has_stopped:
+        if self.not_inited:
+            return
+        #base_command = self.cmd.val(self.count)
+        #print 'publishing', base_command.forward_vel, base_command.rot_vel
+        if self.should_stop.val(self.count) and not self.has_stopped:
             self.velocity_topic.publish(BaseVel(0,0))
-            self.has_stopped = True 
-        else:
-            base_command = self.cmd.val(count)
+            #print 'stoppping'
+            #self.has_stopped = True 
+        elif not self.has_stopped:
+            base_command = self.cmd.val(self.count)
             msg = BaseVel(base_command.forward_vel, base_command.rot_vel)
             #print 'publishing', base_command.forward_vel, base_command.rot_vel
-            #self.velocity_topic.publish(msg)
-        count = count + 1
+            self.velocity_topic.publish(msg)
+        self.count = self.count + 1
 
 class FakeTopic:
     def publish(self, something):
         pass
+
+class FakePoint:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
 
 
 if __name__ == '__main__':
@@ -62,6 +77,7 @@ if __name__ == '__main__':
     rospy.TopicSub('odom', RobotBase2DOdom, follow_behavior.robot_moved)
     rospy.TopicSub(CURSOR_TOPIC, Point3DFloat64, follow_behavior.cursor_moved)
     rospy.ready(sys.argv[0])
+    #follow_behavior.cursor_moved(FakePoint(0.0,0.0,1.0))
     while (True):
         follow_behavior.run()
         time.sleep(0.016)

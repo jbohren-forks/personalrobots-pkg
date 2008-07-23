@@ -440,6 +440,7 @@ class V_KeepLocal_P2d_V(n.Node):
 		"""
 			Set egocentric points to keep track of
 		"""
+		print "REMEMBER CALLED"
 		self.local_point  = local_point
 		point             = local_point.val(-1)
 		start_pos         = self.robot_pose_node.val(-1)
@@ -474,8 +475,10 @@ class V_KeepLocal_P2d_V(n.Node):
 		if (self.global_point == None):
 			self.remember(self.local_point)
 		current_pose = self.robot_pose_node.val(t)
+		#print 'V_KeepLocal_P2d_V', current_pose
 		b_T_o        = n.transform2D(current_pose.pos, current_pose.angle)   
 		results = ut.homo_to_point(b_T_o * self.global_point)     
+		print 'V_KeepLocal_P2d_V', results.T
 		return results
 
 class R_SelectBaseCommand_(n.Node):
