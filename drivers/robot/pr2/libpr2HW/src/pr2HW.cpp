@@ -34,15 +34,16 @@ using namespace PR2;
 gazebo::Client           *client;
 gazebo::SimulationIface  *simIface;
 gazebo::PR2ArrayIface    *pr2Iface;
-gazebo::PR2ArrayIface    *pr2HeadIface;
 gazebo::PR2GripperIface  *pr2GripperLeftIface;
 gazebo::PR2GripperIface  *pr2GripperRightIface;
 gazebo::LaserIface       *pr2LaserIface;
 gazebo::LaserIface       *pr2BaseLaserIface;
 gazebo::CameraIface      *pr2CameraIface;
 gazebo::CameraIface      *pr2CameraGlobalIface;
-gazebo::CameraIface      *pr2CameraHeadLeftIface;
-gazebo::CameraIface      *pr2CameraHeadRightIface;
+gazebo::CameraIface      *pr2PTZCameraLeftIface;
+gazebo::CameraIface      *pr2PTZCameraRightIface;
+gazebo::PTZIface         *pr2PTZLeftIface;
+gazebo::PTZIface         *pr2PTZRightIface;
 gazebo::PositionIface    *pr2LeftWristIface;
 gazebo::PositionIface    *pr2RightWristIface;
 gazebo::PositionIface    *pr2BaseIface;
@@ -74,14 +75,15 @@ PR2_ERROR_CODE PR2HW::Init()
    client                  = new gazebo::Client();
    simIface                = new gazebo::SimulationIface();
    pr2Iface                = new gazebo::PR2ArrayIface();
-   pr2HeadIface            = new gazebo::PR2ArrayIface();
    pr2GripperLeftIface     = new gazebo::PR2GripperIface();
    pr2GripperRightIface    = new gazebo::PR2GripperIface();
    pr2LaserIface           = new gazebo::LaserIface();
    pr2BaseLaserIface       = new gazebo::LaserIface();
    pr2CameraGlobalIface    = new gazebo::CameraIface();
-   pr2CameraHeadLeftIface  = new gazebo::CameraIface();
-   pr2CameraHeadRightIface = new gazebo::CameraIface();
+   pr2PTZCameraLeftIface   = new gazebo::CameraIface();
+   pr2PTZCameraRightIface  = new gazebo::CameraIface();
+   pr2PTZLeftIface         = new gazebo::PTZIface();
+   pr2PTZRightIface        = new gazebo::PTZIface();
 
    pr2LeftWristIface       = new gazebo::PositionIface();
    pr2RightWristIface      = new gazebo::PositionIface();
@@ -120,14 +122,25 @@ PR2_ERROR_CODE PR2HW::Init()
     << e << "\n";
   }
 
-  /// Open the Position interface
+  /// Open the PTZ Position interface
   try
   {
-    pr2HeadIface->Open(client, "pr2_head_iface");
+    pr2PTZLeftIface->Open(client, "ptz_left_iface");
   }
   catch (std::string e)
   {
-    std::cout << "Gazebo error: Unable to connect to the pr2 head interface\n"
+    std::cout << "Gazebo error: Unable to connect to the pr2 Left PTZ interface\n"
+    << e << "\n";
+  }
+
+  /// Open the PTZ Position interface
+  try
+  {
+    pr2PTZRightIface->Open(client, "ptz_right_iface");
+  }
+  catch (std::string e)
+  {
+    std::cout << "Gazebo error: Unable to connect to the pr2 Right PTZ interface\n"
     << e << "\n";
   }
 
@@ -179,7 +192,7 @@ PR2_ERROR_CODE PR2HW::Init()
   }
 
 
-  /// Open the camera interface for hokuyo
+  /// Open the camera interfaces
   try
   {
     pr2CameraGlobalIface->Open(client, "cam1_iface_0");
@@ -193,24 +206,24 @@ PR2_ERROR_CODE PR2HW::Init()
 
   try
   {
-    pr2CameraHeadLeftIface->Open(client, "head_cam_left_iface_0");
+    pr2PTZCameraLeftIface->Open(client, "ptz_cam_left_iface");
   }
   catch (std::string e)
   {
     std::cout << "Gazebo error: Unable to connect to the pr2 camera interface\n"
     << e << "\n";
-    pr2CameraHeadLeftIface = NULL;
+    pr2PTZCameraLeftIface = NULL;
   }
 
   try
   {
-    pr2CameraHeadRightIface->Open(client, "head_cam_right_iface_0");
+    pr2PTZCameraRightIface->Open(client, "ptz_cam_right_iface");
   }
   catch (std::string e)
   {
     std::cout << "Gazebo error: Unable to connect to the pr2 camera interface\n"
     << e << "\n";
-    pr2CameraHeadRightIface = NULL;
+    pr2PTZCameraRightIface = NULL;
   }
 
   try
@@ -248,22 +261,9 @@ PR2_ERROR_CODE PR2HW::Init()
 
   std::cout << "initial HW reads\n" << std::endl;
   // fill in actuator data
-  for (int id = PR2::CASTER_FL_STEER; id < PR2::HEAD_PTZ_R_TILT; id++)
+  for (int id = PR2::HEAD_YAW; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
-    if(IsHead((PR2::PR2_JOINT_ID)id))
-    {
-      pr2HeadIface->Lock(1);
-      this->jointData[id].cmdEnableMotor    =  pr2HeadIface->data->actuators[id-JointStart[HEAD]].cmdEnableMotor     ;
-      this->jointData[id].controlMode       =  pr2HeadIface->data->actuators[id-JointStart[HEAD]].controlMode        ;
-      this->jointData[id].pGain             =  pr2HeadIface->data->actuators[id-JointStart[HEAD]].pGain              ;
-      this->jointData[id].iGain             =  pr2HeadIface->data->actuators[id-JointStart[HEAD]].iGain              ;
-      this->jointData[id].dGain             =  pr2HeadIface->data->actuators[id-JointStart[HEAD]].dGain              ;
-      this->jointData[id].cmdPosition       =  pr2HeadIface->data->actuators[id-JointStart[HEAD]].cmdPosition        ;
-      this->jointData[id].cmdSpeed          =  pr2HeadIface->data->actuators[id-JointStart[HEAD]].cmdSpeed           ;
-      this->jointData[id].cmdEffectorForce  =  pr2HeadIface->data->actuators[id-JointStart[HEAD]].cmdEffectorForce   ;
-      pr2HeadIface->Unlock();
-    }
-    else if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
+    if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
     {
       pr2GripperLeftIface->Lock(1);
       this->jointData[id].cmdEnableMotor    =  pr2GripperLeftIface->data->cmdEnableMotor   ;
@@ -361,9 +361,9 @@ PR2_ERROR_CODE PR2HW::GetJointControlMode(PR2_JOINT_ID id, PR2_JOINT_CONTROL_MOD
 
 PR2_ERROR_CODE PR2HW::SetJointGains(PR2_JOINT_ID id, double pGain, double iGain, double dGain)
 {
-   this->jointData[id-JointStart[HEAD]].pGain = pGain;
-   this->jointData[id-JointStart[HEAD]].iGain = iGain;
-   this->jointData[id-JointStart[HEAD]].dGain = dGain;
+   this->jointData[id].pGain = pGain;
+   this->jointData[id].iGain = iGain;
+   this->jointData[id].dGain = dGain;
    return PR2_ALL_OK;
 
 };
@@ -677,10 +677,10 @@ PR2_ERROR_CODE PR2HW::GetCameraImage(PR2_SENSOR_ID id ,
           pr2CameraIface = pr2CameraGlobalIface;
           break;
       case CAMERA_HEAD_LEFT:
-          pr2CameraIface = pr2CameraHeadLeftIface;
+          pr2CameraIface = pr2PTZCameraLeftIface;
           break;
       case CAMERA_HEAD_RIGHT:
-          pr2CameraIface = pr2CameraHeadRightIface;
+          pr2CameraIface = pr2PTZCameraRightIface;
           break;
       default:
           pr2CameraIface = pr2CameraGlobalIface;
@@ -827,17 +827,9 @@ PR2_ERROR_CODE PR2HW::UpdateHW()
 {
   //std::cout << "updating HW receive\n" << std::endl;
   // receive data from hardware
-  for (int id = PR2::CASTER_FL_STEER; id < PR2::HEAD_PTZ_R_TILT; id++)
+  for (int id = PR2::HEAD_YAW; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
-    if(IsHead((PR2::PR2_JOINT_ID)id))
-    {
-      pr2HeadIface->Lock(1);
-      this->jointData[id].actualPosition              = pr2HeadIface->data->actuators[id-JointStart[HEAD]].actualPosition     ;
-      this->jointData[id].actualSpeed                 = pr2HeadIface->data->actuators[id-JointStart[HEAD]].actualSpeed        ;
-      this->jointData[id].actualEffectorForce         = pr2HeadIface->data->actuators[id-JointStart[HEAD]].actualEffectorForce;
-      pr2HeadIface->Unlock();
-    }
-    else if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
+    if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
     {
       pr2GripperLeftIface->Lock(1);
       this->jointData[id].actualPosition              = ( pr2GripperLeftIface->data->actualFingerPosition[0] - 0.015)  // FIXME: not debugged
@@ -886,22 +878,9 @@ PR2_ERROR_CODE PR2HW::UpdateHW()
 
   //std::cout << "updating HW send\n" << std::endl;
   // send commands to hardware
-  for (int id = PR2::CASTER_FL_STEER; id < PR2::HEAD_PTZ_R_TILT; id++)
+  for (int id = PR2::HEAD_YAW; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
-    if(IsHead((PR2::PR2_JOINT_ID)id))
-    {
-      pr2HeadIface->Lock(1);
-      pr2HeadIface->data->actuators[id-JointStart[HEAD]].cmdEnableMotor   = this->jointData[id].cmdEnableMotor  ;
-      pr2HeadIface->data->actuators[id-JointStart[HEAD]].controlMode      = this->jointData[id].controlMode     ;
-      pr2HeadIface->data->actuators[id-JointStart[HEAD]].pGain            = this->jointData[id].pGain           ;
-      pr2HeadIface->data->actuators[id-JointStart[HEAD]].iGain            = this->jointData[id].iGain           ;
-      pr2HeadIface->data->actuators[id-JointStart[HEAD]].dGain            = this->jointData[id].dGain           ;
-      pr2HeadIface->data->actuators[id-JointStart[HEAD]].cmdPosition      = this->jointData[id].cmdPosition     ;
-      pr2HeadIface->data->actuators[id-JointStart[HEAD]].cmdSpeed         = this->jointData[id].cmdSpeed        ;
-      pr2HeadIface->data->actuators[id-JointStart[HEAD]].cmdEffectorForce = this->jointData[id].cmdEffectorForce;
-      pr2HeadIface->Unlock();
-    }
-    else if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
+    if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
     {
       pr2GripperLeftIface->Lock(1);
       pr2GripperLeftIface->data->cmdEnableMotor                           = this->jointData[id].cmdEnableMotor  ;
@@ -951,19 +930,9 @@ PR2_ERROR_CODE PR2HW::UpdateJointArray(mechanism::Joint** jointArray)
 {
  // std::cout << "updating Joint receive\n" << std::endl;
   // receive data from hardware
-  for (int id = PR2::CASTER_FL_STEER; id < PR2::HEAD_PTZ_R_TILT; id++)
+  for (int id = PR2::HEAD_YAW; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
-    if(IsHead((PR2::PR2_JOINT_ID)id))
-    {
-      
-      pr2HeadIface->Lock(1);
-      jointArray[id]->position              = pr2HeadIface->data->actuators[id-JointStart[HEAD]].actualPosition     ;
-      jointArray[id]->velocity                = pr2HeadIface->data->actuators[id-JointStart[HEAD]].actualSpeed        ;
-     jointArray[id]->appliedEffort         = pr2HeadIface->data->actuators[id-JointStart[HEAD]].actualEffectorForce;
-      pr2HeadIface->Unlock();
-      
-    }
-    else if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
+    if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
     {
      /* //Don't look at grippers for now
        pr2GripperLeftIface->Lock(1);
@@ -1017,25 +986,9 @@ PR2_ERROR_CODE PR2HW::UpdateJointArray(mechanism::Joint** jointArray)
 
  // std::cout << "updating Joint send\n" << std::endl;
   // send commands to hardware
-  for (int id = PR2::CASTER_FL_STEER; id < PR2::HEAD_PTZ_R_TILT; id++)
+  for (int id = PR2::HEAD_YAW; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
-    if(IsHead((PR2::PR2_JOINT_ID)id))
-    {
-      pr2HeadIface->Lock(1);
-      
-      pr2HeadIface->data->actuators[id-JointStart[HEAD]].cmdEnableMotor   = jointArray[id]->initialized;
-      /*
-      pr2HeadIface->data->actuators[id-JointStart[HEAD]].controlMode      = this->jointData[id].controlMode     ;
-      pr2HeadIface->data->actuators[id-JointStart[HEAD]].pGain            = this->jointData[id].pGain           ;
-      pr2HeadIface->data->actuators[id-JointStart[HEAD]].iGain            = this->jointData[id].iGain           ;
-      pr2HeadIface->data->actuators[id-JointStart[HEAD]].dGain            = this->jointData[id].dGain           ;
-      pr2HeadIface->data->actuators[id-JointStart[HEAD]].cmdPosition      = this->jointData[id].cmdPosition     ;
-      pr2HeadIface->data->actuators[id-JointStart[HEAD]].cmdSpeed         = this->jointData[id].cmdSpeed        ;
-      */
-      pr2HeadIface->data->actuators[id-JointStart[HEAD]].cmdEffectorForce = jointArray[id]->commandedEffort;
-      pr2HeadIface->Unlock();
-    }
-    else if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
+    if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
     {
       /*
       pr2GripperLeftIface->Lock(1);

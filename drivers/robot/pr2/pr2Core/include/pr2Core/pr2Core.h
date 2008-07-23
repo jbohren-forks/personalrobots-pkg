@@ -64,6 +64,9 @@ namespace PR2
    };
 
    enum PR2_JOINT_ID{
+      HEAD_YAW          , 
+      HEAD_PITCH        ,
+      HEAD_LASER_PITCH  ,
      CASTER_FL_STEER   , // 0
      CASTER_FL_DRIVE_L , // 1 
      CASTER_FL_DRIVE_R , // 2
@@ -93,9 +96,6 @@ namespace PR2
       ARM_R_WRIST_ROLL  ,
       ARM_L_GRIPPER     ,
       ARM_R_GRIPPER     ,
-      HEAD_YAW          , 
-      HEAD_PITCH        ,
-      HEAD_LASER_PITCH  ,
       HEAD_PTZ_L_PAN    , 
       HEAD_PTZ_L_TILT   ,
       HEAD_PTZ_R_PAN    , 
@@ -121,6 +121,8 @@ namespace PR2
    };
 
    enum PR2_BODY_ID{
+      HEAD_PAN_BASE     , 
+      HEAD_TILT_BASE    ,
       CASTER_FL_WHEEL_L , 
       CASTER_FL_WHEEL_R , 
       CASTER_FL_BODY    ,
@@ -153,8 +155,6 @@ namespace PR2
       ARM_R_HAND        , 
       ARM_R_FINGER_1    ,
       ARM_R_FINGER_2    ,
-      HEAD_PAN_BASE     , 
-      HEAD_TILT_BASE    ,
       STEREO_BLOCK      , 
       TILT_LASER_BLOCK  ,
       BASE_LASER_BLOCK  ,
@@ -287,9 +287,9 @@ namespace PR2
    };
 
    // JointStart/JointEnd corresponds to the PR2_MODEL_ID, start and end id for each model
-   enum PR2_MODEL_ID                  {PR2_BASE          ,PR2_SPINE      ,PR2_LEFT_ARM     ,PR2_RIGHT_ARM    ,PR2_LEFT_GRIPPER ,PR2_RIGHT_GRIPPER ,HEAD             , MAX_MODELS };
-   const int JointStart[MAX_MODELS] = {CASTER_FL_STEER   ,SPINE_ELEVATOR ,ARM_L_PAN        ,ARM_R_PAN        ,ARM_L_GRIPPER    ,ARM_R_GRIPPER     ,HEAD_YAW         };
-   const int JointEnd[MAX_MODELS]   = {CASTER_RR_DRIVE_R ,SPINE_ELEVATOR ,ARM_L_WRIST_ROLL ,ARM_R_WRIST_ROLL ,ARM_L_GRIPPER    ,ARM_R_GRIPPER     ,HEAD_LASER_PITCH };
+   enum PR2_MODEL_ID                  {PR2_BASE          ,PR2_SPINE      ,PR2_LEFT_ARM     ,PR2_RIGHT_ARM    ,PR2_LEFT_GRIPPER ,PR2_RIGHT_GRIPPER ,HEAD             ,PR2_LEFT_PTZ ,PR2_RIGHT_PTZ , MAX_MODELS };
+   const int JointStart[MAX_MODELS] = {CASTER_FL_STEER   ,SPINE_ELEVATOR ,ARM_L_PAN        ,ARM_R_PAN        ,ARM_L_GRIPPER    ,ARM_R_GRIPPER     ,HEAD_YAW         ,PR2_LEFT_PTZ ,PR2_RIGHT_PTZ };
+   const int JointEnd[MAX_MODELS]   = {CASTER_RR_DRIVE_R ,SPINE_ELEVATOR ,ARM_L_WRIST_ROLL ,ARM_R_WRIST_ROLL ,ARM_L_GRIPPER    ,ARM_R_GRIPPER     ,HEAD_LASER_PITCH ,PR2_LEFT_PTZ ,PR2_RIGHT_PTZ };
 
 
    // Geometric description for the base

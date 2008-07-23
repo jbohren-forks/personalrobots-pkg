@@ -54,6 +54,20 @@ namespace PR2
        return false;
     }
 
+    inline bool IsPTZLeft(PR2_MODEL_ID id)
+    {
+       if(id == PR2_LEFT_PTZ)
+          return true;
+       return false;
+    }
+
+    inline bool IsPTZRight(PR2_MODEL_ID id)
+    {
+       if(id == PR2_RIGHT_PTZ)
+          return true;
+       return false;
+    }
+
     inline bool IsHead(PR2_JOINT_ID id)
     {
        if(id >= JointStart[HEAD] && id <= JointEnd[HEAD])
@@ -73,6 +87,20 @@ namespace PR2
           return true;
        return false;
     }
+
+    inline bool IsPTZRight(PR2_JOINT_ID id)
+    {
+       if (id >= JointStart[PR2_RIGHT_PTZ] && id <= JointEnd[PR2_RIGHT_PTZ])
+          return true;
+       return false;
+    }
+    inline bool IsPTZLeft(PR2_JOINT_ID id)
+    {
+       if (id >= JointStart[PR2_LEFT_PTZ] && id <= JointEnd[PR2_LEFT_PTZ])
+          return true;
+       return false;
+    }
+
 
     inline double GetMagnitude(double xl[], int num)
     {
