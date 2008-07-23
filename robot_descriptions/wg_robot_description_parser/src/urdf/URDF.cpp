@@ -1088,18 +1088,21 @@ void robot_desc::URDF::loadData(const TiXmlNode *node, Data *data)
 	if (child->Type() == TiXmlNode::ELEMENT && child->FirstChild() && child->FirstChild()->Type() == TiXmlNode::TEXT)
 	    data->add(type, name, child->ValueStr(), child->FirstChild()->ValueStr());
 	else
-	    if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "xml")
-	    {
-		std::string key;
-		for (const TiXmlAttribute *attr = child->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
-		{
-		    if (strcmp(attr->Name(), "key") == 0)
-			key = attr->ValueStr();
-		}
-		data->add(type, name, key, child->ToElement());
-	    }
+	    if (child->Type() == TiXmlNode::ELEMENT && !child->FirstChild())
+		data->add(type, name, child->ValueStr(), "");
 	    else
-		ignoreNode(child);
+		if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "xml")
+		{
+		    std::string key;
+		    for (const TiXmlAttribute *attr = child->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
+		    {
+			if (strcmp(attr->Name(), "key") == 0)
+			    key = attr->ValueStr();
+		    }
+		    data->add(type, name, key, child->ToElement());
+		}
+		else
+		    ignoreNode(child);
 }
 
 bool robot_desc::URDF::parse(const TiXmlNode *node)

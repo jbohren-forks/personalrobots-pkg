@@ -163,6 +163,7 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
 	root->LinkEndChild(elem);
 	
 	/* compute the joint tag */
+	bool fixed = false;
 	std::string jtype;
 	switch (link->joint->type)
 	{
@@ -173,6 +174,10 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
 	    jtype = "slider";
 	    break;
 	case robot_desc::URDF::Link::Joint::FLOATING:
+	    break;
+	case robot_desc::URDF::Link::Joint::FIXED:
+	    jtype = "hinge";
+	    fixed = true;
 	    break;
 	default:
 	    printf("Unknown joint type: %d in link '%s'\n", link->joint->type, link->name.c_str());
@@ -187,11 +192,20 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
 	    addKeyValue(joint, "body2", link->name);
 	    addKeyValue(joint, "anchor", link->name);
 	    
-	    addKeyValue(joint, "axis", values2str(3, link->joint->axis));
-	    addKeyValue(joint, "axisOffset", values2str(3, link->joint->anchor));
-	    
-	    addKeyValue(joint, "lowStop", values2str(1, link->joint->limit));
-	    addKeyValue(joint, "highStop", values2str(1, link->joint->limit + 1));
+	    if (fixed)
+	    {
+		addKeyValue(joint, "lowStop", "0");
+		addKeyValue(joint, "highStop", "0");
+		addKeyValue(joint, "axis", "1 0 0");
+	    }
+	    else
+	    {		    
+		addKeyValue(joint, "axis", values2str(3, link->joint->axis));
+		addKeyValue(joint, "axisOffset", values2str(3, link->joint->anchor));
+		
+		addKeyValue(joint, "lowStop", values2str(1, link->joint->limit));
+		addKeyValue(joint, "highStop", values2str(1, link->joint->limit + 1));
+	    }
 	    
 	    /* add joint to document */
 	    root->LinkEndChild(joint);
