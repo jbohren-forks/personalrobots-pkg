@@ -54,12 +54,26 @@ class EtherdriveHardware{
     * \param string[] etherIP - array of IPs for each board
     * \param string[] hostIP - array of IPs for each host that the board is hooked up to
     */
-  EtherdriveHardware(int numBoards, int numActuators, int boardLookUp[], int portLookUp[], int jointId[], string etherIP[], string hostIP[], HardwareInterface *hw);
+  EtherdriveHardware(int numBoards, int numActuators, int boardLookUp[], int portLookUp[], int jointId[], string etherIP[], string hostIP[]);
 
    /*!
     * \brief Destructor
     */
    ~EtherdriveHardware();
+
+   /*! 
+    * \brief tick send most recent motor commands and retrieve updates. This command must be run at a sufficient rate or else the motors will be disabled.
+   */
+   void update();
+
+   /*! 
+    * \brief Initialize the etherdrive interface by calling init() on all the etherdrive boards. The boards are set to current control and the gains for the boards are also set up here.
+    */
+   void init();
+
+   HardwareInterface *hw;
+
+  private:
 
    /*! 
     * \brief Update the state (in the hardware interface) by reading the values from the encoders
@@ -68,22 +82,10 @@ class EtherdriveHardware{
    void updateState();
 
    /*! 
-    * \brief tick send most recent motor commands and retrieve updates. This command must be run at a sufficient rate or else the motors will be disabled.
-   */
-   void tick();
-
-   /*! 
     * \brief Read the command values from the hardware interface and send them out to the actual motors
     \param HardwareInterface* hw pointer to the hardware interface
    */
    void sendCommand();
-
-   /*! 
-    * \brief Initialize the etherdrive interface by calling init() on all the etherdrive boards. The boards are set to current control and the gains for the boards are also set up here.
-    */
-   void init();
-
-  private:
 
    /*! 
     * \brief Setup the gains for the etherdrive boards 
@@ -115,8 +117,6 @@ class EtherdriveHardware{
    string hostIP[MAX_NUM_ACTUATORS]; /**< host address of etherdrive module for the actuator */
 
    EtherDrive *edBoard; /**< pointer to the hardware object */
-
-   HardwareInterface *hw;
 
    enum ETHERDRIVE_CONTROL_MODE{
       ETHERDRIVE_VOLTAGE_MODE,

@@ -42,11 +42,11 @@ double EtherdriveHardware::GetTimeHardware()
   return ((double) t.tv_usec *1e-6 + (double) t.tv_sec);
 }
 
-EtherdriveHardware::EtherdriveHardware(int numBoards, int numActuators, int boardLookUp[], int portLookUp[], int jointId[], string etherIP[], string hostIP[],HardwareInterface *hw){
+EtherdriveHardware::EtherdriveHardware(int numBoards, int numActuators, int boardLookUp[], int portLookUp[], int jointId[], string etherIP[], string hostIP[]){
   int ii;
   this->numBoards = numBoards;
   this->numActuators = numActuators;
-  this->hw = hw;
+  this->hw = new HardwareInterface(numActuators);
 
   for(ii = 0; ii < numActuators; ii++){
       this->boardLookUp[ii] = boardLookUp[ii];
@@ -83,16 +83,13 @@ void EtherdriveHardware::updateState(){
 	}
       dE = (double) (newCount - hw->actuator[ii].state.encoderCount);
       double vel = dE / dT;
-      //hw->actuator[ii].state.encoderVelocity *= 0.8;
-      //hw->actuator[ii].state.encoderVelocity += vel * 0.2;
       hw->actuator[ii].state.encoderVelocity = vel;
   
       hw->actuator[ii].state.timestamp = newTime;
-      hw->actuator[ii].state.encoderCount = newCount;
+      hw->actuator[ii].state.encoderCount = (int) newCount;
 #ifdef DEBUG
       printf("etherdrive_hardware.cpp:: %d, enc: %d\n",ii,hw->actuator[ii].state.encoderCount);
 #endif
-      //printf("etherdrive_hardware.cpp:: dT: %f, enc_vel: %f\n",dT,hw->actuator[ii].state.encoderVelocity);
     }
 };
 
@@ -102,8 +99,8 @@ void EtherdriveHardware::sendCommand(){
     {
       if( hw->actuator[ii].command.enable){
 	command = (int)(ETHERDRIVE_CURRENT_TO_CMD*hw->actuator[ii].command.current);
-	printf("command: %d, %d\n", ii, command);
 #ifdef DEBUG
+	printf("command: %d, %d\n", ii, command);
 #endif
 	edBoard[boardLookUp[ii]].set_drv(portLookUp[ii], command);
       }
@@ -140,9 +137,11 @@ void EtherdriveHardware::setMotorsOn(bool motorsOn)
   }
 }
 
-void EtherdriveHardware::tick() {
+void EtherdriveHardware::update() {
+  sendCommand();
   for(int ii = 0; ii < numBoards; ii++)
     edBoard[ii].tick();
+  updateState();
 }
 
 EtherdriveHardware::~EtherdriveHardware()
@@ -151,7 +150,61 @@ EtherdriveHardware::~EtherdriveHardware()
   setMotorsOn(false);
 };
 
-/*int main(int argc, char *argv[]){
+/*void EtherdriveHardware::LoadXML(std::string filename)
+{
+   robot_desc::URDF model;
+   int exists = 0;
+
+   if(!model.loadFile(filename.c_str()))
+      return CONTROLLER_MODE_ERROR;
+
+   const robot_desc::URDF::Data &data = model.getData();
+
+   std::vector<std::string> types;
+   std::vector<std::string> names;
+   std::vector<std::string>::iterator iter;
+
+   data.getDataTagTypes(types);
+
+   for(iter = types.begin(); iter != types.end(); iter++){
+      if(*iter == "etherdrive"){
+         exists = 1;
+         break;
+      }
+   }
+
+   if(!exists)
+      return CONTROLLER_MODE_ERROR;
+
+   data.getDataTagNames("etherdrive",names);
+
+
+   
+   param_map = model.getDataTagValues("mcb","etherdrive");   
+
+   return CONTROLLER_ALL_OK;
+}
+
+void EtherdriveHardware::LoadParam(std::string label, double &param)
+{
+   if(param_map.find(label) != param_map.end()) // if parameter value has been initialized in the xml file, set internal parameter value
+      param = atof(param_map[label].c_str());
+}
+
+void EtherdriveHardware::LoadParam(std::string label, int &param)
+{
+   if(param_map.find(label) != param_map.end())
+      param = atoi(param_map[label].c_str());
+}
+
+void EtherdriveHardware::LoadParam(std::string label, std::string &param)
+{
+   if(param_map.find(label) != param_map.end()) // if parameter value has been initialized in the xml file, set internal parameter value
+      param = param_map[label];
+}
+*/
+#ifdef _ETHERDRIVE_MAIN_TEST
+int main(int argc, char *argv[]){
 
   int numBoards = 2;
   int numActuators = 2;
@@ -178,4 +231,5 @@ EtherdriveHardware::~EtherdriveHardware()
 
   delete(h);
   delete(hi);
-  }*/
+  }
+#endif
