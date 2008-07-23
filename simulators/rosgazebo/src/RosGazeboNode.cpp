@@ -588,7 +588,7 @@ RosGazeboNode::Update()
   /***************************************************************/
   static double dAngle = -1;
   double simPitchFreq,simPitchAngle,simPitchRate,simPitchTimeScale,simPitchAmp,simPitchOffset;
-  simPitchFreq      = 1.0/10.0;
+  simPitchFreq      = 1.0/60.0;
   simPitchTimeScale = 2.0*M_PI*simPitchFreq;
   simPitchAmp    =  M_PI / 8.0;
   simPitchOffset = -M_PI / 8.0;

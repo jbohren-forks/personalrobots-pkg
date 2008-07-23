@@ -12,6 +12,7 @@
   <depend package="hw_interface" />
   <depend package="wg_robot_description_parser" />
   <depend package="joy" />
+  <depend package="math_utils" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

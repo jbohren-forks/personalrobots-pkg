@@ -13,6 +13,8 @@ A test file for Player interface.
 <depend package="pr2Core"/>
 <depend package="newmat10"/>
 <depend package="genericControllers"/>
+<depend package="roscpp"/>
+<depend package="std_msgs"/>
 <export>
 <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lPr2_Actarray -lPr2_Gripper -lP3D"/>
 </export>
