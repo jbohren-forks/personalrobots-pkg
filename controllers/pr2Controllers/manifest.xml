@@ -10,6 +10,8 @@
   <depend package="genericControllers" />
   <depend package="rosTF" />
   <depend package="hw_interface" />
+  <depend package="wg_robot_description_parser" />
+  <depend package="joy" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

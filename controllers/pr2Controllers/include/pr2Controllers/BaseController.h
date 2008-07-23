@@ -21,11 +21,13 @@
 #include <pr2Core/pr2Core.h>
 #include <pr2Core/pr2Misc.h>
 
+#include <joy/Joy.h>
+
 #include <genericControllers/Controller.h>
 #include <genericControllers/JointController.h>
 #include <mechanism_model/joint.h>
 #include <mechanism_model/robot.h>
-
+#include <urdf/URDF.h>
 
 using namespace std;
 
@@ -48,21 +50,37 @@ namespace CONTROLLER
         * \param 
         */
       BaseController(char *nbc);
+      
+      /*!
+       * \brief Constructor for the BaseController class.
+       * 
+       * \param r - pointer to the Robot
+       * \param name - std::string name for the controller. This must match the name attribute corresponding to the controller
+       * description in the xml description file for the controller. 
+       */
+      BaseController(Robot *r, std::string name);
 
       BaseController(Robot *r);
 
       /*!
-        * \brief Destructor of the BaseController class.
-        */       
+       *  \brief Load the parameters for the controller from the controllers.xml file 
+       * 
+       * \param filename - xml file name
+       */
+      CONTROLLER::CONTROLLER_ERROR_CODE LoadXML(std::string filename);
+
+      /*!
+       * \brief Destructor of the BaseController class.
+       */       
       ~BaseController( );
 
       /*!
-        * \brief Update controller
-        */       
+       * \brief Update controller
+       */       
       void Update( );
 
       /*!
-        * \brief Initialize the controller
+       * \brief Initialize the controller
         */
       void Init();
 
@@ -148,6 +166,13 @@ namespace CONTROLLER
       PR2::PR2_ERROR_CODE setParam(std::string label,double value);
       PR2::PR2_ERROR_CODE setParam(std::string label,std::string value);
 
+      /*!
+       * \brief Callback for ROS base command message
+       */
+      void receiveBaseCommandMessage();
+
+      joy::Joy baseCommandMessage;
+
     private:
 
       void InitJointControllers();
@@ -160,27 +185,27 @@ namespace CONTROLLER
 
       PR2::PR2_CONTROL_MODE controlMode; /*!< Base controller control mode */
 
-      static const double PGain; /**< Proportional gain for speed control */
+      double PGain; /**< Proportional gain for speed control */
 
-      static const double IGain; /**< Integral gain for speed control */
+      double IGain; /**< Integral gain for speed control */
 
-      static const double DGain; /**< Derivative gain for speed control */
+      double DGain; /**< Derivative gain for speed control */
 
-      static const double IMax; /**< Max integral error term */
+      double IMax; /**< Max integral error term */
 
-      static const double IMin; /**< Min integral error term */
+      double IMin; /**< Min integral error term */
 
-      static const double maxPositiveTorque; /**< (in Nm) max current = 0.75 A. Torque constant = 70.4 mNm/A.Max Torque = 70.4*0.75 = 52.8 mNm */
+      double maxPositiveTorque; /**< (in Nm) max current = 0.75 A. Torque constant = 70.4 mNm/A.Max Torque = 70.4*0.75 = 52.8 mNm */
 
-      static const double maxNegativeTorque; /**< max negative torque */
+      double maxNegativeTorque; /**< max negative torque */
 
-      static const double maxEffort; /**< maximum effort */
+      double maxEffort; /**< maximum effort */
       
-      static const double PGain_Pos; /**< Proportional gain for position control */
+      double PGain_Pos; /**< Proportional gain for position control */
 
-      static const double IGain_Pos; /**< Integral gain for position control */
+      double IGain_Pos; /**< Integral gain for position control */
 
-      static const double DGain_Pos; /**< Derivative gain for position control */
+      double DGain_Pos; /**< Derivative gain for position control */
 
       double xDotCmd; /**< Forward speed cmd */
 
@@ -194,10 +219,27 @@ namespace CONTROLLER
 
       double yawDotNew; /**< New rotational speed cmd (motion counter-clockwise is positive) */
 
+      double maxXDot;
+
+      double maxYDot;
+
+      double maxYawDot;
+
       double GetTime();
+
+      int wheelMode;
+
+      int casterMode;
 
       Robot *robot;
 
+      std::map<std::string,std::string> param_map;
+
+      std::string name;
+
+      void LoadParam(std::string label, double &value);
+
+      void LoadParam(std::string label, int &value);
   };
 }
 
