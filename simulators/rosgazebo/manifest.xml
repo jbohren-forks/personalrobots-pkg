@@ -11,6 +11,7 @@
   <depend package="libpr2HW" />
   <depend package="pr2Core" />
   <depend package="std_msgs" />
+  <depend package="pr2_msgs" />
   <depend package="rosthread" />
   <depend package="rosTF" />
   <depend package="gazebo_plugin" />

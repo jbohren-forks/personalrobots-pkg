@@ -6,6 +6,7 @@
 <url>http://pr.willowgarage.com</url>
 <depend package="roscpp"/>
 <depend package="std_msgs"/>
+<depend package="pr2_msgs"/>
 <depend package="pr2Core"/>
 <depend package="libpr2API"/>
 <depend package="libKDL"/>

@@ -2,7 +2,7 @@
 #include <rosthread/mutex.h>
 
 #include <std_msgs/PR2Arm.h>
-#include <rosgazebo/EndEffectorState.h>
+#include <pr2_msgs/EndEffectorState.h>
 
 #include <libpr2API/pr2API.h>
 
@@ -18,8 +18,8 @@ class InterpolatedKinematicController : public ros::node {
 public:
   
   InterpolatedKinematicController(void) : ros::node("interpolated_kinematic_controller") {
-    advertise<rosgazebo::EndEffectorState>("cmd_leftarm_cartesian");
-    advertise<rosgazebo::EndEffectorState>("cmd_rightarm_cartesian");
+    advertise<pr2_msgs::EndEffectorState>("cmd_leftarm_cartesian");
+    advertise<pr2_msgs::EndEffectorState>("cmd_rightarm_cartesian");
     subscribe("right_pr2arm_set_end_effector", _rightEndEffectorGoal, &InterpolatedKinematicController::setRightEndEffector);	
     subscribe("left_pr2arm_set_end_effector", _leftEndEffectorGoal, &InterpolatedKinematicController::setLeftEndEffector);
     subscribe("left_pr2arm_pos",  leftArmPosMsg,  &InterpolatedKinematicController::currentLeftArmPos);
@@ -58,15 +58,20 @@ public:
   }
 
   void publishFrame(bool isRightArm, const Frame& f) {
-    rosgazebo::EndEffectorState efs;
+    pr2_msgs::EndEffectorState efs;
     efs.set_rot_size(9);
     efs.set_trans_size(3);
+    std::cout << "Publishing rot ";
     for(int i = 0; i < 9; i++) {
       efs.rot[i] = f.M.data[i];
+      std::cout << efs.rot[i] << " ";
     }
+    std::cout << " trans ";
     for(int i = 0; i < 3; i++) {
       efs.trans[i] = f.p.data[i];
+      std::cout << efs.trans[i] << " ";
     }
+    std::cout << std::endl;
     if(isRightArm) {
       publish("cmd_rightarm_cartesian",efs);
     } else {
@@ -93,6 +98,8 @@ public:
     Vector move = r.p-start;
     double dist = move.Norm();
     move = move/dist;
+
+    std::cout << "Starting trans " << f.p.data[0] << " " << f.p.data[1] << " " << f.p.data[2] << std::endl;
     
     RotationalInterpolation_SingleAxis rotInterpolater;
     rotInterpolater.SetStartEnd(f.M, r.M);
@@ -105,6 +112,7 @@ public:
     for(int i=0;i<nSteps;i++) {
       f.p = start+(i+1)*move*step_size;
       f.M = rotInterpolater.Pos(angle_step*(i+1));
+      std::cout << "Starting trans " << f.p.data[0] << " " << f.p.data[1] << " " << f.p.data[2] << std::endl;
       publishFrame(isRightArm, f);
       usleep(1000000);
     }
@@ -115,8 +123,8 @@ public:
 
 private:
 
-  rosgazebo::EndEffectorState _leftEndEffectorGoal;
-  rosgazebo::EndEffectorState _rightEndEffectorGoal;
+  pr2_msgs::EndEffectorState _leftEndEffectorGoal;
+  pr2_msgs::EndEffectorState _rightEndEffectorGoal;
   std_msgs::PR2Arm leftArmPosMsg, rightArmPosMsg;
 
 };
