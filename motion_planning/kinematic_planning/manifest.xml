@@ -3,8 +3,8 @@
   <author>Ioan A. Sucan</author>
   <license>BSD</license>
   <depend package="roscpp" />
-  <depend package="std_msgs" />
-  <depend package="std_srvs" />
+  <depend package="robot_msgs" />
+  <depend package="robot_srvs" />
   <depend package="xmlparam" />
   <depend package="ompl" />
   <depend package="collision_space" />

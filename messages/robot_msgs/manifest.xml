@@ -1,0 +1,16 @@
+<package>
+  <description brief="Common ROS Messages">
+
+    Service definitions that are common for different robots
+
+  </description>
+  <author>Morgan Quigley/mquigley@cs.stanford.edu, Ken Conley/kwc@willowgarage.com</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com/wiki/std_msgs</url>
+  <logo>http://www.willowgarage.com/files/willowgarage/robot10.jpg</logo>
+  <depend package="std_msgs"/>
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
+</package>
+

@@ -83,8 +83,8 @@ Provides (name/type):
 
 #include <ros/node.h>
 #include <std_msgs/PointCloudFloat32.h>
-#include <std_msgs/KinematicPath.h>
-#include <std_srvs/KinematicMotionPlan.h>
+#include <robot_msgs/KinematicPath.h>
+#include <robot_srvs/KinematicMotionPlan.h>
 
 #include <urdf/URDF.h>
 #include <collision_space/environmentODE.h>
@@ -155,7 +155,7 @@ public:
 	
     }
     
-    bool plan(std_srvs::KinematicMotionPlan::request &req, std_srvs::KinematicMotionPlan::response &res)
+    bool plan(robot_srvs::KinematicMotionPlan::request &req, robot_srvs::KinematicMotionPlan::response &res)
     {
 	Model   *m = m_models[req.model_id];
 	Planner &p = m->planners[0];
@@ -163,11 +163,11 @@ public:
 	const int dim = req.start_state.vals_size;
 	if ((int)p.si->getStateDimension() != dim)
 	    return false;
-	/*
+	
 	libTF::Pose3D &tf = m->collisionSpace->models[m->collisionSpaceID]->rootTransform;  
 	tf.setPosition(req.transform.xt, req.transform.yt, req.transform.zt);
 	tf.setQuaternion(req.transform.xr, req.transform.yr, req.transform.zr, req.transform.w);
-	*/
+	
 
 	// set the 3D space bounding box for planning.
 	// if not specified in the request, infer it based on start + goal positions
@@ -188,10 +188,10 @@ public:
 	    goal->state->values[i] = req.goal_state.vals[i];
 	p.si->setGoal(goal);
 	
-	//	bool ok = p.mp->solve(req.allowed_time); 
+	bool ok = p.mp->solve(req.allowed_time); 
 
 	/* copy the solution to the result */
-	//	if (ok)
+	if (ok)
 	{
 	    ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());	    
 	    res.path.set_states_size(path->states.size());
@@ -258,7 +258,7 @@ private:
       
     struct Planner
     {
-	ompl::MotionPlanner_t             mp;
+	ompl::Planner_t                   mp;
 	ompl::SpaceInformationKinematic_t si;
 	int                               type;
     };
