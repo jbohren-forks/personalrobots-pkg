@@ -854,5 +854,6 @@
     head_tilt    
   </group>
 
+  <include>controllers.xml</include>
 
 </robot>
