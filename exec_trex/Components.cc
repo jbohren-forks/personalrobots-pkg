@@ -12,6 +12,7 @@
 #include "CalcCommandConstraint.hh"
 #include "CalcGlobalPathConstraint.hh"
 #include "CalcArmInverseKinematicsConstraint.hh"
+#include "CalcInterpolatedEndEffectorPosConstraint.hh"
 #include "CalcGraspPositionConstraint.hh"
 #include "CalcAngleDiffConstraint.hh"
 #include "CalcCommandConstraintPlayback.hh"
@@ -45,6 +46,7 @@ namespace TREX{
       REGISTER_CONSTRAINT(CalcGlobalPathConstraint, "calcGlobalPath", "Default");
       REGISTER_CONSTRAINT(CalcArmInverseKinematicsConstraint, "calcArmInverseKinematics", "Default");
       REGISTER_CONSTRAINT(CalcGraspPositionConstraint, "calcGraspPosition", "Default");
+      REGISTER_CONSTRAINT(CalcInterpolatedEndEffectorPosConstraint, "calcInterpolatedEndEffectorPos", "Default");
       REGISTER_CONSTRAINT(CalcAngleDiffConstraint, "calcAngleDiff", "Default");
     }
 

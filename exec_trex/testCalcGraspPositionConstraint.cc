@@ -93,6 +93,8 @@ int main(int argc, char** argv) {
 
     scope.clear();
 
+    exit(1);
+
     scope.push_back(bothVar2.getId());
     scope.push_back(rot_frame_1_1.getId());
     scope.push_back(rot_frame_1_2.getId());

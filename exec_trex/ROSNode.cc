@@ -3,6 +3,7 @@
 //external ros includes for messages
 #include <std_srvs/StaticMap.h>
 #include <std_msgs/BaseVel.h>
+#include <rosgazebo/EndEffectorState.h>
 #include "WavefrontPlanner.hh"
 
 //NDDL includes
@@ -19,6 +20,7 @@
 #include "LogManager.hh"
 
 using namespace std_msgs;
+using namespace KDL;
 static const double AllowableArmError = .05;
 static const double AllowableGraspError = .01;
 
@@ -114,6 +116,8 @@ namespace TREX {
     advertise<BaseVel>("cmd_vel");
     advertise<PR2Arm>("right_pr2arm_set_position");
     advertise<PR2Arm>("left_pr2arm_set_position");
+    advertise<rosgazebo::EndEffectorState>("cmd_leftarm_cartesian");
+    advertise<rosgazebo::EndEffectorState>("cmd_rightarm_cartesian");
     //subscribe("state", m_rcs_obs, &ROSNode::rcs_cb);
     subscribe("scan", laserMsg, &ROSNode::laserReceived);
     subscribe("left_pr2arm_pos", leftArmPosMsg, &ROSNode::leftArmPosReceived);
@@ -252,8 +256,8 @@ namespace TREX {
     
     std::cout << "Trying to dispatch arm.\n";
     if(cmd_arm->getPredicateName() == LabelStr("MoveArm.Active")) {
-      //figure out if it's left or right
       PR2Arm armGoal;
+      //figure out if it's left or right
       armGoal.turretAngle = cmd_arm->getVariable("turretAngle")->lastDomain().getSingletonValue();
       armGoal.shoulderLiftAngle = cmd_arm->getVariable("shoulderLiftAngle")->lastDomain().getSingletonValue();
       armGoal.upperarmRollAngle = cmd_arm->getVariable("upperarmRollAngle")->lastDomain().getSingletonValue();
@@ -264,8 +268,6 @@ namespace TREX {
       armGoal.gripperForceCmd = cmd_arm->getVariable("gripperForceCmd")->lastDomain().getSingletonValue();
       armGoal.gripperGapCmd = cmd_arm->getVariable("gripperGapCmd")->lastDomain().getSingletonValue();
 
-      //std::cout << "WTF: " << getObjectName(cmd_arm).toString() << std::endl;
-      
       if(getObjectName(cmd_arm)==LabelStr("moveRightArm")) {
 	debugMsg("ROSNode::Arm", "dispatching command for right arm.");
 	publish("right_pr2arm_set_position",armGoal);
@@ -282,12 +284,59 @@ namespace TREX {
     }
   }
 
-  void ROSNode::get_obs(std::vector<Observation*>& buff){
+  void ROSNode::dispatchEndEffector(const TokenId& cmd_end, TICK currentTick) {
+    if(cmd_end->getPredicateName() == LabelStr("EndEffectorGoal.Holds")) {
+      rosgazebo::EndEffectorState endGoal;
+      endGoal.set_rot_size(9);
+      endGoal.set_trans_size(3);
+      endGoal.rot[0] = cmd_end->getVariable("cmd_rot1_1")->lastDomain().getSingletonValue();
+      endGoal.rot[1] = cmd_end->getVariable("cmd_rot1_2")->lastDomain().getSingletonValue();
+      endGoal.rot[2] = cmd_end->getVariable("cmd_rot1_3")->lastDomain().getSingletonValue();
+      endGoal.rot[3] = cmd_end->getVariable("cmd_rot2_1")->lastDomain().getSingletonValue();
+      endGoal.rot[4] = cmd_end->getVariable("cmd_rot2_2")->lastDomain().getSingletonValue();
+      endGoal.rot[5] = cmd_end->getVariable("cmd_rot2_3")->lastDomain().getSingletonValue();
+      endGoal.rot[6] = cmd_end->getVariable("cmd_rot3_1")->lastDomain().getSingletonValue();
+      endGoal.rot[7] = cmd_end->getVariable("cmd_rot3_2")->lastDomain().getSingletonValue();
+      endGoal.rot[8] = cmd_end->getVariable("cmd_rot3_3")->lastDomain().getSingletonValue();
+      endGoal.trans[0] = cmd_end->getVariable("cmd_x")->lastDomain().getSingletonValue();
+      endGoal.trans[1] = cmd_end->getVariable("cmd_y")->lastDomain().getSingletonValue();
+      endGoal.trans[2] = cmd_end->getVariable("cmd_z")->lastDomain().getSingletonValue();
+      debugMsg("ROSNode::EndEffector", "Dispatching end frame " 
+	       << endGoal.rot[0] << " " 
+	       << endGoal.rot[1] << " " 
+	       << endGoal.rot[2] << " " 
+	       << endGoal.rot[3] << " " 
+	       << endGoal.rot[4] << " " 
+	       << endGoal.rot[5] << " " 
+	       << endGoal.rot[6] << " " 
+	       << endGoal.rot[7] << " " 
+	       << endGoal.rot[8] << " " 
+	       << endGoal.trans[0] << " " 
+	       << endGoal.trans[1] << " " 
+	       << endGoal.trans[2]); 
+	       
+      if(getObjectName(cmd_end) == LabelStr("rightEndEffectorGoal")) {
+	debugMsg("ROSNode::EndEffector", "dispatching command for right end effector");
+	publish("cmd_rightarm_cartesian", endGoal);
+      } else {
+	debugMsg("ROSNode::EndEffector", "dispatching command for left end effector");
+	publish("cmd_leftarm_cartesian", endGoal);
+      }
+    }
+  }
+
+  void ROSNode::get_obs(std::vector<Observation*>& buff, TICK currentTick){
     Observation* vs = get_vs_obs();
     if(vs != NULL)
       buff.push_back(vs);
 
-    get_laser_obs();
+    //get_laser_obs doesn't do anything
+    //get_laser_obs();
+
+    //arm observations
+    get_arm_obs(buff, currentTick);
+
+    get_end_effector_obs(buff, currentTick);
 
     //Observation* wpc = get_wpc_obs();
     //if(wpc != NULL)
@@ -364,25 +413,19 @@ namespace TREX {
     if(_rightArmInit && _leftArmInit) {
 
       if(currentTick != _lastActiveLeftArmDispatch) {
-	Observation* larm = get_left_arm_obs();
-	if(larm != NULL)
-	  buff.push_back(larm);
+	get_left_arm_obs(buff);
       }
       
       if(currentTick != _lastActiveRightArmDispatch) {
-	Observation* rarm = get_right_arm_obs();
-	if(rarm != NULL)
-	  buff.push_back(rarm);
+	get_right_arm_obs(buff);
       }
 	
       _generateFirstObservation = false;
     }
   }
 
-  Observation* ROSNode::get_left_arm_obs(){
+  void ROSNode::get_left_arm_obs(std::vector<Observation*>& buff){
     lock();
-    ObservationByValue* obs = NULL;
-    
     if(_generateFirstObservation || 
        (_leftArmActive &&
 	fabs(leftArmPosMsg.turretAngle-_lastLeftArmGoal.turretAngle) < AllowableArmError &&
@@ -396,26 +439,37 @@ namespace TREX {
       
       std::cout << "Pushing left arm inactive observation.\n";
 
-      obs = new ObservationByValue("moveLeftArm", "MoveArm.Inactive");
-      obs->push_back("acTurretAngle", new IntervalDomain(leftArmPosMsg.turretAngle));
-      obs->push_back("acShoulderLiftAngle", new IntervalDomain(leftArmPosMsg.shoulderLiftAngle));
-      obs->push_back("acUpperarmRollAngle", new IntervalDomain(leftArmPosMsg.upperarmRollAngle));
-      obs->push_back("acElbowAngle", new IntervalDomain(leftArmPosMsg.elbowAngle));
-      obs->push_back("acForearmRollAngle", new IntervalDomain(leftArmPosMsg.forearmRollAngle));
-      obs->push_back("acWristPitchAngle", new IntervalDomain(leftArmPosMsg.wristPitchAngle));
-      obs->push_back("acWristRollAngle", new IntervalDomain(leftArmPosMsg.wristRollAngle));
-      obs->push_back("acGripperForceCmd", new IntervalDomain(leftArmPosMsg.gripperForceCmd));
-      obs->push_back("acGripperGapCmd", new IntervalDomain(leftArmPosMsg.gripperGapCmd));
+      ObservationByValue* obs1 = new ObservationByValue("leftArmState", "ArmState.Holds");
+      obs1->push_back("acTurretAngle", new IntervalDomain(leftArmPosMsg.turretAngle));
+      obs1->push_back("acShoulderLiftAngle", new IntervalDomain(leftArmPosMsg.shoulderLiftAngle));
+      obs1->push_back("acUpperarmRollAngle", new IntervalDomain(leftArmPosMsg.upperarmRollAngle));
+      obs1->push_back("acElbowAngle", new IntervalDomain(leftArmPosMsg.elbowAngle));
+      obs1->push_back("acForearmRollAngle", new IntervalDomain(leftArmPosMsg.forearmRollAngle));
+      obs1->push_back("acWristPitchAngle", new IntervalDomain(leftArmPosMsg.wristPitchAngle));
+      obs1->push_back("acWristRollAngle", new IntervalDomain(leftArmPosMsg.wristRollAngle));
+      obs1->push_back("acGripperForceCmd", new IntervalDomain(leftArmPosMsg.gripperForceCmd));
+      obs1->push_back("acGripperGapCmd", new IntervalDomain(leftArmPosMsg.gripperGapCmd));
+      buff.push_back(obs1);
+
+      ObservationByValue* obs2 = new ObservationByValue("moveLeftArm", "MoveArm.Inactive");
+      obs2->push_back("acTurretAngle", new IntervalDomain(leftArmPosMsg.turretAngle));
+      obs2->push_back("acShoulderLiftAngle", new IntervalDomain(leftArmPosMsg.shoulderLiftAngle));
+      obs2->push_back("acUpperarmRollAngle", new IntervalDomain(leftArmPosMsg.upperarmRollAngle));
+      obs2->push_back("acElbowAngle", new IntervalDomain(leftArmPosMsg.elbowAngle));
+      obs2->push_back("acForearmRollAngle", new IntervalDomain(leftArmPosMsg.forearmRollAngle));
+      obs2->push_back("acWristPitchAngle", new IntervalDomain(leftArmPosMsg.wristPitchAngle));
+      obs2->push_back("acWristRollAngle", new IntervalDomain(leftArmPosMsg.wristRollAngle));
+      obs2->push_back("acGripperForceCmd", new IntervalDomain(leftArmPosMsg.gripperForceCmd));
+      obs2->push_back("acGripperGapCmd", new IntervalDomain(leftArmPosMsg.gripperGapCmd));
+      buff.push_back(obs2);
+			  
       _leftArmActive = false;
    }
     unlock();
-   return obs;
   }
     
-  Observation* ROSNode::get_right_arm_obs(){
+  void ROSNode::get_right_arm_obs(std::vector<Observation*>& buff){
     lock();
-    ObservationByValue* obs = NULL;
-    
     if(_generateFirstObservation ||
        (_rightArmActive &&
 	fabs(rightArmPosMsg.turretAngle-_lastRightArmGoal.turretAngle) < AllowableArmError &&
@@ -428,21 +482,146 @@ namespace TREX {
       //fabs(rightArmPosMsg.gripperGapCmd-_lastRightArmGoal.gripperGapCmd) < AllowableGraspError)) {
       std::cout << "Pushing right arm inactive observation.\n";
 
-      obs = new ObservationByValue("moveRightArm", "MoveArm.Inactive");
-      obs->push_back("acTurretAngle", new IntervalDomain(rightArmPosMsg.turretAngle));
-      obs->push_back("acShoulderLiftAngle", new IntervalDomain(rightArmPosMsg.shoulderLiftAngle));
-      obs->push_back("acUpperarmRollAngle", new IntervalDomain(rightArmPosMsg.upperarmRollAngle));
-      obs->push_back("acElbowAngle", new IntervalDomain(rightArmPosMsg.elbowAngle));
-      obs->push_back("acForearmRollAngle", new IntervalDomain(rightArmPosMsg.forearmRollAngle));
-      obs->push_back("acWristPitchAngle", new IntervalDomain(rightArmPosMsg.wristPitchAngle));
-      obs->push_back("acWristRollAngle", new IntervalDomain(rightArmPosMsg.wristRollAngle));
-      obs->push_back("acGripperForceCmd", new IntervalDomain(rightArmPosMsg.gripperForceCmd));
-      obs->push_back("acGripperGapCmd", new IntervalDomain(rightArmPosMsg.gripperGapCmd));
+      ObservationByValue* obs1 = new ObservationByValue("rightArmState", "ArmState.Holds");
+      obs1->push_back("acTurretAngle", new IntervalDomain(rightArmPosMsg.turretAngle));
+      obs1->push_back("acShoulderLiftAngle", new IntervalDomain(rightArmPosMsg.shoulderLiftAngle));
+      obs1->push_back("acUpperarmRollAngle", new IntervalDomain(rightArmPosMsg.upperarmRollAngle));
+      obs1->push_back("acElbowAngle", new IntervalDomain(rightArmPosMsg.elbowAngle));
+      obs1->push_back("acForearmRollAngle", new IntervalDomain(rightArmPosMsg.forearmRollAngle));
+      obs1->push_back("acWristPitchAngle", new IntervalDomain(rightArmPosMsg.wristPitchAngle));
+      obs1->push_back("acWristRollAngle", new IntervalDomain(rightArmPosMsg.wristRollAngle));
+      obs1->push_back("acGripperForceCmd", new IntervalDomain(rightArmPosMsg.gripperForceCmd));
+      obs1->push_back("acGripperGapCmd", new IntervalDomain(rightArmPosMsg.gripperGapCmd));
+      buff.push_back(obs1);
+
+      ObservationByValue* obs2 = new ObservationByValue("moveRightArm", "MoveArm.Inactive");
+      obs2->push_back("acTurretAngle", new IntervalDomain(rightArmPosMsg.turretAngle));
+      obs2->push_back("acShoulderLiftAngle", new IntervalDomain(rightArmPosMsg.shoulderLiftAngle));
+      obs2->push_back("acUpperarmRollAngle", new IntervalDomain(rightArmPosMsg.upperarmRollAngle));
+      obs2->push_back("acElbowAngle", new IntervalDomain(rightArmPosMsg.elbowAngle));
+      obs2->push_back("acForearmRollAngle", new IntervalDomain(rightArmPosMsg.forearmRollAngle));
+      obs2->push_back("acWristPitchAngle", new IntervalDomain(rightArmPosMsg.wristPitchAngle));
+      obs2->push_back("acWristRollAngle", new IntervalDomain(rightArmPosMsg.wristRollAngle));
+      obs2->push_back("acGripperForceCmd", new IntervalDomain(rightArmPosMsg.gripperForceCmd));
+      obs2->push_back("acGripperGapCmd", new IntervalDomain(rightArmPosMsg.gripperGapCmd));
+      buff.push_back(obs2);
       _rightArmActive = false;
     }
     unlock();
+  }
+
+  void ROSNode::get_end_effector_obs(std::vector<Observation*>& buff, TICK currentTick){
+   
+    if(_rightArmInit && _leftArmInit) {
+      Observation* larm = get_left_end_effector_obs();
+      if(larm != NULL) {
+	buff.push_back(larm);
+      }
+      Observation* rarm = get_right_end_effector_obs();
+      if(rarm != NULL) {
+	buff.push_back(rarm);
+      }
+    }
+  }
+
+  Observation* ROSNode::get_right_end_effector_obs(){
+    lock();
+    ObservationByValue* obs = NULL;
+    Frame f;
+    ConvertArmToEndEffectorFrame(rightArmPosMsg,
+				 PR2::FRAMEID_ARM_R_SHOULDER,
+				 f);
+    
+    obs = new ObservationByValue("rightEndEffectorState", "EndEffectorState.Holds");
+    obs->push_back("rot1_1", new IntervalDomain(f.M.data[0]));
+    obs->push_back("rot1_2", new IntervalDomain(f.M.data[1]));
+    obs->push_back("rot1_3", new IntervalDomain(f.M.data[2]));
+    obs->push_back("rot2_1", new IntervalDomain(f.M.data[3]));
+    obs->push_back("rot2_2", new IntervalDomain(f.M.data[4]));
+    obs->push_back("rot2_3", new IntervalDomain(f.M.data[5]));
+    obs->push_back("rot3_1", new IntervalDomain(f.M.data[6]));
+    obs->push_back("rot3_2", new IntervalDomain(f.M.data[7]));
+    obs->push_back("rot3_3", new IntervalDomain(f.M.data[8]));
+    obs->push_back("x", new IntervalDomain(f.p.data[0]));
+    obs->push_back("y", new IntervalDomain(f.p.data[1]));
+    obs->push_back("z", new IntervalDomain(f.p.data[2]));
+    unlock();
     return obs;
   }
+
+ Observation* ROSNode::get_left_end_effector_obs(){
+    lock();
+    ObservationByValue* obs = NULL;
+    Frame f;
+    ConvertArmToEndEffectorFrame(leftArmPosMsg,
+				 PR2::FRAMEID_ARM_L_SHOULDER,
+				 f);
+    
+    obs = new ObservationByValue("leftEndEffectorState", "EndEffectorState.Holds");
+    obs->push_back("rot1_1", new IntervalDomain(f.M.data[0]));
+    obs->push_back("rot1_2", new IntervalDomain(f.M.data[1]));
+    obs->push_back("rot1_3", new IntervalDomain(f.M.data[2]));
+    obs->push_back("rot2_1", new IntervalDomain(f.M.data[3]));
+    obs->push_back("rot2_2", new IntervalDomain(f.M.data[4]));
+    obs->push_back("rot2_3", new IntervalDomain(f.M.data[5]));
+    obs->push_back("rot3_1", new IntervalDomain(f.M.data[6]));
+    obs->push_back("rot3_2", new IntervalDomain(f.M.data[7]));
+    obs->push_back("rot3_3", new IntervalDomain(f.M.data[8]));
+    obs->push_back("x", new IntervalDomain(f.p.data[0]));
+    obs->push_back("y", new IntervalDomain(f.p.data[1]));
+    obs->push_back("z", new IntervalDomain(f.p.data[2]));
+    unlock();
+    return obs;
+  }
+
+  void ROSNode::ConvertArmToEndEffectorFrame(const PR2Arm arm,
+					     const unsigned int target_frame,
+					     Frame& f) {
+    //frame comes from forward kinematics
+    PR2_kinematics pr2_kin;
+    JntArray q = JntArray(pr2_kin.nJnts);
+    
+    q(0) = arm.turretAngle;
+    q(1) = arm.shoulderLiftAngle;
+    q(2) = arm.upperarmRollAngle;
+    q(3) = arm.elbowAngle;
+    q(4) = arm.forearmRollAngle;
+    q(5) = arm.wristPitchAngle;
+    q(6) = arm.wristRollAngle;
+
+    pr2_kin.FK(q,f);
+
+    //for now need to convert to funky shoulder frame
+  //   libTF::TFPose aPose;
+//     aPose.x = 0;
+//     aPose.y = 0;
+//     aPose.z = 0;
+//     aPose.roll = 0;
+//     aPose.pitch = 0;
+//     aPose.yaw = 0;
+//     aPose.time = 0;
+//     aPose.frame = target_frame;
+
+//     libTF::TFPose inShoulderFrame = tf.transformPose(FRAMEID_ODOM, aPose);
+
+//     f.p.data[0] -= inShoulderFrame.x;
+//     f.p.data[1] -= inShoulderFrame.y;
+//     f.p.data[2] -= inShoulderFrame.z;
+  }
+  
+
+  /*
+  Observation* ROSNode::get_end_effector_obs() {
+    lock();
+    ObservationByValue* obs = NULL;
+    
+    //take current arm position
+    //do transform to determine current end effector position in bizarre shoulder coordinates
+    //see if we're inactive using the same trick above
+
+
+  }
+  */
 
   bool ROSNode::isInitialized() const {
     return m_initialized;

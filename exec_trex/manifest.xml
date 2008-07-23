@@ -18,4 +18,5 @@
   <depend package="pr2Core" />
   <depend package="libpr2API" />
   <depend package="libKDL" />
+  <depend package="rosgazebo" />
 </package>

@@ -35,7 +35,7 @@ namespace TREX {
   bool ROSAdapter::synchronize(){
     debugMsg("ROSAdapter:synchronize", nameString() << "Checking..");
     std::vector<Observation*> obsBuffer;
-    m_node->get_obs(obsBuffer);
+    m_node->get_obs(obsBuffer,getCurrentTick());
 
     // Because the VelCommander is an abstracted timeline we are generating a value for it
     // that is hardwired
@@ -43,6 +43,40 @@ namespace TREX {
       ObservationByValue* obs = new ObservationByValue("baseGoal", "BaseGoal.Holds");
       obs->push_back("cmd_x", new IntervalDomain(0.0));
       obs->push_back("cmd_th", new IntervalDomain(0.0));
+      obsBuffer.push_back(obs);
+    }
+
+    if(getCurrentTick() == 0 && Agent::instance()->getOwner("rightEndEffectorGoal") == getId()){
+      ObservationByValue* obs = new ObservationByValue("rightEndEffectorGoal", "EndEffectorGoal.Holds");
+      obs->push_back("cmd_rot1_1", new IntervalDomain(0.0));
+      obs->push_back("cmd_rot1_2", new IntervalDomain(0.0));
+      obs->push_back("cmd_rot1_3", new IntervalDomain(0.0));
+      obs->push_back("cmd_rot2_1", new IntervalDomain(0.0));
+      obs->push_back("cmd_rot2_2", new IntervalDomain(0.0));
+      obs->push_back("cmd_rot2_3", new IntervalDomain(0.0));
+      obs->push_back("cmd_rot3_1", new IntervalDomain(0.0));
+      obs->push_back("cmd_rot3_2", new IntervalDomain(0.0));
+      obs->push_back("cmd_rot3_3", new IntervalDomain(0.0));
+      obs->push_back("cmd_x", new IntervalDomain(0.0));
+      obs->push_back("cmd_y", new IntervalDomain(0.0));
+      obs->push_back("cmd_z", new IntervalDomain(0.0));
+      obsBuffer.push_back(obs);
+    }
+
+    if(getCurrentTick() == 0 && Agent::instance()->getOwner("leftEndEffectorGoal") == getId()){
+      ObservationByValue* obs = new ObservationByValue("leftEndEffectorGoal", "EndEffectorGoal.Holds");
+      obs->push_back("cmd_rot1_1", new IntervalDomain(0.0));
+      obs->push_back("cmd_rot1_2", new IntervalDomain(0.0));
+      obs->push_back("cmd_rot1_3", new IntervalDomain(0.0));
+      obs->push_back("cmd_rot2_1", new IntervalDomain(0.0));
+      obs->push_back("cmd_rot2_2", new IntervalDomain(0.0));
+      obs->push_back("cmd_rot2_3", new IntervalDomain(0.0));
+      obs->push_back("cmd_rot3_1", new IntervalDomain(0.0));
+      obs->push_back("cmd_rot3_2", new IntervalDomain(0.0));
+      obs->push_back("cmd_rot3_3", new IntervalDomain(0.0));
+      obs->push_back("cmd_x", new IntervalDomain(0.0));
+      obs->push_back("cmd_y", new IntervalDomain(0.0));
+      obs->push_back("cmd_z", new IntervalDomain(0.0));
       obsBuffer.push_back(obs);
     }
 
@@ -62,6 +96,7 @@ namespace TREX {
     // Constants for Timelines handled
     static const LabelStr BASE_GOAL("BaseGoal");
     static const LabelStr MOVE_ARM_BEHAVIOR("MoveArm");
+    static const LabelStr MOVE_ENDEFFECTOR_BEHAVIOR("EndEffectorGoal");
 
     bool returnObservation = false;
 
@@ -69,13 +104,16 @@ namespace TREX {
       debugMsg("ROSAdapter:handleRequest", token->toString());
       m_node->dispatchVel(token);
       returnObservation = true;
-    }
-    else if(token->getBaseObjectType() == MOVE_ARM_BEHAVIOR) {
-      debugMsg("RCSArmAdapter:handleRequest", token->toString());
+    } else if(token->getBaseObjectType() == MOVE_ARM_BEHAVIOR) {
+      debugMsg("ROSArmAdapter:handleRequest", token->toString());
       m_node->dispatchArm(token, getCurrentTick());
-
       //assuming instantly active
       if(token->getPredicateName() == LabelStr("MoveArm.Active"))
+	returnObservation = true;
+    } else if(token->getBaseObjectType() == MOVE_ENDEFFECTOR_BEHAVIOR) {
+      debugMsg("ROSAdapter:handleRequest", token->toString());
+      m_node->dispatchEndEffector(token, getCurrentTick());
+      if(token->getPredicateName() == LabelStr("EndEffectorGoal.Holds"))
 	returnObservation = true;
     }
 

@@ -6,10 +6,10 @@
 #include <stdlib.h>
 #include <list>
 
-#define DTOR(a) ((a)*M_PI/180.0)
-
 // The Player lib we're using
 #include <libstandalone_drivers/plan.h>
+
+#define MY_DTOR(a) ((a)*M_PI/180.0)
 
 class WavefrontPlanner {
 

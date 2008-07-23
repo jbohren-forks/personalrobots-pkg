@@ -14,7 +14,8 @@ if ! $(exec_trex_READY) {
 	ModuleMain exec_trex : Executive.cc ROSAdapter.cc
 	ROSNode.cc Logger.cc LogClock.cc CalcCommandConstraintPlayback.cc
 	CalcGlobalPathConstraintPlayback.cc CalcCommandConstraint.cc Playback.cc
-	CalcGlobalPathConstraint.cc CalcArmInverseKinematicsConstraint.cc OrienteeringSolver.cc
+	CalcGlobalPathConstraint.cc CalcArmInverseKinematicsConstraint.cc
+	CalcInterpolatedEndEffectorPosConstraint.cc OrienteeringSolver.cc
 	CalcGraspPositionConstraint.cc CalcAngleDiffConstraint.cc GoalManager.cc
 	WavefrontPlanner.cc map_helpers.cc ExecDefs.cc Components.cc pr2.model.o
 	: TREX : exec_trex ;
@@ -42,6 +43,9 @@ if ! $(exec_trex_READY) {
 		handwave.wpc.nddl
 		handwave.ac.nddl
 		handwave.sim.nddl
+		grasp.0.exec.nddl
+		grasp.0.wpc.nddl
+		grasp.0.ac.nddl
 	;
 
 	local file ;

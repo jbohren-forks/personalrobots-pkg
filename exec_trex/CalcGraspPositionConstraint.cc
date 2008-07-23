@@ -52,12 +52,14 @@ namespace TREX {
     aPose.time = 0;
     aPose.frame = FRAMEID_ARM_R_SHOULDER;
 
+    std::cout << "Before\n";
+
     ROSNodeId rni = ROSNode::request();
     libTF::TFPose inShoulderFrame = rni->tf.transformPose(FRAMEID_ODOM, aPose);
 
-    //std::cout << "In shoulder frame in base x " << inShoulderFrame.x << std::endl;
-    //std::cout << "In shoulder frame in base y " << inShoulderFrame.y << std::endl;
-    //std::cout << "In shoulder frame in base z " << inShoulderFrame.z << std::endl;
+    std::cout << "In shoulder frame in base x " << inShoulderFrame.x << std::endl;
+    std::cout << "In shoulder frame in base y " << inShoulderFrame.y << std::endl;
+    std::cout << "In shoulder frame in base z " << inShoulderFrame.z << std::endl;
 
 
     //now we have the shoulder translation in world coordinates
@@ -66,19 +68,22 @@ namespace TREX {
     double objPosZ = m_variables[OBJECT_POS_Z]->lastDomain().getSingletonValue()-inShoulderFrame.z;
 
     //take object x,y,z in world and convert to shoulder coordinates
-  //   libTF::TFPose aPose;
-//     aPose.x = m_variables[OBJECT_POS_X]->lastDomain().getSingletonValue();
-//     aPose.y = m_variables[OBJECT_POS_Y]->lastDomain().getSingletonValue();
-//     aPose.z = m_variables[OBJECT_POS_Z]->lastDomain().getSingletonValue();
-//     aPose.roll = 0;
-//     aPose.pitch = 0;
-//     aPose.yaw = 0;
-//     aPose.time = 0;
-//     aPose.frame = FRAMEID_ODOM;
-
-    //ROSNodeId rni = ROSNode::request();
-    //libTF::TFPose inShoulderFrame = rni->tf.transformPose(FRAMEID_ARM_R_SHOULDER, aPose);
+    libTF::TFPose bPose;
+    bPose.x = 0;
+    bPose.y = 0;
+    bPose.z = 0;
+    bPose.roll = 0;
+    bPose.pitch = 0;
+    bPose.yaw = 0;
+    bPose.time = 0;
+    bPose.frame = FRAMEID_ARM_R_HAND;
     
+    libTF::TFPose inHandFrame = rni->tf.transformPose(FRAMEID_ODOM, bPose);
+ 
+    std::cout << "In hand frame in base x " << inHandFrame.x << std::endl;
+    std::cout << "In hand frame in base y " << inHandFrame.y << std::endl;
+    std::cout << "In hand frame in base z " << inHandFrame.z << std::endl;
+   
     Rotation r = Rotation::RotZ(DTOR(0));
     Vector v(objPosX,objPosY,objPosZ);
 

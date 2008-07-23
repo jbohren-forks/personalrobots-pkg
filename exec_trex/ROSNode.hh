@@ -20,6 +20,9 @@
 // For transform support
 #include <rosTF/rosTF.h>
 
+//for KDL
+#include <libKDL/kdl_kinematics.h>
+
 typedef struct
 {
   double* pts;
@@ -72,15 +75,22 @@ namespace TREX{
      */
     void dispatchArm(const TokenId& cmd_vel, TICK currentTick);    
 
+    void dispatchEndEffector(const TokenId& cmd_end, TICK currentTick);
+
     /**
      * Get all observations.
      */
-    void get_obs(std::vector<Observation*>& obsBuffer);
+    void get_obs(std::vector<Observation*>& obsBuffer, TICK currentTick);
 
     /**
      * Get all arm observations.
      */
     void get_arm_obs(std::vector<Observation*>& obsBuffer, TICK currentTick);
+
+    /**
+     * Get all arm observations.
+     */
+    void get_end_effector_obs(std::vector<Observation*>& buff, TICK currentTick);
 
     /**
      * test if the node is initialized with inbound messages it requires
@@ -108,9 +118,15 @@ namespace TREX{
     
     void get_laser_obs();
 
-    Observation* get_left_arm_obs();
-    Observation* get_right_arm_obs();
+    void get_left_arm_obs(std::vector<Observation*>& obsBuffer);
+    void get_right_arm_obs(std::vector<Observation*>& obsBuffer);
     
+    Observation* get_right_end_effector_obs();
+    Observation* get_left_end_effector_obs();
+
+    void ConvertArmToEndEffectorFrame(const std_msgs::PR2Arm arm,
+				      const unsigned int target_frame,
+				      KDL::Frame& f);
 
     /**
      * Adds a reference

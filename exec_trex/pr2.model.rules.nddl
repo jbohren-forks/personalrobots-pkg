@@ -515,6 +515,7 @@ MoveEndEffector::Active {
 Actions::SetEndEffectorGoal{
   // Bind to prior state to obtain current distance from target pose
   met_by(EndEffectorState.Holds pos);
+  eq(pos.object.isLeft, isLeft);
   float distanceToGo;
   bool done;
   calcDistance(distanceToGo, pos.x, pos.y, pos.z, x, y, z);
@@ -522,6 +523,7 @@ Actions::SetEndEffectorGoal{
 
   if(done == false){
     starts(EndEffectorGoal.Holds g);
+    eq(g.object.isLeft, isLeft);
     calcInterpolatedEndEffectorPos(END_EFFECTOR_STEP_SIZE,
 				   pos.rot1_1, pos.rot1_2, pos.rot1_3,
 				   pos.rot2_1, pos.rot2_2, pos.rot2_3,
@@ -590,8 +592,8 @@ MoveArm::Inactive {
   addEq(acForearmRollAngle,  [-.15 , .15], desForearmRollAngle);
   addEq(acWristPitchAngle, [-.15 , .15], desWristPitchAngle);
   addEq(acWristRollAngle,  [-.15 , .15], desWristRollAngle);
-  addEq(acGripperForceCmd,  [-25 , 25], desGripperForceCmd);
-  addEq(acGripperGapCmd,  [-.03 , .03], desGripperGapCmd);
+  //addEq(acGripperForceCmd,  [-25 , 25], desGripperForceCmd);
+  //addEq(acGripperGapCmd,  [-.03 , .03], desGripperGapCmd);
 
 }
 
