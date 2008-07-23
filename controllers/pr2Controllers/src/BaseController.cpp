@@ -114,6 +114,8 @@ CONTROLLER::CONTROLLER_ERROR_CODE BaseController::LoadXML(std::string filename)
    param_map = data.getDataTagValues("controller",this->name);   
 
    LoadParam("PGain",PGain);
+
+   printf("BC:: %f\n",PGain);
    LoadParam("DGain",DGain);
    LoadParam("IGain",IGain);
 
