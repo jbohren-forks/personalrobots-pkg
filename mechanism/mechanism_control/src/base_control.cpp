@@ -1,6 +1,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
-// Copyright (C) 2008, Eric Berger
+// Copyright (C) 2008, Willow Garage Inc.
 //
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -9,7 +9,7 @@
 //   * Redistributions in binary form must reproduce the above copyright 
 //     notice, this list of conditions and the following disclaimer in the 
 //     documentation and/or other materials provided with the distribution.
-//   * Neither the name of Stanford University nor the names of its 
+//   * Neither the name of Willow Garage Inc. nor the names of its 
 //     contributors may be used to endorse or promote products derived from 
 //     this software without specific prior written permission.
 //   
@@ -40,8 +40,8 @@ const double maxXDot = 1;
 const double maxYDot = 1;
 const double maxYawDot = 1;
 
-MechanismControl::MechanismControl(HardwareInterface *hw){
-  this->hw = hw;
+MechanismControl::MechanismControl(){
+  this->hw = NULL;
 }
 
 int notDone = 1;
@@ -58,7 +58,8 @@ double GetTime()
 }
 
 
-void MechanismControl::Init(){
+void MechanismControl::init(HardwareInterface *hw){
+  this->hw = hw;
   r = new Robot("robot"); 
 
   r->numJoints = BASE_NUM_JOINTS;
@@ -78,12 +79,8 @@ void MechanismControl::Init(){
      hw->actuator[ii].command.enable = true;
      r->joint[ii].effortLimit = maxPositiveTorque;
   }
-  //  SimpleTransmission *sc = new SimpleTransmission(joint,&hi->actuator[0],1,1,14000);
   controller = new BaseController(r);
   controller->Init();
-  //controller = new JointController();
-  //controller->Init(pGain, iGain, dGain, IMax, IMin, ETHERDRIVE_SPEED, GetTime(), maxPositiveTorque, maxNegativeTorque, maxEffort, &(r->joint[0]));
-  //controller->EnableController();
 }
 
 void MechanismControl::update()//This function is called only from the realtime loop.  Everything it calls must also be realtime safe.
@@ -111,6 +108,7 @@ void MechanismControl::update()//This function is called only from the realtime 
   }
 }
 
+/*
 BaseTest::BaseTest(MechanismControl *mbc) : ros::node("BaseTest"){
   subscribe("joy", joy_msg, &BaseTest::wiiInput); 
   this->mbc = mbc;
@@ -138,7 +136,9 @@ void BaseTest::wiiInput() {
   mbc->controller->setVelocity(vx,vy,vw);
   printf("vx: %f, vy: %f, vw: %f\n", vx, vy, vw);
 }
+*/
 
+/*
 int main(int argc, char *argv[]){
 
   ros::init(argc,argv);
@@ -194,3 +194,4 @@ int main(int argc, char *argv[]){
   delete(hi);
 
 }
+*/

@@ -1,6 +1,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
-// Copyright (C) 2008, Eric Berger
+// Copyright (C) 2008, Willow Garage, Inc.
 //
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -9,7 +9,7 @@
 //   * Redistributions in binary form must reproduce the above copyright 
 //     notice, this list of conditions and the following disclaimer in the 
 //     documentation and/or other materials provided with the distribution.
-//   * Neither the name of Stanford University nor the names of its 
+//   * Neither the name of Willow Garage, Inc. nor the names of its 
 //     contributors may be used to endorse or promote products derived from 
 //     this software without specific prior written permission.
 //   
@@ -52,7 +52,7 @@ class MechanismControl{
 
   public:
 
-  MechanismControl(HardwareInterface *hw);
+  MechanismControl();
 
   void update(); //Must be realtime safe
 
@@ -60,7 +60,7 @@ class MechanismControl{
 
   void requestController(const char *type, const char *ns);
 
-  void Init();
+  void init(HardwareInterface *hw);
 
   BaseController *controller;
 
@@ -79,19 +79,21 @@ class MechanismControl{
   Robot *r;
 };
 
+/*
 class BaseTest : public ros::node{ 
 
 public:
 
-  BaseTest(MechanismControl *mbcl);
+   //BaseTest(MechanismControl *mbcl);
 
-  joy::Joy joy_msg;
+   //joy::Joy joy_msg;
 
-  void wiiInput();
+   //void wiiInput();
 
   float vx, vy, vw;
 
   MechanismControl *mbc;
 };
+*/
 
 #endif
