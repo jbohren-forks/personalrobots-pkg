@@ -13,7 +13,7 @@
 int main( int argc, char** argv )
 {
     if (argc == 1) {
-        std::cerr << "Usage: ./censure_detect -i image.pgm -o image.key "
+        std::cerr << "Usage: ./willow_detect -i image.pgm -o image.key "
                   << "[-t warp.xfm -i2 warped.pgm -o2 warped.key] [options]\n"
                   << "  number of points to take: -p 800\n"
                   << "  number of scales:         -s 7\n"
@@ -77,7 +77,7 @@ int main( int argc, char** argv )
     WgDetector detector(cvSize(W, H), scales, thres, line_thres);
     std::vector<Keypoint> keypts;
     {
-        Timer t("Censure detector");
+        Timer t("Willow detector");
         keypts = detector.DetectPoints(source);
     }
 
@@ -100,14 +100,9 @@ int main( int argc, char** argv )
                                       scales, thres, line_thres);
         std::vector<Keypoint> warp_keypts;
         {
-            Timer t("Censure detector (warped)");
+            Timer t("Willow detector (warped)");
             warp_keypts = warp_detector.DetectPoints(warped);
         }
-        /*
-        warp_keypts.erase(std::remove_if(warp_keypts.begin(), warp_keypts.end(),
-                                         LineThreshold()),
-                          warp_keypts.end());
-        */
         warp_keypts.erase(std::remove_if(warp_keypts.begin(), warp_keypts.end(),
                                          OutsideSource(W, H, inv)),
                           warp_keypts.end());
