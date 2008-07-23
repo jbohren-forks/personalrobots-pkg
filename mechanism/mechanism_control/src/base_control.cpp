@@ -78,7 +78,8 @@ void MechanismControl::init(HardwareInterface *hw){
      hw->actuator[ii].command.enable = true;
      r->joint[ii].effortLimit = maxPositiveTorque;
   }
-  controller = new BaseController(r);
+  controller = new BaseController(r,"baseController");
+  controller->LoadXML("/u/sachinc/projects/pr2/ros-pkg/robot_descriptions/wg_robot_description/pr2/pr2.xml");
   controller->Init();
 }
 
