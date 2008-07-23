@@ -78,7 +78,7 @@ class GatherExamples:
             #diff = time.time() - before
             #print 'took %.2f seconds to run or %.2f fps' % (diff, 1.0/diff)
             if laser_blob != None:
-                instance = blob_to_input_instance(image, laser_blob)
+                instance = blob_to_input_instance(image, laser_blob, LaserPointerDetector.CLASSIFICATION_WINDOW_WIDTH)
                 if instance is not None:
                     self.examples.append(instance)
                     print 'got', len(self.examples), 'instances'
@@ -187,7 +187,7 @@ class LaserPointerDetectorNode:
                     self.debug   = not self.debug"""
 
     def _make_windows(self):
-        windows = ['video', 'right', 'thresholded', 'motion', 'intensity']
+        windows = ['video', 'right', 'thresholded', 'motion', 'intensity', 'patch', 'big_patch']
         for n in windows:
             hg.cvNamedWindow(n, 1)
         hg.cvMoveWindow("video",       0,   0)

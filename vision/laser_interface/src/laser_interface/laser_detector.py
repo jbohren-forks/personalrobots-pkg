@@ -615,8 +615,7 @@ def blob_to_rect(blob, classification_window_width=LaserPointerDetector.CLASSIFI
     else:
         return r
 
-def blob_to_input_instance(image, blob, 
-        classification_window_width=LaserPointerDetector.CLASSIFICATION_WINDOW_WIDTH):
+def blob_to_input_instance(image, blob, classification_window_width):
     patch_size = classification_window_width*2+1
     small_r    = blob_to_rect(blob, classification_window_width=classification_window_width)
     big_r      = blob_to_rect(blob, classification_window_width=classification_window_width*2)
@@ -624,6 +623,8 @@ def blob_to_input_instance(image, blob,
         return None
     small_patch        = cv.cvGetSubRect(image, small_r.as_cv_rect())
     big_patch          = cv.cvGetSubRect(image, big_r.as_cv_rect())
+    hg.cvShowImage('patch', small_patch)
+    hg.cvShowImage('big_patch', big_patch)
     big_patch_rescaled = cv.cvCreateImage(cv.cvSize(int(classification_window_width/2), int(classification_window_width/2)), 8, 3)
     cv.cvResize(big_patch, big_patch_rescaled, cv.CV_INTER_LINEAR );
 
