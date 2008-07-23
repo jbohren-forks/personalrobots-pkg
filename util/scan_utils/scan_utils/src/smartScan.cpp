@@ -1306,8 +1306,6 @@ void SmartScan::subtractScan(const SmartScan *target, float thresh)
 
 	int keptPoints = size();
 	for (int i=0; i<target->size(); i++) {
-	  if(i%1000==1) 
-	    cout << "point " << i << " of " << target->size() << endl;
 	  
 	  //a point from the target
 	  std_msgs::Point3DFloat32 p = target->getPoint(i);
