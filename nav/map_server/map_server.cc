@@ -36,8 +36,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-// We use gdk-pixbuf to load the image from disk
-#include <gdk-pixbuf/gdk-pixbuf.h>
+// We use SDL_image to load the image from disk
+#include <SDL/SDL_image.h>
 
 #include "ros/node.h"
 #include "std_srvs/StaticMap.h"
@@ -104,32 +104,28 @@ int main(int argc, char **argv)
 bool
 MapServer::loadMapFromFile(const char* fname, double res, bool negate)
 {
-  GdkPixbuf* pixbuf;
-  guchar* pixels;
-  guchar* p;
-  int rowstride, n_channels, bps;
-  GError* error = NULL;
+  SDL_Surface* img;
+
+  unsigned char* pixels;
+  unsigned char* p;
+  int rowstride, n_channels;
   unsigned int i,j;
   int k;
   double occ;
   int color_sum;
   double color_avg;
 
-  // Initialize glib
-  g_type_init();
-
   printf("loading image file: %s...", fname);
   fflush(stdout);
 
-  // Read the image
-  if(!(pixbuf = gdk_pixbuf_new_from_file(fname, &error)))
+  if(!(img = IMG_Load(fname)))
   {
     printf("failed to open image file %s", fname);
     return(false);
   }
 
-  map_resp.map.width = gdk_pixbuf_get_width(pixbuf);
-  map_resp.map.height = gdk_pixbuf_get_height(pixbuf);
+  map_resp.map.width = img->w;
+  map_resp.map.height = img->h;
   map_resp.map.resolution = res;
   // TODO: make origin configurable
   map_resp.map.origin.x = 0.0;
@@ -138,23 +134,19 @@ MapServer::loadMapFromFile(const char* fname, double res, bool negate)
 
   map_resp.map.set_data_size(map_resp.map.width * map_resp.map.height);
 
-  rowstride = gdk_pixbuf_get_rowstride(pixbuf);
-  bps = gdk_pixbuf_get_bits_per_sample(pixbuf)/8;
-  n_channels = gdk_pixbuf_get_n_channels(pixbuf);
-  // This seems to be broken somehow
-  //if(gdk_pixbuf_get_has_alpha(pixbuf))
-    //n_channels++;
+  rowstride = img->pitch;
+  n_channels = img->format->BytesPerPixel;
 
   // Read data
-  pixels = gdk_pixbuf_get_pixels(pixbuf);
+  pixels = (unsigned char*)(img->pixels);
   for(j = 0; j < map_resp.map.height; j++)
   {
     for (i = 0; i < map_resp.map.width; i++)
     {
-      p = pixels + j*rowstride + i*n_channels*bps;
+      p = pixels + j*rowstride + i*n_channels;
       color_sum = 0;
       for(k=0;k<n_channels;k++)
-        color_sum += *(p + (k * bps));
+        color_sum += *(p + (k));
       color_avg = color_sum / (double)n_channels;
 
       if(negate)
@@ -170,7 +162,7 @@ MapServer::loadMapFromFile(const char* fname, double res, bool negate)
     }
   }
 
-  gdk_pixbuf_unref(pixbuf);
+  SDL_FreeSurface(img);
 
   puts("Done.");
   printf("read a %d X %d map\n", map_resp.map.width, map_resp.map.height);
