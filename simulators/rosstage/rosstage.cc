@@ -241,7 +241,7 @@ StageNode::Update()
     }
 
     // TODO: get the frame ID from somewhere
-    this->laserMsg.header.frame_id = FRAMEID_LASER;
+    this->laserMsg.header.frame_id = tf.lookup("FRAMEID_LASER");
     this->laserMsg.header.stamp.from_double(world->SimTimeNow() / 1e6);
     //this->laserMsg.header.stamp.sec = 
             //(unsigned long)floor(world->SimTimeNow() / 1e6);
@@ -262,7 +262,7 @@ StageNode::Update()
   this->odomMsg.vel.th = v.a;
   this->odomMsg.stall = this->positionmodel->Stall();
   // TODO: get the frame ID from somewhere
-  this->odomMsg.header.frame_id = FRAMEID_ODOM;
+  this->odomMsg.header.frame_id = tf.lookup("FRAMEID_ODOM");
 
   this->odomMsg.header.stamp.from_double(world->SimTimeNow() / 1e6);
   //this->odomMsg.header.stamp.sec = 
@@ -275,16 +275,17 @@ StageNode::Update()
   //  printf("%u \n",world->SimTimeNow());
   printf("time: %u, %u \n",odomMsg.header.stamp.sec, odomMsg.header.stamp.nsec);
 
-  tf.sendInverseEuler(FRAMEID_ODOM,
-                      FRAMEID_ROBOT,
+  tf.sendInverseEuler("FRAMEID_ODOM",
+                      "FRAMEID_ROBOT",
                       odomMsg.pos.x,
                       odomMsg.pos.y,
                       0.0,
                       odomMsg.pos.th,
                       0.0,
                       0.0,
-                      odomMsg.header.stamp.sec,
-                      odomMsg.header.stamp.nsec);
+                      odomMsg.header.stamp);//rostime?
+                      //                      ros::Time(odomMsg.header.stamp.sec,
+                      //odomMsg.header.stamp.nsec));
   
   this->lock.unlock();
 }

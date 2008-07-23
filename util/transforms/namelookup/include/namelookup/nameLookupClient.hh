@@ -11,15 +11,11 @@ class nameLookupClient
 public:
   nameLookupClient(ros::node &aNode): myNode(aNode)
   {
-    //printf("Constructed nameLoookupClient\n");
     pthread_mutex_init(&protect_call, NULL);
   };
 
   int lookup(std::string str_in)
   {
-    static std::map<std::string, int> nameMap;  //This is here not a member because of initialization order issues.  
-    //    printf("Start lookup\n");
-    //    return lookupOnServer(str_in); // Using this instead exposes race condition in wavefron_ player
     std::map<std::string, int>::iterator it;
     it = nameMap.find(str_in);
     if ( it == nameMap.end())
@@ -34,12 +30,10 @@ public:
             value = lookupOnServer(str_in);
           };
         nameMap[str_in] = value;
-        //  printf("NOT FOUND\n");
         return value;
       }
     else
       {
-        //printf("FOUDN\n");
         return (*it).second;
       }
     
@@ -50,7 +44,7 @@ public:
   
 private:
   ros::node &myNode;
-  
+  std::map<std::string, int> nameMap;  
   pthread_mutex_t protect_call;
 
   int lookupOnServer(std::string str_in)
@@ -58,7 +52,6 @@ private:
     namelookup::NameToNumber::request req;
     namelookup::NameToNumber::response res;
     req.name = myNode.map_name(str_in);
-    //printf("About to lock\n");
     pthread_mutex_lock(&protect_call);   
     if (ros::service::call("/nameToNumber", req, res))
       {

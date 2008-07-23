@@ -288,7 +288,7 @@ main(int argc, char** argv)
       en.odom.vel.th = pdata->vel.pa;
       en.odom.stall = pdata->stall;
 
-      en.odom.header.frame_id = FRAMEID_ODOM;
+      en.odom.header.frame_id = tf.lookup("FRAMEID_ODOM");
       
       en.odom.header.stamp.sec = (long long unsigned int)floor(hdr->timestamp);
       en.odom.header.stamp.sec = (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL);
@@ -297,16 +297,16 @@ main(int argc, char** argv)
       // Publish the new data
       en.publish("odom", en.odom);
 
-      en.tf.sendInverseEuler(FRAMEID_ODOM,
-			  FRAMEID_ROBOT,
-			  pdata->pos.px,
-			  pdata->pos.py,
-			  0.0,
-			  pdata->pos.pa,
-			  0.0,
-			  0.0,
-			  (long long unsigned int)floor(hdr->timestamp),
-			  (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL));
+      en.tf.sendInverseEuler("FRAMEID_ODOM",
+                             "FRAMEID_ROBOT",
+                             pdata->pos.px,
+                             pdata->pos.py,
+                             0.0,
+                             pdata->pos.pa,
+                             0.0,
+                             0.0,
+                             ros::Time((long long unsigned int)floor(hdr->timestamp),
+                                       (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL)));
       
       std::cout <<"Sent 32" <<std::endl;
 

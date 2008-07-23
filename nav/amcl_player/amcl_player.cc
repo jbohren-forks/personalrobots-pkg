@@ -370,16 +370,16 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
 
     
     // publish new transform map->odom
-    this->tf->sendEuler(FRAMEID_ROBOT,
-                        FRAMEID_MAP,
+    this->tf->sendEuler("FRAMEID_ROBOT",
+                        "FRAMEID_MAP",
                         pdata->pos.px,
                         pdata->pos.py,
                         0.0,
                         pdata->pos.pa,
                         0.0,
                         0.0,
-			(long long unsigned int)floor(hdr->timestamp),
-                        (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL));
+			ros::Time((long long unsigned int)floor(hdr->timestamp),
+                        (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL)));
 
     /*
     printf("lpose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",

@@ -5,6 +5,7 @@
   </description>
   <author>Morgan Quigley</author>
   <license>BSD</license>
+  <depend package="namelookup"/>
   <depend package="sicktoolbox"/>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>

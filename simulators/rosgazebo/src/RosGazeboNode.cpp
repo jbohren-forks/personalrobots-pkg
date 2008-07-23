@@ -478,7 +478,7 @@ RosGazeboNode::Update()
       this->laserMsg.intensities[i] = this->intensities[i];
     }
 
-    this->laserMsg.header.frame_id = FRAMEID_LASER;
+    this->laserMsg.header.frame_id = tf.lookup("FRAMEID_LASER");
     this->laserMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
     this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->laserMsg.header.stamp.sec) );
 
@@ -511,7 +511,7 @@ RosGazeboNode::Update()
   // this->odomMsg.stall = this->positionmodel->Stall();
 
   // TODO: get the frame ID from somewhere
-  this->odomMsg.header.frame_id = FRAMEID_ODOM;
+  this->odomMsg.header.frame_id = tf.lookup("FRAMEID_ODOM");
 
   this->odomMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
   this->odomMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->odomMsg.header.stamp.sec) );
@@ -521,16 +521,15 @@ RosGazeboNode::Update()
   /*  frame transforms                                           */
   /*                                                             */
   /***************************************************************/
-  tf.sendInverseEuler(FRAMEID_ODOM,
-                      FRAMEID_ROBOT,
+  tf.sendInverseEuler("FRAMEID_ODOM",
+                      "FRAMEID_ROBOT",
                       odomMsg.pos.x,
                       odomMsg.pos.y,
                       0.0,
                       odomMsg.pos.th,
                       0.0,
                       0.0,
-                      odomMsg.header.stamp.sec,
-                      odomMsg.header.stamp.nsec);
+                      odomMsg.header.stamp);
 
   // This publish call resets odomMsg.header.stamp.sec and 
   // odomMsg.header.stamp.nsec to zero.  Thus, it must be called *after*
@@ -685,34 +684,32 @@ RosGazeboNode::Update()
   /*                                                             */
   /***************************************************************/
   //this->PR2Copy->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw); // actual CoM of base
-  tf.sendEuler(PR2::FRAMEID_BASE,
-               FRAMEID_ODOM,
+  tf.sendEuler("FRAMEID_BASE",
+               "FRAMEID_ODOM",
                x,
                y,
                z-0.13, /* half height of base box */
                yaw,
                pitch,
                roll,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
   //std::cout << "base y p r " << yaw << " " << pitch << " " << roll << std::endl;
 
   // base = center of the bottom of the base box
   // torso = midpoint of bottom of turrets
-  tf.sendEuler(PR2::FRAMEID_TORSO,
-               PR2::FRAMEID_BASE,
+  tf.sendEuler("FRAMEID_TORSO",
+               "FRAMEID_BASE",
                PR2::BASE_TORSO_OFFSET.x,
                PR2::BASE_TORSO_OFFSET.y,
                PR2::BASE_TORSO_OFFSET.z, /* FIXME: spine elevator not accounted for */
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   // arm_l_turret = bottom of left turret
-  tf.sendEuler(PR2::FRAMEID_ARM_L_TURRET,
-               PR2::FRAMEID_TORSO,
+  tf.sendEuler("FRAMEID_ARM_L_TURRET",
+               "FRAMEID_TORSO",
                PR2::TORSO_LEFT_ARM_PAN_OFFSET.x,
                PR2::TORSO_LEFT_ARM_PAN_OFFSET.y,
                PR2::TORSO_LEFT_ARM_PAN_OFFSET.z,
@@ -720,274 +717,251 @@ RosGazeboNode::Update()
                //0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
   //std::cout << "left pan angle " << larm.turretAngle << std::endl;
 
   // arm_l_shoulder = center of left shoulder pitch bracket
-  tf.sendEuler(PR2::FRAMEID_ARM_L_SHOULDER,
-               PR2::FRAMEID_ARM_L_TURRET,
+  tf.sendEuler("FRAMEID_ARM_L_SHOULDER",
+               "FRAMEID_ARM_L_TURRET",
                PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.x,
                PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.y,
                PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.z,
                0.0,
                larm.shoulderLiftAngle,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   // arm_l_upperarm = upper arm with roll DOF, at shoulder pitch center
-  tf.sendEuler(PR2::FRAMEID_ARM_L_UPPERARM,
-               PR2::FRAMEID_ARM_L_SHOULDER,
+  tf.sendEuler("FRAMEID_ARM_L_UPPERARM",
+               "FRAMEID_ARM_L_SHOULDER",
                PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.x,
                PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.y,
                PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.z,
                0.0,
                0.0,
                larm.upperarmRollAngle,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   //frameid_arm_l_elbow = elbow pitch bracket center of rotation
-  tf.sendEuler(PR2::FRAMEID_ARM_L_ELBOW,
-               PR2::FRAMEID_ARM_L_UPPERARM,
+  tf.sendEuler("FRAMEID_ARM_L_ELBOW",
+               "FRAMEID_ARM_L_UPPERARM",
                PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.x,
                PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.y,
                PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.z,
                0.0,
                larm.elbowAngle,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   //frameid_arm_l_forearm = forearm roll DOR, at elbow pitch center
-  tf.sendEuler(PR2::FRAMEID_ARM_L_FOREARM,
-               PR2::FRAMEID_ARM_L_ELBOW,
+  tf.sendEuler("FRAMEID_ARM_L_FOREARM",
+               "FRAMEID_ARM_L_ELBOW",
                PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.x,
                PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.y,
                PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.z,
                0.0,
                0.0,
                larm.forearmRollAngle,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   // arm_l_wrist = wrist pitch DOF.
-  tf.sendEuler(PR2::FRAMEID_ARM_L_WRIST,
-               PR2::FRAMEID_ARM_L_FOREARM,
+  tf.sendEuler("FRAMEID_ARM_L_WRIST",
+               "FRAMEID_ARM_L_FOREARM",
                PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.x,
                PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.y,
                PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.z,
                0.0,
                larm.wristPitchAngle,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   // arm_l_hand = hand roll DOF, center at wrist pitch center
-  tf.sendEuler(PR2::FRAMEID_ARM_L_HAND,
-               PR2::FRAMEID_ARM_L_WRIST,
+  tf.sendEuler("FRAMEID_ARM_L_HAND",
+               "FRAMEID_ARM_L_WRIST",
                PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.x,
                PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.y,
                PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.z,
                0.0,
                0.0,
                larm.wristRollAngle,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   // FIXME: not implemented
-  tf.sendEuler(PR2::FRAMEID_ARM_L_FINGER_1,
-               PR2::FRAMEID_ARM_L_HAND,
+  tf.sendEuler("FRAMEID_ARM_L_FINGER_1",
+               "FRAMEID_ARM_L_HAND",
                0.05,
                0.025,
                0.0,
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   // FIXME: not implemented
-  tf.sendEuler(PR2::FRAMEID_ARM_L_FINGER_2,
-               PR2::FRAMEID_ARM_L_HAND,
+  tf.sendEuler("FRAMEID_ARM_L_FINGER_2",
+               "FRAMEID_ARM_L_HAND",
                0.05,
                -0.025,
                0.0,
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
 
   // arm_r_turret = bottom of right turret
-  tf.sendEuler(PR2::FRAMEID_ARM_R_TURRET,
-               PR2::FRAMEID_TORSO,
+  tf.sendEuler("FRAMEID_ARM_R_TURRET",
+               "FRAMEID_TORSO",
                PR2::TORSO_RIGHT_ARM_PAN_OFFSET.x,
                PR2::TORSO_RIGHT_ARM_PAN_OFFSET.y,
                PR2::TORSO_RIGHT_ARM_PAN_OFFSET.z,
                rarm.turretAngle,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   // arm_r_shoulder = center of right shoulder pitch bracket
-  tf.sendEuler(PR2::FRAMEID_ARM_R_SHOULDER,
-               PR2::FRAMEID_ARM_R_TURRET,
+  tf.sendEuler("FRAMEID_ARM_R_SHOULDER",
+               "FRAMEID_ARM_R_TURRET",
                PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.x,
                PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.y,
                PR2::ARM_PAN_SHOULDER_PITCH_OFFSET.z,
                0.0,
                rarm.shoulderLiftAngle,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   // arm_r_upperarm = upper arm with roll DOF, at shoulder pitch center
-  tf.sendEuler(PR2::FRAMEID_ARM_R_UPPERARM,
-               PR2::FRAMEID_ARM_R_SHOULDER,
+  tf.sendEuler("FRAMEID_ARM_R_UPPERARM",
+               "FRAMEID_ARM_R_SHOULDER",
                PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.x,
                PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.y,
                PR2::ARM_SHOULDER_PITCH_ROLL_OFFSET.z,
                0.0,
                0.0,
                rarm.upperarmRollAngle,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   //frameid_arm_r_elbow = elbow pitch bracket center of rotation
-  tf.sendEuler(PR2::FRAMEID_ARM_R_ELBOW,
-               PR2::FRAMEID_ARM_R_UPPERARM,
+  tf.sendEuler("FRAMEID_ARM_R_ELBOW",
+               "FRAMEID_ARM_R_UPPERARM",
                PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.x,
                PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.y,
                PR2::ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.z,
                0.0,
                rarm.elbowAngle,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   //frameid_arm_r_forearm = forearm roll DOR, at elbow pitch center
-  tf.sendEuler(PR2::FRAMEID_ARM_R_FOREARM,
-               PR2::FRAMEID_ARM_R_ELBOW,
+  tf.sendEuler("FRAMEID_ARM_R_FOREARM",
+               "FRAMEID_ARM_R_ELBOW",
                PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.x,
                PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.y,
                PR2::ELBOW_PITCH_ELBOW_ROLL_OFFSET.z,
                0.0,
                0.0,
                rarm.forearmRollAngle,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   // arm_r_wrist = wrist pitch DOF.
-  tf.sendEuler(PR2::FRAMEID_ARM_R_WRIST,
-               PR2::FRAMEID_ARM_R_FOREARM,
+  tf.sendEuler("FRAMEID_ARM_R_WRIST",
+               "FRAMEID_ARM_R_FOREARM",
                PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.x,
                PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.y,
                PR2::ELBOW_ROLL_WRIST_PITCH_OFFSET.z,
                0.0,
                rarm.wristPitchAngle,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   // arm_r_hand = hand roll DOF, center at wrist pitch center
-  tf.sendEuler(PR2::FRAMEID_ARM_R_HAND,
-               PR2::FRAMEID_ARM_R_WRIST,
+  tf.sendEuler("FRAMEID_ARM_R_HAND",
+               "FRAMEID_ARM_R_WRIST",
                PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.x,
                PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.y,
                PR2::WRIST_PITCH_WRIST_ROLL_OFFSET.z,
                0.0,
                0.0,
                rarm.wristRollAngle,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   // FIXME: not implemented
-  tf.sendEuler(PR2::FRAMEID_ARM_R_FINGER_1,
-               PR2::FRAMEID_ARM_R_HAND,
+  tf.sendEuler("FRAMEID_ARM_R_FINGER_1",
+               "FRAMEID_ARM_R_HAND",
                0.05,
                0.025,
                0.0,
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   // FIXME: not implemented
-  tf.sendEuler(PR2::FRAMEID_ARM_R_FINGER_2,
-               PR2::FRAMEID_ARM_R_HAND,
+  tf.sendEuler("FRAMEID_ARM_R_FINGER_2",
+               "FRAMEID_ARM_R_HAND",
                0.05,
                -0.025,
                0.0,
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   // FIXME: not implemented
-  tf.sendEuler(PR2::FRAMEID_HEAD_PAN_BASE,
-               PR2::FRAMEID_TORSO,
+  tf.sendEuler("FRAMEID_HEAD_PAN_BASE",
+               "FRAMEID_TORSO",
                PR2::TORSO_HEAD_OFFSET.x,
                0.0,
                PR2::TORSO_HEAD_OFFSET.z,
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   // FIXME: not implemented
-  tf.sendEuler(PR2::FRAMEID_HEAD_TILT_BASE,
-               PR2::FRAMEID_TORSO,
+  tf.sendEuler("FRAMEID_HEAD_TILT_BASE",
+               "FRAMEID_TORSO",
                0.0,
                0.0,
                1.05,
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   // FIXME: not implemented
-  tf.sendEuler(PR2::FRAMEID_STEREO_BLOCK,
-               PR2::FRAMEID_TORSO,
+  tf.sendEuler("FRAMEID_STEREO_BLOCK",
+               "FRAMEID_TORSO",
                0.0,
                0.0,
                1.10,
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   // FIXME: not implemented
-  tf.sendEuler(PR2::FRAMEID_TILT_LASER_BLOCK,
-               PR2::FRAMEID_TORSO,
+  tf.sendEuler("FRAMEID_TILT_LASER_BLOCK",
+               "FRAMEID_TORSO",
                PR2::TORSO_TILT_LASER_OFFSET.x,
                0.0,
                PR2::TORSO_TILT_LASER_OFFSET.z,
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   // FIXME: not implemented
-  tf.sendEuler(PR2::FRAMEID_BASE_LASER_BLOCK,
-               PR2::FRAMEID_BASE,
+  tf.sendEuler("FRAMEID_BASE_LASER_BLOCK",
+               "FRAMEID_BASE",
                PR2::BASE_BASE_LASER_OFFSET.x,
                0.0,
                PR2::BASE_BASE_LASER_OFFSET.z,
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
   /***************************************************************/
   // for the casters
@@ -999,129 +973,117 @@ RosGazeboNode::Update()
   this->PR2Copy->hw.GetJointServoCmd(PR2::CASTER_FR_STEER, &tmpSteerFR, &tmpVelFR );
   this->PR2Copy->hw.GetJointServoCmd(PR2::CASTER_RL_STEER, &tmpSteerRL, &tmpVelRL );
   this->PR2Copy->hw.GetJointServoCmd(PR2::CASTER_RR_STEER, &tmpSteerRR, &tmpVelRR );
-  tf.sendEuler(PR2::FRAMEID_CASTER_FL_BODY,
-               PR2::FRAMEID_BASE,
+  tf.sendEuler("FRAMEID_CASTER_FL_BODY",
+               "FRAMEID_BASE",
                PR2::BASE_BODY_OFFSETS[0].x,
                PR2::BASE_BODY_OFFSETS[0].y,
                PR2::BASE_BODY_OFFSETS[0].z,
                tmpSteerFL,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
-  tf.sendEuler(PR2::FRAMEID_CASTER_FL_WHEEL_L,
-               PR2::FRAMEID_CASTER_FL_BODY,
+               odomMsg.header.stamp);
+  tf.sendEuler("FRAMEID_CASTER_FL_WHEEL_L",
+               "FRAMEID_CASTER_FL_BODY",
                0.0,
                PR2::CASTER_DRIVE_OFFSET[0].y,
                0.0,
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
-  tf.sendEuler(PR2::FRAMEID_CASTER_FL_WHEEL_R,
-               PR2::FRAMEID_CASTER_FL_BODY,
+               odomMsg.header.stamp);
+  tf.sendEuler("FRAMEID_CASTER_FL_WHEEL_R",
+               "FRAMEID_CASTER_FL_BODY",
                0.0,
                PR2::CASTER_DRIVE_OFFSET[1].y,
                0.0,
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
-  tf.sendEuler(PR2::FRAMEID_CASTER_FR_BODY,
-               PR2::FRAMEID_BASE,
+  tf.sendEuler("FRAMEID_CASTER_FR_BODY",
+               "FRAMEID_BASE",
                PR2::BASE_BODY_OFFSETS[3].x,
                PR2::BASE_BODY_OFFSETS[3].y,
                PR2::BASE_BODY_OFFSETS[3].z,
                tmpSteerFR,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
-  tf.sendEuler(PR2::FRAMEID_CASTER_FR_WHEEL_L,
-               PR2::FRAMEID_CASTER_FR_BODY,
+               odomMsg.header.stamp);
+  tf.sendEuler("FRAMEID_CASTER_FR_WHEEL_L",
+               "FRAMEID_CASTER_FR_BODY",
                0.0,
                PR2::CASTER_DRIVE_OFFSET[2].y,
                0.0,
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
-  tf.sendEuler(PR2::FRAMEID_CASTER_FR_WHEEL_R,
-               PR2::FRAMEID_CASTER_FR_BODY,
+               odomMsg.header.stamp);
+  tf.sendEuler("FRAMEID_CASTER_FR_WHEEL_R",
+               "FRAMEID_CASTER_FR_BODY",
                0.0,
                PR2::CASTER_DRIVE_OFFSET[3].y,
                0.0,
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
-  tf.sendEuler(PR2::FRAMEID_CASTER_RL_BODY,
-               PR2::FRAMEID_BASE,
+  tf.sendEuler("FRAMEID_CASTER_RL_BODY",
+               "FRAMEID_BASE",
                PR2::BASE_BODY_OFFSETS[6].x,
                PR2::BASE_BODY_OFFSETS[6].y,
                PR2::BASE_BODY_OFFSETS[6].z,
                tmpSteerRL,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
-  tf.sendEuler(PR2::FRAMEID_CASTER_RL_WHEEL_L,
-               PR2::FRAMEID_CASTER_RL_BODY,
+               odomMsg.header.stamp);
+  tf.sendEuler("FRAMEID_CASTER_RL_WHEEL_L",
+               "FRAMEID_CASTER_RL_BODY",
                0.0,
                PR2::CASTER_DRIVE_OFFSET[4].y,
                0.0,
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
-  tf.sendEuler(PR2::FRAMEID_CASTER_RL_WHEEL_R,
-               PR2::FRAMEID_CASTER_RL_BODY,
+               odomMsg.header.stamp);
+  tf.sendEuler("FRAMEID_CASTER_RL_WHEEL_R",
+               "FRAMEID_CASTER_RL_BODY",
                0.0,
                PR2::CASTER_DRIVE_OFFSET[5].y,
                0.0,
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
-  tf.sendEuler(PR2::FRAMEID_CASTER_RR_BODY,
-               PR2::FRAMEID_BASE,
+  tf.sendEuler("FRAMEID_CASTER_RR_BODY",
+               "FRAMEID_BASE",
                PR2::BASE_BODY_OFFSETS[9].x,
                PR2::BASE_BODY_OFFSETS[9].y,
                PR2::BASE_BODY_OFFSETS[9].z,
                tmpSteerRR,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
-  tf.sendEuler(PR2::FRAMEID_CASTER_RR_WHEEL_L,
-               PR2::FRAMEID_CASTER_RR_BODY,
+               odomMsg.header.stamp);
+  tf.sendEuler("FRAMEID_CASTER_RR_WHEEL_L",
+               "FRAMEID_CASTER_RR_BODY",
                0.0,
                PR2::CASTER_DRIVE_OFFSET[6].y,
                0.0,
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
-  tf.sendEuler(PR2::FRAMEID_CASTER_RR_WHEEL_R,
-               PR2::FRAMEID_CASTER_RR_BODY,
+               odomMsg.header.stamp);
+  tf.sendEuler("FRAMEID_CASTER_RR_WHEEL_R",
+               "FRAMEID_CASTER_RR_BODY",
                0.0,
                PR2::CASTER_DRIVE_OFFSET[7].y,
                0.0,
                0.0,
                0.0,
                0.0,
-               odomMsg.header.stamp.sec,
-               odomMsg.header.stamp.nsec);
+               odomMsg.header.stamp);
 
 
 	publish("transform",this->shutterMsg);

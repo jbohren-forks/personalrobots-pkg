@@ -69,8 +69,9 @@ namespace TREX {
     //     m_rcs_obs.valid = 1;
 
     //copied from wavefront_planner.cc
-    this->tf.setWithEulers(FRAMEID_LASER,
-			   FRAMEID_ROBOT,
+    //TODO change this to broadcast.
+    this->tf.setWithEulers(tf.lookup("FRAMEID_LASER"),
+			   tf.lookup("FRAMEID_ROBOT"),
 			   0.05, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
     
     this->laser_hitpts_size = this->laser_hitpts_len = 0;
@@ -361,11 +362,11 @@ namespace TREX {
     robotPose.x = 0;
     robotPose.y = 0;
     robotPose.yaw = 0;
-    robotPose.frame = FRAMEID_ROBOT;
+    robotPose.frame = tf.lookup("FRAMEID_ROBOT");
     robotPose.time = laserMsg.header.stamp.sec * 1000000000ULL + 
       laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
     try {
-      global_pose = this->tf.transformPose2D(FRAMEID_MAP, robotPose);
+      global_pose = this->tf.transformPose2D("FRAMEID_MAP", robotPose);
 
       debugMsg("ROSNode::VS", "New global pose x " << global_pose.x << " y " << global_pose.y);
 
@@ -705,7 +706,7 @@ namespace TREX {
 	    local.yaw = 0;
 	    try
 	      {
-		global = this->tf.transformPose2D(FRAMEID_MAP, local);
+		global = this->tf.transformPose2D("FRAMEID_MAP", local);
 	      }
 	    catch(libTF::TransformReference::LookupException& ex)
 	      {

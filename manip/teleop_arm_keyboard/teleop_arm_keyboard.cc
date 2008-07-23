@@ -156,9 +156,9 @@ public:
     aPose.pitch = 0;
     aPose.yaw = 0;
     aPose.time = 0;
-    aPose.frame = FRAMEID_ARM_R_HAND;
+    aPose.frame = tf.lookup("FRAMEID_ARM_R_HAND");
 
-    libTF::TFPose inOdomFrame = tf.transformPose(FRAMEID_ODOM, aPose);
+    libTF::TFPose inOdomFrame = tf.transformPose("FRAMEID_ODOM", aPose);
 
     std::cout << "In odom frame x " << inOdomFrame.x << std::endl;
     std::cout << "In odom frame y " << inOdomFrame.y << std::endl;
@@ -174,9 +174,9 @@ public:
     aPose.pitch = 0;
     aPose.yaw = 0;
     aPose.time = 0;
-    aPose.frame = FRAMEID_ODOM;
+    aPose.frame = tf.lookup("FRAMEID_ODOM");
 
-    libTF::TFPose inOdomFrame = tf.transformPose(FRAMEID_ARM_R_SHOULDER, aPose);
+    libTF::TFPose inOdomFrame = tf.transformPose("FRAMEID_ARM_R_SHOULDER", aPose);
 
     std::cout << "In shoulder frame x " << inOdomFrame.x << std::endl;
     std::cout << "In shoulder frame y " << inOdomFrame.y << std::endl;

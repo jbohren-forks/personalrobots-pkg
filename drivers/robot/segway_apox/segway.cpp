@@ -64,7 +64,7 @@ Segway::Segway() :
   tf(*this),
   req_timeout(false)
 {
-  odom.header.frame_id = FRAMEID_ODOM;
+  odom.header.frame_id = tf.lookup("FRAMEID_ODOM");
   advertise("odom", odom);
   subscribe("cmd_vel", cmd_vel, &Segway::cmd_vel_cb);
   subscribe("operating_mode", op_mode, &Segway::op_mode_cb);
@@ -299,16 +299,15 @@ void Segway::main_loop()
             odom.pos.th = odom_yaw;
             publish("odom", odom);
 
-            tf.sendInverseEuler(FRAMEID_ODOM,
-                                FRAMEID_ROBOT,
+            tf.sendInverseEuler("FRAMEID_ODOM",
+                                "FRAMEID_ROBOT",
                                 odom.pos.x,
                                 odom.pos.y,
                                 0.0,
                                 odom.pos.th,
                                 0,
                                 0,
-                                odom.header.stamp.sec,
-                                odom.header.stamp.nsec);
+                                odom.header.stamp);
 					}
 				}
 				last_foreaft = rmp.foreaft;

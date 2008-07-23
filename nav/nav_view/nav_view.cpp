@@ -321,10 +321,10 @@ NavView::render()
     robotPose.x = 0;
     robotPose.y = 0;
     robotPose.yaw = 0;
-    robotPose.frame = FRAMEID_ROBOT;
+    robotPose.frame = tf.lookup("FRAMEID_ROBOT");
     robotPose.time = 0;
 
-    libTF::TFPose2D mapPose = tf.transformPose2D(FRAMEID_MAP, robotPose);
+    libTF::TFPose2D mapPose = tf.transformPose2D("FRAMEID_MAP", robotPose);
 
     glPushMatrix();
     glTranslatef(mapPose.x, mapPose.y, 0);
