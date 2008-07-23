@@ -1133,6 +1133,9 @@
     <iClamp>0</iClamp>
   </data>
 
+  <data type="controller" name="baseController">
+    <PGain> 911 </PGain>
+  </data>
   <!-- ========================================= -->
 
   <data type="pr2_gripper_controller" name="pr2_gripper_left_controller">
@@ -1182,4 +1185,5 @@
 
 
 
+>>>>>>> .r1968
 </robot>

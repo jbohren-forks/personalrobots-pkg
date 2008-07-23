@@ -1,3 +1,4 @@
+
 <?xml version="1.0"?>
 
 <robot name="pr2">
@@ -17,11 +18,9 @@
       <port> 0 </port>
       <reduction>10</reduction>
       <polymap>1 0.2 0.5 </polymap>
-    </actuator> 
-    
+    </actuator>     
   </joint>
-  
-  
+    
   <joint name="joint_left_gripper">
     <actuator name="">
       <motor>MAXON</motor>
@@ -31,5 +30,165 @@
       <lookup> gripper_lookup </lookup>
     </actuator> 
   </joint>
+
+
+
+
+<joint name="joint_caster_front_left">
+ <actuator name="actuator_caster_front_left">
+      <data type="interface" name="etherdrive">
+        <board> etherdrive_board_0 </board>
+        <port>2</port>
+      </data>
+ <data>    
+    <motor>MAXON</motor>
+    <reduction>75</reduction>
+    <polymap>1</polymap>
+</data>
+</actuator> 
+</joint>
+
+<joint name="joint_caster_front_right">
+ <actuator name="actuator_caster_front_right">
+      <motor>MAXON</motor>
+      <reduction>75</reduction>
+      <polymap>1</polymap>
+      <data type="interface" name="etherdrive">
+        <board> etherdrive_board_1 </board>
+        <port>1</port>
+      </data>
+ </actuator> 
+</joint>
+
+<joint name="joint_caster_rear_left">
+ <actuator name="actuator_caster_rear_left">
+      <motor>MAXON</motor>
+      <reduction>75</reduction>
+      <data type="interface" name="etherdrive">
+        <board> etherdrive_board_0 </board>
+        <port>5</port>
+      </data>
+      <polymap>1</polymap>
+ </actuator> 
+</joint>
+
+<joint name="joint_caster_rear_right">
+ <actuator name="actuator_caster_rear_right">
+      <motor>MAXON</motor>
+      <reduction>75</reduction>
+      <data type="interface" name="etherdrive">
+        <board> etherdrive_board_1 </board>
+        <port>5</port>
+      </data>
+      <polymap>1</polymap>
+ </actuator> 
+</joint>
+
+
+
+
+<joint name="joint_wheel_front_left_l">
+ <actuator name="actuator_wheel_front_left_l">
+      <motor>MAXON</motor>
+      <reduction>75</reduction>
+      <data type="interface" name="etherdrive">
+        <board> etherdrive_board_0 </board>
+        <port>0</port>
+      </data>
+      <polymap>1</polymap>
+ </actuator> 
+</joint>
+<joint name="joint_wheel_front_left_r">
+ <actuator name="actuator_wheel_front_left_r">
+      <motor>MAXON</motor>
+      <reduction>75</reduction>
+      <data type="interface" name="etherdrive">
+        <board> etherdrive_board_0 </board>
+        <port>1</port>
+      </data>
+      <polymap>1</polymap>
+ </actuator> 
+</joint>
+
+<joint name="joint_wheel_front_right_l">
+ <actuator name="actuator_wheel_front_right_l">
+      <motor>MAXON</motor>
+      <reduction>75</reduction>
+      <data type="interface" name="etherdrive">
+        <board> etherdrive_board_1 </board>
+        <port>1</port>
+      </data>
+      <polymap>1</polymap>
+ </actuator> 
+</joint>
+<joint name="joint_wheel_front_right_r">
+ <actuator name="actuator_wheel_front_right_r">
+      <motor>MAXON</motor>
+      <reduction>75</reduction>
+      <data type="interface" name="etherdrive">
+        <board> etherdrive_board_1 </board>
+        <port>0</port>
+      </data>
+      <polymap>1</polymap>
+ </actuator> 
+</joint>
+
+<joint name="joint_wheel_rear_left_l">
+ <actuator name="actuator_wheel_rear_left_l">
+      <motor>MAXON</motor>
+      <reduction>75</reduction>
+      <data type="interface" name="etherdrive">
+        <board> etherdrive_board_0</board>
+        <port>3</port>
+      </data>
+      <polymap>1</polymap>
+ </actuator> 
+</joint>
+<joint name="joint_wheel_rear_left_r">
+ <actuator name="actuator_wheel_rear_left_r">
+      <motor>MAXON</motor>
+      <reduction>75</reduction>
+      <data type="interface" name="etherdrive">
+        <board> etherdrive_board_0</board>
+        <port>4</port>
+      </data>
+      <polymap>1</polymap>
+ </actuator> 
+</joint>
+
+<joint name="joint_wheel_rear_right_l">
+ <actuator name="actuator_wheel_rear_right_l">
+      <motor>MAXON</motor>
+      <reduction>75</reduction>
+      <data type="interface" name="etherdrive">
+        <board> etherdrive_board_0</board>
+        <port>4</port>
+      </data>
+      <polymap>1</polymap>
+ </actuator> 
+</joint>
+<joint name="joint_wheel_rear_right_r">
+ <actuator name="actuator_wheel_rear_right_r">
+      <motor>MAXON</motor>
+      <reduction>75</reduction>
+      <data type="interface" name="etherdrive">
+        <board> etherdrive_board_0</board>
+        <port>3</port>
+      </data>
+      <polymap>1</polymap>
+ </actuator> 
+</joint>
+
+
+<data type="etherdrive" name="etherdrive_board_0">
+ <hostip> </hostip>
+ <etherip> </etherip>
+</data>
+
+<data type="etherdrive" name="etherdrive_board_1">
+ <hostip> </hostip>
+ <etherip> </etherip>
+</data>
+
 
 </robot>
