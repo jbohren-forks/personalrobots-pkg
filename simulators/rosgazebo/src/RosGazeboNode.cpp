@@ -590,6 +590,9 @@ RosGazeboNode::Update()
 
   if (dAngle * simPitchRate < 0.0)
   {
+    // shutter in irrlicht viewer clears the cloud memory, goes before republish of full_cloud
+    publish("shutter",this->shutterMsg);
+
     dAngle = -dAngle;
 
     int    num_channels = 1;
@@ -604,7 +607,6 @@ RosGazeboNode::Update()
     this->full_cloud_pts->clear();
     this->full_cloud_ch1->clear();
 
-    publish("shutter",this->shutterMsg);
   }
 
   // should send shutter when changing direction, or wait for Tully to implement ring buffer in viewer
