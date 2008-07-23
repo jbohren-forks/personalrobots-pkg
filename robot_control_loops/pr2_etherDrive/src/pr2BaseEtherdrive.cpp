@@ -43,19 +43,19 @@
 int notDone = 1;
 
 void finalize(int dummy){
-   notDone = 0;
+  notDone = 0;
 }
 
 int main(int argc, char *argv[]){
-   ros::init(argc, argv); //Everyone else expects ros::init to be already called
-   ros::node *node = new ros::node("mechanism_control"); //Can be found by ros::node *ros::g_node for now.  Will eventually be superceded by ros::peer interface
+  ros::init(argc, argv); //Everyone else expects ros::init to be already called
+  ros::node *node = new ros::node("mechanism_control"); //Can be found by ros::node *ros::g_node for now.  Will eventually be superceded by ros::peer interface
 
-   //set up signals
+  //set up signals
   signal(SIGINT,  (&finalize));
   signal(SIGQUIT, (&finalize));
   signal(SIGTERM, (&finalize));
 
-   //For now possibly hard-code EtherDrive base parameters here
+  //For now possibly hard-code EtherDrive base parameters here
   int numBoards = 2;
   int numActuators = 12;
   //  int boardLookUp[] ={0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1}; 
@@ -71,29 +71,29 @@ int main(int argc, char *argv[]){
   string hostIP[] = {"10.12.0.2", "10.11.0.3"};
   
   EtherdriveHardware h(numBoards, numActuators, boardLookUp, portLookUp, jointId, etherIP, hostIP);
-   //h.init("BaseEtherdrive.xml"); //Should this be a command-line argument?
+  //h.init("BaseEtherdrive.xml"); //Should this be a command-line argument?
 
-   //mc.init(h.hardwareInterface, char *namespace or char *init.xml);
-   MechanismControl mc;
-   mc.init(h.hw); //If not hard-coded, this is where the ROS namespace or configuration file would be passed in
-   mc.controller->setVelocity(-0,0,0);
+  //mc.init(h.hardwareInterface, char *namespace or char *init.xml);
+  MechanismControl mc;
+  mc.init(h.hw); //If not hard-coded, this is where the ROS namespace or configuration file would be passed in
+  mc.controller->setVelocity(-0,0,0);
 
 
-   //Realtime loop would spawn a thread and make it realtime to run this loop
+  //Realtime loop would spawn a thread and make it realtime to run this loop
 
-   while(notDone){ //Decide if this is how we want to do this
+  while(notDone){ //Decide if this is how we want to do this
 //      h.update();
-      mc.update();
-      //read out fingertip sensor data from etherCAT hardware
-      usleep(1000); //clock_nanosleep();
-   }
+    mc.update();
+    //read out fingertip sensor data from etherCAT hardware
+    usleep(1000); //clock_nanosleep();
+  }
 
-   //mc.fini();   //If needed
-   //h.fini();    //If needed
+  //mc.fini();   //If needed
+  //h.fini();    //If needed
 
 
-   ros::fini();
-   delete(node); //Before ros::fini
+  ros::fini();
+  delete(node); //Before ros::fini
 
-   return 0;
+  return 0;
 }
