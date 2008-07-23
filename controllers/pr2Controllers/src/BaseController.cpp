@@ -19,30 +19,7 @@ using namespace PR2;
 
 static pthread_mutex_t dataMutex = PTHREAD_MUTEX_INITIALIZER;
 
-// const double BaseController::PGain = 0.1; /**< Proportional gain for speed control */
-
-// const double BaseController::IGain = 0.1; /**< Integral gain for speed control */
-
-// const double BaseController::DGain = 0; /**< Derivative gain for speed control */
-
-// const double BaseController::IMax  = 10; /**< Max integral error term */
-
-// const double BaseController::IMin  = -10; /**< Min integral error term */
-
-// const double BaseController::maxPositiveTorque = 0.75; /**< (in Nm) max current = 0.75 A. Torque constant = 70.4 mNm/A.Max Torque = 70.4*0.75 = 52.8 mNm */
-
-// const double BaseController::maxNegativeTorque = -0.75; /**< max negative torque */
-
-// const double BaseController::maxEffort = 0.75; /**< maximum effort */
-      
-// const double BaseController::PGain_Pos = 0.1; /**< Proportional gain for position control */
-
-// const double BaseController::IGain_Pos = 0.1; /**< Integral gain for position control */
-
-// const double BaseController::DGain_Pos = 0; /**< Derivative gain for position control */
-
-
-void ComputePointVelocity(double vx, double vy, double vw, double x_offset, double y_offset, double &pvx, double &pvy)
+void BaseController::computePointVelocity(double vx, double vy, double vw, double x_offset, double y_offset, double &pvx, double &pvy)
 {
   pvx = vx - y_offset*vw;
   pvy = vy + x_offset*vw;
@@ -50,6 +27,7 @@ void ComputePointVelocity(double vx, double vy, double vw, double x_offset, doub
 
 BaseController::BaseController()
 {
+  this->robot = NULL;
   this->name = "baseController";
 }
 
@@ -77,7 +55,7 @@ BaseController::~BaseController( )
   delete (this->baseJointControllers);
 }
 
-CONTROLLER::CONTROLLER_ERROR_CODE BaseController::LoadXML(std::string filename)
+CONTROLLER::CONTROLLER_ERROR_CODE BaseController::loadXML(std::string filename)
 {
   robot_desc::URDF model;
   int exists = 0;
@@ -113,28 +91,28 @@ CONTROLLER::CONTROLLER_ERROR_CODE BaseController::LoadXML(std::string filename)
   }
   param_map = data.getDataTagValues("controller",this->name);   
 
-  LoadParam("PGain",PGain);
+  loadParam("pGain",pGain);
 
-  printf("BC:: %f\n",PGain);
-  LoadParam("DGain",DGain);
-  LoadParam("IGain",IGain);
+  printf("BC:: %f\n",pGain);
+  loadParam("dGain",dGain);
+  loadParam("iGain",iGain);
 
-  LoadParam("pGainPos",PGain_Pos);
-  LoadParam("dGainPos",DGain_Pos);
-  LoadParam("iGainPos",IGain_Pos);
+  loadParam("pGainPos",pGainPos);
+  loadParam("dGainPos",dGainPos);
+  loadParam("iGainPos",iGainPos);
 
-  LoadParam("casterMode",casterMode);
-  LoadParam("wheelMode",wheelMode);
+  loadParam("casterMode",casterMode);
+  loadParam("wheelMode",wheelMode);
 
 
-  LoadParam("maxXDot",maxXDot);
-  LoadParam("maxYDot",maxYDot);
-  LoadParam("maxYawDot",maxYawDot);
+  loadParam("maxXDot",maxXDot);
+  loadParam("maxYDot",maxYDot);
+  loadParam("maxYawDot",maxYawDot);
 
   return CONTROLLER_ALL_OK;
 }
 
-void BaseController::Init()
+void BaseController::init()
 {
   xDotCmd = 0;
   yDotCmd = 0;
@@ -144,7 +122,7 @@ void BaseController::Init()
   yDotNew = 0;
   yawDotNew = 0;
 
-  InitJointControllers();
+  initJointControllers();
 
   //Subscribe to joystick message
   (ros::g_node)->subscribe("base_command", baseCommandMessage, &CONTROLLER::BaseController::receiveBaseCommandMessage, this);
@@ -158,22 +136,21 @@ void BaseController::receiveBaseCommandMessage(){
   setVelocity(vx, vy, vyaw);
 }
 
-void BaseController::InitJointControllers() 
+void BaseController::initJointControllers() 
 {
   this->baseJointControllers = new JointController[BASE_NUM_JOINTS];
 
   for(int ii = 0; ii < NUM_CASTERS; ii++){
-//      baseJointControllers[ii].Init(PGain_Pos, IGain_Pos, DGain_Pos, IMax, IMin, ETHERDRIVE_SPEED, GetTime(), maxPositiveTorque, maxNegativeTorque, maxEffort, &(robot->joint[ii]));
-    baseJointControllers[ii].Init(PGain_Pos, IGain_Pos, DGain_Pos, IMax, IMin, ETHERDRIVE_SPEED, GetTime(), maxPositiveTorque, maxNegativeTorque, maxEffort, &(robot->joint[ii]));
+    baseJointControllers[ii].Init(pGainPos, iGainPos, dGainPos, iMax, iMin, ETHERDRIVE_SPEED, getTime(), maxPositiveTorque, maxNegativeTorque, maxEffort, &(robot->joint[ii]));
     baseJointControllers[ii].EnableController();
   }
   for(int ii = NUM_CASTERS; ii < BASE_NUM_JOINTS; ii++){
-    baseJointControllers[ii].Init(PGain, IGain, DGain, IMax, IMin, ETHERDRIVE_SPEED, GetTime(), maxPositiveTorque, maxNegativeTorque, maxEffort,&(robot->joint[ii]));
+    baseJointControllers[ii].Init(pGain, iGain, dGain, iMax, iMin, ETHERDRIVE_SPEED, getTime(), maxPositiveTorque, maxNegativeTorque, maxEffort,&(robot->joint[ii]));
     baseJointControllers[ii].EnableController();
   }
 }  
 
-double BaseController::GetTime()
+double BaseController::getTime()
 {
   struct timeval t;
   gettimeofday( &t, 0);
@@ -189,7 +166,7 @@ double ModNPiBy2(double angle)
   return angle;
 }
 
-void BaseController::Update( )
+void BaseController::update( )
 {
   point drivePointVelocityL, drivePointVelocityR;
   double wheelSpeed[NUM_WHEELS];
@@ -208,7 +185,7 @@ void BaseController::Update( )
   }
  
   for(int ii=0; ii < NUM_CASTERS; ii++){
-    ComputePointVelocity(xDotCmd,yDotCmd,yawDotCmd,BASE_CASTER_OFFSET[ii].x,BASE_CASTER_OFFSET[ii].y,steerPointVelocity[ii].x,steerPointVelocity[ii].y);
+    computePointVelocity(xDotCmd,yDotCmd,yawDotCmd,BASE_CASTER_OFFSET[ii].x,BASE_CASTER_OFFSET[ii].y,steerPointVelocity[ii].x,steerPointVelocity[ii].y);
     steerAngle[ii] = atan2(steerPointVelocity[ii].y,steerPointVelocity[ii].x);
 
     steerAngle[ii] = ModNPiBy2(steerAngle[ii]);//Clean steer Angle
@@ -232,8 +209,8 @@ void BaseController::Update( )
     newDriveCenterR.x += BASE_CASTER_OFFSET[ii].x;
     newDriveCenterR.y += BASE_CASTER_OFFSET[ii].y;
 
-    ComputePointVelocity(xDotCmd,yDotCmd,yawDotCmd,newDriveCenterL.x,newDriveCenterL.y,drivePointVelocityL.x,drivePointVelocityL.y);
-    ComputePointVelocity(xDotCmd,yDotCmd,yawDotCmd,newDriveCenterR.x,newDriveCenterR.y,drivePointVelocityR.x,drivePointVelocityR.y);
+    computePointVelocity(xDotCmd,yDotCmd,yawDotCmd,newDriveCenterL.x,newDriveCenterL.y,drivePointVelocityL.x,drivePointVelocityL.y);
+    computePointVelocity(xDotCmd,yDotCmd,yawDotCmd,newDriveCenterR.x,newDriveCenterR.y,drivePointVelocityR.x,drivePointVelocityR.y);
 
 #ifdef DEBUG
     printf("CPV1:: %f, %f, %f, %f, %f, %f, %f\n",xDotCmd,yDotCmd,yawDotCmd,newDriveCenterL.x,newDriveCenterL.y,drivePointVelocityL.x,drivePointVelocityL.y);
@@ -312,13 +289,13 @@ PR2::PR2_ERROR_CODE BaseController::setWrench(double yaw)
   return PR2::PR2_ALL_OK;
 }
 
-void BaseController::LoadParam(std::string label, double &param)
+void BaseController::loadParam(std::string label, double &param)
 {
   if(param_map.find(label) != param_map.end()) // if parameter value has been initialized in the xml file, set internal parameter value
     param = atof(param_map[label].c_str());
 }
 
-void BaseController::LoadParam(std::string label, int &param)
+void BaseController::loadParam(std::string label, int &param)
 {
   if(param_map.find(label) != param_map.end())
     param = atoi(param_map[label].c_str());
@@ -333,3 +310,15 @@ PR2::PR2_ERROR_CODE BaseController::setParam(std::string label,std::string value
 {   
   return PR2::PR2_ALL_OK;
 }
+
+// const double BaseController::PGain = 0.1; /**< Proportional gain for speed control */
+// const double BaseController::IGain = 0.1; /**< Integral gain for speed control */
+// const double BaseController::DGain = 0; /**< Derivative gain for speed control */
+// const double BaseController::IMax  = 10; /**< Max integral error term */
+// const double BaseController::IMin  = -10; /**< Min integral error term */
+// const double BaseController::maxPositiveTorque = 0.75; /**< (in Nm) max current = 0.75 A. Torque constant = 70.4 mNm/A.Max Torque = 70.4*0.75 = 52.8 mNm */
+// const double BaseController::maxNegativeTorque = -0.75; /**< max negative torque */
+// const double BaseController::maxEffort = 0.75; /**< maximum effort */
+// const double BaseController::PGain_Pos = 0.1; /**< Proportional gain for position control */
+// const double BaseController::IGain_Pos = 0.1; /**< Integral gain for position control */
+// const double BaseController::DGain_Pos = 0; /**< Derivative gain for position control */

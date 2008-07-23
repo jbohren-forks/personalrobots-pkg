@@ -67,7 +67,7 @@ namespace CONTROLLER
      * 
      * \param filename - xml file name
      */
-    CONTROLLER::CONTROLLER_ERROR_CODE LoadXML(std::string filename);
+    CONTROLLER::CONTROLLER_ERROR_CODE loadXML(std::string filename);
 
     /*!
      * \brief Destructor of the BaseController class.
@@ -77,12 +77,12 @@ namespace CONTROLLER
     /*!
      * \brief Update controller
      */       
-    void Update( );
+    void update( );
 
     /*!
      * \brief Initialize the controller
      */
-    void Init();
+    void init();
 
     /*!
      * \brief Drive robot on a course
@@ -175,7 +175,7 @@ namespace CONTROLLER
 
     private:
 
-    void InitJointControllers();
+    void initJointControllers();
 
     JointController *baseJointControllers;
 
@@ -185,15 +185,15 @@ namespace CONTROLLER
 
     PR2::PR2_CONTROL_MODE controlMode; /*!< Base controller control mode */
 
-    double PGain; /**< Proportional gain for speed control */
+    double pGain; /**< Proportional gain for speed control */
 
-    double IGain; /**< Integral gain for speed control */
+    double iGain; /**< Integral gain for speed control */
 
-    double DGain; /**< Derivative gain for speed control */
+    double dGain; /**< Derivative gain for speed control */
 
-    double IMax; /**< Max integral error term */
+    double iMax; /**< Max integral error term */
 
-    double IMin; /**< Min integral error term */
+    double iMin; /**< Min integral error term */
 
     double maxPositiveTorque; /**< (in Nm) max current = 0.75 A. Torque constant = 70.4 mNm/A.Max Torque = 70.4*0.75 = 52.8 mNm */
 
@@ -201,11 +201,11 @@ namespace CONTROLLER
 
     double maxEffort; /**< maximum effort */
       
-    double PGain_Pos; /**< Proportional gain for position control */
+    double pGainPos; /**< Proportional gain for position control */
 
-    double IGain_Pos; /**< Integral gain for position control */
+    double iGainPos; /**< Integral gain for position control */
 
-    double DGain_Pos; /**< Derivative gain for position control */
+    double dGainPos; /**< Derivative gain for position control */
 
     double xDotCmd; /**< Forward speed cmd */
 
@@ -225,7 +225,7 @@ namespace CONTROLLER
 
     double maxYawDot;
 
-    double GetTime();
+    double getTime();
 
     int wheelMode;
 
@@ -237,9 +237,12 @@ namespace CONTROLLER
 
     std::string name;
 
-    void LoadParam(std::string label, double &value);
+    void loadParam(std::string label, double &value);
 
-    void LoadParam(std::string label, int &value);
+    void loadParam(std::string label, int &value);
+
+    void computePointVelocity(double vx, double vy, double vw, double x_offset, double y_offset, double &pvx, double &pvy);
+
   };
 }
 
