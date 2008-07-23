@@ -225,6 +225,62 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
     
     for (unsigned int k = 0 ; k < wgxml.getDisjointPartCount() ; ++k)
 	convertLink(root, wgxml.getDisjointPart(k), transform);
+
+    /* find all data item types */
+    const robot_desc::URDF::Data& data = wgxml.getData();
+    std::vector<std::string> types;    
+    data.getDataTagTypes(types);
+    
+    for (unsigned int i = 0 ; i < types.size() ; ++i)
+	/* if we have a controller */
+	if (types[i].find("controller:") == 0)
+	{
+	    /* find all the defined names in this controller */
+	    std::vector<std::string> names;    
+	    data.getDataTagNames(types[i], names);
+	    if (names.size() == 0) continue;
+	    /* Find the name with the shortest length. This will be the base node, since the name of all other 
+	       tags will have this one as prefix. */
+	    std::string base = names[0];
+	    for (unsigned int j = 1 ; j < names.size() ; ++j)
+		if (names[j].length() < base.length())
+		    base = names[j];
+	    std::map<std::string, std::string> baseData = data.getDataTagValues(types[i], base);
+	    
+	    TiXmlElement *ctrl = new TiXmlElement(types[i]);
+	    ctrl->SetAttribute("name", base);
+	    if (baseData.find("plugin") != baseData.end())
+	    {
+		ctrl->SetAttribute("plugin", baseData["plugin"]);
+		baseData.erase("plugin");
+	    }
+	    
+	    for (std::map<std::string, std::string>::iterator j = baseData.begin() ; j != baseData.end() ; j++)
+		if (j->first.find("interface:") == 0)
+		{
+		    TiXmlElement *iface = new TiXmlElement(j->first);
+		    iface->SetAttribute("name", j->second);
+		    ctrl->LinkEndChild(iface);
+		}
+		else
+		    addKeyValue(ctrl, j->first, j->second);
+	    base += ":";	    
+	    for (unsigned int j = 0 ; j < names.size() ; ++j)
+		if (names[j].find(base) == 0) 
+		{
+		    std::string nm = names[j];
+		    nm.erase(0, base.length());		    
+		    TiXmlElement *joint = new TiXmlElement("joint");  
+		    joint->SetAttribute("name", nm);
+		    std::map<std::string, std::string> dt = data.getDataTagValues(types[i], names[j]);
+		    for (std::map<std::string, std::string>::iterator k = dt.begin() ; k != dt.end() ; k++)
+			addKeyValue(joint, k->first, k->second);
+		    ctrl->LinkEndChild(joint);
+		}
+	    
+	    root->LinkEndChild(ctrl);	    
+	}
+    
 }
 
 void usage(const char *progname)
