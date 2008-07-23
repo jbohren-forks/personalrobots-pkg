@@ -599,8 +599,8 @@ RosGazeboNode::Update()
     this->full_cloudMsg.chan[0].name = "intensities";
     this->full_cloudMsg.chan[0].set_vals_size(this->full_cloud_ch1->size());
     // TODO: make sure this is doing the right memcopy stuff
-    this->full_cloudMsg.pts          = &(this->full_cloud_pts->front());
-    this->full_cloudMsg.chan[0].vals = &(this->full_cloud_ch1->front());
+    memcpy(this->full_cloudMsg.pts          , &(this->full_cloud_pts->front()), this->full_cloud_pts->size());
+    memcpy(this->full_cloudMsg.chan[0].vals , &(this->full_cloud_ch1->front()), this->full_cloud_ch1->size());
     publish("full_cloud",this->full_cloudMsg);
     this->full_cloud_pts->clear();
     this->full_cloud_ch1->clear();
