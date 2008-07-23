@@ -7,6 +7,7 @@
   <depend package="pr2Core" />
   <depend package="math_utils" />
   <depend package="robot_mechanism_model" />
+  <depend package="wg_robot_description_parser" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////////
 //Software License Agreement (BSD License)
 //
-//Copyright (c) 2008, David Li, Melonee Wise, John Hsu
+//Copyright (c) 2008, Willow Garage, Inc.
 //All rights reserved.
 //
 //Redistribution and use in source and binary forms, with or without
@@ -77,8 +77,10 @@
 #include <mechanism_model/joint.h>
 #include <string>
 #include <math.h>
+#include <urdf/URDF.h>
 
 using namespace mechanism;
+using namespace std;
 
 namespace CONTROLLER
 {
@@ -324,6 +326,10 @@ namespace CONTROLLER
 
       bool capAccel;  /*!<Flag to indicate whether we should cap acceleration.>*/
       double maxAccel; /*!<Maximum allowed acceleration/deceleration.>*/
+      std::string jointName; /*!< Namespace ID for this controller>*/  
+
+      CONTROLLER::CONTROLLER_ERROR_CODE LoadXML(std::string filename);
+
     private:
 
 //---------------------------------------------------------------------------------//
@@ -337,7 +343,6 @@ namespace CONTROLLER
         */       
      double SafelySetTorqueInternal(double torque);
      
-      std::string jointName; /*!< Namespace ID for this controller>*/  
       mechanism::Joint* joint; /*!< Joint we're controlling>*/  
       Pid pidController; /*!< Internal PID controller>*/  
 
@@ -375,5 +380,12 @@ namespace CONTROLLER
       double maxEffort; /*!<Temporary (until param server): local copy of max possible commanded effort.>*/
 
       double dt; /*!<Timestep amount. >*/
+
+      std::map<std::string,std::string> param_map;
+
+      void LoadParam(std::string label, double &value);
+
+      void LoadParam(std::string label, int &value);
+
        };
 }

@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////////
 //Software License Agreement (BSD License)
 //
-//Copyright (c) 2008, David Li, Melonee Wise, John Hsu
+//Copyright (c) 2008, Willow Garage, Inc.
 //All rights reserved.
 //
 //Redistribution and use in source and binary forms, with or without
@@ -14,7 +14,7 @@
 //   copyright notice, this list of conditions and the following
 //   disclaimer in the documentation and/or other materials provided
 //   with the distribution.
-// * Neither the name of the Willow Garage nor the names of its
+// * Neither the name of Willow Garage nor the names of its
 //   contributors may be used to endorse or promote products derived
 //   from this software without specific prior written permission.
 //
@@ -417,7 +417,6 @@ CONTROLLER_ERROR_CODE JointController::GetParam(std::string label, std::string v
 }
 */
 
-
 //---------------------------------------------------------------------------------//
 //SAFETY CALLS
 //---------------------------------------------------------------------------------//
@@ -445,7 +444,6 @@ double JointController::SafelySetTorqueInternal(double torque)
     SaturationFlag = false;
   }
 
-  
   //Set torque command 
   #ifdef DEBUG
   printf("JC:: torque:: %f,%f\n",torque,newTorque);
@@ -454,3 +452,68 @@ double JointController::SafelySetTorqueInternal(double torque)
   return newTorque;
 }
 
+CONTROLLER_ERROR_CODE JointController::LoadXML(std::string filename)
+{
+   robot_desc::URDF model;
+   int exists = 0;
+
+   if(!model.loadFile(filename.c_str()))
+      return CONTROLLER_MODE_ERROR;
+
+   const robot_desc::URDF::Data &data = model.getData();
+
+   std::vector<std::string> types;
+   std::vector<std::string> names;
+   std::vector<std::string>::iterator iter;
+
+   data.getDataTagTypes(types);
+
+   for(iter = types.begin(); iter != types.end(); iter++){
+      if(*iter == "controller"){
+         exists = 1;
+         break;
+      }
+   }
+
+   if(!exists)
+      return CONTROLLER_MODE_ERROR;
+
+   exists = 0;
+   data.getDataTagNames("controller",names);
+
+   for(iter = names.begin(); iter != names.end(); iter++){
+      if(*iter == this->jointName){
+         exists = 1;
+         break;
+      }
+   }
+
+   if(!exists)
+      return CONTROLLER_MODE_ERROR;
+
+   param_map = data.getDataTagValues("controller",this->jointName);   
+
+   LoadParam("PGain",PGain);
+   LoadParam("DGain",DGain);
+   LoadParam("IGain",IGain);
+   LoadParam("IMax",IMax);
+   LoadParam("IMin",IMin);
+   LoadParam("maxEffort",maxEffort);
+   LoadParam("maxPositiveTorque",maxPositiveTorque);
+   LoadParam("maxNegativeTorque",maxPositiveTorque);
+   LoadParam("dt",dt);
+
+   return  CONTROLLER_ALL_OK;
+}
+
+void JointController::LoadParam(std::string label, double &param)
+{
+   if(param_map.find(label) != param_map.end()) // if parameter value has been initialized in the xml file, set internal parameter value
+      param = atof(param_map[label].c_str());
+}
+
+void JointController::LoadParam(std::string label, int &param)
+{
+   if(param_map.find(label) != param_map.end())
+      param = atoi(param_map[label].c_str());
+}
