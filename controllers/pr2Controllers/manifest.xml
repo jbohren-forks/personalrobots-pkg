@@ -10,6 +10,8 @@
   <depend package="genericControllers" />
   <depend package="rosTF" />
   <depend package="hw_interface" />
+  <depend package="libKDL" />
+  <depend package="libpr2API" />
   <depend package="wg_robot_description_parser" />
   <depend package="joy" />
   <depend package="math_utils" />

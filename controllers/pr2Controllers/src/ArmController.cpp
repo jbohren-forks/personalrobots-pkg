@@ -1,5 +1,4 @@
-#include <pr2Controllers/ArmController.h>
-
+#include <pr2Controllers/ArmController.h> 
 using namespace CONTROLLER;
 /***************************************************/
 /*! \class CONTROLLER::ArmController
@@ -53,8 +52,10 @@ void ArmController::initJoint(int jointNum, double PGain, double IGain, double D
   lowerControl[jointNum].Init(PGain,  IGain,  DGain,  IMax,  IMin,  CONTROLLER::CONTROLLER_DISABLED,  time,  maxPositiveTorque,  maxNegativeTorque,  maxEffort,  joint); //Initialize joint, but keep in disabled state 
 }
 
-CONTROLLER_ERROR_CODE ArmController::initArm(CONTROLLER_CONTROL_MODE mode)
+CONTROLLER_ERROR_CODE ArmController::initArm(CONTROLLER_CONTROL_MODE mode, PR2::PR2Robot* robot)
 {
+  //Record the robot pointer for kinematics
+  this->robot = robot;
 
   //Reset commanded positions
   for(int i =0 ;i<6;i++){
@@ -125,8 +126,52 @@ void  ArmController::checkForSaturation(bool* status[])
 //---------------------------------------------------------------------------------//
 CONTROLLER_ERROR_CODE
 ArmController::setHandCartesianPosition(double x, double y, double z, double roll, double pitch, double yaw)
-{
+{	
+  //Define position and rotation
+  KDL::Vector position(x,y,z);
+  KDL::Rotation rotation;
+  rotation = rotation.RPY(roll,pitch,yaw);
+  
+  //Create frame based on position and rotation
+  KDL::Frame f;
+  f.p = position;
+  f.M = rotation;
+  
+  //Create joint arrays
+	KDL::JntArray q_init(ARM_MAX_JOINTS);
+	KDL::JntArray q_out(ARM_MAX_JOINTS);
+  
+  //Use zero values for initialization
+  for(int i = 0;i<ARM_MAX_JOINTS;i++){
+    q_init(i)= 0.0;
+  }
 
+  //Perform inverse kinematics
+  if (robot->pr2_kin.IK(q_init, f, q_out)){
+   // cout<<"IK result:"<<q_out<<endl;
+ }else{ 
+    //cout<<"Could not compute Inv Kin."<<endl;
+    return CONTROLLER::CONTROLLER_JOINT_ERROR; 
+  }
+
+   //------ checking that IK returned a valid soln -----
+  KDL::Frame f_ik;
+  if (robot->pr2_kin.FK(q_out,f_ik))
+  {
+    //    cout<<"End effector after IK:"<<f_ik<<endl;
+  }
+  else{
+   // cout<<"Could not compute Fwd Kin. (After IK)"<<endl;
+    return CONTROLLER::CONTROLLER_JOINT_ERROR;
+  }
+
+  //Record commands and shove to arm
+  for(int ii = 0; ii < ARM_MAX_JOINTS; ii++){
+    cmdPos[ii] = q_out(ii);
+    lowerControl[ii].SetPosCmd(q_out(ii));
+    //std::cout<<"*"<<q_out(ii);
+  }
+  //std::cout<<std::endl;
   return CONTROLLER::CONTROLLER_ALL_OK;
 }
 CONTROLLER_ERROR_CODE ArmController::getHandCartesianPositionCmd(double *x, double *y, double *z, double *roll, double *pitch, double *yaw)
@@ -180,6 +225,7 @@ CONTROLLER_ERROR_CODE ArmController::getHandParam(std::string label, std::string
 
 //---------------------------------------------------------------------------------//
 //ARM JOINT POSITION CALLS
+//
 //---------------------------------------------------------------------------------//
 CONTROLLER_ERROR_CODE
 ArmController::setArmJointPosition(int numJoints, double angles[],double speed[])
@@ -189,7 +235,7 @@ ArmController::setArmJointPosition(int numJoints, double angles[],double speed[]
   if(controlMode!=CONTROLLER::CONTROLLER_POSITION) return CONTROLLER_MODE_ERROR; //TODO implement errors?
   for (int i = 0;i<numJoints;i++){
     current = lowerControl[i].SetPosCmd(angles[i]);
-    std::cout<<i<<":"<<current<<std::endl;
+//    std::cout<<i<<":"<<current<<std::endl;
     if(current!=CONTROLLER_ALL_OK) error = current;
   }  
   return error;
@@ -339,6 +385,23 @@ ArmController::Update( )
   for(int i = 0;i<ARM_MAX_JOINTS;i++){   
     lowerControl[i].Update();
   }
+
+/* 
+	KDL::JntArray q_out(ARM_MAX_JOINTS);
+  for(int i = 0;i<ARM_MAX_JOINTS;i++){
+    lowerControl[i].GetPosAct(&q_out(i));
+  }
+  
+
+  KDL::Frame f_ik;
+  if (robot->pr2_kin.FK(q_out,f_ik))
+  {
+        cout<<"End effector after IK:"<<f_ik.M<<endl;
+  }
+  else{
+    cout<<"Could not compute Fwd Kin. (After IK)"<<endl;
+  }
+*/
 }
 
 /*

@@ -20,9 +20,8 @@
 #include <genericControllers/Controller.h>
 #include <genericControllers/JointController.h>
 #include <mechanism_model/joint.h>
-
-
-
+#include <libKDL/kdl_kinematics.h>
+#include <libpr2API/pr2API.h> 
 namespace CONTROLLER
 {
   class ArmController : Controller
@@ -66,7 +65,7 @@ namespace CONTROLLER
         * \brief Call after initializing individual joints to initialize arm as a whole
         *         
         */
-      CONTROLLER_ERROR_CODE initArm(CONTROLLER_CONTROL_MODE mode);
+      CONTROLLER_ERROR_CODE initArm(CONTROLLER_CONTROL_MODE mode, PR2::PR2Robot* robot);
 
 
 
@@ -303,7 +302,7 @@ namespace CONTROLLER
       double cmdPos[6]; /**<Last commanded cartesian position>*/
       double cmdVel[6]; /**<Last commanded cartesian velocity>*/
 
-      
+      PR2::PR2Robot* robot; /**<Track robot for kinematics>*/ 
   };
 }
 
