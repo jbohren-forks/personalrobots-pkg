@@ -41,6 +41,8 @@ namespace TREX {
       return;
     }
 
+    ROSNodeId rni = ROSNode::request();
+
     //getting shoulder origin in world coordinates
     libTF::TFPose aPose;
     aPose.x = 0;
@@ -50,12 +52,11 @@ namespace TREX {
     aPose.pitch = 0;
     aPose.yaw = 0;
     aPose.time = 0;
-    aPose.frame = tf.lookup("FRAMEID_ARM_R_SHOULDER");
+    aPose.frame = rni->tf.lookup("FRAMEID_ARM_R_SHOULDER");
 
     std::cout << "Before\n";
 
-    ROSNodeId rni = ROSNode::request();
-    libTF::TFPose inShoulderFrame = rni->tf.transformPose(tf.lookup("FRAMEID_ODOM"), aPose);
+    libTF::TFPose inShoulderFrame = rni->tf.transformPose(rni->tf.lookup("FRAMEID_ODOM"), aPose);
 
     std::cout << "In shoulder frame in base x " << inShoulderFrame.x << std::endl;
     std::cout << "In shoulder frame in base y " << inShoulderFrame.y << std::endl;
@@ -76,9 +77,9 @@ namespace TREX {
     bPose.pitch = 0;
     bPose.yaw = 0;
     bPose.time = 0;
-    bPose.frame = tf.loookup("FRAMEID_ARM_R_HAND");
+    bPose.frame = rni->tf.lookup("FRAMEID_ARM_R_HAND");
     
-    libTF::TFPose inHandFrame = rni->tf.transformPose(FRAMEID_ODOM, bPose);
+    libTF::TFPose inHandFrame = rni->tf.transformPose(rni->tf.lookup("FRAMEID_ODOM"), bPose);
  
     std::cout << "In hand frame in base x " << inHandFrame.x << std::endl;
     std::cout << "In hand frame in base y " << inHandFrame.y << std::endl;

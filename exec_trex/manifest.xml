@@ -5,7 +5,8 @@
   <depend package="roscpp" />
   <depend package="xmlrpc++" />
   <depend package="player" />
-  <depend package="std_srvs" />
+  <depend package="std_msgs" />
+  <depend package="pr2_msgs" />
   <depend package="rosthread" />
   <depend package="rosstage" />
   <depend package="nav_view" />
@@ -16,7 +17,5 @@
   <depend package="trex" />
   <depend package="rosTF" />
   <depend package="pr2Core" />
-  <depend package="libpr2API" />
   <depend package="libKDL" />
-  <depend package="rosgazebo" />
 </package>

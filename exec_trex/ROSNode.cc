@@ -3,7 +3,7 @@
 //external ros includes for messages
 #include <std_srvs/StaticMap.h>
 #include <std_msgs/BaseVel.h>
-#include <rosgazebo/EndEffectorState.h>
+#include <pr2_msgs/EndEffectorState.h>
 #include "WavefrontPlanner.hh"
 
 //NDDL includes
@@ -117,8 +117,8 @@ namespace TREX {
     advertise<BaseVel>("cmd_vel");
     advertise<PR2Arm>("right_pr2arm_set_position");
     advertise<PR2Arm>("left_pr2arm_set_position");
-    advertise<rosgazebo::EndEffectorState>("cmd_leftarm_cartesian");
-    advertise<rosgazebo::EndEffectorState>("cmd_rightarm_cartesian");
+    advertise<pr2_msgs::EndEffectorState>("cmd_leftarm_cartesian");
+    advertise<pr2_msgs::EndEffectorState>("cmd_rightarm_cartesian");
     //subscribe("state", m_rcs_obs, &ROSNode::rcs_cb);
     subscribe("scan", laserMsg, &ROSNode::laserReceived);
     subscribe("left_pr2arm_pos", leftArmPosMsg, &ROSNode::leftArmPosReceived);
@@ -287,7 +287,7 @@ namespace TREX {
 
   void ROSNode::dispatchEndEffector(const TokenId& cmd_end, TICK currentTick) {
     if(cmd_end->getPredicateName() == LabelStr("EndEffectorGoal.Holds")) {
-      rosgazebo::EndEffectorState endGoal;
+      pr2_msgs::EndEffectorState endGoal;
       endGoal.set_rot_size(9);
       endGoal.set_trans_size(3);
       endGoal.rot[0] = cmd_end->getVariable("cmd_rot1_1")->lastDomain().getSingletonValue();
@@ -530,7 +530,7 @@ namespace TREX {
     ObservationByValue* obs = NULL;
     Frame f;
     ConvertArmToEndEffectorFrame(rightArmPosMsg,
-				 PR2::FRAMEID_ARM_R_SHOULDER,
+				 tf.lookup("FRAMEID_ARM_R_SHOULDER"),
 				 f);
     
     obs = new ObservationByValue("rightEndEffectorState", "EndEffectorState.Holds");
@@ -555,7 +555,7 @@ namespace TREX {
     ObservationByValue* obs = NULL;
     Frame f;
     ConvertArmToEndEffectorFrame(leftArmPosMsg,
-				 PR2::FRAMEID_ARM_L_SHOULDER,
+				 tf.lookup("FRAMEID_ARM_L_SHOULDER"),
 				 f);
     
     obs = new ObservationByValue("leftEndEffectorState", "EndEffectorState.Holds");
