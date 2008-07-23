@@ -31,8 +31,8 @@
 
 using namespace scan_utils;
 
-#define TFRT 1
-#define TFMF 2
+#define SU_TFRT 1
+#define SU_TFMF 2
 
 SmartScan::SmartScan()
 {
@@ -69,12 +69,12 @@ void SmartScan::setScanner(float px, float py, float pz,
 			   float ux, float uy, float uz)
 {
 	mScannerPos.x = px; mScannerPos.y = py; mScannerPos.z = pz;
-	mScannerPos.frame = TFMF; mScannerPos.time = 0;
+	mScannerPos.frame = SU_TFMF; mScannerPos.time = 0;
 	//should normalize them too...
 	mScannerDir.x = dx; mScannerDir.y = dy; mScannerDir.z = dz;
-	mScannerDir.frame = TFMF; mScannerDir.time = 0;
+	mScannerDir.frame = SU_TFMF; mScannerDir.time = 0;
 	mScannerUp.x = ux; mScannerUp.y = uy; mScannerUp.z = uz;
-	mScannerUp.frame = TFMF; mScannerUp.time = 0;
+	mScannerUp.frame = SU_TFMF; mScannerUp.time = 0;
 }
 
 void SmartScan::getScanner(float &px, float &py, float &pz, 
@@ -116,6 +116,33 @@ void SmartScan::setPoints(int numPoints, const float *points)
 	}
 }
 
+/*! Set the data from a ROS PointCloudFloat32 message. For the moment,
+    it ingores all channels except the points themselves.
+*/
+void SmartScan::setFromRosCloud(const std_msgs::PointCloudFloat32 &cloud)
+{
+	//for the moment we ignore intensity values
+	setPoints( cloud.get_pts_size(), cloud.pts);
+}
+
+/*!  Returns the SmartScan as a ROS PointCloudFloat32 message.
+  Currently, this sets the intensity channel to all zeros.  
+*/
+std_msgs::PointCloudFloat32 SmartScan::getPointCloud() const{
+	std_msgs::PointCloudFloat32 cloud;
+	cloud.set_pts_size(mNumPoints);
+	cloud.set_chan_size(1);
+	cloud.chan[0].name = "intensities";
+	cloud.chan[0].set_vals_size(mNumPoints);
+	for(int i=0; i<mNumPoints; i++) {
+		std_msgs::Point3DFloat32 pt = getPoint(i);
+		cloud.pts[i].x = pt.x;
+		cloud.pts[i].y = pt.y;
+		cloud.pts[i].z = pt.z;
+		cloud.chan[0].vals[i] = 0;
+	}
+	return cloud;
+}
 
 std_msgs::Point3DFloat32 SmartScan::transformPoint(const std_msgs::Point3DFloat32 &p_in,
 						   libTF::TransformReference &tr) const
@@ -123,8 +150,8 @@ std_msgs::Point3DFloat32 SmartScan::transformPoint(const std_msgs::Point3DFloat3
 
 	libTF::TFPoint p;
 	p.x = p_in.x; p.y = p_in.y; p.z = p_in.z;
-	p.frame = TFMF;	p.time = 0;
-	p = tr.transformPoint(TFRT, p);
+	p.frame = SU_TFMF;	p.time = 0;
+	p = tr.transformPoint(SU_TFRT, p);
 
 	std_msgs::Point3DFloat32 p_out;
 	p_out.x = p.x; p_out.y = p.y; p_out.z = p.z;
@@ -140,18 +167,18 @@ void SmartScan::applyTransform(const NEWMAT::Matrix &M)
 	//unsure about how to use libTF
 
 	libTF::TransformReference tr;
-	tr.setWithMatrix( TFMF, TFRT, M, 0);
+	tr.setWithMatrix( SU_TFMF, SU_TFRT, M, 0);
 
 	for (int i=0; i<mNumPoints; i++) {
 		mNativePoints[i] = transformPoint( mNativePoints[i], tr );
 	}
 
-	mScannerPos = tr.transformPoint(TFRT, mScannerPos);
-	mScannerDir = tr.transformVector(TFRT, mScannerDir);
-	mScannerUp = tr.transformVector(TFRT, mScannerUp);
-	mScannerPos.frame = TFMF; mScannerPos.time = 0;
-	mScannerDir.frame = TFMF; mScannerDir.time = 0;
-	mScannerUp.frame = TFMF; mScannerUp.time = 0;
+	mScannerPos = tr.transformPoint(SU_TFRT, mScannerPos);
+	mScannerDir = tr.transformVector(SU_TFRT, mScannerDir);
+	mScannerUp = tr.transformVector(SU_TFRT, mScannerUp);
+	mScannerPos.frame = SU_TFMF; mScannerPos.time = 0;
+	mScannerDir.frame = SU_TFMF; mScannerDir.time = 0;
+	mScannerUp.frame = SU_TFMF; mScannerUp.time = 0;
 
 	if (hasVtkData()) {
 		deleteVtkData();
@@ -305,10 +332,13 @@ vtkPointLocator* SmartScan::getVtkLocator()
 	return mVtkPointLocator;
 }
 
-std_msgs::Point3DFloat32 SmartScan::centroid() const
+libTF::TFPoint SmartScan::centroid() const
 {
-	std_msgs::Point3DFloat32 c,p;
+	std_msgs::Point3DFloat32 p;
+	libTF::TFPoint c;
+	c.time = 0; c.frame = 0;
 	c.x = c.y = c.z = 0;
+
 	if (size()==0) return c;
 	for (int i=0; i<size(); i++) {
 		p = getPoint(i);
@@ -332,10 +362,11 @@ std_msgs::Point3DFloat32 SmartScan::centroid() const
 
   Future work: make this more robust by disregarding outliers.
  */
-void SmartScan::principalAxes(std_msgs::Point3DFloat32 &a1, std_msgs::Point3DFloat32 &a2,
-			      std_msgs::Point3DFloat32 &a3)
+void SmartScan::principalAxes(libTF::TFVector &a1, libTF::TFVector &a2,
+			      libTF::TFVector &a3)
 {
-	std_msgs::Point3DFloat32 c = centroid(),p;
+	std_msgs::Point3DFloat32 p;
+	libTF::TFPoint c = centroid();
 
 	//asemble normalized NEWMAT matrix
 	NEWMAT::Matrix M(size(),3);
@@ -346,14 +377,27 @@ void SmartScan::principalAxes(std_msgs::Point3DFloat32 &a1, std_msgs::Point3DFlo
 		M.element(i,2) = p.z - c.z;
 	}
 
+	//for now we use a mixture of Point3DFloat32 and libTF::TFVector
+	//this is just a hack, I need to clean this up in the future
+	std_msgs::Point3DFloat32 pa1, pa2, pa3;
+
 	//do SVD decomposition
-	singularVectors(&M,size(),a1,a2,a3);
+	singularVectors(&M,size(),pa1,pa2,pa3);
 
 	//  singular vectors are orthonormal, but there's no guarantee
 	//  they form a right-handed coordinate system! We might need to flip one of the vectors.
-	if ( dot ( cross(a1,a2) , a3 ) < 0) {
-		a3.x = -a3.x; a3.y = -a3.y; a3.z = -a3.z;
+	if ( dot ( cross(pa1,pa2) , pa3 ) < 0) {
+		pa3.x = -pa3.x; pa3.y = -pa3.y; pa3.z = -pa3.z;
 	}
+
+	//and copy back into the libTF::TFVectors. Horrible hack.
+	a1.x = pa1.x; a1.y = pa1.y; a1.z = pa1.z;
+	a2.x = pa2.x; a2.y = pa2.y; a2.z = pa2.z;
+	a3.x = pa3.x; a3.y = pa3.y; a3.z = pa3.z;
+
+	//set frame and time to 0. In the future, a smart scan might have its own frame and time
+	a1.time = a2.time = a3.time = 0;
+	a1.frame = a2.frame = a3.frame = 0;
 }
 
 /*! Adds the points in the scan \a target to this one. Does not check
@@ -716,13 +760,19 @@ void SmartScan::removeGrazingPoints(float threshold, bool removeOutliers, float 
 
   For computing point normals we look for at least \a nbrs neighbors
   within a sphere of radius \a radius.
+
+  Returns a measure of how many points in the cloud are close to the
+  returned plane. This is the exact value of the histogram at its
+  highest points, but as such it does not have clear units. Will
+  generally be somewhere between 0 and 2, with higher values
+  indicating that more points in the cloud lie close to the plane.
 */
-void SmartScan::normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Point3DFloat32 &planeNormal,
+float SmartScan::normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Point3DFloat32 &planeNormal,
 				     float radius, int nbrs)
 {
 	std_msgs::Point3DFloat32 zero; zero.x = zero.y = zero.z = 0.0;
 	if ( size() == 0) {
-		planeNormal = zero; planePoint = zero; return;
+		planeNormal = zero; planePoint = zero; return 0;
 	}
 
 	float binSize = 1.0 * M_PI / 180.0;
@@ -807,6 +857,8 @@ void SmartScan::normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_m
 
 	delete grid2;
 	delete grid1;
+
+	return ((float)max) / size();
 }
 
 /*! Computes the dominant plane in the scan using RANSAC.
@@ -818,14 +870,18 @@ void SmartScan::normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_m
   \param distThresh Internal RANSAC threshold: points that are closer
   than this value to a hypothesis plane are considered inliers
 
+  Returns the ratio of points that are within \a distThresh of the
+  plane to total number of points in the scan. This can be considered
+  as a measure of how dominant the plane is in the scan.
+
  */
-void SmartScan::ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Point3DFloat32 &planeNormal,
+float SmartScan::ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Point3DFloat32 &planeNormal,
 			    int iterations, float distThresh)
 {
 	std_msgs::Point3DFloat32 foo,zero; zero.x = zero.y = zero.z = 0.0;
 
 	if ( size() == 0) {
-		planeNormal = zero; planePoint = zero; return;
+		planeNormal = zero; planePoint = zero; return 0;
 	}
 	int selPoints = 3;
 
@@ -924,6 +980,7 @@ void SmartScan::ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Poin
 	}
 	consList.clear();
 	fprintf(stderr,"RANSAC consensus: %d\n",maxConsensus);
+	return ((float)maxConsensus) / size();
 }
 
 /*!  Removes all points that are closer than \a thresh to the plane
@@ -1121,10 +1178,13 @@ std::vector<scan_utils::Triangle>* SmartScan::createMesh()
   considered connected if the minimum distance between them is less
   than \a thresh.
 
+  \param minPts - only returns components which have more then this
+  number of points. Defaults to 0.
+
   Speed of implementation has been favored over speed of execution -
   multiple optimizations are possible.
  */
-std::vector<SmartScan*> *SmartScan::connectedComponents(float thresh, float minPts)
+std::vector<SmartScan*> *SmartScan::connectedComponents(float thresh, int minPts)
 {
 	std::vector<SmartScan*> *result = new std::vector<SmartScan*>;
 	std::list<std_msgs::Point3DFloat32> currentList;
@@ -1193,6 +1253,7 @@ std::vector<SmartScan*> *SmartScan::connectedComponents(float thresh, float minP
 		for (int i=0; i<size(); i++) {
 			if (indices[i]==id) nPoints++;
 		}
+		//if fewer than minPts, skip
 		if(nPoints < minPts) {
 		  continue;
 		}
@@ -1274,21 +1335,5 @@ void SmartScan::subtractScan(const SmartScan *target, float thresh)
 	delete [] indices;
 }
 
-/*!  Returns the SmartScan as a ROS PointCloudFloat32 message.  Currently, this sets the intensity channel to all zeros.  */
-std_msgs::PointCloudFloat32 SmartScan::getPointCloud() {
-  std_msgs::PointCloudFloat32 cloud;
-  cloud.set_pts_size(mNumPoints);
-  cloud.set_chan_size(1);
-  cloud.chan[0].name = "intensities";
-  cloud.chan[0].set_vals_size(mNumPoints);
-  for(int i=0; i<mNumPoints; i++) {
-    std_msgs::Point3DFloat32 pt = getPoint(i);
-    cloud.pts[i].x = pt.x;
-    cloud.pts[i].y = pt.y;
-    cloud.pts[i].z = pt.z;
-    cloud.chan[0].vals[i] = 0;
-  }
-  return cloud;
-}
 
 

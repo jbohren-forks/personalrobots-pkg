@@ -95,6 +95,7 @@ class SmartScan {
  public:
 	//! Empty constructor for a new point cloud that does not hold any data
 	SmartScan();
+	//! Destructor
 	~SmartScan();
 
 	//! Set the native data of the point cloud
@@ -107,6 +108,11 @@ class SmartScan {
 	//! Get scanner position and orientation
 	void getScanner(float &px, float &py, float &pz, float &dx, float &dy, float &dz,
 			float &ux, float &uy, float &uz);
+
+	//! Set the data from a ROS PointCloudFloat32 message.
+	void setFromRosCloud(const std_msgs::PointCloudFloat32 &cloud);
+	//! Returns a PointCloudFloat32 ros msg.
+	std_msgs::PointCloudFloat32 getPointCloud() const;
 
 	//! Write point cloud to an output stream
 	void writeToFile(std::iostream &output);
@@ -122,10 +128,10 @@ class SmartScan {
 		return mNativePoints[i];
 	}
 	//! Returns the centroid of the point cloud
-	std_msgs::Point3DFloat32 centroid() const;
+	libTF::TFPoint centroid() const;
 	//! Get the principal axes of the point cloud
-	void principalAxes(std_msgs::Point3DFloat32 &a1, std_msgs::Point3DFloat32 &a2,
-			   std_msgs::Point3DFloat32 &a3);
+	void principalAxes(libTF::TFVector &a1, libTF::TFVector &a2,
+			   libTF::TFVector &a3);
 
 	//! Adds the points from another scan to this one
 	void addScan(const SmartScan *target);
@@ -152,10 +158,10 @@ class SmartScan {
 	//! Returns the transform that registers this point cloud (computed using ICP).
 	float* ICPTo(SmartScan *target);
 	//! Finds the dominant plane in the point cloud by histograming point normals
-	void normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Point3DFloat32 &planeNormal,
+	float normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Point3DFloat32 &planeNormal,
 				  float radius = 0.01, int nbrs = 5);
 	//! Finds the dominant plane in the point cloud using RANSAC
-	void ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Point3DFloat32 &planeNormal,
+	float ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Point3DFloat32 &planeNormal,
 			 int iterations = 500, float distThresh = 0.02);
 	//! Removes all points that are close to a given plane
 	void removePlane(const std_msgs::Point3DFloat32 &planePoint, 
@@ -164,13 +170,11 @@ class SmartScan {
 	std_msgs::Point3DFloat32 computePointNormal(int id, float radius = 0.01, int nbrs = 5);
 
 	//! Returns the connected components in this scan, each in its own SmartScan
-	std::vector<SmartScan*> *connectedComponents(float thresh, float minPts = 0);
+	std::vector<SmartScan*> *connectedComponents(float thresh, int minPts = 0);
 
 	//! Under construction...
 	std::vector<scan_utils::Triangle> *createMesh();
 
-	//! Returns a PointCloudFloat32 ros msg.
-	std_msgs::PointCloudFloat32 getPointCloud();
 };
 
 
