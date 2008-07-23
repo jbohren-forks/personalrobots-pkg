@@ -118,7 +118,7 @@ int main(int argc, char **argv)
     armGoal.forearmRollAngle = 0; 
     armGoal.wristPitchAngle = 0;
     armGoal.wristRollAngle = 0;
-    armGoal.gripperForceCmd = 10;
+    armGoal.gripperForceCmd = 0;
     armGoal.gripperGapCmd = 0;
     test.publish("right_pr2arm_set_position",armGoal);
     //sleep(1);
