@@ -35,7 +35,7 @@ $(BUILD_TARGET):
 clean: check_svn_clean
 	cd $(SVN_DIR) && make clean
 	rm -rf opende
-wipe:
+wipe: clean
 	rm -rf $(SVN_DIR) opende
 
 download: opende-checkout
