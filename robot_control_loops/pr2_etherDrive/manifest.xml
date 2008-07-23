@@ -4,10 +4,9 @@ Main loop that runs the robot.
   </description>
   <author>Jimmy Sastra, Sachin Chitta</author>
   <license>BSD</license>
-  <depend package="pr2Controllers" />
   <depend package="roscpp" />
-  <depend package="std_msgs"/>
-  <depend package="joy"/>
+  <depend package="mechanism_control"/>
+  <depend package="etherdrive_hardware"/>
 
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
