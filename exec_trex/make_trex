@@ -4,7 +4,7 @@
 export PLASMA_HOME=`rospack find trex`/PLASMA/
 
 # Build the debug version
-jam exec_trex
+jam -q exec_trex
 
 # Build the optimized version
-jam -sVARIANTS=OPTIMIZED exec_trex
+jam -q -sVARIANTS=OPTIMIZED exec_trex
