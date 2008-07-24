@@ -290,6 +290,7 @@ RosGazeboNode::AdvertiseSubscribeMessages()
   advertise<std_msgs::LaserScan>("scan");
   advertise<std_msgs::RobotBase2DOdom>("odom");
   advertise<std_msgs::Image>("PTZR_image");
+  advertise<std_msgs::Image>("image");
   advertise<std_msgs::Image>("image_ptz_right");
   advertise<std_msgs::Image>("image_ptz_left");
   advertise<std_msgs::Image>("image_wrist_right");
