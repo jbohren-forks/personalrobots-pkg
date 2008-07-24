@@ -294,6 +294,7 @@ namespace robot_desc
 	    Data                data;
 
 	    std::vector<Group*> groups;
+	    std::vector<bool>   inGroup;
 	};
 	
 	struct Sensor : public Link
@@ -359,6 +360,7 @@ namespace robot_desc
 	const std::string& getRobotName(void) const;
 	unsigned int getDisjointPartCount(void) const;
 	Link* getDisjointPart(unsigned int index) const;
+	unsigned int getLinkCount(void) const;
 	void getLinks(std::vector<Link*> &links) const;
 	
 	void getGroupNames(std::vector<std::string> &groups) const;

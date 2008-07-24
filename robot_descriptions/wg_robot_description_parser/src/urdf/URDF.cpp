@@ -78,6 +78,11 @@ void robot_desc::URDF::getLinks(std::vector<Link*> &links) const
 	links.push_back(i->second);
 }
 
+unsigned int robot_desc::URDF::getLinkCount(void) const
+{
+    return m_links.size();
+}
+
 unsigned int robot_desc::URDF::getDisjointPartCount(void) const
 {
     return m_linkRoots.size();
@@ -1203,6 +1208,20 @@ bool robot_desc::URDF::parse(const TiXmlNode *node)
 		    if (outside)
 			i->second->linkRoots.push_back(i->second->links[j]);
 		}
+
+	    /* construct inGroup for every link */
+	    std::vector<std::string> grps;
+	    getGroupNames(grps);
+	    std::map<std::string, unsigned int> grpmap;
+	    for (unsigned int i = 0 ; i < grps.size() ; ++i)
+		grpmap[grps[i]] = i;
+
+	    for (std::map<std::string, Link*>::iterator i = m_links.begin() ; i != m_links.end() ; i++)
+	    {
+		i->second->inGroup.resize(grps.size(), false);
+		for (unsigned int j = 0 ; j < i->second->groups.size() ; ++j)
+		    i->second->inGroup[grpmap[i->second->groups[j]->name]] = true;
+	    }
 	}
 	
 	m_constants.clear();
