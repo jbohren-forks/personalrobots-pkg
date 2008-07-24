@@ -95,6 +95,8 @@ class GazeboHardware{
    */
   void init();
 
+  HardwareInterface *hardwareInterface; /**< a class holding an array of actuators */
+
  private:
 
   /*! 
@@ -138,8 +140,6 @@ class GazeboHardware{
   gazebo::PR2GripperIface  *pr2GripperRightIface; /**< pointer to right gripper iface */
   gazebo::PTZIface         *pr2PTZCameraLeftIface; /**< pointer to left gripper iface */
   gazebo::PTZIface         *pr2PTZCameraRightIface; /**< pointer to right gripper iface */
-
-  HardwareInterface *hw; /**< a class holding an array of actuators */
 
   enum GAZEBO_CONTROL_MODE{
        GAZEBO_VOLTAGE_MODE,
