@@ -10,10 +10,6 @@
 #include "Agent.hh"
 #include "GoalManager.hh"
 
-
-#include <gdk-pixbuf/gdk-pixbuf.h>
-#include <libstandalone_drivers/plan.h>
-
 #include <math.h>
 
 namespace TREX{

@@ -5,8 +5,8 @@ all: trex
 trex: env.jam
 	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else ./make_trex; fi
 
-env.jam: installEnv manifest.xml
+env.jam: installEnv 
 	./installEnv
 
-installEnv: Install.cc
+installEnv: Install.cc manifest.xml
 	g++ -o installEnv Install.cc

@@ -19,18 +19,12 @@
 #include "CalcGlobalPathConstraintPlayback.hh"
 #include "OrienteeringSolver.hh"
 
-
-#include <gdk-pixbuf/gdk-pixbuf.h>
-#include <libstandalone_drivers/plan.h>
-
 #include <math.h>
 
 namespace TREX{
 
 
   void initROSExecutive(bool playback){
-    // Initialize glib
-    g_type_init();
 
     initTREX();
 
