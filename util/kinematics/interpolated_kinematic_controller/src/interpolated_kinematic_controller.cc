@@ -2,6 +2,7 @@
 #include <rosthread/mutex.h>
 
 #include <std_msgs/PR2Arm.h>
+#include <std_msgs/Float64.h>
 #include <pr2_msgs/EndEffectorState.h>
 
 #include <libpr2API/pr2API.h>
@@ -12,20 +13,34 @@ using namespace std_msgs;
 using namespace PR2;
 using namespace KDL;
 
-static const double step_size = .05;
 
 class InterpolatedKinematicController : public ros::node {
 public:
   
   InterpolatedKinematicController(void) : ros::node("interpolated_kinematic_controller") {
+		step_size = 0.05;
+		wait_time = 1.;
     advertise<pr2_msgs::EndEffectorState>("cmd_leftarm_cartesian");
     advertise<pr2_msgs::EndEffectorState>("cmd_rightarm_cartesian");
     subscribe("right_pr2arm_set_end_effector", _rightEndEffectorGoal, &InterpolatedKinematicController::setRightEndEffector);	
     subscribe("left_pr2arm_set_end_effector", _leftEndEffectorGoal, &InterpolatedKinematicController::setLeftEndEffector);
     subscribe("left_pr2arm_pos",  leftArmPosMsg,  &InterpolatedKinematicController::currentLeftArmPos);
     subscribe("right_pr2arm_pos", rightArmPosMsg, &InterpolatedKinematicController::currentRightArmPos);
+
+    subscribe("interpolate_step_size", float64_msg, &InterpolatedKinematicController::setStepSize);	
+    subscribe("interpolate_wait_time", float64_msg, &InterpolatedKinematicController::setWaitTime);	
   }
   
+	void setWaitTime(void)
+	{
+		wait_time = float64_msg.data;
+	}
+
+	void setStepSize(void)
+	{
+		step_size = float64_msg.data;
+	}
+
   void setRightEndEffector(void) {
     KDL::Frame f;
     for(int i = 0; i < 9; i++) {
@@ -114,7 +129,7 @@ public:
       f.M = rotInterpolater.Pos(angle_step*(i+1));
       std::cout << "Starting trans " << f.p.data[0] << " " << f.p.data[1] << " " << f.p.data[2] << std::endl;
       publishFrame(isRightArm, f);
-      usleep(1000000);
+      usleep(wait_time*1e6);
     }
     f.p = r.p;
     f.M = r.M;
@@ -126,6 +141,9 @@ private:
   pr2_msgs::EndEffectorState _leftEndEffectorGoal;
   pr2_msgs::EndEffectorState _rightEndEffectorGoal;
   std_msgs::PR2Arm leftArmPosMsg, rightArmPosMsg;
+	double step_size;
+	double wait_time;
+  std_msgs::Float64 float64_msg;
 
 };
 
