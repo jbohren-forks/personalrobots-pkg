@@ -11,24 +11,43 @@ if ! $(exec_trex_READY) {
 		LINKFLAGS = $(LINKFLAGS) -Wl,-rpath,$(PLASMA_HOME)/build/lib ;	
 	}
 
-	ModuleMain exec_trex : Executive.cc ROSAdapter.cc
-	ROSNode.cc Logger.cc LogClock.cc CalcCommandConstraintPlayback.cc
-	CalcGlobalPathConstraintPlayback.cc CalcCommandConstraint.cc Playback.cc
-	CalcGlobalPathConstraint.cc CalcArmInverseKinematicsConstraint.cc
-	CalcInterpolatedEndEffectorPosConstraint.cc OrienteeringSolver.cc
-	CalcGraspPositionConstraint.cc CalcAngleDiffConstraint.cc CalcDistanceConstraint.cc GoalManager.cc
-	WavefrontPlanner.cc map_helpers.cc ExecDefs.cc Components.cc pr2.model.cc
-	: TREX : exec_trex ;
+	# The executive library specification. Will eventually partition into
+	# core and application specific stuff
+	Module executive : TREX ;
+	ModuleFiles executive : 
+	 	    ROSAdapter.cc
+	 	    ROSNode.cc 
+	 	    Logger.cc 
+	 	    LogClock.cc 
+	 	    CalcCommandConstraintPlayback.cc
+		    CalcGlobalPathConstraintPlayback.cc 
+		    CalcCommandConstraint.cc 
+		    Playback.cc
+		    CalcGlobalPathConstraint.cc
+		    CalcArmInverseKinematicsConstraint.cc
+		    CalcInterpolatedEndEffectorPosConstraint.cc 
+		    OrienteeringSolver.cc
+		    CalcGraspPositionConstraint.cc 
+		    CalcAngleDiffConstraint.cc 
+		    CalcDistanceConstraint.cc 
+		    GoalManager.cc
+		    WavefrontPlanner.cc 
+		    map_helpers.cc 
+		    ExecDefs.cc 
+		    Components.cc
+	;
+
+	ModuleLibraries executive : $(DLOPEN_LIBRARY) ;
+	
+	# Main executable for now linked directly with the model. The main executive is pretty slim
+	ModuleMain exec_trex : Executive.cc pr2.model.cc : executive : exec_trex ;
 	
 	Depends exec_trex : exec_inputs ;
-	ModuleMain logger : MessageLogger.cc ExecDefs.cc : TREX : logger ;
 
-	# Test Targets
+	# Test Targets. Modeul tests will be integrated into a single executable
  	RunModuleMain run-exec-module-tests : exec-module-tests ;
-	ModuleMain exec-module-tests : module-tests.cc CalcDistanceConstraint.cc : TREX : exec_trex_module-tests ;
-	ModuleMain testCalcArmInverseKinematicsConstraint :
-	testCalcArmInverseKinematicsConstraint.cc CalcArmInverseKinematicsConstraint.cc Logger.cc LogClock.cc : TREX : testCalcArmInverseKinematicsConstraint ;
-
+	ModuleMain exec-module-tests : module-tests.cc : executive : exec_trex_module-tests ;
+	ModuleMain testCalcArmInverseKinematicsConstraint : testCalcArmInverseKinematicsConstraint.cc  : executive : testCalcArmInverseKinematicsConstraint ;
 
  	# Input file for exec
 	local TestInputs = 
@@ -64,4 +83,7 @@ if ! $(exec_trex_READY) {
 
 	# Build all
 	Depends exec_all : exec_trex logger exec_inputs ;
+
+	# Will be deprecated
+	ModuleMain logger : MessageLogger.cc ExecDefs.cc : TREX : logger ;
 }
