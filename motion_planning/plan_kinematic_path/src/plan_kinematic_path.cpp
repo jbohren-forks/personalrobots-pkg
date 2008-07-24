@@ -48,15 +48,29 @@ public:
 	robot_srvs::KinematicMotionPlan::request  req;
 	robot_srvs::KinematicMotionPlan::response res;
 	
+	req.model_id = "pr2::leftArm";
+	
+	req.start_state.set_vals_size(32);
+	for (unsigned int i = 0 ; i < req.start_state.vals_size ; ++i)
+	    req.start_state.vals[i] = 0.0;
+	
+	req.goal_state.set_vals_size(7);
+	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
+	    req.goal_state.vals[i] = 0.1;
+	
+	req.allowed_time = 2.0;
+	
+	req.volumeMin.x = -1.0;	req.volumeMin.y = -1.0;	req.volumeMin.z = -1.0;
+	req.volumeMax.x = -1.0;	req.volumeMax.y = -1.0;	req.volumeMax.z = -1.0;
+	
 	if (ros::service::call("plan_kinematic_path", req, res))
 	{
-	    
-	    
+	    unsigned int nstates = res.path.get_states_size();
+	    printf("Obtained solution path with %u states\n", nstates);
 	}
 	else
 	    fprintf(stderr, "Service 'plan_kinematic_path' failed\n");	  
-    }	  
-
+    }
     
 };
 
