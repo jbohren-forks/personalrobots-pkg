@@ -15,6 +15,19 @@
   <depend package="std_msgs" />
   <depend package="rosthread" />
   <depend package="rosTF" />
+  <depend package="gazebo" />
+  <depend package="gazebo_plugin" />
+  <depend package="libpr2HW" />
+  <depend package="math_utils" />
+  <depend package="string_utils" />
+  <depend package="libKDL" />
+  <depend package="robot_mechanism_model" />
+  <depend package="hw_interface" />
+  <depend package="gazebo_hardware" />
+  <depend package="gazebo_sensors" />
   <depend package="rosgazebo" />
+  <export>
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lRosGazeboControlsNode"/>
+  </export>  
   <depend package="mechanism_control" />
 </package>
