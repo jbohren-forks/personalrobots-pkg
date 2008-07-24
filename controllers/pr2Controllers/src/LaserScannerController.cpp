@@ -41,7 +41,7 @@ LaserScannerController::LaserScannerController(Joint* joint, std::string name);
 }
 */
  
-void LaserScannerController::Init(double PGain, double IGain, double DGain, double IMax, double IMin, controllerControlMode mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint){
+void LaserScannerController::init(double pGain, double iGain, double dGain, double windupMax, double windupMin, controllerControlMode mode, double time,double maxEffort,double minEffort, mechanism::Joint *joint){
   
   //If we're in automatic mode, want to pass down position control mode to lower controller
   controllerControlMode newMode;
@@ -52,23 +52,23 @@ void LaserScannerController::Init(double PGain, double IGain, double DGain, doub
   }
   else newMode = mode;
 
-  lowerControl.init(PGain,IGain,DGain,IMax,IMin,mode,time,maxEffort,-maxEffort,joint);
+  lowerControl.init(pGain,iGain,dGain,windupMax,windupMin,mode,time,maxEffort,minEffort,joint);
 
-  EnableController();
+  enableController();
 }
 
  //---------------------------------------------------------------------------------//
  //AUTOMATIC PROFILE FUNCTIONS
  //---------------------------------------------------------------------------------//
-void LaserScannerController::SetSawtoothProfile(double period, double amplitude, double dt, double offset){
+void LaserScannerController::setSawtoothProfile(double period, double amplitude, double dt, double offset){
 
 	unsigned int elements = (unsigned int) (period/dt);
 	setParam("profile" , "sawtooth");
-	GenerateSawtooth(profileX,profileT,period,amplitude,dt,offset,elements);
+	generateSawtooth(profileX,profileT,period,amplitude,dt,offset,elements);
 	profileLength = elements;
 }
 
-void LaserScannerController::GenerateSawtooth(double *&x, double *&t, double period, double amplitude, double dt, double offset, unsigned int numElements){
+void LaserScannerController::generateSawtooth(double *&x, double *&t, double period, double amplitude, double dt, double offset, unsigned int numElements){
 	double lastPeakTime = 0.0; //Track the time of the last peak
 	double timeDifference= 0.0;
 	double currentTime = 0.0;
@@ -91,16 +91,16 @@ void LaserScannerController::GenerateSawtooth(double *&x, double *&t, double per
 	}
 }
 
-void LaserScannerController::SetSinewaveProfile(double period, double amplitude, double dt, double offset){
+void LaserScannerController::setSinewaveProfile(double period, double amplitude, double dt, double offset){
 	setParam("profile", "sinewave");
 	unsigned int elements = (unsigned int) (period/dt);
-	GenerateSinewave(profileX,profileT,period,amplitude,dt,offset,elements);
+	generateSinewave(profileX,profileT,period,amplitude,dt,offset,elements);
 	profileLength = elements;
 	profileIndex = 0; //Start at beginning of profile
 }
 
 
-void LaserScannerController::GenerateSinewave(double *&x, double *&t, double period, double amplitude,double dt, double offset, unsigned int numElements){
+void LaserScannerController::generateSinewave(double *&x, double *&t, double period, double amplitude,double dt, double offset, unsigned int numElements){
 
 	double currentTime = 0.0;
 	//Set up arrays
@@ -116,16 +116,16 @@ void LaserScannerController::GenerateSinewave(double *&x, double *&t, double per
 
 }
 
-void LaserScannerController::SetSquarewaveProfile(double period, double amplitude, double dt, double offset){
+void LaserScannerController::setSquarewaveProfile(double period, double amplitude, double dt, double offset){
 	setParam("profile", "squarewave");
 	unsigned int elements = (unsigned int) (period/dt);
-	GenerateSquarewave(profileX,profileT,period,amplitude,dt,offset,elements);
+	generateSquarewave(profileX,profileT,period,amplitude,dt,offset,elements);
 	profileLength = elements;
 	profileIndex = 0; //Start at beginning of profile
 }
 
 
-void LaserScannerController::GenerateSquarewave(double *&x, double *&t, double period, double amplitude, double dt, double offset, unsigned int numElements){
+void LaserScannerController::generateSquarewave(double *&x, double *&t, double period, double amplitude, double dt, double offset, unsigned int numElements){
 
 	double currentTime = 0.0;
 	double lastSwitchTime = 0.0;
@@ -158,7 +158,7 @@ controllerErrorCode LaserScannerController::setProfile(double *&t, double *&x, i
 //TIME CALLS
 //
 //---------------------------------------------------------------------------------//
-void LaserScannerController::GetTime(double* time){
+void LaserScannerController::getTime(double* time){
         lowerControl.getTime(time);
       }
 
@@ -167,7 +167,7 @@ void LaserScannerController::GetTime(double* time){
 //---------------------------------------------------------------------------------//
 
 //Set the controller control mode
-controllerControlMode LaserScannerController::SetMode(controllerControlMode mode){
+controllerControlMode LaserScannerController::setMode(controllerControlMode mode){
   //Record top level of control mode
   controlMode = mode;
 
@@ -183,26 +183,26 @@ controllerControlMode LaserScannerController::SetMode(controllerControlMode mode
 }
 
 
-controllerControlMode LaserScannerController::GetMode(void){
+controllerControlMode LaserScannerController::getMode(void){
 	return controlMode;
 }
 
 
 //Allow controller to function
-controllerControlMode LaserScannerController::EnableController(){
+controllerControlMode LaserScannerController::enableController(){
   enabled = true;
   return lowerControl.enableController();
   
 }
 
 //Disable functioning. Set joint torque to zero.
-controllerControlMode LaserScannerController::DisableController(){
+controllerControlMode LaserScannerController::disableController(){
   enabled = false;
   return lowerControl.disableController();   
 }
 
 //Check for saturation of last command
-bool LaserScannerController::CheckForSaturation(void){ 
+bool LaserScannerController::checkForSaturation(void){ 
   return lowerControl.checkForSaturation();
 }
 
@@ -212,7 +212,7 @@ bool LaserScannerController::CheckForSaturation(void){
 //TORQUE CALLS
 //---------------------------------------------------------------------------------//
 
-controllerErrorCode LaserScannerController::SetTorqueCmd(double torque){
+controllerErrorCode LaserScannerController::setTorqueCmd(double torque){
 	if(controlMode != CONTROLLER_TORQUE)  //Make sure we're in torque command mode
 	return CONTROLLER_MODE_ERROR;
 	
@@ -221,7 +221,7 @@ controllerErrorCode LaserScannerController::SetTorqueCmd(double torque){
 
 //Return current torque command
 controllerErrorCode
-LaserScannerController::GetTorqueCmd(double *torque)
+LaserScannerController::getTorqueCmd(double *torque)
 {
   *torque = cmdTorque;
   return CONTROLLER_ALL_OK; 
@@ -229,7 +229,7 @@ LaserScannerController::GetTorqueCmd(double *torque)
 
 //Query motor for actual torque 
 controllerErrorCode
-LaserScannerController::GetTorqueAct(double *torque)
+LaserScannerController::getTorqueAct(double *torque)
 {
 	return lowerControl.getTorqueAct(torque);
 }
@@ -239,7 +239,7 @@ LaserScannerController::GetTorqueAct(double *torque)
 //---------------------------------------------------------------------------------//
 
 //Query mode, then set desired position 
-controllerErrorCode LaserScannerController::SetPosCmd(double pos)
+controllerErrorCode LaserScannerController::setPosCmd(double pos)
 {
 	if(controlMode != CONTROLLER_POSITION)  //Make sure we're in position command mode
 	return CONTROLLER_MODE_ERROR;
@@ -250,14 +250,14 @@ controllerErrorCode LaserScannerController::SetPosCmd(double pos)
 }
 
 //Return the current position command
-controllerErrorCode LaserScannerController::GetPosCmd(double *pos)
+controllerErrorCode LaserScannerController::getPosCmd(double *pos)
 {
   *pos = cmdPos;
 	return CONTROLLER_ALL_OK;
 }
 
 //Query the joint for the actual position
-controllerErrorCode LaserScannerController::GetPosAct(double *pos)
+controllerErrorCode LaserScannerController::getPosAct(double *pos)
 {
   return	lowerControl.getPosAct(pos);
 }
@@ -267,7 +267,7 @@ controllerErrorCode LaserScannerController::GetPosAct(double *pos)
 //VELOCITY CALLS
 //---------------------------------------------------------------------------------//
 //Check mode, then set the commanded velocity
-controllerErrorCode LaserScannerController::SetVelCmd(double vel)
+controllerErrorCode LaserScannerController::setVelCmd(double vel)
 {
 	if( controlMode != CONTROLLER_VELOCITY)  //Make sure we're in velocity command mode
 	return CONTROLLER_MODE_ERROR;
@@ -276,23 +276,22 @@ controllerErrorCode LaserScannerController::SetVelCmd(double vel)
 }
 
 //Return the internally stored commanded velocity
-controllerErrorCode LaserScannerController::GetVelCmd(double *vel)
+controllerErrorCode LaserScannerController::getVelCmd(double *vel)
 {
   return lowerControl.getVelCmd(vel);
 }
 
 //Query our joint for velocity
-controllerErrorCode LaserScannerController::GetVelAct(double *vel)
+controllerErrorCode LaserScannerController::getVelAct(double *vel)
 {
-//	lowerControl.getVelAct(vel);
-	return CONTROLLER_ALL_OK;
+  return	lowerControl.getVelAct(vel);
 }
       
 //---------------------------------------------------------------------------------//
 //UPDATE CALLS
 //---------------------------------------------------------------------------------//
 
-void LaserScannerController::Update( )
+void LaserScannerController::update( )
 {
   if(!enabled) return; //Check for enabled
  /* 	double currentTime;

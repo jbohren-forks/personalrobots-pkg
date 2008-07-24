@@ -46,10 +46,10 @@ namespace controller
 
         //TEMPORARY
         /*! 
-        * \brief Temporary way to initialize limits and gains. Default argument for dt is 1 ms
+        * \brief Temporary way to initialize limits and gains. 
         *
         */
-      void Init(double PGain, double IGain, double DGain, double IMax, double IMin, controllerControlMode mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint);
+      void init(double pGain, double iGain, double dGain, double windupMax, double windupMin, controllerControlMode mode, double time, double maxEffort, double minEffort, mechanism::Joint *joint);
 
 
 
@@ -63,7 +63,7 @@ namespace controller
         *
         */
 
-      void SetSawtoothProfile(double period, double amplitude, double dt, double offset);
+      void setSawtoothProfile(double period, double amplitude, double dt, double offset);
 
 
        /*!
@@ -72,7 +72,7 @@ namespace controller
         * 
         *
         */      
-      void GenerateSawtooth(double *&x, double *&t, double period, double amplitude, double dt, double offset, unsigned int numElements);
+      void generateSawtooth(double *&x, double *&t, double period, double amplitude, double dt, double offset, unsigned int numElements);
 	
         /*!
         * \brief Generate a sawtooth wave
@@ -80,7 +80,7 @@ namespace controller
         * 
         *
         */         
-      void SetSinewaveProfile(double period, double amplitude, double dt, double offset);
+      void setSinewaveProfile(double period, double amplitude, double dt, double offset);
 
    
 
@@ -91,7 +91,7 @@ namespace controller
         *
         */         
 
-      void GenerateSinewave(double *&x, double *&t, double period, double amplitude,double dt, double offset, unsigned int numElements);
+      void generateSinewave(double *&x, double *&t, double period, double amplitude,double dt, double offset, unsigned int numElements);
       
         /*!
         * \brief Generate a sawtooth wave
@@ -100,7 +100,7 @@ namespace controller
         *
         */         
 
-      void SetSquarewaveProfile(double period, double amplitude, double dt, double offset);
+      void setSquarewaveProfile(double period, double amplitude, double dt, double offset);
 
 
       /*!
@@ -109,7 +109,7 @@ namespace controller
         * 
         *
         */       
-      void GenerateSquarewave(double *&x, double *&t, double period, double amplitude, double dt, double offset, unsigned int numElements);
+      void generateSquarewave(double *&x, double *&t, double period, double amplitude, double dt, double offset, unsigned int numElements);
  
 //---------------------------------------------------------------------------------//
 //TIME CALLS
@@ -121,7 +121,7 @@ namespace controller
         *
         * \param double* time Pointer to value to change 
         */
-       void GetTime(double* time);
+       void getTime(double* time);
 
 //---------------------------------------------------------------------------------//
 //MODE/ENABLE CALLS
@@ -131,20 +131,20 @@ namespace controller
         * \brief Switches command mode type (Automatic, Torque, position, velocity control)
         *  
         */
-      controllerControlMode SetMode(controllerControlMode mode);
+      controllerControlMode setMode(controllerControlMode mode);
 
     /*!
       * \brief Allow controller to send commands
       *      
       */
-      controllerControlMode EnableController(void);
+      controllerControlMode enableController(void);
 
         /*!
       * \brief Shut down controller.
       * 
       *       
       */
-      controllerControlMode DisableController(void);
+      controllerControlMode disableController(void);
       
 
         /*!
@@ -152,14 +152,14 @@ namespace controller
       * 
       */
     
-      controllerControlMode GetMode(void);
+      controllerControlMode getMode(void);
 
         /*!
         * \brief Return true if last command saturated the torque 
         *
         *  
         */
-      bool CheckForSaturation(void);
+      bool checkForSaturation(void);
 
 //---------------------------------------------------------------------------------//
 //TORQUE CALLS
@@ -172,21 +172,21 @@ namespace controller
       */
     
 
-      controllerErrorCode SetTorqueCmd(double torque);
+      controllerErrorCode setTorqueCmd(double torque);
 
 	    /*!
       * \brief Fetch the latest user issued torque command 
       * 
       * \param double* torque Pointer to value to change 
       */ 
-      controllerErrorCode GetTorqueCmd(double *torque);
+      controllerErrorCode getTorqueCmd(double *torque);
     
       /*!
       * \brief Get the actual torque of the joint motor.
       * 
       * \param double* torque Pointer to value to change
       */  
-      controllerErrorCode GetTorqueAct(double *torque);
+      controllerErrorCode getTorqueAct(double *torque);
 
 //---------------------------------------------------------------------------------//
 //POSITION CALLS
@@ -197,19 +197,19 @@ namespace controller
       * 
       * \param double pos Position command to issue. Pos = 0 is home position of horizontal scan
       */       
-      controllerErrorCode SetPosCmd(double pos);
+      controllerErrorCode setPosCmd(double pos);
     
       /*!
       * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
       * \param double* pos Pointer to value to change
       */       
-      controllerErrorCode GetPosCmd(double *pos);
+      controllerErrorCode getPosCmd(double *pos);
     
       /*!
       * \brief Read the torque of the motor
       * \param double* pos Pointer to value to change
       */       
-      controllerErrorCode GetPosAct(double *pos);    
+      controllerErrorCode getPosAct(double *pos);    
  
 //---------------------------------------------------------------------------------//
 //VELOCITY CALLS
@@ -219,19 +219,19 @@ namespace controller
       * \brief Set velocity command to the joint to be issue next update
       * \param double vel Velocity to issue next command
       */
-      controllerErrorCode SetVelCmd(double vel);
+      controllerErrorCode setVelCmd(double vel);
     
       /*!
       * \brief Get latest velocity command to the joint
       * \param double* vel Pointer to value to change
       */
-      controllerErrorCode GetVelCmd(double *vel);
+      controllerErrorCode getVelCmd(double *vel);
     
       /*!
       * \brief Get actual velocity of the joint
       * \param double* vel Pointer to value to change
       */
-      controllerErrorCode GetVelAct(double *vel);
+      controllerErrorCode getVelAct(double *vel);
       
 //---------------------------------------------------------------------------------//
 //UPDATE CALLS
@@ -243,7 +243,7 @@ namespace controller
         */
 
       //Issues commands to the joint. Should be called at regular intervals
-       virtual void Update();
+       virtual void update();
 
 //---------------------------------------------------------------------------------//
 //PARAM SERVER CALLS
