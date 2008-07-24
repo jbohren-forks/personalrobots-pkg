@@ -6,6 +6,7 @@
   </description>
   <author>John Hsu, Ioan Sucan</author>
   <license>BSD</license>
+  <depend package="gtest" />
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lmath_utils"/>
   </export>
