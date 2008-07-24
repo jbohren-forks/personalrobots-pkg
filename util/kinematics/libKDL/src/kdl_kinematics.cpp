@@ -9,24 +9,53 @@ using namespace std;
 PR2_kinematics::PR2_kinematics()
 {
 	//---------- create the chain for the PR2 ----------
-	Chain pr2_chain;
-	pr2_chain.addSegment(Segment(Joint(Joint::RotZ),Frame(Vector(ARM_PAN_SHOULDER_PITCH_OFFSET.x,0.0,0.0))));
-	pr2_chain.addSegment(Segment(Joint(Joint::RotY),Frame(Vector(ARM_SHOULDER_PITCH_ROLL_OFFSET.x,0.0,0.0))));
-	pr2_chain.addSegment(Segment(Joint(Joint::RotX),Frame(Vector(ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.x,0.0,0.0))));
-	pr2_chain.addSegment(Segment(Joint(Joint::RotY),Frame(Vector(ELBOW_PITCH_ELBOW_ROLL_OFFSET.x,0.0,0.0))));
-	pr2_chain.addSegment(Segment(Joint(Joint::RotX),Frame(Vector(ELBOW_ROLL_WRIST_PITCH_OFFSET.x,0.0,0.0))));
-	pr2_chain.addSegment(Segment(Joint(Joint::RotY),Frame(Vector(WRIST_PITCH_WRIST_ROLL_OFFSET.x,0.0,0.0))));
-	pr2_chain.addSegment(Segment(Joint(Joint::RotX),Frame(Vector(WRIST_ROLL_GRIPPER_OFFSET.x,0.0,0.0))));
+	this->chain = new Chain();
+	this->chain->addSegment(Segment(Joint(Joint::RotZ),Frame(Vector(ARM_PAN_SHOULDER_PITCH_OFFSET.x,0.0,0.0))));
+	this->chain->addSegment(Segment(Joint(Joint::RotY),Frame(Vector(ARM_SHOULDER_PITCH_ROLL_OFFSET.x,0.0,0.0))));
+	this->chain->addSegment(Segment(Joint(Joint::RotX),Frame(Vector(ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.x,0.0,0.0))));
+	this->chain->addSegment(Segment(Joint(Joint::RotY),Frame(Vector(ELBOW_PITCH_ELBOW_ROLL_OFFSET.x,0.0,0.0))));
+	this->chain->addSegment(Segment(Joint(Joint::RotX),Frame(Vector(ELBOW_ROLL_WRIST_PITCH_OFFSET.x,0.0,0.0))));
+	this->chain->addSegment(Segment(Joint(Joint::RotY),Frame(Vector(WRIST_PITCH_WRIST_ROLL_OFFSET.x,0.0,0.0))));
+	this->chain->addSegment(Segment(Joint(Joint::RotX),Frame(Vector(WRIST_ROLL_GRIPPER_OFFSET.x,0.0,0.0))));
 
-	this->chain = &pr2_chain;
-	this->nJnts = pr2_chain.getNrOfJoints();
-
+	this->nJnts = this->chain->getNrOfJoints();
 	//------ Forward Position Kinematics --------------
-	this->fk_pos_solver = new ChainFkSolverPos_recursive(pr2_chain);
-
+	this->fk_pos_solver = new ChainFkSolverPos_recursive(*this->chain);
 	//------- IK
-	this->ik_vel_solver = new ChainIkSolverVel_pinv(pr2_chain);
+	this->ik_vel_solver = new ChainIkSolverVel_pinv(*this->chain);
 	this->ik_pos_solver = new ChainIkSolverPos_NR(*this->chain, *this->fk_pos_solver, *this->ik_vel_solver);
+
+
+	//---------- create a chain for the fore-arm camera -------------
+	this->chain_forearm_camera = new Chain();
+	this->chain_forearm_camera->addSegment(Segment(Joint(Joint::RotZ),Frame(Vector(ARM_PAN_SHOULDER_PITCH_OFFSET.x,0.0,0.0))));
+	this->chain_forearm_camera->addSegment(Segment(Joint(Joint::RotY),Frame(Vector(ARM_SHOULDER_PITCH_ROLL_OFFSET.x,0.0,0.0))));
+	this->chain_forearm_camera->addSegment(Segment(Joint(Joint::RotX),Frame(Vector(ARM_SHOULDER_ROLL_ELBOW_PITCH_OFFSET.x,0.0,0.0))));
+	this->chain_forearm_camera->addSegment(Segment(Joint(Joint::RotY),Frame(Vector(ELBOW_PITCH_ELBOW_ROLL_OFFSET.x,0.0,0.0))));
+	this->chain_forearm_camera->addSegment(Segment(Joint(Joint::RotX),Frame(Rotation::RotY(-45*deg2rad),Vector(0.111825,0.0,0.02))));
+
+	this->nJnts_forearm_camera = this->chain_forearm_camera->getNrOfJoints();
+	//------ Forward Position Kinematics --------------
+	this->fk_pos_solver_forearm_camera = new ChainFkSolverPos_recursive(*this->chain_forearm_camera);
+	//------- IK
+	this->ik_vel_solver_forearm_camera = new ChainIkSolverVel_pinv(*this->chain_forearm_camera);
+	this->ik_pos_solver_forearm_camera = new ChainIkSolverPos_NR(*this->chain_forearm_camera, *this->fk_pos_solver_forearm_camera,
+																															 *this->ik_vel_solver_forearm_camera);
+
+
+}
+
+PR2_kinematics::~PR2_kinematics()
+{
+	delete this->chain;
+	delete this->fk_pos_solver;
+	delete this->ik_vel_solver;
+	delete this->ik_pos_solver;
+
+	delete this->chain_forearm_camera;
+	delete this->fk_pos_solver_forearm_camera;
+	delete this->ik_vel_solver_forearm_camera;
+	delete this->ik_pos_solver_forearm_camera;
 }
 
 
