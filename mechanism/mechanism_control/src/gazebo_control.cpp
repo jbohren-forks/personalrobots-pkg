@@ -28,70 +28,92 @@
 
 #include <mechanism_control/gazebo_control.h>
 #include <signal.h>
-#include <etherdrive_hardware/etherdrive_hardware.h>
 #include <sys/time.h>
 
-#define NUM_JOINTS 12
+#include <pr2Core/pr2Core.h> // this should be replaced by xmls
 
-const double maxPositiveTorque = 0.75; 
+const double maxPositiveTorque = 10000;
 
 using namespace std;
 
-MechanismControl::MechanismControl(){
-  this->hw = NULL;
+GazeboMechanismControl::GazeboMechanismControl(){
+  this->hardwareInterface = NULL;
 }
 
-void MechanismControl::init(HardwareInterface *hw){
+GazeboMechanismControl::~GazeboMechanismControl(){
+  this->hardwareInterface = NULL;
+}
 
-  this->hw = hw;
+
+void GazeboMechanismControl::init(HardwareInterface *hardwareInterface){
+
+  this->hardwareInterface = hardwareInterface;
 
   this->initRobot();
 
   this->initControllers();
 }
 
-void MechanismControl::initRobot(){
+void GazeboMechanismControl::initRobot(){
   r = new Robot("robot"); 
 
-  r->numJoints = NUM_JOINTS;
-  r->numTransmissions = NUM_JOINTS;
-  r->numLinks = NUM_JOINTS;
+  r->numJoints        = PR2::MAX_JOINTS;
+  r->numTransmissions = PR2::MAX_JOINTS;
+  r->numLinks         = PR2::MAX_JOINTS;
 
-  r->transmission = new SimpleTransmission[NUM_JOINTS];
-  r->joint = new Joint[NUM_JOINTS];
-  r->link = new Link[NUM_JOINTS];
+  r->transmission = new SimpleTransmission[PR2::MAX_JOINTS];
+  r->joint = new Joint[PR2::MAX_JOINTS];
+  r->link = new Link[PR2::MAX_JOINTS];
 
-  for(int ii=0; ii<NUM_JOINTS; ii++){
-    r->transmission[ii].actuator = &(hw->actuator[ii]);
+  // assign transmissions for all joints
+  for(int ii=0; ii<PR2::MAX_JOINTS; ii++){
+    r->transmission[ii].actuator = &(hardwareInterface->actuator[ii]);
     r->transmission[ii].joint = &(r->joint[ii]);
     r->transmission[ii].mechanicalReduction = 1.0;
     r->transmission[ii].motorTorqueConstant = 1.0;
-    r->transmission[ii].pulsesPerRevolution = 90000;
-    hw->actuator[ii].command.enable = true;
+    r->transmission[ii].pulsesPerRevolution = 1.0;
     r->joint[ii].effortLimit = maxPositiveTorque;
+  }
+  // enable all actuators, just so happens num. joints == num. actuators for now
+  for(int ii=0; ii<PR2::MAX_JOINTS; ii++){
+    hardwareInterface->actuator[ii].command.enable = true;
   }
 }
 
-void MechanismControl::initControllers(){
+void GazeboMechanismControl::initControllers(){
   baseController     = new BaseController(r,"baseController");
   leftArmController  = new ArmController(); //r,"leftArmController");
   rightArmController = new ArmController(); //r,"rightArmController");
   //headController     = new HeadController(r,"headController");
+  //laserScannerController     = new LaserScannerController(r,"headController");
+  //spineController     = new SpineController(r,"headController");
+
+  // xml information, hardcoded
   char *c_filename = getenv("ROS_PACKAGE_PATH");
   std::stringstream filename;
   filename << c_filename << "/robot_descriptions/wg_robot_description/pr2/pr2.xml" ;
+
   baseController->loadXML(filename.str());
   baseController->init();
+
   //leftArmController->loadXML(filename.str());
   leftArmController->init();
+
   //rightArmController->loadXML(filename.str());
   rightArmController->init();
+
   //headController->loadXML(filename.str());
   //headController->init();
+
+  //LaserScannerController->loadXML(filename.str());
+  //LaserScannerController->init();
+
+  //SpineController->loadXML(filename.str());
+  //SpineController->init();
 }
 
 //This function is called only from the realtime loop.  Everything it calls must also be realtime safe.
-void MechanismControl::update(){
+void GazeboMechanismControl::update(){
   //Clear actuator commands
 
   //Process robot model transmissions

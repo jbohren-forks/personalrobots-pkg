@@ -33,6 +33,8 @@
 #include <pr2Controllers/BaseController.h>
 #include <pr2Controllers/ArmController.h>
 #include <pr2Controllers/HeadController.h>
+#include <pr2Controllers/LaserScannerController.h>
+#include <pr2Controllers/SpineController.h>
 #include <hw_interface/hardware_interface.h>
 #include <ros/node.h>
 #include <joy/Joy.h>
@@ -48,42 +50,43 @@ const int MAX_NUM_CONTROLLERS = 1000;
 
 typedef Controller*(*ControllerAllocationFunc)(const char *);
 
-class MechanismControl{
+class GazeboMechanismControl{
 
   public:
 
-  MechanismControl();
+    GazeboMechanismControl();
+    ~GazeboMechanismControl();
 
-  void update(); //Must be realtime safe
+    void update(); //Must be realtime safe
 
-  void registerControllerType(const char *type, ControllerAllocationFunc f);
+    void registerControllerType(const char *type, ControllerAllocationFunc f);
 
-  void requestController(const char *type, const char *ns);
+    void requestController(const char *type, const char *ns);
 
-  void init(HardwareInterface *hw);
+    void init(HardwareInterface *hardwareInterface);
 
-  BaseController *baseController;
-  ArmController *leftArmController;
-  ArmController *rightArmController;
-  //HeadController *headController;
-
-  //JointController *controller;
+    BaseController *baseController;
+    ArmController *leftArmController;
+    ArmController *rightArmController;
+    //HeadController *headController;
+    //LaserScannerController *laserScannerController;
+    //SpineController *spineController;
 
   private:
 
-//map<const char *, ControllerAllocationFunc> controllerLibrary;
+    //map<const char *, ControllerAllocationFunc> controllerLibrary;
 
-//Controller *controller[MAX_NUM_CONTROLLERS];
+    //Controller *controller[MAX_NUM_CONTROLLERS];
 
-//ros::thread::mutex controllerListMutex;
+    //ros::thread::mutex controllerListMutex;
 
-  HardwareInterface *hw;
+    HardwareInterface *hardwareInterface;
 
-  Robot *r;
+    Robot *r;
 
-  void initRobot();
+    void initRobot();
 
-  void initControllers();
+    void initControllers();
 
 };
 

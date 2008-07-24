@@ -13,7 +13,7 @@
 <depend package="etherdrive_hardware"/>
 
 <export>
-    <cpp cflags='-I${prefix}/include' lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lmechanism_control -ltest_gazebo_mechanism_control'/>
+    <cpp cflags='-I${prefix}/include' lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lmechanism_control -lgazebo_mechanism_control'/>
 </export>
 </package>
 
