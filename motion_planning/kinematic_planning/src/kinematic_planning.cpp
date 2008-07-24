@@ -168,11 +168,13 @@ public:
 	const int dim = req.start_state.vals_size;
 	if ((int)p.si->getStateDimension() != dim)
 	    return false;
-	
+
+	/* set the transform for the model we are planning for */
 	libTF::Pose3D &tf = m->collisionSpace->models[m->collisionSpaceID]->rootTransform;  
 	tf.setPosition(req.transform.xt, req.transform.yt, req.transform.zt);
 	tf.setQuaternion(req.transform.xr, req.transform.yr, req.transform.zr, req.transform.w);
 	
+	/* set the workspace volume for planning */
 	static_cast<SpaceInformationNode*>(p.si)->setPlanningVolume(req.volumeMin.x, req.volumeMin.y, req.volumeMin.z,
 								    req.volumeMax.x, req.volumeMax.y, req.volumeMax.z);
 	
@@ -188,7 +190,8 @@ public:
 	for (int i = 0 ; i < dim ; ++i)
 	    goal->state->values[i] = req.goal_state.vals[i];
 	p.si->setGoal(goal);
-
+	
+	/* do the planning */
 	m_collisionSpace->lock();
 	bool ok = p.mp->solve(req.allowed_time); 
 	m_collisionSpace->unlock();
