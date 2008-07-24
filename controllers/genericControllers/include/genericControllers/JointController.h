@@ -112,20 +112,20 @@ namespace controller
      * \brief Functional way to initialize limits and gains.
      *
      */
-    void init(pidControlParam pcp, controllerControlMode mode, double time, double minEffort, double maxEffort, Joint *joint);
+    void init(pidControlParam pcp, controllerControlMode mode, double time, double minEffort, double maxEffort, mechanism::Joint *joint);
 
     /*! 
      * \brief Functional way to initialize limits and gains.
      *
      */
-    void init(double time, Joint *joint);
+    void init(double time, mechanism::Joint *joint);
 
     /*!
      * \brief   Initialization routine for the controller
      * \param Joint* joint The joint we are interacting with
      * \param string name The namespace identification in ROS
      */
-    // controller::controllerErrorCode Init(Joint* joint, string name);
+    // controller::controllerErrorCode Init(mechanism::Joint* joint, string name);
     
     // JointController(Joint* joint, string name);
 
