@@ -7,6 +7,7 @@
   <author>Sachin Chita, John Hsu, David Li, Jimmy Sastra, Melonee Wise</author>
   <license>BSD</license>
   <depend package="pr2Core" />
+  <depend package="libpr2API" />
   <depend package="genericControllers" />
   <depend package="rosTF" />
   <depend package="hw_interface" />

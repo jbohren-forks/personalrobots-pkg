@@ -1,6 +1,6 @@
 #pragma once
 /***************************************************/
-/*! \class CONTROLLER::ArmController
+/*! \class controller::ArmController
     \brief A PR2 Arm controller
     
     This class implements controller loops for
@@ -20,9 +20,8 @@
 #include <genericControllers/Controller.h>
 #include <genericControllers/JointController.h>
 #include <mechanism_model/joint.h>
-
-
-
+#include <libKDL/kdl_kinematics.h>
+#include <libpr2API/pr2API.h> 
 namespace controller
 {
   class ArmController : Controller
@@ -64,14 +63,14 @@ namespace controller
         * \brief Temporary way to initialize limits and gains for a single joint. JointNum is Identified with enum
         *
         */
-      void initJoint(int jointNum, double PGain, double IGain, double DGain, double IMax, double IMin, controllerControlMode mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint);
+      void initJoint(int jointNum, double pGain, double iGain, double dGain, double iMax, double iMin, controllerControlMode mode, double time,double maxEffort,double minEffort, mechanism::Joint *joint);
 
      //TEMPORARY
         /*! 
         * \brief Call after initializing individual joints to initialize arm as a whole
         *         
         */
-      controllerErrorCode initArm(controllerControlMode mode);
+      controllerErrorCode initArm(controllerControlMode mode, PR2::PR2Robot* robot);
 
 
 
@@ -123,21 +122,21 @@ namespace controller
         * \brief Set Cartesian position of Hand (end-effector) in Global Frame (Euler Angles)
         * 
         */       
-      controllerErrorCode setHandCartesianPosition   (double  x, double  y, double  z, double  roll, double  pitch, double  yaw);
+      controllerErrorCode setHandCartesianPos(double  x, double  y, double  z, double  roll, double  pitch, double  yaw);
 
         /*!
         * 
         * \brief Get commanded Cartesian position of Hand (end-effector) in Global Frame (Euler Angles)
         * 
         */      
-       controllerErrorCode getHandCartesianPositionCmd(double *x, double *y, double *z, double *roll, double *pitch, double *yaw);
+       controllerErrorCode getHandCartesianPosCmd(double *x, double *y, double *z, double *roll, double *pitch, double *yaw);
 
         /*!
         * 
         * \brief Get Cartesian position of Hand (end-effector) in Global Frame (Euler Angles)
         * 
         */      
-       controllerErrorCode getHandCartesianPositionAct(double *x, double *y, double *z, double *roll, double *pitch, double *yaw);
+       controllerErrorCode getHandCartesianPosAct(double *x, double *y, double *z, double *roll, double *pitch, double *yaw);
 
         /*!
         * 
@@ -189,20 +188,40 @@ namespace controller
         * \brief Set all arm joint positions 
         *
         */
-       controllerErrorCode setArmJointPosition(int numJoints, double angles[],double speed[]);
+       controllerErrorCode setArmJointPos(double angles[], double speeds[]);
   /*!
         *
         * \brief Get all commanded arm joint positions 
         *
         */
 
-       controllerErrorCode getArmJointPositionCmd(int *numJoints, double *angles[],double *speed[]);
+       controllerErrorCode getArmJointPosCmd(double *angles[], double *speeds[]);
      /*!
         *
         * \brief Get all arm joint positions 
         *
         */
-      controllerErrorCode getArmJointPositionAct(int *numJoints, double *angles[],double *speed[]);
+       controllerErrorCode getArmJointPosAct(double *angles[], double *speeds[]);
+
+   /*!
+        *
+        * \brief Set one arm joint position 
+        *
+        */
+       controllerErrorCode setOneArmJointPos(int numJoint, double angle);
+  /*!
+        *
+        * \brief Get one commanded arm joint position 
+        *
+        */
+
+       controllerErrorCode getOneArmJointPosCmd(int numJoint, double *angle);
+     /*!
+        *
+        * \brief Get one arm joint position 
+        *
+        */
+       controllerErrorCode getOneArmJointPosAct(int numJoint, double *angle);
 
 //---------------------------------------------------------------------------------//
 //ARM JOINT TORQUE CALLS
@@ -213,21 +232,41 @@ namespace controller
         * \brief Set all arm joint torques 
         *
         */
-       controllerErrorCode setArmJointTorque(int numJoints, double torque[]);
+       controllerErrorCode setArmJointTorque( double torque[]);
        /*!
         *
         * \brief Get all commanded arm joint torques 
         *
         */
 
-       controllerErrorCode getArmJointTorqueCmd(int *numJoints, double *torque[]);
+       controllerErrorCode getArmJointTorqueCmd( double *torque[]);
        /*!
         *
         * \brief Get all arm joint torques 
         *
         */
 
-       controllerErrorCode getArmJointTorqueAct(int *numJoints, double *torque[]);
+       controllerErrorCode getArmJointTorqueAct( double *torque[]);
+   /*!
+        *
+        * \brief Set one arm joint torque
+        *
+        */
+       controllerErrorCode setOneArmJointTorque(int numJoint,double torque);
+       /*!
+        *
+        * \brief Get one commanded arm joint torque
+        *
+        */
+
+       controllerErrorCode getArmJointTorqueCmd(int numJoint, double *torque);
+       /*!
+        *
+        * \brief Get one arm joint torque
+        *
+        */
+
+       controllerErrorCode getArmJointTorqueAct(int numJoint, double *torque);
 
 //---------------------------------------------------------------------------------//
 //ARM JOINT VELOCITY CALLS
@@ -238,7 +277,7 @@ namespace controller
         * \brief Set all arm joint speeds 
         *
         */
-       controllerErrorCode setArmJointSpeed(int numJoints, double speed[]);
+       controllerErrorCode setArmJointSpeed( double speed[]);
   
         /*!
         *
@@ -246,13 +285,33 @@ namespace controller
         *
         */
 
-       controllerErrorCode getArmJointSpeedCmd(int *numJoints, double *speed[]);
+       controllerErrorCode getArmJointSpeedCmd( double *speed[]);
       /*!
         *
         * \brief Get all arm joint speeds 
         *
         */
-        controllerErrorCode getArmJointSpeedAct(int *numJoints, double *speed[]);
+        controllerErrorCode getArmJointSpeedAct( double *speed[]);
+ /*!
+        *
+        * \brief Set one arm joint speed
+        *
+        */
+       controllerErrorCode setOneArmJointSpeed(int numJoint, double speed);
+  
+        /*!
+        *
+        * \brief Get one commanded arm joint speed
+        *
+        */
+
+       controllerErrorCode getOneArmJointSpeedCmd(int numJoint, double *speed);
+      /*!
+        *
+        * \brief Get one arm joint speed
+        *
+        */
+        controllerErrorCode getOneArmJointSpeedAct(int numJoint, double *speed);
 
 //---------------------------------------------------------------------------------//
 // GAZE POINT CALLS
@@ -296,6 +355,13 @@ namespace controller
         */       
       void update( );
 
+//---------------------------------------------------------------------------------//
+// MISC CALLS
+//---------------------------------------------------------------------------------//
+       /*!
+        * \brief Return the number of joints
+        */  
+      int getNumJoints();
 
     private:
       bool enabled;   /**<Is the arm controller active?>*/
@@ -308,17 +374,8 @@ namespace controller
       double cmdPos[6]; /**<Last commanded cartesian position>*/
       double cmdVel[6]; /**<Last commanded cartesian velocity>*/
 
-      
+      PR2::PR2Robot* robot; /**<Track robot for kinematics>*/ 
   };
 }
 
-
-      /*!
-        *
-        * \brief Set arm joint maximum torques individually.
-        *
-        */
-     // PR2::PR2_ERROR_CODE setArmJointMaxTorque(int numJoints, double maxTorque[]);
-      //PR2::PR2_ERROR_CODE getArmJointMaxTorqueCmd(int *numJoints, double *maxTorque[]);
-      //PR2::PR2_ERROR_CODE getArmJointMaxTorqueAct(int *numJoints, double *maxTorque[]);
 
