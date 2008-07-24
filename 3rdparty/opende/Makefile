@@ -28,7 +28,7 @@ ROOT = $(shell rospack find opende)/opende
 .PHONY: $(BUILD_TARGET)
 $(BUILD_TARGET):
 	cd $(SVN_DIR) && sh ./autogen.sh
-	cd $(SVN_DIR) && ./configure --prefix=$(ROOT) --with-trimesh=opcode $(CONFIGURE_FLAGS)
+	cd $(SVN_DIR) && ./configure --prefix=$(ROOT) --with-trimesh=opcode --enable-shared $(CONFIGURE_FLAGS)
 	cd $(SVN_DIR) && make
 	cd $(SVN_DIR) && make install
 
