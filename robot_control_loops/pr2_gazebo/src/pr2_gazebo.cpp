@@ -119,12 +119,12 @@ main(int argc, char** argv)
   /*                            initialize controllers                                   */
   /*                                                                                     */
   /***************************************************************************************/
-  CONTROLLER::ArmController          myArm;
-  CONTROLLER::HeadController         myHead;
-  CONTROLLER::SpineController        mySpine;
-  CONTROLLER::BaseController         myBase;
-  CONTROLLER::LaserScannerController myLaserScanner;
-  CONTROLLER::GripperController      myGripper;
+  controller::ArmController          myArm;
+  controller::HeadController         myHead;
+  controller::SpineController        mySpine;
+  controller::BaseController         myBase;
+  controller::LaserScannerController myLaserScanner;
+  controller::GripperController      myGripper;
 
   /***************************************************************************************/
   /*                                                                                     */

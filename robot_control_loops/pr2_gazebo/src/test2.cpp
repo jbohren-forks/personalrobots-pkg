@@ -201,7 +201,7 @@ main(int argc, char** argv)
   HardwareInterface *hi = new HardwareInterface(numActuators);
   // hi is passed to h during construction of h,
   // mapping between actuators in h and actuators in hi defined by boardLookUp, portLookUp and jointId
-  GazeboHardware    *h  = new GazeboHardware(numBoards,numActuators, boardLookUp, portLookUp, jointId, etherIP, hostIP, hi);
+  GazeboHardware    *h  = new GazeboHardware(numBoards,numActuators, boardLookUp, portLookUp, jointId, etherIP, hostIP);
   // connect to hardware (gazebo in this case)
   h->init();
 
@@ -216,42 +216,42 @@ main(int argc, char** argv)
   /*                                                                                     */
   /***************************************************************************************/
   // stubs
-  CONTROLLER::ArmController          myArm;
-  CONTROLLER::HeadController         myHead;
-  CONTROLLER::SpineController        mySpine;
-  CONTROLLER::BaseController         myBase;
-  CONTROLLER::LaserScannerController myLaserScanner;
-  CONTROLLER::GripperController      myGripper;
+  controller::ArmController          myArm;
+  controller::HeadController         myHead;
+  controller::SpineController        mySpine;
+  controller::BaseController         myBase;
+  controller::LaserScannerController myLaserScanner;
+  controller::GripperController      myGripper;
 
   // used here in this test
-  CONTROLLER::JointController*       jc[PR2::MAX_JOINTS];  // One controller per joint
+  controller::JointController*       jc[PR2::MAX_JOINTS];  // One controller per joint
 
   // initialize each jointController jc[i], associate with a joint joint[i]
   for (int i = 0;i<PR2::MAX_JOINTS;i++){
-    jc[i]  = new CONTROLLER::JointController();
-    jc[i]->Init(1000,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,1000,-1000,1000,joint[i]);
+    jc[i]  = new controller::JointController();
+    jc[i]->init(1000,0,0,500,-500, controller::CONTROLLER_POSITION,time,-1000,1000,joint[i]);
   }
 
   //Explicitly initialize the controllers we wish to use. Don't forget to set the controllers to torque mode in the world file! 
-  jc[PR2::ARM_L_PAN]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_L_PAN]);
-  jc[PR2::ARM_L_SHOULDER_PITCH]->Init(1000,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,1000,-1000,1000,joint[PR2::ARM_L_SHOULDER_PITCH]);
-  jc[PR2::ARM_L_SHOULDER_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_L_SHOULDER_ROLL]);
-  jc[PR2::ARM_L_ELBOW_PITCH]->Init(300,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_L_ELBOW_PITCH]);
-  jc[PR2::ARM_L_ELBOW_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_L_ELBOW_ROLL]);
-  jc[PR2::ARM_L_WRIST_PITCH]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_L_WRIST_PITCH]);
-  jc[PR2::ARM_L_WRIST_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_L_WRIST_ROLL]);
+  jc[PR2::ARM_L_PAN]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_L_PAN]);
+  jc[PR2::ARM_L_SHOULDER_PITCH]->init(1000,0,0,500,-500, controller::CONTROLLER_POSITION,time,-1000,1000,joint[PR2::ARM_L_SHOULDER_PITCH]);
+  jc[PR2::ARM_L_SHOULDER_ROLL]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_L_SHOULDER_ROLL]);
+  jc[PR2::ARM_L_ELBOW_PITCH]->init(300,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_L_ELBOW_PITCH]);
+  jc[PR2::ARM_L_ELBOW_ROLL]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_L_ELBOW_ROLL]);
+  jc[PR2::ARM_L_WRIST_PITCH]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_L_WRIST_PITCH]);
+  jc[PR2::ARM_L_WRIST_ROLL]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_L_WRIST_ROLL]);
 
-  jc[PR2::ARM_R_PAN]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_R_PAN]);
-  jc[PR2::ARM_R_SHOULDER_PITCH]->Init(1000,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,1000,-1000,1000,joint[PR2::ARM_R_SHOULDER_PITCH]);
-  jc[PR2::ARM_R_SHOULDER_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_R_SHOULDER_ROLL]);
-  jc[PR2::ARM_R_ELBOW_PITCH]->Init(300,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_R_ELBOW_PITCH]);
-  jc[PR2::ARM_R_ELBOW_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_R_ELBOW_ROLL]);
-  jc[PR2::ARM_R_WRIST_PITCH]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_R_WRIST_PITCH]);
-  jc[PR2::ARM_R_WRIST_ROLL]->Init(100,0,0,500,-500, CONTROLLER::CONTROLLER_POSITION,time,100,-100,100,joint[PR2::ARM_R_WRIST_ROLL]);
+  jc[PR2::ARM_R_PAN]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_R_PAN]);
+  jc[PR2::ARM_R_SHOULDER_PITCH]->init(1000,0,0,500,-500, controller::CONTROLLER_POSITION,time,-1000,1000,joint[PR2::ARM_R_SHOULDER_PITCH]);
+  jc[PR2::ARM_R_SHOULDER_ROLL]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_R_SHOULDER_ROLL]);
+  jc[PR2::ARM_R_ELBOW_PITCH]->init(300,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_R_ELBOW_PITCH]);
+  jc[PR2::ARM_R_ELBOW_ROLL]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_R_ELBOW_ROLL]);
+  jc[PR2::ARM_R_WRIST_PITCH]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_R_WRIST_PITCH]);
+  jc[PR2::ARM_R_WRIST_ROLL]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_R_WRIST_ROLL]);
 
-  //JointController::Init(double PGain, double IGain, double DGain, double IMax,
+  //JointController::init(double PGain, double IGain, double DGain, double IMax,
   //                      double IMin, CONTROLLER_CONTROL_MODE mode, double time,
-  //                      double maxPositiveTorque, double maxNegativeTorque,
+  //                      double minEffore,
   //                      double maxEffort, mechanism::Joint *joint)
 
   /***************************************************************************************/
@@ -348,7 +348,7 @@ main(int argc, char** argv)
       //update controller
       if (pthread_mutex_trylock(&simMutex[i])==0)
       {
-        jc[i]->Update();
+        jc[i]->update();
         pthread_mutex_unlock(&simMutex[i]); //Unlock after we're done with r/w
       }
       // update command current from joint command
