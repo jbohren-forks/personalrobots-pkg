@@ -200,12 +200,12 @@ RosGazeboNode::cmdvelReceived()
 
 RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
          PR2::PR2Robot          *myPR2,
-         CONTROLLER::ArmController          *myArm,
-         CONTROLLER::HeadController         *myHead,
-         CONTROLLER::SpineController        *mySpine,
-         CONTROLLER::BaseController         *myBase,
-         CONTROLLER::LaserScannerController *myLaserScanner,
-         CONTROLLER::GripperController      *myGripper) :
+         controller::ArmController          *myArm,
+         controller::HeadController         *myHead,
+         controller::SpineController        *mySpine,
+         controller::BaseController         *myBase,
+         controller::LaserScannerController *myLaserScanner,
+         controller::GripperController      *myGripper) :
         ros::node("rosgazebo"),tf(*this)
 {
   // accept passed in robot
@@ -241,13 +241,13 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
 
 RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
          PR2::PR2Robot          *myPR2,
-         CONTROLLER::ArmController          *myArm,
-         CONTROLLER::HeadController         *myHead,
-         CONTROLLER::SpineController        *mySpine,
-         CONTROLLER::BaseController         *myBase,
-         CONTROLLER::LaserScannerController *myLaserScanner,
-         CONTROLLER::GripperController      *myGripper,
-         CONTROLLER::JointController** ControllerArray):
+         controller::ArmController          *myArm,
+         controller::HeadController         *myHead,
+         controller::SpineController        *mySpine,
+         controller::BaseController         *myBase,
+         controller::LaserScannerController *myLaserScanner,
+         controller::GripperController      *myGripper,
+         controller::JointController** ControllerArray):
         ros::node("rosgazebo"),tf(*this)
 {
   // accept passed in robot
@@ -335,13 +335,13 @@ RosGazeboNode::GaussianKernel(double mu,double sigma)
 
 void
 RosGazeboNode::UpdateRightArm(){
-  ControllerArray[PR2::ARM_R_PAN]->SetPosCmd(this->rightarm.turretAngle); 
-  ControllerArray[PR2::ARM_R_SHOULDER_PITCH]->SetPosCmd(this->rightarm.shoulderLiftAngle);
-  ControllerArray[PR2::ARM_R_SHOULDER_ROLL]->SetPosCmd(this->rightarm.upperarmRollAngle);
-  ControllerArray[PR2::ARM_R_ELBOW_PITCH]->SetPosCmd(this->rightarm.elbowAngle);
-  ControllerArray[PR2::ARM_R_ELBOW_ROLL]->SetPosCmd(this->rightarm.forearmRollAngle);
-  ControllerArray[PR2::ARM_R_WRIST_PITCH]->SetPosCmd(this->rightarm.wristPitchAngle);
-  ControllerArray[PR2::ARM_R_WRIST_ROLL]->SetPosCmd(this->rightarm.wristRollAngle);
+  ControllerArray[PR2::ARM_R_PAN]->setPosCmd(this->rightarm.turretAngle); 
+  ControllerArray[PR2::ARM_R_SHOULDER_PITCH]->setPosCmd(this->rightarm.shoulderLiftAngle);
+  ControllerArray[PR2::ARM_R_SHOULDER_ROLL]->setPosCmd(this->rightarm.upperarmRollAngle);
+  ControllerArray[PR2::ARM_R_ELBOW_PITCH]->setPosCmd(this->rightarm.elbowAngle);
+  ControllerArray[PR2::ARM_R_ELBOW_ROLL]->setPosCmd(this->rightarm.forearmRollAngle);
+  ControllerArray[PR2::ARM_R_WRIST_PITCH]->setPosCmd(this->rightarm.wristPitchAngle);
+  ControllerArray[PR2::ARM_R_WRIST_ROLL]->setPosCmd(this->rightarm.wristRollAngle);
 
   //Mark that we've consumed the right arm message
   newRightArmPos=false; 
@@ -349,13 +349,13 @@ RosGazeboNode::UpdateRightArm(){
 
 void
 RosGazeboNode::UpdateLeftArm(){
-  ControllerArray[PR2::ARM_L_PAN]->SetPosCmd(this->leftarm.turretAngle); 
-  ControllerArray[PR2::ARM_L_SHOULDER_PITCH]->SetPosCmd(this->leftarm.shoulderLiftAngle);
-  ControllerArray[PR2::ARM_L_SHOULDER_ROLL]->SetPosCmd(this->leftarm.upperarmRollAngle);
-  ControllerArray[PR2::ARM_L_ELBOW_PITCH]->SetPosCmd(this->leftarm.elbowAngle);
-  ControllerArray[PR2::ARM_L_ELBOW_ROLL]->SetPosCmd(this->leftarm.forearmRollAngle);
-  ControllerArray[PR2::ARM_L_WRIST_PITCH]->SetPosCmd(this->leftarm.wristPitchAngle);
-  ControllerArray[PR2::ARM_L_WRIST_ROLL]->SetPosCmd(this->leftarm.wristRollAngle);
+  ControllerArray[PR2::ARM_L_PAN]->setPosCmd(this->leftarm.turretAngle); 
+  ControllerArray[PR2::ARM_L_SHOULDER_PITCH]->setPosCmd(this->leftarm.shoulderLiftAngle);
+  ControllerArray[PR2::ARM_L_SHOULDER_ROLL]->setPosCmd(this->leftarm.upperarmRollAngle);
+  ControllerArray[PR2::ARM_L_ELBOW_PITCH]->setPosCmd(this->leftarm.elbowAngle);
+  ControllerArray[PR2::ARM_L_ELBOW_ROLL]->setPosCmd(this->leftarm.forearmRollAngle);
+  ControllerArray[PR2::ARM_L_WRIST_PITCH]->setPosCmd(this->leftarm.wristPitchAngle);
+  ControllerArray[PR2::ARM_L_WRIST_ROLL]->setPosCmd(this->leftarm.wristRollAngle);
 
   //Mark that we've consumed the left arm message
   newLeftArmPos = false;
@@ -730,7 +730,7 @@ RosGazeboNode::Update()
     //memcpy(this->full_cloudMsg.pts          , &(this->full_cloud_pts->front()), this->full_cloud_pts->size());
     //memcpy(this->full_cloudMsg.chan[0].vals , &(this->full_cloud_ch1->front()), this->full_cloud_ch1->size());
 
-    for(int i=0;i< this->full_cloud_pts->size() ;i++)
+    for(unsigned int i=0;i< this->full_cloud_pts->size() ;i++)
     {
       this->full_cloudMsg.pts[i].x        = (this->full_cloud_pts->at(i)).x;
       this->full_cloudMsg.pts[i].y        = (this->full_cloud_pts->at(i)).y;

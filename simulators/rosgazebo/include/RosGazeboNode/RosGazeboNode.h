@@ -95,12 +95,12 @@ class RosGazeboNode : public ros::node
 
     // used to generate Gaussian noise (for PCD)
     PR2::PR2Robot *PR2Copy;
-    CONTROLLER::ArmController          *armCopy;
-    CONTROLLER::HeadController         *headCopy;
-    CONTROLLER::SpineController        *spineCopy;
-    CONTROLLER::BaseController         *baseCopy;
-    CONTROLLER::LaserScannerController *laserScannerCopy;
-    CONTROLLER::GripperController      *gripperCopy;
+    controller::ArmController          *armCopy;
+    controller::HeadController         *headCopy;
+    controller::SpineController        *spineCopy;
+    controller::BaseController         *baseCopy;
+    controller::LaserScannerController *laserScannerCopy;
+    controller::GripperController      *gripperCopy;
 
     //Copy data from message to Joint Array. Required to be in update for thread locking.
     void UpdateLeftArm();
@@ -111,25 +111,25 @@ class RosGazeboNode : public ros::node
     // that stage should load.
     RosGazeboNode(int argc, char** argv, const char* fname,
          PR2::PR2Robot          *myPR2,
-         CONTROLLER::ArmController          *myArm,
-         CONTROLLER::HeadController         *myHead,
-         CONTROLLER::SpineController        *mySpine,
-         CONTROLLER::BaseController         *myBase,
-         CONTROLLER::LaserScannerController *myLaserScanner,
-         CONTROLLER::GripperController      *myGripper
+         controller::ArmController          *myArm,
+         controller::HeadController         *myHead,
+         controller::SpineController        *mySpine,
+         controller::BaseController         *myBase,
+         controller::LaserScannerController *myLaserScanner,
+         controller::GripperController      *myGripper
          );
     ~RosGazeboNode();
    // Constructor; stage itself needs argc/argv.  fname is the .world file
     // that stage should load.
     RosGazeboNode(int argc, char** argv, const char* fname,
          PR2::PR2Robot          *myPR2,
-         CONTROLLER::ArmController          *myArm,
-         CONTROLLER::HeadController         *myHead,
-         CONTROLLER::SpineController        *mySpine,
-         CONTROLLER::BaseController         *myBase,
-         CONTROLLER::LaserScannerController *myLaserScanner,
-         CONTROLLER::GripperController      *myGripper,
-         CONTROLLER::JointController** ControllerArray
+         controller::ArmController          *myArm,
+         controller::HeadController         *myHead,
+         controller::SpineController        *mySpine,
+         controller::BaseController         *myBase,
+         controller::LaserScannerController *myLaserScanner,
+         controller::GripperController      *myGripper,
+         controller::JointController** ControllerArray
          );
 
     // advertise / subscribe models
@@ -189,7 +189,7 @@ class RosGazeboNode : public ros::node
     int max_full_cloud_pts;
 
     //Keep track of controllers
-    CONTROLLER::JointController** ControllerArray;
+    controller::JointController** ControllerArray;
 };
 
 
