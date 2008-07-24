@@ -1,7 +1,6 @@
 CC = g++
 CFLAGS = -c -g -Wall -I/usr/include -I../../include
-CFLAGS += -O3
-#CFLAGS += -DNDEBUG
+CFLAGS += -O3 -DNDEBUG
 CFLAGS += `pkg-config opencv --cflags`
 LDFLAGS = `pkg-config opencv --libs`
 SOURCES = ../integral.cpp ../detector.cpp ../keypoint.cpp keypoint_utils.cpp
@@ -40,6 +39,4 @@ $(SIFT_PROGRAMS): $$@.o $(OBJECTS)
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm $(PROGRAMS) $(addsuffix .o,$(PROGRAMS)) $(OBJECTS)
-	rm $(SIFT_PROGRAMS) $(addsuffix .o,$(SIFT_PROGRAMS))
-	rm $(SURF_PROGRAMS) $(addsuffix .o,$(SURF_PROGRAMS)) $(SURF_OBJECTS)
+	rm $(PROGRAMS) $(SIFT_PROGRAMS) $(SURF_PROGRAMS) *.o ../*.o

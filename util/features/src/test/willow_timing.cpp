@@ -13,8 +13,11 @@ int main( int argc, char** argv )
 
     keypts = detector.DetectPoints(source);
 
-    for (int i = 0; i < 20; ++i) {
-        keypts = detector.DetectPoints(source);
+    {
+        Timer t("Willow detector (20x)");
+        for (int i = 0; i < 20; ++i) {
+            keypts = detector.DetectPoints(source);
+        }
     }
 
     return 0;

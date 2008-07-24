@@ -3,7 +3,7 @@ INCLUDE_DIR = $(ROS_PACKAGE_PATH)/util/features/include
 CC = g++
 LIBTOOL = libtool
 INSTALL = install
-CFLAGS = -c -g -O3 -I$(INCLUDE_DIR) `pkg-config opencv --cflags`
+CFLAGS = -c -g -O3 -DNDEBUG -I$(INCLUDE_DIR) `pkg-config opencv --cflags`
 LDFLAGS = `pkg-config opencv --libs` -rpath $(INSTALL_DIR)
 SOURCES = detector.cpp integral.cpp keypoint.cpp
 OBJECTS = $(SOURCES:.cpp=.lo)

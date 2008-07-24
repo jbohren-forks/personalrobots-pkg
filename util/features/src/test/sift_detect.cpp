@@ -67,7 +67,6 @@ int main( int argc, char** argv )
         ReadTransform(transform_file, transform);
         inv = cvCreateMat(3, 3, CV_32FC1);
         cvInvert(transform, inv);
-        WriteTransform("inv.xfm", inv);
         
         keypts.erase(std::remove_if(keypts.begin(), keypts.end(),
                                     OutsideSource(warped->cols, warped->rows, transform)),

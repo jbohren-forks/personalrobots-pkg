@@ -15,10 +15,8 @@
   Functor to perform non-maximal suppression over a scale space.
 
   At each pixel coordinate, this version first looks for the scale which
-  maximizes response. It then checks a 3x3 spatial neighborhood around
-  the point at that scale to determine whether it is a maximum. This
-  version seems to offer improved reliability over the 3x3x3 version at
-  a slight cost in speed. It is also appropriate for the 2D case (N=1).
+  maximizes response. It then checks a 3x3x3 neighborhood around
+  the point to determine whether it is a maximum.
   
   NonmaxSuppress3x3xN uses some template parameters to
   achieve a useful degree of generality without sacrificing performance.
@@ -73,7 +71,12 @@ struct NonmaxSuppress3x3xN
                 if (scale == 1 || scale == n) continue;
 
                 IplImage *curr = responses[scale - 1];
-
+                IplImage *prev = responses[scale - 2];
+                IplImage *next = responses[scale];
+                // NOTE: searching only the 3x3 spatial neighborhood seems to allow
+                // too many redundant keypoints at wedge-shaped features. And the
+                // 3x3x3 version is actually faster when using line suppression.
+                /*
                 if (m_compare(m_response_thresh, response) ||
                     m_compare(CV_IMAGE_ELEM(curr, T, y, x-1), response) ||
                     m_compare(CV_IMAGE_ELEM(curr, T, y, x+1), response) ||
@@ -83,6 +86,35 @@ struct NonmaxSuppress3x3xN
                     m_compare(CV_IMAGE_ELEM(curr, T, y-1, x+1), response) ||
                     m_compare(CV_IMAGE_ELEM(curr, T, y+1, x-1), response) ||
                     m_compare(CV_IMAGE_ELEM(curr, T, y+1, x+1), response) ||
+                    m_post_thresh(x, y, scale)
+                    )
+                    continue;
+                */
+                if (m_compare(m_response_thresh, response) ||
+                    m_compare(CV_IMAGE_ELEM(curr, T, y, x-1), response) ||
+                    m_compare(CV_IMAGE_ELEM(curr, T, y, x+1), response) ||
+                    m_compare(CV_IMAGE_ELEM(curr, T, y-1, x), response) ||
+                    m_compare(CV_IMAGE_ELEM(curr, T, y+1, x), response) ||
+                    m_compare(CV_IMAGE_ELEM(curr, T, y-1, x-1), response) ||
+                    m_compare(CV_IMAGE_ELEM(curr, T, y-1, x+1), response) ||
+                    m_compare(CV_IMAGE_ELEM(curr, T, y+1, x-1), response) ||
+                    m_compare(CV_IMAGE_ELEM(curr, T, y+1, x+1), response) ||
+                    m_compare(CV_IMAGE_ELEM(prev, T, y, x-1), response) ||
+                    m_compare(CV_IMAGE_ELEM(prev, T, y, x+1), response) ||
+                    m_compare(CV_IMAGE_ELEM(prev, T, y-1, x), response) ||
+                    m_compare(CV_IMAGE_ELEM(prev, T, y+1, x), response) ||
+                    m_compare(CV_IMAGE_ELEM(prev, T, y-1, x-1), response) ||
+                    m_compare(CV_IMAGE_ELEM(prev, T, y-1, x+1), response) ||
+                    m_compare(CV_IMAGE_ELEM(prev, T, y+1, x-1), response) ||
+                    m_compare(CV_IMAGE_ELEM(prev, T, y+1, x+1), response) ||
+                    m_compare(CV_IMAGE_ELEM(next, T, y, x-1), response) ||
+                    m_compare(CV_IMAGE_ELEM(next, T, y, x+1), response) ||
+                    m_compare(CV_IMAGE_ELEM(next, T, y-1, x), response) ||
+                    m_compare(CV_IMAGE_ELEM(next, T, y+1, x), response) ||
+                    m_compare(CV_IMAGE_ELEM(next, T, y-1, x-1), response) ||
+                    m_compare(CV_IMAGE_ELEM(next, T, y-1, x+1), response) ||
+                    m_compare(CV_IMAGE_ELEM(next, T, y+1, x-1), response) ||
+                    m_compare(CV_IMAGE_ELEM(next, T, y+1, x+1), response) ||
                     m_post_thresh(x, y, scale)
                     )
                     continue;
