@@ -197,6 +197,12 @@ namespace planning_models
 	     *  set to 0, the parameter is unbounded. */
 	    std::vector<double> stateBounds;
 	    
+	    /** The list of index values where floating joints
+		start. These joints need special attention in motion
+		planning, so the indices are provided here for
+		convenience. */
+	    std::vector<int>    floatingJoints;
+	    
 	    /** The model that owns this robot */
 	    KinematicModel     *owner;
 	    
@@ -235,6 +241,9 @@ namespace planning_models
 	/** Cumulative state bounds */
 	std::vector<double> stateBounds;
 
+	/** Cumulative list of floating joints */
+	std::vector<int>    floatingJoints;
+	
     protected:
 	
 	std::vector<Robot*> m_robots;

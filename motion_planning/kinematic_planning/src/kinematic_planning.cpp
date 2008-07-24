@@ -173,11 +173,9 @@ public:
 	tf.setPosition(req.transform.xt, req.transform.yt, req.transform.zt);
 	tf.setQuaternion(req.transform.xr, req.transform.yr, req.transform.zr, req.transform.w);
 	
-
-	// set the 3D space bounding box for planning.
-	// if not specified in the request, infer it based on start + goal positions
-	// need to know where floating joints are and set these there. also update resolution
-
+	static_cast<SpaceInformationNode*>(p.si)->setPlanningVolume(req.volumeMin.x, req.volumeMin.y, req.volumeMin.z,
+								    req.volumeMax.x, req.volumeMax.y, req.volumeMax.z);
+	
 	/* set the starting state */
 	ompl::SpaceInformationKinematic::StateKinematic_t start = new ompl::SpaceInformationKinematic::StateKinematic(dim);
 	for (int i = 0 ; i < dim ; ++i)
@@ -209,11 +207,11 @@ public:
 	}
 
 	/* cleanup */
-	p.si->clearGoal();	
+	p.si->clearGoal();
 	p.si->clearStartStates(true);
 	p.mp->clear();
 	
-	return true;	
+	return true;
     }
 
     void addRobotDescriptionFromFile(const char *filename)
@@ -295,6 +293,9 @@ private:
     public:
 	SpaceInformationNode(planning_models::KinematicModel *km) : SpaceInformationKinematic()
 	{
+	    m_km = km;
+	    m_divisions = 20.0;
+	    
 	    m_stateDimension = km->stateDimension;
 	    m_stateComponent.resize(m_stateDimension);
 	    
@@ -303,15 +304,35 @@ private:
 		m_stateComponent[i].type       = StateComponent::NORMAL;
 		m_stateComponent[i].minValue   = km->stateBounds[i*2    ];
 		m_stateComponent[i].maxValue   = km->stateBounds[i*2 + 1];
-		m_stateComponent[i].resolution = (m_stateComponent[i].maxValue - m_stateComponent[i].minValue) / 20.0;
-		if (m_stateComponent[i].resolution == 0.0)
-		    m_stateComponent[i].resolution = 0.1; // this happens for floating joints
+		m_stateComponent[i].resolution = (m_stateComponent[i].maxValue - m_stateComponent[i].minValue) / m_divisions;
 	    }
 	}
 
 	virtual ~SpaceInformationNode(void)
 	{
 	}
+
+	void setPlanningVolume(double x0, double y0, double z0, double x1, double y1, double z1)
+	{
+	    for (unsigned int i = 0 ; i < m_km->floatingJoints.size() ; ++i)
+	    {
+		int id = m_km->floatingJoints[i];		
+		m_stateComponent[id    ].minValue = x0;
+		m_stateComponent[id    ].maxValue = x1;
+		m_stateComponent[id + 1].minValue = y0;
+		m_stateComponent[id + 1].maxValue = y1;
+		m_stateComponent[id + 2].minValue = z0;
+		m_stateComponent[id + 2].maxValue = z1;
+		for (int j = 0 ; j < 3 ; ++j)
+		    m_stateComponent[j + id].resolution = (m_stateComponent[j + id].maxValue - m_stateComponent[j + id].minValue) / m_divisions;
+	    }
+	}
+	
+    protected:
+	
+	double                           m_divisions;	
+	planning_models::KinematicModel *m_km;
+	
     };    
 	
     std_msgs::PointCloudFloat32        m_cloud;

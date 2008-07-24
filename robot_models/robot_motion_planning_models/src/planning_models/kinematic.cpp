@@ -122,9 +122,11 @@ void planning_models::KinematicModel::build(robot_desc::URDF &model, const char 
 
     for (unsigned int i = 0 ; i < m_robots.size() ; ++i)
     {
-	stateDimension += m_robots[i]->stateDimension;
 	stateBounds.insert(stateBounds.end(), m_robots[i]->stateBounds.begin(), m_robots[i]->stateBounds.end());
-    }    
+	for (unsigned int j = 0 ; j < m_robots[i]->floatingJoints.size() ; ++j)
+	    floatingJoints.push_back(stateDimension + m_robots[i]->floatingJoints[j]);
+	stateDimension += m_robots[i]->stateDimension;
+    }
 }
     
 unsigned int planning_models::KinematicModel::getRobotCount(void) const
@@ -158,6 +160,7 @@ void planning_models::KinematicModel::buildChain(Robot *robot, Link *parent, Joi
 	joint->type = Joint::FLOATING;
 	joint->usedParamEnd = joint->usedParamStart + 3;
 	robot->stateBounds.insert(robot->stateBounds.end(), 6, 0.0);
+	robot->floatingJoints.push_back(joint->usedParamStart);
 	break;
     case robot_desc::URDF::Link::Joint::FIXED:
 	joint->type = Joint::FIXED; 
