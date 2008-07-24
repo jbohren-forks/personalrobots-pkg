@@ -81,6 +81,7 @@ void keyboardLoop()
 				printf("You pressed Something Else\n");
 				break;
 		}
+		myKinCon.myPR2->hw.UpdateHW();
 	}
 }
 
