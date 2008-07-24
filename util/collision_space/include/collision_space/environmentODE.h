@@ -51,6 +51,13 @@ namespace collision_space
 		
         EnvironmentModelODE(void) : EnvironmentModel()
 	{
+	    static bool initODE = true;
+	    if (initODE)
+	    {
+		dInitODE();
+		initODE = false;
+	    }
+	    
 	    m_space = dHashSpaceCreate(0);
 	}
 	
