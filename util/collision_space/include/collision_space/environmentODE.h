@@ -147,13 +147,18 @@ namespace collision_space
 	    dGeomID                                geom;
 	    planning_models::KinematicModel::Link *link;
 	};
-
+	
+	struct ModelInfo
+	{
+	    std::vector< kGeom* > g;
+	    dSpaceID              s;
+	};
+	
 	void freeMemory(void);	
 	
-	std::vector< std::vector< kGeom* > > m_kgeoms;
-
-	dSpaceID                             m_space;
-	ODECollide2                          m_collide2;
+	std::vector<ModelInfo> m_kgeoms;
+	dSpaceID               m_space;
+	ODECollide2            m_collide2;
 	
     };
 }

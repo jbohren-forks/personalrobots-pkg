@@ -83,12 +83,19 @@ namespace collision_space
 	/** Provide interface to a lock. Use carefully! */
 	void unlock(void);
 	
+	/** Set the status of self collision */
+	void setSelfCollision(bool selfCollision);
+	
+	/** Check if self collision is enabled */
+	bool getSelfCollision(void) const;	
+
 	/** List of loaded robot models */	
 	std::vector<planning_models::KinematicModel*> models;
 	
     protected:
         
 	ros::thread::mutex m_lock;
+	bool               m_selfCollision;
 	
     };
 }

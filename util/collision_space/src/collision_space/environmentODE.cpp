@@ -37,8 +37,11 @@
 void collision_space::EnvironmentModelODE::freeMemory(void)
 { 
     for (unsigned int i = 0 ; i < m_kgeoms.size() ; ++i)
-	for (unsigned int j = 0 ; j < m_kgeoms[i].size() ; ++j)
-	    delete m_kgeoms[i][j];
+    {
+	for (unsigned int j = 0 ; j < m_kgeoms[i].g.size() ; ++j)
+	    delete m_kgeoms[i].g[j];
+	dSpaceDestroy(m_kgeoms[i].s);
+    }    
     if (m_space)
 	dSpaceDestroy(m_space);
 }
@@ -48,7 +51,10 @@ unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models
     unsigned int id = collision_space::EnvironmentModel::addRobotModel(model);
 
     if (m_kgeoms.size() <= id)
-	m_kgeoms.resize(id + 1);	    
+    {
+	m_kgeoms.resize(id + 1);
+	m_kgeoms[id].s = dHashSpaceCreate(0);	
+    }
     
     for (unsigned int j = 0 ; j < models[id]->getRobotCount() ; ++j)
     {
@@ -62,13 +68,13 @@ unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models
 	    switch (geom->type)
 	    {
 	    case planning_models::KinematicModel::Geometry::SPHERE:
-		g = dCreateSphere(m_space, geom->size[0]);
+		g = dCreateSphere(m_kgeoms[id].s, geom->size[0]);
 		break;
 	    case planning_models::KinematicModel::Geometry::BOX:
-		g = dCreateBox(m_space, geom->size[0], geom->size[1], geom->size[2]);
+		g = dCreateBox(m_kgeoms[id].s, geom->size[0], geom->size[1], geom->size[2]);
 		break;
 	    case planning_models::KinematicModel::Geometry::CYLINDER:
-		g = dCreateCylinder(m_space, geom->size[0], geom->size[1]);
+		g = dCreateCylinder(m_kgeoms[id].s, geom->size[0], geom->size[1]);
 		break;
 	    default:
 		break;
@@ -76,7 +82,7 @@ unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models
 	    if (g)
 	    {
 		kg->geom = g;
-		m_kgeoms[id].push_back(kg);
+		m_kgeoms[id].g.push_back(kg);
 	    }
 	    else
 		delete kg;
@@ -87,12 +93,12 @@ unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models
 
 void collision_space::EnvironmentModelODE::updateRobotModel(unsigned int model_id)
 { 
-    const unsigned int n = m_kgeoms[model_id].size();
+    const unsigned int n = m_kgeoms[model_id].g.size();
     
     for (unsigned int i = 0 ; i < n ; ++i)
     {
-	libTF::Pose3D &pose = m_kgeoms[model_id][i]->link->globalTrans;
-	dGeomID        geom = m_kgeoms[model_id][i]->geom;
+	libTF::Pose3D &pose = m_kgeoms[model_id].g[i]->link->globalTrans;
+	dGeomID        geom = m_kgeoms[model_id].g[i]->geom;
 	
 	libTF::Pose3D::Position pos = pose.getPosition();
 	dGeomSetPosition(geom, pos.x, pos.y, pos.z);
@@ -174,12 +180,16 @@ struct CollisionData
     
 static void nearCallbackFn(void *data, dGeomID o1, dGeomID o2)
 {
-    static const int MAX_CONTACTS = 1;    
-    dContact contact[MAX_CONTACTS];
-    int numc = dCollide (o1, o2, MAX_CONTACTS,
-			 &contact[0].geom, sizeof(dContact));
-    if (numc)
-	reinterpret_cast<CollisionData*>(data)->collides = true;
+    bool &coll = reinterpret_cast<CollisionData*>(data)->collides;
+    if (!coll)
+    {
+	static const int MAX_CONTACTS = 1;    
+	dContact contact[MAX_CONTACTS];
+	int numc = dCollide (o1, o2, MAX_CONTACTS,
+			     &contact[0].geom, sizeof(dContact));
+	if (numc)
+	    coll = true;
+    }
 }
 
 bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
@@ -187,8 +197,12 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
     CollisionData cdata;
     cdata.collides = false;
     m_collide2.setup();
-    for (int i = m_kgeoms[model_id].size() - 1 ; i >= 0 && !cdata.collides ; --i)
-	m_collide2.collide(m_kgeoms[model_id][i]->geom, reinterpret_cast<void*>(&cdata), nearCallbackFn);
+    for (int i = m_kgeoms[model_id].g.size() - 1 ; i >= 0 && !cdata.collides ; --i)
+	m_collide2.collide(m_kgeoms[model_id].g[i]->geom, reinterpret_cast<void*>(&cdata), nearCallbackFn);
+    
+    if (m_selfCollision && !cdata.collides)
+	dSpaceCollide(m_kgeoms[model_id].s, reinterpret_cast<void*>(&cdata), nearCallbackFn);
+    
     return cdata.collides;
 }
 

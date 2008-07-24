@@ -57,3 +57,13 @@ void collision_space::EnvironmentModel::unlock(void)
 {
     m_lock.unlock();    
 }
+
+void collision_space::EnvironmentModel::setSelfCollision(bool selfCollision)
+{
+    m_selfCollision = selfCollision;
+}
+
+bool collision_space::EnvironmentModel::getSelfCollision(void) const
+{
+    return m_selfCollision;
+}
