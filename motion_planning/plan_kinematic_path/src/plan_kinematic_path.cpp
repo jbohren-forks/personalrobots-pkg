@@ -32,74 +32,42 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef KINEMATIC_ENVIRONMENT_MODEL_
-#define KINEMATIC_ENVIRONMENT_MODEL_
+#include <ros/node.h>
+#include <robot_srvs/KinematicMotionPlan.h>
 
-#include <planning_models/kinematic.h>
-#include <rosthread/mutex.h>
-#include <vector>
-
-/** @htmlinclude ../../manifest.html
-
-    A class describing an environment for a kinematic robot */
-
-namespace collision_space
+class PlanKinematicPath : public ros::node
 {
+public:
     
-    class EnvironmentModel
+    PlanKinematicPath(void) : ros::node("plan_kinematic_path")
     {
-    public:
-	
-	EnvironmentModel(void)
-	{
-	    m_selfCollision = true;
-	}
-	
-	virtual ~EnvironmentModel(void)
-	{
-	    for (unsigned int i = 0 ; i < models.size() ; ++i)
-		delete models[i];
-	}
-	
-	/** Check if a model is in collision */
-	virtual bool isCollision(unsigned int model_id) = 0;
-	
-	/** Remove all obstacles from collision model */
-	virtual void clearObstacles(void) = 0;
-	
-	/** Add a point cloud to the collision space */
-	virtual void addPointCloud(unsigned int n, const double* points, double radius = 0.01) = 0;
-
-	/** Add a robot model */
-	virtual unsigned int addRobotModel(robot_desc::URDF &pmodel, const char *group = NULL);
-	/** Add a robot model */
-	virtual unsigned int addRobotModel(planning_models::KinematicModel *model);
-
-	/** Update the positions of the geometry used in collision detection */
-	virtual void updateRobotModel(unsigned int model_id) = 0;
-
-	/** Provide interface to a lock. Use carefully! */
-	void lock(void);
-	
-	/** Provide interface to a lock. Use carefully! */
-	void unlock(void);
-	
-	/** Set the status of self collision */
-	void setSelfCollision(bool selfCollision);
-	
-	/** Check if self collision is enabled */
-	bool getSelfCollision(void) const;	
-
-	/** List of loaded robot models */	
-	std::vector<planning_models::KinematicModel*> models;
-	
-    protected:
-        
-	ros::thread::mutex m_lock;
-	bool               m_selfCollision;
-	
-    };
-}
-
-#endif
+    }
     
+    void runTest1(void)
+    {
+	robot_srvs::KinematicMotionPlan::request  req;
+	robot_srvs::KinematicMotionPlan::response res;
+	
+	if (ros::service::call("plan_kinematic_path", req, res))
+	{
+	    
+	    
+	}
+	else
+	    fprintf(stderr, "Service 'plan_kinematic_path' failed\n");	  
+    }	  
+
+    
+};
+
+
+int main(int argc, char **argv)
+{  
+    ros::init(argc, argv);
+    
+    PlanKinematicPath plan;
+    plan.runTest1();
+    plan.shutdown();
+    
+    return 0;    
+}

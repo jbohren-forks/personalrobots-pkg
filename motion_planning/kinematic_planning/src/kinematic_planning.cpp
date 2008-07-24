@@ -83,7 +83,6 @@ Provides (name/type):
 
 #include <ros/node.h>
 #include <std_msgs/PointCloudFloat32.h>
-#include <robot_msgs/KinematicPath.h>
 #include <robot_srvs/KinematicMotionPlan.h>
 
 #include <urdf/URDF.h>
