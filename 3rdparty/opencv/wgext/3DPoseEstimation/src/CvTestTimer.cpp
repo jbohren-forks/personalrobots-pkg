@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <iostream>
 
-
 CvTestTimer CvTestTimer::_singleton;
 
 CvTestTimer::CvTestTimer():
