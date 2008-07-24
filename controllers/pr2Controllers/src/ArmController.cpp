@@ -48,6 +48,14 @@ ArmController::~ArmController( )
 {
 }
 
+void ArmController::init()
+{
+  // to be filled in here
+  // initJointControllers();
+
+}
+
+
 void ArmController::initJoint(int jointNum, double PGain, double IGain, double DGain, double IMax, double IMin, controllerControlMode mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint)
 {
   lowerControl[jointNum].init(PGain,  IGain,  DGain,  IMax,  IMin,  CONTROLLER_DISABLED,  time,  maxEffort,  -maxEffort, joint); //Initialize joint, but keep in disabled state 

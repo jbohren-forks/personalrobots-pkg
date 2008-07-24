@@ -54,6 +54,11 @@ namespace controller
         */       
       ~ArmController( );
   
+      /*!
+        * \brief initialize controller variables
+        */       
+     void init();
+
       //TEMPORARY
         /*! 
         * \brief Temporary way to initialize limits and gains for a single joint. JointNum is Identified with enum
