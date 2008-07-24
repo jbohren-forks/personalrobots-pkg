@@ -80,7 +80,7 @@ main(int argc, char** argv)
   double torque;
   /***************************************************************************************/
   /*                                                                                     */
-  /*                           Init Threads                                              */
+  /*                           init Threads                                              */
   /*                                                                                     */
   /***************************************************************************************/
 
@@ -91,7 +91,7 @@ main(int argc, char** argv)
 
   /***************************************************************************************/
   /*                                                                                     */
-  /*                           Init Joints                                               */
+  /*                           init Joints                                               */
   /*                                                                                     */
   /***************************************************************************************/
 
@@ -110,9 +110,9 @@ main(int argc, char** argv)
   ros::init(argc,argv);
   printf("Creating robot\n");
   PR2::PR2Robot* myPR2;
-  // Initialize robot object
+  // initialize robot object
   myPR2 = new PR2::PR2Robot();
-  // Initialize connections
+  // initialize connections
   myPR2->InitializeRobot();
   // Set control mode for the base
   myPR2->SetBaseControlMode(PR2::PR2_CARTESIAN_CONTROL);
@@ -166,17 +166,17 @@ main(int argc, char** argv)
   /***************************************************************************************/
   controller::JointController* ControllerArray[PR2::MAX_JOINTS]; //Create array of pointers to controllers
   for(int i = 0;i<PR2::MAX_JOINTS;i++){
-      ControllerArray[i] = new controller::JointController(); //Initialize blank controller
+      ControllerArray[i] = new controller::JointController(); //initialize blank controller
   }
  
   //Explicitly initialize the controllers we wish to use. Don't forget to set the controllers to torque mode in the world file! 
-  ControllerArray[PR2::ARM_L_PAN]->init(1000,0,0,500,-500, controller::CONTROLLER_POSITION,time,-1000,1000,JointArray[PR2::ARM_L_PAN]);
-  ControllerArray[PR2::ARM_L_SHOULDER_PITCH]->init(1000,0,0,500,-500, controller::CONTROLLER_POSITION,time,-1000,1000,JointArray[PR2::ARM_L_SHOULDER_PITCH]);
-  ControllerArray[PR2::ARM_L_SHOULDER_ROLL]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,JointArray[PR2::ARM_L_SHOULDER_ROLL]);
-  ControllerArray[PR2::ARM_L_ELBOW_PITCH]->init(300,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,JointArray[PR2::ARM_L_ELBOW_PITCH]);
-  ControllerArray[PR2::ARM_L_ELBOW_ROLL]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,JointArray[PR2::ARM_L_ELBOW_ROLL]);
-  ControllerArray[PR2::ARM_L_WRIST_PITCH]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,JointArray[PR2::ARM_L_WRIST_PITCH]);
-  ControllerArray[PR2::ARM_L_WRIST_ROLL]->init(0.5,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,JointArray[PR2::ARM_L_WRIST_ROLL]);
+  ControllerArray[PR2::ARM_L_PAN]->init(1000,0,0,500,-500, controller::CONTROLLER_POSITION,time,1000,-1000,JointArray[PR2::ARM_L_PAN]);
+  ControllerArray[PR2::ARM_L_SHOULDER_PITCH]->init(1000,0,0,500,-500, controller::CONTROLLER_POSITION,time,1000,-1000,JointArray[PR2::ARM_L_SHOULDER_PITCH]);
+  ControllerArray[PR2::ARM_L_SHOULDER_ROLL]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,100,-100,JointArray[PR2::ARM_L_SHOULDER_ROLL]);
+  ControllerArray[PR2::ARM_L_ELBOW_PITCH]->init(300,0,0,500,-500, controller::CONTROLLER_POSITION,time,100,-100,JointArray[PR2::ARM_L_ELBOW_PITCH]);
+  ControllerArray[PR2::ARM_L_ELBOW_ROLL]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,100,-100,JointArray[PR2::ARM_L_ELBOW_ROLL]);
+  ControllerArray[PR2::ARM_L_WRIST_PITCH]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,100,-100,JointArray[PR2::ARM_L_WRIST_PITCH]);
+  ControllerArray[PR2::ARM_L_WRIST_ROLL]->init(0.5,0,0,500,-500, controller::CONTROLLER_POSITION,time,100,-100,JointArray[PR2::ARM_L_WRIST_ROLL]);
 
   
 //  ControllerArray[PR2::ARM_L_WRIST_ROLL]->capAccel = true;
@@ -195,28 +195,28 @@ main(int argc, char** argv)
   /*                                                                                     */
   /***************************************************************************************/
   controller::LaserScannerController*  laser = new controller::LaserScannerController();
-  laser->Init(0.01,0,0,100,-100,controller::CONTROLLER_VELOCITY,time,100,-100,100, JointArray[PR2::HEAD_LASER_PITCH]);
+  laser->init(0.01,0,0,100,-100,controller::CONTROLLER_VELOCITY,time,100,-100, JointArray[PR2::HEAD_LASER_PITCH]);
  // laser->SetVelCmd(0.5);
   
 
       //Set profiles
-    laser->SetSinewaveProfile(1,0.5,0.01,0);
+    laser->setSinewaveProfile(1,0.5,0.01,0);
 //      laser->SetSawtoothProfile(1,0.5,0.01,0);
-  laser->SetMode(controller::CONTROLLER_AUTOMATIC);
+  laser->setMode(controller::CONTROLLER_AUTOMATIC);
 
 
 /*
   controller::JointController        leftShoulderPitch; //Test jointController
   controller::JointController        leftWristRoll; //Test jointController
   myPR2->hw.GetSimTime(&time);
-  leftShoulderPitch.Init(1000,0,0,500,-500, controller::CONTROLLER_POSITION,time,1000,-1000,1000,JointArray[PR2::ARM_L_SHOULDER_PITCH]);
-  leftWristRoll.Init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,100,-100,100,JointArray[PR2::ARM_L_WRIST_ROLL]);
+  leftShoulderPitch.init(1000,0,0,500,-500, controller::CONTROLLER_POSITION,time,1000,-1000,1000,JointArray[PR2::ARM_L_SHOULDER_PITCH]);
+  leftWristRoll.init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,100,-100,100,JointArray[PR2::ARM_L_WRIST_ROLL]);
  // std::cout<<"****************"<<test.SetTorqueCmd(-500.0)<<std::endl;
   std::cout<<"****************"<<leftShoulderPitch.SetPosCmd(-1.0)<<std::endl;
   std::cout<<"****************"<<leftWristRoll.SetPosCmd(2.0)<<std::endl;  
 //std::cout<<"****************"<<leftWristRoll.SetTorqueCmd(50.0)<<std::endl;
 */
-//void JointController::Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint) {
+  //void JointController::init(double PGain, double IGain, double DGain, double IMax, double IMin, controller_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint) {
 
   /***************************************************************************************/
   /*                                                                                     */
@@ -286,7 +286,7 @@ main(int argc, char** argv)
   }
 
      
-    laser->Update();
+    laser->update();
 
     double cmdvel;
       ControllerArray[PR2::ARM_L_WRIST_ROLL]->getVelAct(&cmdvel);
