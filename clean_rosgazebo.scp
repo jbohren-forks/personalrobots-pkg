@@ -1,5 +1,5 @@
 #!/bin/bash
-
+ 
 #clean controllers
 (cd controllers/genericControllers            ; rm -f lib/* ;make clean)
 (cd controllers/pr2Controllers                ; rm -f lib/* ;make clean)
