@@ -76,8 +76,8 @@ namespace planning_models
 	{
 	    Joint(void)
 	    {
+		usedParams = 0;
 		before = after = NULL;
-		usedParamStart = usedParamEnd = 0;
 		axis[0] = axis[1] = axis[2] = 0.0;
 		anchor[0] = anchor[1] = anchor[2] = 0.0;
 		limit[0] = limit[1] = 0.0;
@@ -97,9 +97,7 @@ namespace planning_models
 	    /* the range of indices in the parameter vector that
 	       needed to access information about the position of this
 	       joint */
-	    unsigned int  usedParamStart;
-	    unsigned int  usedParamEnd;
-	    bool          active;
+	    unsigned int  usedParams;
 	    
 	    /* relevant joint information */
 	    enum

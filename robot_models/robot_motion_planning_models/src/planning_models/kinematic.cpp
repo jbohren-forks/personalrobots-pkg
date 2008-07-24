@@ -56,11 +56,11 @@ void planning_models::KinematicModel::Joint::computeTransform(const double *para
     switch (type)
     {
     case Joint::REVOLUTE:
-	varTrans.setAxisAngle(axis, params[usedParamStart]);
+	varTrans.setAxisAngle(axis, params[0]);
 	break;
     case Joint::PRISMATIC:
 	{
-	    double p  = params[usedParamStart];
+	    double p  = params[0];
 	    double dx = axis[0] * p;
 	    double dy = axis[1] * p;
 	    double dz = axis[2] * p;
@@ -68,15 +68,16 @@ void planning_models::KinematicModel::Joint::computeTransform(const double *para
 	}
 	break;
     case Joint::FLOATING:
-	varTrans.setPosition(params[usedParamStart], params[usedParamStart + 1], params[usedParamStart + 2]);
+	varTrans.setPosition(params[0], params[1], params[2]);
 	break;
     default:
 	break;
     }
+
     if (before)
 	globalTrans = before->globalTrans; // otherwise, the caller initialized globalTrans already
     globalTrans.multiplyPose(varTrans);
-    after->computeTransform(params);
+    after->computeTransform(params + usedParams);
 }
 
 void planning_models::KinematicModel::Link::computeTransform(const double *params)
@@ -141,7 +142,6 @@ planning_models::KinematicModel::Robot* planning_models::KinematicModel::getRobo
 
 void planning_models::KinematicModel::buildChain(Robot *robot, Link *parent, Joint* joint, robot_desc::URDF::Link* urdfLink)
 {
-    joint->usedParamStart = robot->stateDimension;
     joint->before = parent;
     joint->after  = new Link();
     
@@ -158,42 +158,41 @@ void planning_models::KinematicModel::buildChain(Robot *robot, Link *parent, Joi
     {
     case robot_desc::URDF::Link::Joint::FLOATING:
 	joint->type = Joint::FLOATING;
-	joint->usedParamEnd = joint->usedParamStart + 3;
+	joint->usedParams = 3;
 	robot->stateBounds.insert(robot->stateBounds.end(), 6, 0.0);
-	robot->floatingJoints.push_back(joint->usedParamStart);
+	robot->floatingJoints.push_back(robot->stateDimension);
 	break;
     case robot_desc::URDF::Link::Joint::FIXED:
 	joint->type = Joint::FIXED; 
-	joint->usedParamEnd = joint->usedParamStart;
+	joint->usedParams = 0;
 	break;
     case robot_desc::URDF::Link::Joint::REVOLUTE:
 	joint->type = Joint::REVOLUTE;
-	joint->usedParamEnd = joint->usedParamStart + 1;
+	joint->usedParams = 1;
 	robot->stateBounds.push_back(joint->limit[0]);
 	robot->stateBounds.push_back(joint->limit[1]);
 	break;
     case robot_desc::URDF::Link::Joint::PRISMATIC:
 	joint->type = Joint::PRISMATIC;
-	joint->usedParamEnd = joint->usedParamStart + 1;
+	joint->usedParams = 1;
 	robot->stateBounds.push_back(joint->limit[0]);
 	robot->stateBounds.push_back(joint->limit[1]);
 	break;
     default:
 	joint->type = Joint::UNKNOWN; 
-	joint->usedParamEnd = joint->usedParamStart;
+	joint->usedParams = 0;
 	break;
     }
-    joint->active = joint->usedParamEnd > joint->usedParamStart;
-    if (m_verbose && joint->usedParamEnd > joint->usedParamStart)
+    if (m_verbose && joint->usedParams > 0)
     {
 	printf("Joint '%s' connects link '%s' to link '%s' and uses state coordinates: ",
 	       urdfLink->joint->name.c_str(), urdfLink->parentName.c_str(), urdfLink->name.c_str());
-	for (unsigned int i = joint->usedParamStart ; i < joint->usedParamEnd ; ++i)
-	    printf("%d ", i);
+	for (unsigned int i = 0 ; i < joint->usedParams ; ++i)
+	    printf("%d ", i + robot->stateDimension);
 	printf("\n");
     }
     
-    robot->stateDimension = joint->usedParamEnd;	    
+    robot->stateDimension += joint->usedParams;
     buildChain(robot, joint, joint->after, urdfLink);
 }
 
