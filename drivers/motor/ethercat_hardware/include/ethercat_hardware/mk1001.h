@@ -39,48 +39,53 @@
 
 struct MK1001Command
 {
-	int16_t		i_k;
-	int16_t		i_i;
-	int16_t		i_offset;
-	int16_t		i_desire;
-	int16_t		mode;
-	int16_t		shift;
-	int16_t		i_i_limit;
-	int16_t		qei_cpr;
-	int16_t		config;
-} __attribute__ ((__packed__));
+  int16_t i_k;
+  int16_t i_i;
+  int16_t i_offset;
+  int16_t i_desire;
+  int16_t mode;
+  int16_t shift;
+  int16_t i_i_limit;
+  int16_t qei_cpr;
+  int16_t config;
+}__attribute__ ((__packed__));
 
 struct MK1001Status
 {
-	int32_t		timestamp;
-	int32_t		qei_index_pos;
-	int32_t		qei_pos;
-	int32_t		qei_velocity;
-	int16_t		qei_error_count;
-	int16_t		debug;
-	int16_t		adc_current;
-	int16_t		adc_pot;
-	int16_t		adc_temp;
-	int16_t		adc_voltage;
-	int16_t		pwm_cmd;
-} __attribute__ ((__packed__)) ;
+  int32_t timestamp;
+  int32_t qei_index_pos;
+  int32_t qei_pos;
+  int32_t qei_velocity;
+  int16_t qei_error_count;
+  int16_t debug;
+  int16_t adc_current;
+  int16_t adc_pot;
+  int16_t adc_temp;
+  int16_t adc_voltage;
+  int16_t pwm_cmd;
+}__attribute__ ((__packed__)) ;
 
-class MK1001: public MotorControlBoard {
-	static const int STATUS_PHY_ADDR = 0x1200;
-	static const int COMMAND_PHY_ADDR = 0x1100;
+class MK1001 : public MotorControlBoard
+{
+  static const int STATUS_PHY_ADDR = 0x1200;
+  static const int COMMAND_PHY_ADDR = 0x1100;
 
-	enum {
-		MODE_OFF, MODE_PWM, MODE_PID
-	};
+  enum
+  {
+    MODE_OFF, MODE_PWM, MODE_PID
+  };
 
 public:
-	MK1001() : MotorControlBoard(MK1001_PRODUCT_CODE, sizeof(MK1001Command), sizeof(MK1001Status)) {}
-	void configure(int &startAddress, EtherCAT_SlaveHandler *sh);
-    void convertCommand(ActuatorCommand &command, unsigned char *buffer);
-    void convertState(ActuatorState &state, unsigned char *buffer);
+  MK1001() :
+    MotorControlBoard(MK1001_PRODUCT_CODE, sizeof(MK1001Command), sizeof(MK1001Status))
+  {
+  }
+  void configure(int &startAddress, EtherCAT_SlaveHandler *sh);
+  void convertCommand(ActuatorCommand &command, unsigned char *buffer);
+  void convertState(ActuatorState &state, unsigned char *buffer);
 
 private:
-	static const EC_UDINT MK1001_PRODUCT_CODE = 0x000003E9;
+  static const EC_UDINT MK1001_PRODUCT_CODE = 0x000003E9;
 };
 
 #endif /* MK1001_H */
