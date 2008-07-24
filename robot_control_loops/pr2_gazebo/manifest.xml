@@ -16,4 +16,5 @@
   <depend package="rosthread" />
   <depend package="rosTF" />
   <depend package="rosgazebo" />
+  <depend package="mechanism_control" />
 </package>
