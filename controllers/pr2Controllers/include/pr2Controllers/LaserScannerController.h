@@ -1,6 +1,6 @@
 #pragma once
 /***************************************************/
-/*! \class CONTROLLER::LaserScannerController
+/*! \class LaserScannerController
     \brief A PR2 Pitching Laser Scanner Joint controller
     
     This class implements controller loops for
@@ -22,7 +22,7 @@
 #include <math.h>
 
 #define EPSILON 0.001 //Threshold value for floating point comparisons in waveform generation
-namespace CONTROLLER
+namespace controller
 {
   class LaserScannerController : Controller
   {
@@ -49,7 +49,7 @@ namespace CONTROLLER
         * \brief Temporary way to initialize limits and gains. Default argument for dt is 1 ms
         *
         */
-      void Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint);
+      void Init(double PGain, double IGain, double DGain, double IMax, double IMin, controllerControlMode mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint);
 
 
 
@@ -131,20 +131,20 @@ namespace CONTROLLER
         * \brief Switches command mode type (Automatic, Torque, position, velocity control)
         *  
         */
-      CONTROLLER_CONTROL_MODE SetMode(CONTROLLER_CONTROL_MODE mode);
+      controllerControlMode SetMode(controllerControlMode mode);
 
     /*!
       * \brief Allow controller to send commands
       *      
       */
-      CONTROLLER_CONTROL_MODE EnableController(void);
+      controllerControlMode EnableController(void);
 
         /*!
       * \brief Shut down controller.
       * 
       *       
       */
-      CONTROLLER_CONTROL_MODE DisableController(void);
+      controllerControlMode DisableController(void);
       
 
         /*!
@@ -152,7 +152,7 @@ namespace CONTROLLER
       * 
       */
     
-      CONTROLLER_CONTROL_MODE GetMode(void);
+      controllerControlMode GetMode(void);
 
         /*!
         * \brief Return true if last command saturated the torque 
@@ -172,21 +172,21 @@ namespace CONTROLLER
       */
     
 
-      CONTROLLER_ERROR_CODE SetTorqueCmd(double torque);
+      controllerErrorCode SetTorqueCmd(double torque);
 
 	    /*!
       * \brief Fetch the latest user issued torque command 
       * 
       * \param double* torque Pointer to value to change 
       */ 
-      CONTROLLER_ERROR_CODE GetTorqueCmd(double *torque);
+      controllerErrorCode GetTorqueCmd(double *torque);
     
       /*!
       * \brief Get the actual torque of the joint motor.
       * 
       * \param double* torque Pointer to value to change
       */  
-      CONTROLLER_ERROR_CODE GetTorqueAct(double *torque);
+      controllerErrorCode GetTorqueAct(double *torque);
 
 //---------------------------------------------------------------------------------//
 //POSITION CALLS
@@ -197,19 +197,19 @@ namespace CONTROLLER
       * 
       * \param double pos Position command to issue. Pos = 0 is home position of horizontal scan
       */       
-      CONTROLLER_ERROR_CODE SetPosCmd(double pos);
+      controllerErrorCode SetPosCmd(double pos);
     
       /*!
       * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
       * \param double* pos Pointer to value to change
       */       
-      CONTROLLER_ERROR_CODE GetPosCmd(double *pos);
+      controllerErrorCode GetPosCmd(double *pos);
     
       /*!
       * \brief Read the torque of the motor
       * \param double* pos Pointer to value to change
       */       
-      CONTROLLER_ERROR_CODE GetPosAct(double *pos);    
+      controllerErrorCode GetPosAct(double *pos);    
  
 //---------------------------------------------------------------------------------//
 //VELOCITY CALLS
@@ -219,19 +219,19 @@ namespace CONTROLLER
       * \brief Set velocity command to the joint to be issue next update
       * \param double vel Velocity to issue next command
       */
-      CONTROLLER_ERROR_CODE SetVelCmd(double vel);
+      controllerErrorCode SetVelCmd(double vel);
     
       /*!
       * \brief Get latest velocity command to the joint
       * \param double* vel Pointer to value to change
       */
-      CONTROLLER_ERROR_CODE GetVelCmd(double *vel);
+      controllerErrorCode GetVelCmd(double *vel);
     
       /*!
       * \brief Get actual velocity of the joint
       * \param double* vel Pointer to value to change
       */
-      CONTROLLER_ERROR_CODE GetVelAct(double *vel);
+      controllerErrorCode GetVelAct(double *vel);
       
 //---------------------------------------------------------------------------------//
 //UPDATE CALLS
@@ -257,7 +257,7 @@ namespace CONTROLLER
         * Consider also, using setParam('profile','sawtooth')
         *
         */       
-      CONTROLLER::CONTROLLER_ERROR_CODE setProfile(double *&t, double *&x, int numElements);
+      controllerErrorCode setProfile(double *&t, double *&x, int numElements);
 
       /*!
         * \brief Set parameters for this controller
@@ -278,14 +278,14 @@ namespace CONTROLLER
         * </UL>
         *
         */      
-      CONTROLLER::CONTROLLER_ERROR_CODE setParam(std::string label,     double value);
-      CONTROLLER::CONTROLLER_ERROR_CODE setParam(std::string label,std::string value);
+      controllerErrorCode setParam(std::string label,     double value);
+      controllerErrorCode setParam(std::string label,std::string value);
 
     
         private:
       int counter; 
       bool enabled; /**< Track enabled stats>*/
-      CONTROLLER_CONTROL_MODE controlMode; /**<Allow different control modes for hokuyo>*/
+      controllerControlMode controlMode; /**<Allow different control modes for hokuyo>*/
 
       std::string name; /**<Namespace identifier for ROS>*/      
 

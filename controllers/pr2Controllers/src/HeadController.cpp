@@ -1,6 +1,6 @@
 #include <pr2Controllers/HeadController.h>
 
-using namespace CONTROLLER;
+using namespace controller;
 
 HeadController::HeadController()
 {

@@ -1,6 +1,6 @@
 #pragma once
 /***************************************************/
-/*! \class CONTROLLER::BaseController
+/*! \class controller::BaseController
   \brief A PR2 Base controller
     
   This class implements controller loops for
@@ -31,7 +31,7 @@
 
 using namespace std;
 
-namespace CONTROLLER
+namespace controller
 {
   class BaseController : public Controller
   {
@@ -67,7 +67,7 @@ namespace CONTROLLER
      * 
      * \param filename - xml file name
      */
-    CONTROLLER::CONTROLLER_ERROR_CODE loadXML(std::string filename);
+    controllerErrorCode loadXML(std::string filename);
 
     /*!
      * \brief Destructor of the BaseController class.
@@ -195,11 +195,9 @@ namespace CONTROLLER
 
     double iMin; /**< Min integral error term */
 
-    double maxPositiveTorque; /**< (in Nm) max current = 0.75 A. Torque constant = 70.4 mNm/A.Max Torque = 70.4*0.75 = 52.8 mNm */
-
-    double maxNegativeTorque; /**< max negative torque */
-
     double maxEffort; /**< maximum effort */
+
+    double minEffort; /**< maximum effort */
       
     double pGainPos; /**< Proportional gain for position control */
 

@@ -36,7 +36,7 @@
 #include<iostream>  
 
 using namespace std;
-using namespace CONTROLLER;
+using namespace controller;
 
 Pid::Pid(double P,double I, double D, double I1, double I2 ) :
   pGain(P),iGain(I),dGain(D),iMax(I1),iMin(I2)

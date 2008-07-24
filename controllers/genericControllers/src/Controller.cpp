@@ -2,7 +2,7 @@
 
 #include <math.h>
 
-using namespace CONTROLLER;
+using namespace controller;
 
 
 Controller::Controller()
@@ -14,10 +14,10 @@ Controller::~Controller()
 }
 
 //Intended to be overwritten by child classes
-void Controller::Update(){
+void Controller::update(){
 
 }
 
-void Controller::Init(){
+void Controller::init(){
 
 }

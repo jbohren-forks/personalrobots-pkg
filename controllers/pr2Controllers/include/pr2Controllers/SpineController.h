@@ -19,7 +19,7 @@
 #include <pr2Core/pr2Core.h>
 #include <genericControllers/Controller.h>
 
-namespace CONTROLLER
+namespace controller
 {
   class SpineController : Controller
   {

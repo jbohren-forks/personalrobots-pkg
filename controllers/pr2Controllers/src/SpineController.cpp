@@ -1,6 +1,6 @@
 #include <pr2Controllers/SpineController.h>
 
-using namespace CONTROLLER;
+using namespace controller;
 
 SpineController::SpineController()
 {

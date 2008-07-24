@@ -1,18 +1,17 @@
 #pragma once
 /***************************************************/
-/*! \namespace CONTROLLER
-    \brief The CONTROLLER namespace
+/*! \namespace controller
+    \brief The controller namespace
     
-    \class CONTROLLER::Controller
+    \class controller::Controller
     \brief A base level controller class.
 
 */
 /***************************************************/
 
-namespace CONTROLLER
+namespace controller
 {
-
-  enum CONTROLLER_ERROR_CODE
+  enum controllerErrorCode
   {
     CONTROLLER_ALL_OK,
     CONTROLLER_JOINT_LIMIT,
@@ -24,7 +23,7 @@ namespace CONTROLLER
     CONTROLLER_CMD_SET
   };
   
-  enum CONTROLLER_CONTROL_MODE
+  enum controllerControlMode
   {
     CONTROLLER_MODE_SET,
     CONTROLLER_ENABLED,
@@ -35,19 +34,23 @@ namespace CONTROLLER
     CONTROLLER_AUTOMATIC,
     ETHERDRIVE_SPEED
   };
-
   
   class Controller
   {
     public:
-      Controller();
-      virtual ~Controller();
-       
-     virtual void Update(void);
-     virtual void Init(void);
+    Controller();
+    virtual ~Controller();       
+    virtual void update(void);
+    virtual void init(void);
 
     private:
-
-
   };
+
+  typedef struct{
+      double pGain;
+      double iGain;
+      double dGain;
+      double windupMin;
+      double windupMax;
+  }pidControlParam;
 }

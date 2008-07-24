@@ -1,7 +1,8 @@
-#include <pr2Controllers/ArmController.h> 
-using namespace CONTROLLER;
+#include <pr2Controllers/ArmController.h>
+
+using namespace controller;
 /***************************************************/
-/*! \class CONTROLLER::ArmController
+/*! \class controller::ArmController
     \brief An overall arm controller
     
     This class implements controller loops for
@@ -47,15 +48,13 @@ ArmController::~ArmController( )
 {
 }
 
-void ArmController::initJoint(int jointNum, double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint)
+void ArmController::initJoint(int jointNum, double PGain, double IGain, double DGain, double IMax, double IMin, controllerControlMode mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint)
 {
-  lowerControl[jointNum].Init(PGain,  IGain,  DGain,  IMax,  IMin,  CONTROLLER::CONTROLLER_DISABLED,  time,  maxPositiveTorque,  maxNegativeTorque,  maxEffort,  joint); //Initialize joint, but keep in disabled state 
+  lowerControl[jointNum].init(PGain,  IGain,  DGain,  IMax,  IMin,  CONTROLLER_DISABLED,  time,  maxEffort,  -maxEffort, joint); //Initialize joint, but keep in disabled state 
 }
 
-CONTROLLER_ERROR_CODE ArmController::initArm(CONTROLLER_CONTROL_MODE mode, PR2::PR2Robot* robot)
+controllerErrorCode ArmController::initArm(controllerControlMode mode)
 {
-  //Record the robot pointer for kinematics
-  this->robot = robot;
 
   //Reset commanded positions
   for(int i =0 ;i<6;i++){
@@ -67,7 +66,7 @@ CONTROLLER_ERROR_CODE ArmController::initArm(CONTROLLER_CONTROL_MODE mode, PR2::
   controlMode = mode;
 
     for(int i =0;i<ARM_MAX_JOINTS;i++){
-      lowerControl[i].SetMode(mode); //Set underlying jointControllers to position control
+      lowerControl[i].setMode(mode); //Set underlying jointControllers to position control
     }
   
   //Turn on the controller
@@ -79,35 +78,35 @@ CONTROLLER_ERROR_CODE ArmController::initArm(CONTROLLER_CONTROL_MODE mode, PR2::
 //---------------------------------------------------------------------------------//
 //MODE/ENABLE CALLS
 //---------------------------------------------------------------------------------//
-CONTROLLER::CONTROLLER_CONTROL_MODE ArmController::setMode(CONTROLLER_CONTROL_MODE mode)
+controllerControlMode ArmController::setMode(controllerControlMode mode)
 {
   for(int i = 0;i<ARM_MAX_JOINTS;i++){
-    lowerControl[i].SetMode(mode);
+    lowerControl[i].setMode(mode);
   }
   return CONTROLLER_MODE_SET;
 }
 
-CONTROLLER::CONTROLLER_CONTROL_MODE ArmController::enableController(void)
+controllerControlMode ArmController::enableController(void)
 {
   enabled = true;
  for(int i = 0;i<ARM_MAX_JOINTS;i++){
-    lowerControl[i].EnableController();
+    lowerControl[i].enableController();
   }
   return CONTROLLER_ENABLED;
 }
 
-CONTROLLER::CONTROLLER_CONTROL_MODE  ArmController::disableController(void)
+controllerControlMode  ArmController::disableController(void)
 { 
   enabled = false;
  for(int i = 0;i<ARM_MAX_JOINTS;i++){
-    lowerControl[i].DisableController();
+    lowerControl[i].disableController();
   }
   return CONTROLLER_DISABLED;
 
 }
       
     
-CONTROLLER::CONTROLLER_CONTROL_MODE  ArmController::getMode(void)
+controllerControlMode  ArmController::getMode(void)
 {
   return controlMode;
 }
@@ -115,7 +114,7 @@ CONTROLLER::CONTROLLER_CONTROL_MODE  ArmController::getMode(void)
 void  ArmController::checkForSaturation(bool* status[])
 {
   for(int i= 0;i<ARM_MAX_JOINTS;i++){
-    *status[i] = lowerControl[i].CheckForSaturation();
+    *status[i] = lowerControl[i].checkForSaturation();
   }
 }
 
@@ -124,347 +123,204 @@ void  ArmController::checkForSaturation(bool* status[])
 //HAND CALLS
 //Require forward and inverse kinematics
 //---------------------------------------------------------------------------------//
-CONTROLLER_ERROR_CODE
-ArmController::setHandCartesianPos(double x, double y, double z, double roll, double pitch, double yaw)
-{	
-  //Define position and rotation
-  KDL::Vector position(x,y,z);
-  KDL::Rotation rotation;
-  rotation = rotation.RPY(roll,pitch,yaw);
-  
-  cmdPos[0] = x;
-  cmdPos[1] = y;
-  cmdPos[2] = z;
-  cmdPos[3] = roll;
-  cmdPos[4] = pitch;
-  cmdPos[5] = yaw;
-
-  //Create frame based on position and rotation
-  KDL::Frame f;
-  f.p = position;
-  f.M = rotation;
-  
-  //Create joint arrays
-	KDL::JntArray q_init(ARM_MAX_JOINTS);
-	KDL::JntArray q_out(ARM_MAX_JOINTS);
-  
-  //Use zero values for initialization
-  for(int i = 0;i<ARM_MAX_JOINTS;i++){
-    q_init(i)= 0.0;
-  }
-
-  //Perform inverse kinematics
-  if (robot->pr2_kin.IK(q_init, f, q_out)){
-   // cout<<"IK result:"<<q_out<<endl;
- }else{ 
-    //cout<<"Could not compute Inv Kin."<<endl;
-    return CONTROLLER::CONTROLLER_JOINT_ERROR; 
-  }
-
-   //------ checking that IK returned a valid soln -----
-  KDL::Frame f_ik;
-  if (robot->pr2_kin.FK(q_out,f_ik))
-  {
-    //    cout<<"End effector after IK:"<<f_ik<<endl;
-  }
-  else{
-   // cout<<"Could not compute Fwd Kin. (After IK)"<<endl;
-    return CONTROLLER::CONTROLLER_JOINT_ERROR;
-  }
-
-  //Record commands and shove to arm
-  for(int ii = 0; ii < ARM_MAX_JOINTS; ii++){
-    lowerControl[ii].SetPosCmd(q_out(ii));
-    //std::cout<<"*"<<q_out(ii);
-  }
-  //std::cout<<std::endl;
-  return CONTROLLER::CONTROLLER_ALL_OK;
-}
-CONTROLLER_ERROR_CODE ArmController::getHandCartesianPosCmd(double *x, double *y, double *z, double *roll, double *pitch, double *yaw)
-{
-  *x = cmdPos[0];
-  *y = cmdPos[1];
-  *z = cmdPos[2];
-  *roll = cmdPos[3];
-  *pitch = cmdPos[4];
-  *yaw = cmdPos[5];
-  return CONTROLLER::CONTROLLER_ALL_OK;
-}
-CONTROLLER_ERROR_CODE ArmController::getHandCartesianPosAct(double *x, double *y, double *z, double *roll, double *pitch, double *yaw)
-{
-  double pos;
-  KDL::JntArray q_jts(ARM_MAX_JOINTS);
-  //Read current joint locations
-  for(int i = 0;i<ARM_MAX_JOINTS;i++){
-   lowerControl[i].GetPosAct(&pos);
-    q_jts(i) = pos;
-  }
-
-  //Perform forward kinematics to get cartesian location
-  KDL::Frame fk;
-  if (robot->pr2_kin.FK(q_jts,fk))
-  {
-    //    cout<<"End effector:"<<fk<<endl;
-  }
-  else{
-   // cout<<"Could not compute Fwd Kin. "<<endl;
-    return CONTROLLER::CONTROLLER_JOINT_ERROR;
-  }
-
-  *x = fk.p.x();
-  *y = fk.p.y();
-  *z = fk.p.z();
-  fk.M.GetRPY(*roll,*pitch,*yaw);
-
-  return CONTROLLER::CONTROLLER_ALL_OK;
-}
-
-CONTROLLER_ERROR_CODE ArmController::setHandOrientation(double roll, double pitch, double yaw)
-{
-  //Get the current commanded hand orientation
-  double x,y,z,currentroll,currentpitch,currentyaw;
-  this->getHandCartesianPosCmd(&x,&y,&z,&roll,&pitch,&yaw);
-  return this->setHandCartesianPos(x,y,z,roll,pitch,yaw);
-}
-
-CONTROLLER_ERROR_CODE ArmController::getHandOrientationCmd(double *roll, double *pitch, double *yaw)
-{
-  *roll = cmdPos[3];
-  *pitch = cmdPos[4];
-  *yaw = cmdPos[5];
-
-  return CONTROLLER::CONTROLLER_ALL_OK;
-}
-
-CONTROLLER_ERROR_CODE ArmController::getHandOrientationAct(double *roll, double *pitch, double *yaw)
-{ 
-  double x,y,z;
-  return this->getHandCartesianPosAct(&x,&y,&z,roll,pitch,yaw);
-}
-
-CONTROLLER_ERROR_CODE ArmController::setHandParam(std::string label, double value)
+controllerErrorCode
+ArmController::setHandCartesianPosition(double x, double y, double z, double roll, double pitch, double yaw)
 {
 
-  return CONTROLLER::CONTROLLER_ALL_OK;
+  return CONTROLLER_ALL_OK;
 }
-CONTROLLER_ERROR_CODE ArmController::getHandParam(std::string label, double *value)
+controllerErrorCode ArmController::getHandCartesianPositionCmd(double *x, double *y, double *z, double *roll, double *pitch, double *yaw)
 {
 
-  return CONTROLLER::CONTROLLER_ALL_OK;
+  return CONTROLLER_ALL_OK;
 }
-
-CONTROLLER_ERROR_CODE ArmController::setHandParam(std::string label, std::string value)
+controllerErrorCode ArmController::getHandCartesianPositionAct(double *x, double *y, double *z, double *roll, double *pitch, double *yaw)
 {
 
-  return CONTROLLER::CONTROLLER_ALL_OK;
+  return CONTROLLER_ALL_OK;
 }
-CONTROLLER_ERROR_CODE ArmController::getHandParam(std::string label, std::string *value)
+
+controllerErrorCode ArmController::setHandOrientation(double roll, double pitch, double yaw)
 {
 
-  return CONTROLLER::CONTROLLER_ALL_OK;
+  return CONTROLLER_ALL_OK;
+}
+controllerErrorCode ArmController::getHandOrientationCmd(double *roll, double *pitch, double *yaw)
+{
+
+  return CONTROLLER_ALL_OK;
+}
+controllerErrorCode ArmController::getHandOrientationAct(double *roll, double *pitch, double *yaw)
+{
+
+  return CONTROLLER_ALL_OK;
+}
+
+controllerErrorCode ArmController::setHandParam(std::string label, double value)
+{
+
+  return CONTROLLER_ALL_OK;
+}
+controllerErrorCode ArmController::getHandParam(std::string label, double *value)
+{
+
+  return CONTROLLER_ALL_OK;
+}
+
+controllerErrorCode ArmController::setHandParam(std::string label, std::string value)
+{
+
+  return CONTROLLER_ALL_OK;
+}
+controllerErrorCode ArmController::getHandParam(std::string label, std::string *value)
+{
+
+  return CONTROLLER_ALL_OK;
 }
 
 //---------------------------------------------------------------------------------//
 //ARM JOINT POSITION CALLS
-//
 //---------------------------------------------------------------------------------//
-CONTROLLER_ERROR_CODE
-ArmController::setArmJointPos(int numJoints, double angles[])
+controllerErrorCode
+ArmController::setArmJointPosition(int numJoints, double angles[],double speed[])
 {
-  CONTROLLER_ERROR_CODE error = CONTROLLER_ALL_OK;
-  CONTROLLER_ERROR_CODE current;
-  if(controlMode!=CONTROLLER::CONTROLLER_POSITION) return CONTROLLER_MODE_ERROR; //TODO implement errors?
+  controllerErrorCode error = CONTROLLER_ALL_OK;
+  controllerErrorCode current;
+  if(controlMode!=CONTROLLER_POSITION) return CONTROLLER_MODE_ERROR; //TODO implement errors?
   for (int i = 0;i<numJoints;i++){
-    current = lowerControl[i].SetPosCmd(angles[i]);
-//    std::cout<<i<<":"<<current<<std::endl;
+    current = lowerControl[i].setPosCmd(angles[i]);
+    std::cout<<i<<":"<<current<<std::endl;
     if(current!=CONTROLLER_ALL_OK) error = current;
   }  
   return error;
 }
-CONTROLLER_ERROR_CODE ArmController::getArmJointPosCmd(int numJoints, double *angles[])
+controllerErrorCode ArmController::getArmJointPositionCmd(int *numJoints, double *angles[],double *speed[])
 {
-  CONTROLLER_ERROR_CODE error = CONTROLLER_ALL_OK;
-  CONTROLLER_ERROR_CODE current;
+  controllerErrorCode error = CONTROLLER_ALL_OK;
+  controllerErrorCode current;
 
-   for (int i = 0;i<numJoints;i++){
-    current = lowerControl[i].GetPosCmd(angles[i]); //If we find even a single error,return error for overall
+   for (int i = 0;i<*numJoints;i++){
+    current = lowerControl[i].getPosCmd(angles[i]); //If we find even a single error,return error for overall
     if(current!=CONTROLLER_ALL_OK) error = current;
   }  
   return error;
 }
-CONTROLLER_ERROR_CODE
-ArmController::getArmJointPosAct(int numJoints, double *angles[])
+controllerErrorCode
+ArmController::getArmJointPositionAct(int *numJoints, double *angles[],double *speed[])
 {
- CONTROLLER_ERROR_CODE error = CONTROLLER_ALL_OK;
- CONTROLLER_ERROR_CODE current;
+ controllerErrorCode error = CONTROLLER_ALL_OK;
+ controllerErrorCode current;
 
-  for (int i = 0;i<numJoints;i++){
-    current = lowerControl[i].GetPosAct(angles[i]); //If we find even a single error,return error for overall
+  for (int i = 0;i<*numJoints;i++){
+    current = lowerControl[i].getPosAct(angles[i]); //If we find even a single error,return error for overall
     if(current!=CONTROLLER_ALL_OK) error = current;
 
   }  
   return error;
-}
-
-CONTROLLER_ERROR_CODE ArmController::setOneArmJointPos(int numJoint, double angle)
-{
-  if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].SetPosCmd(angle);
-}
- 
-CONTROLLER_ERROR_CODE ArmController::getOneArmJointPosCmd(int numJoint, double *angle)
-{
-  if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].GetPosCmd(angle);
-}
-
-CONTROLLER_ERROR_CODE ArmController::getOneArmJointPosAct(int numJoint, double *angle)
-{
-  if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].GetPosAct(angle);
 }
 
 //---------------------------------------------------------------------------------//
 //ARM JOINT TORQUE CALLS
 //---------------------------------------------------------------------------------//
-CONTROLLER_ERROR_CODE
+controllerErrorCode
 ArmController::setArmJointTorque(int numJoints, double torque[])
 {
-  CONTROLLER_ERROR_CODE error = CONTROLLER_ALL_OK;
-  CONTROLLER_ERROR_CODE current;
-  if(controlMode!=CONTROLLER::CONTROLLER_TORQUE) return CONTROLLER_MODE_ERROR; //TODO implement errors?
+  controllerErrorCode error = CONTROLLER_ALL_OK;
+  controllerErrorCode current;
+  if(controlMode!=CONTROLLER_TORQUE) return CONTROLLER_MODE_ERROR; //TODO implement errors?
   for (int i = 0;i<numJoints;i++){
-    current = lowerControl[i].SetTorqueCmd(torque[i]); //If we find even a single error, complete the set position and return error for overall
+    current = lowerControl[i].setTorqueCmd(torque[i]); //If we find even a single error, complete the set position and return error for overall
      if(current!=CONTROLLER_ALL_OK) error = current;
 
   }  
   return error;
 
 }
-CONTROLLER_ERROR_CODE ArmController::getArmJointTorqueCmd(int numJoints, double *torque[])
+controllerErrorCode ArmController::getArmJointTorqueCmd(int *numJoints, double *torque[])
 {
-  CONTROLLER_ERROR_CODE error = CONTROLLER_ALL_OK;
-  CONTROLLER_ERROR_CODE current;
+  controllerErrorCode error = CONTROLLER_ALL_OK;
+  controllerErrorCode current;
 
-   for (int i = 0;i<numJoints;i++){
-    current = lowerControl[i].GetTorqueCmd(torque[i]); //If we find even a single error,return error for overall
+   for (int i = 0;i<*numJoints;i++){
+    current = lowerControl[i].getTorqueCmd(torque[i]); //If we find even a single error,return error for overall
    if(current!=CONTROLLER_ALL_OK) error = current;
 
   }  
   return error;
 
 }
-CONTROLLER_ERROR_CODE ArmController::getArmJointTorqueAct(int numJoints, double *torque[])
+controllerErrorCode ArmController::getArmJointTorqueAct(int *numJoints, double *torque[])
 {
- CONTROLLER_ERROR_CODE error = CONTROLLER_ALL_OK;
- CONTROLLER_ERROR_CODE current;
+ controllerErrorCode error = CONTROLLER_ALL_OK;
+ controllerErrorCode current;
 
-  for (int i = 0;i<numJoints;i++){
-    current = lowerControl[i].GetTorqueAct(torque[i]); //If we find even a single error,return error for overall 
+  for (int i = 0;i<*numJoints;i++){
+    current = lowerControl[i].getTorqueAct(torque[i]); //If we find even a single error,return error for overall 
    if(current!=CONTROLLER_ALL_OK) error = current;
   }  
   return error;
 
 }
-
-CONTROLLER_ERROR_CODE ArmController::setOneArmJointTorque(int numJoint,double torque)
-{
-  if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].SetTorqueCmd(torque);
-}
-
-
-CONTROLLER_ERROR_CODE ArmController::getArmJointTorqueCmd(int numJoint, double *torque)
-{
-  if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].GetTorqueCmd(torque);
-
-}
-
-CONTROLLER_ERROR_CODE ArmController::getArmJointTorqueAct(int numJoint, double *torque)
-{
-  if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].GetTorqueAct(torque);
-
-}
-
 
 //---------------------------------------------------------------------------------//
 //ARM JOINT VELOCITY CALLS
 //---------------------------------------------------------------------------------//
-CONTROLLER_ERROR_CODE
+controllerErrorCode
 ArmController::setArmJointSpeed(int numJoints, double speed[])
 {
-   CONTROLLER_ERROR_CODE error = CONTROLLER_ALL_OK;
-  CONTROLLER_ERROR_CODE current;
-  if(controlMode!=CONTROLLER::CONTROLLER_VELOCITY) return CONTROLLER_MODE_ERROR; //TODO implement errors?
+   controllerErrorCode error = CONTROLLER_ALL_OK;
+  controllerErrorCode current;
+  if(controlMode!=CONTROLLER_VELOCITY) return CONTROLLER_MODE_ERROR; //TODO implement errors?
   for (int i = 0;i<numJoints;i++){
-    current = lowerControl[i].SetVelCmd(speed[i]); //If we find even a single error, complete the set position and return error for overall
+    current = lowerControl[i].setVelCmd(speed[i]); //If we find even a single error, complete the set position and return error for overall
     if(current!=CONTROLLER_ALL_OK) error = current;
   }  
   return error;
 
 }
-CONTROLLER_ERROR_CODE ArmController::getArmJointSpeedCmd(int numJoints, double *speed[])
+controllerErrorCode ArmController::getArmJointSpeedCmd(int *numJoints, double *speed[])
 { 
-  CONTROLLER_ERROR_CODE error = CONTROLLER_ALL_OK;
-  CONTROLLER_ERROR_CODE current;
+  controllerErrorCode error = CONTROLLER_ALL_OK;
+  controllerErrorCode current;
 
-   for (int i = 0;i<numJoints;i++){
-    current = lowerControl[i].GetVelCmd(speed[i]); //If we find even a single error,return error for overall
+   for (int i = 0;i<*numJoints;i++){
+    current = lowerControl[i].getVelCmd(speed[i]); //If we find even a single error,return error for overall
     if(current!=CONTROLLER_ALL_OK) error = current;
   }  
   return error;
 
  }
-CONTROLLER_ERROR_CODE ArmController::getArmJointSpeedAct(int numJoints, double *speed[])
+controllerErrorCode ArmController::getArmJointSpeedAct(int *numJoints, double *speed[])
 { 
-  CONTROLLER_ERROR_CODE error = CONTROLLER_ALL_OK;
-  CONTROLLER_ERROR_CODE current;
+  controllerErrorCode error = CONTROLLER_ALL_OK;
+  controllerErrorCode current;
 
-  for (int i = 0;i<numJoints;i++){
-    current = lowerControl[i].GetVelAct(speed[i]); //If we find even a single error,return error for overall
+  for (int i = 0;i<*numJoints;i++){
+    current = lowerControl[i].getVelAct(speed[i]); //If we find even a single error,return error for overall
     if(current!=CONTROLLER_ALL_OK) error = current;
   }  
   return error;
-
-}
-
-CONTROLLER_ERROR_CODE ArmController::setOneArmJointSpeed(int numJoint, double speed){
-  if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].SetVelCmd(speed);
-}
-
-CONTROLLER_ERROR_CODE ArmController::getOneArmJointSpeedCmd(int numJoint, double *speed)
-{
-  if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].GetVelCmd(speed);
-}
-CONTROLLER_ERROR_CODE ArmController::getOneArmJointSpeedAct(int numJoint, double *speed)
-{
-  if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].GetVelAct(speed);
 
 }
 
 //---------------------------------------------------------------------------------//
 // GAZE POINT CALLS
 //---------------------------------------------------------------------------------//
-CONTROLLER_ERROR_CODE
+controllerErrorCode
 ArmController::setArmCamGazePoint(double x, double y, double z)
 {
 
-  return CONTROLLER::CONTROLLER_ALL_OK;
+  return CONTROLLER_ALL_OK;
 }
-CONTROLLER_ERROR_CODE ArmController::getArmCamGazePointCmd(double *x, double *y, double *z)
+controllerErrorCode ArmController::getArmCamGazePointCmd(double *x, double *y, double *z)
 {
 
-  return CONTROLLER::CONTROLLER_ALL_OK;
+  return CONTROLLER_ALL_OK;
 }
-CONTROLLER_ERROR_CODE ArmController::getArmCamGazePointAct(double *x, double *y, double *z)
+controllerErrorCode ArmController::getArmCamGazePointAct(double *x, double *y, double *z)
 {
 
-  return CONTROLLER::CONTROLLER_ALL_OK;
+  return CONTROLLER_ALL_OK;
 }
 
 //---------------------------------------------------------------------------------//
@@ -476,14 +332,33 @@ ArmController::Update( )
 {
   if(!enabled){
     for(int i = 0;i<ARM_MAX_JOINTS;i++){    
-      lowerControl[i].DisableController();
+      lowerControl[i].disableController();
     }
   } //Make sure controller is enabled. Otherwise, tell all jointcontrollers to shut down
 
   for(int i = 0;i<ARM_MAX_JOINTS;i++){   
-    lowerControl[i].Update();
+    lowerControl[i].update();
   }
-
 }
 
+/*
+PR2::PR2_ERROR_CODE
+ArmController::setArmJointMaxTorque(int numJoints, double maxTorque[])
+{
+
+  return PR2::PR2_ALL_OK;
+}
+PR2::PR2_ERROR_CODE
+ArmController::getArmJointMaxTorqueCmd(int *numJoints, double *maxTorque[])
+{
+
+  return PR2::PR2_ALL_OK;
+}
+PR2::PR2_ERROR_CODE
+ArmController::getArmJointMaxTorqueAct(int *numJoints, double *maxTorque[])
+{
+
+  return PR2::PR2_ALL_OK;
+}
+*/
 

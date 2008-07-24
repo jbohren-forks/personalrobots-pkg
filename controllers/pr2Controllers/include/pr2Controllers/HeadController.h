@@ -20,7 +20,7 @@
 #include <genericControllers/Controller.h>
 
 
-namespace CONTROLLER
+namespace controller
 {
   class HeadController : Controller
   {

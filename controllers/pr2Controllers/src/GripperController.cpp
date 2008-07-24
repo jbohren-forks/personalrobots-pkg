@@ -1,6 +1,6 @@
 #include <pr2Controllers/GripperController.h>
 
-using namespace CONTROLLER;
+using namespace controller;
 
 GripperController::GripperController()
 {

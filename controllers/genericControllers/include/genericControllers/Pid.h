@@ -69,7 +69,7 @@
 
 */
 /***************************************************/
-namespace CONTROLLER
+namespace controller
 {
   class Pid
   {

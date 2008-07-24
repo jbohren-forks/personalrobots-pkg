@@ -42,14 +42,14 @@
 //2. Integrate Joint and robot objects
 //3. Integrate Motor controller time
 
-using namespace CONTROLLER;
+using namespace controller;
  
 //---------------------------------------------------------------------------------//
 //CONSTRUCTION/DESTRUCTION CALLS
 //---------------------------------------------------------------------------------//
 
 
-JointController::JointController( )
+JointController::JointController()
 { 
 //Instantiate PID class
   pidController.InitPid(0,0,0,0,0); //Constructor for pid controller  
@@ -59,7 +59,7 @@ JointController::JointController( )
   cmdPos = 0;
   cmdVel = 0;
  
-  controlMode = CONTROLLER::CONTROLLER_DISABLED;
+  controlMode = controller::CONTROLLER_DISABLED;
 }
 
 
@@ -68,11 +68,10 @@ JointController::~JointController( )
   
 }
 
-void JointController::Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint, double dt) {
-  //Instantiate PID class
-  pidController.InitPid(PGain,IGain,DGain,IMax,IMin); //Constructor for pid controller  
-  //  printf("JointController:: %f, %f\n",IMax,IMin); 
-  //Set commands to zero
+void JointController::init(double pGain, double iGain, double dGain, double windupMax, double windupMin, controllerControlMode mode, double time, double maxEffort, double minEffort, mechanism::Joint *joint) {
+
+  pidController.InitPid(pGain,iGain,dGain,windupMax,windupMin); //Constructor for pid controller  
+
   cmdTorque = 0;
   cmdPos = 0;
   cmdVel = 0;
@@ -81,33 +80,24 @@ void JointController::Init(double PGain, double IGain, double DGain, double IMax
   lastTime = time;
 
   //Temporary: will transition to use param server
-  this->PGain = PGain;
-  this->IGain = IGain;
-  this->DGain = DGain;
-  this->IMax = IMax;
-  this->IMin = IMin;
+  this->pGain = pGain;
+  this->iGain = iGain;
+  this->dGain = dGain;
+  this->windupMax  = windupMax;
+  this->windupMin  = windupMin;
 
-  this->maxPositiveTorque = maxPositiveTorque;
-  this->maxNegativeTorque = maxNegativeTorque;
-  this->maxEffort = maxEffort;
-  
+  this->minEffort = minEffort;
+  this->maxEffort = maxEffort;  
   this->joint = joint;
 
   controlMode = mode;
-
-  //set dt if included
-  this->dt = dt;
-
-  //Turn on controller
-  EnableController();
-
+  enableController();
 }
 
-void JointController::Init(double PGain, double IGain, double DGain, double IMax, double IMin, CONTROLLER_CONTROL_MODE mode, double time, double maxPositiveTorque, double maxNegativeTorque, double maxEffort, mechanism::Joint *joint) {
-  //Instantiate PID class
-  pidController.InitPid(PGain,IGain,DGain,IMax,IMin); //Constructor for pid controller  
+void JointController::init(pidControlParam pcp, controllerControlMode mode, double time, double minEffort, double maxEffort, Joint *joint) {
 
-  //Set commands to zero
+  pidController.InitPid(pcp.pGain,pcp.iGain,pcp.dGain,pcp.windupMax,pcp.windupMin); //Constructor for pid controller  
+
   cmdTorque = 0;
   cmdPos = 0;
   cmdVel = 0;
@@ -116,26 +106,31 @@ void JointController::Init(double PGain, double IGain, double DGain, double IMax
   lastTime = time;
 
   //Temporary: will transition to use param server
-  this->PGain = PGain;
-  this->IGain = IGain;
-  this->DGain = DGain;
-  this->IMax = IMax;
-  this->IMin = IMin;
+  this->pGain = pcp.pGain;
+  this->iGain = pcp.iGain;
+  this->dGain = pcp.dGain;
+  this->windupMax  = pcp.windupMax;
+  this->windupMin  = pcp.windupMin;
 
-  this->maxPositiveTorque = maxPositiveTorque;
-  this->maxNegativeTorque = maxNegativeTorque;
-  this->maxEffort = maxEffort;
-  
+  this->minEffort = minEffort;
+  this->maxEffort = maxEffort;  
   this->joint = joint;
 
   controlMode = mode;
+  enableController();
+}
 
+
+void JointController::init(double time, Joint *joint) {
+  pidController.InitPid(pGain,iGain,dGain,windupMax,windupMin); //Constructor for pid controller  
+
+  cmdTorque = 0;
+  cmdPos = 0;
+  cmdVel = 0;
   
-  dt=0.001; //TODO: make sure this goes away
-
-  //Turn on controller
-  EnableController();
-
+  lastTime = time;
+  this->joint = joint;
+  enableController();
 }
 
 
@@ -145,48 +140,43 @@ void JointController::Init(double PGain, double IGain, double DGain, double IMax
 
 
 //Returns the current time. Will eventually mode to use motor board controller time TODO
-void JointController::GetTime(double *time){
-
+void JointController::getTime(double *time){
   struct timeval t;
   gettimeofday( &t, 0);
   *time = ((double)t.tv_usec*1e-6 + (double) t.tv_sec);
-
-//  return PR2::PR2_ALL_OK;
-//  return(myPR2->hw.GetSimTime(time));
 }
 
 //---------------------------------------------------------------------------------//
 //MODE/ENABLE CALLS
 //---------------------------------------------------------------------------------//
 
-
 //Set the controller control mode
-CONTROLLER_CONTROL_MODE JointController::SetMode(CONTROLLER_CONTROL_MODE mode){
+controllerControlMode JointController::setMode(controllerControlMode mode){
   controlMode = mode;
   return CONTROLLER_MODE_SET;
 }
 
 //Getter for control mode
-CONTROLLER_CONTROL_MODE JointController::GetMode(){
+controllerControlMode JointController::getMode(){
   return controlMode;
 }
 
 //Allow controller to function
-CONTROLLER_CONTROL_MODE JointController::EnableController(){
+controllerControlMode JointController::enableController(){
   enabled = true;
   return CONTROLLER_ENABLED;
 }
 
 //Disable functioning. Set joint torque to zero.
-CONTROLLER_CONTROL_MODE JointController::DisableController(){
+controllerControlMode JointController::disableController(){
   enabled = false;
   joint->commandedEffort = 0; //Immediately set commanded Effort to 0
   controlMode = CONTROLLER_DISABLED;
   return CONTROLLER_DISABLED;
 }
 
-bool JointController::CheckForSaturation(void){ 
-  return SaturationFlag;
+bool JointController::checkForSaturation(void){ 
+  return saturationFlag;
 }
 
 
@@ -194,7 +184,7 @@ bool JointController::CheckForSaturation(void){
 //---------------------------------------------------------------------------------//
 //TORQUE CALLS
 //---------------------------------------------------------------------------------//
-CONTROLLER_ERROR_CODE JointController::SetTorqueCmd(double torque){
+controllerErrorCode JointController::setTorqueCmd(double torque){
 // double maxEffort = joint->effortLimit;
   
   if(controlMode != CONTROLLER_TORQUE)  //Make sure we're in torque command mode
@@ -202,32 +192,28 @@ CONTROLLER_ERROR_CODE JointController::SetTorqueCmd(double torque){
   
   cmdTorque = torque;  
   
-  if(cmdTorque > maxEffort){ //Truncate to positive limit
+  if(cmdTorque >= maxEffort){ //Truncate to positive limit
     cmdTorque = maxEffort;
     return CONTROLLER_TORQUE_LIMIT;
   }
-  else if (cmdPos < -maxEffort){ //Truncate to negative limit
-    cmdTorque = -maxEffort;
+  else if (cmdPos <= minEffort){ //Truncate to negative limit
+    cmdTorque = minEffort;
     return CONTROLLER_TORQUE_LIMIT;
   }
   
   return CONTROLLER_CMD_SET;
 }
 
-//Return current torque command
-CONTROLLER::CONTROLLER_ERROR_CODE
-JointController::GetTorqueCmd(double *torque)
+controllerErrorCode JointController::getTorqueCmd(double *torque)
 {
   *torque = cmdTorque;
-  return CONTROLLER::CONTROLLER_ALL_OK;
+  return CONTROLLER_ALL_OK;
 }
 
-//Query motor for actual torque 
-CONTROLLER::CONTROLLER_ERROR_CODE
-JointController::GetTorqueAct(double *torque)
+controllerErrorCode JointController::getTorqueAct(double *torque)
 {
   *torque = joint->appliedEffort; //Read torque from joint
-  return CONTROLLER::CONTROLLER_ALL_OK; 
+  return CONTROLLER_ALL_OK; 
 }
 
 //---------------------------------------------------------------------------------//
@@ -236,43 +222,42 @@ JointController::GetTorqueAct(double *torque)
 
 
 //Query mode, then set desired position 
-CONTROLLER_ERROR_CODE JointController::SetPosCmd(double pos)
+controllerErrorCode JointController::setPosCmd(double pos)
 {
   if(controlMode != CONTROLLER_POSITION)  //Make sure we're in position command mode
   return CONTROLLER_MODE_ERROR;
   
   cmdPos = pos;  
-  if(cmdPos > joint->jointLimitMax){ //Truncate to positive limit
+  if(cmdPos >= joint->jointLimitMax && joint->type != mechanism::JOINT_CONTINUOUS){ //Truncate to positive limit
     cmdPos = joint->jointLimitMax;
     return CONTROLLER_JOINT_LIMIT;
   }
-  else if (cmdPos < joint->jointLimitMin){ //Truncate to negative limit
+  else if (cmdPos <= joint->jointLimitMin && joint->type != mechanism::JOINT_CONTINUOUS){ //Truncate to negative limit
     cmdPos = joint->jointLimitMin;
     return CONTROLLER_JOINT_LIMIT;
   }
-  return CONTROLLER_CMD_SET;
-  
+  return CONTROLLER_CMD_SET;  
 }
 
 //Return the current position command
-CONTROLLER::CONTROLLER_ERROR_CODE JointController::GetPosCmd(double *pos)
+controller::controllerErrorCode JointController::getPosCmd(double *pos)
 {
   *pos = cmdPos;
-  return CONTROLLER::CONTROLLER_ALL_OK; 
+  return controller::CONTROLLER_ALL_OK; 
 }
 
 //Query the joint for the actual position
-CONTROLLER::CONTROLLER_ERROR_CODE JointController::GetPosAct(double *pos)
+controller::controllerErrorCode JointController::getPosAct(double *pos)
 {
   *pos = joint->position;
-  return CONTROLLER::CONTROLLER_ALL_OK; 
+  return controller::CONTROLLER_ALL_OK; 
 }
 
 //---------------------------------------------------------------------------------//
 //VELOCITY CALLS
 //---------------------------------------------------------------------------------//
 //Check mode, then set the commanded velocity
-CONTROLLER_ERROR_CODE JointController::SetVelCmd(double vel)
+controllerErrorCode JointController::setVelCmd(double vel)
 {
   if(controlMode == CONTROLLER_VELOCITY || controlMode == ETHERDRIVE_SPEED){ //Make sure we're in velocity command mode
     cmdVel = vel;  
@@ -282,29 +267,27 @@ CONTROLLER_ERROR_CODE JointController::SetVelCmd(double vel)
 }
 
 //Return the internally stored commanded velocity
-CONTROLLER::CONTROLLER_ERROR_CODE JointController::GetVelCmd(double *vel)
+controller::controllerErrorCode JointController::getVelCmd(double *vel)
 {
   *vel = cmdVel;
-  return CONTROLLER::CONTROLLER_ALL_OK; 
+  return controller::CONTROLLER_ALL_OK; 
 }
 
 //Query our joint for velocity
-CONTROLLER::CONTROLLER_ERROR_CODE JointController::GetVelAct(double *vel)
+controller::controllerErrorCode JointController::getVelAct(double *vel)
 {
   *vel = joint->velocity;
-  return CONTROLLER::CONTROLLER_ALL_OK; 
+  return controller::CONTROLLER_ALL_OK; 
 }
 
 
-double JointController::GetMaxVelocity(){
+double JointController::getMaxVelocity(){
       double disToMin,disToMax,closestLimit;
       disToMin = fabs(shortest_angular_distance(joint->position, joint->jointLimitMin));
       disToMax = fabs(shortest_angular_distance(joint->position, joint->jointLimitMax));
       closestLimit =  (disToMin<disToMax)?disToMin:disToMax; //min
       //std::cout<<"Dis to min"<<disToMin<<" Dist to Max"<<disToMax<<" Closest limit"<<closestLimit<<std::endl;
-
       return sqrt(fabs(closestLimit*maxAccel));
-
 }
 
 //---------------------------------------------------------------------------------//
@@ -312,51 +295,41 @@ double JointController::GetMaxVelocity(){
 //---------------------------------------------------------------------------------//
 
 
-void JointController::Update(void)
+void JointController::update(void)
 {
   double error(0),time(0),currentTorqueCmd(0);
   double maxVelocity = cmdVel;
-  if(controlMode==CONTROLLER::CONTROLLER_DISABLED)return; //If we're not initialized, don't try to interact
+  double currentVoltageCmd,v_backemf,v_clamp_min,v_clamp_max,k;      
 
-  GetTime(&time); //TODO: Replace time with joint->timeStep
+  if(controlMode == controller::CONTROLLER_DISABLED)
+    return; //If we're not initialized, don't try to interact
 
+  getTime(&time); //TODO: Replace time with joint->timeStep
 
-  double  currentVoltageCmd,v_backemf, v_clamp_min,v_clamp_max,k;      
-
-
-  switch (controlMode)
-    {
+  switch(controlMode)
+  {
     case CONTROLLER_TORQUE: //Pass through torque command
       currentTorqueCmd = cmdTorque;
       break;
+
     case CONTROLLER_POSITION: //Close the loop around position
-      //ASSUME ROTARY JOINT FOR NOW
-      error = shortest_angular_distance(cmdPos, joint->position); 
+      if(joint->type == mechanism::JOINT_ROTARY || joint->type == mechanism::JOINT_CONTINUOUS) 
+        error = shortest_angular_distance(cmdPos, joint->position); 
+      else
+        error = joint->position - cmdPos;
       currentTorqueCmd = pidController.UpdatePid(error,time-lastTime);
-#ifdef DEBUG
-//      std::cout << "JC:: " << joint->position << ", cmdPos:: " << cmdPos << ", error:: " << error << ", cTC:: " << currentTorqueCmd << std::endl; 
-#endif
       break;
+
     case CONTROLLER_VELOCITY: //Close the loop around velocity
       if(capAccel){
-        maxVelocity = GetMaxVelocity(); //Check max velocity coming into wall
+        maxVelocity = getMaxVelocity(); //Check max velocity coming into wall
         if(fabs(cmdVel)>maxVelocity){
-           cmdVel = -maxVelocity; //Truncate velocity smoothly
-           //  std::cout<<"*******************"<<cmdVel<<std::endl;
+          cmdVel = -maxVelocity; //Truncate velocity smoothly
+          //  std::cout<<"*******************"<<cmdVel<<std::endl;
         }
       }
       error = joint->velocity - cmdVel;
       currentTorqueCmd = pidController.UpdatePid(error,time-lastTime);
-           // currentTorqueCmd = 0.5;
-      //      printf("JointController.cpp:: error:: %f, dT:: %f \n", error, time-lastTime);
-      //idea how to limit the velocity near limit
-      //disToMin = shortest_angular_distance(joint->position, joint->jointLimitMin);
-      //disToMax = shortest_angular_distance(joint->position, joint->jointLimitMax);
-      //closestLimit =  (disToMin<disToMax)?disToMin:disToMax //min
-      //if(joint->velocity^2/(2*maxAcc)-closestLimit<0.1 && accLimit) 
-      //{
-      //  cmdVel=2*maxAcc*closestLimit;
-      //}      
       break;
     case ETHERDRIVE_SPEED: // Use hack to contol speed in voltage control mode for the etherdrive
 #ifdef DEBUG
@@ -377,84 +350,51 @@ void JointController::Update(void)
 
       if (currentVoltageCmd < v_clamp_min)
 	currentVoltageCmd = v_clamp_min;
-
       currentTorqueCmd = currentVoltageCmd * k; //Convert to match PWM conversion inside boards
-	break;
-    default: //On error (no mode), set torque to zero
+      break;
+
+    default:
+      printf("JointController.cpp: Error:: invalid controlMode\n");
       currentTorqueCmd = 0; 
-      //TODO:put somekind of error here for no mode
-    }
+  }
   lastTime = time;
-  //Make sure we're enabled. If not, send a 0 torque command
-  if(enabled) SafelySetTorqueInternal(currentTorqueCmd);   
-  else SafelySetTorqueInternal(0); //Send a zero command if disabled
+
+  setJointEffort(currentTorqueCmd);   
 }
 
-//---------------------------------------------------------------------------------//
-//PARAM SERVER CALLS
-//---------------------------------------------------------------------------------//
 
-//TODO: Case statement to effect changes when parameters are set here
-CONTROLLER_ERROR_CODE JointController::SetParam(std::string label,double value)
+controllerErrorCode JointController::setParam(std::string label,double value)
 {   
   return CONTROLLER_ALL_OK;
 }
 
-/*
-CONTROLLER_ERROR_CODE
-JointController::SetParam(std::string label,std::string value)
-{
-  return CONTROLLER_ALL_OK;
-}
-*/
-
-CONTROLLER_ERROR_CODE JointController::GetParam(std::string label, double* value)
+controllerErrorCode JointController::getParam(std::string label, double* value)
 {
 return CONTROLLER_ALL_OK;
 }
 
-/*
-CONTROLLER_ERROR_CODE JointController::GetParam(std::string label, std::string value)
-{
-}
-*/
 
-//---------------------------------------------------------------------------------//
-//SAFETY CALLS
-//---------------------------------------------------------------------------------//
-
-//Truncates (if needed), then sets the torque
-double JointController::SafelySetTorqueInternal(double torque)
+//Truncates (if needed), then sets the effort
+void JointController::setJointEffort(double effort)
 {
-  double newTorque;
+  double newEffort;
     
-//  std::cout<<"Effort:"<<torque<<std::endl; 
-  //Read the max positive and max negative torque once
-//  maxPositiveTorque = joint->effortLimit;
- // maxNegativeTorque = -joint->effortLimit; 
+  newEffort = effort;
+  saturationFlag = false;
 
-  if(torque>maxPositiveTorque){
-    newTorque = maxPositiveTorque;
-    SaturationFlag = true;
+  if(effort >= maxEffort){
+    newEffort = maxEffort;
+    saturationFlag = true;
   }
-  else if (torque< maxNegativeTorque) {
-    newTorque = maxNegativeTorque;
-    SaturationFlag = true;
-  }
-  else {
-    newTorque = torque;
-    SaturationFlag = false;
+  else if (effort <= minEffort) {
+    newEffort = minEffort;
+    saturationFlag = true;
   }
 
-  //Set torque command 
-  #ifdef DEBUG
-  printf("JC:: torque:: %f,%f\n",torque,newTorque);
-  #endif
-  joint->commandedEffort = newTorque; 
-  return newTorque;
+  joint->commandedEffort = newEffort; 
 }
 
-CONTROLLER_ERROR_CODE JointController::LoadXML(std::string filename)
+controllerErrorCode JointController::loadXML(std::string filename)
 {
    robot_desc::URDF model;
    int exists = 0;
@@ -484,7 +424,7 @@ CONTROLLER_ERROR_CODE JointController::LoadXML(std::string filename)
    data.getDataTagNames("controller",names);
 
    for(iter = names.begin(); iter != names.end(); iter++){
-      if(*iter == this->jointName){
+      if(*iter == this->name){
          exists = 1;
          break;
       }
@@ -493,29 +433,27 @@ CONTROLLER_ERROR_CODE JointController::LoadXML(std::string filename)
    if(!exists)
       return CONTROLLER_MODE_ERROR;
 
-   param_map = data.getDataTagValues("controller",this->jointName);   
+   paramMap = data.getDataTagValues("controller",this->name);   
 
-   LoadParam("PGain",PGain);
-   LoadParam("DGain",DGain);
-   LoadParam("IGain",IGain);
-   LoadParam("IMax",IMax);
-   LoadParam("IMin",IMin);
-   LoadParam("maxEffort",maxEffort);
-   LoadParam("maxPositiveTorque",maxPositiveTorque);
-   LoadParam("maxNegativeTorque",maxPositiveTorque);
-   LoadParam("dt",dt);
+   loadParam("pGain",pGain);
+   loadParam("dGain",dGain);
+   loadParam("iGain",iGain);
+   loadParam("windupMax",windupMax);
+   loadParam("windupMin",windupMin);
+   loadParam("maxEffort",maxEffort);
+   loadParam("minEffort",minEffort);
 
    return  CONTROLLER_ALL_OK;
 }
 
-void JointController::LoadParam(std::string label, double &param)
+void JointController::loadParam(std::string label, double &param)
 {
-   if(param_map.find(label) != param_map.end()) // if parameter value has been initialized in the xml file, set internal parameter value
-      param = atof(param_map[label].c_str());
+   if(paramMap.find(label) != paramMap.end()) // if parameter value has been initialized in the xml file, set internal parameter value
+      param = atof(paramMap[label].c_str());
 }
 
-void JointController::LoadParam(std::string label, int &param)
+void JointController::loadParam(std::string label, int &param)
 {
-   if(param_map.find(label) != param_map.end())
-      param = atoi(param_map[label].c_str());
+   if(paramMap.find(label) != paramMap.end())
+      param = atoi(paramMap[label].c_str());
 }

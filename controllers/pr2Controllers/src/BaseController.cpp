@@ -13,8 +13,7 @@
 
 #define BASE_NUM_JOINTS 12
 
-using namespace CONTROLLER;
-
+using namespace controller;
 using namespace PR2;
 
 static pthread_mutex_t dataMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -55,7 +54,7 @@ BaseController::~BaseController( )
   delete (this->baseJointControllers);
 }
 
-CONTROLLER::CONTROLLER_ERROR_CODE BaseController::loadXML(std::string filename)
+controllerErrorCode BaseController::loadXML(std::string filename)
 {
   robot_desc::URDF model;
   int exists = 0;
@@ -125,7 +124,7 @@ void BaseController::init()
   initJointControllers();
 
   //Subscribe to joystick message
-  (ros::g_node)->subscribe("base_command", baseCommandMessage, &CONTROLLER::BaseController::receiveBaseCommandMessage, this);
+  (ros::g_node)->subscribe("base_command", baseCommandMessage, &controller::BaseController::receiveBaseCommandMessage, this);
 }
 
 void BaseController::receiveBaseCommandMessage(){
@@ -141,12 +140,12 @@ void BaseController::initJointControllers()
   this->baseJointControllers = new JointController[BASE_NUM_JOINTS];
 
   for(int ii = 0; ii < NUM_CASTERS; ii++){
-    baseJointControllers[ii].Init(pGainPos, iGainPos, dGainPos, iMax, iMin, ETHERDRIVE_SPEED, getTime(), maxPositiveTorque, maxNegativeTorque, maxEffort, &(robot->joint[ii]));
-    baseJointControllers[ii].EnableController();
+    baseJointControllers[ii].init(pGainPos, iGainPos, dGainPos, iMax, iMin, ETHERDRIVE_SPEED, getTime(), maxEffort, minEffort, &(robot->joint[ii]));
+    baseJointControllers[ii].enableController();
   }
   for(int ii = NUM_CASTERS; ii < BASE_NUM_JOINTS; ii++){
-    baseJointControllers[ii].Init(pGain, iGain, dGain, iMax, iMin, ETHERDRIVE_SPEED, getTime(), maxPositiveTorque, maxNegativeTorque, maxEffort,&(robot->joint[ii]));
-    baseJointControllers[ii].EnableController();
+    baseJointControllers[ii].init(pGain, iGain, dGain, iMax, iMin, ETHERDRIVE_SPEED, getTime(), maxEffort, minEffort, &(robot->joint[ii]));
+    baseJointControllers[ii].enableController();
   }
 }  
 
@@ -191,7 +190,7 @@ void BaseController::update( )
     steerAngle[ii] = ModNPiBy2(steerAngle[ii]);//Clean steer Angle
     errorSteer[ii] = robot->joint[3*ii].position - steerAngle[ii];
     cmdVel[ii] = kp_local * errorSteer[ii];
-    baseJointControllers[3*ii].SetVelCmd(cmdVel[ii]);     
+    baseJointControllers[3*ii].setVelCmd(cmdVel[ii]);     
   }
 
   for(int ii = 0; ii < NUM_CASTERS; ii++){
@@ -227,8 +226,8 @@ void BaseController::update( )
     wheelSpeed[ii*2  ] = (-dotProdL - cmdVel[ii] * CASTER_DRIVE_OFFSET[ii*2].y)/WHEEL_RADIUS;
     wheelSpeed[ii*2+1] = (dotProdR  +cmdVel[ii] * CASTER_DRIVE_OFFSET[ii*2+1].y)/WHEEL_RADIUS;
 
-    baseJointControllers[ii*3+1].SetVelCmd(wheelSpeed[ii*2]);
-    baseJointControllers[ii*3+2].SetVelCmd(wheelSpeed[ii*2+1]);
+    baseJointControllers[ii*3+1].setVelCmd(wheelSpeed[ii*2]);
+    baseJointControllers[ii*3+2].setVelCmd(wheelSpeed[ii*2+1]);
 
 #ifdef DEBUG       // send command
     printf("DRIVE::L:: %d, cmdVel:: %f\n",ii,wheelSpeed[ii*2]);
@@ -236,7 +235,7 @@ void BaseController::update( )
 #endif
   }
   for(int ii = 0; ii < BASE_NUM_JOINTS; ii++) 
-    baseJointControllers[ii].Update();
+    baseJointControllers[ii].update();
 }
 
 PR2::PR2_ERROR_CODE BaseController::setCourse(double v , double yaw)
@@ -262,10 +261,6 @@ PR2::PR2_ERROR_CODE BaseController::setTarget(double x,double y, double yaw, dou
 }
 
 PR2::PR2_ERROR_CODE BaseController::setTraj(int num_pts, double x[],double y[], double yaw[], double xDot[], double yDot[], double yawDot[])
-//int test_ii = 8;
- 
-//baseJointControllers[test_ii].SetVelCmd(10);
-//baseJointControllers[test_ii].Update();
 {
 
   return PR2::PR2_ALL_OK;
