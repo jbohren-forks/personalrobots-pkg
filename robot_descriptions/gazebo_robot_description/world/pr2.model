@@ -398,6 +398,13 @@
       <nearClip>0.1</nearClip>
       <farClip>100</farClip>
       <updateRate>15.0</updateRate>
+      <!--
+      <controller:ros_camera name="wrist_cam_right_controller" plugin="libRos_Camera.so">
+        <updateRate>15.0</updateRate>
+        <topicName>image_wrist_cam_right</topicName>
+        <interface:camera name="wrist_cam_right_iface" />
+      </controller:ros_camera>
+      -->
       <controller:generic_camera name="wrist_cam_right_controller">
         <updateRate>15.0</updateRate>
         <interface:camera name="wrist_cam_right_iface" />
