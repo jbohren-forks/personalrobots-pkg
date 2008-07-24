@@ -105,8 +105,10 @@ public:
 	subscribe("world_3d_map", m_cloud, &KinematicPlanning::pointCloudCallback);
 	
 	m_collisionSpace = new collision_space::EnvironmentModelODE();
-	
+
+	m_collisionSpace->lock();	
 	loadRobotDescriptions();
+	m_collisionSpace->unlock();
     }
     
     ~KinematicPlanning(void)
@@ -149,8 +151,10 @@ public:
 	    data[i3 + 2] = m_cloud.pts[i].z;
 	}
 	
+	m_collisionSpace->lock();
 	m_collisionSpace->clearObstacles();
 	m_collisionSpace->addPointCloud(n, data, 0.01);
+	m_collisionSpace->unlock();
 	
 	delete[] data;
 	
@@ -174,8 +178,6 @@ public:
 	// if not specified in the request, infer it based on start + goal positions
 	// need to know where floating joints are and set these there. also update resolution
 
-
-	
 	/* set the starting state */
 	ompl::SpaceInformationKinematic::StateKinematic_t start = new ompl::SpaceInformationKinematic::StateKinematic(dim);
 	for (int i = 0 ; i < dim ; ++i)
@@ -188,9 +190,11 @@ public:
 	for (int i = 0 ; i < dim ; ++i)
 	    goal->state->values[i] = req.goal_state.vals[i];
 	p.si->setGoal(goal);
-	
-	bool ok = p.mp->solve(req.allowed_time); 
 
+	m_collisionSpace->lock();
+	bool ok = p.mp->solve(req.allowed_time); 
+	m_collisionSpace->unlock();
+	
 	/* copy the solution to the result */
 	if (ok)
 	{
@@ -228,7 +232,7 @@ public:
     void addRobotDescription(robot_desc::URDF *file)
     {
 	m_robotDescriptions.push_back(file);
-
+	
 	std::vector<std::string> groups;
 	file->getGroupNames(groups);
 	std::string name = file->getRobotName();
