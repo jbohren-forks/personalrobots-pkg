@@ -47,3 +47,13 @@ unsigned int collision_space::EnvironmentModel::addRobotModel(planning_models::K
     models.push_back(model);
     return pos;
 }
+
+void collision_space::EnvironmentModel::lock(void)
+{
+    m_lock.lock();
+}
+
+void collision_space::EnvironmentModel::unlock(void)
+{
+    m_lock.unlock();    
+}

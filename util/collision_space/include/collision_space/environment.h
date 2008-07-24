@@ -36,6 +36,7 @@
 #define KINEMATIC_ENVIRONMENT_MODEL_
 
 #include <planning_models/kinematic.h>
+#include <rosthread/mutex.h>
 #include <vector>
 
 /** @htmlinclude ../../manifest.html
@@ -76,9 +77,19 @@ namespace collision_space
 	/** Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(unsigned int model_id) = 0;
 
+	/** Provide interface to a lock. Use carefully! */
+	void lock(void);
+	
+	/** Provide interface to a lock. Use carefully! */
+	void unlock(void);
+	
 	/** List of loaded robot models */	
 	std::vector<planning_models::KinematicModel*> models;
+	
+    protected:
         
+	ros::thread::mutex m_lock;
+	
     };
 }
 
