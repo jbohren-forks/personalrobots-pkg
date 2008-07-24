@@ -326,6 +326,11 @@
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
+  </body:box>
+
+  <body:empty name="forearm_cam_right_body">
+    <xyz>  0.90225 -0.15   0.8369 </xyz>
+    <rpy> 0.00  -45.0   0.00 </rpy>
     <sensor:camera name="forearm_cam_right_sensor">
       <imageSize>640 480</imageSize>
       <hfov>60</hfov>
@@ -337,7 +342,27 @@
         <interface:camera name="forearm_cam_right_iface" />
       </controller:generic_camera>
     </sensor:camera>
-  </body:box>
+    <geom:box name="forearm_cam_right_geom">
+      <xyz> 0.00   0.00   0.00</xyz>
+      <size>0.02   0.02   0.02</size>
+      <mass>0.1</mass>
+      <visual>
+        <size>0.02   0.02   0.02</size>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Black</material>
+      </visual>
+    </geom:box>
+  </body:empty>
+  <joint:hinge name="forearm_cam_right">
+    <body1>forearm_cam_right_body</body1>
+    <body2>forearm_right</body2>
+    <anchor>forearm_right</anchor>
+    <axis>  0.0   0.0   1.0 </axis>
+    <lowStop> 0.0 </lowStop>
+    <highStop> 0.0 </highStop>
+  </joint:hinge>
+
 
   <body:cylinder name="wrist_right">
     <xyz>  1.008   -0.15   0.8269 </xyz>
