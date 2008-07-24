@@ -52,6 +52,14 @@ namespace mechanism {
     double effortLimit;
     double velocityLimit;
   };
+
+  enum jointType{
+    JOINT_NONE,
+    JOINT_ROTARY,
+    JOINT_CONTINUOUS,
+    JOINT_PRISMATIC,
+    JOINT_FIXED,
+    JOINT_TYPES_MAX};
 }
 
 #endif
