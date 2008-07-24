@@ -1507,16 +1507,20 @@ Index: gazebo-svn/SConstruct
 ===================================================================
 --- gazebo-svn/SConstruct	(revision 6897)
 +++ gazebo-svn/SConstruct	(working copy)
-@@ -24,6 +24,8 @@
+@@ -22,8 +22,11 @@
+ # 3rd party packages
+ #
  parseConfigs=['pkg-config --cflags --libs OGRE',
++      	      'rospack export/cpp/cflags opende',
++      	      'rospack export/cpp/lflags opende',
                'xml2-config --cflags --libs', 
-       	      'ode-config --cflags --libs',
+-      	      'ode-config --cflags --libs',
 +      	      'rospack export/cpp/cflags freeimage',
 +      	      'rospack export/cpp/lflags freeimage',
                'fltk-config --cflags --libs --ldflags --use-gl --use-images',
                'pkg-config --cflags --libs xft'
                ]
-@@ -80,7 +82,8 @@
+@@ -80,7 +83,8 @@
  rcconfig = env.RCConfig(target='gazeborc', source=Value(install_prefix))
  
  # DEFAULT list of subdirectories to build

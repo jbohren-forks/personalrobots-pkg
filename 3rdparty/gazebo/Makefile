@@ -24,15 +24,12 @@ $(SVN_TARGET):
 	-patch -N -p0 < gazebo_patch.diff
 
 .PHONY: $(BUILD_TARGET)
-$(BUILD_TARGET): $(SVN_TARGET)
+$(BUILD_TARGET):
 	if [ ! -d $(BUILD_TARGET) ]; then mkdir -p $(BUILD_TARGET); mkdir -p $(BUILD_TARGET)/share; mkdir -p $(BUILD_TARGET)/share/gazebo; mkdir -p $(BUILD_TARGET)/share/gazebo/Media; fi
-	cd $(SVN_DIR) && export PKG_CONFIG_PATH=${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} && \
-	export LIBPATH="${FI_LD}" && \
-	export PATH=${ODE_PATH}/bin:${PATH} && scons prefix=$(ROOT) && scons prefix=$(ROOT) install
-        # Gazebo's install appears to be broken.  It actually works, but
-        # throws an error at the end.  So we ignore it.
-        #-scons prefix=$(ROOT) install
-        #scons prefix=$(ROOT) install
+	cd $(SVN_DIR) && PKG_CONFIG_PATH=${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} \
+	LIBPATH="${FI_LD}:`rospack find opende/opende/lib`" scons prefix=$(ROOT) 
+	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} \
+	LIBPATH="${FI_LD}:`rospack find opende/opende/lib`" scons prefix=$(ROOT) install
 
 test-$(SVN_TARGET):
 	@if [ ! -d test-$(SVN_DIR) ]; then svn co $(REVISION) https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk test-$(SVN_DIR); fi
