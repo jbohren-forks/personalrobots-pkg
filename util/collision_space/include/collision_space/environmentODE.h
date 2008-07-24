@@ -56,11 +56,7 @@ namespace collision_space
 	
 	~EnvironmentModelODE(void)
 	{
-	    for (unsigned int i = 0 ; i < m_kgeoms.size() ; ++i)
-		for (unsigned int j = 0 ; j < m_kgeoms[i].size() ; ++j)
-		    delete m_kgeoms[i][j];
-	    if (m_space)
-		dSpaceDestroy(m_space);
+	    freeMemory();
 	}
 	
 	dSpaceID getODESpace(void) const;
@@ -68,6 +64,9 @@ namespace collision_space
 	/** Check if a model is in collision */
 	virtual bool isCollision(unsigned int model_id);
 	
+	/** Remove all obstacles from collision model */
+	virtual void clearObstacles(void);
+
 	/** Add a point cloud to the collision space */
 	virtual void addPointCloud(unsigned int n, const double *points, double radius = 0.01); 
 
@@ -78,7 +77,7 @@ namespace collision_space
 	virtual void updateRobotModel(unsigned int model_id);
 
     protected:
-	
+		
 	class ODECollide2
 	{
 	public:
@@ -148,6 +147,8 @@ namespace collision_space
 	    dGeomID                                geom;
 	    planning_models::KinematicModel::Link *link;
 	};
+
+	void freeMemory(void);	
 	
 	std::vector< std::vector< kGeom* > > m_kgeoms;
 

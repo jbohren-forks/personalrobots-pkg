@@ -34,6 +34,15 @@
 
 #include <collision_space/environmentODE.h>
 
+void collision_space::EnvironmentModelODE::freeMemory(void)
+{ 
+    for (unsigned int i = 0 ; i < m_kgeoms.size() ; ++i)
+	for (unsigned int j = 0 ; j < m_kgeoms[i].size() ; ++j)
+	    delete m_kgeoms[i][j];
+    if (m_space)
+	dSpaceDestroy(m_space);
+}
+
 unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models::KinematicModel *model)
 {
     unsigned int id = collision_space::EnvironmentModel::addRobotModel(model);
@@ -192,5 +201,13 @@ void collision_space::EnvironmentModelODE::addPointCloud(unsigned int n, const d
 	dGeomSetPosition(g, points[i3], points[i3 + 1], points[i3 + 2]);
 	m_collide2.registerGeom(g);
     }
+    m_collide2.setup();
+}
+
+void collision_space::EnvironmentModelODE::clearObstacles(void)
+{
+    m_collide2.clear();
+    freeMemory();
+    m_space = dHashSpaceCreate(0);
     m_collide2.setup();
 }

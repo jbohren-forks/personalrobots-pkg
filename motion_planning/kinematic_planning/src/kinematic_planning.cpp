@@ -148,7 +148,8 @@ public:
 	    data[i3 + 1] = m_cloud.pts[i].y;
 	    data[i3 + 2] = m_cloud.pts[i].z;
 	}
-
+	
+	m_collisionSpace->clearObstacles();
 	m_collisionSpace->addPointCloud(n, data, 0.01);
 	
 	delete[] data;

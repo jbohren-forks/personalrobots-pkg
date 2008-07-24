@@ -62,6 +62,9 @@ namespace collision_space
 	/** Check if a model is in collision */
 	virtual bool isCollision(unsigned int model_id) = 0;
 	
+	/** Remove all obstacles from collision model */
+	virtual void clearObstacles(void) = 0;
+	
 	/** Add a point cloud to the collision space */
 	virtual void addPointCloud(unsigned int n, const double* points, double radius = 0.01) = 0;
 
