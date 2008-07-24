@@ -167,7 +167,6 @@ between \f$p_0\f$ and \f$p_1\f$, and \f$\Omega\f$ is the angle between the axis 
 
 \f[
 Slerp(p_0,p_1;t) = \frac{sin((1-t)\Omega)}{sin(\Omega)} * p_0 + \frac{sin(t*\Omega)}{sin(\Omega)} * p_1
-\label{eq:slerp}
 \f]
 
 
