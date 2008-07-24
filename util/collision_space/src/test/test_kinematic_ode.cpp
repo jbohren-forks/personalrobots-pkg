@@ -111,29 +111,65 @@ static void simLoop(int)
     displaySpace(robotSpace);
 }
 
+void printModelInfo(planning_models::KinematicModel *m)
+{   
+    printf("Number of robots = %d\n", m->getRobotCount());
+    printf("Complete model state dimension = %d\n", m->stateDimension);
+
+    printf("State bounds: ");
+    for (unsigned int i = 0 ; i < m->stateDimension ; ++i)
+	printf("[%f, %f] ", m->stateBounds[2 * i], m->stateBounds[2 * i + 1]);
+    printf("\n");
+    
+    printf("Floating joints at: ");    
+    for (unsigned int i = 0 ; i < m->floatingJoints.size() ; ++i)
+	printf("%d ", m->floatingJoints[i]);
+    printf("\n");
+
+    printf("Available groups: ");    
+    std::vector<std::string> l;    
+    m->getGroups(l);
+    for (unsigned int i = 0 ; i < l.size() ; ++i)
+	printf("%s ", l[i].c_str());
+    printf("\n");
+    
+    for (unsigned int i = 0 ; i < l.size() ; ++i)
+    {
+	int gid = m->getGroupID(l[i]);
+	printf("Group %s has %d roots\n", l[i].c_str(), m->groupChainStart[gid].size());
+	printf("The state components for this group are: ");
+	for (unsigned int j = 0 ; j < m->groupStateIndexList[gid].size() ; ++j)
+	    printf("%d ", m->groupStateIndexList[gid][j]);
+	printf("\n");
+    }    
+}
+
 int main(int argc, char **argv)
 {
     dInitODE();
     
     robot_desc::URDF model;
-    model.loadFile("/u/isucan/ros/ros-pkg/drivers/robot/pr2/pr2Core/include/pr2Core/pr2.xml");
+    model.loadFile("/u/isucan/ros/ros-pkg/robot_descriptions/wg_robot_description/pr2/pr2.xml");
     
     EnvironmentModel *km = new EnvironmentModelODE();
-    km->addRobotModel(model);
-    printf("number of robots = %d\n", km->models[0]->getRobotCount());
+    km->addRobotModel(model);    
+    planning_models::KinematicModel *m = km->models[0];
+    printModelInfo(m);
     
-    planning_models::KinematicModel::Robot *r = km->models[0]->getRobot(0);    
-    printf("state dimension = %d\n", r->stateDimension);
-    
-    double *param = new double[r->stateDimension];
-    for (unsigned int i = 0 ; i < r->stateDimension ; ++i)
+    double *param = new double[m->stateDimension];    
+
+    for (unsigned int i = 0 ; i < m->stateDimension ; ++i)
 	param[i] = 0.0;    
-    r->computeTransforms(param);
-    delete[] param;
-    
+    m->computeTransforms(param);
     km->updateRobotModel(0);
     
-    robotSpace = dynamic_cast<EnvironmentModelODE*>(km)->getODESpace();
+
+    for (unsigned int i = 0 ; i < m->stateDimension ; ++i)
+	param[i] = 0.1;
+    m->computeTransforms(param, m->getGroupID("pr2::leftArm"));
+    km->updateRobotModel(0);
+
+        robotSpace = dynamic_cast<EnvironmentModelODE*>(km)->getODESpace();
     
     dsFunctions fn;
     fn.version = DS_VERSION;
@@ -147,6 +183,7 @@ int main(int argc, char **argv)
     
     delete km;
     
+    delete[] param;
     dCloseODE();
     
     return 0;    
