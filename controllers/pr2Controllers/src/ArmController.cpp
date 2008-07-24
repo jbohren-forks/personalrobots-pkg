@@ -336,7 +336,7 @@ controllerErrorCode ArmController::getArmCamGazePointAct(double *x, double *y, d
 //---------------------------------------------------------------------------------//
 
 void
-ArmController::Update( )
+ArmController::update( )
 {
   if(!enabled){
     for(int i = 0;i<ARM_MAX_JOINTS;i++){    

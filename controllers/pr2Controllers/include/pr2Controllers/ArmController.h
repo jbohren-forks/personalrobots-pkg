@@ -294,7 +294,7 @@ namespace controller
       /*!
         * \brief Update controller
         */       
-      void Update( );
+      void update( );
 
 
     private:
