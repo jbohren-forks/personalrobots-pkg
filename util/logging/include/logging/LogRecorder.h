@@ -40,135 +40,200 @@
 #include "logging/AnyMsg.h"
 
 #include <fstream>
+#include <iostream>
 #include <iomanip>
 
-class LogWriter : public std::ofstream
+
+class LogRecorder
 {
-  ros::thread::mutex m;
-  uint32_t count;
+
+  class LogHelper : public ros::msg
+  {
+
+    typedef std::pair<void (*)(std::string, ros::msg*, void*), void*> Callback;
+
+    LogRecorder* log_recorder_;
+
+    std::string topic_name_;
+    std::string datatype_;
+    std::string md5sum_;
+
+    Callback* callback_;
+
+    ros::msg* msg_;
+
+  public:
+
+    LogHelper(LogRecorder* log_recorder, std::string topic_name, std::string datatype, std::string md5sum)
+      : log_recorder_(log_recorder), 
+        topic_name_(topic_name), datatype_(datatype), md5sum_(md5sum),
+        callback_(NULL),
+        msg_(NULL) {}
+
+    virtual ~LogHelper()
+    {
+      if (msg_)
+        delete msg_;
+
+      if (callback_)
+        delete callback_;
+    }
+
+
+    void addHandler(ros::msg* msg, void (*fp)(std::string, ros::msg*, void*), void* ptr)
+    {
+      if (msg)
+      {
+        if (msg_)
+          delete msg_;
+        msg_ = msg;
+      }
+
+      callback_ = new Callback(fp, ptr);
+    }
+
+    void callHandler()
+    {
+      ros::msg* msg = this;
+
+      if (msg_)
+        msg = msg_;
+
+      if (callback_)
+        (*(callback_->first))(topic_name_, msg, (callback_->second));
+    }
+
+
+    std::string get_topic_name() {return topic_name_;}
+
+    virtual const std::string __get_datatype() const { return datatype_; }
+
+    virtual const std::string __get_md5sum()   const { return md5sum_; }
+
+     virtual uint32_t serialization_length()    { return __serialized_length; }
+
+    virtual uint8_t *serialize(uint8_t *write_ptr) { assert(0); return NULL; }
+
+    virtual uint8_t *deserialize(uint8_t *read_ptr)
+    {
+      uint8_t* sz = log_recorder_->log(get_topic_name(), read_ptr, __serialized_length);
+
+      if (msg_)
+      {
+        msg_->__serialized_length = __serialized_length;
+        msg_->deserialize(read_ptr);
+      }
+
+      return sz;
+    }
+  };
+
+  ros::node* node_;
+
+  std::ofstream log_file_;
+
+  ros::thread::mutex log_mutex_;
+
+  ros::Time start_time_;
+
+  std::vector<LogHelper*> topics_;
 
 public:
 
-  LogWriter() : std::ofstream() , count(0) { }
+  LogRecorder(ros::node* node) : node_(node) {}
 
-  bool openOld(std::string fname, std::string topic_name, std::string data_type, std::string md5sum) 
-  {
-    std::ofstream::open(fname.c_str());
-    if (std::ofstream::fail())
-    {
-      printf("Failed to open log\n");
-      return false;
-    }
-
-    *this << topic_name << std::endl;
-    *this << data_type  << std::endl;
-    *this << md5sum     << std::endl;
-
-    return true;
-  }
-
-  bool open(std::string fname) 
-  {
-    std::ofstream::open(fname.c_str());
-    if (std::ofstream::fail())
-    {
-      fprintf(stderr, "Failed to open log\n");
-      return false;
-    }
-
-    *this << "##MULTILOG##" << std::endl << std::setw(4) << std::setfill('0') << 0 << std::endl;
-
-    return true;
-  }
-
-  void addLog(std::string topic_name, std::string data_type, std::string md5sum)
-  {
-    seekp(0, ios_base::beg);
-
-    *this << "##MULTILOG##" << std::endl << std::setw(4) << std::setfill('0') << ++count << std::endl;
-
-    seekp(0, ios_base::end);
-
-    *this << topic_name << std::endl;
-    *this << data_type  << std::endl;
-    *this << md5sum     << std::endl;
-  }
-
-  void lock() {
-    m.lock();
-  }
-
-  void unlock() {
-    m.unlock();
-  }
-};
-
-template <class M = AnyMsg>
-class LogRecorder : public M
-{
-
-  bool oldFormat;
-  LogWriter* log;
-  std::string topic_name;
-  ros::Time start;
-public:
-
-  LogRecorder() : M(), oldFormat(false), log(NULL) { }
   virtual ~LogRecorder()
   {
-    if (oldFormat)
-      delete log;
+    for (std::vector<LogHelper*>::iterator topic_it = topics_.begin(); 
+         topic_it != topics_.end(); 
+         topic_it++)
+    {
+      if (*topic_it)
+        delete *topic_it;
+    }
+
+    log_file_.close();
   }
-  bool open_log(const std::string &file_name, std::string _topic_name, ros::Time _start)
+
+  bool open(const std::string &file_name, ros::Time start_time)
   {
-    oldFormat = true;
+    start_time_ = start_time;
 
-    topic_name = _topic_name;
-    start = _start;
-    log = new LogWriter;
-
-    if (!log->openOld(file_name, __get_topic_name(), M::__get_datatype(), M::__get_md5sum()))
+    log_file_.open(file_name.c_str());
+    if (log_file_.fail())
+    {
+      std::cerr << "Failed to open log file: " << file_name <<  std::endl;
       return false;
+    }
+
+    log_file_ << "#ROSLOG V1.0" << std::endl << std::setw(4) << std::setfill('0') << 0 << std::endl;
 
     return true;
   }
 
-  bool open_log(LogWriter* _log, std::string _topic_name, ros::Time _start)
+
+  template <class M>
+  void addTopic(std::string topic_name, void (*fp)(std::string, ros::msg*, void*) = NULL, void* ptr = NULL, bool inflate = false)
   {
-    log = _log;
+    LogHelper* l = new LogHelper(this, topic_name, M::__s_get_datatype(), M::__s_get_md5sum());
+    topics_.push_back(l);
 
-    topic_name = _topic_name;
-    start = _start;
+    log_mutex_.lock();
+    
+    log_file_.seekp(0, std::ios_base::beg);
+    log_file_ << "#ROSLOG V1.0" << std::endl << std::setw(4) << std::setfill('0') << topics_.size() << std::endl;
+    log_file_.seekp(0, std::ios_base::end);
 
-    log->lock();
-    log->addLog(__get_topic_name(), M::__get_datatype(), M::__get_md5sum());
-    log->unlock();
+    log_file_ << topic_name << std::endl;
+    log_file_ << l->__get_datatype() << std::endl;
+    log_file_ << l->__get_md5sum() << std::endl;
 
-    return true;
+    log_mutex_.unlock();
+    
+    if (fp != NULL)
+    {
+      M* msg = NULL;
+
+      if (inflate)
+        msg = new M;
+
+      l->addHandler(msg, fp, ptr);
+    }
+
   }
 
-  virtual std::string __get_topic_name() { return topic_name; }
-
-  virtual uint8_t *serialize(uint8_t *write_ptr) { assert(0); return NULL; }
-  virtual uint8_t *deserialize(uint8_t *read_ptr)
-  {
-    ros::Duration elapsed = ros::Time::now() - start;
-    log->lock();
-
-    if (!oldFormat)
-      *log << topic_name << std::endl;
-
-    log->write((char*)&elapsed.sec, 4);
-    log->write((char*)&elapsed.nsec, 4);
-
-    uint32_t tmp = M::__serialized_length;
-    log->write((char*)&(tmp), 4);
-
-    log->write((char*)read_ptr, M::__serialized_length);
-    log->unlock();
-    return read_ptr + M::__serialized_length;
+  void start() {
+    for (std::vector<LogHelper*>::iterator topic_it = topics_.begin();
+         topic_it != topics_.end();
+         topic_it++)
+      node_->subscribe((*topic_it)->get_topic_name(), *(*topic_it), &LogRecorder::dummyCb, this, (*topic_it), 100);
   }
+
+  void dummyCb(void* log_helper)
+  {
+    ((LogHelper*)(log_helper))->callHandler();
+  }
+
+protected:
+  uint8_t* log(std::string topic_name, uint8_t *read_ptr, uint32_t length)
+  {
+    ros::Duration elapsed = ros::Time::now() - start_time_;
+    log_mutex_.lock();
+
+    log_file_ << topic_name << std::endl;
+
+    log_file_.write((char*)&elapsed.sec, 4);
+    log_file_.write((char*)&elapsed.nsec, 4);
+
+    log_file_.write((char*)&(length), 4);
+
+    log_file_.write((char*)read_ptr, length);
+    
+    log_mutex_.unlock();
+
+    return read_ptr + length;
+  }
+
 };
-
 
 #endif

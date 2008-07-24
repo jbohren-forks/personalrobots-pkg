@@ -1,7 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 // The megamaid package provides logging and playback
 //
-// Copyright (C) 2008, Morgan Quigley
+// Copyright (C) 2008, Morgan Quigley, Stanford Univerity,
+//                     Willow Garage
 //
 // Redistribution and use in source and binary forms, with or without 
 // modification, are permitted provided that the following conditions are met:
@@ -10,9 +11,9 @@
 //   * Redistributions in binary form must reproduce the above copyright 
 //     notice, this list of conditions and the following disclaimer in the 
 //     documentation and/or other materials provided with the distribution.
-//   * Neither the name of Stanford University nor the names of its 
-//     contributors may be used to endorse or promote products derived from 
-//     this software without specific prior written permission.
+//   * Neither the name of Stanford University, Willow Garage, nor the names 
+//     of its contributors may be used to endorse or promote products derived 
+//     from this software without specific prior written permission.
 //   
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
@@ -35,47 +36,6 @@
 
 using namespace std;
 
-class Vacuum : public ros::node
-{
-public:
-  LogRecorder<> *bags;
-  Vacuum(vector<string> vac_topics) : node("vacuum")
-  { 
-    bags = new LogRecorder<>[vac_topics.size()];
-    time_t t = ::time(NULL);
-    struct tm *tms = localtime(&t);
-    char logdir[500];
-    snprintf(logdir, sizeof(logdir), "%d-%02d-%02d-%02d-%02d-%02d",
-             tms->tm_year+1900, tms->tm_mon+1, tms->tm_mday,
-             tms->tm_hour     , tms->tm_min  , tms->tm_sec);
-    mkdir(logdir, 0755);
-    ros::Time start = ros::Time::now();
-    for (size_t i = 0; i < vac_topics.size(); i++)
-    {
-      string sanitized = vac_topics[i];
-      printf("vacuum up [%s]\n", vac_topics[i].c_str());
-      for (size_t j = 0; j < vac_topics[i].length(); j++)
-      {
-        char c = sanitized[j]; // sanitize it a bit
-        if (c == '\\' || c == '/' || c == '#' || c == '&' || c == ';')
-          sanitized[j] = '_';
-      }
-      if (!bags[i].open_log(std::string(logdir) + std::string("/") + sanitized + string(".bag"),
-                            map_name(vac_topics[i]),
-                            start))
-        throw std::runtime_error("couldn't open log file\n");
-      
-      subscribe(vac_topics[i], bags[i], &Vacuum::dummy_cb);
-    }
-  }
-  virtual ~Vacuum()
-  {
-    delete[] bags;
-    bags = NULL;
-  }
-  void dummy_cb() { }
-};
-
 int main(int argc, char **argv)
 {
   ros::init(argc, argv);
@@ -84,11 +44,65 @@ int main(int argc, char **argv)
     printf("\nusage: vacuum TOPIC1 [TOPIC2] ...\n\n");
     return 1;
   }
+
+  time_t t = ::time(NULL);
+  struct tm *tms = localtime(&t);
+  char logdir[500];
+  snprintf(logdir, sizeof(logdir), "%d-%02d-%02d-%02d-%02d-%02d",
+           tms->tm_year+1900, tms->tm_mon+1, tms->tm_mday,
+           tms->tm_hour     , tms->tm_min  , tms->tm_sec);
+  mkdir(logdir, 0755);
+
+
   vector<std::string> topics;
   for (int i = 1; i < argc; i++)
     topics.push_back(argv[i]);
-  Vacuum vac(topics);
-  vac.spin();
+
+  vector<LogRecorder*> logs;
+
+  ros::node n("vacuum");  // Ros peer style usage.
+
+  ros::Time start = ros::Time::now();
+
+  for (vector<std::string>::iterator i = topics.begin(); i != topics.end(); i++)
+  {
+    printf("vacuum up [%s]\n", i->c_str());
+    string sanitized = *i;
+
+    for (size_t j = 0; j < sanitized.length(); j++)
+    {
+      char c = sanitized[j];
+      if (c == '\\' || c == '/' || c == '#' || c == '&' || c == ';')
+        sanitized[j] = '_';
+    }
+
+    LogRecorder *l = new LogRecorder(&n);
+
+    std::string fname = std::string(logdir) + std::string("/") + sanitized + std::string(".bag");
+    if (l->open(fname, start))
+    {
+      l->addTopic<AnyMsg>(*i);
+      logs.push_back(l);
+    } else {
+      cerr << "Could not open file: " << fname << endl;
+      delete l;
+    }
+  }
+
+
+  for (vector<LogRecorder*>::iterator i = logs.begin(); i != logs.end(); i++)
+    (*i)->start();
+
+
+  if (logs.size() <= 0)
+    n.self_destruct();
+
+  n.spin();
+
   ros::fini();
+
+  for (vector<LogRecorder*>::iterator i = logs.begin(); i != logs.end(); i++)
+    delete *i;
+
   return 0;
 }

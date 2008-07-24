@@ -37,74 +37,17 @@
 
 using namespace std;
 
-class Playback : public ros::node
+void doPublish(string name, ros::msg* m, ros::Time t, void* n)
 {
-public:
-  LogPlayer<> *bags;
-  size_t num_bags;
-  Playback(vector<string> bag_names) : node("playback"), num_bags(0)
-  { 
-    num_bags = bag_names.size();
-    bags = new LogPlayer<>[num_bags];
-    ros::Time t = ros::Time::now();
-    for (size_t i = 0; i < num_bags; i++)
-    {
-      printf("%s\n", bag_names[i].c_str());
-      if (!bags[i].open_log(bag_names[i], t))
-        throw std::runtime_error("couldn't open bag file\n");
-    }
-    // all the bags opened up OK. advertise them.
-    for (size_t i = 0; i < num_bags; i++)
-      advertise(bags[i].topic_name, bags[i]);
-  }
-  virtual ~Playback()
-  {
-    delete[] bags;
-    bags = NULL;
-  }
-  void play()
-  {
-    while (ok())
-    {
-      bool keep_going = false;
-      ros::Time min_t(-1,0);
-      ros::Time soon = ros::Time::now() + ros::Duration(0,5000);
+  ros::Time now = ros::Time::now();
 
-      vector<size_t> inds;
+  ros::Duration delta = t - ros::Time::now();
 
-      for (size_t i = 0; i < num_bags; i++)
-      {
-        if (!bags[i].done)
-        {
-          keep_going = true;
-          ros::Time next = bags[i].time_of_msg();
-          if (next < soon)
-          {
-            min_t = next;
-            inds.push_back(i);
-          } else if (next < min_t)
-          {
-            min_t = next;
-          }
-        }
-      }
-      if (!keep_going)
-        break;
-
-      ros::Duration delta = min_t - soon;
-
-      if (delta > ros::Duration(0,5000))
-        usleep(delta.to_ll()/1000 - 5);
-
-      for (vector<size_t>::iterator i = inds.begin(); i != inds.end(); i++)
-      {
-        publish(bags[*i].topic_name, bags[*i]);
-        if (!bags[*i].read_next_msg())
-          bags[*i].done = true;
-      }
-    }
-  }
-};
+  if (delta > ros::Duration(0, 5000))
+    usleep(delta.to_ll()/1000 - 5);
+  
+  ((ros::node*)(n))->publish(name, *m);
+}
 
 int main(int argc, char **argv)
 {
@@ -115,11 +58,65 @@ int main(int argc, char **argv)
            "the shell * feature\n\n");
     return 1;
   }
-  vector<string> bag_names;
+
+  ros::node n("player");  // Ros peer style usage.
+
+  vector<LogPlayer*> players;
+
+  ros::Time start = ros::Time::now();
+
   for (int i = 1; i < argc; i++)
-    bag_names.push_back(argv[i]);
-  Playback pb(bag_names);
-  pb.play();
+  {
+    LogPlayer* l = new LogPlayer;
+
+    if (l->open(argv[i], start)) {
+
+      std::vector<std::string> names = l->getNames();
+
+      for (std::vector<std::string>::iterator i = names.begin(); i != names.end(); i++)
+      {
+        n.advertise<AnyMsg>(*i);
+      }
+
+      l->addHandler<AnyMsg>(string("*"), &doPublish, (void*)(&n), false);
+      
+      players.push_back(l);
+
+    } else {
+      n.shutdown();
+      break;
+    }
+  }
+
+  bool done = false;;
+  while(n.ok() && !done)
+  {
+    done = true;
+    LogPlayer* next_player = 0;
+    ros::Time min_t = ros::Time(-1); // This should be the maximum unsigned int;
+    for (vector<LogPlayer*>::iterator player_it = players.begin();
+         player_it != players.end();
+         player_it++)
+    {
+      if ((*player_it)->isDone())
+      {
+        continue;
+      }
+      else
+      {
+        done = false;
+        ros::Time t = (*player_it)->get_next_msg_time();
+        if (t < min_t)
+        {
+          next_player = (*player_it);
+          min_t = (*player_it)->get_next_msg_time();
+        }
+      }
+    }
+    if (next_player)
+      next_player->nextMsg();
+  }
+
   ros::fini();
   return 0;
 }

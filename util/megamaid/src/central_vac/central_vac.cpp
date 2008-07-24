@@ -40,21 +40,12 @@
 
 using namespace std;
 
-
-void doUnsubscribe(string name, ros::msg* m, void* n)
-{
-  ((ros::node*)(n))->unsubscribe(name);
-
-  if (((ros::node*)(n))->num_subscriptions() == 0)
-    ((ros::node*)(n))->self_destruct();
-}
-
 int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   if (argc <= 1)
   {
-    printf("\nusage: dustbuster TOPIC1 [TOPIC2] ...\n\n");
+    printf("\nusage: central_vac TOPIC1 [TOPIC2] ...\n\n");
     return 1;
   }
 
@@ -70,7 +61,7 @@ int main(int argc, char **argv)
   for (int i = 1; i < argc; i++)
     topics.push_back(argv[i]);
 
-  ros::node n("dustbuster", ros::node::WRITE_LOG_FILE);  // Ros peer style usage.
+  ros::node n("central_vac");  // Ros peer style usage.
 
   LogRecorder l(&n);
 
@@ -82,7 +73,7 @@ int main(int argc, char **argv)
     for (vector<std::string>::iterator i = topics.begin(); i != topics.end(); i++)
     {
       printf("vacuum up [%s]\n", i->c_str());
-      l.addTopic<AnyMsg>(*i, &doUnsubscribe, (void*)(&n));
+      l.addTopic<AnyMsg>(*i);
     }
 
     l.start();
