@@ -28,5 +28,7 @@ namespace TREX {
 
     double result = sqrt(sum);
     m_target.set(result);
+
+    debugMsg("CalcDistanceConstraint:handleExecute", "After:" << toString());
   }
 }

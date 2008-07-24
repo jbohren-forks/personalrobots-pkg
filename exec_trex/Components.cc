@@ -17,6 +17,7 @@
 #include "CalcAngleDiffConstraint.hh"
 #include "CalcCommandConstraintPlayback.hh"
 #include "CalcGlobalPathConstraintPlayback.hh"
+#include "CalcDistanceConstraint.hh"
 #include "OrienteeringSolver.hh"
 
 #include <math.h>
@@ -29,7 +30,7 @@ namespace TREX{
     initTREX();
 
     // Constraint Registration
-    REGISTER_CONSTRAINT(SubsetOfConstraint, "in", "Default");
+    REGISTER_CONSTRAINT(TREX::SubsetOfConstraint, "in", "Default");
     REGISTER_CONSTRAINT(TREX::CalcDistanceConstraint, "calcDistance", "Default");
     REGISTER_CONSTRAINT(FloorFunction, "calcFloor", "Default");
     if (playback) {

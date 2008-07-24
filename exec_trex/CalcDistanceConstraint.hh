@@ -1,5 +1,5 @@
-#ifndef _CALCCOMMANDCONSTRAINT_H_
-#define _CALCCOMMANDCONSTRAINT_H_
+#ifndef _CALCDISTANCECONSTRAINT_H_
+#define _CALCDISTANCECONSTRAINT_H_
 
 #include "ConstraintEngineDefs.hh"
 #include "Variable.hh"

@@ -40,7 +40,7 @@ if ! $(exec_trex_READY) {
 	ModuleLibraries executive : $(DLOPEN_LIBRARY) ;
 	
 	# Main executable for now linked directly with the model. The main executive is pretty slim
-	ModuleMain exec_trex : Executive.cc pr2.model.cc : executive : exec_trex ;
+	ModuleMain exec_trex : Executive.cc pr2.model.o : executive : exec_trex ;
 	
 	Depends exec_trex : exec_inputs ;
 
@@ -69,6 +69,7 @@ if ! $(exec_trex_READY) {
 		grasp.0.exec.nddl
 		grasp.0.wpc.nddl
 		grasp.0.ac.nddl
+		grasp.0.sim.nddl
 	;
 
 	local file ;
