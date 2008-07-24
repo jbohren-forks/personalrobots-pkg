@@ -9,6 +9,6 @@ This package contains Open Dynamics Engine OpenDE or ODE
 <license>LGPL</license>
 <url>http://opende.sf.net</url>
 <export>
-  <cpp lflags="-Xlinker -rpath ${prefix}/opende/lib -L${prefix}/opende/lib -lode" cflags="-I${prefix}/opende/include -DdDOUBLE"/>
+  <cpp lflags="-Wl,-rpath,${prefix}/opende/lib `${prefix}/opende/bin/ode-config --libs`" cflags="`${prefix}/opende/bin/ode-config --cflags`"/>
 </export>
 </package>
