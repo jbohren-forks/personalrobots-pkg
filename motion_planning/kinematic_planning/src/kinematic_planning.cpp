@@ -165,23 +165,34 @@ public:
 	Model   *m = m_models[req.model_id];
 	Planner &p = m->planners[0];
 	
-	const int dim = req.start_state.vals_size;
+	const int dim = req.goal_state.vals_size;
 	if ((int)p.si->getStateDimension() != dim)
 	    return false;
 
-	/* set the transform for the model we are planning for */
-	libTF::Pose3D &tf = m->collisionSpace->models[m->collisionSpaceID]->rootTransform;  
-	tf.setPosition(req.transform.xt, req.transform.yt, req.transform.zt);
-	tf.setQuaternion(req.transform.xr, req.transform.yr, req.transform.zr, req.transform.w);
-	
 	/* set the workspace volume for planning */
 	static_cast<SpaceInformationNode*>(p.si)->setPlanningVolume(req.volumeMin.x, req.volumeMin.y, req.volumeMin.z,
 								    req.volumeMax.x, req.volumeMax.y, req.volumeMax.z);
 	
+	
 	/* set the starting state */
 	ompl::SpaceInformationKinematic::StateKinematic_t start = new ompl::SpaceInformationKinematic::StateKinematic(dim);
-	for (int i = 0 ; i < dim ; ++i)
-	    start->values[i] = req.start_state.vals[i];
+
+	if (m->groupID >= 0)
+	{
+	    /* set the pose of the whole robot */
+	    m->kmodel->computeTransforms(req.start_state.vals);
+	    m->collisionSpace->updateRobotModel(m->collisionSpaceID);
+	 
+	    /* extract the components needed for the start state of the desired group */
+	    for (int i = 0 ; i < dim ; ++i)
+		start->values[i] = req.start_state.vals[m->kmodel->groupStateIndexList[m->groupID][i]];
+	}
+	else
+	{
+	    for (int i = 0 ; i < dim ; ++i)
+		start->values[i] = req.start_state.vals[i];
+	}
+	
 	p.si->addStartState(start);
 	
 	/* set the goal */
@@ -199,7 +210,7 @@ public:
 	/* copy the solution to the result */
 	if (ok)
 	{
-	    ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());	    
+	    ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
 	    res.path.set_states_size(path->states.size());
 	    for (unsigned int i = 0 ; i < path->states.size() ; ++i)
 	    {
@@ -240,7 +251,10 @@ public:
 	
 	/* create a model for the whole robot (with the name given in the file) */
 	Model *model = new Model();
-	model->collisionSpaceID = m_collisionSpace->addRobotModel(*file);
+	unsigned int cid = m_collisionSpace->addRobotModel(*file);
+	model->collisionSpaceID = cid;
+	model->collisionSpace = m_collisionSpace;
+        model->kmodel = m_collisionSpace->models[cid];
 	m_models[name] = model;
 	createMotionPlanningInstances(model);
 	
@@ -248,8 +262,12 @@ public:
 	for (unsigned int i = 0 ; i < groups.size() ; ++i)
 	{
 	    Model *model = new Model();
-	    model->collisionSpaceID = m_collisionSpace->addRobotModel(*file, groups[i].c_str());
-	    m_models[name + "::" + groups[i]] = model;
+	    std::string gname = name + "::" + groups[i];
+	    model->collisionSpaceID = cid;
+	    model->collisionSpace = m_collisionSpace;
+	    model->kmodel = m_collisionSpace->models[cid];
+	    model->groupID = model->kmodel->getGroupID(gname);
+	    m_models[gname] = model;
 	    createMotionPlanningInstances(model);
 	}	
     }
@@ -273,6 +291,7 @@ private:
     {
 	Model(void)
 	{
+	    groupID          = -1;
 	    collisionSpaceID = 0;
 	    collisionSpace   = NULL;	    
 	}
@@ -288,25 +307,28 @@ private:
 	
 	std::vector<Planner>               planners;
 	collision_space::EnvironmentModel *collisionSpace;    	
-	unsigned int                       collisionSpaceID;	
+	unsigned int                       collisionSpaceID;
+	planning_models::KinematicModel   *kmodel;
+	int                                groupID;	
     };
     
     class SpaceInformationNode : public ompl::SpaceInformationKinematic
     {
     public:
-	SpaceInformationNode(planning_models::KinematicModel *km) : SpaceInformationKinematic()
+	SpaceInformationNode(Model *model) : SpaceInformationKinematic()
 	{
-	    m_km = km;
+	    m_m = model;
 	    m_divisions = 20.0;
 	    
-	    m_stateDimension = km->stateDimension;
+	    m_stateDimension = m_m->groupID >= 0 ? m_m->kmodel->groupStateIndexList[m_m->groupID].size() : m_m->kmodel->stateDimension;
 	    m_stateComponent.resize(m_stateDimension);
 	    
 	    for (unsigned int i = 0 ; i < m_stateDimension ; ++i)
 	    {	
 		m_stateComponent[i].type       = StateComponent::NORMAL;
-		m_stateComponent[i].minValue   = km->stateBounds[i*2    ];
-		m_stateComponent[i].maxValue   = km->stateBounds[i*2 + 1];
+		unsigned int p = m_m->groupID >= 0 ? m_m->kmodel->groupStateIndexList[m_m->groupID][i] * 2 : i * 2;
+		m_stateComponent[i].minValue   = m_m->kmodel->stateBounds[p    ];
+		m_stateComponent[i].maxValue   = m_m->kmodel->stateBounds[p + 1];
 		m_stateComponent[i].resolution = (m_stateComponent[i].maxValue - m_stateComponent[i].minValue) / m_divisions;
 	    }
 	}
@@ -317,24 +339,25 @@ private:
 
 	void setPlanningVolume(double x0, double y0, double z0, double x1, double y1, double z1)
 	{
-	    for (unsigned int i = 0 ; i < m_km->floatingJoints.size() ; ++i)
-	    {
-		int id = m_km->floatingJoints[i];		
-		m_stateComponent[id    ].minValue = x0;
-		m_stateComponent[id    ].maxValue = x1;
-		m_stateComponent[id + 1].minValue = y0;
-		m_stateComponent[id + 1].maxValue = y1;
-		m_stateComponent[id + 2].minValue = z0;
-		m_stateComponent[id + 2].maxValue = z1;
-		for (int j = 0 ; j < 3 ; ++j)
-		    m_stateComponent[j + id].resolution = (m_stateComponent[j + id].maxValue - m_stateComponent[j + id].minValue) / m_divisions;
-	    }
+	    if (m_m->groupID < 0)
+		for (unsigned int i = 0 ; i < m_m->kmodel->floatingJoints.size() ; ++i)
+		{
+		    int id = m_m->kmodel->floatingJoints[i];		
+		    m_stateComponent[id    ].minValue = x0;
+		    m_stateComponent[id    ].maxValue = x1;
+		    m_stateComponent[id + 1].minValue = y0;
+		    m_stateComponent[id + 1].maxValue = y1;
+		    m_stateComponent[id + 2].minValue = z0;
+		    m_stateComponent[id + 2].maxValue = z1;
+		    for (int j = 0 ; j < 3 ; ++j)
+			m_stateComponent[j + id].resolution = (m_stateComponent[j + id].maxValue - m_stateComponent[j + id].minValue) / m_divisions;
+		}
 	}
 	
     protected:
 	
-	double                           m_divisions;	
-	planning_models::KinematicModel *m_km;
+	double  m_divisions;	
+	Model  *m_m;
 	
     };    
 	
@@ -346,15 +369,15 @@ private:
     static bool isStateValid(const ompl::SpaceInformationKinematic::StateKinematic_t state, void *data)
     {
 	Model *model = reinterpret_cast<Model*>(data);
+	model->kmodel->computeTransforms(state->values, model->groupID);
+	model->collisionSpace->updateRobotModel(model->collisionSpaceID);
 	return model->collisionSpace->isCollision(model->collisionSpaceID);
     }
     
     void createMotionPlanningInstances(Model* model)
     {
-	model->collisionSpace = m_collisionSpace;
-
 	Planner p;
-	p.si   = new SpaceInformationNode(m_collisionSpace->models[model->collisionSpaceID]);
+	p.si   = new SpaceInformationNode(model);
 	p.si->setStateValidFn(isStateValid, reinterpret_cast<void*>(model));
 	p.mp   = new ompl::RRT(p.si);
 	p.type = 0;	
