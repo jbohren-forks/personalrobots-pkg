@@ -457,3 +457,9 @@ void JointController::loadParam(std::string label, int &param)
    if(paramMap.find(label) != paramMap.end())
       param = atoi(paramMap[label].c_str());
 }
+
+std::string JointController::getName()
+{
+  return this->name;
+}
+
