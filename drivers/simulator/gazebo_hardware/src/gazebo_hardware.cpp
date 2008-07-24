@@ -29,13 +29,14 @@
 //Simulated Iface-hardware implementation for gazebo
 
 #include <gazebo_hardware/gazebo_hardware.h>
+#include <assert.h>
 
 using namespace std;
 
-GazeboHardware::GazeboHardware(int numBoards, int numActuators, int boardLookUp[], int portLookUp[], int jointId[], string etherIP[], string hostIP[],HardwareInterface *hw){
+GazeboHardware::GazeboHardware(int numBoards, int numActuators, int boardLookUp[], int portLookUp[], int jointId[], string etherIP[], string hostIP[]){
   this->numBoards    = numBoards;
   this->numActuators = numActuators;
-  this->hw = hw;
+  this->hw = new HardwareInterface(numActuators);
   for(int ii = 0; ii < numActuators; ii++)
     {
       this->boardLookUp[ii] = boardLookUp[ii];
@@ -44,11 +45,14 @@ GazeboHardware::GazeboHardware(int numBoards, int numActuators, int boardLookUp[
       this->etherIP[ii] = etherIP[ii];
       this->hostIP[ii] = hostIP[ii];
     }
-  //edBoard = new EtherDrive[numBoards];
+  // Ifaces are like edBoards
   client                  = new gazebo::Client();
-  edBoard                 = new gazebo::PR2ArrayIface[numBoards];
+  assert(numBoards==5); // hardcode, for now, for the pr2 model
+  pr2ActarrayIface        = new gazebo::PR2ArrayIface();
   pr2GripperLeftIface     = new gazebo::PR2GripperIface();
   pr2GripperRightIface    = new gazebo::PR2GripperIface();
+  pr2PTZCameraLeftIface   = new gazebo::PTZIface();
+  pr2PTZCameraRightIface  = new gazebo::PTZIface();
 
 };
 
@@ -70,22 +74,11 @@ void GazeboHardware::init(){
   /// Open the actuator arrays for casters spine arm interface
   try
   {
-    edBoard[1].Open(client, "pr2_iface");
+    pr2ActarrayIface->Open(client, "pr2_iface");
   }
   catch (std::string e)
   {
     std::cout << "Gazebo error: Unable to connect to the pr2 interface\n"
-    << e << "\n";
-  }
-
-  /// Open the actuator arrays for head interface
-  try
-  {
-    edBoard[0].Open(client, "pr2_head_iface");
-  }
-  catch (std::string e)
-  {
-    std::cout << "Gazebo error: Unable to connect to the pr2 head interface\n"
     << e << "\n";
   }
 
@@ -111,6 +104,28 @@ void GazeboHardware::init(){
     << e << "\n";
   }
 
+  /// Open the interface for ptz right
+  try
+  {
+    pr2PTZCameraRightIface->Open(client, "ptz_right_iface");
+  }
+  catch (std::string e)
+  {
+    std::cout << "Gazebo error: Unable to connect to the pr2 ptz right interface\n"
+    << e << "\n";
+  }
+
+  /// Open the interface for ptz left
+  try
+  {
+    pr2PTZCameraLeftIface->Open(client, "ptz_left_iface");
+  }
+  catch (std::string e)
+  {
+    std::cout << "Gazebo error: Unable to connect to the pr2 ptz left interface\n"
+    << e << "\n";
+  }
+
   setGains(1,0,0,0,0,0);               // hard-coded for all the boards and all the motors for now
   setControlMode(PR2::TORQUE_CONTROL); // for all motors
   setMotorsOn(true);
@@ -125,7 +140,14 @@ void GazeboHardware::updateState(){
   for(int ii = 0; ii < numActuators; ii++)
     {
       hw->actuator[jointId[ii]].state.timestamp++;
-      if (boardLookUp[ii] == 2)
+      if (boardLookUp[ii] == 0)
+      {
+        pr2ActarrayIface->Lock(1);
+        hw->actuator[jointId[ii]].state.encoderCount =
+           GAZEBO_POS_TO_ENCODER*pr2ActarrayIface->data->actuators[portLookUp[ii]].actualPosition;
+        pr2ActarrayIface->Unlock();
+      }
+      else if (boardLookUp[ii] == 1)
       {
         pr2GripperLeftIface->Lock(1);
         hw->actuator[jointId[ii]].state.encoderCount = GAZEBO_POS_TO_ENCODER*(
@@ -133,7 +155,7 @@ void GazeboHardware::updateState(){
          +(-pr2GripperLeftIface->data->actualFingerPosition[1] + 0.015)     );
         pr2GripperLeftIface->Unlock();
       }
-      else if (boardLookUp[ii] == 3)
+      else if (boardLookUp[ii] == 2)
       {
         pr2GripperRightIface->Lock(1);
         hw->actuator[jointId[ii]].state.encoderCount = GAZEBO_POS_TO_ENCODER*(
@@ -141,11 +163,21 @@ void GazeboHardware::updateState(){
          +(-pr2GripperRightIface->data->actualFingerPosition[1] + 0.015)    );
         pr2GripperRightIface->Unlock();
       }
-      else
+      else if (boardLookUp[ii] == 3)
       {
-        edBoard[boardLookUp[ii]].Lock(1);
-        hw->actuator[jointId[ii]].state.encoderCount = GAZEBO_POS_TO_ENCODER*edBoard[boardLookUp[ii]].data->actuators[portLookUp[ii]].actualPosition;
-        edBoard[boardLookUp[ii]].Unlock();
+        pr2PTZCameraLeftIface->Lock(1);
+        //hw->actuator[jointId[ii]].state.encoderCount = GAZEBO_POS_TO_ENCODER*(
+        //  ( pr2PTZCameraLeftIface->data->actualFingerPosition[0] - 0.015)  // FIXME: not debugged
+        // +(-pr2PTZCameraLeftIface->data->actualFingerPosition[1] + 0.015)     );
+        pr2PTZCameraLeftIface->Unlock();
+      }
+      else if (boardLookUp[ii] == 4)
+      {
+        pr2PTZCameraRightIface->Lock(1);
+        //hw->actuator[jointId[ii]].state.encoderCount = GAZEBO_POS_TO_ENCODER*(
+        //  ( pr2PTZCameraRightIface->data->actualFingerPosition[0] - 0.015)  // FIXME: not debugged
+        // +(-pr2PTZCameraRightIface->data->actualFingerPosition[1] + 0.015)    );
+        pr2PTZCameraRightIface->Unlock();
       }
       //fprintf(stderr,"edh:: %d\n",hw->actuator[jointId[ii]].state.encoderCount);
     }
@@ -159,13 +191,19 @@ void GazeboHardware::sendCommand(){
       if( hw->actuator[ii].command.enable){
         command = (GAZEBO_CURRENT_TO_CMD*hw->actuator[ii].command.current);
         //fprintf(stderr,"command: %f\n", command);
-        if (boardLookUp[ii] == 2)
+        if (boardLookUp[ii] == 0)
+        {
+          pr2ActarrayIface->Lock(1);
+          pr2ActarrayIface->data->actuators[portLookUp[ii]].cmdEffectorForce = command;
+          pr2ActarrayIface->Unlock();
+        }
+        else if (boardLookUp[ii] == 1)
         {
           pr2GripperLeftIface->Lock(1);
           pr2GripperLeftIface->data->cmdForce             = command;
           pr2GripperLeftIface->Unlock();
         }
-        else if (boardLookUp[ii] == 3)
+        else if (boardLookUp[ii] == 2)
         {
           pr2GripperRightIface->Lock(1);
           pr2GripperRightIface->data->cmdForce            = command;
@@ -173,9 +211,7 @@ void GazeboHardware::sendCommand(){
         }
         else
         {
-          edBoard[boardLookUp[ii]].Lock(1);
-          edBoard[boardLookUp[ii]].data->actuators[portLookUp[ii]].cmdEffectorForce = command;
-          edBoard[boardLookUp[ii]].Unlock();
+           //FIXME: take care of ptz cams
         }
       }
     }
@@ -185,13 +221,21 @@ void GazeboHardware::setGains(int P, int I, int D, int W, int M, int Z)
 {
   for(int ii = 0; ii < numActuators; ii++)
   {
-    if (boardLookUp[ii] == 2)
+    if (boardLookUp[ii] == 0)
+    {
+      pr2ActarrayIface->Lock(1);
+      pr2ActarrayIface->data->actuators[portLookUp[ii]].pGain = P;
+      pr2ActarrayIface->data->actuators[portLookUp[ii]].iGain = I;
+      pr2ActarrayIface->data->actuators[portLookUp[ii]].dGain = D;
+      pr2ActarrayIface->Unlock();
+    }
+    else if (boardLookUp[ii] == 1)
     {
       pr2GripperLeftIface->data->pGain     = P;
       pr2GripperLeftIface->data->iGain     = I;
       pr2GripperLeftIface->data->dGain     = D;
     }
-    else if (boardLookUp[ii] == 3)
+    else if (boardLookUp[ii] == 2)
     {
       pr2GripperRightIface->data->pGain    = P;
       pr2GripperRightIface->data->iGain    = I;
@@ -199,11 +243,7 @@ void GazeboHardware::setGains(int P, int I, int D, int W, int M, int Z)
     }
     else
     {
-      edBoard[boardLookUp[ii]].Lock(1);
-      edBoard[boardLookUp[ii]].data->actuators[portLookUp[ii]].pGain = P;
-      edBoard[boardLookUp[ii]].data->actuators[portLookUp[ii]].iGain = I;
-      edBoard[boardLookUp[ii]].data->actuators[portLookUp[ii]].dGain = D;
-      edBoard[boardLookUp[ii]].Unlock();
+           //FIXME: take care of ptz cams
     }
   }
 }
@@ -212,13 +252,19 @@ void GazeboHardware::setControlMode(int controlMode)
 {
   for(int ii = 0; ii < numActuators; ii++)
   {
-    if (boardLookUp[ii] == 2)
+    if (boardLookUp[ii] == 0)
+    {
+      pr2ActarrayIface->Lock(1);
+      pr2ActarrayIface->data->actuators[portLookUp[ii]].controlMode = controlMode;
+      pr2ActarrayIface->Unlock();
+    }
+    else if (boardLookUp[ii] == 1)
     {
       pr2GripperLeftIface->Lock(1);
       pr2GripperLeftIface->data->controlMode     = controlMode;
       pr2GripperLeftIface->Unlock();
     }
-    else if (boardLookUp[ii] == 3)
+    else if (boardLookUp[ii] == 2)
     {
       pr2GripperRightIface->Lock(1);
       pr2GripperRightIface->data->controlMode    = controlMode;
@@ -226,9 +272,7 @@ void GazeboHardware::setControlMode(int controlMode)
     }
     else
     {
-      edBoard[boardLookUp[ii]].Lock(1);
-      edBoard[boardLookUp[ii]].data->actuators[portLookUp[ii]].controlMode = controlMode;
-      edBoard[boardLookUp[ii]].Unlock();
+           //FIXME: take care of ptz cams
     }
   }
 }
@@ -238,13 +282,19 @@ void GazeboHardware::setMotorsOn(bool motorsOn)
   for(int ii = 0; ii < numActuators; ii++)
   { 
     hw->actuator[ii].command.enable = true;
-    if (boardLookUp[ii] == 2)
+    if (boardLookUp[ii] == 0)
+    {
+      pr2ActarrayIface->Lock(1);
+      pr2ActarrayIface->data->actuators[portLookUp[ii]].cmdEnableMotor = motorsOn;
+      pr2ActarrayIface->Unlock();
+    }
+    else if (boardLookUp[ii] == 1)
     {
       pr2GripperLeftIface->Lock(1);
       pr2GripperLeftIface->data->cmdEnableMotor     = motorsOn;
       pr2GripperLeftIface->Unlock();
     }
-    else if (boardLookUp[ii] == 3)
+    else if (boardLookUp[ii] == 2)
     {
       pr2GripperRightIface->Lock(1);
       pr2GripperRightIface->data->cmdEnableMotor    = motorsOn;
@@ -252,9 +302,7 @@ void GazeboHardware::setMotorsOn(bool motorsOn)
     }
     else
     {
-      edBoard[boardLookUp[ii]].Lock(1);
-      edBoard[boardLookUp[ii]].data->actuators[portLookUp[ii]].cmdEnableMotor = motorsOn;
-      edBoard[boardLookUp[ii]].Unlock();
+           //FIXME: take care of ptz cams
     }
   }
 }
@@ -262,13 +310,19 @@ void GazeboHardware::setMotorsOn(bool motorsOn)
 void GazeboHardware::tick() {
   for(int ii = 0; ii < numActuators; ii++)
   {
-    if (boardLookUp[ii] == 2)
+    if (boardLookUp[ii] == 0)
+    {
+      //pr2ActarrayIface->Lock(1);
+      //pr2ActarrayIface->data->actuators[portLookUp[ii]].cmdEnableMotor = motorsOn;
+      //pr2ActarrayIface->Unlock();
+    }
+    else if (boardLookUp[ii] == 1)
     {
       //pr2GripperLeftIface->Lock(1);
       //pr2GripperLeftIface->data->cmdEnableMotor     = motorsOn;
       //pr2GripperLeftIface->Unlock();
     }
-    else if (boardLookUp[ii] == 3)
+    else if (boardLookUp[ii] == 2)
     {
       //pr2GripperRightIface->Lock(1);
       //pr2GripperRightIface->data->cmdEnableMotor    = motorsOn;
@@ -276,9 +330,7 @@ void GazeboHardware::tick() {
     }
     else
     {
-      //edBoard[boardLookUp[ii]].Lock(1);
-      //edBoard[boardLookUp[ii]].data->actuators[portLookUp[ii]].cmdEnableMotor = motorsOn;
-      //edBoard[boardLookUp[ii]].Unlock();
+           //FIXME: take care of ptz cams
     }
   }
 }

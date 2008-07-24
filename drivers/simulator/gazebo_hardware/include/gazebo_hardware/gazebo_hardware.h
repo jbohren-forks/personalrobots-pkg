@@ -65,7 +65,7 @@ class GazeboHardware{
    * \param string[] etherIP - array of IPs for each board (TBD)
    * \param string[] hostIP - array of IPs for each host that the board is hooked up to (TBD)
    */
- GazeboHardware(int numBoards, int numActuators, int boardLookUp[], int portLookUp[], int jointId[], string etherIP[], string hostIP[], HardwareInterface *hw);
+ GazeboHardware(int numBoards, int numActuators, int boardLookUp[], int portLookUp[], int jointId[], string etherIP[], string hostIP[]);
 
   /*!
    * \brief Destructor
@@ -133,9 +133,11 @@ class GazeboHardware{
   //                                                                //
   ////////////////////////////////////////////////////////////////////
   gazebo::Client           *client;  /**< connect to simulation as a client */
-  gazebo::PR2ArrayIface    *edBoard; /**< pointer to the actuator actarrays */
+  gazebo::PR2ArrayIface    *pr2ActarrayIface; /**< pointer to the actuator actarrays */
   gazebo::PR2GripperIface  *pr2GripperLeftIface; /**< pointer to left gripper iface */
   gazebo::PR2GripperIface  *pr2GripperRightIface; /**< pointer to right gripper iface */
+  gazebo::PTZIface         *pr2PTZCameraLeftIface; /**< pointer to left gripper iface */
+  gazebo::PTZIface         *pr2PTZCameraRightIface; /**< pointer to right gripper iface */
 
   HardwareInterface *hw; /**< a class holding an array of actuators */
 
