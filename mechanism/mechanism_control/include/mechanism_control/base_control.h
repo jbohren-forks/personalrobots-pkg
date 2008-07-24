@@ -37,7 +37,7 @@
 
 using std::map;
 
-using namespace CONTROLLER;
+using namespace controller;
 
 //using CONTROLLER::Controller;
 
@@ -75,6 +75,11 @@ class MechanismControl{
   HardwareInterface *hw;
 
   Robot *r;
+
+  void initRobot();
+
+  void initControllers();
+
 };
 
 #endif
