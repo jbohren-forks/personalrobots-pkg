@@ -30,7 +30,7 @@ RosJointController::cmdReceived()
   // update the controller
   //FIXME: shouldn't we have a mutex to protect the joint controller?
   //FIXME: velMsg has 2 fields: is it the proper structure to use here?
-  jc->SetVelCmd(velMsg.vx);
+  jc->setVelCmd(velMsg.vx);
 }
 
 
@@ -63,7 +63,7 @@ void
 RosJointController::init(controller::JointController *jc)
 {
   assert(jc);
-  assert(jc->name() == mJointName);
+  assert(jc->getName() == mJointName);
   this->jc = jc;
 }
 
@@ -74,24 +74,24 @@ RosJointController::update()
   this->lock.lock();
   // Get the state from the joint and advertise it
   // FIXME: how to express an enum in a message?
-  jointStateMsg.ControlMode = jc->GetMode();
+  jointStateMsg.ControlMode = jc->getMode();
   jointStateMsg.JointName = mJointName;
   // FIXME: does this function change the state of the controller?
-  jointStateMsg.Saturated = jc->CheckForSaturation();
-  jc->GetParam(std::string("PGain"), &(jointStateMsg.PGain));
-//   jc->GetParam("IGain", &(jointStateMsg.IGain));
-//   jc->GetParam("DGain", &(jointStateMsg.DGain));
-//   jc->GetParam("IMax", &(jointStateMsg.IMax));
-//   jc->GetParam("IMin", &(jointStateMsg.IMin));
+  jointStateMsg.Saturated = jc->checkForSaturation();
+  jc->getParam(std::string("PGain"), &(jointStateMsg.PGain));
+//   jc->getParam("IGain", &(jointStateMsg.IGain));
+//   jc->getParam("DGain", &(jointStateMsg.DGain));
+//   jc->getParam("IMax", &(jointStateMsg.IMax));
+//   jc->getParam("IMin", &(jointStateMsg.IMin));
   //TODO: add Time, SaturationEffort, MaxEffort from the joint
   
   //The commands:
-  jc->GetTorqueCmd(&(jointStateMsg.TorqueCmd));
-  jc->GetTorqueAct(&(jointStateMsg.TorqueAct));
-  jc->GetPosCmd(&(jointStateMsg.PosCmd));
-  jc->GetPosAct(&(jointStateMsg.PosAct));
-  jc->GetVelCmd(&(jointStateMsg.VelCmd));
-  jc->GetVelAct(&(jointStateMsg.VelAct));
+  jc->getTorqueCmd(&(jointStateMsg.TorqueCmd));
+  jc->getTorqueAct(&(jointStateMsg.TorqueAct));
+  jc->getPosCmd(&(jointStateMsg.PosCmd));
+  jc->getPosAct(&(jointStateMsg.PosAct));
+  jc->getVelCmd(&(jointStateMsg.VelCmd));
+  jc->getVelAct(&(jointStateMsg.VelAct));
   
   publish(mStateBusName, jointStateMsg);
   this->lock.unlock();
