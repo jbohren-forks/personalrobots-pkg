@@ -91,7 +91,7 @@ namespace gazebo
       private: Joint *joints[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
 
       // we'll declare a pid controller for each hinger/slider/... joint
-      private: CONTROLLER::Pid *pids[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+      private: controller::Pid *pids[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
 
       // number of joints in this array
       private: int num_joints;
