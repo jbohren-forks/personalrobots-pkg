@@ -1,7 +1,7 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
 * 
-*  Copyright (c) 2008, Willow Garage, Inc.
+*  Copyright (c) 2008, Jimmy Sastra
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -32,34 +32,37 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+#ifndef BLOB_TRACKER_H
+#define BLOB_TRACKER_H
+
 #include <iostream>
 #include <fstream>
 #include "elphel_cam/elphel_cam.h"
+#include "ros/node.h"
+
+// OpenCV libraries
+#include "cv.h"
+#include "highgui.h"
+#include <stdio.h>
+#include <ctype.h>
+#include "std_msgs/Image.h"
+#include "image_utils/cv_bridge.h"
 
 using namespace std;
 
-int main() {
+class Blob_Tracker
+{
+public:
+  Blob_Tracker();
 
-  //Elphel_Cam e("192.168.0.9");
-Elphel_Cam e("10.12.0.103");
-  uint8_t* jpeg;
-  uint32_t jpeg_size;
+  void init();
+  void processFrame(IplImage**);
+  void showFrame(IplImage**);
+  void saveFrame(const char*, IplImage*);
 
-  e.init(10, 4, 4);
- //e.init(20, 2, 2);
 
-  e.start();
+private:
 
-  for (int i = 0; i < 200;i++) {
-    ostringstream oss;
-    oss << "img" << i << ".jpg";
-    
-    ofstream outfile(oss.str().c_str(),ofstream::binary);
-    e.next_jpeg(&jpeg, &jpeg_size);
-    outfile.write((char*)jpeg, jpeg_size);
-    
-    outfile.close();
-  }
 
-  e.stop();
-}
+};
+#endif

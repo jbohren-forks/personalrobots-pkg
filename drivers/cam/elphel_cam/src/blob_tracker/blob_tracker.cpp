@@ -50,9 +50,33 @@ float hranges_arr[] = {0,180};
 float* hranges = hranges_arr;
 int vmin = 10, vmax = 256, smin = 30;
 
+CvPoint2D32f corners[4];
+
+double homog_dest[] = { 0,  1,  1,  0,
+                        0,  0,  1,  1 };
+
+
+CvMat M_homog_dest = cvMat(2, 4, CV_64FC1, homog_dest);
+CvMat* M_homog_src = cvCreateMat(2, 4, CV_64FC1);
+CvMat* M_homog = cvCreateMat(3,3,CV_64FC1);
+bool homogIsSet = false;
+
+int nBlobs;
+
+void CvPointToCvMat(const CvPoint2D32f* CvPoints, CvMat* Ma,int nPoints) {
+
+
+    printf(" print Ma:\n");
+    printf("[ %f %f %f %f ]\n", cvmGet(Ma, 0,0), cvmGet(Ma, 0,1), cvmGet(Ma, 0,2), cvmGet(Ma, 0,3)); 
+    printf("[ %f %f %f %f ]\n", cvmGet(Ma, 1,0), cvmGet(Ma, 1,1), cvmGet(Ma, 1,2), cvmGet(Ma, 1,3)); 
+
+
+}
 
 // constructor
 Blob_Tracker::Blob_Tracker() {}
+
+
 
 void on_mouse( int event, int x, int y, int flags, void* param )
 {
@@ -192,6 +216,17 @@ void Blob_Tracker::processFrame(IplImage** cv_image) {
                   &track_comp, &track_box );
       track_window = track_comp.rect;
 printf("x: %f, y: %f\n", track_box.center.x, track_box.center.y);
+ if(homogIsSet) {
+   CvMat *p = cvCreateMat(3,1,CV_64FC1);
+   CvMat *r = cvCreateMat(3,1,CV_64FC1);
+   cvmSet(p,0,0,track_box.center.x);
+     cvmSet(p,1,0,track_box.center.y);
+     cvmSet(p,2,0,1);
+     cvMatMul(M_homog,p,r);
+     printf("homog:: x:%f, y: %f\n", cvmGet(r,0,0), cvmGet(r,1,0)); 
+
+
+ }
       if( backproject_mode )
           cvCvtColor( backproject, image, CV_GRAY2BGR );
 
@@ -210,7 +245,7 @@ printf("x: %f, y: %f\n", track_box.center.x, track_box.center.y);
 
   if( squares_mode) { 
     int pattern_was_found;
-    CvPoint2D32f corners[4];
+
     CvSize pattern_size = cvSize(3,3);
     int corner_count = 0;
     pattern_was_found = cvFindChessboardCorners(image, pattern_size, corners, &corner_count, 0);
@@ -225,6 +260,11 @@ printf("x: %f, y: %f\n", track_box.center.x, track_box.center.y);
       return;
   switch( (char) c )
   {
+  case 'a': 
+    nBlobs++; //add a blobs to track
+  case 'r':
+    if(nBlobs > 0)
+      nBlobs--; // remove blobs
   case 'b':
       backproject_mode ^= 1;
       break;
@@ -242,11 +282,29 @@ printf("x: %f, y: %f\n", track_box.center.x, track_box.center.y);
   case 'q':
     squares_mode ^= 1;
     break;
-  case 's':
-    // setHomography();
+  case 'f':
+    if(squares_mode) {
+
+      for(int i = 0; i < 4; i++) {
+	cvmSet(M_homog_src,0,i,corners[i].x);
+	cvmSet(M_homog_src,1,i,corners[i].y);
+      }
+      printf("src:\n");
+      printf("[ %f %f %f %f]\n", cvmGet(M_homog_src,0,0),  cvmGet(M_homog_src,0,1),  cvmGet(M_homog_src,0,2),  cvmGet(M_homog_src,0,3));
+      printf("[ %f %f %f %f]\n", cvmGet(M_homog_src,1,0),  cvmGet(M_homog_src,1,1),  cvmGet(M_homog_src,1,2),  cvmGet(M_homog_src,1,3)); 
+    
+     printf("dest: \n");
+     printf("[ %f %f %f %f]\n", cvmGet(&M_homog_dest,0,0),  cvmGet(&M_homog_dest,0,1),  cvmGet(&M_homog_dest,0,2),  cvmGet(&M_homog_dest,0,3));
+     printf("[ %f %f %f %f]\n", cvmGet(&M_homog_dest,1,0),  cvmGet(&M_homog_dest,1,1),  cvmGet(&M_homog_dest,1,2),  cvmGet(&M_homog_dest,1,3));
+      cvFindHomography(M_homog_src,
+                       &M_homog_dest,
+                       M_homog);
+      homogIsSet = true;
+    }
     break;
   default:
-      ;
+
+    break;
   }
 
 }

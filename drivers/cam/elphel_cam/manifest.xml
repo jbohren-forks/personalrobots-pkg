@@ -5,9 +5,13 @@ A package to configure and grab images from the Elphel IP-based camera.
 </description>
 <author>Jeremy Leibs (email: leibs@willowgarage.com)</author>
 <license>BSD</license>
+  <depend package="opencv"/>
+  <depend package="std_msgs"/>
+  <depend package="image_utils"/>
+  <depend package="roscpp"/>
 <url>http://pr.willowgarage.com</url>
 <export>
-  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lelphel_cam -lcurl"/>
+  <cpp cflags="-I${prefix}/include"  lflags="-L${prefix}/lib -lelphel_cam -lcurl -lblob_tracker"/>
 </export>
 </package>
 
