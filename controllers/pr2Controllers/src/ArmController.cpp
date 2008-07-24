@@ -60,10 +60,8 @@ void ArmController::initJoint(int jointNum, double PGain, double IGain, double D
   lowerControl[jointNum].init(PGain,  IGain,  DGain,  IMax,  IMin,   CONTROLLER_DISABLED,  time,   maxEffort, minEffort, joint); //Initialize joint, but keep in disabled state 
 }
 
-controllerErrorCode ArmController::initArm(controllerControlMode mode, PR2::PR2Robot* robot)
+controllerErrorCode ArmController::initArm(controllerControlMode mode)
 {
-  //Record the robot pointer for kinematics
-  this->robot = robot;
 
   //Reset commanded positions
   for(int i =0 ;i<6;i++){
@@ -161,7 +159,7 @@ ArmController::setHandCartesianPos(double x, double y, double z, double roll, do
   }
 
   //Perform inverse kinematics
-  if (robot->pr2_kin.IK(q_init, f, q_out)){
+  if (pr2_kin.IK(q_init, f, q_out)){
    // cout<<"IK result:"<<q_out<<endl;
  }else{ 
     //cout<<"Could not compute Inv Kin."<<endl;
@@ -170,7 +168,7 @@ ArmController::setHandCartesianPos(double x, double y, double z, double roll, do
 
    //------ checking that IK returned a valid soln -----
   KDL::Frame f_ik;
-  if (robot->pr2_kin.FK(q_out,f_ik))
+  if (pr2_kin.FK(q_out,f_ik))
   {
     //    cout<<"End effector after IK:"<<f_ik<<endl;
   }
@@ -209,7 +207,7 @@ controllerErrorCode ArmController::getHandCartesianPosAct(double *x, double *y, 
 
   //Perform forward kinematics to get cartesian location
   KDL::Frame fk;
-  if (robot->pr2_kin.FK(q_jts,fk))
+  if (pr2_kin.FK(q_jts,fk))
   {
     //    cout<<"End effector:"<<fk<<endl;
   }

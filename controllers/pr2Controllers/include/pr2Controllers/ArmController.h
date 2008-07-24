@@ -21,7 +21,6 @@
 #include <genericControllers/JointController.h>
 #include <mechanism_model/joint.h>
 #include <libKDL/kdl_kinematics.h>
-#include <libpr2API/pr2API.h> 
 namespace controller
 {
   class ArmController : Controller
@@ -70,7 +69,7 @@ namespace controller
         * \brief Call after initializing individual joints to initialize arm as a whole
         *         
         */
-      controllerErrorCode initArm(controllerControlMode mode, PR2::PR2Robot* robot);
+      controllerErrorCode initArm(controllerControlMode mode);
 
 
 
@@ -175,7 +174,7 @@ namespace controller
         *
         */       
        controllerErrorCode setHandParam(std::string label, double value);
-       controllerErrorCode  setHandParam(std::string label, std::string value);
+       controllerErrorCode setHandParam(std::string label, std::string value);
 
        controllerErrorCode getHandParam(std::string label, double *value);
        controllerErrorCode getHandParam(std::string label, std::string *value);
@@ -373,8 +372,9 @@ namespace controller
 
       double cmdPos[6]; /**<Last commanded cartesian position>*/
       double cmdVel[6]; /**<Last commanded cartesian velocity>*/
+    
+      PR2_kinematics pr2_kin; /**<PR2 kinematics>*/
 
-      PR2::PR2Robot* robot; /**<Track robot for kinematics>*/ 
   };
 }
 
