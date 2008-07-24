@@ -87,6 +87,8 @@ namespace controller
 
   class JointController : Controller
   {
+
+    static const double AccelerationThreshold = 0.1; //Distance threshold below which linear acceleration limit is active, if enabled 
     public:
 
     /*!
@@ -112,7 +114,11 @@ namespace controller
      * \brief Functional way to initialize limits and gains.
      *
      */
+<<<<<<< .mine
+    void init(pidControlParam pcp, controllerControlMode mode, double time, double maxEffort, double minEffort, mechanism::Joint *joint);
+=======
     void init(pidControlParam pcp, controllerControlMode mode, double time, double minEffort, double maxEffort, mechanism::Joint *joint);
+>>>>>>> .r2084
 
     /*! 
      * \brief Functional way to initialize limits and gains.

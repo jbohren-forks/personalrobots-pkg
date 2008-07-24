@@ -94,7 +94,7 @@ void JointController::init(double pGain, double iGain, double dGain, double wind
   enableController();
 }
 
-void JointController::init(pidControlParam pcp, controllerControlMode mode, double time, double minEffort, double maxEffort, Joint *joint) {
+void JointController::init(pidControlParam pcp, controllerControlMode mode, double time, double maxEffort, double minEffort, Joint *joint) {
 
   pidController.InitPid(pcp.pGain,pcp.iGain,pcp.dGain,pcp.windupMax,pcp.windupMin); //Constructor for pid controller  
 
@@ -115,6 +115,7 @@ void JointController::init(pidControlParam pcp, controllerControlMode mode, doub
   this->minEffort = minEffort;
   this->maxEffort = maxEffort;  
   this->joint = joint;
+
 
   controlMode = mode;
   enableController();
@@ -196,7 +197,7 @@ controllerErrorCode JointController::setTorqueCmd(double torque){
     cmdTorque = maxEffort;
     return CONTROLLER_TORQUE_LIMIT;
   }
-  else if (cmdPos <= minEffort){ //Truncate to negative limit
+  else if (cmdTorque <= minEffort){ //Truncate to negative limit
     cmdTorque = minEffort;
     return CONTROLLER_TORQUE_LIMIT;
   }
@@ -301,11 +302,13 @@ void JointController::update(void)
   double maxVelocity = cmdVel;
   double currentVoltageCmd,v_backemf,v_clamp_min,v_clamp_max,k;      
 
-  if(controlMode == controller::CONTROLLER_DISABLED)
+ 
+   if(controlMode == controller::CONTROLLER_DISABLED){
+    printf("JointController.cpp: Error:: controller disabled\n");
     return; //If we're not initialized, don't try to interact
-
+  }
   getTime(&time); //TODO: Replace time with joint->timeStep
-
+  
   switch(controlMode)
   {
     case CONTROLLER_TORQUE: //Pass through torque command
@@ -390,7 +393,6 @@ void JointController::setJointEffort(double effort)
     newEffort = minEffort;
     saturationFlag = true;
   }
-
   joint->commandedEffort = newEffort; 
 }
 
