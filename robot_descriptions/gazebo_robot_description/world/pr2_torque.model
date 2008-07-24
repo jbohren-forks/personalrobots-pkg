@@ -1860,7 +1860,7 @@
         <iGain>500</iGain>
         <iClamp>500</iClamp>
         <explicitDampingCoefficient>50.0</explicitDampingCoefficient>
-        <controlMode>PD_TORQUE_CONTROL</controlMode>
+        <controlMode>TORQUE_CONTROL</controlMode>
       </joint>
       <joint name="upperarm_pitch_joint_left">
         <saturationTorque>1000</saturationTorque>
@@ -1869,7 +1869,7 @@
         <iGain>500</iGain>
         <iClamp>500</iClamp>
         <explicitDampingCoefficient>100.0</explicitDampingCoefficient>
-        <controlMode>PD_TORQUE_CONTROL</controlMode>
+        <controlMode>TORQUE_CONTROL</controlMode>
       </joint>
       <joint name="upperarm_roll_joint_left">
         <saturationTorque>1000</saturationTorque>
@@ -1878,7 +1878,7 @@
         <iGain>100</iGain>
         <iClamp>100</iClamp>
         <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
-        <controlMode>PD_TORQUE_CONTROL</controlMode>
+        <controlMode>TORQUE_CONTROL</controlMode>
       </joint>
       <joint name="elbow_pitch_joint_left">
         <saturationTorque>100</saturationTorque>
@@ -1887,7 +1887,7 @@
         <iGain>100</iGain>
         <iClamp>100</iClamp>
         <explicitDampingCoefficient>2.0</explicitDampingCoefficient>
-        <controlMode>PD_TORQUE_CONTROL</controlMode>
+        <controlMode>TORQUE_CONTROL</controlMode>
       </joint>
       <joint name="forearm_roll_joint_left">
         <saturationTorque>100</saturationTorque>
@@ -1896,7 +1896,7 @@
         <iGain>1</iGain>
         <iClamp>1</iClamp>
         <explicitDampingCoefficient>2.0</explicitDampingCoefficient>
-        <controlMode>PD_TORQUE_CONTROL</controlMode>
+        <controlMode>TORQUE_CONTROL</controlMode>
       </joint>
       <joint name="wrist_pitch_joint_left">
         <saturationTorque>100</saturationTorque>
@@ -1905,7 +1905,7 @@
         <iGain>10</iGain>
         <iClamp>10</iClamp>
         <explicitDampingCoefficient>2.0</explicitDampingCoefficient>
-        <controlMode>PD_TORQUE_CONTROL</controlMode>
+        <controlMode>TORQUE_CONTROL</controlMode>
       </joint>
       <joint name="palm_roll_joint_left">
         <saturationTorque>100</saturationTorque>
@@ -1914,7 +1914,7 @@
         <iGain>1</iGain>
         <iClamp>1</iClamp>
         <explicitDampingCoefficient>2.0</explicitDampingCoefficient>
-        <controlMode>PD_TORQUE_CONTROL</controlMode>
+        <controlMode>TORQUE_CONTROL</controlMode>
       </joint>
       <!-- ========================================= -->
       <joint name="shoulder_pan_right">
