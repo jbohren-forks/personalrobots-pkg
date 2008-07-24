@@ -37,11 +37,11 @@ const double maxPositiveTorque = 0.75;
 
 using namespace std;
 
-MechanismControl::MechanismControl(){
+BaseControl::BaseControl(){
   this->hw = NULL;
 }
 
-void MechanismControl::init(HardwareInterface *hw){
+void BaseControl::init(HardwareInterface *hw){
 
   this->hw = hw;
 
@@ -50,7 +50,7 @@ void MechanismControl::init(HardwareInterface *hw){
   this->initControllers();
 }
 
-void MechanismControl::initRobot(){
+void BaseControl::initRobot(){
   r = new Robot("robot"); 
 
   r->numJoints = NUM_JOINTS;
@@ -72,7 +72,7 @@ void MechanismControl::initRobot(){
   }
 }
 
-void MechanismControl::initControllers(){
+void BaseControl::initControllers(){
   controller = new BaseController(r,"baseController");
   char *c_filename = getenv("ROS_PACKAGE_PATH");
   std::stringstream filename;
@@ -82,7 +82,7 @@ void MechanismControl::initControllers(){
 }
 
 //This function is called only from the realtime loop.  Everything it calls must also be realtime safe.
-void MechanismControl::update(){
+void BaseControl::update(){
   //Clear actuator commands
 
   //Process robot model transmissions

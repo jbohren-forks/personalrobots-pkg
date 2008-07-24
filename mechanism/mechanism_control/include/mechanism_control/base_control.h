@@ -24,8 +24,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
-#ifndef MECHANISM_CONTROL_H
-#define MECHANISM_CONTROL_H
+#ifndef BASE_CONTROL_H
+#define BASE_CONTROL_H
 
 #include <mechanism_model/robot.h>
 #include <rosthread/mutex.h>
@@ -46,11 +46,11 @@ const int MAX_NUM_CONTROLLERS = 1000;
 
 typedef Controller*(*ControllerAllocationFunc)(const char *);
 
-class MechanismControl{
+class BaseControl{
 
   public:
 
-  MechanismControl();
+  BaseControl();
 
   void update(); //Must be realtime safe
 

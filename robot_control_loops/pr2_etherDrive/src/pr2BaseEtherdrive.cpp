@@ -74,7 +74,7 @@ int main(int argc, char *argv[]){
   //h.init("BaseEtherdrive.xml"); //Should this be a command-line argument?
 
   //mc.init(h.hardwareInterface, char *namespace or char *init.xml);
-  MechanismControl mc;
+  BaseControl mc;
   mc.init(h.hw); //If not hard-coded, this is where the ROS namespace or configuration file would be passed in
   mc.controller->setVelocity(-0,0,0);
 
