@@ -68,12 +68,14 @@ namespace planning_models
 	    double size[3];
 	};
 	
-	struct Joint;
-	struct Link;	
+	class Joint;
+	class Link;	
 	
 	/** A joint from the robot. Contains the transform applied by the joint type */
-	struct Joint
+	class Joint
 	{
+	public:
+
 	    Joint(void)
 	    {
 		usedParams = 0;
@@ -97,7 +99,10 @@ namespace planning_models
 	    /* the range of indices in the parameter vector that
 	       needed to access information about the position of this
 	       joint */
-	    unsigned int  usedParams;
+	    unsigned int      usedParams;
+	    
+	    /* bitvector identifying which groups this joint is part of */
+	    std::vector<bool> inGroup;	    
 	    
 	    /* relevant joint information */
 	    enum
@@ -114,13 +119,15 @@ namespace planning_models
 	    libTF::Pose3D varTrans;
 	    libTF::Pose3D globalTrans;
 	    
-	    void computeTransform(const double *params);
+	    void computeTransform(const double *params, int groupID = -1);
 	    
 	};
 	
 	/** A link from the robot. Contains the constant transform applied to the link and its geometry */
-	struct Link
+	class Link
 	{
+	public:
+
 	    Link(void)
 	    {
 		before = NULL;
@@ -155,12 +162,14 @@ namespace planning_models
 	    /* the global transform for this link (computed by forward kinematics) */
 	    libTF::Pose3D       globalTrans;
 	    
-	    void computeTransform(const double *params);	
+	    void computeTransform(const double *params, int groupID = -1);	
 	};
 	
 	/** A robot structure */
-	struct Robot
+	class Robot
 	{
+	public:
+
 	    Robot(KinematicModel *model)
 	    {
 		owner = model;	  
@@ -174,7 +183,7 @@ namespace planning_models
 		    delete chain;
 	    }
 	    
-	    void computeTransforms(const double *params);
+	    void computeTransforms(const double *params, int groupID = -1);
 	    
 	    /** List of links in the robot */
 	    std::vector<Link*>  links;
@@ -201,6 +210,14 @@ namespace planning_models
 		convenience. */
 	    std::vector<int>    floatingJoints;
 	    
+	    /* For each group, we have a list of index values in the
+	     * computed state information that describe the components of
+	     * the state space the group corresponds to */
+	    std::vector< std::vector<unsigned int> > groupStateIndexList;
+
+	    /* The roots of every group within this robot */
+	    std::vector<std::vector<Joint*> >        groupChainStart;
+
 	    /** The model that owns this robot */
 	    KinematicModel     *owner;
 	    
@@ -212,7 +229,8 @@ namespace planning_models
 	KinematicModel(void)
 	{
 	    stateDimension = 0;
-	    m_verbose = true;
+	    m_verbose = false;
+	    m_built = false;
 	}
 	
 	virtual ~KinematicModel(void)
@@ -222,35 +240,45 @@ namespace planning_models
 	}
 	
 	virtual void build(robot_desc::URDF &model, const char *group = NULL);	
-	void         setVerbose(bool verbose);
-	
+	void         setVerbose(bool verbose);	
 
 	unsigned int getRobotCount(void) const;
 	Robot*       getRobot(unsigned int index) const;
+	void         getGroups(std::vector<std::string> &groups) const;
+	int          getGroupID(const std::string &group) const;
 	
-	void computeTransforms(const double *params);
+	void computeTransforms(const double *params, int groupID = -1);
 
 	/** A transform that is applied to the entire model */
 	libTF::Pose3D       rootTransform;
+	
+	/** Cumulative list of floating joints */
+	std::vector<int>    floatingJoints;
 	
 	/** Cumulative state dimension */
 	unsigned int        stateDimension;
 	
 	/** Cumulative state bounds */
 	std::vector<double> stateBounds;
-
-	/** Cumulative list of floating joints */
-	std::vector<int>    floatingJoints;
 	
+	/* Cumulative index list */
+	std::vector< std::vector<unsigned int> > groupStateIndexList;
+
+	/* Cumulative list of group roots */
+	std::vector<std::vector<Joint*> >        groupChainStart;
+
     protected:
 	
-	std::vector<Robot*> m_robots;
-	bool                m_verbose;    
-
+	std::vector<Robot*>               m_robots;
+	std::vector<std::string>          m_groups;
+	std::map<std::string, int>        m_groupsMap;	       
+	bool                              m_verbose;    
+	bool                              m_built;
+	
     private:
 	
-	void buildChain(Robot *robot, Link  *parent, Joint *joint, robot_desc::URDF::Link *urdfLink);
-	void buildChain(Robot *robot, Joint *parent, Link  *link,  robot_desc::URDF::Link *urdfLink);
+	void buildChainJ(Robot *robot, Link  *parent, Joint *joint, robot_desc::URDF::Link *urdfLink, robot_desc::URDF &model);
+	void buildChainL(Robot *robot, Joint *parent, Link  *link,  robot_desc::URDF::Link *urdfLink, robot_desc::URDF &model);
 	
     };
 
