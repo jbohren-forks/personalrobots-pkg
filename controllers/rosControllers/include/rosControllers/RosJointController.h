@@ -87,7 +87,7 @@ class RosJointController : public ros::node
     // TODO: return significant return value?
     int advertiseSubscribeMessages();
 
-    void init(CONTROLLER::JointController *jc);
+    void init(controller::JointController *jc);
     // Do one update of the simulator.  May pause if the next update time
     // has not yet arrived.
     void update();
@@ -96,7 +96,7 @@ class RosJointController : public ros::node
     void cmdReceived();
 
     //Keep track of controllers
-    CONTROLLER::JointController* jc;
+    controller::JointController* jc;
   
   private:
     std::string mJointName; //we keep the name of the joint
