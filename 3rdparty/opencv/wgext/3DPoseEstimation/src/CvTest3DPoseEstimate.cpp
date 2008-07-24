@@ -12,6 +12,8 @@
 
 using namespace std;
 
+#define GAUSSIANNOISE
+
 CvTest3DPoseEstimate::CvTest3DPoseEstimate():
 	Parent(),
     mRng(cvRNG(time(NULL))),
@@ -106,6 +108,13 @@ double CvTest3DPoseEstimate::randReal(double min, double max) {
 }
 
 void CvTest3DPoseEstimate::disturb(CvMat *xyzs) {
+#ifdef GAUSSIANNOISE
+	CvMat* Noise = cvCreateMat(xyzs->rows, xyzs->cols, xyzs->type);
+	double sigma = mDisturbScale/2.0; // ~ 95%
+	cvRandArr( &mRng, Noise, CV_RAND_NORMAL, cvScalar(0.0), cvScalar(sigma));
+	cvAdd(xyzs, Noise, xyzs);
+	cvReleaseMat(&Noise);
+#else
 	double s = mDisturbScale;
 	if (s<=0.0)
 		return;
@@ -114,6 +123,7 @@ void CvTest3DPoseEstimate::disturb(CvMat *xyzs) {
 		cvSetReal2D(xyzs, i, 1, cvGetReal2D(xyzs, i, 1)+randReal(-s, s));
 		cvSetReal2D(xyzs, i, 2, cvGetReal2D(xyzs, i, 2)+randReal(-s, s));
 	}
+#endif
 }
 
 void CvTest3DPoseEstimate::randomize(CvMat *xyzs, int num, double maxVal){
@@ -131,11 +141,10 @@ void CvTest3DPoseEstimate::randomize(CvMat *xyzs, int num, double maxVal){
 
 bool CvTest3DPoseEstimate::test(){
     bool status = true;
-	CvMat * points0 =  (CvMat *)cvLoad("test/obj1_cropped_2000.xml");
+	CvMat * points0 =  (CvMat *)cvLoad("Data/obj1_cropped_2000.xml");
 	
-//	CvMat * points0 =  (CvMat *)cvLoad("test/3dPointClouds0.xml");
-//	CvMat * points0 =  (CvMat *)cvLoad("test/obj1_cropped.xml");
-//	CvMat * points0 =  (CvMat *)cvLoad("3dPoints3a.xml");
+//	CvMat * points0 =  (CvMat *)cvLoad("Data/3dPointClouds0.xml");
+//	CvMat * points0 =  (CvMat *)cvLoad("Data/obj1_cropped.xml");
 	int numPoints = points0->rows;
 	double percentageOfOutliers = mOutlierPercentage;
 	
@@ -178,9 +187,9 @@ bool CvTest3DPoseEstimate::test(){
 		cout << "mean and std of point cloud: "<<mean.val[0] << ","<<std.val[0]<<endl;
 		this->mDisturbScale = std.val[0]*0.015;
 		this->mOutlierScale = 1.0;
-		mOutlierPercentage = 0.2;
+		mOutlierPercentage = 0.0;
 		// set threshold
-		double threshold = std.val[0]*0.015;
+		double threshold = std.val[0]*0.01;
 		peCart.configureErrorMeasurement(NULL, threshold);
 		cout << "set disturb scale, threshold to be: "<< this->mDisturbScale<<","<<threshold<<endl;
 	} else {
@@ -210,6 +219,8 @@ bool CvTest3DPoseEstimate::test(){
 	int numInliers_maxErrorBeforeLevMarq=0;
 	int maxNumInliers = 0;
 	double errAfterLevMarq_maxNumInliers=0.0;
+	double maxImprovementAfterLevMarq = 0;
+	int numInliers_maxImprovementAfterLevMarq;
 	
 	int numGoodIters=0;
 	for (int i=0; i<numIters; i++)
@@ -314,6 +325,11 @@ bool CvTest3DPoseEstimate::test(){
 				maxNumInliers = numInLiers;
 				errAfterLevMarq_maxNumInliers = errorInliersAfter;
 			}
+			
+			if (maxImprovementAfterLevMarq < errorInliersBefore - errorInliersAfter){
+				maxImprovementAfterLevMarq = errorInliersBefore - errorInliersAfter;
+				numInliers_maxImprovementAfterLevMarq = numInLiers;
+			}
 
 
 			cvReleaseMat(&inliers1r);
@@ -331,6 +347,9 @@ bool CvTest3DPoseEstimate::test(){
 	
 	cout << "max error after levmarq:  " << maxErrorAfterLevMarq  << endl;
 	cout << "num of inliers for the test case: " << numInliers_maxErrorAfterLevMarq<< endl;
+	
+	cout << "max improvement after levmarq: " << maxImprovementAfterLevMarq << endl;
+	cout << "num of inliers for the test case: "<<numInliers_maxImprovementAfterLevMarq << endl;
 	
 	cout << "max num of inliers: "<< maxNumInliers << endl;
 	cout << "error after levmarq for the test case: "<< errAfterLevMarq_maxNumInliers << endl; 
