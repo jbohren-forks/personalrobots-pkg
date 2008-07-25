@@ -65,9 +65,8 @@ Ros_Laser::Ros_Laser(Entity *parent)
     // start a ros node if none exist
     ros::init(argc,argv);
     rosnode = new ros::node("ros_gazebo");
-    printf("-------------------- starting node \n");
+    printf("-------------------- starting node in laser \n");
   }
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
