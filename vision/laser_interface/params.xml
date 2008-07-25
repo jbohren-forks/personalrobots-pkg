@@ -11,6 +11,7 @@
     <double name="laser_pointer_detector/LASER_POINT_SIZE"             > 40.0  </double>
     <int    name="laser_pointer_detector/MIN_AGE"                      > 5     </int>
     <int    name="laser_pointer_detector/NUMBER_OF_LEARNERS"           > 50    </int>
+    <double name="laser_pointer_detector/PCA_VARIANCE_RETAIN"          > 0.9   </double>
 
     <double name="laser_pointer_detector/TRACKER_MAX_PIX_TRESHOLD"     > 30.0  </double>
     <int    name="laser_pointer_detector/TRACKER_MAX_TIME_THRESHOLD"   > 3     </int>

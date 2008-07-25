@@ -1,5 +1,8 @@
 from opencv import cv
+from opencv import highgui
 import numpy as np
+import Image as Image
+
 
 cv2np_type_dict = {cv.CV_16S	  : (np.int16, 1),	
 				   cv.CV_16SC	 : (np.int16, 1),   
@@ -72,4 +75,33 @@ def cv2np(im, format='RGB'):
 def list_mat_to_mat(list_mat, axis=0):
 	return np.concatenate(tuple(list_mat), axis=axis)
 
+def np2cv(im):
+    image = np2pil( im )
+    image.save('test.bmp', 'BMP')
+    cvim = highgui.cvLoadImage('test.bmp')
+    return cvim
 
+def np2pil( im ):
+    """ for grayscale - all values must be between 0 and 255.
+        not sure about color yet.
+    """
+    #TODO: print 'util.np2cv: works for texseg.py'
+    #TODO: print 'util.np2cv: more extensive tests would be useful'
+    if len(im.shape) == 3:
+        shp = im.shape
+        channels = shp[2]
+        height, width = shp[0], shp[1]
+    elif len(im.shape) == 2:
+        height, width = im.shape
+        channels = 1
+    else:
+        raise AssertionError("unrecognized shape for the input image. should be 3 or 2, but was %d." % len(im.shape))
+    
+    if channels == 3:
+        image = Image.fromstring( "RGB", (width, height), im.tostring() )
+    if channels == 1:
+        im = np.array(im, dtype=np.uint8)
+        image = Image.fromarray(im)
+        #image = Image.fromstring( "L", (width, height), im.tostring() )
+    
+    return image

@@ -13,4 +13,9 @@ swigify: videreo
 	g++ $(INCLUDE_FLAGS) -I/usr/include/python2.5 -c videre.cpp videre_wrap.cxx
 	ld $(LINK_FLAGS) -shared videre.o videre_wrap.o -o _videre.so
 
+clean:
+	rm -f *.o
+	rm -f *.so
+	rm -f sample
+
  

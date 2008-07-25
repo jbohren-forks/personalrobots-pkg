@@ -77,6 +77,25 @@ class Dataset:
         self.inputs  = np.concatenate((self.inputs, another_dataset.inputs), axis=1)
         self.outputs = np.concatenate((self.outputs, another_dataset.outputs), axis=1)
 
+class LinearDimReduceDataset(Dataset):
+    def __init__(self, inputs, outputs):
+        Dataset.__init__(self, inputs, outputs)
+
+    def set_projection_vectors(self, vec):
+        '''
+            projection vectors are assumed to be columnwise
+        '''
+        self.projection_basis = vec
+
+    def reduce(self, data_points):
+        return self.projection_basis.T * data_points
+
+    def reduce_input(self):
+        '''
+           reduce dimensionality of this dataset
+        '''
+        self.inputs =  self.projection_basis.T * self.inputs
+
 def binary_less_than(attribute, threshold, input_vec):
     return input_vec[attribute,0] <= threshold
 

@@ -6,6 +6,7 @@ import opencv.highgui as hg
 import camera as cam
 import util as ut
 import random_forest as rf
+import dimreduce as dr
 from laser_detector import *
 from threading import RLock
 
@@ -39,14 +40,22 @@ def confirmation_prompt(confirm_phrase):
     else:
         return False
 
-def append_examples_to_file(dataset, file = LaserPointerDetector.DEFAULT_DATASET_FILE):
+def append_examples_from_file(dataset, file):
     try:
         loaded_set = load_pickle(file)
         dataset.append(loaded_set)
     except IOError:
-        pass
-    dump_pickle(dataset, file)
-    return dataset.num_examples()
+        print 'append_examples_from_file: training file \'', file, '\'not found!'
+
+#def append_examples_to_file(dataset, file = LaserPointerDetector.DEFAULT_DATASET_FILE):
+#    try:
+#        loaded_set = load_pickle(file)
+#        dataset.append(loaded_set)
+#    except IOError:
+#        print 'append_examples_to_file: training file \'', file, '\'not found! creating new file'
+#        pass
+#    dump_pickle(dataset, file)
+#    return dataset.num_examples()
 
 class GatherExamples:
     def __init__(self, hardware_camera, type = 1):
@@ -89,10 +98,11 @@ class GatherExamples:
 
 
     def write(self):
-        n = append_examples_to_file(
-                matrix_to_dataset(
-                    ut.list_mat_to_mat(
-                        self.examples, axis=1), type=self.type))
+        dataset        = matrix_to_dataset(ut.list_mat_to_mat(self.examples, axis=1), type=self.type)
+        dim_reduce_set = rf.LinearDimReduceDataset(dataset.inputs, dataset.outputs)
+        n = append_examples_from_file(dim_reduce_set, file=LaserPointerDetector.DEFAULT_DATASET_FILE)
+        dim_reduce_set.set_projection_vectors(dr.pca_vectors(dim_reduce_set, percent_variance=LaserPointerDetector.PCA_VARIANCE_RETAIN))
+        dump_pickle(dim_reduce_set, file=LaserPointerDetector.DEFAULT_DATASET_FILE)
         print 'GatherExamples: recorded examples to disk.  Total in dataset', n
 
 class DetectState:
@@ -156,7 +166,7 @@ class LaserPointerDetectorNode:
         self.camera_model     = cam.ROSStereoCamera('videre_stereo')
         self.state            = None
         self.state_object     = None
-        self.set_state(self.DETECT)
+        self.set_state(self.GATHER_NEGATIVE_EXAMPLES)
         if display:
             self._make_windows()
         self.display = display

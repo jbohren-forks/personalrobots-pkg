@@ -5,5 +5,7 @@
   <author>Hai Nguyen/hai@gatech.edu</author>
   <license>BSD</license>
   <depend package="rospy" />
+  <depend package="numpy" />
+  <depend package="matplotlib" />
   <depend package="std_msgs" />  
 </package>

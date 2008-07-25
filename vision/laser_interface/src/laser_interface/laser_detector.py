@@ -459,6 +459,7 @@ class LaserPointerDetector:
     LASER_POINT_SIZE            = rospy.getMaster()['laser_pointer_detector/LASER_POINT_SIZE'] 
     MIN_AGE                     = rospy.getMaster()['laser_pointer_detector/MIN_AGE'] 
     NUMBER_OF_LEARNERS          = rospy.getMaster()['laser_pointer_detector/NUMBER_OF_LEARNERS'] 
+    PCA_VARIANCE_RETAIN         = rospy.getMaster()['laser_pointer_detector/PCA_VARIANCE_RETAIN'] 
 
     TRACKER_MAX_PIX_TRESHOLD    = rospy.getMaster()['laser_pointer_detector/TRACKER_MAX_PIX_TRESHOLD'] 
     TRACKER_MAX_TIME_THRESHOLD  = rospy.getMaster()['laser_pointer_detector/TRACKER_MAX_TIME_THRESHOLD'] 
@@ -543,6 +544,7 @@ class LaserPointerDetector:
             components = self.classifier.classify(image, components)
             if number_components_before != len(components) and verbose:
                 print '         PatchClassifier: %d -> %d' % (number_components_before, len(components))
+
         laser_blob    = select_laser_blob(components, approx_laser_point_size=self.LASER_POINT_SIZE)
         if laser_blob != None:
             tracks        = self.tracker.track(components_to_detections([laser_blob]))
@@ -571,7 +573,7 @@ class PatchClassifier:
             if instance == None:
                 classification = np.matrix([False])
                 return (classification, None, c)
-            classification, votes = self.classifier.predict(instance)
+            classification, votes = self.classifier.predict(dataset.reduce(instance))
             return (classification, votes, c)
 
         def select_valid(c):
@@ -592,10 +594,11 @@ class PatchClassifier:
             number_of_learners=30, write_file=LaserPointerDetector.DEFAULT_DATASET_FILE):
         if dataset == None and positive_examples != None and negative_examples != None:
             dataset = classifier_matrix(positive_examples, negative_examples)
-        #if dataset == None and file != None:
-        #    dataset = load_pickle(file)
-        dump_pickle(dataset, write_file)
+            dump_pickle(dataset, write_file)
         print 'PatchClassifier: building classifier...'
+        #Reduce dimensionality before using for training
+        dataset.reduce()
+        self.dataset = dataset
         self.classifier = rf.RFBreiman(dataset, number_of_learners=number_of_learners)
         print 'PatchClassifier: done building.'
         return self
@@ -628,8 +631,8 @@ def blob_to_input_instance(image, blob, classification_window_width):
     big_patch_rescaled = cv.cvCreateImage(cv.cvSize(int(classification_window_width/2), int(classification_window_width/2)), 8, 3)
     cv.cvResize(big_patch, big_patch_rescaled, cv.CV_INTER_LINEAR );
 
-    np_patch_small   = ut.cv2np(small_patch)
-    np_patch_big     = ut.cv2np(big_patch_rescaled)
+    np_patch_small   = ut.cv2np(small_patch, 'BGR')
+    np_patch_big     = ut.cv2np(big_patch_rescaled, 'BGR')
     np_resized_small = np.matrix(np_patch_small.reshape(patch_size*patch_size*3, 1))
     np_resized_big   = np.matrix(np_patch_big.reshape(np_patch_big.shape[0] * np_patch_big.shape[1] * 3, 1))
     return np.concatenate((np_resized_small, np_resized_big), axis=0)
