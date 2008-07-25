@@ -26,11 +26,9 @@ if ! $(exec_trex_READY) {
 		    CalcGlobalPathConstraint.cc
 		    CalcArmInverseKinematicsConstraint.cc
 		    CalcInterpolatedEndEffectorPosConstraint.cc 
-		    OrienteeringSolver.cc
 		    CalcGraspPositionConstraint.cc 
 		    CalcAngleDiffConstraint.cc 
 		    CalcDistanceConstraint.cc 
-		    GoalManager.cc
 		    WavefrontPlanner.cc 
 		    map_helpers.cc 
 		    ExecDefs.cc 
