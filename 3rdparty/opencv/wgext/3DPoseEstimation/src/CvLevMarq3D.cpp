@@ -10,8 +10,9 @@ using namespace std;
 #include "CvTestTimer.h"
 #include <cv.h>
 
-#define DEBUG 1
+//#define DEBUG 1
 #define USE_UPDATEALT
+#define LAST3ISLIN
 
 #if 0
 #define TIMERSTART(x) 
@@ -372,8 +373,11 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	        	}
 
 	        	// TODO: skip the last 3 params
+#ifdef LAST3ISLIN
+	        	for (int k=0; k<3; k++) {
+#else
 	    		for (int k=0; k<numParams; k++) {
-//	    		for (int k=0; k<3; k++) {
+#endif
 	    			CvMat r1_k;
 	    			cvGetRow(&r1, &r1_k, k);
 	    			
@@ -386,14 +390,24 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 		        	TIMEREND(Residue);
 #endif
 	    		}
+	    		
+#ifdef DEBUG
+	    		cout << "residues:"<<endl;
+	    		cvMatUtils::printMat(&r0);
+	    		cvMatUtils::printMat(&r1);
+#endif
+	    		
 
 	    		TIMERSTART(JtJJtErr);
 	    		
 	    		// compute the part of jacobian regarding this
 	    		// point
 	    		CvMyReal *_r1_k = _r1;
+#ifdef LAST3ISLIN
+	    		for (int k=0; k<3; k++){
+#else
 	    		for (int k=0; k<numParams; k++){
-//	    		for (int k=0; k<3; k++){
+#endif
 	    			*_r1_k -= _r0x;
 	    			*_r1_k *= scale;
 	    			_r1_k++;
@@ -412,10 +426,32 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 #endif
 	    		}
 	    		
-	    		_r1_k = _r1;
 #if 1 // this branch is 1.5x to 2x faster than this branch below
+	    		_r1_k = _r1;
+#ifdef LAST3ISLIN
+	    		for (int k=0;	k<3; k++) {
+	    			CvMyReal _r1x = *(_r1_k++);
+	    			CvMyReal _r1y = *(_r1_k++);
+	    			CvMyReal _r1z = *(_r1_k++);
+	    			for (int l=k; l <3; l++) {
+	    				// update the  JtJ entries
+	    				JtJData[k*numParams + l] +=
+	    					_r1x*_r1[l*3+0] + _r1y*_r1[l*3+1] + _r1z*_r1[l*3+2];
+	    			}
+	    			// TODO: not sure if the following is correct
+	    			JtJData[k*numParams + 3] += _r1x;
+	    			JtJData[k*numParams + 4] += _r1y;
+	    			JtJData[k*numParams + 5] += _r1z;
+	    			// update the JtErr entries
+	    			JtErrData[k] += _r1x*_r0x+_r1y*_r0y+_r1z*_r0z;
+
+	    		}
+	    		// the last 3 entries
+	    		JtErrData[3] += _r0x;
+	    		JtErrData[4] += _r0y;
+	    		JtErrData[5] += _r0z;
+#else	    		
 	    		for (int k=0;	k<numParams; k++) {
-//	    		for (int k=0;	k<3; k++) {
 	    			CvMyReal _r1x = *(_r1_k++);
 	    			CvMyReal _r1y = *(_r1_k++);
 	    			CvMyReal _r1z = *(_r1_k++);
@@ -427,11 +463,8 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	    			// update the JtErr entries
 	    			JtErrData[k] += _r1x*_r0x+_r1y*_r0y+_r1z*_r0z;
 	    		}
+#endif
 
-               // the last 3 entries
-//	    		JtErrData[3] += _r0x;
-//	    		JtErrData[4] += _r0y;
-//	    		JtErrData[5] += _r0z;
 #else 
 	    		for (int k=0;	k<numParams; k++) {
 	    			for (int c=0; c<3; c++) {
@@ -452,15 +485,23 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	    		*_errNorm = errNorm;
 	    	}
 
-	    	for (int k=0; k<numParams; k++) {
-//	    	for (int k=0; k<3; k++) {
-	    		for (int l=k; l <numParams; l++) {
+#ifdef LAST3ISLIN
+	    	for (int k=0; k<3; k++) {
+	    		for (int l=k+1; l <numParams; l++) {
 	    			// fill out the lower triangle just in case
 	    			JtJData[l*numParams + k] = JtJData[k*numParams + l];
 	    		}
 	    	}
-//	    	JtJData[3*numParams + 3] = JtJData[4*numParams+4] = JtJData[5*numParams+5] = numPoints;
-
+	    	JtJData[3*numParams + 3] = JtJData[4*numParams+4] = JtJData[5*numParams+5] = numPoints;
+#else
+	    	for (int k=0; k<numParams; k++) {
+	    		for (int l=k+1; l <numParams; l++) {
+	    			// fill out the lower triangle just in case
+	    			JtJData[l*numParams + k] = JtJData[k*numParams + l];
+	    		}
+	    	}
+#endif
+	    	
 #ifdef DEBUG
 	    	cout << "JtJ on iter: "<<i<<endl;
 	    	CvMatUtils::printMat(_JtJ);
