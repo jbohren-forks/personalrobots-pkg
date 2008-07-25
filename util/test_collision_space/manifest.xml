@@ -1,0 +1,12 @@
+<package>
+  <description brief="Test collision spaces">
+    A set of robot models that can do collision checking
+  </description>
+
+  <author>Ioan Sucan/isucan@willowgarage.com</author>
+  <license>BSD</license>
+
+  <depend package="collision_space"/>
+  <depend package="drawstuff"/>
+  
+</package>

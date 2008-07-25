@@ -33,66 +33,9 @@
 *********************************************************************/
 
 #include <collision_space/environmentODE.h>
-#include <drawstuff/drawstuff.h>
+#include "displayODE.h"
 using namespace collision_space;
 
-
-#ifdef dDOUBLE
-#define dsDrawBox dsDrawBoxD
-#define dsDrawSphere dsDrawSphereD
-#define dsDrawTriangle dsDrawTriangleD
-#define dsDrawCylinder dsDrawCylinderD
-#define dsDrawCapsule dsDrawCapsuleD
-#define dsDrawLine dsDrawLineD
-#define dsDrawConvex dsDrawConvexD
-#endif
-
-static dSpaceID robotSpace = NULL;
-
-static void drawSphere(dGeomID geom)
-{
-    dReal radius = dGeomSphereGetRadius(geom);
-    dsDrawSphere(dGeomGetPosition(geom), dGeomGetRotation(geom), radius);    
-}
-
-static void drawBox(dGeomID geom)
-{
-    dVector3 sides;	
-    dGeomBoxGetLengths(geom, sides);	
-    dsDrawBox(dGeomGetPosition(geom), dGeomGetRotation(geom), sides);
-}
-
-static void drawCylinder(dGeomID geom)
-{
-    dReal radius, length;
-    dGeomCylinderGetParams(geom, &radius, &length);	
-    dsDrawCylinder(dGeomGetPosition(geom), dGeomGetRotation(geom), length, radius);
-}
-
-static void displaySpace(dSpaceID space)
-{
-    int ngeoms = dSpaceGetNumGeoms(space);
-    for (int i = 0 ; i < ngeoms ; ++i)
-    {
-	dGeomID geom = dSpaceGetGeom(space, i);
-	int cls = dGeomGetClass(geom);
-	switch (cls)
-	{
-	case dSphereClass:
-	    drawSphere(geom);
-	    break;
-	case dBoxClass:
-	    drawBox(geom);
-	    break;
-	case dCylinderClass:
-	    drawCylinder(geom);
-	    break;	    
-	default:
-	    printf("Geometry class %d not yet implemented\n", cls);	    
-	    break;	    
-	}
-    }
-}
 
 static void start(void)
 {
