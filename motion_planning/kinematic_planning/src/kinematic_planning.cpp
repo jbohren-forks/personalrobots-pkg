@@ -254,7 +254,7 @@ public:
 	unsigned int cid = m_collisionSpace->addRobotModel(*file);
 	model->collisionSpaceID = cid;
 	model->collisionSpace = m_collisionSpace;
-        model->kmodel = m_collisionSpace->models[cid];
+        model->kmodel = m_collisionSpace->getModel(cid);
 	m_models[name] = model;
 	createMotionPlanningInstances(model);
 	
@@ -265,7 +265,7 @@ public:
 	    std::string gname = name + "::" + groups[i];
 	    model->collisionSpaceID = cid;
 	    model->collisionSpace = m_collisionSpace;
-	    model->kmodel = m_collisionSpace->models[cid];
+	    model->kmodel = m_collisionSpace->getModel(cid);
 	    model->groupID = model->kmodel->getGroupID(gname);
 	    m_models[gname] = model;
 	    createMotionPlanningInstances(model);

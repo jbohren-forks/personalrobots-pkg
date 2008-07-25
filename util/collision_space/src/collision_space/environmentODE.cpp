@@ -56,9 +56,9 @@ unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models
 	m_kgeoms[id].s = dHashSpaceCreate(0);	
     }
     
-    for (unsigned int j = 0 ; j < models[id]->getRobotCount() ; ++j)
+    for (unsigned int j = 0 ; j < m_models[id]->getRobotCount() ; ++j)
     {
-	planning_models::KinematicModel::Robot *robot = models[id]->getRobot(j);
+	planning_models::KinematicModel::Robot *robot = m_models[id]->getRobot(j);
 	for (unsigned int i = 0 ; i < robot->links.size() ; ++i)
 	{
 	    kGeom *kg = new kGeom();

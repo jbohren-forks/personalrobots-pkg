@@ -43,8 +43,8 @@ unsigned int collision_space::EnvironmentModel::addRobotModel(robot_desc::URDF &
 
 unsigned int collision_space::EnvironmentModel::addRobotModel(planning_models::KinematicModel *model)
 {
-    unsigned int pos = models.size();
-    models.push_back(model);
+    unsigned int pos = m_models.size();
+    m_models.push_back(model);
     return pos;
 }
 
@@ -66,4 +66,15 @@ void collision_space::EnvironmentModel::setSelfCollision(bool selfCollision)
 bool collision_space::EnvironmentModel::getSelfCollision(void) const
 {
     return m_selfCollision;
+}
+
+
+unsigned int collision_space::EnvironmentModel::getModelCount(void) const
+{
+    return m_models.size();    
+}
+
+planning_models::KinematicModel* collision_space::EnvironmentModel::getModel(unsigned int model_id) const
+{
+    return m_models[model_id];
 }

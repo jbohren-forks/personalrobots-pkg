@@ -57,8 +57,8 @@ namespace collision_space
 	
 	virtual ~EnvironmentModel(void)
 	{
-	    for (unsigned int i = 0 ; i < models.size() ; ++i)
-		delete models[i];
+	    for (unsigned int i = 0 ; i < m_models.size() ; ++i)
+		delete m_models[i];
 	}
 	
 	/** Check if a model is in collision */
@@ -78,6 +78,11 @@ namespace collision_space
 	/** Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(unsigned int model_id) = 0;
 
+	/** Get the number of loaded models */
+	unsigned int getModelCount(void) const;
+	/** Get a specific model */
+	planning_models::KinematicModel* getModel(unsigned int model_id) const;
+	
 	/** Provide interface to a lock. Use carefully! */
 	void lock(void);
 	
@@ -89,14 +94,14 @@ namespace collision_space
 	
 	/** Check if self collision is enabled */
 	bool getSelfCollision(void) const;	
-
-	/** List of loaded robot models */	
-	std::vector<planning_models::KinematicModel*> models;
 	
     protected:
         
 	ros::thread::mutex m_lock;
 	bool               m_selfCollision;
+	
+	/** List of loaded robot models */	
+	std::vector<planning_models::KinematicModel*> m_models;
 	
     };
 }

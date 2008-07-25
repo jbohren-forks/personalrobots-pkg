@@ -95,7 +95,7 @@ int main(int argc, char **argv)
     
     EnvironmentModel *km = new EnvironmentModelODE();
     km->addRobotModel(model);    
-    planning_models::KinematicModel *m = km->models[0];
+    planning_models::KinematicModel *m = km->getModel(0);
     printModelInfo(m);
     
     double *param = new double[m->stateDimension];    
@@ -110,8 +110,12 @@ int main(int argc, char **argv)
 	param[i] = 0.1;
     m->computeTransforms(param, m->getGroupID("pr2::leftArm"));
     km->updateRobotModel(0);
-
-    spaces.addSpace(dynamic_cast<EnvironmentModelODE*>(km)->getModelODESpace(0));
+    
+    EnvironmentModelODE* okm = dynamic_cast<EnvironmentModelODE*>(km);
+    spaces.addSpace(okm->getODESpace());
+    for (unsigned int i = 0 ; i < okm->getModelCount() ; ++i)
+	spaces.addSpace(okm->getModelODESpace(i));
+    
     
     dsFunctions fn;
     fn.version = DS_VERSION;
