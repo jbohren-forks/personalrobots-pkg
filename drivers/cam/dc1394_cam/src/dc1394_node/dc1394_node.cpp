@@ -65,10 +65,21 @@ public:
   int32_t mode;
   int32_t textureThresh;
   int32_t uniqueThresh;
-  double Cx;
-  double Cy;
-  double Tx;
-  double f;
+  bool    companding;
+  bool    HDR;
+  double  Cx;
+  double  Cy;
+  double  Tx;
+  double  f;
+  int w;
+  int h;
+  int corrs;
+  int logs;
+  int offx;
+  int dleft;
+  int dwidth;
+  int dtop;
+  int dheight;
   std_msgs::ImageArray imgs;
   NEWMAT::Matrix lproj;
   NEWMAT::Matrix rproj;
@@ -250,20 +261,21 @@ public:
 
       if (cd.camType == VIDERE)
       {
-        cd.otherData = new VidereData;
+        VidereData* v = new VidereData;
+        cd.otherData = v;
 
         string strVidereMode;
         param(cd.name + string("/videreParam/mode"), strVidereMode, string("none"));
         if (strVidereMode == string("none"))
-          ((VidereData*)(cd.otherData))->mode = 1;
+          v->mode = 1;
         else if (strVidereMode == string("rectified"))
-          ((VidereData*)(cd.otherData))->mode = 3;
+          v->mode = 3;
         else if (strVidereMode == string("disparity"))
-          ((VidereData*)(cd.otherData))->mode = 4;
+          v->mode = 4;
         else if (strVidereMode == string("disparity_raw"))
-          ((VidereData*)(cd.otherData))->mode = 5;
+          v->mode = 5;
         else
-          ((VidereData*)(cd.otherData))->mode = 4;
+          v->mode = 4;
 
         int textureThresh;
         param(cd.name + string("/videreParam/textureThresh"), textureThresh, 12);
@@ -271,7 +283,7 @@ public:
           textureThresh = 0;
         if (textureThresh > 63)
           textureThresh = 63;
-        ((VidereData*)(cd.otherData))->textureThresh = textureThresh;
+        v->textureThresh = textureThresh;
 
         int uniqueThresh;
         param(cd.name + string("/videreParam/uniqueThresh"), uniqueThresh, 12);
@@ -279,7 +291,18 @@ public:
           uniqueThresh = 0;
         if (uniqueThresh > 63)
           uniqueThresh = 63;
-        ((VidereData*)(cd.otherData))->uniqueThresh = uniqueThresh;
+        v->uniqueThresh = uniqueThresh;
+
+        int companding;
+        param(cd.name + string("/videreParam/companding"), companding, 0);
+        if (companding)
+          v->companding = true;
+
+        int HDR;
+        param(cd.name + string("/videreParam/HDR"), HDR, 0);
+        if (HDR)
+          v->HDR = true;
+
       }
 
       printf("Opening camera with guid: %llx\n", guid);
@@ -367,9 +390,42 @@ public:
         v->f = v->lproj(1,1);
 
 
+        iss.str( params.substr( params.find("width", params.find("[image]") ) + strlen("width")) );
+        iss >> v->w;
+
+        iss.str( params.substr( params.find("height", params.find("[image]") ) + strlen("height")) );
+        iss >> v->h;
+
+        iss.str( params.substr( params.find("corrxsize", params.find("[stereo]") ) + strlen("corrxsize")) );
+        iss >> v->corrs;
+
+        v->logs = 9;
+
+        iss.str( params.substr( params.find("offx", params.find("[stereo]") ) + strlen("offx")) );
+        iss >> v->offx;
+
+        v->dleft   = (v->logs + v->corrs - 2)/2 - 1 + v->offx;
+        v->dwidth  = v->w - (v->logs + v->corrs + v->offx - 2);
+        v->dtop    = (v->logs + v->corrs - 2)/2;
+        v->dheight = v->h - (v->logs + v->corrs);
+
+        /*
         printf("Read in file: %s\n", params.c_str());
         std::cout << v->lproj << std::endl << std::endl;
         std::cout << v->rproj << std::endl << std::endl;
+        
+        std::cout << "Disparity shift params: "
+                  << v->w << ", "
+                  << v->h << ", "
+                  << v->corrs << ", "
+                  << v->logs << ", "
+                  << v->offx << ", "
+                  << v->dleft << ", "
+                  << v->dwidth << ", "
+                  << v->dtop << ", "
+                  << v->dheight << std::endl;
+        */
+
       }
 
       checkAndSetFeature(cd, "brightness", DC1394_FEATURE_BRIGHTNESS);
@@ -384,35 +440,37 @@ public:
 
       if (cd.camType == VIDERE)
       {
+        VidereData* v = ((VidereData*)(cd.otherData));
+
         usleep(50000);
-        uint32_t t_thresh = 0x08000000 | (0x40 << 16) | ( ((VidereData*)(cd.otherData))->textureThresh << 16);
+        uint32_t t_thresh = 0x08000000 | (0x40 << 16) | ( v->textureThresh << 16);
         cd.cam->setControlRegister(0xFF000, t_thresh);
 
         usleep(50000);
-        uint32_t u_thresh = 0x08000000 | (0x00 << 16) | ( ((VidereData*)(cd.otherData))->uniqueThresh << 16);
+        uint32_t u_thresh = 0x08000000 | (0x00 << 16) | ( v->uniqueThresh << 16);
         cd.cam->setControlRegister(0xFF000, u_thresh);
 
         usleep(50000);
-        uint32_t qval1 = 0x08000000 | (0x90 << 16) | ( ( ((VidereData*)(cd.otherData))->mode & 0x7) << 16);
+        uint32_t qval1 = 0x08000000 | (0x90 << 16) | ( ( v->mode & 0x7) << 16);
         uint32_t qval2 = 0x08000000 | (0x9C << 16);
 
         cd.cam->setControlRegister(0xFF000, qval1);
         cd.cam->setControlRegister(0xFF000, qval2);
-      }
 
-
-      /*
-        if (strVidereMode == string("none"))
-          ((VidereData*)(cd.otherData))->mode = 1;
-        else if (strVidereMode == string("rectified"))
-          ((VidereData*)(cd.otherData))->mode = 3;
-        else if (strVidereMode == string("disparity"))
-          ((VidereData*)(cd.otherData))->mode = 4;
-        else if (strVidereMode == string("disparity_raw"))
-          ((VidereData*)(cd.otherData))->mode = 5;
+        usleep(50000);
+        if (v->companding)
+          cd.cam->setControlRegister(0xFF000, 0x041C0003);
         else
-          ((VidereData*)(cd.otherData))->mode = 4;
-      */
+          cd.cam->setControlRegister(0xFF000, 0x041C0002);
+
+        usleep(50000);
+        if (v->HDR)
+          cd.cam->setControlRegister(0xFF000, 0x040F0051);
+        else
+          cd.cam->setControlRegister(0xFF000, 0x040F0011);
+          
+        
+      }
 
 
       if (cd.camType == VIDERE)
@@ -501,6 +559,21 @@ public:
           uint32_t width    = frame->size[0];
           uint32_t height   = frame->size[1]/2;
           uint32_t buf_size = width*height;
+
+          // Fix disparity window location
+
+          if (v->mode == 4)
+          {
+            for (int i = 0; i < v->dheight; i++)
+            {
+              memcpy(buf + (v->dtop + i)*v->w + v->dleft - 6, buf + (v->h - v->dheight + i)*v->w + v->w - v->dwidth, v->dwidth);
+              memset(buf + (v->dtop + i)*v->w + v->dleft - 6 + v->dwidth, 0, v->w - v->dwidth - v->dleft + 6);
+            }
+            for (int i = v->dheight + v->dtop; i < v->h; i++)
+            {
+              memset(buf + i*v->w, 0, v->w);
+            }
+          }
         
           v->imgs.images[0].width = width;
           v->imgs.images[0].height = height;
