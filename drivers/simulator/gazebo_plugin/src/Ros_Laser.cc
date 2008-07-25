@@ -93,9 +93,11 @@ void Ros_Laser::LoadChild(XMLConfigNode *node)
   if (!this->laserIface) gzthrow("Ros_Laser controller requires a LaserIface");
 
   this->topicName = node->GetString("topicName","default_ros_laser",0); //read from xml file
+  std::cout << "================= " << this->topicName <<  std::endl;
+  rosnode->advertise<std_msgs::PointCloudFloat32>(this->topicName);
 
-  std::cout << "================= " << this->topicName << std::endl;
-  rosnode->advertise<std_msgs::Image>(this->topicName);
+  // cannot publish full cloud because we need the tilt angle information
+  // TODO: we can include the link to the Hokuyo pitch joint in this controller
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -181,6 +183,19 @@ void Ros_Laser::PutLaserData()
 
     assert(this->laserIface->data->range_count < GZ_LASER_MAX_RANGES );
 
+    /***************************************************************/
+    /*                                                             */
+    /*  point cloud from laser image                               */
+    /*                                                             */
+    /***************************************************************/
+    int    num_channels = 1;
+    this->cloudMsg.set_pts_size(rangeCount);
+    this->cloudMsg.set_chan_size(num_channels);
+    this->cloudMsg.chan[0].name = "intensities";
+    this->cloudMsg.chan[0].set_vals_size(rangeCount);
+    double tmp_res_angle = (maxAngle - minAngle)/((double)(rangeCount -1)); // for computing yaw
+
+
     // Interpolate the range readings from the rays
     for (i = 0; i<rangeCount; i++)
     {
@@ -206,6 +221,20 @@ void Ros_Laser::PutLaserData()
 
       this->laserIface->data->ranges[i] =  r + minRange;
       this->laserIface->data->intensity[i] = v;
+
+      /***************************************************************/
+      /*                                                             */
+      /*  point cloud from laser image                               */
+      /*                                                             */
+      /***************************************************************/
+      double laser_yaw = minAngle + (double)i * tmp_res_angle;
+      double laser_pitch = 0.0;
+      double sigma = 0.002;  // 2 milimeter noise
+      this->cloudMsg.pts[i].x        =r * cos(laser_yaw) * cos(laser_pitch) + this->GaussianKernel(0,sigma) ;
+      this->cloudMsg.pts[i].y        =r * sin(laser_yaw)                    + this->GaussianKernel(0,sigma) ;
+      this->cloudMsg.pts[i].z        =r * cos(laser_yaw) * sin(laser_pitch) + this->GaussianKernel(0,sigma) ;
+      this->cloudMsg.chan[0].vals[i] = v;
+
     }
 
     this->laserIface->Unlock();
@@ -213,6 +242,12 @@ void Ros_Laser::PutLaserData()
     // New data is available
     this->laserIface->Post();
   }
+
+  // iface writing can be skipped if iface is not used.
+  // send data out via ros message
+  rosnode->publish("cloud",this->cloudMsg);
+
+
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -315,3 +350,22 @@ void Ros_Laser::PutFiducialData()
     this->fiducialIface->Post();
   }
 }
+
+//////////////////////////////////////////////////////////////////////////////
+// Utility for adding noise
+double Ros_Laser::GaussianKernel(double mu,double sigma)
+{
+  // using Box-Muller transform to generate two independent standard normally disbributed normal variables
+  // see wikipedia
+  double U = (double)rand()/(double)RAND_MAX; // normalized uniform random variable
+  double V = (double)rand()/(double)RAND_MAX; // normalized uniform random variable
+  double X = sqrt(-2.0 * ::log(U)) * cos( 2.0*M_PI * V);
+  //double Y = sqrt(-2.0 * ::log(U)) * sin( 2.0*M_PI * V); // the other indep. normal variable
+  // we'll just use X
+  // scale to our mu and sigma
+  X = sigma * X + mu;
+  return X;
+}
+
+
+
