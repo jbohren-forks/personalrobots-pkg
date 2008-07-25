@@ -56,7 +56,7 @@
 // roscpp - arm
 #include <std_msgs/PR2Arm.h>
 
-#include <std_msgs/EndEffectorState.h>
+#include <pr2_msgs/EndEffectorState.h>
 #include "rosgazebo/CartesianCmd.h"
 
 // roscpp - camera
@@ -172,8 +172,8 @@ class RosGazeboControlsNode : public ros::node
     std_msgs::PR2Arm rightarm;
 
     // end effector cmds
-    std_msgs::EndEffectorState cmd_leftarmcartesian;
-    std_msgs::EndEffectorState cmd_rightarmcartesian;
+    pr2_msgs::EndEffectorState cmd_leftarmcartesian;
+    pr2_msgs::EndEffectorState cmd_rightarmcartesian;
 
     //Pose commands
     rosgazebo::CartesianCmd cmd_leftpose;
