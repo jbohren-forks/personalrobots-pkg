@@ -1,3 +1,37 @@
+/////////////////////////////////////////////////////////////////////////////////////
+//Software License Agreement (BSD License)
+//
+//Copyright (c) 2008, Willow Garage, Inc.
+//All rights reserved.
+//
+//Redistribution and use in source and binary forms, with or without
+//modification, are permitted provided that the following conditions
+//are met:
+//
+// * Redistributions of source code must retain the above copyright
+//   notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above
+//   copyright notice, this list of conditions and the following
+//   disclaimer in the documentation and/or other materials provided
+//   with the distribution.
+// * Neither the name of Willow Garage nor the names of its
+//   contributors may be used to endorse or promote products derived
+//   from this software without specific prior written permission.
+//
+//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+//"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+//LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+//FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+//COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+//INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+//LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+//CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+//LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+//ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+//POSSIBILITY OF SUCH DAMAGE.
+/////////////////////////////////////////////////////////////////////////////////////
+
 #include <pr2Controllers/ArmController.h> 
 #define NDOF 6 // accounts for x,y,z,roll,pitch,yaw
 using namespace controller;
@@ -43,6 +77,8 @@ ArmController::ArmController()
 {
   this->robot = NULL;
   this->name  = "armController";
+
+  this->armJointControllers = new JointController[ARM_MAX_JOINTS];
 }
 ArmController::ArmController(Robot *robot)
 {
@@ -125,8 +161,6 @@ void ArmController::init()
 
 void ArmController::initJointControllers()
 {
-  this->armJointControllers = new JointController[ARM_MAX_JOINTS];
-
   /**************************************************************************************/
   /*                                                                                    */
   /* MAPPING BETWEEN: armController->jointController array and robot->joint array       */
@@ -256,9 +290,62 @@ void  ArmController::checkForSaturation(bool* status[])
 //HAND CALLS
 //Require forward and inverse kinematics
 //---------------------------------------------------------------------------------//
+
+controllerErrorCode ArmController::setHandCartesianPosLinear(double x, double y, double z, double roll, double pitch, double yaw, double timestep, double stepSize)
+{
+
+  double pos;
+  //Set up controller
+  setMode(CONTROLLER_POSITION);
+  this->timeStep = timestep;
+  this->stepSize = stepSize;
+
+  //Calculate end position
+  KDL::Vector endPos(x,y,z);
+  KDL::Rotation endRot;
+  endRot = endRot.RPY(roll,pitch,yaw);
+  endFrame.p = endPos;
+  endFrame.M = endRot;  
+
+  //Get current location
+  KDL::JntArray q = KDL::JntArray(pr2_kin.nJnts);
+
+  //Get joint positions
+  for(int i=0;i<ARM_MAX_JOINTS;i++){   
+    armJointControllers[i].getPosAct(&pos);
+    q(i) = pos;
+  }
+
+  KDL::Frame f;
+  pr2_kin.FK(q,f);
+
+  startPosition = f.p; //Record Starting location
+  KDL::Vector move = endPos-startPosition; //Vector to ending position
+
+  double dist = move.Norm(); //Distance to move
+  moveDirection = move/dist; //Normalize movement vector
+    
+  rotInterpolator.SetStartEnd(f.M, endRot);
+  double total_angle = rotInterpolator.Angle();
+
+  nSteps = (int)(dist/stepSize);
+  if(nSteps==0){
+    std::cout<<"ArmController.cpp: Error:: number of steps calculated to be 0"<<std::endl;
+    return CONTROLLER_COMPUTATION_ERROR;
+  } 
+  angleStep = total_angle/nSteps;
+  lastTime= getTime(); //Record first time marker
+  stepIndex = 0; //Reset step index
+
+  linearInterpolation = true;
+  return CONTROLLER_ALL_OK;
+}
+
 controllerErrorCode
 ArmController::setHandCartesianPos(double x, double y, double z, double roll, double pitch, double yaw)
 {	
+  linearInterpolation = false;
+  
   //Define position and rotation
   KDL::Vector position(x,y,z);
   KDL::Rotation rotation;
@@ -275,13 +362,18 @@ ArmController::setHandCartesianPos(double x, double y, double z, double roll, do
   KDL::Frame f;
   f.p = position;
   f.M = rotation;
-  
-  //Create joint arrays
+    
+  return commandCartesianPos(f);
+ }
+
+controllerErrorCode ArmController::commandCartesianPos(KDL::Frame f)
+{
+   //Create joint arrays
 	KDL::JntArray q_init(ARM_MAX_JOINTS);
 	KDL::JntArray q_out(ARM_MAX_JOINTS);
   
   //Use zero values for initialization
-  for(int i = 0;i<ARM_MAX_JOINTS;i++){
+  for(int i = 0;i<getNumJoints();i++){
     q_init(i)= 0.0;
   }
 
@@ -311,7 +403,10 @@ ArmController::setHandCartesianPos(double x, double y, double z, double roll, do
   }
   //std::cout<<std::endl;
   return  CONTROLLER_ALL_OK;
+
+
 }
+
 controllerErrorCode ArmController::getHandCartesianPosCmd(double *x, double *y, double *z, double *roll, double *pitch, double *yaw)
 {
   *x     = cmdPos[0];
@@ -562,7 +657,8 @@ controllerErrorCode ArmController::getArmJointSpeedAct( double *speed[])
 
 }
 
-controllerErrorCode ArmController::setOneArmJointSpeed(int numJoint, double speed){
+controllerErrorCode ArmController::setOneArmJointSpeed(int numJoint, double speed)
+{
   if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
   return armJointControllers[numJoint].setVelCmd(speed);
 }
@@ -606,15 +702,47 @@ controllerErrorCode ArmController::getArmCamGazePointAct(double *x, double *y, d
 void
 ArmController::update( )
 {
+  KDL::Frame f;
+  double time;
+
   if(!enabled){
     for(int i = 0;i<ARM_MAX_JOINTS;i++){    
       armJointControllers[i].disableController();
     }
   } //Make sure controller is enabled. Otherwise, tell all jointcontrollers to shut down
 
+
+  if(linearInterpolation)
+  {
+    //Perform linearly interpolated motion 
+      time = getTime();
+    double deltaT = time-lastTime; 
+    if(deltaT>= timeStep) { //If enough time has elapsed for next set point, increment motion
+      if(stepIndex >= nSteps){ //We're done. Reset motion
+        //std::cout<<"Finished motion"<<std::endl;
+        linearInterpolation = false;
+        commandCartesianPos(endFrame);
+        stepIndex = 0;
+        stepSize=0;
+        nSteps=0;
+        timeStep=0;
+        lastTime = 0;
+      } else {        
+        //std::cout<<"Anglestep:"<<angleStep<<" timeStep:"<<timeStep<<" nSteps:"<<nSteps<<" stepSize: "<<stepSize<<" stepIndex:"<<stepIndex<<std::endl;
+        lastTime = time;
+        f.p = startPosition+(stepIndex+1)*moveDirection*stepSize;
+        f.M = rotInterpolator.Pos(angleStep*(stepIndex+1));
+        commandCartesianPos(f); //Command new location
+        stepIndex++; 
+      }
+    }
+  }
+  
+  //Servo to commanded location
   for(int i = 0;i<ARM_MAX_JOINTS;i++){   
     armJointControllers[i].update();
   }
+  
 }
 
 void ArmController::loadParam(std::string label, double &param)
@@ -629,9 +757,11 @@ void ArmController::loadParam(std::string label, int &param)
     param = atoi(paramMap[label].c_str());
 }
 
+//---------------------------------------------------------------------------------//
+// MISC CALLS
+//---------------------------------------------------------------------------------//
 int ArmController::getNumJoints()
 {
-  return ARM_MAX_JOINTS;
+  return pr2_kin.nJnts;
 }
-
 
