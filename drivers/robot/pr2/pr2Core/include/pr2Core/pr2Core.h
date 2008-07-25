@@ -65,9 +65,6 @@ namespace PR2
    };
 
    enum PR2_JOINT_ID{
-      HEAD_YAW          , 
-      HEAD_PITCH        ,
-      HEAD_LASER_PITCH  ,
      CASTER_FL_STEER   , // 0
      CASTER_FL_DRIVE_L , // 1 
      CASTER_FL_DRIVE_R , // 2
@@ -95,6 +92,9 @@ namespace PR2
       ARM_R_ELBOW_ROLL  ,
       ARM_R_WRIST_PITCH , 
       ARM_R_WRIST_ROLL  ,
+      HEAD_YAW          , 
+      HEAD_PITCH        ,
+      HEAD_LASER_PITCH  ,
       ARM_L_GRIPPER     ,
       ARM_R_GRIPPER     ,
       HEAD_PTZ_L_PAN    , 

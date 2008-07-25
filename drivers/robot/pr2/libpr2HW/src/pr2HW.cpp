@@ -309,7 +309,7 @@ PR2_ERROR_CODE PR2HW::Init()
 
   std::cout << "initial HW reads\n" << std::endl;
   // fill in actuator data
-  for (int id = PR2::HEAD_YAW; id < PR2::HEAD_PTZ_R_TILT; id++)
+  for (int id = 0; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
     if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
     {
@@ -1008,7 +1008,7 @@ PR2_ERROR_CODE PR2HW::UpdateHW()
 {
   //std::cout << "updating HW receive\n" << std::endl;
   // receive data from hardware
-  for (int id = PR2::HEAD_YAW; id < PR2::HEAD_PTZ_R_TILT; id++)
+  for (int id = 0; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
     if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
     {
@@ -1059,7 +1059,7 @@ PR2_ERROR_CODE PR2HW::UpdateHW()
 
   //std::cout << "updating HW send\n" << std::endl;
   // send commands to hardware
-  for (int id = PR2::HEAD_YAW; id < PR2::HEAD_PTZ_R_TILT; id++)
+  for (int id = 0; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
     if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
     {
@@ -1111,7 +1111,7 @@ PR2_ERROR_CODE PR2HW::UpdateJointArray(mechanism::Joint** jointArray)
 {
  // std::cout << "updating Joint receive\n" << std::endl;
   // receive data from hardware
-  for (int id = PR2::HEAD_YAW; id < PR2::HEAD_PTZ_R_TILT; id++)
+  for (int id = 0; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
     if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
     {
@@ -1167,7 +1167,7 @@ PR2_ERROR_CODE PR2HW::UpdateJointArray(mechanism::Joint** jointArray)
 
  // std::cout << "updating Joint send\n" << std::endl;
   // send commands to hardware
-  for (int id = PR2::HEAD_YAW; id < PR2::HEAD_PTZ_R_TILT; id++)
+  for (int id = 0; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
     if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
     {
