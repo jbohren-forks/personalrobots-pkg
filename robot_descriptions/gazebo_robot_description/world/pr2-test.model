@@ -1720,28 +1720,6 @@
   <!-- PR2_ACTARRAY -->
   <controller:pr2_actarray name="pr2_controller" plugin="libPr2_Actarray.so">
       <updateRate>100.0</updateRate>
-      <!-- head and above array -->
-      <joint name="neck_yaw_joint">
-        <saturationTorque>100</saturationTorque>
-        <pGain>1</pGain>
-        <dGain>0</dGain>
-        <iGain>0</iGain>
-        <iClamp>0</iClamp>
-      </joint>
-      <joint name="head_tilt_joint">
-        <saturationTorque>10</saturationTorque>
-        <pGain>1</pGain>
-        <dGain>0</dGain>
-        <iGain>0</iGain>
-        <iClamp>0</iClamp>
-      </joint>
-      <joint name="hokuyo_pitch_joint">
-        <saturationTorque>500</saturationTorque>
-        <pGain>2</pGain>
-        <dGain>0</dGain>
-        <iGain>1</iGain>
-        <iClamp>20</iClamp>
-      </joint>
       <!-- caster array -->
       <joint name="front_left_caster_steer">
         <saturationTorque>1000</saturationTorque>
@@ -1934,6 +1912,28 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+      </joint>
+      <!-- head and above array -->
+      <joint name="neck_yaw_joint">
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+      </joint>
+      <joint name="head_tilt_joint">
+        <saturationTorque>10</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+      </joint>
+      <joint name="hokuyo_pitch_joint">
+        <saturationTorque>500</saturationTorque>
+        <pGain>2</pGain>
+        <dGain>0</dGain>
+        <iGain>1</iGain>
+        <iClamp>20</iClamp>
       </joint>
       <!-- ========================================= -->
       <interface:pr2array name="pr2_iface"/>

@@ -398,13 +398,11 @@
       <nearClip>0.1</nearClip>
       <farClip>100</farClip>
       <updateRate>15.0</updateRate>
-      <!--
       <controller:ros_camera name="wrist_cam_right_controller" plugin="libRos_Camera.so">
         <updateRate>15.0</updateRate>
         <topicName>image_wrist_cam_right</topicName>
         <interface:camera name="wrist_cam_right_iface" />
       </controller:ros_camera>
-      -->
       <controller:generic_camera name="wrist_cam_right_controller">
         <updateRate>15.0</updateRate>
         <interface:camera name="wrist_cam_right_iface" />
@@ -703,6 +701,11 @@
       <nearClip>0.1</nearClip>
       <farClip>100</farClip>
       <updateRate>15.0</updateRate>
+      <controller:ros_camera name="wrist_cam_left_controller" plugin="libRos_Camera.so">
+        <updateRate>15.0</updateRate>
+        <topicName>image_wrist_cam_left</topicName>
+        <interface:camera name="wrist_cam_left_iface" />
+      </controller:ros_camera>
       <controller:generic_camera name="forearm_cam_left_controller">
         <updateRate>15.0</updateRate>
         <interface:camera name="forearm_cam_left_iface" />
@@ -1764,28 +1767,6 @@
   <!-- PR2_ACTARRAY -->
   <controller:pr2_actarray name="pr2_controller" plugin="libPr2_Actarray.so">
       <updateRate>100.0</updateRate>
-      <!-- head and above array -->
-      <joint name="neck_yaw_joint">
-        <saturationTorque>100</saturationTorque>
-        <pGain>1</pGain>
-        <dGain>0</dGain>
-        <iGain>0</iGain>
-        <iClamp>0</iClamp>
-      </joint>
-      <joint name="head_tilt_joint">
-        <saturationTorque>10</saturationTorque>
-        <pGain>1</pGain>
-        <dGain>0</dGain>
-        <iGain>0</iGain>
-        <iClamp>0</iClamp>
-      </joint>
-      <joint name="hokuyo_pitch_joint">
-        <saturationTorque>500</saturationTorque>
-        <pGain>2</pGain>
-        <dGain>0</dGain>
-        <iGain>1</iGain>
-        <iClamp>20</iClamp>
-      </joint>
       <!-- caster array -->
       <joint name="front_left_caster_steer">
         <saturationTorque>1000</saturationTorque>
@@ -1981,6 +1962,28 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+      </joint>
+      <!-- head and above array -->
+      <joint name="neck_yaw_joint">
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+      </joint>
+      <joint name="head_tilt_joint">
+        <saturationTorque>10</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+      </joint>
+      <joint name="hokuyo_pitch_joint">
+        <saturationTorque>500</saturationTorque>
+        <pGain>2</pGain>
+        <dGain>0</dGain>
+        <iGain>1</iGain>
+        <iClamp>20</iClamp>
       </joint>
       <!-- ========================================= -->
       <interface:pr2array name="pr2_iface"/>
