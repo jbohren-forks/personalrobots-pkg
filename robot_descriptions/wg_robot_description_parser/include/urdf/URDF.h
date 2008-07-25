@@ -102,6 +102,38 @@ namespace robot_desc
 	
 	struct Group;
 	
+	struct Actuator
+	{
+	    Actuator(void)
+	    {
+	    }
+	    
+	    virtual ~Actuator(void)
+	    {
+	    }
+	    
+	    virtual void print(FILE *out = stdout, std::string indent = "") const;
+	    
+	    std::string  name;
+	    Data         data;
+	};
+
+	struct Transmission
+	{
+	    Transmission(void)
+	    {
+	    }
+	    
+	    virtual ~Transmission(void)
+	    {
+	    }
+	    
+	    virtual void print(FILE *out = stdout, std::string indent = "") const;
+	    
+	    std::string  name;
+	    Data         data;
+	};
+	
 	struct Link
 	{
 	    
@@ -129,22 +161,6 @@ namespace robot_desc
 		Data        data;
 	    };
 	    
-	    struct Actuator
-	    {
-		Actuator(void)
-		{
-		}
-		
-		virtual ~Actuator(void)
-		{
-		}
-		
-		virtual void print(FILE *out = stdout, std::string indent = "") const;
-		
-		std::string  name;
-		Data         data;
-	    };
-	    
 	    struct Joint
 	    {
 		Joint(void)
@@ -158,8 +174,6 @@ namespace robot_desc
 		
 		virtual ~Joint(void)
 		{
-		    for (unsigned int i = 0 ; i < actuators.size() ; ++i)
-			delete actuators[i];
 		}
 		
 		virtual void print(FILE *out = stdout, std::string indent = "") const;
@@ -173,10 +187,9 @@ namespace robot_desc
 		double                 anchor[3];
 		double                 limit[2];
 		double                 calibration[2];
-		std::vector<Actuator*> actuators;
 		Data                   data;
 	    };
-	    
+	   
 	    struct Collision
 	    {
 		Collision(void)
@@ -362,6 +375,8 @@ namespace robot_desc
 	Link* getDisjointPart(unsigned int index) const;
 	unsigned int getLinkCount(void) const;
 	void getLinks(std::vector<Link*> &links) const;
+	void getActuators(std::vector<Actuator*> &actuators) const;
+	void getTransmissions(std::vector<Transmission*> &transmissions) const;
 	
 	void getGroupNames(std::vector<std::string> &groups) const;
 	Group* getGroup(const std::string &name) const;
@@ -380,30 +395,37 @@ namespace robot_desc
 	virtual bool parse(const TiXmlNode *node);
 	virtual void ignoreNode(const TiXmlNode* node);
 	
+	/* file processing data elements */
 	std::string                  m_source;
 	std::vector<std::string>     m_paths;
 	
-	std::string                  m_name;
-	std::map<std::string, Link*> m_links;     // contains sensors too (casted down)
-	std::vector<Link*>           m_linkRoots; // contains the links that are connected to the world (have no parent)
+	/* parsed datastructures */
+	std::string                          m_name;
+	std::map<std::string, Link*>         m_links;     // contains sensors too (casted down)
+	std::map<std::string, Group*>        m_groups;
+	std::map<std::string, Actuator*>     m_actuators;
+	std::map<std::string, Transmission*> m_transmissions;
+	Data                                       m_data; // information from data tags
 	
+	/* simple computed datastructures */
+	std::vector<Link*> m_linkRoots; // contains the links that are connected to the world (have no parent)
+
+	/* easy access maps */
 	std::map<std::string, Link::Collision*> m_collision;
 	std::map<std::string, Link::Joint*>     m_joints;
 	std::map<std::string, Link::Inertial*>  m_inertial;
 	std::map<std::string, Link::Visual*>    m_visual;
 	std::map<std::string, Link::Geometry*>  m_geoms;
-	std::map<std::string, Link::Actuator*>  m_actuators;
-	
-	std::map<std::string, Group*>           m_groups;
-	
-	Data                                    m_data; // information from data tags
+
+
 	
     private:
 	
 	/* utility functions for parsing */
 	void loadLink(const TiXmlNode *node);
 	void loadSensor(const TiXmlNode *node);
-	void loadActuator(const TiXmlNode *node, const std::string &defaultName, Link::Actuator *actuator);
+	void loadActuator(const TiXmlNode *node);
+	void loadTransmission(const TiXmlNode *node);
 	void loadJoint(const TiXmlNode *node, const std::string &defaultName, Link::Joint *joint);
 	void loadGeometry(const TiXmlNode *node, const std::string &defaultName, Link::Geometry *geometry);
 	void loadCollision(const TiXmlNode *node, const std::string &defaultName, Link::Collision *collision);

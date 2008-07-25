@@ -47,6 +47,10 @@ void robot_desc::URDF::freeMemory(void)
 	delete i->second;
     for (std::map<std::string, Group*>::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
 	delete i->second;
+    for (std::map<std::string, Actuator*>::iterator i = m_actuators.begin() ; i != m_actuators.end() ; i++)
+	delete i->second;
+    for (std::map<std::string, Transmission*>::iterator i = m_transmissions.begin() ; i != m_transmissions.end() ; i++)
+	delete i->second;
 }
 
 void robot_desc::URDF::clear(void)
@@ -55,6 +59,8 @@ void robot_desc::URDF::clear(void)
     m_name   = "";
     m_source = "";
     m_links.clear();
+    m_actuators.clear();
+    m_transmissions.clear();
     m_groups.clear();
     m_paths.clear();
     m_paths.push_back("");
@@ -64,7 +70,6 @@ void robot_desc::URDF::clear(void)
     m_inertial.clear();
     m_visual.clear();
     m_geoms.clear();
-    m_actuators.clear();
 }
 
 const std::string& robot_desc::URDF::getRobotName(void) const
@@ -76,6 +81,18 @@ void robot_desc::URDF::getLinks(std::vector<Link*> &links) const
 {
     for (std::map<std::string, Link*>::const_iterator i = m_links.begin() ; i != m_links.end() ; i++)
 	links.push_back(i->second);
+}
+
+void robot_desc::URDF::getActuators(std::vector<Actuator*> &actuators) const
+{
+    for (std::map<std::string, Actuator*>::const_iterator i = m_actuators.begin() ; i != m_actuators.end() ; i++)
+	actuators.push_back(i->second);
+}
+
+void robot_desc::URDF::getTransmissions(std::vector<Transmission*> &transmissions) const
+{
+    for (std::map<std::string, Transmission*>::const_iterator i = m_transmissions.begin() ; i != m_transmissions.end() ; i++)
+	transmissions.push_back(i->second);
 }
 
 unsigned int robot_desc::URDF::getLinkCount(void) const
@@ -219,6 +236,14 @@ void robot_desc::URDF::print(FILE *out) const
     for (unsigned int i = 0 ; i < m_linkRoots.size() ; ++i)
 	m_linkRoots[i]->print(out, "  ");
     fprintf(out, "\n");
+    fprintf(out, "Actuators:\n");
+    for (std::map<std::string, Actuator*>::const_iterator i = m_actuators.begin() ; i != m_actuators.end() ; i++)
+	i->second->print(out, "  "); 
+    fprintf(out, "\n");   
+    fprintf(out, "Transmissions:\n");
+    for (std::map<std::string, Transmission*>::const_iterator i = m_transmissions.begin() ; i != m_transmissions.end() ; i++)
+	i->second->print(out, "  ");
+    fprintf(out, "\n");   
     fprintf(out, "Data types:\n");
     m_data.print(out, "  ");
 }
@@ -246,7 +271,13 @@ void robot_desc::URDF::Link::Geometry::print(FILE *out, std::string indent) cons
     data.print(out, indent + "  ");
 }
 
-void robot_desc::URDF::Link::Actuator::print(FILE *out, std::string indent) const
+void robot_desc::URDF::Transmission::print(FILE *out, std::string indent) const
+{
+    fprintf(out, "%sTransmission [%s]:\n", indent.c_str(), name.c_str());
+    data.print(out, indent + "  ");
+}
+
+void robot_desc::URDF::Actuator::print(FILE *out, std::string indent) const
 {
     fprintf(out, "%sActuator [%s]:\n", indent.c_str(), name.c_str());
     data.print(out, indent + "  ");
@@ -260,8 +291,6 @@ void robot_desc::URDF::Link::Joint::print(FILE *out, std::string indent) const
     fprintf(out, "%s  - anchor: (%f, %f, %f)\n", indent.c_str(), anchor[0], anchor[1], anchor[2]);
     fprintf(out, "%s  - limit: (%f, %f)\n", indent.c_str(), limit[0], limit[1]);
     fprintf(out, "%s  - calibration: (%f, %f)\n", indent.c_str(), calibration[0], calibration[1]);
-    for (unsigned int i = 0 ; i < actuators.size() ; ++i)
-	actuators[i]->print(out, indent + "  ");
     data.print(out, indent + "  ");
 }
 
@@ -602,28 +631,47 @@ unsigned int robot_desc::URDF::loadBoolValues(const TiXmlNode *node, unsigned in
     return read;
 }
 
-void robot_desc::URDF::loadActuator(const TiXmlNode *node, const std::string &defaultName, Link::Actuator *actuator)
+void robot_desc::URDF::loadTransmission(const TiXmlNode *node)
 {
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
     getChildrenAndAttributes(node, children, attributes);
     
-    std::string name = extractName(attributes, defaultName);
+    std::string name = extractName(attributes, "");    
+    Transmission *transmission = (m_transmissions.find(name) != m_transmissions.end()) ? m_transmissions[name] : new Transmission();
+    transmission->name = name;
+    if (transmission->name == "")
+	fprintf(stderr, "No transmission name given\n");
+    m_transmissions[transmission->name] = transmission;
     
-    if (!actuator)
+    for (unsigned int i = 0 ; i < children.size() ; ++i)
     {
-	if (m_actuators.find(name) == m_actuators.end())
+	const TiXmlNode *node = children[i];
+	if (node->Type() == TiXmlNode::ELEMENT)
 	{
-	    fprintf(stderr, "Attempting to add information to an undefined actuator: '%s'\n", name.c_str());
-	    return;
+	    if (node->ValueStr() == "data")
+		loadData(node, &transmission->data);
+	    else
+		ignoreNode(node);
 	}
 	else
-	    actuator = m_actuators[name];
-    }
-    
+	    ignoreNode(node);
+    }    
+}
+
+void robot_desc::URDF::loadActuator(const TiXmlNode *node)
+{
+    std::vector<const TiXmlNode*> children;
+    std::vector<const TiXmlAttribute*> attributes;
+    getChildrenAndAttributes(node, children, attributes);
+
+    std::string name = extractName(attributes, "");    
+    Actuator *actuator = (m_actuators.find(name) != m_actuators.end()) ? m_actuators[name] : new Actuator();
     actuator->name = name;
-    m_actuators[name] = actuator;
-    
+    if (actuator->name == "")
+	fprintf(stderr, "No actuator name given\n");
+    m_actuators[actuator->name] = actuator;
+
     for (unsigned int i = 0 ; i < children.size() ; ++i)
     {
 	const TiXmlNode *node = children[i];
@@ -701,13 +749,6 @@ void robot_desc::URDF::loadJoint(const TiXmlNode *node, const std::string& defau
 	    else
 	    if (node->ValueStr() == "data")
 		loadData(node, &joint->data);
-	    else
-	    if (node->ValueStr() == "actuator")
-	    {
-		Link::Actuator *actuator = new Link::Actuator();
-		joint->actuators.push_back(actuator);
-		loadActuator(node, name + "_actuator", actuator);
-	    }
 	    else
 		ignoreNode(node);
 	}
@@ -1136,6 +1177,12 @@ bool robot_desc::URDF::parse(const TiXmlNode *node)
 		    if (name == "sensor")
 			loadSensor(m_stage2[i]);
 		    else
+		    if (name == "actuator")
+			loadActuator(m_stage2[i]);
+		    else
+		    if (name == "transmission")
+			loadTransmission(m_stage2[i]);
+		    else
 		    if (name == "joint")
 			loadJoint(m_stage2[i], "", NULL);
 		    else
@@ -1149,9 +1196,6 @@ bool robot_desc::URDF::parse(const TiXmlNode *node)
 			loadVisual(m_stage2[i], "", NULL);
 		    else
 		    if (name == "inertial")
-			loadInertial(m_stage2[i], "", NULL);
-		    else
-		    if (name == "actuator")
 			loadInertial(m_stage2[i], "", NULL);
 		    else
 			ignoreNode(m_stage2[i]);
