@@ -101,22 +101,33 @@ namespace display_ode
 	void displaySpaces(void)
 	{
 	    for (unsigned int i = 0 ; i < m_spaces.size() ; ++i)
+	    {
+		dsSetColor(m_colors[i].r, m_colors[i].g, m_colors[i].b);
 		displaySpace(m_spaces[i]);
+	    }	    
 	}
 	
-	void addSpace(dSpaceID space)
+	void addSpace(dSpaceID space, float r = 0.75, float g = 0.75, float b = 0.75)
 	{
+	    Color c = {r, g, b};
+	    m_colors.push_back(c);
 	    m_spaces.push_back(space);
 	}
 	
 	void clear(void)
 	{
 	    m_spaces.clear();
+	    m_colors.clear();
 	}
 	
     protected:
+	struct Color
+	{
+	    float r, g, b;
+	};
 	
 	std::vector<dSpaceID> m_spaces;
+	std::vector<Color>    m_colors;
 	
     };
     

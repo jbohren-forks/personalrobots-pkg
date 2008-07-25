@@ -113,9 +113,9 @@ int main(int argc, char **argv)
     km->updateRobotModel(0);
     
     EnvironmentModelODE* okm = dynamic_cast<EnvironmentModelODE*>(km);
-    spaces.addSpace(okm->getODESpace());
+    spaces.addSpace(okm->getODESpace(), 1.0f, 0.3f, 0.0f);
     for (unsigned int i = 0 ; i < okm->getModelCount() ; ++i)
-	spaces.addSpace(okm->getModelODESpace(i));
+	spaces.addSpace(okm->getModelODESpace(i), 0.0f, 0.5f, (float)(i + 1)/(float)okm->getModelCount());
     
     double sphere[3] = {0.8,0.2,0.4};    
     
