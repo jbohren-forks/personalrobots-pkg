@@ -10,7 +10,7 @@ using namespace std;
 #include "CvTestTimer.h"
 #include <cv.h>
 
-//#define DEBUG 1
+#define DEBUG 1
 #define USE_UPDATEALT
 
 #if 0
@@ -325,7 +325,9 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	    	CvMatUtils::printMat(&this->mFwdT[4]);
 	    	CvMatUtils::printMat(&this->mFwdT[5]);
 #endif
-	    	
+	    	double *p0 = xyzs0->data.db;
+	    	double *p1 = xyzs1->data.db;
+	    	double errNorm = 0.0;
 	    	for (int j=0; j<numPoints; j++) {
 	        	// compute current error = xyzs1^T  - Transformation * xyzs0^T
 	        	CvMat point0, point1;
@@ -344,23 +346,34 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	        	TIMERSTART(Residue);
 //	        	xyzs0 and xyzs1's are inliers we copy. so we know
 //	        	how their data are orgainized
+#if 0
 	        	_p0x = cvmGet(xyzs0, j, 0);
 	        	_p0y = cvmGet(xyzs0, j, 1);
 	        	_p0z = cvmGet(xyzs0, j, 2);
 	        	
 	        	_p1x = cvmGet(xyzs1, j, 0);
 	        	_p1y = cvmGet(xyzs1, j, 1);
-	        	_p1z = cvmGet(xyzs1, j, 2);	        	
+	        	_p1z = cvmGet(xyzs1, j, 2);	    
+#else
+	        	_p0x = *p0++;
+	        	_p0y = *p0++;
+	        	_p0z = *p0++;
+	        	
+	        	_p1x = *p1++;
+	        	_p1y = *p1++;
+	        	_p1z = *p1++;
+#endif
 	        	TRANSFORMRESIDUE(mRTData, _p0x, _p0y, _p0z, _p1x, _p1y, _p1z, _r0x, _r0y, _r0z);
 	        	TIMEREND(Residue);
 #endif
 	        	
 	        	if (_errNorm) {
-	        		*_errNorm += _r0x*_r0x + _r0y*_r0y + _r0z*_r0z;
+	        		errNorm += _r0x*_r0x + _r0y*_r0y + _r0z*_r0z;
 	        	}
 
-	        	// TODO: compute transformation matrix of all diff directions
+	        	// TODO: skip the last 3 params
 	    		for (int k=0; k<numParams; k++) {
+//	    		for (int k=0; k<3; k++) {
 	    			CvMat r1_k;
 	    			cvGetRow(&r1, &r1_k, k);
 	    			
@@ -373,13 +386,14 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 		        	TIMEREND(Residue);
 #endif
 	    		}
+
 	    		TIMERSTART(JtJJtErr);
-//	    		int64 tJtJJtErr = cvGetTickCount();
 	    		
 	    		// compute the part of jacobian regarding this
 	    		// point
 	    		CvMyReal *_r1_k = _r1;
 	    		for (int k=0; k<numParams; k++){
+//	    		for (int k=0; k<3; k++){
 	    			*_r1_k -= _r0x;
 	    			*_r1_k *= scale;
 	    			_r1_k++;
@@ -399,9 +413,9 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	    		}
 	    		
 	    		_r1_k = _r1;
-	    		for (int k=0;
-	    		k<numParams; k++) {
 #if 1 // this branch is 1.5x to 2x faster than this branch below
+	    		for (int k=0;	k<numParams; k++) {
+//	    		for (int k=0;	k<3; k++) {
 	    			CvMyReal _r1x = *(_r1_k++);
 	    			CvMyReal _r1y = *(_r1_k++);
 	    			CvMyReal _r1z = *(_r1_k++);
@@ -410,8 +424,16 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	    				JtJData[k*numParams + l] +=
 	    					_r1x*_r1[l*3+0] + _r1y*_r1[l*3+1] + _r1z*_r1[l*3+2];
 	    			}
+	    			// update the JtErr entries
 	    			JtErrData[k] += _r1x*_r0x+_r1y*_r0y+_r1z*_r0z;
+	    		}
+
+               // the last 3 entries
+//	    		JtErrData[3] += _r0x;
+//	    		JtErrData[4] += _r0y;
+//	    		JtErrData[5] += _r0z;
 #else 
+	    		for (int k=0;	k<numParams; k++) {
 	    			for (int c=0; c<3; c++) {
 	    				CvMyReal j = (_r1[k*3 + c]);
 	    				JtErrData[k] += j*_r0[c];
@@ -420,19 +442,25 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	    					JtJData[k*numParams + l] += j*_r1[l*3 + c];
 	    				}
 	    			}
-#endif
 	    		}
-	    		CvTestTimerEnd(JtJJtErr);
-//	    		CvTestTimer::getTimer().mJtJJtErr += cvGetTickCount() - tJtJJtErr;
+#endif
+	    		
+	    		TIMEREND(JtJJtErr);
 	    	}
-//	    	int64 tJtJJtErr = cvGetTickCount();
+
+	    	if (_errNorm){
+	    		*_errNorm = errNorm;
+	    	}
+
 	    	for (int k=0; k<numParams; k++) {
+//	    	for (int k=0; k<3; k++) {
 	    		for (int l=k; l <numParams; l++) {
 	    			// fill out the lower triangle just in case
 	    			JtJData[l*numParams + k] = JtJData[k*numParams + l];
 	    		}
 	    	}
-//	    	CvTestTimer::getTimer().mJtJJtErr += cvGetTickCount() - tJtJJtErr;
+//	    	JtJData[3*numParams + 3] = JtJData[4*numParams+4] = JtJData[5*numParams+5] = numPoints;
+
 #ifdef DEBUG
 	    	cout << "JtJ on iter: "<<i<<endl;
 	    	CvMatUtils::printMat(_JtJ);
@@ -443,7 +471,7 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 
     	if (_errNorm) {
     		if (_JtJ==NULL && _JtErr==NULL) {
-	    		TIMERSTART(ErrNorm);
+    			TIMERSTART(ErrNorm);
 
 	    		TIMERSTART(ConstructMatrices);
     			constructTransformationMatrix(param0);
@@ -513,7 +541,6 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
              _param[i] = cvmGet(mLevMarq.param, i, 0);
         }
     }
-    
 	return status;
 }
 	
