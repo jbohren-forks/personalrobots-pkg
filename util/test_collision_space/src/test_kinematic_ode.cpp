@@ -33,8 +33,9 @@
 *********************************************************************/
 
 #include <collision_space/environmentODE.h>
-#include "displayODE.h"
+#include <display_ode/displayODE.h>
 using namespace collision_space;
+using namespace display_ode;
 
 static DisplayODESpaces spaces;
 

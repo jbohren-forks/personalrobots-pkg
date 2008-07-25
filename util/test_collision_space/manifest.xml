@@ -7,6 +7,6 @@
   <license>BSD</license>
 
   <depend package="collision_space"/>
-  <depend package="drawstuff"/>
+  <depend package="display_ode_spaces"/>
   
 </package>

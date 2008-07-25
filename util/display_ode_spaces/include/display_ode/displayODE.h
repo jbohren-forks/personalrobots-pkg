@@ -46,74 +46,78 @@
 #define dsDrawConvex dsDrawConvexD
 #endif
 
-class DisplayODESpaces
+namespace display_ode
 {
- public:
     
-    void drawSphere(dGeomID geom)
+    class DisplayODESpaces
     {
-	dReal radius = dGeomSphereGetRadius(geom);
-	dsDrawSphere(dGeomGetPosition(geom), dGeomGetRotation(geom), radius);    
-    }
-    
-    void drawBox(dGeomID geom)
-    {
-	dVector3 sides;	
-	dGeomBoxGetLengths(geom, sides);	
-	dsDrawBox(dGeomGetPosition(geom), dGeomGetRotation(geom), sides);
-    }
-    
-    void drawCylinder(dGeomID geom)
-    {
-	dReal radius, length;
-	dGeomCylinderGetParams(geom, &radius, &length);	
-	dsDrawCylinder(dGeomGetPosition(geom), dGeomGetRotation(geom), length, radius);
-    }
-    
-    void displaySpace(dSpaceID space)
-    {
-	int ngeoms = dSpaceGetNumGeoms(space);
-	for (int i = 0 ; i < ngeoms ; ++i)
+    public:
+	
+	void drawSphere(dGeomID geom)
 	{
-	    dGeomID geom = dSpaceGetGeom(space, i);
-	    int cls = dGeomGetClass(geom);
-	    switch (cls)
+	    dReal radius = dGeomSphereGetRadius(geom);
+	    dsDrawSphere(dGeomGetPosition(geom), dGeomGetRotation(geom), radius);    
+	}
+	
+	void drawBox(dGeomID geom)
+	{
+	    dVector3 sides;	
+	    dGeomBoxGetLengths(geom, sides);	
+	    dsDrawBox(dGeomGetPosition(geom), dGeomGetRotation(geom), sides);
+	}
+	
+	void drawCylinder(dGeomID geom)
+	{
+	    dReal radius, length;
+	    dGeomCylinderGetParams(geom, &radius, &length);	
+	    dsDrawCylinder(dGeomGetPosition(geom), dGeomGetRotation(geom), length, radius);
+	}
+	
+	void displaySpace(dSpaceID space)
+	{
+	    int ngeoms = dSpaceGetNumGeoms(space);
+	    for (int i = 0 ; i < ngeoms ; ++i)
 	    {
-	    case dSphereClass:
-		drawSphere(geom);
-		break;
-	    case dBoxClass:
-		drawBox(geom);
-		break;
-	    case dCylinderClass:
-		drawCylinder(geom);
-		break;	    
-	    default:
-		printf("Geometry class %d not yet implemented\n", cls);	    
-		break;	    
+		dGeomID geom = dSpaceGetGeom(space, i);
+		int cls = dGeomGetClass(geom);
+		switch (cls)
+		{
+		case dSphereClass:
+		    drawSphere(geom);
+		    break;
+		case dBoxClass:
+		    drawBox(geom);
+		    break;
+		case dCylinderClass:
+		    drawCylinder(geom);
+		    break;	    
+		default:
+		    printf("Geometry class %d not yet implemented\n", cls);	    
+		    break;	    
+		}
 	    }
 	}
-    }
+	
+	void displaySpaces(void)
+	{
+	    for (unsigned int i = 0 ; i < m_spaces.size() ; ++i)
+		displaySpace(m_spaces[i]);
+	}
+	
+	void addSpace(dSpaceID space)
+	{
+	    m_spaces.push_back(space);
+	}
+	
+	void clear(void)
+	{
+	    m_spaces.clear();
+	}
+	
+    protected:
+	
+	std::vector<dSpaceID> m_spaces;
+	
+    };
     
-    void displaySpaces(void)
-    {
-	for (unsigned int i = 0 ; i < m_spaces.size() ; ++i)
-	    displaySpace(m_spaces[i]);
-    }
-    
-    void addSpace(dSpaceID space)
-    {
-	m_spaces.push_back(space);
-    }
-    
-    void clear(void)
-    {
-	m_spaces.clear();
-    }
-    
- protected:
-    
-    std::vector<dSpaceID> m_spaces;
-    
-};
-
+}

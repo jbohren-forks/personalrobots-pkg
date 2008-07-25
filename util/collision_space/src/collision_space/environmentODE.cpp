@@ -178,7 +178,6 @@ dSpaceID collision_space::EnvironmentModelODE::getModelODESpace(unsigned int mod
     return m_kgeoms[model_id].s;    
 }
 
-
 struct CollisionData
 {
     bool collides;

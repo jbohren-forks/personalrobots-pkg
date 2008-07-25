@@ -104,7 +104,8 @@ public:
 	subscribe("world_3d_map", m_cloud, &KinematicPlanning::pointCloudCallback);
 	
 	m_collisionSpace = new collision_space::EnvironmentModelODE();
-
+	m_collisionSpace->setSelfCollision(false); // for now, disable self collision (incorrect model)
+	
 	m_collisionSpace->lock();	
 	loadRobotDescriptions();
 	m_collisionSpace->unlock();
