@@ -95,9 +95,12 @@ Provides (name/type):
 #include <sstream>
 #include <map>
 
-//////////// temp:
+#define DISPLAY_ODE_SPACES
+
+#ifdef DISPLAY_ODE_SPACES
 #include <display_ode/displayODE.h>
 static display_ode::DisplayODESpaces spaces;
+#endif
 
 class KinematicPlanning : public ros::node
 {
@@ -114,18 +117,20 @@ public:
 	m_collisionSpace->lock();	
 	loadRobotDescriptions();
 	m_collisionSpace->unlock();
-
-
-
-	double sphere[3] = {0.8,0.2,0.4};    
 	
+	// temp obstacle
+	double sphere[3] = {0.8,0.2,0.4};    
 	m_collisionSpace->addPointCloud(1, sphere, 0.15);
-	///////////////////////
+	
+#ifdef DISPLAY_ODE_SPACES
 	collision_space::EnvironmentModelODE* okm = dynamic_cast<collision_space::EnvironmentModelODE*>(m_collisionSpace);
-	spaces.addSpace(okm->getODESpace(), 1.0f, 0.0f, 0.0f);
-	for (unsigned int i = 0 ; i < okm->getModelCount() ; ++i)
-	    spaces.addSpace(okm->getModelODESpace(i), 0.1f, 0.5f, (float)(i + 1)/(float)okm->getModelCount());
-	//////////////////////
+	if (okm)
+	{
+	    spaces.addSpace(okm->getODESpace(), 1.0f, 0.0f, 0.0f);
+	    for (unsigned int i = 0 ; i < okm->getModelCount() ; ++i)
+		spaces.addSpace(okm->getModelODESpace(i), 0.1f, 0.5f, (float)(i + 1)/(float)okm->getModelCount());
+	}
+#endif
 
     }
     
@@ -257,11 +262,11 @@ public:
 		for (int j = 0 ; j < dim ; ++j)
 		    res.path.states[i].vals[j] = path->states[i]->values[j];
 		
-		// hack
+#ifdef DISPLAY_ODE_SPACES
 		m->kmodel->computeTransforms(path->states[i]->values, m->groupID);
 		m->collisionSpace->updateRobotModel(m->collisionSpaceID);
-		usleep(1000000);
-		//
+		sleep(1);
+#endif
 		
 	    }
 	}
@@ -434,13 +439,12 @@ private:
 };
 
 
-////////////////////////////////////////////
+#ifdef DISPLAY_ODE_SPACES
 
 static void start(void)
 {
     static float xyz[3] = {-0.2179,1.5278,0.8700};
-    static float hpr[3] = {-77.5000,-19.5000,0.0000};
-    
+    static float hpr[3] = {-77.5000,-19.5000,0.0000};    
     dsSetViewpoint(xyz, hpr);
 }
 
@@ -452,8 +456,7 @@ static void simLoop(int)
 {
     spaces.displaySpaces();
 }
-////////////////////////////////////////////
-
+#endif
 
 int main(int argc, char **argv)
 {  
@@ -467,10 +470,7 @@ int main(int argc, char **argv)
     for (unsigned int i = 0 ; i < mlist.size() ; ++i)
 	printf("  * %s\n", mlist[i].c_str());    
     
-    //    planner.spin();
-
-
-    ////////////////////
+#ifdef DISPLAY_ODE_SPACES
     dsFunctions fn;
     fn.version = DS_VERSION;
     fn.start   = &start;
@@ -480,8 +480,9 @@ int main(int argc, char **argv)
     fn.path_to_textures = "./res";
     
     dsSimulationLoop(argc, argv, 640, 480, &fn);
-    //////////////////
-
+#else
+    planner.spin();
+#endif
 
     planner.shutdown();
     
