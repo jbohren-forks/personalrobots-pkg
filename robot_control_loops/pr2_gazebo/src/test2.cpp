@@ -118,7 +118,6 @@ main(int argc, char** argv)
                       };  // 0=actarray, 1=left gripper, 2=right gripper, 3=left ptz, 4=right ptz
   //int numJointsLookUp[]   ={7, 28};  // joints per actuator array
   int portLookUp[] = {    // the way joints are listed in pr2.model
-      PR2::HEAD_YAW            , PR2::HEAD_PITCH          , PR2::HEAD_LASER_PITCH    ,
       PR2::CASTER_FL_STEER     , PR2::CASTER_FL_DRIVE_L   , PR2::CASTER_FL_DRIVE_R   ,
       PR2::CASTER_FR_STEER     , PR2::CASTER_FR_DRIVE_L   , PR2::CASTER_FR_DRIVE_R   ,
       PR2::CASTER_RL_STEER     , PR2::CASTER_RL_DRIVE_L   , PR2::CASTER_RL_DRIVE_R   ,
@@ -130,16 +129,16 @@ main(int argc, char** argv)
       PR2::ARM_R_PAN           , PR2::ARM_R_SHOULDER_PITCH, PR2::ARM_R_SHOULDER_ROLL ,
       PR2::ARM_R_ELBOW_PITCH   , PR2::ARM_R_ELBOW_ROLL    , PR2::ARM_R_WRIST_PITCH   ,
       PR2::ARM_R_WRIST_ROLL    ,
+      PR2::HEAD_YAW            , PR2::HEAD_PITCH          , PR2::HEAD_LASER_PITCH    ,
       PR2::ARM_L_GRIPPER      - PR2::ARM_L_GRIPPER        ,
       PR2::ARM_R_GRIPPER      - PR2::ARM_R_GRIPPER        ,
       PR2::HEAD_PTZ_L_PAN     - PR2::HEAD_PTZ_L_PAN       ,
       PR2::HEAD_PTZ_L_TILT    - PR2::HEAD_PTZ_L_PAN       ,
-      PR2::HEAD_PTZ_R_PAN     - PR2::HEAD_PTZ_L_PAN       ,
-      PR2::HEAD_PTZ_R_TILT    - PR2::HEAD_PTZ_L_PAN       };
+      PR2::HEAD_PTZ_R_PAN     - PR2::HEAD_PTZ_R_PAN       ,
+      PR2::HEAD_PTZ_R_TILT    - PR2::HEAD_PTZ_R_PAN       };
 
   
   int jointId[]    = {    // numbering system
-      PR2::HEAD_YAW            , PR2::HEAD_PITCH          , PR2::HEAD_LASER_PITCH    ,
       PR2::CASTER_FL_STEER     , PR2::CASTER_FL_DRIVE_L   , PR2::CASTER_FL_DRIVE_R   ,
       PR2::CASTER_FR_STEER     , PR2::CASTER_FR_DRIVE_L   , PR2::CASTER_FR_DRIVE_R   ,
       PR2::CASTER_RL_STEER     , PR2::CASTER_RL_DRIVE_L   , PR2::CASTER_RL_DRIVE_R   ,
@@ -151,6 +150,7 @@ main(int argc, char** argv)
       PR2::ARM_R_PAN           , PR2::ARM_R_SHOULDER_PITCH, PR2::ARM_R_SHOULDER_ROLL ,
       PR2::ARM_R_ELBOW_PITCH   , PR2::ARM_R_ELBOW_ROLL    , PR2::ARM_R_WRIST_PITCH   ,
       PR2::ARM_R_WRIST_ROLL    ,
+      PR2::HEAD_YAW            , PR2::HEAD_PITCH          , PR2::HEAD_LASER_PITCH    ,
       PR2::ARM_L_GRIPPER       ,
       PR2::ARM_R_GRIPPER       ,
       PR2::HEAD_PTZ_L_PAN      ,
@@ -187,7 +187,15 @@ main(int argc, char** argv)
   // MechanismControl
   GazeboMechanismControl mechanismControl;
   mechanismControl.init(hardware.hardwareInterface); // pass hardware interface to mechanism control
+
+
+  // initialize inidividual controllers
   mechanismControl.baseController->setVelocity(0,0,0);
+  //mechanismControl.leftArmController->setVelocity(0,0,0);
+  //mechanismControl.rightArmController->setVelocity(0,0,0);
+  //mechanismControl.headArmController->setVelocity(0,0,0);
+  //mechanismControl.laserScannerArmController->setVelocity(0,0,0);
+  //mechanismControl.SpineArmController->setVelocity(0,0,0);
 
   // access to all the gazebo sensors
   GazeboSensors         gazeboSensor;
