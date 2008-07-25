@@ -36,6 +36,7 @@
 #include "displayODE.h"
 using namespace collision_space;
 
+static DisplayODESpaces spaces;
 
 static void start(void)
 {
@@ -51,7 +52,7 @@ static void command(int cmd)
 
 static void simLoop(int)
 {
-    displaySpace(robotSpace);
+    spaces.displaySpaces();
 }
 
 void printModelInfo(planning_models::KinematicModel *m)
@@ -110,7 +111,7 @@ int main(int argc, char **argv)
     m->computeTransforms(param, m->getGroupID("pr2::leftArm"));
     km->updateRobotModel(0);
 
-    robotSpace = dynamic_cast<EnvironmentModelODE*>(km)->getModelODESpace(0);
+    spaces.addSpace(dynamic_cast<EnvironmentModelODE*>(km)->getModelODESpace(0));
     
     dsFunctions fn;
     fn.version = DS_VERSION;
