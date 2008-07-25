@@ -163,7 +163,7 @@ void collision_space::EnvironmentModelODE::ODECollide2::collide(dGeomID geom, vo
 	      pos->aabb[3] < g.aabb[2] ||
 	      pos->aabb[4] > g.aabb[5] ||
 	      pos->aabb[5] < g.aabb[4]))
-	    dSpaceCollide2(geom, pos->id, NULL, nearCallback);
+	    dSpaceCollide2(geom, pos->id, data, nearCallback);
 	pos++;
     }
 }
@@ -183,7 +183,7 @@ struct CollisionData
 {
     bool collides;
 };
-    
+
 static void nearCallbackFn(void *data, dGeomID o1, dGeomID o2)
 {
     bool &coll = reinterpret_cast<CollisionData*>(data)->collides;

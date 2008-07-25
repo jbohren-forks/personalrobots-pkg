@@ -40,8 +40,8 @@ static DisplayODESpaces spaces;
 
 static void start(void)
 {
-    static float xyz[3] = {0, .7404, .47};
-    static float hpr[3] = {-90, 0.0000, 0.0000};
+    static float xyz[3] = {-0.2179,1.5278,0.8700};
+    static float hpr[3] = {-77.5000,-19.5000,0.0000};
     
     dsSetViewpoint(xyz, hpr);
 }
@@ -116,7 +116,14 @@ int main(int argc, char **argv)
     for (unsigned int i = 0 ; i < okm->getModelCount() ; ++i)
 	spaces.addSpace(okm->getModelODESpace(i));
     
+    double sphere[3] = {0.8,0.2,0.4};    
     
+    km->addPointCloud(1, sphere, 0.15);
+    km->setSelfCollision(false);
+    
+    printf("Collision: %d\n", km->isCollision(0));
+    
+
     dsFunctions fn;
     fn.version = DS_VERSION;
     fn.start   = &start;

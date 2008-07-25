@@ -49,12 +49,13 @@ namespace collision_space
     {
     public:
 		
-        EnvironmentModelODE(void) : EnvironmentModel()
+        EnvironmentModelODE(bool performODEinit = true) : EnvironmentModel()
 	{
 	    static bool initODE = true;
 	    if (initODE)
 	    {
-		dInitODE();
+		if (performODEinit)
+		    dInitODE();
 		initODE = false;
 	    }
 	    
