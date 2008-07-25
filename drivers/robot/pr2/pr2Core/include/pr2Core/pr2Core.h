@@ -345,7 +345,7 @@ namespace PR2
    const point3 BASE_LEFT_ARM_OFFSET                 = {-.1829361, 0.1329361, 0.80981 };
    const point3 BASE_RIGHT_ARM_OFFSET                = {-.1829361, -0.1329361, 0.80981 };
 
-   const point3 HEAD_PAN_HEAD_PITCH_OFFSET           = {0,0,0};
+   const point3 HEAD_PAN_HEAD_PITCH_OFFSET           = {.06,0,.08};
 
    const point3 TORSO_HEAD_OFFSET                    = {-.02, 0, 0.80981};
    const point3 TORSO_TILT_LASER_OFFSET				 = {.07, 0, .68};

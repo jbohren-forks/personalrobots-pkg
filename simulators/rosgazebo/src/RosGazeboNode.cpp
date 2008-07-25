@@ -324,7 +324,7 @@ RosGazeboNode::AdvertiseSubscribeMessages()
   //advertise<std_msgs::LaserScan>("laser");
   advertise<std_msgs::LaserScan>("scan");
   advertise<std_msgs::RobotBase2DOdom>("odom");
-  advertise<std_msgs::Image>("PTZR_image");
+  //advertise<std_msgs::Image>("image");
   advertise<std_msgs::Image>("image");
   advertise<std_msgs::Image>("image_ptz_right");
   advertise<std_msgs::Image>("image_ptz_left");
@@ -616,7 +616,7 @@ RosGazeboNode::Update()
       this->img_ptz_right.data        = buf_ptz_right;
       //memcpy(this->img_ptz_right.data,buf,data_size);
 
-      publish("image",this->img_ptz_right);
+      //publish("image",this->img_ptz_right);
       publish("image_ptz_right",this->img_ptz_right);
     }
   }
@@ -1094,10 +1094,10 @@ RosGazeboNode::Update()
 
   // FIXME: not implemented
   tf.sendEuler("FRAMEID_HEAD_TILT_BASE",
-               "FRAMEID_TORSO",
+               "FRAMEID_HEAD_PAN_BASE",
+               PR2::HEAD_PAN_HEAD_PITCH_OFFSET.x,
                0.0,
-               0.0,
-               1.05,
+               PR2::HEAD_PAN_HEAD_PITCH_OFFSET.z,
                0.0,
                0.0,
                0.0,
