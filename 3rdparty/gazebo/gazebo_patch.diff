@@ -1166,7 +1166,7 @@ Index: gazebo-svn/server/GazeboConfig.cc
 ===================================================================
 --- gazebo-svn/server/GazeboConfig.cc	(revision 6897)
 +++ gazebo-svn/server/GazeboConfig.cc	(working copy)
-@@ -56,6 +56,17 @@
+@@ -56,36 +56,62 @@
  
    cfgFile.open(rcFilename.c_str(), std::ios::in);
  
@@ -1178,12 +1178,71 @@ Index: gazebo-svn/server/GazeboConfig.cc
 +  if(gazebo_resource_path) {
 +    this->gazeboPaths.push_back(gazebo_resource_path);
 +  }
-+  // if both paths are set, don't check the config file or use the defaults.
-+  if(ogre_resource_path && gazebo_resource_path) return;
 +
    if (cfgFile)
    {
      XMLConfig rc;
+     XMLConfigNode *node;
+     rc.Load(rcFilename);
+ 
+-    node = rc.GetRootNode()->GetChild("gazeboPath");
+-    while (node)
++    // if we have a gazebo resource path set by the environment, don't use the one in the config file
++    if ( !gazebo_resource_path )
+     {
+-      gzmsg(1) << "Gazebo Path[" << node->GetValue() << "]\n";
+-      this->gazeboPaths.push_back(node->GetValue());
+-      node = node->GetNext("gazeboPath");
++      node = rc.GetRootNode()->GetChild("gazeboPath");
++      while (node)
++      {
++	  gzmsg(1) << "Gazebo Path[" << node->GetValue() << "]\n";
++	  this->gazeboPaths.push_back(node->GetValue());
++	  node = node->GetNext("gazeboPath");
++      }
+     }
+ 
+-    node = rc.GetRootNode()->GetChild("ogrePath");
+-    while (node)
++    // if we have an ogre resource path set by the environment, don't use the one in the config file
++    if ( !ogre_resource_path )
+     {
+-      gzmsg(1) << "Ogre Path[" << node->GetValue() << "]\n";
+-      this->ogrePaths.push_back( node->GetValue() );
+-      node = node->GetNext("ogrePath");
++	node = rc.GetRootNode()->GetChild("ogrePath");
++	while (node)
++	{
++	    gzmsg(1) << "Ogre Path[" << node->GetValue() << "]\n";
++	    this->ogrePaths.push_back( node->GetValue() );
++	    node = node->GetNext("ogrePath");
++	}
+     }
++
+     this->RTTMode = rc.GetRootNode()->GetString("RTTMode", "PBuffer");
+-
+   }
+   else
+   {
+     gzmsg(0) << "Unable to find the file ~/.gazeborc. Using default paths. This may cause OGRE to fail.\n";
+-    this->gazeboPaths.push_back("/usr/local/share/gazebo");
+-    this->ogrePaths.push_back("/usr/local/lib/OGRE");
+-    this->ogrePaths.push_back("/usr/lib/OGRE");
++
++    if ( !gazebo_resource_path )
++    {
++	this->gazeboPaths.push_back("/usr/local/share/gazebo");
++    }
++
++    if ( !ogre_resource_path )
++    {
++	this->ogrePaths.push_back("/usr/local/lib/OGRE");
++	this->ogrePaths.push_back("/usr/lib/OGRE");
++    }
++
+     this->RTTMode="PBuffer";
+   }
+ }
 Index: gazebo-svn/server/gui/GLWindow.cc
 ===================================================================
 --- gazebo-svn/server/gui/GLWindow.cc	(revision 6897)
