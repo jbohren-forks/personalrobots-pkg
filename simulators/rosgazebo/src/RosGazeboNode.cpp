@@ -199,6 +199,41 @@ RosGazeboNode::cmdvelReceived()
 }
 
 RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
+         PR2::PR2Robot          *myPR2 ) :
+        ros::node("rosgazebo"),tf(*this)
+{
+  // accept passed in robot
+  this->PR2Copy = myPR2;
+
+  // initialize random seed
+  srand(time(NULL));
+
+  // Initialize ring buffer for point cloud data
+  this->cloud_pts = new ringBuffer<std_msgs::Point3DFloat32>();
+  this->cloud_ch1 = new ringBuffer<float>();
+  this->full_cloud_pts = new vector<std_msgs::Point3DFloat32>();
+  this->full_cloud_ch1 = new vector<float>();
+
+  // FIXME:  move this to Subscribe Models
+  param("tilting_laser/max_cloud_pts",max_cloud_pts, 683); // number of point in one scan line
+  this->cloud_pts->allocate(this->max_cloud_pts);
+  this->cloud_ch1->allocate(this->max_cloud_pts);
+  this->full_cloud_pts->clear();
+  this->full_cloud_ch1->clear();
+
+  // initialize times
+  this->PR2Copy->GetTime(&(this->lastTime));
+  this->PR2Copy->GetTime(&(this->simTime));
+
+  //No new messages
+  newRightArmPos = false;
+  newLeftArmPos = false;
+
+  //Don't use new architecture
+  useControllerArray = false;
+}
+
+RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
          PR2::PR2Robot          *myPR2,
          controller::ArmController          *myArm,
          controller::HeadController         *myHead,

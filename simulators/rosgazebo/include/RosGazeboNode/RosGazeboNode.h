@@ -110,6 +110,8 @@ class RosGazeboNode : public ros::node
     // Constructor; stage itself needs argc/argv.  fname is the .world file
     // that stage should load.
     RosGazeboNode(int argc, char** argv, const char* fname,
+         PR2::PR2Robot          *myPR2);
+    RosGazeboNode(int argc, char** argv, const char* fname,
          PR2::PR2Robot          *myPR2,
          controller::ArmController          *myArm,
          controller::HeadController         *myHead,
