@@ -30,15 +30,15 @@ BaseController::BaseController()
   this->name = "baseController";
 }
 
-BaseController::BaseController(Robot *r, std::string name)
+BaseController::BaseController(Robot *robot, std::string name)
 {
-  this->robot = r;
+  this->robot = robot;
   this->name = name;
 }
 
-BaseController::BaseController(Robot *r)
+BaseController::BaseController(Robot *robot)
 {
-  this->robot = r;
+  this->robot = robot;
   this->name = "baseController";
 }
 
@@ -139,6 +139,8 @@ void BaseController::initJointControllers()
 {
   this->baseJointControllers = new JointController[BASE_NUM_JOINTS];
 
+  // these loops are not correct, the number is currently: caster drive drive caster drive drive ... NOT caster caster caster caster drvie drive ...
+  // see pr2Core JOINT_ID for details
   for(int ii = 0; ii < NUM_CASTERS; ii++){
     baseJointControllers[ii].init(pGainPos, iGainPos, dGainPos, iMax, iMin, ETHERDRIVE_SPEED, getTime(), maxEffort, minEffort, &(robot->joint[ii]));
     baseJointControllers[ii].enableController();

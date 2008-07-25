@@ -54,13 +54,13 @@ namespace controller
     /*!
      * \brief Constructor for the BaseController class.
      * 
-     * \param r - pointer to the Robot
+     * \param robot - pointer to the Robot
      * \param name - std::string name for the controller. This must match the name attribute corresponding to the controller
      * description in the xml description file for the controller. 
      */
-    BaseController(Robot *r, std::string name);
+    BaseController(Robot *robot, std::string name);
 
-    BaseController(Robot *r);
+    BaseController(Robot *robot);
 
     /*!
      *  \brief Load the parameters for the controller from the controllers.xml file 
