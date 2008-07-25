@@ -32,9 +32,9 @@
 #include "ros/node.h"
 #include "std_msgs/LaserScan.h"
 #include "std_msgs/RobotBase2DOdom.h"
-#include "logsnarf/logsnarf.h"
 #include <vector>
 #include <string>
+#include "logging/LogPlayer.h"
 using std::vector;
 using std::string;
 
@@ -42,11 +42,11 @@ FILE *clog = NULL;
 FILE *test_log = NULL;
 double prev_x = 0, prev_y = 0, prev_th = 0, dumb_rv = 0, dumb_tv = 0, prev_time;
 
-LogPlayer<std_msgs::RobotBase2DOdom> odom;
-LogPlayer<std_msgs::LaserScan> scan;
-
-void odom_callback(ros::Time t)
+void odom_callback(string name, ros::msg* m, ros::Time t, void* n)
 {
+
+  std_msgs::RobotBase2DOdom* odom = (std_msgs::RobotBase2DOdom*)(m);
+
   double rel_time = t.to_double();
 
   static bool vel_init = false;
@@ -61,7 +61,7 @@ void odom_callback(ros::Time t)
   }
   else
   {
-    double next_th = odom.pos.th + yaw_offset;
+    double next_th = odom->pos.th + yaw_offset;
     if (fabs(next_th - prev_th) > M_PI)
     {
       if (next_th > prev_th)
@@ -69,36 +69,39 @@ void odom_callback(ros::Time t)
       else
         yaw_offset += 2 * M_PI;
     }
-    odom.pos.th += yaw_offset;
+    odom->pos.th += yaw_offset;
     double dt = rel_time - prev_time;
-    double dx = odom.pos.x - prev_x;
-    double dy = odom.pos.y - prev_y;
-    dumb_rv = (odom.pos.th - prev_th) / dt;
+    double dx = odom->pos.x - prev_x;
+    double dy = odom->pos.y - prev_y;
+    dumb_rv = (odom->pos.th - prev_th) / dt;
     dumb_tv = sqrt(dx*dx + dy*dy) / dt;
     fprintf(test_log, "%f %f %f %f %f %f\n", 
-            odom.pos.x, odom.pos.y, odom.pos.th, dumb_tv, dumb_rv, dt);
+            odom->pos.x, odom->pos.y, odom->pos.th, dumb_tv, dumb_rv, dt);
   }
-  prev_x  = odom.pos.x;
-  prev_y  = odom.pos.y;
-  prev_th = odom.pos.th;
+  prev_x  = odom->pos.x;
+  prev_y  = odom->pos.y;
+  prev_th = odom->pos.th;
   prev_time = rel_time;
   fprintf(clog, "ODOM %f %f %f %f %f 0 %f logsetta %f\n", 
-          odom.pos.x, odom.pos.y, odom.pos.th,
+          odom->pos.x, odom->pos.y, odom->pos.th,
           dumb_tv, dumb_rv, rel_time, rel_time);
 }
 
-void scan_callback(ros::Time t)
+void scan_callback(string name, ros::msg* m, ros::Time t, void* n)
 {
+
+  std_msgs::LaserScan* scan = (std_msgs::LaserScan*)(m);
+
   double rel_time = t.to_double();
 
-  const double fov = fabs(scan.angle_max - scan.angle_min);
+  const double fov = fabs(scan->angle_max - scan->angle_min);
   // only make an exception for the SICK LMS2xx running in centimeter mode
-  const double acc = (scan.range_max >= 81 ? 0.05 : 0.005); 
+  const double acc = (scan->range_max >= 81 ? 0.05 : 0.005); 
   fprintf(clog, "ROBOTLASER1 0 %f %f %f %f %f 0 %d ",
-          scan.angle_min, fov, fov / scan.angle_increment,
-          scan.range_max, acc, scan.get_ranges_size());
-  for (int i = 0; i < scan.get_ranges_size(); i++)
-    fprintf(clog, "%.3f ", scan.ranges[scan.get_ranges_size() - i - 1]);
+          scan->angle_min, fov, fov / scan->angle_increment,
+          scan->range_max, acc, scan->get_ranges_size());
+  for (int i = 0; i < scan->get_ranges_size(); i++)
+    fprintf(clog, "%.3f ", scan->ranges[scan->get_ranges_size() - i - 1]);
   double laser_x = prev_x + 0.30 * cos(prev_th); // in the robot frame
   double laser_y = prev_y + 0.30 * sin(prev_th);
   double laser_th = prev_th;
@@ -120,14 +123,33 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  LogSnarfer s;
+  MultiLogPlayer player;
 
-  s.addLog(odom, string(argv[1]), &odom_callback);
-  s.addLog(scan, string(argv[2]), &scan_callback);
+  vector<string> files;
+  files.push_back(argv[1]);
+  files.push_back(argv[2]);
+
+  player.open(files, ros::Time(0));
+
+  int count;
+
+  count = player.addHandler<std_msgs::RobotBase2DOdom>(string("/odom"), &odom_callback, NULL, true);
+
+  if (count != 1)
+  {
+    printf("Found %d '/odom' topics when expecting 1", count);
+    return 1;
+  }
+
+  count = player.addHandler<std_msgs::LaserScan>(string("/scan"), &scan_callback, NULL, true);
+  {
+    printf("Found %d '/scan' topics when expecting 1", count);
+    return 1;
+  }
 
   clog = fopen("carmen.txt", "w");
 
-  s.snarf();
+  while(player.nextMsg())  {}
 
   fclose(clog);
 

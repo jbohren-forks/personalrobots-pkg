@@ -61,61 +61,27 @@ int main(int argc, char **argv)
 
   ros::node n("player");  // Ros peer style usage.
 
-  vector<LogPlayer*> players;
+  MultiLogPlayer player;
+
+  std::vector<std::string> topics;
+  for (int i = 1; i < argc; i++)
+    topics.push_back(argv[i]);
 
   ros::Time start = ros::Time::now();
 
-  for (int i = 1; i < argc; i++)
+  if (player.open(topics, start))
   {
-    LogPlayer* l = new LogPlayer;
+    std::vector<std::string> names = player.getNames();
 
-    if (l->open(argv[i], start)) {
-
-      std::vector<std::string> names = l->getNames();
-
-      for (std::vector<std::string>::iterator i = names.begin(); i != names.end(); i++)
-      {
-        n.advertise<AnyMsg>(*i);
-      }
-
-      l->addHandler<AnyMsg>(string("*"), &doPublish, (void*)(&n), false);
-      
-      players.push_back(l);
-
-    } else {
-      n.shutdown();
-      break;
-    }
-  }
-
-  bool done = false;;
-  while(n.ok() && !done)
-  {
-    done = true;
-    LogPlayer* next_player = 0;
-    ros::Time min_t = ros::Time(-1); // This should be the maximum unsigned int;
-    for (vector<LogPlayer*>::iterator player_it = players.begin();
-         player_it != players.end();
-         player_it++)
+    for (std::vector<std::string>::iterator i = names.begin(); i != names.end(); i++)
     {
-      if ((*player_it)->isDone())
-      {
-        continue;
-      }
-      else
-      {
-        done = false;
-        ros::Time t = (*player_it)->get_next_msg_time();
-        if (t < min_t)
-        {
-          next_player = (*player_it);
-          min_t = (*player_it)->get_next_msg_time();
-        }
-      }
+      n.advertise<AnyMsg>(*i);
     }
-    if (next_player)
-      next_player->nextMsg();
+    
+    player.addHandler<AnyMsg>(string("*"), &doPublish, (void*)(&n), false);
   }
+
+  while(n.ok() && player.nextMsg())  {}
 
   ros::fini();
   return 0;

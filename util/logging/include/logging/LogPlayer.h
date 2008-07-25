@@ -172,8 +172,6 @@ public:
 
     if (comment_line[0] != '#')
       log_file_.seekg(0, std::ios_base::beg);
-    else
-      std::cout << "Read comment line: " << comment_line << std::endl;
 
     std::string quantity_line;
     getline(log_file_,quantity_line);
@@ -183,7 +181,7 @@ public:
     int quantity = -1;
     iss >> quantity;
     
-    std::cout << "Read quantity: " << quantity << std::endl;
+    std::cout << "Reading " << quantity << " topics from " << file_name << std::endl;
 
     if (quantity == -1)
     {
@@ -202,7 +200,7 @@ public:
       getline(log_file_,md5sum);
       getline(log_file_,datatype);
 
-      std::cout << "Log " << i << ": " << topic_name << ", " << md5sum << ", " << datatype << std::endl;
+      std::cout << " (" << i << "): " << topic_name << ", " << md5sum << ", " << datatype << std::endl;
 
       LogHelper* l = new LogHelper(topic_name, md5sum, datatype);
 
@@ -226,8 +224,10 @@ public:
   }
 
   template <class M>
-  bool addHandler(std::string topic_name, void (*fp)(std::string, ros::msg*, ros::Time, void*), void* ptr, bool inflate)
+  int addHandler(std::string topic_name, void (*fp)(std::string, ros::msg*, ros::Time, void*), void* ptr, bool inflate)
   {
+
+    int count = 0;
 
     for (std::map<std::string, LogHelper*>::iterator topic_it = topics_.begin();
          topic_it != topics_.end();
@@ -239,11 +239,11 @@ public:
 
         if (M::__s_get_md5sum() != (topic_it->second)->__get_md5sum() &&
             (topic_it->second)->__get_md5sum() != std::string("*"))
-          return false;
+          break;
 
         if (M::__s_get_datatype() != (topic_it->second)->__get_datatype() && 
             M::__s_get_datatype() != std::string("*") && (topic_it->second)->__get_datatype() != std::string("*"))
-          return false;
+          break;
         
         M* msg = NULL;
 
@@ -251,9 +251,11 @@ public:
           msg = new M;
 
         (topic_it->second)->addHandler(msg, fp, ptr);
+        count++;
+        
       }
     }
-    return true;
+    return count;
   }
 
 
@@ -328,6 +330,112 @@ protected:
     return true;
   }
 
+};
+
+class MultiLogPlayer
+{
+  std::vector<LogPlayer*> players_;
+
+public:
+
+  MultiLogPlayer() { }
+
+  ~MultiLogPlayer()
+  {
+    for (std::vector<LogPlayer*>::iterator player_it = players_.begin();
+         player_it != players_.end();
+         player_it++)
+    {
+      if (*player_it)
+        delete (*player_it);
+    }
+  }
+
+  bool open(std::vector<std::string> file_names, ros::Time start)
+  {
+    for (std::vector<std::string>::iterator name_it = file_names.begin();
+         name_it != file_names.end();
+         name_it++)
+    {
+      LogPlayer* l = new LogPlayer;
+
+      if (l->open(*name_it, start))
+        players_.push_back(l);
+      else
+      {
+        delete l;
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  std::vector<std::string> getNames() {
+
+    std::vector<std::string> names;
+
+    for (std::vector<LogPlayer*>::iterator player_it = players_.begin();
+         player_it != players_.end();
+         player_it++)
+    {
+      std::vector<std::string> n = (*player_it)->getNames();
+
+      for (std::vector<std::string>::iterator topic_it = n.begin(); 
+           topic_it != n.end();
+           topic_it++)
+        names.push_back(*topic_it);
+    }
+
+    return names;
+  }
+
+  bool nextMsg()
+  {
+    LogPlayer* next_player = 0;
+
+    ros::Time min_t = ros::Time(-1); // This should be the maximum unsigned int;
+
+    bool remaining = false;
+
+    for (std::vector<LogPlayer*>::iterator player_it = players_.begin();
+         player_it != players_.end();
+         player_it++)
+    {
+      if ((*player_it)->isDone())
+      {
+        continue;
+      }
+      else
+      {
+        remaining = true;
+        ros::Time t = (*player_it)->get_next_msg_time();
+        if (t < min_t)
+        {
+          next_player = (*player_it);
+          min_t = (*player_it)->get_next_msg_time();
+        }
+      }
+    }
+
+    if (next_player)
+      next_player->nextMsg();
+    
+    return remaining;
+  }
+
+  template <class M>
+  int addHandler(std::string topic_name, void (*fp)(std::string, ros::msg*, ros::Time, void*), void* ptr, bool inflate)
+  {
+    int count = 0;
+    for (std::vector<LogPlayer*>::iterator player_it = players_.begin();
+         player_it != players_.end();
+         player_it++)
+    {
+      count += (*player_it)->addHandler<M>(topic_name, fp, ptr, inflate);
+    }
+    return count;
+  }
 };
 
 #endif
