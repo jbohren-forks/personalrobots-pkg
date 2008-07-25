@@ -1,0 +1,24 @@
+Index: gazebo-svn/server/physics/HingeJoint.cc
+===================================================================
+--- gazebo-svn/server/physics/HingeJoint.cc	(revision 6915)
++++ gazebo-svn/server/physics/HingeJoint.cc	(working copy)
+@@ -38,6 +38,7 @@
+     : Joint()
+ {
+   this->jointId = dJointCreateHinge( worldId, NULL );
++  this->type = Joint::HINGE;
+ }
+ 
+ 
+Index: gazebo-svn/server/physics/SliderJoint.cc
+===================================================================
+--- gazebo-svn/server/physics/SliderJoint.cc	(revision 6915)
++++ gazebo-svn/server/physics/SliderJoint.cc	(working copy)
+@@ -35,6 +35,7 @@
+     : Joint()
+ {
+   this->jointId = dJointCreateSlider( worldId, NULL );
++  this->type = Joint::SLIDER;
+ }
+ 
+ 

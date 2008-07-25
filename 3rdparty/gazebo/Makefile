@@ -6,12 +6,12 @@ SVN_TARGET = gazebo-checkout
 SVN_DIR = gazebo-svn
 include $(shell rospack find mk)/check_svn.mk
 
-REVISION = -r 6897
+REVISION = -r 6915 #revision with wall extrusion working, Ogre camera save frame (TP)
 
 OGRE_PKG = $(shell rospack find ogre)/ogre/lib/pkgconfig
 PLAYER_PKG = $(shell rospack find player)/player/lib/pkgconfig
 ODE_PATH = $(shell rospack find opende)/opende
-#FI_LD = $(shell rospack export/cpp/lflags freeimage)
+FI_PATH = $(shell rospack find freeimage)
 FI_LD = $(shell rospack find freeimage)/freeimage/lib
 ROOT = $(shell rospack find gazebo)/gazebo
 TESTROOT = $(shell rospack find gazebo)/test-gazebo
@@ -26,10 +26,10 @@ $(SVN_TARGET):
 .PHONY: $(BUILD_TARGET)
 $(BUILD_TARGET):
 	if [ ! -d $(BUILD_TARGET) ]; then mkdir -p $(BUILD_TARGET); mkdir -p $(BUILD_TARGET)/share; mkdir -p $(BUILD_TARGET)/share/gazebo; mkdir -p $(BUILD_TARGET)/share/gazebo/Media; fi
-	cd $(SVN_DIR) && PKG_CONFIG_PATH=${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} \
-	LIBPATH="${FI_LD}:`rospack find opende/opende/lib`" scons prefix=$(ROOT) 
-	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} \
-	LIBPATH="${FI_LD}:`rospack find opende/opende/lib`" scons prefix=$(ROOT) install
+	cd $(SVN_DIR) && PKG_CONFIG_PATH=${FI_PATH}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} \
+	LIBPATH="${FI_LD}:`rospack find opende`/opende/lib" scons prefix=$(ROOT) 
+	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${FI_PATH}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} \
+	LIBPATH="${FI_LD}:`rospack find opende`/opende/lib" scons prefix=$(ROOT) install
 
 test-$(SVN_TARGET):
 	@if [ ! -d test-$(SVN_DIR) ]; then svn co $(REVISION) https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk test-$(SVN_DIR); fi
