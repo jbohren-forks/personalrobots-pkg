@@ -122,9 +122,9 @@ public:
 	m_collisionSpace->addPointCloud(1, sphere, 0.15);
 	///////////////////////
 	collision_space::EnvironmentModelODE* okm = dynamic_cast<collision_space::EnvironmentModelODE*>(m_collisionSpace);
-	spaces.addSpace(okm->getODESpace());
+	spaces.addSpace(okm->getODESpace(), 1.0f, 0.0f, 0.0f);
 	for (unsigned int i = 0 ; i < okm->getModelCount() ; ++i)
-	    spaces.addSpace(okm->getModelODESpace(i));
+	    spaces.addSpace(okm->getModelODESpace(i), 0.1f, 0.5f, (float)(i + 1)/(float)okm->getModelCount());
 	//////////////////////
 
     }
