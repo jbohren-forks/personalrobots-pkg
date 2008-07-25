@@ -55,7 +55,7 @@ void *controlLoop(void *arg)
 
   // Switch to hard real-time
   int period = 1000000;
-  struct timespec tick;
+  struct timespec tick, now;
 #if defined(__XENO__)
   pthread_set_mode_np(0, PTHREAD_PRIMARY|PTHREAD_WARNSW);
 #endif
@@ -64,6 +64,8 @@ void *controlLoop(void *arg)
   while (!quit)
   {
     ec.update();
+    clock_gettime(CLOCK_REALTIME, &now);
+    ec.hw->current_time_ = now.tv_nsec / NSEC_PER_SEC + now.tv_sec;
     mc.update();
     tick.tv_nsec += period;
     while (tick.tv_nsec >= NSEC_PER_SEC)

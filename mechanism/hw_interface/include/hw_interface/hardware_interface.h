@@ -84,6 +84,7 @@ class HardwareInterface{
   }
   Actuator *actuator;
   int numActuators;
+  double current_time_;
 };
 
 #endif
