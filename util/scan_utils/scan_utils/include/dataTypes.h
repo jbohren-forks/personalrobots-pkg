@@ -52,7 +52,7 @@ class Grid1D
 	int *mData;
  public:
         Grid1D(int d1);
-	Grid1D(int d1, int *data);
+	Grid1D(int d1, int *data, bool copy = false);
 	~Grid1D();
 
 	int getSize () const {return mD1;}
@@ -76,7 +76,7 @@ class Grid2D
 	int *mData;
  public:
         Grid2D(int d1, int d2);
-	Grid2D(int d1, int d2, int *data);
+	Grid2D(int d1, int d2, int *data, bool copy = false);
 	~Grid2D();
 
 	void getSize(int &d1, int &d2) const {d1 = mD1; d2 = mD2;}

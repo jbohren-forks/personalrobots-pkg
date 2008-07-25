@@ -32,7 +32,7 @@ std_msgs::Point3DFloat32 cross(const std_msgs::Point3DFloat32 &f1, const std_msg
 }
 
 static int mask1d[5] = {0,1,2,1,0};
-const Grid1D Grid1D::MASK(5,mask1d);
+	const Grid1D Grid1D::MASK(5,mask1d,true);
 
 Grid1D::Grid1D(int d1)
 {
@@ -44,11 +44,18 @@ Grid1D::Grid1D(int d1)
 	}
 }
 
-Grid1D::Grid1D(int d1, int *data)
+Grid1D::Grid1D(int d1, int *data, bool copy)
 {
 	assert(d1>0);
 	mD1 = d1;
-	mData = data;
+	if (!copy) {
+		mData = data;
+	} else {
+		mData = new int[d1];
+		for (int i=0; i<d1; i++) {
+			mData[i] = data[i];
+		}
+	}
 }
 
 Grid1D::~Grid1D()
@@ -83,7 +90,7 @@ static int mask2d[25] = { 0,1,1,1,0,
 			  1,2,3,2,1,
 			  1,1,2,1,1,
 			  0,1,1,1,0 };
-const Grid2D Grid2D::MASK(5,5,mask2d);
+	const Grid2D Grid2D::MASK(5,5,mask2d,true);
 
 Grid2D::Grid2D(int d1, int d2)
 {
@@ -96,11 +103,20 @@ Grid2D::Grid2D(int d1, int d2)
 	}
 }
 
-Grid2D::Grid2D(int d1, int d2, int *data)
+Grid2D::Grid2D(int d1, int d2, int *data,bool copy)
 {
 	assert(d1>0 && d2>0);
 	mD1 = d1; mD2 = d2;
-	mData = data;
+	if (!copy) {
+		mData = data;
+	} else {
+		mData = new int[d1*d2];
+		for (int i=0; i<d1; i++) {
+			for(int j=0; j<d2; j++) {
+				mData[i*d2 + j] = data[i*d2 + j];
+			}
+		}
+	}
 }
 
 Grid2D::~Grid2D()
