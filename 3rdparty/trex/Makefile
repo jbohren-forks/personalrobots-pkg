@@ -19,7 +19,7 @@ PlanWorks:
 
 # Get TREX
 trex: PLASMA
-	@if [ ! -d TREX ]; then svn co http://prdev.willowgarage.com/svn/scratch/TREX TREX; fi
+	@if [ ! -d TREX ]; then svn co https://prdev.willowgarage.com/svn/scratch/TREX TREX; fi
 	@if [ ! -d logs ]; then mkdir logs; fi
 
 # Build library and run regression tests
