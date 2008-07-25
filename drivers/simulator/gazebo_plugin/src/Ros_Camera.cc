@@ -30,6 +30,7 @@
 #include <assert.h>
 
 #include <gazebo/Sensor.hh>
+#include <gazebo/Model.hh>
 #include <gazebo/Global.hh>
 #include <gazebo/XMLConfig.hh>
 #include <gazebo/Simulator.hh>
@@ -53,6 +54,20 @@ Ros_Camera::Ros_Camera(Entity *parent)
 
   if (!this->myParent)
     gzthrow("Ros_Camera controller requires a Camera Sensor as its parent");
+
+
+  rosnode = ros::g_node; // comes from where?
+  int argc;
+  char** argv = NULL;
+  if (rosnode == NULL)
+  {
+    // this only works for a single camera.
+    ros::init(argc,argv);
+    rosnode = new ros::node("ros_gazebo");
+    printf("-------------------- starting node \n");
+  }
+
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -70,15 +85,9 @@ void Ros_Camera::LoadChild(XMLConfigNode *node)
   if (!this->cameraIface)
     gzthrow("Ros_Camera controller requires a CameraIface");
 
-  int argc;
-  char** argv = NULL;
-  // this only works for a single camera.
-  ros::init(argc,argv);
-
-
   this->topicName = node->GetString("topicName","default_ros_camera",0); //read from xml file
 
-  rosnode = new ros::node(this->topicName);
+  std::cout << "================= " << this->topicName << std::endl;
   rosnode->advertise<std_msgs::Image>(this->topicName);
 }
 
