@@ -8,7 +8,5 @@
   <depend package="xmlparam" />
   <depend package="ompl" />
   <depend package="collision_space" />
-  <export>
-    <cpp cflags="-I${prefix}/include"/>
-  </export>
+  <depend package="display_ode_spaces" />
 </package>

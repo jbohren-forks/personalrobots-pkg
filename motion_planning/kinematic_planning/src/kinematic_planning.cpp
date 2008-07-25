@@ -94,6 +94,10 @@ Provides (name/type):
 #include <sstream>
 #include <map>
 
+//////////// temp:
+#include <display_ode/displayODE.h>
+static display_ode::DisplayODESpaces spaces;
+
 class KinematicPlanning : public ros::node
 {
 public:
@@ -109,6 +113,19 @@ public:
 	m_collisionSpace->lock();	
 	loadRobotDescriptions();
 	m_collisionSpace->unlock();
+
+
+
+	double sphere[3] = {0.8,0.2,0.4};    
+	
+	m_collisionSpace->addPointCloud(1, sphere, 0.15);
+	///////////////////////
+	collision_space::EnvironmentModelODE* okm = dynamic_cast<collision_space::EnvironmentModelODE*>(m_collisionSpace);
+	spaces.addSpace(okm->getODESpace());
+	for (unsigned int i = 0 ; i < okm->getModelCount() ; ++i)
+	    spaces.addSpace(okm->getModelODESpace(i));
+	//////////////////////
+
     }
     
     ~KinematicPlanning(void)
@@ -182,7 +199,7 @@ public:
 	    /* set the pose of the whole robot */
 	    m->kmodel->computeTransforms(req.start_state.vals);
 	    m->collisionSpace->updateRobotModel(m->collisionSpaceID);
-	 
+	    
 	    /* extract the components needed for the start state of the desired group */
 	    for (int i = 0 ; i < dim ; ++i)
 		start->values[i] = req.start_state.vals[m->kmodel->groupStateIndexList[m->groupID][i]];
@@ -212,12 +229,20 @@ public:
 	if (ok)
 	{
 	    ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
+	    p.si->smoothVertices(path);	    
 	    res.path.set_states_size(path->states.size());
 	    for (unsigned int i = 0 ; i < path->states.size() ; ++i)
 	    {
 		res.path.states[i].set_vals_size(dim);
 		for (int j = 0 ; j < dim ; ++j)
 		    res.path.states[i].vals[j] = path->states[i]->values[j];
+		
+		// hack
+		m->kmodel->computeTransforms(path->states[i]->values, m->groupID);
+		m->collisionSpace->updateRobotModel(m->collisionSpaceID);
+		usleep(1000000);
+		//
+		
 	    }
 	}
 	
@@ -372,7 +397,8 @@ private:
 	Model *model = reinterpret_cast<Model*>(data);
 	model->kmodel->computeTransforms(state->values, model->groupID);
 	model->collisionSpace->updateRobotModel(model->collisionSpaceID);
-	return model->collisionSpace->isCollision(model->collisionSpaceID);
+	bool collision = model->collisionSpace->isCollision(model->collisionSpaceID);
+	return !collision;
     }
     
     void createMotionPlanningInstances(Model* model)
@@ -388,6 +414,27 @@ private:
 };
 
 
+////////////////////////////////////////////
+
+static void start(void)
+{
+    static float xyz[3] = {-0.2179,1.5278,0.8700};
+    static float hpr[3] = {-77.5000,-19.5000,0.0000};
+    
+    dsSetViewpoint(xyz, hpr);
+}
+
+static void command(int cmd)
+{
+}
+
+static void simLoop(int)
+{
+    spaces.displaySpaces();
+}
+////////////////////////////////////////////
+
+
 int main(int argc, char **argv)
 {  
     ros::init(argc, argv);
@@ -400,7 +447,22 @@ int main(int argc, char **argv)
     for (unsigned int i = 0 ; i < mlist.size() ; ++i)
 	printf("  * %s\n", mlist[i].c_str());    
     
-    planner.spin();
+    //    planner.spin();
+
+
+    ////////////////////
+    dsFunctions fn;
+    fn.version = DS_VERSION;
+    fn.start   = &start;
+    fn.step    = &simLoop;
+    fn.command = &command;
+    fn.stop = 0;
+    fn.path_to_textures = "./res";
+    
+    dsSimulationLoop(argc, argv, 640, 480, &fn);
+    //////////////////
+
+
     planner.shutdown();
     
     return 0;    

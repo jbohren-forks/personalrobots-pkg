@@ -53,10 +53,13 @@ public:
 	req.start_state.set_vals_size(32);
 	for (unsigned int i = 0 ; i < req.start_state.vals_size ; ++i)
 	    req.start_state.vals[i] = 0.0;
+
+	for (unsigned int i = 18 ; i < 25 ; ++i)
+	    req.start_state.vals[i] = 0.1;
 	
 	req.goal_state.set_vals_size(7);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
-	    req.goal_state.vals[i] = 0.1;
+	    req.goal_state.vals[i] = -0.4;
 	
 	req.allowed_time = 2.0;
 	
