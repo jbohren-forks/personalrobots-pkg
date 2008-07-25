@@ -1978,7 +1978,9 @@
         <pGain>2</pGain>
         <dGain>0</dGain>
         <iGain>1</iGain>
-        <iClamp>20</iClamp>
+        <iClamp>20</iClamp> 
+        <explicitDampingCoefficient>0.01</explicitDampingCoefficient>
+        <controlMode>TORQUE_CONTROL</controlMode>
       </joint>
       <!-- ========================================= -->
       <interface:pr2array name="pr2_iface"/>
