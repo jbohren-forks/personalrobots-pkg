@@ -146,8 +146,6 @@ void printModelInfo(planning_models::KinematicModel *m)
 
 int main(int argc, char **argv)
 {
-    dInitODE();
-    
     robot_desc::URDF model;
     model.loadFile("/u/isucan/ros/ros-pkg/robot_descriptions/wg_robot_description/pr2/pr2.xml");
     
@@ -169,7 +167,7 @@ int main(int argc, char **argv)
     m->computeTransforms(param, m->getGroupID("pr2::leftArm"));
     km->updateRobotModel(0);
 
-        robotSpace = dynamic_cast<EnvironmentModelODE*>(km)->getODESpace();
+    robotSpace = dynamic_cast<EnvironmentModelODE*>(km)->getModelODESpace(0);
     
     dsFunctions fn;
     fn.version = DS_VERSION;
@@ -184,7 +182,6 @@ int main(int argc, char **argv)
     delete km;
     
     delete[] param;
-    dCloseODE();
     
     return 0;    
 }

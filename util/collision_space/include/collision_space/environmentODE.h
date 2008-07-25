@@ -67,6 +67,7 @@ namespace collision_space
 	}
 	
 	dSpaceID getODESpace(void) const;
+	dSpaceID getModelODESpace(unsigned int model_id) const;
 	
 	/** Check if a model is in collision */
 	virtual bool isCollision(unsigned int model_id);

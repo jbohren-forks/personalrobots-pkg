@@ -173,6 +173,12 @@ dSpaceID collision_space::EnvironmentModelODE::getODESpace(void) const
     return m_space;
 }
 
+dSpaceID collision_space::EnvironmentModelODE::getModelODESpace(unsigned int model_id) const
+{
+    return m_kgeoms[model_id].s;    
+}
+
+
 struct CollisionData
 {
     bool collides;

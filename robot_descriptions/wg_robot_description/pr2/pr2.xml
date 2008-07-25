@@ -207,6 +207,7 @@
       <axis> 1 0 0 </axis> <!-- direction of the joint in a global coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+      <limit>-1 1</limit>
     </define>
 
     <define template="pr2_forearm_roll_inertial">
@@ -228,6 +229,7 @@
       <axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+      <limit>-1 1</limit>
     </define>
 
     <define template="pr2_wrist_pitch_inertial">
@@ -250,6 +252,7 @@
       <axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+      <limit>-1 1</limit>
     </define>
 
     <define template="pr2_wrist_roll_inertial">

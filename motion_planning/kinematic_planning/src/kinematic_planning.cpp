@@ -199,6 +199,7 @@ public:
 	goal->state = new ompl::SpaceInformationKinematic::StateKinematic(dim);
 	for (int i = 0 ; i < dim ; ++i)
 	    goal->state->values[i] = req.goal_state.vals[i];
+	goal->threshold = 1e-6;
 	p.si->setGoal(goal);
 	
 	/* do the planning */
@@ -218,7 +219,7 @@ public:
 		    res.path.states[i].vals[j] = path->states[i]->values[j];
 	    }
 	}
-
+	
 	/* cleanup */
 	p.si->clearGoal();
 	p.si->clearStartStates(true);
