@@ -24,8 +24,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
-#ifndef MECHANISM_CONTROL_H
-#define MECHANISM_CONTROL_H
+#ifndef GAZEBO_CONTROL_H
+#define GAZEBO_CONTROL_H
 
 #include <mechanism_model/robot.h>
 #include <rosthread/mutex.h>
