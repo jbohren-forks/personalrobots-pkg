@@ -16,11 +16,23 @@
 
 #include <iostream>
 
+// to be replaced by xml
 #include <pr2Core/pr2Core.h>
+
+// generic controllers
 #include <genericControllers/Controller.h>
 #include <genericControllers/JointController.h>
+
+// robot model
 #include <mechanism_model/joint.h>
+#include <mechanism_model/robot.h>
+
+// kinematics library
 #include <libKDL/kdl_kinematics.h>
+
+// for temporary gettimeofday call, will be passed in from hardware interface and deprecate
+#include <sys/time.h>
+
 namespace controller
 {
   class ArmController : Controller
@@ -46,12 +58,20 @@ namespace controller
         * \param 
         */
       ArmController();
-      
+      ArmController(Robot *robot, std::string name);
+      ArmController(Robot *robot);
+      ArmController(Robot *robot, std::string name,int armNumJoints, int jcToRobotJointMap[], int jcToHIActuatorMap[]);
+
       /*!
         * \brief Destructor.
         */       
       ~ArmController( );
   
+      /*!
+        * \brief load XML file
+        */       
+      controllerErrorCode loadXML(std::string filename);
+      
       /*!
         * \brief initialize controller variables
         */       
@@ -63,6 +83,13 @@ namespace controller
         *
         */
       void initJoint(int jointNum, double pGain, double iGain, double dGain, double iMax, double iMin, controllerControlMode mode, double time,double maxEffort,double minEffort, mechanism::Joint *joint);
+
+      //TEMPORARY
+        /*! 
+        * \brief get system time, want to get simulator time for simulation.
+        *
+        */
+     double getTime();
 
      //TEMPORARY
         /*! 
@@ -352,7 +379,7 @@ namespace controller
       /*!
         * \brief Update controller
         */       
-      void update( );
+      void update();
 
 //---------------------------------------------------------------------------------//
 // MISC CALLS
@@ -366,14 +393,59 @@ namespace controller
       bool enabled;   /**<Is the arm controller active?>*/
       controllerControlMode controlMode;      /**< Arm controller control mode >*/
 
-      std::string name; /**<Namespace identifier for ROS>*/      
-
-      JointController lowerControl[ARM_MAX_JOINTS]; /**< Lower level control done by JointControllers>*/
+      /*!
+        * \brief initialize joint controllers
+        */       
+      void initJointControllers();
+      JointController *armJointControllers; /**< Lower level control done by JointControllers>*/
 
       double cmdPos[6]; /**<Last commanded cartesian position>*/
       double cmdVel[6]; /**<Last commanded cartesian velocity>*/
     
       PR2_kinematics pr2_kin; /**<PR2 kinematics>*/
+
+      double pGain; /**< Proportional gain for position control */
+
+      double iGain; /**< Integral gain for position control */
+
+      double dGain; /**< Derivative gain for position control */
+
+      double iMax; /**< Max integral error term */
+
+      double iMin; /**< Min integral error term */
+
+      double maxEffort; /**< maximum effort */
+
+      double minEffort; /**< maximum effort */
+        
+      double xDotCmd; /**< Forward speed cmd */
+
+      double yDotCmd; /**< Sideways speed cmd (motion to the left is positive) */
+
+      double yawDotCmd; /**< Rotational speed cmd (motion counter-clockwise is positive) */
+
+      double xDotNew; /**< New forward speed cmd */
+
+      double yDotNew; /**< New sideways speed cmd (motion to the left is positive) */
+
+      double yawDotNew; /**< New rotational speed cmd (motion counter-clockwise is positive) */
+
+      double maxXDot;
+
+      double maxYDot;
+
+      double maxYawDot;
+
+      Robot *robot;
+
+      std::map<std::string,std::string> paramMap;
+
+      std::string name; /**<Namespace identifier for ROS>*/      
+
+      void loadParam(std::string label, double &value);
+
+      void loadParam(std::string label, int &value);
+
 
   };
 }

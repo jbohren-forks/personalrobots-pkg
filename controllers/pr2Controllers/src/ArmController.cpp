@@ -1,4 +1,5 @@
 #include <pr2Controllers/ArmController.h> 
+#define NDOF 6 // accounts for x,y,z,roll,pitch,yaw
 using namespace controller;
 /***************************************************/
 /*! \class controller::ArmController
@@ -40,31 +41,157 @@ using namespace controller;
 
 ArmController::ArmController()
 {
-  //Default construction of JointControllers should init them to blank controllers
+  this->robot = NULL;
+  this->name  = "armController";
 }
-    
-ArmController::~ArmController( )
+ArmController::ArmController(Robot *robot)
+{
+  this->robot = robot;
+  this->name  = "armController";
+}
+ArmController::ArmController(Robot *robot, std::string name)
+{
+  this->robot = robot;
+  this->name  = name;
+}
+     
+ArmController::ArmController(Robot *robot, std::string name,int armNumJoints, int jcToRobotJointMap[], int jcToHIActuatorMap[])
+{
+  this->robot = robot;
+  this->name  = "armController";
+
+}
+
+ArmController::~ArmController()
 {
 }
+
+
+controllerErrorCode ArmController::loadXML(std::string filename)
+{
+  robot_desc::URDF model;
+  int exists = 0;
+
+  if(!model.loadFile(filename.c_str()))
+    return CONTROLLER_MODE_ERROR;
+
+  const robot_desc::URDF::Data &data = model.getData();
+
+  std::vector<std::string> types;
+  std::vector<std::string> names;
+  std::vector<std::string>::iterator iter;
+
+  data.getDataTagTypes(types);
+
+  for(iter = types.begin(); iter != types.end(); iter++){
+    if(*iter == "controller"){
+      exists = 1;
+      break;
+    }
+  }
+
+  if(!exists)
+    return CONTROLLER_MODE_ERROR;
+
+  exists = 0;
+
+  for(iter = names.begin(); iter != names.end(); iter++){
+    if(*iter == this->name){
+      exists = 1;
+      break;
+    }
+  }
+  paramMap = data.getDataTagValues("controller",this->name);   
+
+  loadParam("pGain",pGain);
+  printf("BC:: %f\n",pGain);
+  loadParam("dGain",dGain);
+  loadParam("iGain",iGain);
+
+  loadParam("maxXDot",maxXDot);
+  loadParam("maxYDot",maxYDot);
+  loadParam("maxYawDot",maxYawDot);
+
+  return CONTROLLER_ALL_OK;
+}
+
 
 void ArmController::init()
 {
   // to be filled in here
-  // initJointControllers();
+  initJointControllers();
 
 }
 
+void ArmController::initJointControllers()
+{
+  this->armJointControllers = new JointController[ARM_MAX_JOINTS];
+
+  /**************************************************************************************/
+  /*                                                                                    */
+  /* MAPPING BETWEEN: armController->jointController array and robot->joint array       */
+  /*                                                                                    */
+  /* note: this is how the arm's joint controller arrays knows when robot->joint        */
+  /*       to use                                                                       */
+  /*                                                                                    */
+  /**************************************************************************************/
+
+  for (int ii=0; ii < ARM_MAX_JOINTS; ii++) {
+    // FIXME: hardcoded values for gazebo for now
+    //armJointControllers[ii].init(pGain, iGain, dGain, iMax, iMin,                ETHERDRIVE_SPEED, getTime(), maxEffort, minEffort, &(robot->joint[ii]));
+    armJointControllers[ii].init( 1000,     0,     0,  500, -500, controller::CONTROLLER_POSITION, getTime(),      1000,     -1000, &(robot->joint[ii]));
+    armJointControllers[ii].enableController();
+  }
+  /***************************************************************************************/
+  /*                                                                                     */
+  /*                            initialize controllers                                   */
+  /*           hardcoded values, should be replaced by reading controllers.xml file      */
+  /*         TODO: assigned by xml fils and param servers                                */
+  /*                                                                                     */
+  /***************************************************************************************/
+#if 0
+  // initialize each jointController jc[i], associate with a joint joint[i]
+  for (int i = 0;i<PR2::MAX_JOINTS;i++){
+    jc[i]  = new controller::JointController();
+    jc[i]->init(joint[i]);
+  }
+
+  //Explicitly initialize the controllers we wish to use. Don't forget to set the controllers to torque mode in the world file! 
+  armJointController[PR2::ARM_L_PAN]->initJoint(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_L_PAN]);
+  armJointController[PR2::ARM_L_SHOULDER_PITCH]->init(1000,0,0,500,-500, controller::CONTROLLER_POSITION,time,-1000,1000,joint[PR2::ARM_L_SHOULDER_PITCH]);
+  armJointController[PR2::ARM_L_SHOULDER_ROLL]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_L_SHOULDER_ROLL]);
+  armJointController[PR2::ARM_L_ELBOW_PITCH]->init(300,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_L_ELBOW_PITCH]);
+  armJointController[PR2::ARM_L_ELBOW_ROLL]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_L_ELBOW_ROLL]);
+  armJointController[PR2::ARM_L_WRIST_PITCH]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_L_WRIST_PITCH]);
+  armJointController[PR2::ARM_L_WRIST_ROLL]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_L_WRIST_ROLL]);
+
+  armJointController[PR2::ARM_R_PAN]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_R_PAN]);
+  armJointController[PR2::ARM_R_SHOULDER_PITCH]->init(1000,0,0,500,-500, controller::CONTROLLER_POSITION,time,-1000,1000,joint[PR2::ARM_R_SHOULDER_PITCH]);
+  armJointController[PR2::ARM_R_SHOULDER_ROLL]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_R_SHOULDER_ROLL]);
+  armJointController[PR2::ARM_R_ELBOW_PITCH]->init(300,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_R_ELBOW_PITCH]);
+  armJointController[PR2::ARM_R_ELBOW_ROLL]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_R_ELBOW_ROLL]);
+  armJointController[PR2::ARM_R_WRIST_PITCH]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_R_WRIST_PITCH]);
+  armJointController[PR2::ARM_R_WRIST_ROLL]->init(100,0,0,500,-500, controller::CONTROLLER_POSITION,time,-100,100,joint[PR2::ARM_R_WRIST_ROLL]);
+#endif
+}
+
+double ArmController::getTime()
+{
+  struct timeval t;
+  gettimeofday( &t, 0);
+  return (double) (t.tv_usec *1e-6 + t.tv_sec);
+}
 
 void ArmController::initJoint(int jointNum, double PGain, double IGain, double DGain, double IMax, double IMin, controllerControlMode mode, double time, double maxEffort,double minEffort, mechanism::Joint *joint)
 {
-  lowerControl[jointNum].init(PGain,  IGain,  DGain,  IMax,  IMin,   CONTROLLER_DISABLED,  time,   maxEffort, minEffort, joint); //Initialize joint, but keep in disabled state 
+  armJointControllers[jointNum].init(PGain,  IGain,  DGain,  IMax,  IMin,   CONTROLLER_DISABLED,  time,   maxEffort, minEffort, joint); //Initialize joint, but keep in disabled state 
 }
 
 controllerErrorCode ArmController::initArm(controllerControlMode mode)
 {
 
   //Reset commanded positions
-  for(int i =0 ;i<6;i++){
+  for(int i =0 ;i< NDOF ;i++){
     cmdPos[i] = 0.0;
     cmdVel[i] = 0.0;
   }
@@ -72,7 +199,7 @@ controllerErrorCode ArmController::initArm(controllerControlMode mode)
   //Set mode
   controlMode = mode;
     for(int i =0;i<ARM_MAX_JOINTS;i++){
-      lowerControl[i].setMode(mode); //Set underlying jointControllers to position control
+      armJointControllers[i].setMode(mode); //Set underlying jointControllers to position control
     }
   
   //Turn on the controller
@@ -87,7 +214,7 @@ controllerErrorCode ArmController::initArm(controllerControlMode mode)
  controllerControlMode ArmController::setMode(controllerControlMode mode)
 {
   for(int i = 0;i<ARM_MAX_JOINTS;i++){
-    lowerControl[i].setMode(mode);
+    armJointControllers[i].setMode(mode);
   }
   return CONTROLLER_MODE_SET;
 }
@@ -96,7 +223,7 @@ controllerErrorCode ArmController::initArm(controllerControlMode mode)
 {
   enabled = true;
  for(int i = 0;i<ARM_MAX_JOINTS;i++){
-    lowerControl[i].enableController();
+    armJointControllers[i].enableController();
   }
   return CONTROLLER_ENABLED;
 }
@@ -105,7 +232,7 @@ controllerErrorCode ArmController::initArm(controllerControlMode mode)
 { 
   enabled = false;
  for(int i = 0;i<ARM_MAX_JOINTS;i++){
-    lowerControl[i].disableController();
+    armJointControllers[i].disableController();
   }
   return CONTROLLER_DISABLED;
 
@@ -120,7 +247,7 @@ controllerErrorCode ArmController::initArm(controllerControlMode mode)
 void  ArmController::checkForSaturation(bool* status[])
 {
   for(int i= 0;i<ARM_MAX_JOINTS;i++){
-    *status[i] = lowerControl[i].checkForSaturation();
+    *status[i] = armJointControllers[i].checkForSaturation();
   }
 }
 
@@ -159,16 +286,16 @@ ArmController::setHandCartesianPos(double x, double y, double z, double roll, do
   }
 
   //Perform inverse kinematics
-  if (pr2_kin.IK(q_init, f, q_out)){
+  if (this->pr2_kin.IK(q_init, f, q_out)){
    // cout<<"IK result:"<<q_out<<endl;
- }else{ 
+  }else{ 
     //cout<<"Could not compute Inv Kin."<<endl;
     return  CONTROLLER_JOINT_ERROR; 
   }
 
    //------ checking that IK returned a valid soln -----
   KDL::Frame f_ik;
-  if (pr2_kin.FK(q_out,f_ik))
+  if (this->pr2_kin.FK(q_out,f_ik))
   {
     //    cout<<"End effector after IK:"<<f_ik<<endl;
   }
@@ -179,7 +306,7 @@ ArmController::setHandCartesianPos(double x, double y, double z, double roll, do
 
   //Record commands and shove to arm
   for(int ii = 0; ii < ARM_MAX_JOINTS; ii++){
-    lowerControl[ii].setPosCmd(q_out(ii));
+    armJointControllers[ii].setPosCmd(q_out(ii));
     //std::cout<<"*"<<q_out(ii);
   }
   //std::cout<<std::endl;
@@ -187,12 +314,12 @@ ArmController::setHandCartesianPos(double x, double y, double z, double roll, do
 }
 controllerErrorCode ArmController::getHandCartesianPosCmd(double *x, double *y, double *z, double *roll, double *pitch, double *yaw)
 {
-  *x = cmdPos[0];
-  *y = cmdPos[1];
-  *z = cmdPos[2];
-  *roll = cmdPos[3];
+  *x     = cmdPos[0];
+  *y     = cmdPos[1];
+  *z     = cmdPos[2];
+  *roll  = cmdPos[3];
   *pitch = cmdPos[4];
-  *yaw = cmdPos[5];
+  *yaw   = cmdPos[5];
   return  CONTROLLER_ALL_OK;
 }
 controllerErrorCode ArmController::getHandCartesianPosAct(double *x, double *y, double *z, double *roll, double *pitch, double *yaw)
@@ -201,13 +328,13 @@ controllerErrorCode ArmController::getHandCartesianPosAct(double *x, double *y, 
   KDL::JntArray q_jts(ARM_MAX_JOINTS);
   //Read current joint locations
   for(int i = 0;i<ARM_MAX_JOINTS;i++){
-   lowerControl[i].getPosAct(&pos);
+   armJointControllers[i].getPosAct(&pos);
     q_jts(i) = pos;
   }
 
   //Perform forward kinematics to get cartesian location
   KDL::Frame fk;
-  if (pr2_kin.FK(q_jts,fk))
+  if (this->pr2_kin.FK(q_jts,fk))
   {
     //    cout<<"End effector:"<<fk<<endl;
   }
@@ -234,9 +361,9 @@ controllerErrorCode ArmController::setHandOrientation(double roll, double pitch,
 
 controllerErrorCode ArmController::getHandOrientationCmd(double *roll, double *pitch, double *yaw)
 {
-  *roll = cmdPos[3];
+  *roll  = cmdPos[3];
   *pitch = cmdPos[4];
-  *yaw = cmdPos[5];
+  *yaw   = cmdPos[5];
 
   return  CONTROLLER_ALL_OK;
 }
@@ -280,7 +407,7 @@ ArmController::setArmJointPos( double angles[], double speeds[])
   controllerErrorCode current;
   if(controlMode!= CONTROLLER_POSITION) return CONTROLLER_MODE_ERROR; //TODO implement errors?
   for (int i = 0;i<getNumJoints();i++){
-    current = lowerControl[i].setPosCmd(angles[i]);
+    current = armJointControllers[i].setPosCmd(angles[i]);
 //    std::cout<<i<<":"<<current<<std::endl;
     if(current!=CONTROLLER_ALL_OK) error = current;
   }  
@@ -292,7 +419,7 @@ controllerErrorCode ArmController::getArmJointPosCmd( double *angles[], double *
   controllerErrorCode current;
 
    for (int i = 0;i<getNumJoints();i++){
-    current = lowerControl[i].getPosCmd(angles[i]); //If we find even a single error,return error for overall
+    current = armJointControllers[i].getPosCmd(angles[i]); //If we find even a single error,return error for overall
     if(current!=CONTROLLER_ALL_OK) error = current;
   }  
   return error;
@@ -304,7 +431,7 @@ ArmController::getArmJointPosAct( double *angles[], double *speeds[])
  controllerErrorCode current;
 
   for (int i = 0;i<getNumJoints();i++){
-    current = lowerControl[i].getPosAct(angles[i]); //If we find even a single error,return error for overall
+    current = armJointControllers[i].getPosAct(angles[i]); //If we find even a single error,return error for overall
     if(current!=CONTROLLER_ALL_OK) error = current;
 
   }  
@@ -314,19 +441,19 @@ ArmController::getArmJointPosAct( double *angles[], double *speeds[])
 controllerErrorCode ArmController::setOneArmJointPos(int numJoint, double angle)
 {
   if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].setPosCmd(angle);
+  return armJointControllers[numJoint].setPosCmd(angle);
 }
  
 controllerErrorCode ArmController::getOneArmJointPosCmd(int numJoint, double *angle)
 {
   if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].getPosCmd(angle);
+  return armJointControllers[numJoint].getPosCmd(angle);
 }
 
 controllerErrorCode ArmController::getOneArmJointPosAct(int numJoint, double *angle)
 {
   if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].getPosAct(angle);
+  return armJointControllers[numJoint].getPosAct(angle);
 }
 
 //---------------------------------------------------------------------------------//
@@ -339,7 +466,7 @@ ArmController::setArmJointTorque( double torque[])
   controllerErrorCode current;
   if(controlMode!= CONTROLLER_TORQUE) return CONTROLLER_MODE_ERROR; //TODO implement errors?
   for (int i = 0;i<getNumJoints();i++){
-    current = lowerControl[i].setTorqueCmd(torque[i]); //If we find even a single error, complete the set position and return error for overall
+    current = armJointControllers[i].setTorqueCmd(torque[i]); //If we find even a single error, complete the set position and return error for overall
      if(current!=CONTROLLER_ALL_OK) error = current;
 
   }  
@@ -352,7 +479,7 @@ controllerErrorCode ArmController::getArmJointTorqueCmd( double *torque[])
   controllerErrorCode current;
 
    for (int i = 0;i<getNumJoints();i++){
-    current = lowerControl[i].getTorqueCmd(torque[i]); //If we find even a single error,return error for overall
+    current = armJointControllers[i].getTorqueCmd(torque[i]); //If we find even a single error,return error for overall
    if(current!=CONTROLLER_ALL_OK) error = current;
 
   }  
@@ -365,7 +492,7 @@ controllerErrorCode ArmController::getArmJointTorqueAct( double *torque[])
  controllerErrorCode current;
 
   for (int i = 0;i<getNumJoints();i++){
-    current = lowerControl[i].getTorqueAct(torque[i]); //If we find even a single error,return error for overall 
+    current = armJointControllers[i].getTorqueAct(torque[i]); //If we find even a single error,return error for overall 
    if(current!=CONTROLLER_ALL_OK) error = current;
   }  
   return error;
@@ -375,21 +502,21 @@ controllerErrorCode ArmController::getArmJointTorqueAct( double *torque[])
 controllerErrorCode ArmController::setOneArmJointTorque(int numJoint,double torque)
 {
   if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].setTorqueCmd(torque);
+  return armJointControllers[numJoint].setTorqueCmd(torque);
 }
 
 
 controllerErrorCode ArmController::getArmJointTorqueCmd(int numJoint, double *torque)
 {
   if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].getTorqueCmd(torque);
+  return armJointControllers[numJoint].getTorqueCmd(torque);
 
 }
 
 controllerErrorCode ArmController::getArmJointTorqueAct(int numJoint, double *torque)
 {
   if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].getTorqueAct(torque);
+  return armJointControllers[numJoint].getTorqueAct(torque);
 
 }
 
@@ -404,7 +531,7 @@ ArmController::setArmJointSpeed( double speed[])
   controllerErrorCode current;
   if(controlMode!= CONTROLLER_VELOCITY) return CONTROLLER_MODE_ERROR; //TODO implement errors?
   for (int i = 0;i<getNumJoints();i++){
-    current = lowerControl[i].setVelCmd(speed[i]); //If we find even a single error, complete the set position and return error for overall
+    current = armJointControllers[i].setVelCmd(speed[i]); //If we find even a single error, complete the set position and return error for overall
     if(current!=CONTROLLER_ALL_OK) error = current;
   }  
   return error;
@@ -416,7 +543,7 @@ controllerErrorCode ArmController::getArmJointSpeedCmd( double *speed[])
   controllerErrorCode current;
 
    for (int i = 0;i<getNumJoints();i++){
-    current = lowerControl[i].getVelCmd(speed[i]); //If we find even a single error,return error for overall
+    current = armJointControllers[i].getVelCmd(speed[i]); //If we find even a single error,return error for overall
     if(current!=CONTROLLER_ALL_OK) error = current;
   }  
   return error;
@@ -428,7 +555,7 @@ controllerErrorCode ArmController::getArmJointSpeedAct( double *speed[])
   controllerErrorCode current;
 
   for (int i = 0;i<getNumJoints();i++){
-    current = lowerControl[i].getVelAct(speed[i]); //If we find even a single error,return error for overall
+    current = armJointControllers[i].getVelAct(speed[i]); //If we find even a single error,return error for overall
     if(current!=CONTROLLER_ALL_OK) error = current;
   }  
   return error;
@@ -437,18 +564,18 @@ controllerErrorCode ArmController::getArmJointSpeedAct( double *speed[])
 
 controllerErrorCode ArmController::setOneArmJointSpeed(int numJoint, double speed){
   if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].setVelCmd(speed);
+  return armJointControllers[numJoint].setVelCmd(speed);
 }
 
 controllerErrorCode ArmController::getOneArmJointSpeedCmd(int numJoint, double *speed)
 {
   if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].getVelCmd(speed);
+  return armJointControllers[numJoint].getVelCmd(speed);
 }
 controllerErrorCode ArmController::getOneArmJointSpeedAct(int numJoint, double *speed)
 {
   if(numJoint<0 || numJoint > ARM_MAX_JOINTS) return CONTROLLER_JOINT_ERROR; //Index out of bounds
-  return lowerControl[numJoint].getVelAct(speed);
+  return armJointControllers[numJoint].getVelAct(speed);
 
 }
 
@@ -481,21 +608,30 @@ ArmController::update( )
 {
   if(!enabled){
     for(int i = 0;i<ARM_MAX_JOINTS;i++){    
-      lowerControl[i].disableController();
+      armJointControllers[i].disableController();
     }
   } //Make sure controller is enabled. Otherwise, tell all jointcontrollers to shut down
 
   for(int i = 0;i<ARM_MAX_JOINTS;i++){   
-    lowerControl[i].update();
+    armJointControllers[i].update();
   }
-
 }
 
-
-//---------------------------------------------------------------------------------//
-// MISC CALLS
-//---------------------------------------------------------------------------------//
-int ArmController::getNumJoints(){
-    return ARM_MAX_JOINTS;
+void ArmController::loadParam(std::string label, double &param)
+{
+  if(paramMap.find(label) != paramMap.end()) // if parameter value has been initialized in the xml file, set internal parameter value
+    param = atof(paramMap[label].c_str());
 }
+
+void ArmController::loadParam(std::string label, int &param)
+{
+  if(paramMap.find(label) != paramMap.end())
+    param = atoi(paramMap[label].c_str());
+}
+
+int ArmController::getNumJoints()
+{
+  return ARM_MAX_JOINTS;
+}
+
 

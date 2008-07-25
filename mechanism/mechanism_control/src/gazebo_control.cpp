@@ -65,6 +65,7 @@ void GazeboMechanismControl::initRobot(){
   r->joint = new Joint[PR2::MAX_JOINTS];
   r->link = new Link[PR2::MAX_JOINTS];
 
+  // MAPPING BETWEEN hwInterface->actuators and robot->joints
   // assign transmissions for all joints
   for(int ii=0; ii<PR2::MAX_JOINTS; ii++){
     r->transmission[ii].actuator = &(hardwareInterface->actuator[ii]);
@@ -81,12 +82,58 @@ void GazeboMechanismControl::initRobot(){
 }
 
 void GazeboMechanismControl::initControllers(){
-  baseController     = new BaseController(r,"baseController");
-  leftArmController  = new ArmController(); //r,"leftArmController");
-  rightArmController = new ArmController(); //r,"rightArmController");
-  //headController     = new HeadController(r,"headController");
-  //laserScannerController     = new LaserScannerController(r,"headController");
-  //spineController     = new SpineController(r,"headController");
+
+  // assuming that: robot joint array == hardware interface actuator array
+  // hard coded mapping between jointcontroller array and robot joint array
+  int baseMapToRobotJointIndex[] = { 
+      PR2::CASTER_FL_STEER   , PR2::CASTER_FL_DRIVE_L , PR2::CASTER_FL_DRIVE_R ,
+      PR2::CASTER_FR_STEER   , PR2::CASTER_FR_DRIVE_L , PR2::CASTER_FR_DRIVE_R ,
+      PR2::CASTER_RL_STEER   , PR2::CASTER_RL_DRIVE_L , PR2::CASTER_RL_DRIVE_R ,
+      PR2::CASTER_RR_STEER   , PR2::CASTER_RR_DRIVE_L , PR2::CASTER_RR_DRIVE_R };
+  int leftArmMapToRobotJointIndex[] = { 
+      PR2::ARM_L_PAN           , PR2::ARM_L_SHOULDER_PITCH, PR2::ARM_L_SHOULDER_ROLL ,
+      PR2::ARM_L_ELBOW_PITCH   , PR2::ARM_L_ELBOW_ROLL    , PR2::ARM_L_WRIST_PITCH   ,
+      PR2::ARM_L_WRIST_ROLL    };
+  int rightArmMapToRobotJointIndex[] = { 
+      PR2::ARM_R_PAN           , PR2::ARM_R_SHOULDER_PITCH, PR2::ARM_R_SHOULDER_ROLL ,
+      PR2::ARM_R_ELBOW_PITCH   , PR2::ARM_R_ELBOW_ROLL    , PR2::ARM_R_WRIST_PITCH   ,
+      PR2::ARM_R_WRIST_ROLL    };
+  int headMapToRobotJointIndex[] = { 
+      PR2::HEAD_YAW            , PR2::HEAD_PITCH };
+  int laserScannerMapToRobotJointIndex[] = { 
+      PR2::HEAD_LASER_PITCH  };
+  int spineMapToRobotJointIndex[] = { 
+      PR2::SPINE_ELEVATOR  };
+  // hard coded mapping between jointcontroller array and hardware interface actuator array
+  int baseMapToHIActuatorIndex[] = { 
+      PR2::CASTER_FL_STEER   , PR2::CASTER_FL_DRIVE_L , PR2::CASTER_FL_DRIVE_R ,
+      PR2::CASTER_FR_STEER   , PR2::CASTER_FR_DRIVE_L , PR2::CASTER_FR_DRIVE_R ,
+      PR2::CASTER_RL_STEER   , PR2::CASTER_RL_DRIVE_L , PR2::CASTER_RL_DRIVE_R ,
+      PR2::CASTER_RR_STEER   , PR2::CASTER_RR_DRIVE_L , PR2::CASTER_RR_DRIVE_R };
+  int leftArmMapToHIActuatorIndex[] = { 
+      PR2::ARM_L_PAN           , PR2::ARM_L_SHOULDER_PITCH, PR2::ARM_L_SHOULDER_ROLL ,
+      PR2::ARM_L_ELBOW_PITCH   , PR2::ARM_L_ELBOW_ROLL    , PR2::ARM_L_WRIST_PITCH   ,
+      PR2::ARM_L_WRIST_ROLL    };
+  int rightArmMapToHIActuatorIndex[] = { 
+      PR2::ARM_R_PAN           , PR2::ARM_R_SHOULDER_PITCH, PR2::ARM_R_SHOULDER_ROLL ,
+      PR2::ARM_R_ELBOW_PITCH   , PR2::ARM_R_ELBOW_ROLL    , PR2::ARM_R_WRIST_PITCH   ,
+      PR2::ARM_R_WRIST_ROLL    };
+  int headMapToHIActuatorIndex[] = { 
+      PR2::HEAD_YAW                 , PR2::HEAD_PITCH };
+  int laserScannerMapToHIActuatorIndex[] = { 
+      PR2::HEAD_LASER_PITCH  };
+  int spineMapToHIActuatorIndex[] = { 
+      PR2::SPINE_ELEVATOR  };
+
+  int leftArmNumJoints  = 7;
+  int rightArmNumJoints = 7;
+
+  baseController         = new BaseController(r,"baseController"); // controller got lucky, starts at 0 in pr2Core, if pr2Core changes, update.
+  leftArmController      = new ArmController(r,"leftArmController",leftArmNumJoints,leftArmMapToRobotJointIndex,leftArmMapToHIActuatorIndex);
+  rightArmController     = new ArmController(r,"rightArmController",rightArmNumJoints,rightArmMapToRobotJointIndex,rightArmMapToHIActuatorIndex);
+  //headController         = new HeadController(r,"headController",headNumJoints,headMapToRobotJointIndex[],headMapToHIActuatorIndex[]);
+  //laserScannerController = new LaserScannerController(r,"headController",laserScannerNumJoints,laserScannerMapToRobotJointIndex[],laserScannerMapToHIActuatorIndex[]);
+  //spineController        = new SpineController(r,"headController",spienNumJoints,spineMapToRobotJointIndex[],spineMapToHIActuatorIndex[]);
 
   // xml information, hardcoded
   char *c_filename = getenv("ROS_PACKAGE_PATH");
@@ -96,7 +143,8 @@ void GazeboMechanismControl::initControllers(){
   baseController->loadXML(filename.str());
   baseController->init();
 
-  //leftArmController->loadXML(filename.str());
+  filename << c_filename << "/robot_descriptions/wg_robot_description/pr2/pr2.xml" ;
+  leftArmController->loadXML(filename.str());
   leftArmController->init();
 
   //rightArmController->loadXML(filename.str());

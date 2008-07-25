@@ -175,6 +175,10 @@ void GazeboHardware::updateState(){
         hardwareInterface->actuator[jointId[ii]].state.encoderCount = GAZEBO_POS_TO_ENCODER*( pr2PTZCameraRightIface->data->tilt );
         pr2PTZCameraRightIface->Unlock();
       }
+      else
+      {
+        //FIXME: default action??
+      }
       //fprintf(stderr,"edh:: %d\n",hardwareInterface->actuator[jointId[ii]].state.encoderCount);
     }
 
@@ -321,40 +325,6 @@ void GazeboHardware::setMotorsOn(bool motorsOn)
       pr2GripperRightIface->Lock(1);
       pr2GripperRightIface->data->cmdEnableMotor    = motorsOn;
       pr2GripperRightIface->Unlock();
-    }
-    else if (boardLookUp[ii] == 3)
-    {
-    }
-    else if (boardLookUp[ii] == 4)
-    {
-    }
-    else
-    {
-      //FIXME: default action??
-    }
-  }
-}
-
-void GazeboHardware::tick() {
-  for(int ii = 0; ii < numActuators; ii++)
-  {
-    if (boardLookUp[ii] == 0)
-    {
-      //pr2ActarrayIface->Lock(1);
-      //pr2ActarrayIface->data->actuators[portLookUp[ii]].cmdEnableMotor = motorsOn;
-      //pr2ActarrayIface->Unlock();
-    }
-    else if (boardLookUp[ii] == 1)
-    {
-      //pr2GripperLeftIface->Lock(1);
-      //pr2GripperLeftIface->data->cmdEnableMotor     = motorsOn;
-      //pr2GripperLeftIface->Unlock();
-    }
-    else if (boardLookUp[ii] == 2)
-    {
-      //pr2GripperRightIface->Lock(1);
-      //pr2GripperRightIface->data->cmdEnableMotor    = motorsOn;
-      //pr2GripperRightIface->Unlock();
     }
     else if (boardLookUp[ii] == 3)
     {
