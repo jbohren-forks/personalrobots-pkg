@@ -14,7 +14,7 @@ cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 rospack(rosnpm)
 rospack_add_executable(nepumuk src/simul/nepumuk.cpp)
-rospack_add_executable(test src/ros/test.cpp)
+rospack_add_executable(simpletest src/ros/test.cpp)
 
 
 
