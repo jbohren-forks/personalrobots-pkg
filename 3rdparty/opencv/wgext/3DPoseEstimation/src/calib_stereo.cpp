@@ -13,6 +13,8 @@
 
 using namespace std;
 
+//#define DEBUG
+
 // reimplementation of dAB.m
 static void
 cvCalcMatMulDeriv( const CvMat* A, const CvMat* B, CvMat* dABdA, CvMat* dABdB )
@@ -606,13 +608,17 @@ bool CvLevMarq::updateAlt( const CvMat*& _param, CvMat*& _JtJ, CvMat*& _JtErr, d
    {
        _param = param;
        state = DONE;
+#ifdef DEBUG
        // jdc debugging
        printf("cvLevMarq done: iter num: %d,  change: %f, errNorm: %f\n", iters, change, errNorm);
+#endif
        return false;
    }
+#ifdef DEBUG
    // jdc debugging
    printf("cvLevMarq continue: iter num: %d,  change: %le, %le, errNorm: %f\n", 
 		   iters, change, criteria.epsilon, errNorm);
+#endif
 
    prevErrNorm = errNorm;
    _param = param;

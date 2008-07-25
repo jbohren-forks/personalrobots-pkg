@@ -8,8 +8,9 @@ using namespace std;
 #include "CvLevMarq3D.h"
 
 #include "CvTestTimer.h"
+#include <cv.h>
 
-#define DEBUG 1
+//#define DEBUG 1
 #define USE_UPDATEALT
 
 #if 0
@@ -23,6 +24,7 @@ using namespace std;
 
 CvLevMarq3D::CvLevMarq3D(int numErrors, int numMaxIter)
 {
+	this->mAngleType = Euler;
 	cvInitMatHeader(&mRT,         4, 4, CV_XF, mRTData);
 	cvSetIdentity(&mRT);
 	// get a view of the 3x4 transformation matrix that combines rot matrix and shift (translation) vector
@@ -76,15 +78,31 @@ bool CvLevMarq3D::constructRTMatrices(const CvMat *param, CvMyReal delta) {
 
 bool CvLevMarq3D::constructRTMatrix(const CvMat * param, CvMyReal _RT[]){
 	bool status = true;
-		
-	CvMyReal x  = cvmGet(param, 0, 0);
-	CvMyReal y  = cvmGet(param, 1, 0);
-	CvMyReal z  = cvmGet(param, 2, 0);
-	CvMyReal tx = cvmGet(param, 3, 0);
-	CvMyReal ty = cvmGet(param, 4, 0);
-	CvMyReal tz = cvmGet(param, 5, 0);
 	
-	CvMat3X3<CvMyReal>::transformMatrix(x, y, z, tx, ty, tz, _RT, 4, CvMat3X3<CvMyReal>::XYZ);
+	if (this->mAngleType == Euler) {
+		
+		CvMyReal x  = cvmGet(param, 0, 0);
+		CvMyReal y  = cvmGet(param, 1, 0);
+		CvMyReal z  = cvmGet(param, 2, 0);
+		CvMyReal tx = cvmGet(param, 3, 0);
+		CvMyReal ty = cvmGet(param, 4, 0);
+		CvMyReal tz = cvmGet(param, 5, 0);
+
+		CvMat3X3<CvMyReal>::transformMatrix(x, y, z, tx, ty, tz, _RT, 4, CvMat3X3<CvMyReal>::XYZ);
+	} else {
+	cout << "constructRTMatrix() Not Implemented Yet"<<endl;
+	exit(0);
+#if 0
+		// Rodrigues
+		CvMat rod;
+		if (param->rows==1) {
+			cvGetCols(param, &rod, 0, 3);
+		} else {
+			cvGetRows(param, &rod, 0, 3);
+		}
+		cvRodgrigues2(&rod, rot);
+#endif
+	}
 	return status;
 }
 
@@ -132,7 +150,7 @@ bool CvLevMarq3D::computeResidue(CvMat* xyzs0, CvMat *xyzs1, CvMat* res){
 	return computeResidue(xyzs0, xyzs1, &mRT3x4, res);
 }
 bool CvLevMarq3D::computeResidue(CvMat* xyzs0, CvMat *xyzs1, CvMat *T, CvMat* res){
-	TIMERSTART(Residue)
+	TIMERSTART(Residue);
 	
 	CvMat _xyzs0;
 	CvMat _res;
@@ -141,7 +159,7 @@ bool CvLevMarq3D::computeResidue(CvMat* xyzs0, CvMat *xyzs1, CvMat *T, CvMat* re
 	cvTransform(&_xyzs0, &_res, T);
 	cvSub(res, xyzs1, res);
 	
-	TIMEREND(Residue)
+	TIMEREND(Residue);
 	return true;
 }
 
@@ -190,6 +208,18 @@ bool CvLevMarq3D::constructTransformationMatrices(const CvMat *param, CvMyReal d
 	return true;
 }
 #endif
+
+bool CvLevMarq3D::doit(CvMat *xyzs0, CvMat *xyzs1, CvMat *rot, CvMat* trans) {
+	bool status = true;
+	double _param[6];
+	CvMat rod;
+	cvInitMatHeader(&rod, 1, 3, CV_64F, _param);
+	// compute rodrigues
+	cvRodrigues2(rot, &rod);
+	this->mAngleType = Rodrigues;
+	status = doit(xyzs0, xyzs1, _param);
+	return status;
+}
 
 bool CvLevMarq3D::doit(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 #ifdef USE_UPDATEALT
@@ -281,7 +311,10 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
     		double* JtJData   = _JtJ->data.db;
     		double* JtErrData = _JtErr->data.db;
     		
+    		TIMERSTART(ConstructMatrices);
+    		// construct all the matirces need for JtJData JtErrData
 	    	constructTransformationMatrices(param0, delta);
+    		TIMEREND(ConstructMatrices);
 	    	
 #if 0
 	    	CvMatUtils::printMat(&this->mRT);
@@ -307,16 +340,19 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	        	_r0y = _r0[1];
 	        	_r0z = _r0[2];
 #else
+	        	CvMyReal _p0x, _p0y, _p0z,  _p1x, _p1y, _p1z;
+	        	TIMERSTART(Residue);
 //	        	xyzs0 and xyzs1's are inliers we copy. so we know
 //	        	how their data are orgainized
-	        	CvMyReal _p0x = cvmGet(xyzs0, j, 0);
-	        	CvMyReal _p0y = cvmGet(xyzs0, j, 1);
-	        	CvMyReal _p0z = cvmGet(xyzs0, j, 2);
+	        	_p0x = cvmGet(xyzs0, j, 0);
+	        	_p0y = cvmGet(xyzs0, j, 1);
+	        	_p0z = cvmGet(xyzs0, j, 2);
 	        	
-	        	CvMyReal _p1x = cvmGet(xyzs1, j, 0);
-	        	CvMyReal _p1y = cvmGet(xyzs1, j, 1);
-	        	CvMyReal _p1z = cvmGet(xyzs1, j, 2);	        	
+	        	_p1x = cvmGet(xyzs1, j, 0);
+	        	_p1y = cvmGet(xyzs1, j, 1);
+	        	_p1z = cvmGet(xyzs1, j, 2);	        	
 	        	TRANSFORMRESIDUE(mRTData, _p0x, _p0y, _p0z, _p1x, _p1y, _p1z, _r0x, _r0y, _r0z);
+	        	TIMEREND(Residue);
 #endif
 	        	
 	        	if (_errNorm) {
@@ -331,8 +367,10 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 #if 0
 	    			computeResidue(&point0, &point1, &mFwdT3x4[k], &r1_k);
 #else
+	    			TIMERSTART(Residue);
 		        	TRANSFORMRESIDUE(mFwdTData[k], _p0x, _p0y, _p0z, _p1x, _p1y, _p1z, 
 		        			_r1[k*3], _r1[k*3+1], _r1[k*3+2]);
+		        	TIMEREND(Residue);
 #endif
 	    		}
 	    		TIMERSTART(JtJJtErr);
@@ -406,21 +444,52 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
     	if (_errNorm) {
     		if (_JtJ==NULL && _JtErr==NULL) {
 	    		TIMERSTART(ErrNorm);
-//    			int64 tErrNorm = cvGetTickCount();
-    			// not computed yet
-    			// construct the transformation matrix
+
+	    		TIMERSTART(ConstructMatrices);
     			constructTransformationMatrix(param0);
+        		TIMEREND(ConstructMatrices);
+    			double *p0 = xyzs0->data.db;
+    			double *p1 = xyzs1->data.db;
+    			double errNorm=0.0;
     			for (int j=0; j<numPoints; j++) {
     				// compute current error = xyzs1^T  - Transformation * xyzs0^T
+#if 0
     				CvMat point0, point1;
     				cvGetRow(xyzs0, &point0, j);
     				cvGetRow(xyzs1, &point1, j);
     				computeResidue(&point0, &point1, &r0);
-    				        	
+		        	
     				*_errNorm += _r0[0]*_r0[0] + _r0[1]*_r0[1] + _r0[2]*_r0[2];
+#else
+    				double _r0x, _r0y, _r0z;
+    				TIMERSTART(Residue);
+    				//	        	xyzs0 and xyzs1's are inliers we copy. so we know
+    				//	        	how their data are orgainized
+#if 0
+    				CvMyReal _p0x = cvmGet(xyzs0, j, 0);
+    				CvMyReal _p0y = cvmGet(xyzs0, j, 1);
+    				CvMyReal _p0z = cvmGet(xyzs0, j, 2);
+
+    				CvMyReal _p1x = cvmGet(xyzs1, j, 0);
+    				CvMyReal _p1y = cvmGet(xyzs1, j, 1);
+    				CvMyReal _p1z = cvmGet(xyzs1, j, 2);
+#else
+    				CvMyReal _p0x = *p0++;
+    				CvMyReal _p0y = *p0++;
+    				CvMyReal _p0z = *p0++;
+
+    				CvMyReal _p1x = *p1++;
+    				CvMyReal _p1y = *p1++;
+    				CvMyReal _p1z = *p1++;
+#endif
+    				TRANSFORMRESIDUE(mRTData, _p0x, _p0y, _p0z, _p1x, _p1y, _p1z, _r0x, _r0y, _r0z);
+    				TIMEREND(Residue);
+		        	
+    				errNorm += _r0x*_r0x + _r0y*_r0y + _r0z*_r0z;
+#endif
     			}
+    			*_errNorm = errNorm;
 	    		TIMEREND(ErrNorm);
-//    			CvTestTimer::getTimer().mErrNorm += cvGetTickCount() - tErrNorm;
     		}
     	}
 #ifdef DEBUG
@@ -449,6 +518,7 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 }
 	
 bool CvLevMarq3D::doit2(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
+	cout << "CvLevMarq3D::doit2 --- Not Fixed Yet"<<endl;
 	bool status=true;
 	//initialize the initial vector of paramters
 	if (_param == NULL){

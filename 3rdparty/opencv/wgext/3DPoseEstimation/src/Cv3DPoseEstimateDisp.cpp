@@ -9,7 +9,7 @@
 #include "CvTestTimer.h"
 using namespace std;
 
-#define DEBUG
+//#define DEBUG
 #define USE_LEVMARQ
 //#define DEBUG_DISTURB_PARAM
 

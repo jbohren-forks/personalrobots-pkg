@@ -12,6 +12,14 @@ using namespace std;
 #define USE_LEVMARQ
 //#define DEBUG_DISTURB_PARAM
 
+#if 0
+#define TIMERSTART(x) 
+#define TIMEREND(x)
+#else
+#define TIMERSTART(x) CvTestTimerStart(x)
+#define TIMEREND(x) CvTestTimerEnd(x)
+#endif
+
 Cv3DPoseEstimate::Cv3DPoseEstimate()
 {
 }
@@ -198,25 +206,29 @@ int Cv3DPoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat
 		return maxNumInLiers;
 	}
     
-	int64 tLevMarq = cvGetTickCount();
-	
+	int numInLiers0;
+    CvMat *points0Inlier;
+    CvMat *points1Inlier;
+	TIMERSTART(CopyInliers);
 	// get a copy of all the inliers, original and transformed
-    CvMat *points0Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
-    CvMat *points1Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
+    points0Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
+    points1Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
     // construct homography matrix
     constructRT(rot, trans, &RT);
     
-    int numInLiers0 = getInLiers(points0, points1, &RT, points0Inlier, points1Inlier);
+    numInLiers0 = getInLiers(points0, points1, &RT, points0Inlier, points1Inlier);
     
     if (numInLiers0 == 0) {
     	cout << "ZeroInLiers"<<endl;
     	numInLiers0 = getInLiers(points0, points1, &RT, points0Inlier, points1Inlier);
     }
+    TIMEREND(CopyInliers);
     
     // make a copy of the best RT before nonlinear optimization
     cvCopy(&RT, &mRTBestWithoutLevMarq);
 	
 #ifdef USE_LEVMARQ    
+    TIMERSTART(LevMarq);
 	// get the euler angle from rot
 	CvPoint3D64f eulerAngles;
 	{
@@ -284,7 +296,7 @@ int Cv3DPoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat
     cvmSet(trans, 1, 0, param[4]);
     cvmSet(trans, 2, 0, param[5]);
     
-    CvTestTimer::getTimer().mLevMarq += cvGetTickCount() - tLevMarq;
+    TIMEREND(LevMarq);
 #endif    
     inliers0 = points0Inlier;
     inliers1 = points1Inlier;

@@ -114,8 +114,10 @@ bool CvLevMarqDispSpace::computeResidueVector(const CvMat *uvdws0, const CvMat *
 		cvReshape(&uvdw1, &uvdw1T, 0, 4);
 		cvSub(&uvdw1r, &uvdw1T, &uvdw2);
 	}
+#ifdef DEBUG
 	cout << "residue" << endl;
 	CvMatUtils::printMat(resVector);
+#endif
 	return true;
 }
 
@@ -125,6 +127,7 @@ bool CvLevMarqDispSpace::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1, 
 
 bool CvLevMarqDispSpace::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1, 
 		const CvMat *T, CvMat* res){
+	TIMERSTART(Residue);
 	CvMat _xyzs0;
 	CvMat _res;
 	cvReshape(xyzs0, &_xyzs0, 3, 0);
@@ -135,6 +138,7 @@ bool CvLevMarqDispSpace::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1,
 	cout << "residue" << endl;
 	CvMatUtils::printMat(res);
 #endif
+	TIMEREND(Residue);
 	return true;
 }
 
@@ -224,7 +228,7 @@ bool CvLevMarqDispSpace::doit1(const CvMat *xyzs0, const CvMat *xyzs1, double _p
 
 			constructTransformationMatrices(param0, delta);
 
-#if 1
+#ifdef DEBUG
 			cout << "All the matrices Jacobian needs:"<<endl;
 			CvMatUtils::printMat(&this->mHomography);
 			CvMatUtils::printMat(&this->mFwdT[0]);

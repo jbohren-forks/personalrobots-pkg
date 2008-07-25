@@ -9,6 +9,7 @@
 #include "CvMatUtils.h"
 #include "CvMat3X3.h"
 #include "CvTestTimer.h"
+#include <cv.h>
 
 using namespace std;
 
@@ -107,13 +108,13 @@ double CvTest3DPoseEstimate::randReal(double min, double max) {
 	return r;
 }
 
-void CvTest3DPoseEstimate::disturb(CvMat *xyzs) {
+void CvTest3DPoseEstimate::disturb(const CvMat *xyzs, CvMat* xyzsNoised) {
 #ifdef GAUSSIANNOISE
-	CvMat* Noise = cvCreateMat(xyzs->rows, xyzs->cols, xyzs->type);
+//	CvMat* Noise = cvCreateMat(xyzs->rows, xyzs->cols, xyzs->type);
 	double sigma = mDisturbScale/2.0; // ~ 95%
-	cvRandArr( &mRng, Noise, CV_RAND_NORMAL, cvScalar(0.0), cvScalar(sigma));
-	cvAdd(xyzs, Noise, xyzs);
-	cvReleaseMat(&Noise);
+	cvRandArr( &mRng, xyzsNoised, CV_RAND_NORMAL, cvScalar(0.0), cvScalar(sigma));
+	cvAdd(xyzs, xyzsNoised, xyzsNoised);
+//	cvReleaseMat(&Noise);
 #else
 	double s = mDisturbScale;
 	if (s<=0.0)
@@ -141,16 +142,45 @@ void CvTest3DPoseEstimate::randomize(CvMat *xyzs, int num, double maxVal){
 
 bool CvTest3DPoseEstimate::test(){
     bool status = true;
-	CvMat * points0 =  (CvMat *)cvLoad("Data/obj1_cropped_2000.xml");
+	CvMat * points0 =  (CvMat *)cvLoad("Data/obj1_cropped_2000_adjusted.xml");
 	
+#if 0
+	CvMat * points0 =  (CvMat *)cvLoad("Data/obj1_cropped_2000.xml");
+	int numPoints = points0->rows;
+	// adjusting the data set
+	// turn it from meters to mm
+	cvScale(points0, points0, 1000.0);
+#if 0
+	double _v[3] = {0, 100., 100.};
+	CvMat v = cvMat(1, 3, CV_64F, _v);
+	double _Temp[3*points0->rows];
+	CvMat Temp = cvMat(points0->rows, 3, CV_64F, _Temp);
+	cvRepeat(&v, &Temp);
+	cvAdd(points0, &Temp, points0);
+#endif
+	// a rotation matrix to turn from x forward, z up to
+	// z forward and y down
+	double _X2Z[9] = { 
+			0, -1,  0,
+			0,  0, -1,
+			1,  0,  0
+	};
+	CvMat X2Z = cvMat(3, 3, CV_64F, _X2Z);
+	CvMat *points00 = cvCreateMat(numPoints, 3, CV_64FC1);
+	cvGEMM(points0, &X2Z, 1.0, NULL, 0, points00, CV_GEMM_B_T);
+	cvReleaseMat(&points0);
+	points0 = points00;
+//	cvMatMul(&X2Z, points0, points00);
+	cvSave("Data/obj1_cropped_2000_adjusted.xml", points0, "adjusted", "...so that it is more like real data");
+#endif	
 //	CvMat * points0 =  (CvMat *)cvLoad("Data/3dPointClouds0.xml");
 //	CvMat * points0 =  (CvMat *)cvLoad("Data/obj1_cropped.xml");
 	int numPoints = points0->rows;
-	double percentageOfOutliers = mOutlierPercentage;
 	
-	double numOutliers = percentageOfOutliers*numPoints;
-	
-	CvMat * points1  =  cvCreateMat(numPoints,  3, CV_64FC1);
+		
+	CvMat * points1   = cvCreateMat(numPoints,  3, CV_64FC1);
+	CvMat * points1d  = cvCreateMat(numPoints,  3, CV_64FC1); // to hold the disturbed version of points1
+	CvMat * points1r  = cvCreateMat(numPoints,  3, CV_64FC1);
 	
 	mEulerAngle.x = CV_PI/4.;
 	mEulerAngle.y = CV_PI/3.;
@@ -193,24 +223,27 @@ bool CvTest3DPoseEstimate::test(){
 		peCart.configureErrorMeasurement(NULL, threshold);
 		cout << "set disturb scale, threshold to be: "<< this->mDisturbScale<<","<<threshold<<endl;
 	} else {
+		cout << "Testing in disparity space"<<endl;
 		uvds0 = cvCreateMat(numPoints, 3, CV_64FC1);
 		uvds1 = cvCreateMat(numPoints, 3, CV_64FC1);
 		this->convert3DToDisparitySpace(points0, uvds0);
 		cvAvgSdv(uvds0, &mean, &std);
 		cout << "mean and std of point cloud: "<<mean.val[0] << ","<<std.val[0]<<endl;
 
-//		this->mDisturbScale = 1.5;
-//		this->mOutlierScale = 10.0;
-		this->mDisturbScale = 1.0;
+		this->mDisturbScale = std.val[0]*0.015;
 		this->mOutlierScale = 10.0;
-		mOutlierPercentage = 0.2;
+		mOutlierPercentage = 0.0;
 		// set threshold
-		double threshold = 1.0;
-		peCart.configureErrorMeasurement(NULL, threshold);
+		double threshold = std.val[0]*0.01;
+		peDisp.configureErrorMeasurement(NULL, threshold);
 		cout << "set disturb scale, threshold to be: "<< this->mDisturbScale<<","<<threshold<<endl;
 		
 		peDisp.setCameraParams(this->mFx, this->mFy, this->mTx, this->mClx, this->mCrx, this->mCy);
 	}
+	
+	double percentageOfOutliers = mOutlierPercentage;
+	double numOutliers = percentageOfOutliers*numPoints;
+	
 	
 	double numIters = 1000;
 	double maxErrorAfterLevMarq = 0.0;
@@ -222,14 +255,18 @@ bool CvTest3DPoseEstimate::test(){
 	double maxImprovementAfterLevMarq = 0;
 	int numInliers_maxImprovementAfterLevMarq;
 	
+	double maxErrorRod = 0.0;
+	int numInliers_maxErrorRod = 0;
+	int testCaseNum = -1;
+	
 	int numGoodIters=0;
 	for (int i=0; i<numIters; i++)
 	{
 		cout << "Test Case Number:  "<<i<<endl;
 #if 1
-		mEulerAngle.x = CV_PI*randReal(-1., 1.);
-		mEulerAngle.y = CV_PI*randReal(-1., 1.);
-		mEulerAngle.z = CV_PI*randReal(-1., 1.);
+		mEulerAngle.x = CV_PI/4.0*randReal(-1., 1.);
+		mEulerAngle.y = CV_PI/4.0*randReal(-1., 1.);
+		mEulerAngle.z = CV_PI/4.0*randReal(-1., 1.);
 
 		mTranslation.x = 50. + 100.*cvRandReal(&mRng);
 		mTranslation.y = 50. + 100.*cvRandReal(&mRng);
@@ -250,18 +287,17 @@ bool CvTest3DPoseEstimate::test(){
 		CvMat *TransformBestBeforeLevMarq;
 		CvMat *TransformAfterLevMarq;
 		if (this->mTestCartesian) {
-			disturb(points1);
+			disturb(points1, points1d);
 			int64 t = cvGetTickCount();
-			numInLiers = peCart.estimate(points0, points1, rot, trans, inliers0, inliers1);
+			numInLiers = peCart.estimate(points0, points1d, rot, trans, inliers0, inliers1);
 			CvTestTimer::getTimer().mTotal += cvGetTickCount() - t;
 //			cvCopy(&peCart.mRTBestWithoutLevMarq, &TransformBestBeforeLevMarq);
 			TransformBestBeforeLevMarq = peCart.getBestTWithoutNonLinearOpt();
 			TransformAfterLevMarq      = peCart.getFinalTransformation();
 		} else {
 			// convert both set of points into disparity color space
-			this->convert3DToDisparitySpace(points1, uvds1);
-			
-			disturb(uvds1);
+			this->convert3DToDisparitySpace(points1, points1d);
+			disturb(points1d, uvds1);
 			
 			int64 t = cvGetTickCount();
 			numInLiers = peDisp.estimate(uvds0, uvds1, rot, trans, inliers0, inliers1);	
@@ -282,18 +318,70 @@ bool CvTest3DPoseEstimate::test(){
 		CvMatUtils::printMat(rot);
 		cout << "Reconstructed Translation Matrix" << endl;
 		CvMatUtils::printMat(trans);
+		
+		// calculate the relative L2 norm of the diff between true transformation and predicted transformation
+		// compute rodrigues from rot and mRot
+		double _rod0[3], _rod1[3];
+		CvMat rod0 = cvMat(3, 1, CV_64F, _rod0);
+		CvMat rod1 = cvMat(3, 1, CV_64F, _rod1);
+		cvRodrigues2(&mRot, &rod0);
+		cvRodrigues2(rot, &rod1);
+		
+		cout << "Rodrigues:"<<endl;
+		CvMatUtils::printMat(&rod0);
+		CvMatUtils::printMat(&rod1);
+		
+		double errRod   = cvNorm(&rod0, &rod1, CV_L2);
+		double errTransMat = cvNorm(trans, &mTrans, CV_RELATIVE_L2);
 
-		CvMat *points1r = cvCreateMat(numPoints, 3, CV_64FC1);
+		cout << "L2 -norm of the diff of rodrigues and trans mat are: "<<errRod<<" , "<<errTransMat<<endl;
+		
+		if (maxErrorRod < errRod) {
+			maxErrorRod = errRod;
+			numInliers_maxErrorRod = numInLiers;
+			testCaseNum = i;
+		}
+
+		CvMat P0, P1r;
+		
+		cvReshape(points0,  &P0,  3, 0);
+		cvReshape(points1r, &P1r, 3, 0);		
+		
+		cvPerspectiveTransform(&P0, &P1r, TransformBestBeforeLevMarq);
+		
+		// calculate the relative L2 norm of the diff between observed and predicted points;
+		double errorBeforeLevMarq = cvNorm(points1, points1r, CV_RELATIVE_L2)/numPoints;
+		cout << "Average of the L2-norm of the diff between observed and prediction (Before LevMarq):  "<< errorBeforeLevMarq << endl;
+
+		if (maxErrorBeforeLevMarq < errorBeforeLevMarq) {
+			maxErrorBeforeLevMarq = errorBeforeLevMarq;
+			numInliers_maxErrorBeforeLevMarq = numInLiers;
+		}
+		
+
 		this->transform(rot, points0, trans, points1r);
 		//	cout << "Reconstructed tranformed points: "<<endl;
 		//	CvMatUtils::printMat(points1r);
 
-		// calculate the relative L2 norm of the diff between true transformation and predicted transformation
-		double errRotMat   = cvNorm(rot, &mRot, CV_L2)/3.0;
-		double errTransMat = cvNorm(trans, &mTrans, CV_RELATIVE_L2);
+		// calculate the relative L2 norm of the diff between observed and predicted points;
+		double errorAfterLevMarq = cvNorm(points1, points1r, CV_RELATIVE_L2)/numPoints;
+		cout << "Average of the L2-norm of the diff between observed and prediction (After  LevMarq):  "<< errorAfterLevMarq << endl;
 
-		cout << "L2 -norm of the diff of rot mat and trans mat are: "<<errRotMat<<" , "<<errTransMat<<endl;
-
+		if (maxErrorAfterLevMarq < errorAfterLevMarq) {
+			maxErrorAfterLevMarq = errorAfterLevMarq;
+			numInliers_maxErrorAfterLevMarq = numInLiers;
+		}
+		
+		if (maxNumInliers < numInLiers){
+			maxNumInliers = numInLiers;
+			errAfterLevMarq_maxNumInliers = errorAfterLevMarq;
+		}
+		
+		if (maxImprovementAfterLevMarq < errorBeforeLevMarq - errorAfterLevMarq){
+			maxImprovementAfterLevMarq = errorBeforeLevMarq - errorAfterLevMarq;
+			numInliers_maxImprovementAfterLevMarq = numInLiers;
+		}
+		
 		if (inliers0){
 			CvMat *inliers1r = cvCreateMat(numInLiers, 3, CV_64FC1);
 			
@@ -305,10 +393,12 @@ bool CvTest3DPoseEstimate::test(){
 			cvPerspectiveTransform(&P0, &P1r, TransformBestBeforeLevMarq);
 			double errorInliersBefore = cvNorm(inliers1, inliers1r, CV_RELATIVE_L2)/numInLiers;
 			cout << "Average of the L2-norm of the diff between observed and prediction of inliers (Before LevMarq):  "<< errorInliersBefore << endl;
+#if 0			
 			if (maxErrorBeforeLevMarq < errorInliersBefore) {
 				maxErrorBeforeLevMarq = errorInliersBefore;
 				numInliers_maxErrorBeforeLevMarq = numInLiers;
 			}
+#endif
 
 			cvPerspectiveTransform(&P0, &P1r, TransformAfterLevMarq);
 //			this->transform(rot, inliers0, trans, inliers1r);
@@ -316,6 +406,7 @@ bool CvTest3DPoseEstimate::test(){
 			// calculate the relative L2 norm of the diff between observed and predicted points;
 			double errorInliersAfter = cvNorm(inliers1, inliers1r, CV_RELATIVE_L2)/numInLiers;
 			cout << "Average of the L2-norm of the diff between observed and prediction of inliers (After  LevMarq):  "<< errorInliersAfter << endl;
+#if 0
 			if (maxErrorAfterLevMarq < errorInliersAfter) {
 				maxErrorAfterLevMarq = errorInliersAfter;
 				numInliers_maxErrorAfterLevMarq = numInLiers;
@@ -330,18 +421,16 @@ bool CvTest3DPoseEstimate::test(){
 				maxImprovementAfterLevMarq = errorInliersBefore - errorInliersAfter;
 				numInliers_maxImprovementAfterLevMarq = numInLiers;
 			}
-
+#endif
 
 			cvReleaseMat(&inliers1r);
 		}
 
-		// calculate the relative L2 norm of the diff between observed and predicted points;
-		double error = cvNorm(points1, points1r, CV_RELATIVE_L2)/numPoints;
-		cout << "Average of the L2-norm of the diff between observed and prediction:  "<< error << endl;
-
-		cvReleaseMat(&points1r);
 #endif
 	}
+	cout << "max error of rodrigues: "<<maxErrorRod <<endl;
+	cout << "num of inliers for the test case: "<< numInliers_maxErrorRod<<endl;
+	cout << "test Case number: "<< testCaseNum <<endl;
 	cout << "max error before levmarq: "<< maxErrorBeforeLevMarq << endl;
 	cout << "num of inliers for the test case: "<< numInliers_maxErrorBeforeLevMarq << endl;
 	
@@ -359,6 +448,9 @@ bool CvTest3DPoseEstimate::test(){
 	timer.mNumIters = numGoodIters;
 	timer.printStat();
 	
+	cvReleaseMat(&points1);
+	cvReleaseMat(&points1d);
+	cvReleaseMat(&points1r);
 	
     return status;
 }

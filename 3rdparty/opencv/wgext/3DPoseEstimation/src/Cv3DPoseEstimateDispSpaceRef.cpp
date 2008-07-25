@@ -8,6 +8,8 @@
 #include "CvMat3X3.h"
 #include "CvMatUtils.h"
 
+#include "CvTestTimer.h"
+
 //#define DEBUG
 
 //#define DEBUG_DISTURB_PARAM
@@ -45,6 +47,12 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
 	reprojection(uvds0, points0);
 	reprojection(uvds1, points1);
 #if 0
+	cout << "uvds0: "<< endl;
+	CvMatUtils::printMat(uvds0);
+	cout << "uvds1: " << endl;
+	CvMatUtils::printMat(uvds1);
+#endif
+#if 0
 	cout << "Reprojected points0: "<< endl;
 	CvMatUtils::printMat(points0);
 	cout << "Reprojected points1: " << endl;
@@ -65,17 +73,23 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
 	srand(time(NULL));
 	int maxNumInLiers=0;
 	for (int i=0; i< mNumIterations; i++) {
+#ifdef DEBUG
 		cout << "Iteration: "<< i << endl;
+#endif
 		// randomly pick 3 points. make sure they are not 
 		// colinear
 		pick3RandomPoints(points0, points1, &P0, &P1);
 		
+		CvTestTimerStart(SVD);
 		this->estimateLeastSquareInCol(&P0, &P1, &R, &T);
+		CvTestTimerEnd(SVD);
         
         this->constructDisparityHomography(&R, &T, &H);
 		
+        CvTestTimerStart(CheckInliers);
 		// scoring against all points
 		numInLiers = checkInLiers(uvds0, uvds1, &H);
+		CvTestTimerEnd(CheckInliers);
 		
 #ifdef DEBUG
 		cout << "R, T, and H: "<<endl;
@@ -167,9 +181,12 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
     param[3] = cvmGet(trans, 0, 0);
     param[4] = cvmGet(trans, 1, 0);
     param[5] = cvmGet(trans, 2, 0);
+    
+#ifdef DEBUG
     printf("initial parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n", 
     		param[0]/CV_PI*180., param[0], param[1]/CV_PI*180., param[1], param[2]/CV_PI*180., param[2], 
     		param[3], param[4], param[5]);
+#endif
     
 #ifdef    DEBUG_DISTURB_PARAM
     for (int i=0; i<6; i++) param[i] *= 1.01;
@@ -178,11 +195,15 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
     		param[3], param[4], param[5]);
 #endif
 
+    CvTestTimerStart(LevMarqDoit);
     levMarq.doit(uvds0Inlier, uvds1Inlier, param);    
+    CvTestTimerEnd(LevMarqDoit);
     
+#ifdef DEBUG
     printf("optimized parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n", 
     		param[0]/CV_PI*180., param[0], param[1]/CV_PI*180., param[1], param[2]/CV_PI*180., param[2], 
     		param[3], param[4], param[5]);
+#endif
     
 	// TODO: construct matrix with parameters from nonlinear optimization
     double _rot[9];

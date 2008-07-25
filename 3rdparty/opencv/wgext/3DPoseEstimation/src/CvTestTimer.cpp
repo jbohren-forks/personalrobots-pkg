@@ -16,23 +16,26 @@ CvTestTimer::~CvTestTimer()
 {
 }
 
-void CvTestTimer::printStat(const char* title, int64 val) {
-	fprintf(stdout, "total time spend in %s: %f, %f\n",
+#define PRINTSTAT(title, name) printStat((title), m##name, mCount##name)
+
+void CvTestTimer::printStat(const char* title, int64 val, int64 count) {
+	fprintf(stdout, "total time spend in %s: %10.2f, %6.2f%%, %10.2f\n",
 			title,
 			(double)val/(double)mNumIters/(double)mFrequency, 
-			(double)val/(double)mTotal);
+			(double)val/(double)mTotal*100.0, (double)count/(double)mNumIters);
 }
 
 void CvTestTimer::printStat() {
 	cout << "num of iters: "<< this->mNumIters<<endl;
-	printStat("Total", mTotal);
-	printStat("SVD", mSVD);
-	printStat("CheckInliers", mCheckInliers);
-	
-	printStat("LevMarq::doit", mLevMarqDoit);
-	printStat("LevMarq::getResidue", mResidue);
-	printStat("LevMarq::errNorm", mErrNorm);
-	printStat("LevMarq::JtJJtErr", mJtJJtErr);
-	printStat("LevMarq::CvLevMarq:", mCvLevMarq);
+	PRINTSTAT("Total               ", Total);
+	PRINTSTAT("SVD                 ", SVD);
+	PRINTSTAT("CheckInliers        ", CheckInliers);
+	PRINTSTAT("CopyInliers         ", CopyInliers);
+	PRINTSTAT("LevMarq::           ", LevMarqDoit);
+	PRINTSTAT("LevMarq::getResidue ", Residue);
+	PRINTSTAT("LevMarq::errNorm    ", ErrNorm);
+	PRINTSTAT("LevMarq::JtJJtErr   ", JtJJtErr);
+	PRINTSTAT("LevMarq::CvLevMarq  ", CvLevMarq);
+	PRINTSTAT("LevMarq::CnstrctMats", ConstructMatrices);
 }
 
