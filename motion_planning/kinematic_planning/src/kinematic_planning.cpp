@@ -82,6 +82,7 @@ Provides (name/type):
 **/
 
 #include <ros/node.h>
+#include <ros/time.h>
 #include <std_msgs/PointCloudFloat32.h>
 #include <robot_srvs/KinematicMotionPlan.h>
 
@@ -159,6 +160,7 @@ public:
 	unsigned int n = m_cloud.get_pts_size();
 	printf("received %u points\n", n);
 
+	ros::Time startTime = ros::Time::now();
 	double *data = new double[3 * n];	
 	for (unsigned int i = 0 ; i < n ; ++i)
 	{
@@ -175,6 +177,9 @@ public:
 	
 	delete[] data;
 	
+	double tupd = (ros::Time::now() - startTime).to_double();	
+	printf("Updated world model in %f seconds\n", tupd);
+
     }
     
     bool plan(robot_srvs::KinematicMotionPlan::request &req, robot_srvs::KinematicMotionPlan::response &res)
@@ -222,14 +227,29 @@ public:
 	
 	/* do the planning */
 	m_collisionSpace->lock();
+	
+	ros::Time startTime = ros::Time::now();
 	bool ok = p.mp->solve(req.allowed_time); 
+	double tsolve = (ros::Time::now() - startTime).to_double();	
+	printf("Motion planner spent %f seconds\n", tsolve);
+	
+	/* do path smoothing */
+	if (ok)
+	{
+	    ros::Time startTime = ros::Time::now();
+	    ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
+	    p.si->smoothVertices(path);
+	    double tsmooth = (ros::Time::now() - startTime).to_double();	
+	    printf("Smoother spent %f seconds (%f seconds in total)\n", tsmooth, tsmooth + tsolve);
+	}	
+	
 	m_collisionSpace->unlock();
+
 	
 	/* copy the solution to the result */
 	if (ok)
 	{
 	    ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
-	    p.si->smoothVertices(path);	    
 	    res.path.set_states_size(path->states.size());
 	    for (unsigned int i = 0 ; i < path->states.size() ; ++i)
 	    {
