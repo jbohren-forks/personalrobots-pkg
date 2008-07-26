@@ -8,6 +8,7 @@ Library for doing transformations.
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
 <depend package="newmat10"/>
+<depend package="gtest"/>
 <export>
 <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lTF -lnewmat"/>
 </export>
