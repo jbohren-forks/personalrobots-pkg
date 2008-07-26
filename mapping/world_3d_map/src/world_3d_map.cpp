@@ -103,7 +103,7 @@ public:
 	advertise<rostools::Log>("roserr");
 
 	// NOTE: subscribe to stereo vision point cloud as well... when it becomes available
-	subscribe("full_cloud", inputCloud, &World3DMap::pointCloudCallback);
+	subscribe("cloud", inputCloud, &World3DMap::pointCloudCallback);
 	
 	param("world_3d_map/max_publish_frequency", maxPublishFrequency, 0.5);
 	param("world_3d_map/retain_pointcloud_duration", retainPointcloudDuration, 2.0);
