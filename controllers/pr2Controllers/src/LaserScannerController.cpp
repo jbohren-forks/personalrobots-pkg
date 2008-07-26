@@ -1,3 +1,37 @@
+/////////////////////////////////////////////////////////////////////////////////////
+//Software License Agreement (BSD License)
+//
+//Copyright (c) 2008, Willow Garage, Inc.
+//All rights reserved.
+//
+//Redistribution and use in source and binary forms, with or without
+//modification, are permitted provided that the following conditions
+//are met:
+//
+// * Redistributions of source code must retain the above copyright
+//   notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above
+//   copyright notice, this list of conditions and the following
+//   disclaimer in the documentation and/or other materials provided
+//   with the distribution.
+// * Neither the name of Willow Garage nor the names of its
+//   contributors may be used to endorse or promote products derived
+//   from this software without specific prior written permission.
+//
+//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+//"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+//LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+//FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+//COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+//INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+//LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+//CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+//LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+//ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+//POSSIBILITY OF SUCH DAMAGE.
+/////////////////////////////////////////////////////////////////////////////////////
+
 #include <pr2Controllers/LaserScannerController.h>
 #define DEMO
 
@@ -64,8 +98,11 @@ void LaserScannerController::setSawtoothProfile(double period, double amplitude,
 
 	unsigned int elements = (unsigned int) (period/dt);
 	setParam("profile" , "sawtooth");
+  this->timeStep = dt; //Record timestep
+  getTime(&lastCycleStart);
 	generateSawtooth(profileX,profileT,period,amplitude,dt,offset,elements);
 	profileLength = elements;
+  profileIndex = 0;
 }
 
 void LaserScannerController::generateSawtooth(double *&x, double *&t, double period, double amplitude, double dt, double offset, unsigned int numElements){
@@ -92,8 +129,11 @@ void LaserScannerController::generateSawtooth(double *&x, double *&t, double per
 }
 
 void LaserScannerController::setSinewaveProfile(double period, double amplitude, double dt, double offset){
+  
 	setParam("profile", "sinewave");
 	unsigned int elements = (unsigned int) (period/dt);
+  this->timeStep = dt; //Record timestep
+  getTime(&lastCycleStart);
 	generateSinewave(profileX,profileT,period,amplitude,dt,offset,elements);
 	profileLength = elements;
 	profileIndex = 0; //Start at beginning of profile
@@ -119,6 +159,8 @@ void LaserScannerController::generateSinewave(double *&x, double *&t, double per
 void LaserScannerController::setSquarewaveProfile(double period, double amplitude, double dt, double offset){
 	setParam("profile", "squarewave");
 	unsigned int elements = (unsigned int) (period/dt);
+  this->timeStep = dt; //Record timestep
+  getTime(&lastCycleStart);
 	generateSquarewave(profileX,profileT,period,amplitude,dt,offset,elements);
 	profileLength = elements;
 	profileIndex = 0; //Start at beginning of profile
@@ -159,8 +201,10 @@ controllerErrorCode LaserScannerController::setProfile(double *&t, double *&x, i
 //
 //---------------------------------------------------------------------------------//
 void LaserScannerController::getTime(double* time){
-        lowerControl.getTime(time);
-      }
+  struct timeval t;
+  gettimeofday( &t, 0);
+  *time = (double) (t.tv_usec *1e-6 + t.tv_sec);    
+}
 
 //---------------------------------------------------------------------------------//
 //MODE/ENABLE CALLS
@@ -314,8 +358,11 @@ void LaserScannerController::update( )
     if(controlMode == CONTROLLER_AUTOMATIC){
 			lowerControl.setPosCmd(profileX[profileIndex]);
       //Every x calls, advance profile Index
-      if(counter==1000){ //Hardcoded for now...
+      double time;
+      getTime(&time);
+      if(time-lastCycleStart >= timeStep){ 
        counter = 0;			
+       lastCycleStart = time;
 		  	//Advance time index. Reset if necessary
 		  	if(profileIndex == profileLength-1){
 			  	profileIndex = 0; //Restart profile
