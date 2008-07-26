@@ -88,8 +88,10 @@ Provides (name/type):
 #include <rosthread/mutex.h>
 #include <std_msgs/PointCloudFloat32.h>
 #include <rostools/Log.h>
+#include <random_utils/random_utils.h>
 #include <deque>
 #include <cmath>
+
 using namespace std_msgs;
 using namespace ros::thread::member_thread;
 
@@ -114,6 +116,7 @@ public:
 	active = true;
 	working = false;
 	shouldPublish = false;
+	random_utils::init(&rng);
 	
 	processMutex.lock();
 	publishMutex.lock();
@@ -236,8 +239,9 @@ public:
 	delete d;
     }
     
-    /* remove invalid floating point values and strip channel iformation */
-    PointCloudFloat32* filterInvalidValues(const PointCloudFloat32 &cloud)
+    /* Remove invalid floating point values and strip channel iformation.
+     * Also keep a certain ratio of the cloud information only */
+    PointCloudFloat32* filter0(const PointCloudFloat32 &cloud, double frac = 1.0)
     {
 	PointCloudFloat32 *copy = new PointCloudFloat32();
 	copy->header = cloud.header;
@@ -246,8 +250,9 @@ public:
 	unsigned int j = 0;
 	copy->set_pts_size(n);	
 	for (unsigned int k = 0 ; k < n ; ++k)
-	    if (isfinite(cloud.pts[k].x) && isfinite(cloud.pts[k].y) && isfinite(cloud.pts[k].z))
-		copy->pts[j++] = cloud.pts[k];
+	    if (random_utils::uniform(&rng, 0.0, 1.0) < frac)
+		if (isfinite(cloud.pts[k].x) && isfinite(cloud.pts[k].y) && isfinite(cloud.pts[k].z))
+		    copy->pts[j++] = cloud.pts[k];
 	copy->set_pts_size(j);
 
 	return copy;	
@@ -255,7 +260,7 @@ public:
 
     PointCloudFloat32* runFilters(const PointCloudFloat32 &cloud)
     {
-	return filterInvalidValues(cloud);
+	return filter0(cloud);
     }
     
     void processData(void)
@@ -288,6 +293,8 @@ private:
     pthread_t         *publishingThread;
     ros::thread::mutex processMutex, publishMutex, worldDataMutex, flagMutex;
     bool               active, working, shouldPublish;
+
+    random_utils::rngState rng;    
 };
 
 
