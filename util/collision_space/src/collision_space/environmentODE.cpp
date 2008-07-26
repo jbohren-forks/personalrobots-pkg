@@ -226,7 +226,8 @@ void collision_space::EnvironmentModelODE::addPointCloud(unsigned int n, const d
 void collision_space::EnvironmentModelODE::clearObstacles(void)
 {
     m_collide2.clear();
-    freeMemory();
+    if (m_space)
+	dSpaceDestroy(m_space);
     m_space = dHashSpaceCreate(0);
     m_collide2.setup();
 }

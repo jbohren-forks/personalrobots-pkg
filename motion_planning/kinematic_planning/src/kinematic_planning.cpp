@@ -119,7 +119,7 @@ public:
 	m_collisionSpace->unlock();
 	
 	// temp obstacle
-	double sphere[3] = {0.8,0.2,0.4};    
+	double sphere[6] = {0.8,0.2,0.4};    
 	m_collisionSpace->addPointCloud(1, sphere, 0.15);
 	
 #ifdef DISPLAY_ODE_SPACES
@@ -162,25 +162,42 @@ public:
     
     void pointCloudCallback(void)
     {
-	unsigned int n = m_cloud.get_pts_size();
+	const int frac = 50;
+	unsigned int n = m_cloud.get_pts_size()/frac;
 	printf("received %u points\n", n);
+
+	
+#ifdef DISPLAY_ODE_SPACES
+	spaces.clear();	
+#endif
+
 
 	ros::Time startTime = ros::Time::now();
 	double *data = new double[3 * n];	
 	for (unsigned int i = 0 ; i < n ; ++i)
 	{
 	    unsigned int i3 = i * 3;	    
-	    data[i3    ] = m_cloud.pts[i].x;
-	    data[i3 + 1] = m_cloud.pts[i].y;
-	    data[i3 + 2] = m_cloud.pts[i].z;
+	    data[i3    ] = m_cloud.pts[i * frac].x;
+	    data[i3 + 1] = m_cloud.pts[i * frac].y;
+	    data[i3 + 2] = m_cloud.pts[i * frac].z;
 	}
 	
 	m_collisionSpace->lock();
 	m_collisionSpace->clearObstacles();
-	m_collisionSpace->addPointCloud(n, data, 0.01);
+	m_collisionSpace->addPointCloud(n, data, 0.03);
 	m_collisionSpace->unlock();
 	
 	delete[] data;
+
+#ifdef DISPLAY_ODE_SPACES
+	collision_space::EnvironmentModelODE* okm = dynamic_cast<collision_space::EnvironmentModelODE*>(m_collisionSpace);
+	if (okm)
+	{
+	    spaces.addSpace(okm->getODESpace(), 1.0f, 0.0f, 0.0f);
+	    for (unsigned int i = 0 ; i < okm->getModelCount() ; ++i)
+		spaces.addSpace(okm->getModelODESpace(i), 0.1f, 0.5f, (float)(i + 1)/(float)okm->getModelCount());
+	}
+#endif
 	
 	double tupd = (ros::Time::now() - startTime).to_double();	
 	printf("Updated world model in %f seconds\n", tupd);
