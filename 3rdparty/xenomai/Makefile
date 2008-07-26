@@ -3,7 +3,7 @@ all: check_done
 BUILD_TARGET = xenomai
 include $(shell rospack find mk)/check_done.mk
 
-XENOMAI_REVISION = 4007
+XENOMAI_REVISION = 4063
 LINUX_VERSION = 2.6.24.3
 
 empty :=
