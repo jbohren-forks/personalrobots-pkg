@@ -104,6 +104,7 @@ public:
 
 	// NOTE: subscribe to stereo vision point cloud as well... when it becomes available
 	subscribe("full_cloud", inputCloud, &World3DMap::pointCloudCallback);
+	
 	param("world_3d_map/max_publish_frequency", maxPublishFrequency, 0.5);
 	param("world_3d_map/retain_pointcloud_duration", retainPointcloudDuration, 2.0);
 	param("world_3d_map/verbosity_level", verbose, 1);
@@ -190,15 +191,13 @@ public:
     void publishDataThread(void)
     {
 	ros::Duration *d = new ros::Duration(1.0/maxPublishFrequency);
-	double us = d->to_double() * 1000000.0;
 	
 	/* while everything else is running (map building) check if
 	   there are any updates to send, but do so at most at the
 	   maximally allowed frequency of sending data */
 	while (active)
 	{
-	    // should change from usleep() to some other method when rostime looks better
-	    usleep(us);
+	    d->sleep();
 
 	    if (shouldPublish)
 	    {
@@ -206,24 +205,20 @@ public:
 		if (active)
 		{
 		    PointCloudFloat32 toPublish;
+		    toPublish.header = currentWorld.back()->header;
 		    
 		    unsigned int      npts  = 0;
 		    for (unsigned int i = 0 ; i < currentWorld.size() ; ++i)
-			npts += currentWorld[i]->cloud.get_pts_size();
+			npts += currentWorld[i]->get_pts_size();
 		    
 		    toPublish.set_pts_size(npts);
 		    
 		    unsigned int j = 0;
 		    for (unsigned int i = 0 ; i < currentWorld.size() ; ++i)
 		    {
-			unsigned int n = currentWorld[i]->cloud.get_pts_size();			
+			unsigned int n = currentWorld[i]->get_pts_size();			
 			for (unsigned int k = 0 ; k < n ; ++k)
-			{
-			    std_msgs::Point3DFloat32 &point = currentWorld[i]->cloud.pts[k];
-			    if (isnormal(point.x) && isnormal(point.y) && isnormal(point.z))
-				toPublish.pts[j++] = point;
-			}
-			
+			    toPublish.pts[j++] =  currentWorld[i]->pts[k];
 		    }
 		    
 		    toPublish.set_pts_size(j);
@@ -241,40 +236,49 @@ public:
 	delete d;
     }
     
+    /* remove invalid floating point values and strip channel iformation */
+    PointCloudFloat32* filterInvalidValues(const PointCloudFloat32 &cloud)
+    {
+	PointCloudFloat32 *copy = new PointCloudFloat32();
+	copy->header = cloud.header;
+
+	unsigned int n = cloud.get_pts_size();
+	unsigned int j = 0;
+	copy->set_pts_size(n);	
+	for (unsigned int k = 0 ; k < n ; ++k)
+	    if (isfinite(cloud.pts[k].x) && isfinite(cloud.pts[k].y) && isfinite(cloud.pts[k].z))
+		copy->pts[j++] = cloud.pts[k];
+	copy->set_pts_size(j);
+
+	return copy;	
+    }
+
+    PointCloudFloat32* runFilters(const PointCloudFloat32 &cloud)
+    {
+	return filterInvalidValues(cloud);
+    }
+    
     void processData(void)
     {
 	/* remove old data */
-	double now = ros::Time::now().to_double();
-	double time = now - retainPointcloudDuration;
-	while (!currentWorld.empty() && currentWorld.front()->time < time)
+	ros::Time &time = toProcess.header.stamp;
+	while (!currentWorld.empty() && (time - currentWorld.front()->header.stamp).to_double() < retainPointcloudDuration)
 	{
-	    TimedPointCloud* old = currentWorld.front();
+	    PointCloudFloat32* old = currentWorld.front();
 	    currentWorld.pop_front();
 	    delete old;
 	}
 	/* add new data */
-	currentWorld.push_back(new TimedPointCloud(toProcess, now));
+	currentWorld.push_back(runFilters(toProcess));
 	if (verbose > 0)
 	    printf("World map containing %d point clouds\n", currentWorld.size());	
     }
     
 private:
-
-    struct TimedPointCloud
-    {
-	TimedPointCloud(PointCloudFloat32 &c, double t)
-	{
-	    cloud = c;
-	    time = t;
-	}
-	
-	PointCloudFloat32 cloud;
-	double            time;
-    };
     
-    PointCloudFloat32            inputCloud;
-    PointCloudFloat32            toProcess;
-    std::deque<TimedPointCloud*> currentWorld;
+    PointCloudFloat32              inputCloud;
+    PointCloudFloat32              toProcess;
+    std::deque<PointCloudFloat32*> currentWorld;
     
     double             maxPublishFrequency;
     double             retainPointcloudDuration;
