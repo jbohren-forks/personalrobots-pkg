@@ -50,9 +50,16 @@
       </visual>
     </geom:box>
 
-    <!--         Hokuyo laser body             -->
+  </body:box>
+
+
+  <!--         Hokuyo laser body             -->
+  <body:box name="base_laser_body">
+    <xyz>0.45 0.0 0.27</xyz> <!-- from the robot coordinate system (center bottom of base box)-->
+    <rpy>0.0  0.0 0.0</rpy>
+ 
     <geom:box name="base_laser_box">
-      <xyz>0.275 0.0 0.14</xyz>
+      <xyz>0.0 0.0 0.02</xyz>
       <rpy>0 0 0</rpy>
       <size>0.05 0.05 0.041</size>
       <mass>0.12</mass>
@@ -65,7 +72,7 @@
 
     </geom:box>
     <geom:cylinder name="base_laser_cylinder1">
-      <xyz>0.275 0.0 0.161</xyz>
+      <xyz>0.0 0.0 0.041</xyz>
       <rpy>0 0 0</rpy>
       <size>0.02 0.013</size>
       <mass>0.02</mass>
@@ -80,7 +87,7 @@
     </geom:cylinder>
 
     <geom:cylinder name="base_laser_cylinder2">
-      <xyz>0.275 0.0 0.174</xyz>
+      <xyz>0.0 0.0 0.054</xyz>
       <rpy>0 0 0</rpy>
       <size>0.018 0.009</size>
       <mass>0.02</mass>
@@ -95,7 +102,7 @@
     </geom:cylinder>
 
     <geom:cylinder name="base_laser_cylinder3">
-      <xyz>0.275 0.0 0.183</xyz>
+      <xyz>0.0 0.0 0.063</xyz>
       <rpy>0 0 0</rpy>
       <size>0.0175 0.008</size>
       <mass>0.02</mass>
@@ -106,13 +113,15 @@
         <mesh>unit_cylinder</mesh>
         <material>Gazebo/Shell</material>
       </visual>
+
     </geom:cylinder>
 
+
     <sensor:ray name="base_laser_1">
-      <origin>0.275 0.0 0.17</origin> <!-- from the robot coordinate system (center bottom of base box)-->
-      <rayCount>68</rayCount>
+      <rayCount>683</rayCount>
       <rangeCount>683</rangeCount>
       <laserCount>1</laserCount>
+      <origin>0.0 0.0 0.05</origin>
 
       <minAngle>-135</minAngle>
       <maxAngle>135</maxAngle>
@@ -125,7 +134,38 @@
         <updateRate>10</updateRate>
       </controller:sicklms200_laser>
     </sensor:ray>
+      <!--
+      -->
+      <!--
+    <sensor:ray2 name="laser_1">
+      <rayCount>683</rayCount>
+      <rangeCount>683</rangeCount>
+      <laserCount>1</laserCount>
+      <origin>0.0 0.0 0.05</origin>
+
+      <minAngle>-135</minAngle>
+      <maxAngle>135</maxAngle>
+
+      <minRange>0.05</minRange>
+      <maxRange>10.0</maxRange>
+      <controller:sick2lms200_laser name="laser_controller_1">
+        <interface:laser name="laser_iface_1"/>
+        <updateRate>10</updateRate>
+      </controller:sick2lms200_laser>
+    </sensor:ray2>
+      -->
+
   </body:box>
+
+  <!-- attach hokuyo to torso -->
+  <joint:hinge name="tiltlaser_torso_attach_joint">
+    <body1>base_body</body1>
+    <body2>base_laser_body</body2>
+    <anchor>base_laser_body</anchor>
+    <axis>  1.0   0.0   0.0 </axis>
+    <lowStop> 0.0 </lowStop>
+    <highStop> 0.0 </highStop>
+  </joint:hinge>
 
 
 
