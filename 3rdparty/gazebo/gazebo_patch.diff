@@ -1176,7 +1176,15 @@ Index: gazebo-svn/server/Simulator.cc
 ===================================================================
 --- gazebo-svn/server/Simulator.cc	(revision 6915)
 +++ gazebo-svn/server/Simulator.cc	(working copy)
-@@ -253,6 +253,9 @@
+@@ -71,6 +71,7 @@
+   physicsEnabled(true),
+   timeout(-1)
+ {
++  selectedEntity = NULL;
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -253,6 +254,9 @@
    {
      currTime = this->GetRealTime();
  
@@ -1186,7 +1194,7 @@ Index: gazebo-svn/server/Simulator.cc
      if (physicsUpdateRate == 0 || 
          currTime - this->prevPhysicsTime >= physicsUpdatePeriod) 
      {
-@@ -277,6 +280,9 @@
+@@ -277,6 +281,9 @@
        this->prevPhysicsTime = this->GetRealTime();
      }
  
