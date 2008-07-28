@@ -74,6 +74,7 @@ class RosGazeboNode : public ros::node
     std_msgs::LaserScan laserMsg;
     std_msgs::PointCloudFloat32 cloudMsg;
     std_msgs::PointCloudFloat32 full_cloudMsg;
+    //std_msgs::PointCloudFloat32 transformed_cloudMsg;
     std_msgs::Empty shutterMsg;  // marks end of a cloud message
     std_msgs::RobotBase2DOdom odomMsg;
     rostools::Time timeMsg;
@@ -83,6 +84,7 @@ class RosGazeboNode : public ros::node
 
     // for frame transforms, publish frame transforms
     rosTFServer tf;
+    rosTFClient tfc;
 
     // time step calculation
     double lastTime, simTime;

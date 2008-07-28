@@ -200,7 +200,7 @@ RosGazeboNode::cmdvelReceived()
 
 RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
          PR2::PR2Robot          *myPR2 ) :
-        ros::node("rosgazebo"),tf(*this)
+        ros::node("rosgazebo"),tf(*this),tfc(*this)
 {
   // accept passed in robot
   this->PR2Copy = myPR2;
@@ -241,7 +241,7 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
          controller::BaseController         *myBase,
          controller::LaserScannerController *myLaserScanner,
          controller::GripperController      *myGripper) :
-        ros::node("rosgazebo"),tf(*this)
+        ros::node("rosgazebo"),tf(*this),tfc(*this)
 {
   // accept passed in robot
   this->PR2Copy = myPR2;
@@ -283,7 +283,7 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
          controller::LaserScannerController *myLaserScanner,
          controller::GripperController      *myGripper,
          controller::JointController** ControllerArray):
-        ros::node("rosgazebo"),tf(*this)
+        ros::node("rosgazebo"),tf(*this),tfc(*this)
 {
   // accept passed in robot
   this->PR2Copy = myPR2;
@@ -465,31 +465,19 @@ RosGazeboNode::Update()
       // get position cheats from simulator
       //double cheat_x,cheat_y,cheat_z,cheat_roll,cheat_pitch,cheat_yaw;
       //this->PR2Copy->GetBasePositionActual(&cheat_x,&cheat_y,&cheat_z,&cheat_roll,&cheat_pitch,&cheat_yaw);
-      //local_cloud_pt.x = local_cloud_pt.x + cheat_x;
-      //local_cloud_pt.y = local_cloud_pt.y + cheat_y;
-      //local_cloud_pt.z = local_cloud_pt.z + cheat_z;
-
-      // TODO: does anyone need transform to MAP FRAME directly here?
-      // try
-      // {
-      //   global_cloud_pt = tf.transformPointCloud("FRAMEID_MAP", local_cloud_pt);
-      // }
-      // catch(libTF::TransformReference::LookupException& ex)
-      // {
-      //   puts("no global->local Tx yet");
-      //   return;
-      // }
-      global_cloud_pt = local_cloud_pt;
-
+      //global_cloud_pt.x = local_cloud_pt.x + cheat_x;
+      //global_cloud_pt.y = local_cloud_pt.y + cheat_y;
+      //global_cloud_pt.z = local_cloud_pt.z + cheat_z;
+      // apply rotataions yaw, pitch, roll
 
       // add mixed pixel noise
       // if this point is some threshold away from last, add mixing model
 
       // push pcd point into structure
-      this->cloud_pts->add((std_msgs::Point3DFloat32)global_cloud_pt);
+      this->cloud_pts->add((std_msgs::Point3DFloat32)local_cloud_pt);
       this->cloud_ch1->add(this->intensities[i]);
 
-      this->full_cloud_pts->push_back((std_msgs::Point3DFloat32)global_cloud_pt);
+      this->full_cloud_pts->push_back((std_msgs::Point3DFloat32)local_cloud_pt);
       this->full_cloud_ch1->push_back(this->intensities[i]);
     }
     /***************************************************************/
@@ -512,7 +500,19 @@ RosGazeboNode::Update()
       this->cloudMsg.chan[0].vals[i] = this->cloud_ch1->buffer[i];
     }
 
-    publish("cloud",this->cloudMsg);
+    // TODO: does anyone need transform to MAP FRAME directly here? answer: use 3d world model
+    // try
+    // {
+    //   transformed_cloudMsg = tfc.transformPointCloud("FRAMEID_MAP", this->cloudMsg);
+    // }
+    // catch(libTF::TransformReference::LookupException& ex)
+    // {
+    //   puts("no global->local Tx yet");
+    //   return;
+    // }
+    // publish("cloud",transformed_cloudMsg);
+
+    publish("cloud",cloudMsg);
   }
 
 
@@ -769,8 +769,8 @@ RosGazeboNode::Update()
   double simPitchFreq,simPitchAngle,simPitchRate,simPitchTimeScale,simPitchAmp,simPitchOffset;
   simPitchFreq      = 1.0/60.0;
   simPitchTimeScale = 2.0*M_PI*simPitchFreq;
-  simPitchAmp    =  M_PI / 8.0;
-  simPitchOffset = -M_PI / 8.0;
+  simPitchAmp    =  M_PI / 10.0;
+  simPitchOffset = -M_PI / 10.0;
   simPitchAngle = simPitchOffset + simPitchAmp * sin(this->simTime * simPitchTimeScale);
   simPitchRate  =  simPitchAmp * simPitchTimeScale * cos(this->simTime * simPitchTimeScale); // TODO: check rate correctness
   this->PR2Copy->GetTime(&this->simTime);
