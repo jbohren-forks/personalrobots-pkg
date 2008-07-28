@@ -88,6 +88,7 @@ Provides (name/type):
 #include <rosthread/mutex.h>
 #include <std_msgs/PointCloudFloat32.h>
 #include <rostools/Log.h>
+#include <rosTF/rosTF.h>
 #include <random_utils/random_utils.h>
 #include <deque>
 #include <cmath>
@@ -99,7 +100,8 @@ class World3DMap : public ros::node
 {
 public:
 
-    World3DMap(void) : ros::node("world_3d_map")
+    World3DMap(void) : ros::node("world_3d_map"),
+		       tf(*this, true, 1 * 1000000000ULL, 0ULL)
     {
 	advertise<PointCloudFloat32>("world_3d_map");
 	advertise<rostools::Log>("roserr");
@@ -144,7 +146,7 @@ public:
 	   of data will not happen, but we don't want the node to
 	   postpone processing latest data just because it is not done
 	   with older data. */
-	
+
 	flagMutex.lock();
 	bool discard = working;
 	if (!discard)
@@ -258,10 +260,24 @@ public:
 
 	return copy;	
     }
-
+    
     PointCloudFloat32* runFilters(const PointCloudFloat32 &cloud)
     {
-	return filter0(cloud, retainPointcloudFraction);
+	PointCloudFloat32 *cloud0 = filter0(cloud, retainPointcloudFraction);
+	
+	if (cloud0)
+	{
+	    try
+	    {
+		tf.transformPointCloud("FRAMEID_MAP", *cloud0, *cloud0);
+	    }
+	    catch (...)
+	    {
+		printf("Error applying transform to point cloud\n");
+	    }
+	}
+	
+	return cloud0;
     }
     
     void processData(void)
@@ -286,7 +302,8 @@ private:
     PointCloudFloat32              inputCloud;
     PointCloudFloat32              toProcess;
     std::deque<PointCloudFloat32*> currentWorld;
-    
+    rosTFClient                    tf;
+
     double             maxPublishFrequency;
     double             retainPointcloudDuration;
     double             retainPointcloudFraction;    
