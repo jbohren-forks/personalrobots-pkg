@@ -99,7 +99,8 @@ Provides (name/type):
 
 #ifdef DISPLAY_ODE_SPACES
 #include <display_ode/displayODE.h>
-static display_ode::DisplayODESpaces spaces;
+static display_ode::DisplayODESpaces         spaces;
+static collision_space::EnvironmentModelODE* em = NULL;
 #endif
 
 class KinematicPlanning : public ros::node
@@ -126,6 +127,7 @@ public:
 	collision_space::EnvironmentModelODE* okm = dynamic_cast<collision_space::EnvironmentModelODE*>(m_collisionSpace);
 	if (okm)
 	{
+	    em = okm;
 	    spaces.addSpace(okm->getODESpace(), 1.0f, 0.0f, 0.0f);
 	    for (unsigned int i = 0 ; i < okm->getModelCount() ; ++i)
 		spaces.addSpace(okm->getModelODESpace(i), 0.1f, 0.5f, (float)(i + 1)/(float)okm->getModelCount());
@@ -162,8 +164,7 @@ public:
     
     void pointCloudCallback(void)
     {
-	const int frac = 50;
-	unsigned int n = m_cloud.get_pts_size()/frac;
+	unsigned int n = m_cloud.get_pts_size();
 	printf("received %u points\n", n);
 
 	
@@ -177,9 +178,9 @@ public:
 	for (unsigned int i = 0 ; i < n ; ++i)
 	{
 	    unsigned int i3 = i * 3;	    
-	    data[i3    ] = m_cloud.pts[i * frac].x;
-	    data[i3 + 1] = m_cloud.pts[i * frac].y;
-	    data[i3 + 2] = m_cloud.pts[i * frac].z;
+	    data[i3    ] = m_cloud.pts[i].x;
+	    data[i3 + 1] = m_cloud.pts[i].y;
+	    data[i3 + 2] = m_cloud.pts[i].z;
 	}
 	
 	m_collisionSpace->lock();
@@ -471,7 +472,9 @@ static void command(int cmd)
 
 static void simLoop(int)
 {
+    em->lock();
     spaces.displaySpaces();
+    em->unlock();    
 }
 #endif
 
@@ -486,21 +489,25 @@ int main(int argc, char **argv)
     printf("Known models:\n");    
     for (unsigned int i = 0 ; i < mlist.size() ; ++i)
 	printf("  * %s\n", mlist[i].c_str());    
-    
+    if (mlist.size() > 0)
+    {
 #ifdef DISPLAY_ODE_SPACES
-    dsFunctions fn;
-    fn.version = DS_VERSION;
-    fn.start   = &start;
-    fn.step    = &simLoop;
-    fn.command = &command;
-    fn.stop = 0;
-    fn.path_to_textures = "./res";
-    
-    dsSimulationLoop(argc, argv, 640, 480, &fn);
+	dsFunctions fn;
+	fn.version = DS_VERSION;
+	fn.start   = &start;
+	fn.step    = &simLoop;
+	fn.command = &command;
+	fn.stop = 0;
+	fn.path_to_textures = "./res";
+	
+	dsSimulationLoop(argc, argv, 640, 480, &fn);
 #else
-    planner.spin();
+	planner.spin();
 #endif
-
+    }
+    else
+	printf("No models defined. Kinematic planning node cannot start.\n");
+    
     planner.shutdown();
     
     return 0;    
