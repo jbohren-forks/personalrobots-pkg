@@ -593,15 +593,18 @@ RosGazeboNode::Update()
   /*                                                             */
   /*  frame transforms                                           */
   /*                                                             */
+  /*  TODO: should we send z, roll, pitch, yaw? seems to confuse */
+  /*        localization                                         */
+  /*                                                             */
   /***************************************************************/
   tf.sendInverseEuler("FRAMEID_ODOM",
                       "FRAMEID_ROBOT",
                       odomMsg.pos.x,
                       odomMsg.pos.y,
-                      z,
+                      0.0,
                       odomMsg.pos.th,
-                      pitch,
-                      roll,
+                      0.0,
+                      0.0,
                       odomMsg.header.stamp);
 
   // This publish call resets odomMsg.header.stamp.sec and 
