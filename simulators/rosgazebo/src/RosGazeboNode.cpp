@@ -410,7 +410,8 @@ RosGazeboNode::Update()
   uint32_t ranges_alloc_size;
   uint32_t intensities_size;
   uint32_t intensities_alloc_size;
-  std_msgs::Point3DFloat32 tmp_cloud_pt;
+  std_msgs::Point3DFloat32 local_cloud_pt;
+  std_msgs::Point3DFloat32 global_cloud_pt;
 
   /***************************************************************/
   /*                                                             */
@@ -445,31 +446,50 @@ RosGazeboNode::Update()
       // populating cloud data by range
       double tmp_range = this->ranges[i];
       // transform from range to x,y,z
-      tmp_cloud_pt.x                = tmp_range * cos(laser_yaw) * cos(laser_pitch);
-      tmp_cloud_pt.y                = tmp_range * sin(laser_yaw) ; //* cos(laser_pitch);
-      tmp_cloud_pt.z                = tmp_range * cos(laser_yaw) * sin(laser_pitch);
+      local_cloud_pt.x                = tmp_range * cos(laser_yaw) * cos(laser_pitch);
+      local_cloud_pt.y                = tmp_range * sin(laser_yaw) ; //* cos(laser_pitch);
+      local_cloud_pt.z                = tmp_range * cos(laser_yaw) * sin(laser_pitch);
 
       // add gaussian noise
       const double sigma = 0.002;  // 2 millimeter sigma
-      tmp_cloud_pt.x                = tmp_cloud_pt.x + GaussianKernel(0,sigma);
-      tmp_cloud_pt.y                = tmp_cloud_pt.y + GaussianKernel(0,sigma);
-      tmp_cloud_pt.z                = tmp_cloud_pt.z + GaussianKernel(0,sigma);
+      local_cloud_pt.x                = local_cloud_pt.x + GaussianKernel(0,sigma);
+      local_cloud_pt.y                = local_cloud_pt.y + GaussianKernel(0,sigma);
+      local_cloud_pt.z                = local_cloud_pt.z + GaussianKernel(0,sigma);
 
       // offsets for changing frame of reference to ROBOT FRAME
       // we can use transform server here or use the offsets directly
-      tmp_cloud_pt.x = tmp_cloud_pt.x + PR2::BASE_TORSO_OFFSET.x + PR2::TORSO_TILT_LASER_OFFSET.x,
-      tmp_cloud_pt.y = tmp_cloud_pt.y + PR2::BASE_TORSO_OFFSET.y,
-      tmp_cloud_pt.z = tmp_cloud_pt.z + PR2::BASE_TORSO_OFFSET.z + PR2::TORSO_TILT_LASER_OFFSET.z, /* FIXME: spine elevator not accounted for */
-      // TODO: does anyone need transform to WORLD FRAME directly here?
+      local_cloud_pt.x = local_cloud_pt.x + PR2::BASE_TORSO_OFFSET.x + PR2::TORSO_TILT_LASER_OFFSET.x;
+      local_cloud_pt.y = local_cloud_pt.y + PR2::BASE_TORSO_OFFSET.y;
+      local_cloud_pt.z = local_cloud_pt.z + PR2::BASE_TORSO_OFFSET.z + PR2::TORSO_TILT_LASER_OFFSET.z; /* FIXME: spine elevator not accounted for */
+
+      // get position cheats from simulator
+      //double cheat_x,cheat_y,cheat_z,cheat_roll,cheat_pitch,cheat_yaw;
+      //this->PR2Copy->GetBasePositionActual(&cheat_x,&cheat_y,&cheat_z,&cheat_roll,&cheat_pitch,&cheat_yaw);
+      //local_cloud_pt.x = local_cloud_pt.x + cheat_x;
+      //local_cloud_pt.y = local_cloud_pt.y + cheat_y;
+      //local_cloud_pt.z = local_cloud_pt.z + cheat_z;
+
+      // TODO: does anyone need transform to MAP FRAME directly here?
+      // try
+      // {
+      //   global_cloud_pt = tf.transformPointCloud("FRAMEID_MAP", local_cloud_pt);
+      // }
+      // catch(libTF::TransformReference::LookupException& ex)
+      // {
+      //   puts("no global->local Tx yet");
+      //   return;
+      // }
+      global_cloud_pt = local_cloud_pt;
+
 
       // add mixed pixel noise
       // if this point is some threshold away from last, add mixing model
 
       // push pcd point into structure
-      this->cloud_pts->add((std_msgs::Point3DFloat32)tmp_cloud_pt);
+      this->cloud_pts->add((std_msgs::Point3DFloat32)global_cloud_pt);
       this->cloud_ch1->add(this->intensities[i]);
 
-      this->full_cloud_pts->push_back((std_msgs::Point3DFloat32)tmp_cloud_pt);
+      this->full_cloud_pts->push_back((std_msgs::Point3DFloat32)global_cloud_pt);
       this->full_cloud_ch1->push_back(this->intensities[i]);
     }
     /***************************************************************/
@@ -578,10 +598,10 @@ RosGazeboNode::Update()
                       "FRAMEID_ROBOT",
                       odomMsg.pos.x,
                       odomMsg.pos.y,
-                      0.0,
+                      z,
                       odomMsg.pos.th,
-                      0.0,
-                      0.0,
+                      pitch,
+                      roll,
                       odomMsg.header.stamp);
 
   // This publish call resets odomMsg.header.stamp.sec and 
