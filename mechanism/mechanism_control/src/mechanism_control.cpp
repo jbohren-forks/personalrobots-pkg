@@ -26,47 +26,43 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-#include "mechanism/mechanism_control.h"
+#include "mechanism_control/mechanism_control.h"
 
-MechanismControl::MechanismControl(HardwareInterface *hw){
-  this->hw = hw;
-  //Needs to learn pr2.xml filename or get it from param server
-  //Create robot modeli
-  r = new Robot("robot"); //Should actually be name-space
-  //Set up transmissions, joints, and links
-
-  for(int i = 0; i < MAX_NUM_CONTROLLERS; i++){
-    controller[i] = NULL;
-  }
-  //Set up ROS
-  //Subscribe to "new controller request" topic
-  //(Should be Advertise "new controller" service)
+MechanismControl::MechanismControl(HardwareInterface *hw)
+  : initialized_(0), model_((char*)"robot"), hw_(hw)
+{
+  memset(controllers_, 0, MAX_NUM_CONTROLLERS*sizeof(void*));
 }
 
-void MechanismControl::registerControllerType(const char *type, ControllerAllocationFunc f){
-  controllerLibrary[type] = f;
+MechanismControl::~MechanismControl() {
 }
 
-//This function will be exported as a ROS service and called externally to set up all the control loops on system startup.
-void MechanismControl::requestController(const char *type, const char *ns){
-  Controller *c;
-  ControllerAllocationFunc f = controllerLibrary[type];
-  c = f(ns);
-  //At this point, the controller is fully initialized and has created the ROS interface, etc.
+bool MechanismControl::registerActuator(const std::string &name, int index) {
+  if (initialized_)
+    return false;
 
-  //Add controller to list of controllers in realtime-safe manner;
-  controllerListMutex.lock(); //This lock is only to prevent us from other non-realtime threads.  The realtime thread may be spinning through the list of controllers while we are in here, so we need to keep that list always in a valid state.  This is why we fully allocate and set up the controller before adding it into the list of active controllers.
-  for(int i = 0; i < MAX_NUM_CONTROLLERS; i++){
-    if(controller[i] == NULL){
-      controller[i] = c;
-    }
-    break;
-  }
-  controllerListMutex.unlock();
+  actuators_.insert(ActuatorMap::value_type(name, index));
+
+  return true;
 }
 
-//This function is called only from the realtime loop.  Everything it calls must also be realtime safe.
-void MechanismControl::update(){
+bool MechanismControl::init() { // TODO: should take in a node of xml?
+  // Creates:
+  // - joints
+  // - transmissions
+  return true;
+}
+
+// Must be realtime safe.
+void MechanismControl::update() {
+
+  // Propogates actuator information into the robot model.
+  // Propogates through the robot model.
+  // Calls update on all of the plugins.
+  // Performs safety checks on the commands.
+  // Propogates commands back into the actuators.
+
+#if 0
   //Clear actuator commands
 
   //Process robot model transmissions
@@ -91,4 +87,40 @@ void MechanismControl::update(){
   for(int i = 0; i < r->numTransmissions; i++){
     r->transmission[i].propagateEffort();
   }
+#endif
+}
+
+
+
+void MechanismControl::registerControllerType(const std::string& type, ControllerAllocator f){
+  controller_library_.insert(std::pair<std::string,ControllerAllocator>(type, f));
+}
+
+bool MechanismControl::spawnController(const char *type, const char *ns){
+  controller::Controller *c;
+  ControllerAllocator f = controller_library_[type];
+  c = f(ns);
+
+  //At this point, the controller is fully initialized and has created the ROS interface, etc.
+
+  //Add controller to list of controllers in realtime-safe manner;
+  controllers_mutex_.lock(); //This lock is only to prevent us from other non-realtime threads.  The realtime thread may be spinning through the list of controllers while we are in here, so we need to keep that list always in a valid state.  This is why we fully allocate and set up the controller before adding it into the list of active controllers.
+  bool spot_found = false;
+  for(int i = 0; i < MAX_NUM_CONTROLLERS; i++){
+    if(controllers_[i] == NULL)
+    {
+      spot_found = true;
+      controllers_[i] = c;
+      break;
+    }
+  }
+  controllers_mutex_.unlock();
+
+  if (!spot_found)
+  {
+    delete c;
+    return false;
+  }
+
+  return true;
 }
