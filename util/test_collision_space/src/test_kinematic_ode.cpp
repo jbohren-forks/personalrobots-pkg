@@ -91,8 +91,13 @@ void printModelInfo(planning_models::KinematicModel *m)
 
 int main(int argc, char **argv)
 {
+    // TODO: add usage message
+
     robot_desc::URDF model;
-    model.loadFile("/u/isucan/ros/ros-pkg/robot_descriptions/wg_robot_description/pr2/pr2.xml");
+    if (argc > 0)
+      model.loadFile(argv[1]);
+    else // default to isucan for now
+      model.loadFile("/u/isucan/ros/ros-pkg/robot_descriptions/wg_robot_description/pr2/pr2.xml");
     
     EnvironmentModel *km = new EnvironmentModelODE();
     km->addRobotModel(model);    
@@ -108,7 +113,7 @@ int main(int argc, char **argv)
     
 
     for (unsigned int i = 0 ; i < m->stateDimension ; ++i)
-	param[i] = 0.1;
+	param[i] = -0.3;
     m->computeTransforms(param, m->getGroupID("pr2::leftArm"));
     km->updateRobotModel(0);
     
