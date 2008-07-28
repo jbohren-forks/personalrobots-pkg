@@ -146,7 +146,6 @@ public:
 	   of data will not happen, but we don't want the node to
 	   postpone processing latest data just because it is not done
 	   with older data. */
-	printf("%d\n", inputCloud.header.frame_id);
 	
 	flagMutex.lock();
 	bool discard = working;
