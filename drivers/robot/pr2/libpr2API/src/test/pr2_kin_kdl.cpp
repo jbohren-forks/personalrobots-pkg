@@ -56,11 +56,10 @@ int main()
 		cout<<"Could not compute Fwd Kin."<<endl;
 
 	// send command to robot
-	JntArray q_init = JntArray(myPR2.pr2_kin.nJnts);
-	JntArray q_out = JntArray(myPR2.pr2_kin.nJnts);
-	q_init(0) = 0.0, q_init(1) = 0.0, q_init(2) = 0.0, q_init(3) = 0.0;
-	q_init(4) = 0.0, q_init(5) = 0.0, q_init(6) = 0.0;
-	myPR2.SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f,q_init,q_out);
+	(*myPR2.pr2_kin.q_IK_guess)(0) = 0.0, (*myPR2.pr2_kin.q_IK_guess)(1) = 0.0, (*myPR2.pr2_kin.q_IK_guess)(2) = 0.0;
+	(*myPR2.pr2_kin.q_IK_guess)(3) = 0.0,	(*myPR2.pr2_kin.q_IK_guess)(4) = 0.0, (*myPR2.pr2_kin.q_IK_guess)(5) = 0.0;
+	(*myPR2.pr2_kin.q_IK_guess)(6) = 0.0;
+	myPR2.SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f);
 
 
 	myPR2.GetBasePositionActual(&x, &y, &z, &roll, &pitch, &yaw);

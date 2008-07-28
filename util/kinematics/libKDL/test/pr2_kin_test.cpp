@@ -27,16 +27,14 @@ int main( int argc, char** argv )
 	else
 		cout<<"Could not compute Fwd Kin."<<endl;
 
-	JntArray q_init = JntArray(pr2_kin.nJnts);
-	q_init(0) = 0.1, q_init(1) = 0.0, q_init(2) = 0.0, q_init(3) = 0.0;
-	q_init(4) = 0.0, q_init(5) = 0.0, q_init(6) = 0.0;
+	(*pr2_kin.q_IK_guess)(0) = 0.1, (*pr2_kin.q_IK_guess)(1) = 0.0, (*pr2_kin.q_IK_guess)(2) = 0.0, (*pr2_kin.q_IK_guess)(3) = 0.0;
+	(*pr2_kin.q_IK_guess)(4) = 0.0, (*pr2_kin.q_IK_guess)(5) = 0.0, (*pr2_kin.q_IK_guess)(6) = 0.0;
 
-	JntArray q_out = JntArray(pr2_kin.nJnts);
 	gettimeofday(&t0,NULL);
-	if (pr2_kin.IK(q_init, f, q_out) == true)
+	if (pr2_kin.IK(f) == true)
 	{
 		gettimeofday(&t1, NULL);
-		cout<<"IK result:"<<q_out<<endl;
+		cout<<"IK result:"<<*pr2_kin.q_IK_result<<endl;
 		double time_taken = (t1.tv_sec*1000000+t1.tv_usec - (t0.tv_sec*1000000+t0.tv_usec))/1000.;
 	  printf("Time taken: %f ms\n", time_taken);
 	}
@@ -45,7 +43,7 @@ int main( int argc, char** argv )
 
 	//------ checking that IK returned a valid soln -----
 	Frame f_ik;
-	if (pr2_kin.FK(q_out,f_ik))
+	if (pr2_kin.FK(*pr2_kin.q_IK_result,f_ik))
 		cout<<"End effector after IK:"<<f_ik<<endl;
 	else
 		cout<<"Could not compute Fwd Kin. (After IK)"<<endl;

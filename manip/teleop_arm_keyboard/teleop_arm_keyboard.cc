@@ -260,10 +260,12 @@ void TArmK_Node::openGripper(PR2_JOINT_ID jointID) {
   }
   if(jointID == ARM_R_GRIPPER) {
     this->cmd_rightarmconfig.gripperForceCmd = 50;
-    this->cmd_rightarmconfig.gripperGapCmd = .1;
+    this->cmd_rightarmconfig.gripperGapCmd = .2;
+		printf("Opening right gripper\n");
   } else { 
     this->cmd_leftarmconfig.gripperForceCmd = 50;
-    this->cmd_leftarmconfig.gripperGapCmd = .1;
+    this->cmd_leftarmconfig.gripperGapCmd = .2;
+		printf("Opening left gripper\n");
   }
 }
 
@@ -391,53 +393,52 @@ TArmK_Node::keyboardLoop()
         }
 
         switch(c)
-        {
-        case 'l':
-        case 'L':
-            right_arm = false;
-            printf("Actuating left arm.\n");
-            break;
-        case 'r':
-        case 'R':
-            right_arm = true;
-            printf("Actuating right arm.\n");
-            break;
-        case '+':
-        case '=':
-            changeJointAngle(curr_jointID, true);
-            dirty=true;
-            break;
-        case '_':
-        case '-':
-            changeJointAngle(curr_jointID, false);
-            dirty=true;
-            break;
-	case '.':
-	  _rightInit = false;
-	  _leftInit = false;
-	  sleep(1);
-	  openGripper(curr_jointID);
-	  dirty = true;
-	  break;
-	case '/':
-	  _rightInit = false;
-	  _leftInit = false;
-	  sleep(1);
-	  closeGripper(curr_jointID);
-	  dirty = true;
-	  break;
-	case 'q':
-	  printCurrentJointValues();
-	  break;
-	case 'k':
-	  printCurrentEndEffectorWorldCoord();
-	  break;
-	case 'j':
-	  printCurrentEndEffectorShoulderCoord();
-	  break;
-        default:
-            break;
-        }
+				{
+					case 'l':
+					case 'L':
+						right_arm = false;
+						printf("Actuating left arm.\n");
+						break;
+					case 'r':
+					case 'R':
+						right_arm = true;
+						printf("Actuating right arm.\n");
+						break;
+					case '+':
+					case '=':
+						changeJointAngle(curr_jointID, true);
+						dirty=true;
+						break;
+					case '_':
+					case '-':
+						changeJointAngle(curr_jointID, false);
+						dirty=true;
+						break;
+					case '.':
+						_rightInit = false;
+						_leftInit = false;
+						openGripper(curr_jointID);
+						dirty = true;
+						break;
+					case '/':
+						_rightInit = false;
+						_leftInit = false;
+						sleep(1);
+						closeGripper(curr_jointID);
+						dirty = true;
+						break;
+					case 'q':
+						printCurrentJointValues();
+						break;
+					case 'k':
+						printCurrentEndEffectorWorldCoord();
+						break;
+					case 'j':
+						printCurrentEndEffectorShoulderCoord();
+						break;
+					default:
+						break;
+				}
 
         if (right_arm==false)
         {

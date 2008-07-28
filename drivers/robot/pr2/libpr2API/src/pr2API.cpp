@@ -149,7 +149,10 @@ PR2_ERROR_CODE PR2Robot::DisableSpine()
    return PR2_ALL_OK;
 }
 
-
+/*
+ * Preserved right now (July 28,2008) for compatibility with controller code.
+ * We might want to get rid of this later. -- Advait
+ */
 PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Frame &f, const KDL::JntArray &q_init, KDL::JntArray &q_out)
 {
   //  KDL::JntArray q_init = KDL::JntArray(this->pr2_kin.nJnts);
@@ -173,6 +176,36 @@ PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Fra
 
   for(int ii = 0; ii < 7; ii++)
     hw.SetJointServoCmd((PR2::PR2_JOINT_ID) (JointStart[id]+ii),q_out(ii),0);
+
+  return PR2_ALL_OK;
+}
+
+PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Frame &f)
+{
+  if (this->pr2_kin.IK(f) == true)
+	{
+//    cout<<"IK guess:"<<*this->pr2_kin.q_IK_guess<<endl;
+//    cout<<"IK result:"<<*this->pr2_kin.q_IK_result<<endl;
+	}
+  else
+    cout<<"Could not compute Inv Kin."<<endl;
+
+  //------ checking that IK returned a valid soln -----
+  KDL::Frame f_ik;
+  if (this->pr2_kin.FK(*this->pr2_kin.q_IK_result,f_ik))
+  {
+    //    cout<<"End effector after IK:"<<f_ik<<endl;
+  }
+  else
+    cout<<"Could not compute Fwd Kin. (After IK)"<<endl;
+
+  for(int ii = 0; ii < 7; ii++)
+    hw.SetJointServoCmd((PR2::PR2_JOINT_ID) (JointStart[id]+ii),(*this->pr2_kin.q_IK_result)(ii),0);
+
+	KDL::JntArray *t = this->pr2_kin.q_IK_result;
+	this->pr2_kin.q_IK_result = this->pr2_kin.q_IK_guess;
+	this->pr2_kin.q_IK_guess = t; // update guess with the computed IK result.
+
 
   return PR2_ALL_OK;
 }

@@ -10,8 +10,11 @@ rospack_add_executable(torque_test src/test/torque_test.cpp)
 target_link_libraries(torque_test pr2API)
 rospack_add_executable(pick_object src/test/pick_object.cpp)
 target_link_libraries(pick_object pr2API)
-rospack_add_executable(test_kin_controllers src/test/test_kin_controllers.cpp src/kinematic_controllers.cpp)
-target_link_libraries(test_kin_controllers pr2API)
+
+# kinematic_controllers is now deprecated.
+#rospack_add_executable(test_kin_controllers src/test/test_kin_controllers.cpp src/kinematic_controllers.cpp)
+#target_link_libraries(test_kin_controllers pr2API)
+
 rospack_add_executable(pr2_kin_kdl src/test/pr2_kin_kdl.cpp)
 target_link_libraries(pr2_kin_kdl pr2API)
 rospack_add_executable(test_FK src/test/test_FK.cpp)

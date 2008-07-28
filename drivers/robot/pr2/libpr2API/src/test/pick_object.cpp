@@ -18,10 +18,10 @@ int kfd = 0;
 struct termios cooked, raw;
 PR2::PR2Robot myPR2;
 
-JntArray object_pose();
+void object_pose();
 void open_gripper();
 void close_gripper();
-void go_down(const JntArray &guess);
+void go_down();
 
 
 void keyboardLoop()
@@ -40,7 +40,6 @@ void keyboardLoop()
 	puts("---------------------------");
 	puts("---------------------------");
 
-	JntArray q = JntArray(myPR2.pr2_kin.nJnts);
 	for(;;)
 	{
 		// get the next event from the keyboard
@@ -58,11 +57,11 @@ void keyboardLoop()
 				break;
 			case '2':
 				printf("You pressed 2\n");
-				q = object_pose();
+				object_pose();
 				break;
 			case '3':
 				printf("You pressed 3\n");
-				go_down(q);
+				go_down();
 				break;
 			case '4':
 				printf("You pressed 4\n");
@@ -91,11 +90,12 @@ void init_robot()
 	Frame f;
 	myPR2.pr2_kin.FK(pr2_config,f);
 	// send command to robot
-	JntArray q_init = JntArray(myPR2.pr2_kin.nJnts);
-	q_init(0) = 0.0, q_init(1) = 0.0, q_init(2) = 0.0, q_init(3) = 0.0;
-	q_init(4) = 0.0, q_init(5) = 0.0, q_init(6) = 0.0;
-	JntArray q_out = JntArray(myPR2.pr2_kin.nJnts);
-	myPR2.SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f,q_init,q_out);
+
+	(*myPR2.pr2_kin.q_IK_guess)(0) = 0.0, (*myPR2.pr2_kin.q_IK_guess)(1) = 0.0, (*myPR2.pr2_kin.q_IK_guess)(2) = 0.0;
+	(*myPR2.pr2_kin.q_IK_guess)(3) = 0.0,	(*myPR2.pr2_kin.q_IK_guess)(4) = 0.0, (*myPR2.pr2_kin.q_IK_guess)(5) = 0.0;
+	(*myPR2.pr2_kin.q_IK_guess)(6) = 0.0;
+
+	myPR2.SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f);
 
 }
 
@@ -109,16 +109,17 @@ void open_gripper()
 	myPR2.hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, 0.15, 500);
 }
 
-void go_down(const JntArray &guess)
+void go_down()
 {
+	// called after object_pose so q_IK_guess should already be correct.
 	Rotation r = Rotation::RotZ(DTOR(90));
 	Vector v(0.568,0.01,-0.01);
 	Frame f(r,v);
-	JntArray q_out = JntArray(myPR2.pr2_kin.nJnts);
-	myPR2.SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f,guess,q_out);
+
+	myPR2.SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f);
 }
 
-JntArray object_pose()
+void object_pose()
 {
 	Rotation r = Rotation::RotZ(DTOR(90));
 	
@@ -126,41 +127,16 @@ JntArray object_pose()
 	Vector v(0.568,0.01,0.06);
 
 	Frame f(r,v);
-	JntArray q_init = JntArray(myPR2.pr2_kin.nJnts);
-	q_init(0) = DTOR(-30); // turret
-	q_init(1) = DTOR(-20); // shoulder pitch
-	q_init(2) = DTOR(60);  // shoulder roll
-	q_init(3) = DTOR(60);  // elbow pitch
-	q_init(4) = DTOR(20);  // elbow roll
-	q_init(5) = DTOR(30);  // wrist pitch
-	q_init(6) = 0.0;       // wrist roll
 
-//	myPR2.pr2_kin.FK(q_init,f);
-//	cout<<"end effector frame: "<<f<<endl;
+	(*myPR2.pr2_kin.q_IK_guess)(0) = DTOR(-20); // turret
+	(*myPR2.pr2_kin.q_IK_guess)(1) = DTOR(-20); // shoulder pitch
+	(*myPR2.pr2_kin.q_IK_guess)(2) = DTOR(40);  // shoulder roll
+	(*myPR2.pr2_kin.q_IK_guess)(3) = DTOR(60);  // elbow pitch
+	(*myPR2.pr2_kin.q_IK_guess)(4) = DTOR(20);  // elbow roll
+	(*myPR2.pr2_kin.q_IK_guess)(5) = DTOR(30);  // wrist pitch
+	(*myPR2.pr2_kin.q_IK_guess)(6) = 0.0;       // wrist roll
 
-	q_init(0) = DTOR(-20); // turret
-	q_init(1) = DTOR(-20); // shoulder pitch
-	q_init(2) = DTOR(40);  // shoulder roll
-	q_init(3) = DTOR(60);  // elbow pitch
-	q_init(4) = DTOR(20);  // elbow roll
-	q_init(5) = DTOR(30);  // wrist pitch
-	q_init(6) = 0.0;       // wrist roll
-
-	JntArray q_out = JntArray(myPR2.pr2_kin.nJnts);
-	myPR2.SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f,q_init,q_out);
-	return q_out;
-
-/*
-	end effector frame: [[   +0.592488,   +0.135547,   +0.794094;
-	+0.741583,   +0.293264,   -0.603367;
-	-0.314663,   +0.946374,  +0.0732355]
-		[   +0.698411,   -0.130820,  +0.0626092]]
-*/
-
-//	double jntArr[7] = {q_init(0),q_init(1),q_init(2),q_init(3),q_init(4),q_init(5),q_init(6)};
-//	double jntSpd[7] = {0,0,0,0,0,0,0};
-//	myPR2.SetArmJointPosition(PR2::PR2_RIGHT_ARM, jntArr,jntSpd);
-
+	myPR2.SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f);
 }
 
 

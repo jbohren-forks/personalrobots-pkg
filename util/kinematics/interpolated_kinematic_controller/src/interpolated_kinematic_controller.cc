@@ -1,6 +1,7 @@
 #include <ros/node.h>
 #include <rosthread/mutex.h>
 
+#include <std_msgs/Empty.h>
 #include <std_msgs/PR2Arm.h>
 #include <std_msgs/Float64.h>
 #include <pr2_msgs/EndEffectorState.h>
@@ -22,6 +23,8 @@ public:
 		wait_time = 1.;
     advertise<pr2_msgs::EndEffectorState>("cmd_leftarm_cartesian");
     advertise<pr2_msgs::EndEffectorState>("cmd_rightarm_cartesian");
+    advertise<std_msgs::Empty>("reset_IK_guess"); // to tell RosGazeboNode to make q_IK_guess = current manipulator config.
+
     subscribe("right_pr2arm_set_end_effector", _rightEndEffectorGoal, &InterpolatedKinematicController::setRightEndEffector);	
     subscribe("left_pr2arm_set_end_effector", _leftEndEffectorGoal, &InterpolatedKinematicController::setLeftEndEffector);
     subscribe("left_pr2arm_pos",  leftArmPosMsg,  &InterpolatedKinematicController::currentLeftArmPos);
@@ -95,6 +98,9 @@ public:
   }
 
   void RunControlLoop(bool isRightArm, const Frame& r, const std_msgs::PR2Arm& arm) {
+
+    std_msgs::Empty emp;
+    publish("reset_IK_guess",emp);
 
     PR2_kinematics pr2_kin;
     JntArray q = JntArray(pr2_kin.nJnts);

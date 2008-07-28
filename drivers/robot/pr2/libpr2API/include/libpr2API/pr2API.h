@@ -412,7 +412,12 @@ namespace PR2
 
 
 // KDL version of SetArmCartesianPosition
-			public: PR2_ERROR_CODE SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Frame &f,const KDL::JntArray &q_init, KDL::JntArray &q_out);
+			public: PR2_ERROR_CODE SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Frame &f);
+							/*
+							 * Preserved right now (July 28,2008) for compatibility with controller code.
+							 * We might want to get rid of this later. -- Advait
+							 */
+							PR2_ERROR_CODE SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Frame &f, const KDL::JntArray &q_init, KDL::JntArray &q_out);
 
          /*! \fn
            \brief Get the commanded position and speed for the end-effector

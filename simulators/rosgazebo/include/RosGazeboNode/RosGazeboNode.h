@@ -153,6 +153,10 @@ class RosGazeboNode : public ros::node
     void cmd_leftarmcartesianReceived();
     void cmd_rightarmcartesianReceived();
 
+		// Message callback which sets pr2_kin.q_IK_guess to the current manipulator configuration.
+		// July 24, 2008 - Advait - only right arm is supported
+    void reset_IK_guess();
+
     // laser range data
     float    ranges[GZ_LASER_MAX_RANGES];
     uint8_t  intensities[GZ_LASER_MAX_RANGES];
@@ -174,6 +178,8 @@ class RosGazeboNode : public ros::node
     // end effector cmds
     pr2_msgs::EndEffectorState cmd_leftarmcartesian;
     pr2_msgs::EndEffectorState cmd_rightarmcartesian;
+
+    std_msgs::Empty empty_msg;
 
     //Flags to indicate that a new message has arrived
     bool newRightArmPos;

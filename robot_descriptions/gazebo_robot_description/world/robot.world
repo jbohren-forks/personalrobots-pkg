@@ -81,18 +81,18 @@
 
   <!-- The "desk"-->
   <model:physical name="desk1_model">
-    <xyz>   2.28  -0.21  -0.10</xyz>
+    <xyz>   0.80  -0.21  -0.10</xyz>
     <rpy>   0.0    0.0    0.00</rpy>
     <body:box name="desk1_legs_body">
       <geom:box name="desk1_legs_geom">
         <kp>100000000.0</kp>
         <kd>1.0</kd>
-        <xyz>   0.0    0.0    0.50</xyz>
+        <xyz>   0.0    0.0    0.60</xyz>
         <mesh>default</mesh>
-        <size>0.5 1.0  0.75</size>
+        <size>0.5 1.0  0.6</size>
         <mass> 10.0</mass>
         <visual>
-          <size> 0.5 1.0 0.75</size>
+          <size> 0.5 1.0 0.60</size>
           <material>Gazebo/Rocky</material>
           <mesh>unit_box</mesh>
         </visual>

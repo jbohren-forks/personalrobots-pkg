@@ -432,25 +432,8 @@
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
-    <sensor:camera name="wrist_cam_right_sensor">
-      <imageSize>640 480</imageSize>
-      <hfov>60</hfov>
-      <nearClip>0.1</nearClip>
-      <farClip>100</farClip>
-      <updateRate>15.0</updateRate>
-      <!--
-      <controller:ros_camera name="wrist_cam_right_controller" plugin="libRos_Camera.so">
-        <updateRate>15.0</updateRate>
-        <topicName>image_wrist_cam_right</topicName>
-        <interface:camera name="wrist_cam_right_iface" />
-      </controller:ros_camera>
-      -->
-      <controller:generic_camera name="wrist_cam_right_controller">
-        <updateRate>15.0</updateRate>
-        <interface:camera name="wrist_cam_right_iface" />
-      </controller:generic_camera>
-    </sensor:camera>
   </body:cylinder>
+
 
   <body:box name="palm_right">
     <xyz>  1.10   -0.15   0.8269</xyz>
@@ -481,6 +464,43 @@
       </visual>
     </geom:box>
   </body:box>
+
+  <body:empty name="palm_cam_right_body">
+    <xyz>  1.10   -0.15   0.8569</xyz>
+    <rpy>  0.0     0.0    0.0 </rpy>
+    <sensor:camera name="palm_cam_right_sensor">
+      <imageSize>640 480</imageSize>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <updateRate>15.0</updateRate>
+      <controller:generic_camera name="wrist_cam_right_controller">
+        <updateRate>15.0</updateRate>
+        <interface:camera name="wrist_cam_right_iface" />
+      </controller:generic_camera>
+    </sensor:camera>
+    <geom:box name="palm_cam_right_geom">
+      <xyz> 0.00   0.00   0.00</xyz>
+      <size>0.02   0.02   0.02</size>
+      <mass>0.1</mass>
+      <visual>
+        <size>0.02   0.02   0.02</size>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Black</material>
+      </visual>
+    </geom:box>
+  </body:empty>
+  <joint:hinge name="palm_cam_right">
+    <body1>palm_cam_right_body</body1>
+    <body2>palm_right</body2>
+    <anchor>palm_right</anchor>
+    <axis>  0.0   0.0   1.0 </axis>
+    <lowStop> 0.0 </lowStop>
+    <highStop> 0.0 </highStop>
+  </joint:hinge>
+
+
 
   <body:box name="finger_1_right">
     <xyz>  1.18   -0.17   0.8269 </xyz>

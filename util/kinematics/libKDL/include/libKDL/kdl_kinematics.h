@@ -35,6 +35,9 @@ class PR2_kinematics
 		KDL::ChainIkSolverPos_NR *ik_pos_solver;
 		int nJnts;
 
+		KDL::JntArray *q_IK_guess; // is used as the IK guess.
+		KDL::JntArray *q_IK_result; // stores result of IK
+
 		KDL::Chain *chain_forearm_camera; // chain whose end-effector is the fore-arm camera.
 		KDL::ChainFkSolverPos_recursive *fk_pos_solver_forearm_camera;
 		KDL::ChainIkSolverVel_pinv *ik_vel_solver_forearm_camera;
@@ -46,6 +49,7 @@ class PR2_kinematics
 		~PR2_kinematics();
 		bool FK(const KDL::JntArray &q, KDL::Frame &f);
 		bool IK(const KDL::JntArray &q_init, const KDL::Frame &f, KDL::JntArray &q_out);
+		bool IK(const KDL::Frame &f);
 
 };
 
