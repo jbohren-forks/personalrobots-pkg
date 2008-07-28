@@ -1755,15 +1755,16 @@ Index: gazebo-svn/SConstruct
 ===================================================================
 --- gazebo-svn/SConstruct	(revision 6915)
 +++ gazebo-svn/SConstruct	(working copy)
-@@ -23,7 +23,10 @@
+@@ -22,8 +22,11 @@
+ # 3rd party packages
  #
  parseConfigs=['pkg-config --cflags --libs OGRE',
-               'xml2-config --cflags --libs', 
--      	      'ode-config --cflags --libs',
 +      	      'rospack export/cpp/cflags opende',
 +      	      'rospack export/cpp/lflags opende',
 +      	      'rospack export/cpp/cflags freeimage',
 +      	      'rospack export/cpp/lflags freeimage',
+               'xml2-config --cflags --libs', 
+-      	      'ode-config --cflags --libs',
                'fltk-config --cflags --libs --ldflags --use-gl --use-images',
                'pkg-config --cflags --libs xft'
                ]
