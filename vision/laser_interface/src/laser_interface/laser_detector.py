@@ -335,8 +335,8 @@ class ColorLearner:
             if detection == None:
                 print "ColorLearner.learn_sequence: there are no detections for this image, skipping."
                 continue
-            patch        = cv.cvGetSubRect(img, detection['rect'].as_cv_rect())
-            binary_patch = cv.cvGetSubRect(binary_mask, detection['rect'].as_cv_rect())
+            patch        = cv.cvCloneImage(cv.cvGetSubRect(img, detection['rect'].as_cv_rect()))
+            binary_patch = cv.cvCloneImage(cv.cvGetSubRect(binary_mask, detection['rect'].as_cv_rect()))
 
             #Split it
             csplit       = SplitColors(patch)
@@ -424,8 +424,8 @@ class ColorFilter(ColorLearner):
         valid = []
         not_valid = []
         for component in components:
-            patch = cv.cvGetSubRect(original_image, component['rect'].as_cv_rect())
-            mask  = cv.cvGetSubRect(binary_image, component['rect'].as_cv_rect())
+            patch = cv.cvCloneImage(cv.cvGetSubRect(original_image, component['rect'].as_cv_rect()))
+            mask  = cv.cvCloneImage(cv.cvGetSubRect(binary_image, component['rect'].as_cv_rect()))
             averages = cv.cvAvg(patch, mask)
             b_avg = averages[0]
             g_avg = averages[1]
@@ -447,6 +447,7 @@ class ColorFilter(ColorLearner):
 
 
 class LaserPointerDetector:
+    #These are currently set using parameters on the parameter server
     SHADE_EXPOSURE               = rospy.getMaster()['laser_pointer_detector/SHADE_EXPOSURE'] 
     SHADE_DARK_IMAGE_THRESHOLD   = rospy.getMaster()['laser_pointer_detector/SHADE_DARK_IMAGE_THRESHOLD'] 
     SHADE_BRIGHT_IMAGE_THRESHOLD = rospy.getMaster()['laser_pointer_detector/SHADE_BRIGHT_IMAGE_THRESHOLD'] 
@@ -455,17 +456,37 @@ class LaserPointerDetector:
     SUN_DARK_IMAGE_THRESHOLD     = rospy.getMaster()['laser_pointer_detector/SUN_DARK_IMAGE_THRESHOLD'] 
     SUN_BRIGHT_IMAGE_THRESHOLD   = rospy.getMaster()['laser_pointer_detector/SUN_BRIGHT_IMAGE_THRESHOLD'] 
 
-    MAX_BLOB_AREA               = rospy.getMaster()['laser_pointer_detector/MAX_BLOB_AREA'] 
-    LASER_POINT_SIZE            = rospy.getMaster()['laser_pointer_detector/LASER_POINT_SIZE'] 
-    MIN_AGE                     = rospy.getMaster()['laser_pointer_detector/MIN_AGE'] 
-    NUMBER_OF_LEARNERS          = rospy.getMaster()['laser_pointer_detector/NUMBER_OF_LEARNERS'] 
-    PCA_VARIANCE_RETAIN         = rospy.getMaster()['laser_pointer_detector/PCA_VARIANCE_RETAIN'] 
+    MAX_BLOB_AREA                = rospy.getMaster()['laser_pointer_detector/MAX_BLOB_AREA'] 
+    LASER_POINT_SIZE             = rospy.getMaster()['laser_pointer_detector/LASER_POINT_SIZE'] 
+    MIN_AGE                      = rospy.getMaster()['laser_pointer_detector/MIN_AGE'] 
+    NUMBER_OF_LEARNERS           = rospy.getMaster()['laser_pointer_detector/NUMBER_OF_LEARNERS'] 
+    PCA_VARIANCE_RETAIN          = rospy.getMaster()['laser_pointer_detector/PCA_VARIANCE_RETAIN'] 
 
-    TRACKER_MAX_PIX_TRESHOLD    = rospy.getMaster()['laser_pointer_detector/TRACKER_MAX_PIX_TRESHOLD'] 
-    TRACKER_MAX_TIME_THRESHOLD  = rospy.getMaster()['laser_pointer_detector/TRACKER_MAX_TIME_THRESHOLD'] 
+    TRACKER_MAX_PIX_TRESHOLD     = rospy.getMaster()['laser_pointer_detector/TRACKER_MAX_PIX_TRESHOLD'] 
+    TRACKER_MAX_TIME_THRESHOLD   = rospy.getMaster()['laser_pointer_detector/TRACKER_MAX_TIME_THRESHOLD'] 
 
-    CLASSIFICATION_WINDOW_WIDTH = rospy.getMaster()['laser_pointer_detector/CLASSIFICATION_WINDOW_WIDTH'] 
-    DEFAULT_DATASET_FILE        = rospy.getMaster()['laser_pointer_detector/DEFAULT_DATASET_FILE'] 
+    CLASSIFICATION_WINDOW_WIDTH  = rospy.getMaster()['laser_pointer_detector/CLASSIFICATION_WINDOW_WIDTH'] 
+    DEFAULT_DATASET_FILE         = rospy.getMaster()['laser_pointer_detector/DEFAULT_DATASET_FILE'] 
+
+    #SHADE_EXPOSURE               = None
+    #SHADE_DARK_IMAGE_THRESHOLD   = None
+    #SHADE_BRIGHT_IMAGE_THRESHOLD = None
+    #                               
+    #SUN_EXPOSURE                 = None
+    #SUN_DARK_IMAGE_THRESHOLD     = None
+    #SUN_BRIGHT_IMAGE_THRESHOLD   = None
+    #                               
+    #MAX_BLOB_AREA                = None
+    #LASER_POINT_SIZE             = None
+    #MIN_AGE                      = None
+    #NUMBER_OF_LEARNERS           = None
+    #PCA_VARIANCE_RETAIN          = None
+    #                               
+    #TRACKER_MAX_PIX_TRESHOLD     = None
+    #TRACKER_MAX_TIME_THRESHOLD   = None
+    #                               
+    #CLASSIFICATION_WINDOW_WIDTH  = None
+    #DEFAULT_DATASET_FILE         = None
 
     def __init__(self, sample_frame, exposure, 
             channel      = 'red', 
@@ -563,6 +584,7 @@ class LaserPointerDetector:
 class PatchClassifier:
     def __init__(self, dataset=None, number_of_learners=30, classification_window_width=7):
         if dataset is not None:
+            print 'PatchClassifier.__init__: dataset size', dataset.num_examples()
             self.learn(dataset, number_of_learners=number_of_learners)
             self.classification_window_width = classification_window_width
 
@@ -573,7 +595,7 @@ class PatchClassifier:
             if instance == None:
                 classification = np.matrix([False])
                 return (classification, None, c)
-            classification, votes = self.classifier.predict(dataset.reduce(instance))
+            classification, votes = self.classifier.predict(self.dataset.reduce(instance))
             return (classification, votes, c)
 
         def select_valid(c):
@@ -597,7 +619,7 @@ class PatchClassifier:
             dump_pickle(dataset, write_file)
         print 'PatchClassifier: building classifier...'
         #Reduce dimensionality before using for training
-        dataset.reduce()
+        dataset.reduce_input()
         self.dataset = dataset
         self.classifier = rf.RFBreiman(dataset, number_of_learners=number_of_learners)
         print 'PatchClassifier: done building.'
@@ -624,8 +646,8 @@ def blob_to_input_instance(image, blob, classification_window_width):
     big_r      = blob_to_rect(blob, classification_window_width=classification_window_width*2)
     if big_r == None or small_r == None:
         return None
-    small_patch        = cv.cvGetSubRect(image, small_r.as_cv_rect())
-    big_patch          = cv.cvGetSubRect(image, big_r.as_cv_rect())
+    small_patch        = cv.cvCloneImage(cv.cvGetSubRect(image, small_r.as_cv_rect()))
+    big_patch          = cv.cvCloneImage(cv.cvGetSubRect(image, big_r.as_cv_rect()))
     hg.cvShowImage('patch', small_patch)
     hg.cvShowImage('big_patch', big_patch)
     big_patch_rescaled = cv.cvCreateImage(cv.cvSize(int(classification_window_width/2), int(classification_window_width/2)), 8, 3)
@@ -635,6 +657,7 @@ def blob_to_input_instance(image, blob, classification_window_width):
     np_patch_big     = ut.cv2np(big_patch_rescaled, 'BGR')
     np_resized_small = np.matrix(np_patch_small.reshape(patch_size*patch_size*3, 1))
     np_resized_big   = np.matrix(np_patch_big.reshape(np_patch_big.shape[0] * np_patch_big.shape[1] * 3, 1))
+    #print 'np_patch_small.shape, np_resized_small.shape, np_patch_big.shape, np_resized_big.shape', np_patch_small.shape, np_resized_small.shape, np_patch_big.shape, np_resized_big.shape
     return np.concatenate((np_resized_small, np_resized_big), axis=0)
 
 def blobs_list_to_classifier_matrix(img_blobs_list, 

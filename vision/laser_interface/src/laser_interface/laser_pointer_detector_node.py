@@ -30,7 +30,6 @@ def show_processed(image, masks, detection, blobs, detector):
     hg.cvShowImage('motion',      masks[1])
     hg.cvShowImage('intensity',   masks[2])
 
-
 def confirmation_prompt(confirm_phrase):
     print confirm_phrase
     print 'y(es)/n(no)'
@@ -46,26 +45,20 @@ def append_examples_from_file(dataset, file):
         dataset.append(loaded_set)
     except IOError:
         print 'append_examples_from_file: training file \'', file, '\'not found!'
-
-#def append_examples_to_file(dataset, file = LaserPointerDetector.DEFAULT_DATASET_FILE):
-#    try:
-#        loaded_set = load_pickle(file)
-#        dataset.append(loaded_set)
-#    except IOError:
-#        print 'append_examples_to_file: training file \'', file, '\'not found! creating new file'
-#        pass
-#    dump_pickle(dataset, file)
-#    return dataset.num_examples()
+    return dataset.num_examples()
 
 class GatherExamples:
-    def __init__(self, hardware_camera, type = 1):
+    def __init__(self, hardware_camera, gather_misclassified_only=True, type = 1):
+        print 'GatherExamples: gather_misclassified_only', gather_misclassified_only
+        self.gather_misclassified_only = gather_misclassified_only
         frames         = hardware_camera.next()
         self.detector  = LaserPointerDetector(frames[0], exposure=exposure, 
                                          dataset=LaserPointerDetector.DEFAULT_DATASET_FILE,
-                                         use_color=False, use_learning=False)
+                                         use_color=False, use_learning=gather_misclassified_only)
         self.detector2 = LaserPointerDetector(frames[1], exposure=exposure, 
                                          dataset=LaserPointerDetector.DEFAULT_DATASET_FILE,
-                                         use_color=False, use_learning=False)
+                                         classifier=self.detector.classifier,
+                                         use_color=False, use_learning=gather_misclassified_only)
         for i in xrange(10):
             frames = hardware_camera.next()
             self.detector.detect(frames[0])
@@ -86,24 +79,72 @@ class GatherExamples:
             image, combined, laser_blob, intensity_motion_blob = detect.detect(raw_image)
             #diff = time.time() - before
             #print 'took %.2f seconds to run or %.2f fps' % (diff, 1.0/diff)
-            if laser_blob != None:
-                instance = blob_to_input_instance(image, laser_blob, LaserPointerDetector.CLASSIFICATION_WINDOW_WIDTH)
-                if instance is not None:
-                    self.examples.append(instance)
-                    print 'got', len(self.examples), 'instances'
+            if self.type == 1:
+                #We got it wrong
+                if laser_blob == None:
+                    for blob in intensity_motion_blob:
+                        instance = blob_to_input_instance(image, blob, LaserPointerDetector.CLASSIFICATION_WINDOW_WIDTH)
+                        if instance != None:
+                            self.examples.append(instance)
+                    if len(intensity_motion_blob) > 0:
+                        print 'expected 1 got 0', len(self.examples), 'instances'
+                #We got it right
+                elif laser_blob != None and not self.gather_misclassified_only: 
+                    instance = blob_to_input_instance(image, laser_blob, LaserPointerDetector.CLASSIFICATION_WINDOW_WIDTH)
+                    if instance != None:
+                        self.examples.append(instance)
+                    print 'expected 1 got 1, ', len(self.examples), 'instances'
+
+            if self.type == 0:
+                #We got it wrong
+                if laser_blob != None:
+                    instance = blob_to_input_instance(image, laser_blob, LaserPointerDetector.CLASSIFICATION_WINDOW_WIDTH)
+                    if instance != None:
+                        self.examples.append(instance)
+                    print 'expected 0 got 1,', len(self.examples), 'instances'
+                #We got it right
+                elif laser_blob == None and not self.gather_misclassified_only:
+                    for blob in intensity_motion_blob:
+                        instance = blob_to_input_instance(image, blob, LaserPointerDetector.CLASSIFICATION_WINDOW_WIDTH)
+                        if instance != None:
+                            self.examples.append(instance)
+                    print 'expected 0 got 0,', len(self.examples), 'instances'
+
+            #if laser_blob != None:
+            #    instance = blob_to_input_instance(image, laser_blob, LaserPointerDetector.CLASSIFICATION_WINDOW_WIDTH)
+            #    if instance is not None:
+            #        self.examples.append(instance)
+            #        print 'got', len(self.examples), 'instances'
             motion, intensity = detect.get_motion_intensity_images()
 
         if display:
             show_processed(image, [combined, motion, intensity], laser_blob, intensity_motion_blob, self.detector2)
 
-
     def write(self):
+        if not (len(self.examples) > 0):
+            print 'GatherExamples: no examples to record'
+            return
+        #print 'len(self.examples)    ', len(self.examples)
+        #print 'self.examples[0].shape', self.examples[0].shape
+        #for i in self.examples:
+        #    print i.shape
         dataset        = matrix_to_dataset(ut.list_mat_to_mat(self.examples, axis=1), type=self.type)
         dim_reduce_set = rf.LinearDimReduceDataset(dataset.inputs, dataset.outputs)
+        print 'GatherExamples.write: appending examples from disk to dataset'
         n = append_examples_from_file(dim_reduce_set, file=LaserPointerDetector.DEFAULT_DATASET_FILE)
-        dim_reduce_set.set_projection_vectors(dr.pca_vectors(dim_reduce_set, percent_variance=LaserPointerDetector.PCA_VARIANCE_RETAIN))
-        dump_pickle(dim_reduce_set, file=LaserPointerDetector.DEFAULT_DATASET_FILE)
+        print 'GatherExamples.write: calculating pca projection vectors'
+        dim_reduce_set.set_projection_vectors(dr.pca_vectors(dim_reduce_set.inputs, percent_variance=LaserPointerDetector.PCA_VARIANCE_RETAIN))
+        print 'GatherExamples.write: writing...'
+        dump_pickle(dim_reduce_set, LaserPointerDetector.DEFAULT_DATASET_FILE)
         print 'GatherExamples: recorded examples to disk.  Total in dataset', n
+
+def print_friendly(votes):
+    new_dict = {}
+    total = 0
+    for k in votes.keys():
+        new_key = k[0,0]
+        new_dict[new_key] = votes[k]
+    return new_dict
 
 class DetectState:
     def __init__(self, geometric_camera, hardware_camera, exposure_setting):
@@ -141,19 +182,35 @@ class DetectState:
 
         #Triangulate
         if right_cam_detection != None and left_cam_detection != None:
+            print 'DetectState: votes', print_friendly(right_cam_detection['votes']), print_friendly(left_cam_detection['votes'])
             x  = np.matrix(left_cam_detection['centroid']).T
             xp = np.matrix(right_cam_detection['centroid']).T
             result = self.stereo_cam.triangulate_3d(x, xp)
             print '3D point located at', result['point'].T, 
             print 'distance %.2f error %.3f' % (np.linalg.norm(result['point']),  result['error'])
+            #if result['point'][0,0] < 0:
+            #    #Don't return anything if point is behind camera
+            #    print 'DetectState: point was behind camera, ignoring'
+            #    return None
+
+            if result['point'][2,0] < 0:
+                #Don't return anything if point is behind camera
+                print 'DetectState: point was behind camera, ignoring'
+                return None
+
+            if result['point'][2,0] > 5:
+                print 'DetectState: was too far, ignoring'
+                return None
+
             return result
         else:
             return None
 
 class LaserPointerDetectorNode:
-    GATHER_POSITIVE_EXAMPLES = 'GATHER_POSITIVE_EXAMPLES'
-    GATHER_NEGATIVE_EXAMPLES = 'GATHER_NEGATIVE_EXAMPLES'
-    DETECT                   = 'DETECT'
+    GATHER_MISCLASSIFIED_ONLY = bool(rospy.getMaster()['laser_pointer_detector_node/GATHER_MISCLASSIFIED_ONLY'])
+    GATHER_POSITIVE_EXAMPLES  = 'GATHER_POSITIVE_EXAMPLES'
+    GATHER_NEGATIVE_EXAMPLES  = 'GATHER_NEGATIVE_EXAMPLES'
+    DETECT                    = 'DETECT'
 
     def __init__(self, exposure = LaserPointerDetector.SUN_EXPOSURE, video = None, display=False):
         if video is None:
@@ -252,10 +309,12 @@ class LaserPointerDetectorNode:
             self.state_object.write()
 
         if new_state == self.GATHER_POSITIVE_EXAMPLES:
-            self.state_object = GatherExamples(self.video, type = 1)
+            self.state_object = GatherExamples(self.video, 
+                    gather_misclassified_only = self.GATHER_MISCLASSIFIED_ONLY, type = 1)
 
         if new_state == self.GATHER_NEGATIVE_EXAMPLES:
-            self.state_object = GatherExamples(self.video, type = 0)
+            self.state_object = GatherExamples(self.video, 
+                    gather_misclassified_only = self.GATHER_MISCLASSIFIED_ONLY, type = 0)
 
         if new_state == self.DETECT:
             self.state_object = DetectState(self.camera_model, self.video, self.exposure)
@@ -346,6 +405,17 @@ if __name__ == '__main__':
 
 
 
+
+#def append_examples_to_file(dataset, file = LaserPointerDetector.DEFAULT_DATASET_FILE):
+#    try:
+#        loaded_set = load_pickle(file)
+#        dataset.append(loaded_set)
+#    except IOError:
+#        print 'append_examples_to_file: training file \'', file, '\'not found! creating new file'
+#        pass
+#    dump_pickle(dataset, file)
+#    return dataset.num_examples()
+
     #key = hg.cvWaitKey(10)
     #if detector != None:
     #    if key == 'T': #down
@@ -397,13 +467,6 @@ if __name__ == '__main__':
 #                matrix_to_dataset(
 #                    ut.list_mat_to_mat(
 #                        self.negative_examples_for_classifier, axis=1)))
-
-
-
-
-
-
-
 
         #l = stereo_cam.camera_left.undistort_img(l)
         #r = stereo_cam.camera_right.undistort_img(r)

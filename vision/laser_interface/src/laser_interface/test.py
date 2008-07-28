@@ -1,3 +1,66 @@
+import laser_detector as ld
+import opencv as cv
+import opencv.highgui as hg
+import util as ut
+
+dataset = ld.load_pickle('PatchClassifier.dataset.pickle')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #PKG = 'laser_interface'
 #import sys, os, subprocess
 #try:
@@ -20,28 +83,23 @@
 #rospy.TopicSub('odom', RobotBase2DOdom, debug_me)
 #rospy.ready('test')
 #rospy.spin()
-
-import opencv as cv
-import opencv.highgui as hg
-import util as ut
-
-def swap_br(npimage):
-    b = npimage[:,:,0].copy()
-    r = npimage[:,:,2].copy()
-    npimage[:,:,0] = r
-    npimage[:,:,2] = b
-    return npimage
-
-image   = hg.cvLoadImage('1frame489.png')
-npimg   = ut.cv2np(image)
-swapped = swap_br(npimg.copy())
-cvimg   = ut.np2cv(swapped)
-
-hg.cvNamedWindow('hai', 1)
-hg.cvShowImage('hai', cvimg)
-hg.cvWaitKey(10)
-
-
+#def swap_br(npimage):
+#    b = npimage[:,:,0].copy()
+#    r = npimage[:,:,2].copy()
+#    npimage[:,:,0] = r
+#    npimage[:,:,2] = b
+#    return npimage
+#
+#image   = hg.cvLoadImage('1frame489.png')
+#npimg   = ut.cv2np(image)
+#swapped = swap_br(npimg.copy())
+#cvimg   = ut.np2cv(swapped)
+#
+#hg.cvNamedWindow('hai', 1)
+#hg.cvShowImage('hai', cvimg)
+#hg.cvWaitKey(10)
+#
+#
 
 
 

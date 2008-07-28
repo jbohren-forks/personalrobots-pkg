@@ -11,20 +11,23 @@ def pca_gain_threshold(s, percentage_change_threshold=.15):
     positions    = np.where(percent_diff < percentage_change_threshold)
     return positions[0][0]
 
-def pca_variance_threshold(eigen_values, percentage_variance=.9):
+def pca_variance_threshold(eigen_values, percent_variance=.9):
     eigen_sum    = np.sum(eigen_values)
+    #print 'pca_variance_threshold: eigen_sum', eigen_sum
     eigen_normed = np.cumsum(eigen_values) / eigen_sum
-    positions    = np.where(eigen_normed > percentage_variance)
+    positions    = np.where(eigen_normed > percent_variance)
+    print 'pca_variance_threshold: percent_variance', percent_variance
+    #print positions
     return positions[0][0]
 
-def pca(dataset):
+def pca(data):
     #data = ld.load_pickle('PatchClassifier.dataset.pickle')
-    cov_data = np.cov(dataset.inputs)
+    cov_data = np.cov(data)
     u, s, vh = np.linalg.svd(cov_data)
     return u,s,vh
 
-def pca_vectors(dataset, percent_variance):
-    u, s, vh = pca(dataset)
+def pca_vectors(data, percent_variance):
+    u, s, vh = pca(data)
     number_of_vectors = pca_variance_threshold(s, percent_variance=percent_variance)
     return np.matrix(u[:,0:number_of_vectors+1])
 

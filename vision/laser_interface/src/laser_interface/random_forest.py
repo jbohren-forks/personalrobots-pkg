@@ -86,6 +86,7 @@ class LinearDimReduceDataset(Dataset):
             projection vectors are assumed to be columnwise
         '''
         self.projection_basis = vec
+        print 'LinearDimReduceDataset: projection_basis', vec.shape
 
     def reduce(self, data_points):
         return self.projection_basis.T * data_points
