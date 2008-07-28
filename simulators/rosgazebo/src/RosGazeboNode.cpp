@@ -444,7 +444,7 @@ RosGazeboNode::Update()
                 &angle_min, &angle_max, &angle_increment,
                 &range_max, &ranges_size     , &ranges_alloc_size,
                 &intensities_size, &intensities_alloc_size,
-                this->ranges     , this->intensities) == PR2::PR2_ALL_OK)
+                this->ranges     , this->intensities, &laserTime) == PR2::PR2_ALL_OK)
   {
     for(unsigned int i=0;i<ranges_size;i++)
     {
@@ -500,8 +500,8 @@ RosGazeboNode::Update()
     //std::cout << " pcd num " << this->cloud_pts->length << std::endl;
     //
     this->cloudMsg.header.frame_id = tf.lookup("FRAMEID_BASE");
-    this->cloudMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
-    this->cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->cloudMsg.header.stamp.sec) );
+    this->cloudMsg.header.stamp.sec = (unsigned long)floor(this->laserTime);
+    this->cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->laserTime - this->cloudMsg.header.stamp.sec) );
 
     int    num_channels = 1;
     this->cloudMsg.set_pts_size(this->cloud_pts->length);
@@ -542,7 +542,7 @@ RosGazeboNode::Update()
                 &angle_min, &angle_max, &angle_increment,
                 &range_max, &ranges_size     , &ranges_alloc_size,
                 &intensities_size, &intensities_alloc_size,
-                this->ranges     , this->intensities) == PR2::PR2_ALL_OK)
+                this->ranges     , this->intensities, &laserTime) == PR2::PR2_ALL_OK)
   {
     // Get latest laser data
     this->laserMsg.angle_min       = angle_min;
@@ -559,8 +559,8 @@ RosGazeboNode::Update()
     }
 
     this->laserMsg.header.frame_id = tf.lookup("FRAMEID_LASER");
-    this->laserMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
-    this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->laserMsg.header.stamp.sec) );
+    this->laserMsg.header.stamp.sec = (unsigned long)floor(this->laserTime);
+    this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->laserTime - this->laserMsg.header.stamp.sec) );
 
     //publish("laser",this->laserMsg); // for laser_view FIXME: can alias this at the commandline or launch script
     publish("scan",this->laserMsg);  // for rosstage
@@ -640,7 +640,7 @@ RosGazeboNode::Update()
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_ptz_right         )) {
+          &buf_size        ,         buf_ptz_right         , &cameraTime)) {
     this->img_ptz_right.width       = width;
     this->img_ptz_right.height      = height;
     this->img_ptz_right.compression = compression;
@@ -648,6 +648,10 @@ RosGazeboNode::Update()
 
     if(buf_size >0)
     {
+      this->img_ptz_right.header.frame_id = tf.lookup("FRAMEID_PTZ_CAM_R");
+      this->img_ptz_right.header.stamp.sec = (unsigned long)floor(this->cameraTime);
+      this->img_ptz_right.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraTime - this->laserMsg.header.stamp.sec) );
+
       this->img_ptz_right.set_data_size(buf_size);
 
       this->img_ptz_right.data        = buf_ptz_right;
@@ -662,7 +666,7 @@ RosGazeboNode::Update()
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_ptz_left          )) {
+          &buf_size        ,         buf_ptz_left          , &cameraTime)) {
     this->img_ptz_left .width       = width;
     this->img_ptz_left .height      = height;
     this->img_ptz_left .compression = compression;
@@ -670,6 +674,10 @@ RosGazeboNode::Update()
 
     if(buf_size >0)
     {
+      this->img_ptz_left.header.frame_id = tf.lookup("FRAMEID_PTZ_CAM_L");
+      this->img_ptz_left.header.stamp.sec = (unsigned long)floor(this->cameraTime);
+      this->img_ptz_left.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraTime - this->laserMsg.header.stamp.sec) );
+
       this->img_ptz_left .set_data_size(buf_size);
 
       this->img_ptz_left .data        = buf_ptz_left ;
@@ -684,7 +692,7 @@ RosGazeboNode::Update()
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_wrist_right         )) {
+          &buf_size        ,         buf_wrist_right       , &cameraTime  )) {
     this->img_wrist_right.width       = width;
     this->img_wrist_right.height      = height;
     this->img_wrist_right.compression = compression;
@@ -692,6 +700,10 @@ RosGazeboNode::Update()
 
     if(buf_size >0)
     {
+      this->img_wrist_right.header.frame_id = tf.lookup("FRAMEID_WRIST_CAM_R");
+      this->img_wrist_right.header.stamp.sec = (unsigned long)floor(this->cameraTime);
+      this->img_wrist_right.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraTime - this->laserMsg.header.stamp.sec) );
+
       this->img_wrist_right.set_data_size(buf_size);
 
       this->img_wrist_right.data        = buf_wrist_right;
@@ -706,7 +718,7 @@ RosGazeboNode::Update()
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_wrist_left          )) {
+          &buf_size        ,         buf_wrist_left        , &cameraTime  )) {
     this->img_wrist_left .width       = width;
     this->img_wrist_left .height      = height;
     this->img_wrist_left .compression = compression;
@@ -714,6 +726,10 @@ RosGazeboNode::Update()
 
     if(buf_size >0)
     {
+      this->img_wrist_left.header.frame_id = tf.lookup("FRAMEID_WRIST_CAM_L");
+      this->img_wrist_left.header.stamp.sec = (unsigned long)floor(this->cameraTime);
+      this->img_wrist_left.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraTime - this->laserMsg.header.stamp.sec) );
+
       this->img_wrist_left .set_data_size(buf_size);
 
       this->img_wrist_left .data        = buf_wrist_left ;
@@ -728,7 +744,7 @@ RosGazeboNode::Update()
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_forearm_right         )) {
+          &buf_size        ,         buf_forearm_right     , &cameraTime    )) {
     this->img_forearm_right.width       = width;
     this->img_forearm_right.height      = height;
     this->img_forearm_right.compression = compression;
@@ -736,6 +752,10 @@ RosGazeboNode::Update()
 
     if(buf_size >0)
     {
+      this->img_forearm_right.header.frame_id = tf.lookup("FRAMEID_FOREARM_CAM_R");
+      this->img_forearm_right.header.stamp.sec = (unsigned long)floor(this->cameraTime);
+      this->img_forearm_right.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraTime - this->laserMsg.header.stamp.sec) );
+
       this->img_forearm_right.set_data_size(buf_size);
 
       this->img_forearm_right.data        = buf_forearm_right;
@@ -750,7 +770,7 @@ RosGazeboNode::Update()
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_forearm_left          )) {
+          &buf_size        ,         buf_forearm_left      , &cameraTime    )) {
     this->img_forearm_left .width       = width;
     this->img_forearm_left .height      = height;
     this->img_forearm_left .compression = compression;
@@ -758,6 +778,10 @@ RosGazeboNode::Update()
 
     if(buf_size >0)
     {
+      this->img_forearm_left.header.frame_id = tf.lookup("FRAMEID_FOREARM_CAM_L");
+      this->img_forearm_left.header.stamp.sec = (unsigned long)floor(this->cameraTime);
+      this->img_forearm_left.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraTime - this->laserMsg.header.stamp.sec) );
+
       this->img_forearm_left .set_data_size(buf_size);
 
       this->img_forearm_left .data        = buf_forearm_left ;
@@ -795,8 +819,8 @@ RosGazeboNode::Update()
     dAngle = -dAngle;
 
     this->full_cloudMsg.header.frame_id = tf.lookup("FRAMEID_BASE");
-    this->full_cloudMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
-    this->full_cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->full_cloudMsg.header.stamp.sec) );
+    this->full_cloudMsg.header.stamp.sec = (unsigned long)floor(this->laserTime);
+    this->full_cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->laserTime - this->full_cloudMsg.header.stamp.sec) );
 
     int    num_channels = 1;
     this->full_cloudMsg.set_pts_size(this->full_cloud_pts->size());

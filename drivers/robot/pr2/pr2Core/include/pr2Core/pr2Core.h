@@ -45,6 +45,12 @@ namespace PR2
       "FRAMEID_STEREO_BLOCK"      ,//34
       "FRAMEID_TILT_LASER_BLOCK"  ,//35
       "FRAMEID_BASE_LASER_BLOCK"  ,//36
+      "FRAMEID_PTZ_CAM_L"         ,//37
+      "FRAMEID_PTZ_CAM_R"         ,//38
+      "FRAMEID_FOREARM_CAM_L"     ,//39
+      "FRAMEID_FOREARM_CAM_R"     ,//40
+      "FRAMEID_WRIST_CAM_L"       ,//41
+      "FRAMEID_WRIST_CAM_R"       ,//42
       "END" 
    };
 

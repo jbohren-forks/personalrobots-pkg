@@ -156,6 +156,7 @@ class RosGazeboNode : public ros::node
     // laser range data
     float    ranges[GZ_LASER_MAX_RANGES];
     uint8_t  intensities[GZ_LASER_MAX_RANGES];
+    double   cameraTime, laserTime;
 
     // camera data
     std_msgs::Image img;
