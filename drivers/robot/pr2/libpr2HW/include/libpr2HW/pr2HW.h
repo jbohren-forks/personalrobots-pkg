@@ -256,7 +256,8 @@ namespace PR2
           float* angle_min, float* angle_max, float* angle_increment,
           float* range_max,uint32_t* ranges_size     ,uint32_t* ranges_alloc_size,
                            uint32_t* intensities_size,uint32_t* intensities_alloc_size,
-                           float*    ranges          ,uint8_t*  intensities);
+                           float*    ranges          ,uint8_t*  intensities,
+          double*   simTime);
 
          /*! \fn
            \brief - Open gripper
@@ -293,7 +294,8 @@ namespace PR2
                      uint32_t*    width                 ,uint32_t*    height                ,
                      uint32_t*    depth                 ,
                      std::string* compression           ,std::string* colorspace            ,
-                     uint32_t*    data_size             ,void*        data                  );
+                     uint32_t*    data_size             ,void*        data                  ,
+                     double*      simTime);
 
          /*! \fn
            \brief Retrieve caster/wheel properties and estimate velocity of the base in cartesian space in body coordinates 

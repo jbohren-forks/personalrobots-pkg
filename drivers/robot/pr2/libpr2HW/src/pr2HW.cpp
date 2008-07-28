@@ -531,7 +531,8 @@ PR2_ERROR_CODE PR2HW::GetLaserRanges(PR2_SENSOR_ID id,
     float* angle_min, float* angle_max, float* angle_increment,
     float* range_max,uint32_t* ranges_size     ,uint32_t* ranges_alloc_size,
                      uint32_t* intensities_size,uint32_t* intensities_alloc_size,
-                     float*    ranges          ,uint8_t*  intensities)
+                     float*    ranges          ,uint8_t*  intensities,
+    double* simTime)
 {
 
   gazebo::LaserIface       *tmpLaserIface;
@@ -583,6 +584,7 @@ PR2_ERROR_CODE PR2HW::GetLaserRanges(PR2_SENSOR_ID id,
   else
   {
     tmpLaserIface->Lock(1);
+    *simTime                 = tmpLaserIface->data->head.time;
     *angle_min               = (float)tmpLaserIface->data->min_angle;
     *angle_max               = (float)tmpLaserIface->data->max_angle;
 
@@ -723,7 +725,8 @@ PR2_ERROR_CODE PR2HW::GetCameraImage(PR2_SENSOR_ID id ,
                      uint32_t*    width                 ,uint32_t*    height                ,
                      uint32_t*    depth                 ,
                      std::string* compression           ,std::string* colorspace            ,
-                     uint32_t*    data_size             ,void*        buf                   )
+                     uint32_t*    data_size             ,void*        buf                   ,
+                     double* simTime)
 {
 
     gazebo::CameraIface      *tmpCameraIface;
@@ -868,6 +871,7 @@ PR2_ERROR_CODE PR2HW::GetCameraImage(PR2_SENSOR_ID id ,
   else
   {
     tmpCameraIface->Lock(1);
+    *simTime      = tmpCameraIface->data->head.time;
     *width        = (uint32_t)tmpCameraIface->data->width;
     *height       = (uint32_t)tmpCameraIface->data->height;
     *compression  = "raw";
