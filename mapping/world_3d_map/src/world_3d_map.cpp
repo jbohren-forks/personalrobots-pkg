@@ -101,7 +101,7 @@ class World3DMap : public ros::node
 public:
 
     World3DMap(void) : ros::node("world_3d_map"),
-		       tf(*this, true, 1 * 1000000000ULL, 0ULL)
+		       tf(*this, true, 1 * 1000000000ULL, 1000000000ULL)
     {
 	advertise<PointCloudFloat32>("world_3d_map");
 	advertise<rostools::Log>("roserr");
@@ -146,7 +146,8 @@ public:
 	   of data will not happen, but we don't want the node to
 	   postpone processing latest data just because it is not done
 	   with older data. */
-
+	printf("%d\n", inputCloud.header.frame_id);
+	
 	flagMutex.lock();
 	bool discard = working;
 	if (!discard)
@@ -274,7 +275,7 @@ public:
 	    catch (...)
 	    {
 		printf("Error applying transform to point cloud\n");
-	    }
+	    }	    
 	}
 	
 	return cloud0;
