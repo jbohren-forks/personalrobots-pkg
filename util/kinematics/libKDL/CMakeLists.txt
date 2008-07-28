@@ -11,6 +11,6 @@ endif(NOT HAVE_OROCOS_KDL)
 rospack_add_executable(bin/pr2_kin_test test/pr2_kin_test.cpp)
 target_link_libraries(bin/pr2_kin_test KDL orocos-kdl)
 
-rospack_add_executable(bin/dynamics test/dynamics.cpp)
-target_link_libraries(bin/dynamics KDL orocos-kdl)
+#rospack_add_executable(bin/dynamics test/dynamics.cpp)
+#target_link_libraries(bin/dynamics KDL orocos-kdl)
 
