@@ -455,11 +455,12 @@ RosGazeboNode::Update()
       tmp_cloud_pt.y                = tmp_cloud_pt.y + GaussianKernel(0,sigma);
       tmp_cloud_pt.z                = tmp_cloud_pt.z + GaussianKernel(0,sigma);
 
+      // offsets for changing frame of reference to ROBOT FRAME
       // we can use transform server here or use the offsets directly
-      // offsets for changing rame of reference to BASE
       tmp_cloud_pt.x = tmp_cloud_pt.x + PR2::BASE_TORSO_OFFSET.x + PR2::TORSO_TILT_LASER_OFFSET.x,
       tmp_cloud_pt.y = tmp_cloud_pt.y + PR2::BASE_TORSO_OFFSET.y,
       tmp_cloud_pt.z = tmp_cloud_pt.z + PR2::BASE_TORSO_OFFSET.z + PR2::TORSO_TILT_LASER_OFFSET.z, /* FIXME: spine elevator not accounted for */
+      // TODO: does anyone need transform to WORLD FRAME directly here?
 
       // add mixed pixel noise
       // if this point is some threshold away from last, add mixing model
