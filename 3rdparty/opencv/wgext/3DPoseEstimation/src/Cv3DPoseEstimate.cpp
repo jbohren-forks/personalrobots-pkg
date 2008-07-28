@@ -247,7 +247,7 @@ int Cv3DPoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat
 	}
 
     // nonlinear optimization by Levenberg-Marquardt
-    CvLevMarq3D levMarq(numInLiers0);
+    CvLevMarqTransform levMarq(numInLiers0);
     
     double param[6];
     

@@ -5,11 +5,11 @@
 #include "CvMatUtils.h"
 
 //class CvLevMarq3D: public CvLevMarq
-class CvLevMarq3D
+class CvLevMarqTransform
 {
 public:
-	CvLevMarq3D(int numErrors, int numMaxIter = defNumMaxIter);
-	virtual ~CvLevMarq3D();
+	CvLevMarqTransform(int numErrors, int numMaxIter = defNumMaxIter);
+	virtual ~CvLevMarqTransform();
 	const static int numParams = 6;
 	const static int defNumMaxIter = 50;  // maximum num of iterations
 	const static int defMaxTimesOfUpdates = 300; //maximum num of times update() is called

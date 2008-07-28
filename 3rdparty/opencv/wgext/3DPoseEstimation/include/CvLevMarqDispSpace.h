@@ -4,7 +4,7 @@
 #include <cxtypes.h>
 #include "CvLevMarq3D.h"
 
-class CvLevMarqDispSpace : public CvLevMarq3D
+class CvLevMarqDispSpace : public CvLevMarqTransform
 {
 public:
 	CvLevMarqDispSpace(CvMat *disparityTo3D, CvMat *threeDToDisparity, int numErrors, 

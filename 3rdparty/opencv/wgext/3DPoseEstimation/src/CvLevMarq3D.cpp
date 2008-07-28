@@ -31,7 +31,7 @@ using namespace std;
 #endif
 
 
-CvLevMarq3D::CvLevMarq3D(int numErrors, int numMaxIter)
+CvLevMarqTransform::CvLevMarqTransform(int numErrors, int numMaxIter)
 {
 	this->mAngleType = Euler;
 	cvInitMatHeader(&mRT,         4, 4, CV_XF, mRTData);
@@ -60,11 +60,11 @@ CvLevMarq3D::CvLevMarq3D(int numErrors, int numMaxIter)
 #endif
 }
 
-CvLevMarq3D::~CvLevMarq3D()
+CvLevMarqTransform::~CvLevMarqTransform()
 {
 }
 
-bool CvLevMarq3D::constructRTMatrices(const CvMat *param, CvMyReal delta) {
+bool CvLevMarqTransform::constructRTMatrices(const CvMat *param, CvMyReal delta) {
 	CvMyReal x  = cvmGet(param, 0, 0);
 	CvMyReal y  = cvmGet(param, 1, 0);
 	CvMyReal z  = cvmGet(param, 2, 0);
@@ -85,7 +85,7 @@ bool CvLevMarq3D::constructRTMatrices(const CvMat *param, CvMyReal delta) {
 	return true;
 }
 
-bool CvLevMarq3D::constructRTMatrix(const CvMat * param, CvMyReal _RT[]){
+bool CvLevMarqTransform::constructRTMatrix(const CvMat * param, CvMyReal _RT[]){
 	bool status = true;
 	
 	if (this->mAngleType == Euler) {
@@ -115,7 +115,7 @@ bool CvLevMarq3D::constructRTMatrix(const CvMat * param, CvMyReal _RT[]){
 	return status;
 }
 
-bool CvLevMarq3D::constructRTMatrix(const CvMat* param){
+bool CvLevMarqTransform::constructRTMatrix(const CvMat* param){
 	bool status = true;
 	
 	double x = cvmGet(param, 0, 0);
@@ -155,10 +155,10 @@ bool CvLevMarq3D::constructRTMatrix(const CvMat* param){
 	return status;
 }
 
-bool CvLevMarq3D::computeResidue(CvMat* xyzs0, CvMat *xyzs1, CvMat* res){
+bool CvLevMarqTransform::computeResidue(CvMat* xyzs0, CvMat *xyzs1, CvMat* res){
 	return computeResidue(xyzs0, xyzs1, &mRT3x4, res);
 }
-bool CvLevMarq3D::computeResidue(CvMat* xyzs0, CvMat *xyzs1, CvMat *T, CvMat* res){
+bool CvLevMarqTransform::computeResidue(CvMat* xyzs0, CvMat *xyzs1, CvMat *T, CvMat* res){
 	TIMERSTART2(Residue);
 	
 	CvMat _xyzs0;
@@ -172,7 +172,7 @@ bool CvLevMarq3D::computeResidue(CvMat* xyzs0, CvMat *xyzs1, CvMat *T, CvMat* re
 	return true;
 }
 
-bool CvLevMarq3D::computeForwardResidues(CvMat *xyzs0, CvMat *xyzs1, CvMat *res){
+bool CvLevMarqTransform::computeForwardResidues(CvMat *xyzs0, CvMat *xyzs1, CvMat *res){
 	bool status = true;
 	for (int k=0; k<numParams; k++) {
 		CvMat r1_k;
@@ -182,21 +182,21 @@ bool CvLevMarq3D::computeForwardResidues(CvMat *xyzs0, CvMat *xyzs1, CvMat *res)
 	return status;
 }
 
-bool CvLevMarq3D::constructTransformationMatrix(const CvMat *param){
+bool CvLevMarqTransform::constructTransformationMatrix(const CvMat *param){
 	return constructRTMatrix(param);
 }
 
-bool CvLevMarq3D::constructTransformationMatrix(const CvMat *param, CvMyReal T[]){
+bool CvLevMarqTransform::constructTransformationMatrix(const CvMat *param, CvMyReal T[]){
 	return constructRTMatrix(param, T);
 }
 
 #if 1
-bool CvLevMarq3D::constructTransformationMatrices(const CvMat *param, CvMyReal delta){
+bool CvLevMarqTransform::constructTransformationMatrices(const CvMat *param, CvMyReal delta){
 	return constructRTMatrices(param, delta);
 }
 #else
 
-bool CvLevMarq3D::constructTransformationMatrices(const CvMat *param, CvMyReal delta) {
+bool CvLevMarqTransform::constructTransformationMatrices(const CvMat *param, CvMyReal delta) {
 	CvMyReal x  = cvmGet(param, 0, 0);
 	CvMyReal y  = cvmGet(param, 1, 0);
 	CvMyReal z  = cvmGet(param, 2, 0);
@@ -218,7 +218,7 @@ bool CvLevMarq3D::constructTransformationMatrices(const CvMat *param, CvMyReal d
 }
 #endif
 
-bool CvLevMarq3D::doit(CvMat *xyzs0, CvMat *xyzs1, CvMat *rot, CvMat* trans) {
+bool CvLevMarqTransform::doit(CvMat *xyzs0, CvMat *xyzs1, CvMat *rot, CvMat* trans) {
 	bool status = true;
 	double _param[6];
 	CvMat rod;
@@ -230,7 +230,7 @@ bool CvLevMarq3D::doit(CvMat *xyzs0, CvMat *xyzs1, CvMat *rot, CvMat* trans) {
 	return status;
 }
 
-bool CvLevMarq3D::doit(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
+bool CvLevMarqTransform::doit(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 #ifdef USE_UPDATEALT
 	return doit1(xyzs0, xyzs1, _param);
 #else
@@ -238,7 +238,7 @@ bool CvLevMarq3D::doit(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 #endif
 }
 
-bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
+bool CvLevMarqTransform::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	bool status=true;
 	TIMERSTART2(LevMarq2);
 	//initialize the initial vector of paramters
@@ -606,7 +606,7 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	
 
 // TODO: This function is not completed	    
-bool CvLevMarq3D::doit2(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
+bool CvLevMarqTransform::doit2(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	cout << "CvLevMarq3D::doit2 --- Not Fixed Yet"<<endl;
 	bool status=true;
 	//initialize the initial vector of paramters

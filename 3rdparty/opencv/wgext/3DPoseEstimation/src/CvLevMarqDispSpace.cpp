@@ -24,7 +24,7 @@ using namespace std;
 CvLevMarqDispSpace::CvLevMarqDispSpace(
             CvMat* disparityTo3D, CvMat *threeDToDisparity,
             int numErrors, int numMaxIter):
-	CvLevMarq3D(
+	CvLevMarqTransform(
 			numErrors /* dimensionality of the error vector */,
 			numMaxIter
 	), m3DToDisparity(threeDToDisparity), mDisparityTo3D(disparityTo3D)
@@ -146,7 +146,7 @@ bool CvLevMarqDispSpace::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1,
 	return true;
 }
 
-// This function shall be the same as CvLevMarq3D::doit1 except for the 
+// This function shall be the same as CvLevMarqTransform::doit1 except for the 
 // residue computation
 bool CvLevMarqDispSpace::doit1(const CvMat *xyzs0, const CvMat *xyzs1, double _param[]){
 	bool status=true;
