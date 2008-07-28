@@ -113,7 +113,7 @@ namespace libTF{
     /** \brief Return the transform as a Matrix  
      * \param time The desired time for the transformation */
     NEWMAT::Matrix getMatrix(unsigned long long time);
-    /** \breif Return the inverse matrix 
+    /** \brief Return the inverse matrix 
      * \param time The desired time for the transformation */
     NEWMAT::Matrix getInverseMatrix(unsigned long long time);
   
