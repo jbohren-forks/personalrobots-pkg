@@ -1,5 +1,8 @@
 all: gen_msgs
-	ln -s `rospack find wg_robot_description`/pr2/cameras.xml .
+	ln -fs `rospack find wg_robot_description`/pr2/cameras.xml .
+	cd src; $(MAKE) $(MFLAGS)
+
 clean: clean_msgs
-	run cameras.xml
+	rm cameras.xml
+	cd src; $(MAKE) $(MFLAGS) clean
 include $(shell rospack find mk)/msg.mk
