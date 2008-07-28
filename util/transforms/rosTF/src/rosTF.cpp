@@ -49,24 +49,22 @@ rosTFClient::rosTFClient(ros::node & rosnode,
 
 };
 
-std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(std::string target_frame,  std_msgs::PointCloudFloat32 & cloudIn)
+void rosTFClient::transformPointCloud(std::string target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn)
 {
-  return transformPointCloud(lookup(target_frame), cloudIn);
-};
+    transformPointCloud(lookup(target_frame), cloudOut, cloudIn);
+}
 
-
-//PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target_frame, const std_msgs::PointCloudFloat32 & cloudIn) //todo add back const when get_pts_size() is const ticket:232
-std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target_frame,  std_msgs::PointCloudFloat32 & cloudIn)
+void rosTFClient::transformPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn)
 {
   NEWMAT::Matrix transform = TransformReference::getMatrix(target_frame, cloudIn.header.frame_id, cloudIn.header.stamp.sec * 1000000000ULL + cloudIn.header.stamp.nsec);
 
-  int length = cloudIn.get_pts_size();
+  unsigned int length = cloudIn.get_pts_size();
 
   NEWMAT::Matrix matIn(4,length);
   
   double * matrixPtr = matIn.Store();
   
-  for (unsigned int i = 0; i < cloudIn.get_pts_size();i++) 
+  for (unsigned int i = 0; i < length ; i++) 
     { 
       matrixPtr[i] = cloudIn.pts[i].x;
       matrixPtr[length +i] = cloudIn.pts[i].y;
@@ -76,7 +74,15 @@ std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target
   
   NEWMAT::Matrix matOut = transform * matIn;
   
-  std_msgs::PointCloudFloat32 cloudOut = cloudIn; //Get everything from cloudIn
+  // Copy relevant data from cloudIn, if needed
+  if (&cloudIn != &cloudOut)
+  {
+      cloudOut.header = cloudIn.header;
+      cloudOut.set_pts_size(length);  
+      cloudOut.set_chan_size(cloudIn.get_chan_size());
+      for (unsigned int i = 0 ; i < cloudIn.get_chan_size() ; ++i)
+	  cloudOut.chan[i] = cloudIn.chan[i];
+  }
   
   matrixPtr = matOut.Store();
   
@@ -88,8 +94,20 @@ std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target
       cloudOut.pts[i].y = matrixPtr[1*length + i];
       cloudOut.pts[i].z = matrixPtr[2*length + i];
     };
+}
 
-  return cloudOut;
+std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(std::string target_frame,  const std_msgs::PointCloudFloat32 & cloudIn)
+{
+  return transformPointCloud(lookup(target_frame), cloudIn);
+};
+
+
+//PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target_frame, const std_msgs::PointCloudFloat32 & cloudIn) //todo add back const when get_pts_size() is const ticket:232
+std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target_frame,  const std_msgs::PointCloudFloat32 & cloudIn)
+{
+    std_msgs::PointCloudFloat32 cloudOut;
+    transformPointCloud(target_frame, cloudOut, cloudIn);
+    return cloudOut;    
 };
 
 
