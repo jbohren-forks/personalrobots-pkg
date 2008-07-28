@@ -2,6 +2,7 @@
 
 #include "math.h"
 #include <list>
+#include <algorithm>
 
 #include "vtkFloatArray.h"
 #include "vtkPoints.h"
@@ -400,6 +401,32 @@ void SmartScan::principalAxes(libTF::TFVector &a1, libTF::TFVector &a2,
 	//set frame and time to 0. In the future, a smart scan might have its own frame and time
 	a1.time = a2.time = a3.time = 0;
 	a1.frame = a2.frame = a3.frame = 0;
+}
+
+/*! Return the two corners of the bounding box of this scan, in \a bb1
+    and \a bb2 respectively. Computes the bounding box each time it is
+    called; in the future we could also compute the bbox when the
+    points are set and then cache it.
+ */
+void SmartScan::boundingBox(libTF::TFPoint &bb1, libTF::TFPoint &bb2) const
+{
+	if (size() < 0) return;
+	std_msgs::Point3DFloat32 p = getPoint(0);
+	bb1.x = bb2.x = p.x;
+	bb1.y = bb2.y = p.y;
+	bb1.z = bb2.z = p.z;
+
+	for (int i=1; i<size(); i++) {
+		p = getPoint(i);
+
+		bb1.x = std::min((float)bb1.x, p.x);
+		bb1.y = std::min((float)bb1.y, p.y);
+		bb1.z = std::min((float)bb1.z, p.z);
+
+		bb2.x = std::max((float)bb2.x, p.x);
+		bb2.y = std::max((float)bb2.y, p.y);
+		bb2.z = std::max((float)bb2.z, p.z);
+	}
 }
 
 /*! Adds the points in the scan \a target to this one. Does not check
@@ -1120,41 +1147,70 @@ void SmartScan::singularVectors(NEWMAT::Matrix *M, int n, std_msgs::Point3DFloat
 	//fprintf(stderr,"%f %f %f \n",normal.x, normal.y, normal.z);
 }
 
-std::vector<scan_utils::Triangle>* SmartScan::createMesh()
+/*! Returns a triangular mesh that approximates this point cloud.The
+    mesh will usually be closed and wrapping around the point cloud,
+    thus creating acomplete 3D object, not just one face of it. This
+    is generally a drawback, but for now we don't have a better
+    meching algorithm available.
+
+    The scan is sampled into a regular grid, which is then in turn meshed.
+    
+    \param resolution - the size of a grid cell. Usually values around
+    0.01 work well for regular sized objects. If a 0 is passed (which
+    is also the default value), it will be set automatically depending
+    on the size of scan bounding box, so that the size of the grid in
+    any dimension will not exceed 100 cells.
+
+    Returns the list of surface triangles. It is the responsability of
+    the caller to free this memory.
+
+    WARNING: can be used, but it's still under construction. This
+    function still has significant problems, most of them due the
+    underlying vtk function which seems very unpredictable. I have
+    tested it with scans ranging in bbox from 1m (tables) to 0.1m
+    (objects) and it seems to work reasonably well. However, it always
+    fails on scans with bbox on the order of 20m (rooms) regardless of
+    resolution parameter.
+*/
+std::vector<scan_utils::Triangle>* SmartScan::createMesh(float resolution)
 {
 	std::vector<scan_utils::Triangle> *triangles = new std::vector<scan_utils::Triangle>;
 
+	libTF::TFPoint bb1, bb2;
+	boundingBox(bb1,bb2);
+	
+	float maxSize = std::max( bb2.x - bb1.x , bb2.y - bb1.y );
+	maxSize = std::max(maxSize, (float)(bb2.z - bb1.z));
+
+	if (resolution == 0) {
+		resolution = maxSize / 100.0;
+	}
+	int sampleSize = ceil(maxSize / resolution);
+	fprintf(stderr,"maxSize is %f with %d samples for %f resolution\n",maxSize, sampleSize,resolution);
+
+	float sampleDistance;
+	// the sample distance is strange... it seems not to be absolute, but rather relative to grid size
+	// vtk documentation says absolutely nothing useful
+	// through experimentation, a value of 0.0065 (pulled out of thin air) seems to work for a scan of 1m in size
+	// so we just scale that...
+	sampleDistance = 0.0065 / maxSize;
+
+	//float cellSize = maxSize / sampleSize;
+	//sampleDistance = 0.01 + 2 * cellSize;
+
 	vtkImplicitModeller *modeller = vtkImplicitModeller::New();
 	modeller->SetInput( getVtkData() );
-	//	modeller->SetSampleDimensions(100, 100, 100);
-	modeller->SetMaximumDistance(0.2);
-	//	modeller->SetModelBounds(-1,-1,-1,1,1,1);
-
-	vtkSurfaceReconstructionFilter *surface = vtkSurfaceReconstructionFilter::New();
-	surface->SetSampleSpacing(0.01);
-	surface->SetInput( getVtkData() );
+	modeller->SetSampleDimensions(sampleSize, sampleSize, sampleSize);
+	modeller->SetMaximumDistance(sampleDistance);
+	modeller->SetModelBounds( bb1.x, bb2.x, bb1.y, bb2.y, bb1.z, bb2.z );
 
 	vtkContourFilter *filter = vtkContourFilter::New();
-	filter->SetValue(0,0.0);
-	vtkMarchingCubes *cubes = vtkMarchingCubes::New();
-	cubes->SetValue(0,0.0);
-	vtkPolyData *output;
+	filter->SetInputConnection( modeller->GetOutputPort() );
+	filter->SetValue(0,sampleDistance);
 
-	/*
-	output = filter->GetOutput();
-	//filter->SetInputConnection( modeller->GetOutputPort() );
-	filter->SetInputConnection( surface->GetOutputPort() );
+	vtkPolyData *output = filter->GetOutput();
 	filter->Update();
-	*/
 
-	output = cubes->GetOutput();
-	//cubes->SetInputConnection( modeller->GetOutputPort() );
-	cubes->SetInputConnection( surface->GetOutputPort() );
-	cubes->Update();
-
-	
-	fprintf(stderr,"Filter has updated and has %d cells\n", output->GetNumberOfCells() );
-	
 	vtkCellArray *cells = output->GetPolys();
 	cells->InitTraversal();
 	int nPts, *pts;
@@ -1163,16 +1219,15 @@ std::vector<scan_utils::Triangle>* SmartScan::createMesh()
 	while( cells->GetNextCell(nPts,pts) ){
 		if (nPts != 3) {
 			//not a triangle
-			fprintf(stderr,"Warning: cell does not have 3 points!\n");
+			//fprintf(stderr,"Warning: cell does not have 3 points!\n");
 			continue;
 		}
 		output->GetPoint( pts[0], c1 );
 		output->GetPoint( pts[1], c2 );
 		output->GetPoint( pts[2], c3 );
-		triangles->push_back( Triangle(c1, c2, c3) );
+		triangles->push_back( Triangle(c1, c3, c2) );
 	}
 	
-	modeller->Delete();
 	return triangles;
 }
 

@@ -132,6 +132,8 @@ class SmartScan {
 	//! Get the principal axes of the point cloud
 	void principalAxes(libTF::TFVector &a1, libTF::TFVector &a2,
 			   libTF::TFVector &a3);
+	//! Get the bounding box of this scan
+	void boundingBox(libTF::TFPoint &bb1, libTF::TFPoint &bb2)const;
 
 	//! Adds the points from another scan to this one
 	void addScan(const SmartScan *target);
@@ -172,8 +174,8 @@ class SmartScan {
 	//! Returns the connected components in this scan, each in its own SmartScan
 	std::vector<SmartScan*> *connectedComponents(float thresh, int minPts = 0);
 
-	//! Under construction...
-	std::vector<scan_utils::Triangle> *createMesh();
+	//! Returns a triangular surface mesh that approximates this cloud.
+	std::vector<scan_utils::Triangle> *createMesh(float resolution = 0);
 
 	//! Computes a spin image at x, y, z with fixed orientation, i.e. the surface normal is set to point up.
 	void computeSpinImageFixedOrientation(scan_utils::Grid2D &si, float x, float y, float z, float support, float pixelsPerMeter);
