@@ -102,7 +102,7 @@ namespace controller
      */       
     ~JointController( );
 
-    static JointController* create(const std::string&) {
+    static Controller* create(const std::string&) {
       return new JointController;
     }
  
