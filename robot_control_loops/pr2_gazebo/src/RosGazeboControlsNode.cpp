@@ -419,7 +419,7 @@ RosGazeboControlsNode::Update()
   uint32_t intensities_size;
   uint32_t intensities_alloc_size;
   std_msgs::Point3DFloat32 tmp_cloud_pt;
-
+  double laserTime, cameraTime;
   /***************************************************************/
   /*                                                             */
   /*  Arm Updates                                                */
@@ -446,7 +446,7 @@ RosGazeboControlsNode::Update()
                 &angle_min, &angle_max, &angle_increment,
                 &range_max, &ranges_size     , &ranges_alloc_size,
                 &intensities_size, &intensities_alloc_size,
-                this->ranges     , this->intensities) == PR2::PR2_ALL_OK)
+                this->ranges     , this->intensities, &laserTime) == PR2::PR2_ALL_OK)
   {
     for(unsigned int i=0;i<ranges_size;i++)
     {
@@ -523,7 +523,7 @@ RosGazeboControlsNode::Update()
                 &angle_min, &angle_max, &angle_increment,
                 &range_max, &ranges_size     , &ranges_alloc_size,
                 &intensities_size, &intensities_alloc_size,
-                this->ranges     , this->intensities) == PR2::PR2_ALL_OK)
+                this->ranges     , this->intensities, &laserTime) == PR2::PR2_ALL_OK)
   {
     // Get latest laser data
     this->laserMsg.angle_min       = angle_min;
@@ -618,7 +618,7 @@ RosGazeboControlsNode::Update()
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_ptz_right         )) {
+          &buf_size        ,         buf_ptz_right         , &cameraTime)) {
     this->img_ptz_right.width       = width;
     this->img_ptz_right.height      = height;
     this->img_ptz_right.compression = compression;
@@ -640,7 +640,7 @@ RosGazeboControlsNode::Update()
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_ptz_left          )) {
+          &buf_size        ,         buf_ptz_left          , &cameraTime)) {
     this->img_ptz_left .width       = width;
     this->img_ptz_left .height      = height;
     this->img_ptz_left .compression = compression;
@@ -662,7 +662,7 @@ RosGazeboControlsNode::Update()
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_wrist_right         )) {
+          &buf_size        ,         buf_wrist_right       , &cameraTime  )) {
     this->img_wrist_right.width       = width;
     this->img_wrist_right.height      = height;
     this->img_wrist_right.compression = compression;
@@ -684,7 +684,7 @@ RosGazeboControlsNode::Update()
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_wrist_left          )) {
+          &buf_size        ,         buf_wrist_left        , &cameraTime  )) {
     this->img_wrist_left .width       = width;
     this->img_wrist_left .height      = height;
     this->img_wrist_left .compression = compression;
@@ -706,7 +706,7 @@ RosGazeboControlsNode::Update()
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_forearm_right         )) {
+          &buf_size        ,         buf_forearm_right     , &cameraTime    )) {
     this->img_forearm_right.width       = width;
     this->img_forearm_right.height      = height;
     this->img_forearm_right.compression = compression;
@@ -728,7 +728,7 @@ RosGazeboControlsNode::Update()
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_forearm_left          )) {
+          &buf_size        ,         buf_forearm_left      , &cameraTime    )) {
     this->img_forearm_left .width       = width;
     this->img_forearm_left .height      = height;
     this->img_forearm_left .compression = compression;
