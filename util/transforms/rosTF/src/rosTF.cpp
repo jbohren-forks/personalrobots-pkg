@@ -60,7 +60,7 @@ void rosTFClient::transformPointCloud(unsigned int target_frame, std_msgs::Point
 
   unsigned int length = cloudIn.get_pts_size();
 
-  NEWMAT::Matrix matIn(4,length);
+  NEWMAT::Matrix matIn(4, length);
   
   double * matrixPtr = matIn.Store();
   
@@ -88,7 +88,7 @@ void rosTFClient::transformPointCloud(unsigned int target_frame, std_msgs::Point
   
   //Override the positions
   cloudOut.header.frame_id = target_frame;
-  for (unsigned int i = 0; i < cloudIn.get_pts_size();i++) 
+  for (unsigned int i = 0; i < length ; i++) 
     { 
       cloudOut.pts[i].x = matrixPtr[i];
       cloudOut.pts[i].y = matrixPtr[1*length + i];
