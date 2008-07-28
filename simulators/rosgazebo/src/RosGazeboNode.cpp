@@ -421,7 +421,7 @@ RosGazeboNode::Update()
   /***************************************************************/
   this->PR2Copy->GetTime(&(this->simTime));
   timeMsg.rostime.sec  = (unsigned long)floor(this->simTime);
-  timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->laserMsg.header.stamp.sec) );
+  timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  this->simTime - timeMsg.rostime.sec) );
   publish("time",timeMsg);
 
 
