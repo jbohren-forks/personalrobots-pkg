@@ -8,16 +8,11 @@ import numpy as np
 dataset = ld.load_pickle('PatchClassifier.dataset.pickle')
 hg.cvNamedWindow('image', 1)
 hg.cvNamedWindow('context', 1)
-#npimg   = ut.cv2np(image)
-#swapped = swap_br(npimg.copy())
-#cvimg   = ut.np2cv(swapped)
 
 def reconstruct_input(nparray):
     #split
     npbig   = nparray[0:675].A
     npsmall = nparray[675:].A
-    #print 'npbig.shape  ', npbig.shape, npbig.__class__
-    #print 'npsmall.shape', npsmall.shape, npbig.__class__
 
     #reshape
     npbig_rs = npbig.reshape((15,15,3))
@@ -27,6 +22,107 @@ def reconstruct_input(nparray):
     img     = ut.np2cv(npbig_rs.astype(np.uint8))
     context = ut.np2cv(npsml_rs.astype(np.uint8))
     return img, context
+
+def normalize_for_display(vec):
+    return (255 * ((vec - np.min(vec)) / np.max(vec)))
+
+def display(vec, name):
+    patch, context = reconstruct_input(vec)
+    hg.cvSaveImage(name + '_patch.png', patch)
+    hg.cvSaveImage(name + '_context.png', context)
+    hg.cvShowImage('image', patch)
+    hg.cvShowImage('context', context)
+    hg.cvWaitKey()
+
+pca_basis = normalize_for_display(dataset.projection_basis)
+for i in range(pca_basis.shape[1]):
+    print 'basis', i
+    display(pca_basis[:,i], 'pca_basis'+str(i))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#projection_vectors = dr.pca_vectors(dataset.inputs, 0.95)
+#projection_vectors = normalize_for_display(projection_vectors)
+#print 'number of projection bases', projection_vectors.shape
 
 #image = hg.cvLoadImage('1frame489.png')
 #subrect = cv.cvCloneImage(cv.cvGetSubRect(image, cv.cvRect(40, 40, 20, 30)))
@@ -48,49 +144,6 @@ def reconstruct_input(nparray):
 #    hg.cvShowImage('image', patch)
 #    hg.cvShowImage('context', context)
 #    hg.cvWaitKey(33)
-
-def show(vec):
-    patch, context = reconstruct_input(vec)
-    hg.cvShowImage('image', patch)
-    hg.cvShowImage('context', context)
-    hg.cvWaitKey()
-
-def normalize_for_display(vec):
-    return (255 * ((vec - np.min(vec)) / np.max(vec)))
-
-projection_vectors = dr.pca_vectors(dataset.inputs, 0.95)
-projection_vectors = normalize_for_display(projection_vectors)
-#print 'number of projection bases', projection_vectors.shape
-for i in range(projection_vectors.shape[1]):
-    show(projection_vectors[:,i])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
