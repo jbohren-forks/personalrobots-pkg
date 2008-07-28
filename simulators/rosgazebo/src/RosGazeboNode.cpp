@@ -486,6 +486,11 @@ RosGazeboNode::Update()
     /*                                                             */
     /***************************************************************/
     //std::cout << " pcd num " << this->cloud_pts->length << std::endl;
+    //
+    this->cloudMsg.header.frame_id = tf.lookup("FRAMEID_BASE");
+    this->cloudMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
+    this->cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->cloudMsg.header.stamp.sec) );
+
     int    num_channels = 1;
     this->cloudMsg.set_pts_size(this->cloud_pts->length);
     this->cloudMsg.set_chan_size(num_channels);
@@ -786,6 +791,10 @@ RosGazeboNode::Update()
     publish("shutter",this->shutterMsg);
 
     dAngle = -dAngle;
+
+    this->full_cloudMsg.header.frame_id = tf.lookup("FRAMEID_BASE");
+    this->full_cloudMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
+    this->full_cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->full_cloudMsg.header.stamp.sec) );
 
     int    num_channels = 1;
     this->full_cloudMsg.set_pts_size(this->full_cloud_pts->size());
