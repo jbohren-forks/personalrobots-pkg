@@ -9,12 +9,16 @@ using namespace std;
 
 //#define DEBUG 1
 
-#if 0
+#if 1
 #define TIMERSTART(x) 
 #define TIMEREND(x)
+#define TIMERSTART2(x) 
+#define TIMEREND2(x)
 #else
 #define TIMERSTART(x) CvTestTimerStart(x)
 #define TIMEREND(x) CvTestTimerEnd(x)
+#define TIMERSTART2(x) CvTestTimerStart2(x)
+#define TIMEREND2(x) CvTestTimerEnd2(x)
 #endif
 
 CvLevMarqDispSpace::CvLevMarqDispSpace(
@@ -127,7 +131,7 @@ bool CvLevMarqDispSpace::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1, 
 
 bool CvLevMarqDispSpace::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1, 
 		const CvMat *T, CvMat* res){
-	TIMERSTART(Residue);
+	TIMERSTART2(Residue);
 	CvMat _xyzs0;
 	CvMat _res;
 	cvReshape(xyzs0, &_xyzs0, 3, 0);
@@ -138,7 +142,7 @@ bool CvLevMarqDispSpace::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1,
 	cout << "residue" << endl;
 	CvMatUtils::printMat(res);
 #endif
-	TIMEREND(Residue);
+	TIMEREND2(Residue);
 	return true;
 }
 
@@ -283,7 +287,6 @@ bool CvLevMarqDispSpace::doit1(const CvMat *xyzs0, const CvMat *xyzs1, double _p
 #endif
 				}
 				TIMERSTART(JtJJtErr);
-				//	    		int64 tJtJJtErr = cvGetTickCount();
 
 				// compute the part of jacobian regarding this
 				// point
@@ -331,8 +334,7 @@ bool CvLevMarqDispSpace::doit1(const CvMat *xyzs0, const CvMat *xyzs1, double _p
 					}
 #endif
 				}
-				CvTestTimerEnd(JtJJtErr);
-				//	    		CvTestTimer::getTimer().mJtJJtErr += cvGetTickCount() - tJtJJtErr;
+				TIMEREND(JtJJtErr);
 			}
 			//	    	int64 tJtJJtErr = cvGetTickCount();
 			for (int k=0; k<numParams; k++) {

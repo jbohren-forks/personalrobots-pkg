@@ -190,18 +190,6 @@ bool CvTest3DPoseEstimate::test(){
 	mTranslation.y = 10.0;
 	mTranslation.z = 50.0;
 	
-#if 0
-	mEulerAngle.x = 47.0055/180*CV_PI;
-	mEulerAngle.y = -19.7913/180*CV_PI;
-	mEulerAngle.z = 30.4901/180*CV_PI;
-		
-	mTranslation.x = 52.08514;
-	   
-	mTranslation.y = 106.30646;
-
-	mTranslation.z = 109.97764;
-#endif
-	
 	CvMat *rot    = cvCreateMat(3, 3, CV_64FC1);
 	CvMat *trans  = cvCreateMat(3, 1, CV_64FC1);
 
@@ -263,15 +251,16 @@ bool CvTest3DPoseEstimate::test(){
 	for (int i=0; i<numIters; i++)
 	{
 		cout << "Test Case Number:  "<<i<<endl;
-#if 1
-		mEulerAngle.x = CV_PI/4.0*randReal(-1., 1.);
-		mEulerAngle.y = CV_PI/4.0*randReal(-1., 1.);
-		mEulerAngle.z = CV_PI/4.0*randReal(-1., 1.);
+		if (i>0) {
+			// first iter use preset value
+			mEulerAngle.x = CV_PI/4.0*randReal(-1., 1.);
+			mEulerAngle.y = CV_PI/4.0*randReal(-1., 1.);
+			mEulerAngle.z = CV_PI/4.0*randReal(-1., 1.);
 
-		mTranslation.x = 50. + 100.*cvRandReal(&mRng);
-		mTranslation.y = 50. + 100.*cvRandReal(&mRng);
-		mTranslation.z = 50. + 100.*cvRandReal(&mRng);
-#endif
+			mTranslation.x = 50. + 100.*cvRandReal(&mRng);
+			mTranslation.y = 50. + 100.*cvRandReal(&mRng);
+			mTranslation.z = 50. + 100.*cvRandReal(&mRng);
+		}
 		transform(points0, points1);
 		
 		// now randomize the first percentageOfOutliers points to make them outliers
@@ -280,10 +269,6 @@ bool CvTest3DPoseEstimate::test(){
 		int numInLiers;
 		CvMat *inliers0=NULL, *inliers1=NULL;
 
-//		double _data[16];
-//		double _data2[16];
-//		CvMat  TransformBestBeforeLevMarq = cvMat(4, 4, CV_64F, _data);
-//		CvMat  TransformAfterLevMarq = cvMat(4, 4, CV_64F, _data2);
 		CvMat *TransformBestBeforeLevMarq;
 		CvMat *TransformAfterLevMarq;
 		if (this->mTestCartesian) {
@@ -291,7 +276,7 @@ bool CvTest3DPoseEstimate::test(){
 			int64 t = cvGetTickCount();
 			numInLiers = peCart.estimate(points0, points1d, rot, trans, inliers0, inliers1);
 			CvTestTimer::getTimer().mTotal += cvGetTickCount() - t;
-//			cvCopy(&peCart.mRTBestWithoutLevMarq, &TransformBestBeforeLevMarq);
+
 			TransformBestBeforeLevMarq = peCart.getBestTWithoutNonLinearOpt();
 			TransformAfterLevMarq      = peCart.getFinalTransformation();
 		} else {
@@ -303,7 +288,6 @@ bool CvTest3DPoseEstimate::test(){
 			numInLiers = peDisp.estimate(uvds0, uvds1, rot, trans, inliers0, inliers1);	
 			
 			CvTestTimer::getTimer().mTotal += cvGetTickCount() - t;
-//			cvCopy(&peDisp.mRTBestWithoutLevMarq, &TransformBestBeforeLevMarq);
 			TransformBestBeforeLevMarq = peDisp.getBestTWithoutNonLinearOpt();
 			TransformAfterLevMarq      = peDisp.getFinalTransformation();
 		}

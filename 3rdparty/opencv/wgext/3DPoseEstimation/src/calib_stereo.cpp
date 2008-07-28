@@ -590,6 +590,7 @@ bool CvLevMarq::updateAlt( const CvMat*& _param, CvMat*& _JtJ, CvMat*& _JtErr, d
 
    assert( state == CHECK_ERR );
    // jdc debugging
+   //   if (errNorm - prevErrNorm > -0.1e-10)
    //   if( errNorm >= prevErrNorm )
    if( errNorm > prevErrNorm)
    {
@@ -637,6 +638,10 @@ void CvLevMarq::solve()
    cvAdd( JtJ, JtJN, JtJN );
    cvSVD( JtJN, JtJW, 0, JtJV, CV_SVD_MODIFY_A + CV_SVD_U_T + CV_SVD_V_T );
    cvSVBkSb( JtJW, JtJV, JtJV, JtErr, param, CV_SVD_U_T + CV_SVD_V_T );
+#ifdef DEBUG
+   // jdc debugging
+   printf("param changed\n");
+#endif
 }
 
 

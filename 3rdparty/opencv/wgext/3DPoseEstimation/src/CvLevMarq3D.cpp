@@ -14,12 +14,20 @@ using namespace std;
 #define USE_UPDATEALT
 #define LAST3ISLIN
 
-#if 0
+// Please note that because the timing code is executed is called lots of lots of times
+// they themselves have taken substantial timing as well
+#define CHECKTIMING 0
+
+#if CHECKTIMING == 0
 #define TIMERSTART(x) 
 #define TIMEREND(x)
+#define TIMERSTART2(x) 
+#define TIMEREND2(x)
 #else
 #define TIMERSTART(x) CvTestTimerStart(x)
 #define TIMEREND(x) CvTestTimerEnd(x)
+#define TIMERSTART2(x) CvTestTimerStart2(x)
+#define TIMEREND2(x) CvTestTimerEnd2(x)
 #endif
 
 
@@ -151,7 +159,7 @@ bool CvLevMarq3D::computeResidue(CvMat* xyzs0, CvMat *xyzs1, CvMat* res){
 	return computeResidue(xyzs0, xyzs1, &mRT3x4, res);
 }
 bool CvLevMarq3D::computeResidue(CvMat* xyzs0, CvMat *xyzs1, CvMat *T, CvMat* res){
-	TIMERSTART(Residue);
+	TIMERSTART2(Residue);
 	
 	CvMat _xyzs0;
 	CvMat _res;
@@ -160,7 +168,7 @@ bool CvLevMarq3D::computeResidue(CvMat* xyzs0, CvMat *xyzs1, CvMat *T, CvMat* re
 	cvTransform(&_xyzs0, &_res, T);
 	cvSub(res, xyzs1, res);
 	
-	TIMEREND(Residue);
+	TIMEREND2(Residue);
 	return true;
 }
 
@@ -232,6 +240,7 @@ bool CvLevMarq3D::doit(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 
 bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	bool status=true;
+	TIMERSTART2(LevMarq2);
 	//initialize the initial vector of paramters
 	if (_param == NULL){
 	   	cvSetZero(mLevMarq.param);
@@ -273,6 +282,8 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 		moreUpdate = mLevMarq.updateAlt(param0, 
 				_JtJ, _JtErr, _errNorm );
 		TIMEREND(CvLevMarq)
+		
+		TIMERSTART2(LevMarq3);
 		if (moreUpdate == false) {
 			break;
 		}
@@ -300,6 +311,7 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
         if( _errNorm )
             *_errNorm = 0;
 
+		TIMERSTART2(LevMarq4);
 	    if( _JtJ || _JtErr )
 	    {
 #ifdef DEBUG
@@ -344,7 +356,7 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	        	_r0z = _r0[2];
 #else
 	        	CvMyReal _p0x, _p0y, _p0z,  _p1x, _p1y, _p1z;
-	        	TIMERSTART(Residue);
+	        	TIMERSTART2(Residue);
 //	        	xyzs0 and xyzs1's are inliers we copy. so we know
 //	        	how their data are orgainized
 #if 0
@@ -365,15 +377,18 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	        	_p1z = *p1++;
 #endif
 	        	TRANSFORMRESIDUE(mRTData, _p0x, _p0y, _p0z, _p1x, _p1y, _p1z, _r0x, _r0y, _r0z);
-	        	TIMEREND(Residue);
+	        	TIMEREND2(Residue);
 #endif
 	        	
 	        	if (_errNorm) {
 	        		errNorm += _r0x*_r0x + _r0y*_r0y + _r0z*_r0z;
 	        	}
 
-	        	// TODO: skip the last 3 params
+	        	// compute the residues w.r.t. the fowarded parameters in 
+	        	// each of the 6 component
 #ifdef LAST3ISLIN
+	        	// skip the last 3 params as they are linear, and so can be 
+	        	// computed without going thru the coords of the points.
 	        	for (int k=0; k<3; k++) {
 #else
 	    		for (int k=0; k<numParams; k++) {
@@ -384,10 +399,10 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 #if 0
 	    			computeResidue(&point0, &point1, &mFwdT3x4[k], &r1_k);
 #else
-	    			TIMERSTART(Residue);
+	    			TIMERSTART2(FwdResidue);
 		        	TRANSFORMRESIDUE(mFwdTData[k], _p0x, _p0y, _p0z, _p1x, _p1y, _p1z, 
 		        			_r1[k*3], _r1[k*3+1], _r1[k*3+2]);
-		        	TIMEREND(Residue);
+		        	TIMEREND2(FwdResidue);
 #endif
 	    		}
 	    		
@@ -485,10 +500,10 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	    		*_errNorm = errNorm;
 	    	}
 
+			// fill out the lower triangle just in case
 #ifdef LAST3ISLIN
 	    	for (int k=0; k<3; k++) {
 	    		for (int l=k+1; l <numParams; l++) {
-	    			// fill out the lower triangle just in case
 	    			JtJData[l*numParams + k] = JtJData[k*numParams + l];
 	    		}
 	    	}
@@ -496,7 +511,6 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 #else
 	    	for (int k=0; k<numParams; k++) {
 	    		for (int l=k+1; l <numParams; l++) {
-	    			// fill out the lower triangle just in case
 	    			JtJData[l*numParams + k] = JtJData[k*numParams + l];
 	    		}
 	    	}
@@ -509,10 +523,11 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	    	CvMatUtils::printMat(_JtErr);
 #endif
 	    }
+	    TIMEREND2(LevMarq4);
+	    TIMERSTART2(LevMarq5);
 
     	if (_errNorm) {
     		if (_JtJ==NULL && _JtErr==NULL) {
-    			TIMERSTART(ErrNorm);
 
 	    		TIMERSTART(ConstructMatrices);
     			constructTransformationMatrix(param0);
@@ -531,7 +546,7 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
     				*_errNorm += _r0[0]*_r0[0] + _r0[1]*_r0[1] + _r0[2]*_r0[2];
 #else
     				double _r0x, _r0y, _r0z;
-    				TIMERSTART(Residue);
+    				TIMERSTART2(Residue);
     				//	        	xyzs0 and xyzs1's are inliers we copy. so we know
     				//	        	how their data are orgainized
 #if 0
@@ -552,13 +567,14 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
     				CvMyReal _p1z = *p1++;
 #endif
     				TRANSFORMRESIDUE(mRTData, _p0x, _p0y, _p0z, _p1x, _p1y, _p1z, _r0x, _r0y, _r0z);
-    				TIMEREND(Residue);
+    				TIMEREND2(Residue);
 		        	
+        			TIMERSTART(ErrNorm);
     				errNorm += _r0x*_r0x + _r0y*_r0y + _r0z*_r0z;
+    	    		TIMEREND(ErrNorm);
 #endif
     			}
     			*_errNorm = errNorm;
-	    		TIMEREND(ErrNorm);
     		}
     	}
 #ifdef DEBUG
@@ -570,6 +586,8 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	    		cvmGet(mLevMarq.param, 4, 0), 
 	    		cvmGet(mLevMarq.param, 5, 0));
 #endif
+	    TIMEREND2(LevMarq5);
+	    TIMEREND2(LevMarq3);
 	}
 #ifdef DEBUG
 	fprintf(stdout, "Num of JtJ computed: %d\n", numJtJComputed);
@@ -582,9 +600,12 @@ bool CvLevMarq3D::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
              _param[i] = cvmGet(mLevMarq.param, i, 0);
         }
     }
+	TIMEREND2(LevMarq2);
 	return status;
 }
 	
+
+// TODO: This function is not completed	    
 bool CvLevMarq3D::doit2(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	cout << "CvLevMarq3D::doit2 --- Not Fixed Yet"<<endl;
 	bool status=true;
@@ -660,21 +681,13 @@ bool CvLevMarq3D::doit2(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 
 	    if( J )
 	    {
+	    	constructTransformationMatrices(_param0, delta);
 	    	TIMERSTART(JtJJtErr);
+	    	// TODO: skip the last 3 parameters as they are linear
 	    	for (int k=0; k<numParams; k++){
-	    		// compute the col of partial over param k
-	    		cvCopy(_param0, &param1);
-	    		cvmSet(&param1, k, 0, cvmGet(&param1, k, 0)+delta);
-	    		constructTransformationMatrix(&param1);
-	    		CvMat currRes1;
-	    		cvReshape(currErr1, &currRes1, 0, numPoints);
-	    		computeResidue(xyzs0, xyzs1, &currRes1);
 	    		for (int j=0; j<numPoints; j++){
 	    			for (int l=0; l<3; l++) {
-//	    				cvmSet(currErr1, 3*j+l,   0, cvmGet(resVector1, l, j));
-	    				double diff = cvmGet(currErr1, 3*j+l, 0) -
-	    					cvmGet(currErr, 3*j+l, 0);
-	    				cvmSet(J, 3*j+l, k, diff/delta);
+	    				// compute the jacobian
 	    			}
 	    		}
 	    	}

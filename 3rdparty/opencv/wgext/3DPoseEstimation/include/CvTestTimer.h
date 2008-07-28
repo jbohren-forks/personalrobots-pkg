@@ -4,17 +4,29 @@ using namespace std;
 #ifndef CVTESTTIMER_H_
 #define CVTESTTIMER_H_
 
+#define DECLARE(timerName) RecordType m##timerName;
+#define RESET(timerName)   do {m##timerName.reset();} while(0)
+
 class CvTestTimer
 {
 public:
 	CvTestTimer();
 	virtual ~CvTestTimer();
 	
+	class RecordType {
+	public:
+		int64 mTime;
+		int64 mCount;
+		int64 mTimeStart;
+		void reset() {
+			mTime = 0;
+			mCount = 0;
+		}
+	};
+	
 	void reset(){
 		mTotal   = 0;
 		mCountTotal   = 0;
-		mResidue = 0;
-		mCountResidue = 0;
 		mErrNorm = 0;
 		mCountErrNorm = 0;
 		mJtJJtErr = 0;
@@ -33,6 +45,13 @@ public:
 		mCountCopyInliers = 0;
 		mConstructMatrices = 0;
 		mCountConstructMatrices = 0;
+		RESET(SVD);
+		RESET(Residue);
+		RESET(FwdResidue);
+		RESET(LevMarq2);
+		RESET(LevMarq3);
+		RESET(LevMarq4);
+		RESET(LevMarq5);
 	}
 	int64 mNumIters;
 	int64 mFrequency;
@@ -40,10 +59,6 @@ public:
 	int64 mTotal;
 	int64 mCountTotal;
 	
-	int64 mSVD;
-	int64 mCountSVD;
-	int64 mResidue;
-	int64 mCountResidue;
 	int64 mErrNorm;
 	int64 mCountErrNorm;
 	int64 mJtJJtErr;
@@ -63,12 +78,19 @@ public:
 	int64 mConstructMatrices;
 	int64 mCountConstructMatrices;
 	
+	DECLARE(SVD);
+	DECLARE(Residue);
+	DECLARE(FwdResidue);
+	DECLARE(LevMarq2);
+	DECLARE(LevMarq3);
+	DECLARE(LevMarq4);
+	DECLARE(LevMarq5);
+	
 	void printStat();
 	void printStat(const char* title, int64 val, int64 count);
-	static CvTestTimer& getTimer() {
+	static inline CvTestTimer& getTimer() {
 		return _singleton;
 	}
-protected:
 	static CvTestTimer _singleton;
 };
 
@@ -78,6 +100,15 @@ protected:
 
 #define CvTestTimerEnd(timerName) \
 	CvTestTimer::getTimer().m##timerName += cvGetTickCount() - _CvTestTimer_##timerName;}
+
+
+#define CvTestTimerStart2(timerName) \
+	do { CvTestTimer::getTimer().m##timerName.mTimeStart = cvGetTickCount(); \
+	  CvTestTimer::getTimer().m##timerName.mCount++;} while(0)
+
+#define CvTestTimerEnd2(timerName) \
+	do { CvTestTimer::getTimer().m##timerName.mTime += \
+			cvGetTickCount() - CvTestTimer::getTimer().m##timerName.mTimeStart;} while (0)
 
 
 #endif /*CVTESTTIMER_H_*/
