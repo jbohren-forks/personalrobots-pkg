@@ -108,7 +108,8 @@ public:
 	subscribe("cloud", inputCloud, &World3DMap::pointCloudCallback);
 	
 	param("world_3d_map/max_publish_frequency", maxPublishFrequency, 0.5);
-	param("world_3d_map/retain_pointcloud_duration", retainPointcloudDuration, 2.0);
+	param("world_3d_map/retain_pointcloud_duration", retainPointcloudDuration, 60.0);
+	param("world_3d_map/retain_pointcloud_fraction", retainPointcloudFraction, 0.02);
 	param("world_3d_map/verbosity_level", verbose, 1);
 	
 	/* create a thread that does the processing of the input data.
@@ -260,14 +261,15 @@ public:
 
     PointCloudFloat32* runFilters(const PointCloudFloat32 &cloud)
     {
-	return filter0(cloud);
+	return filter0(cloud, retainPointcloudFraction);
     }
     
     void processData(void)
     {
 	/* remove old data */
 	ros::Time &time = toProcess.header.stamp;
-	while (!currentWorld.empty() && (time - currentWorld.front()->header.stamp).to_double() < retainPointcloudDuration)
+
+	while (!currentWorld.empty() && (time - currentWorld.front()->header.stamp).to_double() > retainPointcloudDuration)
 	{
 	    PointCloudFloat32* old = currentWorld.front();
 	    currentWorld.pop_front();
@@ -287,6 +289,7 @@ private:
     
     double             maxPublishFrequency;
     double             retainPointcloudDuration;
+    double             retainPointcloudFraction;    
     int                verbose;
     
     pthread_t         *processingThread;
