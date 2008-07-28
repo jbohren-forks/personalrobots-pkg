@@ -48,7 +48,7 @@ public:
 };
 
 
-class SimpleTransmission : Transmission
+class SimpleTransmission : public Transmission
 {
 public:
   SimpleTransmission() {}

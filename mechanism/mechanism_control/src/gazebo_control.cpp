@@ -2,27 +2,27 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Copyright (C) 2008, Willow Garage Inc.
 //
-// Redistribution and use in source and binary forms, with or without 
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-//   * Redistributions of source code must retain the above copyright notice, 
+//   * Redistributions of source code must retain the above copyright notice,
 //     this list of conditions and the following disclaimer.
-//   * Redistributions in binary form must reproduce the above copyright 
-//     notice, this list of conditions and the following disclaimer in the 
+//   * Redistributions in binary form must reproduce the above copyright
+//     notice, this list of conditions and the following disclaimer in the
 //     documentation and/or other materials provided with the distribution.
-//   * Neither the name of Willow Garage Inc. nor the names of its 
-//     contributors may be used to endorse or promote products derived from 
+//   * Neither the name of Willow Garage Inc. nor the names of its
+//     contributors may be used to endorse or promote products derived from
 //     this software without specific prior written permission.
-//   
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
@@ -55,24 +55,24 @@ void GazeboMechanismControl::init(HardwareInterface *hardwareInterface){
 }
 
 void GazeboMechanismControl::initRobot(){
-  r = new Robot("robot"); 
+  r = new Robot((char*)"robot");
 
   r->numJoints        = PR2::MAX_JOINTS;
-  r->numTransmissions = PR2::MAX_JOINTS;
   r->numLinks         = PR2::MAX_JOINTS;
 
-  r->transmission = new SimpleTransmission[PR2::MAX_JOINTS];
   r->joint = new Joint[PR2::MAX_JOINTS];
   r->link = new Link[PR2::MAX_JOINTS];
 
   // MAPPING BETWEEN hwInterface->actuators and robot->joints
   // assign transmissions for all joints
   for(int ii=0; ii<PR2::MAX_JOINTS; ii++){
-    r->transmission[ii].actuator = &(hardwareInterface->actuator[ii]);
-    r->transmission[ii].joint = &(r->joint[ii]);
-    r->transmission[ii].mechanicalReduction = 1.0;
-    r->transmission[ii].motorTorqueConstant = 1.0;
-    r->transmission[ii].pulsesPerRevolution = 1.0;
+    SimpleTransmission *tr = new SimpleTransmission;
+    r->transmissions_.push_back(tr);
+    tr->actuator = &(hardwareInterface->actuator[ii]);
+    tr->joint = &(r->joint[ii]);
+    tr->mechanicalReduction = 1.0;
+    tr->motorTorqueConstant = 1.0;
+    tr->pulsesPerRevolution = 1.0;
     r->joint[ii].effortLimit = maxPositiveTorque;
   }
   // enable all actuators, just so happens num. joints == num. actuators for now
@@ -85,44 +85,44 @@ void GazeboMechanismControl::initControllers(){
 
   // assuming that: robot joint array == hardware interface actuator array
   // hard coded mapping between jointcontroller array and robot joint array
-  int baseMapToRobotJointIndex[] = { 
+  int baseMapToRobotJointIndex[] = {
       PR2::CASTER_FL_STEER   , PR2::CASTER_FL_DRIVE_L , PR2::CASTER_FL_DRIVE_R ,
       PR2::CASTER_FR_STEER   , PR2::CASTER_FR_DRIVE_L , PR2::CASTER_FR_DRIVE_R ,
       PR2::CASTER_RL_STEER   , PR2::CASTER_RL_DRIVE_L , PR2::CASTER_RL_DRIVE_R ,
       PR2::CASTER_RR_STEER   , PR2::CASTER_RR_DRIVE_L , PR2::CASTER_RR_DRIVE_R };
-  int leftArmMapToRobotJointIndex[] = { 
+  int leftArmMapToRobotJointIndex[] = {
       PR2::ARM_L_PAN           , PR2::ARM_L_SHOULDER_PITCH, PR2::ARM_L_SHOULDER_ROLL ,
       PR2::ARM_L_ELBOW_PITCH   , PR2::ARM_L_ELBOW_ROLL    , PR2::ARM_L_WRIST_PITCH   ,
       PR2::ARM_L_WRIST_ROLL    };
-  int rightArmMapToRobotJointIndex[] = { 
+  int rightArmMapToRobotJointIndex[] = {
       PR2::ARM_R_PAN           , PR2::ARM_R_SHOULDER_PITCH, PR2::ARM_R_SHOULDER_ROLL ,
       PR2::ARM_R_ELBOW_PITCH   , PR2::ARM_R_ELBOW_ROLL    , PR2::ARM_R_WRIST_PITCH   ,
       PR2::ARM_R_WRIST_ROLL    };
-  int headMapToRobotJointIndex[] = { 
+  int headMapToRobotJointIndex[] = {
       PR2::HEAD_YAW            , PR2::HEAD_PITCH };
-  int laserScannerMapToRobotJointIndex[] = { 
+  int laserScannerMapToRobotJointIndex[] = {
       PR2::HEAD_LASER_PITCH  };
-  int spineMapToRobotJointIndex[] = { 
+  int spineMapToRobotJointIndex[] = {
       PR2::SPINE_ELEVATOR  };
   // hard coded mapping between jointcontroller array and hardware interface actuator array
-  int baseMapToHIActuatorIndex[] = { 
+  int baseMapToHIActuatorIndex[] = {
       PR2::CASTER_FL_STEER   , PR2::CASTER_FL_DRIVE_L , PR2::CASTER_FL_DRIVE_R ,
       PR2::CASTER_FR_STEER   , PR2::CASTER_FR_DRIVE_L , PR2::CASTER_FR_DRIVE_R ,
       PR2::CASTER_RL_STEER   , PR2::CASTER_RL_DRIVE_L , PR2::CASTER_RL_DRIVE_R ,
       PR2::CASTER_RR_STEER   , PR2::CASTER_RR_DRIVE_L , PR2::CASTER_RR_DRIVE_R };
-  int leftArmMapToHIActuatorIndex[] = { 
+  int leftArmMapToHIActuatorIndex[] = {
       PR2::ARM_L_PAN           , PR2::ARM_L_SHOULDER_PITCH, PR2::ARM_L_SHOULDER_ROLL ,
       PR2::ARM_L_ELBOW_PITCH   , PR2::ARM_L_ELBOW_ROLL    , PR2::ARM_L_WRIST_PITCH   ,
       PR2::ARM_L_WRIST_ROLL    };
-  int rightArmMapToHIActuatorIndex[] = { 
+  int rightArmMapToHIActuatorIndex[] = {
       PR2::ARM_R_PAN           , PR2::ARM_R_SHOULDER_PITCH, PR2::ARM_R_SHOULDER_ROLL ,
       PR2::ARM_R_ELBOW_PITCH   , PR2::ARM_R_ELBOW_ROLL    , PR2::ARM_R_WRIST_PITCH   ,
       PR2::ARM_R_WRIST_ROLL    };
-  int headMapToHIActuatorIndex[] = { 
+  int headMapToHIActuatorIndex[] = {
       PR2::HEAD_YAW                 , PR2::HEAD_PITCH };
-  int laserScannerMapToHIActuatorIndex[] = { 
+  int laserScannerMapToHIActuatorIndex[] = {
       PR2::HEAD_LASER_PITCH  };
-  int spineMapToHIActuatorIndex[] = { 
+  int spineMapToHIActuatorIndex[] = {
       PR2::SPINE_ELEVATOR  };
 
   int leftArmNumJoints  = 7;
@@ -165,8 +165,8 @@ void GazeboMechanismControl::update(){
   //Clear actuator commands
 
   //Process robot model transmissions
-  for(int i = 0; i < r->numTransmissions; i++){
-    r->transmission[i].propagatePosition();
+  for(int i = 0; i < r->transmissions_.size(); i++){
+    r->transmissions_[i]->propagatePosition();
   }
 
   //update KDL model with new joint position/velocities
@@ -183,8 +183,8 @@ void GazeboMechanismControl::update(){
       r->joint[i].enforceLimits();
       }*/
 
-  for(int i = 0; i < r->numTransmissions; i++){
-    r->transmission[i].propagateEffort();
+  for(int i = 0; i < r->transmissions_.size(); i++){
+    r->transmissions_[i]->propagateEffort();
   }
 }
 

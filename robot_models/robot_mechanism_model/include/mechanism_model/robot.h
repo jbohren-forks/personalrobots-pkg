@@ -52,7 +52,7 @@ namespace mechanism {
     Joint *joint;
     int numJoints;
 
-    vector<Transmission*> transmissions_;
+    std::vector<Transmission*> transmissions_;
   };
 }
 
