@@ -444,7 +444,7 @@ RosGazeboNode::Update()
                 &angle_min, &angle_max, &angle_increment,
                 &range_max, &ranges_size     , &ranges_alloc_size,
                 &intensities_size, &intensities_alloc_size,
-                this->ranges     , this->intensities, &laserTime) == PR2::PR2_ALL_OK)
+                this->ranges     , this->intensities, &tiltLaserTime) == PR2::PR2_ALL_OK)
   {
     for(unsigned int i=0;i<ranges_size;i++)
     {
@@ -500,8 +500,8 @@ RosGazeboNode::Update()
     //std::cout << " pcd num " << this->cloud_pts->length << std::endl;
     //
     this->cloudMsg.header.frame_id = tf.lookup("FRAMEID_BASE");
-    this->cloudMsg.header.stamp.sec = (unsigned long)floor(this->laserTime);
-    this->cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->laserTime - this->cloudMsg.header.stamp.sec) );
+    this->cloudMsg.header.stamp.sec = (unsigned long)floor(this->tiltLaserTime);
+    this->cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->tiltLaserTime - this->cloudMsg.header.stamp.sec) );
 
     int    num_channels = 1;
     this->cloudMsg.set_pts_size(this->cloud_pts->length);
@@ -542,7 +542,7 @@ RosGazeboNode::Update()
                 &angle_min, &angle_max, &angle_increment,
                 &range_max, &ranges_size     , &ranges_alloc_size,
                 &intensities_size, &intensities_alloc_size,
-                this->ranges     , this->intensities, &laserTime) == PR2::PR2_ALL_OK)
+                this->ranges     , this->intensities, &baseLaserTime) == PR2::PR2_ALL_OK)
   {
     // Get latest laser data
     this->laserMsg.angle_min       = angle_min;
@@ -559,8 +559,8 @@ RosGazeboNode::Update()
     }
 
     this->laserMsg.header.frame_id = tf.lookup("FRAMEID_LASER");
-    this->laserMsg.header.stamp.sec = (unsigned long)floor(this->laserTime);
-    this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->laserTime - this->laserMsg.header.stamp.sec) );
+    this->laserMsg.header.stamp.sec = (unsigned long)floor(this->baseLaserTime);
+    this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->baseLaserTime - this->laserMsg.header.stamp.sec) );
 
     //publish("laser",this->laserMsg); // for laser_view FIXME: can alias this at the commandline or launch script
     publish("scan",this->laserMsg);  // for rosstage
@@ -819,8 +819,8 @@ RosGazeboNode::Update()
     dAngle = -dAngle;
 
     this->full_cloudMsg.header.frame_id = tf.lookup("FRAMEID_BASE");
-    this->full_cloudMsg.header.stamp.sec = (unsigned long)floor(this->laserTime);
-    this->full_cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->laserTime - this->full_cloudMsg.header.stamp.sec) );
+    this->full_cloudMsg.header.stamp.sec = (unsigned long)floor(this->tiltLaserTime);
+    this->full_cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->tiltLaserTime - this->full_cloudMsg.header.stamp.sec) );
 
     int    num_channels = 1;
     this->full_cloudMsg.set_pts_size(this->full_cloud_pts->size());
