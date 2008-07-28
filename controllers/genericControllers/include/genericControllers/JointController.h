@@ -101,7 +101,11 @@ namespace controller
      * \brief Destructor of the JointController class.
      */       
     ~JointController( );
-    
+
+    static JointController* create(const std::string&) {
+      return new JointController;
+    }
+ 
     /*!
      * \brief   Initialization routine for the controller
      * \param Joint* joint The joint we are interacting with
