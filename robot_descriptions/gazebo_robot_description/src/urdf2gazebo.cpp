@@ -14,9 +14,9 @@ std::string values2str(unsigned int count, const double *values, double (*conv)(
     std::stringstream ss;
     for (unsigned int i = 0 ; i < count ; i++)
     {
-	if (i > 0)
-	    ss << " ";
-	ss << (conv ? conv(values[i]) : values[i]);
+  if (i > 0)
+      ss << " ";
+  ss << (conv ? conv(values[i]) : values[i]);
     }
     return ss.str();
 }
@@ -47,7 +47,7 @@ void addTransform(TiXmlElement *elem, const::libTF::Pose3D& transform)
     
     libTF::Pose3D::Euler eu;
     transform.getEuler(eu);
-    double crot[3] = { eu.roll, eu.pitch, eu.yaw };		    
+    double crot[3] = { eu.roll, eu.pitch, eu.yaw };        
     
     /* set geometry transform */
     addKeyValue(elem, "xyz", values2str(3, cpos));
@@ -64,157 +64,168 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
     switch (link->collision->geometry->type)
     {
     case robot_desc::URDF::Link::Geometry::BOX:
-	nsize = 3;
-	type = "box";
-	break;
+  nsize = 3;
+  type = "box";
+  break;
     case robot_desc::URDF::Link::Geometry::CYLINDER:
-	nsize = 2;
-	type = "cylinder";
-	break;
+  nsize = 2;
+  type = "cylinder";
+  break;
     case robot_desc::URDF::Link::Geometry::SPHERE:
-	nsize = 1;
-	type = "sphere";
-	break;
+  nsize = 1;
+  type = "sphere";
+  break;
     default:
-	nsize = 0;
-	printf("Unknown body type: %d in link '%s'\n", link->collision->geometry->type, link->name.c_str());
-	break;
+  nsize = 0;
+  printf("Unknown body type: %d in link '%s'\n", link->collision->geometry->type, link->name.c_str());
+  break;
     }
     
     if (!type.empty())
     {
-	/* create new body */
-	TiXmlElement *elem     = new TiXmlElement("body:" + type);
-	
-	/* set body name */
-	elem->SetAttribute("name", link->name);
-	
-	/* compute global transform */
-	libTF::Pose3D localTransform;
-	setupTransform(localTransform, link->xyz, link->rpy);
-	currentTransform.multiplyPose(localTransform);
-	addTransform(elem, currentTransform);
-	
-	/* create geometry node */
-	TiXmlElement *geom     = new TiXmlElement("geom:" + type);
-	
-	{		
-	    /* set its name */
-	    geom->SetAttribute("name", link->collision->geometry->name);
-	    
-	    /* set transform */
-	    addKeyValue(geom, "xyz", values2str(3, link->collision->xyz));
-	    addKeyValue(geom, "rpy", values2str(3, link->collision->rpy, rad2deg));
-	    
-	    /* set mass properties */
-	    addKeyValue(geom, "massMatrix", "true");
-	    addKeyValue(geom, "mass", values2str(1, &link->inertial->mass));
-	    static const char tagList1[6][4] = {"ixx", "ixy", "ixz", "iyy", "iyz", "izz"};
-	    for (int j = 0 ; j < 6 ; ++j)
-		addKeyValue(geom, tagList1[j], values2str(1, link->inertial->inertia + j));
-	    static const char tagList2[3][3] = {"cx", "cy", "cz"};
-	    for (int j = 0 ; j < 3 ; ++j)
-		addKeyValue(geom, tagList2[j], values2str(1, link->inertial->com + j));
-	    
-	    /* set additional data */
-	    static const char tagList3[4][4] = {"kp", "kd", "mu1", "mu2"};
-	    for (int j = 0 ; j < 4 ; ++j)
-		if (link->collision->data.hasDefault(tagList3[j]))
-		    addKeyValue(geom, tagList3[j], link->collision->data.getDefaultValue(tagList3[j]));
-	    
-	    /* set geometry size */
-	    addKeyValue(geom, "size", values2str(nsize, link->collision->geometry->size));
-	    
-	    /* create visual node */
-	    TiXmlElement *visual = new TiXmlElement("visual");
-	    {
-		/* compute the visualisation transfrom */
-		libTF::Pose3D coll;
-		setupTransform(coll, link->collision->xyz, link->collision->rpy);
-		coll.invert();
-		
-		libTF::Pose3D vis;
-		setupTransform(vis, link->visual->xyz, link->visual->rpy);
-		coll.multiplyPose(vis);
-		
-		addTransform(visual, coll);
-		
-		/* set geometry scale */
-		addKeyValue(visual, "scale", values2str(3, link->visual->scale));
-		
-		/* set geometry mesh file */
-		if (link->visual->geometry->filename.empty())
-		    addKeyValue(visual, "mesh", "unit_" + type);
-		else
-		    addKeyValue(visual, "mesh", link->visual->geometry->filename);
-		
-		/* set geometry material */		    
-		if (!link->visual->material.empty())
-		    addKeyValue(visual, "material", link->visual->material);
-	    }
-	    
-	    geom->LinkEndChild(visual);
-	}
-	
-	/* add geometry to body */
-	elem->LinkEndChild(geom);	    
-	
-	/* add body to document */
-	root->LinkEndChild(elem);
-	
-	/* compute the joint tag */
-	bool fixed = false;
-	std::string jtype;
-	switch (link->joint->type)
-	{
-	case robot_desc::URDF::Link::Joint::REVOLUTE:
-	    jtype = "hinge";
-	    break;
-	case robot_desc::URDF::Link::Joint::PRISMATIC:
-	    jtype = "slider";
-	    break;
-	case robot_desc::URDF::Link::Joint::FLOATING:
-	    break;
-	case robot_desc::URDF::Link::Joint::FIXED:
-	    jtype = "hinge";
-	    fixed = true;
-	    break;
-	default:
-	    printf("Unknown joint type: %d in link '%s'\n", link->joint->type, link->name.c_str());
-	    break;
-	}
-	
-	if (!jtype.empty())
-	{
-	    TiXmlElement *joint = new TiXmlElement("joint:" + jtype);
-	    joint->SetAttribute("name", link->joint->name);
-	    
-	    addKeyValue(joint, "body1", link->parentName);
-	    addKeyValue(joint, "body2", link->name);
-	    addKeyValue(joint, "anchor", link->name);
-	    
-	    if (fixed)
-	    {
-		addKeyValue(joint, "lowStop", "0");
-		addKeyValue(joint, "highStop", "0");
-		addKeyValue(joint, "axis", "1 0 0");
-	    }
-	    else
-	    {		    
-		addKeyValue(joint, "axis", values2str(3, link->joint->axis));
-		addKeyValue(joint, "axisOffset", values2str(3, link->joint->anchor));
-		
-		addKeyValue(joint, "lowStop", values2str(1, link->joint->limit));
-		addKeyValue(joint, "highStop", values2str(1, link->joint->limit + 1));
-	    }
-	    
-	    /* add joint to document */
-	    root->LinkEndChild(joint);
-	}
+  /* create new body */
+  TiXmlElement *elem     = new TiXmlElement("body:" + type);
+  
+  /* set body name */
+  elem->SetAttribute("name", link->name);
+  
+  /* compute global transform */
+  libTF::Pose3D localTransform;
+  setupTransform(localTransform, link->xyz, link->rpy);
+  currentTransform.multiplyPose(localTransform);
+  addTransform(elem, currentTransform);
+  
+  /* create geometry node */
+  TiXmlElement *geom     = new TiXmlElement("geom:" + type);
+  
+  {    
+      /* set its name */
+      geom->SetAttribute("name", link->collision->geometry->name);
+      
+      /* set transform */
+      addKeyValue(geom, "xyz", values2str(3, link->collision->xyz));
+      addKeyValue(geom, "rpy", values2str(3, link->collision->rpy, rad2deg));
+      
+      /* set mass properties */
+      addKeyValue(geom, "massMatrix", "true");
+      addKeyValue(geom, "mass", values2str(1, &link->inertial->mass));
+      static const char tagList1[6][4] = {"ixx", "ixy", "ixz", "iyy", "iyz", "izz"};
+      for (int j = 0 ; j < 6 ; ++j)
+    addKeyValue(geom, tagList1[j], values2str(1, link->inertial->inertia + j));
+      static const char tagList2[3][3] = {"cx", "cy", "cz"};
+      for (int j = 0 ; j < 3 ; ++j)
+    addKeyValue(geom, tagList2[j], values2str(1, link->inertial->com + j));
+      
+      /* set additional data */
+      static const char tagList3[4][4] = {"kp", "kd", "mu1", "mu2"};
+      for (int j = 0 ; j < 4 ; ++j)
+    if (link->collision->data.hasDefault(tagList3[j]))
+        addKeyValue(geom, tagList3[j], link->collision->data.getDefaultValue(tagList3[j]));
+      
+      /* set geometry size */
+      addKeyValue(geom, "size", values2str(nsize, link->collision->geometry->size));
+      
+      /* create visual node */
+      TiXmlElement *visual = new TiXmlElement("visual");
+      {
+    /* compute the visualisation transfrom */
+    libTF::Pose3D coll;
+    setupTransform(coll, link->collision->xyz, link->collision->rpy);
+    coll.invert();
+    
+    libTF::Pose3D vis;
+    setupTransform(vis, link->visual->xyz, link->visual->rpy);
+    coll.multiplyPose(vis);
+    
+    addTransform(visual, coll);
+    
+    /* if size are all zeros, use scale */
+    /* set geometry size */
+    double tmpSize = 0.0;
+    for (int k=0; k<nsize; k++)
+    {
+      tmpSize = tmpSize + fabs((link->visual->geometry->size)[k]);
+    }
+    if (tmpSize > 0.0)
+      /* set geometry size */
+      addKeyValue(visual, "size", values2str(nsize, link->visual->geometry->size));
+    else
+      /* set geometry scale */
+      addKeyValue(visual, "scale", values2str(3, link->visual->scale));
+    
+    /* set geometry mesh file */
+    if (link->visual->geometry->filename.empty())
+        addKeyValue(visual, "mesh", "unit_" + type);
+    else
+        addKeyValue(visual, "mesh", link->visual->geometry->filename);
+    
+    /* set geometry material */        
+    if (!link->visual->material.empty())
+        addKeyValue(visual, "material", link->visual->material);
+      }
+      
+      geom->LinkEndChild(visual);
+  }
+  
+  /* add geometry to body */
+  elem->LinkEndChild(geom);      
+  
+  /* add body to document */
+  root->LinkEndChild(elem);
+  
+  /* compute the joint tag */
+  bool fixed = false;
+  std::string jtype;
+  switch (link->joint->type)
+  {
+  case robot_desc::URDF::Link::Joint::REVOLUTE:
+      jtype = "hinge";
+      break;
+  case robot_desc::URDF::Link::Joint::PRISMATIC:
+      jtype = "slider";
+      break;
+  case robot_desc::URDF::Link::Joint::FLOATING:
+      break;
+  case robot_desc::URDF::Link::Joint::FIXED:
+      jtype = "hinge";
+      fixed = true;
+      break;
+  default:
+      printf("Unknown joint type: %d in link '%s'\n", link->joint->type, link->name.c_str());
+      break;
+  }
+  
+  if (!jtype.empty())
+  {
+      TiXmlElement *joint = new TiXmlElement("joint:" + jtype);
+      joint->SetAttribute("name", link->joint->name);
+      
+      addKeyValue(joint, "body1", link->parentName);
+      addKeyValue(joint, "body2", link->name);
+      addKeyValue(joint, "anchor", link->name);
+      
+      if (fixed)
+      {
+    addKeyValue(joint, "lowStop", "0");
+    addKeyValue(joint, "highStop", "0");
+    addKeyValue(joint, "axis", "1 0 0");
+      }
+      else
+      {        
+    addKeyValue(joint, "axis", values2str(3, link->joint->axis));
+    addKeyValue(joint, "axisOffset", values2str(3, link->joint->anchor));
+    
+    addKeyValue(joint, "lowStop", values2str(1, link->joint->limit));
+    addKeyValue(joint, "highStop", values2str(1, link->joint->limit + 1));
+      }
+      
+      /* add joint to document */
+      root->LinkEndChild(joint);
+  }
     }
     
     for (unsigned int i = 0 ; i < link->children.size() ; ++i)
-	convertLink(root, link->children[i], currentTransform);
+  convertLink(root, link->children[i], currentTransform);
 }
 
 void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
@@ -238,7 +249,7 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
 
     // Verbosity is good
     addKeyValue(root, "verbosity", "5");
-
+#if 0
     // Add the <physics:ode> block
     TiXmlElement *physics     = new TiXmlElement("physics:ode");
     addKeyValue(physics, "stepTime", "0.01");
@@ -286,7 +297,7 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
 
     gplane->LinkEndChild(gplane_body);
     root->LinkEndChild(gplane);
-
+#endif
     // Create a node to enclose the robot body
     TiXmlElement *robot = new TiXmlElement("model:physical");
     robot->SetAttribute("name", "pr2_model");
@@ -297,7 +308,7 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
     libTF::Pose3D transform;    
     
     for (unsigned int k = 0 ; k < wgxml.getDisjointPartCount() ; ++k)
-	convertLink(robot, wgxml.getDisjointPart(k), transform);
+  convertLink(robot, wgxml.getDisjointPart(k), transform);
 
     /* find all data item types */
     const robot_desc::URDF::Data& data = wgxml.getData();
@@ -306,12 +317,12 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
     
     for (unsigned int i = 0 ; i < names.size() ; ++i)
     {
-	std::map<std::string, const TiXmlElement*> cmap = data.getDataTagXML("gazebo_controller", names[i]);
-	for (std::map<std::string, const TiXmlElement*>::iterator it = cmap.begin() ; it != cmap.end() ; it++)
-	{
-	    for (const TiXmlNode *child = it->second->FirstChild() ; child ; child = child->NextSibling())
-		robot->LinkEndChild(child->Clone());
-	}
+  std::map<std::string, const TiXmlElement*> cmap = data.getDataTagXML("gazebo_controller", names[i]);
+  for (std::map<std::string, const TiXmlElement*>::iterator it = cmap.begin() ; it != cmap.end() ; it++)
+  {
+      for (const TiXmlNode *child = it->second->FirstChild() ; child ; child = child->NextSibling())
+    robot->LinkEndChild(child->Clone());
+  }
     }
     root->LinkEndChild(robot);
 }
@@ -327,16 +338,16 @@ int main(int argc, char **argv)
 {
     if (argc != 3)
     {
-	usage(argv[0]);
-	exit(1);
+  usage(argv[0]);
+  exit(1);
     }
     
     robot_desc::URDF wgxml;
 
     if (!wgxml.loadFile(argv[1]))
     {
-	printf("Unable to load robot model from %s\n", argv[1]);	
-	exit(2);
+  printf("Unable to load robot model from %s\n", argv[1]);  
+  exit(2);
     }
     
     TiXmlDocument doc;
@@ -345,8 +356,8 @@ int main(int argc, char **argv)
     
     if (!doc.SaveFile(argv[2]))
     {
-	printf("Unable to save gazebo model in %s\n", argv[2]);	
-	exit(3);
+  printf("Unable to save gazebo model in %s\n", argv[2]);  
+  exit(3);
     }
     
     return 0;

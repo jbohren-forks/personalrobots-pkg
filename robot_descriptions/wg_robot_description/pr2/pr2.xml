@@ -299,7 +299,7 @@
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <geometry type="box">
-      <size>base_length base_width base_height</size>
+        <size>base_length base_width base_height</size>
       </geometry>
     </visual> 
 
