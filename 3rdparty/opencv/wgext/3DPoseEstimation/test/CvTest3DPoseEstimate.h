@@ -12,6 +12,12 @@ class CvTest3DPoseEstimate: public CvStereoCamModel
 {
 public:
     typedef CvStereoCamModel Parent;
+    typedef enum {
+    	Cartesian,
+    	Disparity,
+    	CartAndDisp, // two point clouds. One of each kind
+    	Video
+    } TestType;
     /**
      *  Fx  - focal length in x direction of the rectified image in pixels.
      *  Fy  - focal length in y direction of the rectified image in pixels.
@@ -23,9 +29,11 @@ public:
     CvTest3DPoseEstimate(double Fx, double Fy, double Tx, double Clx=0.0, double Crx=0.0, double Cy=0.0);
     CvTest3DPoseEstimate();
 	virtual ~CvTest3DPoseEstimate();
+	bool testPointClouds();
+	bool testVideos();
     bool test();
     
-    bool mTestCartesian;
+    TestType mTestType;
     
 protected:
 	void _init();

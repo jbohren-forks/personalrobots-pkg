@@ -10,6 +10,7 @@
 #include "CvMat3X3.h"
 #include "CvTestTimer.h"
 #include <cv.h>
+#include <highgui.h>
 
 using namespace std;
 
@@ -42,8 +43,6 @@ void CvTest3DPoseEstimate::_init(){
 	cvInitMatHeader(&mRot,   3, 3, CV_64FC1, mRotData);
 	cvInitMatHeader(&mTrans, 3, 1, CV_64FC1, mTransData);
 	
-//	mTestCartesian = true;
-	mTestCartesian = false;
 }
 
 /**
@@ -140,7 +139,40 @@ void CvTest3DPoseEstimate::randomize(CvMat *xyzs, int num, double maxVal){
 	}
 }
 
-bool CvTest3DPoseEstimate::test(){
+bool CvTest3DPoseEstimate::test() {
+	switch (this->mTestType) {
+	case Cartesian:
+	case Disparity:
+	case CartAndDisp:
+		return testPointClouds();
+		break;
+	case Video:
+		return testVideos();
+		break;
+	default:
+		cout << "Unknown test type: "<<  mTestType << endl;
+	}
+	return false;
+}
+
+bool CvTest3DPoseEstimate::testVideos() {
+	bool status = false;
+//	int numImages = 1509;
+	int numImages = 1;
+	IplImage* img=0;
+	char filename[256];
+	string dirname = "Data/indoor1";
+	for (int i=0; i<numImages; i++) {
+		sprintf(filename, "%s/left-%04d.ppm", dirname.c_str(), i);
+		cout << "loading "<<filename<<endl;
+		img = cvLoadImage(filename);
+		// display it
+		// sleep for a moment
+	}
+	return status;
+}
+
+bool CvTest3DPoseEstimate::testPointClouds(){
     bool status = true;
 	CvMat * points0 =  (CvMat *)cvLoad("Data/obj1_cropped_2000_adjusted.xml");
 	
@@ -199,7 +231,8 @@ bool CvTest3DPoseEstimate::test(){
 	Cv3DPoseEstimateDisp peDisp;
 	CvMat *uvds0=NULL, *uvds1=NULL;
 	CvScalar mean, std;
-	if (this->mTestCartesian == true) {
+
+	if (this->mTestType == Cartesian) {
 		cout << "Testing in Cartesian Space"<<endl;
 		cvAvgSdv(points0, &mean, &std);
 		cout << "mean and std of point cloud: "<<mean.val[0] << ","<<std.val[0]<<endl;
@@ -210,7 +243,7 @@ bool CvTest3DPoseEstimate::test(){
 		double threshold = std.val[0]*0.01;
 		peCart.configureErrorMeasurement(NULL, threshold);
 		cout << "set disturb scale, threshold to be: "<< this->mDisturbScale<<","<<threshold<<endl;
-	} else {
+	} else if (this->mTestType == Disparity){
 		cout << "Testing in disparity space"<<endl;
 		uvds0 = cvCreateMat(numPoints, 3, CV_64FC1);
 		uvds1 = cvCreateMat(numPoints, 3, CV_64FC1);
@@ -227,6 +260,24 @@ bool CvTest3DPoseEstimate::test(){
 		cout << "set disturb scale, threshold to be: "<< this->mDisturbScale<<","<<threshold<<endl;
 		
 		peDisp.setCameraParams(this->mFx, this->mFy, this->mTx, this->mClx, this->mCrx, this->mCy);
+	} else if (this->mTestType == CartAndDisp) {
+		cout << "testing mixed of cartesian and disparity space"<<endl;
+		uvds1 = cvCreateMat(numPoints, 3, CV_64FC1);
+		cvAvgSdv(points0, &mean, &std);
+		cout << "mean and std of point cloud: "<<mean.val[0] << ","<<std.val[0]<<endl;
+
+		this->mDisturbScale = std.val[0]*0.015;
+		this->mOutlierScale = 1.0;
+		mOutlierPercentage = 0.0;
+		// set threshold
+		double threshold = std.val[0]*0.01;
+		peDisp.configureErrorMeasurement(NULL, threshold);
+		cout << "set disturb scale, threshold to be: "<< this->mDisturbScale<<","<<threshold<<endl;
+		
+		peDisp.setCameraParams(this->mFx, this->mFy, this->mTx, this->mClx, this->mCrx, this->mCy);
+		
+	} else {
+		cerr << "Unknown test type: "<< this->mTestType<<endl;
 	}
 	
 	double percentageOfOutliers = mOutlierPercentage;
@@ -271,7 +322,7 @@ bool CvTest3DPoseEstimate::test(){
 
 		CvMat *TransformBestBeforeLevMarq;
 		CvMat *TransformAfterLevMarq;
-		if (this->mTestCartesian) {
+		if (this->mTestType == Cartesian) {
 			disturb(points1, points1d);
 			int64 t = cvGetTickCount();
 			numInLiers = peCart.estimate(points0, points1d, rot, trans, inliers0, inliers1);
@@ -279,7 +330,7 @@ bool CvTest3DPoseEstimate::test(){
 
 			TransformBestBeforeLevMarq = peCart.getBestTWithoutNonLinearOpt();
 			TransformAfterLevMarq      = peCart.getFinalTransformation();
-		} else {
+		} else if (mTestType == Disparity){
 			// convert both set of points into disparity color space
 			this->convert3DToDisparitySpace(points1, points1d);
 			disturb(points1d, uvds1);
@@ -290,6 +341,20 @@ bool CvTest3DPoseEstimate::test(){
 			CvTestTimer::getTimer().mTotal += cvGetTickCount() - t;
 			TransformBestBeforeLevMarq = peDisp.getBestTWithoutNonLinearOpt();
 			TransformAfterLevMarq      = peDisp.getFinalTransformation();
+		} else if (mTestType == CartAndDisp) {
+			// convert both set of points into disparity color space
+			this->convert3DToDisparitySpace(points1, points1d);
+			disturb(points1d, uvds1);
+			
+			int64 t = cvGetTickCount();
+			numInLiers = peDisp.estimate(points0, uvds1, NULL, NULL, rot, trans, inliers0, inliers1);	
+			
+			CvTestTimer::getTimer().mTotal += cvGetTickCount() - t;
+			TransformBestBeforeLevMarq = peDisp.getBestTWithoutNonLinearOpt();
+			TransformAfterLevMarq      = peDisp.getFinalTransformation();
+			
+		} else {
+			cerr << "Unknown test type "<< mTestType << endl;
 		}
 		if (numInLiers < 6) {
 			continue;
@@ -439,12 +504,30 @@ bool CvTest3DPoseEstimate::test(){
     return status;
 }
 
-int main(){
+int main(int argc, char **argv){
+	CvTest3DPoseEstimate test3DPoseEstimate;
+    
+	if (argc >= 2) {
+		char *option = argv[1];
+		if (strcasecmp(option, "cartesian")==0) {
+			test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Cartesian;
+		} else if (strcasecmp(option, "disparity")==0) {
+			test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Disparity;
+		} else if (strcasecmp(option, "cartanddisp") == 0) {
+			test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::CartAndDisp;
+		} else if (strcasecmp(option, "video") == 0) {
+			test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Video;
+		} else {
+			cerr << "Unknown option: "<<option<<endl;
+			exit(1);
+		}
+	} else {
+		test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Cartesian;
+	}
+	
 	cout << "Testing wg3DPoseEstimate ..."<<endl;
 	
 	
-	CvTest3DPoseEstimate test3DPoseEstimate;
-    
     test3DPoseEstimate.test();
 	
 	cout << "Done testing wg3DPoseEstimate ..."<<endl;
