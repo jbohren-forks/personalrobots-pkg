@@ -57,7 +57,7 @@ Ros_Camera::Ros_Camera(Entity *parent)
 
 
   rosnode = ros::g_node; // comes from where?
-  int argc;
+  int argc = 0;
   char** argv = NULL;
   if (rosnode == NULL)
   {
