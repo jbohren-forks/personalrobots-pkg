@@ -223,7 +223,8 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
     doc.LinkEndChild(decl);
     
     /* create root element and define needed namespaces */
-    TiXmlElement *root = new TiXmlElement("model:physical");
+    TiXmlElement *root = new TiXmlElement("gazebo:world");
+    root->SetAttribute("xmlns:gazebo", "http://playerstage.sourceforge.net/gazebo/xmlschema/#gz");
     root->SetAttribute("xmlns:model", "http://playerstage.sourceforge.net/gazebo/xmlschema/#model");
     root->SetAttribute("xmlns:sensor", "http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor");
     root->SetAttribute("xmlns:body", "http://playerstage.sourceforge.net/gazebo/xmlschema/#body");
@@ -231,15 +232,72 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
     root->SetAttribute("xmlns:joint", "http://playerstage.sourceforge.net/gazebo/xmlschema/#joint");
     root->SetAttribute("xmlns:controller", "http://playerstage.sourceforge.net/gazebo/xmlschema/#controller");
     root->SetAttribute("xmlns:interface", "http://playerstage.sourceforge.net/gazebo/xmlschema/#interface");
+    root->SetAttribute("xmlns:rendering", "http://playerstage.sourceforge.net/gazebo/xmlschema/#rendering");
+    root->SetAttribute("xmlns:physics", "http://playerstage.sourceforge.net/gazebo/xmlschema/#physics");
     doc.LinkEndChild(root);
+
+    // Verbosity is good
+    addKeyValue(root, "verbosity", "5");
+
+    // Add the <physics:ode> block
+    TiXmlElement *physics     = new TiXmlElement("physics:ode");
+    addKeyValue(physics, "stepTime", "0.01");
+    addKeyValue(physics, "gravity", "0 0 -9.8");
+    addKeyValue(physics, "cfm", "0.0000000001");
+    addKeyValue(physics, "erp", "0.2");
+    root->LinkEndChild(physics);
+
+    // Add the <rendering:gui> block
+    TiXmlElement *gui = new TiXmlElement("rendering:gui");
+    addKeyValue(gui, "type", "fltk");
+    addKeyValue(gui, "size", "1024 800");
+    addKeyValue(gui, "pos", "0 0");
+    root->LinkEndChild(gui);
     
+    // Add the <rendering:ogre> block
+    TiXmlElement *ogre = new TiXmlElement("rendering:ogre");
+    addKeyValue(ogre, "ambient", "1.0 1.0 1.0 1.0");
+    TiXmlElement *sky = new TiXmlElement("sky");
+    addKeyValue(sky, "material", "Gazebo/CloudySky");
+    ogre->LinkEndChild(sky);
+    addKeyValue(ogre, "gazeboPath", "media");
+    addKeyValue(ogre, "grid", "off");
+    addKeyValue(ogre, "maxUpdateRate", "100");
+    root->LinkEndChild(ogre);
+
+    // Add the <gplane> block
+    TiXmlElement *gplane = new TiXmlElement("model:physical");
+    gplane->SetAttribute("name", "gplane");
+    addKeyValue(gplane, "xyz", "0 0 0");
+    addKeyValue(gplane, "rpy", "0 0 0");
+    addKeyValue(gplane, "static", "true");
+
+    TiXmlElement *gplane_body = new TiXmlElement("body:plane");
+    gplane_body->SetAttribute("name", "plane");
+
+    TiXmlElement *gplane_body_geom = new TiXmlElement("geom:plane");
+    gplane_body_geom->SetAttribute("name", "plane");
+    addKeyValue(gplane_body_geom, "kp", "1000000.0");
+    addKeyValue(gplane_body_geom, "kd", "1.0");
+    addKeyValue(gplane_body_geom, "normal", "0 0 1");
+    addKeyValue(gplane_body_geom, "size", "100 100");
+    addKeyValue(gplane_body_geom, "material", "PR2/floor_texture");
+    gplane_body->LinkEndChild(gplane_body_geom);
+
+    gplane->LinkEndChild(gplane_body);
+    root->LinkEndChild(gplane);
+
+    // Create a node to enclose the robot body
+    TiXmlElement *robot = new TiXmlElement("model:physical");
+    robot->SetAttribute("name", "pr2_model");
+
     /* set the transform for the whole model to identity */
-    addKeyValue(root, "xyz", "0 0 0");
-    addKeyValue(root, "rpy", "0 0 0");
+    addKeyValue(robot, "xyz", "0 0 0");
+    addKeyValue(robot, "rpy", "0 0 0");
     libTF::Pose3D transform;    
     
     for (unsigned int k = 0 ; k < wgxml.getDisjointPartCount() ; ++k)
-	convertLink(root, wgxml.getDisjointPart(k), transform);
+	convertLink(robot, wgxml.getDisjointPart(k), transform);
 
     /* find all data item types */
     const robot_desc::URDF::Data& data = wgxml.getData();
@@ -252,9 +310,10 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
 	for (std::map<std::string, const TiXmlElement*>::iterator it = cmap.begin() ; it != cmap.end() ; it++)
 	{
 	    for (const TiXmlNode *child = it->second->FirstChild() ; child ; child = child->NextSibling())
-		root->LinkEndChild(child->Clone());
+		robot->LinkEndChild(child->Clone());
 	}
     }
+    root->LinkEndChild(robot);
 }
 
 void usage(const char *progname)
