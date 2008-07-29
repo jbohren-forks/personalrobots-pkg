@@ -1,21 +1,21 @@
 all: ffmpeg
 
-ffmpeg-latest:
-	svn export svn://svn.mplayerhq.hu/ffmpeg/trunk ffmpeg-latest
+SVN_DIR = ffmpeg-latest
+SVN_URL = svn://svn.mplayerhq.hu/ffmpeg/trunk 
+SVN_REVISION =
+include $(shell rospack find mk)/svn_checkout.mk
 
-download: ffmpeg-latest
-
-ffmpeg: ffmpeg-latest
-	cd ffmpeg-latest && ./configure --prefix=$(PWD)/ffmpeg --enable-shared
-	cd ffmpeg-latest && make && make install
-	mkdir ffmpeg/include/ffmpeg
-	cd ffmpeg/include/ffmpeg && ln -s ../libavcodec/avcodec.h avcodec.h
-	cd ffmpeg/include/ffmpeg && ln -s ../libavformat/avformat.h avformat.h
+ffmpeg: SVN_UP
+	cd $(SVN_DIR) && ./configure --prefix=$(PWD)/ffmpeg --enable-shared
+	cd $(SVN_DIR) && make && make install
+	mkdir -p ffmpeg/include/ffmpeg
+	cd ffmpeg/include/ffmpeg && ln -sf ../libavcodec/avcodec.h avcodec.h
+	cd ffmpeg/include/ffmpeg && ln -sf ../libavformat/avformat.h avformat.h
 
 clean:
 	-rm -rf ffmpeg 
 
 wipe: clean
-	rm -rf ffmpeg-latest
+	rm -rf $(SVN_DIR)
 
-.PHONY : clean wipe
+.PHONY : clean wipe ffmpeg

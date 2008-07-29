@@ -2,17 +2,13 @@ all: eml
 
 EML_REVISION = 36
 
-download: eml-checkout
+SVN_DIR = eml-svn
+SVN_URL = svn://svn.berlios.de/ethercatmaster/trunk 
+SVN_REVISION = -r $(EML_REVISION)
+SVN_PATCH = eml-r$(EML_REVISION).patch
+include $(shell rospack find mk)/svn_checkout.mk
 
-eml-checkout:
-	@if [ ! -d eml-svn ]; then \
-		svn co -r $(EML_REVISION) svn://svn.berlios.de/ethercatmaster/trunk eml-svn ; \
-	else \
-		cd eml-svn && svn up -r $(EML_REVISION) ; \
-	fi
-	-cd eml-svn && patch -N -p0 < ../eml-r$(EML_REVISION).patch
-
-eml: eml-checkout
+eml: SVN_UP
 	cd eml-svn && \
 	mkdir -p build && \
 	cd build && \

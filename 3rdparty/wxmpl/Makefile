@@ -1,19 +1,17 @@
 all: wxmpl
 
-wxmpl-1.2.9.tar.gz: 
-	wget wget http://agni.phys.iit.edu/~kmcivor/wxmpl/downloads/wxmpl-1.2.9.tar.gz
+TARBALL = wxmpl-1.2.9.tar.gz
+TARBALL_URL = http://agni.phys.iit.edu/~kmcivor/wxmpl/downloads/wxmpl-1.2.9.tar.gz
+SOURCE_DIR = wxmpl-1.2.9
+UNPACK_CMD = tar xzf
+include $(shell rospack find mk)/download_unpack.mk
 
-wxmpl-1.2.9: wxmpl-1.2.9.tar.gz
-	@if [ ! -d wxmpl-1.2.9 ]; then tar xfz wxmpl-1.2.9.tar.gz; fi
-
-wxmpl: wxmpl-1.2.9
+wxmpl: $(SOURCE_DIR)
 	-mkdir src
-	cd wxmpl-1.2.9 && python setup.py build 
-	mv wxmpl-1.2.9/build/lib/* src/
+	cd $(SOURCE_DIR) && python setup.py build 
+	mv $(SOURCE_DIR)/build/lib/* src/
 	touch wxmpl
 clean:
 	rm -rf src wxmpl
 wipe: clean
-	rm -rf wxmpl-1.2.9 wxmpl-1.2.9.tar.gz
-
-download: wxmpl-1.2.9.tar.gz
+	rm -rf $(SOURCE_DIR) $(TARBALL)

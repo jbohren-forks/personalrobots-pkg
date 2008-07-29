@@ -1,24 +1,21 @@
 all: plplot
 
-plplot-checkout:
-	@if [ ! -d plplot-svn ]; then svn co https://plplot.svn.sf.net/svnroot/plplot/trunk plplot-svn; fi
-	-cd plplot-svn && svn up $(REVISION) 
+SVN_DIR = plplot-svn
+SVN_URL = https://plplot.svn.sf.net/svnroot/plplot/trunk 
+include $(shell rospack find mk)/svn_checkout.mk
 
 CMAKE = `rospack find cmake`/cmake/bin/cmake 
 CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/plplot \
 	-DPLD_wxwidgets:BOOL=ON
 
-plplot: plplot-checkout
-	cd plplot-svn && mkdir -p build
-	cd plplot-svn/build &&  $(CMAKE) $(CMAKE_ARGS) ..
-	cd plplot-svn/build && make install
+plplot: SVN_UP
+	cd $(SVN_DIR) && mkdir -p build
+	cd $(SVN_DIR)/build &&  $(CMAKE) $(CMAKE_ARGS) ..
+	cd $(SVN_DIR)/build && make install
 	touch plplot
 
 clean:
-	rm -rf plplot-svn/build
+	rm -rf $(SVN_DIR)/build
 	rm -rf plplot
-wipe:
-	rm -rf plplot-svn plplot
-
-download: plplot-checkout
-
+wipe: clean
+	rm -rf plplot-svn

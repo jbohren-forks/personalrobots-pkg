@@ -7,19 +7,25 @@
 # 3. make trex
 # 4. make test
 
+# This little voodoo allows for the 'svn' command to be overriden from the
+# environment, as the autobuilder does.
+ifeq ($(strip $(SVN_CMDLINE)),)
+SVN_CMDLINE = svn
+endif
+
 all: trex PlanWorks
 
 # GET PLASMA
 PLASMA:
-	@if [ ! -d PLASMA ]; then svn co -r 4919 https://babelfish.arc.nasa.gov/svn/europa/PLASMA/trunk PLASMA; fi
+	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 4919 https://babelfish.arc.nasa.gov/svn/europa/PLASMA/trunk PLASMA; fi
 
 # GET PlanWorks
 PlanWorks:
-	@if [ ! -d PlanWorks ]; then svn co -r 4919 https://babelfish.arc.nasa.gov/svn/europa/PlanWorks/trunk PlanWorks; fi
+	@if [ ! -d PlanWorks ]; then $(SVN_CMDLINE) co -r 4919 https://babelfish.arc.nasa.gov/svn/europa/PlanWorks/trunk PlanWorks; fi
 
 # Get TREX
 trex: PLASMA
-	@if [ ! -d TREX ]; then svn co https://prdev.willowgarage.com/svn/scratch/TREX TREX; fi
+	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co https://prdev.willowgarage.com/svn/scratch/TREX TREX; fi
 	@if [ ! -d logs ]; then mkdir logs; fi
 
 # Build library and run regression tests

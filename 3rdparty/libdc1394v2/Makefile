@@ -1,16 +1,16 @@
 all: libdc1394v2-build
 
-libdc1394v2:
-	svn co https://libdc1394.svn.sourceforge.net/svnroot/libdc1394/trunk/libdc1394/ libdc1394v2
-	cd libdc1394v2 && patch -p0 < ../conversions_fix.patch
-	cd libdc1394v2 && autoreconf -i -s
-	cd libdc1394v2 && ./configure --prefix=`rospack find libdc1394v2` --enable-shared=no
+SVN_DIR = libdc1394v2
+SVN_URL = https://libdc1394.svn.sourceforge.net/svnroot/libdc1394/trunk/libdc1394
+SVN_REVISION =
+SVN_PATCH = conversions_fix.patch
+include $(shell rospack find mk)/svn_checkout.mk
 
-download: libdc1394v2
-
-libdc1394v2-build: libdc1394v2
-	cd libdc1394v2 && make
-	cd libdc1394v2 && make install
+libdc1394v2-build: SVN_UP
+	cd $(SVN_DIR) && autoreconf -i -s
+	cd $(SVN_DIR) && ./configure --prefix=$(PWD) --enable-shared=no
+	cd $(SVN_DIR) && make
+	cd $(SVN_DIR) && make install
 
 clean: 
 	rm -rf include
@@ -19,6 +19,6 @@ clean:
 	rm -rf bin
 
 wipe: clean
-	rm -rf libdc1394v2
+	rm -rf $(SVN_DIR)
 
 .PHONY : clean wipe

@@ -1,15 +1,10 @@
-all: check_svn
+all: player
 
-BUILD_TARGET = player
-SVN_TARGET = player-checkout
 SVN_DIR = player-svn
-include $(shell rospack find mk)/check_svn.mk
+SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/player/trunk
+SVN_REVISION = -r 6833
+include $(shell rospack find mk)/svn_checkout.mk
 
-REVISION = -r 6833
-
-$(SVN_TARGET):
-	@if [ ! -d $(SVN_DIR) ]; then svn co $(REVISION) https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/player/trunk $(SVN_DIR); fi
-	-cd $(SVN_DIR) && svn up $(REVISION) 
 
 CMAKE = `rospack find cmake`/cmake/bin/cmake 
 CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
@@ -17,17 +12,15 @@ CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
 	     -D BUILD_PLAYERCC_BOOST=OFF \
 	     -D ENABLE_DRIVER_CAMERA1394=OFF
 
-.PHONY: $(BUILD_TARGET)
-$(BUILD_TARGET):
-	mkdir -p player-svn/build
-	cd player-svn/build && $(CMAKE) $(CMAKE_ARGS) ..
-	cd player-svn/build && make install
+.PHONY: player
+player: SVN_UP
+	mkdir -p $(SVN_DIR)/build
+	cd $(SVN_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
+	cd $(SVN_DIR)/build && make install
 
-clean: check_svn_clean
-	rm -rf player-svn/build
+clean:
+	rm -rf $(SVN_DIR)/build
 	rm -rf player
-wipe:
-	rm -rf $(SVN_DIR) player
-
-download: player-checkout
+wipe: clean
+	rm -rf $(SVN_DIR)
 

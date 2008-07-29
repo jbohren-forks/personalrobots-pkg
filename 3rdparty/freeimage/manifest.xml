@@ -11,6 +11,7 @@ FreeImage is an Open Source library project for developers who would like to sup
 <url>http://freeimage.sourceforge.net</url>
 <export>
   <cpp cflags="-I${prefix}/freeimage/include" lflags="-Wl,-rpath,${prefix}/freeimage/lib -L${prefix}/freeimage/lib -lfreeimage"/>
+        <doxymaker external="http://freeimage.sourceforge.net"/>
 </export>
 </package>
 

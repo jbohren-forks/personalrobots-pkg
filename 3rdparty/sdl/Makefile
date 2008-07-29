@@ -1,7 +1,4 @@
-all: check_done
-
-BUILD_TARGET = SDL
-include $(shell rospack find mk)/check_done.mk
+all: SDL
 
 TARBALL = SDL-1.2.13.tar.gz
 TARBALL_URL = http://libsdl.org/release/SDL-1.2.13.tar.gz
@@ -18,7 +15,7 @@ SDL: $(SOURCE_DIR)
 	cd SDL-1.2.13 && ./configure --prefix=$(PWD)/SDL
 	cd SDL-1.2.13 && make && make install
 
-clean: check_done_clean
+clean: 
 	-rm -rf SDL-1.2.13 SDL 
 
 wipe: clean

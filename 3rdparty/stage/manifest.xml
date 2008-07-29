@@ -11,10 +11,8 @@ system.
 <author>Richard Vaughan, with contributions from many others. See web page for a full credits list.</author>
 <license>GPL</license>
 <url>http://playerstage.sf.net</url>
-<!-- depend package="cmake" /-->
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/stage/lib `PKG_CONFIG_PATH=${prefix}/stage/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --libs stage`" cflags="`PKG_CONFIG_PATH=${prefix}/stage/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --cflags stage`"/>
-  <!-- cpp lflags="-Wl,-rpath,${prefix}/stage/lib -L${prefix}/stage/lib -lstage `pkg-config --libs gtk+-2.0 \>= 2.4 gthread-2.0 \>= 2.4`" cflags="-I${prefix}/stage/include/Stage-3.0 `pkg-config --cflags gtk+-2.0 \>= 2.4 gthread-2.0 \>= 2.4`"/-->
   <doxymaker external="http://playerstage.sourceforge.net/doc/stage-cvs"/>
 </export>
 </package>

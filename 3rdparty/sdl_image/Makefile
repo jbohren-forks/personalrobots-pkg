@@ -1,9 +1,4 @@
-# Overall build is conditioned on 'done' file
-all: check_done
-
-# Set up for conditional build, based on 'done' file
-BUILD_TARGET = SDL_image
-include $(shell rospack find mk)/check_done.mk
+all: SDL_image
 
 # Set up for download and unpack
 TARBALL = SDL_image-1.2.6.tar.gz
@@ -26,8 +21,7 @@ SDL_image: $(SOURCE_DIR)
 	sed -e 's:SDL.h:SDL/SDL.h:' -e 's:SDL_version.h:SDL/SDL_version.h:' -e 's:begin_code.h:SDL/begin_code.h:' -e 's:close_code.h:SDL/close_code.h:' <SDL_image/include/SDL/SDL_image.h >SDL_image/include/SDL/SDL_image_mod.h
 	mv SDL_image/include/SDL/SDL_image_mod.h SDL_image/include/SDL/SDL_image.h
 
-# clean must depend on check_done_clean, to remove the 'done' file
-clean: check_done_clean
+clean:
 	rm -rf SDL_image-1.2.6 SDL_image
 
 wipe: clean

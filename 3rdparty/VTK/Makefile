@@ -1,7 +1,4 @@
-all: check_done
-
-BUILD_TARGET = vtk
-include $(shell rospack find mk)/check_done.mk
+all: vtk
 
 TARBALL = vtk-5.0.4.tar.gz
 TARBALL_URL = http://www.vtk.org/files/release/5.0/vtk-5.0.4.tar.gz
@@ -13,7 +10,7 @@ vtk: $(SOURCE_DIR)
 	mkdir -p vtk-build
 	cd vtk-build && `rospack find cmake`/cmake/bin/cmake -D CMAKE_INSTALL_PREFIX=$(PWD)/vtk-install ../$(SOURCE_DIR) && make install
 
-clean: check_done_clean
+clean:
 	rm -rf vtk-build vtk-install
 wipe: clean
 	rm -rf vtk-5.0.4 vtk-5.0.4.tar.gz

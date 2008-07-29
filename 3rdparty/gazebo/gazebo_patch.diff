@@ -1,7 +1,7 @@
-Index: gazebo-svn/player/SConscript
+Index:player/SConscript
 ===================================================================
---- gazebo-svn/player/SConscript	(revision 6915)
-+++ gazebo-svn/player/SConscript	(working copy)
+---player/SConscript	(revision 6915)
++++player/SConscript	(working copy)
 @@ -1,7 +1,8 @@
  import os
  Import('env install_prefix staticObjs sharedObjs subdirs')
@@ -12,10 +12,10 @@ Index: gazebo-svn/player/SConscript
  
  sources = ['GazeboDriver.cc',
             'GazeboClient.cc',
-Index: gazebo-svn/libgazebo/Server.cc
+Index:libgazebo/Server.cc
 ===================================================================
---- gazebo-svn/libgazebo/Server.cc	(revision 6915)
-+++ gazebo-svn/libgazebo/Server.cc	(working copy)
+---libgazebo/Server.cc	(revision 6915)
++++libgazebo/Server.cc	(working copy)
 @@ -38,6 +38,7 @@
  #include <sys/sem.h>
  #include <sstream>
@@ -101,10 +101,10 @@ Index: gazebo-svn/libgazebo/Server.cc
    // Delete the server dir
    if (rmdir(this->filename.c_str()) != 0)
    {
-Index: gazebo-svn/libgazebo/Iface.cc
+Index:libgazebo/Iface.cc
 ===================================================================
---- gazebo-svn/libgazebo/Iface.cc	(revision 6915)
-+++ gazebo-svn/libgazebo/Iface.cc	(working copy)
+---libgazebo/Iface.cc	(revision 6915)
++++libgazebo/Iface.cc	(working copy)
 @@ -55,6 +55,8 @@
  GZ_REGISTER_IFACE("factory", FactoryIface);
  GZ_REGISTER_IFACE("gripper", GripperIface);
@@ -114,10 +114,10 @@ Index: gazebo-svn/libgazebo/Iface.cc
  GZ_REGISTER_IFACE("ptz", PTZIface);
  GZ_REGISTER_IFACE("stereocamera", StereoCameraIface);
  
-Index: gazebo-svn/libgazebo/gazebo.h
+Index:libgazebo/gazebo.h
 ===================================================================
---- gazebo-svn/libgazebo/gazebo.h	(revision 6915)
-+++ gazebo-svn/libgazebo/gazebo.h	(working copy)
+---libgazebo/gazebo.h	(revision 6915)
++++libgazebo/gazebo.h	(working copy)
 @@ -558,7 +558,7 @@
  
  
@@ -603,10 +603,10 @@ Index: gazebo-svn/libgazebo/gazebo.h
    /// Pointer to the stereo data
    public: StereoCameraData *data;
  };
-Index: gazebo-svn/server/physics/SphereGeom.cc
+Index:server/physics/SphereGeom.cc
 ===================================================================
---- gazebo-svn/server/physics/SphereGeom.cc	(revision 6915)
-+++ gazebo-svn/server/physics/SphereGeom.cc	(working copy)
+---server/physics/SphereGeom.cc	(revision 6915)
++++server/physics/SphereGeom.cc	(working copy)
 @@ -53,11 +53,16 @@
    double radius = node->GetDouble("size",1.0,0);
  
@@ -626,10 +626,10 @@ Index: gazebo-svn/server/physics/SphereGeom.cc
    //to be able to show physics
    /*  this->visualNode->AttachMesh("unit_sphere"); // unit_sphere radius=1 diameter=2
      this->visualNode->SetScale(Vector3(radius, radius ,radius));
-Index: gazebo-svn/server/physics/BoxGeom.cc
+Index:server/physics/BoxGeom.cc
 ===================================================================
---- gazebo-svn/server/physics/BoxGeom.cc	(revision 6915)
-+++ gazebo-svn/server/physics/BoxGeom.cc	(working copy)
+---server/physics/BoxGeom.cc	(revision 6915)
++++server/physics/BoxGeom.cc	(working copy)
 @@ -54,11 +54,18 @@
  
    size = node->GetVector3("size",Vector3(1,1,1));
@@ -652,10 +652,10 @@ Index: gazebo-svn/server/physics/BoxGeom.cc
    /*  this->visualNode->AttachMesh("unit_box");
      this->visualNode->SetScale(size);
      this->visualNode->SetMaterial("Gazebo/GreenEmissive");
-Index: gazebo-svn/server/physics/Geom.hh
+Index:server/physics/Geom.hh
 ===================================================================
---- gazebo-svn/server/physics/Geom.hh	(revision 6915)
-+++ gazebo-svn/server/physics/Geom.hh	(working copy)
+---server/physics/Geom.hh	(revision 6915)
++++server/physics/Geom.hh	(working copy)
 @@ -170,6 +170,10 @@
      ///  Mass as a double
      protected: double dblMass;
@@ -667,10 +667,10 @@ Index: gazebo-svn/server/physics/Geom.hh
      /// Special bounding box visual
      private: OgreVisual *bbVisual;
  
-Index: gazebo-svn/server/physics/CylinderGeom.cc
+Index:server/physics/CylinderGeom.cc
 ===================================================================
---- gazebo-svn/server/physics/CylinderGeom.cc	(revision 6915)
-+++ gazebo-svn/server/physics/CylinderGeom.cc	(working copy)
+---server/physics/CylinderGeom.cc	(revision 6915)
++++server/physics/CylinderGeom.cc	(working copy)
 @@ -50,10 +50,17 @@
    double radius = node->GetTupleDouble("size",0,1.0);
    double length = node->GetTupleDouble("size",1,1.0);
@@ -691,10 +691,10 @@ Index: gazebo-svn/server/physics/CylinderGeom.cc
  
    //to be able to show physics
    /*this->visualNode->AttachMesh("unit_cylinder");
-Index: gazebo-svn/server/physics/Geom.cc
+Index:server/physics/Geom.cc
 ===================================================================
---- gazebo-svn/server/physics/Geom.cc	(revision 6915)
-+++ gazebo-svn/server/physics/Geom.cc	(working copy)
+---server/physics/Geom.cc	(revision 6915)
++++server/physics/Geom.cc	(working copy)
 @@ -102,6 +102,21 @@
      this->dblMass = 0.001;
    }
@@ -741,10 +741,10 @@ Index: gazebo-svn/server/physics/Geom.cc
    if (dMassCheck(&this->bodyMass))
    {
      dMassRotate(&this->bodyMass, r);
-Index: gazebo-svn/server/physics/HingeJoint.cc
+Index:server/physics/HingeJoint.cc
 ===================================================================
---- gazebo-svn/server/physics/HingeJoint.cc	(revision 6915)
-+++ gazebo-svn/server/physics/HingeJoint.cc	(working copy)
+---server/physics/HingeJoint.cc	(revision 6915)
++++server/physics/HingeJoint.cc	(working copy)
 @@ -38,6 +38,7 @@
      : Joint()
  {
@@ -753,10 +753,10 @@ Index: gazebo-svn/server/physics/HingeJoint.cc
  }
  
  
-Index: gazebo-svn/server/physics/ode/ODEPhysics.cc
+Index:server/physics/ode/ODEPhysics.cc
 ===================================================================
---- gazebo-svn/server/physics/ode/ODEPhysics.cc	(revision 6915)
-+++ gazebo-svn/server/physics/ode/ODEPhysics.cc	(working copy)
+---server/physics/ode/ODEPhysics.cc	(revision 6915)
++++server/physics/ode/ODEPhysics.cc	(working copy)
 @@ -259,24 +259,28 @@
          double h, kp, kd;
  
@@ -792,10 +792,10 @@ Index: gazebo-svn/server/physics/ode/ODEPhysics.cc
  
          dJointID c = dJointCreateContact (self->worldId,
                                            self->contactGroup, &contact);
-Index: gazebo-svn/server/physics/TrimeshGeom.cc
+Index:server/physics/TrimeshGeom.cc
 ===================================================================
---- gazebo-svn/server/physics/TrimeshGeom.cc	(revision 6915)
-+++ gazebo-svn/server/physics/TrimeshGeom.cc	(working copy)
+---server/physics/TrimeshGeom.cc	(revision 6915)
++++server/physics/TrimeshGeom.cc	(working copy)
 @@ -208,7 +208,11 @@
  
    this->geomId = dCreateTriMesh( this->spaceId, this->odeData,0,0,0 );
@@ -809,10 +809,10 @@ Index: gazebo-svn/server/physics/TrimeshGeom.cc
  
    // Create the trimesh geometry
    this->SetGeom(this->geomId, true);
-Index: gazebo-svn/server/physics/SliderJoint.cc
+Index:server/physics/SliderJoint.cc
 ===================================================================
---- gazebo-svn/server/physics/SliderJoint.cc	(revision 6915)
-+++ gazebo-svn/server/physics/SliderJoint.cc	(working copy)
+---server/physics/SliderJoint.cc	(revision 6915)
++++server/physics/SliderJoint.cc	(working copy)
 @@ -35,6 +35,8 @@
      : Joint()
  {
@@ -822,10 +822,10 @@ Index: gazebo-svn/server/physics/SliderJoint.cc
  }
  
  
-Index: gazebo-svn/server/sensors/Sensor.hh
+Index:server/sensors/Sensor.hh
 ===================================================================
---- gazebo-svn/server/sensors/Sensor.hh	(revision 6915)
-+++ gazebo-svn/server/sensors/Sensor.hh	(working copy)
+---server/sensors/Sensor.hh	(revision 6915)
++++server/sensors/Sensor.hh	(working copy)
 @@ -63,6 +63,7 @@
  
      /// \brief Set whether the sensor is active or not
@@ -850,10 +850,10 @@ Index: gazebo-svn/server/sensors/Sensor.hh
    /// \}
  }
  #endif
-Index: gazebo-svn/server/sensors/camera/MonoCameraSensor.cc
+Index:server/sensors/camera/MonoCameraSensor.cc
 ===================================================================
---- gazebo-svn/server/sensors/camera/MonoCameraSensor.cc	(revision 6915)
-+++ gazebo-svn/server/sensors/camera/MonoCameraSensor.cc	(working copy)
+---server/sensors/camera/MonoCameraSensor.cc	(revision 6915)
++++server/sensors/camera/MonoCameraSensor.cc	(working copy)
 @@ -49,6 +49,7 @@
  MonoCameraSensor::MonoCameraSensor(Body *body)
      : Sensor(body), OgreCamera("Mono")
@@ -941,10 +941,10 @@ Index: gazebo-svn/server/sensors/camera/MonoCameraSensor.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-Index: gazebo-svn/server/sensors/camera/StereoCameraSensor.cc
+Index:server/sensors/camera/StereoCameraSensor.cc
 ===================================================================
---- gazebo-svn/server/sensors/camera/StereoCameraSensor.cc	(revision 6915)
-+++ gazebo-svn/server/sensors/camera/StereoCameraSensor.cc	(working copy)
+---server/sensors/camera/StereoCameraSensor.cc	(revision 6915)
++++server/sensors/camera/StereoCameraSensor.cc	(working copy)
 @@ -58,6 +58,7 @@
    this->depthBuffer[1] = NULL;
    this->rgbBuffer[0] = NULL;
@@ -1106,10 +1106,10 @@ Index: gazebo-svn/server/sensors/camera/StereoCameraSensor.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-Index: gazebo-svn/server/sensors/ray/RaySensor.cc
+Index:server/sensors/ray/RaySensor.cc
 ===================================================================
---- gazebo-svn/server/sensors/ray/RaySensor.cc	(revision 6915)
-+++ gazebo-svn/server/sensors/ray/RaySensor.cc	(working copy)
+---server/sensors/ray/RaySensor.cc	(revision 6915)
++++server/sensors/ray/RaySensor.cc	(working copy)
 @@ -237,7 +237,7 @@
  // Update the sensor information
  void RaySensor::UpdateChild()
@@ -1119,10 +1119,10 @@ Index: gazebo-svn/server/sensors/ray/RaySensor.cc
    {
      std::vector<RayGeom*>::iterator iter;
      Pose3d poseDelta;
-Index: gazebo-svn/server/sensors/Sensor.cc
+Index:server/sensors/Sensor.cc
 ===================================================================
---- gazebo-svn/server/sensors/Sensor.cc	(revision 6915)
-+++ gazebo-svn/server/sensors/Sensor.cc	(working copy)
+---server/sensors/Sensor.cc	(revision 6915)
++++server/sensors/Sensor.cc	(working copy)
 @@ -32,6 +32,7 @@
  #include "World.hh"
  #include "ControllerFactory.hh"
@@ -1172,10 +1172,10 @@ Index: gazebo-svn/server/sensors/Sensor.cc
 +}
  
 +
-Index: gazebo-svn/server/Simulator.cc
+Index:server/Simulator.cc
 ===================================================================
---- gazebo-svn/server/Simulator.cc	(revision 6915)
-+++ gazebo-svn/server/Simulator.cc	(working copy)
+---server/Simulator.cc	(revision 6915)
++++server/Simulator.cc	(working copy)
 @@ -71,6 +71,7 @@
    physicsEnabled(true),
    timeout(-1)
@@ -1204,10 +1204,10 @@ Index: gazebo-svn/server/Simulator.cc
      // Update the rendering
      if (renderUpdateRate == 0 || 
          currTime - this->prevRenderTime >= renderUpdatePeriod)
-Index: gazebo-svn/server/rendering/UserCamera.hh
+Index:server/rendering/UserCamera.hh
 ===================================================================
---- gazebo-svn/server/rendering/UserCamera.hh	(revision 6915)
-+++ gazebo-svn/server/rendering/UserCamera.hh	(working copy)
+---server/rendering/UserCamera.hh	(revision 6915)
++++server/rendering/UserCamera.hh	(working copy)
 @@ -52,7 +52,7 @@
      public: void Load( XMLConfigNode *node );
  
@@ -1237,10 +1237,10 @@ Index: gazebo-svn/server/rendering/UserCamera.hh
    };
  }
  
-Index: gazebo-svn/server/rendering/UserCamera.cc
+Index:server/rendering/UserCamera.cc
 ===================================================================
---- gazebo-svn/server/rendering/UserCamera.cc	(revision 6915)
-+++ gazebo-svn/server/rendering/UserCamera.cc	(working copy)
+---server/rendering/UserCamera.cc	(revision 6915)
++++server/rendering/UserCamera.cc	(working copy)
 @@ -25,6 +25,7 @@
   */
  
@@ -1400,10 +1400,10 @@ Index: gazebo-svn/server/rendering/UserCamera.cc
 +
 +  this->saveCount++;
 +}
-Index: gazebo-svn/server/GazeboConfig.cc
+Index:server/GazeboConfig.cc
 ===================================================================
---- gazebo-svn/server/GazeboConfig.cc	(revision 6915)
-+++ gazebo-svn/server/GazeboConfig.cc	(working copy)
+---server/GazeboConfig.cc	(revision 6915)
++++server/GazeboConfig.cc	(working copy)
 @@ -56,6 +56,17 @@
  
    cfgFile.open(rcFilename.c_str(), std::ios::in);
@@ -1422,10 +1422,10 @@ Index: gazebo-svn/server/GazeboConfig.cc
    if (cfgFile)
    {
      XMLConfig rc;
-Index: gazebo-svn/server/gui/GLWindow.hh
+Index:server/gui/GLWindow.hh
 ===================================================================
---- gazebo-svn/server/gui/GLWindow.hh	(revision 6915)
-+++ gazebo-svn/server/gui/GLWindow.hh	(working copy)
+---server/gui/GLWindow.hh	(revision 6915)
++++server/gui/GLWindow.hh	(working copy)
 @@ -63,6 +63,9 @@
      /// \brief Initalize the gui
      public: virtual void Init();
@@ -1436,10 +1436,10 @@ Index: gazebo-svn/server/gui/GLWindow.hh
      /// \brief Update the window
      public: void Update();
  
-Index: gazebo-svn/server/gui/GLFrame.cc
+Index:server/gui/GLFrame.cc
 ===================================================================
---- gazebo-svn/server/gui/GLFrame.cc	(revision 6915)
-+++ gazebo-svn/server/gui/GLFrame.cc	(working copy)
+---server/gui/GLFrame.cc	(revision 6915)
++++server/gui/GLFrame.cc	(working copy)
 @@ -107,7 +107,7 @@
  // Load the frame
  void GLFrame::Load( XMLConfigNode *node )
@@ -1449,10 +1449,10 @@ Index: gazebo-svn/server/gui/GLFrame.cc
    if (node)
    {
      this->startPose.pos = node->GetVector3("xyz", Vector3(0,0,0));
-Index: gazebo-svn/server/gui/GLWindow.cc
+Index:server/gui/GLWindow.cc
 ===================================================================
---- gazebo-svn/server/gui/GLWindow.cc	(revision 6915)
-+++ gazebo-svn/server/gui/GLWindow.cc	(working copy)
+---server/gui/GLWindow.cc	(revision 6915)
++++server/gui/GLWindow.cc	(working copy)
 @@ -68,11 +68,17 @@
    this->directionVec.x = 0;
    this->directionVec.y = 0;
@@ -1558,10 +1558,10 @@ Index: gazebo-svn/server/gui/GLWindow.cc
          case '=':
          case '+':
            this->moveAmount *= 2;
-Index: gazebo-svn/server/World.hh
+Index:server/World.hh
 ===================================================================
---- gazebo-svn/server/World.hh	(revision 6915)
-+++ gazebo-svn/server/World.hh	(working copy)
+---server/World.hh	(revision 6915)
++++server/World.hh	(working copy)
 @@ -91,6 +91,26 @@
    /// \return Pointer to the physics engine
    public: PhysicsEngine *GetPhysicsEngine() const;
@@ -1599,10 +1599,10 @@ Index: gazebo-svn/server/World.hh
    private: friend class DestroyerT<World>;
    private: friend class SingletonT<World>;
  };
-Index: gazebo-svn/server/controllers/camera/generic/Generic_Camera.cc
+Index:server/controllers/camera/generic/Generic_Camera.cc
 ===================================================================
---- gazebo-svn/server/controllers/camera/generic/Generic_Camera.cc	(revision 6915)
-+++ gazebo-svn/server/controllers/camera/generic/Generic_Camera.cc	(working copy)
+---server/controllers/camera/generic/Generic_Camera.cc	(revision 6915)
++++server/controllers/camera/generic/Generic_Camera.cc	(working copy)
 @@ -79,7 +79,24 @@
  // Update the controller
  void Generic_Camera::UpdateChild()
@@ -1629,10 +1629,10 @@ Index: gazebo-svn/server/controllers/camera/generic/Generic_Camera.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-Index: gazebo-svn/server/World.cc
+Index:server/World.cc
 ===================================================================
---- gazebo-svn/server/World.cc	(revision 6915)
-+++ gazebo-svn/server/World.cc	(working copy)
+---server/World.cc	(revision 6915)
++++server/World.cc	(working copy)
 @@ -27,6 +27,7 @@
  #include <assert.h>
  #include <sstream>
@@ -1751,10 +1751,10 @@ Index: gazebo-svn/server/World.cc
  ///////////////////////////////////////////////////////////////////////////////
  // Load a model
  int World::LoadEntities(XMLConfigNode *node, Model *parent)
-Index: gazebo-svn/SConstruct
+Index:SConstruct
 ===================================================================
---- gazebo-svn/SConstruct	(revision 6915)
-+++ gazebo-svn/SConstruct	(working copy)
+---SConstruct	(revision 6915)
++++SConstruct	(working copy)
 @@ -22,8 +22,11 @@
  # 3rd party packages
  #

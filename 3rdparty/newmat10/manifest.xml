@@ -13,6 +13,7 @@ This ROS package also supplies a small patch which enables namespaces and stream
 <url>http://www.robertnz.net/nm_intro.htm</url>
 <export>
   <cpp cflags="-I${prefix}/newmat" lflags="-L${prefix}/newmat/newmat10 -lnewmat" />
+        <doxymaker external="http://www.robertnz.net/nm_intro.htm"/>
 </export>
 </package>
 

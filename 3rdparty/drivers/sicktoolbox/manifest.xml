@@ -9,6 +9,7 @@ The Sick LIDAR Matlab/C++ Toolbox offers stable and easy-to-use C++ drivers for 
 <url>http://sicktoolbox.sourceforge.net</url>
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/sicktoolbox/lib -L${prefix}/sicktoolbox/lib -lsicklms-1.0" cflags="-I${prefix}/sicktoolbox/include"/>
+   <doxymaker external="http://sicktoolbox.sourceforge.net"/>
 </export>
 </package>
 

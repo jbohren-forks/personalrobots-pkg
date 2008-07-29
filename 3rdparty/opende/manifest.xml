@@ -10,5 +10,6 @@ This package contains Open Dynamics Engine OpenDE or ODE
 <url>http://opende.sf.net</url>
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/opende/lib `${prefix}/opende/bin/ode-config --libs`" cflags="`${prefix}/opende/bin/ode-config --cflags`"/>
+        <doxymaker external="http://opende.sf.net"/>
 </export>
 </package>

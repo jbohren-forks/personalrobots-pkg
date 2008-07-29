@@ -10,6 +10,7 @@ This package contains Open Dynamics Engine OpenDE or ODE
 <url>http://ois.sf.net</url>
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/ois/lib -L${prefix}/ois/lib -lOIS" cflags="-I${prefix}/ois/include/OIS"/>
+        <doxymaker external="http://ois.sf.net"/>
 </export>
 </package>
 
