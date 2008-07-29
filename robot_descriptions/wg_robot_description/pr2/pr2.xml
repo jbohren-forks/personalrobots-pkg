@@ -35,9 +35,9 @@
     <wrist_roll_y>0.10</wrist_roll_y>
     <wrist_roll_z>0.05</wrist_roll_z>
 
-    <base_length>0.5</base_length>
-    <base_width>0.5</base_width>
-    <base_height>0.1</base_height>
+    <base_length>0.65</base_length>
+    <base_width>0.65</base_width>
+    <base_height>0.26</base_height>
 
     <wheel_clearance_offset>0.02</wheel_clearance_offset> <!-- wheel clearance from bottom of base to ground-->
 
@@ -64,10 +64,12 @@
 
   <templates>
     <define template="pr2_caster_visual">
+      <scale>0.001 0.001 0.001</scale>
       <xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <geometry type="mesh" name="pr2_caster_mesh_file">
+        <size>0.1 0.08 0.1</size> 
         <filename>models/pr2_caster.mesh</filename><!-- mesh specified using an obj file --> 
       </geometry>
     </define> 
@@ -499,7 +501,6 @@
 <!-- End torso definition -->
 
 
-
 <!-- Begin arm definitions -->
 
 
@@ -766,6 +767,10 @@
 
 <!-- End head definition -->
 
+<!-- Begin right finger definition -->
+<!-- End right finger definition -->
+<!-- Begin left finger definition -->
+<!-- End left finger definition -->
 
 
 <!-- Begin sensor definitions -->

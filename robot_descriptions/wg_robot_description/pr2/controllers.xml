@@ -3,7 +3,7 @@
 
   <xml key="1"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <data> tag -->
 
-    <controller:pr2_gripper name="pr2_gripper_left_controller" plugin="libPr2_Gripper.so">
+    <!--controller:pr2_gripper name="pr2_gripper_left_controller" plugin="libPr2_Gripper.so">
       <updateRate>100.0</updateRate>
       <leftJoint>finger_2_slider_left</leftJoint>
       <rightJoint>finger_1_slider_left</rightJoint>
@@ -23,23 +23,23 @@
       <dGain>0.0</dGain>
       <iGain>0.0</iGain>
       <interface:pr2gripper name="pr2_gripper_right_iface"/>
-    </controller:pr2_gripper>
+    </controller:pr2_gripper-->
     
     <controller:P3D name="p3d_right_wrist_controller" plugin="libP3D.so">
       <updateRate>100.0</updateRate>
-      <bodyName>palm_right</bodyName>
+      <bodyName>wrist_roll_right</bodyName>
       <interface:position name="p3d_right_wrist_position"/>
     </controller:P3D>
     
     <controller:P3D name="p3d_left_wrist_controller" plugin="libP3D.so">
       <updateRate>100.0</updateRate>
-      <bodyName>palm_left</bodyName>
+      <bodyName>wrist_roll_left</bodyName>
       <interface:position name="p3d_left_wrist_position"/>
     </controller:P3D>
     
     <controller:P3D name="p3d_base_controller" plugin="libP3D.so">
       <updateRate>100.0</updateRate>
-      <bodyName>base_body</bodyName>
+      <bodyName>base</bodyName>
       <interface:position name="p3d_base_position"/>
     </controller:P3D>
 
