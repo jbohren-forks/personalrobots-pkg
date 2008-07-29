@@ -807,7 +807,7 @@ void URDF::loadGeometry(const TiXmlNode *node, const std::string &defaultName, L
           loadDoubleValues(node, 3, geometry->size);
           break;
         case Link::Geometry::CYLINDER:
-          loadDoubleValues(node, 3, geometry->size);
+          loadDoubleValues(node, 2, geometry->size);
           break;
         case Link::Geometry::SPHERE:
           loadDoubleValues(node, 1, geometry->size);
