@@ -94,7 +94,7 @@ int main(int argc, char **argv)
     // TODO: add usage message
 
     robot_desc::URDF model;
-    if (argc > 0)
+    if (argc > 1)
       model.loadFile(argv[1]);
     else // default to isucan for now
       model.loadFile("/u/isucan/ros/ros-pkg/robot_descriptions/wg_robot_description/pr2/pr2.xml");
