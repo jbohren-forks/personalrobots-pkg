@@ -11,6 +11,7 @@ library in a way that can be managed by the ROS dependency system.
 <url>http://ffmpeg.mplayerhq.hu</url>
 <export>
   <cpp cflags="-I${prefix}/ffmpeg/include" lflags="-L${prefix}/ffmpeg/lib -Xlinker -rpath -Xlinker ${prefix}/ffmpeg/lib -lavcodec -lavdevice -lavformat -lavutil" />
+  <doxymaker external="http://ffmpeg.mplayerhq.hu/documentation.html"/>
 </export>
 </package>
 

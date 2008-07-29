@@ -10,6 +10,7 @@ Specifications (also known as the IIDC or DCAM Specifications)
 <url>http://damien.douxchamps.net/ieee1394/libdc1394/</url>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib/ -ldc1394 -lraw1394" />
+  <doxymaker external="http://damien.douxchamps.net/ieee1394/libdc1394/"/>
 </export>
 </package>
 

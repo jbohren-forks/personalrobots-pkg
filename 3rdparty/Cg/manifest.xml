@@ -10,6 +10,7 @@ This package contains Cg, for Nvidia Cg.
 <url>http://developer.nvidia.com/page/cg_main.html</url>
 <export>
   <cpp lflags="-Xlinker -rpath ${prefix}/Cg/lib -L${prefix}/Cg/lib -lCg" cflags="-I${prefix}/Cg/include/Cg"/>
+  <doxymaker external="http://developer.nvidia.com/page/documentation.html"/>
 </export>
 </package>
 

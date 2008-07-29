@@ -5,5 +5,6 @@
   <description>Lots of C++ libraries</description>
   <export>
     <cpp cflags="-I${prefix}/boost_1_35_0"/>
+    <doxymaker external="http://www.boost.org/doc/libs/1_35_0"/>
   </export>
 </package>

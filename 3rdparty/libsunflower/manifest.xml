@@ -12,6 +12,7 @@
   <url>http://libsunflower.sourceforge.net/</url>
   <export>
     <cpp cflags="-I${prefix}/sfl/include" lflags="-L${prefix}/sfl/lib -lsunflower" />
+    <doxymaker external="http://libsunflower.sourceforge.net/"/>
   </export>
   <depend package="estar"/>
 </package>

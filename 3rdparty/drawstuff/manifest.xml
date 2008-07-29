@@ -11,5 +11,6 @@ This package contains a library for displaying ODE spaces.
 <depend package="opende" />
 <export>
   <cpp lflags="-Xlinker -rpath ${prefix}/lib -L${prefix}/lib -ldrawstuff -lGL -lglut" cflags="-I${prefix}/include"/>
+  <doxymaker external="http://opende.sourceforge.net/docs/"/>
 </export>
 </package>

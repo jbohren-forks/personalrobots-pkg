@@ -12,6 +12,7 @@
   <url>http://estar.sourceforge.net/</url>
   <export>
     <cpp cflags="-I${prefix}/local/include" lflags="-L${prefix}/local/lib -lestar" />
+    <doxymaker external="http://estar.sourceforge.net/doc/index.html"/>
   </export>
   <depend package="boost"/>
 <!--   <depend package="std_msgs"/> -->

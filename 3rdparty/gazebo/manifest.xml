@@ -12,6 +12,7 @@ This package contains Gazebo, from the Player Project
 <depend package="ogre" />
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/gazebo/lib -L${prefix}/gazebo/lib -lgazebo -lgazeboServer" cflags="-I${prefix}/gazebo/include -I${prefix}/gazebo-svn/server/physics -I${prefix}/gazebo-svn/server/sensors -I${prefix}/gazebo-svn/server/sensors/ray -I${prefix}/gazebo-svn/server/sensors/camera -I${prefix}/gazebo-svn/server -I${prefix}/gazebo-svn/server/rendering"/>
+  <doxymaker external="http://playerstage.sourceforge.net/doc/Gazebo-manual-svn-html/"/>
 </export>
 </package>
 
