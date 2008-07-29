@@ -481,7 +481,7 @@ WavefrontNode::laserReceived()
     pts.pts = new double[pts.pts_num*2];
     assert(pts.pts);
     pts.ts = global_cloud.header.stamp;
-    for(int i=0;i<global_cloud.get_pts_size();i++)
+    for(unsigned int i=0;i<global_cloud.get_pts_size();i++)
     {
       pts.pts[2*i] = global_cloud.pts[i].x;
       pts.pts[2*i+1] = global_cloud.pts[i].y;
