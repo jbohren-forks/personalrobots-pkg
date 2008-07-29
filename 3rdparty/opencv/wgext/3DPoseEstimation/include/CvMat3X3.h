@@ -24,16 +24,16 @@ using namespace std;
 
 
 #define TRANSFORM_X(T, x, y, z) \
-(T)[0]*(x) + (T)[1]*(y) + (T)[2]*(z) + (T)[3]
+((T)[0]*(x) + (T)[1]*(y) + (T)[2]*(z) + (T)[3])
 
 #define TRANSFORM_Y(T, x, y, z) \
-(T)[4]*(x) + (T)[5]*(y) + (T)[6]*(z) + (T)[7]
+((T)[4]*(x) + (T)[5]*(y) + (T)[6]*(z) + (T)[7])
 
 #define TRANSFORM_Z(T, x, y, z) \
-(T)[8]*(x) + (T)[9]*(y) + (T)[10]*(z) + (T)[11]
+((T)[8]*(x) + (T)[9]*(y) + (T)[10]*(z) + (T)[11])
 
 #define TRANSFORM_W(T, x, y, z) \
-(T)[12]*(x) + (T)[13]*(y) + (T)[14]*(z) + (T)[15]
+((T)[12]*(x) + (T)[13]*(y) + (T)[14]*(z) + (T)[15])
 
 // [x1, y1, z1]^t = T * [x, y, z]^T
 #define TRANSFORM(T, x, y, z, x1, y1, z1) \
