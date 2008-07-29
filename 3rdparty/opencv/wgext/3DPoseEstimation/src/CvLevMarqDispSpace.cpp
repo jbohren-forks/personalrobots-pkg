@@ -254,7 +254,7 @@ bool CvLevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *x
 				CvMyReal _r0x;
 				CvMyReal _r0y;
 				CvMyReal _r0z;
-#if 1
+#if 0
 				computeResidue(&point0, &point1, &r0);
 				_r0x = _r0[0];
 				_r0y = _r0[1];
@@ -279,10 +279,10 @@ bool CvLevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *x
 
 				// TODO: compute transformation matrix of all diff directions
 				for (int k=0; k<numParams; k++) {
+#if 0
 					CvMat r1_k;
 					cvGetRow(&r1, &r1_k, k);
 
-#if 1
 					computeResidue(&point0, &point1, &mFwdT[k], &r1_k);
 #else
 					PERSTRANSFORMRESIDUE(mFwdTData[k], _p0x, _p0y, _p0z, _p1x, _p1y, _p1z, 
@@ -366,7 +366,7 @@ bool CvLevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *x
 				constructTransformationMatrix(param0);
 				for (int j=0; j<numPoints; j++) {
 					// compute current error = xyzs1^T  - Transformation * xyzs0^T
-#if 1
+#if 0
 					CvMat point0, point1;
 					cvGetRow(xyzs0, &point0, j);
 					cvGetRow(xyzs1, &point1, j);

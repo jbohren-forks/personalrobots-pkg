@@ -377,10 +377,10 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 #else
 	    		for (int k=0; k<numParams; k++) {
 #endif
+#if 0
 	    			CvMat r1_k;
 	    			cvGetRow(&r1, &r1_k, k);
 	    			
-#if 0
 	    			computeResidue(&point0, &point1, &mFwdT3x4[k], &r1_k);
 #else
 	    			TIMERSTART2(FwdResidue);
