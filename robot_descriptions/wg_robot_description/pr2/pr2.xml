@@ -8,9 +8,6 @@
 <!-- Begin constant dimensions -->
   <constants>
 
-    <wheel_length>0.03</wheel_length>
-    <wheel_radius>0.08</wheel_radius>
-
     <shoulder_pan_length>0.60</shoulder_pan_length>
     <shoulder_pan_radius>0.13</shoulder_pan_radius>
 
@@ -39,8 +36,6 @@
     <base_width>0.65</base_width>
     <base_height>0.26</base_height>
 
-    <wheel_clearance_offset>0.02</wheel_clearance_offset> <!-- wheel clearance from bottom of base to ground-->
-
     <torso_length>0.3</torso_length>
     <torso_width>0.05</torso_width>
     <torso_height>0.8</torso_height>
@@ -59,6 +54,45 @@
     <torso_head_pan_offset_x>-0.1829361-base_torso_offset_x</torso_head_pan_offset_x>
     <torso_head_pan_offset_y>0</torso_head_pan_offset_y>
     <torso_head_pan_offset_z>0.80981-base_torso_offset_z</torso_head_pan_offset_z>
+    
+    
+    <!-- Start new numbers from pr2Core.h -->
+    <!-- parent_child_what -->
+    <wheel_clearance_offset>0</wheel_clearance_offset> <!-- wheel clearance from bottom of base to ground, was .02-->
+    
+    <base_caster_offset_x>0.2255</base_caster_offset_x>
+    <base_caster_offset_y>0.2255</base_caster_offset_y>
+    <base_caster_offset_z>0.08069</base_caster_offset_z>
+    
+    <caster_wheel_offset_y>0.049</caster_wheel_offset_y>
+    
+    <base_torso_offset_x>-0.1829361</base_torso_offset_x>
+    <base_torso_offset_z>0.30981</base_torso_offset_z>
+    
+    <torso_shoulder_pan_offset_y>0.1329361</torso_shoulder_pan_offset_y>
+    
+    <shoulder_pan_shoulder_pitch_offset_x>0.1</shoulder_pan_shoulder_pitch_offset_x>
+    <shoulder_pan_shoulder_pitch_offset_z>0.5</shoulder_pan_shoulder_pitch_offset_z>
+    
+    <shoulder_roll_elbow_pitch_offset_x>0.385</shoulder_roll_elbow_pitch_offset_x>
+    
+    <elbow_roll_wrist_pitch_offset_x>0.3137</elbow_roll_wrist_pitch_offset_x>
+    
+    <head_pan_head_pitch_offset_x>0.06</head_pan_head_pitch_offset_x>
+    <head_pan_head_pitch_offset_z>0.08</head_pan_head_pitch_offset_z>
+    
+    <torso_head_offset_x>-0.02</torso_head_offset_x>
+    <torso_head_offset_z>0.80981</torso_head_offset_z>
+    
+    <torso_laser_tilt_offest_x>0.07</torso_laser_tilt_offest_x>
+    <torso_laser_tilt_offest_z>0.68</torso_laser_tilt_offest_z>
+    
+    <base_base_laser_offset_x>0.26</base_base_laser_offset_x>
+    <base_base_laser_offset_z>0.28</base_base_laser_offset_z>
+    
+    <elbow_roll_camera_offset_x>elbow_roll_wrist_pitch_offset_x/2</elbow_roll_camera_offset_x> <!-- this is a guess, please change me -->
+    <elbow_roll_camera_offset_y>0</elbow_roll_camera_offset_y> <!-- this is a guess, please change me -->
+    <elbow_roll_camera_offset_z>-0.02</elbow_roll_camera_offset_z> <!-- this is a guess, please change me -->
   </constants>
 <!-- End constant dimensions -->
 
@@ -69,8 +103,7 @@
       <rpy>M_PI/2 0.0 M_PI/2 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <geometry type="mesh" name="pr2_caster_mesh_file">
-        <size>0.1 0.08 0.1</size> 
-        <filename>models/pr2_caster.mesh</filename><!-- mesh specified using an obj file --> 
+        <filename>caster</filename><!-- mesh specified using an obj file --> 
       </geometry>
     </define> 
 
@@ -97,10 +130,10 @@
 
     <define template="pr2_wheel_visual">
       <xyz>-1 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
-      <rpy>M_PI/2 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Black</material>
-      <geometry type="cylinder"><!-- geometry specified using a simple geometric object -->
-        <size>wheel_radius*2 wheel_radius*2 wheel_length</size> 
+      <geometry type="mesh" name="pr2_wheel_mesh_file"><!-- geometry specified using a simple geometric object -->
+        <filename>wheel</filename>
       </geometry>
     </define> 
 
@@ -138,11 +171,11 @@
     </define> 
 
     <define template="pr2_shoulder_pan_visual">
-      <xyz>0 0 shoulder_pan_length/2 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
-      <geometry type="cylinder">
-      <size> shoulder_pan_radius shoulder_pan_length</size>
+      <geometry type="mesh" name="pr2_sholder_pan_mesh_file">
+        <filename>sh-pan</filename>
       </geometry>
     </define> 
 
@@ -160,11 +193,11 @@
     </define> 
 
     <define template="pr2_shoulder_pitch_visual">
-      <xyz>shoulder_pitch_length/2 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
-      <rpy>M_PI/2 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
-      <geometry type="cylinder">
-      <size> shoulder_pitch_radius shoulder_pitch_length </size>
+      <geometry type="mesh" name="pr2_sholder_pitch_mesh_file">
+        <filename>sh-pitch</filename>
       </geometry>
     </define> 
 
@@ -182,11 +215,11 @@
     </define> 
 
     <define template="pr2_shoulder_roll_visual">
-      <xyz>shoulder_roll_x/2 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
-      <geometry type="box">
-      <size> shoulder_roll_x shoulder_roll_y shoulder_roll_z </size>
+      <geometry type="mesh" name="pr2_sholder_roll_mesh_file">
+        <filename>sh-roll</filename>
       </geometry>
     </define> 
 
@@ -204,11 +237,11 @@
     </define> 
 
     <define template="pr2_elbow_pitch_visual">
-      <xyz>elbow_pitch_length/2 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
-      <geometry type="cylinder">
-      <size>elbow_pitch_radius elbow_pitch_length </size>
+      <geometry type="mesh" name="pr2_elbow_pitch_mesh_file">
+        <filename>el-pitch</filename>
       </geometry>
     </define> 
 
@@ -226,11 +259,11 @@
     </define> 
 
     <define template="pr2_forearm_roll_visual">
-      <xyz>forearm_roll_x/2 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
-      <geometry type="box">
-      <size>forearm_roll_x forearm_roll_y forearm_roll_z </size>
+      <geometry type="mesh" name="pr2_forearm_roll_mesh_file">
+        <filename>fa-roll</filename>
       </geometry>
     </define> 
 
@@ -251,8 +284,8 @@
       <xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
-      <geometry type="cylinder">
-      <size>wrist_pitch_radius wrist_pitch_length</size>
+      <geometry type="mesh" name="pr2_wrist_pitch_mesh_file">
+        <filename>wr-pitch</filename>
       </geometry>
     </define> 
 
@@ -274,8 +307,8 @@
       <xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
-      <geometry type="box">
-      <size>wrist_roll_x wrist_roll_y wrist_roll_z </size>
+      <geometry type="mesh" name="pr2_wrist_roll_mesh_file">
+        <filename>wr-roll</filename>
       </geometry>
     </define> 
   </templates>
@@ -302,11 +335,11 @@
     </inertial> 
 
     <visual>
-      <xyz>0 0 base_height/2</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
-      <geometry type="box">
-        <size>base_length base_width base_height</size>
+      <geometry type="mesh" name="pr2_base_mesh_file">
+        <filename>base</filename>
       </geometry>
     </visual> 
 
@@ -324,7 +357,7 @@
   <link name="caster_front_left">
     <parent> base</parent>
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0.2255 0.2255 0.08069 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> base_caster_offset_x base_caster_offset_y base_caster_offset_z </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
     <joint clone="pr2_caster_joint"/>
     <inertial clone="pr2_caster_inertial"/>
     <visual clone="pr2_caster_visual"/>
@@ -335,7 +368,7 @@
   <link name="caster_front_right">
     <parent> base</parent>
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0.2255 -0.2255 0.08069 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> base_caster_offset_x -base_caster_offset_y base_caster_offset_z </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_caster_joint"/>
     <inertial clone="pr2_caster_inertial"/>
@@ -347,7 +380,7 @@
     <parent> base</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-      <xyz> -0.2255 0.2255 0.08069 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+      <xyz> -base_caster_offset_x base_caster_offset_y base_caster_offset_z </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
       <joint clone="pr2_caster_joint"/>
       <inertial clone="pr2_caster_inertial"/>
@@ -359,7 +392,7 @@
     <parent> base</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-      <xyz> -0.2255 -0.2255 0.08069 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+      <xyz> -base_caster_offset_x -base_caster_offset_y base_caster_offset_z </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
       <joint clone="pr2_caster_joint"/>
       <inertial clone="pr2_caster_inertial"/>
@@ -371,7 +404,7 @@
     <parent> caster_front_left</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 0.049 -0.08 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 caster_wheel_offset_y 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
@@ -383,7 +416,7 @@
     <parent> caster_front_left</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 -0.049 -0.08 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 -caster_wheel_offset_y 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
@@ -395,7 +428,7 @@
     <parent> caster_front_right</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 0.049 -0.08 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 caster_wheel_offset_y 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
@@ -408,7 +441,7 @@
     <parent> caster_front_right</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 -0.049 -0.08 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 -caster_wheel_offset_y 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
@@ -420,7 +453,7 @@
     <parent> caster_rear_left</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 0.049 -0.08 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 caster_wheel_offset_y 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
@@ -432,7 +465,7 @@
     <parent> caster_rear_left</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 -0.049 -0.08 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 -caster_wheel_offset_y 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
@@ -444,7 +477,7 @@
     <parent> caster_rear_right</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 0.049 -0.08 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 caster_wheel_offset_y 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
@@ -456,7 +489,7 @@
     <parent> caster_rear_right</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 -0.049 -0.08 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 -caster_wheel_offset_y 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
@@ -472,7 +505,7 @@
   <link name="torso">
     <parent> base </parent>
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> base_torso_offset_x base_torso_offset_y base_torso_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> base_torso_offset_x 0 base_torso_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint type="prismatic"> 
       <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
@@ -490,8 +523,8 @@
       <xyz>0.0 0.0 0.0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
-      <geometry type="box">
-      <size> torso_length torso_width torso_height </size>
+      <geometry type="mesh" name="pr2_torso_mesh_file">
+        <filename>body</filename>
       </geometry>
     </visual> 
 
@@ -514,7 +547,7 @@
   <link name="shoulder_pan_left"><!-- link specifying the shoulder of the robot -->
     <parent> torso</parent>
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 0.1329361 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 torso_shoulder_pan_offset_y 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_shoulder_pan_joint" name="joint_shoulder_pan_left"/>
     <inertial clone="pr2_shoulder_pan_inertial"/>
@@ -526,7 +559,7 @@
     <parent> torso</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 -0.1329361 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 -torso_shoulder_pan_offset_y 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_shoulder_pan_joint"/>
     <inertial clone="pr2_shoulder_pan_inertial"/>
@@ -542,7 +575,7 @@
   <link name="shoulder_pitch_left"><!-- link specifying the shoulder of the robot -->
     <parent> shoulder_pan_left</parent>
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> .1 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> shoulder_pan_shoulder_pitch_offset_x 0 shoulder_pan_shoulder_pitch_offset_z </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_shoulder_pitch_joint"/>
     <inertial clone="pr2_shoulder_pitch_inertial"/>
@@ -554,7 +587,7 @@
     <parent> shoulder_pan_right</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> .1 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> shoulder_pan_shoulder_pitch_offset_x 0 shoulder_pan_shoulder_pitch_offset_z </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_shoulder_pitch_joint"/>
     <inertial clone="pr2_shoulder_pitch_inertial"/>
@@ -593,7 +626,7 @@
   <link name="elbow_pitch_left"><!-- link specifying the shoulder of the robot -->
     <parent> shoulder_roll_left</parent>
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0.4 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> shoulder_roll_elbow_pitch_offset_x 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_elbow_pitch_joint"/>
     <inertial clone="pr2_elbow_pitch_inertial"/>
@@ -605,7 +638,7 @@
     <parent> shoulder_roll_right</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0.4 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> shoulder_roll_elbow_pitch_offset_x 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_elbow_pitch_joint"/>
     <inertial clone="pr2_elbow_pitch_inertial"/>
@@ -619,7 +652,7 @@
   <link name="forearm_roll_left"><!-- link specifying the shoulder of the robot -->
     <parent> elbow_pitch_left</parent>
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0.09085 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_forearm_roll_joint"/>
     <inertial clone="pr2_forearm_roll_inertial"/>
@@ -631,7 +664,7 @@
     <parent> elbow_pitch_right</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0.09085 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_forearm_roll_joint"/>
     <inertial clone="pr2_forearm_roll_inertial"/>
@@ -645,7 +678,7 @@
   <link name="wrist_pitch_left"><!-- link specifying the shoulder of the robot -->
     <parent> forearm_roll_left</parent>
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0.2237 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> elbow_roll_wrist_pitch_offset_x 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_wrist_pitch_joint"/>
     <inertial clone="pr2_wrist_pitch_inertial"/>
@@ -657,7 +690,7 @@
     <parent> forearm_roll_right</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0.2237 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> elbow_roll_wrist_pitch_offset_x 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_wrist_pitch_joint"/>
     <inertial clone="pr2_wrist_pitch_inertial"/>
@@ -699,7 +732,7 @@
   <link name="head_pan"><!-- link specifying the shoulder of the robot -->
     <parent>torso</parent>
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 0 torso_head_pan_offset_z+head_pan_length/2</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> torso_head_offset_x 0 torso_head_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
 
     <joint type="revolute"> 
@@ -718,8 +751,8 @@
       <xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
-      <geometry type="cylinder">
-        <size>head_pan_radius head_pan_length </size>
+      <geometry type="mesh" name="pr2_head_pan_mesh_file">
+        <filename>head-pan</filename>
       </geometry>
     </visual> 
 
@@ -738,7 +771,7 @@
     <parent> head_pan</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> head_pan_head_pitch_offset_x 0 head_pan_head_pitch_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
 
     <joint type="revolute"> 
@@ -757,8 +790,8 @@
       <xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
-      <geometry type="box">
-      <size>head_tilt_length head_tilt_width head_tilt_height</size>
+      <geometry type="mesh" name="pr2_head_tilt_mesh_file">
+        <filename>head-tilt</filename>
       </geometry>
     </visual> 
 
@@ -786,7 +819,7 @@
 
     <calibration> calib_filename </calibration>
     <parent>forearm_roll_left</parent>
-    <xyz> 10 1 10 </xyz> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+    <xyz> elbow_roll_camera_offset_x elbow_roll_camera_offset_y elbow_roll_camera_offset_z </xyz> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
     <inertial>
       <mass> 10.0  </mass>
@@ -797,12 +830,12 @@
       <xyz>0   0   0   </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
-      <geometry type="box" name="visual_left_forearm_camera"><!-- geometry specified using a simple geometric object -->
+      <geometry type="box" name="pr2_left_forearm_camera"><!-- geometry specified using a simple geometric object -->
         <size>1 1 1</size> 
       </geometry>
 
-      <geometry type="mesh" name="visual_left_forearm_camera">
-        <filename>visual_left_forearm_camera</filename><!-- mesh specified using an obj file --> 
+      <geometry type="mesh" name="pr2_left_forearm_camera_mesh_file">
+        <filename>pr2_left_forearm_camera</filename><!-- mesh specified using an obj file --> 
       </geometry>
     </visual> 
     <collision>
