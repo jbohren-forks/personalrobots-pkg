@@ -139,6 +139,7 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
     
     addTransform(visual, coll);
     
+    /* FIXME: HACK HACK HACK -- proper fix is to look for size and scale tags, and make sure only 1/2 exist. */
     /* if size are all zeros, use scale */
     /* set geometry size */
     double tmpSize = 0.0;
@@ -152,6 +153,10 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
     else
       /* set geometry scale */
       addKeyValue(visual, "scale", values2str(3, link->visual->scale));
+    /* FIXME: HACK HACK HACK -- proper fix is to look for size and scale tags, and make sure only 1/2 exist. */
+
+
+
     
     /* set geometry mesh file */
     if (link->visual->geometry->filename.empty())
