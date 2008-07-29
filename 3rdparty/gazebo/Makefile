@@ -7,7 +7,7 @@ SVN_PATCH = gazebo_patch.diff
 include $(shell rospack find mk)/svn_checkout.mk
 
 
-OGRE_PKG = $(shell rospack find ogre)/ogre-install/lib/pkgconfig
+OGRE_PKG = $(shell rospack find ogre)/ogre/lib/pkgconfig
 PLAYER_PKG = $(shell rospack find player)/player/lib/pkgconfig
 ODE_PATH = $(shell rospack find opende)/opende
 FI_PATH = $(shell rospack find freeimage)
