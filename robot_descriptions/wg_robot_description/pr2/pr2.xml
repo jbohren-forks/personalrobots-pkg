@@ -857,6 +857,8 @@
     head_tilt    
   </group>
 
-  <include>controllers.xml</include>
+  <!-- Inclusion of this file causes the urdf2gazebo translator to produce
+       a .world file that makes Gazebo crash - BPG -->
+  <include>controllers.xml</include> 
 
 </robot>
