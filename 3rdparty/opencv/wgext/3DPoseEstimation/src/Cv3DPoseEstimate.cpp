@@ -277,7 +277,7 @@ int Cv3DPoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat
     		param[3], param[4], param[5]);
 #endif
     int64 tDoit = cvGetTickCount();
-    levMarq.doit(points0Inlier, points1Inlier, param);   
+    levMarq.optimize(points0Inlier, points1Inlier, param);   
     CvTestTimer::getTimer().mLevMarqDoit += cvGetTickCount() - tDoit;
 
 #ifdef DEBUG

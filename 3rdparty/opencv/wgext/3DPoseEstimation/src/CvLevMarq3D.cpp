@@ -218,7 +218,7 @@ bool CvLevMarqTransform::constructTransformationMatrices(const CvMat *param, CvM
 }
 #endif
 
-bool CvLevMarqTransform::doit(CvMat *xyzs0, CvMat *xyzs1, CvMat *rot, CvMat* trans) {
+bool CvLevMarqTransform::optimize(CvMat *xyzs0, CvMat *xyzs1, CvMat *rot, CvMat* trans) {
 	bool status = true;
 	double _param[6];
 	CvMat rod;
@@ -226,19 +226,20 @@ bool CvLevMarqTransform::doit(CvMat *xyzs0, CvMat *xyzs1, CvMat *rot, CvMat* tra
 	// compute rodrigues
 	cvRodrigues2(rot, &rod);
 	this->mAngleType = Rodrigues;
-	status = doit(xyzs0, xyzs1, _param);
+	status = optimize(xyzs0, xyzs1, _param);
 	return status;
 }
 
-bool CvLevMarqTransform::doit(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
+bool CvLevMarqTransform::optimize(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 #ifdef USE_UPDATEALT
-	return doit1(xyzs0, xyzs1, _param);
+	return optimizeAlt(xyzs0, xyzs1, _param);
 #else
-	return doit2(xyzs0, xyzs1, _param);
+	return optimizeDefault(xyzs0, xyzs1, _param);
 #endif
 }
 
-bool CvLevMarqTransform::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
+bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0, 
+		const CvMat *xyzs1, double _param[]){
 	bool status=true;
 	TIMERSTART2(LevMarq2);
 	//initialize the initial vector of paramters
@@ -265,10 +266,6 @@ bool CvLevMarqTransform::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	CvMyReal _r1[3*numParams];
 	CvMat r1 = cvMat(numParams, 3, CV_64FC1, _r1);
 	
-#ifdef DEBUG
-//#if 1
-	int numJtJComputed = 0;
-#endif
 	for(int i=0;
         ;
 		i++
@@ -314,10 +311,6 @@ bool CvLevMarqTransform::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 		TIMERSTART2(LevMarq4);
 	    if( _JtJ || _JtErr )
 	    {
-#ifdef DEBUG
-//#if 1
-	    	numJtJComputed++;
-#endif
 	    	CvMyReal scale = 1./delta;
 	    	
     		// Not sure if this is illegal;
@@ -329,15 +322,6 @@ bool CvLevMarqTransform::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	    	constructTransformationMatrices(param0, delta);
     		TIMEREND(ConstructMatrices);
 	    	
-#if 0
-	    	CvMatUtils::printMat(&this->mRT);
-	    	CvMatUtils::printMat(&this->mFwdT[0]);
-	    	CvMatUtils::printMat(&this->mFwdT[1]);
-	    	CvMatUtils::printMat(&this->mFwdT[2]);
-	    	CvMatUtils::printMat(&this->mFwdT[3]);
-	    	CvMatUtils::printMat(&this->mFwdT[4]);
-	    	CvMatUtils::printMat(&this->mFwdT[5]);
-#endif
 	    	double *p0 = xyzs0->data.db;
 	    	double *p1 = xyzs1->data.db;
 	    	double errNorm = 0.0;
@@ -606,7 +590,7 @@ bool CvLevMarqTransform::doit1(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	
 
 // TODO: This function is not completed	    
-bool CvLevMarqTransform::doit2(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
+bool CvLevMarqTransform::optimizeDefault(CvMat *xyzs0, CvMat *xyzs1, double _param[]){
 	cout << "CvLevMarq3D::doit2 --- Not Fixed Yet"<<endl;
 	bool status=true;
 	//initialize the initial vector of paramters

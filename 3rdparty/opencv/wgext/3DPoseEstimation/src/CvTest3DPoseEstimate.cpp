@@ -42,8 +42,8 @@ void CvTest3DPoseEstimate::_init(){
 	cvInitMatHeader(&mRot,   3, 3, CV_64FC1, mRotData);
 	cvInitMatHeader(&mTrans, 3, 1, CV_64FC1, mTransData);
 	
-	mTestCartesian = true;
-//	mTestCartesian = false;
+//	mTestCartesian = true;
+	mTestCartesian = false;
 }
 
 /**

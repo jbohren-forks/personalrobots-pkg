@@ -4,17 +4,17 @@
 #include <cxtypes.h>
 #include "CvLevMarq3D.h"
 
-class CvLevMarqDispSpace : public CvLevMarqTransform
+class CvLevMarqTransformDispSpace : public CvLevMarqTransform
 {
 public:
-	CvLevMarqDispSpace(CvMat *disparityTo3D, CvMat *threeDToDisparity, int numErrors, 
+	CvLevMarqTransformDispSpace(CvMat *disparityTo3D, CvMat *threeDToDisparity, int numErrors, 
         int numMaxInter = defNumMaxIter);
-	virtual ~CvLevMarqDispSpace();
+	virtual ~CvLevMarqTransformDispSpace();
 	/**
 	 *  initParams [alpha, beta, gamma, x, y, z];
 	 */
-	bool doit(CvMat* A, CvMat* B, double param[]=NULL) {
-		return doit1(A, B, param);
+	bool optimize(CvMat* A, CvMat* B, double param[]=NULL) {
+		return optimizeAlt(A, B, param);
 	}
 private:
 	bool constructHomographyMatrix(const CvMat* params);
@@ -25,7 +25,7 @@ private:
 	virtual bool computeResidueVector(const CvMat *xyzws0, const CvMat *xyzws1, CvMat* resVector);
 	virtual bool computeResidue(const CvMat *xyzs0, const CvMat *xyzs1, CvMat* resVector);
 	virtual bool computeResidue(const CvMat *xyzs0, const CvMat *xyzs1, const CvMat *T, CvMat* resVector);
-	bool doit1(const CvMat *xyzs0, const CvMat *xyzs1, double _param[]);
+	bool optimizeAlt(const CvMat *xyzs0, const CvMat *xyzs1, double _param[]);
 	double _Homography[16];
 	CvMat mHomography;
 	

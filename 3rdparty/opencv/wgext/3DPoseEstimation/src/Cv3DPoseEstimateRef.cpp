@@ -24,7 +24,7 @@
 #endif
 
 Cv3DPoseEstimateRef::Cv3DPoseEstimateRef():
-	mNumIterations(20), mMinDet(0.1), mNumTriesForRandomTriple(10), 
+	mNumIterations(50), mMinDet(0.1), mNumTriesForRandomTriple(10), 
 	mErrMapping(NULL), mErrNormType(CV_C),	mErrThreshold(mDefErrThreshold),
 	mResidue1(cvMat(3, 1, CV_64F, mResidue1_Data)),
 	mResidue2(cvMat(3, 1, CV_64F, mResidue2_Data)),
@@ -260,7 +260,7 @@ int Cv3DPoseEstimateRef::estimate(CvMat *points0, CvMat *points1, CvMat *rot, Cv
     		param[0]/CV_PI*180., param[0], param[1]/CV_PI*180., param[1], param[2]/CV_PI*180., param[2], 
     		param[3], param[4], param[5]);
 #endif
-    levMarq.doit(points0Inlier, points1Inlier, param);    
+    levMarq.optimize(points0Inlier, points1Inlier, param);    
 
 #ifdef DEBUG
     printf("optimized parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n", 

@@ -17,8 +17,8 @@ public:
 	/**
 	 *  initParams [alpha, beta, gamma, x, y, z];
 	 */
-	bool doit(CvMat* A, CvMat* B, double param[]=NULL);
-	bool doit(CvMat* A, CvMat* B, CvMat *rot, CvMat* trans);
+	bool optimize(CvMat* A, CvMat* B, double param[]=NULL);
+	bool optimize(CvMat* A, CvMat* B, CvMat *rot, CvMat* trans);
 	
 	typedef enum {
 		Euler, Rodrigues
@@ -38,9 +38,10 @@ protected:
 	// TODO: what is T supposed to be, 4x3 or 4x4?
 	virtual bool computeResidue(CvMat *xyzs0, CvMat *xyzs1, CvMat* T, CvMat* res);
 	// use CvLevMarq.updateAlt()
-	bool doit1(CvMat* A, CvMat* B, double param[]=NULL);
+	bool optimizeAlt(const CvMat* A, const CvMat* B, 
+			double param[]=NULL);
 	// use CvLevMarq.update()
-	bool doit2(CvMat* A, CvMat* B, double param[]=NULL);
+	bool optimizeDefault(CvMat* A, CvMat* B, double param[]=NULL);
 	CvLevMarq mLevMarq;
 	CvMyReal mRTData[16];
 	CvMat mRT;  // this is a transient buffer. Do not assume it is updated

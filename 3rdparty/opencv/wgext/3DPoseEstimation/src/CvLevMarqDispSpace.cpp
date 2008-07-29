@@ -9,6 +9,9 @@ using namespace std;
 
 //#define DEBUG 1
 
+#define USE_UPDATEALT
+#define LAST3ISLIN
+
 #if 1
 #define TIMERSTART(x) 
 #define TIMEREND(x)
@@ -21,7 +24,7 @@ using namespace std;
 #define TIMEREND2(x) CvTestTimerEnd2(x)
 #endif
 
-CvLevMarqDispSpace::CvLevMarqDispSpace(
+CvLevMarqTransformDispSpace::CvLevMarqTransformDispSpace(
             CvMat* disparityTo3D, CvMat *threeDToDisparity,
             int numErrors, int numMaxIter):
 	CvLevMarqTransform(
@@ -32,16 +35,16 @@ CvLevMarqDispSpace::CvLevMarqDispSpace(
 	cvInitMatHeader(&mHomography, 4, 4, CV_64FC1, _Homography);
 }
 
-CvLevMarqDispSpace::~CvLevMarqDispSpace()
+CvLevMarqTransformDispSpace::~CvLevMarqTransformDispSpace()
 {
 }
 
 
-bool CvLevMarqDispSpace::constructHomographyMatrix(const CvMat* param){
+bool CvLevMarqTransformDispSpace::constructHomographyMatrix(const CvMat* param){
 	return constructHomographyMatrix(param, _Homography);
 }
 
-bool CvLevMarqDispSpace::constructHomographyMatrix(const CvMat* param, CvMyReal _H[]){
+bool CvLevMarqTransformDispSpace::constructHomographyMatrix(const CvMat* param, CvMyReal _H[]){
     double _buf[16], _rt[16];
     CvMat buf, rt;
     CvMat H;
@@ -66,15 +69,15 @@ bool CvLevMarqDispSpace::constructHomographyMatrix(const CvMat* param, CvMyReal 
 	return status;
 }
 
-bool CvLevMarqDispSpace::constructTransformationMatrix(const CvMat * param){
+bool CvLevMarqTransformDispSpace::constructTransformationMatrix(const CvMat * param){
 	return constructHomographyMatrix(param);
 }
 
-bool CvLevMarqDispSpace::constructTransformationMatrix(const CvMat * param, CvMyReal T[]) {
+bool CvLevMarqTransformDispSpace::constructTransformationMatrix(const CvMat * param, CvMyReal T[]) {
 	return constructHomographyMatrix(param, T);
 }
 
-bool CvLevMarqDispSpace::constructTransformationMatrices(const CvMat *param, CvMyReal delta) {
+bool CvLevMarqTransformDispSpace::constructTransformationMatrices(const CvMat *param, CvMyReal delta) {
 //	CvMyReal x  = cvmGet(param, 0, 0);
 //	CvMyReal y  = cvmGet(param, 1, 0);
 //	CvMyReal z  = cvmGet(param, 2, 0);
@@ -97,7 +100,7 @@ bool CvLevMarqDispSpace::constructTransformationMatrices(const CvMat *param, CvM
 }
 
 
-bool CvLevMarqDispSpace::computeResidueVector(const CvMat *uvdws0, const CvMat *uvdws1, 
+bool CvLevMarqTransformDispSpace::computeResidueVector(const CvMat *uvdws0, const CvMat *uvdws1, 
 		CvMat * resVector){
 	int numPoints = uvdws0->rows;
 	CvMat uvdw0;
@@ -125,11 +128,11 @@ bool CvLevMarqDispSpace::computeResidueVector(const CvMat *uvdws0, const CvMat *
 	return true;
 }
 
-bool CvLevMarqDispSpace::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1, CvMat* res){
+bool CvLevMarqTransformDispSpace::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1, CvMat* res){
 	return computeResidue(xyzs0, xyzs1, &mHomography, res);
 }
 
-bool CvLevMarqDispSpace::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1, 
+bool CvLevMarqTransformDispSpace::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1, 
 		const CvMat *T, CvMat* res){
 	TIMERSTART2(Residue);
 	CvMat _xyzs0;
@@ -146,9 +149,9 @@ bool CvLevMarqDispSpace::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1,
 	return true;
 }
 
-// This function shall be the same as CvLevMarqTransform::doit1 except for the 
+// This function shall be the same as CvLevMarqTransform::optimizeAlt except for the 
 // residue computation
-bool CvLevMarqDispSpace::doit1(const CvMat *xyzs0, const CvMat *xyzs1, double _param[]){
+bool CvLevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *xyzs1, double _param[]){
 	bool status=true;
 	//initialize the initial vector of paramters
 	if (_param == NULL){
@@ -251,7 +254,7 @@ bool CvLevMarqDispSpace::doit1(const CvMat *xyzs0, const CvMat *xyzs1, double _p
 				CvMyReal _r0x;
 				CvMyReal _r0y;
 				CvMyReal _r0z;
-#if 1	        	
+#if 1
 				computeResidue(&point0, &point1, &r0);
 				_r0x = _r0[0];
 				_r0y = _r0[1];
@@ -354,6 +357,8 @@ bool CvLevMarqDispSpace::doit1(const CvMat *xyzs0, const CvMat *xyzs1, double _p
 
 		if (_errNorm) {
 			if (_JtJ==NULL && _JtErr==NULL) {
+    			double *p0 = xyzs0->data.db;
+    			double *p1 = xyzs1->data.db;				
 				TIMERSTART(ErrNorm);
 				//    			int64 tErrNorm = cvGetTickCount();
 				// not computed yet
@@ -361,12 +366,32 @@ bool CvLevMarqDispSpace::doit1(const CvMat *xyzs0, const CvMat *xyzs1, double _p
 				constructTransformationMatrix(param0);
 				for (int j=0; j<numPoints; j++) {
 					// compute current error = xyzs1^T  - Transformation * xyzs0^T
+#if 1
 					CvMat point0, point1;
 					cvGetRow(xyzs0, &point0, j);
 					cvGetRow(xyzs1, &point1, j);
 					computeResidue(&point0, &point1, &r0);
 
 					*_errNorm += _r0[0]*_r0[0] + _r0[1]*_r0[1] + _r0[2]*_r0[2];
+#else
+    				double _r0x, _r0y, _r0z;
+    				TIMERSTART2(Residue);
+    				//	        	xyzs0 and xyzs1's are inliers we copy. so we know
+    				//	        	how their data are orgainized
+    				CvMyReal _p0x = *p0++;
+    				CvMyReal _p0y = *p0++;
+    				CvMyReal _p0z = *p0++;
+
+    				CvMyReal _p1x = *p1++;
+    				CvMyReal _p1y = *p1++;
+    				CvMyReal _p1z = *p1++;
+    				PERSTRANSFORMRESIDUE(_Homography, _p0x, _p0y, _p0z, _p1x, _p1y, _p1z, _r0x, _r0y, _r0z);
+    				TIMEREND2(Residue);
+		        	
+        			TIMERSTART(ErrNorm);
+    				*_errNorm += _r0x*_r0x + _r0y*_r0y + _r0z*_r0z;
+    	    		TIMEREND(ErrNorm);					
+#endif
 				}
 				TIMEREND(ErrNorm);
 				//    			CvTestTimer::getTimer().mErrNorm += cvGetTickCount() - tErrNorm;
@@ -396,3 +421,4 @@ bool CvLevMarqDispSpace::doit1(const CvMat *xyzs0, const CvMat *xyzs1, double _p
 
 	return status;
 }
+

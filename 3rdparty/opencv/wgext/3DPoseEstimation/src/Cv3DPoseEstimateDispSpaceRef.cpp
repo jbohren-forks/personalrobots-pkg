@@ -182,7 +182,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
 	}
 	
     // nonlinear optimization by Levenberg-Marquardt
-	CvLevMarqDispSpace levMarq(this->mDispToCart, this->mCartToDisp, 
+	CvLevMarqTransformDispSpace levMarq(this->mDispToCart, this->mCartToDisp, 
         numInliers0);
     
     double param[6];
@@ -209,7 +209,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
 #endif
 
     CvTestTimerStart(LevMarqDoit);
-    levMarq.doit(uvds0Inlier, uvds1Inlier, param);    
+    levMarq.optimize(uvds0Inlier, uvds1Inlier, param);    
     CvTestTimerEnd(LevMarqDoit);
     
 #ifdef DEBUG
