@@ -1,0 +1,18 @@
+<package>
+<description brief="The Open Source Computer Vision Library (latest)">
+
+This package contains the latest code from the Open Source Computer Vision
+Library (opencv).  This ROS package does not modify OpenCV in any way;
+it simply provides a convenient way to download and compile the library
+in a way that can be managed by the ROS dependency system.
+
+</description>
+<author>Gary Bradski and many others. See web page for a full contributor list. ROS package maintained by JD Chen.</author>
+<license>BSD</license>
+<url>http://opencvlibrary.sourceforge.net</url>
+<export>
+  <cpp cflags="-I${prefix}/opencv/include -I${prefix}/opencv/include/opencv" lflags="-L${prefix}/opencv/lib -Xlinker -rpath -Xlinker ${prefix}/opencv/lib -lcvaux -lcv -lcxcore -lhighgui -lml"/>
+  <doxymaker external="http://opencvlibrary.sourceforge.net/" />
+</export>
+</package>
+
