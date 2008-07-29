@@ -123,6 +123,8 @@
       <laserCount>1</laserCount>
       <origin>0.0 0.0 0.05</origin>
 
+      <displayRays>false</displayRays>
+
       <minAngle>-135</minAngle>
       <maxAngle>135</maxAngle>
 
@@ -1296,6 +1298,8 @@
       <rangeCount>683</rangeCount>
       <laserCount>1</laserCount>
       <origin>0.0 0.0 0.05</origin>
+
+      <displayRays>false</displayRays>
 
       <minAngle>-45</minAngle>
       <maxAngle> 45</maxAngle>
