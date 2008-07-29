@@ -35,6 +35,7 @@
 #include "mechanism_model/link.h"
 #include "mechanism_model/joint.h"
 #include "mechanism_model/transmission.h"
+#include "hw_interface/hardware_interface.h"
 
 namespace mechanism {
   class Robot{
@@ -60,6 +61,8 @@ namespace mechanism {
 
     std::vector<Joint*> joints_;
     std::vector<Transmission*> transmissions_;
+
+    HardwareInterface *hw_;
   };
 }
 
