@@ -9,8 +9,9 @@
 */
 /***************************************************/
 
+#include <mechanism_model/robot.h>
+
 class TiXmlElement;
-class Robot;
 
 namespace controller
 {
@@ -46,7 +47,7 @@ namespace controller
     virtual ~Controller() {}
     virtual void update(void) {}
     virtual void init(void) {}
-    virtual void initXml(Robot *robot, TiXmlElement *config) {}
+    virtual void initXml(mechanism::Robot *robot, TiXmlElement *config) {}
 
   private:
   };

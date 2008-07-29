@@ -37,19 +37,19 @@
 #include <rosthread/mutex.h>
 #include <genericControllers/Controller.h>
 
-typedef controller::Controller* (*ControllerAllocator)(const std::string&);
+typedef controller::Controller* (*ControllerAllocator)();
 
 class MechanismControl {
  public:
   MechanismControl(HardwareInterface *hw);
   ~MechanismControl();
 
-  bool init();
+  bool init(TiXmlElement* config);
   void update(); //Must be realtime safe
 
   bool registerActuator(const std::string &name, int index);
   void registerControllerType(const std::string& type, ControllerAllocator f);
-  bool spawnController(const char* type, const char* ns);
+  bool spawnController(const char* type, TiXmlElement* config);
 
   Actuator* getActuator(const std::string& name);
 
