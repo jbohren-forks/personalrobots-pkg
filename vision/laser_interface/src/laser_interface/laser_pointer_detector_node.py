@@ -1,4 +1,6 @@
 from pkg import *
+import psyco
+psyco.full()
 from std_msgs.msg import Point3DFloat64
 import sys, time
 import opencv as cv
@@ -165,7 +167,9 @@ class DetectState:
         l, r = images
 
         #Detect right image
+        start_time = time.time()
         _, _, right_cam_detection, stats = self.detector_right.detect(r, verbose=verbose)
+        right_time = time.time()
         if debug:
             draw_blobs(r, stats)
             draw_detection(r, right_cam_detection)
@@ -173,12 +177,16 @@ class DetectState:
 
         #Detect left image
         image, combined, left_cam_detection, stats = self.detector.detect(l, verbose=verbose)
+        left_time = time.time()
         if debug: 
             motion, intensity = self.detector.get_motion_intensity_images()
             show_processed(l, [combined, motion, intensity], left_cam_detection, stats, self.detector)
         elif display:
             draw_detection(l, left_cam_detection)
             hg.cvShowImage('video', l)
+
+        print '#   right_time %.4f' % (right_time - start_time)
+        print '#   left_time %.4f' % (left_time - right_time)
 
         #Triangulate
         if right_cam_detection != None and left_cam_detection != None:
@@ -192,7 +200,6 @@ class DetectState:
             #    #Don't return anything if point is behind camera
             #    print 'DetectState: point was behind camera, ignoring'
             #    return None
-
             if result['point'][2,0] < 0:
                 #Don't return anything if point is behind camera
                 print 'DetectState: point was behind camera, ignoring'
@@ -212,7 +219,7 @@ class LaserPointerDetectorNode:
     GATHER_NEGATIVE_EXAMPLES  = 'GATHER_NEGATIVE_EXAMPLES'
     DETECT                    = 'DETECT'
 
-    def __init__(self, exposure = LaserPointerDetector.SUN_EXPOSURE, video = None, display=False):
+    def __init__(self, mode, exposure = LaserPointerDetector.SUN_EXPOSURE, video = None, display=False):
         if video is None:
             self.video    = cam.VidereStereo(0, gain=96, exposure=exposure)
             #self.video    = cam.StereoFile('measuring_tape_red_left.avi','measuring_tape_red_right.avi')
@@ -223,7 +230,7 @@ class LaserPointerDetectorNode:
         self.camera_model     = cam.ROSStereoCamera('videre_stereo')
         self.state            = None
         self.state_object     = None
-        self.set_state(self.GATHER_NEGATIVE_EXAMPLES)
+        self.set_state(mode)
         if display:
             self._make_windows()
         self.display = display
@@ -272,29 +279,36 @@ class LaserPointerDetectorNode:
                 frames = list(self.video.next())
                 frames[0] = self.camera_model.camera_left.undistort_img(frames[0])
                 frames[1] = self.camera_model.camera_right.undistort_img(frames[1])
+                undistort_time = time.time()
                 result = self.state_object.run(frames, display=self.display, verbose=self.verbose, debug=self.debug)
+                run_time = time.time()
                 self.video_lock.release()
                 if result != None:
                     p = result['point']
                     self.topic.publish(Point3DFloat64(p[0,0], p[1,0], p[2,0]))
 
-                if count % (2*30) == 0:
+                #if count % (2*30) == 0:
+                if True:
+                    print '>> undistort %.2f' % (undistort_time - start_time)
+                    print '>> run %.4f' % (run_time - undistort_time)
                     diff = time.time() - start_time
                     print 'Main: Running at %.2f fps, took %.4f s' % (1.0 / diff, diff)
                 count = count + 1
                 k = hg.cvWaitKey(10)
                 if k == 'p':
                     self.set_state(self.GATHER_POSITIVE_EXAMPLES)
-                if k == 'n':
+                elif k == 'n':
                     self.set_state(self.GATHER_NEGATIVE_EXAMPLES)
-                if k == ' ':
+                elif k == ' ':
                     self.set_state(self.DETECT)
-                if k == 'd':
+                elif k == 'd':
                     self.display = not self.display
-                if k == 'v':
+                elif k == 'v':
                     self.verbose = not self.verbose
-                if k == 'g':
+                elif k == 'g':
                     self.debug   = not self.debug
+                elif k == 'q':
+                    return
 
         except StopIteration, e:
             if self.state_object.__class__ == GatherExamples:
@@ -325,9 +339,16 @@ class LaserPointerDetectorNode:
 if __name__ == '__main__':
     import optparse
     p = optparse.OptionParser()
+    p.add_option('-p', '--positive',  action='store_true', 
+                dest='mode_positive', help='gather positive examples (need X display)')
+    p.add_option('-n', '--negative',  action='store_true', 
+                dest='mode_negative', help='gather negative examples (need X display)')
+    p.add_option('-r', '--run',  action='store_true', 
+                dest='mode_run', help='classify')
     p.add_option('-o', '--office', action='store', dest='office', 
                  help='true for operating robot in office environments')
-    p.add_option('-d', '--display',  action='store_true', dest='display', help='show display')
+    p.add_option('-d', '--display',  action='store_true', 
+                dest='display', help='show display')
     opt, args = p.parse_args()
 
     if opt.display == None:
@@ -345,9 +366,23 @@ if __name__ == '__main__':
     else:
         exposure = LaserPointerDetector.SUN_EXPOSURE
 
+    if opt.mode_positive == True:
+        mode    = LaserPointerDetectorNode.GATHER_POSITIVE_EXAMPLES
+        display = True
+    elif opt.mode_negative == True:
+        mode    = LaserPointerDetectorNode.GATHER_NEGATIVE_EXAMPLES
+        display = True
+    elif opt.mode_run == True:
+        mode = LaserPointerDetectorNode.DETECT
+    else:
+        mode = LaserPointerDetectorNode.DETECT
+
+    if display == False:
+        hg.cvNamedWindow('key', 1)
     print 'Display set to', display
     print 'Exposure set to', exposure
-    LaserPointerDetectorNode(exposure = exposure, display=display).run()
+    print 'Mode will be', mode
+    LaserPointerDetectorNode(mode = mode, exposure = exposure, display=display).run()
 
 
 

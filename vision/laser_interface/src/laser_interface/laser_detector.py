@@ -531,7 +531,7 @@ class LaserPointerDetector:
         cv.cvCopy(image, self.copy)
         image = self.copy
 
-        #start_time = time.time()
+        start_time = time.time()
         if self.channel   == 'red':
             channel = 0
         elif self.channel == 'green':
@@ -540,20 +540,20 @@ class LaserPointerDetector:
             channel = 2
         r, g, b               = self.splitter.split(image)
         coi = [r,g,b][channel]
-        #split_time = time.time()
+        split_time = time.time()
 
         intensity_filtered    = self.intensity_filter.threshold(coi)
-        #intensity_time = time.time()
+        intensity_time = time.time()
         motion_filtered       = self.motion_filter.subtract(coi)
-        #motion_time = time.time()
+        motion_time = time.time()
         combined              = self.combine.combine([intensity_filtered, motion_filtered])
-        #combine_time = time.time()
+        combine_time = time.time()
 
         #Threshold image image after combining intensity & motion filters' outputs
         cv.cvThreshold(combined, combined, 0, 1, cv.CV_THRESH_BINARY)
         cv.cvMul(coi, combined, self.combined_grey_scale)
         intensity_motion_blob = blob_statistics(self.combined_grey_scale)
-        #threshold_time = time.time()
+        threshold_time = time.time()
 
         if len(intensity_motion_blob) > 100:
             print 'Too many...', len(intensity_motion_blob)
@@ -565,6 +565,7 @@ class LaserPointerDetector:
             components = self.classifier.classify(image, components)
             if number_components_before != len(components) and verbose:
                 print '         PatchClassifier: %d -> %d' % (number_components_before, len(components))
+        classify_time = time.time()
 
         laser_blob    = select_laser_blob(components, approx_laser_point_size=self.LASER_POINT_SIZE)
         if laser_blob != None:
@@ -578,6 +579,17 @@ class LaserPointerDetector:
                 laser_blob['track'] = laser_track
             else:
                 laser_blob    = None
+        selection_time = time.time()
+
+        print '======================================================='
+        print 'split %.4f' % (split_time - start_time)
+        print 'intensity %.4f' % (intensity_time - split_time)
+        print 'motion %.4f' % (motion_time - intensity_time)
+        print 'combine %.4f' % (combine_time - motion_time )
+        print 'threshold %.4f' % (threshold_time -combine_time )
+        print 'classify_time %.4f' % (classify_time - threshold_time)
+        print 'selection_time %.4f' % (selection_time - classify_time)
+        print 'total %.4f' % (selection_time - start_time)
 
         return image, combined, laser_blob, intensity_motion_blob
 
