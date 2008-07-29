@@ -291,10 +291,15 @@ public:
 	    currentWorld.pop_front();
 	    delete old;
 	}
+
 	/* add new data */
 	currentWorld.push_back(runFilters(toProcess));
 	if (verbose > 0)
-	    printf("World map containing %d point clouds\n", currentWorld.size());	
+	{
+	    double window = currentWorld.size() > 0 ? (currentWorld.back()->header.stamp - currentWorld.front()->header.stamp).to_double() : 0.0;
+	    printf("World map containing %d point clouds (window size = %f seconds)\n", currentWorld.size(), window);
+	}
+	
     }
     
 private:
