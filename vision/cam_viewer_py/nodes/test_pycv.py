@@ -12,8 +12,7 @@ import opencv.highgui as hg
 def to_cv(image, cv_image=None):
     if cv_image == None:
         cv_image = cv.cvCreateImage(cv.cvSize(image.width, image.height), 8, 1)
-
-    
+    #cv_image.imageData = np.frombuffer(image.data, dtype='uint8', count=image.height*image.width*1).tostring()
     cv_image.imageData = np.array(image.data, dtype='uint8').tostring()
     return cv_image
 

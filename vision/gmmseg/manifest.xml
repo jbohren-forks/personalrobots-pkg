@@ -1,0 +1,12 @@
+<package>
+  <description>
+      Gaussian texture segmentation assuming object is in center of image.
+  </description>
+  <author>Charles C. Kemp</author>
+  <author>Hai Nguyen</author>
+  <license>BSD</license>
+  <depend package="opencv"/>
+  <depend package="numpy"/>
+  <depend package="rospy"/>
+  <depend package="std_msgs"/>
+</package>
