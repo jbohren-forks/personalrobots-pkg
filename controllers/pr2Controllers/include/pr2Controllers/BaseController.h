@@ -58,9 +58,9 @@ namespace controller
      * \param name - std::string name for the controller. This must match the name attribute corresponding to the controller
      * description in the xml description file for the controller. 
      */
-    BaseController(Robot *robot, std::string name);
+    BaseController(mechanism::Robot *robot, std::string name);
 
-    BaseController(Robot *robot);
+    BaseController(mechanism::Robot *robot);
 
     /*!
      *  \brief Load the parameters for the controller from the controllers.xml file 
@@ -229,7 +229,7 @@ namespace controller
 
     int casterMode;
 
-    Robot *robot;
+    mechanism::Robot *robot;
 
     std::map<std::string,std::string> paramMap;
 

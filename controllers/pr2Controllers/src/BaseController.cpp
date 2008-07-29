@@ -30,13 +30,13 @@ BaseController::BaseController()
   this->name = "baseController";
 }
 
-BaseController::BaseController(Robot *robot, std::string name)
+BaseController::BaseController(mechanism::Robot *robot, std::string name)
 {
   this->robot = robot;
   this->name = name;
 }
 
-BaseController::BaseController(Robot *robot)
+BaseController::BaseController(mechanism::Robot *robot)
 {
   this->robot = robot;
   this->name = "baseController";

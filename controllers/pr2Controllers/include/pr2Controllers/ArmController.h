@@ -95,9 +95,9 @@ namespace controller
         * \param 
         */
       ArmController();
-      ArmController(Robot *robot, std::string name);
-      ArmController(Robot *robot);
-      ArmController(Robot *robot, std::string name,int armNumJoints, int jcToRobotJointMap[], int jcToHIActuatorMap[]);
+      ArmController(mechanism::Robot *robot, std::string name);
+      ArmController(mechanism::Robot *robot);
+      ArmController(mechanism::Robot *robot, std::string name,int armNumJoints, int jcToRobotJointMap[], int jcToHIActuatorMap[]);
 
       /*!
         * \brief Destructor.
@@ -490,7 +490,7 @@ namespace controller
 
       double maxYawDot;
 
-      Robot *robot;
+      mechanism::Robot *robot;
 
       std::map<std::string,std::string> paramMap;
 
