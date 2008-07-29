@@ -67,7 +67,7 @@ PR2::PR2_ERROR_CODE GazeboSensors::Init()
   /// Open the laser interface for hokuyo
   try
   {
-    pr2LaserIface->Open(client, "laser_iface_1");
+    pr2LaserIface->Open(client, "tilt_laser_iface_1");
   }
   catch (std::string e)
   {
