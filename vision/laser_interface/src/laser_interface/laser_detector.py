@@ -264,15 +264,38 @@ class BrightnessThreshold:
         #elif self.channel == 'blue':
         #    thres_chan = b
 
+        start_time = time.time()
         cv.cvThreshold(thres_chan, self.thresholded_low, self.thres_low, 1, cv.CV_THRESH_BINARY)
+        threshold_time = time.time()
         cv.cvDilate(self.thresholded_low, self.thresholded_low)
+        dilate_time = time.time()
         remove_large_blobs(self.thresholded_low, LaserPointerDetector.MAX_BLOB_AREA)
+        remove_time = time.time()
 
         cv.cvThreshold(thres_chan, self.thresholded_high, self.thres_high, 1, cv.CV_THRESH_BINARY)
+        threshold_time2 = time.time()
         cv.cvDilate(self.thresholded_high, self.thresholded_high)
+        dilate_time2 = time.time()
         remove_large_blobs(self.thresholded_high, LaserPointerDetector.MAX_BLOB_AREA)
+        remove_time2 = time.time()
 
         cv.cvOr(self.thresholded_low, self.thresholded_high, self.thresholded_combined)
+        or_time = time.time()
+
+
+        print '      threshold_time %.4f' %(threshold_time - start_time)
+        print '      dilate_time %.4f' %(dilate_time - threshold_time)
+        print '      remove_time %.4f' %(remove_time - dilate_time)
+
+        print '      threshold_time2 %.4f' %(threshold_time2 - remove_time)
+        print '      dilate_time2 %.4f' %(dilate_time2 - threshold_time2)
+        print '      remove_time2 %.4f' %(remove_time2 - dilate_time2)
+
+        print '      or_time %.4f' %(or_time - remove_time2)
+
+
+
+
         #if self.should_mask:
         #    joined_image = self.mask.mask(self.thresholded_combined, r, g, b)
         #    return joined_image
