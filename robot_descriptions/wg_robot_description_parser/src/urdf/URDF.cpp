@@ -184,7 +184,7 @@ std::map<std::string, std::string> URDF::Data::getDataTagValues(const std::strin
     if (m != pos->second.end())
     {
       for (std::map<std::string, Element>::const_iterator it = m->second.begin() ; it != m->second.end() ; it++)
-	result[it->first] = it->second.str;	    
+        result[it->first] = it->second.str;            
     }
   }
   return result;
@@ -201,7 +201,7 @@ std::map<std::string, const TiXmlElement*> URDF::Data::getDataTagXML(const std::
     if (m != pos->second.end())
     {
       for (std::map<std::string, Element>::const_iterator it = m->second.begin() ; it != m->second.end() ; it++)
-	result[it->first] = it->second.xml;
+        result[it->first] = it->second.xml;
     }
   }
   return result;
@@ -224,9 +224,9 @@ bool URDF::containsCycle(unsigned int index) const
     seen[link] = true;
     for (unsigned int i = 0 ; i < link->children.size() ; ++i) {
       if (seen.find(link->children[i]) != seen.end())
-	return true;
+        return true;
       else
-	queue.push(link->children[i]);
+        queue.push(link->children[i]);
     }
   }
 
@@ -260,7 +260,7 @@ void URDF::Data::print(FILE *out, std::string indent) const
     {
       fprintf(out, "%s  [%s]\n", indent.c_str(), j->first.c_str());
       for (std::map<std::string, Element>::const_iterator k = j->second.begin() ; k != j->second.end() ; ++k)
-	fprintf(out, "%s    %s = %s%s\n", indent.c_str(), k->first.c_str(), k->second.str.c_str(), k->second.xml != NULL ? " [XML]" : "");
+        fprintf(out, "%s    %s = %s%s\n", indent.c_str(), k->first.c_str(), k->second.str.c_str(), k->second.xml != NULL ? " [XML]" : "");
     }
   }
 }
@@ -314,7 +314,7 @@ void URDF::Link::Inertial::print(FILE *out, std::string indent) const
   fprintf(out, "%s  - mass: %f\n", indent.c_str(), mass);
   fprintf(out, "%s  - com: (%f, %f, %f)\n", indent.c_str(), com[0], com[1], com[2]);
   fprintf(out, "%s  - inertia: (%f, %f, %f, %f, %f, %f)\n", indent.c_str(), 
-	  inertia[0], inertia[1], inertia[2], inertia[3], inertia[4],  inertia[5]);
+          inertia[0], inertia[1], inertia[2], inertia[3], inertia[4],  inertia[5]);
   data.print(out, indent + "  ");
 }
 
@@ -382,7 +382,7 @@ void URDF::ignoreNode(const TiXmlNode* node)
     break;
   case TiXmlNode::COMMENT:
   case TiXmlNode::DECLARATION:
-    break;	    
+    break;            
   case TiXmlNode::UNKNOWN:
   default:
     fprintf(stderr, "Ignoring unknown node '%s'\n", node->Value());
@@ -400,14 +400,14 @@ void URDF::getChildrenAndAttributes(const TiXmlNode *node, std::vector<const TiX
     {
       if (strcmp(attr->Name(), "clone") == 0)
       {
-	std::map<std::string, const TiXmlNode*>::const_iterator pos = m_templates.find(attr->ValueStr());
-	if (pos == m_templates.end())
-	  fprintf(stderr, "Template '%s' is not defined\n", attr->Value());
-	else
-	  getChildrenAndAttributes(pos->second, children, attributes);
+        std::map<std::string, const TiXmlNode*>::const_iterator pos = m_templates.find(attr->ValueStr());
+        if (pos == m_templates.end())
+          fprintf(stderr, "Template '%s' is not defined\n", attr->Value());
+        else
+          getChildrenAndAttributes(pos->second, children, attributes);
       }
       else
-	attributes.push_back(attr);
+        attributes.push_back(attr);
     }
   }
 }
@@ -526,7 +526,7 @@ char* URDF::findFile(const char *filename)
     bool good = fin.is_open();
     fin.close();
     if (good)
-      return strdup(name.c_str());	
+      return strdup(name.c_str());        
   }
   return NULL;
 }
@@ -568,8 +568,8 @@ static double getConstant(void *data, std::string &name)
       std::map<std::string, bool>::iterator pos = d->s.find((*m)[name]);
       if (pos != d->s.end() && pos->second == true)
       {
-	fprintf(stderr, "Recursive definition of constant '%s'\n", name.c_str());
-	return 0.0;
+        fprintf(stderr, "Recursive definition of constant '%s'\n", name.c_str());
+        return 0.0;
       }
       d->s[(*m)[name]] = true;
       double result = meval::EvaluateMathExpression((*m)[name], &getConstant, data);
@@ -623,7 +623,7 @@ unsigned int URDF::loadBoolValues(const TiXmlNode *node, unsigned int count, boo
     ss >> value;
     const unsigned int length = value.length();
     for(unsigned int j = 0 ; j != length ; ++j)
-      value[j] = std::tolower(value[j]);	
+      value[j] = std::tolower(value[j]);        
     vals[i] = (value == "true" || value == "yes" || value == "1");
     read++;
   }
@@ -653,9 +653,9 @@ void URDF::loadTransmission(const TiXmlNode *node)
     if (node->Type() == TiXmlNode::ELEMENT)
     {
       if (node->ValueStr() == "data")
-	loadData(node, &transmission->data);
+        loadData(node, &transmission->data);
       else
-	ignoreNode(node);
+        ignoreNode(node);
     }
     else
       ignoreNode(node);
@@ -681,9 +681,9 @@ void URDF::loadActuator(const TiXmlNode *node)
     if (node->Type() == TiXmlNode::ELEMENT)
     {
       if (node->ValueStr() == "data")
-	loadData(node, &actuator->data);
+        loadData(node, &actuator->data);
       else
-	ignoreNode(node);
+        ignoreNode(node);
     }
     else
       ignoreNode(node);
@@ -718,15 +718,15 @@ void URDF::loadJoint(const TiXmlNode *node, const std::string& defaultName, Link
     if (strcmp(attr->Name(), "type") == 0)
     {
       if (attr->ValueStr() == "fixed")
-	joint->type = Link::Joint::FIXED;
+        joint->type = Link::Joint::FIXED;
       else if (attr->ValueStr() == "revolute")
-	joint->type = Link::Joint::REVOLUTE;
+        joint->type = Link::Joint::REVOLUTE;
       else if (attr->ValueStr() == "prismatic")
-	joint->type = Link::Joint::PRISMATIC;
+        joint->type = Link::Joint::PRISMATIC;
       else if (attr->ValueStr() == "floating")
-	joint->type = Link::Joint::FLOATING;
+        joint->type = Link::Joint::FLOATING;
       else
-	fprintf(stderr, "Unknown sensor type: '%s'\n", attr->Value());
+        fprintf(stderr, "Unknown sensor type: '%s'\n", attr->Value());
     }
   }
     
@@ -736,17 +736,17 @@ void URDF::loadJoint(const TiXmlNode *node, const std::string& defaultName, Link
     if (node->Type() == TiXmlNode::ELEMENT)
     {
       if (node->ValueStr() == "axis")
-	loadDoubleValues(node, 3, joint->axis);
+        loadDoubleValues(node, 3, joint->axis);
       else if (node->ValueStr() == "anchor")
-	loadDoubleValues(node, 3, joint->anchor);
+        loadDoubleValues(node, 3, joint->anchor);
       else if (node->ValueStr() == "limit")
-	loadDoubleValues(node, 2, joint->limit);
+        loadDoubleValues(node, 2, joint->limit);
       else if (node->ValueStr() == "calibration")
-	loadDoubleValues(node, 2, joint->calibration);
+        loadDoubleValues(node, 2, joint->calibration);
       else if (node->ValueStr() == "data")
-	loadData(node, &joint->data);
+        loadData(node, &joint->data);
       else
-	ignoreNode(node);
+        ignoreNode(node);
     }
     else
       ignoreNode(node);
@@ -782,15 +782,15 @@ void URDF::loadGeometry(const TiXmlNode *node, const std::string &defaultName, L
     if (strcmp(attr->Name(), "type") == 0)
     {
       if (attr->ValueStr() == "box")
-	geometry->type = Link::Geometry::BOX;
+        geometry->type = Link::Geometry::BOX;
       else if (attr->ValueStr() == "cylinder")
-	geometry->type = Link::Geometry::CYLINDER;
+        geometry->type = Link::Geometry::CYLINDER;
       else if (attr->ValueStr() == "sphere")
-	geometry->type = Link::Geometry::SPHERE;
+        geometry->type = Link::Geometry::SPHERE;
       else if (attr->ValueStr() == "mesh")
-	geometry->type = Link::Geometry::MESH;
+        geometry->type = Link::Geometry::MESH;
       else
-	fprintf(stderr, "Unknown sensor type: '%s'\n", attr->Value());
+        fprintf(stderr, "Unknown sensor type: '%s'\n", attr->Value());
     }
   }
 
@@ -801,28 +801,28 @@ void URDF::loadGeometry(const TiXmlNode *node, const std::string &defaultName, L
     {
       if (node->ValueStr() == "size")
       {
-	switch (geometry->type)
-	{
-	case Link::Geometry::BOX:
-	  loadDoubleValues(node, 3, geometry->size);
-	  break;
-	case Link::Geometry::CYLINDER:
-	  loadDoubleValues(node, 2, geometry->size);
-	  break;
-	case Link::Geometry::SPHERE:
-	  loadDoubleValues(node, 1, geometry->size);
-	  break;
-	default:
-	  ignoreNode(node);
-	  break;
-	}
+        switch (geometry->type)
+        {
+        case Link::Geometry::BOX:
+          loadDoubleValues(node, 3, geometry->size);
+          break;
+        case Link::Geometry::CYLINDER:
+          loadDoubleValues(node, 2, geometry->size);
+          break;
+        case Link::Geometry::SPHERE:
+          loadDoubleValues(node, 1, geometry->size);
+          break;
+        default:
+          ignoreNode(node);
+          break;
+        }
       }
       else if (node->ValueStr() == "data")
-	loadData(node, &geometry->data);
+        loadData(node, &geometry->data);
       else if (node->ValueStr() == "filename" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
-	geometry->filename = node->FirstChild()->ValueStr();
-      else		
-	ignoreNode(node);
+        geometry->filename = node->FirstChild()->ValueStr();
+      else                
+        ignoreNode(node);
     }
     else
       ignoreNode(node);
@@ -857,19 +857,19 @@ void URDF::loadCollision(const TiXmlNode *node, const std::string &defaultName, 
     if (node->Type() == TiXmlNode::ELEMENT)
     {
       if (node->ValueStr() == "rpy")
-	loadDoubleValues(node, 3, collision->rpy);
+        loadDoubleValues(node, 3, collision->rpy);
       else if (node->ValueStr() == "xyz")
-	loadDoubleValues(node, 3, collision->xyz);
+        loadDoubleValues(node, 3, collision->xyz);
       else if (node->ValueStr() == "verbose")
-	loadBoolValues(node, 1, &collision->verbose);
+        loadBoolValues(node, 1, &collision->verbose);
       else if (node->ValueStr() == "material" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
-	collision->material = node->FirstChild()->ValueStr();
+        collision->material = node->FirstChild()->ValueStr();
       else if (node->ValueStr() == "data")
-	loadData(node, &collision->data);
+        loadData(node, &collision->data);
       else if (node->ValueStr() == "geometry")
-	loadGeometry(node, name + "_geom", collision->geometry);
+        loadGeometry(node, name + "_geom", collision->geometry);
       else
-	ignoreNode(node);
+        ignoreNode(node);
     }
     else
       ignoreNode(node);
@@ -904,19 +904,19 @@ void URDF::loadVisual(const TiXmlNode *node, const std::string &defaultName, Lin
     if (node->Type() == TiXmlNode::ELEMENT)
     {
       if (node->ValueStr() == "rpy")
-	loadDoubleValues(node, 3, visual->rpy);
+        loadDoubleValues(node, 3, visual->rpy);
       else if (node->ValueStr() == "xyz")
-	loadDoubleValues(node, 3, visual->xyz);
+        loadDoubleValues(node, 3, visual->xyz);
       else if (node->ValueStr() == "scale")
-	loadDoubleValues(node, 3, visual->scale);
+        loadDoubleValues(node, 3, visual->scale);
       else if (node->ValueStr() == "material" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
-	visual->material = node->FirstChild()->ValueStr();
+        visual->material = node->FirstChild()->ValueStr();
       else if (node->ValueStr() == "data")
-	loadData(node, &visual->data);
+        loadData(node, &visual->data);
       else if (node->ValueStr() == "geometry")
-	loadGeometry(node, name + "_geom", visual->geometry);
+        loadGeometry(node, name + "_geom", visual->geometry);
       else
-	ignoreNode(node);
+        ignoreNode(node);
     }
     else
       ignoreNode(node);
@@ -951,15 +951,15 @@ void URDF::loadInertial(const TiXmlNode *node, const std::string &defaultName, L
     if (node->Type() == TiXmlNode::ELEMENT)
     {
       if (node->ValueStr() == "mass")
-	loadDoubleValues(node, 1, &inertial->mass);
+        loadDoubleValues(node, 1, &inertial->mass);
       else if (node->ValueStr() == "com")
-	loadDoubleValues(node, 3, inertial->com);
+        loadDoubleValues(node, 3, inertial->com);
       else if (node->ValueStr() == "inertia")
-	loadDoubleValues(node, 6, inertial->inertia);
+        loadDoubleValues(node, 6, inertial->inertia);
       else if (node->ValueStr() == "data")
-	loadData(node, &inertial->data);
+        loadData(node, &inertial->data);
       else
-	ignoreNode(node);
+        ignoreNode(node);
     }
     else
       ignoreNode(node);
@@ -985,23 +985,23 @@ void URDF::loadLink(const TiXmlNode *node)
     if (node->Type() == TiXmlNode::ELEMENT)
     {
       if (node->ValueStr() == "parent" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
-	link->parentName = node->FirstChild()->ValueStr();
+        link->parentName = node->FirstChild()->ValueStr();
       else if (node->ValueStr() == "rpy")
-	loadDoubleValues(node, 3, link->rpy);
+        loadDoubleValues(node, 3, link->rpy);
       else if (node->ValueStr() == "xyz")
-	loadDoubleValues(node, 3, link->xyz);
+        loadDoubleValues(node, 3, link->xyz);
       else if (node->ValueStr() == "joint")
-	loadJoint(node, name + "_joint", link->joint);
+        loadJoint(node, name + "_joint", link->joint);
       else if (node->ValueStr() == "collision")
-	loadCollision(node, name + "_collision", link->collision);
+        loadCollision(node, name + "_collision", link->collision);
       else if (node->ValueStr() == "inertial")
-	loadInertial(node, name + "_inertial", link->inertial);
+        loadInertial(node, name + "_inertial", link->inertial);
       else if (node->ValueStr() == "visual")
-	loadVisual(node, name + "_visual", link->visual);
+        loadVisual(node, name + "_visual", link->visual);
       else if (node->ValueStr() == "data")
-	loadData(node, &link->data);
+        loadData(node, &link->data);
       else
-	ignoreNode(node);
+        ignoreNode(node);
     }
     else
       ignoreNode(node);
@@ -1036,13 +1036,13 @@ void URDF::loadSensor(const TiXmlNode *node)
     if (strcmp(attr->Name(), "type") == 0)
     {
       if (attr->ValueStr() == "camera")
-	sensor->type = Sensor::CAMERA;
+        sensor->type = Sensor::CAMERA;
       else if (attr->ValueStr() == "laser")
-	sensor->type = Sensor::LASER;
+        sensor->type = Sensor::LASER;
       else if (attr->ValueStr() == "stereocamera")
-	sensor->type = Sensor::STEREO_CAMERA;
+        sensor->type = Sensor::STEREO_CAMERA;
       else
-	fprintf(stderr, "Unknown sensor type: '%s'\n", attr->Value());
+        fprintf(stderr, "Unknown sensor type: '%s'\n", attr->Value());
     }
   }
 
@@ -1052,25 +1052,25 @@ void URDF::loadSensor(const TiXmlNode *node)
     if (node->Type() == TiXmlNode::ELEMENT)
     {
       if (node->ValueStr() == "parent" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
-	sensor->parentName = node->FirstChild()->ValueStr();
+        sensor->parentName = node->FirstChild()->ValueStr();
       else if (node->ValueStr() == "rpy")
-	loadDoubleValues(node, 3, sensor->rpy);
+        loadDoubleValues(node, 3, sensor->rpy);
       else if (node->ValueStr() == "xyz")
-	loadDoubleValues(node, 3, sensor->xyz);
+        loadDoubleValues(node, 3, sensor->xyz);
       else if (node->ValueStr() == "joint")
-	loadJoint(node, name + "_joint", sensor->joint);
+        loadJoint(node, name + "_joint", sensor->joint);
       else if (node->ValueStr() == "collision")
-	loadCollision(node, name + "_collision", sensor->collision);
+        loadCollision(node, name + "_collision", sensor->collision);
       else if (node->ValueStr() == "inertial")
-	loadInertial(node, name + "_inertial", sensor->inertial);
+        loadInertial(node, name + "_inertial", sensor->inertial);
       else if (node->ValueStr() == "visual")
-	loadVisual(node, name + "_visual", sensor->visual);
+        loadVisual(node, name + "_visual", sensor->visual);
       else if (node->ValueStr() == "data")
-	loadData(node, &sensor->data);
+        loadData(node, &sensor->data);
       else if (node->ValueStr() == "calibration" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
-	sensor->calibration =  node->FirstChild()->ValueStr();
+        sensor->calibration =  node->FirstChild()->ValueStr();
       else
-	ignoreNode(node); 
+        ignoreNode(node); 
     }
     else
       ignoreNode(node);
@@ -1088,7 +1088,7 @@ void URDF::loadData(const TiXmlNode *node, Data *data)
       name = attr->ValueStr();
     else
       if (strcmp(attr->Name(), "type") == 0)
-	type = attr->ValueStr();
+        type = attr->ValueStr();
   }
     
   for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
@@ -1101,8 +1101,8 @@ void URDF::loadData(const TiXmlNode *node, Data *data)
       std::string key;
       for (const TiXmlAttribute *attr = child->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
       {
-	if (strcmp(attr->Name(), "key") == 0)
-	  key = attr->ValueStr();
+        if (strcmp(attr->Name(), "key") == 0)
+          key = attr->ValueStr();
       }
       data->add(type, name, key, child->ToElement());
     }
@@ -1119,110 +1119,110 @@ bool URDF::parse(const TiXmlNode *node)
   {
   case TiXmlNode::DOCUMENT:
     parse(dynamic_cast<const TiXmlNode*>(dynamic_cast<const TiXmlDocument*>(node)->RootElement()));
-	
+        
     {
       for (unsigned int i = 0 ; i < m_stage2.size() ; ++i)
       {
-	const TiXmlElement *elem = m_stage2[i]->ToElement(); 
-	if (!elem)
-	  fprintf(stderr, "Non-element node found in second stage of parsing\n");
-	else
-	{
-	  std::string name = elem->ValueStr();
-		    
-	  if (name == "link")
-	    loadLink(m_stage2[i]);
-	  else if (name == "sensor")
-	    loadSensor(m_stage2[i]);
-	  else if (name == "actuator")
-	    loadActuator(m_stage2[i]);
-	  else if (name == "transmission")
-	    loadTransmission(m_stage2[i]);
-	  else if (name == "joint")
-	    loadJoint(m_stage2[i], "", NULL);
-	  else if (name == "geometry")
-	    loadGeometry(m_stage2[i], "", NULL);
-	  else if (name == "collision")
-	    loadCollision(m_stage2[i], "", NULL);
-	  else if (name == "visual")
-	    loadVisual(m_stage2[i], "", NULL);
-	  else if (name == "inertial")
-	    loadInertial(m_stage2[i], "", NULL);
-	  else
-	    ignoreNode(m_stage2[i]);
-	}
+        const TiXmlElement *elem = m_stage2[i]->ToElement(); 
+        if (!elem)
+          fprintf(stderr, "Non-element node found in second stage of parsing\n");
+        else
+        {
+          std::string name = elem->ValueStr();
+                    
+          if (name == "link")
+            loadLink(m_stage2[i]);
+          else if (name == "sensor")
+            loadSensor(m_stage2[i]);
+          else if (name == "actuator")
+            loadActuator(m_stage2[i]);
+          else if (name == "transmission")
+            loadTransmission(m_stage2[i]);
+          else if (name == "joint")
+            loadJoint(m_stage2[i], "", NULL);
+          else if (name == "geometry")
+            loadGeometry(m_stage2[i], "", NULL);
+          else if (name == "collision")
+            loadCollision(m_stage2[i], "", NULL);
+          else if (name == "visual")
+            loadVisual(m_stage2[i], "", NULL);
+          else if (name == "inertial")
+            loadInertial(m_stage2[i], "", NULL);
+          else
+            ignoreNode(m_stage2[i]);
+        }
       }
 
       /* compute the proper pointers for parent nodes and children */
       for (std::map<std::string, Link*>::iterator i = m_links.begin() ; i != m_links.end() ; i++)
       {
-	if (i->second->parentName.empty() || i->second->parentName == "world")
-	{
-	  m_linkRoots.push_back(i->second);
-	  continue;
-	}
-	if (i->second->joint->type == Link::Joint::FLOATING)
-	  fprintf(stderr, "Link '%s' uses a floating joint but its parent is not the environment!\n", i->second->name.c_str());
-	if (m_links.find(i->second->parentName) == m_links.end())
-	  fprintf(stderr, "Parent of link '%s' is undefined: '%s'\n", i->second->name.c_str(),
-		  i->second->parentName.c_str());
-	else
-	{
-	  Link *parent =  m_links[i->second->parentName];
-	  i->second->parent = parent;
-	  parent->children.push_back(i->second);
-	}
+        if (i->second->parentName.empty() || i->second->parentName == "world")
+        {
+          m_linkRoots.push_back(i->second);
+          continue;
+        }
+        if (i->second->joint->type == Link::Joint::FLOATING)
+          fprintf(stderr, "Link '%s' uses a floating joint but its parent is not the environment!\n", i->second->name.c_str());
+        if (m_links.find(i->second->parentName) == m_links.end())
+          fprintf(stderr, "Parent of link '%s' is undefined: '%s'\n", i->second->name.c_str(),
+                  i->second->parentName.c_str());
+        else
+        {
+          Link *parent =  m_links[i->second->parentName];
+          i->second->parent = parent;
+          parent->children.push_back(i->second);
+        }
       }
-	    
+            
       /* for each group, compute the pointers to the links they contain, and for every link,
        * compute the list of pointers to the groups they are part of */
       for (std::map<std::string, Group*>::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
-	for (unsigned int j = 0 ; j < i->second->linkNames.size() ; ++j)
-	  if (m_links.find(i->second->linkNames[j]) == m_links.end())
-	    fprintf(stderr, "Group '%s': link '%s' is undefined\n", i->first.c_str(), i->second->linkNames[j].c_str());
-	  else
-	  {
-	    Link* l = m_links[i->second->linkNames[j]];
-	    l->groups.push_back(i->second);
-	    i->second->links.push_back(l);
-	  }
-	    
+        for (unsigned int j = 0 ; j < i->second->linkNames.size() ; ++j)
+          if (m_links.find(i->second->linkNames[j]) == m_links.end())
+            fprintf(stderr, "Group '%s': link '%s' is undefined\n", i->first.c_str(), i->second->linkNames[j].c_str());
+          else
+          {
+            Link* l = m_links[i->second->linkNames[j]];
+            l->groups.push_back(i->second);
+            i->second->links.push_back(l);
+          }
+            
       /* for every group, find the set of links that are roots in this group (their parent is not in the group) */
       for (std::map<std::string, Group*>::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
-	for (unsigned int j = 0 ; j < i->second->links.size() ; ++j)
-	{
-	  Link *parent = i->second->links[j]->parent;
-	  bool outside = true;
-	  if (parent)
-	    for (unsigned int k = 0 ; k < parent->groups.size() ; ++k)
-	      if (parent->groups[k] == i->second)
-	      {
-		outside = false;
-		break;
-	      }
-	  if (outside)
-	    i->second->linkRoots.push_back(i->second->links[j]);
-	}
+        for (unsigned int j = 0 ; j < i->second->links.size() ; ++j)
+        {
+          Link *parent = i->second->links[j]->parent;
+          bool outside = true;
+          if (parent)
+            for (unsigned int k = 0 ; k < parent->groups.size() ; ++k)
+              if (parent->groups[k] == i->second)
+              {
+                outside = false;
+                break;
+              }
+          if (outside)
+            i->second->linkRoots.push_back(i->second->links[j]);
+        }
 
       /* construct inGroup for every link */
       std::vector<std::string> grps;
       getGroupNames(grps);
       std::map<std::string, unsigned int> grpmap;
       for (unsigned int i = 0 ; i < grps.size() ; ++i)
-	grpmap[grps[i]] = i;
+        grpmap[grps[i]] = i;
 
       for (std::map<std::string, Link*>::iterator i = m_links.begin() ; i != m_links.end() ; i++)
       {
-	i->second->inGroup.resize(grps.size(), false);
-	for (unsigned int j = 0 ; j < i->second->groups.size() ; ++j)
-	  i->second->inGroup[grpmap[i->second->groups[j]->name]] = true;
+        i->second->inGroup.resize(grps.size(), false);
+        for (unsigned int j = 0 ; j < i->second->groups.size() ; ++j)
+          i->second->inGroup[grpmap[i->second->groups[j]->name]] = true;
       }
     }
-	
+        
     m_constants.clear();
     m_templates.clear();
     m_stage2.clear();
-	
+        
     break;
   case TiXmlNode::ELEMENT:
     if (node->ValueStr() == "robot")
@@ -1230,99 +1230,99 @@ bool URDF::parse(const TiXmlNode *node)
       const char *name = node->ToElement()->Attribute("name");
       if (name)
       {
-	std::string nameStr = name;
-	if (!m_name.empty() && nameStr != m_name)
-	  fprintf(stderr, "Loading a file with contradicting robot name: '%s' - '%s'\n", m_name.c_str(), name);
-	m_name = nameStr;
+        std::string nameStr = name;
+        if (!m_name.empty() && nameStr != m_name)
+          fprintf(stderr, "Loading a file with contradicting robot name: '%s' - '%s'\n", m_name.c_str(), name);
+        m_name = nameStr;
       }
       for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
-	parse(child);
+        parse(child);
     }
     else
       if (node->ValueStr() == "include")
       {
-	if (node->Type() == TiXmlNode::ELEMENT && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
-	{
-	  char* filename = findFile(node->FirstChild()->Value());
-	  if (filename)
-	  {
-	    TiXmlDocument *doc = new TiXmlDocument(filename);
-	    m_docs.push_back(doc);
-	    if (doc->LoadFile())
-	    {
-	      addPath(filename);
-	      parse(dynamic_cast<const TiXmlNode*>(doc->RootElement()));
-	    }
-	    else
-	      fprintf(stderr, "Unable to load %s\n", filename);
-	    free(filename);
-	  }
-	  else
-	    fprintf(stderr, "Unable to find %s\n", node->FirstChild()->Value());		    
-	}
-	else 
-	  ignoreNode(node);
+        if (node->Type() == TiXmlNode::ELEMENT && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+        {
+          char* filename = findFile(node->FirstChild()->Value());
+          if (filename)
+          {
+            TiXmlDocument *doc = new TiXmlDocument(filename);
+            m_docs.push_back(doc);
+            if (doc->LoadFile())
+            {
+              addPath(filename);
+              parse(dynamic_cast<const TiXmlNode*>(doc->RootElement()));
+            }
+            else
+              fprintf(stderr, "Unable to load %s\n", filename);
+            free(filename);
+          }
+          else
+            fprintf(stderr, "Unable to find %s\n", node->FirstChild()->Value());                    
+        }
+        else 
+          ignoreNode(node);
       }
       else if (node->ValueStr() == "constants")
-      {	
-	for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
-	  if (child->Type() == TiXmlNode::ELEMENT && child->FirstChild() && child->FirstChild()->Type() == TiXmlNode::TEXT)
-	    m_constants[child->ValueStr()] = child->FirstChild()->ValueStr();
-	  else
-	    ignoreNode(child);
+      {        
+        for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
+          if (child->Type() == TiXmlNode::ELEMENT && child->FirstChild() && child->FirstChild()->Type() == TiXmlNode::TEXT)
+            m_constants[child->ValueStr()] = child->FirstChild()->ValueStr();
+          else
+            ignoreNode(child);
       }
       else
-	if (node->ValueStr() == "templates")
-	{
-	  for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
-	    if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "define")
-	    {
-	      const char *name = child->ToElement()->Attribute("template");
-	      if (name)
-		m_templates[name] = child;
-	      else
-		ignoreNode(child);
-	    }
-	    else
-	      ignoreNode(child);
-	}
-	else if (node->ValueStr() == "group" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
-	{
-	  std::string group;
-	  std::string flags;
-			    
-	  for (const TiXmlAttribute *attr = node->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
-	  {
-	    if (strcmp(attr->Name(), "name") == 0)
-	      group = attr->ValueStr();
-	    else
-	      if (strcmp(attr->Name(), "flags") == 0)
-		flags = attr->ValueStr();
-	  }
-	  Group *g = NULL;
-	  if (m_groups.find(group) == m_groups.end())
-	  {
-	    g = new Group();
-	    g->name = group;
-	    m_groups[group] = g;
-	  }
-	  else
-	    g = m_groups[group];
-	  if (g->flags.empty())
-	    g->flags = flags;
-	  else
-	    g->flags += " " + flags;
-	  std::stringstream ss(node->FirstChild()->ValueStr());
-	  while (ss.good())
-	  {
-	    std::string value; ss >> value;
-	    g->linkNames.push_back(value);
-	  }
-	}
-	else if (node->ValueStr() == "data")
-	  loadData(node, &m_data);
-	else
-	  m_stage2.push_back(node);
+        if (node->ValueStr() == "templates")
+        {
+          for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
+            if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "define")
+            {
+              const char *name = child->ToElement()->Attribute("template");
+              if (name)
+                m_templates[name] = child;
+              else
+                ignoreNode(child);
+            }
+            else
+              ignoreNode(child);
+        }
+        else if (node->ValueStr() == "group" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+        {
+          std::string group;
+          std::string flags;
+                            
+          for (const TiXmlAttribute *attr = node->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
+          {
+            if (strcmp(attr->Name(), "name") == 0)
+              group = attr->ValueStr();
+            else
+              if (strcmp(attr->Name(), "flags") == 0)
+                flags = attr->ValueStr();
+          }
+          Group *g = NULL;
+          if (m_groups.find(group) == m_groups.end())
+          {
+            g = new Group();
+            g->name = group;
+            m_groups[group] = g;
+          }
+          else
+            g = m_groups[group];
+          if (g->flags.empty())
+            g->flags = flags;
+          else
+            g->flags += " " + flags;
+          std::stringstream ss(node->FirstChild()->ValueStr());
+          while (ss.good())
+          {
+            std::string value; ss >> value;
+            g->linkNames.push_back(value);
+          }
+        }
+        else if (node->ValueStr() == "data")
+          loadData(node, &m_data);
+        else
+          m_stage2.push_back(node);
     break;
   default:
     ignoreNode(node);

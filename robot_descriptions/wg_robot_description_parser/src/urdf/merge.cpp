@@ -42,30 +42,30 @@ class Merge
 public:
     Merge(void)
     {
-	m_doc = new TiXmlDocument();
-	m_paths.push_back("");
+        m_doc = new TiXmlDocument();
+        m_paths.push_back("");
     }
     
     ~Merge(void)
     {  
-	delete m_doc;
+        delete m_doc;
     }
 
     bool Execute(const char *filename)
     {
-	if (!m_doc->LoadFile(filename))
-	{
-	    fprintf(stderr, "%s\n", m_doc->ErrorDesc());
-	    return false;
-	}
-	addPath(filename);
-	fixIncludes(m_doc->RootElement());
-	return true;	
+        if (!m_doc->LoadFile(filename))
+        {
+            fprintf(stderr, "%s\n", m_doc->ErrorDesc());
+            return false;
+        }
+        addPath(filename);
+        fixIncludes(m_doc->RootElement());
+        return true;        
     }
     
     TiXmlDocument* getDocument(void) const
     {
-	return m_doc;
+        return m_doc;
     }
     
 private:
@@ -75,61 +75,61 @@ private:
     
     void addPath(const char *filename)
     {
-	if (!filename)
-	    return;
-	
-	std::string name = filename;
-	std::string::size_type pos = name.find_last_of("/\\");
-	if (pos != std::string::npos)
-	{
-	    char sep = name[pos];
-	    name.erase(pos);
-	    m_paths.push_back(name + sep);
-	}	
+        if (!filename)
+            return;
+        
+        std::string name = filename;
+        std::string::size_type pos = name.find_last_of("/\\");
+        if (pos != std::string::npos)
+        {
+            char sep = name[pos];
+            name.erase(pos);
+            m_paths.push_back(name + sep);
+        }        
     }
 
     char* findFile(const char *filename)
     {
-	for (unsigned int i = 0 ; i < m_paths.size() ; ++i)
-	{
-	    std::string name = m_paths[i] + filename;
-	    std::fstream fin;
-	    fin.open(name.c_str(), std::ios::in);
-	    bool good = fin.is_open();
-	    fin.close();
-	    if (good)
-		return strdup(name.c_str());	
-	}
-	return NULL;
+        for (unsigned int i = 0 ; i < m_paths.size() ; ++i)
+        {
+            std::string name = m_paths[i] + filename;
+            std::fstream fin;
+            fin.open(name.c_str(), std::ios::in);
+            bool good = fin.is_open();
+            fin.close();
+            if (good)
+                return strdup(name.c_str());        
+        }
+        return NULL;
     }
 
     void fixIncludes(TiXmlElement *elem)
     {
-	if (elem->ValueStr() == "include" && elem->FirstChild() && elem->FirstChild()->Type() == TiXmlNode::TEXT)
-	{
-	    char* filename = findFile(elem->FirstChild()->Value());
-	    if (filename)
-	    {
-		TiXmlDocument *doc = new TiXmlDocument(filename);
-		if (doc->LoadFile())
-		{
-		    addPath(filename);
-		    TiXmlNode *parent = elem->Parent();
-		    if (parent)
-			parent->ReplaceChild(dynamic_cast<TiXmlNode*>(elem), *doc->RootElement()->Clone());
-		}
-		else
-		    fprintf(stderr, "Unable to load %s\n", filename);
-		delete doc;
-		free(filename);
-	    }
-	    else
-		fprintf(stderr, "Unable to find %s\n", elem->FirstChild()->Value());	
-	}
-	
-	for (TiXmlNode *child = elem->FirstChild() ; child ; child = child->NextSibling())
-	    if (child->Type() == TiXmlNode::ELEMENT)
-		fixIncludes(child->ToElement());
+        if (elem->ValueStr() == "include" && elem->FirstChild() && elem->FirstChild()->Type() == TiXmlNode::TEXT)
+        {
+            char* filename = findFile(elem->FirstChild()->Value());
+            if (filename)
+            {
+                TiXmlDocument *doc = new TiXmlDocument(filename);
+                if (doc->LoadFile())
+                {
+                    addPath(filename);
+                    TiXmlNode *parent = elem->Parent();
+                    if (parent)
+                        parent->ReplaceChild(dynamic_cast<TiXmlNode*>(elem), *doc->RootElement()->Clone());
+                }
+                else
+                    fprintf(stderr, "Unable to load %s\n", filename);
+                delete doc;
+                free(filename);
+            }
+            else
+                fprintf(stderr, "Unable to find %s\n", elem->FirstChild()->Value());        
+        }
+        
+        for (TiXmlNode *child = elem->FirstChild() ; child ; child = child->NextSibling())
+            if (child->Type() == TiXmlNode::ELEMENT)
+                fixIncludes(child->ToElement());
     }
 };
 
@@ -142,8 +142,8 @@ int main(int argc, char** argv)
 {
     if (argc != 2)
     {
-	usage(argv[0]);
-	exit(1);	
+        usage(argv[0]);
+        exit(1);        
     }
     
     Merge m;
