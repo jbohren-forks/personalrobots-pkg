@@ -1,0 +1,14 @@
+<package>
+<description brief='Behavior for performing an overhead grasp'>
+</description>
+<author>Advait Jain</author>
+<license>BSD</license>
+<url>http://pr.willowgarage.com</url>
+<depend package="roscpp"/>
+<depend package="std_msgs"/>
+<depend package="pr2Core"/>
+<depend package="libpr2API"/>
+<depend package="libKDL"/>
+<depend package="pr2_gazebo"/>
+<depend package="interpolated_kinematic_controller"/>
+</package>
