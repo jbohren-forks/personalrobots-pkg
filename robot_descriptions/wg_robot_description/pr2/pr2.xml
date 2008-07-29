@@ -65,8 +65,8 @@
   <templates>
     <define template="pr2_caster_visual">
       <scale>0.001 0.001 0.001</scale>
-      <xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
-      <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <xyz>-1 0 -0.08</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>M_PI/2 0.0 M_PI/2 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <geometry type="mesh" name="pr2_caster_mesh_file">
         <size>0.1 0.08 0.1</size> 
@@ -75,11 +75,10 @@
     </define> 
 
     <define template="pr2_caster_collision">
-      <xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <xyz>-1 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <material>Gazebo/Grey</material>
       <geometry type="box"><!-- geometry specified using a simple geometric object -->
-        <size>0.1 0.08 0.1</size> 
+        <size>0.2 0.18 0.22</size> 
       </geometry>
     </define> 
 
@@ -97,9 +96,17 @@
     </define>
 
     <define template="pr2_wheel_visual">
-      <xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <xyz>-1 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>M_PI/2 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <material>Gazebo/Grey</material>
+      <material>Gazebo/Black</material>
+      <geometry type="cylinder"><!-- geometry specified using a simple geometric object -->
+        <size>wheel_radius*2 wheel_radius*2 wheel_length</size> 
+      </geometry>
+    </define> 
+
+    <define template="pr2_wheel_collision">
+      <xyz>-1 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>M_PI/2 0.0 M_PI/2 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <geometry type="cylinder"><!-- geometry specified using a simple geometric object -->
         <size>wheel_radius wheel_length</size> 
       </geometry>
@@ -364,36 +371,36 @@
     <parent> caster_front_left</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-      <xyz> 0 0.049 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 0.049 -0.08 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-      <joint clone="pr2_wheel_joint"/>
-      <inertial clone="pr2_wheel_inertial"/>
-      <visual clone="pr2_wheel_visual"/>
-    <collision clone="pr2_wheel_visual"/>
+    <joint clone="pr2_wheel_joint"/>
+    <inertial clone="pr2_wheel_inertial"/>
+    <visual clone="pr2_wheel_visual"/>
+    <collision clone="pr2_wheel_collision"/>
   </link>
 
   <link name="wheel_front_left_r">
     <parent> caster_front_left</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 -0.049 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 -0.049 -0.08 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
     <visual clone="pr2_wheel_visual"/>
-    <collision clone="pr2_wheel_visual"/>
+    <collision clone="pr2_wheel_collision"/>
   </link>
 
   <link name="wheel_front_right_l">
     <parent> caster_front_right</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 0.049 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 0.049 -0.08 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
     <visual clone="pr2_wheel_visual"/>
-    <collision clone="pr2_wheel_visual"/>
+    <collision clone="pr2_wheel_collision"/>
   </link>
 
 
@@ -401,60 +408,60 @@
     <parent> caster_front_right</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 -0.049 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 -0.049 -0.08 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
     <visual clone="pr2_wheel_visual"/>
-    <collision clone="pr2_wheel_visual"/>
+    <collision clone="pr2_wheel_collision"/>
   </link>
 
   <link name="wheel_rear_left_l">
     <parent> caster_rear_left</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 0.049 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 0.049 -0.08 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
     <visual clone="pr2_wheel_visual"/>
-    <collision clone="pr2_wheel_visual"/>
+    <collision clone="pr2_wheel_collision"/>
   </link>
 
   <link name="wheel_rear_left_r">
     <parent> caster_rear_left</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 -0.049 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 -0.049 -0.08 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
     <visual clone="pr2_wheel_visual"/>
-    <collision clone="pr2_wheel_visual"/>
+    <collision clone="pr2_wheel_collision"/>
   </link>
 
   <link name="wheel_rear_right_l">
     <parent> caster_rear_right</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 0.049 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 0.049 -0.08 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
     <visual clone="pr2_wheel_visual"/>
-    <collision clone="pr2_wheel_visual"/>
+    <collision clone="pr2_wheel_collision"/>
   </link>
 
   <link name="wheel_rear_right_r">
     <parent> caster_rear_right</parent>
 
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <xyz> 0 -0.049 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <xyz> 0 -0.049 -0.08 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
     <joint clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
     <visual clone="pr2_wheel_visual"/>
-    <collision clone="pr2_wheel_visual"/>
+    <collision clone="pr2_wheel_collision"/>
   </link>
 
 <!-- End base definition -->

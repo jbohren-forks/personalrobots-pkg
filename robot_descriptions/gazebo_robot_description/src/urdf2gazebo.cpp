@@ -59,24 +59,24 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
   libTF::Pose3D currentTransform = transform;
   
   std::string type;
-  unsigned int nsize = 0;
+  unsigned int linkGeomSize = 0;
 
   switch (link->collision->geometry->type)
   {
     case robot_desc::URDF::Link::Geometry::BOX:
-      nsize = 3;
+      linkGeomSize = 3;
       type = "box";
       break;
     case robot_desc::URDF::Link::Geometry::CYLINDER:
-      nsize = 2;
+      linkGeomSize = 2;
       type = "cylinder";
       break;
     case robot_desc::URDF::Link::Geometry::SPHERE:
-      nsize = 1;
+      linkGeomSize = 1;
       type = "sphere";
       break;
     default:
-      nsize = 0;
+      linkGeomSize = 0;
       printf("Unknown body type: %d in link '%s'\n", link->collision->geometry->type, link->name.c_str());
       break;
   }
@@ -125,7 +125,7 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
           addKeyValue(geom, tagList3[j], link->collision->data.getDefaultValue(tagList3[j]));
         
       /* set geometry size */
-      addKeyValue(geom, "size", values2str(nsize, link->collision->geometry->size));
+      addKeyValue(geom, "size", values2str(linkGeomSize, link->collision->geometry->size));
       
       /* create visual node */
       TiXmlElement *visual = new TiXmlElement("visual");
@@ -148,7 +148,9 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
         for (int k=0; k<3; k++) /* hack, for visual this is always 3 with new gazebo definitions */
         {
           tmpSize = tmpSize + fabs((link->visual->geometry->size)[k]);
+          std::cout << "visual size " << k << " " << (link->visual->geometry->size)[k];
         }
+        std::cout << std::endl;
         if (tmpSize > 0.0)
           /* set geometry size */
           addKeyValue(visual, "size", values2str(3, link->visual->geometry->size));
