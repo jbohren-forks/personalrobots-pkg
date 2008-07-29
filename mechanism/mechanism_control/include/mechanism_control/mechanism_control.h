@@ -51,12 +51,8 @@ class MechanismControl {
   void registerControllerType(const std::string& type, ControllerAllocator f);
   bool spawnController(const char* type, TiXmlElement* config);
 
-  Actuator* getActuator(const std::string& name);
-
  private:
   bool initialized_;
-  typedef std::map<std::string,int> ActuatorMap;
-  ActuatorMap actuators_;
   mechanism::Robot model_;
   HardwareInterface *hw_;
 

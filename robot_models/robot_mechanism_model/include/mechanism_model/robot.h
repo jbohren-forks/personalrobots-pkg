@@ -32,38 +32,62 @@
 #define ROBOT_H
 
 #include <vector>
+#include <map>
+#include <string>
 #include "mechanism_model/link.h"
 #include "mechanism_model/joint.h"
 #include "mechanism_model/transmission.h"
 #include "hw_interface/hardware_interface.h"
 
 namespace mechanism {
-  class Robot{
-  public:
-    Robot(char *ns){}
-    ~Robot()
-    {
-      std::vector<Transmission *>::size_type t;
-      for (t = 0; t < transmissions_.size(); ++t)
-        delete transmissions_[t];
-      std::vector<Joint *>::size_type j;
-      for (j = 0; j < joints_.size(); ++j)
-        delete joints_[j];
-    }
 
-    char *name;
-    Link *link;
-    int numLinks;
-    Joint *joint;  // TODO: delete
-    int numJoints;
-    int numTransmissions;
-    SimpleTransmission *transmission;  // TODO: delete
+class Robot{
+public:
+  Robot(char *ns){}
+  ~Robot()
+  {
+    std::vector<Transmission *>::size_type t;
+    for (t = 0; t < transmissions_.size(); ++t)
+      delete transmissions_[t];
+    std::vector<Joint *>::size_type j;
+    for (j = 0; j < joints_.size(); ++j)
+      delete joints_[j];
+  }
 
-    std::vector<Joint*> joints_;
-    std::vector<Transmission*> transmissions_;
+  char *name;
+  Link *link;
+  int numLinks;
+  Joint *joint;  // TODO: delete
+  int numJoints;
+  int numTransmissions;
+  SimpleTransmission *transmission;  // TODO: delete
 
-    HardwareInterface *hw_;
-  };
+  std::vector<Joint*> joints_;
+  std::vector<Transmission*> transmissions_;
+
+  // Supports looking up joints and actuators by name.  The IndexMap
+  // structure maps the name of the item to its index in the vectors.
+  typedef std::map<std::string,int> IndexMap;
+  IndexMap joints_lookup_;
+  IndexMap actuators_lookup_;
+  Joint* getJoint(const std::string &name)
+  {
+    IndexMap::iterator it = joints_lookup_.find(name);
+    if (it == joints_lookup_.end())
+      return NULL;
+    return joints_[it->second];
+  }
+  Actuator* getActuator(const std::string &name)
+  {
+    IndexMap::iterator it = actuators_lookup_.find(name);
+    if (it == actuators_lookup_.end())
+      return NULL;
+    return &hw_->actuator[it->second];
+  }
+
+  HardwareInterface *hw_;
+};
+
 }
 
 #endif

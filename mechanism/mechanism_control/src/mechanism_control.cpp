@@ -40,22 +40,20 @@ MechanismControl::MechanismControl(HardwareInterface *hw)
 MechanismControl::~MechanismControl() {
 }
 
-bool MechanismControl::registerActuator(const std::string &name, int index) {
+bool MechanismControl::registerActuator(const std::string &name, int index)
+{
   if (initialized_)
     return false;
 
-  actuators_.insert(ActuatorMap::value_type(name, index));
+  model_.actuators_lookup_.insert(Robot::IndexMap::value_type(name, index));
 
   return true;
 }
 
-bool MechanismControl::init(TiXmlElement* config) {
-
+bool MechanismControl::init(TiXmlElement* config)
+{
   bool successful = true;
 
-  // Creates:
-  // - joints
-  // - transmissions
   TiXmlElement *elt;
 
   // Constructs the joints
@@ -64,7 +62,8 @@ bool MechanismControl::init(TiXmlElement* config) {
   {
     Joint *j = new Joint;
     model_.joints_.push_back(j);
-    joint_map[elt->Attribute("name")] = j;
+    model_.joints_lookup_.insert(
+      Robot::IndexMap::value_type(elt->Attribute("name"), model_.joints_.size() - 1));
     j->jointLimitMin = atof(elt->FirstChildElement("limitMin")->GetText());
     j->jointLimitMax = atof(elt->FirstChildElement("limitMax")->GetText());
     j->effortLimit = atof(elt->FirstChildElement("effortLimit")->GetText());
@@ -78,23 +77,23 @@ bool MechanismControl::init(TiXmlElement* config) {
     if (0 == strcmp("SimpleTransmission", elt->Attribute("type")))
     {
       // Looks up the joint and the actuator used by the transmission.
-      std::map<std::string,Joint*>::iterator joint_it =
-	joint_map.find(elt->FirstChildElement("joint")->Attribute("name"));
-      ActuatorMap::iterator actuator_it =
-	actuators_.find(elt->FirstChildElement("actuator")->Attribute("name"));
-      if (joint_it == joint_map.end())
+      Robot::IndexMap::iterator joint_it =
+	model_.joints_lookup_.find(elt->FirstChildElement("joint")->Attribute("name"));
+      Robot::IndexMap::iterator actuator_it =
+	model_.actuators_lookup_.find(elt->FirstChildElement("actuator")->Attribute("name"));
+      if (joint_it == model_.joints_lookup_.end())
       {
 	// TODO: report: The joint was not declared in the XML file
 	continue;
       }
-      if (actuator_it == actuators_.end())
+      if (actuator_it == model_.actuators_lookup_.end())
       {
 	// TODO: report: The actuator was not registered with mechanism control.
 	continue;
       }
 
       Transmission *tr = new SimpleTransmission
-	(joint_it->second, &hw_->actuator[actuator_it->second],
+	(model_.joints_[joint_it->second], &hw_->actuator[actuator_it->second],
 	 atof(elt->FirstChildElement("mechanicalReduction")->Value()),
 	 atof(elt->FirstChildElement("motorTorqueConstant")->Value()),
 	 atof(elt->FirstChildElement("pulsesPerRevolution")->Value()));
