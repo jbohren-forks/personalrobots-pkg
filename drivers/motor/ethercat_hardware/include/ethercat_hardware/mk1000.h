@@ -48,8 +48,12 @@ public:
   void convertCommand(ActuatorCommand &command, unsigned char *buffer)
   {
   }
-  void convertState(ActuatorState &state, unsigned char *buffer)
+  void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer)
   {
+  }
+  bool hasActuator(void)
+  {
+    return false;
   }
 private:
   static const EC_UDINT MK1000_PRODUCT_CODE = 0x000003E8;

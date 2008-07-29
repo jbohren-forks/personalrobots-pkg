@@ -106,7 +106,7 @@ void MK1001::convertCommand(ActuatorCommand &command, unsigned char *buffer)
   memcpy(buffer + sizeof(MK1001Status), &c, sizeof(c));
 }
 
-void MK1001::convertState(ActuatorState &state, unsigned char *buffer)
+void MK1001::convertState(ActuatorState &state, unsigned char *buffer, unsigned char *not_used)
 {
   MK1001Status s;
   MK1001Command c;

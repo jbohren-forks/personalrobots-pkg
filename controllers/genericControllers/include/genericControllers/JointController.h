@@ -36,7 +36,7 @@
 /***************************************************/
 /*! \class controller::JointController
   \brief A Joint controller
-    
+
   This class implements controller loops for
   PR2 Joint Control
 
@@ -62,7 +62,7 @@
   4. Set appropriate command (position, torque, velocity)
   5. Call Update from Real Time loop
 
-    
+
 */
 /***************************************************/
 #include <sys/types.h>
@@ -88,7 +88,7 @@ namespace controller
   class JointController : Controller
   {
 
-    static const double AccelerationThreshold = 0.1; //Distance threshold below which linear acceleration limit is active, if enabled 
+    static const double AccelerationThreshold = 0.1; //Distance threshold below which linear acceleration limit is active, if enabled
     public:
 
     /*!
@@ -96,10 +96,10 @@ namespace controller
      *
      */
     JointController();
-      
+
     /*!
      * \brief Destructor of the JointController class.
-     */       
+     */
     ~JointController( );
 
     static Controller* create(const std::string&) {
@@ -111,16 +111,16 @@ namespace controller
      * \param Joint* joint The joint we are interacting with
      * \param string name The namespace identification in ROS
      */
-    // controller::controllerErrorCode Init(Joint* joint, string name);    
+    // controller::controllerErrorCode Init(Joint* joint, string name);
     // JointController(Joint* joint, string name);
 
-    /*! 
+    /*!
      * \brief Functional way to initialize limits and gains.
      *
      */
     void init(pidControlParam pcp, controllerControlMode mode, double time, double maxEffort, double minEffort, mechanism::Joint *joint);
 
-    /*! 
+    /*!
      * \brief Functional way to initialize limits and gains.
      *
      */
@@ -132,10 +132,10 @@ namespace controller
      * \param string name The namespace identification in ROS
      */
     // controller::controllerErrorCode Init(mechanism::Joint* joint, string name);
-    
+
     // JointController(Joint* joint, string name);
 
-    /*! 
+    /*!
      * \brief Functional way to initialize limits and gains.
      *
      */
@@ -143,19 +143,19 @@ namespace controller
 
     /*!
      * \brief TODO: Get the actual time
-     *  
      *
-     * \param double* time Pointer to value to change 
+     *
+     * \param double* time Pointer to value to change
      */
     void getTime(double* time);
-     
+
 //---------------------------------------------------------------------------------//
 //MODE/ENABLE CALLS
 //---------------------------------------------------------------------------------//
-    
+
     /*!
      * \brief Switches command mode type (Torque, position, velocity control)
-     *  
+     *
      */
     controllerControlMode setMode(controller::controllerControlMode mode);
 
@@ -176,9 +176,9 @@ namespace controller
     controller::controllerControlMode disableController();
 
     /*!
-     * \brief Return true if last command saturated the torque 
+     * \brief Return true if last command saturated the torque
      *
-     *  
+     *
      */
     bool checkForSaturation(void);
 
@@ -191,19 +191,19 @@ namespace controller
      * \param torque Torque command to issue
      */
     controller::controllerErrorCode setTorqueCmd(double torque);
-      
+
     /*!
-     * \brief Fetch the latest user issued torque command 
-     * 
-     * \param double* torque Pointer to value to change 
-     */ 
+     * \brief Fetch the latest user issued torque command
+     *
+     * \param double* torque Pointer to value to change
+     */
     controller::controllerErrorCode getTorqueCmd(double *torque);
-      
+
     /*!
      * \brief Get the actual torque of the joint motor.
-     * 
+     *
      * \param double* torque Pointer to value to change
-     */  
+     */
     controller::controllerErrorCode getTorqueAct(double *torque);
 
 //---------------------------------------------------------------------------------//
@@ -212,45 +212,45 @@ namespace controller
 
     /*!
      * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
-     * 
+     *
      * \param double pos Position command to issue
-     */       
+     */
     controller::controllerErrorCode setPosCmd(double pos);
-      
+
     /*!
      * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
      * \param double* pos Pointer to value to change
-     */       
+     */
     controller::controllerErrorCode getPosCmd(double *pos);
-      
+
     /*!
      * \brief Read the torque of the motor
      * \param double* pos Pointer to value to change
-     */       
-    controller::controllerErrorCode getPosAct(double *pos);    
+     */
+    controller::controllerErrorCode getPosAct(double *pos);
 
 //---------------------------------------------------------------------------------//
 //VELOCITY CALLS
 //---------------------------------------------------------------------------------//
-   
+
     /*!
      * \brief Set velocity command to the joint to be issue next update
      * \param double vel Velocity to issue next command
      */
     controller::controllerErrorCode setVelCmd(double vel);
-      
+
     /*!
      * \brief Get latest velocity command to the joint
      * \param double* vel Pointer to value to change
      */
     controller::controllerErrorCode getVelCmd(double *vel);
-      
+
     /*!
      * \brief Get actual velocity of the joint
      * \param double* vel Pointer to value to change
      */
     controller::controllerErrorCode getVelAct(double *vel);
- 
+
     /*!
      * \brief Compute max velocity coming into the end stop to stop with linear velocity in endstop.
      *
@@ -263,11 +263,13 @@ namespace controller
     /*!
      * \brief Issues commands to joint based on control mode
      *
-     * 
+     *
      */
 
     //Issues commands to the joint. Should be called at regular intervals
     virtual void update(void);
+
+    virtual void update(double current_time);
 
 //---------------------------------------------------------------------------------//
 //PARAM SERVER CALLS
@@ -280,7 +282,7 @@ namespace controller
      * constraints for this controller
      * \param string label Name of param to change
      * \param double value New value
-     *<br> 
+     *<br>
      *<UL TYPE="none">
      *<LI> e.g. SetParam('PGain',10);
      *<LI>   or SetParam('IGain',10);
@@ -298,7 +300,7 @@ namespace controller
      * user can get maximum velocity
      * and maximum acceleration
      * constraints for this controller
-     *<br> 
+     *<br>
      *<UL TYPE="none">
      *<UL TYPE="none">
      *<LI> e.g. GetParam('PGain',value);
@@ -310,9 +312,9 @@ namespace controller
      */
     controller::controllerErrorCode getParam(std::string label, double* value);
     //controller::controllerErrorCode GetParam(std::string label, std::string value);
-      
+
     /*!
-     * \brief Set the name of the controller 
+     * \brief Set the name of the controller
      *
      * \param name - std::string representation of the name of the controller
      */
@@ -341,12 +343,12 @@ namespace controller
 
     /*!
      * \brief Actually issue torque set command of the joint motor.
-     */       
+     */
     void setJointEffort(double torque);
-     
-    mechanism::Joint* joint; /*!< Joint we're controlling>*/  
 
-    Pid pidController; /*!< Internal PID controller>*/       
+    mechanism::Joint* joint; /*!< Joint we're controlling>*/
+
+    Pid pidController; /*!< Internal PID controller>*/
 
     double lastTime;/*!< Last time stamp of update> */
 
@@ -356,11 +358,11 @@ namespace controller
 
     double cmdVel;/*!< Last commanded Velocity> */
 
-    bool saturationFlag; /*!< Flag to indicate last command exceed torque limits and was truncated>*/  
+    bool saturationFlag; /*!< Flag to indicate last command exceed torque limits and was truncated>*/
 
     bool enabled; /*!<Can controller issue commands?>*/
 
-    controller::controllerControlMode controlMode;    /*!< Indicate current controller mode (torque, position, velocity)>*/  
+    controller::controllerControlMode controlMode;    /*!< Indicate current controller mode (torque, position, velocity)>*/
 
     double pGain; /*!< Proportional gain>*/
 
@@ -382,7 +384,7 @@ namespace controller
 
     void loadParam(std::string label, int &value);
 
-    std::string name; /*!< Namespace ID for this controller>*/  
+    std::string name; /*!< Namespace ID for this controller>*/
 
   };
 }

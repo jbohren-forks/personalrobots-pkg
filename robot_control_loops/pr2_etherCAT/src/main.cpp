@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <mechanism_control/base_control.h>
+#include <mechanism_control/single_control.h>
 #include <ethercat_hardware/ethercat_hardware.h>
 
 #include <stdio.h>
@@ -43,19 +43,27 @@
 static int quit = 0;
 static const int NSEC_PER_SEC = 1e+9;
 
+static void getTime(HardwareInterface *hw)
+{
+  struct timespec now;
+  clock_gettime(CLOCK_REALTIME, &now);
+  hw->current_time_ = double(now.tv_nsec) / NSEC_PER_SEC + now.tv_sec;
+}
+
 void *controlLoop(void *arg)
 {
   char *interface = (char *)arg;
 
   EthercatHardware ec;
   ec.init(interface, (char *)"foo.xml");
+  getTime(ec.hw);
 
-  MechanismControl mc;
+  SingleControl mc;
   mc.init(ec.hw);
 
   // Switch to hard real-time
-  int period = 1000000;
-  struct timespec tick, now;
+  int period = 1e+6; // 1 ms in nanoseconds
+  struct timespec tick;
 #if defined(__XENO__)
   pthread_set_mode_np(0, PTHREAD_PRIMARY|PTHREAD_WARNSW);
 #endif
@@ -64,8 +72,7 @@ void *controlLoop(void *arg)
   while (!quit)
   {
     ec.update();
-    clock_gettime(CLOCK_REALTIME, &now);
-    ec.hw->current_time_ = now.tv_nsec / NSEC_PER_SEC + now.tv_sec;
+    getTime(ec.hw);
     mc.update();
     tick.tv_nsec += period;
     while (tick.tv_nsec >= NSEC_PER_SEC)

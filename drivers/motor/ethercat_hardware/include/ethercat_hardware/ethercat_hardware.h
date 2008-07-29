@@ -76,10 +76,12 @@ private:
 
   MotorControlBoard *configSlave(EtherCAT_SlaveHandler *sh);
   MotorControlBoard **slaves;
-  unsigned int numSlaves;
+  unsigned int num_slaves_;
 
-  unsigned char *buffer;
-  unsigned int bufferSize;
+  unsigned char *current_buffer_;
+  unsigned char *last_buffer_;
+  unsigned char *buffers_;
+  unsigned int buffer_size_;
 };
 
 #endif /* ETHERCAT_HARDWARE_H */

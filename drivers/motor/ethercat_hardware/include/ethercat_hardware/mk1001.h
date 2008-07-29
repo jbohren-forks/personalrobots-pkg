@@ -82,7 +82,11 @@ public:
   }
   void configure(int &startAddress, EtherCAT_SlaveHandler *sh);
   void convertCommand(ActuatorCommand &command, unsigned char *buffer);
-  void convertState(ActuatorState &state, unsigned char *buffer);
+  void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
+  bool hasActuator(void)
+  {
+    return true;
+  }
 
 private:
   static const EC_UDINT MK1001_PRODUCT_CODE = 0x000003E9;

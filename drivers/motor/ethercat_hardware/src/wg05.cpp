@@ -101,28 +101,55 @@ void WG05::convertCommand(ActuatorCommand &command, unsigned char *buffer)
   memcpy(buffer + sizeof(WG05Status), &c, sizeof(c));
 }
 
-void WG05::convertState(ActuatorState &state, unsigned char *buffer)
+void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer)
 {
-  WG05Status s;
-  WG05Command c;
+  WG05Status current_status, last_status;
+  WG05Command current_command, last_command;
 
-  memcpy(&s, buffer, sizeof(s));
-  memcpy(&c, buffer + sizeof(s), sizeof(c));
-  state.encoderCount = s.encoderCount;
-  state.encoderVelocity = 0;//delta count / delta time (in seconds);
-  state.calibrationReading = s.calibrationReading;
-  state.lastCalibrationHighTransition = s.lastCalibrationHighTransition;
-  state.lastCalibrationLowTransition = s.lastCalibrationLowTransition;
-  state.isEnabled = s.mode != MODE_OFF;
-  state.runStopHit = (s.mode & MODE_UNDERVOLTAGE) != 0;
+  memcpy(&current_status, current_buffer, sizeof(current_status));
+  memcpy(&current_command, current_buffer + sizeof(current_status), sizeof(current_command));
 
-  state.lastRequestedCurrent = c.programmedCurrent / CURRENT_FACTOR; // Should be actual request, before safety
-  state.lastCommandedCurrent = s.programmedCurrent / CURRENT_FACTOR;
-  state.lastMeasuredCurrent = s.measuredCurrent / CURRENT_FACTOR;
+  memcpy(&last_status, last_buffer, sizeof(last_status));
+  memcpy(&last_command, last_buffer + sizeof(last_status), sizeof(last_command));
 
-  state.numEncoderErrors = s.numEncoderErrors;
-  state.numCommunicationErrors = s.pdiTimeoutErrorCount + s.pdiChecksumErrorCount;
+  state.encoderCount = current_status.encoderCount;
+  state.encoderVelocity = double(int(current_status.encoderCount - last_status.encoderCount)) / (current_status.timestamp - last_status.timestamp) * 1e+6;
+  state.calibrationReading = current_status.calibrationReading;
+  state.lastCalibrationHighTransition = current_status.lastCalibrationHighTransition;
+  state.lastCalibrationLowTransition = current_status.lastCalibrationLowTransition;
+  state.isEnabled = current_status.mode != MODE_OFF;
+  state.runStopHit = (current_status.mode & MODE_UNDERVOLTAGE) != 0;
 
-  state.motorVoltage = s.motorVoltage;
+  state.lastRequestedCurrent = current_command.programmedCurrent / CURRENT_FACTOR; // Should be actual request, before safety
+  state.lastCommandedCurrent = current_status.programmedCurrent / CURRENT_FACTOR;
+  state.lastMeasuredCurrent = current_status.measuredCurrent / CURRENT_FACTOR;
+
+  state.numEncoderErrors = current_status.numEncoderErrors;
+  state.numCommunicationErrors = current_status.pdiTimeoutErrorCount + current_status.pdiChecksumErrorCount;
+
+  state.motorVoltage = current_status.motorVoltage;
+#if 1
+{
+static int times = 0;
+
+if (++times % 2000 == 0) {
+  printf("-----------------------------------------------------\n");
+  printf("timestamp = %#08x\n", current_status.timestamp);
+  printf("encoderCount  = %#08x\n", current_status.encoderCount);
+  printf("last timestamp = %#08x\n", last_status.timestamp);
+  printf("last encoderCount  = %#08x\n", last_status.encoderCount);
+  printf("delta encoderCount  = %#08x %f\n", current_status.encoderCount - last_status.encoderCount, double(int(current_status.encoderCount - last_status.encoderCount)));
+  printf("delta timestamp  = %#08x %f\n", current_status.timestamp - last_status.timestamp, double(current_status.timestamp - last_status.timestamp));
+  printf("encoderVelocity  = %f\n", state.encoderVelocity);
+  printf("programmedCurrent = %#08x\n", current_status.programmedCurrent);
+  printf("measuredCurrent = %#08x\n", current_status.measuredCurrent);
+  printf("mode = %#08x\n", current_status.mode);
+  printf("Kp = %#08x\n", int(current_status.currentLoopKp));
+  printf("Ki = %#08x\n", int(current_status.currentLoopKi));
 }
+}
+#endif
+
+}
+
 

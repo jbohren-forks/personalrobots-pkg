@@ -39,7 +39,7 @@
 #include <dll/ethercat_dll.h>
 
 EthercatHardware::EthercatHardware() :
-  hw(0), ni(0), buffer(0), bufferSize(0)
+  hw(0), ni(0), current_buffer_(0), last_buffer_(0), buffer_size_(0)
 {
 }
 
@@ -49,9 +49,13 @@ EthercatHardware::~EthercatHardware()
   {
     close_socket(ni);
   }
-  if (buffer)
+  if (current_buffer_)
   {
-    delete buffer;
+    delete current_buffer_;
+  }
+  if (last_buffer_)
+  {
+    delete last_buffer_;
   }
   if (hw)
   {
@@ -61,23 +65,6 @@ EthercatHardware::~EthercatHardware()
 
 void EthercatHardware::init(char *interface, char *configuration)
 {
-  // Determine configuration from XML file 'configuration'
-  // Create HardwareInterface
-
-  // XXXwheeler: replace with XML parser
-  hw = new HardwareInterface(5);
-
-  hw->actuator[0].command.enable = true;
-  hw->actuator[0].command.current = 0;
-  hw->actuator[1].command.enable = true;
-  hw->actuator[1].command.current = 0.0;
-  hw->actuator[2].command.enable = true;
-  hw->actuator[2].command.current = 0.0;
-  hw->actuator[3].command.enable = true;
-  hw->actuator[3].command.current = 0;
-  hw->actuator[4].command.enable = true;
-  hw->actuator[4].command.current = 0;
-
   // Initialize network interface
   if ((ni = init_ec(interface)) == NULL)
   {
@@ -109,6 +96,7 @@ void EthercatHardware::init(char *interface, char *configuration)
 
   slaves = new MotorControlBoard*[numSlaves];
 
+  unsigned int num_actuators = 0;
   for (unsigned int slave = 0; slave < numSlaves; ++slave)
   {
     EC_FixedStationAddress fsa(slave + 1);
@@ -121,39 +109,51 @@ void EthercatHardware::init(char *interface, char *configuration)
 
     if ((slaves[slave] = configSlave(sh)) != NULL)
     {
-      bufferSize += slaves[slave]->commandSize + slaves[slave]->statusSize;
+      num_actuators += slaves[slave]->hasActuator();
+      buffer_size_ += slaves[slave]->commandSize + slaves[slave]->statusSize;
       if (!sh->to_state(EC_OP_STATE))
       {
         perror("to_state");
       }
     }
   }
-  buffer = new unsigned char[bufferSize];
+  buffers_ = new unsigned char[2 * buffer_size_];
+  current_buffer_ = buffers_;
+  last_buffer_ = buffers_ + buffer_size_;
+
+  // Determine configuration from XML file 'configuration'
+  // Create HardwareInterface
+  hw = new HardwareInterface(num_actuators);
 }
 
 void EthercatHardware::update()
 {
-  unsigned char *p;
+  unsigned char *current, *last;
 
   // Convert HW Interface commands to MCB-specific buffers
-  p = buffer;
+  current = current_buffer_;
   for (int i = 0; i < hw->numActuators; ++i)
   {
-    slaves[i]->convertCommand(hw->actuator[i].command, p);
-    p += slaves[i]->commandSize + slaves[i]->statusSize;
+    slaves[i]->convertCommand(hw->actuator[i].command, current);
+    current += slaves[i]->commandSize + slaves[i]->statusSize;
   }
 
   // Transmit process data
-  em->txandrx_PD(bufferSize, buffer);
+  em->txandrx_PD(buffer_size_, current_buffer_);
 
   // Convert status back to HW Interface
-  p = buffer;
+  current = current_buffer_;
+  last = last_buffer_;
   for (int i = 0; i < hw->numActuators; ++i)
   {
-    slaves[i]->convertState(hw->actuator[i].state, p);
-    p += slaves[i]->commandSize + slaves[i]->statusSize;
-
+    slaves[i]->convertState(hw->actuator[i].state, current, last);
+    current += slaves[i]->commandSize + slaves[i]->statusSize;
+    last += slaves[i]->commandSize + slaves[i]->statusSize;
   }
+
+  unsigned char *tmp = current_buffer_;
+  current_buffer_ = last_buffer_;
+  last_buffer_ = tmp;
 }
 
 MotorControlBoard *
