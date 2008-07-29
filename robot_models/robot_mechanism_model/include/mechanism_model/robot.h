@@ -42,11 +42,12 @@ namespace mechanism {
     Robot(char *ns){}
     ~Robot()
     {
-      int i;
-      for (i = 0; i < transmissions_.size(); ++i)
-	delete transmissions_[i];
-      for (i = 0; i < joints_.size(); ++i)
-	delete joints_[i];
+      std::vector<Transmission *>::size_type t;
+      for (t = 0; t < transmissions_.size(); ++t)
+        delete transmissions_[t];
+      std::vector<Joint *>::size_type j;
+      for (j = 0; j < joints_.size(); ++j)
+        delete joints_[j];
     }
 
     char *name;
