@@ -34,6 +34,7 @@ MechanismControl::MechanismControl(HardwareInterface *hw)
   : initialized_(0), model_((char*)"robot"), hw_(hw)
 {
   memset(controllers_, 0, MAX_NUM_CONTROLLERS*sizeof(void*));
+  model_.hw_ = hw;
 }
 
 MechanismControl::~MechanismControl() {
