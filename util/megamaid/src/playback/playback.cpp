@@ -81,8 +81,15 @@ int main(int argc, char **argv)
     player.addHandler<AnyMsg>(string("*"), &doPublish, (void*)(&n), false);
   }
 
-  while(n.ok() && player.nextMsg())  {}
+  while(n.ok())
+  {
+    if (!player.nextMsg())
+    {
+      n.self_destruct();
+    }
+  }
 
+  usleep(100000);
   ros::fini();
   return 0;
 }
