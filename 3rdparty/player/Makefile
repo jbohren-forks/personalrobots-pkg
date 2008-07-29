@@ -14,15 +14,18 @@ CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
 
 build: SVN_UP player
 
-player: $(SVN_DIR)
+configured: $(SVN_DIR)
 	mkdir -p $(SVN_DIR)/build
 	cd $(SVN_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
+	touch configured
+
+.PHONY: player
+player: configured
 	cd $(SVN_DIR)/build && make install
-	touch player
 
 clean:
 	rm -rf $(SVN_DIR)/build
-	rm -rf player
+	rm -rf player configured
 wipe: clean
 	rm -rf $(SVN_DIR)
 

@@ -7,16 +7,21 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 build: SVN_UP ffmpeg
 
-ffmpeg: $(SVN_DIR)
+configured: $(SVN_DIR)
 	cd $(SVN_DIR) && ./configure --prefix=$(PWD)/ffmpeg --enable-shared
+	touch configured
+
+.PHONY: ffmpeg
+ffmpeg: configured
 	cd $(SVN_DIR) && make && make install
 	mkdir -p ffmpeg/include/ffmpeg
 	cd ffmpeg/include/ffmpeg && ln -sf ../libavcodec/avcodec.h avcodec.h
 	cd ffmpeg/include/ffmpeg && ln -sf ../libavformat/avformat.h avformat.h
-	touch ffmpeg
+	touch configured
 
 clean:
-	-rm -rf ffmpeg 
+	-cd $(SVN_DIR) && make clean
+	rm -rf ffmpeg configured
 
 wipe: clean
 	rm -rf $(SVN_DIR)

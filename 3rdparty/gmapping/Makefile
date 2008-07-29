@@ -8,13 +8,17 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 build: SVN_UP gmapping
 
-gmapping: $(SVN_DIR)
-	cd $(SVN_DIR) && ./configure && make
-	touch gmapping
+configured: $(SVN_DIR)
+	cd $(SVN_DIR) && ./configure
+	touch configured
+
+.PHONY: gmapping
+gmapping: configured
+	cd $(SVN_DIR) && make
 
 clean:
-	cd $(SVN_DIR) && make clean
-	rm -rf gmapping
+	-cd $(SVN_DIR) && make clean
+	rm -rf gmapping configured
 wipe: clean
 	rm -rf gmapping-svn
 

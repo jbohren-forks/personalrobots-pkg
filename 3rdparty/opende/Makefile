@@ -21,15 +21,18 @@ ROOT = $(shell rospack find opende)/opende
 
 build: SVN_UP opende
 
-opende: $(SVN_DIR)
+configured: $(SVN_DIR)
 	cd $(SVN_DIR) && sh ./autogen.sh
 	cd $(SVN_DIR) && ./configure --prefix=$(ROOT) --with-trimesh=opcode --enable-shared $(CONFIGURE_FLAGS)
+	touch configured
+
+.PHONY: opende
+opende: configured
 	cd $(SVN_DIR) && make
 	cd $(SVN_DIR) && make install
-	touch opende
 
 clean:
 	-cd $(SVN_DIR) && make clean
-	rm -rf opende
+	rm -rf opende configured
 wipe: clean
 	rm -rf $(SVN_DIR)

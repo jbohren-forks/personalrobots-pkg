@@ -7,7 +7,7 @@ SVN_PATCH = gazebo_patch.diff
 include $(shell rospack find mk)/svn_checkout.mk
 
 
-OGRE_PKG = $(shell rospack find ogre)/ogre/lib/pkgconfig
+OGRE_PKG = $(shell rospack find ogre)/ogre-install/lib/pkgconfig
 PLAYER_PKG = $(shell rospack find player)/player/lib/pkgconfig
 ODE_PATH = $(shell rospack find opende)/opende
 FI_PATH = $(shell rospack find freeimage)
@@ -17,6 +17,7 @@ TESTROOT = $(shell rospack find gazebo)/test-gazebo
 
 build: SVN_UP gazebo
 
+.PHONY: gazebo
 gazebo: $(SVN_DIR)
 	if [ ! -d gazebo ]; then mkdir -p gazebo; mkdir -p gazebo/share; mkdir -p gazebo/share/gazebo; mkdir -p gazebo/share/gazebo/Media; fi
 	cd $(SVN_DIR) && PKG_CONFIG_PATH=${FI_PATH}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} \

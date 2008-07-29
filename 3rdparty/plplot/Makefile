@@ -10,14 +10,17 @@ CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/plplot \
 
 build: SVN_UP plplot
 
-plplot: $(SVN_DIR)
+configured: $(SVN_DIR)
 	cd $(SVN_DIR) && mkdir -p build
 	cd $(SVN_DIR)/build &&  $(CMAKE) $(CMAKE_ARGS) ..
+	touch configured
+
+.PHONY: plplot
+plplot: configured
 	cd $(SVN_DIR)/build && make install
-	touch plplot
 
 clean:
 	rm -rf $(SVN_DIR)/build
-	rm -rf plplot
+	rm -rf plplot configured
 wipe: clean
 	rm -rf plplot-svn

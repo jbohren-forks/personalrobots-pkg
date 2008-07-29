@@ -8,15 +8,19 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 build: SVN_UP libdc1394v2
 
-libdc1394v2: $(SVN_DIR)
+configured: $(SVN_DIR)
 	cd $(SVN_DIR) && autoreconf -i -s
 	cd $(SVN_DIR) && ./configure --prefix=$(PWD)/libdc1394v2 --enable-shared=no
+	touch configured
+
+.PHONY: libdc1394v2
+libdc1394v2: configured
 	cd $(SVN_DIR) && make
 	cd $(SVN_DIR) && make install
 	touch libdc1394v2
 
 clean: 
-	rm -rf libdc1394v2
+	rm -rf libdc1394v2 configured
 
 wipe: clean
 	rm -rf $(SVN_DIR)

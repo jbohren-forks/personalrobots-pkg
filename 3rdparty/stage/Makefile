@@ -7,15 +7,18 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 build: SVN_UP stage
 
-stage: $(SVN_DIR)
+configured: $(SVN_DIR)
 	cd $(SVN_DIR) && autoreconf -i -s
 	cd $(SVN_DIR) && ./configure --prefix=$(PWD)/stage
+	touch configured
+
+.PHONY: stage
+stage: configured
 	cd $(SVN_DIR) && make install
-	touch stage
 
 clean:
 	-cd $(SVN_DIR) && make clean
-	rm -rf stage
+	rm -rf stage configured
 
 wipe: clean
 	rm -rf $(SVN_DIR)
