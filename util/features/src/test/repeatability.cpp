@@ -12,13 +12,14 @@ int main( int argc, char** argv )
                   << "-t img1to2.xfm [options]\n"
                   << "  scale factor:    -sf 1.5\n"
                   << "  do rounding:     -r\n"
+                  << "  pure scaling:    -s\n"
                   << "  normalize size:  -n 15\n";
         return 0;
     }
 
     char *key1_file = NULL, *key2_file = NULL, *transform_file = NULL;
     float scale_factor = 10;
-    bool round = false, normalize = true;
+    bool round = false, normalize = true, plain = false, pure_scaling = false;
     
     int arg = 0;
     while (++arg < argc) {
@@ -34,10 +35,14 @@ int main( int argc, char** argv )
         }
         if (! strcmp(argv[arg], "-r"))
             round = true;
+        if (! strcmp(argv[arg], "-s"))
+            pure_scaling = true;
         if (! strcmp(argv[arg], "-n")) {
             scale_factor = atof(argv[++arg]);
             normalize = true;
         }
+        if (! strcmp(argv[arg], "-plain"))
+            plain = true;
     }
 
     assert(key1_file);
@@ -51,7 +56,8 @@ int main( int argc, char** argv )
     
     CvMat* transform = cvCreateMat(3, 3, CV_32FC1);
     ReadTransform(transform_file, transform);
-
+    float pure_scale_factor = transform->data.fl[0];
+    
     typedef std::vector<KeypointFl>::iterator iter;
     for (iter i = pts1.begin(); i != pts1.end(); ++i) {
         CvPoint2D32f pt = MapPoint(cvPoint2D32f(i->x, i->y), transform);
@@ -62,12 +68,21 @@ int main( int argc, char** argv )
             i->x = pt.x;
             i->y = pt.y;
         }
+        if (pure_scaling) {
+            if (round)
+                i->scale = (int)(i->scale*pure_scale_factor + 0.5);
+            else
+                i->scale *= pure_scale_factor;
+        }
     }
 
     for (int ot = 5; ot <= 40; ot += 5) {
         int corr = OverlapCorrespondences(pts1, pts2, (float)ot / 100, scale_factor, normalize);
-        printf("Overlap threshold = %d%%: %d correspondences (%f%%)\n",
-               ot, corr, (float)corr*100/num_pts);
+        if (plain)
+            printf("%d %d %f\n", ot, corr, (float)corr*100/num_pts);
+        else 
+            printf("Overlap threshold = %d%%: %d correspondences (%f%%)\n",
+                   ot, corr, (float)corr*100/num_pts);
     }
     
     return 0;

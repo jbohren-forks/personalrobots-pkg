@@ -18,7 +18,11 @@ int main( int argc, char** argv )
                   << "  number of points to take: -p 800\n"
                   << "  number of scales:         -s 7\n"
                   << "  strength threshold:       -thres 30\n"
-                  << "  line threshold:           -line 10\n";
+                  << "  line threshold:           -line 10\n"
+                  << "  scale upper bound 1:      -ub1 6\n"
+                  << "  scale lower bound 1:      -lb1 2\n"
+                  << "  scale upper bound 2:      -ub2 9\n"
+                  << "  scale lower bound 2:      -lb2 2.8\n";
         return 0;
     }
     
@@ -28,6 +32,7 @@ int main( int argc, char** argv )
     int scales = 7;
     float thres = WgDetector::DEFAULT_THRESHOLD;
     float line_thres = WgDetector::DEFAULT_LINE_THRESHOLD;
+    float scale_ub1 = -1, scale_lb1 = -1, scale_ub2 = -1, scale_lb2 = -1;
     
     int arg = 0;
     while (++arg < argc) {
@@ -49,6 +54,14 @@ int main( int argc, char** argv )
             thres = atof(argv[++arg]);
         if (! strcmp(argv[arg], "-line"))
             line_thres = atof(argv[++arg]);
+        if (! strcmp(argv[arg], "-ub1"))
+            scale_ub1 = atof(argv[++arg]);
+        if (! strcmp(argv[arg], "-lb1"))
+            scale_lb1 = atof(argv[++arg]);
+        if (! strcmp(argv[arg], "-ub2"))
+            scale_ub2 = atof(argv[++arg]);
+        if (! strcmp(argv[arg], "-lb2"))
+            scale_lb2 = atof(argv[++arg]);
     }
 
     assert(image_file);
@@ -81,6 +94,15 @@ int main( int argc, char** argv )
         keypts = detector.DetectPoints(source);
     }
 
+    if (scale_ub1 > 0)
+        keypts.erase(std::remove_if(keypts.begin(), keypts.end(),
+                                    ScaleUpperBound(scale_ub1)),
+                     keypts.end());
+    if (scale_lb1 > 0)
+        keypts.erase(std::remove_if(keypts.begin(), keypts.end(),
+                                    ScaleLowerBound(scale_lb1)),
+                     keypts.end());
+
     if (warped_file) {
         keypts.erase(std::remove_if(keypts.begin(), keypts.end(),
                                     OutsideSource(warped->width, warped->height, transform)),
@@ -103,6 +125,14 @@ int main( int argc, char** argv )
             Timer t("Willow detector (warped)");
             warp_keypts = warp_detector.DetectPoints(warped);
         }
+        if (scale_ub2 > 0)
+            warp_keypts.erase(std::remove_if(warp_keypts.begin(), warp_keypts.end(),
+                                             ScaleUpperBound(scale_ub2)),
+                              warp_keypts.end());
+        if (scale_lb2 > 0)
+            warp_keypts.erase(std::remove_if(warp_keypts.begin(), warp_keypts.end(),
+                                             ScaleLowerBound(scale_lb2)),
+                              warp_keypts.end());
         warp_keypts.erase(std::remove_if(warp_keypts.begin(), warp_keypts.end(),
                                          OutsideSource(W, H, inv)),
                           warp_keypts.end());

@@ -63,7 +63,10 @@ private:
     NonmaxSuppress3x3xN<float, LineSuppress> m_nonmax;
     //! Non-minimal suppression functor
     NonmaxSuppress3x3xN<float, LineSuppress, std::less_equal<float> > m_nonmin;
+    //! Filter size at each scale
+    int* m_filter_sizes;
     // TODO: Keep intermediate star sum images for reuse?
+    static const float SCALE_MULTIPLIER = 1.3;
 
     //! Calculate sum of all pixel values in the "star" shape.
     int StarAreaSum(CvPoint center, int radius, int offset);

@@ -96,6 +96,30 @@ int OverlapCorrespondences(std::vector<KeyptT> const& keys1,
     return correspondences;
 }
 
+struct ScaleLowerBound
+{
+    float lb;
+
+    ScaleLowerBound(float lb) : lb(lb) {}
+
+    template< typename KeyptT >
+    inline bool operator() (KeyptT const& pt) {
+        return pt.scale < lb;
+    }
+};
+
+struct ScaleUpperBound
+{
+    float ub;
+
+    ScaleUpperBound(float ub) : ub(ub) {}
+
+    template< typename KeyptT >
+    inline bool operator() (KeyptT const& pt) {
+        return pt.scale > ub;
+    }
+};
+
 // Functor to reject points that exceed the line response threshold.
 /*
 struct LineThreshold

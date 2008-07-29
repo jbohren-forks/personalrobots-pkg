@@ -14,13 +14,18 @@ int main( int argc, char** argv )
     if (argc == 1) {
         std::cerr << "Usage: ./sift_detect -i image.pgm -o image.key "
                   << "[-t warp.xfm -i2 warped.pgm -o2 warped.key] [options]\n"
-                  << "  number of points to take: -p 800\n";
+                  << "  number of points to take: -p 800\n"
+                  << "  scale upper bound 1:      -ub1 6\n"
+                  << "  scale lower bound 1:      -lb1 2\n"
+                  << "  scale upper bound 2:      -ub2 9\n"
+                  << "  scale lower bound 2:      -lb2 2.8\n";
         return 0;
     }
     
     char *image_file = NULL, *warped_file = NULL, *transform_file = NULL;
     int num_points = 800;
     std::string key_file = "source.key", warped_key_file = "warped.key";
+    float scale_ub1 = -1, scale_lb1 = -1, scale_ub2 = -1, scale_lb2 = -1;
     
     int arg = 0;
     while (++arg < argc) {
@@ -36,6 +41,14 @@ int main( int argc, char** argv )
             warped_key_file = argv[++arg];
         if (! strcmp(argv[arg], "-p"))
             num_points = atoi(argv[++arg]);
+        if (! strcmp(argv[arg], "-ub1"))
+            scale_ub1 = atof(argv[++arg]);
+        if (! strcmp(argv[arg], "-lb1"))
+            scale_lb1 = atof(argv[++arg]);
+        if (! strcmp(argv[arg], "-ub2"))
+            scale_ub2 = atof(argv[++arg]);
+        if (! strcmp(argv[arg], "-lb2"))
+            scale_lb2 = atof(argv[++arg]);
     }
 
     assert(image_file);
@@ -56,6 +69,14 @@ int main( int argc, char** argv )
     for (LoweKeypoint pt = lowe_keypts; pt != NULL; pt = pt->next) {
         keypts.push_back(KeypointFl(pt->col, pt->row, pt->scale, pt->strength));
     }
+    if (scale_ub1 > 0)
+        keypts.erase(std::remove_if(keypts.begin(), keypts.end(),
+                                    ScaleUpperBound(scale_ub1)),
+                     keypts.end());
+    if (scale_lb1 > 0)
+        keypts.erase(std::remove_if(keypts.begin(), keypts.end(),
+                                    ScaleLowerBound(scale_lb1)),
+                     keypts.end());
 
     Image warped = NULL;
     CvMat *transform = NULL, *inv = NULL;
@@ -91,6 +112,14 @@ int main( int argc, char** argv )
         for (LoweKeypoint pt = lowe_warp_keypts; pt != NULL; pt = pt->next) {
             warp_keypts.push_back(KeypointFl(pt->col, pt->row, pt->scale, pt->strength));
         }
+        if (scale_ub2 > 0)
+            warp_keypts.erase(std::remove_if(warp_keypts.begin(), warp_keypts.end(),
+                                             ScaleUpperBound(scale_ub2)),
+                              warp_keypts.end());
+        if (scale_lb2 > 0)
+            warp_keypts.erase(std::remove_if(warp_keypts.begin(), warp_keypts.end(),
+                                             ScaleLowerBound(scale_lb2)),
+                              warp_keypts.end());
         warp_keypts.erase(std::remove_if(warp_keypts.begin(), warp_keypts.end(),
                                          OutsideSource(W, H, inv)),
                           warp_keypts.end());

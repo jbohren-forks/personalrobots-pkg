@@ -76,20 +76,6 @@ struct NonmaxSuppress3x3xN
                 // NOTE: searching only the 3x3 spatial neighborhood seems to allow
                 // too many redundant keypoints at wedge-shaped features. And the
                 // 3x3x3 version is actually faster when using line suppression.
-                /*
-                if (m_compare(m_response_thresh, response) ||
-                    m_compare(CV_IMAGE_ELEM(curr, T, y, x-1), response) ||
-                    m_compare(CV_IMAGE_ELEM(curr, T, y, x+1), response) ||
-                    m_compare(CV_IMAGE_ELEM(curr, T, y-1, x), response) ||
-                    m_compare(CV_IMAGE_ELEM(curr, T, y+1, x), response) ||
-                    m_compare(CV_IMAGE_ELEM(curr, T, y-1, x-1), response) ||
-                    m_compare(CV_IMAGE_ELEM(curr, T, y-1, x+1), response) ||
-                    m_compare(CV_IMAGE_ELEM(curr, T, y+1, x-1), response) ||
-                    m_compare(CV_IMAGE_ELEM(curr, T, y+1, x+1), response) ||
-                    m_post_thresh(x, y, scale)
-                    )
-                    continue;
-                */
                 if (m_compare(m_response_thresh, response) ||
                     m_compare(CV_IMAGE_ELEM(curr, T, y, x-1), response) ||
                     m_compare(CV_IMAGE_ELEM(curr, T, y, x+1), response) ||
