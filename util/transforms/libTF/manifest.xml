@@ -10,6 +10,6 @@ Library for doing transformations.
 <depend package="newmat10"/>
 <depend package="gtest"/>
 <export>
-<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lTF -lnewmat"/>
+<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lTF"/>
 </export>
 </package>
