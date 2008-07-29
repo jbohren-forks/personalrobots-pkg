@@ -88,7 +88,7 @@ Provides (name/type):
 
 #include <urdf/URDF.h>
 #include <collision_space/environmentODE.h>
-#include <ompl/extension/samplingbased/kinematic/extension/rrt/RRT.h>
+#include <ompl/extension/samplingbased/kinematic/extension/rrt/LazyRRT.h>
 
 #include <vector>
 #include <string>
@@ -449,7 +449,7 @@ private:
 	Planner p;
 	p.si   = new SpaceInformationNode(model);
 	p.si->setStateValidFn(isStateValid, reinterpret_cast<void*>(model));
-	p.mp   = new ompl::RRT(p.si);
+	p.mp   = new ompl::LazyRRT(p.si);
 	p.type = 0;	
 	model->planners.push_back(p);
     }
