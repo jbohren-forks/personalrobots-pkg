@@ -1,4 +1,4 @@
-all: gazebo
+all: build
 
 SVN_DIR = gazebo-svn
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk
@@ -15,13 +15,15 @@ FI_LD = $(shell rospack find freeimage)/freeimage/lib
 ROOT = $(shell rospack find gazebo)/gazebo
 TESTROOT = $(shell rospack find gazebo)/test-gazebo
 
-.PHONY: gazebo
-gazebo: SVN_UP
+build: SVN_UP gazebo
+
+gazebo: $(SVN_DIR)
 	if [ ! -d gazebo ]; then mkdir -p gazebo; mkdir -p gazebo/share; mkdir -p gazebo/share/gazebo; mkdir -p gazebo/share/gazebo/Media; fi
 	cd $(SVN_DIR) && PKG_CONFIG_PATH=${FI_PATH}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} \
 	LIBPATH="${FI_LD}:`rospack find opende`/opende/lib" scons prefix=$(ROOT) 
 	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${FI_PATH}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} \
 	LIBPATH="${FI_LD}:`rospack find opende`/opende/lib" scons prefix=$(ROOT) install
+	touch gazebo
 
 test-$(SVN_TARGET):
 	@if [ ! -d test-$(SVN_DIR) ]; then svn co $(SVN_REVISION) https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk test-$(SVN_DIR); fi

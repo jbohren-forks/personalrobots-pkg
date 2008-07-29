@@ -9,7 +9,7 @@ ifeq ($(WITH_DRAWSTUFF), yes)
 CFG_OPTIONS += --with-drawstuff=X11
 endif
 
-all: opende
+all: build
 
 SVN_DIR = opende-svn
 SVN_URL = https://opende.svn.sourceforge.net/svnroot/opende/trunk 
@@ -19,12 +19,14 @@ CONFIGURE_FLAGS = $(CFG_OPTIONS) CXXFLAGS='-O3 -fPIC -I$(ROOT)/include' LDFLAGS=
 
 ROOT = $(shell rospack find opende)/opende
 
-.PHONY: opende
-opende: SVN_UP
+build: SVN_UP opende
+
+opende: $(SVN_DIR)
 	cd $(SVN_DIR) && sh ./autogen.sh
 	cd $(SVN_DIR) && ./configure --prefix=$(ROOT) --with-trimesh=opcode --enable-shared $(CONFIGURE_FLAGS)
 	cd $(SVN_DIR) && make
 	cd $(SVN_DIR) && make install
+	touch opende
 
 clean:
 	-cd $(SVN_DIR) && make clean

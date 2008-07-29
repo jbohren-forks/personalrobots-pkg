@@ -1,4 +1,4 @@
-all: player
+all: build
 
 SVN_DIR = player-svn
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/player/trunk
@@ -12,11 +12,13 @@ CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
 	     -D BUILD_PLAYERCC_BOOST=OFF \
 	     -D ENABLE_DRIVER_CAMERA1394=OFF
 
-.PHONY: player
-player: SVN_UP
+build: SVN_UP player
+
+player: $(SVN_DIR)
 	mkdir -p $(SVN_DIR)/build
 	cd $(SVN_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
 	cd $(SVN_DIR)/build && make install
+	touch player
 
 clean:
 	rm -rf $(SVN_DIR)/build
