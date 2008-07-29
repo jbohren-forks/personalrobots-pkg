@@ -84,18 +84,23 @@ ArmController::ArmController(mechanism::Robot *robot)
 {
   this->robot = robot;
   this->name  = "armController";
+
+  this->armJointControllers = new JointController[ARM_MAX_JOINTS];
 }
 ArmController::ArmController(mechanism::Robot *robot, std::string name)
 {
   this->robot = robot;
   this->name  = name;
+
+  this->armJointControllers = new JointController[ARM_MAX_JOINTS];
 }
      
 ArmController::ArmController(mechanism::Robot *robot, std::string name,int armNumJoints, int jcToRobotJointMap[], int jcToHIActuatorMap[])
 {
   this->robot = robot;
   this->name  = "armController";
-
+ 
+  this->armJointControllers = new JointController[ARM_MAX_JOINTS];
 }
 
 ArmController::~ArmController()
@@ -161,6 +166,7 @@ void ArmController::init()
 
 void ArmController::initJointControllers()
 {
+
   /**************************************************************************************/
   /*                                                                                    */
   /* MAPPING BETWEEN: armController->jointController array and robot->joint array       */
