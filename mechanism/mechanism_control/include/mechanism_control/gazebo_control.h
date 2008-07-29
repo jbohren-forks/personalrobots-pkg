@@ -82,7 +82,7 @@ class GazeboMechanismControl{
 
     HardwareInterface *hardwareInterface;
 
-    Robot *r;
+    mechanism::Robot *r;
 
     void initRobot();
 

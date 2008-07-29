@@ -51,7 +51,7 @@ void BaseControl::init(HardwareInterface *hw){
 }
 
 void BaseControl::initRobot(){
-  r = new Robot("robot");
+  r = new mechanism::Robot("robot");
 
   r->numJoints = NUM_JOINTS;
   r->numLinks = NUM_JOINTS;

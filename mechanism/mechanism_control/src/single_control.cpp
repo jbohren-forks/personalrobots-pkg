@@ -45,7 +45,7 @@ SingleControl::SingleControl(){
 
 void SingleControl::init(HardwareInterface *hw){
   this->hw = hw;
-    r = new Robot((char*)"robot");
+    r = new mechanism::Robot((char*)"robot");
 
   r->numJoints = NUM_JOINTS;
   r->numTransmissions = NUM_JOINTS;

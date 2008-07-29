@@ -74,7 +74,7 @@ class BaseControl{
 
   HardwareInterface *hw;
 
-  Robot *r;
+  mechanism::Robot *r;
 
   void initRobot();
 

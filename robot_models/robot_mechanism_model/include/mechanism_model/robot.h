@@ -54,6 +54,8 @@ namespace mechanism {
     int numLinks;
     Joint *joint;  // TODO: delete
     int numJoints;
+    int numTransmissions;
+    SimpleTransmission *transmission;  // TODO: delete
 
     std::vector<Joint*> joints_;
     std::vector<Transmission*> transmissions_;

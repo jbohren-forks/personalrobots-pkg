@@ -55,7 +55,7 @@ void GazeboMechanismControl::init(HardwareInterface *hardwareInterface){
 }
 
 void GazeboMechanismControl::initRobot(){
-  r = new Robot((char*)"robot");
+  r = new mechanism::Robot((char*)"robot");
 
   r->numJoints        = PR2::MAX_JOINTS;
   r->numLinks         = PR2::MAX_JOINTS;
