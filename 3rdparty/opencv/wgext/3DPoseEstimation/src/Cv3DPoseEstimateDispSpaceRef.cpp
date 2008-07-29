@@ -42,8 +42,34 @@ Cv3DPoseEstimateDispSpaceRef::~Cv3DPoseEstimateDispSpaceRef()
 	// TODO: remove projection mat and reprojection mat
 }
 
+int Cv3DPoseEstimateDispSpaceRef::estimate(
+		CvMat *xyzs0, CvMat *uvds1, CvMat *refPoints0, CvMat *refPoints1,
+		CvMat *rot, CvMat *shift, CvMat *& inliers0, CvMat *& outliers1){
+	int numInLiers = 0;
+	
+	// convert the first point cloud, xyzs0, which is in cartesian space
+	// into disparity space
+	int numPoints = xyzs0->rows;
+	
+	CvMat* uvds0 = cvCreateMat(numPoints, 3, CV_64FC1);
+	CvMat* xyzs1 = cvCreateMat(numPoints, 3, CV_64FC1);
+	
+	reprojection(uvds1, xyzs1);
+	projection(xyzs0, uvds0);
+	
+	numInLiers = estimate(xyzs0, xyzs1, uvds0, uvds1, 
+			refPoints0, refPoints1,
+			rot, shift, inliers0, outliers1);
+	
+	cvReleaseMat(&uvds0);
+	cvReleaseMat(&xyzs1);
+	return numInLiers;
+}
+	
+
+
 int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
-		CvMat *rot, CvMat *trans, CvMat*& outliers0, CvMat*& outliers1) {
+		CvMat *rot, CvMat *shift, CvMat*& outliers0, CvMat*& outliers1) {
 	int numInLiers = 0;
 	
 	int numPoints = uvds0->rows;
@@ -53,25 +79,26 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
 		return 0;
 	}
 	
-	CvMat* points0 = cvCreateMat(numPoints, 3, CV_64FC1);
-	CvMat* points1 = cvCreateMat(numPoints, 3, CV_64FC1);
+	CvMat* xyzs0 = cvCreateMat(numPoints, 3, CV_64FC1);
+	CvMat* xyzs1 = cvCreateMat(numPoints, 3, CV_64FC1);
 	
 	// project from disparity space back to XYZ
-	reprojection(uvds0, points0);
-	reprojection(uvds1, points1);
-#if 0
-	cout << "uvds0: "<< endl;
-	CvMatUtils::printMat(uvds0);
-	cout << "uvds1: " << endl;
-	CvMatUtils::printMat(uvds1);
-#endif
-#if 0
-	cout << "Reprojected points0: "<< endl;
-	CvMatUtils::printMat(points0);
-	cout << "Reprojected points1: " << endl;
-	CvMatUtils::printMat(points1);
-#endif
+	reprojection(uvds0, xyzs0);
+	reprojection(uvds1, xyzs1);
 	
+	numInLiers = estimate(xyzs0, xyzs1, uvds0, uvds1, NULL, NULL, rot, shift,
+			outliers0, outliers1);
+	
+	cvReleaseMat(&xyzs0);
+	cvReleaseMat(&xyzs1);
+	return numInLiers;
+}
+	
+int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
+			CvMat *uvds0, CvMat *uvds1, CvMat *refPoints0, CvMat *refPoints1,
+			CvMat *rot, CvMat *shift, CvMat *& inliers0, CvMat *& inliers1)
+{
+	int numInLiers = 0;
 	double _P0[3*3], _P1[3*3], _R[3*3], _T[3*1], _H[4*4];
 	CvMat P0, P1;
 	cvInitMatHeader(&P0, 3, 3, CV_64FC1, _P0); // 3 random points from camera0, stored in columns
@@ -82,41 +109,45 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
 	cvInitMatHeader(&T,  3, 1, CV_64FC1, _T);  // translation matrix
 	cvInitMatHeader(&H,  4, 4, CV_64FC1, _H);  // disparity space homography
 	
-	// reseed the random number generator 
-	srand(time(NULL));
 	int maxNumInLiers=0;
-	for (int i=0; i< mNumIterations; i++) {
+	if (refPoints0 ==  NULL || refPoints1 == NULL) {
+		for (int i=0; i< mNumIterations; i++) {
 #ifdef DEBUG
-		cout << "Iteration: "<< i << endl;
+			cout << "Iteration: "<< i << endl;
 #endif
-		// randomly pick 3 points. make sure they are not 
-		// colinear
-		pick3RandomPoints(points0, points1, &P0, &P1);
-		
-		TIMERSTART2(SVD);
-		this->estimateLeastSquareInCol(&P0, &P1, &R, &T);
-		TIMEREND2(SVD);
-        
-        this->constructDisparityHomography(&R, &T, &H);
-		
-        CvTestTimerStart(CheckInliers);
-		// scoring against all points
-		numInLiers = checkInLiers(uvds0, uvds1, &H);
-		CvTestTimerEnd(CheckInliers);
-		
+			// randomly pick 3 points. make sure they are not 
+			// colinear
+			pick3RandomPoints(xyzs0, xyzs1, &P0, &P1);
+
+			TIMERSTART2(SVD);
+			this->estimateLeastSquareInCol(&P0, &P1, &R, &T);
+			TIMEREND2(SVD);
+
+			this->constructDisparityHomography(&R, &T, &H);
+
+			CvTestTimerStart(CheckInliers);
+			// scoring against all points
+			numInLiers = checkInLiers(uvds0, uvds1, &H);
+			CvTestTimerEnd(CheckInliers);
+
 #ifdef DEBUG
-		cout << "R, T, and H: "<<endl;
-		CvMatUtils::printMat(&R);
-		CvMatUtils::printMat(&T);
-		CvMatUtils::printMat(&H);
+			cout << "R, T, and H: "<<endl;
+			CvMatUtils::printMat(&R);
+			CvMatUtils::printMat(&T);
+			CvMatUtils::printMat(&H);
 #endif
-		
-		// keep the best R and T
-		if (maxNumInLiers < numInLiers) {
-			maxNumInLiers = numInLiers;
-			cvCopy(&R, rot);
-			cvCopy(&T, trans);
+
+			// keep the best R and T
+			if (maxNumInLiers < numInLiers) {
+				maxNumInLiers = numInLiers;
+				cvCopy(&R, rot);
+				cvCopy(&T, shift);
+			}
 		}
+	} else {
+		this->estimateLeastSquareInCol(refPoints0, refPoints1, rot, shift);
+		this->constructDisparityHomography(rot, shift, &H);
+		maxNumInLiers = checkInLiers(uvds0, uvds1, &H);
 	}
 	
 	if (maxNumInLiers<6) {
@@ -128,7 +159,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
     CvMat *uvds0Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
     CvMat *uvds1Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
     // construct homography matrix
-    constructDisparityHomography(rot, trans, &H);
+    constructDisparityHomography(rot, shift, &H);
     int numInliers0 = getInLiers(uvds0, uvds1, &H, uvds0Inlier, uvds1Inlier);
 	
     // make a copy of the best Transformation before nonlinear optimization
@@ -191,9 +222,9 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
     param[0] = eulerAngles.x/180. * CV_PI;
     param[1] = eulerAngles.y/180. * CV_PI;
     param[2] = eulerAngles.z/180. * CV_PI;
-    param[3] = cvmGet(trans, 0, 0);
-    param[4] = cvmGet(trans, 1, 0);
-    param[5] = cvmGet(trans, 2, 0);
+    param[3] = cvmGet(shift, 0, 0);
+    param[4] = cvmGet(shift, 1, 0);
+    param[5] = cvmGet(shift, 2, 0);
     
 #ifdef DEBUG
     printf("initial parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n", 
@@ -227,15 +258,15 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
         for (int j=0;j<3;j++) {
             cvmSet(rot, i, j, _rot[i*3+j]);
         }
-    cvmSet(trans, 0, 0, param[3]);
-    cvmSet(trans, 1, 0, param[4]);
-    cvmSet(trans, 2, 0, param[5]);
+    cvmSet(shift, 0, 0, param[3]);
+    cvmSet(shift, 1, 0, param[4]);
+    cvmSet(shift, 2, 0, param[5]);
     
-    outliers0 = uvds0Inlier;
-    outliers1 = uvds1Inlier;
+    inliers0 = uvds0Inlier;
+    inliers1 = uvds1Inlier;
     
     // construct the final transformation matrix
-    this->constructDisparityHomography(rot, trans, &mT);
+    this->constructDisparityHomography(rot, shift, &mT);
 	return numInliers0;
 }
 
@@ -401,18 +432,17 @@ bool Cv3DPoseEstimateDispSpaceRef::reprojection(CvMat *uvds, CvMat *XYZs) {
 	cvReshape(uvds, &uvds0, 3, 0);
 	cvReshape(XYZs, &XYZs0, 3, 0);
 	cvPerspectiveTransform(&uvds0, &XYZs0, this->mDispToCart);
-	/*
-	int nPoints = uvds->cols;
-	
-	if (nPoints != XYZs->cols) {
-		cerr << "Num of points mismatched"<<endl;
-		return false;
-	}
-	for (int i=0; i<nPoints; i++){
-		// do reprojection of points in uvds into XYZs
-		 
-	}
-	*/
 	return status;
 }
+
+bool Cv3DPoseEstimateDispSpaceRef::projection(CvMat *XYZs, CvMat *uvds) {
+	bool status = true;
+	CvMat xyzs0;
+	CvMat uvds0;
+	cvReshape(XYZs, &xyzs0, 3, 0);
+	cvReshape(uvds, &uvds0, 3, 0);
+	cvPerspectiveTransform(&xyzs0, &uvds0, this->mCartToDisp);
+	return status;
+}
+
 

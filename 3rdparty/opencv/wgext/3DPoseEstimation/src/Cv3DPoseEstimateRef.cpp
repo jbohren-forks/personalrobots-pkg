@@ -51,7 +51,10 @@ bool Cv3DPoseEstimateRef::estimateLeastSquare(CvMat *p0, CvMat *p1, CvMat *R, Cv
 	cvTranspose(p0, P0);
 	cvTranspose(p1, P1);
 	
-	return estimateLeastSquareInCol(P0, P1, R, T);
+	bool status =  estimateLeastSquareInCol(P0, P1, R, T);
+	cvReleaseMat(&P0);
+	cvReleaseMat(&P1);
+	return status;
 }
 
 bool Cv3DPoseEstimateRef::estimateLeastSquareInCol(CvMat *P0, CvMat *P1, CvMat *R, CvMat *T) {
