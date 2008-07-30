@@ -102,10 +102,10 @@ namespace controller
      */
     ~JointController( );
 
-    static Controller* create(const std::string&) {
+    static Controller* create() {
       return new JointController;
     }
- 
+
     /*!
      * \brief   Initialization routine for the controller
      * \param Joint* joint The joint we are interacting with
