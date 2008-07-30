@@ -107,17 +107,24 @@ namespace TREX {
     desf.M.data[7] = m_variables[DES_ROT_3_2]->lastDomain().getSingletonValue();
     desf.M.data[8] = m_variables[DES_ROT_3_3]->lastDomain().getSingletonValue();
  
+    std::cout << "Cur f: " << curf << std::endl;
+    std::cout << "Des f: " << desf << std::endl;
+
     Vector move_vec = desf.p-curf.p;
     double dist = move_vec.Norm();
     
+    std::cout << "Move vec " << move_vec << std::endl;
+
     move_vec = move_vec/dist;
+
+    std::cout << "Move vec after div " << move_vec << std::endl;
     
     double step_size = m_variables[STEP_SIZE]->lastDomain().getSingletonValue();
     
     Frame retframe;
-    std::cout << "Norm is " << dist << std::endl;
-    std::cout << "Cur trans " << curf.p.data[0] << " " << curf.p.data[1] << " " << curf.p.data[2] << " " << std::endl;
-    std::cout << "Des trans " << desf.p.data[0] << " " << desf.p.data[1] << " " << desf.p.data[2] << " " << std::endl;
+    //std::cout << "Norm is " << dist << std::endl;
+    //std::cout << "Cur trans " << curf.p.data[0] << " " << curf.p.data[1] << " " << curf.p.data[2] << " " << std::endl;
+    //std::cout << "Des trans " << desf.p.data[0] << " " << desf.p.data[1] << " " << desf.p.data[2] << " " << std::endl;
 
     //figure out if we're within the step size of the destination
     if(dist < step_size) {
@@ -128,15 +135,19 @@ namespace TREX {
       RotationalInterpolation_SingleAxis rotInterpolater;
       rotInterpolater.SetStartEnd(curf.M, desf.M);
       double total_angle = rotInterpolater.Angle();
-      //	printf("Angle: %f\n", rotInterpolater.Angle());
+      printf("Angle: %f\n", rotInterpolater.Angle());
       
       Vector target;
       int nSteps = (int)(dist/step_size);
       double angle_step = total_angle/nSteps;
 
+      printf("Angle step: %f\n", angle_step);
+
       retframe.p = curf.p+move_vec*step_size;
       retframe.M = rotInterpolater.Pos(angle_step);
     }
+    
+    std::cout << "Out f: " << retframe << std::endl;
 
     //filling out return variables
     getCurrentDomain(m_variables[INTER_ROT_1_1]).set(retframe.M.data[0]);

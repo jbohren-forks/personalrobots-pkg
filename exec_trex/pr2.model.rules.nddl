@@ -31,7 +31,7 @@
 float OPEN_GRIPPER_GAP = 0.10;
 float OPEN_GRIPPER_FORCE = 100.0;
 
-float CLOSED_GRIPPER_GAP = 0.03;
+float CLOSED_GRIPPER_GAP = 0.02;
 float CLOSED_GRIPPER_FORCE = 100.0;
 
 
@@ -356,6 +356,72 @@ HandWave::Active{
   eq(left.desGripperGapCmd,OPEN_GRIPPER_GAP);
 }
 
+GraspObject::Active {
+  if(object.mode == Internal){
+    //first we need to open the gripper
+    contains(Actions.SetMoveArmGoalRelative opengrip1);
+    eq(opengrip1.isLeft, false);
+    eq(opengrip1.gripperForceCmd,OPEN_GRIPPER_FORCE);
+    eq(opengrip1.gripperGapCmd,OPEN_GRIPPER_GAP);
+    //first we move the end effector the desired grasp
+    //which is calculated from our object x y z
+
+    contains(MoveEndEffector.Inactive me);
+    //precedes(start, me.end);
+    eq(me.object.isLeft, false);
+    temporalDistance(opengrip1.end, [2, +inf], me.start);
+    //opengrip1 before me;
+    
+    eq(me.des_rot1_1, 1.0);
+    eq(me.des_rot1_2 , 0.0);
+    eq(me.des_rot1_3 , 0.0);
+    eq(me.des_rot2_1 , 0.0);
+    eq(me.des_rot2_2 , 1.0);
+    eq(me.des_rot2_3 , 0.0);
+    eq(me.des_rot3_1 , 0.0);
+    eq(me.des_rot3_2 , 0.0);
+    eq(me.des_rot3_3 , 1.0);
+    eq(me.des_x , .562689);
+    eq(me.des_y , -.367447);
+    eq(me.des_z , -.369594);
+
+    /*
+    bool graspPosOk;
+    
+    calcGraspPosition(graspPosOk, 
+		      x, y, z,
+		      me.des_rot1_1, me.des_rot1_2, me.des_rot1_3,
+		      me.des_rot2_1, me.des_rot2_2, me.des_rot2_3,
+		      me.des_rot3_1, me.des_rot3_2, me.des_rot3_3,
+		      me.des_x, me.des_y, me.des_z);
+    */
+
+    //next we close the gripper
+    contains(Actions.SetMoveArmGoalRelative closegrip);
+    eq(closegrip.isLeft, false);
+    eq(closegrip.gripperForceCmd,CLOSED_GRIPPER_FORCE);
+    eq(closegrip.gripperGapCmd,CLOSED_GRIPPER_GAP);
+    temporalDistance(me.start, [2, +inf], closegrip.start);
+    //me before closegrip;
+    
+    //then we move the turret and shoulder
+    contains(Actions.SetMoveArmGoalRelative armpivot);
+    eq(armpivot.isLeft, false);
+    eq(armpivot.turretAngle,-1.0);
+    eq(armpivot.shoulderLiftAngle,-.5);
+    temporalDistance(closegrip.end, [2, +inf], armpivot.start);
+    //closegrip before armpivot;
+    
+    //finally we open the gripper
+    contains(Actions.SetMoveArmGoalRelative opengrip2);
+    eq(opengrip2.isLeft, false);
+    eq(opengrip2.gripperForceCmd,OPEN_GRIPPER_FORCE);
+    eq(opengrip2.gripperGapCmd,OPEN_GRIPPER_GAP);
+    temporalDistance(armpivot.end, [2, +inf], opengrip2.start);
+    //armpivot before opengrip2;
+  }
+}
+
 /**
  * Produces Velocity Commands to bridge gap between current and desired pose.
  */
@@ -423,7 +489,7 @@ MoveEndEffector::Inactive{
 
   if(des_x){
     if(des_y){
-      if(des_y){
+      if(des_z){
 	if(des_rot1_1) {
 	  if(des_rot1_2) {
 	    if(des_rot1_3) {
@@ -493,6 +559,8 @@ MoveEndEffector::Inactive{
 }
 
 MoveEndEffector::Active {
+  contained_by(MoveArm.Inactive);
+
   if(object.mode == Internal) {
     // Generate an action to get to the goal position. This will be iterative
     contains(Actions.SetEndEffectorGoal a);
@@ -525,9 +593,12 @@ Actions::SetEndEffectorGoal{
     starts(EndEffectorGoal.Holds g);
     eq(g.object.isLeft, isLeft);
     calcInterpolatedEndEffectorPos(END_EFFECTOR_STEP_SIZE,
-				   pos.rot1_1, pos.rot1_2, pos.rot1_3,
-				   pos.rot2_1, pos.rot2_2, pos.rot2_3,
-				   pos.rot3_1, pos.rot3_2, pos.rot3_3,
+				   0.0,0.0,0.0,
+				   0.0,0.0,0.0,
+				   0.0,0.0,0.0,
+				   //pos.rot1_1, pos.rot1_2, pos.rot1_3,
+				   //pos.rot2_1, pos.rot2_2, pos.rot2_3,
+				   //pos.rot3_1, pos.rot3_2, pos.rot3_3,
 				   pos.x, pos.y, pos.z,
 				   rot1_1, rot1_2, rot1_3,
 				   rot2_1, rot2_2, rot2_3,
@@ -572,6 +643,34 @@ Actions::SetEndEffectorGoal{
   }
 }
 
+Actions::SetMoveArmGoalRelative {
+  met_by(ArmState.Holds as);
+  eq(as.object.isLeft, isLeft);
+  
+  ends(MoveArm.Active ma);
+  eq(ma.object.isLeft, isLeft);
+  
+  eq(ma.turretAngle, turretAngle);
+  eq(ma.shoulderLiftAngle, shoulderLiftAngle);;
+  eq(ma.upperarmRollAngle, upperarmRollAngle);
+  eq(ma.elbowAngle, elbowAngle);
+  eq(ma.forearmRollAngle, forearmRollAngle);
+  eq(ma.wristPitchAngle, wristPitchAngle);
+  eq(ma.wristRollAngle, wristRollAngle);;
+  eq(ma.gripperForceCmd, gripperForceCmd);
+  eq(ma.gripperGapCmd, gripperGapCmd);
+  
+  default(turretAngle, as.acTurretAngle);
+  default(shoulderLiftAngle, as.acShoulderLiftAngle);;
+  default(upperarmRollAngle, as.acUpperarmRollAngle);
+  default(elbowAngle, as.acElbowAngle);
+  default(forearmRollAngle, as.acForearmRollAngle);
+  default(wristPitchAngle, as.acWristPitchAngle);
+  default(wristRollAngle, as.acWristRollAngle);;
+  default(gripperForceCmd, as.acGripperForceCmd);
+  default(gripperGapCmd, as.acGripperGapCmd);
+}
+
 MoveArm::Inactive {
   met_by(Active p);
   eq(p.turretAngle,desTurretAngle);
@@ -592,13 +691,14 @@ MoveArm::Inactive {
   addEq(acForearmRollAngle,  [-.15 , .15], desForearmRollAngle);
   addEq(acWristPitchAngle, [-.15 , .15], desWristPitchAngle);
   addEq(acWristRollAngle,  [-.15 , .15], desWristRollAngle);
-  //addEq(acGripperForceCmd,  [-25 , 25], desGripperForceCmd);
-  //addEq(acGripperGapCmd,  [-.03 , .03], desGripperGapCmd);
+  addEq(acGripperForceCmd,  [-25 , 25], desGripperForceCmd);
+  addEq(acGripperGapCmd,  [-.01 , .01], desGripperGapCmd);
 
 }
 
 MoveArm::Active {
   contained_by(MoveBase.Inactive wp);
+  contained_by(MoveEndEffector.Inactive);
   met_by(Inactive p);
   meets(Inactive s);
 }

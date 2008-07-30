@@ -14,7 +14,7 @@ static const double JointMin = -M_PI;
 static const double JointMax = M_PI;
 
 int main(int argc, char** argv) {
-
+  
   double obj_x = .60;
   double obj_y = -.5;
   double obj_z = 1.25;
@@ -143,7 +143,7 @@ int main(int argc, char** argv) {
     armGoal.forearmRollAngle = joint_5.getDerivedDomain().getSingletonValue();
     armGoal.wristPitchAngle = joint_6.getDerivedDomain().getSingletonValue();
     armGoal.wristRollAngle = joint_7.getDerivedDomain().getSingletonValue();
-    armGoal.gripperForceCmd = 10.0; 
+    armGoal.gripperForceCmd = 100.0; 
     armGoal.gripperGapCmd = 0.1;
     
   

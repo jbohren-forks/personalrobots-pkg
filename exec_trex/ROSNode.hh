@@ -118,8 +118,8 @@ namespace TREX{
     
     void get_laser_obs();
 
-    void get_left_arm_obs(std::vector<Observation*>& obsBuffer);
-    void get_right_arm_obs(std::vector<Observation*>& obsBuffer);
+    void get_left_arm_obs(std::vector<Observation*>& obsBuffer, TICK currentTick);
+    void get_right_arm_obs(std::vector<Observation*>& obsBuffer, TICK currentTick);
     
     Observation* get_right_end_effector_obs();
     Observation* get_left_end_effector_obs();

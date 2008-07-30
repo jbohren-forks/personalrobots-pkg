@@ -54,13 +54,11 @@ namespace TREX {
     aPose.time = 0;
     aPose.frame = rni->tf.lookup("FRAMEID_ARM_R_SHOULDER");
 
-    std::cout << "Before\n";
-
     libTF::TFPose inShoulderFrame = rni->tf.transformPose(rni->tf.lookup("FRAMEID_ODOM"), aPose);
 
-    std::cout << "In shoulder frame in base x " << inShoulderFrame.x << std::endl;
-    std::cout << "In shoulder frame in base y " << inShoulderFrame.y << std::endl;
-    std::cout << "In shoulder frame in base z " << inShoulderFrame.z << std::endl;
+    //std::cout << "In shoulder frame in base x " << inShoulderFrame.x << std::endl;
+    //std::cout << "In shoulder frame in base y " << inShoulderFrame.y << std::endl;
+    //std::cout << "In shoulder frame in base z " << inShoulderFrame.z << std::endl;
 
 
     //now we have the shoulder translation in world coordinates
@@ -81,16 +79,16 @@ namespace TREX {
     
     libTF::TFPose inHandFrame = rni->tf.transformPose(rni->tf.lookup("FRAMEID_ODOM"), bPose);
  
-    std::cout << "In hand frame in base x " << inHandFrame.x << std::endl;
-    std::cout << "In hand frame in base y " << inHandFrame.y << std::endl;
-    std::cout << "In hand frame in base z " << inHandFrame.z << std::endl;
+    //std::cout << "In hand frame in base x " << inHandFrame.x << std::endl;
+    //std::cout << "In hand frame in base y " << inHandFrame.y << std::endl;
+    //std::cout << "In hand frame in base z " << inHandFrame.z << std::endl;
    
     Rotation r = Rotation::RotZ(DTOR(0));
     Vector v(objPosX,objPosY,objPosZ);
-
-    //std::cout << "In shoulder frame x " << objPosX << std::endl;
-    //std::cout << "In shoulder frame y " << objPosY << std::endl;
-    //std::cout << "In shoulder frame z " << objPosZ << std::endl;
+    
+    std::cout << "In shoulder frame x " << objPosX << std::endl;
+    std::cout << "In shoulder frame y " << objPosY << std::endl;
+    std::cout << "In shoulder frame z " << objPosZ << std::endl;
 
     getCurrentDomain(m_variables[ROT_FRAME_1_1]).set(r.data[0]);
     getCurrentDomain(m_variables[ROT_FRAME_1_2]).set(r.data[1]);

@@ -256,6 +256,7 @@ namespace TREX {
   void ROSNode::dispatchArm(const TokenId& cmd_arm, TICK currentTick) {
     
     std::cout << "Trying to dispatch arm.\n";
+    std::cout << "Pred name: " << cmd_arm->getPredicateName().toString() << std::endl;
     if(cmd_arm->getPredicateName() == LabelStr("MoveArm.Active")) {
       PR2Arm armGoal;
       //figure out if it's left or right
@@ -270,13 +271,32 @@ namespace TREX {
       armGoal.gripperGapCmd = cmd_arm->getVariable("gripperGapCmd")->lastDomain().getSingletonValue();
 
       if(getObjectName(cmd_arm)==LabelStr("moveRightArm")) {
-	debugMsg("ROSNode::Arm", "dispatching command for right arm.");
+	debugMsg("ROSNode::Arm", "dispatching command for right arm. " <<
+		 armGoal.turretAngle << " " <<
+		 armGoal.shoulderLiftAngle << " " <<
+		 armGoal.upperarmRollAngle << " " <<
+		 armGoal.elbowAngle << " " <<
+		 armGoal.forearmRollAngle << " " <<
+		 armGoal.wristPitchAngle << " " <<
+		 armGoal.wristRollAngle << " " <<
+		 armGoal.gripperForceCmd << " " <<
+		 armGoal.gripperGapCmd);
 	publish("right_pr2arm_set_position",armGoal);
+	
 	_lastActiveRightArmDispatch = currentTick;
 	_rightArmActive = true;
 	_lastRightArmGoal = armGoal;
       } else {
-	debugMsg("ROSNode::Arm", "dispatching command for left arm.");
+	debugMsg("ROSNode::Arm", "dispatching command for left arm." <<
+		 armGoal.turretAngle << " " <<
+		 armGoal.shoulderLiftAngle << " " <<
+		 armGoal.upperarmRollAngle << " " <<
+		 armGoal.elbowAngle << " " <<
+		 armGoal.forearmRollAngle << " " <<
+		 armGoal.wristPitchAngle << " " <<
+		 armGoal.wristRollAngle << " " <<
+		 armGoal.gripperForceCmd << " " <<
+		 armGoal.gripperGapCmd);
 	publish("left_pr2arm_set_position",armGoal);
 	_leftArmActive = true;
 	_lastActiveLeftArmDispatch = currentTick;
@@ -315,6 +335,20 @@ namespace TREX {
 	       << endGoal.trans[0] << " " 
 	       << endGoal.trans[1] << " " 
 	       << endGoal.trans[2]); 
+
+      std::cout << "ROSNode::EndEffector:: Dispatching end frame " 
+		<< endGoal.rot[0] << " " 
+		<< endGoal.rot[1] << " " 
+		<< endGoal.rot[2] << " " 
+		<< endGoal.rot[3] << " " 
+		<< endGoal.rot[4] << " " 
+		<< endGoal.rot[5] << " " 
+		<< endGoal.rot[6] << " " 
+		<< endGoal.rot[7] << " " 
+		<< endGoal.rot[8] << " " 
+		<< endGoal.trans[0] << " " 
+		<< endGoal.trans[1] << " " 
+		<< endGoal.trans[2] << std::endl; 
 	       
       if(getObjectName(cmd_end) == LabelStr("rightEndEffectorGoal")) {
 	debugMsg("ROSNode::EndEffector", "dispatching command for right end effector");
@@ -412,101 +446,101 @@ namespace TREX {
   void ROSNode::get_arm_obs(std::vector<Observation*>& buff, TICK currentTick){
    
     if(_rightArmInit && _leftArmInit) {
-
-      if(currentTick != _lastActiveLeftArmDispatch) {
-	get_left_arm_obs(buff);
-      }
-      
-      if(currentTick != _lastActiveRightArmDispatch) {
-	get_right_arm_obs(buff);
-      }
-	
+      get_left_arm_obs(buff, currentTick);
+      get_right_arm_obs(buff, currentTick);
       _generateFirstObservation = false;
     }
   }
 
-  void ROSNode::get_left_arm_obs(std::vector<Observation*>& buff){
+  void ROSNode::get_left_arm_obs(std::vector<Observation*>& buff, TICK currentTick){
     lock();
-    if(_generateFirstObservation || 
-       (_leftArmActive &&
-	fabs(leftArmPosMsg.turretAngle-_lastLeftArmGoal.turretAngle) < AllowableArmError &&
-	fabs(leftArmPosMsg.shoulderLiftAngle-_lastLeftArmGoal.shoulderLiftAngle) < AllowableArmError &&
-	fabs(leftArmPosMsg.upperarmRollAngle-_lastLeftArmGoal.upperarmRollAngle) < AllowableArmError &&
-	fabs(leftArmPosMsg.elbowAngle-_lastLeftArmGoal.elbowAngle) < AllowableArmError &&
-	fabs(leftArmPosMsg.forearmRollAngle-_lastLeftArmGoal.forearmRollAngle) < AllowableArmError &&
-	fabs(leftArmPosMsg.wristPitchAngle-_lastLeftArmGoal.wristPitchAngle) < AllowableArmError &&
-	fabs(leftArmPosMsg.wristRollAngle-_lastLeftArmGoal.wristRollAngle) < AllowableArmError)) { //&&
-	//fabs(leftArmPosMsg.gripperGapCmd-_lastLeftArmGoal.gripperGapCmd) < AllowableGraspError)) {
-      
-      std::cout << "Pushing left arm inactive observation.\n";
 
-      ObservationByValue* obs1 = new ObservationByValue("leftArmState", "ArmState.Holds");
-      obs1->push_back("acTurretAngle", new IntervalDomain(leftArmPosMsg.turretAngle));
-      obs1->push_back("acShoulderLiftAngle", new IntervalDomain(leftArmPosMsg.shoulderLiftAngle));
-      obs1->push_back("acUpperarmRollAngle", new IntervalDomain(leftArmPosMsg.upperarmRollAngle));
-      obs1->push_back("acElbowAngle", new IntervalDomain(leftArmPosMsg.elbowAngle));
-      obs1->push_back("acForearmRollAngle", new IntervalDomain(leftArmPosMsg.forearmRollAngle));
-      obs1->push_back("acWristPitchAngle", new IntervalDomain(leftArmPosMsg.wristPitchAngle));
-      obs1->push_back("acWristRollAngle", new IntervalDomain(leftArmPosMsg.wristRollAngle));
-      obs1->push_back("acGripperForceCmd", new IntervalDomain(leftArmPosMsg.gripperForceCmd));
-      obs1->push_back("acGripperGapCmd", new IntervalDomain(leftArmPosMsg.gripperGapCmd));
-      buff.push_back(obs1);
-
-      ObservationByValue* obs2 = new ObservationByValue("moveLeftArm", "MoveArm.Inactive");
-      obs2->push_back("acTurretAngle", new IntervalDomain(leftArmPosMsg.turretAngle));
-      obs2->push_back("acShoulderLiftAngle", new IntervalDomain(leftArmPosMsg.shoulderLiftAngle));
-      obs2->push_back("acUpperarmRollAngle", new IntervalDomain(leftArmPosMsg.upperarmRollAngle));
-      obs2->push_back("acElbowAngle", new IntervalDomain(leftArmPosMsg.elbowAngle));
-      obs2->push_back("acForearmRollAngle", new IntervalDomain(leftArmPosMsg.forearmRollAngle));
-      obs2->push_back("acWristPitchAngle", new IntervalDomain(leftArmPosMsg.wristPitchAngle));
-      obs2->push_back("acWristRollAngle", new IntervalDomain(leftArmPosMsg.wristRollAngle));
-      obs2->push_back("acGripperForceCmd", new IntervalDomain(leftArmPosMsg.gripperForceCmd));
-      obs2->push_back("acGripperGapCmd", new IntervalDomain(leftArmPosMsg.gripperGapCmd));
-      buff.push_back(obs2);
-			  
-      _leftArmActive = false;
-   }
+    //do this no matter what
+    ObservationByValue* obs1 = new ObservationByValue("leftArmState", "ArmState.Holds");
+    obs1->push_back("acTurretAngle", new IntervalDomain(leftArmPosMsg.turretAngle));
+    obs1->push_back("acShoulderLiftAngle", new IntervalDomain(leftArmPosMsg.shoulderLiftAngle));
+    obs1->push_back("acUpperarmRollAngle", new IntervalDomain(leftArmPosMsg.upperarmRollAngle));
+    obs1->push_back("acElbowAngle", new IntervalDomain(leftArmPosMsg.elbowAngle));
+    obs1->push_back("acForearmRollAngle", new IntervalDomain(leftArmPosMsg.forearmRollAngle));
+    obs1->push_back("acWristPitchAngle", new IntervalDomain(leftArmPosMsg.wristPitchAngle));
+    obs1->push_back("acWristRollAngle", new IntervalDomain(leftArmPosMsg.wristRollAngle));
+    obs1->push_back("acGripperForceCmd", new IntervalDomain(leftArmPosMsg.gripperForceCmd));
+    obs1->push_back("acGripperGapCmd", new IntervalDomain(leftArmPosMsg.gripperGapCmd));
+    buff.push_back(obs1);
+    if(currentTick != _lastActiveLeftArmDispatch) {
+      if(_generateFirstObservation || 
+	 (_leftArmActive &&
+	  fabs(leftArmPosMsg.turretAngle-_lastLeftArmGoal.turretAngle) < AllowableArmError &&
+	  fabs(leftArmPosMsg.shoulderLiftAngle-_lastLeftArmGoal.shoulderLiftAngle) < AllowableArmError &&
+	  fabs(leftArmPosMsg.upperarmRollAngle-_lastLeftArmGoal.upperarmRollAngle) < AllowableArmError &&
+	  fabs(leftArmPosMsg.elbowAngle-_lastLeftArmGoal.elbowAngle) < AllowableArmError &&
+	  fabs(leftArmPosMsg.forearmRollAngle-_lastLeftArmGoal.forearmRollAngle) < AllowableArmError &&
+	  fabs(leftArmPosMsg.wristPitchAngle-_lastLeftArmGoal.wristPitchAngle) < AllowableArmError &&
+	  fabs(leftArmPosMsg.wristRollAngle-_lastLeftArmGoal.wristRollAngle) < AllowableArmError &&
+	  fabs(leftArmPosMsg.gripperGapCmd-_lastLeftArmGoal.gripperGapCmd) < AllowableGraspError)) {
+	
+	std::cout << "Pushing left arm inactive observation.\n";
+	
+	ObservationByValue* obs2 = new ObservationByValue("moveLeftArm", "MoveArm.Inactive");
+	obs2->push_back("acTurretAngle", new IntervalDomain(leftArmPosMsg.turretAngle));
+	obs2->push_back("acShoulderLiftAngle", new IntervalDomain(leftArmPosMsg.shoulderLiftAngle));
+	obs2->push_back("acUpperarmRollAngle", new IntervalDomain(leftArmPosMsg.upperarmRollAngle));
+	obs2->push_back("acElbowAngle", new IntervalDomain(leftArmPosMsg.elbowAngle));
+	obs2->push_back("acForearmRollAngle", new IntervalDomain(leftArmPosMsg.forearmRollAngle));
+	obs2->push_back("acWristPitchAngle", new IntervalDomain(leftArmPosMsg.wristPitchAngle));
+	obs2->push_back("acWristRollAngle", new IntervalDomain(leftArmPosMsg.wristRollAngle));
+	obs2->push_back("acGripperForceCmd", new IntervalDomain(leftArmPosMsg.gripperForceCmd));
+	obs2->push_back("acGripperGapCmd", new IntervalDomain(leftArmPosMsg.gripperGapCmd));
+	buff.push_back(obs2);
+	
+	_leftArmActive = false;
+      }
+    }
     unlock();
   }
     
-  void ROSNode::get_right_arm_obs(std::vector<Observation*>& buff){
+  void ROSNode::get_right_arm_obs(std::vector<Observation*>& buff, TICK currentTick){
     lock();
-    if(_generateFirstObservation ||
-       (_rightArmActive &&
-	fabs(rightArmPosMsg.turretAngle-_lastRightArmGoal.turretAngle) < AllowableArmError &&
-	fabs(rightArmPosMsg.shoulderLiftAngle-_lastRightArmGoal.shoulderLiftAngle) < AllowableArmError &&
-	fabs(rightArmPosMsg.upperarmRollAngle-_lastRightArmGoal.upperarmRollAngle) < AllowableArmError &&
-	fabs(rightArmPosMsg.elbowAngle-_lastRightArmGoal.elbowAngle) < AllowableArmError &&
-	fabs(rightArmPosMsg.forearmRollAngle-_lastRightArmGoal.forearmRollAngle) < AllowableArmError &&
-	fabs(rightArmPosMsg.wristPitchAngle-_lastRightArmGoal.wristPitchAngle) < AllowableArmError &&
-	fabs(rightArmPosMsg.wristRollAngle-_lastRightArmGoal.wristRollAngle) < AllowableArmError)) { //&&
-      //fabs(rightArmPosMsg.gripperGapCmd-_lastRightArmGoal.gripperGapCmd) < AllowableGraspError)) {
-      std::cout << "Pushing right arm inactive observation.\n";
 
-      ObservationByValue* obs1 = new ObservationByValue("rightArmState", "ArmState.Holds");
-      obs1->push_back("acTurretAngle", new IntervalDomain(rightArmPosMsg.turretAngle));
-      obs1->push_back("acShoulderLiftAngle", new IntervalDomain(rightArmPosMsg.shoulderLiftAngle));
-      obs1->push_back("acUpperarmRollAngle", new IntervalDomain(rightArmPosMsg.upperarmRollAngle));
-      obs1->push_back("acElbowAngle", new IntervalDomain(rightArmPosMsg.elbowAngle));
-      obs1->push_back("acForearmRollAngle", new IntervalDomain(rightArmPosMsg.forearmRollAngle));
-      obs1->push_back("acWristPitchAngle", new IntervalDomain(rightArmPosMsg.wristPitchAngle));
-      obs1->push_back("acWristRollAngle", new IntervalDomain(rightArmPosMsg.wristRollAngle));
-      obs1->push_back("acGripperForceCmd", new IntervalDomain(rightArmPosMsg.gripperForceCmd));
-      obs1->push_back("acGripperGapCmd", new IntervalDomain(rightArmPosMsg.gripperGapCmd));
-      buff.push_back(obs1);
+    //do this no matter what
+    ObservationByValue* obs1 = new ObservationByValue("rightArmState", "ArmState.Holds");
+    obs1->push_back("acTurretAngle", new IntervalDomain(rightArmPosMsg.turretAngle));
+    obs1->push_back("acShoulderLiftAngle", new IntervalDomain(rightArmPosMsg.shoulderLiftAngle));
+    obs1->push_back("acUpperarmRollAngle", new IntervalDomain(rightArmPosMsg.upperarmRollAngle));
+    obs1->push_back("acElbowAngle", new IntervalDomain(rightArmPosMsg.elbowAngle));
+    obs1->push_back("acForearmRollAngle", new IntervalDomain(rightArmPosMsg.forearmRollAngle));
+    obs1->push_back("acWristPitchAngle", new IntervalDomain(rightArmPosMsg.wristPitchAngle));
+    obs1->push_back("acWristRollAngle", new IntervalDomain(rightArmPosMsg.wristRollAngle));
+    obs1->push_back("acGripperForceCmd", new IntervalDomain(rightArmPosMsg.gripperForceCmd));
+    obs1->push_back("acGripperGapCmd", new IntervalDomain(rightArmPosMsg.gripperGapCmd));
+    buff.push_back(obs1);
 
-      ObservationByValue* obs2 = new ObservationByValue("moveRightArm", "MoveArm.Inactive");
-      obs2->push_back("acTurretAngle", new IntervalDomain(rightArmPosMsg.turretAngle));
-      obs2->push_back("acShoulderLiftAngle", new IntervalDomain(rightArmPosMsg.shoulderLiftAngle));
-      obs2->push_back("acUpperarmRollAngle", new IntervalDomain(rightArmPosMsg.upperarmRollAngle));
-      obs2->push_back("acElbowAngle", new IntervalDomain(rightArmPosMsg.elbowAngle));
-      obs2->push_back("acForearmRollAngle", new IntervalDomain(rightArmPosMsg.forearmRollAngle));
-      obs2->push_back("acWristPitchAngle", new IntervalDomain(rightArmPosMsg.wristPitchAngle));
-      obs2->push_back("acWristRollAngle", new IntervalDomain(rightArmPosMsg.wristRollAngle));
-      obs2->push_back("acGripperForceCmd", new IntervalDomain(rightArmPosMsg.gripperForceCmd));
-      obs2->push_back("acGripperGapCmd", new IntervalDomain(rightArmPosMsg.gripperGapCmd));
-      buff.push_back(obs2);
-      _rightArmActive = false;
+    if(currentTick != _lastActiveRightArmDispatch) {
+      if(_generateFirstObservation ||
+	 (_rightArmActive &&
+	  fabs(rightArmPosMsg.turretAngle-_lastRightArmGoal.turretAngle) < AllowableArmError &&
+	  fabs(rightArmPosMsg.shoulderLiftAngle-_lastRightArmGoal.shoulderLiftAngle) < AllowableArmError &&
+	  fabs(rightArmPosMsg.upperarmRollAngle-_lastRightArmGoal.upperarmRollAngle) < AllowableArmError &&
+	  fabs(rightArmPosMsg.elbowAngle-_lastRightArmGoal.elbowAngle) < AllowableArmError &&
+	  fabs(rightArmPosMsg.forearmRollAngle-_lastRightArmGoal.forearmRollAngle) < AllowableArmError &&
+	  fabs(rightArmPosMsg.wristPitchAngle-_lastRightArmGoal.wristPitchAngle) < AllowableArmError &&
+	  fabs(rightArmPosMsg.wristRollAngle-_lastRightArmGoal.wristRollAngle) < AllowableArmError &&
+	  fabs(rightArmPosMsg.gripperGapCmd-_lastRightArmGoal.gripperGapCmd) < AllowableGraspError)) {
+	std::cout << "Pushing right arm inactive observation.\n";       	
+	
+	ObservationByValue* obs2 = new ObservationByValue("moveRightArm", "MoveArm.Inactive");
+	obs2->push_back("acTurretAngle", new IntervalDomain(rightArmPosMsg.turretAngle));
+	obs2->push_back("acShoulderLiftAngle", new IntervalDomain(rightArmPosMsg.shoulderLiftAngle));
+	obs2->push_back("acUpperarmRollAngle", new IntervalDomain(rightArmPosMsg.upperarmRollAngle));
+	obs2->push_back("acElbowAngle", new IntervalDomain(rightArmPosMsg.elbowAngle));
+	obs2->push_back("acForearmRollAngle", new IntervalDomain(rightArmPosMsg.forearmRollAngle));
+	obs2->push_back("acWristPitchAngle", new IntervalDomain(rightArmPosMsg.wristPitchAngle));
+	obs2->push_back("acWristRollAngle", new IntervalDomain(rightArmPosMsg.wristRollAngle));
+	obs2->push_back("acGripperForceCmd", new IntervalDomain(rightArmPosMsg.gripperForceCmd));
+	obs2->push_back("acGripperGapCmd", new IntervalDomain(rightArmPosMsg.gripperGapCmd));
+	buff.push_back(obs2);
+	_rightArmActive = false;
+      }
     }
     unlock();
   }
@@ -579,8 +613,8 @@ namespace TREX {
 					     const unsigned int target_frame,
 					     Frame& f) {
     //frame comes from forward kinematics
-    PR2_kinematics pr2_kin;
-    JntArray q = JntArray(pr2_kin.nJnts);
+    PR2_kinematics* pr2_kin = new PR2_kinematics();
+    JntArray q = JntArray(pr2_kin->nJnts);
     
     q(0) = arm.turretAngle;
     q(1) = arm.shoulderLiftAngle;
@@ -590,7 +624,9 @@ namespace TREX {
     q(5) = arm.wristPitchAngle;
     q(6) = arm.wristRollAngle;
 
-    pr2_kin.FK(q,f);
+    pr2_kin->FK(q,f);
+
+    delete pr2_kin;
 
     //for now need to convert to funky shoulder frame
   //   libTF::TFPose aPose;

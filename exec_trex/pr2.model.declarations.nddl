@@ -40,8 +40,8 @@ typedef float [0.0 +inff] PFLOAT;
 
 float BASE_POSITION_ERROR = 1.0;
 float ANGLE_ERROR = .2;
-float END_EFFECTOR_POSITION_ERROR = 0.1;
-float END_EFFECTOR_STEP_SIZE = 0.25;
+float END_EFFECTOR_POSITION_ERROR = 0.005;
+float END_EFFECTOR_STEP_SIZE = 5.0;
 
 // Bogus
 float NOMINAL_SPEED = 1.0;
@@ -259,6 +259,20 @@ class HandWave extends Behavior {
   }
 };
 
+class GraspObject extends Behavior {
+
+  predicate Active {
+    float x;
+    float y;
+    float z;
+  }
+
+  GraspObject(Mode _mode){
+    super(_mode);
+  }
+
+};
+
 /**
  * Actions are since they have the unique properties that:
  * 1. They are explicitly started by the agent when they become startable
@@ -308,6 +322,20 @@ class Actions extends AgentActions{
     float x;
     float y;
     float z;
+    eq(duration, 1);
+  }
+
+  predicate SetMoveArmGoalRelative {
+    bool isLeft;
+    float turretAngle;
+    float shoulderLiftAngle;
+    float upperarmRollAngle;
+    float elbowAngle;
+    float forearmRollAngle;
+    float wristPitchAngle;
+    float wristRollAngle;
+    float gripperForceCmd;
+    float gripperGapCmd;
   }
 };
 

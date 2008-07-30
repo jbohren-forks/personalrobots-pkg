@@ -6,6 +6,7 @@
 #include "pr2.model.nddl"
 
 // Internal Timelines
+GraspObject graspobject = new GraspObject(Internal);
 MoveEndEffector moveRightEndEffector = new MoveEndEffector(Internal, false);
 MoveEndEffector moveLeftEndEffector = new MoveEndEffector(Internal, true);
 
@@ -25,5 +26,6 @@ EndEffectorGoal leftEndEffectorGoal = new EndEffectorGoal(External, true);
 Actions actions = new Actions();
 
 // Ignored Timelines
+MoveBase moveBase = new MoveBase(Ignore);
 
 close();

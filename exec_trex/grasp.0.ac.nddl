@@ -1,7 +1,7 @@
 #include "ac.init.nddl"
 
+/*
 rejectable(moveRightEndEffector.Inactive me);
-//eq(me.object.isLeft, false);
 me.des_rot1_1 = 1.0;
 me.des_rot1_2 = 0.0;
 me.des_rot1_3 = 0.0;
@@ -14,3 +14,4 @@ me.des_rot3_3 = 1.0;
 me.des_x = .562689;
 me.des_y = -.367447;
 me.des_z = -.369594;
+*/
