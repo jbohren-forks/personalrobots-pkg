@@ -47,8 +47,8 @@ public:
   float last_mot_val[6];
   double pulse_per_rad[6];
 
-  int frame_id[6];
-  int parent_id[6];
+  string frame_id[6];
+  string parent_id[6];
   int rot_axis[6];
 
   int count;
@@ -80,17 +80,17 @@ public:
 
       oss.str("");
       oss << "etherdrive/frame_id" << i;
-      param(oss.str().c_str(), frame_id[i], 0);
+      param(oss.str().c_str(), frame_id[i], string("BAD_ID"));
 
       oss.str("");
       oss << "etherdrive/parent_id" << i;
-      param(oss.str().c_str(), parent_id[i], 0);
+      param(oss.str().c_str(), parent_id[i], string("BAD_ID"));
 
       oss.str("");
       oss << "etherdrive/rot_axis" << i;
-      param(oss.str().c_str(), rot_axis[i], 1);
+      param(oss.str().c_str(), rot_axis[i], 0);
 
-      printf("Using frame %d and parent %d for motor %d\n", frame_id[i], parent_id[i], i);
+      printf("Using frame %s and parent %s for motor %d\n", frame_id[i].c_str(), parent_id[i].c_str(), i);
     }
 
     ed = new EtherDrive();
@@ -152,8 +152,6 @@ public:
 
     ros::Time stamp = before + ros::Duration( delta.to_double() / 2.0 );
 
-    //    printf("%d %d %d\n",ed->get_enc(0), ed->get_cur(0), ed->get_pwm(0));
-   
     for (int i = 0; i < 6; i++) {
       mot[i].val = val[i] / pulse_per_rad[i];
       mot[i].rel = false;
@@ -162,14 +160,15 @@ public:
       ostringstream oss;
       oss << "mot" << i;
 
-      if (frame_id[i] != 0 && parent_id[i] != 0) 
+      if (frame_id[i] != string("BAD_ID") && parent_id[i] != string("BAD_ID")) 
       {
+
         tf.sendEuler(frame_id[i], parent_id[i],
                      0, 0, 0,
                      (rot_axis[i] == 1) ? mot[i].val : 0,
                      (rot_axis[i] == 2) ? mot[i].val : 0,
                      (rot_axis[i] == 3) ? mot[i].val : 0,
-                     stamp.sec, stamp.nsec);
+                     stamp);
       }
       publish(oss.str().c_str(), mot[i]);
     }
