@@ -381,7 +381,7 @@ GraspObject::Active {
     eq(me.des_rot3_1 , 0.0);
     eq(me.des_rot3_2 , 0.0);
     eq(me.des_rot3_3 , 1.0);
-    eq(me.des_x , .562689);
+    eq(me.des_x , .563689);
     eq(me.des_y , -.367447);
     eq(me.des_z , -.369594);
 
