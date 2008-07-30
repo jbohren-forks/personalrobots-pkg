@@ -1,0 +1,10 @@
+std_msgs/PointCloudFloat32 cloud
+float32 connectedThreshold
+int32 minComponentSize
+float32 grazingThreshold
+float32 grazingRadius
+int32 grazingNbrs
+float32 planeRemovalThreshold
+float32 planeFitThreshold
+---
+object_msg[] objects
