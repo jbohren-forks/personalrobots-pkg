@@ -1,7 +1,0 @@
-<package>
-  <description>A ROS node that wraps up the Player linuxjoystick driver, which provides access to Linux joystick.</description>
-  <author>Brian P. Gerkey</author>
-  <license>BSD</license>
-  <depend package="roscpp" />
-<!--  <depend package="common_flows" />-->
-</package>
