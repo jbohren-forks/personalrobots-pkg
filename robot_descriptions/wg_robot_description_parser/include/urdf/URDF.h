@@ -35,7 +35,7 @@
 #ifndef URDF_PARSER_
 #define URDF_PARSER_
 
-#include <tinyxml-2.5.3/tinyxml.h>
+#include <tinyxml/tinyxml.h>
 #include <istream>
 #include <string>
 #include <vector>

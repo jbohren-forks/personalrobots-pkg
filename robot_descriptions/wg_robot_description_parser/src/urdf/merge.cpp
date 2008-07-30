@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include <tinyxml-2.5.3/tinyxml.h>
+#include <tinyxml/tinyxml.h>
 #include <vector>
 #include <string>
 #include <fstream>

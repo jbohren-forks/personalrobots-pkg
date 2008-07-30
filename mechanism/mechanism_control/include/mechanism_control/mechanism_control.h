@@ -31,7 +31,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "tinyxml-2.5.3/tinyxml.h"
+#include "tinyxml/tinyxml.h"
 #include <hw_interface/hardware_interface.h>
 #include <mechanism_model/robot.h>
 #include <rosthread/mutex.h>
