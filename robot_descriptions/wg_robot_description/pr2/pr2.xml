@@ -104,7 +104,7 @@
   <templates>
     <define template="pr2_caster_visual">
       <xyz>-1 0 -0.08</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
-      <rpy>M_PI/2 0.0 M_PI/2 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <scale>0.001 0.001 0.001</scale>
       <geometry type="mesh" name="pr2_caster_mesh_file">
@@ -187,7 +187,7 @@
 
     <define template="pr2_shoulder_pan_visual">
       <xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
-      <rpy>M_PI/2 0 M_PI/2 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <rpy>0 0 0</rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <scale>0.001 0.001 0.001</scale>
       <geometry type="mesh" name="pr2_sholder_pan_mesh_file">
@@ -219,7 +219,7 @@
 
     <define template="pr2_shoulder_pitch_visual">
       <xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
-      <rpy>M_PI/2 0.0 M_PI/2 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <scale>0.001 0.001 0.001</scale>
       <geometry type="mesh" name="pr2_sholder_pitch_mesh_file">
@@ -251,7 +251,7 @@
 
     <define template="pr2_shoulder_roll_visual">
       <xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
-      <rpy>M_PI/2 M_PI/2 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <scale>0.001 0.001 0.001</scale>
       <geometry type="mesh" name="pr2_sholder_roll_mesh_file">
@@ -283,7 +283,7 @@
 
     <define template="pr2_elbow_pitch_visual">
       <xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
-      <rpy>M_PI/2 0.0 M_PI/2 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <scale>0.001 0.001 0.001</scale>
       <geometry type="mesh" name="pr2_elbow_pitch_mesh_file">
@@ -315,7 +315,7 @@
 
     <define template="pr2_forearm_roll_visual">
       <xyz>0.5 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
-      <rpy> 0.0 M_PI/2 M_PI </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <rpy> 0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <scale>0.001 0.001 0.001</scale>
       <geometry type="mesh" name="pr2_forearm_roll_mesh_file">
@@ -380,7 +380,7 @@
 
     <define template="pr2_wrist_roll_visual">
       <xyz>0 0 0.25 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
-      <rpy>0.0 M_PI/2 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <scale>0.001 0.001 0.001</scale>
       <geometry type="mesh" name="pr2_wrist_roll_mesh_file">
@@ -412,7 +412,7 @@
 
     <visual>
       <xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
-      <rpy>M_PI/2 0.0 M_PI/2 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <scale>0.001 0.001 0.001</scale>
       <geometry type="mesh" name="pr2_base_mesh_file">
@@ -598,7 +598,7 @@
 
     <visual>
       <xyz>0.1 0.0 -0.3 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
-      <rpy>M_PI/2 0.0 M_PI/2 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <scale>0.001 0.001 0.001</scale>
       <geometry type="mesh" name="pr2_torso_mesh_file">
@@ -827,7 +827,7 @@
 
     <visual>
       <xyz>0 0 0.0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
-      <rpy>M_PI/2 0.0 M_PI/2 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material>
       <scale>0.001 0.001 0.001</scale>
       <geometry type="mesh" name="pr2_head_pan_mesh_file">
