@@ -184,7 +184,7 @@ class ImageFeatures(object):
         cv.cvCornerEigenValsAndVecs(self.gray_image, eig_tex,#CvArr* eigenvv,
                                     block_size, filter_size)
 
-        eig_tex = ut.cv2np(eig_tex, debug=True)
+        eig_tex = ut.cv2np(eig_tex)
         eig_tex = np.reshape(eig_tex, [self.im_height, self.im_width, 6])
         #print eig_tex.shape ## [480,640,3]
         ## (l1, l2, x1, y1, x2, y2), where

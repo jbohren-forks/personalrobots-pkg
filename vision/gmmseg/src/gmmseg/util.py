@@ -165,7 +165,7 @@ cv2np_type_dict_invertible = {cv.CV_16SC1	: (np.int16, 1),
 #	np_im = np.frombuffer(im.imageData, dtype=numpy_type)
 #	return np.reshape(np_im, array_size)
 
-def cv2np(im, format='RGB', debug=False):
+def cv2np(im, format='RGB'):
 	if format == 'BGR':
 		cv.cvCvtColor( im, im, cv.CV_BGR2RGB )
 	numpy_type, nchannels = cv2np_type_dict[cv.cvGetElemType(im)]
