@@ -1,6 +1,5 @@
 all: manual
 
-
 manual: libTF_Manual.tex
 	pdflatex $^
 	bibtex libTF_Manual
