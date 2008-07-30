@@ -22,7 +22,7 @@ def print_data(image):
         print image.data[i],
     print ''
 
-def callback(iar):
+def callback_array(iar):
     left = iar.images[0]
     right = iar.images[1]
 
@@ -37,9 +37,13 @@ def callback(iar):
     hg.cvShowImage('right', rightcv)
     hg.cvWaitKey(5)
 
+def callback_image(im):
+    cvim = to_cv(im)
+    hg.cvShowImage('left', cvim)
+    hg.cvWaitKey(5)
+
 hg.cvNamedWindow('left', 1)
-hg.cvNamedWindow('right', 1)
-rospy.TopicSub('images', ImageArray, callback)
+rospy.TopicSub('images', Image, callback_image)
 rospy.ready(sys.argv[0])
 rospy.spin()
 
@@ -72,3 +76,5 @@ rospy.spin()
 
     #cv_image.imageData = np.frombuffer(image.data, dtype='uint8', count=image.height*image.width*1).tostring()
     #cv_image.imageData = np.array(image.data, dtype='uint8').tostring()
+#hg.cvNamedWindow('right', 1)
+#rospy.TopicSub('images', ImageArray, callback)
