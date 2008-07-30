@@ -107,17 +107,17 @@ namespace TREX {
     desf.M.data[7] = m_variables[DES_ROT_3_2]->lastDomain().getSingletonValue();
     desf.M.data[8] = m_variables[DES_ROT_3_3]->lastDomain().getSingletonValue();
  
-    std::cout << "Cur f: " << curf << std::endl;
-    std::cout << "Des f: " << desf << std::endl;
+    //std::cout << "Cur f: " << curf << std::endl;
+    //std::cout << "Des f: " << desf << std::endl;
 
     Vector move_vec = desf.p-curf.p;
     double dist = move_vec.Norm();
     
-    std::cout << "Move vec " << move_vec << std::endl;
+    //std::cout << "Move vec " << move_vec << std::endl;
 
     move_vec = move_vec/dist;
 
-    std::cout << "Move vec after div " << move_vec << std::endl;
+    //std::cout << "Move vec after div " << move_vec << std::endl;
     
     double step_size = m_variables[STEP_SIZE]->lastDomain().getSingletonValue();
     
@@ -135,19 +135,19 @@ namespace TREX {
       RotationalInterpolation_SingleAxis rotInterpolater;
       rotInterpolater.SetStartEnd(curf.M, desf.M);
       double total_angle = rotInterpolater.Angle();
-      printf("Angle: %f\n", rotInterpolater.Angle());
+      //printf("Angle: %f\n", rotInterpolater.Angle());
       
       Vector target;
       int nSteps = (int)(dist/step_size);
       double angle_step = total_angle/nSteps;
 
-      printf("Angle step: %f\n", angle_step);
+      //printf("Angle step: %f\n", angle_step);
 
       retframe.p = curf.p+move_vec*step_size;
       retframe.M = rotInterpolater.Pos(angle_step);
     }
     
-    std::cout << "Out f: " << retframe << std::endl;
+    //std::cout << "Out f: " << retframe << std::endl;
 
     //filling out return variables
     getCurrentDomain(m_variables[INTER_ROT_1_1]).set(retframe.M.data[0]);
