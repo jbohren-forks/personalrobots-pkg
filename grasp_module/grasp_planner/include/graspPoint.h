@@ -2,6 +2,7 @@
 #define _grasppoint_h_
 
 #include <libTF/libTF.h>
+#include "grasp_module/graspPoint_msg.h"
 
 namespace NEWMAT {
 	class Matrix;
@@ -75,9 +76,9 @@ class GraspPoint {
 		     const libTF::TFVector &app, const libTF::TFVector &up);
 
 	//! Returns the inner transform as a row-major float[16]. Caller should free this memory
-	void getTran(float **f);
+	void getTran(float **f) const;
 	//! Returns the inner transform as a NEWMAT::Matrix
-	void getTran(NEWMAT::Matrix *M);
+	void getTran(NEWMAT::Matrix *M) const;
 
 	//! Set the quality of this grasp. Caps value between 0 and 1
 	void setQuality(float q){if (q<0) q=0; if (q>1) q=1; mQuality = q;}
@@ -85,6 +86,13 @@ class GraspPoint {
 	float getQuality() const {return mQuality;}
 	//! For sorting based on relative quality values.
 	bool operator < (const GraspPoint &rhs) const {return mQuality < rhs.mQuality;}
+
+	//! Get this GraspPoint as the corresponding ROS message type
+	graspPoint_msg getMsg() const;
+	//! Set this GraspPoint from a corresponding ROS message type
+	void setFromMsg(const graspPoint_msg &msg);
+
+	
 };
  
 //!Convenience predicate for sorting containers of pointers to GraspPoints

@@ -126,7 +126,7 @@ void GraspPoint::setTran(const libTF::TFPoint &c,
 	*/
 }
 
-void GraspPoint::getTran(float **f)
+void GraspPoint::getTran(float **f) const
 {
 	*f = new float[16];
 	NEWMAT::Matrix M(4,4);
@@ -139,10 +139,88 @@ void GraspPoint::getTran(float **f)
 	}
 }
 
-void GraspPoint::getTran(NEWMAT::Matrix *M)
+void GraspPoint::getTran(NEWMAT::Matrix *M) const
 {
 	//get matrix is not const...
-	*M = mTran.getMatrix(baseFrame,graspFrame, 0);
+	*M = (const_cast<libTF::TransformReference&>(mTran)).getMatrix(baseFrame,graspFrame, 0);
 }
+
+graspPoint_msg GraspPoint::getMsg() const
+{
+	graspPoint_msg msg;
+	NEWMAT::Matrix M(4,4);
+	getTran(&M);
+
+	msg.frame.xt = M.element(0,3);
+	msg.frame.yt = M.element(1,3);
+	msg.frame.zt = M.element(2,3);
+	msg.quality = getQuality();
+
+	//my own matrix-to-quaternion conversion for now...
+
+	// Algorithm in Ken Shoemake's article in 1987 SIGGRAPH course notes
+	// article "Quaternion Calculus and Fast Animation".
+	
+	double trace = M.element(0,0)+M.element(1,1)+M.element(2,2);
+	double root;
+	
+	if ( trace > 0.0 ){
+		// |w| > 1/2, may as well choose w > 1/2
+		root = sqrt(trace+1.0);  // 2w
+		msg.frame.w = 0.5*root;
+		root = 0.5/root;  // 1/(4w)
+		msg.frame.xr = (-M.element(1,2)+M.element(2,1))*root;
+		msg.frame.yr = (-M.element(2,0)+M.element(0,2))*root;
+		msg.frame.zr = (-M.element(0,1)+M.element(1,0))*root;
+	}
+	else {
+		// |w| <= 1/2
+		static int next[3] = { 1, 2, 0 };
+		int i = 0;
+		if ( M.element(1,1) > M.element(0,0) )
+			i = 1;
+		if ( M.element(2,2) > M.element(i,i) )
+			i = 2;
+		int j = next[i];
+		int k = next[j];
+		
+		root = sqrt(M.element(i,i)-M.element(j,j)-M.element(k,k)+1.0);
+		double* quat[3] = { &msg.frame.xr, &msg.frame.yr, &msg.frame.zr };
+		*quat[i] = 0.5*root;
+		root = 0.5/root;
+		msg.frame.w = (-M.element(j,k)+M.element(k,j))*root;
+		*quat[j] = (M.element(i,j)+M.element(j,i))*root;
+		*quat[k] = (M.element(i,k)+M.element(k,i))*root;
+	}
+
+	//normalise the quaternion
+	double nm = msg.frame.xr * msg.frame.xr;
+	nm += msg.frame.yr * msg.frame.yr;
+	nm += msg.frame.zr * msg.frame.zr;
+	nm += msg.frame.w  * msg.frame.w;
+
+	double invnorm;
+	if (nm==0.0) {
+		//this should not happen
+		invnorm = 0;
+	} else {
+		invnorm =1.0/sqrt(nm);
+	}
+	msg.frame.w*=invnorm; msg.frame.xr*=invnorm; 
+	msg.frame.yr*=invnorm; msg.frame.zr*=invnorm;
+
+	return msg;
+}
+
+
+void GraspPoint::setFromMsg(const graspPoint_msg &msg)
+{
+	mTran.setWithQuaternion( graspFrame, baseFrame, 
+				 msg.frame.xt, msg.frame.yt, msg.frame.zt, 
+				 msg.frame.xr, msg.frame.yr, msg.frame.zr, msg.frame.w,
+				 0);
+	setQuality(msg.quality);
+}
+
 
 } //namespace grasp_module

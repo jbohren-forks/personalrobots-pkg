@@ -2,7 +2,7 @@
 
 #include <libTF/libTF.h>
 
-#include "object.h"
+#include <object.h>
 #include "graspPoint.h"
 
 #include <algorithm> //for sort
