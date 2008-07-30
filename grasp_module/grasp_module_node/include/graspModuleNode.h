@@ -4,6 +4,7 @@
 #include <ros/node.h>
 
 #include "grasp_module/object_detector_srv.h"
+#include "grasp_module/grasp_planner_srv.h"
 
 /**
    @mainpage 
@@ -34,6 +35,8 @@ class GraspModuleNode : public ros::node
 
 	bool objDetect(object_detector_srv::request &req,
 		       object_detector_srv::response &res);
+	bool graspPlan(grasp_planner_srv::request &req,
+		       grasp_planner_srv::response &res);
 }; 
 
 } //namespace grasp_module

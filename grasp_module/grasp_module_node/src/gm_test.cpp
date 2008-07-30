@@ -2,7 +2,7 @@
 #include <smartScan.h>
 #include <fstream>
 #include "grasp_module/object_detector_srv.h"
- 
+#include "grasp_module/grasp_planner_srv.h"
 
 class Service : public ros::node
 {
@@ -12,6 +12,11 @@ public:
 	bool callObjDet(grasp_module::object_detector_srv::request &req,
 			grasp_module::object_detector_srv::response &res) {
 		return ros::service::call("object_detector_srv",req,res);
+	}
+
+	bool callGraspPlan(grasp_module::grasp_planner_srv::request &req,
+			   grasp_module::grasp_planner_srv::response &res) {
+		return ros::service::call("grasp_planner_srv",req,res);
 	}
 	
 };
@@ -76,14 +81,39 @@ int main(int argc, char **argv)
 	std::vector<grasp_module::object_msg> objects;
 	res.get_objects_vec(objects);
 	for (int i=0; i<(int)objects.size(); i++) {
-		fprintf(stderr,"Centroid: %f %f %f\n",objects[i].centroid.x,
+		fprintf(stderr,"  Centroid: %f %f %f\n",objects[i].centroid.x,
 			objects[i].centroid.y, objects[i].centroid.z);
-		fprintf(stderr,"Axis 1: %f %f %f\n", objects[i].axis1.x,
+		fprintf(stderr,"  Axis 1: %f %f %f\n", objects[i].axis1.x,
 			objects[i].axis1.y, objects[i].axis1.z);
-		fprintf(stderr,"Axis 2: %f %f %f\n", objects[i].axis2.x,
+		fprintf(stderr,"  Axis 2: %f %f %f\n", objects[i].axis2.x,
 			objects[i].axis2.y, objects[i].axis2.z);
-		fprintf(stderr,"Axis 3: %f %f %f\n", objects[i].axis3.x,
+		fprintf(stderr,"  Axis 3: %f %f %f\n", objects[i].axis3.x,
 			objects[i].axis3.y, objects[i].axis3.z);
+
+		//and call the grasp planner
+		grasp_module::grasp_planner_srv::request greq;
+		grasp_module::grasp_planner_srv::response gres;
+
+		greq.obj = objects[i];
+		greq.resolution = 8; //set other resolution if desired
+
+		//send the query
+		if (!serv.callGraspPlan(greq,gres) ) {
+			fprintf(stderr,"Service call failed\n");
+			ros::fini();
+			return 0;
+		}
+		fprintf(stderr,"  %d grasps found:\n",gres.get_graspPoints_size());
+		std::vector<grasp_module::graspPoint_msg> grasps;
+		gres.get_graspPoints_vec(grasps);
+		for(int j=0; j<(int)grasps.size(); j++) {
+			fprintf(stderr,"    %f %f %f\n",grasps[j].frame.xt, grasps[j].frame.yt,
+				grasps[j].frame.zt);
+			fprintf(stderr,"    %f %f %f %f\n",grasps[j].frame.w, grasps[j].frame.xr,
+				grasps[j].frame.yr, grasps[j].frame.zr);
+			fprintf(stderr,"    Quality: %f\n\n",grasps[j].quality);
+		}
+		fprintf(stderr,"\n");
 	}
 		
 	ros::fini();

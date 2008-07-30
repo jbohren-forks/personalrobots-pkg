@@ -6,12 +6,15 @@
 #include "smartScan.h"
 #include "object.h"
 #include "objectDetector.h"
+#include "graspPoint.h"
+#include "graspPlanner.h"
 
 namespace grasp_module {
 
 GraspModuleNode::GraspModuleNode() : ros::node("grasp_module_node")
 {
 	advertise_service("object_detector_srv",&GraspModuleNode::objDetect);
+	advertise_service("grasp_planner_srv",&GraspModuleNode::graspPlan);
 	fprintf(stderr,"GraspModuleNode created and subscribed.\n");
 }
 
@@ -31,7 +34,7 @@ bool GraspModuleNode::objDetect(object_detector_srv::request &req,
 	SmartScan *scan = new SmartScan();
 	scan->setFromRosCloud(req.cloud);
 
-	grasp_module::ObjectDetector detector;
+	ObjectDetector detector;
 	detector.setParamComponents(req.connectedThreshold, req.minComponentSize);
 	detector.setParamGrazing(req.grazingThreshold, req.grazingRadius, req.grazingNbrs);
 	detector.setParamPlane(req.planeRemovalThreshold, req.planeFitThreshold);
@@ -51,5 +54,30 @@ bool GraspModuleNode::objDetect(object_detector_srv::request &req,
 
 	return true;
 }
+
+bool GraspModuleNode::graspPlan(grasp_planner_srv::request &req,
+				grasp_planner_srv::response &res)
+{
+
+	GraspPlanner planner;
+
+	Object objIn;
+	objIn.setFromMsg(req.obj);
+
+	std::vector<GraspPoint*> *grasps = planner.getGraspPoints(&objIn, req.resolution);
+
+	std::vector<graspPoint_msg> graspmsg;
+
+	for (int i=0; i<(int)grasps->size(); i++) {
+		graspmsg.push_back( (*grasps)[i]->getMsg() );
+		delete (*grasps)[i];
+	}
+	res.set_graspPoints_vec(graspmsg);
+
+	delete grasps;
+
+	return true;
+}
+
 
 } //namespace grasp_module
