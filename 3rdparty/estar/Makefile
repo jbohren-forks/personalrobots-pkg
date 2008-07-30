@@ -1,31 +1,44 @@
-SRCDIR= $(PWD)/estar
-BUILDDIR= $(PWD)/build
-INSTDIR= $(PWD)/local
+# If all goes according to plan, all you have to touch for an E*
+# update is the VERSION. This also allows you to build a specific
+# version without touching the Makefile, for example by typing:
+#
+#  $ make VERSION=0.2
+#
+# Or, to replace an existing build, do e.g.:
+#
+#  $ make VERSION=0.2 rebuild
 
-#CMAKE= `rospack find cmake`/cmake/bin/cmake 
-#CMAKE_ARGS= -Wno-dev -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=$(INSTDIR)
+all: really-all
 
-all: $(SRCDIR) $(SRCDIR)/configure $(BUILDDIR)/config.h
-	$(MAKE) -C $(BUILDDIR) install
+VERSION=     r267
 
-$(SRCDIR):
-	@ echo "SRCDIR should be handled by svn:externals"
-	svn co https://estar.svn.sourceforge.net/svnroot/estar/trunk/estar
+TARBALL=     estar-$(VERSION).tar.gz
+TARBALL_URL= http://downloads.sourceforge.net/estar/$(TARBALL)
+SOURCE_DIR=  $(PWD)/estar-$(VERSION)
+UNPACK_CMD=  tar xfz
+BUILD_DIR=   $(PWD)/build
+INST_DIR=    $(PWD)/local
 
-$(SRCDIR)/configure: $(SRCDIR)/configure.ac $(SRCDIR)/bootstrap-buildsystem.sh
-	cd $(SRCDIR) && ./bootstrap-buildsystem.sh
+include $(shell rospack find mk)/download_unpack.mk
 
-$(BUILDDIR)/config.h: $(SRCDIR)/configure $(SRCDIR)/config.h.in
-	test -d $(BUILDDIR) || mkdir -p $(BUILDDIR)
-	cd $(BUILDDIR) && $(SRCDIR)/configure --prefix=$(INSTDIR)
+.PHONY: reall-all
+really-all: $(SOURCE_DIR) $(SOURCE_DIR)/configure $(BUILD_DIR)/config.h
+	$(MAKE) -C $(BUILD_DIR) install
+
+rebuild: wipe really-all
+
+$(SOURCE_DIR)/configure: $(SOURCE_DIR)/configure.ac $(SOURCE_DIR)/bootstrap-buildsystem.sh
+	cd $(SOURCE_DIR) && ./bootstrap-buildsystem.sh
+
+$(BUILD_DIR)/config.h: $(SOURCE_DIR)/configure $(SOURCE_DIR)/config.h.in
+	test -d $(BUILD_DIR) || mkdir -p $(BUILD_DIR)
+	cd $(BUILD_DIR) && $(SOURCE_DIR)/configure --prefix=$(INST_DIR)
 
 clean:
-	$(MAKE) -C $(BUILDDIR) clean
+	$(MAKE) -C $(BUILD_DIR) clean
 
 distclean:
-	$(MAKE) -C $(BUILDDIR) distclean
+	$(MAKE) -C $(BUILD_DIR) distclean
 
 wipe:
-	svn revert -R $(SRCDIR)
-	svn st --no-ignore $(SRCDIR) | awk '{print $2}' | xargs rm -rvf
-	rm -rf $(BUILDDIR) $(INSTDIR)
+	rm -rf $(BUILD_DIR) $(INST_DIR)
