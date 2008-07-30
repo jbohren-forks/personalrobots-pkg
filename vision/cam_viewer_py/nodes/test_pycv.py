@@ -10,15 +10,17 @@ import opencv as cv
 import opencv.highgui as hg
 
 def to_cv(image, cv_image=None):
+    print 'image.colorspace', image.colorspace
+    print 'image.label     ', image.label
     if cv_image == None:
         cv_image = cv.cvCreateImage(cv.cvSize(image.width, image.height), 8, 1)
-    #cv_image.imageData = np.frombuffer(image.data, dtype='uint8', count=image.height*image.width*1).tostring()
-    cv_image.imageData = np.array(image.data, dtype='uint8').tostring()
+    cv_image.imageData = image.data
     return cv_image
 
 def print_data(image):
     for i in range(10):
         print image.data[i],
+    print ''
 
 def callback(iar):
     left = iar.images[0]
@@ -33,10 +35,40 @@ def callback(iar):
     print_data(left)
     hg.cvShowImage('left', leftcv)
     hg.cvShowImage('right', rightcv)
-    hg.cvWaitKey(10)
+    hg.cvWaitKey(5)
 
 hg.cvNamedWindow('left', 1)
 hg.cvNamedWindow('right', 1)
 rospy.TopicSub('images', ImageArray, callback)
 rospy.ready(sys.argv[0])
 rospy.spin()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    #cv_image.imageData = np.frombuffer(image.data, dtype='uint8', count=image.height*image.width*1).tostring()
+    #cv_image.imageData = np.array(image.data, dtype='uint8').tostring()
