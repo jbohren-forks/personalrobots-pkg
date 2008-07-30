@@ -77,7 +77,7 @@ Publishes to (name / type):
 
  **/
 #include "ros/node.h"
-#include "std_msgs/MsgLaserScan.h"
+#include "std_msgs/LaserScan.h"
 #include "cloud_viewer/cloud_viewer.h"
 #include <SDL.h>
 #include "math.h"
@@ -90,7 +90,7 @@ using namespace std;
 class Laser_Viewer : public ros::node
 {
 public:
-  MsgLaserScan laser;
+  std_msgs::LaserScan laser;
   vector< vector<float> > scans;
   vector<CloudViewerPoint> saved_cloud;
   CloudViewer cloud_viewer;
