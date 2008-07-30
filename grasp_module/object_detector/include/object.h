@@ -37,6 +37,8 @@ class Object {
 		mA1 = o.mA1; mA2 = o.mA2; mA3 = o.mA3; }
 
  public:
+	//! Empty constructor does no initialization at all
+	Object(){}
 	//! Constructor using centroid and axes information
 	Object(const libTF::TFPoint &c, const libTF::TFVector &a1,
 	       const libTF::TFVector &a2, const libTF::TFVector &a3) {
