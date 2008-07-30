@@ -100,8 +100,9 @@ int main(int argc, char **argv)
       model.loadFile("/u/isucan/ros/ros-pkg/robot_descriptions/wg_robot_description/pr2/pr2.xml");
     
     EnvironmentModel *km = new EnvironmentModelODE();
-    km->addRobotModel(model);    
-    planning_models::KinematicModel *m = km->getModel(0);
+    planning_models::KinematicModel *m = new planning_models::KinematicModel();
+    m->build(model);    
+    km->addRobotModel(m);
     printModelInfo(m);
     
     double *param = new double[m->stateDimension];    
@@ -113,8 +114,8 @@ int main(int argc, char **argv)
     
 
     for (unsigned int i = 0 ; i < m->stateDimension ; ++i)
-	param[i] = -0.3;
-    m->computeTransforms(param, m->getGroupID("pr2::leftArm"));
+	param[i] = +0.3;
+    m->computeTransforms(param, m->getGroupID("pr2::base+rightArm"));
     km->updateRobotModel(0);
     
     EnvironmentModelODE* okm = dynamic_cast<EnvironmentModelODE*>(km);

@@ -34,13 +34,6 @@
 
 #include <collision_space/environment.h>
 
-unsigned int collision_space::EnvironmentModel::addRobotModel(robot_desc::URDF &pmodel, const char *group)
-{
-    planning_models::KinematicModel *m = new planning_models::KinematicModel();
-    m->build(pmodel, group);
-    return addRobotModel(m);
-}
-
 unsigned int collision_space::EnvironmentModel::addRobotModel(planning_models::KinematicModel *model)
 {
     unsigned int pos = m_models.size();

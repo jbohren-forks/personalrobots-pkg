@@ -299,44 +299,49 @@ public:
 
     void addRobotDescriptionFromFile(const char *filename)
     {
-	robot_desc::URDF *file = new robot_desc::URDF(filename);
-	addRobotDescription(file);   
+	robot_desc::URDF *file = new robot_desc::URDF();
+	if (file->loadFile(filename))
+	    addRobotDescription(file);   
+	else
+	    delete file;
     }
 
     void addRobotDescriptionFromData(const char *data)
     {
 	robot_desc::URDF *file = new robot_desc::URDF();
-	file->loadString(data);
-	addRobotDescription(file);
+	if (file->loadString(data))
+	    addRobotDescription(file);
+	else
+	    delete file;
     }
     
     void addRobotDescription(robot_desc::URDF *file)
     {
 	m_robotDescriptions.push_back(file);
 	
-	std::vector<std::string> groups;
-	file->getGroupNames(groups);
-	std::string name = file->getRobotName();
-	
 	/* create a model for the whole robot (with the name given in the file) */
 	Model *model = new Model();
-	unsigned int cid = m_collisionSpace->addRobotModel(*file);
+	planning_models::KinematicModel *kmodel = new planning_models::KinematicModel();
+	kmodel->build(*file);
+	unsigned int cid = m_collisionSpace->addRobotModel(kmodel);
 	model->collisionSpaceID = cid;
 	model->collisionSpace = m_collisionSpace;
         model->kmodel = m_collisionSpace->getModel(cid);
 	m_models[name] = model;
 	createMotionPlanningInstances(model);
 	
+	std::vector<std::string> groups;
+	kmodel->getGroups(groups);
+
 	/* create a model for each group */
 	for (unsigned int i = 0 ; i < groups.size() ; ++i)
 	{
 	    Model *model = new Model();
-	    std::string gname = name + "::" + groups[i];
 	    model->collisionSpaceID = cid;
 	    model->collisionSpace = m_collisionSpace;
 	    model->kmodel = m_collisionSpace->getModel(cid);
-	    model->groupID = model->kmodel->getGroupID(gname);
-	    m_models[gname] = model;
+	    model->groupID = model->kmodel->getGroupID(groups[i]);
+	    m_models[groups[i]] = model;
 	    createMotionPlanningInstances(model);
 	}	
     }
