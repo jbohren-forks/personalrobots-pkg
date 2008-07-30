@@ -17,11 +17,18 @@ int main( int argc, char** argv )
 	struct timeval t0, t1;
 
 	JntArray pr2_config = JntArray(pr2_kin.nJnts);
+	pr2_config(0) = 0.0, pr2_config(1) = -0, pr2_config(2)=0.0, pr2_config(3)=0.0;
+	pr2_config(4) = 0.0, pr2_config(5) = deg2rad*0, pr2_config(6) = deg2rad*90.0;
+	cout<<"Config of the arm:"<<pr2_config<<endl;
+
+	Frame f;
+	if (pr2_kin.FK(pr2_config,f))
+		cout<<"End effector transformation:"<<f<<endl;
+
 	pr2_config(0) = 0.1, pr2_config(1) = -1, pr2_config(2)=0.3, pr2_config(3)=0.3;
 	pr2_config(4) = 0.2, pr2_config(5) = 0.5, pr2_config(6) = 0.0;
 	cout<<"Config of the arm:"<<pr2_config<<endl;
 
-	Frame f;
 	if (pr2_kin.FK(pr2_config,f))
 		cout<<"End effector transformation:"<<f<<endl;
 	else

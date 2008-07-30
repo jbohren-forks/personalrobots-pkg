@@ -47,7 +47,9 @@ RosGazeboNode::cmd_rightarmconfigReceived()
   //  this->PR2Copy->SetArmJointPosition(PR2::PR2_LEFT_ARM, jointPosition, jointSpeed);
   */
 
+	printf("boo!\n");
   if(!useControllerArray){
+	printf("hoo!\n");
     
     this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_PAN           , this->rightarm.turretAngle,       0);
     this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, this->rightarm.shoulderLiftAngle, 0);
@@ -345,6 +347,7 @@ RosGazeboNode::AdvertiseSubscribeMessages()
   advertise<std_msgs::PR2Arm>("right_pr2arm_pos");
   advertise<rostools::Time>("time");
   advertise<std_msgs::Empty>("transform");
+  advertise<std_msgs::Point3DFloat32>("object_position");
 
   subscribe("cmd_vel", velMsg, &RosGazeboNode::cmdvelReceived);
   subscribe("cmd_leftarmconfig", leftarm, &RosGazeboNode::cmd_leftarmconfigReceived);
@@ -624,6 +627,17 @@ RosGazeboNode::Update()
   // odomMsg.header.stamp.nsec to zero.  Thus, it must be called *after*
   // those values are reused in the sendInverseEuler() call above.
   publish("odom",this->odomMsg);
+
+	/***************************************************************/
+	/*                                                             */
+	/*   object position                                           */
+	/*                                                             */
+	/***************************************************************/
+  this->PR2Copy->GetObjectPositionActual(&x,&y,&z,&roll,&pitch,&yaw);
+  this->objectPosMsg.x  = x;
+  this->objectPosMsg.y  = y;
+  this->objectPosMsg.z  = z;
+	publish("object_position", this->objectPosMsg);
 
   /***************************************************************/
   /*                                                             */

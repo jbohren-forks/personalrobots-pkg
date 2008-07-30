@@ -918,6 +918,12 @@ PR2_ERROR_CODE PR2Robot::GetBasePositionActual(double* x, double* y, double *z, 
    return PR2_ALL_OK;
 };
 
+PR2_ERROR_CODE PR2Robot::GetObjectPositionActual(double* x, double* y, double *z, double *roll, double *pitch, double *yaw)
+{
+   hw.GetObjectPositionGroundTruth(x,y,z,roll,pitch,yaw);
+   return PR2_ALL_OK;
+};
+
 
 PR2_ERROR_CODE PR2Robot::GetLeftGripperCmd(double *gap,double *force)
 {

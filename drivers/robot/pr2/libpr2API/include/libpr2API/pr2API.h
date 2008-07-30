@@ -553,6 +553,11 @@ namespace PR2
       public: PR2_ERROR_CODE GetBasePositionActual(double* x, double* y, double *z, double *roll, double *pitch, double *yaw);
 
          /*! \fn
+           \brief Retrieve position and orientation of an object.
+         */
+      public: PR2_ERROR_CODE GetObjectPositionActual(double* x, double* y, double *z, double *roll, double *pitch, double *yaw);
+
+         /*! \fn
            \brief - Run the robot
          */
       public: PR2_ERROR_CODE RunRobot();

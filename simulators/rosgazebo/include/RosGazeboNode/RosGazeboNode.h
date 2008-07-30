@@ -79,6 +79,8 @@ class RosGazeboNode : public ros::node
     std_msgs::RobotBase2DOdom odomMsg;
     rostools::Time timeMsg;
 
+    std_msgs::Point3DFloat32 objectPosMsg;
+
     // A mutex to lock access to fields that are used in message callbacks
     ros::thread::mutex lock;
 

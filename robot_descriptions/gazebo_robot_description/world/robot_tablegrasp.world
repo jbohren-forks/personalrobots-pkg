@@ -47,6 +47,7 @@
       <material>Gazebo/CloudySky</material>
     </sky>
     <gazeboPath>media</gazeboPath>
+		<shadowTechnique>none</shadowTechnique>
     <grid>off</grid>
     <maxUpdateRate>100</maxUpdateRate>
   </rendering:ogre>
@@ -147,39 +148,55 @@
     </body:box>
   </model:physical>
 
-  <!-- The small cylinder "cup" -->
-  <model:physical name="cylinder1_model">
-    <xyz>   2.5    0.0    0.9</xyz>
+  <!-- The small box "cup" -->
+  <model:physical name="object1_model">
+    <xyz>   0.835  -0.55   0.95</xyz>
+    <rpy>   0.0    0.0    30.0</rpy>
+    <body:box name="object1_body">
+			<geom:box name="object1_geom">
+				<kp>100000000.0</kp>
+				<kd>0.1</kd>
+				<mesh>default</mesh>
+				<size>0.1 0.03 0.03</size>
+				<mass> 0.05</mass>
+				<visual>
+					<size> 0.1 0.030 0.03</size>
+					<material>Gazebo/PioneerBody</material>
+					<mesh>unit_box</mesh>
+				</visual>
+			</geom:box>
+		</body:box>
+
+		<controller:P3D name="p3d_object_controller" plugin="libP3D.so">
+			<updateRate>100.0</updateRate>
+			<bodyName>object1_body</bodyName>
+			<interface:position name="p3d_object_position"/>
+		</controller:P3D>
+
+	</model:physical>
+
+
+
+	<!--
+  <model:physical name="object1_model">
+    <xyz>   1.035  -0.15   0.55</xyz>
     <rpy>   0.0    0.0    0.0</rpy>
-    <body:cylinder name="cylinder1_body">
-      <geom:cylinder name="cylinder1_geom">
+    <body:box name="object1_body">
+      <geom:box name="object1_geom">
         <kp>100000000.0</kp>
         <kd>0.1</kd>
         <mesh>default</mesh>
-        <size>0.025 0.075</size>
+        <size>0.01 0.01 0.01</size>
         <mass> 0.05</mass>
         <visual>
-          <size> 0.05 0.05 0.075</size>
+          <size> 0.01 0.010 0.01</size>
           <material>Gazebo/PioneerBody</material>
-          <mesh>unit_cylinder</mesh>
-        </visual>
-      </geom:cylinder>
-      <geom:box name="cylinder1_base_geom">
-        <kp>100000000.0</kp>
-        <kd>0.1</kd>
-        <mesh>default</mesh>
-        <xyz>0.0 0.0 -0.033</xyz>
-        <size>0.05 0.05 0.01</size>
-        <mass> 0.01</mass>
-        <visual>
-          <size> 0.05 0.05 0.01</size>
-          <material>Gazebo/Fish</material>
           <mesh>unit_box</mesh>
         </visual>
       </geom:box>
-    </body:cylinder>
+    </body:box>
   </model:physical>
-
+	-->
 
   <!-- The small ball -->
   <model:physical name="sphere1_model">
@@ -293,12 +310,12 @@
   <model:renderable name="directional_white">
     <light>
       <type>directional</type>
-      <direction>0 -0.5 -0.5</direction>
+      <direction>0 0.0 -1.0</direction>
       <diffuseColor>0.4 0.4 0.4</diffuseColor>
       <specularColor>0.0 0.0 0.0</specularColor>
       <attenuation>1 0.0 1.0 0.4</attenuation>
     </light>
   </model:renderable>
-  
 
 </gazebo:world>
+

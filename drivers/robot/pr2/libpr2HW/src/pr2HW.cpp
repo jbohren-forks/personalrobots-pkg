@@ -46,6 +46,7 @@ gazebo::PTZIface         *pr2PTZRightIface;
 gazebo::PositionIface    *pr2LeftWristIface;
 gazebo::PositionIface    *pr2RightWristIface;
 gazebo::PositionIface    *pr2BaseIface;
+gazebo::PositionIface    *posObjectIface;
 gazebo::CameraIface      *pr2WristCameraLeftIface;
 gazebo::CameraIface      *pr2WristCameraRightIface;
 gazebo::CameraIface      *pr2ForearmCameraLeftIface;
@@ -95,6 +96,8 @@ PR2_ERROR_CODE PR2HW::Init()
    pr2LeftWristIface       = new gazebo::PositionIface();
    pr2RightWristIface      = new gazebo::PositionIface();
    pr2BaseIface            = new gazebo::PositionIface();
+
+   posObjectIface            = new gazebo::PositionIface();
 
   int serverId = 0;
 
@@ -305,6 +308,17 @@ PR2_ERROR_CODE PR2HW::Init()
     std::cout << "Gazebo error: Unable to connect to the base position interface\n"
     << e << "\n";
     pr2BaseIface = NULL;
+  }
+
+  try
+  {
+    posObjectIface->Open(client, "p3d_object_position");
+  }
+  catch (std::string e)
+  {
+    std::cout << "Gazebo error: Unable to connect to the object position interface\n"
+    << e << "\n";
+    posObjectIface = NULL;
   }
 
   std::cout << "initial HW reads\n" << std::endl;
@@ -998,6 +1012,22 @@ PR2_ERROR_CODE PR2HW::GetBasePositionGroundTruth(double* x, double* y, double *z
    *pitch = pr2BaseIface->data->pose.pitch;
    *yaw   = pr2BaseIface->data->pose.yaw;
    pr2BaseIface->Unlock();
+   return PR2_ALL_OK;
+};
+
+PR2_ERROR_CODE PR2HW::GetObjectPositionGroundTruth(double* x, double* y, double *z, double *roll, double *pitch, double *yaw)
+{
+	if(posObjectIface == NULL)
+		return PR2_ALL_OK;
+
+   posObjectIface->Lock(1);
+   *x     = posObjectIface->data->pose.pos.x;
+   *y     = posObjectIface->data->pose.pos.y;
+   *z     = posObjectIface->data->pose.pos.z;
+   *roll  = posObjectIface->data->pose.roll;
+   *pitch = posObjectIface->data->pose.pitch;
+   *yaw   = posObjectIface->data->pose.yaw;
+   posObjectIface->Unlock();
    return PR2_ALL_OK;
 };
 

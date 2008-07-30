@@ -320,6 +320,11 @@ namespace PR2
      public: PR2_ERROR_CODE GetBasePositionGroundTruth(double* x, double* y, double *z, double *roll, double *pitch, double *yaw);
 
          /*! \fn
+           \brief - Get ground truth object position
+         */
+     public: PR2_ERROR_CODE GetObjectPositionGroundTruth(double* x, double* y, double *z, double *roll, double *pitch, double *yaw);
+
+         /*! \fn
            \brief Wait for Gazebo to update
            TODO: put this in UpdateHW()?
          */

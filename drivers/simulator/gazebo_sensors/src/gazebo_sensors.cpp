@@ -33,6 +33,8 @@ GazeboSensors::GazeboSensors()
   pr2LeftWristIface       = new gazebo::PositionIface();
   pr2RightWristIface      = new gazebo::PositionIface();
   pr2BaseIface            = new gazebo::PositionIface();
+
+  posObjectIface          = new gazebo::PositionIface();
 }
 
 GazeboSensors::~GazeboSensors()
@@ -156,6 +158,17 @@ PR2::PR2_ERROR_CODE GazeboSensors::Init()
     std::cout << "Gazebo error: Unable to connect to the base position interface\n"
     << e << "\n";
     pr2BaseIface = NULL;
+  }
+
+  try
+  {
+    posObjectIface->Open(client, "p3d_object_position");
+  }
+  catch (std::string e)
+  {
+    std::cout << "Gazebo error: Unable to connect to the object position interface\n"
+    << e << "\n";
+    posObjectIface = NULL;
   }
 
 
@@ -349,6 +362,19 @@ PR2::PR2_ERROR_CODE GazeboSensors::GetBasePositionGroundTruth(double* x, double*
    *pitch = pr2BaseIface->data->pose.pitch;
    *yaw   = pr2BaseIface->data->pose.yaw;
    pr2BaseIface->Unlock();
+   return PR2::PR2_ALL_OK;
+};
+
+PR2::PR2_ERROR_CODE GazeboSensors::GetObjectPositionGroundTruth(double* x, double* y, double *z, double *roll, double *pitch, double *yaw)
+{
+   posObjectIface->Lock(1);
+   *x     = posObjectIface->data->pose.pos.x;
+   *y     = posObjectIface->data->pose.pos.y;
+   *z     = posObjectIface->data->pose.pos.z;
+   *roll  = posObjectIface->data->pose.roll;
+   *pitch = posObjectIface->data->pose.pitch;
+   *yaw   = posObjectIface->data->pose.yaw;
+   posObjectIface->Unlock();
    return PR2::PR2_ALL_OK;
 };
 

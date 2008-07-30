@@ -78,6 +78,8 @@ private:
   gazebo::PositionIface    *pr2RightWristIface;
   gazebo::PositionIface    *pr2BaseIface;
 
+  gazebo::PositionIface    *posObjectIface;
+
 
   /*! \fn 
     \brief Constructor
@@ -170,6 +172,10 @@ private:
   */
   public: PR2::PR2_ERROR_CODE GetWristPoseGroundTruth(PR2::PR2_MODEL_ID id, double *x, double *y, double *z, double *roll, double *pitch, double *yaw);
 
+  /*! \fn
+    \brief - 3D position sensor can be attached to any object to get its position and orientation.
+  */
+	public: PR2::PR2_ERROR_CODE GetObjectPositionGroundTruth(double* x, double* y, double *z, double *roll, double *pitch, double *yaw);
 
   /*! \fn
     \brief Wait for Gazebo to update
