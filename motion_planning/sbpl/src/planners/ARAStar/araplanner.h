@@ -180,8 +180,8 @@ private:
 
 	int getHeurValue(ARASearchStateSpace_t* pSearchStateSpace, int StateID);
 
-	vector<int> ARAPlanner::GetSearchPath(ARASearchStateSpace_t* pSearchStateSpace, CMDPSTATE* stateGoal, int& solcost);
-	vector<int> ARAPlanner::GetPath(ARASearchStateSpace_t* pSearchStateSpace, int StateIDGoal, int& solcost);
+	vector<int> GetSearchPath(ARASearchStateSpace_t* pSearchStateSpace, CMDPSTATE* stateGoal, int& solcost);
+	vector<int> GetPath(ARASearchStateSpace_t* pSearchStateSpace, int StateIDGoal, int& solcost);
 
 
 	bool Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& pathIds, int & PathCost, bool bFirstSolution, bool bOptimalSolution, double MaxNumofSecs);

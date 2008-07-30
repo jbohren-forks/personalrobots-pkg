@@ -11,5 +11,6 @@ rospack_add_library(sbpl
                          src/utils/mdp.cpp
                          src/utils/utils.cpp
 			 )
-
+rospack_add_executable(bin/test_2dnav src/test/main.cpp)
+target_link_libraries(bin/test_2dnav sbpl)
 
