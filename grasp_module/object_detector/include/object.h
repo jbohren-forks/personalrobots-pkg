@@ -4,6 +4,7 @@
 #include "assert.h"
 
 #include <libTF/libTF.h>
+#include "grasp_module/object_msg.h"
 
 namespace grasp_module {
 
@@ -67,6 +68,13 @@ class Object {
 		case 3: return mA3; break;
 		default: assert(0);} 
 	}
+
+	//! Get this object in the corresponding ROS message type
+	object_msg getMsg() const;
+
+	//! Set this object from a corresponding ROS message type
+	void setFromMsg(const object_msg &om);
+
 
 };
 

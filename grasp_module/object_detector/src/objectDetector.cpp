@@ -123,13 +123,15 @@ std::vector<Object*> *ObjectDetector::getObjects(SmartScan *scan)
    \param rad \param nbrs - radius and number of neighbors for
    computing normals. Defaults = 0.01 and 5
 
-   See \a SmartScan::removeGrazingPoints(...) for details
+   Passing a -1 for any parameter means "keep the current value"
+
+   See \a SmartScan::removeGrazingPoints(...) for details.
  */
 void ObjectDetector::setParamGrazing(float thresh, float rad, int nbrs)
 {
-	mGrazThresh = thresh;
-	mGrazRad = rad;
-	mGrazNbrs = nbrs;
+	if ( thresh >=0 ) mGrazThresh = thresh;
+	if ( rad >= 0 ) mGrazRad = rad;
+	if ( nbrs >=0 )mGrazNbrs = nbrs;
 }
 
 /*! These parameters are passed to \a SmartScan::removePlane(...)
@@ -143,11 +145,13 @@ void ObjectDetector::setParamGrazing(float thresh, float rad, int nbrs)
    dominant plane (such as a table) and therefore we skip the plane
    removal stage. This value is directly compared to the return value of
    \a SmartScan::ransacPlane(...). Default = 0.7
+
+   Passing a -1 for any parameter means "keep the current value"
  */
 void ObjectDetector::setParamPlane(float thresh, float fit)
 {
-	mRemThresh = thresh;
-	mFitThresh = fit;
+	if ( thresh >= 0 ) mRemThresh = thresh;
+	if ( fit >= 0 ) mFitThresh = fit;
 }
 
 /*! These parameters are passed to \a SmartScan::connectedComponents(...)
@@ -158,11 +162,12 @@ void ObjectDetector::setParamPlane(float thresh, float fit)
   \param points - only components with more point than this value are
   kept. Default = 300
 
+   Passing a -1 for any parameter means "keep the current value"
  */
 void ObjectDetector::setParamComponents(float thresh, int points)
 {
-	mConnThresh = thresh;
-	mSizeThresh = points;
+	if ( thresh >= 0 ) mConnThresh = thresh;
+	if ( points >= 0 ) mSizeThresh = points;
 }
 
 } //namespace grasp_module
