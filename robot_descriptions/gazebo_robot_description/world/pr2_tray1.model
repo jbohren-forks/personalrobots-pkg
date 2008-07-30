@@ -57,7 +57,7 @@
         <!--size>0.65  0.65  0.65</size-->
         <scale>0.001 0.001 0.001</scale>
         <rpy> 90.0   0.0 90.0 </rpy>
-        <mesh>pr2_base.mesh</mesh>
+        <mesh>pr2/pr2_base.mesh</mesh>
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
@@ -554,7 +554,7 @@
         <!--size>0.6  0.8   0.6 </size-->
         <scale>0.001 0.001 0.001</scale>
         <rpy>90.0  0.0   90.0 </rpy>
-        <mesh>pr2_body.mesh</mesh>
+        <mesh>pr2/pr2_body.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:box>
@@ -608,7 +608,7 @@
         <rpy> 90.0   0.0   90.0 </rpy>
         <!--size> 0.26 0.6 0.36</size-->
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_sh_turret.mesh</mesh>
+        <mesh>pr2/pr2_sh_turret.mesh</mesh>
         <material>Gazebo/Green</material>
       </visual>
     </geom:cylinder>
@@ -638,7 +638,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0    90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_sh_pitch.mesh</mesh>
+        <mesh>pr2/pr2_sh_pitch.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
@@ -668,7 +668,7 @@
         <xyz> -0.20    0.0    0.0 </xyz>
         <rpy>180.0   -90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_sh_roll.mesh</mesh>
+        <mesh>pr2/pr2_sh_roll.mesh</mesh>
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
@@ -698,7 +698,7 @@
         <xyz> -0.135   0.0    0.0 </xyz>
         <rpy>  0.0   -90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_elbow_pitch.mesh</mesh>
+        <mesh>pr2/pr2_elbow_pitch.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
@@ -728,7 +728,7 @@
         <xyz>  0.11    0.0    0.0 </xyz>
         <rpy>  0.0   -90.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_forearm_roll.mesh</mesh>
+        <mesh>pr2/pr2_forearm_roll.mesh</mesh>
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
@@ -758,7 +758,7 @@
         <xyz>  0.008   0.0    0.0 </xyz>
         <rpy> 90.0     0.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_wrist_pitch.mesh</mesh>
+        <mesh>pr2/pr2_wrist_pitch.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
@@ -788,7 +788,7 @@
         <xyz> -0.035   0.0    0.0 </xyz>
         <rpy>  0.0    90.0   90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_wrist_roll.mesh</mesh>
+        <mesh>pr2/pr2_wrist_roll.mesh</mesh>
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
@@ -925,7 +925,7 @@
         <rpy> 90.0   0.0   90.0 </rpy>
         <!--size> 0.26 0.6 0.36</size-->
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_sh_turret.mesh</mesh>
+        <mesh>pr2/pr2_sh_turret.mesh</mesh>
         <material>Gazebo/Green</material>
       </visual>
     </geom:cylinder>
@@ -955,7 +955,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0    90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_sh_pitch.mesh</mesh>
+        <mesh>pr2/pr2_sh_pitch.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
@@ -985,7 +985,7 @@
         <xyz> -0.20    0.0    0.0 </xyz>
         <rpy>180.0   -90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_sh_roll.mesh</mesh>
+        <mesh>pr2/pr2_sh_roll.mesh</mesh>
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
@@ -1015,7 +1015,7 @@
         <xyz> -0.135   0.0    0.0 </xyz>
         <rpy>  0.0   -90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_elbow_pitch.mesh</mesh>
+        <mesh>pr2/pr2_elbow_pitch.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
@@ -1045,7 +1045,7 @@
         <xyz>  0.11    0.0    0.0 </xyz>
         <rpy>  0.0   -90.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_forearm_roll.mesh</mesh>
+        <mesh>pr2/pr2_forearm_roll.mesh</mesh>
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
@@ -1075,7 +1075,7 @@
         <xyz>  0.003   0.0    0.0 </xyz>
         <rpy> 90.0     0.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_wrist_pitch.mesh</mesh>
+        <mesh>pr2/pr2_wrist_pitch.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
@@ -1105,7 +1105,7 @@
         <xyz> -0.035   0.0    0.0 </xyz>
         <rpy>  0.0    90.0   90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_wrist_roll.mesh</mesh>
+        <mesh>pr2/pr2_wrist_roll.mesh</mesh>
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
@@ -1251,7 +1251,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy> 90.0     0.0   90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_caster.mesh</mesh>
+        <mesh>pr2/pr2_caster.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:box>
@@ -1286,7 +1286,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy> 90.0     0.0   90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_caster.mesh</mesh>
+        <mesh>pr2/pr2_caster.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:box>
@@ -1321,7 +1321,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy> 90.0     0.0   90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_caster.mesh</mesh>
+        <mesh>pr2/pr2_caster.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:box>
@@ -1355,7 +1355,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy> 90.0     0.0   90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_caster.mesh</mesh>
+        <mesh>pr2/pr2_caster.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:box>
@@ -1388,7 +1388,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_wheel.mesh</mesh>
+        <mesh>pr2/pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
@@ -1419,7 +1419,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_wheel.mesh</mesh>
+        <mesh>pr2/pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
@@ -1450,7 +1450,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_wheel.mesh</mesh>
+        <mesh>pr2/pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
@@ -1481,7 +1481,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_wheel.mesh</mesh>
+        <mesh>pr2/pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
@@ -1512,7 +1512,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_wheel.mesh</mesh>
+        <mesh>pr2/pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
@@ -1543,7 +1543,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_wheel.mesh</mesh>
+        <mesh>pr2/pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
@@ -1574,7 +1574,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_wheel.mesh</mesh>
+        <mesh>pr2/pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
@@ -1605,7 +1605,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2_wheel.mesh</mesh>
+        <mesh>pr2/pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
