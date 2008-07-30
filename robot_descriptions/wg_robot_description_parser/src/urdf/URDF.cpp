@@ -341,7 +341,12 @@ void URDF::Link::print(FILE *out, std::string indent) const
   visual->print(out, indent+ "  ");
   fprintf(out, "%s  - groups: ", indent.c_str());
   for (unsigned int i = 0 ; i < groups.size() ; ++i)
-    fprintf(out, "%s (%s) ", groups[i]->name.c_str(), groups[i]->flags.c_str());
+  {      
+    fprintf(out, "%s ( ", groups[i]->name.c_str());
+    for (unsigned int j = 0 ; j < groups[i]->flags.size() ; ++j)
+      fprintf(out, "%s ", groups[i]->flags[j].c_str());
+    fprintf(out, ") ");
+  }
   fprintf(out, "\n");
   fprintf(out, "%s  - children links: ", indent.c_str());
   for (unsigned int i = 0 ; i < children.size() ; ++i)
@@ -369,6 +374,14 @@ bool URDF::Sensor::canSense(void) const
 {
   return true;
 }
+
+bool URDF::Group::hasFlag(const std::string &flag) const
+{
+  for (unsigned int i = 0 ; i < flags.size() ; ++i)
+    if (flags[i] == flag)
+      return true;
+  return false;	  
+}    
 
 void URDF::ignoreNode(const TiXmlNode* node)
 {
@@ -1308,10 +1321,15 @@ bool URDF::parse(const TiXmlNode *node)
           }
           else
             g = m_groups[group];
-          if (g->flags.empty())
-            g->flags = flags;
-          else
-            g->flags += " " + flags;
+	  
+	  std::stringstream ssflags(flags);
+	  while (ssflags.good())
+	  {
+	      std::string flag;
+	      ssflags >> flag;
+	      g->flags.push_back(flag);	      
+	  }
+	  
           std::stringstream ss(node->FirstChild()->ValueStr());
           while (ss.good())
           {

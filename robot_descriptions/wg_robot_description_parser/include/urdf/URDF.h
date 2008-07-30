@@ -341,9 +341,11 @@ public:
     virtual ~Group(void)
     {
     }
-            
+    
+    bool hasFlag(const std::string &flag) const;
+      
     std::string              name;
-    std::string              flags;
+    std::vector<std::string> flags;
     std::vector<std::string> linkNames;
     std::vector<Link*>       links;
     std::vector<Link*>       linkRoots;
