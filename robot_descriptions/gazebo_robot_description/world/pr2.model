@@ -180,29 +180,17 @@
     <reportStaticCollision>true</reportStaticCollision>
 
     <geom:box name="torso_geom">
-      <xyz> 0.0  0.0   0.0 </xyz>
-      <size>0.1  0.2   0.6 </size>
+      <xyz> 0.0  0.0   0.275 </xyz>
+      <size>0.4  0.65  0.8 </size>
       <mass>1</mass>
       <visual>
         <!--   x    y     z -->
-        <xyz> 0.1  0.0   -0.425 </xyz>
+        <xyz> 0.1  0.0   -0.70 </xyz>
         <!--size>0.6  0.8   0.6 </size-->
         <scale>0.001 0.001 0.001</scale>
         <rpy>90.0  0.0   90.0 </rpy>
         <mesh>pr2_body.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
-      </visual>
-    </geom:box>
-
-    <geom:box name="shoulder_geom">
-      <xyz> 0.1  0.00  0.54</xyz>
-      <size>0.3  0.65  0.02</size>
-      <mass>1</mass>
-      <visual>
-        <!--size>0.3  0.65  0.02</size-->
-        <size>0.0  0.0  0.0</size>
-        <mesh>unit_box</mesh>
-        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
 

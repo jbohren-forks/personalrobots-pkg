@@ -27,7 +27,7 @@
     <stepTime>0.01</stepTime>
     <gravity>0 0 -9.8</gravity>
     <cfm>0.0000000001</cfm>
-    <erp>0.9999999999</erp>
+    <erp>0.2</erp>
   </physics:ode>
 
   <geo:origin>
@@ -52,17 +52,6 @@
   </rendering:ogre>
 
 
-<!--
-  <model:physical name="gbuilding">
-    <body:heightmap name="building">
-      <geom:heightmap name="building">
-        <image>map.png</image>
-        <worldTexture>map2.jpg</worldTexture>
-        <size>2 2 0.5</size>
-      </geom:heightmap>
-    </body:heightmap>
-  </model:physical>
--->
   <model:physical name="gplane">
     <xyz>0 0 0</xyz>	
     <rpy>0 0 0</rpy>
@@ -79,57 +68,16 @@
       </geom:plane>
     </body:plane>
   </model:physical>
-<!--
--->
 
-
-
-
-  <!-- test laser model -->
-        <!--
-  <model:physical name="test_laser_model">
-    <xyz>  -2.0    0.0    0.15</xyz>
-    <rpy>   0.0    0.0   90.0</rpy>
-    <static>true</static>
-    <body:box name="test_laser_body">
-      <xyz>0.0 0.0 0.0</xyz>
-      <rpy>0.0 0.0 0.0</rpy>
-
-      <geom:box name="test_laser_box">
-        <xyz>0.0 0.0 -0.05</xyz>
-        <rpy>0 0 0</rpy>
-        <size>0.05 0.15 0.02</size>
-        <mass>0.0</mass>
-        <visual>
-          <scale>0.05 0.15 0.02</scale>
-          <mesh>unit_box</mesh>
-          <material>Gazebo/Blue</material>
-        </visual>
-      </geom:box>
-
-      <sensor:ray name="laser_1">
-        <rayCount>100</rayCount>
-        <rangeCount>100</rangeCount>
-        <laserCount>1</laserCount>
-        <origin>0.0 0.0 0.10</origin>
-
-        <minAngle>-135</minAngle>
-        <maxAngle>135</maxAngle>
-
-        <minRange>0.036</minRange>
-        <maxRange>10.0</maxRange>
-
-        <updateRate>10.0</updateRate>
-
-        <controller:sicklms200_laser name="laser_controller_1">
-          <interface:laser name="laser_iface_1"/>
-          <updateRate>10</updateRate>
-        </controller:sicklms200_laser>
-      </sensor:ray>
-
-    </body:box>
-  </model:physical>
-        -->
+  <!--
+  <model:empty name="ros_model">
+    <body:empty name="ros_body">
+       <controller:ros_node name="ros_node" plugin="libRos_Node.so">
+        <nodeName>simulator_ros_node</nodeName>
+      </controller:ros_node>
+    </body:empty>
+  </model:empty>
+  -->
 
   <!-- The "desk"-->
   <model:physical name="desk1_model">
@@ -335,310 +283,20 @@
 
     <!-- base, torso and arms -->
     <include embedded="true">
-      <xi:include href="pr2_torque.model" />
+      <xi:include href="pr2.model" />
     </include>
 
-    <controller:pr2_actarray name="pr2_head_controller" plugin="libPr2_Actarray.so">
-        <updateRate>100.0</updateRate>
-        <joint name="neck_yaw_joint">
-          <saturationTorque>100</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="head_tilt_joint">
-          <saturationTorque>10</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="hokuyo_pitch_joint">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="head_cam_left_yaw_joint">
-          <saturationTorque>100</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="head_cam_left_pitch_joint">
-          <saturationTorque>100</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="head_cam_right_yaw_joint">
-          <saturationTorque>100</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="head_cam_right_pitch_joint">
-          <saturationTorque>100</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <interface:pr2array name="pr2_head_iface"/>
-    </controller:pr2_actarray>
+  </model:physical>
 
-    <!-- use actarray for the rest of the model -->
 
-    <controller:pr2_actarray name="pr2_controller" plugin="libPr2_Actarray.so">
-        <updateRate>100.0</updateRate>
-        <joint name="front_left_caster_steer">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>2</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="front_left_wheel_l_drive">
-          <saturationTorque>5</saturationTorque>
-          <pGain>0.5</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="front_left_wheel_r_drive">
-          <saturationTorque>5</saturationTorque>
-          <pGain>0.5</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="front_right_caster_steer">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>2</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="front_right_wheel_l_drive">
-          <saturationTorque>5</saturationTorque>
-          <pGain>0.5</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="front_right_wheel_r_drive">
-          <saturationTorque>5</saturationTorque>
-          <pGain>0.5</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="rear_left_caster_steer">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>2</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="rear_left_wheel_l_drive">
-          <saturationTorque>5</saturationTorque>
-          <pGain>0.5</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="rear_left_wheel_r_drive">
-          <saturationTorque>5</saturationTorque>
-          <pGain>0.5</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="rear_right_caster_steer">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>2</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="rear_right_wheel_l_drive">
-          <saturationTorque>5</saturationTorque>
-          <pGain>0.5</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="rear_right_wheel_r_drive">
-          <saturationTorque>5</saturationTorque>
-          <pGain>0.5</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <!-- ========================================= -->
-        <joint name="torso_spine_slider">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>100</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <!-- ========================================= -->
-        <joint name="shoulder_pan_left">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-          <controlMode>PD_CONTROL</controlMode>
-        </joint>
-        <joint name="upperarm_pitch_joint_left">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1500</pGain><!--700-->
-          <dGain>.2</dGain><!--35-->
-          <iGain>2</iGain><!--10-->
-          <iClamp>50</iClamp><!--300-->
-          <controlMode>PD_TORQUE_CONTROL</controlMode>
-        </joint>
-        <joint name="upperarm_roll_joint_left">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-          <controlMode>PD_CONTROL</controlMode>
-        </joint>
-        <joint name="elbow_pitch_joint_left">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>2000</pGain>
-          <dGain>.2</dGain>
-          <iGain>2</iGain>
-          <iClamp>50</iClamp>
-          <controlMode>PD_TORQUE_CONTROL</controlMode>
-        </joint>
-        <joint name="forearm_roll_joint_left">
-          <saturationTorque>100</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-          <controlMode>PD_CONTROL</controlMode>
-        </joint>
-        <joint name="wrist_pitch_joint_left">
-          <saturationTorque>100</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-          <controlMode>PD_CONTROL</controlMode>
-        </joint>
-        <joint name="palm_roll_joint_left">
-          <saturationTorque>100</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-          <controlMode>PD_CONTROL</controlMode>
-        </joint>
-        <!-- ========================================= -->
-        <joint name="shoulder_pan_right">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="upperarm_pitch_joint_right">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="upperarm_roll_joint_right">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="elbow_pitch_joint_right">
-          <saturationTorque>1000</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="forearm_roll_joint_right">
-          <saturationTorque>100</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="wrist_pitch_joint_right">
-          <saturationTorque>100</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <joint name="palm_roll_joint_right">
-          <saturationTorque>100</saturationTorque>
-          <pGain>1</pGain>
-          <dGain>0</dGain>
-          <iGain>0</iGain>
-          <iClamp>0</iClamp>
-        </joint>
-        <!-- ========================================= -->
-        <interface:pr2array name="pr2_iface"/>
-        <!-- ========================================= -->
-    </controller:pr2_actarray>
+  <model:physical name="robot_model2">
+    <xyz>0.0 2.0 0.02</xyz> <!-- bottom of base off the ground by this much, basically wheel height below skirt -->
+    <rpy>0.0 0.0 0.0 </rpy>
 
-    <controller:pr2_gripper name="pr2_gripper_left_controller" plugin="libPr2_Gripper.so">
-        <updateRate>100.0</updateRate>
-        <leftJoint>finger_2_slider_left</leftJoint>
-        <rightJoint>finger_1_slider_left</rightJoint>
-        <gripperForce>100.0</gripperForce>
-        <pGain>1.0</pGain>
-        <dGain>0.0</dGain>
-        <iGain>0.0</iGain>
-        <interface:pr2gripper name="pr2_gripper_left_iface"/>
-    </controller:pr2_gripper>
-
-    <controller:pr2_gripper name="pr2_gripper_right_controller" plugin="libPr2_Gripper.so">
-        <updateRate>100.0</updateRate>
-        <leftJoint>finger_2_slider_right</leftJoint>
-        <rightJoint>finger_1_slider_right</rightJoint>
-        <gripperForce>100.0</gripperForce>
-        <pGain>1.0</pGain>
-        <dGain>0.0</dGain>
-        <iGain>0.0</iGain>
-        <interface:pr2gripper name="pr2_gripper_right_iface"/>
-    </controller:pr2_gripper>
-
-    <controller:P3D name="p3d_right_wrist_controller" plugin="libP3D.so">
-        <updateRate>100.0</updateRate>
-        <bodyName>palm_right</bodyName>
-        <interface:position name="p3d_right_wrist_position"/>
-    </controller:P3D>
-
-    <controller:P3D name="p3d_left_wrist_controller" plugin="libP3D.so">
-        <updateRate>100.0</updateRate>
-        <bodyName>palm_left</bodyName>
-        <interface:position name="p3d_left_wrist_position"/>
-    </controller:P3D>
-
-    <controller:P3D name="p3d_base_controller" plugin="libP3D.so">
-        <updateRate>100.0</updateRate>
-        <bodyName>base_body</bodyName>
-        <interface:position name="p3d_base_position"/>
-    </controller:P3D>
+    <!-- base, torso and arms -->
+    <include embedded="true">
+      <xi:include href="test.model" />
+    </include>
 
   </model:physical>
 
