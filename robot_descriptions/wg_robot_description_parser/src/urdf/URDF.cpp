@@ -127,6 +127,12 @@ URDF::Group* URDF::getGroup(const std::string &name) const
   return (it == m_groups.end()) ? NULL : it->second;
 }
 
+void URDF::getGroups(std::vector<Group*> &groups) const
+{
+  for (std::map<std::string, Group*>::const_iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
+    groups.push_back(i->second);
+}
+    
 const URDF::Data& URDF::getData(void) const
 {
   return m_data;

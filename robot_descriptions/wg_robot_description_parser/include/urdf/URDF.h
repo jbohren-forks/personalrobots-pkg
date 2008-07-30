@@ -382,7 +382,8 @@ public:
         
   void getGroupNames(std::vector<std::string> &groups) const;
   Group* getGroup(const std::string &name) const;
-        
+  void getGroups(std::vector<Group*> &groups) const;
+
   const Data& getData(void) const;
         
 protected:
