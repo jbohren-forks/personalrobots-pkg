@@ -1,0 +1,17 @@
+<package>
+	<description brief='Higher level controllers for kinematics. Sourced from interpolated_kinematic_controller'>
+	</description>
+	<author>Advait Jain</author>
+	<license>BSD</license>
+	<url>http://pr.willowgarage.com</url>
+	<depend package="roscpp"/>
+	<depend package="std_msgs"/>
+	<depend package="pr2_msgs"/>
+	<depend package="pr2Core"/>
+	<depend package="libpr2API"/>
+	<depend package="libKDL"/>
+	<depend package="pr2_gazebo"/>
+	<export>
+		<cpp cflags="-I${prefix}/srv/cpp" />
+	</export>
+</package>

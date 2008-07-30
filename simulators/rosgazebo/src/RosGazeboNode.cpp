@@ -126,9 +126,10 @@ void RosGazeboNode::cmd_leftarmcartesianReceived() {
   this->lock.unlock();
 }
 
-void RosGazeboNode::reset_IK_guess()
+bool RosGazeboNode::reset_IK_guess(rosgazebo::VoidVoid::request &req, rosgazebo::VoidVoid::response &res)
 {
 	this->PR2Copy->GetArmJointPositionCmd(PR2::PR2_RIGHT_ARM, *(this->PR2Copy->pr2_kin.q_IK_guess));
+	return true;
 }
 
 void RosGazeboNode::cmd_rightarmcartesianReceived() {
@@ -354,7 +355,9 @@ RosGazeboNode::AdvertiseSubscribeMessages()
   subscribe("cmd_rightarmconfig", rightarm, &RosGazeboNode::cmd_rightarmconfigReceived);
   subscribe("cmd_leftarm_cartesian", cmd_leftarmcartesian, &RosGazeboNode::cmd_leftarmcartesianReceived);
   subscribe("cmd_rightarm_cartesian", cmd_rightarmcartesian, &RosGazeboNode::cmd_rightarmcartesianReceived);
-  subscribe("reset_IK_guess", empty_msg, &RosGazeboNode::reset_IK_guess);
+
+	//------ services ----------
+  advertise_service("reset_IK_guess", &RosGazeboNode::reset_IK_guess);
 
   return(0);
 }

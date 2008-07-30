@@ -65,6 +65,9 @@
 
 #include <time.h>
 
+// service
+#include <rosgazebo/VoidVoid.h>
+
 // Our node
 class RosGazeboNode : public ros::node
 {
@@ -157,7 +160,7 @@ class RosGazeboNode : public ros::node
 
 		// Message callback which sets pr2_kin.q_IK_guess to the current manipulator configuration.
 		// July 24, 2008 - Advait - only right arm is supported
-    void reset_IK_guess();
+    bool reset_IK_guess(rosgazebo::VoidVoid::request &req, rosgazebo::VoidVoid::response &res);
 
     // laser range data
     float    ranges[GZ_LASER_MAX_RANGES];

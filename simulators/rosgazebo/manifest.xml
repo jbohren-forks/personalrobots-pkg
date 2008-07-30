@@ -23,6 +23,6 @@
   <depend package="gazebo_hardware" />
   <depend package="gazebo_sensors" />
   <export>
-    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lRosGazeboNode"/>
+		<cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lRosGazeboNode"/>
   </export>
 </package>

@@ -3,6 +3,8 @@ include(rosbuild)
 rospack(rosgazebo)
 genmsg()
 include_directories(msg/cpp)
+gensrv()
+include_directories(srv/cpp)
 add_definitions(-Wall)
 rospack_add_library(RosGazeboNode src/RosGazeboNode.cpp)
 
