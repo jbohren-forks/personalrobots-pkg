@@ -304,7 +304,7 @@ MS_3DMGX2::IMU::extract_time(uint8_t* addr)
 
   uint64_t all_ticks = ((uint64_t)wraps << 32) - offset_ticks + ticks;
 
-  return  start_time + (uint64_t)(all_ticks * 1000000000 / TICKS_PER_SEC);
+  return  start_time + (uint64_t)(all_ticks * (1000000000.0 / TICKS_PER_SEC));
 }
 
 
