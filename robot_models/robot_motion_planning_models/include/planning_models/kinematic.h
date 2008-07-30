@@ -92,16 +92,16 @@ namespace planning_models
 		    delete after;
 	    }
 	    
-	    /* the links that this joint connects */	    
+	    /** the links that this joint connects */	    
 	    Link         *before;
 	    Link         *after;
 	    
-	    /* the range of indices in the parameter vector that
-	       needed to access information about the position of this
-	       joint */
+	    /** The range of indices in the parameter vector that
+		needed to access information about the position of this
+		joint */
 	    unsigned int      usedParams;
 	    
-	    /* bitvector identifying which groups this joint is part of */
+	    /** Bitvector identifying which groups this joint is part of */
 	    std::vector<bool> inGroup;	    
 	    
 	    /* relevant joint information */
@@ -115,7 +115,7 @@ namespace planning_models
 	    
 	    /* ----------------- Computed data -------------------*/
 	    
-	    /* the local transform (computed by forward kinematics) */
+	    /** the local transform (computed by forward kinematics) */
 	    libTF::Pose3D varTrans;
 	    libTF::Pose3D globalTrans;
 	    
@@ -142,24 +142,24 @@ namespace planning_models
 		    delete after[i];
 	    }
 	    
-	    /* joint that connects this link to the parent link */
+	    /** Joint that connects this link to the parent link */
 	    Joint              *before;
 	    
-	    /* list of descending joints (each connects to a child link) */
+	    /** List of descending joints (each connects to a child link) */
 	    std::vector<Joint*> after;
 	    
-	    /* the constant transform applied to the link (local) */
+	    /** The constant transform applied to the link (local) */
 	    libTF::Pose3D       constTrans;
 	    
-	    /* the constant transform applied to the collision geometry of the link (local) */
+	    /** The constant transform applied to the collision geometry of the link (local) */
 	    libTF::Pose3D       constGeomTrans;
 	    
-	    /* the geometry of the link */
+	    /** The geometry of the link */
 	    Geometry           *geom;
 	    
 	    /* ----------------- Computed data -------------------*/
 	    
-	    /* the global transform for this link (computed by forward kinematics) */
+	    /** The global transform for this link (computed by forward kinematics) */
 	    libTF::Pose3D       globalTrans;
 	    
 	    void computeTransform(const double *params, int groupID = -1);	
@@ -261,11 +261,11 @@ namespace planning_models
 	/** Cumulative state bounds */
 	std::vector<double> stateBounds;
 	
-	/* Cumulative index list */
+	/** Cumulative index list */
 	std::vector< std::vector<unsigned int> > groupStateIndexList;
 
-	/* Cumulative list of group roots */
-	std::vector<std::vector<Joint*> >        groupChainStart;
+	/** Cumulative list of group roots */
+	std::vector< std::vector<Joint*> >       groupChainStart;
 
     protected:
 	
@@ -279,6 +279,7 @@ namespace planning_models
 	
 	void buildChainJ(Robot *robot, Link  *parent, Joint *joint, robot_desc::URDF::Link *urdfLink, robot_desc::URDF &model);
 	void buildChainL(Robot *robot, Joint *parent, Link  *link,  robot_desc::URDF::Link *urdfLink, robot_desc::URDF &model);
+	void constructGroupList(robot_desc::URDF &model);
 	
     };
 

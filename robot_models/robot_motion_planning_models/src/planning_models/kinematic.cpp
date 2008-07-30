@@ -108,6 +108,20 @@ void planning_models::KinematicModel::setVerbose(bool verbose)
     m_verbose = verbose;
 }
 
+void planning_models::KinematicModel::constructGroupList(robot_desc::URDF &model)
+{
+    std::string rname = model.getRobotName();
+    std::vector<std::string> allGroups;
+    model.getGroupNames(allGroups);
+    m_groups.clear();
+    for (unsigned int i = 0 ; i < allGroups.size() ; ++i)
+	if (model.getGroup(allGroups[i])->hasFlag("plan"))
+	    m_groups.push_back(rname + "::" + allGroups[i]);
+    m_groupsMap.clear();
+    for (unsigned int i = 0 ; i < m_groups.size() ; ++i)
+	m_groupsMap[m_groups[i]] = i;
+}
+
 void planning_models::KinematicModel::build(robot_desc::URDF &model, const char *group)
 {
     if (m_built)
@@ -119,13 +133,7 @@ void planning_models::KinematicModel::build(robot_desc::URDF &model, const char 
     m_built = true;
 
     /* construct a map for the available groups */
-    std::string rname = model.getRobotName();
-    model.getGroupNames(m_groups);
-    for (unsigned int i = 0 ; i < m_groups.size() ; ++i)
-	m_groups[i] = rname + "::" + m_groups[i];    
-    m_groupsMap.clear();
-    for (unsigned int i = 0 ; i < m_groups.size() ; ++i)
-	m_groupsMap[m_groups[i]] = i;
+    constructGroupList(model);
     groupStateIndexList.resize(m_groups.size());
     groupChainStart.resize(m_groups.size());
     
@@ -133,17 +141,22 @@ void planning_models::KinematicModel::build(robot_desc::URDF &model, const char 
     {
 	robot_desc::URDF::Group *g = model.getGroup(group);
 	if (g)
-	    for (unsigned int i = 0 ; i < g->linkRoots.size() ; ++i)
-	    {
-		robot_desc::URDF::Link *link = g->linkRoots[i];
-		Robot *rb = new Robot(this);
-		rb->groupStateIndexList.resize(m_groups.size());
-		rb->groupChainStart.resize(m_groups.size());
-		rb->tag = g->name;
-		rb->chain = new Joint();
-		buildChainJ(rb, NULL, rb->chain, link, model);
-		m_robots.push_back(rb);
-	    }
+	{
+	    if (g->hasFlag("plan"))
+		for (unsigned int i = 0 ; i < g->linkRoots.size() ; ++i)
+		{
+		    robot_desc::URDF::Link *link = g->linkRoots[i];
+		    Robot *rb = new Robot(this);
+		    rb->groupStateIndexList.resize(m_groups.size());
+		    rb->groupChainStart.resize(m_groups.size());
+		    rb->tag = g->name;
+		    rb->chain = new Joint();
+		    buildChainJ(rb, NULL, rb->chain, link, model);
+		    m_robots.push_back(rb);
+		}
+	    else
+		fprintf(stderr, "Group '%s' is not marked for planning ('plan' flag).\n", group);
+	}
 	else
 	    fprintf(stderr, "Group '%s' not found.\n", group);
     }
@@ -247,8 +260,13 @@ void planning_models::KinematicModel::buildChainJ(Robot *robot, Link *parent, Jo
 	joint->usedParams = 0;
 	break;
     }
-
-    joint->inGroup = urdfLink->inGroup;
+    
+    /** construct the inGroup bitvector */
+    std::vector<std::string> gnames;
+    model.getGroupNames(gnames);
+    for (unsigned int i = 0 ; i < gnames.size() ; ++i)
+	if (model.getGroup(gnames[i])->hasFlag("plan"))
+	    joint->inGroup.push_back(urdfLink->inGroup[i]);
     
     for (unsigned int i = 0 ; i < joint->inGroup.size() ; ++i)
 	if (joint->inGroup[i])
@@ -256,9 +274,12 @@ void planning_models::KinematicModel::buildChainJ(Robot *robot, Link *parent, Jo
 		robot->groupStateIndexList[i].push_back(j + robot->stateDimension);
     
     for (unsigned int k = 0 ; k < urdfLink->groups.size() ; ++k)
-	for (unsigned int j = 0 ; j < urdfLink->groups[k]->linkRoots.size() ; ++j)
-	    if (urdfLink->groups[k]->linkRoots[j] == urdfLink)
-		robot->groupChainStart[m_groupsMap[model.getRobotName() + "::" + urdfLink->groups[k]->name]].push_back(joint);		
+	if (urdfLink->groups[k]->isRoot(urdfLink))
+	{
+	    std::string gname = model.getRobotName() + "::" + urdfLink->groups[k]->name;
+	    if (m_groupsMap.find(gname) != m_groupsMap.end())
+		robot->groupChainStart[m_groupsMap[gname]].push_back(joint);
+	}
     
     if (m_verbose && joint->usedParams > 0)
     {
