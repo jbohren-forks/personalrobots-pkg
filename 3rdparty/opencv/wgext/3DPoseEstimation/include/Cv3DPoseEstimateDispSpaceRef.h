@@ -50,10 +50,6 @@ public:
 	int estimate(CvMat *points0, CvMat *points1,
 		CvMat *rot, CvMat *trans, CvMat *& inliers0, CvMat *& outliers1);
 	
-	int estimateMixedPointClouds_old(CvMat *xyzs0, CvMat *uvds1, 
-			CvMat *refPoints0, CvMat *refPoints1,
-			CvMat *rot, CvMat *shift, CvMat *& inliers0, CvMat *& outliers1);
-		
 	int estimateMixedPointClouds(CvMat *xyzs0, CvMat *uvds1,
 			int numRefGrps, int refPoints[],
 			CvMat *rot, CvMat *shift, CvMat *& inliers0, CvMat *& outliers1);
@@ -64,9 +60,6 @@ protected:
     int getInLiers(CvMat *uvds0, CvMat *uvds1, CvMat* H, 
         CvMat* uvds0Inlier, CvMat* uvds1Inlier);
 #endif
-	int estimate_old(CvMat *xyzs0, CvMat *xyzs1,
-			CvMat *uvds0, CvMat *uvds1, CvMat *refPoints0, CvMat *refPoints1,
-			CvMat *rot, CvMat *shift, CvMat *& inliers0, CvMat *& inliers1);
 	int estimate(CvMat *xyzs0, CvMat *xyzs1,
 			CvMat *uvds0, CvMat *uvds1, 
 			int numRefGrps, int refPoints[],
