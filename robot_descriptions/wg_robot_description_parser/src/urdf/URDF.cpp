@@ -389,6 +389,14 @@ bool URDF::Group::hasFlag(const std::string &flag) const
   return false;	  
 }    
 
+bool URDF::Group::isRoot(const Link* link) const
+{
+  for (unsigned int i = 0 ; i < linkRoots.size() ; ++i)
+    if (linkRoots[i] == link)
+      return true;
+  return false;    
+}
+
 void URDF::ignoreNode(const TiXmlNode* node)
 {
   switch (node->Type())

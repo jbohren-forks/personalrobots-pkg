@@ -343,7 +343,8 @@ public:
     }
     
     bool hasFlag(const std::string &flag) const;
-      
+    bool isRoot(const Link* link) const;
+       
     std::string              name;
     std::vector<std::string> flags;
     std::vector<std::string> linkNames;
