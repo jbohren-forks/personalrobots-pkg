@@ -2,8 +2,6 @@
 <description>Thin ROS node that provides the functionality of the grasp_module as ROS services</description>
 <author>Matei Ciocarlie</author>
 <license>BSD</license>
-<depend package="libTF" />
-<depend package="newmat10" />
 <depend package="grasp_module" />
 <depend package="object_detector" />
 <depend package="grasp_planner" />
