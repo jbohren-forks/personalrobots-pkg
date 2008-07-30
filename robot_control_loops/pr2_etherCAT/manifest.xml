@@ -5,7 +5,7 @@ Main loop that runs the robot.
   <author>Rob Wheeler/wheeler@willowgarage.com</author>
   <license>BSD</license>
   <depend package="roscpp" />
-  <depend package="mechanism_control"/>
+  <depend package="old_mechanism_control"/>
   <depend package="ethercat_hardware"/>
   <depend package="hw_interface"/>
 

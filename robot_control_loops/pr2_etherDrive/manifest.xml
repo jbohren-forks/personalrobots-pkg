@@ -5,7 +5,7 @@ Main loop that runs the robot.
   <author>Jimmy Sastra, Sachin Chitta</author>
   <license>BSD</license>
   <depend package="roscpp" />
-  <depend package="mechanism_control"/>
+  <depend package="old_mechanism_control"/>
   <depend package="etherdrive_hardware"/>
   <depend package="hw_interface"/>
 
