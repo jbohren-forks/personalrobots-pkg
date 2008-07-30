@@ -166,7 +166,7 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
         if (link->visual->geometry->filename.empty())
             addKeyValue(visual, "mesh", "unit_" + type);
         else
-            addKeyValue(visual, "mesh", link->visual->geometry->filename);
+            addKeyValue(visual, "mesh", "models/pr2/pr2_" + link->visual->geometry->filename + ".mesh");
         
         /* set geometry material */        
         if (!link->visual->material.empty())
