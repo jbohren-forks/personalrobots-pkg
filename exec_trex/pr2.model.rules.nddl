@@ -692,7 +692,7 @@ MoveArm::Inactive {
   addEq(acWristPitchAngle, [-.15 , .15], desWristPitchAngle);
   addEq(acWristRollAngle,  [-.15 , .15], desWristRollAngle);
   addEq(acGripperForceCmd,  [-25 , 25], desGripperForceCmd);
-  addEq(acGripperGapCmd,  [-.01 , .01], desGripperGapCmd);
+  addEq(acGripperGapCmd,  [-.015 , .015], desGripperGapCmd);
 
 }
 

@@ -22,7 +22,7 @@
 using namespace std_msgs;
 using namespace KDL;
 static const double AllowableArmError = .05;
-static const double AllowableGraspError = .01;
+static const double AllowableGraspError = .011;
 
 namespace TREX {
   ROSNodeId ROSNode::s_id;
@@ -335,21 +335,22 @@ namespace TREX {
 	       << endGoal.trans[0] << " " 
 	       << endGoal.trans[1] << " " 
 	       << endGoal.trans[2]); 
-
-      std::cout << "ROSNode::EndEffector:: Dispatching end frame " 
-		<< endGoal.rot[0] << " " 
-		<< endGoal.rot[1] << " " 
-		<< endGoal.rot[2] << " " 
-		<< endGoal.rot[3] << " " 
-		<< endGoal.rot[4] << " " 
-		<< endGoal.rot[5] << " " 
-		<< endGoal.rot[6] << " " 
-		<< endGoal.rot[7] << " " 
-		<< endGoal.rot[8] << " " 
-		<< endGoal.trans[0] << " " 
-		<< endGoal.trans[1] << " " 
-		<< endGoal.trans[2] << std::endl; 
-	       
+      /*
+	std::cout << "ROSNode::EndEffector:: Dispatching end frame " 
+	<< endGoal.rot[0] << " " 
+	<< endGoal.rot[1] << " " 
+	<< endGoal.rot[2] << " " 
+	<< endGoal.rot[3] << " " 
+	<< endGoal.rot[4] << " " 
+	<< endGoal.rot[5] << " " 
+	<< endGoal.rot[6] << " " 
+	<< endGoal.rot[7] << " " 
+	<< endGoal.rot[8] << " " 
+	<< endGoal.trans[0] << " " 
+	<< endGoal.trans[1] << " " 
+	<< endGoal.trans[2] << std::endl; 
+      */
+	
       if(getObjectName(cmd_end) == LabelStr("rightEndEffectorGoal")) {
 	debugMsg("ROSNode::EndEffector", "dispatching command for right end effector");
 	publish("cmd_rightarm_cartesian", endGoal);
