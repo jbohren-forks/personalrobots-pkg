@@ -331,7 +331,7 @@ public:
       }           type;
     std::string calibration;
   };
-        
+  
   struct Group
   {
     Group(void)
