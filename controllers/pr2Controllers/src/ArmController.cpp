@@ -101,6 +101,7 @@ ArmController::ArmController(mechanism::Robot *robot, std::string name,int armNu
   this->name  = "armController";
  
   this->armJointControllers = new JointController[ARM_MAX_JOINTS];
+  init(jcToRobotJointMap);
 }
 
 ArmController::~ArmController()
@@ -157,14 +158,17 @@ controllerErrorCode ArmController::loadXML(std::string filename)
 }
 
 
-void ArmController::init()
+void ArmController::init(int jcToRobotJointMap[])
 {
   // to be filled in here
-  initJointControllers();
+  static int defaultMap[ARM_MAX_JOINTS] = {0,1,2,3,4,5,6}; //Specify default mapping
+  if(jcToRobotJointMap!=NULL)  initJointControllers(jcToRobotJointMap);
+  else initJointControllers(defaultMap);
 
 }
 
-void ArmController::initJointControllers()
+
+void ArmController::initJointControllers( int jcToRobotJointMap[])
 {
 
   /**************************************************************************************/
@@ -179,9 +183,27 @@ void ArmController::initJointControllers()
   for (int ii=0; ii < ARM_MAX_JOINTS; ii++) {
     // FIXME: hardcoded values for gazebo for now
     //armJointControllers[ii].init(pGain, iGain, dGain, iMax, iMin,                ETHERDRIVE_SPEED, getTime(), maxEffort, minEffort, &(robot->joint[ii]));
-    armJointControllers[ii].init( 1000,     0,     0,  500, -500, controller::CONTROLLER_POSITION, getTime(),      1000,     -1000, &(robot->joint[ii]));
-    armJointControllers[ii].enableController();
-  }
+  //  armJointControllers[ii].init( 1000,     0,     0,  500, -500, controller::CONTROLLER_TORQUE, getTime(),      1000,     -1000, &(robot->joint[jcToRobotJointMap[ii]]));
+//    printf("Index: %u\n",jcToRobotJointMap[ii]);
+//    armJointControllers[ii].enableController();
+    }
+  double time = getTime();
+  //Explicitly initialize the controllers we wish to use. Don't forget to set the controllers to torque mode in the world file! 
+  initJoint(0,100,0,0,500,-500, controller::CONTROLLER_POSITION,time,100,-100, &(robot->joint[jcToRobotJointMap[0]]));
+  initJoint(1,1000,0,0,500,-500, controller::CONTROLLER_POSITION,time,1000,-1000, &(robot->joint[jcToRobotJointMap[1]]));
+
+  initJoint(2,100,0,0,500,-500, controller::CONTROLLER_POSITION,time,100,-100, &(robot->joint[jcToRobotJointMap[2]]));
+
+  initJoint(3,300,0,0,500,-500, controller::CONTROLLER_POSITION,time,100,-100, &(robot->joint[jcToRobotJointMap[3]]));
+
+  initJoint(4,100,0,0,500,-500, controller::CONTROLLER_POSITION,time,100,-100, &(robot->joint[jcToRobotJointMap[4]]));
+
+  initJoint(5,100,0,0,500,-500, controller::CONTROLLER_POSITION,time,100,-100, &(robot->joint[jcToRobotJointMap[5]]));
+  initJoint(6,100,0,0,500,-500, controller::CONTROLLER_POSITION,time,100,-100, &(robot->joint[jcToRobotJointMap[6]]));
+
+
+  
+
   /***************************************************************************************/
   /*                                                                                     */
   /*                            initialize controllers                                   */

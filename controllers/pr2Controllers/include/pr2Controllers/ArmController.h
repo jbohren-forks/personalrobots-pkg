@@ -112,7 +112,7 @@ namespace controller
       /*!
         * \brief initialize controller variables
         */       
-     void init();
+     void init(int jcToRobotJointMap[]=NULL);
 
       //TEMPORARY
         /*! 
@@ -449,7 +449,7 @@ namespace controller
       /*!
         * \brief initialize joint controllers
         */       
-      void initJointControllers();
+      void initJointControllers(int jcToRobotJointMap[]);
       JointController *armJointControllers; /**< Lower level control done by JointControllers>*/
 
       double cmdPos[6]; /**<Last commanded cartesian position>*/
