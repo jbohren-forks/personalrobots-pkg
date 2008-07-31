@@ -8,6 +8,11 @@
 # Or, to replace an existing build, do e.g.:
 #
 #  $ make VERSION=0.2 rebuild
+#
+# It is also possible to use svn checkout to get the sources, in case
+# you need the bleeding edge. This is done using:
+#
+#  $ make svn-all
 
 all: really-all
 
@@ -21,11 +26,20 @@ BUILD_DIR=   $(PWD)/build
 INST_DIR=    $(PWD)/local
 ESTAR_DIR=   `rospack find estar`/local
 
+SVN_DIR=     $(PWD)/sunflower-svn
+SVN_REV=     HEAD
+SVN_URL=     https://libsunflower.svn.sourceforge.net/svnroot/libsunflower/trunk/sunflower
+
 include $(shell rospack find mk)/download_unpack.mk
 
 .PHONY: reall-all
 really-all: $(SOURCE_DIR) $(SOURCE_DIR)/configure $(BUILD_DIR)/config.h
 	$(MAKE) -C $(BUILD_DIR) install
+
+.PHONY: svn-all
+svn-all:
+	test -d $(SVN_DIR) || svn co -r$(SVN_REV) $(SVN_URL) $(SVN_DIR)
+	$(MAKE) SOURCE_DIR=$(SVN_DIR) really-all
 
 rebuild: wipe really-all
 
