@@ -752,8 +752,10 @@ void URDF::loadJoint(const TiXmlNode *node, const std::string& defaultName, Link
         joint->type = Link::Joint::PRISMATIC;
       else if (attr->ValueStr() == "floating")
         joint->type = Link::Joint::FLOATING;
+      else if (attr->ValueStr() == "planar")
+	joint->type = Link::Joint::PLANAR;
       else
-        fprintf(stderr, "Unknown sensor type: '%s'\n", attr->Value());
+        fprintf(stderr, "Unknown joint type: '%s'\n", attr->Value());
     }
   }
     
@@ -766,6 +768,8 @@ void URDF::loadJoint(const TiXmlNode *node, const std::string& defaultName, Link
         loadDoubleValues(node, 3, joint->axis);
       else if (node->ValueStr() == "anchor")
         loadDoubleValues(node, 3, joint->anchor);
+      else if (node->ValueStr() == "position" && (joint->type == Link::Joint::PLANAR || joint->type == Link::Joint::FLOATING))
+	loadDoubleValues(node, joint->type == Link::Joint::PLANAR ? 3 : 7, joint->position);
       else if (node->ValueStr() == "limit")
         loadDoubleValues(node, 2, joint->limit);
       else if (node->ValueStr() == "calibration")
@@ -817,7 +821,7 @@ void URDF::loadGeometry(const TiXmlNode *node, const std::string &defaultName, L
       else if (attr->ValueStr() == "mesh")
         geometry->type = Link::Geometry::MESH;
       else
-        fprintf(stderr, "Unknown sensor type: '%s'\n", attr->Value());
+        fprintf(stderr, "Unknown geometry type: '%s'\n", attr->Value());
     }
   }
 
