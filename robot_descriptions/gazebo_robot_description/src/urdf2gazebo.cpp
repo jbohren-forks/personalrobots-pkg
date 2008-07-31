@@ -166,7 +166,7 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
         if (link->visual->geometry->filename.empty())
             addKeyValue(visual, "mesh", "unit_" + type);
         else
-            addKeyValue(visual, "mesh", "models/pr2/pr2_" + link->visual->geometry->filename + ".mesh");
+            addKeyValue(visual, "mesh", "models/pr2/" + link->visual->geometry->filename + ".mesh");
             //addKeyValue(visual, "mesh", "models/pr2_matt/high/" + link->visual->geometry->filename + ".mesh");
         
         /* set geometry material */        
@@ -210,9 +210,9 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
       TiXmlElement *joint = new TiXmlElement("joint:" + jtype);
       joint->SetAttribute("name", link->joint->name);
       
-      addKeyValue(joint, "body1", link->parentName);
-      addKeyValue(joint, "body2", link->name);
-      addKeyValue(joint, "anchor", link->name);
+      addKeyValue(joint, "body1", link->name);
+      addKeyValue(joint, "body2", link->parentName);
+      addKeyValue(joint, "anchor", link->parentName);
       
       if (fixed)
       {
