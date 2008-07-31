@@ -23,7 +23,7 @@ class mqmat
     (std::ostream &, const mqmat<rows, cols, T> &);
 public:
   T *d;
-  int pop_row, pop_col; // used for populating with <<
+  size_t pop_row, pop_col; // used for populating with <<
   mqmat() : pop_row(0), pop_col(0)
   {
     d = new T[rows * cols];
@@ -45,12 +45,12 @@ public:
 
   inline const size_t num_rows() const { return rows; }
   inline const size_t num_cols() const { return cols; }
-  void populate(int i, int j) { pop_row = i; pop_col = j; }
-  T at(int i, int j) const { return d[i*cols + j]; }
+  void populate(uint32_t i, uint32_t j) { pop_row = i; pop_col = j; }
+  T at(uint32_t i, uint32_t j) const { return d[i*cols + j]; }
 
   mqmat &operator |(T val)
   {
-    if (pop_row < (int)rows && pop_col < (int)cols)
+    if (pop_row < (uint32_t)rows && pop_col < (uint32_t)cols)
     {
       d[pop_row * cols + pop_col] = val;
       if (++pop_col >= cols)
@@ -66,9 +66,9 @@ public:
   mqmat<rows, rcols, T> operator *(const mqmat<rrows, rcols, rT> &rhs)
   {
     mqmat<rows, rcols, T> temp;
-    for (int i = 0; i < rows; i++)
-      for (int j = 0; j < rcols; j++)
-        for (int k = 0; k < cols; k++)
+    for (size_t i = 0; i < rows; i++)
+      for (size_t j = 0; j < rcols; j++)
+        for (size_t k = 0; k < cols; k++)
           temp.d[i*rcols+j] += d[i*cols+k] * rhs.d[k*rcols+j];
     return temp;
   }

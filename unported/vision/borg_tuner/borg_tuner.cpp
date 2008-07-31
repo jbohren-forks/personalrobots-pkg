@@ -197,7 +197,11 @@ void generate_cloud()
     intrinsics(pt.col, pt.row);
     intersect();
     camera_to_world();
-    cv->add_point(world_point[0], world_point[1], world_point[2], 255*pt.r, 255*pt.g, 255*pt.b);
+    float rowcol[2];
+    rowcol[0] = pt.row;
+    rowcol[1] = pt.col;
+    cv->add_point(world_point[0], world_point[1], world_point[2], 255*pt.r, 255*pt.g, 255*pt.b,
+                  rowcol, 2);
   }
 }
 
