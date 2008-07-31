@@ -39,15 +39,15 @@
 #include <dll/ethercat_dll.h>
 
 EthercatHardware::EthercatHardware() :
-  hw(0), ni(0), current_buffer_(0), last_buffer_(0), buffer_size_(0)
+  hw_(0), ni_(0), current_buffer_(0), last_buffer_(0), buffer_size_(0)
 {
 }
 
 EthercatHardware::~EthercatHardware()
 {
-  if (ni)
+  if (ni_)
   {
-    close_socket(ni);
+    close_socket(ni_);
   }
   if (current_buffer_)
   {
@@ -57,50 +57,50 @@ EthercatHardware::~EthercatHardware()
   {
     delete last_buffer_;
   }
-  if (hw)
+  if (hw_)
   {
-    delete hw;
+    delete hw_;
   }
 }
 
-void EthercatHardware::init(char *interface, char *configuration)
+void EthercatHardware::init(char *interface, TiXmlElement *configuration)
 {
   // Initialize network interface
-  if ((ni = init_ec(interface)) == NULL)
+  if ((ni_ = init_ec(interface)) == NULL)
   {
     perror("init_ec");
     return;
   }
 
   // Initialize Application Layer (AL)
-  EtherCAT_DataLinkLayer::instance()->attach(ni);
-  if ((al = EtherCAT_AL::instance()) == NULL)
+  EtherCAT_DataLinkLayer::instance()->attach(ni_);
+  if ((al_ = EtherCAT_AL::instance()) == NULL)
   {
     perror("EtherCAT_AL::instance");
     return;
   }
 
-  unsigned int numSlaves = al->get_num_slaves();
-  if (numSlaves == 0)
+  unsigned int num_slaves = al_->get_num_slaves();
+  if (num_slaves == 0)
   {
     perror("Can't locate any slaves");
     return;
   }
 
   // Initialize Master
-  if ((em = EtherCAT_Master::instance()) == NULL)
+  if ((em_ = EtherCAT_Master::instance()) == NULL)
   {
     perror("EtherCAT_Master::instance");
     return;
   }
 
-  slaves = new MotorControlBoard*[numSlaves];
+  slaves = new MotorControlBoard*[num_slaves];
 
   unsigned int num_actuators = 0;
-  for (unsigned int slave = 0; slave < numSlaves; ++slave)
+  for (unsigned int slave = 0; slave < num_slaves; ++slave)
   {
     EC_FixedStationAddress fsa(slave + 1);
-    EtherCAT_SlaveHandler *sh = em->get_slave_handler(fsa);
+    EtherCAT_SlaveHandler *sh = em_->get_slave_handler(fsa);
     if (sh == NULL)
     {
       perror("get_slave_handler");
@@ -123,7 +123,7 @@ void EthercatHardware::init(char *interface, char *configuration)
 
   // Determine configuration from XML file 'configuration'
   // Create HardwareInterface
-  hw = new HardwareInterface(num_actuators);
+  hw_ = new HardwareInterface(num_actuators);
 }
 
 void EthercatHardware::update()
@@ -132,21 +132,21 @@ void EthercatHardware::update()
 
   // Convert HW Interface commands to MCB-specific buffers
   current = current_buffer_;
-  for (int i = 0; i < hw->numActuators; ++i)
+  for (int i = 0; i < hw_->num_actuators_; ++i)
   {
-    slaves[i]->convertCommand(hw->actuator[i].command, current);
+    slaves[i]->convertCommand(hw_->actuators_[i].command_, current);
     current += slaves[i]->commandSize + slaves[i]->statusSize;
   }
 
   // Transmit process data
-  em->txandrx_PD(buffer_size_, current_buffer_);
+  em_->txandrx_PD(buffer_size_, current_buffer_);
 
   // Convert status back to HW Interface
   current = current_buffer_;
   last = last_buffer_;
-  for (int i = 0; i < hw->numActuators; ++i)
+  for (int i = 0; i < hw_->num_actuators_; ++i)
   {
-    slaves[i]->convertState(hw->actuator[i].state, current, last);
+    slaves[i]->convertState(hw_->actuators_[i].state_, current, last);
     current += slaves[i]->commandSize + slaves[i]->statusSize;
     last += slaves[i]->commandSize + slaves[i]->statusSize;
   }

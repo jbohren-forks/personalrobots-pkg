@@ -31,38 +31,46 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
+#ifndef TRANSMISSION_H
+#define TRANSMISSION_H
 
-#ifndef MOTOR_CONTROL_BOARD_H
-#define MOTOR_CONTROL_BOARD_H
+#include "mechanism_model/joint.h"
+#include "hardware_interface/hardware_interface.h"
 
-#include <vector>
+namespace mechanism {
 
-#include <ethercat/ethercat_defs.h>
-#include <al/ethercat_slave_handler.h>
-
-#include <hardware_interface/hardware_interface.h>
-
-using namespace std;
-
-class MotorControlBoard
+class Transmission
 {
 public:
-  MotorControlBoard(EC_UDINT productCode, int commandSize = 0, int statusSize = 0)
-  {
-    this->productCode = productCode;
-    this->commandSize = commandSize;
-    this->statusSize = statusSize;
-  }
-  virtual void configure(int &startAddress, EtherCAT_SlaveHandler *sh) = 0;
-  virtual void convertCommand(ActuatorCommand &command, unsigned char *buffer) = 0;
-  virtual void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer) = 0;
-  virtual bool hasActuator(void) = 0;
+  Transmission() {}
+  virtual ~Transmission() {}
 
-  EC_UDINT productCode;
-  unsigned int commandSize;
-  unsigned int statusSize;
+  // Uses encoder data to fill out joint position and velocities
+  virtual void propagatePosition() = 0;
+
+  // Uses commanded joint efforts to fill out commanded motor currents
+  virtual void propagateEffort() = 0;
 };
 
-extern vector<MotorControlBoard *> boards;
 
-#endif /* MOTOR_CONTROL_BOARD_H */
+class SimpleTransmission : public Transmission
+{
+public:
+  SimpleTransmission() {}
+  SimpleTransmission(Joint *joint, Actuator *actuator, double mechanical_reduction, double motor_torque_constant, double ticks_per_radian);
+  ~SimpleTransmission() {}
+
+  Actuator *actuator_;
+  Joint *joint_;
+
+  double mechanical_reduction_;
+  double motor_torque_constant_;
+  double pulses_per_revolution_;
+
+  void propagatePosition();
+  void propagateEffort();
+};
+
+} // namespace mechanism
+
+#endif

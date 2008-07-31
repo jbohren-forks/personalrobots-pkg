@@ -31,38 +31,33 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
+#include <mechanism_model/transmission.h>
+#include <mechanism_model/joint.h>
+#include <math.h>
+#include <stdio.h>
 
-#ifndef MOTOR_CONTROL_BOARD_H
-#define MOTOR_CONTROL_BOARD_H
+using namespace mechanism;
 
-#include <vector>
-
-#include <ethercat/ethercat_defs.h>
-#include <al/ethercat_slave_handler.h>
-
-#include <hardware_interface/hardware_interface.h>
-
-using namespace std;
-
-class MotorControlBoard
+SimpleTransmission::SimpleTransmission(Joint *joint, Actuator *actuator,
+  double mechanical_reduction, double motor_torque_constant,
+  double pulses_per_revolution) 
 {
-public:
-  MotorControlBoard(EC_UDINT productCode, int commandSize = 0, int statusSize = 0)
-  {
-    this->productCode = productCode;
-    this->commandSize = commandSize;
-    this->statusSize = statusSize;
-  }
-  virtual void configure(int &startAddress, EtherCAT_SlaveHandler *sh) = 0;
-  virtual void convertCommand(ActuatorCommand &command, unsigned char *buffer) = 0;
-  virtual void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer) = 0;
-  virtual bool hasActuator(void) = 0;
+  actuator_ = actuator;
+  mechanical_reduction_ = mechanical_reduction;
+  motor_torque_constant_ = motor_torque_constant;
+  pulses_per_revolution_ = pulses_per_revolution;
+  joint_ = joint;
+}
 
-  EC_UDINT productCode;
-  unsigned int commandSize;
-  unsigned int statusSize;
-};
 
-extern vector<MotorControlBoard *> boards;
+void SimpleTransmission::propagatePosition()
+{
+  joint_->position_ = ((double)actuator_->state_.encoder_count_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);
+  joint_->velocity_ = ((double)actuator_->state_.encoder_velocity_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_); 
+  joint_->applied_effort_ = actuator_->state_.last_measured_current_ * (motor_torque_constant_ * mechanical_reduction_);
+}
 
-#endif /* MOTOR_CONTROL_BOARD_H */
+void SimpleTransmission::propagateEffort()
+{
+  actuator_->command_.current_ = joint_->commanded_effort_/(motor_torque_constant_ * mechanical_reduction_);
+}

@@ -101,8 +101,8 @@ void MK1001::convertCommand(ActuatorCommand &command, unsigned char *buffer)
   c.config = 1;
   c.i_offset = 0;//-2000;
 
-  c.i_desire = command.current;
-  c.mode = command.enable ? MODE_PWM : MODE_OFF;
+  c.i_desire = command.current_;
+  c.mode = command.enable_ ? MODE_PWM : MODE_OFF;
   memcpy(buffer + sizeof(MK1001Status), &c, sizeof(c));
 }
 
@@ -114,10 +114,10 @@ void MK1001::convertState(ActuatorState &state, unsigned char *buffer, unsigned 
   memcpy(&s, buffer, sizeof(s));
   memcpy(&c, buffer + sizeof(s), sizeof(c));
 
-  state.isEnabled = c.mode != MODE_OFF;
-  state.timestamp = s.timestamp;
-  state.encoderCount = s.qei_pos;
-  state.encoderVelocity = s.qei_velocity;
-  state.lastMeasuredCurrent = s.adc_current;
+  state.is_enabled_ = c.mode != MODE_OFF;
+  state.timestamp_ = s.timestamp;
+  state.encoder_count_ = s.qei_pos;
+  state.encoder_velocity_ = s.qei_velocity;
+  state.last_measured_current_ = s.adc_current;
 }
 

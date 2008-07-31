@@ -32,7 +32,9 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <mechanism_control/single_control.h>
+#include <ros/node.h>
+
+#include <mechanism_control/mechanism_control.h>
 #include <ethercat_hardware/ethercat_hardware.h>
 
 #include <stdio.h>
@@ -52,14 +54,21 @@ static void getTime(HardwareInterface *hw)
 
 void *controlLoop(void *arg)
 {
-  char *interface = (char *)arg;
+  char **args = (char **) arg;
+  char *interface = args[1];
+  char *xml_file = args[2];
+
+  TiXmlDocument xml(xml_file);
+  xml.LoadFile();
+  TiXmlElement *root = xml.FirstChildElement("robot");
+printf("root = %08x\n", root);
 
   EthercatHardware ec;
-  ec.init(interface, (char *)"foo.xml");
-  getTime(ec.hw);
+  ec.init(interface, root);
+  getTime(ec.hw_);
 
-  SingleControl mc;
-  mc.init(ec.hw);
+  MechanismControl mc(ec.hw_);
+  mc.init(root);
 
   // Switch to hard real-time
   int period = 1e+6; // 1 ms in nanoseconds
@@ -72,7 +81,7 @@ void *controlLoop(void *arg)
   while (!quit)
   {
     ec.update();
-    getTime(ec.hw);
+    getTime(ec.hw_);
     mc.update();
     tick.tv_nsec += period;
     while (tick.tv_nsec >= NSEC_PER_SEC)
@@ -83,7 +92,7 @@ void *controlLoop(void *arg)
     clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &tick, NULL);
   }
 
-  memset(ec.hw->actuator, 0, ec.hw->numActuators * sizeof(Actuator));
+  memset(ec.hw_->actuators_, 0, ec.hw_->num_actuators_ * sizeof(Actuator));
   ec.update();
 
   return 0;
@@ -112,9 +121,9 @@ int main(int argc, char *argv[])
 {
   // Initialize ROS and check command-line arguments
   ros::init(argc, argv);
-  if (argc != 2)
+  if (argc != 3)
   {
-    fprintf(stderr, "Usage: %s <interface>\n", argv[0]);
+    fprintf(stderr, "Usage: %s <interface> <xml>\n", argv[0]);
     exit(-1);
   }
 
@@ -138,7 +147,7 @@ int main(int argc, char *argv[])
 
   //Start thread
   int rv;
-  if ((rv = pthread_create(&rtThread, &rtThreadAttr, controlLoop, argv[1])) != 0)
+  if ((rv = pthread_create(&rtThread, &rtThreadAttr, controlLoop, argv)) != 0)
   {
     perror("pthread_create");
     exit(1);

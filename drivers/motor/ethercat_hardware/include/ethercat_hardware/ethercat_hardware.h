@@ -35,7 +35,9 @@
 #ifndef ETHERCAT_HARDWARE_H
 #define ETHERCAT_HARDWARE_H
 
-#include <hw_interface/hardware_interface.h>
+#include <tinyxml/tinyxml.h>
+
+#include <hardware_interface/hardware_interface.h>
 
 #include <al/ethercat_AL.h>
 #include <al/ethercat_master.h>
@@ -64,15 +66,15 @@ public:
   /*!
    * \brief Initialize the EtherCAT Master Library.
    */
-  void init(char *interface, char *configuration);
+  void init(char *interface, TiXmlElement *config);
 
-  HardwareInterface *hw;
+  HardwareInterface *hw_;
 
 private:
-  struct netif *ni;
+  struct netif *ni_;
 
-  EtherCAT_AL *al;
-  EtherCAT_Master *em;
+  EtherCAT_AL *al_;
+  EtherCAT_Master *em_;
 
   MotorControlBoard *configSlave(EtherCAT_SlaveHandler *sh);
   MotorControlBoard **slaves;

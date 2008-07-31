@@ -31,77 +31,63 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
+//The robot model is populated by the control code infrastructure and used by all the controllers to read mechanism state and command mechanism motion.
 
-#ifndef WG05_H
-#define WG05_H
+#ifndef ROBOT_H
+#define ROBOT_H
 
-#include <ethercat_hardware/motor_control_board.h>
+#include <vector>
+#include <map>
+#include <string>
+#include "mechanism_model/link.h"
+#include "mechanism_model/joint.h"
+#include "mechanism_model/transmission.h"
+#include "hardware_interface/hardware_interface.h"
 
-struct WG05Status
+namespace mechanism
 {
-  uint16_t device_type_id_;
-  uint16_t device_rev_;
-  uint8_t mode_;
-  uint8_t digital_out_;
-  uint16_t pwm_duty_;
-  uint16_t programmed_current_;
-  uint8_t current_loop_kp_;
-  uint8_t current_loop_ki_;
-  uint16_t measured_current_;
-  uint16_t pad1_;
-  uint32_t timestamp_;
-  uint32_t encoder_count_;
-  uint32_t encoder_index_pos_;
-  uint16_t num_encoder_errors_;
-  uint8_t encoder_status_;
-  uint8_t calibration_reading_;
-  uint32_t last_calibration_high_transition_;
-  uint32_t last_calibration_low_transition_;
-  uint16_t supply_voltage_;
-  uint16_t motor_voltage_;
-  uint16_t board_temperature_;
-  uint16_t bridge_temperature_;
-  uint8_t pdo_command_irq_count_;
-  uint8_t mbx_command_irq_count_;
-  uint16_t packet_count_;
-  uint16_t pdi_timeout_error_count_;
-  uint16_t pdi_checksum_error_count_;
-  uint8_t pad2_;
-  uint8_t checksum_;
-}__attribute__ ((__packed__));
 
-typedef WG05Status WG05Command;
-
-class WG05 : public MotorControlBoard
+class Robot
 {
-  static const int STATUS_PHY_ADDR = 0x2000;
-  static const int COMMAND_PHY_ADDR = 0x1000;
-
-  static const int Ki = 8;
-  static const int Kp = 4;
-
-  static const double CURRENT_FACTOR = 2000.0;
-
-  enum
-  {
-    MODE_OFF = 0x00, MODE_CURRENT = 0x01, MODE_ENABLE = 0x02, MODE_UNDERVOLTAGE = 0x04, MODE_RESET = 0x80
-  };
-
 public:
-  WG05() :
-    MotorControlBoard(WG05_PRODUCT_CODE, sizeof(WG05Command), sizeof(WG05Status))
+  Robot(char *ns){}
+
+  ~Robot()
   {
-  }
-  void configure(int &start_address, EtherCAT_SlaveHandler *sh);
-  void convertCommand(ActuatorCommand &command, unsigned char *buffer);
-  void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
-  bool hasActuator(void)
-  {
-    return true;
+    std::vector<Transmission *>::size_type t;
+    for (t = 0; t < transmissions_.size(); ++t)
+      delete transmissions_[t];
+    std::vector<Joint *>::size_type j;
+    for (j = 0; j < joints_.size(); ++j)
+      delete joints_[j];
   }
 
-private:
-  static const EC_UDINT WG05_PRODUCT_CODE = 0x57473035;
+  std::vector<Joint*> joints_;
+  std::vector<Transmission*> transmissions_;
+
+  // Supports looking up joints and actuators by name.  The IndexMap
+  // structure maps the name of the item to its index in the vectors.
+  typedef std::map<std::string,int> IndexMap;
+  IndexMap joints_lookup_;
+  IndexMap actuators_lookup_;
+  Joint* getJoint(const std::string &name)
+  {
+    IndexMap::iterator it = joints_lookup_.find(name);
+    if (it == joints_lookup_.end())
+      return NULL;
+    return joints_[it->second];
+  }
+  Actuator* getActuator(const std::string &name)
+  {
+    IndexMap::iterator it = actuators_lookup_.find(name);
+    if (it == actuators_lookup_.end())
+      return NULL;
+    return &hw_->actuators_[it->second];
+  }
+
+  HardwareInterface *hw_;
 };
 
-#endif /* WG05_H */
+}
+
+#endif

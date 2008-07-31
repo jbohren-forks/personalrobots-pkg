@@ -93,10 +93,10 @@ void WG05::convertCommand(ActuatorCommand &command, unsigned char *buffer)
 
   memset(&c, 0, sizeof(c));
 
-  c.currentLoopKi = Ki;
+  c.current_loop_ki_ = Ki;
 
-  c.programmedCurrent = CURRENT_FACTOR * command.current;
-  c.mode = command.enable ? (MODE_ENABLE | MODE_CURRENT) : MODE_OFF;
+  c.programmed_current_ = CURRENT_FACTOR * command.current_;
+  c.mode_ = command.enable_ ? (MODE_ENABLE | MODE_CURRENT) : MODE_OFF;
 
   memcpy(buffer + sizeof(WG05Status), &c, sizeof(c));
 }
@@ -112,43 +112,22 @@ void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, uns
   memcpy(&last_status, last_buffer, sizeof(last_status));
   memcpy(&last_command, last_buffer + sizeof(last_status), sizeof(last_command));
 
-  state.encoderCount = current_status.encoderCount;
-  state.encoderVelocity = double(int(current_status.encoderCount - last_status.encoderCount)) / (current_status.timestamp - last_status.timestamp) * 1e+6;
-  state.calibrationReading = current_status.calibrationReading;
-  state.lastCalibrationHighTransition = current_status.lastCalibrationHighTransition;
-  state.lastCalibrationLowTransition = current_status.lastCalibrationLowTransition;
-  state.isEnabled = current_status.mode != MODE_OFF;
-  state.runStopHit = (current_status.mode & MODE_UNDERVOLTAGE) != 0;
+  state.encoder_count_ = current_status.encoder_count_;
+  state.encoder_velocity_ = double(int(current_status.encoder_count_ - last_status.encoder_count_)) / (current_status.timestamp_ - last_status.timestamp_) * 1e+6;
+  state.calibration_reading_ = current_status.calibration_reading_;
+  state.last_calibration_high_transition_ = current_status.last_calibration_high_transition_;
+  state.last_calibration_low_transition_ = current_status.last_calibration_low_transition_;
+  state.is_enabled_ = current_status.mode_ != MODE_OFF;
+  state.run_stop_hit_ = (current_status.mode_ & MODE_UNDERVOLTAGE) != 0;
 
-  state.lastRequestedCurrent = current_command.programmedCurrent / CURRENT_FACTOR; // Should be actual request, before safety
-  state.lastCommandedCurrent = current_status.programmedCurrent / CURRENT_FACTOR;
-  state.lastMeasuredCurrent = current_status.measuredCurrent / CURRENT_FACTOR;
+  state.last_requested_current_ = current_command.programmed_current_ / CURRENT_FACTOR; // TODO should be pre-safety code value
+  state.last_commanded_current_ = current_status.programmed_current_ / CURRENT_FACTOR;
+  state.last_measured_current_ = current_status.measured_current_ / CURRENT_FACTOR;
 
-  state.numEncoderErrors = current_status.numEncoderErrors;
-  state.numCommunicationErrors = current_status.pdiTimeoutErrorCount + current_status.pdiChecksumErrorCount;
+  state.num_encoder_errors_ = current_status.num_encoder_errors_;
+  state.num_communication_errors_ = current_status.pdi_timeout_error_count_ + current_status.pdi_checksum_error_count_;
 
-  state.motorVoltage = current_status.motorVoltage;
-#if 1
-{
-static int times = 0;
-
-if (++times % 2000 == 0) {
-  printf("-----------------------------------------------------\n");
-  printf("timestamp = %#08x\n", current_status.timestamp);
-  printf("encoderCount  = %#08x\n", current_status.encoderCount);
-  printf("last timestamp = %#08x\n", last_status.timestamp);
-  printf("last encoderCount  = %#08x\n", last_status.encoderCount);
-  printf("delta encoderCount  = %#08x %f\n", current_status.encoderCount - last_status.encoderCount, double(int(current_status.encoderCount - last_status.encoderCount)));
-  printf("delta timestamp  = %#08x %f\n", current_status.timestamp - last_status.timestamp, double(current_status.timestamp - last_status.timestamp));
-  printf("encoderVelocity  = %f\n", state.encoderVelocity);
-  printf("programmedCurrent = %#08x\n", current_status.programmedCurrent);
-  printf("measuredCurrent = %#08x\n", current_status.measuredCurrent);
-  printf("mode = %#08x\n", current_status.mode);
-  printf("Kp = %#08x\n", int(current_status.currentLoopKp));
-  printf("Ki = %#08x\n", int(current_status.currentLoopKi));
-}
-}
-#endif
+  state.motor_voltage_ = current_status.motor_voltage_;
 
 }
 

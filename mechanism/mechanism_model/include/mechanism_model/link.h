@@ -31,38 +31,20 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
+#ifndef LINK_H
+#define LINK_H
 
-#ifndef MOTOR_CONTROL_BOARD_H
-#define MOTOR_CONTROL_BOARD_H
+#include "mechanism_model/joint.h"
 
-#include <vector>
+namespace mechanism {
 
-#include <ethercat/ethercat_defs.h>
-#include <al/ethercat_slave_handler.h>
-
-#include <hardware_interface/hardware_interface.h>
-
-using namespace std;
-
-class MotorControlBoard
+class Link
 {
-public:
-  MotorControlBoard(EC_UDINT productCode, int commandSize = 0, int statusSize = 0)
-  {
-    this->productCode = productCode;
-    this->commandSize = commandSize;
-    this->statusSize = statusSize;
-  }
-  virtual void configure(int &startAddress, EtherCAT_SlaveHandler *sh) = 0;
-  virtual void convertCommand(ActuatorCommand &command, unsigned char *buffer) = 0;
-  virtual void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer) = 0;
-  virtual bool hasActuator(void) = 0;
-
-  EC_UDINT productCode;
-  unsigned int commandSize;
-  unsigned int statusSize;
+  char *name;
+  //Pointer to KDL link
+  Joint *joint;
 };
 
-extern vector<MotorControlBoard *> boards;
+}
 
-#endif /* MOTOR_CONTROL_BOARD_H */
+#endif /* LINK_H */
