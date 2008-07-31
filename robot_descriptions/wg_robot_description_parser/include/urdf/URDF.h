@@ -142,6 +142,7 @@ public:
       Geometry(void)
       {
         type = UNKNOWN;
+	nsize = -1;
         size[0] = size[1] = size[2] = 0.0;
       }
                 
@@ -157,6 +158,7 @@ public:
         }       type;
       std::string name;
       double      size[3];
+      int         nsize;	
       std::string filename;
       Data        data;
     };
@@ -373,6 +375,8 @@ public:
   virtual void print(FILE *out = stdout) const;
         
   bool containsCycle(unsigned int index) const;
+  void sanityCheck(void) const;
+  
   const std::string& getRobotName(void) const;
   unsigned int getDisjointPartCount(void) const;
   Link* getDisjointPart(unsigned int index) const;

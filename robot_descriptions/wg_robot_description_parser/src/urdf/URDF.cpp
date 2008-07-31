@@ -835,13 +835,25 @@ void URDF::loadGeometry(const TiXmlNode *node, const std::string &defaultName, L
     if (strcmp(attr->Name(), "type") == 0)
     {
       if (attr->ValueStr() == "box")
-        geometry->type = Link::Geometry::BOX;
+      {
+	geometry->type = Link::Geometry::BOX;
+	geometry->nsize = 3;	  
+      }      
       else if (attr->ValueStr() == "cylinder")
-        geometry->type = Link::Geometry::CYLINDER;
+      {
+	geometry->type = Link::Geometry::CYLINDER;
+	geometry->nsize = 2;	  
+      }
       else if (attr->ValueStr() == "sphere")
-        geometry->type = Link::Geometry::SPHERE;
+      {
+	geometry->type = Link::Geometry::SPHERE;
+	geometry->nsize = 1;	  
+      }
       else if (attr->ValueStr() == "mesh")
-        geometry->type = Link::Geometry::MESH;
+      {
+	geometry->type = Link::Geometry::MESH;
+	geometry->nsize = 3;
+      }      
       else
       {
 	fprintf(stderr, "Unknown geometry type: '%s'\n", attr->Value());
@@ -857,21 +869,10 @@ void URDF::loadGeometry(const TiXmlNode *node, const std::string &defaultName, L
     {
       if (node->ValueStr() == "size")
       {
-        switch (geometry->type)
-        {
-        case Link::Geometry::BOX:
-          loadDoubleValues(node, 3, geometry->size);
-          break;
-        case Link::Geometry::CYLINDER:
-          loadDoubleValues(node, 2, geometry->size);
-          break;
-        case Link::Geometry::SPHERE:
-          loadDoubleValues(node, 1, geometry->size);
-          break;
-        default:
-          ignoreNode(node);
-          break;
-        }
+	if (geometry->nsize > 0)
+	  loadDoubleValues(node, geometry->nsize, geometry->size);
+	else
+	  ignoreNode(node);	
       }
       else if (node->ValueStr() == "data")
         loadData(node, &geometry->data);
@@ -1404,5 +1405,44 @@ bool URDF::parse(const TiXmlNode *node)
     
   return true;
 }
+
+void URDF::sanityCheck(void) const
+{
+    std::vector<Link*> links;
+    getLinks(links);
+    for (unsigned int i = 0 ; i < links.size() ; ++i)
+    {
+
+	Link::Joint *joint = links[i]->joint;
+	if (joint->type == Link::Joint::UNKNOWN)
+	    fprintf(stderr, "Joint '%s' in link '%s' is of unknown type\n", joint->name.c_str(), links[i]->name.c_str());
+	if (joint->type == Link::Joint::REVOLUTE || joint->type == Link::Joint::PRISMATIC)
+	{
+	    if (joint->axis[0] == 0.0 && joint->axis[1] == 0.0 && joint->axis[2] == 0.0)
+		fprintf(stderr, "Joint '%s' in link '%s' does not seem to have its axis properly set\n", joint->name.c_str(), links[i]->name.c_str());
+	    if (joint->limit[0] == 0.0 && joint->limit[1] == 0.0)
+		fprintf(stderr, "Joint '%s' in link '%s' does not seem to have its limits properly set\n", joint->name.c_str(), links[i]->name.c_str());
+	}
+
+	Link::Geometry *cgeom = links[i]->collision->geometry;
+	if (cgeom->type == Link::Geometry::UNKNOWN)
+	    fprintf(stderr, "Collision geometry '%s' in link '%s' is of unknown type\n", cgeom->name.c_str(), links[i]->name.c_str());
+	if (cgeom->type != Link::Geometry::UNKNOWN && cgeom->type != Link::Geometry::MESH)
+	{
+	    if (cgeom->size[0] == 0.0 && cgeom->size[1] == 0.0 && cgeom->size[2] == 0.0)
+		fprintf(stderr, "Collision geometry '%s' in link '%s' does not seem to have its size properly set\n", cgeom->name.c_str(), links[i]->name.c_str());
+	}
+	
+	Link::Geometry *vgeom = links[i]->visual->geometry;
+	if (vgeom->type == Link::Geometry::UNKNOWN)
+	    fprintf(stderr, "Visual geometry '%s' in link '%s' is of unknown type\n", vgeom->name.c_str(), links[i]->name.c_str());
+	if (vgeom->type != Link::Geometry::UNKNOWN && vgeom->type != Link::Geometry::MESH)
+	{
+	    if (vgeom->size[0] == 0.0 && vgeom->size[1] == 0.0 && vgeom->size[2] == 0.0)
+		fprintf(stderr, "Visual geometry '%s' in link '%s' does not seem to have its size properly set\n", vgeom->name.c_str(), links[i]->name.c_str());
+	}	
+    }
+}
+
 
 } // namespace robot_desc
