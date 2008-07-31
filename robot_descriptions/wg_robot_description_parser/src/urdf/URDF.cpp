@@ -758,19 +758,21 @@ void URDF::loadJoint(const TiXmlNode *node, const std::string& defaultName, Link
         fprintf(stderr, "Unknown joint type: '%s'\n", attr->Value());
     }
   }
-    
+  
+  bool free = joint->type == Link::Joint::PLANAR || joint->type == Link::Joint::FLOATING;
+
   for (unsigned int i = 0 ; i < children.size() ; ++i)
   {
     const TiXmlNode *node = children[i];
     if (node->Type() == TiXmlNode::ELEMENT)
     {
-      if (node->ValueStr() == "axis")
+      if (node->ValueStr() == "axis" && !free)
         loadDoubleValues(node, 3, joint->axis);
-      else if (node->ValueStr() == "anchor")
+      else if (node->ValueStr() == "anchor" && !free)
         loadDoubleValues(node, 3, joint->anchor);
-      else if (node->ValueStr() == "position" && (joint->type == Link::Joint::PLANAR || joint->type == Link::Joint::FLOATING))
+      else if (node->ValueStr() == "position" && free)
 	loadDoubleValues(node, joint->type == Link::Joint::PLANAR ? 3 : 7, joint->position);
-      else if (node->ValueStr() == "limit")
+      else if (node->ValueStr() == "limit" && !free)
         loadDoubleValues(node, 2, joint->limit);
       else if (node->ValueStr() == "calibration")
         loadDoubleValues(node, 2, joint->calibration);
