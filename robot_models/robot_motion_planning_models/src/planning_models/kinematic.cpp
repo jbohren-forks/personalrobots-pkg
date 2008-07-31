@@ -33,7 +33,6 @@
 *********************************************************************/
 
 #include <planning_models/kinematic.h>
-#include <cstdio>
 #include <cmath>
 
 void planning_models::KinematicModel::Robot::computeTransforms(const double *params, int groupID)
@@ -369,4 +368,42 @@ void planning_models::KinematicModel::buildChainL(Robot *robot, Joint *parent, L
 
     if (link->after.size() == 0)
 	robot->leafs.push_back(link);
+}
+
+void planning_models::KinematicModel::printModelInfo(FILE *out) const
+{   
+    fprintf(out, "Number of robots = %d\n", getRobotCount());
+    fprintf(out, "Complete model state dimension = %d\n", stateDimension);
+
+    fprintf(out, "State bounds: ");
+    for (unsigned int i = 0 ; i < stateDimension ; ++i)
+	fprintf(out, "[%f, %f] ", stateBounds[2 * i], stateBounds[2 * i + 1]);
+    fprintf(out, "\n");
+    
+    fprintf(out, "Floating joints at: ");    
+    for (unsigned int i = 0 ; i < floatingJoints.size() ; ++i)
+	fprintf(out, "%d ", floatingJoints[i]);
+    fprintf(out, "\n");
+
+    fprintf(out, "Planar joints at: ");    
+    for (unsigned int i = 0 ; i < planarJoints.size() ; ++i)
+	fprintf(out, "%d ", planarJoints[i]);
+    fprintf(out, "\n");
+
+    fprintf(out, "Available groups: ");    
+    std::vector<std::string> l;    
+    getGroups(l);
+    for (unsigned int i = 0 ; i < l.size() ; ++i)
+	fprintf(out, "%s ", l[i].c_str());
+    fprintf(out, "\n");
+    
+    for (unsigned int i = 0 ; i < l.size() ; ++i)
+    {
+	int gid = getGroupID(l[i]);
+	fprintf(out, "Group %s has %d roots\n", l[i].c_str(), groupChainStart[gid].size());
+	fprintf(out, "The state components for this group are: ");
+	for (unsigned int j = 0 ; j < groupStateIndexList[gid].size() ; ++j)
+	    fprintf(out, "%d ", groupStateIndexList[gid][j]);
+	fprintf(out, "\n");
+    }    
 }

@@ -252,6 +252,11 @@ public:
 	    goal->state->values[i] = req.goal_state.vals[i];
 	goal->threshold = 1e-6;
 	p.si->setGoal(goal);
+
+	printf("=======================================\n");	
+	m->kmodel->printModelInfo();
+	p.si->printSettings();
+	printf("=======================================\n");	
 	
 	/* do the planning */
 	m_collisionSpace->lock();

@@ -39,6 +39,7 @@
 #include <libTF/Pose3D.h>
 #include <vector>
 #include <string>
+#include <cstdio>
 
 /** @htmlinclude ../../manifest.html
 
@@ -257,7 +258,8 @@ namespace planning_models
 	int          getGroupID(const std::string &group) const;
 	
 	void computeTransforms(const double *params, int groupID = -1);
-
+	void printModelInfo(FILE *out = stdout) const;
+	
 	/** A transform that is applied to the entire model */
 	libTF::Pose3D       rootTransform;
 	

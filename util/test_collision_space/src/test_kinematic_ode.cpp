@@ -56,39 +56,6 @@ static void simLoop(int)
     spaces.displaySpaces();
 }
 
-void printModelInfo(planning_models::KinematicModel *m)
-{   
-    printf("Number of robots = %d\n", m->getRobotCount());
-    printf("Complete model state dimension = %d\n", m->stateDimension);
-
-    printf("State bounds: ");
-    for (unsigned int i = 0 ; i < m->stateDimension ; ++i)
-	printf("[%f, %f] ", m->stateBounds[2 * i], m->stateBounds[2 * i + 1]);
-    printf("\n");
-    
-    printf("Floating joints at: ");    
-    for (unsigned int i = 0 ; i < m->floatingJoints.size() ; ++i)
-	printf("%d ", m->floatingJoints[i]);
-    printf("\n");
-
-    printf("Available groups: ");    
-    std::vector<std::string> l;    
-    m->getGroups(l);
-    for (unsigned int i = 0 ; i < l.size() ; ++i)
-	printf("%s ", l[i].c_str());
-    printf("\n");
-    
-    for (unsigned int i = 0 ; i < l.size() ; ++i)
-    {
-	int gid = m->getGroupID(l[i]);
-	printf("Group %s has %d roots\n", l[i].c_str(), m->groupChainStart[gid].size());
-	printf("The state components for this group are: ");
-	for (unsigned int j = 0 ; j < m->groupStateIndexList[gid].size() ; ++j)
-	    printf("%d ", m->groupStateIndexList[gid][j]);
-	printf("\n");
-    }    
-}
-
 int main(int argc, char **argv)
 {
     // TODO: add usage message
@@ -103,7 +70,7 @@ int main(int argc, char **argv)
     planning_models::KinematicModel *m = new planning_models::KinematicModel();
     m->build(model);    
     km->addRobotModel(m);
-    printModelInfo(m);
+    m->printModelInfo();
     
     double *param = new double[m->stateDimension];    
 
