@@ -430,9 +430,7 @@
     <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
 
     <joint type="planar"> 
-      <anchor>0.25 0.1 0.3+wheel_clearance_offset  </anchor> <!-- This type of joint should not use <anchor> -->
-      <position>0 0 0</position> <!-- this tag defines either (x, y, theta) in the case of planar joints, 
-				      or a translation + a quaternion (x_t, y_t, z_t, x_q, y_q, z_q, w) for a floating joint-->
+      <anchor>0.25 0.1 0.3+wheel_clearance_offset  </anchor> <!-- This type of joint should not use <anchor> ; translation should be done with <xyz> above -->
     </joint>
 
     <inertial>

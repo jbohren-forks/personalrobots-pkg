@@ -792,8 +792,6 @@ void URDF::loadJoint(const TiXmlNode *node, const std::string& defaultName, Link
         loadDoubleValues(node, 3, joint->axis);
       else if (node->ValueStr() == "anchor" && !free)
         loadDoubleValues(node, 3, joint->anchor);
-      else if (node->ValueStr() == "position" && free)
-	loadDoubleValues(node, joint->type == Link::Joint::PLANAR ? 3 : 7, joint->position);
       else if (node->ValueStr() == "limit" && !free)
         loadDoubleValues(node, 2, joint->limit);
       else if (node->ValueStr() == "calibration")

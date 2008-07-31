@@ -169,9 +169,6 @@ public:
         anchor[0] = anchor[1] = anchor[2] = 0.0;
         calibration[0] = calibration[1] = 0.0;
         limit[0] = limit[1] = 0.0;
-	position[0] = position[1] = position[2] = 0.0;
-	position[3] = position[4] = position[5] = 0.0;
-	position[6] = 1.0;
         type = UNKNOWN;
       }
       
@@ -189,8 +186,6 @@ public:
       double                 axis[3];       // vector describing the axis of rotation: (x,y,z)
       double                 anchor[3];     // point about which the axis defines the rotation: (x,y,z)
       double                 limit[2];      // the joint limits: (min, max)
-      double                 position[7];   // only for planar and floating joints: (x, y, theta) for planar, 
-	                                    // translation + quaternion ((x, y, z), (x, y, z, w)) for floating
       double                 calibration[2];
       Data                   data;
     };
