@@ -695,6 +695,11 @@ public:
 int main(int argc, char **argv)
 {
   ros::init(argc, argv);
+
+  //Keep things from dying poorly
+  signal(SIGHUP, ros::basic_sigint_handler);
+  signal(SIGPIPE, ros::basic_sigint_handler);
+
   
   Dc1394Node dc;
 
