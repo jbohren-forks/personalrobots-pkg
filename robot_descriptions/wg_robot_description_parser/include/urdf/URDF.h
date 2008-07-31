@@ -452,13 +452,17 @@ private:
   std::string  extractName(std::vector<const TiXmlAttribute*> &attributes, const std::string &defaultName);    
 
   void clearDocs(void);    
-        
+
+  /* print the error location, if known */
+  void errorLocation(void) const;
+  
   /* temporary storage for information during parsing; should not be used elsewhere */
   std::map<std::string, std::string>      m_constants;  // constants 
   std::map<std::string, const TiXmlNode*> m_templates;  // templates
   std::vector<const TiXmlNode*>           m_stage2;     // xml nodes that should be processed after all templates and constants are read
   std::vector<TiXmlDocument*>             m_docs;       // pointer to loaded documents
-        
+
+  std::string                             m_location;   // approximate location in file (used for error messages)
 };
     
 } // namespace robot_desc

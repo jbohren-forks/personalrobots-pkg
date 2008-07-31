@@ -58,8 +58,9 @@ void URDF::freeMemory(void)
 void URDF::clear(void)
 {
   freeMemory();
-  m_name   = "";
-  m_source = "";
+  m_name.clear();
+  m_source.clear();
+  m_location.clear();
   m_links.clear();
   m_actuators.clear();
   m_transmissions.clear();
@@ -397,15 +398,23 @@ bool URDF::Group::isRoot(const Link* link) const
   return false;    
 }
 
+void URDF::errorLocation(void) const
+{
+  if (!m_location.empty())
+    fprintf(stderr, "  ... at %s\n", m_location.c_str());  
+}
+
 void URDF::ignoreNode(const TiXmlNode* node)
 {
   switch (node->Type())
   {
   case TiXmlNode::ELEMENT:
     fprintf(stderr, "Ignoring element node '%s'\n", node->Value());
+    errorLocation();  
     break;
   case TiXmlNode::TEXT:
     fprintf(stderr, "Ignoring text node with content '%s'\n", node->Value());
+    errorLocation();  
     break;
   case TiXmlNode::COMMENT:
   case TiXmlNode::DECLARATION:
@@ -413,10 +422,11 @@ void URDF::ignoreNode(const TiXmlNode* node)
   case TiXmlNode::UNKNOWN:
   default:
     fprintf(stderr, "Ignoring unknown node '%s'\n", node->Value());
+    errorLocation();  
     break;
   }
 }
-
+    
 void URDF::getChildrenAndAttributes(const TiXmlNode *node, std::vector<const TiXmlNode*> &children, std::vector<const TiXmlAttribute*> &attributes) const
 {
   for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
@@ -429,7 +439,10 @@ void URDF::getChildrenAndAttributes(const TiXmlNode *node, std::vector<const TiX
       {
         std::map<std::string, const TiXmlNode*>::const_iterator pos = m_templates.find(attr->ValueStr());
         if (pos == m_templates.end())
-          fprintf(stderr, "Template '%s' is not defined\n", attr->Value());
+	{
+	  fprintf(stderr, "Template '%s' is not defined\n", attr->Value());
+	  errorLocation();
+	}	
         else
           getChildrenAndAttributes(pos->second, children, attributes);
       }
@@ -629,7 +642,10 @@ unsigned int URDF::loadDoubleValues(const TiXmlNode *node, unsigned int count, d
   }
 
   if (read != count)
+  {
     fprintf(stderr, "Not all values were read: '%s'\n", node->Value());
+    errorLocation();
+  }  
     
   return read;
 }
@@ -656,8 +672,11 @@ unsigned int URDF::loadBoolValues(const TiXmlNode *node, unsigned int count, boo
   }
 
   if (read != count)
+  {
     fprintf(stderr, "Not all values were read: '%s'\n", node->Value());
-    
+    errorLocation();  
+  }
+  
   return read;
 }
 
@@ -755,7 +774,10 @@ void URDF::loadJoint(const TiXmlNode *node, const std::string& defaultName, Link
       else if (attr->ValueStr() == "planar")
 	joint->type = Link::Joint::PLANAR;
       else
-        fprintf(stderr, "Unknown joint type: '%s'\n", attr->Value());
+      {
+	fprintf(stderr, "Unknown joint type: '%s'\n", attr->Value());
+	errorLocation();
+      }
     }
   }
   
@@ -823,7 +845,10 @@ void URDF::loadGeometry(const TiXmlNode *node, const std::string &defaultName, L
       else if (attr->ValueStr() == "mesh")
         geometry->type = Link::Geometry::MESH;
       else
-        fprintf(stderr, "Unknown geometry type: '%s'\n", attr->Value());
+      {
+	fprintf(stderr, "Unknown geometry type: '%s'\n", attr->Value());
+	errorLocation();
+      }      
     }
   }
 
@@ -1011,7 +1036,10 @@ void URDF::loadLink(const TiXmlNode *node)
   if (link->name == "")
     fprintf(stderr, "No link name given\n");
   m_links[link->name] = link;
-    
+  
+  std::string currentLocation = m_location;
+  m_location = "link '" + name + "'";
+  
   for (unsigned int i = 0 ; i < children.size() ; ++i)
   {
     const TiXmlNode *node = children[i];
@@ -1039,6 +1067,8 @@ void URDF::loadLink(const TiXmlNode *node)
     else
       ignoreNode(node);
   }
+
+  m_location = currentLocation;  
 }
 
 void URDF::loadSensor(const TiXmlNode *node)
@@ -1063,6 +1093,9 @@ void URDF::loadSensor(const TiXmlNode *node)
     fprintf(stderr, "Sensor '%s' redefined\n", sensor->name.c_str());
   m_links[sensor->name] = dynamic_cast<Link*>(sensor);
     
+  std::string currentLocation = m_location;
+  m_location = "sensor '" + name + "'";
+  
   for (unsigned int i = 0 ; i < attributes.size() ; ++i)
   {
     const TiXmlAttribute *attr = attributes[i];
@@ -1075,7 +1108,10 @@ void URDF::loadSensor(const TiXmlNode *node)
       else if (attr->ValueStr() == "stereocamera")
         sensor->type = Sensor::STEREO_CAMERA;
       else
-        fprintf(stderr, "Unknown sensor type: '%s'\n", attr->Value());
+      {
+	fprintf(stderr, "Unknown sensor type: '%s'\n", attr->Value());
+	errorLocation();
+      }      
     }
   }
 
@@ -1108,6 +1144,8 @@ void URDF::loadSensor(const TiXmlNode *node)
     else
       ignoreNode(node);
   }
+
+  m_location = currentLocation;  
 }
 
 void URDF::loadData(const TiXmlNode *node, Data *data)
@@ -1158,7 +1196,7 @@ bool URDF::parse(const TiXmlNode *node)
       {
         const TiXmlElement *elem = m_stage2[i]->ToElement(); 
         if (!elem)
-          fprintf(stderr, "Non-element node found in second stage of parsing\n");
+          fprintf(stderr, "Non-element node found in second stage of parsing. This should NOT happen\n");
         else
         {
           std::string name = elem->ValueStr();
@@ -1194,8 +1232,8 @@ bool URDF::parse(const TiXmlNode *node)
           m_linkRoots.push_back(i->second);
           continue;
         }
-        if (i->second->joint->type == Link::Joint::FLOATING)
-          fprintf(stderr, "Link '%s' uses a floating joint but its parent is not the environment!\n", i->second->name.c_str());
+        if (i->second->joint->type == Link::Joint::FLOATING || i->second->joint->type == Link::Joint::PLANAR)
+          fprintf(stderr, "Link '%s' uses a free joint (floating or planar) but its parent is not the environment!\n", i->second->name.c_str());
         if (m_links.find(i->second->parentName) == m_links.end())
           fprintf(stderr, "Parent of link '%s' is undefined: '%s'\n", i->second->name.c_str(),
                   i->second->parentName.c_str());
