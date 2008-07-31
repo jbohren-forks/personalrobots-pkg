@@ -274,7 +274,9 @@ public:
 	    catch (...)
 	    {
 		printf("Error applying transform to point cloud\n");
-	    }	    
+		delete cloud0;
+		cloud0 = NULL;
+	    }
 	}
 	
 	return cloud0;
@@ -293,7 +295,15 @@ public:
 	}
 
 	/* add new data */
-	currentWorld.push_back(runFilters(toProcess));
+	PointCloudFloat32 *newData = runFilters(toProcess);
+	if (newData)
+	{
+	    if (newData->get_pts_size() == 0)
+		delete newData;
+	    else
+		currentWorld.push_back(newData);
+	}
+	
 	if (verbose > 0)
 	{
 	    double window = currentWorld.size() > 0 ? (currentWorld.back()->header.stamp - currentWorld.front()->header.stamp).to_double() : 0.0;
