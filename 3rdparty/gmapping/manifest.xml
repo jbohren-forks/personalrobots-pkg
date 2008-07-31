@@ -13,6 +13,11 @@ the SVN version of GMapping, and also removes its GSL dependency.
   <cpp lflags="-Xlinker -rpath ${prefix}/gmapping-svn/lib -L${prefix}/gmapping-svn/lib -lgridfastslam" cflags="-I${prefix}/gmapping-svn/"/>
   <doxymaker external="http://openslam.org"/>
 </export>
+
+<sysdepend os="Ubuntu" version="7.04"  package="qt3-dev-tools"/>
+<sysdepend os="Ubuntu" version="7.04"  package="libqt3-headers"/>
+<sysdepend os="Ubuntu" version="8.04.1"  package="qt3-dev-tools"/>
+<sysdepend os="Ubuntu" version="8.04.1"  package="libqt3-headers"/>
 </package>
 
 

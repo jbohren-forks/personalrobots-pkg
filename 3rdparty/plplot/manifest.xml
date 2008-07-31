@@ -10,6 +10,7 @@ PLplot is a library of functions that are useful for making scientific plots.
   <cpp lflags="`PKG_CONFIG_PATH=${prefix}/plplot/lib/pkgconfig pkg-config plplotd-c++ --libs`" cflags="`PKG_CONFIG_PATH=${prefix}/plplot/lib/pkgconfig pkg-config plplotd-c++ --cflags`"/>
   <doxymaker external="http://plplot.sourceforge.net/docbook-manual/"/>
 </export>
+<versioncontrol type="svn" url="https://plplot.svn.sf.net/svnroot/plplot/trunk"/>
 </package>
 
 
