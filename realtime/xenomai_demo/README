@@ -1,4 +1,0 @@
-This is a test of the realtime execution system.
-Xenomai must be properly installed for this code to compile and run.
-All this code does is instantiate a realtime loop and print statistics about the actual execution time.  All printed values are in 
-ms.
