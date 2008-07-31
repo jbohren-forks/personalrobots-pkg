@@ -97,6 +97,7 @@ Reads the following parameters from the parameter server
 #include <ros/node.h>
 #include <std_msgs/LaserScan.h>
 #include "ros/time.h"
+#include "namelookup/nameLookupClient.hh"
 
 using namespace std;
 
@@ -111,6 +112,8 @@ private:
   int count;
   ros::Time next_time;
   
+  nameLookupClient lookup_client;
+
 public:
   URG::laser urg;
   std_msgs::LaserScan scan_msg;
@@ -122,7 +125,7 @@ public:
   
   string port;
   
-  HokuyoNode() : ros::node("urglaser"), count(0)
+  HokuyoNode() : ros::node("urglaser"), count(0), lookup_client(*this)
   {
     advertise<std_msgs::LaserScan>("scan");
 
@@ -228,6 +231,7 @@ public:
     scan_msg.set_ranges_size(scan.num_readings);
     scan_msg.set_intensities_size(scan.num_readings);
     scan_msg.header.stamp = ros::Time(scan.system_time_stamp);
+    scan_msg.header.frame_id = lookup_client.lookup("FRAMEID_LASER2");
       
     for(int i = 0; i < scan.num_readings; ++i)
     {
