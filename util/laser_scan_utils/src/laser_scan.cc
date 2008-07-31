@@ -51,6 +51,12 @@ namespace laser_scan{
     //Stuff the output cloud
     cloud_out.header = scan_in.header;
     cloud_out.set_pts_size(scan_in.ranges_size);
+    if (scan_in.intensities_size > 0)
+      {
+        cloud_out.set_chan_size(1);
+        cloud_out.chan[0].name ="intensities";
+        cloud_out.chan[0].set_vals_size(scan_in.intensities_size);
+      }
 
     double* outputMat = output.Store();
 
@@ -63,15 +69,16 @@ namespace laser_scan{
             cloud_out.pts[count].x = outputMat[index];
             cloud_out.pts[count].y = outputMat[index + scan_in.ranges_size];
             cloud_out.pts[count].z = 0.0;
+            if (scan_in.intensities_size >= index) /// \todo optimize and catch length difference better
+              cloud_out.chan[0].vals[count] = scan_in.intensities[index];
             count++;
           }
       }
 
     //downsize if necessary
     cloud_out.set_pts_size(count);
-
-    /** \todo Add intensity to channel 1 */
-
+    cloud_out.chan[0].set_vals_size(count);
+ 
   };
   
   NEWMAT::Matrix& LaserProjection::getUnitVectors(float angle_min, float angle_max, float angle_increment)
