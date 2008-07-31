@@ -288,7 +288,7 @@ main(int argc, char** argv)
       en.odom.vel.th = pdata->vel.pa;
       en.odom.stall = pdata->stall;
 
-      en.odom.header.frame_id = tf.lookup("FRAMEID_ODOM");
+      en.odom.header.frame_id = en.tf.lookup("FRAMEID_ODOM");
       
       en.odom.header.stamp.sec = (long long unsigned int)floor(hdr->timestamp);
       en.odom.header.stamp.sec = (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL);
