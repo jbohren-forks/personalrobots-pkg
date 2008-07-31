@@ -151,6 +151,8 @@ public:
 
     void loadRobotDescriptions(void)
     {
+	printf("Loading robot desctiptions...\n\n");
+	
 	std::string description_files;
 	get_param("robotdesc_list", description_files);
 	std::stringstream sdf(description_files);
@@ -162,6 +164,7 @@ public:
 	    get_param(file, content);
 	    addRobotDescriptionFromData(content.c_str());
 	}
+	printf("\n\n");	
     }
     
     void pointCloudCallback(void)
@@ -329,9 +332,12 @@ public:
     {
 	m_robotDescriptions.push_back(file);
 	
+	printf("\n\nCreating new kinematic model:\n");
+	
 	/* create a model for the whole robot (with the name given in the file) */
 	Model *model = new Model();
 	planning_models::KinematicModel *kmodel = new planning_models::KinematicModel();
+	kmodel->setVerbose(true);
 	kmodel->build(*file);
 	unsigned int cid = m_collisionSpace->addRobotModel(kmodel);
 	model->collisionSpaceID = cid;
