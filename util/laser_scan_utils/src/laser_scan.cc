@@ -30,8 +30,85 @@
 #include "laser_scan_utils/laser_scan.h"
 
 
-/** \todo add other channel pass throughs */
 namespace laser_scan{
+
+  
+  void LaserProjection::projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloudFloat32 & cloud_out)
+  {
+    NEWMAT::Matrix ranges(2, scan_in.ranges_size);
+    double * matPointer = ranges.Store();
+    // Fill the ranges matrix
+    for (unsigned int index = 0; index < scan_in.ranges_size; index++)
+      {
+        matPointer[index] = (double) scan_in.ranges[index];
+        matPointer[index+scan_in.ranges_size] = (double) scan_in.ranges[index];
+      }
+    
+    //Do the projection
+    NEWMAT::Matrix output = NEWMAT::SP(ranges, getUnitVectors(scan_in.angle_min, scan_in.angle_max, scan_in.angle_increment));
+    
+
+    //Stuff the output cloud
+    cloud_out.header = scan_in.header;
+    cloud_out.set_pts_size(scan_in.ranges_size);
+
+    double* outputMat = output.Store();
+
+    unsigned int count = 0;
+    for (unsigned int index = 0; index< scan_in.ranges_size; index++)
+      {
+        if (matPointer[index] <= scan_in.range_max 
+            && matPointer[index] >= scan_in.range_min) //only valid
+          {
+            cloud_out.pts[count].x = outputMat[index];
+            cloud_out.pts[count].y = outputMat[index + scan_in.ranges_size];
+            cloud_out.pts[count].z = 0.0;
+            count++;
+          }
+      }
+
+    //downsize if necessary
+    cloud_out.set_pts_size(count);
+
+    /** \todo Add intensity to channel 1 */
+
+  };
+  
+  NEWMAT::Matrix& LaserProjection::getUnitVectors(float angle_min, float angle_max, float angle_increment)
+  {
+    //construct string for lookup in the map
+    std::stringstream anglestring;
+    anglestring <<angle_min<<","<<angle_max<<","<<angle_increment;
+    std::map<string, NEWMAT::Matrix*>::iterator it;
+    it = unit_vector_map_.find(anglestring.str());
+    //check the map for presense
+    if (it != unit_vector_map_.end())
+      return *((*it).second);     //if present return
+    //else calculate
+    unsigned int length = (unsigned int) ((angle_max - angle_min)/angle_increment) + 1;//fixme assuming it's calculated right
+    NEWMAT::Matrix * tempPtr = new NEWMAT::Matrix(2,length);
+    for (unsigned int index = 0;index < length; index++)
+      {
+        (*tempPtr)(1,index+1) = cos(angle_min + (double) index * angle_increment);
+        (*tempPtr)(2,index+1) = sin(angle_min + (double) index * angle_increment);
+      }
+    //store 
+    unit_vector_map_[anglestring.str()] = tempPtr;
+    //and return
+    return *tempPtr;
+  };
+
+
+  LaserProjection::~LaserProjection()
+  {
+    std::map<string, NEWMAT::Matrix*>::iterator it;
+    it = unit_vector_map_.begin();
+    while (it != unit_vector_map_.end())
+      {
+        delete (*it).second;
+        it++;
+      }
+  };
 
   LaserMedianFilter::LaserMedianFilter(unsigned int filter_length, unsigned int num_ranges, MedianMode_t mode):
     current_packet_num_(0),

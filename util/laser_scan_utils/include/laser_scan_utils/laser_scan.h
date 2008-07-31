@@ -27,30 +27,56 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LASER_SCAN_H
-#define LASER_SCAN_H
+#ifndef LASER_SCAN_UTILS_LASERSCAN_H
+#define LASER_SCAN_UTILS_LASERSCAN_H
 
+#include <map>
 #include <iostream>
+#include <sstream>
+
 #include <newmat10/newmat.h>
 #include <newmat10/newmatio.h>
 #include <newmat10/newmatap.h>
 
 #include "math_utils/math_utils.h"
 #include "std_msgs/LaserScan.h"
+#include "std_msgs/PointCloudFloat32.h"
 
 /* \mainpage 
  * This is a class for laser scan utilities.  
- * The first goal will be to project laser scans into point clouds efficiently.  
+ * \todo The first goal will be to project laser scans into point clouds efficiently.  
  * The second goal is to provide median filtering.  
+ * \todo Other potential additions are upsampling and downsampling algorithms for the scans.
  */
 
 namespace laser_scan{
-  
-  /** \brief Project Laser Scan
-   * This will project a laser scan from a linear array into a 3D point cloud
+  /** \brief A Class to Project Laser Scan
+   * This class will project laser scans into point clouds, and caches unit vectors 
+   * between runs so as not to need to recalculate.  
    */
-  //  void projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloudFloat32 & cloud_out);
+  class LaserProjection
+    {
+    public:
+      /** \brief Destructor to deallocate stored unit vectors */
+      ~LaserProjection(); 
+      
+      /** \brief Project Laser Scan
+       * This will project a laser scan from a linear array into a 3D point cloud
+       */
+      void projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloudFloat32 & cloud_out);
+      
+      /** \brief Return the unit vectors for this configuration
+       * Return the unit vectors for this configuration.
+       * if they have not been calculated yet, calculate them and store them
+       * Otherwise it will return them from memory. */
+      NEWMAT::Matrix& getUnitVectors(float angle_max, float angle_min, float angle_increment);
+    private:
+      ///The map of pointers to stored values
+      std::map<std::string,NEWMAT::Matrix*> unit_vector_map_;
+      
+    };
   
+  /** \brief A class to provide median filtering of laser scans */
   class LaserMedianFilter
     {
     public:
@@ -58,7 +84,8 @@ namespace laser_scan{
       
       /** \brief Constructor
        * \param averaging_length How many scans to average over.
-       * \param Whether to downsample and return or compute a rolling median over the last n scans
+       * \param num_ranges Whether to downsample and return or compute a rolling median over the last n scans
+       * \param mode What mode to operate in Trailing or Downsampling (Effectively changes returning true every time or every 3)
        */
       LaserMedianFilter(unsigned int averaging_length, unsigned int num_ranges, MedianMode_t mode = MEDIAN_DOWNSAMPLE);
       /** \brief Add a scan to the filter
@@ -66,22 +93,22 @@ namespace laser_scan{
        * return whether there is a new output to get */
       bool addScan(const std_msgs::LaserScan& scan_in);
       /** \brief get the Filtered results
-       * \param The scan to fill with the median results */
+       * \param scan_result The scan to fill with the median results */
       void getMedian(std_msgs::LaserScan& scan_result);
-
-
+      
+      
     private:
-      unsigned int current_packet_num_;
-      NEWMAT::Matrix range_data_;
-      NEWMAT::Matrix intensity_data_;
-      unsigned int filter_length_;
-      unsigned int num_ranges_;
-      MedianMode_t mode_;
-        
+      unsigned int current_packet_num_; ///The number of scans recieved
+      NEWMAT::Matrix range_data_; ///Storage for range_data
+      NEWMAT::Matrix intensity_data_; ///Storage for intensity data
+      unsigned int filter_length_; ///How many scans to average over
+      unsigned int num_ranges_; /// How many data point are in each row
+      MedianMode_t mode_; ///Whether to return true every time or once every 3
+      
       std_msgs::LaserScan temp_scan_; /** \todo cache only shallow info not full scan */
       
     };
   
   
 }
-#endif //LASER_SCAN_H
+#endif //LASER_SCAN_UTILS_LASERSCAN_H

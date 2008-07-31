@@ -304,9 +304,9 @@ public:
     
 private:
     
-    PointCloudFloat32              inputCloud;
-    PointCloudFloat32              toProcess;
-    std::deque<PointCloudFloat32*> currentWorld;
+  PointCloudFloat32              inputCloud; //Buffer for recieving cloud
+  PointCloudFloat32              toProcess; //Buffer (size 1) for incoming cloud
+  std::deque<PointCloudFloat32*> currentWorld;// Pointers to saved clouds
     rosTFClient                    tf;
 
     double             maxPublishFrequency;

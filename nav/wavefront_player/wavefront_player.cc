@@ -130,6 +130,9 @@ robot.
 // For transform support
 #include <rosTF/rosTF.h>
 
+//Laser projection
+#include "laser_scan_utils/laser_scan.h"
+
 // For time support
 #include <ros/time.h>
 
@@ -218,7 +221,8 @@ class WavefrontNode: public ros::node
 
     // Internal helpers
     void sendVelCmd(double vx, double vy, double vth);
-
+  
+    laser_scan::LaserProjection projector_;
   public:
     // Transform client
     rosTFClient tf;
@@ -426,8 +430,12 @@ WavefrontNode::laserReceived()
       continue;
     }
 
+
     // Assemble a point cloud, in the laser's frame
     std_msgs::PointCloudFloat32 local_cloud;
+    projector_.projectLaser(*it, local_cloud);
+    
+    /*  Replaced by above!!
     local_cloud.header.frame_id = it->header.frame_id;
     local_cloud.header.stamp = it->header.stamp;
     local_cloud.set_pts_size(it->get_ranges_size());
@@ -455,7 +463,7 @@ WavefrontNode::laserReceived()
 
     // Resize, because we may have thrown out some points
     local_cloud.set_pts_size(cnt);
-
+*/
     // Convert to a point cloud in the map frame
     std_msgs::PointCloudFloat32 global_cloud;
 
