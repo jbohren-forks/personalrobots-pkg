@@ -44,11 +44,14 @@ public:
   MechanismControl(HardwareInterface *hw);
   ~MechanismControl();
 
-  bool init(TiXmlElement* config);
-  void update(); //Must be realtime safe
+  // Real-time functions
+  void update();
 
+  // Non real-time functions
+  bool init(TiXmlElement* config);
   bool registerActuator(const std::string &name, int index);
   void registerControllerType(const std::string& type, ControllerAllocator f);
+  bool addController(controller::Controller *c);
   bool spawnController(const char* type, TiXmlElement* config);
 
 private:

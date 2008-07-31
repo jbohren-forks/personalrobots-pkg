@@ -1,4 +1,3 @@
-
 ///////////////////////////////////////////////////////////////////////////////
 // Copyright (C) 2008, Willow Garage, Inc.
 //
@@ -30,14 +29,15 @@
 
 using namespace mechanism;
 
-MechanismControl::MechanismControl(HardwareInterface *hw)
-  : initialized_(0), model_((char*)"robot"), hw_(hw)
+MechanismControl::MechanismControl(HardwareInterface *hw) :
+  initialized_(0), model_((char*)"robot"), hw_(hw)
 {
-  memset(controllers_, 0, MAX_NUM_CONTROLLERS*sizeof(void*));
+  memset(controllers_, 0, MAX_NUM_CONTROLLERS * sizeof(void*));
   model_.hw_ = hw;
 }
 
-MechanismControl::~MechanismControl() {
+MechanismControl::~MechanismControl()
+{
 }
 
 bool MechanismControl::registerActuator(const std::string &name, int index)
@@ -62,8 +62,7 @@ bool MechanismControl::init(TiXmlElement* config)
   {
     Joint *j = new Joint;
     model_.joints_.push_back(j);
-    model_.joints_lookup_.insert(
-      Robot::IndexMap::value_type(elt->Attribute("name"), model_.joints_.size() - 1));
+    model_.joints_lookup_.insert(Robot::IndexMap::value_type(elt->Attribute("name"), model_.joints_.size() - 1));
     j->joint_limit_min_ = atof(elt->FirstChildElement("limitMin")->GetText());
     j->joint_limit_max_ = atof(elt->FirstChildElement("limitMax")->GetText());
     j->effort_limit_ = atof(elt->FirstChildElement("effortLimit")->GetText());
@@ -78,25 +77,29 @@ bool MechanismControl::init(TiXmlElement* config)
     {
       // Looks up the joint and the actuator used by the transmission.
       Robot::IndexMap::iterator joint_it =
-	model_.joints_lookup_.find(elt->FirstChildElement("joint")->Attribute("name"));
+          model_.joints_lookup_.find(elt->FirstChildElement("joint")->Attribute("name"));
       Robot::IndexMap::iterator actuator_it =
-	model_.actuators_lookup_.find(elt->FirstChildElement("actuator")->Attribute("name"));
+          model_.actuators_lookup_.find(elt->FirstChildElement("actuator")->Attribute("name"));
       if (joint_it == model_.joints_lookup_.end())
       {
-	// TODO: report: The joint was not declared in the XML file
-	continue;
+        // TODO: report: The joint was not declared in the XML file
+        continue;
       }
       if (actuator_it == model_.actuators_lookup_.end())
       {
-	// TODO: report: The actuator was not registered with mechanism control.
-	continue;
+        // TODO: report: The actuator was not registered with mechanism control.
+        continue;
       }
 
-      Transmission *tr = new SimpleTransmission
-	(model_.joints_[joint_it->second], &hw_->actuators_[actuator_it->second],
-	 atof(elt->FirstChildElement("mechanicalReduction")->Value()),
-	 atof(elt->FirstChildElement("motorTorqueConstant")->Value()),
-	 atof(elt->FirstChildElement("pulsesPerRevolution")->Value()));
+      Transmission
+                   *tr =
+                       new SimpleTransmission(model_.joints_[joint_it->second], &hw_->actuators_[actuator_it->second], atof(
+                                                                                                                            elt->FirstChildElement(
+                                                                                                                                                   "mechanicalReduction")->Value()), atof(
+                                                                                                                                                                                          elt->FirstChildElement(
+                                                                                                                                                                                                                 "motorTorqueConstant")->Value()), atof(
+                                                                                                                                                                                                                                                        elt->FirstChildElement(
+                                                                                                                                                                                                                                                                               "pulsesPerRevolution")->Value()));
       model_.transmissions_.push_back(tr);
     }
     else
@@ -111,7 +114,8 @@ bool MechanismControl::init(TiXmlElement* config)
 }
 
 // Must be realtime safe.
-void MechanismControl::update() {
+void MechanismControl::update()
+{
 
   // Propagates through the robot model.
   for (unsigned int i = 0; i < model_.transmissions_.size(); ++i)
@@ -120,8 +124,9 @@ void MechanismControl::update() {
   // TODO: update KDL model with new joint position/velocities
 
   //update all controllers
-  for(int i = 0; i < MAX_NUM_CONTROLLERS; ++i){
-    if(controllers_[i] != NULL)
+  for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
+  {
+    if (controllers_[i] != NULL)
       controllers_[i]->update();
   }
 
@@ -134,26 +139,19 @@ void MechanismControl::update() {
     model_.transmissions_[i]->propagateEffort();
 }
 
-
-
-void MechanismControl::registerControllerType(const std::string& type, ControllerAllocator f){
+void MechanismControl::registerControllerType(const std::string& type, ControllerAllocator f)
+{
   controller_library_.insert(std::pair<std::string,ControllerAllocator>(type, f));
 }
 
-bool MechanismControl::spawnController(const char *type, TiXmlElement *config)
+bool MechanismControl::addController(controller::Controller *c)
 {
-  controller::Controller *c;
-  ControllerAllocator f = controller_library_[type];
-  c = f();
-  c->initXml(&model_, config);
-
-  //At this point, the controller is fully initialized and has created the ROS interface, etc.
-
   //Add controller to list of controllers in realtime-safe manner;
   controllers_mutex_.lock(); //This lock is only to prevent us from other non-realtime threads.  The realtime thread may be spinning through the list of controllers while we are in here, so we need to keep that list always in a valid state.  This is why we fully allocate and set up the controller before adding it into the list of active controllers.
   bool spot_found = false;
-  for(int i = 0; i < MAX_NUM_CONTROLLERS; i++){
-    if(controllers_[i] == NULL)
+  for (int i = 0; i < MAX_NUM_CONTROLLERS; i++)
+  {
+    if (controllers_[i] == NULL)
     {
       spot_found = true;
       controllers_[i] = c;
@@ -169,4 +167,14 @@ bool MechanismControl::spawnController(const char *type, TiXmlElement *config)
   }
 
   return true;
+}
+
+bool MechanismControl::spawnController(const char *type, TiXmlElement *config)
+{
+  controller::Controller *c;
+  ControllerAllocator f = controller_library_[type];
+  c = f();
+  c->initXml(&model_, config);
+
+  return addController(c);
 }
