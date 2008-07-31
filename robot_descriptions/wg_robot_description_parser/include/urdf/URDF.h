@@ -190,7 +190,7 @@ public:
       double                 anchor[3];     // point about which the axis defines the rotation: (x,y,z)
       double                 limit[2];      // the joint limits: (min, max)
       double                 position[7];   // only for planar and floating joints: (x, y, theta) for planar, 
-	                                    // quaternion ((x, y, z), (x, y, z, w)) for floating
+	                                    // translation + quaternion ((x, y, z), (x, y, z, w)) for floating
       double                 calibration[2];
       Data                   data;
     };
