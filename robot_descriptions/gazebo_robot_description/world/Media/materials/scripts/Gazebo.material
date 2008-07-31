@@ -295,6 +295,23 @@ material Gazebo/BlueEmissive
 }
 
 
+material Gazebo/Red
+{
+	receive_shadows on
+
+	technique
+	{
+		pass
+		{
+		  ambient 1.000000 0.000000 0.000000 1.000000
+			diffuse 1.000000 0.000000 0.000000 1.000000
+			specular 0.200000 0.000000 0.000000 1.000000
+			emissive 0.000000 0.000000 0.000000 1.000000
+      lighting on
+		}
+	}
+}
+
 material Gazebo/Blue
 {
 	receive_shadows on
