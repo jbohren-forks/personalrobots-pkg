@@ -39,6 +39,7 @@
 #include "std_msgs/ImageArray.h"
 #include "std_msgs/PointCloudFloat32.h"
 #include "std_msgs/Empty.h"
+#include "std_msgs/String.h"
 #include "dc1394_cam/dc1394_cam.h"
 
 #include <newmat10/newmat.h>
@@ -62,6 +63,7 @@ public:
 class VidereData : public OtherData
 {
 public:
+  std_msgs::String cal_params;
   int32_t mode;
   int32_t textureThresh;
   int32_t uniqueThresh;
@@ -370,15 +372,15 @@ public:
         }
         *bb = 0;                      // just in case we missed the last zero
 
-        string params(buf);
+        v->cal_params.data = buf;
 
-        istringstream iss( params.substr( params.find("proj", params.find("[left camera]") ) + strlen("proj")) );
+        istringstream iss( v->cal_params.data.substr( v->cal_params.data.find("proj", v->cal_params.data.find("[left camera]") ) + strlen("proj")) );
         
         for (int i = 1; i <= 3; i++)
           for (int j = 1; j <= 4; j++)
             iss >> v->lproj(i,j);
 
-        iss.str( params.substr( params.find("proj", params.find("[right camera]") ) + strlen("proj")) );
+        iss.str( v->cal_params.data.substr( v->cal_params.data.find("proj", v->cal_params.data.find("[right camera]") ) + strlen("proj")) );
         
         for (int i = 1; i <= 3; i++)
           for (int j = 1; j <= 4; j++)
@@ -390,18 +392,18 @@ public:
         v->f = v->lproj(1,1);
 
 
-        iss.str( params.substr( params.find("width", params.find("[image]") ) + strlen("width")) );
+        iss.str( v->cal_params.data.substr( v->cal_params.data.find("width", v->cal_params.data.find("[image]") ) + strlen("width")) );
         iss >> v->w;
 
-        iss.str( params.substr( params.find("height", params.find("[image]") ) + strlen("height")) );
+        iss.str( v->cal_params.data.substr( v->cal_params.data.find("height", v->cal_params.data.find("[image]") ) + strlen("height")) );
         iss >> v->h;
 
-        iss.str( params.substr( params.find("corrxsize", params.find("[stereo]") ) + strlen("corrxsize")) );
+        iss.str( v->cal_params.data.substr( v->cal_params.data.find("corrxsize", v->cal_params.data.find("[stereo]") ) + strlen("corrxsize")) );
         iss >> v->corrs;
 
         v->logs = 9;
 
-        iss.str( params.substr( params.find("offx", params.find("[stereo]") ) + strlen("offx")) );
+        iss.str( v->cal_params.data.substr( v->cal_params.data.find("offx", v->cal_params.data.find("[stereo]") ) + strlen("offx")) );
         iss >> v->offx;
 
         v->dleft   = (v->logs + v->corrs - 2)/2 - 1 + v->offx;
@@ -477,6 +479,7 @@ public:
       {
         VidereData* v = ((VidereData*)(cd.otherData));
 
+        advertise<std_msgs::String>(cd.name + string("/cal_params"));
         advertise<std_msgs::ImageArray>(cd.name + string("/images"));
         v->imgs.set_images_size(2);
 
@@ -590,6 +593,9 @@ public:
 
           v->imgs.images[1].set_data_size(buf_size);
           memcpy(v->imgs.images[1].data, buf + buf_size, buf_size);
+
+          if (count < cams.size())
+            publish(c->name + string("/cal_params"), v->cal_params);
 
           switch (v->mode)
           {
