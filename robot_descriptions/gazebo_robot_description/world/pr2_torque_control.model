@@ -1,5 +1,4 @@
 <?xml version="1.0"?>
-<!-- torque control mode for actuator joints, besides caster joints -->
 
 <!-- PR2 model -->
 <model:physical name="pr2_model"
@@ -46,7 +45,7 @@
         <!--size>0.65  0.65  0.65</size-->
         <scale>0.001 0.001 0.001</scale>
         <rpy> 90.0   0.0 90.0 </rpy>
-        <mesh>pr2/pr2_base.mesh</mesh>
+        <mesh>pr2_old/pr2_base.mesh</mesh>
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
@@ -119,10 +118,12 @@
 
 
     <sensor:ray name="base_laser_1">
-      <rayCount>68</rayCount>
+      <rayCount>683</rayCount>
       <rangeCount>683</rangeCount>
       <laserCount>1</laserCount>
       <origin>0.0 0.0 0.05</origin>
+
+      <displayRays>false</displayRays>
 
       <minAngle>-135</minAngle>
       <maxAngle>135</maxAngle>
@@ -159,7 +160,7 @@
   </body:box>
 
   <!-- attach hokuyo to torso -->
-  <joint:hinge name="base_laser_torso_attach_joint">
+  <joint:hinge name="tiltlaser_torso_attach_joint">
     <body1>base_body</body1>
     <body2>base_laser_body</body2>
     <anchor>base_laser_body</anchor>
@@ -171,7 +172,6 @@
 
 
   <!-- ========== spine and shoulder =========== -->
-
   <body:box name="torso_body">
     <xyz>0.056 0.0  0.45</xyz>
     <rpy>0.0   0.0  0.0</rpy>
@@ -180,29 +180,17 @@
     <reportStaticCollision>true</reportStaticCollision>
 
     <geom:box name="torso_geom">
-      <xyz> 0.0  0.0   0.0 </xyz>
-      <size>0.1  0.2   0.6 </size>
+      <xyz> 0.0  0.0   0.275 </xyz>
+      <size>0.4  0.65  0.8 </size>
       <mass>1</mass>
       <visual>
         <!--   x    y     z -->
-        <xyz> 0.1  0.0   -0.425 </xyz>
+        <xyz> 0.1  0.0   -0.70 </xyz>
         <!--size>0.6  0.8   0.6 </size-->
         <scale>0.001 0.001 0.001</scale>
         <rpy>90.0  0.0   90.0 </rpy>
-        <mesh>pr2/pr2_body.mesh</mesh>
+        <mesh>pr2_old/pr2_body.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
-      </visual>
-    </geom:box>
-
-    <geom:box name="shoulder_geom">
-      <xyz> 0.1  0.00  0.54</xyz>
-      <size>0.3  0.65  0.02</size>
-      <mass>1</mass>
-      <visual>
-        <!--size>0.3  0.65  0.02</size-->
-        <size>0.0  0.0  0.0</size>
-        <mesh>unit_box</mesh>
-        <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
 
@@ -244,7 +232,7 @@
         <rpy> 90.0   0.0   90.0 </rpy>
         <!--size> 0.26 0.6 0.36</size-->
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_sh_turret.mesh</mesh>
+        <mesh>pr2_old/pr2_sh_turret.mesh</mesh>
         <material>Gazebo/Green</material>
       </visual>
     </geom:cylinder>
@@ -274,7 +262,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0    90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_sh_pitch.mesh</mesh>
+        <mesh>pr2_old/pr2_sh_pitch.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
@@ -304,7 +292,7 @@
         <xyz> -0.20    0.0    0.0 </xyz>
         <rpy>180.0   -90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_sh_roll.mesh</mesh>
+        <mesh>pr2_old/pr2_sh_roll.mesh</mesh>
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
@@ -334,7 +322,7 @@
         <xyz> -0.135   0.0    0.0 </xyz>
         <rpy>  0.0   -90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_elbow_pitch.mesh</mesh>
+        <mesh>pr2_old/pr2_elbow_pitch.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
@@ -364,11 +352,47 @@
         <xyz>  0.11    0.0    0.0 </xyz>
         <rpy>  0.0   -90.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_forearm_roll.mesh</mesh>
+        <mesh>pr2_old/pr2_forearm_roll.mesh</mesh>
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
   </body:box>
+
+  <body:empty name="forearm_cam_right_body">
+    <xyz>  0.92225 -0.15   0.8369 </xyz>
+    <rpy> 0.00  -45.0   0.00 </rpy>
+    <sensor:camera name="forearm_cam_right_sensor">
+      <imageSize>640 480</imageSize>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <updateRate>15.0</updateRate>
+      <controller:generic_camera name="forearm_cam_right_controller">
+        <updateRate>15.0</updateRate>
+        <interface:camera name="forearm_cam_right_iface" />
+      </controller:generic_camera>
+    </sensor:camera>
+    <geom:box name="forearm_cam_right_geom">
+      <xyz> 0.00   0.00   0.00</xyz>
+      <size>0.02   0.02   0.02</size>
+      <mass>0.1</mass>
+      <visual>
+        <size>0.02   0.02   0.02</size>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Black</material>
+      </visual>
+    </geom:box>
+  </body:empty>
+  <joint:hinge name="forearm_cam_right">
+    <body1>forearm_cam_right_body</body1>
+    <body2>forearm_right</body2>
+    <anchor>forearm_right</anchor>
+    <axis>  0.0   0.0   1.0 </axis>
+    <lowStop> 0.0 </lowStop>
+    <highStop> 0.0 </highStop>
+  </joint:hinge>
+
 
   <body:cylinder name="wrist_right">
     <xyz>  1.008   -0.15   0.8269 </xyz>
@@ -394,11 +418,12 @@
         <xyz>  0.008   0.0    0.0 </xyz>
         <rpy> 90.0     0.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_wrist_pitch.mesh</mesh>
+        <mesh>pr2_old/pr2_wrist_pitch.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
   </body:cylinder>
+
 
   <body:box name="palm_right">
     <xyz>  1.10   -0.15   0.8269</xyz>
@@ -424,11 +449,48 @@
         <xyz> -0.035   0.0    0.0 </xyz>
         <rpy>  0.0    90.0   90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_wrist_roll.mesh</mesh>
+        <mesh>pr2_old/pr2_wrist_roll.mesh</mesh>
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
   </body:box>
+
+  <body:empty name="palm_cam_right_body">
+    <xyz>  1.10   -0.15   0.8569</xyz>
+    <rpy>  0.0     0.0    0.0 </rpy>
+    <sensor:camera name="palm_cam_right_sensor">
+      <imageSize>640 480</imageSize>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <updateRate>15.0</updateRate>
+      <controller:generic_camera name="wrist_cam_right_controller">
+        <updateRate>15.0</updateRate>
+        <interface:camera name="wrist_cam_right_iface" />
+      </controller:generic_camera>
+    </sensor:camera>
+    <geom:box name="palm_cam_right_geom">
+      <xyz> 0.00   0.00   0.00</xyz>
+      <size>0.02   0.02   0.02</size>
+      <mass>0.1</mass>
+      <visual>
+        <size>0.02   0.02   0.02</size>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Black</material>
+      </visual>
+    </geom:box>
+  </body:empty>
+  <joint:hinge name="palm_cam_right">
+    <body1>palm_cam_right_body</body1>
+    <body2>palm_right</body2>
+    <anchor>palm_right</anchor>
+    <axis>  0.0   0.0   1.0 </axis>
+    <lowStop> 0.0 </lowStop>
+    <highStop> 0.0 </highStop>
+  </joint:hinge>
+
+
 
   <body:box name="finger_1_right">
     <xyz>  1.18   -0.17   0.8269 </xyz>
@@ -561,7 +623,7 @@
         <rpy> 90.0   0.0   90.0 </rpy>
         <!--size> 0.26 0.6 0.36</size-->
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_sh_turret.mesh</mesh>
+        <mesh>pr2_old/pr2_sh_turret.mesh</mesh>
         <material>Gazebo/Green</material>
       </visual>
     </geom:cylinder>
@@ -591,7 +653,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0    90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_sh_pitch.mesh</mesh>
+        <mesh>pr2_old/pr2_sh_pitch.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
@@ -621,7 +683,7 @@
         <xyz> -0.20    0.0    0.0 </xyz>
         <rpy>180.0   -90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_sh_roll.mesh</mesh>
+        <mesh>pr2_old/pr2_sh_roll.mesh</mesh>
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
@@ -651,7 +713,7 @@
         <xyz> -0.135   0.0    0.0 </xyz>
         <rpy>  0.0   -90.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_elbow_pitch.mesh</mesh>
+        <mesh>pr2_old/pr2_elbow_pitch.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
@@ -681,10 +743,28 @@
         <xyz>  0.11    0.0    0.0 </xyz>
         <rpy>  0.0   -90.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_forearm_roll.mesh</mesh>
+        <mesh>pr2_old/pr2_forearm_roll.mesh</mesh>
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
+    <sensor:camera name="forearm_cam_left_sensor">
+      <imageSize>640 480</imageSize>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <updateRate>15.0</updateRate>
+      <!--
+      <controller:ros_camera name="wrist_cam_left_controller" plugin="libRos_Camera.so">
+        <updateRate>15.0</updateRate>
+        <topicName>image_wrist_cam_left</topicName>
+        <interface:camera name="wrist_cam_left_iface" />
+      </controller:ros_camera>
+      -->
+      <controller:generic_camera name="forearm_cam_left_controller">
+        <updateRate>15.0</updateRate>
+        <interface:camera name="forearm_cam_left_iface" />
+      </controller:generic_camera>
+    </sensor:camera>
   </body:box>
 
   <body:cylinder name="wrist_left">
@@ -711,10 +791,21 @@
         <xyz>  0.003   0.0    0.0 </xyz>
         <rpy> 90.0     0.0  -90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_wrist_pitch.mesh</mesh>
+        <mesh>pr2_old/pr2_wrist_pitch.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:cylinder>
+    <sensor:camera name="wrist_cam_left_sensor">
+      <imageSize>640 480</imageSize>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <updateRate>15.0</updateRate>
+      <controller:generic_camera name="wrist_cam_left_controller">
+        <updateRate>15.0</updateRate>
+        <interface:camera name="wrist_cam_left_iface" />
+      </controller:generic_camera>
+    </sensor:camera>
   </body:cylinder>
 
   <body:box name="palm_left">
@@ -741,7 +832,7 @@
         <xyz> -0.035   0.0    0.0 </xyz>
         <rpy>  0.0    90.0   90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_wrist_roll.mesh</mesh>
+        <mesh>pr2_old/pr2_wrist_roll.mesh</mesh>
         <material>Gazebo/Shell</material>
       </visual>
     </geom:box>
@@ -878,6 +969,7 @@
     <highStop> 0.0 </highStop>
   </joint:hinge>
 
+
   <body:box name="head_base_body">
     <xyz>0.10 0.0 1.13 </xyz>
     <rpy>0.0 0.0 0.0 </rpy>
@@ -963,7 +1055,7 @@
 
   <!-- left camera -->
   <body:box name="ptz_cam_left_body">
-    <xyz> 0.15  0.23  1.07 </xyz>
+    <xyz> 0.13  0.30  1.04 </xyz>
     <rpy> 0.00  0.0   0.00 </rpy>
     <sensor:camera name="ptz_cam_left_sensor">
       <imageSize>640 480</imageSize>
@@ -975,6 +1067,7 @@
         <updateRate>15.0</updateRate>
         <interface:camera name="ptz_cam_left_iface" />
       </controller:generic_camera>
+      <!-- PTZ camera controllers -->
     </sensor:camera>
     <geom:box name="ptz_cam_left_geom">
       <xyz> 0.00   0.00   0.00</xyz>
@@ -985,12 +1078,13 @@
         <size>0.05   0.03   0.04</size>
         <rpy>0.0   0.0 0.0 </rpy>
         <mesh>unit_box</mesh>
-        <material>Gazebo/PioneerBody</material>
+        <material>Gazebo/Black</material>
       </visual>
     </geom:box>
   </body:box>
+
   <body:box name="ptz_cam_base_left_body">
-    <xyz> 0.15  0.20  1.07 </xyz>
+    <xyz> 0.13  0.27  1.04 </xyz>
     <rpy> 0.00  0.0   0.00 </rpy>
     <geom:box name="ptz_cam_base_left_geom">
       <xyz> 0.00   0.00   0.00</xyz>
@@ -1005,10 +1099,9 @@
       </visual>
     </geom:box>
   </body:box>
-
   <!-- right camera -->
   <body:empty name="ptz_cam_right_body">
-    <xyz> 0.15 -0.23  1.07 </xyz>
+    <xyz> 0.13 -0.30  1.04 </xyz>
     <rpy> 0.00  0.0   0.00 </rpy>
     <sensor:camera name="ptz_cam_right_sensor">
       <imageSize>640 480</imageSize>
@@ -1020,6 +1113,7 @@
         <updateRate>15.0</updateRate>
         <interface:camera name="ptz_cam_right_iface" />
       </controller:generic_camera>
+      <!-- PTZ camera controllers -->
     </sensor:camera>
     <geom:box name="ptz_cam_right_geom">
       <xyz> 0.00   0.00   0.00</xyz>
@@ -1030,12 +1124,12 @@
         <size>0.05   0.03   0.04</size>
         <rpy>0.0   0.0 0.0 </rpy>
         <mesh>unit_box</mesh>
-        <material>Gazebo/PioneerBody</material>
+        <material>Gazebo/Black</material>
       </visual>
     </geom:box>
   </body:empty>
   <body:box name="ptz_cam_base_right_body">
-    <xyz> 0.15 -0.20  1.07 </xyz>
+    <xyz> 0.13 -0.27  1.04 </xyz>
     <rpy> 0.00  0.0   0.00 </rpy>
     <geom:box name="ptz_cam_base_right_geom">
       <xyz> 0.00   0.00   0.00</xyz>
@@ -1123,7 +1217,7 @@
     <highStop> 0.0 </highStop>
   </joint:hinge>
 
-  <!--         Hokuyo laser body             -->
+  <!--         Hokuyo tilting laser body             -->
   <body:box name="tilt_laser_body">
     <xyz>0.23 0.0 1.0</xyz>
     <rpy>0.0 0.0 0.0</rpy>
@@ -1188,13 +1282,15 @@
 
 
     <sensor:ray name="tilt_laser_1">
-      <rayCount>68</rayCount>
+      <rayCount>683</rayCount>
       <rangeCount>683</rangeCount>
       <laserCount>1</laserCount>
       <origin>0.0 0.0 0.05</origin>
 
+      <displayRays>false</displayRays>
+
       <minAngle>-45</minAngle>
-      <maxAngle>45</maxAngle>
+      <maxAngle> 45</maxAngle>
 
       <minRange>0.05</minRange>
       <maxRange>10.0</maxRange>
@@ -1238,10 +1334,8 @@
 
 
 
-
   <!--=========================== caster ===========================-->
 
-  <!--=========================== caster body ===========================-->
   <body:box name="front_left_caster_body">
     <xyz>0.425  0.25   0.16069 </xyz> <!-- caster height + height off ground of base bottom -->
     <rpy> 0.0    0.0    0.0 </rpy>
@@ -1271,7 +1365,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy> 90.0     0.0   90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_caster.mesh</mesh>
+        <mesh>pr2_old/pr2_caster.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:box>
@@ -1306,7 +1400,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy> 90.0     0.0   90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_caster.mesh</mesh>
+        <mesh>pr2_old/pr2_caster.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:box>
@@ -1341,7 +1435,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy> 90.0     0.0   90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_caster.mesh</mesh>
+        <mesh>pr2_old/pr2_caster.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:box>
@@ -1375,7 +1469,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy> 90.0     0.0   90.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_caster.mesh</mesh>
+        <mesh>pr2_old/pr2_caster.mesh</mesh>
         <material>Gazebo/PioneerBody</material>
       </visual>
     </geom:box>
@@ -1408,7 +1502,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_wheel.mesh</mesh>
+        <mesh>pr2_old/pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
@@ -1439,7 +1533,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_wheel.mesh</mesh>
+        <mesh>pr2_old/pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
@@ -1470,7 +1564,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_wheel.mesh</mesh>
+        <mesh>pr2_old/pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
@@ -1501,7 +1595,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_wheel.mesh</mesh>
+        <mesh>pr2_old/pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
@@ -1532,7 +1626,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_wheel.mesh</mesh>
+        <mesh>pr2_old/pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
@@ -1563,7 +1657,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_wheel.mesh</mesh>
+        <mesh>pr2_old/pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
@@ -1594,7 +1688,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_wheel.mesh</mesh>
+        <mesh>pr2_old/pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
@@ -1625,7 +1719,7 @@
         <xyz>  0.0     0.0    0.0 </xyz>
         <rpy>  0.0     0.0    0.0 </rpy>
         <scale>0.001 0.001 0.001</scale>
-        <mesh>pr2/pr2_wheel.mesh</mesh>
+        <mesh>pr2_old/pr2_wheel.mesh</mesh>
         <material>Gazebo/Black</material>
       </visual>
     </geom:cylinder>
@@ -1689,10 +1783,6 @@
     <anchor>rear_right_wheel_r</anchor>
     <axis>0 1 0</axis>
   </joint:hinge>
-
-
-
-
   <joint:hinge name="front_left_caster_steer">
     <body1>front_left_caster_body</body1>
     <body2>base_body</body2>
@@ -1722,8 +1812,7 @@
   </joint:hinge>
 
 
-
-  <!-- PR2_ACTARRAY -->
+<!-- PR2_ACTARRAY -->
   <controller:pr2_actarray name="pr2_controller" plugin="libPr2_Actarray.so">
       <updateRate>100.0</updateRate>
       <!-- caster array -->
@@ -1862,7 +1951,7 @@
         <iGain>500</iGain>
         <iClamp>500</iClamp>
         <explicitDampingCoefficient>100.0</explicitDampingCoefficient>
-        <controlMode>TORQUE_CONTROL</controlMode>
+        <controlMode>TORQUE_CONTROL</controlMode> 
       </joint>
       <joint name="upperarm_roll_joint_left">
         <saturationTorque>1000</saturationTorque>
@@ -1880,7 +1969,7 @@
         <iGain>100</iGain>
         <iClamp>100</iClamp>
         <explicitDampingCoefficient>2.0</explicitDampingCoefficient>
-        <controlMode>TORQUE_CONTROL</controlMode>
+        <controlMode>TORQUE_CONTROL</controlMode> 
       </joint>
       <joint name="forearm_roll_joint_left">
         <saturationTorque>100</saturationTorque>
@@ -1926,7 +2015,7 @@
         <iGain>500</iGain>
         <iClamp>500</iClamp>
         <explicitDampingCoefficient>100.0</explicitDampingCoefficient>
-        <controlMode>TORQUE_CONTROL</controlMode>
+        <controlMode>TORQUE_CONTROL</controlMode> 
       </joint>
       <joint name="upperarm_roll_joint_right">
         <saturationTorque>1000</saturationTorque>
@@ -1944,7 +2033,7 @@
         <iGain>100</iGain>
         <iClamp>100</iClamp>
         <explicitDampingCoefficient>2.0</explicitDampingCoefficient>
-        <controlMode>TORQUE_CONTROL</controlMode>
+        <controlMode>TORQUE_CONTROL</controlMode>  
       </joint>
       <joint name="forearm_roll_joint_right">
         <saturationTorque>100</saturationTorque>
@@ -2001,6 +2090,8 @@
         <explicitDampingCoefficient>0.01</explicitDampingCoefficient>
         <controlMode>TORQUE_CONTROL</controlMode>
       </joint>
+
+
       <!-- ========================================= -->
       <interface:pr2array name="pr2_iface"/>
       <!-- ========================================= -->
@@ -2060,8 +2151,6 @@
     <tiltJoint>ptz_cam_right_yaw_joint</tiltJoint>
     <interface:ptz name="ptz_right_iface" />
   </controller:generic_ptz>
-
-
 
 
 </model:physical>
