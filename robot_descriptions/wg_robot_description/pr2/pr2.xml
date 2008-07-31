@@ -1019,11 +1019,11 @@
     torso
     shoulder_pan_right
     shoulder_pitch_right
-    shoulder_roll_right
-    elbow_pitch_right
+    upperarm_roll_right
+    elbow_flex_right
     forearm_roll_right
-    wrist_pitch_right
-    wrist_roll_right
+    wrist_flex_right
+    gripper_roll_right
   </group>
   
   <group name="arms" flags="plan">
