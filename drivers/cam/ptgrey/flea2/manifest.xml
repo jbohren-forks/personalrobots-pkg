@@ -8,4 +8,6 @@
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lflea2 -ldc1394_control -lraw1394"/>
   </export>
+  <sysdepend os="Ubuntu" version="7.04" package="libdc1394-13-dev"/>
+  <sysdepend os="Ubuntu" version="8.04.1" package="libdc1394-13-dev"/>
 </package>
