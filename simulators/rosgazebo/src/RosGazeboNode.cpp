@@ -121,7 +121,7 @@ void RosGazeboNode::cmd_leftarmcartesianReceived() {
 
 //  KDL::JntArray q = KDL::JntArray(this->PR2Copy->pr2_kin.nJnts);
 //  this->PR2Copy->GetArmJointPositionCmd(PR2::PR2_LEFT_ARM, q);
-  this->PR2Copy->SetArmCartesianPosition(PR2::PR2_LEFT_ARM,f);
+//   this->PR2Copy->SetArmCartesianPosition(PR2::PR2_LEFT_ARM,f);
 
   this->lock.unlock();
 }
@@ -145,7 +145,7 @@ void RosGazeboNode::cmd_rightarmcartesianReceived() {
 
 //  KDL::JntArray q = KDL::JntArray(this->PR2Copy->pr2_kin.nJnts);
 //  this->PR2Copy->GetArmJointPositionCmd(PR2::PR2_RIGHT_ARM, q);
-  this->PR2Copy->SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f);
+//   this->PR2Copy->SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f);
 
   this->lock.unlock();
 }
@@ -290,7 +290,8 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
          controller::BaseController         *myBase,
          controller::LaserScannerController *myLaserScanner,
          controller::GripperController      *myGripper,
-         controller::JointController** ControllerArray):
+         controller::JointController** ControllerArray,
+         controller::RosJointController ** RosControllerArray):
         ros::node("rosgazebo"),tf(*this),tfc(*this)
 {
   // accept passed in robot
@@ -324,6 +325,9 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
 
   //Use new architecture
   useControllerArray = true;
+  
+      //Store copy of Controller Array. Only interact with it during Update() calls.
+  this->RosControllerArray = RosControllerArray;
 }
 
 int
@@ -355,6 +359,9 @@ RosGazeboNode::AdvertiseSubscribeMessages()
   subscribe("cmd_rightarmconfig", rightarm, &RosGazeboNode::cmd_rightarmconfigReceived);
   subscribe("cmd_leftarm_cartesian", cmd_leftarmcartesian, &RosGazeboNode::cmd_leftarmcartesianReceived);
   subscribe("cmd_rightarm_cartesian", cmd_rightarmcartesian, &RosGazeboNode::cmd_rightarmcartesianReceived);
+  
+  for(int i=0; i<PR2::MAX_JOINTS;i++)
+    RosControllerArray[i]->AdvertiseSubscribeMessages();
 
 	//------ services ----------
   advertise_service("reset_IK_guess", &RosGazeboNode::reset_IK_guess);
@@ -452,11 +459,11 @@ RosGazeboNode::Update()
   /*  laser - pitching                                           */
   /*                                                             */
   /***************************************************************/
-  if (this->PR2Copy->hw.GetLaserRanges(PR2::LASER_HEAD,
+/*  if (this->PR2Copy->hw.GetLaserRanges(PR2::LASER_HEAD,
                 &angle_min, &angle_max, &angle_increment,
                 &range_max, &ranges_size     , &ranges_alloc_size,
                 &intensities_size, &intensities_alloc_size,
-                this->ranges     , this->intensities, &tiltLaserTime) == PR2::PR2_ALL_OK)
+                this->ranges     , this->intensities, &tiltLaserTime) == PR2::PR2_ALL_OK)*/if(false)
   {
     for(unsigned int i=0;i<ranges_size;i++)
     {
@@ -550,11 +557,11 @@ RosGazeboNode::Update()
   /*  laser - base                                               */
   /*                                                             */
   /***************************************************************/
-  if (this->PR2Copy->hw.GetLaserRanges(PR2::LASER_BASE,
+/*  if (this->PR2Copy->hw.GetLaserRanges(PR2::LASER_BASE,
                 &angle_min, &angle_max, &angle_increment,
                 &range_max, &ranges_size     , &ranges_alloc_size,
                 &intensities_size, &intensities_alloc_size,
-                this->ranges     , this->intensities, &baseLaserTime) == PR2::PR2_ALL_OK)
+                this->ranges     , this->intensities, &baseLaserTime) == PR2::PR2_ALL_OK)*/ if(false)
   {
     // Get latest laser data
     this->laserMsg.angle_min       = angle_min;
@@ -659,11 +666,11 @@ RosGazeboNode::Update()
 
   //this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_GLOBAL,
   // ----------------------- get image ----------------------------
-  if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_HEAD_RIGHT,
+  /*if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_HEAD_RIGHT,
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_ptz_right         , &cameraTime)) {
+          &buf_size        ,         buf_ptz_right         , &cameraTime)) */if(false){
     this->img_ptz_right.width       = width;
     this->img_ptz_right.height      = height;
     this->img_ptz_right.compression = compression;
@@ -685,11 +692,11 @@ RosGazeboNode::Update()
     }
   }
   // ----------------------- get image ----------------------------
-  if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_HEAD_LEFT,
+  /*if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_HEAD_LEFT,
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_ptz_left          , &cameraTime)) {
+          &buf_size        ,         buf_ptz_left          , &cameraTime))*/if(false) {
     this->img_ptz_left .width       = width;
     this->img_ptz_left .height      = height;
     this->img_ptz_left .compression = compression;
@@ -767,7 +774,7 @@ RosGazeboNode::Update()
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_forearm_right     , &cameraTime    )) {
+          &buf_size        ,         buf_forearm_right     , &cameraTime    )){
     this->img_forearm_right.width       = width;
     this->img_forearm_right.height      = height;
     this->img_forearm_right.compression = compression;
@@ -1348,6 +1355,11 @@ RosGazeboNode::Update()
 
 
 	publish("transform",this->shutterMsg);
+  
+  // Publish info on the joints:
+  for(int i=0; i<PR2::MAX_JOINTS; i++)
+    RosControllerArray[i]->Update();
+  
   this->lock.unlock();
 }
 

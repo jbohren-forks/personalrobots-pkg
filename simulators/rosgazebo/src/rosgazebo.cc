@@ -45,12 +45,17 @@
 
 #include <RosGazeboNode/RosGazeboNode.h>
 
+// Information nodes about the joints
+#include <rosControllers/RosJointController.h>
+using controller::RosJointController;
 //Joint defaults
 #define DEFAULTJOINTMAX 1
 #define DEFAULTJOINTMIN -1
 
  pthread_mutex_t simMutex; //Mutex for sim R/W
 mechanism::Joint* JointArray[PR2::MAX_JOINTS]; //Joint pointer array
+
+
 
 void finalize(int)
 {
@@ -67,12 +72,28 @@ void *nonRealtimeLoop(void *rgn)
   {
     pthread_mutex_lock(&simMutex); //Lock for r/w
     ((RosGazeboNode*)rgn)->Update();
+    
+    pthread_mutex_unlock(&simMutex); //Unlock when done
+    // some time out for publishing ros info
+    usleep(10000);
+  }
+}
+/*
+void *nonRealtimeLogLoop(void *rgn)
+{
+  std::cout << "Started nonRT Log loop" << std::endl;
+  while (1)
+  {
+    
+    pthread_mutex_lock(&simMutex); //Lock for r/w
+    RosJointController ** array=((RosJointController **)rgn);
+    
     pthread_mutex_unlock(&simMutex); //Unlock when done
     // some time out for publishing ros info
     usleep(10000);
   }
 
-}
+}*/
 
 int 
 main(int argc, char** argv)
@@ -179,6 +200,18 @@ main(int argc, char** argv)
   ControllerArray[PR2::ARM_L_WRIST_ROLL]->init(0.5,0,0,500,-500, controller::CONTROLLER_POSITION,time,100,-100,JointArray[PR2::ARM_L_WRIST_ROLL]);
 
   
+  
+  
+  RosJointController * RosControllerArray[PR2::MAX_JOINTS];
+  for(int i = 0;i<PR2::MAX_JOINTS;i++){
+    RosControllerArray[i] = new controller::RosJointController(""); //Initialize dummy controller
+  }
+  //TODO: use name server to actually initialize the rjc with the proper names
+  // This is testing code only...
+  delete RosControllerArray[PR2::ARM_L_PAN];
+  RosControllerArray[PR2::ARM_L_PAN] = new RosJointController("ARM_L_PAN");
+  
+  
 //  ControllerArray[PR2::ARM_L_WRIST_ROLL]->capAccel = true;
 //  ControllerArray[PR2::ARM_L_WRIST_ROLL]->maxAccel = 0.5;
 //  std::cout<<"Arm check:"<< ControllerArray[PR2::ARM_L_SHOULDER_PITCH]->GetMode()<<std::endl;
@@ -224,7 +257,7 @@ main(int argc, char** argv)
   /*                                                                                     */
   /***************************************************************************************/
   printf("Creating node \n");
-  RosGazeboNode rgn(argc,argv,argv[1],myPR2,&myArm,&myHead,&mySpine,&myBase,&myLaserScanner,&myGripper,ControllerArray);
+  RosGazeboNode rgn(argc,argv,argv[1],myPR2,&myArm,&myHead,&mySpine,&myBase,&myLaserScanner,&myGripper,ControllerArray, RosControllerArray);
 
   /***************************************************************************************/
   /*                                                                                     */
@@ -235,6 +268,11 @@ main(int argc, char** argv)
   signal(SIGQUIT, (&finalize));
   signal(SIGTERM, (&finalize));
 
+  //The initialization require a pointer to the publishing ros node
+  //TODO: there is a static variable in the ros node which can ba accessed, use it
+  for(int i=0; i<PR2::MAX_JOINTS; i++)
+    RosControllerArray[i]->init(ControllerArray[i], &rgn);
+  
   // see if we can subscribe models needed
   if (rgn.AdvertiseSubscribeMessages() != 0)
     exit(-1);
@@ -252,6 +290,7 @@ main(int argc, char** argv)
     exit(-1);
   }
 
+    
   /***************************************************************************************/
   /*                                                                                     */
   /*      RealTime loop using Gazebo ClientWait function call                            */
@@ -291,7 +330,8 @@ main(int argc, char** argv)
     double cmdvel;
       ControllerArray[PR2::ARM_L_WRIST_ROLL]->getVelAct(&cmdvel);
       ControllerArray[PR2::ARM_L_WRIST_ROLL]->getPosAct(&pos);
-      std::cout<<pos<<" "<<cmdvel<<std::endl;
+//       std::cout<<pos<<" "<<cmdvel<<std::endl;
+      
 //      std::cout<<"Mode:"<<ControllerArray[PR2::ARM_L_PAN]->GetMode()<<std::endl;
 
 //   std::cout<<"*"<<torque<<std::endl;

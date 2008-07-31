@@ -22,6 +22,7 @@
   <depend package="hw_interface" />
   <depend package="gazebo_hardware" />
   <depend package="gazebo_sensors" />
+  <depend package="rosControllers" />
   <export>
 		<cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lRosGazeboNode"/>
   </export>

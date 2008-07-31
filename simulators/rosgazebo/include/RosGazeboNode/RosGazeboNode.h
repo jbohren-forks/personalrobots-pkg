@@ -34,6 +34,7 @@
 #include <pr2Controllers/BaseController.h>
 #include <pr2Controllers/LaserScannerController.h>
 #include <pr2Controllers/GripperController.h>
+#include <rosControllers/RosJointController.h>
 
 #include "ringbuffer.h"
 #include "mechanism_model/joint.h"
@@ -138,7 +139,8 @@ class RosGazeboNode : public ros::node
          controller::BaseController         *myBase,
          controller::LaserScannerController *myLaserScanner,
          controller::GripperController      *myGripper,
-         controller::JointController** ControllerArray
+         controller::JointController** ControllerArray,
+         controller::RosJointController ** RosControllerArray
          );
 
     // advertise / subscribe models
@@ -206,6 +208,8 @@ class RosGazeboNode : public ros::node
 
     //Keep track of controllers
     controller::JointController** ControllerArray;
+
+    controller::RosJointController ** RosControllerArray;
 };
 
 
