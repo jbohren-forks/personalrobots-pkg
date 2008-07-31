@@ -88,7 +88,9 @@ Provides (name/type):
 
 #include <urdf/URDF.h>
 #include <collision_space/environmentODE.h>
-#include <ompl/extension/samplingbased/kinematic/extension/rrt/LazyRRT.h>
+#include <ompl/extension/samplingbased/kinematic/extension/rrt/RRT.h>
+
+#include "SpaceInformationXMLModel.h"
 
 #include <vector>
 #include <string>
@@ -120,7 +122,7 @@ public:
 	m_collisionSpace->unlock();
 	
 	// temp obstacle
-	double sphere[6] = {0.8,0.2,0.4};    
+	double sphere[6] = {2.8,0.2,0.4};    
 	m_collisionSpace->addPointCloud(1, sphere, 0.15);
 	
 #ifdef DISPLAY_ODE_SPACES
@@ -215,9 +217,12 @@ public:
 	    return false;
 
 	/* set the workspace volume for planning */
-	static_cast<SpaceInformationNode*>(p.si)->setPlanningVolume(req.volumeMin.x, req.volumeMin.y, req.volumeMin.z,
-								    req.volumeMax.x, req.volumeMax.y, req.volumeMax.z);
-	
+	// only area or volume should go through... not sure what happens on really complicated models where 
+	// we have both multiple planar and multiple floating joints...
+	static_cast<SpaceInformationXMLModel*>(p.si)->setPlanningArea(req.volumeMin.x, req.volumeMin.y,
+								      req.volumeMax.x, req.volumeMax.y);
+	static_cast<SpaceInformationXMLModel*>(p.si)->setPlanningVolume(req.volumeMin.x, req.volumeMin.y, req.volumeMin.z,
+									req.volumeMax.x, req.volumeMax.y, req.volumeMax.z);
 	
 	/* set the starting state */
 	ompl::SpaceInformationKinematic::StateKinematic_t start = new ompl::SpaceInformationKinematic::StateKinematic(dim);
@@ -385,56 +390,7 @@ private:
 	planning_models::KinematicModel   *kmodel;
 	int                                groupID;	
     };
-    
-    class SpaceInformationNode : public ompl::SpaceInformationKinematic
-    {
-    public:
-	SpaceInformationNode(Model *model) : SpaceInformationKinematic()
-	{
-	    m_m = model;
-	    m_divisions = 20.0;
-	    
-	    m_stateDimension = m_m->groupID >= 0 ? m_m->kmodel->groupStateIndexList[m_m->groupID].size() : m_m->kmodel->stateDimension;
-	    m_stateComponent.resize(m_stateDimension);
-	    
-	    for (unsigned int i = 0 ; i < m_stateDimension ; ++i)
-	    {	
-		m_stateComponent[i].type       = StateComponent::NORMAL;
-		unsigned int p = m_m->groupID >= 0 ? m_m->kmodel->groupStateIndexList[m_m->groupID][i] * 2 : i * 2;
-		m_stateComponent[i].minValue   = m_m->kmodel->stateBounds[p    ];
-		m_stateComponent[i].maxValue   = m_m->kmodel->stateBounds[p + 1];
-		m_stateComponent[i].resolution = (m_stateComponent[i].maxValue - m_stateComponent[i].minValue) / m_divisions;
-	    }
-	}
-
-	virtual ~SpaceInformationNode(void)
-	{
-	}
-
-	void setPlanningVolume(double x0, double y0, double z0, double x1, double y1, double z1)
-	{
-	    if (m_m->groupID < 0)
-		for (unsigned int i = 0 ; i < m_m->kmodel->floatingJoints.size() ; ++i)
-		{
-		    int id = m_m->kmodel->floatingJoints[i];		
-		    m_stateComponent[id    ].minValue = x0;
-		    m_stateComponent[id    ].maxValue = x1;
-		    m_stateComponent[id + 1].minValue = y0;
-		    m_stateComponent[id + 1].maxValue = y1;
-		    m_stateComponent[id + 2].minValue = z0;
-		    m_stateComponent[id + 2].maxValue = z1;
-		    for (int j = 0 ; j < 3 ; ++j)
-			m_stateComponent[j + id].resolution = (m_stateComponent[j + id].maxValue - m_stateComponent[j + id].minValue) / m_divisions;
-		}
-	}
-	
-    protected:
-	
-	double  m_divisions;	
-	Model  *m_m;
-	
-    };    
-	
+    	
     std_msgs::PointCloudFloat32        m_cloud;
     collision_space::EnvironmentModel *m_collisionSpace;    
     std::map<std::string, Model*>      m_models;
@@ -452,9 +408,9 @@ private:
     void createMotionPlanningInstances(Model* model)
     {
 	Planner p;
-	p.si   = new SpaceInformationNode(model);
+	p.si   = new SpaceInformationXMLModel(model->kmodel, model->groupID);
 	p.si->setStateValidFn(isStateValid, reinterpret_cast<void*>(model));
-	p.mp   = new ompl::LazyRRT(p.si);
+	p.mp   = new ompl::RRT(p.si);
 	p.type = 0;	
 	model->planners.push_back(p);
     }

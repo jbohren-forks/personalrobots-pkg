@@ -34,6 +34,7 @@
 
 #include <planning_models/kinematic.h>
 #include <cstdio>
+#include <cmath>
 
 void planning_models::KinematicModel::Robot::computeTransforms(const double *params, int groupID)
 {
@@ -81,8 +82,13 @@ void planning_models::KinematicModel::Joint::computeTransform(const double *para
 		varTrans.setPosition(dx, dy, dz);
 	    }
 	    break;
+	case Joint::PLANAR:
+	    varTrans.setPosition(params[0], params[1], 0.0);
+	    varTrans.setAxisAngle(0.0, 0.0, 1.0, params[2]);
+	    break;
 	case Joint::FLOATING:
 	    varTrans.setPosition(params[0], params[1], params[2]);
+	    varTrans.setQuaternion(params[3], params[4], params[5], params[6]);
 	    break;
 	default:
 	    break;
@@ -182,6 +188,10 @@ void planning_models::KinematicModel::build(robot_desc::URDF &model, const char 
 	/* copy floating joints*/
 	for (unsigned int j = 0 ; j < m_robots[i]->floatingJoints.size() ; ++j)
 	    floatingJoints.push_back(stateDimension + m_robots[i]->floatingJoints[j]);
+
+	/* copy planar joints*/
+	for (unsigned int j = 0 ; j < m_robots[i]->planarJoints.size() ; ++j)
+	    planarJoints.push_back(stateDimension + m_robots[i]->planarJoints[j]);
 	
 	/* copy group roots */
 	for (unsigned int j = 0 ; j < m_robots[i]->groupChainStart.size() ; ++j)
@@ -235,9 +245,17 @@ void planning_models::KinematicModel::buildChainJ(Robot *robot, Link *parent, Jo
     {
     case robot_desc::URDF::Link::Joint::FLOATING:
 	joint->type = Joint::FLOATING;
-	joint->usedParams = 3;
-	robot->stateBounds.insert(robot->stateBounds.end(), 6, 0.0);
+	joint->usedParams = 7;
+	robot->stateBounds.insert(robot->stateBounds.end(), 14, 0.0);
 	robot->floatingJoints.push_back(robot->stateDimension);
+	break;
+    case robot_desc::URDF::Link::Joint::PLANAR:
+	joint->type = Joint::PLANAR;
+	joint->usedParams = 3;
+	robot->stateBounds.insert(robot->stateBounds.end(), 4, 0.0);
+	robot->stateBounds.push_back(-M_PI);
+	robot->stateBounds.push_back(M_PI);
+	robot->planarJoints.push_back(robot->stateDimension);
 	break;
     case robot_desc::URDF::Link::Joint::FIXED:
 	joint->type = Joint::FIXED; 
@@ -296,6 +314,7 @@ void planning_models::KinematicModel::buildChainJ(Robot *robot, Link *parent, Jo
 
 void planning_models::KinematicModel::buildChainL(Robot *robot, Joint *parent, Link* link, robot_desc::URDF::Link* urdfLink, robot_desc::URDF &model)
 {
+    link->name = urdfLink->name;
     link->before = parent;
     robot->links.push_back(link);
     

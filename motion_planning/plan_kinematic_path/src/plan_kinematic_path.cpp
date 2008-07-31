@@ -48,7 +48,7 @@ public:
 	robot_srvs::KinematicMotionPlan::request  req;
 	robot_srvs::KinematicMotionPlan::response res;
 	
-	req.model_id = "pr2::base+rightArm";
+	req.model_id = "pr2::rightArm";
 	
 	req.start_state.set_vals_size(32);
 	for (unsigned int i = 0 ; i < req.start_state.vals_size ; ++i)
@@ -57,14 +57,14 @@ public:
 	for (unsigned int i = 18 ; i < 25 ; ++i)
 	    req.start_state.vals[i] = 0.1;
 	
-	req.goal_state.set_vals_size(11);
+	req.goal_state.set_vals_size(7);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
 	    req.goal_state.vals[i] = -0.4;
 	
 	req.allowed_time = 15.0;
 	
 	req.volumeMin.x = -1.0;	req.volumeMin.y = -1.0;	req.volumeMin.z = -1.0;
-	req.volumeMax.x = -1.0;	req.volumeMax.y = -1.0;	req.volumeMax.z = -1.0;
+	req.volumeMax.x = 1.0;	req.volumeMax.y = 1.0;	req.volumeMax.z = 1.0;
 	
 	if (ros::service::call("plan_kinematic_path", req, res))
 	{

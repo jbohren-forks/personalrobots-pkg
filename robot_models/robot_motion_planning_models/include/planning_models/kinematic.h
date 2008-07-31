@@ -107,7 +107,7 @@ namespace planning_models
 	    /* relevant joint information */
 	    enum
 		{
-		    UNKNOWN, FIXED, REVOLUTE, PRISMATIC, FLOATING
+		    UNKNOWN, FIXED, REVOLUTE, PRISMATIC, PLANAR, FLOATING
 		}         type;
 	    double        axis[3];
 	    double        anchor[3];
@@ -141,6 +141,9 @@ namespace planning_models
 		for (unsigned int i = 0 ; i < after.size() ; ++i)
 		    delete after[i];
 	    }
+
+	    /** Name of the link */
+	    std::string         name;
 	    
 	    /** Joint that connects this link to the parent link */
 	    Joint              *before;
@@ -209,6 +212,12 @@ namespace planning_models
 		planning, so the indices are provided here for
 		convenience. */
 	    std::vector<int>    floatingJoints;
+
+	    /** The list of index values where planar joints
+		start. These joints need special attention in motion
+		planning, so the indices are provided here for
+		convenience. */
+	    std::vector<int>    planarJoints;
 	    
 	    /* For each group, we have a list of index values in the
 	     * computed state information that describe the components of
@@ -254,6 +263,9 @@ namespace planning_models
 	
 	/** Cumulative list of floating joints */
 	std::vector<int>    floatingJoints;
+
+	/** Cumulative list of planar joints */
+	std::vector<int>    planarJoints;
 	
 	/** Cumulative state dimension */
 	unsigned int        stateDimension;
@@ -277,8 +289,13 @@ namespace planning_models
 	
     private:
 	
+	/** Build the needed datastructure for a joint */
 	void buildChainJ(Robot *robot, Link  *parent, Joint *joint, robot_desc::URDF::Link *urdfLink, robot_desc::URDF &model);
+
+	/** Build the needed datastructure for a link */
 	void buildChainL(Robot *robot, Joint *parent, Link  *link,  robot_desc::URDF::Link *urdfLink, robot_desc::URDF &model);
+
+	/** Construct the list of groups the model knows about (the ones marked with the 'plan' attribute) */
 	void constructGroupList(robot_desc::URDF &model);
 	
     };
