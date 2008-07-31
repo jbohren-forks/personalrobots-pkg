@@ -105,6 +105,10 @@ Reads the following parameters from the parameter server
 #include "std_msgs/PointCloudFloat32.h"
 #include "std_msgs/LaserImage.h"
 #include "std_msgs/Actuator.h"
+
+//Laser projection
+#include "laser_scan_utils/laser_scan.h"
+
 #include "math.h"
 
 using namespace std_msgs;
@@ -114,6 +118,7 @@ class Tilting_Laser : public ros::node
 public:
 
   rosTFClient tf;
+  laser_scan::LaserProjection projector;
 
   PointCloudFloat32 cloud;
   Empty shutter;
@@ -244,12 +249,14 @@ public:
     {
       img_dir = 1;
       img_ind = 0;
+      full_cloud_cnt = 0;
     }
 
     if (ang > min_ang && last_ang < min_ang)
     {
       img_dir = -1;
       img_ind = 0;
+      full_cloud_cnt = 0;
     }
 
     last_ang = ang;
@@ -269,6 +276,32 @@ public:
 
       int cnt = 0;
 
+      std_msgs::PointCloudFloat32 temp_cloud;
+      projector.projectLaser(scans, temp_cloud);
+      cloud = tf.transformPointCloud("FRAMEID_TILT_BASE", temp_cloud);
+      
+
+      
+      //Populate full_cloud from the cloud
+      for(unsigned int i = 0; i < cloud.pts_size; i ++)
+        {
+          full_cloud.pts[full_cloud_cnt].x = cloud.pts[i].x;  
+          full_cloud.pts[full_cloud_cnt].y = cloud.pts[i].y;  
+          full_cloud.pts[full_cloud_cnt].z = cloud.pts[i].z;  
+          full_cloud.chan[0].vals[full_cloud_cnt] = cloud.chan[0].vals[i];
+          full_cloud_cnt++;
+        }
+
+      //Populate the laser_image from the scan
+      for (unsigned int i = 0; i < scans.intensities_size; i ++)
+        {
+          *(unsigned short*)(&(image.intensity_img.data[ind * 2 * image.intensity_img.width + image.intensity_img.width * 2 - 2 - 2*i])) = scans.intensities[i];
+          *(unsigned short*)(&(image.range_img.data[ind * 2 * image.range_img.width + image.range_img.width * 2 - 2 - 2*i])) = scans.ranges[i] * 1000.0;
+          image.horiz_angles[i] = scans.angle_min + i*scans.angle_increment;
+        }  
+
+      
+        /* REPLACED BY ABOVE
       for (uint32_t i = 0; i < scans.get_ranges_size(); i++) {
         bool valid = false;
         if (scans.ranges[i] < scans.range_max && scans.ranges[i] > scans.range_min)
@@ -309,7 +342,7 @@ public:
 	*(unsigned short*)(&(image.range_img.data[ind * 2 * image.range_img.width + image.range_img.width * 2 - 2 - 2*i])) = scans.ranges[i] * 1000.0;
 	image.horiz_angles[i] = scans.angle_min + i*scans.angle_increment;
       }
-
+        */
       image.vert_angles[ind] = ang;
       cloud.set_pts_size(cnt);
       cloud.chan[0].set_vals_size(cnt);
