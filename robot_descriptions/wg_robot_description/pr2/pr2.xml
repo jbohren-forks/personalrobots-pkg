@@ -405,6 +405,7 @@
       <geometry type="box">
         <size>gripper_roll_size_x gripper_roll_size_y gripper_roll_size_z </size>
       </geometry>
+      <verbose>Yes</verbose>
     </define> 
 
     <define template="pr2_gripper_roll_visual">

@@ -125,6 +125,9 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
     currentTransform.multiplyPose(localTransform);
     addTransform(elem, currentTransform);
     
+    if (link->collision->verbose)
+	addKeyValue(elem, "reportStaticCollision", "true");
+    
     /* create geometry node */
     TiXmlElement *geom     = new TiXmlElement("geom:" + type);
     
