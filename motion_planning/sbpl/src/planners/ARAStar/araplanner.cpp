@@ -984,7 +984,7 @@ int ARAPlanner::replan(double allocated_time_secs, vector<int>* solution_stateID
     }
 
     //plan for the first solution only
-    if((bFound = Search(pSearchStateSpace, pathIds, PathCost, false, false, allocated_time_secs)) == false) 
+    if((bFound = Search(pSearchStateSpace, *solution_stateIDs_V, PathCost, false, false, allocated_time_secs)) == false) 
     {
         printf("failed to find a solution\n");
     }

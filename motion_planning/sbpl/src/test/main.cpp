@@ -26,6 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
+#include <iostream>
+
 #include "../headers.h"
 
 //clock_t time3_addallout = 0;
@@ -74,6 +77,11 @@ int main(int argc, char *argv[])
 	ARAPlanner ara_planner(&environment_nav2D, &MDPCfg);
 	bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
 
+	std::cout << "Size " << solution_stateIDs_V.size() << std::endl;
+
+	for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
+	  environment_nav2D.PrintState(solution_stateIDs_V[i], true, NULL);
+	}
 
 	//print a path
 	if(bRet)

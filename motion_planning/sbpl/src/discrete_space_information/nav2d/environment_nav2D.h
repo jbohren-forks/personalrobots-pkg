@@ -102,8 +102,18 @@ public:
 	void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
 	void PrintEnv_Config(FILE* fOut);
 
+	void SetConfiguration(int width, int height,
+			      char* mapdata,
+			      int startx, int starty,
+			      int goalx, int goaly);
+	
+	bool InitGeneral();
 
-private:
+	void GetCoordFromState(int stateID, int& x, int& y);
+
+	const EnvNAV2DConfig_t* GetEnvNavConfig();
+	
+ private:
 
 	//member data
 	EnvNAV2DConfig_t EnvNAV2DCfg;

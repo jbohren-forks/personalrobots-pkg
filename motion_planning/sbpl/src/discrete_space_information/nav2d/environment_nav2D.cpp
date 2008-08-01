@@ -90,6 +90,45 @@ void EnvironmentNAV2D::PrintHashTableHist()
 		s0,s1, s50, s100, s200,s300,slarge);
 }
 
+void EnvironmentNAV2D::SetConfiguration(int width, int height,
+					char* mapdata,
+					int startx, int starty,
+					int goalx, int goaly) {
+  EnvNAV2DCfg.EnvWidth_c = width;
+  EnvNAV2DCfg.EnvHeight_c = height;
+  EnvNAV2DCfg.StartX_c = startx;
+  EnvNAV2DCfg.StartY_c = starty;
+ 
+  if(EnvNAV2DCfg.StartX_c < 0 || EnvNAV2DCfg.StartX_c >= EnvNAV2DCfg.EnvWidth_c) {
+    printf("ERROR: illegal start coordinates\n");
+    exit(1);
+  }
+  if(EnvNAV2DCfg.StartY_c < 0 || EnvNAV2DCfg.StartY_c >= EnvNAV2DCfg.EnvHeight_c) {
+    printf("ERROR: illegal start coordinates\n");
+    exit(1);
+  }
+  
+  EnvNAV2DCfg.EndX_c = goalx;
+  EnvNAV2DCfg.EndY_c = goaly;
+
+  //allocate the 2D environment
+  EnvNAV2DCfg.Grid2D = new char* [EnvNAV2DCfg.EnvWidth_c];
+  for (int x = 0; x < EnvNAV2DCfg.EnvWidth_c; x++) {
+    EnvNAV2DCfg.Grid2D[x] = new char [EnvNAV2DCfg.EnvHeight_c];
+  }
+  
+  //environment:
+  for (int y = 0; y < EnvNAV2DCfg.EnvHeight_c; y++) {
+    for (int x = 0; x < EnvNAV2DCfg.EnvWidth_c; x++) {
+      char cval = mapdata[x+y*width];
+      if(cval == 1) {
+	EnvNAV2DCfg.Grid2D[x][y] = 1;
+      } else {
+	EnvNAV2DCfg.Grid2D[x][y] = 0;
+      }
+    }
+  }
+}
 
 void EnvironmentNAV2D::ReadConfiguration(FILE* fCfg)
 {
@@ -339,18 +378,21 @@ bool EnvironmentNAV2D::InitializeEnv(char* sEnvFile)
 	}
 	ReadConfiguration(fCfg);
 
-	//Initialize other parameters of the environment
-	InitializeEnvConfig();
-
-	//initialize Environment
-	InitializeEnvironment();
-
-	//pre-compute heuristics
-	ComputeHeuristicValues();
+	InitGeneral();
 
 	return true;
 }
 
+bool EnvironmentNAV2D::InitGeneral() {
+  //Initialize other parameters of the environment
+  InitializeEnvConfig();
+  
+  //initialize Environment
+  InitializeEnvironment();
+  
+  //pre-compute heuristics
+  ComputeHeuristicValues();
+}
 
 bool EnvironmentNAV2D::InitializeMDPCfg(MDPConfig *MDPCfg)
 {
@@ -601,6 +643,15 @@ void EnvironmentNAV2D::PrintState(int stateID, bool bVerbose, FILE* fOut /*=NULL
 
 }
 
+void EnvironmentNAV2D::GetCoordFromState(int stateID, int& x, int& y) {
+  EnvNAV2DHashEntry_t* HashEntry = EnvNAV2D.StateID2CoordTable[stateID];
+  x = HashEntry->X;
+  y = HashEntry->Y;
+}
+
+const EnvNAV2DConfig_t* EnvironmentNAV2D::GetEnvNavConfig() {
+  return &EnvNAV2DCfg;
+}
 
 void EnvironmentNAV2D::PrintEnv_Config(FILE* fOut)
 {
