@@ -8,14 +8,15 @@ import time
 import numpy as np
 import opencv as cv
 import opencv.highgui as hg
+import Image as PImage
 
-def to_cv(image, cv_image=None):
-    print 'image.colorspace', image.colorspace
-    print 'image.label     ', image.label
-    if cv_image == None:
-        cv_image = cv.cvCreateImage(cv.cvSize(image.width, image.height), 8, 1)
-    cv_image.imageData = image.data
-    return cv_image
+def to_cv(image):
+    pil_image = PImage.fromstring( "RGB", (image.width, image.height), image.data)
+    t = time.time()
+    pil_image.save('ros_test.bmp', 'BMP')
+    cvim = hg.cvLoadImage('ros_test.bmp')
+    print time.time() - t
+    return cvim
 
 def print_data(image):
     for i in range(10):
@@ -38,9 +39,11 @@ def callback_array(iar):
     hg.cvWaitKey(5)
 
 def callback_image(im):
+    t = time.time()
     cvim = to_cv(im)
     hg.cvShowImage('left', cvim)
     hg.cvWaitKey(5)
+    print 'total', time.time() - t
 
 hg.cvNamedWindow('left', 1)
 rospy.TopicSub('images', Image, callback_image)
