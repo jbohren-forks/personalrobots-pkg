@@ -472,11 +472,11 @@ RosGazeboNode::Update()
   /*  laser - pitching                                           */
   /*                                                             */
   /***************************************************************/
-/*  if (this->PR2Copy->hw.GetLaserRanges(PR2::LASER_HEAD,
+  if (this->PR2Copy->hw.GetLaserRanges(PR2::LASER_HEAD,
                 &angle_min, &angle_max, &angle_increment,
                 &range_max, &ranges_size     , &ranges_alloc_size,
                 &intensities_size, &intensities_alloc_size,
-                this->ranges     , this->intensities, &tiltLaserTime) == PR2::PR2_ALL_OK)*/if(false)
+                this->ranges     , this->intensities, &tiltLaserTime) == PR2::PR2_ALL_OK)
   {
     for(unsigned int i=0;i<ranges_size;i++)
     {
@@ -570,11 +570,11 @@ RosGazeboNode::Update()
   /*  laser - base                                               */
   /*                                                             */
   /***************************************************************/
-/*  if (this->PR2Copy->hw.GetLaserRanges(PR2::LASER_BASE,
+  if (this->PR2Copy->hw.GetLaserRanges(PR2::LASER_BASE,
                 &angle_min, &angle_max, &angle_increment,
                 &range_max, &ranges_size     , &ranges_alloc_size,
                 &intensities_size, &intensities_alloc_size,
-                this->ranges     , this->intensities, &baseLaserTime) == PR2::PR2_ALL_OK)*/ if(false)
+                this->ranges     , this->intensities, &baseLaserTime) == PR2::PR2_ALL_OK)
   {
     // Get latest laser data
     this->laserMsg.angle_min       = angle_min;
@@ -679,11 +679,11 @@ RosGazeboNode::Update()
 
   //this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_GLOBAL,
   // ----------------------- get image ----------------------------
-  /*if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_HEAD_RIGHT,
+  if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_HEAD_RIGHT,
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_ptz_right         , &cameraTime)) */if(false){
+          &buf_size        ,         buf_ptz_right         , &cameraTime)) {
     this->img_ptz_right.width       = width;
     this->img_ptz_right.height      = height;
     this->img_ptz_right.compression = compression;
@@ -705,11 +705,11 @@ RosGazeboNode::Update()
     }
   }
   // ----------------------- get image ----------------------------
-  /*if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_HEAD_LEFT,
+  if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_HEAD_LEFT,
           &width           ,         &height               ,
           &depth           ,
           &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_ptz_left          , &cameraTime))*/if(false) {
+          &buf_size        ,         buf_ptz_left          , &cameraTime)) {
     this->img_ptz_left .width       = width;
     this->img_ptz_left .height      = height;
     this->img_ptz_left .compression = compression;
