@@ -91,6 +91,7 @@ main(int argc, char** argv)
 #endif
 
   ros::init(argc,argv);
+  std::cout<<"Ros has initialized"<<std::endl;
 
   /***************************************************************************************/
   /*                                                                                     */
@@ -104,7 +105,9 @@ main(int argc, char** argv)
   /*   hardware info, eventually retrieve from param server (from xml files)             */
   /*                                                                                     */
   /***************************************************************************************/
-  int numBoards    = 4;                 // 0 for head and 1 for arms, see pr2.model:Pr2_Actarray for now
+
+
+  int numBoards    = 5;                 // 0 for head and 1 for arms, see pr2.model:Pr2_Actarray for now
   int numActuators = PR2::MAX_JOINTS-2; // total number of actuators for both boards, last 2 in pr2Core (BASE_6DOF and PR2_WORLD don't count)
 
   int boardLookUp[] ={0,0,0,                   // head pitch, yaw, hokuyo pitch
@@ -184,13 +187,17 @@ main(int argc, char** argv)
   /***************************************************************************************/
   // mapping between actuators in h and actuators in hi defined by boardLookUp, portLookUp and jointId
   GazeboHardware         hardware(numBoards,numActuators, boardLookUp, portLookUp, jointId, etherIP, hostIP);
+
+  hardware.init(); //UPDATE
+  std::cout<<"Finished creating GazeboHardware"<<std::endl;
   // MechanismControl
   GazeboMechanismControl mechanismControl;
+  std::cout<<"Created mechanism Control"<<std::endl;
   mechanismControl.init(hardware.hardwareInterface); // pass hardware interface to mechanism control
-
+  std::cout<<"Done with mechanism control init"<<std::endl;
 
   // initialize inidividual controllers
-  mechanismControl.baseController->setVelocity(0,0,0);
+ // mechanismControl.baseController->setVelocity(0,0,0);
   //mechanismControl.leftArmController->setVelocity(0,0,0);
   //mechanismControl.rightArmController->setVelocity(0,0,0);
   //mechanismControl.headArmController->setVelocity(0,0,0);
@@ -264,10 +271,14 @@ main(int argc, char** argv)
     //   and skip update if locked by nonRT loop.
 
     // get encoder counts from hardware
+   
+
     hardware.updateState();
 
     // update mechanism control
     mechanismControl.update();
+
+    hardware.sendCommand(); //UPDATE
 
     // wait for Gazebo time step, fix Wait() call or else...
     //myPR2->hw.ClientWait();
