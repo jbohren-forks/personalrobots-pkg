@@ -333,6 +333,9 @@ namespace robot_desc
 		    delete joint;
 	    }
             
+	    bool insideGroup(Group *group) const;
+	    bool insideGroup(const std::string &group) const;
+	    
 	    virtual bool canSense(void) const;
 	    virtual void print(FILE *out = stdout, std::string indent = "") const;
             

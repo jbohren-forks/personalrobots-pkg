@@ -391,6 +391,22 @@ namespace robot_desc {
 	return true;
     }
     
+    bool URDF::Link::insideGroup(Group *group) const
+    {
+	for (unsigned int i = 0 ; i < groups.size() ; ++i)
+	    if (groups[i] == group)
+		return true;
+	return false;
+    }
+
+    bool URDF::Link::insideGroup(const std::string &group) const
+    {
+	for (unsigned int i = 0 ; i < groups.size() ; ++i)
+	    if (groups[i]->name == group)
+		return true;
+	return false;
+    }
+    
     bool URDF::Group::hasFlag(const std::string &flag) const
     {
 	for (unsigned int i = 0 ; i < flags.size() ; ++i)
