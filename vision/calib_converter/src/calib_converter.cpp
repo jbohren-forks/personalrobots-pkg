@@ -13,13 +13,6 @@
 
 using namespace std;
 
-template <class T>
-void copyMsg(string name, ros::msg* m, ros::Time t, void* n)
-{
-  if (m != 0) {
-    *((T*)(n)) = *((T*)(m));
-  }
-}
 
 void SplitFilename (const string& str, string *dir, string *file)
 {
@@ -29,6 +22,14 @@ void SplitFilename (const string& str, string *dir, string *file)
   *dir = str.substr(0,found);
 }
 
+template <class T>
+void copyMsg(string name, ros::msg* m, ros::Time t, void* n)
+{
+  if (m != 0) {
+    *((T*)(n)) = *((T*)(m));
+  }
+}
+  
 
 struct imgData
 {
@@ -42,15 +43,20 @@ class calib_converter
 {
 public:
   
-  std_msgs::ImageArray image_msg;
+
   ros::thread::mutex cv_mutex;  
   LogPlayer lp;
   map<string, imgData> images;
+  std_msgs::ImageArray image_msg;
   std_msgs::String calparams;
   std_msgs::PointCloudFloat32 cloud;
+  string fullname;
 
-  calib_converter(string fullname)
-  {
+  calib_converter(string bag) : fullname(bag)
+  {}
+
+
+  int run_conversion() {
 
     // -- Get the filenames to save to.
     string dir, filename;
@@ -66,10 +72,27 @@ public:
     lp.addHandler<std_msgs::String>(string("videre/cal_params"), &copyMsg<std_msgs::String>, (void*)(&calparams), true);
     lp.addHandler<std_msgs::PointCloudFloat32>(string("full_cloud"), &copyMsg<std_msgs::PointCloudFloat32>, (void*)(&cloud), true);
     while(lp.nextMsg());
-
+    
 
     // -- If we don't have all the expected messages, yell.
-
+    bool hasImages = false, hasPtcld = false, hasCalparams = false;
+    vector<string> names = lp.getNames();
+    for (unsigned int i=0; i<names.size(); i++) { 
+      if(names[i].compare("videre/images") == 0) {
+	hasImages = true;
+      }
+      else if(names[i].compare("videre/cal_params") == 0) {
+	hasCalparams = true;
+      }
+      else if(names[i].compare("full_cloud") == 0) {
+	hasPtcld = true;
+      }
+    }
+    if(!hasImages || !hasPtcld || !hasCalparams) {
+      cerr << fullname << " does not have the required message types!" << endl;
+      return 1;
+    }
+    
    
     // -- Save the camera calibration information file.
     string outputname = outputdir + string("/") + num + string("-cal_params.txt");
@@ -111,7 +134,7 @@ public:
 
       // -- Make sure we've got the right image types.
       if(l.compare(string("left_rectified")) != 0 && l.compare(string("right_rectified")) != 0) {
-	cerr << "This bag file has something other than a left and right rectified image in it!" << endl;
+	cerr << fullname << " has something other than a left and right rectified image in it!" << endl;
       }
 	
       // -- Save the image.
@@ -125,7 +148,7 @@ public:
 
     }
     cv_mutex.unlock();
-
+    return 0;
   }
 };
 
@@ -139,6 +162,7 @@ int main(int argc, char **argv) {
   for(int i=1; i<argc; i++) {
     string name = argv[i];
     calib_converter cc(name);
+    cc.run_conversion();
   }
 }
   
