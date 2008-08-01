@@ -1,0 +1,10 @@
+<package>
+  <description brief="Python Robotic Library">
+      This package provides conmmon functions for working with
+      opencv, numpy and python in the robotics domain.
+  </description>
+  <author>Hai Nguyen, Advait Jain, Charlie Kemp, Cressel Anderson</author>
+  <depend package="numpy" />
+  <depend package="pil" />
+</package>
+
