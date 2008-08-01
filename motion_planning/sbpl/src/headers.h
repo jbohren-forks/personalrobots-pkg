@@ -47,7 +47,7 @@ using namespace std;
 
 #include <stdlib.h> //have to go after the defines above
 
-#if MEM_CHECH == 1
+#if MEM_CHECK == 1
 #include <crtdbg.h>
 #endif
 

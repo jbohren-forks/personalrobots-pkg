@@ -32,6 +32,45 @@
 
 
 //-----------------------------------------------------------------------------------------------------
+
+ARAPlanner::ARAPlanner(DiscreteSpaceInformation* environment)
+{
+    environment_ = environment;
+    
+    finitial_eps = DEFAULT_INITIAL_EPS;
+    searchexpands = 0;
+    MaxMemoryCounter = 0;
+    
+    fDeb = fopen("debug.txt", "w");
+    
+    pSearchStateSpace_ = new ARASearchStateSpace_t;
+    
+    
+    //create the ARA planner
+    if(CreateSearchStateSpace(pSearchStateSpace_) != 1)
+        {
+            printf("ERROR: failed to create statespace\n");
+            return;
+        }
+    
+    //set the start and goal states
+    if(InitializeSearchStateSpace(pSearchStateSpace_) != 1)
+        {
+            printf("ERROR: failed to create statespace\n");
+            return;
+        }    
+}
+
+ARAPlanner::~ARAPlanner()
+{
+
+    //delete the statespace
+    DeleteSearchStateSpace(pSearchStateSpace_);
+
+
+}
+
+
 void ARAPlanner::Initialize_searchinfo(CMDPSTATE* state, ARASearchStateSpace_t* pSearchStateSpace)
 {
 
@@ -510,6 +549,8 @@ int ARAPlanner::CreateSearchStateSpace(ARASearchStateSpace_t* pSearchStateSpace)
 
 	searchexpands = 0;
 
+
+    pSearchStateSpace->bReinitializeSearchStateSpace = false;
 	
 	return 1;
 }
@@ -582,11 +623,12 @@ void ARAPlanner::ReInitializeSearchStateSpace(ARASearchStateSpace_t* pSearchStat
 	//key.key[1] = startstateinfo->h;
 	pSearchStateSpace->heap->insertheap(startstateinfo, key);
 
+    pSearchStateSpace->bReinitializeSearchStateSpace = false;
+
 }
 
 //very first initialization
-int ARAPlanner::InitializeSearchStateSpace(int SearchStartStateID, 
-						  ARASearchStateSpace_t* pSearchStateSpace)
+int ARAPlanner::InitializeSearchStateSpace(ARASearchStateSpace_t* pSearchStateSpace)
 {
 
 	if(pSearchStateSpace->heap->currentsize != 0 || 
@@ -600,14 +642,16 @@ int ARAPlanner::InitializeSearchStateSpace(int SearchStartStateID,
 	pSearchStateSpace->iteration = 0;
 	pSearchStateSpace->callnumber = 0;
 	pSearchStateSpace->bReevaluatefvals = false;
-	pSearchStateSpace->bEncounteredLinkState = false;
 
 
 	//create and set the search start state
 	pSearchStateSpace->searchgoalstate = NULL;
-	pSearchStateSpace->searchstartstate = GetState(SearchStartStateID, pSearchStateSpace);
-
+	//pSearchStateSpace->searchstartstate = GetState(SearchStartStateID, pSearchStateSpace);
+    pSearchStateSpace->searchstartstate = NULL;
 	
+
+    pSearchStateSpace->bReinitializeSearchStateSpace = true;
+
 	return 1;
 
 }
@@ -643,6 +687,8 @@ int ARAPlanner::SetSearchStartState(int SearchStartStateID, ARASearchStateSpace_
 {
 
 	pSearchStateSpace->searchstartstate = GetState(SearchStartStateID, pSearchStateSpace);
+
+    pSearchStateSpace->bReinitializeSearchStateSpace = true;
 
 	return 1;
 
@@ -841,8 +887,11 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 	fprintf(fDeb, "new search call (call number=%d)\n", pSearchStateSpace->callnumber);
 #endif
 
-	//re-initialize state space 
-	ReInitializeSearchStateSpace(pSearchStateSpace);
+    if(pSearchStateSpace->bReinitializeSearchStateSpace == true){
+        //re-initialize state space 
+        ReInitializeSearchStateSpace(pSearchStateSpace);
+    }
+
 
 	if(bOptimalSolution)
 	{
@@ -943,59 +992,88 @@ int ARAPlanner::replan(double allocated_time_secs, vector<int>* solution_stateID
     int PathCost = 0;
     bool bFound = false;
 	int ret = 0;
-	FILE* fPolicy = fopen("sol.txt","w");
-    ARASearchStateSpace_t* pSearchStateSpace = new ARASearchStateSpace_t;
-    int SearchStartStateID = 0;
-    int SearchGoalStateID = 0;
 
-
-#if ARA_SEARCH_FORWARD == 1
-    SearchStartStateID = MDPCfg_->startstateid;
-    SearchGoalStateID = MDPCfg_->goalstateid;
-#else
-    SearchStartStateID = MDPCfg_->goalstateid;
-    SearchGoalStateID = MDPCfg_->startstateid;
-#endif
-
-	//create the ARA planner
-    if(CreateSearchStateSpace(pSearchStateSpace) != 1)
-    {
-        printf("ERROR: failed to create statespace\n");
-        return 0;
-    }
-    
-    //set the start and goal states
-    if(InitializeSearchStateSpace(SearchStartStateID, pSearchStateSpace) != 1)
-    {
-        printf("ERROR: failed to create statespace\n");
-        return 0;
-    }
-
-    if(SetSearchStartState(SearchStartStateID, pSearchStateSpace) != 1)
-    {
-        printf("ERROR: failed to set search start state\n");
-        return 0;
-    }
-
-    if(SetSearchGoalState(SearchGoalStateID, pSearchStateSpace) != 1)
-    {
-        printf("ERROR: failed to set search goal state\n");
-        return 0;
-    }
 
     //plan for the first solution only
-    if((bFound = Search(pSearchStateSpace, *solution_stateIDs_V, PathCost, false, false, allocated_time_secs)) == false) 
+    if((bFound = Search(pSearchStateSpace_, pathIds, PathCost, true, false, allocated_time_secs)) == false) 
     {
         printf("failed to find a solution\n");
     }
 
-    //delete the statespace
-    DeleteSearchStateSpace(pSearchStateSpace);
 
 
 	return 1;
 
 }
+
+int ARAPlanner::set_goal(int goal_stateID)
+{
+
+#if ARA_SEARCH_FORWARD == 1
+
+    if(SetSearchGoalState(goal_stateID, pSearchStateSpace_) != 1)
+        {
+            printf("ERROR: failed to set search goal state\n");
+            return 0;
+        }
+#else
+
+    if(SetSearchStartState(goal_stateID, pSearchStateSpace_) != 1)
+        {
+            printf("ERROR: failed to set search start state\n");
+            return 0;
+        }
+#endif
+
+    return 1;
+}
+
+
+int ARAPlanner::set_start(int start_stateID)
+{
+
+#if ARA_SEARCH_FORWARD == 1
+
+    if(SetSearchStartState(start_stateID, pSearchStateSpace_) != 1)
+        {
+            printf("ERROR: failed to set search start state\n");
+            return 0;
+        }
+#else
+
+    if(SetSearchGoalState(start_stateID, pSearchStateSpace_) != 1)
+        {
+            printf("ERROR: failed to set search goal state\n");
+            return 0;
+        }
+#endif
+
+    return 1;
+
+}
+
+
+
+void ARAPlanner::costs_changed()
+{
+
+
+    pSearchStateSpace_->bReinitializeSearchStateSpace = true;
+
+
+}
+
+
+
+int ARAPlanner::force_planning_from_scratch()
+{
+
+    pSearchStateSpace_->bReinitializeSearchStateSpace = true;
+
+
+}
+
+
 
 //---------------------------------------------------------------------------------------------------------
 

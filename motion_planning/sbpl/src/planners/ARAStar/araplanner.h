@@ -96,7 +96,8 @@ typedef struct ARASEARCHSTATESPACE
 	CMDP searchMDP;
 
 	bool bReevaluatefvals;
-	bool bEncounteredLinkState;
+    bool bReinitializeSearchStateSpace;
+
 } ARASearchStateSpace_t;
 
 
@@ -108,20 +109,16 @@ class ARAPlanner : public SBPLPlanner
 public:
 	int replan(double allocated_time_secs, vector<int>* solution_stateIDs_V);
 
-	//constructors
-	ARAPlanner(DiscreteSpaceInformation* environment, MDPConfig* MDP_cfg)
-	{
-		environment_ = environment;
-		MDPCfg_ = MDP_cfg;
-
-		finitial_eps = DEFAULT_INITIAL_EPS;
-		searchexpands = 0;
-		MaxMemoryCounter = 0;
-
-		fDeb = fopen("debug.txt", "w");
+    int set_goal(int goal_stateID);
+    int set_start(int start_stateID);
+    void costs_changed();
+    int force_planning_from_scratch(); 
 
 
-	};
+	//constructors & destructors
+    ARAPlanner(DiscreteSpaceInformation* environment);
+    ~ARAPlanner();
+
 
 
 private:
@@ -129,6 +126,8 @@ private:
 	//member variables
 	double finitial_eps;
 	MDPConfig* MDPCfg_;
+
+    ARASearchStateSpace_t* pSearchStateSpace_;
 
 	unsigned int searchexpands;
 	int MaxMemoryCounter;
@@ -190,8 +189,7 @@ private:
 	void ReInitializeSearchStateSpace(ARASearchStateSpace_t* pSearchStateSpace);
 
 	//very first initialization
-	int InitializeSearchStateSpace(int SearchStartStateID, 
-							  ARASearchStateSpace_t* pSearchStateSpace);
+	int InitializeSearchStateSpace(ARASearchStateSpace_t* pSearchStateSpace);
 
 	int SetSearchGoalState(int SearchGoalStateID, ARASearchStateSpace_t* pSearchStateSpace);
 

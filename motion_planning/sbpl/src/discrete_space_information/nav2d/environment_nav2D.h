@@ -39,6 +39,7 @@
 //-1, 0, 1 per each dX and dY
 #define ACTIONSWIDTH 8
 
+//configuration parameters
 typedef struct ENV_NAV2D_CONFIG
 {
 	int EnvWidth_c;
@@ -62,7 +63,7 @@ typedef struct ENVHASHENTRY
 } EnvNAV2DHashEntry_t;
 
 
-
+//variables that dynamically change (e.g., array of states, ...)
 typedef struct
 {
 

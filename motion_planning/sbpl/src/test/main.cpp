@@ -45,7 +45,7 @@ void PrintUsage(char *argv[])
 int main(int argc, char *argv[])
 {
 	int bRet = 0;
-	double allocated_time_secs = 60.0*15; //in seconds
+	double allocated_time_secs = 1; //in seconds
 	MDPConfig MDPCfg;
 
 
@@ -74,10 +74,29 @@ int main(int argc, char *argv[])
 
 	//plan a path
 	vector<int> solution_stateIDs_V;
-	ARAPlanner ara_planner(&environment_nav2D, &MDPCfg);
+	ARAPlanner ara_planner(&environment_nav2D);
+
+    if(ara_planner.set_start(MDPCfg.startstateid) == 0)
+        {
+            printf("ERROR: failed to set start state\n");
+            exit(1);
+        }
+
+    if(ara_planner.set_goal(MDPCfg.goalstateid) == 0)
+        {
+            printf("ERROR: failed to set goal state\n");
+            exit(1);
+        }
+
+    printf("start planning...\n");
 	bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
 
 	std::cout << "Size " << solution_stateIDs_V.size() << std::endl;
+
+    printf("start planning...\n");
+	bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
 
 	for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
 	  environment_nav2D.PrintState(solution_stateIDs_V[i], true, NULL);

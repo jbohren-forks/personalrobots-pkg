@@ -76,7 +76,20 @@ class SBPLPlanner
 public:
 
 	//returns 1 if solution is found, 0 otherwise
+    //will replan incrementally if possible (e.g., supported by the planner and not forced to replan from scratch)
 	virtual int replan(double allocated_time_sec, vector<int>* solution_stateIDs_V) = 0;
+
+    //sets the goal of search (planner will automatically decide whether it needs to replan from scratch)
+    virtual int set_goal(int goal_stateID) = 0;
+
+    //sets the start of search (planner will automatically decide whether it needs to replan from scratch)
+    virtual int set_start(int start_stateID) = 0;
+
+    //should be called whenever edgecosts are changed to let planner know
+    virtual void costs_changed() = 0;
+
+    //forgets previous planning efforts and starts planning from scratch next time replan is called
+    virtual int force_planning_from_scratch() = 0; 
 
 
 protected:

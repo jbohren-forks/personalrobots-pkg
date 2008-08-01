@@ -29,7 +29,7 @@
 #ifndef __VIPLANNER_H_
 #define __VIPLANNER_H_
 
-
+#define MDP_ERRDELTA 0.01 
 
 struct VIPLANNER_T
 {

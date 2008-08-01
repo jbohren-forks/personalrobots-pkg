@@ -34,6 +34,9 @@
 #define __min(x,y) (x>y?y:x)
 #endif
 
+#define UNKNOWN_COST 1000000
+
+
 
 //function prototypes
 #if MEM_CHECK == 1
