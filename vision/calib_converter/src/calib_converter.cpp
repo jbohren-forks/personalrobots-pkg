@@ -89,7 +89,7 @@ public:
       }
     }
     if(!hasImages || !hasPtcld || !hasCalparams) {
-      cerr << fullname << " does not have the required message types!" << endl;
+      cerr << fullname << " does not have the required message types!  Note that this check is based on topic name, not message type; yell at Alex if this is the problem." << endl;
       return 1;
     }
     
