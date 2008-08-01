@@ -1,0 +1,14 @@
+<package>
+<description brief="PIL">
+    The Python Imaging Library (PIL) adds image processing capabilities to your
+    Python interpreter. This library supports many file formats, and provides
+    powerful image processing and graphics capabilities.
+</description>
+<author>Pythonware.com. ROS package maintained by Ken Conley (kwc@willowgarage.com)</author>
+<license>OSI-Approved Open Source</license>
+<url>http://www.pythonware.com/products/pil/</url>
+<export>
+  <doxymaker external="http://www.pythonware.com/library/pil/handbook/index.htm" />
+</export>
+</package>
+
