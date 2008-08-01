@@ -240,6 +240,12 @@ void planning_models::KinematicModel::buildChainJ(Robot *robot, Link *parent, Jo
     joint->anchor[0] = urdfLink->joint->anchor[0];
     joint->anchor[1] = urdfLink->joint->anchor[1];
     joint->anchor[2] = urdfLink->joint->anchor[2];
+    if (!urdfLink->joint->isSet["limit"] && urdfLink->joint->type == robot_desc::URDF::Link::Joint::REVOLUTE)
+    {
+	joint->limit[0] = -M_PI;
+	joint->limit[1] =  M_PI;
+    }
+
     switch (urdfLink->joint->type)
     {
     case robot_desc::URDF::Link::Joint::FLOATING:
@@ -278,12 +284,6 @@ void planning_models::KinematicModel::buildChainJ(Robot *robot, Link *parent, Jo
 	break;
     }
     
-    if (!urdfLink->joint->isSet["limit"] && joint->type == Joint::REVOLUTE)
-    {
-	joint->limit[0] = -M_PI;
-	joint->limit[1] =  M_PI;
-    }
-
     /** construct the inGroup bitvector */
     std::vector<std::string> gnames;
     model.getGroupNames(gnames);

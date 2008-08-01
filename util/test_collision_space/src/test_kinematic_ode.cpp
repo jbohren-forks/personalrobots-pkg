@@ -68,6 +68,7 @@ int main(int argc, char **argv)
     
     EnvironmentModel *km = new EnvironmentModelODE();
     planning_models::KinematicModel *m = new planning_models::KinematicModel();
+    m->setVerbose(true);
     m->build(model);    
     km->addRobotModel(m);
     m->printModelInfo();
@@ -97,7 +98,6 @@ int main(int argc, char **argv)
     
     printf("Collision: %d\n", km->isCollision(0));
     
-
     dsFunctions fn;
     fn.version = DS_VERSION;
     fn.start   = &start;
