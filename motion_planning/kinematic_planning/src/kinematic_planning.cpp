@@ -343,7 +343,7 @@ public:
 	model->collisionSpaceID = cid;
 	model->collisionSpace = m_collisionSpace;
         model->kmodel = m_collisionSpace->getModel(cid);
-	m_models[name] = model;
+	m_models[file->getRobotName()] = model;
 	createMotionPlanningInstances(model);
 	
 	std::vector<std::string> groups;
