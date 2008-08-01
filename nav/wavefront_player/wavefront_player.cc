@@ -435,35 +435,6 @@ WavefrontNode::laserReceived()
     std_msgs::PointCloudFloat32 local_cloud;
     projector_.projectLaser(*it, local_cloud);
     
-    /*  Replaced by above!!
-    local_cloud.header.frame_id = it->header.frame_id;
-    local_cloud.header.stamp = it->header.stamp;
-    local_cloud.set_pts_size(it->get_ranges_size());
-
-    // Iterate through the scan, adding points to the local cloud
-    float b=it->angle_min;
-    float* r=it->ranges;
-    unsigned int i;
-    unsigned int cnt=0;
-    for(i=0;i<it->get_ranges_size();
-        i++,r++,b+=it->angle_increment)
-    {
-      // TODO: take out the bogus epsilon range_max check, after the
-      // hokuyourg_player node is fixed
-      if(((*r) >= this->laser_maxrange) || 
-         ((it->range_max > 0.1) && ((*r) >= it->range_max)) ||
-         ((*r) <= 0.01))
-        continue;
-
-      local_cloud.pts[cnt].x = (*r)*cos(b);
-      local_cloud.pts[cnt].y = (*r)*sin(b);
-      local_cloud.pts[cnt].z = 0.0;
-      cnt++;
-    }
-
-    // Resize, because we may have thrown out some points
-    local_cloud.set_pts_size(cnt);
-*/
     // Convert to a point cloud in the map frame
     std_msgs::PointCloudFloat32 global_cloud;
 
