@@ -428,7 +428,6 @@
 
     <rpy> 0 0 0</rpy> <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
     <xyz> 0.25 0.1 0.3+wheel_clearance_offset</xyz> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
-    <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
 
     <joint type="planar"> 
     </joint>
@@ -997,6 +996,10 @@
   
   <!-- Define groups of links; a link may be part of multiple groups -->
 
+  <group name="base" flags="plan">
+    base
+  </group>
+  
   <group name="leftArm" flags="plan">
     shoulder_pan_left
     shoulder_pitch_left

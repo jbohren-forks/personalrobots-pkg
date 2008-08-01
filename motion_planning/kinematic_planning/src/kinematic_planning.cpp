@@ -285,6 +285,15 @@ public:
 	/* copy the solution to the result */
 	if (ok)
 	{
+
+#ifdef DISPLAY_ODE_SPACES
+	if (m->groupID >= 0)
+	{
+	    /* set the pose of the whole robot */
+	    m->kmodel->computeTransforms(req.start_state.vals);
+	    m->collisionSpace->updateRobotModel(m->collisionSpaceID);
+	}
+#endif
 	    ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
 	    res.path.set_states_size(path->states.size());
 	    for (unsigned int i = 0 ; i < path->states.size() ; ++i)

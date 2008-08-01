@@ -48,18 +48,17 @@ public:
 	robot_srvs::KinematicMotionPlan::request  req;
 	robot_srvs::KinematicMotionPlan::response res;
 	
-	req.model_id = "pr2::rightArm";
+	req.model_id = "pr2::base";
 	
 	req.start_state.set_vals_size(32);
 	for (unsigned int i = 0 ; i < req.start_state.vals_size ; ++i)
 	    req.start_state.vals[i] = 0.0;
 
-	for (unsigned int i = 18 ; i < 25 ; ++i)
-	    req.start_state.vals[i] = 0.1;
-	
-	req.goal_state.set_vals_size(7);
+	req.goal_state.set_vals_size(3);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
-	    req.goal_state.vals[i] = -0.4;
+	    req.goal_state.vals[i] = 0.0;
+	req.goal_state.vals[0] = 1.0;
+	req.goal_state.vals[2] = M_PI/2;
 	
 	req.allowed_time = 15.0;
 	
@@ -70,6 +69,12 @@ public:
 	{
 	    unsigned int nstates = res.path.get_states_size();
 	    printf("Obtained solution path with %u states\n", nstates);
+	    for (unsigned int i = 0 ; i < nstates ; ++i)
+	    {
+		for (unsigned int j = 0 ; j < res.path.states[i].get_vals_size() ; ++j)
+		    printf("%f ", res.path.states[i].vals[j]);
+		printf("\n");
+	    }	    
 	}
 	else
 	    fprintf(stderr, "Service 'plan_kinematic_path' failed\n");	  
