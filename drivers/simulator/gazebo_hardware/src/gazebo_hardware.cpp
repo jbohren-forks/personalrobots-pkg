@@ -145,6 +145,9 @@ void GazeboHardware::updateState(){
         pr2ActarrayIface->Lock(1);
         hardwareInterface->actuator[jointId[ii]].state.encoderCount =
            GAZEBO_POS_TO_ENCODER*pr2ActarrayIface->data->actuators[portLookUp[ii]].actualPosition;
+       // hardwareInterface->actuator[jointId[ii]].state.encoderVelocity =
+           GAZEBO_POS_TO_ENCODER*pr2ActarrayIface->data->actuators[portLookUp[ii]].actualSpeed;
+
         pr2ActarrayIface->Unlock();
       }
       else if (boardLookUp[ii] == 1)
@@ -191,6 +194,7 @@ void GazeboHardware::sendCommand(){
       if( hardwareInterface->actuator[ii].command.enable){
         command = (GAZEBO_CURRENT_TO_CMD*hardwareInterface->actuator[ii].command.current);
         //fprintf(stderr,"command: %f\n", command);
+//        printf("Command: %f\n",command);
         if (boardLookUp[ii] == 0)
         {
           pr2ActarrayIface->Lock(1);
