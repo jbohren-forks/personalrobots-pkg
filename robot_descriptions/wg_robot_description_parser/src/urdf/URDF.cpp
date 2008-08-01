@@ -1551,7 +1551,7 @@ namespace robot_desc {
 	    {
 		if (joint->axis[0] == 0.0 && joint->axis[1] == 0.0 && joint->axis[2] == 0.0)
 		    fprintf(stderr, "Joint '%s' in link '%s' does not seem to have its axis properly set\n", joint->name.c_str(), links[i]->name.c_str());
-		if (joint->isSet["limit"] && joint->limit[0] == 0.0 && joint->limit[1] == 0.0)
+		if ((joint->isSet["limit"] || joint->type == Link::Joint::PRISMATIC) && joint->limit[0] == 0.0 && joint->limit[1] == 0.0)
 		    fprintf(stderr, "Joint '%s' in link '%s' does not seem to have its limits properly set\n", joint->name.c_str(), links[i]->name.c_str());
 	    }
 	    

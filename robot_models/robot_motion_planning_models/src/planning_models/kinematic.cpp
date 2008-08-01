@@ -278,6 +278,12 @@ void planning_models::KinematicModel::buildChainJ(Robot *robot, Link *parent, Jo
 	break;
     }
     
+    if (!urdfLink->joint->isSet["limit"] && joint->type == Joint::REVOLUTE)
+    {
+	joint->limit[0] = -M_PI;
+	joint->limit[1] =  M_PI;
+    }
+
     /** construct the inGroup bitvector */
     std::vector<std::string> gnames;
     model.getGroupNames(gnames);

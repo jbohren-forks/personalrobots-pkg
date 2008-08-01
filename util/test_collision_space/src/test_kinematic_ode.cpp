@@ -79,12 +79,12 @@ int main(int argc, char **argv)
     m->computeTransforms(param);
     km->updateRobotModel(0);
     
-
+    /*
     for (unsigned int i = 0 ; i < m->stateDimension ; ++i)
 	param[i] = +0.3;
     m->computeTransforms(param, m->getGroupID("pr2::base+rightArm"));
     km->updateRobotModel(0);
-    
+    */
     EnvironmentModelODE* okm = dynamic_cast<EnvironmentModelODE*>(km);
     spaces.addSpace(okm->getODESpace(), 1.0f, 0.3f, 0.0f);
     for (unsigned int i = 0 ; i < okm->getModelCount() ; ++i)
