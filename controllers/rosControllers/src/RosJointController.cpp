@@ -22,35 +22,38 @@
 #include <cassert>
 #include <iostream>
 
-void
-RosJointController::cmdReceived()
-{
-  assert(jc);
-  std::cout<<"Received command:"<<velMsg.vx<<std::endl;
-  // update the controller
-  //FIXME: shouldn't we have a mutex to protect the joint controller?
-  //FIXME: velMsg has 2 fields: is it the proper structure to use here?
-  jc->setVelCmd(velMsg.vx);
-}
-
-
+using namespace controller;
+using ros::node;
 
 RosJointController::RosJointController(std::string jointName) : 
-    ros::node(jointName),
-    tf(*this),
     jc(NULL),
     mJointName(jointName)
 {
   mCmdBusName=mJointName+std::string("_cmd");
   mStateBusName=mJointName+std::string("_state");
+  // Actually, there is a static poitner to the process's ros node:
+  publisherNode = ros::node::instance();
 
 }
 
-int
-RosJointController::advertiseSubscribeMessages()
+
+RosJointController::RosJointController(controller::JointController *jointc) : 
+    jc(jointc)
 {
-  advertise<rosControllers::RotaryJointState>(mStateBusName);
-  subscribe(mCmdBusName, velMsg, &RosJointController::cmdReceived);
+  mCmdBusName=mJointName+std::string("_cmd");
+  mStateBusName=mJointName+std::string("_state");
+  // Actually, there is a static poitner to the process's ros node:
+  publisherNode = ros::node::instance();
+  assert(jointc);
+  mJointName = jointc->getName();
+
+}
+
+
+int RosJointController::AdvertiseSubscribeMessages()
+{
+  if(publisherNode)
+    publisherNode->advertise<rosControllers::RotaryJointState>(mStateBusName);
   return(0);
 }
 
@@ -63,37 +66,40 @@ void
 RosJointController::init(controller::JointController *jc)
 {
   assert(jc);
-  assert(jc->getName() == mJointName);
+  //FIXME: the joint controller does not initialize its name properly
+//   assert(jc->name() == mJointName);
   this->jc = jc;
 }
 
 
 void
-RosJointController::update()
+RosJointController::Update()
 {
   this->lock.lock();
-  // Get the state from the joint and advertise it
-  // FIXME: how to express an enum in a message?
+  // get the state from the joint and advertise it
+  //TODO: add information from the pid controller
   jointStateMsg.ControlMode = jc->getMode();
   jointStateMsg.JointName = mJointName;
   // FIXME: does this function change the state of the controller?
   jointStateMsg.Saturated = jc->checkForSaturation();
   jc->getParam(std::string("PGain"), &(jointStateMsg.PGain));
-//   jc->getParam("IGain", &(jointStateMsg.IGain));
-//   jc->getParam("DGain", &(jointStateMsg.DGain));
-//   jc->getParam("IMax", &(jointStateMsg.IMax));
-//   jc->getParam("IMin", &(jointStateMsg.IMin));
+  jc->getParam("IGain", &(jointStateMsg.IGain));
+  jc->getParam("DGain", &(jointStateMsg.DGain));
+  jc->getParam("IMax", &(jointStateMsg.IMax));
+  jc->getParam("IMin", &(jointStateMsg.IMin));
   //TODO: add Time, SaturationEffort, MaxEffort from the joint
   
   //The commands:
-  jc->getTorqueCmd(&(jointStateMsg.TorqueCmd));
-  jc->getTorqueAct(&(jointStateMsg.TorqueAct));
-  jc->getPosCmd(&(jointStateMsg.PosCmd));
-  jc->getPosAct(&(jointStateMsg.PosAct));
-  jc->getVelCmd(&(jointStateMsg.VelCmd));
-  jc->getVelAct(&(jointStateMsg.VelAct));
+//   jc->getTorqueCmd(&(jointStateMsg.TorqueCmd));
+//   jc->getTorqueAct(&(jointStateMsg.TorqueAct));
+//   jc->getPosCmd(&(jointStateMsg.PosCmd));
+//   jc->getPosAct(&(jointStateMsg.PosAct));
+//   jc->getVelCmd(&(jointStateMsg.VelCmd));
+//   jc->getVelAct(&(jointStateMsg.VelAct));
   
-  publish(mStateBusName, jointStateMsg);
+  if(publisherNode)
+    publisherNode->publish(mStateBusName, jointStateMsg);
+  std::cout<<"Publishing "<<mStateBusName<<std::endl;
   this->lock.unlock();
 }
 

@@ -57,53 +57,63 @@
 #include <rosControllers/RotaryJointState.h>
 
 // Our node
-class RosJointController : public ros::node
+// TODO: add documentation
+
+namespace controller
+{
+  
+class RosJointController
 {
   private:
-    // Messages that we'll send or receive
-    std_msgs::BaseVel velMsg;
-    std_msgs::LaserScan laserMsg;
-    std_msgs::PointCloudFloat32 cloudMsg;
-    std_msgs::PointCloudFloat32 full_cloudMsg;
-    std_msgs::Empty shutterMsg;  // marks end of a cloud message
-    std_msgs::RobotBase2DOdom odomMsg;
-    rostools::Time timeMsg;
-    
+    // This node only sends information about the current joint
+    // You need a controller if you want to pass some torque commands
     rosControllers::RotaryJointState jointStateMsg;
 
     // A mutex to lock access to fields that are used in message callbacks
     ros::thread::mutex lock;
 
-    // for frame transforms, publish frame transforms
-    rosTFServer tf;
 
   public:
-    // Constructor; stage itself needs argc/argv.  fname is the .world file
-    // that stage should load.
+    // If you call this contructor, don't forget to call init() afterwards
     RosJointController(std::string jointName);
+    // The constructor that should be used
+    // It assumes the name of the joint controller is properly initialized
+    RosJointController(controller::JointController *jc);
     ~RosJointController();
+    
+    // Registers the topic about the joint to ROS
+    // To be called before using the jointcontroller
+    int AdvertiseSubscribeMessages();
 
+
+    // Reigsters a joint controller to this class
+    // The constructor should be used instead
+    void init(controller::JointController *jc);
     // advertise / subscribe models
     // TODO: return significant return value?
     int advertiseSubscribeMessages();
 
-    void init(controller::JointController *jc);
+//     void init(controller::JointController *jc);
     // Do one update of the simulator.  May pause if the next update time
     // has not yet arrived.
-    void update();
+    void Update();
 
     // Message callback for a std_msgs::BaseVel message, which set velocities.
     void cmdReceived();
 
     //Keep track of controllers
     controller::JointController* jc;
+    
+    std::string busName(void) const { return mStateBusName; }
   
   private:
     std::string mJointName; //we keep the name of the joint
     std::string mCmdBusName; //The name of the bus that will accept commands
     std::string mStateBusName; //The name of the bus that will send state
+    // Since we cannot publish messages on our node, we have to rely on an external publisher
+    ros::node * publisherNode;
 };
 
 
-
+}
 
