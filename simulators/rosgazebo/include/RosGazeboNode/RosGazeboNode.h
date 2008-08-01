@@ -36,6 +36,9 @@
 #include <pr2Controllers/GripperController.h>
 #include <rosControllers/RosJointController.h>
 
+// for rosController
+#include <list>
+using std::list;
 #include "ringbuffer.h"
 #include "mechanism_model/joint.h"
 // roscpp
@@ -140,7 +143,7 @@ class RosGazeboNode : public ros::node
          controller::LaserScannerController *myLaserScanner,
          controller::GripperController      *myGripper,
          controller::JointController** ControllerArray,
-         RosJointController ** RosControllerArray
+         controller::RosJointController ** RosControllerArray
          );
 
     // advertise / subscribe models
@@ -209,7 +212,8 @@ class RosGazeboNode : public ros::node
     //Keep track of controllers
     controller::JointController** ControllerArray;
 
-    RosJointController ** RosControllerArray;
+    typedef list<controller::RosJointController *> RCList;
+    RCList RosControllers;
 };
 
 

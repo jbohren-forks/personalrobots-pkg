@@ -18,6 +18,7 @@
  */
 
 #include <RosGazeboNode/RosGazeboNode.h>
+#include <iostream>
 
 void
 RosGazeboNode::cmd_rightarmconfigReceived()
@@ -280,6 +281,10 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
 
   //Don't use new architecture
   useControllerArray = false;
+  
+  //TODO: if you want to advertise some information about joints, this is the place to do it:
+//   JointController * controller = ...
+//   RosControllers.push_back(new RosJointController(controller))
 }
 
 RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
@@ -291,7 +296,7 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
          controller::LaserScannerController *myLaserScanner,
          controller::GripperController      *myGripper,
          controller::JointController** ControllerArray,
-         RosJointController ** RosControllerArray):
+         controller::RosJointController ** RosControllerArray):
         ros::node("rosgazebo"),tf(*this),tfc(*this)
 {
   // accept passed in robot
@@ -327,7 +332,13 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
   useControllerArray = true;
   
       //Store copy of Controller Array. Only interact with it during Update() calls.
-  this->RosControllerArray = RosControllerArray;
+  for(int i=0; i<PR2::MAX_JOINTS; ++i)
+    if(RosControllerArray[i] && RosControllerArray[i]->jc && RosControllerArray[i]->jc->getName() != "")
+    {
+      std::cout<<"Adding "<<RosControllerArray[i]->jc->getName()<<std::endl;
+      RosControllers.push_back(RosControllerArray[i]);
+    }
+      
 }
 
 int
@@ -360,8 +371,10 @@ RosGazeboNode::AdvertiseSubscribeMessages()
   subscribe("cmd_leftarm_cartesian", cmd_leftarmcartesian, &RosGazeboNode::cmd_leftarmcartesianReceived);
   subscribe("cmd_rightarm_cartesian", cmd_rightarmcartesian, &RosGazeboNode::cmd_rightarmcartesianReceived);
   
-  for(int i=0; i<PR2::MAX_JOINTS;i++)
-    RosControllerArray[i]->advertiseSubscribeMessages();
+  for(RCList::iterator it = RosControllers.begin(); it != RosControllers.end(); ++it)
+  {
+    (*it)->AdvertiseSubscribeMessages();
+  }
 
 	//------ services ----------
   advertise_service("reset_IK_guess", &RosGazeboNode::reset_IK_guess);
@@ -1357,8 +1370,8 @@ RosGazeboNode::Update()
 	publish("transform",this->shutterMsg);
   
   // Publish info on the joints:
-  for(int i=0; i<PR2::MAX_JOINTS; i++)
-    RosControllerArray[i]->update();
+  for(RCList::iterator it = RosControllers.begin(); it != RosControllers.end(); ++it)
+    (*it)->Update();
   
   this->lock.unlock();
 }
