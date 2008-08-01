@@ -57,26 +57,29 @@ void GazeboMechanismControl::init(HardwareInterface *hardwareInterface){
 void GazeboMechanismControl::initRobot(){
   r = new mechanism::Robot((char*)"robot");
 
-  r->numJoints        = PR2::MAX_JOINTS;
-  r->numLinks         = PR2::MAX_JOINTS;
+  r->numJoints        = PR2::MAX_JOINTS-2;
+  r->numLinks         = PR2::MAX_JOINTS-2;
 
-  r->joint = new Joint[PR2::MAX_JOINTS];
-  r->link = new Link[PR2::MAX_JOINTS];
+  r->joint = new Joint[PR2::MAX_JOINTS-2];
+  r->link = new Link[PR2::MAX_JOINTS-2];
 
   // MAPPING BETWEEN hwInterface->actuators and robot->joints
   // assign transmissions for all joints
-  for(int ii=0; ii<PR2::MAX_JOINTS; ii++){
+  for(int ii=0; ii<PR2::MAX_JOINTS-2; ii++){
     SimpleTransmission *tr = new SimpleTransmission;
     r->transmissions_.push_back(tr);
     tr->actuator = &(hardwareInterface->actuator[ii]);
     tr->joint = &(r->joint[ii]);
     tr->mechanicalReduction = 1.0;
     tr->motorTorqueConstant = 1.0;
-    tr->pulsesPerRevolution = 1.0;
-    r->joint[ii].effortLimit = maxPositiveTorque;
+    tr->pulsesPerRevolution = 2*M_PI*1e6;
+    r->joint[ii].effortLimit = 1000;
+    r->joint[ii].jointLimitMax = 5;
+    r->joint[ii].jointLimitMin = -5;
+    r->joint[ii].type = mechanism::JOINT_ROTARY;
   }
   // enable all actuators, just so happens num. joints == num. actuators for now
-  for(int ii=0; ii<PR2::MAX_JOINTS; ii++){
+  for(int ii=0; ii<PR2::MAX_JOINTS-2; ii++){
     hardwareInterface->actuator[ii].command.enable = true;
   }
 }
@@ -143,12 +146,34 @@ void GazeboMechanismControl::initControllers(){
   baseController->loadXML(filename.str());
   baseController->init();
 
-  filename << c_filename << "/robot_descriptions/wg_robot_description/pr2/pr2.xml" ;
+  /*filename << c_filename << "/robot_descriptions/wg_robot_description/pr2/pr2.xml" ;
   leftArmController->loadXML(filename.str());
   leftArmController->init();
+*/
+  double data[7] = {1,1,1,1,1,1,1};
+  double time = rightArmController->getTime();
+    //rightArmController->loadXML(filename.str());
+  printf("Initializing arm controllers\n");
+  
+  rightArmController->initArm(controller::CONTROLLER_TORQUE);
 
-  //rightArmController->loadXML(filename.str());
-  rightArmController->init();
+ rightArmController->initJoint(0,100,0,0,500,-500, controller::CONTROLLER_VELOCITY,time,100,-100, &r->joint[20]);
+
+/*  rightArmController->initJoint(1,100,0,0,500,-500, controller::CONTROLLER_VELOCITY,time,1000,-1000,&r->joint[21]);
+
+  rightArmController->initJoint(2,10,0,0,500,-500, controller::CONTROLLER_VELOCITY,time,100,-100,&r->joint[22]);
+
+  rightArmController->initJoint(3,15,0,0,500,-500, controller::CONTROLLER_VELOCITY,time,100,-100,&r->joint[23]);
+
+  rightArmController->initJoint(4,5,0,0,500,-500, controller::CONTROLLER_VELOCITY,time,100,-100,&r->joint[24]);
+
+  rightArmController->initJoint(5,2,0,0,500,-500, controller::CONTROLLER_VELOCITY,time,100,-100,&r->joint[25]);
+  rightArmController->initJoint(6,10,0,0,500,-500, controller::CONTROLLER_VELOCITY,time,100,-100,&r->joint[26]);
+*/
+  leftArmController->initArm(controller::CONTROLLER_TORQUE);
+ 
+//  rightArmController->setOneArmJointSpeed(0,1);
+//  leftArmController->setArmJointTorque(torque);
 
   //headController->loadXML(filename.str());
   //headController->init();
@@ -163,10 +188,14 @@ void GazeboMechanismControl::initControllers(){
 //This function is called only from the realtime loop.  Everything it calls must also be realtime safe.
 void GazeboMechanismControl::update(){
   //Clear actuator commands
-
   //Process robot model transmissions
+  double pos;
   for(int i = 0; i < r->transmissions_.size(); i++){
+
+//   SimpleTransmission* tr = (SimpleTransmission*)r->transmissions_[i];
     r->transmissions_[i]->propagatePosition();
+  //  printf("Joint: %u Mech: %f Torque: %f Pulses %f\n", i,tr->mechanicalReduction, tr->motorTorqueConstant, tr->pulsesPerRevolution);
+
   }
 
   //update KDL model with new joint position/velocities
@@ -174,6 +203,7 @@ void GazeboMechanismControl::update(){
   leftArmController->update();
   rightArmController->update();
   //headController->update();
+  //
 #ifdef DEBUG
   for(int i = 0; i < r->numJoints; i++){
     printf("base_control:: cmd:: %d, %f\n",i,r->joint[i].commandedEffort);
@@ -182,9 +212,9 @@ void GazeboMechanismControl::update(){
   /*  for(int i = 0; i < r->numJoints; i++){
       r->joint[i].enforceLimits();
       }*/
-
   for(int i = 0; i < r->transmissions_.size(); i++){
     r->transmissions_[i]->propagateEffort();
   }
+
 }
 
