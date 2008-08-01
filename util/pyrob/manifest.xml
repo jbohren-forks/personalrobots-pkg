@@ -4,6 +4,7 @@
       opencv, numpy and python in the robotics domain.
   </description>
   <author>Hai Nguyen, Advait Jain, Charlie Kemp, Cressel Anderson</author>
+  <license>BSD</license>
   <depend package="numpy" />
   <depend package="pil" />
 </package>
