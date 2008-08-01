@@ -225,8 +225,13 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
         addKeyValue(joint, "axis", values2str(3, link->joint->axis));
         addKeyValue(joint, "axisOffset", values2str(3, link->joint->anchor));
         
-        addKeyValue(joint, "lowStop", values2str(1, link->joint->limit));
-        addKeyValue(joint, "highStop", values2str(1, link->joint->limit + 1));
+        // FIXME:  if not limit specified, how do we know????
+        // not fixed, but 0 limits, do not assign stops
+        if (*(link->joint->limit) != 0 || *( link->joint->limit + 1) != 0)
+        {
+          addKeyValue(joint, "lowStop", values2str(1, link->joint->limit));
+          addKeyValue(joint, "highStop", values2str(1, link->joint->limit + 1));
+        }
       }
         
       /* add joint to document */

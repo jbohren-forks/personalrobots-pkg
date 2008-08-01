@@ -160,7 +160,7 @@
   </body:box>
 
   <!-- attach hokuyo to torso -->
-  <joint:hinge name="tiltlaser_torso_attach_joint">
+  <joint:hinge name="base_laser_base_attach_joint">
     <body1>base_body</body1>
     <body2>base_laser_body</body2>
     <anchor>base_laser_body</anchor>
