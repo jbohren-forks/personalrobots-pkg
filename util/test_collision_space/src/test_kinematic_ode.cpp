@@ -76,7 +76,10 @@ int main(int argc, char **argv)
     double *param = new double[m->stateDimension];    
 
     for (unsigned int i = 0 ; i < m->stateDimension ; ++i)
-	param[i] = 0.0;    
+	param[i] = 0.0;
+    param[0] = 0.9;
+    param[1] = -0.3;
+    param[2] = M_PI/3;
     m->computeTransforms(param);
     km->updateRobotModel(0);
     
@@ -96,7 +99,7 @@ int main(int argc, char **argv)
     km->addPointCloud(1, sphere, 0.15);
     km->setSelfCollision(false);
     
-    printf("Collision: %d\n", km->isCollision(0));
+    printf("\n\nCollision: %d\n", km->isCollision(0));
     
     dsFunctions fn;
     fn.version = DS_VERSION;
