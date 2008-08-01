@@ -1,0 +1,14 @@
+<package>
+<description brief='Kinematics and Dynamics library using KDL'>
+</description>
+<author>Sachin Chitta sachinc@willowgarage.com, Advait Jain ajain@willowgarage.com</author>
+<license>BSD</license>
+<url>http://pr.willowgarage.com</url>
+<depend package="pr2Core"/>
+<depend package="wg_robot_description_parser"/>
+<depend package="rosTF"/>
+<depend package="math_utils"/>
+<export>
+<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lorocos-kdl -lrobot_kinematics"/>
+</export>
+</package>
