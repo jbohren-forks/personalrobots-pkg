@@ -215,10 +215,19 @@ public:
 	Model   *m = m_models[req.model_id];
 	Planner &p = m->planners[0];
 	
-	const int dim = req.goal_state.vals_size;
-	if ((int)p.si->getStateDimension() != dim)
-	    return false;
+	if (m->kmodel->stateDimension != req.start_state.get_vals_size())
+	{
+	    fprintf(stderr, "Dimension of start state expected to be %u but was received as %u\n", m->kmodel->stateDimension, req.start_state.get_vals_size());
+	    return false;	    
+	}
 
+	const int dim = req.goal_state.get_vals_size();
+	if ((int)p.si->getStateDimension() != dim)
+	{
+	    fprintf(stderr, "Dimension of goal state expected to be %u but was received as %d\n", p.si->getStateDimension(), dim);
+	    return false;
+	}
+	
 	/* set the workspace volume for planning */
 	// only area or volume should go through... not sure what happens on really complicated models where 
 	// we have both multiple planar and multiple floating joints...
@@ -310,6 +319,8 @@ public:
 		
 	    }
 	}
+	else
+	    res.path.set_states_size(0);
 	
 	/* cleanup */
 	p.si->clearGoal();
@@ -344,30 +355,36 @@ public:
 	printf("\n\nCreating new kinematic model:\n");
 	
 	/* create a model for the whole robot (with the name given in the file) */
-	Model *model = new Model();
 	planning_models::KinematicModel *kmodel = new planning_models::KinematicModel();
 	kmodel->setVerbose(true);
 	kmodel->build(*file);
+	
+	/* add the model to the collision space */
 	unsigned int cid = m_collisionSpace->addRobotModel(kmodel);
+
+	/* set the data for the model */
+	Model *model = new Model();
 	model->collisionSpaceID = cid;
 	model->collisionSpace = m_collisionSpace;
-        model->kmodel = m_collisionSpace->getModel(cid);
-	m_models[file->getRobotName()] = model;
+        model->kmodel = kmodel;
 	createMotionPlanningInstances(model);
 	
+	/* remember the model by the robot's name */
+	m_models[file->getRobotName()] = model;
+
+	/* create a model for each group */
 	std::vector<std::string> groups;
 	kmodel->getGroups(groups);
 
-	/* create a model for each group */
 	for (unsigned int i = 0 ; i < groups.size() ; ++i)
 	{
 	    Model *model = new Model();
 	    model->collisionSpaceID = cid;
 	    model->collisionSpace = m_collisionSpace;
-	    model->kmodel = m_collisionSpace->getModel(cid);
-	    model->groupID = model->kmodel->getGroupID(groups[i]);
-	    m_models[groups[i]] = model;
+	    model->kmodel = kmodel;
+	    model->groupID = kmodel->getGroupID(groups[i]);
 	    createMotionPlanningInstances(model);
+	    m_models[groups[i]] = model;
 	}	
     }
     

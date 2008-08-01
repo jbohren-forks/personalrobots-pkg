@@ -84,6 +84,7 @@ namespace planning_models
 		axis[0] = axis[1] = axis[2] = 0.0;
 		anchor[0] = anchor[1] = anchor[2] = 0.0;
 		limit[0] = limit[1] = 0.0;
+		robotRoot = false;
 		type = UNKNOWN;
 	    }
 	    
@@ -96,6 +97,9 @@ namespace planning_models
 	    /** the links that this joint connects */	    
 	    Link         *before;
 	    Link         *after;
+	    
+	    /** Flag for marking joints that are roots for the entire robot */
+	    bool          robotRoot;
 	    
 	    /** The range of indices in the parameter vector that
 		needed to access information about the position of this
@@ -231,9 +235,6 @@ namespace planning_models
 	    /** The model that owns this robot */
 	    KinematicModel     *owner;
 	    
-	    /** Group of links corresponding to this robot (if any) */
-	    std::string         tag;
-	    
 	};
 	
 	KinematicModel(void)
@@ -249,13 +250,14 @@ namespace planning_models
 		delete m_robots[i];
 	}
 	
-	virtual void build(robot_desc::URDF &model, const char *group = NULL);	
+	virtual void build(robot_desc::URDF &model);	
 	void         setVerbose(bool verbose);	
 
 	unsigned int getRobotCount(void) const;
 	Robot*       getRobot(unsigned int index) const;
 	void         getGroups(std::vector<std::string> &groups) const;
 	int          getGroupID(const std::string &group) const;
+	Link*        getLink(const std::string &link) const;
 	
 	void computeTransforms(const double *params, int groupID = -1);
 	void printModelInfo(FILE *out = stdout) const;
@@ -286,6 +288,7 @@ namespace planning_models
 	std::vector<Robot*>               m_robots;
 	std::vector<std::string>          m_groups;
 	std::map<std::string, int>        m_groupsMap;	       
+	std::map<std::string, Link*>      m_linkMap;	       
 	bool                              m_verbose;    
 	bool                              m_built;
 	

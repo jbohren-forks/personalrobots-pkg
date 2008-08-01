@@ -50,17 +50,19 @@ public:
 	
 	req.model_id = "pr2::base";
 	
-	req.start_state.set_vals_size(32);
+	req.start_state.set_vals_size(34);
 	for (unsigned int i = 0 ; i < req.start_state.vals_size ; ++i)
 	    req.start_state.vals[i] = 0.0;
-
+	req.start_state.vals[0] = -0.5;
+	
 	req.goal_state.set_vals_size(3);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
 	    req.goal_state.vals[i] = 0.0;
-	req.goal_state.vals[0] = 1.0;
+	req.goal_state.vals[0] = 0.75;
+	req.goal_state.vals[1] = 0.75;
 	req.goal_state.vals[2] = M_PI/2;
 	
-	req.allowed_time = 15.0;
+	req.allowed_time = 10.0;
 	
 	req.volumeMin.x = -1.0;	req.volumeMin.y = -1.0;	req.volumeMin.z = -1.0;
 	req.volumeMax.x = 1.0;	req.volumeMax.y = 1.0;	req.volumeMax.z = 1.0;
