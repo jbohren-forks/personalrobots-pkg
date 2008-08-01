@@ -211,6 +211,7 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
         jtype = "slider";
         break;
     case robot_desc::URDF::Link::Joint::FLOATING:
+    case robot_desc::URDF::Link::Joint::PLANAR:
         break;
     case robot_desc::URDF::Link::Joint::FIXED:
         jtype = "hinge";
@@ -263,72 +264,19 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
   doc.LinkEndChild(decl);
   
   /* create root element and define needed namespaces */
-  TiXmlElement *root = new TiXmlElement("gazebo:world");
-  root->SetAttribute("xmlns:gazebo", "http://playerstage.sourceforge.net/gazebo/xmlschema/#gz");
-  root->SetAttribute("xmlns:model", "http://playerstage.sourceforge.net/gazebo/xmlschema/#model");
-  root->SetAttribute("xmlns:sensor", "http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor");
-  root->SetAttribute("xmlns:body", "http://playerstage.sourceforge.net/gazebo/xmlschema/#body");
-  root->SetAttribute("xmlns:geom", "http://playerstage.sourceforge.net/gazebo/xmlschema/#geom");
-  root->SetAttribute("xmlns:joint", "http://playerstage.sourceforge.net/gazebo/xmlschema/#joint");
-  root->SetAttribute("xmlns:controller", "http://playerstage.sourceforge.net/gazebo/xmlschema/#controller");
-  root->SetAttribute("xmlns:interface", "http://playerstage.sourceforge.net/gazebo/xmlschema/#interface");
-  root->SetAttribute("xmlns:rendering", "http://playerstage.sourceforge.net/gazebo/xmlschema/#rendering");
-  root->SetAttribute("xmlns:physics", "http://playerstage.sourceforge.net/gazebo/xmlschema/#physics");
-  doc.LinkEndChild(root);
-
-  // Verbosity is good
-  addKeyValue(root, "verbosity", "5");
-#if 0
-  // Add the <physics:ode> block
-  TiXmlElement *physics     = new TiXmlElement("physics:ode");
-  addKeyValue(physics, "stepTime", "0.01");
-  addKeyValue(physics, "gravity", "0 0 -9.8");
-  addKeyValue(physics, "cfm", "0.0000000001");
-  addKeyValue(physics, "erp", "0.2");
-  root->LinkEndChild(physics);
-
-  // Add the <rendering:gui> block
-  TiXmlElement *gui = new TiXmlElement("rendering:gui");
-  addKeyValue(gui, "type", "fltk");
-  addKeyValue(gui, "size", "1024 800");
-  addKeyValue(gui, "pos", "0 0");
-  root->LinkEndChild(gui);
-  
-  // Add the <rendering:ogre> block
-  TiXmlElement *ogre = new TiXmlElement("rendering:ogre");
-  addKeyValue(ogre, "ambient", "1.0 1.0 1.0 1.0");
-  TiXmlElement *sky = new TiXmlElement("sky");
-  addKeyValue(sky, "material", "Gazebo/CloudySky");
-  ogre->LinkEndChild(sky);
-  addKeyValue(ogre, "gazeboPath", "media");
-  addKeyValue(ogre, "grid", "off");
-  addKeyValue(ogre, "maxUpdateRate", "100");
-  root->LinkEndChild(ogre);
-
-  // Add the <gplane> block
-  TiXmlElement *gplane = new TiXmlElement("model:physical");
-  gplane->SetAttribute("name", "gplane");
-  addKeyValue(gplane, "xyz", "0 0 0");
-  addKeyValue(gplane, "rpy", "0 0 0");
-  addKeyValue(gplane, "static", "true");
-
-  TiXmlElement *gplane_body = new TiXmlElement("body:plane");
-  gplane_body->SetAttribute("name", "plane");
-
-  TiXmlElement *gplane_body_geom = new TiXmlElement("geom:plane");
-  gplane_body_geom->SetAttribute("name", "plane");
-  addKeyValue(gplane_body_geom, "kp", "1000000.0");
-  addKeyValue(gplane_body_geom, "kd", "1.0");
-  addKeyValue(gplane_body_geom, "normal", "0 0 1");
-  addKeyValue(gplane_body_geom, "size", "100 100");
-  addKeyValue(gplane_body_geom, "material", "PR2/floor_texture");
-  gplane_body->LinkEndChild(gplane_body_geom);
-
-  gplane->LinkEndChild(gplane_body);
-  root->LinkEndChild(gplane);
-#endif
-  // Create a node to enclose the robot body
   TiXmlElement *robot = new TiXmlElement("model:physical");
+  robot->SetAttribute("xmlns:gazebo", "http://playerstage.sourceforge.net/gazebo/xmlschema/#gz");
+  robot->SetAttribute("xmlns:model", "http://playerstage.sourceforge.net/gazebo/xmlschema/#model");
+  robot->SetAttribute("xmlns:sensor", "http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor");
+  robot->SetAttribute("xmlns:body", "http://playerstage.sourceforge.net/gazebo/xmlschema/#body");
+  robot->SetAttribute("xmlns:geom", "http://playerstage.sourceforge.net/gazebo/xmlschema/#geom");
+  robot->SetAttribute("xmlns:joint", "http://playerstage.sourceforge.net/gazebo/xmlschema/#joint");
+  robot->SetAttribute("xmlns:controller", "http://playerstage.sourceforge.net/gazebo/xmlschema/#controller");
+  robot->SetAttribute("xmlns:interface", "http://playerstage.sourceforge.net/gazebo/xmlschema/#interface");
+  robot->SetAttribute("xmlns:rendering", "http://playerstage.sourceforge.net/gazebo/xmlschema/#rendering");
+  robot->SetAttribute("xmlns:physics", "http://playerstage.sourceforge.net/gazebo/xmlschema/#physics");
+
+  // Create a node to enclose the robot body
   robot->SetAttribute("name", "pr2_model");
 
   /* set the transform for the whole model to identity */
@@ -353,7 +301,7 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
         robot->LinkEndChild(child->Clone());
     }
   }
-  root->LinkEndChild(robot);
+  doc.LinkEndChild(robot);
 }
 
 void usage(const char *progname)
