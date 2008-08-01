@@ -1,0 +1,17 @@
+<package>
+<description brief="Tool for converting calibration bags to non-ROS formats.">
+</description>
+<author>Alex Teichman</author>
+<license>BSD</license>
+<url></url>
+<depend package="megamaid"/>
+<depend package="logging"/>
+<depend package="opencv"/>
+<depend package="std_msgs"/>
+<depend package="image_utils"/>
+<depend package="roscpp"/>
+<export>
+  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib"/>
+</export>
+</package>
+
