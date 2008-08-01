@@ -13,4 +13,5 @@ This package contains Open Dynamics Engine OpenDE or ODE
         <doxymaker external="http://opende.sf.net"/>
 </export>
 <versioncontrol type="svn" url="https://opende.svn.sourceforge.net/svnroot/opende/trunk"/>
+<versioncontrol type="svn" url="https://oderutils.svn.sourceforge.net"/>
 </package>
