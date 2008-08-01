@@ -151,7 +151,7 @@ public:
 
     void loadRobotDescriptions(void)
     {
-	printf("Loading robot desctiptions...\n\n");
+	printf("Loading robot descriptions...\n\n");
 	
 	std::string description_files;
 	get_param("robotdesc_list", description_files);
@@ -371,6 +371,14 @@ public:
 	
 	/* remember the model by the robot's name */
 	m_models[file->getRobotName()] = model;
+
+	
+	/* set all parameters to 0 */
+	double defaultPose[kmodel->stateDimension];
+	for (unsigned int i = 0 ; i < kmodel->stateDimension ; ++i)
+	    defaultPose[i] = 0.0;
+	kmodel->computeTransforms(defaultPose);
+	m_collisionSpace->updateRobotModel(cid);
 
 	/* create a model for each group */
 	std::vector<std::string> groups;

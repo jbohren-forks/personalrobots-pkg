@@ -58,9 +58,9 @@ public:
 	req.goal_state.set_vals_size(3);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
 	    req.goal_state.vals[i] = 0.0;
-	req.goal_state.vals[0] = 0.75;
-	req.goal_state.vals[1] = 0.75;
-	req.goal_state.vals[2] = M_PI/2;
+	req.goal_state.vals[0] = 0.0;
+	req.goal_state.vals[1] = 0.0;
+	//	req.goal_state.vals[2] = M_PI/2;
 	
 	req.allowed_time = 10.0;
 	
