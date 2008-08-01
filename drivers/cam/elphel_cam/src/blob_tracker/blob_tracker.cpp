@@ -31,15 +31,25 @@
 #include <sstream>
 #include <iostream>
 #include "blob_tracker/blob_tracker.h"
+#include <string.h>
+#include <stdlib.h>
+#include <iostream.h>
+
+
 
 IplImage *image = 0, *hsv = 0, *hue = 0, *mask = 0, *backproject = 0, *histimg = 0;
 CvHistogram *hist = 0;
 
+// Different modes:
 int backproject_mode = 0;
 int squares_mode = 0;
 int select_object = 0;
 int track_object = 0;
 int show_hist = 1;
+bool homogIsSet = false;
+bool printPropsToCMD = false;
+
+
 CvPoint origin;
 CvRect selection;
 CvRect track_window;
@@ -50,33 +60,39 @@ float hranges_arr[] = {0,180};
 float* hranges = hranges_arr;
 int vmin = 10, vmax = 256, smin = 30;
 
-CvPoint2D32f corners[4];
-
-double homog_dest[] = { 0,  1,  1,  0,
-                        0,  0,  1,  1 };
-
-
-CvMat M_homog_dest = cvMat(2, 4, CV_64FC1, homog_dest);
-CvMat* M_homog_src = cvCreateMat(2, 4, CV_64FC1);
+const int nChessPointsWidth = 3;
+const int nChessPointsHeight = 5;
+CvPoint2D32f corners[nChessPointsWidth*nChessPointsHeight];
+CvMat* M_homog_src = cvCreateMat(2,nChessPointsWidth*nChessPointsHeight, CV_64FC1);
+CvMat* M_homog_dest = cvCreateMat(2,nChessPointsWidth*nChessPointsHeight, CV_64FC1);
 CvMat* M_homog = cvCreateMat(3,3,CV_64FC1);
-bool homogIsSet = false;
-
-int nBlobs;
-
-void CvPointToCvMat(const CvPoint2D32f* CvPoints, CvMat* Ma,int nPoints) {
 
 
-    printf(" print Ma:\n");
-    printf("[ %f %f %f %f ]\n", cvmGet(Ma, 0,0), cvmGet(Ma, 0,1), cvmGet(Ma, 0,2), cvmGet(Ma, 0,3)); 
-    printf("[ %f %f %f %f ]\n", cvmGet(Ma, 1,0), cvmGet(Ma, 1,1), cvmGet(Ma, 1,2), cvmGet(Ma, 1,3)); 
 
+int pattern_was_found;
 
-}
+struct Blob {
+  float x, y;
+  CvHistogram *histBlob;
+  CvBox2D track_boxBlob;
+  CvConnectedComp track_compBlob;
+  CvRect track_windowBlob;
+};
+
+vector<Blob> blobs;
+Blob property;
 
 // constructor
 Blob_Tracker::Blob_Tracker() {}
 
 
+void create_M_homog_dest(const int nCornersWidth, const int nCornersHeight, CvMat* Ma) {
+  for(int i=0; i < nCornersWidth*nCornersHeight; i++) {
+    cvmSet(Ma,0,i,i%nCornersWidth);
+    cvmSet(Ma,1,i,(int)(i/nCornersWidth));
+  }
+
+}
 
 void on_mouse( int event, int x, int y, int flags, void* param )
 {
@@ -149,17 +165,22 @@ void Blob_Tracker::init() {
   cvCreateTrackbar( "Vmax", "BlobTracker", &vmax, 256, 0 );
   cvCreateTrackbar( "Smin", "BlobTracker", &smin, 256, 0 );
 
+  create_M_homog_dest(nChessPointsWidth,nChessPointsHeight,M_homog_dest); 
+  
+
 }
 
-void Blob_Tracker::processFrame(IplImage** cv_image) {
+bool Blob_Tracker::processFrame(IplImage** cv_image) {
   IplImage* frame = 0;
   int i, bin_w, c;
   frame = *cv_image;
   if( !frame )
-    return;
+    return false;
 
   if( !image )
+
   {
+    printf("!image\n");
       /* allocate all the buffers */
       image = cvCreateImage( cvGetSize(frame), 8, 3 );
       image->origin = frame->origin;
@@ -167,7 +188,7 @@ void Blob_Tracker::processFrame(IplImage** cv_image) {
       hue = cvCreateImage( cvGetSize(frame), 8, 1 );
       mask = cvCreateImage( cvGetSize(frame), 8, 1 );
       backproject = cvCreateImage( cvGetSize(frame), 8, 1 );
-      hist = cvCreateHist( 1, &hdims, CV_HIST_ARRAY, &hranges, 1 );
+      //hist = cvCreateHist( 1, &hdims, CV_HIST_ARRAY, &hranges, 1 );
       histimg = cvCreateImage( cvSize(320,200), 8, 3 );
       cvZero( histimg );
   }
@@ -183,24 +204,28 @@ void Blob_Tracker::processFrame(IplImage** cv_image) {
                   cvScalar(180,256,MAX(_vmin,_vmax),0), mask );
       cvSplit( hsv, hue, 0, 0, 0 );
 
-      if( track_object < 0 )
+      if( track_object < 0 ) // first time round calc hist
       {
+	
+	blobs.push_back(property);
+	blobs.back().histBlob = cvCreateHist( 1, &hdims, CV_HIST_ARRAY, &hranges, 1);
+
           float max_val = 0.f;
           cvSetImageROI( hue, selection );
           cvSetImageROI( mask, selection );
-          cvCalcHist( &hue, hist, 0, mask );
-          cvGetMinMaxHistValue( hist, 0, &max_val, 0, 0 );
-          cvConvertScale( hist->bins, hist->bins, max_val ? 255. / max_val : 0., 0 );
+          cvCalcHist( &hue, blobs.back().histBlob, 0, mask );
+          cvGetMinMaxHistValue( blobs.back().histBlob, 0, &max_val, 0, 0 );
+          cvConvertScale( blobs.back().histBlob->bins, blobs.back().histBlob->bins, max_val ? 255. / max_val : 0., 0 );
           cvResetImageROI( hue );
           cvResetImageROI( mask );
-          track_window = selection;
+          blobs.back().track_windowBlob = selection;
           track_object = 1;
 
           cvZero( histimg );
           bin_w = histimg->width / hdims;
           for( i = 0; i < hdims; i++ )
           {
-              int val = cvRound( cvGetReal1D(hist->bins,i)*histimg->height/255 );
+	    int val = cvRound( cvGetReal1D(blobs.back().histBlob->bins,i)*histimg->height/255 );
               CvScalar color = hsv2rgb(i*180.f/hdims);
               cvRectangle( histimg, cvPoint(i*bin_w,histimg->height),
                            cvPoint((i+1)*bin_w,histimg->height - val),
@@ -208,33 +233,44 @@ void Blob_Tracker::processFrame(IplImage** cv_image) {
           }
       }
 
-      cvCalcBackProject( &hue, backproject, hist );
+      for(vector<Blob>::size_type i = 0; i != blobs.size(); ++i) {
+	
+      
+	cvCalcBackProject( &hue, backproject, blobs[i].histBlob );
 
-      cvAnd( backproject, mask, backproject, 0 );
-      cvCamShift( backproject, track_window,
-                  cvTermCriteria( CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1 ),
-                  &track_comp, &track_box );
-      track_window = track_comp.rect;
-printf("x: %f, y: %f\n", track_box.center.x, track_box.center.y);
- if(homogIsSet) {
-   CvMat *p = cvCreateMat(3,1,CV_64FC1);
-   CvMat *r = cvCreateMat(3,1,CV_64FC1);
-   cvmSet(p,0,0,track_box.center.x);
-     cvmSet(p,1,0,track_box.center.y);
-     cvmSet(p,2,0,1);
-     cvMatMul(M_homog,p,r);
-     printf("homog:: x:%f, y: %f\n", cvmGet(r,0,0), cvmGet(r,1,0)); 
+	cvAnd( backproject, mask, backproject, 0 );
+	cvCamShift( backproject, blobs[i].track_windowBlob,
+		    cvTermCriteria( CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1 ),
+		    &blobs[i].track_compBlob, &blobs[i].track_boxBlob );
+	blobs[i].track_windowBlob = blobs[i].track_compBlob.rect;
+	
 
 
- }
-      if( backproject_mode )
+
+	if(homogIsSet) {
+	  CvMat *p = cvCreateMat(3,1,CV_64FC1);
+	  CvMat *r = cvCreateMat(3,1,CV_64FC1);
+	  cvmSet(p,0,0,blobs[i].track_boxBlob.center.x);
+	  cvmSet(p,1,0,blobs[i].track_boxBlob.center.y);
+	  cvmSet(p,2,0,1);
+	  cvMatMul(M_homog,p,r);
+	  blobs[i].x = cvmGet(r,0,0);
+	  blobs[i].y = -cvmGet(r,1,0); // want to use farther away as y positive 
+	}
+	else {
+            blobs[i].x =  blobs[i].track_boxBlob.center.x;
+	    blobs[i].y =  blobs[i].track_boxBlob.center.y;
+	}
+	if( backproject_mode )
           cvCvtColor( backproject, image, CV_GRAY2BGR );
 
-      if( !image->origin )
-          track_box.angle = -track_box.angle;
-      cvEllipseBox( image, track_box, CV_RGB(255,0,0), 3, CV_AA, 0 );
+	if( !image->origin )
+	  blobs[i].track_boxBlob.angle = -blobs[i].track_boxBlob.angle;
+	cvEllipseBox( image, blobs[i].track_boxBlob, CV_RGB(255,0,0), 3, CV_AA, 0 );
+      }
   }
   
+
 
   if( select_object && selection.width > 0 && selection.height > 0 )
   {
@@ -244,28 +280,34 @@ printf("x: %f, y: %f\n", track_box.center.x, track_box.center.y);
   }
 
   if( squares_mode) { 
-    int pattern_was_found;
-
-    CvSize pattern_size = cvSize(3,3);
+    CvSize pattern_size = cvSize(nChessPointsWidth,nChessPointsHeight);
     int corner_count = 0;
     pattern_was_found = cvFindChessboardCorners(image, pattern_size, corners, &corner_count, 0);
     cvDrawChessboardCorners(image, pattern_size, corners, corner_count, pattern_was_found);
   }
-
+  
+  if( printPropsToCMD ) {
+    for(vector<Blob>::size_type i = 0; i != blobs.size(); ++i) {
+      printf("i: %i, x: %f, y: %f\n", i, blobs[i].x, blobs[i].y);
+    }
+  }
   cvShowImage( "BlobTracker", image );
   cvShowImage( "Histogram", histimg );
 
   c = cvWaitKey(10);
   if( (char) c == 27 )
-      return;
+      return false;
   switch( (char) c )
   {
-  case 'a': 
-    nBlobs++; //add a blobs to track
+  case 'p': //print blob properties to CMD
+    printPropsToCMD = true;
+    break;
   case 'r':
-    if(nBlobs > 0)
-      nBlobs--; // remove blobs
-  case 'b':
+    if(!blobs.empty())
+      blobs.pop_back(); // remove blobs
+    printf("blob size: %i\n", blobs.size());
+    break;
+   case 'b':
       backproject_mode ^= 1;
       break;
   case 'c':
@@ -279,34 +321,45 @@ printf("x: %f, y: %f\n", track_box.center.x, track_box.center.y);
       else
           cvNamedWindow( "Histogram", 1 );
       break;
-  case 'q':
+  case 's':
     squares_mode ^= 1;
     break;
   case 'f':
-    if(squares_mode) {
-
-      for(int i = 0; i < 4; i++) {
+    if(squares_mode && (pattern_was_found != 0)) {
+	printf("Corners:\n");
+      for(int i = 0; i < nChessPointsWidth*nChessPointsHeight; i++) {
 	cvmSet(M_homog_src,0,i,corners[i].x);
 	cvmSet(M_homog_src,1,i,corners[i].y);
       }
-      printf("src:\n");
-      printf("[ %f %f %f %f]\n", cvmGet(M_homog_src,0,0),  cvmGet(M_homog_src,0,1),  cvmGet(M_homog_src,0,2),  cvmGet(M_homog_src,0,3));
-      printf("[ %f %f %f %f]\n", cvmGet(M_homog_src,1,0),  cvmGet(M_homog_src,1,1),  cvmGet(M_homog_src,1,2),  cvmGet(M_homog_src,1,3)); 
+
+#ifdef DEBUG
+#define  
+     printf("src: \n");
+     for(int i = 0; i < nChessPointsWidth*nChessPointsHeight; i++)
+       printf("[ %f %f]\n", cvmGet(M_homog_src,0,i),  cvmGet(M_homog_src,1,i));
+
     
      printf("dest: \n");
-     printf("[ %f %f %f %f]\n", cvmGet(&M_homog_dest,0,0),  cvmGet(&M_homog_dest,0,1),  cvmGet(&M_homog_dest,0,2),  cvmGet(&M_homog_dest,0,3));
-     printf("[ %f %f %f %f]\n", cvmGet(&M_homog_dest,1,0),  cvmGet(&M_homog_dest,1,1),  cvmGet(&M_homog_dest,1,2),  cvmGet(&M_homog_dest,1,3));
+     for(int i = 0; i < nChessPointsWidth*nChessPointsHeight; i++)
+       printf("[ %f %f]\n", cvmGet(M_homog_dest,0,i),  cvmGet(M_homog_dest,1,i));
+#endif
       cvFindHomography(M_homog_src,
-                       &M_homog_dest,
+                       M_homog_dest,
                        M_homog);
       homogIsSet = true;
+      
     }
+    break;
+  case 'q':
+    return false;
     break;
   default:
 
     break;
+    
+    
   }
-
+  return true;
 }
 
 void Blob_Tracker::showFrame(IplImage** cv_image) {
@@ -319,7 +372,18 @@ void Blob_Tracker::showFrame(IplImage** cv_image) {
 
 
 void Blob_Tracker::saveFrame(const char* fileName, IplImage* cv_image) {
-  cvSaveImage(fileName, cv_image);
+        std::stringstream ss;
+	static int iFrame;
+        ss << "test" << iFrame++ << ".png";    
+	cvSaveImage(ss.str().c_str(), cv_image);
 }
 
 
+int Blob_Tracker::getNumBlobs(){
+  return blobs.size();
+}
+
+void Blob_Tracker::getBlobCoords(int i, float* x, float* y) {
+  *x = blobs[i].x;
+  *y = blobs[i].y;
+}

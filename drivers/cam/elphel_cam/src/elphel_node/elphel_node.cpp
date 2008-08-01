@@ -1,7 +1,4 @@
 /*********************************************************************
-* This node takes OpenCV images and tracks blobs 
-*
-*
 * Software License Agreement (BSD License)
 * 
 *  Copyright (c) 2008, Jimmy Sastra
@@ -46,85 +43,102 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "std_msgs/Image.h"
-#include "std_msgs/Blob.h"
-
 #include "image_utils/cv_bridge.h"
 
 
-#include "blob_tracker/blob_tracker.h"
-#include <string.h>
-#include <stdlib.h>
-#include <iostream.h>
-
+#include "image_utils/image_codec.h"
 
 using namespace std;
 
-//static int i;
-bool notDone = true;
 
-
-class Blob_Tracker_Node : public ros::node
+class Elphel_Node : public ros::node
 {
 public:
   std_msgs::Image image_msg;
-  std_msgs::Blob blob_msg;
   CvBridge<std_msgs::Image> cv_bridge;
+  ImageCodec<std_msgs::Image> codec;
 
-  IplImage* img;
-  IplImage *cv_image;
-  IplImage *frame;
   uint8_t* jpeg;
   uint32_t jpeg_size;
-  Blob_Tracker b;
   
+
+  Elphel_Cam *e; //("10.12.0.103");
+  IplImage* img;
   
-  Blob_Tracker_Node() : ros::node("blobtracker"), cv_bridge(&image_msg, CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U)
+  Elphel_Node() : ros::node("elphel"), cv_bridge(&image_msg), codec(&image_msg)
   {
-
-      cvNamedWindow("blobtracker", CV_WINDOW_AUTOSIZE);
-      subscribe("elphel_bus",image_msg, &Blob_Tracker_Node::processFrame); 
-
-    advertise<std_msgs::Blob>("blob");
-
-
-      b.init();     
+      advertise<std_msgs::Image>("elphel_bus");
+      e = new Elphel_Cam("10.12.0.103");
+//      e->init(10, 4, 4);
+      e->init(1, 4, 4);
+      e->start();
   }
 
-  virtual ~Blob_Tracker_Node() {
 
-  }
+  bool getFrame() {
+    static int i = 0;    
+    i++;     
 
-  void processFrame() 
-  {
-    if (cv_bridge.to_cv(&cv_image))
+    if (!e->next_jpeg(&jpeg, &jpeg_size))
     {
-      notDone = b.processFrame(&cv_image);
-      blob_msg.set_x_size(b.getNumBlobs());
-      blob_msg.set_y_size(b.getNumBlobs());
-      for(int i=0; i < b.getNumBlobs(); i++) {
-	float x, y;
-	b.getBlobCoords(i, &x, &y);
-	blob_msg.x[i] = x;
-	blob_msg.y[i] = y;
-      }
-    
-      publish("blob", blob_msg);
-      cvReleaseImage(&cv_image);
+      log(ros::ERROR, "Elphel_Cam::next_jpeg returned an error");
+      return false;
     }
-  } 
+
+    // Sometimes things break for no great reason.  When this happens
+    // the http server returns a 1x1 GIF.
+    // Skip failures and re-init cam if we get too many of them
+    int failcount = 0;
+    while (jpeg[0] == 0x47 && jpeg[1] == 0x49) { //THIS IS A GIF
+      if (failcount++ > 10) {
+      	printf("Received too many failures... restarting cam\n");
+	      e->init(10, 4, 4);
+	      e->start();
+	      failcount = 0;
+      }
+      if (!e->next_jpeg(&jpeg, &jpeg_size))
+      {
+	      log(ros::ERROR, "Elphel_Cam::next_jpeg returned an error");
+	      return false;
+      }
+    }
+
+
+
+
+    if(e->next_jpeg(&jpeg, &jpeg_size)) {
+      assert(jpeg != NULL);
+      image_msg.set_data_size(jpeg_size);
+      memcpy(image_msg.data, jpeg, jpeg_size);
+      image_msg.compression = "jpeg";
+      image_msg.colorspace = "rgb24";
+      codec.inflate_header();
+      publish("elphel_bus", image_msg);
+      printf("releasing frames %i\n", i);
+    }
+    return true;
+  }
+
+  virtual ~Elphel_Node() {
+    if(e) {
+      e->stop();
+    } 
+  }
 };
-
-
-
 
 int main(int argc, char **argv) 
 {
-
   ros::init(argc, argv);
-  Blob_Tracker_Node n;
-  while(n.ok() && notDone) {
-    usleep(1000);      
+  Elphel_Node n;
+  while(n.ok()) {
+    if(!n.getFrame()) 
+    {
+      printf("Elphel camera failed.\n");
+      n.log(ros::ERROR,"Elphel camera failed.");
+      break;
+    }       
   }
+
   ros::fini();
   return 0;
 }
