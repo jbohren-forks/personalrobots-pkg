@@ -140,7 +140,7 @@ class RosGazeboNode : public ros::node
          controller::LaserScannerController *myLaserScanner,
          controller::GripperController      *myGripper,
          controller::JointController** ControllerArray,
-         controller::RosJointController ** RosControllerArray
+         RosJointController ** RosControllerArray
          );
 
     // advertise / subscribe models
@@ -209,7 +209,7 @@ class RosGazeboNode : public ros::node
     //Keep track of controllers
     controller::JointController** ControllerArray;
 
-    controller::RosJointController ** RosControllerArray;
+    RosJointController ** RosControllerArray;
 };
 
 

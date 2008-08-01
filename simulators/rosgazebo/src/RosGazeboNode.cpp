@@ -291,7 +291,7 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
          controller::LaserScannerController *myLaserScanner,
          controller::GripperController      *myGripper,
          controller::JointController** ControllerArray,
-         controller::RosJointController ** RosControllerArray):
+         RosJointController ** RosControllerArray):
         ros::node("rosgazebo"),tf(*this),tfc(*this)
 {
   // accept passed in robot
@@ -361,7 +361,7 @@ RosGazeboNode::AdvertiseSubscribeMessages()
   subscribe("cmd_rightarm_cartesian", cmd_rightarmcartesian, &RosGazeboNode::cmd_rightarmcartesianReceived);
   
   for(int i=0; i<PR2::MAX_JOINTS;i++)
-    RosControllerArray[i]->AdvertiseSubscribeMessages();
+    RosControllerArray[i]->advertiseSubscribeMessages();
 
 	//------ services ----------
   advertise_service("reset_IK_guess", &RosGazeboNode::reset_IK_guess);
@@ -1358,7 +1358,7 @@ RosGazeboNode::Update()
   
   // Publish info on the joints:
   for(int i=0; i<PR2::MAX_JOINTS; i++)
-    RosControllerArray[i]->Update();
+    RosControllerArray[i]->update();
   
   this->lock.unlock();
 }

@@ -47,7 +47,7 @@
 
 // Information nodes about the joints
 #include <rosControllers/RosJointController.h>
-using controller::RosJointController;
+//using controller::RosJointController;
 //Joint defaults
 #define DEFAULTJOINTMAX 1
 #define DEFAULTJOINTMIN -1
@@ -204,7 +204,7 @@ main(int argc, char** argv)
   
   RosJointController * RosControllerArray[PR2::MAX_JOINTS];
   for(int i = 0;i<PR2::MAX_JOINTS;i++){
-    RosControllerArray[i] = new controller::RosJointController(""); //Initialize dummy controller
+    RosControllerArray[i] = new RosJointController(""); //Initialize dummy controller
   }
   //TODO: use name server to actually initialize the rjc with the proper names
   // This is testing code only...
@@ -271,7 +271,7 @@ main(int argc, char** argv)
   //The initialization require a pointer to the publishing ros node
   //TODO: there is a static variable in the ros node which can ba accessed, use it
   for(int i=0; i<PR2::MAX_JOINTS; i++)
-    RosControllerArray[i]->init(ControllerArray[i], &rgn);
+    RosControllerArray[i]->init(ControllerArray[i]);
   
   // see if we can subscribe models needed
   if (rgn.AdvertiseSubscribeMessages() != 0)
