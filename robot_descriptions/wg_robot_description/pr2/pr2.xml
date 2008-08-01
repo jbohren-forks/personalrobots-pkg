@@ -8,18 +8,21 @@
 <!-- Begin constant dimensions -->
   <constants>
 
+    <robot_inital_position_x> 0.0 </robot_inital_position_x>  <!-- keep 0 for now, because of hardcoded sensor/gripper positions in controllers.cml -->
+    <robot_inital_position_y> 0.0 </robot_inital_position_y>  <!-- keep 0 for now, because of hardcoded sensor/gripper positions in controllers.cml -->
+    <robot_inital_position_z> 0.0*(wheel_radius-base_caster_offset_z/2)/2 </robot_inital_position_z>  <!-- keep 0 for now, because of hardcoded sensor/gripper positions in controllers.cml -->
+    <wheel_clearance_offset>0.02</wheel_clearance_offset> <!-- placement robot model origin so wheel are not under ground -->
+
     <base_size_x>0.65</base_size_x>  <!-- for defining collision geometry -->
     <base_size_y>0.65</base_size_y>  <!-- for defining collision geometry -->
     <base_size_z>0.26</base_size_z>  <!-- for defining collision geometry -->
 
     <wheel_length>0.03</wheel_length> <!-- FIXME -->
-    <wheel_radius>0.08</wheel_radius> <!-- FIXME -->
+    <wheel_radius>0.079</wheel_radius>  <!-- mp 20080801 -->
 
-    <wheel_clearance_offset>0.02</wheel_clearance_offset> <!-- placement robot model origin so wheel are not under ground -->
-    
-    <base_caster_offset_x>0.2255</base_caster_offset_x> <!-- from function spreadsheet -->
-    <base_caster_offset_y>0.2255</base_caster_offset_y> <!-- from function spreadsheet -->
-    <base_caster_offset_z>0.0565</base_caster_offset_z> <!-- FIXME this number - wheel radius = amount wheel protrudes base -->
+    <base_caster_offset_x>0.2225</base_caster_offset_x>  <!-- mp 20080801 -->
+    <base_caster_offset_y>0.2225</base_caster_offset_y>  <!-- mp 20080801 -->
+    <base_caster_offset_z>0.0282</base_caster_offset_z>  <!-- mp 20080801 -->
     
     <caster_wheel_offset_y>0.049</caster_wheel_offset_y> <!-- from function spreadsheet -->
 
@@ -27,8 +30,8 @@
     <torso_size_y>.620 </torso_size_y> <!-- for defining collision geometry -->
     <torso_size_z>.823 </torso_size_z>  <!-- for defining collision geometry -->
 
-    <base_torso_offset_x>-0.05</base_torso_offset_x> <!-- FIXME -->
-    <base_torso_offset_z>0.8</base_torso_offset_z>    <!-- FIXME -->
+    <base_torso_offset_x>-0.05    </base_torso_offset_x> <!-- mp 20080801 -->
+    <base_torso_offset_z> 0.739675</base_torso_offset_z> <!-- mp 20080801 -->
 
     <torso_center_box_center_offset_x>-.10</torso_center_box_center_offset_x> <!-- FIXME -->
     <torso_center_box_center_offset_z>-.50</torso_center_box_center_offset_z> <!-- FIXME -->
@@ -44,7 +47,7 @@
     <shoulder_pan_min_limit> -M_PI/2 </shoulder_pan_min_limit>  <!-- FIXME -->
     <shoulder_pan_max_limit>  M_PI/2 </shoulder_pan_max_limit>  <!-- FIXME -->
 
-    <torso_shoulder_pan_offset_y>0.1329361</torso_shoulder_pan_offset_y> <!-- FIXME -->
+    <torso_shoulder_pan_offset_y>0.188</torso_shoulder_pan_offset_y> <!-- mp 20080801 -->
 
     <shoulder_pitch_min_limit> -0.6109 </shoulder_pitch_min_limit>
     <shoulder_pitch_max_limit> 1.3090 </shoulder_pitch_max_limit>
@@ -52,7 +55,7 @@
     <shoulder_pitch_length>0.10</shoulder_pitch_length> <!-- for defining collision geometry -->
     <shoulder_pitch_radius>0.12</shoulder_pitch_radius> <!-- for defining collision geometry -->
 
-    <shoulder_pan_shoulder_pitch_offset_x>0.1</shoulder_pan_shoulder_pitch_offset_x>
+    <shoulder_pan_shoulder_pitch_offset_x>0.1</shoulder_pan_shoulder_pitch_offset_x> <!-- mp 20080801 -->
     
     <upperarm_roll_size_x>0.362</upperarm_roll_size_x> <!-- for defining collision geometry -->
     <upperarm_roll_size_y>0.144</upperarm_roll_size_y> <!-- for defining collision geometry -->
@@ -66,14 +69,14 @@
     <elbow_flex_length>0.08</elbow_flex_length> <!-- for defining collision geometry -->
     <elbow_flex_radius>0.1</elbow_flex_radius> <!-- for defining collision geometry -->
 
-    <upperarm_roll_elbow_flex_offset_x>0.4</upperarm_roll_elbow_flex_offset_x> <!-- FIXME -->
+    <upperarm_roll_elbow_flex_offset_x>0.4</upperarm_roll_elbow_flex_offset_x> <!-- mp 20080801 -->
 
     <forearm_roll_size_x>0.27</forearm_roll_size_x> <!-- for defining collision geometry -->
     <forearm_roll_size_y>0.12</forearm_roll_size_y> <!-- for defining collision geometry -->
     <forearm_roll_size_z>0.08</forearm_roll_size_z> <!-- for defining collision geometry -->
     <forearm_roll_center_box_center_offset_x> 0.22 </forearm_roll_center_box_center_offset_x> <!-- FIXME -->
 
-    <elbow_roll_wrist_flex_offset_x>0.3137</elbow_roll_wrist_flex_offset_x>
+    <elbow_roll_wrist_flex_offset_x>0.32025</elbow_roll_wrist_flex_offset_x> <!-- mp 20080801 -->
 
     <wrist_flex_radius>0.033 </wrist_flex_radius>   <!-- for defining collision geometry -->
     <wrist_flex_length>0.103 </wrist_flex_length> <!-- for defining collision geometry -->
@@ -91,8 +94,8 @@
     <head_pan_min_limit>-2.9322</head_pan_min_limit>
     <head_pan_max_limit>2.9322</head_pan_max_limit>
 
-    <torso_head_pan_offset_x>-0.1</torso_head_pan_offset_x>
-    <torso_head_pan_offset_z>0.35</torso_head_pan_offset_z>
+    <torso_head_pan_offset_x>0.0</torso_head_pan_offset_x>
+    <torso_head_pan_offset_z>0.3815</torso_head_pan_offset_z>
 
     <head_pan_size_x>0.188</head_pan_size_x>
     <head_pan_size_y>0.219</head_pan_size_y>
@@ -102,18 +105,59 @@
     <head_tilt_min_limit> -M_PI/6 </head_tilt_min_limit>
     <head_tilt_max_limit> M_PI/3 </head_tilt_max_limit>
 
-    <head_pan_head_tilt_offset_x>0.06</head_pan_head_tilt_offset_x>
+    <head_pan_head_tilt_offset_x>0.058</head_pan_head_tilt_offset_x> <!-- mp 20080801 -->
 
     <head_tilt_size_x>0.164</head_tilt_size_x>
     <head_tilt_size_y>0.253</head_tilt_size_y>
     <head_tilt_size_z>0.181</head_tilt_size_z>
 
-    <!-- TODO fingers -->
+    <!-- stereo camera -->
+    <head_tilt_stereo_offset_x>0.0232</head_tilt_stereo_offset_x> <!-- mp 20080801 -->
+    <head_tilt_stereo_offset_z>0.0645</head_tilt_stereo_offset_z> <!-- mp 20080801 -->
 
+    <!-- ptz cameras -->
+    <torso_ptz_left_offset_x> 0.0000</torso_ptz_left_offset_x> <!-- mp 20080801 -->
+    <torso_ptz_left_offset_y> 0.1975</torso_ptz_left_offset_y> <!-- mp 20080801 -->
+    <torso_ptz_left_offset_z> 0.2265</torso_ptz_left_offset_z> <!-- mp 20080801 -->
+    <torso_ptz_rightt_offset_x> 0.0000</torso_ptz_rightt_offset_x> <!-- mp 20080801 -->
+    <torso_ptz_rightt_offset_y>-0.1975</torso_ptz_rightt_offset_y> <!-- mp 20080801 -->
+    <torso_ptz_rightt_offset_z> 0.2265</torso_ptz_rightt_offset_z> <!-- mp 20080801 -->
+
+    <!-- left hand left fingers -->
+    <gripper_roll_finger_l_left_offset_x> 0.0000 </gripper_roll_finger_l_left_offset_x>
+    <gripper_roll_finger_l_left_offset_y> 0.0000 </gripper_roll_finger_l_left_offset_y>
+    <gripper_roll_finger_l_left_offset_z> 0.0000 </gripper_roll_finger_l_left_offset_z>
+    <finger_l_finger_tip_l_left_offset_x> 0.0000 </finger_l_finger_tip_l_left_offset_x>
+    <finger_l_finger_tip_l_left_offset_y> 0.0000 </finger_l_finger_tip_l_left_offset_y>
+    <finger_l_finger_tip_l_left_offset_z> 0.0000 </finger_l_finger_tip_l_left_offset_z>
+
+    <!-- left hand right fingers -->
+    <gripper_roll_finger_r_left_offset_x> 0.0000 </gripper_roll_finger_r_left_offset_x>
+    <gripper_roll_finger_r_left_offset_y> 0.0000 </gripper_roll_finger_r_left_offset_y>
+    <gripper_roll_finger_r_left_offset_z> 0.0000 </gripper_roll_finger_r_left_offset_z>
+    <finger_r_finger_tip_r_left_offset_x> 0.0000 </finger_r_finger_tip_r_left_offset_x>
+    <finger_r_finger_tip_r_left_offset_y> 0.0000 </finger_r_finger_tip_r_left_offset_y>
+    <finger_r_finger_tip_r_left_offset_z> 0.0000 </finger_r_finger_tip_r_left_offset_z>
+
+    <!-- right hand left fingers -->
+    <gripper_roll_finger_l_right_offset_x> 0.0000 </gripper_roll_finger_l_right_offset_x>
+    <gripper_roll_finger_l_right_offset_y> 0.0000 </gripper_roll_finger_l_right_offset_y>
+    <gripper_roll_finger_l_right_offset_z> 0.0000 </gripper_roll_finger_l_right_offset_z>
+    <finger_l_finger_tip_l_right_offset_x> 0.0000 </finger_l_finger_tip_l_right_offset_x>
+    <finger_l_finger_tip_l_right_offset_y> 0.0000 </finger_l_finger_tip_l_right_offset_y>
+    <finger_l_finger_tip_l_right_offset_z> 0.0000 </finger_l_finger_tip_l_right_offset_z>
+
+    <!-- right hand right fingers -->
+    <gripper_roll_finger_r_right_offset_x> 0.0000 </gripper_roll_finger_r_right_offset_x>
+    <gripper_roll_finger_r_right_offset_y> 0.0000 </gripper_roll_finger_r_right_offset_y>
+    <gripper_roll_finger_r_right_offset_z> 0.0000 </gripper_roll_finger_r_right_offset_z>
+    <finger_r_finger_tip_r_right_offset_x> 0.0000 </finger_r_finger_tip_r_right_offset_x>
+    <finger_r_finger_tip_r_right_offset_y> 0.0000 </finger_r_finger_tip_r_right_offset_y>
+    <finger_r_finger_tip_r_right_offset_z> 0.0000 </finger_r_finger_tip_r_right_offset_z>
 
     <!-- to be used by sensors -->
-    <torso_tilt_laser_offset_x>0.03</torso_tilt_laser_offset_x>
-    <torso_tilt_laser_offset_z>0.30</torso_tilt_laser_offset_z>
+    <torso_tilt_laser_offset_x>0.10000</torso_tilt_laser_offset_x> <!-- mp 20080801 -->
+    <torso_tilt_laser_offset_z>0.19525</torso_tilt_laser_offset_z> <!-- mp 20080801 -->
     
     <base_base_laser_offset_x>0.26</base_base_laser_offset_x>
     <base_base_laser_offset_z>0.28</base_base_laser_offset_z>
@@ -193,7 +237,7 @@
 
     <define template="pr2_wheel_joint" type="revolute"> 
       <axis> 0 1 0 </axis> <!-- direction of the joint in the local coordinate frame -->
-      <anchor>0 0 0</anchor> <!-- point on the joint relative to the local coordinate frame -->
+      <anchor>0 caster_wheel_offset_y 0</anchor> <!-- point on the joint relative to the local coordinate frame -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
     </define>
 
@@ -428,7 +472,7 @@
     <parent> world</parent>
 
     <rpy> 0 0 0</rpy> <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
-    <xyz> 0 0 (wheel_radius-base_caster_offset_z/2)/2</xyz> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
+    <xyz> robot_inital_position_x robot_inital_position_y robot_inital_position_z </xyz> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
 
     <joint type="planar"> 
     </joint>
