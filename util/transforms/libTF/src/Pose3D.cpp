@@ -130,21 +130,21 @@ void Pose3D::setFromMatrix(const NEWMAT::Matrix& matIn)
     else if ( mat[0] > mat[5] && mat[0] > mat[10] ) {// Column 0: 
         double S  = sqrt( 1.0 + mat[0] - mat[5] - mat[10] ) * 2;
         xr = 0.25 * S;
-        yr = (mat[1] + mat[4] ) / S;
-        zr = (mat[8] + mat[2] ) / S;
-        w = (mat[6] - mat[9] ) / S;
+        yr = (mat[4] + mat[1] ) / S;
+        zr = (mat[2] + mat[8] ) / S;
+        w = (mat[9] - mat[6] ) / S;
     } else if ( mat[5] > mat[10] ) {// Column 1: 
         double S  = sqrt( 1.0 + mat[5] - mat[0] - mat[10] ) * 2;
-        xr = (mat[1] + mat[4] ) / S;
+        xr = (mat[4] + mat[1] ) / S;
         yr = 0.25 * S;
-        zr = (mat[6] + mat[9] ) / S;
-        w = (mat[8] - mat[2] ) / S;
+        zr = (mat[9] + mat[6] ) / S;
+        w = (mat[2] - mat[8] ) / S;
     } else {// Column 2:
         double S  = sqrt( 1.0 + mat[10] - mat[0] - mat[5] ) * 2;
-        xr = (mat[8] + mat[2] ) / S;
-        yr = (mat[6] + mat[9] ) / S;
+        xr = (mat[2] + mat[8] ) / S;
+        yr = (mat[9] + mat[6] ) / S;
         zr = 0.25 * S;
-        w = (mat[1] - mat[4] ) / S;
+        w = (mat[4] - mat[1] ) / S; 
     }
     
     //  std::cout << "setFromMatrix" << xt  <<" "<< yt  <<" "<< zt  <<" "<< xr  <<" "<<yr <<" "<<zr <<" "<<w <<std::endl;
