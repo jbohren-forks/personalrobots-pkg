@@ -430,6 +430,7 @@ namespace robot_desc
 	unsigned int getDisjointPartCount(void) const;
 	Link* getDisjointPart(unsigned int index) const;
 	unsigned int getLinkCount(void) const;
+	bool isRoot(const Link* link) const;
 	void getLinks(std::vector<Link*> &links) const;
 	void getActuators(std::vector<Actuator*> &actuators) const;
 	void getTransmissions(std::vector<Transmission*> &transmissions) const;

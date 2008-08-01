@@ -125,6 +125,14 @@ namespace robot_desc {
 	    return NULL;
     }
     
+    bool URDF::isRoot(const Link* link) const
+    {
+	for (unsigned int i = 0 ; i < m_linkRoots.size() ; ++i)
+	    if (link == m_linkRoots[i])
+		return true;
+	return false;
+    }
+    
     void URDF::getGroupNames(std::vector<std::string> &groups) const
     {
 	for (std::map<std::string, Group*>::const_iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
