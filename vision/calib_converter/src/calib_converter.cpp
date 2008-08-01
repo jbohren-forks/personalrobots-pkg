@@ -20,6 +20,13 @@ void SplitFilename (const string& str, string *dir, string *file)
   found=str.find_last_of("/\\");
   *file = str.substr(found+1);
   *dir = str.substr(0,found);
+
+  //If there was no leading directory.
+  if(found == str.npos) {
+     *file = *dir;
+     *dir = string(".");
+   }
+
 }
 
 template <class T>
@@ -61,10 +68,12 @@ public:
     // -- Get the filenames to save to.
     string dir, filename;
     SplitFilename(fullname, &dir, &filename);
+    //cout << " dir: " << dir << "    filename: " << filename << endl;
     string num = filename.substr(0, filename.find_first_of("-"));
     string filebase = filename.substr(0, filename.find_first_of("."));
     string outputdir = dir; // + string("/") + filebase; 
     mkdir(outputdir.c_str(), 0755);
+
 
     // -- Load the messages.
     lp.open(fullname, ros::Time(0));
@@ -96,14 +105,16 @@ public:
    
     // -- Save the camera calibration information file.
     string outputname = outputdir + string("/") + num + string("-cal_params.txt");
-    cout << "Saving cal_params to " << outputname << endl;
+    cout << "Saving cal_params to " << outputname << "..." << endl;
     ofstream f(outputname.c_str());
     f << calparams.data;
     f.close();
-
+    cout << " done." << endl;
+    
     // -- Save the pointcloud.
     outputname = outputdir + string("/") + num + string("-J.xml");
-    cout << "Saving pointcloud to " << outputname << endl;
+    cout << "Saving pointcloud of " << cloud.get_pts_size() << " points to " << outputname << "..." << endl;
+    
     CvMat *M = cvCreateMat(cloud.get_pts_size(), 4, CV_64FC1);
     for(unsigned int i=0; i<cloud.get_pts_size(); i++) {
       cvmSet(M, i, 0, cloud.pts[i].x);
@@ -112,6 +123,7 @@ public:
       cvmSet(M, i, 3, cloud.chan[0].vals[i]);
     }
     cvSave(outputname.c_str(), M);
+    cout << " done." << endl;
 
     // -- For each image in the message.
     cv_mutex.lock();
@@ -143,9 +155,9 @@ public:
       else
 	outputname = outputdir + string("/") + num + string("-R.png");
 
-      cout << "Saving image to " << outputname << endl;
+      cout << "Saving image to " << outputname << "..." << endl;
       cvSaveImage(outputname.c_str(), j->second.cv_image);
-
+      cout << " done." << endl;
     }
     cv_mutex.unlock();
     return 0;
@@ -161,6 +173,7 @@ int main(int argc, char **argv) {
 
   for(int i=1; i<argc; i++) {
     string name = argv[i];
+    cout << "\n\n===  Starting processing on " << name << endl;
     calib_converter cc(name);
     cc.run_conversion();
   }
