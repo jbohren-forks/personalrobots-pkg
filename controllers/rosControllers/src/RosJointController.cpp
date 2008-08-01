@@ -25,10 +25,14 @@
 using namespace controller;
 using ros::node;
 
-RosJointController::RosJointController(std::string jointName) : 
-    jc(NULL),
+RosJointController::RosJointController(controller::JointController *jointc, std::string jointName) : 
+    jc(jointc),
     mJointName(jointName)
 {
+  assert(jointc);
+  // The user did not set a name for the joint, let's set it
+  if(jointc->getName() == "")
+    jc->setName(jointName);
   mCmdBusName=mJointName+std::string("_cmd");
   mStateBusName=mJointName+std::string("_state");
   // Actually, there is a static poitner to the process's ros node:
@@ -52,8 +56,15 @@ RosJointController::RosJointController(controller::JointController *jointc) :
 
 int RosJointController::AdvertiseSubscribeMessages()
 {
+  if(!publisherNode)
+    publisherNode = ros::node::instance();  
   if(publisherNode)
+  {
     publisherNode->advertise<rosControllers::RotaryJointState>(mStateBusName);
+    std::cout<<"Publishing "<<mStateBusName<<std::endl;
+  }
+  else
+    std::cout<<"No ROS node for "<<mStateBusName<<std::endl;
   return(0);
 }
 
@@ -62,14 +73,14 @@ RosJointController::~RosJointController()
 }
 
 
-void
+/*void
 RosJointController::init(controller::JointController *jc)
 {
   assert(jc);
   //FIXME: the joint controller does not initialize its name properly
 //   assert(jc->name() == mJointName);
   this->jc = jc;
-}
+}*/
 
 
 void
@@ -90,12 +101,12 @@ RosJointController::Update()
   //TODO: add Time, SaturationEffort, MaxEffort from the joint
   
   //The commands:
-//   jc->getTorqueCmd(&(jointStateMsg.TorqueCmd));
-//   jc->getTorqueAct(&(jointStateMsg.TorqueAct));
-//   jc->getPosCmd(&(jointStateMsg.PosCmd));
-//   jc->getPosAct(&(jointStateMsg.PosAct));
-//   jc->getVelCmd(&(jointStateMsg.VelCmd));
-//   jc->getVelAct(&(jointStateMsg.VelAct));
+  jc->getTorqueCmd(&(jointStateMsg.TorqueCmd));
+  jc->getTorqueAct(&(jointStateMsg.TorqueAct));
+  jc->getPosCmd(&(jointStateMsg.PosCmd));
+  jc->getPosAct(&(jointStateMsg.PosAct));
+  jc->getVelCmd(&(jointStateMsg.VelCmd));
+  jc->getVelAct(&(jointStateMsg.VelAct));
   
   if(publisherNode)
     publisherNode->publish(mStateBusName, jointStateMsg);

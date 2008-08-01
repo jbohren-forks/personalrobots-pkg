@@ -74,8 +74,9 @@ class RosJointController
 
 
   public:
-    // If you call this contructor, don't forget to call init() afterwards
-    RosJointController(std::string jointName);
+    // You should not use this constructor
+    // The name should be given by the joint controller directly
+    RosJointController(controller::JointController *jc, std::string jointName);
     // The constructor that should be used
     // It assumes the name of the joint controller is properly initialized
     RosJointController(controller::JointController *jc);
@@ -88,7 +89,7 @@ class RosJointController
 
     // Reigsters a joint controller to this class
     // The constructor should be used instead
-    void init(controller::JointController *jc);
+//     void init(controller::JointController *jc);
     // advertise / subscribe models
     // TODO: return significant return value?
     int advertiseSubscribeMessages();
