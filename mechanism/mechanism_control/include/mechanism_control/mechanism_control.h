@@ -25,6 +25,19 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
+
+/*
+ * MechanismControl mc(hardware_interface);
+ * mc.registerActuator("AnActuatorName", 0);
+ * mc.registerActuator("AnotherActuatorName", 0);
+ * ...
+ *
+ * mc.registerControllerType("JointController", JointController::create);
+ * ...
+ * mc.init(config);
+ *
+ * mc.spawnController("JointController", controllerConfig);
+ */
 #ifndef MECHANISM_CONTROL_H
 #define MECHANISM_CONTROL_H
 
@@ -54,9 +67,10 @@ public:
   bool addController(controller::Controller *c);
   bool spawnController(const char* type, TiXmlElement* config);
 
+  mechanism::Robot model_;
+
 private:
   bool initialized_;
-  mechanism::Robot model_;
   HardwareInterface *hw_;
 
   std::map<std::string, ControllerAllocator> controller_library_;
