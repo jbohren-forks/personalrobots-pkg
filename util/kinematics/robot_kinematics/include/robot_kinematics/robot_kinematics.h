@@ -88,6 +88,8 @@ namespace robot_kinematics
 
     NEWMAT::Matrix getKDLJointInXMLFrame(robot_desc::URDF::Link *link);
 
+    robot_desc::URDF::Link* findNextLinkInGroup(robot_desc::URDF::Link *link_current, robot_desc::URDF::Group* group);
+    
     int num_chains_;
 
     int chain_counter_;

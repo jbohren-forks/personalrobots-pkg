@@ -55,7 +55,7 @@ int main( int argc, char** argv )
 
   assert(left_arm);
   assert(right_arm);
-
+  
   JntArray pr2_config = JntArray(left_arm->num_joints_);
   JntArray pr2_config_r = JntArray(right_arm->num_joints_);
 

@@ -1,12 +1,12 @@
 //Software License Agreement (BSD License)
-
+//
 //Copyright (c) 2008, Willow Garage, Inc.
 //All rights reserved.
-
+//
 //Redistribution and use in source and binary forms, with or without
 //modification, are permitted provided that the following conditions
 //are met:
-
+//
 // * Redistributions of source code must retain the above copyright
 //   notice, this list of conditions and the following disclaimer.
 // * Redistributions in binary form must reproduce the above
@@ -119,17 +119,28 @@ void RobotKinematics::createChain(robot_desc::URDF::Group* group)
   KDL::Frame frame1;
   KDL::Frame frame2;
   KDL::Frame ident = KDL::Frame::Identity();
+  int link_count = 0;
+
+  if((int) group->linkRoots.size() != 1)
+  {
+    fprintf(stderr,"Too many roots in serial chain\n");
+    return;
+  }
+
+  robot_desc::URDF::Link *link_current = group->linkRoots[0];
+  robot_desc::URDF::Link *link_next;
 
   this->chains_[chain_counter_].link_kdl_frame_ = new KDL::Frame[(int) group->links.size()];
   this->chains_[chain_counter_].name = group->name;
   this->serial_chain_map_[this->chains_[chain_counter_].name] = &(this->chains_[chain_counter_]);
 
-  for(int i=0; i < (int) group->links.size(); i++)
+  while(link_count < (int) group->links.size())
   {
-    if (i < (int) (group->links.size()-1))
+    if (link_count < (int) (group->links.size()-1))
     {
-      getKDLJointInXMLFrame(group->links[i],frame1);
-      frame2 = getKDLNextJointFrame(group->links[i],group->links[i+1]);
+      link_next = findNextLinkInGroup(link_current,group);
+      getKDLJointInXMLFrame(link_current,frame1);
+      frame2 = getKDLNextJointFrame(link_current,link_next);
 #ifdef DEBUG
       printf("\nComputing and adding frame::%d\n",i);
       cout << frame2 << endl << endl << endl;
@@ -140,11 +151,24 @@ void RobotKinematics::createChain(robot_desc::URDF::Group* group)
       frame1 = ident;
       frame2 = ident;
     }
-    this->chains_[chain_counter_].link_kdl_frame_[i] = frame1;
+    this->chains_[chain_counter_].link_kdl_frame_[link_count] = frame1;
     this->chains_[chain_counter_].chain.addSegment(Segment(Joint(Joint::RotZ),frame2));
+    link_count++;
   }
+
   this->chains_[chain_counter_].init();
   chain_counter_++;
+}
+
+robot_desc::URDF::Link* RobotKinematics::findNextLinkInGroup(robot_desc::URDF::Link *link_current, robot_desc::URDF::Group* group)
+{
+  std::vector<robot_desc::URDF::Link*>::iterator link_iter;
+  for(link_iter = link_current->children.begin(); link_iter != link_current->children.end(); link_iter++)
+  {
+    if((*link_iter)->insideGroup(group))
+      return *link_iter;
+  }
+  return NULL;
 }
 
 KDL::Frame RobotKinematics::getKDLNextJointFrame(robot_desc::URDF::Link *link, robot_desc::URDF::Link *link_plus_one)

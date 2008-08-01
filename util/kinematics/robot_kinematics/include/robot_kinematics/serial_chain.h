@@ -84,10 +84,6 @@ namespace robot_kinematics
      */
     KDL::Frame *link_kdl_frame_;
 
-    /*! \brief Number of links in the robot
-     */
-    int num_links_;
-
     /*! \brief Number of joints in the robot
      */
     int num_joints_;
