@@ -500,12 +500,6 @@ RosGazeboNode::Update()
       local_cloud_pt.y                = local_cloud_pt.y + GaussianKernel(0,sigma);
       local_cloud_pt.z                = local_cloud_pt.z + GaussianKernel(0,sigma);
 
-      // offsets for changing frame of reference to ROBOT FRAME
-      // we can use transform server here or use the offsets directly
-      local_cloud_pt.x = local_cloud_pt.x + PR2::BASE_TORSO_OFFSET.x + PR2::TORSO_TILT_LASER_OFFSET.x;
-      local_cloud_pt.y = local_cloud_pt.y + PR2::BASE_TORSO_OFFSET.y;
-      local_cloud_pt.z = local_cloud_pt.z + PR2::BASE_TORSO_OFFSET.z + PR2::TORSO_TILT_LASER_OFFSET.z; /* FIXME: spine elevator not accounted for */
-
       // get position cheats from simulator
       //double cheat_x,cheat_y,cheat_z,cheat_roll,cheat_pitch,cheat_yaw;
       //this->PR2Copy->GetBasePositionActual(&cheat_x,&cheat_y,&cheat_z,&cheat_roll,&cheat_pitch,&cheat_yaw);
@@ -531,7 +525,7 @@ RosGazeboNode::Update()
     /***************************************************************/
     //std::cout << " pcd num " << this->cloud_pts->length << std::endl;
     //
-    this->cloudMsg.header.frame_id = tf.lookup("FRAMEID_BASE");
+    this->cloudMsg.header.frame_id = tf.lookup("FRAMEID_TILT_LASER_BLOCK");
     this->cloudMsg.header.stamp.sec = (unsigned long)floor(this->tiltLaserTime);
     this->cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->tiltLaserTime - this->cloudMsg.header.stamp.sec) );
 
@@ -590,7 +584,7 @@ RosGazeboNode::Update()
       this->laserMsg.intensities[i] = this->intensities[i];
     }
 
-    this->laserMsg.header.frame_id = tf.lookup("FRAMEID_LASER");
+    this->laserMsg.header.frame_id = tf.lookup("FRAMEID_BASE_LASER_BLOCK");
     this->laserMsg.header.stamp.sec = (unsigned long)floor(this->baseLaserTime);
     this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->baseLaserTime - this->laserMsg.header.stamp.sec) );
 
@@ -620,6 +614,7 @@ RosGazeboNode::Update()
   this->odomMsg.pos.x  = x;
   this->odomMsg.pos.y  = y;
   this->odomMsg.pos.th = yaw;
+
   // this->odomMsg.stall = this->positionmodel->Stall();
 
   // TODO: get the frame ID from somewhere
@@ -966,6 +961,17 @@ RosGazeboNode::Update()
   /***************************************************************/
   //this->PR2Copy->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw); // actual CoM of base
   tf.sendEuler("FRAMEID_BASE",
+               "FRAMEID_ROBOT",
+               0,
+               0,
+               0, 
+               0,
+               0,
+               0,
+               odomMsg.header.stamp);
+
+  //this->PR2Copy->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw); // actual CoM of base
+  tf.sendEuler("FRAMEID_BASE",
                "FRAMEID_ODOM",
                x,
                y,
@@ -974,6 +980,7 @@ RosGazeboNode::Update()
                pitch,
                roll,
                odomMsg.header.stamp);
+
   //std::cout << "base y p r " << yaw << " " << pitch << " " << roll << std::endl;
 
   // base = center of the bottom of the base box
