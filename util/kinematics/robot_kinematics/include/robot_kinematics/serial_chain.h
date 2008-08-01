@@ -57,6 +57,10 @@ void angle_within_mod180(KDL::JntArray &q, int nJnts);
 
 namespace robot_kinematics
 {
+  /* \class
+   * \brief The SerialChain class is a wrapper for the serial chain class found in the KDL library. It allows the additional 
+   * specification of a transformation from the externally-defined "link" frame to the joint coordinate frame defined by KDL.
+   */
   class SerialChain
   {
     public:
@@ -68,14 +72,12 @@ namespace robot_kinematics
         delete q_IK_result;
         delete q_IK_guess;
    };
-
-    public:
      
     /*! \brief String name for the serial chain, eg : "rightArm"
      */
     std::string name;
 
-    /*! \brief KDL::Chain representation of the chain
+    /*! \brief KDL::Chain representation of the serial chain
      */
     KDL::Chain chain;
 
@@ -89,35 +91,47 @@ namespace robot_kinematics
     int num_joints_;
 
     /*! \brief Compute the forward kinematics and return as a KDL::frame
-     * f - end effector frame (result of the fwd kinematics)
+     * \param q - input joint angles 
+     * \param f - output end effector frame (result of the fwd kinematics)
      * returns True if ok, False if error.
      */
     bool computeFK(const KDL::JntArray &q, KDL::Frame &f);
 
     /*! \brief Compute the forward kinematics and return as a NEWMAT::Matrix
-     * f - end effector frame (result of the fwd kinematics)
+     * \param q - input joint angles 
+     * \param f - output end effector frame (result of the fwd kinematics)
      * returns True if ok, False if error.
      */
     bool computeFK(const KDL::JntArray &q, NEWMAT::Matrix &f);
 
     /*! \brief Compute the inverse kinematics and return as a KDL::JntArray
-     * f - end effector frame 
+     * \param q_init - initial guess for the inverse kinematics solution
+     * \param f - end effector frame 
+     * \param q_out - final solution to the IK 
      * returns True if ok, False if error.
      */
     bool computeIK(const KDL::JntArray &q_init, const KDL::Frame &f, KDL::JntArray &q_out);
 
-    /*! \brief Compute the inverse kinematics and return as a KDL::JntArray
-     * f - end effector frame
+    /*! \brief Compute the inverse kinematics and return as a KDL::JntArray.
+     * This uses the stored previous guess for the inverse kinematics as a starting point for the solution
+     * \param f - end effector frame 
+     * \param q_out - final solution to the IK 
      * returns True if ok, False if error.
      */
     bool computeIK(const KDL::Frame &f, KDL::JntArray &q_out);
 
     /*! \brief Compute the inverse kinematics
-     * f - end effector frame (result of the fwd kinematics)
+     * This uses the stored previous guess for the inverse kinematics as a starting point for the solution 
+     * and stores the result in q_IK_result
+     * \param f - end effector frame 
      * returns True if ok, False if error.
      */
     bool computeIK(const KDL::Frame &f);
 
+    /*! \brief Compute the differential kinematics
+     * f - end effector frame (result of the fwd kinematics)
+     * returns True if ok, False if error.
+     */
     bool computeDK(const KDL::JntArray & q_in, const KDL::Twist &v_in, KDL::JntArray & qdot_out);
 
     KDL::JntArray *q_IK_result; //< KDL::JntArray that stores result of IK
@@ -128,11 +142,11 @@ namespace robot_kinematics
 
     KDL::JntArray *q_IK_guess; //< is used as the IK guess.
 
-    KDL::ChainFkSolverPos_recursive *forwardKinematics;
+    KDL::ChainFkSolverPos_recursive *forwardKinematics; /*< pointer to the forward kinematics solver for this chain*/
 
-    KDL::ChainIkSolverVel_pinv *differentialKinematics;
+    KDL::ChainIkSolverVel_pinv *differentialKinematics; /*< pointer to the differential kinematics solver for this chain */
 
-    KDL::ChainIkSolverPos_NR *inverseKinematics;
+    KDL::ChainIkSolverPos_NR *inverseKinematics; /*< pointer to the inverse kinematics sovler for this case */
 
     private:
 

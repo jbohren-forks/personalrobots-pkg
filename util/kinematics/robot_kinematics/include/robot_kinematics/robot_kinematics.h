@@ -54,49 +54,118 @@
 
 namespace robot_kinematics
 {
+  /*! \class
+   * \brief RobotKinematics is a class to easily construct serial robot chain descriptions in the KDL library. 
+   * It reads an xml file (the URDF - Universal Robot Description Format) and generates a serial chain robot from the description.
+   * It returns pointers to different serial chains and allows access to the underlying kinematics solvers provided by KDL
+   * In all serial chains defined by RobotKinematics from the URDF, the KDL frame is always positioned on the joint axis with the joint axis along the Z axis.
+   * This simplifies the description of joints whose axes do not lie along coordinate directions in the home position.
+   */
   class RobotKinematics
   {
     public:
 
+    /*!
+     * \brief Default constructor
+     */
     RobotKinematics();
 
+    /*!
+     * \brief Default destructor
+     */
     ~RobotKinematics();
 
+    /*!
+     * \brief load the robot kinematics from an XML file
+     *
+     * \param filename - xml file name
+     */
     void loadXML(std::string filename);
 
+    /*!
+     * \brief get back a pointer to a serial chain inside the robot kinematics
+     * \param name - name of the serial chain, eg. "rightArm", 
+     * this name must match the name given to the serial chain in the XML description
+     */
     SerialChain* getSerialChain(std::string name) const;
 
     private:
 
-    SerialChain *chains_;
+    SerialChain *chains_; /*< pointer to array of serial chains inside RobotKinematics */
 
-    void createChain(robot_desc::URDF::Group* group);
+    /*!
+     * \brief Create a serial chain for the robot using a "group" descripition from the URDF. 
+     * A group is a series of links forming a SERIAL manipulator
+     * Groups in the URDF must be specified with a flag = "kinematic"
+     *
+     * \param group - pointer to a URDF group. See URDF.h for more information on groups.
+     */ 
+    void createChain(robot_desc::URDF::Group* group); 
 
+    /*!
+     * \brief cross product helper function
+     */
     void cross(const double p1[], const double p2[], double p3[]);
 
-    void getKDLJointInXMLFrame(robot_desc::URDF::Link *link, KDL::Frame &frame);
 
+    /*! 
+     * \brief get angle between two vectors 
+     */ 
     double getAngleBetweenVectors(double p1[],double p2[]);
 
-    KDL::Frame *robot_kdl_frame_;
-
+    /*!
+     * \brief convert a newmat matrix to KDL::frame format
+     *
+     * \param NEWMAT::Matrix
+     * \return KDL::Frame
+     */
     KDL::Frame convertNewmatMatrixToKDL(NEWMAT::Matrix m);
 
+    /*!
+     * \brief get the transformation from the current KDL joint frame to the next KDL joint frame
+     * \param link - pointer to current link
+     * \param link_plus_one - pointer to next link
+     * \return KDL::frame representation of the required transformation
+     */
     KDL::Frame getKDLNextJointFrame(robot_desc::URDF::Link *link, robot_desc::URDF::Link *link_plus_one);
 
-    std::vector<robot_desc::URDF::Group*> groups_;
+    std::vector<robot_desc::URDF::Group*> groups_; /*< vector of group pointers defined in the XML file */
 
+    /*! 
+     * \brief Compute and get the transformation from the XML/Link frame to the KDL joint frame
+     * The KDL frame is always positioned on the joint axis with the joint axis along the Z axis.
+     * 
+     * \param link - pointer to link in URDF model 
+     * \param frame - reference to frame containing KDL::frame description of the required transformation
+     */ 
+    void getKDLJointInXMLFrame(robot_desc::URDF::Link *link, KDL::Frame &frame);
+
+    /*! 
+     * \brief Compute and get the transformation from the XML/Link frame to the KDL joint frame as a NEWMAT::Matrix
+     * The KDL frame is always positioned on the joint axis with the joint axis along the Z axis.
+     * 
+     * \param link - pointer to link in URDF model 
+     * \param frame - reference to frame containing KDL::frame description of the required transformation
+     */ 
     NEWMAT::Matrix getKDLJointInXMLFrame(robot_desc::URDF::Link *link);
 
+    /*!
+     * \brief find the next child link that also belongs to a particular group 
+     *
+     * \param link_current - pointer to current link. This functions examines the children of this link, 
+     * determines which one lies in the requested group and returns a pointer to the child link. 
+     * It returns null if it does not find a child.
+     * \param group - group to which child must belong to be returned
+     */
     robot_desc::URDF::Link* findNextLinkInGroup(robot_desc::URDF::Link *link_current, robot_desc::URDF::Group* group);
     
-    int num_chains_;
+    int num_chains_; /*< num of chains in the Robot Kinematics class */
 
-    int chain_counter_;
+    int chain_counter_; /*< chain count */
 
     protected:
 
-    std::map<std::string, SerialChain*> serial_chain_map_;
+    std::map<std::string, SerialChain*> serial_chain_map_; /*< map from pointers to the chains to string names for the chains */
 
   };
 }
