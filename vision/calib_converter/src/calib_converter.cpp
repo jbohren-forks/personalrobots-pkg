@@ -13,20 +13,6 @@
 
 using namespace std;
 
-void copyImageArray(string name, ros::msg* m, ros::Time t, void* n)
-{
-  if (m != 0) {
-    *((std_msgs::ImageArray*)(n)) = *((std_msgs::ImageArray*)(m));
-  }
-}
-
-void copyPointcloud(string name, ros::msg* m, ros::Time t, void* n)
-{
-  if (m != 0) {
-    *((std_msgs::PointCloudFloat32*)(n)) = *((std_msgs::PointCloudFloat32*)(m));
-  }
-}
-
 template <class T>
 void copyMsg(string name, ros::msg* m, ros::Time t, void* n)
 {
@@ -71,7 +57,7 @@ public:
     SplitFilename(fullname, &dir, &filename);
     string num = filename.substr(0, filename.find_first_of("-"));
     string filebase = filename.substr(0, filename.find_first_of("."));
-    string outputdir = dir + string("/") + filebase; 
+    string outputdir = dir; // + string("/") + filebase; 
     mkdir(outputdir.c_str(), 0755);
 
     // -- Load the messages.
@@ -82,19 +68,19 @@ public:
     while(lp.nextMsg());
 
 
-
     // -- If we don't have all the expected messages, yell.
 
    
     // -- Save the camera calibration information file.
-    string outputname = outputdir + string("/") + string("cal_params.txt");
+    string outputname = outputdir + string("/") + num + string("-cal_params.txt");
+    cout << "Saving cal_params to " << outputname << endl;
     ofstream f(outputname.c_str());
     f << calparams.data;
     f.close();
 
-
     // -- Save the pointcloud.
-    outputname = outputdir + string("/") + string("pointcloud.xml");
+    outputname = outputdir + string("/") + num + string("-J.xml");
+    cout << "Saving pointcloud to " << outputname << endl;
     CvMat *M = cvCreateMat(cloud.get_pts_size(), 4, CV_64FC1);
     for(unsigned int i=0; i<cloud.get_pts_size(); i++) {
       cvmSet(M, i, 0, cloud.pts[i].x);
@@ -110,26 +96,18 @@ public:
     {
       // -- Get the image into openCV and display.
       string l = image_msg.images[i].label;
-      cout << "Looking at image " << l << endl;
       map<string, imgData>::iterator j = images.find(l);
 
       if (j == images.end())
       {
-	cout << "adding new keyval pair for " << l << endl;
         images[l].label = image_msg.images[i].label;
         images[l].bridge = new CvBridge<std_msgs::Image>(&image_msg.images[i], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
         cvNamedWindow(l.c_str(), CV_WINDOW_AUTOSIZE);
         images[l].cv_image = 0;
       } 
       
-      j = images.find(l);
-
-      //make sure we don't have an old image.
-//       if (j->second.cv_image)
-// 	cvReleaseImage(&j->second.cv_image);
-      
+      j = images.find(l);      
       j->second.bridge->to_cv(&j->second.cv_image);
-
 
       // -- Make sure we've got the right image types.
       if(l.compare(string("left_rectified")) != 0 && l.compare(string("right_rectified")) != 0) {
@@ -137,8 +115,12 @@ public:
       }
 	
       // -- Save the image.
-      string outputname = outputdir + string("/") + l + string(".png");
-      cout << "saving to " << outputname << endl;
+      if(l.compare(string("left_rectified")) == 0)
+	outputname = outputdir + string("/") + num + string("-L.png");
+      else
+	outputname = outputdir + string("/") + num + string("-R.png");
+
+      cout << "Saving image to " << outputname << endl;
       cvSaveImage(outputname.c_str(), j->second.cv_image);
 
     }
@@ -148,6 +130,12 @@ public:
 };
 
 int main(int argc, char **argv) {
+  if(argc==1) {
+    cout << "\nUsage: \ncalib_converter BAGFILE [BAGFILE ...]\n";
+    cout << "The bagfiles must have a rectified left and right Videre image, a full_cloud from the Hokuyo, and a videre/cal_params message.\n" << endl;
+    return 1;
+  }
+
   for(int i=1; i<argc; i++) {
     string name = argv[i];
     calib_converter cc(name);
