@@ -427,7 +427,7 @@
     <parent> world</parent>
 
     <rpy> 0 0 0</rpy> <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
-    <xyz> 0.25 0.1 0.3+wheel_clearance_offset</xyz> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
+    <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
 
     <joint type="planar"> 
     </joint>
