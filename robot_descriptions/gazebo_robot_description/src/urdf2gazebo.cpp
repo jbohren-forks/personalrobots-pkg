@@ -1,3 +1,37 @@
+/*********************************************************************
+* Software License Agreement (BSD License)
+* 
+*  Copyright (c) 2008, Willow Garage, Inc.
+*  All rights reserved.
+* 
+*  Redistribution and use in source and binary forms, with or without
+*  modification, are permitted provided that the following conditions
+*  are met:
+* 
+*   * Redistributions of source code must retain the above copyright
+*     notice, this list of conditions and the following disclaimer.
+*   * Redistributions in binary form must reproduce the above
+*     copyright notice, this list of conditions and the following
+*     disclaimer in the documentation and/or other materials provided
+*     with the distribution.
+*   * Neither the name of the Willow Garage nor the names of its
+*     contributors may be used to endorse or promote products derived
+*     from this software without specific prior written permission.
+* 
+*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+*  POSSIBILITY OF SUCH DAMAGE.
+*********************************************************************/
+
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
@@ -59,24 +93,20 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
   libTF::Pose3D currentTransform = transform;
   
   std::string type;
-  unsigned int linkGeomSize = 0;
-
+  int linkGeomSize = link->collision->geometry->nsize;
+  
   switch (link->collision->geometry->type)
   {
     case robot_desc::URDF::Link::Geometry::BOX:
-      linkGeomSize = 3;
       type = "box";
       break;
     case robot_desc::URDF::Link::Geometry::CYLINDER:
-      linkGeomSize = 2;
       type = "cylinder";
       break;
     case robot_desc::URDF::Link::Geometry::SPHERE:
-      linkGeomSize = 1;
       type = "sphere";
       break;
     default:
-      linkGeomSize = 0;
       printf("Unknown body type: %d in link '%s'\n", link->collision->geometry->type, link->name.c_str());
       break;
   }
@@ -140,34 +170,20 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
         coll.multiplyPose(vis);
         
         addTransform(visual, coll);
-        
-        /* FIXME: HACK HACK HACK -- proper fix is to look for size and scale tags, and make sure only 1/2 exist. */
-        /* if size are all zeros, use scale */
-        /* set geometry size */
-        double tmpSize = 0.0;
-        for (int k=0; k<3; k++) /* hack, for visual this is always 3 with new gazebo definitions */
-        {
-          tmpSize = tmpSize + fabs((link->visual->geometry->size)[k]);
-          std::cout << "visual size " << k << " " << (link->visual->geometry->size)[k];
-        }
-        std::cout << std::endl;
-        if (tmpSize > 0.0)
-          /* set geometry size */
-          addKeyValue(visual, "size", values2str(3, link->visual->geometry->size));
+
+	/* set geometry size */
+	if (link->visual->geometry->isSet["size"])
+	  addKeyValue(visual, "size", values2str(3, link->visual->geometry->size));
         else
           /* set geometry scale */
           addKeyValue(visual, "scale", values2str(3, link->visual->scale));
-        /* FIXME: HACK HACK HACK -- proper fix is to look for size and scale tags, and make sure only 1/2 exist. */
-
-
-
+	
         
         /* set geometry mesh file */
         if (link->visual->geometry->filename.empty())
             addKeyValue(visual, "mesh", "unit_" + type);
         else
             addKeyValue(visual, "mesh", "models/pr2/" + link->visual->geometry->filename + ".mesh");
-            //addKeyValue(visual, "mesh", "models/pr2_matt/high/" + link->visual->geometry->filename + ".mesh");
         
         /* set geometry material */        
         if (!link->visual->material.empty())
@@ -225,11 +241,9 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
         addKeyValue(joint, "axis", values2str(3, link->joint->axis));
         addKeyValue(joint, "axisOffset", values2str(3, link->joint->anchor));
         
-        // FIXME:  if not limit specified, how do we know????
-        // not fixed, but 0 limits, do not assign stops
-        if (*(link->joint->limit) != 0 || *( link->joint->limit + 1) != 0)
+        if (link->joint->isSet["limit"])
         {
-          addKeyValue(joint, "lowStop", values2str(1, link->joint->limit));
+	  addKeyValue(joint, "lowStop", values2str(1, link->joint->limit));
           addKeyValue(joint, "highStop", values2str(1, link->joint->limit + 1));
         }
       }
