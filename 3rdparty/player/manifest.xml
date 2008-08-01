@@ -16,6 +16,7 @@ system.
   <cpp lflags="-Wl,-rpath,${prefix}/player/lib -L${prefix}/player/lib -lplayercore -lplayerxdr -lplayerutils -lplayererror -lplayerdrivers" cflags="-I${prefix}/player/include/player-2.2"/>
   <doxymaker external="http://playerstage.sourceforge.net/doc/Player-cvs/player"/>
 </export>
+<versioncontrol type="svn" url="https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/player/trunk"/>
 </package>
 
 

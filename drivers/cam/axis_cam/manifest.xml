@@ -17,7 +17,7 @@ In the future, I may add more sophisticated (more efficient) transport methods.
 <depend package="rosthread"/>
 <depend package="string_utils"/>
 <depend package="image_utils"/>
-<sysdepend package="libcurl3-openssl-dev" os="ubuntu" version="7.10-gutsy"/>
+<sysdepend package="libcurl3-openssl-dev" os="ubuntu" version="7.04-feisty"/>
 <sysdepend package="libcurl4-openssl-dev" os="ubuntu" version="8.04-hardy"/>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -laxis_cam -lcurl"/>

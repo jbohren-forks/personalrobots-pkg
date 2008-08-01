@@ -13,5 +13,6 @@ library in a way that can be managed by the ROS dependency system.
   <cpp cflags="-I${prefix}/ffmpeg/include" lflags="-L${prefix}/ffmpeg/lib -Wl,-rpath,${prefix}/ffmpeg/lib -lavcodec -lavdevice -lavformat -lavutil" />
   <doxymaker external="http://ffmpeg.mplayerhq.hu/documentation.html"/>
 </export>
+<versioncontrol type="svn" url="svn://svn.mplayerhq.hu/ffmpeg/trunk"/>
 </package>
 

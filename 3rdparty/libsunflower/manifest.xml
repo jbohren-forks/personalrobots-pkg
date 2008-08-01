@@ -15,4 +15,5 @@
     <doxymaker external="http://libsunflower.sourceforge.net/"/>
   </export>
   <depend package="estar"/>
+<versioncontrol type="svn" url="https://libsunflower.svn.sourceforge.net/svnroot/libsunflower/trunk/sunflower"/>
 </package>
