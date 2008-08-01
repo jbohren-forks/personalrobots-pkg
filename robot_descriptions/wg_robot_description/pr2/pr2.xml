@@ -31,7 +31,7 @@
     <base_torso_offset_z>0.8</base_torso_offset_z>    <!-- FIXME -->
 
     <torso_center_box_center_offset_x>-.10</torso_center_box_center_offset_x> <!-- FIXME -->
-    <torso_center_box_center_offset_z>-.20</torso_center_box_center_offset_z> <!-- FIXME -->
+    <torso_center_box_center_offset_z>-.50</torso_center_box_center_offset_z> <!-- FIXME -->
 
     <torso_max_travel_range> 0.396 </torso_max_travel_range> <!-- FIXME -->
 
@@ -428,6 +428,7 @@
 
     <rpy> 0 0 0</rpy> <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
     <xyz> 0.25 0.1 0.3+wheel_clearance_offset</xyz> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
+    <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
 
     <joint type="planar"> 
     </joint>
