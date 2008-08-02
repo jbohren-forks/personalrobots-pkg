@@ -48,15 +48,17 @@ public:
 	robot_srvs::KinematicMotionPlan::request  req;
 	robot_srvs::KinematicMotionPlan::response res;
 	
-	req.model_id = "pr2::base";
+	req.model_id = "pr2::base+arms";
 	
 	req.start_state.set_vals_size(34);
 	for (unsigned int i = 0 ; i < req.start_state.vals_size ; ++i)
 	    req.start_state.vals[i] = 0.0;
 	
-	req.goal_state.set_vals_size(3);
+	req.goal_state.set_vals_size(18);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
 	    req.goal_state.vals[i] = 0.0;
+	for (unsigned int i = req.goal_state.vals_size-7 ; i < req.goal_state.vals_size ; ++i)
+	    req.goal_state.vals[i] = 0.2;
 	req.goal_state.vals[0] = 4.0;
 	req.goal_state.vals[1] = 0.0;
 	req.goal_state.vals[2] = M_PI;

@@ -212,6 +212,12 @@ public:
     
     bool plan(robot_srvs::KinematicMotionPlan::request &req, robot_srvs::KinematicMotionPlan::response &res)
     {
+	if (m_models.find(req.model_id) == m_models.end())
+	{
+	    fprintf(stderr, "Cannot plan for '%s'. Model does not exist\n", req.model_id.c_str());
+	    return false;	    
+	}
+	
 	Model   *m = m_models[req.model_id];
 	Planner &p = m->planners[0];
 	

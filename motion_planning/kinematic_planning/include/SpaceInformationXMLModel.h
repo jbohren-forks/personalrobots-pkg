@@ -39,8 +39,9 @@
 class SpaceInformationXMLModel : public ompl::SpaceInformationKinematic
 {
  public:
- SpaceInformationXMLModel(planning_models::KinematicModel *kmodel, int groupID = -1, double divisions = 20.0) : SpaceInformationKinematic()
-    {
+    SpaceInformationXMLModel(planning_models::KinematicModel *kmodel, int groupID = -1, double divisions = 20.0) : SpaceInformationKinematic()
+    {	
+	m_smoother.maxSteps = 20;
 	m_kmodel = kmodel;
 	m_groupID = groupID;	    
 	m_divisions = divisions;
@@ -73,7 +74,7 @@ class SpaceInformationXMLModel : public ompl::SpaceInformationKinematic
 		}
 	}
     }
-    
+        
     virtual ~SpaceInformationXMLModel(void)
     {
     }
