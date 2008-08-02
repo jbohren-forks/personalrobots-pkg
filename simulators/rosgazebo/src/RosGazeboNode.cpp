@@ -59,7 +59,7 @@ RosGazeboNode::cmd_rightarmconfigReceived()
     this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    , this->rightarm.forearmRollAngle,  0);
     this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , this->rightarm.wristPitchAngle,   0);
     this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , this->rightarm.wristRollAngle,    0);
-    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER       , this->rightarm.gripperGapCmd,     0);
+    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER_GAP   , this->rightarm.gripperGapCmd,     0);
   }
 
   //Leave a way to communicate with the grippers
@@ -99,7 +99,7 @@ RosGazeboNode::cmd_leftarmconfigReceived()
     this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_ROLL    , this->leftarm.forearmRollAngle,  0);
     this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_WRIST_PITCH   , this->leftarm.wristPitchAngle,   0);
     this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_WRIST_ROLL    , this->leftarm.wristRollAngle,    0);
-    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_GRIPPER       , this->leftarm.gripperGapCmd,     0);
+    this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_L_GRIPPER_GAP   , this->leftarm.gripperGapCmd,     0);
   }
 
   //Leave a way to communicate with the grippers

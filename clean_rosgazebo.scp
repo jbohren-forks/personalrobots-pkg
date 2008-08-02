@@ -1,7 +1,8 @@
 #!/bin/bash
  
 #clean controllers
-(cd controllers/genericControllers            ; rm -f lib/* ;make clean)
+(cd controllers/generic_controllers           ; rm -f lib/* ;make clean)
+(cd deprecated/genericControllers             ; rm -f lib/* ;make clean)
 (cd controllers/pr2Controllers                ; rm -f lib/* ;make clean)
 
 #clean gazebo dependent stuff
@@ -13,7 +14,7 @@
 (cd drivers/simulator/gazebo_sensors          ; rm -f lib/* ;make clean)
 
 (cd simulators/rosgazebo                      ; rm -f lib/* ;make clean)
-(cd robot/pr2_gazebo                          ; rm -f lib/* ;make clean)
+(cd robot_control_loops/pr2_gazebo            ; rm -f lib/* ;make clean)
 
 #clean 2dnav stack stuff
 (cd nav/nav_view                              ; rm -f lib/* ;make clean)

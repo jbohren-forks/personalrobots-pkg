@@ -102,6 +102,30 @@ namespace gazebo
       // explicit damping coefficient for the joint
       private: double dampCoef;
 
+      // get joints names from xml fields
+      private: std::string finger_l_name     [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+      private: std::string finger_tip_l_name [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+      private: std::string finger_r_name     [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+      private: std::string finger_tip_r_name [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+
+      // get the joints from parent
+      private: HingeJoint *finger_l_joint     [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+      private: HingeJoint *finger_tip_l_joint [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+      private: HingeJoint *finger_r_joint     [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+      private: HingeJoint *finger_tip_r_joint [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+
+      // assign pid for each finger for PD_CONTROL
+      private: controller::Pid *finger_l_pids     [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+      private: controller::Pid *finger_tip_l_pids [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+      private: controller::Pid *finger_r_pids     [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+      private: controller::Pid *finger_tip_r_pids [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+
+      // get name of each child, e.g. front_left_caster_steer
+      std::string actarrayName[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+
+      // get type of each child, only check for special case for grippers for now.  All others ignored. (TODO)
+      std::string actarrayType[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+
    };
 
 /** \} */

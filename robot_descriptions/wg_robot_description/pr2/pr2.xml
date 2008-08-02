@@ -128,37 +128,53 @@
     <torso_ptz_rightt_offset_y>-0.1975</torso_ptz_rightt_offset_y> <!-- mp 20080801 -->
     <torso_ptz_rightt_offset_z> 0.2265</torso_ptz_rightt_offset_z> <!-- mp 20080801 -->
 
-    <!-- left hand left fingers -->
-    <gripper_roll_finger_l_left_offset_x> 0.0000 </gripper_roll_finger_l_left_offset_x>
-    <gripper_roll_finger_l_left_offset_y> 0.0000 </gripper_roll_finger_l_left_offset_y>
-    <gripper_roll_finger_l_left_offset_z> 0.0000 </gripper_roll_finger_l_left_offset_z>
-    <finger_l_finger_tip_l_left_offset_x> 0.0000 </finger_l_finger_tip_l_left_offset_x>
-    <finger_l_finger_tip_l_left_offset_y> 0.0000 </finger_l_finger_tip_l_left_offset_y>
-    <finger_l_finger_tip_l_left_offset_z> 0.0000 </finger_l_finger_tip_l_left_offset_z>
 
-    <!-- left hand right fingers -->
-    <gripper_roll_finger_r_left_offset_x> 0.0000 </gripper_roll_finger_r_left_offset_x>
-    <gripper_roll_finger_r_left_offset_y> 0.0000 </gripper_roll_finger_r_left_offset_y>
-    <gripper_roll_finger_r_left_offset_z> 0.0000 </gripper_roll_finger_r_left_offset_z>
-    <finger_r_finger_tip_r_left_offset_x> 0.0000 </finger_r_finger_tip_r_left_offset_x>
-    <finger_r_finger_tip_r_left_offset_y> 0.0000 </finger_r_finger_tip_r_left_offset_y>
-    <finger_r_finger_tip_r_left_offset_z> 0.0000 </finger_r_finger_tip_r_left_offset_z>
+    <!-- =========================== l finger proximal digit =========================== -->
+    <gripper_roll_finger_l_offset_x> 0.07751</gripper_roll_finger_l_offset_x>
+    <gripper_roll_finger_l_offset_y> 0.0100 </gripper_roll_finger_l_offset_y>
+    <gripper_roll_finger_l_offset_z> 0.0000 </gripper_roll_finger_l_offset_z>
 
-    <!-- right hand left fingers -->
-    <gripper_roll_finger_l_right_offset_x> 0.0000 </gripper_roll_finger_l_right_offset_x>
-    <gripper_roll_finger_l_right_offset_y> 0.0000 </gripper_roll_finger_l_right_offset_y>
-    <gripper_roll_finger_l_right_offset_z> 0.0000 </gripper_roll_finger_l_right_offset_z>
-    <finger_l_finger_tip_l_right_offset_x> 0.0000 </finger_l_finger_tip_l_right_offset_x>
-    <finger_l_finger_tip_l_right_offset_y> 0.0000 </finger_l_finger_tip_l_right_offset_y>
-    <finger_l_finger_tip_l_right_offset_z> 0.0000 </finger_l_finger_tip_l_right_offset_z>
+    <finger_l_size_x>0.131</finger_l_size_x> <!-- for defining collision geometry -->
+    <finger_l_size_y>0.056</finger_l_size_y> <!-- for defining collision geometry -->
+    <finger_l_size_z>0.049</finger_l_size_z> <!-- for defining collision geometry -->
+    <finger_l_center_box_center_offset_x>0.00</finger_l_center_box_center_offset_x> <!-- FIXME -->
+    <finger_l_center_box_center_offset_y>0.00</finger_l_center_box_center_offset_y> <!-- FIXME -->
 
-    <!-- right hand right fingers -->
-    <gripper_roll_finger_r_right_offset_x> 0.0000 </gripper_roll_finger_r_right_offset_x>
-    <gripper_roll_finger_r_right_offset_y> 0.0000 </gripper_roll_finger_r_right_offset_y>
-    <gripper_roll_finger_r_right_offset_z> 0.0000 </gripper_roll_finger_r_right_offset_z>
-    <finger_r_finger_tip_r_right_offset_x> 0.0000 </finger_r_finger_tip_r_right_offset_x>
-    <finger_r_finger_tip_r_right_offset_y> 0.0000 </finger_r_finger_tip_r_right_offset_y>
-    <finger_r_finger_tip_r_right_offset_z> 0.0000 </finger_r_finger_tip_r_right_offset_z>
+
+    <!-- =========================== l finger tip (distal digit) =========================== -->
+    <finger_l_finger_tip_l_offset_x> 0.0915 </finger_l_finger_tip_l_offset_x>
+    <finger_l_finger_tip_l_offset_y> 0.0000 </finger_l_finger_tip_l_offset_y>
+    <finger_l_finger_tip_l_offset_z> 0.0000 </finger_l_finger_tip_l_offset_z>
+
+    <finger_tip_l_size_x>0.053</finger_tip_l_size_x> <!-- for defining collision geometry -->
+    <finger_tip_l_size_y>0.040</finger_tip_l_size_y> <!-- for defining collision geometry -->
+    <finger_tip_l_size_z>0.023</finger_tip_l_size_z> <!-- for defining collision geometry -->
+    <finger_tip_l_center_box_center_offset_x>0.00</finger_tip_l_center_box_center_offset_x> <!-- FIXME -->
+    <finger_tip_l_center_box_center_offset_y>0.00</finger_tip_l_center_box_center_offset_y> <!-- FIXME -->
+
+    <!-- =========================== r finger proximal digit =========================== -->
+    <gripper_roll_finger_r_offset_x> 0.07751</gripper_roll_finger_r_offset_x>
+    <gripper_roll_finger_r_offset_y>-0.0100 </gripper_roll_finger_r_offset_y>
+    <gripper_roll_finger_r_offset_z> 0.0000 </gripper_roll_finger_r_offset_z>
+
+    <finger_r_size_x>0.131</finger_r_size_x> <!-- for defining collision geometry -->
+    <finger_r_size_y>0.056</finger_r_size_y> <!-- for defining collision geometry -->
+    <finger_r_size_z>0.049</finger_r_size_z> <!-- for defining collision geometry -->
+    <finger_r_center_box_center_offset_x>0.00</finger_r_center_box_center_offset_x> <!-- FIXME -->
+    <finger_r_center_box_center_offset_y>0.00</finger_r_center_box_center_offset_y> <!-- FIXME -->
+
+    <!-- =========================== r finger tip (distal digit) =========================== -->
+    <finger_r_finger_tip_r_offset_x> 0.0915 </finger_r_finger_tip_r_offset_x>
+    <finger_r_finger_tip_r_offset_y> 0.0000 </finger_r_finger_tip_r_offset_y>
+    <finger_r_finger_tip_r_offset_z> 0.0000 </finger_r_finger_tip_r_offset_z>
+
+    <finger_tip_r_size_x>0.053</finger_tip_r_size_x> <!-- for defining collision geometry -->
+    <finger_tip_r_size_y>0.040</finger_tip_r_size_y> <!-- for defining collision geometry -->
+    <finger_tip_r_size_z>0.023</finger_tip_r_size_z> <!-- for defining collision geometry -->
+    <finger_tip_r_center_box_center_offset_x>0.00</finger_tip_r_center_box_center_offset_x> <!-- FIXME -->
+    <finger_tip_r_center_box_center_offset_y>0.00</finger_tip_r_center_box_center_offset_y> <!-- FIXME -->
+
+
 
     <!-- to be used by sensors -->
     <torso_tilt_laser_offset_x>0.10000</torso_tilt_laser_offset_x> <!-- mp 20080801 -->
@@ -464,7 +480,142 @@
         <filename>wr-roll</filename>
       </geometry>
     </define> 
+
+
+    <!-- ====================   l finger proximal digit ====================   -->
+    <define template="pr2_finger_l_joint" type="revolute">
+      <axis> 0 0 1 </axis> <!-- direction of the joint in a global coordinate frame -->
+      <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+    </define>
+
+    <define template="pr2_finger_l_inertial">
+      <mass> 0.1 </mass>
+      <com> 0 0 0 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --><!-- FIXME John switched x and z for now-->
+      <inertia> 0.012430552544 -0.000003671102 0.000029379389  0.013567548848 -0.000427679042 0.001755089866 </inertia>
+    </define> 
+
+    <define template="pr2_finger_l_collision">
+      <xyz>finger_l_center_box_center_offset_x finger_l_center_box_center_offset_y 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry type="box">
+        <size>finger_l_size_x finger_l_size_y finger_l_size_z </size>
+      </geometry>
+      <verbose>Yes</verbose>
+    </define> 
+
+    <define template="pr2_finger_l_visual">
+      <xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <material>Gazebo/Shell</material>
+      <scale>1 1 1</scale>
+      <geometry type="mesh" name="pr2_finger_l_mesh_file">
+        <filename>finger-l</filename>
+      </geometry>
+    </define> 
+
+
+    <!-- ====================   l finger tip (distal digit) ====================   -->
+    <define template="pr2_finger_tip_l_joint" type="revolute">
+      <axis> 0 0 1 </axis> <!-- direction of the joint in a global coordinate frame -->
+      <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+    </define>
+
+    <define template="pr2_finger_tip_l_inertial">
+      <mass> 0.1 </mass>
+      <com> 0 0 0 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --><!-- FIXME John switched x and z for now-->
+      <inertia> 0.012430552544 -0.000003671102 0.000029379389  0.013567548848 -0.000427679042 0.001755089866 </inertia>
+    </define> 
+
+    <define template="pr2_finger_tip_l_collision">
+      <xyz>finger_tip_l_center_box_center_offset_x finger_tip_l_center_box_center_offset_y 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry type="box">
+        <size>finger_tip_l_size_x finger_tip_l_size_y finger_tip_l_size_z </size>
+      </geometry>
+      <verbose>Yes</verbose>
+    </define> 
+
+    <define template="pr2_finger_tip_l_visual">
+      <xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <material>Gazebo/Green</material>
+      <scale>1 1 1</scale>
+      <geometry type="mesh" name="pr2_finger_tip_l_mesh_file">
+        <filename>finger-tip-l</filename>
+      </geometry>
+    </define> 
+
+    <!-- ====================   r finger proximal digit ====================   -->
+    <define template="pr2_finger_r_joint" type="revolute">
+      <axis> 0 0 1 </axis> <!-- direction of the joint in a global coordinate frame -->
+      <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+    </define>
+
+    <define template="pr2_finger_r_inertial">
+      <mass> 0.1 </mass>
+      <com> 0 0 0 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --><!-- FIXME John switched x and z for now-->
+      <inertia> 0.012430552544 -0.000003671102 0.000029379389  0.013567548848 -0.000427679042 0.001755089866 </inertia>
+    </define> 
+
+    <define template="pr2_finger_r_collision">
+      <xyz>finger_r_center_box_center_offset_x finger_r_center_box_center_offset_y 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry type="box">
+        <size>finger_r_size_x finger_r_size_y finger_r_size_z </size>
+      </geometry>
+      <verbose>Yes</verbose>
+    </define> 
+
+    <define template="pr2_finger_r_visual">
+      <xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <material>Gazebo/Blue</material>
+      <scale>1 1 1</scale>
+      <geometry type="mesh" name="pr2_finger_r_mesh_file">
+        <filename>finger-r</filename>
+      </geometry>
+    </define> 
+
+    <!-- ====================   r finger tip (distal digit) ====================   -->
+    <define template="pr2_finger_tip_r_joint" type="revolute">
+      <axis> 0 0 1 </axis> <!-- direction of the joint in a global coordinate frame -->
+      <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+    </define>
+
+    <define template="pr2_finger_tip_r_inertial">
+      <mass> 0.1 </mass>
+      <com> 0 0 0 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --><!-- FIXME John switched x and z for now-->
+      <inertia> 0.012430552544 -0.000003671102 0.000029379389  0.013567548848 -0.000427679042 0.001755089866 </inertia>
+    </define> 
+
+    <define template="pr2_finger_tip_r_collision">
+      <xyz>finger_tip_r_center_box_center_offset_x finger_tip_r_center_box_center_offset_y 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry type="box">
+        <size>finger_tip_r_size_x finger_tip_r_size_y finger_tip_r_size_z </size>
+      </geometry>
+      <verbose>Yes</verbose>
+    </define> 
+
+    <define template="pr2_finger_tip_r_visual">
+      <xyz>0 0 0 </xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <material>Gazebo/Green</material>
+      <scale>1 1 1</scale>
+      <geometry type="mesh" name="pr2_finger_tip_r_mesh_file">
+        <filename>finger-tip-r</filename>
+      </geometry>
+    </define> 
+
+
+
+
   </templates>
+
 <!-- End template definitions for ease of reuse -->
 
 
@@ -864,6 +1015,119 @@
 <!-- End arm definitions -->
 
 
+<!-- Begin left hand  -->
+  <!-- Begin left hand l finger proximal digit definition -->
+  <link name="finger_l_left"><!-- link specifying the shoulder of the robot -->
+    <parent> gripper_roll_left </parent>
+
+    <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <xyz> gripper_roll_finger_l_offset_x gripper_roll_finger_l_offset_y gripper_roll_finger_l_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+    <joint clone="pr2_finger_l_joint"/>
+    <inertial clone="pr2_finger_l_inertial"/>
+    <visual clone="pr2_finger_l_visual"/>
+    <collision clone="pr2_finger_l_collision"/>
+  </link>
+  <!-- End   left hand l finger proximal digit definition -->
+  <!-- Begin left hand l finger tip (distal digit) definition -->
+  <link name="finger_tip_l_left"><!-- link specifying the shoulder of the robot -->
+    <parent> finger_l_left </parent>
+
+    <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <xyz> finger_l_finger_tip_l_offset_x finger_l_finger_tip_l_offset_y finger_l_finger_tip_l_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+    <joint clone="pr2_finger_tip_l_joint"/>
+    <inertial clone="pr2_finger_tip_l_inertial"/>
+    <visual clone="pr2_finger_tip_l_visual"/>
+    <collision clone="pr2_finger_tip_l_collision"/>
+  </link>
+  <!-- End   left hand l finger tip (distal digit) definition -->
+  <!-- Begin left hand r finger proximal digit definition -->
+  <link name="finger_r_left"><!-- link specifying the shoulder of the robot -->
+    <parent> gripper_roll_left </parent>
+
+    <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <xyz> gripper_roll_finger_r_offset_x gripper_roll_finger_r_offset_y gripper_roll_finger_r_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+    <joint clone="pr2_finger_r_joint"/>
+    <inertial clone="pr2_finger_r_inertial"/>
+    <visual clone="pr2_finger_r_visual"/>
+    <collision clone="pr2_finger_r_collision"/>
+  </link>
+  <!-- End   left hand r finger proximal digit definition -->
+  <!-- Begin left hand r finger tip (distal digit) definition -->
+  <link name="finger_tip_r_left"><!-- link specifying the shoulder of the robot -->
+    <parent> finger_r_left </parent>
+
+    <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <xyz> finger_r_finger_tip_r_offset_x finger_r_finger_tip_r_offset_y finger_r_finger_tip_r_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+    <joint clone="pr2_finger_tip_r_joint"/>
+    <inertial clone="pr2_finger_tip_r_inertial"/>
+    <visual clone="pr2_finger_tip_r_visual"/>
+    <collision clone="pr2_finger_tip_r_collision"/>
+  </link>
+  <!-- End   left hand r finger tip (distal digit) definition -->
+<!-- End   left hand  -->
+
+
+<!-- Begin right hand  -->
+  <!-- Begin right hand l finger proximal digit definition -->
+  <link name="finger_l_right"><!-- link specifying the shoulder of the robot -->
+    <parent> gripper_roll_right </parent>
+
+    <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <xyz> gripper_roll_finger_l_offset_x gripper_roll_finger_l_offset_y gripper_roll_finger_l_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+    <joint clone="pr2_finger_l_joint"/>
+    <inertial clone="pr2_finger_l_inertial"/>
+    <visual clone="pr2_finger_l_visual"/>
+    <collision clone="pr2_finger_l_collision"/>
+  </link>
+  <!-- End   right hand l finger proximal digit definition -->
+  <!-- Begin right hand l finger tip (distal digit) definition -->
+  <link name="finger_tip_l_right"><!-- link specifying the shoulder of the robot -->
+    <parent> finger_l_right </parent>
+
+    <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <xyz> finger_l_finger_tip_l_offset_x finger_l_finger_tip_l_offset_y finger_l_finger_tip_l_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+    <joint clone="pr2_finger_tip_l_joint"/>
+    <inertial clone="pr2_finger_tip_l_inertial"/>
+    <visual clone="pr2_finger_tip_l_visual"/>
+    <collision clone="pr2_finger_tip_l_collision"/>
+  </link>
+  <!-- End   right hand l finger tip (distal digit) definition -->
+  <!-- Begin right hand r finger proximal digit definition -->
+  <link name="finger_r_right"><!-- link specifying the shoulder of the robot -->
+    <parent> gripper_roll_right </parent>
+
+    <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <xyz> gripper_roll_finger_r_offset_x gripper_roll_finger_r_offset_y gripper_roll_finger_r_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+    <joint clone="pr2_finger_r_joint"/>
+    <inertial clone="pr2_finger_r_inertial"/>
+    <visual clone="pr2_finger_r_visual"/>
+    <collision clone="pr2_finger_r_collision"/>
+  </link>
+  <!-- End   right hand r finger proximal digit definition -->
+  <!-- Begin right hand r finger tip (distal digit) definition -->
+  <link name="finger_tip_r_right"><!-- link specifying the shoulder of the robot -->
+    <parent> finger_r_right </parent>
+
+    <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <xyz> finger_r_finger_tip_r_offset_x finger_r_finger_tip_r_offset_y finger_r_finger_tip_r_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+    <joint clone="pr2_finger_tip_r_joint"/>
+    <inertial clone="pr2_finger_tip_r_inertial"/>
+    <visual clone="pr2_finger_tip_r_visual"/>
+    <collision clone="pr2_finger_tip_r_collision"/>
+  </link>
+  <!-- End   right hand r finger tip (distal digit) definition -->
+<!-- End   right hand  -->
+
+
+
 <!-- Begin head definition -->
 
 
@@ -944,11 +1208,6 @@
   </link>
 
 <!-- End head definition -->
-
-<!-- Begin right finger definition -->
-<!-- End right finger definition -->
-<!-- Begin left finger definition -->
-<!-- End left finger definition -->
 
 
 <!-- Begin sensor definitions -->
