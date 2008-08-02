@@ -45,21 +45,22 @@ void planning_models::KinematicModel::Robot::computeTransforms(const double *par
 void planning_models::KinematicModel::computeTransforms(const double *params, int groupID)
 {
     unsigned int n = groupID >= 0 ? groupChainStart[groupID].size() : m_robots.size();
-    
     for (unsigned int i = 0 ; i < n ; ++i)
     {
 	Joint *start = groupID >= 0 ? groupChainStart[groupID][i] : m_robots[i]->chain;
 	if (start->robotRoot)
 	    start->globalTrans = rootTransform;
-	start->computeTransform(params, groupID);
-	params += groupID >= 0 ? groupStateIndexList[groupID].size() : m_robots[i]->stateDimension;
-    }
+	params = start->computeTransform(params, groupID);
+    }    
 }
 
 // we can optimize things here... (when we use identity transforms, for example)
-void planning_models::KinematicModel::Joint::computeTransform(const double *params, int groupID)
+const double* planning_models::KinematicModel::Joint::computeTransform(const double *params, int groupID)
 {
+    unsigned int used = 0;
+    
     if (groupID < 0 || inGroup[groupID])
+    {
 	switch (type)
 	{
 	case Joint::REVOLUTE:
@@ -85,20 +86,24 @@ void planning_models::KinematicModel::Joint::computeTransform(const double *para
 	default:
 	    break;
 	}
-
+	used = usedParams;
+    }
+    
     if (before)
 	globalTrans = before->globalTrans; // otherwise, the caller initialized globalTrans already
     globalTrans.multiplyPose(varTrans);
-    after->computeTransform(params + usedParams, groupID);
+    return after->computeTransform(params + used, groupID);
 }
 
-void planning_models::KinematicModel::Link::computeTransform(const double *params, int groupID)
+const double* planning_models::KinematicModel::Link::computeTransform(const double *params, int groupID)
 {
+    const double *rparams = params;
     globalTrans = before->globalTrans;
     globalTrans.multiplyPose(constTrans);
     for (unsigned int i = 0 ; i < after.size() ; ++i)
-	after[i]->computeTransform(params, groupID);
+	rparams = after[i]->computeTransform(rparams, groupID);
     globalTrans.multiplyPose(constGeomTrans);
+    return rparams;
 }
 
 void planning_models::KinematicModel::setVerbose(bool verbose)

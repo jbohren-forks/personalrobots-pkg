@@ -124,7 +124,7 @@ namespace planning_models
 	    libTF::Pose3D varTrans;
 	    libTF::Pose3D globalTrans;
 	    
-	    void computeTransform(const double *params, int groupID = -1);
+	    const double* computeTransform(const double *params, int groupID = -1);
 	    
 	};
 	
@@ -170,7 +170,7 @@ namespace planning_models
 	    /** The global transform for this link (computed by forward kinematics) */
 	    libTF::Pose3D       globalTrans;
 	    
-	    void computeTransform(const double *params, int groupID = -1);	
+	    const double* computeTransform(const double *params, int groupID = -1);	
 	};
 	
 	/** A robot structure */
