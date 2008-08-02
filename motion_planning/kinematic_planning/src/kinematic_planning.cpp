@@ -122,8 +122,8 @@ public:
 	m_collisionSpace->unlock();
 	
 	// temp obstacle
-	double sphere[6] = {2.8,0.2,0.4};    
-	m_collisionSpace->addPointCloud(1, sphere, 0.15);
+	double sphere[9] = {2,-1.8,1.2, 2,0.2,1.2, 2,4.2,1.2};
+	m_collisionSpace->addPointCloud(3, sphere, 1.0);
 	
 #ifdef DISPLAY_ODE_SPACES
 	collision_space::EnvironmentModelODE* okm = dynamic_cast<collision_space::EnvironmentModelODE*>(m_collisionSpace);
@@ -377,6 +377,7 @@ public:
 	double defaultPose[kmodel->stateDimension];
 	for (unsigned int i = 0 ; i < kmodel->stateDimension ; ++i)
 	    defaultPose[i] = 0.0;
+
 	kmodel->computeTransforms(defaultPose);
 	m_collisionSpace->updateRobotModel(cid);
 
