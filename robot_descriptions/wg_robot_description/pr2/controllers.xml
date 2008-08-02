@@ -307,7 +307,7 @@
 
   <!-- stereo camera -->
   <body:empty name="stereo_camera_body">
-    <xyz> -0.06 0.0   1.30 </xyz>
+    <xyz> 0.03 0.0   1.30 </xyz>
     <rpy> 0.0  0.0   0.0  </rpy>
     <sensor:stereocamera name="stereo_camera_sensor">
       <imageSize>640 480</imageSize>

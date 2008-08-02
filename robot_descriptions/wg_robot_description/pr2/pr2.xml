@@ -26,6 +26,11 @@
     
     <caster_wheel_offset_y>0.049</caster_wheel_offset_y> <!-- from function spreadsheet -->
 
+    <caster_size_x>0.192</caster_size_x> <!-- for collision geometry -->
+    <caster_size_y>0.164</caster_size_y> <!-- for collision geometry -->
+    <caster_size_z>0.213</caster_size_z> <!-- for collision geometry -->
+    <caster_collision_center_box_center_offset_z>0.07</caster_collision_center_box_center_offset_z>
+
     <torso_size_x>.432 </torso_size_x>  <!-- for defining collision geometry -->
     <torso_size_y>.620 </torso_size_y> <!-- for defining collision geometry -->
     <torso_size_z>.823 </torso_size_z>  <!-- for defining collision geometry -->
@@ -179,18 +184,16 @@
         <filename>caster</filename><!-- mesh specified using an obj file --> 
       </geometry>
     </define> 
-
     <define template="pr2_caster_collision">
-      <xyz>0 0 0.213/2</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <xyz>0 0 caster_collision_center_box_center_offset_z</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <geometry type="box"><!-- geometry specified using a simple geometric object -->
-        <size>0.192 0.164 0.213</size> 
+        <size>caster_size_x caster_size_y caster_size_z</size> 
       </geometry>
     </define> 
-
     <define template="pr2_caster_inertial">
       <mass> 3.473082 </mass>
-      <com> 0.007342 0.00015 0.095236 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <com> 0 0 0 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
       <inertia> 0.012411765597 -0.000711733678 0.00050272983 0.015218160428 -0.000004273467 0.011763977943 </inertia>
     </define> 
 
@@ -231,13 +234,13 @@
 
     <define template="pr2_wheel_inertial">
       <mass> 0.44036 </mass>
-      <com> 0.000008  0.000008 0.008475 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <com> 0 0 0 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
       <inertia> 0.012411765597 -0.000711733678 0.00050272983 0.015218160428 -0.000004273467 0.011763977943 </inertia>
     </define> 
 
     <define template="pr2_wheel_joint" type="revolute"> 
       <axis> 0 1 0 </axis> <!-- direction of the joint in the local coordinate frame -->
-      <anchor>0 caster_wheel_offset_y 0</anchor> <!-- point on the joint relative to the local coordinate frame -->
+      <anchor>0 0 0</anchor> <!-- point on the joint relative to the local coordinate frame -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
     </define>
 
@@ -250,7 +253,7 @@
 
     <define template="pr2_shoulder_pan_inertial">
       <mass> 16.29553  </mass>
-      <com> -0.005215 -0.030552 -0.175743 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <com> -0.005215 -0.030552 0.0 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
       <inertia>0.793291393007  0.003412032973  0.0096614481  0.818419457224  -0.033999499551  0.13915007406 </inertia>
     </define> 
 
@@ -281,7 +284,7 @@
 
     <define template="pr2_shoulder_pitch_inertial">
       <mass> 2.41223  </mass>
-      <com> -0.035895  0.014422 -0.028263</com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <com> -0.035895  0.014422 -0.0028263</com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
       <inertia> 0.016640333585 0.002696462583  0.001337742275  0.017232603914  -0.003605106514  0.018723553425</inertia>
     </define> 
 
@@ -432,14 +435,14 @@
 
 
     <define template="pr2_gripper_roll_joint" type="revolute">
-      <axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
+      <axis> 1 0 0 </axis> <!-- direction of the joint in a global coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
     </define>
 
     <define template="pr2_gripper_roll_inertial">
       <mass> 1.0 </mass>
-      <com> 1.179474 -0.000058  0.013779  </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --><!-- FIXME John switched x and z for now-->
+      <com> 0.179474 -0.000058  0.013779  </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --><!-- FIXME John switched x and z for now-->
       <inertia> 0.012430552544 -0.000003671102 0.000029379389  0.013567548848 -0.000427679042 0.001755089866 </inertia>
     </define> 
 
@@ -479,7 +482,7 @@
 
     <inertial>
       <mass> 70.750964  </mass>
-      <com> -0.061523  0.000942 0.293569 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <com> 0 0 0 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
       <inertia>5.652232699207  -0.009719934438  1.293988226423 5.669473158652 -0.007379583694 3.683196351726 </inertia>
     </inertial> 
 
@@ -664,7 +667,7 @@
 
     <inertial>
       <mass> 36.248046  </mass>
-      <com> -0.085285  -0.002393 -0.149724 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <com> 0 0 0 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
       <inertia> 2.771653750257 0.004284522609  -0.160418504506  2.510019507959 0.029664468704 0.526432355569</inertia>
     </inertial>
 
@@ -958,13 +961,13 @@
 
     <joint type="revolute"> 
       <axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
-      <anchor>torso_tilt_laser_offset_x 0 torso_tilt_laser_offset_z  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <anchor>0 0 0</anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit>0.1 0.1</limit>
     </joint>
 
     <inertial>
       <mass> 1.0  </mass>
-      <com> 0.5 0.1 2 </com> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
+      <com> 0 0 0 </com> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
       <inertia>1 0 0 1 0 1 </inertia>
     </inertial> 
 
@@ -1000,7 +1003,7 @@
 
     <joint type="revolute"> 
       <axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
-      <anchor>forearm_roll_camera_offset_x forearm_roll_camera_offset_y forearm_roll_camera_offset_z  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <anchor>0 0 0</anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit>0.1 0.1</limit>
     </joint>
 
