@@ -232,7 +232,7 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
       
       addKeyValue(joint, "body1", link->name);
       addKeyValue(joint, "body2", link->parentName);
-      addKeyValue(joint, "anchor", link->parentName);
+      addKeyValue(joint, "anchor", link->name);
       
       if (fixed)
       {
@@ -243,12 +243,29 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
       else
       {        
         addKeyValue(joint, "axis", values2str(3, link->joint->axis));
-        addKeyValue(joint, "axisOffset", values2str(3, link->joint->anchor));
-        
+
+        double tmpAnchor[3];
+
+        for (int j = 0 ; j < 3 ; ++j)
+        {
+           // undo Gazebo's shift of object anchor to geom xyz, stay in body cs
+           tmpAnchor[j] = (link->joint->anchor)[j] - 0.0*(link->inertial->com)[j] - (link->collision->xyz)[j];
+        }
+
+        addKeyValue(joint, "anchorOffset", values2str(3, tmpAnchor));
+         
         if (link->joint->isSet["limit"])
         {
-	  addKeyValue(joint, "lowStop", values2str(1, link->joint->limit));
-          addKeyValue(joint, "highStop", values2str(1, link->joint->limit + 1));
+      	  if (jtype == "slider")
+          {
+            addKeyValue(joint, "lowStop",  values2str(1, link->joint->limit             ));
+            addKeyValue(joint, "highStop", values2str(1, link->joint->limit + 1         ));
+          }
+          else
+          {
+            addKeyValue(joint, "lowStop",  values2str(1, link->joint->limit    , rad2deg));
+            addKeyValue(joint, "highStop", values2str(1, link->joint->limit + 1, rad2deg));
+          }
         }
       }
         
