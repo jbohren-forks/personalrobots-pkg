@@ -48,7 +48,7 @@ public:
 
   //Update every cycle from input data
   bool initialized_;
-  double position_;
+  double position_;  // In radians
   double velocity_;
   double applied_effort_;
 
@@ -56,8 +56,8 @@ public:
   double commanded_effort_;
 
   //Never changes
-  double joint_limit_min_;
-  double joint_limit_max_;
+  double joint_limit_min_;  // In radians
+  double joint_limit_max_;  // In radians
   double effort_limit_;
   double velocity_limit_;
 };
