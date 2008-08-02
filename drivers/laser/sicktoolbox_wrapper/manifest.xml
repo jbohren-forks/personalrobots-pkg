@@ -1,4 +1,4 @@
-<manifest>
+<package>
   <description>
     A ROS package which is mainly just a wrapper of the outstanding sicktoolbox
     library for interfacing with the SICK LMS2xx lasers.
@@ -10,4 +10,4 @@
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
   <depend package="rosTF"/>
-</manifest>
+</package>

@@ -2,8 +2,7 @@
   <description>
       Gaussian texture segmentation assuming object is in center of image.
   </description>
-  <author>Charles C. Kemp</author>
-  <author>Hai Nguyen</author>
+  <author>Charles C. Kemp, Hai Nguyen</author>
   <license>BSD</license>
   <depend package="opencv"/>
   <depend package="numpy"/>
