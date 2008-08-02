@@ -1,4 +1,4 @@
-<manifest>
+<package>
   <description>
     Like the famed Rosetta stone of ages past, the logsetta package will
     contain translators to/from every imaginable log file format.
@@ -13,4 +13,4 @@
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
   <depend package="logging"/>
-</manifest>
+</package>
