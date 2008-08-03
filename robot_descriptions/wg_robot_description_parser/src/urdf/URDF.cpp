@@ -676,6 +676,24 @@ namespace robot_desc {
 	    vals[i] = meval::EvaluateMathExpression(value, &getConstant, reinterpret_cast<void*>(&data));
 	    read++;
 	}
+
+	if (ss.good())
+	{
+	    std::string extra = ss.str();
+	    while (!extra.empty())
+	    {
+		char last = extra[extra.size() - 1];
+		if (last == ' ' || last == '\n' || last == '\t')
+		    extra.erase(extra.size() - 1);
+		else
+		    break;	  
+	    }
+	    if (!extra.empty())
+	    {
+		fprintf(stderr, "More data available (%u read, rest is ignored): '%s'\n", read, node->Value());		
+		errorLocation();		
+	    }	    
+	}
 	
 	if (read != count)
 	{
@@ -705,6 +723,24 @@ namespace robot_desc {
 		value[j] = std::tolower(value[j]);        
 	    vals[i] = (value == "true" || value == "yes" || value == "1");
 	    read++;
+	}
+
+	if (ss.good())
+	{
+	    std::string extra = ss.str();
+	    while (!extra.empty())
+	    {
+		char last = extra[extra.size() - 1];
+		if (last == ' ' || last == '\n' || last == '\t')
+		    extra.erase(extra.size() - 1);
+		else
+		    break;	  
+	    }
+	    if (!extra.empty())
+	    {
+		fprintf(stderr, "More data available (%u read, rest is ignored): '%s'\n", read, node->Value());		
+		errorLocation();		
+	    }	    
 	}
 	
 	if (read != count)
