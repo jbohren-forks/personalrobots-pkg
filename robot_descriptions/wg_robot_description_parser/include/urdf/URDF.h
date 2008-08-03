@@ -213,12 +213,15 @@ namespace robot_desc
 		{
 		    xyz[0] = xyz[1] = xyz[2] = 0.0;
 		    rpy[0] = rpy[1] = rpy[2] = 0.0;
+		    mu1 = mu2 = 0.0;
 		    verbose = false;
 		    geometry = new Geometry();
 		    isSet["name"] = false;
 		    isSet["verbose"] = false;
 		    isSet["xyz"] = false;
 		    isSet["rpy"] = false;
+		    isSet["mu1"] = false;
+		    isSet["mu2"] = false;
 		    isSet["material"] = false;
 		    isSet["geometry"] = false;
 		}

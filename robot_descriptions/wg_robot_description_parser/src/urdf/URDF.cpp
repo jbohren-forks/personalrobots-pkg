@@ -293,7 +293,10 @@ namespace robot_desc {
     {
 	fprintf(out, "%sGeometry [%s]:\n", indent.c_str(), name.c_str());
 	fprintf(out, "%s  - type: %d\n", indent.c_str(), (int)type);
-	fprintf(out, "%s  - size: (%f, %f, %f)\n", indent.c_str(), size[0], size[1], size[2]);
+	fprintf(out, "%s  - size: ( ", indent.c_str());
+	for (int i = 0 ; i < nsize ; ++i)
+	    fprintf(out, "%f ", size[i]);
+	fprintf(out, ")\n");
 	fprintf(out, "%s  - filename: %s\n", indent.c_str(), filename.c_str());
 	data.print(out, indent + "  ");
     }
@@ -326,6 +329,8 @@ namespace robot_desc {
 	fprintf(out, "%sCollision [%s]:\n", indent.c_str(), name.c_str());
 	fprintf(out, "%s  - verbose: %s\n", indent.c_str(), verbose ? "Yes" : "No");
 	fprintf(out, "%s  - material: %s\n", indent.c_str(), material.c_str());
+	fprintf(out, "%s  - mu1: %f\n", indent.c_str(), mu1);
+	fprintf(out, "%s  - mu2: %f\n", indent.c_str(), mu2);
 	fprintf(out, "%s  - rpy: (%f, %f, %f)\n", indent.c_str(), rpy[0], rpy[1], rpy[2]);
 	fprintf(out, "%s  - xyz: (%f, %f, %f)\n", indent.c_str(), xyz[0], xyz[1], xyz[2]);
 	geometry->print(out, indent + "  ");
