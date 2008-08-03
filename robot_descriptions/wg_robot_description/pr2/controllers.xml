@@ -4,8 +4,8 @@
   <xml key="1"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <data> tag -->
 
   <!-- ========== Right Arm =========== -->
-  <!--body:empty name="forearm_cam_right_body">
-    <xyz>  0.92225 -0.15   0.8369 </xyz>
+  <body:empty name="forearm_cam_right_body">
+    <xyz>  0.8  -0.15   0.8369 </xyz>
     <rpy> 0.00  -45.0   0.00 </rpy>
     <sensor:camera name="forearm_cam_right_sensor">
       <imageSize>640 480</imageSize>
@@ -32,16 +32,16 @@
   </body:empty>
   <joint:hinge name="forearm_cam_right">
     <body1>forearm_cam_right_body</body1>
-    <body2>forearm_right</body2>
-    <anchor>forearm_right</anchor>
+    <body2>forearm_roll_right</body2>
+    <anchor>forearm_roll_right</anchor>
     <axis>  0.0   0.0   1.0 </axis>
     <lowStop> 0.0 </lowStop>
     <highStop> 0.0 </highStop>
-  </joint:hinge-->
+  </joint:hinge>
 
 
-  <!--body:empty name="palm_cam_right_body">
-    <xyz>  1.10   -0.15   0.8569</xyz>
+  <body:empty name="palm_cam_right_body">
+    <xyz>  1.00   -0.15   0.8569</xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <sensor:camera name="palm_cam_right_sensor">
       <imageSize>640 480</imageSize>
@@ -73,14 +73,14 @@
     <axis>  0.0   0.0   1.0 </axis>
     <lowStop> 0.0 </lowStop>
     <highStop> 0.0 </highStop>
-  </joint:hinge-->
+  </joint:hinge>
 
 
 
 
 
 
-  <!-- left camera -->
+  <!-- ptz left camera -->
   <body:box name="ptz_cam_left_body">
     <xyz> -0.1   0.30  1.04 </xyz>
     <rpy> 0.00  0.0   0.00 </rpy>
@@ -126,7 +126,7 @@
       </visual>
     </geom:box>
   </body:box>
-  <!-- right camera -->
+  <!-- ptz right camera -->
   <body:empty name="ptz_cam_right_body">
     <xyz> -0.1  -0.30  1.04 </xyz>
     <rpy> 0.00  0.0   0.00 </rpy>
@@ -675,6 +675,7 @@
 
   <!-- ========== Old Obsolete =========== -->
   <!-- ========== Right hand =========== -->
+  <!--
   <body:box name="finger_1_right">
      <xyz>0.93 -0.172936 0.72</xyz>
      <rpy>  0.0     0.0    0.0 </rpy>
@@ -709,19 +710,18 @@
     <body2>finger_1_right</body2>
     <body1>gripper_roll_right</body1>
     <anchor>gripper_roll_right</anchor>
-    <lowStop> -0.02 </lowStop> <!-- red close -->
-    <highStop>   0.05 </highStop> <!-- red open -->
+    <lowStop> -0.02 </lowStop>
+    <highStop>   0.05 </highStop>
     <axis>0.0  1.0  0.0 </axis>
   </joint:slider>
   <joint:slider name="finger_2_slider_right">
     <body2>finger_2_right</body2>
     <body1>gripper_roll_right</body1>
     <anchor>gripper_roll_right</anchor>
-    <lowStop> -0.05 </lowStop> <!-- white open -->
-    <highStop>   0.02 </highStop> <!-- white close -->
+    <lowStop> -0.05 </lowStop> 
+    <highStop>   0.02 </highStop>
     <axis>0.0  1.0  0.0 </axis>
   </joint:slider>
-  <!-- ========== Left hand =========== -->
   <body:box name="finger_1_left">
     <xyz>0.93  0.132936 0.72</xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
@@ -757,16 +757,16 @@
     <body2>finger_1_left</body2>
     <body1>gripper_roll_left</body1>
     <anchor>gripper_roll_left</anchor>
-    <lowStop> -0.02 </lowStop> <!-- red close -->
-    <highStop>   0.05 </highStop> <!-- red open -->
+    <lowStop> -0.02 </lowStop>
+    <highStop>   0.05 </highStop>
     <axis>0.0  1.0  0.0 </axis>
   </joint:slider>
   <joint:slider name="finger_2_slider_left">
     <body2>finger_2_left</body2>
     <body1>gripper_roll_left</body1>
     <anchor>gripper_roll_left</anchor>
-    <lowStop> -0.05 </lowStop> <!-- white open -->
-    <highStop>   0.02 </highStop> <!-- white close -->
+    <lowStop> -0.05 </lowStop>
+    <highStop>   0.02 </highStop>
     <axis>0.0  1.0  0.0 </axis>
   </joint:slider>
   <controller:pr2_gripper name="pr2_gripper_left_controller" plugin="libPr2_Gripper.so">
@@ -789,6 +789,6 @@
       <iGain>0.0</iGain>
       <interface:pr2gripper name="pr2_gripper_right_iface"/>
   </controller:pr2_gripper>
-
+  -->
   </xml>
 </data>

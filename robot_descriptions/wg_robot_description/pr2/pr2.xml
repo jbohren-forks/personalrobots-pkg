@@ -1247,7 +1247,48 @@
       <xyz>0   0   0   </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material> 
-      <geometry type="box" name="collision_tilt_laser_camera"><!-- geometry specified using a simple geometric object -->
+      <geometry type="box" name="collision_tilt_laser"><!-- geometry specified using a simple geometric object -->
+        <size>.115 .116 .115</size> 
+      </geometry>
+    </collision>
+
+  </sensor>
+
+  <sensor name="base_laser" type="laser"> 
+
+    <calibration> calib_filename </calibration>
+    <parent>base</parent>
+    <xyz> base_base_laser_offset_x 0 base_base_laser_offset_z </xyz> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+    <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+
+    <joint type="revolute"> 
+      <axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
+      <anchor>0 0 0</anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <limit>0.1 0.1</limit>
+    </joint>
+
+    <inertial>
+      <mass> 1.0  </mass>
+      <com> 0 0 0 </com> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
+      <inertia>1 0 0 1 0 1 </inertia>
+    </inertial> 
+
+    <visual>
+      <xyz>0   0   0   </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+
+      <material>Gazebo/PioneerBody</material>
+      <scale>.5 .5 .5</scale>
+      <geometry type="mesh" name="pr2_base_laser_mesh_file">
+        <filename>hokuyo</filename> <!-- mesh specified using an obj file --> 
+      </geometry>
+    </visual>
+
+    <collision>
+      <xyz>0   0   0   </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <material>Gazebo/Grey</material> 
+      <geometry type="box" name="collision_base_laser"><!-- geometry specified using a simple geometric object -->
         <size>.115 .116 .115</size> 
       </geometry>
     </collision>
