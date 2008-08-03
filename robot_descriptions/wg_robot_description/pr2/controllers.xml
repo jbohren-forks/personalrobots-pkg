@@ -294,18 +294,17 @@
 
   <!-- ========================================== Hokuyo laser body ========================================== -->
   <body:box name="base_laser_body">
-    <xyz>0.25 0.0 0.30</xyz> <!-- from the robot coordinate system (center bottom of base box)-->
+    <xyz>0.25 0.0 0.27</xyz> <!-- from the robot coordinate system (center bottom of base box)-->
     <rpy>0.0  0.0 0.0</rpy>
  
     <geom:box name="base_laser_box">
       <xyz>0.0 0.0 0.02</xyz>
       <rpy>0 0 0</rpy>
-      <mesh>pr2/hokuyo.mesh</mesh>
       <mass>0.12</mass>
-      <size>.1 .1 .1</size>
+      <size>.05 .05 .05</size>
       <visual>
-        <scale>.5 .5 .5</scale>
-        <mesh>pr2/hokuyo.mesh</mesh>
+        <scale>.05 .05 .05</scale>
+        <mesh>unit_cylinder</mesh>
         <material>Gazebo/Red</material>
       </visual>
     </geom:box>
