@@ -139,11 +139,6 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
       addKeyValue(geom, "xyz", values2str(3, link->collision->xyz));
       addKeyValue(geom, "rpy", values2str(3, link->collision->rpy, rad2deg));
 
-      if (link->collision->isSet["mu1"])
-        addKeyValue(geom, "mu1", values2str(1, &(link->collision->mu1)));
-      if (link->collision->isSet["mu2"])
-      addKeyValue(geom, "mu2", values2str(1, &(link->collision->mu2)));
-      
       /* set mass properties */
       addKeyValue(geom, "massMatrix", "true");
       addKeyValue(geom, "mass", values2str(1, &link->inertial->mass));

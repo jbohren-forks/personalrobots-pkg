@@ -329,8 +329,6 @@ namespace robot_desc {
 	fprintf(out, "%sCollision [%s]:\n", indent.c_str(), name.c_str());
 	fprintf(out, "%s  - verbose: %s\n", indent.c_str(), verbose ? "Yes" : "No");
 	fprintf(out, "%s  - material: %s\n", indent.c_str(), material.c_str());
-	fprintf(out, "%s  - mu1: %f\n", indent.c_str(), mu1);
-	fprintf(out, "%s  - mu2: %f\n", indent.c_str(), mu2);
 	fprintf(out, "%s  - rpy: (%f, %f, %f)\n", indent.c_str(), rpy[0], rpy[1], rpy[2]);
 	fprintf(out, "%s  - xyz: (%f, %f, %f)\n", indent.c_str(), xyz[0], xyz[1], xyz[2]);
 	geometry->print(out, indent + "  ");
@@ -1001,16 +999,6 @@ namespace robot_desc {
 		    collision->material = node->FirstChild()->ValueStr();
 		    MARK_SET(collision, material);
 		}		
-		else if (node->ValueStr() == "mu1")
-		{
-		    loadDoubleValues(node, 1, &collision->mu1);
-		    MARK_SET(collision, mu1);
-		}
-		else if (node->ValueStr() == "mu2")
-		{
-		    loadDoubleValues(node, 1, &collision->mu2);
-		    MARK_SET(collision, mu2);
-		}
 		else if (node->ValueStr() == "geometry")
 		{
 		    loadGeometry(node, name + "_geom", collision->geometry);

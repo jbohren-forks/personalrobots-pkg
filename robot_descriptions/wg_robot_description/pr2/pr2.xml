@@ -246,8 +246,10 @@
       <geometry type="cylinder"><!-- geometry specified using a simple geometric object -->
         <size>wheel_radius wheel_length</size> 
       </geometry>
-      <mu1>5.0</mu1> <!-- john needed so wheel can slip and steer -->
-      <mu2>5.0</mu2> <!-- john needed so wheel can slip and steer -->
+      <data>
+	<mu1>5.0</mu1> <!-- john needed so wheel can slip and steer -->
+	<mu2>5.0</mu2> <!-- john needed so wheel can slip and steer -->
+      </data>
     </define> 
 
     <define template="pr2_wheel_inertial">
