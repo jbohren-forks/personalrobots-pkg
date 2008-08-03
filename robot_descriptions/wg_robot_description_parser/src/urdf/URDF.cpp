@@ -996,6 +996,16 @@ namespace robot_desc {
 		    collision->material = node->FirstChild()->ValueStr();
 		    MARK_SET(collision, material);
 		}		
+		else if (node->ValueStr() == "mu1")
+		{
+		    loadDoubleValues(node, 1, &collision->mu1);
+		    MARK_SET(collision, mu1);
+		}
+		else if (node->ValueStr() == "mu2")
+		{
+		    loadDoubleValues(node, 1, &collision->mu2);
+		    MARK_SET(collision, mu2);
+		}
 		else if (node->ValueStr() == "geometry")
 		{
 		    loadGeometry(node, name + "_geom", collision->geometry);

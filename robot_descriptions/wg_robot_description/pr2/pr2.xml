@@ -28,7 +28,7 @@
 
     <caster_size_x>0.192</caster_size_x> <!-- for collision geometry -->
     <caster_size_y>0.164</caster_size_y> <!-- for collision geometry -->
-    <caster_size_z>0.213</caster_size_z> <!-- for collision geometry -->
+    <caster_size_z>0.013</caster_size_z> <!-- for collision geometry -->
     <caster_collision_center_box_center_offset_z>0.07</caster_collision_center_box_center_offset_z>
 
     <torso_size_x>.432 </torso_size_x>  <!-- for defining collision geometry -->
@@ -246,6 +246,8 @@
       <geometry type="cylinder"><!-- geometry specified using a simple geometric object -->
         <size>wheel_radius wheel_length</size> 
       </geometry>
+      <mu1>5.0</mu1> <!-- john needed so wheel can slip and steer -->
+      <mu2>5.0</mu2> <!-- john needed so wheel can slip and steer -->
     </define> 
 
     <define template="pr2_wheel_inertial">

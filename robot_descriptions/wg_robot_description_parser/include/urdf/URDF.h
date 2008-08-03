@@ -235,6 +235,8 @@ namespace robot_desc
 		bool                        verbose;
 		double                      xyz[3];
 		double                      rpy[3];
+		double                      mu1;
+		double                      mu2;
 		std::string                 material;
 		Geometry                   *geometry;
 		Data                        data;    
