@@ -1,7 +1,19 @@
-#pragma once 
-#include <math.h>
+#ifndef MATH_UTILS_ANGLES
+#define MATH_UTILS_ANGLES
 
-#define FROM_DEGREES(degrees)   (((double)(degrees))/180*M_PI) 
+#include <cmath>
+
+/** Convert degrees to radians */
+static inline double FROM_DEGREES(double degrees)
+{
+    return degrees * M_PI / 180.0;   
+}
+
+/** Convert radians to degrees */
+static inline double TO_DEGREES(double radians)
+{
+    return radians * 180.0 / M_PI;
+}
 
 /*
  * normalize_angle_positive
@@ -10,9 +22,9 @@
  * It takes and returns native units.
  */
 
-inline double normalize_angle_positive(double angle)
+static inline double normalize_angle_positive(double angle)
 {
-  return fmod(fmod(angle, FROM_DEGREES(360))+FROM_DEGREES(360), FROM_DEGREES(360));
+    return fmod(fmod(angle, 2.0*M_PI) + 2.0*M_PI, 2.0*M_PI);
 }
 /*
  * normalize
@@ -22,13 +34,14 @@ inline double normalize_angle_positive(double angle)
  *
  */
 
-inline double normalize_angle(double angle)
+static inline double normalize_angle(double angle)
 {
-  double a=normalize_angle_positive(angle);
-  if (a>FROM_DEGREES(180))
-      a-=FROM_DEGREES(360);
-  return(a);
+  double a = normalize_angle_positive(angle);
+  if (a > M_PI)
+    a -= 2.0 *M_PI;
+  return a;
 }
+
 /*
  * shortest_angular_distance
  *
@@ -41,18 +54,17 @@ inline double normalize_angle(double angle)
  * to "from" will always get you an equivelent angle to "to".
  */
 
-inline double shortest_angular_distance(double from, double to)
+static inline double shortest_angular_distance(double from, double to)
 {
-  double result;
-  result=normalize_angle_positive(
-      normalize_angle_positive(to) - normalize_angle_positive(from));
+    double result = normalize_angle_positive(normalize_angle_positive(to) - normalize_angle_positive(from));
 
-  if ( result > FROM_DEGREES(180) ) {  // If the result > 180,
-                                       // It's shorter the other way.
-      result=-(FROM_DEGREES(360)-result);   
-  }
-  return normalize_angle(result);
+    if (result > M_PI)
+	// If the result > 180,
+	// It's shorter the other way.
+	result = -(2.0*M_PI - result);
+    
+    return normalize_angle(result);
 }
 
 
-
+#endif
