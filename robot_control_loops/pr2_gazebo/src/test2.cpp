@@ -107,19 +107,21 @@ main(int argc, char** argv)
   /***************************************************************************************/
 
 
-  int numBoards    = 5;                 // 0 for head and 1 for arms, see pr2.model:Pr2_Actarray for now
+  int numBoards    = 3;                 // 0 for head and 1 for arms, see pr2.model:Pr2_Actarray for now
   int numActuators = PR2::MAX_JOINTS-2; // total number of actuators for both boards, last 2 in pr2Core (BASE_6DOF and PR2_WORLD don't count)
 
   int boardLookUp[] ={0,0,0,                   // head pitch, yaw, hokuyo pitch
                       0,0,0,0,0,0,0,0,0,0,0,0, // casters
                       0,                       // spine elevator
-                      0,0,0,0,0,0,0,           // left arm
-                      0,0,0,0,0,0,0,           // right arm
-                      1,                       // left gripper
-                      2,                       // right gripper
-                      3,3,4,4                  // left ptz p/t, right ptz p/t
-                      };  // 0=actarray, 1=left gripper, 2=right gripper, 3=left ptz, 4=right ptz
-  //int numJointsLookUp[]   ={7, 28};  // joints per actuator array
+                      0,0,0,0,0,0,0,0,           // left arm, gripper gap
+                      0,0,0,0,0,0,0,0,           // right arm, gripper gap
+                      0,                       // left gripper
+                      0,                       // right gripper
+                      1,1,2,2                  // left ptz p/t, right ptz p/t
+                      };  // 0=actarray, 1=left ptz, 2=right pt
+  //int numJointsLookUp[]   ={7, 28};  // joints per actuator array. 
+  
+  //Board mappings from pr2.model
   int portLookUp[] = {    // the way joints are listed in pr2.model
       PR2::CASTER_FL_STEER     , PR2::CASTER_FL_DRIVE_L   , PR2::CASTER_FL_DRIVE_R   ,
       PR2::CASTER_FR_STEER     , PR2::CASTER_FR_DRIVE_L   , PR2::CASTER_FR_DRIVE_R   ,
@@ -128,31 +130,31 @@ main(int argc, char** argv)
       PR2::SPINE_ELEVATOR      ,
       PR2::ARM_L_PAN           , PR2::ARM_L_SHOULDER_PITCH, PR2::ARM_L_SHOULDER_ROLL ,
       PR2::ARM_L_ELBOW_PITCH   , PR2::ARM_L_ELBOW_ROLL    , PR2::ARM_L_WRIST_PITCH   ,
-      PR2::ARM_L_WRIST_ROLL    ,
+      PR2::ARM_L_WRIST_ROLL    , PR2::ARM_L_GRIPPER_GAP   ,
       PR2::ARM_R_PAN           , PR2::ARM_R_SHOULDER_PITCH, PR2::ARM_R_SHOULDER_ROLL ,
       PR2::ARM_R_ELBOW_PITCH   , PR2::ARM_R_ELBOW_ROLL    , PR2::ARM_R_WRIST_PITCH   ,
-      PR2::ARM_R_WRIST_ROLL    ,
+      PR2::ARM_R_WRIST_ROLL    , PR2::ARM_R_GRIPPER_GAP   ,
       PR2::HEAD_YAW            , PR2::HEAD_PITCH          , PR2::HEAD_LASER_PITCH    ,
-      PR2::ARM_L_GRIPPER      - PR2::ARM_L_GRIPPER        ,
-      PR2::ARM_R_GRIPPER      - PR2::ARM_R_GRIPPER        ,
+      PR2::ARM_L_GRIPPER       ,
+      PR2::ARM_R_GRIPPER       ,
       PR2::HEAD_PTZ_L_PAN     - PR2::HEAD_PTZ_L_PAN       ,
       PR2::HEAD_PTZ_L_TILT    - PR2::HEAD_PTZ_L_PAN       ,
       PR2::HEAD_PTZ_R_PAN     - PR2::HEAD_PTZ_R_PAN       ,
       PR2::HEAD_PTZ_R_TILT    - PR2::HEAD_PTZ_R_PAN       };
 
-  
-  int jointId[]    = {    // numbering system
+
+  int jointId[]    = {    // numbering system in pr2core
       PR2::CASTER_FL_STEER     , PR2::CASTER_FL_DRIVE_L   , PR2::CASTER_FL_DRIVE_R   ,
       PR2::CASTER_FR_STEER     , PR2::CASTER_FR_DRIVE_L   , PR2::CASTER_FR_DRIVE_R   ,
       PR2::CASTER_RL_STEER     , PR2::CASTER_RL_DRIVE_L   , PR2::CASTER_RL_DRIVE_R   ,
       PR2::CASTER_RR_STEER     , PR2::CASTER_RR_DRIVE_L   , PR2::CASTER_RR_DRIVE_R   ,
-      PR2::SPINE_ELEVATOR      ,
+      PR2::SPINE_ELEVATOR      ,  
       PR2::ARM_L_PAN           , PR2::ARM_L_SHOULDER_PITCH, PR2::ARM_L_SHOULDER_ROLL ,
       PR2::ARM_L_ELBOW_PITCH   , PR2::ARM_L_ELBOW_ROLL    , PR2::ARM_L_WRIST_PITCH   ,
-      PR2::ARM_L_WRIST_ROLL    ,
+      PR2::ARM_L_WRIST_ROLL    , PR2::ARM_L_GRIPPER_GAP   ,
       PR2::ARM_R_PAN           , PR2::ARM_R_SHOULDER_PITCH, PR2::ARM_R_SHOULDER_ROLL ,
       PR2::ARM_R_ELBOW_PITCH   , PR2::ARM_R_ELBOW_ROLL    , PR2::ARM_R_WRIST_PITCH   ,
-      PR2::ARM_R_WRIST_ROLL    ,
+      PR2::ARM_R_WRIST_ROLL    , PR2::ARM_R_GRIPPER_GAP   ,
       PR2::HEAD_YAW            , PR2::HEAD_PITCH          , PR2::HEAD_LASER_PITCH    ,
       PR2::ARM_L_GRIPPER       ,
       PR2::ARM_R_GRIPPER       ,
@@ -166,14 +168,14 @@ main(int argc, char** argv)
                       "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103",
                       "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103",
                       "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103",
-                      "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103"
+                      "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103", "10.12.0.103",       "10.12.0.103", "10.12.0.103"
                      };
   string hostIP[]  = {"10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ",
                       "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ",
                       "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ",
                       "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ",
                       "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ",
-                      "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  "
+                      "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ", "10.12.0.2  ",       "10.12.0.2  ", "10.12.0.2  "
                      };
   /***************************************************************************************/
   /*                                                                                     */
@@ -186,8 +188,10 @@ main(int argc, char** argv)
   /*                                                                                     */
   /***************************************************************************************/
   // mapping between actuators in h and actuators in hi defined by boardLookUp, portLookUp and jointId
+  std::cout<<"Starting gazebohardware constructor"<<std::endl;
+ 
   GazeboHardware         hardware(numBoards,numActuators, boardLookUp, portLookUp, jointId, etherIP, hostIP);
-
+  std::cout<<"Finished constructor"<<std::endl;
   hardware.init(); //UPDATE
   std::cout<<"Finished creating GazeboHardware"<<std::endl;
   // MechanismControl
