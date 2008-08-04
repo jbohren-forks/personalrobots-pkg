@@ -145,7 +145,7 @@ void GazeboHardware::updateState(){
         pr2ActarrayIface->Lock(1);
         hardwareInterface->actuator[jointId[ii]].state.encoderCount =
            GAZEBO_POS_TO_ENCODER*pr2ActarrayIface->data->actuators[portLookUp[ii]].actualPosition;
-       // hardwareInterface->actuator[jointId[ii]].state.encoderVelocity =
+        hardwareInterface->actuator[jointId[ii]].state.encoderVelocity =
            GAZEBO_POS_TO_ENCODER*pr2ActarrayIface->data->actuators[portLookUp[ii]].actualSpeed;
 
         pr2ActarrayIface->Unlock();
