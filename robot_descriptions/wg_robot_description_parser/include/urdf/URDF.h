@@ -360,8 +360,7 @@ namespace robot_desc
 	};
         
 	struct Sensor : public Link
-	{
-	    
+	{	    
 	    Sensor(void)
 	    {
 		type = UNKNOWN;
@@ -383,6 +382,44 @@ namespace robot_desc
 	    std::string calibration;
 	};
 	
+	struct Frame
+	{
+	    Frame(void)
+	    {
+		link = NULL;
+		type = UNKNOWN;
+		xyz[0] = xyz[1] = xyz[2] = 0.0;
+		rpy[0] = rpy[1] = rpy[2] = 0.0;
+		isSet["name"] = false;
+		isSet["parent"] = false;
+		isSet["child"] = false;
+		isSet["rpy"] = false;
+		isSet["xyz"] = false;		
+	    }
+	    
+	    virtual ~Frame(void)
+	    {
+	    }
+	    
+	    virtual void print(FILE *out = stdout, std::string indent = "") const;
+
+	    std::string                 name;
+	    std::string                 linkName;
+	    Link*                       link;
+	    
+	    enum
+	    {
+		UNKNOWN, PARENT, CHILD
+	    }                           type;
+	    
+	    double                      rpy[3];
+	    double                      xyz[3];
+	    Data                        data;
+
+	    std::vector<Group*>         groups;
+	    std::map<std::string, bool> isSet;
+	};
+	
 	struct Group
 	{
 	    Group(void)
@@ -401,10 +438,12 @@ namespace robot_desc
 	    std::vector<std::string> linkNames;
 	    std::vector<Link*>       links;
 	    std::vector<Link*>       linkRoots;
+	    std::vector<std::string> frameNames;
+	    std::vector<Frame*>      frames;
 	};
 	
 	explicit
-	    URDF(const char *filename = NULL)
+	URDF(const char *filename = NULL)
 	{   
 	    m_paths.push_back("");
 	    if (filename)
@@ -434,7 +473,8 @@ namespace robot_desc
 	void getLinks(std::vector<Link*> &links) const;
 	void getActuators(std::vector<Actuator*> &actuators) const;
 	void getTransmissions(std::vector<Transmission*> &transmissions) const;
-        
+        void getFrames(std::vector<Frame*> &frames) const;
+	
 	void getGroupNames(std::vector<std::string> &groups) const;
 	Group* getGroup(const std::string &name) const;
 	void getGroups(std::vector<Group*> &groups) const;
@@ -463,7 +503,8 @@ namespace robot_desc
 	std::map<std::string, Group*>        m_groups;
 	std::map<std::string, Actuator*>     m_actuators;
 	std::map<std::string, Transmission*> m_transmissions;
-	Data                                       m_data; // information from data tags
+	std::map<std::string, Frame*>        m_frames;
+	Data                                 m_data; // information from data tags
         
 	/* simple computed datastructures */
 	std::vector<Link*> m_linkRoots; // contains the links that are connected to the world (have no parent)
@@ -482,6 +523,7 @@ namespace robot_desc
 	/* utility functions for parsing */
 	void loadLink(const TiXmlNode *node);
 	void loadSensor(const TiXmlNode *node);
+	void loadFrame(const TiXmlNode *node);
 	void loadActuator(const TiXmlNode *node);
 	void loadTransmission(const TiXmlNode *node);
 	void loadJoint(const TiXmlNode *node, const std::string &defaultName, Link::Joint *joint);

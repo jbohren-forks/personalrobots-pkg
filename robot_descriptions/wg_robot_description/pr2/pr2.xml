@@ -1383,8 +1383,11 @@
 
 <!-- End sensor definitions -->
 
-
-
+<frame name="test">
+  <parent>finger_l_left</parent>
+      <xyz>0   0   0   </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+</frame>
 
 
 <!-- Include actuators definition -->

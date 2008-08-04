@@ -75,6 +75,8 @@ namespace robot_desc {
 	    delete i->second;
 	for (std::map<std::string, Transmission*>::iterator i = m_transmissions.begin() ; i != m_transmissions.end() ; i++)
 	    delete i->second;
+	for (std::map<std::string, Frame*>::iterator i = m_frames.begin() ; i != m_frames.end() ; i++)
+	    delete i->second;
     }
     
     void URDF::clear(void)
@@ -86,6 +88,7 @@ namespace robot_desc {
 	m_links.clear();
 	m_actuators.clear();
 	m_transmissions.clear();
+	m_frames.clear();
 	m_groups.clear();
 	m_paths.clear();
 	m_paths.push_back("");
@@ -109,6 +112,15 @@ namespace robot_desc {
 	    localLinks.push_back(i->second);
 	std::sort(localLinks.begin(), localLinks.end(), SortByName<Link>());
 	links.insert(links.end(), localLinks.begin(), localLinks.end());
+    }
+
+    void URDF::getFrames(std::vector<Frame*> &frames) const
+    {
+	std::vector<Frame*> localFrames;
+	for (std::map<std::string, Frame*>::const_iterator i = m_frames.begin() ; i != m_frames.end() ; i++)
+	    localFrames.push_back(i->second);
+	std::sort(localFrames.begin(), localFrames.end(), SortByName<Frame>());
+	frames.insert(frames.end(), localFrames.begin(), localFrames.end());
     }
     
     void URDF::getActuators(std::vector<Actuator*> &actuators) const
@@ -286,6 +298,10 @@ namespace robot_desc {
 	for (unsigned int i = 0 ; i < m_linkRoots.size() ; ++i)
 	    m_linkRoots[i]->print(out, "  ");
 	fprintf(out, "\n");
+	fprintf(out, "Frames:\n");
+	for (std::map<std::string, Frame*>::const_iterator i = m_frames.begin() ; i != m_frames.end() ; i++)
+	    i->second->print(out, "  ");
+	fprintf(out, "\n");
 	fprintf(out, "Actuators:\n");
 	for (std::map<std::string, Actuator*>::const_iterator i = m_actuators.begin() ; i != m_actuators.end() ; i++)
 	    i->second->print(out, "  "); 
@@ -293,7 +309,7 @@ namespace robot_desc {
 	fprintf(out, "Transmissions:\n");
 	for (std::map<std::string, Transmission*>::const_iterator i = m_transmissions.begin() ; i != m_transmissions.end() ; i++)
 	    i->second->print(out, "  ");
-	fprintf(out, "\n");   
+	fprintf(out, "\n");
 	fprintf(out, "Data types:\n");
 	m_data.print(out, "  ");
     }
@@ -311,16 +327,22 @@ namespace robot_desc {
 	    }
 	}
     }
-    
-    void URDF::Link::Geometry::print(FILE *out, std::string indent) const
+   
+    void URDF::Frame::print(FILE *out, std::string indent) const
     {
-	fprintf(out, "%sGeometry [%s]:\n", indent.c_str(), name.c_str());
+	fprintf(out, "%sFrame [%s]:\n", indent.c_str(), name.c_str());
 	fprintf(out, "%s  - type: %d\n", indent.c_str(), (int)type);
-	fprintf(out, "%s  - size: ( ", indent.c_str());
-	for (int i = 0 ; i < nsize ; ++i)
-	    fprintf(out, "%f ", size[i]);
-	fprintf(out, ")\n");
-	fprintf(out, "%s  - filename: %s\n", indent.c_str(), filename.c_str());
+	fprintf(out, "%s  - rpy: (%f, %f, %f)\n", indent.c_str(), rpy[0], rpy[1], rpy[2]);
+	fprintf(out, "%s  - xyz: (%f, %f, %f)\n", indent.c_str(), xyz[0], xyz[1], xyz[2]);
+	fprintf(out, "%s  - link: %s\n", indent.c_str(), link ? link->name.c_str() : "");
+	fprintf(out, "%s  - groups: ", indent.c_str());
+	for (unsigned int i = 0 ; i < groups.size() ; ++i)
+	{      
+	    fprintf(out, "%s ( ", groups[i]->name.c_str());
+	    for (unsigned int j = 0 ; j < groups[i]->flags.size() ; ++j)
+		fprintf(out, "%s ", groups[i]->flags[j].c_str());
+	    fprintf(out, ") ");
+	}
 	data.print(out, indent + "  ");
     }
     
@@ -333,6 +355,18 @@ namespace robot_desc {
     void URDF::Actuator::print(FILE *out, std::string indent) const
     {
 	fprintf(out, "%sActuator [%s]:\n", indent.c_str(), name.c_str());
+	data.print(out, indent + "  ");
+    }
+     
+    void URDF::Link::Geometry::print(FILE *out, std::string indent) const
+    {
+	fprintf(out, "%sGeometry [%s]:\n", indent.c_str(), name.c_str());
+	fprintf(out, "%s  - type: %d\n", indent.c_str(), (int)type);
+	fprintf(out, "%s  - size: ( ", indent.c_str());
+	for (int i = 0 ; i < nsize ; ++i)
+	    fprintf(out, "%f ", size[i]);
+	fprintf(out, ")\n");
+	fprintf(out, "%s  - filename: %s\n", indent.c_str(), filename.c_str());
 	data.print(out, indent + "  ");
     }
     
@@ -837,6 +871,64 @@ namespace robot_desc {
 	}    
     }
     
+    void URDF::loadFrame(const TiXmlNode *node)
+    {
+	std::vector<const TiXmlNode*> children;
+	std::vector<const TiXmlAttribute*> attributes;
+	getChildrenAndAttributes(node, children, attributes);
+	
+	std::string name = extractName(attributes, "");    
+	Frame *frame = (m_frames.find(name) != m_frames.end()) ? m_frames[name] : new Frame();
+	frame->name = name;
+	if (frame->name.empty())
+	    fprintf(stderr, "No frame name given\n");
+	else
+	    MARK_SET(frame, name);
+	
+	m_frames[frame->name] = frame;
+	
+	for (unsigned int i = 0 ; i < children.size() ; ++i)
+	{
+	    const TiXmlNode *node = children[i];
+	    if (node->Type() == TiXmlNode::ELEMENT)
+	    {
+		if (node->ValueStr() == "rpy")
+		{
+		    loadDoubleValues(node, 3, frame->rpy);
+		    MARK_SET(frame, rpy);		    
+		}		
+		else if (node->ValueStr() == "xyz")
+		{
+		    loadDoubleValues(node, 3, frame->xyz);
+		    MARK_SET(frame, xyz);
+		}
+		else if (node->ValueStr() == "parent" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+		{
+		    frame->linkName = node->FirstChild()->ValueStr();
+		    MARK_SET(frame, parent);
+		    if (frame->type == Frame::CHILD)
+			fprintf(stderr, "Frame '%s' can only have either a child or a parent link\n", frame->name.c_str());
+		    frame->type = Frame::PARENT;
+		}
+		else if (node->ValueStr() == "child" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+		{
+		    frame->linkName = node->FirstChild()->ValueStr();
+		    MARK_SET(frame, child);
+		    if (frame->type == Frame::PARENT)
+			fprintf(stderr, "Frame '%s' can only have either a child or a parent link\n", frame->name.c_str());
+		    frame->type = Frame::CHILD;
+		}
+		else
+		if (node->ValueStr() == "data")
+		    loadData(node, &frame->data);
+		else
+		    ignoreNode(node);
+	    }
+	    else
+		ignoreNode(node);
+	}    
+    }
+    
     void URDF::loadJoint(const TiXmlNode *node, const std::string& defaultName, Link::Joint *joint)
     {
 	std::vector<const TiXmlNode*> children;
@@ -1206,6 +1298,9 @@ namespace robot_desc {
 	    MARK_SET(link, name);
 	m_links[link->name] = link;
 	
+	if (link->canSense())
+	    fprintf(stderr, "Link '%s' was already defined as a sensor\n", link->name.c_str());
+
 	std::string currentLocation = m_location;
 	m_location = "link '" + name + "'";
 	
@@ -1405,6 +1500,9 @@ namespace robot_desc {
 	switch (type)
 	{
 	case TiXmlNode::DOCUMENT:
+	    if (dynamic_cast<const TiXmlDocument*>(node)->RootElement()->ValueStr() != "robot")
+		fprintf(stderr, "File '%s' does not start with the <robot> tag\n", m_source.c_str());
+	    
 	    parse(dynamic_cast<const TiXmlNode*>(dynamic_cast<const TiXmlDocument*>(node)->RootElement()));
 	    
 	    {
@@ -1421,6 +1519,8 @@ namespace robot_desc {
 			    loadLink(m_stage2[i]);
 			else if (name == "sensor")
 			    loadSensor(m_stage2[i]);
+			else if (name == "frame")
+			    loadFrame(m_stage2[i]);
 			else if (name == "actuator")
 			    loadActuator(m_stage2[i]);
 			else if (name == "transmission")
@@ -1460,31 +1560,62 @@ namespace robot_desc {
 			parent->children.push_back(i->second);
 		    }
 		}
-				
+		
+		/* compute the pointers to links inside frames */
+		for (std::map<std::string, Frame*>::iterator i = m_frames.begin() ; i != m_frames.end() ; i++)
+		{
+		    if (m_links.find(i->second->linkName) != m_links.end())
+			i->second->link = m_links[i->second->linkName];
+		    else
+			fprintf(stderr, "Frame '%s' refers to unknown link ('%s')\n", i->first.c_str(), i->second->linkName.c_str());		    
+		}
+		
 		/* for each group, compute the pointers to the links they contain, and for every link,
-		 * compute the list of pointers to the groups they are part of */
+		 * compute the list of pointers to the groups they are part of 
+		 * do the same for frames */
 		for (std::map<std::string, Group*>::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
 		{
 		    std::sort(i->second->linkNames.begin(), i->second->linkNames.end());
 		    
 		    for (unsigned int j = 0 ; j < i->second->linkNames.size() ; ++j)
 			if (m_links.find(i->second->linkNames[j]) == m_links.end())
-			    fprintf(stderr, "Group '%s': link '%s' is undefined\n", i->first.c_str(), i->second->linkNames[j].c_str());
+			{
+			    if (m_frames.find(i->second->linkNames[j]) == m_frames.end())
+				fprintf(stderr, "Group '%s': '%s' is not defined as a link or frame\n", i->first.c_str(), i->second->linkNames[j].c_str());
+			    else
+			    {
+				/* name is a frame */
+				i->second->frameNames.push_back(i->second->linkNames[j]);
+				Frame* f = m_frames[i->second->linkNames[j]];
+				f->groups.push_back(i->second);
+				i->second->frames.push_back(f);
+			    }			    
+			}
 			else
 			{
+			    /* name is a link */
+			    if (m_frames.find(i->second->linkNames[j]) != m_frames.end())
+				fprintf(stderr, "Name '%s' is used both for a link and a frame\n", i->second->linkNames[j].c_str());
+			    
 			    Link* l = m_links[i->second->linkNames[j]];
 			    l->groups.push_back(i->second);
 			    i->second->links.push_back(l);
 			}
+		    
+		    /* remove the link names that are in fact frame names */
+		    for (unsigned int j = 0 ; j < i->second->frameNames.size() ; ++j)
+			for (unsigned int k = 0 ; k < i->second->linkNames.size() ; ++k)
+			    if (i->second->linkNames[k] == i->second->frameNames[j])
+			    {
+				i->second->linkNames.erase(i->second->linkNames.begin() + k);
+				break;
+			    }
 		}
 
 		/* sort the links by name to reduce variance in the output of the parser */
 		std::sort(m_linkRoots.begin(), m_linkRoots.end(), SortByName<Link>());
 		for (std::map<std::string, Link*>::iterator i = m_links.begin() ; i != m_links.end() ; i++)
-		{
 		    std::sort(i->second->children.begin(), i->second->children.end(), SortByName<Link>());
-		    std::sort(i->second->groups.begin(), i->second->groups.end(), SortByName<Group>());
-		}		
 
 		/* for every group, find the set of links that are roots in this group (their parent is not in the group) */
 		for (std::map<std::string, Group*>::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
