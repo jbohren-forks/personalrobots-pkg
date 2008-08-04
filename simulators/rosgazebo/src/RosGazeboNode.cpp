@@ -972,7 +972,7 @@ RosGazeboNode::Update()
                odomMsg.header.stamp);
 
   //this->PR2Copy->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw); // actual CoM of base
-  tf.sendEuler("FRAMEID_ODOM",
+  tf.sendInverseEuler("FRAMEID_ODOM",
                "FRAMEID_BASE",
                x,
                y,
