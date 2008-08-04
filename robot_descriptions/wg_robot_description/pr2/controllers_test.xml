@@ -1,0 +1,816 @@
+<?xml version="1.0"?>
+
+<robot name="pr2"><!-- name of the robot-->
+
+<data type="gazebo_controller"> <!-- we can set a name too, but the convertor only cares about the type -->
+
+  <xml> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <data> tag -->
+
+  <!-- ========== Wrist Cameras =========== -->
+  <body:empty name="wrist_cam_left_body">
+    <xyz>  0.85  0.17   0.78 </xyz>
+    <rpy> 0.00  0.0   0.00 </rpy>
+    <sensor:camera name="wrist_cam_left_sensor">
+      <imageSize>640 480</imageSize>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <updateRate>15.0</updateRate>
+      <controller:generic_camera name="wrist_cam_left_controller">
+        <updateRate>15.0</updateRate>
+        <interface:camera name="wrist_cam_left_iface" />
+      </controller:generic_camera>
+    </sensor:camera>
+    <geom:box name="wrist_cam_left_geom">
+      <xyz> 0.00   0.00   0.00</xyz>
+      <size>0.02   0.02   0.02</size>
+      <mass>0.1</mass>
+      <visual>
+        <size>0.02   0.02   0.02</size>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Black</material>
+      </visual>
+    </geom:box>
+  </body:empty>
+  <joint:hinge name="wrist_cam_left">
+    <body1>wrist_cam_left_body</body1>
+    <body2>gripper_roll_left</body2>
+    <anchor>gripper_roll_left</anchor>
+    <axis>  0.0   0.0   1.0 </axis>
+    <lowStop> 0.0 </lowStop>
+    <highStop> 0.0 </highStop>
+  </joint:hinge>
+
+
+  <body:empty name="wrist_cam_right_body">
+    <xyz>  0.85   -0.17   0.78 </xyz>
+    <rpy>  0.0     0.0    0.0 </rpy>
+    <sensor:camera name="wrist_cam_right_sensor">
+      <imageSize>640 480</imageSize>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <updateRate>15.0</updateRate>
+      <controller:generic_camera name="wrist_cam_right_controller">
+        <updateRate>15.0</updateRate>
+        <interface:camera name="wrist_cam_right_iface" />
+      </controller:generic_camera>
+    </sensor:camera>
+    <geom:box name="wrist_cam_right_geom">
+      <xyz> 0.00   0.00   0.00</xyz>
+      <size>0.02   0.02   0.02</size>
+      <mass>0.1</mass>
+      <visual>
+        <size>0.02   0.02   0.02</size>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Black</material>
+      </visual>
+    </geom:box>
+  </body:empty>
+  <joint:hinge name="wrist_cam_right">
+    <body1>wrist_cam_right_body</body1>
+    <body2>gripper_roll_right</body2>
+    <anchor>gripper_roll_right</anchor>
+    <axis>  0.0   0.0   1.0 </axis>
+    <lowStop> 0.0 </lowStop>
+    <highStop> 0.0 </highStop>
+  </joint:hinge>
+
+
+
+
+
+
+  <!-- ptz left camera -->
+  <body:box name="ptz_cam_left_body">
+    <xyz> -0.1   0.30  1.04 </xyz>
+    <rpy> 0.00  0.0   0.00 </rpy>
+    <sensor:camera name="ptz_cam_left_sensor">
+      <imageSize>640 480</imageSize>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <updateRate>15.0</updateRate>
+      <controller:generic_camera name="ptz_cam_left_controller">
+        <updateRate>15.0</updateRate>
+        <interface:camera name="ptz_cam_left_iface" />
+      </controller:generic_camera>
+      <!-- PTZ camera controllers -->
+    </sensor:camera>
+    <geom:box name="ptz_cam_left_geom">
+      <xyz> 0.00   0.00   0.00</xyz>
+      <size>0.05   0.03   0.04</size>
+      <mass>0.1</mass>
+      <!--color> 0.0  1.0  0.0</color-->
+      <visual>
+        <size>0.05   0.03   0.04</size>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Black</material>
+      </visual>
+    </geom:box>
+  </body:box>
+
+  <body:box name="ptz_cam_base_left_body">
+    <xyz> -0.1   0.27  1.04 </xyz>
+    <rpy> 0.00  0.0   0.00 </rpy>
+    <geom:box name="ptz_cam_base_left_geom">
+      <xyz> 0.00   0.00   0.00</xyz>
+      <size>0.05   0.02   0.02</size>
+      <mass>0.1</mass>
+      <!--color> 0.0  1.0  0.0</color-->
+      <visual>
+        <size>0.05   0.02   0.02</size>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Shell</material>
+      </visual>
+    </geom:box>
+  </body:box>
+  <!-- ptz right camera -->
+  <body:empty name="ptz_cam_right_body">
+    <xyz> -0.1  -0.30  1.04 </xyz>
+    <rpy> 0.00  0.0   0.00 </rpy>
+    <sensor:camera name="ptz_cam_right_sensor">
+      <imageSize>640 480</imageSize>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <updateRate>15.0</updateRate>
+      <controller:generic_camera name="ptz_cam_right_controller">
+        <updateRate>15.0</updateRate>
+        <interface:camera name="ptz_cam_right_iface" />
+      </controller:generic_camera>
+      <!-- PTZ camera controllers -->
+    </sensor:camera>
+    <geom:box name="ptz_cam_right_geom">
+      <xyz> 0.00   0.00   0.00</xyz>
+      <size>0.05   0.03   0.04</size>
+      <mass>0.1</mass>
+      <!--color> 0.0  1.0  0.0</color-->
+      <visual>
+        <size>0.05   0.03   0.04</size>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Black</material>
+      </visual>
+    </geom:box>
+  </body:empty>
+  <body:box name="ptz_cam_base_right_body">
+    <xyz> -0.1  -0.27  1.04 </xyz>
+    <rpy> 0.00  0.0   0.00 </rpy>
+    <geom:box name="ptz_cam_base_right_geom">
+      <xyz> 0.00   0.00   0.00</xyz>
+      <size>0.05   0.02   0.02</size>
+      <mass>0.1</mass>
+      <!--color> 0.0  1.0  0.0</color-->
+      <visual>
+        <size>0.05   0.02   0.02</size>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Shell</material>
+      </visual>
+    </geom:box>
+  </body:box>
+
+  <!-- attach neck_body to ptz cameras -->
+  <joint:hinge name="ptz_cam_left_yaw_joint">
+    <body1>ptz_cam_left_body</body1>
+    <body2>ptz_cam_base_left_body</body2>
+    <anchor>ptz_cam_left_body</anchor>
+    <axis>  0.0   0.0   1.0 </axis>
+  </joint:hinge>
+  <joint:hinge name="ptz_cam_left_pitch_joint">
+    <body1>ptz_cam_base_left_body</body1>
+    <body2>torso</body2>
+    <anchor>ptz_cam_base_left_body</anchor>
+    <axis>  0.0   1.0   0.0 </axis>
+  </joint:hinge>
+  <joint:hinge name="ptz_cam_right_yaw_joint">
+    <body2>ptz_cam_right_body</body2>
+    <body1>ptz_cam_base_right_body</body1>
+    <anchor>ptz_cam_right_body</anchor>
+    <axis>  0.0   0.0   1.0 </axis>
+  </joint:hinge>
+  <joint:hinge name="ptz_cam_right_pitch_joint">
+    <body2>ptz_cam_base_right_body</body2>
+    <body1>torso</body1>
+    <anchor>ptz_cam_base_right_body</anchor>
+    <axis>  0.0   1.0   0.0 </axis>
+  </joint:hinge>
+
+
+  <!-- stereo camera -->
+  <body:empty name="stereo_camera_body">
+    <xyz> 0.03 0.0   1.30 </xyz>
+    <rpy> 0.0  0.0   0.0  </rpy>
+    <sensor:stereocamera name="stereo_camera_sensor">
+      <imageSize>640 480</imageSize>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>100</farClip>
+      <saveFrames>false</saveFrames>
+      <saveFramePath>frames</saveFramePath>
+      <baseline>0.2</baseline>
+      <updateRate>15.0</updateRate>
+      <controller:stereocamera name="stereo_camera_controller">
+        <updateRate>15.0</updateRate>
+        <interface:stereocamera name="stereo_iface_0" />
+        <interface:camera name="camera_iface_0" />
+        <interface:camera name="camera_iface_1" />
+        <leftcamera>camera_iface_0</leftcamera>
+        <rightcamera>camera_iface_1</rightcamera>
+      </controller:stereocamera>
+    </sensor:stereocamera>
+    <geom:box name="stereo_camera_geom">
+      <xyz> 0.00   0.00   0.00</xyz>
+      <size>0.05   0.10   0.05</size>
+      <mass>0.1</mass>
+      <visual>
+        <size>0.05   0.10   0.05</size>
+        <rpy>0.0   0.0 0.0 </rpy>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/PioneerBody</material>
+      </visual>
+    </geom:box>
+  </body:empty>
+
+  <!-- attach stereo_camera to head_tilt -->
+  <joint:hinge name="stereo_camera_attach_joint">
+    <body2>head_tilt</body2>
+    <body1>stereo_camera_body</body1>
+    <anchor>head_tilt</anchor>
+    <axis>  1.0   0.0   0.0 </axis>
+    <lowStop> 0.0 </lowStop>
+    <highStop> 0.0 </highStop>
+  </joint:hinge>
+
+  <!-- ========================================== Hokuyo tilt laser ========================================== -->
+  <body:box name="tilt_laser_body">
+    <xyz>0.03 0.0 1.0</xyz>
+    <rpy>0.0 0.0 0.0</rpy>
+ 
+    <geom:box name="tilt_laser_box">
+      <xyz>0.0 0.0 0.0</xyz>
+      <rpy>0 0 0</rpy>
+      <mass>0.12</mass>
+      <size>.1 .1 .1</size>
+      <visual>
+        <xyz>0.0 0.0 0.0</xyz>
+        <scale>.5 .5 .5</scale>
+        <mesh>pr2/hokuyo.mesh</mesh>
+        <material>Gazebo/Blue</material>
+      </visual>
+
+    </geom:box>
+
+    <sensor:ray name="tilt_laser_1">
+      <rayCount>683</rayCount>
+      <rangeCount>683</rangeCount>
+      <laserCount>1</laserCount>
+      <origin>0.0 0.0 0.05</origin>
+
+      <displayRays>false</displayRays>
+
+      <minAngle>-45</minAngle>
+      <maxAngle> 45</maxAngle>
+
+      <minRange>0.05</minRange>
+      <maxRange>10.0</maxRange>
+      <updateRate>10</updateRate>
+      <controller:sicklms200_laser name="tilt_laser_controller_1">
+        <interface:laser name="tilt_laser_iface_1"/>
+        <updateRate>10</updateRate>
+      </controller:sicklms200_laser>
+    </sensor:ray>
+  </body:box>
+
+  <!-- attach hokuyo to torso -->
+  <joint:hinge name="hokuyo_pitch_joint">
+    <body1>torso</body1>
+    <body2>tilt_laser_body</body2>
+    <anchor>tilt_laser_body</anchor>
+    <axis>  0.0   1.0   0.0 </axis>
+  </joint:hinge>
+
+  <!-- ========================================== Hokuyo laser body ========================================== -->
+  <body:box name="base_laser_body">
+    <xyz>0.25 0.0 0.27</xyz> <!-- from the robot coordinate system (center bottom of base box)-->
+    <rpy>0.0  0.0 0.0</rpy>
+ 
+    <geom:box name="base_laser_box">
+      <xyz>0.0 0.0 0.02</xyz>
+      <rpy>0 0 0</rpy>
+      <mass>0.12</mass>
+      <size>.05 .05 .05</size>
+      <visual>
+        <scale>.05 .05 .05</scale>
+        <mesh>unit_cylinder</mesh>
+        <material>Gazebo/Red</material>
+      </visual>
+    </geom:box>
+    <sensor:ray name="base_laser_1">
+      <rayCount>683</rayCount>
+      <rangeCount>683</rangeCount>
+      <laserCount>1</laserCount>
+      <origin>0.0 0.0 0.05</origin>
+
+      <displayRays>false</displayRays>
+
+      <minAngle>-90</minAngle>
+      <maxAngle>90</maxAngle>
+
+      <minRange>0.05</minRange>
+      <maxRange>10.0</maxRange>
+      <updateRate>10.0</updateRate>
+      <controller:sicklms200_laser name="base_laser_controller_1">
+        <interface:laser name="base_laser_iface_1"/>
+        <updateRate>10</updateRate>
+      </controller:sicklms200_laser>
+    </sensor:ray>
+  </body:box>
+  <!-- attach hokuyo to torso -->
+  <joint:hinge name="base_laser_base_attach_joint">
+    <body1>base</body1>
+    <body2>base_laser_body</body2>
+    <anchor>base_laser_body</anchor>
+    <axis>  1.0   0.0   0.0 </axis>
+    <lowStop> 0.0 </lowStop>
+    <highStop> 0.0 </highStop>
+  </joint:hinge>
+
+
+
+  <!-- PR2_ACTARRAY -->
+  <controller:pr2_actarray name="pr2_controller" plugin="libPr2_Actarray.so">
+      <updateRate>100.0</updateRate>
+      <!-- caster array -->
+      <joint name="caster_front_left_joint">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>0</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+      <joint name="wheel_front_left_l_joint">
+        <saturationTorque>5</saturationTorque>
+        <pGain>0</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>SPEED_CONTROL</controlMode>
+      </joint>
+      <joint name="wheel_front_left_r_joint">
+        <saturationTorque>5</saturationTorque>
+        <pGain>0</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>SPEED_CONTROL</controlMode>
+      </joint>
+      <joint name="caster_front_right_joint">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>0</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+      <joint name="wheel_front_right_l_joint">
+        <saturationTorque>5</saturationTorque>
+        <pGain>0</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>SPEED_CONTROL</controlMode>
+      </joint>
+      <joint name="wheel_front_right_r_joint">
+        <saturationTorque>5</saturationTorque>
+        <pGain>0</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>SPEED_CONTROL</controlMode>
+      </joint>
+      <joint name="caster_rear_left_joint">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>0.2</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+      <joint name="wheel_rear_left_l_joint">
+        <saturationTorque>5</saturationTorque>
+        <pGain>0.1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>SPEED_CONTROL</controlMode>
+      </joint>
+      <joint name="wheel_rear_left_r_joint">
+        <saturationTorque>5</saturationTorque>
+        <pGain>0.1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>SPEED_CONTROL</controlMode>
+      </joint>
+      <joint name="caster_rear_right_joint">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>0.2</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+      <joint name="wheel_rear_right_l_joint">
+        <saturationTorque>5</saturationTorque>
+        <pGain>0.1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>SPEED_CONTROL</controlMode>
+      </joint>
+      <joint name="wheel_rear_right_r_joint">
+        <saturationTorque>5</saturationTorque>
+        <pGain>0.1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>SPEED_CONTROL</controlMode>
+      </joint>
+      <!-- ========================================= -->
+      <!-- torso array -->
+      <joint name="torso_joint">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+      <!-- ========================================= -->
+      <!-- left arm array -->
+      <joint name="shoulder_pan_left_joint">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>50.0</explicitDampingCoefficient>
+        <controlMode>TORQUE_CONTROL</controlMode>
+      </joint>
+      <joint name="shoulder_pitch_left_joint">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>100.0</explicitDampingCoefficient>
+        <controlMode>TORQUE_CONTROL</controlMode>
+      </joint>
+      <joint name="upperarm_roll_left_joint">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
+        <controlMode>TORQUE_CONTROL</controlMode>
+      </joint>
+      <joint name="elbow_flex_left_joint">
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>2.0</explicitDampingCoefficient>
+        <controlMode>TORQUE_CONTROL</controlMode>
+      </joint>
+      <joint name="forearm_roll_left_joint">
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>TORQUE_CONTROL</controlMode>
+      </joint>
+      <joint name="wrist_flex_left_joint">
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>TORQUE_CONTROL</controlMode>
+      </joint>
+      <joint name="gripper_roll_left_joint">
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>TORQUE_CONTROL</controlMode>
+      </joint>
+      <!-- Special gripper joint -->
+      <joint name="gripper_left_joint" type="gripper_special">
+        <left_proximal>finger_l_left_joint</left_proximal>
+        <left_distal>finger_tip_l_left_joint</left_distal>
+        <right_proximal>finger_r_left_joint</right_proximal>
+        <right_distal>finger_tip_r_left_joint</right_distal>
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+      <!-- ========================================= -->
+      <!-- right arm array -->
+      <joint name="shoulder_pan_right_joint">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>50.0</explicitDampingCoefficient>
+        <controlMode>TORQUE_CONTROL</controlMode>
+      </joint>
+      <joint name="shoulder_pitch_right_joint">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>100.0</explicitDampingCoefficient>
+        <controlMode>TORQUE_CONTROL</controlMode>
+      </joint>
+      <joint name="upperarm_roll_right_joint">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
+        <controlMode>TORQUE_CONTROL</controlMode>
+      </joint>
+      <joint name="elbow_flex_right_joint">
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>2.0</explicitDampingCoefficient>
+        <controlMode>TORQUE_CONTROL</controlMode>
+      </joint>
+      <joint name="forearm_roll_right_joint">
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>TORQUE_CONTROL</controlMode>
+      </joint>
+      <joint name="wrist_flex_right_joint">
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>TORQUE_CONTROL</controlMode>
+      </joint>
+      <joint name="gripper_roll_right_joint">
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>TORQUE_CONTROL</controlMode>
+      </joint>
+      <!-- Special gripper joint -->
+      <joint name="gripper_right_joint" type="gripper_special">
+        <left_proximal>finger_l_right_joint</left_proximal>
+        <left_distal>finger_tip_l_right_joint</left_distal>
+        <right_proximal>finger_r_right_joint</right_proximal>
+        <right_distal>finger_tip_r_right_joint</right_distal>
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+      <!-- head and above array -->
+      <joint name="head_pan_joint">
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+      <joint name="head_tilt_joint">
+        <saturationTorque>10</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+      <joint name="hokuyo_pitch_joint">
+        <saturationTorque>500</saturationTorque>
+        <pGain>2</pGain>
+        <dGain>0</dGain>
+        <iGain>1</iGain>
+        <iClamp>20</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+      <!-- ========================================= -->
+      <interface:pr2array name="pr2_iface"/>
+      <!-- ========================================= -->
+  </controller:pr2_actarray>
+
+  <controller:P3D name="p3d_right_wrist_controller" plugin="libP3D.so">
+      <updateRate>100.0</updateRate>
+      <bodyName>gripper_roll_right</bodyName>
+      <interface:position name="p3d_right_wrist_position"/>
+  </controller:P3D>
+
+  <controller:P3D name="p3d_left_wrist_controller" plugin="libP3D.so">
+      <updateRate>100.0</updateRate>
+      <bodyName>gripper_roll_left</bodyName>
+      <interface:position name="p3d_left_wrist_position"/>
+  </controller:P3D>
+
+  <controller:P3D name="p3d_base_controller" plugin="libP3D.so">
+      <updateRate>100.0</updateRate>
+      <bodyName>base</bodyName>
+      <interface:position name="p3d_base_position"/>
+  </controller:P3D>
+
+  <!-- ptz camera controls -->
+  <controller:generic_ptz name="ptz_cam_left_controller">
+    <updateRate>15.0</updateRate> <!-- rate not implemented in gazebo yet-->
+    <panJoint>ptz_cam_left_pitch_joint</panJoint>
+    <tiltJoint>ptz_cam_left_yaw_joint</tiltJoint>
+    <interface:ptz name="ptz_left_iface" />
+  </controller:generic_ptz>
+
+  <controller:generic_ptz name="ptz_cam_right_controller">
+    <updateRate>15.0</updateRate> <!-- rate not implemented in gazebo yet-->
+    <panJoint>ptz_cam_right_pitch_joint</panJoint>
+    <tiltJoint>ptz_cam_right_yaw_joint</tiltJoint>
+    <interface:ptz name="ptz_right_iface" />
+  </controller:generic_ptz>
+
+
+
+  <!-- ========== Old Obsolete =========== -->
+  <!-- ========== Right hand =========== -->
+  <!--
+  <body:box name="finger_1_right">
+     <xyz>0.93 -0.172936 0.72</xyz>
+     <rpy>  0.0     0.0    0.0 </rpy>
+    <geom:box name="finger_1_right_geom">
+      <kp>100000000.0</kp>
+      <kd>1.0</kd>
+      <size> 0.05  0.01 0.025</size>
+      <mass>0.1</mass>
+      <visual>
+        <size> 0.05  0.01 0.025</size>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/PioneerBody</material>
+      </visual>
+    </geom:box>
+  </body:box>
+  <body:box name="finger_2_right">
+    <xyz>0.93 -0.132936 0.72</xyz>
+    <rpy>  0.0     0.0    0.0 </rpy>
+    <geom:box name="finger_2_right_geom">
+      <kp>100000000.0</kp>
+      <kd>1.0</kd>
+      <size> 0.05  0.01 0.025</size>
+      <mass>0.1</mass>
+      <visual>
+        <size> 0.05  0.01 0.025</size>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Blue</material>
+      </visual>
+    </geom:box>
+  </body:box>
+  <joint:slider name="finger_1_slider_right">
+    <body2>finger_1_right</body2>
+    <body1>gripper_roll_right</body1>
+    <anchor>gripper_roll_right</anchor>
+    <lowStop> -0.02 </lowStop>
+    <highStop>   0.05 </highStop>
+    <axis>0.0  1.0  0.0 </axis>
+  </joint:slider>
+  <joint:slider name="finger_2_slider_right">
+    <body2>finger_2_right</body2>
+    <body1>gripper_roll_right</body1>
+    <anchor>gripper_roll_right</anchor>
+    <lowStop> -0.05 </lowStop> 
+    <highStop>   0.02 </highStop>
+    <axis>0.0  1.0  0.0 </axis>
+  </joint:slider>
+  <body:box name="finger_1_left">
+    <xyz>0.93  0.132936 0.72</xyz>
+    <rpy>  0.0     0.0    0.0 </rpy>
+    <geom:box name="finger_1_left_geom">
+      <kp>100000000.0</kp>
+      <kd>1.0</kd>
+      <size> 0.05  0.01 0.025</size>
+      <mass>0.1</mass>
+      <visual>
+        <size> 0.05  0.01 0.025</size>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/PioneerBody</material>
+      </visual>
+    </geom:box>
+  </body:box>
+
+  <body:box name="finger_2_left">
+    <xyz>0.93  0.172936 0.72</xyz>
+    <rpy>  0.0     0.0    0.0 </rpy>
+    <geom:box name="finger_2_left_geom">
+      <kp>100000000.0</kp>
+      <kd>1.0</kd>
+      <size> 0.05  0.01 0.025</size>
+      <mass>0.1</mass>
+      <visual>
+        <size> 0.05  0.01 0.025</size>
+        <mesh>unit_box</mesh>
+        <material>Gazebo/Blue</material>
+      </visual>
+    </geom:box>
+  </body:box>
+  <joint:slider name="finger_1_slider_left">
+    <body2>finger_1_left</body2>
+    <body1>gripper_roll_left</body1>
+    <anchor>gripper_roll_left</anchor>
+    <lowStop> -0.02 </lowStop>
+    <highStop>   0.05 </highStop>
+    <axis>0.0  1.0  0.0 </axis>
+  </joint:slider>
+  <joint:slider name="finger_2_slider_left">
+    <body2>finger_2_left</body2>
+    <body1>gripper_roll_left</body1>
+    <anchor>gripper_roll_left</anchor>
+    <lowStop> -0.05 </lowStop>
+    <highStop>   0.02 </highStop>
+    <axis>0.0  1.0  0.0 </axis>
+  </joint:slider>
+  <controller:pr2_gripper name="pr2_gripper_left_controller" plugin="libPr2_Gripper.so">
+      <updateRate>100.0</updateRate>
+      <leftJoint>finger_2_slider_left</leftJoint>
+      <rightJoint>finger_1_slider_left</rightJoint>
+      <gripperForce>100.0</gripperForce>
+      <pGain>1.0</pGain>
+      <dGain>0.0</dGain>
+      <iGain>0.0</iGain>
+      <interface:pr2gripper name="pr2_gripper_left_iface"/>
+  </controller:pr2_gripper>
+  <controller:pr2_gripper name="pr2_gripper_right_controller" plugin="libPr2_Gripper.so">
+      <updateRate>100.0</updateRate>
+      <leftJoint>finger_2_slider_right</leftJoint>
+      <rightJoint>finger_1_slider_right</rightJoint>
+      <gripperForce>100.0</gripperForce>
+      <pGain>1.0</pGain>
+      <dGain>0.0</dGain>
+      <iGain>0.0</iGain>
+      <interface:pr2gripper name="pr2_gripper_right_iface"/>
+  </controller:pr2_gripper>
+  -->
+  </xml>
+</data>
+
+</robot>
+
