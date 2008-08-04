@@ -1553,6 +1553,8 @@ namespace robot_desc {
 			    if (doc->LoadFile())
 			    {
 				addPath(filename);
+				if (doc->RootElement()->ValueStr() != "robot")
+				    fprintf(stderr, "Included file '%s' does not start with the <robot> tag\n", filename);
 				parse(dynamic_cast<const TiXmlNode*>(doc->RootElement()));
 			    }
 			    else

@@ -1,3 +1,6 @@
+<?xml version="1.0"?>
+
+<robot name="pr2"><!-- name of the robot-->
 
 <data type="gazebo_controller"> <!-- we can set a name too, but the convertor only cares about the type -->
 
@@ -792,3 +795,5 @@
   -->
   </xml>
 </data>
+
+</robot>

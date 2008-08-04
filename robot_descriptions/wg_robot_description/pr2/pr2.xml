@@ -1347,91 +1347,9 @@
   <!--include>actuators.xml</include-->
   
   <!-- Define groups of links; a link may be part of multiple groups -->
+  
+  <include>planning.xml</include>
 
-  <group name="base" flags="plan">
-    base
-  </group>
-  
-  <group name="leftArm" flags="plan">
-    shoulder_pan_left
-    shoulder_pitch_left
-    upperarm_roll_left
-    elbow_flex_left
-    forearm_roll_left
-    wrist_flex_left
-    gripper_roll_left
-  </group>
-  
-  <group name="rightArm" flags="plan">
-    shoulder_pan_right
-    shoulder_pitch_right
-    upperarm_roll_right
-    elbow_flex_right
-    forearm_roll_right
-    wrist_flex_right
-    gripper_roll_right
-  </group>
-
-  <group name="base+leftArm" flags="plan">
-    base
-    torso
-    shoulder_pan_left
-    shoulder_pitch_left
-    upperarm_roll_left
-    elbow_flex_left
-    forearm_roll_left
-    wrist_flex_left
-    gripper_roll_left
-  </group>
-  
-  <group name="base+rightArm" flags="plan">
-    base
-    torso
-    shoulder_pan_right
-    shoulder_pitch_right
-    upperarm_roll_right
-    elbow_flex_right
-    forearm_roll_right
-    wrist_flex_right
-    gripper_roll_right
-  </group>
-  
-  <group name="arms" flags="plan">
-    shoulder_pan_left
-    shoulder_pitch_left
-    upperarm_roll_left
-    elbow_flex_left
-    forearm_roll_left
-    wrist_flex_left
-    gripper_roll_left
-    shoulder_pan_right
-    shoulder_pitch_right
-    upperarm_roll_right
-    elbow_flex_right
-    forearm_roll_right
-    wrist_flex_right
-    gripper_roll_right
-  </group>
-
-  <group name="base+arms" flags="plan">
-    base
-    torso
-    shoulder_pan_left
-    shoulder_pitch_left
-    upperarm_roll_left
-    elbow_flex_left
-    forearm_roll_left
-    wrist_flex_left
-    gripper_roll_left
-    shoulder_pan_right
-    shoulder_pitch_right
-    upperarm_roll_right
-    elbow_flex_right
-    forearm_roll_right
-    wrist_flex_right
-    gripper_roll_right
-  </group>
-  
   <group name="head">
     head_pan
     head_tilt    
