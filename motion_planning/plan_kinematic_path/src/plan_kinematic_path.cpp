@@ -49,6 +49,8 @@ public:
 	robot_srvs::KinematicMotionPlan::response res;
 	
 	req.model_id = "pr2::base+arms";
+	req.threshold = 1e-6;
+	req.distance_metric = "L2Square";
 	
 	req.start_state.set_vals_size(34);
 	for (unsigned int i = 0 ; i < req.start_state.vals_size ; ++i)

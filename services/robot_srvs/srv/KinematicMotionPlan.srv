@@ -1,8 +1,63 @@
+# This message contains the definition for a request to the motion
+# planner
+
+
+
+# The model (defined in pr2.xml as a group) for which the motion
+# planner should plan for
 string model_id
+
+
+# The starting state for the robot. This is eth complete state of the
+# robot, all joint values, everything that needs to be specified to
+# completely define where each part of the robot is in space. The
+# meaning for each element in the state vector can be extracted from
+# viewing the output of the robot model construction (the kinematic
+# model constructed from the parsed URDF model) in verbose mode
 robot_msgs/KinematicState start_state
+
+
+# The goal state for the model to plan for. The dimension of this
+# state must be equal to the dimension of the state space
+# characterizing the model (group) to plan for.  If this state has
+# dimension 0, it is assumed that the first state that satisfies the
+# constraints is correct
 robot_msgs/KinematicState goal_state
+
+
+# The constraints the motion planner should respect
+robot_msgs/KinematicConstraint[] constraints
+
+
+# The maximum amount of time the motion planner is allowed to plan for
 float64 allowed_time
+
+
+# A string that identifies which distance metric the planner should use
+string distance_metric
+
+
+# The threshold (distance) that is allowed between the returned
+# solution and the actual goal
+float64 threshold
+
+
+# Lower coordinate for a box defining the volume in the workspace the
+# motion planner is active in.  If planning in 2D, only first 2 values
+# (x, y) of the points are used.
 std_msgs/Point3DFloat64 volumeMin
+
+
+# Higher coordinate for the box described above
 std_msgs/Point3DFloat64 volumeMax
+
 ---
+
+# The result of a motion plan: a kinematic path. If the motion plan is
+# not succesful, this path has 0 states. If the motion plan is
+# succesful, this path contains the minimum number of states (but it
+# includes start and goal states) to define the motions for the
+# robot. If more intermediate states are needed, linear interpolation
+# is to be assumed.
+
 robot_msgs/KinematicPath path

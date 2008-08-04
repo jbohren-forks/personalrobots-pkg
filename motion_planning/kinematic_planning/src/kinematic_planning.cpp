@@ -268,7 +268,7 @@ public:
 	goal->state = new ompl::SpaceInformationKinematic::StateKinematic(dim);
 	for (int i = 0 ; i < dim ; ++i)
 	    goal->state->values[i] = req.goal_state.vals[i];
-	goal->threshold = 1e-6;
+	goal->threshold = req.threshold;
 	p.si->setGoal(goal);
 
 	printf("=======================================\n");	
