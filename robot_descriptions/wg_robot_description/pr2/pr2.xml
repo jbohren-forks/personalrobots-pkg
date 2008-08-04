@@ -1255,7 +1255,7 @@
     </collision>
 
     <data>
-      <xml>
+      <xml key="gazebo">
         <sensor:ray name="tilt_laser">
           <origin>0.275 0.0 0.17</origin> <!-- from the robot coordinate system (center bottom of base box)-->
           <rayCount>68</rayCount>
@@ -1319,7 +1319,7 @@
     </collision>
 
     <data>
-      <xml>
+      <xml key="gazebo">
         <sensor:ray name="base_laser">
           <origin>0.275 0.0 0.17</origin> <!-- from the robot coordinate system (center bottom of base box)-->
           <rayCount>68</rayCount>

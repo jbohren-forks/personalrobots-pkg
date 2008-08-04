@@ -4,7 +4,7 @@
 
 <data type="gazebo_controller"> <!-- we can set a name too, but the convertor only cares about the type -->
 
-  <xml key="1"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <data> tag -->
+  <xml> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <data> tag -->
 
   <!-- ========== Wrist Cameras =========== -->
   <body:empty name="wrist_cam_left_body">

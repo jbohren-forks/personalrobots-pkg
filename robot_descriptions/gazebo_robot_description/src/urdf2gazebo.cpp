@@ -199,6 +199,13 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
     /* add geometry to body */
     elem->LinkEndChild(geom);      
     
+    
+    /* copy gazebo data */
+    const TiXmlElement* gazebo_data = link->data.getDefaultXML("gazebo");
+    if (gazebo_data)
+	for (const TiXmlNode *child = gazebo_data->FirstChild() ; child ; child = child->NextSibling())
+	    elem->LinkEndChild(child->Clone());
+
     /* add body to document */
     root->LinkEndChild(elem);
     
