@@ -28,7 +28,7 @@
  */
 
 #include "laser_scan_utils/laser_scan.h"
-
+#include <algorithm>
 
 namespace laser_scan{
 
@@ -133,7 +133,7 @@ namespace laser_scan{
     temp_scan_ = scan_in; //HACK to store all metadata 
 
     /** \todo check for length of intensities too */
-    unsigned int iterations = MIN(scan_in.ranges_size, num_ranges_);
+    unsigned int iterations = std::min(scan_in.ranges_size, num_ranges_);
     for (unsigned int index = 0; index < iterations; index ++)
       {
         range_data_(current_packet_num_+1, index+1)= (double) scan_in.ranges[index];
@@ -158,7 +158,7 @@ namespace laser_scan{
     NEWMAT::ColumnVector iColumn;
 
 
-    unsigned int iterations = MIN(scan_result.ranges_size, num_ranges_);
+    unsigned int iterations = std::min(scan_result.ranges_size, num_ranges_);
     /** \todo Resize output cloud/check length */
     for (unsigned int index = 0; index < iterations; index ++)
       {

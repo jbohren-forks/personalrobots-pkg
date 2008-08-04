@@ -129,9 +129,9 @@ void BaseController::init()
 
 void BaseController::receiveBaseCommandMessage(){
   maxXDot = maxYDot = maxYawDot = 1; //Until we start reading the xml file for parameters
-  double vx = CLAMP(baseCommandMessage.axes[1], -maxXDot, maxXDot);
-  double vy = CLAMP(baseCommandMessage.axes[0], -maxYDot, maxYDot);
-  double vyaw = CLAMP(baseCommandMessage.axes[2], -maxYawDot, maxYawDot);
+  double vx = math_utils::clamp<double>(baseCommandMessage.axes[1], -maxXDot, maxXDot);
+  double vy = math_utils::clamp<double>(baseCommandMessage.axes[0], -maxYDot, maxYDot);
+  double vyaw = math_utils::clamp<double>(baseCommandMessage.axes[2], -maxYawDot, maxYawDot);
   setVelocity(vx, vy, vyaw);
 }
 

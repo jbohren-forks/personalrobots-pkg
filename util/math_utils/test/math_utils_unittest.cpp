@@ -37,15 +37,9 @@ TEST(MathExpressions, BadInput){
 }
 
 TEST(math_utils, BasicOperations){
-  EXPECT_EQ(MIN(10, 20), 10);
-  EXPECT_EQ(MAX(10, 20), 20);
-  EXPECT_EQ(CLAMP(-10, 10, 20), 10);
-  EXPECT_EQ(CLAMP(15, 10, 20), 15);
-  EXPECT_EQ(CLAMP(25, 10, 20), 20);
-}
-
-TEST(math_utils, BoundaryCases){
-  EXPECT_EQ(MAX(10, 10), 10);
+  EXPECT_EQ(math_utils::clamp<int>(-10, 10, 20), 10);
+  EXPECT_EQ(math_utils::clamp<int>(15, 10, 20), 15);
+  EXPECT_EQ(math_utils::clamp<int>(25, 10, 20), 20);
 }
 
 int main(int argc, char **argv){
