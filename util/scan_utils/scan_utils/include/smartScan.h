@@ -153,6 +153,8 @@ class SmartScan {
 	void crop(float x, float y, float z, float dx, float dy, float dz);
 	//! Returns all the points in the scan that are within a given sphere
 	std::vector<std_msgs::Point3DFloat32> *getPointsWithinRadius(float x, float y, float z, float radius);
+	//! Returns all the points in the scan that are within a given sphere in ros pointcloud format.
+	std_msgs::PointCloudFloat32 *getPointsWithinRadiusPointCloud(float x, float y, float z, float radius);
 	//! Removes outliers - points that have few neighbors
 	void removeOutliers(float radius, int nbrs);
 	//! Removes points whose normals are perpendicular to the direction of the scanner
@@ -171,6 +173,9 @@ class SmartScan {
 	//! Computes the normal of a point by looking at its neighbors
 	std_msgs::Point3DFloat32 computePointNormal(int id, float radius = 0.01, int nbrs = 5);
 
+	//! Computes the normal of a point by looking at its neighbors
+	std_msgs::Point3DFloat32 computePointNormal(float x, float y, float z, float radius = 0.01, int nbrs = 5);
+
 	//! Returns the connected components in this scan, each in its own SmartScan
 	std::vector<SmartScan*> *connectedComponents(float thresh, int minPts = 0);
 
@@ -179,6 +184,9 @@ class SmartScan {
 
 	//! Computes a spin image at x, y, z with fixed orientation, i.e. the surface normal is set to point up.
 	void computeSpinImageFixedOrientation(scan_utils::Grid2D &si, float x, float y, float z, float support, float pixelsPerMeter);
+	
+	//! Computes a spin image at x, y, z using the surface normal at that point.
+	void computeSpinImageNatural(scan_utils::Grid2D &si, float x, float y, float z, float support, float pixelsPerMeter, float radius = 0.02, int nbrs = 20);
 };
 
 

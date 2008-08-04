@@ -1063,6 +1063,32 @@ std::vector<std_msgs::Point3DFloat32>* SmartScan::getPointsWithinRadius(float x,
 	return resPts;
 }
 
+std_msgs::PointCloudFloat32* SmartScan::getPointsWithinRadiusPointCloud(float x, float y, float z, float radius)
+{
+
+	std_msgs::PointCloudFloat32 *resPts = new std_msgs::PointCloudFloat32;
+	vtkIdList *result = vtkIdList::New();
+
+	getVtkLocator()->FindPointsWithinRadius( radius, x, y, z, result );
+	int n = result->GetNumberOfIds();
+
+	resPts->set_pts_size(n);
+	resPts->set_chan_size(1);
+	resPts->chan[0].name = "intensity";
+	resPts->chan[0].set_vals_size(n);
+	for (int i=0; i<n; i++){
+		int nbrId = result->GetId(i);
+		std_msgs::Point3DFloat32 p = getPoint(nbrId);
+		resPts->pts[i].x = p.x;
+		resPts->pts[i].y = p.y;
+		resPts->pts[i].z = p.z;
+		resPts->chan[0].vals[i] = 0; //Placeholder for intensity.
+	}
+
+	result->Delete();
+	return resPts;
+}
+
 /*!Computes the normal of the point with index \a id by fitting a
    plane to neighboring points. It uses all neighbors within a sphere
    of radius \a radius. If less than \a nbrs such neighbors
@@ -1072,16 +1098,28 @@ std::vector<std_msgs::Point3DFloat32>* SmartScan::getPointsWithinRadius(float x,
  */
 std_msgs::Point3DFloat32 SmartScan::computePointNormal(int id, float radius, int nbrs)
 {
+        assert(id >=0 && id < mNumPoints);
+	std_msgs::Point3DFloat32 p = getPoint(id);
+	return computePointNormal(p.x, p.y, p.z, radius, nbrs);
+}
+
+
+/*!Computes the normal of the point at \a x, \a y, \a z by fitting a
+   plane to neighboring points. It uses all neighbors within a sphere
+   of radius \a radius. If less than \a nbrs such neighbors
+   are found, the normal is considered unreliable and the function
+   returns (0,0,0)
+
+ */
+std_msgs::Point3DFloat32 SmartScan::computePointNormal(float x, float y, float z, float radius, int nbrs)
+{
 	// radius - how large is the radius in which we look for nbrs for computing normal
 	// nbrs - min number of nbrs we use for normal computation
-	assert(id >=0 && id < mNumPoints);
 	int nbrId;
-
 	vtkIdList *result = vtkIdList::New();
 	std_msgs::Point3DFloat32 zero; zero.x = zero.y = zero.z = 0.0;
-	std_msgs::Point3DFloat32 p = getPoint(id);
 
-	getVtkLocator()->FindPointsWithinRadius( radius, p.x, p.y, p.z, result );
+	getVtkLocator()->FindPointsWithinRadius( radius, x, y, z, result );
 	//we don't have enough nbrs for a reliable normal
 	int n = result->GetNumberOfIds();
 	if ( n < nbrs ) {
@@ -1094,7 +1132,7 @@ std_msgs::Point3DFloat32 SmartScan::computePointNormal(int id, float radius, int
 	for (int i=0; i<n; i++) {
 		nbrId = result->GetId(i);
 		assert(nbrId >= 0 && nbrId < mNumPoints);
-		p = getPoint(nbrId);
+		std_msgs::Point3DFloat32 p = getPoint(nbrId);
 
 		mean.x += p.x;
 		mean.y += p.y;
@@ -1108,7 +1146,8 @@ std_msgs::Point3DFloat32 SmartScan::computePointNormal(int id, float radius, int
 	for (int i=0; i<n; i++) {
 		nbrId = result->GetId(i);
 		assert(nbrId >= 0 && nbrId < mNumPoints);
-		p = getPoint(nbrId);
+
+		std_msgs::Point3DFloat32 p = getPoint(nbrId);
 
 		M.element(i,0) = p.x - mean.x;
 		M.element(i,1) = p.y - mean.y;
@@ -1120,6 +1159,7 @@ std_msgs::Point3DFloat32 SmartScan::computePointNormal(int id, float radius, int
 	singularVectors(&M, n, foo, foo, normal);
 	return normal;
 }
+
 
 /*! Given an \a n by 3 matrix \a M in NEWMAT format, performs
   SVD and returns the singular vectors in decreasing order of the singular values.
@@ -1393,8 +1433,11 @@ void SmartScan::subtractScan(const SmartScan *target, float thresh)
 	delete [] indices;
 }
 
+
 /*! 
   The choice of \a support and \a pixelsPerMeter determines how many pixels are in the spin image.  \a si is filled with the relevant data.
+
+  This does NOT yet do any point cloud conditioning such as removing grazing points.
 
   \param si A Grid2D which will hold the spin image data.
   \param x, y, z The location of the spin image center.
@@ -1404,41 +1447,106 @@ void SmartScan::subtractScan(const SmartScan *target, float thresh)
 */
 void SmartScan::computeSpinImageFixedOrientation(Grid2D &si, float x, float y, float z, float support, float pixelsPerMeter) {
 
-  //Make sure si has the appropriate dimensions.
-  int height, width, hsi, wsi;
-  height = (int)(2*support*pixelsPerMeter);
-  width = (int)(support*pixelsPerMeter);
-  si.getSize(hsi, wsi);
-  assert(height==hsi && width==wsi);
-  if(height!=hsi || width!=wsi) {
-    cerr << "The size of the spin image does not match that specified by support and pixelsPerMeter." << endl;
-    return;
-  }
+        // -- Make sure si has the appropriate dimensions.
+        int height, width, hsi, wsi;
+	height = (int)(2*support*pixelsPerMeter);
+	width = (int)(support*pixelsPerMeter);
+	si.getSize(hsi, wsi);
+	assert(height==hsi && width==wsi);
 
-  //Get a first cut at points close enough to care about.
-  std::vector<std_msgs::Point3DFloat32> *point;
-  point = getPointsWithinRadius(x, y, z, support*sqrt(2));
-  
-  //Iterate over those points.
-  for (unsigned int i=0; i<point->size(); i++) {
-    std_msgs::Point3DFloat32 pt;
-    pt = (*point)[i];
-    float beta = -(pt.z - z - support);
-    if(beta > 2*support || beta < 0)
-      continue;
-    float alpha = sqrt(pow(x - pt.x, 2) + pow(y - pt.y, 2));
-    if(alpha > support)
-      continue;
+	// -- Get a first cut at points close enough to care about.
+	std::vector<std_msgs::Point3DFloat32> *point;
+	point = getPointsWithinRadius(x, y, z, support*sqrt(2));
+	assert(point->size() != 0);
+	
+	// -- TODO: Cut away grazing points.  Will this still work when used for natural spin images? (the points are pre-rotated)
 
-    if(beta < 0) {
-      cerr << "Beta is " << beta << " ... it should be pos." << endl;
-      return;
-    }
+	// -- Add points within the support to the appropriate cell in the spin image.
+	for (unsigned int i=0; i<point->size(); i++) {
+	        std_msgs::Point3DFloat32 pt;
+		pt = (*point)[i];
+		float beta = -(pt.z - z - support);
+		if(beta > 2*support || beta < 0)
+		        continue;
+		float alpha = sqrt(pow(x - pt.x, 2) + pow(y - pt.y, 2));
+		if(alpha > support)
+		        continue;
+		assert(beta >= 0);
+		
+		int n1, n2;
+		n1 = (int)(beta*pixelsPerMeter);
+		n2 = (int)(alpha*pixelsPerMeter);
+		si.addElement(n1, n2, 1);
+	}
+}
 
-    int n1, n2;
-    n1 = (int)(beta*pixelsPerMeter);
-    n2 = (int)(alpha*pixelsPerMeter);
-    si.addElement(n1, n2, 1);
-  }
+/*! 
+  The choice of \a support and \a pixelsPerMeter determines how many pixels are in the spin image.  \a si is filled with the relevant data.  If the surface normal is not reliable, then si has a -1 placed in the (0,0) position.
+
+  This does NOT yet do any point cloud conditioning such as removing grazing points.
+
+  \param si A Grid2D which will hold the spin image data.
+  \param x, y, z The location of the spin image center.
+  \param support The support of the spin image, i.e. the "radius" it cares about.
+  \param pixelsPerMeter Discretization of the spin image.
+  \param radius Parameter passed to computePointNormal.
+  \param nbrs Parameter passed to computePointNormal.
+
+*/
+void SmartScan::computeSpinImageNatural(scan_utils::Grid2D &si, float x, float y, float z, float support, float pixelsPerMeter, float radius, int nbrs) {
+
+        // -- Get the surface normal.
+        std_msgs::Point3DFloat32 normal = computePointNormal(x, y, z, radius, nbrs);
+	if(normal.x == 0 && normal.y == 0 && normal.z == 0) {
+	        si.setElement(0,0,-1);
+	        return;
+	}
+	
+	// -- Setup libTF.
+	libTF::TFVector tfn0, tfn1, tfn2;
+	libTF::TransformReference tr;
+	tfn0.frame = 13;
+	tfn0.time = 0; 
+	tfn0.x = normal.x;
+	tfn0.y = normal.y;
+	tfn0.z = normal.z;
+
+	// -- Find the transformation that makes the surface normal point up.
+	double pitch = atan2(normal.x, normal.z);
+	tr.setWithEulers((unsigned int)13, (unsigned int)14, 0.0, 0.0, 0.0, 0.0, -pitch, 0.0, (libTF::TransformReference::ULLtime)0);
+	tfn1 = tr.transformVector(14, tfn0);
+	float roll = atan2(tfn1.y, tfn1.z);
+	tr.setWithEulers((unsigned int)14, (unsigned int)15, 0.0, 0.0, 0.0, 0.0, 0.0, roll, (libTF::TransformReference::ULLtime)0);
+	tfn2 = tr.transformVector(15, tfn1);
+
+	// -- Transform the spin image center point.
+	libTF::TFPoint center0, center2;
+	center0.frame = 13;
+	center0.time = 0;
+	center0.x = x;
+	center0.y = y;
+	center0.z = z;
+	center2 = tr.transformPoint(15, center0);
+
+	// -- Transform the nearby points.
+	//ss.applyTransform(tr.getMatrix(13, 15, 0));  Why doesn't this work? -- ss was a smartscan of cld.
+	std_msgs::PointCloudFloat32* cld = getPointsWithinRadiusPointCloud(x, y, z, support*sqrt(2));
+	libTF::TFPoint ptf, ptf2;
+	for (unsigned int j=0; j<cld->get_pts_size(); j++) {
+	        ptf.frame = 13;
+		ptf.time = 0;
+		ptf.x = cld->pts[j].x;
+		ptf.y = cld->pts[j].y;
+		ptf.z = cld->pts[j].z;
+		ptf2 = tr.transformPoint(15, ptf);
+		cld->pts[j].x = ptf2.x;
+		cld->pts[j].y = ptf2.y;
+		cld->pts[j].z = ptf2.z;
+	}
+
+	// -- Compute the spin image.
+	SmartScan ss;
+	ss.setFromRosCloud(*cld);
+	ss.computeSpinImageFixedOrientation(si, center2.x, center2.y, center2.z, support, pixelsPerMeter);
 }
 
