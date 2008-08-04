@@ -80,10 +80,10 @@ namespace robot_desc
 	    void add(const std::string &type, const std::string &name, const std::string &key, const TiXmlElement *value);
             
 	    Data& operator=(const Data &rhs)
-		{ 
-		    m_data = rhs.m_data;
-		    return *this;
-		}
+	    { 
+		m_data = rhs.m_data;
+		return *this;
+	    }
 	protected:
             
 	    struct Element
@@ -429,8 +429,8 @@ namespace robot_desc
 	const std::string& getRobotName(void) const;
 	unsigned int getDisjointPartCount(void) const;
 	Link* getDisjointPart(unsigned int index) const;
-	unsigned int getLinkCount(void) const;
 	bool isRoot(const Link* link) const;
+
 	void getLinks(std::vector<Link*> &links) const;
 	void getActuators(std::vector<Actuator*> &actuators) const;
 	void getTransmissions(std::vector<Transmission*> &transmissions) const;

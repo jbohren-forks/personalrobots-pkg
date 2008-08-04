@@ -41,6 +41,8 @@
 
 namespace robot_desc {
     
+    /** Macro to mark the fact a certain member variable was set. Also
+	prints a warning if the same member was set multiple times. */
 #define MARK_SET(owner, variable)					\
     {									\
 	if (owner->isSet[#variable]) {					\
@@ -49,6 +51,17 @@ namespace robot_desc {
 	else								\
 	    owner->isSet[#variable] = true;				\
     }
+    
+
+    /** Operator for sorting objects by name */
+    template<typename T>
+    struct SortByName
+    {
+	bool operator()(const T *a, const T *b) const
+	{
+	    return a->name < b->name;
+	}
+    };
     
     void URDF::freeMemory(void)
     {
@@ -91,25 +104,29 @@ namespace robot_desc {
     
     void URDF::getLinks(std::vector<Link*> &links) const
     {
+	std::vector<Link*> localLinks;
 	for (std::map<std::string, Link*>::const_iterator i = m_links.begin() ; i != m_links.end() ; i++)
-	    links.push_back(i->second);
+	    localLinks.push_back(i->second);
+	std::sort(localLinks.begin(), localLinks.end(), SortByName<Link>());
+	links.insert(links.end(), localLinks.begin(), localLinks.end());
     }
     
     void URDF::getActuators(std::vector<Actuator*> &actuators) const
     {
+	std::vector<Actuator*> localActuators;
 	for (std::map<std::string, Actuator*>::const_iterator i = m_actuators.begin() ; i != m_actuators.end() ; i++)
-	    actuators.push_back(i->second);
+	    localActuators.push_back(i->second);
+	std::sort(localActuators.begin(), localActuators.end(), SortByName<Actuator>());
+	actuators.insert(actuators.end(), localActuators.begin(), localActuators.end());
     }
     
     void URDF::getTransmissions(std::vector<Transmission*> &transmissions) const
     {
+	std::vector<Transmission*> localTransmissions;
 	for (std::map<std::string, Transmission*>::const_iterator i = m_transmissions.begin() ; i != m_transmissions.end() ; i++)
-	    transmissions.push_back(i->second);
-    }
-    
-    unsigned int URDF::getLinkCount(void) const
-    {
-	return m_links.size();
+	    localTransmissions.push_back(i->second);
+	std::sort(localTransmissions.begin(), localTransmissions.end(), SortByName<Transmission>());
+	transmissions.insert(transmissions.end(), localTransmissions.begin(), localTransmissions.end());
     }
     
     unsigned int URDF::getDisjointPartCount(void) const
@@ -135,8 +152,11 @@ namespace robot_desc {
     
     void URDF::getGroupNames(std::vector<std::string> &groups) const
     {
+	std::vector<std::string> localGroups;
 	for (std::map<std::string, Group*>::const_iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
-	    groups.push_back(i->first);
+	    localGroups.push_back(i->first);
+	std::sort(localGroups.begin(), localGroups.end());
+	groups.insert(groups.end(), localGroups.begin(), localGroups.end());
     }
     
     URDF::Group* URDF::getGroup(const std::string &name) const
@@ -147,8 +167,11 @@ namespace robot_desc {
     
     void URDF::getGroups(std::vector<Group*> &groups) const
     {
-	for (std::map<std::string, Group*>::const_iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
-	    groups.push_back(i->second);
+	/* To maintain the same ordering as getGroupNames, we do this in a slightly more cumbersome way */
+	std::vector<std::string> names;
+	getGroupNames(names);
+	for (unsigned int i = 0 ; i < names.size() ; ++i)
+	    groups.push_back(getGroup(names[i]));
     }
     
     const URDF::Data& URDF::getData(void) const
@@ -1437,10 +1460,13 @@ namespace robot_desc {
 			parent->children.push_back(i->second);
 		    }
 		}
-		
+				
 		/* for each group, compute the pointers to the links they contain, and for every link,
 		 * compute the list of pointers to the groups they are part of */
 		for (std::map<std::string, Group*>::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
+		{
+		    std::sort(i->second->linkNames.begin(), i->second->linkNames.end());
+		    
 		    for (unsigned int j = 0 ; j < i->second->linkNames.size() ; ++j)
 			if (m_links.find(i->second->linkNames[j]) == m_links.end())
 			    fprintf(stderr, "Group '%s': link '%s' is undefined\n", i->first.c_str(), i->second->linkNames[j].c_str());
@@ -1450,9 +1476,19 @@ namespace robot_desc {
 			    l->groups.push_back(i->second);
 			    i->second->links.push_back(l);
 			}
-		
+		}
+
+		/* sort the links by name to reduce variance in the output of the parser */
+		std::sort(m_linkRoots.begin(), m_linkRoots.end(), SortByName<Link>());
+		for (std::map<std::string, Link*>::iterator i = m_links.begin() ; i != m_links.end() ; i++)
+		{
+		    std::sort(i->second->children.begin(), i->second->children.end(), SortByName<Link>());
+		    std::sort(i->second->groups.begin(), i->second->groups.end(), SortByName<Group>());
+		}		
+
 		/* for every group, find the set of links that are roots in this group (their parent is not in the group) */
 		for (std::map<std::string, Group*>::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
+		{
 		    for (unsigned int j = 0 ; j < i->second->links.size() ; ++j)
 		    {
 			Link *parent = i->second->links[j]->parent;
@@ -1467,6 +1503,8 @@ namespace robot_desc {
 			if (outside)
 			    i->second->linkRoots.push_back(i->second->links[j]);
 		    }
+		    std::sort(i->second->linkRoots.begin(), i->second->linkRoots.end(), SortByName<Link>());
+		}
 		
 		/* construct inGroup for every link */
 		std::vector<std::string> grps;
