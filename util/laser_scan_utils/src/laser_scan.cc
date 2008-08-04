@@ -44,6 +44,7 @@ namespace laser_scan{
         matPointer[index+scan_in.ranges_size] = (double) scan_in.ranges[index];
       }
     
+
     //Do the projection
     NEWMAT::Matrix output = NEWMAT::SP(ranges, getUnitVectors(scan_in.angle_min, scan_in.angle_max, scan_in.angle_increment));
     
@@ -92,7 +93,7 @@ namespace laser_scan{
     if (it != unit_vector_map_.end())
       return *((*it).second);     //if present return
     //else calculate
-    unsigned int length = (unsigned int) ((angle_max - angle_min)/angle_increment) + 1;//fixme assuming it's calculated right
+    unsigned int length = (unsigned int) round((angle_max - angle_min)/angle_increment) + 1; ///\todo Codify how this parameter will be calculated in all cases
     NEWMAT::Matrix * tempPtr = new NEWMAT::Matrix(2,length);
     for (unsigned int index = 0;index < length; index++)
       {
