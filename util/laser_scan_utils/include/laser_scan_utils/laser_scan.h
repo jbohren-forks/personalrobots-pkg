@@ -38,7 +38,6 @@
 #include <newmat10/newmatio.h>
 #include <newmat10/newmatap.h>
 
-#include "math_utils/math_utils.h"
 #include "std_msgs/LaserScan.h"
 #include "std_msgs/PointCloudFloat32.h"
 
