@@ -4,13 +4,14 @@
 #include <cmath>
 
 /** Convert degrees to radians */
-static inline double FROM_DEGREES(double degrees)
+
+static inline double from_degrees(double degrees)
 {
     return degrees * M_PI / 180.0;   
 }
 
 /** Convert radians to degrees */
-static inline double TO_DEGREES(double radians)
+static inline double to_degrees(double radians)
 {
     return radians * 180.0 / M_PI;
 }
