@@ -7,21 +7,21 @@
   <xml key="1"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <data> tag -->
 
   <!-- ========== Right Arm =========== -->
-  <body:empty name="forearm_cam_right_body">
-    <xyz>  0.8  -0.15   0.8369 </xyz>
-    <rpy> 0.00  -45.0   0.00 </rpy>
-    <sensor:camera name="forearm_cam_right_sensor">
+  <body:empty name="palm_cam_left_body">
+    <xyz>  0.85  0.17   0.78 </xyz>
+    <rpy> 0.00  0.0   0.00 </rpy>
+    <sensor:camera name="palm_cam_left_sensor">
       <imageSize>640 480</imageSize>
       <hfov>60</hfov>
       <nearClip>0.1</nearClip>
       <farClip>100</farClip>
       <updateRate>15.0</updateRate>
-      <controller:generic_camera name="forearm_cam_right_controller">
+      <controller:generic_camera name="palm_cam_left_controller">
         <updateRate>15.0</updateRate>
-        <interface:camera name="forearm_cam_right_iface" />
+        <interface:camera name="palm_cam_left_iface" />
       </controller:generic_camera>
     </sensor:camera>
-    <geom:box name="forearm_cam_right_geom">
+    <geom:box name="palm_cam_left_geom">
       <xyz> 0.00   0.00   0.00</xyz>
       <size>0.02   0.02   0.02</size>
       <mass>0.1</mass>
@@ -33,10 +33,10 @@
       </visual>
     </geom:box>
   </body:empty>
-  <joint:hinge name="forearm_cam_right">
-    <body1>forearm_cam_right_body</body1>
-    <body2>forearm_roll_right</body2>
-    <anchor>forearm_roll_right</anchor>
+  <joint:hinge name="palm_cam_left">
+    <body1>palm_cam_left_body</body1>
+    <body2>gripper_roll_left</body2>
+    <anchor>gripper_roll_left</anchor>
     <axis>  0.0   0.0   1.0 </axis>
     <lowStop> 0.0 </lowStop>
     <highStop> 0.0 </highStop>
@@ -44,7 +44,7 @@
 
 
   <body:empty name="palm_cam_right_body">
-    <xyz>  1.00   -0.15   0.8569</xyz>
+    <xyz>  0.85   -0.17   0.78 </xyz>
     <rpy>  0.0     0.0    0.0 </rpy>
     <sensor:camera name="palm_cam_right_sensor">
       <imageSize>640 480</imageSize>

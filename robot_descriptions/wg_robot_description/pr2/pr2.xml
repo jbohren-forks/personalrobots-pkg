@@ -1254,6 +1254,27 @@
       </geometry>
     </collision>
 
+    <data>
+      <sensor:ray name="tilt_laser">
+        <origin>0.275 0.0 0.17</origin> <!-- from the robot coordinate system (center bottom of base box)-->
+        <rayCount>68</rayCount>
+        <rangeCount>683</rangeCount>
+        <laserCount>1</laserCount>
+
+        <minAngle>-135</minAngle>
+        <maxAngle>135</maxAngle>
+
+        <minRange>0.05</minRange>
+        <maxRange>10.0</maxRange>
+        <updateRate>10.0</updateRate>
+        <controller:ros_laser name="ros_tilt_laser_controller" plugin="libRos_Laser.so">
+          <updateRate>15.0</updateRate>
+          <topicName>cloudRos</topicName>
+          <interface:laser name="ros_tilt_laser_iface" />
+        </controller:ros_laser>
+      </sensor:ray>
+    </data>
+
   </sensor>
 
   <sensor name="base_laser" type="laser"> 
@@ -1295,6 +1316,30 @@
       </geometry>
     </collision>
 
+    <data>
+      <sensor:ray name="base_laser">
+        <origin>0.275 0.0 0.17</origin> <!-- from the robot coordinate system (center bottom of base box)-->
+        <rayCount>68</rayCount>
+        <rangeCount>683</rangeCount>
+        <laserCount>1</laserCount>
+
+        <minAngle>-135</minAngle>
+        <maxAngle>135</maxAngle>
+
+        <minRange>0.05</minRange>
+        <maxRange>10.0</maxRange>
+        <updateRate>10.0</updateRate>
+        <controller:ros_laser name="ros_base_laser_controller" plugin="libRos_Laser.so">
+          <updateRate>15.0</updateRate>
+          <topicName>scanRos</topicName>
+          <interface:laser name="ros_base_laser_iface" />
+        </controller:ros_laser>
+        <controller:sicklms200_laser name="base_laser_controller">
+          <interface:laser name="base_laser_iface"/>
+          <updateRate>10</updateRate>
+        </controller:sicklms200_laser>
+      </sensor:ray>
+    </data>
   </sensor>
 
 
