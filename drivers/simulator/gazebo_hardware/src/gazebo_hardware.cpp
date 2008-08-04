@@ -47,13 +47,10 @@ GazeboHardware::GazeboHardware(int numBoards, int numActuators, int boardLookUp[
     }
   // Ifaces are like edBoards
   client                  = new gazebo::Client();
-  assert(numBoards==5); // hardcode, for now, for the pr2 model
+  assert(numBoards==3); // hardcode, for now, for the pr2 model
   pr2ActarrayIface        = new gazebo::PR2ArrayIface();
-  pr2GripperLeftIface     = new gazebo::PR2GripperIface();
-  pr2GripperRightIface    = new gazebo::PR2GripperIface();
   pr2PTZCameraLeftIface   = new gazebo::PTZIface();
   pr2PTZCameraRightIface  = new gazebo::PTZIface();
-
 };
 
 void GazeboHardware::init(){
@@ -70,8 +67,7 @@ void GazeboHardware::init(){
     std::cout << "Gazebo error: Unable to connect\n" << e << "\n";
   }
 
-
-  /// Open the actuator arrays for casters spine arm interface
+  /// Open the actuator arrays for casters spine arm gripper interface
   try
   {
     pr2ActarrayIface->Open(client, "pr2_iface");
@@ -79,28 +75,6 @@ void GazeboHardware::init(){
   catch (std::string e)
   {
     std::cout << "Gazebo error: Unable to connect to the pr2 interface\n"
-    << e << "\n";
-  }
-
-  /// Open the interface for gripper left
-  try
-  {
-    pr2GripperLeftIface->Open(client, "pr2_gripper_left_iface");
-  }
-  catch (std::string e)
-  {
-    std::cout << "Gazebo error: Unable to connect to the pr2 gripper left interface\n"
-    << e << "\n";
-  }
-
-  /// Open the interface for gripper right
-  try
-  {
-    pr2GripperRightIface->Open(client, "pr2_gripper_right_iface");
-  }
-  catch (std::string e)
-  {
-    std::cout << "Gazebo error: Unable to connect to the pr2 gripper right interface\n"
     << e << "\n";
   }
 
@@ -126,7 +100,7 @@ void GazeboHardware::init(){
     << e << "\n";
   }
 
-  setGains(1,0,0,0,0,0);               // hard-coded for all the boards and all the motors for now
+  setGains(1,0,0,0,0,0);               // hard-coded for all the boards and all the motors for now. PGain is 1
   setControlMode(PR2::TORQUE_CONTROL); // for all motors
   setMotorsOn(true);
 
@@ -139,7 +113,9 @@ void GazeboHardware::updateState(){
   //
   for(int ii = 0; ii < numActuators; ii++)
     {
+      //hardwareInterface->actuator[] is indexed the same way as pr2core
       hardwareInterface->actuator[jointId[ii]].state.timestamp++;
+      //ActArrayIface includes casters, spine, arm, grippers, and head
       if (boardLookUp[ii] == 0)
       {
         pr2ActarrayIface->Lock(1);
@@ -147,32 +123,18 @@ void GazeboHardware::updateState(){
            GAZEBO_POS_TO_ENCODER*pr2ActarrayIface->data->actuators[portLookUp[ii]].actualPosition;
         hardwareInterface->actuator[jointId[ii]].state.encoderVelocity =
            GAZEBO_POS_TO_ENCODER*pr2ActarrayIface->data->actuators[portLookUp[ii]].actualSpeed;
-
+       //hardwareInterface->actuator[jointId[ii]].state.last_measured_current = pr2ActarrayIface->data->actuators[portLookUp[ii]].actualEffectorForce;  //TODO: Scale by motor torque constant to implement
         pr2ActarrayIface->Unlock();
       }
+      //Left PTZ
       else if (boardLookUp[ii] == 1)
-      {
-        pr2GripperLeftIface->Lock(1);
-        hardwareInterface->actuator[jointId[ii]].state.encoderCount = GAZEBO_POS_TO_ENCODER*(
-          ( pr2GripperLeftIface->data->actualFingerPosition[0] - 0.015)  // FIXME: not debugged
-         +(-pr2GripperLeftIface->data->actualFingerPosition[1] + 0.015)     );
-        pr2GripperLeftIface->Unlock();
-      }
-      else if (boardLookUp[ii] == 2)
-      {
-        pr2GripperRightIface->Lock(1);
-        hardwareInterface->actuator[jointId[ii]].state.encoderCount = GAZEBO_POS_TO_ENCODER*(
-          ( pr2GripperRightIface->data->actualFingerPosition[0] - 0.015)  // FIXME: not debugged
-         +(-pr2GripperRightIface->data->actualFingerPosition[1] + 0.015)    );
-        pr2GripperRightIface->Unlock();
-      }
-      else if (boardLookUp[ii] == 3)
       {
         pr2PTZCameraLeftIface->Lock(1);
         hardwareInterface->actuator[jointId[ii]].state.encoderCount = GAZEBO_POS_TO_ENCODER*( pr2PTZCameraLeftIface->data->pan );
         pr2PTZCameraLeftIface->Unlock();
       }
-      else if (boardLookUp[ii] == 4)
+      //Right PTZ
+      else if (boardLookUp[ii] == 2)
       {
         pr2PTZCameraRightIface->Lock(1);
         hardwareInterface->actuator[jointId[ii]].state.encoderCount = GAZEBO_POS_TO_ENCODER*( pr2PTZCameraRightIface->data->tilt );
@@ -192,35 +154,26 @@ void GazeboHardware::sendCommand(){
   for(int ii = 0; ii < numActuators; ii++)
     {
       if( hardwareInterface->actuator[ii].command.enable){
-        command = (GAZEBO_CURRENT_TO_CMD*hardwareInterface->actuator[ii].command.current);
+        command = (hardwareInterface->actuator[ii].command.current);
+        
+        //TODO Update actuator current commands and readings
         //fprintf(stderr,"command: %f\n", command);
-//        printf("Command: %f\n",command);
         if (boardLookUp[ii] == 0)
         {
           pr2ActarrayIface->Lock(1);
-          pr2ActarrayIface->data->actuators[portLookUp[ii]].cmdEffectorForce = command;
+          hardwareInterface->last_requested_current = command; //TODO differentiate between these
+          hardwareInterface->last_commanded_current = command;
+          pr2ActarrayIface->data->actuators[portLookUp[ii]].cmdEffectorForce = command*GAZEBO_CURRENT_TO_CMD;
           pr2ActarrayIface->Unlock();
         }
-        else if (boardLookUp[ii] == 1)
-        {
-          pr2GripperLeftIface->Lock(1);
-          pr2GripperLeftIface->data->cmdForce             = command;
-          pr2GripperLeftIface->Unlock();
-        }
-        else if (boardLookUp[ii] == 2)
-        {
-          pr2GripperRightIface->Lock(1);
-          pr2GripperRightIface->data->cmdForce            = command;
-          pr2GripperRightIface->Unlock();
-        }
-        else if (boardLookUp[ii] == 3)
+         else if (boardLookUp[ii] == 1)
         {
           //FIXME: take care of ptz cams
           pr2PTZCameraLeftIface->Lock(1);
-          pr2PTZCameraLeftIface->data->pan  = GAZEBO_CURRENT_TO_CMD*hardwareInterface->actuator[jointId[ii]].command.current;
+          pr2PTZCameraLeftIface->data->pan  = GAZEBO_CURRENT_TO_CMD*hardwareInterface->actuator[jointId[ii]].command.current; 
           pr2PTZCameraLeftIface->Unlock();
         }
-        else if (boardLookUp[ii] == 4)
+        else if (boardLookUp[ii] == 2)
         {
           //FIXME: take care of ptz cams
           pr2PTZCameraRightIface->Lock(1);
@@ -247,22 +200,10 @@ void GazeboHardware::setGains(int P, int I, int D, int W, int M, int Z)
       pr2ActarrayIface->data->actuators[portLookUp[ii]].dGain = D;
       pr2ActarrayIface->Unlock();
     }
-    else if (boardLookUp[ii] == 1)
+   else if (boardLookUp[ii] == 1)
     {
-      pr2GripperLeftIface->data->pGain     = P;
-      pr2GripperLeftIface->data->iGain     = I;
-      pr2GripperLeftIface->data->dGain     = D;
     }
     else if (boardLookUp[ii] == 2)
-    {
-      pr2GripperRightIface->data->pGain    = P;
-      pr2GripperRightIface->data->iGain    = I;
-      pr2GripperRightIface->data->dGain    = D;
-    }
-    else if (boardLookUp[ii] == 3)
-    {
-    }
-    else if (boardLookUp[ii] == 4)
     {
     }
     else
@@ -282,22 +223,10 @@ void GazeboHardware::setControlMode(int controlMode)
       pr2ActarrayIface->data->actuators[portLookUp[ii]].controlMode = controlMode;
       pr2ActarrayIface->Unlock();
     }
-    else if (boardLookUp[ii] == 1)
+       else if (boardLookUp[ii] == 1)
     {
-      pr2GripperLeftIface->Lock(1);
-      pr2GripperLeftIface->data->controlMode     = controlMode;
-      pr2GripperLeftIface->Unlock();
     }
     else if (boardLookUp[ii] == 2)
-    {
-      pr2GripperRightIface->Lock(1);
-      pr2GripperRightIface->data->controlMode    = controlMode;
-      pr2GripperRightIface->Unlock();
-    }
-    else if (boardLookUp[ii] == 3)
-    {
-    }
-    else if (boardLookUp[ii] == 4)
     {
     }
     else
@@ -318,22 +247,10 @@ void GazeboHardware::setMotorsOn(bool motorsOn)
       pr2ActarrayIface->data->actuators[portLookUp[ii]].cmdEnableMotor = motorsOn;
       pr2ActarrayIface->Unlock();
     }
-    else if (boardLookUp[ii] == 1)
+     else if (boardLookUp[ii] == 1)
     {
-      pr2GripperLeftIface->Lock(1);
-      pr2GripperLeftIface->data->cmdEnableMotor     = motorsOn;
-      pr2GripperLeftIface->Unlock();
     }
     else if (boardLookUp[ii] == 2)
-    {
-      pr2GripperRightIface->Lock(1);
-      pr2GripperRightIface->data->cmdEnableMotor    = motorsOn;
-      pr2GripperRightIface->Unlock();
-    }
-    else if (boardLookUp[ii] == 3)
-    {
-    }
-    else if (boardLookUp[ii] == 4)
     {
     }
     else
