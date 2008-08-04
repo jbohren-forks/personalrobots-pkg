@@ -631,6 +631,7 @@ RosGazeboNode::Update()
   /*        localization                                         */
   /*                                                             */
   /***************************************************************/
+  std::cout << " robot yaw " << odomMsg.pos.th << std::endl;
   tf.sendInverseEuler("FRAMEID_ODOM",
                       "FRAMEID_ROBOT",
                       odomMsg.pos.x,
@@ -971,8 +972,8 @@ RosGazeboNode::Update()
                odomMsg.header.stamp);
 
   //this->PR2Copy->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw); // actual CoM of base
-  tf.sendEuler("FRAMEID_BASE",
-               "FRAMEID_ODOM",
+  tf.sendEuler("FRAMEID_ODOM",
+               "FRAMEID_BASE",
                x,
                y,
                z-0.13, /* half height of base box */
