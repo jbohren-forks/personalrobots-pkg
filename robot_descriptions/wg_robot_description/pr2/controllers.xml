@@ -349,7 +349,7 @@
       <!-- caster array -->
       <joint name="caster_front_left_joint">
         <saturationTorque>1000</saturationTorque>
-        <pGain>2</pGain>
+        <pGain>0</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
@@ -358,21 +358,25 @@
       </joint>
       <joint name="wheel_front_left_l_joint">
         <saturationTorque>5</saturationTorque>
-        <pGain>0.5</pGain>
+        <pGain>0</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>SPEED_CONTROL</controlMode>
       </joint>
       <joint name="wheel_front_left_r_joint">
         <saturationTorque>5</saturationTorque>
-        <pGain>0.5</pGain>
+        <pGain>0</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>SPEED_CONTROL</controlMode>
       </joint>
       <joint name="caster_front_right_joint">
         <saturationTorque>1000</saturationTorque>
-        <pGain>2</pGain>
+        <pGain>0</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
@@ -381,21 +385,25 @@
       </joint>
       <joint name="wheel_front_right_l_joint">
         <saturationTorque>5</saturationTorque>
-        <pGain>0.5</pGain>
+        <pGain>0</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>SPEED_CONTROL</controlMode>
       </joint>
       <joint name="wheel_front_right_r_joint">
         <saturationTorque>5</saturationTorque>
-        <pGain>0.5</pGain>
+        <pGain>0</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>SPEED_CONTROL</controlMode>
       </joint>
       <joint name="caster_rear_left_joint">
         <saturationTorque>1000</saturationTorque>
-        <pGain>2</pGain>
+        <pGain>0.2</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
@@ -404,21 +412,25 @@
       </joint>
       <joint name="wheel_rear_left_l_joint">
         <saturationTorque>5</saturationTorque>
-        <pGain>0.5</pGain>
+        <pGain>0.1</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>SPEED_CONTROL</controlMode>
       </joint>
       <joint name="wheel_rear_left_r_joint">
         <saturationTorque>5</saturationTorque>
-        <pGain>0.5</pGain>
+        <pGain>0.1</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>SPEED_CONTROL</controlMode>
       </joint>
       <joint name="caster_rear_right_joint">
         <saturationTorque>1000</saturationTorque>
-        <pGain>2</pGain>
+        <pGain>0.2</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
@@ -427,17 +439,21 @@
       </joint>
       <joint name="wheel_rear_right_l_joint">
         <saturationTorque>5</saturationTorque>
-        <pGain>0.5</pGain>
+        <pGain>0.1</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>SPEED_CONTROL</controlMode>
       </joint>
       <joint name="wheel_rear_right_r_joint">
         <saturationTorque>5</saturationTorque>
-        <pGain>0.5</pGain>
+        <pGain>0.1</pGain>
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>SPEED_CONTROL</controlMode>
       </joint>
       <!-- ========================================= -->
       <!-- torso array -->
@@ -458,7 +474,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
-        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <explicitDampingCoefficient>50.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode>
       </joint>
       <joint name="shoulder_pitch_left_joint">
@@ -467,7 +483,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
-        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <explicitDampingCoefficient>100.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode>
       </joint>
       <joint name="upperarm_roll_left_joint">
@@ -476,7 +492,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
-        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode>
       </joint>
       <joint name="elbow_flex_left_joint">
@@ -485,7 +501,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
-        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <explicitDampingCoefficient>2.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode>
       </joint>
       <joint name="forearm_roll_left_joint">
@@ -537,7 +553,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
-        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <explicitDampingCoefficient>50.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode>
       </joint>
       <joint name="shoulder_pitch_right_joint">
@@ -546,7 +562,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
-        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <explicitDampingCoefficient>100.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode>
       </joint>
       <joint name="upperarm_roll_right_joint">
@@ -555,7 +571,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
-        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode>
       </joint>
       <joint name="elbow_flex_right_joint">
@@ -564,7 +580,7 @@
         <dGain>0</dGain>
         <iGain>0</iGain>
         <iClamp>0</iClamp>
-        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <explicitDampingCoefficient>2.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode>
       </joint>
       <joint name="forearm_roll_right_joint">
