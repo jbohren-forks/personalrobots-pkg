@@ -1587,6 +1587,13 @@ namespace robot_desc {
 			    std::string value; ss >> value;
 			    g->linkNames.push_back(value);
 			}
+			
+			if (g->linkNames.empty())
+			{
+			    fprintf(stderr, "Group '%s' is empty. Not adding to list of groups.\n", g->name.c_str());
+			    m_groups.erase(m_groups.find(g->name));
+			    delete g;
+			}			
 		    }
 		    else if (node->ValueStr() == "data")
 			loadData(node, &m_data);
