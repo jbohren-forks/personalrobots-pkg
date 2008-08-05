@@ -47,12 +47,12 @@
 
 namespace robot_desc
 {
-    
+    /** This class contains a parser for URDF documents */
     class URDF
     {
     public:
         
-	/* This class encapsulates data that can be attached to various tags in the format */
+	/** This class encapsulates data that can be attached to various tags in the format */
 	class Data
 	{
 	public:
@@ -100,8 +100,11 @@ namespace robot_desc
 	    std::map < std::string, std::map < std::string, std::map < std::string, Element > > > m_data;
 	};
         
+
+	/** Forward declaration of groups */
 	struct Group;
         
+	/** This class defines actuator instances */
 	struct Actuator
 	{
 	    Actuator(void)
@@ -120,6 +123,7 @@ namespace robot_desc
 	    std::map<std::string, bool> isSet;
 	};
 	
+	/** This class defines transmission instances */
 	struct Transmission
 	{
 	    Transmission(void)
@@ -137,10 +141,13 @@ namespace robot_desc
 	    Data                        data;
 	    std::map<std::string, bool> isSet;
 	};
-        
+
+	
+	/** This class defines link instances */
 	struct Link
 	{
 	    
+	    /** Class for link geometry instances */
 	    struct Geometry
 	    {
 		Geometry(void)
@@ -171,7 +178,8 @@ namespace robot_desc
 		Data                        data;
 		std::map<std::string, bool> isSet;
 	    };
-            
+
+	    /** Class for link joint instances (connects a link to its parent) */
 	    struct Joint
 	    {
 		Joint(void)
@@ -207,6 +215,7 @@ namespace robot_desc
 		std::map<std::string, bool> isSet;
 	    };
 	    
+	    /** Class for link collision component instances */
 	    struct Collision
 	    {
 		Collision(void)
@@ -240,7 +249,8 @@ namespace robot_desc
 		Data                        data;    
 		std::map<std::string, bool> isSet;
 	    };
-            
+	    
+	    /** Class for link inertial component instances */
 	    struct Inertial
 	    {
 		Inertial(void)
@@ -267,7 +277,8 @@ namespace robot_desc
 		Data                        data;
 		std::map<std::string, bool> isSet;
 	    };
-            
+	    
+	    /** Class for link visual component instances */
 	    struct Visual
 	    {
 		Visual(void)
@@ -333,10 +344,15 @@ namespace robot_desc
 		    delete joint;
 	    }
             
+	    /** Check if the link instance is inside some group */
 	    bool insideGroup(Group *group) const;
+
+	    /** Check if the link instance is inside some group */
 	    bool insideGroup(const std::string &group) const;
 	    
+	    /** Check if the link instance is also a sensor */
 	    virtual bool canSense(void) const;
+	    
 	    virtual void print(FILE *out = stdout, std::string indent = "") const;
             
 	    Link                       *parent;
@@ -430,7 +446,10 @@ namespace robot_desc
 	    {
 	    }
 	    
+	    /** Check if this group has a specific flag */
 	    bool hasFlag(const std::string &flag) const;
+	    
+	    /** Check if a specific link is a root in this group */
 	    bool isRoot(const Link* link) const;
 	    
 	    std::string              name;
@@ -442,6 +461,7 @@ namespace robot_desc
 	    std::vector<Frame*>      frames;
 	};
 	
+	/** Constructor. If a filename if specified as argument, that file is parsed. */
 	explicit
 	URDF(const char *filename = NULL)
 	{   
@@ -450,114 +470,213 @@ namespace robot_desc
 		loadFile(filename);
 	}
         
+	/** Destructor. Frees all memory */
 	virtual ~URDF(void)
 	{
 	    freeMemory();
 	}
         
+	/** Clear all datastructures. The parser can be used for a new document */
 	virtual void clear(void);
+
+	/** Parse the content of the specified file */
 	virtual bool loadFile(const char *filename);
+
+	/** Parse the content of the specified file */
 	virtual bool loadFile(FILE *file);
+
+	/** Parse the content of the specified buffer */
 	virtual bool loadString(const char *data);
+
+	/** Parse the content of the specified stream */
 	virtual bool loadStream(std::istream &is);
+
+	/** Print the parsed datastructure */
 	virtual void print(FILE *out = stdout) const;
         
+	/** Check if the links form a cycle */
 	bool containsCycle(unsigned int index) const;
+	
+	/** Simple checks to make sure the parsed values are correct */
 	void sanityCheck(void) const;
 	
+	/** Returns the robot name */
 	const std::string& getRobotName(void) const;
+	
+	/** Returns the number of individual robot parts that connect to the environment */
 	unsigned int getDisjointPartCount(void) const;
+	
+	/** Return a robot part that connects to the environment */
 	Link* getDisjointPart(unsigned int index) const;
+	
+	/** Check if a specific link connects to the environment */
 	bool isRoot(const Link* link) const;
-
+	
+	/** Retrieve a link by its name */
 	Link* getLink(const std::string &name) const;
+
+	/** Get the list of all links. The array is sorted alphabetically by name. */
 	void getLinks(std::vector<Link*> &links) const;
+	
+	/** Retrieve an actuator by its name */
 	Actuator* getActuator(const std::string &name) const;
+
+	/** Get the list of all actuators. The array is sorted alphabetically by name. */
 	void getActuators(std::vector<Actuator*> &actuators) const;
+
+	/** Retrieve a transmission by its name */
 	Transmission* getTransmission(const std::string &name) const;	
+	
+	/** Get the list of all transmissions. The array is sorted alphabetically by name. */	
 	void getTransmissions(std::vector<Transmission*> &transmissions) const;
+
+	/** Retrieve a frame by its name */
 	Frame* getFrame(const std::string &name) const;	
+
+	/** Get the list of all frames. The array is sorted alphabetically by name. */
         void getFrames(std::vector<Frame*> &frames) const;
 	
+	/** Get the list of all group names. The array is sorted alphabetically. */
 	void getGroupNames(std::vector<std::string> &groups) const;
+
+	/** Retrieve a group by its name */
 	Group* getGroup(const std::string &name) const;
+
+	/** Get the list of all groups. The array is sorted alphabetically by name. */
 	void getGroups(std::vector<Group*> &groups) const;
 	
+	/** Get the data that was defined at top level */
 	const Data& getData(void) const;
         
     protected:
         
-	/* free the memory allocate in this class */
+	/** Free the memory allocated in this class */
 	void freeMemory(void);
+	
+	/** Clear temporary datastructures used in parsing */
+	void clearTemporaryData(void);
+
+	/** Clear the memory used by the XML parser*/
+	void clearDocs(void);
+
+	
+	
+	/** Add the path to a given filename as a known path */
+	virtual void  addPath(const char *filename);
+
+	/** Find a file using the set of known paths */
+	virtual char* findFile(const char *filename);
+
+	
+
+	/** Add default constants like M_PI */
+	virtual void defaultConstants(void);
         
-	void  addPath(const char *filename);
-	char* findFile(const char *filename);
-        
-	/* parse the URDF document */
+	/** Parse the URDF document */
 	virtual bool parse(const TiXmlNode *node);
+
+	/** Parse the <link> tag */
+	void loadLink(const TiXmlNode *node);
+	/** Parse the <sensor> tag */
+	void loadSensor(const TiXmlNode *node);
+	/** Parse the <frame> tag */
+	void loadFrame(const TiXmlNode *node);
+	/** Parse the <actuator> tag */
+	void loadActuator(const TiXmlNode *node);
+	/** Parse the <transmission> tag */
+	void loadTransmission(const TiXmlNode *node);
+	/** Parse the <joint> tag */
+	void loadJoint(const TiXmlNode *node, const std::string &defaultName, Link::Joint *joint);
+	/** Parse the <geometry> tag */
+	void loadGeometry(const TiXmlNode *node, const std::string &defaultName, Link::Geometry *geometry);
+	/** Parse the <collision> tag */
+	void loadCollision(const TiXmlNode *node, const std::string &defaultName, Link::Collision *collision);
+	/** Parse the <visual> tag */
+	void loadVisual(const TiXmlNode *node, const std::string &defaultName, Link::Visual *visual);
+	/** Parse the <inertial> tag */
+	void loadInertial(const TiXmlNode *node, const std::string &defaultName, Link::Inertial *inertial);
+	/** Parse the <data> tag */
+	void loadData(const TiXmlNode *node, Data *data);
+	
+	/** Parse a list of string expressions and convert them to doubles (this relies on the loaded constants) */
+	unsigned int loadDoubleValues(const TiXmlNode *node, unsigned int count, double *vals);
+	
+	/** Parse a list of strings and convert them to booleans */
+	unsigned int loadBoolValues  (const TiXmlNode *node, unsigned int count, bool   *vals);
+	
+	/** Depending on whether the node is a clone or not, get the proper list of children and attibutes for this tag */
+	void getChildrenAndAttributes(const TiXmlNode* node, std::vector<const TiXmlNode*> &children, std::vector<const TiXmlAttribute*> &attributes) const;	
+
+	/** Extract and return the value of the name attribute from a list of attributes */
+	std::string extractName(std::vector<const TiXmlAttribute*> &attributes, const std::string &defaultName) const;
+	
+
+	/** Output a message letting the user know that a specific node was ignored */
 	virtual void ignoreNode(const TiXmlNode* node);
         
-	/* file processing data elements */
-	std::string                  m_source;
-	std::vector<std::string>     m_paths;
-        
-	/* parsed datastructures */
-	std::string                          m_name;
-	std::map<std::string, Link*>         m_links;     // contains sensors too (casted down)
-	std::map<std::string, Group*>        m_groups;
-	std::map<std::string, Actuator*>     m_actuators;
-	std::map<std::string, Transmission*> m_transmissions;
-	std::map<std::string, Frame*>        m_frames;
-	Data                                 m_data; // information from data tags
-        
-	/* simple computed datastructures */
-	std::vector<Link*> m_linkRoots; // contains the links that are connected to the world (have no parent)
+	/** Print the error location, if known */
+	void errorLocation(void) const;
 	
-	/* easy access maps */
+	/** Compute the easy-access pointers inside the parsed datastructures */
+	void linkDatastructure(void);
+
+	/** The name of the file where the parsing started */
+	std::string                          m_source;
+	
+	/** The list of paths the parser knows about when it sees an <include> directive */
+	std::vector<std::string>             m_paths;
+        
+	/** The robot name */
+	std::string                          m_name;
+
+	/** Contains the list of parsed links and sensors */
+	std::map<std::string, Link*>         m_links;
+
+	/** Contains the list of parsed groups */
+	std::map<std::string, Group*>        m_groups;
+
+	/** Contains the list of parsed actuators */
+	std::map<std::string, Actuator*>     m_actuators;
+
+	/** Contains the list of parsed transmissions */
+	std::map<std::string, Transmission*> m_transmissions;
+
+	/** Contains the list of parsed frames */
+	std::map<std::string, Frame*>        m_frames;
+	
+	/** Contains information specified in <data> tags at the top level */
+	Data                                 m_data;
+        
+	/** Additional datastructure containing a list links that are connected to the environment */
+	std::vector<Link*>                   m_linkRoots; 
+	
+    private:
+        
+	/** Temporary datastructure for keeping track link collision components */
 	std::map<std::string, Link::Collision*> m_collision;
+	/** Temporary datastructure for keeping track link joints */
 	std::map<std::string, Link::Joint*>     m_joints;
+	/** Temporary datastructure for keeping track link inertial components */
 	std::map<std::string, Link::Inertial*>  m_inertial;
+	/** Temporary datastructure for keeping track link visual components */
 	std::map<std::string, Link::Visual*>    m_visual;
+	/** Temporary datastructure for keeping track link geometry */
 	std::map<std::string, Link::Geometry*>  m_geoms;
 	
 	
-        
-    private:
-        
-	/* utility functions for parsing */
-	void loadLink(const TiXmlNode *node);
-	void loadSensor(const TiXmlNode *node);
-	void loadFrame(const TiXmlNode *node);
-	void loadActuator(const TiXmlNode *node);
-	void loadTransmission(const TiXmlNode *node);
-	void loadJoint(const TiXmlNode *node, const std::string &defaultName, Link::Joint *joint);
-	void loadGeometry(const TiXmlNode *node, const std::string &defaultName, Link::Geometry *geometry);
-	void loadCollision(const TiXmlNode *node, const std::string &defaultName, Link::Collision *collision);
-	void loadVisual(const TiXmlNode *node, const std::string &defaultName, Link::Visual *visual);
-	void loadInertial(const TiXmlNode *node, const std::string &defaultName, Link::Inertial *inertial);
-	void loadData(const TiXmlNode *node, Data *data);
-        
-	void defaultConstants(void);
-	
-	void getChildrenAndAttributes(const TiXmlNode* node, std::vector<const TiXmlNode*> &children, std::vector<const TiXmlAttribute*> &attributes) const;
-	
-	unsigned int loadDoubleValues(const TiXmlNode *node, unsigned int count, double *vals);
-	unsigned int loadBoolValues  (const TiXmlNode *node, unsigned int count, bool   *vals);
-	
-	std::string  extractName(std::vector<const TiXmlAttribute*> &attributes, const std::string &defaultName);    
-	
-	void clearDocs(void);    
-	
-	/* print the error location, if known */
-	void errorLocation(void) const;
-	
 	/* temporary storage for information during parsing; should not be used elsewhere */
-	std::map<std::string, std::string>      m_constants;  // constants 
-	std::map<std::string, const TiXmlNode*> m_templates;  // templates
-	std::vector<const TiXmlNode*>           m_stage2;     // xml nodes that should be processed after all templates and constants are read
-	std::vector<TiXmlDocument*>             m_docs;       // pointer to loaded documents
 	
-	std::string                             m_location;   // approximate location in file (used for error messages)
+	/** The list of constants (temporary) */
+	std::map<std::string, std::string>      m_constants; 
+	/** The list of templates (temporary) */
+	std::map<std::string, const TiXmlNode*> m_templates;
+	/** List of nodes to be processed after loading the constants and templates (temporary) */
+	std::vector<const TiXmlNode*>           m_stage2;
+	/** List of loaded documents. The documents are not cleared after parse since <data> tags may contain pointers to XML datastructures from these documents */
+	std::vector<TiXmlDocument*>             m_docs;
+	
+	/** Approximate location in parsed file, if known (used for error messages) */
+	std::string                             m_location;
     };
     
 } // namespace robot_desc

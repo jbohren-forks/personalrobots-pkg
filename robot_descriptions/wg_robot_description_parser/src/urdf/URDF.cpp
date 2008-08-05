@@ -93,11 +93,7 @@ namespace robot_desc {
 	m_paths.clear();
 	m_paths.push_back("");
 	m_linkRoots.clear();
-	m_collision.clear();
-	m_joints.clear();
-	m_inertial.clear();
-	m_visual.clear();
-	m_geoms.clear();
+	clearTemporaryData();
     }
     
     const std::string& URDF::getRobotName(void) const
@@ -582,6 +578,19 @@ namespace robot_desc {
 	m_docs.clear();
     }
     
+    void URDF::clearTemporaryData(void)
+    {	
+	m_collision.clear();
+	m_joints.clear();
+	m_inertial.clear();
+	m_visual.clear();
+	m_geoms.clear();
+	
+	m_constants.clear();
+	m_templates.clear();
+	m_stage2.clear();
+    }
+    
     bool URDF::loadStream(std::istream &is)
     {
 	if (!is.good())
@@ -688,7 +697,7 @@ namespace robot_desc {
 	return NULL;
     }
     
-    std::string URDF::extractName(std::vector<const TiXmlAttribute*> &attributes, const std::string &defaultName)
+    std::string URDF::extractName(std::vector<const TiXmlAttribute*> &attributes, const std::string &defaultName) const
     { 
 	std::string name = defaultName;
 	for (unsigned int i = 0 ; i < attributes.size() ; ++i)
@@ -1515,7 +1524,123 @@ namespace robot_desc {
 	    else
 		ignoreNode(child);
     }
-    
+     
+
+    void URDF::linkDatastructure(void)
+    {
+	
+	/* compute the proper pointers for parent nodes and children */
+	for (std::map<std::string, Link*>::iterator i = m_links.begin() ; i != m_links.end() ; i++)
+	{
+	    if (i->second->parentName.empty() || i->second->parentName == "world")
+	    {
+		m_linkRoots.push_back(i->second);
+		continue;
+	    }
+	    if (i->second->joint->type == Link::Joint::FLOATING || i->second->joint->type == Link::Joint::PLANAR)
+		fprintf(stderr, "Link '%s' uses a free joint (floating or planar) but its parent is not the environment!\n", i->second->name.c_str());
+	    if (m_links.find(i->second->parentName) == m_links.end())
+		fprintf(stderr, "Parent of link '%s' is undefined: '%s'\n", i->second->name.c_str(),
+			i->second->parentName.c_str());
+	    else
+	    {
+		Link *parent =  m_links[i->second->parentName];
+		i->second->parent = parent;
+		parent->children.push_back(i->second);
+	    }
+	}
+	
+	/* compute the pointers to links inside frames */
+	for (std::map<std::string, Frame*>::iterator i = m_frames.begin() ; i != m_frames.end() ; i++)
+	{
+	    if (m_links.find(i->second->linkName) != m_links.end())
+		i->second->link = m_links[i->second->linkName];
+	    else
+		fprintf(stderr, "Frame '%s' refers to unknown link ('%s')\n", i->first.c_str(), i->second->linkName.c_str());		    
+	}
+	
+	/* for each group, compute the pointers to the links they contain, and for every link,
+	 * compute the list of pointers to the groups they are part of 
+	 * do the same for frames */
+	for (std::map<std::string, Group*>::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
+	{
+	    std::sort(i->second->linkNames.begin(), i->second->linkNames.end());
+	    
+	    for (unsigned int j = 0 ; j < i->second->linkNames.size() ; ++j)
+		if (m_links.find(i->second->linkNames[j]) == m_links.end())
+		{
+		    if (m_frames.find(i->second->linkNames[j]) == m_frames.end())
+			fprintf(stderr, "Group '%s': '%s' is not defined as a link or frame\n", i->first.c_str(), i->second->linkNames[j].c_str());
+		    else
+		    {
+			/* name is a frame */
+			i->second->frameNames.push_back(i->second->linkNames[j]);
+			Frame* f = m_frames[i->second->linkNames[j]];
+			f->groups.push_back(i->second);
+			i->second->frames.push_back(f);
+		    }			    
+		}
+		else
+		{
+		    /* name is a link */
+		    if (m_frames.find(i->second->linkNames[j]) != m_frames.end())
+			fprintf(stderr, "Name '%s' is used both for a link and a frame\n", i->second->linkNames[j].c_str());
+		    
+		    Link* l = m_links[i->second->linkNames[j]];
+		    l->groups.push_back(i->second);
+		    i->second->links.push_back(l);
+		}
+	    
+	    /* remove the link names that are in fact frame names */
+	    for (unsigned int j = 0 ; j < i->second->frameNames.size() ; ++j)
+		for (unsigned int k = 0 ; k < i->second->linkNames.size() ; ++k)
+		    if (i->second->linkNames[k] == i->second->frameNames[j])
+		    {
+			i->second->linkNames.erase(i->second->linkNames.begin() + k);
+			break;
+		    }
+	}
+	
+	/* sort the links by name to reduce variance in the output of the parser */
+	std::sort(m_linkRoots.begin(), m_linkRoots.end(), SortByName<Link>());
+	for (std::map<std::string, Link*>::iterator i = m_links.begin() ; i != m_links.end() ; i++)
+	    std::sort(i->second->children.begin(), i->second->children.end(), SortByName<Link>());
+	
+	/* for every group, find the set of links that are roots in this group (their parent is not in the group) */
+	for (std::map<std::string, Group*>::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
+	{
+	    for (unsigned int j = 0 ; j < i->second->links.size() ; ++j)
+	    {
+		Link *parent = i->second->links[j]->parent;
+		bool outside = true;
+		if (parent)
+		    for (unsigned int k = 0 ; k < parent->groups.size() ; ++k)
+			if (parent->groups[k] == i->second)
+			{
+			    outside = false;
+			    break;
+			}
+		if (outside)
+		    i->second->linkRoots.push_back(i->second->links[j]);
+	    }
+	    std::sort(i->second->linkRoots.begin(), i->second->linkRoots.end(), SortByName<Link>());
+	}
+	
+	/* construct inGroup for every link */
+	std::vector<std::string> grps;
+	getGroupNames(grps);
+	std::map<std::string, unsigned int> grpmap;
+	for (unsigned int i = 0 ; i < grps.size() ; ++i)
+	    grpmap[grps[i]] = i;
+	
+	for (std::map<std::string, Link*>::iterator i = m_links.begin() ; i != m_links.end() ; i++)
+	{
+	    i->second->inGroup.resize(grps.size(), false);
+	    for (unsigned int j = 0 ; j < i->second->groups.size() ; ++j)
+		i->second->inGroup[grpmap[i->second->groups[j]->name]] = true;
+	}
+    }
+    	    
     bool URDF::parse(const TiXmlNode *node)
     {
 	if (!node) return false;
@@ -1527,9 +1652,11 @@ namespace robot_desc {
 	    if (dynamic_cast<const TiXmlDocument*>(node)->RootElement()->ValueStr() != "robot")
 		fprintf(stderr, "File '%s' does not start with the <robot> tag\n", m_source.c_str());
 	    
+	    /* stage 1: extract templates, constants, groups */
 	    parse(dynamic_cast<const TiXmlNode*>(dynamic_cast<const TiXmlDocument*>(node)->RootElement()));
 	    
-	    {
+	    /* stage 2: parse the rest of the data (that depends on templates & constants) */
+	    {		
 		for (unsigned int i = 0 ; i < m_stage2.size() ; ++i)
 		{
 		    const TiXmlElement *elem = m_stage2[i]->ToElement(); 
@@ -1563,122 +1690,13 @@ namespace robot_desc {
 			    ignoreNode(m_stage2[i]);
 		    }
 		}
-		
-		/* compute the proper pointers for parent nodes and children */
-		for (std::map<std::string, Link*>::iterator i = m_links.begin() ; i != m_links.end() ; i++)
-		{
-		    if (i->second->parentName.empty() || i->second->parentName == "world")
-		    {
-			m_linkRoots.push_back(i->second);
-			continue;
-		    }
-		    if (i->second->joint->type == Link::Joint::FLOATING || i->second->joint->type == Link::Joint::PLANAR)
-			fprintf(stderr, "Link '%s' uses a free joint (floating or planar) but its parent is not the environment!\n", i->second->name.c_str());
-		    if (m_links.find(i->second->parentName) == m_links.end())
-			fprintf(stderr, "Parent of link '%s' is undefined: '%s'\n", i->second->name.c_str(),
-				i->second->parentName.c_str());
-		    else
-		    {
-			Link *parent =  m_links[i->second->parentName];
-			i->second->parent = parent;
-			parent->children.push_back(i->second);
-		    }
-		}
-		
-		/* compute the pointers to links inside frames */
-		for (std::map<std::string, Frame*>::iterator i = m_frames.begin() ; i != m_frames.end() ; i++)
-		{
-		    if (m_links.find(i->second->linkName) != m_links.end())
-			i->second->link = m_links[i->second->linkName];
-		    else
-			fprintf(stderr, "Frame '%s' refers to unknown link ('%s')\n", i->first.c_str(), i->second->linkName.c_str());		    
-		}
-		
-		/* for each group, compute the pointers to the links they contain, and for every link,
-		 * compute the list of pointers to the groups they are part of 
-		 * do the same for frames */
-		for (std::map<std::string, Group*>::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
-		{
-		    std::sort(i->second->linkNames.begin(), i->second->linkNames.end());
-		    
-		    for (unsigned int j = 0 ; j < i->second->linkNames.size() ; ++j)
-			if (m_links.find(i->second->linkNames[j]) == m_links.end())
-			{
-			    if (m_frames.find(i->second->linkNames[j]) == m_frames.end())
-				fprintf(stderr, "Group '%s': '%s' is not defined as a link or frame\n", i->first.c_str(), i->second->linkNames[j].c_str());
-			    else
-			    {
-				/* name is a frame */
-				i->second->frameNames.push_back(i->second->linkNames[j]);
-				Frame* f = m_frames[i->second->linkNames[j]];
-				f->groups.push_back(i->second);
-				i->second->frames.push_back(f);
-			    }			    
-			}
-			else
-			{
-			    /* name is a link */
-			    if (m_frames.find(i->second->linkNames[j]) != m_frames.end())
-				fprintf(stderr, "Name '%s' is used both for a link and a frame\n", i->second->linkNames[j].c_str());
-			    
-			    Link* l = m_links[i->second->linkNames[j]];
-			    l->groups.push_back(i->second);
-			    i->second->links.push_back(l);
-			}
-		    
-		    /* remove the link names that are in fact frame names */
-		    for (unsigned int j = 0 ; j < i->second->frameNames.size() ; ++j)
-			for (unsigned int k = 0 ; k < i->second->linkNames.size() ; ++k)
-			    if (i->second->linkNames[k] == i->second->frameNames[j])
-			    {
-				i->second->linkNames.erase(i->second->linkNames.begin() + k);
-				break;
-			    }
-		}
-
-		/* sort the links by name to reduce variance in the output of the parser */
-		std::sort(m_linkRoots.begin(), m_linkRoots.end(), SortByName<Link>());
-		for (std::map<std::string, Link*>::iterator i = m_links.begin() ; i != m_links.end() ; i++)
-		    std::sort(i->second->children.begin(), i->second->children.end(), SortByName<Link>());
-
-		/* for every group, find the set of links that are roots in this group (their parent is not in the group) */
-		for (std::map<std::string, Group*>::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
-		{
-		    for (unsigned int j = 0 ; j < i->second->links.size() ; ++j)
-		    {
-			Link *parent = i->second->links[j]->parent;
-			bool outside = true;
-			if (parent)
-			    for (unsigned int k = 0 ; k < parent->groups.size() ; ++k)
-				if (parent->groups[k] == i->second)
-				{
-				    outside = false;
-				    break;
-				}
-			if (outside)
-			    i->second->linkRoots.push_back(i->second->links[j]);
-		    }
-		    std::sort(i->second->linkRoots.begin(), i->second->linkRoots.end(), SortByName<Link>());
-		}
-		
-		/* construct inGroup for every link */
-		std::vector<std::string> grps;
-		getGroupNames(grps);
-		std::map<std::string, unsigned int> grpmap;
-		for (unsigned int i = 0 ; i < grps.size() ; ++i)
-		    grpmap[grps[i]] = i;
-		
-		for (std::map<std::string, Link*>::iterator i = m_links.begin() ; i != m_links.end() ; i++)
-		{
-		    i->second->inGroup.resize(grps.size(), false);
-		    for (unsigned int j = 0 ; j < i->second->groups.size() ; ++j)
-			i->second->inGroup[grpmap[i->second->groups[j]->name]] = true;
-		}
 	    }
 	    
-	    m_constants.clear();
-	    m_templates.clear();
-	    m_stage2.clear();
+	    /* stage 3: 'link' datastructures -- provide easy access pointers */
+	    linkDatastructure();
+	    
+	    /* clear temporary data */
+	    clearTemporaryData();
 	    
 	    break;
 	case TiXmlNode::ELEMENT:
