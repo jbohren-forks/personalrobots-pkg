@@ -91,6 +91,7 @@ HokuyoTester::HokuyoTester( wxWindow* parent )
   gl->Connect( wxEVT_PAINT, wxPaintEventHandler( HokuyoTester::OnPaint ), NULL, this );
   gl->Connect( wxEVT_ERASE_BACKGROUND, wxEraseEventHandler( HokuyoTester::OnEraseBackground ), NULL, this );
   gl->Connect( wxEVT_SIZE, wxSizeEventHandler( HokuyoTester::OnSize ), NULL, this );
+  gl->Connect( wxEVT_MOTION, wxMouseEventHandler( HokuyoTester::OnMouse ), NULL, this );
 
   disconnectButton->Disable();
 
@@ -233,12 +234,13 @@ void HokuyoTester::InitGL()
 
   int w,h;
   visPanel->GetClientSize(&w, &h);
-  int m = (w < h) ? w : h;
-  glViewport((GLint)((w-m)/2), (GLint)((h-m)/2), (GLint) m, (GLint) m);
+  //  int m = (w < h) ? w : h;
+  //  glViewport((GLint)((w-m)/2), (GLint)((h-m)/2), (GLint) m, (GLint) m);
+  glViewport((GLint) 0, (GLint) 0, (GLint) w, (GLint) h);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(-m/2, m/2, -m/2, m/2, -1, 1);
+    glOrtho(-w/2, w/2, -h/2, h/2, -1, 1);
     glMatrixMode(GL_MODELVIEW);
 
 }
@@ -254,7 +256,10 @@ void HokuyoTester::OnSize(wxSizeEvent& event)
     int m = (w < h) ? w : h;
 
     gl->SetCurrent();
-    glViewport((GLint)((w-m)/2), (GLint)((h-m)/2), (GLint) m, (GLint) m);
+    //    glViewport((GLint)((w-m)/2), (GLint)((h-m)/2), (GLint) m, (GLint) m);
+    glViewport((GLint) 0, (GLint) 0, (GLint) w, (GLint) h);
+
+    InitGL();
 }
 
 void HokuyoTester::OnPaint( wxPaintEvent& WXUNUSED(event) )
@@ -266,6 +271,75 @@ void HokuyoTester::OnEraseBackground(wxEraseEvent& WXUNUSED(event))
 {
   // Do nothing, to avoid flashing.
 }
+
+
+void HokuyoTester::OnMouse(wxMouseEvent& event)
+{
+  int x, y;
+  event.GetPosition(&x,&y);
+
+  int dx, dy;
+  dx = x - last_x;
+  dy = y - last_y;
+
+  last_x = x;
+  last_y = y;
+
+  if (event.LeftIsDown())
+  {
+    view_x += dx / view_scale;
+    view_y -= dy / view_scale;
+
+    wxPaintEvent* e = new wxPaintEvent();
+    gl->AddPendingEvent(*e);
+
+    printf("Shift by: %d %d\n", dx, dy);
+
+  }
+  if (event.RightIsDown())
+  {
+    view_scale *= 1.0 - dy * 0.01;
+
+    wxPaintEvent* e = new wxPaintEvent();
+    gl->AddPendingEvent(*e);
+
+    printf("Scale by: %d %d\n", dx, dy);
+  }
+}
+
+void drawrectgrid(float x_distance, float y_distance, float center_x, float center_y, float x_div, float y_div)
+{
+  float i = 0;
+
+  glPushMatrix();
+  glTranslatef(center_x,center_y,0.0);
+  glBegin(GL_LINE_LOOP);
+  glVertex2f(-x_distance/2, y_distance/2);
+  glVertex2f(x_distance/2, y_distance/2);
+  glVertex2f(x_distance/2, -y_distance/2);
+  glVertex2f(-x_distance/2, -y_distance/2);
+  glEnd();
+
+
+  for(i =-x_distance/2; i<=x_distance/2; i+=x_div)
+  {
+    glBegin(GL_LINES);
+    glVertex2f(i, y_distance/2);
+    glVertex2f(i, -y_distance/2);
+    glEnd();
+  }
+
+  for(i =-y_distance/2; i<=y_distance/2; i+=y_div)
+  {
+    glBegin(GL_LINES);
+    glVertex2f(x_distance/2, i);
+    glVertex2f(-x_distance/2, i);
+    glEnd();
+  }
+
+  glPopMatrix();
+}
+
 
 void HokuyoTester::Render()
 {
@@ -287,6 +361,10 @@ void HokuyoTester::Render()
     glTranslatef(view_x, view_y, 0);
 
     glPushMatrix();
+
+    drawrectgrid(10.0, 10.0, 0.0, 0.0, 1.0, 1.0);
+
+
     bool intensity_avail = false;
     double min_intensity = 1e9, max_intensity = -1e9;
 

@@ -74,6 +74,9 @@ class HokuyoTester : public GenHokuyoTester
   URG::laser_scan_t  scan;
   HokuyoThread* thread;
 
+  int last_x;
+  int last_y;
+
 protected:
 
   void InitGL();
@@ -85,6 +88,7 @@ protected:
   virtual void OnConnect( wxCommandEvent& event );
   virtual void OnDisconnect( wxCommandEvent& event );
   virtual void OnScan( wxCommandEvent& event );
+  virtual void OnMouse( wxMouseEvent& event );
 
   bool DoStopScan();
   bool DoStartScan();
