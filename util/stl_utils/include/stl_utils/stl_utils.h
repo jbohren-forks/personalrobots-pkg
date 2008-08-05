@@ -4,8 +4,6 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
 template <class C>
 void deleteElements(C *c)
 {
