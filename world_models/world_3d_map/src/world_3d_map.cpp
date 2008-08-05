@@ -153,21 +153,13 @@ public:
     
     void loadRobotDescriptions(void)
     {
-	printf("Loading robot descriptions...\n\n");
-	
-	std::string description_files;
-	get_param("robotdesc_list", description_files);
-	std::stringstream sdf(description_files);
-	while (sdf.good())
+	std::string model;
+	if (get_param("world_3d_map/robot_model", model))
 	{
-	    std::string file;
 	    std::string content;
-	    sdf >> file;
-	    printf("Loading '%s'\n", file.c_str());	    
-	    get_param(file, content);
-	    addRobotDescriptionFromData(content.c_str());
+	    if (get_param(model, content))
+		addRobotDescriptionFromData(content.c_str());
 	}
-	printf("\n\n");	
     }
     
     void addRobotDescriptionFromData(const char *data)

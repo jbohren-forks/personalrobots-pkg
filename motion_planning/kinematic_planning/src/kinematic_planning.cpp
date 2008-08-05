@@ -154,15 +154,17 @@ public:
 	printf("Loading robot descriptions...\n\n");
 	
 	std::string description_files;
-	get_param("robotdesc_list", description_files);
-	std::stringstream sdf(description_files);
-	while (sdf.good())
+	if (get_param("robotdesc_list", description_files))
 	{
-	    std::string file;
-	    std::string content;
-	    sdf >> file;
-	    get_param(file, content);
-	    addRobotDescriptionFromData(content.c_str());
+	    std::stringstream sdf(description_files);
+	    while (sdf.good())
+	    {
+		std::string file;
+		std::string content;
+		sdf >> file;
+		if (get_param(file, content))
+		    addRobotDescriptionFromData(content.c_str());
+	    }
 	}
 	printf("\n\n");	
     }
