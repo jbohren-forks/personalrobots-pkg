@@ -1,7 +1,7 @@
 #ifndef CVMATUTILS_H_
 #define CVMATUTILS_H_
 
-#include <cxcore.h>
+#include <opencv/cxcore.h>
 
 typedef double CvMyReal;
 #define CV_XF CV_64F

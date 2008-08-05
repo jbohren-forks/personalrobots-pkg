@@ -4,7 +4,7 @@
 #include "calib_stereo.h"
 #include "CvMatUtils.h"
 
-//class CvLevMarq3D: public CvLevMarq
+//class CvLevMarq3D: public CvLevMarq_JDC
 class CvLevMarqTransform
 {
 public:
@@ -37,12 +37,12 @@ protected:
 	virtual bool computeResidue(CvMat *xyzs0, CvMat *xyzs1, CvMat* res);
 	// TODO: what is T supposed to be, 4x3 or 4x4?
 	virtual bool computeResidue(CvMat *xyzs0, CvMat *xyzs1, CvMat* T, CvMat* res);
-	// use CvLevMarq.updateAlt()
+	// use CvLevMarq_JDC.updateAlt()
 	bool optimizeAlt(const CvMat* A, const CvMat* B, 
 			double param[]=NULL);
-	// use CvLevMarq.update()
+	// use CvLevMarq_JDC.update()
 	bool optimizeDefault(CvMat* A, CvMat* B, double param[]=NULL);
-	CvLevMarq mLevMarq;
+	CvLevMarq_JDC mLevMarq;
 	CvMyReal mRTData[16];
 	CvMat mRT;  // this is a transient buffer. Do not assume it is updated
 	CvMat mRT3x4;

@@ -1,7 +1,7 @@
 #ifndef CV3DPOSEESTIMATEDISPREF_H_
 #define CV3DPOSEESTIMATEDISPREF_H_
 
-#include "cxcore.h"
+#include "opencv/cxcore.h"
 #include "CvStereoCamParams.h"
 #include "Cv3DPoseEstimateRef.h"
 

@@ -1,14 +1,14 @@
 #ifndef LEVMARQ_H_
 #define LEVMARQ_H_
 
-#include "cxtypes.h"
+#include "opencv/cxtypes.h"
 
-struct CvLevMarq
+struct CvLevMarq_JDC
 {
-   CvLevMarq();
-   CvLevMarq( int nparams, int nerrs, CvTermCriteria criteria=
+   CvLevMarq_JDC();
+   CvLevMarq_JDC( int nparams, int nerrs, CvTermCriteria criteria=
        cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,30,DBL_EPSILON) );
-   ~CvLevMarq();
+   ~CvLevMarq_JDC();
    void init( int nparams, int nerrs, CvTermCriteria criteria=
        cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,30,DBL_EPSILON) );
    bool update( const CvMat*& param, CvMat*& J, CvMat*& err );

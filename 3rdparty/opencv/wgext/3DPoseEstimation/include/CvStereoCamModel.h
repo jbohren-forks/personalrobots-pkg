@@ -2,7 +2,7 @@
 #define WGSTEREOCAMMODEL_H_
 
 #include "CvStereoCamParams.h"
-#include <cxtypes.h>
+#include <opencv/cxtypes.h>
 
 class CvStereoCamModel : public CvStereoCamParams
 {

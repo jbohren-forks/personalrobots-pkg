@@ -1,7 +1,6 @@
 #ifndef WGLEVMARQDISPSPACE_H_
 #define WGLEVMARQDISPSPACE_H_
 
-#include <cxtypes.h>
 #include "CvLevMarq3D.h"
 
 class CvLevMarqTransformDispSpace : public CvLevMarqTransform

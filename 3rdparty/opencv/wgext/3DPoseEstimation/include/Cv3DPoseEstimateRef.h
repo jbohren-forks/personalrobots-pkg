@@ -1,7 +1,7 @@
 #ifndef CV3DPOSEESTIMATEREF_H_
 #define CV3DPOSEESTIMATEREF_H_
 
-#include <cxcore.h>
+#include <opencv/cxcore.h>
 #include "CvMatUtils.h"
 
 class Cv3DPoseEstimateRef
@@ -43,9 +43,12 @@ public:
 
 	CvMat* getFinalTransformation() { return &mT;};
 	CvMat* getBestTWithoutNonLinearOpt() { return &mRTBestWithoutLevMarq;};
+	void setInlierErrorThreshold(double threshold) {
+		this->mErrThreshold = threshold;
+	}
 protected:
 	// a utility function that shall not belong here
-	bool colinear(CvMat* points);
+	bool tooCloseToColinear(CvMat* points);
 	bool estimateLeastSquareInCol(CvMat *P0, CvMat *P1, CvMat *rot, CvMat *trans);
 	bool pick3RandomPoints(CvMat* points0, CvMat* points1, CvMat* P0, CvMat* P1, bool fInputPointsInRows=true);
 	static bool constructRT(CvMat *R, CvMat *T, CvMat *RT);
@@ -54,7 +57,8 @@ protected:
 	    CvMat* points0Inlier, CvMat* points1Inlier);
 	bool isInLier(CvMat *points0, CvMat *points1, int i);
 	int    mNumIterations; // num of iteration in RANSAC
-	double mMinDet; // to decide if 3 points are colinear
+	double mMinDet; // to decide if 3 points are tooCloseToColinear
+	double mMinAngleForRansacTriple;
 	int mNumTriesForRandomTriple; // max num of tries to get a group of 3 random points
 	
 	// parameters for deciding the inliers
