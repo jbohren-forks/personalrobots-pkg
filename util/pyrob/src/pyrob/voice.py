@@ -1,5 +1,5 @@
 import os
 
-def say( self, mytex ):
+def say( mytex ):
     os.system( 'echo "' + mytex + '" | festival --tts' )
 
