@@ -2,4 +2,6 @@
 <description>2D cost map maintenance library</description>
 <author>Willow Garage</author>
 <license>BSD</license>
+<depend package="roscpp" />
+<depend package="std_msgs" />
 </package>
