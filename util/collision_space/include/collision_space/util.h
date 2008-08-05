@@ -57,26 +57,48 @@ namespace collision_space
 	    m_scale = scale;	    
 	}
 	
-	bool containsPoint(const libTF::Pose3D &pose, const libTF::Pose3D::Position &p) const
+	void setPose(const libTF::Pose3D &pose)
+	{
+	    m_pose = pose;
+	    m_pose.invert();
+	}
+	
+	bool containsPoint(const libTF::Pose3D::Position &p) const
 	{
 	    /* bring point in the reference frame described by pose */
 	    libTF::Pose3D::Position pt = p;
-	    pose.applyToPosition(pt);
+	    m_pose.applyToPosition(pt);
 
 	    /* since the body is centered at origin, scaling the body is equivalent 
 	     * to scaling the coordinates of the point */
-	    pt.x *= m_scale;
-	    pt.y *= m_scale;
-	    pt.z *= m_scale;
+	    pt.x /= m_scale;
+	    pt.y /= m_scale;
+	    pt.z /= m_scale;
 	    
-	    return containsPoint(pt);	    
+	    return containsPt(pt);
 	}
 	
-	virtual bool containsPoint(const libTF::Pose3D::Position &p) const = 0;
-
+	bool containsPoint(double x, double y, double z) const
+	{
+	    /* bring point in the reference frame described by pose */
+	    libTF::Pose3D::Position pt = { x, y, z };
+	    m_pose.applyToPosition(pt);
+	    
+	    /* since the body is centered at origin, scaling the body is equivalent 
+	     * to scaling the coordinates of the point */
+	    pt.x /= m_scale;
+	    pt.y /= m_scale;
+	    pt.z /= m_scale;
+	    
+	    return containsPt(pt);
+	}
+	
     protected:
+	
+	virtual bool containsPt(const libTF::Pose3D::Position &p) const = 0;
 
-	double m_scale;
+	libTF::Pose3D m_pose;	
+	double        m_scale;
 	
     };
     
@@ -97,13 +119,13 @@ namespace collision_space
 	    m_radius = radius;
 	    m_radius2 = radius * radius;	    
 	}
-	
-	virtual bool containsPoint(const libTF::Pose3D::Position &p) const 
+		
+    protected:
+
+	virtual bool containsPt(const libTF::Pose3D::Position &p) const 
 	{
 	    return p.x * p.x + p.y * p.y + p.z * p.z < m_radius2;
 	}
-	
-    protected:
 
 	double m_radius2;	
 	double m_radius;	
@@ -129,15 +151,15 @@ namespace collision_space
 	    m_radius2 = radius * radius;
 	}
 	
-	virtual bool containsPoint(const libTF::Pose3D::Position &p) const 
+    protected:
+
+	virtual bool containsPt(const libTF::Pose3D::Position &p) const 
 	{
 	    if (fabs(p.z) > m_length2)
 		return false;
 	    return p.x * p.x + p.y * p.y < m_radius2;
 	}
 	
-    protected:
-
 	double m_length;
 	double m_length2;	
 	double m_radius;	
@@ -164,14 +186,15 @@ namespace collision_space
 	    m_width2 = width / 2.0;	    
 	    m_height = height;
 	    m_height2 = height / 2.0;	    
-	}
+	}	
+
+    protected:
 	
-	virtual bool containsPoint(const libTF::Pose3D::Position &p) const 
+	virtual bool containsPt(const libTF::Pose3D::Position &p) const 
 	{
 	    return fabs(p.x) < m_length2 && fabs(p.y) < m_width2 && fabs(p.z) < m_height2;
 	}
 	
-    protected:
 	double m_length;
 	double m_width;
 	double m_height;	

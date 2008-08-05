@@ -8,5 +8,7 @@
 <depend package="xmlparam" />
 <depend package="rosTF" />
 <depend package="random_utils" /> 
+<depend package="wg_robot_description_parser" /> 
+<depend package="robot_motion_planning_models" /> 
 <depend package="collision_space" /> 
 </package>

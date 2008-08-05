@@ -90,7 +90,11 @@ Provides (name/type):
 #include <rostools/Log.h>
 #include <rosTF/rosTF.h>
 #include <random_utils/random_utils.h>
+
+#include <urdf/URDF.h>
+#include <planning_models/kinematic.h>
 #include <collision_space/util.h>
+
 #include <deque>
 #include <cmath>
 
@@ -107,13 +111,14 @@ public:
 	advertise<PointCloudFloat32>("world_3d_map");
 	advertise<rostools::Log>("roserr");
 
-	// NOTE: subscribe to stereo vision point cloud as well... when it becomes available
 	subscribe("cloud", inputCloud, &World3DMap::pointCloudCallback);
 	
 	param("world_3d_map/max_publish_frequency", maxPublishFrequency, 0.5);
 	param("world_3d_map/retain_pointcloud_duration", retainPointcloudDuration, 60.0);
 	param("world_3d_map/retain_pointcloud_fraction", retainPointcloudFraction, 0.02);
 	param("world_3d_map/verbosity_level", verbose, 1);
+
+	loadRobotDescriptions();
 	
 	/* create a thread that does the processing of the input data.
 	 * and one that handles the publishing of the data */
@@ -138,6 +143,50 @@ public:
 	pthread_join(*processingThread, NULL);
 	for (unsigned int i = 0 ; i < currentWorld.size() ; ++i)
 	    delete currentWorld[i];
+
+	for (unsigned int i = 0 ; i < robotDescriptions.size() ; ++i)
+	{
+	    delete robotDescriptions[i].urdf;
+	    delete robotDescriptions[i].kmodel;
+	}	
+    }
+    
+    void loadRobotDescriptions(void)
+    {
+	printf("Loading robot descriptions...\n\n");
+	
+	std::string description_files;
+	get_param("robotdesc_list", description_files);
+	std::stringstream sdf(description_files);
+	while (sdf.good())
+	{
+	    std::string file;
+	    std::string content;
+	    sdf >> file;
+	    printf("Loading '%s'\n", file.c_str());	    
+	    get_param(file, content);
+	    addRobotDescriptionFromData(content.c_str());
+	}
+	printf("\n\n");	
+    }
+    
+    void addRobotDescriptionFromData(const char *data)
+    {
+	robot_desc::URDF *file = new robot_desc::URDF();
+	if (file->loadString(data))
+	    addRobotDescription(file);
+	else
+	    delete file;
+    }
+
+    void addRobotDescription(robot_desc::URDF *file)
+    {
+	planning_models::KinematicModel *kmodel = new planning_models::KinematicModel();
+	kmodel->setVerbose(false);
+	kmodel->build(*file);
+	
+	RobotDesc rd = { file, kmodel };
+	robotDescriptions.push_back(rd);
     }
     
     void pointCloudCallback(void)
@@ -315,9 +364,17 @@ public:
     
 private:
     
-  PointCloudFloat32              inputCloud; //Buffer for recieving cloud
-  PointCloudFloat32              toProcess; //Buffer (size 1) for incoming cloud
-  std::deque<PointCloudFloat32*> currentWorld;// Pointers to saved clouds
+    struct RobotDesc
+    {
+	robot_desc::URDF                *urdf;
+	planning_models::KinematicModel *kmodel;	
+    };    
+    
+    std::vector<RobotDesc>         robotDescriptions;
+    
+    PointCloudFloat32              inputCloud; //Buffer for recieving cloud
+    PointCloudFloat32              toProcess; //Buffer (size 1) for incoming cloud
+    std::deque<PointCloudFloat32*> currentWorld;// Pointers to saved clouds
     rosTFClient                    tf;
 
     double             maxPublishFrequency;
