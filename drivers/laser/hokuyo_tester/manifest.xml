@@ -1,0 +1,9 @@
+<package>
+<description brief="Tool for connecting to a Hokuyo">
+</description>
+<author>Jeremy Leibs</author>
+<license>BSD</license>
+<url>http://pr.willowgarage.com</url>
+<depend package="urg_driver"/>
+</package>
+
