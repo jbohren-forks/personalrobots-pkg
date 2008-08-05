@@ -32,8 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef POSE3D_HH
-#define POSE3D_HH
+#ifndef LIBTF_POSE3D_HH
+#define LIBTF_POSE3D_HH
 
 #include <iostream>
 #include <vector>
@@ -183,4 +183,4 @@ namespace libTF
 }
 
 
-#endif //POSE3D_HH
+#endif //LIBTF_POSE3D_HH
