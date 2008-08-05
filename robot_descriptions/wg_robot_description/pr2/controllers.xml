@@ -474,7 +474,7 @@
         <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode>
       </joint>
-      <joint name="laser_pitch_joint">
+      <joint name="tilt_laser_joint">
         <saturationTorque>500</saturationTorque>
         <pGain>2</pGain>
         <dGain>0</dGain>
