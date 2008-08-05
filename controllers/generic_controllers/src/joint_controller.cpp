@@ -290,8 +290,8 @@ controller::ControllerErrorCode JointController::getVelAct(double *vel)
 double JointController::getMaxVelocity()
 {
   double dis_to_min, dis_to_max, closest_limit;
-  dis_to_min = fabs(shortest_angular_distance(joint_->position_, joint_->joint_limit_min_));
-  dis_to_max = fabs(shortest_angular_distance(joint_->position_, joint_->joint_limit_max_));
+  dis_to_min = fabs(math_utils::shortest_angular_distance(joint_->position_, joint_->joint_limit_min_));
+  dis_to_max = fabs(math_utils::shortest_angular_distance(joint_->position_, joint_->joint_limit_max_));
   closest_limit = dis_to_min < dis_to_max ? dis_to_min : dis_to_max;
   return sqrt(fabs(closest_limit * max_accel_));
 }
@@ -321,7 +321,7 @@ void JointController::update(void)
 
     case CONTROLLER_POSITION: //Close the loop around position
       if (joint_->type_ == mechanism::JOINT_ROTARY || joint_->type_ == mechanism::JOINT_CONTINUOUS)
-        error = shortest_angular_distance(cmd_pos_, joint_->position_);
+        error = math_utils::shortest_angular_distance(cmd_pos_, joint_->position_);
       else
         error = joint_->position_ - cmd_pos_;
       current_torque_cmd = pid_controller_.updatePid(error, time - last_time_);
