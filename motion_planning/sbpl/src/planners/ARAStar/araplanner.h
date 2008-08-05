@@ -86,6 +86,7 @@ public:
 typedef struct ARASEARCHSTATESPACE
 {
 	double eps;
+    double eps_satisfied;
 	CHeap* heap;
 	CList* inconslist;
 	short unsigned int iteration;

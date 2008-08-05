@@ -637,6 +637,7 @@ int ARAPlanner::InitializeSearchStateSpace(ARASearchStateSpace_t* pSearchStateSp
 	}
 
 	pSearchStateSpace->eps = this->finitial_eps;
+    pSearchStateSpace->eps_satisfied = INFINITECOST;
 	pSearchStateSpace->iteration = 0;
 	pSearchStateSpace->callnumber = 0;
 	pSearchStateSpace->bReevaluatefvals = false;
@@ -853,10 +854,10 @@ vector<int> ARAPlanner::GetSearchPath(ARASearchStateSpace_t* pSearchStateSpace, 
         }
         solcost += actioncost;
 
-        fprintf(fDeb, "actioncost=%d between states %d and %d\n", 
-                actioncost, state->StateID, searchstateinfo->bestnextstate->StateID);
-        environment_->PrintState(state->StateID, false, fDeb);
-        environment_->PrintState(searchstateinfo->bestnextstate->StateID, false, fDeb);
+        //fprintf(fDeb, "actioncost=%d between states %d and %d\n", 
+        //        actioncost, state->StateID, searchstateinfo->bestnextstate->StateID);
+        //environment_->PrintState(state->StateID, false, fDeb);
+        //environment_->PrintState(searchstateinfo->bestnextstate->StateID, false, fDeb);
 
 
 		state = searchstateinfo->bestnextstate;
@@ -878,7 +879,7 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 {
 	CKey key;
 	TimeStarted = clock();
-
+    searchexpands = 0;
 
 #if DEBUG
 	fprintf(fDeb, "new search call (call number=%d)\n", pSearchStateSpace->callnumber);
@@ -902,14 +903,14 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 
 	//the main loop of ARA*
 	int prevexpands = 0;
-	while((pSearchStateSpace->iteration == 0 || pSearchStateSpace->eps > FINAL_EPS + 0.000001) && 
+	while(pSearchStateSpace->eps_satisfied > FINAL_EPS && 
 		(clock()- TimeStarted) < MaxNumofSecs*(double)CLOCKS_PER_SEC)
 	{
 		//it will be a new search iteration
 		pSearchStateSpace->iteration++;
 
 		//decrease eps for all subsequent iterations
-		if(pSearchStateSpace->iteration > 1)
+		if(fabs(pSearchStateSpace->eps_satisfied - pSearchStateSpace->eps) < ERR_EPS)
 		{
 			pSearchStateSpace->eps = pSearchStateSpace->eps - DECREASE_EPS;
 			if(pSearchStateSpace->eps < FINAL_EPS)
@@ -927,10 +928,12 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 		}
 
 		//improve or compute path
-		ImprovePath(pSearchStateSpace, MaxNumofSecs);
+		if(ImprovePath(pSearchStateSpace, MaxNumofSecs) == 1){
+            pSearchStateSpace->eps_satisfied = pSearchStateSpace->eps;
+        }
 
 		//print the solution cost and eps bound
-		printf("eps=%f expands=%d g(sstart)=%d\n", pSearchStateSpace->eps, searchexpands - prevexpands,
+		printf("eps=%f expands=%d g(sstart)=%d\n", pSearchStateSpace->eps_satisfied, searchexpands - prevexpands,
 							((ARAState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g);
 		prevexpands = searchexpands;
 
@@ -954,7 +957,6 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 #endif
 
 	PathCost = ((ARAState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g;
-	printf("\n!!! searchexpands = %u\n\n", searchexpands);
 	MaxMemoryCounter += environment_->StateID2IndexMapping.size()*sizeof(int);
 	
 	printf("MaxMemoryCounter = %d\n", MaxMemoryCounter);
@@ -973,7 +975,10 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
         ret = true;
 	}
 
-	
+	printf("total expands this call = %d, planning time = %.3f secs, solution cost=%d\n", 
+           searchexpands, (clock()-TimeStarted)/((double)CLOCKS_PER_SEC), solcost);
+    
+
     //fprintf(fStat, "%d %d\n", searchexpands, solcost);
 
 	return true;

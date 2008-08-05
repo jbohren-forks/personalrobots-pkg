@@ -45,7 +45,7 @@ void PrintUsage(char *argv[])
 int main(int argc, char *argv[])
 {
 	int bRet = 0;
-	double allocated_time_secs = 1; //in seconds
+	double allocated_time_secs = 0.5; //in seconds
 	MDPConfig MDPCfg;
 
 
@@ -91,15 +91,37 @@ int main(int argc, char *argv[])
     printf("start planning...\n");
 	bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
     printf("done planning\n");
-
-	std::cout << "Size " << solution_stateIDs_V.size() << std::endl;
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
 
     printf("start planning...\n");
 	bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
     printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
 
+    printf("start planning...\n");
+	bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    printf("start planning...\n");
+	bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    printf("start planning...\n");
+	bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+
+    printf("start planning...\n");
+	bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    FILE* fSol = fopen("sol.txt", "w");
 	for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
-	  environment_nav2D.PrintState(solution_stateIDs_V[i], true, NULL);
+	  environment_nav2D.PrintState(solution_stateIDs_V[i], true, fSol);
 	}
 
 	//print a path
