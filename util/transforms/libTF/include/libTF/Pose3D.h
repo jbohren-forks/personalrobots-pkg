@@ -52,18 +52,24 @@ namespace libTF
       friend class Pose3DCache;
       
   public:
-      /** \brief A struct to return the translational component */
+      /** \brief A struct to represent the translational component (a point) */
       struct Position
       {
         double x,y,z;
       };
+
+      /** \brief A struct to represent vectors */
+      struct Vector
+      {
+        double x,y,z;
+      };
   
-      /** \brief A struct to return the quaternion component */
+      /** \brief A struct to represent the quaternion component */
       struct Quaternion
       {
         double x,y,z,w;
       };
-      /** \brief A struct to return the Euler angles */
+      /** \brief A struct to represent Euler angles */
       struct Euler
       {
         double yaw, pitch, roll;
@@ -157,6 +163,10 @@ namespace libTF
       void applyToPosition(Position &pos) const;
       /** \brief Apply the stored transform to a vector of points */
       void applyToPositions(std::vector<Position*> &posv) const;
+      /** \brief Apply the stored transform to a point */
+      void applyToVector(Vector &pos) const;
+      /** \brief Apply the stored transform to a vector of points */
+      void applyToVectors(std::vector<Vector*> &posv) const;
       
       /**************** Static Helper Functions ***********************/
       /** \brief Convert DH Parameters to a Homogeneous Transformation Matrix */

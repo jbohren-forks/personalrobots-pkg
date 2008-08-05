@@ -480,6 +480,19 @@ void Pose3D::applyToPosition(Position &pos) const
     pos.x     = t0;
 }
 
+void Pose3D::applyToVector(Vector &vec) const
+{
+    double xx = 2.0 * xr * xr, xy = 2.0 * xr * yr, xz = 2.0 * xr * zr,                 
+	xs = 2.0 * xr * w,  yy = 2.0 * yr * yr, yz = 2.0 * yr * zr,                 
+	ys = 2.0 * yr * w,  zz = 2.0 * zr * zr, zs = 2.0 * zr * w;
+    
+    double t0 = vec.x * (1.0 - yy - zz) + vec.y * (xy - zs) + vec.z * (xz + ys);
+    double t1 = vec.x * (xy + zs) + vec.y * (1.0 - xx - zz) + vec.z * (yz - xs);
+    vec.z     = vec.x * (xz - ys) + vec.y * (yz + xs) + vec.z * (1.0 - xx - yy);
+    vec.y     = t1;
+    vec.x     = t0;
+}
+
 void Pose3D::applyToPositions(std::vector<Position*> &posv) const
 {
     double xx = 2.0 * xr * xr, xy = 2.0 * xr * yr, xz = 2.0 * xr * zr,                 
@@ -494,6 +507,23 @@ void Pose3D::applyToPositions(std::vector<Position*> &posv) const
 	pos.z     = zt + pos.x * (xz - ys) + pos.y * (yz + xs) + pos.z * (1.0 - xx - yy);
 	pos.y     = t1;
 	pos.x     = t0;
+    }
+}
+
+void Pose3D::applyToVectors(std::vector<Vector*> &vecv) const
+{
+    double xx = 2.0 * xr * xr, xy = 2.0 * xr * yr, xz = 2.0 * xr * zr,                 
+	xs = 2.0 * xr * w,  yy = 2.0 * yr * yr, yz = 2.0 * yr * zr,                 
+	ys = 2.0 * yr * w,  zz = 2.0 * zr * zr, zs = 2.0 * zr * w;
+    
+    for (unsigned int i = 0 ; i < vecv.size() ; ++i)
+    {
+	Vector &vec = *(vecv[i]);
+	double t0 = vec.x * (1.0 - yy - zz) + vec.y * (xy - zs) + vec.z * (xz + ys);
+	double t1 = vec.x * (xy + zs) + vec.y * (1.0 - xx - zz) + vec.z * (yz - xs);
+	vec.z     = vec.x * (xz - ys) + vec.y * (yz + xs) + vec.z * (1.0 - xx - yy);
+	vec.y     = t1;
+	vec.x     = t0;
     }
 }
 

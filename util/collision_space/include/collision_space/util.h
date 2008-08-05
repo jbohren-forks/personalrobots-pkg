@@ -36,6 +36,7 @@
 #define COLLISION_SPACE_UTIL_
 
 #include <libTF/Pose3D.h>
+#include <cmath>
 
 namespace collision_space
 {
@@ -54,49 +55,35 @@ namespace collision_space
 	
 	void setScale(double scale)
 	{
-	    m_scale = scale;	    
+	    m_scale = scale;
+	    updateInternalData();
 	}
 	
 	void setPose(const libTF::Pose3D &pose)
 	{
 	    m_pose = pose;
-	    m_pose.invert();
+	    updateInternalData();
 	}
 	
-	bool containsPoint(const libTF::Pose3D::Position &p) const
+	virtual void setDimensions(const double *dims)
 	{
-	    /* bring point in the reference frame described by pose */
-	    libTF::Pose3D::Position pt = p;
-	    m_pose.applyToPosition(pt);
-
-	    /* since the body is centered at origin, scaling the body is equivalent 
-	     * to scaling the coordinates of the point */
-	    pt.x /= m_scale;
-	    pt.y /= m_scale;
-	    pt.z /= m_scale;
-	    
-	    return containsPt(pt);
+	    useDimensions(dims);
+	    updateInternalData();	    
 	}
 	
 	bool containsPoint(double x, double y, double z) const
 	{
-	    /* bring point in the reference frame described by pose */
 	    libTF::Pose3D::Position pt = { x, y, z };
-	    m_pose.applyToPosition(pt);
-	    
-	    /* since the body is centered at origin, scaling the body is equivalent 
-	     * to scaling the coordinates of the point */
-	    pt.x /= m_scale;
-	    pt.y /= m_scale;
-	    pt.z /= m_scale;
-	    
-	    return containsPt(pt);
+	    return containsPoint(pt);
 	}
+	
+	virtual bool containsPoint(const libTF::Pose3D::Position &p) const = 0;	
 	
     protected:
 	
-	virtual bool containsPt(const libTF::Pose3D::Position &p) const = 0;
-
+	virtual void updateInternalData(void) = 0;
+	virtual void useDimensions(const double *dims) = 0;
+	
 	libTF::Pose3D m_pose;	
 	double        m_scale;
 	
@@ -105,105 +92,185 @@ namespace collision_space
     class Sphere : public Object
     {
     public:
-        Sphere(double radius = 0) : Object()
+        Sphere(void) : Object()
 	{
-	    setRadius(radius);	    
+	    m_radius = 0.0;
 	}
 	
 	virtual ~Sphere(void)
 	{
 	}
 	
-	void setRadius(double radius)
+	virtual bool containsPoint(const libTF::Pose3D::Position &p) const 
 	{
-	    m_radius = radius;
-	    m_radius2 = radius * radius;	    
+	    double dx = m_center.x - p.x;
+	    double dy = m_center.y - p.y;
+	    double dz = m_center.z - p.z;
+	    return dx * dx + dy * dy + dz * dz < m_radius2;
 	}
 		
     protected:
 
-	virtual bool containsPt(const libTF::Pose3D::Position &p) const 
+	virtual void useDimensions(const double *dims) // radius
 	{
-	    return p.x * p.x + p.y * p.y + p.z * p.z < m_radius2;
+	    m_radius = dims[0];
 	}
-
-	double m_radius2;	
-	double m_radius;	
+	
+	virtual void updateInternalData(void)
+	{
+	    m_radius2 = m_radius * m_radius * m_scale * m_scale;
+	    
+	    m_pose.getPosition(m_center);
+	}
+	
+	libTF::Pose3D::Position m_center;
+	double                  m_radius;	
+	double                  m_radius2;	
+	
     };
-    
+        
     class Cylinder : public Object
     {
     public:
-        Cylinder(double length = 0.0, double radius = 0.0) : Object()
+        Cylinder(void) : Object()
 	{
-	    setDimensions(length, radius);	    
+	    m_length = m_radius = 0.0;
 	}
 	
 	virtual ~Cylinder(void)
 	{
 	}
 	
-	void setDimensions(double length, double radius)
+	virtual bool containsPoint(const libTF::Pose3D::Position &p) const 
 	{
-	    m_length = length;
-	    m_length2 = length / 2.0;
-	    m_radius = radius;
-	    m_radius2 = radius * radius;
+	    double vx = p.x - m_center.x;
+	    double vy = p.y - m_center.y;
+	    double vz = p.z - m_center.z;
+	    
+	    double pH = vx * m_normalH.x + vy * m_normalH.y + vz * m_normalH.z;
+	    
+	    if (fabs(pH) > m_length2)
+		return false;
+	    
+	    double pB1 = vx * m_normalB1.x + vy * m_normalB1.y + vz * m_normalB1.z;
+	    double pB2 = vx * m_normalB2.x + vy * m_normalB2.y + vz * m_normalB2.z;
+	    
+	    return pB1 * pB2 < m_radius2;
 	}
 	
     protected:
-
-	virtual bool containsPt(const libTF::Pose3D::Position &p) const 
+	
+	virtual void useDimensions(const double *dims) // (length, radius)
 	{
-	    if (fabs(p.z) > m_length2)
-		return false;
-	    return p.x * p.x + p.y * p.y < m_radius2;
+	    m_length = dims[0];
+	    m_radius = dims[1];
+	}
+
+	virtual void updateInternalData(void)
+	{
+	    m_radius2 = m_radius * m_radius * m_scale * m_scale;
+	    m_length2 = m_scale * m_length / 2.0;
+	    
+	    m_pose.getPosition(m_center);
+
+	    m_normalH.x = m_normalH.y = 0.0; m_normalH.z = 1.0;
+	    m_pose.applyToVector(m_normalH);
+
+	    m_normalB1.y = m_normalB1.z = 0.0; m_normalB1.x = 1.0;
+	    m_pose.applyToVector(m_normalB1);
+	    
+	    m_normalB2.x = m_normalB2.z = 0.0; m_normalB2.y = 1.0;
+	    m_pose.applyToVector(m_normalB2);
 	}
 	
-	double m_length;
-	double m_length2;	
-	double m_radius;	
-	double m_radius2;
+	libTF::Pose3D::Position m_center;
+	libTF::Pose3D::Vector   m_normalH;
+	libTF::Pose3D::Vector   m_normalB1;
+	libTF::Pose3D::Vector   m_normalB2;
+
+	double                  m_length;
+	double                  m_length2;	
+	double                  m_radius;	
+	double                  m_radius2;
     };
     
+
     class Box : public Object
     {
     public: 
-        Box(double length = 0.0, double width = 0.0, double height = 0.0) : Object()
+        Box(void) : Object()
 	{
-	    setDimensions(length, width, height);	    
+	    m_length = m_width = m_height = 0.0;
 	}
 	
 	virtual ~Box(void)
 	{
 	}
 	
-	void setDimensions(double length, double width, double height) // x, y, z
+	virtual bool containsPoint(const libTF::Pose3D::Position &p) const 
 	{
-	    m_length = length;
-	    m_length2 = length / 2.0;	    
-	    m_width = width;
-	    m_width2 = width / 2.0;	    
-	    m_height = height;
-	    m_height2 = height / 2.0;	    
-	}	
+	    double vx = p.x - m_center.x;
+	    double vy = p.y - m_center.y;
+	    double vz = p.z - m_center.z;
+	    
+	    double pL = vx * m_normalL.x + vy * m_normalL.y + vz * m_normalL.z;
+	    
+	    if (fabs(pL) > m_length2)
+		return false;
+	    
+	    double pW = vx * m_normalW.x + vy * m_normalW.y + vz * m_normalW.z;
 
-    protected:
-	
-	virtual bool containsPt(const libTF::Pose3D::Position &p) const 
-	{
-	    return fabs(p.x) < m_length2 && fabs(p.y) < m_width2 && fabs(p.z) < m_height2;
+	    if (fabs(pW) > m_width2)
+		return false;
+	    
+	    double pH = vx * m_normalH.x + vy * m_normalH.y + vz * m_normalH.z;
+
+	    if (fabs(pH) > m_height2)
+		return false;
+	    
+	    return true;
 	}
 	
-	double m_length;
-	double m_width;
-	double m_height;	
-	double m_length2;
-	double m_width2;
-	double m_height2;	
+    protected:
+	
+	virtual void useDimensions(const double *dims) // (x, y, z) = (length, width, height)
+	{
+	    m_length = dims[0];
+	    m_width  = dims[1];
+	    m_height = dims[2];
+	}
+	
+	virtual void updateInternalData(void) 
+	{
+	    m_length2 = m_scale * m_length / 2.0;
+	    m_width2  = m_scale * m_width / 2.0;
+	    m_height2 = m_scale * m_height / 2.0;
+
+	    m_pose.getPosition(m_center);
+	    
+	    m_normalH.x = m_normalH.y = 0.0; m_normalH.z = 1.0;
+	    m_pose.applyToVector(m_normalH);
+
+	    m_normalL.y = m_normalL.z = 0.0; m_normalL.x = 1.0;
+	    m_pose.applyToVector(m_normalL);
+	    
+	    m_normalW.x = m_normalW.z = 0.0; m_normalW.y = 1.0;
+	    m_pose.applyToVector(m_normalW);
+	}
+	
+	libTF::Pose3D::Position m_center;
+	libTF::Pose3D::Vector   m_normalL;
+	libTF::Pose3D::Vector   m_normalW;
+	libTF::Pose3D::Vector   m_normalH;
+
+	double                  m_length;
+	double                  m_width;
+	double                  m_height;	
+	double                  m_length2;
+	double                  m_width2;
+	double                  m_height2;	
     };
     
-
 }
 
 #endif

@@ -9,9 +9,10 @@
   <depend package="rosthread"/>
   <depend package="robot_motion_planning_models"/>
   <depend package="opende"/>
+  <depend package="gtest"/>
 
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lCollisionSpace"/>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcollision_space"/>
   </export>
   
 </package>
