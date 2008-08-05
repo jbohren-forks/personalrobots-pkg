@@ -31,7 +31,7 @@
 #include <gazebo/Controller.hh>
 
 #include <ros/node.h>
-#include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/LaserScan.h>
 #include <rosTF/rosTF.h>
 
 namespace gazebo
@@ -112,7 +112,7 @@ class Ros_Laser : public Controller
   private: ros::node *rosnode;
 
   // ros message
-  private: std_msgs::PointCloudFloat32 cloudMsg;
+  private: std_msgs::LaserScan laserMsg;
  
   // topic name
   private: std::string topicName;

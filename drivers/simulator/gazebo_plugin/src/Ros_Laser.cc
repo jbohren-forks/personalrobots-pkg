@@ -97,11 +97,8 @@ void Ros_Laser::LoadChild(XMLConfigNode *node)
 
   this->topicName = node->GetString("topicName","default_ros_laser",0); //read from xml file
   std::cout << "================= " << this->topicName <<  std::endl;
-  rosnode->advertise<std_msgs::PointCloudFloat32>(this->topicName);
+  rosnode->advertise<std_msgs::LaserScan>(this->topicName);
   this->frameName = node->GetString("frameName","default_ros_laser",0); //read from xml file
-
-  // cannot publish full cloud because we need the tilt angle information
-  // TODO: we can include the link to the Hokuyo pitch joint in this controller
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -165,22 +162,24 @@ void Ros_Laser::PutLaserData()
 
     /***************************************************************/
     /*                                                             */
-    /*  point cloud from laser image                               */
+    /*  point scan from laser                                      */
     /*                                                             */
     /***************************************************************/
     this->lock.lock();
-    this->cloudMsg.header.frame_id = tfc->lookup(this->frameName);
-    this->cloudMsg.header.stamp.sec = (unsigned long)floor(this->laserIface->data->head.time);
-    this->cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->laserIface->data->head.time - this->cloudMsg.header.stamp.sec) );
+    this->laserMsg.header.frame_id = tfc->lookup(this->frameName);
+    this->laserMsg.header.stamp.sec = (unsigned long)floor(this->laserIface->data->head.time);
+    this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->laserIface->data->head.time - this->laserMsg.header.stamp.sec) );
 
 
-    int    num_channels = 1;
-    this->cloudMsg.set_pts_size(rangeCount);
-    this->cloudMsg.set_chan_size(num_channels);
-    this->cloudMsg.chan[0].name = "intensities";
-    this->cloudMsg.chan[0].set_vals_size(rangeCount);
     double tmp_res_angle = (maxAngle - minAngle)/((double)(rangeCount -1)); // for computing yaw
-
+    int    num_channels = 1;
+    this->laserMsg.angle_min = minAngle;
+    this->laserMsg.angle_max = maxAngle;
+    this->laserMsg.angle_increment = tmp_res_angle;
+    this->laserMsg.range_min = minRange;
+    this->laserMsg.range_max = maxRange;
+    this->laserMsg.set_ranges_size(rangeCount);
+    this->laserMsg.set_intensities_size(rangeCount);
 
     // Interpolate the range readings from the rays
     for (i = 0; i<rangeCount; i++)
@@ -210,21 +209,17 @@ void Ros_Laser::PutLaserData()
 
       /***************************************************************/
       /*                                                             */
-      /*  point cloud from laser image                               */
+      /*  point scan from laser                                      */
       /*                                                             */
       /***************************************************************/
-      double laser_yaw = minAngle + (double)i * tmp_res_angle;
-      double laser_pitch = 0.0;
       double sigma = 0.002;  // 2 milimeter noise
-      this->cloudMsg.pts[i].x        =r * cos(laser_yaw) * cos(laser_pitch) + this->GaussianKernel(0,sigma) ;
-      this->cloudMsg.pts[i].y        =r * sin(laser_yaw)                    + this->GaussianKernel(0,sigma) ;
-      this->cloudMsg.pts[i].z        =r * cos(laser_yaw) * sin(laser_pitch) + this->GaussianKernel(0,sigma) ;
-      this->cloudMsg.chan[0].vals[i] = v;
+      this->laserMsg.ranges[i]        = r + this->GaussianKernel(0,sigma) ;
+      this->laserMsg.intensities[i]   = v + this->GaussianKernel(0,sigma) ;
     }
 
     // iface writing can be skipped if iface is not used.
     // send data out via ros message
-    rosnode->publish(this->topicName,this->cloudMsg);
+    rosnode->publish(this->topicName,this->laserMsg);
     this->lock.unlock();
 
     this->laserIface->Unlock();
