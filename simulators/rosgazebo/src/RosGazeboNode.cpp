@@ -533,7 +533,7 @@ RosGazeboNode::Update()
     /***************************************************************/
     //std::cout << " pcd num " << this->cloud_pts->length << std::endl;
     //
-    this->cloudMsg.header.frame_id = tf.lookup("FRAMEID_TILT_LASER_BLOCK");
+    this->cloudMsg.header.frame_id = tf.lookup("tilt_laser");
     this->cloudMsg.header.stamp.sec = (unsigned long)floor(this->tiltLaserTime);
     this->cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->tiltLaserTime - this->cloudMsg.header.stamp.sec) );
 
@@ -681,8 +681,8 @@ RosGazeboNode::Update()
   static unsigned char  buf_forearm_right[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
   static unsigned char  buf_forearm_left[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
 
-  //this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_GLOBAL,
   // ----------------------- get image ----------------------------
+  if (false)
   if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_HEAD_RIGHT,
           &width           ,         &height               ,
           &depth           ,
@@ -709,6 +709,7 @@ RosGazeboNode::Update()
     }
   }
   // ----------------------- get image ----------------------------
+  if (false)
   if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_HEAD_LEFT,
           &width           ,         &height               ,
           &depth           ,
@@ -735,6 +736,7 @@ RosGazeboNode::Update()
   }
 
   // ----------------------- get image ----------------------------
+  if (false)
   if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_WRIST_RIGHT,
           &width           ,         &height               ,
           &depth           ,
@@ -747,7 +749,7 @@ RosGazeboNode::Update()
 
     if(buf_size >0)
     {
-      this->img_wrist_right.header.frame_id = tf.lookup("FRAMEID_WRIST_CAM_R");
+      this->img_wrist_right.header.frame_id = tf.lookup("wrist_camera_right");
       this->img_wrist_right.header.stamp.sec = (unsigned long)floor(this->cameraTime);
       this->img_wrist_right.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraTime - this->laserMsg.header.stamp.sec) );
 
@@ -761,6 +763,7 @@ RosGazeboNode::Update()
   }
 
   // ----------------------- get image ----------------------------
+  if (false)
   if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_WRIST_LEFT,
           &width           ,         &height               ,
           &depth           ,
@@ -773,7 +776,7 @@ RosGazeboNode::Update()
 
     if(buf_size >0)
     {
-      this->img_wrist_left.header.frame_id = tf.lookup("FRAMEID_WRIST_CAM_L");
+      this->img_wrist_left.header.frame_id = tf.lookup("wrist_camera_left");
       this->img_wrist_left.header.stamp.sec = (unsigned long)floor(this->cameraTime);
       this->img_wrist_left.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraTime - this->laserMsg.header.stamp.sec) );
 
@@ -787,6 +790,7 @@ RosGazeboNode::Update()
   }
 
   // ----------------------- get image ----------------------------
+  if (false)
   if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_FOREARM_RIGHT,
           &width           ,         &height               ,
           &depth           ,
@@ -799,7 +803,7 @@ RosGazeboNode::Update()
 
     if(buf_size >0)
     {
-      this->img_forearm_right.header.frame_id = tf.lookup("FRAMEID_FOREARM_CAM_R");
+      this->img_forearm_right.header.frame_id = tf.lookup("forearm_camera_right");
       this->img_forearm_right.header.stamp.sec = (unsigned long)floor(this->cameraTime);
       this->img_forearm_right.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraTime - this->laserMsg.header.stamp.sec) );
 
@@ -813,6 +817,7 @@ RosGazeboNode::Update()
   }
 
   // ----------------------- get image ----------------------------
+  if (false)
   if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_FOREARM_LEFT,
           &width           ,         &height               ,
           &depth           ,
@@ -825,7 +830,7 @@ RosGazeboNode::Update()
 
     if(buf_size >0)
     {
-      this->img_forearm_left.header.frame_id = tf.lookup("FRAMEID_FOREARM_CAM_L");
+      this->img_forearm_left.header.frame_id = tf.lookup("forearm_camera_left");
       this->img_forearm_left.header.stamp.sec = (unsigned long)floor(this->cameraTime);
       this->img_forearm_left.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraTime - this->laserMsg.header.stamp.sec) );
 
@@ -867,8 +872,8 @@ RosGazeboNode::Update()
 
     dAngle = -dAngle;
 
-    //if (false)
-    //{
+    if (false)
+    {
       this->full_cloudMsg.header.frame_id = tf.lookup("base");
       this->full_cloudMsg.header.stamp.sec = (unsigned long)floor(this->tiltLaserTime);
       this->full_cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->tiltLaserTime - this->full_cloudMsg.header.stamp.sec) );
@@ -893,7 +898,7 @@ RosGazeboNode::Update()
       publish("full_cloud",this->full_cloudMsg);
       this->full_cloud_pts->clear();
       this->full_cloud_ch1->clear();
-    //}
+    }
 
   }
 
@@ -1289,12 +1294,64 @@ RosGazeboNode::Update()
                link->xyz[0],
                link->xyz[1],
                link->xyz[2],
-               0.0,  //FIXME: get angle of finger tip...
+               0.0,
                0.0,
                0.0,
                odomMsg.header.stamp);
 
+  // forearm camera left
+  link = pr2Description.getLink("forearm_camera_left");
+  if (link)
+  tf.sendEuler("forearm_camera_left",
+               "forearm_roll_left",
+               link->xyz[0],
+               link->xyz[1],
+               link->xyz[2],
+               0.0,
+               0.0,
+               0.0,
+               odomMsg.header.stamp);
 
+  // forearm camera right
+  link = pr2Description.getLink("forearm_camera_right");
+  if (link)
+  tf.sendEuler("forearm_camera_right",
+               "forearm_roll_right",
+               link->xyz[0],
+               link->xyz[1],
+               link->xyz[2],
+               0.0,
+               0.0,
+               0.0,
+               odomMsg.header.stamp);
+
+  // wrist camera left
+  link = pr2Description.getLink("wrist_camera_left");
+  if (link)
+  tf.sendEuler("wrist_camera_left",
+               "gripper_roll_left",
+               link->xyz[0],
+               link->xyz[1],
+               link->xyz[2],
+               0.0,
+               0.0,
+               0.0,
+               odomMsg.header.stamp);
+
+  // wrist camera right
+  link = pr2Description.getLink("wrist_camera_right");
+  if (link)
+  tf.sendEuler("wrist_camera_right",
+               "gripper_roll_right",
+               link->xyz[0],
+               link->xyz[1],
+               link->xyz[2],
+               0.0,
+               0.0,
+               0.0,
+               odomMsg.header.stamp);
+
+ 
 
 
 
@@ -1352,8 +1409,8 @@ RosGazeboNode::Update()
 
   // tilt laser location
   double tmpPitch, tmpPitchRate;
-  link = pr2Description.getLink("tilt_laser");
   this->PR2Copy->hw.GetJointServoCmd(PR2::HEAD_LASER_PITCH, &tmpPitch, &tmpPitchRate );
+  link = pr2Description.getLink("tilt_laser");
   if (link)
   tf.sendEuler("tilt_laser",
                "torso",
