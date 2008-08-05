@@ -1659,6 +1659,25 @@ Index: server/controllers/camera/generic/Generic_Camera.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
+Index: server/controllers/Controller.cc
+===================================================================
+--- server/controllers/Controller.cc	(revision 6915)
++++ server/controllers/Controller.cc	(working copy)
+@@ -67,8 +67,12 @@
+ 
+   this->name = node->GetString("name","",1);
+ 
+-  this->updatePeriod = 1.0 / (node->GetDouble("updateRate", 10) + 1e-6);
+-  this->lastUpdate = -1e6;
++  double updateRate  = node->GetDouble("updateRate", 0, 0);
++  if (updateRate == 0)
++    this->updatePeriod = 0.0; // no throttling if updateRate is 0
++  else
++    this->updatePeriod = 1.0 / updateRate;
++  this->lastUpdate   = Simulator::Instance()->GetSimTime();
+ 
+   childNode = node->GetChildByNSPrefix("interface");
+ 
 Index: server/World.cc
 ===================================================================
 --- server/World.cc	(revision 6915)
