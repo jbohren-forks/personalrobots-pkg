@@ -58,7 +58,7 @@ Ros_Laser::Ros_Laser(Entity *parent)
   this->fiducialIface = NULL;
 
   rosnode = ros::g_node; // comes from where?  common.h exports as global variable
-  int argc;
+  int argc = 0;
   char** argv = NULL;
   if (rosnode == NULL)
   {
