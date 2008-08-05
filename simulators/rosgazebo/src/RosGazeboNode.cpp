@@ -122,7 +122,7 @@ void RosGazeboNode::cmd_leftarmcartesianReceived() {
 
 //  KDL::JntArray q = KDL::JntArray(this->PR2Copy->pr2_kin.nJnts);
 //  this->PR2Copy->GetArmJointPositionCmd(PR2::PR2_LEFT_ARM, q);
-//   this->PR2Copy->SetArmCartesianPosition(PR2::PR2_LEFT_ARM,f);
+  this->PR2Copy->SetArmCartesianPosition(PR2::PR2_LEFT_ARM,f);
 
   this->lock.unlock();
 }
@@ -146,7 +146,7 @@ void RosGazeboNode::cmd_rightarmcartesianReceived() {
 
 //  KDL::JntArray q = KDL::JntArray(this->PR2Copy->pr2_kin.nJnts);
 //  this->PR2Copy->GetArmJointPositionCmd(PR2::PR2_RIGHT_ARM, q);
-//   this->PR2Copy->SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f);
+  this->PR2Copy->SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f);
 
   this->lock.unlock();
 }
