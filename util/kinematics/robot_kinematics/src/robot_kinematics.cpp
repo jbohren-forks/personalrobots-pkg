@@ -240,3 +240,123 @@ SerialChain* RobotKinematics::getSerialChain(std::string name) const
   std::map<std::string, SerialChain*>::const_iterator it = serial_chain_map_.find(name);
   return (it == serial_chain_map_.end()) ? NULL : it->second;
 }
+
+
+double RobotKinematics::SubProblem1(NEWMAT::Matrix pin, NEWMAT::Matrix qin, NEWMAT::Matrix rin, NEWMAT::Matrix w)
+{
+   NEWMAT::Matrix u(3,1),v(3,1),up(3,1),vp(3,1);
+   NEWMAT::Matrix p(3,1),q(3,1),r(3,1);
+
+   NEWMAT::Matrix arg1, arg2;
+
+   p = pin.SubMatrix(1,3,1,1);
+   q = qin.SubMatrix(1,3,1,1);
+   r = rin.SubMatrix(1,3,1,1);
+
+#ifdef DEBUG
+   PrintMatrix(p,"SubProblem1::p");
+   PrintMatrix(q,"SubProblem1::q");
+   PrintMatrix(r,"SubProblem1::r");
+   PrintMatrix(w,"SubProblem1::w");
+#endif
+
+   u = p-r;
+   v = q-r;
+
+   up = u - w*(w.t()*u);
+   vp = v - w*(w.t()*v);
+
+#ifdef DEBUG
+   PrintMatrix(up,"SP1::up::");
+   PrintMatrix(vp,"SP1::vp::");
+   PrintMatrix(w,"SP1::w");
+#endif
+
+   arg1 = w.t()*cross(up,vp);
+   arg2 = up.t()*vp;
+
+#ifdef DEBUG
+   cout << "SubProblem1::" << arg1(1,1) << "," << arg2(1,1) << endl;
+   cout << endl << endl << endl;
+#endif
+   return atan2(arg1(1,1),arg2(1,1));
+}
+
+NEWMAT::Matrix RobotKinematics::cross(NEWMAT::Matrix p1, NEWMAT::Matrix p2)
+{
+   NEWMAT::Matrix p3(3,1);
+   p3(1,1) = p1(2,1)*p2(3,1)-p1(3,1)*p2(2,1);
+   p3(2,1) = p1(3,1)*p2(1,1)-p1(1,1)*p2(3,1);
+   p3(3,1) = p1(1,1)*p2(2,1)-p1(2,1)*p2(1,1);
+
+   return p3;
+};
+
+void RobotKinematics::SubProblem2(NEWMAT::Matrix pin, NEWMAT::Matrix qin, NEWMAT::Matrix rin, NEWMAT::Matrix omega1, NEWMAT::Matrix omega2, double theta[])
+{
+   NEWMAT::Matrix u,v,z,c;
+   NEWMAT::Matrix p,q,r;
+   NEWMAT::Matrix denom;
+
+   NEWMAT::Matrix alpha,beta,gamma_numerator,gamma_denominator;
+
+   double gamma;
+
+   p = pin.SubMatrix(1,3,1,1);
+   q = qin.SubMatrix(1,3,1,1);
+   r = rin.SubMatrix(1,3,1,1);
+
+   u = p-r;
+   v = q-r;
+
+   denom = omega1.t()*omega2;
+
+#ifdef DEBUG
+   PrintMatrix(p,"SubProblem2::p");
+   PrintMatrix(q,"SubProblem2::q");
+   PrintMatrix(u,"SubProblem2::u");
+   PrintMatrix(v,"SubProblem2::v");
+   PrintMatrix(denom,"SubProblem2::denom");
+#endif
+
+   alpha = ((omega1.t()*omega2)*(omega2.t()*u)-(omega1.t()*v))/(pow(denom(1,1),2)-1);
+   beta = ((omega1.t()*omega2)*(omega1.t()*v)-(omega2.t()*u))/(pow(denom(1,1),2)-1);
+
+#ifdef DEBUG
+   PrintMatrix(alpha,"SubProblem2::alpha");
+   PrintMatrix(beta,"SubProblem2::beta");
+#endif
+
+   gamma_numerator = ((u.t()*u)-pow(alpha(1,1),2)-pow(beta(1,1),2)-2*alpha(1,1)*beta(1,1)*(omega1.t()*omega2));
+   gamma_denominator = (cross(omega1,omega2).t()*cross(omega1,omega2));
+   gamma = sqrt(gamma_numerator(1,1)/gamma_denominator(1,1));
+
+
+#ifdef DEBUG
+   cout << "SubProblem2::gamma" << endl << gamma << endl << endl;
+#endif
+
+   z = alpha(1,1)*omega1 + beta(1,1)*omega2 + gamma*cross(omega1,omega2);
+   c = z+r;
+
+#ifdef DEBUG
+   PrintMatrix(c,"SubProblem2::c");
+   PrintMatrix(z,"SubProblem2::z");
+#endif
+
+   theta[0] = SubProblem1(c,q,r,omega1);
+   theta[1] = SubProblem1(p,c,r,omega2);
+
+   z = alpha(1,1)*omega1 + beta(1,1)*omega2 - gamma*cross(omega1,omega2);
+   c = z+r;
+
+#ifdef DEBUG
+   PrintMatrix(c,"SubProblem2::c");
+   PrintMatrix(z,"SubProblem2::z");
+#endif
+
+   theta[2] = SubProblem1(c,q,r,omega1);
+   theta[3] = SubProblem1(p,c,r,omega2);
+}
+
+

@@ -51,7 +51,7 @@ int main( int argc, char** argv )
   pr2_kin.loadXML(filename.str());
 
   SerialChain *left_arm = pr2_kin.getSerialChain("leftArm");
-  SerialChain *right_arm = pr2_kin.getSerialChain("leftArm");
+  SerialChain *right_arm = pr2_kin.getSerialChain("rightArm");
 
   assert(left_arm);
   assert(right_arm);

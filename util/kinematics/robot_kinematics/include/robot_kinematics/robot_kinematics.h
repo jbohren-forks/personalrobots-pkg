@@ -89,6 +89,26 @@ namespace robot_kinematics
      */
     SerialChain* getSerialChain(std::string name) const;
 
+    /*! \fn
+     *\brief Solution of the first form of the Paden-Kahan subproblems. This formulation solves for theta in exp(xi1 theta1) exp(xi2 theta2) p  = q
+     *\param p NEWMAT matrix representation of a point on which the exponential operates
+     *\param q NEWMAT matrix representation of the resultant point after rotation through thets
+     *\param r point on the axis about which the rotation is happening
+     *\param omega direction vector for the axis about which the rotation is happening. The twist vectors xi1 and xi2 are a combination of this vector and linear velocity terms v1 and v2.
+     *\param theta[] a 4x1 vector containing the two solutions to this problem.
+     */
+    double SubProblem1(NEWMAT::Matrix p, NEWMAT::Matrix q, NEWMAT::Matrix r, NEWMAT::Matrix omega);
+
+    /*! \fn
+      \brief Solution of the first form of the Paden-Kahan subproblems. This formulation solves for theta in exp(xi1 theta1) exp(xi2 theta2) p  = q
+      \param p NEWMAT matrix representation of a point on which the exponential operates
+      \param q NEWMAT matrix representation of the resultant point after rotation through thets
+      \param r point on the axis about which the rotation is happening
+      \param omega direction vector for the axis about which the rotation is happening. The twist vectors xi1 and xi2 are a combination of this vector and linear velocity terms v1 and v2.
+      \param theta[] a 4x1 vector containing the two solutions to this problem.
+    */
+    void SubProblem2(NEWMAT::Matrix pin, NEWMAT::Matrix qin, NEWMAT::Matrix rin, NEWMAT::Matrix omega1, NEWMAT::Matrix omega2, double theta[]);
+
     private:
 
     SerialChain *chains_; /*< pointer to array of serial chains inside RobotKinematics */
@@ -107,6 +127,13 @@ namespace robot_kinematics
      */
     void cross(const double p1[], const double p2[], double p3[]);
 
+    /*! \fn
+      \brief Compute the cross product of two vectors
+      \param p1 - NEWMAT matrix representation of the first vector
+      \param p2 - NEWMAT matrix representation of the second vector
+      \return Output skew-symmetric rotation matrix
+    */   
+    NEWMAT::Matrix cross(NEWMAT::Matrix p1, NEWMAT::Matrix p2);
 
     /*! 
      * \brief get angle between two vectors 
