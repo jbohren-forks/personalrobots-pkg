@@ -1,3 +1,7 @@
+'''
+@package image_broadcaster
+Broadcast image given on command line to topic 'image'.
+'''
 import rostools
 rostools.updatePath('gmmseg')
 import rospy

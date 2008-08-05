@@ -1,3 +1,8 @@
+'''
+@package gmm_segment
+Provides Gaussian mixture segmentation service.
+Subscribes to topic 'image' of type std_msgs.msg.Image.
+'''
 import rostools
 rostools.updatePath('gmmseg')
 import rospy
