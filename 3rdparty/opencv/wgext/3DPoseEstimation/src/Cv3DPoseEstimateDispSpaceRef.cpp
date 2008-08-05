@@ -1,7 +1,7 @@
 #include <iostream.h>
-#include <cxtypes.h>
+#include <opencv/cxtypes.h>
 #include "calib_stereo.h"
-#include <cv.h>
+#include <opencv/cv.h>
 #include "Cv3DPoseEstimateDispSpaceRef.h"
 #include "CvStereoCamModel.h"
 #include "CvLevMarqDispSpace.h"
@@ -10,7 +10,7 @@
 
 #include "CvTestTimer.h"
 
-//#define DEBUG
+#define DEBUG
 
 //#define DEBUG_DISTURB_PARAM
 
@@ -56,6 +56,17 @@ int Cv3DPoseEstimateDispSpaceRef::estimateMixedPointClouds(
 	
 	reprojection(uvds1, xyzs1);
 	projection(xyzs0, uvds0);
+#ifdef DEBUG
+	cout << "Cv3DPoseEstimateDispSpaceRef::estimateMixedPointClouds()"<<endl;
+	cout << "xyzs0:"<<endl;
+	CvMatUtils::printMat(xyzs0);
+	cout << "uvds0"<<endl;
+	CvMatUtils::printMat(uvds0);
+	cout << "xyzs1"<<endl;
+	CvMatUtils::printMat(xyzs1);
+	cout << "uvds1"<<endl;
+	CvMatUtils::printMat(uvds1);
+#endif
 	
 	int numInLiers = estimate(xyzs0, xyzs1, uvds0, uvds1, 
 			numRefGrps, refPoints,
@@ -114,8 +125,11 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
 			cout << "Iteration: "<< i << endl;
 #endif
 			// randomly pick 3 points. make sure they are not 
-			// colinear
-			pick3RandomPoints(xyzs0, xyzs1, &P0, &P1);
+			// tooCloseToColinear
+			if (pick3RandomPoints(xyzs0, xyzs1, &P0, &P1)== false) {
+				cerr << "Cannot find points that are non colinear enough"<<endl;
+				continue;
+			}
 
 			TIMERSTART2(SVD);
 			this->estimateLeastSquareInCol(&P0, &P1, &R, &T);
@@ -123,17 +137,17 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
 
 			this->constructDisparityHomography(&R, &T, &H);
 
-			CvTestTimerStart(CheckInliers);
-			// scoring against all points
-			numInLiers = checkInLiers(uvds0, uvds1, &H);
-			CvTestTimerEnd(CheckInliers);
-
 #ifdef DEBUG
 			cout << "R, T, and H: "<<endl;
 			CvMatUtils::printMat(&R);
 			CvMatUtils::printMat(&T);
 			CvMatUtils::printMat(&H);
 #endif
+
+			CvTestTimerStart(CheckInliers);
+			// scoring against all points
+			numInLiers = checkInLiers(uvds0, uvds1, &H);
+			CvTestTimerEnd(CheckInliers);
 
 			// keep the best R and T
 			if (maxNumInLiers < numInLiers) {
@@ -145,13 +159,13 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
 	} else {
 		for (int j=0; j<3; j++) {
 		
-			cvSetReal2D(&P0, 0, j, cvmGet(xyzs0, refPoints[j], 0));
-			cvSetReal2D(&P0, 1, j, cvmGet(xyzs0, refPoints[j], 1));
-			cvSetReal2D(&P0, 2, j, cvmGet(xyzs0, refPoints[j], 2));
+			_P0[      j] = cvmGet(xyzs0, refPoints[j], 0);
+			_P0[1*3 + j] = cvmGet(xyzs0, refPoints[j], 1);
+			_P0[2*3 + j] = cvmGet(xyzs0, refPoints[j], 2);
 
-			cvSetReal2D(&P1, 0, j, cvmGet(xyzs1, refPoints[j], 0));
-			cvSetReal2D(&P1, 1, j, cvmGet(xyzs1, refPoints[j], 1));
-			cvSetReal2D(&P1, 2, j, cvmGet(xyzs1, refPoints[j], 2));
+			_P1[      j] = cvmGet(xyzs1, refPoints[j], 0);
+			_P1[1*3 + j] = cvmGet(xyzs1, refPoints[j], 1);
+			_P1[2*3 + j] = cvmGet(xyzs1, refPoints[j], 2);
 		}
 
 		this->estimateLeastSquareInCol(&P0, &P1, rot, shift);

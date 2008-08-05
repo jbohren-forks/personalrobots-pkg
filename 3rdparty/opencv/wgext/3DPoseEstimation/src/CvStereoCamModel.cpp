@@ -3,8 +3,8 @@
 #include <iostream>
 using namespace std;
 
-#include <cxtypes.h>
-#include <cxcore.h>
+#include <opencv/cxtypes.h>
+#include <opencv/cxcore.h>
 
 
 CvStereoCamModel::CvStereoCamModel(double Fx, double Fy, double Tx, double Clx, double Crx, double Cy):

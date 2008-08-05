@@ -1,6 +1,6 @@
 #include "iostream.h"
 
-#include "cv.h"
+#include "opencv/cv.h"
 
 #include "CvMat3X3.h"
 #include "CvLevMarqDispSpace.h"
@@ -8,8 +8,8 @@
 #include "CvMatUtils.h"
 #include "CvTestTimer.h"
 
-//#define DEBUG
-//#define USE_LEVMARQ
+#define DEBUG
+#define USE_LEVMARQ
 
 #if 0
 #define TIMERSTART(x) 
@@ -24,7 +24,8 @@
 #endif
 
 Cv3DPoseEstimateRef::Cv3DPoseEstimateRef():
-	mNumIterations(50), mMinDet(0.1), mNumTriesForRandomTriple(10), 
+	mNumIterations(50), mMinDet(0.1), mMinAngleForRansacTriple(10.),
+	mNumTriesForRandomTriple(10), 
 	mErrMapping(NULL), mErrNormType(CV_C),	mErrThreshold(mDefErrThreshold),
 	mResidue1(cvMat(3, 1, CV_64F, mResidue1_Data)),
 	mResidue2(cvMat(3, 1, CV_64F, mResidue2_Data)),
@@ -143,7 +144,7 @@ int Cv3DPoseEstimateRef::estimate(CvMat *points0, CvMat *points1, CvMat *rot, Cv
 		cout << "Iteration: "<< i << endl;
 #endif
 		// randomly pick 3 points. make sure they are not 
-		// colinear
+		// tooCloseToColinear
 		pick3RandomPoints(points0, points1, &P0, &P1);
 		
 		TIMERSTART2(SVD);
@@ -288,8 +289,8 @@ int Cv3DPoseEstimateRef::estimate(CvMat *points0, CvMat *points1, CvMat *rot, Cv
     inliers1 = points1Inlier;
 	return numInLiers0;	
 }
-
-bool Cv3DPoseEstimateRef::colinear(CvMat* points){
+#if 0
+bool Cv3DPoseEstimateRef::tooCloseToColinear(CvMat* points){
 	CvMat * temp = cvCloneMat(points);
 	cvSetReal2D(temp, 0, 0, 1);
 	cvSetReal2D(temp, 0, 1, 1);
@@ -312,8 +313,34 @@ bool Cv3DPoseEstimateRef::colinear(CvMat* points){
 		return false;
 	}
 	// TODO: release temp
+	cvReleaseMat(&temp);
 	return true;
 }
+#else
+bool Cv3DPoseEstimateRef::tooCloseToColinear(CvMat *points)  {
+	CvMat p0, p1, p2;
+	double _p01[3], _p02[3];
+	CvMat p01, p02;
+	cvGetCol(points, &p0, 0);
+	cvGetCol(points, &p1, 1);
+	cvGetCol(points, &p2, 2);
+	cvInitMatHeader(&p01, 3, 1, CV_64FC1, _p01);
+	cvInitMatHeader(&p02, 3, 1, CV_64FC1, _p02);
+	cvSub(&p1, &p0, &p01);
+	cvSub(&p2, &p0, &p02);
+	double norm_p01 = cvNorm(&p01);
+	double norm_p02 = cvNorm(&p02);
+	double cosAngle = cvDotProduct(&p01, &p02)/norm_p01/norm_p02;
+	if (cosAngle > cos(CV_PI/180.0*15.0)) {
+#ifdef DEBUG
+		cout << "Too close to colinear: angle = "<< acos(cosAngle)/CV_PI*180.0<<"(degree)"<<endl;
+#endif
+		return true;
+	} else {
+		return false;
+	}
+}
+#endif
 
 bool Cv3DPoseEstimateRef::pick3RandomPoints(CvMat* points0, CvMat* points1, CvMat* P0, CvMat* P1, 
 		bool fInputPointsInRows){
@@ -364,15 +391,11 @@ bool Cv3DPoseEstimateRef::pick3RandomPoints(CvMat* points0, CvMat* points1, CvMa
 		CvMatUtils::printMat(P0);
 		cout << "P1:"<<endl;
 		CvMatUtils::printMat(P1);
-		CvMatUtils::printMat(points1);
 #endif
 		
-		// TODO: check if they are colinear
-		if (colinear(P0) == false && colinear(P1) == false) {
+		// TODO: check if they are tooCloseToColinear
+		if (tooCloseToColinear(P0) == false && tooCloseToColinear(P1) == false) {
 			status = true;
-#ifdef DEBUG
-			cout << "det(P0) = "<< cvDet(P0) << "  "<< "det(P1) = " << cvDet(P1) << endl;
-#endif
 			break;
 		}
 	}

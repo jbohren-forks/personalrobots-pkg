@@ -1,9 +1,9 @@
 #pragma warning( disable: 4996 )
 
-#include "cv.h"
-#include "cxmisc.h"
-#include "highgui.h"
-#include "cvaux.h"
+#include "opencv/cv.h"
+#include "opencv/cxmisc.h"
+#include "opencv/highgui.h"
+#include "opencv/cvaux.h"
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -15,6 +15,7 @@ using namespace std;
 
 //#define DEBUG
 
+#if 0 // seems that this file is already in opencv
 // reimplementation of dAB.m
 static void
 cvCalcMatMulDeriv( const CvMat* A, const CvMat* B, CvMat* dABdA, CvMat* dABdB )
@@ -390,13 +391,15 @@ static int dbCmp( const void* _a, const void* _b )
    return (a > b) - (a < b);
 }
 
+#endif
+
 #if 0
-struct CvLevMarq
+struct CvLevMarq_JDC
 {
-   CvLevMarq();
-   CvLevMarq( int nparams, int nerrs, CvTermCriteria criteria=
+   CvLevMarq_JDC();
+   CvLevMarq_JDC( int nparams, int nerrs, CvTermCriteria criteria=
        cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,30,DBL_EPSILON) );
-   ~CvLevMarq();
+   ~CvLevMarq_JDC();
    void init( int nparams, int nerrs, CvTermCriteria criteria=
        cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,30,DBL_EPSILON) );
    bool update( const CvMat*& param, CvMat*& J, CvMat*& err );
@@ -423,7 +426,7 @@ struct CvLevMarq
 };
 #endif
 
-CvLevMarq::CvLevMarq()
+CvLevMarq_JDC::CvLevMarq_JDC()
 {
    prevParam = param = J = err = JtJ = JtJN = JtErr = JtJV = JtJW = 0;
    lambdaLg10 = 0; state = DONE;
@@ -431,13 +434,13 @@ CvLevMarq::CvLevMarq()
    iters = 0;
 }
 
-CvLevMarq::CvLevMarq( int nparams, int nerrs, CvTermCriteria criteria0 )
+CvLevMarq_JDC::CvLevMarq_JDC( int nparams, int nerrs, CvTermCriteria criteria0 )
 {
    prevParam = param = J = err = JtJ = JtJN = JtErr = JtJV = JtJW = 0;
    init(nparams, nerrs, criteria0);
 }
 
-void CvLevMarq::clear()
+void CvLevMarq_JDC::clear()
 {
    cvReleaseMat(&prevParam);
    cvReleaseMat(&param);
@@ -450,12 +453,12 @@ void CvLevMarq::clear()
    cvReleaseMat(&JtJW);
 }
 
-CvLevMarq::~CvLevMarq()
+CvLevMarq_JDC::~CvLevMarq_JDC()
 {
    clear();
 }
 
-void CvLevMarq::init( int nparams, int nerrs, CvTermCriteria criteria0 )
+void CvLevMarq_JDC::init( int nparams, int nerrs, CvTermCriteria criteria0 )
 {
    if( !param || param->rows != nparams || nerrs != (err ? err->rows : 0) )
        clear();
@@ -486,7 +489,7 @@ void CvLevMarq::init( int nparams, int nerrs, CvTermCriteria criteria0 )
    iters = 0;
 }
 
-bool CvLevMarq::update( const CvMat*& _param, CvMat*& _J, CvMat*& _err )
+bool CvLevMarq_JDC::update( const CvMat*& _param, CvMat*& _J, CvMat*& _err )
 {
    double change;
 
@@ -555,7 +558,7 @@ bool CvLevMarq::update( const CvMat*& _param, CvMat*& _J, CvMat*& _err )
 }
 
 
-bool CvLevMarq::updateAlt( const CvMat*& _param, CvMat*& _JtJ, CvMat*& _JtErr, double*& _errNorm )
+bool CvLevMarq_JDC::updateAlt( const CvMat*& _param, CvMat*& _JtJ, CvMat*& _JtErr, double*& _errNorm )
 {
    double change;
 
@@ -629,7 +632,7 @@ bool CvLevMarq::updateAlt( const CvMat*& _param, CvMat*& _JtJ, CvMat*& _JtErr, d
    return true;
 }
 
-void CvLevMarq::solve()
+void CvLevMarq_JDC::solve()
 {
    const double LOG10 = log(10.);
    double lambda = exp(lambdaLg10*LOG10);
@@ -644,7 +647,7 @@ void CvLevMarq::solve()
 #endif
 }
 
-
+#if 0 // this file is already in cv
 #define CV_CALIB_FIX_INTRINSIC  16
 
 /* Computes optimal rotation matrix (R) and the translation vector (T) from the left
@@ -721,7 +724,7 @@ bool cvStereoCalibrate( const CvMat* _objectPoints, const CvMat* _imagePoints1,
    CvMat* activePoints[2] = {0,0};
    CvMat* objectPoints = 0;
    CvMat* RT0 = 0;
-   CvLevMarq solver;
+   CvLevMarq_JDC solver;
    int k;
 
    CV_FUNCNAME( "cvStereoCalibrate" );
@@ -1919,4 +1922,5 @@ void main(void)
 {
    testStereoCalib("list.txt", 9, 6);
 }
+#endif
 #endif

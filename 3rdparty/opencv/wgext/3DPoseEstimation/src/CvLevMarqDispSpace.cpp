@@ -190,10 +190,10 @@ bool CvLevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *x
 		CvMat * _JtErr=NULL;
 		double *_errNorm=NULL;
 		bool moreUpdate;
-		TIMERSTART(CvLevMarq)
+		TIMERSTART(CvLevMarq_JDC)
 		moreUpdate = mLevMarq.updateAlt(param0, 
 				_JtJ, _JtErr, _errNorm );
-		TIMEREND(CvLevMarq)
+		TIMEREND(CvLevMarq_JDC)
 		if (moreUpdate == false) {
 			break;
 		}

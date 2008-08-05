@@ -1,14 +1,14 @@
 #include <iostream>
 using namespace std;
 
-#include <cxcore.h>
+#include <opencv/cxcore.h>
+#include <opencv/cv.h>
 
 #include "CvMatUtils.h"
 #include "CvMat3X3.h"
 #include "CvLevMarq3D.h"
 
 #include "CvTestTimer.h"
-#include <cv.h>
 
 //#define DEBUG 1
 #define USE_UPDATEALT
@@ -275,10 +275,10 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 	    CvMat * _JtErr=NULL;
 	    double *_errNorm=NULL;
 	    bool moreUpdate;
-	    TIMERSTART(CvLevMarq)
+	    TIMERSTART(CvLevMarq_JDC)
 		moreUpdate = mLevMarq.updateAlt(param0, 
 				_JtJ, _JtErr, _errNorm );
-		TIMEREND(CvLevMarq)
+		TIMEREND(CvLevMarq_JDC)
 		
 		TIMERSTART2(LevMarq3);
 		if (moreUpdate == false) {

@@ -1,8 +1,9 @@
 #include "CvTestTimer.h"
-#include <cxcore.h>
 
 #include <stdio.h>
 #include <iostream>
+#include <opencv/cxcore.h>
+
 
 CvTestTimer CvTestTimer::_singleton;
 

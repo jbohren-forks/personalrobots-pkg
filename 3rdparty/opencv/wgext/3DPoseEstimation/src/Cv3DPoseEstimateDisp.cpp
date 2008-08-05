@@ -1,7 +1,5 @@
 #include "Cv3DPoseEstimateDisp.h"
 
-#include <cv.h>
-
 #include "CvMat3X3.h"
 #include "CvLevMarq3D.h"
 

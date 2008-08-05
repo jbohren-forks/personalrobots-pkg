@@ -1,4 +1,4 @@
-#include <cv.h>
+#include <opencv/cv.h>
 
 #include "CvMat3X3.h"
 #include "Cv3DPoseEstimate.h"
@@ -177,7 +177,7 @@ int Cv3DPoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat
 		cout << "Iteration: "<< i << endl;
 #endif
 		// randomly pick 3 points. make sure they are not 
-		// colinear
+		// tooCloseToColinear
 		pick3RandomPoints(points0, points1, &P0, &P1);
 		
 		TIMERSTART2(SVD);
