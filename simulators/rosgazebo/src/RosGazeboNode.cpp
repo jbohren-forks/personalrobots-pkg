@@ -929,7 +929,7 @@ RosGazeboNode::Update()
   larm.gripperForceCmd   = velocity;
   larm.gripperGapCmd     = position;
   publish("left_pr2arm_pos", larm);
-  /* get left arm position */
+  /* get right arm position */
   this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_R_PAN,            &position, &velocity);
   rarm.turretAngle       = position;
   this->PR2Copy->hw.GetJointPositionActual(PR2::ARM_R_SHOULDER_PITCH, &position, &velocity);
@@ -1157,7 +1157,7 @@ RosGazeboNode::Update()
                link->xyz[0],
                link->xyz[1],
                link->xyz[2],
-               larm.turretAngle,
+               rarm.turretAngle,
                //0.0,
                0.0,
                0.0,
@@ -1173,7 +1173,7 @@ RosGazeboNode::Update()
                link->xyz[1],
                link->xyz[2],
                0.0,
-               larm.shoulderLiftAngle,
+               rarm.shoulderLiftAngle,
                0.0,
                odomMsg.header.stamp);
 
@@ -1187,7 +1187,7 @@ RosGazeboNode::Update()
                link->xyz[2],
                0.0,
                0.0,
-               larm.upperarmRollAngle,
+               rarm.upperarmRollAngle,
                odomMsg.header.stamp);
 
   //frameid_arm_r_elbow = elbow pitch bracket center of rotation
@@ -1199,7 +1199,7 @@ RosGazeboNode::Update()
                link->xyz[1],
                link->xyz[2],
                0.0,
-               larm.elbowAngle,
+               rarm.elbowAngle,
                0.0,
                odomMsg.header.stamp);
 
@@ -1213,7 +1213,7 @@ RosGazeboNode::Update()
                link->xyz[2],
                0.0,
                0.0,
-               larm.forearmRollAngle,
+               rarm.forearmRollAngle,
                odomMsg.header.stamp);
 
   // arm_r_wrist = wrist pitch DOF.
@@ -1225,7 +1225,7 @@ RosGazeboNode::Update()
                link->xyz[1],
                link->xyz[2],
                0.0,
-               larm.wristPitchAngle,
+               rarm.wristPitchAngle,
                0.0,
                odomMsg.header.stamp);
 
@@ -1239,7 +1239,7 @@ RosGazeboNode::Update()
                link->xyz[2],
                0.0,
                0.0,
-               larm.wristRollAngle,
+               rarm.wristRollAngle,
                odomMsg.header.stamp);
 
   // proximal digit, right
