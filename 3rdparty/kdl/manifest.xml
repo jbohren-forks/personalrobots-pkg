@@ -1,0 +1,12 @@
+<package>
+<description brief="ROS package for the robot kinematics package KDL.">
+</description>
+<author>Advait Jain, Sachin Chitta</author>
+<license>BSD</license>
+<url>http://pr.willowgarage.net</url>
+<export>
+  <cpp cflags="-I${prefix}/kdl/include" lflags="-Wl,-rpath,${prefix}/kdl/lib  -L${prefix}/kdl/lib -lorocos-kdl"/>
+  <doxymaker external="http://pr.willowgarage.com/" />
+</export>
+</package>
+
