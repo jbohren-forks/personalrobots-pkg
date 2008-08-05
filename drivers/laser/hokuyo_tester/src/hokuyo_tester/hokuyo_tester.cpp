@@ -292,9 +292,6 @@ void HokuyoTester::OnMouse(wxMouseEvent& event)
 
     wxPaintEvent* e = new wxPaintEvent();
     gl->AddPendingEvent(*e);
-
-    printf("Shift by: %d %d\n", dx, dy);
-
   }
   if (event.RightIsDown())
   {
@@ -302,8 +299,6 @@ void HokuyoTester::OnMouse(wxMouseEvent& event)
 
     wxPaintEvent* e = new wxPaintEvent();
     gl->AddPendingEvent(*e);
-
-    printf("Scale by: %d %d\n", dx, dy);
   }
 }
 
