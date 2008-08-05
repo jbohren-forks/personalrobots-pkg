@@ -13,16 +13,17 @@ struct Keypoint
 {
     int x;
     int y;
-    int scale;
+    int s;
+    float scale;
     float response;
     // TODO: sign on dark or bright
 
     Keypoint()
-        : x(0), y(0), scale(0), response(0)
+        : x(0), y(0), s(0), scale(0), response(0)
     {}
 
-    Keypoint(int x, int y, int scale, float response)
-        : x(x), y(y), scale(scale), response(response)
+    Keypoint(int x, int y, float scale, float response, int s = 0)
+        : x(x), y(y), s(s), scale(scale), response(response)
     {};
 
     //! Allow sorting a list of keypoints into descending order

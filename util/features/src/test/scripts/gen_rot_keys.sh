@@ -1,7 +1,7 @@
 #!/bin/bash
 
-DETECTORS="willow willow9 sift surf"
-#DETECTORS=willow
+#DETECTORS="willow willow9 sift surf"
+DETECTORS="willow willow9"
 ANGLES=`seq 15 15 180`
 SOURCE=graf/img1.pgm
 ROT_DIR=rotated

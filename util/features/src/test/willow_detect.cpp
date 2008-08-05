@@ -30,8 +30,8 @@ int main( int argc, char** argv )
     int num_points = 800;
     std::string key_file = "source.key", warped_key_file = "warped.key";
     int scales = 7;
-    float thres = WgDetector::DEFAULT_THRESHOLD;
-    float line_thres = WgDetector::DEFAULT_LINE_THRESHOLD;
+    float thres = StarDetector::DEFAULT_THRESHOLD;
+    float line_thres = StarDetector::DEFAULT_LINE_THRESHOLD;
     float scale_ub1 = -1, scale_lb1 = -1, scale_ub2 = -1, scale_lb2 = -1;
     
     int arg = 0;
@@ -87,7 +87,7 @@ int main( int argc, char** argv )
     }
     
     // Find keypoints in source image
-    WgDetector detector(cvSize(W, H), scales, thres, line_thres);
+    StarDetector detector(cvSize(W, H), scales, thres, line_thres);
     std::vector<Keypoint> keypts;
     {
         Timer t("Willow detector");
@@ -118,8 +118,8 @@ int main( int argc, char** argv )
     
     if (warped_file) {
         // Find keypoints in warped image
-        WgDetector warp_detector(cvSize(warped->width, warped->height),
-                                      scales, thres, line_thres);
+        StarDetector warp_detector(cvSize(warped->width, warped->height),
+                                   scales, thres, line_thres);
         std::vector<Keypoint> warp_keypts;
         {
             Timer t("Willow detector (warped)");

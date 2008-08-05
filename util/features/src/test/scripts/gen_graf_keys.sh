@@ -1,10 +1,11 @@
 #!/bin/bash
 
-#DETECTORS="willow sift surf"
+#DETECTORS="willow willow9 sift surf"
+DETECTORS="willow willow9"
 #NUMPTS=800
 #INDICES=`seq 2 6`
 
-DETECTORS="willow willow9"
+#DETECTORS="willow willow9"
 NUMPTS="`seq 10 10 50` `seq 100 50 500` `seq 600 100 800`"
 INDICES=2
 

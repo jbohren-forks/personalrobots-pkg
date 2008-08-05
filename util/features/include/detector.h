@@ -1,11 +1,12 @@
-#ifndef FEATURES_WG_DETECTOR_H
-#define FEATURES_WG_DETECTOR_H
+#ifndef FEATURES_STAR_DETECTOR_H
+#define FEATURES_STAR_DETECTOR_H
 
 #include "integral.h"
 #include "keypoint.h"
 #include "nonmax_suppress.h"
 #include <cv.h>
 #include <vector>
+#include <cmath>
 
 /*!
   This class offers a simple interface for keypoint detection.
@@ -26,7 +27,7 @@
   thresholds are more stringent. Reasonable defaults for the thresholds
   are provided.
  */
-class WgDetector
+class StarDetector
 {
 public:
     static const float DEFAULT_THRESHOLD = 30;
@@ -34,14 +35,17 @@ public:
     
     //! Constructor. The dimensions of the source images that will be used
     //! with the detector are required to pre-allocate memory.
-    WgDetector(CvSize dims, int n = 7, float threshold = DEFAULT_THRESHOLD,
-               float line_threshold = DEFAULT_LINE_THRESHOLD);
+    StarDetector(CvSize dims, int n = 7, float threshold = DEFAULT_THRESHOLD,
+                 float line_threshold = DEFAULT_LINE_THRESHOLD);
 
-    ~WgDetector();
+    ~StarDetector();
 
     //! Returns a vector of keypoints in the source image.
     std::vector<Keypoint> DetectPoints(IplImage* source);
 
+    //! Turn scale interpolation on or off. On by default.
+    void interpolate(bool value);
+    
     // TODO: expose integral images?
 
 private:
@@ -59,14 +63,17 @@ private:
     float m_threshold;
     //! Line response threshold
     float m_line_threshold;
+    //! Filter size at each scale
+    int* m_filter_sizes;
     //! Non-maximal suppression functor
     NonmaxSuppress3x3xN<float, LineSuppress> m_nonmax;
     //! Non-minimal suppression functor
     NonmaxSuppress3x3xN<float, LineSuppress, std::less_equal<float> > m_nonmin;
-    //! Filter size at each scale
-    int* m_filter_sizes;
+    //! Scale interpolation flag
+    bool m_interpolate;
     // TODO: Keep intermediate star sum images for reuse?
-    static const float SCALE_MULTIPLIER = 1.3;
+    
+    static const float SCALE_RATIO = M_SQRT2;
 
     //! Calculate sum of all pixel values in the "star" shape.
     int StarAreaSum(CvPoint center, int radius, int offset);
@@ -80,9 +87,14 @@ private:
 
     //! Calculate the filter responses over the range of desired scales.
     void FilterResponses();
-
+    void FilterResponses2();
+    void FilterResponses3();
+    
     //! Return extrema which satisfy the strength and line response thresholds
     std::vector<Keypoint> FindExtrema();
+
+    //! Fill in scales based in indices and interpolation
+    void InterpolateScales(std::vector<Keypoint> &keypoints);
 };
 
 #endif

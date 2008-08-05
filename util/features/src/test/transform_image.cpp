@@ -54,12 +54,13 @@ int main( int argc, char** argv )
 
     CvMat* transform = NULL;
     IplImage* warped = NULL;
+    int flags = CV_INTER_CUBIC | CV_WARP_FILL_OUTLIERS;
 
     if (mode == Rotate) {
         transform = cvCreateMat(2, 3, CV_32FC1);
         CvSize warped_size = FullImageRotation(W, H, angle, transform);
         warped = cvCreateImage(warped_size, IPL_DEPTH_8U, 1);
-        cvWarpAffine(loaded, warped, transform);
+        cvWarpAffine(loaded, warped, transform, flags);
     }
     else if (mode == Scale) {
         transform = cvCreateMat(2, 3, CV_32FC1);
@@ -69,13 +70,13 @@ int main( int argc, char** argv )
         data[transform->step/sizeof(float) + 1] = scaling;
         CvSize warped_size = cvSize(W*scaling + 0.5, H*scaling + 0.5);
         warped = cvCreateImage(warped_size, IPL_DEPTH_8U, 1);
-        cvWarpAffine(loaded, warped, transform);
+        cvWarpAffine(loaded, warped, transform, flags);
     }
     else if (mode == Transform) {
         transform = cvCreateMat(3, 3, CV_32FC1);
         ReadTransform(homography_file, transform);
         warped = cvCreateImage(cvSize(W, H), IPL_DEPTH_8U, 1);
-        cvWarpPerspective(loaded, warped, transform);
+        cvWarpPerspective(loaded, warped, transform, flags);
     }
     
     cvSaveImage(out_file.c_str(), warped);

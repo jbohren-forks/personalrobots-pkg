@@ -1,0 +1,2 @@
+#!/bin/bash
+./willow_detect $@ -s 9

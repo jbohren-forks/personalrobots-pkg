@@ -53,6 +53,7 @@ struct NonmaxSuppress3x3xN
         int W = responses[0]->width, H = responses[0]->height;
         int num_pts = 0;
 
+        // TODO: figure out what offset needs to be, prob need to bring in filter size array
         int offset = 3*n;
         for (int y = offset; y < H - offset; ++y) {
             for (int x = offset; x < W - offset; ++x) {
@@ -104,7 +105,7 @@ struct NonmaxSuppress3x3xN
                     m_post_thresh(x, y, scale)
                     )
                     continue;
-                pts.push_back(Keypoint(x, y, scale, response));
+                pts.push_back(Keypoint(x, y, 0, response, scale));
                 ++num_pts;
             }
         }
@@ -191,7 +192,7 @@ struct NonmaxSuppress3x3x3
                         m_post_thresh(x, y, s)
                         )
                         continue;
-                    pts.push_back(Keypoint(x, y, s, response));
+                    pts.push_back(Keypoint(x, y, 0, response, s));
                     ++num_pts;
                 }
             }

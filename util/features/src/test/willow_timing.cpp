@@ -8,7 +8,8 @@ int main( int argc, char** argv )
     assert(argc > 1);
     
     IplImage* source = cvLoadImage(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
-    WgDetector detector(cvSize(source->width, source->height));
+    StarDetector detector(cvSize(source->width, source->height));
+    detector.interpolate(false);
     std::vector<Keypoint> keypts;
 
     keypts = detector.DetectPoints(source);

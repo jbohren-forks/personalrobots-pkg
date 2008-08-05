@@ -61,7 +61,7 @@ void on_trackbar(int h)
     InvertRotation(map_matrix, inv_matrix);
     
     // Detect and threshold keypoints in the warped image
-    WgDetector detector(warped_size, 7, 0);
+    StarDetector detector(warped_size, 7, 0);
     out_keypts = detector.DetectPoints(warped);
     out_keypts.erase(std::remove_if(out_keypts.begin(), out_keypts.end(),
                                     OutsideSource(W, H, inv_matrix)),
@@ -101,7 +101,7 @@ int main( int argc, char** argv )
     map_matrix = cvCreateMat(2, 3, CV_32FC1);
     inv_matrix = cvCreateMat(2, 3, CV_32FC1);
 
-    WgDetector detector(cvSize(W,H), 7, 0);
+    StarDetector detector(cvSize(W,H), 7, 0);
     
     cvNamedWindow(src_wndname);
     cvNamedWindow(out_wndname);

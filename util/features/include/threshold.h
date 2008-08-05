@@ -6,7 +6,7 @@
 //! A noop post-threshold functor which rejects no keypoints.
 struct NullThreshold
 {
-    inline bool operator() (int x, int y, int scale) {
+    inline bool operator() (int x, int y, int s) {
         return false;
     }
 };
@@ -22,14 +22,15 @@ struct LineSuppress
 {
     IplImage** m_responses;
     float m_threshold;
+    int* m_scale_sizes;
 
-    LineSuppress(IplImage** responses, float threshold)
-        : m_responses(responses), m_threshold(threshold)
+    LineSuppress(IplImage** responses, float threshold, int* sizes)
+        : m_responses(responses), m_threshold(threshold), m_scale_sizes(sizes)
     {}
 
-    bool operator() (int pt_x, int pt_y, int scale) {
-        IplImage* L = m_responses[scale - 1];
-        int offset = 2*scale; // use the outer box as the window
+    bool operator() (int pt_x, int pt_y, int pt_s) {
+        IplImage* L = m_responses[pt_s - 1];
+        int offset = 2*m_scale_sizes[pt_s - 1]; // use the outer box as the window
         float sum_Lx_2 = 0;
         float sum_Ly_2 = 0;
         float sum_LxLy = 0;

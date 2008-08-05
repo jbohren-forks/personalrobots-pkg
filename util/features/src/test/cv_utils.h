@@ -11,7 +11,6 @@ void DrawPoints(IplImage* dst, std::vector<Keypoint> const& pts,
     typedef std::vector<Keypoint>::const_iterator iter;
 
     for (iter i = pts.begin(); i != pts.end(); ++i) {
-        //int r = i->scale + i->scale / 2;
         int r = scale_multiplier * i->scale;
 
         cvCircle(dst, cvPoint(i->x, i->y), r, color, 1);
@@ -49,7 +48,7 @@ void on_mouse_find_keypts(int event, int x, int y, int flags, void* param)
                         printf("Keypoint: (%f, %f, %f), response = %f\n",
                                pt.x, pt.y, pt.scale, pt.response);
                     } else {
-                        printf("Keypoint: (%d, %d, %d), response = %f\n",
+                        printf("Keypoint: (%d, %d, %f), response = %f\n",
                                i->x, i->y, i->scale, i->response);
                     }
                     break;

@@ -3,7 +3,7 @@ from pylab import *
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 def loadRepeatabilityCurve(infix, scales, overlap=40):
-    files = ["scale_data/img1-3.%s-%ds.rep" % (infix, s) for s in scales]
+    files = ["scale_data/img1-2.%s-%ds.rep" % (infix, s) for s in scales]
     repeatability = zeros(len(scales))
     index = overlap/5 - 1
     for i in range(len(scales)):
