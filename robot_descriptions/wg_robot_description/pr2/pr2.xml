@@ -250,10 +250,12 @@
       <geometry type="cylinder"><!-- geometry specified using a simple geometric object -->
         <size>wheel_radius wheel_length</size> 
       </geometry>
-      <data>
+
+      <data name="friction_coefficients" type="gazebo">
 	<mu1>5.0</mu1> <!-- john needed so wheel can slip and steer -->
 	<mu2>5.0</mu2> <!-- john needed so wheel can slip and steer -->
       </data>
+
     </define> 
 
     <define template="pr2_wheel_inertial">
@@ -1257,8 +1259,8 @@
       </geometry>
     </collision>
 
-    <data>
-      <xml key="gazebo">
+    <data name="sensor" type="gazebo">
+      <xml key="sensor_ray">
         <sensor:ray name="tilt_laser">
           <rayCount>683</rayCount>
           <rangeCount>683</rangeCount>
@@ -1327,8 +1329,8 @@
       </geometry>
     </collision>
 
-    <data>
-      <xml key="gazebo">
+    <data name="sensor" type="gazebo">
+      <xml key="sensor_ray">
         <sensor:ray name="base_laser">
           <rayCount>683</rayCount>
           <rangeCount>683</rangeCount>
@@ -1354,6 +1356,7 @@
         </sensor:ray>
       </xml>
     </data>
+
   </sensor>
 
 
@@ -1392,8 +1395,9 @@
         <size>0.02 0.02 0.02</size> 
       </geometry>
     </collision>
-    <data>
-      <xml key="gazebo">
+
+    <data name="sensor" type="gazebo">
+      <xml key="sensor_camera">
         <sensor:camera name="wrist_cam_left_sensor">
           <imageSize>640 480</imageSize>
           <hfov>60</hfov>
@@ -1412,6 +1416,7 @@
         </sensor:camera>
       </xml>
     </data>
+
   </sensor>
 
 
@@ -1450,8 +1455,9 @@
         <size>0.02 0.02 0.02</size> 
       </geometry>
     </collision>
-    <data>
-      <xml key="gazebo">
+
+    <data name="sensor" type="gazebo">
+      <xml key="sensor_camera">
         <sensor:camera name="wrist_cam_right_sensor">
           <imageSize>640 480</imageSize>
           <hfov>60</hfov>
@@ -1470,6 +1476,7 @@
         </sensor:camera>
       </xml>
     </data>
+
   </sensor>
 
 
@@ -1508,8 +1515,9 @@
         <size>0.02 0.02 0.02</size> 
       </geometry>
     </collision>
-    <data>
-      <xml key="gazebo">
+
+    <data name="sensor" type="gazebo">
+      <xml key="sensor_camera">
         <sensor:camera name="forearm_cam_left_sensor">
           <imageSize>640 480</imageSize>
           <hfov>60</hfov>
@@ -1528,6 +1536,7 @@
         </sensor:camera>
       </xml>
     </data>
+
   </sensor>
 
 
@@ -1566,8 +1575,9 @@
         <size>0.02 0.02 0.02</size> 
       </geometry>
     </collision>
-    <data>
-      <xml key="gazebo">
+
+    <data name="sensor" type="gazebo">
+      <xml key="sensor_camera">
         <sensor:camera name="forearm_cam_right_sensor">
           <imageSize>640 480</imageSize>
           <hfov>60</hfov>
@@ -1586,6 +1596,7 @@
         </sensor:camera>
       </xml>
     </data>
+
   </sensor>
 
 

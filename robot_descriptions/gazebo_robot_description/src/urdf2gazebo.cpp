@@ -88,6 +88,33 @@ void addTransform(TiXmlElement *elem, const::libTF::Pose3D& transform)
     addKeyValue(elem, "rpy", values2str(3, crot, rad2deg));  
 }
 
+void copyGazeboData(const robot_desc::URDF::Data& data, TiXmlElement *elem, const std::vector<std::string> *tags = NULL)
+{
+    std::vector<std::string> gazebo_names;
+    data.getDataTagNames("gazebo", gazebo_names);
+    for (unsigned int k = 0 ; k < gazebo_names.size() ; ++k)
+    {
+	std::map<std::string, std::string> m = data.getDataTagValues("gazebo", gazebo_names[k]);
+	std::vector<std::string> accepted_tags;
+	if (tags)
+	    accepted_tags = *tags;
+	else
+	    for (std::map<std::string, std::string>::iterator it = m.begin() ; it != m.end() ; it++)
+		accepted_tags.push_back(it->first);
+	
+	for (unsigned int i = 0 ; i < accepted_tags.size() ; ++i)
+	    if (m.find(accepted_tags[i]) != m.end())
+		addKeyValue(elem, accepted_tags[i], m[accepted_tags[i]]);
+	
+	std::map<std::string, const TiXmlElement*> x = data.getDataTagXML("gazebo", gazebo_names[k]);
+	for (std::map<std::string, const TiXmlElement*>::iterator it = x.begin() ; it != x.end() ; it++)
+	{
+	    for (const TiXmlNode *child = it->second->FirstChild() ; child ; child = child->NextSibling())
+		elem->LinkEndChild(child->Clone());
+	}	      
+    }
+}
+
 void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::Pose3D &transform)
 {
   libTF::Pose3D currentTransform = transform;
@@ -150,16 +177,13 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
       static const char tagList2[3][3] = {"cx", "cy", "cz"};
       for (int j = 0 ; j < 3 ; ++j)
         addKeyValue(geom, tagList2[j], values2str(1, link->inertial->com + j));
-        
-      /* set additional data */
-      static const char tagList3[4][4] = {"kp", "kd", "mu1", "mu2"};
-      for (int j = 0 ; j < 4 ; ++j)
-        if (link->collision->data.hasDefault(tagList3[j]))
-          addKeyValue(geom, tagList3[j], link->collision->data.getDefaultValue(tagList3[j]));
-        
+              
       /* set geometry size */
       addKeyValue(geom, "size", values2str(linkGeomSize, link->collision->geometry->size));
       
+      /* set additional data */      
+      copyGazeboData(link->collision->data, geom);
+
       /* create visual node */
       TiXmlElement *visual = new TiXmlElement("visual");
       {
@@ -199,12 +223,8 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
     /* add geometry to body */
     elem->LinkEndChild(geom);      
     
-    
     /* copy gazebo data */
-    const TiXmlElement* gazebo_data = link->data.getDefaultXML("gazebo");
-    if (gazebo_data)
-	for (const TiXmlNode *child = gazebo_data->FirstChild() ; child ; child = child->NextSibling())
-	    elem->LinkEndChild(child->Clone());
+    copyGazeboData(link->data, elem);
 
     /* add body to document */
     root->LinkEndChild(elem);
@@ -315,19 +335,8 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
     convertLink(robot, wgxml.getDisjointPart(k), transform);
 
   /* find all data item types */
-  const robot_desc::URDF::Data& data = wgxml.getData();
-  std::vector<std::string> names;
-  data.getDataTagNames("gazebo_controller", names);
+  copyGazeboData(wgxml.getData(), robot);
   
-  for (unsigned int i = 0 ; i < names.size() ; ++i)
-  {
-    std::map<std::string, const TiXmlElement*> cmap = data.getDataTagXML("gazebo_controller", names[i]);
-    for (std::map<std::string, const TiXmlElement*>::iterator it = cmap.begin() ; it != cmap.end() ; it++)
-    {
-      for (const TiXmlNode *child = it->second->FirstChild() ; child ; child = child->NextSibling())
-        robot->LinkEndChild(child->Clone());
-    }
-  }
   doc.LinkEndChild(robot);
 }
 
