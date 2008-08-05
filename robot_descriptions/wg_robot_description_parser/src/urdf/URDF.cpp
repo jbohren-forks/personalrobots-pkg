@@ -1510,11 +1510,21 @@ namespace robot_desc {
 		    type = attr->ValueStr();
 	}
 	
-	for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
-	    if (child->Type() == TiXmlNode::ELEMENT && child->FirstChild() && child->FirstChild()->Type() == TiXmlNode::TEXT)
-		data->add(type, name, child->ValueStr(), child->FirstChild()->ValueStr());
-	    else if (child->Type() == TiXmlNode::ELEMENT && !child->FirstChild())
-		data->add(type, name, child->ValueStr(), "");
+	for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())	    
+	    if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "elem")
+	    {
+		std::string key;
+		std::string value;
+		for (const TiXmlAttribute *attr = child->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
+		{
+		    if (strcmp(attr->Name(), "key") == 0)
+			key = attr->ValueStr();
+		    else
+			if (strcmp(attr->Name(), "value") == 0)
+			    value = attr->ValueStr();
+		}
+		data->add(type, name, key, value);
+	    }
 	    else if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "verbatim")
 	    {
 		std::string key;

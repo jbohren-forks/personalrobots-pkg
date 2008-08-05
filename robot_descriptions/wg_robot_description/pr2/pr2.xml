@@ -247,8 +247,8 @@
       </geometry>
 
       <data name="friction_coefficients" type="gazebo">
-	<mu1>5.0</mu1> <!-- john needed so wheel can slip and steer -->
-	<mu2>5.0</mu2> <!-- john needed so wheel can slip and steer -->
+	<elem key="mu1" value="5.0" /> <!-- john needed so wheel can slip and steer -->
+	<elem key="mu2" value="5.0" /> <!-- john needed so wheel can slip and steer -->
       </data>
 
     </define> 
