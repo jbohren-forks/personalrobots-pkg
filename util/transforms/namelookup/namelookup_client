@@ -36,25 +36,15 @@
 ## A test program for the namelookup_server
 ## It will pass a string and echo the response number.  
 
-PKG = 'namelookup'
+import rostools
+rostools.update_path('namelookup')
 
-# LOADER #####################
-import sys, os, subprocess
-try:
-    rostoolsDir = (subprocess.Popen(['rospack', 'find', 'rostools'], stdout=subprocess.PIPE).communicate()[0] or '').strip()
-    sys.path.append(os.path.join(rostoolsDir,'src'))
-    import rostools.launcher
-    rostools.launcher.updateSysPath(sys.argv[0], PKG, bootstrapVersion="0.6")
-except ImportError:
-    print >> sys.stderr, "\nERROR: Cannot locate rostools"
-    sys.exit(1)  
-# END LOADER #################
-
+import sys
 import string
 import rospy
 from namelookup.srv import *
 
-def nameLookupClient(x):
+def name_lookup_client(x):
     try:
         s = rospy.ServiceProxy('/nameToNumber', NameToNumber)
         #TODO: try/except
@@ -81,4 +71,4 @@ if __name__ == "__main__":
         print usage()
         sys.exit(1)
 
-    print "%s looks up to %s"%(x, str(nameLookupClient(rospy.resolveName(x))))
+    print "%s looks up to %s"%(x, str(name_lookup_client(rospy.resolve_name(x))))

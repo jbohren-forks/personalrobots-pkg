@@ -38,20 +38,8 @@
 ## a new number, a repeated string will recieve the same number
 ## as that string did previously.
 
-
-PKG = 'namelookup'
-
-# LOADER #####################
-import sys, os, subprocess
-try:
-    rostoolsDir = (subprocess.Popen(['rospack', 'find', 'rostools'], stdout=subprocess.PIPE).communicate()[0] or '').strip()
-    sys.path.append(os.path.join(rostoolsDir,'src'))
-    import rostools.launcher
-    rostools.launcher.updateSysPath(sys.argv[0], PKG, bootstrapVersion="0.6")
-except ImportError:
-    print >> sys.stderr, "\nERROR: Cannot locate rostools"
-    sys.exit(1)  
-# END LOADER #################
+import rostools
+rostools.update_path('namelookup')
 
 from namelookup.srv import *
 import rospy 
