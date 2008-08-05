@@ -1744,13 +1744,24 @@ namespace robot_desc {
 		    else 
 			ignoreNode(node);
 		}
-		else if (node->ValueStr() == "constants")
-		{        
-		    for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
-			if (child->Type() == TiXmlNode::ELEMENT && child->FirstChild() && child->FirstChild()->Type() == TiXmlNode::TEXT)
-			    m_constants[child->ValueStr()] = child->FirstChild()->ValueStr();
+		else if (node->ValueStr() == "const")
+		{       
+		    std::string name;
+		    std::string value;
+		    
+		    for (const TiXmlAttribute *attr = node->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
+		    {
+			if (strcmp(attr->Name(), "name") == 0)
+			    name = attr->ValueStr();
 			else
-			    ignoreNode(child);
+			    if (strcmp(attr->Name(), "value") == 0)
+				value = attr->ValueStr();
+		    }
+		    
+		    if (node->FirstChild())
+			fprintf(stderr, "Constant '%s' apears to contain tags. This should not be the case.\n", name.c_str());
+		    
+		    m_constants[name] = value;
 		}
 		else
 		    if (node->ValueStr() == "templates")
