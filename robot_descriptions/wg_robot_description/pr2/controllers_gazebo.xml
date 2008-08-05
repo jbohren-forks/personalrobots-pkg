@@ -4,7 +4,7 @@
 
 <data name="controllers" type="gazebo"> <!-- we can set a name too, but the convertor only cares about the type -->
 
-  <xml key="controllers"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <data> tag -->
+  <verbatim key="controllers"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <data> tag -->
 
 
 
@@ -507,7 +507,7 @@
   </controller:P3D>
 
 
-  </xml>
+  </verbatim>
 </data>
 
 </robot>

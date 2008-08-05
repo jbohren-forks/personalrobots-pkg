@@ -1515,7 +1515,7 @@ namespace robot_desc {
 		data->add(type, name, child->ValueStr(), child->FirstChild()->ValueStr());
 	    else if (child->Type() == TiXmlNode::ELEMENT && !child->FirstChild())
 		data->add(type, name, child->ValueStr(), "");
-	    else if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "xml")
+	    else if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "verbatim")
 	    {
 		std::string key;
 		for (const TiXmlAttribute *attr = child->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
