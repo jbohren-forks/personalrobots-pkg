@@ -105,6 +105,12 @@ namespace robot_desc {
 	return m_name;
     }
     
+    URDF::Link* URDF::getLink(const std::string &name) const
+    {
+	std::map<std::string, Link*>::const_iterator it = m_links.find(name);
+	return it == m_links.end() ? NULL : it->second;
+    }
+    
     void URDF::getLinks(std::vector<Link*> &links) const
     {
 	std::vector<Link*> localLinks;
@@ -114,6 +120,12 @@ namespace robot_desc {
 	links.insert(links.end(), localLinks.begin(), localLinks.end());
     }
 
+    URDF::Frame* URDF::getFrame(const std::string &name) const
+    {
+	std::map<std::string, Frame*>::const_iterator it = m_frames.find(name);
+	return it == m_frames.end() ? NULL : it->second;
+    }
+    
     void URDF::getFrames(std::vector<Frame*> &frames) const
     {
 	std::vector<Frame*> localFrames;
@@ -123,6 +135,12 @@ namespace robot_desc {
 	frames.insert(frames.end(), localFrames.begin(), localFrames.end());
     }
     
+    URDF::Actuator* URDF::getActuator(const std::string &name) const
+    {
+	std::map<std::string, Actuator*>::const_iterator it = m_actuators.find(name);
+	return it == m_actuators.end() ? NULL : it->second;
+    }
+
     void URDF::getActuators(std::vector<Actuator*> &actuators) const
     {
 	std::vector<Actuator*> localActuators;
@@ -130,6 +148,12 @@ namespace robot_desc {
 	    localActuators.push_back(i->second);
 	std::sort(localActuators.begin(), localActuators.end(), SortByName<Actuator>());
 	actuators.insert(actuators.end(), localActuators.begin(), localActuators.end());
+    }
+
+    URDF::Transmission* URDF::getTransmission(const std::string &name) const
+    {
+	std::map<std::string, Transmission*>::const_iterator it = m_transmissions.find(name);
+	return it == m_transmissions.end() ? NULL : it->second;
     }
     
     void URDF::getTransmissions(std::vector<Transmission*> &transmissions) const

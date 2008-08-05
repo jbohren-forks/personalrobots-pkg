@@ -470,9 +470,13 @@ namespace robot_desc
 	Link* getDisjointPart(unsigned int index) const;
 	bool isRoot(const Link* link) const;
 
+	Link* getLink(const std::string &name) const;
 	void getLinks(std::vector<Link*> &links) const;
+	Actuator* getActuator(const std::string &name) const;
 	void getActuators(std::vector<Actuator*> &actuators) const;
+	Transmission* getTransmission(const std::string &name) const;	
 	void getTransmissions(std::vector<Transmission*> &transmissions) const;
+	Frame* getFrame(const std::string &name) const;	
         void getFrames(std::vector<Frame*> &frames) const;
 	
 	void getGroupNames(std::vector<std::string> &groups) const;
