@@ -12,12 +12,17 @@
 #include <iostream>
 #include <assert.h>
 
+
 class vtkPolyData;
 class vtkPointLocator;
 class vtkTransform;
 
 namespace NEWMAT {
 	class Matrix;
+}
+
+namespace scan_utils {
+	class Octree;
 }
 
 //namespace libTF {
@@ -183,7 +188,11 @@ class SmartScan {
 	std::vector<scan_utils::Triangle> *createMesh(float resolution = 0);
 
 	//! Computes a spin image at x, y, z with fixed orientation, i.e. the surface normal is set to point up.
-	void computeSpinImageFixedOrientation(scan_utils::Grid2D &si, float x, float y, float z, float support, float pixelsPerMeter);
+	void computeSpinImageFixedOrientation(scan_utils::Grid2D &si, 
+					      float x, float y, float z, float support, float pixelsPerMeter);
+
+	//! Inserts all the points in this scan in the Octree \a o with a value of \a 1.
+	void insertInOctree(scan_utils::Octree *o);
 	
 	//! Computes a spin image at x, y, z using the surface normal at that point.
 	void computeSpinImageNatural(scan_utils::Grid2D &si, float x, float y, float z, float support, float pixelsPerMeter, float radius = 0.02, int nbrs = 20);

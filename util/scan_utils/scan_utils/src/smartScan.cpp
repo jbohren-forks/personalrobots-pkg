@@ -4,6 +4,8 @@
 #include <list>
 #include <algorithm>
 
+#include "octree.h"
+
 #include "vtkFloatArray.h"
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
@@ -1548,5 +1550,14 @@ void SmartScan::computeSpinImageNatural(scan_utils::Grid2D &si, float x, float y
 	SmartScan ss;
 	ss.setFromRosCloud(*cld);
 	ss.computeSpinImageFixedOrientation(si, center2.x, center2.y, center2.z, support, pixelsPerMeter);
+}
+
+void SmartScan::insertInOctree(Octree *o)
+{
+	std_msgs::Point3DFloat32 p;
+	for(int i=0; i<size(); i++) {
+		p = getPoint(i);
+		o->insert(p.x, p.y, p.z, 1.0);
+	}
 }
 

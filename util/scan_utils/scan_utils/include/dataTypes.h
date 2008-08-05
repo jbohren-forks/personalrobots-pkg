@@ -32,6 +32,13 @@ class Triangle{
 		p2.x = c2[0]; p2.y = c2[1]; p2.z = c2[2];
 		p3.x = c3[0]; p3.y = c3[1]; p3.z = c3[2];
 	}
+	Triangle(double p1x, double p1y, double p1z,
+		 double p2x, double p2y, double p2z,
+		 double p3x, double p3y, double p3z){
+		p1.x = p1x; p1.y = p1y; p1.z = p1z;
+		p2.x = p2x; p2.y = p2y; p2.z = p2z;
+		p3.x = p3x; p3.y = p3y; p3.z = p3z;
+	}
 };
 
 /*! A couple of utility functions which will probably be replaced by a
