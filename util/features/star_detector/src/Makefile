@@ -1,5 +1,5 @@
-INSTALL_DIR = $(ROS_PACKAGE_PATH)/util/features/lib
-INCLUDE_DIR = $(ROS_PACKAGE_PATH)/util/features/include
+INSTALL_DIR = $(ROS_PACKAGE_PATH)/util/features/star_detector/lib
+INCLUDE_DIR = $(ROS_PACKAGE_PATH)/util/features/star_detector/include
 CC = g++
 LIBTOOL = libtool
 INSTALL = install
