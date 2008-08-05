@@ -20,10 +20,12 @@
       <nearClip>0.1</nearClip>
       <farClip>100</farClip>
       <updateRate>15.0</updateRate>
-      <controller:generic_camera name="ptz_cam_left_controller">
+      <controller:ros_camera name="ptz_cam_left_controller" plugin="libRos_Camera.so">
         <updateRate>15.0</updateRate>
+        <topicName>image_ptz_left</topicName>
+        <frameName>ptz_camera_left</frameName>
         <interface:camera name="ptz_cam_left_iface" />
-      </controller:generic_camera>
+      </controller:ros_camera>
       <!-- PTZ camera controllers -->
     </sensor:camera>
     <geom:box name="ptz_cam_left_geom">
@@ -66,10 +68,12 @@
       <nearClip>0.1</nearClip>
       <farClip>100</farClip>
       <updateRate>15.0</updateRate>
-      <controller:generic_camera name="ptz_cam_right_controller">
+      <controller:ros_camera name="ptz_cam_right_controller" plugin="libRos_Camera.so">
         <updateRate>15.0</updateRate>
+        <topicName>image_ptz_right</topicName>
+        <frameName>ptz_camera_right</frameName>
         <interface:camera name="ptz_cam_right_iface" />
-      </controller:generic_camera>
+      </controller:ros_camera>
       <!-- PTZ camera controllers -->
     </sensor:camera>
     <geom:box name="ptz_cam_right_geom">

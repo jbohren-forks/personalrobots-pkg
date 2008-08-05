@@ -186,7 +186,10 @@
   <const name="forearm_roll_camera_offset_x" value="0.10" />  <!-- this is a guess, please change me -->
   <const name="forearm_roll_camera_offset_y" value="0   " />  <!-- this is a guess, please change me -->
   <const name="forearm_roll_camera_offset_z" value="0.05" />  <!-- this is a guess, please change me -->
-  
+
+  <const name="torso_ptz_camera_offset_x" value="0.00" />  <!-- this is a guess, please change me -->
+  <const name="torso_ptz_camera_offset_y" value="0.20" />  <!-- this is a guess, please change me -->
+  <const name="torso_ptz_camera_offset_z" value="0.30" />  <!-- this is a guess, please change me -->
   <!-- End constant dimensions -->
   
   <templates>
@@ -1270,15 +1273,18 @@
           <minRange>0.05</minRange>
           <maxRange>10.0</maxRange>
           <updateRate>10.0</updateRate>
-          <!--controller:ros_laser name="ros_tilt_laser_controller" plugin="libRos_Laser.so">
+          <controller:ros_laser name="ros_tilt_laser_controller" plugin="libRos_Laser.so">
             <updateRate>15.0</updateRate>
             <topicName>cloud</topicName>
+            <frameName>tilt_laser</frameName>
             <interface:laser name="ros_tilt_laser_iface" />
-          </controller:ros_laser-->
-      <controller:sicklms200_laser name="tilt_laser_controller_1">
-        <interface:laser name="tilt_laser_iface_1"/>
-        <updateRate>10</updateRate>
-      </controller:sicklms200_laser>
+          </controller:ros_laser>
+          <!--
+          <controller:sicklms200_laser name="tilt_laser_controller_1">
+            <interface:laser name="tilt_laser_iface_1"/>
+            <updateRate>10</updateRate>
+          </controller:sicklms200_laser>
+          -->
         </sensor:ray>
       </verbatim>
     </data>
@@ -1331,7 +1337,7 @@
           <rangeCount>683</rangeCount>
           <laserCount>1</laserCount>
           <origin>0.0 0.0 0.05</origin>
-          <displayRays>false</displayRays>
+          <displayRays>true</displayRays>
 
           <minAngle>-90</minAngle>
           <maxAngle>90</maxAngle>
@@ -1339,15 +1345,18 @@
           <minRange>0.05</minRange>
           <maxRange>10.0</maxRange>
           <updateRate>10.0</updateRate>
-          <!--controller:ros_laser name="ros_base_laser_controller" plugin="libRos_Laser.so">
+          <controller:ros_laser name="ros_base_laser_controller" plugin="libRos_Laser.so">
             <updateRate>10</updateRate>
             <topicName>scan</topicName>
+            <frameName>base_laser</frameName>
             <interface:laser name="ros_base_laser_iface" />
-          </controller:ros_laser-->
-      <controller:sicklms200_laser name="base_laser_controller_1">
-        <interface:laser name="base_laser_iface_1"/>
-        <updateRate>10</updateRate>
-      </controller:sicklms200_laser>
+          </controller:ros_laser>
+          <!--
+          <controller:sicklms200_laser name="base_laser_controller_1">
+            <interface:laser name="base_laser_iface_1"/>
+            <updateRate>10</updateRate>
+          </controller:sicklms200_laser>
+          -->
         </sensor:ray>
       </verbatim>
     </data>
@@ -1399,15 +1408,18 @@
           <nearClip>0.1</nearClip>
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
-          <!--controller:ros_camera name="wrist_cam_left_controller" plugin="libRos_Camera.so">
+          <controller:ros_camera name="wrist_cam_left_controller" plugin="libRos_Camera.so">
             <updateRate>15.0</updateRate>
-            <topicName>image_wrist_cam_left</topicName>
+            <topicName>image_wrist_left</topicName>
+            <frameName>wrist_camera_left</frameName>
             <interface:camera name="wrist_cam_left_iface" />
-          </controller:ros_camera-->
-      <controller:generic_camera name="wrist_cam_left_controller">
-        <updateRate>15.0</updateRate>
-        <interface:camera name="wrist_cam_left_iface_1" />
-      </controller:generic_camera>
+          </controller:ros_camera>
+          <!--
+          <controller:generic_camera name="wrist_cam_left_controller">
+            <updateRate>15.0</updateRate>
+            <interface:camera name="wrist_cam_left_iface_1" />
+          </controller:generic_camera>
+          -->
         </sensor:camera>
       </verbatim>
     </data>
@@ -1459,15 +1471,18 @@
           <nearClip>0.1</nearClip>
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
-          <!--controller:ros_camera name="wrist_cam_right_controller" plugin="libRos_Camera.so">
+          <controller:ros_camera name="wrist_cam_right_controller" plugin="libRos_Camera.so">
             <updateRate>15.0</updateRate>
-            <topicName>image_wrist_cam_right</topicName>
+            <topicName>image_wrist_right</topicName>
+            <frameName>wrist_camera_right</frameName>
             <interface:camera name="wrist_cam_right_iface" />
-          </controller:ros_camera-->
-      <controller:generic_camera name="wrist_cam_right_controller">
-        <updateRate>15.0</updateRate>
-        <interface:camera name="wrist_cam_right_iface_1" />
-      </controller:generic_camera>
+          </controller:ros_camera>
+          <!--
+          <controller:generic_camera name="wrist_cam_right_controller">
+            <updateRate>15.0</updateRate>
+            <interface:camera name="wrist_cam_right_iface_1" />
+          </controller:generic_camera>
+          -->
         </sensor:camera>
       </verbatim>
     </data>
@@ -1519,15 +1534,12 @@
           <nearClip>0.1</nearClip>
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
-          <!--controller:ros_camera name="forearm_cam_left_controller" plugin="libRos_Camera.so">
+          <controller:ros_camera name="forearm_cam_left_controller" plugin="libRos_Camera.so">
             <updateRate>15.0</updateRate>
-            <topicName>image_forearm_cam_left</topicName>
+            <topicName>image_forearm_left</topicName>
+            <frameName>forearm_roll_left</frameName>
             <interface:camera name="forearm_cam_left_iface" />
-          </controller:ros_camera-->
-      <controller:generic_camera name="forearm_cam_left_controller">
-        <updateRate>15.0</updateRate>
-        <interface:camera name="forearm_cam_left_iface_1" />
-      </controller:generic_camera>
+          </controller:ros_camera>
         </sensor:camera>
       </verbatim>
     </data>
@@ -1579,21 +1591,133 @@
           <nearClip>0.1</nearClip>
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
-          <!--controller:ros_camera name="forearm_cam_right_controller" plugin="libRos_Camera.so">
+          <controller:ros_camera name="forearm_cam_right_controller" plugin="libRos_Camera.so">
             <updateRate>15.0</updateRate>
-            <topicName>image_forearm_cam_right</topicName>
+            <topicName>image_forearm_right</topicName>
+            <frameName>forearm_roll_right</frameName>
             <interface:camera name="forearm_cam_right_iface" />
-          </controller:ros_camera-->
-      <controller:generic_camera name="forearm_cam_right_controller">
-        <updateRate>15.0</updateRate>
-        <interface:camera name="forearm_cam_right_iface_1" />
-      </controller:generic_camera>
+          </controller:ros_camera>
         </sensor:camera>
       </verbatim>
     </data>
 
   </sensor>
 
+
+
+<!-- 
+  <sensor name="ptz_camera_right" type="camera"> 
+
+    <calibration> calib_filename </calibration>
+    <parent>torso</parent>
+    <xyz> torso_ptz_camera_offset_x torso_ptz_camera_offset_y torso_ptz_camera_offset_z </xyz>
+    <rpy> 0 0 0 </rpy>
+
+    <joint type="revolute"> 
+      <axis> 0 1 0 </axis>
+      <anchor>0 0 0</anchor>
+      <limit>0.0 0.0</limit>
+    </joint>
+
+    <inertial>
+      <mass> 0.5  </mass>
+      <com> 0.0 0.0 0.0 </com>
+      <inertia>1 0 0 1 0 1 </inertia>
+    </inertial> 
+
+    <visual>
+      <xyz>0   0   0   </xyz>
+      <rpy>0.0 0.0 0.0 </rpy>
+      <material>Gazebo/PioneerBody</material>
+      <geometry type="box" name="visual_ptz_camera_right">
+        <size>0.02 0.02 0.02</size>
+      </geometry>
+    </visual> 
+
+    <collision>
+      <xyz>0   0   0   </xyz>
+      <rpy>0.0 0.0 0.0 </rpy>
+      <geometry type="box" name="collision_ptz_camera_right">
+        <size>0.02 0.02 0.02</size> 
+      </geometry>
+    </collision>
+
+    <data name="sensor" type="gazebo">
+      <verbatim key="sensor_camera">
+        <sensor:camera name="ptz_cam_right_sensor">
+          <imageSize>640 480</imageSize>
+          <hfov>60</hfov>
+          <nearClip>0.1</nearClip>
+          <farClip>100</farClip>
+          <updateRate>15.0</updateRate>
+          <controller:ros_camera name="ptz_cam_right_controller" plugin="libRos_Camera.so">
+            <updateRate>15.0</updateRate>
+            <topicName>image_ptz_right</topicName>
+            <frameName>ptz_camera_right</frameName>
+            <interface:camera name="ptz_cam_right_iface" />
+          </controller:ros_camera>
+        </sensor:camera>
+      </verbatim>
+    </data>
+
+  </sensor>
+
+  <sensor name="ptz_camera_left" type="camera"> 
+
+    <calibration> calib_filename </calibration>
+    <parent>torso</parent>
+    <xyz> torso_ptz_camera_offset_x torso_ptz_camera_offset_y torso_ptz_camera_offset_z </xyz>
+    <rpy> 0 0 0 </rpy>
+
+    <joint type="revolute"> 
+      <axis> 0 1 0 </axis>
+      <anchor>0 0 0</anchor>
+      <limit>0.0 0.0</limit>
+    </joint>
+
+    <inertial>
+      <mass> 0.5  </mass>
+      <com> 0.0 0.0 0.0 </com>
+      <inertia>1 0 0 1 0 1 </inertia>
+    </inertial> 
+
+    <visual>
+      <xyz>0   0   0   </xyz>
+      <rpy>0.0 0.0 0.0 </rpy>
+      <material>Gazebo/PioneerBody</material>
+      <geometry type="box" name="visual_ptz_camera_left">
+        <size>0.02 0.02 0.02</size>
+      </geometry>
+    </visual> 
+
+    <collision>
+      <xyz>0   0   0   </xyz>
+      <rpy>0.0 0.0 0.0 </rpy>
+      <geometry type="box" name="collision_ptz_camera_left">
+        <size>0.02 0.02 0.02</size> 
+      </geometry>
+    </collision>
+
+    <data name="sensor" type="gazebo">
+      <verbatim key="sensor_camera">
+        <sensor:camera name="ptz_cam_left_sensor">
+          <imageSize>640 480</imageSize>
+          <hfov>60</hfov>
+          <nearClip>0.1</nearClip>
+          <farClip>100</farClip>
+          <updateRate>15.0</updateRate>
+          <controller:ros_camera name="ptz_cam_left_controller" plugin="libRos_Camera.so">
+            <updateRate>15.0</updateRate>
+            <topicName>image_ptz_left</topicName>
+            <frameName>ptz_camera_left</frameName>
+            <interface:camera name="ptz_cam_left_iface" />
+          </controller:ros_camera>
+        </sensor:camera>
+      </verbatim>
+    </data>
+
+  </sensor>
+-->
 
 
 
@@ -1606,10 +1730,7 @@
 </frame>
 
 
-<!-- Include actuators definition -->
-
-  <!--include>actuators.xml</include-->
-  
+ 
   <!-- Define groups of links; a link may be part of multiple groups -->
   
   <include>planning.xml</include>
@@ -1622,5 +1743,9 @@
   <!-- Inclusion of this file causes the urdf2gazebo translator to produce
        a .world file that makes Gazebo crash - BPG -->
   <include>controllers.xml</include> 
+
+  <!-- Include actuators definition -->
+
+  <include>actuators.xml</include>
 
 </robot>
