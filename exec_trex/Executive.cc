@@ -102,7 +102,6 @@ void signalHandler(int signalNo){
   exit(0);
 }
 
-
 /**
  * @brief Handle cleanup on exit
  */
@@ -153,8 +152,6 @@ int main(int argc, char **argv)
   }
 
   initROSExecutive(playback);
-
-  NDDL::loadSchema();
 
   DebugMessage::setStream(dbgFile);
 

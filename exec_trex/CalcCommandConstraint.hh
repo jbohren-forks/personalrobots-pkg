@@ -3,7 +3,6 @@
 
 #include "ConstraintEngineDefs.hh"
 #include "Variable.hh"
-#include "ConstraintLibrary.hh"
 #include "ConstrainedVariable.hh"
 #include "ConstraintEngine.hh"
 #include "Constraints.hh"

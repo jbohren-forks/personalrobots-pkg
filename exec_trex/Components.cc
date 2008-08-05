@@ -6,7 +6,6 @@
 #include "TemporalAdvisor.hh"
 #include "DbCore.hh"
 #include "Constraints.hh"
-#include "ConstraintLibrary.hh"
 #include "Timeline.hh"
 #include "Agent.hh"
 #include "CalcCommandConstraint.hh"
@@ -24,26 +23,41 @@
 
 namespace TREX{
 
+  class ROSSchema: public Assembly::Schema {
+  public:
+    ROSSchema(bool playback):m_playback(playback){}
+
+    void registerComponents(const Assembly& assembly){
+      Assembly::Schema::registerComponents(assembly);
+      ConstraintEngineId constraintEngine = ((ConstraintEngine*) assembly.getComponent("ConstraintEngine"))->getId();
+
+      // Constraint Registration
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::SubsetOfConstraint, "in", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::CalcDistanceConstraint, "calcDistance", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), FloorFunction, "calcFloor", "Default");
+
+      if (m_playback) {
+	REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcCommandConstraintPlayback, "calcCommand", "Default");
+	REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcGlobalPathConstraintPlayback, "calcGlobalPath", "Default");
+      } else {
+	REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcCommandConstraint, "calcCommand", "Default");
+	REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcGlobalPathConstraint, "calcGlobalPath", "Default");
+	REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcArmInverseKinematicsConstraint, "calcArmInverseKinematics", "Default");
+	REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcGraspPositionConstraint, "calcGraspPosition", "Default");
+	REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcInterpolatedEndEffectorPosConstraint, "calcInterpolatedEndEffectorPos", "Default");
+	REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcAngleDiffConstraint, "calcAngleDiff", "Default");
+      }
+    }
+
+  private:
+    const bool m_playback;
+  };
+
+  ROSSchema* ROS_SCHEMA = NULL;
 
   void initROSExecutive(bool playback){
-
     initTREX();
-
-    // Constraint Registration
-    REGISTER_CONSTRAINT(TREX::SubsetOfConstraint, "in", "Default");
-    REGISTER_CONSTRAINT(TREX::CalcDistanceConstraint, "calcDistance", "Default");
-    REGISTER_CONSTRAINT(FloorFunction, "calcFloor", "Default");
-    if (playback) {
-      REGISTER_CONSTRAINT(CalcCommandConstraintPlayback, "calcCommand", "Default");
-      REGISTER_CONSTRAINT(CalcGlobalPathConstraintPlayback, "calcGlobalPath", "Default");
-    } else {
-      REGISTER_CONSTRAINT(CalcCommandConstraint, "calcCommand", "Default");
-      REGISTER_CONSTRAINT(CalcGlobalPathConstraint, "calcGlobalPath", "Default");
-      REGISTER_CONSTRAINT(CalcArmInverseKinematicsConstraint, "calcArmInverseKinematics", "Default");
-      REGISTER_CONSTRAINT(CalcGraspPositionConstraint, "calcGraspPosition", "Default");
-      REGISTER_CONSTRAINT(CalcInterpolatedEndEffectorPosConstraint, "calcInterpolatedEndEffectorPos", "Default");
-      REGISTER_CONSTRAINT(CalcAngleDiffConstraint, "calcAngleDiff", "Default");
-    }
+    ROS_SCHEMA = new ROSSchema(playback);
   }
 
   FloorFunction::FloorFunction(const LabelStr& name,
