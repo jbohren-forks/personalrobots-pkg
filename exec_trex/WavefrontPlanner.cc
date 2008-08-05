@@ -225,7 +225,7 @@ int WavefrontPlanner::GenerateLocalPlan(double curx, double cury,
     gettimeofday(&timeafter,&tzdummy);
     int best_seconds = timeafter.tv_sec-timebefore.tv_sec;
     int best_microseconds = timeafter.tv_usec-timebefore.tv_usec;
-    double best_tt = best_seconds*1.0+(.000001)*(best_microseconds*1.0);
+    //double best_tt = best_seconds*1.0+(.000001)*(best_microseconds*1.0);
     //std::cout << "Local planning took " << best_tt << " seconds\n";
   }
   return res;
