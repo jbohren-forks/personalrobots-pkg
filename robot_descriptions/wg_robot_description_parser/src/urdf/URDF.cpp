@@ -213,7 +213,9 @@ namespace robot_desc {
     
     void URDF::Data::add(const std::string &type, const std::string &name, const std::string &key, const std::string &value)
     {
-	m_data[type][name][key].str = value;
+	if (!m_data[type][name][key].str)
+	    m_data[type][name][key].str = new std::string();
+	*(m_data[type][name][key].str) = value;
     }
     
     void URDF::Data::add(const std::string &type, const std::string &name, const std::string &key, const TiXmlElement *value)
@@ -263,7 +265,8 @@ namespace robot_desc {
 	    if (m != pos->second.end())
 	    {
 		for (std::map<std::string, Element>::const_iterator it = m->second.begin() ; it != m->second.end() ; it++)
-		    result[it->first] = it->second.str;            
+		    if (it->second.str)
+			result[it->first] = *(it->second.str);
 	    }
 	}
 	return result;
@@ -280,7 +283,8 @@ namespace robot_desc {
 	    if (m != pos->second.end())
 	    {
 		for (std::map<std::string, Element>::const_iterator it = m->second.begin() ; it != m->second.end() ; it++)
-		    result[it->first] = it->second.xml;
+		    if (it->second.xml)
+			result[it->first] = it->second.xml;
 	    }
 	}
 	return result;
@@ -343,7 +347,7 @@ namespace robot_desc {
 	    {
 		fprintf(out, "%s  [%s]\n", indent.c_str(), j->first.c_str());
 		for (std::map<std::string, Element>::const_iterator k = j->second.begin() ; k != j->second.end() ; ++k)
-		    fprintf(out, "%s    %s = %s%s\n", indent.c_str(), k->first.c_str(), k->second.str.c_str(), k->second.xml != NULL ? " [XML]" : "");
+		    fprintf(out, "%s    %s = %s%s\n", indent.c_str(), k->first.c_str(), k->second.str != NULL ? k->second.str->c_str() : "", k->second.xml != NULL ? " [XML]" : "");
 	    }
 	}
     }

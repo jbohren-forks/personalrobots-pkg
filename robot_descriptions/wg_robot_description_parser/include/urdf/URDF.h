@@ -91,10 +91,17 @@ namespace robot_desc
 		Element(void)
 		{
 		    xml = NULL;
+		    str = NULL;		    
 		}
+		
+		~Element(void)
+		{
+		    if (str)
+			delete str;		    
+		}		
                 
-		std::string         str;
-		const TiXmlElement *xml;
+		std::string        *str; // allocated locally 
+		const TiXmlElement *xml; // allocated in the XML document
 	    };
             
 	    std::map < std::string, std::map < std::string, std::map < std::string, Element > > > m_data;
