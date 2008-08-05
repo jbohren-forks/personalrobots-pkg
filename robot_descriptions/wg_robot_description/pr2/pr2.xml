@@ -1273,18 +1273,12 @@
           <minRange>0.05</minRange>
           <maxRange>10.0</maxRange>
           <updateRate>10.0</updateRate>
-          <!--
           <controller:ros_laser name="ros_tilt_laser_controller" plugin="libRos_Laser.so">
             <updateRate>15.0</updateRate>
             <topicName>cloud</topicName>
             <frameName>tilt_laser</frameName>
             <interface:laser name="ros_tilt_laser_iface" />
           </controller:ros_laser>
-          -->
-          <controller:sicklms200_laser name="tilt_laser_controller_1">
-            <interface:laser name="tilt_laser_iface_1"/>
-            <updateRate>10</updateRate>
-          </controller:sicklms200_laser>
         </sensor:ray>
       </verbatim>
     </data>
@@ -1337,7 +1331,7 @@
           <rangeCount>683</rangeCount>
           <laserCount>1</laserCount>
           <origin>0.0 0.0 0.05</origin>
-          <displayRays>true</displayRays>
+          <displayRays>false</displayRays>
 
           <minAngle>-90</minAngle>
           <maxAngle>90</maxAngle>
@@ -1345,18 +1339,12 @@
           <minRange>0.05</minRange>
           <maxRange>10.0</maxRange>
           <updateRate>10.0</updateRate>
-          <!--
           <controller:ros_laser name="ros_base_laser_controller" plugin="libRos_Laser.so">
             <updateRate>10</updateRate>
             <topicName>scan</topicName>
             <frameName>base_laser</frameName>
             <interface:laser name="ros_base_laser_iface" />
           </controller:ros_laser>
-          -->
-          <controller:sicklms200_laser name="base_laser_controller_1">
-            <interface:laser name="base_laser_iface_1"/>
-            <updateRate>10</updateRate>
-          </controller:sicklms200_laser>
         </sensor:ray>
       </verbatim>
     </data>

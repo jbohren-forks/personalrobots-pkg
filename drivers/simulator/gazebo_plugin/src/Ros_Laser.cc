@@ -220,21 +220,10 @@ void Ros_Laser::PutLaserData()
       this->cloudMsg.pts[i].y        =r * sin(laser_yaw)                    + this->GaussianKernel(0,sigma) ;
       this->cloudMsg.pts[i].z        =r * cos(laser_yaw) * sin(laser_pitch) + this->GaussianKernel(0,sigma) ;
       this->cloudMsg.chan[0].vals[i] = v;
-      std::cout << " i " << i
-                << " x " << this->cloudMsg.pts[i].x
-                << " y " << this->cloudMsg.pts[i].y
-                << " z " << this->cloudMsg.pts[i].z
-                << " "   << this->cloudMsg.header.frame_id   
-                << " "   << this->cloudMsg.header.stamp.sec  
-                << " "   << this->cloudMsg.header.stamp.nsec 
-                << " "   << Simulator::Instance()->GetSimTime()
-                << std::endl;
-
     }
 
     // iface writing can be skipped if iface is not used.
     // send data out via ros message
-    std::cout<< "putting message " << this->topicName << " " << rangeCount << std::endl;
     rosnode->publish(this->topicName,this->cloudMsg);
     this->lock.unlock();
 

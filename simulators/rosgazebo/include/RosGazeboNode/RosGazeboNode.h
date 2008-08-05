@@ -43,12 +43,6 @@ using std::list;
 #include "mechanism_model/joint.h"
 // roscpp
 #include <ros/node.h>
-// roscpp - laser
-#include <std_msgs/LaserScan.h>
-// roscpp - laser image (point cloud)
-#include <std_msgs/PointCloudFloat32.h>
-#include <std_msgs/Point3DFloat32.h>
-#include <std_msgs/ChannelFloat32.h>
 // roscpp - used for shutter message right now
 #include <std_msgs/Empty.h>
 // roscpp - used for broadcasting time over ros
@@ -60,9 +54,6 @@ using std::list;
 #include <std_msgs/PR2Arm.h>
 
 #include <pr2_msgs/EndEffectorState.h>
-
-// roscpp - camera
-#include <std_msgs/Image.h>
 
 // for frame transforms
 #include <rosTF/rosTF.h>
@@ -81,14 +72,10 @@ class RosGazeboNode : public ros::node
   private:
     // Messages that we'll send or receive
     std_msgs::BaseVel velMsg;
-    std_msgs::LaserScan laserMsg;
-    std_msgs::PointCloudFloat32 cloudMsg;
-    std_msgs::PointCloudFloat32 full_cloudMsg;
-    //std_msgs::PointCloudFloat32 transformed_cloudMsg;
-    std_msgs::Empty shutterMsg;  // marks end of a cloud message
     std_msgs::RobotBase2DOdom odomMsg;
     rostools::Time timeMsg;
-
+    std_msgs::Empty shutterMsg;  // marks end of a cloud message
+ 
     std_msgs::Point3DFloat32 objectPosMsg;
 
     // A mutex to lock access to fields that are used in message callbacks
@@ -173,20 +160,6 @@ class RosGazeboNode : public ros::node
 		// July 24, 2008 - Advait - only right arm is supported
     bool reset_IK_guess(rosgazebo::VoidVoid::request &req, rosgazebo::VoidVoid::response &res);
 
-    // laser range data
-    float    ranges[GZ_LASER_MAX_RANGES];
-    uint8_t  intensities[GZ_LASER_MAX_RANGES];
-    double   cameraTime, baseLaserTime, tiltLaserTime;
-
-    // camera data
-    std_msgs::Image img;
-    std_msgs::Image img_ptz_right;
-    std_msgs::Image img_ptz_left;
-    std_msgs::Image img_wrist_right;
-    std_msgs::Image img_wrist_left;
-    std_msgs::Image img_forearm_right;
-    std_msgs::Image img_forearm_left;
-    
     // arm joint data
     std_msgs::PR2Arm leftarm;
     std_msgs::PR2Arm rightarm;
@@ -203,17 +176,6 @@ class RosGazeboNode : public ros::node
 
     //Flag set to indicate that we should use new controls architecture
     bool useControllerArray; 
-
-    // for the point cloud data
-    ringBuffer<std_msgs::Point3DFloat32> *cloud_pts;
-    ringBuffer<float>                    *cloud_ch1;
-
-    vector<std_msgs::Point3DFloat32> *full_cloud_pts;
-    vector<float>                    *full_cloud_ch1;
-
-    // keep count for full cloud
-    int max_cloud_pts;
-    int max_full_cloud_pts;
 
     //Keep track of controllers
     controller::JointController** ControllerArray;
