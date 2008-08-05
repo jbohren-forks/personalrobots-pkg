@@ -109,6 +109,10 @@ class Ros_Camera : public Controller
   // topic name
   private: std::string topicName;
 
+  // A mutex to lock access to fields that are used in message callbacks
+  private: ros::thread::mutex lock;
+
+
 
 
 };

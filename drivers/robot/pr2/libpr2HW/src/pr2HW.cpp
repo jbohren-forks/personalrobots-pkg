@@ -34,8 +34,6 @@ using namespace PR2;
 gazebo::Client           *client;
 gazebo::SimulationIface  *simIface;
 gazebo::PR2ArrayIface    *pr2Iface;
-gazebo::PR2GripperIface  *pr2GripperLeftIface;
-gazebo::PR2GripperIface  *pr2GripperRightIface;
 gazebo::LaserIface       *pr2LaserIface;
 gazebo::LaserIface       *pr2BaseLaserIface;
 gazebo::CameraIface      *pr2CameraGlobalIface;
@@ -79,8 +77,6 @@ PR2_ERROR_CODE PR2HW::Init()
    client                  = new gazebo::Client();
    simIface                = new gazebo::SimulationIface();
    pr2Iface                = new gazebo::PR2ArrayIface();
-   pr2GripperLeftIface     = new gazebo::PR2GripperIface();
-   pr2GripperRightIface    = new gazebo::PR2GripperIface();
    pr2LaserIface           = new gazebo::LaserIface();
    pr2BaseLaserIface       = new gazebo::LaserIface();
    pr2CameraGlobalIface    = new gazebo::CameraIface();
@@ -162,7 +158,7 @@ PR2_ERROR_CODE PR2HW::Init()
   /// Open the wrist and forearm cameras
   try
   {
-    pr2WristCameraLeftIface->Open(client, "wrist_cam_left_iface");
+    pr2WristCameraLeftIface->Open(client, "wrist_cam_left_iface_1");
   }
   catch (std::string e)
   {
@@ -173,7 +169,7 @@ PR2_ERROR_CODE PR2HW::Init()
 
   try
   {
-    pr2WristCameraRightIface->Open(client, "wrist_cam_right_iface");
+    pr2WristCameraRightIface->Open(client, "wrist_cam_right_iface_1");
   }
   catch (std::string e)
   {
@@ -202,30 +198,6 @@ PR2_ERROR_CODE PR2HW::Init()
     std::cout << "Gazebo error: Unable to connect to the pr2 Right forearm camera interface\n"
     << e << "\n";
     pr2ForearmCameraRightIface = NULL;
-  }
-
-  /// Open the Position interface for gripper left
-  try
-  {
-    pr2GripperLeftIface->Open(client, "pr2_gripper_left_iface");
-  }
-  catch (std::string e)
-  {
-    std::cout << "Gazebo error: Unable to connect to the pr2 gripper left interface\n"
-    << e << "\n";
-    pr2GripperLeftIface = NULL;
-  }
-
-  /// Open the Position interface for gripper right
-  try
-  {
-    pr2GripperRightIface->Open(client, "pr2_gripper_right_iface");
-  }
-  catch (std::string e)
-  {
-    std::cout << "Gazebo error: Unable to connect to the pr2 gripper right interface\n"
-    << e << "\n";
-    pr2GripperRightIface = NULL;
   }
 
   /// Open the laser interface for hokuyo
@@ -336,51 +308,16 @@ PR2_ERROR_CODE PR2HW::Init()
   // fill in actuator data
   for (int id = 0; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
-    if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
-    {
-      if (pr2GripperLeftIface)
-      {
-        pr2GripperLeftIface->Lock(1);
-        this->jointData[id].cmdEnableMotor    =  pr2GripperLeftIface->data->cmdEnableMotor   ;
-        this->jointData[id].controlMode       =  pr2GripperLeftIface->data->controlMode      ;
-        this->jointData[id].pGain             =  pr2GripperLeftIface->data->pGain            ;
-        this->jointData[id].iGain             =  pr2GripperLeftIface->data->iGain            ;
-        this->jointData[id].dGain             =  pr2GripperLeftIface->data->dGain            ;
-        this->jointData[id].cmdGap            =  pr2GripperLeftIface->data->cmdGap           ;
-        this->jointData[id].cmdEffectorForce  =  pr2GripperLeftIface->data->cmdForce         ;
-        this->jointData[id].cmdSpeed          =  pr2GripperLeftIface->data->cmdPositionRate  ;
-        pr2GripperLeftIface->Unlock();
-      }
-    }
-    else if(IsGripperRight((PR2::PR2_JOINT_ID)id))
-    {
-      if (pr2GripperRightIface)
-      {
-        pr2GripperRightIface->Lock(1);
-        this->jointData[id].cmdEnableMotor    =  pr2GripperRightIface->data->cmdEnableMotor   ;
-        this->jointData[id].controlMode       =  pr2GripperRightIface->data->controlMode      ;
-        this->jointData[id].pGain             =  pr2GripperRightIface->data->pGain            ;
-        this->jointData[id].iGain             =  pr2GripperRightIface->data->iGain            ;
-        this->jointData[id].dGain             =  pr2GripperRightIface->data->dGain            ;
-        this->jointData[id].cmdGap            =  pr2GripperRightIface->data->cmdGap           ;
-        this->jointData[id].cmdEffectorForce  =  pr2GripperRightIface->data->cmdForce         ;
-        this->jointData[id].cmdSpeed          =  pr2GripperRightIface->data->cmdPositionRate  ;
-        pr2GripperRightIface->Unlock();
-      }
-    }
-    else // corresponds to Pr2_Actarray from CASTER to ARM_R_GRIPPER
-    {
-      pr2Iface->Lock(1);
-      this->jointData[id].cmdEnableMotor    =  pr2Iface->data->actuators[id].cmdEnableMotor    ;
-      this->jointData[id].controlMode       =  pr2Iface->data->actuators[id].controlMode       ;
-      this->jointData[id].pGain             =  pr2Iface->data->actuators[id].pGain             ;
-      this->jointData[id].iGain             =  pr2Iface->data->actuators[id].iGain             ;
-      this->jointData[id].dGain             =  pr2Iface->data->actuators[id].dGain             ;
-      this->jointData[id].cmdPosition       =  pr2Iface->data->actuators[id].cmdPosition       ;
-      this->jointData[id].cmdSpeed          =  pr2Iface->data->actuators[id].cmdSpeed          ;
-      this->jointData[id].cmdEffectorForce  =  pr2Iface->data->actuators[id].cmdEffectorForce  ;
-      pr2Iface->Unlock();
-    }
+    pr2Iface->Lock(1);
+    this->jointData[id].cmdEnableMotor    =  pr2Iface->data->actuators[id].cmdEnableMotor    ;
+    this->jointData[id].controlMode       =  pr2Iface->data->actuators[id].controlMode       ;
+    this->jointData[id].pGain             =  pr2Iface->data->actuators[id].pGain             ;
+    this->jointData[id].iGain             =  pr2Iface->data->actuators[id].iGain             ;
+    this->jointData[id].dGain             =  pr2Iface->data->actuators[id].dGain             ;
+    this->jointData[id].cmdPosition       =  pr2Iface->data->actuators[id].cmdPosition       ;
+    this->jointData[id].cmdSpeed          =  pr2Iface->data->actuators[id].cmdSpeed          ;
+    this->jointData[id].cmdEffectorForce  =  pr2Iface->data->actuators[id].cmdEffectorForce  ;
+    pr2Iface->Unlock();
   }
 
 
@@ -653,103 +590,6 @@ PR2_ERROR_CODE PR2HW::GetLaserRanges(PR2_SENSOR_ID id,
     tmpLaserIface->Unlock();
     return PR2_ALL_OK;
   }
-};
-
-PR2_ERROR_CODE PR2HW::OpenGripper(PR2_MODEL_ID id,double gap,double force)
-{
-    switch(id)
-    {
-       case PR2_LEFT_GRIPPER:
-       case PR2_RIGHT_GRIPPER:
-          for (int ii = JointStart[id];ii <= JointEnd[id];ii++)
-          {
-            this->jointData[ii].cmdMode          = GAZEBO_PR2GRIPPER_CMD_OPEN;
-            this->jointData[ii].cmdSpeed         = 1.0;
-            this->jointData[ii].cmdEffectorForce = force;
-            this->jointData[ii].cmdGap           = gap;
-          }
-          break;
-       default:
-          break;
-    }
-    return PR2_ALL_OK;
-};
-
-PR2_ERROR_CODE PR2HW::CloseGripper(PR2_MODEL_ID id,double gap,double force)
-{
-    switch(id)
-    {
-       case PR2_LEFT_GRIPPER:
-       case PR2_RIGHT_GRIPPER:
-	 std::cout << "JointStart " << JointStart[id] << " joint end " << JointEnd[id] << std::endl;
-         for (int ii = JointStart[id];ii <= JointEnd[id];ii++)
-          {
-            this->jointData[ii].cmdMode          = GAZEBO_PR2GRIPPER_CMD_OPEN;
-            this->jointData[ii].cmdSpeed         = 1.0;
-            this->jointData[ii].cmdEffectorForce = force;
-            this->jointData[ii].cmdGap           = gap;
-	    std::cout << "Setting gap for " << ii << " " << gap << std::endl;
-          }
-          break;
-       default:
-          break;
-    }
-    return PR2_ALL_OK;
-};
-
-PR2_ERROR_CODE PR2HW::GetGripperCmd(PR2_MODEL_ID id,double *gap,double *force)
-{
-    switch(id)
-    {
-       case PR2_LEFT_GRIPPER:
-       case PR2_RIGHT_GRIPPER:
-          for (int ii = JointStart[id];ii <= JointEnd[id];ii++)
-          {
-            *force = this->jointData[ii].cmdEffectorForce;
-            *gap   = this->jointData[ii].cmdGap          ;
-          }
-          break;
-       default:
-          break;
-    }
-    return PR2_ALL_OK;
-};
-
-PR2_ERROR_CODE PR2HW::GetGripperActual(PR2_MODEL_ID id,double *gap,double *force)
-{
-    switch(id)
-    {
-       case PR2_LEFT_GRIPPER:
-       case PR2_RIGHT_GRIPPER:
-          for (int ii = JointStart[id];ii <= JointEnd[id];ii++)
-          {
-            *force = this->jointData[ii].actualEffectorForce;
-            *gap   = this->jointData[ii].actualGap          ;
-          }
-          break;
-       default:
-          break;
-    }
-    return PR2_ALL_OK;
-};
-
-PR2_ERROR_CODE PR2HW::SetGripperGains(PR2_MODEL_ID id,double p,double i, double d)
-{
-    switch(id)
-    {
-       case PR2_LEFT_GRIPPER:
-       case PR2_RIGHT_GRIPPER:
-          for (int ii = JointStart[id];ii <= JointEnd[id];ii++)
-          {
-            this->jointData[ii].pGain = p;
-            this->jointData[ii].iGain = i;
-            this->jointData[ii].dGain = d;
-          }
-          break;
-       default:
-          break;
-    }
-    return PR2_ALL_OK;
 };
 
 PR2_ERROR_CODE PR2HW::GetCameraImage(PR2_SENSOR_ID id ,
@@ -1061,56 +901,11 @@ PR2_ERROR_CODE PR2HW::UpdateHW()
   // receive data from hardware
   for (int id = 0; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
-    if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
-    {
-      if (pr2GripperLeftIface)
-      {
-        pr2GripperLeftIface->Lock(1);
-        this->jointData[id].actualPosition              = ( pr2GripperLeftIface->data->actualFingerPosition[0] - 0.015)  // FIXME: not debugged
-                                                         +(-pr2GripperLeftIface->data->actualFingerPosition[1] + 0.015);
-        this->jointData[id].actualGap                   = ( pr2GripperLeftIface->data->actualFingerPosition[0] - 0.015)  // FIXME: not debugged
-                                                         +(-pr2GripperLeftIface->data->actualFingerPosition[1] + 0.015);
-        this->jointData[id].actualSpeed                 = ( pr2GripperLeftIface->data->actualFingerPositionRate[0])  // FIXME: not debugged
-                                                         +(-pr2GripperLeftIface->data->actualFingerPositionRate[1]);
-        this->jointData[id].actualSpeed                 = pr2GripperLeftIface->data->actualFingerPositionRate[0]; // FIXME: temporary numbers
-
-        this->jointData[id].actualEffectorForce         = pr2GripperLeftIface->data->gripperForce;
-        this->jointData[id].actualFingerPosition[0]     = pr2GripperLeftIface->data->actualFingerPosition[0];
-        this->jointData[id].actualFingerPosition[1]     = pr2GripperLeftIface->data->actualFingerPosition[1];
-        this->jointData[id].actualFingerPositionRate[0] = pr2GripperLeftIface->data->actualFingerPositionRate[0];
-        this->jointData[id].actualFingerPositionRate[1] = pr2GripperLeftIface->data->actualFingerPositionRate[1];
-        pr2GripperLeftIface->Unlock();
-      }
-    }
-    else if(IsGripperRight((PR2::PR2_JOINT_ID)id))
-    {
-      if (pr2GripperRightIface)
-      {
-        pr2GripperRightIface->Lock(1);
-        this->jointData[id].actualPosition              = ( pr2GripperRightIface->data->actualFingerPosition[0] - 0.015)  // FIXME: not debugged
-                                                         +(-pr2GripperRightIface->data->actualFingerPosition[1] + 0.015);
-        this->jointData[id].actualGap                   = ( pr2GripperRightIface->data->actualFingerPosition[0] - 0.015)  // FIXME: not debugged
-                                                         +(-pr2GripperRightIface->data->actualFingerPosition[1] + 0.015);
-        this->jointData[id].actualSpeed                 = ( pr2GripperRightIface->data->actualFingerPositionRate[0])  // FIXME: not debugged
-                                                         +(-pr2GripperRightIface->data->actualFingerPositionRate[1]);
-        this->jointData[id].actualSpeed                 = pr2GripperRightIface->data->actualFingerPositionRate[0]; // FIXME: temporary numbers
-
-        this->jointData[id].actualEffectorForce         = pr2GripperRightIface->data->gripperForce;
-        this->jointData[id].actualFingerPosition[0]     = pr2GripperRightIface->data->actualFingerPosition[0];
-        this->jointData[id].actualFingerPosition[1]     = pr2GripperRightIface->data->actualFingerPosition[1];
-        this->jointData[id].actualFingerPositionRate[0] = pr2GripperRightIface->data->actualFingerPositionRate[0];
-        this->jointData[id].actualFingerPositionRate[1] = pr2GripperRightIface->data->actualFingerPositionRate[1];
-        pr2GripperRightIface->Unlock();
-      }
-    }
-    else // corresponds to Pr2_Actarray from CASTER to ARM_R_GRIPPER
-    {
-      pr2Iface->Lock(1);
-      this->jointData[id].actualPosition              = pr2Iface->data->actuators[id].actualPosition     ;
-      this->jointData[id].actualSpeed                 = pr2Iface->data->actuators[id].actualSpeed        ;
-      this->jointData[id].actualEffectorForce         = pr2Iface->data->actuators[id].actualEffectorForce;
-      pr2Iface->Unlock();
-    }
+    pr2Iface->Lock(1);
+    this->jointData[id].actualPosition              = pr2Iface->data->actuators[id].actualPosition     ;
+    this->jointData[id].actualSpeed                 = pr2Iface->data->actuators[id].actualSpeed        ;
+    this->jointData[id].actualEffectorForce         = pr2Iface->data->actuators[id].actualEffectorForce;
+    pr2Iface->Unlock();
   }
 
 
@@ -1118,51 +913,16 @@ PR2_ERROR_CODE PR2HW::UpdateHW()
   // send commands to hardware
   for (int id = 0; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
-    if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
-    {
-      if (pr2GripperLeftIface)
-      {
-        pr2GripperLeftIface->Lock(1);
-        pr2GripperLeftIface->data->cmdEnableMotor                           = this->jointData[id].cmdEnableMotor  ;
-        pr2GripperLeftIface->data->controlMode                              = this->jointData[id].controlMode     ;
-        pr2GripperLeftIface->data->pGain                                    = this->jointData[id].pGain           ;
-        pr2GripperLeftIface->data->iGain                                    = this->jointData[id].iGain           ;
-        pr2GripperLeftIface->data->dGain                                    = this->jointData[id].dGain           ;
-        pr2GripperLeftIface->data->cmdGap                                   = this->jointData[id].cmdGap          ;
-        pr2GripperLeftIface->data->cmdForce                                 = this->jointData[id].cmdEffectorForce;
-        pr2GripperLeftIface->data->cmdPositionRate                          = this->jointData[id].cmdSpeed;
-        pr2GripperLeftIface->Unlock();
-      }
-    }
-    else if(IsGripperRight((PR2::PR2_JOINT_ID)id))
-    {
-      if (pr2GripperRightIface)
-      {
-        pr2GripperRightIface->Lock(1);
-        pr2GripperRightIface->data->cmdEnableMotor                          = this->jointData[id].cmdEnableMotor  ;
-        pr2GripperRightIface->data->controlMode                             = this->jointData[id].controlMode     ;
-        pr2GripperRightIface->data->pGain                                   = this->jointData[id].pGain           ;
-        pr2GripperRightIface->data->iGain                                   = this->jointData[id].iGain           ;
-        pr2GripperRightIface->data->dGain                                   = this->jointData[id].dGain           ;
-        pr2GripperRightIface->data->cmdGap                                  = this->jointData[id].cmdGap          ;
-        pr2GripperRightIface->data->cmdForce                                = this->jointData[id].cmdEffectorForce;
-        pr2GripperRightIface->data->cmdPositionRate                         = this->jointData[id].cmdSpeed;
-        pr2GripperRightIface->Unlock();
-      }
-    }
-    else // corresponds to Pr2_Actarray from CASTER to ARM_R_GRIPPER
-    {
-      pr2Iface->Lock(1);
-      pr2Iface->data->actuators[id].cmdEnableMotor                        = this->jointData[id].cmdEnableMotor  ;
-      pr2Iface->data->actuators[id].controlMode                           = this->jointData[id].controlMode     ;
-      pr2Iface->data->actuators[id].pGain                                 = this->jointData[id].pGain           ;
-      pr2Iface->data->actuators[id].iGain                                 = this->jointData[id].iGain           ;
-      pr2Iface->data->actuators[id].dGain                                 = this->jointData[id].dGain           ;
-      pr2Iface->data->actuators[id].cmdPosition                           = this->jointData[id].cmdPosition     ;
-      pr2Iface->data->actuators[id].cmdSpeed                              = this->jointData[id].cmdSpeed        ;
-      pr2Iface->data->actuators[id].cmdEffectorForce                      = this->jointData[id].cmdEffectorForce;
-      pr2Iface->Unlock();
-    }
+    pr2Iface->Lock(1);
+    pr2Iface->data->actuators[id].cmdEnableMotor        = this->jointData[id].cmdEnableMotor  ;
+    pr2Iface->data->actuators[id].controlMode           = this->jointData[id].controlMode     ;
+    pr2Iface->data->actuators[id].pGain                 = this->jointData[id].pGain           ;
+    pr2Iface->data->actuators[id].iGain                 = this->jointData[id].iGain           ;
+    pr2Iface->data->actuators[id].dGain                 = this->jointData[id].dGain           ;
+    pr2Iface->data->actuators[id].cmdPosition           = this->jointData[id].cmdPosition     ;
+    pr2Iface->data->actuators[id].cmdSpeed              = this->jointData[id].cmdSpeed        ;
+    pr2Iface->data->actuators[id].cmdEffectorForce      = this->jointData[id].cmdEffectorForce;
+    pr2Iface->Unlock();
   }
 
 
@@ -1176,55 +936,11 @@ PR2_ERROR_CODE PR2HW::UpdateJointArray(mechanism::Joint** jointArray)
   // receive data from hardware
   for (int id = 0; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
-    if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
-    {
-     /* //Don't look at grippers for now
-       pr2GripperLeftIface->Lock(1);
-      this->jointArray[id].actualPosition              = ( pr2GripperLeftIface->data->actualFingerPosition[0] - 0.015)  // FIXME: not debugged
-                                                       +(-pr2GripperLeftIface->data->actualFingerPosition[1] + 0.015);
-      this->jointData[id].actualGap                   = ( pr2GripperLeftIface->data->actualFingerPosition[0] - 0.015)  // FIXME: not debugged
-                                                       +(-pr2GripperLeftIface->data->actualFingerPosition[1] + 0.015);
-      this->jointData[id].actualSpeed                 = ( pr2GripperLeftIface->data->actualFingerPositionRate[0])  // FIXME: not debugged
-                                                       +(-pr2GripperLeftIface->data->actualFingerPositionRate[1]);
-      this->jointData[id].actualSpeed                 = pr2GripperLeftIface->data->actualFingerPositionRate[0]; // FIXME: temporary numbers
-
-      this->jointData[id].actualEffectorForce         = pr2GripperLeftIface->data->gripperForce;
-      this->jointData[id].actualFingerPosition[0]     = pr2GripperLeftIface->data->actualFingerPosition[0];
-      this->jointData[id].actualFingerPosition[1]     = pr2GripperLeftIface->data->actualFingerPosition[1];
-      this->jointData[id].actualFingerPositionRate[0] = pr2GripperLeftIface->data->actualFingerPositionRate[0];
-      this->jointData[id].actualFingerPositionRate[1] = pr2GripperLeftIface->data->actualFingerPositionRate[1];
-      
-      pr2GripperLeftIface->Unlock();
-      */
-    }
-    else if(IsGripperRight((PR2::PR2_JOINT_ID)id))
-    {
-      /*
-      pr2GripperRightIface->Lock(1);
-      this->jointData[id].actualPosition              = ( pr2GripperRightIface->data->actualFingerPosition[0] - 0.015)  // FIXME: not debugged
-                                                       +(-pr2GripperRightIface->data->actualFingerPosition[1] + 0.015);
-      this->jointData[id].actualGap                   = ( pr2GripperRightIface->data->actualFingerPosition[0] - 0.015)  // FIXME: not debugged
-                                                       +(-pr2GripperRightIface->data->actualFingerPosition[1] + 0.015);
-      this->jointData[id].actualSpeed                 = ( pr2GripperRightIface->data->actualFingerPositionRate[0])  // FIXME: not debugged
-                                                       +(-pr2GripperRightIface->data->actualFingerPositionRate[1]);
-      this->jointData[id].actualSpeed                 = pr2GripperRightIface->data->actualFingerPositionRate[0]; // FIXME: temporary numbers
-
-      this->jointData[id].actualEffectorForce         = pr2GripperRightIface->data->gripperForce;
-      this->jointData[id].actualFingerPosition[0]     = pr2GripperRightIface->data->actualFingerPosition[0];
-      this->jointData[id].actualFingerPosition[1]     = pr2GripperRightIface->data->actualFingerPosition[1];
-      this->jointData[id].actualFingerPositionRate[0] = pr2GripperRightIface->data->actualFingerPositionRate[0];
-      this->jointData[id].actualFingerPositionRate[1] = pr2GripperRightIface->data->actualFingerPositionRate[1];
-      pr2GripperRightIface->Unlock();
-      */
-    }
-    else // corresponds to Pr2_Actarray from CASTER to ARM_R_GRIPPER
-    {
-      pr2Iface->Lock(1);
-      jointArray[id]->position              = pr2Iface->data->actuators[id].actualPosition     ;
-      jointArray[id]->velocity                 = pr2Iface->data->actuators[id].actualSpeed        ;
-      jointArray[id]->appliedEffort         = pr2Iface->data->actuators[id].actualEffectorForce;
-      pr2Iface->Unlock();
-    }
+    pr2Iface->Lock(1);
+    jointArray[id]->position              = pr2Iface->data->actuators[id].actualPosition     ;
+    jointArray[id]->velocity                 = pr2Iface->data->actuators[id].actualSpeed        ;
+    jointArray[id]->appliedEffort         = pr2Iface->data->actuators[id].actualEffectorForce;
+    pr2Iface->Unlock();
   }
 
 
@@ -1232,51 +948,19 @@ PR2_ERROR_CODE PR2HW::UpdateJointArray(mechanism::Joint** jointArray)
   // send commands to hardware
   for (int id = 0; id < PR2::HEAD_PTZ_R_TILT; id++)
   {
-    if(IsGripperLeft((PR2::PR2_JOINT_ID)id))
-    {
-      /*
-      pr2GripperLeftIface->Lock(1);
-      pr2GripperLeftIface->data->cmdEnableMotor                           = this->jointData[id].cmdEnableMotor  ;
-      pr2GripperLeftIface->data->controlMode                              = this->jointData[id].controlMode     ;
-      pr2GripperLeftIface->data->pGain                                    = this->jointData[id].pGain           ;
-      pr2GripperLeftIface->data->iGain                                    = this->jointData[id].iGain           ;
-      pr2GripperLeftIface->data->dGain                                    = this->jointData[id].dGain           ;
-      pr2GripperLeftIface->data->cmdGap                                   = this->jointData[id].cmdGap          ;
-      pr2GripperLeftIface->data->cmdForce                                 = this->jointData[id].cmdEffectorForce;
-      pr2GripperLeftIface->data->cmdPositionRate                          = this->jointData[id].cmdSpeed;
-      pr2GripperLeftIface->Unlock();
-      */
-    }
-    else if(IsGripperRight((PR2::PR2_JOINT_ID)id))
-    {
-      /*
-      pr2GripperRightIface->Lock(1);
-      pr2GripperRightIface->data->cmdEnableMotor                          = this->jointData[id].cmdEnableMotor  ;
-      pr2GripperRightIface->data->controlMode                             = this->jointData[id].controlMode     ;
-      pr2GripperRightIface->data->pGain                                   = this->jointData[id].pGain           ;
-      pr2GripperRightIface->data->iGain                                   = this->jointData[id].iGain           ;
-      pr2GripperRightIface->data->dGain                                   = this->jointData[id].dGain           ;
-      pr2GripperRightIface->data->cmdGap                                  = this->jointData[id].cmdGap          ;
-      pr2GripperRightIface->data->cmdForce                                = this->jointData[id].cmdEffectorForce;
-      pr2GripperRightIface->data->cmdPositionRate                         = this->jointData[id].cmdSpeed;
-      pr2GripperRightIface->Unlock();
-      */
-    }
-    else // corresponds to Pr2_Actarray from CASTER to ARM_R_GRIPPER
-    {
-      pr2Iface->Lock(1);
-      pr2Iface->data->actuators[id].cmdEnableMotor                        = jointArray[id]->initialized  ;
-      /*
-      pr2Iface->data->actuators[id].controlMode                           = this->jointData[id].controlMode     ;
-      pr2Iface->data->actuators[id].pGain                                 = this->jointData[id].pGain           ;
-      pr2Iface->data->actuators[id].iGain                                 = this->jointData[id].iGain           ;
-      pr2Iface->data->actuators[id].dGain                                 = this->jointData[id].dGain           ;
-      pr2Iface->data->actuators[id].cmdPosition                           = this->jointData[id].cmdPosition     ;
-      pr2Iface->data->actuators[id].cmdSpeed                              = this->jointData[id].cmdSpeed        ;
-      */
-      pr2Iface->data->actuators[id].cmdEffectorForce                      = jointArray[id]->commandedEffort;
-      pr2Iface->Unlock();
-    }
+
+    pr2Iface->Lock(1);
+    pr2Iface->data->actuators[id].cmdEnableMotor     = jointArray[id]->initialized  ;
+    /*
+    pr2Iface->data->actuators[id].controlMode        = this->jointData[id].controlMode     ;
+    pr2Iface->data->actuators[id].pGain              = this->jointData[id].pGain           ;
+    pr2Iface->data->actuators[id].iGain              = this->jointData[id].iGain           ;
+    pr2Iface->data->actuators[id].dGain              = this->jointData[id].dGain           ;
+    pr2Iface->data->actuators[id].cmdPosition        = this->jointData[id].cmdPosition     ;
+    pr2Iface->data->actuators[id].cmdSpeed           = this->jointData[id].cmdSpeed        ;
+    */
+    pr2Iface->data->actuators[id].cmdEffectorForce   = jointArray[id]->commandedEffort;
+    pr2Iface->Unlock();
   }
 
 

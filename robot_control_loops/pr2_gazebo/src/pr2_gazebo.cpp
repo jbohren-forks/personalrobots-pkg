@@ -83,29 +83,6 @@ main(int argc, char** argv)
   myPR2->InitializeRobot();
   // Set control mode for the base
   myPR2->SetBaseControlMode(PR2::PR2_CARTESIAN_CONTROL);
-  // myPR2->SetJointControlMode(PR2::CASTER_FL_STEER, PR2::TORQUE_CONTROL);
-  // myPR2->SetJointControlMode(PR2::CASTER_FR_STEER, PR2::TORQUE_CONTROL);
-  // myPR2->SetJointControlMode(PR2::CASTER_RL_STEER, PR2::TORQUE_CONTROL);
-  // myPR2->SetJointControlMode(PR2::CASTER_RR_STEER, PR2::TORQUE_CONTROL);
-
-  myPR2->EnableGripperLeft();
-  myPR2->EnableGripperRight();
-
-  // Set control mode for the arms
-  // FIXME: right now this just sets default to pd control
-  //myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM, PR2::PR2_JOINT_CONTROL);
-  //myPR2->SetArmControlMode(PR2::PR2_LEFT_ARM, PR2::PR2_JOINT_CONTROL);
-  //------------------------------------------------------------
-
-  // set torques for driving the robot wheels
-  // myPR2->hw.SetJointTorque(PR2::CASTER_FL_DRIVE_L, 1000.0 );
-  // myPR2->hw.SetJointTorque(PR2::CASTER_FR_DRIVE_L, 1000.0 );
-  // myPR2->hw.SetJointTorque(PR2::CASTER_RL_DRIVE_L, 1000.0 );
-  // myPR2->hw.SetJointTorque(PR2::CASTER_RR_DRIVE_L, 1000.0 );
-  // myPR2->hw.SetJointTorque(PR2::CASTER_FL_DRIVE_R, 1000.0 );
-  // myPR2->hw.SetJointTorque(PR2::CASTER_FR_DRIVE_R, 1000.0 );
-  // myPR2->hw.SetJointTorque(PR2::CASTER_RL_DRIVE_R, 1000.0 );
-  // myPR2->hw.SetJointTorque(PR2::CASTER_RR_DRIVE_R, 1000.0 );
 
   /***************************************************************************************/
   /*                                                                                     */
@@ -141,6 +118,9 @@ main(int argc, char** argv)
   signal(SIGINT,  (&finalize));
   signal(SIGQUIT, (&finalize));
   signal(SIGTERM, (&finalize));
+
+  // let rosgazebonode read the xml data from pr2.xml in ros
+  rgn.LoadRobotModel();
 
   // see if we can subscribe models needed
   if (rgn.AdvertiseSubscribeMessages() != 0)

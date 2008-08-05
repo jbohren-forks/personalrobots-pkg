@@ -250,28 +250,10 @@ namespace PR2
       public: PR2_ERROR_CODE EnableHead();
 
          /*! \fn
-           \brief Enable the left gripper (i.e. enable all actuators corresponding to the left gripper)
-         */
-      public: PR2_ERROR_CODE EnableGripperLeft();
-
-         /*! \fn
-           \brief Enable the right gripper (i.e. enable all actuators corresponding to the right gripper)
-         */
-      public: PR2_ERROR_CODE EnableGripperRight();
-
-
-         /*! \fn
            \brief Enable the arm (i.e. enable all actuators corresponding to an arm)
            \param id - model ID, see pr2Core.h for a list of model IDs
          */
       public: PR2_ERROR_CODE EnableArm(PR2_MODEL_ID id);
-
-
-         /*! \fn
-           \brief Enable the gripper (i.e. enable all actuators corresponding to the gripper)
-           \param id - model ID, see pr2Core.h for a list of model IDs
-         */
-      public: PR2_ERROR_CODE EnableGripper(PR2_MODEL_ID id);
 
 
          /*! \fn
@@ -291,28 +273,10 @@ namespace PR2
       public: PR2_ERROR_CODE DisableHead();
 
          /*! \fn
-           \brief Disable the head (i.e. enable all actuators corresponding to the head)
-         */
-      public: PR2_ERROR_CODE DisableGripperLeft();
-
-         /*! \fn
-           \brief Disable the head (i.e. enable all actuators corresponding to the head)
-         */
-      public: PR2_ERROR_CODE DisableGripperRight();
-
-
-         /*! \fn
            \brief Disable the arm (i.e. disable all actuators corresponding to an arm)
            \param id - model ID, see pr2Core.h for a list of model IDs
          */
       public: PR2_ERROR_CODE DisableArm(PR2_MODEL_ID id);
-
-
-         /*! \fn
-           \brief Disable the gripper (i.e. disable all actuators corresponding to a gripper)
-           \param id - model ID, see pr2Core.h for a list of model IDs
-         */
-      public: PR2_ERROR_CODE DisableGripper(PR2_MODEL_ID id);
 
 
          /*! \fn
@@ -627,6 +591,9 @@ namespace PR2
       public: PR2_ERROR_CODE StopRobot();
 
 
+        /*! \fn
+          \brief - Shortcuts to get gripper commands
+         */
       public: PR2_ERROR_CODE GetLeftGripperCmd(double *gap,double *force);
 
       public: PR2_ERROR_CODE GetLeftGripperActual(double *gap,double *force);

@@ -260,34 +260,6 @@ namespace PR2
           double*   simTime);
 
          /*! \fn
-           \brief - Open gripper
-         */
-      public: PR2_ERROR_CODE OpenGripper(PR2_MODEL_ID id,double gap, double force);
-
-         /*! \fn
-           \brief - Close gripper
-         */
-      public: PR2_ERROR_CODE CloseGripper(PR2_MODEL_ID id,double gap, double force);
-
-         /*! \fn
-           \brief - Get gripper gap and force setpoint
-         */
-      public: PR2_ERROR_CODE GetGripperCmd(PR2_MODEL_ID id,double *gap,double *force);
-
-         /*! \fn
-           \brief - Get gripper gap and force status
-         */
-      public: PR2_ERROR_CODE GetGripperActual(PR2_MODEL_ID id,double *gap,double *force);
-
-         /*! \fn
-           \brief - Set gripper p,i,d gains
-         */
-      public: PR2_ERROR_CODE SetGripperGains(PR2_MODEL_ID id,double p,double i, double d);
-         /*! 
-           \brief - control mode for the arms, possible values are joint space control or cartesian space control
-         */
-
-         /*! \fn
            \brief - Get camera data
          */
       public:    PR2_ERROR_CODE GetCameraImage(PR2_SENSOR_ID id ,

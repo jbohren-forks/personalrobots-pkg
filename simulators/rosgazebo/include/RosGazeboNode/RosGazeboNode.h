@@ -72,6 +72,9 @@ using std::list;
 // service
 #include <rosgazebo/VoidVoid.h>
 
+// xml parser, robot structure
+#include <urdf/URDF.h>
+
 // Our node
 class RosGazeboNode : public ros::node
 {
@@ -117,7 +120,10 @@ class RosGazeboNode : public ros::node
     void UpdateLeftArm();
     void UpdateRightArm();
 
+    robot_desc::URDF pr2Description;
+
   public:
+    void LoadRobotModel();
     // Constructor; stage itself needs argc/argv.  fname is the .world file
     // that stage should load.
     RosGazeboNode(int argc, char** argv, const char* fname,

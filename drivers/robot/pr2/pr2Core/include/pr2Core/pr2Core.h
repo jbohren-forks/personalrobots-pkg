@@ -104,8 +104,6 @@ namespace PR2
       HEAD_YAW          , 
       HEAD_PITCH        ,
       HEAD_LASER_PITCH  ,
-      ARM_L_GRIPPER     ,
-      ARM_R_GRIPPER     ,
       HEAD_PTZ_L_PAN    , 
       HEAD_PTZ_L_TILT   ,
       HEAD_PTZ_R_PAN    , 
@@ -299,9 +297,9 @@ namespace PR2
    };
 
    // JointStart/JointEnd corresponds to the PR2_MODEL_ID, start and end id for each model
-   enum PR2_MODEL_ID                  {PR2_BASE          ,PR2_SPINE      ,PR2_LEFT_ARM     ,PR2_RIGHT_ARM    ,PR2_LEFT_GRIPPER ,PR2_RIGHT_GRIPPER ,HEAD             ,PR2_LEFT_PTZ ,PR2_RIGHT_PTZ , MAX_MODELS };
-   const int JointStart[MAX_MODELS] = {CASTER_FL_STEER   ,SPINE_ELEVATOR ,ARM_L_PAN        ,ARM_R_PAN        ,ARM_L_GRIPPER    ,ARM_R_GRIPPER     ,HEAD_YAW         ,PR2_LEFT_PTZ ,PR2_RIGHT_PTZ };
-   const int JointEnd[MAX_MODELS]   = {CASTER_RR_DRIVE_R ,SPINE_ELEVATOR ,ARM_L_GRIPPER_GAP,ARM_R_GRIPPER_GAP,ARM_L_GRIPPER    ,ARM_R_GRIPPER     ,HEAD_LASER_PITCH ,PR2_LEFT_PTZ ,PR2_RIGHT_PTZ };
+   enum PR2_MODEL_ID                  {PR2_BASE          ,PR2_SPINE      ,PR2_LEFT_ARM     ,PR2_RIGHT_ARM    ,HEAD             ,PR2_LEFT_PTZ ,PR2_RIGHT_PTZ , MAX_MODELS };
+   const int JointStart[MAX_MODELS] = {CASTER_FL_STEER   ,SPINE_ELEVATOR ,ARM_L_PAN        ,ARM_R_PAN        ,HEAD_YAW         ,PR2_LEFT_PTZ ,PR2_RIGHT_PTZ };
+   const int JointEnd[MAX_MODELS]   = {CASTER_RR_DRIVE_R ,SPINE_ELEVATOR ,ARM_L_GRIPPER_GAP,ARM_R_GRIPPER_GAP,HEAD_LASER_PITCH ,PR2_LEFT_PTZ ,PR2_RIGHT_PTZ };
 
 
    // Geometric description for the base

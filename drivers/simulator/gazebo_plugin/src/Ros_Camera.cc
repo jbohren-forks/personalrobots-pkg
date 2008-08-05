@@ -164,6 +164,7 @@ void Ros_Camera::PutCameraData()
   // Make sure there is room to store the image
   assert (data->image_size <= sizeof(data->image));
 
+  this->lock.lock();
   // Copy the pixel data to the interface
   src = this->myParent->GetImageData(0);
   dst = data->image;
@@ -195,6 +196,6 @@ void Ros_Camera::PutCameraData()
 
   // publish to ros
   rosnode->publish(this->topicName,this->image);
-
+  this->lock.unlock();
 }
 

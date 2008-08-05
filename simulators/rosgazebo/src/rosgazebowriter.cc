@@ -334,9 +334,7 @@ GazeboNode::cmd_rightarmconfigReceived()
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_ELBOW_ROLL    , this->rightarm.forearmRollAngle,  0);
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_PITCH   , this->rightarm.wristPitchAngle,   0);
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_WRIST_ROLL    , this->rightarm.wristRollAngle,    0);
-//Ignore gripper commands for now	
-	//this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER       , this->rightarm.gripperGapCmd,     0);
-	//this->myPR2->hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, this->rightarm.gripperGapCmd, this->rightarm.gripperForceCmd);
+	this->myPR2->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER_GAP   , this->rightarm.gripperGapCmd,     0);
 	//*/
 	
   this->lock.unlock();
@@ -368,9 +366,7 @@ GazeboNode::cmd_leftarmconfigReceived()
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_ELBOW_ROLL    , this->leftarm.forearmRollAngle,  0);
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_WRIST_PITCH   , this->leftarm.wristPitchAngle,   0);
 	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_WRIST_ROLL    , this->leftarm.wristRollAngle,    0);
-//Ignore gripper commands for now
-//	this->myPR2->SetJointServoCmd(PR2::ARM_L_GRIPPER       , this->leftarm.gripperGapCmd,     0);
-	//this->myPR2->hw.CloseGripper(PR2::PR2_LEFT_GRIPPER, this->leftarm.gripperGapCmd, this->leftarm.gripperForceCmd);
+  	this->myPR2->hw.SetJointServoCmd(PR2::ARM_L_GRIPPER_GAP   , this->leftarm.gripperGapCmd,     0);
 	//*/
   this->lock.unlock();
 }

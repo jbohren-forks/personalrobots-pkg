@@ -41,37 +41,9 @@ PR2_ERROR_CODE PR2Robot::EnableArm(PR2_MODEL_ID id)
    return PR2_ALL_OK;
 };
 
-PR2_ERROR_CODE PR2Robot::EnableGripper(PR2_MODEL_ID id)
-{
-   switch(id)
-   {
-      case PR2_LEFT_GRIPPER:
-         EnableGripperLeft();
-         break;
-      case PR2_RIGHT_GRIPPER:
-         EnableGripperRight();
-         break;
-      default:
-         break;
-   }
-   return PR2_ALL_OK;
-};
-
 PR2_ERROR_CODE PR2Robot::EnableHead()
 {
    hw.EnableModel(HEAD);
-   return PR2_ALL_OK;
-}
-
-PR2_ERROR_CODE PR2Robot::EnableGripperLeft()
-{
-   hw.EnableModel(PR2_LEFT_GRIPPER);
-   return PR2_ALL_OK;
-}
-
-PR2_ERROR_CODE PR2Robot::EnableGripperRight()
-{
-   hw.EnableModel(PR2_RIGHT_GRIPPER);
    return PR2_ALL_OK;
 }
 
@@ -103,37 +75,9 @@ PR2_ERROR_CODE PR2Robot::DisableArm(PR2_MODEL_ID id)
    return PR2_ALL_OK;
 };
 
-PR2_ERROR_CODE PR2Robot::DisableGripper(PR2_MODEL_ID id)
-{
-   switch(id)
-   {
-      case PR2_LEFT_GRIPPER:
-         DisableGripperLeft();
-         break;
-      case PR2_RIGHT_GRIPPER:
-         DisableGripperRight();
-         break;
-      default:
-         break;
-   }
-   return PR2_ALL_OK;
-};
-
 PR2_ERROR_CODE PR2Robot::DisableHead()
 {
    hw.DisableModel(HEAD);
-   return PR2_ALL_OK;
-}
-
-PR2_ERROR_CODE PR2Robot::DisableGripperLeft()
-{
-   hw.DisableModel(PR2_LEFT_GRIPPER);
-   return PR2_ALL_OK;
-}
-
-PR2_ERROR_CODE PR2Robot::DisableGripperRight()
-{
-   hw.DisableModel(PR2_RIGHT_GRIPPER);
    return PR2_ALL_OK;
 }
 
@@ -927,25 +871,25 @@ PR2_ERROR_CODE PR2Robot::GetObjectPositionActual(double* x, double* y, double *z
 
 PR2_ERROR_CODE PR2Robot::GetLeftGripperCmd(double *gap,double *force)
 {
-   hw.GetGripperCmd((PR2_MODEL_ID)PR2::PR2_LEFT_GRIPPER,gap,force);
+   hw.GetJointServoCmd((PR2_JOINT_ID)PR2::ARM_L_GRIPPER_GAP,gap,force);
    return PR2_ALL_OK;
 }
 
 PR2_ERROR_CODE PR2Robot::GetLeftGripperActual(double *gap,double *force)
 {
-   hw.GetGripperActual((PR2_MODEL_ID)PR2::PR2_LEFT_GRIPPER,gap,force);
+   hw.GetJointServoActual((PR2_JOINT_ID)PR2::ARM_L_GRIPPER_GAP,gap,force);
    return PR2_ALL_OK;
 }
 
 PR2_ERROR_CODE PR2Robot::GetRightGripperCmd(double *gap,double *force)
 {
-   hw.GetGripperCmd((PR2_MODEL_ID)PR2::PR2_RIGHT_GRIPPER,gap,force);
+   hw.GetJointServoCmd((PR2_JOINT_ID)PR2::ARM_R_GRIPPER_GAP,gap,force);
    return PR2_ALL_OK;
 }
 
 PR2_ERROR_CODE PR2Robot::GetRightGripperActual(double *gap,double *force)
 {
-   hw.GetGripperActual((PR2_MODEL_ID)PR2::PR2_RIGHT_GRIPPER,gap,force);
+   hw.GetJointServoActual((PR2_JOINT_ID)PR2::ARM_R_GRIPPER_GAP,gap,force);
    return PR2_ALL_OK;
 }
 

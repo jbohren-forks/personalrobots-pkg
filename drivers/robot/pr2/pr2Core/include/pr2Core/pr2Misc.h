@@ -37,25 +37,6 @@ namespace PR2
        return q;
     }
 
-    inline bool IsHead(PR2_MODEL_ID id)
-    {
-       if(id == HEAD)
-          return true;
-       return false;
-    }
-    inline bool IsGripperLeft(PR2_MODEL_ID id)
-    {
-       if(id == PR2_LEFT_GRIPPER)
-          return true;
-       return false;
-    }
-    inline bool IsGripperRight(PR2_MODEL_ID id)
-    {
-       if(id == PR2_RIGHT_GRIPPER)
-          return true;
-       return false;
-    }
-
     inline bool IsPTZLeft(PR2_MODEL_ID id)
     {
        if(id == PR2_LEFT_PTZ)
@@ -66,26 +47,6 @@ namespace PR2
     inline bool IsPTZRight(PR2_MODEL_ID id)
     {
        if(id == PR2_RIGHT_PTZ)
-          return true;
-       return false;
-    }
-
-    inline bool IsHead(PR2_JOINT_ID id)
-    {
-       if(id >= JointStart[HEAD] && id <= JointEnd[HEAD])
-          return true;
-       return false;
-    }
-
-    inline bool IsGripperLeft(PR2_JOINT_ID id)
-    {
-       if (id >= JointStart[PR2_LEFT_GRIPPER] && id <= JointEnd[PR2_LEFT_GRIPPER])
-          return true;
-       return false;
-    }
-    inline bool IsGripperRight(PR2_JOINT_ID id)
-    {
-       if (id >= JointStart[PR2_RIGHT_GRIPPER] && id <= JointEnd[PR2_RIGHT_GRIPPER])
           return true;
        return false;
     }

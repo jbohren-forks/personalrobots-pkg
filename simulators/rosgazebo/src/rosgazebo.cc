@@ -142,9 +142,6 @@ main(int argc, char** argv)
   // myPR2->SetJointControlMode(PR2::CASTER_RL_STEER, PR2::TORQUE_CONTROL);
   // myPR2->SetJointControlMode(PR2::CASTER_RR_STEER, PR2::TORQUE_CONTROL);
 
-  myPR2->EnableGripperLeft();
-  myPR2->EnableGripperRight();
-
   // Set control mode for the arms
   // FIXME: right now this just sets default to pd control
   //myPR2->SetArmControlMode(PR2::PR2_RIGHT_ARM, PR2::PR2_JOINT_CONTROL);

@@ -6,79 +6,6 @@
 
   <xml> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <data> tag -->
 
-  <!-- ========== Wrist Cameras =========== -->
-  <body:empty name="wrist_cam_left_body">
-    <xyz>  0.85  0.17   0.78 </xyz>
-    <rpy> 0.00  0.0   0.00 </rpy>
-    <sensor:camera name="wrist_cam_left_sensor">
-      <imageSize>640 480</imageSize>
-      <hfov>60</hfov>
-      <nearClip>0.1</nearClip>
-      <farClip>100</farClip>
-      <updateRate>15.0</updateRate>
-      <controller:generic_camera name="wrist_cam_left_controller">
-        <updateRate>15.0</updateRate>
-        <interface:camera name="wrist_cam_left_iface" />
-      </controller:generic_camera>
-    </sensor:camera>
-    <geom:box name="wrist_cam_left_geom">
-      <xyz> 0.00   0.00   0.00</xyz>
-      <size>0.02   0.02   0.02</size>
-      <mass>0.1</mass>
-      <visual>
-        <size>0.02   0.02   0.02</size>
-        <rpy>0.0   0.0 0.0 </rpy>
-        <mesh>unit_box</mesh>
-        <material>Gazebo/Black</material>
-      </visual>
-    </geom:box>
-  </body:empty>
-  <joint:hinge name="wrist_cam_left">
-    <body1>wrist_cam_left_body</body1>
-    <body2>gripper_roll_left</body2>
-    <anchor>gripper_roll_left</anchor>
-    <axis>  0.0   0.0   1.0 </axis>
-    <lowStop> 0.0 </lowStop>
-    <highStop> 0.0 </highStop>
-  </joint:hinge>
-
-
-  <body:empty name="wrist_cam_right_body">
-    <xyz>  0.85   -0.17   0.78 </xyz>
-    <rpy>  0.0     0.0    0.0 </rpy>
-    <sensor:camera name="wrist_cam_right_sensor">
-      <imageSize>640 480</imageSize>
-      <hfov>60</hfov>
-      <nearClip>0.1</nearClip>
-      <farClip>100</farClip>
-      <updateRate>15.0</updateRate>
-      <controller:generic_camera name="wrist_cam_right_controller">
-        <updateRate>15.0</updateRate>
-        <interface:camera name="wrist_cam_right_iface" />
-      </controller:generic_camera>
-    </sensor:camera>
-    <geom:box name="wrist_cam_right_geom">
-      <xyz> 0.00   0.00   0.00</xyz>
-      <size>0.02   0.02   0.02</size>
-      <mass>0.1</mass>
-      <visual>
-        <size>0.02   0.02   0.02</size>
-        <rpy>0.0   0.0 0.0 </rpy>
-        <mesh>unit_box</mesh>
-        <material>Gazebo/Black</material>
-      </visual>
-    </geom:box>
-  </body:empty>
-  <joint:hinge name="wrist_cam_right">
-    <body1>wrist_cam_right_body</body1>
-    <body2>gripper_roll_right</body2>
-    <anchor>gripper_roll_right</anchor>
-    <axis>  0.0   0.0   1.0 </axis>
-    <lowStop> 0.0 </lowStop>
-    <highStop> 0.0 </highStop>
-  </joint:hinge>
-
-
 
 
 
@@ -201,6 +128,22 @@
     <axis>  0.0   1.0   0.0 </axis>
   </joint:hinge>
 
+  <!-- ptz camera controls -->
+  <controller:generic_ptz name="ptz_cam_left_controller">
+    <updateRate>15.0</updateRate> <!-- rate not implemented in gazebo yet-->
+    <panJoint>ptz_cam_left_pitch_joint</panJoint>
+    <tiltJoint>ptz_cam_left_yaw_joint</tiltJoint>
+    <interface:ptz name="ptz_left_iface" />
+  </controller:generic_ptz>
+
+  <controller:generic_ptz name="ptz_cam_right_controller">
+    <updateRate>15.0</updateRate> <!-- rate not implemented in gazebo yet-->
+    <panJoint>ptz_cam_right_pitch_joint</panJoint>
+    <tiltJoint>ptz_cam_right_yaw_joint</tiltJoint>
+    <interface:ptz name="ptz_right_iface" />
+  </controller:generic_ptz>
+
+
 
   <!-- stereo camera -->
   <body:empty name="stereo_camera_body">
@@ -246,101 +189,6 @@
     <lowStop> 0.0 </lowStop>
     <highStop> 0.0 </highStop>
   </joint:hinge>
-
-  <!-- ========================================== Hokuyo tilt laser ========================================== -->
-  <body:box name="tilt_laser_body">
-    <xyz>0.03 0.0 1.0</xyz>
-    <rpy>0.0 0.0 0.0</rpy>
- 
-    <geom:box name="tilt_laser_box">
-      <xyz>0.0 0.0 0.0</xyz>
-      <rpy>0 0 0</rpy>
-      <mass>0.12</mass>
-      <size>.1 .1 .1</size>
-      <visual>
-        <xyz>0.0 0.0 0.0</xyz>
-        <scale>.5 .5 .5</scale>
-        <mesh>pr2/hokuyo.mesh</mesh>
-        <material>Gazebo/Blue</material>
-      </visual>
-
-    </geom:box>
-
-    <sensor:ray name="tilt_laser_1">
-      <rayCount>683</rayCount>
-      <rangeCount>683</rangeCount>
-      <laserCount>1</laserCount>
-      <origin>0.0 0.0 0.05</origin>
-
-      <displayRays>false</displayRays>
-
-      <minAngle>-45</minAngle>
-      <maxAngle> 45</maxAngle>
-
-      <minRange>0.05</minRange>
-      <maxRange>10.0</maxRange>
-      <updateRate>10</updateRate>
-      <controller:sicklms200_laser name="tilt_laser_controller_1">
-        <interface:laser name="tilt_laser_iface_1"/>
-        <updateRate>10</updateRate>
-      </controller:sicklms200_laser>
-    </sensor:ray>
-  </body:box>
-
-  <!-- attach hokuyo to torso -->
-  <joint:hinge name="hokuyo_pitch_joint">
-    <body1>torso</body1>
-    <body2>tilt_laser_body</body2>
-    <anchor>tilt_laser_body</anchor>
-    <axis>  0.0   1.0   0.0 </axis>
-  </joint:hinge>
-
-  <!-- ========================================== Hokuyo laser body ========================================== -->
-  <body:box name="base_laser_body">
-    <xyz>0.25 0.0 0.27</xyz> <!-- from the robot coordinate system (center bottom of base box)-->
-    <rpy>0.0  0.0 0.0</rpy>
- 
-    <geom:box name="base_laser_box">
-      <xyz>0.0 0.0 0.02</xyz>
-      <rpy>0 0 0</rpy>
-      <mass>0.12</mass>
-      <size>.05 .05 .05</size>
-      <visual>
-        <scale>.05 .05 .05</scale>
-        <mesh>unit_cylinder</mesh>
-        <material>Gazebo/Red</material>
-      </visual>
-    </geom:box>
-    <sensor:ray name="base_laser_1">
-      <rayCount>683</rayCount>
-      <rangeCount>683</rangeCount>
-      <laserCount>1</laserCount>
-      <origin>0.0 0.0 0.05</origin>
-
-      <displayRays>false</displayRays>
-
-      <minAngle>-90</minAngle>
-      <maxAngle>90</maxAngle>
-
-      <minRange>0.05</minRange>
-      <maxRange>10.0</maxRange>
-      <updateRate>10.0</updateRate>
-      <controller:sicklms200_laser name="base_laser_controller_1">
-        <interface:laser name="base_laser_iface_1"/>
-        <updateRate>10</updateRate>
-      </controller:sicklms200_laser>
-    </sensor:ray>
-  </body:box>
-  <!-- attach hokuyo to torso -->
-  <joint:hinge name="base_laser_base_attach_joint">
-    <body1>base</body1>
-    <body2>base_laser_body</body2>
-    <anchor>base_laser_body</anchor>
-    <axis>  1.0   0.0   0.0 </axis>
-    <lowStop> 0.0 </lowStop>
-    <highStop> 0.0 </highStop>
-  </joint:hinge>
-
 
 
   <!-- PR2_ACTARRAY -->
@@ -643,7 +491,7 @@
         <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
         <controlMode>PD_CONTROL</controlMode>
       </joint>
-      <joint name="hokuyo_pitch_joint">
+      <joint name="tilt_laser_joint">
         <saturationTorque>500</saturationTorque>
         <pGain>2</pGain>
         <dGain>0</dGain>
@@ -675,140 +523,7 @@
       <interface:position name="p3d_base_position"/>
   </controller:P3D>
 
-  <!-- ptz camera controls -->
-  <controller:generic_ptz name="ptz_cam_left_controller">
-    <updateRate>15.0</updateRate> <!-- rate not implemented in gazebo yet-->
-    <panJoint>ptz_cam_left_pitch_joint</panJoint>
-    <tiltJoint>ptz_cam_left_yaw_joint</tiltJoint>
-    <interface:ptz name="ptz_left_iface" />
-  </controller:generic_ptz>
 
-  <controller:generic_ptz name="ptz_cam_right_controller">
-    <updateRate>15.0</updateRate> <!-- rate not implemented in gazebo yet-->
-    <panJoint>ptz_cam_right_pitch_joint</panJoint>
-    <tiltJoint>ptz_cam_right_yaw_joint</tiltJoint>
-    <interface:ptz name="ptz_right_iface" />
-  </controller:generic_ptz>
-
-
-
-  <!-- ========== Old Obsolete =========== -->
-  <!-- ========== Right hand =========== -->
-  <!--
-  <body:box name="finger_1_right">
-     <xyz>0.93 -0.172936 0.72</xyz>
-     <rpy>  0.0     0.0    0.0 </rpy>
-    <geom:box name="finger_1_right_geom">
-      <kp>100000000.0</kp>
-      <kd>1.0</kd>
-      <size> 0.05  0.01 0.025</size>
-      <mass>0.1</mass>
-      <visual>
-        <size> 0.05  0.01 0.025</size>
-        <mesh>unit_box</mesh>
-        <material>Gazebo/PioneerBody</material>
-      </visual>
-    </geom:box>
-  </body:box>
-  <body:box name="finger_2_right">
-    <xyz>0.93 -0.132936 0.72</xyz>
-    <rpy>  0.0     0.0    0.0 </rpy>
-    <geom:box name="finger_2_right_geom">
-      <kp>100000000.0</kp>
-      <kd>1.0</kd>
-      <size> 0.05  0.01 0.025</size>
-      <mass>0.1</mass>
-      <visual>
-        <size> 0.05  0.01 0.025</size>
-        <mesh>unit_box</mesh>
-        <material>Gazebo/Blue</material>
-      </visual>
-    </geom:box>
-  </body:box>
-  <joint:slider name="finger_1_slider_right">
-    <body2>finger_1_right</body2>
-    <body1>gripper_roll_right</body1>
-    <anchor>gripper_roll_right</anchor>
-    <lowStop> -0.02 </lowStop>
-    <highStop>   0.05 </highStop>
-    <axis>0.0  1.0  0.0 </axis>
-  </joint:slider>
-  <joint:slider name="finger_2_slider_right">
-    <body2>finger_2_right</body2>
-    <body1>gripper_roll_right</body1>
-    <anchor>gripper_roll_right</anchor>
-    <lowStop> -0.05 </lowStop> 
-    <highStop>   0.02 </highStop>
-    <axis>0.0  1.0  0.0 </axis>
-  </joint:slider>
-  <body:box name="finger_1_left">
-    <xyz>0.93  0.132936 0.72</xyz>
-    <rpy>  0.0     0.0    0.0 </rpy>
-    <geom:box name="finger_1_left_geom">
-      <kp>100000000.0</kp>
-      <kd>1.0</kd>
-      <size> 0.05  0.01 0.025</size>
-      <mass>0.1</mass>
-      <visual>
-        <size> 0.05  0.01 0.025</size>
-        <mesh>unit_box</mesh>
-        <material>Gazebo/PioneerBody</material>
-      </visual>
-    </geom:box>
-  </body:box>
-
-  <body:box name="finger_2_left">
-    <xyz>0.93  0.172936 0.72</xyz>
-    <rpy>  0.0     0.0    0.0 </rpy>
-    <geom:box name="finger_2_left_geom">
-      <kp>100000000.0</kp>
-      <kd>1.0</kd>
-      <size> 0.05  0.01 0.025</size>
-      <mass>0.1</mass>
-      <visual>
-        <size> 0.05  0.01 0.025</size>
-        <mesh>unit_box</mesh>
-        <material>Gazebo/Blue</material>
-      </visual>
-    </geom:box>
-  </body:box>
-  <joint:slider name="finger_1_slider_left">
-    <body2>finger_1_left</body2>
-    <body1>gripper_roll_left</body1>
-    <anchor>gripper_roll_left</anchor>
-    <lowStop> -0.02 </lowStop>
-    <highStop>   0.05 </highStop>
-    <axis>0.0  1.0  0.0 </axis>
-  </joint:slider>
-  <joint:slider name="finger_2_slider_left">
-    <body2>finger_2_left</body2>
-    <body1>gripper_roll_left</body1>
-    <anchor>gripper_roll_left</anchor>
-    <lowStop> -0.05 </lowStop>
-    <highStop>   0.02 </highStop>
-    <axis>0.0  1.0  0.0 </axis>
-  </joint:slider>
-  <controller:pr2_gripper name="pr2_gripper_left_controller" plugin="libPr2_Gripper.so">
-      <updateRate>100.0</updateRate>
-      <leftJoint>finger_2_slider_left</leftJoint>
-      <rightJoint>finger_1_slider_left</rightJoint>
-      <gripperForce>100.0</gripperForce>
-      <pGain>1.0</pGain>
-      <dGain>0.0</dGain>
-      <iGain>0.0</iGain>
-      <interface:pr2gripper name="pr2_gripper_left_iface"/>
-  </controller:pr2_gripper>
-  <controller:pr2_gripper name="pr2_gripper_right_controller" plugin="libPr2_Gripper.so">
-      <updateRate>100.0</updateRate>
-      <leftJoint>finger_2_slider_right</leftJoint>
-      <rightJoint>finger_1_slider_right</rightJoint>
-      <gripperForce>100.0</gripperForce>
-      <pGain>1.0</pGain>
-      <dGain>0.0</dGain>
-      <iGain>0.0</iGain>
-      <interface:pr2gripper name="pr2_gripper_right_iface"/>
-  </controller:pr2_gripper>
-  -->
   </xml>
 </data>
 

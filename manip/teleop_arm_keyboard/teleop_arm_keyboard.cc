@@ -253,12 +253,12 @@ main(int argc, char** argv)
 }
 
 void TArmK_Node::openGripper(PR2_JOINT_ID jointID) {
-  if(jointID != ARM_R_GRIPPER && jointID != ARM_L_GRIPPER) return;
+  if(jointID != ARM_R_GRIPPER_GAP && jointID != ARM_L_GRIPPER_GAP) return;
   if(_leftInit == false || _rightInit == false) {
     printf("No init, so not sending command.\n");
     return;
   }
-  if(jointID == ARM_R_GRIPPER) {
+  if(jointID == ARM_R_GRIPPER_GAP) {
     this->cmd_rightarmconfig.gripperForceCmd = 50;
     this->cmd_rightarmconfig.gripperGapCmd = .2;
 		printf("Opening right gripper\n");
@@ -270,12 +270,12 @@ void TArmK_Node::openGripper(PR2_JOINT_ID jointID) {
 }
 
 void TArmK_Node::closeGripper(PR2_JOINT_ID jointID) {
-  if(jointID != ARM_R_GRIPPER && jointID != ARM_L_GRIPPER) return;
+  if(jointID != ARM_R_GRIPPER_GAP && jointID != ARM_L_GRIPPER_GAP) return;
   if(_leftInit == false || _rightInit == false) {
     printf("No init, so not sending command.\n");
     return;
   }
-  if(jointID == ARM_R_GRIPPER) {
+  if(jointID == ARM_R_GRIPPER_GAP) {
     this->cmd_rightarmconfig.gripperForceCmd = 50;
     this->cmd_rightarmconfig.gripperGapCmd = 0;
   } else { 
@@ -325,7 +325,7 @@ void TArmK_Node::changeJointAngle(PR2_JOINT_ID jointID, bool increment)
     case ARM_L_WRIST_ROLL:
         this->cmd_leftarmconfig.wristRollAngle += jointCmdStep;
         break;
-    case ARM_L_GRIPPER:
+    case ARM_L_GRIPPER_GAP:
         this->cmd_leftarmconfig.gripperGapCmd += gripperStep;
         break;
     case ARM_R_PAN:
@@ -349,7 +349,7 @@ void TArmK_Node::changeJointAngle(PR2_JOINT_ID jointID, bool increment)
     case ARM_R_WRIST_ROLL:
         this->cmd_rightarmconfig.wristRollAngle += jointCmdStep;
         break;
-    case ARM_R_GRIPPER:
+    case ARM_R_GRIPPER_GAP:
         this->cmd_rightarmconfig.gripperGapCmd += gripperStep;
         break;
     default:
@@ -473,7 +473,7 @@ TArmK_Node::keyboardLoop()
                 printf("left wrist roll\n");
                 break;
             case '8':
-                curr_jointID = ARM_L_GRIPPER;
+                curr_jointID = ARM_L_GRIPPER_GAP;
                 printf("left gripper\n");
                 break;
 	    case '9':
@@ -516,7 +516,7 @@ TArmK_Node::keyboardLoop()
                 printf("right wrist roll\n");
                 break;
             case '8':
-                curr_jointID = ARM_R_GRIPPER;
+                curr_jointID = ARM_R_GRIPPER_GAP;
                 printf("right gripper\n");
                 break;
 	    case '9':
