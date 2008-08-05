@@ -71,17 +71,17 @@ void EnvironmentNAV2D::PrintHashTableHist()
 
 	for(int  j = 0; j < EnvNAV2D.HashTableSize; j++)
 	{
-		if(EnvNAV2D.Coord2StateIDHashTable[j].size() == 0)
+		if((int)EnvNAV2D.Coord2StateIDHashTable[j].size() == 0)
 			s0++;
-		else if(EnvNAV2D.Coord2StateIDHashTable[j].size() < 50)
+		else if((int)EnvNAV2D.Coord2StateIDHashTable[j].size() < 50)
 			s1++;
-		else if(EnvNAV2D.Coord2StateIDHashTable[j].size() < 100)
+		else if((int)EnvNAV2D.Coord2StateIDHashTable[j].size() < 100)
 			s50++;
-		else if(EnvNAV2D.Coord2StateIDHashTable[j].size() < 200)
+		else if((int)EnvNAV2D.Coord2StateIDHashTable[j].size() < 200)
 			s100++;
-		else if(EnvNAV2D.Coord2StateIDHashTable[j].size() < 300)
+		else if((int)EnvNAV2D.Coord2StateIDHashTable[j].size() < 300)
 			s200++;
-		else if(EnvNAV2D.Coord2StateIDHashTable[j].size() < 400)
+		else if((int)EnvNAV2D.Coord2StateIDHashTable[j].size() < 400)
 			s300++;
 		else
 			slarge++;
@@ -233,12 +233,12 @@ void EnvironmentNAV2D::InitializeEnvConfig()
 
 EnvNAV2DHashEntry_t* EnvironmentNAV2D::GetHashEntry(int X, int Y)
 {
-	clock_t currenttime = clock();
+	//clock_t currenttime = clock();
 
 	int binid = GETHASHBIN(X, Y);
 	
 #if DEBUG
-	if (EnvNAV2D.Coord2StateIDHashTable[binid].size() > 500)
+	if ((int)EnvNAV2D.Coord2StateIDHashTable[binid].size() > 500)
 	{
 		printf("WARNING: Hash table has a bin %d (X=%d Y=%d) of size %d\n", 
 			binid, X, Y, EnvNAV2D.Coord2StateIDHashTable[binid].size());
@@ -248,7 +248,7 @@ EnvNAV2DHashEntry_t* EnvironmentNAV2D::GetHashEntry(int X, int Y)
 #endif
 
 	//iterate over the states in the bin and select the perfect match
-	for(int ind = 0; ind < EnvNAV2D.Coord2StateIDHashTable[binid].size(); ind++)
+	for(int ind = 0; ind < (int)EnvNAV2D.Coord2StateIDHashTable[binid].size(); ind++)
 	{
 		if( EnvNAV2D.Coord2StateIDHashTable[binid][ind]->X == X 
 			&& EnvNAV2D.Coord2StateIDHashTable[binid][ind]->Y == Y)
@@ -268,7 +268,7 @@ EnvNAV2DHashEntry_t* EnvironmentNAV2D::CreateNewHashEntry(int X, int Y)
 {
 	int i;
 	
-	clock_t currenttime = clock();
+	//clock_t currenttime = clock();
 
 	EnvNAV2DHashEntry_t* HashEntry = new EnvNAV2DHashEntry_t;
 
@@ -295,7 +295,7 @@ EnvNAV2DHashEntry_t* EnvironmentNAV2D::CreateNewHashEntry(int X, int Y)
 		StateID2IndexMapping[HashEntry->stateID][i] = -1;
 	}
 
-	if(HashEntry->stateID != StateID2IndexMapping.size()-1)
+	if(HashEntry->stateID != (int)StateID2IndexMapping.size()-1)
 	{
 		printf("ERROR in Env... function: last state has incorrect stateID\n");
 		exit(1);	
@@ -347,7 +347,7 @@ static int EuclideanDistance(int X1, int Y1, int X2, int Y2)
 {
     int sqdist = ((X1-X2)*(X1-X2)+(Y1-Y2)*(Y1-Y2));
     double dist = sqrt((double)sqdist);
-    return COSTMULT*dist;
+    return (int)(COSTMULT*dist);
 
 }
 
@@ -392,6 +392,8 @@ bool EnvironmentNAV2D::InitGeneral() {
   
   //pre-compute heuristics
   ComputeHeuristicValues();
+
+  return true;
 }
 
 bool EnvironmentNAV2D::InitializeMDPCfg(MDPConfig *MDPCfg)
@@ -413,13 +415,13 @@ int EnvironmentNAV2D::GetFromToHeuristic(int FromStateID, int ToStateID)
 
 
 #if DEBUG
-	if(FromStateID >= EnvNAV2D.StateID2CoordTable.size() 
-		|| ToStateID >= EnvNAV2D.StateID2CoordTable.size())
+	if(FromStateID >= (int)EnvNAV2D.StateID2CoordTable.size() 
+		|| ToStateID >= (int)EnvNAV2D.StateID2CoordTable.size())
 	{
 		printf("ERROR in EnvNAV2D... function: stateID illegal\n");
 		exit(1);
 	}
-#endif;
+#endif
 
 	//get X, Y for the state
 	EnvNAV2DHashEntry_t* FromHashEntry = EnvNAV2D.StateID2CoordTable[FromStateID];
@@ -438,7 +440,7 @@ int EnvironmentNAV2D::GetGoalHeuristic(int stateID)
 #endif
 
 #if DEBUG
-	if(stateID >= EnvNAV2D.StateID2CoordTable.size())
+	if(stateID >= (int)EnvNAV2D.StateID2CoordTable.size())
 	{
 		printf("ERROR in EnvNAV2D... function: stateID illegal\n");
 		exit(1);
@@ -460,7 +462,7 @@ int EnvironmentNAV2D::GetStartHeuristic(int stateID)
 
 
 #if DEBUG
-	if(stateID >= EnvNAV2D.StateID2CoordTable.size())
+	if(stateID >= (int)EnvNAV2D.StateID2CoordTable.size())
 	{
 		printf("ERROR in EnvNAV2D... function: stateID illegal\n");
 		exit(1);
@@ -484,13 +486,13 @@ void EnvironmentNAV2D::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 	int cost;
 
 #if DEBUG
-	if(state->StateID >= EnvNAV2D.StateID2CoordTable.size())
+	if(state->StateID >= (int)EnvNAV2D.StateID2CoordTable.size())
 	{
 		printf("ERROR in Env... function: stateID illegal\n");
 		exit(1);
 	}
 
-	if(state->Actions.size() != 0)
+	if((int)state->Actions.size() != 0)
 	{
 		printf("ERROR in Env_setAllActionsandAllOutcomes: actions already exist for the state\n");
 		exit(1);
@@ -531,7 +533,7 @@ void EnvironmentNAV2D::SetAllActionsandAllOutcomes(CMDPSTATE* state)
         cost = COSTMULT;
         //diagonal moves are costlier
         if(newX != HashEntry->X && newY != HashEntry->Y)
-            cost = sqrt(2)*cost;
+            cost = (int)(sqrt(2)*cost);
 
     	EnvNAV2DHashEntry_t* OutHashEntry;
 		if((OutHashEntry = GetHashEntry(newX, newY)) == NULL)
@@ -600,7 +602,7 @@ void EnvironmentNAV2D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<
         int cost = COSTMULT;
         //diagonal moves are costlier
         if(newX != HashEntry->X && newY != HashEntry->Y)
-            cost = sqrt(2)*cost;
+            cost = (int)(sqrt(2)*cost);
 
 
         SuccIDV->push_back(OutHashEntry->stateID);
@@ -612,14 +614,14 @@ void EnvironmentNAV2D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<
 
 int EnvironmentNAV2D::SizeofCreatedEnv()
 {
-	return EnvNAV2D.StateID2CoordTable.size();
+	return (int)EnvNAV2D.StateID2CoordTable.size();
 	
 }
 
 void EnvironmentNAV2D::PrintState(int stateID, bool bVerbose, FILE* fOut /*=NULL*/)
 {
 #if DEBUG
-	if(stateID >= EnvNAV2D.StateID2CoordTable.size())
+	if(stateID >= (int)EnvNAV2D.StateID2CoordTable.size())
 	{
 		printf("ERROR in EnvNAV2D... function: stateID illegal (2)\n");
 		exit(1);

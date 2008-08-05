@@ -54,6 +54,9 @@ public:
 	virtual void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL) = 0;
 	virtual void PrintEnv_Config(FILE* fOut) = 0;
 
+    //destructor
+    virtual ~DiscreteSpaceInformation(){};
+
 };
 
 

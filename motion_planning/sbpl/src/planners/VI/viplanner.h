@@ -73,6 +73,8 @@ public:
 		MDPCfg_ = MDP_cfg;
 	};
 
+    //destructor
+    ~VIPlanner();
 
 private:
 	

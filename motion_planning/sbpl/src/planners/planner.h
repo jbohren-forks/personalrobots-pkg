@@ -91,6 +91,7 @@ public:
     //forgets previous planning efforts and starts planning from scratch next time replan is called
     virtual int force_planning_from_scratch() = 0; 
 
+    virtual ~SBPLPlanner(){};
 
 protected:
 	DiscreteSpaceInformation *environment_;

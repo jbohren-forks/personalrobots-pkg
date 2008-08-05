@@ -51,7 +51,7 @@ bool CMDPACTION::DeleteAllOutcomes()
 bool CMDPACTION::IsValid()
 {
 	float Prob = 0;
-	for(int i = 0; i < SuccsProb.size(); i++)
+	for(int i = 0; i < (int)SuccsProb.size(); i++)
 	{
 		Prob += SuccsProb[i];
 	}
@@ -86,7 +86,7 @@ int CMDPACTION::GetIndofMostLikelyOutcome()
 	double HighestProb = 0;
 	int mlind = -1;
 
-	for(int oind = 0; oind < this->SuccsID.size(); oind++)
+	for(int oind = 0; oind < (int)this->SuccsID.size(); oind++)
 	{
 		if(this->SuccsProb[oind] >= HighestProb)
 		{
@@ -103,7 +103,7 @@ int CMDPACTION::GetIndofMostLikelyOutcome()
 int CMDPACTION::GetIndofOutcome(int OutcomeID)
 {
 
-	for(int oind = 0; oind < this->SuccsID.size(); oind++)
+	for(int oind = 0; oind < (int)this->SuccsID.size(); oind++)
 	{
 		if(this->SuccsID[oind] == OutcomeID)
 		{
@@ -133,7 +133,7 @@ bool CMDPSTATE::Delete()
 	PredsID.clear();
 
 	//delete actions array
-	while(Actions.size() > 0)
+	while((int)Actions.size() > 0)
 	{
 		action = Actions[Actions.size()-1];
 		Actions.pop_back();
@@ -172,8 +172,8 @@ bool CMDPSTATE::AddPred(int stateID)
 #if MEM_CHECK
 	DisableMemCheck();
 #endif
-		int t=PredsID.size();
-		PredsID.push_back(stateID);
+
+    PredsID.push_back(stateID);
 #if MEM_CHECK
 	EnableMemCheck();
 #endif
@@ -184,7 +184,7 @@ bool CMDPSTATE::AddPred(int stateID)
 
 bool CMDPSTATE::RemovePred(int stateID)
 {
-	for(int i = 0; i < this->PredsID.size(); i++)
+	for(int i = 0; i < (int)this->PredsID.size(); i++)
 	{
 		if(this->PredsID.at(i) == stateID)
 		{
@@ -208,7 +208,7 @@ bool CMDPSTATE::RemoveAllActions()
 	CMDPACTION* action;
 
 	//delete actions array
-	while(Actions.size() > 0)
+	while((int)Actions.size() > 0)
 	{
 		action = Actions[Actions.size()-1];
 		Actions.pop_back();
@@ -222,7 +222,7 @@ bool CMDPSTATE::RemoveAllActions()
 
 bool CMDPSTATE::ContainsPred(int stateID)
 {
-	for(int i = 0; i < PredsID.size(); i++)
+	for(int i = 0; i < (int)PredsID.size(); i++)
 	{
 		if(PredsID[i] == stateID)
 			return true;
@@ -239,7 +239,7 @@ void CMDPSTATE::operator = (const CMDPSTATE& rhsstate)
 CMDPACTION* CMDPSTATE::GetAction(int actionID)
 {
 
-	for(int i = 0; i < Actions.size(); i++)
+	for(int i = 0; i < (int)Actions.size(); i++)
 	{
 		if(Actions[i]->ActionID == actionID)
 			return Actions[i];
@@ -254,10 +254,10 @@ CMDPACTION* CMDPSTATE::GetAction(int actionID)
 
 //-------------MDP class functions--------------------------------
 bool CMDP::empty()
-{	return (StateArray.size() == 0);};
+{	return ((int)StateArray.size() == 0);};
 
 bool CMDP::full()
-{	return (StateArray.size() >= MAXSTATESPACESIZE);};
+{	return ((int)StateArray.size() >= MAXSTATESPACESIZE);};
 
 //creates numofstates states. Their ids must be initialized elsewhere
 bool CMDP::Create(int numofstates)
@@ -292,7 +292,7 @@ CMDPSTATE* CMDP::AddState(int StateID)
 {
 	CMDPSTATE* state;
 
-	if(StateArray.size()+1 > MAXSTATESPACESIZE)
+	if((int)StateArray.size()+1 > MAXSTATESPACESIZE)
 	{
 		printf("ERROR: maximum of states is reached in MDP\n");
 		exit(1);
@@ -317,7 +317,7 @@ bool CMDP::Delete()
 {
 	CMDPSTATE* state;
 
-	while(StateArray.size() > 0)
+	while((int)StateArray.size() > 0)
 	{
 		state = StateArray[StateArray.size()-1];
 		StateArray.pop_back();
@@ -332,14 +332,14 @@ bool CMDP::Delete()
 void CMDP::Print(FILE* fOut)
 {
 	fprintf(fOut, "MDP statespace size=%d\n", StateArray.size());
-	for(int i = 0; i < StateArray.size(); i++)
+	for(int i = 0; i < (int)StateArray.size(); i++)
 	{
 		fprintf(fOut, "%d: ", StateArray[i]->StateID);
-		for( int j = 0; j < StateArray[i]->Actions.size(); j++)
+		for( int j = 0; j < (int)StateArray[i]->Actions.size(); j++)
 		{
 			CMDPACTION* action = StateArray[i]->Actions[j];
 			fprintf(fOut, "[%d", action->ActionID);
-			for( int outind = 0; outind < action->SuccsID.size(); outind++)
+			for( int outind = 0; outind < (int)action->SuccsID.size(); outind++)
 			{
 				fprintf(fOut, " %d %d %f", action->SuccsID[outind], action->Costs[outind],
 					action->SuccsProb[outind]);

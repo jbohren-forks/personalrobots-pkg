@@ -167,7 +167,7 @@ private:
 	int GetGVal(int StateID, ARASearchStateSpace_t* pSearchStateSpace);
 
 	//returns 1 if the solution is found, 0 if the solution does not exist and 2 if it ran out of time
-	int ImprovePath(ARASearchStateSpace_t* pSearchStateSpace, int MaxNumofSecs);
+	int ImprovePath(ARASearchStateSpace_t* pSearchStateSpace, double MaxNumofSecs);
 
 	void BuildNewOPENList(ARASearchStateSpace_t* pSearchStateSpace);
 

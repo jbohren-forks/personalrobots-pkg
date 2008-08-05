@@ -70,19 +70,19 @@ void EnvironmentXXX::PrintHashTableHist()
 {
 	int s0=0, s1=0, s50=0, s100=0, s200=0, s300=0, slarge=0;
 
-	for(int  j = 0; j < EnvXXX.HashTableSize; j++)
+	for(int  j = 0; j < (int)EnvXXX.HashTableSize; j++)
 	{
-		if(EnvXXX.Coord2StateIDHashTable[j].size() == 0)
+		if((int)EnvXXX.Coord2StateIDHashTable[j].size() == 0)
 			s0++;
-		else if(EnvXXX.Coord2StateIDHashTable[j].size() < 50)
+		else if((int)EnvXXX.Coord2StateIDHashTable[j].size() < 50)
 			s1++;
-		else if(EnvXXX.Coord2StateIDHashTable[j].size() < 100)
+		else if((int)EnvXXX.Coord2StateIDHashTable[j].size() < 100)
 			s50++;
-		else if(EnvXXX.Coord2StateIDHashTable[j].size() < 200)
+		else if((int)EnvXXX.Coord2StateIDHashTable[j].size() < 200)
 			s100++;
-		else if(EnvXXX.Coord2StateIDHashTable[j].size() < 300)
+		else if((int)EnvXXX.Coord2StateIDHashTable[j].size() < 300)
 			s200++;
-		else if(EnvXXX.Coord2StateIDHashTable[j].size() < 400)
+		else if((int)EnvXXX.Coord2StateIDHashTable[j].size() < 400)
 			s300++;
 		else
 			slarge++;
@@ -108,12 +108,12 @@ void EnvironmentXXX::InitializeEnvConfig()
 EnvXXXHashEntry_t* EnvironmentXXX::GetHashEntry(unsigned int X1, unsigned int X2, 
 									unsigned int X3, unsigned int X4)
 {
-	clock_t currenttime = clock();
+	//clock_t currenttime = clock();
 
 	int binid = GETHASHBIN(X1, X2, X3, X4);
 	
 #if DEBUG
-	if (EnvXXX.Coord2StateIDHashTable[binid].size() > 500)
+	if ((int)EnvXXX.Coord2StateIDHashTable[binid].size() > 500)
 	{
 		printf("WARNING: Hash table has a bin %d (X1=%d X2=%d X3=%d X4=%d) of size %d\n", 
 			binid, X1, X2, X3, X4, EnvXXX.Coord2StateIDHashTable[binid].size());
@@ -123,7 +123,7 @@ EnvXXXHashEntry_t* EnvironmentXXX::GetHashEntry(unsigned int X1, unsigned int X2
 #endif
 
 	//iterate over the states in the bin and select the perfect match
-	for(int ind = 0; ind < EnvXXX.Coord2StateIDHashTable[binid].size(); ind++)
+	for(int ind = 0; ind < (int)EnvXXX.Coord2StateIDHashTable[binid].size(); ind++)
 	{
 		if( EnvXXX.Coord2StateIDHashTable[binid][ind]->X1 == X1 
 			&& EnvXXX.Coord2StateIDHashTable[binid][ind]->X2 == X2
@@ -146,7 +146,7 @@ EnvXXXHashEntry_t* EnvironmentXXX::CreateNewHashEntry(unsigned int X1, unsigned 
 {
 	int i;
 	
-	clock_t currenttime = clock();
+	//clock_t currenttime = clock();
 
 	EnvXXXHashEntry_t* HashEntry = new EnvXXXHashEntry_t;
 
@@ -176,7 +176,7 @@ EnvXXXHashEntry_t* EnvironmentXXX::CreateNewHashEntry(unsigned int X1, unsigned 
 		StateID2IndexMapping[HashEntry->stateID][i] = -1;
 	}
 
-	if(HashEntry->stateID != StateID2IndexMapping.size()-1)
+	if(HashEntry->stateID != (int)StateID2IndexMapping.size()-1)
 	{
 		printf("ERROR in Env... function: last state has incorrect stateID\n");
 		exit(1);	
@@ -320,8 +320,8 @@ int EnvironmentXXX::GetFromToHeuristic(int FromStateID, int ToStateID)
 
 
 #if DEBUG
-	if(FromStateID >= EnvXXX.StateID2CoordTable.size() 
-		|| ToStateID >= EnvXXX.StateID2CoordTable.size())
+	if(FromStateID >= (int)EnvXXX.StateID2CoordTable.size() 
+		|| ToStateID >= (int)EnvXXX.StateID2CoordTable.size())
 	{
 		printf("ERROR in EnvXXX... function: stateID illegal\n");
 		exit(1);
@@ -345,7 +345,7 @@ int EnvironmentXXX::GetGoalHeuristic(int stateID)
 #endif
 
 #if DEBUG
-	if(stateID >= EnvXXX.StateID2CoordTable.size())
+	if(stateID >= (int)EnvXXX.StateID2CoordTable.size())
 	{
 		printf("ERROR in EnvXXX... function: stateID illegal\n");
 		exit(1);
@@ -368,7 +368,7 @@ int EnvironmentXXX::GetStartHeuristic(int stateID)
 
 
 #if DEBUG
-	if(stateID >= EnvXXX.StateID2CoordTable.size())
+	if(stateID >= (int)EnvXXX.StateID2CoordTable.size())
 	{
 		printf("ERROR in EnvXXX... function: stateID illegal\n");
 		exit(1);
@@ -392,13 +392,13 @@ void EnvironmentXXX::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 
 
 #if DEBUG
-	if(state->StateID >= EnvXXX.StateID2CoordTable.size())
+	if(state->StateID >= (int)EnvXXX.StateID2CoordTable.size())
 	{
 		printf("ERROR in EnvXXX... function: stateID illegal\n");
 		exit(1);
 	}
 
-	if(state->Actions.size() != 0)
+	if((int)state->Actions.size() != 0)
 	{
 		printf("ERROR in Env_setAllActionsandAllOutcomes: actions already exist for the state\n");
 		exit(1);
@@ -420,7 +420,7 @@ void EnvironmentXXX::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 		//Add Action
 		CMDPACTION* action = state->AddAction(aind);
 
-		clock_t currenttime = clock();
+		//clock_t currenttime = clock();
 		//add all the outcomes to the action
 		AddAllOutcomes(HashEntry->X1, HashEntry->X2, HashEntry->X3, HashEntry->X4, action, cost); 
 
@@ -450,14 +450,14 @@ void EnvironmentXXX::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<in
 
 int EnvironmentXXX::SizeofCreatedEnv()
 {
-	return EnvXXX.StateID2CoordTable.size();
+	return (int)EnvXXX.StateID2CoordTable.size();
 	
 }
 
 void EnvironmentXXX::PrintState(int stateID, bool bVerbose, FILE* fOut /*=NULL*/)
 {
 #if DEBUG
-	if(stateID >= EnvXXX.StateID2CoordTable.size())
+	if(stateID >= (int)EnvXXX.StateID2CoordTable.size())
 	{
 		printf("ERROR in EnvXXX... function: stateID illegal (2)\n");
 		exit(1);

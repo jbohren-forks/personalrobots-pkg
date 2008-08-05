@@ -33,6 +33,15 @@ static clock_t g_runtime = 0;
 static double g_belldelta = INFINITECOST;
 
 
+VIPlanner::~VIPlanner()
+{
+
+    //delete the statespace
+
+
+
+}
+
 
 void VIPlanner::Initialize_vidata(CMDPSTATE* state)
 {
@@ -82,7 +91,7 @@ CMDPSTATE* VIPlanner::CreateState(int stateID)
 CMDPSTATE* VIPlanner::GetState(int stateID)
 {	
 
-	if(stateID >= environment_->StateID2IndexMapping.size())
+	if(stateID >= (int)environment_->StateID2IndexMapping.size())
 	{
 		printf("ERROR int GetState: stateID is invalid\n");
 		exit(1);
@@ -135,7 +144,7 @@ void VIPlanner::PrintPolicy(FILE* fPolicy)
 	double Conf = 0;
 	bool bCycles = false;
 	printf("Printing policy...\n");
-	while(WorkList.size() > 0)
+	while((int)WorkList.size() > 0)
 	{
 		//pop the last state
 		CMDPSTATE* state = WorkList.at(WorkList.size()-1);
@@ -187,14 +196,14 @@ void VIPlanner::PrintPolicy(FILE* fPolicy)
 				fprintf(fPolicy, "%d ", action->SuccsID.size());
 
 			//print successors and insert them into the list
-			for(int i = 0; i < action->SuccsID.size(); i++)
+			for(int i = 0; i < (int)action->SuccsID.size(); i++)
 			{
 				if(!bPrintStatOnly)
 					fprintf(fPolicy, "%d %d ", action->Costs[i], action->SuccsID[i]);
 				polaction->AddOutcome(action->SuccsID[i], action->Costs[i], action->SuccsProb[i]);
 
 				CMDPSTATE* succstate = GetState(action->SuccsID[i]);
-				if(((VIState*)succstate->PlannerSpecificData)->iteration != viPlanner.iteration)
+				if((int)((VIState*)succstate->PlannerSpecificData)->iteration != viPlanner.iteration)
 				{
 					((VIState*)succstate->PlannerSpecificData)->iteration = viPlanner.iteration;
 					WorkList.push_back(succstate);
@@ -260,11 +269,11 @@ void VIPlanner::backup(CMDPSTATE* state)
 	//iterate through actions
 	double minactionQ = INFINITECOST;
 	CMDPACTION* minaction = NULL;
-	for(aind = 0; aind < state->Actions.size(); aind++)
+	for(aind = 0; aind < (int)state->Actions.size(); aind++)
 	{
 		double actionQ = 0;
 		CMDPACTION* action = state->Actions[aind];
-		for(oind = 0; oind < action->SuccsID.size(); oind++)
+		for(oind = 0; oind < (int)action->SuccsID.size(); oind++)
 		{
 			succstate = GetState(action->SuccsID[oind]);
 			actionQ += action->SuccsProb[oind]*(action->Costs[oind] + 
@@ -301,29 +310,29 @@ void VIPlanner::perform_iteration_backward()
 	Worklist.push_back(viPlanner.GoalState->StateID);
 		
 	//backup all the states
-	while(Worklist.size() > 0)
+	while((int)Worklist.size() > 0)
 	{
 		//get the next state to process
 		state = GetState(Worklist[Worklist.size()-1]);
 		Worklist.pop_back();
 
 		//add all actions to the state 
-		if(state->Actions.size() == 0)
+		if((int)state->Actions.size() == 0)
 			environment_->SetAllActionsandAllOutcomes(state);
 
 		//backup the state
 		backup(state);
 
 		//insert all the not yet processed successors into the worklist
-		for(aind = 0; aind < state->Actions.size(); aind++)
+		for(aind = 0; aind < (int)state->Actions.size(); aind++)
 		{
 			CMDPACTION* action = state->Actions[aind];
-			for(oind = 0; oind < action->SuccsID.size(); oind++)
+			for(oind = 0; oind < (int)action->SuccsID.size(); oind++)
 			{
 				CMDPSTATE* succstate = GetState(action->SuccsID[oind]);
 
 				//skip if already was in the queue
-				if(((VIState*)succstate->PlannerSpecificData)->iteration != viPlanner.iteration)
+				if((int)((VIState*)succstate->PlannerSpecificData)->iteration != viPlanner.iteration)
 				{
 					Worklist.push_back(succstate->StateID);
 				
@@ -338,15 +347,15 @@ void VIPlanner::perform_iteration_backward()
 			continue;
 		
 		//add all predecessor ids to the state
-		if(state->PredsID.size() == 0)
+		if((int)state->PredsID.size() == 0)
 			environment_->SetAllPreds(state);
 		//insert all the not yet processed predecessors into the worklist
-		for(int pind = 0; pind < state->PredsID.size(); pind++)
+		for(int pind = 0; pind < (int)state->PredsID.size(); pind++)
 		{
 			CMDPSTATE* PredState = GetState(state->PredsID[pind]);
 	
 			//skip if already was in the queue
-			if(((VIState*)PredState->PlannerSpecificData)->iteration != viPlanner.iteration)
+			if((int)((VIState*)PredState->PlannerSpecificData)->iteration != viPlanner.iteration)
 			{
 				Worklist.push_back(PredState->StateID);
 				
@@ -368,7 +377,7 @@ void VIPlanner::perform_iteration_forward()
 	Worklist.push_back(viPlanner.StartState);
 		
 	//backup all the states
-	while(Worklist.size() > 0)
+	while((int)Worklist.size() > 0)
 	{
 		//get the next state to process from the front
 		state = Worklist[Worklist.size()-1];
@@ -376,23 +385,23 @@ void VIPlanner::perform_iteration_forward()
 		Worklist.pop_back();
 
 		//add all actions to the state 
-		if(state->Actions.size() == 0)
+		if((int)state->Actions.size() == 0)
 			environment_->SetAllActionsandAllOutcomes(state);
 
 		//backup the state
 		backup(state);
 
 		//insert all the not yet processed successors into the worklist
-		for(aind = 0; aind < state->Actions.size(); aind++)
+		for(aind = 0; aind < (int)state->Actions.size(); aind++)
 		{
 			//CMDPACTION* action = state->Actions[aind];
 			CMDPACTION* action = ((VIState*)state->PlannerSpecificData)->bestnextaction;
-			for(oind = 0; action != NULL && oind < action->SuccsID.size(); oind++)
+			for(oind = 0; action != NULL && oind < (int)action->SuccsID.size(); oind++)
 			{
 				CMDPSTATE* succstate = GetState(action->SuccsID[oind]);
 
 				//skip if already was in the queue
-				if(((VIState*)succstate->PlannerSpecificData)->iteration != viPlanner.iteration)
+				if((int)((VIState*)succstate->PlannerSpecificData)->iteration != viPlanner.iteration)
 				{
 					Worklist.push_back(succstate);
 				
@@ -422,7 +431,7 @@ void VIPlanner::InitializePlanner()
 //returns 1 if path is found, 0 otherwise
 int VIPlanner::replan(double allocatedtime, vector<int>* solution_stateIDs_V)
 {
-	int ret = 0;
+
 	FILE* fPolicy = fopen("policy.txt","w");
 	FILE* fStat = fopen("stat.txt","w");
 

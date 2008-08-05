@@ -113,6 +113,8 @@ public:
 	void GetCoordFromState(int stateID, int& x, int& y);
 
 	const EnvNAV2DConfig_t* GetEnvNavConfig();
+
+    ~EnvironmentNAV2D(){};
 	
  private:
 

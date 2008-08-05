@@ -71,9 +71,9 @@ void checkmdpstate(CMDPSTATE* state)
 	exit(1);
 #endif
 
-	for(int aind = 0; aind < state->Actions.size(); aind++)
+	for(int aind = 0; aind < (int)state->Actions.size(); aind++)
 	{
-		for(int aind1 = 0; aind1 < state->Actions.size(); aind1++)
+		for(int aind1 = 0; aind1 < (int)state->Actions.size(); aind1++)
 		{
 			if(state->Actions[aind1]->ActionID == state->Actions[aind]->ActionID &&
 				aind1 != aind)
@@ -82,9 +82,9 @@ void checkmdpstate(CMDPSTATE* state)
 				exit(1);
 			}
 		}
-		for(int sind = 0; sind < state->Actions[aind]->SuccsID.size(); sind++)
+		for(int sind = 0; sind < (int)state->Actions[aind]->SuccsID.size(); sind++)
 		{	
-			for(int sind1 = 0; sind1 < state->Actions[aind]->SuccsID.size(); sind1++)
+			for(int sind1 = 0; sind1 < (int)state->Actions[aind]->SuccsID.size(); sind1++)
 			{
 				if(state->Actions[aind]->SuccsID[sind] == state->Actions[aind]->SuccsID[sind1] &&
 					sind != sind1)
@@ -100,7 +100,7 @@ void checkmdpstate(CMDPSTATE* state)
 
 void CheckMDP(CMDP* mdp)
 {
-	for(int i = 0; i < mdp->StateArray.size(); i++)
+	for(int i = 0; i < (int)mdp->StateArray.size(); i++)
 	{
 		checkmdpstate(mdp->StateArray[i]);
 	}
@@ -133,14 +133,14 @@ bool PathExists(CMDP* pMarkovChain, CMDPSTATE* sourcestate, CMDPSTATE* targetsta
 
 	//insert the source state
 	WorkList.push_back(sourcestate);
-	while(WorkList.size() > 0)
+	while((int)WorkList.size() > 0)
 	{
 		//get the state and its info
 		state = WorkList[WorkList.size()-1];
 		WorkList.pop_back();
 
 		//Markov Chain should just contain a single policy
-		if(state->Actions.size() > 1)
+		if((int)state->Actions.size() > 1)
 		{
 			printf("ERROR in PathExists: Markov Chain is a general MDP\n");
 			exit(1);
@@ -154,15 +154,15 @@ bool PathExists(CMDP* pMarkovChain, CMDPSTATE* sourcestate, CMDPSTATE* targetsta
 		}
 
 		//otherwise just insert policy successors into the worklist unless it is a goal state
-		for(int sind = 0; state->Actions.size() != 0 && sind < state->Actions[0]->SuccsID.size(); sind++)
+		for(int sind = 0; (int)state->Actions.size() != 0 && sind < (int)state->Actions[0]->SuccsID.size(); sind++)
 		{
 			//get a successor
-			for(i = 0; i < pMarkovChain->StateArray.size(); i++)
+			for(i = 0; i < (int)pMarkovChain->StateArray.size(); i++)
 			{
 				if(pMarkovChain->StateArray[i]->StateID == state->Actions[0]->SuccsID[sind])
 					break;
 			}
-			if(i == pMarkovChain->StateArray.size())
+			if(i == (int)pMarkovChain->StateArray.size())
 			{	
 				printf("ERROR in PathExists: successor is not found\n");
 				exit(1);
@@ -189,11 +189,11 @@ int ComputeNumofStochasticActions(CMDP* pMDP)
 	int nNumofStochActions = 0;
 	printf("ComputeNumofStochasticActions...\n");
 
-	for(i = 0; i < pMDP->StateArray.size(); i++)
+	for(i = 0; i < (int)pMDP->StateArray.size(); i++)
 	{
-		for(int aind = 0; aind < pMDP->StateArray[i]->Actions.size(); aind++)
+		for(int aind = 0; aind < (int)pMDP->StateArray[i]->Actions.size(); aind++)
 		{
-			if(pMDP->StateArray[i]->Actions[aind]->SuccsID.size() > 1)
+			if((int)pMDP->StateArray[i]->Actions[aind]->SuccsID.size() > 1)
 				nNumofStochActions++;
 		}
 	}
@@ -219,7 +219,7 @@ void EvaluatePolicy(CMDP* PolicyMDP, int StartStateID, int GoalStateID,
 	//create and initialize values
 	double* vals = new double [PolicyMDP->StateArray.size()];
 	double* Pcvals = new double [PolicyMDP->StateArray.size()];
-	for(i = 0; i < PolicyMDP->StateArray.size(); i++)
+	for(i = 0; i < (int)PolicyMDP->StateArray.size(); i++)
 	{
 		vals[i] = 0;
 		Pcvals[i] = 0;
@@ -238,7 +238,7 @@ void EvaluatePolicy(CMDP* PolicyMDP, int StartStateID, int GoalStateID,
 	while(delta > mindelta)
 	{
 		delta = 0;
-		for(i = 0; i < PolicyMDP->StateArray.size(); i++)
+		for(i = 0; i < (int)PolicyMDP->StateArray.size(); i++)
 		{
 			//get the state
 			CMDPSTATE* state = PolicyMDP->StateArray[i];
@@ -248,7 +248,7 @@ void EvaluatePolicy(CMDP* PolicyMDP, int StartStateID, int GoalStateID,
 			{
 				vals[i] = 0;
 			}
-			else if(state->Actions.size() == 0)
+			else if((int)state->Actions.size() == 0)
 			{
 				*bFullPolicy = false;
 				vals[i] = UNKNOWN_COST;
@@ -262,16 +262,15 @@ void EvaluatePolicy(CMDP* PolicyMDP, int StartStateID, int GoalStateID,
 
 				//do backup
 				double Q = 0;
-				for(int oind = 0; oind < action->SuccsID.size(); oind++)
+				for(int oind = 0; oind < (int)action->SuccsID.size(); oind++)
 				{
 					//get the state
-					for(j = 0; j < PolicyMDP->StateArray.size(); j++)
+					for(j = 0; j < (int)PolicyMDP->StateArray.size(); j++)
 					{	
-						int t = PolicyMDP->StateArray[j]->StateID;
 						if(PolicyMDP->StateArray[j]->StateID == action->SuccsID[oind])
 							break;
 					}
-					if(j == PolicyMDP->StateArray.size())
+					if(j == (int)PolicyMDP->StateArray.size())
 					{
 						printf("ERROR in EvaluatePolicy: incorrect successor %d\n", 
 							action->SuccsID[oind]);
@@ -298,10 +297,10 @@ void EvaluatePolicy(CMDP* PolicyMDP, int StartStateID, int GoalStateID,
 			double Pc = 0;
 			//go over all predecessor states
 			int nMerge = 0;
-			for(j = 0; j < PolicyMDP->StateArray.size(); j++)
+			for(j = 0; j < (int)PolicyMDP->StateArray.size(); j++)
 			{
-				for(int oind = 0; PolicyMDP->StateArray[j]->Actions.size() > 0 && 
-					oind <  PolicyMDP->StateArray[j]->Actions[0]->SuccsID.size(); oind++)
+				for(int oind = 0; (int)PolicyMDP->StateArray[j]->Actions.size() > 0 && 
+					oind <  (int)PolicyMDP->StateArray[j]->Actions[0]->SuccsID.size(); oind++)
 				{
 					if(PolicyMDP->StateArray[j]->Actions[0]->SuccsID[oind] == state->StateID)
 					{

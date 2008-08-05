@@ -99,6 +99,8 @@ public:
 	void PrintEnv_Config(FILE* fOut);
 
 
+    ~EnvironmentXXX(){};
+
 private:
 
 	//member variables
