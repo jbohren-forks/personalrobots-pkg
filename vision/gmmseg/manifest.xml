@@ -1,10 +1,13 @@
 <package>
   <description>
       Gaussian texture segmentation assuming object is in center of image.
+      This depends on scipy and psyco, but scipy depends on a lot of other things
+      so it isn't in ros right now.
   </description>
   <author>Charles C. Kemp, Hai Nguyen</author>
   <license>BSD</license>
   <depend package="opencv"/>
+  <depend package="pyrob"/>
   <depend package="numpy"/>
   <depend package="rospy"/>
   <depend package="std_msgs"/>

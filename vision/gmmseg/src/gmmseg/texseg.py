@@ -1,13 +1,15 @@
+import rostools
+rostools.updatePath('gmmseg')
 from optparse import OptionParser
 from opencv import cv
 from opencv import highgui
 import scipy.ndimage as ni
 import Image
 import ImageDraw
-import util as ut
 import numpy as np
-import gmm as gm
-import prob as pb
+import pyrob.util as ut
+import pyrob.gmm as gm
+import pyrob.prob as pb
 import itertools as it
 rn = np.random
 la = np.linalg
@@ -643,6 +645,7 @@ def segment_center_object(image,
     else:
         features = imf.select_subset(nsamp)
     #sego = SegmentObject(image, features, iter_limit=iter_limit)
+
     sego = SegmentObject(image, imf, iter_limit=iter_limit, prior_gmm=prior_gmm)
     sego.classify_image(use_flip_heuristic)
     sego.clean_classified_image()
