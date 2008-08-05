@@ -161,8 +161,8 @@ void GazeboHardware::sendCommand(){
         if (boardLookUp[ii] == 0)
         {
           pr2ActarrayIface->Lock(1);
-          hardwareInterface->last_requested_current = command; //TODO differentiate between these
-          hardwareInterface->last_commanded_current = command;
+          hardwareInterface->actuator[ii].state.lastRequestedCurrent= command; //TODO differentiate between these
+          hardwareInterface->actuator[ii].state.lastCommandedCurrent= command;
           pr2ActarrayIface->data->actuators[portLookUp[ii]].cmdEffectorForce = command*GAZEBO_CURRENT_TO_CMD;
           pr2ActarrayIface->Unlock();
         }
