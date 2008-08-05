@@ -31,10 +31,6 @@
 
 #include "../headers.h"
 
-//clock_t time3_addallout = 0;
-//clock_t time_gethash = 0;
-//clock_t time_createhash = 0;
-
 
 void PrintUsage(char *argv[])
 {
@@ -93,26 +89,35 @@ int main(int argc, char *argv[])
     printf("done planning\n");
 	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
 
-    printf("start planning...\n");
-	bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
-    printf("done planning\n");
-	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+    environment_nav2D.PrintTimeStat(stdout);
 
     printf("start planning...\n");
 	bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
     printf("done planning\n");
 	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
 
-    printf("start planning...\n");
-	bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
-    printf("done planning\n");
-	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+    environment_nav2D.PrintTimeStat(stdout);
 
     printf("start planning...\n");
 	bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
     printf("done planning\n");
 	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
 
+    environment_nav2D.PrintTimeStat(stdout);
+
+    printf("start planning...\n");
+	bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    environment_nav2D.PrintTimeStat(stdout);
+
+    printf("start planning...\n");
+	bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    environment_nav2D.PrintTimeStat(stdout);
 
     printf("start planning...\n");
 	bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
@@ -123,6 +128,8 @@ int main(int argc, char *argv[])
 	for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
 	  environment_nav2D.PrintState(solution_stateIDs_V[i], true, fSol);
 	}
+
+    environment_nav2D.PrintTimeStat(stdout);
 
 	//print a path
 	if(bRet)

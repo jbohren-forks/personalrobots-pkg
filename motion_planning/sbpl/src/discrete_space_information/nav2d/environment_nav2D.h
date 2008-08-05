@@ -115,6 +115,8 @@ public:
 	const EnvNAV2DConfig_t* GetEnvNavConfig();
 
     ~EnvironmentNAV2D(){};
+
+    void PrintTimeStat(FILE* fOut);
 	
  private:
 

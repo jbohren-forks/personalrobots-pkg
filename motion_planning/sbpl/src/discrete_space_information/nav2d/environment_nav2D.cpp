@@ -30,12 +30,13 @@
 
 
 
+#if TIME_DEBUG
+static clock_t time3_addallout = 0;
+static clock_t time_gethash = 0;
+static clock_t time_createhash = 0;
+static clock_t time_getsuccs = 0;
+#endif
 
-//extern clock_t time3_addallout;
-//extern clock_t time_gethash;
-//extern clock_t time_createhash;
-
-//function prototypes
 
 
 //-------------------problem specific and local functions---------------------
@@ -233,7 +234,10 @@ void EnvironmentNAV2D::InitializeEnvConfig()
 
 EnvNAV2DHashEntry_t* EnvironmentNAV2D::GetHashEntry(int X, int Y)
 {
-	//clock_t currenttime = clock();
+
+#if TIME_DEBUG
+	clock_t currenttime = clock();
+#endif
 
 	int binid = GETHASHBIN(X, Y);
 	
@@ -253,12 +257,16 @@ EnvNAV2DHashEntry_t* EnvironmentNAV2D::GetHashEntry(int X, int Y)
 		if( EnvNAV2D.Coord2StateIDHashTable[binid][ind]->X == X 
 			&& EnvNAV2D.Coord2StateIDHashTable[binid][ind]->Y == Y)
 		{
-			//time_gethash += clock()-currenttime;
+#if TIME_DEBUG
+			time_gethash += clock()-currenttime;
+#endif
 			return EnvNAV2D.Coord2StateIDHashTable[binid][ind];
 		}
 	}
-	
-	//time_gethash += clock()-currenttime;
+
+#if TIME_DEBUG	
+	time_gethash += clock()-currenttime;
+#endif
 
 	return NULL;	  
 }
@@ -267,8 +275,10 @@ EnvNAV2DHashEntry_t* EnvironmentNAV2D::GetHashEntry(int X, int Y)
 EnvNAV2DHashEntry_t* EnvironmentNAV2D::CreateNewHashEntry(int X, int Y) 
 {
 	int i;
-	
-	//clock_t currenttime = clock();
+
+#if TIME_DEBUG	
+	clock_t currenttime = clock();
+#endif
 
 	EnvNAV2DHashEntry_t* HashEntry = new EnvNAV2DHashEntry_t;
 
@@ -301,8 +311,9 @@ EnvNAV2DHashEntry_t* EnvironmentNAV2D::CreateNewHashEntry(int X, int Y)
 		exit(1);	
 	}
 
-
-	//time_createhash += clock()-currenttime;
+#if TIME_DEBUG
+	time_createhash += clock()-currenttime;
+#endif
 
 	return HashEntry;
 }
@@ -328,7 +339,7 @@ void EnvironmentNAV2D::InitializeEnvironment()
 	EnvNAV2DHashEntry_t* HashEntry;
 
 	//initialize the map from Coord to StateID
-	EnvNAV2D.HashTableSize = 32*1024; //should be power of two
+	EnvNAV2D.HashTableSize = 64*1024; //should be power of two
 	EnvNAV2D.Coord2StateIDHashTable = new vector<EnvNAV2DHashEntry_t*>[EnvNAV2D.HashTableSize];
 	
 	//initialize the map from StateID to Coord
@@ -508,13 +519,21 @@ void EnvironmentNAV2D::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 	EnvNAV2DHashEntry_t* HashEntry = EnvNAV2D.StateID2CoordTable[state->StateID];
 	
 	//iterate through actions
+    bool bTestBounds = false;
+    if(HashEntry->X == 0 || HashEntry->X == EnvNAV2DCfg.EnvWidth_c-1 || 
+       HashEntry->Y == 0 || HashEntry->Y == EnvNAV2DCfg.EnvHeight_c-1)
+        bTestBounds = true;
 	for (int aind = 0; aind < ACTIONSWIDTH; aind++)
 	{
         int newX = HashEntry->X + EnvNAV2DCfg.dXY[aind][0];
         int newY = HashEntry->Y + EnvNAV2DCfg.dXY[aind][1];
 
         //skip the invalid cells
-        if(!IsValidCell(newX, newY))
+        if(bTestBounds){
+            if(!IsValidCell(newX, newY))
+                continue;
+        }
+       else if(EnvNAV2DCfg.Grid2D[newX][newY] != 0)
             continue;
 
 		//skip invalid diagonal move
@@ -528,7 +547,9 @@ void EnvironmentNAV2D::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 		//add the action
 		CMDPACTION* action = state->AddAction(aind);
 
-		//clock_t currenttime = clock();
+#if TIME_DEBUG
+		clock_t currenttime = clock();
+#endif
         
         cost = COSTMULT;
         //diagonal moves are costlier
@@ -543,7 +564,10 @@ void EnvironmentNAV2D::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 		}
 		action->AddOutcome(OutHashEntry->stateID, cost, 1.0); 
 
-		//time3_addallout += clock()-currenttime;
+#if TIME_DEBUG
+		time3_addallout += clock()-currenttime;
+#endif
+
 	}
 }
 
@@ -562,9 +586,15 @@ void EnvironmentNAV2D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<
 {
     int aind;
 
+#if TIME_DEBUG
+		clock_t currenttime = clock();
+#endif
+
     //clear the successor array
     SuccIDV->clear();
     CostV->clear();
+    SuccIDV->reserve(ACTIONSWIDTH);
+    CostV->reserve(ACTIONSWIDTH);
 
 	//goal state should be absorbing
 	if(SourceStateID == EnvNAV2D.goalstateid)
@@ -574,13 +604,21 @@ void EnvironmentNAV2D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<
 	EnvNAV2DHashEntry_t* HashEntry = EnvNAV2D.StateID2CoordTable[SourceStateID];
 	
 	//iterate through actions
+    bool bTestBounds = false;
+    if(HashEntry->X == 0 || HashEntry->X == EnvNAV2DCfg.EnvWidth_c-1 || 
+       HashEntry->Y == 0 || HashEntry->Y == EnvNAV2DCfg.EnvHeight_c-1)
+        bTestBounds = true;
 	for (aind = 0; aind < ACTIONSWIDTH; aind++)
 	{
         int newX = HashEntry->X + EnvNAV2DCfg.dXY[aind][0];
         int newY = HashEntry->Y + EnvNAV2DCfg.dXY[aind][1];
     
         //skip the invalid cells
-        if(!IsValidCell(newX, newY))
+         if(bTestBounds){
+            if(!IsValidCell(newX, newY))
+                continue;
+        }
+        else if(EnvNAV2DCfg.Grid2D[newX][newY] != 0)
             continue;
 
 		//skip invalid diagonal move
@@ -588,7 +626,7 @@ void EnvironmentNAV2D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<
 		{
 			if(EnvNAV2DCfg.Grid2D[HashEntry->X][newY] != 0 || EnvNAV2DCfg.Grid2D[newX][HashEntry->Y] != 0)
 				continue;
-		}
+        }
 
 
     	EnvNAV2DHashEntry_t* OutHashEntry;
@@ -602,12 +640,16 @@ void EnvironmentNAV2D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<
         int cost = COSTMULT;
         //diagonal moves are costlier
         if(newX != HashEntry->X && newY != HashEntry->Y)
-            cost = (int)(sqrt(2)*cost);
+            cost = (int)(sqrt(2)*cost); 
 
 
         SuccIDV->push_back(OutHashEntry->stateID);
         CostV->push_back(cost);
 	}
+
+#if TIME_DEBUG
+		time_getsuccs += clock()-currenttime;
+#endif
 
 }
 
@@ -663,6 +705,16 @@ void EnvironmentNAV2D::PrintEnv_Config(FILE* fOut)
 	printf("ERROR in EnvNAV2D... function: PrintEnv_Config is undefined\n");
 	exit(1);
 
+}
+
+void EnvironmentNAV2D::PrintTimeStat(FILE* fOut)
+{
+
+#if TIME_DEBUG
+    fprintf(fOut, "time3_addallout = %f secs, time_gethash = %f secs, time_createhash = %f secs, time_getsuccs = %f\n",
+            time3_addallout/(double)CLOCKS_PER_SEC, time_gethash/(double)CLOCKS_PER_SEC, 
+            time_createhash/(double)CLOCKS_PER_SEC, time_getsuccs/(double)CLOCKS_PER_SEC);
+#endif
 }
 
 

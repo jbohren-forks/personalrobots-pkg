@@ -39,6 +39,8 @@
 //regular debugging
 #define DEBUG 0
 
+//timing debugging
+#define TIME_DEBUG 1
 
 //small epsilon for various floating error checking
 #define ERR_EPS 0.0000001
