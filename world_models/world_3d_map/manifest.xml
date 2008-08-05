@@ -8,5 +8,5 @@
 <depend package="xmlparam" />
 <depend package="rosTF" />
 <depend package="random_utils" /> 
-
+<depend package="collision_space" /> 
 </package>

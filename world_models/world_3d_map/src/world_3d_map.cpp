@@ -90,6 +90,7 @@ Provides (name/type):
 #include <rostools/Log.h>
 #include <rosTF/rosTF.h>
 #include <random_utils/random_utils.h>
+#include <collision_space/util.h>
 #include <deque>
 #include <cmath>
 

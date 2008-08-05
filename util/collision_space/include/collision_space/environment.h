@@ -32,8 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef KINEMATIC_ENVIRONMENT_MODEL_
-#define KINEMATIC_ENVIRONMENT_MODEL_
+#ifndef COLLISION_SPACE_ENVIRONMENT_MODEL_
+#define COLLISION_SPACE_ENVIRONMENT_MODEL_
 
 #include <planning_models/kinematic.h>
 #include <rosthread/mutex.h>
