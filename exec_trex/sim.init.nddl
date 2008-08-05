@@ -22,6 +22,9 @@ Actions actions = new Actions();
 
 // Ignored Timelines
 MoveBase moveBase = new MoveBase(Ignore);
+MoveEndEffector moveRightEndEffector = new MoveEndEffector(Ignore, false);
+MoveEndEffector moveLeftEndEffector = new MoveEndEffector(Ignore, true);
+
 
 close();
 
