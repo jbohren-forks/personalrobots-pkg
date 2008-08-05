@@ -8,5 +8,11 @@
   <cpp cflags="-I${prefix}/kdl/include" lflags="-Wl,-rpath,${prefix}/kdl/lib  -L${prefix}/kdl/lib -lorocos-kdl"/>
   <doxymaker external="http://pr.willowgarage.com/" />
 </export>
+<sysdepend os="ubuntu" version="7.04-feisty" package="python-sip4"/>
+<sysdepend os="ubuntu" version="7.04-feisty" package="python-sip4-dev"/>
+<sysdepend os="ubuntu" version="7.04-feisty" package="sip4"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="python-sip4"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="python-sip4-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="sip4"/>
 </package>
 
