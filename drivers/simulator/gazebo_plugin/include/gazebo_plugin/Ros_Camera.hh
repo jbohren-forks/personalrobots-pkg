@@ -27,10 +27,12 @@
 #ifndef ROS_CAMERA_HH
 #define ROS_CAMERA_HH
 
-#include <gazebo/Controller.hh>
+#include <rosTF/rosTF.h>
+
 
 #include <ros/node.h>
 #include <std_msgs/Image.h>
+#include <gazebo/Controller.hh>
 
 namespace gazebo
 {
@@ -104,16 +106,20 @@ class Ros_Camera : public Controller
   private: ros::node *rosnode;
 
   // ros message
-  private: std_msgs::Image image;
+  private: std_msgs::Image imageMsg;
 
   // topic name
   private: std::string topicName;
 
+  // frame transform name, should match link name
+  // FIXME: extract link name directly?
+  private: std::string frameName;
+
   // A mutex to lock access to fields that are used in message callbacks
   private: ros::thread::mutex lock;
 
-
-
+  // transform server
+  private: rosTFClient *tfc;
 
 };
 

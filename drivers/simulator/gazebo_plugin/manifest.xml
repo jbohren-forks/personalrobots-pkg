@@ -14,9 +14,11 @@ A test file for Player interface.
 <depend package="newmat10"/>
 <depend package="genericControllers"/>
 <depend package="roscpp"/>
+<depend package="rosTF"/>
+<depend package="rosthread"/>
 <depend package="std_msgs"/>
 <depend package="gazebo_robot_description"/>
 <export>
-<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lPr2_Actarray -lPr2_Gripper -lP3D"/>
+<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lPr2_Actarray -lPr2_Gripper -lP3D -lRos_Camera -lRos_Laser"/>
 </export>
 </package>

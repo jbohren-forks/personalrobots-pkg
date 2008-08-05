@@ -54,6 +54,9 @@ Ros_Laser::Ros_Laser(Entity *parent)
   if (!this->myParent)
     gzthrow("Ros_Laser controller requires a Ray Sensor as its parent");
 
+  // set parent sensor to active automatically
+  this->myParent->SetActive(true);
+
   this->laserIface = NULL;
   this->fiducialIface = NULL;
 
@@ -67,6 +70,7 @@ Ros_Laser::Ros_Laser(Entity *parent)
     rosnode = new ros::node("ros_gazebo");
     printf("-------------------- starting node in laser \n");
   }
+  tfc = new rosTFClient(*rosnode); //, true, 1 * 1000000000ULL, 0ULL);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -94,6 +98,7 @@ void Ros_Laser::LoadChild(XMLConfigNode *node)
   this->topicName = node->GetString("topicName","default_ros_laser",0); //read from xml file
   std::cout << "================= " << this->topicName <<  std::endl;
   rosnode->advertise<std_msgs::PointCloudFloat32>(this->topicName);
+  this->frameName = node->GetString("frameName","default_ros_laser",0); //read from xml file
 
   // cannot publish full cloud because we need the tilt angle information
   // TODO: we can include the link to the Hokuyo pitch joint in this controller
@@ -109,39 +114,12 @@ void Ros_Laser::InitChild()
 // Update the controller
 void Ros_Laser::UpdateChild()
 {
-  bool laserOpened = false;
-  bool fidOpened = false;
 
-  if (this->laserIface->Lock(1))
-  {
-    laserOpened = this->laserIface->GetOpenCount() > 0;
-    //std::cout << " laser open count " << this->laserIface->GetOpenCount() << std::endl;
-    this->laserIface->Unlock();
-  }
-
-  if (this->fiducialIface && this->fiducialIface->Lock(1))
-  {
-    fidOpened = this->fiducialIface->GetOpenCount() > 0;
-    this->fiducialIface->Unlock();
-  }
-
-  if (laserOpened)
-  {
-    this->myParent->SetActive(true);
+  if (this->laserIface)
     this->PutLaserData();
-  }
 
-  if (fidOpened)
-  {
-    this->myParent->SetActive(true);
+  if (this->fiducialIface)
     this->PutFiducialData();
-  }
-
-  if (!laserOpened && !fidOpened)
-  {
-    this->myParent->SetActive(false);
-  }
-  //std::cout << "            active " << this->myParent->IsActive() << std::endl;
 
 }
 
@@ -169,6 +147,9 @@ void Ros_Laser::PutLaserData()
 
   if (this->laserIface->Lock(1))
   {
+    // Add Frame Name
+
+
     // Data timestamp
     this->laserIface->data->head.time = Simulator::Instance()->GetSimTime();
 
@@ -187,6 +168,12 @@ void Ros_Laser::PutLaserData()
     /*  point cloud from laser image                               */
     /*                                                             */
     /***************************************************************/
+    this->lock.lock();
+    this->cloudMsg.header.frame_id = tfc->lookup(this->frameName);
+    this->cloudMsg.header.stamp.sec = (unsigned long)floor(this->laserIface->data->head.time);
+    this->cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->laserIface->data->head.time - this->cloudMsg.header.stamp.sec) );
+
+
     int    num_channels = 1;
     this->cloudMsg.set_pts_size(rangeCount);
     this->cloudMsg.set_chan_size(num_channels);
@@ -233,18 +220,29 @@ void Ros_Laser::PutLaserData()
       this->cloudMsg.pts[i].y        =r * sin(laser_yaw)                    + this->GaussianKernel(0,sigma) ;
       this->cloudMsg.pts[i].z        =r * cos(laser_yaw) * sin(laser_pitch) + this->GaussianKernel(0,sigma) ;
       this->cloudMsg.chan[0].vals[i] = v;
+      std::cout << " i " << i
+                << " x " << this->cloudMsg.pts[i].x
+                << " y " << this->cloudMsg.pts[i].y
+                << " z " << this->cloudMsg.pts[i].z
+                << " "   << this->cloudMsg.header.frame_id   
+                << " "   << this->cloudMsg.header.stamp.sec  
+                << " "   << this->cloudMsg.header.stamp.nsec 
+                << " "   << Simulator::Instance()->GetSimTime()
+                << std::endl;
 
     }
+
+    // iface writing can be skipped if iface is not used.
+    // send data out via ros message
+    std::cout<< "putting message " << this->topicName << " " << rangeCount << std::endl;
+    rosnode->publish(this->topicName,this->cloudMsg);
+    this->lock.unlock();
 
     this->laserIface->Unlock();
 
     // New data is available
     this->laserIface->Post();
   }
-
-  // iface writing can be skipped if iface is not used.
-  // send data out via ros message
-  rosnode->publish("cloud",this->cloudMsg);
 
 
 }

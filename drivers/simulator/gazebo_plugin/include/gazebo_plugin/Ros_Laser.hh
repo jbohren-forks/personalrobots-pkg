@@ -32,6 +32,7 @@
 
 #include <ros/node.h>
 #include <std_msgs/PointCloudFloat32.h>
+#include <rosTF/rosTF.h>
 
 namespace gazebo
 {
@@ -116,7 +117,18 @@ class Ros_Laser : public Controller
   // topic name
   private: std::string topicName;
 
+  // frame transform name, should match link name
+  // FIXME: extract link name directly?
+  private: std::string frameName;
+
   private: double GaussianKernel(double mu,double sigma);
+
+  // A mutex to lock access to fields that are used in message callbacks
+  private: ros::thread::mutex lock;
+
+  // transform server
+  private: rosTFClient *tfc;
+
 };
 
 /** /} */

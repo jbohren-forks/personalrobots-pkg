@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <assert.h>
 
+#include <gazebo_plugin/Ros_Camera.hh>
 #include <gazebo/Sensor.hh>
 #include <gazebo/Model.hh>
 #include <gazebo/Global.hh>
@@ -39,9 +40,9 @@
 #include <gazebo/ControllerFactory.hh>
 //#include "/u/johnhsu/projects/pr2/3rdparty/gazebo/gazebo-svn/server/sensors/camera/MonoCameraSensor.hh"
 #include "MonoCameraSensor.hh"
-#include <gazebo_plugin/Ros_Camera.hh>
 
 using namespace gazebo;
+using namespace libTF;
 
 GZ_REGISTER_DYNAMIC_CONTROLLER("ros_camera", Ros_Camera);
 
@@ -56,6 +57,10 @@ Ros_Camera::Ros_Camera(Entity *parent)
     gzthrow("Ros_Camera controller requires a Camera Sensor as its parent");
 
 
+  // set parent sensor to active automatically
+  this->myParent->SetActive(true);
+
+
   rosnode = ros::g_node; // comes from where?
   int argc = 0;
   char** argv = NULL;
@@ -66,8 +71,7 @@ Ros_Camera::Ros_Camera(Entity *parent)
     rosnode = new ros::node("ros_gazebo");
     printf("-------------------- starting node in camera \n");
   }
-
-
+  tfc = new rosTFClient(*rosnode); //, true, 1 * 1000000000ULL, 0ULL);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -86,6 +90,7 @@ void Ros_Camera::LoadChild(XMLConfigNode *node)
     gzthrow("Ros_Camera controller requires a CameraIface");
 
   this->topicName = node->GetString("topicName","default_ros_camera",0); //read from xml file
+  this->frameName = node->GetString("frameName","default_ros_camera",0); //read from xml file
 
   std::cout << "================= " << this->topicName << std::endl;
   rosnode->advertise<std_msgs::Image>(this->topicName);
@@ -105,20 +110,6 @@ void Ros_Camera::UpdateChild()
   // do this first so there's chance for sensor to run 1 frame after activate
   if (this->myParent->IsActive())
     this->PutCameraData();
-
-  // activate if iface open
-  if (this->cameraIface->Lock(1))
-  {
-    if (this->cameraIface->GetOpenCount() > 0)
-      this->myParent->SetActive(true);
-    else
-      this->myParent->SetActive(false);
-
-    //std::cout << " camera open count " << this->cameraIface->GetOpenCount() << std::endl;
-    this->cameraIface->Unlock();
-  }
-  //std::cout << " camera     active " << this->myParent->IsActive() << std::endl;
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -164,38 +155,45 @@ void Ros_Camera::PutCameraData()
   // Make sure there is room to store the image
   assert (data->image_size <= sizeof(data->image));
 
-  this->lock.lock();
   // Copy the pixel data to the interface
   src = this->myParent->GetImageData(0);
   dst = data->image;
 
   // TODO: can skip copy to Iface if Iface is not used
-  memcpy(dst, src, data->image_size);
+  if (src)
+  {
+    memcpy(dst, src, data->image_size);
+
+    this->lock.lock();
+    // copy data into image
+    this->imageMsg.header.frame_id = tfc->lookup(this->frameName);
+    this->imageMsg.header.stamp.sec = (unsigned long)floor(this->cameraIface->data->head.time);
+    this->imageMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraIface->data->head.time - this->imageMsg.header.stamp.sec) );
+
+    int    width            = this->myParent->GetImageWidth();
+    int    height           = this->myParent->GetImageHeight();
+    int    depth            = 3;
+
+    this->imageMsg.width       = width;
+    this->imageMsg.height      = height;
+    this->imageMsg.compression = "jpeg";
+    this->imageMsg.colorspace  = "bgr";
+
+    // on first pass, the sensor does not update after cameraIface is opened.
+    uint32_t       buf_size = (width) * (height) * (depth);
+
+    this->imageMsg.set_data_size(buf_size);
+    this->imageMsg.data        = (unsigned char*)src;
+
+    // publish to ros
+    rosnode->publish(this->topicName,this->imageMsg);
+    this->lock.unlock();
+  }
 
   this->cameraIface->Unlock();
 
   // New data is available
   this->cameraIface->Post();
 
-
-  // copy data into image
-  int    width            = this->myParent->GetImageWidth();
-  int    height           = this->myParent->GetImageHeight();
-  int    depth            = 3;
-
-  this->image.width       = width;
-  this->image.height      = height;
-  this->image.compression = "jpeg";
-  this->image.colorspace  = "bgr";
-
-  // on first pass, the sensor does not update after cameraIface is opened.
-  uint32_t       buf_size = (width) * (height) * (depth);
-
-  this->image.set_data_size(buf_size);
-  this->image.data        = (unsigned char*)src;
-
-  // publish to ros
-  rosnode->publish(this->topicName,this->image);
-  this->lock.unlock();
 }
 
