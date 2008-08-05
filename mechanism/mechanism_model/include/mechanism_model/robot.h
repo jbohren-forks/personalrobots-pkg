@@ -39,6 +39,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include "stl_utils/stl_utils.h"
 #include "mechanism_model/link.h"
 #include "mechanism_model/joint.h"
 #include "mechanism_model/transmission.h"
@@ -54,12 +55,8 @@ public:
 
   ~Robot()
   {
-    std::vector<Transmission *>::size_type t;
-    for (t = 0; t < transmissions_.size(); ++t)
-      delete transmissions_[t];
-    std::vector<Joint *>::size_type j;
-    for (j = 0; j < joints_.size(); ++j)
-      delete joints_[j];
+    deleteElements(&transmissions_);
+    deleteElements(&joints_);
   }
 
   std::vector<Joint*> joints_;
@@ -82,7 +79,7 @@ public:
     IndexMap::iterator it = actuators_lookup_.find(name);
     if (it == actuators_lookup_.end())
       return NULL;
-    return &hw_->actuators_[it->second];
+    return hw_->actuators_[it->second];
   }
 
   HardwareInterface *hw_;

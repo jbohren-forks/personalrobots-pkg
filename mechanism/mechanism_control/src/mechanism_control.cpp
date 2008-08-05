@@ -77,9 +77,9 @@ bool MechanismControl::init(TiXmlElement* config)
     {
       // Looks up the joint and the actuator used by the transmission.
       Robot::IndexMap::iterator joint_it =
-          model_.joints_lookup_.find(elt->FirstChildElement("joint")->Attribute("name"));
+        model_.joints_lookup_.find(elt->FirstChildElement("joint")->Attribute("name"));
       Robot::IndexMap::iterator actuator_it =
-          model_.actuators_lookup_.find(elt->FirstChildElement("actuator")->Attribute("name"));
+        model_.actuators_lookup_.find(elt->FirstChildElement("actuator")->Attribute("name"));
       if (joint_it == model_.joints_lookup_.end())
       {
         // TODO: report: The joint was not declared in the XML file
@@ -91,15 +91,11 @@ bool MechanismControl::init(TiXmlElement* config)
         continue;
       }
 
-      Transmission
-                   *tr =
-                       new SimpleTransmission(model_.joints_[joint_it->second], &hw_->actuators_[actuator_it->second], atof(
-                                                                                                                            elt->FirstChildElement(
-                                                                                                                                                   "mechanicalReduction")->Value()), atof(
-                                                                                                                                                                                          elt->FirstChildElement(
-                                                                                                                                                                                                                 "motorTorqueConstant")->Value()), atof(
-                                                                                                                                                                                                                                                        elt->FirstChildElement(
-                                                                                                                                                                                                                                                                               "pulsesPerRevolution")->Value()));
+      Transmission *tr =
+        new SimpleTransmission(model_.joints_[joint_it->second], hw_->actuators_[actuator_it->second],
+                               atof(elt->FirstChildElement("mechanicalReduction")->Value()),
+                               atof(elt->FirstChildElement("motorTorqueConstant")->Value()),
+                               atof(elt->FirstChildElement("pulsesPerRevolution")->Value()));
       model_.transmissions_.push_back(tr);
     }
     else

@@ -35,6 +35,8 @@
 #ifndef HARDWARE_INTERFACE_H
 #define HARDWARE_INTERFACE_H
 
+#include <stl_utils/stl_utils.h>
+
 class ActuatorState{
 public:
   ActuatorState() :
@@ -87,12 +89,14 @@ class HardwareInterface
 {
 public:
   HardwareInterface(int num_actuators)
+    : actuators_(num_actuators, (Actuator*)NULL)
   {
-    actuators_ = new Actuator[num_actuators];
-    num_actuators_ = num_actuators;
   }
-  Actuator *actuators_;
-  int num_actuators_;
+  ~HardwareInterface()
+  {
+    deleteElements(&actuators_);
+  }
+  std::vector<Actuator*> actuators_;
   double current_time_;
 };
 

@@ -132,9 +132,9 @@ void EthercatHardware::update()
 
   // Convert HW Interface commands to MCB-specific buffers
   current = current_buffer_;
-  for (int i = 0; i < hw_->num_actuators_; ++i)
+  for (int i = 0; i < hw_->actuators_.size(); ++i)
   {
-    slaves[i]->convertCommand(hw_->actuators_[i].command_, current);
+    slaves[i]->convertCommand(hw_->actuators_[i]->command_, current);
     current += slaves[i]->commandSize + slaves[i]->statusSize;
   }
 
@@ -144,9 +144,9 @@ void EthercatHardware::update()
   // Convert status back to HW Interface
   current = current_buffer_;
   last = last_buffer_;
-  for (int i = 0; i < hw_->num_actuators_; ++i)
+  for (int i = 0; i < hw_->actuators_.size(); ++i)
   {
-    slaves[i]->convertState(hw_->actuators_[i].state_, current, last);
+    slaves[i]->convertState(hw_->actuators_[i]->state_, current, last);
     current += slaves[i]->commandSize + slaves[i]->statusSize;
     last += slaves[i]->commandSize + slaves[i]->statusSize;
   }
