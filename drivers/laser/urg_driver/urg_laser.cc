@@ -837,7 +837,13 @@ URG::laser::calc_latency(bool intensity, double min_ang, double max_ang, int clu
   count = 200;
   for (int i = 0; i < count;i++)
   {
-    service_scan(&scan);
+    try
+    {
+      service_scan(&scan);
+    } catch (URG::corrupted_data_exception &e) {
+      //      printf("Skipping corrupted data...\n");
+      continue;
+    }
 
     comp_time = scan.system_time_stamp;
     drift_time = comp_time - start_time;
