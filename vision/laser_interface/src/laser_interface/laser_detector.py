@@ -251,6 +251,7 @@ class BrightnessThreshold:
         self.thresholded_combined = cv.cvCreateImage(cv.cvGetSize(sample_image), 8 , 1)
         #self.should_mask = should_mask
         #self.channel = channel
+        self.debug = False
 
     def get_thresholded_image(self):
         return self.thresholded_combined
@@ -283,15 +284,16 @@ class BrightnessThreshold:
         or_time = time.time()
 
 
-        print '      threshold_time %.4f' %(threshold_time - start_time)
-        print '      dilate_time %.4f' %(dilate_time - threshold_time)
-        print '      remove_time %.4f' %(remove_time - dilate_time)
+        if self.debug:
+            print '      threshold_time %.4f' %(threshold_time - start_time)
+            print '      dilate_time %.4f' %(dilate_time - threshold_time)
+            print '      remove_time %.4f' %(remove_time - dilate_time)
 
-        print '      threshold_time2 %.4f' %(threshold_time2 - remove_time)
-        print '      dilate_time2 %.4f' %(dilate_time2 - threshold_time2)
-        print '      remove_time2 %.4f' %(remove_time2 - dilate_time2)
+            print '      threshold_time2 %.4f' %(threshold_time2 - remove_time)
+            print '      dilate_time2 %.4f' %(dilate_time2 - threshold_time2)
+            print '      remove_time2 %.4f' %(remove_time2 - dilate_time2)
 
-        print '      or_time %.4f' %(or_time - remove_time2)
+            print '      or_time %.4f' %(or_time - remove_time2)
 
 
 
@@ -537,7 +539,11 @@ class LaserPointerDetector:
 
         self.combine             = CombineMasks(sample_frame)
         if use_learning and classifier is None:
-            self.classifier      = PatchClassifier(load_pickle(dataset), number_of_learners=self.NUMBER_OF_LEARNERS)
+            try:
+                loaded_dataset       = load_pickle(dataset)
+                self.classifier      = PatchClassifier(loaded_dataset, number_of_learners=self.NUMBER_OF_LEARNERS)
+            except IOError, e:
+                self.classifier      = None
         else:
             self.classifier      = classifier
         self.copy                = cv.cvCreateImage(cv.cvGetSize(sample_frame), 8, 3)
@@ -546,6 +552,11 @@ class LaserPointerDetector:
         self.combined_grey_scale = cv.cvCreateImage(cv.cvGetSize(sample_frame), 8, 1)
         self.channel             = channel
         self.copy                = cv.cvCreateImage(cv.cvGetSize(sample_frame), 8, 3)
+        self.debug               = False
+
+    def set_debug(self, v):
+        self.debug                  = v
+        self.intensity_filter.debug = v
 
     def get_motion_intensity_images(self):
         return (self.motion_filter.get_thresholded_image(), self.intensity_filter.get_thresholded_image())
@@ -604,15 +615,16 @@ class LaserPointerDetector:
                 laser_blob    = None
         selection_time = time.time()
 
-        print '======================================================='
-        print 'split %.4f' % (split_time - start_time)
-        print 'intensity %.4f' % (intensity_time - split_time)
-        print 'motion %.4f' % (motion_time - intensity_time)
-        print 'combine %.4f' % (combine_time - motion_time )
-        print 'threshold %.4f' % (threshold_time -combine_time )
-        print 'classify_time %.4f' % (classify_time - threshold_time)
-        print 'selection_time %.4f' % (selection_time - classify_time)
-        print 'total %.4f' % (selection_time - start_time)
+        if self.debug:
+            print '======================================================='
+            print 'split %.4f' % (split_time - start_time)
+            print 'intensity %.4f' % (intensity_time - split_time)
+            print 'motion %.4f' % (motion_time - intensity_time)
+            print 'combine %.4f' % (combine_time - motion_time )
+            print 'threshold %.4f' % (threshold_time -combine_time )
+            print 'classify_time %.4f' % (classify_time - threshold_time)
+            print 'selection_time %.4f' % (selection_time - classify_time)
+            print 'total %.4f' % (selection_time - start_time)
 
         return image, combined, laser_blob, intensity_motion_blob
 

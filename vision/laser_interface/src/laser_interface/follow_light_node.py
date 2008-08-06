@@ -7,11 +7,14 @@ import numpy as np
 import nodes as n
 import camera as cam
 import math
+from pyrob.voice import say
+from StringIO import StringIO
 
 class FollowBehavior:
     def __init__(self, velocity_topic):
         self.not_inited     = True
         self.velocity_topic = velocity_topic
+        self.last_said      = ''
 
     def init_pose(self, robot_pose):
         R = cam.Rx(math.radians(90)) * cam.Ry(math.radians(-90))
@@ -19,7 +22,7 @@ class FollowBehavior:
         self.base_T_camera = cam.homo_transform3d(R, T)
         self.robot_pose     = n.ConstNode(robot_pose)
         self.local_pos      = n.nav.V_KeepLocal_P2d_V(self.robot_pose, n.ConstNode(np.matrix([0.0, 0.0]).T))
-        self.attr	        = n.nav.V_LinearAttract_V(self.local_pos, dead_zone = 0.05, far_dist = 1.0)
+        self.attr	        = n.nav.V_LinearAttract_V(self.local_pos, dead_zone = 0.20, far_dist = 1.0)
         self.cmd            = n.nav.R_Conv_V(self.attr, allow_backwards_driving = False)
         self.should_stop    = self.attr.is_done()
 
@@ -34,6 +37,12 @@ class FollowBehavior:
         point3d   = np.matrix([point.x, point.y, point.z, 1.0]).T
         print 'FollowBehavior.cursor_moved: got point', point3d.T
         new_point = self.base_T_camera * point3d
+        sio = StringIO()
+        print >>sio, int(round(np.linalg.norm(point3d[0:3]) * 100.0))
+        new_saying = sio.getvalue()
+        if new_saying != self.last_said:
+            say(new_saying)
+            self.last_said = new_saying
 
         #Drop the z, store as homogeneous coordinates
         goal2d = new_point[0:2, 0]
@@ -57,6 +66,7 @@ class FollowBehavior:
             self.velocity_topic.publish(BaseVel(0,0))
             #print 'stoppping'
             self.has_stopped = True 
+            say('done')
         elif not self.has_stopped:
             #print 'HAS STOPPED'
             base_command = self.cmd.val(self.count)
@@ -84,7 +94,7 @@ if __name__ == '__main__':
     rospy.TopicSub(CURSOR_TOPIC, Point3DFloat64, follow_behavior.cursor_moved)
     rospy.ready(sys.argv[0])
     #follow_behavior.cursor_moved(FakePoint(0.0,0.0,1.0))
-    while (True):
+    while not rospy.isShutdown():
         follow_behavior.run()
         time.sleep(0.016)
 
