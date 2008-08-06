@@ -113,10 +113,8 @@ void RosGazeboNode::cmd_leftarmcartesianReceived() {
     f.p.data[i] = cmd_leftarmcartesian.trans[i];
   }
 
-//  KDL::JntArray q = KDL::JntArray(this->PR2Copy->pr2_kin.nJnts);
-//  this->PR2Copy->GetArmJointPositionCmd(PR2::PR2_LEFT_ARM, q);
-  this->PR2Copy->SetArmCartesianPosition(PR2::PR2_LEFT_ARM,f);
-
+	bool reachable;
+  this->PR2Copy->SetArmCartesianPosition(PR2::PR2_LEFT_ARM,f, reachable);
   this->lock.unlock();
 }
 
@@ -137,11 +135,44 @@ void RosGazeboNode::cmd_rightarmcartesianReceived() {
     f.p.data[i] = cmd_rightarmcartesian.trans[i];
   }
 
-//  KDL::JntArray q = KDL::JntArray(this->PR2Copy->pr2_kin.nJnts);
-//  this->PR2Copy->GetArmJointPositionCmd(PR2::PR2_RIGHT_ARM, q);
-  this->PR2Copy->SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f);
+	bool reachable;
+  this->PR2Copy->SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f, reachable);
+  this->lock.unlock();
+}
+
+bool RosGazeboNode::SetRightArmCartesian(rosgazebo::MoveCartesian::request &req, rosgazebo::MoveCartesian::response &res)
+{
+  this->lock.lock();
+  KDL::Frame f;
+  for(int i = 0; i < 9; i++)
+    f.M.data[i] = req.e.rot[i];
+
+  for(int i = 0; i < 3; i++)
+    f.p.data[i] = req.e.trans[i];
+
+	bool reachable;
+  this->PR2Copy->SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f,reachable);
+	res.reachable = (reachable==false) ? -1 : 0;
 
   this->lock.unlock();
+	return true;
+}
+
+bool RosGazeboNode::OperateRightGripper(rosgazebo::GripperCmd::request &req, rosgazebo::GripperCmd::response &res)
+{
+	this->lock.lock();
+	//	Advait, please use the new gripper interface.
+//	this->PR2Copy->hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, req.gap, req.force);
+	this->lock.unlock();
+	return true;
+}
+
+bool RosGazeboNode::reset_IK_guess(rosgazebo::VoidVoid::request &req, rosgazebo::VoidVoid::response &res)
+{
+  this->lock.lock();
+	this->PR2Copy->GetArmJointPositionCmd(PR2::PR2_RIGHT_ARM, *(this->PR2Copy->pr2_kin.q_IK_guess));
+  this->lock.unlock();
+	return true;
 }
 
 void
@@ -356,6 +387,8 @@ RosGazeboNode::AdvertiseSubscribeMessages()
     (*it)->AdvertiseSubscribeMessages();
   }	//------ services ----------
   advertise_service("reset_IK_guess", &RosGazeboNode::reset_IK_guess);
+  advertise_service("operate_right_gripper", &RosGazeboNode::OperateRightGripper);
+  advertise_service("set_rightarm_cartesian", &RosGazeboNode::SetRightArmCartesian);
 
   return(0);
 }

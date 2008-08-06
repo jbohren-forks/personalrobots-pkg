@@ -65,6 +65,8 @@ using std::list;
 
 // service
 #include <rosgazebo/VoidVoid.h>
+#include <rosgazebo/MoveCartesian.h>
+#include <rosgazebo/GripperCmd.h>
 
 // xml parser, robot structure
 #include <urdf/URDF.h>
@@ -159,9 +161,11 @@ class RosGazeboNode : public ros::node
     void cmd_leftarmcartesianReceived();
     void cmd_rightarmcartesianReceived();
 
-    // Message callback which sets pr2_kin.q_IK_guess to the current manipulator configuration.
-    // July 24, 2008 - Advait - only right arm is supported
+		// Service which sets pr2_kin.q_IK_guess to the current manipulator configuration.
+		// July 24, 2008 - Advait - only right arm is supported
     bool reset_IK_guess(rosgazebo::VoidVoid::request &req, rosgazebo::VoidVoid::response &res);
+		bool SetRightArmCartesian(rosgazebo::MoveCartesian::request &req, rosgazebo::MoveCartesian::response &res);
+		bool OperateRightGripper(rosgazebo::GripperCmd::request &req, rosgazebo::GripperCmd::response &res);
 
     // arm joint data
     std_msgs::PR2Arm leftarm;
