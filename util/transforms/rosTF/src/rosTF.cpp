@@ -162,6 +162,10 @@ void rosTFClient::transformLaserScanToPointCloud(unsigned int target_frame, std_
     }
     
   }
+  //downsize if necessary
+  cloudOut.set_pts_size(count);
+  cloudOut.chan[0].set_vals_size(count);
+
 }
 
 
