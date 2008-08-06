@@ -152,13 +152,24 @@ public:
    * @param mx map x index return value
    * @param my map y index return value
    */
-  void convertFromWorldCoordToIndex(double wx, double wy,
+  void convertFromWorldCoordToIndexes(double wx, double wy,
                                     size_t& mx, size_t& my) const;
+  /**
+   * @brief Get world (x,y) point given map indexes
+   * 
+   * @param mx map x index location
+   * @param my map y index location
+   * @param wx world x return value
+   * @param wy world y return value
+   */
+  void convertFromIndexesToWorldCoord(size_t mx, size_t my,
+                                      double& wx, double& wy) const;
     
   //accessors
   size_t getWidth() const;
   size_t getHeight() const;
-
+  unsigned int getTotalObsPoints() const;
+  
 private:
   
   //refreshes the full_map, chucking old data
@@ -176,9 +187,13 @@ private:
   double resolution_; /**< resolution of the map, currently unused */ 
   unsigned char* static_data_; /**< data loaded from the static map */
   unsigned char* full_data_; /**< the full map data that has both static and obstacle data */
+  unsigned int* obs_count_; /**< this holds the count among current scans of a particular cell as an obstacle cell */
+
   std::list<ObstaclePts*> obstacle_pts_; /**< a list of obstacle points corresponding to scans */
   ros::Time cur_time_; /**< the map's current notion of time */
   
+  unsigned int total_obs_points_; /**< running total of number of non-static obstacle points in the map */
+
 };
 
 

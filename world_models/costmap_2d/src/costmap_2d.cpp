@@ -57,9 +57,11 @@ window_length_(window_length)
 {  
   static_data_ = NULL;
   full_data_ = NULL;
+  obs_count_ = NULL;
   width_ = 0;
   height_ = 0;
   resolution_ = 0;
+  total_obs_points_ = 0;
 }
 
 CostMap2D::~CostMap2D() {
@@ -72,6 +74,7 @@ CostMap2D::~CostMap2D() {
   
   if(static_data_ != NULL) delete[] static_data_;
   if(full_data_ != NULL) delete[] full_data_;
+  if(obs_count_ != NULL) delete[] obs_count_;
 }
 
 void CostMap2D::setStaticMap(size_t width, size_t height,
@@ -84,12 +87,14 @@ void CostMap2D::setStaticMap(size_t width, size_t height,
   //TODO handle resize?
   static_data_ = new unsigned char[width_*height_];
   full_data_ = new unsigned char[width_*height_];
+  obs_count_ = new unsigned int[width_*height_];
   //if(size(data) < (width_*height_)) {
   //  std::cerr << "CostMap2D::setStaticMap Error - data has " << sizeof(data) << " bytes instead of the required " << width_*height_ << std::endl;
   //  return;
   //}
   memcpy(static_data_, data, width_*height_);
   memcpy(full_data_, static_data_, width_*height_);
+  memset(obs_count_, 0, width_*height_);
 }
 
 void CostMap2D::addObstacles(const std_msgs::PointCloudFloat32* cloud) {
@@ -139,27 +144,42 @@ const unsigned char* CostMap2D::getMap() const {
 }
 
 void CostMap2D::refreshFullMap() {
-  //TODO this encodes a pretty unwise policy whereby
-  //obstacle data only gets inserted on addition,
-  //and is removed when it leaves the window.  This is 
-  //perhaps undesirable behavior when some scans have conflicting values
-  //for particular 
+  //this encodes a system whereby if a cell is an obstacle in
+  //any scan we treat is as an obstacle, only reverting to the static map if all
+  //scans think it's free
+  //std::cout << "Cur time " << cur_time_ << std::endl;
+
   std::list<ObstaclePts*>::iterator oit = obstacle_pts_.begin();
   while(oit != obstacle_pts_.end()) {
     if(!isTimeWithinWindow((*oit)->ts_)) 
     {
+      //std::cout << "Ditching obstacle time " << (*oit)->ts_ << std::endl;
       for(size_t i = 0; i < (*oit)->pts_num_; i++) 
       {
         size_t mx, my;
-        convertFromWorldCoordToIndex((*oit)->pts_[i*2],(*oit)->pts_[i*2+1], mx, my);
+        convertFromWorldCoordToIndexes((*oit)->pts_[i*2],(*oit)->pts_[i*2+1], mx, my);
         size_t ind = getMapIndex(mx, my);
         //full map reverts to static map
-        full_data_[ind] = static_data_[ind];
+        if(obs_count_[ind] == 0) {
+          std::cout << "CostMap2D::refreshFullMap problem - obs_count for cell ind " << ind << " is zero and we're trying to decrement.\n";
+        } else {
+          obs_count_[ind]--;
+        }
+        //this means that no scans think this is an obstacle, and we can get rid of it.
+        if(obs_count_[ind] == 0) {
+          full_data_[ind] = static_data_[ind];
+          if(total_obs_points_ == 0) {
+            std::cout << "CostMap2D::refreshFullMap problem - total_obs_points_ is zero and we're trying to decrement.\n";
+          } else {
+            total_obs_points_--;
+          }
+        }
       }
       //can get rid of this
       delete (*oit);
       oit = obstacle_pts_.erase(oit);
     } else {
+      //std::cout << "Obstacle time " << (*oit)->ts_ << std::endl;
       oit++;
     }
   }
@@ -177,10 +197,14 @@ void CostMap2D::addObstaclePointsToFullMap(const ObstaclePts* pts) {
   }
   for(size_t i = 0; i < pts->pts_num_; i++) {
     size_t mx, my;
-    convertFromWorldCoordToIndex(pts->pts_[i*2],pts->pts_[i*2+1], mx, my);
+    convertFromWorldCoordToIndexes(pts->pts_[i*2],pts->pts_[i*2+1], mx, my);
     size_t ind = getMapIndex(mx, my);
-    //assuming full for now
+    if(full_data_[ind] != 75) {
+      //this is a new obstacle cell being set
+      total_obs_points_++;
+    }
     full_data_[ind] = 75;
+    obs_count_[ind]++;
   }
 }
 
@@ -196,11 +220,11 @@ size_t CostMap2D::getMapIndex(unsigned int x, unsigned int y) const
   return(x+y*width_);
 }
 
-void CostMap2D::convertFromWorldCoordToIndex(double wx, double wy,
+void CostMap2D::convertFromWorldCoordToIndexes(double wx, double wy,
 					     size_t& mx, size_t& my) const {
   
   if(wx < 0 || wy < 0) {
-    std::cerr << "CostMap2D::convertFromWorldCoordToIndex problem with " << wx << " or " << wy << std::endl;
+    //std::cerr << "CostMap2D::convertFromWorldCoordToIndex problem with " << wx << " or " << wy << std::endl;
     mx = 0;
     my = 0;
     return;
@@ -211,15 +235,21 @@ void CostMap2D::convertFromWorldCoordToIndex(double wx, double wy,
   my = (int) (wy/resolution_);
 
   if(mx > width_) {
-    std::cerr << "CostMap2D::convertFromWorldCoordToIndex converted x " << wx << " greater than width " << width_ << std::endl;
+    //std::cerr << "CostMap2D::convertFromWorldCoordToIndex converted x " << wx << " greater than width " << width_ << std::endl;
     mx = 0;
     return;
   } 
   if(my > height_) {
-    std::cerr << "CostMap2D::convertFromWorldCoordToIndex converted y " << wy << " greater than height " << height_ << std::endl;
+    //std::cerr << "CostMap2D::convertFromWorldCoordToIndex converted y " << wy << " greater than height " << height_ << std::endl;
     my = 0;
     return;
   }
+}
+
+void CostMap2D::convertFromIndexesToWorldCoord(size_t mx, size_t my,
+                                               double& wx, double& wy) const {
+  wx = (mx*1.0)*resolution_;
+  wy = (my*1.0)*resolution_;
 }
 
 size_t CostMap2D::getWidth() const {
@@ -228,4 +258,8 @@ size_t CostMap2D::getWidth() const {
 
 size_t CostMap2D::getHeight() const {
   return height_;
+}
+
+unsigned int CostMap2D::getTotalObsPoints() const {
+  return total_obs_points_;
 }

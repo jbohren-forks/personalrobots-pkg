@@ -52,8 +52,11 @@
 //costmap_2d
 #include "costmap_2d/costmap_2d.h" 
 
+// For GUI debug
+#include <std_msgs/Polyline2D.h>
+
 //window length for remembering laser data (seconds)
-static const double WINDOW_LENGTH = 10.0;
+static const double WINDOW_LENGTH = 1.0;
 
 class CostMap2DRos: public ros::node
 {
@@ -64,11 +67,13 @@ public:
 
   ~CostMap2DRos();
 
-  rosTFClient tf;
+  rosTFClient tf_;
 
 private:
   
   void drawCostMap(); 
+
+  void publishMapData();
 
   //callback for laser data
   void laserReceived();
@@ -77,8 +82,9 @@ private:
   CostMap2D costmap_;
 
   //laser scan message
-  std_msgs::LaserScan laserMsg;
-  
+  std_msgs::LaserScan laser_msg_;
+  std_msgs::Polyline2D pointcloud_msg_;
+
   //projector for the laser
   laser_scan::LaserProjection projector_;
 
@@ -87,7 +93,7 @@ private:
 
 CostMap2DRos::CostMap2DRos() :
   ros::node("costmap2d_ros"),
-  tf(*this, true),
+  tf_(*this, true),
   costmap_(WINDOW_LENGTH)
 {
   std_srvs::StaticMap::request  req;
@@ -119,11 +125,12 @@ CostMap2DRos::CostMap2DRos() :
   costmap_.setStaticMap(sx, sy, resp.map.resolution, mapdata);
   delete[] mapdata;
   
-  this->tf.setWithEulers(tf.lookup("FRAMEID_LASER"),
-                         tf.lookup("FRAMEID_ROBOT"),
-                         0.05, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
-
-  subscribe("scan", laserMsg, &CostMap2DRos::laserReceived);
+  tf_.setWithEulers(tf_.lookup("FRAMEID_LASER"),
+                    tf_.lookup("FRAMEID_ROBOT"),
+                    0.05, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+  
+  advertise<std_msgs::Polyline2D>("gui_laser");
+  subscribe("scan", laser_msg_, &CostMap2DRos::laserReceived);
   
 }
   
@@ -133,14 +140,14 @@ CostMap2DRos::~CostMap2DRos() {
 void CostMap2DRos::laserReceived() {
   
   std_msgs::PointCloudFloat32 local_cloud;
-  projector_.projectLaser(laserMsg, local_cloud);
+  projector_.projectLaser(laser_msg_, local_cloud);
   
   // Convert to a point cloud in the map frame
   std_msgs::PointCloudFloat32 global_cloud;
   
   try
   {
-    global_cloud = this->tf.transformPointCloud("FRAMEID_MAP", local_cloud);
+    global_cloud = tf_.transformPointCloud("FRAMEID_MAP", local_cloud);
   }
   catch(libTF::TransformReference::LookupException& ex)
   {
@@ -152,10 +159,62 @@ void CostMap2DRos::laserReceived() {
     puts("extrapolation required");
     return;
   }
+
+  //  libTF::TFPose aPose;
+  //   aPose.x = 0.0;
+  //   aPose.y = 0.0;
+  //   aPose.z = 0.0;
+  //   aPose.roll = 0;
+  //   aPose.pitch = 0;
+  //   aPose.yaw = 0;
+  //   aPose.time = 0;
+  //   aPose.frame = tf.lookup("FRAMEID_ODOM");
   
+  //   libTF::TFPose inMapFrame = tf.transformPose("FRAMEID_MAP", aPose);
+  
+  //std::cout << "Map frame x " << inMapFrame.x << std::endl;
+  //std::cout << "Map frame y " << inMapFrame.y << std::endl;
+
   costmap_.addObstacles(&global_cloud);
 
-  drawCostMap();
+  publishMapData();
+ 
+  //drawCostMap();
+}
+
+void CostMap2DRos::publishMapData()
+{
+  size_t height = costmap_.getHeight();
+  size_t width = costmap_.getWidth();
+  const unsigned char* mapdata = costmap_.getMap();
+  unsigned int tot_points = costmap_.getTotalObsPoints();
+
+  pointcloud_msg_.set_points_size(tot_points);
+  pointcloud_msg_.color.a = 0.0;
+  pointcloud_msg_.color.r = 0.0;
+  pointcloud_msg_.color.b = 0.0;
+  pointcloud_msg_.color.g = 1.0;
+
+  unsigned int pointcloud_ind = 0;
+  for(size_t i = 0; i < width; i++)
+  {
+    for(size_t j = 0; j < height; j++) 
+    {
+      size_t ind = costmap_.getMapIndex(i,j);
+      if(mapdata[ind] == 75) {
+        double wx, wy;
+        costmap_.convertFromIndexesToWorldCoord(i,j,wx,wy);
+        pointcloud_msg_.points[pointcloud_ind].x = wx;
+        pointcloud_msg_.points[pointcloud_ind].y = wy;
+        if(pointcloud_ind == tot_points) {
+          std::cerr << "CostMap2DRos::publishMapData - too many obstacle points.\n";
+        } else {
+          pointcloud_ind++;
+        }
+      }
+    }
+  }
+  publish("gui_laser",pointcloud_msg_);
 }
 
 void CostMap2DRos::drawCostMap() 
@@ -178,8 +237,10 @@ void CostMap2DRos::drawCostMap()
 
   //this draws the obstacles
   p=0;
-  for(int j=(int)(height-1);j>=0;j--) {
-    for(int i=0; i< (int)width; i++,p++) {
+  for(int j=(int)(height-1);j>=0;j--) 
+  {
+    for(int i=0; i< (int)width; i++,p++) 
+    {
       paddr = p * 3;
       //std::cout << "Map index for " << i << " " << j << " is " << costmap_.getMapIndex(i,j) << std::endl;
       if(mapdata[costmap_.getMapIndex(i,j)] == 100) {
