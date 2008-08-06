@@ -1797,8 +1797,8 @@ namespace robot_desc {
 				value = attr->ValueStr();
 		    }
 		    
-		    if (node->FirstChild())
-			fprintf(stderr, "Constant '%s' apears to contain tags. This should not be the case.\n", name.c_str());
+		    if (!node->NoChildren())
+			fprintf(stderr, "Constant '%s' appears to contain tags. This should not be the case.\n", name.c_str());
 		    
 		    m_constants[name] = value;
 		}
