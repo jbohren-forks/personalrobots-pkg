@@ -1902,7 +1902,6 @@
   <include>controllers.xml</include> 
 
   <!-- Include actuators definition -->
-
-  <include>actuators.xml</include>
+  <!--include>actuator_test.xml</include-->
 
 </robot>

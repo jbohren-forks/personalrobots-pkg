@@ -2,13 +2,28 @@
 
 <robot name="pr2"><!-- name of the robot-->
 
+
+
+<data name="transmissions_gazebo_actuators" type="gazebo"> <!-- we can set a name too, but the convertor only cares about the type -->
+  <verbatim key="transmissions_gazebo_actuators" includes="true"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <data> tag -->
+
+  <!-- PR2_ACTARRAY -->
+  <controller:gazebo_actuators name="gazebo_actuators" plugin="libgazebo_actuators.so">
+      <updateRate>100.0</updateRate>
+
+
+      <include>transmission_test.xml</include>
+
+
+      <interface:audio name="gazebo_actuators_dummy_iface" />
+  </controller:gazebo_actuators>
+
+  </verbatim>
+</data>
+
+
 <data name="controllers" type="gazebo"> <!-- we can set a name too, but the convertor only cares about the type -->
-
   <verbatim key="controllers"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <data> tag -->
-
-
-
-
 
   <!-- ptz camera controls -->
   <controller:generic_ptz name="ptz_cam_left_controller">
@@ -24,8 +39,6 @@
     <tiltJoint>ptz_tilt_right_joint</tiltJoint>
     <interface:ptz name="ptz_right_iface" />
   </controller:generic_ptz>
-
-
 
   <!-- PR2_ACTARRAY -->
   <controller:pr2_actarray name="pr2_controller" plugin="libPr2_Actarray.so">
