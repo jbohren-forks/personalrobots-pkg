@@ -85,6 +85,8 @@ namespace laser_scan{
         cloud_out.pts[count].x = outputMat[index];
         cloud_out.pts[count].y = outputMat[index + scan_in.ranges_size];
         cloud_out.pts[count].z = 0.0;
+        if (scan_in.intensities_size >= index) /// \todo optimize and catch length difference better
+          cloud_out.chan[0].vals[count] = scan_in.intensities[index];
         count++;
       }
         
