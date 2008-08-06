@@ -118,12 +118,6 @@ void RosGazeboNode::cmd_leftarmcartesianReceived() {
   this->lock.unlock();
 }
 
-bool RosGazeboNode::reset_IK_guess(rosgazebo::VoidVoid::request &req, rosgazebo::VoidVoid::response &res)
-{
-  this->PR2Copy->GetArmJointPositionCmd(PR2::PR2_RIGHT_ARM, *(this->PR2Copy->pr2_kin.q_IK_guess));
-  return true;
-}
-
 void RosGazeboNode::cmd_rightarmcartesianReceived() {
   this->lock.lock();
 
