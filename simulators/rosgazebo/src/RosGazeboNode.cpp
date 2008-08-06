@@ -49,9 +49,9 @@ RosGazeboNode::cmd_rightarmconfigReceived()
   //  this->PR2Copy->SetArmJointPosition(PR2::PR2_LEFT_ARM, jointPosition, jointSpeed);
   */
 
-	printf("boo!\n");
+  printf("boo!\n");
   if(!useControllerArray){
-	printf("hoo!\n");
+    printf("hoo!\n");
     
     this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_PAN           , this->rightarm.turretAngle,       0);
     this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_SHOULDER_PITCH, this->rightarm.shoulderLiftAngle, 0);
@@ -122,8 +122,8 @@ void RosGazeboNode::cmd_leftarmcartesianReceived() {
 
 bool RosGazeboNode::reset_IK_guess(rosgazebo::VoidVoid::request &req, rosgazebo::VoidVoid::response &res)
 {
-	this->PR2Copy->GetArmJointPositionCmd(PR2::PR2_RIGHT_ARM, *(this->PR2Copy->pr2_kin.q_IK_guess));
-	return true;
+  this->PR2Copy->GetArmJointPositionCmd(PR2::PR2_RIGHT_ARM, *(this->PR2Copy->pr2_kin.q_IK_guess));
+  return true;
 }
 
 void RosGazeboNode::cmd_rightarmcartesianReceived() {
@@ -210,19 +210,6 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
   // initialize random seed
   srand(time(NULL));
 
-  // Initialize ring buffer for point cloud data
-  this->cloud_pts = new ringBuffer<std_msgs::Point3DFloat32>();
-  this->cloud_ch1 = new ringBuffer<float>();
-  this->full_cloud_pts = new vector<std_msgs::Point3DFloat32>();
-  this->full_cloud_ch1 = new vector<float>();
-
-  // FIXME:  move this to Subscribe Models
-  param("tilting_laser/max_cloud_pts",max_cloud_pts, 683); // number of point in one scan line
-  this->cloud_pts->allocate(this->max_cloud_pts);
-  this->cloud_ch1->allocate(this->max_cloud_pts);
-  this->full_cloud_pts->clear();
-  this->full_cloud_ch1->clear();
-
   // initialize times
   this->PR2Copy->GetTime(&(this->lastTime));
   this->PR2Copy->GetTime(&(this->simTime));
@@ -250,19 +237,6 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
 
   // initialize random seed
   srand(time(NULL));
-
-  // Initialize ring buffer for point cloud data
-  this->cloud_pts = new ringBuffer<std_msgs::Point3DFloat32>();
-  this->cloud_ch1 = new ringBuffer<float>();
-  this->full_cloud_pts = new vector<std_msgs::Point3DFloat32>();
-  this->full_cloud_ch1 = new vector<float>();
-
-  // FIXME:  move this to Subscribe Models
-  param("tilting_laser/max_cloud_pts",max_cloud_pts, 683); // number of point in one scan line
-  this->cloud_pts->allocate(this->max_cloud_pts);
-  this->cloud_ch1->allocate(this->max_cloud_pts);
-  this->full_cloud_pts->clear();
-  this->full_cloud_ch1->clear();
 
   // initialize times
   this->PR2Copy->GetTime(&(this->lastTime));
@@ -319,19 +293,6 @@ RosGazeboNode::RosGazeboNode(int argc, char** argv, const char* fname,
   // initialize random seed
   srand(time(NULL));
 
-  // Initialize ring buffer for point cloud data
-  this->cloud_pts = new ringBuffer<std_msgs::Point3DFloat32>();
-  this->cloud_ch1 = new ringBuffer<float>();
-  this->full_cloud_pts = new vector<std_msgs::Point3DFloat32>();
-  this->full_cloud_ch1 = new vector<float>();
-
-  // FIXME:  move this to Subscribe Models
-  param("tilting_laser/max_cloud_pts",max_cloud_pts, 683); // number of point in one scan line
-  this->cloud_pts->allocate(this->max_cloud_pts);
-  this->cloud_ch1->allocate(this->max_cloud_pts);
-  this->full_cloud_pts->clear();
-  this->full_cloud_ch1->clear();
-
   // initialize times
   this->PR2Copy->GetTime(&(this->lastTime));
   this->PR2Copy->GetTime(&(this->simTime));
@@ -370,23 +331,9 @@ RosGazeboNode::LoadRobotModel()
 int
 RosGazeboNode::AdvertiseSubscribeMessages()
 {
-  //advertise<std_msgs::LaserScan>("laser");
-  advertise<std_msgs::LaserScan>("scan");
-
-  //advertise<std_msgs::Image>("image");
-  advertise<std_msgs::Image>("image_ptz_right");
-  advertise<std_msgs::Image>("image_ptz_left");
-  advertise<std_msgs::Image>("image_wrist_right");
-  advertise<std_msgs::Image>("image_wrist_left");
-  advertise<std_msgs::Image>("image_forearm_right");
-  advertise<std_msgs::Image>("image_forearm_left");
-  advertise<std_msgs::PointCloudFloat32>("cloud");
-  advertise<std_msgs::PointCloudFloat32>("full_cloud");
-
   advertise<std_msgs::PointCloudFloat32>("cloudStereo");
 
   advertise<std_msgs::RobotBase2DOdom>("odom");
-  advertise<std_msgs::Empty>("shutter");
   advertise<std_msgs::PR2Arm>("left_pr2arm_pos");
   advertise<std_msgs::PR2Arm>("right_pr2arm_pos");
   advertise<rostools::Time>("time");
@@ -465,18 +412,6 @@ RosGazeboNode::Update()
 {
   this->lock.lock();
 
-  float    angle_min;
-  float    angle_max;
-  float    angle_increment;
-  float    range_max;
-  uint32_t ranges_size;
-  uint32_t ranges_alloc_size;
-  uint32_t intensities_size;
-  uint32_t intensities_alloc_size;
-  std_msgs::Point3DFloat32 local_cloud_pt;
-  std_msgs::Point3DFloat32 global_cloud_pt;
-
-
   /***************************************************************/
   /*                                                             */
   /*  publish time                                               */
@@ -503,127 +438,12 @@ RosGazeboNode::Update()
   /*  laser - pitching                                           */
   /*                                                             */
   /***************************************************************/
-  if (this->PR2Copy->hw.GetLaserRanges(PR2::LASER_HEAD,
-                &angle_min, &angle_max, &angle_increment,
-                &range_max, &ranges_size     , &ranges_alloc_size,
-                &intensities_size, &intensities_alloc_size,
-                this->ranges     , this->intensities, &tiltLaserTime) == PR2::PR2_ALL_OK)
-  {
-    for(unsigned int i=0;i<ranges_size;i++)
-    {
-      // get laser pitch angle
-      double laser_yaw, laser_pitch, laser_pitch_rate;
-      this->PR2Copy->hw.GetJointServoActual(PR2::HEAD_LASER_PITCH , &laser_pitch,  &laser_pitch_rate);
-      // get laser yaw angle
-      laser_yaw = angle_min + (double)i * angle_increment;
-      //std::cout << " pit " << laser_pitch << "yaw " << laser_yaw
-      //          << " amin " <<  angle_min << " inc " << angle_increment << std::endl;
-      // populating cloud data by range
-      double tmp_range = this->ranges[i];
-      // transform from range to x,y,z
-      local_cloud_pt.x                = tmp_range * cos(laser_yaw) * cos(laser_pitch);
-      local_cloud_pt.y                = tmp_range * sin(laser_yaw) ; //* cos(laser_pitch);
-      local_cloud_pt.z                = tmp_range * cos(laser_yaw) * sin(laser_pitch);
-
-      // add gaussian noise
-      const double sigma = 0.002;  // 2 millimeter sigma
-      local_cloud_pt.x                = local_cloud_pt.x + GaussianKernel(0,sigma);
-      local_cloud_pt.y                = local_cloud_pt.y + GaussianKernel(0,sigma);
-      local_cloud_pt.z                = local_cloud_pt.z + GaussianKernel(0,sigma);
-
-      // get position cheats from simulator
-      //double cheat_x,cheat_y,cheat_z,cheat_roll,cheat_pitch,cheat_yaw;
-      //this->PR2Copy->GetBasePositionActual(&cheat_x,&cheat_y,&cheat_z,&cheat_roll,&cheat_pitch,&cheat_yaw);
-      //global_cloud_pt.x = local_cloud_pt.x + cheat_x;
-      //global_cloud_pt.y = local_cloud_pt.y + cheat_y;
-      //global_cloud_pt.z = local_cloud_pt.z + cheat_z;
-      // apply rotataions yaw, pitch, roll
-
-      // add mixed pixel noise
-      // if this point is some threshold away from last, add mixing model
-
-      // push pcd point into structure
-      this->cloud_pts->add((std_msgs::Point3DFloat32)local_cloud_pt);
-      this->cloud_ch1->add(this->intensities[i]);
-
-      this->full_cloud_pts->push_back((std_msgs::Point3DFloat32)local_cloud_pt);
-      this->full_cloud_ch1->push_back(this->intensities[i]);
-    }
-    /***************************************************************/
-    /*                                                             */
-    /*  point cloud from laser image                               */
-    /*                                                             */
-    /***************************************************************/
-    //std::cout << " pcd num " << this->cloud_pts->length << std::endl;
-    //
-    this->cloudMsg.header.frame_id = tf.lookup("FRAMEID_TILT_LASER_BLOCK");
-    this->cloudMsg.header.stamp.sec = (unsigned long)floor(this->tiltLaserTime);
-    this->cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->tiltLaserTime - this->cloudMsg.header.stamp.sec) );
-
-    int    num_channels = 1;
-    this->cloudMsg.set_pts_size(this->cloud_pts->length);
-    this->cloudMsg.set_chan_size(num_channels);
-    this->cloudMsg.chan[0].name = "intensities";
-    this->cloudMsg.chan[0].set_vals_size(this->cloud_ch1->length);
-
-    for(int i=0;i< this->cloud_pts->length ;i++)
-    {
-      this->cloudMsg.pts[i].x        = this->cloud_pts->buffer[i].x;
-      this->cloudMsg.pts[i].y        = this->cloud_pts->buffer[i].y;
-      this->cloudMsg.pts[i].z        = this->cloud_pts->buffer[i].z;
-      this->cloudMsg.chan[0].vals[i] = this->cloud_ch1->buffer[i];
-    }
-
-    // TODO: does anyone need transform to MAP FRAME directly here? answer: use 3d world model
-    // try
-    // {
-    //   transformed_cloudMsg = tfc.transformPointCloud("FRAMEID_MAP", this->cloudMsg);
-    // }
-    // catch(libTF::TransformReference::LookupException& ex)
-    // {
-    //   puts("no global->local Tx yet");
-    //   return;
-    // }
-    // publish("cloud",transformed_cloudMsg);
-
-    publish("cloud",cloudMsg);
-  }
-
 
   /***************************************************************/
   /*                                                             */
   /*  laser - base                                               */
   /*                                                             */
   /***************************************************************/
-  if (this->PR2Copy->hw.GetLaserRanges(PR2::LASER_BASE,
-                &angle_min, &angle_max, &angle_increment,
-                &range_max, &ranges_size     , &ranges_alloc_size,
-                &intensities_size, &intensities_alloc_size,
-                this->ranges     , this->intensities, &baseLaserTime) == PR2::PR2_ALL_OK)
-  {
-    // Get latest laser data
-    this->laserMsg.angle_min       = angle_min;
-    this->laserMsg.angle_max       = angle_max;
-    this->laserMsg.angle_increment = angle_increment;
-    this->laserMsg.range_max       = range_max;
-    this->laserMsg.set_ranges_size(ranges_size);
-    this->laserMsg.set_intensities_size(intensities_size);
-    for(unsigned int i=0;i<ranges_size;i++)
-    {
-      double tmp_range = this->ranges[i];
-      this->laserMsg.ranges[i]      =tmp_range;
-      this->laserMsg.intensities[i] = this->intensities[i];
-    }
-
-    this->laserMsg.header.frame_id = tf.lookup("FRAMEID_BASE_LASER_BLOCK");
-    this->laserMsg.header.stamp.sec = (unsigned long)floor(this->baseLaserTime);
-    this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->baseLaserTime - this->laserMsg.header.stamp.sec) );
-
-    //publish("laser",this->laserMsg); // for laser_view FIXME: can alias this at the commandline or launch script
-    publish("scan",this->laserMsg);  // for rosstage
-  }
-
-
 
   /***************************************************************/
   /*                                                             */
@@ -677,16 +497,16 @@ RosGazeboNode::Update()
   // those values are reused in the sendInverseEuler() call above.
   publish("odom",this->odomMsg);
 
-	/***************************************************************/
-	/*                                                             */
-	/*   object position                                           */
-	/*                                                             */
-	/***************************************************************/
+  /***************************************************************/
+  /*                                                             */
+  /*   object position                                           */
+  /*                                                             */
+  /***************************************************************/
   this->PR2Copy->GetObjectPositionActual(&x,&y,&z,&roll,&pitch,&yaw);
   this->objectPosMsg.x  = x;
   this->objectPosMsg.y  = y;
   this->objectPosMsg.z  = z;
-	publish("object_position", this->objectPosMsg);
+  publish("object_position", this->objectPosMsg);
 
   /***************************************************************/
   /*                                                             */
@@ -694,173 +514,6 @@ RosGazeboNode::Update()
   /*                                                             */
   /***************************************************************/
   // deprecated to using ros+gazebo plugins
-  uint32_t              width, height, depth;
-  std::string           compression, colorspace;
-  uint32_t              buf_size;
-  static unsigned char  buf_ptz_right[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
-  static unsigned char  buf_ptz_left[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
-  static unsigned char  buf_wrist_right[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
-  static unsigned char  buf_wrist_left[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
-  static unsigned char  buf_forearm_right[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
-  static unsigned char  buf_forearm_left[GAZEBO_CAMERA_MAX_IMAGE_SIZE];
-
-  //this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_GLOBAL,
-  // ----------------------- get image ----------------------------
-  if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_HEAD_RIGHT,
-          &width           ,         &height               ,
-          &depth           ,
-          &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_ptz_right         , &cameraTime)) {
-    this->img_ptz_right.width       = width;
-    this->img_ptz_right.height      = height;
-    this->img_ptz_right.compression = compression;
-    this->img_ptz_right.colorspace  = colorspace;
-
-    if(buf_size >0)
-    {
-      this->img_ptz_right.header.frame_id = tf.lookup("FRAMEID_PTZ_CAM_R");
-      this->img_ptz_right.header.stamp.sec = (unsigned long)floor(this->cameraTime);
-      this->img_ptz_right.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraTime - this->laserMsg.header.stamp.sec) );
-
-      this->img_ptz_right.set_data_size(buf_size);
-
-      this->img_ptz_right.data        = buf_ptz_right;
-      //memcpy(this->img_ptz_right.data,buf,data_size);
-
-      //publish("image",this->img_ptz_right);
-      publish("image_ptz_right",this->img_ptz_right);
-    }
-  }
-  // ----------------------- get image ----------------------------
-  if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_HEAD_LEFT,
-          &width           ,         &height               ,
-          &depth           ,
-          &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_ptz_left          , &cameraTime)) {
-    this->img_ptz_left .width       = width;
-    this->img_ptz_left .height      = height;
-    this->img_ptz_left .compression = compression;
-    this->img_ptz_left .colorspace  = colorspace;
-
-    if(buf_size >0)
-    {
-      this->img_ptz_left.header.frame_id = tf.lookup("FRAMEID_PTZ_CAM_L");
-      this->img_ptz_left.header.stamp.sec = (unsigned long)floor(this->cameraTime);
-      this->img_ptz_left.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraTime - this->laserMsg.header.stamp.sec) );
-
-      this->img_ptz_left .set_data_size(buf_size);
-
-      this->img_ptz_left .data        = buf_ptz_left ;
-      //memcpy(this->img_ptz_left .data,buf,data_size);
-
-      publish("image_ptz_left",this->img_ptz_left);
-    }
-  }
-
-  // ----------------------- get image ----------------------------
-  if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_WRIST_RIGHT,
-          &width           ,         &height               ,
-          &depth           ,
-          &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_wrist_right       , &cameraTime  )) {
-    this->img_wrist_right.width       = width;
-    this->img_wrist_right.height      = height;
-    this->img_wrist_right.compression = compression;
-    this->img_wrist_right.colorspace  = colorspace;
-
-    if(buf_size >0)
-    {
-      this->img_wrist_right.header.frame_id = tf.lookup("FRAMEID_WRIST_CAM_R");
-      this->img_wrist_right.header.stamp.sec = (unsigned long)floor(this->cameraTime);
-      this->img_wrist_right.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraTime - this->laserMsg.header.stamp.sec) );
-
-      this->img_wrist_right.set_data_size(buf_size);
-
-      this->img_wrist_right.data        = buf_wrist_right;
-      //memcpy(this->img_wrist_right.data,buf,data_size);
-
-      publish("image_wrist_right",this->img_wrist_right);
-    }
-  }
-
-  // ----------------------- get image ----------------------------
-  if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_WRIST_LEFT,
-          &width           ,         &height               ,
-          &depth           ,
-          &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_wrist_left        , &cameraTime  )) {
-    this->img_wrist_left .width       = width;
-    this->img_wrist_left .height      = height;
-    this->img_wrist_left .compression = compression;
-    this->img_wrist_left .colorspace  = colorspace;
-
-    if(buf_size >0)
-    {
-      this->img_wrist_left.header.frame_id = tf.lookup("FRAMEID_WRIST_CAM_L");
-      this->img_wrist_left.header.stamp.sec = (unsigned long)floor(this->cameraTime);
-      this->img_wrist_left.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraTime - this->laserMsg.header.stamp.sec) );
-
-      this->img_wrist_left .set_data_size(buf_size);
-
-      this->img_wrist_left .data        = buf_wrist_left ;
-      //memcpy(this->img_wrist_left .data,buf,data_size);
-
-      publish("image_wrist_left",this->img_wrist_left);
-    }
-  }
-
-  // ----------------------- get image ----------------------------
-  if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_FOREARM_RIGHT,
-          &width           ,         &height               ,
-          &depth           ,
-          &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_forearm_right     , &cameraTime    )){
-    this->img_forearm_right.width       = width;
-    this->img_forearm_right.height      = height;
-    this->img_forearm_right.compression = compression;
-    this->img_forearm_right.colorspace  = colorspace;
-
-    if(buf_size >0)
-    {
-      this->img_forearm_right.header.frame_id = tf.lookup("FRAMEID_FOREARM_CAM_R");
-      this->img_forearm_right.header.stamp.sec = (unsigned long)floor(this->cameraTime);
-      this->img_forearm_right.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraTime - this->laserMsg.header.stamp.sec) );
-
-      this->img_forearm_right.set_data_size(buf_size);
-
-      this->img_forearm_right.data        = buf_forearm_right;
-      //memcpy(this->img_forearm_right.data,buf,data_size);
-
-      publish("image_forearm_right",this->img_forearm_right);
-    }
-  }
-
-  // ----------------------- get image ----------------------------
-  if (PR2::PR2_ALL_OK == this->PR2Copy->hw.GetCameraImage(PR2::CAMERA_FOREARM_LEFT,
-          &width           ,         &height               ,
-          &depth           ,
-          &compression     ,         &colorspace           ,
-          &buf_size        ,         buf_forearm_left      , &cameraTime    )) {
-    this->img_forearm_left .width       = width;
-    this->img_forearm_left .height      = height;
-    this->img_forearm_left .compression = compression;
-    this->img_forearm_left .colorspace  = colorspace;
-
-    if(buf_size >0)
-    {
-      this->img_forearm_left.header.frame_id = tf.lookup("FRAMEID_FOREARM_CAM_L");
-      this->img_forearm_left.header.stamp.sec = (unsigned long)floor(this->cameraTime);
-      this->img_forearm_left.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraTime - this->laserMsg.header.stamp.sec) );
-
-      this->img_forearm_left .set_data_size(buf_size);
-
-      this->img_forearm_left .data        = buf_forearm_left ;
-      //memcpy(this->img_forearm_left .data,buf,data_size);
-
-      publish("image_forearm_left",this->img_forearm_left);
-    }
-  }
-
 
 
   /***************************************************************/
@@ -877,51 +530,12 @@ RosGazeboNode::Update()
   simPitchAngle = simPitchOffset + simPitchAmp * sin(this->simTime * simPitchTimeScale);
   simPitchRate  =  simPitchAmp * simPitchTimeScale * cos(this->simTime * simPitchTimeScale); // TODO: check rate correctness
   this->PR2Copy->GetTime(&this->simTime);
-  //std::cout << "sim time: " << this->simTime << std::endl;
-  //std::cout << "ang: " << simPitchAngle*180.0/M_PI << "rate: " << simPitchRate*180.0/M_PI << std::endl;
   this->PR2Copy->hw.SetJointTorque(PR2::HEAD_LASER_PITCH , 200.0);
   this->PR2Copy->hw.SetJointGains(PR2::HEAD_LASER_PITCH, 3.0, 1.0, 0.0);
-  this->PR2Copy->hw.SetJointServoCmd(PR2::HEAD_LASER_PITCH , simPitchAngle, simPitchRate);
+  this->PR2Copy->hw.SetJointServoCmd(PR2::HEAD_LASER_PITCH , -simPitchAngle, simPitchRate);
 
   if (dAngle * simPitchRate < 0.0)
-  {
-    // shutter in irrlicht viewer clears the cloud memory, goes before republish of full_cloud
-    publish("shutter",this->shutterMsg);
-
     dAngle = -dAngle;
-
-    //if (false)
-    //{
-      this->full_cloudMsg.header.frame_id = tf.lookup("base");
-      this->full_cloudMsg.header.stamp.sec = (unsigned long)floor(this->tiltLaserTime);
-      this->full_cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->tiltLaserTime - this->full_cloudMsg.header.stamp.sec) );
-
-      int    num_channels = 1;
-      this->full_cloudMsg.set_pts_size(this->full_cloud_pts->size());
-      this->full_cloudMsg.set_chan_size(num_channels);
-      this->full_cloudMsg.chan[0].name = "intensities";
-      this->full_cloudMsg.chan[0].set_vals_size(this->full_cloud_ch1->size());
-      // TODO: make sure this is doing the right memcopy stuff
-      //memcpy(this->full_cloudMsg.pts          , &(this->full_cloud_pts->front()), this->full_cloud_pts->size());
-      //memcpy(this->full_cloudMsg.chan[0].vals , &(this->full_cloud_ch1->front()), this->full_cloud_ch1->size());
-
-      for(unsigned int i=0;i< this->full_cloud_pts->size() ;i++)
-      {
-        this->full_cloudMsg.pts[i].x        = (this->full_cloud_pts->at(i)).x;
-        this->full_cloudMsg.pts[i].y        = (this->full_cloud_pts->at(i)).y;
-        this->full_cloudMsg.pts[i].z        = (this->full_cloud_pts->at(i)).z;
-        this->full_cloudMsg.chan[0].vals[i] = (this->full_cloud_ch1->at(i));
-      }
-
-      publish("full_cloud",this->full_cloudMsg);
-      this->full_cloud_pts->clear();
-      this->full_cloud_ch1->clear();
-    //}
-
-  }
-
-  // should send shutter when changing direction, or wait for Tully to implement ring buffer in viewer
-
 
   /***************************************************************/
   /*                                                             */
@@ -1154,19 +768,69 @@ RosGazeboNode::Update()
                odomMsg.header.stamp);
 
   // distal digit, right
-  link = pr2Description.getLink("finger_tip_r_left");
+  link = pr2Description.getLink("finger_tip_r_right");
   if (link)
-  tf.sendEuler("finger_tip_r_left",
-               "finger_r_left",
+  tf.sendEuler("finger_tip_r_right",
+               "finger_r_right",
                link->xyz[0],
                link->xyz[1],
                link->xyz[2],
-               0.0,  //FIXME: get angle of finger tip...
+               0.0,
                0.0,
                0.0,
                odomMsg.header.stamp);
 
+  // forearm camera left
+  link = pr2Description.getLink("forearm_camera_left");
+  if (link)
+  tf.sendEuler("forearm_camera_left",
+               "forearm_roll_left",
+               link->xyz[0],
+               link->xyz[1],
+               link->xyz[2],
+               0.0,
+               0.0,
+               0.0,
+               odomMsg.header.stamp);
 
+  // forearm camera right
+  link = pr2Description.getLink("forearm_camera_right");
+  if (link)
+  tf.sendEuler("forearm_camera_right",
+               "forearm_roll_right",
+               link->xyz[0],
+               link->xyz[1],
+               link->xyz[2],
+               0.0,
+               0.0,
+               0.0,
+               odomMsg.header.stamp);
+
+  // wrist camera left
+  link = pr2Description.getLink("wrist_camera_left");
+  if (link)
+  tf.sendEuler("wrist_camera_left",
+               "gripper_roll_left",
+               link->xyz[0],
+               link->xyz[1],
+               link->xyz[2],
+               0.0,
+               0.0,
+               0.0,
+               odomMsg.header.stamp);
+
+  // wrist camera right
+  link = pr2Description.getLink("wrist_camera_right");
+  if (link)
+  tf.sendEuler("wrist_camera_right",
+               "gripper_roll_right",
+               link->xyz[0],
+               link->xyz[1],
+               link->xyz[2],
+               0.0,
+               0.0,
+               0.0,
+               odomMsg.header.stamp);
 
 
 
@@ -1375,8 +1039,8 @@ RosGazeboNode::Update()
 
   // tilt laser location
   double tmpPitch, tmpPitchRate;
-  link = pr2Description.getLink("tilt_laser");
   this->PR2Copy->hw.GetJointServoCmd(PR2::HEAD_LASER_PITCH, &tmpPitch, &tmpPitchRate );
+  link = pr2Description.getLink("tilt_laser");
   if (link)
   tf.sendEuler("tilt_laser",
                "torso",
@@ -1539,7 +1203,7 @@ RosGazeboNode::Update()
                0.0,
                odomMsg.header.stamp);
 
-	publish("transform",this->shutterMsg);
+  publish("transform",this->shutterMsg);
   
   // Publish info on the joints:
   for(RCList::iterator it = RosControllers.begin(); it != RosControllers.end(); ++it)

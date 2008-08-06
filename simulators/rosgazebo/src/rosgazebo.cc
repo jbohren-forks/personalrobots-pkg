@@ -118,8 +118,8 @@ main(int argc, char** argv)
 
   for (int i = 0;i<PR2::MAX_JOINTS;i++){
     JointArray[i] = new mechanism::Joint();
-    JointArray[i]->jointLimitMax = DEFAULTJOINTMAX;
-    JointArray[i]->jointLimitMin = DEFAULTJOINTMIN;
+    //JointArray[i]->jointLimitMax = DEFAULTJOINTMAX;
+    //JointArray[i]->jointLimitMin = DEFAULTJOINTMIN;
   }
 
 
