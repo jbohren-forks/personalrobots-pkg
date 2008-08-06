@@ -2,11 +2,11 @@
 
 //Copyright (c) 2008, Willow Garage, Inc.
 //All rights reserved.
-
+//
 //Redistribution and use in source and binary forms, with or without
 //modification, are permitted provided that the following conditions
 //are met:
-
+//
 // * Redistributions of source code must retain the above copyright
 //   notice, this list of conditions and the following disclaimer.
 // * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 // * Neither the name of Willow Garage, Inc. nor the names of its
 //   contributors may be used to endorse or promote products derived
 //   from this software without specific prior written permission.
-
+//
 //THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 //"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 //LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -31,6 +31,7 @@
 //POSSIBILITY OF SUCH DAMAGE.
 
 #include <robot_kinematics/serial_chain.h>
+//#include <mechanism_model/robot.h>
 
 #define eps 0.000001
 //#define DEBUG 1
@@ -39,8 +40,11 @@ using namespace KDL;
 using namespace std;
 using namespace robot_kinematics;
 
+SerialChain::SerialChain()
+{
+}
 
-void SerialChain::init()
+void SerialChain::finalize()
 {
   this->num_joints_ = this->chain.getNrOfJoints();
   this->q_IK_guess  = new JntArray(this->num_joints_);
@@ -50,7 +54,20 @@ void SerialChain::init()
   this->inverseKinematics      = new ChainIkSolverPos_NR(this->chain, *this->forwardKinematics, *this->differentialKinematics);
 
   if(!this->link_kdl_frame_)
+  {
     this->link_kdl_frame_ = new KDL::Frame[this->num_joints_];
+  }
+
+/*
+  if(!this->joints_)
+  {
+    this->joints_ = new mechanism::Joint[this->num_joints_];
+  }  
+  if(!this->joints_names_)
+  {
+    this->joint_names_ = new std::string[this->num_joints_];
+  }  
+*/
 }
 
 bool SerialChain::computeFK(const KDL::JntArray &q, KDL::Frame &f)
@@ -60,6 +77,7 @@ bool SerialChain::computeFK(const KDL::JntArray &q, KDL::Frame &f)
 	else
 		return false;
 }
+
 
 bool SerialChain::computeIK(const KDL::JntArray &q_init, const KDL::Frame &f, KDL::JntArray &q_out)
 {
@@ -114,9 +132,9 @@ double angle_within_mod180(double ang)
 {
   double rem = modulus_double(ang, 2*M_PI);
 
-  if (rem>M_PI)
+  if (rem > M_PI)
     rem -= 2*M_PI;
-  else if (rem<(-1*M_PI))
+  else if (rem < (-1*M_PI))
     rem += 2*M_PI;
 
   return rem;
@@ -124,18 +142,9 @@ double angle_within_mod180(double ang)
 
 void angle_within_mod180(JntArray &q, int nJnts)
 {
-  for(int i=0;i<nJnts;i++)
+  for(int i=0; i < nJnts; i++)
   {
     q(i) = angle_within_mod180(q(i));
   }	
-}
-
-inline double GetMagnitude(double xl[], int num)
-{
-  int ii;
-  double mag=0;
-  for(ii=0; ii < num; ii++)
-    mag += (xl[ii]*xl[ii]); 
-  return sqrt(mag);
 }
 

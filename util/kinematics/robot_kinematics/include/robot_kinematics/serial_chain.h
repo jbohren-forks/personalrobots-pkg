@@ -65,13 +65,19 @@ namespace robot_kinematics
   {
     public:
      
-    SerialChain(){};
+    SerialChain();
 
     ~SerialChain(){
         delete[] link_kdl_frame_;
         delete q_IK_result;
         delete q_IK_guess;
-   };
+/*
+        if (joints_)
+          delete[] joints_;
+        if (joint_names_)
+          delete[] joint_names_;
+*/
+     };
      
     /*! \brief String name for the serial chain, eg : "rightArm"
      */
@@ -136,9 +142,9 @@ namespace robot_kinematics
 
     KDL::JntArray *q_IK_result; //< KDL::JntArray that stores result of IK
 
-    /*! \brief Initialize the chain. This must be done AFTER all links have been added using chain.addSegment 
+    /*! \brief Finalize the chain after all the segments have been added. This must be done AFTER all links have been added using addLink 
      */
-    void init();
+    void finalize();
 
     KDL::JntArray *q_IK_guess; //< is used as the IK guess.
 
@@ -148,11 +154,15 @@ namespace robot_kinematics
 
     KDL::ChainIkSolverPos_NR *inverseKinematics; /*< pointer to the inverse kinematics sovler for this case */
 
-    private:
 
+
+    private:
+/*
+    mechanism::Joint * joints_;
+
+    std::string *joint_names_;
+*/
   };
 }
 
 #endif
-
-

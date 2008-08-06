@@ -30,9 +30,10 @@
 //ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 //POSSIBILITY OF SUCH DAMAGE.
 
-#include "urdf/URDF.h"
-#include "libTF/Pose3D.h"
-#include "robot_kinematics/robot_kinematics.h"
+#include <urdf/URDF.h>
+#include <libTF/Pose3D.h>
+#include <robot_kinematics/robot_kinematics.h>
+//#include <mechanism_model/robot.h>
 
 #define eps 0.000001
 //#define DEBUG 1
@@ -51,10 +52,10 @@ RobotKinematics::~RobotKinematics()
   delete[] this->chains_;
 }
 
-inline double GetMagnitude(double xl[], int num)
+inline double getMagnitude(double xl[], int num)
 {
   int ii;
-  double mag=0;
+  double mag = 0;
   for(ii=0; ii < num; ii++)
     mag += (xl[ii]*xl[ii]); 
   return sqrt(mag);
@@ -73,8 +74,8 @@ void RobotKinematics::loadXML(std::string filename)
       num_chains_++;
 
 #ifdef DEBUG
-#endif 
   printf("kdl_kinematics.cpp:: num_chains_:: %d\n",num_chains_);
+#endif 
 
   this->chains_ = new SerialChain[num_chains_];  
   this->chain_counter_ = 0;
@@ -102,8 +103,8 @@ void RobotKinematics::cross(const double p1[], const double p2[], double p3[])
 double RobotKinematics::getAngleBetweenVectors(double p1[],double p2[])
 {
   double dot = p1[0]*p2[0] + p1[1]*p2[1] + p1[2]*p2[2];
-  double p1_magnitude = GetMagnitude(p1,3);
-  double p2_magnitude = GetMagnitude(p2,3);
+  double p1_magnitude = getMagnitude(p1,3);
+  double p2_magnitude = getMagnitude(p2,3);
   double theta = acos(dot/(p1_magnitude*p2_magnitude)); 
 
 #ifdef DEBUG
@@ -123,11 +124,17 @@ void RobotKinematics::createChain(robot_desc::URDF::Group* group)
 
   if((int) group->linkRoots.size() != 1)
   {
-    fprintf(stderr,"Too many roots in serial chain\n");
+    fprintf(stderr,"robot_kinematics.cpp::Too many roots in serial chain!\n");
     return;
   }
 
+
   robot_desc::URDF::Link *link_current = group->linkRoots[0];
+
+#ifdef DEBUG
+  cout << "root link" << link_current->name << endl;
+#endif
+
   robot_desc::URDF::Link *link_next;
 
   this->chains_[chain_counter_].link_kdl_frame_ = new KDL::Frame[(int) group->links.size()];
@@ -139,10 +146,13 @@ void RobotKinematics::createChain(robot_desc::URDF::Group* group)
     if (link_count < (int) (group->links.size()-1))
     {
       link_next = findNextLinkInGroup(link_current,group);
+#ifdef DEBUG
+      cout << link_next->name << endl;
+#endif
       getKDLJointInXMLFrame(link_current,frame1);
       frame2 = getKDLNextJointFrame(link_current,link_next);
 #ifdef DEBUG
-      printf("\nComputing and adding frame::%d\n",i);
+      printf("\nComputing and adding frame::%d\n",link_count);
       cout << frame2 << endl << endl << endl;
 #endif
     }
@@ -153,18 +163,25 @@ void RobotKinematics::createChain(robot_desc::URDF::Group* group)
     }
     this->chains_[chain_counter_].link_kdl_frame_[link_count] = frame1;
     this->chains_[chain_counter_].chain.addSegment(Segment(Joint(Joint::RotZ),frame2));
+    link_current = link_next;
     link_count++;
   }
-
-  this->chains_[chain_counter_].init();
+  this->chains_[chain_counter_].finalize();
   chain_counter_++;
 }
 
 robot_desc::URDF::Link* RobotKinematics::findNextLinkInGroup(robot_desc::URDF::Link *link_current, robot_desc::URDF::Group* group)
 {
   std::vector<robot_desc::URDF::Link*>::iterator link_iter;
+
+#ifdef DEBUG
+  cout << "Current link:: " << link_current->name << endl; 
+#endif
   for(link_iter = link_current->children.begin(); link_iter != link_current->children.end(); link_iter++)
   {
+#ifdef DEBUG
+    cout << (*link_iter)->name;
+#endif
     if((*link_iter)->insideGroup(group))
       return *link_iter;
   }
@@ -241,8 +258,25 @@ SerialChain* RobotKinematics::getSerialChain(std::string name) const
   return (it == serial_chain_map_.end()) ? NULL : it->second;
 }
 
+/*
+void RobotKinematics::mapRobotModelJoints(Robot *r)
+{
+  for(int i=0; i < this->num_chains_; i++)
+  {
+    for(int j=0; j < this->chains_[i]->num_joints_; j++)
+    {
+      this->chains_[i]->joints_[j] = r->getJoint(this->chains_[i]->joint_names_[j]);      
+    }
+  }
+}
 
-double RobotKinematics::SubProblem1(NEWMAT::Matrix pin, NEWMAT::Matrix qin, NEWMAT::Matrix rin, NEWMAT::Matrix w)
+double RobotKinematics::update(Robot *r)
+{
+  
+}
+*/
+
+double RobotKinematics::subProblem1(NEWMAT::Matrix pin, NEWMAT::Matrix qin, NEWMAT::Matrix rin, NEWMAT::Matrix w)
 {
    NEWMAT::Matrix u(3,1),v(3,1),up(3,1),vp(3,1);
    NEWMAT::Matrix p(3,1),q(3,1),r(3,1);
@@ -254,10 +288,10 @@ double RobotKinematics::SubProblem1(NEWMAT::Matrix pin, NEWMAT::Matrix qin, NEWM
    r = rin.SubMatrix(1,3,1,1);
 
 #ifdef DEBUG
-   PrintMatrix(p,"SubProblem1::p");
-   PrintMatrix(q,"SubProblem1::q");
-   PrintMatrix(r,"SubProblem1::r");
-   PrintMatrix(w,"SubProblem1::w");
+   PrintMatrix(p,"subProblem1::p");
+   PrintMatrix(q,"subProblem1::q");
+   PrintMatrix(r,"subProblem1::r");
+   PrintMatrix(w,"subProblem1::w");
 #endif
 
    u = p-r;
@@ -276,7 +310,7 @@ double RobotKinematics::SubProblem1(NEWMAT::Matrix pin, NEWMAT::Matrix qin, NEWM
    arg2 = up.t()*vp;
 
 #ifdef DEBUG
-   cout << "SubProblem1::" << arg1(1,1) << "," << arg2(1,1) << endl;
+   cout << "subProblem1::" << arg1(1,1) << "," << arg2(1,1) << endl;
    cout << endl << endl << endl;
 #endif
    return atan2(arg1(1,1),arg2(1,1));
@@ -292,7 +326,7 @@ NEWMAT::Matrix RobotKinematics::cross(NEWMAT::Matrix p1, NEWMAT::Matrix p2)
    return p3;
 };
 
-void RobotKinematics::SubProblem2(NEWMAT::Matrix pin, NEWMAT::Matrix qin, NEWMAT::Matrix rin, NEWMAT::Matrix omega1, NEWMAT::Matrix omega2, double theta[])
+void RobotKinematics::subProblem2(NEWMAT::Matrix pin, NEWMAT::Matrix qin, NEWMAT::Matrix rin, NEWMAT::Matrix omega1, NEWMAT::Matrix omega2, double theta[])
 {
    NEWMAT::Matrix u,v,z,c;
    NEWMAT::Matrix p,q,r;
@@ -344,8 +378,8 @@ void RobotKinematics::SubProblem2(NEWMAT::Matrix pin, NEWMAT::Matrix qin, NEWMAT
    PrintMatrix(z,"SubProblem2::z");
 #endif
 
-   theta[0] = SubProblem1(c,q,r,omega1);
-   theta[1] = SubProblem1(p,c,r,omega2);
+   theta[0] = subProblem1(c,q,r,omega1);
+   theta[1] = subProblem1(p,c,r,omega2);
 
    z = alpha(1,1)*omega1 + beta(1,1)*omega2 - gamma*cross(omega1,omega2);
    c = z+r;
@@ -355,8 +389,8 @@ void RobotKinematics::SubProblem2(NEWMAT::Matrix pin, NEWMAT::Matrix qin, NEWMAT
    PrintMatrix(z,"SubProblem2::z");
 #endif
 
-   theta[2] = SubProblem1(c,q,r,omega1);
-   theta[3] = SubProblem1(p,c,r,omega2);
+   theta[2] = subProblem1(c,q,r,omega1);
+   theta[3] = subProblem1(p,c,r,omega2);
 }
 
 

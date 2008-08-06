@@ -59,7 +59,7 @@ namespace robot_kinematics
    * It reads an xml file (the URDF - Universal Robot Description Format) and generates a serial chain robot from the description.
    * It returns pointers to different serial chains and allows access to the underlying kinematics solvers provided by KDL
    * In all serial chains defined by RobotKinematics from the URDF, the KDL frame is always positioned on the joint axis with the joint axis along the Z axis.
-   * This simplifies the description of joints whose axes do not lie along coordinate directions in the home position.
+   * This class simplifies the description of joints whose axes do not lie along coordinate directions in the home position.
    */
   class RobotKinematics
   {
@@ -97,7 +97,7 @@ namespace robot_kinematics
      *\param omega direction vector for the axis about which the rotation is happening. The twist vectors xi1 and xi2 are a combination of this vector and linear velocity terms v1 and v2.
      *\param theta[] a 4x1 vector containing the two solutions to this problem.
      */
-    double SubProblem1(NEWMAT::Matrix p, NEWMAT::Matrix q, NEWMAT::Matrix r, NEWMAT::Matrix omega);
+    double subProblem1(NEWMAT::Matrix p, NEWMAT::Matrix q, NEWMAT::Matrix r, NEWMAT::Matrix omega);
 
     /*! \fn
       \brief Solution of the first form of the Paden-Kahan subproblems. This formulation solves for theta in exp(xi1 theta1) exp(xi2 theta2) p  = q
@@ -107,7 +107,7 @@ namespace robot_kinematics
       \param omega direction vector for the axis about which the rotation is happening. The twist vectors xi1 and xi2 are a combination of this vector and linear velocity terms v1 and v2.
       \param theta[] a 4x1 vector containing the two solutions to this problem.
     */
-    void SubProblem2(NEWMAT::Matrix pin, NEWMAT::Matrix qin, NEWMAT::Matrix rin, NEWMAT::Matrix omega1, NEWMAT::Matrix omega2, double theta[]);
+    void subProblem2(NEWMAT::Matrix pin, NEWMAT::Matrix qin, NEWMAT::Matrix rin, NEWMAT::Matrix omega1, NEWMAT::Matrix omega2, double theta[]);
 
     private:
 
