@@ -1,0 +1,3 @@
+pr2_msgs/EndEffectorState e
+---
+int32 reachable
