@@ -62,7 +62,7 @@ namespace laser_scan{
       /** \brief Project Laser Scan
        * This will project a laser scan from a linear array into a 3D point cloud
        */
-      void projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloudFloat32 & cloud_out);
+      void projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloudFloat32 & cloud_out, double range_cutoff=-1.0);
       
       /** \brief Return the unit vectors for this configuration
        * Return the unit vectors for this configuration.

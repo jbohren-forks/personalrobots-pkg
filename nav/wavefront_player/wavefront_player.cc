@@ -280,9 +280,9 @@ WavefrontNode::WavefrontNode() :
         dist_penalty(2.0),   // overridden by param retrieval below!
         plan_halfwidth(5.0),
         dist_eps(1.0),       // overridden by param retrieval below!
-        ang_eps(DTOR(10.0)),
+        ang_eps(DTOR(4.0)),
         cycletime(0.1),
-        laser_maxrange(4.0),
+        laser_maxrange(10.0),
         laser_buffer_time(3.0),
         lookahead_maxdist(2.0),
         lookahead_distweight(5.0),
@@ -433,7 +433,7 @@ WavefrontNode::laserReceived()
 
     // Assemble a point cloud, in the laser's frame
     std_msgs::PointCloudFloat32 local_cloud;
-    projector_.projectLaser(*it, local_cloud);
+    projector_.projectLaser(*it, local_cloud, laser_maxrange);
     
     // Convert to a point cloud in the map frame
     std_msgs::PointCloudFloat32 global_cloud;

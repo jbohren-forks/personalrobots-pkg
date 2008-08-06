@@ -33,7 +33,7 @@
 namespace laser_scan{
 
   
-  void LaserProjection::projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloudFloat32 & cloud_out)
+  void LaserProjection::projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloudFloat32 & cloud_out, double range_cutoff)
   {
     NEWMAT::Matrix ranges(2, scan_in.ranges_size);
     double * matPointer = ranges.Store();
@@ -64,8 +64,9 @@ namespace laser_scan{
     unsigned int count = 0;
     for (unsigned int index = 0; index< scan_in.ranges_size; index++)
       {
-        if (matPointer[index] <= scan_in.range_max 
-            && matPointer[index] >= scan_in.range_min) //only valid
+        if ((matPointer[index] < scan_in.range_max) &&
+            ((range_cutoff < 0.0) || (matPointer[index] < range_cutoff)) &&
+            (matPointer[index] > scan_in.range_min)) //only valid
           {
             cloud_out.pts[count].x = outputMat[index];
             cloud_out.pts[count].y = outputMat[index + scan_in.ranges_size];
