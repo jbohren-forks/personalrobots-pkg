@@ -474,24 +474,6 @@ RosGazeboNode::Update()
   this->odomMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
   this->odomMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->odomMsg.header.stamp.sec) );
 
-  /***************************************************************/
-  /*                                                             */
-  /*  frame transforms                                           */
-  /*                                                             */
-  /*  TODO: should we send z, roll, pitch, yaw? seems to confuse */
-  /*        localization                                         */
-  /*                                                             */
-  /***************************************************************/
-  tf.sendInverseEuler("FRAMEID_ODOM",
-                      "FRAMEID_ROBOT",
-                      odomMsg.pos.x,
-                      odomMsg.pos.y,
-                      0.0,
-                      odomMsg.pos.th,
-                      0.0,
-                      0.0,
-                      odomMsg.header.stamp);
-
   // This publish call resets odomMsg.header.stamp.sec and 
   // odomMsg.header.stamp.nsec to zero.  Thus, it must be called *after*
   // those values are reused in the sendInverseEuler() call above.
@@ -586,6 +568,28 @@ RosGazeboNode::Update()
   rarm.gripperGapCmd     = position;
   publish("right_pr2arm_pos", rarm);
   
+  /***************************************************************/
+  /*                                                             */
+  /*  frame transforms                                           */
+  /*                                                             */
+  /*  TODO: should we send z, roll, pitch, yaw? seems to confuse */
+  /*        localization                                         */
+  /*                                                             */
+  /***************************************************************/
+  robot_desc::URDF::Link* link;
+
+  link = pr2Description.getLink("base");
+  if (link)
+  this->PR2Copy->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw); // actual CoM of base
+  tf.sendInverseEuler("FRAMEID_ODOM",
+               "base",
+               x,
+               y,
+               z-link->collision->xyz[3], /* get infor from xml: half height of base box */
+               yaw,
+               pitch,
+               roll,
+               odomMsg.header.stamp);
 
   /***************************************************************/
   /*                                                             */
@@ -594,7 +598,6 @@ RosGazeboNode::Update()
   /*  x,y,z,yaw,pitch,roll                                       */
   /*                                                             */
   /***************************************************************/
-  //this->PR2Copy->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw); // actual CoM of base
   tf.sendEuler("base",
                "FRAMEID_ROBOT",
                0,
@@ -605,23 +608,10 @@ RosGazeboNode::Update()
                0,
                odomMsg.header.stamp);
 
-  //this->PR2Copy->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw); // actual CoM of base
-  tf.sendInverseEuler("FRAMEID_ODOM",
-               "base",
-               x,
-               y,
-               z-0.13, /* half height of base box */
-               yaw,
-               pitch,
-               roll,
-               odomMsg.header.stamp);
-
   //std::cout << "base y p r " << yaw << " " << pitch << " " << roll << std::endl;
 
   // base = center of the bottom of the base box
   // torso = midpoint of bottom of turrets
-
-  robot_desc::URDF::Link* link;
 
   link = pr2Description.getLink("torso");
   if (link)

@@ -27,51 +27,6 @@
 
 
 
-  <!-- stereo camera -->
-  <body:empty name="stereo_camera_body">
-    <xyz> 0.03 0.0   1.30 </xyz>
-    <rpy> 0.0  0.0   0.0  </rpy>
-    <sensor:stereocamera name="stereo_camera_sensor">
-      <imageSize>640 480</imageSize>
-      <hfov>60</hfov>
-      <nearClip>0.1</nearClip>
-      <farClip>100</farClip>
-      <saveFrames>false</saveFrames>
-      <saveFramePath>frames</saveFramePath>
-      <baseline>0.2</baseline>
-      <updateRate>15.0</updateRate>
-      <controller:stereocamera name="stereo_camera_controller">
-        <updateRate>15.0</updateRate>
-        <interface:stereocamera name="stereo_iface_0" />
-        <interface:camera name="camera_iface_0" />
-        <interface:camera name="camera_iface_1" />
-        <leftcamera>camera_iface_0</leftcamera>
-        <rightcamera>camera_iface_1</rightcamera>
-      </controller:stereocamera>
-    </sensor:stereocamera>
-    <geom:box name="stereo_camera_geom">
-      <xyz> 0.00   0.00   0.00</xyz>
-      <size>0.05   0.10   0.05</size>
-      <mass>0.1</mass>
-      <visual>
-        <size>0.05   0.10   0.05</size>
-        <rpy>0.0   0.0 0.0 </rpy>
-        <mesh>unit_box</mesh>
-        <material>Gazebo/PioneerBody</material>
-      </visual>
-    </geom:box>
-  </body:empty>
-
-  <!-- attach stereo_camera to head_tilt -->
-  <joint:hinge name="stereo_camera_attach_joint">
-    <body2>head_tilt</body2>
-    <body1>stereo_camera_body</body1>
-    <anchor>head_tilt</anchor>
-    <axis>  1.0   0.0   0.0 </axis>
-    <lowStop> 0.0 </lowStop>
-    <highStop> 0.0 </highStop>
-  </joint:hinge>
-
   <!-- PR2_ACTARRAY -->
   <controller:pr2_actarray name="pr2_controller" plugin="libPr2_Actarray.so">
       <updateRate>100.0</updateRate>
