@@ -117,18 +117,37 @@
   <const name="head_tilt_stereo_offset_z" value="0.0645" />  <!-- mp 20080801 -->
   
   <!-- ptz cameras -->
-  <const name="torso_ptz_left_offset_x" value=" 0.0000" />  <!-- mp 20080801 -->
-  <const name="torso_ptz_left_offset_y" value=" 0.1975" />  <!-- mp 20080801 -->
-  <const name="torso_ptz_left_offset_z" value=" 0.2265" />  <!-- mp 20080801 -->
-  <const name="torso_ptz_rightt_offset_x" value=" 0.0000" />  <!-- mp 20080801 -->
-  <const name="torso_ptz_rightt_offset_y" value="-0.1975" />  <!-- mp 20080801 -->
-  <const name="torso_ptz_rightt_offset_z" value=" 0.2265" />  <!-- mp 20080801 -->
+  <const name="torso_ptz_pan_left_offset_x" value=" 0.0000" />  <!-- mp 20080801 -->
+  <const name="torso_ptz_pan_left_offset_y" value=" 0.1975" />  <!-- mp 20080801 -->
+  <const name="torso_ptz_pan_left_offset_z" value=" 0.2265" />  <!-- mp 20080801 -->
+  <const name="torso_ptz_pan_right_offset_x" value=" 0.0000" />  <!-- mp 20080801 -->
+  <const name="torso_ptz_pan_right_offset_y" value="-0.1975" />  <!-- mp 20080801 -->
+  <const name="torso_ptz_pan_right_offset_z" value=" 0.2265" />  <!-- mp 20080801 -->
+
+  <const name="ptz_pan_ptz_tilt_left_offset_x" value=" 0.0000" />  <!-- FIXME -->
+  <const name="ptz_pan_ptz_tilt_left_offset_y" value=" 0.0300" />  <!-- FIXME -->
+  <const name="ptz_pan_ptz_tilt_left_offset_z" value=" 0.0000" />  <!-- FIXME -->
+  <const name="ptz_pan_ptz_tilt_right_offset_x" value=" 0.0000" />  <!-- FIXME -->
+  <const name="ptz_pan_ptz_tilt_right_offset_y" value="-0.0300" />  <!-- FIXME -->
+  <const name="ptz_pan_ptz_tilt_right_offset_z" value=" 0.0000" />  <!-- FIXME -->
+   
+  <const name="ptz_pan_min_limit" value=" -M_PI/2 " /> <!-- FIXME -->
+  <const name="ptz_pan_max_limit" value="  M_PI/2 " /> <!-- FIXME -->
+  <const name="ptz_tilt_min_limit" value=" -M_PI/2 " /> <!-- FIXME -->
+  <const name="ptz_tilt_max_limit" value="  M_PI/2 " /> <!-- FIXME -->
   
+  <const name="ptz_pan_size_x" value=" 0.05 " /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_pan_size_y" value=" 0.05 " /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_pan_size_z" value=" 0.05 " /> <!-- for definint visual and collision geometry -->
+  
+  <const name="ptz_tilt_size_x" value=" 0.03 " /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_tilt_size_y" value=" 0.03 " /> <!-- for definint visual and collision geometry -->
+  <const name="ptz_tilt_size_z" value=" 0.03 " /> <!-- for definint visual and collision geometry -->
   
   <!-- =========================== l finger proximal digit =========================== -->
-  <const name="gripper_roll_finger_l_offset_x" value=" 0.07751" /> 
-  <const name="gripper_roll_finger_l_offset_y" value=" 0.0100 " /> 
-  <const name="gripper_roll_finger_l_offset_z" value=" 0.0000 " /> 
+  <const name="gripper_roll_finger_l_offset_x" value=" 0.07751" />  <!-- mp 20080801 -->
+  <const name="gripper_roll_finger_l_offset_y" value=" 0.0100 " />  <!-- mp 20080801 -->
+  <const name="gripper_roll_finger_l_offset_z" value=" 0.0000 " />  <!-- mp 20080801 -->
   
   <const name="finger_l_size_x" value="0.131" />  <!-- for defining collision geometry -->
   <const name="finger_l_size_y" value="0.056" />  <!-- for defining collision geometry -->
@@ -138,9 +157,9 @@
   
   
   <!-- =========================== l finger tip (distal digit) =========================== -->
-  <const name="finger_l_finger_tip_l_offset_x" value=" 0.0915 " /> 
-  <const name="finger_l_finger_tip_l_offset_y" value=" 0.0000 " /> 
-  <const name="finger_l_finger_tip_l_offset_z" value=" 0.0000 " /> 
+  <const name="finger_l_finger_tip_l_offset_x" value=" 0.0915 " />  <!-- mp 20080801 -->
+  <const name="finger_l_finger_tip_l_offset_y" value=" 0.0000 " />  <!-- mp 20080801 -->
+  <const name="finger_l_finger_tip_l_offset_z" value=" 0.0000 " />  <!-- mp 20080801 -->
   
   <const name="finger_tip_l_size_x" value="0.053" />  <!-- for defining collision geometry -->
   <const name="finger_tip_l_size_y" value="0.040" />  <!-- for defining collision geometry -->
@@ -149,9 +168,9 @@
   <const name="finger_tip_l_center_box_center_offset_y" value="0.00" />  <!-- FIXME -->
   
   <!-- =========================== r finger proximal digit =========================== -->
-  <const name="gripper_roll_finger_r_offset_x" value=" 0.07751" /> 
-  <const name="gripper_roll_finger_r_offset_y" value="-0.0100 " /> 
-  <const name="gripper_roll_finger_r_offset_z" value=" 0.0000 " /> 
+  <const name="gripper_roll_finger_r_offset_x" value=" 0.07751" />  <!-- mp 20080801 -->
+  <const name="gripper_roll_finger_r_offset_y" value="-0.0100 " />  <!-- mp 20080801 -->
+  <const name="gripper_roll_finger_r_offset_z" value=" 0.0000 " />  <!-- mp 20080801 -->
   
   <const name="finger_r_size_x" value="0.131" />  <!-- for defining collision geometry -->
   <const name="finger_r_size_y" value="0.056" />  <!-- for defining collision geometry -->
@@ -160,9 +179,9 @@
   <const name="finger_r_center_box_center_offset_y" value="0.00" />  <!-- FIXME -->
   
   <!-- =========================== r finger tip (distal digit) =========================== -->
-  <const name="finger_r_finger_tip_r_offset_x" value=" 0.0915 " /> 
-  <const name="finger_r_finger_tip_r_offset_y" value=" 0.0000 " /> 
-  <const name="finger_r_finger_tip_r_offset_z" value=" 0.0000 " /> 
+  <const name="finger_r_finger_tip_r_offset_x" value=" 0.0915 " />  <!-- mp 20080801 -->
+  <const name="finger_r_finger_tip_r_offset_y" value=" 0.0000 " />  <!-- mp 20080801 -->
+  <const name="finger_r_finger_tip_r_offset_z" value=" 0.0000 " />  <!-- mp 20080801 -->
   
   <const name="finger_tip_r_size_x" value="0.053" />  <!-- for defining collision geometry -->
   <const name="finger_tip_r_size_y" value="0.040" />  <!-- for defining collision geometry -->
@@ -176,8 +195,8 @@
   <const name="torso_tilt_laser_offset_x" value="0.10000" />  <!-- mp 20080801 -->
   <const name="torso_tilt_laser_offset_z" value="0.19525" />  <!-- mp 20080801 -->
   
-  <const name="base_base_laser_offset_x" value="0.26" /> 
-  <const name="base_base_laser_offset_z" value="0.28" /> 
+  <const name="base_base_laser_offset_x" value="0.275" />  <!-- mp 20080801 -->
+  <const name="base_base_laser_offset_z" value="0.182" />  <!-- mp 20080801 -->
   
   <const name="gripper_roll_camera_offset_x" value="0.05" />  <!-- this is a guess, please change me -->
   <const name="gripper_roll_camera_offset_y" value="0   " />  <!-- this is a guess, please change me -->
@@ -1589,99 +1608,77 @@
   </sensor>
 
 
-
-<!-- 
-  <sensor name="ptz_right" type="camera"> 
-
-    <calibration> calib_filename </calibration>
+  <link name="ptz_pan_left"><!-- link specifying the shoulder of the robot -->
     <parent>torso</parent>
-    <xyz> torso_ptz_offset_x torso_ptz_offset_y torso_ptz_offset_z </xyz>
-    <rpy> 0 0 0 </rpy>
+    <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <xyz> torso_ptz_pan_left_offset_x torso_ptz_pan_left_offset_y torso_ptz_pan_left_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
 
     <joint type="revolute"> 
-      <axis> 0 1 0 </axis>
-      <anchor>0 0 0</anchor>
-      <limit>0.0 0.0</limit>
+      <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
+      <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <limit> ptz_pan_min_limit ptz_pan_max_limit </limit>
     </joint>
 
     <inertial>
-      <mass> 0.5  </mass>
-      <com> 0.0 0.0 0.0 </com>
-      <inertia>1 0 0 1 0 1 </inertia>
-    </inertial> 
+      <mass> 0.1  </mass>
+      <com> 0  0 0 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <inertia>0.00482611007  -0.000144683999  0.000110076136  0.005218991412  -0.000314239509  0.008618784925 </inertia>
+    </inertial>
 
     <visual>
-      <xyz>0   0   0   </xyz>
-      <rpy>0.0 0.0 0.0 </rpy>
-      <material>Gazebo/PioneerBody</material>
-      <geometry type="box" name="visual_ptz_right">
-        <size>0.02 0.02 0.02</size>
+      <xyz>0 0 0.0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>M_PI/2 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <material>Gazebo/Blue</material>
+      <geometry type="cylinder" name="pr2_ptz_pan_left_visual">
+        <size>ptz_pan_size_x ptz_pan_size_y ptz_pan_size_z</size>
       </geometry>
     </visual> 
 
     <collision>
-      <xyz>0   0   0   </xyz>
-      <rpy>0.0 0.0 0.0 </rpy>
-      <geometry type="box" name="collision_ptz_right">
-        <size>0.02 0.02 0.02</size> 
+      <xyz>0   0   0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry type="cylinder">
+        <size>ptz_pan_size_x ptz_pan_size_y ptz_pan_size_z </size>
       </geometry>
-    </collision>
+    </collision> 
 
-    <data name="sensor" type="gazebo">
-      <verbatim key="sensor_camera">
-        <sensor:camera name="ptz_cam_right_sensor">
-          <imageSize>640 480</imageSize>
-          <hfov>60</hfov>
-          <nearClip>0.1</nearClip>
-          <farClip>100</farClip>
-          <updateRate>15.0</updateRate>
-          <controller:ros_camera name="ptz_cam_right_controller" plugin="libRos_Camera.so">
-            <updateRate>15.0</updateRate>
-            <topicName>image_ptz_right</topicName>
-            <frameName>ptz_right</frameName>
-            <interface:camera name="ptz_cam_right_iface" />
-          </controller:ros_camera>
-        </sensor:camera>
-      </verbatim>
-    </data>
+  </link>
 
-  </sensor>
+  <sensor name="ptz_tilt_left" type="camera"><!-- link specifying the shoulder of the robot -->
+    <parent>ptz_pan_left</parent>
+    <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <xyz> ptz_pan_ptz_tilt_left_offset_x ptz_pan_ptz_tilt_left_offset_y ptz_pan_ptz_tilt_left_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-  <sensor name="ptz_left" type="camera"> 
-
-    <calibration> calib_filename </calibration>
-    <parent>torso</parent>
-    <xyz> torso_ptz_offset_x torso_ptz_offset_y torso_ptz_offset_z </xyz>
-    <rpy> 0 0 0 </rpy>
 
     <joint type="revolute"> 
-      <axis> 0 1 0 </axis>
-      <anchor>0 0 0</anchor>
-      <limit>0.0 0.0</limit>
+      <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
+      <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <limit> ptz_tilt_min_limit ptz_tilt_max_limit </limit>
     </joint>
 
     <inertial>
-      <mass> 0.5  </mass>
-      <com> 0.0 0.0 0.0 </com>
-      <inertia>1 0 0 1 0 1 </inertia>
-    </inertial> 
+      <mass> 0.1  </mass>
+      <com> 0  0 0 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <inertia>0.00482611007  -0.000144683999  0.000110076136  0.005218991412  -0.000314239509  0.008618784925 </inertia>
+    </inertial>
 
     <visual>
-      <xyz>0   0   0   </xyz>
-      <rpy>0.0 0.0 0.0 </rpy>
-      <material>Gazebo/PioneerBody</material>
-      <geometry type="box" name="visual_ptz_left">
-        <size>0.02 0.02 0.02</size>
+      <xyz>0 0 0.0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>M_PI/2 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <material>Gazebo/Blue</material>
+      <geometry type="cylinder" name="pr2_ptz_tilt_left_visual">
+        <size>ptz_tilt_size_x ptz_tilt_size_y ptz_tilt_size_z</size>
       </geometry>
     </visual> 
 
     <collision>
-      <xyz>0   0   0   </xyz>
-      <rpy>0.0 0.0 0.0 </rpy>
-      <geometry type="box" name="collision_ptz_left">
-        <size>0.02 0.02 0.02</size> 
+      <xyz>0   0   0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry type="cylinder">
+        <size>ptz_tilt_size_x ptz_tilt_size_y ptz_tilt_size_z </size>
       </geometry>
-    </collision>
+    </collision> 
 
     <data name="sensor" type="gazebo">
       <verbatim key="sensor_camera">
@@ -1702,8 +1699,98 @@
     </data>
 
   </sensor>
--->
 
+  <link name="ptz_pan_right"><!-- link specifying the shoulder of the robot -->
+    <parent>torso</parent>
+    <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <xyz> torso_ptz_pan_right_offset_x torso_ptz_pan_right_offset_y torso_ptz_pan_right_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+
+    <joint type="revolute"> 
+      <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
+      <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <limit> ptz_pan_min_limit ptz_pan_max_limit </limit>
+    </joint>
+
+    <inertial>
+      <mass> 0.1  </mass>
+      <com> 0  0 0 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <inertia>0.00482611007  -0.000144683999  0.000110076136  0.005218991412  -0.000314239509  0.008618784925 </inertia>
+    </inertial>
+
+    <visual>
+      <xyz>0 0 0.0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>M_PI/2 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <material>Gazebo/Blue</material>
+      <geometry type="cylinder" name="pr2_ptz_pan_right_visual">
+        <size>ptz_pan_size_x ptz_pan_size_y ptz_pan_size_z</size>
+      </geometry>
+    </visual> 
+
+    <collision>
+      <xyz>0   0   0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry type="cylinder">
+        <size>ptz_pan_size_x ptz_pan_size_y ptz_pan_size_z </size>
+      </geometry>
+    </collision> 
+
+  </link>
+
+  <sensor name="ptz_tilt_right" type="camera"><!-- link specifying the shoulder of the robot -->
+    <parent>ptz_pan_right</parent>
+    <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <xyz> ptz_pan_ptz_tilt_right_offset_x ptz_pan_ptz_tilt_right_offset_y ptz_pan_ptz_tilt_right_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+
+
+    <joint type="revolute"> 
+      <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
+      <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <limit> ptz_tilt_min_limit ptz_tilt_max_limit </limit>
+    </joint>
+
+    <inertial>
+      <mass> 0.1  </mass>
+      <com> 0  0 0 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <inertia>0.00482611007  -0.000144683999  0.000110076136  0.005218991412  -0.000314239509  0.008618784925 </inertia>
+    </inertial>
+
+    <visual>
+      <xyz>0 0 0.0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>M_PI/2 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <material>Gazebo/Blue</material>
+      <geometry type="cylinder" name="pr2_ptz_tilt_right_visual">
+        <size>ptz_tilt_size_x ptz_tilt_size_y ptz_tilt_size_z</size>
+      </geometry>
+    </visual> 
+
+    <collision>
+      <xyz>0   0   0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry type="cylinder">
+        <size>ptz_tilt_size_x ptz_tilt_size_y ptz_tilt_size_z </size>
+      </geometry>
+    </collision> 
+
+    <data name="sensor" type="gazebo">
+      <verbatim key="sensor_camera">
+        <sensor:camera name="ptz_cam_right_sensor">
+          <imageSize>640 480</imageSize>
+          <hfov>60</hfov>
+          <nearClip>0.1</nearClip>
+          <farClip>100</farClip>
+          <updateRate>15.0</updateRate>
+          <controller:ros_camera name="ptz_cam_right_controller" plugin="libRos_Camera.so">
+            <updateRate>15.0</updateRate>
+            <topicName>image_ptz_right</topicName>
+            <frameName>ptz_right</frameName>
+            <interface:camera name="ptz_cam_right_iface" />
+          </controller:ros_camera>
+        </sensor:camera>
+      </verbatim>
+    </data>
+
+  </sensor>
 
 
 <!-- End sensor definitions -->
