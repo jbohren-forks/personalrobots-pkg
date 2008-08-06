@@ -123,6 +123,12 @@ void rosTFClient::transformLaserScanToPointCloud(unsigned int target_frame, std_
   cloudOut.header = scanIn.header;
   cloudOut.header.frame_id = target_frame;
   cloudOut.set_pts_size(scanIn.ranges_size);
+    if (scanIn.intensities_size > 0)
+      {
+        cloudOut.set_chan_size(1);
+        cloudOut.chan[0].name ="intensities";
+        cloudOut.chan[0].set_vals_size(scanIn.intensities_size);
+      }
 
   libTF::TFPoint pointIn;
   libTF::TFPoint pointOut;
@@ -149,7 +155,10 @@ void rosTFClient::transformLaserScanToPointCloud(unsigned int target_frame, std_
       cloudOut.pts[count].x  = pointOut.x;
       cloudOut.pts[count].y  = pointOut.y;
       cloudOut.pts[count].z  = pointOut.z;
-
+      
+      if (scanIn.intensities_size >= i) /// \todo optimize and catch length difference better
+        cloudOut.chan[0].vals[count] = scanIn.intensities[i];
+      count++;
     }
     
   }
