@@ -35,38 +35,38 @@
 
 /***************************************************/
 /*! \class CONTROLLER::Pid
- \brief A basic pid class.
+    \brief A basic pid class.
+    
+    This class implements a generic structure that
+    can be used to create a wide range of pid 
+    controllers. It can function independently or 
+    be subclassed to provide more specific controls 
+    based on a particular control loop.
 
- This class implements a generic structure that
- can be used to create a wide range of pid
- controllers. It can function independently or
- be subclassed to provide more specific controls
- based on a particular control loop.
+    In particular, this class implements the standard
+    pid equation:
 
- In particular, this class implements the standard
- pid equation:
+    command  = -Pterm - Iterm - Dterm
 
- command  = Pterm + Iterm + Dterm
+    where: <br> 
+    <UL TYPE="none">
+    <LI>  Pterm  = pGain * pError
+    <LI>  Iterm  = iGain * iError
+    <LI>  Dterm  = dGain * dError
+    <LI>  iError = iError + pError * dT
+    <LI>  dError = dError + (pError - pErrorLast) / dT
+    </UL> 
+      
+    given:<br> 
+    <UL TYPE="none"> 
+    <LI>  pError = pState-pTarget.
+    </UL>
+    
+    If the fixedTime input of UpdatePid is set to alpha, 
+    dT = alpha. Otherwise the time step is computed when 
+    the function is called.
 
- where: <br>
- <UL TYPE="none">
- <LI>  Pterm  = pGain * pError
- <LI>  Iterm  = iGain * iError
- <LI>  Dterm  = dGain * dError
- <LI>  iError = iError + pError * dT
- <LI>  dError = dError = dError + (pError - lastpError) / dT
- </UL>
-
- given:<br>
- <UL TYPE="none">
- <LI>  pError = pTarget - pState.
- </UL>
-
- If the fixedTime input of UpdatePid is set to alpha,
- dT = alpha. Otherwise the time step is computed when
- the function is called.
-
- */
+*/
 /***************************************************/
 namespace controller
 {
@@ -85,7 +85,7 @@ public:
    * \param I1 The integral upper limit.
    * \param I2 The integral lower limit.
    */
-  Pid(double P = 0.8, double I = 0.5, double D = 0.0, double I1 = 1.0, double I2 = -1.0);
+  Pid(double P = 0.0, double I = 0.0, double D = 0.0, double I1 = 0.0, double I2 = -0.0);
 
   /*!
    * \brief Destructor of Pid class.
@@ -138,7 +138,7 @@ private:
   double d_gain_; /**< _Derivative gain. */
   double i_max_; /**< _Maximum allowable integrator state. */
   double i_min_; /**< _Minimum allowable integrator state. */
-  double motor_cmd_; /**< _Command to send to motor. */
+  double cmd_;   /**< _Command to send. */
 };
 
 }

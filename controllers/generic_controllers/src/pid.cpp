@@ -42,7 +42,7 @@ Pid::Pid(double P, double I, double D, double I1, double I2) :
   p_error_ = 0.0;
   d_error_ = 0.0;
   i_error_ = 0.0;
-  motor_cmd_ = 0.0;
+  cmd_ = 0.0;
 }
 
 Pid::~Pid()
@@ -60,64 +60,60 @@ void Pid::initPid(double P, double I, double D, double I1, double I2)
   p_error_ = 0.0;
   d_error_ = 0.0;
   i_error_ = 0.0;
-  motor_cmd_ = 0.0;
+  cmd_ = 0.0;
 }
 
 double Pid::updatePid(double error, double dt)
 {
   double p_term, d_term, i_term;
-  p_error_ = error;
+  p_error_ = error; //this is pError = pState-pTarget
 
   if (dt == 0)
   {
-    throw "dividebyzero";
+    throw "dividebyzero"; //TODO: not sure how to deal with this
   }
   else
   {
-    // calculate proportional contribution to command
+    // Calculate proportional contribution to command
     p_term = p_gain_ * p_error_;
 
-    // calculate the integral error accumulation with appropriate limiting
+    // Calculate the integral error
     i_error_ = i_error_ + dt * p_error_;
-    // limit i_error_
-    if (i_error_ > i_max_)
-    {
-      i_error_ = i_max_;
-    }
-    else if (i_error_ < i_min_)
-    {
-      i_error_ = i_min_;
-    }
-    // calculate integral contribution to command
+    
+    //Calculate integral contribution to command
     i_term = i_gain_ * i_error_;
+    
+    // Limit i_term so that the limit is meaningful in the output
+    if (i_term > i_max_)
+    {
+      i_term = i_max_;
+    }
+    else if (i_term < i_min_)
+    {
+      i_term = i_min_;
+    }
 
-    //    printf("Pid.cpp:: %f, %f, %f, %f, %f\n",i_term,i_gain_,i_error_,i_max_,i_min_);
-
-    // CALCULATE DERIVATIVE ERROR
+    // Calculate the derivative error
     if (dt != 0)
     {
-      // d_error_ should be d (p_error_) / dt
       d_error_ = (p_error_ - p_error_last_) / dt;
-      // save p_error_ for next time
       p_error_last_ = p_error_;
     }
-    // calculate derivative contribution to command
+    // Calculate derivative contribution to command
     d_term = d_gain_ * d_error_;
-
-    // create current command value TODO: rename as motor command?
-    motor_cmd_ = -p_term - i_term - d_term;
+    cmd_ = -p_term - i_term - d_term;
   }
-  return motor_cmd_;
+  return cmd_;
 }
 
 void Pid::setCurrentCmd(double cmd)
 {
-  motor_cmd_ = cmd;
+  cmd_ = cmd;
 }
 
 double Pid::getCurrentCmd()
 {
-  return motor_cmd_;
+  return cmd_;
 }
 
 void Pid::getCurrentPIDErrors(double *pe, double *ie, double *de)
