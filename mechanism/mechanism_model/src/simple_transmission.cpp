@@ -40,7 +40,7 @@ using namespace mechanism;
 
 SimpleTransmission::SimpleTransmission(Joint *joint, Actuator *actuator,
   double mechanical_reduction, double motor_torque_constant,
-  double pulses_per_revolution) 
+  double pulses_per_revolution)
 {
   actuator_ = actuator;
   mechanical_reduction_ = mechanical_reduction;
@@ -53,11 +53,23 @@ SimpleTransmission::SimpleTransmission(Joint *joint, Actuator *actuator,
 void SimpleTransmission::propagatePosition()
 {
   joint_->position_ = ((double)actuator_->state_.encoder_count_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);
-  joint_->velocity_ = ((double)actuator_->state_.encoder_velocity_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_); 
+  joint_->velocity_ = ((double)actuator_->state_.encoder_velocity_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);
   joint_->applied_effort_ = actuator_->state_.last_measured_current_ * (motor_torque_constant_ * mechanical_reduction_);
+}
+
+void SimpleTransmission::propagatePositionBackwards()
+{
+  actuator_->state_.encoder_count_ = (int)(joint_->position_ * pulses_per_revolution_ * mechanical_reduction_ / (2*M_PI));
+  actuator_->state_.encoder_velocity_ = joint_->velocity_ * pulses_per_revolution_ * mechanical_reduction_ / (2*M_PI);
+  actuator_->state_.last_measured_current_ = joint_->applied_effort_ / (motor_torque_constant_ * mechanical_reduction_);
 }
 
 void SimpleTransmission::propagateEffort()
 {
   actuator_->command_.current_ = joint_->commanded_effort_/(motor_torque_constant_ * mechanical_reduction_);
+}
+
+void SimpleTransmission::propagateEffortBackwards()
+{
+  joint_->commanded_effort_ = actuator_->command_.current_ * motor_torque_constant_ * mechanical_reduction_;
 }

@@ -48,8 +48,15 @@ public:
   // Uses encoder data to fill out joint position and velocities
   virtual void propagatePosition() = 0;
 
+  // Uses the joint position to fill out the actuator's encoder.
+  virtual void propagatePositionBackwards() = 0;
+
   // Uses commanded joint efforts to fill out commanded motor currents
   virtual void propagateEffort() = 0;
+
+  // Uses the actuator's commanded effort to fill out the torque on
+  // the joint.
+  virtual void propagateEffortBackwards() = 0;
 };
 
 
@@ -69,6 +76,8 @@ public:
 
   void propagatePosition();
   void propagateEffort();
+  void propagatePositionBackwards();
+  void propagateEffortBackwards();
 };
 
 } // namespace mechanism
