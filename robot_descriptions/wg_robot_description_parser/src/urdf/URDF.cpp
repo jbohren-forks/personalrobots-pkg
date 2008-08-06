@@ -520,7 +520,18 @@ namespace robot_desc {
 	if (!m_location.empty())
 	    fprintf(stderr, "  ... at %s%s", m_location.c_str(), node ? "" : "\n");
 	if (node)
-	    fprintf(stderr, "%s line %d, column %d\n", m_location.empty() ? "  ..." : ",", node->Row(), node->Column());
+	{
+	    /* find the document the node is part of */
+	    const TiXmlNode* doc = node;
+	    while (doc && doc->Type() != TiXmlNode::DOCUMENT)
+		doc = doc->Parent();
+	    const char *filename = doc ? reinterpret_cast<const char*>(doc->GetUserData()) : NULL;
+	    fprintf(stderr, "%s line %d, column %d", m_location.empty() ? "  ..." : ",", node->Row(), node->Column());
+	    if (filename)
+		fprintf(stderr, " (%s)\n", filename);
+	    else
+		fprintf(stderr, "\n");
+	}
     }
     
     void URDF::ignoreNode(const TiXmlNode* node)
@@ -580,7 +591,12 @@ namespace robot_desc {
     {
 	/* clear memory allocated for loaded documents */
 	for (unsigned int i = 0 ; i < m_docs.size() ; ++i)
+	{
+	    char *filename = reinterpret_cast<char*>(m_docs[i]->GetUserData());
+	    if (filename)
+		free(filename);
 	    delete m_docs[i];
+	}	
 	m_docs.clear();
     }
     
@@ -623,6 +639,7 @@ namespace robot_desc {
 	bool result = false;
 	
 	TiXmlDocument *doc = new TiXmlDocument();
+	doc->SetUserData(NULL);	
 	m_docs.push_back(doc);
 	if (doc->Parse(data))
 	{
@@ -641,6 +658,7 @@ namespace robot_desc {
 	bool result = false;
 	
 	TiXmlDocument *doc = new TiXmlDocument();
+	doc->SetUserData(NULL);	
 	m_docs.push_back(doc);
 	if (doc->LoadFile(file))
 	{
@@ -660,6 +678,7 @@ namespace robot_desc {
 	m_source = filename;
 	
 	TiXmlDocument *doc = new TiXmlDocument(filename);
+	doc->SetUserData(filename ? reinterpret_cast<void*>(strdup(filename)) : NULL);	
 	m_docs.push_back(doc);
 	if (doc->LoadFile())
 	{
@@ -1661,7 +1680,9 @@ namespace robot_desc {
 		i->second->inGroup[grpmap[i->second->groups[j]->name]] = true;
 	}
     }
-    	    
+    
+    
+
     bool URDF::parse(const TiXmlNode *node)
     {
 	if (!node) return false;
@@ -1743,6 +1764,7 @@ namespace robot_desc {
 			if (filename)
 			{
 			    TiXmlDocument *doc = new TiXmlDocument(filename);
+			    doc->SetUserData(reinterpret_cast<void*>(filename));
 			    m_docs.push_back(doc);
 			    if (doc->LoadFile())
 			    {
@@ -1754,7 +1776,6 @@ namespace robot_desc {
 			    }
 			    else
 				fprintf(stderr, "Unable to load %s\n", filename);
-			    free(filename);
 			}
 			else
 			    fprintf(stderr, "Unable to find %s\n", node->FirstChild()->Value());                    
