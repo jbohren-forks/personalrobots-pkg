@@ -32,15 +32,16 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <ros/node.h>
-
-#include <mechanism_control/mechanism_control.h>
-#include <ethercat_hardware/ethercat_hardware.h>
-
 #include <stdio.h>
 #include <execinfo.h>
 #include <signal.h>
 #include <sys/mman.h>
+
+#include <generic_controllers/joint_controller.h>
+#include <mechanism_control/mechanism_control.h>
+#include <ethercat_hardware/ethercat_hardware.h>
+
+#include <ros/node.h>
 
 static int quit = 0;
 static const int NSEC_PER_SEC = 1e+9;
@@ -61,14 +62,20 @@ void *controlLoop(void *arg)
   TiXmlDocument xml(xml_file);
   xml.LoadFile();
   TiXmlElement *root = xml.FirstChildElement("robot");
-printf("root = %08x\n", root);
 
   EthercatHardware ec;
   ec.init(interface, root);
   getTime(ec.hw_);
 
   MechanismControl mc(ec.hw_);
+  // TODO: register actuators with mechanism control
   mc.init(root);
+
+  // TODO: register some controller types
+  mc.registerControllerType("JointController", controller::JointController::create);
+
+  // TODO: spawn some controllers
+  mc.spawnController("JointController", /*xml handle */NULL);
 
   // Switch to hard real-time
   int period = 1e+6; // 1 ms in nanoseconds
@@ -92,7 +99,11 @@ printf("root = %08x\n", root);
     clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &tick, NULL);
   }
 
-  memset(ec.hw_->actuators_, 0, ec.hw_->num_actuators_ * sizeof(Actuator));
+  for (unsigned int i = 0; i < ec.hw_->actuators_.size(); ++i)
+  {
+    ec.hw_->actuators_[i]->command_.enable_ = false;
+    ec.hw_->actuators_[i]->command_.current_ = 0;
+  }
   ec.update();
 
   return 0;
@@ -127,7 +138,8 @@ int main(int argc, char *argv[])
     exit(-1);
   }
 
-  ros::node *node = new ros::node("mechanism_control");
+  ros::node *node = new ros::node("mechanism_control",
+                                  ros::node::DONT_HANDLE_SIGINT);
 
   // Catch attempts to quit
   signal(SIGTERM, quitRequested);
@@ -149,8 +161,7 @@ int main(int argc, char *argv[])
   int rv;
   if ((rv = pthread_create(&rtThread, &rtThreadAttr, controlLoop, argv)) != 0)
   {
-    perror("pthread_create");
-    exit(1);
+    node->log(ros::FATAL, "Unable to create realtime thread: rv = %d\n", rv);
   }
 
   pthread_join(rtThread, 0);
