@@ -77,9 +77,6 @@ loadMapFromFile(std_srvs::StaticMap::response* resp,
   int color_sum;
   double color_avg;
 
-  printf("loading image file: %s...", fname);
-  fflush(stdout);
-
   if(!(img = IMG_Load(fname)))
   {
     std::string errmsg = std::string("failed to open image file \"") + 
@@ -126,10 +123,6 @@ loadMapFromFile(std_srvs::StaticMap::response* resp,
   }
 
   SDL_FreeSurface(img);
-
-  puts("Done.");
-  printf("read a %d X %d map\n", resp->map.width, resp->map.height);
-
 
   return(true);
 }

@@ -132,7 +132,12 @@ int main(int argc, char **argv)
   MapServer ms;
   try
   {
+    printf("[map_server] loading map from image \"%s\"\n", fname);
     map_server::loadMapFromFile(&ms.map_resp_,fname,res,negate);
+    printf("[map_server] read a %d X %d map @ %.3lf m/cell\n",
+           ms.map_resp_.map.width,
+           ms.map_resp_.map.height,
+           ms.map_resp_.map.resolution);
     ms.advertise_service("static_map", &MapServer::mapCallback);
     ms.spin();
   }

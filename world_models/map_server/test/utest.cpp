@@ -36,17 +36,31 @@
 const char* g_invalid_image_file = "foo";
 
 /* Note that these must be changed if the test image changes */
-const char* g_valid_png_file = "test/testmap.png";
-const unsigned int g_valid_png_width = 10;
-const unsigned int g_valid_png_height = 10;
+const unsigned int g_valid_image_width = 10;
+const unsigned int g_valid_image_height = 10;
+// Note that the image content is given in row-major order, with the
+// lower-left pixel first.  This is different from a graphics coordinate
+// system, which starts with the upper-left pixel.  The loadMapFromFile
+// call converts from the latter to the former when it loads the image, and
+// we want to compare against the result of that conversion.
+const char g_valid_image_content[] = {
+0,0,0,0,0,0,0,0,0,0,
+100,100,100,100,0,0,100,100,100,0,
+100,100,100,100,0,0,100,100,100,0,
+100,0,0,0,0,0,0,0,0,0,
+100,0,0,0,0,0,0,0,0,0,
+100,0,0,0,0,0,100,100,0,0,
+100,0,0,0,0,0,100,100,0,0,
+100,0,0,0,0,0,100,100,0,0,
+100,0,0,0,0,0,100,100,0,0,
+100,0,0,0,0,0,0,0,0,0,
+};
 
-/* Note that these must be changed if the test image changes */
+const char* g_valid_png_file = "test/testmap.png";
 const char* g_valid_bmp_file = "test/testmap.bmp";
-const unsigned int g_valid_bmp_width = 10;
-const unsigned int g_valid_bmp_height = 10;
 
 /* Try to load a valid PNG file.  Succeeds if no exception is thrown, and if
- * the loaded image matches the known dimensions of the file. 
+ * the loaded image matches the known dimensions and content of the file. 
  *
  * This test can fail on OS X, due to an apparent limitation of the
  * underlying SDL_Image library. */
@@ -57,8 +71,10 @@ TEST(map_server, load_valid_png)
     std_srvs::StaticMap::response map_resp;
     map_server::loadMapFromFile(&map_resp, g_valid_png_file, 0.1, false);
     ASSERT_FLOAT_EQ(map_resp.map.resolution, 0.1);
-    ASSERT_EQ(map_resp.map.width, g_valid_png_width);
-    ASSERT_EQ(map_resp.map.height, g_valid_png_height);
+    ASSERT_EQ(map_resp.map.width, g_valid_image_width);
+    ASSERT_EQ(map_resp.map.height, g_valid_image_height);
+    for(unsigned int i=0; i < map_resp.map.width * map_resp.map.height; i++)
+      ASSERT_EQ(g_valid_image_content[i], map_resp.map.data[i]);
   }
   catch(...)
   {
@@ -67,7 +83,7 @@ TEST(map_server, load_valid_png)
 }
 
 /* Try to load a valid BMP file.  Succeeds if no exception is thrown, and if
- * the loaded image matches the known dimensions of the file. */
+ * the loaded image matches the known dimensions and content of the file. */
 TEST(map_server, load_valid_bmp)
 {
   try
@@ -75,8 +91,10 @@ TEST(map_server, load_valid_bmp)
     std_srvs::StaticMap::response map_resp;
     map_server::loadMapFromFile(&map_resp, g_valid_bmp_file, 0.1, false);
     ASSERT_FLOAT_EQ(map_resp.map.resolution, 0.1);
-    ASSERT_EQ(map_resp.map.width, g_valid_bmp_width);
-    ASSERT_EQ(map_resp.map.height, g_valid_bmp_height);
+    ASSERT_EQ(map_resp.map.width, g_valid_image_width);
+    ASSERT_EQ(map_resp.map.height, g_valid_image_height);
+    for(unsigned int i=0; i < map_resp.map.width * map_resp.map.height; i++)
+      ASSERT_EQ(g_valid_image_content[i], map_resp.map.data[i]);
   }
   catch(...)
   {
