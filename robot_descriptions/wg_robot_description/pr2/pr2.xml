@@ -209,9 +209,11 @@
   <!-- to be used by sensors -->
   <const name="torso_tilt_laser_offset_x" value="0.10000" />  <!-- mp 20080801 -->
   <const name="torso_tilt_laser_offset_z" value="0.19525" />  <!-- mp 20080801 -->
+  <const name="tilt_laser_center_box_center_offset_z" value="0.0" />  <!-- FIXME -->
   
   <const name="base_base_laser_offset_x" value="0.275" />  <!-- mp 20080801 -->
-  <const name="base_base_laser_offset_z" value="0.182+base_size_z/2" />  <!-- FIXME: seems low. mp 20080801 -->
+  <const name="base_base_laser_offset_z" value="0.182" />  <!-- mp 20080801 -->
+  <const name="base_laser_center_box_center_offset_z" value="0.12" />  <!-- FIXME -->
   
   <const name="gripper_roll_camera_offset_x" value="0.05" />  <!-- this is a guess, please change me -->
   <const name="gripper_roll_camera_offset_y" value="0   " />  <!-- this is a guess, please change me -->
@@ -1269,7 +1271,7 @@
     </inertial> 
 
     <visual>
-      <xyz>0   0   0   </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <xyz>0   0   tilt_laser_center_box_center_offset_z  </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
 
       <material>Gazebo/PioneerBody</material>
@@ -1280,7 +1282,7 @@
     </visual>
 
     <collision>
-      <xyz>0   0   0   </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <xyz>0   0   tilt_laser_center_box_center_offset_z  </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material> 
       <geometry type="box" name="collision_tilt_laser"><!-- geometry specified using a simple geometric object -->
@@ -1336,7 +1338,7 @@
     </inertial> 
 
     <visual>
-      <xyz>0   0   0   </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <xyz>0   0   base_laser_center_box_center_offset_z  </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
 
       <material>Gazebo/PioneerBody</material>
@@ -1347,7 +1349,7 @@
     </visual>
 
     <collision>
-      <xyz>0   0   0   </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <xyz>0   0   base_laser_center_box_center_offset_z  </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
       <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <material>Gazebo/Grey</material> 
       <geometry type="box" name="collision_base_laser"><!-- geometry specified using a simple geometric object -->
@@ -1361,7 +1363,7 @@
           <rayCount>683</rayCount>
           <rangeCount>683</rangeCount>
           <laserCount>1</laserCount>
-          <origin>0.0 0.0 0.05</origin>
+          <origin>0.0 0.0 0.17</origin> <!-- FIXME: for verbatim, adjust this number according to base_laser_center_box_center_offset_z -->
           <displayRays>false</displayRays>
 
           <minAngle>-90</minAngle>
