@@ -376,7 +376,12 @@ namespace PR2
 
 
 // KDL version of SetArmCartesianPosition
-			public: PR2_ERROR_CODE SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Frame &f);
+				/*! \fn
+				   \brief Command end effector to position and orientation in cartesian space.
+					 \param reachable - whether the deesired position can be reached or not.
+				 */
+			public: PR2_ERROR_CODE SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Frame &f, bool &reachable);
+
 							/*
 							 * Preserved right now (July 28,2008) for compatibility with controller code.
 							 * We might want to get rid of this later. -- Advait

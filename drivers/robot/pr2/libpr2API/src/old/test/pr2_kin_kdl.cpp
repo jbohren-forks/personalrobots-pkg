@@ -59,7 +59,10 @@ int main()
 	(*myPR2.pr2_kin.q_IK_guess)(0) = 0.0, (*myPR2.pr2_kin.q_IK_guess)(1) = 0.0, (*myPR2.pr2_kin.q_IK_guess)(2) = 0.0;
 	(*myPR2.pr2_kin.q_IK_guess)(3) = 0.0,	(*myPR2.pr2_kin.q_IK_guess)(4) = 0.0, (*myPR2.pr2_kin.q_IK_guess)(5) = 0.0;
 	(*myPR2.pr2_kin.q_IK_guess)(6) = 0.0;
-	myPR2.SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f);
+	bool reachable;
+	myPR2.SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f, reachable);
+	if(reachable==false)
+		printf("Couldn't reach the desired point\n");
 
 
 	myPR2.GetBasePositionActual(&x, &y, &z, &roll, &pitch, &yaw);

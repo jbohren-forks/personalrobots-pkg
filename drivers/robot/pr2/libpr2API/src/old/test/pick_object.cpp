@@ -95,18 +95,19 @@ void init_robot()
 	(*myPR2.pr2_kin.q_IK_guess)(3) = 0.0,	(*myPR2.pr2_kin.q_IK_guess)(4) = 0.0, (*myPR2.pr2_kin.q_IK_guess)(5) = 0.0;
 	(*myPR2.pr2_kin.q_IK_guess)(6) = 0.0;
 
-	myPR2.SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f);
+	bool reachable;
+	myPR2.SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f, reachable);
 
 }
 
 void close_gripper()
 {
-	myPR2.hw.SetJointServoCmd(PR2::ARM_R_GRIPPER_GAP, 0.0, 500);
+	myPR2.hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, 0.05, 500);
 }
 
 void open_gripper()
 {
-	myPR2.hw.SetJointServoCmd(PR2::ARM_R_GRIPPER_GAP, 0.15, 500);
+	myPR2.hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, 0.15, 500);
 }
 
 void go_down()
@@ -116,7 +117,8 @@ void go_down()
 	Vector v(0.568,0.01,-0.01);
 	Frame f(r,v);
 
-	myPR2.SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f);
+	bool reachable;
+	myPR2.SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f, reachable);
 }
 
 void object_pose()
@@ -136,7 +138,8 @@ void object_pose()
 	(*myPR2.pr2_kin.q_IK_guess)(5) = DTOR(30);  // wrist pitch
 	(*myPR2.pr2_kin.q_IK_guess)(6) = 0.0;       // wrist roll
 
-	myPR2.SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f);
+	bool reachable;
+	myPR2.SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f, reachable);
 }
 
 

@@ -99,24 +99,11 @@ PR2_ERROR_CODE PR2Robot::DisableSpine()
  */
 PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Frame &f, const KDL::JntArray &q_init, KDL::JntArray &q_out)
 {
-  //  KDL::JntArray q_init = KDL::JntArray(this->pr2_kin.nJnts);
-  //  q_init(0) = 0.1, q_init(1) = 0.0, q_init(2) = 0.0, q_init(3) = 0.0;
-  //  q_init(4) = 0.0, q_init(5) = 0.0, q_init(6) = 0.0;
-
-  //  KDL::JntArray q_out = KDL::JntArray(this->pr2_kin.nJnts);
-  if (this->pr2_kin.IK(q_init, f, q_out) == true)
-    cout<<"IK result:"<<q_out<<endl;
-  else
-    cout<<"Could not compute Inv Kin."<<endl;
-
-  //------ checking that IK returned a valid soln -----
-  KDL::Frame f_ik;
-  if (this->pr2_kin.FK(q_out,f_ik))
-  {
-    //    cout<<"End effector after IK:"<<f_ik<<endl;
-  }
-  else
-    cout<<"Could not compute Fwd Kin. (After IK)"<<endl;
+  if (this->pr2_kin.IK(f) == false)
+	{
+    printf("[libpr2API]<pr2API.cpp> Could not compute Inv Kin.\n");
+		return PR2_ALL_OK;
+	}
 
   for(int ii = 0; ii < 7; ii++)
     hw.SetJointServoCmd((PR2::PR2_JOINT_ID) (JointStart[id]+ii),q_out(ii),0);
@@ -124,24 +111,17 @@ PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Fra
   return PR2_ALL_OK;
 }
 
-PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Frame &f)
+/*
+ * This is the function which should be used -- Advait
+ */
+PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Frame &f, bool &reachable)
 {
-  if (this->pr2_kin.IK(f) == true)
+	reachable = this->pr2_kin.IK(f);
+  if (reachable == false)
 	{
-//    cout<<"IK guess:"<<*this->pr2_kin.q_IK_guess<<endl;
-//    cout<<"IK result:"<<*this->pr2_kin.q_IK_result<<endl;
+    printf("[libpr2API]<pr2API.cpp> Could not compute Inv Kin.\n");
+		return PR2_ALL_OK;
 	}
-  else
-    cout<<"Could not compute Inv Kin."<<endl;
-
-  //------ checking that IK returned a valid soln -----
-  KDL::Frame f_ik;
-  if (this->pr2_kin.FK(*this->pr2_kin.q_IK_result,f_ik))
-  {
-    //    cout<<"End effector after IK:"<<f_ik<<endl;
-  }
-  else
-    cout<<"Could not compute Fwd Kin. (After IK)"<<endl;
 
   for(int ii = 0; ii < 7; ii++)
     hw.SetJointServoCmd((PR2::PR2_JOINT_ID) (JointStart[id]+ii),(*this->pr2_kin.q_IK_result)(ii),0);
