@@ -30,31 +30,18 @@
 #define MAP_SERVER_MAP_SERVER_H
 
 /*
- * The map_server class reads an occupancy grid map from a bitmap image and
- * serves it up via ROS.
- * 
  * Author: Brian Gerkey
  */
 
-#include "ros/node.h"
 #include "std_srvs/StaticMap.h"
 
-class MapServer : public ros::node
+namespace map_server
 {
-  private:
-    std_srvs::StaticMap::response map_resp_;
 
-  public:
-    // Constructor
-    MapServer() : ros::node("map_server") {}
-
-    // Callback invoked when someone requests our service
-    bool mapCallback(std_srvs::StaticMap::request  &req,
-                     std_srvs::StaticMap::response &res );
-
-    // Read the image from file and fill out the map_resp object, 
-    // for later use when our services are requested.
-    bool loadMapFromFile(const char* fname, double res, bool negate);
-};
+// Read the image from file and fill out the map_resp object, 
+// for later use when our services are requested.
+bool loadMapFromFile(std_srvs::StaticMap::response* resp,
+                     const char* fname, double res, bool negate);
+}
 
 #endif

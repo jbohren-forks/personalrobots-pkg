@@ -27,12 +27,58 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * The map_server node reads an occupancy grid map from a bitmap image and
- * serves it up via ROS.
- * 
- * Author: Brian Gerkey
- */
+/* Author: Brian Gerkey */
+
+/**
+
+@mainpage
+
+@htmlinclude manifest.html
+
+@b map_server is a ROS node that reads an occupancy grid map from an image
+file and offers up the map via a ROS service.
+
+When parsing the image, a pixel is considered to be free (occupancy
+value 0) if the mean of its RGB values is greater than 0.9*255 (i.e.,
+very white).  The pixel is occupied (occupancy value 100) if the mean
+is less than 0.5*255 (i.e., sort of black).  Anything in between is
+considered unknown (occupancy value -1).
+
+@todo Make the color threshold an externally-configurable parameter.
+
+<hr>
+
+@section usage Usage
+@verbatim
+map_server <map> <resolution> [<negate>]
+           map: image file to load
+           resolution: map resolution [meters/pixel]
+           negate: if non-zero, black is free, white is occupied
+@endverbatim
+
+@par Example
+@verbatim
+map_server mymap.png 0.1
+@endverbatim
+
+<hr>
+
+@section topic ROS topics
+
+- None
+
+@section topic ROS services
+
+Offers (name/type):
+- @b "static_map"/std_srvs::StaticMap : Retrieve the map via this service
+
+<hr>
+
+@section parameters ROS parameters
+
+- None
+*/
+
 
 
 #define USAGE "USAGE: map_server <map> <resolution> [<negate>]\n"\
@@ -44,7 +90,30 @@
 #include <stdlib.h>
 
 #include "ros/node.h"
-#include "map_server/map_server.h"
+#include "map_server/image_loader.h"
+
+class MapServer : public ros::node
+{
+  public:
+    /** Trivial constructor */
+    MapServer() : ros::node("map_server") {}
+
+    /** Callback invoked when someone requests our service */
+    bool mapCallback(std_srvs::StaticMap::request  &req,
+                     std_srvs::StaticMap::response &res )
+    {
+      // request is empty; we ignore it
+
+      // = operator is overloaded to make deep copy (tricky!)
+      res = map_resp_;
+      puts("sending map");
+      return true;
+    }
+
+    /** The map response is cached here, to be sent out to service callers
+     */
+    std_srvs::StaticMap::response map_resp_;
+};
 
 int main(int argc, char **argv)
 {
@@ -63,7 +132,8 @@ int main(int argc, char **argv)
   MapServer ms;
   try
   {
-    ms.loadMapFromFile(fname,res,negate);
+    map_server::loadMapFromFile(&ms.map_resp_,fname,res,negate);
+    ms.advertise_service("static_map", &MapServer::mapCallback);
     ms.spin();
   }
   catch(std::runtime_error& e)

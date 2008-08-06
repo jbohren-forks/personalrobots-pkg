@@ -28,13 +28,13 @@
  */
 
 /*
- * The MapServer class reads an occupancy grid map from a bitmap image and
- * serves it up via ROS.
+ * This file contains helper functions for loading images as maps.
  * 
  * Author: Brian Gerkey
  */
 
 #include <cstring>
+#include <stdexcept>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -42,27 +42,29 @@
 // We use SDL_image to load the image from disk
 #include <SDL/SDL_image.h>
 
-#include "map_server/map_server.h"
+#include "map_server/image_loader.h"
 
 // compute linear index for given map coords
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
 
-// Callback invoked when someone requests our service
-bool MapServer::mapCallback(std_srvs::StaticMap::request  &req,
-                            std_srvs::StaticMap::response &res )
+namespace map_server
 {
-  // request is empty; we ignore it
 
-  // = operator is overloaded to make deep copy (tricky!)
-  res = map_resp_;
-  puts("sending map");
-  return true;
-}
-
-// Read the image from file and fill out the map_resp_ object, for later use
-// when our services are requested.
+/** Read the image from file and fill out the resp object, for later 
+ * use when our services are requested. 
+ *
+ * @param resp The map wil be written into here
+ * @param fname The image file to read from
+ * @param res The resolution of the map (gets stored in resp)
+ * @param negate If true, then whiter pixels are occupied, and blacker
+ *               pixels are free
+ *
+ * @return True on success (image was loaded into resp), false otherwise
+ * (image was not loaded into resp).
+ * */
 bool
-MapServer::loadMapFromFile(const char* fname, double res, bool negate)
+loadMapFromFile(std_srvs::StaticMap::response* resp,
+                const char* fname, double res, bool negate)
 {
   SDL_Surface* img;
 
@@ -85,24 +87,24 @@ MapServer::loadMapFromFile(const char* fname, double res, bool negate)
     throw std::runtime_error(errmsg);
   }
 
-  map_resp_.map.width = img->w;
-  map_resp_.map.height = img->h;
-  map_resp_.map.resolution = res;
+  resp->map.width = img->w;
+  resp->map.height = img->h;
+  resp->map.resolution = res;
   // TODO: make origin configurable
-  map_resp_.map.origin.x = 0.0;
-  map_resp_.map.origin.y = 0.0;
-  map_resp_.map.origin.th = 0.0;
+  resp->map.origin.x = 0.0;
+  resp->map.origin.y = 0.0;
+  resp->map.origin.th = 0.0;
 
-  map_resp_.map.set_data_size(map_resp_.map.width * map_resp_.map.height);
+  resp->map.set_data_size(resp->map.width * resp->map.height);
 
   rowstride = img->pitch;
   n_channels = img->format->BytesPerPixel;
 
   // Read data
   pixels = (unsigned char*)(img->pixels);
-  for(j = 0; j < map_resp_.map.height; j++)
+  for(j = 0; j < resp->map.height; j++)
   {
-    for (i = 0; i < map_resp_.map.width; i++)
+    for (i = 0; i < resp->map.width; i++)
     {
       p = pixels + j*rowstride + i*n_channels;
       color_sum = 0;
@@ -115,20 +117,21 @@ MapServer::loadMapFromFile(const char* fname, double res, bool negate)
       else
         occ = (255 - color_avg) / 255.0;
       if(occ > 0.5)
-        map_resp_.map.data[MAP_IDX(map_resp_.map.width,i,map_resp_.map.height - j - 1)] = +100;
+        resp->map.data[MAP_IDX(resp->map.width,i,resp->map.height - j - 1)] = +100;
       else if(occ < 0.1)
-        map_resp_.map.data[MAP_IDX(map_resp_.map.width,i,map_resp_.map.height - j - 1)] = 0;
+        resp->map.data[MAP_IDX(resp->map.width,i,resp->map.height - j - 1)] = 0;
       else
-        map_resp_.map.data[MAP_IDX(map_resp_.map.width,i,map_resp_.map.height - j - 1)] = -1;
+        resp->map.data[MAP_IDX(resp->map.width,i,resp->map.height - j - 1)] = -1;
     }
   }
 
   SDL_FreeSurface(img);
 
   puts("Done.");
-  printf("read a %d X %d map\n", map_resp_.map.width, map_resp_.map.height);
+  printf("read a %d X %d map\n", resp->map.width, resp->map.height);
 
-  advertise_service("static_map", &MapServer::mapCallback);
 
   return(true);
+}
+
 }
