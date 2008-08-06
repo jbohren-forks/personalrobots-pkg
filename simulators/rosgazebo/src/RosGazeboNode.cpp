@@ -606,8 +606,8 @@ RosGazeboNode::Update()
   robot_desc::URDF::Link* link;
 
   link = pr2Description.getLink("base");
-  if (link)
   this->PR2Copy->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw); // actual CoM of base
+  if (link)
   tf.sendInverseEuler("FRAMEID_ODOM",
                "base",
                x,
