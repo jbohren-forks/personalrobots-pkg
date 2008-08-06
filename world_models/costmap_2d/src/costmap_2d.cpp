@@ -57,6 +57,9 @@ window_length_(window_length)
 {  
   static_data_ = NULL;
   full_data_ = NULL;
+  width_ = 0;
+  height_ = 0;
+  resolution_ = 0;
 }
 
 CostMap2D::~CostMap2D() {
@@ -67,8 +70,8 @@ CostMap2D::~CostMap2D() {
   }
   obstacle_pts_.clear();
   
-  if(static_data_ != NULL) delete static_data_;
-  if(full_data_ != NULL) delete full_data_;
+  if(static_data_ != NULL) delete[] static_data_;
+  if(full_data_ != NULL) delete[] full_data_;
 }
 
 void CostMap2D::setStaticMap(size_t width, size_t height,
@@ -79,13 +82,13 @@ void CostMap2D::setStaticMap(size_t width, size_t height,
   resolution_ = resolution;
 
   //TODO handle resize?
-  static_data_ = new unsigned char(width_*height_);
-  full_data_ = new unsigned char(width_*height_);
-  if(sizeof(data) < (width_*height_)) {
-    std::cerr << "CostMap2D::setStaticMap Error - not enough data\n";
-    return;
-  }
-  memcpy(static_data_, data, width_*height);
+  static_data_ = new unsigned char[width_*height_];
+  full_data_ = new unsigned char[width_*height_];
+  //if(size(data) < (width_*height_)) {
+  //  std::cerr << "CostMap2D::setStaticMap Error - data has " << sizeof(data) << " bytes instead of the required " << width_*height_ << std::endl;
+  //  return;
+  //}
+  memcpy(static_data_, data, width_*height_);
   memcpy(full_data_, static_data_, width_*height_);
 }
 
@@ -131,7 +134,7 @@ void CostMap2D::update(ros::Time ts) {
   refreshFullMap();
 }
 
-const unsigned char* CostMap2D::getMap() {
+const unsigned char* CostMap2D::getMap() const {
   return full_data_;
 }
 
@@ -177,7 +180,7 @@ void CostMap2D::addObstaclePointsToFullMap(const ObstaclePts* pts) {
     convertFromWorldCoordToIndex(pts->pts_[i*2],pts->pts_[i*2+1], mx, my);
     size_t ind = getMapIndex(mx, my);
     //assuming full for now
-    full_data_[ind] = 100;
+    full_data_[ind] = 75;
   }
 }
 
@@ -204,8 +207,8 @@ void CostMap2D::convertFromWorldCoordToIndex(double wx, double wy,
   }
 
   //not much for now
-  mx = (int) wx;
-  my = (int) wy;
+  mx = (int) (wx/resolution_);
+  my = (int) (wy/resolution_);
 
   if(mx > width_) {
     std::cerr << "CostMap2D::convertFromWorldCoordToIndex converted x " << wx << " greater than width " << width_ << std::endl;
@@ -217,4 +220,12 @@ void CostMap2D::convertFromWorldCoordToIndex(double wx, double wy,
     my = 0;
     return;
   }
+}
+
+size_t CostMap2D::getWidth() const {
+  return width_;
+}
+
+size_t CostMap2D::getHeight() const {
+  return height_;
 }

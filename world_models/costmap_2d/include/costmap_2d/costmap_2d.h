@@ -70,10 +70,11 @@ typedef struct ObstaclePts
       delete pts_;
       pts_ = NULL;
     }
-    pts_ = new double(num*2);
+    pts_ = new double[num*2];
     pts_num_ = num;
   }
   void setPoint(size_t i, double x, double y) {
+    if(pts_ == NULL) return;
     if(i > pts_num_) return;
     pts_[i*2] = x;
     pts_[i*2+1] = y;
@@ -133,7 +134,7 @@ public:
    * @brief Get pointer into the obstacle map (which contains both static
    * and dynamic obstacles)
    */
-  const unsigned char* getMap();
+  const unsigned char* getMap() const;
   
   /**
    * @brief Get index of given (x,y) point into data
@@ -154,6 +155,10 @@ public:
   void convertFromWorldCoordToIndex(double wx, double wy,
                                     size_t& mx, size_t& my) const;
     
+  //accessors
+  size_t getWidth() const;
+  size_t getHeight() const;
+
 private:
   
   //refreshes the full_map, chucking old data
