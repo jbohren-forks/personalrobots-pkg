@@ -87,13 +87,14 @@ Provides (name/type):
 #include <rosthread/member_thread.h>
 #include <rosthread/mutex.h>
 #include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/LaserScan.h>
 #include <rostools/Log.h>
-#include <rosTF/rosTF.h>
-#include <random_utils/random_utils.h>
 
+#include <rosTF/rosTF.h>
 #include <urdf/URDF.h>
 #include <planning_models/kinematic.h>
 #include <collision_space/util.h>
+#include <random_utils/random_utils.h>
 
 #include <deque>
 #include <cmath>
@@ -106,48 +107,48 @@ class World3DMap : public ros::node
 public:
 
     World3DMap(void) : ros::node("world_3d_map"),
-		       tf(*this, true, 1 * 1000000000ULL, 1000000000ULL)
+		       m_tf(*this, true, 1 * 1000000000ULL, 1000000000ULL)
     {
 	advertise<PointCloudFloat32>("world_3d_map");
 	advertise<rostools::Log>("roserr");
 
-	subscribe("cloud", inputCloud, &World3DMap::pointCloudCallback);
+	subscribe("tilt_scan", m_inputScan, &World3DMap::pointCloudCallback);
 	
-	param("world_3d_map/max_publish_frequency", maxPublishFrequency, 0.5);
-	param("world_3d_map/retain_pointcloud_duration", retainPointcloudDuration, 60.0);
-	param("world_3d_map/retain_pointcloud_fraction", retainPointcloudFraction, 0.02);
-	param("world_3d_map/verbosity_level", verbose, 1);
+	param("world_3d_map/max_publish_frequency", m_maxPublishFrequency, 0.5);
+	param("world_3d_map/retain_pointcloud_duration", m_retainPointcloudDuration, 60.0);
+	param("world_3d_map/retain_pointcloud_fraction", m_retainPointcloudFraction, 0.02);
+	param("world_3d_map/verbosity_level", m_verbose, 1);
 
 	loadRobotDescriptions();
 	
 	/* create a thread that does the processing of the input data.
 	 * and one that handles the publishing of the data */
-	active = true;
-	working = false;
-	shouldPublish = false;
-	random_utils::init(&rng);
+	m_active = true;
+	m_working = false;
+	m_shouldPublish = false;
+	random_utils::init(&m_rng);
 	
-	processMutex.lock();
-	publishMutex.lock();
-	processingThread = startMemberFunctionThread<World3DMap>(this, &World3DMap::processDataThread);
-	publishingThread = startMemberFunctionThread<World3DMap>(this, &World3DMap::publishDataThread);
+	m_processMutex.lock();
+	m_publishMutex.lock();
+	m_processingThread = startMemberFunctionThread<World3DMap>(this, &World3DMap::processDataThread);
+	m_publishingThread = startMemberFunctionThread<World3DMap>(this, &World3DMap::publishDataThread);
     }
     
     ~World3DMap(void)
     {
 	/* terminate spawned threads */
-	active = false;
-	processMutex.unlock();
+	m_active = false;
+	m_processMutex.unlock();
 	
-	pthread_join(*publishingThread, NULL);
-	pthread_join(*processingThread, NULL);
-	for (unsigned int i = 0 ; i < currentWorld.size() ; ++i)
-	    delete currentWorld[i];
+	pthread_join(*m_publishingThread, NULL);
+	pthread_join(*m_processingThread, NULL);
+	for (unsigned int i = 0 ; i < m_currentWorld.size() ; ++i)
+	    delete m_currentWorld[i];
 
-	for (unsigned int i = 0 ; i < robotDescriptions.size() ; ++i)
+	for (unsigned int i = 0 ; i < m_robotDescriptions.size() ; ++i)
 	{
-	    delete robotDescriptions[i].urdf;
-	    delete robotDescriptions[i].kmodel;
+	    delete m_robotDescriptions[i].urdf;
+	    delete m_robotDescriptions[i].kmodel;
 	}	
     }
     
@@ -178,7 +179,7 @@ public:
 	kmodel->build(*file);
 	
 	RobotDesc rd = { file, kmodel };
-	robotDescriptions.push_back(rd);
+	m_robotDescriptions.push_back(rd);
     }
     
     void pointCloudCallback(void)
@@ -189,10 +190,10 @@ public:
 	   postpone processing latest data just because it is not done
 	   with older data. */
 	
-	flagMutex.lock();
-	bool discard = working;
+	m_flagMutex.lock();
+	bool discard = m_working;
 	if (!discard)
-	    working = true;
+	    m_working = true;
 	
 	if (discard)
 	{
@@ -205,80 +206,92 @@ public:
 	}
 	else
 	{
-	    toProcess = inputCloud;  /* copy data to a place where incoming messages do not affect it */
-	    processMutex.unlock();   /* let the processing thread know that there is data to process */
+	    /* copy data to a place where incoming messages do not affect it */
+	    try
+	    {
+		m_tf.transformLaserScanToPointCloud("FRAMEID_MAP", m_toProcess, m_inputScan);
+	    }
+	    catch (...)
+	    {	
+		rostools::Log l;
+		l.level = 20;
+		l.name  = get_name();
+		l.msg   = "Discarded point cloud data (laser scan transform failed)";
+		publish("roserr", l);
+	    }
+	    m_processMutex.unlock();   /* let the processing thread know that there is data to process */
 	}
-	flagMutex.unlock();
+	m_flagMutex.unlock();
     }
     
     void processDataThread(void)
     {
-	while (active)
+	while (m_active)
 	{
 	    /* This mutex acts as a condition, but is safer (condition
 	       messages may get lost or interrupted by signals) */
-	    processMutex.lock();
-	    if (active)
+	    m_processMutex.lock();
+	    if (m_active)
 	    {
-		worldDataMutex.lock();
+		m_worldDataMutex.lock();
 		processData();
-		worldDataMutex.unlock();
+		m_worldDataMutex.unlock();
 		
 		/* notify the publishing thread that it can send data */
-		shouldPublish = true;
+		m_shouldPublish = true;
 	    }
 	    
 	    /* make a note that there is no active processing */
-	    flagMutex.lock();
-	    working = false;
-	    flagMutex.unlock();
+	    m_flagMutex.lock();
+	    m_working = false;
+	    m_flagMutex.unlock();
 	}
     }
     
 
     void publishDataThread(void)
     {
-	ros::Duration *d = new ros::Duration(1.0/maxPublishFrequency);
+	ros::Duration *d = new ros::Duration(1.0/m_maxPublishFrequency);
 	
 	/* while everything else is running (map building) check if
 	   there are any updates to send, but do so at most at the
 	   maximally allowed frequency of sending data */
-	while (active)
+	while (m_active)
 	{
 	    d->sleep();
 
-	    if (shouldPublish)
+	    if (m_shouldPublish)
 	    {
-		worldDataMutex.lock();
-		if (active)
+		m_worldDataMutex.lock();
+		if (m_active)
 		{
 		    PointCloudFloat32 toPublish;
-		    toPublish.header = currentWorld.back()->header;
+		    toPublish.header = m_currentWorld.back()->header;
 		    
 		    unsigned int      npts  = 0;
-		    for (unsigned int i = 0 ; i < currentWorld.size() ; ++i)
-			npts += currentWorld[i]->get_pts_size();
+		    for (unsigned int i = 0 ; i < m_currentWorld.size() ; ++i)
+			npts += m_currentWorld[i]->get_pts_size();
 		    
 		    toPublish.set_pts_size(npts);
 		    
 		    unsigned int j = 0;
-		    for (unsigned int i = 0 ; i < currentWorld.size() ; ++i)
+		    for (unsigned int i = 0 ; i < m_currentWorld.size() ; ++i)
 		    {
-			unsigned int n = currentWorld[i]->get_pts_size();			
+			unsigned int n = m_currentWorld[i]->get_pts_size();			
 			for (unsigned int k = 0 ; k < n ; ++k)
-			    toPublish.pts[j++] =  currentWorld[i]->pts[k];
+			    toPublish.pts[j++] =  m_currentWorld[i]->pts[k];
 		    }
 		    
 		    toPublish.set_pts_size(j);
 		    if (ok())
 		    {
-			if (verbose > 0)
+			if (m_verbose > 0)
 			    printf("Publishing a point cloud with %u points\n", toPublish.get_pts_size());
 			publish("world_3d_map", toPublish);
 		    }
 		}
-		shouldPublish = false;
-		worldDataMutex.unlock();
+		m_shouldPublish = false;
+		m_worldDataMutex.unlock();
 	    }
 	}
 	delete d;
@@ -295,7 +308,7 @@ public:
 	unsigned int j = 0;
 	copy->set_pts_size(n);	
 	for (unsigned int k = 0 ; k < n ; ++k)
-	    if (random_utils::uniform(&rng, 0.0, 1.0) < frac)
+	    if (random_utils::uniform(&m_rng, 0.0, 1.0) < frac)
 		if (isfinite(cloud.pts[k].x) && isfinite(cloud.pts[k].y) && isfinite(cloud.pts[k].z))
 		    copy->pts[j++] = cloud.pts[k];
 	copy->set_pts_size(j);
@@ -305,21 +318,7 @@ public:
     
     PointCloudFloat32* runFilters(const PointCloudFloat32 &cloud)
     {
-	PointCloudFloat32 *cloud0 = filter0(cloud, retainPointcloudFraction);
-	
-	if (cloud0)
-	{
-	    try
-	    {
-		tf.transformPointCloud("FRAMEID_MAP", *cloud0, *cloud0);
-	    }
-	    catch (...)
-	    {
-		printf("Error applying transform to point cloud\n");
-		delete cloud0;
-		cloud0 = NULL;
-	    }
-	}
+	PointCloudFloat32 *cloud0 = filter0(cloud, m_retainPointcloudFraction);
 	
 	return cloud0;
     }
@@ -327,29 +326,29 @@ public:
     void processData(void)
     {
 	/* remove old data */
-	ros::Time &time = toProcess.header.stamp;
+	ros::Time &time = m_toProcess.header.stamp;
 
-	while (!currentWorld.empty() && (time - currentWorld.front()->header.stamp).to_double() > retainPointcloudDuration)
+	while (!m_currentWorld.empty() && (time - m_currentWorld.front()->header.stamp).to_double() > m_retainPointcloudDuration)
 	{
-	    PointCloudFloat32* old = currentWorld.front();
-	    currentWorld.pop_front();
+	    PointCloudFloat32* old = m_currentWorld.front();
+	    m_currentWorld.pop_front();
 	    delete old;
 	}
 
 	/* add new data */
-	PointCloudFloat32 *newData = runFilters(toProcess);
+	PointCloudFloat32 *newData = runFilters(m_toProcess);
 	if (newData)
 	{
 	    if (newData->get_pts_size() == 0)
 		delete newData;
 	    else
-		currentWorld.push_back(newData);
+		m_currentWorld.push_back(newData);
 	}
 	
-	if (verbose > 0)
+	if (m_verbose > 0)
 	{
-	    double window = currentWorld.size() > 0 ? (currentWorld.back()->header.stamp - currentWorld.front()->header.stamp).to_double() : 0.0;
-	    printf("World map containing %d point clouds (window size = %f seconds)\n", currentWorld.size(), window);
+	    double window = m_currentWorld.size() > 0 ? (m_currentWorld.back()->header.stamp - m_currentWorld.front()->header.stamp).to_double() : 0.0;
+	    printf("World map containing %d point clouds (window size = %f seconds)\n", m_currentWorld.size(), window);
 	}
 	
     }
@@ -362,24 +361,24 @@ private:
 	planning_models::KinematicModel *kmodel;	
     };    
     
-    std::vector<RobotDesc>         robotDescriptions;
+    std::vector<RobotDesc>         m_robotDescriptions;
     
-    PointCloudFloat32              inputCloud; //Buffer for recieving cloud
-    PointCloudFloat32              toProcess; //Buffer (size 1) for incoming cloud
-    std::deque<PointCloudFloat32*> currentWorld;// Pointers to saved clouds
-    rosTFClient                    tf;
+    LaserScan                      m_inputScan; //Buffer for recieving cloud
+    PointCloudFloat32              m_toProcess; //Buffer (size 1) for incoming cloud
+    std::deque<PointCloudFloat32*> m_currentWorld;// Pointers to saved clouds
+    rosTFClient                    m_tf;
 
-    double             maxPublishFrequency;
-    double             retainPointcloudDuration;
-    double             retainPointcloudFraction;    
-    int                verbose;
+    double             m_maxPublishFrequency;
+    double             m_retainPointcloudDuration;
+    double             m_retainPointcloudFraction;    
+    int                m_verbose;
     
-    pthread_t         *processingThread;
-    pthread_t         *publishingThread;
-    ros::thread::mutex processMutex, publishMutex, worldDataMutex, flagMutex;
-    bool               active, working, shouldPublish;
+    pthread_t         *m_processingThread;
+    pthread_t         *m_publishingThread;
+    ros::thread::mutex m_processMutex, m_publishMutex, m_worldDataMutex, m_flagMutex;
+    bool               m_active, m_working, m_shouldPublish;
 
-    random_utils::rngState rng;    
+    random_utils::rngState m_rng;    
 };
 
 
