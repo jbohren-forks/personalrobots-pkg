@@ -23,7 +23,7 @@ public:
         
         int value = 0;
         value = lookupOnServer(str_in);
-        while (value == 0)
+        while (value == 0 && myNode.ok())
           {
             printf("Waiting for namelookup_server\n");
             usleep(500000);//wait for service to come up
