@@ -1,0 +1,5 @@
+<launch>
+  <master auto="restart" />
+  <node pkg="namelookup" type="namelookup_server" />
+  <test test-name="test_namelookup_server" pkg="namelookup" type="test_namelookup_server.py" />
+</launch>
