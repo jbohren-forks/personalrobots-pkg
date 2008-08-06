@@ -49,16 +49,8 @@
 #include "std_msgs/PointCloudFloat32.h"
 #include "namelookup/nameLookupClient.hh"
 #include "namelookup/NameToNumber.h"
+#include "laser_scan_utils/laser_scan.h"
 
-//TODO FIXME REMOVE WHEN FRAME ID SERVER IS IMPLEMENTED
-/* #define FRAMEID_MAP 1
- *#define FRAMEID_ROBOT 2
- *#define FRAMEID_ODOM 3
- *#define FRAMEID_LASER 4
- *#define FRAMEID_TILT_BASE 5
- *#define FRAMEID_TILT_STAGE 6
- *#define FRAMEID_LASER2 7
- */
 
 /** \brief A basic ROS client library for libTF
  * This inherits from libTF and will automatically
@@ -76,6 +68,9 @@ class rosTFClient : public libTF::TransformReference, public nameLookupClient
   std_msgs::PointCloudFloat32 transformPointCloud(unsigned int target_frame, const std_msgs::PointCloudFloat32 & cloudIn);
   void transformPointCloud(std::string target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn);
   void transformPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn);
+
+  void transformLaserScanToPointCloud(std::string target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn);
+  void transformLaserScanToPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn);
 
   //Call back functions
   void receiveEuler();
@@ -140,6 +135,8 @@ class rosTFClient : public libTF::TransformReference, public nameLookupClient
   std_msgs::TransformEuler eulerIn;
   std_msgs::TransformDH dhIn;
   std_msgs::TransformQuaternion quaternionIn;
+
+  laser_scan::LaserProjection projector_;
 
   pthread_mutex_t cb_mutex;
 

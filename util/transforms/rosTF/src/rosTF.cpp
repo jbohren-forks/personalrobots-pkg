@@ -49,6 +49,7 @@ rosTFClient::rosTFClient(ros::node & rosnode,
 
 };
 
+
 void rosTFClient::transformPointCloud(std::string target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn)
 {
     transformPointCloud(lookup(target_frame), cloudOut, cloudIn);
@@ -109,6 +110,49 @@ std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target
     transformPointCloud(target_frame, cloudOut, cloudIn);
     return cloudOut;    
 };
+
+
+
+void rosTFClient::transformLaserScanToPointCloud(std::string target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn)
+{
+  transformLaserScanToPointCloud(lookup(target_frame), cloudOut, scanIn);
+}
+
+void rosTFClient::transformLaserScanToPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan &scanIn)
+{
+  cloudOut.header = scanIn.header;
+  cloudOut.set_pts_size(scanIn.ranges_size);
+
+  libTF::TFPoint pointIn;
+  libTF::TFPoint pointOut;
+
+  pointIn.frame = scanIn.header.frame_id;
+  
+
+
+  ///\todo this 
+  std_msgs::PointCloudFloat32 intermediate; //optimize out
+  projector_.projectLaser(scanIn, intermediate, true);
+  unsigned int count = 0;
+  for (unsigned int i = 0; i < scanIn.ranges_size; i++)
+  {
+    if (scanIn.ranges[i] <= scanIn.range_max 
+        && scanIn.ranges[i] >= scanIn.range_min) //only when valid
+    {
+      pointIn.time = scanIn.header.stamp.to_ull() + (unsigned long long) (scanIn.time_increment * 1000000000);
+      pointIn.x = intermediate.pts[i].x;
+      pointIn.y = intermediate.pts[i].y;
+      pointIn.z = intermediate.pts[i].z;
+      
+      pointOut = transformPoint(target_frame, pointIn);
+      cloudOut.pts[count].x  = pointOut.x;
+      cloudOut.pts[count].y  = pointOut.y;
+      cloudOut.pts[count].z  = pointOut.z;
+
+    }
+    
+  }
+}
 
 
 

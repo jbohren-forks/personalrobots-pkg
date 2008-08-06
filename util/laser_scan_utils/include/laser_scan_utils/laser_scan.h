@@ -61,8 +61,13 @@ namespace laser_scan{
       
       /** \brief Project Laser Scan
        * This will project a laser scan from a linear array into a 3D point cloud
+       * \param scan_in The input laser scan
+       * \param cloudOut The output point cloud
+       * \param range_cutoff An additional range cutoff which can be applied which is more limiting than max_range in the scan.
+       * \param preservative Default: false  If true all points in scan will be projected, including out of range values.  Otherwise they will not be added to the cloud.
        */
-      void projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloudFloat32 & cloud_out, double range_cutoff=-1.0);
+      void projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloudFloat32 & cloud_out, double range_cutoff=-1.0, bool preservative = false);
+
       
       /** \brief Return the unit vectors for this configuration
        * Return the unit vectors for this configuration.

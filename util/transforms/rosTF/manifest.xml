@@ -12,6 +12,7 @@ Library for doing transformations within ROS.
 </export>
 <depend package="libTF"/>
 <depend package="roscpp"/>
+<depend package="laser_scan_utils"/>
 <depend package="std_msgs"/>
 <depend package="namelookup"/>
 </package>

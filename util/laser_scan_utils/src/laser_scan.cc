@@ -33,7 +33,7 @@
 namespace laser_scan{
 
   
-  void LaserProjection::projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloudFloat32 & cloud_out, double range_cutoff)
+  void LaserProjection::projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloudFloat32 & cloud_out, double range_cutoff, bool preservative)
   {
     NEWMAT::Matrix ranges(2, scan_in.ranges_size);
     double * matPointer = ranges.Store();
@@ -61,21 +61,34 @@ namespace laser_scan{
 
     double* outputMat = output.Store();
 
+    if (range_cutoff < 0)
+      range_cutoff = scan_in.range_max;
+    else
+      range_cutoff = std::min(range_cutoff, (double)scan_in.range_max); 
+    
     unsigned int count = 0;
     for (unsigned int index = 0; index< scan_in.ranges_size; index++)
-      {
-        if ((matPointer[index] < scan_in.range_max) &&
-            ((range_cutoff < 0.0) || (matPointer[index] < range_cutoff)) &&
+    {
+      if (!preservative){ //Default behaviour will throw out invalid data
+        if ((matPointer[index] < range_cutoff) &&
             (matPointer[index] > scan_in.range_min)) //only valid
-          {
-            cloud_out.pts[count].x = outputMat[index];
-            cloud_out.pts[count].y = outputMat[index + scan_in.ranges_size];
-            cloud_out.pts[count].z = 0.0;
-            if (scan_in.intensities_size >= index) /// \todo optimize and catch length difference better
-              cloud_out.chan[0].vals[count] = scan_in.intensities[index];
-            count++;
-          }
+        {
+          cloud_out.pts[count].x = outputMat[index];
+          cloud_out.pts[count].y = outputMat[index + scan_in.ranges_size];
+          cloud_out.pts[count].z = 0.0;
+          if (scan_in.intensities_size >= index) /// \todo optimize and catch length difference better
+            cloud_out.chan[0].vals[count] = scan_in.intensities[index];
+          count++;
+        }
       }
+      else { //Keep all points
+        cloud_out.pts[count].x = outputMat[index];
+        cloud_out.pts[count].y = outputMat[index + scan_in.ranges_size];
+        cloud_out.pts[count].z = 0.0;
+        count++;
+      }
+        
+    }
 
     //downsize if necessary
     cloud_out.set_pts_size(count);
