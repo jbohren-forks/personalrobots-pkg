@@ -43,6 +43,7 @@ rostools.update_path(PKG)
 
 import sys, time
 import unittest
+import random
 
 import rospy, rostest
 from namelookup.srv import *
@@ -57,15 +58,36 @@ class TestNameLookup(unittest.TestCase):
         s = rospy.ServiceProxy('/nameToNumber', NameToNumber)
 
         ## \todo change this to a random string generator
-        tests = [('asdf', 1), ('fdsa', 2), ('asdf', 1)]
-        for x, y in tests:
+        alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/1234567890'
+        min_length = 1
+        max_length = 50
+        num_tests = 1000
+        tests = []
+        for count in xrange(1,num_tests):
+            astring = ''
+            for x in random.sample(alphabet, random.randint(min_length, max_length)):
+                astring += x
+            tests.append(astring)
+##            print tests
+            
+
+        
+        ##tests = ['asdf', 'fdsa','asdf']
+        
+
+        for x in tests:
             print "Requesting %s"%(x)
             resp = s.call(NameToNumberRequest(x))
             if x in self.names:
+                ## assert that we have not seen a different value before
                 self.assertEquals(resp.number,self.names[x], "two different values returned for the same string, previous value was %s vs. %d"%( self.names[x], resp.number))
             else:
-                ## \todo assert that the name was not previously tested
+                ## record this value
                 self.names[x] = resp.number
+                ##  assert that the name was not previously tested
+                self.assertEquals(x in self.previously_tried_names, False )
+                self.previously_tried_names[x] = resp.number
+                
             print "%s lookus up to %d"%(x, resp.number)            
         
 if __name__ == '__main__':
