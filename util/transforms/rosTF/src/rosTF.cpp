@@ -121,6 +121,7 @@ void rosTFClient::transformLaserScanToPointCloud(std::string target_frame, std_m
 void rosTFClient::transformLaserScanToPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan &scanIn)
 {
   cloudOut.header = scanIn.header;
+  cloudOut.header.frame_id = target_frame;
   cloudOut.set_pts_size(scanIn.ranges_size);
 
   libTF::TFPoint pointIn;
@@ -130,7 +131,7 @@ void rosTFClient::transformLaserScanToPointCloud(unsigned int target_frame, std_
   
 
 
-  ///\todo this 
+  ///\todo this can be optimized
   std_msgs::PointCloudFloat32 intermediate; //optimize out
   projector_.projectLaser(scanIn, intermediate, true);
   unsigned int count = 0;
