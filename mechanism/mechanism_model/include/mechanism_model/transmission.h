@@ -57,7 +57,7 @@ class SimpleTransmission : public Transmission
 {
 public:
   SimpleTransmission() {}
-  SimpleTransmission(Joint *joint, Actuator *actuator, double mechanical_reduction, double motor_torque_constant, double ticks_per_radian);
+  SimpleTransmission(Joint *joint, Actuator *actuator, double mechanical_reduction, double motor_torque_constant, double pulses_per_revolution);
   ~SimpleTransmission() {}
 
   Actuator *actuator_;
