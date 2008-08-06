@@ -622,7 +622,7 @@ namespace robot_desc
 	virtual void ignoreNode(const TiXmlNode* node);
         
 	/** Print the error location, if known */
-	void errorLocation(void) const;
+	void errorLocation(const TiXmlNode* node = NULL) const;
 	
 	/** Compute the easy-access pointers inside the parsed datastructures */
 	void linkDatastructure(void);

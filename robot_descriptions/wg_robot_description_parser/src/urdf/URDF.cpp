@@ -43,11 +43,11 @@ namespace robot_desc {
     
     /** Macro to mark the fact a certain member variable was set. Also
 	prints a warning if the same member was set multiple times. */
-#define MARK_SET(owner, variable)					\
+#define MARK_SET(node, owner, variable)					\
     {									\
 	if (owner->isSet[#variable]) {					\
 	    fprintf(stderr, "'%s' already set\n", #variable);		\
-	    errorLocation(); }						\
+	    errorLocation(node); }					\
 	else								\
 	    owner->isSet[#variable] = true;				\
     }
@@ -515,10 +515,12 @@ namespace robot_desc {
 	return false;    
     }
     
-    void URDF::errorLocation(void) const
+    void URDF::errorLocation(const TiXmlNode* node) const
     {
 	if (!m_location.empty())
-	    fprintf(stderr, "  ... at %s\n", m_location.c_str());  
+	    fprintf(stderr, "  ... at %s%s", m_location.c_str(), node ? "" : "\n");
+	if (node)
+	    fprintf(stderr, "%s line %d, column %d\n", m_location.empty() ? "  ..." : ",", node->Row(), node->Column());
     }
     
     void URDF::ignoreNode(const TiXmlNode* node)
@@ -527,11 +529,11 @@ namespace robot_desc {
 	{
 	case TiXmlNode::ELEMENT:
 	    fprintf(stderr, "Ignoring element node '%s'\n", node->Value());
-	    errorLocation();  
+	    errorLocation(node);  
 	    break;
 	case TiXmlNode::TEXT:
 	    fprintf(stderr, "Ignoring text node with content '%s'\n", node->Value());
-	    errorLocation();  
+	    errorLocation(node);  
 	    break;
 	case TiXmlNode::COMMENT:
 	case TiXmlNode::DECLARATION:
@@ -539,7 +541,7 @@ namespace robot_desc {
 	case TiXmlNode::UNKNOWN:
 	default:
 	    fprintf(stderr, "Ignoring unknown node '%s'\n", node->Value());
-	    errorLocation();  
+	    errorLocation(node);  
 	    break;
 	}
     }
@@ -558,7 +560,7 @@ namespace robot_desc {
 		    if (pos == m_templates.end())
 		    {
 			fprintf(stderr, "Template '%s' is not defined\n", attr->Value());
-			errorLocation();
+			errorLocation(node);
 		    }	
 		    else
 			getChildrenAndAttributes(pos->second, children, attributes);
@@ -785,14 +787,14 @@ namespace robot_desc {
 	    if (!extra.empty())
 	    {
 		fprintf(stderr, "More data available (%u read, rest is ignored): '%s'\n", read, node->Value());		
-		errorLocation();		
+		errorLocation(node);
 	    }	    
 	}
 	
 	if (read != count)
 	{
 	    fprintf(stderr, "Not all values were read: '%s'\n", node->Value());
-	    errorLocation();
+	    errorLocation(node);
 	}  
 	
 	return read;
@@ -833,14 +835,14 @@ namespace robot_desc {
 	    if (!extra.empty())
 	    {
 		fprintf(stderr, "More data available (%u read, rest is ignored): '%s'\n", read, node->Value());		
-		errorLocation();		
+		errorLocation(node);
 	    }	    
 	}
 	
 	if (read != count)
 	{
 	    fprintf(stderr, "Not all values were read: '%s'\n", node->Value());
-	    errorLocation();  
+	    errorLocation(node);  
 	}
 	
 	return read;
@@ -858,7 +860,7 @@ namespace robot_desc {
 	if (transmission->name.empty())
 	    fprintf(stderr, "No transmission name given\n");
 	else
-	    MARK_SET(transmission, name);
+	    MARK_SET(node, transmission, name);
 	
 	m_transmissions[transmission->name] = transmission;
 	
@@ -889,7 +891,7 @@ namespace robot_desc {
 	if (actuator->name.empty())
 	    fprintf(stderr, "No actuator name given\n");
 	else
-	    MARK_SET(actuator, name);
+	    MARK_SET(node, actuator, name);
 	
 	m_actuators[actuator->name] = actuator;
 	
@@ -920,7 +922,7 @@ namespace robot_desc {
 	if (frame->name.empty())
 	    fprintf(stderr, "No frame name given\n");
 	else
-	    MARK_SET(frame, name);
+	    MARK_SET(node, frame, name);
 	
 	m_frames[frame->name] = frame;
 	
@@ -932,17 +934,17 @@ namespace robot_desc {
 		if (node->ValueStr() == "rpy")
 		{
 		    loadDoubleValues(node, 3, frame->rpy);
-		    MARK_SET(frame, rpy);		    
+		    MARK_SET(node, frame, rpy);		    
 		}		
 		else if (node->ValueStr() == "xyz")
 		{
 		    loadDoubleValues(node, 3, frame->xyz);
-		    MARK_SET(frame, xyz);
+		    MARK_SET(node, frame, xyz);
 		}
 		else if (node->ValueStr() == "parent" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 		{
 		    frame->linkName = node->FirstChild()->ValueStr();
-		    MARK_SET(frame, parent);
+		    MARK_SET(node, frame, parent);
 		    if (frame->type == Frame::CHILD)
 			fprintf(stderr, "Frame '%s' can only have either a child or a parent link\n", frame->name.c_str());
 		    frame->type = Frame::PARENT;
@@ -950,7 +952,7 @@ namespace robot_desc {
 		else if (node->ValueStr() == "child" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 		{
 		    frame->linkName = node->FirstChild()->ValueStr();
-		    MARK_SET(frame, child);
+		    MARK_SET(node, frame, child);
 		    if (frame->type == Frame::PARENT)
 			fprintf(stderr, "Frame '%s' can only have either a child or a parent link\n", frame->name.c_str());
 		    frame->type = Frame::CHILD;
@@ -974,13 +976,14 @@ namespace robot_desc {
 	
 	std::string name = extractName(attributes, defaultName);
 	if (joint && !name.empty())
-	    MARK_SET(joint, name);
+	    MARK_SET(node, joint, name);
 	
 	if (!joint)
 	{
 	    if (m_joints.find(name) == m_joints.end())
 	    {
 		fprintf(stderr, "Attempting to add information to an undefined joint: '%s'\n", name.c_str());
+		errorLocation(node);		
 		return;
 	    }
 	    else
@@ -1008,9 +1011,9 @@ namespace robot_desc {
 		else
 		{
 		    fprintf(stderr, "Unknown joint type: '%s'\n", attr->Value());
-		    errorLocation();
+		    errorLocation(node);
 		}
-		MARK_SET(joint, type);
+		MARK_SET(node, joint, type);
 	    }
 	}
 	
@@ -1024,22 +1027,22 @@ namespace robot_desc {
 		if (node->ValueStr() == "axis" && !free)
 		{
 		    loadDoubleValues(node, 3, joint->axis);
-		    MARK_SET(joint, axis);
+		    MARK_SET(node, joint, axis);
 		}		
 		else if (node->ValueStr() == "anchor" && !free)
 		{
 		    loadDoubleValues(node, 3, joint->anchor);
-		    MARK_SET(joint, anchor);
+		    MARK_SET(node, joint, anchor);
 		}		
 		else if (node->ValueStr() == "limit" && !free)
 		{
 		    loadDoubleValues(node, 2, joint->limit);
-		    MARK_SET(joint, limit);
+		    MARK_SET(node, joint, limit);
 		}		
 		else if (node->ValueStr() == "calibration" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 		{
 		    joint->calibration = node->FirstChild()->ValueStr();
-		    MARK_SET(joint, calibration);		    
+		    MARK_SET(node, joint, calibration);		    
 		}	
 		else if (node->ValueStr() == "data")
 		    loadData(node, &joint->data);
@@ -1060,13 +1063,14 @@ namespace robot_desc {
 	
 	std::string name = extractName(attributes, defaultName);
 	if (geometry && !name.empty())
-	    MARK_SET(geometry, name);
+	    MARK_SET(node, geometry, name);
 
 	if (!geometry)
 	{
 	    if (m_geoms.find(name) == m_geoms.end())
 	    {
 		fprintf(stderr, "Attempting to add information to an undefined geometry: '%s'\n", name.c_str());
+		errorLocation(node);		
 		return;
 	    }
 	    else
@@ -1104,9 +1108,9 @@ namespace robot_desc {
 		else
 		{
 		    fprintf(stderr, "Unknown geometry type: '%s'\n", attr->Value());
-		    errorLocation();
+		    errorLocation(node);
 		}
-		MARK_SET(geometry, type);
+		MARK_SET(node, geometry, type);
 	    }
 	}
 	
@@ -1121,14 +1125,14 @@ namespace robot_desc {
 			loadDoubleValues(node, geometry->nsize, geometry->size);
 		    else
 			ignoreNode(node);
-		    MARK_SET(geometry, size);
+		    MARK_SET(node, geometry, size);
 		}
 		else if (node->ValueStr() == "data")
 		    loadData(node, &geometry->data);
 		else if (node->ValueStr() == "filename" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 		{
 		    geometry->filename = node->FirstChild()->ValueStr();
-		    MARK_SET(geometry, filename);
+		    MARK_SET(node, geometry, filename);
 		}		
 		else                
 		    ignoreNode(node);
@@ -1146,13 +1150,14 @@ namespace robot_desc {
 	
 	std::string name = extractName(attributes, defaultName);
 	if (collision && !name.empty())
-	    MARK_SET(collision, name);
+	    MARK_SET(node, collision, name);
 	
 	if (!collision)
 	{
 	    if (m_collision.find(name) == m_collision.end())
 	    {
 		fprintf(stderr, "Attempting to add information to an undefined collision: '%s'\n", name.c_str());
+		errorLocation(node);
 		return;
 	    }
 	    else
@@ -1170,27 +1175,27 @@ namespace robot_desc {
 		if (node->ValueStr() == "rpy")
 		{
 		    loadDoubleValues(node, 3, collision->rpy);
-		    MARK_SET(collision, rpy);		    
+		    MARK_SET(node, collision, rpy);		    
 		}		
 		else if (node->ValueStr() == "xyz")
 		{
 		    loadDoubleValues(node, 3, collision->xyz);
-		    MARK_SET(collision, xyz);
+		    MARK_SET(node, collision, xyz);
 		}		
 		else if (node->ValueStr() == "verbose")
 		{
 		    loadBoolValues(node, 1, &collision->verbose);
-		    MARK_SET(collision, verbose);
+		    MARK_SET(node, collision, verbose);
 		}		
 		else if (node->ValueStr() == "material" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 		{
 		    collision->material = node->FirstChild()->ValueStr();
-		    MARK_SET(collision, material);
+		    MARK_SET(node, collision, material);
 		}		
 		else if (node->ValueStr() == "geometry")
 		{
 		    loadGeometry(node, name + "_geom", collision->geometry);
-		    MARK_SET(collision, geometry);		    
+		    MARK_SET(node, collision, geometry);		    
 		}		
 		else if (node->ValueStr() == "data")
 		    loadData(node, &collision->data);
@@ -1210,13 +1215,14 @@ namespace robot_desc {
 	
 	std::string name = extractName(attributes, defaultName);
 	if (visual && !name.empty())
-	    MARK_SET(visual, name);
+	    MARK_SET(node, visual, name);
 
 	if (!visual)
 	{
 	    if (m_visual.find(name) == m_visual.end())
 	    {
 		fprintf(stderr, "Attempting to add information to an undefined visual: '%s'\n", name.c_str());
+		errorLocation(node);
 		return;
 	    }
 	    else
@@ -1234,27 +1240,27 @@ namespace robot_desc {
 		if (node->ValueStr() == "rpy")
 		{
 		    loadDoubleValues(node, 3, visual->rpy);
-		    MARK_SET(visual, rpy);
+		    MARK_SET(node, visual, rpy);
 		}
 		else if (node->ValueStr() == "xyz")
 		{
 		    loadDoubleValues(node, 3, visual->xyz);
-		    MARK_SET(visual, xyz);		    
+		    MARK_SET(node, visual, xyz);		    
 		}		
 		else if (node->ValueStr() == "scale")
 		{
 		    loadDoubleValues(node, 3, visual->scale);
-		    MARK_SET(visual, scale);
+		    MARK_SET(node, visual, scale);
 		}		
 		else if (node->ValueStr() == "material" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 		{
 		    visual->material = node->FirstChild()->ValueStr();
-		    MARK_SET(visual, material);
+		    MARK_SET(node, visual, material);
 		}		
 		else if (node->ValueStr() == "geometry")
 		{
 		    loadGeometry(node, name + "_geom", visual->geometry);
-		    MARK_SET(visual, geometry);
+		    MARK_SET(node, visual, geometry);
 		}
 		else if (node->ValueStr() == "data")
 		    loadData(node, &visual->data);
@@ -1274,13 +1280,14 @@ namespace robot_desc {
 	
 	std::string name = extractName(attributes, defaultName);
 	if (inertial && !name.empty())
-	    MARK_SET(inertial, name);
+	    MARK_SET(node, inertial, name);
 	
 	if (!inertial)
 	{
 	    if (m_inertial.find(name) == m_inertial.end())
 	    {
 		fprintf(stderr, "Attempting to add information to an undefined inertial component: '%s'\n", name.c_str());
+		errorLocation(node);
 		return;
 	    }
 	    else
@@ -1298,17 +1305,17 @@ namespace robot_desc {
 		if (node->ValueStr() == "mass")
 		{
 		    loadDoubleValues(node, 1, &inertial->mass);
-		    MARK_SET(inertial, mass);		    
+		    MARK_SET(node, inertial, mass);		    
 		}		
 		else if (node->ValueStr() == "com")
 		{
 		    loadDoubleValues(node, 3, inertial->com);
-		    MARK_SET(inertial, com);
+		    MARK_SET(node, inertial, com);
 		}
 		else if (node->ValueStr() == "inertia")
 		{
 		    loadDoubleValues(node, 6, inertial->inertia);
-		    MARK_SET(inertial, inertia);		    
+		    MARK_SET(node, inertial, inertia);		    
 		}		
 		else if (node->ValueStr() == "data")
 		    loadData(node, &inertial->data);
@@ -1332,7 +1339,7 @@ namespace robot_desc {
 	if (link->name.empty())
 	    fprintf(stderr, "No link name given\n");
 	else
-	    MARK_SET(link, name);
+	    MARK_SET(node, link, name);
 	m_links[link->name] = link;
 	
 	if (link->canSense())
@@ -1349,37 +1356,37 @@ namespace robot_desc {
 		if (node->ValueStr() == "parent" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 		{
 		    link->parentName = node->FirstChild()->ValueStr();
-		    MARK_SET(link, parent);
+		    MARK_SET(node, link, parent);
 		}		
 		else if (node->ValueStr() == "rpy")
 		{
 		    loadDoubleValues(node, 3, link->rpy);
-		    MARK_SET(link, rpy);
+		    MARK_SET(node, link, rpy);
 		}		
 		else if (node->ValueStr() == "xyz")
 		{
 		    loadDoubleValues(node, 3, link->xyz);
-		    MARK_SET(link, xyz);
+		    MARK_SET(node, link, xyz);
 		}		
 		else if (node->ValueStr() == "joint")
 		{
 		    loadJoint(node, name + "_joint", link->joint);
-		    MARK_SET(link, joint);
+		    MARK_SET(node, link, joint);
 		}		
 		else if (node->ValueStr() == "collision")
 		{
 		    loadCollision(node, name + "_collision", link->collision);
-		    MARK_SET(link, collision);
+		    MARK_SET(node, link, collision);
 		}
 		else if (node->ValueStr() == "inertial")
 		{
 		    loadInertial(node, name + "_inertial", link->inertial);
-		    MARK_SET(link, inertial);
+		    MARK_SET(node, link, inertial);
 		}		
 		else if (node->ValueStr() == "visual")
 		{
 		    loadVisual(node, name + "_visual", link->visual);
-		    MARK_SET(link, visual);
+		    MARK_SET(node, link, visual);
 		}		
 		else if (node->ValueStr() == "data")
 		    loadData(node, &link->data);
@@ -1411,7 +1418,7 @@ namespace robot_desc {
 	if (sensor->name.empty())
 	    fprintf(stderr, "No sensor name given\n");
 	else
-	    MARK_SET(sensor, name);
+	    MARK_SET(node, sensor, name);
 	if (m_links.find(sensor->name) != m_links.end())
 	    fprintf(stderr, "Sensor '%s' redefined\n", sensor->name.c_str());
 	m_links[sensor->name] = dynamic_cast<Link*>(sensor);
@@ -1433,9 +1440,9 @@ namespace robot_desc {
 		else
 		{
 		    fprintf(stderr, "Unknown sensor type: '%s'\n", attr->Value());
-		    errorLocation();
+		    errorLocation(node);
 		}
-		MARK_SET(sensor, type);
+		MARK_SET(node, sensor, type);
 	    }
 	}
 	
@@ -1447,44 +1454,44 @@ namespace robot_desc {
 		if (node->ValueStr() == "parent" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 		{
 		    sensor->parentName = node->FirstChild()->ValueStr();
-		    MARK_SET(sensor, parent);		    
+		    MARK_SET(node, sensor, parent);		    
 		}		
 		else if (node->ValueStr() == "rpy")
 		{
 		    loadDoubleValues(node, 3, sensor->rpy);
-		    MARK_SET(sensor, rpy);		    
+		    MARK_SET(node, sensor, rpy);		    
 		}		
 		else if (node->ValueStr() == "xyz")
 		{
 		    loadDoubleValues(node, 3, sensor->xyz);
-		    MARK_SET(sensor, xyz);		    
+		    MARK_SET(node, sensor, xyz);		    
 		}		
 		else if (node->ValueStr() == "joint")
 		{
 		    loadJoint(node, name + "_joint", sensor->joint);
-		    MARK_SET(sensor, joint);
+		    MARK_SET(node, sensor, joint);
 		}
 		else if (node->ValueStr() == "collision")
 		{
 		    loadCollision(node, name + "_collision", sensor->collision);
-		    MARK_SET(sensor, collision);
+		    MARK_SET(node, sensor, collision);
 		}		
 		else if (node->ValueStr() == "inertial")
 		{
 		    loadInertial(node, name + "_inertial", sensor->inertial);
-		    MARK_SET(sensor, inertial);
+		    MARK_SET(node, sensor, inertial);
 		}		
 		else if (node->ValueStr() == "visual")
 		{
 		    loadVisual(node, name + "_visual", sensor->visual);
-		    MARK_SET(sensor, visual);
+		    MARK_SET(node, sensor, visual);
 		}		
 		else if (node->ValueStr() == "data")
 		    loadData(node, &sensor->data);
 		else if (node->ValueStr() == "calibration" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 		{
 		    sensor->calibration =  node->FirstChild()->ValueStr();
-		    MARK_SET(sensor, calibration);
+		    MARK_SET(node, sensor, calibration);
 		}		
 		else
 		    ignoreNode(node); 
@@ -1742,6 +1749,7 @@ namespace robot_desc {
 				addPath(filename);
 				if (doc->RootElement()->ValueStr() != "robot")
 				    fprintf(stderr, "Included file '%s' does not start with the <robot> tag\n", filename);
+
 				parse(dynamic_cast<const TiXmlNode*>(doc->RootElement()));
 			    }
 			    else
