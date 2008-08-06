@@ -92,25 +92,25 @@
   
   
   
-  <const name="head_pan_min_limit" value="-2.9322" /> 
-  <const name="head_pan_max_limit" value="2.9322" /> 
+  <const name="head_pan_min_limit" value="-2.9322" /> <!-- FIXME -->
+  <const name="head_pan_max_limit" value="2.9322" /> <!-- FIXME -->
   
-  <const name="torso_head_pan_offset_x" value="0.0" /> 
-  <const name="torso_head_pan_offset_z" value="0.3815" /> 
+  <const name="torso_head_pan_offset_x" value="0.0" /> <!-- mp 20080801 -->
+  <const name="torso_head_pan_offset_z" value="0.3815" /> <!-- mp 20080801 -->
   
-  <const name="head_pan_size_x" value="0.188" /> 
-  <const name="head_pan_size_y" value="0.219" /> 
-  <const name="head_pan_size_z" value="0.137" /> 
+  <const name="head_pan_size_x" value="0.188" />  <!-- for defining collision geometry -->
+  <const name="head_pan_size_y" value="0.219" />  <!-- for defining collision geometry -->
+  <const name="head_pan_size_z" value="0.137" />  <!-- for defining collision geometry -->
   
   
-  <const name="head_tilt_min_limit" value=" -M_PI/6 " /> 
-  <const name="head_tilt_max_limit" value=" M_PI/3 " /> 
+  <const name="head_tilt_min_limit" value=" -M_PI/6 " /> <!-- FIXME -->
+  <const name="head_tilt_max_limit" value=" M_PI/3 " /> <!-- FIXME -->
   
   <const name="head_pan_head_tilt_offset_x" value="0.058" />  <!-- mp 20080801 -->
   
-  <const name="head_tilt_size_x" value="0.164" /> 
-  <const name="head_tilt_size_y" value="0.253" /> 
-  <const name="head_tilt_size_z" value="0.181" /> 
+  <const name="head_tilt_size_x" value="0.164" />  <!-- for defining collision geometry -->
+  <const name="head_tilt_size_y" value="0.253" />  <!-- for defining collision geometry -->
+  <const name="head_tilt_size_z" value="0.181" />  <!-- for defining collision geometry -->
   
   <!-- stereo camera -->
   <const name="head_tilt_stereo_offset_x" value="0.0232" />  <!-- mp 20080801 -->
@@ -187,9 +187,6 @@
   <const name="forearm_roll_camera_offset_y" value="0   " />  <!-- this is a guess, please change me -->
   <const name="forearm_roll_camera_offset_z" value="0.05" />  <!-- this is a guess, please change me -->
 
-  <const name="torso_ptz_camera_offset_x" value="0.00" />  <!-- this is a guess, please change me -->
-  <const name="torso_ptz_camera_offset_y" value="0.20" />  <!-- this is a guess, please change me -->
-  <const name="torso_ptz_camera_offset_z" value="0.30" />  <!-- this is a guess, please change me -->
   <!-- End constant dimensions -->
   
   <templates>
@@ -1275,7 +1272,7 @@
           <updateRate>10.0</updateRate>
           <controller:ros_laser name="ros_tilt_laser_controller" plugin="libRos_Laser.so">
             <updateRate>15.0</updateRate>
-            <topicName>cloud</topicName>
+            <topicName>tilt_scan</topicName>
             <frameName>tilt_laser</frameName>
             <interface:laser name="ros_tilt_laser_iface" />
           </controller:ros_laser>
@@ -1341,7 +1338,7 @@
           <updateRate>10.0</updateRate>
           <controller:ros_laser name="ros_base_laser_controller" plugin="libRos_Laser.so">
             <updateRate>10</updateRate>
-            <topicName>scan</topicName>
+            <topicName>base_scan</topicName>
             <frameName>base_laser</frameName>
             <interface:laser name="ros_base_laser_iface" />
           </controller:ros_laser>
@@ -1594,11 +1591,11 @@
 
 
 <!-- 
-  <sensor name="ptz_camera_right" type="camera"> 
+  <sensor name="ptz_right" type="camera"> 
 
     <calibration> calib_filename </calibration>
     <parent>torso</parent>
-    <xyz> torso_ptz_camera_offset_x torso_ptz_camera_offset_y torso_ptz_camera_offset_z </xyz>
+    <xyz> torso_ptz_offset_x torso_ptz_offset_y torso_ptz_offset_z </xyz>
     <rpy> 0 0 0 </rpy>
 
     <joint type="revolute"> 
@@ -1617,7 +1614,7 @@
       <xyz>0   0   0   </xyz>
       <rpy>0.0 0.0 0.0 </rpy>
       <material>Gazebo/PioneerBody</material>
-      <geometry type="box" name="visual_ptz_camera_right">
+      <geometry type="box" name="visual_ptz_right">
         <size>0.02 0.02 0.02</size>
       </geometry>
     </visual> 
@@ -1625,7 +1622,7 @@
     <collision>
       <xyz>0   0   0   </xyz>
       <rpy>0.0 0.0 0.0 </rpy>
-      <geometry type="box" name="collision_ptz_camera_right">
+      <geometry type="box" name="collision_ptz_right">
         <size>0.02 0.02 0.02</size> 
       </geometry>
     </collision>
@@ -1641,7 +1638,7 @@
           <controller:ros_camera name="ptz_cam_right_controller" plugin="libRos_Camera.so">
             <updateRate>15.0</updateRate>
             <topicName>image_ptz_right</topicName>
-            <frameName>ptz_camera_right</frameName>
+            <frameName>ptz_right</frameName>
             <interface:camera name="ptz_cam_right_iface" />
           </controller:ros_camera>
         </sensor:camera>
@@ -1650,11 +1647,11 @@
 
   </sensor>
 
-  <sensor name="ptz_camera_left" type="camera"> 
+  <sensor name="ptz_left" type="camera"> 
 
     <calibration> calib_filename </calibration>
     <parent>torso</parent>
-    <xyz> torso_ptz_camera_offset_x torso_ptz_camera_offset_y torso_ptz_camera_offset_z </xyz>
+    <xyz> torso_ptz_offset_x torso_ptz_offset_y torso_ptz_offset_z </xyz>
     <rpy> 0 0 0 </rpy>
 
     <joint type="revolute"> 
@@ -1673,7 +1670,7 @@
       <xyz>0   0   0   </xyz>
       <rpy>0.0 0.0 0.0 </rpy>
       <material>Gazebo/PioneerBody</material>
-      <geometry type="box" name="visual_ptz_camera_left">
+      <geometry type="box" name="visual_ptz_left">
         <size>0.02 0.02 0.02</size>
       </geometry>
     </visual> 
@@ -1681,7 +1678,7 @@
     <collision>
       <xyz>0   0   0   </xyz>
       <rpy>0.0 0.0 0.0 </rpy>
-      <geometry type="box" name="collision_ptz_camera_left">
+      <geometry type="box" name="collision_ptz_left">
         <size>0.02 0.02 0.02</size> 
       </geometry>
     </collision>
@@ -1697,7 +1694,7 @@
           <controller:ros_camera name="ptz_cam_left_controller" plugin="libRos_Camera.so">
             <updateRate>15.0</updateRate>
             <topicName>image_ptz_left</topicName>
-            <frameName>ptz_camera_left</frameName>
+            <frameName>ptz_left</frameName>
             <interface:camera name="ptz_cam_left_iface" />
           </controller:ros_camera>
         </sensor:camera>
