@@ -26,66 +26,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef MAP_SERVER_TEST_CONSTANTS_H
+#define MAP_SERVER_TEST_CONSTANTS_H
 
 /* Author: Brian Gerkey */
 
-#include <gtest/gtest.h>
-#include <ros/service.h>
-#include <std_srvs/StaticMap.h>
+/* This file externs global constants shared among tests */
 
-#include "test_constants.h"
+extern const unsigned int g_valid_image_width;
+extern const unsigned int g_valid_image_height;
+extern const char g_valid_image_content[];
+extern const char* g_valid_png_file;
+extern const char* g_valid_bmp_file;
+extern const float g_valid_image_res;
 
-int g_argc;
-char** g_argv;
-
-class MapClientTest : public testing::Test
-{
-  private:
-    // A node is needed to make a service call
-    ros::node* n;
-
-  protected:
-    void SetUp()
-    {
-      ros::init(g_argc, g_argv);
-      n = new ros::node("map_client_test");
-    }
-    void TearDown()
-    {
-      ros::fini();
-      delete n;
-    }
-};
-
-/* Try to retrieve the map via a valid PNG file.  Succeeds if no 
- * exception is thrown, if the call succeeds, and if
- * the loaded image matches the known dimensions of the map.  */
-TEST_F(MapClientTest, retrieve_valid_bmp)
-{
-  try
-  {
-    std_srvs::StaticMap::request  req;
-    std_srvs::StaticMap::response resp;
-    bool call_result = ros::service::call("static_map", req, resp);
-    ASSERT_TRUE(call_result);
-    ASSERT_FLOAT_EQ(resp.map.resolution, g_valid_image_res);
-    ASSERT_EQ(resp.map.width, g_valid_image_width);
-    ASSERT_EQ(resp.map.height, g_valid_image_height);
-    for(unsigned int i=0; i < resp.map.width * resp.map.height; i++)
-      ASSERT_EQ(g_valid_image_content[i], resp.map.data[i]);
-  }
-  catch(...)
-  {
-    FAIL() << "Uncaught exception : " << "This is OK on OS X";
-  }
-}
-
-int main(int argc, char **argv)
-{
-  testing::InitGoogleTest(&argc, argv);
-
-  g_argc = argc;
-  g_argv = argv;
-
-  return RUN_ALL_TESTS();
-}
+#endif

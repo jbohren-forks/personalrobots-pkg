@@ -29,63 +29,34 @@
 
 /* Author: Brian Gerkey */
 
-#include <gtest/gtest.h>
-#include <ros/service.h>
-#include <std_srvs/StaticMap.h>
+/* This file contains global constants shared among tests */
+
+/* Note that these must be changed if the test image changes */
 
 #include "test_constants.h"
 
-int g_argc;
-char** g_argv;
-
-class MapClientTest : public testing::Test
-{
-  private:
-    // A node is needed to make a service call
-    ros::node* n;
-
-  protected:
-    void SetUp()
-    {
-      ros::init(g_argc, g_argv);
-      n = new ros::node("map_client_test");
-    }
-    void TearDown()
-    {
-      ros::fini();
-      delete n;
-    }
+const unsigned int g_valid_image_width = 10;
+const unsigned int g_valid_image_height = 10;
+// Note that the image content is given in row-major order, with the
+// lower-left pixel first.  This is different from a graphics coordinate
+// system, which starts with the upper-left pixel.  The loadMapFromFile
+// call converts from the latter to the former when it loads the image, and
+// we want to compare against the result of that conversion.
+const char g_valid_image_content[] = {
+0,0,0,0,0,0,0,0,0,0,
+100,100,100,100,0,0,100,100,100,0,
+100,100,100,100,0,0,100,100,100,0,
+100,0,0,0,0,0,0,0,0,0,
+100,0,0,0,0,0,0,0,0,0,
+100,0,0,0,0,0,100,100,0,0,
+100,0,0,0,0,0,100,100,0,0,
+100,0,0,0,0,0,100,100,0,0,
+100,0,0,0,0,0,100,100,0,0,
+100,0,0,0,0,0,0,0,0,0,
 };
 
-/* Try to retrieve the map via a valid PNG file.  Succeeds if no 
- * exception is thrown, if the call succeeds, and if
- * the loaded image matches the known dimensions of the map.  */
-TEST_F(MapClientTest, retrieve_valid_bmp)
-{
-  try
-  {
-    std_srvs::StaticMap::request  req;
-    std_srvs::StaticMap::response resp;
-    bool call_result = ros::service::call("static_map", req, resp);
-    ASSERT_TRUE(call_result);
-    ASSERT_FLOAT_EQ(resp.map.resolution, g_valid_image_res);
-    ASSERT_EQ(resp.map.width, g_valid_image_width);
-    ASSERT_EQ(resp.map.height, g_valid_image_height);
-    for(unsigned int i=0; i < resp.map.width * resp.map.height; i++)
-      ASSERT_EQ(g_valid_image_content[i], resp.map.data[i]);
-  }
-  catch(...)
-  {
-    FAIL() << "Uncaught exception : " << "This is OK on OS X";
-  }
-}
+const char* g_valid_png_file = "test/testmap.png";
+const char* g_valid_bmp_file = "test/testmap.bmp";
 
-int main(int argc, char **argv)
-{
-  testing::InitGoogleTest(&argc, argv);
+const float g_valid_image_res = 0.1;
 
-  g_argc = argc;
-  g_argv = argv;
-
-  return RUN_ALL_TESTS();
-}
