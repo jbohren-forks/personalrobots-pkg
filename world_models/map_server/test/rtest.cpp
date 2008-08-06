@@ -29,58 +29,63 @@
 
 /* Author: Brian Gerkey */
 
-#include <stdexcept> // for std::runtime_error
 #include <gtest/gtest.h>
-#include "map_server/image_loader.h"
+#include <ros/service.h>
+#include <std_srvs/StaticMap.h>
 
-const char* g_invalid_image_file = "foo";
+const unsigned int g_valid_bmp_res = 0.1;
+const unsigned int g_valid_bmp_width = 10;
+const unsigned int g_valid_bmp_height = 10;
 
-/* Note that these must be changed if the test image changes */
-const char* g_valid_image_file = "test/testmap.png";
-const unsigned int g_valid_image_width = 10;
-const unsigned int g_valid_image_height = 10;
+int g_argc;
+char** g_argv;
 
-/* Try to load a valid image file.  Succeeds if no exception is thrown, and if
- * the loaded image matches the known dimensions of the file. */
-TEST(map_server, load_valid_file)
+class MapClientTest : public testing::Test
+{
+  private:
+    // A node is needed to make a service call
+    ros::node* n;
+
+  protected:
+    void SetUp()
+    {
+      ros::init(g_argc, g_argv);
+      n = new ros::node("map_client_test");
+    }
+    void TearDown()
+    {
+      ros::fini();
+      delete n;
+    }
+};
+
+/* Try to retrieve the map via a valid PNG file.  Succeeds if no 
+ * exception is thrown, if the call succeeds, and if
+ * the loaded image matches the known dimensions of the map.  */
+TEST_F(MapClientTest, retrieve_valid_bmp)
 {
   try
   {
-    std_srvs::StaticMap::response map_resp;
-    map_server::loadMapFromFile(&map_resp, g_valid_image_file, 0.1, false);
-    ASSERT_FLOAT_EQ(map_resp.map.resolution, 0.1);
-    ASSERT_EQ(map_resp.map.width, g_valid_image_width);
-    ASSERT_EQ(map_resp.map.height, g_valid_image_height);
+    std_srvs::StaticMap::request  req;
+    std_srvs::StaticMap::response resp;
+    bool call_result = ros::service::call("static_map", req, resp);
+    ASSERT_TRUE(call_result);
+    ASSERT_FLOAT_EQ(resp.map.resolution, g_valid_bmp_res);
+    ASSERT_EQ(resp.map.width, g_valid_bmp_width);
+    ASSERT_EQ(resp.map.height, g_valid_bmp_height);
   }
   catch(...)
   {
-    FAIL() << "Uncaught exception";
+    FAIL() << "Uncaught exception : " << "This is OK on OS X";
   }
-}
-
-/* Try to load an invalid file.  Succeeds if a std::runtime_error exception
- * is thrown. */
-TEST(map_server, load_invalid_file)
-{
-  try
-  {
-    std_srvs::StaticMap::response map_resp;
-    map_server::loadMapFromFile(&map_resp, "foo", 0.1, false);
-  }
-  catch(std::runtime_error &e)
-  {
-    SUCCEED();
-    return;
-  }
-  catch(...)
-  {
-    FAIL() << "Uncaught exception";
-  }
-  FAIL() << "Didn't throw exception as expected";
 }
 
 int main(int argc, char **argv)
 {
   testing::InitGoogleTest(&argc, argv);
+
+  g_argc = argc;
+  g_argv = argv;
+
   return RUN_ALL_TESTS();
 }
