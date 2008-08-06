@@ -6,5 +6,5 @@ all:
 clean: 
 	-rm -rf srv/cpp src/namelookup/srv
 
-test: testClient.cc
+testClient: testClient.cc
 	g++ $(CFLAGS) $^ -o testClient $(LFLAGS)

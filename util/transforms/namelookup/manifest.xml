@@ -7,6 +7,7 @@ A server which will provide unique numbers based on incoming strings.
   <url>http://pr.willowgarage.com</url>
   <depend package="roscpp"/>
   <depend package="rospy"/>
+  <depend package="rostest"/>
   <depend package="std_srvs"/>
   <depend package="std_msgs"/>
 <export>

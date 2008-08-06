@@ -49,10 +49,10 @@ from namelookup.srv import *
 
 class TestNameLookup(unittest.TestCase):
 
-    names = {}
-    previously_tried_names = {}
     
     def test_namelookup_server(self):
+        self.names = {}
+        self.previously_tried_names = {}
         rospy.wait_for_service('/nameToNumber')
         s = rospy.ServiceProxy('/nameToNumber', NameToNumber)
 
@@ -60,13 +60,13 @@ class TestNameLookup(unittest.TestCase):
         tests = [('asdf', 1), ('fdsa', 2), ('asdf', 1)]
         for x, y in tests:
             print "Requesting %s"%(x)
-            resp = s.call(NameToNumber(x))
-            if names.has_key(x):
-                self.assertEquals(resp.number,names[x], "two different values returned for the same string, previous value was %s vs. %s"%( names[x], resp.number))
+            resp = s.call(NameToNumberRequest(x))
+            if x in self.names:
+                self.assertEquals(resp.number,self.names[x], "two different values returned for the same string, previous value was %s vs. %d"%( self.names[x], resp.number))
             else:
                 ## \todo assert that the name was not previously tested
-                names[x] = resp.number
-            print "%s lookus up to %s = %s"%(x, resp.number)            
+                self.names[x] = resp.number
+            print "%s lookus up to %d"%(x, resp.number)            
         
 if __name__ == '__main__':
     rostest.run(PKG, NAME, TestNameLookup, sys.argv)
