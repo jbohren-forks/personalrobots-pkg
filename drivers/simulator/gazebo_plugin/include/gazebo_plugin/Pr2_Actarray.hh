@@ -1,6 +1,6 @@
 /*
  *  Gazebo - Outdoor Multi-Robot Simulator
- *  Copyright (C) 2003  
+ *  Copyright (C) 2003
  *     Nate Koenig & Andrew Howard
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -32,7 +32,7 @@
 #include <pr2Core/pr2Core.h>
 
 #include <vector>
-#include <genericControllers/Pid.h>
+#include <generic_controllers/pid.h>
 
 namespace gazebo
 {
@@ -50,7 +50,7 @@ namespace gazebo
    <interface:actarray name="iface-name"/>
    </controller:pr2_actarray>
    \endverbatim
-  
+
    \{
    */
 

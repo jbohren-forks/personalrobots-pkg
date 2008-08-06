@@ -56,7 +56,7 @@ double ModNPi2Pi(double angle)
    //double theta = fmod(angle,2*M_PI);
    double result = theta;
 
-   if (theta > M_PI) 
+   if (theta > M_PI)
       result = theta - 2*M_PI;
    if(theta < -M_PI)
       result = theta + 2*M_PI;
@@ -153,7 +153,7 @@ void Pr2_Actarray::LoadChild(XMLConfigNode *node)
         //this->myIface->data->actuators[count].actualPosition      = finger_l_joint[count]->GetAngle(); //TODO: get gap from joint positions
         //this->myIface->data->actuators[count].actualSpeed         = finger_l_joint[count]->GetAngleRate(); //TODO: get gap rate?
         //this->myIface->data->actuators[count].actualEffectorForce = 0.0; //TODO: use JointFeedback struct at some point
-        this->myIface->data->actuators[count].jointType           = PR2::GRIPPER;         
+        this->myIface->data->actuators[count].jointType           = PR2::GRIPPER;
 
         // create new pid for each finger for PD_CONTROL
         this->finger_l_pids    [count] = new Pid();
@@ -190,7 +190,7 @@ void Pr2_Actarray::LoadChild(XMLConfigNode *node)
             this->myIface->data->actuators[count].actualPosition      = hjoint->GetAngle();
             this->myIface->data->actuators[count].actualSpeed         = hjoint->GetAngleRate();
             this->myIface->data->actuators[count].actualEffectorForce = 0.0; //TODO: use JointFeedback struct at some point
-            this->myIface->data->actuators[count].jointType           = PR2::ROTARY;         
+            this->myIface->data->actuators[count].jointType           = PR2::ROTARY;
             break;
           case Joint::HINGE2:
           case Joint::BALL:
@@ -245,10 +245,10 @@ void Pr2_Actarray::InitChild()
       if (actarrayType[count]=="gripper_special") // if this is a gripper, do something about it
       {
         // FIXME: temporary hack, initialize finger pid stuff, this should be based on transmissions
-        this->finger_l_pids[count]     -> InitPid ( 1.0, 0.01, 0.0, 0.2, -0.2 );
-        this->finger_r_pids[count]     -> InitPid ( 1.0, 0.01, 0.0, 0.2, -0.2 );
-        this->finger_tip_l_pids[count] -> InitPid ( 1.0, 0.01, 0.0, 0.2, -0.2 );
-        this->finger_tip_r_pids[count] -> InitPid ( 1.0, 0.01, 0.0, 0.2, -0.2 );
+        this->finger_l_pids[count]     -> initPid ( 1.0, 0.01, 0.0, 0.2, -0.2 );
+        this->finger_r_pids[count]     -> initPid ( 1.0, 0.01, 0.0, 0.2, -0.2 );
+        this->finger_tip_l_pids[count] -> initPid ( 1.0, 0.01, 0.0, 0.2, -0.2 );
+        this->finger_tip_r_pids[count] -> initPid ( 1.0, 0.01, 0.0, 0.2, -0.2 );
         this->finger_l_joint[count]     -> SetParam( dParamVel, 0 );
         this->finger_r_joint[count]     -> SetParam( dParamVel, 0 );
         this->finger_tip_l_joint[count] -> SetParam( dParamVel, 0 );
@@ -261,13 +261,13 @@ void Pr2_Actarray::InitChild()
       else
       {
         // initialize pid stuff
-        this->pids[count]->InitPid( this->myIface->data->actuators[count].pGain,
+        this->pids[count]->initPid( this->myIface->data->actuators[count].pGain,
                                     this->myIface->data->actuators[count].iGain,
                                     this->myIface->data->actuators[count].dGain,
                                     this->myIface->data->actuators[count].iClamp,
                                    -this->myIface->data->actuators[count].iClamp
                                   );
-        this->pids[count]->SetCurrentCmd(0);
+        this->pids[count]->setCurrentCmd(0);
 
         // as a first hack, initialize to zero velocity and saturation torque
         //this->joints[count]->SetParam( dParamVel , this->pids[count]->GetCurrentCmd());
@@ -349,11 +349,11 @@ void Pr2_Actarray::UpdateChild()
 
 #else
 ////////////////////////////////////////////////////////////////////////////////
-// 
+//
 // Update the controller
-// 
+//
 // one step in a PID loop
-// 
+//
 // ALGORITHM
 // =========
 // go through all joints,
@@ -361,7 +361,7 @@ void Pr2_Actarray::UpdateChild()
 //         check control type
 //             check error
 //             compute and set new command
-// 
+//
 // ODE I/O
 // =======
 // all we can set in ode is
@@ -466,7 +466,7 @@ void Pr2_Actarray::UpdateChild()
                currentRate   = finger_l_joint[count]->GetAngleRate();
                positionError = ModNPi2Pi(currentAngle - cmdGripperJointAngle);
                speedError    = currentRate - cmdSpeed;
-               currentCmd    = this->finger_l_pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
+               currentCmd    = this->finger_l_pids[count]->updatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
                finger_l_joint[count]->SetParam( dParamVel, currentCmd );
                finger_l_joint[count]->SetParam( dParamFMax,this->myIface->data->actuators[count].saturationTorque );
 
@@ -475,7 +475,7 @@ void Pr2_Actarray::UpdateChild()
                currentRate   = finger_tip_l_joint[count]->GetAngleRate();
                positionError = ModNPi2Pi(currentAngle + cmdGripperJointAngle); // negative command angle enforces parallel gripper
                speedError    = currentRate - cmdSpeed;
-               currentCmd    = this->finger_tip_l_pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
+               currentCmd    = this->finger_tip_l_pids[count]->updatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
                finger_tip_l_joint[count]->SetParam( dParamVel, currentCmd );
                finger_tip_l_joint[count]->SetParam( dParamFMax,this->myIface->data->actuators[count].saturationTorque );
 
@@ -484,7 +484,7 @@ void Pr2_Actarray::UpdateChild()
                currentRate   = finger_r_joint[count]->GetAngleRate();
                positionError = ModNPi2Pi(currentAngle + cmdGripperJointAngle); // negative command angle enforces symmetric gripper
                speedError    = currentRate - cmdSpeed;
-               currentCmd    = this->finger_r_pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
+               currentCmd    = this->finger_r_pids[count]->updatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
                finger_r_joint[count]->SetParam( dParamVel, currentCmd );
                finger_r_joint[count]->SetParam( dParamFMax,this->myIface->data->actuators[count].saturationTorque );
 
@@ -493,7 +493,7 @@ void Pr2_Actarray::UpdateChild()
                currentRate   = finger_tip_r_joint[count]->GetAngleRate();
                positionError = ModNPi2Pi(currentAngle - cmdGripperJointAngle);
                speedError    = currentRate - cmdSpeed;
-               currentCmd    = this->finger_tip_r_pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
+               currentCmd    = this->finger_tip_r_pids[count]->updatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
                finger_tip_r_joint[count]->SetParam( dParamVel, currentCmd );
                finger_tip_r_joint[count]->SetParam( dParamFMax,this->myIface->data->actuators[count].saturationTorque );
 
@@ -548,7 +548,7 @@ void Pr2_Actarray::UpdateChild()
                        //    positionError = cmdPosition - sjoint->GetPosition();
                        //    speedError    = cmdSpeed    - sjoint->GetPositionRate();
                        //    //std::cout << "slider e:" << speedError << " + " << positionError << std::endl;
-                       //    currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
+                       //    currentCmd    = this->pids[count]->updatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
                        //    currentCmd = (currentCmd >  this->myIface->data->actuators[count].saturationTorque ) ?  this->myIface->data->actuators[count].saturationTorque : currentCmd;
                        //    currentCmd = (currentCmd < -this->myIface->data->actuators[count].saturationTorque ) ? -this->myIface->data->actuators[count].saturationTorque : currentCmd;
                        //    sjoint->SetSliderForce(currentCmd);
@@ -559,12 +559,12 @@ void Pr2_Actarray::UpdateChild()
                        //   cmdPosition = sjoint->GetHighStop();
                        //else if (cmdPosition < sjoint->GetLowStop())
                        //   cmdPosition = sjoint->GetLowStop();
-    
+
                        positionError = sjoint->GetPosition() - cmdPosition; //Error defined as actual - desired
                        speedError    = sjoint->GetPositionRate() - cmdSpeed;
                        //std::cout << "slider e:" << speedError << " + " << positionError << std::endl;
-                       currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
-    
+                       currentCmd    = this->pids[count]->updatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
+
                        sjoint->SetParam( dParamVel , currentCmd );
                        sjoint->SetParam( dParamFMax, this->myIface->data->actuators[count].saturationTorque );
                        break;
@@ -572,7 +572,7 @@ void Pr2_Actarray::UpdateChild()
                        sjoint->SetParam( dParamVel, cmdSpeed);
                        sjoint->SetParam( dParamFMax,this->myIface->data->actuators[count].saturationTorque );
                        break;
-    
+
                    default:
                       break;
                }
@@ -612,7 +612,7 @@ void Pr2_Actarray::UpdateChild()
                       // No fancy controller, just pass the commanded torque/force in (we are not modeling the motors for now)
                       positionError = ModNPi2Pi( currentAngle - cmdPosition);
                       speedError    =  currentRate- cmdSpeed;
-                      currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
+                      currentCmd    = this->pids[count]->updatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
                       // if(count==PR2::ARM_R_SHOULDER_PITCH ) std::cout << "hinge err:" << positionError << " cmd: " << currentCmd << std::endl;
                       //Write out data
                       if(count==PR2::ARM_R_SHOULDER_PITCH ) std::cout << currentTime<<" "<<cmdPosition<<" "<<currentAngle<<" "<<positionError<< " "<<currentCmd << std::endl;
@@ -629,18 +629,18 @@ void Pr2_Actarray::UpdateChild()
                   case PR2::SPEED_TORQUE_CONTROL :
                       currentRate = hjoint->GetAngleRate();
                       speedError    = currentRate - cmdSpeed;
-                      currentCmd    = this->pids[count]->UpdatePid(speedError, currentTime-this->lastTime);
+                      currentCmd    = this->pids[count]->updatePid(speedError, currentTime-this->lastTime);
                       //if(count==PR2::ARM_R_PAN)std::cout<<"Joint:" <<count << " Desired:" << cmdSpeed << " Current speed"<<currentRate<<" Error"<<speedError<<" cmd: " << currentCmd << std::endl;
                       if(count==PR2::ARM_R_ELBOW_PITCH )std::cout<<currentTime<<" "<<currentRate<<" "<<speedError<<" " << currentCmd << std::endl;
                       // limit torque
-        
+
                       currentCmd = (currentCmd >  100) ?  100: currentCmd;
                       currentCmd = (currentCmd < -100 ) ? -100: currentCmd;
-    
+
                       //Needs to be set to 0 1x for every joint
                       hjoint->SetParam( dParamFMax, 0);
                       hjoint->SetTorque(currentCmd);
-      
+
 
                       break;
                   case PR2::PD_CONTROL:
@@ -648,13 +648,13 @@ void Pr2_Actarray::UpdateChild()
                       //   cmdPosition = hjoint->GetHighStop();
                       //else if (cmdPosition < hjoint->GetLowStop())
                       //   cmdPosition = hjoint->GetLowStop();
-   
+
                       currentAngle  = hjoint->GetAngle();
                       currentRate   = hjoint->GetAngleRate();
                       positionError = ModNPi2Pi(currentAngle - cmdPosition);
                       speedError    = currentRate - cmdSpeed;
                       //std::cout << "hinge e:" << speedError << " + " << positionError << std::endl;
-                      currentCmd    = this->pids[count]->UpdatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
+                      currentCmd    = this->pids[count]->updatePid(positionError + 0.0*speedError, currentTime-this->lastTime);
                       hjoint->SetParam( dParamVel, currentCmd );
                       hjoint->SetParam( dParamFMax,this->myIface->data->actuators[count].saturationTorque );
                       break;
@@ -698,5 +698,5 @@ void Pr2_Actarray::UpdateChild()
 ////////////////////////////////////////////////////////////////////////////////
 void Pr2_Actarray::FiniChild()
 {
- 
+
 }
