@@ -213,7 +213,10 @@ void Ros_Laser::PutLaserData()
       /*                                                             */
       /***************************************************************/
       double sigma = 0.002;  // 2 milimeter noise
-      this->laserMsg.ranges[i]        = r + this->GaussianKernel(0,sigma) ;
+      if (r == maxRange)
+        this->laserMsg.ranges[i]        = r; // no noise if at max range
+      else
+        this->laserMsg.ranges[i]        = r + this->GaussianKernel(0,sigma) ;
       this->laserMsg.intensities[i]   = v + this->GaussianKernel(0,sigma) ;
     }
 
