@@ -1544,12 +1544,13 @@ namespace robot_desc {
 	m_location = currentLocation;  
     }
     
-    void URDF::replaceIncludes(TiXmlElement *elem)
+    bool URDF::replaceIncludes(TiXmlElement *elem)
     {
-        if (elem->ValueStr() == "include" && elem->FirstChild() && elem->FirstChild()->Type() == TiXmlNode::TEXT)
+	if (elem->ValueStr() == "include" && elem->FirstChild() && elem->FirstChild()->Type() == TiXmlNode::TEXT)
         {
             char* filename = findFile(elem->FirstChild()->Value());
-            if (filename)
+	    bool change = false;
+	    if (filename)
             {
                 TiXmlDocument *doc = new TiXmlDocument(filename);
                 if (doc->LoadFile())
@@ -1557,20 +1558,36 @@ namespace robot_desc {
                     addPath(filename);
                     TiXmlNode *parent = elem->Parent();
                     if (parent)
-                        parent->ReplaceChild(dynamic_cast<TiXmlNode*>(elem), *doc->RootElement()->Clone());
-                }
+		    {
+			parent->ReplaceChild(dynamic_cast<TiXmlNode*>(elem), *doc->RootElement())->ToElement();
+			change = true;
+		    }
+		}
                 else
                     fprintf(stderr, "Unable to load %s\n", filename);
-                delete doc;
+		delete doc;
                 free(filename);
-            }
+	    }
             else
                 fprintf(stderr, "Unable to find %s\n", elem->FirstChild()->Value());        
+	    if (change)
+		return true;
         }
 	
-        for (TiXmlNode *child = elem->FirstChild() ; child ; child = child->NextSibling())
-            if (child->Type() == TiXmlNode::ELEMENT)
-                replaceIncludes(child->ToElement());
+	bool restart = true;
+	while (restart)
+	{
+	    restart = false;
+	    for (TiXmlNode *child = elem->FirstChild() ; child ; child = child->NextSibling())
+		if (child->Type() == TiXmlNode::ELEMENT)
+		    if (replaceIncludes(child->ToElement()))
+		    {
+			restart = true;
+			break;
+		    }
+	}
+	return false;
+	
     }
 
     void URDF::loadData(const TiXmlNode *node, Data *data)

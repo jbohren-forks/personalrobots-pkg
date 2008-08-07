@@ -33,6 +33,7 @@
 *********************************************************************/
 
 #include <tinyxml/tinyxml.h>
+#include <cassert>
 #include <vector>
 #include <string>
 #include <fstream>
@@ -59,7 +60,7 @@ public:
             return false;
         }
         addPath(filename);
-        fixIncludes(m_doc->RootElement());
+        assert(!fixIncludes(m_doc->RootElement()));	
         return true;        
     }
     
@@ -103,12 +104,13 @@ private:
         return NULL;
     }
 
-    void fixIncludes(TiXmlElement *elem)
+    bool fixIncludes(TiXmlElement *elem)
     {
-        if (elem->ValueStr() == "include" && elem->FirstChild() && elem->FirstChild()->Type() == TiXmlNode::TEXT)
+	if (elem->ValueStr() == "include" && elem->FirstChild() && elem->FirstChild()->Type() == TiXmlNode::TEXT)
         {
             char* filename = findFile(elem->FirstChild()->Value());
-            if (filename)
+	    bool change = false;
+	    if (filename)
             {
                 TiXmlDocument *doc = new TiXmlDocument(filename);
                 if (doc->LoadFile())
@@ -116,15 +118,20 @@ private:
                     addPath(filename);
                     TiXmlNode *parent = elem->Parent();
                     if (parent)
-                        parent->ReplaceChild(dynamic_cast<TiXmlNode*>(elem), *doc->RootElement()->Clone());
-                }
+		    {
+			parent->ReplaceChild(dynamic_cast<TiXmlNode*>(elem), *doc->RootElement())->ToElement();
+			change = true;
+		    }
+		}
                 else
                     fprintf(stderr, "Unable to load %s\n", filename);
-                delete doc;
+		delete doc;
                 free(filename);
-            }
+	    }
             else
                 fprintf(stderr, "Unable to find %s\n", elem->FirstChild()->Value());        
+	    if (change)
+		return true;
         }
 	
         if (elem->ValueStr() == "verbatim")
@@ -140,12 +147,22 @@ private:
 		    break;
 		}
 	    if (!includes)
-		return;
+		return false;
 	}
 	
-        for (TiXmlNode *child = elem->FirstChild() ; child ; child = child->NextSibling())
-            if (child->Type() == TiXmlNode::ELEMENT)
-                fixIncludes(child->ToElement());
+	bool restart = true;
+	while (restart)
+	{
+	    restart = false;
+	    for (TiXmlNode *child = elem->FirstChild() ; child ; child = child->NextSibling())
+		if (child->Type() == TiXmlNode::ELEMENT)
+		    if (fixIncludes(child->ToElement()))
+		    {
+			restart = true;
+			break;
+		    }
+	}
+	return false;
     }
 };
 

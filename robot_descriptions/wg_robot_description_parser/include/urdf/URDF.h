@@ -631,7 +631,7 @@ namespace robot_desc
 	virtual void ignoreNode(const TiXmlNode* node);
 	
 	/** Replace include declarations with the indicated file */
-	void replaceIncludes(TiXmlElement *elem);	
+	bool replaceIncludes(TiXmlElement *elem);	
 
 	/** Print the error location, if known */
 	void errorLocation(const TiXmlNode* node = NULL) const;
