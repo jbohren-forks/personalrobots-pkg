@@ -260,6 +260,10 @@ public:
    */
   std::string viewChain(unsigned int target_frame, unsigned int source_frame);
 
+  /** \brief A way to see what frames have been cached 
+   * Useful for debugging 
+   */
+  std::string viewFrames();
 
   /************ Possible Exceptions ****************************/
 
@@ -274,8 +278,13 @@ public:
   class LookupException : public std::exception
   {
   public:
-    virtual const char* what() const throw()    { return "InvalidFrame"; }
-  } InvalidFrame;
+    LookupException(const std::string errorDescription) { 
+      errorDescription_ = new std::string(errorDescription);
+    };
+    std::string * errorDescription_;
+    ~LookupException() throw() { delete errorDescription_; };
+    virtual const char* what() const throw()    { return errorDescription_->c_str(); };
+  };
 
   /** \brief An exception class to notify of no connection
    * 
@@ -285,9 +294,14 @@ public:
   class ConnectivityException : public std::exception
   {
   public:
-    virtual const char* what() const throw()    { return "No connection between frames"; }
+    ConnectivityException(const std::string errorDescription) { 
+      errorDescription_ = new std::string(errorDescription);
+    };
+    std::string * errorDescription_;
+    ~ConnectivityException() throw() { delete errorDescription_; };
+    virtual const char* what() const throw()    { return errorDescription_->c_str(); };
   private:
-  } NoFrameConnectivity;
+  };
 
   /** \brief An exception class to notify that the search for connectivity descended too deep. 
    * 
@@ -299,9 +313,14 @@ public:
   class MaxDepthException : public std::exception
   {
   public:
-    virtual const char* what() const throw()    { return "Search exceeded max depth.  Probably a loop in the tree."; }
+    MaxDepthException(const std::string errorDescription) { 
+      errorDescription_ = new std::string(errorDescription);
+    };
+    std::string * errorDescription_;
+    ~MaxDepthException() throw() { delete errorDescription_; };
+    virtual const char* what() const throw()    { return errorDescription_->c_str(); };
   private:
-  } MaxSearchDepth;
+  };
 
 
 private:
@@ -376,7 +395,7 @@ private:
    * This is an internal function which will get the pointer to the frame associated with the frame id
    * Possible Exception: TransformReference::LookupException
    */
-  inline RefFrame* getFrame(unsigned int frame_number) { if (frames[frame_number] == NULL) throw InvalidFrame; else return frames[frame_number];};
+  inline RefFrame* getFrame(unsigned int frame_number) { if (frames[frame_number] == NULL) throw LookupException("Frame does not exist."); else return frames[frame_number];};
 
   /** Find the list of connected frames necessary to connect two different frames */
   TransformLists  lookUpList(unsigned int target_frame, unsigned int source_frame);

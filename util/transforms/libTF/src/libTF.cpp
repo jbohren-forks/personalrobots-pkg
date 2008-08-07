@@ -78,7 +78,7 @@ TransformReference::~TransformReference()
 
 void TransformReference::addFrame(unsigned int frameID, unsigned int parentID) {
   if (frameID >= MAX_NUM_FRAMES || parentID >= MAX_NUM_FRAMES || frameID == NO_PARENT)
-    throw InvalidFrame;
+    throw LookupException("frameID >= MAX_NUM_FRAMES || parentID >= MAX_NUM_FRAMES || frameID == NO_PARENT");
 
   if (frames[frameID] == NULL)
     frames[frameID] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
@@ -302,8 +302,8 @@ TFPose2D TransformReference::transformPose2D(unsigned int target_frame, const TF
 TransformReference::TransformLists TransformReference::lookUpList(unsigned int target_frame, unsigned int source_frame)
 {
   TransformLists mTfLs;
-  if (source_frame == NO_PARENT) throw InvalidFrame; 
-  if (target_frame == NO_PARENT) throw InvalidFrame; 
+  if (source_frame == NO_PARENT) throw LookupException("cannnot lookup frame id = NO_PARENT (0)"); 
+  if (target_frame == NO_PARENT) throw LookupException("cannnot lookup frame id = NO_PARENT (0)"); 
 
   unsigned int frame = source_frame;
   unsigned int counter = 0;  //A counter to keep track of how deep we've descended
@@ -314,14 +314,14 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
       mTfLs.inverseTransforms.push_back(frame);
 
       //Check that we arn't going somewhere illegal 
-      if (getFrame(frame)->getParent() >=MAX_NUM_FRAMES) throw InvalidFrame;
+      if (getFrame(frame)->getParent() >=MAX_NUM_FRAMES) throw LookupException("max frame greater than MAX_NUM_FRAMES");
 
       // Descent to parent frame
       frame = getFrame(frame)->getParent();
 
       /* Check if we've gone too deep.  A loop in the tree would cause this */
       if (counter++ > MAX_GRAPH_DEPTH)
-	throw(MaxSearchDepth);
+	throw(MaxDepthException("Recursed too deep into graph ( > MAX_GRAPH_DEPTH) there is probably a loop in the graph"));
     }
   
   frame = target_frame;
@@ -333,23 +333,23 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
       mTfLs.forwardTransforms.push_back(frame);
 
       //Check that we aren't going somewhere illegal
-      if (getFrame(frame)->getParent() >=MAX_NUM_FRAMES) throw InvalidFrame;
+      if (getFrame(frame)->getParent() >=MAX_NUM_FRAMES) throw LookupException("max frame greater than MAX_NUM_FRAMES");
 
       //Descent to parent frame
       frame = getFrame(frame)->getParent();
 
       /* Check if we've gone too deep.  A loop in the tree would cause this*/
       if (counter++ > MAX_GRAPH_DEPTH)
-	throw(MaxSearchDepth);
+	throw(MaxDepthException("Recursed too deep into graph ( > MAX_GRAPH_DEPTH) there is probably a loop in the graph"));
     }
   
   /* Make sure the end of the search shares a parent. */
   if (mTfLs.inverseTransforms.back() != mTfLs.forwardTransforms.back())
-    throw(NoFrameConnectivity);
+    throw(ConnectivityException("No Common Parent, at top of search"));
 
   /* Make sure that we don't have a no parent at the top */
   if (mTfLs.inverseTransforms.back() == NO_PARENT ||  mTfLs.forwardTransforms.back() == NO_PARENT)
-    throw(NoFrameConnectivity);
+    throw(ConnectivityException("No Common Parent"));
 
   while (mTfLs.inverseTransforms.back() == mTfLs.forwardTransforms.back())
     {
@@ -409,6 +409,20 @@ std::string TransformReference::viewChain(unsigned int target_frame, unsigned in
   mstream << std::endl;
   return mstream.str();
 }
+
+std::string TransformReference::viewFrames()
+{
+  stringstream mstream;
+  for (unsigned int frameid = 1; frameid < MAX_NUM_FRAMES; frameid++)
+  {
+    if (frames[frameid] != NULL)
+    {
+      mstream << "Frame "<< frameid << " exists with parent " << frames[frameid]->getParent() << "." <<std::endl;    
+    }
+  }
+  return mstream.str();
+}
+
 
 bool TransformReference::RefFrame::setParent(unsigned int parentID)
 {
