@@ -118,7 +118,9 @@ public:
 	param("world_3d_map/retain_pointcloud_duration", m_retainPointcloudDuration, 60.0);
 	param("world_3d_map/retain_pointcloud_fraction", m_retainPointcloudFraction, 0.02);
 	param("world_3d_map/verbosity_level", m_verbose, 1);
-
+	
+	m_verbose = 0;
+	
 	loadRobotDescriptions();
 	
 	/* create a thread that does the processing of the input data.
@@ -203,23 +205,35 @@ public:
 	    l.name  = get_name();
 	    l.msg   = "Discarded point cloud data (previous input set not done processing)";
 	    publish("roserr", l);
+	    fprintf(stderr, "Discarding pointcloud: Too much data to process\n");
 	}
 	else
 	{
 	    /* copy data to a place where incoming messages do not affect it */
+	    bool success = true;
 	    try
 	    {
 		m_tf.transformLaserScanToPointCloud("FRAMEID_MAP", m_toProcess, m_inputScan);
 	    }
-	    catch (...)
-	    {	
-		rostools::Log l;
-		l.level = 20;
-		l.name  = get_name();
-		l.msg   = "Discarded point cloud data (laser scan transform failed)";
-		publish("roserr", l);
+	    catch(libTF::TransformReference::LookupException& ex)
+	    {
+		fprintf(stderr, "Discarding pointcloud: Transform reference lookup exception\n");
+		success = false;		
 	    }
-	    m_processMutex.unlock();   /* let the processing thread know that there is data to process */
+	    catch(libTF::Pose3DCache::ExtrapolateException& ex)
+	    {
+		fprintf(stderr, "Discarding pointcloud: Extrapolation exception: %s\n", ex.what());
+		success = false;
+	    }
+	    catch(...)
+	    {
+		fprintf(stderr, "Discarding pointcloud: Exception in point cloud computation\n");
+		success = false;
+	    }	    
+	    if (success)
+		m_processMutex.unlock();   /* let the processing thread know that there is data to process */
+	    else 
+		m_working = false;	   /* unmark the fact we are working */
 	}
 	m_flagMutex.unlock();
     }
