@@ -36,7 +36,7 @@
 #define URDF_PARSER_
 
 #include <tinyxml/tinyxml.h>
-#include <istream>
+#include <iostream>
 #include <string>
 #include <vector>
 #include <map>
@@ -74,7 +74,7 @@ namespace robot_desc
 	    std::string getDefaultValue(const std::string &key) const;
 	    const TiXmlElement* getDefaultXML(const std::string &key) const;
 	    
-	    virtual void print(FILE *out = stdout, std::string indent = "") const;
+	    virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
             
 	    void add(const std::string &type, const std::string &name, const std::string &key, const std::string &value);
 	    void add(const std::string &type, const std::string &name, const std::string &key, const TiXmlElement *value);
@@ -123,7 +123,7 @@ namespace robot_desc
 	    {
 	    }
             
-	    virtual void print(FILE *out = stdout, std::string indent = "") const;
+	    virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
             
 	    std::string                 name;
 	    Data                        data;
@@ -142,7 +142,7 @@ namespace robot_desc
 	    {
 	    }
             
-	    virtual void print(FILE *out = stdout, std::string indent = "") const;
+	    virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
             
 	    std::string                 name;
 	    Data                        data;
@@ -172,7 +172,7 @@ namespace robot_desc
 		{
 		}
                 
-		virtual void print(FILE *out = stdout, std::string indent = "") const;
+		virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
                 
 		enum
 		    {
@@ -194,12 +194,15 @@ namespace robot_desc
 		    axis[0] = axis[1] = axis[2] = 0.0;
 		    anchor[0] = anchor[1] = anchor[2] = 0.0;
 		    limit[0] = limit[1] = 0.0;
+		    velocityLimit = 0.0;
+		    effortLimit = 0.0;
 		    type = UNKNOWN;
 		    isSet["name"] = false;
 		    isSet["type"] = false;
 		    isSet["axis"] = false;
 		    isSet["anchor"] = false;
-		    isSet["limit"] = false;
+		    isSet["effortLimit"] = false;
+		    isSet["velocityLimit"] = false;
 		    isSet["calibration"] = false;
 		}
 		
@@ -207,7 +210,7 @@ namespace robot_desc
 		{
 		}
                 
-		virtual void print(FILE *out = stdout, std::string indent = "") const;
+		virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
                 
 		enum
 		    {
@@ -217,6 +220,8 @@ namespace robot_desc
 		double                      axis[3];       // vector describing the axis of rotation: (x,y,z)
 		double                      anchor[3];     // point about which the axis defines the rotation: (x,y,z)
 		double                      limit[2];      // the joint limits: (min, max)
+		double                      effortLimit;
+		double                      velocityLimit;
 		std::string                 calibration;
 		Data                        data;
 		std::map<std::string, bool> isSet;
@@ -245,7 +250,7 @@ namespace robot_desc
 			delete geometry;
 		}
                 
-		virtual void print(FILE *out = stdout, std::string indent = "") const;
+		virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
                 
 		std::string                 name;
 		bool                        verbose;
@@ -275,7 +280,7 @@ namespace robot_desc
 		{
 		}
                 
-		virtual void print(FILE *out = stdout, std::string indent = "") const;
+		virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
                 
 		std::string                 name;
 		double                      mass;
@@ -308,7 +313,7 @@ namespace robot_desc
 			delete geometry;
 		}
                 
-		virtual void print(FILE *out = stdout, std::string indent = "") const;
+		virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
                 
 		std::string                 name;
 		double                      xyz[3];
@@ -360,7 +365,7 @@ namespace robot_desc
 	    /** Check if the link instance is also a sensor */
 	    virtual bool canSense(void) const;
 	    
-	    virtual void print(FILE *out = stdout, std::string indent = "") const;
+	    virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
             
 	    Link                       *parent;
 	    std::string                 parentName;
@@ -396,7 +401,7 @@ namespace robot_desc
 	    }
             
 	    virtual bool canSense(void) const;
-	    virtual void print(FILE *out = stdout, std::string indent = "") const;
+	    virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
             
 	    enum
 	    {
@@ -424,7 +429,7 @@ namespace robot_desc
 	    {
 	    }
 	    
-	    virtual void print(FILE *out = stdout, std::string indent = "") const;
+	    virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
 
 	    std::string                 name;
 	    std::string                 linkName;
@@ -499,7 +504,7 @@ namespace robot_desc
 	virtual bool loadStream(std::istream &is);
 
 	/** Print the parsed datastructure */
-	virtual void print(FILE *out = stdout) const;
+	virtual void print(std::ostream &out = std::cout) const;
         
 	/** Check if the links form a cycle */
 	bool containsCycle(unsigned int index) const;
@@ -607,10 +612,14 @@ namespace robot_desc
 	
 	/** Parse a list of string expressions and convert them to doubles (this relies on the loaded constants) */
 	unsigned int loadDoubleValues(const TiXmlNode *node, unsigned int count, double *vals);
-	
+	/** Parse a list of string expressions and convert them to doubles (this relies on the loaded constants) */
+	unsigned int loadDoubleValues(const std::string& data, unsigned int count, double *vals, const TiXmlNode *node = NULL);
 	/** Parse a list of strings and convert them to booleans */
-	unsigned int loadBoolValues  (const TiXmlNode *node, unsigned int count, bool   *vals);
+	unsigned int loadBoolValues  (const TiXmlNode *node, unsigned int count, bool *vals);
+	/** Parse a list of string expressions and convert them to doubles (this relies on the loaded constants) */
+	unsigned int loadBoolValues(const std::string& data, unsigned int count, bool *vals, const TiXmlNode *node = NULL);
 	
+
 	/** Depending on whether the node is a clone or not, get the proper list of children and attibutes for this tag */
 	void getChildrenAndAttributes(const TiXmlNode* node, std::vector<const TiXmlNode*> &children, std::vector<const TiXmlAttribute*> &attributes) const;	
 
@@ -620,7 +629,10 @@ namespace robot_desc
 
 	/** Output a message letting the user know that a specific node was ignored */
 	virtual void ignoreNode(const TiXmlNode* node);
-        
+	
+	/** Replace include declarations with the indicated file */
+	void replaceIncludes(TiXmlElement *elem);	
+
 	/** Print the error location, if known */
 	void errorLocation(const TiXmlNode* node = NULL) const;
 	

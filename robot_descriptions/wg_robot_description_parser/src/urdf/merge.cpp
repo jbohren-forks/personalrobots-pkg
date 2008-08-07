@@ -126,7 +126,23 @@ private:
             else
                 fprintf(stderr, "Unable to find %s\n", elem->FirstChild()->Value());        
         }
-        
+	
+        if (elem->ValueStr() == "verbatim")
+	{
+	    bool includes = false;
+	    for (const TiXmlAttribute *attr = elem->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
+		if (strcmp(attr->Name(), "includes") == 0)
+		{
+		    std::string value = attr->ValueStr();
+		    for(unsigned int j = 0 ; j < value.size() ; ++j)
+			value[j] = std::tolower(value[j]);
+		    includes = (value == "true" || value == "yes" || value == "1");
+		    break;
+		}
+	    if (!includes)
+		return;
+	}
+	
         for (TiXmlNode *child = elem->FirstChild() ; child ; child = child->NextSibling())
             if (child->Type() == TiXmlNode::ELEMENT)
                 fixIncludes(child->ToElement());

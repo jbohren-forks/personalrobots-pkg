@@ -316,160 +316,162 @@ namespace robot_desc {
 	return false;
     }
     
-    void URDF::print(FILE *out) const
+    void URDF::print(std::ostream &out) const
     {
-	fprintf(out, "\nList of root links in robot '%s' (%u):\n", m_name.c_str(), m_linkRoots.size());
+	out << std::endl << "List of root links in robot '"<< m_name << "' (" << m_linkRoots.size() << ") :" << std::endl;
 	for (unsigned int i = 0 ; i < m_linkRoots.size() ; ++i)
 	    m_linkRoots[i]->print(out, "  ");
-	fprintf(out, "\n");
-	fprintf(out, "Frames:\n");
+	out << std::endl << "Frames:" << std::endl;
 	for (std::map<std::string, Frame*>::const_iterator i = m_frames.begin() ; i != m_frames.end() ; i++)
 	    i->second->print(out, "  ");
-	fprintf(out, "\n");
-	fprintf(out, "Actuators:\n");
+	out << std::endl << "Actuators:" << std::endl;
 	for (std::map<std::string, Actuator*>::const_iterator i = m_actuators.begin() ; i != m_actuators.end() ; i++)
 	    i->second->print(out, "  "); 
-	fprintf(out, "\n");   
-	fprintf(out, "Transmissions:\n");
+	out << std::endl << "Transmissions:" << std::endl;
 	for (std::map<std::string, Transmission*>::const_iterator i = m_transmissions.begin() ; i != m_transmissions.end() ; i++)
 	    i->second->print(out, "  ");
-	fprintf(out, "\n");
-	fprintf(out, "Data types:\n");
+	out << std::endl << "Data types:" << std::endl;
 	m_data.print(out, "  ");
     }
     
-    void URDF::Data::print(FILE *out, std::string indent) const
+    void URDF::Data::print(std::ostream &out, std::string indent) const
     {
 	for (std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator i = m_data.begin() ; i != m_data.end() ; ++i)
 	{
-	    fprintf(out, "%sData of type '%s':\n", indent.c_str(), i->first.c_str());
+	    out << indent << "Data of type '" << i->first << "':" << std::endl;
 	    for (std::map<std::string, std::map<std::string, Element > >::const_iterator j = i->second.begin() ; j != i->second.end() ; ++j)
 	    {
-		fprintf(out, "%s  [%s]\n", indent.c_str(), j->first.c_str());
+		out << indent << "  [" << j->first << "]" << std::endl;
 		for (std::map<std::string, Element>::const_iterator k = j->second.begin() ; k != j->second.end() ; ++k)
-		    fprintf(out, "%s    %s = %s%s\n", indent.c_str(), k->first.c_str(), k->second.str != NULL ? k->second.str->c_str() : "", k->second.xml != NULL ? " [XML]" : "");
+		    out << indent << "    " << k->first << " = " << (k->second.str != NULL ? *(k->second.str) : "") << (k->second.xml != NULL ? " [XML]" : "") << std::endl;
 	    }
 	}
     }
-   
-    void URDF::Frame::print(FILE *out, std::string indent) const
+    
+    void URDF::Frame::print(std::ostream &out, std::string indent) const
     {
-	fprintf(out, "%sFrame [%s]:\n", indent.c_str(), name.c_str());
-	fprintf(out, "%s  - type: %d\n", indent.c_str(), (int)type);
-	fprintf(out, "%s  - rpy: (%f, %f, %f)\n", indent.c_str(), rpy[0], rpy[1], rpy[2]);
-	fprintf(out, "%s  - xyz: (%f, %f, %f)\n", indent.c_str(), xyz[0], xyz[1], xyz[2]);
-	fprintf(out, "%s  - link: %s\n", indent.c_str(), link ? link->name.c_str() : "");
-	fprintf(out, "%s  - groups: ", indent.c_str());
+	out << indent << "Frame [" << name << "]:" << std::endl;
+	out << indent << "  - type: " << type << std::endl;
+	out << indent << "  - rpy: (" <<  rpy[0] << ", " << rpy[1] << ", " << rpy[2] << ")" << std::endl;
+	out << indent << "  - xyz: (" <<  xyz[0] << ", " << xyz[1] << ", " << xyz[2] << ")" << std::endl;
+	out << indent << "  - link: " << (link ? link->name : "") << std::endl;
+
+	out << indent << "  - groups: ";
 	for (unsigned int i = 0 ; i < groups.size() ; ++i)
-	{      
-	    fprintf(out, "%s ( ", groups[i]->name.c_str());
+	{
+	    out << groups[i]->name << " ( ";
 	    for (unsigned int j = 0 ; j < groups[i]->flags.size() ; ++j)
-		fprintf(out, "%s ", groups[i]->flags[j].c_str());
-	    fprintf(out, ") ");
+		out << groups[i]->flags[j] << " ";
+	    out << ") ";
 	}
+	out << std::endl;
 	data.print(out, indent + "  ");
     }
     
-    void URDF::Transmission::print(FILE *out, std::string indent) const
+    void URDF::Transmission::print(std::ostream &out, std::string indent) const
     {
-	fprintf(out, "%sTransmission [%s]:\n", indent.c_str(), name.c_str());
+	out << indent << "Transmission [" << name << "]:" << std::endl;
 	data.print(out, indent + "  ");
     }
     
-    void URDF::Actuator::print(FILE *out, std::string indent) const
+    void URDF::Actuator::print(std::ostream &out, std::string indent) const
     {
-	fprintf(out, "%sActuator [%s]:\n", indent.c_str(), name.c_str());
+	out << indent << "Actuator [" << name << "]:" << std::endl;
 	data.print(out, indent + "  ");
     }
      
-    void URDF::Link::Geometry::print(FILE *out, std::string indent) const
+    void URDF::Link::Geometry::print(std::ostream &out, std::string indent) const
     {
-	fprintf(out, "%sGeometry [%s]:\n", indent.c_str(), name.c_str());
-	fprintf(out, "%s  - type: %d\n", indent.c_str(), (int)type);
-	fprintf(out, "%s  - size: ( ", indent.c_str());
+	out << indent << "Geometry [" << name << "]:" << std::endl;
+	out << indent << "  - type: " << type << std::endl;
+	out << indent << "  - size: ( ";
 	for (int i = 0 ; i < nsize ; ++i)
-	    fprintf(out, "%f ", size[i]);
-	fprintf(out, ")\n");
-	fprintf(out, "%s  - filename: %s\n", indent.c_str(), filename.c_str());
+	    out << size[i] << " ";
+	out << ")" << std::endl;
+	out << indent << "  - filename: " << filename << std::endl;
 	data.print(out, indent + "  ");
     }
     
-    void URDF::Link::Joint::print(FILE *out, std::string indent) const
+    void URDF::Link::Joint::print(std::ostream &out, std::string indent) const
     {
-	fprintf(out, "%sJoint [%s]:\n", indent.c_str(), name.c_str());
-	fprintf(out, "%s  - type: %d\n", indent.c_str(), (int)type);
-	fprintf(out, "%s  - axis: (%f, %f, %f)\n", indent.c_str(), axis[0], axis[1], axis[2]);
-	fprintf(out, "%s  - anchor: (%f, %f, %f)\n", indent.c_str(), anchor[0], anchor[1], anchor[2]);
-	fprintf(out, "%s  - limit: (%f, %f)\n", indent.c_str(), limit[0], limit[1]);
-	fprintf(out, "%s  - calibration: %s\n", indent.c_str(), calibration.c_str());
+	out << indent << "Joint [" << name << "]:" << std::endl;
+	out << indent << "  - type: " << type << std::endl;
+	out << indent << "  - axis: (" <<  axis[0] << ", " << axis[1] << ", " << axis[2] << ")" << std::endl;
+	out << indent << "  - anchor: (" <<  anchor[0] << ", " << anchor[1] << ", " << anchor[2] << ")" << std::endl;
+	out << indent << "  - limit: (" <<  limit[0] << ", " << limit[1] << ")" << std::endl;
+	out << indent << "  - effortLimit: " << effortLimit << std::endl;
+	out << indent << "  - velocityLimit: " << velocityLimit << std::endl;
+	out << indent << "  - calibration: " << calibration << std::endl;
 	data.print(out, indent + "  ");
     }
     
-    void URDF::Link::Collision::print(FILE *out, std::string indent) const
+    void URDF::Link::Collision::print(std::ostream &out, std::string indent) const
     {
-	fprintf(out, "%sCollision [%s]:\n", indent.c_str(), name.c_str());
-	fprintf(out, "%s  - verbose: %s\n", indent.c_str(), verbose ? "Yes" : "No");
-	fprintf(out, "%s  - material: %s\n", indent.c_str(), material.c_str());
-	fprintf(out, "%s  - rpy: (%f, %f, %f)\n", indent.c_str(), rpy[0], rpy[1], rpy[2]);
-	fprintf(out, "%s  - xyz: (%f, %f, %f)\n", indent.c_str(), xyz[0], xyz[1], xyz[2]);
+	out << indent << "Collision [" << name << "]:" << std::endl;
+	out << indent << "  - verbose: " << (verbose ? "Yes" : "No") << std::endl;
+	out << indent << "  - material: " << material << std::endl;
+	out << indent << "  - rpy: (" <<  rpy[0] << ", " << rpy[1] << ", " << rpy[2] << ")" << std::endl;
+	out << indent << "  - xyz: (" <<  xyz[0] << ", " << xyz[1] << ", " << xyz[2] << ")" << std::endl;
 	geometry->print(out, indent + "  ");
 	data.print(out, indent + "  ");
     }
     
-    void URDF::Link::Inertial::print(FILE *out, std::string indent) const
-    {
-	fprintf(out, "%sInertial [%s]:\n", indent.c_str(), name.c_str());
-	fprintf(out, "%s  - mass: %f\n", indent.c_str(), mass);
-	fprintf(out, "%s  - com: (%f, %f, %f)\n", indent.c_str(), com[0], com[1], com[2]);
-	fprintf(out, "%s  - inertia: (%f, %f, %f, %f, %f, %f)\n", indent.c_str(), 
-		inertia[0], inertia[1], inertia[2], inertia[3], inertia[4],  inertia[5]);
+    void URDF::Link::Inertial::print(std::ostream &out, std::string indent) const
+    {	
+	out << indent << "Inertial [" << name << "]:" << std::endl;
+	out << indent << "  - mass: " << mass << std::endl;
+	out << indent << "  - com: (" <<  com[0] << ", " << com[1] << ", " << com[2] << ")" << std::endl;
+	out << indent << "  - inertia: (" <<  inertia[0] << ", " << inertia[1] << ", " << inertia[2] << ", " << inertia[3] << ", " << inertia[4] << ", " << inertia[5] << ")" << std::endl;
 	data.print(out, indent + "  ");
     }
     
-    void URDF::Link::Visual::print(FILE *out, std::string indent) const
+    void URDF::Link::Visual::print(std::ostream &out, std::string indent) const
     {
-	fprintf(out, "%sVisual [%s]:\n", indent.c_str(), name.c_str());
-	fprintf(out, "%s  - material: %s\n", indent.c_str(), material.c_str());
-	fprintf(out, "%s  - scale: (%f, %f, %f)\n", indent.c_str(), scale[0], scale[1], scale[2]);
-	fprintf(out, "%s  - rpy: (%f, %f, %f)\n", indent.c_str(), rpy[0], rpy[1], rpy[2]);
-	fprintf(out, "%s  - xyz: (%f, %f, %f)\n", indent.c_str(), xyz[0], xyz[1], xyz[2]);
+	out << indent << "Visual [" << name << "]:" << std::endl;
+	out << indent << "  - material: " << material << std::endl;
+	out << indent << "  - scale: " << scale[0] << ", " << scale[1] << ", " << scale[2] << ")" << std::endl;
+	out << indent << "  - rpy: (" <<  rpy[0] << ", " << rpy[1] << ", " << rpy[2] << ")" << std::endl;
+	out << indent << "  - xyz: (" <<  xyz[0] << ", " << xyz[1] << ", " << xyz[2] << ")" << std::endl;
 	geometry->print(out, indent + "  ");
 	data.print(out, indent + "  ");
     }
     
-    void URDF::Link::print(FILE *out, std::string indent) const
+    void URDF::Link::print(std::ostream &out, std::string indent) const
     {
-	fprintf(out, "%sLink [%s]:\n", indent.c_str(), name.c_str());
-	fprintf(out, "%s  - parent link: %s\n", indent.c_str(), parentName.c_str());
-	fprintf(out, "%s  - rpy: (%f, %f, %f)\n", indent.c_str(), rpy[0], rpy[1], rpy[2]);
-	fprintf(out, "%s  - xyz: (%f, %f, %f)\n", indent.c_str(), xyz[0], xyz[1], xyz[2]);
+	out << indent << "Link [" << name << "]:" << std::endl;
+	out << indent << "  - parent link: " << parentName << std::endl;
+	out << indent << "  - rpy: (" <<  rpy[0] << ", " << rpy[1] << ", " << rpy[2] << ")" << std::endl;
+	out << indent << "  - xyz: (" <<  xyz[0] << ", " << xyz[1] << ", " << xyz[2] << ")" << std::endl;
 	joint->print(out, indent+ "  ");
 	collision->print(out, indent+ "  ");
 	inertial->print(out, indent+ "  ");
 	visual->print(out, indent+ "  ");
-	fprintf(out, "%s  - groups: ", indent.c_str());
+	
+	out << indent << "  - groups: ";
 	for (unsigned int i = 0 ; i < groups.size() ; ++i)
 	{      
-	    fprintf(out, "%s ( ", groups[i]->name.c_str());
+	    out << groups[i]->name <<  " ( ";
 	    for (unsigned int j = 0 ; j < groups[i]->flags.size() ; ++j)
-		fprintf(out, "%s ", groups[i]->flags[j].c_str());
-	    fprintf(out, ") ");
+		out << groups[i]->flags[j] << " ";
+	    out << ") ";
 	}
-	fprintf(out, "\n");
-	fprintf(out, "%s  - children links: ", indent.c_str());
+	out << std::endl;
+	
+	out << indent << "  - children links: ";
 	for (unsigned int i = 0 ; i < children.size() ; ++i)
-	    fprintf(out, "%s ", children[i]->name.c_str());
-	fprintf(out, "\n");
+	    out << children[i]->name << " ";
+	out << std::endl;
+
 	for (unsigned int i = 0 ; i < children.size() ; ++i)
 	    children[i]->print(out, indent + "  ");
 	data.print(out, indent + "  ");
     }
     
-    void URDF::Sensor::print(FILE *out, std::string indent) const
+    void URDF::Sensor::print(std::ostream &out, std::string indent) const
     {
-	fprintf(out, "%sSensor:\n", indent.c_str());
-	fprintf(out, "%s  - type: %d\n", indent.c_str(), (int)type);
-	fprintf(out, "%s  - calibration: %s\n", indent.c_str(), calibration.c_str());
+	out << indent << "Sensor:" << std::endl;
+	out << indent << "  - type: " << type << std::endl;
+	out << indent << "  - calibration: " << calibration << std::endl;
 	Link::print(out, indent + "  ");
     }
     
@@ -776,10 +778,15 @@ namespace robot_desc {
     {
 	if (node && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 	    node = node->FirstChild();
+	if (node && node->Type() == TiXmlNode::TEXT)
+	    return loadDoubleValues(node->ValueStr(), count, vals, node);
 	else
 	    return 0;
-	
-	std::stringstream ss(node->ValueStr());
+    }
+    
+    unsigned int URDF::loadDoubleValues(const std::string &data, unsigned int count, double *vals, const TiXmlNode *node)
+    {
+	std::stringstream ss(data);
 	unsigned int read = 0;
 	
 	for (unsigned int i = 0 ; ss.good() && i < count ; ++i)
@@ -805,14 +812,14 @@ namespace robot_desc {
 	    }
 	    if (!extra.empty())
 	    {
-		fprintf(stderr, "More data available (%u read, rest is ignored): '%s'\n", read, node->Value());		
+		fprintf(stderr, "More data available (%u read, rest is ignored): '%s'\n", read, data.c_str());		
 		errorLocation(node);
 	    }	    
 	}
 	
 	if (read != count)
 	{
-	    fprintf(stderr, "Not all values were read: '%s'\n", node->Value());
+	    fprintf(stderr, "Not all values were read: '%s'\n", data.c_str());
 	    errorLocation(node);
 	}  
 	
@@ -823,10 +830,15 @@ namespace robot_desc {
     {
 	if (node && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 	    node = node->FirstChild();
+	if (node && node->Type() == TiXmlNode::TEXT)
+	    return loadBoolValues(node->ValueStr(), count, vals, node);
 	else
 	    return 0;
-	
-	std::stringstream ss(node->ValueStr());
+    }
+    
+    unsigned int URDF::loadBoolValues(const std::string& data, unsigned int count, bool *vals, const TiXmlNode *node)
+    {
+	std::stringstream ss(data);
 	unsigned int read = 0;
 	
 	for (unsigned int i = 0 ; ss.good() && i < count ; ++i)
@@ -834,7 +846,7 @@ namespace robot_desc {
 	    std::string value;
 	    ss >> value;
 	    const unsigned int length = value.length();
-	    for(unsigned int j = 0 ; j != length ; ++j)
+	    for(unsigned int j = 0 ; j < length ; ++j)
 		value[j] = std::tolower(value[j]);        
 	    vals[i] = (value == "true" || value == "yes" || value == "1");
 	    read++;
@@ -853,14 +865,14 @@ namespace robot_desc {
 	    }
 	    if (!extra.empty())
 	    {
-		fprintf(stderr, "More data available (%u read, rest is ignored): '%s'\n", read, node->Value());		
+		fprintf(stderr, "More data available (%u read, rest is ignored): '%s'\n", read, data.c_str());		
 		errorLocation(node);
 	    }	    
 	}
 	
 	if (read != count)
 	{
-	    fprintf(stderr, "Not all values were read: '%s'\n", node->Value());
+	    fprintf(stderr, "Not all values were read: '%s'\n", data.c_str());
 	    errorLocation(node);  
 	}
 	
@@ -1057,7 +1069,17 @@ namespace robot_desc {
 		{
 		    loadDoubleValues(node, 2, joint->limit);
 		    MARK_SET(node, joint, limit);
-		}		
+		}
+		else if (node->ValueStr() == "effortLimit" && !free)
+		{
+		    loadDoubleValues(node, 1, &joint->effortLimit);
+		    MARK_SET(node, joint, effortLimit);
+		}
+		else if (node->ValueStr() == "velocityLimit")
+		{
+		    loadDoubleValues(node, 1, &joint->velocityLimit);
+		    MARK_SET(node, joint, velocityLimit);
+		}
 		else if (node->ValueStr() == "calibration" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 		{
 		    joint->calibration = node->FirstChild()->ValueStr();
@@ -1522,6 +1544,35 @@ namespace robot_desc {
 	m_location = currentLocation;  
     }
     
+    void URDF::replaceIncludes(TiXmlElement *elem)
+    {
+        if (elem->ValueStr() == "include" && elem->FirstChild() && elem->FirstChild()->Type() == TiXmlNode::TEXT)
+        {
+            char* filename = findFile(elem->FirstChild()->Value());
+            if (filename)
+            {
+                TiXmlDocument *doc = new TiXmlDocument(filename);
+                if (doc->LoadFile())
+                {
+                    addPath(filename);
+                    TiXmlNode *parent = elem->Parent();
+                    if (parent)
+                        parent->ReplaceChild(dynamic_cast<TiXmlNode*>(elem), *doc->RootElement()->Clone());
+                }
+                else
+                    fprintf(stderr, "Unable to load %s\n", filename);
+                delete doc;
+                free(filename);
+            }
+            else
+                fprintf(stderr, "Unable to find %s\n", elem->FirstChild()->Value());        
+        }
+	
+        for (TiXmlNode *child = elem->FirstChild() ; child ; child = child->NextSibling())
+            if (child->Type() == TiXmlNode::ELEMENT)
+                replaceIncludes(child->ToElement());
+    }
+
     void URDF::loadData(const TiXmlNode *node, Data *data)
     {
 	std::string name;
@@ -1536,7 +1587,7 @@ namespace robot_desc {
 		    type = attr->ValueStr();
 	}
 	
-	for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())	    
+	for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
 	    if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "elem")
 	    {
 		std::string key;
@@ -1554,11 +1605,16 @@ namespace robot_desc {
 	    else if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "verbatim")
 	    {
 		std::string key;
+		bool includes = false;
 		for (const TiXmlAttribute *attr = child->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
 		{
 		    if (strcmp(attr->Name(), "key") == 0)
 			key = attr->ValueStr();
+		    if (strcmp(attr->Name(), "includes") == 0)
+			loadBoolValues(attr->ValueStr(), 1, &includes, child);
 		}
+		if (includes)
+		    replaceIncludes(const_cast<TiXmlElement*>(child->ToElement()));
 		data->add(type, name, key, child->ToElement());
 	    }
 	    else
