@@ -37,7 +37,7 @@
 
 TEST(SpherePointContainment, SimpleInside)
 {
-    collision_space::Object* sphere = new collision_space::Sphere();
+    collision_space::bodies::Object* sphere = new collision_space::bodies::Sphere();
     double dims = 1.0;    
     sphere->setDimensions(&dims);    
     sphere->setScale(1.05);
@@ -48,7 +48,7 @@ TEST(SpherePointContainment, SimpleInside)
 
 TEST(SpherePointContainment, SimpleOutside)
 {
-    collision_space::Object* sphere = new collision_space::Sphere();
+    collision_space::bodies::Object* sphere = new collision_space::bodies::Sphere();
     double dims = 1.0;    
     sphere->setDimensions(&dims);    
     sphere->setScale(0.95);
@@ -59,7 +59,7 @@ TEST(SpherePointContainment, SimpleOutside)
 
 TEST(SpherePointContainment, ComplexInside)
 {
-    collision_space::Object* sphere = new collision_space::Sphere();
+    collision_space::bodies::Object* sphere = new collision_space::bodies::Sphere();
     double dims = 1.0;
     sphere->setDimensions(&dims);
     sphere->setScale(0.95);
@@ -73,7 +73,7 @@ TEST(SpherePointContainment, ComplexInside)
 
 TEST(SpherePointContainment, ComplexOutside)
 {
-    collision_space::Object* sphere = new collision_space::Sphere();
+    collision_space::bodies::Object* sphere = new collision_space::bodies::Sphere();
     double dims = 1.0;
     sphere->setDimensions(&dims);
     sphere->setScale(0.95);
@@ -88,7 +88,7 @@ TEST(SpherePointContainment, ComplexOutside)
 
 TEST(BoxPointContainment, SimpleInside)
 {
-    collision_space::Object* box = new collision_space::Box();
+    collision_space::bodies::Object* box = new collision_space::bodies::Box();
     double dims[3] = {1.0, 2.0, 3.0};    
     box->setDimensions(dims);
     box->setScale(0.95);
@@ -100,7 +100,7 @@ TEST(BoxPointContainment, SimpleInside)
 
 TEST(BoxPointContainment, SimpleOutside)
 {
-    collision_space::Object* box = new collision_space::Box();
+    collision_space::bodies::Object* box = new collision_space::bodies::Box();
     double dims[3] = {1.0, 2.0, 3.0};    
     box->setDimensions(dims);
     box->setScale(0.95);
@@ -112,7 +112,7 @@ TEST(BoxPointContainment, SimpleOutside)
 
 TEST(BoxPointContainment, ComplexInside)
 {
-    collision_space::Object* box = new collision_space::Box();
+    collision_space::bodies::Object* box = new collision_space::bodies::Box();
     double dims[3] = {1.0, 1.0, 1.0};    
     box->setDimensions(dims);
     box->setScale(1.01);
@@ -128,7 +128,7 @@ TEST(BoxPointContainment, ComplexInside)
 
 TEST(BoxPointContainment, ComplexOutside)
 {
-    collision_space::Object* box = new collision_space::Box();
+    collision_space::bodies::Object* box = new collision_space::bodies::Box();
     double dims[3] = {1.0, 1.0, 1.0};    
     box->setDimensions(dims);
     box->setScale(1.01);
@@ -144,7 +144,7 @@ TEST(BoxPointContainment, ComplexOutside)
 
 TEST(CylinderPointContainment, SimpleInside)
 {
-    collision_space::Object* cylinder = new collision_space::Cylinder();
+    collision_space::bodies::Object* cylinder = new collision_space::bodies::Cylinder();
     double dims[3] = {4.0, 1.0};    
     cylinder->setDimensions(dims);
     cylinder->setScale(1.05);
@@ -156,7 +156,7 @@ TEST(CylinderPointContainment, SimpleInside)
 
 TEST(CylinderPointContainment, SimpleOutside)
 {
-    collision_space::Object* cylinder = new collision_space::Cylinder();
+    collision_space::bodies::Object* cylinder = new collision_space::bodies::Cylinder();
     double dims[3] = {4.0, 1.0};    
     cylinder->setDimensions(dims);
     cylinder->setScale(0.95);
