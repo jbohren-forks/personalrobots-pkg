@@ -149,9 +149,32 @@
     <motorTorqueConstant>1</motorTorqueConstant>
     <pulsesPerRevolution>90000</pulsesPerRevolution>
   </transmission>
-  <transmission type="SimpleTransmission" name="gripper_left_trans">
+
+  <!--  fingers share a single motor -->
+  <transmission type="SimpleTransmission" name="finger_l_left_trans">
     <actuator name="gripper_left_motor" />
-    <joint name="gripper_left_joint" />
+    <joint name="finger_l_left_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+  <transmission type="SimpleTransmission" name="finger_r_left_trans">
+    <actuator name="gripper_left_motor" />
+    <joint name="finger_r_left_joint" />
+    <mechanicalReduction>-1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+  <transmission type="SimpleTransmission" name="finger_tip_l_left_trans">
+    <actuator name="gripper_left_motor" />
+    <joint name="finger_tip_l_left_joint" />
+    <mechanicalReduction>-1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+  <transmission type="SimpleTransmission" name="finger_tip_r_left_trans">
+    <actuator name="gripper_left_motor" />
+    <joint name="finger_tip_r_left_joint" />
     <mechanicalReduction>1</mechanicalReduction>
     <motorTorqueConstant>1</motorTorqueConstant>
     <pulsesPerRevolution>90000</pulsesPerRevolution>
@@ -214,9 +237,32 @@
     <motorTorqueConstant>1</motorTorqueConstant>
     <pulsesPerRevolution>90000</pulsesPerRevolution>
   </transmission>
-  <transmission type="SimpleTransmission" name="gripper_right_trans">
+
+  <!--  fingers share a single motor -->
+  <transmission type="SimpleTransmission" name="finger_l_right_trans">
     <actuator name="gripper_right_motor" />
-    <joint name="gripper_right_joint" />
+    <joint name="finger_l_right_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+  <transmission type="SimpleTransmission" name="finger_r_right_trans">
+    <actuator name="gripper_right_motor" />
+    <joint name="finger_r_right_joint" />
+    <mechanicalReduction>-1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+  <transmission type="SimpleTransmission" name="finger_tip_l_right_trans">
+    <actuator name="gripper_right_motor" />
+    <joint name="finger_tip_l_right_joint" />
+    <mechanicalReduction>-1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+  <transmission type="SimpleTransmission" name="finger_tip_r_right_trans">
+    <actuator name="gripper_right_motor" />
+    <joint name="finger_tip_r_right_joint" />
     <mechanicalReduction>1</mechanicalReduction>
     <motorTorqueConstant>1</motorTorqueConstant>
     <pulsesPerRevolution>90000</pulsesPerRevolution>
