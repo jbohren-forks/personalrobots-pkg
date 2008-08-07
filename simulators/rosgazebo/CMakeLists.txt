@@ -15,4 +15,4 @@ rospack_add_executable(rosgazebowriter src/rosgazebowriter.cc)
 target_link_libraries(rosgazebowriter RosGazeboNode)
 
 
-rospack_add_executable(poshack test/poshack.cpp)
+rospack_add_executable(groundtruthtransform test/groundtruthtransform.cpp)
