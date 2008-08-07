@@ -58,15 +58,16 @@ class TestNameLookup(unittest.TestCase):
         s = rospy.ServiceProxy('/nameToNumber', NameToNumber)
 
         ## \todo change this to a random string generator
-        alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/1234567890'
-        min_length = 1
-        max_length = 50
-        num_tests = 1000
+        alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890/_:-!@#$%^&*()+=\[]{}|~`\';><,.?""'
+        min_length = 0
+        max_length = 100
+        num_tests = 10000
         tests = []
         for count in xrange(1,num_tests):
             astring = ''
-            for x in random.sample(alphabet, random.randint(min_length, max_length)):
-                astring += x
+            for x in xrange(random.randint(min_length, max_length)):
+                alist = random.sample(alphabet, 1);
+                astring += alist[0]
             tests.append(astring)
 ##            print tests
             
