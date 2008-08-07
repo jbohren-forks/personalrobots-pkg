@@ -1,0 +1,14 @@
+<package>
+  <description brief="Miscellaneous Utilities">
+
+    General utility classes.
+
+  </description>
+  <author>Stuart Glaser &lt;sglaser@willowgarage.com&gt;</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <export>
+    <cpp cflags="-I${prefix}/include" />
+  </export>
+</package>
+
