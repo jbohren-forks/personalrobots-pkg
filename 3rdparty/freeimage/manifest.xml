@@ -13,5 +13,6 @@ FreeImage is an Open Source library project for developers who would like to sup
   <cpp cflags="-I${prefix}/freeimage/include" lflags="-Wl,-rpath,${prefix}/freeimage/lib -L${prefix}/freeimage/lib -lfreeimage"/>
         <doxymaker external="http://freeimage.sourceforge.net"/>
 </export>
+<sysdepend os="ubuntu" version="8.04-hardy" package="unzip"/>
 </package>
 
