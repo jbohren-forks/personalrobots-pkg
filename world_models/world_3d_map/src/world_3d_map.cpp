@@ -87,6 +87,7 @@ Provides (name/type):
 #include <rosthread/member_thread.h>
 #include <rosthread/mutex.h>
 #include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/LaserScan.h>
 #include <rostools/Log.h>
 
@@ -112,14 +113,10 @@ public:
 	advertise<PointCloudFloat32>("world_3d_map");
 	advertise<rostools::Log>("roserr");
 
-	subscribe("tilt_scan", m_inputScan, &World3DMap::pointCloudCallback);
-	
 	param("world_3d_map/max_publish_frequency", m_maxPublishFrequency, 0.5);
 	param("world_3d_map/retain_pointcloud_duration", m_retainPointcloudDuration, 60.0);
 	param("world_3d_map/retain_pointcloud_fraction", m_retainPointcloudFraction, 0.02);
 	param("world_3d_map/verbosity_level", m_verbose, 1);
-	
-	m_verbose = 0;
 	
 	loadRobotDescriptions();
 	
@@ -129,11 +126,15 @@ public:
 	m_working = false;
 	m_shouldPublish = false;
 	random_utils::init(&m_rng);
+	m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
 	
 	m_processMutex.lock();
 	m_publishMutex.lock();
 	m_processingThread = startMemberFunctionThread<World3DMap>(this, &World3DMap::processDataThread);
 	m_publishingThread = startMemberFunctionThread<World3DMap>(this, &World3DMap::publishDataThread);
+
+	subscribe("tilt_scan", m_inputScan, &World3DMap::pointCloudCallback);
+	subscribe("localizedpose", m_localizedPose, &World3DMap::localizedPoseCallback);
     }
     
     ~World3DMap(void)
@@ -147,21 +148,13 @@ public:
 	for (unsigned int i = 0 ; i < m_currentWorld.size() ; ++i)
 	    delete m_currentWorld[i];
 
+	for (unsigned int i = 0 ; i < m_selfSeeParts.size() ; ++i)
+	    delete m_selfSeeParts[i].body;
+
 	for (unsigned int i = 0 ; i < m_robotDescriptions.size() ; ++i)
 	{
 	    delete m_robotDescriptions[i].urdf;
 	    delete m_robotDescriptions[i].kmodel;
-	}	
-    }
-    
-    void loadRobotDescriptions(void)
-    {
-	std::string model;
-	if (get_param("world_3d_map/robot_model", model))
-	{
-	    std::string content;
-	    if (get_param(model, content))
-		addRobotDescriptionFromData(content.c_str());
 	}
     }
     
@@ -182,6 +175,46 @@ public:
 	
 	RobotDesc rd = { file, kmodel };
 	m_robotDescriptions.push_back(rd);
+	addSelfSeeBodies(rd);
+    }
+  
+private:
+    
+    struct RobotDesc
+    {
+	robot_desc::URDF                *urdf;
+	planning_models::KinematicModel *kmodel;	
+    };    
+    
+    struct RobotPart
+    {
+	collision_space::bodies::Object       *body;
+	planning_models::KinematicModel::Link *link;	
+    };
+  
+    void loadRobotDescriptions(void)
+    {
+	std::string model;
+	if (get_param("world_3d_map/robot_model", model))
+	{
+	    std::string content;
+	    if (get_param(model, content))
+		addRobotDescriptionFromData(content.c_str());
+	}
+    }
+    
+    void localizedPoseCallback(void)
+    {
+	m_basePos[0] = m_localizedPose.pos.x;
+	m_basePos[1] = m_localizedPose.pos.y;
+	m_basePos[2] = m_localizedPose.pos.th;
+	
+	if (m_robotDescriptions.size() == 1)
+	{
+	    int group = m_robotDescriptions[0].kmodel->getGroupID(m_robotDescriptions[0].urdf->getRobotName() + "::base");
+	    if (group >= 0)
+		m_robotDescriptions[0].kmodel->computeTransforms(m_basePos, group);
+	}
     }
     
     void pointCloudCallback(void)
@@ -311,30 +344,49 @@ public:
 	delete d;
     }
     
-    /* Remove invalid floating point values and strip channel iformation.
-     * Also keep a certain ratio of the cloud information only */
-    PointCloudFloat32* filter0(const PointCloudFloat32 &cloud, double frac = 1.0)
+    void addSelfSeeBodies(const RobotDesc &rd)
     {
-	PointCloudFloat32 *copy = new PointCloudFloat32();
-	copy->header = cloud.header;
-
-	unsigned int n = cloud.get_pts_size();
-	unsigned int j = 0;
-	copy->set_pts_size(n);	
-	for (unsigned int k = 0 ; k < n ; ++k)
-	    if (random_utils::uniform(&m_rng, 0.0, 1.0) < frac)
-		if (isfinite(cloud.pts[k].x) && isfinite(cloud.pts[k].y) && isfinite(cloud.pts[k].z))
-		    copy->pts[j++] = cloud.pts[k];
-	copy->set_pts_size(j);
-
-	return copy;	
-    }
-    
-    PointCloudFloat32* runFilters(const PointCloudFloat32 &cloud)
-    {
-	PointCloudFloat32 *cloud0 = filter0(cloud, m_retainPointcloudFraction);
+	robot_desc::URDF::Group *ss = rd.urdf->getGroup("self_see");
+	if (ss)
+	{
+	    for (unsigned int i = 0 ; i < ss->linkNames.size() ; ++i)
+	    {
+		planning_models::KinematicModel::Link *link = rd.kmodel->getLink(ss->linkNames[i]);
+		if (link)
+		{
+		    RobotPart rp = { NULL, link };    
+		    
+		    switch (link->geom->type)
+		    {
+		    case planning_models::KinematicModel::Geometry::BOX:
+			rp.body = new collision_space::bodies::Box();
+			break;			
+		    case planning_models::KinematicModel::Geometry::SPHERE:
+			rp.body = new collision_space::bodies::Sphere();
+			break;
+		    case planning_models::KinematicModel::Geometry::CYLINDER:
+			rp.body = new collision_space::bodies::Cylinder();
+			break;
+		    default:
+			break;
+		    }
+		    
+		    if (!rp.body)
+		    {
+			fprintf(stderr, "Unknown body type: %d\n", link->geom->type);
+			continue;
+		    }
+		    
+		    rp.body->setDimensions(link->geom->size);
+		    rp.body->setScale(1.25);
+		    
+		    m_selfSeeParts.push_back(rp);
+		}
+	    }
+	}
 	
-	return cloud0;
+	if (m_verbose)
+	    printf("Ignoring point cloud data that intersects with %d robot parts\n", m_selfSeeParts.size());
     }
     
     void processData(void)
@@ -367,32 +419,93 @@ public:
 	
     }
     
-private:
-    
-    struct RobotDesc
+    PointCloudFloat32* runFilters(const PointCloudFloat32 &cloud)
     {
-	robot_desc::URDF                *urdf;
-	planning_models::KinematicModel *kmodel;	
-    };    
+	PointCloudFloat32 *cloudF = filter0(cloud, m_retainPointcloudFraction);
+	
+	if (cloudF)
+	{
+	    PointCloudFloat32 *temp = filter1(*cloudF);
+	    delete cloudF;
+	    cloudF = temp;
+	}
+	
+	return cloudF;
+    }
     
+    /* Remove invalid floating point values and strip channel iformation.
+     * Also keep a certain ratio of the cloud information only */
+    PointCloudFloat32* filter0(const PointCloudFloat32 &cloud, double frac = 1.0)
+    {
+	PointCloudFloat32 *copy = new PointCloudFloat32();
+	copy->header = cloud.header;
+
+	unsigned int n = cloud.get_pts_size();
+	unsigned int j = 0;
+	copy->set_pts_size(n);	
+	for (unsigned int k = 0 ; k < n ; ++k)
+	    if (random_utils::uniform(&m_rng, 0.0, 1.0) < frac)
+		if (isfinite(cloud.pts[k].x) && isfinite(cloud.pts[k].y) && isfinite(cloud.pts[k].z))
+		    copy->pts[j++] = cloud.pts[k];
+	copy->set_pts_size(j);
+
+	return copy;	
+    }    
+    
+    PointCloudFloat32* filter1(const PointCloudFloat32 &cloud)
+    {
+	PointCloudFloat32 *copy = new PointCloudFloat32();
+	copy->header = cloud.header;
+	
+	for (int i = m_selfSeeParts.size() - 1 ; i >= 0 ; --i)
+	    m_selfSeeParts[i].body->setPose(m_selfSeeParts[i].link->globalTrans);
+
+	unsigned int n = cloud.get_pts_size();
+	unsigned int j = 0;
+	copy->set_pts_size(n);	
+	for (unsigned int k = 0 ; k < n ; ++k)
+	{
+	    double x = cloud.pts[k].x;
+	    double y = cloud.pts[k].y;
+	    double z = cloud.pts[k].z;
+	    
+	    bool keep = true;
+	    for (int i = m_selfSeeParts.size() - 1 ; keep && i >= 0 ; --i)
+		keep = !m_selfSeeParts[i].body->containsPoint(x, y, z);
+	    
+	    if (keep)
+		copy->pts[j++] = cloud.pts[k];	    
+	}
+	printf("Discarded %d points\n", n - j);
+	
+	copy->set_pts_size(j);
+
+	return copy;
+    }
+    
+    rosTFClient                    m_tf;
+    random_utils::rngState         m_rng;    
+
     std::vector<RobotDesc>         m_robotDescriptions;
+    std::vector<RobotPart>         m_selfSeeParts;
+    
+    double                         m_maxPublishFrequency;
+    double                         m_retainPointcloudDuration;
+    double                         m_retainPointcloudFraction;    
+    int                            m_verbose;
     
     LaserScan                      m_inputScan; //Buffer for recieving cloud
     PointCloudFloat32              m_toProcess; //Buffer (size 1) for incoming cloud
+    std_msgs::RobotBase2DOdom      m_localizedPose;
+
     std::deque<PointCloudFloat32*> m_currentWorld;// Pointers to saved clouds
-    rosTFClient                    m_tf;
-
-    double             m_maxPublishFrequency;
-    double             m_retainPointcloudDuration;
-    double             m_retainPointcloudFraction;    
-    int                m_verbose;
+    double                         m_basePos[3];
     
-    pthread_t         *m_processingThread;
-    pthread_t         *m_publishingThread;
-    ros::thread::mutex m_processMutex, m_publishMutex, m_worldDataMutex, m_flagMutex;
-    bool               m_active, m_working, m_shouldPublish;
+    pthread_t                     *m_processingThread;
+    pthread_t                     *m_publishingThread;
+    ros::thread::mutex             m_processMutex, m_publishMutex, m_worldDataMutex, m_flagMutex;
+    bool                           m_active, m_working, m_shouldPublish;
 
-    random_utils::rngState m_rng;    
 };
 
 
