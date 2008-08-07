@@ -62,11 +62,6 @@ Publishes to (name / type):
 - @b "localizedpose"/RobotBase2DOdom : robot's localized map pose.  Only the position information is set (no velocity).
 - @b "particlecloud"/ParticleCloud2D : the set of particles being maintained by the filter.
 
-@todo Start using libTF for transform management:
-  - remove the manual interpolation of poses to attach to laser scans
-  - add the ability to set the laser's pose relative to the robot (currently assumed to be 0,0,0).
-  - publish map->odom transform, instead of map pose
-
 <hr>
 
 @section parameters ROS parameters
