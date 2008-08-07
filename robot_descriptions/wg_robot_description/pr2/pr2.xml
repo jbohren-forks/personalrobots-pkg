@@ -253,6 +253,8 @@
       <axis> 0 0 1 </axis> <!-- direction of the joint in the local coordinate frame -->
       <anchor>0 0 0</anchor> <!-- point on the joint relative to the local coordinate frame -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </define>
 
     <define template="pr2_wheel_left_visual">
@@ -298,6 +300,8 @@
     <define template="pr2_wheel_joint" type="revolute"> 
       <axis> 0 1 0 </axis> <!-- direction of the joint in the local coordinate frame -->
       <anchor>0 0 0</anchor> <!-- point on the joint relative to the local coordinate frame -->
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
     </define>
 
@@ -305,6 +309,8 @@
       <axis> 0 0 1 </axis> <!-- direction of the joint in a global coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit> shoulder_pan_min_limit shoulder_pan_max_limit </limit>
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
     </define>
 
@@ -336,6 +342,8 @@
       <axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit> shoulder_pitch_min_limit shoulder_pitch_max_limit </limit>
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
     </define>
 
@@ -368,6 +376,8 @@
       <axis> 1 0 0 </axis> <!-- direction of the joint in a global coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit> -2.3562 2.3562 </limit>
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
     </define>
 
@@ -399,6 +409,8 @@
       <axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit>  elbow_flex_min_limit elbow_flex_max_limit  </limit>
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
     </define>
 
@@ -430,6 +442,8 @@
     <define template="pr2_forearm_roll_joint" type="revolute">
       <axis> 1 0 0 </axis> <!-- direction of the joint in a global coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
     </define>
 
@@ -461,6 +475,8 @@
     <define template="pr2_wrist_flex_joint" type="revolute">
       <axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
       <limit> wrist_flex_min_limit wrist_flex_max_limit </limit>
     </define>
@@ -494,6 +510,8 @@
     <define template="pr2_gripper_roll_joint" type="revolute">
       <axis> 1 0 0 </axis> <!-- direction of the joint in a global coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
     </define>
 
@@ -527,6 +545,8 @@
     <define template="pr2_finger_l_joint" type="revolute">
       <axis> 0 0 1 </axis> <!-- direction of the joint in a global coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
     </define>
 
@@ -560,6 +580,8 @@
     <define template="pr2_finger_tip_l_joint" type="revolute">
       <axis> 0 0 1 </axis> <!-- direction of the joint in a global coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
     </define>
 
@@ -855,6 +877,8 @@
       <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit> 0.0 torso_max_travel_range </limit> <!-- 0 for min range since home position is at bottom -->
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
@@ -1182,6 +1206,8 @@
       <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit> head_pan_min_limit head_pan_max_limit </limit>
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
@@ -1221,6 +1247,8 @@
       <axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit> head_tilt_min_limit head_tilt_max_limit </limit>
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
@@ -1262,6 +1290,8 @@
     <joint type="revolute"> 
       <axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0</anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
@@ -1329,6 +1359,8 @@
       <axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0</anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit>0.0 0.0</limit>
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
@@ -1396,6 +1428,8 @@
       <axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0</anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit>0.0 0.0</limit>
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
@@ -1459,6 +1493,8 @@
       <axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0</anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit>0.0 0.0</limit>
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
@@ -1522,6 +1558,8 @@
       <axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0</anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit>0.0 0.0</limit>
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
@@ -1579,6 +1617,8 @@
       <axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0</anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit>0.0 0.0</limit>
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
@@ -1635,6 +1675,8 @@
       <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit> ptz_pan_min_limit ptz_pan_max_limit </limit>
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
@@ -1672,6 +1714,8 @@
       <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit> ptz_tilt_min_limit ptz_tilt_max_limit </limit>
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
@@ -1727,6 +1771,8 @@
       <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit> ptz_pan_min_limit ptz_pan_max_limit </limit>
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
@@ -1764,6 +1810,8 @@
       <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit> ptz_tilt_min_limit ptz_tilt_max_limit </limit>
+      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
