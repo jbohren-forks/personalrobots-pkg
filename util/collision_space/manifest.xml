@@ -7,7 +7,7 @@
   <license>BSD</license>
 
   <depend package="rosthread"/>
-  <depend package="robot_motion_planning_models"/>
+  <depend package="planning_models"/>
   <depend package="opende"/>
   <depend package="gtest"/>
 
