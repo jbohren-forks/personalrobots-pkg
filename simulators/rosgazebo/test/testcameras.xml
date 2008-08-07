@@ -1,0 +1,5 @@
+<launch>
+  <master start="auto" />
+  <node pkg="rosgazebo" type="gazebowrapper" args="testcameraframes $(find gazebo_robot_description)/world/testcameras.world" />
+  <test test-name="rosgazebo_testcameras" pkg="rosgazebo" type="testcameras.py" />
+</launch>

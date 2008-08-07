@@ -1,0 +1,7 @@
+<launch>
+  <master start="auto" />
+  <node pkg="rosgazebo" type="gazebowrapper" args="testcameraframes $(find gazebo_robot_description)/world/testpointcloud.world" />
+  <node pkg="namelookup" type="namelookup_server" respawn="true"/>
+  <node pkg="pr2_gazebo" type="run-pr2_gazebo.sh" args="" respawn="true" />
+  <test test-name="rosgazebo_testpointclouds" pkg="rosgazebo" type="testpointclouds.py" />
+</launch>

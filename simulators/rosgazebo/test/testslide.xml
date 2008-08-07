@@ -1,0 +1,8 @@
+<launch>
+  <master start="auto" />
+  <node pkg="namelookup" type="namelookup_server" respawn="true"/>
+  <node pkg="rosgazebo" type="run-gazebo.sh" args="$(find gazebo_robot_description)/world/testslide.world" respawn="false" />
+  <node pkg="rosgazebo" type="poshack" args="" respawn="true" />
+  <node pkg="pr2_gazebo" type="run-pr2_gazebo.sh" args="" respawn="true" />
+  <test test-name="rosgazebo_testslide" pkg="rosgazebo" type="testslide.py" />
+</launch>
