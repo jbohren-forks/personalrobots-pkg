@@ -89,17 +89,17 @@ void EnvironmentROBARM::PrintHashTableHist()
 
 	for(int  j = 0; j < EnvROBARM.HashTableSize; j++)
 	{
-		if(EnvROBARM.Coord2StateIDHashTable[j].size() == 0)
+		if((int)EnvROBARM.Coord2StateIDHashTable[j].size() == 0)
 			s0++;
-		else if(EnvROBARM.Coord2StateIDHashTable[j].size() < 50)
+		else if((int)EnvROBARM.Coord2StateIDHashTable[j].size() < 50)
 			s1++;
-		else if(EnvROBARM.Coord2StateIDHashTable[j].size() < 100)
+		else if((int)EnvROBARM.Coord2StateIDHashTable[j].size() < 100)
 			s50++;
-		else if(EnvROBARM.Coord2StateIDHashTable[j].size() < 200)
+		else if((int)EnvROBARM.Coord2StateIDHashTable[j].size() < 200)
 			s100++;
-		else if(EnvROBARM.Coord2StateIDHashTable[j].size() < 300)
+		else if((int)EnvROBARM.Coord2StateIDHashTable[j].size() < 300)
 			s200++;
-		else if(EnvROBARM.Coord2StateIDHashTable[j].size() < 400)
+		else if((int)EnvROBARM.Coord2StateIDHashTable[j].size() < 400)
 			s300++;
 		else
 			slarge++;
@@ -122,7 +122,7 @@ EnvROBARMHashEntry_t* EnvironmentROBARM::GetHashEntry(short unsigned int* coord,
 	int binid = GETHASHBIN(coord, numofcoord);
 	
 #if DEBUG
-	if (EnvROBARM.Coord2StateIDHashTable[binid].size() > 500)
+	if ((int)EnvROBARM.Coord2StateIDHashTable[binid].size() > 500)
 	{
 		printf("WARNING: Hash table has a bin %d (coord0=%d) of size %d\n", 
 			binid, coord[0], EnvROBARM.Coord2StateIDHashTable[binid].size());
@@ -132,7 +132,7 @@ EnvROBARMHashEntry_t* EnvironmentROBARM::GetHashEntry(short unsigned int* coord,
 #endif
 
 	//iterate over the states in the bin and select the perfect match
-	for(int ind = 0; ind < EnvROBARM.Coord2StateIDHashTable[binid].size(); ind++)
+	for(int ind = 0; ind < (int)EnvROBARM.Coord2StateIDHashTable[binid].size(); ind++)
 	{
         int j = 0;
         for(j = 0; j < numofcoord; j++)
@@ -187,7 +187,7 @@ EnvROBARMHashEntry_t* EnvironmentROBARM::CreateNewHashEntry(short unsigned int* 
 		StateID2IndexMapping[HashEntry->stateID][i] = -1;
 	}
 
-	if(HashEntry->stateID != StateID2IndexMapping.size()-1)
+	if(HashEntry->stateID != (int)StateID2IndexMapping.size()-1)
 	{
 		printf("ERROR in Env... function: last state has incorrect stateID\n");
 		exit(1);	
@@ -327,7 +327,7 @@ void EnvironmentROBARM::Search2DwithQueue(State2D** statespace, int* HeurGrid, i
 	Queue.push(&statespace[searchstartx][searchstarty]);
 
 	//expand all of the states
-	while(Queue.size() > 0)
+	while((int)Queue.size() > 0)
 	{
 		
 		//get the state to expand
@@ -436,7 +436,7 @@ void EnvironmentROBARM::ComputeHeuristicValues()
 	        //perform the search for pathcosts to x,y and store values in Heur[hind]
 	        Search2DwithQueue(statespace2D, &EnvROBARM.Heur[hind][0], x, y);               
         }
-        printf("h for %d computed\n", x);
+        //printf("h for %d computed\n", x);
     }
 	Delete2DStateSpace(&statespace2D);	
 
@@ -830,11 +830,11 @@ void EnvironmentROBARM::ContXY2Cell(double x, double y, short unsigned int* pX, 
 {
 	//take the nearest cell
 	*pX = (int)(x/EnvROBARMCfg.GridCellWidth);
-	if( *pX < 0) *pX = 0;
+	if( x < 0) *pX = 0;
 	if( *pX >= EnvROBARMCfg.EnvWidth_c) *pX = EnvROBARMCfg.EnvWidth_c-1;
 
 	*pY = (int)(y/EnvROBARMCfg.GridCellWidth);
-	if( *pY < 0) *pY = 0;
+	if( y < 0) *pY = 0;
 	if( *pY >= EnvROBARMCfg.EnvHeight_c) *pY = EnvROBARMCfg.EnvHeight_c-1;
 }
 
@@ -1056,8 +1056,9 @@ bool EnvironmentROBARM::InitializeEnvironment()
 	EnvROBARM.goalHashEntry = CreateNewHashEntry(coord, NUMOFLINKS, EnvROBARMCfg.EndEffGoalX_c, EnvROBARMCfg.EndEffGoalY_c);
 
 	//check the validity of both goal and start configurations
-	if(!IsValidCoord(EnvROBARM.startHashEntry->coord) || EnvROBARMCfg.EndEffGoalX_c < 0 || EnvROBARMCfg.EndEffGoalX_c >= EnvROBARMCfg.EnvWidth_c ||
-        EnvROBARMCfg.EndEffGoalX_c < 0 || EnvROBARMCfg.EndEffGoalX_c >= EnvROBARMCfg.EnvWidth_c)
+    //testing for EnvROBARMCfg.EndEffGoalX_c < 0  and EnvROBARMCfg.EndEffGoalY_c < 0 is useless since they are unsigned 
+	if(!IsValidCoord(EnvROBARM.startHashEntry->coord) || EnvROBARMCfg.EndEffGoalX_c >= EnvROBARMCfg.EnvWidth_c ||
+        EnvROBARMCfg.EndEffGoalY_c >= EnvROBARMCfg.EnvHeight_c)
     {
         printf("Either start or goal configuration is invalid\n");
         return false;
@@ -1119,13 +1120,13 @@ int EnvironmentROBARM::GetFromToHeuristic(int FromStateID, int ToStateID)
 
 
 #if DEBUG
-	if(FromStateID >= EnvROBARM.StateID2CoordTable.size() 
-		|| ToStateID >= EnvROBARM.StateID2CoordTable.size())
+	if(FromStateID >= (int)EnvROBARM.StateID2CoordTable.size() 
+		|| ToStateID >= (int)EnvROBARM.StateID2CoordTable.size())
     {
 		printf("ERROR in EnvROBARM... function: stateID illegal\n");
 		exit(1);
 	}
-#endif;
+#endif
 
 	//get X, Y for the state
 	EnvROBARMHashEntry_t* FromHashEntry = EnvROBARM.StateID2CoordTable[FromStateID];
@@ -1161,7 +1162,7 @@ int EnvironmentROBARM::GetGoalHeuristic(int stateID)
 #endif
 
 #if DEBUG
-	if(stateID >= EnvROBARM.StateID2CoordTable.size())
+	if(stateID >= (int)EnvROBARM.StateID2CoordTable.size())
 	{
 		printf("ERROR in EnvROBARM... function: stateID illegal\n");
 		exit(1);
@@ -1183,7 +1184,7 @@ int EnvironmentROBARM::GetStartHeuristic(int stateID)
 
 
 #if DEBUG
-	if(stateID >= EnvROBARM.StateID2CoordTable.size())
+	if(stateID >= (int)EnvROBARM.StateID2CoordTable.size())
 	{
 		printf("ERROR in EnvROBARM... function: stateID illegal\n");
 		exit(1);
@@ -1221,7 +1222,7 @@ void EnvironmentROBARM::PrintState(int stateID, bool bVerbose, FILE* fOut /*=NUL
 	bool bLocal = false;
 
 #if DEBUG
-	if(stateID >= EnvROBARM.StateID2CoordTable.size())
+	if(stateID >= (int)EnvROBARM.StateID2CoordTable.size())
 	{
 		printf("ERROR in EnvROBARM... function: stateID illegal (2)\n");
 		exit(1);
@@ -1333,6 +1334,15 @@ void EnvironmentROBARM::PrintHeader(FILE* fOut)
 }
 
 
+void EnvironmentROBARM::SetAllActionsandAllOutcomes(CMDPSTATE* state)
+{
+
+
+	printf("ERROR in EnvROBARM..function: SetAllActionsandOutcomes is undefined\n");
+	exit(1);
+}
+
+
 void EnvironmentROBARM::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV)
 {
     int i, inc;
@@ -1440,7 +1450,7 @@ void EnvironmentROBARM::GetRandomSUCCS(CMDPSTATE* SourceState, vector<int>* Succ
 	for (int succind = 0; succind < numofsuccs; succind++)
 	{
         //pick the coordinate that will have dist = longactiondist
-        int maxcoordind = NUMOFLINKS*(((double)rand())/RAND_MAX);
+        int maxcoordind = (int)(NUMOFLINKS*(((double)rand())/RAND_MAX));
 
         //now iterate over the coordinates
         for (int cind = 0; cind < NUMOFLINKS; cind++)
@@ -1457,20 +1467,21 @@ void EnvironmentROBARM::GetRandomSUCCS(CMDPSTATE* SourceState, vector<int>* Succ
                 else
                 {
                     //negative sign
-                    coord[cind] = (HashEntry->coord[cind] - ROBARM_LONGACTIONDIST_CELLS);
-                    if(coord[cind] < 0)
-                        coord[cind] += EnvROBARMCfg.anglevals[cind];
-                    if(coord[cind] < 0)
-                    {
-                        printf("ERROR: ROBARM_LONGACTIONDIST_CELLS is too large for dim %d\n", cind);
-                        exit(1);
-                    }
+                    if(HashEntry->coord[cind] < ROBARM_LONGACTIONDIST_CELLS)
+                        coord[cind] = HashEntry->coord[cind] + EnvROBARMCfg.anglevals[cind] - ROBARM_LONGACTIONDIST_CELLS;
+                    else
+                        coord[cind] = HashEntry->coord[cind] - ROBARM_LONGACTIONDIST_CELLS;
+                    //if(coord[cind] < 0)
+                    //{
+                    //    printf("ERROR: ROBARM_LONGACTIONDIST_CELLS is too large for dim %d\n", cind);
+                    //    exit(1);
+                    //}
                 }
             }
             else
             {
                 //any value within ROBARM_LONGACTIONDIST_CELLS from the center
-                int offset = ROBARM_LONGACTIONDIST_CELLS*(((double)rand())/RAND_MAX);
+                int offset = (int)(ROBARM_LONGACTIONDIST_CELLS*(((double)rand())/RAND_MAX));
                 if((((double)rand())/RAND_MAX) > 0.5)
                     offset = -offset;
 
@@ -1484,13 +1495,13 @@ void EnvironmentROBARM::GetRandomSUCCS(CMDPSTATE* SourceState, vector<int>* Succ
                 {
                     //negative sign
                     coord[cind] = (HashEntry->coord[cind] + offset);
-                    if(coord[cind] < 0)
-                        coord[cind] += EnvROBARMCfg.anglevals[cind];
-                    if(coord[cind] < 0)
-                    {
-                        printf("ERROR: ROBARM_LONGACTIONDIST_CELLS is too large for dim %d\n", cind);
-                        exit(1);
-                    }
+                    if(HashEntry->coord[cind] < -offset)
+                        coord[cind] = HashEntry->coord[cind] + EnvROBARMCfg.anglevals[cind] + offset;
+                    //if(coord[cind] < 0)
+                    //{
+                    //    printf("ERROR: ROBARM_LONGACTIONDIST_CELLS is too large for dim %d\n", cind);
+                    //    exit(1);
+                    //}
                 }
             }//else random offset
         }//over coordinates
@@ -1558,13 +1569,13 @@ int EnvironmentROBARM::GetEdgeCost(int FromStateID, int ToStateID)
 {
 
 #if DEBUG
-	if(FromStateID >= EnvROBARM.StateID2CoordTable.size() 
-		|| ToStateID >= EnvROBARM.StateID2CoordTable.size())
+	if(FromStateID >= (int)EnvROBARM.StateID2CoordTable.size() 
+		|| ToStateID >= (int)EnvROBARM.StateID2CoordTable.size())
 	{
 		printf("ERROR in EnvROBARM... function: stateID illegal\n");
 		exit(1);
 	}
-#endif;
+#endif
 
 	//get X, Y for the state
 	EnvROBARMHashEntry_t* FromHashEntry = EnvROBARM.StateID2CoordTable[FromStateID];
@@ -1590,7 +1601,7 @@ int EnvironmentROBARM::GetRandomState()
         for(int i = 0; i < NUMOFLINKS; i++)
         {
                 //give it a shot
-                coord[i] = EnvROBARMCfg.anglevals[i]*(((double)rand())/(RAND_MAX+1));
+                coord[i] = (short unsigned int)(EnvROBARMCfg.anglevals[i]*(((double)rand())/(RAND_MAX+1)));
         }
 
 

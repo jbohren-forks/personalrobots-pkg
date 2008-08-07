@@ -38,19 +38,12 @@ void PrintUsage(char *argv[])
 }
 
 
-int main(int argc, char *argv[])
+int plan2d(int argc, char *argv[])
 {
+
 	int bRet = 0;
 	double allocated_time_secs = 0.5; //in seconds
 	MDPConfig MDPCfg;
-
-
-	if(argc != 2)
-	{
-		PrintUsage(argv);
-		exit(1);
-	}
-
 	
 	//Initialize Environment (should be called before initializing anything else)
 	EnvironmentNAV2D environment_nav2D;
@@ -128,6 +121,7 @@ int main(int argc, char *argv[])
 	for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
 	  environment_nav2D.PrintState(solution_stateIDs_V[i], true, fSol);
 	}
+    fclose(fSol);
 
     environment_nav2D.PrintTimeStat(stdout);
 
@@ -141,6 +135,99 @@ int main(int argc, char *argv[])
 		printf("Solution does not exist\n");
 
 	fflush(NULL);
+
+
+    return bRet;
+}
+
+
+int planrobarm(int argc, char *argv[])
+{
+
+	int bRet = 0;
+	double allocated_time_secs = 0.5; //in seconds
+	MDPConfig MDPCfg;
+	
+	//Initialize Environment (should be called before initializing anything else)
+	EnvironmentROBARM environment_robarm;
+	if(!environment_robarm.InitializeEnv(argv[1]))
+	{
+		printf("ERROR: InitializeEnv failed\n");
+		exit(1);
+	}
+
+	//Initialize MDP Info
+	if(!environment_robarm.InitializeMDPCfg(&MDPCfg))
+	{
+		printf("ERROR: InitializeMDPCfg failed\n");
+		exit(1);
+	}
+
+
+	//plan a path
+	vector<int> solution_stateIDs_V;
+	ARAPlanner ara_planner(&environment_robarm);
+
+    if(ara_planner.set_start(MDPCfg.startstateid) == 0)
+        {
+            printf("ERROR: failed to set start state\n");
+            exit(1);
+        }
+
+    if(ara_planner.set_goal(MDPCfg.goalstateid) == 0)
+        {
+            printf("ERROR: failed to set goal state\n");
+            exit(1);
+        }
+
+    printf("start planning...\n");
+	bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    FILE* fSol = fopen("sol.txt", "w");
+	for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
+	  environment_robarm.PrintState(solution_stateIDs_V[i], true, fSol);
+	}
+    fclose(fSol);
+
+
+ 	//print a path
+	if(bRet)
+	{
+		//print the solution
+		printf("Solution is found\n");
+	}
+	else
+		printf("Solution does not exist\n");
+
+	fflush(NULL);
+
+
+    return bRet;
+}
+
+
+
+
+
+
+int main(int argc, char *argv[])
+{
+
+	if(argc != 2)
+	{
+		PrintUsage(argv);
+		exit(1);
+	}
+
+    //2D planning
+    plan2d(argc, argv);
+
+
+    //robotarm planning
+    //planrobarm(argc, argv);
+
 	
 	return 0;
 }
