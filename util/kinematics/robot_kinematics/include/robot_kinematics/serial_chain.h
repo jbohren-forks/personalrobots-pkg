@@ -135,10 +135,21 @@ namespace robot_kinematics
     bool computeIK(const KDL::Frame &f);
 
     /*! \brief Compute the differential kinematics
-     * f - end effector frame (result of the fwd kinematics)
+     * \param q_in - input joint array 
+     * \param v_in - input end-effector twist
+     * \param qdot_out - output joint velocities
      * returns True if ok, False if error.
      */
     bool computeDK(const KDL::JntArray & q_in, const KDL::Twist &v_in, KDL::JntArray & qdot_out);
+
+    /*! \brief Compute the inverse dynamics
+     * \param q - input joint array 
+     * \param q_dot - input joint velocities
+     * \param q_dotdot - input joint accelerations
+     * \param torque - output vector of torques required to acheive desired joint trajectory
+     * \return True if ok, False if error.
+     */
+    bool computeInverseDynamics(const KDL::JntArray &q, const KDL::JntArray &q_dot, const KDL::JntArray &q_dotdot, KDL::Vector* torque);
 
     KDL::JntArray *q_IK_result; //< KDL::JntArray that stores result of IK
 

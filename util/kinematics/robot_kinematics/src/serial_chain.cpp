@@ -52,7 +52,11 @@ void SerialChain::finalize()
   this->forwardKinematics      = new ChainFkSolverPos_recursive(this->chain);
   this->differentialKinematics = new ChainIkSolverVel_pinv(this->chain);
   this->inverseKinematics      = new ChainIkSolverPos_NR(this->chain, *this->forwardKinematics, *this->differentialKinematics);
-
+  
+#ifdef KDL_DYNAMICS
+  this->inverseDynamics = new ChainIdSolver_NE::ChainIdSolver_NE(this->chain);
+#endif  
+  
   if(!this->link_kdl_frame_)
   {
     this->link_kdl_frame_ = new KDL::Frame[this->num_joints_];
@@ -120,6 +124,16 @@ bool SerialChain::computeDK(const JntArray & q_in, const Twist &v_in, JntArray &
   else
     return false;  
 }
+
+#ifdef KDL_DYNAMICS
+bool SerialChain::computeInverseDynamics(const JntArray &q, const JntArray &q_dot, const JntArray &q_dotdot, Vector* torque)
+{
+  if (this->inverseDynamics->InverseDynamics(q,q_dot,q_dotdot,torque) >= 0)
+    return true;
+  else
+    return false;  
+}
+#endif
 
 // returns a%b
 double modulus_double(double a, double b)
