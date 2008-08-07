@@ -71,9 +71,9 @@ public:
 class ActuatorCommand
 {
 public:
-  ActuatorCommand() : enable_(0), current_(0)
-  {
-  }
+  ActuatorCommand() :
+    enable_(0), current_(0)
+  {}
   bool enable_;
   double current_;
 };
@@ -89,8 +89,11 @@ class HardwareInterface
 {
 public:
   HardwareInterface(int num_actuators)
-    : actuators_(num_actuators, (Actuator*)NULL)
   {
+    for (int i = 0; i < num_actuators; ++i)
+    {
+      actuators_[i] = new Actuator();
+    }
   }
   ~HardwareInterface()
   {
