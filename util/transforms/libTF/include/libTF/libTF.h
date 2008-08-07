@@ -395,7 +395,7 @@ private:
    * This is an internal function which will get the pointer to the frame associated with the frame id
    * Possible Exception: TransformReference::LookupException
    */
-  inline RefFrame* getFrame(unsigned int frame_number) { if (frames[frame_number] == NULL) throw LookupException("Frame does not exist."); else return frames[frame_number];};
+  inline RefFrame* getFrame(unsigned int frame_number) { if (frames[frame_number] == NULL) { std::stringstream ss; ss << "Frame " << frame_number << " does not exist."; throw LookupException(ss.str());} else return frames[frame_number];};
 
   /** Find the list of connected frames necessary to connect two different frames */
   TransformLists  lookUpList(unsigned int target_frame, unsigned int source_frame);

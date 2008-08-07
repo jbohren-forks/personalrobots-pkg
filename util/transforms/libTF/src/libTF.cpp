@@ -78,7 +78,11 @@ TransformReference::~TransformReference()
 
 void TransformReference::addFrame(unsigned int frameID, unsigned int parentID) {
   if (frameID >= MAX_NUM_FRAMES || parentID >= MAX_NUM_FRAMES || frameID == NO_PARENT)
-    throw LookupException("frameID >= MAX_NUM_FRAMES || parentID >= MAX_NUM_FRAMES || frameID == NO_PARENT");
+  {
+    std::stringstream ss;
+    ss << "frameID("<<frameID<<") >= MAX_NUM_FRAMES || parentID("<<parentID<<") >= MAX_NUM_FRAMES || frameID("<<frameID<<") == NO_PARENT";
+    throw LookupException(ss.str());
+  }
 
   if (frames[frameID] == NULL)
     frames[frameID] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
@@ -302,8 +306,8 @@ TFPose2D TransformReference::transformPose2D(unsigned int target_frame, const TF
 TransformReference::TransformLists TransformReference::lookUpList(unsigned int target_frame, unsigned int source_frame)
 {
   TransformLists mTfLs;
-  if (source_frame == NO_PARENT) throw LookupException("cannnot lookup frame id = NO_PARENT (0)"); 
-  if (target_frame == NO_PARENT) throw LookupException("cannnot lookup frame id = NO_PARENT (0)"); 
+  if (source_frame == NO_PARENT) throw LookupException("cannnot lookup source frame id = NO_PARENT (0)"); 
+  if (target_frame == NO_PARENT) throw LookupException("cannnot lookup target frame id = NO_PARENT (0)"); 
 
   unsigned int frame = source_frame;
   unsigned int counter = 0;  //A counter to keep track of how deep we've descended
@@ -314,8 +318,14 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
       mTfLs.inverseTransforms.push_back(frame);
 
       //Check that we arn't going somewhere illegal 
-      if (getFrame(frame)->getParent() >=MAX_NUM_FRAMES) throw LookupException("max frame greater than MAX_NUM_FRAMES");
-
+      unsigned int parentid = getFrame(frame)->getParent();
+      if (getFrame(frame)->getParent() >=MAX_NUM_FRAMES)
+      {
+        std::stringstream ss;
+        ss <<"parentid("<<parentid<<") greater than MAX_NUM_FRAMES("<<MAX_NUM_FRAMES<<")";
+        throw LookupException(ss.str());
+      }
+      
       // Descent to parent frame
       frame = getFrame(frame)->getParent();
 
@@ -333,7 +343,13 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
       mTfLs.forwardTransforms.push_back(frame);
 
       //Check that we aren't going somewhere illegal
-      if (getFrame(frame)->getParent() >=MAX_NUM_FRAMES) throw LookupException("max frame greater than MAX_NUM_FRAMES");
+      unsigned int parentid = getFrame(frame)->getParent();
+      if ( parentid >= MAX_NUM_FRAMES)
+      {
+        std::stringstream ss;
+        ss<< "parentid("<<parentid<<") of frame ("<<frame<<") greater than MAX_NUM_FRAMES("<<MAX_NUM_FRAMES<<")";
+        throw LookupException(ss.str());
+      }
 
       //Descent to parent frame
       frame = getFrame(frame)->getParent();
