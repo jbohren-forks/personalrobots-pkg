@@ -26,14 +26,6 @@
 // gazebo
 #include <libpr2API/pr2API.h>
 
-// controller
-#include <pr2Controllers/ArmController.h>
-#include <pr2Controllers/HeadController.h>
-#include <pr2Controllers/SpineController.h>
-#include <pr2Controllers/BaseController.h>
-#include <pr2Controllers/LaserScannerController.h>
-#include <pr2Controllers/GripperController.h>
-
 // roscpp
 #include <ros/node.h>
 
@@ -89,26 +81,19 @@ main(int argc, char** argv)
   /*                        build actuators from pr2Actuators.xml                        */
   /*                                                                                     */
   /***************************************************************************************/
-  //Actuators myActuators(myPR2);
   
   /***************************************************************************************/
   /*                                                                                     */
   /*                            initialize controllers                                   */
   /*                                                                                     */
   /***************************************************************************************/
-  controller::ArmController          myArm;
-  controller::HeadController         myHead;
-  controller::SpineController        mySpine;
-  controller::BaseController         myBase;
-  controller::LaserScannerController myLaserScanner;
-  controller::GripperController      myGripper;
 
   /***************************************************************************************/
   /*                                                                                     */
   /*                            initialize ROS Gazebo Nodes                              */
   /*                                                                                     */
   /***************************************************************************************/
-  RosGazeboNode rgn(argc,argv,argv[1],myPR2,&myArm,&myHead,&mySpine,&myBase,&myLaserScanner,&myGripper);
+  RosGazeboNode rgn(argc,argv,argv[1],myPR2);
 
   /***************************************************************************************/
   /*                                                                                     */
@@ -151,13 +136,6 @@ main(int argc, char** argv)
     // Update Controllers
     //   each controller will try to read new commands from shared memory with nonRT hooks,
     //   and skip update if locked by nonRT loop.
-    //myArm.Update();
-    //myHead.Update();
-    //mySpine.Update();
-    //myBase.Update();
-    // Commenting out because it crashes
-    //myLaserScanner.Update();
-    //myGripper.Update();
 
     // TODO: Safety codes should go here...
 
