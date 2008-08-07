@@ -176,6 +176,8 @@ void Ros_Laser::PutLaserData()
     this->laserMsg.angle_min = minAngle;
     this->laserMsg.angle_max = maxAngle;
     this->laserMsg.angle_increment = tmp_res_angle;
+    this->laserMsg.time_increment  = 0; // instantaneous simulator scan
+    this->laserMsg.scan_time       = 0; // FIXME: what's this?
     this->laserMsg.range_min = minRange;
     this->laserMsg.range_max = maxRange;
     this->laserMsg.set_ranges_size(rangeCount);
