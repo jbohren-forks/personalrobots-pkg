@@ -110,6 +110,8 @@ public:
 	m_collisionSpace = new collision_space::EnvironmentModelODE();
 	m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
 	m_follow = true;
+	m_displayRobot = true;
+	m_displayObstacles = true;
 	
 	m_collisionSpace->lock();
 	loadRobotDescriptions();
@@ -128,9 +130,14 @@ public:
     
     void updateODESpaces(void)
     {
-	m_spaces.addSpace(m_collisionSpace->getODESpace(), 1.0f, 0.0f, 0.0f);
-	for (unsigned int i = 0 ; i < m_collisionSpace->getModelCount() ; ++i)
+	m_collisionSpace->lock();	
+	m_spaces.clear();	
+	if (m_displayObstacles)
+	    m_spaces.addSpace(m_collisionSpace->getODESpace(), 1.0f, 0.0f, 0.0f);
+	if (m_displayRobot)
+	    for (unsigned int i = 0 ; i < m_collisionSpace->getModelCount() ; ++i)
 	    m_spaces.addSpace(m_collisionSpace->getModelODESpace(i), 0.1f, 0.5f, (float)(i + 1)/(float)m_collisionSpace->getModelCount());
+	m_collisionSpace->unlock();
     }
     
     void loadRobotDescriptions(void)
@@ -167,15 +174,12 @@ public:
 	    m_collisionSpace->updateRobotModel(0);
 	    m_collisionSpace->unlock();
 	}
-	
     }
     
     void pointCloudCallback(void)
     {
 	unsigned int n = m_cloud.get_pts_size();
 	printf("received %u points\n", n);
-	
-	m_spaces.clear();	
 	
 	ros::Time startTime = ros::Time::now();
 	double *data = new double[3 * n];	
@@ -188,6 +192,7 @@ public:
 	}
 	
 	m_collisionSpace->lock();
+	m_spaces.clear();
 	m_collisionSpace->clearObstacles();
 	m_collisionSpace->addPointCloud(n, data, 0.03);
 	m_collisionSpace->unlock();
@@ -205,7 +210,8 @@ public:
     {
 	if (m_collisionSpace->getModelCount() != 1)
 	    return;
-	
+	bool follow = m_follow;
+	m_follow = false;
 	ros::Duration sleepTime(0.2);
 	planning_models::KinematicModel *kmodel = m_collisionSpace->getModel(0);
 	int groupID = kmodel->getGroupID(m_displayPath.name);
@@ -216,7 +222,7 @@ public:
 	    m_collisionSpace->updateRobotModel(0);
 	    sleepTime.sleep();
 	}
-	
+	m_follow = follow;
     }
     
     void addRobotDescriptionFromFile(const char *filename)
@@ -275,6 +281,34 @@ public:
 	m_follow = follow;
     }
     
+    bool getDisplayRobot(void) const
+    {
+	return m_displayRobot;
+    }
+    
+    void setDisplayRobot(bool display)
+    {
+	if (m_displayRobot != display)
+	{
+	    m_displayRobot = display;
+	    updateODESpaces();
+	}	
+    }
+    
+    bool getDisplayObstacles(void) const
+    {
+	return m_displayObstacles;
+    }
+    
+    void setDisplayObstacles(bool display)
+    {
+	if (m_displayObstacles != display)
+	{
+	    m_displayObstacles = display;
+	    updateODESpaces();
+	}	
+    }
+    
     const double* getBasePos(void) const
     {
 	return m_basePos;
@@ -298,6 +332,8 @@ private:
     display_ode::DisplayODESpaces         m_spaces;
     robot_msgs::NamedKinematicPath        m_displayPath;
     bool                                  m_follow;
+    bool                                  m_displayRobot;
+    bool                                  m_displayObstacles;  
     
 };
 
@@ -328,6 +364,13 @@ static void command(int cmd)
     case 'f':
     case 'F':
 	viewer->setFollow(!viewer->getFollow());	
+	break;
+
+    case 'R':
+	viewer->setDisplayRobot(!viewer->getDisplayRobot());
+	break;
+    case 'O':
+	viewer->setDisplayObstacles(!viewer->getDisplayObstacles());
 	break;
     default:
 	break;

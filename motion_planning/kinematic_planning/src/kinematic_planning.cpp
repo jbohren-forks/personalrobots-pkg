@@ -241,8 +241,7 @@ public:
 	goal->threshold = req.threshold;
 	p.si->setGoal(goal);
 
-	printf("=======================================\n");	
-	m->kmodel->printModelInfo();
+	printf("=======================================\n");
 	p.si->printSettings();
 	printf("=======================================\n");	
 	
@@ -340,6 +339,10 @@ public:
 
 	kmodel->computeTransforms(defaultPose);
 	m_collisionSpace->updateRobotModel(cid);
+
+	printf("=======================================\n");	
+	kmodel->printModelInfo();
+	printf("=======================================\n");
 
 	/* create a model for each group */
 	std::vector<std::string> groups;
