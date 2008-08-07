@@ -103,9 +103,9 @@ public:
     
     PlanningWorldViewer(void) : ros::node("planning_world_viewer")
     {
-	subscribe("world_3d_map", m_cloud, &KinematicPlanning::pointCloudCallback);
-	subscribe("localizedpose", m_localizedPose, &KinematicPlanning::localizedPoseCallback);
-	subscribe("display_kinematic_path", m_displayPath, &KinematicPlanning::displayPathCallback);
+	subscribe("world_3d_map", m_cloud, &PlanningWorldViewer::pointCloudCallback);
+	subscribe("localizedpose", m_localizedPose, &PlanningWorldViewer::localizedPoseCallback);
+	subscribe("display_kinematic_path", m_displayPath, &PlanningWorldViewer::displayPathCallback);
 	
 	m_collisionSpace = new collision_space::EnvironmentModelODE();
 	m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
@@ -118,12 +118,10 @@ public:
 	updateODESpaces();
     }
     
-    ~KinematicPlanning(void)
+    ~PlanningWorldViewer(void)
     {
 	for (unsigned int i = 0 ; i < m_robotDescriptions.size() ; ++i)
 	    delete m_robotDescriptions[i];
-	for (std::map<std::string, Model*>::iterator i = m_models.begin() ; i != m_models.end() ; i++)
-	    delete i->second;
 	if (m_collisionSpace)
 	    delete m_collisionSpace;
     }
@@ -180,7 +178,7 @@ public:
 	unsigned int n = m_cloud.get_pts_size();
 	printf("received %u points\n", n);
 	
-	spaces.clear();	
+	m_spaces.clear();	
 	
 	ros::Time startTime = ros::Time::now();
 	double *data = new double[3 * n];	
@@ -215,11 +213,11 @@ public:
 	planning_models::KinematicModel *kmodel = m_collisionSpace->getModel(0);
 	int groupID = kmodel->getGroupID(m_displayPath.name);
 	
-	for (unsigned int i = 0 ; i < m_displayPath.path.states.size() ; ++i)
+	for (unsigned int i = 0 ; i < m_displayPath.path.get_states_size() ; ++i)
 	{
-	    kmodel->computeTransforms(path.path.states[i]->values, groupID);
-	    m->collisionSpace->updateRobotModel(0);
-		sleepTime.sleep();
+	    kmodel->computeTransforms(m_displayPath.path.states[i].vals, groupID);
+	    m_collisionSpace->updateRobotModel(0);
+	    sleepTime.sleep();
 	}
 	
     }
@@ -265,6 +263,11 @@ public:
 
     }
     
+    unsigned int getRobotCount(void) const
+    {
+	return m_robotDescriptions.size();	
+    }
+    
     bool getFollow(void) const
     {
 	return m_follow;
@@ -293,7 +296,7 @@ private:
     std_msgs::RobotBase2DOdom             m_localizedPose;
     collision_space::EnvironmentModelODE *m_collisionSpace;    
     std::vector<robot_desc::URDF*>        m_robotDescriptions;
-    double                               *m_basePos;
+    double                                m_basePos[3];
     
     display_ode::DisplayODESpaces         m_spaces;
     robot_msgs::NamedKinematicPath        m_displayPath;
@@ -320,7 +323,7 @@ static void command(int cmd)
     case 'T':
 	{
 	    const double *basePos = viewer->getBasePos();	    
-	    float xyz[3] = {m_basePos[0], m_basePos[1], 1.0};
+	    float xyz[3] = {basePos[0], basePos[1], 1.0};
 	    float hpr[3] = {-77.5000,-19.5000,0.0000};    
 	    dsSetViewpoint(xyz, hpr);
 	}
@@ -345,12 +348,7 @@ int main(int argc, char **argv)
     
     viewer = new PlanningWorldViewer();
     
-    std::vector<std::string> mlist;    
-    planner.knownModels(mlist);
-    printf("Known models:\n");    
-    for (unsigned int i = 0 ; i < mlist.size() ; ++i)
-	printf("  * %s\n", mlist[i].c_str());    
-    if (mlist.size() > 0)
+    if (viewer->getRobotCount() > 0)
     {
 	dsFunctions fn;
 	fn.version = DS_VERSION;
@@ -365,7 +363,9 @@ int main(int argc, char **argv)
     else
 	printf("No models defined. Kinematic planning node cannot start.\n");
     
-    planner.shutdown();
+    viewer->shutdown();
+    
+    delete viewer;
     
     return 0;    
 }
