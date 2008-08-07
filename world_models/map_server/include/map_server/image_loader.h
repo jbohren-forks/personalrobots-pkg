@@ -38,9 +38,18 @@
 namespace map_server
 {
 
-// Read the image from file and fill out the map_resp object, 
-// for later use when our services are requested.
-bool loadMapFromFile(std_srvs::StaticMap::response* resp,
+/** Read the image from file and fill out the resp object, for later 
+ * use when our services are requested. 
+ *
+ * @param resp The map wil be written into here
+ * @param fname The image file to read from
+ * @param res The resolution of the map (gets stored in resp)
+ * @param negate If true, then whiter pixels are occupied, and blacker
+ *               pixels are free
+ *
+ * @throws std::runtime_error If the image file can't be loaded
+ * */
+void loadMapFromFile(std_srvs::StaticMap::response* resp,
                      const char* fname, double res, bool negate);
 }
 

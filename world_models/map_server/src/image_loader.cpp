@@ -50,19 +50,7 @@
 namespace map_server
 {
 
-/** Read the image from file and fill out the resp object, for later 
- * use when our services are requested. 
- *
- * @param resp The map wil be written into here
- * @param fname The image file to read from
- * @param res The resolution of the map (gets stored in resp)
- * @param negate If true, then whiter pixels are occupied, and blacker
- *               pixels are free
- *
- * @return True on success (image was loaded into resp), false otherwise
- * (image was not loaded into resp).
- * */
-bool
+void
 loadMapFromFile(std_srvs::StaticMap::response* resp,
                 const char* fname, double res, bool negate)
 {
@@ -77,6 +65,7 @@ loadMapFromFile(std_srvs::StaticMap::response* resp,
   int color_sum;
   double color_avg;
 
+  // Load the image using SDL.  If we get NULL back, the image load failed.
   if(!(img = IMG_Load(fname)))
   {
     std::string errmsg = std::string("failed to open image file \"") + 
@@ -84,35 +73,47 @@ loadMapFromFile(std_srvs::StaticMap::response* resp,
     throw std::runtime_error(errmsg);
   }
 
+  // Copy the image data into the map structure
   resp->map.width = img->w;
   resp->map.height = img->h;
   resp->map.resolution = res;
-  // TODO: make origin configurable
+  /// @todo Make the map's origin configurable
   resp->map.origin.x = 0.0;
   resp->map.origin.y = 0.0;
   resp->map.origin.th = 0.0;
 
+  // Allocate space to hold the data
   resp->map.set_data_size(resp->map.width * resp->map.height);
 
+  // Get values that we'll need to iterate through the pixels
   rowstride = img->pitch;
   n_channels = img->format->BytesPerPixel;
 
-  // Read data
+  // Copy pixel data into the map structure
   pixels = (unsigned char*)(img->pixels);
   for(j = 0; j < resp->map.height; j++)
   {
     for (i = 0; i < resp->map.width; i++)
     {
+      // Compute mean of RGB for this pixel
       p = pixels + j*rowstride + i*n_channels;
       color_sum = 0;
       for(k=0;k<n_channels;k++)
         color_sum += *(p + (k));
       color_avg = color_sum / (double)n_channels;
 
+      // If negate is true, we consider blacker pixels free, and whiter
+      // pixels free.  Otherwise, it's vice versa.
       if(negate)
         occ = color_avg / 255.0;
       else
         occ = (255 - color_avg) / 255.0;
+      
+      // Apply thresholds to RGB means to determine occupancy values for
+      // map.  Note that we invert the graphics-ordering of the pixels to
+      // produce a map with cell (0,0) in the lower-left corner.
+      //
+      /// @todo Make the color thresholds configurable
       if(occ > 0.5)
         resp->map.data[MAP_IDX(resp->map.width,i,resp->map.height - j - 1)] = +100;
       else if(occ < 0.1)
@@ -123,8 +124,6 @@ loadMapFromFile(std_srvs::StaticMap::response* resp,
   }
 
   SDL_FreeSurface(img);
-
-  return(true);
 }
 
 }

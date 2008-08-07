@@ -44,7 +44,13 @@ very white).  The pixel is occupied (occupancy value 100) if the mean
 is less than 0.5*255 (i.e., sort of black).  Anything in between is
 considered unknown (occupancy value -1).
 
-@todo Make the color threshold an externally-configurable parameter.
+@todo Establish a standard for storing maps, with metadata (origin,
+resolution ,etc.) in the same file.  Perhaps we can use PNGs with comments
+for this purpose. Then rewrite this node to use said standard.
+
+@todo Make the color thresholds a ROS parameter
+
+@todo Make the map origin a ROS parameter
 
 <hr>
 
@@ -57,6 +63,7 @@ map_server <map> <resolution> [<negate>]
 @endverbatim
 
 @par Example
+
 @verbatim
 map_server mymap.png 0.1
 @endverbatim
@@ -67,12 +74,10 @@ map_server mymap.png 0.1
 
 - None
 
-@section topic ROS services
+@section services ROS services
 
 Offers (name/type):
 - @b "static_map"/std_srvs::StaticMap : Retrieve the map via this service
-
-<hr>
 
 @section parameters ROS parameters
 
