@@ -11,9 +11,7 @@
   <controller:gazebo_actuators name="gazebo_actuators" plugin="libgazebo_actuators.so">
       <updateRate>100.0</updateRate>
 
-
       <include>transmission_test.xml</include>
-
 
       <interface:audio name="gazebo_actuators_dummy_iface" />
   </controller:gazebo_actuators>

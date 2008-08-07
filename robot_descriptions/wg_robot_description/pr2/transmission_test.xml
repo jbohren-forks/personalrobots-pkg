@@ -2,12 +2,10 @@
 
 <robot name="pr2"><!-- name of the robot-->
 
-<data name="transmissions" type="gazebo"> <!-- we can set a name too, but the convertor only cares about the type -->
-<verbatim> 
  <!-- Transmissions -->
  <!-- ========================================= -->
  <!--- Casters and wheels -->
- <transmission type="SimpleTransmission" name="caster_front_left_trans">
+  <transmission type="SimpleTransmission" name="caster_front_left_trans">
     <actuator name="caster_front_left_motor" />
     <joint name="caster_front_left_joint" />
     <mechanicalReduction>1</mechanicalReduction>
@@ -247,8 +245,6 @@
     <pulsesPerRevolution>90000</pulsesPerRevolution>
   </transmission>
 
-</verbatim>
-</data>
 </robot>
 
 
