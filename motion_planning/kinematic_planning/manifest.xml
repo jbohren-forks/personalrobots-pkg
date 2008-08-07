@@ -8,5 +8,4 @@
   <depend package="xmlparam" />
   <depend package="ompl" />
   <depend package="collision_space" />
-<sysdepend os="ubuntu" version="8.04-hardy" package="freeglut3-dev"/>
 </package>
