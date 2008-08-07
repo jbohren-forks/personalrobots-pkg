@@ -6,24 +6,18 @@
 --------------------Configuration: sbpl - Win32 Debug--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP68B.tmp" with contents
+Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSPE14.tmp" with contents
 [
 /nologo /MLd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"Debug/sbpl.pch" /YX /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
-"C:\Max\codeforstarters\SBPL\src\planners\ARAStar\araplanner.cpp"
-"C:\Max\codeforstarters\SBPL\src\discrete_space_information\nav2d\environment_nav2D.cpp"
-"C:\Max\codeforstarters\SBPL\src\discrete_space_information\template\environment_XXX.cpp"
-"C:\Max\codeforstarters\SBPL\src\utils\heap.cpp"
-"C:\Max\codeforstarters\SBPL\src\test\main.cpp"
-"C:\Max\codeforstarters\SBPL\src\utils\mdp.cpp"
-"C:\Max\codeforstarters\SBPL\src\utils\utils.cpp"
-"C:\Max\codeforstarters\SBPL\src\planners\VI\viplanner.cpp"
+"C:\Max\codeforstarters\sbpl\src\discrete_space_information\robarm\environment_robarm.cpp"
 ]
-Creating command line "cl.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP68B.tmp" 
-Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP68C.tmp" with contents
+Creating command line "cl.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSPE14.tmp" 
+Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSPE15.tmp" with contents
 [
 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:yes /pdb:"Debug/sbpl.pdb" /debug /machine:I386 /out:"Debug/sbpl.exe" /pdbtype:sept 
 .\Debug\araplanner.obj
 .\Debug\environment_nav2D.obj
+.\Debug\environment_robarm.obj
 .\Debug\environment_XXX.obj
 .\Debug\heap.obj
 .\Debug\main.obj
@@ -31,17 +25,10 @@ kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32
 .\Debug\utils.obj
 .\Debug\viplanner.obj
 ]
-Creating command line "link.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP68C.tmp"
+Creating command line "link.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSPE15.tmp"
 <h3>Output Window</h3>
 Compiling...
-araplanner.cpp
-environment_nav2D.cpp
-environment_XXX.cpp
-heap.cpp
-main.cpp
-mdp.cpp
-utils.cpp
-viplanner.cpp
+environment_robarm.cpp
 Linking...
 
 

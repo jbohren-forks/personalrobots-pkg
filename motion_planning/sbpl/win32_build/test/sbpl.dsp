@@ -93,6 +93,10 @@ SOURCE=..\..\src\discrete_space_information\nav2d\environment_nav2D.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\discrete_space_information\robarm\environment_robarm.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\discrete_space_information\template\environment_XXX.cpp
 # PROP Exclude_From_Scan -1
 
@@ -147,6 +151,10 @@ SOURCE=..\..\src\discrete_space_information\environment.h
 # Begin Source File
 
 SOURCE=..\..\src\discrete_space_information\nav2d\environment_nav2D.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\discrete_space_information\robarm\environment_robarm.h
 # End Source File
 # Begin Source File
 

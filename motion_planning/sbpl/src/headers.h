@@ -58,6 +58,7 @@ using namespace std;
 #include "discrete_space_information/environment.h"
 #include "discrete_space_information/template/environment_XXX.h"
 #include "discrete_space_information/nav2d/environment_nav2D.h"
+#include "discrete_space_information/robarm/environment_robarm.h"
 #include "utils/list.h"
 #include "utils/heap.h"
 #include "planners/VI/viplanner.h"

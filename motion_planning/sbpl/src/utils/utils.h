@@ -36,6 +36,19 @@
 
 #define UNKNOWN_COST 1000000
 
+typedef struct {
+  int X1, Y1;
+  int X2, Y2;
+  int Increment;
+  int UsingYIndex;
+  int DeltaX, DeltaY;
+  int DTerm;
+  int IncrE, IncrNE;
+  int XIndex, YIndex;
+  int Flipped;
+} bresenham_param_t;
+
+
 
 
 //function prototypes
@@ -49,6 +62,12 @@ void EvaluatePolicy(CMDP* PolicyMDP, int StartStateID, int GoalStateID,
 					double* PolValue, bool *bFullPolicy, double *Pcgoal, 
 					int* nMerges, bool *bCycles);
 int ComputeNumofStochasticActions(CMDP* pMDP);
+
+void get_bresenham_parameters(int p1x, int p1y, int p2x, int p2y, bresenham_param_t *params);
+void get_current_point(bresenham_param_t *params, int *x, int *y);
+int get_next_point(bresenham_param_t *params);
+
+
 
 #if 0
 void CheckSearchMDP(CMDP* mdp, int ExcludeSuccStateID = -1);

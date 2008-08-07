@@ -339,3 +339,87 @@ void EvaluatePolicy(CMDP* PolicyMDP, int StartStateID, int GoalStateID,
 	printf("done\n");
 }
 
+
+
+void get_bresenham_parameters(int p1x, int p1y, int p2x, int p2y, bresenham_param_t *params)
+{
+  params->UsingYIndex = 0;
+
+  if (fabs((double)(p2y-p1y)/(double)(p2x-p1x)) > 1)
+    (params->UsingYIndex)++;
+
+  if (params->UsingYIndex)
+    {
+      params->Y1=p1x;
+      params->X1=p1y;
+      params->Y2=p2x;
+      params->X2=p2y;
+    }
+  else
+    {
+      params->X1=p1x;
+      params->Y1=p1y;
+      params->X2=p2x;
+      params->Y2=p2y;
+    }
+
+   if ((p2x - p1x) * (p2y - p1y) < 0)
+    {
+      params->Flipped = 1;
+      params->Y1 = -params->Y1;
+      params->Y2 = -params->Y2;
+    }
+  else
+    params->Flipped = 0;
+
+  if (params->X2 > params->X1)
+    params->Increment = 1;
+  else
+    params->Increment = -1;
+
+  params->DeltaX=params->X2-params->X1;
+  params->DeltaY=params->Y2-params->Y1;
+
+  params->IncrE=2*params->DeltaY*params->Increment;
+  params->IncrNE=2*(params->DeltaY-params->DeltaX)*params->Increment;
+  params->DTerm=(2*params->DeltaY-params->DeltaX)*params->Increment;
+
+  params->XIndex = params->X1;
+  params->YIndex = params->Y1;
+}
+
+void get_current_point(bresenham_param_t *params, int *x, int *y)
+{
+  if (params->UsingYIndex)
+    {
+      *y = params->XIndex;
+      *x = params->YIndex;
+      if (params->Flipped)
+        *x = -*x;
+    }
+  else
+    {
+      *x = params->XIndex;
+      *y = params->YIndex;
+      if (params->Flipped)
+        *y = -*y;
+    }
+}
+
+int get_next_point(bresenham_param_t *params)
+{
+  if (params->XIndex == params->X2)
+    {
+      return 0;
+    }
+  params->XIndex += params->Increment;
+  if (params->DTerm < 0 || (params->Increment < 0 && params->DTerm <= 0))
+    params->DTerm += params->IncrE;
+  else
+    {
+      params->DTerm += params->IncrNE;
+      params->YIndex += params->Increment;
+    }
+  return 1;
+}
+
