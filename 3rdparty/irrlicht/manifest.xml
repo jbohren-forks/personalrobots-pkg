@@ -14,5 +14,9 @@ dependency system.
   <cpp lflags="-L${prefix}/irrlicht-1.4/lib/Linux -lIrrlicht -L/usr/X111R6/lib -lGL -lXxf86vm -lXext -lX11" cflags="-I${prefix}/irrlicht-1.4/include  -ffast-math"/>
   <doxymaker external="http://irrlicht.sourceforge.net/docu/index.html" />
 </export>
+<sysdepend os="ubuntu" version="8.04-hardy" package="unzip"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libxext-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libxxf86vm-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libgl1-mesa-dev"/>
 </package>
 
