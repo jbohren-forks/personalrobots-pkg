@@ -71,6 +71,8 @@
   <const name="elbow_flex_radius" value="0.1" />  <!-- for defining collision geometry -->
   
   <const name="upperarm_roll_elbow_flex_offset_x" value="0.4" />  <!-- mp 20080801 -->
+  <const name="upperarm_roll_min_limit" value="-2.3562" />
+  <const name="upperarm_roll_max_limit" value=" 2.3562" />
   
   <const name="forearm_roll_size_x" value="0.27" />  <!-- for defining collision geometry -->
   <const name="forearm_roll_size_y" value="0.12" />  <!-- for defining collision geometry -->
@@ -375,7 +377,7 @@
     <define template="pr2_upperarm_roll_joint" type="revolute">
       <axis> 1 0 0 </axis> <!-- direction of the joint in a global coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit> -2.3562 2.3562 </limit>
+      <limit> upperarm_roll_min_limit upperarm_roll_max_limit </limit>
       <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
       <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
