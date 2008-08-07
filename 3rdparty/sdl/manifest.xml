@@ -16,5 +16,6 @@ dependency system.
 </export>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libgl1-mesa-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libglu1-mesa-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libxext-dev"/>
 </package>
 
