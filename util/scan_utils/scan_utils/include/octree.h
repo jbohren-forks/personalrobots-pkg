@@ -123,7 +123,7 @@ class Octree {
 	Octree(float cx, float cy, float cz,
 	       float dx, float dy, float dz, 
 	       int maxDepth, int emptyValue);
-	//! Recursively deletes the tree bu deleting the root.
+	//! Recursively deletes the tree by deleting the root.
 	~Octree(){delete mRoot;}
 	//! Returns \a true if the point at x,y,z is inside the volume of this Octree
 	inline bool testBounds(float x, float y, float z);
