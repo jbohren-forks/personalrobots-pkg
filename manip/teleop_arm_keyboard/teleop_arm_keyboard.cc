@@ -71,15 +71,55 @@ Publishes to (name / type):
 #include <ros/node.h>
 #include <std_msgs/PR2Arm.h>
 
-#include <libpr2API/pr2API.h>
-
 // For transform support
 #include <rosTF/rosTF.h>
 
 #define COMMAND_TIMEOUT_SEC 0.2
 
-using namespace PR2;
-
+/// @todo Remove this giant enum, which was stoled from pr2Core/pr2Core.h.
+/// It can be replaced by some simpler indexing scheme.
+enum PR2_JOINT_ID
+{
+  CASTER_FL_STEER   , // 0
+  CASTER_FL_DRIVE_L , // 1 
+  CASTER_FL_DRIVE_R , // 2
+  CASTER_FR_STEER   , // 3
+  CASTER_FR_DRIVE_L , // 4
+  CASTER_FR_DRIVE_R , // 5
+  CASTER_RL_STEER   , // 6
+  CASTER_RL_DRIVE_L , // 7 
+  CASTER_RL_DRIVE_R , // 8
+  CASTER_RR_STEER   , // 9 
+  CASTER_RR_DRIVE_L , // 10
+  CASTER_RR_DRIVE_R , // 11
+  SPINE_ELEVATOR    ,
+  ARM_L_PAN         , 
+  ARM_L_SHOULDER_PITCH, 
+  ARM_L_SHOULDER_ROLL,
+  ARM_L_ELBOW_PITCH , 
+  ARM_L_ELBOW_ROLL  ,
+  ARM_L_WRIST_PITCH , 
+  ARM_L_WRIST_ROLL  ,
+  ARM_L_GRIPPER_GAP ,  // added 20080802 by john
+  ARM_R_PAN         , 
+  ARM_R_SHOULDER_PITCH, 
+  ARM_R_SHOULDER_ROLL,
+  ARM_R_ELBOW_PITCH , 
+  ARM_R_ELBOW_ROLL  ,
+  ARM_R_WRIST_PITCH , 
+  ARM_R_WRIST_ROLL  ,
+  ARM_R_GRIPPER_GAP ,  // added 20080802 by john
+  HEAD_YAW          , 
+  HEAD_PITCH        ,
+  HEAD_LASER_PITCH  ,
+  HEAD_PTZ_L_PAN    , 
+  HEAD_PTZ_L_TILT   ,
+  HEAD_PTZ_R_PAN    , 
+  HEAD_PTZ_R_TILT   ,
+  BASE_6DOF,
+  PR2_WORLD,
+  MAX_JOINTS   
+};
 
 class TArmK_Node : public ros::node
 {
