@@ -27,18 +27,18 @@ public:
     robotPose.time = 0;
     try {
       robotPose.frame = tf.lookup("FRAMEID_ROBOT");
-      tf.lookup("base");
+      //      tf.lookup("base");
     } catch(libTF::TransformReference::LookupException& ex) {
-      std::cerr << "LookupException in lookup(\"FRAMEID_ROBOT\")!\n";
-      std::cout << "LookupException in lookup(\"FRAMEID_ROBOT\")!";
+      std::cerr << "LookupException in lookup(\"FRAMEID_ROBOT\")!"<<ex.what() <<"\n";
+      std::cout << "LookupException in lookup(\"FRAMEID_ROBOT\")!"<<ex.what() <<"";
       return;
     } catch(libTF::Pose3DCache::ExtrapolateException& ex) {
-      std::cerr << "ExtrapolateException in lookup(\"FRAMEID_ROBOT\")!\n";
-      std::cout << "ExtrapolateException in lookup(\"FRAMEID_ROBOT\")!";
+      std::cerr << "ExtrapolateException in lookup(\"FRAMEID_ROBOT\")!"<<ex.what() <<"\n";
+      std::cout << "ExtrapolateException in lookup(\"FRAMEID_ROBOT\")!"<<ex.what() <<"";
       return;
     } catch(libTF::TransformReference::ConnectivityException& ex) {
-      std::cerr << "ConnectivityException in lookup(\"FRAMEID_ROBOT\")!\n";
-      std::cout << "ConnectivityException in lookup(\"FRAMEID_ROBOT\")!";
+      std::cerr << "ConnectivityException in lookup(\"FRAMEID_ROBOT\")!"<<ex.what() <<"\n";
+      std::cout << "ConnectivityException in lookup(\"FRAMEID_ROBOT\")!"<<ex.what() <<"";
       return;
     }
 
@@ -46,16 +46,17 @@ public:
     try {
       global_pose = this->tf.transformPose("FRAMEID_ODOM", robotPose);
     } catch(libTF::TransformReference::LookupException& ex) {
-      std::cerr << "LookupException in transformPose(\"FRAMEID_ODOM\", robotPose)!\n";
-      std::cout << "LookupException in transformPose(\"FRAMEID_ODOM\", robotPose)!";
+      std::cerr << tf.viewFrames();
+      std::cerr << "LookupException in transformPose(\"FRAMEID_ODOM\", robotPose)!"<<ex.what() <<"\n";
+      std::cout << "LookupException in transformPose(\"FRAMEID_ODOM\", robotPose)!"<<ex.what() <<"";
       return;
     } catch(libTF::Pose3DCache::ExtrapolateException& ex) {
-      std::cerr << "ExtrapolateException in transformPose(\"FRAMEID_ODOM\", robotPose)!\n";
-      std::cout << "ExtrapolateException in transformPose(\"FRAMEID_ODOM\", robotPose)!";
+      std::cerr << "ExtrapolateException in transformPose(\"FRAMEID_ODOM\", robotPose)!"<<ex.what() <<"\n";
+      std::cout << "ExtrapolateException in transformPose(\"FRAMEID_ODOM\", robotPose)!"<<ex.what() <<"";
       return;
     } catch(libTF::TransformReference::ConnectivityException& ex) {
-      std::cerr << "ConnectivityException in transformPose(\"FRAMEID_ODOM\", robotPose)!\n";
-      std::cout << "ConnectivityException in transformPose(\"FRAMEID_ODOM\", robotPose)!";
+      std::cerr << "ConnectivityException in transformPose(\"FRAMEID_ODOM\", robotPose)!"<<ex.what() <<"\n";
+      std::cout << "ConnectivityException in transformPose(\"FRAMEID_ODOM\", robotPose)!"<<ex.what() <<"";
       return;
     }
     msg.x = global_pose.x;
