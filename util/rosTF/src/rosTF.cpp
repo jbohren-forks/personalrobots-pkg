@@ -135,16 +135,15 @@ void rosTFClient::transformLaserScanToPointCloud(unsigned int target_frame, std_
 
   pointIn.frame = scanIn.header.frame_id;
   
-
-
   ///\todo this can be optimized
   std_msgs::PointCloudFloat32 intermediate; //optimize out
-  projector_.projectLaser(scanIn, intermediate, true);
-  unsigned int count = 0;
+  projector_.projectLaser(scanIn, intermediate, -1.0, true);
+  
+  unsigned int count = 0;  
   for (unsigned int i = 0; i < scanIn.ranges_size; i++)
   {
-    if (scanIn.ranges[i] <= scanIn.range_max 
-        && scanIn.ranges[i] >= scanIn.range_min) //only when valid
+    if (scanIn.ranges[i] < scanIn.range_max 
+        && scanIn.ranges[i] > scanIn.range_min) //only when valid
     {
       pointIn.time = scanIn.header.stamp.to_ull() + (unsigned long long) (scanIn.time_increment * 1000000000);
       pointIn.x = intermediate.pts[i].x;
@@ -152,12 +151,13 @@ void rosTFClient::transformLaserScanToPointCloud(unsigned int target_frame, std_
       pointIn.z = intermediate.pts[i].z;
       
       pointOut = transformPoint(target_frame, pointIn);
+      
       cloudOut.pts[count].x  = pointOut.x;
       cloudOut.pts[count].y  = pointOut.y;
       cloudOut.pts[count].z  = pointOut.z;
       
       if (scanIn.intensities_size >= i) /// \todo optimize and catch length difference better
-        cloudOut.chan[0].vals[count] = scanIn.intensities[i];
+	  cloudOut.chan[0].vals[count] = scanIn.intensities[i];
       count++;
     }
     
@@ -165,7 +165,7 @@ void rosTFClient::transformLaserScanToPointCloud(unsigned int target_frame, std_
   //downsize if necessary
   cloudOut.set_pts_size(count);
   cloudOut.chan[0].set_vals_size(count);
-
+    
 }
 
 
