@@ -6,6 +6,6 @@
   <depend package="robot_msgs" />
   <depend package="robot_srvs" />
   <depend package="xmlparam" />
-  <depend package="ompl" />
   <depend package="collision_space" />
+  <depend package="display_ode_spaces" />
 </package>

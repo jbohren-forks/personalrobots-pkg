@@ -84,6 +84,7 @@ Provides (name/type):
 #include <ros/node.h>
 #include <ros/time.h>
 #include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/RobotBase2DOdom.h>
 #include <robot_srvs/KinematicMotionPlan.h>
 
 #include <urdf/URDF.h>
@@ -97,14 +98,6 @@ Provides (name/type):
 #include <sstream>
 #include <map>
 
-#define DISPLAY_ODE_SPACES
-
-#ifdef DISPLAY_ODE_SPACES
-#include <display_ode/displayODE.h>
-static display_ode::DisplayODESpaces         spaces;
-static collision_space::EnvironmentModelODE* em = NULL;
-#endif
-
 class KinematicPlanning : public ros::node
 {
 public:
@@ -113,29 +106,14 @@ public:
     {
 	advertise_service("plan_kinematic_path", &KinematicPlanning::plan);
 	subscribe("world_3d_map", m_cloud, &KinematicPlanning::pointCloudCallback);
-	
+	subscribe("localizedpose", m_localizedPose, &KinematicPlanning::localizedPoseCallback);
+
 	m_collisionSpace = new collision_space::EnvironmentModelODE();
 	m_collisionSpace->setSelfCollision(false); // for now, disable self collision (incorrect model)
 	
-	m_collisionSpace->lock();	
+	m_collisionSpace->lock();
 	loadRobotDescriptions();
 	m_collisionSpace->unlock();
-	
-	// temp obstacle
-	double sphere[9] = {2,-1.8,1.2, 2,0.2,1.2, 2,4.2,1.2};
-	m_collisionSpace->addPointCloud(3, sphere, 1.0);
-	
-#ifdef DISPLAY_ODE_SPACES
-	collision_space::EnvironmentModelODE* okm = dynamic_cast<collision_space::EnvironmentModelODE*>(m_collisionSpace);
-	if (okm)
-	{
-	    em = okm;
-	    spaces.addSpace(okm->getODESpace(), 1.0f, 0.0f, 0.0f);
-	    for (unsigned int i = 0 ; i < okm->getModelCount() ; ++i)
-		spaces.addSpace(okm->getModelODESpace(i), 0.1f, 0.5f, (float)(i + 1)/(float)okm->getModelCount());
-	}
-#endif
-
     }
     
     ~KinematicPlanning(void)
@@ -169,18 +147,19 @@ public:
 	printf("\n\n");	
     }
     
+    void localizedPoseCallback(void)
+    {
+	m_basePos[0] = m_localizedPose.pos.x;
+	m_basePos[1] = m_localizedPose.pos.y;
+	m_basePos[2] = m_localizedPose.pos.th;
+    }
+    
     void pointCloudCallback(void)
     {
 	unsigned int n = m_cloud.get_pts_size();
-	printf("received %u points\n", n);
+	printf("Received %u points\n", n);
 
-	
-#ifdef DISPLAY_ODE_SPACES
-	spaces.clear();	
-#endif
-
-
-	ros::Time startTime = ros::Time::now();
+       	ros::Time startTime = ros::Time::now();
 	double *data = new double[3 * n];	
 	for (unsigned int i = 0 ; i < n ; ++i)
 	{
@@ -196,20 +175,9 @@ public:
 	m_collisionSpace->unlock();
 	
 	delete[] data;
-
-#ifdef DISPLAY_ODE_SPACES
-	collision_space::EnvironmentModelODE* okm = dynamic_cast<collision_space::EnvironmentModelODE*>(m_collisionSpace);
-	if (okm)
-	{
-	    spaces.addSpace(okm->getODESpace(), 1.0f, 0.0f, 0.0f);
-	    for (unsigned int i = 0 ; i < okm->getModelCount() ; ++i)
-		spaces.addSpace(okm->getModelODESpace(i), 0.1f, 0.5f, (float)(i + 1)/(float)okm->getModelCount());
-	}
-#endif
 	
 	double tupd = (ros::Time::now() - startTime).to_double();	
 	printf("Updated world model in %f seconds\n", tupd);
-
     }
     
     bool plan(robot_srvs::KinematicMotionPlan::request &req, robot_srvs::KinematicMotionPlan::response &res)
@@ -302,15 +270,6 @@ public:
 	/* copy the solution to the result */
 	if (ok)
 	{
-
-#ifdef DISPLAY_ODE_SPACES
-	if (m->groupID >= 0)
-	{
-	    /* set the pose of the whole robot */
-	    m->kmodel->computeTransforms(req.start_state.vals);
-	    m->collisionSpace->updateRobotModel(m->collisionSpaceID);
-	}
-#endif
 	    ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
 	    res.path.set_states_size(path->states.size());
 	    for (unsigned int i = 0 ; i < path->states.size() ; ++i)
@@ -318,13 +277,6 @@ public:
 		res.path.states[i].set_vals_size(dim);
 		for (int j = 0 ; j < dim ; ++j)
 		    res.path.states[i].vals[j] = path->states[i]->values[j];
-		
-#ifdef DISPLAY_ODE_SPACES
-		m->kmodel->computeTransforms(path->states[i]->values, m->groupID);
-		m->collisionSpace->updateRobotModel(m->collisionSpaceID);
-		sleep(1);
-#endif
-		
 	    }
 	}
 	else
@@ -446,9 +398,12 @@ private:
     };
     	
     std_msgs::PointCloudFloat32        m_cloud;
+    std_msgs::RobotBase2DOdom          m_localizedPose;
+    double                             m_basePos[3];    
     collision_space::EnvironmentModel *m_collisionSpace;    
     std::map<std::string, Model*>      m_models;
-    std::vector<robot_desc::URDF*>     m_robotDescriptions;    
+    std::vector<robot_desc::URDF*>     m_robotDescriptions;
+    
 
     static bool isStateValid(const ompl::SpaceInformationKinematic::StateKinematic_t state, void *data)
     {
@@ -471,28 +426,6 @@ private:
 
 };
 
-
-#ifdef DISPLAY_ODE_SPACES
-
-static void start(void)
-{
-    static float xyz[3] = {-0.2179,1.5278,0.8700};
-    static float hpr[3] = {-77.5000,-19.5000,0.0000};    
-    dsSetViewpoint(xyz, hpr);
-}
-
-static void command(int cmd)
-{
-}
-
-static void simLoop(int)
-{
-    em->lock();
-    spaces.displaySpaces();
-    em->unlock();    
-}
-#endif
-
 int main(int argc, char **argv)
 {  
     ros::init(argc, argv);
@@ -505,21 +438,7 @@ int main(int argc, char **argv)
     for (unsigned int i = 0 ; i < mlist.size() ; ++i)
 	printf("  * %s\n", mlist[i].c_str());    
     if (mlist.size() > 0)
-    {
-#ifdef DISPLAY_ODE_SPACES
-	dsFunctions fn;
-	fn.version = DS_VERSION;
-	fn.start   = &start;
-	fn.step    = &simLoop;
-	fn.command = &command;
-	fn.stop = 0;
-	fn.path_to_textures = "./res";
-	
-	dsSimulationLoop(argc, argv, 640, 480, &fn);
-#else
 	planner.spin();
-#endif
-    }
     else
 	printf("No models defined. Kinematic planning node cannot start.\n");
     
