@@ -103,7 +103,7 @@
 
 
 
-  <model:physical name="endbin_model">
+  <!--<model:physical name="endbin_model">
     <xyz>   -4.4    0.0     2.6</xyz>
     <rpy>   90.0    0.0    90.0</rpy>
     <body:trimesh name="endbin_body">
@@ -132,7 +132,7 @@
         </visual>
       </geom:trimesh>
     </body:trimesh>
-  </model:physical>
+  </model:physical>-->
 
   <!-- The Slide-->
   <model:physical name="slide1_model">
