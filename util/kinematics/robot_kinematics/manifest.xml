@@ -4,9 +4,8 @@
 <author>Sachin Chitta sachinc@willowgarage.com, Advait Jain ajain@willowgarage.com</author>
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
-<depend package="pr2Core"/>
 <depend package="wg_robot_description_parser"/>
-<depend package="rosTF"/>
+<depend package="libTF"/>
 <depend package="math_utils"/>
 <depend package="kdl"/>
 <export>
