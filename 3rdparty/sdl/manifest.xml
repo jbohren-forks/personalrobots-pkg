@@ -14,5 +14,7 @@ dependency system.
   <cpp lflags="-Wl,-rpath,${prefix}/SDL/lib `${prefix}/SDL/bin/sdl-config --libs`" cflags="`${prefix}/SDL/bin/sdl-config --cflags` -I${prefix}/SDL/include"/>
   <doxymaker external="http://libsdl.org/cgi/docwiki.cgi" />
 </export>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libgl1-mesa-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libglu1-mesa-dev"/>
 </package>
 
