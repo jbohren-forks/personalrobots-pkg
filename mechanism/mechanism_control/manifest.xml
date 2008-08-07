@@ -9,6 +9,7 @@
 <depend package="tinyxml"/>
 <depend package="mechanism_model"/>
 <depend package="generic_controllers"/>
+<depend package="misc_utils" />
 <export>
     <cpp cflags='-I${prefix}/include' lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lmechanism_control'/>
 </export>

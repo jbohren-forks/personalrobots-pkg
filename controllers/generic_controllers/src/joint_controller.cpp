@@ -41,6 +41,8 @@
 
 using namespace controller;
 
+ROS_REGISTER_CONTROLLER(JointController)
+
 //-------------------------------------------------------------------------//
 //CONSTRUCTION/DESTRUCTION CALLS
 //-------------------------------------------------------------------------//

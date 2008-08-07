@@ -42,6 +42,7 @@
  */
 /***************************************************/
 
+#include <misc_utils/factory.h>
 #include <mechanism_model/robot.h>
 
 class TiXmlElement;
@@ -62,6 +63,14 @@ enum ControllerControlMode
   CONTROLLER_MODE_SET, CONTROLLER_ENABLED, CONTROLLER_DISABLED, CONTROLLER_TORQUE, CONTROLLER_POSITION,
   CONTROLLER_VELOCITY, CONTROLLER_AUTOMATIC, ETHERDRIVE_SPEED
 };
+
+class Controller;
+typedef Factory<Controller> ControllerFactory;
+
+#define ROS_REGISTER_CONTROLLER(c) \
+  controller::Controller *ROS_New_##c() { return new c(); }             \
+  bool ROS_CONTROLLER_##c = \
+    controller::ControllerFactory::instance().registerType(#c, ROS_New_##c);
 
 class Controller
 {
