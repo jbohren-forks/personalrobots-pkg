@@ -58,6 +58,9 @@
 //window length for remembering laser data (seconds)
 static const double WINDOW_LENGTH = 1.0;
 
+//laser range value - hits beyond this get discard
+static const double LASER_MAX_RANGE = 10.0;
+
 class CostMap2DRos: public ros::node
 {
 
@@ -140,7 +143,7 @@ CostMap2DRos::~CostMap2DRos() {
 void CostMap2DRos::laserReceived() {
   
   std_msgs::PointCloudFloat32 local_cloud;
-  projector_.projectLaser(laser_msg_, local_cloud);
+  projector_.projectLaser(laser_msg_, local_cloud, LASER_MAX_RANGE);
   
   // Convert to a point cloud in the map frame
   std_msgs::PointCloudFloat32 global_cloud;
@@ -204,11 +207,11 @@ void CostMap2DRos::publishMapData()
       if(mapdata[ind] == 75) {
         double wx, wy;
         costmap_.convertFromIndexesToWorldCoord(i,j,wx,wy);
-        pointcloud_msg_.points[pointcloud_ind].x = wx;
-        pointcloud_msg_.points[pointcloud_ind].y = wy;
-        if(pointcloud_ind == tot_points) {
+        if(pointcloud_ind > tot_points) {
           std::cerr << "CostMap2DRos::publishMapData - too many obstacle points.\n";
         } else {
+          pointcloud_msg_.points[pointcloud_ind].x = wx;
+          pointcloud_msg_.points[pointcloud_ind].y = wy;
           pointcloud_ind++;
         }
       }
