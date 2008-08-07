@@ -12,6 +12,7 @@ This package contains Open Dynamics Engine OpenDE or ODE
   <cpp lflags="-Wl,-rpath,${prefix}/ois/lib -L${prefix}/ois/lib -lOIS" cflags="-I${prefix}/ois/include/OIS"/>
         <doxymaker external="http://ois.sf.net"/>
 </export>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libxaw7-dev"/>
 </package>
 
 

@@ -24,6 +24,8 @@ ois: ois-checkout
 	  cp ois-cvs/Mac/XCode-2.2/build/Release/OIS.framework/Versions/A/Headers/*.h ois/include/OIS; \
 	  cp ois-cvs/Mac/XCode-2.2/build/Release/libOIS.a ois/lib; \
 	else \
+	  mkdir -p ois/lib; \
+	  mkdir -p ois/include/OIS;\
 	  cd ois-cvs && touch NEWS README AUTHORS ChangeLog; \
 	  autoreconf -i -s; \
 	  ./configure --prefix=$(ROOT) --with-trimesh=opcode $(CONFIGURE_FLAGS); \
