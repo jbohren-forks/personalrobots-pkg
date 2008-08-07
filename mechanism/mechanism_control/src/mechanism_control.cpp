@@ -26,11 +26,12 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "mechanism_control/mechanism_control.h"
+#include "generic_controllers/controller.h"
 
 using namespace mechanism;
 
 MechanismControl::MechanismControl(HardwareInterface *hw) :
-  initialized_(0), model_((char*)"robot"), hw_(hw)
+  model_((char*)"robot"), initialized_(0), hw_(hw)
 {
   memset(controllers_, 0, MAX_NUM_CONTROLLERS * sizeof(void*));
   model_.hw_ = hw;
@@ -137,7 +138,7 @@ void MechanismControl::update()
 
 void MechanismControl::registerControllerType(const std::string& type, ControllerAllocator f)
 {
-  controller_library_.insert(std::pair<std::string,ControllerAllocator>(type, f));
+  controller::ControllerFactory::instance().registerType(type, f);
 }
 
 bool MechanismControl::addController(controller::Controller *c)
@@ -167,9 +168,9 @@ bool MechanismControl::addController(controller::Controller *c)
 
 bool MechanismControl::spawnController(const char *type, TiXmlElement *config)
 {
-  controller::Controller *c;
-  ControllerAllocator f = controller_library_[type];
-  c = f();
+  controller::Controller *c = controller::ControllerFactory::instance().create(type);
+  if (c == NULL)
+    return false;
   c->initXml(&model_, config);
 
   return addController(c);

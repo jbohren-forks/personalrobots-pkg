@@ -63,17 +63,18 @@ public:
   // Non real-time functions
   bool init(TiXmlElement* config);
   bool registerActuator(const std::string &name, int index);
-  void registerControllerType(const std::string& type, ControllerAllocator f);
   bool addController(controller::Controller *c);
   bool spawnController(const char* type, TiXmlElement* config);
 
   mechanism::Robot model_;
 
+  // TODO: deprecated.  Replaced by ControllerFactory
+  void registerControllerType(const std::string& type, ControllerAllocator f);
+
 private:
   bool initialized_;
   HardwareInterface *hw_;
 
-  std::map<std::string, ControllerAllocator> controller_library_;
   const static int MAX_NUM_CONTROLLERS = 100;
   ros::thread::mutex controllers_mutex_;
   controller::Controller* controllers_[MAX_NUM_CONTROLLERS];
