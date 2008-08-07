@@ -346,7 +346,190 @@ RosGazeboNode::LoadRobotModel()
   std::string pr2Content;
   get_param("robotdesc/pr2",pr2Content);
 
+  // parse the big pr2.xml string from ros
   pr2Description.loadString(pr2Content.c_str());
+
+  // get all the parameters needed for frame transforms
+  link = pr2Description.getLink("base");
+  base_center_offset_z = link->collision->xyz[2];
+  link = pr2Description.getLink("torso");
+  base_torso_offset_x  = link->xyz[0];
+  base_torso_offset_y  = link->xyz[1];
+  base_torso_offset_z  = link->xyz[2];
+  link = pr2Description.getLink("shoulder_pan_left");
+  sh_pan_left_torso_offset_x =  link->xyz[0];
+  sh_pan_left_torso_offset_y =  link->xyz[1];
+  sh_pan_left_torso_offset_z =  link->xyz[2];
+  link = pr2Description.getLink("shoulder_pitch_left");
+  shoulder_pitch_left_offset_x = link->xyz[0];
+  shoulder_pitch_left_offset_y = link->xyz[1];
+  shoulder_pitch_left_offset_z = link->xyz[2];
+  link = pr2Description.getLink("upperarm_roll_left");
+  upperarm_roll_left_offset_x = link->xyz[0];
+  upperarm_roll_left_offset_y = link->xyz[1];
+  upperarm_roll_left_offset_z = link->xyz[2];
+  link = pr2Description.getLink("elbow_flex_left");
+  elbow_flex_left_offset_x = link->xyz[0];
+  elbow_flex_left_offset_y = link->xyz[1];
+  elbow_flex_left_offset_z = link->xyz[2];
+  link = pr2Description.getLink("finger_l_left");
+  finger_l_left_offset_x = link->xyz[0];
+  finger_l_left_offset_y = link->xyz[1];
+  finger_l_left_offset_z = link->xyz[2];
+  link = pr2Description.getLink("forearm_roll_left");
+  forearm_roll_left_offset_x = link->xyz[0];
+  forearm_roll_left_offset_y = link->xyz[1];
+  forearm_roll_left_offset_z = link->xyz[2];
+  link = pr2Description.getLink("wrist_flex_left");
+  wrist_flex_left_offset_x = link->xyz[0];
+  wrist_flex_left_offset_y = link->xyz[1];
+  wrist_flex_left_offset_z = link->xyz[2];
+  link = pr2Description.getLink("gripper_roll_left");
+  gripper_roll_left_offset_x = link->xyz[0];
+  gripper_roll_left_offset_y = link->xyz[1];
+  gripper_roll_left_offset_z = link->xyz[2];
+  link = pr2Description.getLink("finger_r_left");
+  finger_r_left_offset_x = link->xyz[0];
+  finger_r_left_offset_y = link->xyz[1];
+  finger_r_left_offset_z = link->xyz[2];
+  link = pr2Description.getLink("finger_tip_l_left");
+  finger_tip_l_left_offset_x = link->xyz[0];
+  finger_tip_l_left_offset_y = link->xyz[1];
+  finger_tip_l_left_offset_z = link->xyz[2];
+  link = pr2Description.getLink("finger_tip_r_left");
+  finger_tip_r_left_offset_x = link->xyz[0];
+  finger_tip_r_left_offset_y = link->xyz[1];
+  finger_tip_r_left_offset_z = link->xyz[2];
+
+
+  link = pr2Description.getLink("shoulder_pan_right");
+  shoulder_pan_right_offset_x = link->xyz[0];
+  shoulder_pan_right_offset_y = link->xyz[1];
+  shoulder_pan_right_offset_z = link->xyz[2];
+  link = pr2Description.getLink("shoulder_pitch_right");
+  shoulder_pitch_right_offset_x = link->xyz[0];
+  shoulder_pitch_right_offset_y = link->xyz[1];
+  shoulder_pitch_right_offset_z = link->xyz[2];
+  link = pr2Description.getLink("upperarm_roll_right");
+  upperarm_roll_right_offset_x = link->xyz[0];
+  upperarm_roll_right_offset_y = link->xyz[1];
+  upperarm_roll_right_offset_z = link->xyz[2];
+  link = pr2Description.getLink("elbow_flex_right");
+  elbow_flex_right_offset_x = link->xyz[0];
+  elbow_flex_right_offset_y = link->xyz[1];
+  elbow_flex_right_offset_z = link->xyz[2];
+  link = pr2Description.getLink("forearm_roll_right");
+  forearm_roll_right_offset_x = link->xyz[0];
+  forearm_roll_right_offset_y = link->xyz[1];
+  forearm_roll_right_offset_z = link->xyz[2];
+  link = pr2Description.getLink("wrist_flex_right");
+  wrist_flex_right_offset_x = link->xyz[0];
+  wrist_flex_right_offset_y = link->xyz[1];
+  wrist_flex_right_offset_z = link->xyz[2];
+  link = pr2Description.getLink("gripper_roll_right");
+  gripper_roll_right_offset_x = link->xyz[0];
+  gripper_roll_right_offset_y = link->xyz[1];
+  gripper_roll_right_offset_z = link->xyz[2];
+  link = pr2Description.getLink("finger_l_right");
+  finger_l_right_offset_x = link->xyz[0];
+  finger_l_right_offset_y = link->xyz[1];
+  finger_l_right_offset_z = link->xyz[2];
+  link = pr2Description.getLink("finger_r_right");
+  finger_r_right_offset_x = link->xyz[0];
+  finger_r_right_offset_y = link->xyz[1];
+  finger_r_right_offset_z = link->xyz[2];
+  link = pr2Description.getLink("finger_tip_l_right");
+  finger_tip_l_right_offset_x = link->xyz[0];
+  finger_tip_l_right_offset_y = link->xyz[1];
+  finger_tip_l_right_offset_z = link->xyz[2];
+  link = pr2Description.getLink("finger_tip_r_right");
+  finger_tip_r_right_offset_x = link->xyz[0];
+  finger_tip_r_right_offset_y = link->xyz[1];
+  finger_tip_r_right_offset_z = link->xyz[2];
+
+  link = pr2Description.getLink("forearm_camera_left");
+  forearm_camera_left_offset_x = link->xyz[0];
+  forearm_camera_left_offset_y = link->xyz[1];
+  forearm_camera_left_offset_z = link->xyz[2];
+  link = pr2Description.getLink("forearm_camera_right");
+  forearm_camera_right_offset_x = link->xyz[0];
+  forearm_camera_right_offset_y = link->xyz[1];
+  forearm_camera_right_offset_z = link->xyz[2];
+  link = pr2Description.getLink("wrist_camera_left");
+  wrist_camera_left_offset_x = link->xyz[0];
+  wrist_camera_left_offset_y = link->xyz[1];
+  wrist_camera_left_offset_z = link->xyz[2];
+  link = pr2Description.getLink("wrist_camera_right");
+  wrist_camera_right_offset_x = link->xyz[0];
+  wrist_camera_right_offset_y = link->xyz[1];
+  wrist_camera_right_offset_z = link->xyz[2];
+
+
+  link = pr2Description.getLink("head_pan");
+  head_pan_offset_x = link->xyz[0];
+  head_pan_offset_y = link->xyz[1];
+  head_pan_offset_z = link->xyz[2];
+  link = pr2Description.getLink("head_tilt");
+  head_tilt_offset_x = link->xyz[0];
+  head_tilt_offset_y = link->xyz[1];
+  head_tilt_offset_z = link->xyz[2];
+  link = pr2Description.getLink("base_laser");
+  base_laser_offset_x = link->xyz[0];
+  base_laser_offset_y = link->xyz[1];
+  base_laser_offset_z = link->xyz[2];
+  link = pr2Description.getLink("tilt_laser");
+  tilt_laser_offset_x = link->xyz[0];
+  tilt_laser_offset_y = link->xyz[1];
+  tilt_laser_offset_z = link->xyz[2],
+  link = pr2Description.getLink("caster_front_left");
+  caster_front_left_offset_x = link->xyz[0];
+  caster_front_left_offset_y = link->xyz[1];
+  caster_front_left_offset_z = link->xyz[2];
+  link = pr2Description.getLink("wheel_front_left_l");
+  wheel_front_left_l_offset_x = link->xyz[0];
+  wheel_front_left_l_offset_y = link->xyz[1];
+  wheel_front_left_l_offset_z = link->xyz[2];
+  link = pr2Description.getLink("wheel_front_left_r");
+  wheel_front_left_r_offset_x = link->xyz[0];
+  wheel_front_left_r_offset_y = link->xyz[1];
+  wheel_front_left_r_offset_z = link->xyz[2];
+  link = pr2Description.getLink("caster_front_right");
+  caster_front_right_offset_x = link->xyz[0];
+  caster_front_right_offset_y = link->xyz[1];
+  caster_front_right_offset_z = link->xyz[2];
+  link = pr2Description.getLink("wheel_front_right_l");
+  wheel_front_right_l_offset_x = link->xyz[0];
+  wheel_front_right_l_offset_y = link->xyz[1];
+  wheel_front_right_l_offset_z = link->xyz[2];
+  link = pr2Description.getLink("wheel_front_right_r");
+  wheel_front_right_r_offset_x = link->xyz[0];
+  wheel_front_right_r_offset_y = link->xyz[1];
+  wheel_front_right_r_offset_z = link->xyz[2];
+  link = pr2Description.getLink("caster_rear_left");
+  caster_rear_left_offset_x = link->xyz[0];
+  caster_rear_left_offset_y = link->xyz[1];
+  caster_rear_left_offset_z = link->xyz[2];
+  link = pr2Description.getLink("wheel_rear_left_l");
+  wheel_rear_left_l_offset_x = link->xyz[0];
+  wheel_rear_left_l_offset_y = link->xyz[1];
+  wheel_rear_left_l_offset_z = link->xyz[2];
+  link = pr2Description.getLink("wheel_rear_left_r");
+  wheel_rear_left_r_offset_x = link->xyz[0];
+  wheel_rear_left_r_offset_y = link->xyz[1];
+  wheel_rear_left_r_offset_z = link->xyz[2];
+  link = pr2Description.getLink("caster_rear_right");
+  caster_rear_right_offset_x = link->xyz[0];
+  caster_rear_right_offset_y = link->xyz[1];
+  caster_rear_right_offset_z = link->xyz[2];
+  link = pr2Description.getLink("wheel_rear_right_l");
+  wheel_rear_right_l_offset_x = link->xyz[0];
+  wheel_rear_right_l_offset_y = link->xyz[1];
+  wheel_rear_right_l_offset_z = link->xyz[2];
+  link = pr2Description.getLink("wheel_rear_right_r");
+  wheel_rear_right_r_offset_x = link->xyz[0];
+  wheel_rear_right_r_offset_y = link->xyz[1];
+  wheel_rear_right_r_offset_z = link->xyz[2];
+
 
 }
 
@@ -603,16 +786,14 @@ RosGazeboNode::Update()
   /*        localization                                         */
   /*                                                             */
   /***************************************************************/
-  robot_desc::URDF::Link* link;
 
-  link = pr2Description.getLink("base");
   this->PR2Copy->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw); // actual CoM of base
-  if (link)
+
   tf.sendInverseEuler("FRAMEID_ODOM",
                "base",
                x,
                y,
-               z-link->collision->xyz[3], /* get infor from xml: half height of base box */
+               z - base_center_offset_z, /* get infor from xml: half height of base box */
                yaw,
                pitch,
                roll,
@@ -640,26 +821,22 @@ RosGazeboNode::Update()
   // base = center of the bottom of the base box
   // torso = midpoint of bottom of turrets
 
-  link = pr2Description.getLink("torso");
-  if (link)
   tf.sendEuler("torso",
                "base",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2], /* FIXME: spine elevator not accounted for */
+               base_torso_offset_x,
+               base_torso_offset_y,
+               base_torso_offset_z, /* FIXME: spine elevator not accounted for */
                0.0,
                0.0,
                0.0,
                odomMsg.header.stamp);
 
   // arm_l_turret = bottom of left turret
-  link = pr2Description.getLink("shoulder_pan_left");
-  if (link)
   tf.sendEuler("shoulder_pan_left",
                "torso",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               sh_pan_left_torso_offset_x,
+               sh_pan_left_torso_offset_y,
+               sh_pan_left_torso_offset_z,
                larm.turretAngle,
                //0.0,
                0.0,
@@ -668,199 +845,124 @@ RosGazeboNode::Update()
   //std::cout << "left pan angle " << larm.turretAngle << std::endl;
 
   // arm_l_shoulder = center of left shoulder pitch bracket
-  link = pr2Description.getLink("shoulder_pitch_left");
-  if (link)
   tf.sendEuler("shoulder_pitch_left",
                "shoulder_pan_left",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               shoulder_pitch_left_offset_x,
+               shoulder_pitch_left_offset_y,
+               shoulder_pitch_left_offset_z,
                0.0,
                larm.shoulderLiftAngle,
                0.0,
                odomMsg.header.stamp);
 
   // arm_l_upperarm = upper arm with roll DOF, at shoulder pitch center
-  link = pr2Description.getLink("upperarm_roll_left");
-  if (link)
   tf.sendEuler("upperarm_roll_left",
                "shoulder_pitch_left",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               upperarm_roll_left_offset_x,
+               upperarm_roll_left_offset_y,
+               upperarm_roll_left_offset_z,
                0.0,
                0.0,
                larm.upperarmRollAngle,
                odomMsg.header.stamp);
 
   //frameid_arm_l_elbow = elbow pitch bracket center of rotation
-  link = pr2Description.getLink("elbow_flex_left");
-  if (link)
   tf.sendEuler("elbow_flex_left",
                "upperarm_roll_left",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               elbow_flex_left_offset_x,
+               elbow_flex_left_offset_y,
+               elbow_flex_left_offset_z,
                0.0,
                larm.elbowAngle,
                0.0,
                odomMsg.header.stamp);
 
   //frameid_arm_l_forearm = forearm roll DOR, at elbow pitch center
-  link = pr2Description.getLink("forearm_roll_left");
-  if (link)
   tf.sendEuler("forearm_roll_left",
                "elbow_flex_left",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               forearm_roll_left_offset_x,
+               forearm_roll_left_offset_y,
+               forearm_roll_left_offset_z,
                0.0,
                0.0,
                larm.forearmRollAngle,
                odomMsg.header.stamp);
 
   // arm_l_wrist = wrist pitch DOF.
-  link = pr2Description.getLink("wrist_flex_left");
-  if (link)
   tf.sendEuler("wrist_flex_left",
                "forearm_roll_left",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               wrist_flex_left_offset_x,
+               wrist_flex_left_offset_y,
+               wrist_flex_left_offset_z,
                0.0,
                larm.wristPitchAngle,
                0.0,
                odomMsg.header.stamp);
 
   // arm_l_hand = hand roll DOF, center at wrist pitch center
-  link = pr2Description.getLink("gripper_roll_left");
-  if (link)
   tf.sendEuler("gripper_roll_left",
                "wrist_flex_left",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               gripper_roll_left_offset_x,
+               gripper_roll_left_offset_y,
+               gripper_roll_left_offset_z,
                0.0,
                0.0,
                larm.wristRollAngle,
                odomMsg.header.stamp);
 
   // proximal digit, left
-  link = pr2Description.getLink("finger_l_left");
-  if (link)
   tf.sendEuler("finger_l_left",
                "gripper_roll_left",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               finger_l_left_offset_x,
+               finger_l_left_offset_y,
+               finger_l_left_offset_z,
                0.0,  //FIXME: get angle of finger...
                0.0,
                0.0,
                odomMsg.header.stamp);
 
   // proximal digit, right
-  link = pr2Description.getLink("finger_r_left");
-  if (link)
   tf.sendEuler("finger_r_left",
                "gripper_roll_left",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               finger_r_left_offset_x,
+               finger_r_left_offset_y,
+               finger_r_left_offset_z,
                0.0,  //FIXME: get angle of finger...
                0.0,
                0.0,
                odomMsg.header.stamp);
 
   // distal digit, left
-  link = pr2Description.getLink("finger_tip_l_left");
-  if (link)
   tf.sendEuler("finger_tip_l_left",
                "finger_l_left",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               finger_tip_l_left_offset_x,
+               finger_tip_l_left_offset_y,
+               finger_tip_l_left_offset_z,
                0.0,  //FIXME: get angle of finger tip...
                0.0,
                0.0,
                odomMsg.header.stamp);
 
-  // distal digit, right
-  link = pr2Description.getLink("finger_tip_r_right");
-  if (link)
-  tf.sendEuler("finger_tip_r_right",
-               "finger_r_right",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+  // distal digit, left
+  tf.sendEuler("finger_tip_r_left",
+               "finger_r_left",
+               finger_tip_r_left_offset_x,
+               finger_tip_r_left_offset_y,
+               finger_tip_r_left_offset_z,
                0.0,
                0.0,
                0.0,
                odomMsg.header.stamp);
-
-  // forearm camera left
-  link = pr2Description.getLink("forearm_camera_left");
-  if (link)
-  tf.sendEuler("forearm_camera_left",
-               "forearm_roll_left",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
-               0.0,
-               0.0,
-               0.0,
-               odomMsg.header.stamp);
-
-  // forearm camera right
-  link = pr2Description.getLink("forearm_camera_right");
-  if (link)
-  tf.sendEuler("forearm_camera_right",
-               "forearm_roll_right",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
-               0.0,
-               0.0,
-               0.0,
-               odomMsg.header.stamp);
-
-  // wrist camera left
-  link = pr2Description.getLink("wrist_camera_left");
-  if (link)
-  tf.sendEuler("wrist_camera_left",
-               "gripper_roll_left",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
-               0.0,
-               0.0,
-               0.0,
-               odomMsg.header.stamp);
-
-  // wrist camera right
-  link = pr2Description.getLink("wrist_camera_right");
-  if (link)
-  tf.sendEuler("wrist_camera_right",
-               "gripper_roll_right",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
-               0.0,
-               0.0,
-               0.0,
-               odomMsg.header.stamp);
-
 
 
 
 
   // arm_r_turret = bottom of right turret
-  link = pr2Description.getLink("shoulder_pan_right");
-  if (link)
   tf.sendEuler("shoulder_pan_right",
                "torso",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               shoulder_pan_right_offset_x,
+               shoulder_pan_right_offset_y,
+               shoulder_pan_right_offset_z,
                rarm.turretAngle,
                //0.0,
                0.0,
@@ -869,131 +971,160 @@ RosGazeboNode::Update()
   //std::cout << "right pan angle " << larm.turretAngle << std::endl;
 
   // arm_r_shoulder = center of right shoulder pitch bracket
-  link = pr2Description.getLink("shoulder_pitch_right");
-  if (link)
   tf.sendEuler("shoulder_pitch_right",
                "shoulder_pan_right",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               shoulder_pitch_right_offset_x,
+               shoulder_pitch_right_offset_y,
+               shoulder_pitch_right_offset_z,
                0.0,
                rarm.shoulderLiftAngle,
                0.0,
                odomMsg.header.stamp);
 
   // arm_r_upperarm = upper arm with roll DOF, at shoulder pitch center
-  link = pr2Description.getLink("upperarm_roll_right");
-  if (link)
   tf.sendEuler("upperarm_roll_right",
                "shoulder_pitch_right",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               upperarm_roll_right_offset_x,
+               upperarm_roll_right_offset_y,
+               upperarm_roll_right_offset_z,
                0.0,
                0.0,
                rarm.upperarmRollAngle,
                odomMsg.header.stamp);
 
   //frameid_arm_r_elbow = elbow pitch bracket center of rotation
-  link = pr2Description.getLink("elbow_flex_right");
-  if (link)
   tf.sendEuler("elbow_flex_right",
                "upperarm_roll_right",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               elbow_flex_right_offset_x,
+               elbow_flex_right_offset_y,
+               elbow_flex_right_offset_z,
                0.0,
                rarm.elbowAngle,
                0.0,
                odomMsg.header.stamp);
 
   //frameid_arm_r_forearm = forearm roll DOR, at elbow pitch center
-  link = pr2Description.getLink("forearm_roll_right");
-  if (link)
   tf.sendEuler("forearm_roll_right",
                "elbow_flex_right",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               forearm_roll_right_offset_x,
+               forearm_roll_right_offset_y,
+               forearm_roll_right_offset_z,
                0.0,
                0.0,
                rarm.forearmRollAngle,
                odomMsg.header.stamp);
 
   // arm_r_wrist = wrist pitch DOF.
-  link = pr2Description.getLink("wrist_flex_right");
-  if (link)
   tf.sendEuler("wrist_flex_right",
                "forearm_roll_right",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               wrist_flex_right_offset_x,
+               wrist_flex_right_offset_y,
+               wrist_flex_right_offset_z,
                0.0,
                rarm.wristPitchAngle,
                0.0,
                odomMsg.header.stamp);
 
   // arm_r_hand = hand roll DOF, center at wrist pitch center
-  link = pr2Description.getLink("gripper_roll_right");
-  if (link)
   tf.sendEuler("gripper_roll_right",
                "wrist_flex_right",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               gripper_roll_right_offset_x,
+               gripper_roll_right_offset_y,
+               gripper_roll_right_offset_z,
                0.0,
                0.0,
                rarm.wristRollAngle,
                odomMsg.header.stamp);
 
   // proximal digit, right
-  link = pr2Description.getLink("finger_l_right");
-  if (link)
   tf.sendEuler("finger_l_right",
                "gripper_roll_right",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               finger_l_right_offset_x,
+               finger_l_right_offset_y,
+               finger_l_right_offset_z,
                0.0,  //FIXME: get angle of finger...
                0.0,
                0.0,
                odomMsg.header.stamp);
 
   // proximal digit, right
-  link = pr2Description.getLink("finger_r_right");
-  if (link)
   tf.sendEuler("finger_r_right",
                "gripper_roll_right",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               finger_r_right_offset_x,
+               finger_r_right_offset_y,
+               finger_r_right_offset_z,
                0.0,  //FIXME: get angle of finger...
                0.0,
                0.0,
                odomMsg.header.stamp);
 
   // distal digit, right
-  link = pr2Description.getLink("finger_tip_l_right");
-  if (link)
   tf.sendEuler("finger_tip_l_right",
                "finger_l_right",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               finger_tip_l_right_offset_x,
+               finger_tip_l_right_offset_y,
+               finger_tip_l_right_offset_z,
                0.0,  //FIXME: get angle of finger tip...
                0.0,
                0.0,
                odomMsg.header.stamp);
 
   // distal digit, right
-  link = pr2Description.getLink("finger_tip_r_right");
-  if (link)
   tf.sendEuler("finger_tip_r_right",
                "finger_r_right",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               finger_tip_r_right_offset_x,
+               finger_tip_r_right_offset_y,
+               finger_tip_r_right_offset_z,
                0.0,  //FIXME: get angle of finger tip...
+               0.0,
+               0.0,
+               odomMsg.header.stamp);
+
+
+
+
+
+
+  // forearm camera left
+  tf.sendEuler("forearm_camera_left",
+               "forearm_roll_left",
+               forearm_camera_left_offset_x,
+               forearm_camera_left_offset_y,
+               forearm_camera_left_offset_z,
+               0.0,
+               0.0,
+               0.0,
+               odomMsg.header.stamp);
+
+  // forearm camera right
+  tf.sendEuler("forearm_camera_right",
+               "forearm_roll_right",
+               forearm_camera_right_offset_x,
+               forearm_camera_right_offset_y,
+               forearm_camera_right_offset_z,
+               0.0,
+               0.0,
+               0.0,
+               odomMsg.header.stamp);
+
+  // wrist camera left
+  tf.sendEuler("wrist_camera_left",
+               "gripper_roll_left",
+               wrist_camera_left_offset_x,
+               wrist_camera_left_offset_y,
+               wrist_camera_left_offset_z,
+               0.0,
+               0.0,
+               0.0,
+               odomMsg.header.stamp);
+
+  // wrist camera right
+  tf.sendEuler("wrist_camera_right",
+               "gripper_roll_right",
+               wrist_camera_right_offset_x,
+               wrist_camera_right_offset_y,
+               wrist_camera_right_offset_z,
+               0.0,
                0.0,
                0.0,
                odomMsg.header.stamp);
@@ -1005,26 +1136,22 @@ RosGazeboNode::Update()
 
 
   // head pan angle
-  link = pr2Description.getLink("head_pan");
-  if (link)
   tf.sendEuler("head_pan",
                "torso",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               head_pan_offset_x,
+               head_pan_offset_y,
+               head_pan_offset_z,
                0.0, //FIXME: get pan angle
                0.0,
                0.0,
                odomMsg.header.stamp);
 
   // head tilt angle
-  link = pr2Description.getLink("head_tilt");
-  if (link)
   tf.sendEuler("head_tilt",
                "head_pan",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               head_tilt_offset_x,
+               head_tilt_offset_y,
+               head_tilt_offset_z,
                0.0, //FIXME: get tilt angle
                0.0,
                0.0,
@@ -1042,13 +1169,11 @@ RosGazeboNode::Update()
                odomMsg.header.stamp);
 
   // base laser location
-  link = pr2Description.getLink("base_laser");
-  if (link)
   tf.sendEuler("base_laser",
                "base",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               base_laser_offset_x,
+               base_laser_offset_y,
+               base_laser_offset_z,
                0.0,
                0.0,
                0.0,
@@ -1057,13 +1182,11 @@ RosGazeboNode::Update()
   // tilt laser location
   double tmpPitch, tmpPitchRate;
   this->PR2Copy->hw.GetJointServoCmd(PR2::HEAD_LASER_PITCH, &tmpPitch, &tmpPitchRate );
-  link = pr2Description.getLink("tilt_laser");
-  if (link)
   tf.sendEuler("tilt_laser",
                "torso",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               tilt_laser_offset_x,
+               tilt_laser_offset_y,
+               tilt_laser_offset_z,
                0.0,
                tmpPitch, //FIXME: verify laser tilt angle
                0.0,
@@ -1080,141 +1203,113 @@ RosGazeboNode::Update()
   this->PR2Copy->hw.GetJointServoCmd(PR2::CASTER_FR_STEER, &tmpSteerFR, &tmpVelFR );
   this->PR2Copy->hw.GetJointServoCmd(PR2::CASTER_RL_STEER, &tmpSteerRL, &tmpVelRL );
   this->PR2Copy->hw.GetJointServoCmd(PR2::CASTER_RR_STEER, &tmpSteerRR, &tmpVelRR );
-  link = pr2Description.getLink("caster_front_left");
-  if (link)
   tf.sendEuler("caster_front_left",
                "base",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               caster_front_left_offset_x,
+               caster_front_left_offset_y,
+               caster_front_left_offset_z,
                tmpSteerFL,
                0.0,
                0.0,
                odomMsg.header.stamp);
-  link = pr2Description.getLink("wheel_front_left_l");
-  if (link)
   tf.sendEuler("wheel_front_left_l",
                "caster_front_left",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               wheel_front_left_l_offset_x,
+               wheel_front_left_l_offset_y,
+               wheel_front_left_l_offset_z,
                0.0,
                0.0, //FIXME: get wheel rotation
                0.0,
                odomMsg.header.stamp);
-  link = pr2Description.getLink("wheel_front_left_r");
-  if (link)
   tf.sendEuler("wheel_front_left_r",
                "caster_front_left",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               wheel_front_left_r_offset_x,
+               wheel_front_left_r_offset_y,
+               wheel_front_left_r_offset_z,
                0.0,
                0.0, //FIXME: get wheel rotation
                0.0,
                odomMsg.header.stamp);
 
-
-
-
-
-  link = pr2Description.getLink("caster_front_right");
-  if (link)
   tf.sendEuler("caster_front_right",
                "base",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               caster_front_right_offset_x,
+               caster_front_right_offset_y,
+               caster_front_right_offset_z,
                tmpSteerFR,
                0.0,
                0.0,
                odomMsg.header.stamp);
-  link = pr2Description.getLink("wheel_front_right_l");
-  if (link)
   tf.sendEuler("wheel_front_right_l",
                "caster_front_right",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               wheel_front_right_l_offset_x,
+               wheel_front_right_l_offset_y,
+               wheel_front_right_l_offset_z,
                0.0,
                0.0, //FIXME: get wheel rotation
                0.0,
                odomMsg.header.stamp);
-  link = pr2Description.getLink("wheel_front_right_r");
-  if (link)
   tf.sendEuler("wheel_front_right_r",
                "caster_front_right",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               wheel_front_right_r_offset_x,
+               wheel_front_right_r_offset_y,
+               wheel_front_right_r_offset_z,
                0.0,
                0.0, //FIXME: get wheel rotation
                0.0,
                odomMsg.header.stamp);
 
-  link = pr2Description.getLink("caster_rear_left");
-  if (link)
   tf.sendEuler("caster_rear_left",
                "base",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               caster_rear_left_offset_x,
+               caster_rear_left_offset_y,
+               caster_rear_left_offset_z,
                tmpSteerRL,
                0.0,
                0.0,
                odomMsg.header.stamp);
-  link = pr2Description.getLink("wheel_rear_left_l");
-  if (link)
   tf.sendEuler("wheel_rear_left_l",
                "caster_rear_left",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               wheel_rear_left_l_offset_x,
+               wheel_rear_left_l_offset_y,
+               wheel_rear_left_l_offset_z,
                0.0,
                0.0, //FIXME: get wheel rotation
                0.0,
                odomMsg.header.stamp);
-  link = pr2Description.getLink("wheel_rear_left_r");
-  if (link)
   tf.sendEuler("wheel_rear_left_r",
                "caster_rear_left",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               wheel_rear_left_r_offset_x,
+               wheel_rear_left_r_offset_y,
+               wheel_rear_left_r_offset_z,
                0.0,
                0.0, //FIXME: get wheel rotation
                0.0,
                odomMsg.header.stamp);
 
-  link = pr2Description.getLink("caster_rear_right");
-  if (link)
   tf.sendEuler("caster_rear_right",
                "base",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               caster_rear_right_offset_x,
+               caster_rear_right_offset_y,
+               caster_rear_right_offset_z,
                tmpSteerRR,
                0.0,
                0.0,
                odomMsg.header.stamp);
-  link = pr2Description.getLink("wheel_rear_right_l");
-  if (link)
   tf.sendEuler("wheel_rear_right_l",
                "caster_rear_right",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               wheel_rear_right_l_offset_x,
+               wheel_rear_right_l_offset_y,
+               wheel_rear_right_l_offset_z,
                0.0,
                0.0, //FIXME: get wheel rotation
                0.0,
                odomMsg.header.stamp);
-  link = pr2Description.getLink("wheel_rear_right_r");
-  if (link)
   tf.sendEuler("wheel_rear_right_r",
                "caster_rear_right",
-               link->xyz[0],
-               link->xyz[1],
-               link->xyz[2],
+               wheel_rear_right_r_offset_x,
+               wheel_rear_right_r_offset_y,
+               wheel_rear_right_r_offset_z,
                0.0,
                0.0, //FIXME: get wheel rotation
                0.0,

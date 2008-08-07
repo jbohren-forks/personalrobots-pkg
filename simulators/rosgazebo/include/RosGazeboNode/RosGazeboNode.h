@@ -112,7 +112,144 @@ class RosGazeboNode : public ros::node
     void UpdateLeftArm();
     void UpdateRightArm();
 
+    // Ioan's ultimate parser
     robot_desc::URDF pr2Description;
+
+    // links for various information
+    robot_desc::URDF::Link* link;
+
+    double base_center_offset_z;
+    double base_torso_offset_x;
+    double base_torso_offset_y;
+    double base_torso_offset_z;
+    double sh_pan_left_torso_offset_x;
+    double sh_pan_left_torso_offset_y;
+    double sh_pan_left_torso_offset_z;
+    double shoulder_pitch_left_offset_x;
+    double shoulder_pitch_left_offset_y;
+    double shoulder_pitch_left_offset_z;
+    double upperarm_roll_left_offset_x;
+    double upperarm_roll_left_offset_y;
+    double upperarm_roll_left_offset_z;
+    double elbow_flex_left_offset_x;
+    double elbow_flex_left_offset_y;
+    double elbow_flex_left_offset_z;
+    double forearm_roll_left_offset_x;
+    double forearm_roll_left_offset_y;
+    double forearm_roll_left_offset_z;
+    double wrist_flex_left_offset_x;
+    double wrist_flex_left_offset_y;
+    double wrist_flex_left_offset_z;
+    double gripper_roll_left_offset_x;
+    double gripper_roll_left_offset_y;
+    double gripper_roll_left_offset_z;
+    double finger_l_left_offset_x;
+    double finger_l_left_offset_y;
+    double finger_l_left_offset_z;
+    double finger_r_left_offset_x;
+    double finger_r_left_offset_y;
+    double finger_r_left_offset_z;
+    double finger_tip_l_left_offset_x;
+    double finger_tip_l_left_offset_y;
+    double finger_tip_l_left_offset_z;
+    double finger_tip_r_left_offset_x;
+    double finger_tip_r_left_offset_y;
+    double finger_tip_r_left_offset_z;
+    double shoulder_pan_right_offset_x;
+    double shoulder_pan_right_offset_y;
+    double shoulder_pan_right_offset_z;
+    double shoulder_pitch_right_offset_x;
+    double shoulder_pitch_right_offset_y;
+    double shoulder_pitch_right_offset_z;
+    double upperarm_roll_right_offset_x;
+    double upperarm_roll_right_offset_y;
+    double upperarm_roll_right_offset_z;
+    double elbow_flex_right_offset_x;
+    double elbow_flex_right_offset_y;
+    double elbow_flex_right_offset_z;
+    double forearm_roll_right_offset_x;
+    double forearm_roll_right_offset_y;
+    double forearm_roll_right_offset_z;
+    double wrist_flex_right_offset_x;
+    double wrist_flex_right_offset_y;
+    double wrist_flex_right_offset_z;
+    double gripper_roll_right_offset_x;
+    double gripper_roll_right_offset_y;
+    double gripper_roll_right_offset_z;
+    double finger_l_right_offset_x;
+    double finger_l_right_offset_y;
+    double finger_l_right_offset_z;
+    double finger_r_right_offset_x;
+    double finger_r_right_offset_y;
+    double finger_r_right_offset_z;
+    double finger_tip_l_right_offset_x;
+    double finger_tip_l_right_offset_y;
+    double finger_tip_l_right_offset_z;
+    double finger_tip_r_right_offset_x;
+    double finger_tip_r_right_offset_y;
+    double finger_tip_r_right_offset_z;
+
+    double forearm_camera_left_offset_x;
+    double forearm_camera_left_offset_y;
+    double forearm_camera_left_offset_z;
+    double forearm_camera_right_offset_x;
+    double forearm_camera_right_offset_y;
+    double forearm_camera_right_offset_z;
+    double wrist_camera_left_offset_x;
+    double wrist_camera_left_offset_y;
+    double wrist_camera_left_offset_z;
+    double wrist_camera_right_offset_x;
+    double wrist_camera_right_offset_y;
+    double wrist_camera_right_offset_z;
+    double head_pan_offset_x;
+    double head_pan_offset_y;
+    double head_pan_offset_z;
+    double head_tilt_offset_x;
+    double head_tilt_offset_y;
+    double head_tilt_offset_z;
+    double base_laser_offset_x;
+    double base_laser_offset_y;
+    double base_laser_offset_z;
+    double tilt_laser_offset_x;
+    double tilt_laser_offset_y;
+    double tilt_laser_offset_z;
+
+    double caster_front_left_offset_x;
+    double caster_front_left_offset_y;
+    double caster_front_left_offset_z;
+    double wheel_front_left_l_offset_x;
+    double wheel_front_left_l_offset_y;
+    double wheel_front_left_l_offset_z;
+    double wheel_front_left_r_offset_x;
+    double wheel_front_left_r_offset_y;
+    double wheel_front_left_r_offset_z;
+    double caster_front_right_offset_x;
+    double caster_front_right_offset_y;
+    double caster_front_right_offset_z;
+    double wheel_front_right_l_offset_x;
+    double wheel_front_right_l_offset_y;
+    double wheel_front_right_l_offset_z;
+    double wheel_front_right_r_offset_x;
+    double wheel_front_right_r_offset_y;
+    double wheel_front_right_r_offset_z;
+    double caster_rear_left_offset_x;
+    double caster_rear_left_offset_y;
+    double caster_rear_left_offset_z;
+    double wheel_rear_left_l_offset_x;
+    double wheel_rear_left_l_offset_y;
+    double wheel_rear_left_l_offset_z;
+    double wheel_rear_left_r_offset_x;
+    double wheel_rear_left_r_offset_y;
+    double wheel_rear_left_r_offset_z;
+    double caster_rear_right_offset_x;
+    double caster_rear_right_offset_y;
+    double caster_rear_right_offset_z;
+    double wheel_rear_right_l_offset_x;
+    double wheel_rear_right_l_offset_y;
+    double wheel_rear_right_l_offset_z;
+    double wheel_rear_right_r_offset_x;
+    double wheel_rear_right_r_offset_y;
+    double wheel_rear_right_r_offset_z;
 
   public:
     void LoadRobotModel();
@@ -130,7 +267,7 @@ class RosGazeboNode : public ros::node
          controller::GripperController      *myGripper
          );
     ~RosGazeboNode();
-   // Constructor; stage itself needs argc/argv.  fname is the .world file
+    // Constructor; stage itself needs argc/argv.  fname is the .world file
     // that stage should load.
     RosGazeboNode(int argc, char** argv, const char* fname,
          PR2::PR2Robot          *myPR2,
