@@ -10,4 +10,5 @@
   <depend package="pr2Core" />
   <depend package="libKDL" />
   <depend package="rosstage" />
+<sysdepend os="ubuntu" version="8.04-hardy" package="jam"/>
 </package>
