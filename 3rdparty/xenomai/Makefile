@@ -9,8 +9,14 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 build: SVN_UP xenomai
 
-configured: $(SVN_DIR)
+configured: $(SVN_DIR) linux
 	cd $(SVN_DIR) && mkdir -p build && cd build && ../configure --prefix=$(PWD)/xenomai --enable-x86-sep
+	cd $(SVN_DIR) && \
+	./scripts/prepare-kernel.sh --linux=../linux --arch=i386 \
+		--adeos=ksrc/arch/x86/patches/adeos-ipipe-2.6.24-x86-2.0-07.patch 
+	cd linux && \
+	cp ../config-$(LINUX_VERSION)-AOpen .config && \
+	make oldconfig && make prepare scripts
 	touch configured $(SVN_DIR)
 
 .PHONY: xenomai
@@ -33,15 +39,8 @@ LINUX_ARCHIVE = linux-$(LINUX_VERSION).tar.bz2
 
 download_kernel: $(LINUX_ARCHIVE)
 
-kernel: SVN_UP linux
-	cd $(SVN_DIR) && \
-	./scripts/prepare-kernel.sh --linux=../linux --arch=i386 \
-		--adeos=ksrc/arch/x86/patches/adeos-ipipe-2.6.24-x86-2.0-07.patch 
-	cd linux && \
-	cp ../config-$(LINUX_VERSION)-AOpen .config && \
-	make oldconfig && \
-	make 
-
+kernel: configured
+	make -C linux
 
 install_kernel: xenomai
 	sudo make -C $(SVN_DIR)/build devices
