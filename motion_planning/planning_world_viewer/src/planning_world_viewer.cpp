@@ -159,16 +159,13 @@ public:
 	m_basePos[1] = m_localizedPose.pos.y;
 	m_basePos[2] = m_localizedPose.pos.th;
 	
-	if (m_collisionSpace->getModelCount() == 1 && m_follow)
+	if (m_collisionSpace && m_collisionSpace->getModelCount() == 1 && m_follow)
 	{
 	    int group = m_collisionSpace->getModel(0)->getGroupID("pr2::base");
-	    if (group >= 0)
-	    {
-		m_collisionSpace->lock();
-		m_collisionSpace->getModel(0)->computeTransforms(m_basePos, group);
-		m_collisionSpace->updateRobotModel(0);
-		m_collisionSpace->unlock();
-	    }	    
+	    m_collisionSpace->lock();
+	    m_collisionSpace->getModel(0)->computeTransforms(m_basePos, group);
+	    m_collisionSpace->updateRobotModel(0);
+	    m_collisionSpace->unlock();
 	}
 	
     }
@@ -323,8 +320,8 @@ static void command(int cmd)
     case 'T':
 	{
 	    const double *basePos = viewer->getBasePos();	    
-	    float xyz[3] = {basePos[0], basePos[1], 1.0};
-	    float hpr[3] = {-77.5000,-19.5000,0.0000};    
+	    float xyz[3] = {basePos[0], basePos[1], 6.0};
+	    float hpr[3] = {basePos[2] * 180.0 / M_PI, -70.000,0.000};
 	    dsSetViewpoint(xyz, hpr);
 	}
 	break;
