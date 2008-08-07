@@ -3,7 +3,7 @@
 all: trex
 
 trex: env.jam
-	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else ./make_trex; fi
+	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)" && false; else ./make_trex; fi
 
 env.jam: installEnv.sh manifest.xml
 	./installEnv.sh
