@@ -1944,6 +1944,10 @@
     wrist_flex_right
     gripper_roll_left
     gripper_roll_right
+    finger_l_left
+    finger_r_left
+    finger_l_right
+    finger_r_right
   </group>
   
 <!--
