@@ -1925,25 +1925,37 @@
     </data>
 
   </sensor>
-
-<!-- End sensor definitions -->
-
+  
+  <!-- End sensor definitions -->
+  
+  
+  <!-- Define the parts of the robot that the robot's scanners can see -->
+  
+  <group name="self_see">
+    upperarm_roll_left
+    upperarm_roll_right
+    elbow_flex_left
+    elbow_flex_right
+    forearm_roll_left
+    forearm_roll_right
+    wrist_flex_left
+    wrist_flex_right
+    gripper_roll_left
+    gripper_roll_right
+  </group>
+  
+<!--
 <frame name="test">
   <parent>finger_l_left</parent>
-      <xyz>0   0   0   </xyz> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
-      <rpy>0.0 0.0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <xyz>0   0   0   </xyz> // location defined with respect to the link origin in the sensor's local coordinate frame 
+      <rpy>0.0 0.0 0.0 </rpy> // All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis 
 </frame>
-
+-->
 
  
   <!-- Define groups of links; a link may be part of multiple groups -->
   
   <include>planning.xml</include>
-
-  <group name="head">
-    head_pan
-    head_tilt    
-  </group>
 
   <!-- Inclusion of this file causes the urdf2gazebo translator to produce
        a .world file that makes Gazebo crash - BPG -->
