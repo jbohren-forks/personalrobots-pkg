@@ -35,6 +35,7 @@
 
 
 #include <iostream>
+#include <sstream>
 #include <newmat10/newmat.h>
 #include <newmat10/newmatio.h>
 #include <cmath>
@@ -79,10 +80,15 @@ namespace libTF{
      * 
      */
     class ExtrapolateException : public std::exception
-      {
+      { 
       public:
-        virtual const char* what() const throw()    { return "Disallowed extrapolation required."; }
-      };
+        ExtrapolateException(const std::string errorDescription) { 
+          errorDescription_ = new std::string(errorDescription);
+        };
+        std::string * errorDescription_;
+        ~ExtrapolateException() throw() { delete errorDescription_; };
+        virtual const char* what() const throw()    { return errorDescription_->c_str(); };
+    };
   
     /** \brief The constructor 
      * \param interpolating Whether or not to interpolating when accessing 
@@ -143,8 +149,6 @@ namespace libTF{
      * which is by all the specific add functions.  */
     void add_value(const Pose3DStorage&);
 
-
-    ExtrapolateException MaxExtrapolation;
 
     /** \brief insert a node into the sorted linked list   */
     void insertNode(const Pose3DStorage & );

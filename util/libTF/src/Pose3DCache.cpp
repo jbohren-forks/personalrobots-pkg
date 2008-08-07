@@ -374,7 +374,11 @@ int Pose3DCache::findClosest(Pose3DStorage& one, Pose3DStorage& two, const unsig
 	 target_time + max_extrapolation_time < one.time) // Previous Case
         {
           pthread_mutex_unlock(&linked_list_mutex);
-          throw MaxExtrapolation;
+          std::stringstream ss;
+          ss << "Extrapolation Too Far: target_time = "<< target_time <<", closest data at "
+             << two.time << " and " << one.time <<" which are farther away than max_extrapolation_time "
+             << max_extrapolation_time <<".";
+          throw ExtrapolateException(ss.str());
         }
       
       return 2;
