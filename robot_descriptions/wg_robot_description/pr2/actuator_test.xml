@@ -2,8 +2,6 @@
 
 <robot name="pr2"><!-- name of the robot-->
 
-<data name="actuators" type="gazebo"> <!-- we can set a name too, but the convertor only cares about the type -->
-<verbatim> 
 <!-- Actuators -->
 <!-- ========================================= -->
 <!--- Casters and wheels -->
@@ -304,8 +302,6 @@
     <polymap>-1 -0.2 -0.5 </polymap>
   </actuator>
 
-</verbatim>
-</data>
 </robot>
 
 
