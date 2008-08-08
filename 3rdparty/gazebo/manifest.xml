@@ -16,6 +16,9 @@ This package contains Gazebo, from the Player Project
 </export>
 <versioncontrol type="svn" url="https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="scons"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="pkg-config"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libxml2-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libltdl3-dev"/>
 </package>
 
 
