@@ -41,18 +41,21 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "ros/node.h"
 #include <tinyxml/tinyxml.h>
 #include <hardware_interface/hardware_interface.h>
 #include <mechanism_model/robot.h>
 #include <rosthread/mutex.h>
 #include <generic_controllers/controller.h>
 
+#include "mechanism_control/ListControllerTypes.h"
+
 typedef controller::Controller* (*ControllerAllocator)();
 
 class MechanismControl {
 public:
   MechanismControl(HardwareInterface *hw);
-  ~MechanismControl();
+  virtual ~MechanismControl();
 
   // Real-time functions
   void update();
@@ -75,6 +78,21 @@ private:
   const static int MAX_NUM_CONTROLLERS = 100;
   ros::thread::mutex controllers_mutex_;
   controller::Controller* controllers_[MAX_NUM_CONTROLLERS];
+};
+
+/*
+ * Exposes MechanismControl's interface over ROS
+ */
+class MechanismControlNode : public MechanismControl, public ros::node
+{
+public:
+  MechanismControlNode(HardwareInterface *hw);
+  virtual ~MechanismControlNode() {}
+
+  bool listControllerTypes(mechanism_control::ListControllerTypes::request &req,
+                           mechanism_control::ListControllerTypes::response &resp);
+
+private:
 };
 
 #endif /* MECHANISM_CONTROL_H */

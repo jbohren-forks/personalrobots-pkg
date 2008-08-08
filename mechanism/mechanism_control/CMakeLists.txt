@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 rospack(mechanism_control)
+genmsg()
+gensrv()
 rospack_add_library(mechanism_control src/mechanism_control.cpp)
-

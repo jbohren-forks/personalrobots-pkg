@@ -50,10 +50,21 @@ GZ_REGISTER_DYNAMIC_CONTROLLER("gazebo_actuators", GazeboActuators);
 GazeboActuators::GazeboActuators(Entity *parent)
   : Controller(parent), hw_(0), mc_(&hw_)
 {
-   this->parent_model_ = dynamic_cast<Model*>(this->parent);
+  this->parent_model_ = dynamic_cast<Model*>(this->parent);
 
-   if (!this->parent_model_)
-      gzthrow("GazeboActuators controller requires a Model as its parent");
+  if (!this->parent_model_)
+    gzthrow("GazeboActuators controller requires a Model as its parent");
+
+  rosnode_ = ros::g_node;
+  int argc = 0;
+  char** argv = NULL;
+  if (rosnode_ == NULL)
+  {
+    // start a ros node if none exist
+    ros::init(argc,argv);
+    rosnode_ = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
+    printf("-------------------- starting node in GazeboActuators\n");
+  }
 }
 
 GazeboActuators::~GazeboActuators()

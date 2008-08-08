@@ -175,3 +175,23 @@ bool MechanismControl::spawnController(const char *type, TiXmlElement *config)
 
   return addController(c);
 }
+
+
+
+MechanismControlNode::MechanismControlNode(HardwareInterface *hw)
+  : MechanismControl(hw), ros::node("MechanismControl")
+{
+  advertise_service("list_controller_types", &MechanismControlNode::listControllerTypes);
+}
+
+
+bool MechanismControlNode::listControllerTypes(
+  mechanism_control::ListControllerTypes::request &req,
+  mechanism_control::ListControllerTypes::response &resp)
+{
+  std::vector<std::string> types;
+  controller::ControllerFactory::instance().getTypes(&types);
+  resp.set_types_vec(types);
+  return true;
+}
+

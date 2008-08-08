@@ -31,6 +31,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 template <class BaseResult,
           class Constructor = BaseResult* (*)()>
@@ -58,6 +59,15 @@ public:
     typename ConstructorMap::value_type value(name, c);
     types_.insert(value);
     return true;
+  }
+
+  void getTypes(std::vector<std::string> *result)
+  {
+    result->resize(types_.size());
+    int i = 0;
+    typename ConstructorMap::const_iterator it;
+    for (it = types_.begin(); it != types_.end(); ++it)
+      (*result)[i++] = it->first;
   }
 
 private:
