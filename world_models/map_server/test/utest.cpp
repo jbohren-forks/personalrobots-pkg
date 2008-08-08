@@ -39,7 +39,7 @@
  *
  * This test can fail on OS X, due to an apparent limitation of the
  * underlying SDL_Image library. */
-TEST(map_server, load_valid_png)
+TEST(MapServer, loadValidPNG)
 {
   try
   {
@@ -59,7 +59,7 @@ TEST(map_server, load_valid_png)
 
 /* Try to load a valid BMP file.  Succeeds if no exception is thrown, and if
  * the loaded image matches the known dimensions and content of the file. */
-TEST(map_server, load_valid_bmp)
+TEST(MapServer, loadValidBMP)
 {
   try
   {
@@ -79,7 +79,7 @@ TEST(map_server, load_valid_bmp)
 
 /* Try to load an invalid file.  Succeeds if a std::runtime_error exception
  * is thrown. */
-TEST(map_server, load_invalid_file)
+TEST(MapServer, loadInvalidFile)
 {
   try
   {
