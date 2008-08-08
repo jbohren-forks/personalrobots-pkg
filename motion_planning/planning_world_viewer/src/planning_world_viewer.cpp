@@ -108,10 +108,12 @@ public:
 	subscribe("display_kinematic_path", m_displayPath, &PlanningWorldViewer::displayPathCallback);
 	
 	m_collisionSpace = new collision_space::EnvironmentModelODE();
+	m_collisionSpace->setSelfCollision(false);
 	m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
 	m_follow = true;
 	m_displayRobot = true;
 	m_displayObstacles = true;
+	m_checkCollision = false;
 	
 	m_collisionSpace->lock();
 	loadRobotDescriptions();
@@ -172,6 +174,11 @@ public:
 	    m_collisionSpace->lock();
 	    m_collisionSpace->getModel(0)->computeTransforms(m_basePos, group);
 	    m_collisionSpace->updateRobotModel(0);
+	    if (m_checkCollision)
+	    {
+		ros::Time startTime = ros::Time::now();
+		printf("Collision: %d     [%f s]\n", m_collisionSpace->isCollision(0), (ros::Time::now() - startTime).to_double());
+	    }	    
 	    m_collisionSpace->unlock();
 	}
     }
@@ -257,13 +264,25 @@ public:
 	/* add the model to the collision space */
 	unsigned int cid = m_collisionSpace->addRobotModel(kmodel);
 
+	defaultPosition(kmodel, cid);
+    }
+    
+    void defaultPosition(planning_models::KinematicModel *kmodel = NULL, unsigned int cid = 0)
+    {
+	if (!kmodel)
+	{
+	    if (m_collisionSpace->getModelCount() == 1)
+		kmodel = m_collisionSpace->getModel(0);
+	    else
+		return;
+	}
+	
 	double defaultPose[kmodel->stateDimension];
 	for (unsigned int i = 0 ; i < kmodel->stateDimension ; ++i)
 	    defaultPose[i] = 0.0;
 	
 	kmodel->computeTransforms(defaultPose);
-	m_collisionSpace->updateRobotModel(cid);
-
+	m_collisionSpace->updateRobotModel(cid);	
     }
     
     unsigned int getRobotCount(void) const
@@ -279,6 +298,16 @@ public:
     void setFollow(bool follow)
     {
 	m_follow = follow;
+    }
+    
+    bool getCheckCollision(void) const
+    {
+	return m_checkCollision;
+    }
+    
+    void setCheckCollision(bool collision)
+    {
+	m_checkCollision = collision;
     }
     
     bool getDisplayRobot(void) const
@@ -334,7 +363,8 @@ private:
     bool                                  m_follow;
     bool                                  m_displayRobot;
     bool                                  m_displayObstacles;  
-    
+    bool                                  m_checkCollision;
+        
 };
 
 static PlanningWorldViewer *viewer = NULL;
@@ -365,12 +395,19 @@ static void command(int cmd)
     case 'F':
 	viewer->setFollow(!viewer->getFollow());	
 	break;
+    case 'c':
+    case 'C':
+	viewer->setCheckCollision(!viewer->getCheckCollision());	
+	break;
 
     case 'R':
 	viewer->setDisplayRobot(!viewer->getDisplayRobot());
 	break;
     case 'O':
 	viewer->setDisplayObstacles(!viewer->getDisplayObstacles());
+	break;
+    case 'D':
+	viewer->defaultPosition();
 	break;
     default:
 	break;

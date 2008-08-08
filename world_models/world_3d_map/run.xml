@@ -1,0 +1,11 @@
+<launch>
+  
+  <param name="world_3d_map/max_publish_frequency" type="double" value="0.3" /> <!-- Hz -->
+  <param name="world_3d_map/retain_pointcloud_duration" type="double" value="60.0" /> <!-- seconds -->
+  <param name="world_3d_map/retain_pointcloud_fraction" type="double" value="0.02" /> <!-- percentage (between 0 and 1) -->
+  <param name="world_3d_map/verbosity_level" type="int" value="1" /> <!-- integer value -->
+  <param name="world_3d_map/robot_model" type="str" value="robotdesc/pr2" /> <!-- string value -->
+  
+  <node pkg="world_3d_map" type="world_3d_map" respawn="false" />
+  
+</launch>

@@ -310,7 +310,7 @@ private:
 	    if (m_shouldPublish)
 	    {
 		m_worldDataMutex.lock();
-		if (m_active)
+		if (m_active && m_currentWorld.size() > 0)
 		{
 		    PointCloudFloat32 toPublish;
 		    toPublish.header = m_currentWorld.back()->header;
@@ -378,7 +378,7 @@ private:
 		    }
 		    
 		    rp.body->setDimensions(link->geom->size);
-		    rp.body->setScale(1.4);
+		    rp.body->setScale(1.5);
 		    
 		    m_selfSeeParts.push_back(rp);
 		}
@@ -469,7 +469,7 @@ private:
 	    double y = cloud.pts[k].y;
 	    double z = cloud.pts[k].z;
 	    
-	    if (z > 1e-6)
+	    if (z > 0.01)
 	    {
 		bool keep = true;
 		for (int i = m_selfSeeParts.size() - 1 ; keep && i >= 0 ; --i)

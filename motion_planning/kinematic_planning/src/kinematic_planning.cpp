@@ -277,9 +277,13 @@ public:
 		for (int j = 0 ; j < dim ; ++j)
 		    res.path.states[i].vals[j] = path->states[i]->values[j];
 	    }
+	    res.distance = goal->getDifference();
 	}
 	else
+	{
 	    res.path.set_states_size(0);
+	    res.distance = -1.0;
+	}
 	
 	/* cleanup */
 	p.si->clearGoal();

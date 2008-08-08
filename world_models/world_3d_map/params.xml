@@ -1,7 +1,0 @@
-<params>
-  <double name="world_3d_map/max_publish_frequency">0.3</double> <!-- Hz -->
-  <double name="world_3d_map/retain_pointcloud_duration">60</double> <!-- seconds -->
-  <double name="world_3d_map/retain_pointcloud_fraction">0.02</double> <!-- percentage (between 0 and 1) -->
-  <int    name="world_3d_map/verbosity_level">1</int> <!-- integer value -->
-  <string name="world_3d_map/robot_model">robotdesc/pr2</string> <!-- string value -->
-</params>

@@ -59,5 +59,10 @@ std_msgs/Point3DFloat64 volumeMax
 # includes start and goal states) to define the motions for the
 # robot. If more intermediate states are needed, linear interpolation
 # is to be assumed.
-
 robot_msgs/KinematicPath path
+
+
+# The threshold that was actually achieved. If the planner did not have enough time,
+# it may return a distance larger than the desired threshold. The user may choose to 
+# discard the path
+float64 distance
