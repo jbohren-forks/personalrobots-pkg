@@ -15,6 +15,7 @@ This package contains Gazebo, from the Player Project
   <doxymaker external="http://playerstage.sourceforge.net/doc/Gazebo-manual-svn-html/"/>
 </export>
 <versioncontrol type="svn" url="https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="scons"/>
 </package>
 
 
