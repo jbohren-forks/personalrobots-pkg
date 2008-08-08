@@ -65,6 +65,21 @@ void GraspPoint::setTran(const NEWMAT::Matrix *M)
 	mTran.setWithMatrix( graspFrame, baseFrame, *M, 0);
 }
 
+/*!  Sets the inner transform using a translation \a tx,ty,tz and a
+  quaternion \a qx,qy,qz,qw. No checking is performed at all - the
+  quaternion is set as is.
+ */
+
+void GraspPoint::setTran(float tx, float ty, float tz,
+			 float qx, float qy, float qz, float qw)
+{
+
+	mTran.setWithQuaternion( graspFrame, baseFrame, 
+				 tx, ty, tz,
+				 qx, qy, qz, qw, 
+				 0);
+}
+
 /*! Sets the inner transform, but also normalizes everything and makes
     sure is forms a well-behaved right-handed coordinate system.
 
@@ -145,6 +160,36 @@ void GraspPoint::getTran(NEWMAT::Matrix *M) const
 	*M = (const_cast<libTF::TransformReference&>(mTran)).getMatrix(baseFrame,graspFrame, 0);
 }
 
+void GraspPoint::getTranInv(float **f) const
+{
+	*f = new float[16];
+	NEWMAT::Matrix M(4,4);
+
+	getTranInv(&M);
+	for (int i=0; i<4; i++) {
+		for (int j=0; j<4; j++) {
+			(*f)[4*i+j] = M.element(i,j);
+		}
+	}
+}
+
+void GraspPoint::getTranInv(NEWMAT::Matrix *M) const
+{
+	//get matrix is not const...
+	*M = (const_cast<libTF::TransformReference&>(mTran)).getMatrix(graspFrame, baseFrame, 0);
+}
+
+libTF::TFPoint GraspPoint::getLocation() const
+{
+	libTF::TFPoint pt;
+	pt.x = pt.y = pt.z = 0.0;
+	pt.frame = graspFrame;
+	pt.time = 0.0;
+	//transform point is not const...
+	pt = (const_cast<libTF::TransformReference&>(mTran)).transformPoint(baseFrame,pt);
+	return pt;
+}
+
 graspPoint_msg GraspPoint::getMsg() const
 {
 	graspPoint_msg msg;
@@ -212,13 +257,10 @@ graspPoint_msg GraspPoint::getMsg() const
 	return msg;
 }
 
-
 void GraspPoint::setFromMsg(const graspPoint_msg &msg)
 {
-	mTran.setWithQuaternion( graspFrame, baseFrame, 
-				 msg.frame.xt, msg.frame.yt, msg.frame.zt, 
-				 msg.frame.xr, msg.frame.yr, msg.frame.zr, msg.frame.w,
-				 0);
+	setTran(msg.frame.xt, msg.frame.yt, msg.frame.zt, 
+		msg.frame.xr, msg.frame.yr, msg.frame.zr, msg.frame.w);
 	setQuality(msg.quality);
 }
 

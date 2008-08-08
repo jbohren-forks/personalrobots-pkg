@@ -62,23 +62,34 @@ class GraspPoint {
 
 	//! Empty constructor initializes GraspPoint to identity and quality to 0
 	GraspPoint();
-	//! Constructor taking all parameters
+	//! Constructors taking all parameters
 	GraspPoint(const libTF::TFPoint &c, 
 		   const libTF::TFVector &app, const libTF::TFVector &up) {
 		setTran(c,app,up);
 	}
 	GraspPoint(const NEWMAT::Matrix *M) {setTran(M);}
+	GraspPoint(float tx, float ty, float tz,
+		   float qx, float qy, float qz, float qw) {setTran(tx,ty,tz, qx,qy,qz,qw);}
 
 	//! Set the grasp point transform using a 4x4 NEWMAT matrix
 	void setTran(const NEWMAT::Matrix *M);
 	//! Set the transform by specifying position and approach (x) and up (z) directions 
 	void setTran(const libTF::TFPoint &c, 
 		     const libTF::TFVector &app, const libTF::TFVector &up);
+	//! Set the transform using a translation and a quaternion
+	void setTran(float tx, float ty, float tz,
+		     float qx, float qy, float qz, float qw);
 
 	//! Returns the inner transform as a row-major float[16]. Caller should free this memory
 	void getTran(float **f) const;
 	//! Returns the inner transform as a NEWMAT::Matrix
 	void getTran(NEWMAT::Matrix *M) const;
+	//! Returns the inverse of the inner transform as a row-major float[16]. Caller should free this memory
+	void getTranInv(float **f) const;
+	//! Returns the inverse of the inner transform as a NEWMAT::Matrix
+	void getTranInv(NEWMAT::Matrix *M) const;
+	//! Returns the translation part of the inner transform (gripper location)
+	libTF::TFPoint getLocation() const;
 
 	//! Set the quality of this grasp. Caps value between 0 and 1
 	void setQuality(float q){if (q<0) q=0; if (q>1) q=1; mQuality = q;}
@@ -90,9 +101,7 @@ class GraspPoint {
 	//! Get this GraspPoint as the corresponding ROS message type
 	graspPoint_msg getMsg() const;
 	//! Set this GraspPoint from a corresponding ROS message type
-	void setFromMsg(const graspPoint_msg &msg);
-
-	
+	void setFromMsg(const graspPoint_msg &msg);	
 };
  
 //!Convenience predicate for sorting containers of pointers to GraspPoints
