@@ -7,3 +7,6 @@ rospack_add_executable(testServer src/testServer.cc)
 target_link_libraries(testServer rosTF)
 rospack_add_executable(testClient src/testClient.cc)
 target_link_libraries(testClient rosTF)
+
+rospack_add_executable(frameServer src/frameServer.cc)
+target_link_libraries(frameServer rosTF)
