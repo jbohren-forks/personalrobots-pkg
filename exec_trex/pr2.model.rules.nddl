@@ -77,8 +77,10 @@ CleanBehavior::Active{
   //contains(MoveArm.Inactive f_lacs);
   //contains(MoveArm.Inactive s_lacs);
 
-  f_racs before s_racs;
-  s_racs before grip_racs;
+  //f_racs before s_racs;;
+  precedes(f_racs.end, s_racs.start);
+  //s_racs before grip_racs;
+  precedes(s_racs.end, grip_racs.start);
   //f_lacs before s_lacs;
 
   eq(f_racs.object.isLeft, false);
@@ -228,7 +230,9 @@ MoveBase::Active {
 
   if(object.mode == Internal) {
     contains(Actions.Event startEvent);
-    startEvent starts(BaseState.Holds vs);
+    any(BaseState.Holds vs);
+    //startEvent starts vs;
+    concurrent(startEvent.start, vs.start);
 
     // Test if there is to the goal from the current position. We use the vehicle state at the
     // current position rather than just picking up the prior values from the start of this active
@@ -240,17 +244,21 @@ MoveBase::Active {
     // If there is a path, then trigger the velocity controller into
     // an active state
     if(plan_ok == true){
-      startEvent before (Actions.SetBaseGoal vc);
+      contains(Actions.SetBaseGoal vc);
+      //startEvent before (Actions.SetBaseGoal vc);
+      precedes(startEvent.end, vc.start);
       eq(vc.goal_x, x);
       eq(vc.goal_y, y);
       eq(vc.goal_th, th);
-      contains vc;
+      //contains vc;
+
     }
 
     // if there is no path, then terminate the active state. Termination will
     // result in a successor that is not where we expected it to be!
     if(plan_ok == false){
-      ends startEvent;
+      //ends startEvent;
+      concurrent(end, startEvent.end);
     }
   }   
 

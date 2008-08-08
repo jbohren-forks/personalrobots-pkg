@@ -38,7 +38,7 @@ if ! $(exec_trex_READY) {
 	ModuleLibraries executive : $(DLOPEN_LIBRARY) ;
 	
 	# Main executable for now linked directly with the model. The main executive is pretty slim
-	ModuleMain exec_trex : Executive.cc pr2.model.o : executive : exec_trex ;
+	ModuleMain exec_trex : Executive.cc : executive : exec_trex ;
 	
 	Depends exec_trex : exec_inputs ;
 
@@ -78,7 +78,7 @@ if ! $(exec_trex_READY) {
  	}
  
  	# Build the model - generates .cc and .hh files from .nddl
-	NddlModel pr2.model.nddl : System ;
+	# NddlModel pr2.model.nddl : System ;
 
 	# Build all
 	Depends exec_all : exec_trex logger exec_inputs ;
