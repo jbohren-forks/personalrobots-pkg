@@ -3,7 +3,7 @@
 import sys
 import os
 
-SVN_REV_MIN = 2751
+SVN_REV_MIN = 2785
 
 # directories to purge
 dirs = [
@@ -12,6 +12,9 @@ dirs = [
     'messages',
     'robot_models',
     'services',    
+    'simulator/tools',
+    'unported/vision',
+    'util/features', 
     'util/gui', 
     'util/scan_utils',
     'util/transforms',
