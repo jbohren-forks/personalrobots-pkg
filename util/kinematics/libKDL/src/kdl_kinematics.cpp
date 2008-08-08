@@ -88,7 +88,10 @@ bool PR2_kinematics::IK(const JntArray &q_init, const Frame &f, JntArray &q_out)
 		return true;
 	}
 	else
+	{
+		printf("[libKDL]<kdl_kinematics.cpp>IK failed.\n");
 		return false;
+	}
 }
 
 /*
@@ -100,6 +103,7 @@ bool PR2_kinematics::IK(const Frame &f)
 	if (this->ik_pos_solver->CartToJnt(*this->q_IK_guess,f,*this->q_IK_result) >= 0)
 	{
 		angle_within_mod180(*this->q_IK_result, this->nJnts);
+//		cout<<"[libKDL]<kdl_kinematics.cpp> IK result: "<<*this->q_IK_result<<endl;
 		return true;
 	}
 	else

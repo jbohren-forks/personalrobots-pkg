@@ -1,22 +1,27 @@
 #include <ros/node.h>
-#include <rosthread/mutex.h>
 
-#include <std_msgs/Empty.h>
 #include <std_msgs/PR2Arm.h>
 #include <std_msgs/Float64.h>
 #include <pr2_msgs/EndEffectorState.h>
-
-#include <pr2_kinematic_controllers/Float32Int32.h>
+#include <pr2_kinematic_controllers/Float64Int32.h>
+#include <rosgazebo/VoidVoid.h>
+#include <rosgazebo/MoveCartesian.h>
 
 #include <libpr2API/pr2API.h>
+//#include <libKDL/kdl_kinematics.h>
+
+#include <robot_kinematics/robot_kinematics.h>
+#include <robot_kinematics/serial_chain.h>
 
 #include <kdl/rotational_interpolation_sa.hpp>
-#include <rosgazebo/VoidVoid.h>
 
+#include <unistd.h>
 
 using namespace std_msgs;
 using namespace PR2;
 using namespace KDL;
+
+using namespace robot_kinematics;
 
 
 class Pr2KinematicControllers : public ros::node
@@ -25,16 +30,23 @@ class Pr2KinematicControllers : public ros::node
 
 		Pr2KinematicControllers(void) : ros::node("pr2_kinematic_controller") 
 		{
+			char *c_filename = getenv("ROS_PACKAGE_PATH");
+			std::stringstream filename;
+			filename << c_filename << "/robot_descriptions/wg_robot_description/pr2/pr2.xml" ;
+			pr2_kin.loadXML(filename.str());
+			right_arm = pr2_kin.getSerialChain("rightArm");
+
 			step_size = 0.05;
-			wait_time = 1.;
+			wait_time = 1;
 			advertise<pr2_msgs::EndEffectorState>("cmd_leftarm_cartesian");
-			advertise<pr2_msgs::EndEffectorState>("cmd_rightarm_cartesian");
-//			advertise<std_msgs::Empty>("reset_IK_guess"); // to tell RosGazeboNode to make q_IK_guess = current manipulator config.
+
+			advertise<pr2_msgs::EndEffectorState>("rightarm_tooltip_cartesian"); // position of tip of right arm in cartesian coord.
+			advertise_service("move_along_gripper", &Pr2KinematicControllers::moveAlongGripper);
 
 			subscribe("right_pr2arm_set_end_effector", _rightEndEffectorGoal, &Pr2KinematicControllers::setRightEndEffector);	
 			subscribe("left_pr2arm_set_end_effector", _leftEndEffectorGoal, &Pr2KinematicControllers::setLeftEndEffector);
-			subscribe("left_pr2arm_pos",  leftArmPosMsg,  &Pr2KinematicControllers::currentLeftArmPos);
-			subscribe("right_pr2arm_pos", rightArmPosMsg, &Pr2KinematicControllers::currentRightArmPos);
+			subscribe("left_pr2arm_pos",  leftArmPosMsg,  &Pr2KinematicControllers::currentLeftArmPos);  // configuration of left arm.
+			subscribe("right_pr2arm_pos", rightArmPosMsg, &Pr2KinematicControllers::currentRightArmPos); // configuration of right arm.
 
 			subscribe("interpolate_step_size", float64_msg, &Pr2KinematicControllers::setStepSize);	
 			subscribe("interpolate_wait_time", float64_msg, &Pr2KinematicControllers::setWaitTime);	
@@ -77,32 +89,42 @@ class Pr2KinematicControllers : public ros::node
 
 		void currentLeftArmPos(void)
 		{
-			// don't need to do anything -- we already have the data
 		}
 
 		void currentRightArmPos(void)
 		{
-			// don't need to do anything -- we already have the data
+			JntArray q = JntArray(right_arm->num_joints_);
+			q(0) = rightArmPosMsg.turretAngle;
+			q(1) = rightArmPosMsg.shoulderLiftAngle;
+			q(2) = rightArmPosMsg.upperarmRollAngle;
+			q(3) = rightArmPosMsg.elbowAngle;
+			q(4) = rightArmPosMsg.forearmRollAngle;
+			q(5) = rightArmPosMsg.wristPitchAngle;
+			q(6) = rightArmPosMsg.wristRollAngle;
+
+			Frame f;
+			right_arm->computeFK(q,f);
+			pr2_msgs::EndEffectorState efs;
+			KDL_to_EndEffectorStateMsg(f, efs);
+			publish("rightarm_tooltip_cartesian",efs);
+		}
+
+		void KDL_to_EndEffectorStateMsg(const Frame& f, pr2_msgs::EndEffectorState &efs)
+		{
+			efs.set_rot_size(9);
+			efs.set_trans_size(3);
+			for(int i = 0; i < 9; i++)
+				efs.rot[i] = f.M.data[i];
+
+			for(int i = 0; i < 3; i++)
+				efs.trans[i] = f.p.data[i];
 		}
 
 		void publishFrame(bool isRightArm, const Frame& f)
 		{
 			pr2_msgs::EndEffectorState efs;
-			efs.set_rot_size(9);
-			efs.set_trans_size(3);
-			std::cout << "Publishing rot ";
-			for(int i = 0; i < 9; i++)
-			{
-				efs.rot[i] = f.M.data[i];
-				std::cout << efs.rot[i] << " ";
-			}
-			std::cout << " trans ";
-			for(int i = 0; i < 3; i++)
-			{
-				efs.trans[i] = f.p.data[i];
-				std::cout << efs.trans[i] << " ";
-			}
-			std::cout << std::endl;
+			KDL_to_EndEffectorStateMsg(f, efs);
+
 			if(isRightArm)
 				publish("cmd_rightarm_cartesian",efs);
 			else
@@ -111,29 +133,18 @@ class Pr2KinematicControllers : public ros::node
 
 		void RunControlLoop(bool isRightArm, const Frame& r, const std_msgs::PR2Arm& arm)
 		{
-
-			std_msgs::Empty emp;
 			rosgazebo::VoidVoid::request req;
 			rosgazebo::VoidVoid::response res;
-//			publish("reset_IK_guess",emp);
-			if (ros::service::call("reset_IK_guess", req, res))
-				printf("Success!\n");
-			else
+
+			cout<<"RunControlLoop: rotation: "<<r.M<<"\n";
+
+			if (ros::service::call("reset_IK_guess", req, res)==false)
 			{
-				printf("reset_IK_guess service failed.\nExiting..\n");
+				printf("[pr2_kinematic_controllers] <pr2_kinematic_controllers.cpp> reset_IK_guess service failed.\nExiting..\n");
 				exit(0);
 			}
 
-//			if (ros::service::call("reset_IK_guess", req, res)==false)
-//			{
-//				printf("reset_IK_guess service failed.\nExiting..\n");
-//				exit(0);
-//			}
-
-
-			PR2_kinematics pr2_kin;
-			JntArray q = JntArray(pr2_kin.nJnts);
-
+			JntArray q = JntArray(right_arm->num_joints_);
 			q(0) = arm.turretAngle;
 			q(1) = arm.shoulderLiftAngle;
 			q(2) = arm.upperarmRollAngle;
@@ -143,13 +154,11 @@ class Pr2KinematicControllers : public ros::node
 			q(6) = arm.wristRollAngle;
 
 			Frame f;
-			pr2_kin.FK(q,f);
+			right_arm->computeFK(q,f);
 			Vector start = f.p;
 			Vector move = r.p-start;
 			double dist = move.Norm();
 			move = move/dist;
-
-			std::cout << "Starting trans " << f.p.data[0] << " " << f.p.data[1] << " " << f.p.data[2] << std::endl;
 
 			RotationalInterpolation_SingleAxis rotInterpolater;
 			rotInterpolater.SetStartEnd(f.M, r.M);
@@ -159,17 +168,74 @@ class Pr2KinematicControllers : public ros::node
 			Vector target;
 			int nSteps = (int)(dist/step_size);
 			double angle_step = total_angle/nSteps;
-			for(int i=0;i<nSteps;i++)
+			bool reachable = true;
+			for(int i=0;i<nSteps && reachable==true;i++)
 			{
+				printf("[pr2_kinematic_controllers] interpolating...\n");
 				f.p = start+(i+1)*move*step_size;
 				f.M = rotInterpolater.Pos(angle_step*(i+1));
-				std::cout << "Starting trans " << f.p.data[0] << " " << f.p.data[1] << " " << f.p.data[2] << std::endl;
-				publishFrame(isRightArm, f);
+
+				if (isRightArm)
+					reachable=SetRightArmCartesian(f); // services.
+				else
+					publishFrame(isRightArm, f); // old way of doing things. from interpolated_kinematic_controller.
+
 				usleep(wait_time*1e6);
 			}
+
 			f.p = r.p;
 			f.M = r.M;
-			publishFrame(isRightArm, f);
+			if (isRightArm)
+				reachable=SetRightArmCartesian(f); // services.
+			else
+				publishFrame(isRightArm, f); // old way of doing things. from interpolated_kinematic_controller.
+
+			if (reachable==false)
+				printf("[pr2_kinematic_controllers] reachable became FALSE.\n");
+		}
+
+		bool SetRightArmCartesian(const Frame &f)
+		{
+			rosgazebo::MoveCartesian::request req;
+			rosgazebo::MoveCartesian::response res;
+			KDL_to_EndEffectorStateMsg(f, req.e);
+
+			if (ros::service::call("set_rightarm_cartesian", req, res)==false)
+			{
+				printf("[pr2_kinematic_controllers] <pr2_kinematic_controllers.cpp> set_rightarm_cartesian service failed.\nExiting..\n");
+				exit(0);
+			}
+
+			return (res.reachable==-1) ? false : true;
+		}
+
+		bool moveAlongGripper(pr2_kinematic_controllers::Float64Int32::request &req, pr2_kinematic_controllers::Float64Int32::response &res)
+		{
+			moveAlongGripper(req.f);
+			return true;
+		}
+
+		void moveAlongGripper(double dist)
+		{
+			JntArray q = JntArray(right_arm->num_joints_);
+
+			q(0) = rightArmPosMsg.turretAngle;
+			q(1) = rightArmPosMsg.shoulderLiftAngle;
+			q(2) = rightArmPosMsg.upperarmRollAngle;
+			q(3) = rightArmPosMsg.elbowAngle;
+			q(4) = rightArmPosMsg.forearmRollAngle;
+			q(5) = rightArmPosMsg.wristPitchAngle;
+			q(6) = rightArmPosMsg.wristRollAngle;
+			Frame f;
+			right_arm->computeFK(q,f);
+			cout<<"current end effector position: "<<f.p<<"\n";
+			cout<<"current end effector rotation: "<<f.M<<"\n";
+			Vector v(0,0,dist);
+			v = f*v;
+			cout<<"final end effector position: "<<v<<"\n";
+			cout<<"final end effector rotation: "<<f.M<<"\n";
+			f.p=v;
+			RunControlLoop(true, f, rightArmPosMsg);
 		}
 
 	private:
@@ -180,6 +246,9 @@ class Pr2KinematicControllers : public ros::node
 		double step_size;
 		double wait_time;
 		std_msgs::Float64 float64_msg;
+		
+		RobotKinematics pr2_kin;
+		SerialChain *right_arm;
 
 };
 

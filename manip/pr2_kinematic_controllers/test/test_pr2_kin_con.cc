@@ -14,7 +14,7 @@ int main(int argc, char **argv)
   //In shoulder frame x 0.562689
   //In shoulder frame y -0.367447
   //In shoulder frame z -0.369594
-  Rotation r = Rotation::RotZ(DTOR(0));
+  Rotation r = Rotation::RotZ(deg2rad*0);
   Vector v(.562689,-.367447,-.369594);
 
   std::cout << " rot: " << std::endl;

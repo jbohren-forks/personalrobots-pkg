@@ -3,7 +3,10 @@
 #include <pr2Core/pr2Misc.h>
 #include <math.h>
 
+#include <robot_kinematics/robot_kinematics.h>
+
 using namespace PR2;
+using namespace robot_kinematics;
 
 PR2Robot::PR2Robot()
 {
@@ -15,8 +18,16 @@ PR2Robot::~PR2Robot(){};
 PR2_ERROR_CODE PR2Robot::InitializeRobot()
 {
   // initialize robot
-  hw.Init();
-  return PR2_ALL_OK;
+	hw.Init();
+
+	//------- what is the best way to initialise the kinematics? -------
+	char *c_filename = getenv("ROS_PACKAGE_PATH");
+	std::stringstream filename;
+	filename << c_filename << "/robot_descriptions/wg_robot_description/pr2/pr2.xml" ;
+
+	pr2_kin.loadXML(filename.str());
+	right_arm_chain_ = pr2_kin.getSerialChain("rightArm");
+	return PR2_ALL_OK;
 }
 
 PR2_ERROR_CODE PR2Robot::CalibrateRobot()
@@ -99,7 +110,7 @@ PR2_ERROR_CODE PR2Robot::DisableSpine()
  */
 PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Frame &f, const KDL::JntArray &q_init, KDL::JntArray &q_out)
 {
-  if (this->pr2_kin.IK(f) == false)
+  if (this->right_arm_chain_->computeIK(f) == false)
 	{
     printf("[libpr2API]<pr2API.cpp> Could not compute Inv Kin.\n");
 		return PR2_ALL_OK;
@@ -113,10 +124,11 @@ PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Fra
 
 /*
  * This is the function which should be used -- Advait
+ * only right_chain is currently handled.
  */
 PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Frame &f, bool &reachable)
 {
-	reachable = this->pr2_kin.IK(f);
+	reachable = this->right_arm_chain_->computeIK(f);
   if (reachable == false)
 	{
     printf("[libpr2API]<pr2API.cpp> Could not compute Inv Kin.\n");
@@ -124,11 +136,11 @@ PR2_ERROR_CODE PR2Robot::SetArmCartesianPosition(PR2_MODEL_ID id, const KDL::Fra
 	}
 
   for(int ii = 0; ii < 7; ii++)
-    hw.SetJointServoCmd((PR2::PR2_JOINT_ID) (JointStart[id]+ii),(*this->pr2_kin.q_IK_result)(ii),0);
+    hw.SetJointServoCmd((PR2::PR2_JOINT_ID) (JointStart[id]+ii),(*this->right_arm_chain_->q_IK_result)(ii),0);
 
-	KDL::JntArray *t = this->pr2_kin.q_IK_result;
-	this->pr2_kin.q_IK_result = this->pr2_kin.q_IK_guess;
-	this->pr2_kin.q_IK_guess = t; // update guess with the computed IK result.
+	KDL::JntArray *t = this->right_arm_chain_->q_IK_result;
+	this->right_arm_chain_->q_IK_result = this->right_arm_chain_->q_IK_guess;
+	this->right_arm_chain_->q_IK_guess = t; // update guess with the computed IK result.
 
 
   return PR2_ALL_OK;
@@ -544,7 +556,7 @@ PR2_ERROR_CODE PR2Robot::GetArmJointPositionCmd(PR2_MODEL_ID id, KDL::JntArray &
     return PR2_ERROR;
 
   double pos,vel;
-  for(int ii = JointStart[id]; ii <= JointEnd[id]; ii++)
+  for(int ii = JointStart[id]; ii < JointEnd[id]; ii++) // KDL does not use the gripper and doesn't need the gripper joint angle.
   {
     hw.GetJointServoCmd((PR2_JOINT_ID)ii,&pos,&vel);
     q(ii-JointStart[id]) = pos;

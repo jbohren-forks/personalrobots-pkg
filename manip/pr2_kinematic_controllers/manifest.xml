@@ -9,7 +9,8 @@
 	<depend package="pr2_msgs"/>
 	<depend package="pr2Core"/>
 	<depend package="libpr2API"/>
-	<depend package="libKDL"/>
+	<!--	<depend package="libKDL"/> -->
+	<depend package="robot_kinematics"/>
 	<depend package="pr2_gazebo"/>
 	<export>
 		<cpp cflags="-I${prefix}/srv/cpp" />

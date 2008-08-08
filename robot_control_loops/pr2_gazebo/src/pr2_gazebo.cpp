@@ -87,12 +87,19 @@ main(int argc, char** argv)
   /*                            initialize controllers                                   */
   /*                                                                                     */
   /***************************************************************************************/
+//  controller::ArmController          myArm;
+//  controller::HeadController         myHead;
+//  controller::SpineController        mySpine;
+//  controller::BaseController         myBase;
+//  controller::LaserScannerController myLaserScanner;
+//  controller::GripperController      myGripper;
 
   /***************************************************************************************/
   /*                                                                                     */
   /*                            initialize ROS Gazebo Nodes                              */
   /*                                                                                     */
   /***************************************************************************************/
+//  RosGazeboNode rgn(argc,argv,argv[1],myPR2,&myArm,&myHead,&mySpine,&myBase,&myLaserScanner,&myGripper);
   RosGazeboNode rgn(argc,argv,argv[1],myPR2);
 
   /***************************************************************************************/
@@ -105,7 +112,7 @@ main(int argc, char** argv)
   signal(SIGTERM, (&finalize));
 
   // let rosgazebonode read the xml data from pr2.xml in ros
-  rgn.LoadRobotModel();
+//  rgn.LoadRobotModel();
 
   // see if we can subscribe models needed
   if (rgn.AdvertiseSubscribeMessages() != 0)

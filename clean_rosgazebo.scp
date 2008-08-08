@@ -29,6 +29,7 @@
 # clean kinematics
 (cd util/kinematics/libKinematics             ; rm -f lib/* ;make clean)
 (cd util/kinematics/libKDL                    ; rm -f lib/* ;make clean)
+(cd util/kinematics/robot_kinematics          ; rm -f lib/* ;make clean)
 
 # clean visualization
 (cd visualization/irrlicht_viewer             ; rm -f lib/* ;make clean)

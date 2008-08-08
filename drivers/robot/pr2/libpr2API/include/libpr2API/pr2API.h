@@ -41,7 +41,9 @@
 
 #include <libpr2HW/pr2HW.h>
 
-#include <libKDL/kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
+//#include <libKDL/kdl_kinematics.h> // for kinematics using KDL -- util/kinematics/libKDL
+#include <robot_kinematics/serial_chain.h>
+#include <robot_kinematics/robot_kinematics.h>
 
 namespace PR2
 {
@@ -618,7 +620,8 @@ namespace PR2
       protected: PR2Arm myArm; 
       protected: PR2Head myHead;
 
-      public: PR2_kinematics pr2_kin; // for kinematics using KDL.
+			public: robot_kinematics::SerialChain *right_arm_chain_;
+			public: robot_kinematics::RobotKinematics pr2_kin;
 
     };
 }

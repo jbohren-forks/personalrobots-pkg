@@ -155,8 +155,7 @@ bool RosGazeboNode::SetRightArmCartesian(rosgazebo::MoveCartesian::request &req,
 bool RosGazeboNode::OperateRightGripper(rosgazebo::GripperCmd::request &req, rosgazebo::GripperCmd::response &res)
 {
 	this->lock.lock();
-	//	Advait, please use the new gripper interface.
-//	this->PR2Copy->hw.CloseGripper(PR2::PR2_RIGHT_GRIPPER, req.gap, req.force);
+	this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER_GAP, req.gap, 0);
 	this->lock.unlock();
 	return true;
 }
@@ -164,7 +163,7 @@ bool RosGazeboNode::OperateRightGripper(rosgazebo::GripperCmd::request &req, ros
 bool RosGazeboNode::reset_IK_guess(rosgazebo::VoidVoid::request &req, rosgazebo::VoidVoid::response &res)
 {
   this->lock.lock();
-	this->PR2Copy->GetArmJointPositionCmd(PR2::PR2_RIGHT_ARM, *(this->PR2Copy->pr2_kin.q_IK_guess));
+	this->PR2Copy->GetArmJointPositionCmd(PR2::PR2_RIGHT_ARM, *(this->PR2Copy->right_arm_chain_->q_IK_guess));
   this->lock.unlock();
 	return true;
 }
