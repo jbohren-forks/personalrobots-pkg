@@ -45,15 +45,15 @@ TEST(map_server, load_valid_png)
   {
     std_srvs::StaticMap::response map_resp;
     map_server::loadMapFromFile(&map_resp, g_valid_png_file, g_valid_image_res, false);
-    ASSERT_FLOAT_EQ(map_resp.map.resolution, g_valid_image_res);
-    ASSERT_EQ(map_resp.map.width, g_valid_image_width);
-    ASSERT_EQ(map_resp.map.height, g_valid_image_height);
+    EXPECT_FLOAT_EQ(map_resp.map.resolution, g_valid_image_res);
+    EXPECT_EQ(map_resp.map.width, g_valid_image_width);
+    EXPECT_EQ(map_resp.map.height, g_valid_image_height);
     for(unsigned int i=0; i < map_resp.map.width * map_resp.map.height; i++)
-      ASSERT_EQ(g_valid_image_content[i], map_resp.map.data[i]);
+      EXPECT_EQ(g_valid_image_content[i], map_resp.map.data[i]);
   }
   catch(...)
   {
-    FAIL() << "Uncaught exception : " << "This is OK on OS X";
+    ADD_FAILURE() << "Uncaught exception : " << "This is OK on OS X";
   }
 }
 
@@ -65,15 +65,15 @@ TEST(map_server, load_valid_bmp)
   {
     std_srvs::StaticMap::response map_resp;
     map_server::loadMapFromFile(&map_resp, g_valid_bmp_file, g_valid_image_res, false);
-    ASSERT_FLOAT_EQ(map_resp.map.resolution, g_valid_image_res);
-    ASSERT_EQ(map_resp.map.width, g_valid_image_width);
-    ASSERT_EQ(map_resp.map.height, g_valid_image_height);
+    EXPECT_FLOAT_EQ(map_resp.map.resolution, g_valid_image_res);
+    EXPECT_EQ(map_resp.map.width, g_valid_image_width);
+    EXPECT_EQ(map_resp.map.height, g_valid_image_height);
     for(unsigned int i=0; i < map_resp.map.width * map_resp.map.height; i++)
-      ASSERT_EQ(g_valid_image_content[i], map_resp.map.data[i]);
+      EXPECT_EQ(g_valid_image_content[i], map_resp.map.data[i]);
   }
   catch(...)
   {
-    FAIL() << "Uncaught exception";
+    ADD_FAILURE() << "Uncaught exception";
   }
 }
 
@@ -95,7 +95,7 @@ TEST(map_server, load_invalid_file)
   {
     FAIL() << "Uncaught exception";
   }
-  FAIL() << "Didn't throw exception as expected";
+  ADD_FAILURE() << "Didn't throw exception as expected";
 }
 
 int main(int argc, char **argv)
