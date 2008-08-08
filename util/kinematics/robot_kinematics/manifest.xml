@@ -8,6 +8,8 @@
 <depend package="libTF"/>
 <depend package="math_utils"/>
 <depend package="kdl"/>
+<depend package="roscpp"/>
+<depend package="std_msgs"/>
 <export>
 <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lorocos-kdl -lrobot_kinematics"/>
 </export>

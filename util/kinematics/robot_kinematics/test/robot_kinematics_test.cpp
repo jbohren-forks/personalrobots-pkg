@@ -34,6 +34,7 @@
 #include <robot_kinematics/robot_kinematics.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <ros/node.h> // roscpp
 
 using namespace KDL;
 using namespace std;
@@ -41,16 +42,28 @@ using namespace robot_kinematics;
 
 int main( int argc, char** argv )
 {
-
+/*
   char *c_filename = getenv("ROS_PACKAGE_PATH");
   std::stringstream filename;
   filename << c_filename << "/robot_descriptions/wg_robot_description/pr2/pr2.xml" ;
-
-  struct timeval t0, t1;
   RobotKinematics pr2_kin;
   pr2_kin.loadXML(filename.str());
-
   SerialChain *left_arm = pr2_kin.getSerialChain("leftArm");
+*/
+  struct timeval t0, t1;
+
+  //Initialize ROS
+  ros::init(argc, argv);
+
+  ros::node test_kin("test_kin");
+
+  std::string pr2Content;
+  test_kin.get_param("robotdesc/pr2",pr2Content);
+
+  RobotKinematics pr2_kin;
+  pr2_kin.loadString(pr2Content.c_str());  // parse the big pr2.xml string from ros
+  SerialChain *left_arm = pr2_kin.getSerialChain("leftArm");
+
   SerialChain *right_arm = pr2_kin.getSerialChain("rightArm");
 
   assert(left_arm);
@@ -103,4 +116,6 @@ int main( int argc, char** argv )
     cout<<"End effector after IK:"<<f_ik<<endl;
   else
     cout<<"Could not compute Fwd Kin. (After IK)"<<endl;
+
+  ros::fini();
 }

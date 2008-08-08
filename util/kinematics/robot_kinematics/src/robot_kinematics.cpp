@@ -33,6 +33,7 @@
 #include <urdf/URDF.h>
 #include <libTF/Pose3D.h>
 #include <robot_kinematics/robot_kinematics.h>
+
 //#include <mechanism_model/robot.h>
 
 #define eps 0.000001
@@ -67,6 +68,19 @@ void RobotKinematics::loadXML(std::string filename)
   if(!model.loadFile(filename.c_str()))
     return;
 
+  loadModel(model);
+}
+
+void RobotKinematics::loadString(const char* model_string)
+{
+  robot_desc::URDF model;
+  if(!model.loadString(model_string))
+    return;
+  loadModel(model);
+}
+
+void RobotKinematics::loadModel(const robot_desc::URDF &model)
+{
   model.getGroups(groups_);
 
   for(int i=0; i < (int) groups_.size(); i++)
@@ -85,10 +99,10 @@ void RobotKinematics::loadXML(std::string filename)
     if(groups_[i]->hasFlag("kinematic"))
     {
       createChain(groups_[i]);
-      printf("Creating kinematic group\n");
+      printf("Creating kinematic group:: %s \n", groups_[i]->name.c_str());
     }
   }
-}
+} 
 
 void RobotKinematics::cross(const double p1[], const double p2[], double p3[])
 {

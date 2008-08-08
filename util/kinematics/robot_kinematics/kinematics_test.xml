@@ -1,0 +1,5 @@
+<launch>
+  <group name="wg">
+    <include file="$(find wg_robot_description)/send.xml"/>
+  </group>
+</launch>

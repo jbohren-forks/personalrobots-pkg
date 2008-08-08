@@ -76,11 +76,25 @@ namespace robot_kinematics
     ~RobotKinematics();
 
     /*!
-     * \brief load the robot kinematics from an XML file
+     * \brief load the robot kinematics from an XML file using the string name of the file
      *
      * \param filename - xml file name
      */
     void loadXML(std::string filename);
+
+    /*!
+     * \brief load the robot kinematics from an XML file using a direct c_string representation of the file
+     *
+     * \param filename - xml file name
+     */
+    void loadString(const char* model_string);
+
+    /*!
+     * \brief load the robot kinematics from a URDF model
+     *
+     * \param filename - xml file name
+     */
+    void loadModel(const robot_desc::URDF &model);
 
     /*!
      * \brief get back a pointer to a serial chain inside the robot kinematics
