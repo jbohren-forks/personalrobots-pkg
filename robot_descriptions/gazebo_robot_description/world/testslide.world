@@ -128,7 +128,7 @@
         <visual>
           <scale> 4 2 4</scale>
           <material>Gazebo/Rocky</material>
-          <mesh>out.mesh</mesh>
+          <mesh>cup.mesh</mesh>
         </visual>
       </geom:trimesh>
     </body:trimesh>
