@@ -162,6 +162,7 @@ void RobotKinematics::createChain(robot_desc::URDF::Group* group)
     }
     this->chains_[chain_counter_].link_kdl_frame_[link_count] = frame1;
     this->chains_[chain_counter_].chain.addSegment(Segment(Joint(Joint::RotZ),frame2));
+    this->chains_[chain_counter_].joint_id_map_[link_current->name] = link_count + 1;
     link_current = link_next;
     link_count++;
   }

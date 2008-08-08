@@ -103,6 +103,15 @@ namespace robot_kinematics
      */
     bool computeFK(const KDL::JntArray &q, KDL::Frame &f);
 
+
+    /*! \brief Compute the forward kinematics and return as a KDL::frame
+     * \param q - input joint angles 
+     * \param f - output end effector frame (result of the fwd kinematics)
+     * \param link number - 0 is the base frame and will return an identity matrix for the transformation, frame 1 rotates with the 1st joint and so on until frame num_joints;
+     * returns True if ok, False if error.
+     */
+    bool computeFK(const KDL::JntArray &q, KDL::Frame &f, int frame_number);
+
     /*! \brief Compute the forward kinematics and return as a NEWMAT::Matrix
      * \param q - input joint angles 
      * \param f - output end effector frame (result of the fwd kinematics)
@@ -157,6 +166,8 @@ namespace robot_kinematics
      */
     void finalize();
 
+    int getID(std::string name);//< returns an int corresponding to the input name. 
+
     KDL::JntArray *q_IK_guess; //< is used as the IK guess.
 
     KDL::ChainFkSolverPos_recursive *forwardKinematics; /*< pointer to the forward kinematics solver for this chain*/
@@ -165,14 +176,13 @@ namespace robot_kinematics
 
     KDL::ChainIkSolverPos_NR *inverseKinematics; /*< pointer to the inverse kinematics sovler for this case */
 
-
+    std::map<std::string, int> joint_id_map_;
 
     private:
 /*
     mechanism::Joint * joints_;
-
-    std::string *joint_names_;
 */
+
   };
 }
 

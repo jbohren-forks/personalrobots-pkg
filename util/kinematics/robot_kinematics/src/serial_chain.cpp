@@ -62,14 +62,11 @@ void SerialChain::finalize()
     this->link_kdl_frame_ = new KDL::Frame[this->num_joints_];
   }
 
+
 /*
   if(!this->joints_)
   {
     this->joints_ = new mechanism::Joint[this->num_joints_];
-  }  
-  if(!this->joints_names_)
-  {
-    this->joint_names_ = new std::string[this->num_joints_];
   }  
 */
 }
@@ -81,7 +78,6 @@ bool SerialChain::computeFK(const KDL::JntArray &q, KDL::Frame &f)
 	else
 		return false;
 }
-
 
 bool SerialChain::computeIK(const KDL::JntArray &q_init, const KDL::Frame &f, KDL::JntArray &q_out)
 {
@@ -123,6 +119,12 @@ bool SerialChain::computeDK(const JntArray & q_in, const Twist &v_in, JntArray &
     return true;
   else
     return false;  
+}
+
+int SerialChain::getID(std::string name)
+{
+  std::map<std::string, int>::const_iterator it = joint_id_map_.find(name);
+  return (it == joint_id_map_.end()) ? (-1) : (it->second);
 }
 
 #ifdef KDL_DYNAMICS
