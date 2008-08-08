@@ -31,46 +31,72 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <mechanism_model/transmission.h>
-#include <mechanism_model/joint.h>
-#include <math.h>
-#include <stdio.h>
 
-using namespace mechanism;
+#ifndef JOINT_POSITION_CONTROLLER_H
+#define JOINT_POSITION_CONTROLLER_H
 
-SimpleTransmission::SimpleTransmission(Joint *joint, Actuator *actuator,
-  double mechanical_reduction, double motor_torque_constant,
-  double pulses_per_revolution)
+#include <generic_controllers/controller.h>
+#include <generic_controllers/pid.h>
+
+namespace controller
 {
-  actuator_ = actuator;
-  mechanical_reduction_ = mechanical_reduction;
-  motor_torque_constant_ = motor_torque_constant;
-  pulses_per_revolution_ = pulses_per_revolution;
-  joint_ = joint;
+
+class JointPositionController : public Controller
+{
+public:
+  /*!
+   * \brief Default Constructor of the JointController class.
+   *
+   */
+  JointPositionController();
+
+  /*!
+   * \brief Destructor of the JointController class.
+   */
+  ~JointPositionController();
+
+  /*!
+   * \brief Functional way to initialize limits and gains.
+   *
+   */
+  void init(double p_gain, double i_gain, double d_gain, double windup, double time, mechanism::Joint *joint);
+  void initXml(mechanism::Robot *robot, TiXmlElement *config);
+
+  /*!
+   * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
+   *
+   * \param double pos Position command to issue
+   */
+  void setCommand(double command);
+
+  /*!
+   * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
+   */
+  double getCommand();
+
+  /*!
+   * \brief Read the torque of the motor
+   */
+  double getActual();
+
+  /*!
+   * \brief Issues commands to the joint. Should be called at regular intervals
+   */
+
+  virtual void update();
+
+private:
+  /*!
+   * \brief Actually issue torque set command of the joint motor.
+   */
+  void setJointEffort(double torque);
+
+  mechanism::Joint* joint_; /*!< Joint we're controlling>*/
+  Pid pid_controller_; /*!< Internal PID controller>*/
+  double last_time_; /*!< Last time stamp of update> */
+  double command_; /*!< Last commanded position> */
+  mechanism::Robot *robot_; /*!< Pointer to robot structure>*/
+};
 }
 
-
-void SimpleTransmission::propagatePosition()
-{
-  joint_->position_ = ((double)actuator_->state_.encoder_count_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);
-  joint_->velocity_ = ((double)actuator_->state_.encoder_velocity_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);
-  joint_->applied_effort_ = actuator_->state_.last_measured_current_ * (motor_torque_constant_ * mechanical_reduction_);
-}
-
-void SimpleTransmission::propagatePositionBackwards()
-{
-  actuator_->state_.encoder_count_ = (int)(joint_->position_ * pulses_per_revolution_ * mechanical_reduction_ / (2*M_PI));
-  actuator_->state_.encoder_velocity_ = joint_->velocity_ * pulses_per_revolution_ * mechanical_reduction_ / (2*M_PI);
-  actuator_->state_.last_measured_current_ = joint_->applied_effort_ / (motor_torque_constant_ * mechanical_reduction_);
-}
-
-void SimpleTransmission::propagateEffort()
-{
-  actuator_->command_.current_ = joint_->commanded_effort_/(motor_torque_constant_ * mechanical_reduction_);
-  actuator_->command_.enable_ = true;
-}
-
-void SimpleTransmission::propagateEffortBackwards()
-{
-  joint_->commanded_effort_ = actuator_->command_.current_ * motor_torque_constant_ * mechanical_reduction_;
-}
+#endif /* JOINT_POSITION_CONTROLLER_H */

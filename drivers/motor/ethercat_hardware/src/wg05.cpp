@@ -128,7 +128,4 @@ void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, uns
   state.num_communication_errors_ = current_status.pdi_timeout_error_count_ + current_status.pdi_checksum_error_count_;
 
   state.motor_voltage_ = current_status.motor_voltage_;
-
 }
-
-

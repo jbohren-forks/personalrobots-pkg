@@ -9,6 +9,7 @@ Package for creating a hardware interface to the robot using the EtherCAT motor 
 <depend package='eml'/>
 <depend package='tinyxml'/>
 <depend package='roscpp' />
+<depend package='mechanism_control' />
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lethercat_hardware -Wl,-rpath,${prefix}/lib"/>
 </export>

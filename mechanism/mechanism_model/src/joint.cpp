@@ -31,46 +31,43 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <mechanism_model/transmission.h>
-#include <mechanism_model/joint.h>
-#include <math.h>
-#include <stdio.h>
 
+#include <map>
+#include <string>
+#include <mechanism_model/joint.h>
+
+using namespace std;
 using namespace mechanism;
 
-SimpleTransmission::SimpleTransmission(Joint *joint, Actuator *actuator,
-  double mechanical_reduction, double motor_torque_constant,
-  double pulses_per_revolution)
+static const pair<string, int> types[] = {
+  pair<string, int>("none", JOINT_NONE),
+  pair<string, int>("revolute", JOINT_ROTARY),
+  pair<string, int>("prismatic", JOINT_PRISMATIC),
+  pair<string, int>("fixed", JOINT_FIXED),
+  pair<string, int>("planar", JOINT_PLANAR),
+};
+
+static map<string, int> g_type_map(types, types + sizeof(types)/sizeof(types[0]));
+
+void Joint::enforceLimits()
 {
-  actuator_ = actuator;
-  mechanical_reduction_ = mechanical_reduction;
-  motor_torque_constant_ = motor_torque_constant;
-  pulses_per_revolution_ = pulses_per_revolution;
-  joint_ = joint;
+  // TODO: enforce the limits so the joint operates safely
 }
 
-
-void SimpleTransmission::propagatePosition()
+void Joint::initXml(TiXmlElement *elt)
 {
-  joint_->position_ = ((double)actuator_->state_.encoder_count_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);
-  joint_->velocity_ = ((double)actuator_->state_.encoder_velocity_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);
-  joint_->applied_effort_ = actuator_->state_.last_measured_current_ * (motor_torque_constant_ * mechanical_reduction_);
+  TiXmlElement *min = elt->FirstChildElement("limitMin");
+  TiXmlElement *max = elt->FirstChildElement("limitMax");
+  joint_limit_min_ = min ? atof(min->GetText()) : 0;
+  joint_limit_max_ = max ? atof(max->GetText()) : 0;
+  effort_limit_ = atof(elt->FirstChildElement("effortLimit")->GetText());
+  velocity_limit_ = atof(elt->FirstChildElement("velocityLimit")->GetText());
+
+  type_ = g_type_map[elt->Attribute("type")];
+  // If type is revolute and limits aren't set, then it is continuous
+  if (type_ == JOINT_ROTARY && min == NULL && max == NULL)
+  {
+    type_ = JOINT_CONTINUOUS;
+  }
 }
 
-void SimpleTransmission::propagatePositionBackwards()
-{
-  actuator_->state_.encoder_count_ = (int)(joint_->position_ * pulses_per_revolution_ * mechanical_reduction_ / (2*M_PI));
-  actuator_->state_.encoder_velocity_ = joint_->velocity_ * pulses_per_revolution_ * mechanical_reduction_ / (2*M_PI);
-  actuator_->state_.last_measured_current_ = joint_->applied_effort_ / (motor_torque_constant_ * mechanical_reduction_);
-}
-
-void SimpleTransmission::propagateEffort()
-{
-  actuator_->command_.current_ = joint_->commanded_effort_/(motor_torque_constant_ * mechanical_reduction_);
-  actuator_->command_.enable_ = true;
-}
-
-void SimpleTransmission::propagateEffortBackwards()
-{
-  joint_->commanded_effort_ = actuator_->command_.current_ * motor_torque_constant_ * mechanical_reduction_;
-}

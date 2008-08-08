@@ -37,7 +37,7 @@
 #include <signal.h>
 #include <sys/mman.h>
 
-#include <generic_controllers/joint_controller.h>
+#include <generic_controllers/joint_position_controller.h>
 #include <mechanism_control/mechanism_control.h>
 #include <ethercat_hardware/ethercat_hardware.h>
 
@@ -46,36 +46,38 @@
 static int quit = 0;
 static const int NSEC_PER_SEC = 1e+9;
 
-static void getTime(HardwareInterface *hw)
-{
-  struct timespec now;
-  clock_gettime(CLOCK_REALTIME, &now);
-  hw->current_time_ = double(now.tv_nsec) / NSEC_PER_SEC + now.tv_sec;
-}
-
 void *controlLoop(void *arg)
 {
   char **args = (char **) arg;
   char *interface = args[1];
   char *xml_file = args[2];
 
+  // Initialize the hardware inteface
+  EthercatHardware ec;
+  ec.init(interface);
+
+  // Create mechanism control
+  MechanismControl mc(ec.hw_);
+  //MechanismControlNode mcn(&mc);
+
+  // Load robot description
   TiXmlDocument xml(xml_file);
   xml.LoadFile();
   TiXmlElement *root = xml.FirstChildElement("robot");
 
-  EthercatHardware ec;
-  ec.init(interface, root);
-  getTime(ec.hw_);
+  // Register actuators with mechanism control
+  ec.initXml(root, mc);
 
-  MechanismControl mc(ec.hw_);
-  // TODO: register actuators with mechanism control
+  // Initialize mechanism control from robot description
   mc.init(root);
 
-  // TODO: register some controller types
-  mc.registerControllerType("JointController", controller::JointController::create);
-
-  // TODO: spawn some controllers
-  mc.spawnController("JointController", /*xml handle */NULL);
+  // Spawn controllers
+  // TODO what file does this come from?
+  // Can this be pushed down to mechanism control?
+  for (TiXmlElement *elt = root->FirstChildElement("controller"); elt ; elt = elt->NextSiblingElement("controller"))
+  {
+    mc.spawnController(elt->Attribute("type"), elt->Attribute("name"), elt);
+  }
 
   // Switch to hard real-time
   int period = 1e+6; // 1 ms in nanoseconds
@@ -88,8 +90,8 @@ void *controlLoop(void *arg)
   while (!quit)
   {
     ec.update();
-    getTime(ec.hw_);
     mc.update();
+
     tick.tv_nsec += period;
     while (tick.tv_nsec >= NSEC_PER_SEC)
     {
@@ -99,6 +101,7 @@ void *controlLoop(void *arg)
     clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &tick, NULL);
   }
 
+  /* Shutdown all of the motors on exit */
   for (unsigned int i = 0; i < ec.hw_->actuators_.size(); ++i)
   {
     ec.hw_->actuators_[i]->command_.enable_ = false;

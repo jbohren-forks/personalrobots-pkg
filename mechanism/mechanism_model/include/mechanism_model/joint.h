@@ -34,29 +34,28 @@
 #ifndef JOINT_H
 #define JOINT_H
 
+#include <tinyxml/tinyxml.h>
 
 namespace mechanism {
 
 class Joint{
 public:
-  void enforceLimits()
-  {
-    // TODO: enforce the limits so the joint operates safely
-  }
+  void enforceLimits();
+  void initXml(TiXmlElement *elt);
 
   char *name_;
   int type_;
 
-  //Update every cycle from input data
+  // Update every cycle from input data
   bool initialized_;
   double position_;  // In radians
   double velocity_;
   double applied_effort_;
 
-  //Written every cycle out to motor boards
+  // Written every cycle out to motor boards
   double commanded_effort_;
 
-  //Never changes
+  // Constants
   double joint_limit_min_;  // In radians
   double joint_limit_max_;  // In radians
   double effort_limit_;
@@ -70,6 +69,7 @@ enum
   JOINT_CONTINUOUS,
   JOINT_PRISMATIC,
   JOINT_FIXED,
+  JOINT_PLANAR,
   JOINT_TYPES_MAX
 };
 

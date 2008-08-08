@@ -37,6 +37,7 @@
 
 #include <tinyxml/tinyxml.h>
 
+#include <mechanism_control/mechanism_control.h>
 #include <hardware_interface/hardware_interface.h>
 
 #include <al/ethercat_AL.h>
@@ -66,7 +67,12 @@ public:
   /*!
    * \brief Initialize the EtherCAT Master Library.
    */
-  void init(char *interface, TiXmlElement *config);
+  void init(char *interface);
+
+  /*!
+   * \brief Register actuators with mechanism control
+   */
+  void initXml(TiXmlElement *config, MechanismControl &mc);
 
   HardwareInterface *hw_;
 

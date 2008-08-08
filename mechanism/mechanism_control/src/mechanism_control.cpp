@@ -64,10 +64,7 @@ bool MechanismControl::init(TiXmlElement* config)
     Joint *j = new Joint;
     model_.joints_.push_back(j);
     model_.joints_lookup_.insert(Robot::IndexMap::value_type(elt->Attribute("name"), model_.joints_.size() - 1));
-    j->joint_limit_min_ = atof(elt->FirstChildElement("limitMin")->GetText());
-    j->joint_limit_max_ = atof(elt->FirstChildElement("limitMax")->GetText());
-    j->effort_limit_ = atof(elt->FirstChildElement("effortLimit")->GetText());
-    j->velocity_limit_ = atof(elt->FirstChildElement("velocityLimit")->GetText());
+    j->initXml(elt);
   }
 
   // Constructs the transmissions
@@ -84,20 +81,21 @@ bool MechanismControl::init(TiXmlElement* config)
       if (joint_it == model_.joints_lookup_.end())
       {
         // TODO: report: The joint was not declared in the XML file
+        printf("Unable to locate joint: %s\n", elt->FirstChildElement("joint")->Attribute("name"));
         continue;
       }
       if (actuator_it == model_.actuators_lookup_.end())
       {
         // TODO: report: The actuator was not registered with mechanism control.
+        printf("Unable to locate actuator: %s\n", elt->FirstChildElement("actuator")->Attribute("name"));
         continue;
       }
-
-      Transmission *tr =
+     Transmission *tr =
         new SimpleTransmission(model_.joints_[joint_it->second], hw_->actuators_[actuator_it->second],
-                               atof(elt->FirstChildElement("mechanicalReduction")->Value()),
-                               atof(elt->FirstChildElement("motorTorqueConstant")->Value()),
-                               atof(elt->FirstChildElement("pulsesPerRevolution")->Value()));
-      model_.transmissions_.push_back(tr);
+          atof(elt->FirstChildElement("mechanicalReduction")->GetText()),
+          atof(elt->FirstChildElement("motorTorqueConstant")->GetText()),
+          atof(elt->FirstChildElement("pulsesPerRevolution")->GetText()));
+     model_.transmissions_.push_back(tr);
     }
     else
     {
@@ -113,14 +111,13 @@ bool MechanismControl::init(TiXmlElement* config)
 // Must be realtime safe.
 void MechanismControl::update()
 {
-
   // Propagates through the robot model.
   for (unsigned int i = 0; i < model_.transmissions_.size(); ++i)
     model_.transmissions_[i]->propagatePosition();
 
   // TODO: update KDL model with new joint position/velocities
 
-  //update all controllers
+  // Update all controllers
   for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
   {
     if (controllers_[i] != NULL)

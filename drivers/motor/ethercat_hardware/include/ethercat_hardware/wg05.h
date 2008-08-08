@@ -44,10 +44,10 @@ struct WG05Status
   uint8_t mode_;
   uint8_t digital_out_;
   uint16_t pwm_duty_;
-  uint16_t programmed_current_;
+  int16_t programmed_current_;
   uint8_t current_loop_kp_;
   uint8_t current_loop_ki_;
-  uint16_t measured_current_;
+  int16_t measured_current_;
   uint16_t pad1_;
   uint32_t timestamp_;
   uint32_t encoder_count_;

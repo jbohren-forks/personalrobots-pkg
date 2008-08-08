@@ -5,6 +5,7 @@
 <license>BSD</license>
 <depend package='hardware_interface'/>
 <depend package="stl_utils" />
+<depend package="tinyxml" />
 <url>http://pr.willowgarage.com</url>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lmechanism_model -Wl,-rpath,${prefix}/lib"/>

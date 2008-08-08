@@ -65,7 +65,16 @@ EthercatHardware::~EthercatHardware()
   }
 }
 
-void EthercatHardware::init(char *interface, TiXmlElement *configuration)
+static const int NSEC_PER_SEC = 1e+9;
+
+static double now()
+{
+  struct timespec now;
+  clock_gettime(CLOCK_REALTIME, &now);
+  return double(now.tv_nsec) / NSEC_PER_SEC + now.tv_sec;
+}
+
+void EthercatHardware::init(char *interface)
 {
   ros::node *node = ros::node::instance();
 
@@ -120,10 +129,21 @@ void EthercatHardware::init(char *interface, TiXmlElement *configuration)
   current_buffer_ = buffers_;
   last_buffer_ = buffers_ + buffer_size_;
 
-  // Determine configuration from XML file 'configuration'
 
   // Create HardwareInterface
   hw_ = new HardwareInterface(num_actuators);
+  hw_->current_time_ = now();
+}
+
+void EthercatHardware::initXml(TiXmlElement *config, MechanismControl &mc)
+{
+  int i = 0;
+  // Determine configuration from XML file 'configuration'
+  // TODO: match actuator name to name supplied by board
+  for (TiXmlElement *elt = config->FirstChildElement("actuator"); elt; elt = elt->NextSiblingElement("actuator"))
+  {
+    mc.registerActuator(elt->Attribute("name"), i++);
+  }
 }
 
 void EthercatHardware::update()
@@ -150,6 +170,9 @@ void EthercatHardware::update()
     current += slaves[i]->commandSize + slaves[i]->statusSize;
     last += slaves[i]->commandSize + slaves[i]->statusSize;
   }
+
+  // Update current time
+  hw_->current_time_ = now();
 
   unsigned char *tmp = current_buffer_;
   current_buffer_ = last_buffer_;

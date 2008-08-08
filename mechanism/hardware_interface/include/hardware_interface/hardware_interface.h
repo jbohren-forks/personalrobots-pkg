@@ -92,7 +92,7 @@ public:
   {
     for (int i = 0; i < num_actuators; ++i)
     {
-      actuators_[i] = new Actuator();
+      actuators_.push_back(new Actuator());
     }
   }
   ~HardwareInterface()
