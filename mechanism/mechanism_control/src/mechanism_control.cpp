@@ -141,7 +141,7 @@ void MechanismControl::registerControllerType(const std::string& type, Controlle
   controller::ControllerFactory::instance().registerType(type, f);
 }
 
-bool MechanismControl::addController(controller::Controller *c)
+bool MechanismControl::addController(controller::Controller *c, const std::string &name)
 {
   //Add controller to list of controllers in realtime-safe manner;
   controllers_mutex_.lock(); //This lock is only to prevent us from other non-realtime threads.  The realtime thread may be spinning through the list of controllers while we are in here, so we need to keep that list always in a valid state.  This is why we fully allocate and set up the controller before adding it into the list of active controllers.
@@ -152,6 +152,7 @@ bool MechanismControl::addController(controller::Controller *c)
     {
       spot_found = true;
       controllers_[i] = c;
+      controller_names_[i] = name;
       break;
     }
   }
@@ -166,22 +167,26 @@ bool MechanismControl::addController(controller::Controller *c)
   return true;
 }
 
-bool MechanismControl::spawnController(const char *type, TiXmlElement *config)
+bool MechanismControl::spawnController(const std::string &type,
+                                       const std::string &name,
+                                       TiXmlElement *config)
 {
   controller::Controller *c = controller::ControllerFactory::instance().create(type);
   if (c == NULL)
     return false;
   c->initXml(&model_, config);
 
-  return addController(c);
+  return addController(c, name);
 }
 
 
 
-MechanismControlNode::MechanismControlNode(HardwareInterface *hw)
-  : MechanismControl(hw), ros::node("MechanismControl")
+MechanismControlNode::MechanismControlNode(MechanismControl *mc)
+  : ros::node("MechanismControl"), mc_(mc)
 {
+  assert(mc != NULL);
   advertise_service("list_controller_types", &MechanismControlNode::listControllerTypes);
+  advertise_service("spawn_controller", &MechanismControlNode::spawnController);
 }
 
 
@@ -195,3 +200,12 @@ bool MechanismControlNode::listControllerTypes(
   return true;
 }
 
+bool MechanismControlNode::spawnController(
+  mechanism_control::SpawnController::request &req,
+  mechanism_control::SpawnController::response &resp)
+{
+  TiXmlDocument doc;
+  doc.Parse(req.xml_config.c_str());
+  resp.ok = mc_->spawnController(req.type, req.name, doc.RootElement());
+  return true;
+}

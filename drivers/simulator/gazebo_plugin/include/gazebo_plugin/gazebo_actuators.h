@@ -60,8 +60,8 @@ private:
 
   Model *parent_model_;
   HardwareInterface hw_;
-  MechanismControlNode mc_;
-  ros::node *rosnode_;
+  MechanismControl mc_;
+  MechanismControlNode mcn_;
 
   // Each joint in joints_ corresponds to the joint with the same
   // index in mech_joints_.  The mech_joints_ vector exists so that

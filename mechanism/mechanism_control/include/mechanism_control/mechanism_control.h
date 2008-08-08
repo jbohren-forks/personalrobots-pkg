@@ -49,6 +49,7 @@
 #include <generic_controllers/controller.h>
 
 #include "mechanism_control/ListControllerTypes.h"
+#include "mechanism_control/SpawnController.h"
 
 typedef controller::Controller* (*ControllerAllocator)();
 
@@ -63,8 +64,8 @@ public:
   // Non real-time functions
   bool init(TiXmlElement* config);
   bool registerActuator(const std::string &name, int index);
-  bool addController(controller::Controller *c);
-  bool spawnController(const char* type, TiXmlElement* config);
+  bool addController(controller::Controller *c, const std::string &name);
+  bool spawnController(const std::string &type, const std::string &name, TiXmlElement *config);
 
   mechanism::Robot model_;
 
@@ -78,21 +79,25 @@ private:
   const static int MAX_NUM_CONTROLLERS = 100;
   ros::thread::mutex controllers_mutex_;
   controller::Controller* controllers_[MAX_NUM_CONTROLLERS];
+  std::string controller_names_[MAX_NUM_CONTROLLERS];
 };
 
 /*
  * Exposes MechanismControl's interface over ROS
  */
-class MechanismControlNode : public MechanismControl, public ros::node
+class MechanismControlNode : public ros::node
 {
 public:
-  MechanismControlNode(HardwareInterface *hw);
+  MechanismControlNode(MechanismControl *mc);
   virtual ~MechanismControlNode() {}
 
   bool listControllerTypes(mechanism_control::ListControllerTypes::request &req,
                            mechanism_control::ListControllerTypes::response &resp);
+  bool spawnController(mechanism_control::SpawnController::request &req,
+                       mechanism_control::SpawnController::response &resp);
 
 private:
+  MechanismControl *mc_;
 };
 
 #endif /* MECHANISM_CONTROL_H */
