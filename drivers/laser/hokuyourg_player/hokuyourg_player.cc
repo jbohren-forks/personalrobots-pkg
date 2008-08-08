@@ -79,25 +79,32 @@ Publishes to (name / type):
 
 Reads the following parameters from the parameter server
 
-- @b "urglaser/min_ang" : @b [double] the angle of the first range measurement in degrees (Default: -90.0)
-- @b "urglaser/max_ang" : @b [double] the angle of the last range measurement in degrees (Default: 90.0)
-- @b "urglaser/cluster" : @b [int]    the number of adjascent range measurements to cluster into a single reading (Default: 1)
-- @b "urglaser/skip"    : @b [int]    the number of scans to skip between each measured scan (Default: 1)
-- @b "urglaser/port"    : @b [string] the port where the hokuyo device can be found (Default: "/dev/ttyACM0")
+- @b "~min_ang" : @b [double] the angle of the first range measurement in degrees (Default: -90.0)
+- @b "~max_ang" : @b [double] the angle of the last range measurement in degrees (Default: 90.0)
+- @b "~cluster" : @b [int]    the number of adjascent range measurements to cluster into a single reading (Default: 1)
+- @b "~skip"    : @b [int]    the number of scans to skip between each measured scan (Default: 1)
+- @b "~port"    : @b [string] the port where the hokuyo device can be found (Default: "/dev/ttyACM0")
 
  **/
 
 #include <assert.h>
 #include <math.h>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 
 //#include <libstandalone_drivers/urg_laser.h>
 #include "urg_laser.h"
 
 #include <ros/node.h>
 #include <std_msgs/LaserScan.h>
+#include <std_srvs/SelfTest.h>
 #include "ros/time.h"
 #include "namelookup/nameLookupClient.hh"
+
+#include "rosthread/mutex.h"
+
+#include <pthread.h>
 
 using namespace std;
 
@@ -107,7 +114,7 @@ private:
   URG::laser_scan_t  scan;
   URG::laser_config_t cfg;
   bool running;
-  unsigned int scanid;
+  ros::thread::mutex testing_mutex;
   
   int count;
   ros::Time next_time;
@@ -125,23 +132,33 @@ public:
   
   string port;
   
-  HokuyoNode() : ros::node("urglaser"), count(0), lookup_client(*this)
+  bool autostart;
+
+  bool calibrate_time;
+
+  string frameid;
+
+  HokuyoNode() : ros::node("urglaser"), running(false), count(0), lookup_client(*this)
   {
     advertise<std_msgs::LaserScan>("scan");
+    advertise_service("~self_test", &HokuyoNode::SelfTest);
 
-    param("urglaser/min_ang", min_ang, -90.0);
+    param("~min_ang", min_ang, -90.0);
     min_ang *= M_PI/180;
 
-    param("urglaser/max_ang", max_ang, 90.0);
+    param("~max_ang", max_ang, 90.0);
     max_ang *= M_PI/180;
 
-    param("urglaser/cluster", cluster, 1);
-    param("urglaser/skip", skip, 1);
+    param("~cluster", cluster, 1);
+    param("~skip", skip, 1);
 
-    param("urglaser/port", port, string("/dev/ttyACM0"));
-       
-    running = false;
-    scanid = 0;
+    param("~port", port, string("/dev/ttyACM0"));
+
+    param("~autostart", autostart, true);
+
+    param("~calibrate_time", calibrate_time, true);
+
+    param("~frameid", frameid, string("FRAMEID_LASER"));
   }
 
   ~HokuyoNode()
@@ -153,74 +170,81 @@ public:
   {
     stop();
 
+    testing_mutex.lock();
     try
     {
       urg.open(port.c_str());
 
-      running = true;
-
       printf("Connected to URG with ID: %d\n", urg.get_ID());
 
       urg.laser_on();
-      urg.calc_latency(true, min_ang, max_ang, cluster, skip);
+
+      if (calibrate_time)
+        urg.calc_latency(true, min_ang, max_ang, cluster, skip);
         
       int status = urg.request_scans(true, min_ang, max_ang, cluster, skip);
 
       if (status != 0) {
         printf("Failed to request scans from URG.  Status: %d.\n", status);
+        testing_mutex.unlock();
         return -1;
       }
 
+      running = true;
+
     } catch (URG::exception& e) {
       printf("Exception thrown while starting urg.\n%s\n", e.what());
+      testing_mutex.unlock();
       return -1;
     }
 
     next_time = ros::Time::now();
 
+    testing_mutex.unlock();
     return(0);
   }
 
   int stop()
   {
+    testing_mutex.lock();
     if(running)
     {
       try
       {
         urg.close();
       } catch (URG::exception& e) {
-        printf("%s\n",e.what());
+        printf("Exception thrown while trying to close:\n%s\n",e.what());
       }
       running = false;
     }
-    return(0);
+
+    testing_mutex.unlock();
+    return 0;
   }
 
   int publish_scan()
   {
-      
+    testing_mutex.lock();
     try
     {
       int status = urg.service_scan(&scan);
-        
+      
       if(status != 0)
       {
         printf("error getting scan: %d\n", status);
         return 0;
       }
+    } catch (URG::corrupted_data_exception &e) {
+      printf("CORRUPTED DATA\n");
+      testing_mutex.unlock();
+      return 0;
     } catch (URG::exception& e) {
       printf("Exception thrown while trying to get scan.\n%s\n", e.what());
+      running = false; //If we're here, we are no longer running
+      testing_mutex.unlock();
       return -1;
     }
-
-    count++;
-    ros::Time now_time = ros::Time::now();
-    if (now_time > next_time) {
-      std::cout << count << " scans/sec at " << now_time << std::endl;
-      count = 0;
-      next_time = next_time + ros::Duration(1,0);
-    }
-
+    
     scan_msg.angle_min = scan.config.min_angle;
     scan_msg.angle_max = scan.config.max_angle;
     scan_msg.angle_increment = scan.config.ang_increment;
@@ -231,7 +255,7 @@ public:
     scan_msg.set_ranges_size(scan.num_readings);
     scan_msg.set_intensities_size(scan.num_readings);
     scan_msg.header.stamp = ros::Time(scan.system_time_stamp);
-    scan_msg.header.frame_id = lookup_client.lookup("FRAMEID_LASER2");
+    scan_msg.header.frame_id = lookup_client.lookup(frameid);
       
     for(int i = 0; i < scan.num_readings; ++i)
     {
@@ -240,7 +264,251 @@ public:
     }
 
     publish("scan", scan_msg);
+
+    count++;
+    ros::Time now_time = ros::Time::now();
+    if (now_time > next_time) {
+      std::cout << count << " scans/sec at " << now_time << std::endl;
+      count = 0;
+      next_time = next_time + ros::Duration(1,0);
+    }
+
+    testing_mutex.unlock();
+    sched_yield();
     return(0);
+  }
+
+  bool spin()
+  {
+
+    // Start up the laser
+    while (ok())
+    {
+      if (autostart && start() == 0)
+      {
+        while(ok()) {
+          if(publish_scan() < 0)
+            break;
+        }
+      } else {
+        usleep(1000000);
+      }
+    }
+
+    //stopping should be fine even if not running
+    stop();
+
+    return true;
+  };
+
+  bool SelfTest(std_srvs::SelfTest::request &req,
+                std_srvs::SelfTest::response &res)
+  {
+    testing_mutex.lock();
+
+    printf("Entering self test.  Other operation suspended\n");
+
+    std::ostringstream oss;
+
+    if (num_subscribers("scan") != 0)
+      oss << "WARNING: There were active subscribers.  Running of self test interrupted operations." << std::endl;
+
+    int passed = 0;
+    int total = 0;
+
+    // Stop for good measure.
+    try
+    {
+      urg.close();
+    } catch (URG::exception& e) {
+      oss << "WARNING: Exception thrown while trying to close: " << e.what() << std::endl;
+    }
+
+    // Actually conduct tests
+
+    //Test: Connect
+    total++;
+    oss << "Test " << total << setw(30) << "Opening connection: ";
+    try {
+      urg.open(port.c_str());
+      passed++;
+      oss << "PASSED";
+    } catch (URG::exception& e) {
+      oss << "FAILED" << std::endl << "  " << e.what();
+    }
+    oss << std::endl;
+
+    //Test: Get ID
+    total++;
+    oss << "Test " << total << setw(30) <<  "Getting ID: ";
+    try {
+      int id = urg.get_ID();
+      if (id == 0)
+      {
+        oss << "FAILED" << std::endl << "      ID 0 indicative of failure";
+      } else {
+        passed++;
+        oss << "PASSED" << std::endl << "      ID is " << id;
+      }
+    } catch (URG::exception& e) {
+      oss << "FAILED" << std::endl << "  " << e.what();
+    }
+    oss << std::endl;
+
+    //Test: Get status
+    total++;
+    oss << "Test " << total << setw(30) <<  "Getting Status: ";
+    try {
+      std::string stat = urg.get_status();
+      if (stat != std::string("Sensor works well."))
+      {
+        oss << "FAILED" << std::endl << "      Status: " << stat;
+      } else {
+        passed++;
+        oss << "PASSED";
+      }
+    } catch (URG::exception& e) {
+      oss << "FAILED" << std::endl << "  " << e.what();
+    }
+    oss << std::endl;
+
+    //Test: Laser on
+    total++;
+    oss << "Test " << total << setw(30) <<  "Turning on laser: ";
+    try {
+      urg.laser_on();
+      passed++;
+      oss << "PASSED";
+    } catch (URG::exception& e) {
+      oss << "FAILED" << std::endl << "      " << e.what();
+    }
+    oss << std::endl;
+
+    
+    URG::laser_scan_t  scan;
+    //Test: Polled Data
+    total++;
+    oss << "Test " << total << setw(30) <<  "Polled data: ";
+    try {
+      int res = urg.poll_scan(&scan, min_ang, max_ang, cluster, 1000);
+
+      if (res != 0)
+      {
+        oss << "FAILED" << std::endl << "      Hokuyo error code: " << res << ". Consult manual for meaning.";
+      } else {
+        passed++;
+        oss << "PASSED";
+      }
+    } catch (URG::exception& e) {
+      oss << "FAILED" << std::endl << "      " << e.what();
+    }
+    oss << std::endl;
+
+    //Test: Streamed data with no intensity
+    total++;
+    oss << "Test " << total << setw(30) <<  "Streamed data: ";
+    try {
+      int res = urg.request_scans(false, min_ang, max_ang, cluster, skip, 99, 1000);
+      if (res != 0)
+      {
+        oss << "FAILED" << std::endl << "      Hokuyo error code: " << res << ". Consult manual for meaning.";
+      } else {
+
+        for (int i = 0; i < 99; i++)
+        {
+          urg.service_scan(&scan, 1000);
+        }
+        passed++;
+        oss << "PASSED";
+      }
+    } catch (URG::exception& e) {
+      oss << "FAILED" << std::endl << "      " << e.what();
+    }
+    oss << std::endl;
+
+    //Test: Streamed data with intensity
+    total++;
+    oss << "Test " << total << setw(30) <<  "Streamed intensity data: ";
+    try {
+      int res = urg.request_scans(true, min_ang, max_ang, cluster, skip, 99, 1000);
+      if (res != 0)
+      {
+        oss << "FAILED" << std::endl << "      Hokuyo error code: " << res << ". Consult manual for meaning.";
+      } else {
+        int passable = 1;
+        for (int i = 0; i < 99; i++)
+        {
+          try {
+            urg.service_scan(&scan, 1000);
+          } catch (URG::corrupted_data_exception &e) {
+            passable = 0;
+          }
+        }
+        if (passable)
+        {
+          passed++;
+          oss << "PASSED";
+        }
+      }
+    } catch (URG::exception& e) {
+      oss << "FAILED" << std::endl << "      " << e.what();
+    }
+    oss << std::endl;
+
+    //Test: Laser off
+    total++;
+    oss << "Test " << total << setw(30) <<  "Turning off laser: ";
+    try {
+      urg.laser_off();
+      passed++;
+      oss << "PASSED";
+    } catch (URG::exception& e) {
+      oss << "FAILED" << std::endl << "      " << e.what();
+    }
+    oss << std::endl;
+
+    //Test: Disconnect
+    total++;
+    oss << "Test " << total << setw(30) <<  "Disconnecting: ";
+    try {
+      urg.close();
+      passed++;
+      oss << "PASSED";
+    } catch (URG::exception& e) {
+      oss << "FAILED" << std::endl << "      " << e.what();
+    }
+    oss << std::endl;
+
+    if (total == passed)
+      res.passed = true;
+    else
+      res.passed = false;
+
+    if (res.passed)
+      oss << "All tests passed" << std::endl;
+    else
+      oss << "Some tests failed" << std::endl;
+
+    printf("Self test completed\n");
+
+    if (running)
+    {
+      printf("Trying to restart urg\n");
+      try {
+        urg.open(port.c_str());
+        urg.laser_on();
+        int status = urg.request_scans(true, min_ang, max_ang, cluster, skip);
+        if (status != 0)
+          oss << "WARNING: Requesting scans from URG Failed when trying to resume operation" << std::endl;
+      } catch (URG::exception &e) {
+        oss << "WARNING: Exception caught when resuming operation!  Driver is most likely in a bad state." << std::endl;
+      }
+    } 
+
+    res.info = oss.str();
+
+    testing_mutex.unlock();
+    return true;
   }
 };
 
@@ -251,21 +519,7 @@ main(int argc, char** argv)
 
   HokuyoNode hn;
 
-  // Start up the laser
-  while (hn.ok())
-  {
-    do {
-      usleep(1000000);
-    } while(hn.ok() && hn.start() != 0);
-
-    while(hn.ok()) {
-      if(hn.publish_scan() < 0)
-        break;
-    }
-  }
-
-  //stopping should be fine even if not running
-  hn.stop();
+  hn.spin();
 
   ros::fini();
 
