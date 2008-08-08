@@ -8,6 +8,6 @@
 <depend package="libTF" />
 <depend package="VTK" />
 <export>
-  <cpp cflags="-I${prefix}/include" lflags=" -L${prefix}/lib -lscanutils -llistennode -Wl,-rpath,${prefix}/lib"/>
+  <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags=" -L${prefix}/lib -lscanutils -llistennode -Wl,-rpath,${prefix}/lib"/>
 </export>
 </package>

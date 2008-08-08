@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <list>
 #include <dataTypes.h>
+#include <scan_utils/OctreeMsg.h>
 
 namespace scan_utils {
 
@@ -21,6 +22,9 @@ class OctreeNode {
 				  float cx, float cy, float cz,
 				  float dx, float dy, float dz,
 				  std::list<Triangle> &triangles) = 0;
+	virtual void serialize(char *destinationString, unsigned int &address){}
+	virtual void deserialize(char *sourceString, unsigned int &address, unsigned int size){}
+	virtual int computeMaxDepth(){return 0;}
 };
 
 /*! An Octree branch. Always contains exactly 8 children pointers. A
@@ -55,6 +59,13 @@ class OctreeBranch : public OctreeNode {
 				  float cx, float cy, float cz,
 				  float dx, float dy, float dz,
 				  std::list<Triangle> &triangles);
+	//! Recursively serializes everything below this branch
+	virtual void serialize(char *destinationString, unsigned int &address);
+	//! Recursively reads in everything below this branch
+	virtual void deserialize(char *sourceString, unsigned int &address, unsigned int size);
+	//! Recursively computes the max depth under this branch
+	virtual int computeMaxDepth();
+
 };
 
 /*! A leaf simply holds a value and nothing else. Do not use a leaf to
@@ -65,6 +76,7 @@ class OctreeLeaf : public OctreeNode {
 	int mValue;
  public:
         OctreeLeaf(int val) : mValue(val) {}
+	OctreeLeaf(){}
 	~OctreeLeaf(){}
 	bool isLeaf(){return true;}
 
@@ -75,6 +87,13 @@ class OctreeLeaf : public OctreeNode {
 				  float cx, float cy, float cz,
 				  float dx, float dy, float dz,
 				  std::list<Triangle> &triangles);
+	// Serializes the content of this leaf
+	virtual void serialize(char *destinationString, unsigned int &address);
+	// Reads in the content of this leaf
+	virtual void deserialize(char *sourceString, unsigned int &address, unsigned int size);
+	//! Returns 0
+	virtual int computeMaxDepth(){return 0;}
+
 };
 
 /*! An Octree class. It is designed for access based on spatial
@@ -125,6 +144,12 @@ class Octree {
 	       int maxDepth, int emptyValue);
 	//! Recursively deletes the tree by deleting the root.
 	~Octree(){delete mRoot;}
+	//! Sets the center of this Octree. Does NOT change the inner data.
+	void setCenter(float cx, float cy, float cz){mCx = cx; mCy = cy; mCz = cz;}
+	//! Sets the size of this Octree. Does NOT change the inner data.
+	void setSize(float dx, float dy, float dz){mDx = dx; mDy = dy; mDz = dz;}
+	//! Sets the max depth of this Octree. Does NOT change the inner data.
+	void setDepth(int d){if (d<=0) d=1; mMaxDepth = d;}
 	//! Returns \a true if the point at x,y,z is inside the volume of this Octree
 	inline bool testBounds(float x, float y, float z);
 	//! Inserts a value at given spatial coordinates.
@@ -143,6 +168,24 @@ class Octree {
 	//! Returns the space in memory occupied by the tree
 	long long unsigned int getMemorySize();
 
+	//! Serializes this octree to a string
+	void serialize(char **destinationString, unsigned int *size);
+	//! Reads in the content of this Octree. OLD CONTENT IS DELETED!
+	bool deserialize(char *sourceString, unsigned int size);
+
+	//! Constants that need to be chars to save space
+	static const char NULL_CHILD, BRANCH, LEAF;
+
+	//! Recursively computes the max depth in the Octree. Useful when Octree is read from file.
+	virtual int computeMaxDepth(){return mRoot->computeMaxDepth();}
+	//! Set this Octree from a ROS message
+	void setFromMsg(const OctreeMsg &msg);
+	//! Write this Octree in a ROS message
+	void getAsMsg(OctreeMsg &msg);
+	//! Write the Octree to a file in its own internal format
+	void writeToFile(std::ostream &os);
+	//! Read Octree from a file saved by the \a writeToFile(...) function 
+	void readFromFile(std::istream &is);
 };
 
 OctreeBranch::OctreeBranch()
