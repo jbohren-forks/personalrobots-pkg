@@ -1,0 +1,3 @@
+#!/bin/sh
+
+`rospack find xmlparam`/xmlparam `rospack find wg_robot_description`/pr2/cameras.xml
