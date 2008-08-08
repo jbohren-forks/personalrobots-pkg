@@ -62,14 +62,20 @@ class LogRecorder
 
     ros::msg* msg_;
 
+    unsigned int max_count_;
+    unsigned int count_;
+
+
   public:
 
-    LogHelper(LogRecorder* log_recorder, std::string topic_name, std::string datatype, std::string md5sum)
-      : log_recorder_(log_recorder), 
-        topic_name_(topic_name), datatype_(datatype), md5sum_(md5sum),
-        callback_(NULL),
-        msg_(NULL) {}
-
+  LogHelper(LogRecorder* log_recorder, std::string topic_name, std::string datatype, std::string md5sum, unsigned int max_count = 0)
+    : log_recorder_(log_recorder), 
+      topic_name_(topic_name), datatype_(datatype), md5sum_(md5sum),
+      callback_(NULL),
+      msg_(NULL),
+      max_count_(max_count),
+      count_(0) {}
+    
     virtual ~LogHelper()
     {
       if (msg_)
@@ -94,13 +100,16 @@ class LogRecorder
 
     void callHandler()
     {
-      ros::msg* msg = this;
+      if (count_++ < max_count_ || max_count_ == 0)
+      {
+	ros::msg* msg = this;
 
-      if (msg_)
-        msg = msg_;
+	if (msg_)
+	  msg = msg_;
 
-      if (callback_)
-        (*(callback_->first))(topic_name_, msg, (callback_->second));
+	if (callback_)
+	  (*(callback_->first))(topic_name_, msg, (callback_->second));
+      }
     }
 
 
@@ -116,12 +125,16 @@ class LogRecorder
 
     virtual uint8_t *deserialize(uint8_t *read_ptr)
     {
-      uint8_t* sz = log_recorder_->log(get_topic_name(), read_ptr, __serialized_length);
+      uint8_t* sz = read_ptr + __serialized_length;
+      if (count_ < max_count_ || max_count_ == 0)
+      { 
+	sz = log_recorder_->log(get_topic_name(), read_ptr, __serialized_length);
 
-      if (msg_)
-      {
-        msg_->__serialized_length = __serialized_length;
-        msg_->deserialize(read_ptr);
+	if (msg_)
+	{
+	  msg_->__serialized_length = __serialized_length;
+	  msg_->deserialize(read_ptr);
+	}
       }
 
       return sz;
@@ -173,9 +186,10 @@ public:
 
 
   template <class M>
-  void addTopic(std::string topic_name, void (*fp)(std::string, ros::msg*, void*) = NULL, void* ptr = NULL, bool inflate = false)
+    void addTopic(std::string topic_name, void (*fp)(std::string, ros::msg*, void*) = NULL, void* ptr = NULL, bool inflate = false, unsigned int max_count = 0)
   {
-    LogHelper* l = new LogHelper(this, topic_name, M::__s_get_datatype(), M::__s_get_md5sum());
+    
+    LogHelper* l = new LogHelper(this, topic_name, M::__s_get_datatype(), M::__s_get_md5sum(), max_count);
     topics_.push_back(l);
 
     log_mutex_.lock();
