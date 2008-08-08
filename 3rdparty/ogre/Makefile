@@ -33,7 +33,7 @@ LFLAGS = $(shell rospack export/cpp/lflags freeimage) \
 CONFIGURE_FLAGS = --with-arch=nocona --enable-release CXXFLAGS='-O3 -I$(FIROOT)/include -I$(OISROOT)/include -I$(CGROOT)/include' LDFLAGS=' -L$(FIROOT)/lib -L$(OISROOT)/lib -L$(CGROOT)/lib' CFLAGS='-O3 -I$(FIROOT)/include -I$(OISROOT)/include -I$(CGROOT)/include'
 
 $(OGRE_VERSION)/Makefile: $(OGRE_VERSION)
-	if [ `uname` = Darwin ]; then \
+	if test `uname` = Darwin ; then \
 	  touch $(OGRE_VERSION)/Makefile; \
 	else \
 	  cd $(OGRE_VERSION) && \
@@ -50,7 +50,7 @@ $(OGRE_VERSION)/Makefile: $(OGRE_VERSION)
 
 ogre: $(OGRE_VERSION)/Makefile
 	# building OGRE
-	if [ `uname` = Darwin ]; then \
+	if test `uname` = Darwin ; then \
 	  cd $(ROOT)/$(OGRE_VERSION)/Mac/Ogre && \
 	  export CPATH=Developer/SDKs/MacOSX10.5.sdk/usr/X11/include:/Developer/SDKs/MacOSX10.5.sdk/usr/X11/include/freetype2:`rospack find freeimage`/freeimage/include:/opt/local/include && \
 	  export LIBRARY_PATH=`rospack find freeimage`/freeimage/lib:/opt/local/lib && \
