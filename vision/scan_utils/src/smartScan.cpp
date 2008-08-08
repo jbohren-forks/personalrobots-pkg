@@ -63,6 +63,12 @@ void SmartScan::clearData()
 	mNumPoints = 0;
 }
 
+void SmartScan::clear()
+{
+	clearData();
+	setScanner(0,0,0,  1,0,0,  0,0,1);
+}
+
 /*! Set scanner position and orientation
   \param px \param py \param pz - new scanner position
   \param dx \param dy \param dz - new scanner orientation

@@ -119,6 +119,8 @@ class SmartScan {
 	//! Returns a PointCloudFloat32 ros msg.
 	std_msgs::PointCloudFloat32 getPointCloud() const;
 
+	//! Clears all the data inside this scan
+	void clear();
 	//! Write point cloud to an output stream
 	void writeToFile(std::iostream &output);
 	//! Write point cloud in vrml format to an output stream
