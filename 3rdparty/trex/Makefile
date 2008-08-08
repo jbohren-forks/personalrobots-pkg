@@ -17,7 +17,7 @@ all: trex PlanWorks
 
 # GET PLASMA
 PLASMA:
-	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co https://babelfish.arc.nasa.gov/svn/europa/PLASMA/trunk PLASMA; fi
+	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5077 https://babelfish.arc.nasa.gov/svn/europa/PLASMA/trunk PLASMA; fi
 
 # GET PlanWorks
 PlanWorks:
