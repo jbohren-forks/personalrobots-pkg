@@ -16,7 +16,7 @@ ois: ois-checkout
 	#
 	# automake, as invoked by autoreconf, requires these files to be
 	# present
-	if [ `uname` = Darwin ]; then \
+	if test `uname` = Darwin ; then \
 	  unset LIBRARY_PATH;\
 	  cd ois-cvs/Mac/Xcode-2.2 && xcodebuild && cd ../../..; \
 	  mkdir -p ois/lib; \
