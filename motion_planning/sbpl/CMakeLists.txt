@@ -12,6 +12,15 @@ rospack_add_library(sbpl
                          src/utils/mdp.cpp
                          src/utils/utils.cpp
 			 )
-rospack_add_executable(bin/test_sbpl src/test/main.cpp)
-target_link_libraries(bin/test_sbpl sbpl)
+# Build executables in the bin directory
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+
+rospack_add_executable(test_sbpl src/test/main.cpp)
+target_link_libraries(test_sbpl sbpl)
+rospack_add_gtest(utest src/test/module-tests.cpp)
+target_link_libraries(utest sbpl)
+
+# Send output of tests to the test directory
+set_target_properties(utest PROPERTIES
+                      RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/src/test)
 

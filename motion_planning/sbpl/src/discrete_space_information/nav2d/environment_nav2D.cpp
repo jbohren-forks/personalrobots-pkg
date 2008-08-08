@@ -378,7 +378,7 @@ void EnvironmentNAV2D::ComputeHeuristicValues()
 }
 
 //-----------interface with outside functions-----------------------------------
-bool EnvironmentNAV2D::InitializeEnv(char* sEnvFile)
+bool EnvironmentNAV2D::InitializeEnv(const char* sEnvFile)
 {
 
 	FILE* fCfg = fopen(sEnvFile, "r");

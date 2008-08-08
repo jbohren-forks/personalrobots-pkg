@@ -11,4 +11,5 @@
     <cpp cflags="-I${prefix}/src -O3" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl"/>
   </export>
   
+  <depend package="gtest"/>
 </package>

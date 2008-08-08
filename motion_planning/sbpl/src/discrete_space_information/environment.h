@@ -39,7 +39,7 @@ public:
 	vector<int*> StateID2IndexMapping;
 
 
-	virtual bool InitializeEnv(char* sEnvFile) = 0;
+	virtual bool InitializeEnv(const char* sEnvFile) = 0;
 
 
 	virtual bool InitializeMDPCfg(MDPConfig *MDPCfg) = 0;

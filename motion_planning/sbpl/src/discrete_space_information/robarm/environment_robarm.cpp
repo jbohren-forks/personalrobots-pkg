@@ -1076,7 +1076,7 @@ bool EnvironmentROBARM::InitializeEnvironment()
 
 
 //-----------interface with outside functions-----------------------------------
-bool EnvironmentROBARM::InitializeEnv(char* sEnvFile)
+bool EnvironmentROBARM::InitializeEnv(const char* sEnvFile)
 {
 
 	FILE* fCfg = fopen(sEnvFile, "r");

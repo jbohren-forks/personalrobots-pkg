@@ -88,7 +88,7 @@ class EnvironmentNAV2D : public DiscreteSpaceInformation
 
 public:
 
-	bool InitializeEnv(char* sEnvFile);
+	bool InitializeEnv(const char* sEnvFile);
 
 
 	bool InitializeMDPCfg(MDPConfig *MDPCfg);
