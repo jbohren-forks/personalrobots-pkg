@@ -6,7 +6,7 @@
     base
   </group>
   
-  <group name="leftArm" flags="plan">
+  <group name="leftArm" flags="plan kinematic">
     shoulder_pan_left
     shoulder_pitch_left
     upperarm_roll_left
@@ -16,7 +16,7 @@
     gripper_roll_left
   </group>
   
-  <group name="rightArm" flags="plan">
+  <group name="rightArm" flags="plan kinematic">
     shoulder_pan_right
     shoulder_pitch_right
     upperarm_roll_right
