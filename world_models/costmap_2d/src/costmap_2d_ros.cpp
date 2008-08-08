@@ -157,7 +157,7 @@ void CostMap2DRos::laserReceived() {
     puts("no global->local Tx yet");
     return;
   }
-  catch(libTF::Pose3DCache::ExtrapolateException& ex)
+  catch(libTF::TransformReference::ExtrapolateException& ex)
   {
     puts("extrapolation required");
     return;

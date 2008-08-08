@@ -253,7 +253,7 @@ private:
 		fprintf(stderr, "Discarding pointcloud: Transform reference lookup exception\n");
 		success = false;		
 	    }
-	    catch(libTF::Pose3DCache::ExtrapolateException& ex)
+	    catch(libTF::TransformReference::ExtrapolateException& ex)
 	    {
 		fprintf(stderr, "Discarding pointcloud: Extrapolation exception: %s\n", ex.what());
 		success = false;

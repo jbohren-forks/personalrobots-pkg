@@ -408,7 +408,7 @@ namespace TREX {
     } catch(libTF::TransformReference::LookupException& ex) {
       debugMsg("ROSNode::VS", "no global->local Tx yet");
       return NULL;
-    } catch(libTF::Pose3DCache::ExtrapolateException& ex) {
+    } catch(libTF::TransformReference::ExtrapolateException& ex) {
       debugMsg("ROSNode::VS", 
 	       "libTF::Quaternion3D::ExtrapolateException occured");
     }
@@ -751,7 +751,7 @@ namespace TREX {
 		delete[] pts.pts;
 		return;
 	      }
-	    catch(libTF::Pose3DCache::ExtrapolateException& ex)
+	    catch(libTF::TransformReference::ExtrapolateException& ex)
 	      {
 		puts("extrapolation required");
 		delete[] pts.pts;

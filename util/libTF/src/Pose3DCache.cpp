@@ -159,16 +159,17 @@ bool Pose3DCache::getValue(Pose3DStorage& buff, unsigned long long time, long lo
   bool retval = false;
 
   pthread_mutex_lock(&linked_list_mutex);
-  num_nodes = findClosest(p_temp_1,p_temp_2, time, time_diff);
-
-  if (num_nodes == 0)
-    retval= false;
-  else if (num_nodes == 1)
+  try
+  {
+    num_nodes = findClosest(p_temp_1,p_temp_2, time, time_diff);
+    if (num_nodes == 0)
+      retval= false;
+    else if (num_nodes == 1)
     {
       memcpy(&buff, &p_temp_1, sizeof(Pose3DStorage));
       retval = true;  
     }
-  else
+    else
     {
       if(interpolating)
 	interpolate(p_temp_1, p_temp_2, time, buff); 
@@ -176,7 +177,13 @@ bool Pose3DCache::getValue(Pose3DStorage& buff, unsigned long long time, long lo
 	buff = p_temp_1;
       retval = true;  
     }
-  
+  }
+  catch (ExtrapolationException &ex)
+  {
+    pthread_mutex_unlock(&linked_list_mutex);
+    throw ex;
+  }
+    
   pthread_mutex_unlock(&linked_list_mutex);
 
 
@@ -377,8 +384,8 @@ int Pose3DCache::findClosest(Pose3DStorage& one, Pose3DStorage& two, const unsig
           std::stringstream ss;
           ss << "Extrapolation Too Far: target_time = "<< target_time <<", closest data at "
              << two.time << " and " << one.time <<" which are farther away than max_extrapolation_time "
-             << max_extrapolation_time <<".";
-          throw ExtrapolateException(ss.str());
+             << max_extrapolation_time <<" at "<< target_time - two.time<< " and " << target_time - one.time <<" respectively.";
+          throw ExtrapolationException(ss.str());
         }
       
       return 2;

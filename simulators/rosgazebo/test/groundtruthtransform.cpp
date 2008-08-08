@@ -32,7 +32,7 @@ public:
       std::cerr << "LookupException in lookup(\"FRAMEID_ROBOT\"): " << ex.what() << "\n";
       std::cout << "LookupException in lookup(\"FRAMEID_ROBOT\"): " << ex.what();
       return;
-    } catch(libTF::Pose3DCache::ExtrapolateException& ex) {
+    } catch(libTF::TransformReference::ExtrapolateException& ex) {
       std::cerr << "ExtrapolateException in lookup(\"FRAMEID_ROBOT\"): " << ex.what() << "\n";
       std::cout << "ExtrapolateException in lookup(\"FRAMEID_ROBOT\"): " << ex.what();
       return;
@@ -50,7 +50,7 @@ public:
       std::cerr << "LookupException in transformPose(\"FRAMEID_ODOM\", robotPose): " << ex.what() << "\n";
       std::cout << "LookupException in transformPose(\"FRAMEID_ODOM\", robotPose): " << ex.what();
       return;
-    } catch(libTF::Pose3DCache::ExtrapolateException& ex) {
+    } catch(libTF::TransformReference::ExtrapolateException& ex) {
       std::cerr << "ExtrapolateException in transformPose(\"FRAMEID_ODOM\", robotPose): " << ex.what() << "\n";
       std::cout << "ExtrapolateException in transformPose(\"FRAMEID_ODOM\", robotPose): " << ex.what();
       return;

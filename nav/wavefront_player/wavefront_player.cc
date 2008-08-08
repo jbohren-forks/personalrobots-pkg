@@ -447,7 +447,7 @@ WavefrontNode::laserReceived()
       puts("no global->local Tx yet");
       return;
     }
-    catch(libTF::Pose3DCache::ExtrapolateException& ex)
+    catch(libTF::TransformReference::ExtrapolateException& ex)
     {
       //      puts("extrapolation required");
       continue;
@@ -587,7 +587,7 @@ WavefrontNode::doOneCycle()
     this->stopRobot();
     return;
   }
-  catch(libTF::Pose3DCache::ExtrapolateException& ex)
+  catch(libTF::TransformReference::ExtrapolateException& ex)
   {
     // this should never happen
     puts("WARNING: extrapolation failed!");

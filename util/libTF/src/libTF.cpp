@@ -394,11 +394,27 @@ NEWMAT::Matrix TransformReference::computeTransformFromList(const TransformLists
 
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
-      retMat *= getFrame(lists.inverseTransforms[lists.inverseTransforms.size() -1 - i])->getMatrix(time); //Reverse to get left multiply
+      try {
+        retMat *= getFrame(lists.inverseTransforms[lists.inverseTransforms.size() -1 - i])->getMatrix(time); //Reverse to get left multiply
+      }
+      catch (libTF::Pose3DCache::ExtrapolationException &ex)
+      {
+        std::stringstream ss;
+        ss << "Frame "<< lists.inverseTransforms[lists.inverseTransforms.size() -1 - i] << " is out of date. " << ex.what();
+        throw ExtrapolateException(ss.str());
+      }
     }
   for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
     {
-      retMat *= getFrame(lists.forwardTransforms[i])->getInverseMatrix(time); //Do this list backwards(from backwards) for it was generated traveling the wrong way
+      try {
+        retMat *= getFrame(lists.forwardTransforms[i])->getInverseMatrix(time); //Do this list backwards(from backwards) for it was generated traveling the wrong way
+      }
+      catch (libTF::Pose3DCache::ExtrapolationException &ex)
+      {
+        std::stringstream ss;
+        ss << "Frame "<< lists.forwardTransforms[i] << " is out of date. " << ex.what();
+        throw ExtrapolateException(ss.str());
+      }
     }
 
   return retMat;

@@ -36,6 +36,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <newmat10/newmat.h>
 #include <newmat10/newmatio.h>
 #include <cmath>
@@ -79,15 +80,10 @@ namespace libTF{
     /** \brief An exception class to notify that the requested value would have required extrapolation, and extrapolation is not allowed.
      * 
      */
-    class ExtrapolateException : public std::exception
+    class ExtrapolationException : public std::runtime_error
       { 
       public:
-        ExtrapolateException(const std::string errorDescription) { 
-          errorDescription_ = new std::string(errorDescription);
-        };
-        std::string * errorDescription_;
-        ~ExtrapolateException() throw() { delete errorDescription_; };
-        virtual const char* what() const throw()    { return errorDescription_->c_str(); };
+        ExtrapolationException(const std::string errorDescription) : std::runtime_error(errorDescription) { ; };
     };
   
     /** \brief The constructor 

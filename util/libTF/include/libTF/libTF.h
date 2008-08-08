@@ -32,6 +32,7 @@
 
 #ifndef LIBTF_HH
 #define LIBTF_HH
+#include <stdexcept>
 #include <iostream>
 #include <iomanip>
 #include <newmat10/newmat.h>
@@ -291,18 +292,12 @@ public:
    * This is an exception class to be thrown in the case 
    * that the Reference Frame tree is not connected between
    * the frames requested. */
-  class ConnectivityException : public std::exception
+  class ConnectivityException : public std::runtime_error
   {
   public:
-    ConnectivityException(const std::string errorDescription) { 
-      errorDescription_ = new std::string(errorDescription);
-    };
-    std::string * errorDescription_;
-    ~ConnectivityException() throw() { delete errorDescription_; };
-    virtual const char* what() const throw()    { return errorDescription_->c_str(); };
-  private:
+    ConnectivityException(const std::string errorDescription) : std::runtime_error(errorDescription) { ; };
   };
-
+  
   /** \brief An exception class to notify that the search for connectivity descended too deep. 
    * 
    * This is an exception class which will be thrown if the tree search 
@@ -310,18 +305,20 @@ public:
    * infinitely looping in the case that a tree was malformed and 
    * became cyclic.
    */
-  class MaxDepthException : public std::exception
+  class MaxDepthException : public std::runtime_error
   {
   public:
-    MaxDepthException(const std::string errorDescription) { 
-      errorDescription_ = new std::string(errorDescription);
-    };
-    std::string * errorDescription_;
-    ~MaxDepthException() throw() { delete errorDescription_; };
-    virtual const char* what() const throw()    { return errorDescription_->c_str(); };
-  private:
+    MaxDepthException(const std::string errorDescription): std::runtime_error(errorDescription) { ; };
   };
-
+  
+  /** \brief An exception class to notify that the requested value would have required extrapolation, and extrapolation is not allowed.
+   * 
+   */
+  class ExtrapolateException : public std::runtime_error
+  { 
+  public:
+    ExtrapolateException(const std::string &errorDescription): std::runtime_error(errorDescription) { ; };
+  };
 
 private:
 
