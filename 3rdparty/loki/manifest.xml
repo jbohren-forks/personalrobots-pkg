@@ -8,7 +8,7 @@ This package contains the C++ library Loki.
 <license>MIT http://opensource.org/licenses/mit-license.php</license>
 <url>http://loki-lib.sourceforge.net/</url>
 <export>
-  <cpp lflags="-L${prefix}/loki-svn/lib -lloki" cflags="-I${prefix}/loki-svn/include"/>
+  <cpp lflags="-Wl,-rpath,${prefix}/loki-svn/lib -L${prefix}/loki-svn/lib -lloki" cflags="-I${prefix}/loki-svn/include"/>
   <doxymaker external="http://loki-lib.sourceforge.net/html/modules.html"/>
 </export>
 <versioncontrol type="svn" url="https://loki-lib.svn.sourceforge.net/svnroot/loki-lib/trunk"/>

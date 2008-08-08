@@ -18,7 +18,7 @@ not the SDL_image authors.
 <depend package="sdl"/>
 <depend package="ijg_libjpeg"/>
 <export>
-  <cpp cflags="-I${prefix}/SDL_image/include" lflags="-Xlinker -rpath ${prefix}/SDL_image/lib -L${prefix}/SDL_image/lib -lSDL_image"/>
+  <cpp cflags="-I${prefix}/SDL_image/include" lflags="-Wl,-rpath,${prefix}/SDL_image/lib -L${prefix}/SDL_image/lib -lSDL_image"/>
   <doxymaker external="http://jcatki.no-ip.org:8080/SDL_image/" />
 </export>
 </package>

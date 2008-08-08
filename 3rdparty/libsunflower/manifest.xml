@@ -11,7 +11,7 @@
   <license>GPL</license>
   <url>http://libsunflower.sourceforge.net/</url>
   <export>
-    <cpp cflags="-I${prefix}/local/include" lflags="-L${prefix}/local/lib -lsunflower" />
+    <cpp cflags="-I${prefix}/local/include" lflags="-Wl,-rpath,${prefix}/local/lib -L${prefix}/local/lib -lsunflower" />
     <doxymaker external="http://libsunflower.sourceforge.net/"/>
   </export>
   <depend package="estar"/>
