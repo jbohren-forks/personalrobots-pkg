@@ -72,14 +72,14 @@ URG::laser::open(const char * port_name, bool use_serial, int baud)
   
   laser_port = fopen(port_name, "r+");
   if (laser_port == NULL)
-    URG_EXCEPT_ARGS(URG::exception, "Failed to open port: %s -- error = %d: %s\n", port_name, errno, strerror(errno));
+    URG_EXCEPT_ARGS(URG::exception, "Failed to open port: %s -- error = %d: %s", port_name, errno, strerror(errno));
 
   try
   {
 
     laser_fd = fileno (laser_port);
     if (laser_fd == -1)
-      URG_EXCEPT_ARGS(URG::exception, "Failed to get file descriptor --  error = %d: %s\n", errno, strerror(errno));
+      URG_EXCEPT_ARGS(URG::exception, "Failed to get file descriptor --  error = %d: %s", errno, strerror(errno));
 
     int bauds[] = {B115200, B57600, B19200};
     
@@ -124,7 +124,11 @@ URG::laser::open(const char * port_name, bool use_serial, int baud)
   catch (URG::exception& e)
   {
     // These exceptions mean something failed on open and we should close
-    close();
+    //    close();
+    if (laser_port != NULL)
+      fclose(laser_port);
+    laser_port = NULL;
+    laser_fd = -1;
     throw e;
   }
 }
@@ -637,7 +641,10 @@ URG::laser::poll_scan(URG::laser_scan_t* scan, double min_ang, double max_ang, i
 
 int
 URG::laser::laser_on() {
-  return send_cmd("BM",1000);
+  int res = send_cmd("BM",1000);
+  if (res == 1)
+    URG_EXCEPT(URG::exception, "Unable to control laser due to malfunction");
+  return res;
 }
 
 int
@@ -679,7 +686,7 @@ URG::laser::request_scans(bool intensity, double min_ang, double max_ang, int cl
 
     return status;
   } else {
-    URG_EXCEPT(URG::exception, "Tried to poll for scan with an unknown SCIP version\n");
+    URG_EXCEPT(URG::exception, "Tried to poll for scan with an unknown SCIP version");
   }
 }
 
@@ -778,7 +785,28 @@ URG::laser::get_ID()
 }
 
 
+//////////////////////////////////////////////////////////////////////////////
+std::string
+URG::laser::get_status()
+{
+  if (!port_open())
+    URG_EXCEPT(URG::exception, "Port not open.");
 
+  if (SCIP_version == 2)
+    if (send_cmd("II",1000) != 0)
+      URG_EXCEPT(URG::exception, "Error requesting device information information");
+  
+  char buf[100];
+  char* stat = urg_readline_after(buf, 100, "STAT:");
+
+  std::string statstr(stat);
+  statstr = statstr.substr(0,statstr.length() - 3);
+
+  return statstr;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
 long long
 URG::laser::calc_latency(bool intensity, double min_ang, double max_ang, int clustering, int skip, int num, int timeout)
 {
@@ -827,19 +855,19 @@ URG::laser::calc_latency(bool intensity, double min_ang, double max_ang, int clu
   //  printf("Leaving timing mode.\n");
   send_cmd("TM2",timeout);
   
-  //  printf("Putting URG in scan mode.\n");
+  //    printf("Putting URG in scan mode.\n");
   if (request_scans(intensity, min_ang, max_ang, clustering, skip, num, timeout) != 0)
     URG_EXCEPT(URG::exception, "Error requesting scans during latency calculation");
 
   URG::laser_scan_t scan;
 
-  //  printf("Estimating latency of scans... ");
+  //    printf("Estimating latency of scans... ");
   count = 200;
   for (int i = 0; i < count;i++)
   {
     try
     {
-      service_scan(&scan);
+      service_scan(&scan, 1000);
     } catch (URG::corrupted_data_exception &e) {
       //      printf("Skipping corrupted data...\n");
       continue;

@@ -27,6 +27,7 @@
 
 #include <stdexcept>
 #include <termios.h>
+#include <string>
 
 //! A namespace containing all URG related things
 namespace URG {
@@ -257,6 +258,12 @@ namespace URG {
      * \return  Serial number of URG.
      */
     int get_ID();
+
+    //! Get status message from the URG
+    /*!
+     * \return  Status message
+     */
+    std::string get_status();
 
     //! Get the SCIP version in use by the urg
     int get_SCIP_version() { return SCIP_version; }
