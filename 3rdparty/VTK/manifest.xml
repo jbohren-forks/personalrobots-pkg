@@ -1,11 +1,12 @@
 <package>
 <description brief="Visualization ToolKit">
+VTK - Visualization ToolKit
 </description>
 <author></author>
 <license>BSD</license>
 <url>http://www.vtk.org</url>
 <export>
-  <cpp cflags="-I${prefix}/vtk-install/include/vtk-5.0" lflags="-L${prefix}/vtk-install/lib -lvtkRendering -lvtkGraphics -lvtkImaging -lvtkIO -lvtkFiltering -lvtkCommon -lvtksys -lpthread -ldl -lm -lvtkDICOMParser -lvtkpng -lvtktiff -lvtkzlib -lvtkjpeg -lvtkexpat -lvtkftgl -lvtkfreetype -lvtkHybrid -lGL -lXt -lSM -lICE -lSM -lICE -lX11 -lXext -lX11 -lXext -Wl,-rpath,${prefix}/vtk-install/lib"/>
+  <cpp cflags="-I${prefix}/vtk-install/include/vtk-5.0" lflags="-L${prefix}/vtk-install/lib -lvtkRendering -lvtkGraphics -lvtkImaging -lvtkIO -lvtkFiltering -lvtkCommon -lvtksys -lpthread -ldl -lm -lvtkDICOMParser -lvtkpng -lvtktiff -lvtkzlib -lvtkjpeg -lvtkexpat -lvtkftgl -lvtkfreetype -lvtkHybrid -lvtkFiltering -lvtkGraphics -lGL -lXt -lSM -lICE -lSM -lICE -lX11 -lXext -lX11 -lXext -Wl,-rpath,${prefix}/vtk-install/lib"/>
   <doxymaker external="http://www.vtk.org"/>
 </export>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libxext-dev"/>
