@@ -280,7 +280,7 @@ public:
       projector.projectLaser(scans, temp_cloud);
       cloud = tf.transformPointCloud("FRAMEID_TILT_BASE", temp_cloud);
       
-
+      full_cloud.header = cloud.header; //find a better place to do this/way to do this
       
       //Populate full_cloud from the cloud
       for(unsigned int i = 0; i < cloud.pts_size; i ++)
