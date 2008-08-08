@@ -45,8 +45,8 @@ import time
 import rospy, rostest
 from std_msgs.msg import *
 
-TARGET_X = -3.0
-TARGET_Y = 0.5
+TARGET_X = -4.6
+TARGET_Y = 0.0
 TARGET_Z = 2.6
 TARGET_RAD = 4.5
 
@@ -62,28 +62,31 @@ class TestSlide(unittest.TestCase):
         #if (pos.frame == 1):
         dx = pos.x - TARGET_X
         dy = pos.y - TARGET_Y
-        d = math.sqrt((dx * dx) + (dy * dy))
+        dz = pos.z - TARGET_Z
+        d = math.sqrt((dx * dx) + (dy * dy)) #+ (dz * dz))
         #print "P: " + str(pos.x) + " " + str(pos.y)
         #print "D: " + str(dx) + " " + str(dy) + " " + str(dz) + " " + str(d) + " < " + str(TARGET_RAD * TARGET_RAD)
-        #if (d < TARGET_RAD):
-            #print "HP: " + str(dx) + " " + str(dy) + " " + str(d) + " at " + str(pos.x) + " " + str(pos.y)
-            #print "DONE"
-            #self.hits = self.hits + 1
-            #if (self.hits > 10):
-                #self.success = True
-                #os.system("killall gazebo")
+        if (d < TARGET_RAD):
+            print "HP: " + str(dx) + " " + str(dy) + " " + str(d) + " at " + str(pos.x) + " " + str(pos.y)
+            print "DONE"
+            self.hits = self.hits + 1
+            if (self.hits > 10):
+                self.success = True
+                os.system("killall gazebo")
+                os.system("killall pr2_gazebo")
         
     
     def test_slide(self):
         print "LINK\n"
         #rospy.TopicSub("Odom", RobotBase2DOdom, self.positionInput)
-        rospy.TopicSub("groundtruthposition", Point2DFloat32, self.positionInput)
+        rospy.TopicSub("groundtruthposition", Point3DFloat32, self.positionInput)
         rospy.ready(NAME, anonymous=True)
         timeout_t = time.time() + 50.0 #59 seconds
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
             time.sleep(0.1)
         time.sleep(2.0)
         os.system("killall gazebo")
+        os.system("killall pr2_gazebo")
         self.assert_(self.success)
         
     
