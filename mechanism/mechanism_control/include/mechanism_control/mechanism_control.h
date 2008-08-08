@@ -31,9 +31,6 @@
  * mc.registerActuator("AnActuatorName", 0);
  * mc.registerActuator("AnotherActuatorName", 0);
  * ...
- *
- * mc.registerControllerType("JointController", JointController::create);
- * ...
  * mc.init(config);
  *
  * mc.spawnController("JointController", controllerConfig);
