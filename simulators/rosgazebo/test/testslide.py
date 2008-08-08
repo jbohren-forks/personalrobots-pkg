@@ -54,10 +54,12 @@ class TestSlide(unittest.TestCase):
     def __init__(self, *args):
         super(TestSlide, self).__init__(*args)
         self.success = False
+        self.fail = False
         self.hits = 0
+        self.runs = 0
         
     def positionInput(self, pos):
-        
+        self.runs = self.runs + 1
         
         #if (pos.frame == 1):
         dx = pos.x - TARGET_X
@@ -71,7 +73,12 @@ class TestSlide(unittest.TestCase):
             print "DONE"
             self.hits = self.hits + 1
             if (self.hits > 10):
-                self.success = True
+                if (self.runs > 20):
+                    self.success = True
+                else:
+                    print "Obviously wrong transforms!"
+                    self.success = False
+                    self.fail = True
                 os.system("killall gazebo")
                 os.system("killall pr2_gazebo")
         
@@ -82,7 +89,7 @@ class TestSlide(unittest.TestCase):
         rospy.TopicSub("groundtruthposition", Point3DFloat32, self.positionInput)
         rospy.ready(NAME, anonymous=True)
         timeout_t = time.time() + 50.0 #59 seconds
-        while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
+        while not rospy.is_shutdown() and not self.success and not self.fail and time.time() < timeout_t:
             time.sleep(0.1)
         time.sleep(2.0)
         os.system("killall gazebo")
