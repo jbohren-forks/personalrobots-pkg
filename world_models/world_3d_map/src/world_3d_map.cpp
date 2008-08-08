@@ -378,7 +378,7 @@ private:
 		    }
 		    
 		    rp.body->setDimensions(link->geom->size);
-		    rp.body->setScale(1.25);
+		    rp.body->setScale(1.4);
 		    
 		    m_selfSeeParts.push_back(rp);
 		}
@@ -469,12 +469,15 @@ private:
 	    double y = cloud.pts[k].y;
 	    double z = cloud.pts[k].z;
 	    
-	    bool keep = true;
-	    for (int i = m_selfSeeParts.size() - 1 ; keep && i >= 0 ; --i)
-		keep = !m_selfSeeParts[i].body->containsPoint(x, y, z);
-	    
-	    if (keep)
-		copy->pts[j++] = cloud.pts[k];	    
+	    if (z > 1e-6)
+	    {
+		bool keep = true;
+		for (int i = m_selfSeeParts.size() - 1 ; keep && i >= 0 ; --i)
+		    keep = !m_selfSeeParts[i].body->containsPoint(x, y, z);
+		
+		if (keep)
+		    copy->pts[j++] = cloud.pts[k];
+	    }
 	}
 	printf("Discarded %d points\n", n - j);
 	

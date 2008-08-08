@@ -33,7 +33,9 @@
 *********************************************************************/
 
 #include <ros/node.h>
+#include <ros/time.h>
 #include <robot_srvs/KinematicMotionPlan.h>
+#include <std_msgs/RobotBase2DOdom.h>
 
 class PlanKinematicPath : public ros::node
 {
@@ -41,6 +43,14 @@ public:
     
     PlanKinematicPath(void) : ros::node("plan_kinematic_path")
     {
+	m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
+	m_haveBasePos = false;
+	subscribe("localizedpose", m_localizedPose, &PlanKinematicPath::localizedPoseCallback);
+    }
+  
+    bool haveBasePos(void) const
+    {
+	return m_haveBasePos;
     }
     
     void runTest1(void)
@@ -48,7 +58,7 @@ public:
 	robot_srvs::KinematicMotionPlan::request  req;
 	robot_srvs::KinematicMotionPlan::response res;
 	
-	req.model_id = "pr2::base+arms";
+	req.model_id = "pr2::base";
 	req.threshold = 1e-6;
 	req.distance_metric = "L2Square";
 	
@@ -56,19 +66,17 @@ public:
 	for (unsigned int i = 0 ; i < req.start_state.vals_size ; ++i)
 	    req.start_state.vals[i] = 0.0;
 	
-	req.goal_state.set_vals_size(18);
+	req.goal_state.set_vals_size(3);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
-	    req.goal_state.vals[i] = 0.0;
-	for (unsigned int i = req.goal_state.vals_size-7 ; i < req.goal_state.vals_size ; ++i)
-	    req.goal_state.vals[i] = 0.2;
-	req.goal_state.vals[0] = 4.0;
-	req.goal_state.vals[1] = 0.0;
-	req.goal_state.vals[2] = M_PI;
-	
+	{
+	    req.goal_state.vals[i] = m_basePos[i] + 1.0;
+	    req.start_state.vals[i] = m_basePos[i];
+	}
+
 	req.allowed_time = 10.0;
 	
-	req.volumeMin.x = -5.0;	req.volumeMin.y = -5.0;	req.volumeMin.z = -5.0;
-	req.volumeMax.x = 5.0;	req.volumeMax.y = 5.0;	req.volumeMax.z = 5.0;
+	req.volumeMin.x = -5.0 + m_basePos[0];	req.volumeMin.y = -5.0 + m_basePos[1];	req.volumeMin.z = 0.0;
+	req.volumeMax.x = 5.0 + m_basePos[0];	req.volumeMax.y = 5.0 + m_basePos[1];	req.volumeMax.z = 0.0;
 	
 	if (ros::service::call("plan_kinematic_path", req, res))
 	{
@@ -85,6 +93,20 @@ public:
 	    fprintf(stderr, "Service 'plan_kinematic_path' failed\n");	  
     }
     
+private: 
+
+    void localizedPoseCallback(void)
+    {
+	m_basePos[0] = m_localizedPose.pos.x;
+	m_basePos[1] = m_localizedPose.pos.y;
+	m_basePos[2] = m_localizedPose.pos.th;
+	m_haveBasePos = true;
+    }
+    
+    std_msgs::RobotBase2DOdom m_localizedPose;
+    double                    m_basePos[3];
+    bool                      m_haveBasePos;
+    
 };
 
 
@@ -93,7 +115,13 @@ int main(int argc, char **argv)
     ros::init(argc, argv);
     
     PlanKinematicPath plan;
+    
+    ros::Duration dur(0.1);
+    while (!plan.haveBasePos())
+	dur.sleep();
+    
     plan.runTest1();
+    
     plan.shutdown();
     
     return 0;    
