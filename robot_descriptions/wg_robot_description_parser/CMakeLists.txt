@@ -7,5 +7,5 @@ target_link_libraries(parse URDF)
 rospack_add_executable(merge src/urdf/merge.cpp)
 
 # Tests
-rospack_add_gtest(test/test_cpp_parser test/test_cpp_parser.cpp)
-target_link_libraries(test/test_cpp_parser URDF)
+rospack_add_gtest(test_cpp_parser test/test_cpp_parser.cpp)
+target_link_libraries(test_cpp_parser URDF)
