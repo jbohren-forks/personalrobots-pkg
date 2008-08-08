@@ -1,0 +1,370 @@
+<?xml version="1.0"?>
+
+<robot name="pr2"><!-- name of the robot-->
+
+  <!-- potentially, new update might look like this - JMH
+  <controller name="caster_front_left_controller" type="pd_control">
+      <joint name="caster_front_left_joint" >
+        <limits saturationTorque="1000" />
+        <gains p="2" i="0" d="0" imin="0" imax="0" iclamp="0"/>
+        <data name="physical_damping_model" type="gazebo">
+          <elem key="explicitDampingCoefficient" value="1.0" />
+        </data>
+      </joint>
+  </controller>
+  -->
+  <controller name="caster_front_left_controller">
+      <joint name="caster_front_left_joint" >
+        <saturationTorque>1000</saturationTorque>
+        <pGain>2</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="wheel_front_left_l_controller">
+      <joint name="wheel_front_left_l_joint" >
+        <saturationTorque>5</saturationTorque>
+        <pGain>0.5</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+      </joint>
+  </controller>
+  <controller name="wheel_front_left_r_controller">
+      <joint name="wheel_front_left_r_joint" >
+        <saturationTorque>5</saturationTorque>
+        <pGain>0.5</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+      </joint>
+  </controller>
+  <controller name="caster_front_right_controller">
+      <joint name="caster_front_right_joint" >
+        <saturationTorque>1000</saturationTorque>
+        <pGain>2</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="wheel_front_right_l_controller">
+      <joint name="wheel_front_right_l_joint" >
+        <saturationTorque>5</saturationTorque>
+        <pGain>0.5</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+      </joint>
+  </controller>
+  <controller name="wheel_front_right_r_controller">
+      <joint name="wheel_front_right_r_joint" >
+        <saturationTorque>5</saturationTorque>
+        <pGain>0.5</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+      </joint>
+  </controller>
+  <controller name="caster_rear_left_controller">
+      <joint name="caster_rear_left_joint" >
+        <saturationTorque>1000</saturationTorque>
+        <pGain>2</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="wheel_rear_left_l_controller">
+      <joint name="wheel_rear_left_l_joint" >
+        <saturationTorque>5</saturationTorque>
+        <pGain>0.5</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+      </joint>
+  </controller>
+  <controller name="wheel_rear_left_r_controller">
+      <joint name="wheel_rear_left_r_joint" >
+        <saturationTorque>5</saturationTorque>
+        <pGain>0.5</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+      </joint>
+  </controller>
+  <controller name="caster_rear_right_controller">
+      <joint name="caster_rear_right_joint" >
+        <saturationTorque>1000</saturationTorque>
+        <pGain>2</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="wheel_rear_right_l_controller">
+      <joint name="wheel_rear_right_l_joint" >
+        <saturationTorque>5</saturationTorque>
+        <pGain>0.5</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+      </joint>
+  </controller>
+  <controller name="wheel_rear_right_r_controller">
+      <joint name="wheel_rear_right_r_joint" >
+        <saturationTorque>5</saturationTorque>
+        <pGain>0.5</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+      </joint>
+  </controller>
+      <!-- ========================================= -->
+      <!-- torso array -->
+  <controller name="torso_controller">
+      <joint name="torso_joint" >
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+      <!-- ========================================= -->
+      <!-- left arm array -->
+  <controller name="shoulder_pan_left_controller">
+      <joint name="shoulder_pan_left_joint" >
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="shoulder_pitch_left_controller">
+      <joint name="shoulder_pitch_left_joint" >
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="upperarm_roll_left_controller">
+      <joint name="upperarm_roll_left_joint" >
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="elbow_flex_left_controller">
+      <joint name="elbow_flex_left_joint" >
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="forearm_roll_left_controller">
+      <joint name="forearm_roll_left_joint" >
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="wrist_flex_left_controller">
+      <joint name="wrist_flex_left_joint" >
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="gripper_roll_left_controller">
+      <joint name="gripper_roll_left_joint" >
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <!-- Special gripper joint -->
+  <controller name="gripper_left_controller">
+        <joint name="gripper_left_joint" type="gripper_special" >
+        <left_distal>finger_tip_l_left_joint</left_distal>
+        <right_proximal>finger_r_left_joint</right_proximal>
+        <right_distal>finger_tip_r_left_joint</right_distal>
+        <left_proximal>finger_l_left_joint</left_proximal>
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+      <!-- ========================================= -->
+      <!-- right arm array -->
+  <controller name="shoulder_pan_right_controller">
+      <joint name="shoulder_pan_right_joint" >
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="shoulder_pitch_right_controller">
+      <joint name="shoulder_pitch_right_joint" >
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="upperarm_roll_right_controller">
+      <joint name="upperarm_roll_right_joint" >
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="elbow_flex_right_controller">
+      <joint name="elbow_flex_right_joint" >
+        <saturationTorque>1000</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="forearm_roll_right_controller">
+      <joint name="forearm_roll_right_joint" >
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="wrist_flex_right_controller">
+      <joint name="wrist_flex_right_joint" >
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="gripper_roll_right_controller">
+      <joint name="gripper_roll_right_joint" >
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+      <!-- Special gripper joint -->
+  <controller name="gripper_right_controller" type="gripper_special">
+        <joint name="gripper_right_joint" type="gripper_special" >
+        <left_proximal>finger_l_right_joint</left_proximal>
+        <left_distal>finger_tip_l_right_joint</left_distal>
+        <right_proximal>finger_r_right_joint</right_proximal>
+        <right_distal>finger_tip_r_right_joint</right_distal>
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+      <!-- head and above array -->
+  <controller name="head_pan_controller">
+      <joint name="head_pan_joint" >
+        <saturationTorque>100</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="head_tilt_controller">
+      <joint name="head_tilt_joint" >
+        <saturationTorque>10</saturationTorque>
+        <pGain>1</pGain>
+        <dGain>0</dGain>
+        <iGain>0</iGain>
+        <iClamp>0</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+  <controller name="tilt_laser_controller">
+      <joint name="tilt_laser_joint" >
+        <saturationTorque>500</saturationTorque>
+        <pGain>2</pGain>
+        <dGain>0</dGain>
+        <iGain>1</iGain>
+        <iClamp>20</iClamp>
+        <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+        <controlMode>PD_CONTROL</controlMode>
+      </joint>
+  </controller>
+
+</robot>
