@@ -19,55 +19,39 @@ GenHokuyoTester::GenHokuyoTester( wxWindow* parent, wxWindowID id, const wxPoint
 	visPanel = new wxPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	bSizer1->Add( visPanel, 1, wxALL|wxEXPAND, 5 );
 	
-	wxStaticBoxSizer* sbSizer1;
-	sbSizer1 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Config") ), wxVERTICAL );
+	wxBoxSizer* bSizer4;
+	bSizer4 = new wxBoxSizer( wxVERTICAL );
 	
-	sbSizer1->SetMinSize( wxSize( 300,-1 ) ); 
 	wxBoxSizer* bSizer31;
 	bSizer31 = new wxBoxSizer( wxHORIZONTAL );
 	
-	m_staticText2 = new wxStaticText( this, wxID_ANY, wxT("Port:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText2 = new wxStaticText( this, wxID_ANY, wxT("SN: "), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText2->Wrap( -1 );
 	bSizer31->Add( m_staticText2, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 	
-	port = new wxTextCtrl( this, wxID_ANY, wxT("/dev/ttyACM0"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer31->Add( port, 1, wxALL|wxEXPAND|wxALIGN_CENTER_VERTICAL, 5 );
+	serial = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer31->Add( serial, 1, wxALL|wxEXPAND|wxALIGN_CENTER_VERTICAL, 5 );
 	
-	sbSizer1->Add( bSizer31, 0, wxEXPAND, 5 );
+	testButton = new wxButton( this, wxID_ANY, wxT("Test"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer31->Add( testButton, 0, wxALL|wxEXPAND, 5 );
 	
-	wxBoxSizer* bSizer3;
-	bSizer3 = new wxBoxSizer( wxHORIZONTAL );
-	
-	connectButton = new wxButton( this, wxID_ANY, wxT("Connect"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer3->Add( connectButton, 1, wxALL|wxEXPAND, 5 );
-	
-	disconnectButton = new wxButton( this, wxID_ANY, wxT("Disconnect"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer3->Add( disconnectButton, 1, wxALL|wxEXPAND, 5 );
-	
-	scanButton = new wxToggleButton( this, wxID_ANY, wxT("Scan"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
-	bSizer3->Add( scanButton, 1, wxALL|wxEXPAND, 5 );
-	
-	sbSizer1->Add( bSizer3, 0, wxEXPAND, 5 );
+	bSizer4->Add( bSizer31, 0, wxEXPAND, 5 );
 	
 	logText = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE );
-	sbSizer1->Add( logText, 1, wxALL|wxEXPAND, 5 );
+	bSizer4->Add( logText, 1, wxALL|wxEXPAND, 5 );
 	
-	bSizer1->Add( sbSizer1, 0, wxEXPAND, 5 );
+	bSizer1->Add( bSizer4, 1, wxEXPAND, 5 );
 	
 	this->SetSizer( bSizer1 );
 	this->Layout();
 	bSizer1->Fit( this );
 	
 	// Connect Events
-	connectButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( GenHokuyoTester::OnConnect ), NULL, this );
-	disconnectButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( GenHokuyoTester::OnDisconnect ), NULL, this );
-	scanButton->Connect( wxEVT_COMMAND_TOGGLEBUTTON_CLICKED, wxCommandEventHandler( GenHokuyoTester::OnScan ), NULL, this );
+	testButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( GenHokuyoTester::OnTest ), NULL, this );
 }
 
 GenHokuyoTester::~GenHokuyoTester()
 {
 	// Disconnect Events
-	connectButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( GenHokuyoTester::OnConnect ), NULL, this );
-	disconnectButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( GenHokuyoTester::OnDisconnect ), NULL, this );
-	scanButton->Disconnect( wxEVT_COMMAND_TOGGLEBUTTON_CLICKED, wxCommandEventHandler( GenHokuyoTester::OnScan ), NULL, this );
+	testButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( GenHokuyoTester::OnTest ), NULL, this );
 }

@@ -32,75 +32,55 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef HOKUYO_TESTER_H
-#define HOKUYO_TESTER_H
-
-#include "gen_hokuyo_tester.h"
-#include <wx/log.h>
-#include <wx/thread.h>
-#include <wx/glcanvas.h>
-
 #include "ros/node.h"
-#include "std_msgs/LaserScan.h"
 #include "std_srvs/SelfTest.h"
 
-class HokuyoTester;
+#include <string>
 
-class TestThread: public wxThread
+class TestHokuyo : public ros::node
 {
 public:
-  TestThread(HokuyoTester* p) : parent(p) {}
-private:
-  HokuyoTester* parent;
-  void* Entry();
+  TestHokuyo() : ros::node("test_hokuyo")
+  {
+  }
+
+  bool doTest(std::string name)
+  {
+    std_srvs::SelfTest::request  req;
+    std_srvs::SelfTest::response res;
+    if (ros::service::call(name + "/self_test", req, res))
+    {
+      printf("Self test completed:\n");
+      if (res.passed)
+        printf("Test passed!\n");
+      else
+        printf("Test failed!\n");
+      printf("Status code: %d\n", res.status_code);
+      printf("Info:\n%s\n", res.info.c_str());
+      return true;
+    }
+    else
+    {
+      printf("Failed to call service.\n");
+      return false;
+    }
+  }
+
 };
 
-
-class HokuyoTester : public GenHokuyoTester
+int main(int argc, char **argv)
 {
-  friend class TestThread;
+  ros::init(argc, argv);
+  if (argc != 2)
+  {
+    printf("usage: test_hokuyo name\n");
+    return 1;
+  }
+  TestHokuyo h;
 
-  wxMutex* scan_mutex;
+  h.doTest(std::string(argv[1]));
 
-  ros::node* rosNode;
-  bool createdNode;
+  ros::fini();
+  return 0;
+}
 
-  std_msgs::LaserScan readScan;
-  std_msgs::LaserScan dispScan;
-  int scanCount;
-
-  wxLogTextCtrl* log;
-  wxGLCanvas *gl;
-
-  bool m_init;
-  float view_scale, view_x, view_y;
-
-  int last_x;
-  int last_y;
-
-  std_srvs::SelfTest::request  req;
-  std_srvs::SelfTest::response res;
-
-protected:
-
-  void InitGL();
-  void Render();
-
-  virtual void OnEraseBackground(wxEraseEvent& event);
-  virtual void OnPaint(wxPaintEvent& event);
-  virtual void OnSize(wxSizeEvent& event);
-  virtual void OnMouse( wxMouseEvent& event );
-  virtual void OnTest( wxCommandEvent& event );
-
-  virtual void SelfTestDone( wxCommandEvent& event );
-
-  void HandleScan();
-
-public:
-	/** Constructor */
-	HokuyoTester( wxWindow* parent, ros::node* rosNode = NULL );
-
-	~HokuyoTester();
-};
-
-#endif

@@ -16,10 +16,8 @@
 #include <wx/string.h>
 #include <wx/stattext.h>
 #include <wx/textctrl.h>
-#include <wx/sizer.h>
 #include <wx/button.h>
-#include <wx/tglbtn.h>
-#include <wx/statbox.h>
+#include <wx/sizer.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -34,16 +32,12 @@ class GenHokuyoTester : public wxPanel
 	protected:
 		wxPanel* visPanel;
 		wxStaticText* m_staticText2;
-		wxTextCtrl* port;
-		wxButton* connectButton;
-		wxButton* disconnectButton;
-		wxToggleButton* scanButton;
+		wxTextCtrl* serial;
+		wxButton* testButton;
 		wxTextCtrl* logText;
 		
 		// Virtual event handlers, overide them in your derived class
-		virtual void OnConnect( wxCommandEvent& event ){ event.Skip(); }
-		virtual void OnDisconnect( wxCommandEvent& event ){ event.Skip(); }
-		virtual void OnScan( wxCommandEvent& event ){ event.Skip(); }
+		virtual void OnTest( wxCommandEvent& event ){ event.Skip(); }
 		
 	
 	public:

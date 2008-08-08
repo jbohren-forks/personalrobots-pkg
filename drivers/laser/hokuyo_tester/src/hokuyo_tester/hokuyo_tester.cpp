@@ -38,38 +38,24 @@
 #include <math.h>
 #include <wx/app.h>
 
-void HokuyoThread::OnExit()
-{
-  tester->DoStopScan();
-  tester->thread = NULL;
-}
+#include <wx/msgdlg.h>
 
-void *HokuyoThread::Entry()
-{
-  if (!tester->DoStartScan())
-    return NULL;
+DECLARE_EVENT_TYPE(wxSELF_TEST_DONE,-1)
+DEFINE_EVENT_TYPE(wxSELF_TEST_DONE)
 
-  while (1)
+HokuyoTester::HokuyoTester( wxWindow* parent, ros::node* rosNode_ )
+:
+  GenHokuyoTester( parent ), rosNode(rosNode_), createdNode(false), view_scale(50), view_x(0), view_y(0)
+{
+  if (rosNode == NULL)
   {
-    if ( TestDestroy() )
-      return NULL;
-
-    if (!tester->DoHandleScan())
-      return NULL;
-
-    Yield();
+    int argc = 0;
+    ros::init(argc, NULL);
+    rosNode = new ros::node("HokuyoTester");
+    createdNode = true;
   }
 
-  return NULL;
-}
-
-
-HokuyoTester::HokuyoTester( wxWindow* parent )
-:
-  GenHokuyoTester( parent ), view_scale(50), view_x(0), view_y(0), thread(NULL)
-{
-  urg_mutex = new wxMutex();
-  log_mutex = new wxMutex();
+  scan_mutex = new wxMutex();
 
   log = new wxLogTextCtrl(logText);
 
@@ -93,139 +79,87 @@ HokuyoTester::HokuyoTester( wxWindow* parent )
   gl->Connect( wxEVT_SIZE, wxSizeEventHandler( HokuyoTester::OnSize ), NULL, this );
   gl->Connect( wxEVT_MOTION, wxMouseEventHandler( HokuyoTester::OnMouse ), NULL, this );
 
-  disconnectButton->Disable();
+  Connect( wxSELF_TEST_DONE, wxCommandEventHandler( HokuyoTester::SelfTestDone ), NULL, this );
 
-  scan.num_readings = 0;
 }
 
-
-void
-HokuyoTester::OnConnect( wxCommandEvent& event )
+HokuyoTester::~HokuyoTester()
 {
-    try
-    {
-      urg.open((const char*)(port->GetValue().mb_str(wxConvUTF8)));
-
-      log_mutex->Lock();
-      wxLogMessage(_T("Connection successful"));
-      log_mutex->Unlock();
-
-      urg.laser_on();
-
-      disconnectButton->Enable();
-      connectButton->Disable();
-
-    } catch (URG::exception& e) {
-      log_mutex->Lock();
-      wxLogMessage(_T("Could not connect to Hokuyo: ") + wxString::FromAscii(e.what()));
-      log_mutex->Unlock();
-    }
-}
-
-void
-HokuyoTester::OnDisconnect( wxCommandEvent& event )
-{
-  try
+  if (createdNode && rosNode)
   {
-    urg.close();
-
-    log_mutex->Lock();
-    wxLogMessage(_T("Disconnection successful"));
-    log_mutex->Unlock();;
-
-    disconnectButton->Disable();
-    connectButton->Enable();
-
-  } catch (URG::exception& e) {
-    log_mutex->Lock();
-    wxLogMessage(_T("Could not disconnect from Hokuyo: ") + wxString::FromAscii(e.what()));
-    log_mutex->Unlock();
+    ros::fini();
+    delete rosNode;
   }
 }
 
-void
-HokuyoTester::OnScan( wxCommandEvent& event )
+// GetValue().mb_str(wxConvUTF8);
+//  
+
+void* TestThread::Entry()
 {
-  if (scanButton->GetValue())
+  wxLogMessage(_T("Conducting self test...\n"));
+
+  if (ros::service::call("urglaser/self_test", parent->req, parent->res))
   {
-    if (thread == NULL)
-    {
-      thread = new HokuyoThread(this);
-      thread->Create();
-      thread->Run();
-    }
-  } else {
-    if (thread != NULL)
-    {
-      thread->Delete();
-    }
+    wxLogMessage(_T("Self test completed\n") + wxString::FromAscii(parent->res.info.c_str()));
   }
+  else
+  {
+    wxLogMessage(_T("Could not find hokuyo selftest service.  Ros node must not be running."));
+    parent->testButton->Enable();
+    return NULL;
+  }
+
+  wxCommandEvent* e = new wxCommandEvent(wxSELF_TEST_DONE);
+  parent->AddPendingEvent(*e);
+
+  return NULL;
 }
 
-bool
-HokuyoTester::DoStartScan()
+void HokuyoTester::OnTest( wxCommandEvent& event )
 {
-  try
+  if (serial->GetValue() == _T(""))
   {
-    urg_mutex->Lock();
-    urg.request_scans(true, -M_PI/2.0, M_PI/2.0, 1, 1, 0, -1);    
-    urg_mutex->Unlock();
-
-    log_mutex->Lock();
-    wxLogMessage(_T("Started scanning."));
-    log_mutex->Unlock();
-  } catch (URG::exception& e) {
-    urg_mutex->Unlock();
-
-    log_mutex->Lock();
-    wxLogMessage(_T("Could not start scanning: ") + wxString::FromAscii(e.what()));
-    log_mutex->Unlock();
-    scanButton->SetValue(false);
-    return false;
+    wxMessageBox(_T("Please enter a serial number"), _T("No serial number"), wxOK, this);
+    return;
   }
-  return true;
+      
+
+  testButton->Disable();
+
+  logText->Clear();
+
+  TestThread* t = new TestThread(this);
+  t->Create();
+  t->Run();
 }
 
-bool
-HokuyoTester::DoStopScan()
+void HokuyoTester::SelfTestDone( wxCommandEvent& event )
 {
-  try
+  if (res.passed)
   {
-    urg_mutex->Lock();
-    urg.stop_scanning();
-    urg_mutex->Unlock();
+    rosNode->subscribe("scan", readScan, &HokuyoTester::HandleScan, this);
+    scanCount = 0;  
+    int answer = wxMessageBox(_T("Does the data from the Hokuyo look reasonable."), _T("User Confirmation"), wxYES_NO, this);
+    rosNode->unsubscribe("scan");
 
-    log_mutex->Lock();
-    wxLogMessage(_T("Stopped scanning."));
-    log_mutex->Unlock();
-  } catch (URG::exception& e) {
-    urg_mutex->Unlock();
-
-    log_mutex->Lock();
-    wxLogMessage(_T("Error while stoppign scanning: ") + wxString::FromAscii(e.what()));
-    log_mutex->Unlock();
-    return false;
+    if (answer == wxYES)
+      wxLogMessage(_T("User verified data looks reasonable."));
+    else
+      wxLogMessage(_T("User specified data looks unreasonable."));
   }
-  return true;
+
+  testButton->Enable();
 }
 
-bool
-HokuyoTester::DoHandleScan()
-{
-  try
-  {
-    urg_mutex->Lock();
-    urg.service_scan(&scan, 1000);
-    urg_mutex->Unlock();
 
-    wxPaintEvent* e = new wxPaintEvent();
-    gl->AddPendingEvent(*e);
+void HokuyoTester::HandleScan() {
+  scan_mutex->Lock();
+  dispScan = readScan;
+  scan_mutex->Unlock();
 
-  } catch (URG::timeout_exception& e) {
-    urg_mutex->Unlock();
-    return false;
-  }
-  return true;
+  wxPaintEvent* e = new wxPaintEvent();
+  gl->AddPendingEvent(*e);
 }
 
 void HokuyoTester::InitGL()
@@ -234,8 +168,7 @@ void HokuyoTester::InitGL()
 
   int w,h;
   visPanel->GetClientSize(&w, &h);
-  //  int m = (w < h) ? w : h;
-  //  glViewport((GLint)((w-m)/2), (GLint)((h-m)/2), (GLint) m, (GLint) m);
+
   glViewport((GLint) 0, (GLint) 0, (GLint) w, (GLint) h);
 
     glMatrixMode(GL_PROJECTION);
@@ -253,7 +186,6 @@ void HokuyoTester::OnSize(wxSizeEvent& event)
     // set GL viewport (not called by wxGLCanvas::OnSize on all platforms...)
     int w, h;
     visPanel->GetClientSize(&w, &h);
-    int m = (w < h) ? w : h;
 
     gl->SetCurrent();
     //    glViewport((GLint)((w-m)/2), (GLint)((h-m)/2), (GLint) m, (GLint) m);
@@ -357,27 +289,49 @@ void HokuyoTester::Render()
 
     glPushMatrix();
 
-    drawrectgrid(10.0, 10.0, 0.0, 0.0, 1.0, 1.0);
-
+    glColor3f(0.9, 0.9, 0.9);
+    drawrectgrid(20.0, 20.0, 0.0, 0.0, 1.0, 1.0);
 
     bool intensity_avail = false;
     double min_intensity = 1e9, max_intensity = -1e9;
-
+    scan_mutex->Lock();
+    if (dispScan.get_intensities_size() == dispScan.get_ranges_size())
+    {
+      for (size_t i = 0; i < dispScan.get_intensities_size(); i++)
+      {
+        if (dispScan.intensities[i] > max_intensity)
+          max_intensity = dispScan.intensities[i];
+        if (dispScan.intensities[i] < min_intensity)
+          min_intensity = dispScan.intensities[i];
+      }
+      if (min_intensity == max_intensity)
+        min_intensity = max_intensity - 1; // whatever. this won't happen.
+      intensity_avail = true;
+    }
     glPointSize(4.0);
 
-    urg_mutex->Lock();
-    for (size_t i = 0; i < scan.num_readings; i++)
+    for (size_t i = 0; i < dispScan.get_ranges_size(); i++)
     {
       glColor3f(0.1, 0.3, 0.1);
       glBegin(GL_LINES);
       glVertex2f(0,0);
-      const double ang = scan.config.min_angle + scan.config.ang_increment * i;
-      const double lx = scan.ranges[i] * cos(ang);
-      const double ly = scan.ranges[i] * sin(ang);
+      const double ang = dispScan.angle_min + dispScan.angle_increment * i;
+      const double lx = dispScan.ranges[i] * cos(ang);
+      const double ly = dispScan.ranges[i] * sin(ang);
       glVertex2f(lx, ly);
       glEnd();
+      if (intensity_avail)
+      {
+        const float inten = (dispScan.intensities[i] - min_intensity) / 
+                            (max_intensity - min_intensity);
+        glColor3f(inten, 0, 1.0 - inten);
+        glBegin(GL_POINTS);
+        glVertex2f(lx, ly);
+        glEnd();
+      }
     }
-    urg_mutex->Unlock();
+  scan_mutex->Unlock();
+
     glPopMatrix();
 
     glFlush();

@@ -17,6 +17,7 @@ rospack_add_library(hokuyotester   src/hokuyo_tester/hokuyo_tester.cpp
                                    src/hokuyo_tester/gen_hokuyo_tester.cpp)
 
 rospack_add_executable(gui         src/gui/gui.cpp)
+rospack_add_executable(test_hokuyo src/standalone/standalone.cpp)
 
 target_link_libraries(gui hokuyotester ${wxWidgets_LIBRARIES})
 
