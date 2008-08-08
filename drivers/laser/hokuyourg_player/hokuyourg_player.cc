@@ -310,8 +310,9 @@ public:
 
     std::ostringstream oss;
 
-    if (num_subscribers("scan") != 0)
-      oss << "WARNING: There were active subscribers.  Running of self test interrupted operations." << std::endl;
+#warning fixme ticket:201
+    //Commented out to allow building   TULLY ticket:201    if (num_subscribers("scan") != 0)
+    //     oss << "WARNING: There were active subscribers.  Running of self test interrupted operations." << std::endl;
 
     int passed = 0;
     int total = 0;
