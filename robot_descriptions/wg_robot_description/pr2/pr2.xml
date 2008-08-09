@@ -1357,12 +1357,9 @@
     <xyz> base_base_laser_offset_x 0 base_base_laser_offset_z </xyz> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
 
-    <joint type="revolute"> 
+    <joint type="fixed"> 
       <axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0</anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit>0.0 0.0</limit>
-      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
-      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
@@ -1426,12 +1423,9 @@
     <xyz> gripper_roll_camera_offset_x gripper_roll_camera_offset_y gripper_roll_camera_offset_z </xyz> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
 
-    <joint type="revolute"> 
+    <joint type="fixed"> 
       <axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0</anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit>0.0 0.0</limit>
-      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
-      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
@@ -1491,12 +1485,9 @@
     <xyz> gripper_roll_camera_offset_x gripper_roll_camera_offset_y gripper_roll_camera_offset_z </xyz> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
 
-    <joint type="revolute"> 
+    <joint type="fixed"> 
       <axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0</anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit>0.0 0.0</limit>
-      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
-      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
@@ -1556,12 +1547,9 @@
     <xyz> forearm_roll_camera_offset_x forearm_roll_camera_offset_y forearm_roll_camera_offset_z </xyz> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
 
-    <joint type="revolute"> 
+    <joint type="fixed"> 
       <axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0</anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit>0.0 0.0</limit>
-      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
-      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
@@ -1615,12 +1603,9 @@
     <xyz> forearm_roll_camera_offset_x forearm_roll_camera_offset_y forearm_roll_camera_offset_z </xyz> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
 
-    <joint type="revolute"> 
+    <joint type="fixed"> 
       <axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0</anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit>0.0 0.0</limit>
-      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
-      <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
     <inertial>
@@ -1877,7 +1862,6 @@
     <joint type="fixed"> 
       <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit> 0 0 </limit>
     </joint>
 
     <inertial>
@@ -1963,11 +1947,13 @@
   
   <include>planning.xml</include>
 
-  <!-- Inclusion of this file causes the urdf2gazebo translator to produce
-       a .world file that makes Gazebo crash - BPG -->
-  <include>controllers.xml</include> 
+  <!-- Inclusion of this file causes the urdf2gazebo translator to produce a .world file that makes Gazebo crash - BPG -->
+  <!-- Let me know if it still does -JMH -->
+  <include>controllers_gazebo.xml</include> 
 
-  <!-- Include actuators definition -->
-  <!--include>actuator_test.xml</include-->
+  <!-- new definitions for mechanism controls - JMH -->
+  <include>controller_test.xml</include>
+  <include>actuator_test.xml</include> 
+  <include>transmission_test.xml</include> 
 
 </robot>
