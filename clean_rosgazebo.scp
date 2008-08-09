@@ -1,39 +1,39 @@
 #!/bin/bash
  
 #clean controllers
-(cd controllers/generic_controllers           ; rm -f lib/* ;make clean)
-(cd deprecated/genericControllers             ; rm -f lib/* ;make clean)
-(cd controllers/pr2Controllers                ; rm -f lib/* ;make clean)
+(cd `rospack find generic_controllers`   ; rm -f lib/* ;make clean)
+(cd `rospack find genericControllers`    ; rm -f lib/* ;make clean)
+(cd `rospack find pr2Controllers`        ; rm -f lib/* ;make clean)
 
 #clean gazebo dependent stuff
-(cd drivers/robot/pr2/libpr2HW                ; rm -f lib/* ;make clean)
-(cd drivers/robot/pr2/libpr2API               ; rm -f lib/* ;make clean)
+(cd `rospack find libpr2HW`              ; rm -f lib/* ;make clean)
+(cd `rospack find libpr2API`             ; rm -f lib/* ;make clean)
 
-(cd drivers/simulator/gazebo_plugin           ; rm -f lib/* ;make clean)
-(cd drivers/simulator/gazebo_hardware         ; rm -f lib/* ;make clean)
-(cd drivers/simulator/gazebo_sensors          ; rm -f lib/* ;make clean)
+(cd `rospack find gazebo_plugin`         ; rm -f lib/* ;make clean)
+(cd `rospack find gazebo_hardware`       ; rm -f lib/* ;make clean)
+(cd `rospack find gazebo_sensors`        ; rm -f lib/* ;make clean)
 
-(cd simulators/rosgazebo                      ; rm -f lib/* ;make clean)
-(cd robot_control_loops/pr2_gazebo            ; rm -f lib/* ;make clean)
+(cd `rospack find rosgazebo`             ; rm -f lib/* ;make clean)
+(cd `rospack find pr2_gazebo`            ; rm -f lib/* ;make clean)
 
 #clean 2dnav stack stuff
-(cd nav/nav_view                              ; rm -f lib/* ;make clean)
-(cd nav/amcl_player                           ; rm -f lib/* ;make clean)
-(cd nav/wavefront_player                      ; rm -f lib/* ;make clean)
-(cd nav/map_server                            ; rm -f lib/* ;make clean)
+(cd `rospack find nav_view`              ; rm -f lib/* ;make clean)
+(cd `rospack find amcl_player`           ; rm -f lib/* ;make clean)
+(cd `rospack find wavefront_player`      ; rm -f lib/* ;make clean)
+(cd `rospack find map_server`            ; rm -f lib/* ;make clean)
 
 #clean keyboard controllers
-(cd nav/teleop_base_keyboard                  ; rm -f lib/* ;make clean)
-(cd manip/teleop_arm_keyboard                 ; rm -f lib/* ;make clean)
+(cd `rospack find teleop_base_keyboard`  ; rm -f lib/* ;make clean)
+(cd `rospack find teleop_arm_keyboard`   ; rm -f lib/* ;make clean)
 
 # clean kinematics
-(cd util/kinematics/libKinematics             ; rm -f lib/* ;make clean)
-(cd util/kinematics/libKDL                    ; rm -f lib/* ;make clean)
-(cd util/kinematics/robot_kinematics          ; rm -f lib/* ;make clean)
+(cd `rospack find libKinematics`         ; rm -f lib/* ;make clean)
+(cd `rospack find libKDL`                ; rm -f lib/* ;make clean)
+(cd `rospack find robot_kinematics`      ; rm -f lib/* ;make clean)
 
 # clean visualization
-(cd visualization/irrlicht_viewer             ; rm -f lib/* ;make clean)
-(cd visualization/cloud_viewer                ; rm -f lib/* ;make clean)
+(cd `rospack find irrlicht_viewer`       ; rm -f lib/* ;make clean)
+(cd `rospack find cloud_viewer`          ; rm -f lib/* ;make clean)
 
 # note for users
 echo "if gazebo still functions incorrectly, please perform a make wipe in 3rdparty/gazebo directory."
