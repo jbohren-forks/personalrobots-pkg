@@ -45,6 +45,7 @@
 #include "std_msgs/TransformEuler.h"
 #include "std_msgs/TransformDH.h"
 #include "std_msgs/TransformQuaternion.h"
+#include "std_msgs/TransformMatrix.h"
 #include "libTF/libTF.h"
 #include "std_msgs/PointCloudFloat32.h"
 #include "namelookup/nameLookupClient.hh"
@@ -76,6 +77,7 @@ class rosTFClient : public libTF::TransformReference, public nameLookupClient
   void receiveEuler();
   void receiveDH();
   void receiveQuaternion();
+  void receiveMatrix();
 
 
   /*********** Accessors *************/
@@ -135,6 +137,7 @@ class rosTFClient : public libTF::TransformReference, public nameLookupClient
   std_msgs::TransformEuler eulerIn;
   std_msgs::TransformDH dhIn;
   std_msgs::TransformQuaternion quaternionIn;
+  std_msgs::TransformMatrix matrixIn;
 
   laser_scan::LaserProjection projector_;
 
@@ -181,6 +184,12 @@ class rosTFServer : public nameLookupClient
   void sendQuaternion(std::string frame, std::string parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, ros::Time rostime);
   /** \brief Send a transform using Quaternion notation and libTF syntax*/
   void sendQuaternion(unsigned int frame, unsigned int parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, unsigned int secs, unsigned int nsecs);
+
+
+  /** \brief Send a Transform with 4x4 Matrix */
+  void sendMatrix(std::string frame, std::string parent, NEWMAT::Matrix matrix, ros::Time rostime);
+  /** \brief Send a Transform with 4x4 Matrix */
+  void sendMatrix(unsigned int frame, unsigned int parent, NEWMAT::Matrix matrix, ros::Time rostime);
 
 
  private:

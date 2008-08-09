@@ -46,6 +46,7 @@ rosTFClient::rosTFClient(ros::node & rosnode,
   myNode.subscribe("TransformEuler", eulerIn, &rosTFClient::receiveEuler, this,100);
   myNode.subscribe("TransformDH", dhIn, &rosTFClient::receiveDH, this);
   myNode.subscribe("TransformQuaternion", quaternionIn, &rosTFClient::receiveQuaternion, this);
+  myNode.subscribe("TransformMatrix", matrixIn, &rosTFClient::receiveMatrix, this);
 
 };
 
@@ -179,13 +180,30 @@ void rosTFClient::receiveEuler()
 void rosTFClient::receiveDH()
 {
   setWithDH(dhIn.frame, dhIn.parent, dhIn.length, dhIn.twist, dhIn.offset, dhIn.angle, dhIn.header.stamp.sec * 1000000000ULL + dhIn.header.stamp.nsec);
-  std::cout << "recieved DH frame: " << dhIn.frame << " with parent:" << dhIn.parent << std::endl;
+  //  std::cout << "recieved DH frame: " << dhIn.frame << " with parent:" << dhIn.parent << std::endl;
 };
 
 void rosTFClient::receiveQuaternion()
 {
   setWithQuaternion(quaternionIn.frame, quaternionIn.parent, quaternionIn.xt, quaternionIn.yt, quaternionIn.zt, quaternionIn.xr, quaternionIn.yr, quaternionIn.zr, quaternionIn.w, quaternionIn.header.stamp.sec * 1000000000ULL + quaternionIn.header.stamp.nsec);
-  std::cout << "recieved quaternion frame: " << quaternionIn.frame << " with parent:" << quaternionIn.parent << std::endl;
+  //  std::cout << "recieved quaternion frame: " << quaternionIn.frame << " with parent:" << quaternionIn.parent << std::endl;
+};
+
+
+void rosTFClient::receiveMatrix()
+{
+  if (matrixIn.matrix_size != 16)
+  {
+    std::cerr << "recieved matrix not of size 16, it was "<< matrixIn.matrix_size;
+    return;
+  }
+  
+  NEWMAT::Matrix tempMatrix(4,4);
+  tempMatrix << matrixIn.matrix;
+  
+  setWithMatrix(matrixIn.header.frame_id, matrixIn.parent, tempMatrix, matrixIn.header.stamp.sec * 1000000000ULL + matrixIn.header.stamp.nsec);
+  
+  //  std::cout << "recieved Matrix:" << tempMatrix << " in frame: " << matrixIn.header.frame_id << " with parent:" << matrixIn.parent << " at time:" << matrixIn.header.stamp.to_double() << std::endl;
 };
 
 
@@ -230,6 +248,7 @@ rosTFServer::rosTFServer(ros::node & rosnode):
   myNode.advertise<std_msgs::TransformEuler>("TransformEuler");
   myNode.advertise<std_msgs::TransformDH>("TransformDH");
   myNode.advertise<std_msgs::TransformQuaternion>("TransformQuaternion");
+  myNode.advertise<std_msgs::TransformMatrix>("TransformMatrix");
 
 };
 
@@ -367,6 +386,40 @@ void rosTFServer::sendQuaternion(unsigned int frame, unsigned int parent, double
   myNode.publish("TransformQuaternion", quaternionOut);
 
 };
+
+
+void rosTFServer::sendMatrix(std::string frame, std::string parent, NEWMAT::Matrix matrix, ros::Time rostime)
+{
+  sendMatrix(lookup(frame), lookup(parent), matrix, rostime);
+};
+
+void rosTFServer::sendMatrix(unsigned int frame, unsigned int parent, NEWMAT::Matrix matrix, ros::Time rostime)
+{
+  if (!checkInvalidFrame(frame))
+    return;
+
+
+
+  std_msgs::TransformMatrix matrixOut;
+  matrixOut.header.frame_id = frame;
+  matrixOut.header.stamp = rostime;
+  matrixOut.parent = parent;
+
+  matrixOut.set_matrix_size(16);
+  if (matrix.Nrows() != 4 || matrix.Ncols() != 4)
+    return;  
+  
+  double * matPtr = matrix.Store();
+  for (unsigned int i = 0; i < 16; i++)
+  {
+    matrixOut.matrix[i] = matPtr[i];
+  }
+
+  myNode.publish("TransformMatrix", matrixOut);
+
+  
+};
+
 
 bool rosTFServer::checkInvalidFrame(unsigned int frameID)
 {
