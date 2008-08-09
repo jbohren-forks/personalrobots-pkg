@@ -34,6 +34,29 @@
 
 #include <ethercat_hardware/wg05.h>
 
+static unsigned int rotate_right_8(unsigned in)
+{
+  in &= 0xff;
+  in = (in >> 1) | (in << 7);
+  in &= 0xff;
+  return in;
+}
+
+
+
+static unsigned compute_checksum(void const *data, unsigned length)
+{
+  unsigned char *d = (unsigned char *) data;
+  unsigned int checksum = 0x42;
+  for (unsigned int i = 0; i < length; ++i)
+  {
+    checksum = rotate_right_8(checksum);
+    checksum ^= d[i];
+    checksum &= 0xff;
+  }
+  return checksum;
+}
+
 void WG05::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 {
   static unsigned int phyStatusAddress(STATUS_PHY_ADDR);
@@ -97,6 +120,7 @@ void WG05::convertCommand(ActuatorCommand &command, unsigned char *buffer)
 
   c.programmed_current_ = CURRENT_FACTOR * command.current_;
   c.mode_ = command.enable_ ? (MODE_ENABLE | MODE_CURRENT) : MODE_OFF;
+  c.checksum_ = rotate_right_8(compute_checksum(&c, sizeof(c) - 1));
 
   memcpy(buffer + sizeof(WG05Status), &c, sizeof(c));
 }
