@@ -8,13 +8,17 @@
   <verbatim key="transmissions_gazebo_actuators" includes="true"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <data> tag -->
 
   <!-- PR2_ACTARRAY -->
-  <!--controller:gazebo_actuators name="gazebo_actuators" plugin="libgazebo_actuators.so">
+  <!-- uncomment for testing
+  <controller:gazebo_actuators name="gazebo_actuators" plugin="libgazebo_actuators.so">
       <updateRate>100.0</updateRate>
 
       <include>transmission_test.xml</include>
+      <include>actuator_test.xml</include>
+      <include>controller_test.xml</include>
 
       <interface:audio name="gazebo_actuators_dummy_iface" />
-  </controller:gazebo_actuators-->
+  </controller:gazebo_actuators>
+  -->
 
   </verbatim>
 </data>
@@ -336,6 +340,7 @@
       <!-- ========================================= -->
   </controller:pr2_actarray>
 
+  <!-- P3D for position groundtruth -->
   <controller:P3D name="p3d_right_wrist_controller" plugin="libP3D.so">
       <updateRate>100.0</updateRate>
       <bodyName>gripper_roll_right</bodyName>
