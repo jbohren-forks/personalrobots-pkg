@@ -80,12 +80,13 @@ void *controlLoop(void *arg)
   }
 
   // Switch to hard real-time
-  int period = 1e+6; // 1 ms in nanoseconds
-  struct timespec tick;
 #if defined(__XENO__)
   pthread_set_mode_np(0, PTHREAD_PRIMARY|PTHREAD_WARNSW);
 #endif
+
+  struct timespec tick;
   clock_gettime(CLOCK_REALTIME, &tick);
+  int period = 1e+6; // 1 ms in nanoseconds
 
   while (!quit)
   {
@@ -108,6 +109,11 @@ void *controlLoop(void *arg)
     ec.hw_->actuators_[i]->command_.current_ = 0;
   }
   ec.update();
+
+  // Switch back from hard real-time
+#if defined(__XENO__)
+  pthread_set_mode_np(PTHREAD_PRIMARY, 0);
+#endif
 
   return 0;
 }
