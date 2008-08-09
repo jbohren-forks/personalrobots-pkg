@@ -1,5 +1,5 @@
 <launch>
-
+  <master auto="start"/>
   <group name="wg">
     <node pkg="namelookup" type="namelookup_server" respawn="false"/>
     <include file="$(find wg_robot_description)/send.xml"/>
