@@ -18,14 +18,14 @@
     <pulsesPerRevolution>1200</pulsesPerRevolution>
   </transmission>
 
-  <controller name="single_controller" type="JointPositionController">
+  <controller name="single_controller" type="JointVelocityController">
     <joint name="single_joint">
-      <pGain>0.3</pGain>
-      <iGain>0.4</iGain>
-      <dGain>4.0</dGain>
-      <windup>0.02</windup>
-      <type>rotary</type>
+      <pGain>0.01</pGain>
+      <iGain>0.5</iGain>
+      <dGain>0</dGain>
+      <windup>0.1</windup>
     </joint>
+  </controller>
 
   
 </robot>
