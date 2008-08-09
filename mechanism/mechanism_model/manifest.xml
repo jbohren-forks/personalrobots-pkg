@@ -3,8 +3,10 @@
 </description>
 <author>Eric Berger berger@willowgarage.com</author>
 <license>BSD</license>
+<depend package='roscpp'/>
 <depend package='hardware_interface'/>
 <depend package="stl_utils" />
+<depend package="misc_utils" />
 <depend package="tinyxml" />
 <url>http://pr.willowgarage.com</url>
 <export>

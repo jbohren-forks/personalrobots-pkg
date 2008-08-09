@@ -34,16 +34,34 @@
 #ifndef TRANSMISSION_H
 #define TRANSMISSION_H
 
+#include <tinyxml/tinyxml.h>
+
+#include <misc_utils/factory.h>
+
 #include "mechanism_model/joint.h"
 #include "hardware_interface/hardware_interface.h"
 
 namespace mechanism {
+
+class Robot;
+
+class Transmission;
+typedef Factory<Transmission> TransmissionFactory;
+
+#define ROS_REGISTER_TRANSMISSION(c) \
+  mechanism::Transmission *ROS_New_##c() { return new c(); }             \
+  bool ROS_TRANSMISSION_##c = \
+    mechanism::TransmissionFactory::instance().registerType(#c, ROS_New_##c);
+
 
 class Transmission
 {
 public:
   Transmission() {}
   virtual ~Transmission() {}
+
+  // Initialize transmission from XML data
+  virtual void initXml(TiXmlElement *config, Robot *robot) = 0;
 
   // Uses encoder data to fill out joint position and velocities
   virtual void propagatePosition() = 0;
@@ -66,6 +84,8 @@ public:
   SimpleTransmission() {}
   SimpleTransmission(Joint *joint, Actuator *actuator, double mechanical_reduction, double motor_torque_constant, double pulses_per_revolution);
   ~SimpleTransmission() {}
+
+  void initXml(TiXmlElement *config, Robot *robot);
 
   Actuator *actuator_;
   Joint *joint_;

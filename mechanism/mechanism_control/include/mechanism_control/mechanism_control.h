@@ -31,7 +31,7 @@
  * mc.registerActuator("AnActuatorName", 0);
  * mc.registerActuator("AnotherActuatorName", 0);
  * ...
- * mc.init(config);
+ * mc.initXml(config);
  *
  * mc.spawnController("JointController", controllerConfig);
  */
@@ -62,7 +62,7 @@ public:
   void update();
 
   // Non real-time functions
-  bool init(TiXmlElement* config);
+  bool initXml(TiXmlElement* config);
   bool registerActuator(const std::string &name, int index);
   bool addController(controller::Controller *c, const std::string &name);
   bool spawnController(const std::string &type, const std::string &name, TiXmlElement *config);

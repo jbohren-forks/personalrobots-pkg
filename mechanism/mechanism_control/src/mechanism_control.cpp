@@ -51,14 +51,14 @@ bool MechanismControl::registerActuator(const std::string &name, int index)
   return true;
 }
 
-bool MechanismControl::init(TiXmlElement* config)
+bool MechanismControl::initXml(TiXmlElement* config)
 {
   bool successful = true;
+  ros::node *node = ros::node::instance();
 
   TiXmlElement *elt;
 
-  // Constructs the joints
-  std::map<std::string, Joint*> joint_map;
+  // Construct the joints
   for (elt = config->FirstChildElement("joint"); elt; elt = elt->NextSiblingElement("joint"))
   {
     Joint *j = new Joint;
@@ -67,41 +67,16 @@ bool MechanismControl::init(TiXmlElement* config)
     j->initXml(elt);
   }
 
-  // Constructs the transmissions
+  // Construct the transmissions
   elt = config->FirstChildElement("transmission");
   for (; elt; elt = elt->NextSiblingElement("transmission"))
   {
-    if (0 == strcmp("SimpleTransmission", elt->Attribute("type")))
-    {
-      // Looks up the joint and the actuator used by the transmission.
-      Robot::IndexMap::iterator joint_it =
-        model_.joints_lookup_.find(elt->FirstChildElement("joint")->Attribute("name"));
-      Robot::IndexMap::iterator actuator_it =
-        model_.actuators_lookup_.find(elt->FirstChildElement("actuator")->Attribute("name"));
-      if (joint_it == model_.joints_lookup_.end())
-      {
-        // TODO: report: The joint was not declared in the XML file
-        printf("Unable to locate joint: %s\n", elt->FirstChildElement("joint")->Attribute("name"));
-        continue;
-      }
-      if (actuator_it == model_.actuators_lookup_.end())
-      {
-        // TODO: report: The actuator was not registered with mechanism control.
-        printf("Unable to locate actuator: %s\n", elt->FirstChildElement("actuator")->Attribute("name"));
-        continue;
-      }
-     Transmission *tr =
-        new SimpleTransmission(model_.joints_[joint_it->second], hw_->actuators_[actuator_it->second],
-          atof(elt->FirstChildElement("mechanicalReduction")->GetText()),
-          atof(elt->FirstChildElement("motorTorqueConstant")->GetText()),
-          atof(elt->FirstChildElement("pulsesPerRevolution")->GetText()));
-     model_.transmissions_.push_back(tr);
-    }
-    else
-    {
-      // TODO: report: Unknown transmission type
-      successful = false;
-    }
+    const char *type = elt->Attribute("type");
+    Transmission *t = TransmissionFactory::instance().create(type);
+    if (t == NULL)
+      node->log(ros::FATAL, "Unknown transmission type: %s\n", type);
+    t->initXml(elt, &model_);
+    model_.transmissions_.push_back(t);
   }
 
   initialized_ = true;

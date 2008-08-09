@@ -31,12 +31,13 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <mechanism_model/transmission.h>
-#include <mechanism_model/joint.h>
 #include <math.h>
-#include <stdio.h>
+#include <ros/node.h>
+#include <mechanism_model/robot.h>
 
 using namespace mechanism;
+
+ROS_REGISTER_TRANSMISSION(SimpleTransmission)
 
 SimpleTransmission::SimpleTransmission(Joint *joint, Actuator *actuator,
   double mechanical_reduction, double motor_torque_constant,
@@ -49,6 +50,14 @@ SimpleTransmission::SimpleTransmission(Joint *joint, Actuator *actuator,
   joint_ = joint;
 }
 
+void SimpleTransmission::initXml(TiXmlElement *elt, Robot *robot)
+{
+  joint_ = robot->getJoint(elt->FirstChildElement("joint")->Attribute("name"));
+  actuator_ = robot->getActuator(elt->FirstChildElement("actuator")->Attribute("name"));
+  mechanical_reduction_ = atof(elt->FirstChildElement("mechanicalReduction")->GetText()),
+  motor_torque_constant_ = atof(elt->FirstChildElement("motorTorqueConstant")->GetText()),
+  pulses_per_revolution_ = atof(elt->FirstChildElement("pulsesPerRevolution")->GetText());
+}
 
 void SimpleTransmission::propagatePosition()
 {

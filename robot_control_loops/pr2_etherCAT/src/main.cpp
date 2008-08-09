@@ -69,7 +69,7 @@ void *controlLoop(void *arg)
   ec.initXml(root, mc);
 
   // Initialize mechanism control from robot description
-  mc.init(root);
+  mc.initXml(root);
 
   // Spawn controllers
   // TODO what file does this come from?
