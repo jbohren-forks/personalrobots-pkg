@@ -56,7 +56,8 @@ namespace TREX {
 		       m_initialized(1), 
 		       m_state(UNDEFINED),
 		       laser_maxrange(4.0),
-		       laser_buffer_time(3.0)
+		       laser_buffer_time(3.0),
+		       _armSerialChain(NULL)
   {
 
     debugMsg("ROSNode:Create", "ROSNode created.");
@@ -133,6 +134,14 @@ namespace TREX {
     _rightArmInit = false;
     _lastActiveLeftArmDispatch = 10000;
     _lastActiveRightArmDispatch = 10000;
+
+    // Obtain a serial chain for an arm. The call uses the left arm but they can be used interchangeably according to
+    // Sachin.
+    std::string pr2_configuration_str;
+    get_param("robotdesc/pr2", pr2_configuration_str);
+    _pr2Kinematics.loadString(pr2_configuration_str.c_str());
+    _armSerialChain = _pr2Kinematics.getSerialChain("leftArm");
+    assertTrue(_armSerialChain != NULL, "Could not retrieve serial chain for LeftArm");
   }
 
 
@@ -614,8 +623,7 @@ namespace TREX {
 					     const unsigned int target_frame,
 					     Frame& f) {
     //frame comes from forward kinematics
-    PR2_kinematics* pr2_kin = new PR2_kinematics();
-    JntArray q = JntArray(pr2_kin->nJnts);
+    JntArray q = JntArray(_armSerialChain->num_joints_);
     
     q(0) = arm.turretAngle;
     q(1) = arm.shoulderLiftAngle;
@@ -625,9 +633,7 @@ namespace TREX {
     q(5) = arm.wristPitchAngle;
     q(6) = arm.wristRollAngle;
 
-    pr2_kin->FK(q,f);
-
-    delete pr2_kin;
+    _armSerialChain->computeFK(q,f);
 
     //for now need to convert to funky shoulder frame
   //   libTF::TFPose aPose;

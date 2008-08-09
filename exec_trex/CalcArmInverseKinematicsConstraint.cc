@@ -2,11 +2,10 @@
 #include "Logger.hh"
 
 //kinematics includes
-#include "libKDL/kdl_kinematics.h"
+#include <robot_kinematics/robot_kinematics.h>
 
-using namespace KDL;
-using namespace PR2;
 using namespace std;
+using namespace KDL;
 
 namespace TREX {
 
@@ -16,9 +15,11 @@ namespace TREX {
 									 const std::vector<ConstrainedVariableId>& variables)
     : Constraint(name, propagatorName, constraintEngine, variables) {
     m_logger = TREX::Logger::request();
+    m_rosNode = ROSNode::request();
   }
 
   CalcArmInverseKinematicsConstraint::~CalcArmInverseKinematicsConstraint() {
+    m_rosNode->release();
     m_logger->release();
   }
     
@@ -78,17 +79,15 @@ namespace TREX {
     f.M.data[8] = m_variables[ROT_FRAME_3_3]->lastDomain().getSingletonValue();
 
     //cout << "Frame " << f << endl;
-
-    PR2_kinematics pr2_kin;
     
     //initial guesses - assume mostly straight out for now
-    JntArray q_init = JntArray(pr2_kin.nJnts);
+    JntArray q_init = JntArray(m_rosNode->getArmSerialChain()->num_joints_);
     q_init(0) = 0.1, q_init(1) = -1, q_init(2) = 0.3, q_init(3) = 0.3;
     q_init(4) = 0.2, q_init(5) = 0.5, q_init(6) = 0.0;
 
     bool res;
-    JntArray q_out = JntArray(pr2_kin.nJnts);
-    if (pr2_kin.IK(q_init, f, q_out) == true) {
+    JntArray q_out = JntArray(m_rosNode->getArmSerialChain()->num_joints_);
+    if (m_rosNode->getArmSerialChain()->computeIK(q_init, f, q_out) == true) {
       cout<<"IK result:"<<q_out<<endl;
       boolDom.set(true);
       res = true;

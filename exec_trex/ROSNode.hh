@@ -21,7 +21,7 @@
 #include <rosTF/rosTF.h>
 
 //for KDL
-#include <libKDL/kdl_kinematics.h>
+#include <robot_kinematics/robot_kinematics.h>
 
 typedef struct
 {
@@ -96,6 +96,12 @@ namespace TREX{
      * test if the node is initialized with inbound messages it requires
      */
     bool isInitialized() const;
+
+    /**
+     * @brief Accessor for armSerialChain for us in Robot Kinematics
+     * @todo These should be const accessors. But underlying kinematics api is not written that way.
+     */
+    robot_kinematics::SerialChain* getArmSerialChain() const {return _armSerialChain;}
 
     rosTFClient tf;
        
@@ -177,8 +183,6 @@ namespace TREX{
     std_msgs::Polyline2D polylineMsg;
     std_msgs::Polyline2D pointcloudMsg;
     
-    //MsgRobotBase2DOdom m_localizedOdomMsg;
-    
     void lock();
     void unlock();
     
@@ -186,6 +190,8 @@ namespace TREX{
     pthread_mutex_t m_lock; /*!< Protect access to buffers */
 
 
+    robot_kinematics::RobotKinematics _pr2Kinematics;
+    robot_kinematics::SerialChain* _armSerialChain;
   };
 }
 

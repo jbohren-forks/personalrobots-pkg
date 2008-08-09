@@ -8,7 +8,7 @@
   <depend package="trex" />
   <depend package="rosTF" />
   <depend package="pr2Core" />
-  <depend package="libKDL" />
+  <depend package="robot_kinematics" />
   <depend package="rosstage" />
-<sysdepend os="ubuntu" version="8.04-hardy" package="jam"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="jam"/>
 </package>

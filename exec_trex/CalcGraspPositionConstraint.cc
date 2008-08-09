@@ -2,7 +2,7 @@
 #include "Logger.hh"
 
 //kinematics includes
-#include "libKDL/kdl_kinematics.h"
+#include <robot_kinematics/robot_kinematics.h>
 
 //for transform
 #include <rosTF/rosTF.h>
@@ -13,17 +13,21 @@ using namespace KDL;
 using namespace PR2;
 using namespace std;
 
+#define DTOR(d) ((d)*M_PI/180)
+
 namespace TREX {
 
   CalcGraspPositionConstraint::CalcGraspPositionConstraint(const LabelStr& name,
 							   const LabelStr& propagatorName,
 							   const ConstraintEngineId& constraintEngine,
 							   const std::vector<ConstrainedVariableId>& variables)
-    : Constraint(name, propagatorName, constraintEngine, variables) {
+    : Constraint(name, propagatorName, constraintEngine, variables){
     m_logger = TREX::Logger::request();
+    m_rosNode = ROSNode::request();
   }
 
   CalcGraspPositionConstraint::~CalcGraspPositionConstraint() {
+    m_rosNode->release();
     m_logger->release();
   }
   
@@ -110,6 +114,8 @@ namespace TREX {
     if (log) {
       //fprintf(log, "\t<CalcGlobalPathConstraint time=\"%u\" value=\"%d\"/>\n", sl_cycles, res);
     }
+
+    rni->release();
   }
 
 }

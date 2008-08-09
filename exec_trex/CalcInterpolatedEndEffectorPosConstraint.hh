@@ -11,6 +11,7 @@
 #include "IntervalIntDomain.hh"
 #include "BoolDomain.hh"
 #include "Logger.hh"
+#include "ROSNode.hh"
 
 using namespace EUROPA;
 namespace TREX {
@@ -30,6 +31,7 @@ namespace TREX {
     
   private:
     LoggerId m_logger;
+    ROSNodeId m_rosNode;
     
     static const unsigned int ARG_COUNT = 37;
     static const unsigned int STEP_SIZE = 0;

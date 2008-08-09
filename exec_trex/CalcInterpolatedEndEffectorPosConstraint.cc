@@ -2,11 +2,10 @@
 #include "Logger.hh"
 
 //kinematics includes
-#include <libKDL/kdl_kinematics.h>
+#include <robot_kinematics/robot_kinematics.h>
 #include <kdl/rotational_interpolation_sa.hpp>
 
 using namespace KDL;
-using namespace PR2;
 using namespace std;
 
 namespace TREX {
@@ -17,9 +16,11 @@ namespace TREX {
 									 const std::vector<ConstrainedVariableId>& variables)
     : Constraint(name, propagatorName, constraintEngine, variables) {
     m_logger = TREX::Logger::request();
+    m_rosNode = ROSNode::request();
   }
 
   CalcInterpolatedEndEffectorPosConstraint::~CalcInterpolatedEndEffectorPosConstraint() {
+    m_rosNode->release();
     m_logger->release();
   }
     
