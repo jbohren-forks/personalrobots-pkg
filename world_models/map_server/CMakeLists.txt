@@ -9,3 +9,5 @@ set_target_properties(utest PROPERTIES
 rospack_add_executable(rtest test/rtest.cpp test/test_constants.cpp)
 set_target_properties(rtest PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
+
+rospack_add_rostest(test/rtest.xml)
