@@ -302,7 +302,7 @@
 
     <!-- base, torso and arms -->
     <include embedded="true">
-      <xi:include href="pr2_xml.model" />
+      <xi:include href="pr2_xml_nolimit.model" />
     </include>
   </model:physical>
 

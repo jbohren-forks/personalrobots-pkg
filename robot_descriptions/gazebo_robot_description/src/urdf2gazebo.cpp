@@ -115,7 +115,7 @@ void copyGazeboData(const robot_desc::URDF::Data& data, TiXmlElement *elem, cons
     }
 }
 
-void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::Pose3D &transform)
+void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::Pose3D &transform, bool enforce_limits)
 {
   libTF::Pose3D currentTransform = transform;
   
@@ -281,7 +281,7 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
 
         addKeyValue(joint, "anchorOffset", values2str(3, tmpAnchor));
          
-        if (link->joint->isSet["limit"])
+        if (enforce_limits && link->joint->isSet["limit"])
         {
       	  if (jtype == "slider")
           {
@@ -302,10 +302,10 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
   }
     
   for (unsigned int i = 0 ; i < link->children.size() ; ++i)
-    convertLink(root, link->children[i], currentTransform);
+    convertLink(root, link->children[i], currentTransform, enforce_limits);
 }
 
-void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
+void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc, bool enforce_limits)
 {
   TiXmlDeclaration *decl = new TiXmlDeclaration("1.0", "", "");
   doc.LinkEndChild(decl);
@@ -332,7 +332,7 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc)
   libTF::Pose3D transform;    
   
   for (unsigned int k = 0 ; k < wgxml.getDisjointPartCount() ; ++k)
-    convertLink(robot, wgxml.getDisjointPart(k), transform);
+    convertLink(robot, wgxml.getDisjointPart(k), transform, enforce_limits);
 
   /* find all data item types */
   copyGazeboData(wgxml.getData(), robot);
@@ -349,12 +349,17 @@ void usage(const char *progname)
 
 int main(int argc, char **argv)
 {
-  if (argc != 3)
+  if (argc < 3)
   {
     usage(argv[0]);
     exit(1);
   }
-  
+
+  // Experimental: take in optional argument to disable passing the limit for grasping test
+  bool enforce_limits = true;
+  if (argc == 4)
+    enforce_limits = false;
+   
   robot_desc::URDF wgxml;
 
   if (!wgxml.loadFile(argv[1]))
@@ -365,7 +370,7 @@ int main(int argc, char **argv)
   
   TiXmlDocument doc;
   
-  convert(wgxml, doc);
+  convert(wgxml, doc, enforce_limits);
   
   if (!doc.SaveFile(argv[2]))
   {
