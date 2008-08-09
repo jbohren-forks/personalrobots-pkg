@@ -8,6 +8,7 @@
   <depend package="wg_robot_description_parser" />
   <depend package="stl_utils" />
   <depend package="misc_utils" />
+  <depend package="rospy" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

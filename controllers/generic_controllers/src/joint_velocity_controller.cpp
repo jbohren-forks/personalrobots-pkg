@@ -75,19 +75,19 @@ void JointVelocityController::initXml(mechanism::Robot *robot, TiXmlElement *con
   }
 }
 
-// Set the joint position command
+// Set the joint velocity command
 void JointVelocityController::setCommand(double command)
 {
   command_ = command;
 }
 
-// Return the current position command
+// Return the current velocity command
 double JointVelocityController::getCommand()
 {
   return command_;
 }
 
-// Return the measured joint position
+// Return the measured joint velocity
 double JointVelocityController::getActual()
 {
   return joint_->position_;
@@ -100,7 +100,6 @@ void JointVelocityController::update()
   double time = robot_->hw_->current_time_;
 
   error = joint_->velocity_ - command_;
-
   torque_cmd = pid_controller_.updatePid(error, time - last_time_);
 
   setJointEffort(torque_cmd);
@@ -111,6 +110,35 @@ void JointVelocityController::setJointEffort(double effort)
   joint_->commanded_effort_ = min(max(effort, -joint_->effort_limit_), joint_->effort_limit_);
 }
 
+ROS_REGISTER_CONTROLLER(JointVelocityControllerNode)
+JointVelocityControllerNode::JointVelocityControllerNode() 
+{
+  c_ = new JointVelocityController();
+}
 
+JointVelocityControllerNode::~JointVelocityControllerNode()
+{
+  delete c_;
+}
 
+void JointVelocityControllerNode::update()
+{
+  c_->update();
+}
 
+bool JointVelocityControllerNode::setVelocity(
+  generic_controllers::SetVelocity::request &req,
+  generic_controllers::SetVelocity::response &resp)
+{
+  c_->setCommand(req.velocity);
+  resp.velocity = c_->getCommand();
+
+  return true;
+}
+void JointVelocityControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+{
+  ros::node *node = ros::node::instance();
+
+  c_->initXml(robot, config);
+  node->advertise_service("set_velocity", &JointVelocityControllerNode::setVelocity, this);
+}

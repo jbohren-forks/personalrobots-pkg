@@ -35,8 +35,12 @@
 #ifndef JOINT_VELOCITY_CONTROLLER_H
 #define JOINT_VELOCITY_CONTROLLER_H
 
+#include <ros/node.h>
+
 #include <generic_controllers/controller.h>
 #include <generic_controllers/pid.h>
+
+#include <generic_controllers/SetVelocity.h>
 
 namespace controller
 {
@@ -96,6 +100,31 @@ private:
   double last_time_; /*!< Last time stamp of update> */
   double command_; /*!< Last commanded position> */
   mechanism::Robot *robot_; /*!< Pointer to robot structure>*/
+};
+
+class JointVelocityControllerNode : public Controller
+{
+public:
+  /*!
+   * \brief Default Constructor
+   *
+   */
+  JointVelocityControllerNode();
+
+  /*!
+   * \brief Destructor
+   */
+  ~JointVelocityControllerNode();
+
+  void update();
+
+  void initXml(mechanism::Robot *robot, TiXmlElement *config);
+
+  bool setVelocity(generic_controllers::SetVelocity::request &req,
+                   generic_controllers::SetVelocity::response &resp);
+
+private:
+  JointVelocityController *c_;
 };
 }
 
