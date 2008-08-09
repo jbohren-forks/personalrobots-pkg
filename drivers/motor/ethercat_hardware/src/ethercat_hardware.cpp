@@ -51,13 +51,9 @@ EthercatHardware::~EthercatHardware()
   {
     close_socket(ni_);
   }
-  if (current_buffer_)
+  if (buffers_)
   {
-    delete current_buffer_;
-  }
-  if (last_buffer_)
-  {
-    delete last_buffer_;
+    delete buffers_;
   }
   if (hw_)
   {
