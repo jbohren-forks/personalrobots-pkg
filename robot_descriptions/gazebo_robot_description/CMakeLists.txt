@@ -23,7 +23,7 @@ add_custom_target(pr2_gazebo_model_nolimit ALL
 		  DEPENDS urdf2gazebo
 		  COMMENT "Building Gazebo model for PR2")
 add_custom_target(pr2_gazebo_model_test ALL
-		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2/pr2_test.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_test.model 1
+		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2/pr2_test.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_test.model
 		  DEPENDS urdf2gazebo
 		  COMMENT "Building Gazebo model for PR2")
 
