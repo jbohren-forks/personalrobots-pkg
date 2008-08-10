@@ -2,20 +2,9 @@
 
 <robot name="pr2"><!-- name of the robot-->
 
-  <!-- potentially, new update might look like this - JMH
-  <controller name="caster_front_left_controller" type="pd_control">
-      <joint name="caster_front_left_joint" >
-        saturationTorque="1000" />
-        <gains p="2" i="0" d="0" imin="0" imax="0" iclamp="0"/>
-        <data name="physical_damping_model" type="gazebo">
-          <elem explicitDampingCoefficient="1.0" />
-        </data>
-      </joint>
-  </controller>
-  -->
   <controller name="caster_front_left_controller" type="joint_controller">
-      <joint name="caster_front_left_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="2" d="0" i="0" iClamp="0" />
+      <joint name="caster_front_left_joint" type="revolute">
+        <pid_defaults controlMode="PD_CONTROL" p="1000" d="0" i="0" iClamp="0" />
         <data name="caster_front_left_data" type="gazebo">
           <elem ey="1000" explicitDampingCoefficient="1.0" />
         </data>
@@ -23,7 +12,7 @@
   </controller>
   <controller name="wheel_front_left_l_controller" type="joint_controller">
       <joint name="wheel_front_left_l_joint" >
-        <pid_defaults p="0.5" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="VELOCITY_CONTROL" p="0.5" d="0" i="0" iClamp="0" />
         <data name="wheel_front_left_l_data" type="gazebo">
           <elem saturationTorque="5" />
         </data>
@@ -31,7 +20,7 @@
   </controller>
   <controller name="wheel_front_left_r_controller" type="joint_controller">
       <joint name="wheel_front_left_r_joint" >
-        <pid_defaults p="0.5" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="VELOCITY_CONTROL" p="0.5" d="0" i="0" iClamp="0" />
         <data name="wheel_front_left_r_data" type="gazebo">
           <elem saturationTorque="5" />
         </data>
@@ -39,7 +28,7 @@
   </controller>
   <controller name="caster_front_right_controller" type="joint_controller">
       <joint name="caster_front_right_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="2" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="1000" d="0" i="0" iClamp="0" />
         <data name="wheel_front_left_l_data" type="gazebo">
           <elem saturationTorque="1000" explicitDampingCoefficient="1.0" />
         </data>
@@ -47,7 +36,7 @@
   </controller>
   <controller name="wheel_front_right_l_controller" type="joint_controller">
       <joint name="wheel_front_right_l_joint" >
-        <pid_defaults p="0.5" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="VELOCITY_CONTROL" p="0.5" d="0" i="0" iClamp="0" />
         <data name="wheel_front_right_l_data" type="gazebo">
           <elem saturationTorque="5" />
         </data>
@@ -55,7 +44,7 @@
   </controller>
   <controller name="wheel_front_right_r_controller" type="joint_controller">
       <joint name="wheel_front_right_r_joint" >
-        <pid_defaults p="0.5" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="VELOCITY_CONTROL" p="0.5" d="0" i="0" iClamp="0" />
         <data name="wheel_front_right_r_data" type="gazebo">
           <elem saturationTorque="5" />
         </data>
@@ -63,7 +52,7 @@
   </controller>
   <controller name="caster_rear_left_controller" type="joint_controller">
       <joint name="caster_rear_left_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="2" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="1000" d="0" i="0" iClamp="0" />
         <data name="wheel_front_right_r_data" type="gazebo">
           <elem saturationTorque="1000" explicitDampingCoefficient="1.0" />
         </data>
@@ -71,7 +60,7 @@
   </controller>
   <controller name="wheel_rear_left_l_controller" type="joint_controller">
       <joint name="wheel_rear_left_l_joint" >
-        <pid_defaults p="0.5" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="VELOCITY_CONTROL" p="0.5" d="0" i="0" iClamp="0" />
         <data name="wheel_rear_left_l_data" type="gazebo">
           <elem saturationTorque="5" />
         </data>
@@ -79,7 +68,7 @@
   </controller>
   <controller name="wheel_rear_left_r_controller" type="joint_controller">
       <joint name="wheel_rear_left_r_joint" >
-        <pid_defaults p="0.5" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="VELOCITY_CONTROL" p="0.5" d="0" i="0" iClamp="0" />
         <data name="wheel_rear_left_r_data" type="gazebo">
           <elem saturationTorque="5" />
         </data>
@@ -87,7 +76,7 @@
   </controller>
   <controller name="caster_rear_right_controller" type="joint_controller">
       <joint name="caster_rear_right_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="2" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="1000" d="0" i="0" iClamp="0" />
         <data name="wheel_rear_left_l_data" type="gazebo">
           <elem saturationTorque="1000" explicitDampingCoefficient="1.0" />
         </data>
@@ -95,7 +84,7 @@
   </controller>
   <controller name="wheel_rear_right_l_controller" type="joint_controller">
       <joint name="wheel_rear_right_l_joint" >
-        <pid_defaults p="0.5" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="VELOCITY_CONTROL" p="0.5" d="0" i="0" iClamp="0" />
         <data name="wheel_rear_right_l_data" type="gazebo">
           <elem saturationTorque="5" />
         </data>
@@ -103,7 +92,7 @@
   </controller>
   <controller name="wheel_rear_right_r_controller" type="joint_controller">
       <joint name="wheel_rear_right_r_joint" >
-        <pid_defaults p="0.5" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="VELOCITY_CONTROL" p="0.5" d="0" i="0" iClamp="0" />
         <data name="wheel_rear_right_r_data" type="gazebo">
           <elem saturationTorque="5" />
         </data>
@@ -113,7 +102,7 @@
       <!-- torso array -->
   <controller name="torso_controller" type="joint_controller">
       <joint name="torso_joint" type="prismatic">
-        <pid_defaults controlMode="PD_CONTROL" p="1" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="1000" d="0" i="0" iClamp="0" />
         <data name="wheel_rear_right_l_data" type="gazebo">
           <elem saturationTorque="1000" explicitDampingCoefficient="1.0" type="slider" />
         </data>
@@ -123,7 +112,7 @@
       <!-- left arm array -->
   <controller name="shoulder_pan_left_controller" type="joint_controller">
       <joint name="shoulder_pan_left_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="1" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="1000" d="0" i="0" iClamp="0" />
         <data name="shoulder_pan_left_data" type="gazebo">
           <elem saturationTorque="1000" explicitDampingCoefficient="1.0" />
         </data>
@@ -131,7 +120,7 @@
   </controller>
   <controller name="shoulder_pitch_left_controller" type="joint_controller">
       <joint name="shoulder_pitch_left_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="1" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="10000" d="0" i="0" iClamp="0" />
         <data name="shoulder_pitch_left_data" type="gazebo">
           <elem saturationTorque="1000" explicitDampingCoefficient="1.0" />
         </data>
@@ -139,7 +128,7 @@
   </controller>
   <controller name="upperarm_roll_left_controller" type="joint_controller">
       <joint name="upperarm_roll_left_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="1" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="1000" d="0" i="0" iClamp="0" />
         <data name="upperarm_roll_left_data" type="gazebo">
           <elem saturationTorque="1000" explicitDampingCoefficient="1.0" />
         </data>
@@ -147,7 +136,7 @@
   </controller>
   <controller name="elbow_flex_left_controller" type="joint_controller">
       <joint name="elbow_flex_left_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="1" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="5000" d="0" i="0" iClamp="0" />
         <data name="elbow_flex_left_data" type="gazebo">
           <elem saturationTorque="100" explicitDampingCoefficient="1.0" />
         </data>
@@ -155,7 +144,7 @@
   </controller>
   <controller name="forearm_roll_left_controller" type="joint_controller">
       <joint name="forearm_roll_left_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="1" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="100" d="0" i="0" iClamp="0" />
         <data name="forearm_roll_left_data" type="gazebo">
           <elem saturationTorque="100" explicitDampingCoefficient="1.0" />
         </data>
@@ -163,7 +152,7 @@
   </controller>
   <controller name="wrist_flex_left_controller" type="joint_controller">
       <joint name="wrist_flex_left_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="1" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="100" d="0" i="0" iClamp="0" />
         <data name="wrist_flex_left_data" type="gazebo">
           <elem saturationTorque="100" explicitDampingCoefficient="1.0" />
         </data>
@@ -178,11 +167,12 @@
       </joint>
   </controller>
   <!-- Special gripper joint -->
-  <controller name="gripper_left_controller" type="joint_controller">
+  <controller name="gripper_left_controller" type="gripper_controller">
         <joint name="gripper_left_joint" type="gripper" >
-        <pid_defaults controlMode="PD_CONTROL" p="1" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="20" d="0" i="0" iClamp="0" />
+        <gripper_defaults effortLimit="100" velocityLimit="10" />
         <data name="gripper_joints" type="gazebo">
-          <elem saturationTorque="100" explicitDampingCoefficient="1.0" type="gripper" left_distal="finger_tip_l_left_joint" right_proximal="finger_r_left_joint" right_distal="finger_tip_r_left_joint" left_proximal="finger_l_left_joint" />
+          <elem saturationTorque="100" explicitDampingCoefficient="0.1" type="gripper" left_distal="finger_tip_l_left_joint" right_proximal="finger_r_left_joint" right_distal="finger_tip_r_left_joint" left_proximal="finger_l_left_joint" />
         </data>
       </joint>
   </controller>
@@ -190,7 +180,7 @@
       <!-- right arm array -->
   <controller name="shoulder_pan_right_controller" type="joint_controller">
       <joint name="shoulder_pan_right_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="1" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="1000" d="0" i="0" iClamp="0" />
         <data name="shoulder_pan_right_data" type="gazebo">
           <elem saturationTorque="1000" explicitDampingCoefficient="1.0" />
         </data>
@@ -198,7 +188,7 @@
   </controller>
   <controller name="shoulder_pitch_right_controller" type="joint_controller">
       <joint name="shoulder_pitch_right_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="1" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="10000" d="0" i="0" iClamp="0" />
         <data name="shoulder_pitch_right_data" type="gazebo">
           <elem saturationTorque="1000" explicitDampingCoefficient="1.0" />
         </data>
@@ -206,7 +196,7 @@
   </controller>
   <controller name="upperarm_roll_right_controller" type="joint_controller">
       <joint name="upperarm_roll_right_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="1" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="1000" d="0" i="0" iClamp="0" />
         <data name="upperarm_roll_right_data" type="gazebo">
           <elem saturationTorque="1000" explicitDampingCoefficient="1.0" />
         </data>
@@ -214,7 +204,7 @@
   </controller>
   <controller name="elbow_flex_right_controller" type="joint_controller">
       <joint name="elbow_flex_right_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="1" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="5000" d="0" i="0" iClamp="0" />
         <data name="elbow_flex_right_data" type="gazebo">
           <elem saturationTorque="1000" explicitDampingCoefficient="1.0" />
         </data>
@@ -222,7 +212,7 @@
   </controller>
   <controller name="forearm_roll_right_controller" type="joint_controller">
       <joint name="forearm_roll_right_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="1" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="100" d="0" i="0" iClamp="0" />
         <data name="forearm_roll_right_data" type="gazebo">
           <elem saturationTorque="100" explicitDampingCoefficient="1.0" />
         </data>
@@ -230,7 +220,7 @@
   </controller>
   <controller name="wrist_flex_right_controller" type="joint_controller">
       <joint name="wrist_flex_right_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="1" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="100" d="0" i="0" iClamp="0" />
         <data name="wrist_flex_right_data" type="gazebo">
           <elem saturationTorque="100" explicitDampingCoefficient="1.0" />
         </data>
@@ -245,18 +235,19 @@
       </joint>
   </controller>
       <!-- Special gripper joint -->
-  <controller name="gripper_right_controller" type="joint_controller">
+  <controller name="gripper_right_controller" type="gripper_controller">
         <joint name="gripper_right_joint" type="gripper" >
-        <pid_defaults controlMode="PD_CONTROL" p="1" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="20" d="0" i="0" iClamp="0" />
+        <gripper_defaults effortLimit="100" velocityLimit="10" />
         <data name="gripper_joints" type="gazebo">
-          <elem saturationTorque="100" explicitDampingCoefficient="1.0" type="gripper" left_proximal="finger_l_right_joint" left_distal="finger_tip_l_right_joint" right_proximal="finger_r_right_joint" right_distal="finger_tip_r_right_joint" />
+          <elem saturationTorque="100" explicitDampingCoefficient="0.1" type="gripper" left_proximal="finger_l_right_joint" left_distal="finger_tip_l_right_joint" right_proximal="finger_r_right_joint" right_distal="finger_tip_r_right_joint" />
         </data>
       </joint>
   </controller>
       <!-- head and above array -->
   <controller name="head_pan_controller" type="joint_controller">
       <joint name="head_pan_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="1" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="100" d="0" i="0" iClamp="0" />
         <data name="head_pan_data" type="gazebo">
           <elem saturationTorque="100" explicitDampingCoefficient="1.0" />
         </data>
@@ -264,7 +255,7 @@
   </controller>
   <controller name="head_tilt_controller" type="joint_controller">
       <joint name="head_tilt_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="1" d="0" i="0" iClamp="0" />
+        <pid_defaults controlMode="PD_CONTROL" p="100" d="0" i="0" iClamp="0" />
         <data name="head_tilt_data" type="gazebo">
           <elem saturationTorque="10" explicitDampingCoefficient="1.0" />
         </data>
@@ -272,7 +263,7 @@
   </controller>
   <controller name="tilt_laser_controller" type="joint_controller">
       <joint name="tilt_laser_joint" >
-        <pid_defaults controlMode="PD_CONTROL" p="2" d="0" i="1" iClamp="20" />
+        <pid_defaults controlMode="PD_CONTROL" p="0.5" d="0" i="0" iClamp="20" />
         <data name="tilt_laser_data" type="gazebo">
           <elem saturationTorque="500" explicitDampingCoefficient="1.0" />
         </data>

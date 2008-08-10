@@ -411,7 +411,7 @@
       <axis> 0 1 0 </axis> <!-- direction of the joint in a global coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit>  elbow_flex_min_limit elbow_flex_max_limit  </limit>
-      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <effortLimit>1000</effortLimit> <!-- Hard limit on effort exerted by joint -->
       <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
       <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
     </define>
@@ -1292,7 +1292,7 @@
     <joint type="revolute"> 
       <axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0</anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <effortLimit>100</effortLimit> <!-- Hard limit on effort exerted by joint -->
+      <effortLimit>10</effortLimit> <!-- Hard limit on effort exerted by joint -->
       <velocityLimit>5</velocityLimit> <!-- Hard limit on joint velocity -->
     </joint>
 
