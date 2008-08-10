@@ -167,7 +167,7 @@ bool MechanismControl::spawnController(const std::string &type,
 
 
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
-  : ros::node("MechanismControl"), mc_(mc)
+  : ros::node("MechanismControl", DONT_HANDLE_SIGINT), mc_(mc)
 {
   assert(mc != NULL);
   advertise_service("list_controllers", &MechanismControlNode::listControllers);
