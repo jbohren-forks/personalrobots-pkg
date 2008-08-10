@@ -1,0 +1,15 @@
+*** newmat_1.10.4/nm_gnu.mak	2006-03-18 16:49:26.000000000 -0800
+--- nm_gnu.mak	2008-08-10 01:04:25.000000000 -0700
+***************
+*** 1,5 ****
+  CXX = g++
+! CXXFLAGS = -O2 -Wall
+  
+  DIFF = ./sdiff
+  PRE = ./
+--- 1,5 ----
+  CXX = g++
+! CXXFLAGS = -O2 -Wall -fPIC
+  
+  DIFF = ./sdiff
+  PRE = ./
