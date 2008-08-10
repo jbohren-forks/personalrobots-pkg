@@ -49,6 +49,7 @@
 #include <generic_controllers/controller.h>
 
 #include "mechanism_control/ListControllerTypes.h"
+#include "mechanism_control/ListControllers.h"
 #include "mechanism_control/SpawnController.h"
 
 typedef controller::Controller* (*ControllerAllocator)();
@@ -64,6 +65,7 @@ public:
   // Non real-time functions
   bool initXml(TiXmlElement* config);
   bool registerActuator(const std::string &name, int index);
+  void getControllerNames(std::vector<std::string> &v);
   bool addController(controller::Controller *c, const std::string &name);
   bool spawnController(const std::string &type, const std::string &name, TiXmlElement *config);
 
@@ -93,6 +95,8 @@ public:
 
   bool listControllerTypes(mechanism_control::ListControllerTypes::request &req,
                            mechanism_control::ListControllerTypes::response &resp);
+  bool listControllers(mechanism_control::ListControllers::request &req,
+                       mechanism_control::ListControllers::response &resp);
   bool spawnController(mechanism_control::SpawnController::request &req,
                        mechanism_control::SpawnController::response &resp);
 

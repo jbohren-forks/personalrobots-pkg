@@ -113,6 +113,19 @@ void MechanismControl::registerControllerType(const std::string& type, Controlle
   controller::ControllerFactory::instance().registerType(type, f);
 }
 
+void MechanismControl::getControllerNames(std::vector<std::string> &controllers)
+{
+  controllers_mutex_.lock();
+  for (int i = 0; i < MAX_NUM_CONTROLLERS; i++)
+  {
+    if (controllers_[i] != NULL)
+    {
+      controllers.push_back(controller_names_[i]);
+    }
+  }
+  controllers_mutex_.unlock();
+}
+
 bool MechanismControl::addController(controller::Controller *c, const std::string &name)
 {
   //Add controller to list of controllers in realtime-safe manner;
@@ -157,6 +170,7 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   : ros::node("MechanismControl"), mc_(mc)
 {
   assert(mc != NULL);
+  advertise_service("list_controllers", &MechanismControlNode::listControllers);
   advertise_service("list_controller_types", &MechanismControlNode::listControllerTypes);
   advertise_service("spawn_controller", &MechanismControlNode::spawnController);
 }
@@ -179,5 +193,16 @@ bool MechanismControlNode::spawnController(
   TiXmlDocument doc;
   doc.Parse(req.xml_config.c_str());
   resp.ok = mc_->spawnController(req.type, req.name, doc.RootElement());
+  return true;
+}
+
+bool MechanismControlNode::listControllers(
+  mechanism_control::ListControllers::request &req,
+  mechanism_control::ListControllers::response &resp)
+{
+  std::vector<std::string> controllers;
+
+  mc_->getControllerNames(controllers);
+  resp.set_controllers_vec(controllers);
   return true;
 }
