@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+
+<robot name="pr2"><!-- name of the robot-->
+
+
+
+<data name="transmissions_gazebo_actuators" type="gazebo"> <!-- we can set a name too, but the convertor only cares about the type -->
+  <verbatim key="transmissions_gazebo_actuators" includes="true"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <data> tag -->
+
+  <!-- PR2_ACTARRAY -->
+  <!-- uncomment for testing
+  <controller:gazebo_actuators name="gazebo_actuators" plugin="libgazebo_actuators.so">
+      <updateRate>100.0</updateRate>
+
+      <include>transmission_test.xml</include>
+      <include>actuator_test.xml</include>
+      <include>controller_test.xml</include>
+
+      <interface:audio name="gazebo_actuators_dummy_iface" />
+  </controller:gazebo_actuators>
+  -->
+
+  <!-- PR2_ACTARRAY -->
+  <!-- uncomment for testing -->
+  <controller:test_actuators name="test_actuators" plugin="libtest_actuators.so">
+      <updateRate>100.0</updateRate>
+
+      <include>transmission_test.xml</include>
+      <include>actuator_test.xml</include>
+      <include>controller_test.xml</include>
+
+      <interface:audio name="test_actuators_dummy_iface" />
+  </controller:test_actuators>
+
+  </verbatim>
+</data>
+
+
+<data name="controllers" type="gazebo"> <!-- we can set a name too, but the convertor only cares about the type -->
+  <verbatim key="controllers"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <data> tag -->
+
+  <!-- ptz camera controls -->
+  <controller:generic_ptz name="ptz_cam_left_controller">
+    <updateRate>15.0</updateRate> <!-- rate not implemented in gazebo yet-->
+    <panJoint>ptz_pan_left_joint</panJoint>
+    <tiltJoint>ptz_tilt_left_joint</tiltJoint>
+    <interface:ptz name="ptz_left_iface" />
+  </controller:generic_ptz>
+
+  <controller:generic_ptz name="ptz_cam_right_controller">
+    <updateRate>15.0</updateRate> <!-- rate not implemented in gazebo yet-->
+    <panJoint>ptz_pan_right_joint</panJoint>
+    <tiltJoint>ptz_tilt_right_joint</tiltJoint>
+    <interface:ptz name="ptz_right_iface" />
+  </controller:generic_ptz>
+
+  <!-- P3D for position groundtruth -->
+  <controller:P3D name="p3d_right_wrist_controller" plugin="libP3D.so">
+      <updateRate>100.0</updateRate>
+      <bodyName>gripper_roll_right</bodyName>
+      <interface:position name="p3d_right_wrist_position"/>
+  </controller:P3D>
+
+  <controller:P3D name="p3d_left_wrist_controller" plugin="libP3D.so">
+      <updateRate>100.0</updateRate>
+      <bodyName>gripper_roll_left</bodyName>
+      <interface:position name="p3d_left_wrist_position"/>
+  </controller:P3D>
+
+  <controller:P3D name="p3d_base_controller" plugin="libP3D.so">
+      <updateRate>100.0</updateRate>
+      <bodyName>base</bodyName>
+      <interface:position name="p3d_base_position"/>
+  </controller:P3D>
+
+
+  </verbatim>
+</data>
+
+</robot>
+

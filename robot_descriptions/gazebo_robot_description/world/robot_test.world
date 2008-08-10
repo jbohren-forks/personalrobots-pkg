@@ -81,54 +81,30 @@
 
   <!-- The "desk"-->
   <model:physical name="desk1_model">
-    <xyz>   2.28  -0.21   0.60</xyz>
+    <xyz>   2.28  -0.21  -0.10</xyz>
     <rpy>   0.0    0.0    0.00</rpy>
     <body:box name="desk1_legs_body">
       <geom:box name="desk1_legs_geom">
-        <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
-        <mass> 10.0 </mass> <!-- who would have thought we have 6 digits of precision!? -->
-        <ixx> 1.0 </ixx>
-        <ixy> 0.0 </ixy>
-        <ixz> 0.0 </ixz>
-        <iyy> 1.0 </iyy>
-        <iyz> 0.0 </iyz>
-        <izz> 1.0 </izz>
-        <cx>  0.0 </cx>
-        <cy>  0.0 </cy>
-        <cz>  0.0 </cz>
-
-        <kp>10000000000.0</kp>
+        <kp>100000000.0</kp>
         <kd>1.0</kd>
-
-        <xyz>   0.0    0.0    0.0</xyz>
+        <xyz>   0.0    0.0    0.50</xyz>
+        <mesh>default</mesh>
         <size>0.5 1.0  0.75</size>
+        <mass> 10.0</mass>
         <visual>
-          <xyz>   0.0    0.0    0.0</xyz>
           <size> 0.5 1.0 0.75</size>
           <material>Gazebo/Rocky</material>
           <mesh>unit_box</mesh>
         </visual>
       </geom:box>
       <geom:box name="desk1_top_geom">
-        <massMatrix>true</massMatrix> <!-- user provide full mass and inertia matrix -->
-        <mass> 0.0 </mass> <!-- who would have thought we have 6 digits of precision!? -->
-        <ixx> 1.0 </ixx>
-        <ixy> 0.0 </ixy>
-        <ixz> 0.0 </ixz>
-        <iyy> 1.0 </iyy>
-        <iyz> 0.0 </iyz>
-        <izz> 1.0 </izz>
-        <cx>  0.0 </cx>
-        <cy>  0.0 </cy>
-        <cz>  0.0 </cz>
-
-        <kp>10000000000.0</kp>
+        <kp>100000000.0</kp>
         <kd>0.1</kd>
-
-        <xyz>   0.0    0.0    0.4</xyz>
+        <xyz>   0.0    0.0    0.90</xyz>
+        <mesh>default</mesh>
         <size>0.75 1.5  0.05</size>
+        <mass> 10.0</mass>
         <visual>
-          <xyz>   0.0    0.0    0.0</xyz>
           <size> 0.75 1.5 0.05</size>
           <material>Gazebo/Rocky</material>
           <mesh>unit_box</mesh>
@@ -139,13 +115,13 @@
 
   <!-- The second "desk"-->
   <model:physical name="desk2_model">
-    <xyz>   2.25  -3.0   1.00</xyz>
+    <xyz>   2.25  -3.0   -0.10</xyz>
     <rpy>   0.0    0.0    0.00</rpy>
     <body:box name="desk2_legs_body">
       <geom:box name="desk2_legs_geom">
         <kp>1000000.0</kp>
         <kd>1.0</kd>
-        <xyz>   0.0    0.0    0.0</xyz>
+        <xyz>   0.0    0.0    0.50</xyz>
         <mesh>default</mesh>
         <size>0.5 1.0  0.75</size>
         <mass> 10.0</mass>
@@ -158,10 +134,10 @@
       <geom:box name="desk2_top_geom">
         <kp>1000000.0</kp>
         <kd>1.0</kd>
-        <xyz>   0.0    0.0    0.4</xyz>
+        <xyz>   0.0    0.0    0.90</xyz>
         <mesh>default</mesh>
         <size>0.75 1.5  0.05</size>
-        <mass> 0.0</mass>
+        <mass> 10.0</mass>
         <visual>
           <size> 0.75 1.5 0.05</size>
           <material>Gazebo/Rocky</material>
@@ -194,7 +170,7 @@
         <mesh>default</mesh>
         <xyz>0.0 0.0 -0.033</xyz>
         <size>0.05 0.05 0.01</size>
-        <mass> 0.00</mass>
+        <mass> 0.01</mass>
         <visual>
           <size> 0.05 0.05 0.01</size>
           <material>Gazebo/Fish</material>
@@ -203,6 +179,33 @@
       </geom:box>
     </body:cylinder>
   </model:physical>
+
+  <!-- The small box "cup" -->
+  <model:physical name="object1_model">
+    <xyz>   0.835  -0.55   0.95</xyz>
+    <rpy>   0.0    0.0    30.0</rpy>
+    <body:box name="object1_body">
+			<geom:box name="object1_geom">
+				<kp>100000000.0</kp>
+				<kd>0.1</kd>
+				<mesh>default</mesh>
+				<size>0.1 0.03 0.03</size>
+				<mass> 0.05</mass>
+				<visual>
+					<size> 0.1 0.030 0.03</size>
+					<material>Gazebo/PioneerBody</material>
+					<mesh>unit_box</mesh>
+				</visual>
+			</geom:box>
+		</body:box>
+
+		<controller:P3D name="p3d_object_controller" plugin="libP3D.so">
+			<updateRate>100.0</updateRate>
+			<bodyName>object1_body</bodyName>
+			<interface:position name="p3d_object_position"/>
+		</controller:P3D>
+
+	</model:physical>
 
 
   <!-- The small ball -->
@@ -302,24 +305,12 @@
 
 
   <model:physical name="robot_model1">
-    <xyz>0.0 0.0 0.0</xyz> <!-- bottom of base off the ground by this much, basically wheel height below skirt -->
+    <xyz>0.0 0.0 0.02</xyz> <!-- bottom of base off the ground by this much, basically wheel height below skirt -->
     <rpy>0.0 0.0 0.0 </rpy>
 
     <!-- base, torso and arms -->
     <include embedded="true">
-      <xi:include href="test.model" />
-    </include>
-
-  </model:physical>
-
-
-  <model:physical name="robot_model2">
-    <xyz>0.0 2.0 0.02</xyz> <!-- bottom of base off the ground by this much, basically wheel height below skirt -->
-    <rpy>0.0 0.0 0.0 </rpy>
-
-    <!-- base, torso and arms -->
-    <include embedded="true">
-      <xi:include href="pr2.model" />
+      <xi:include href="pr2_xml_test.model" />
     </include>
 
   </model:physical>
