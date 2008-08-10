@@ -12,7 +12,7 @@
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
-    <cpp cflags='-I${prefix}/include' lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lgeneric_controllers'/>
+    <cpp cflags='-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp' lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lgeneric_controllers'/>
   </export>
 
 </package>
