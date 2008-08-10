@@ -58,7 +58,7 @@ void *controlLoop(void *arg)
 
   // Create mechanism control
   MechanismControl mc(ec.hw_);
-  //MechanismControlNode mcn(&mc);
+  MechanismControlNode mcn(&mc);
 
   // Load robot description
   TiXmlDocument xml(xml_file);
@@ -139,8 +139,9 @@ static pthread_attr_t rtThreadAttr;
 
 int main(int argc, char *argv[])
 {
-  // Initialize ROS and check command-line arguments
+  // Initialize ROS and parse command-line arguments
   ros::init(argc, argv);
+
   if (argc != 3)
   {
     fprintf(stderr, "Usage: %s <interface> <xml>\n", argv[0]);
