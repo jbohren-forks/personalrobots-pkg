@@ -126,19 +126,31 @@ void JointVelocityControllerNode::update()
   c_->update();
 }
 
-bool JointVelocityControllerNode::setVelocity(
-  generic_controllers::SetVelocity::request &req,
-  generic_controllers::SetVelocity::response &resp)
+bool JointVelocityControllerNode::setCommand(
+  generic_controllers::SetCommand::request &req,
+  generic_controllers::SetCommand::response &resp)
 {
-  c_->setCommand(req.velocity);
-  resp.velocity = c_->getCommand();
+  c_->setCommand(req.command);
+  resp.command = c_->getCommand();
 
   return true;
 }
+
+bool JointVelocityControllerNode::getCommand(
+  generic_controllers::GetCommand::request &req,
+  generic_controllers::GetCommand::response &resp)
+{
+  resp.command = c_->getCommand();
+
+  return true;
+}
+
 void JointVelocityControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
-
+  string prefix = config->Attribute("name");
+  
   c_->initXml(robot, config);
-  node->advertise_service("set_velocity", &JointVelocityControllerNode::setVelocity, this);
+  node->advertise_service(prefix + "/set_command", &JointVelocityControllerNode::setCommand, this);
+  node->advertise_service(prefix + "/get_command", &JointVelocityControllerNode::getCommand, this);
 }

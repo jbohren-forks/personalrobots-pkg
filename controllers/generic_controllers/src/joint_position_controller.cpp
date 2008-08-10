@@ -118,6 +118,48 @@ void JointPositionController::setJointEffort(double effort)
   joint_->commanded_effort_ = min(max(effort, -joint_->effort_limit_), joint_->effort_limit_);
 }
 
+ROS_REGISTER_CONTROLLER(JointPositionControllerNode)
+JointPositionControllerNode::JointPositionControllerNode() 
+{
+  c_ = new JointPositionController();
+}
 
+JointPositionControllerNode::~JointPositionControllerNode()
+{
+  delete c_;
+}
 
+void JointPositionControllerNode::update()
+{
+  c_->update();
+}
+
+bool JointPositionControllerNode::setCommand(
+  generic_controllers::SetCommand::request &req,
+  generic_controllers::SetCommand::response &resp)
+{
+  c_->setCommand(req.command);
+  resp.command = c_->getCommand();
+
+  return true;
+}
+
+bool JointPositionControllerNode::getCommand(
+  generic_controllers::GetCommand::request &req,
+  generic_controllers::GetCommand::response &resp)
+{
+  resp.command = c_->getCommand();
+
+  return true;
+}
+
+void JointPositionControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+{
+  ros::node *node = ros::node::instance();
+  string prefix = config->Attribute("name");
+  
+  c_->initXml(robot, config);
+  node->advertise_service(prefix + "/set_command", &JointPositionControllerNode::setCommand, this);
+  node->advertise_service(prefix + "/get_command", &JointPositionControllerNode::getCommand, this);
+}
 

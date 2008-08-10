@@ -40,7 +40,9 @@
 #include <generic_controllers/controller.h>
 #include <generic_controllers/pid.h>
 
-#include <generic_controllers/SetVelocity.h>
+// Services
+#include <generic_controllers/SetCommand.h>
+#include <generic_controllers/GetCommand.h>
 
 namespace controller
 {
@@ -120,8 +122,12 @@ public:
 
   void initXml(mechanism::Robot *robot, TiXmlElement *config);
 
-  bool setVelocity(generic_controllers::SetVelocity::request &req,
-                   generic_controllers::SetVelocity::response &resp);
+  // Services
+  bool setCommand(generic_controllers::SetCommand::request &req,
+                  generic_controllers::SetCommand::response &resp);
+
+  bool getCommand(generic_controllers::GetCommand::request &req,
+                  generic_controllers::GetCommand::response &resp);
 
 private:
   JointVelocityController *c_;

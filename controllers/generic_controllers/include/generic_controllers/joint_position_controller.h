@@ -35,8 +35,14 @@
 #ifndef JOINT_POSITION_CONTROLLER_H
 #define JOINT_POSITION_CONTROLLER_H
 
+#include <ros/node.h>
+
 #include <generic_controllers/controller.h>
 #include <generic_controllers/pid.h>
+
+// Services
+#include <generic_controllers/SetCommand.h>
+#include <generic_controllers/GetCommand.h>
 
 namespace controller
 {
@@ -96,6 +102,35 @@ private:
   double last_time_; /*!< Last time stamp of update> */
   double command_; /*!< Last commanded position> */
   mechanism::Robot *robot_; /*!< Pointer to robot structure>*/
+};
+
+class JointPositionControllerNode : public Controller
+{
+public:
+  /*!
+   * \brief Default Constructor
+   *
+   */
+  JointPositionControllerNode();
+
+  /*!
+   * \brief Destructor
+   */
+  ~JointPositionControllerNode();
+
+  void update();
+
+  void initXml(mechanism::Robot *robot, TiXmlElement *config);
+
+  // Services
+  bool setCommand(generic_controllers::SetCommand::request &req,
+                  generic_controllers::SetCommand::response &resp);
+
+  bool getCommand(generic_controllers::GetCommand::request &req,
+                  generic_controllers::GetCommand::response &resp);
+
+private:
+  JointPositionController *c_;
 };
 }
 
