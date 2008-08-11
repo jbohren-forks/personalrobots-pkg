@@ -339,6 +339,7 @@ AmclNode::AmclNode() :
   assert((this->ldevice = deviceTable->GetDevice(olocalize_addr,false)));
 
   this->tf = new rosTFServer(*this);
+
 }
 
 AmclNode::~AmclNode()
@@ -390,6 +391,13 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     localizedOdomMsg.pos.y = pdata->pos.py;
     localizedOdomMsg.pos.th = pdata->pos.pa;
     localizedOdomMsg.header.stamp.from_double(hdr->timestamp);
+    try
+    {
+	localizedOdomMsg.header.frame_id = tf->lookup("FRAMEID_MAP");
+    }
+    catch(...)
+    {
+    }
     publish("localizedpose", localizedOdomMsg);
 
     // Also request and publish the particle cloud
