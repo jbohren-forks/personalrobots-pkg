@@ -17,6 +17,7 @@ system.
   <doxymaker external="http://playerstage.sourceforge.net/doc/Player-cvs/player"/>
 </export>
 <versioncontrol type="svn" url="https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/player/trunk"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="pkg-config"/>
 </package>
 
 
