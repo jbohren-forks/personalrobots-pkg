@@ -83,7 +83,7 @@ public:
 	advertise<std_msgs::RobotBase2DOdom>("localizedpose");
 	advertise<std_msgs::ParticleCloud2D>("particlecloud");
 	
-	subscribe("odom", m_odomMsg, &AmclNode::odomReceived);
+	subscribe("odom", m_odomMsg, &OdomNode::odomReceived);
     }
     
     ~OdomNode(void)
@@ -97,7 +97,10 @@ private:
     
     std_msgs::RobotBase2DOdom m_odomMsg;
     
-    void odomReceived(void);
+    void odomReceived(void)
+    {
+    }
+    
 };
 
 int main(int argc, char** argv)
