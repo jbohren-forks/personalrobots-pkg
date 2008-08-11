@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.6)
+include(rosbuild)
+rospack(pr2_controllers)
+genmsg()
+gensrv()
+rospack_add_library(pr2_controllers src/laser_scanner_controller.cpp)

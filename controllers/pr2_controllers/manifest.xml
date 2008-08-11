@@ -1,0 +1,19 @@
+<package>
+  <description brief='PR2 Controller Library'>
+    Library for doing controls on the PR2.
+  </description>
+  <author>Sachin Chita, John Hsu, David Li, Jimmy Sastra, Melonee Wise</author>
+  <license>BSD</license>
+  <depend package="mechanism_model" />
+  <depend package="wg_robot_description_parser" />
+  <depend package="stl_utils" />
+  <depend package="misc_utils" />
+  <depend package="generic_controllers" />
+  <depend package="rospy" />
+  <url>http://pr.willowgarage.com</url>
+  <repository>http://pr.willowgarage.com/repos</repository>
+  <export>
+    <cpp cflags='-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp' lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lgeneric_controllers'/>
+  </export>
+
+</package>
