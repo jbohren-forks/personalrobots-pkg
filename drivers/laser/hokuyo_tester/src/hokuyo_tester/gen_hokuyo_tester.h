@@ -14,10 +14,9 @@
 #include <wx/colour.h>
 #include <wx/settings.h>
 #include <wx/string.h>
-#include <wx/stattext.h>
-#include <wx/textctrl.h>
 #include <wx/button.h>
 #include <wx/sizer.h>
+#include <wx/textctrl.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -31,8 +30,6 @@ class GenHokuyoTester : public wxPanel
 	
 	protected:
 		wxPanel* visPanel;
-		wxStaticText* m_staticText2;
-		wxTextCtrl* serial;
 		wxButton* testButton;
 		wxTextCtrl* logText;
 		

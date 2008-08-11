@@ -760,13 +760,11 @@ URG::laser::service_scan(URG::laser_scan_t* scan, int timeout)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-int 
+std::string 
 URG::laser::get_ID()
 {
   if (!port_open())
     URG_EXCEPT(URG::exception, "Port not open.");
-
-  int id = 0;
 
   if (SCIP_version == 1)
     if (send_cmd1("V") != 0)
@@ -777,11 +775,12 @@ URG::laser::get_ID()
       URG_EXCEPT(URG::exception, "Error requesting version information");
   
   char buf[100];
-  char* num = urg_readline_after(buf, 100, "SERI:");
+  char* serial = urg_readline_after(buf, 100, "SERI:");
 
-  sscanf(num, "%d", &id);
+  std::string seristring(serial);
+  seristring = std::string("H") + seristring.substr(1,seristring.length() - 4);
 
-  return id;
+  return seristring;
 }
 
 

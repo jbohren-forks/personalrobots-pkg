@@ -39,6 +39,10 @@
 #include <wx/app.h>
 
 #include <wx/msgdlg.h>
+#include <wx/textdlg.h>
+
+#include <time.h>
+#include <fstream>
 
 DECLARE_EVENT_TYPE(wxSELF_TEST_DONE,-1)
 DEFINE_EVENT_TYPE(wxSELF_TEST_DONE)
@@ -118,29 +122,26 @@ void* TestThread::Entry()
 
 void HokuyoTester::OnTest( wxCommandEvent& event )
 {
-  if (serial->GetValue() == _T(""))
-  {
-    wxMessageBox(_T("Please enter a serial number"), _T("No serial number"), wxOK, this);
-    return;
-  }
-      
 
   testButton->Disable();
 
   logText->Clear();
-
+  
   TestThread* t = new TestThread(this);
   t->Create();
   t->Run();
+
 }
 
 void HokuyoTester::SelfTestDone( wxCommandEvent& event )
 {
+  int answer = -1;
+
   if (res.passed)
   {
     rosNode->subscribe("scan", readScan, &HokuyoTester::HandleScan, this);
     scanCount = 0;  
-    int answer = wxMessageBox(_T("Does the data from the Hokuyo look reasonable."), _T("User Confirmation"), wxYES_NO, this);
+    answer = wxMessageBox(_T("Does the data from the Hokuyo look reasonable."), _T("User Confirmation"), wxYES_NO, this);
     rosNode->unsubscribe("scan");
 
     if (answer == wxYES)
@@ -149,6 +150,44 @@ void HokuyoTester::SelfTestDone( wxCommandEvent& event )
       wxLogMessage(_T("User specified data looks unreasonable."));
   }
 
+  if (res.id == std::string("H0000000") || res.id == std::string(""))
+  {
+    wxString id = _T("");
+
+    while (id == _T(""))
+      id = wxGetTextFromUser(_T("Hokuyo ID self reporting failed.\nPlease enter The Hokuyo's SN or WGSN.\nWGSN is barcoded on the bottom of the device and starts with 68-.\nHokuyo SN is written on the side of the device and starts with H"), _T("ID"),
+                             _T(""), this);
+    
+    res.id = std::string(id.mb_str(wxConvUTF8));
+  }
+
+  time_t t = ::time(NULL);
+  struct tm *tms = localtime(&t);
+  char datetime[500];
+  snprintf(datetime, sizeof(datetime), "%d-%02d-%02d-%02d-%02d-%02d",
+           tms->tm_year+1900, tms->tm_mon+1, tms->tm_mday,
+           tms->tm_hour     , tms->tm_min  , tms->tm_sec);
+
+
+  std::string fname = res.id + std::string("_") + std::string(datetime) + std::string(".test");
+  std::ofstream out(fname.c_str());
+  if (res.passed)
+  {
+    out << "Self test: PASSED" << std::endl;
+    out << "Info:" << std::endl << res.info;
+    out << std::endl << std::endl;
+
+    if (answer == wxYES)
+      out << "Data inspection: PASSED" << std::endl;
+    else
+      out << "Data inspection: FAILED" << std::endl;
+  }
+  else
+  {
+    out << "Self test: FAILED" << std::endl;
+    out << "Info:" << std::endl << res.info;
+  }
+  
   testButton->Enable();
 }
 

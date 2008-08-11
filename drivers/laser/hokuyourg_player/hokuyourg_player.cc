@@ -175,7 +175,7 @@ public:
     {
       urg.open(port.c_str());
 
-      printf("Connected to URG with ID: %d\n", urg.get_ID());
+      printf("Connected to URG with ID: %s\n", urg.get_ID().c_str());
 
       urg.laser_on();
 
@@ -310,9 +310,8 @@ public:
 
     std::ostringstream oss;
 
-#warning fixme ticket:201
-    //Commented out to allow building   TULLY ticket:201    if (num_subscribers("scan") != 0)
-    //     oss << "WARNING: There were active subscribers.  Running of self test interrupted operations." << std::endl;
+    if (num_subscribers("scan") != 0)
+      oss << "(WARNING: There were active subscribers.  Running of self test interrupted operations.)" << std::endl;
 
     int passed = 0;
     int total = 0;
@@ -322,66 +321,66 @@ public:
     {
       urg.close();
     } catch (URG::exception& e) {
-      oss << "WARNING: Exception thrown while trying to close: " << e.what() << std::endl;
+      oss << "(WARNING: Exception thrown while trying to close: " << e.what() << ")" << std::endl;
     }
 
     // Actually conduct tests
 
     //Test: Connect
     total++;
-    oss << "Test " << total << setw(30) << "Opening connection: ";
+    oss << "Test " << total << ": Opening connection" << std::endl;
     try {
       urg.open(port.c_str());
       passed++;
-      oss << "PASSED";
+      oss << "  [PASSED]";
     } catch (URG::exception& e) {
-      oss << "FAILED" << std::endl << "  " << e.what();
+      oss << "  [FAILED]" << std::endl << "  " << e.what();
     }
     oss << std::endl;
 
     //Test: Get ID
     total++;
-    oss << "Test " << total << setw(30) <<  "Getting ID: ";
+    oss << "Test " << total <<  ": Getting ID" << std::endl;
     try {
-      int id = urg.get_ID();
-      if (id == 0)
+      res.id = urg.get_ID();
+      passed++;
+      oss << "  [PASSED]" << std::endl << "  ID is: " << res.id;
+
+      if (res.id == std::string("H0000000"))
       {
-        oss << "FAILED" << std::endl << "      ID 0 indicative of failure";
-      } else {
-        passed++;
-        oss << "PASSED" << std::endl << "      ID is " << id;
+        oss <<  std::endl << "  (WARNING: ID 0 is indication of failure.)";
       }
     } catch (URG::exception& e) {
-      oss << "FAILED" << std::endl << "  " << e.what();
+      oss << "  [FAILED]" << std::endl << "  " << e.what();
     }
     oss << std::endl;
 
     //Test: Get status
     total++;
-    oss << "Test " << total << setw(30) <<  "Getting Status: ";
+    oss << "Test " << total <<  ": Getting Status" << std::endl;
     try {
       std::string stat = urg.get_status();
       if (stat != std::string("Sensor works well."))
       {
-        oss << "FAILED" << std::endl << "      Status: " << stat;
+        oss << "  [FAILED]" << std::endl << "  Status: " << stat;
       } else {
         passed++;
-        oss << "PASSED";
+        oss << "  [PASSED]";
       }
     } catch (URG::exception& e) {
-      oss << "FAILED" << std::endl << "  " << e.what();
+      oss << "  [FAILED]" << std::endl << "  " << e.what();
     }
     oss << std::endl;
 
     //Test: Laser on
     total++;
-    oss << "Test " << total << setw(30) <<  "Turning on laser: ";
+    oss << "Test " << total <<  ": Turning on laser" << std::endl;
     try {
       urg.laser_on();
       passed++;
-      oss << "PASSED";
+      oss << "  [PASSED]";
     } catch (URG::exception& e) {
-      oss << "FAILED" << std::endl << "      " << e.what();
+      oss << "  [FAILED]" << std::endl << "  " << e.what();
     }
     oss << std::endl;
 
@@ -389,30 +388,30 @@ public:
     URG::laser_scan_t  scan;
     //Test: Polled Data
     total++;
-    oss << "Test " << total << setw(30) <<  "Polled data: ";
+    oss << "Test " << total << ": Polled data" << std::endl;
     try {
       int res = urg.poll_scan(&scan, min_ang, max_ang, cluster, 1000);
 
       if (res != 0)
       {
-        oss << "FAILED" << std::endl << "      Hokuyo error code: " << res << ". Consult manual for meaning.";
+        oss << "  [FAILED]" << std::endl << "  Hokuyo error code: " << res << ". Consult manual for meaning.";
       } else {
         passed++;
-        oss << "PASSED";
+        oss << "  [PASSED]";
       }
     } catch (URG::exception& e) {
-      oss << "FAILED" << std::endl << "      " << e.what();
+      oss << "  [FAILED]" << std::endl << "  " << e.what();
     }
     oss << std::endl;
 
     //Test: Streamed data with no intensity
     total++;
-    oss << "Test " << total << setw(30) <<  "Streamed data: ";
+    oss << "Test " << total <<  ": Streamed data" << std::endl;
     try {
       int res = urg.request_scans(false, min_ang, max_ang, cluster, skip, 99, 1000);
       if (res != 0)
       {
-        oss << "FAILED" << std::endl << "      Hokuyo error code: " << res << ". Consult manual for meaning.";
+        oss << "  [FAILED]" << std::endl << "  Hokuyo error code: " << res << ". Consult manual for meaning.";
       } else {
 
         for (int i = 0; i < 99; i++)
@@ -420,21 +419,21 @@ public:
           urg.service_scan(&scan, 1000);
         }
         passed++;
-        oss << "PASSED";
+        oss << "  [PASSED]]";
       }
     } catch (URG::exception& e) {
-      oss << "FAILED" << std::endl << "      " << e.what();
+      oss << "  [FAILED]" << std::endl << "  " << e.what();
     }
     oss << std::endl;
 
     //Test: Streamed data with intensity
     total++;
-    oss << "Test " << total << setw(30) <<  "Streamed intensity data: ";
+    oss << "Test " << total << ": Streamed intensity data" << std::endl;
     try {
       int res = urg.request_scans(true, min_ang, max_ang, cluster, skip, 99, 1000);
       if (res != 0)
       {
-        oss << "FAILED" << std::endl << "      Hokuyo error code: " << res << ". Consult manual for meaning.";
+        oss << "  [FAILED]" << std::endl << "  Hokuyo error code: " << res << ". Consult manual for meaning.";
       } else {
         int passable = 1;
         for (int i = 0; i < 99; i++)
@@ -448,35 +447,35 @@ public:
         if (passable)
         {
           passed++;
-          oss << "PASSED";
+          oss << "  [PASSED]";
         }
       }
     } catch (URG::exception& e) {
-      oss << "FAILED" << std::endl << "      " << e.what();
+      oss << "  [FAILED]" << std::endl << "  " << e.what();
     }
     oss << std::endl;
 
     //Test: Laser off
     total++;
-    oss << "Test " << total << setw(30) <<  "Turning off laser: ";
+    oss << "Test " << total << ":Turning off laser" << std::endl;
     try {
       urg.laser_off();
       passed++;
-      oss << "PASSED";
+      oss << "  [PASSED]";
     } catch (URG::exception& e) {
-      oss << "FAILED" << std::endl << "      " << e.what();
+      oss << "  [FAILED]" << std::endl << "  " << e.what();
     }
     oss << std::endl;
 
     //Test: Disconnect
     total++;
-    oss << "Test " << total << setw(30) <<  "Disconnecting: ";
+    oss << "Test " << total << ": Disconnecting" << std::endl;
     try {
       urg.close();
       passed++;
-      oss << "PASSED";
+      oss << "  [PASSED]";
     } catch (URG::exception& e) {
-      oss << "FAILED" << std::endl << "      " << e.what();
+      oss << "  [FAILED]" << std::endl << "  " << e.what();
     }
     oss << std::endl;
 
@@ -485,10 +484,7 @@ public:
     else
       res.passed = false;
 
-    if (res.passed)
-      oss << "All tests passed" << std::endl;
-    else
-      oss << "Some tests failed" << std::endl;
+    oss << passed  << "/" << total << " tests passed";
 
     printf("Self test completed\n");
 

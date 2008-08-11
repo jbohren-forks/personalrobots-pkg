@@ -257,7 +257,7 @@ namespace URG {
     /*!
      * \return  Serial number of URG.
      */
-    int get_ID();
+    std::string get_ID();
 
     //! Get status message from the URG
     /*!
