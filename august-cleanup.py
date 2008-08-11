@@ -3,6 +3,7 @@
 import sys
 import os
 
+SVN = 'svn'
 SVN_REV_MIN = 2785
 PR_URL = 'https://personalrobots.svn.sf.net/svnroot/personalrobots/pkg/trunk'
 
@@ -28,7 +29,7 @@ dirs = [
 
 from subprocess import Popen, PIPE
 
-svninfo = (Popen(['svn', 'info'], stdout=PIPE).communicate()[0] or '').strip().split('\n')
+svninfo = (Popen([SVN, 'info'], stdout=PIPE).communicate()[0] or '').strip().split('\n')
 
 # verify the current working directory is the same as personal robots
 
