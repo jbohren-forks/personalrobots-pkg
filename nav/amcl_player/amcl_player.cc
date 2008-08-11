@@ -365,7 +365,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
             (player_position2d_data_t*)data;
 
     
-    // publish new transform map->odom
+    // publish new transform robot->map
     this->tf->sendEuler("FRAMEID_ROBOT",
                         "FRAMEID_MAP",
                         pdata->pos.px,
