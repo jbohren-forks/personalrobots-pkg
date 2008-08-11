@@ -50,14 +50,22 @@ published.
 
 @section usage Usage
 @verbatim
-$ world_3d_map [standard ROS args]
+$ world_3d_map robot_model [standard ROS args]
 @endverbatim
+
 
 @par Example
 
 @verbatim
 $ world_3d_map
 @endverbatim
+
+@par Notes
+
+@b robot_model is the name (string) of a robot description to be used
+when building the map. This allows for removing parts of the laser
+scan that see the robot itself. If no robot model is to be used,
+specify '-' for the robot_model argument.
 
 <hr>
 
