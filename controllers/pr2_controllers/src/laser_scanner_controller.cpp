@@ -45,10 +45,22 @@ LaserScannerController::LaserScannerController()
 {
   // Initialize PID class
   command_ = 0;
+
+  use_profile_ = false;
+  profile_index_ = 0;
+  profile_length_ = 0;
+
+  //Clear arrays
+  profile_locations_ = NULL;
+  profile_dt_ = NULL;
 }
 
 LaserScannerController::~LaserScannerController()
 {
+  //Free memory in profile if needed
+  if(profile_locations_!=NULL) delete[] profile_locations_;
+  if(profile_dt_!=NULL) delete[] profile_dt_;
+ 
 }
 
 void LaserScannerController::init(double p_gain, double i_gain, double d_gain, double windup, double time, mechanism::Joint *joint)
@@ -94,13 +106,143 @@ double LaserScannerController::getActual()
 
 void LaserScannerController::update()
 {
-  
+  double time = robot_->hw_->current_time_;
+   if(use_profile_)
+  {
+    joint_position_controller_.setCommand(profile_locations_[profile_index_]); //Issue position command
+
+    //Check if enough time has elapsed to move to next set point
+    if(time-cycle_start_time_ >= profile_dt_[profile_index_])
+      {  
+      cycle_start_time_ = time;
+		  
+       //Advance time index
+  		 if(profile_index_ == (profile_length_-1))
+        {
+  			  profile_index_ = 0; //Restart profile
+  			} else profile_index_++;
+      }
+  }
+  else joint_position_controller_.setCommand(command_);
+
+  joint_position_controller_.update(); //Update lower controller
+  last_time_ = time; //Keep track of last time for update
+
 }
 
 void LaserScannerController::setJointEffort(double effort)
 {
   joint_->commanded_effort_ = min(max(effort, -joint_->effort_limit_), joint_->effort_limit_);
 }
+
+
+//Set mode to use sawtooth profile
+void LaserScannerController::setSawtoothProfile(double period, double amplitude, int num_elements, double offset)
+{
+  int smaller_num_elements = num_elements/4; //Number of elements in a single quadrant
+  int total_elements = smaller_num_elements*4; //track actual number of elements after int truncation
+  double delta = amplitude/smaller_num_elements; //Scale first, then determine step size
+  double dt = period/total_elements;
+  double current = 0;
+  double newvalue = 0;
+
+  //Error checking
+  if(total_elements<=0) return;  
+
+  //Clear arrays
+  if(profile_locations_ !=NULL) delete[] profile_locations_;
+  if(profile_dt_ !=NULL) delete[] profile_dt_;
+
+  profile_locations_ = new double[total_elements];
+  profile_dt_ = new double[total_elements];
+
+  //Construct evenly spaced elements in distance along sine wave
+  for(int i = 0;i<total_elements;i++)
+  {
+    profile_locations_[i] = current*amplitude; //set current point
+    profile_dt_[i] = dt; //Constant dt because of linear relationship
+
+    newvalue = current + delta; //Calculate next value
+    if(i == smaller_num_elements) //Shift from quadrant 1 to 2
+    {
+      delta = -delta;      
+      newvalue = current + delta;
+    }
+    else if (i == smaller_num_elements*3)//Shift from quadrant 3-4
+    {
+      delta = -delta;       
+      newvalue = current + delta;
+    }
+    current = newvalue;
+  }
+
+ //Reset profile settings
+  profile_length_ = total_elements; //Keep track of profile length
+  profile_index_= 0; //Start at beginning
+  cycle_start_time_ = robot_->hw_->current_time_;
+
+
+  use_profile_ = true;
+
+}
+ 
+//Set mode to use Sinewave profile
+void LaserScannerController::setSinewaveProfile(double period, double amplitude, int num_elements, double offset)
+{
+  int smaller_num_elements = num_elements/4; //Number of elements in a single quadrant
+  int total_elements = smaller_num_elements*4; //track actual number of elements after int truncation
+  double delta = amplitude/smaller_num_elements;
+  double current = 0;
+  double newvalue = 0;
+  double temp_value = 0.0;
+  double last_temp_value = 0.0;
+
+  //Error checking
+  if(total_elements<=0) return; 
+ 
+  //Clear arrays
+  if(profile_locations_ !=NULL) delete[] profile_locations_;
+  if(profile_dt_ !=NULL) delete[] profile_dt_;
+
+  profile_locations_ = new double[total_elements];
+  profile_dt_ = new double[total_elements];
+  
+  //Construct evenly spaced elements in distance along sine wave
+  for(int i = 0;i<total_elements;i++)
+  {
+    profile_locations_[i] = current; //set current point
+    newvalue = current + delta; //Calculate next value
+    if(i == smaller_num_elements) //Shift from quadrant 1 to 2
+    {
+      delta = -delta;
+      
+      newvalue = current + delta;
+    }
+    else if (i == smaller_num_elements*3)//Shift from quadrant 3-4
+    {
+      delta = -delta;       
+      newvalue = current + delta;
+    }
+    current = newvalue;
+  }
+
+   //At time 0, we wish for our location to be at 0. Start indexing at 1
+  for(int i = 1;i<total_elements;i++)
+  { 
+    temp_value = asin(profile_locations_[i]); //Calculate time
+    profile_dt_[i] = fabs(temp_value-last_temp_value)*period; //Calculate dt, scale by period
+    profile_locations_[i] = temp_value*amplitude; //Scale goal location by amplitude
+    last_temp_value = temp_value;    
+  }
+
+ //Reset profile settings
+  profile_length_ = total_elements; //Keep track of profile length
+  profile_index_= 0; //Start at beginning
+  cycle_start_time_ = robot_->hw_->current_time_;
+
+  use_profile_ = true;
+}
+
 
 ROS_REGISTER_CONTROLLER(LaserScannerControllerNode)
 LaserScannerControllerNode::LaserScannerControllerNode() 

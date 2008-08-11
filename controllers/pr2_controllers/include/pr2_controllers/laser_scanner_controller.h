@@ -91,6 +91,28 @@ public:
 
   virtual void update();
 
+  /*!
+   * \brief Set automatic profile to sawtooth
+   *\param double period Period of signal
+   *\param double amplitude Peak to peak amplitude of signal
+   *\param int num_elements Number of points along one period of sawtooth wave
+   *\param double offset Offset of minimum point of signal to zero
+   *\param double current_time Used to determine start of cycle
+   */
+
+  void setSawtoothProfile(double period, double amplitude, int num_elements, double offset);
+  
+  /*!
+   * \brief Set automatic profile to sinewave
+   *\param double period Period of signal
+   *\param double amplitude Peak to peak amplitude of signal
+   *\param int num_elements Number of points along one period of sine wave
+   *\param double offset Offset of minimum point of signal to zero
+   *\param double current_time Used to determine start of cycle
+   */
+  void setSinewaveProfile(double period, double amplitude, int num_elements, double offset);
+
+
 private:
   /*!
    * \brief Actually issue torque set command of the joint motor.
@@ -102,6 +124,13 @@ private:
   double last_time_; /*!< Last time stamp of update> */
   double command_; /*!< Last commanded position> */
   mechanism::Robot *robot_; /*!< Pointer to robot structure>*/
+  double* profile_locations_; /**<Contains locations for profile>*/
+  double* profile_dt_; /**<Contains timesteps for profile locations>*/
+  int profile_index_; /**<Track location in profile>*/
+  int profile_length_; /**<Number of points in one cycle>*/
+  double cycle_start_time_; //**<Start of the last cycle for profile>*/
+  bool use_profile_; //**<Track whether we want to servo to points or use scanning profile>**/
+
 };
 
 class LaserScannerControllerNode : public Controller
