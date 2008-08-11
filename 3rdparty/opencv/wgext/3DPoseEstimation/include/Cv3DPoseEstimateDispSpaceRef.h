@@ -24,7 +24,8 @@ public:
 	 *  Fy: focal length in y direction
 	 *  Tx: baseline length (sometimes referred as B ).
 	 */
-	bool setCameraParams(double Fx, double Fy, double Tx, double Clx=0, double Crx=0, double Cy=0);
+	bool setCameraParams(double Fx, double Fy, double Tx, double Clx=0, 
+			double Crx=0, double Cy=0);
 	
 	bool projection(CvMat *XYZs, CvMat *uvds);
 	bool reprojection(CvMat *uvds, CvMat *XYZs);
