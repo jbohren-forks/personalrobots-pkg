@@ -38,9 +38,13 @@
 
 @htmlinclude manifest.html
 
-@b world_3d_map is a node capable of building 3D maps out of point
-cloud data. The code is incomplete: it currently only forwards cloud
-data.
+@b world_3d_map is a node capable of building 3D maps out of laser
+scan data.  The node will put together a pointcloud in the FRAMEID_MAP
+frame and will publish the pointcloud with the data it retained. The
+node also downsamples the input data, to avoid a large number of
+obstacles, removes the points in the cloud that intersect with a given
+robot model and allows for limiting the frequency at which this map is
+published.
 
 <hr>
 
@@ -60,7 +64,8 @@ $ world_3d_map
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b full_cloud/PointCloudFloat32 : point cloud with data from a complete laser scan (top to bottom)
+- @b scan/LaserScan : scan data received from a laser
+- @b robotpose/RobotBase2DOdom : position of the robot base
 
 Publishes to (name/type):
 - @b "world_3d_map"/PointCloudFloat32 : point cloud describing the 3D environment
@@ -79,6 +84,7 @@ Provides (name/type):
 @section parameters ROS parameters
 - @b "world_3d_map/max_publish_frequency" : @b [double] the maximum frequency (Hz) at which the data in the built 3D map is to be sent (default 0.5)
 - @b "world_3d_map/retain_pointcloud_duration : @b [double] the time for which a point cloud is retained as part of the current world information (default 2)
+- @b "world_3d_map/retain_pointcloud_fraction : @b [double] the time for which a point cloud is retained as part of the current world information (default 2)
 - @b "world_3d_map/verbosity_level" : @b [int] sets the verbosity level (default 1)
 **/
 
@@ -100,25 +106,22 @@ Provides (name/type):
 #include <deque>
 #include <cmath>
 
-using namespace std_msgs;
-using namespace ros::thread::member_thread;
-
 class World3DMap : public ros::node
 {
 public:
 
-    World3DMap(void) : ros::node("world_3d_map"),
-		       m_tf(*this, true, 1 * 1000000000ULL, 1000000000ULL)
+    World3DMap(const char *robot_model) : ros::node("world_3d_map"),
+					  m_tf(*this, true, 1 * 1000000000ULL, 1000000000ULL)
     {
-	advertise<PointCloudFloat32>("world_3d_map");
+	advertise<std_msgs::PointCloudFloat32>("world_3d_map");
 	advertise<rostools::Log>("roserr");
 
-	param("world_3d_map/max_publish_frequency", m_maxPublishFrequency, 0.5);
-	param("world_3d_map/retain_pointcloud_duration", m_retainPointcloudDuration, 60.0);
-	param("world_3d_map/retain_pointcloud_fraction", m_retainPointcloudFraction, 0.02);
-	param("world_3d_map/verbosity_level", m_verbose, 1);
+	param("max_publish_frequency", m_maxPublishFrequency, 0.5);
+	param("retain_pointcloud_duration", m_retainPointcloudDuration, 60.0);
+	param("retain_pointcloud_fraction", m_retainPointcloudFraction, 0.02);
+	param("verbosity_level", m_verbose, 1);
 	
-	loadRobotDescriptions();
+	loadRobotDescription(robot_model);
 	
 	/* create a thread that does the processing of the input data.
 	 * and one that handles the publishing of the data */
@@ -130,10 +133,10 @@ public:
 	
 	m_processMutex.lock();
 	m_publishMutex.lock();
-	m_processingThread = startMemberFunctionThread<World3DMap>(this, &World3DMap::processDataThread);
-	m_publishingThread = startMemberFunctionThread<World3DMap>(this, &World3DMap::publishDataThread);
+	m_processingThread = ros::thread::member_thread::startMemberFunctionThread<World3DMap>(this, &World3DMap::processDataThread);
+	m_publishingThread = ros::thread::member_thread::startMemberFunctionThread<World3DMap>(this, &World3DMap::publishDataThread);
 
-	subscribe("tilt_scan", m_inputScan, &World3DMap::pointCloudCallback);
+	subscribe("scan", m_inputScan, &World3DMap::pointCloudCallback);
 	subscribe("localizedpose", m_localizedPose, &World3DMap::localizedPoseCallback);
     }
     
@@ -151,40 +154,13 @@ public:
 	for (unsigned int i = 0 ; i < m_selfSeeParts.size() ; ++i)
 	    delete m_selfSeeParts[i].body;
 
-	for (unsigned int i = 0 ; i < m_robotDescriptions.size() ; ++i)
-	{
-	    delete m_robotDescriptions[i].urdf;
-	    delete m_robotDescriptions[i].kmodel;
-	}
+	if (m_kmodel)
+	    delete m_kmodel;
+	if (m_urdf)
+	    delete m_urdf;
     }
     
-    void addRobotDescriptionFromData(const char *data)
-    {
-	robot_desc::URDF *file = new robot_desc::URDF();
-	if (file->loadString(data))
-	    addRobotDescription(file);
-	else
-	    delete file;
-    }
-
-    void addRobotDescription(robot_desc::URDF *file)
-    {
-	planning_models::KinematicModel *kmodel = new planning_models::KinematicModel();
-	kmodel->setVerbose(false);
-	kmodel->build(*file);
-	
-	RobotDesc rd = { file, kmodel };
-	m_robotDescriptions.push_back(rd);
-	addSelfSeeBodies(rd);
-    }
-  
 private:
-    
-    struct RobotDesc
-    {
-	robot_desc::URDF                *urdf;
-	planning_models::KinematicModel *kmodel;	
-    };    
     
     struct RobotPart
     {
@@ -192,29 +168,89 @@ private:
 	planning_models::KinematicModel::Link *link;	
     };
   
-    void loadRobotDescriptions(void)
+    void setRobotDescriptionFromData(const char *data)
     {
-	std::string model;
-	if (get_param("world_3d_map/robot_model", model))
+	robot_desc::URDF *file = new robot_desc::URDF();
+	if (file->loadString(data))
+	    setRobotDescription(file);
+	else
+	    delete file;
+    }
+
+    void setRobotDescription(robot_desc::URDF *file)
+    {
+	m_urdf = file;
+	m_kmodel = new planning_models::KinematicModel();
+	m_kmodel->setVerbose(false);
+	m_kmodel->build(*file);
+	
+	addSelfSeeBodies();
+    }
+  
+    void loadRobotDescription(const char *robot_model)
+    {
+	if (!robot_model || strcmp(robot_model, "-") == 0)
+	{
+	    if (m_verbose)
+		printf("No robot model will be used\n");
+	}
+	else
 	{
 	    std::string content;
-	    if (get_param(model, content))
-		addRobotDescriptionFromData(content.c_str());
+	    if (m_verbose)
+		printf("Attempting to load model '%s'\n", robot_model);
+	    if (get_param(robot_model, content))
+	    {
+		setRobotDescriptionFromData(content.c_str());
+		if (m_verbose)
+		    printf("Success!\n");
+	    }	
+	    else
+		fprintf(stderr, "Robot model '%s' not found!\n", robot_model);
 	}
     }
     
     void localizedPoseCallback(void)
     {
-	m_basePos[0] = m_localizedPose.pos.x;
-	m_basePos[1] = m_localizedPose.pos.y;
-	m_basePos[2] = m_localizedPose.pos.th;
+	bool success = true;
+	libTF::TFPose2D pose;
+	pose.x = m_localizedPose.pos.x;
+	pose.y = m_localizedPose.pos.y;
+	pose.yaw = m_localizedPose.pos.th;
+	pose.time = m_localizedPose.header.stamp.to_ull();
+	pose.frame = m_localizedPose.header.frame_id;
 	
-	if (m_robotDescriptions.size() == 1)
+	try
 	{
-	    int group = m_robotDescriptions[0].kmodel->getGroupID(m_robotDescriptions[0].urdf->getRobotName() + "::base");
-	    if (group >= 0)
-		m_robotDescriptions[0].kmodel->computeTransforms(m_basePos, group);
+	    pose = m_tf.transformPose2D("FRAMEID_MAP", pose);
 	}
+	catch(libTF::TransformReference::LookupException& ex)
+	{
+	    fprintf(stderr, "Discarding pose: Transform reference lookup exception\n");
+	    success = false;
+	}
+	catch(libTF::TransformReference::ExtrapolateException& ex)
+	{
+	    fprintf(stderr, "Discarding pose: Extrapolation exception: %s\n", ex.what());
+	    success = false;
+	}
+	catch(...)
+	{
+	    fprintf(stderr, "Discarding pose: Exception in pose computation\n");
+	    success = false;
+	}
+	
+	if (success)
+	{
+	    m_basePos[0] = pose.x;
+	    m_basePos[1] = pose.y;
+	    m_basePos[2] = pose.yaw;
+	    
+	    int group = m_kmodel->getGroupID(m_urdf->getRobotName() + "::base");
+	    if (group >= 0)
+		m_kmodel->computeTransforms(m_basePos, group);
+	}
+	
     }
     
     void pointCloudCallback(void)
@@ -262,7 +298,7 @@ private:
 	    {
 		fprintf(stderr, "Discarding pointcloud: Exception in point cloud computation\n");
 		success = false;
-	    }	    
+	    }  
 	    if (success)
 		m_processMutex.unlock();   /* let the processing thread know that there is data to process */
 	    else 
@@ -312,7 +348,7 @@ private:
 		m_worldDataMutex.lock();
 		if (m_active && m_currentWorld.size() > 0)
 		{
-		    PointCloudFloat32 toPublish;
+		    std_msgs::PointCloudFloat32 toPublish;
 		    toPublish.header = m_currentWorld.back()->header;
 		    
 		    unsigned int      npts  = 0;
@@ -332,7 +368,7 @@ private:
 		    toPublish.set_pts_size(j);
 		    if (ok())
 		    {
-			if (m_verbose > 0)
+			if (m_verbose)
 			    printf("Publishing a point cloud with %u points\n", toPublish.get_pts_size());
 			publish("world_3d_map", toPublish);
 		    }
@@ -344,14 +380,14 @@ private:
 	delete d;
     }
     
-    void addSelfSeeBodies(const RobotDesc &rd)
+    void addSelfSeeBodies(void)
     {
-	robot_desc::URDF::Group *ss = rd.urdf->getGroup("self_see");
+	robot_desc::URDF::Group *ss = m_urdf->getGroup("self_see");
 	if (ss)
 	{
 	    for (unsigned int i = 0 ; i < ss->linkNames.size() ; ++i)
 	    {
-		planning_models::KinematicModel::Link *link = rd.kmodel->getLink(ss->linkNames[i]);
+		planning_models::KinematicModel::Link *link = m_kmodel->getLink(ss->linkNames[i]);
 		if (link)
 		{
 		    RobotPart rp = { NULL, link };    
@@ -396,13 +432,13 @@ private:
 
 	while (!m_currentWorld.empty() && (time - m_currentWorld.front()->header.stamp).to_double() > m_retainPointcloudDuration)
 	{
-	    PointCloudFloat32* old = m_currentWorld.front();
+	    std_msgs::PointCloudFloat32* old = m_currentWorld.front();
 	    m_currentWorld.pop_front();
 	    delete old;
 	}
 
 	/* add new data */
-	PointCloudFloat32 *newData = runFilters(m_toProcess);
+	std_msgs::PointCloudFloat32 *newData = runFilters(m_toProcess);
 	if (newData)
 	{
 	    if (newData->get_pts_size() == 0)
@@ -411,21 +447,20 @@ private:
 		m_currentWorld.push_back(newData);
 	}
 	
-	if (m_verbose > 0)
+	if (m_verbose)
 	{
 	    double window = m_currentWorld.size() > 0 ? (m_currentWorld.back()->header.stamp - m_currentWorld.front()->header.stamp).to_double() : 0.0;
 	    printf("World map containing %d point clouds (window size = %f seconds)\n", m_currentWorld.size(), window);
-	}
-	
+	}	
     }
     
-    PointCloudFloat32* runFilters(const PointCloudFloat32 &cloud)
+    std_msgs::PointCloudFloat32* runFilters(const std_msgs::PointCloudFloat32 &cloud)
     {
-	PointCloudFloat32 *cloudF = filter0(cloud, m_retainPointcloudFraction);
+	std_msgs::PointCloudFloat32 *cloudF = filter0(cloud, m_retainPointcloudFraction);
 	
 	if (cloudF)
 	{
-	    PointCloudFloat32 *temp = filter1(*cloudF);
+	    std_msgs::PointCloudFloat32 *temp = filter1(*cloudF);
 	    delete cloudF;
 	    cloudF = temp;
 	}
@@ -435,9 +470,9 @@ private:
     
     /* Remove invalid floating point values and strip channel iformation.
      * Also keep a certain ratio of the cloud information only */
-    PointCloudFloat32* filter0(const PointCloudFloat32 &cloud, double frac = 1.0)
+    std_msgs::PointCloudFloat32* filter0(const std_msgs::PointCloudFloat32 &cloud, double frac = 1.0)
     {
-	PointCloudFloat32 *copy = new PointCloudFloat32();
+	std_msgs::PointCloudFloat32 *copy = new std_msgs::PointCloudFloat32();
 	copy->header = cloud.header;
 
 	unsigned int n = cloud.get_pts_size();
@@ -452,9 +487,9 @@ private:
 	return copy;	
     }    
     
-    PointCloudFloat32* filter1(const PointCloudFloat32 &cloud)
+    std_msgs::PointCloudFloat32* filter1(const std_msgs::PointCloudFloat32 &cloud)
     {
-	PointCloudFloat32 *copy = new PointCloudFloat32();
+	std_msgs::PointCloudFloat32 *copy = new std_msgs::PointCloudFloat32();
 	copy->header = cloud.header;
 	
 	for (int i = m_selfSeeParts.size() - 1 ; i >= 0 ; --i)
@@ -479,46 +514,64 @@ private:
 		    copy->pts[j++] = cloud.pts[k];
 	    }
 	}
-	printf("Discarded %d points\n", n - j);
+	if (m_verbose)
+	    printf("Discarded %d points\n", n - j);
 	
 	copy->set_pts_size(j);
 
 	return copy;
     }
     
-    rosTFClient                    m_tf;
-    random_utils::rngState         m_rng;    
+    rosTFClient                              m_tf;
 
-    std::vector<RobotDesc>         m_robotDescriptions;
-    std::vector<RobotPart>         m_selfSeeParts;
+    robot_desc::URDF                        *m_urdf;
+    planning_models::KinematicModel         *m_kmodel;	
     
-    double                         m_maxPublishFrequency;
-    double                         m_retainPointcloudDuration;
-    double                         m_retainPointcloudFraction;    
-    int                            m_verbose;
-    
-    LaserScan                      m_inputScan; //Buffer for recieving cloud
-    PointCloudFloat32              m_toProcess; //Buffer (size 1) for incoming cloud
-    std_msgs::RobotBase2DOdom      m_localizedPose;
+    std::vector<RobotPart>                   m_selfSeeParts;
+    double                                   m_basePos[3];
 
-    std::deque<PointCloudFloat32*> m_currentWorld;// Pointers to saved clouds
-    double                         m_basePos[3];
+    std::deque<std_msgs::PointCloudFloat32*> m_currentWorld;// Pointers to saved clouds
+
+
     
-    pthread_t                     *m_processingThread;
-    pthread_t                     *m_publishingThread;
-    ros::thread::mutex             m_processMutex, m_publishMutex, m_worldDataMutex, m_flagMutex;
-    bool                           m_active, m_working, m_shouldPublish;
+    double                           m_maxPublishFrequency;
+    double                           m_retainPointcloudDuration;
+    double                           m_retainPointcloudFraction;    
+    int                              m_verbose;
+    
+    std_msgs::LaserScan              m_inputScan; //Buffer for recieving cloud
+    std_msgs::PointCloudFloat32      m_toProcess; //Buffer (size 1) for incoming cloud
+    std_msgs::RobotBase2DOdom        m_localizedPose;
+
+
+    pthread_t                       *m_processingThread;
+    pthread_t                       *m_publishingThread;
+    ros::thread::mutex               m_processMutex, m_publishMutex, m_worldDataMutex, m_flagMutex;
+    bool                             m_active, m_working, m_shouldPublish;
+    random_utils::rngState           m_rng;
 
 };
 
+void usage(const char *progname)
+{
+    printf("\nUsage: %s robot_model [standard ROS args]\n", progname);
+    printf("       \"robot_model\" is the name (string) of a robot description to be used when building the map.\n");
+    printf("       This allows for removing parts of the laser scan that see the robot itself.\n");
+    printf("       If no robot model is to be used, specify '-' for the \"robot_model\" argument.\n\n");
+}
 
 int main(int argc, char **argv)
 {  
     ros::init(argc, argv);
-
-    World3DMap map;
-    map.spin();
-    map.shutdown();
+    
+    if (argc == 2)
+    {
+	World3DMap map(argv[1]);
+	map.spin();
+	map.shutdown();
+    }
+    else
+	usage(argv[0]);
     
     return 0;    
 }
