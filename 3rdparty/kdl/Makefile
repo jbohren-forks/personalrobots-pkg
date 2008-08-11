@@ -2,7 +2,7 @@ all: build
 
 SVN_DIR = kdl-svn
 SVN_URL = http://svn.mech.kuleuven.be/repos/orocos/trunk/kdl
-SVN_REVISION = 
+SVN_REVISION =  -r 29471
 SVN_PATCH = kdl_patch.diff
 include $(shell rospack find mk)/svn_checkout.mk
 
