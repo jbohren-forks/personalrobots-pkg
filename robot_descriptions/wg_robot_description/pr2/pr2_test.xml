@@ -727,7 +727,7 @@
     <parent> base</parent>
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> base_caster_offset_x base_caster_offset_y base_caster_offset_z </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
-    <joint clone="pr2_caster_joint"/>
+    <joint name="caster_front_left_joint" clone="pr2_caster_joint"/>
     <inertial clone="pr2_caster_inertial"/>
     <visual clone="pr2_caster_visual"/>
     <collision clone="pr2_caster_collision"/>
@@ -739,7 +739,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> base_caster_offset_x -base_caster_offset_y base_caster_offset_z </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_caster_joint"/>
+    <joint name="caster_front_right_joint" clone="pr2_caster_joint"/>
     <inertial clone="pr2_caster_inertial"/>
     <visual clone="pr2_caster_visual"/>
     <collision clone="pr2_caster_collision"/>
@@ -751,7 +751,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
       <xyz> -base_caster_offset_x base_caster_offset_y base_caster_offset_z </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-      <joint clone="pr2_caster_joint"/>
+      <joint name="caster_rear_left_joint" clone="pr2_caster_joint"/>
       <inertial clone="pr2_caster_inertial"/>
       <visual clone="pr2_caster_visual"/>
     <collision clone="pr2_caster_collision"/>
@@ -763,7 +763,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
       <xyz> -base_caster_offset_x -base_caster_offset_y base_caster_offset_z </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-      <joint clone="pr2_caster_joint"/>
+      <joint name="caster_rear_right_joint" clone="pr2_caster_joint"/>
       <inertial clone="pr2_caster_inertial"/>
       <visual clone="pr2_caster_visual"/>
     <collision clone="pr2_caster_collision"/>
@@ -775,7 +775,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> 0 caster_wheel_offset_y 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_wheel_joint"/>
+    <joint name="wheel_front_left_l_joint" clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
     <visual clone="pr2_wheel_left_visual"/>
     <collision clone="pr2_wheel_collision"/>
@@ -787,7 +787,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> 0 -caster_wheel_offset_y 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_wheel_joint"/>
+    <joint name="wheel_front_left_r_joint" clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
     <visual clone="pr2_wheel_right_visual"/>
     <collision clone="pr2_wheel_collision"/>
@@ -799,7 +799,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> 0 caster_wheel_offset_y 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_wheel_joint"/>
+    <joint name="wheel_front_right_l_joint" clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
     <visual clone="pr2_wheel_left_visual"/>
     <collision clone="pr2_wheel_collision"/>
@@ -812,7 +812,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> 0 -caster_wheel_offset_y 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_wheel_joint"/>
+    <joint name="wheel_front_right_r_joint" clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
     <visual clone="pr2_wheel_right_visual"/>
     <collision clone="pr2_wheel_collision"/>
@@ -824,7 +824,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> 0 caster_wheel_offset_y 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_wheel_joint"/>
+    <joint name="wheel_rear_left_l_joint" clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
     <visual clone="pr2_wheel_left_visual"/>
     <collision clone="pr2_wheel_collision"/>
@@ -836,7 +836,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> 0 -caster_wheel_offset_y 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_wheel_joint"/>
+    <joint name="wheel_rear_left_r_joint" clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
     <visual clone="pr2_wheel_right_visual"/>
     <collision clone="pr2_wheel_collision"/>
@@ -848,7 +848,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> 0 caster_wheel_offset_y 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_wheel_joint"/>
+    <joint name="wheel_rear_right_l_joint" clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
     <visual clone="pr2_wheel_left_visual"/>
     <collision clone="pr2_wheel_collision"/>
@@ -860,7 +860,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> 0 -caster_wheel_offset_y 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_wheel_joint"/>
+    <joint name="wheel_rear_right_r_joint" clone="pr2_wheel_joint"/>
     <inertial clone="pr2_wheel_inertial"/>
     <visual clone="pr2_wheel_right_visual"/>
     <collision clone="pr2_wheel_collision"/>
@@ -875,7 +875,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> base_torso_offset_x 0 base_torso_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint type="prismatic"> 
+    <joint name="torso_joint" type="prismatic"> 
       <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit> 0.0 torso_max_travel_range </limit> <!-- 0 for min range since home position is at bottom -->
@@ -919,7 +919,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> 0 torso_shoulder_pan_offset_y 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_shoulder_pan_joint"/>
+    <joint name="shoulder_pan_left_joint" clone="pr2_shoulder_pan_joint"/>
     <inertial clone="pr2_shoulder_pan_inertial"/>
     <visual clone="pr2_shoulder_pan_visual"/>
     <collision clone="pr2_shoulder_pan_collision"/>
@@ -931,7 +931,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> 0 -torso_shoulder_pan_offset_y 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_shoulder_pan_joint"/>
+    <joint name="shoulder_pan_right_joint" clone="pr2_shoulder_pan_joint"/>
     <inertial clone="pr2_shoulder_pan_inertial"/>
     <visual clone="pr2_shoulder_pan_visual"/>
     <collision clone="pr2_shoulder_pan_collision"/>
@@ -944,7 +944,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> shoulder_pan_shoulder_pitch_offset_x 0 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_shoulder_pitch_joint"/>
+    <joint name="shoulder_pitch_left_joint" clone="pr2_shoulder_pitch_joint"/>
     <inertial clone="pr2_shoulder_pitch_inertial"/>
     <visual clone="pr2_shoulder_pitch_visual"/>
     <collision clone="pr2_shoulder_pitch_collision"/>
@@ -956,7 +956,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> shoulder_pan_shoulder_pitch_offset_x 0 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_shoulder_pitch_joint"/>
+    <joint name="shoulder_pitch_right_joint" clone="pr2_shoulder_pitch_joint"/>
     <inertial clone="pr2_shoulder_pitch_inertial"/>
     <visual clone="pr2_shoulder_pitch_visual"/>
     <collision clone="pr2_shoulder_pitch_collision"/>
@@ -968,7 +968,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> 0 0 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_upperarm_roll_joint"/>
+    <joint name="upperarm_roll_left_joint" clone="pr2_upperarm_roll_joint"/>
     <inertial clone="pr2_upperarm_roll_inertial"/>
     <visual clone="pr2_upperarm_roll_visual"/>
     <collision clone="pr2_upperarm_roll_collision"/>
@@ -980,7 +980,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> 0 0 0 </xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_upperarm_roll_joint"/>
+    <joint name="upperarm_roll_right_joint" clone="pr2_upperarm_roll_joint"/>
     <inertial clone="pr2_upperarm_roll_inertial"/>
     <visual clone="pr2_upperarm_roll_visual"/>
     <collision clone="pr2_upperarm_roll_collision"/>
@@ -993,7 +993,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> upperarm_roll_elbow_flex_offset_x 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_elbow_flex_joint"/>
+    <joint name="elbow_flex_left_joint" clone="pr2_elbow_flex_joint"/>
     <inertial clone="pr2_elbow_flex_inertial"/>
     <visual clone="pr2_elbow_flex_visual"/>
     <collision clone="pr2_elbow_flex_collision"/>
@@ -1005,7 +1005,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> upperarm_roll_elbow_flex_offset_x 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_elbow_flex_joint"/>
+    <joint name="elbow_flex_right_joint" clone="pr2_elbow_flex_joint"/>
     <inertial clone="pr2_elbow_flex_inertial"/>
     <visual clone="pr2_elbow_flex_visual"/>
     <collision clone="pr2_elbow_flex_collision"/>
@@ -1016,7 +1016,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_forearm_roll_joint"/>
+    <joint name="forearm_roll_left_joint" clone="pr2_forearm_roll_joint"/>
     <inertial clone="pr2_forearm_roll_inertial"/>
     <visual clone="pr2_forearm_roll_visual"/>
     <collision clone="pr2_forearm_roll_collision"/>
@@ -1027,7 +1027,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_forearm_roll_joint"/>
+    <joint name="forearm_roll_right_joint" clone="pr2_forearm_roll_joint"/>
     <inertial clone="pr2_forearm_roll_inertial"/>
     <visual clone="pr2_forearm_roll_visual"/>
     <collision clone="pr2_forearm_roll_collision"/>
@@ -1038,7 +1038,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> elbow_roll_wrist_flex_offset_x 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_wrist_flex_joint"/>
+    <joint name="wrist_flex_left_joint" clone="pr2_wrist_flex_joint"/>
     <inertial clone="pr2_wrist_flex_inertial"/>
     <visual clone="pr2_wrist_flex_visual"/>
     <collision clone="pr2_wrist_flex_collision"/>
@@ -1050,7 +1050,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> elbow_roll_wrist_flex_offset_x 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_wrist_flex_joint"/>
+    <joint name="wrist_flex_right_joint" clone="pr2_wrist_flex_joint"/>
     <inertial clone="pr2_wrist_flex_inertial"/>
     <visual clone="pr2_wrist_flex_visual"/>
     <collision clone="pr2_wrist_flex_collision"/>
@@ -1061,7 +1061,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_gripper_roll_joint"/>
+    <joint name="gripper_roll_left_joint" clone="pr2_gripper_roll_joint"/>
     <inertial clone="pr2_gripper_roll_inertial"/>
     <visual clone="pr2_gripper_roll_visual"/>
     <collision clone="pr2_gripper_roll_collision"/>
@@ -1073,7 +1073,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> 0 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_gripper_roll_joint"/>
+    <joint name="gripper_roll_right_joint" clone="pr2_gripper_roll_joint"/>
     <inertial clone="pr2_gripper_roll_inertial"/>
     <visual clone="pr2_gripper_roll_visual"/>
     <collision clone="pr2_gripper_roll_collision"/>
@@ -1090,7 +1090,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> gripper_roll_finger_l_offset_x gripper_roll_finger_l_offset_y gripper_roll_finger_l_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_finger_l_joint"/>
+    <joint name="finger_l_left_joint" clone="pr2_finger_l_joint"/>
     <inertial clone="pr2_finger_l_inertial"/>
     <visual clone="pr2_finger_l_visual"/>
     <collision clone="pr2_finger_l_collision"/>
@@ -1103,7 +1103,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> finger_l_finger_tip_l_offset_x finger_l_finger_tip_l_offset_y finger_l_finger_tip_l_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_finger_tip_l_joint"/>
+    <joint name="finger_tip_l_left_joint" clone="pr2_finger_tip_l_joint"/>
     <inertial clone="pr2_finger_tip_l_inertial"/>
     <visual clone="pr2_finger_tip_l_visual"/>
     <collision clone="pr2_finger_tip_l_collision"/>
@@ -1116,7 +1116,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> gripper_roll_finger_r_offset_x gripper_roll_finger_r_offset_y gripper_roll_finger_r_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_finger_r_joint"/>
+    <joint name="finger_r_left_joint" clone="pr2_finger_r_joint"/>
     <inertial clone="pr2_finger_r_inertial"/>
     <visual clone="pr2_finger_r_visual"/>
     <collision clone="pr2_finger_r_collision"/>
@@ -1129,7 +1129,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> finger_r_finger_tip_r_offset_x finger_r_finger_tip_r_offset_y finger_r_finger_tip_r_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_finger_tip_r_joint"/>
+    <joint name="finger_tip_r_left_joint" clone="pr2_finger_tip_r_joint"/>
     <inertial clone="pr2_finger_tip_r_inertial"/>
     <visual clone="pr2_finger_tip_r_visual"/>
     <collision clone="pr2_finger_tip_r_collision"/>
@@ -1146,7 +1146,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> gripper_roll_finger_l_offset_x gripper_roll_finger_l_offset_y gripper_roll_finger_l_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_finger_l_joint"/>
+    <joint name="finger_l_right_joint" clone="pr2_finger_l_joint"/>
     <inertial clone="pr2_finger_l_inertial"/>
     <visual clone="pr2_finger_l_visual"/>
     <collision clone="pr2_finger_l_collision"/>
@@ -1159,7 +1159,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> finger_l_finger_tip_l_offset_x finger_l_finger_tip_l_offset_y finger_l_finger_tip_l_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_finger_tip_l_joint"/>
+    <joint name="finger_tip_l_right_joint" clone="pr2_finger_tip_l_joint"/>
     <inertial clone="pr2_finger_tip_l_inertial"/>
     <visual clone="pr2_finger_tip_l_visual"/>
     <collision clone="pr2_finger_tip_l_collision"/>
@@ -1172,7 +1172,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> gripper_roll_finger_r_offset_x gripper_roll_finger_r_offset_y gripper_roll_finger_r_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_finger_r_joint"/>
+    <joint name="finger_r_right_joint" clone="pr2_finger_r_joint"/>
     <inertial clone="pr2_finger_r_inertial"/>
     <visual clone="pr2_finger_r_visual"/>
     <collision clone="pr2_finger_r_collision"/>
@@ -1185,7 +1185,7 @@
     <rpy> 0 0 0 </rpy> <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <xyz> finger_r_finger_tip_r_offset_x finger_r_finger_tip_r_offset_y finger_r_finger_tip_r_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint clone="pr2_finger_tip_r_joint"/>
+    <joint name="finger_tip_r_right_joint" clone="pr2_finger_tip_r_joint"/>
     <inertial clone="pr2_finger_tip_r_inertial"/>
     <visual clone="pr2_finger_tip_r_visual"/>
     <collision clone="pr2_finger_tip_r_collision"/>
@@ -1204,7 +1204,7 @@
     <xyz> torso_head_pan_offset_x 0 torso_head_pan_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
 
-    <joint type="revolute"> 
+    <joint name="head_pan_joint" type="revolute"> 
       <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit> head_pan_min_limit head_pan_max_limit </limit>
@@ -1245,7 +1245,7 @@
     <xyz> head_pan_head_tilt_offset_x 0 0</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
 
-    <joint type="revolute"> 
+    <joint name="head_tilt_joint" type="revolute"> 
       <axis> 0 1 0 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit> head_tilt_min_limit head_tilt_max_limit </limit>
@@ -1658,7 +1658,7 @@
     <xyz> torso_ptz_pan_left_offset_x torso_ptz_pan_left_offset_y torso_ptz_pan_left_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
 
-    <joint type="revolute"> 
+    <joint name="ptz_pan_left_joint" type="revolute"> 
       <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit> ptz_pan_min_limit ptz_pan_max_limit </limit>
@@ -1754,7 +1754,7 @@
     <xyz> torso_ptz_pan_right_offset_x torso_ptz_pan_right_offset_y torso_ptz_pan_right_offset_z</xyz> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
 
-    <joint type="revolute"> 
+    <joint name="ptz_pan_right_joint" type="revolute"> 
       <axis> 0 0 1 </axis> <!-- direction of the joint in a local coordinate frame -->
       <anchor>0 0 0  </anchor> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit> ptz_pan_min_limit ptz_pan_max_limit </limit>
