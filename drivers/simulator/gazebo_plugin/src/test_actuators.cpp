@@ -48,7 +48,7 @@ namespace gazebo {
 GZ_REGISTER_DYNAMIC_CONTROLLER("test_actuators", GazeboActuators);
 
 GazeboActuators::GazeboActuators(Entity *parent)
-  : Controller(parent), hw_(0), mc_(&hw_) //, mcn_(&mc_)
+  : Controller(parent) // , hw_(0), mc_(&hw_) //, mcn_(&mc_)
 {
    this->parent_model_ = dynamic_cast<Model*>(this->parent);
 
@@ -67,6 +67,9 @@ GazeboActuators::GazeboActuators(Entity *parent)
   }
   tfc = new rosTFClient(*rosnode_); //, true, 1 * 1000000000ULL, 0ULL);
 
+  // initialize hardware interface
+  hw_ = new HardwareInterface(0);
+
   // uses info from wg_robot_description_parser/send.xml
   std::string pr2Content;
   // get pr2.xml for Ioan's parser
@@ -77,7 +80,7 @@ GazeboActuators::GazeboActuators(Entity *parent)
 
 GazeboActuators::~GazeboActuators()
 {
-  deleteElements(&gazebo_joints_);
+  //deleteElements(&gazebo_joints_);
 }
 
 void GazeboActuators::LoadChild(XMLConfigNode *node)
@@ -190,7 +193,7 @@ void GazeboActuators::InitChild()
 
   // TODO: mc_.init();
 
-  hw_.current_time_ = Simulator::Instance()->GetSimTime();
+  hw_->current_time_ = Simulator::Instance()->GetSimTime();
 }
 
 void GazeboActuators::UpdateChild()
@@ -335,7 +338,7 @@ void GazeboActuators::LoadMC(XMLConfigNode *node)
       mech_robot_->joints_lookup_.insert(make_pair((*lit)->joint->name,(mech_robot_->joints_.size())-1));
     }
   }
-  mech_robot_->hw_ = &hw_;
+  mech_robot_->hw_ = hw_;
 
 
 
@@ -396,7 +399,7 @@ void GazeboActuators::LoadMC(XMLConfigNode *node)
       reverse_mech_robot_->joints_lookup_.insert(make_pair((*lit)->joint->name,(reverse_mech_robot_->joints_.size())-1));
     }
   }
-  reverse_mech_robot_->hw_ = &hw_;
+  reverse_mech_robot_->hw_ = hw_;
 
 
 
@@ -662,7 +665,7 @@ void GazeboActuators::LoadMC(XMLConfigNode *node)
       robot_actuators_.insert(make_pair(actuator.name,actuator));
 
       // formal structures
-      hw_.actuators_.push_back(&actuator.actuator);
+      hw_->actuators_.push_back(&actuator.actuator);
       //actuator_names_.push_back(actuator.name);
 
       std::cout << " actuator name " << actuator.name
@@ -730,7 +733,7 @@ void GazeboActuators::LoadMC(XMLConfigNode *node)
 void GazeboActuators::UpdateMC()
 {
   // pass time to robot
-  hw_.current_time_ = Simulator::Instance()->GetSimTime();
+  hw_->current_time_ = Simulator::Instance()->GetSimTime();
   //---------------------------------------------------------------------
   // Real time update calls to mechanism control
   // this is what the hard real time loop does,
@@ -745,9 +748,9 @@ void GazeboActuators::UpdateMC()
     if ((*rci).gazebo_joint_type == "gripper")
     {
       gazebo::HingeJoint* gj_f_l     = (gazebo::HingeJoint*) (*rci).gazebo_joints_[0];
-      gazebo::HingeJoint* gj_f_r     = (gazebo::HingeJoint*) (*rci).gazebo_joints_[1];
-      gazebo::HingeJoint* gj_f_tip_l = (gazebo::HingeJoint*) (*rci).gazebo_joints_[2];
-      gazebo::HingeJoint* gj_f_tip_r = (gazebo::HingeJoint*) (*rci).gazebo_joints_[3];
+      //gazebo::HingeJoint* gj_f_r     = (gazebo::HingeJoint*) (*rci).gazebo_joints_[1];
+      //gazebo::HingeJoint* gj_f_tip_l = (gazebo::HingeJoint*) (*rci).gazebo_joints_[2];
+      //gazebo::HingeJoint* gj_f_tip_r = (gazebo::HingeJoint*) (*rci).gazebo_joints_[3];
       (*rci).mech_joint_->position_       = gj_f_l->GetAngle();
       (*rci).mech_joint_->velocity_       = gj_f_l->GetAngleRate();
       (*rci).mech_joint_->applied_effort_ = (*rci).mech_joint_->commanded_effort_;

@@ -71,7 +71,7 @@ private:
   //---------------------------------------------------------------------
   //  for mechanism control
   //---------------------------------------------------------------------
-  MechanismControl mc_;
+  //MechanismControl mc_;
   //MechanismControlNode mcn_; // multiple nodes per process
 
   // pointer to ros node
@@ -81,9 +81,9 @@ private:
   void UpdateMC();
 
   // for the mechanism control code loading xml
-  std::string interface; // xml filename for the hardware interface
-  std::string xml_file; // xml filename for the robot
-  TiXmlElement *root;
+  //std::string interface; // xml filename for the hardware interface
+  //std::string xml_file; // xml filename for the robot
+  //TiXmlElement *root;
 
   // JMH: as far as I know, this parsing in mech-control is not functional yet,
   // so I am going to use either:
@@ -92,11 +92,11 @@ private:
   // 
   // steps are defined below
   //   1. fill in MechanismControl->Robot->Joint                                    (defines robot)
-  std::vector<mechanism::Joint*> mech_joints_;
-  std::vector<mechanism::Transmission*> transmissions_;
-  std::vector<std::string> actuator_names_;
-  std::vector<gazebo::Joint*> gazebo_joints_;
-  HardwareInterface hw_;
+  //std::vector<mechanism::Joint*> mech_joints_;
+  //std::vector<mechanism::Transmission*> transmissions_;
+  //std::vector<std::string> actuator_names_;
+  //std::vector<gazebo::Joint*> gazebo_joints_;
+  HardwareInterface *hw_;
 
   //   2. fill in HardwareInterface
   //           actuators_ is a vector
