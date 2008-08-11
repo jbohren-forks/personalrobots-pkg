@@ -90,6 +90,7 @@ void LaserScannerController::initXml(mechanism::Robot *robot, TiXmlElement *conf
 void LaserScannerController::setCommand(double command)
 {
   command_ = command;
+  use_profile_ = false; //Disable automatic profile mode
 }
 
 // Return the current position command
