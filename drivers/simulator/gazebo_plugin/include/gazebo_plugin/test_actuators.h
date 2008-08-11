@@ -42,6 +42,15 @@
 #include <rosTF/rosTF.h>
 #include <ros/node.h>
 
+// roscpp - used for broadcasting time over ros
+#include <rostools/Time.h>
+// ros messages
+#include <std_msgs/RobotBase2DOdom.h>
+#include <std_msgs/BaseVel.h>
+#include <std_msgs/PR2Arm.h>
+#include <std_msgs/Empty.h>
+#include <pr2_msgs/EndEffectorState.h>
+
 // Ioan's parser
 #include <urdf/URDF.h>
 
@@ -57,6 +66,10 @@ public:
   GazeboActuators(Entity *parent);
   virtual ~GazeboActuators();
 
+  void LoadFrameTransformOffsets();
+  void PublishFrameTransforms();
+  int AdvertiseSubscribeMessages();
+
 protected:
   // Inherited from gazebo::Controller
   virtual void LoadChild(XMLConfigNode *node);
@@ -64,7 +77,31 @@ protected:
   virtual void UpdateChild();
   virtual void FiniChild();
 
+  // Callbacks for subscribed messages
+  void CmdBaseVelReceived();
+  void CmdLeftarmconfigReceived();
+  void CmdRightarmconfigReceived();
+  void CmdLeftarmcartesianReceived();
+  void CmdRightarmcartesianReceived();
+
+
 private:
+
+  std_msgs::BaseVel velMsg;
+  std_msgs::RobotBase2DOdom odomMsg;
+  std_msgs::Empty shutterMsg;
+   // arm joint data
+  std_msgs::PR2Arm leftarmMsg;
+  std_msgs::PR2Arm rightarmMsg;
+  // end effector cmds
+  pr2_msgs::EndEffectorState leftarmcartesianMsg;
+  pr2_msgs::EndEffectorState rightarmcartesianMsg;
+
+  rostools::Time timeMsg;
+
+  std_msgs::Point3DFloat32 objectPosMsg;
+
+ 
 
   Model *parent_model_;
 
@@ -199,18 +236,168 @@ private:
 
 
 
+
+
+
+  //------------------------------------------------------------
+  // offsets for frame transform
+  //------------------------------------------------------------
+  double base_center_offset_z;
+  double base_torso_offset_x;
+  double base_torso_offset_y;
+  double base_torso_offset_z;
+  double sh_pan_left_torso_offset_x;
+  double sh_pan_left_torso_offset_y;
+  double sh_pan_left_torso_offset_z;
+  double shoulder_pitch_left_offset_x;
+  double shoulder_pitch_left_offset_y;
+  double shoulder_pitch_left_offset_z;
+  double upperarm_roll_left_offset_x;
+  double upperarm_roll_left_offset_y;
+  double upperarm_roll_left_offset_z;
+  double elbow_flex_left_offset_x;
+  double elbow_flex_left_offset_y;
+  double elbow_flex_left_offset_z;
+  double forearm_roll_left_offset_x;
+  double forearm_roll_left_offset_y;
+  double forearm_roll_left_offset_z;
+  double wrist_flex_left_offset_x;
+  double wrist_flex_left_offset_y;
+  double wrist_flex_left_offset_z;
+  double gripper_roll_left_offset_x;
+  double gripper_roll_left_offset_y;
+  double gripper_roll_left_offset_z;
+  double finger_l_left_offset_x;
+  double finger_l_left_offset_y;
+  double finger_l_left_offset_z;
+  double finger_r_left_offset_x;
+  double finger_r_left_offset_y;
+  double finger_r_left_offset_z;
+  double finger_tip_l_left_offset_x;
+  double finger_tip_l_left_offset_y;
+  double finger_tip_l_left_offset_z;
+  double finger_tip_r_left_offset_x;
+  double finger_tip_r_left_offset_y;
+  double finger_tip_r_left_offset_z;
+  double shoulder_pan_right_offset_x;
+  double shoulder_pan_right_offset_y;
+  double shoulder_pan_right_offset_z;
+  double shoulder_pitch_right_offset_x;
+  double shoulder_pitch_right_offset_y;
+  double shoulder_pitch_right_offset_z;
+  double upperarm_roll_right_offset_x;
+  double upperarm_roll_right_offset_y;
+  double upperarm_roll_right_offset_z;
+  double elbow_flex_right_offset_x;
+  double elbow_flex_right_offset_y;
+  double elbow_flex_right_offset_z;
+  double forearm_roll_right_offset_x;
+  double forearm_roll_right_offset_y;
+  double forearm_roll_right_offset_z;
+  double wrist_flex_right_offset_x;
+  double wrist_flex_right_offset_y;
+  double wrist_flex_right_offset_z;
+  double gripper_roll_right_offset_x;
+  double gripper_roll_right_offset_y;
+  double gripper_roll_right_offset_z;
+  double finger_l_right_offset_x;
+  double finger_l_right_offset_y;
+  double finger_l_right_offset_z;
+  double finger_r_right_offset_x;
+  double finger_r_right_offset_y;
+  double finger_r_right_offset_z;
+  double finger_tip_l_right_offset_x;
+  double finger_tip_l_right_offset_y;
+  double finger_tip_l_right_offset_z;
+  double finger_tip_r_right_offset_x;
+  double finger_tip_r_right_offset_y;
+  double finger_tip_r_right_offset_z;
+
+  double forearm_camera_left_offset_x;
+  double forearm_camera_left_offset_y;
+  double forearm_camera_left_offset_z;
+  double forearm_camera_right_offset_x;
+  double forearm_camera_right_offset_y;
+  double forearm_camera_right_offset_z;
+  double wrist_camera_left_offset_x;
+  double wrist_camera_left_offset_y;
+  double wrist_camera_left_offset_z;
+  double wrist_camera_right_offset_x;
+  double wrist_camera_right_offset_y;
+  double wrist_camera_right_offset_z;
+  double head_pan_offset_x;
+  double head_pan_offset_y;
+  double head_pan_offset_z;
+  double head_tilt_offset_x;
+  double head_tilt_offset_y;
+  double head_tilt_offset_z;
+  double base_laser_offset_x;
+  double base_laser_offset_y;
+  double base_laser_offset_z;
+  double tilt_laser_offset_x;
+  double tilt_laser_offset_y;
+  double tilt_laser_offset_z;
+
+  double caster_front_left_offset_x;
+  double caster_front_left_offset_y;
+  double caster_front_left_offset_z;
+  double wheel_front_left_l_offset_x;
+  double wheel_front_left_l_offset_y;
+  double wheel_front_left_l_offset_z;
+  double wheel_front_left_r_offset_x;
+  double wheel_front_left_r_offset_y;
+  double wheel_front_left_r_offset_z;
+  double caster_front_right_offset_x;
+  double caster_front_right_offset_y;
+  double caster_front_right_offset_z;
+  double wheel_front_right_l_offset_x;
+  double wheel_front_right_l_offset_y;
+  double wheel_front_right_l_offset_z;
+  double wheel_front_right_r_offset_x;
+  double wheel_front_right_r_offset_y;
+  double wheel_front_right_r_offset_z;
+  double caster_rear_left_offset_x;
+  double caster_rear_left_offset_y;
+  double caster_rear_left_offset_z;
+  double wheel_rear_left_l_offset_x;
+  double wheel_rear_left_l_offset_y;
+  double wheel_rear_left_l_offset_z;
+  double wheel_rear_left_r_offset_x;
+  double wheel_rear_left_r_offset_y;
+  double wheel_rear_left_r_offset_z;
+  double caster_rear_right_offset_x;
+  double caster_rear_right_offset_y;
+  double caster_rear_right_offset_z;
+  double wheel_rear_right_l_offset_x;
+  double wheel_rear_right_l_offset_y;
+  double wheel_rear_right_l_offset_z;
+  double wheel_rear_right_r_offset_x;
+  double wheel_rear_right_r_offset_y;
+  double wheel_rear_right_r_offset_z;
+
+
+
+
+
+
+
+
+
+
   // topic name
-  std::string topicName;
+  //std::string topicName;
 
   // frame transform name, should match link name
   // FIXME: extract link name directly?
-  std::string frameName;
+  //std::string frameName;
 
   // A mutex to lock access to fields that are used in message callbacks
   private: ros::thread::mutex lock;
 
   // transform server
   private: rosTFClient *tfc;
+  // transform server
+  private: rosTFServer *tfs;
 
 
 };

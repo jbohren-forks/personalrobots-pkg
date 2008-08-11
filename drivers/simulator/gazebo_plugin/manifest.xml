@@ -14,6 +14,8 @@ A test file for Player interface.
 <depend package="newmat10"/>
 <depend package="generic_controllers"/>
 <depend package="roscpp"/>
+<depend package="std_msgs" />
+<depend package="pr2_msgs" />
 <depend package="rosTF"/>
 <depend package="rosthread"/>
 <depend package="std_msgs"/>
@@ -23,6 +25,6 @@ A test file for Player interface.
 <depend package="mechanism_control" />
 <depend package="wg_robot_description_parser" />
 <export>
-<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lPr2_Actarray -lPr2_Gripper -lP3D -lRos_Camera -lRos_Laser -lgazebo_actuators" />
+<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lPr2_Actarray -lPr2_Gripper -lP3D -lRos_Camera -lRos_Laser -lgazebo_actuators -ltest_actuators" />
 </export>
 </package>
