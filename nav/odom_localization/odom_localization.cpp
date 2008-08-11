@@ -75,31 +75,64 @@ Publishes to (name / type):
 #include <rosTF/rosTF.h>
 
 
-class OdomNode: public ros::node
+class FakeOdomNode: public ros::node
 {
 public:
-    OdomNode(void) : ros::node("odom_localization")
+    FakeOdomNode(void) : ros::node("fake_odom_localization"),
+			 m_tf(*this)
     {
 	advertise<std_msgs::RobotBase2DOdom>("localizedpose");
 	advertise<std_msgs::ParticleCloud2D>("particlecloud");
 	
-	subscribe("odom", m_odomMsg, &OdomNode::odomReceived);
+	m_iniPos.x = m_iniPos.y = m_iniPos.th = 0.0;
+	m_particleCloud.set_particles_size(1);
+	
+	subscribe("odom", m_odomMsg, &FakeOdomNode::odomReceived);
+	subscribe("initialpose", m_iniPos, &FakeOdomNode::initialPoseReceived);
     }
     
-    ~OdomNode(void)
+    ~FakeOdomNode(void)
     {
     }
     
     
 private:
     
-    rosTFServer              *m_tf;
+    rosTFServer               m_tf;
     
     std_msgs::RobotBase2DOdom m_odomMsg;
+    std_msgs::ParticleCloud2D m_particleCloud;
+    std_msgs::Pose2DFloat32   m_iniPos;
+    
+    void initialPoseReceived(void)
+    {
+	update();
+    }
     
     void odomReceived(void)
     {
+	update();
     }
+
+    void update(void)
+    {
+	// change the frame id and republish
+	m_odomMsg.header.frame_id = m_tf.lookup("FRAMEID_MAP");
+	publish("localizedpose", m_odomMsg);
+	m_particleCloud.particles[0] = m_odomMsg.pos;
+	publish("particlecloud", m_particleCloud);
+	
+	m_tf.sendEuler("FRAMEID_ODOM",
+		       "FRAMEID_MAP",
+		       m_iniPos.x,
+		       m_iniPos.y,
+		       0.0,
+		       m_iniPos.th,
+		       0.0,
+		       0.0,
+		       m_odomMsg.header.stamp);
+    }
+    
     
 };
 
@@ -107,7 +140,7 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv);
     
-    OdomNode odom;
+    FakeOdomNode odom;
     odom.spin();
     odom.shutdown();
     
