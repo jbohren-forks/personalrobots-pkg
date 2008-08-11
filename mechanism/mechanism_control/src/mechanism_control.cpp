@@ -106,6 +106,30 @@ void MechanismControl::update()
   // Propagates commands back into the actuators.
   for (unsigned int i = 0; i < model_.transmissions_.size(); ++i)
     model_.transmissions_[i]->propagateEffort();
+  
+  //Attempt to lock the transfert structure
+  // If we get it, update it
+  if(false && roscom_lock_.trylock())
+  {
+    // Some joints were add, we need to resize
+    if(state_.joint_states.size() != model_.joints_.size())
+    {
+      state_.joint_states.resize(model_.joints_.size());
+    }
+    
+    for (unsigned int i = 0; i < model_.joints_.size(); ++i)
+    {
+      state_.joint_states[i].name = model_.joints_[i]->name_;
+      state_.joint_states[i].initialized = model_.joints_[i]->initialized_;
+      state_.joint_states[i].position = model_.joints_[i]->position_;
+      state_.joint_states[i].velocity = model_.joints_[i]->velocity_;
+      state_.joint_states[i].applied_effort = model_.joints_[i]->applied_effort_;
+      state_.joint_states[i].commanded_effort = model_.joints_[i]->commanded_effort_;
+    }
+      
+    //Unlock it
+    roscom_lock_.unlock();
+  }
 }
 
 void MechanismControl::registerControllerType(const std::string& type, ControllerAllocator f)
@@ -188,6 +212,12 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
 void MechanismControlNode::update()
 {
   mc_->update();
+  mc_->roscom_lock_.lock();
+  //Do some data transfert here 
+  robotState.set_joint_states_vec(mc_->state_.joint_states);
+  mc_->roscom_lock_.unlock();
+  //Publish
+  publish(topic_name(), robotState);
 }
 
 bool MechanismControlNode::listControllerTypes(
