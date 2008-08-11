@@ -6,7 +6,7 @@
       <joint name="caster_front_left_joint" type="revolute">
         <pid_defaults controlMode="PD_CONTROL" p="1000" d="0" i="0" iClamp="0" />
         <data name="caster_front_left_data" type="gazebo">
-          <elem ey="1000" explicitDampingCoefficient="1.0" />
+          <elem saturationTorque="1000" explicitDampingCoefficient="1.0" />
         </data>
       </joint>
   </controller>
