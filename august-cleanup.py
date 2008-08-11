@@ -4,6 +4,10 @@ import sys
 import os
 
 SVN_REV_MIN = 2785
+PR_URL = 'https://personalrobots.svn.sf.net/svnroot/personalrobots/pkg/trunk'
+
+## ros package path
+rpp = os.environ['ROS_PACKAGE_PATH']
 
 # directories to purge
 dirs = [
@@ -20,23 +24,46 @@ dirs = [
     'util/transforms',
     ]
 
-# verify the current working directory is the same as personal robots
-rpp = os.environ['ROS_PACKAGE_PATH']
+# get the svn info for this dir
 
-for d in rpp.split(':'):
-    if os.path.samefile(d, '.'):
-        rpp = d
-        break
-else:
-    print >> sys.stderr, "This must be run from the personal robots directory"
-    sys.exit(1)
-
-print "... validated current working directory"
-
-# verify the subversion rev number for this script
 from subprocess import Popen, PIPE
 
 svninfo = (Popen(['svn', 'info'], stdout=PIPE).communicate()[0] or '').strip().split('\n')
+
+# verify the current working directory is the same as personal robots
+
+import string
+svn_url = None
+for l in svninfo:
+    vals = l.split(':')
+    if vals[0] == 'URL':
+        svn_url = ':'.join(vals[1:]).strip()
+        print svn_url
+
+        break
+else:
+    print >> sys.stderr, "ERROR: unable to determine current SVN URL"
+    sys.exit(1)
+if svn_url != PR_URL:
+    
+    #there are various setups in which this might be true, so check
+    #against RPP instead, which isn't as strong
+    
+    print >> sys.stderr, "WARNING: svn info doesn't match, validating against ROS_PACKAGE_PATH instead"
+
+    for d in rpp.split(':'):
+        if os.path.samefile(d, '.'):
+            rpp = d
+            break
+    else:
+        print >> sys.stderr, "ERROR: this must be run from the personal robots directory"
+        sys.exit(1)
+else:
+    print "... SVN URL matches personalrobots"
+    
+print "... validated current working directory"
+
+# verify the subversion rev number for this script
 
 import string
 svn_rev = None
