@@ -127,7 +127,14 @@ namespace gazebo {
 
   void GazeboActuators::FiniChild()
   {
-
+    // TODO: will be replaced by global ros node eventually
+    if (rosnode_ != NULL)
+    {
+      std::cout << "shutdown rosnode in test_actuators" << std::endl;
+      //ros::fini();
+      rosnode_->shutdown();
+      //delete rosnode_;
+    }
   }
 
   void GazeboActuators::LoadMC(XMLConfigNode *node)
@@ -594,16 +601,15 @@ namespace gazebo {
     hw_->current_time_ = Simulator::Instance()->GetSimTime();
 
 
+    this->lock.lock();
     /***************************************************************/
     /*                                                             */
     /*  publish time to ros                                        */
     /*                                                             */
     /***************************************************************/
-    this->lock.lock();
     timeMsg.rostime.sec  = (unsigned long)floor(hw_->current_time_);
     timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  hw_->current_time_ - timeMsg.rostime.sec) );
     rosnode_->publish("time",timeMsg);
-    this->lock.unlock();
     /***************************************************************/
     /*                                                             */
     /*  odometry                                                   */
@@ -648,6 +654,7 @@ namespace gazebo {
     rosnode_->publish("object_position", this->objectPosMsg);
 
 
+    this->lock.unlock();
 
 
     //---------------------------------------------------------------------

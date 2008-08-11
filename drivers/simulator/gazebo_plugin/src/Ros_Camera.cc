@@ -78,6 +78,8 @@ Ros_Camera::Ros_Camera(Entity *parent)
 // Destructor
 Ros_Camera::~Ros_Camera()
 {
+
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -117,8 +119,13 @@ void Ros_Camera::UpdateChild()
 void Ros_Camera::FiniChild()
 {
   // TODO: will be replaced by global ros node eventually
-  delete rosnode;
-  ros::fini();
+  if (rosnode != NULL)
+  {
+    std::cout << "shutdown rosnode in Ros_Camera" << std::endl;
+    //ros::fini();
+    rosnode->shutdown();
+    //delete rosnode;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

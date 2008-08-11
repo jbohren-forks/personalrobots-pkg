@@ -124,6 +124,14 @@ void Ros_Laser::UpdateChild()
 // Finalize the controller
 void Ros_Laser::FiniChild()
 {
+  // TODO: will be replaced by global ros node eventually
+  if (rosnode != NULL)
+  {
+    std::cout << "shutdown rosnode in Ros_Laser" << std::endl;
+    //ros::fini();
+    rosnode->shutdown();
+    //delete rosnode;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
