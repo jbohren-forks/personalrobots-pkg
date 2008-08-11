@@ -1,0 +1,8 @@
+<package>
+  <description>A ROS node that simply forwards odometry information.</description>
+  <author>Ioan A. Sucan</author>
+  <license>BSD</license>
+  <depend package="roscpp" />
+  <depend package="rosTF" />
+  <depend package="std_srvs" />
+</package>
