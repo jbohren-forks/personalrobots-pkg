@@ -74,7 +74,7 @@ public:
 	    req.goal_state.vals[i] = m_basePos[i];
 	    req.start_state.vals[i] = m_basePos[i];
 	}
-	req.goal_state.vals[0] += 4.5;
+	req.goal_state.vals[0] += 2.5;
 	
 
 	req.allowed_time = 5.0;
@@ -160,8 +160,8 @@ int main(int argc, char **argv)
     while (!plan.haveBasePos())
 	dur.sleep();
 
-    //    plan.runTestLeftArm();    
-    plan.runTestBase();
+    plan.runTestLeftArm();    
+    //    plan.runTestBase();
     
     plan.shutdown();
     

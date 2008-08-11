@@ -96,30 +96,26 @@ Provides (name/type):
 - @b "world_3d_map/verbosity_level" : @b [int] sets the verbosity level (default 1)
 **/
 
-#include <ros/node.h>
-#include <ros/time.h>
+#include <planning_models/node.h>
+
 #include <rosthread/member_thread.h>
 #include <rosthread/mutex.h>
+
 #include <std_msgs/PointCloudFloat32.h>
-#include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/LaserScan.h>
 #include <rostools/Log.h>
 
-#include <rosTF/rosTF.h>
-#include <urdf/URDF.h>
-#include <planning_models/kinematic.h>
 #include <collision_space/util.h>
 #include <random_utils/random_utils.h>
 
 #include <deque>
 #include <cmath>
 
-class World3DMap : public ros::node
+class World3DMap : public planning_models::NodeWithRobotModel
 {
 public:
 
-    World3DMap(const char *robot_model) : ros::node("world_3d_map"),
-					  m_tf(*this, true, 1 * 1000000000ULL, 1000000000ULL)
+    World3DMap(const std::string &robot_model) : planning_models::NodeWithRobotModel(robot_model, "world_3d_map")
     {
 	advertise<std_msgs::PointCloudFloat32>("world_3d_map");
 	advertise<rostools::Log>("roserr");
@@ -129,15 +125,12 @@ public:
 	param("retain_pointcloud_fraction", m_retainPointcloudFraction, 0.02);
 	param("verbosity_level", m_verbose, 1);
 	
-	loadRobotDescription(robot_model);
-	
 	/* create a thread that does the processing of the input data.
 	 * and one that handles the publishing of the data */
 	m_active = true;
 	m_working = false;
 	m_shouldPublish = false;
 	random_utils::init(&m_rng);
-	m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
 	
 	m_processMutex.lock();
 	m_publishMutex.lock();
@@ -145,7 +138,6 @@ public:
 	m_publishingThread = ros::thread::member_thread::startMemberFunctionThread<World3DMap>(this, &World3DMap::publishDataThread);
 
 	subscribe("scan", m_inputScan, &World3DMap::pointCloudCallback);
-	subscribe("localizedpose", m_localizedPose, &World3DMap::localizedPoseCallback);
     }
     
     ~World3DMap(void)
@@ -161,11 +153,12 @@ public:
 
 	for (unsigned int i = 0 ; i < m_selfSeeParts.size() ; ++i)
 	    delete m_selfSeeParts[i].body;
-
-	if (m_kmodel)
-	    delete m_kmodel;
-	if (m_urdf)
-	    delete m_urdf;
+    }
+    
+    virtual void setRobotDescription(robot_desc::URDF *file)
+    {
+	planning_models::NodeWithRobotModel::setRobotDescription(file);
+	addSelfSeeBodies();
     }
     
 private:
@@ -176,89 +169,12 @@ private:
 	planning_models::KinematicModel::Link *link;	
     };
   
-    void setRobotDescriptionFromData(const char *data)
+    void baseUpdate(void)
     {
-	robot_desc::URDF *file = new robot_desc::URDF();
-	if (file->loadString(data))
-	    setRobotDescription(file);
-	else
-	    delete file;
-    }
-
-    void setRobotDescription(robot_desc::URDF *file)
-    {
-	m_urdf = file;
-	m_kmodel = new planning_models::KinematicModel();
-	m_kmodel->setVerbose(false);
-	m_kmodel->build(*file);
-	
-	addSelfSeeBodies();
-    }
-  
-    void loadRobotDescription(const char *robot_model)
-    {
-	if (!robot_model || strcmp(robot_model, "-") == 0)
-	{
-	    if (m_verbose)
-		printf("No robot model will be used\n");
-	}
-	else
-	{
-	    std::string content;
-	    if (m_verbose)
-		printf("Attempting to load model '%s'\n", robot_model);
-	    if (get_param(robot_model, content))
-	    {
-		setRobotDescriptionFromData(content.c_str());
-		if (m_verbose)
-		    printf("Success!\n");
-	    }	
-	    else
-		fprintf(stderr, "Robot model '%s' not found!\n", robot_model);
-	}
-    }
-    
-    void localizedPoseCallback(void)
-    {
-	bool success = true;
-	libTF::TFPose2D pose;
-	pose.x = m_localizedPose.pos.x;
-	pose.y = m_localizedPose.pos.y;
-	pose.yaw = m_localizedPose.pos.th;
-	pose.time = m_localizedPose.header.stamp.to_ull();
-	pose.frame = m_localizedPose.header.frame_id;
-	
-	try
-	{
-	    pose = m_tf.transformPose2D("FRAMEID_MAP", pose);
-	}
-	catch(libTF::TransformReference::LookupException& ex)
-	{
-	    fprintf(stderr, "Discarding pose: Transform reference lookup exception\n");
-	    success = false;
-	}
-	catch(libTF::TransformReference::ExtrapolateException& ex)
-	{
-	    fprintf(stderr, "Discarding pose: Extrapolation exception: %s\n", ex.what());
-	    success = false;
-	}
-	catch(...)
-	{
-	    fprintf(stderr, "Discarding pose: Exception in pose computation\n");
-	    success = false;
-	}
-	
-	if (success)
-	{
-	    m_basePos[0] = pose.x;
-	    m_basePos[1] = pose.y;
-	    m_basePos[2] = pose.yaw;
-	    
-	    int group = m_kmodel->getGroupID(m_urdf->getRobotName() + "::base");
-	    if (group >= 0)
-		m_kmodel->computeTransforms(m_basePos, group);
-	}
-	
+	planning_models::NodeWithRobotModel::baseUpdate();
+	int group = m_kmodel->getGroupID(m_urdf->getRobotName() + "::base");
+	if (group >= 0)
+	    m_kmodel->computeTransforms(m_basePos, group);
     }
     
     void pointCloudCallback(void)
@@ -530,16 +446,8 @@ private:
 	return copy;
     }
     
-    rosTFClient                              m_tf;
-
-    robot_desc::URDF                        *m_urdf;
-    planning_models::KinematicModel         *m_kmodel;	
-    
     std::vector<RobotPart>                   m_selfSeeParts;
-    double                                   m_basePos[3];
-
     std::deque<std_msgs::PointCloudFloat32*> m_currentWorld;// Pointers to saved clouds
-
 
     
     double                           m_maxPublishFrequency;
@@ -549,9 +457,7 @@ private:
     
     std_msgs::LaserScan              m_inputScan; //Buffer for recieving cloud
     std_msgs::PointCloudFloat32      m_toProcess; //Buffer (size 1) for incoming cloud
-    std_msgs::RobotBase2DOdom        m_localizedPose;
-
-
+    
     pthread_t                       *m_processingThread;
     pthread_t                       *m_publishingThread;
     ros::thread::mutex               m_processMutex, m_publishMutex, m_worldDataMutex, m_flagMutex;
