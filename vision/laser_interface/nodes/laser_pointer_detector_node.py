@@ -3,12 +3,13 @@ from std_msgs.msg import Point3DFloat64
 import sys, time
 import opencv as cv
 import opencv.highgui as hg
-import camera as cam
-import util as ut
-import random_forest as rf
-import dimreduce as dr
-from laser_detector import *
+import laser_interface.camera as cam
+import laser_interface.random_forest as rf
+import laser_interface.dimreduce as dr
+import laser_interface.util as ut
+from   laser_interface.laser_detector import *
 from threading import RLock
+from pyrob.voice import say
 
 def show_processed(image, masks, detection, blobs, detector):
     masker            = Mask(image)
@@ -336,14 +337,17 @@ class LaserPointerDetectorNode:
             self.state_object.write()
 
         if new_state == self.GATHER_POSITIVE_EXAMPLES:
+            say('gathering positive examples')
             self.state_object = GatherExamples(self.video, 
                     gather_misclassified_only = self.GATHER_MISCLASSIFIED_ONLY, type = 1)
 
         if new_state == self.GATHER_NEGATIVE_EXAMPLES:
+            say('gathering negative examples')
             self.state_object = GatherExamples(self.video, 
                     gather_misclassified_only = self.GATHER_MISCLASSIFIED_ONLY, type = 0)
 
         if new_state == self.DETECT:
+            say('detecting')
             self.state_object = DetectState(self.camera_model, self.video, self.exposure)
 
         self.state_object.set_debug(self.debug)

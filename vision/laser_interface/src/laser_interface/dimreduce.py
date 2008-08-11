@@ -1,4 +1,3 @@
-import laser_detector as ld
 import numpy as np
 #from pylab import *
 
@@ -21,7 +20,6 @@ def pca_variance_threshold(eigen_values, percent_variance=.9):
     return positions[0][0]
 
 def pca(data):
-    #data = ld.load_pickle('PatchClassifier.dataset.pickle')
     cov_data = np.cov(data)
     u, s, vh = np.linalg.svd(cov_data)
     return u,s,vh

@@ -4,8 +4,10 @@
   </description>
   <author>Hai Nguyen/hai@gatech.edu</author>
   <license>BSD</license>
+  <depend package="xmlparam" />
   <depend package="rospy" />
   <depend package="numpy" />
+  <depend package="pyrob" />
   <depend package="matplotlib" />
   <depend package="std_msgs" />  
 </package>

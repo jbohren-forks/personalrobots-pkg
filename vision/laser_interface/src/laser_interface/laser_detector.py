@@ -1,3 +1,4 @@
+from pkg import *
 from opencv import highgui as hg
 import opencv as cv
 import numpy as np
@@ -11,7 +12,6 @@ import camera as cam
 import util as ut
 import random_forest as rf
 import functools as ft
-from pkg import *
 
 class Rect:
     def __init__(self, x, y, width, height):

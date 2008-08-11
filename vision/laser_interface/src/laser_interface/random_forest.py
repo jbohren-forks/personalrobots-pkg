@@ -1,6 +1,7 @@
 import numpy as np
 import itertools as it
 import functools as ft
+import time
 
 class Dataset:
     def __init__(self, inputs, outputs):
@@ -60,7 +61,7 @@ class Dataset:
             selected_pts     = np.random.randint(0, self.inputs.shape[1], points_per_sample)
             selected_inputs  = self.inputs[:, selected_pts]
             selected_outputs = self.outputs[:, selected_pts]
-            print 'Dataset.bootstrap count', i
+            #print 'Dataset.bootstrap count', i
             yield Dataset(selected_inputs, selected_outputs)
 
     def entropy_discrete(self):
@@ -298,8 +299,21 @@ class RFRandomInputSubset(RFBase):
         points_per_sample = dataset.num_examples() * 1.0 / 3.0
         self.learners     = map(train_trees, dataset.bootstrap_samples(self.number_of_learners, points_per_sample))
 
-def evaluate_classifier(building_func, data, times=10.0, percentage=None, extra_args={}):
-    total_pts  = data.num_examples()
+def evaluate_classifier(building_func, data, times=10.0, percentage=None, extra_args={}, test_pca=False):
+    '''
+        Evaluate classifier by dividing dataset into training and test set.
+        @param building_func Function that will build classifier given data and args in extra_args.
+        @param data Dataset to use for evaluation/training.
+        @param times The number of bootstrap samples to take.
+        @param percentage The percentage of data to use for training.
+        @param extra_args Extra arguments to pass to building_func.
+    '''
+    print 'evaluate_classifier: extra_args', extra_args
+    total_pts            = data.num_examples()
+    testing_errors       = []
+    training_errors      = []
+    build_times          = []
+    classification_times = []
     for i in range(times):
         if percentage == None:
             percentage = (i+1)/times
@@ -309,20 +323,60 @@ def evaluate_classifier(building_func, data, times=10.0, percentage=None, extra_
         i                  = data.inputs[:,  subset]
         o                  = data.outputs[:, subset]
         print "Building classifier..."
-        classifier         = building_func(Dataset(i,o), **extra_args)
+        if test_pca:
+            print '            TESTING PCA'
+            import dimreduce as dr
+            subseted_dataset   = LinearDimReduceDataset(i,o)
+            subseted_dataset.set_projection_vectors(dr.pca_vectors(subseted_dataset.inputs, percent_variance=.95))
+            subseted_dataset.reduce_input()
+            print 'subseted_dataset.num_attributes(), subseted_dataset.num_examples()', subseted_dataset.num_attributes(), subseted_dataset.num_examples()
+        else:
+            subseted_dataset   = Dataset(i,o)
+
+        start_time         = time.time()
+        classifier         = building_func(subseted_dataset, **extra_args)
+        build_times.append(time.time() - start_time)
         print "done building..."
 
-        confusion_matrix   = dict()
-        count              = np.matrix(np.zeros((total_pts, 1)))
-        print 'Total points', total_pts
-        for i in xrange(total_pts):
-            prediction = classifier.predict(data.inputs[:,i])
-            true_val   = data.outputs[:,i]
-            #print '       prediction', prediction, ' actual', true_val
-            if prediction == true_val:
-                count[i, 0] = 1
+        ##########################################
+        #Classify training set
+        ##########################################
+        count_selected     = []
+        for i, idx in enumerate(subset):
+            start_time    = time.time()
+            if test_pca:
+                prediction, _ = classifier.predict(data.reduce(data.inputs[:,idx]))
             else:
-                count[i, 0] = 0
+                prediction, _ = classifier.predict(data.inputs[:,idx])
+
+            classification_times.append(time.time() - start_time)
+            true_val      = data.outputs[:,idx]
+            if prediction == true_val:
+                count_selected.append(1)
+            else:
+                count_selected.append(0)
+            if i%100 == 0:
+                print i
+        count_selected = np.matrix(count_selected)
+
+        ##########################################
+        #Classify testing set
+        ##########################################
+        confusion_matrix   = dict()
+        count_unselected   = []
+        print 'Total points', total_pts
+        for idx in unselected:
+            start_time    = time.time()
+            if test_pca:
+                prediction, _ = classifier.predict(data.reduce(data.inputs[:,idx]))
+            else:
+                prediction, _ = classifier.predict(data.inputs[:,idx])
+            classification_times.append(time.time() - start_time)
+            true_val      = data.outputs[:,idx]
+            if prediction == true_val:
+                count_unselected.append(1)
+            else:
+                count_unselected.append(0)
             if confusion_matrix.has_key(true_val[0,0]):
                 if confusion_matrix[true_val[0,0]].has_key(prediction[0,0]):
                     confusion_matrix[true_val[0,0]][prediction[0,0]] = confusion_matrix[true_val[0,0]][prediction[0,0]] + 1
@@ -332,9 +386,12 @@ def evaluate_classifier(building_func, data, times=10.0, percentage=None, extra_
                 confusion_matrix[true_val[0,0]] = dict()
                 confusion_matrix[true_val[0,0]][prediction[0,0]] = 1
 
-        print 'Percent Correct', (np.sum(count) / float(total_pts)) * 100.0, '%'
-        print '    on training set', 100.0 * np.sum(count[subset, 0]) / float(len(subset)), '%'
-        print '    on testing set',  100.0 * np.sum(count[unselected, 0]) / float(len(unselected)), '%'
+        training_error = 100.0 * np.sum(count_selected) / float(len(subset))
+        testing_error  = 100.0 * np.sum(count_unselected) / float(len(unselected))
+        testing_errors.append(testing_error)
+        training_errors.append(training_error)
+        print 'Correct on training set', training_error, '%'
+        print '        on testing set',  testing_error, '%'
         print 'Confusion'
         for k in confusion_matrix.keys():
             sum = 0.0
@@ -343,56 +400,75 @@ def evaluate_classifier(building_func, data, times=10.0, percentage=None, extra_
             for k2 in confusion_matrix[k]:
                 print 'true class', k, 'classified as', k2, 100.0 * (confusion_matrix[k][k2] / sum), '% of the time'
 
+    def print_stats(name, list_data):
+        m = np.matrix(list_data)
+        print '%s: average %f std %f' % (name, m.mean(), np.std(m))
+
+    print_stats('training error', training_errors)
+    print_stats('testing error', testing_errors)
+    print_stats('build time', build_times)
+    print_stats('classification time', classification_times)
+
 
 if __name__ == '__main__':
-    print "Test Dataset.entropy_discrete"
-    input = np.matrix([1, 0, 2, 3])
-    output = np.matrix(['yes', 'no', 'yes', 'no'])
-    dataset = Dataset(input, output)
-    print "Discrete entropy for", output
-    print dataset.entropy_discrete()
+    test_iris         = False
+    test_pickle       = True
+    test_number_trees = False
+    test_pca          = False
+    if test_iris:
+        #Setup for repeated testing
+        iris_array = np.matrix(np.loadtxt('iris.data', dtype='|S30', delimiter=','))
+        inputs     = np.float32(iris_array[:, 0:4]).T
+        outputs    = iris_array[:, 4].T
+        dataset    = Dataset(inputs, outputs)
 
-    print "Test Dataset.bootstrap_samples"
-    input = np.matrix([1, 2, 3, 4, 5, 6, 7, 8])
-    output = np.matrix(['yes', 'no', 'yes', 'no', 'yes', 'no', 'yes', 'no'])
-    dataset = Dataset(input, output)
-    samples = dataset.bootstrap_samples(3, 4)
-    for idx, s in enumerate(samples):
-        print idx, s.inputs
+        print '================================'
+        print "Test DecisionTree"
+        evaluate_classifier(DecisionTree, dataset, 5, .9)
 
-    print "Test Dataset.unique_values"
-    print dataset.unique_values(0)
+        print '================================'
+        #print "Test random forest"
+        #for i in range(4):
+        #    #print "Test RFRandomInputSubset"
+        #    #evaluate_classifier(RFRandomInputSubset, dataset, 1, .7)
+        #    print "Test RFBreiman"
+        #    evaluate_classifier(RFEntropySplitRandomInputSubset, dataset, 1, .7)
+    if test_pickle:
+        import pickle as pk
+        def load_pickle(filename):
+            p = open(filename, 'r')
+            picklelicious = pk.load(p)
+            p.close()
+            return picklelicious
 
-    #Setup for repeated testing
-    iris_array = np.matrix(np.loadtxt('iris.data', dtype='|S30', delimiter=','))
-    inputs     = np.float32(iris_array[:, 0:4]).T
-    outputs    = iris_array[:, 4].T
-    dataset    = Dataset(inputs, outputs)
+        def print_separator(times=2):
+            for i in xrange(times):
+                print '==============================================================='
 
-    print '================================'
-    print "Test DecisionTree"
-    evaluate_classifier(DecisionTree, dataset, 1, .7)
+        dataset = load_pickle('PatchClassifier.dataset.pickle')
+        #if test_pca:
+        #    print_separator(1)
+        #    print_separator(1)
+        #    dataset.reduce_input()
 
-    print '================================'
-    #print "Test random forest"
-    #for i in range(4):
-    #    #print "Test RFRandomInputSubset"
-    #    #evaluate_classifier(RFRandomInputSubset, dataset, 1, .7)
-    #    print "Test RFBreiman"
-    #    evaluate_classifier(RFEntropySplitRandomInputSubset, dataset, 1, .7)
-
-    import laser_detector as ld
-    dataset = ld.load_pickle('PatchClassifier.dataset.pickle')
-    print '==============================================================='
-    print '==============================================================='
-    print "Test RFBreiman"
-    for i in range(4):
-        print 'using', (i+1)*10, 'trees'
-        evaluate_classifier(RFBreiman, dataset, 1, .9, extra_args={'number_of_learners': (i+1)*10})
-    print '==============================================================='
-    print '==============================================================='
-    print "Test RFRandomInputSubset"
-    evaluate_classifier(RFRandomInputSubset, dataset, 1, .9)
+        if test_number_trees:
+            tree_types = [RFBreiman, RFRandomInputSubset]
+            #tree_types = [RFBreiman]
+            for tree_type in tree_types:
+                print_separator()
+                print 'Testing', tree_type
+                for i in range(10):
+                    print tree_type, 'using', (i+1)*10, 'trees'
+                    evaluate_classifier(tree_type, dataset, 3, .95, 
+                            extra_args={'number_of_learners': (i+1)*10}, test_pca=test_pca)
+        else:
+            tree_types = [RFBreiman, RFRandomInputSubset]
+            #tree_types = [RFRandomInputSubset]
+            for tree_type in tree_types:
+                print_separator()
+                print tree_type
+                evaluate_classifier(tree_type, dataset, 10, .95, 
+                        extra_args={'number_of_learners': 70}, test_pca=test_pca)
 
 
 
