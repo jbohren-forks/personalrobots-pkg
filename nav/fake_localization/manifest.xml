@@ -3,6 +3,6 @@
   <author>Ioan A. Sucan</author>
   <license>BSD</license>
   <depend package="roscpp" />
+  <depend package="std_msgs" />
   <depend package="rosTF" />
-  <depend package="std_srvs" />
 </package>

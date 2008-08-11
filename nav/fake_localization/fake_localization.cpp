@@ -122,8 +122,8 @@ private:
 	m_particleCloud.particles[0] = m_odomMsg.pos;
 	publish("particlecloud", m_particleCloud);
 	
-	m_tf.sendEuler("FRAMEID_ODOM",
-		       "FRAMEID_MAP",
+	m_tf.sendEuler("FRAMEID_MAP",
+		       "FRAMEID_ODOM",
 		       m_iniPos.x,
 		       m_iniPos.y,
 		       0.0,
