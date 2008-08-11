@@ -245,10 +245,10 @@ rosTFServer::rosTFServer(ros::node & rosnode):
   nameLookupClient(rosnode),
   myNode(rosnode)
 {
-  myNode.advertise<std_msgs::TransformEuler>("TransformEuler");
-  myNode.advertise<std_msgs::TransformDH>("TransformDH");
-  myNode.advertise<std_msgs::TransformQuaternion>("TransformQuaternion");
-  myNode.advertise<std_msgs::TransformMatrix>("TransformMatrix");
+  myNode.advertise<rosTF::TransformEuler>("TransformEuler");
+  myNode.advertise<rosTF::TransformDH>("TransformDH");
+  myNode.advertise<rosTF::TransformQuaternion>("TransformQuaternion");
+  myNode.advertise<rosTF::TransformMatrix>("TransformMatrix");
 
 };
 
@@ -262,7 +262,7 @@ void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, d
   if (!checkInvalidFrame(frame))
     return;
 
-  std_msgs::TransformEuler eulerOut;
+  rosTF::TransformEuler eulerOut;
   eulerOut.frame = frame;
   eulerOut.parent = parent;
   eulerOut.x = x;
@@ -288,7 +288,7 @@ void rosTFServer::sendInverseEuler(unsigned int frame, unsigned int parent, doub
   if (!checkInvalidFrame(frame))
     return;
 
-  std_msgs::TransformEuler eulerOut;
+  rosTF::TransformEuler eulerOut;
   //Invert the transform
   libTF::Pose3D::Euler odomeuler  = libTF::Pose3D::eulerFromMatrix(libTF::Pose3D::matrixFromEuler(x, y, z, yaw, pitch, roll).i()); //todo optimize
   libTF::Pose3D::Position odompos = libTF::Pose3D::positionFromMatrix(libTF::Pose3D::matrixFromEuler(x, y, z, yaw, pitch, roll).i());
@@ -345,7 +345,7 @@ void rosTFServer::sendDH(unsigned int frame, unsigned int parent, double length,
   if (!checkInvalidFrame(frame))
     return;
 
-  std_msgs::TransformDH dhOut;
+  rosTF::TransformDH dhOut;
 
   dhOut.frame = frame;
   dhOut.parent = parent;
@@ -370,7 +370,7 @@ void rosTFServer::sendQuaternion(unsigned int frame, unsigned int parent, double
   if (!checkInvalidFrame(frame))
     return;
   
-  std_msgs::TransformQuaternion quaternionOut;
+  rosTF::TransformQuaternion quaternionOut;
   quaternionOut.frame = frame;
   quaternionOut.parent = parent;
   quaternionOut.xt = xt;
@@ -400,7 +400,7 @@ void rosTFServer::sendMatrix(unsigned int frame, unsigned int parent, NEWMAT::Ma
 
 
 
-  std_msgs::TransformMatrix matrixOut;
+  rosTF::TransformMatrix matrixOut;
   matrixOut.header.frame_id = frame;
   matrixOut.header.stamp = rostime;
   matrixOut.parent = parent;
