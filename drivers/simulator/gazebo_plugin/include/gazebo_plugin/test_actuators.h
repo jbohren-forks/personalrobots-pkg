@@ -134,6 +134,9 @@ private:
   // for storing pr2 xml
   mechanism::Robot* mech_robot_;
 
+  // for storing reverse transmission results
+  mechanism::Robot* reverse_mech_robot_;
+
   // for storing controller xml
   struct Robot_controller_
   {
@@ -142,6 +145,7 @@ private:
     std::string joint_name;
     std::string joint_type;
     mechanism::Joint* mech_joint_;
+    mechanism::Joint* reverse_mech_joint_;
 
     std::string control_mode; // obsolete? use to pick controller for now
     double p_gain,i_gain,d_gain,windup, init_time;
@@ -166,6 +170,10 @@ private:
       gazebo::Joint* gazebo_joints_;
   };
   std::vector<Robot_transmission_> robot_transmissions_;
+  std::vector<Robot_transmission_> reverse_robot_transmissions_;
+
+  //std::vector<mechanism::SimpleTransmission> forward_simple_transmission;
+  //std::vector<mechanism::SimpleTransmission> reverse_simple_transmission;
 
   // for storing actuator xml
   struct Robot_actuator_
@@ -185,7 +193,7 @@ private:
       // link to joint?
       //gazebo::Joint* gazebo_joints_;
   };
-  std::vector<Robot_actuator_> robot_actuators_;
+  std::map<std::string,Robot_actuator_> robot_actuators_;
 
 
 
