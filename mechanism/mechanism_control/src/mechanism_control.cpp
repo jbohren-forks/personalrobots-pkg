@@ -145,7 +145,6 @@ bool MechanismControl::addController(controller::Controller *c, const std::strin
 
   if (!spot_found)
   {
-    delete c;
     return false;
   }
 
@@ -161,7 +160,13 @@ bool MechanismControl::spawnController(const std::string &type,
     return false;
   c->initXml(&model_, config);
 
-  return addController(c, name);
+  if (!addController(c, name))
+  {
+    delete c;
+    return false;
+  }
+
+  return true;
 }
 
 
