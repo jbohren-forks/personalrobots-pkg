@@ -52,20 +52,7 @@
 #include "mechanism_control/ListControllers.h"
 #include "mechanism_control/SpawnController.h"
 
-#include <mechanism_control/JointState.h>
-#include <mechanism_control/RobotState.h>
-
 typedef controller::Controller* (*ControllerAllocator)();
-
-
-
-struct MechanismState
-{
-  // Reuse structure defined in the JointState message
-  std::vector<mechanism_control::JointState> joint_states;
-  // Add more stuff from the controllers if needed
-};
-
 
 class MechanismControl {
 public:
@@ -88,10 +75,6 @@ public:
   // TODO: deprecated.  Replaced by ControllerFactory
   void registerControllerType(const std::string& type, ControllerAllocator f);
 
-  // Ros communication
-  ros::thread::mutex roscom_lock_;
-  MechanismState state_;
-  
 private:
   bool initialized_;
 
@@ -107,8 +90,6 @@ private:
 class MechanismControlNode : public ros::node
 {
 public:
-  mechanism_control::RobotState robotState;
-  
   MechanismControlNode(MechanismControl *mc);
   virtual ~MechanismControlNode() {}
 
@@ -124,14 +105,7 @@ public:
                        mechanism_control::SpawnController::response &resp);
 
 private:
-  // The name of the topic in which the state of joints is advertised
-  static const char * topic_name()
-  {
-    return "robot_model;";
-  }     
   MechanismControl *mc_;
 };
-
-
 
 #endif /* MECHANISM_CONTROL_H */

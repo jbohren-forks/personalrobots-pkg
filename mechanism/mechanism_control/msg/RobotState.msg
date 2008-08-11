@@ -1,1 +1,0 @@
-JointState[] joint_states
