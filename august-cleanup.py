@@ -90,7 +90,7 @@ for d in dirs:
     if not os.path.exists(p):
         continue
     print "... deleting [%s]"%p
+    time.sleep(2.0)
     shutil.rmtree(p)
-    time.sleep(1.0)
 
 print "... CLEAN!"
