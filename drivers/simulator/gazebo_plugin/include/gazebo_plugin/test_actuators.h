@@ -153,11 +153,6 @@ private:
   // objects.
   // define a map to keep track of joints mapping from mech to gaz
   // struct robot_to_gazebo_joints_
-  // {
-  //   mechanism::Joint* mecj_;
-  //   gazebo::Joint* gazj_;
-  // };
-  // std::map<std::string,robot_to_gazebo_joints_*> joint_map_;
 
   //---------------------------------------------------------------------
   //                                                                   --
@@ -208,9 +203,6 @@ private:
   };
   std::vector<Robot_transmission_> robot_transmissions_;
   std::vector<Robot_transmission_> reverse_robot_transmissions_;
-
-  //std::vector<mechanism::SimpleTransmission> forward_simple_transmission;
-  //std::vector<mechanism::SimpleTransmission> reverse_simple_transmission;
 
   // for storing actuator xml
   struct Robot_actuator_
