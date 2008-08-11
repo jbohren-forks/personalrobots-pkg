@@ -22,6 +22,7 @@ namespace NEWMAT {
 }
 
 namespace scan_utils {
+	template <typename T>
 	class Octree;
 }
 
@@ -194,7 +195,7 @@ class SmartScan {
 					      float x, float y, float z, float support, float pixelsPerMeter);
 
 	//! Inserts all the points in this scan in the Octree \a o with a value of \a 1.
-	void insertInOctree(scan_utils::Octree *o);
+	void insertInOctree(scan_utils::Octree<int> *o);
 	
 	//! Computes a spin image at x, y, z using the surface normal at that point.
 	void computeSpinImageNatural(scan_utils::Grid2D &si, float x, float y, float z, float support, float pixelsPerMeter, float radius = 0.02, int nbrs = 20);

@@ -1558,12 +1558,12 @@ void SmartScan::computeSpinImageNatural(scan_utils::Grid2D &si, float x, float y
 	ss.computeSpinImageFixedOrientation(si, center2.x, center2.y, center2.z, support, pixelsPerMeter);
 }
 
-void SmartScan::insertInOctree(Octree *o)
+void SmartScan::insertInOctree(Octree<int> *o)
 {
 	std_msgs::Point3DFloat32 p;
 	for(int i=0; i<size(); i++) {
 		p = getPoint(i);
-		o->insert(p.x, p.y, p.z, 1.0);
+		o->insert(p.x, p.y, p.z, 1);
 	}
 }
 

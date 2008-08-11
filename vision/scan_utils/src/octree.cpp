@@ -232,6 +232,7 @@ void Octree::setFromMsg(const OctreeMsg &msg)
 	setCenter( msg.center.x, msg.center.y, msg.center.z);
 	setSize(msg.size.x, msg.size.y, msg.size.z);
 	setDepth(msg.max_depth);
+	mEmptyValue = msg.empty_value;
 	unsigned int size = msg.get_structure_data_size();
 	char *data  = new char[size];
 	memcpy(data, msg.structure_data, size);
@@ -250,6 +251,7 @@ void Octree::getAsMsg(OctreeMsg &msg)
 {
 	msg.center.x = mCx; msg.center.y = mCy; msg.center.z = mCz;
 	msg.size.x = mDx; msg.size.y = mDy; msg.size.z = mDz;
+	msg.empty_value = mEmptyValue;
 	msg.max_depth = mMaxDepth;
 	unsigned int size;
 	char *data;
@@ -266,6 +268,7 @@ void Octree::writeToFile(std::ostream &os)
 	fl[0] = mCx; fl[1] = mCy; fl[2] = mCz;
 	fl[3] = mDx; fl[4] = mDy; fl[5] = mDz;
 	os.write((char*)fl, 6 * sizeof(float));
+	os.write((char*)&mEmptyValue, sizeof(int));
 	os.write((char*)&mMaxDepth, sizeof(int));
 
 	//write the volume data
@@ -288,6 +291,7 @@ void Octree::readFromFile(std::istream &is)
 	is.read( (char*)fl, 6*sizeof(float));
 	mCx = fl[0]; mCy = fl[1]; mCz = fl[2];
 	mDx = fl[3]; mDy = fl[4]; mDz = fl[5];
+	is.read( (char*)&mEmptyValue, sizeof(int) );
 	is.read( (char*)&mMaxDepth, sizeof(int) );
 
 	//read the volume data
