@@ -155,7 +155,8 @@ void GazeboActuators::UpdateChild()
   //  Runs Mechanism Control
   //--------------------------------------------------
   hw_.current_time_ = Simulator::Instance()->GetSimTime();
-  mc_.update();
+  //mc_.update();
+  mcn_.update();
 
   //--------------------------------------------------
   //  Takes in actuation commands

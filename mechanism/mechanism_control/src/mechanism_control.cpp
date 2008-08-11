@@ -180,6 +180,15 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   advertise_service("spawn_controller", &MechanismControlNode::spawnController);
 }
 
+bool MechanismControlNode::initXml(TiXmlElement *config)
+{
+  return mc_->initXml(config);
+}
+
+void MechanismControlNode::update()
+{
+  mc_->update();
+}
 
 bool MechanismControlNode::listControllerTypes(
   mechanism_control::ListControllerTypes::request &req,

@@ -70,13 +70,13 @@ public:
   bool spawnController(const std::string &type, const std::string &name, TiXmlElement *config);
 
   mechanism::Robot model_;
+  HardwareInterface *hw_;
 
   // TODO: deprecated.  Replaced by ControllerFactory
   void registerControllerType(const std::string& type, ControllerAllocator f);
 
 private:
   bool initialized_;
-  HardwareInterface *hw_;
 
   const static int MAX_NUM_CONTROLLERS = 100;
   ros::thread::mutex controllers_mutex_;
@@ -92,6 +92,10 @@ class MechanismControlNode : public ros::node
 public:
   MechanismControlNode(MechanismControl *mc);
   virtual ~MechanismControlNode() {}
+
+  bool initXml(TiXmlElement *config);
+
+  void update();  // Must be realtime safe
 
   bool listControllerTypes(mechanism_control::ListControllerTypes::request &req,
                            mechanism_control::ListControllerTypes::response &resp);
