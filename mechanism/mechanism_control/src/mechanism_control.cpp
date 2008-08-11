@@ -109,6 +109,7 @@ void MechanismControl::update()
   
   //Attempt to lock the transfert structure
   // If we get it, update it
+  // TODO: remove the false...
   if(false && roscom_lock_.trylock())
   {
     // Some joints were add, we need to resize
