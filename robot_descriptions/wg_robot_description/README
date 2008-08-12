@@ -12,15 +12,16 @@ Be advised the code is still the most up-to-date documentation.
 and dynamics users should refer to this document for information and
 naming conventions.
 
-  controllers.xml contains the most up-to-date controller xml file
+  controllers.xml should contain the most up-to-date controller xml file
 for the entire robot.  Controller designers should refer to this xml
-file for creating controller architectures.
+file for creating controller architectures.  motor_tests directory
+contains xml files for testing simple motor setups (e.g. etherCAT tests).
 
-  actuators.xml contains the most up-to-date xml file for the
+  actuators.xml should contain the most up-to-date xml file for the
 complete list of actuators in the PR2 robot.  This list should reflect
 actual hardware components for the PR2 robot.
 
-  transmissions.xml contains the most up-to-date transmission
+  transmissions.xml should contain the most up-to-date transmission
 descriptions for the PR2 robot.  This list describes how joints
 described in pr2.xml are related to actuators in actuators.xml.
 
@@ -29,7 +30,7 @@ described in pr2.xml are related to actuators in actuators.xml.
      ros-pkg/robot_descriptions/wg_robot_description_parser
 
 The parser (URDF) reads the xml file and fills in corresponding predefined
-data structures for a robot configuration.  A separate custom parser
+data structures for robot configurations.  An additional custom parser
 exists in 
 
      ros-pkg/robot_descriptions/gazebo_robot_description
