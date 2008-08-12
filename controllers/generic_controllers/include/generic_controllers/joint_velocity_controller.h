@@ -90,6 +90,11 @@ public:
   double getCommand();
 
   /*!
+   * \brief Get latest time..
+   */
+  double getTime();
+
+  /*!
    * \brief Read the torque of the motor
    */
   double getActual();

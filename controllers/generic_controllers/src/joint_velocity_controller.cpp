@@ -87,6 +87,11 @@ double JointVelocityController::getCommand()
   return command_;
 }
 
+double JointVelocityController::getTime()
+{
+  return robot_->hw_->current_time_;
+}
+
 // Return the measured joint velocity
 double JointVelocityController::getActual()
 {
@@ -141,6 +146,7 @@ bool JointVelocityControllerNode::getCommand(
   generic_controllers::GetCommand::response &resp)
 {
   resp.command = c_->getCommand();
+  resp.time = c_->getTime();
 
   return true;
 }

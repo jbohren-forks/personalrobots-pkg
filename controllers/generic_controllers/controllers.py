@@ -29,7 +29,7 @@ def set_controller(controller, command):
 def get_controller(controller):
     s = rospy.ServiceProxy(controller + '/get_command', GetCommand)
     resp = s.call(GetCommandRequest())
-    print resp.command
+    print str(resp.time) + ": " + str(resp.command)
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
