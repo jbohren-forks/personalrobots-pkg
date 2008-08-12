@@ -35,19 +35,18 @@
 #pragma once
 
 /***************************************************/
-/*! \class controller::JointPositionController
-    \brief Joint Position Controller
+/*! \class controller::RampInputController
+    \brief Ramp Input Controller
     
-    This class closes the loop around positon using
-    a pid loop. 
+    This class basically gives a ramp input to an 
+    acuator.
 
 */
 /***************************************************/
 
-#include <ros/node.h>
 
+#include <ros/node.h>
 #include <generic_controllers/controller.h>
-#include <generic_controllers/pid.h>
 
 // Services
 #include <generic_controllers/SetCommand.h>
@@ -56,38 +55,30 @@
 namespace controller
 {
 
-class JointPositionController : public Controller
+class RampInputController : public Controller
 {
 public:
   /*!
-   * \brief Default Constructor of the JointPositionController class.
+   * \brief Default Constructor of the RampInputController class.
    *
    */
-  JointPositionController();
+  RampInputController();
 
   /*!
-   * \brief Destructor of the JointPositionController class.
+   * \brief Destructor of the RampInputController class.
    */
-  ~JointPositionController();
+  ~RampInputController();
 
   /*!
-   * \brief Functional way to initialize limits and gains.
-   * \param p_gain Proportional gain.
-   * \param i_gain Integral gain.
-   * \param d_gain Derivative gain.
-   * \param windup Intergral limit.
+   * \brief Functional way to initialize.
+   * \param input_start The start value of the ramp.
+   * \param input_end The end value of the ramp.
+   * \param duration The duration in seconds from start to finish.
    * \param time The current hardware time. 
    * \param *joint The joint that is being controlled.
    */
-  void init(double p_gain, double i_gain, double d_gain, double windup, double time, mechanism::Joint *joint);
+  void init(double input_start, double input_end, double duration, double time, mechanism::Joint *joint);
   void initXml(mechanism::Robot *robot, TiXmlElement *config);
-
-  /*!
-   * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
-   *
-   * \param command 
-   */
-  void setCommand(double command);
 
   /*!
    * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
@@ -95,15 +86,19 @@ public:
   double getCommand();
 
   /*!
-   * \brief Read the torque of the motor
+   * \brief Read the effort of the joint
    */
   double getActual();
+  
+  /*!
+   * \brief Read the velocity of the joint
+   */
+  double getVelocity();
 
   /*!
    * \brief Get latest time..
    */
   double getTime();
-
 
   /*!
    * \brief Issues commands to the joint. Should be called at regular intervals
@@ -117,51 +112,49 @@ private:
    */
   void setJointEffort(double torque);
 
-  mechanism::Joint* joint_;  /**< Joint we're controlling. */
-  Pid pid_controller_;       /**< Internal PID controller. */
-  double last_time_;         /**< Last time stamp of update. */
-  double command_;           /**< Last commanded position. */
-  mechanism::Robot *robot_;  /**< Pointer to robot structure. */
+  mechanism::Joint* joint_;     /**< Joint we're controlling. */
+  double input_start_;          /**< Begining of the ramp. */
+  double input_end_;            /**< End of the ramp. */
+  double duration_;             /**< Duration of the ramp. */
+  double initial_time_;         /**< Start time of the ramp. */
+  mechanism::Robot *robot_;     /**< Pointer to robot structure. */
 };
 
 /***************************************************/
-/*! \class controller::JointPositionControllerNode
-    \brief Joint Position Controller ROS Node
+/*! \class controller::RampInputControllerNode
+    \brief Ram Input Controller ROS Node
     
-    This class closes the loop around positon using
-    a pid loop. 
-
+    This class basically gives a ramp input to an 
+    acuator.
 
 */
 /***************************************************/
 
-class JointPositionControllerNode : public Controller
+class RampInputControllerNode : public Controller
 {
 public:
   /*!
    * \brief Default Constructor
    *
    */
-  JointPositionControllerNode();
+  RampInputControllerNode();
 
   /*!
    * \brief Destructor
    */
-  ~JointPositionControllerNode();
+  ~RampInputControllerNode();
 
   void update();
 
   void initXml(mechanism::Robot *robot, TiXmlElement *config);
 
-  // Services
-  bool setCommand(generic_controllers::SetCommand::request &req,
-                  generic_controllers::SetCommand::response &resp);
 
   bool getActual(generic_controllers::GetActual::request &req,
                   generic_controllers::GetActual::response &resp);
 
 private:
-  JointPositionController *c_;
+  RampInputController *c_;
 };
 }
+
 

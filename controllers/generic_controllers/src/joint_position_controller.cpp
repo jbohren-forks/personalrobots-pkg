@@ -84,7 +84,7 @@ void JointPositionController::setCommand(double command)
 // Return the current position command
 double JointPositionController::getCommand()
 {
-  return command_;
+  return joint_->commanded_effort_;
 }
 
 // Return the measured joint position
@@ -101,7 +101,7 @@ double JointPositionController::getTime()
 void JointPositionController::update()
 {
   double error(0);
-  double torque_cmd(0);
+  double effort_cmd(0);
   double time = robot_->hw_->current_time_;
 
   if(joint_->type_ == mechanism::JOINT_ROTARY || joint_->type_ == mechanism::JOINT_CONTINUOUS)
@@ -113,9 +113,9 @@ void JointPositionController::update()
     error = joint_->position_ - command_;
   }
 
-  torque_cmd = pid_controller_.updatePid(error, time - last_time_);
+  effort_cmd = pid_controller_.updatePid(error, time - last_time_);
 
-  setJointEffort(torque_cmd);
+  setJointEffort(effort_cmd);
 }
 
 void JointPositionController::setJointEffort(double effort)

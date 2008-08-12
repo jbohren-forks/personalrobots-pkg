@@ -72,8 +72,14 @@ public:
 
   /*!
    * \brief Functional way to initialize limits and gains.
-   *
+   * \param p_gain Proportional gain.
+   * \param i_gain Integral gain.
+   * \param d_gain Derivative gain.
+   * \param windup Intergral limit.
+   * \param time The current hardware time. 
+   * \param *joint The joint that is being controlled.
    */
+
   void init(double p_gain, double i_gain, double d_gain, double windup, double time, mechanism::Joint *joint);
   void initXml(mechanism::Robot *robot, TiXmlElement *config);
 

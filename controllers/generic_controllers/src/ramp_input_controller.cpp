@@ -32,101 +32,103 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 #include <algorithm>
-#include <generic_controllers/joint_effort_controller.h>
+#include <generic_controllers/ramp_input_controller.h>
 
 
 using namespace std;
 using namespace controller;
 
-ROS_REGISTER_CONTROLLER(JointEffortController)
+ROS_REGISTER_CONTROLLER(RampInputController)
 
-JointEffortController::JointEffortController()
+RampInputController::RampInputController()
 {
-  command_ = 0;
+
 }
 
-JointEffortController::~JointEffortController()
+RampInputController::~RampInputController()
 {
 }
 
-void JointEffortController::init(mechanism::Joint *joint)
+void RampInputController::init(double input_start, double input_end, double duration, double time, mechanism::Joint *joint)
 {
-  command_= 0;
   joint_ = joint;
+  input_start_=input_start;
+  input_end_=input_end;
+  duration_=duration;
+  initial_time_=time;
 }
 
-void JointEffortController::initXml(mechanism::Robot *robot, TiXmlElement *config)
+void RampInputController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   robot_ = robot; 
   TiXmlElement *elt = config->FirstChildElement("joint");
   if (elt) 
   {
-    init(robot->getJoint(elt->Attribute("name")));
+    double input_start = atof(elt->FirstChildElement("start")->GetText());
+    double input_end = atof(elt->FirstChildElement("end")->GetText());
+    double duration = atof(elt->FirstChildElement("duration")->GetText());
+    init(input_start, input_end, duration, robot->hw_->current_time_,robot->getJoint(elt->Attribute("name")));
   }
     
 }
 
-// Set the joint position command
-void JointEffortController::setCommand(double command)
-{
-  command_ = command;
-}
-
 // Return the current position command
-double JointEffortController::getCommand()
+double RampInputController::getCommand()
 {
   return joint_->commanded_effort_;
 }
 
 // Return the measured joint position
-double JointEffortController::getActual()
+double RampInputController::getActual()
 {
   return joint_->applied_effort_;
 }
 
-double JointEffortController::getTime()
+// Return the measured joint position
+double RampInputController::getVelocity()
+{
+  return joint_->velocity_;
+}
+
+double RampInputController::getTime()
 {
   return robot_->hw_->current_time_;
 }
 
-void JointEffortController::update()
+void RampInputController::update()
 {
-
-  setJointEffort(command_);
+  double effort_cmd(0);
+  double time = robot_->hw_->current_time_;
+  
+  effort_cmd=input_start_+(input_end_-input_start_)*(time-initial_time_)/(duration_);
+  
+  setJointEffort(effort_cmd);
 }
 
-void JointEffortController::setJointEffort(double effort)
+void RampInputController::setJointEffort(double effort)
 {
   joint_->commanded_effort_ = min(max(effort, -joint_->effort_limit_), joint_->effort_limit_);
 }
 
-ROS_REGISTER_CONTROLLER(JointEffortControllerNode)
-JointEffortControllerNode::JointEffortControllerNode() 
+ROS_REGISTER_CONTROLLER(RampInputControllerNode)
+RampInputControllerNode::RampInputControllerNode() 
 {
-  c_ = new JointEffortController();
+  c_ = new RampInputController();
 }
 
-JointEffortControllerNode::~JointEffortControllerNode()
+RampInputControllerNode::~RampInputControllerNode()
 {
   delete c_;
 }
 
-void JointEffortControllerNode::update()
+void RampInputControllerNode::update()
 {
   c_->update();
 }
 
-bool JointEffortControllerNode::setCommand(
-  generic_controllers::SetCommand::request &req,
-  generic_controllers::SetCommand::response &resp)
-{
-  c_->setCommand(req.command);
-  resp.command = c_->getCommand();
 
-  return true;
-}
 
-bool JointEffortControllerNode::getActual(
+bool RampInputControllerNode::getActual(
   generic_controllers::GetActual::request &req,
   generic_controllers::GetActual::response &resp)
 {
@@ -135,13 +137,13 @@ bool JointEffortControllerNode::getActual(
   return true;
 }
 
-void JointEffortControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+void RampInputControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
   
   c_->initXml(robot, config);
-  node->advertise_service(prefix + "/set_command", &JointEffortControllerNode::setCommand, this);
-  node->advertise_service(prefix + "/get_actual", &JointEffortControllerNode::getActual, this);
+
+  node->advertise_service(prefix + "/get_actual", &RampInputControllerNode::getActual, this);
 }
 
