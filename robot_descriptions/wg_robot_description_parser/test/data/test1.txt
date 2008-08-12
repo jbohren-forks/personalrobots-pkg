@@ -1,0 +1,10 @@
+
+List of root links in robot 'robot' (0) :
+
+Frames:
+
+Actuators:
+
+Transmissions:
+
+Data types:

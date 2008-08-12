@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+
+<robot name="robot">
+  
+  <const name="B" value="2.0" />
+  
+</robot>

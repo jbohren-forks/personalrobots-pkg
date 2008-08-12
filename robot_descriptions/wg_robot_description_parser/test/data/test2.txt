@@ -1,0 +1,46 @@
+
+List of root links in robot 'robot' (1) :
+  Link [base]:
+    - parent link: world
+    - rpy: (0, 0, 0)
+    - xyz: (1, 3, 2)
+    Joint [base_joint]:
+      - type: 4
+      - axis: (0, 0, 0)
+      - anchor: (0, 0, 0)
+      - limit: (0, 0)
+      - effortLimit: 0
+      - velocityLimit: 0
+      - calibration: 
+    Collision [base_collision]:
+      - verbose: No
+      - material: wood
+      - rpy: (0, 0, 0)
+      - xyz: (0, -1.5, -0.5)
+      Geometry [base_collision_geom]:
+        - type: 2
+        - size: ( 1 1 1 )
+        - filename: 
+    Inertial [base_inertial]:
+      - mass: 70.751
+      - com: (0, 0, 0)
+      - inertia: (5.65223, -0.00971993, 1.29399, 5.66947, -0.00737958, 3.6832)
+    Visual [base_visual]:
+      - material: wood
+      - scale: 1, 1, 1)
+      - rpy: (0, 0, 0)
+      - xyz: (0, 0, 0)
+      Geometry [pr2_base_mesh_file]:
+        - type: 4
+        - size: ( 0 0 0 )
+        - filename: base
+    - groups: 
+    - children links: 
+
+Frames:
+
+Actuators:
+
+Transmissions:
+
+Data types:

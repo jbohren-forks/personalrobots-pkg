@@ -16,32 +16,44 @@ TEST(URDF, EmptyFile)
     URDF file;
     file.loadFile("test/data/test1.xml");
     EXPECT_TRUE(file.getErrorCount() == 0);
-    std::stringstream ss1;
-    file.print(ss1);
     
-    std::stringstream ss2;
-    std::ifstream in2("test/data/test1.txt");
-    ss2 << in2;
-    
-    printf("'%s'\n", ss2.str().c_str());
-    
-    EXPECT_TRUE(ss1 == ss2);
+    std::ofstream f("/tmp/test1.txt");
+    file.print(f);
+    f.close();
+    int result = runExternalProcess("diff", "test/data/test1.txt /tmp/test1.txt");
+        
+    EXPECT_TRUE(result == 0);
 }
-/*
+
 TEST(URDF, SimpleFile)
 {
     URDF file;
     file.loadFile("test/data/test2.xml");
     EXPECT_TRUE(file.getErrorCount() == 0);
+    
+    std::ofstream f("/tmp/test2.txt");
+    file.print(f);
+    f.close();
+    int result = runExternalProcess("diff", "test/data/test2.txt /tmp/test2.txt");
+        
+    EXPECT_TRUE(result == 0);
 }
+
 
 TEST(URDF, ComplexFile)
 {
     URDF file;
     file.loadFile("test/data/test3.xml");
     EXPECT_TRUE(file.getErrorCount() == 0);
+
+    std::ofstream f("/tmp/test3.txt");
+    file.print(f);
+    f.close();
+    int result = runExternalProcess("diff", "test/data/test3.txt /tmp/test3.txt");
+        
+    EXPECT_TRUE(result == 0);
 }
-*/
+
 int main(int argc, char **argv)
 {
     testing::InitGoogleTest(&argc, argv);
