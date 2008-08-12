@@ -58,6 +58,12 @@ void JointEffortController::init(mechanism::Joint *joint)
 void JointEffortController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   robot_ = robot; 
+  TiXmlElement *elt = config->FirstChildElement("joint");
+  if (elt) 
+  {
+    init(robot->getJoint(elt->Attribute("name")));
+  }
+    
 }
 
 // Set the joint position command
@@ -133,6 +139,7 @@ void JointEffortControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *c
 {
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
+  
   c_->initXml(robot, config);
   node->advertise_service(prefix + "/set_command", &JointEffortControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_command", &JointEffortControllerNode::getCommand, this);
