@@ -78,7 +78,7 @@ double JointEffortController::getActual()
   return joint_->applied_effort_;
 }
 
-double JointVelocityController::getTime()
+double JointEffortController::getTime()
 {
   return robot_->hw_->current_time_;
 }
@@ -124,8 +124,8 @@ bool JointEffortControllerNode::getCommand(
   generic_controllers::GetCommand::request &req,
   generic_controllers::GetCommand::response &resp)
 {
-  resp.command = c_->getCommand();
-
+  resp.command = c_->getActual();
+  resp.time = c_->getTime();
   return true;
 }
 
