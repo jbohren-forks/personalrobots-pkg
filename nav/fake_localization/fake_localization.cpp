@@ -67,42 +67,53 @@ Publishes to (name / type):
  **/
 
 #include <ros/node.h>
+#include <ros/time.h>
 
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/ParticleCloud2D.h>
 #include <std_msgs/Pose2DFloat32.h>
 
+#include <math_utils/angles.h>
 #include <rosTF/rosTF.h>
 
 
 class FakeOdomNode: public ros::node
 {
 public:
-    FakeOdomNode(void) : ros::node("fake_odom_localization"),
-			 m_tf(*this)
+    FakeOdomNode(void) : ros::node("fake_localization")
     {
 	advertise<std_msgs::RobotBase2DOdom>("localizedpose");
 	advertise<std_msgs::ParticleCloud2D>("particlecloud");
 	
+	m_tfServer = new rosTFServer(*this);	
+
+	m_lastUpdate = ros::Time::now();
+		
 	m_iniPos.x = m_iniPos.y = m_iniPos.th = 0.0;
 	m_particleCloud.set_particles_size(1);
-	
+
+	param("max_publish_frequency", m_maxPublishFrequency, 0.5);
 	subscribe("odom", m_odomMsg, &FakeOdomNode::odomReceived);
 	subscribe("initialpose", m_iniPos, &FakeOdomNode::initialPoseReceived);
     }
     
     ~FakeOdomNode(void)
     {
+	if (m_tfServer)
+	    delete m_tfServer; 
     }
     
     
 private:
     
-    rosTFServer               m_tf;
+    rosTFServer              *m_tfServer;
+    ros::Time                 m_lastUpdate;
+    double                    m_maxPublishFrequency;
     
     std_msgs::RobotBase2DOdom m_odomMsg;
     std_msgs::ParticleCloud2D m_particleCloud;
     std_msgs::Pose2DFloat32   m_iniPos;
+
     
     void initialPoseReceived(void)
     {
@@ -116,23 +127,36 @@ private:
 
     void update(void)
     {
-	// change the frame id and republish
-	m_odomMsg.header.frame_id = m_tf.lookup("FRAMEID_MAP");
+	if ((ros::Time::now() - m_lastUpdate).to_double() < 1.0/m_maxPublishFrequency)
+	    return;
+	
+	m_lastUpdate = ros::Time::now();
+	
+	m_tfServer->sendEuler("FRAMEID_MAP",
+			      "FRAMEID_ODOM",
+			      m_iniPos.x,
+			      m_iniPos.y,
+			      0.0,
+			      m_iniPos.th,
+			      0.0,
+			      0.0,
+			      m_odomMsg.header.stamp); 
+
+	m_odomMsg.pos.x += m_iniPos.x;
+	m_odomMsg.pos.y += m_iniPos.y;
+	m_odomMsg.pos.th = math_utils::normalize_angle(m_odomMsg.pos.th + m_iniPos.th);
+	m_odomMsg.header.frame_id = m_tfServer->lookup("FRAMEID_MAP");
+	
 	publish("localizedpose", m_odomMsg);
+	
 	m_particleCloud.particles[0] = m_odomMsg.pos;
 	publish("particlecloud", m_particleCloud);
 	
-	m_tf.sendEuler("FRAMEID_MAP",
-		       "FRAMEID_ODOM",
-		       m_iniPos.x,
-		       m_iniPos.y,
-		       0.0,
-		       m_iniPos.th,
-		       0.0,
-		       0.0,
-		       m_odomMsg.header.stamp);
+	
+	printf("pos = %f, %f, %f     |   inipos = %f, %f, %f\n",  
+	       m_odomMsg.pos.x, m_odomMsg.pos.y, m_odomMsg.pos.th,
+	       m_iniPos.x, m_iniPos.y, m_iniPos.th);
     }
-    
     
 };
 
@@ -142,7 +166,7 @@ int main(int argc, char** argv)
     
     FakeOdomNode odom;
     odom.spin();
-    odom.shutdown();
+    odom.shutdown();    
     
     return 0;
 }
