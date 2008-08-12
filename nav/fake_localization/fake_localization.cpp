@@ -132,8 +132,8 @@ private:
 	
 	m_lastUpdate = ros::Time::now();
 	
-	m_tfServer->sendEuler("FRAMEID_MAP",
-			      "FRAMEID_ODOM",
+	m_tfServer->sendEuler("FRAMEID_ODOM",
+			      "FRAMEID_MAP",
 			      m_iniPos.x,
 			      m_iniPos.y,
 			      0.0,
@@ -151,11 +151,6 @@ private:
 	
 	m_particleCloud.particles[0] = m_odomMsg.pos;
 	publish("particlecloud", m_particleCloud);
-	
-	
-	printf("pos = %f, %f, %f     |   inipos = %f, %f, %f\n",  
-	       m_odomMsg.pos.x, m_odomMsg.pos.y, m_odomMsg.pos.th,
-	       m_iniPos.x, m_iniPos.y, m_iniPos.th);
     }
     
 };
