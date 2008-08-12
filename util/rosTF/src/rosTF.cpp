@@ -43,11 +43,7 @@ rosTFClient::rosTFClient(ros::node & rosnode,
   myNode(rosnode)
 {
   //  printf("Constructed rosTF\n");
-  myNode.subscribe("TransformEuler", eulerIn, &rosTFClient::receiveEuler, this,100);
-  myNode.subscribe("TransformDH", dhIn, &rosTFClient::receiveDH, this);
-  myNode.subscribe("TransformQuaternion", quaternionIn, &rosTFClient::receiveQuaternion, this);
-  myNode.subscribe("TransformMatrix", matrixIn, &rosTFClient::receiveMatrix, this);
-
+  myNode.subscribe("TransformArray", tfArrayIn, &rosTFClient::receiveArray, this,100);
 };
 
 
@@ -171,41 +167,42 @@ void rosTFClient::transformLaserScanToPointCloud(unsigned int target_frame, std_
 
 
 
-void rosTFClient::receiveEuler()
+void rosTFClient::receiveArray()
 {
-  setWithEulers(eulerIn.frame, eulerIn.parent, eulerIn.x, eulerIn.y, eulerIn.z, eulerIn.yaw, eulerIn.pitch, eulerIn.roll, eulerIn.header.stamp.sec * 1000000000ULL + eulerIn.header.stamp.nsec);
-  //std::cout << "received euler frame: " << eulerIn.frame << " with parent:" << eulerIn.parent << "time " << eulerIn.header.stamp.sec * 1000000000ULL + eulerIn.header.stamp.nsec << std::endl;
-};
-
-void rosTFClient::receiveDH()
-{
-  setWithDH(dhIn.frame, dhIn.parent, dhIn.length, dhIn.twist, dhIn.offset, dhIn.angle, dhIn.header.stamp.sec * 1000000000ULL + dhIn.header.stamp.nsec);
-  //  std::cout << "recieved DH frame: " << dhIn.frame << " with parent:" << dhIn.parent << std::endl;
-};
-
-void rosTFClient::receiveQuaternion()
-{
-  setWithQuaternion(quaternionIn.frame, quaternionIn.parent, quaternionIn.xt, quaternionIn.yt, quaternionIn.zt, quaternionIn.xr, quaternionIn.yr, quaternionIn.zr, quaternionIn.w, quaternionIn.header.stamp.sec * 1000000000ULL + quaternionIn.header.stamp.nsec);
-  //  std::cout << "recieved quaternion frame: " << quaternionIn.frame << " with parent:" << quaternionIn.parent << std::endl;
-};
-
-
-void rosTFClient::receiveMatrix()
-{
-  if (matrixIn.matrix_size != 16)
+  for (unsigned int i = 0; i < tfArrayIn.eulers_size; i++)
   {
-    std::cerr << "recieved matrix not of size 16, it was "<< matrixIn.matrix_size;
-    return;
+    setWithEulers(tfArrayIn.eulers[i].frame, tfArrayIn.eulers[i].parent, tfArrayIn.eulers[i].x, tfArrayIn.eulers[i].y, tfArrayIn.eulers[i].z, tfArrayIn.eulers[i].yaw, tfArrayIn.eulers[i].pitch, tfArrayIn.eulers[i].roll, tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + tfArrayIn.eulers[i].header.stamp.nsec);
   }
-  
-  NEWMAT::Matrix tempMatrix(4,4);
-  tempMatrix << matrixIn.matrix;
-  
-  setWithMatrix(matrixIn.header.frame_id, matrixIn.parent, tempMatrix, matrixIn.header.stamp.sec * 1000000000ULL + matrixIn.header.stamp.nsec);
-  
-  //  std::cout << "recieved Matrix:" << tempMatrix << " in frame: " << matrixIn.header.frame_id << " with parent:" << matrixIn.parent << " at time:" << matrixIn.header.stamp.to_double() << std::endl;
-};
+    //std::cout << "received euler frame: " << tfArrayIn.eulers[i].frame << " with parent:" << tfArrayIn.eulers[i].parent << "time " << tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + eulerIn.header.stamp.nsec << std::endl;
+  for (unsigned int i = 0; i < tfArrayIn.dhparams_size; i++)
+  {
+    setWithDH(tfArrayIn.dhparams[i].frame, tfArrayIn.dhparams[i].parent, tfArrayIn.dhparams[i].length, tfArrayIn.dhparams[i].twist, tfArrayIn.dhparams[i].offset, tfArrayIn.dhparams[i].angle, tfArrayIn.dhparams[i].header.stamp.sec * 1000000000ULL + tfArrayIn.dhparams[i].header.stamp.nsec);
+    //  std::cout << "recieved DH frame: " << tfArrayIn.dhparams[i].frame << " with parent:" << tfArrayIn.dhparams[i].parent << std::endl;
+  }
 
+  for (unsigned int i = 0; i < tfArrayIn.quaternions_size; i++)
+  {
+    setWithQuaternion(tfArrayIn.quaternions[i].frame, tfArrayIn.quaternions[i].parent, tfArrayIn.quaternions[i].xt, tfArrayIn.quaternions[i].yt, tfArrayIn.quaternions[i].zt, tfArrayIn.quaternions[i].xr, tfArrayIn.quaternions[i].yr, tfArrayIn.quaternions[i].zr, tfArrayIn.quaternions[i].w, tfArrayIn.quaternions[i].header.stamp.sec * 1000000000ULL + tfArrayIn.quaternions[i].header.stamp.nsec);
+    //  std::cout << "recieved quaternion frame: " << tfArrayIn.quaternions[i].frame << " with parent:" << tfArrayIn.quaternions[i].parent << std::endl;
+  }
+  for (unsigned int i = 0; i < tfArrayIn.matrices_size; i++)
+  {
+    
+    if (tfArrayIn.matrices[i].matrix_size != 16)
+    {
+      std::cerr << "recieved matrix not of size 16, it was "<< tfArrayIn.matrices[i].matrix_size;
+      return;
+    }
+    
+    NEWMAT::Matrix tempMatrix(4,4);
+    tempMatrix << tfArrayIn.matrices[i].matrix;
+    
+    setWithMatrix(tfArrayIn.matrices[i].header.frame_id, tfArrayIn.matrices[i].parent, tempMatrix, tfArrayIn.matrices[i].header.stamp.sec * 1000000000ULL + tfArrayIn.matrices[i].header.stamp.nsec);
+    
+    //  std::cout << "recieved Matrix:" << tempMatrix << " in frame: " << tfArrayIn.matrices[i].header.frame_id << " with parent:" << tfArrayIn.matrices[i].parent << " at time:" << tfArrayIn.matrices[i].header.stamp.to_double() << std::endl;
+  }
+
+};
 
 NEWMAT::Matrix rosTFClient::getMatrix(std::string target_frame, std::string source_frame, ros::Time time)
 { return getMatrix(lookup(target_frame), lookup(source_frame), time.to_ull());};
@@ -245,11 +242,7 @@ rosTFServer::rosTFServer(ros::node & rosnode):
   nameLookupClient(rosnode),
   myNode(rosnode)
 {
-  myNode.advertise<rosTF::TransformEuler>("TransformEuler");
-  myNode.advertise<rosTF::TransformDH>("TransformDH");
-  myNode.advertise<rosTF::TransformQuaternion>("TransformQuaternion");
-  myNode.advertise<rosTF::TransformMatrix>("TransformMatrix");
-
+  myNode.advertise<rosTF::TransformArray>("TransformArray");
 };
 
 void rosTFServer::sendEuler(std::string frame, std::string parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime)
@@ -262,19 +255,21 @@ void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, d
   if (!checkInvalidFrame(frame))
     return;
 
-  rosTF::TransformEuler eulerOut;
-  eulerOut.frame = frame;
-  eulerOut.parent = parent;
-  eulerOut.x = x;
-  eulerOut.y = y;
-  eulerOut.z = z;
-  eulerOut.yaw = yaw;
-  eulerOut.pitch = pitch;
-  eulerOut.roll = roll;
-  eulerOut.header.stamp.sec = secs;
-  eulerOut.header.stamp.nsec = nsecs;
+  rosTF::TransformArray tfArray;
+  tfArray.set_eulers_size(1);
 
-  myNode.publish("TransformEuler", eulerOut);
+  tfArray.eulers[0].frame = frame;
+  tfArray.eulers[0].parent = parent;
+  tfArray.eulers[0].x = x;
+  tfArray.eulers[0].y = y;
+  tfArray.eulers[0].z = z;
+  tfArray.eulers[0].yaw = yaw;
+  tfArray.eulers[0].pitch = pitch;
+  tfArray.eulers[0].roll = roll;
+  tfArray.eulers[0].header.stamp.sec = secs;
+  tfArray.eulers[0].header.stamp.nsec = nsecs;
+
+  myNode.publish("TransformArray", tfArray);
 
 };
 
@@ -288,23 +283,24 @@ void rosTFServer::sendInverseEuler(unsigned int frame, unsigned int parent, doub
   if (!checkInvalidFrame(frame))
     return;
 
-  rosTF::TransformEuler eulerOut;
+  rosTF::TransformArray tfArray;
+  tfArray.set_eulers_size(1);
   //Invert the transform
   libTF::Pose3D::Euler odomeuler  = libTF::Pose3D::eulerFromMatrix(libTF::Pose3D::matrixFromEuler(x, y, z, yaw, pitch, roll).i()); //todo optimize
   libTF::Pose3D::Position odompos = libTF::Pose3D::positionFromMatrix(libTF::Pose3D::matrixFromEuler(x, y, z, yaw, pitch, roll).i());
   
-  eulerOut.frame = frame;
-  eulerOut.parent = parent;
-  eulerOut.x = odompos.x;
-  eulerOut.y = odompos.y;
-  eulerOut.z = odompos.z;
-  eulerOut.yaw = odomeuler.yaw;
-  eulerOut.pitch = odomeuler.pitch;
-  eulerOut.roll = odomeuler.roll;
-  eulerOut.header.stamp.sec = secs;
-  eulerOut.header.stamp.nsec = nsecs;
+  tfArray.eulers[0].frame = frame;
+  tfArray.eulers[0].parent = parent;
+  tfArray.eulers[0].x = odompos.x;
+  tfArray.eulers[0].y = odompos.y;
+  tfArray.eulers[0].z = odompos.z;
+  tfArray.eulers[0].yaw = odomeuler.yaw;
+  tfArray.eulers[0].pitch = odomeuler.pitch;
+  tfArray.eulers[0].roll = odomeuler.roll;
+  tfArray.eulers[0].header.stamp.sec = secs;
+  tfArray.eulers[0].header.stamp.nsec = nsecs;
 
-  myNode.publish("TransformEuler", eulerOut);
+  myNode.publish("TransformArray", tfArray);
  
 };
 
@@ -345,18 +341,19 @@ void rosTFServer::sendDH(unsigned int frame, unsigned int parent, double length,
   if (!checkInvalidFrame(frame))
     return;
 
-  rosTF::TransformDH dhOut;
+  rosTF::TransformArray tfArray;
+  tfArray.set_dhparams_size(1);
 
-  dhOut.frame = frame;
-  dhOut.parent = parent;
-  dhOut.length = length;
-  dhOut.twist = twist;
-  dhOut.offset = offset;
-  dhOut.angle = angle;
-  dhOut.header.stamp.sec = secs;
-  dhOut.header.stamp.nsec = nsecs;
+  tfArray.dhparams[0].frame = frame;
+  tfArray.dhparams[0].parent = parent;
+  tfArray.dhparams[0].length = length;
+  tfArray.dhparams[0].twist = twist;
+  tfArray.dhparams[0].offset = offset;
+  tfArray.dhparams[0].angle = angle;
+  tfArray.dhparams[0].header.stamp.sec = secs;
+  tfArray.dhparams[0].header.stamp.nsec = nsecs;
 
-  myNode.publish("TransformDH", dhOut);
+  myNode.publish("TransformArray", tfArray);
 
 };
 
@@ -370,20 +367,22 @@ void rosTFServer::sendQuaternion(unsigned int frame, unsigned int parent, double
   if (!checkInvalidFrame(frame))
     return;
   
-  rosTF::TransformQuaternion quaternionOut;
-  quaternionOut.frame = frame;
-  quaternionOut.parent = parent;
-  quaternionOut.xt = xt;
-  quaternionOut.yt = yt;
-  quaternionOut.zt = zt;
-  quaternionOut.xr = xr;
-  quaternionOut.yr = yr;
-  quaternionOut.zr = zr;
-  quaternionOut.w = w;
-  quaternionOut.header.stamp.sec = secs;
-  quaternionOut.header.stamp.nsec = nsecs;
+  rosTF::TransformArray tfArray;
+  tfArray.set_quaternions_size(1);
 
-  myNode.publish("TransformQuaternion", quaternionOut);
+  tfArray.quaternions[0].frame = frame;
+  tfArray.quaternions[0].parent = parent;
+  tfArray.quaternions[0].xt = xt;
+  tfArray.quaternions[0].yt = yt;
+  tfArray.quaternions[0].zt = zt;
+  tfArray.quaternions[0].xr = xr;
+  tfArray.quaternions[0].yr = yr;
+  tfArray.quaternions[0].zr = zr;
+  tfArray.quaternions[0].w = w;
+  tfArray.quaternions[0].header.stamp.sec = secs;
+  tfArray.quaternions[0].header.stamp.nsec = nsecs;
+
+  myNode.publish("TransformArray", tfArray);
 
 };
 
@@ -398,24 +397,25 @@ void rosTFServer::sendMatrix(unsigned int frame, unsigned int parent, NEWMAT::Ma
   if (!checkInvalidFrame(frame))
     return;
 
+  rosTF::TransformArray tfArray;
+  tfArray.set_matrices_size(1);
 
 
-  rosTF::TransformMatrix matrixOut;
-  matrixOut.header.frame_id = frame;
-  matrixOut.header.stamp = rostime;
-  matrixOut.parent = parent;
+  tfArray.matrices[0].header.frame_id = frame;
+  tfArray.matrices[0].header.stamp = rostime;
+  tfArray.matrices[0].parent = parent;
 
-  matrixOut.set_matrix_size(16);
+  tfArray.matrices[0].set_matrix_size(16);
   if (matrix.Nrows() != 4 || matrix.Ncols() != 4)
     return;  
   
   double * matPtr = matrix.Store();
   for (unsigned int i = 0; i < 16; i++)
   {
-    matrixOut.matrix[i] = matPtr[i];
+    tfArray.matrices[0].matrix[i] = matPtr[i];
   }
 
-  myNode.publish("TransformMatrix", matrixOut);
+  myNode.publish("TransformArray", tfArray);
 
   
 };

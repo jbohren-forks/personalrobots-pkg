@@ -42,10 +42,7 @@
 #define ROSTF_HH
 #include <iostream>
 #include "ros/node.h"
-#include "rosTF/TransformEuler.h"
-#include "rosTF/TransformDH.h"
-#include "rosTF/TransformQuaternion.h"
-#include "rosTF/TransformMatrix.h"
+#include "rosTF/TransformArray.h"
 #include "libTF/libTF.h"
 #include "std_msgs/PointCloudFloat32.h"
 #include "namelookup/nameLookupClient.hh"
@@ -74,10 +71,7 @@ class rosTFClient : public libTF::TransformReference, public nameLookupClient
   void transformLaserScanToPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn);
 
   //Call back functions
-  void receiveEuler();
-  void receiveDH();
-  void receiveQuaternion();
-  void receiveMatrix();
+  void receiveArray();
 
 
   /*********** Accessors *************/
@@ -134,10 +128,7 @@ class rosTFClient : public libTF::TransformReference, public nameLookupClient
   // A reference to the active ros::node to allow setting callbacks
   ros::node & myNode; 
   //Temporary storage for callbacks(todo check threadsafe? make scoped in call?)
-  rosTF::TransformEuler eulerIn;
-  rosTF::TransformDH dhIn;
-  rosTF::TransformQuaternion quaternionIn;
-  rosTF::TransformMatrix matrixIn;
+  rosTF::TransformArray tfArrayIn;
 
   laser_scan::LaserProjection projector_;
 
