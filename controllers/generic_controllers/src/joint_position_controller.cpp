@@ -154,7 +154,7 @@ bool JointPositionControllerNode::getActual(
   generic_controllers::GetActual::response &resp)
 {
   resp.command = c_->getActual();
-
+  resp.time = c_->getTime();
   return true;
 }
 
