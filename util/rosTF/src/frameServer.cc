@@ -8,7 +8,10 @@ public:
     pTFServer = new rosTFServer(*this);
   };
   //Clean up ros connections
-  ~FrameServer() { }
+  ~FrameServer() { 
+      if (pTFServer)
+	  delete pTFServer;
+  }
 
   //A pointer to the rosTFServer class
   rosTFServer * pTFServer;
