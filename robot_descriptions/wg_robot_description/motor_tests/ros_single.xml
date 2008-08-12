@@ -1,0 +1,31 @@
+<robot name="pr2">
+
+  <actuator name="single_motor">
+  </actuator>
+
+  <joint name="single_joint" type="revolute">
+    <limitMin>-1.48</limitMin>
+    <limitMax>1.48</limitMax>
+    <effortLimit>3</effortLimit>
+    <velocityLimit>0</velocityLimit>
+  </joint>
+
+  <transmission type="SimpleTransmission" name="single_transmission">
+    <actuator name="single_motor" />
+    <joint name="single_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>-1</motorTorqueConstant>
+    <pulsesPerRevolution>1200</pulsesPerRevolution>
+  </transmission>
+
+  <controller name="single_controller" type="JointVelocityControllerNode">
+    <joint name="single_joint">
+      <pGain>0.05</pGain>
+      <iGain>0.2</iGain>
+      <dGain>0</dGain>
+      <windup>0.1</windup>
+    </joint>
+  </controller>
+
+  
+</robot>

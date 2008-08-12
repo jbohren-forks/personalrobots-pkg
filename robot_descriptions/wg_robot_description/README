@@ -12,17 +12,17 @@ Be advised the code is still the most up-to-date documentation.
 and dynamics users should refer to this document for information and
 naming conventions.
 
-  controller_test.xml contains the most up-to-date controller xml file
+  controllers.xml contains the most up-to-date controller xml file
 for the entire robot.  Controller designers should refer to this xml
 file for creating controller architectures.
 
-  actuator_test.xml contains the most up-to-date xml file for the
+  actuators.xml contains the most up-to-date xml file for the
 complete list of actuators in the PR2 robot.  This list should reflect
 actual hardware components for the PR2 robot.
 
-  transmission_test.xml contains the most up-to-date transmission
+  transmissions.xml contains the most up-to-date transmission
 descriptions for the PR2 robot.  This list describes how joints
-described in pr2.xml are related to actuators in actuator_test.xml.
+described in pr2.xml are related to actuators in actuators.xml.
 
   The current parser for the robot description files is located in
 

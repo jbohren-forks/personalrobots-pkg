@@ -1,0 +1,58 @@
+<robot name="pr2">
+
+  <actuator name="motor1">
+  </actuator>
+
+  <actuator name="motor2">
+  </actuator>
+
+  <joint name="joint1" type="revolute">
+    <limitMin>-1.48</limitMin>
+    <limitMax>1.48</limitMax>
+    <effortLimit>3</effortLimit>
+    <velocityLimit>0</velocityLimit>
+  </joint>
+
+  <joint name="joint2" type="revolute">
+    <limitMin>-1.48</limitMin>
+    <limitMax>1.48</limitMax>
+    <effortLimit>3</effortLimit>
+    <velocityLimit>0</velocityLimit>
+  </joint>
+
+  <transmission type="SimpleTransmission" name="transmission1">
+    <actuator name="motor1" />
+    <joint name="joint1" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>-1</motorTorqueConstant>
+    <pulsesPerRevolution>1200</pulsesPerRevolution>
+  </transmission>
+
+  <transmission type="SimpleTransmission" name="transmission2">
+    <actuator name="motor2" />
+    <joint name="joint2" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>-1</motorTorqueConstant>
+    <pulsesPerRevolution>1200</pulsesPerRevolution>
+  </transmission>
+
+  <controller name="controller1" type="JointVelocityController">
+    <joint name="joint1">
+      <pGain>0.01</pGain>
+      <iGain>0.5</iGain>
+      <dGain>0</dGain>
+      <windup>0.1</windup>
+    </joint>
+  </controller>
+
+  <controller name="controller2" type="JointVelocityController">
+    <joint name="joint2">
+      <pGain>0.01</pGain>
+      <iGain>0.5</iGain>
+      <dGain>0</dGain>
+      <windup>0.1</windup>
+    </joint>
+  </controller>
+
+  
+</robot>

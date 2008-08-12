@@ -1947,13 +1947,12 @@
   
   <include>planning.xml</include>
 
-  <!-- Inclusion of this file causes the urdf2gazebo translator to produce a .world file that makes Gazebo crash - BPG -->
-  <!-- Let me know if it still does -JMH -->
+  <!-- controllers for gazebo -->
   <include>controllers_gazebo.xml</include> 
 
   <!-- new definitions for mechanism controls - JMH -->
-  <include>controller_test.xml</include>
-  <include>actuator_test.xml</include> 
-  <include>transmission_test.xml</include> 
+  <include>controllers.xml</include>
+  <include>actuators.xml</include> 
+  <include>transmissions.xml</include> 
 
 </robot>

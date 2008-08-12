@@ -8,26 +8,13 @@
   <verbatim key="transmissions_gazebo_actuators" includes="true"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <data> tag -->
 
   <!-- PR2_ACTARRAY -->
-  <!-- uncomment for testing
-  <controller:gazebo_actuators name="gazebo_actuators" plugin="libgazebo_actuators.so">
-      <updateRate>100.0</updateRate>
-
-      <include>transmission_test.xml</include>
-      <include>actuator_test.xml</include>
-      <include>controller_test.xml</include>
-
-      <interface:audio name="gazebo_actuators_dummy_iface" />
-  </controller:gazebo_actuators>
-  -->
-
-  <!-- PR2_ACTARRAY -->
   <!-- uncomment for testing -->
   <controller:test_actuators name="test_actuators" plugin="libtest_actuators.so">
       <updateRate>100.0</updateRate>
 
-      <include>transmission_test.xml</include>
-      <include>actuator_test.xml</include>
-      <include>controller_test.xml</include>
+      <include>transmissions.xml</include>
+      <include>actuators.xml</include>
+      <include>controllers.xml</include>
 
       <interface:audio name="test_actuators_dummy_iface" />
   </controller:test_actuators>

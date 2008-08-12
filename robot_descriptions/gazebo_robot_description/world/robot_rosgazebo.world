@@ -52,17 +52,6 @@
   </rendering:ogre>
 
 
-<!--
-  <model:physical name="gbuilding">
-    <body:heightmap name="building">
-      <geom:heightmap name="building">
-        <image>map.png</image>
-        <worldTexture>map2.jpg</worldTexture>
-        <size>2 2 0.5</size>
-      </geom:heightmap>
-    </body:heightmap>
-  </model:physical>
--->
   <model:physical name="gplane">
     <xyz>0 0 0</xyz>	
     <rpy>0 0 0</rpy>
@@ -79,97 +68,31 @@
       </geom:plane>
     </body:plane>
   </model:physical>
-<!--
--->
 
-
-
-  <!-- The camera -->
-  <model:physical name="cam1_model">
-    <xyz>   2.0    0.25    1.17</xyz>
-    <rpy>   5.5    25.71   -152.72</rpy>
-    <!-- <xyz>   3.0    0.0    1.0</xyz> -->
-    <!-- <rpy>   0.0    0.0  180.0</rpy> -->
-    <static>true</static>
-
-    <body:empty name="cam1_body">
-      <sensor:camera name="cam1_sensor">
-        <imageSize>1024 800</imageSize>
-        <hfov>90</hfov>
-        <nearClip>0.1</nearClip>
-        <farClip>20</farClip>
-        <saveFrames>true</saveFrames>
-        <saveFramePath>frames_0</saveFramePath>
-        <updateRate>10.0</updateRate>
-        <controller:generic_camera name="cam1_controller">
-          <updateRate>10.0</updateRate>
-          <interface:camera name="cam1_iface_0" />
-        </controller:generic_camera>
-      </sensor:camera>
+  <!--
+  <model:empty name="ros_model">
+    <body:empty name="ros_body">
+       <controller:ros_node name="ros_node" plugin="libRos_Node.so">
+        <nodeName>simulator_ros_node</nodeName>
+      </controller:ros_node>
     </body:empty>
-  </model:physical>
-
-
-  <!-- test laser model -->
-        <!--
-  <model:physical name="test_laser_model">
-    <xyz>  -2.0    0.0    0.15</xyz>
-    <rpy>   0.0    0.0   90.0</rpy>
-    <static>true</static>
-    <body:box name="test_laser_body">
-      <xyz>0.0 0.0 0.0</xyz>
-      <rpy>0.0 0.0 0.0</rpy>
-
-      <geom:box name="test_laser_box">
-        <xyz>0.0 0.0 -0.05</xyz>
-        <rpy>0 0 0</rpy>
-        <size>0.05 0.15 0.02</size>
-        <mass>0.0</mass>
-        <visual>
-          <scale>0.05 0.15 0.02</scale>
-          <mesh>unit_box</mesh>
-          <material>Gazebo/Blue</material>
-        </visual>
-      </geom:box>
-
-      <sensor:ray name="laser_1">
-        <rayCount>100</rayCount>
-        <rangeCount>100</rangeCount>
-        <laserCount>1</laserCount>
-        <origin>0.0 0.0 0.10</origin>
-
-        <minAngle>-135</minAngle>
-        <maxAngle>135</maxAngle>
-
-        <minRange>0.036</minRange>
-        <maxRange>10.0</maxRange>
-
-        <updateRate>10.0</updateRate>
-
-        <controller:sicklms200_laser name="laser_controller_1">
-          <interface:laser name="laser_iface_1"/>
-          <updateRate>10</updateRate>
-        </controller:sicklms200_laser>
-      </sensor:ray>
-
-    </body:box>
-  </model:physical>
-        -->
+  </model:empty>
+  -->
 
   <!-- The "desk"-->
   <model:physical name="desk1_model">
-    <xyz>   2.25  -0.21  -0.10</xyz>
+    <xyz>   2.28  -0.21  -0.10</xyz>
     <rpy>   0.0    0.0    0.00</rpy>
     <body:box name="desk1_legs_body">
       <geom:box name="desk1_legs_geom">
         <kp>100000000.0</kp>
         <kd>1.0</kd>
-        <xyz>   0.0    0.0    0.4</xyz>
+        <xyz>   0.0    0.0    0.50</xyz>
         <mesh>default</mesh>
-        <size>0.5 1.0  0.6</size>
+        <size>0.5 1.0  0.75</size>
         <mass> 10.0</mass>
         <visual>
-          <size> 0.5 1.0 0.6</size>
+          <size> 0.5 1.0 0.75</size>
           <material>Gazebo/Rocky</material>
           <mesh>unit_box</mesh>
         </visual>
@@ -177,7 +100,7 @@
       <geom:box name="desk1_top_geom">
         <kp>100000000.0</kp>
         <kd>0.1</kd>
-        <xyz>   0.0    0.0    0.7025</xyz>
+        <xyz>   0.0    0.0    0.90</xyz>
         <mesh>default</mesh>
         <size>0.75 1.5  0.05</size>
         <mass> 10.0</mass>
@@ -198,12 +121,12 @@
       <geom:box name="desk2_legs_geom">
         <kp>1000000.0</kp>
         <kd>1.0</kd>
-        <xyz>   0.0    0.0    0.30</xyz>
+        <xyz>   0.0    0.0    0.50</xyz>
         <mesh>default</mesh>
-        <size>0.5 1.0  0.40</size>
+        <size>0.5 1.0  0.75</size>
         <mass> 10.0</mass>
         <visual>
-          <size> 0.5 1.0 0.40</size>
+          <size> 0.5 1.0 0.75</size>
           <material>Gazebo/Rocky</material>
           <mesh>unit_box</mesh>
         </visual>
@@ -211,7 +134,7 @@
       <geom:box name="desk2_top_geom">
         <kp>1000000.0</kp>
         <kd>1.0</kd>
-        <xyz>   0.0    0.0    0.5025</xyz>
+        <xyz>   0.0    0.0    0.90</xyz>
         <mesh>default</mesh>
         <size>0.75 1.5  0.05</size>
         <mass> 10.0</mass>
@@ -224,25 +147,66 @@
     </body:box>
   </model:physical>
 
-  <!-- The small cuboidal "cup" -->
+  <!-- The small cylinder "cup" -->
   <model:physical name="cylinder1_model">
-    <xyz>   .959   -.53    0.2225</xyz> 
+    <xyz>   2.5    0.0    0.9</xyz>
     <rpy>   0.0    0.0    0.0</rpy>
-    <body:box name="cylinder1_body">
-      <geom:box name="cylinder1_geom">
+    <body:cylinder name="cylinder1_body">
+      <geom:cylinder name="cylinder1_geom">
+        <kp>100000000.0</kp>
+        <kd>0.1</kd>
         <mesh>default</mesh>
-        <size>0.03 0.03 .445</size>
-        <mass> 0.1</mass>
-        <cfm>0.000001</cfm>
-        <erp>0.8</erp>
+        <size>0.025 0.075</size>
+        <mass> 0.05</mass>
         <visual>
-          <size> 0.03 0.03 .445</size>
+          <size> 0.05 0.05 0.075</size>
           <material>Gazebo/PioneerBody</material>
+          <mesh>unit_cylinder</mesh>
+        </visual>
+      </geom:cylinder>
+      <geom:box name="cylinder1_base_geom">
+        <kp>100000000.0</kp>
+        <kd>0.1</kd>
+        <mesh>default</mesh>
+        <xyz>0.0 0.0 -0.033</xyz>
+        <size>0.05 0.05 0.01</size>
+        <mass> 0.01</mass>
+        <visual>
+          <size> 0.05 0.05 0.01</size>
+          <material>Gazebo/Fish</material>
           <mesh>unit_box</mesh>
         </visual>
       </geom:box>
-    </body:box>
+    </body:cylinder>
   </model:physical>
+
+  <!-- The small box "cup" -->
+  <model:physical name="object1_model">
+    <xyz>   0.835  -0.55   0.95</xyz>
+    <rpy>   0.0    0.0    30.0</rpy>
+    <body:box name="object1_body">
+			<geom:box name="object1_geom">
+				<kp>100000000.0</kp>
+				<kd>0.1</kd>
+				<mesh>default</mesh>
+				<size>0.1 0.03 0.03</size>
+				<mass> 0.05</mass>
+				<visual>
+					<size> 0.1 0.030 0.03</size>
+					<material>Gazebo/PioneerBody</material>
+					<mesh>unit_box</mesh>
+				</visual>
+			</geom:box>
+		</body:box>
+
+		<controller:P3D name="p3d_object_controller" plugin="libP3D.so">
+			<updateRate>100.0</updateRate>
+			<bodyName>object1_body</bodyName>
+			<interface:position name="p3d_object_position"/>
+		</controller:P3D>
+
+	</model:physical>
+
 
   <!-- The small ball -->
   <model:physical name="sphere1_model">
