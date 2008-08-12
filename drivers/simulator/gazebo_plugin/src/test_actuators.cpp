@@ -697,14 +697,29 @@ namespace gazebo {
       }
     }
 
-    if (false)
+    // -------------------------------------------------------------------------------------------------
+    // -                                                                                               -
+    // -   test some controllers set points by hardcode for debug                                      -
+    // -                                                                                               -
+    // -------------------------------------------------------------------------------------------------
+    if (true)
     for (std::vector<Robot_controller_>::iterator rci = robot_controllers_.begin(); rci != robot_controllers_.end() ; rci++)
-      if ((*rci).control_mode == "PD_CONTROL")
-        (*rci).pcontroller.setCommand(-0.3);
-      else if ((*rci).control_mode == "VELOCITY_CONTROL")
-        (*rci).vcontroller.setCommand(1.0);
+    {
+      if (false)
+        if ((*rci).control_mode == "PD_CONTROL")
+          (*rci).pcontroller.setCommand(-0.3);
+        else if ((*rci).control_mode == "VELOCITY_CONTROL")
+          (*rci).vcontroller.setCommand(1.0);
+      if (true)
+        if ((*rci).gazebo_joint_type == "gripper")
+          (*rci).pcontroller.setCommand(0.2);
+    }
 
-    // update each controller, this updates the joint that the controller was initialized with
+    // -------------------------------------------------------------------------------------------------
+    // -                                                                                               -
+    // -  update each controller, this updates the joint that the controller was initialized with      -
+    // -                                                                                               -
+    // -------------------------------------------------------------------------------------------------
     for (std::vector<Robot_controller_>::iterator rci = robot_controllers_.begin(); rci != robot_controllers_.end() ; rci++)
     {
       try
@@ -725,7 +740,11 @@ namespace gazebo {
       }
     }
 
-    // update actuators from robot joints via forward transmission propagation
+    // -------------------------------------------------------------------------------------------------
+    // -                                                                                               -
+    // -    update actuators from robot joints via forward transmission propagation                    -
+    // -                                                                                               -
+    // -------------------------------------------------------------------------------------------------
     for (std::vector<Robot_transmission_>::iterator rti = robot_transmissions_.begin(); rti != robot_transmissions_.end(); rti++)
     {
       // assign actuator states
@@ -738,7 +757,11 @@ namespace gazebo {
     // below is when the actuator stuff goes to the hardware
     //============================================================================================
 
-    // reverse transmission, get joint data from actuators
+    // -------------------------------------------------------------------------------------------------
+    // -                                                                                               -
+    // -    reverse transmission, get joint data from actuators                                        -
+    // -                                                                                               -
+    // -------------------------------------------------------------------------------------------------
     for (std::vector<Robot_transmission_>::iterator rrti = reverse_robot_transmissions_.begin(); rrti != reverse_robot_transmissions_.end(); rrti++)
     {
       // assign joint states
@@ -747,7 +770,11 @@ namespace gazebo {
       (*rrti).simple_transmission.propagateEffortBackwards();
     }
       
-    // udpate gazebo joint for this controller joint
+    // -------------------------------------------------------------------------------------------------
+    // -                                                                                               -
+    // -     udpate gazebo joint for this controller joint                                             -
+    // -                                                                                               -
+    // -------------------------------------------------------------------------------------------------
     for (std::vector<Robot_controller_>::iterator rci = robot_controllers_.begin(); rci != robot_controllers_.end() ; rci++)
     {
       if ((*rci).gazebo_joint_type == "gripper")
@@ -765,6 +792,13 @@ namespace gazebo {
         gj_f_r->SetTorque(    -(*rci).reverse_mech_joint_->commanded_effort_ - damp_force_f_r    );
         gj_f_tip_l->SetTorque(-(*rci).reverse_mech_joint_->commanded_effort_ - damp_force_f_tip_l);
         gj_f_tip_r->SetTorque( (*rci).reverse_mech_joint_->commanded_effort_ - damp_force_f_tip_r);
+
+        // std::cout << " updating gripper ----------------------------- " << std::endl;
+        // std::cout << " f_l " <<  (*rci).reverse_mech_joint_->commanded_effort_ << " " << damp_force_f_l    << std::endl;
+        // std::cout << " f_r " << -(*rci).reverse_mech_joint_->commanded_effort_ << " " << damp_force_f_r    << std::endl;
+        // std::cout << " ftl " << -(*rci).reverse_mech_joint_->commanded_effort_ << " " << damp_force_f_tip_l<< std::endl;
+        // std::cout << " ftr " <<  (*rci).reverse_mech_joint_->commanded_effort_ << " " << damp_force_f_tip_r<< std::endl;
+
       }
       else if ((*rci).gazebo_joint_type == "slider")
       {
