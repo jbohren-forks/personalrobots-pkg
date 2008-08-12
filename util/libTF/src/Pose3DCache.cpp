@@ -237,7 +237,8 @@ void Pose3DCache::insertNode(const Pose3DStorage & new_val)
 	  p_current->data = new_val;
 	  p_current->previous = last;
 	  p_current->next = NULL;
-
+	  last->next = p_current;
+	  
 	  last = p_current;
 	}
       else
