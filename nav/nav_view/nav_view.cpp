@@ -343,7 +343,10 @@ NavView::render()
   catch(libTF::TransformReference::LookupException& ex)
   {
   }
-
+  catch(...)
+  {
+  }
+  
   cloud.lock();
   for(unsigned int i=0;i<cloud.get_particles_size();i++)
   {
