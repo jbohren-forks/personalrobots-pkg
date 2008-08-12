@@ -95,7 +95,7 @@ namespace libTF{
                 unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME,
                 unsigned long long  max_extrapolation_time = DEFAULT_MAX_EXTRAPOLATION_TIME); 
     /** \brief Destructor */
-    ~Pose3DCache();  
+    virtual ~Pose3DCache();  
 
     /* Mutators */
     /** \brief Set the values with translation and quaternion notation */

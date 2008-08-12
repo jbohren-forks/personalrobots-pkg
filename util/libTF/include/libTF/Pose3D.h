@@ -87,7 +87,12 @@ namespace libTF
       /** \brief Translation and Quaturnion constructor */
       Pose3D(double xt, double yt, double zt, 
              double xr, double yt, double zt, double w);
-  
+      
+      /** \brief Destructor */
+      virtual ~Pose3D(void)
+      {
+      }
+      
       // Utility functions to normalize and get magnitude.
       /** \brief Normalize the quaternion */
       void normalize(void);

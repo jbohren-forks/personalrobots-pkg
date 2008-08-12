@@ -179,7 +179,7 @@ public:
   TransformReference(bool interpolating = true, 
                      ULLtime cache_time = DEFAULT_CACHE_TIME,
                      unsigned long long max_extrapolation_distance = DEFAULT_MAX_EXTRAPOLATION_DISTANCE);
-  ~TransformReference();
+  virtual ~TransformReference(void);
 
   /********** Mutators **************/
   /** \brief Add a new frame and parent
