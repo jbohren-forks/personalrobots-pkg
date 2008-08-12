@@ -99,6 +99,11 @@ namespace robot_desc {
 	m_errorCount = 0;
     }
     
+    void URDF::setVerbose(bool verbose)
+    {
+	m_verbose = verbose;
+    }
+    
     unsigned int URDF::getErrorCount(void) const
     {
 	return m_errorCount;	
@@ -527,12 +532,16 @@ namespace robot_desc {
     
     void URDF::errorMessage(const std::string &msg) const
     {
-	std::cerr << msg << std::endl;
+	if (m_verbose)
+	    std::cerr << msg << std::endl;
 	m_errorCount++;
     }
     
     void URDF::errorLocation(const TiXmlNode* node) const
     {
+	if (!m_verbose)
+	    return;
+	
 	if (!m_location.empty())
 	{
 	    std::cerr << "  ... at " << m_location;
@@ -2004,41 +2013,68 @@ namespace robot_desc {
 	getLinks(links);
 	for (unsigned int i = 0 ; i < links.size() ; ++i)
 	{
-	    
-	    Link::Joint *joint = links[i]->joint;
-	    if (joint->type == Link::Joint::UNKNOWN)
-		errorMessage("Joint '" + joint->name + "' in link '" + links[i]->name + "' is of unknown type");
-	    if (joint->type == Link::Joint::REVOLUTE || joint->type == Link::Joint::PRISMATIC)
+	    if (links[i]->isSet["joint"])
 	    {
-		if (joint->axis[0] == 0.0 && joint->axis[1] == 0.0 && joint->axis[2] == 0.0)
-		    errorMessage("Joint '" + joint->name + "' in link '" + links[i]->name + "' does not seem to have its axis properly set");
-		if ((joint->isSet["limit"] || joint->type == Link::Joint::PRISMATIC) && joint->limit[0] == 0.0 && joint->limit[1] == 0.0)
-		    errorMessage("Joint '" + joint->name + "' in link '" + links[i]->name + "' does not seem to have its limits properly set");
+		Link::Joint *joint = links[i]->joint;
+		if (joint->type == Link::Joint::UNKNOWN)
+		    errorMessage("Joint '" + joint->name + "' in link '" + links[i]->name + "' is of unknown type");
+		if (joint->type == Link::Joint::REVOLUTE || joint->type == Link::Joint::PRISMATIC)
+		{
+		    if (joint->axis[0] == 0.0 && joint->axis[1] == 0.0 && joint->axis[2] == 0.0)
+			errorMessage("Joint '" + joint->name + "' in link '" + links[i]->name + "' does not seem to have its axis properly set");
+		    if ((joint->isSet["limit"] || joint->type == Link::Joint::PRISMATIC) && joint->limit[0] == 0.0 && joint->limit[1] == 0.0)
+			errorMessage("Joint '" + joint->name + "' in link '" + links[i]->name + "' does not seem to have its limits properly set");
+		}
 	    }
+	    else
+		errorMessage("Link " + links[i]->name + " does not have its <joint> set");
 	    
-	    Link::Geometry *cgeom = links[i]->collision->geometry;
-	    if (cgeom->type == Link::Geometry::UNKNOWN)
-		errorMessage("Collision geometry '" + cgeom->name + "' in link '" + links[i]->name + "' is of unknown type");
-	    if (cgeom->type != Link::Geometry::UNKNOWN && cgeom->type != Link::Geometry::MESH)
+	    if (links[i]->isSet["collision"])
 	    {
-		int nzero = 0;
-		for (int k = 0 ; k < cgeom->nsize ; ++k)
-		    nzero += cgeom->size[k] == 0.0 ? 1 : 0;
-		if (nzero > 0)
-		    errorMessage("Collision geometry '" + cgeom->name + "' in link '" + links[i]->name + "' does not seem to have its size properly set");
+		if (links[i]->collision->isSet["geometry"])
+		{
+		    Link::Geometry *cgeom = links[i]->collision->geometry;
+		    if (cgeom->type == Link::Geometry::UNKNOWN)
+			errorMessage("Collision geometry '" + cgeom->name + "' in link '" + links[i]->name + "' is of unknown type");
+		    if (cgeom->type != Link::Geometry::UNKNOWN && cgeom->type != Link::Geometry::MESH)
+		    {
+			int nzero = 0;
+			for (int k = 0 ; k < cgeom->nsize ; ++k)
+			    nzero += cgeom->size[k] == 0.0 ? 1 : 0;
+			if (nzero > 0)
+			    errorMessage("Collision geometry '" + cgeom->name + "' in link '" + links[i]->name + "' does not seem to have its size properly set");
+		    }
+		}
+		else
+		    errorMessage("Collision " + links[i]->collision->name + " does not have its <geometry> set");
 	    }
+	    else
+		errorMessage("Link " + links[i]->name + " does not have its <collision> set");
 	    
-	    Link::Geometry *vgeom = links[i]->visual->geometry;
-	    if (vgeom->type == Link::Geometry::UNKNOWN)
-		errorMessage("Visual geometry '" + vgeom->name + "' in link '" + links[i]->name + "' is of unknown type");
-	    if (vgeom->type != Link::Geometry::UNKNOWN && vgeom->type != Link::Geometry::MESH)
+	    if (links[i]->isSet["visual"])
 	    {
-		int nzero = 0;
-		for (int k = 0 ; k < vgeom->nsize ; ++k)
-		    nzero += vgeom->size[k] == 0.0 ? 1 : 0;
-		if (nzero > 0)
-		    errorMessage("Visual geometry '" + vgeom->name + "' in link '" + links[i]->name + "' does not seem to have its size properly set");
-	    }	
+		if (links[i]->visual->isSet["geometry"])
+		{
+		    Link::Geometry *vgeom = links[i]->visual->geometry;
+		    if (vgeom->type == Link::Geometry::UNKNOWN)
+			errorMessage("Visual geometry '" + vgeom->name + "' in link '" + links[i]->name + "' is of unknown type");
+		    if (vgeom->type != Link::Geometry::UNKNOWN && vgeom->type != Link::Geometry::MESH)
+		    {
+			int nzero = 0;
+			for (int k = 0 ; k < vgeom->nsize ; ++k)
+			    nzero += vgeom->size[k] == 0.0 ? 1 : 0;
+			if (nzero > 0)
+			    errorMessage("Visual geometry '" + vgeom->name + "' in link '" + links[i]->name + "' does not seem to have its size properly set");
+		    }
+		}
+		else
+		    errorMessage("Visual " + links[i]->visual->name + " does not have its <geometry> set");  
+	    }
+	    else
+		errorMessage("Link " + links[i]->name + " does not have its <visual> set");	
+	    
+	    if (!links[i]->isSet["inertial"])
+		errorMessage("Link " + links[i]->name + " does not have its <inertial> set");	
 	}
     }
     

@@ -479,6 +479,7 @@ namespace robot_desc
 	{   
 	    m_paths.push_back("");
 	    m_errorCount = 0;
+	    m_verbose = true;
 	    if (filename)
 		loadFile(filename);
 	}
@@ -507,6 +508,9 @@ namespace robot_desc
 	/** Print the parsed datastructure */
 	virtual void print(std::ostream &out = std::cout) const;
         
+	/** Set the verbosity. Default is true */
+	void setVerbose(bool verbose);
+	
 	/** Check if the links form a cycle */
 	bool containsCycle(unsigned int index) const;
 	
@@ -678,6 +682,9 @@ namespace robot_desc
 	
 	/** Counter for errors */
 	mutable unsigned int                 m_errorCount;
+	
+	/** Verbosity flag */
+	bool                                 m_verbose;
 	
     private:
         
