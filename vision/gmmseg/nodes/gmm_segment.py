@@ -1,3 +1,4 @@
+#!/usr/bin/python
 '''
 @package gmm_segment
 Provides Gaussian mixture segmentation service.
@@ -13,6 +14,7 @@ from threading import RLock
 import pyrob.util as ut
 import sys, time, math
 import opencv.highgui as hg
+import time
 
 CAMERA_FOV    = 60.0 
 CAMERA_WIDTH  = 640
@@ -27,19 +29,40 @@ class SegmentNode:
         self.fy = CAMERA_HEIGHT / t30
 
     def segment(self, request):
+        print 'Hey Advait, I want to segment the image'
         while self.image == None:
             time.sleep(0.1)
 
         self.lock.acquire()
-        sego = tg.segment_center_object(self.image)
+        sego = tg.segment_center_object(self.image, display_on=False)
         self.lock.release()
 
         z     = request.height
-        u     = sego.fg_object_ellipse.center[0]
-        v     = sego.fg_object_ellipse.center[1]
+        u     = sego.fg_object_ellipse.center[0] - (CAMERA_WIDTH / 2.0)
+        v     = sego.fg_object_ellipse.center[1] - (CAMERA_HEIGHT / 2.0)
         x     = u * z / self.fx
         y     = v * z / self.fy
         theta = sego.fg_object_ellipse.angle
+
+        if theta > 90:
+          theta = theta - 180
+        if theta < -90:
+          theta = theta + 180
+
+        theta = math.radians(theta)
+
+#        if True:
+#          image_list = sego.get_images_for_display()
+#          image_list.append( cvimg )
+#          
+#          curtime = time.localtime()
+#          date_name = time.strftime('%Y%m%d%I%M', curtime)
+#        
+#          for i,img in enumerate(image_list):
+#            fname = date_name+'_image%d.png'%(i)
+#            hg.cvSaveImage( fname, img )
+
+
         return srv.hrl_graspResponse(x, y, request.height, theta)
 
     def set_image(self, image):
@@ -55,7 +78,7 @@ def run_me_server():
 
     rospy.TopicSub('image', RImage, sn.set_image)
     rospy.ready(sys.argv[0])
-    segment_service = rospy.Service('gmm_segment', srv.hrl_grasp, sn.segment)
+    segment_service = rospy.Service('hrl_grasp', srv.hrl_grasp, sn.segment)
     segment_service.register()
     rospy.spin()
 

@@ -159,12 +159,10 @@ cv2np_type_dict_invertible = {cv.CV_16SC1	: (np.int16, 1),
 							  cv.CV_8UC4	 : (np.uint8, 4)}
 
 def ros2cv(image):
-    if image.colorspace == 'rgb24':
-        format = 'RGB'
-    elif image.colorspace == 'mono8':
+    if image.colorspace == 'mono8':
         format = 'L'
     else:
-        raise RuntimeError('ros2cv: invalid colorspace in ROS image\'s im.colorspace.')
+        format = 'RGB'
 
     pil_image = Image.fromstring(format, (image.width, image.height), image.data)
     pil_image.save('ros2cv.bmp', 'BMP')

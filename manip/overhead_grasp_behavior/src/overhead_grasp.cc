@@ -16,6 +16,8 @@
 #include <rosgazebo/GripperCmd.h>
 #include <std_msgs/PR2Arm.h>
 
+#include <gmmseg/hrl_grasp.h>
+
 
 using namespace KDL;
 
@@ -28,7 +30,7 @@ class OverheadGrasper : public ros::node
     pr2_msgs::EndEffectorState rightEndEffectorMsg;
 		Frame right_tooltip_frame;
 		Vector objectPosition;
-		const static double PR2_GRIPPER_LENGTH = 0.155;
+		const static double PR2_GRIPPER_LENGTH = 0.16;
 		Vector CAMERA_ENDEFFECTOR; // position of camera relative to end effector in end effector frame.
 
 	public:
@@ -113,20 +115,25 @@ class OverheadGrasper : public ros::node
 
 		void moveArmSegmentation()
 		{
-//			gmmseg::hrl_grasp:request req;
-//			gmmseg::hrl_grasp:response res;
-//			req.height = right_tooltip_frame.p[2] - objectPosition[2] - CAMERA_ENDEFFECTOR[0];
-//			if (ros::service::call("hrl_grasp", req, res)==false)
-//			{
-//				printf("[overhead_grasp_behavior] <overhead_grasp.cpp> {segmentObject} hrl_grasp service failed.\nExiting..\n");
-//				exit(0);
-//			}
-//			Vector move(-1*res.y, -1*res.x, 0);
-//			Rotation r = Rotation::RotY(deg2rad*90)*Rotation::RotX(res.theta); // look down vertically, with correct wrist roll
+			gmmseg::hrl_grasp::request req;
+			gmmseg::hrl_grasp::response res;
+			req.height = right_tooltip_frame.p[2] - objectPosition[2] - CAMERA_ENDEFFECTOR[0];
+			if (ros::service::call("hrl_grasp", req, res)==false)
+			{
+				printf("[overhead_grasp_behavior] <overhead_grasp.cpp> {segmentObject} hrl_grasp service failed.\nExiting..\n");
+				exit(0);
+			}
+			Vector move(-1*res.y, -1*res.x, 0);
+			cout<<"move: "<<move<<"\n";
 
-			Vector move(0,0,0);
 			move += Rotation::RotY(deg2rad*90)*CAMERA_ENDEFFECTOR;
-			Rotation r = Rotation::RotY(deg2rad*90)*Rotation::RotY(deg2rad*90); // look down vertically, with correct wrist roll
+
+			if (res.theta>0)
+				res.theta = deg2rad*90-res.theta;
+			else
+				res.theta = -1*(res.theta+deg2rad*90);
+
+			Rotation r = Rotation::RotY(deg2rad*90)*Rotation::RotY(deg2rad*90)*Rotation::RotZ(res.theta); // look down vertically, with correct wrist roll
 			Vector goto_point = right_tooltip_frame.p+move;
 			cout<<"Going to: "<<goto_point<<endl;
 			positionArmCartesian(goto_point, r);

@@ -10,8 +10,8 @@ import gmmseg.srv as srv
 import rospy
 import sys
 
-rospy.wait_for_service('gmm_segment')
-segment_proxy = rospy.ServiceProxy('gmm_segment', srv.hrl_grasp)
-result = segment_proxy.call(srv.hrl_graspRequest(float(sys.argv[0])))
+rospy.wait_for_service('hrl_grasp')
+segment_proxy = rospy.ServiceProxy('hrl_grasp', srv.hrl_grasp)
+result = segment_proxy.call(srv.hrl_graspRequest(float(sys.argv[1])))
 print result.x, result.y, result.z, result.theta
 
