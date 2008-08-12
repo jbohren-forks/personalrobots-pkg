@@ -19,8 +19,17 @@ public:
 
   // A function to call to send data periodically
   void loop () {
-    pTFServer->sendEuler("FRAMEID_TILT_BASE","base",0,0,0,0,1.57,0,ros::Time::now());
-    pTFServer->sendEuler("FRAMEID_STEREO_BLOCK","base",0,0,0,0,0,0,ros::Time::now());
+    pTFServer->sendEuler("FRAMEID_SMALLV", "FRAMEID_STEREO_BLOCK", 0.0, 0.0, 0.0, -M_PI/2, 0.0, -M_PI/2, ros::Time::now());
+    pTFServer->sendEuler("base", "FRAMEID_STEREO_BLOCK",0,0,0,0,0,0,ros::Time::now());
+
+    NEWMAT::Real trnsele[] = { 0.08830,  0.00158,  0.99609, 2.51721e-3, //
+			       -0.00580,  0.99998, -0.00107, 100.66109e-3, //
+			       -0.99608, -0.00568,  0.08831, 48.23300e-3, //  
+			       0.0, 0.0, 0.0, 1.0}; 
+
+    NEWMAT::Matrix trns(4,4);
+    trns << trnsele;
+    pTFServer->sendMatrix("FRAMEID_STEREO_BLOCK","FRAMEID_TILT_BASE",  trns.i(), ros::Time::now());
   };
 
 private:

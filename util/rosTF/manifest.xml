@@ -15,4 +15,5 @@ Library for doing transformations within ROS.
 <depend package="laser_scan_utils"/>
 <depend package="std_msgs"/>
 <depend package="namelookup"/>
+<depend package="newmat10"/>
 </package>
