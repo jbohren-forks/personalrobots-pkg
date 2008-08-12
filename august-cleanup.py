@@ -90,8 +90,14 @@ for d in dirs:
     p = os.path.join(rpp, d)
     if not os.path.exists(p):
         continue
-    print "... deleting [%s]"%p
-    time.sleep(2.0)
-    shutil.rmtree(p)
+    sys.stdout.write("Delete [%s]? (y/n) "%p)
+    answer = None
+    while answer not in ['y', 'n']:
+        answer = sys.stdin.readline().strip()
+    if answer == 'n':
+        print "... ignoring [%s]"%p
+    else:
+        print "... deleting [%s]"%p
+        shutil.rmtree(p)
 
 print "... CLEAN!"
