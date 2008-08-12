@@ -141,9 +141,9 @@ bool JointVelocityControllerNode::setCommand(
   return true;
 }
 
-bool JointVelocityControllerNode::getCommand(
-  generic_controllers::GetCommand::request &req,
-  generic_controllers::GetCommand::response &resp)
+bool JointVelocityControllerNode::getActual(
+  generic_controllers::GetActual::request &req,
+  generic_controllers::GetActual::response &resp)
 {
   resp.command = c_->getActual();
   resp.time = c_->getTime();
@@ -158,5 +158,5 @@ void JointVelocityControllerNode::initXml(mechanism::Robot *robot, TiXmlElement 
   
   c_->initXml(robot, config);
   node->advertise_service(prefix + "/set_command", &JointVelocityControllerNode::setCommand, this);
-  node->advertise_service(prefix + "/get_command", &JointVelocityControllerNode::getCommand, this);
+  node->advertise_service(prefix + "/get_actual", &JointVelocityControllerNode::getActual, this);
 }

@@ -93,6 +93,11 @@ double JointPositionController::getActual()
   return joint_->position_;
 }
 
+double JointPositionController::getTime()
+{
+  return robot_->hw_->current_time_;
+}
+
 void JointPositionController::update()
 {
   double error(0);
@@ -144,11 +149,11 @@ bool JointPositionControllerNode::setCommand(
   return true;
 }
 
-bool JointPositionControllerNode::getCommand(
-  generic_controllers::GetCommand::request &req,
-  generic_controllers::GetCommand::response &resp)
+bool JointPositionControllerNode::getActual(
+  generic_controllers::GetActual::request &req,
+  generic_controllers::GetActual::response &resp)
 {
-  resp.command = c_->getCommand();
+  resp.command = c_->getActual();
 
   return true;
 }
@@ -160,6 +165,6 @@ void JointPositionControllerNode::initXml(mechanism::Robot *robot, TiXmlElement 
   
   c_->initXml(robot, config);
   node->advertise_service(prefix + "/set_command", &JointPositionControllerNode::setCommand, this);
-  node->advertise_service(prefix + "/get_command", &JointPositionControllerNode::getCommand, this);
+  node->advertise_service(prefix + "/get_actual", &JointPositionControllerNode::getActual, this);
 }
 

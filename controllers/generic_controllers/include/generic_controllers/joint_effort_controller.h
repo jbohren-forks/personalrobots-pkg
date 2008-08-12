@@ -50,7 +50,7 @@
 
 // Services
 #include <generic_controllers/SetCommand.h>
-#include <generic_controllers/GetCommand.h>
+#include <generic_controllers/GetActual.h>
 
 namespace controller
 {
@@ -147,8 +147,8 @@ public:
   bool setCommand(generic_controllers::SetCommand::request &req,
                   generic_controllers::SetCommand::response &resp);
 
-  bool getCommand(generic_controllers::GetCommand::request &req,
-                  generic_controllers::GetCommand::response &resp);
+  bool getActual(generic_controllers::GetActual::request &req,
+                  generic_controllers::GetActual::response &resp);
 
 private:
   JointEffortController *c_;

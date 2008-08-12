@@ -126,9 +126,9 @@ bool JointEffortControllerNode::setCommand(
   return true;
 }
 
-bool JointEffortControllerNode::getCommand(
-  generic_controllers::GetCommand::request &req,
-  generic_controllers::GetCommand::response &resp)
+bool JointEffortControllerNode::getActual(
+  generic_controllers::GetActual::request &req,
+  generic_controllers::GetActual::response &resp)
 {
   resp.command = c_->getActual();
   resp.time = c_->getTime();
@@ -142,6 +142,6 @@ void JointEffortControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *c
   
   c_->initXml(robot, config);
   node->advertise_service(prefix + "/set_command", &JointEffortControllerNode::setCommand, this);
-  node->advertise_service(prefix + "/get_command", &JointEffortControllerNode::getCommand, this);
+  node->advertise_service(prefix + "/get_actual", &JointEffortControllerNode::getActual, this);
 }
 
