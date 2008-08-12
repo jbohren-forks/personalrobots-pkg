@@ -3,13 +3,21 @@
 
 #include <string>
 #include <vector>
+#include <sstream>
 
 namespace string_utils
 {
-void split(const std::string &str, 
-           std::vector<std::string> &token_vec, 
-           const std::string &delim);
+    void split(const std::string &str, 
+	       std::vector<std::string> &token_vec, 
+	       const std::string &delim);
+    
+    template<typename T>
+    static inline std::string convert2str(const T &value)
+    {
+	std::stringstream ss;
+	ss << value;
+	return ss.str();
+    }
 }
 
 #endif
-

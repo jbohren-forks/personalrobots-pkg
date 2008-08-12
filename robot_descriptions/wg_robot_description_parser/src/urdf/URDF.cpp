@@ -34,6 +34,7 @@
 
 #include <urdf/URDF.h>
 #include <math_utils/MathExpression.h>
+#include <string_utils/string_utils.h>
 #include <cstring>
 #include <fstream>
 #include <sstream>
@@ -46,7 +47,8 @@ namespace robot_desc {
 #define MARK_SET(node, owner, variable)					\
     {									\
 	if (owner->isSet[#variable]) {					\
-	    fprintf(stderr, "'%s' already set\n", #variable);		\
+	    errorMessage("'" + std::string(#variable) +			\
+			 "' already set");				\
 	    errorLocation(node); }					\
 	else								\
 	    owner->isSet[#variable] = true;				\
@@ -94,6 +96,12 @@ namespace robot_desc {
 	m_paths.push_back("");
 	m_linkRoots.clear();
 	clearTemporaryData();
+	m_errorCount = 0;
+    }
+    
+    unsigned int URDF::getErrorCount(void) const
+    {
+	return m_errorCount;	
     }
     
     const std::string& URDF::getRobotName(void) const
@@ -517,10 +525,21 @@ namespace robot_desc {
 	return false;    
     }
     
+    void URDF::errorMessage(const std::string &msg) const
+    {
+	std::cerr << msg << std::endl;
+	m_errorCount++;
+    }
+    
     void URDF::errorLocation(const TiXmlNode* node) const
     {
 	if (!m_location.empty())
-	    fprintf(stderr, "  ... at %s%s", m_location.c_str(), node ? "" : "\n");
+	{
+	    std::cerr << "  ... at " << m_location;
+	    if (!node)
+		std::cerr << std::endl;
+	}
+	
 	if (node)
 	{
 	    /* find the document the node is part of */
@@ -528,11 +547,10 @@ namespace robot_desc {
 	    while (doc && doc->Type() != TiXmlNode::DOCUMENT)
 		doc = doc->Parent();
 	    const char *filename = doc ? reinterpret_cast<const char*>(doc->GetUserData()) : NULL;
-	    fprintf(stderr, "%s line %d, column %d", m_location.empty() ? "  ..." : ",", node->Row(), node->Column());
+	    std::cerr << (m_location.empty() ? "  ..." : ",") << " line " << node->Row() << ", column " << node->Column();
 	    if (filename)
-		fprintf(stderr, " (%s)\n", filename);
-	    else
-		fprintf(stderr, "\n");
+		std::cerr << " (" << filename << ")";
+	    std::cerr << std::endl;
 	}
     }
     
@@ -541,11 +559,11 @@ namespace robot_desc {
 	switch (node->Type())
 	{
 	case TiXmlNode::ELEMENT:
-	    fprintf(stderr, "Ignoring element node '%s'\n", node->Value());
+	    errorMessage("Ignoring element node '" + node->ValueStr() + "'");
 	    errorLocation(node);  
 	    break;
 	case TiXmlNode::TEXT:
-	    fprintf(stderr, "Ignoring text node with content '%s'\n", node->Value());
+	    errorMessage("Ignoring text node with content '" + node->ValueStr() + "'");
 	    errorLocation(node);  
 	    break;
 	case TiXmlNode::COMMENT:
@@ -553,7 +571,7 @@ namespace robot_desc {
 	    break;            
 	case TiXmlNode::UNKNOWN:
 	default:
-	    fprintf(stderr, "Ignoring unknown node '%s'\n", node->Value());
+	    errorMessage("Ignoring unknown node '" + node->ValueStr() + "'");
 	    errorLocation(node);  
 	    break;
 	}
@@ -572,7 +590,7 @@ namespace robot_desc {
 		    std::map<std::string, const TiXmlNode*>::const_iterator pos = m_templates.find(attr->ValueStr());
 		    if (pos == m_templates.end())
 		    {
-			fprintf(stderr, "Template '%s' is not defined\n", attr->Value());
+			errorMessage("Template '" + attr->ValueStr() + "' is not defined");
 			errorLocation(node);
 		    }	
 		    else
@@ -649,7 +667,7 @@ namespace robot_desc {
 	    result = parse(dynamic_cast<const TiXmlNode*>(doc));
 	}
 	else
-	    fprintf(stderr, "%s\n", doc->ErrorDesc());
+	    errorMessage(doc->ErrorDesc());
 	
 	return result;
     }  
@@ -668,7 +686,7 @@ namespace robot_desc {
 	    result = parse(dynamic_cast<const TiXmlNode*>(doc));
 	}
 	else
-	    fprintf(stderr, "%s\n", doc->ErrorDesc());
+	    errorMessage(doc->ErrorDesc());
 	
 	return result;
     }
@@ -689,7 +707,7 @@ namespace robot_desc {
 	    result = parse(dynamic_cast<const TiXmlNode*>(doc));
 	}
 	else
-	    fprintf(stderr, "%s\n", doc->ErrorDesc());
+	    errorMessage(doc->ErrorDesc());
 	
 	return result;
     }
@@ -741,17 +759,28 @@ namespace robot_desc {
     
     struct getConstantData
     {
+	getConstantData(void)
+	{
+	    m = NULL;
+	    errorCount = 0;
+	}
+	
 	std::map<std::string, std::string> *m;
 	std::map<std::string, bool>         s;
+	
+	unsigned int                        errorCount;
+	std::vector<std::string>            errorMsg;
     };
     
     static double getConstant(void *data, std::string &name)
     {
 	getConstantData *d = reinterpret_cast<getConstantData*>(data);
 	std::map<std::string, std::string> *m = d->m;
+	assert(m);
 	if (m->find(name) == m->end())
 	{
-	    fprintf(stderr, "Request for undefined constant: '%s'\n", name.c_str());
+	    d->errorMsg.push_back("Request for undefined constant: '" + name + "'");
+	    d->errorCount++;
 	    return 0.0;
 	}
 	else
@@ -761,7 +790,8 @@ namespace robot_desc {
 		std::map<std::string, bool>::iterator pos = d->s.find((*m)[name]);
 		if (pos != d->s.end() && pos->second == true)
 		{
-		    fprintf(stderr, "Recursive definition of constant '%s'\n", name.c_str());
+		    d->errorMsg.push_back("Recursive definition of constant '" + name + "'");
+		    d->errorCount++;
 		    return 0.0;
 		}
 		d->s[(*m)[name]] = true;
@@ -797,6 +827,13 @@ namespace robot_desc {
 	    data.m = &m_constants;
 	    vals[i] = meval::EvaluateMathExpression(value, &getConstant, reinterpret_cast<void*>(&data));
 	    read++;
+	    for (unsigned int k = 0 ; k < data.errorMsg.size() ; ++k)
+		errorMessage(data.errorMsg[k]);
+	    if (data.errorCount)
+	    {
+		m_errorCount += data.errorCount;
+		errorLocation(node);
+	    } 
 	}
 
 	if (ss.good())
@@ -812,14 +849,14 @@ namespace robot_desc {
 	    }
 	    if (!extra.empty())
 	    {
-		fprintf(stderr, "More data available (%u read, rest is ignored): '%s'\n", read, data.c_str());		
+		errorMessage("More data available (" + string_utils::convert2str(read) + " read, rest is ignored): '" + data + "'");
 		errorLocation(node);
 	    }	    
 	}
 	
 	if (read != count)
 	{
-	    fprintf(stderr, "Not all values were read: '%s'\n", data.c_str());
+	    errorMessage("Not all values were read: '" + data + "'");
 	    errorLocation(node);
 	}  
 	
@@ -864,15 +901,15 @@ namespace robot_desc {
 		    break;	  
 	    }
 	    if (!extra.empty())
-	    {
-		fprintf(stderr, "More data available (%u read, rest is ignored): '%s'\n", read, data.c_str());		
+	    {	
+		errorMessage("More data available (" + string_utils::convert2str(read) + " read, rest is ignored): '" + data + "'");
 		errorLocation(node);
 	    }	    
 	}
 	
 	if (read != count)
 	{
-	    fprintf(stderr, "Not all values were read: '%s'\n", data.c_str());
+	    errorMessage("Not all values were read: '" + data + "'");
 	    errorLocation(node);  
 	}
 	
@@ -889,7 +926,10 @@ namespace robot_desc {
 	Transmission *transmission = (m_transmissions.find(name) != m_transmissions.end()) ? m_transmissions[name] : new Transmission();
 	transmission->name = name;
 	if (transmission->name.empty())
-	    fprintf(stderr, "No transmission name given\n");
+	{
+	    errorMessage("No transmission name given");
+	    errorLocation(node);
+	}	
 	else
 	    MARK_SET(node, transmission, name);
 	
@@ -920,7 +960,10 @@ namespace robot_desc {
 	Actuator *actuator = (m_actuators.find(name) != m_actuators.end()) ? m_actuators[name] : new Actuator();
 	actuator->name = name;
 	if (actuator->name.empty())
-	    fprintf(stderr, "No actuator name given\n");
+	{
+	    errorMessage("No actuator name given");
+	    errorLocation(node);
+	}
 	else
 	    MARK_SET(node, actuator, name);
 	
@@ -951,7 +994,10 @@ namespace robot_desc {
 	Frame *frame = (m_frames.find(name) != m_frames.end()) ? m_frames[name] : new Frame();
 	frame->name = name;
 	if (frame->name.empty())
-	    fprintf(stderr, "No frame name given\n");
+	{
+	    errorMessage("No frame name given");
+	    errorLocation(node);
+	}
 	else
 	    MARK_SET(node, frame, name);
 	
@@ -977,7 +1023,7 @@ namespace robot_desc {
 		    frame->linkName = node->FirstChild()->ValueStr();
 		    MARK_SET(node, frame, parent);
 		    if (frame->type == Frame::CHILD)
-			fprintf(stderr, "Frame '%s' can only have either a child or a parent link\n", frame->name.c_str());
+			errorMessage("Frame '" + frame->name + "' can only have either a child or a parent link");
 		    frame->type = Frame::PARENT;
 		}
 		else if (node->ValueStr() == "child" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
@@ -985,7 +1031,7 @@ namespace robot_desc {
 		    frame->linkName = node->FirstChild()->ValueStr();
 		    MARK_SET(node, frame, child);
 		    if (frame->type == Frame::PARENT)
-			fprintf(stderr, "Frame '%s' can only have either a child or a parent link\n", frame->name.c_str());
+			errorMessage("Frame '" + frame->name + "' can only have either a child or a parent link");
 		    frame->type = Frame::CHILD;
 		}
 		else
@@ -1013,7 +1059,7 @@ namespace robot_desc {
 	{
 	    if (m_joints.find(name) == m_joints.end())
 	    {
-		fprintf(stderr, "Attempting to add information to an undefined joint: '%s'\n", name.c_str());
+		errorMessage("Attempting to add information to an undefined joint: '" + name + "'");
 		errorLocation(node);		
 		return;
 	    }
@@ -1041,7 +1087,7 @@ namespace robot_desc {
 		    joint->type = Link::Joint::PLANAR;
 		else
 		{
-		    fprintf(stderr, "Unknown joint type: '%s'\n", attr->Value());
+		    errorMessage("Unknown joint type: '" + attr->ValueStr() + "'");
 		    errorLocation(node);
 		}
 		MARK_SET(node, joint, type);
@@ -1110,7 +1156,7 @@ namespace robot_desc {
 	{
 	    if (m_geoms.find(name) == m_geoms.end())
 	    {
-		fprintf(stderr, "Attempting to add information to an undefined geometry: '%s'\n", name.c_str());
+		errorMessage("Attempting to add information to an undefined geometry: '" + name + "'");
 		errorLocation(node);		
 		return;
 	    }
@@ -1148,7 +1194,7 @@ namespace robot_desc {
 		}      
 		else
 		{
-		    fprintf(stderr, "Unknown geometry type: '%s'\n", attr->Value());
+		    errorMessage("Unknown geometry type: '" + attr->ValueStr() + "'");
 		    errorLocation(node);
 		}
 		MARK_SET(node, geometry, type);
@@ -1197,7 +1243,7 @@ namespace robot_desc {
 	{
 	    if (m_collision.find(name) == m_collision.end())
 	    {
-		fprintf(stderr, "Attempting to add information to an undefined collision: '%s'\n", name.c_str());
+		errorMessage("Attempting to add information to an undefined collision: '" + name + "'");
 		errorLocation(node);
 		return;
 	    }
@@ -1262,7 +1308,7 @@ namespace robot_desc {
 	{
 	    if (m_visual.find(name) == m_visual.end())
 	    {
-		fprintf(stderr, "Attempting to add information to an undefined visual: '%s'\n", name.c_str());
+		errorMessage("Attempting to add information to an undefined visual: '" + name + "'");
 		errorLocation(node);
 		return;
 	    }
@@ -1327,7 +1373,7 @@ namespace robot_desc {
 	{
 	    if (m_inertial.find(name) == m_inertial.end())
 	    {
-		fprintf(stderr, "Attempting to add information to an undefined inertial component: '%s'\n", name.c_str());
+		errorMessage("Attempting to add information to an undefined inertial component: '" + name + "'");
 		errorLocation(node);
 		return;
 	    }
@@ -1378,13 +1424,16 @@ namespace robot_desc {
 	Link *link = (m_links.find(name) != m_links.end()) ? m_links[name] : new Link();
 	link->name = name;
 	if (link->name.empty())
-	    fprintf(stderr, "No link name given\n");
+	{
+	    errorMessage("No link name given");
+	    errorLocation(node);
+	}
 	else
 	    MARK_SET(node, link, name);
 	m_links[link->name] = link;
 	
 	if (link->canSense())
-	    fprintf(stderr, "Link '%s' was already defined as a sensor\n", link->name.c_str());
+	    errorMessage("Link '" + link->name + "' was already defined as a sensor");
 
 	std::string currentLocation = m_location;
 	m_location = "link '" + name + "'";
@@ -1451,17 +1500,17 @@ namespace robot_desc {
 	Sensor *sensor = (m_links.find(name) != m_links.end()) ? dynamic_cast<Sensor*>(m_links[name]) : new Sensor();
 	if (!sensor)
 	{
-	    fprintf(stderr, "Link with name '%s' has already been defined\n", name.c_str());
+	    errorMessage("Link with name '" + name + "' has already been defined");
 	    sensor = new Sensor();
 	}
 	
 	sensor->name = name;
 	if (sensor->name.empty())
-	    fprintf(stderr, "No sensor name given\n");
+	    errorMessage("No sensor name given");
 	else
 	    MARK_SET(node, sensor, name);
 	if (m_links.find(sensor->name) != m_links.end())
-	    fprintf(stderr, "Sensor '%s' redefined\n", sensor->name.c_str());
+	    errorMessage("Sensor '" + sensor->name + "' redefined");
 	m_links[sensor->name] = dynamic_cast<Link*>(sensor);
 	
 	std::string currentLocation = m_location;
@@ -1480,7 +1529,7 @@ namespace robot_desc {
 		    sensor->type = Sensor::STEREO_CAMERA;
 		else
 		{
-		    fprintf(stderr, "Unknown sensor type: '%s'\n", attr->Value());
+		    errorMessage("Unknown sensor type: '" + attr->ValueStr() + "'");
 		    errorLocation(node);
 		}
 		MARK_SET(node, sensor, type);
@@ -1564,12 +1613,12 @@ namespace robot_desc {
 		    }
 		}
                 else
-                    fprintf(stderr, "Unable to load %s\n", filename);
+                    errorMessage("Unable to load " + std::string(filename));
 		delete doc;
                 free(filename);
 	    }
             else
-                fprintf(stderr, "Unable to find %s\n", elem->FirstChild()->Value());        
+                errorMessage("Unable to find " + elem->FirstChild()->ValueStr());
 	    if (change)
 		return true;
         }
@@ -1651,10 +1700,9 @@ namespace robot_desc {
 		continue;
 	    }
 	    if (i->second->joint->type == Link::Joint::FLOATING || i->second->joint->type == Link::Joint::PLANAR)
-		fprintf(stderr, "Link '%s' uses a free joint (floating or planar) but its parent is not the environment!\n", i->second->name.c_str());
+		errorMessage("Link '" + i->second->name + "' uses a free joint (floating or planar) but its parent is not the environment!");
 	    if (m_links.find(i->second->parentName) == m_links.end())
-		fprintf(stderr, "Parent of link '%s' is undefined: '%s'\n", i->second->name.c_str(),
-			i->second->parentName.c_str());
+		errorMessage("Parent of link '" + i->second->name + "' is undefined: '" + i->second->parentName + "'");
 	    else
 	    {
 		Link *parent =  m_links[i->second->parentName];
@@ -1669,7 +1717,7 @@ namespace robot_desc {
 	    if (m_links.find(i->second->linkName) != m_links.end())
 		i->second->link = m_links[i->second->linkName];
 	    else
-		fprintf(stderr, "Frame '%s' refers to unknown link ('%s')\n", i->first.c_str(), i->second->linkName.c_str());		    
+		errorMessage("Frame '" + i->first + "' refers to unknown link ('" + i->second->linkName + "')");	    
 	}
 	
 	/* for each group, compute the pointers to the links they contain, and for every link,
@@ -1683,7 +1731,7 @@ namespace robot_desc {
 		if (m_links.find(i->second->linkNames[j]) == m_links.end())
 		{
 		    if (m_frames.find(i->second->linkNames[j]) == m_frames.end())
-			fprintf(stderr, "Group '%s': '%s' is not defined as a link or frame\n", i->first.c_str(), i->second->linkNames[j].c_str());
+			errorMessage("Group '" + i->first + "': '" + i->second->linkNames[j] + "' is not defined as a link or frame");
 		    else
 		    {
 			/* name is a frame */
@@ -1697,7 +1745,7 @@ namespace robot_desc {
 		{
 		    /* name is a link */
 		    if (m_frames.find(i->second->linkNames[j]) != m_frames.end())
-			fprintf(stderr, "Name '%s' is used both for a link and a frame\n", i->second->linkNames[j].c_str());
+			errorMessage("Name '" + i->second->linkNames[j] + "' is used both for a link and a frame");
 		    
 		    Link* l = m_links[i->second->linkNames[j]];
 		    l->groups.push_back(i->second);
@@ -1765,7 +1813,7 @@ namespace robot_desc {
 	{
 	case TiXmlNode::DOCUMENT:
 	    if (dynamic_cast<const TiXmlDocument*>(node)->RootElement()->ValueStr() != "robot")
-		fprintf(stderr, "File '%s' does not start with the <robot> tag\n", m_source.c_str());
+		errorMessage("File '" + m_source + "' does not start with the <robot> tag");
 	    
 	    /* stage 1: extract templates, constants, groups */
 	    parse(dynamic_cast<const TiXmlNode*>(dynamic_cast<const TiXmlDocument*>(node)->RootElement()));
@@ -1776,7 +1824,7 @@ namespace robot_desc {
 		{
 		    const TiXmlElement *elem = m_stage2[i]->ToElement(); 
 		    if (!elem)
-			fprintf(stderr, "Non-element node found in second stage of parsing. This should NOT happen\n");
+			errorMessage("Non-element node found in second stage of parsing. This should NOT happen");
 		    else
 		    {
 			std::string name = elem->ValueStr();
@@ -1822,7 +1870,7 @@ namespace robot_desc {
 		{
 		    std::string nameStr = name;
 		    if (!m_name.empty() && nameStr != m_name)
-			fprintf(stderr, "Loading a file with contradicting robot name: '%s' - '%s'\n", m_name.c_str(), name);
+			errorMessage("Loading a file with contradicting robot name: '" + m_name + "' - '" + name + "'");
 		    m_name = nameStr;
 		}
 		for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
@@ -1843,15 +1891,15 @@ namespace robot_desc {
 			    {
 				addPath(filename);
 				if (doc->RootElement()->ValueStr() != "robot")
-				    fprintf(stderr, "Included file '%s' does not start with the <robot> tag\n", filename);
-
+				    errorMessage("Included file '" + std::string(filename) + "' does not start with the <robot> tag");
+				
 				parse(dynamic_cast<const TiXmlNode*>(doc->RootElement()));
 			    }
 			    else
-				fprintf(stderr, "Unable to load %s\n", filename);
+				errorMessage("Unable to load " + std::string(filename));
 			}
 			else
-			    fprintf(stderr, "Unable to find %s\n", node->FirstChild()->Value());                    
+			    errorMessage("Unable to find " + node->FirstChild()->ValueStr());
 		    }
 		    else 
 			ignoreNode(node);
@@ -1871,7 +1919,10 @@ namespace robot_desc {
 		    }
 		    
 		    if (!node->NoChildren())
-			fprintf(stderr, "Constant '%s' appears to contain tags. This should not be the case.\n", name.c_str());
+		    {
+			errorMessage("Constant '" + name + "' appears to contain tags. This should not be the case.");
+			errorLocation(node);
+		    }
 		    
 		    m_constants[name] = value;
 		}
@@ -1930,7 +1981,7 @@ namespace robot_desc {
 			
 			if (g->linkNames.empty())
 			{
-			    fprintf(stderr, "Group '%s' is empty. Not adding to list of groups.\n", g->name.c_str());
+			    errorMessage("Group '" + g->name + "' is empty. Not adding to list of groups.");
 			    m_groups.erase(m_groups.find(g->name));
 			    delete g;
 			}			
@@ -1956,37 +2007,37 @@ namespace robot_desc {
 	    
 	    Link::Joint *joint = links[i]->joint;
 	    if (joint->type == Link::Joint::UNKNOWN)
-		fprintf(stderr, "Joint '%s' in link '%s' is of unknown type\n", joint->name.c_str(), links[i]->name.c_str());
+		errorMessage("Joint '" + joint->name + "' in link '" + links[i]->name + "' is of unknown type");
 	    if (joint->type == Link::Joint::REVOLUTE || joint->type == Link::Joint::PRISMATIC)
 	    {
 		if (joint->axis[0] == 0.0 && joint->axis[1] == 0.0 && joint->axis[2] == 0.0)
-		    fprintf(stderr, "Joint '%s' in link '%s' does not seem to have its axis properly set\n", joint->name.c_str(), links[i]->name.c_str());
+		    errorMessage("Joint '" + joint->name + "' in link '" + links[i]->name + "' does not seem to have its axis properly set");
 		if ((joint->isSet["limit"] || joint->type == Link::Joint::PRISMATIC) && joint->limit[0] == 0.0 && joint->limit[1] == 0.0)
-		    fprintf(stderr, "Joint '%s' in link '%s' does not seem to have its limits properly set\n", joint->name.c_str(), links[i]->name.c_str());
+		    errorMessage("Joint '" + joint->name + "' in link '" + links[i]->name + "' does not seem to have its limits properly set");
 	    }
 	    
 	    Link::Geometry *cgeom = links[i]->collision->geometry;
 	    if (cgeom->type == Link::Geometry::UNKNOWN)
-		fprintf(stderr, "Collision geometry '%s' in link '%s' is of unknown type\n", cgeom->name.c_str(), links[i]->name.c_str());
+		errorMessage("Collision geometry '" + cgeom->name + "' in link '" + links[i]->name + "' is of unknown type");
 	    if (cgeom->type != Link::Geometry::UNKNOWN && cgeom->type != Link::Geometry::MESH)
 	    {
 		int nzero = 0;
 		for (int k = 0 ; k < cgeom->nsize ; ++k)
 		    nzero += cgeom->size[k] == 0.0 ? 1 : 0;
 		if (nzero > 0)
-		    fprintf(stderr, "Collision geometry '%s' in link '%s' does not seem to have its size properly set\n", cgeom->name.c_str(), links[i]->name.c_str());
+		    errorMessage("Collision geometry '" + cgeom->name + "' in link '" + links[i]->name + "' does not seem to have its size properly set");
 	    }
 	    
 	    Link::Geometry *vgeom = links[i]->visual->geometry;
 	    if (vgeom->type == Link::Geometry::UNKNOWN)
-		fprintf(stderr, "Visual geometry '%s' in link '%s' is of unknown type\n", vgeom->name.c_str(), links[i]->name.c_str());
+		errorMessage("Visual geometry '" + vgeom->name + "' in link '" + links[i]->name + "' is of unknown type");
 	    if (vgeom->type != Link::Geometry::UNKNOWN && vgeom->type != Link::Geometry::MESH)
 	    {
 		int nzero = 0;
 		for (int k = 0 ; k < vgeom->nsize ; ++k)
 		    nzero += vgeom->size[k] == 0.0 ? 1 : 0;
 		if (nzero > 0)
-		    fprintf(stderr, "Visual geometry '%s' in link '%s' does not seem to have its size properly set\n", vgeom->name.c_str(), links[i]->name.c_str());
+		    errorMessage("Visual geometry '" + vgeom->name + "' in link '" + links[i]->name + "' does not seem to have its size properly set");
 	    }	
 	}
     }

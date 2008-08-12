@@ -1,11 +1,18 @@
 #include <urdf/URDF.h>
 #include <gtest/gtest.h>
 #include <cstdlib>
+#include <string>
 using namespace robot_desc;
+
+int runExternalProcess(const std::string &executable, const std::string &args)
+{
+    return system((executable + " " + args).c_str());
+}
 
 TEST(URDF, EmptyFile)
 {
-    EXPECT_TRUE(true);
+    URDF file;
+    EXPECT_TRUE(file.loadFile("test/data/test1.xml"));
 }
 
 int main(int argc, char **argv)

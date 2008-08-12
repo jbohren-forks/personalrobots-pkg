@@ -478,6 +478,7 @@ namespace robot_desc
 	URDF(const char *filename = NULL)
 	{   
 	    m_paths.push_back("");
+	    m_errorCount = 0;
 	    if (filename)
 		loadFile(filename);
 	}
@@ -560,6 +561,9 @@ namespace robot_desc
 	/** Get the data that was defined at top level */
 	const Data& getData(void) const;
         
+	/** Return the number of encountered errors */
+	unsigned int getErrorCount(void) const;
+	
     protected:
         
 	/** Free the memory allocated in this class */
@@ -636,6 +640,9 @@ namespace robot_desc
 	/** Print the error location, if known */
 	void errorLocation(const TiXmlNode* node = NULL) const;
 	
+	/** Output an error message */
+	void errorMessage(const std::string& msg) const;
+
 	/** Compute the easy-access pointers inside the parsed datastructures */
 	void linkDatastructure(void);
 
@@ -668,6 +675,9 @@ namespace robot_desc
         
 	/** Additional datastructure containing a list links that are connected to the environment */
 	std::vector<Link*>                   m_linkRoots; 
+	
+	/** Counter for errors */
+	mutable unsigned int                 m_errorCount;
 	
     private:
         
