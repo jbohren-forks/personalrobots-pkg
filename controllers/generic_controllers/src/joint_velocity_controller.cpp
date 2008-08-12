@@ -95,7 +95,7 @@ double JointVelocityController::getTime()
 // Return the measured joint velocity
 double JointVelocityController::getActual()
 {
-  return joint_->position_;
+  return joint_->velocity_;
 }
 
 void JointVelocityController::update()
@@ -145,7 +145,7 @@ bool JointVelocityControllerNode::getCommand(
   generic_controllers::GetCommand::request &req,
   generic_controllers::GetCommand::response &resp)
 {
-  resp.command = c_->getCommand();
+  resp.command = c_->getActual();
   resp.time = c_->getTime();
 
   return true;

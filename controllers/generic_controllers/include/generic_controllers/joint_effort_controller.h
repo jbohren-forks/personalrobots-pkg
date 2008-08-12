@@ -94,6 +94,11 @@ public:
   double getActual();
 
   /*!
+   * \brief Get latest time..
+   */
+  double getTime();
+
+  /*!
    * \brief Issues commands to the joint. Should be called at regular intervals
    */
 

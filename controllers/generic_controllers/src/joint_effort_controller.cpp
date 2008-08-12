@@ -78,6 +78,11 @@ double JointEffortController::getActual()
   return joint_->applied_effort_;
 }
 
+double JointVelocityController::getTime()
+{
+  return robot_->hw_->current_time_;
+}
+
 void JointEffortController::update()
 {
 
