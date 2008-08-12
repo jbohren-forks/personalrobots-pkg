@@ -32,8 +32,17 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef JOINT_VELOCITY_CONTROLLER_H
-#define JOINT_VELOCITY_CONTROLLER_H
+#pragma once
+
+/***************************************************/
+/*! \class controller::JointVelocityController
+    \brief Joint Velocity Controller
+    
+    This class closes the loop around velocity using
+    a pid loop. 
+
+*/
+/***************************************************/
 
 #include <ros/node.h>
 
@@ -97,12 +106,21 @@ private:
    */
   void setJointEffort(double torque);
 
-  mechanism::Joint* joint_; /*!< Joint we're controlling>*/
-  Pid pid_controller_; /*!< Internal PID controller>*/
-  double last_time_; /*!< Last time stamp of update> */
-  double command_; /*!< Last commanded position> */
-  mechanism::Robot *robot_; /*!< Pointer to robot structure>*/
+  mechanism::Joint* joint_; /**< Joint we're controlling. */
+  Pid pid_controller_;      /**< Internal PID controller. */
+  double last_time_;        /**< Last time stamp of update. */
+  double command_;          /**< Last commanded position. */
+  mechanism::Robot *robot_; /**< Pointer to robot structure. */
 };
+
+/***************************************************/
+/*! \class controller::JointVelocityControllerNode
+    \brief Joint Velocity Controller ROS Node
+    
+    This class closes the loop around velocity using
+    a pid loop. 
+*/
+/***************************************************/
 
 class JointVelocityControllerNode : public Controller
 {
@@ -134,4 +152,3 @@ private:
 };
 }
 
-#endif /* JOINT_VELOCITY_CONTROLLER_H */

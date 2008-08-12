@@ -32,8 +32,17 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef JOINT_POSITION_CONTROLLER_H
-#define JOINT_POSITION_CONTROLLER_H
+#pragma once
+
+/***************************************************/
+/*! \class controller::JointPositionController
+    \brief Joint Position Controller
+    
+    This class closes the loop around positon using
+    a pid loop. 
+
+*/
+/***************************************************/
 
 #include <ros/node.h>
 
@@ -51,13 +60,13 @@ class JointPositionController : public Controller
 {
 public:
   /*!
-   * \brief Default Constructor of the JointController class.
+   * \brief Default Constructor of the JointPositionController class.
    *
    */
   JointPositionController();
 
   /*!
-   * \brief Destructor of the JointController class.
+   * \brief Destructor of the JointPositionController class.
    */
   ~JointPositionController();
 
@@ -71,7 +80,7 @@ public:
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
    *
-   * \param double pos Position command to issue
+   * \param command 
    */
   void setCommand(double command);
 
@@ -97,12 +106,23 @@ private:
    */
   void setJointEffort(double torque);
 
-  mechanism::Joint* joint_; /*!< Joint we're controlling>*/
-  Pid pid_controller_; /*!< Internal PID controller>*/
-  double last_time_; /*!< Last time stamp of update> */
-  double command_; /*!< Last commanded position> */
-  mechanism::Robot *robot_; /*!< Pointer to robot structure>*/
+  mechanism::Joint* joint_;  /**< Joint we're controlling. */
+  Pid pid_controller_;       /**< Internal PID controller. */
+  double last_time_;         /**< Last time stamp of update. */
+  double command_;           /**< Last commanded position. */
+  mechanism::Robot *robot_;  /**< Pointer to robot structure. */
 };
+
+/***************************************************/
+/*! \class controller::JointPositionControllerNode
+    \brief Joint Position Controller ROS Node
+    
+    This class closes the loop around positon using
+    a pid loop. 
+
+
+*/
+/***************************************************/
 
 class JointPositionControllerNode : public Controller
 {
@@ -134,4 +154,3 @@ private:
 };
 }
 
-#endif /* JOINT_POSITION_CONTROLLER_H */

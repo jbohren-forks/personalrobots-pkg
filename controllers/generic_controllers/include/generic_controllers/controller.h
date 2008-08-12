@@ -86,13 +86,4 @@ public:
   virtual void initXml(mechanism::Robot *robot, TiXmlElement *config) = 0;
 };
 
-struct PidControlParam
-{
-  double p_gain_;
-  double i_gain_;
-  double d_gain_;
-  double windup_min_;
-  double windup_max_;
-};
-
 }

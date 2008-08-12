@@ -2,7 +2,7 @@
   <description brief='Generic Controller Library'>
     Library for doing generic controls.
   </description>
-  <author>Melonee Wise, John Hsu, David Li</author>
+  <author>John Hsu, David Li, Melonee Wise</author>
   <license>BSD</license>
   <depend package="mechanism_model" />
   <depend package="wg_robot_description_parser" />

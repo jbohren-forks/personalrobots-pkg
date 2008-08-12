@@ -32,11 +32,20 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef JOINT_EFFORT_CONTROLLER_H
-#define JOINT_EFFORT_CONTROLLER_H
+#pragma once
+
+/***************************************************/
+/*! \class controller::JointEffortController
+    \brief Joint Torque Controller
+    
+    This class basically passes the commanded effort 
+    down through the transmissions and safety code.
+
+*/
+/***************************************************/
+
 
 #include <ros/node.h>
-
 #include <generic_controllers/controller.h>
 
 // Services
@@ -50,13 +59,13 @@ class JointEffortController : public Controller
 {
 public:
   /*!
-   * \brief Default Constructor of the JointController class.
+   * \brief Default Constructor of the JointEffortController class.
    *
    */
   JointEffortController();
 
   /*!
-   * \brief Destructor of the JointController class.
+   * \brief Destructor of the JointEffortController class.
    */
   ~JointEffortController();
 
@@ -70,7 +79,7 @@ public:
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
    *
-   * \param double pos Position command to issue
+   * \param command 
    */
   void setCommand(double command);
 
@@ -80,7 +89,7 @@ public:
   double getCommand();
 
   /*!
-   * \brief Read the torque of the motor
+   * \brief Read the effort of the joint
    */
   double getActual();
 
@@ -96,10 +105,20 @@ private:
    */
   void setJointEffort(double torque);
 
-  mechanism::Joint* joint_; /*!< Joint we're controlling>*/
-  double command_; /*!< Last commanded position> */
-  mechanism::Robot *robot_; /*!< Pointer to robot structure>*/
+  mechanism::Joint* joint_; /**< Joint we're controlling. */
+  double command_;          /**< Last commanded position. */
+  mechanism::Robot *robot_; /**< Pointer to robot structure. */
 };
+
+/***************************************************/
+/*! \class controller::JointEffortControllerNode
+    \brief Joint Torque Controller ROS Node
+    
+    This class basically passes the commanded effort 
+    down through the transmissions and safety code.
+
+*/
+/***************************************************/
 
 class JointEffortControllerNode : public Controller
 {
@@ -131,4 +150,4 @@ private:
 };
 }
 
-#endif /* JOINT_POSITION_CONTROLLER_H */
+
