@@ -62,6 +62,15 @@ inline double getMagnitude(double xl[], int num)
   return sqrt(mag);
 }
 
+void RobotKinematics::loadXMLString(std::string xml_content)
+{
+  robot_desc::URDF model;
+  if(!model.loadString(xml_content.c_str()))
+    return;
+
+  loadModel(model);
+}
+
 void RobotKinematics::loadXML(std::string filename)
 {
   robot_desc::URDF model;

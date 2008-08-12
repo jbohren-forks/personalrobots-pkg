@@ -76,6 +76,13 @@ namespace robot_kinematics
     ~RobotKinematics();
 
     /*!
+     * \brief load the robot kinematics from an XML string
+     *
+     * \param xml_content - xml content
+     */
+    void loadXMLString(std::string xml_content);
+
+    /*!
      * \brief load the robot kinematics from an XML file using the string name of the file
      *
      * \param filename - xml file name
