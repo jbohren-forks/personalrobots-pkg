@@ -5,6 +5,6 @@
   <param name="world_3d_map/retain_pointcloud_fraction" type="double" value="0.05" /> <!-- percentage (between 0 and 1) -->
   <param name="world_3d_map/verbosity_level" type="int" value="1" /> <!-- integer value -->
   
-  <node pkg="world_3d_map" type="world_3d_map" args="scan:=tilt_scan" respawn="false" />  
+  <node pkg="world_3d_map" type="world_3d_map" args="robotdesc/pr2 scan:=tilt_scan" respawn="false" />  
 
 </launch>
