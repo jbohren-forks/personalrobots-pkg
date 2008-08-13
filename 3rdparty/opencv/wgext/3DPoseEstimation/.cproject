@@ -100,27 +100,6 @@
 </tool>
 </toolChain>
 </folderInfo>
-<folderInfo id="cdt.managedbuild.config.gnu.exe.debug.2127960026.993396484" name="/" resourcePath="test">
-<toolChain id="cdt.managedbuild.toolchain.gnu.exe.debug.1723910544" name="GCC Tool Chain" superClass="cdt.managedbuild.toolchain.gnu.exe.debug" unusedChildren="">
-<targetPlatform id="cdt.managedbuild.target.gnu.platform.exe.debug" name="Debug Platform" superClass="cdt.managedbuild.target.gnu.platform.exe.debug"/>
-<tool id="cdt.managedbuild.tool.gnu.archiver.base.566284418" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base.852381504"/>
-<tool command="g++" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG}${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" id="cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.641818963" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.693064751">
-<option id="gnu.cpp.compiler.exe.debug.option.optimization.level.1314656797" name="Optimization Level" superClass="gnu.cpp.compiler.exe.debug.option.optimization.level" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
-<option id="gnu.cpp.compiler.exe.debug.option.debugging.level.330434302" name="Debug Level" superClass="gnu.cpp.compiler.exe.debug.option.debugging.level" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
-<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.597259873" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
-</tool>
-<tool id="cdt.managedbuild.tool.gnu.c.compiler.exe.debug.888177692" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.exe.debug.1277856600">
-<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.exe.debug.option.optimization.level.1429389414" name="Optimization Level" superClass="gnu.c.compiler.exe.debug.option.optimization.level" valueType="enumerated"/>
-<option id="gnu.c.compiler.exe.debug.option.debugging.level.751752194" name="Debug Level" superClass="gnu.c.compiler.exe.debug.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
-<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.105747786" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
-</tool>
-<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.debug.950899835" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.debug.1992249716"/>
-<tool id="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug.431820402" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug.604478383"/>
-<tool id="cdt.managedbuild.tool.gnu.assembler.exe.debug.1913363574" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.exe.debug.373659826">
-<inputType id="cdt.managedbuild.tool.gnu.assembler.input.2064564479" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
-</tool>
-</toolChain>
-</folderInfo>
 <sourceEntries>
 <entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="src"/>
 <entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="include"/>
@@ -639,27 +618,6 @@
 </tool>
 <tool id="cdt.managedbuild.tool.gnu.archiver.base.1829397208" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base">
 <option id="gnu.both.lib.option.flags.497318664" name="Archiver flags" superClass="gnu.both.lib.option.flags"/>
-</tool>
-</toolChain>
-</folderInfo>
-<folderInfo id="cdt.managedbuild.config.gnu.exe.release.383825935.908369765" name="/" resourcePath="test">
-<toolChain id="cdt.managedbuild.toolchain.gnu.exe.release.1942538322" name="GCC Tool Chain" superClass="cdt.managedbuild.toolchain.gnu.exe.release" unusedChildren="">
-<targetPlatform id="cdt.managedbuild.target.gnu.platform.exe.release" name="Debug Platform" superClass="cdt.managedbuild.target.gnu.platform.exe.release"/>
-<tool id="cdt.managedbuild.tool.gnu.archiver.base.1904147151" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base.1829397208"/>
-<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.973721116" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.1680726876">
-<option id="gnu.cpp.compiler.exe.release.option.optimization.level.1390520548" name="Optimization Level" superClass="gnu.cpp.compiler.exe.release.option.optimization.level" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
-<option id="gnu.cpp.compiler.exe.release.option.debugging.level.492960896" name="Debug Level" superClass="gnu.cpp.compiler.exe.release.option.debugging.level" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
-<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.812781780" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
-</tool>
-<tool id="cdt.managedbuild.tool.gnu.c.compiler.exe.release.59072898" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.exe.release.2031068900">
-<option defaultValue="gnu.c.optimization.level.most" id="gnu.c.compiler.exe.release.option.optimization.level.1116211093" name="Optimization Level" superClass="gnu.c.compiler.exe.release.option.optimization.level" valueType="enumerated"/>
-<option id="gnu.c.compiler.exe.release.option.debugging.level.661043591" name="Debug Level" superClass="gnu.c.compiler.exe.release.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
-<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1908591915" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
-</tool>
-<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.release.1891403014" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.release.511659956"/>
-<tool id="cdt.managedbuild.tool.gnu.cpp.linker.exe.release.1232054584" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.release.807372490"/>
-<tool id="cdt.managedbuild.tool.gnu.assembler.exe.release.631989790" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.exe.release.401042248">
-<inputType id="cdt.managedbuild.tool.gnu.assembler.input.2053528421" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 </tool>
 </toolChain>
 </folderInfo>
