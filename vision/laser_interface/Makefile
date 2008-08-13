@@ -5,4 +5,3 @@ all: gen_msgs
 clean: clean_msgs
 	rm cameras.xml
 	cd src; $(MAKE) $(MFLAGS) clean
-include $(shell rospack find mk)/msg.mk
