@@ -75,15 +75,22 @@ Publishes to (name / type):
 
 <hr>
 
+@section services
+
+
+
 @section parameters ROS parameters
 
 Reads the following parameters from the parameter server
 
-- @b "~min_ang" : @b [double] the angle of the first range measurement in degrees (Default: -90.0)
-- @b "~max_ang" : @b [double] the angle of the last range measurement in degrees (Default: 90.0)
-- @b "~cluster" : @b [int]    the number of adjascent range measurements to cluster into a single reading (Default: 1)
-- @b "~skip"    : @b [int]    the number of scans to skip between each measured scan (Default: 1)
-- @b "~port"    : @b [string] the port where the hokuyo device can be found (Default: "/dev/ttyACM0")
+- @b "~min_ang"       : @b [double] the angle of the first range measurement in degrees (Default: -90.0)
+- @b "~max_ang"       : @b [double] the angle of the last range measurement in degrees (Default: 90.0)
+- @b "~cluster"       : @b [int]    the number of adjascent range measurements to cluster into a single reading (Default: 1)
+- @b "~skip"          : @b [int]    the number of scans to skip between each measured scan (Default: 1)
+- @b "~port"          : @b [string] the port where the hokuyo device can be found (Default: "/dev/ttyACM0")
+- @b "~autostart      : @b [bool]   whether the node should automatically start the hokuyo (Default: true)
+- @b "~calibrate_time : @b [bool]   whether the node should calibrate the hokuyo's time offset (Default: true)
+- @b "~frame_id       : @b [string] the frame in which laser scans will be returned (Default: "FRAMEID_LASER")
 
  **/
 
@@ -92,19 +99,18 @@ Reads the following parameters from the parameter server
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <pthread.h>
 
-//#include <libstandalone_drivers/urg_laser.h>
-#include "urg_laser.h"
-
-#include <ros/node.h>
-#include <std_msgs/LaserScan.h>
-#include <std_srvs/SelfTest.h>
+#include "ros/node.h"
+#include "rosthread/mutex.h"
 #include "ros/time.h"
+
+#include "std_msgs/LaserScan.h"
+#include "robot_srvs/SelfTest.h"
+
 #include "namelookup/nameLookupClient.hh"
 
-#include "rosthread/mutex.h"
-
-#include <pthread.h>
+#include "urg_laser.h"
 
 using namespace std;
 
@@ -137,6 +143,8 @@ public:
   bool calibrate_time;
 
   string frameid;
+
+  string id;
 
   HokuyoNode() : ros::node("urglaser"), running(false), count(0), lookup_client(*this)
   {
@@ -175,7 +183,8 @@ public:
     {
       urg.open(port.c_str());
 
-      printf("Connected to URG with ID: %s\n", urg.get_ID().c_str());
+      string id = urg.get_ID();
+      printf("Connected to URG with ID: %s\n", id.c_str());
 
       urg.laser_on();
 
@@ -299,214 +308,289 @@ public:
     stop();
 
     return true;
-  };
+  }
 
-  bool SelfTest(std_srvs::SelfTest::request &req,
-                std_srvs::SelfTest::response &res)
+
+  bool SelfTest(robot_srvs::SelfTest::request &req,
+                robot_srvs::SelfTest::response &res)
   {
     testing_mutex.lock();
 
     printf("Entering self test.  Other operation suspended\n");
-
-    std::ostringstream oss;
-
-    if (num_subscribers("scan") != 0)
-      oss << "(WARNING: There were active subscribers.  Running of self test interrupted operations.)" << std::endl;
-
-    int passed = 0;
-    int total = 0;
 
     // Stop for good measure.
     try
     {
       urg.close();
     } catch (URG::exception& e) {
-      oss << "(WARNING: Exception thrown while trying to close: " << e.what() << ")" << std::endl;
     }
 
-    // Actually conduct tests
+    std::vector<robot_msgs::DiagnosticStatus> status_vec;
+    std::vector<void (HokuyoNode::*)(robot_msgs::DiagnosticStatus&)> test_fncs;
 
-    //Test: Connect
-    total++;
-    oss << "Test " << total << ": Opening connection" << std::endl;
-    try {
-      urg.open(port.c_str());
-      passed++;
-      oss << "  [PASSED]";
-    } catch (URG::exception& e) {
-      oss << "  [FAILED]" << std::endl << "  " << e.what();
-    }
-    oss << std::endl;
+    test_fncs.push_back( &HokuyoNode::InterruptionTest );
+    test_fncs.push_back( &HokuyoNode::ConnectTest );
+    test_fncs.push_back( &HokuyoNode::IDTest );
+    test_fncs.push_back( &HokuyoNode::StatusTest );
+    test_fncs.push_back( &HokuyoNode::LaserTest );
+    test_fncs.push_back( &HokuyoNode::PolledDataTest );
+    test_fncs.push_back( &HokuyoNode::StreamedDataTest );
+    test_fncs.push_back( &HokuyoNode::StreamedIntensityDataTest );
+    test_fncs.push_back( &HokuyoNode::LaserOffTest );
+    test_fncs.push_back( &HokuyoNode::DisconnectTest );
+    test_fncs.push_back( &HokuyoNode::ResumeTest );
 
-    //Test: Get ID
-    total++;
-    oss << "Test " << total <<  ": Getting ID" << std::endl;
-    try {
-      res.id = urg.get_ID();
-      passed++;
-      oss << "  [PASSED]" << std::endl << "  ID is: " << res.id;
+    for (std::vector<void (HokuyoNode::*)(robot_msgs::DiagnosticStatus&)>::iterator test_fncs_iter = test_fncs.begin();
+           test_fncs_iter != test_fncs.end();
+           test_fncs_iter++)
+    {
+      robot_msgs::DiagnosticStatus status;
 
-      if (res.id == std::string("H0000000"))
+      status.name = "None";
+      status.level = 2;
+      status.message = "No message was set";
+
+      try {
+
+        (*this.*(*test_fncs_iter))(status);
+
+      } catch (URG::exception& e)
       {
-        oss <<  std::endl << "  (WARNING: ID 0 is indication of failure.)";
+        status.level = 2;
+        status.message = std::string("Caught exception: ") + e.what();
       }
-    } catch (URG::exception& e) {
-      oss << "  [FAILED]" << std::endl << "  " << e.what();
-    }
-    oss << std::endl;
 
-    //Test: Get status
-    total++;
-    oss << "Test " << total <<  ": Getting Status" << std::endl;
-    try {
-      std::string stat = urg.get_status();
-      if (stat != std::string("Sensor works well."))
+      status_vec.push_back(status);
+    }
+
+    res.id = id;
+
+    res.passed = true;
+    for (std::vector<robot_msgs::DiagnosticStatus>::iterator status_iter = status_vec.begin();
+         status_iter != status_vec.end();
+         status_iter++)
+    {
+      if (status_iter->level >= 2)
       {
-        oss << "  [FAILED]" << std::endl << "  Status: " << stat;
-      } else {
-        passed++;
-        oss << "  [PASSED]";
+        res.passed = false;
       }
-    } catch (URG::exception& e) {
-      oss << "  [FAILED]" << std::endl << "  " << e.what();
     }
-    oss << std::endl;
 
-    //Test: Laser on
-    total++;
-    oss << "Test " << total <<  ": Turning on laser" << std::endl;
-    try {
-      urg.laser_on();
-      passed++;
-      oss << "  [PASSED]";
-    } catch (URG::exception& e) {
-      oss << "  [FAILED]" << std::endl << "  " << e.what();
-    }
-    oss << std::endl;
-
-    
-    URG::laser_scan_t  scan;
-    //Test: Polled Data
-    total++;
-    oss << "Test " << total << ": Polled data" << std::endl;
-    try {
-      int res = urg.poll_scan(&scan, min_ang, max_ang, cluster, 1000);
-
-      if (res != 0)
-      {
-        oss << "  [FAILED]" << std::endl << "  Hokuyo error code: " << res << ". Consult manual for meaning.";
-      } else {
-        passed++;
-        oss << "  [PASSED]";
-      }
-    } catch (URG::exception& e) {
-      oss << "  [FAILED]" << std::endl << "  " << e.what();
-    }
-    oss << std::endl;
-
-    //Test: Streamed data with no intensity
-    total++;
-    oss << "Test " << total <<  ": Streamed data" << std::endl;
-    try {
-      int res = urg.request_scans(false, min_ang, max_ang, cluster, skip, 99, 1000);
-      if (res != 0)
-      {
-        oss << "  [FAILED]" << std::endl << "  Hokuyo error code: " << res << ". Consult manual for meaning.";
-      } else {
-
-        for (int i = 0; i < 99; i++)
-        {
-          urg.service_scan(&scan, 1000);
-        }
-        passed++;
-        oss << "  [PASSED]]";
-      }
-    } catch (URG::exception& e) {
-      oss << "  [FAILED]" << std::endl << "  " << e.what();
-    }
-    oss << std::endl;
-
-    //Test: Streamed data with intensity
-    total++;
-    oss << "Test " << total << ": Streamed intensity data" << std::endl;
-    try {
-      int res = urg.request_scans(true, min_ang, max_ang, cluster, skip, 99, 1000);
-      if (res != 0)
-      {
-        oss << "  [FAILED]" << std::endl << "  Hokuyo error code: " << res << ". Consult manual for meaning.";
-      } else {
-        int passable = 1;
-        for (int i = 0; i < 99; i++)
-        {
-          try {
-            urg.service_scan(&scan, 1000);
-          } catch (URG::corrupted_data_exception &e) {
-            passable = 0;
-          }
-        }
-        if (passable)
-        {
-          passed++;
-          oss << "  [PASSED]";
-        }
-      }
-    } catch (URG::exception& e) {
-      oss << "  [FAILED]" << std::endl << "  " << e.what();
-    }
-    oss << std::endl;
-
-    //Test: Laser off
-    total++;
-    oss << "Test " << total << ":Turning off laser" << std::endl;
-    try {
-      urg.laser_off();
-      passed++;
-      oss << "  [PASSED]";
-    } catch (URG::exception& e) {
-      oss << "  [FAILED]" << std::endl << "  " << e.what();
-    }
-    oss << std::endl;
-
-    //Test: Disconnect
-    total++;
-    oss << "Test " << total << ": Disconnecting" << std::endl;
-    try {
-      urg.close();
-      passed++;
-      oss << "  [PASSED]";
-    } catch (URG::exception& e) {
-      oss << "  [FAILED]" << std::endl << "  " << e.what();
-    }
-    oss << std::endl;
-
-    if (total == passed)
-      res.passed = true;
-    else
-      res.passed = false;
-
-    oss << passed  << "/" << total << " tests passed";
+    res.set_status_vec(status_vec);
 
     printf("Self test completed\n");
-
-    if (running)
-    {
-      printf("Trying to restart urg\n");
-      try {
-        urg.open(port.c_str());
-        urg.laser_on();
-        int status = urg.request_scans(true, min_ang, max_ang, cluster, skip);
-        if (status != 0)
-          oss << "WARNING: Requesting scans from URG Failed when trying to resume operation" << std::endl;
-      } catch (URG::exception &e) {
-        oss << "WARNING: Exception caught when resuming operation!  Driver is most likely in a bad state." << std::endl;
-      }
-    } 
-
-    res.info = oss.str();
 
     testing_mutex.unlock();
     return true;
   }
+
+  void InterruptionTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Interruption Test";
+
+    if (num_subscribers("scan") == 0)
+    {
+      status.level = 0;
+      status.message = "No operation interrupted.";
+    }
+    else
+    {
+      status.level = 1;
+      status.message = "There were active subscribers.  Running of self test interrupted operations.";
+    }
+  }
+
+  void ConnectTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Connection Test";
+
+    urg.open(port.c_str());
+
+    status.level = 0;
+    status.message = "Connected successfully.";
+  }
+
+  void IDTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "ID Test";
+
+    id = urg.get_ID();
+
+    if (id == std::string("H0000000"))
+    {
+      status.level = 1;
+      status.message = id + std::string(" is indication of failure.");
+    }
+    else
+    {
+      status.level = 0;
+      status.message = id;
+    }
+  }
+
+  void StatusTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "ID Test";
+
+    std::string stat = urg.get_status();
+
+    if (stat != std::string("Sensor works well."))
+    {
+      status.level = 2;
+    } else {
+      status.level = 0;
+    }
+
+    status.message = stat;
+  }
+
+  void LaserTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Laser Test";
+
+    urg.laser_on();
+
+    status.level = 0;
+    status.message = "Laser turned on successfully.";
+  }
+
+  void PolledDataTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Polled Data Test";
+
+    URG::laser_scan_t  scan;
+
+    int res = urg.poll_scan(&scan, min_ang, max_ang, cluster, 1000);
+
+    if (res != 0)
+    {
+      status.level = 2;
+      ostringstream oss;
+      oss << "Hokuyo error code: " << res << ". Consult manual for meaning.";
+      status.message = oss.str();
+
+    } else {
+      status.level = 0;
+      status.message = "Polled Hokuyo for data successfully.";
+    }
+  }
+
+  void StreamedDataTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Streamed Data Test";
+
+    URG::laser_scan_t  scan;
+
+    int res = urg.request_scans(false, min_ang, max_ang, cluster, skip, 99, 1000);
+
+    if (res != 0)
+    {
+      status.level = 2;
+      ostringstream oss;
+      oss << "Hokuyo error code: " << res << ". Consult manual for meaning.";
+      status.message = oss.str();
+
+    } else {
+
+      for (int i = 0; i < 99; i++)
+      {
+        urg.service_scan(&scan, 1000);
+      }
+
+      status.level = 0;
+      status.message = "Streamed data from Hokuyo successfully.";
+
+    }
+  }
+
+  void StreamedIntensityDataTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Streamed Intensity Data Test";
+
+    URG::laser_scan_t  scan;
+
+    int res = urg.request_scans(false, min_ang, max_ang, cluster, skip, 99, 1000);
+
+    if (res != 0)
+    {
+      status.level = 2;
+      ostringstream oss;
+      oss << "Hokuyo error code: " << res << ". Consult manual for meaning.";
+      status.message = oss.str();
+
+    } else {
+
+      int corrupted_data = 0;
+
+      for (int i = 0; i < 99; i++)
+      {
+        try {
+          urg.service_scan(&scan, 1000);
+        } catch (URG::corrupted_data_exception &e) {
+          corrupted_data++;
+        }
+      }
+      if (corrupted_data == 1)
+      {
+        status.level = 1;
+        status.message = "Single corrupted message.  This is acceptable and unavoidable";
+      } else if (corrupted_data > 1)
+      {
+        status.level = 2;
+        ostringstream oss;
+        oss << corrupted_data << " corrupted messages.";
+        status.message = oss.str();
+      } else
+      {
+        status.level = 0;
+        status.message = "Stramed data with intensity from Hokuyo successfully.";
+      }
+    }
+  }
+
+  void LaserOffTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Laser Off Test";
+
+    urg.laser_off();
+
+    status.level = 0;
+    status.message = "Laser turned off successfully.";
+  }
+
+  void DisconnectTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Disconnect Test";
+
+    urg.close();
+
+    status.level = 0;
+    status.message = "Disconnected successfully.";
+  }
+
+  void ResumeTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Resume Test";
+
+    if (running)
+    {
+      urg.open(port.c_str());
+      urg.laser_on();
+
+      int res = urg.request_scans(true, min_ang, max_ang, cluster, skip);
+
+      if (res != 0)
+      {
+        status.level = 2;
+        status.message = "Failed to resume previous mode of operation.";
+        return;
+      }
+    }
+
+    status.level = 0;
+    status.message = "Previous operation resumed successfully.";    
+  }
+
 };
 
 int
