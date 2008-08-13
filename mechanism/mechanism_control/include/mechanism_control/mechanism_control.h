@@ -51,6 +51,7 @@
 #include "mechanism_control/ListControllerTypes.h"
 #include "mechanism_control/ListControllers.h"
 #include "mechanism_control/SpawnController.h"
+#include "mechanism_control/KillController.h"
 
 typedef controller::Controller* (*ControllerAllocator)();
 
@@ -111,6 +112,8 @@ public:
                        mechanism_control::ListControllers::response &resp);
   bool spawnController(mechanism_control::SpawnController::request &req,
                        mechanism_control::SpawnController::response &resp);
+  bool killController(mechanism_control::KillController::request &req,
+                      mechanism_control::KillController::response &resp);
 
 private:
   MechanismControl *mc_;

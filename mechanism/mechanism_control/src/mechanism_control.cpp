@@ -215,6 +215,7 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   advertise_service("list_controllers", &MechanismControlNode::listControllers);
   advertise_service("list_controller_types", &MechanismControlNode::listControllerTypes);
   advertise_service("spawn_controller", &MechanismControlNode::spawnController);
+  advertise_service("kill_controller", &MechanismControlNode::killController);
 }
 
 bool MechanismControlNode::initXml(TiXmlElement *config)
@@ -258,3 +259,10 @@ bool MechanismControlNode::listControllers(
   return true;
 }
 
+bool MechanismControlNode::killController(
+  mechanism_control::KillController::request &req,
+  mechanism_control::KillController::response &resp)
+{
+  resp.ok = mc_->killController(req.name);
+  return true;
+}
