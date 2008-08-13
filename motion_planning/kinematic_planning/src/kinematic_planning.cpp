@@ -81,14 +81,10 @@ Provides (name/type):
 
 **/
 
-#include <ros/node.h>
-#include <ros/time.h>
-#include <std_msgs/PointCloudFloat32.h>
-#include <std_msgs/RobotBase2DOdom.h>
+#include <planning_node_util/cnode.h>
 #include <robot_srvs/KinematicMotionPlan.h>
 
-#include <urdf/URDF.h>
-#include <collision_space/environmentODE.h>
+#include <ompl/extension/samplingbased/kinematic/extension/rrt/LazyRRT.h>
 #include <ompl/extension/samplingbased/kinematic/extension/rrt/RRT.h>
 
 #include "SpaceInformationXMLModel.h"
@@ -98,87 +94,20 @@ Provides (name/type):
 #include <sstream>
 #include <map>
 
-class KinematicPlanning : public ros::node
+class KinematicPlanning : public planning_node_util::NodeWithODECollisionModel
 {
 public:
 
-    KinematicPlanning(void) : ros::node("kinematic_planning")
+    KinematicPlanning(const std::string &robot_model) : planning_node_util::NodeWithODECollisionModel(robot_model, "kinematic_planning")
     {
 	advertise_service("plan_kinematic_path", &KinematicPlanning::plan);
-	subscribe("world_3d_map", m_cloud, &KinematicPlanning::pointCloudCallback);
-	subscribe("localizedpose", m_localizedPose, &KinematicPlanning::localizedPoseCallback);
-
-	m_collisionSpace = new collision_space::EnvironmentModelODE();
-	m_collisionSpace->setSelfCollision(false); // for now, disable self collision (incorrect model)
-	
-	m_collisionSpace->lock();
-	loadRobotDescriptions();
-	m_collisionSpace->unlock();
     }
     
     ~KinematicPlanning(void)
     {
-	for (unsigned int i = 0 ; i < m_robotDescriptions.size() ; ++i)
-	    delete m_robotDescriptions[i];
 	for (std::map<std::string, Model*>::iterator i = m_models.begin() ; i != m_models.end() ; i++)
 	    delete i->second;
-	if (m_collisionSpace)
-	    delete m_collisionSpace;
-    }
-    
-
-    void loadRobotDescriptions(void)
-    {
-	printf("Loading robot descriptions...\n\n");
-	
-	std::string description_files;
-	if (get_param("robotdesc_list", description_files))
-	{
-	    std::stringstream sdf(description_files);
-	    while (sdf.good())
-	    {
-		std::string file;
-		std::string content;
-		sdf >> file;
-		if (get_param(file, content))
-		    addRobotDescriptionFromData(content.c_str());
-	    }
-	}
-	printf("\n\n");	
-    }
-    
-    void localizedPoseCallback(void)
-    {
-	m_basePos[0] = m_localizedPose.pos.x;
-	m_basePos[1] = m_localizedPose.pos.y;
-	m_basePos[2] = m_localizedPose.pos.th;
-    }
-    
-    void pointCloudCallback(void)
-    {
-	unsigned int n = m_cloud.get_pts_size();
-	printf("Received %u points\n", n);
-
-       	ros::Time startTime = ros::Time::now();
-	double *data = new double[3 * n];	
-	for (unsigned int i = 0 ; i < n ; ++i)
-	{
-	    unsigned int i3 = i * 3;	    
-	    data[i3    ] = m_cloud.pts[i].x;
-	    data[i3 + 1] = m_cloud.pts[i].y;
-	    data[i3 + 2] = m_cloud.pts[i].z;
-	}
-	
-	m_collisionSpace->lock();
-	m_collisionSpace->clearObstacles();
-	m_collisionSpace->addPointCloud(n, data, 0.03);
-	m_collisionSpace->unlock();
-	
-	delete[] data;
-	
-	double tupd = (ros::Time::now() - startTime).to_double();	
-	printf("Updated world model in %f seconds\n", tupd);
-    }
+    }    
     
     bool plan(robot_srvs::KinematicMotionPlan::request &req, robot_srvs::KinematicMotionPlan::response &res)
     {
@@ -293,75 +222,39 @@ public:
 	return true;
     }
 
-    void addRobotDescriptionFromFile(const char *filename)
+    virtual void setRobotDescription(robot_desc::URDF *file)
     {
-	robot_desc::URDF *file = new robot_desc::URDF();
-	if (file->loadFile(filename))
-	    addRobotDescription(file);   
-	else
-	    delete file;
-    }
-
-    void addRobotDescriptionFromData(const char *data)
-    {
-	robot_desc::URDF *file = new robot_desc::URDF();
-	if (file->loadString(data))
-	    addRobotDescription(file);
-	else
-	    delete file;
-    }
-    
-    void addRobotDescription(robot_desc::URDF *file)
-    {
-	m_robotDescriptions.push_back(file);
+	planning_node_util::NodeWithODECollisionModel::setRobotDescription(file);	
+	defaultPosition();
 	
-	printf("\n\nCreating new kinematic model:\n");
-	
-	/* create a model for the whole robot (with the name given in the file) */
-	planning_models::KinematicModel *kmodel = new planning_models::KinematicModel();
-	kmodel->setVerbose(true);
-	kmodel->build(*file);
-	
-	/* add the model to the collision space */
-	unsigned int cid = m_collisionSpace->addRobotModel(kmodel);
-
 	/* set the data for the model */
 	Model *model = new Model();
-	model->collisionSpaceID = cid;
+	model->collisionSpaceID = 0;
 	model->collisionSpace = m_collisionSpace;
-        model->kmodel = kmodel;
+        model->kmodel = m_kmodel;
 	createMotionPlanningInstances(model);
 	
 	/* remember the model by the robot's name */
-	m_models[file->getRobotName()] = model;
-
+	m_models[m_urdf->getRobotName()] = model;
 	
-	/* set all parameters to 0 */
-	double defaultPose[kmodel->stateDimension];
-	for (unsigned int i = 0 ; i < kmodel->stateDimension ; ++i)
-	    defaultPose[i] = 0.0;
-
-	kmodel->computeTransforms(defaultPose);
-	m_collisionSpace->updateRobotModel(cid);
-
 	printf("=======================================\n");	
-	kmodel->printModelInfo();
+	m_kmodel->printModelInfo();
 	printf("=======================================\n");
 
 	/* create a model for each group */
 	std::vector<std::string> groups;
-	kmodel->getGroups(groups);
+	m_kmodel->getGroups(groups);
 
 	for (unsigned int i = 0 ; i < groups.size() ; ++i)
 	{
 	    Model *model = new Model();
-	    model->collisionSpaceID = cid;
+	    model->collisionSpaceID = 0;
 	    model->collisionSpace = m_collisionSpace;
-	    model->kmodel = kmodel;
-	    model->groupID = kmodel->getGroupID(groups[i]);
+	    model->kmodel = m_kmodel;
+	    model->groupID = m_kmodel->getGroupID(groups[i]);
 	    createMotionPlanningInstances(model);
 	    m_models[groups[i]] = model;
-	}	
+	}
     }
     
     void knownModels(std::vector<std::string> &model_ids)
@@ -396,6 +289,7 @@ private:
 	    for (unsigned int i = 0 ; i < planners.size() ; ++i)
 	    {
 		delete planners[i].mp;
+		delete planners[i].svc;
 		delete planners[i].si;
 	    }
 	}
@@ -445,32 +339,49 @@ private:
 	model->planners.push_back(p);
     }
     
-    std_msgs::PointCloudFloat32        m_cloud;
-    std_msgs::RobotBase2DOdom          m_localizedPose;
-    double                             m_basePos[3];    
-    collision_space::EnvironmentModel *m_collisionSpace;    
-    std::map<std::string, Model*>      m_models;
-    std::vector<robot_desc::URDF*>     m_robotDescriptions; 
+    void addLazyRRTInstance(Model *model)
+    {
+	Planner p;
+	p.si   = new SpaceInformationXMLModel(model->kmodel, model->groupID);
+	p.svc  = new StateValidityPredicate(model);
+	p.si->setStateValidityChecker(p.svc);	
+	p.mp   = new ompl::LazyRRT(p.si);
+	p.type = 1;
+	model->planners.push_back(p);
+    }
+
+    std::map<std::string, Model*> m_models;
     
 };
 
+void usage(const char *progname)
+{
+    printf("\nUsage: %s robot_model [standard ROS args]\n", progname);
+    printf("       \"robot_model\" is the name (string) of a robot description to be used for planning.\n");
+}
+
 int main(int argc, char **argv)
-{  
-    ros::init(argc, argv);
-    
-    KinematicPlanning planner;
-    
-    std::vector<std::string> mlist;    
-    planner.knownModels(mlist);
-    printf("Known models:\n");    
-    for (unsigned int i = 0 ; i < mlist.size() ; ++i)
-	printf("  * %s\n", mlist[i].c_str());    
-    if (mlist.size() > 0)
-	planner.spin();
+{ 
+    if (argc == 2)
+    { 
+	ros::init(argc, argv);
+	
+	KinematicPlanning planner(argv[1]);
+	
+	std::vector<std::string> mlist;    
+	planner.knownModels(mlist);
+	printf("Known models:\n");    
+	for (unsigned int i = 0 ; i < mlist.size() ; ++i)
+	    printf("  * %s\n", mlist[i].c_str());    
+	if (mlist.size() > 0)
+	    planner.spin();
+	else
+	    printf("No models defined. Kinematic planning node cannot start.\n");
+	
+	planner.shutdown();
+    }
     else
-	printf("No models defined. Kinematic planning node cannot start.\n");
-    
-    planner.shutdown();
+	usage(argv[0]);
     
     return 0;    
 }

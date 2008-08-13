@@ -178,7 +178,6 @@ public:
     {
 	planning_node_util::NodeWithODECollisionModel::setRobotDescription(file);
 	defaultPosition();
-	m_collisionSpace->updateRobotModel(0);	
     }
     
     bool getFollow(void) const

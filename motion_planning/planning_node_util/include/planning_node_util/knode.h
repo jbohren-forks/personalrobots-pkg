@@ -109,7 +109,7 @@ namespace planning_node_util
 	    }
 	}
 	
-	void defaultPosition(void)
+	virtual void defaultPosition(void)
 	{
 	    if (m_kmodel)
 	    {

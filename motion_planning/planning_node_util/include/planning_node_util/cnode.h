@@ -69,7 +69,14 @@ namespace planning_node_util
 		m_collisionSpace->unlock();
 	    }	    
 	}
-    
+	
+    	virtual void defaultPosition(void)
+	{
+	    NodeWithRobotModel::defaultPosition();
+	    if (m_collisionSpace && m_collisionSpace->getModelCount() == 1)
+		m_collisionSpace->updateRobotModel(0);
+	}
+	
     protected:
 	
 	std_msgs::PointCloudFloat32           m_worldCloud;
