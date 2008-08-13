@@ -73,7 +73,7 @@ public:
    * \brief Functional way to initialize limits and gains.
    *
    */
-  void init(mechanism::Joint *joint);
+  void init(mechanism::Robot *robot,mechanism::Joint *joint);
   void initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   /*!

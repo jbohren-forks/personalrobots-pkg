@@ -52,18 +52,19 @@ JointVelocityController::~JointVelocityController()
 {
 }
 
-void JointVelocityController::init(double p_gain, double i_gain, double d_gain, double windup, double time, mechanism::Joint *joint)
+void JointVelocityController::init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint)
 {
   pid_controller_.initPid(p_gain, i_gain, d_gain, windup, -windup);
 
   command_= 0;
   last_time_= time;
   joint_ = joint;
+  robot_ = robot;
 }
 
 void JointVelocityController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
-  robot_ = robot;
+  
   TiXmlElement *elt = config->FirstChildElement("joint");
   if (elt) {
     // TODO: error check if xml attributes/elements are missing
@@ -71,7 +72,7 @@ void JointVelocityController::initXml(mechanism::Robot *robot, TiXmlElement *con
     double i_gain = atof(elt->FirstChildElement("iGain")->GetText());
     double d_gain = atof(elt->FirstChildElement("dGain")->GetText());
     double windup= atof(elt->FirstChildElement("windup")->GetText());
-    init(p_gain, i_gain, d_gain, windup, robot->hw_->current_time_, robot->getJoint(elt->Attribute("name")));
+    init(p_gain, i_gain, d_gain, windup, robot->hw_->current_time_,robot, robot->getJoint(elt->Attribute("name")));
   }
 }
 

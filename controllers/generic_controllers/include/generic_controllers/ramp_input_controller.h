@@ -77,7 +77,7 @@ public:
    * \param time The current hardware time. 
    * \param *joint The joint that is being controlled.
    */
-  void init(double input_start, double input_end, double duration, double time, mechanism::Joint *joint);
+  void init(double input_start, double input_end, double duration, double time,mechanism::Robot *robot, mechanism::Joint *joint);
   void initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   /*!
