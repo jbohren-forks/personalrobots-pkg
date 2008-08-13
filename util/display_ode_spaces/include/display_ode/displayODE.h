@@ -32,6 +32,9 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+#ifndef DISPLAY_ODE_H
+#define DISPLAY_ODE_H
+
 #include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 #include <vector>
@@ -132,3 +135,4 @@ namespace display_ode
     };
     
 }
+#endif

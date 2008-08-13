@@ -81,15 +81,9 @@ Provides (name/type):
 
 **/
 
-#include <ros/node.h>
-#include <ros/time.h>
-#include <std_msgs/PointCloudFloat32.h>
-#include <std_msgs/RobotBase2DOdom.h>
-
+#include <planning_node_util/cnode.h>
+#include <rosthread/mutex.h>
 #include <robot_msgs/NamedKinematicPath.h>
-
-#include <urdf/URDF.h>
-#include <collision_space/environmentODE.h>
 #include <display_ode/displayODE.h>
 
 #include <vector>
@@ -97,76 +91,43 @@ Provides (name/type):
 #include <sstream>
 #include <map>
 
-class PlanningWorldViewer : public ros::node
+class PlanningWorldViewer : public planning_node_util::NodeWithODECollisionModel
 {
 public:
     
-    PlanningWorldViewer(void) : ros::node("planning_world_viewer")
+    PlanningWorldViewer(const std::string &robot_model) : planning_node_util::NodeWithODECollisionModel(robot_model, "planning_world_viewer")
     {
-	subscribe("world_3d_map", m_cloud, &PlanningWorldViewer::pointCloudCallback);
-	subscribe("localizedpose", m_localizedPose, &PlanningWorldViewer::localizedPoseCallback);
 	subscribe("display_kinematic_path", m_displayPath, &PlanningWorldViewer::displayPathCallback);
 	
-	m_collisionSpace = new collision_space::EnvironmentModelODE();
-	m_collisionSpace->setSelfCollision(false);
-	m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
 	m_follow = true;
 	m_displayRobot = true;
 	m_displayObstacles = true;
 	m_checkCollision = false;
-	
-	m_collisionSpace->lock();
-	loadRobotDescriptions();
-	m_collisionSpace->unlock();
 	
 	updateODESpaces();
     }
     
     ~PlanningWorldViewer(void)
     {
-	for (unsigned int i = 0 ; i < m_robotDescriptions.size() ; ++i)
-	    delete m_robotDescriptions[i];
-	if (m_collisionSpace)
-	    delete m_collisionSpace;
     }
     
     void updateODESpaces(void)
     {
-	m_collisionSpace->lock();	
+	m_collisionSpace->lock();
+	m_displayLock.lock();	
 	m_spaces.clear();	
 	if (m_displayObstacles)
 	    m_spaces.addSpace(m_collisionSpace->getODESpace(), 1.0f, 0.0f, 0.0f);
 	if (m_displayRobot)
 	    for (unsigned int i = 0 ; i < m_collisionSpace->getModelCount() ; ++i)
 	    m_spaces.addSpace(m_collisionSpace->getModelODESpace(i), 0.1f, 0.5f, (float)(i + 1)/(float)m_collisionSpace->getModelCount());
+	m_displayLock.unlock();
 	m_collisionSpace->unlock();
     }
     
-    void loadRobotDescriptions(void)
+    void baseUpdate(void)
     {
-	printf("Loading robot descriptions...\n\n");
-	
-	std::string description_files;
-	if (get_param("robotdesc_list", description_files))
-	{
-	    std::stringstream sdf(description_files);
-	    while (sdf.good())
-	    {
-		std::string file;
-		std::string content;
-		sdf >> file;
-		if (get_param(file, content))
-		    addRobotDescriptionFromData(content.c_str());
-	    }
-	}
-	printf("\n\n");	
-    }
-    
-    void localizedPoseCallback(void)
-    {
-	m_basePos[0] = m_localizedPose.pos.x;
-	m_basePos[1] = m_localizedPose.pos.y;
-	m_basePos[2] = m_localizedPose.pos.th;
+	planning_node_util::NodeWithODECollisionModel::baseUpdate();
 	
 	if (m_collisionSpace && m_collisionSpace->getModelCount() == 1 && m_follow)
 	{
@@ -183,111 +144,41 @@ public:
 	}
     }
     
-    void pointCloudCallback(void)
+    virtual void beforeWorldUpdate(void)
     {
-	unsigned int n = m_cloud.get_pts_size();
-	printf("received %u points\n", n);
-	
-	ros::Time startTime = ros::Time::now();
-	double *data = new double[3 * n];	
-	for (unsigned int i = 0 ; i < n ; ++i)
-	{
-	    unsigned int i3 = i * 3;	    
-	    data[i3    ] = m_cloud.pts[i].x;
-	    data[i3 + 1] = m_cloud.pts[i].y;
-	    data[i3 + 2] = m_cloud.pts[i].z;
-	}
-	
-	m_collisionSpace->lock();
+	planning_node_util::NodeWithODECollisionModel::beforeWorldUpdate();
+	m_displayLock.lock();	
 	m_spaces.clear();
-	m_collisionSpace->clearObstacles();
-	m_collisionSpace->addPointCloud(n, data, 0.03);
-	m_collisionSpace->unlock();
-	
-	delete[] data;
-	
-	updateODESpaces();
-	
-	double tupd = (ros::Time::now() - startTime).to_double();	
-	printf("Updated world model in %f seconds\n", tupd);
-	
+	m_displayLock.unlock();	
     }
+
+    virtual void afterWorldUpdate(void)
+    {
+	planning_node_util::NodeWithODECollisionModel::afterWorldUpdate();
+	updateODESpaces();
+    }	
     
     void displayPathCallback(void)
     {
-	if (m_collisionSpace->getModelCount() != 1)
-	    return;
 	bool follow = m_follow;
 	m_follow = false;
 	ros::Duration sleepTime(0.2);
-	planning_models::KinematicModel *kmodel = m_collisionSpace->getModel(0);
-	int groupID = kmodel->getGroupID(m_displayPath.name);
+	int groupID = m_kmodel->getGroupID(m_displayPath.name);
 	
 	for (unsigned int i = 0 ; i < m_displayPath.path.get_states_size() ; ++i)
 	{
-	    kmodel->computeTransforms(m_displayPath.path.states[i].vals, groupID);
+	    m_kmodel->computeTransforms(m_displayPath.path.states[i].vals, groupID);
 	    m_collisionSpace->updateRobotModel(0);
 	    sleepTime.sleep();
 	}
 	m_follow = follow;
     }
     
-    void addRobotDescriptionFromFile(const char *filename)
+    virtual void setRobotDescription(robot_desc::URDF *file)
     {
-	robot_desc::URDF *file = new robot_desc::URDF();
-	if (file->loadFile(filename))
-	    addRobotDescription(file);   
-	else
-	    delete file;
-    }
-    
-    void addRobotDescriptionFromData(const char *data)
-    {
-	robot_desc::URDF *file = new robot_desc::URDF();
-	if (file->loadString(data))
-	    addRobotDescription(file);
-	else
-	    delete file;
-    }
-    
-    void addRobotDescription(robot_desc::URDF *file)
-    {
-	m_robotDescriptions.push_back(file);
-	
-	printf("\n\nCreating new kinematic model:\n");
-	
-	/* create a model for the whole robot (with the name given in the file) */
-	planning_models::KinematicModel *kmodel = new planning_models::KinematicModel();
-	kmodel->setVerbose(true);
-	kmodel->build(*file);
-	
-	/* add the model to the collision space */
-	unsigned int cid = m_collisionSpace->addRobotModel(kmodel);
-
-	defaultPosition(kmodel, cid);
-    }
-    
-    void defaultPosition(planning_models::KinematicModel *kmodel = NULL, unsigned int cid = 0)
-    {
-	if (!kmodel)
-	{
-	    if (m_collisionSpace->getModelCount() == 1)
-		kmodel = m_collisionSpace->getModel(0);
-	    else
-		return;
-	}
-	
-	double defaultPose[kmodel->stateDimension];
-	for (unsigned int i = 0 ; i < kmodel->stateDimension ; ++i)
-	    defaultPose[i] = 0.0;
-	
-	kmodel->computeTransforms(defaultPose);
-	m_collisionSpace->updateRobotModel(cid);	
-    }
-    
-    unsigned int getRobotCount(void) const
-    {
-	return m_robotDescriptions.size();	
+	planning_node_util::NodeWithODECollisionModel::setRobotDescription(file);
+	defaultPosition();
+	m_collisionSpace->updateRobotModel(0);	
     }
     
     bool getFollow(void) const
@@ -345,20 +236,16 @@ public:
     
     void display(void)
     {
-	m_collisionSpace->lock();    
+	m_displayLock.lock();
 	m_spaces.displaySpaces();
-	m_collisionSpace->unlock();
+	m_displayLock.unlock();
     }
     
 private:
     
-    std_msgs::PointCloudFloat32           m_cloud;
-    std_msgs::RobotBase2DOdom             m_localizedPose;
-    collision_space::EnvironmentModelODE *m_collisionSpace;    
-    std::vector<robot_desc::URDF*>        m_robotDescriptions;
-    double                                m_basePos[3];
-    
     display_ode::DisplayODESpaces         m_spaces;
+    ros::thread::mutex                    m_displayLock;
+    
     robot_msgs::NamedKinematicPath        m_displayPath;
     bool                                  m_follow;
     bool                                  m_displayRobot;
@@ -419,30 +306,41 @@ static void simLoop(int)
     viewer->display();
 }
 
+void usage(const char *progname)
+{
+    printf("\nUsage: %s robot_model [standard ROS args]\n", progname);
+    printf("       \"robot_model\" is the name (string) of a robot description to be used when showing the map.\n");
+}
+
 int main(int argc, char **argv)
 {  
-    ros::init(argc, argv);
-    
-    viewer = new PlanningWorldViewer();
-    
-    if (viewer->getRobotCount() > 0)
-    {
-	dsFunctions fn;
-	fn.version = DS_VERSION;
-	fn.start   = &start;
-	fn.step    = &simLoop;
-	fn.command = &command;
-	fn.stop = 0;
-	fn.path_to_textures = "./res";
+    if (argc == 2)
+    {	
+	ros::init(argc, argv);
+        
+	viewer = new PlanningWorldViewer(argv[1]);
 	
-	dsSimulationLoop(argc, argv, 640, 480, &fn);
+	if (viewer->loadedRobot())
+	{
+	    dsFunctions fn;
+	    fn.version = DS_VERSION;
+	    fn.start   = &start;
+	    fn.step    = &simLoop;
+	    fn.command = &command;
+	    fn.stop = 0;
+	    fn.path_to_textures = "./res";
+	    
+	    dsSimulationLoop(argc, argv, 640, 480, &fn);
+	}
+	else
+	    printf("No model defined. Display world node cannot start.\n");
+	
+	viewer->shutdown();
+	
+	delete viewer;
     }
     else
-	printf("No models defined. Kinematic planning node cannot start.\n");
-    
-    viewer->shutdown();
-    
-    delete viewer;
+	usage(argv[0]);
     
     return 0;    
 }
