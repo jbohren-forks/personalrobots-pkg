@@ -36,7 +36,7 @@
 
 @mainpage
 
-@htmlinclude manifest.html
+@htmlinclude ../manifest.html
 
 @b PlanningWorldViewer is a node capable of displaying the state of the world 
 the motion planner sees
@@ -45,13 +45,13 @@ the motion planner sees
 
 @section usage Usage
 @verbatim
-$ planning_world_viewer [standard ROS args]
+$ planning_world_viewer robot_model [standard ROS args]
 @endverbatim
 
 @par Example
 
 @verbatim
-$ planning_world_viewer
+$ planning_world_viewer robotdesc/pr2
 @endverbatim
 
 <hr>
@@ -59,7 +59,7 @@ $ planning_world_viewer
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b world_3d_map/PointCloudFloat32 : point cloud with data describing the 3D environment
+- None
 
 Publishes to (name/type):
 - None

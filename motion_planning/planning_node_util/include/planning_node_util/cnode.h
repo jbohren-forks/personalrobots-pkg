@@ -32,6 +32,42 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/**
+
+@mainpage
+
+@htmlinclude ../../manifest.html
+
+@b NodeWithODECollisionModel is a ROS node that in addition to being aware of a robot model,
+is also aware of an ODE collision space
+
+<hr>
+
+@section topic ROS topics
+
+Subscribes to (name/type):
+- @b world_3d_map/PointCloudFloat32 : point cloud with data describing the 3D environment
+
+Publishes to (name/type):
+- None
+
+<hr>
+
+@section services ROS services
+
+Uses (name/type):
+- None
+
+Provides (name/type):
+- None
+
+<hr>
+
+@section parameters ROS parameters
+- None
+
+**/
+
 #include <planning_node_util/knode.h>
 #include <std_msgs/PointCloudFloat32.h>
 #include <collision_space/environmentODE.h>

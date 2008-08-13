@@ -36,7 +36,7 @@
 
 @mainpage
 
-@htmlinclude manifest.html
+@htmlinclude ../manifest.html
 
 @b world_3d_map is a node capable of building 3D maps out of laser
 scan data.  The node will put together a pointcloud in the FRAMEID_MAP
@@ -57,7 +57,7 @@ $ world_3d_map robot_model [standard ROS args]
 @par Example
 
 @verbatim
-$ world_3d_map
+$ world_3d_map robotdesc/pr2 scan:=tilt_scan
 @endverbatim
 
 @par Notes
@@ -73,7 +73,6 @@ specify '-' for the robot_model argument.
 
 Subscribes to (name/type):
 - @b scan/LaserScan : scan data received from a laser
-- @b robotpose/RobotBase2DOdom : position of the robot base
 
 Publishes to (name/type):
 - @b "world_3d_map"/PointCloudFloat32 : point cloud describing the 3D environment

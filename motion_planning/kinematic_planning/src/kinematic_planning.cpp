@@ -36,7 +36,7 @@
 
 @mainpage
 
-@htmlinclude manifest.html
+@htmlinclude ../manifest.html
 
 @b KinematicPlanning is a node capable of planning kinematic paths for
 a set of robot models.
@@ -45,13 +45,13 @@ a set of robot models.
 
 @section usage Usage
 @verbatim
-$ kinematic_planning [standard ROS args]
+$ kinematic_planning robot_model [standard ROS args]
 @endverbatim
 
 @par Example
 
 @verbatim
-$ kinematic_planning
+$ kinematic_planning robotdesc/pr2
 @endverbatim
 
 <hr>
@@ -59,7 +59,7 @@ $ kinematic_planning
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b world_3d_map/PointCloudFloat32 : point cloud with data describing the 3D environment
+- None
 
 Publishes to (name/type):
 - None

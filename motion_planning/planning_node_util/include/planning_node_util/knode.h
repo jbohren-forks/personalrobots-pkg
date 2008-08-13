@@ -32,6 +32,41 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/**
+
+@mainpage
+
+@htmlinclude ../../manifest.html
+
+@b NodeWithRobotModel is a ROS node that is also aware of a given robot model
+
+<hr>
+
+@section topic ROS topics
+
+Subscribes to (name/type):
+- @b localizedpose/RobotBase2DOdom : localized position of the robot base
+
+Publishes to (name/type):
+- None
+
+<hr>
+
+@section services ROS services
+
+Uses (name/type):
+- None
+
+Provides (name/type):
+- None
+
+<hr>
+
+@section parameters ROS parameters
+- None
+
+**/
+
 #include <ros/node.h>
 #include <ros/time.h>
 #include <urdf/URDF.h>
