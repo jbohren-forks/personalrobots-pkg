@@ -123,6 +123,7 @@ public:
 	param("max_publish_frequency", m_maxPublishFrequency, 0.5);
 	param("retain_pointcloud_duration", m_retainPointcloudDuration, 60.0);
 	param("retain_pointcloud_fraction", m_retainPointcloudFraction, 0.02);
+	param("retain_above_ground_threshold", m_retainAboveGroundThreshold, 0.01);
 	param("verbosity_level", m_verbose, 1);
 	
 	/* create a thread that does the processing of the input data.
@@ -428,7 +429,7 @@ private:
 	    double y = cloud.pts[k].y;
 	    double z = cloud.pts[k].z;
 	    
-	    if (z > 0.01)
+	    if (z > m_retainAboveGroundThreshold)
 	    {
 		bool keep = true;
 		for (int i = m_selfSeeParts.size() - 1 ; keep && i >= 0 ; --i)
@@ -439,7 +440,7 @@ private:
 	    }
 	}
 	if (m_verbose)
-	    printf("Discarded %d points\n", n - j);
+	    printf("Discarded %d points (%d left) \n", n - j, j);
 	
 	copy->set_pts_size(j);
 
@@ -453,10 +454,11 @@ private:
     double                           m_maxPublishFrequency;
     double                           m_retainPointcloudDuration;
     double                           m_retainPointcloudFraction;    
+    double                           m_retainAboveGroundThreshold;
     int                              m_verbose;
     
-    std_msgs::LaserScan              m_inputScan; //Buffer for recieving cloud
-    std_msgs::PointCloudFloat32      m_toProcess; //Buffer (size 1) for incoming cloud
+    std_msgs::LaserScan              m_inputScan; //Buffer for recieving scan
+    std_msgs::PointCloudFloat32      m_toProcess; 
     
     pthread_t                       *m_processingThread;
     pthread_t                       *m_publishingThread;
