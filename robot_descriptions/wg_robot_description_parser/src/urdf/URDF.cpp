@@ -1829,6 +1829,7 @@ namespace robot_desc {
 	    
 	    /* stage 2: parse the rest of the data (that depends on templates & constants) */
 	    {		
+		std::vector<const TiXmlElement*> m_stage3;
 		for (unsigned int i = 0 ; i < m_stage2.size() ; ++i)
 		{
 		    const TiXmlElement *elem = m_stage2[i]->ToElement(); 
@@ -1842,29 +1843,37 @@ namespace robot_desc {
 			    loadLink(m_stage2[i]);
 			else if (name == "sensor")
 			    loadSensor(m_stage2[i]);
-			else if (name == "frame")
-			    loadFrame(m_stage2[i]);
-			else if (name == "actuator")
-			    loadActuator(m_stage2[i]);
-			else if (name == "transmission")
-			    loadTransmission(m_stage2[i]);
-			else if (name == "joint")
-			    loadJoint(m_stage2[i], "", NULL);
-			else if (name == "geometry")
-			    loadGeometry(m_stage2[i], "", NULL);
-			else if (name == "collision")
-			    loadCollision(m_stage2[i], "", NULL);
-			else if (name == "visual")
-			    loadVisual(m_stage2[i], "", NULL);
-			else if (name == "inertial")
-			    loadInertial(m_stage2[i], "", NULL);
 			else
-			    ignoreNode(m_stage2[i]);
+			    m_stage3.push_back(elem);			
 		    }
 		}
+
+		for (unsigned int i = 0 ; i < m_stage3.size() ; ++i)
+		{
+		    std::string name = m_stage3[i]->ValueStr();
+		    
+		    if (name == "frame")
+			loadFrame(m_stage3[i]);
+		    else if (name == "actuator")
+			loadActuator(m_stage3[i]);
+		    else if (name == "transmission")
+			loadTransmission(m_stage3[i]);
+		    else if (name == "joint")
+			loadJoint(m_stage3[i], "", NULL);
+		    else if (name == "geometry")
+			loadGeometry(m_stage3[i], "", NULL);
+		    else if (name == "collision")
+			loadCollision(m_stage3[i], "", NULL);
+		    else if (name == "visual")
+			loadVisual(m_stage3[i], "", NULL);
+		    else if (name == "inertial")
+			loadInertial(m_stage3[i], "", NULL);
+		    else
+			ignoreNode(m_stage3[i]);
+		}		
 	    }
 	    
-	    /* stage 3: 'link' datastructures -- provide easy access pointers */
+	    /* stage 4: 'link' datastructures -- provide easy access pointers */
 	    linkDatastructure();
 	    
 	    /* clear temporary data */
