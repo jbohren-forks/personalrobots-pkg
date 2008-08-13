@@ -391,12 +391,12 @@ namespace gazebo {
         if (controller.control_mode == "PD_CONTROL")
         {
           controller.pcontroller.initXml(mech_robot_,&junk); // just pass Robot pointer to controller.  controller uses hw_ to get time
-          controller.pcontroller.init(controller.p_gain,controller.i_gain,controller.d_gain,controller.windup,controller.init_time,controller.mech_joint_);
+          controller.pcontroller.init(controller.p_gain,controller.i_gain,controller.d_gain,controller.windup,controller.init_time,mech_robot_, controller.mech_joint_);
         }
         else if (controller.control_mode == "VELOCITY_CONTROL")
         {
           controller.vcontroller.initXml(mech_robot_,&junk); // just pass Robot pointer to controller.  controller uses hw_ to get time
-          controller.vcontroller.init(controller.p_gain,controller.i_gain,controller.d_gain,controller.windup,controller.init_time,controller.mech_joint_);
+          controller.vcontroller.init(controller.p_gain,controller.i_gain,controller.d_gain,controller.windup,controller.init_time,mech_robot_, controller.mech_joint_);
         }
 
         XMLConfigNode *dit = jit->GetChild("data");
