@@ -36,6 +36,7 @@
 #define LOGPLAYER_H
 
 #include "ros/node.h"
+#include "ros/time.h"
 #include "logging/AnyMsg.h"
 #include <fstream>
 #include <sstream>
