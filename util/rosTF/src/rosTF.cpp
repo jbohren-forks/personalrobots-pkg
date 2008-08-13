@@ -49,7 +49,7 @@ rosTFClient::rosTFClient(ros::node & rosnode,
 
 void rosTFClient::transformPointCloud(std::string target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn)
 {
-    transformPointCloud(lookup(target_frame), cloudOut, cloudIn);
+    transformPointCloud(nameClient.lookup(target_frame), cloudOut, cloudIn);
 }
 
 void rosTFClient::transformPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn)
@@ -96,7 +96,7 @@ void rosTFClient::transformPointCloud(unsigned int target_frame, std_msgs::Point
 
 std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(std::string target_frame,  const std_msgs::PointCloudFloat32 & cloudIn)
 {
-  return transformPointCloud(lookup(target_frame), cloudIn);
+  return transformPointCloud(nameClient.lookup(target_frame), cloudIn);
 };
 
 
@@ -112,7 +112,7 @@ std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target
 
 void rosTFClient::transformLaserScanToPointCloud(std::string target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn)
 {
-  transformLaserScanToPointCloud(lookup(target_frame), cloudOut, scanIn);
+  transformLaserScanToPointCloud(nameClient.lookup(target_frame), cloudOut, scanIn);
 }
 
 void rosTFClient::transformLaserScanToPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan &scanIn)
@@ -205,35 +205,35 @@ void rosTFClient::receiveArray()
 };
 
 NEWMAT::Matrix rosTFClient::getMatrix(std::string target_frame, std::string source_frame, ros::Time time)
-{ return getMatrix(lookup(target_frame), lookup(source_frame), time.to_ull());};
+{ return getMatrix(nameClient.lookup(target_frame), nameClient.lookup(source_frame), time.to_ull());};
 
 
 libTF::TFPoint rosTFClient::transformPoint(std::string target_frame, const libTF::TFPoint & point_in)
-{ return transformPoint(lookup(target_frame), point_in);};
+{ return transformPoint(nameClient.lookup(target_frame), point_in);};
 
 libTF::TFPoint2D rosTFClient::transformPoint2D(std::string target_frame, const libTF::TFPoint2D & point_in)
-{ return transformPoint2D(lookup(target_frame), point_in);};
+{ return transformPoint2D(nameClient.lookup(target_frame), point_in);};
 
 libTF::TFVector rosTFClient::transformVector(std::string target_frame, const libTF::TFVector & vector_in)
-{ return transformVector(lookup(target_frame), vector_in);};
+{ return transformVector(nameClient.lookup(target_frame), vector_in);};
 
 libTF::TFVector2D rosTFClient::transformVector2D(std::string target_frame, const libTF::TFVector2D & vector_in)
-{ return transformVector2D(lookup(target_frame), vector_in);};
+{ return transformVector2D(nameClient.lookup(target_frame), vector_in);};
 
 libTF::TFEulerYPR rosTFClient::transformEulerYPR(std::string target_frame, const libTF::TFEulerYPR & euler_in)
-{ return transformEulerYPR(lookup(target_frame), euler_in);};
+{ return transformEulerYPR(nameClient.lookup(target_frame), euler_in);};
 
 libTF::TFYaw rosTFClient::transformYaw(std::string target_frame, const libTF::TFYaw & euler_in)
-{ return transformYaw(lookup(target_frame), euler_in);};
+{ return transformYaw(nameClient.lookup(target_frame), euler_in);};
 
 libTF::TFPose rosTFClient::transformPose(std::string target_frame, const libTF::TFPose & pose_in)
-{ return transformPose(lookup(target_frame), pose_in);};
+{ return transformPose(nameClient.lookup(target_frame), pose_in);};
 
 libTF::TFPose2D rosTFClient::transformPose2D(std::string target_frame, const libTF::TFPose2D & pose_in)
-{ return transformPose2D(lookup(target_frame), pose_in);};
+{ return transformPose2D(nameClient.lookup(target_frame), pose_in);};
 
 std::string rosTFClient::viewChain(std::string target_frame, std::string source_frame)
-{ return viewChain(lookup(target_frame), lookup(source_frame));};
+{ return viewChain(nameClient.lookup(target_frame), nameClient.lookup(source_frame));};
 
 
 
@@ -247,7 +247,7 @@ rosTFServer::rosTFServer(ros::node & rosnode):
 
 void rosTFServer::sendEuler(std::string frame, std::string parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime)
 {
-  sendEuler(lookup(frame), lookup(parent), x,y,z,yaw,pitch,roll, rostime.sec, rostime.nsec);
+  sendEuler(nameClient.lookup(frame), nameClient.lookup(parent), x,y,z,yaw,pitch,roll, rostime.sec, rostime.nsec);
 };
 
 void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs)
@@ -275,7 +275,7 @@ void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, d
 
 void rosTFServer::sendInverseEuler(std::string frame, std::string parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime)
 {
-  sendInverseEuler(lookup(frame), lookup(parent), x,y,z,yaw,pitch,roll, rostime.sec, rostime.nsec);
+  sendInverseEuler(nameClient.lookup(frame), nameClient.lookup(parent), x,y,z,yaw,pitch,roll, rostime.sec, rostime.nsec);
 };
 
 void rosTFServer::sendInverseEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs)
@@ -315,12 +315,12 @@ void rosTFServer::sendPose(libTF::TFPose pose, std::string parent)
 {
   unsigned int nsecs = pose.time % 1000000000;
   unsigned int secs = (pose.time - nsecs) / 1000000000;
-  sendEuler(pose.frame, lookup(parent), pose.x, pose.y, pose.z, pose.yaw, pose.pitch, pose.roll, secs, nsecs);  
+  sendEuler(pose.frame, nameClient.lookup(parent), pose.x, pose.y, pose.z, pose.yaw, pose.pitch, pose.roll, secs, nsecs);  
 };
 
 void rosTFServer::sendInversePose(libTF::TFPose pose, std::string parent)
 {
-  sendInversePose(pose, lookup(parent));
+  sendInversePose(pose, nameClient.lookup(parent));
 };
 
 void rosTFServer::sendInversePose(libTF::TFPose pose, unsigned int parent)
@@ -333,7 +333,7 @@ void rosTFServer::sendInversePose(libTF::TFPose pose, unsigned int parent)
 
 void rosTFServer::sendDH(std::string frame, std::string parent, double length, double twist, double offset, double angle, ros::Time rostime)
 {
-  sendDH(lookup(frame), lookup(parent), length, twist, offset, angle, rostime.sec, rostime.nsec);
+  sendDH(nameClient.lookup(frame), nameClient.lookup(parent), length, twist, offset, angle, rostime.sec, rostime.nsec);
 };
 
 void rosTFServer::sendDH(unsigned int frame, unsigned int parent, double length, double twist, double offset, double angle, unsigned int secs, unsigned int nsecs)
@@ -359,7 +359,7 @@ void rosTFServer::sendDH(unsigned int frame, unsigned int parent, double length,
 
 void rosTFServer::sendQuaternion(std::string frame, std::string parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, ros::Time rostime)
 {
-  sendQuaternion(lookup(frame), lookup(parent), xt, yt, zt, xr, yr, zr, w, rostime.sec, rostime.nsec);
+  sendQuaternion(nameClient.lookup(frame), nameClient.lookup(parent), xt, yt, zt, xr, yr, zr, w, rostime.sec, rostime.nsec);
 };
 
 void rosTFServer::sendQuaternion(unsigned int frame, unsigned int parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, unsigned int secs, unsigned int nsecs)
@@ -389,7 +389,7 @@ void rosTFServer::sendQuaternion(unsigned int frame, unsigned int parent, double
 
 void rosTFServer::sendMatrix(std::string frame, std::string parent, NEWMAT::Matrix matrix, ros::Time rostime)
 {
-  sendMatrix(lookup(frame), lookup(parent), matrix, rostime);
+  sendMatrix(nameClient.lookup(frame), nameClient.lookup(parent), matrix, rostime);
 };
 
 void rosTFServer::sendMatrix(unsigned int frame, unsigned int parent, NEWMAT::Matrix matrix, ros::Time rostime)
