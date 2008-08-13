@@ -112,6 +112,7 @@ private:
     
     std_msgs::RobotBase2DOdom m_odomMsg;
     std_msgs::ParticleCloud2D m_particleCloud;
+    std_msgs::RobotBase2DOdom m_currentOdom;
     std_msgs::Pose2DFloat32   m_iniPos;
 
     
@@ -132,24 +133,26 @@ private:
 	
 	m_lastUpdate = ros::Time::now();
 	
-	m_tfServer->sendInverseEuler("FRAMEID_MAP",
-				     "FRAMEID_ODOM",
-				     m_iniPos.x,
-				     m_iniPos.y,
-				     0.0,
-				     m_iniPos.th,
-				     0.0,
-				     0.0,
-				     m_odomMsg.header.stamp); 
-
-	m_odomMsg.pos.x += m_iniPos.x;
-	m_odomMsg.pos.y += m_iniPos.y;
-	m_odomMsg.pos.th = math_utils::normalize_angle(m_odomMsg.pos.th + m_iniPos.th);
-	m_odomMsg.header.frame_id = m_tfServer->lookup("FRAMEID_MAP");
+	m_currentOdom = m_odomMsg;
 	
-	publish("localizedpose", m_odomMsg);
+	m_currentOdom.pos.x += m_iniPos.x;
+	m_currentOdom.pos.y += m_iniPos.y;
+	m_currentOdom.pos.th = math_utils::normalize_angle(m_currentOdom.pos.th + m_iniPos.th);
+	m_currentOdom.header.frame_id = m_tfServer->lookup("FRAMEID_MAP");
 	
-	m_particleCloud.particles[0] = m_odomMsg.pos;
+	m_tfServer->sendEuler("FRAMEID_ROBOT",
+			      "FRAMEID_MAP",
+			      m_currentOdom.pos.x,
+			      m_currentOdom.pos.y,
+			      0.0,
+			      m_currentOdom.pos.th,
+			      0.0,
+			      0.0,
+			      m_currentOdom.header.stamp); 
+			      
+	publish("localizedpose", m_currentOdom);
+	
+	m_particleCloud.particles[0] = m_currentOdom.pos;
 	publish("particlecloud", m_particleCloud);
     }
     
