@@ -620,7 +620,7 @@ bool CvLevMarq_JDC::updateAlt( const CvMat*& _param, CvMat*& _JtJ, CvMat*& _JtEr
    }
 #ifdef DEBUG
    // jdc debugging
-   printf("cvLevMarq continue: iter num: %d,  change: %le, %le, errNorm: %f\n", 
+   printf("cvLevMarq continue: iter num: %d,  change: %le, %le, errNorm: %f\n",
 		   iters, change, criteria.epsilon, errNorm);
 #endif
 

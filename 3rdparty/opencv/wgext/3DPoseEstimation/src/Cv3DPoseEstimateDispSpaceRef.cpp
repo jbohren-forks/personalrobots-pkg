@@ -470,4 +470,26 @@ bool Cv3DPoseEstimateDispSpaceRef::projection(CvMat *XYZs, CvMat *uvds) {
 	return status;
 }
 
+/*
+ * A Convenient function to map z to d, at the optical center
+ */
+double Cv3DPoseEstimateDispSpaceRef::getD(double z){
+	double _xyz[] = {0., 0., z};
+	double _uvd[3];
+	CvMat xyz = cvMat(1, 3, CV_64FC1, _xyz);
+	CvMat uvd = cvMat(1, 3, CV_64FC1, _uvd);
+	projection(&xyz, &uvd);
+	return _uvd[2];
+}
+/*
+ * A convenient function to map disparity d to Z, at the optical center
+ */
+double Cv3DPoseEstimateDispSpaceRef::getZ(double d){
+	double _uvd[] = {this->mClx, this->mCy, d};
+	double _xyz[3];
+	CvMat xyz = cvMat(1, 3, CV_64FC1, _xyz);
+	CvMat uvd = cvMat(1, 3, CV_64FC1, _uvd);
+	reprojection(&uvd, &xyz);
+	return _xyz[2];
+}
 
