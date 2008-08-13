@@ -47,6 +47,32 @@ TEST(OctreeTests, insertionExtraction)
 	delete octree;
 }
 
+TEST(OctreeTests, insertionDeletion)
+{
+	scan_utils::Octree<float> *octree = new scan_utils::Octree<float>(0,0,0, 1.0,1.0,1.0, 5, 0.2);
+	srand( (unsigned)time(NULL) );
+	for (int i=0; i<100; i++) {
+		float x,y,z;
+		x = ((float)rand()) / (RAND_MAX ) - 0.5;
+		y = ((float)rand()) / (RAND_MAX ) - 0.5;
+		z = ((float)rand()) / (RAND_MAX ) - 0.5;
+		if (!octree->testBounds(x,y,z)) {
+			continue;
+		}
+
+		octree->insert(x, y, z, 1.7);
+		EXPECT_TRUE( octree->getNumLeaves() > 0);
+		EXPECT_TRUE( octree->getNumBranches() > 1);
+		//fprintf(stderr,"Full: %d %d\n",octree->getNumLeaves(), octree->getNumBranches());
+
+		octree->erase(x,y,z);
+		EXPECT_TRUE( octree->getNumLeaves() == 0);
+		EXPECT_TRUE( octree->getNumBranches() == 1);
+		//fprintf(stderr,"Empty: %d %d\n",octree->getNumLeaves(), octree->getNumBranches());
+	}
+	delete octree;
+}
+
 TEST (OctreeTests, serializationDeserialization)
 {
 	int depth = 4;
@@ -63,6 +89,7 @@ TEST (OctreeTests, serializationDeserialization)
 		}
 	}
 
+	//fprintf(stderr,"Empty: %d %d\n",original->getNumLeaves(), original->getNumBranches());
 	std::fstream os;
 	os.open("testOctree.dat",std::fstream::out);
 	original->writeToFile(os);

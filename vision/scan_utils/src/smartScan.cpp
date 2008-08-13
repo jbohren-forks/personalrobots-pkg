@@ -1558,12 +1558,28 @@ void SmartScan::computeSpinImageNatural(scan_utils::Grid2D &si, float x, float y
 	ss.computeSpinImageFixedOrientation(si, center2.x, center2.y, center2.z, support, pixelsPerMeter);
 }
 
-void SmartScan::insertInOctree(Octree<int> *o)
+
+template <typename T>
+void SmartScan::insertInOctree(Octree<T> *o, T value)
 {
 	std_msgs::Point3DFloat32 p;
 	for(int i=0; i<size(); i++) {
 		p = getPoint(i);
-		o->insert(p.x, p.y, p.z, 1);
+		o->insert(p.x, p.y, p.z, value);
 	}
 }
+
+/* tell the compiler to instantiate some possible forms of this
+   call. This is really unfortunate, but no other solution seemed
+   preferable. Other solutions include: including octree.h (which is
+   huge) in the smartScan.h header, or including smartScan.h in the
+   octree.h header (which is already huge) and making this member of
+   the Octree class instead of the SmartScan class*/
+
+template void SmartScan::insertInOctree<int>(Octree<int>*,int);
+template void SmartScan::insertInOctree<char>(Octree<char>*,char);
+template void SmartScan::insertInOctree<unsigned char>(Octree<unsigned char>*,unsigned char);
+template void SmartScan::insertInOctree<unsigned int>(Octree<unsigned int>*,unsigned int);
+template void SmartScan::insertInOctree<float>(Octree<float>*,float);
+template void SmartScan::insertInOctree<double>(Octree<double>*,double);
 

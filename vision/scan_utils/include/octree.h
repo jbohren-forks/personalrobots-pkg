@@ -3,6 +3,9 @@
 
 #include "octreeNodes.h"
 #include <scan_utils/OctreeMsg.h>
+#include <math.h>
+
+class SmartScan;
 
 namespace scan_utils {
 
@@ -12,7 +15,7 @@ namespace scan_utils {
 
     The datatype that is held in the leaves is templated. For now, the
     only requirement on the type is that is must allow the assignment
-    operator =. 
+    operator = and the equality operators == and !=. 
 
     The Octree needs to know what part of the 3D world it is
     responsible for. It has a defined center somewhere in space and
@@ -27,7 +30,7 @@ namespace scan_utils {
     another.
 
     You can specify the maximum depth of the tree as well. A \a
-    maxDepth of \d guarantees that the smallest leaves will have size
+    maxDepth of \a d guarantees that the smallest leaves will have size
     2^(-d) * total_octree_size.
 
     Example: an octree that covers a space of 20m * 20m * 20m with max
@@ -53,6 +56,12 @@ class Octree {
 	float mCx, mCy, mCz;
 	//! The value that is returned for a never visited cell
 	T mEmptyValue;
+	//! Intended for forward compatibility with future versions that might use timestamps
+	bool mUsesTimestamps;
+
+	//! Main accessor loop. Performs either insertion or deletion at the given coordinates.
+	void insertOrErase(float x, float y, float z, T newValue, bool deletion);
+
  public:
 	//! Constructor needs all initialization values.
 	Octree(float cx, float cy, float cz,
@@ -70,14 +79,35 @@ class Octree {
 	inline bool testBounds(float x, float y, float z);
 
 	//! Inserts a value at given spatial coordinates.
-	void insert(float x, float y, float z, T newValue);
+	/*! If you want the region at x,y,z to be treated as if it was
+            never visited, do NOT use this to insert an
+            emptyValue. Use \a delete(x,y,z) instead.*/
+	void insert(float x, float y, float z, T newValue){
+		this->insertOrErase(x,y,z,newValue,false);
+	}
+	//! Deletes the data at given spatial coordinates.
+	/*! The region at \a x,y,z will from now be treated as never
+            touched, any query at that point will return \a
+            mEmptyValue */
+	void erase(float x, float y, float z) {
+		this->insertOrErase(x,y,z,mEmptyValue, true);
+	}
 	//! Returns the value at given spatial coordinates
 	T get(float x, float y, float z);
+	//! Traces a scanner ray through this octree
+	void traceRay(float sx, float sy, float sz, 
+		      float dx, float dy, float dz, float distance,  
+		      T emptyVal, T occupiedVal);
+
 	//! Clears and deallocates the entire Octree. 
 	void clear();
+	//! Recursively parses the Octree performing aggregation everyehere where appropriate
+	void aggregate(){mRoot->recursiveAggregation();}
 
-	//! Returns the triangles that form the surface mesh of the non-empty cells
-	void getTriangles(std::list<Triangle> &triangles);
+	//! Returns the triangles that form the surface mesh of all non-empty cells
+	void getAllTriangles(std::list<Triangle> &triangles);
+	//! Returns the triangles that form the surface mesh of the cells with the given value
+	void getTrianglesByValue(std::list<Triangle> &triangles, T value);
 	//! Recursively computes and returns the number of branches of the tree
 	int getNumBranches(){return mRoot->getNumBranches();}
 	//! Recursively computes and returns the number of leaves of the tree
@@ -101,19 +131,15 @@ class Octree {
 	void writeToFile(std::ostream &os);
 	//! Read Octree from a file saved by the \a writeToFile(...) function 
 	void readFromFile(std::istream &is);
+
+	bool intersectsRay(float rx, float ry, float rz, 
+			   float dx, float dy, float dz,
+			   float &t0, float &t1);
+
+	//! Inserts the contents of a scan into this octree
+	//void insertScan(const SmartScan *s, T insertVal);
 };
 
-template <typename T>
-bool Octree<T>::testBounds(float x, float y, float z)
-{
-	float dx = mDx / 2.0;
-	float dy = mDy / 2.0;
-	float dz = mDz / 2.0;
-	if ( x > mCx + dx ) return false; if (x < mCx - dx ) return false;
-	if ( y > mCy + dy ) return false; if (y < mCy - dy ) return false;
-	if ( z > mCz + dz ) return false; if (z < mCz - dz ) return false;
-	return true;
-}
 
 //------------------------------------- Constructor, destructor -------------------------------
 
@@ -141,24 +167,42 @@ Octree<T>::Octree(float cx, float cy, float cz,
 	setSize(dx,dy,dz);
 	setDepth(maxDepth);
 	mEmptyValue = emptyValue;
+	mUsesTimestamps = false;
 }
 
 //--------------------------------------- Navigation ------------------------------------------
 
 
-/*! Inserts a new value at the spatial location specified by \a
-    x,y,z. It is not recursive, in an attempt to be more efficient.
+template <typename T>
+bool Octree<T>::testBounds(float x, float y, float z)
+{
+	float dx = mDx / 2.0;
+	float dy = mDy / 2.0;
+	float dz = mDz / 2.0;
+	if ( x > mCx + dx ) return false; if (x < mCx - dx ) return false;
+	if ( y > mCy + dy ) return false; if (y < mCy - dy ) return false;
+	if ( z > mCz + dz ) return false; if (z < mCz - dz ) return false;
+	return true;
+}
 
-    If the given region of space is previously unvisited, it will
-    travel down creating Branches as it goes, until reaching a depth
-    of \a mMaxDepth. At that point it will create a Leaf with the
-    value \a newValue.
+/*! 
+    If \a deletion is true, this will delete the value stored at the
+    lowermost leaf at \a x,y,z. Any subsequent query will then return
+    \a mEmptyValue. In this case, \a newValue is not used.
 
-    For now, does not aggregate Leaves together, even if all children
-    of a given Branch have the same value.
+    If \a deletion is false, this function inserts the new value at the
+    spatial location specified by \a x,y,z. It is not recursive, in an
+    attempt to be more efficient.  If the given region of space is
+    previously unvisited, it will travel down creating Branches as it
+    goes, until reaching a depth of \a mMaxDepth. At that point it
+    will create a Leaf with the value \a newValue.
+
+    After performing deletion or insertion, this function will
+    navigate back towards the top of the tree, aggregating leaves
+    where appropriate.
  */
 template <typename T>
-void Octree<T>::insert(float x, float y, float z, T newValue)
+void Octree<T>::insertOrErase(float x, float y, float z, T newValue, bool deletion)
 {
 	if (!testBounds(x,y,z)) return;
 
@@ -169,6 +213,8 @@ void Octree<T>::insert(float x, float y, float z, T newValue)
 	unsigned char address;
 	OctreeBranch<T> *currentNode = mRoot;
 	OctreeNode<T> *nextNode;
+
+	std::list<OctreeBranch<T>*> visitedBranches;
 
 	while (1) {
 		dx /= 2.0;
@@ -185,28 +231,39 @@ void Octree<T>::insert(float x, float y, float z, T newValue)
 		else {cz -= dz;}
 		
 		//current node is a branch by definition
+		visitedBranches.push_back( currentNode );
 		nextNode = currentNode->getChild(address);
+
 		if (!nextNode) {
-			// unexplored region of space; extend the tree
+			// unexplored region of space
+
+			//if we wanted to perform deletion it is not necessary; we are done
+			if (deletion) break;
+
+			//if not, extend the tree
 			if (depth >= mMaxDepth) {
 				// we have reached max depth; create a new leaf
 				nextNode = new OctreeLeaf<T>(newValue);
 				currentNode->setChild(address, nextNode);
 				// and we are done
-				return;
+				break;
 			} else {
 				// create a new unexplored branch
 				nextNode = new OctreeBranch<T>();
 				currentNode->setChild(address, nextNode);
 			}
 		} else if (nextNode->isLeaf()) {
-			//leaf already is set to new value; we are done
-			if ( ((OctreeLeaf<T>*)nextNode)->getVal()==newValue) return;
+
+			//leaf already is set to new value; we are done. Check for aggregates anyway.
+			if ( !deletion && ((OctreeLeaf<T>*)nextNode)->getVal()==newValue ) break;
 
 			//we have reached the max depth; set the leaf to new value then done
 			if (depth >= mMaxDepth) { 
-				((OctreeLeaf<T>*)nextNode)->setVal(newValue); 
-				return;
+				//delete if we want to
+				if (deletion) currentNode->setChild(address, NULL);
+				//or just set new value
+				else ((OctreeLeaf<T>*)nextNode)->setVal(newValue); 
+				break;
 			}
 
 			//create a new branch with the all children leaves with the old value
@@ -217,6 +274,20 @@ void Octree<T>::insert(float x, float y, float z, T newValue)
 		// advance the recursion 
 		currentNode = (OctreeBranch<T>*)nextNode;
 	}
+
+	//go back through the list of visited nodes and check if we need to aggregate
+	bool agg = true;
+	OctreeLeaf<T> *newLeaf;
+	while (agg && (int)visitedBranches.size() > 1) {
+		currentNode = visitedBranches.back();
+		visitedBranches.pop_back();
+		agg = currentNode->aggregate(&newLeaf);
+		if (agg) {
+			//this will also delete the old branch
+			visitedBranches.back()->replaceChild(currentNode, newLeaf);
+		}
+	}
+	visitedBranches.clear();
 }
 
 /*! Returns the value at the specified spatial coordinates. If that
@@ -326,6 +397,8 @@ void Octree<T>::setFromMsg(const OctreeMsg &msg)
 	setCenter( msg.center.x, msg.center.y, msg.center.z);
 	setSize(msg.size.x, msg.size.y, msg.size.z);
 	setDepth(msg.max_depth);
+	if (msg.uses_timestamps) mUsesTimestamps = true;
+	else mUsesTimestamps = false;
 
 	if (sizeof(mEmptyValue) != msg.get_empty_value_size()) {
 		fprintf(stderr,"Incompatible data type in ROS Octree message!\n");
@@ -353,6 +426,8 @@ void Octree<T>::getAsMsg(OctreeMsg &msg)
 	msg.center.x = mCx; msg.center.y = mCy; msg.center.z = mCz;
 	msg.size.x = mDx; msg.size.y = mDy; msg.size.z = mDz;
 	msg.max_depth = mMaxDepth;
+	if (mUsesTimestamps) msg.uses_timestamps = 1;
+	else msg.uses_timestamps = 0;
 
 	msg.set_empty_value_size(sizeof(mEmptyValue));
 	memcpy(msg.empty_value, (char*)&mEmptyValue, sizeof(mEmptyValue));
@@ -375,6 +450,7 @@ void Octree<T>::writeToFile(std::ostream &os)
 	os.write((char*)fl, 6 * sizeof(float));
 	os.write((char*)&mEmptyValue, sizeof(mEmptyValue));
 	os.write((char*)&mMaxDepth, sizeof(int));
+	os.write((char*)&mUsesTimestamps,sizeof(bool));
 
 	//write the volume data
 	unsigned int size;
@@ -399,6 +475,7 @@ void Octree<T>::readFromFile(std::istream &is)
 	mDx = fl[3]; mDy = fl[4]; mDz = fl[5];
 	is.read( (char*)&mEmptyValue, sizeof(mEmptyValue) );
 	is.read( (char*)&mMaxDepth, sizeof(int) );
+	is.read( (char*)&mUsesTimestamps, sizeof(bool) );
 
 	//read the volume data
 	unsigned int current = (unsigned int)is.tellg();
@@ -417,24 +494,189 @@ void Octree<T>::readFromFile(std::istream &is)
 	delete [] octreeString;
 }
 
+/*
+template <typename T>
+void Octree<T>::insertScan(const SmartScan *s, T insertVal)
+{
+}
+*/
+
 //--------------------------------------------- Triangulation -----------------------------------------
 
 /*!  Returns the triangles that form the surface mesh of the NON-EMPTY
   (previously visited) cells in the Octree (regardless of the value
   they hold).
 
-  Tries to be somewhat smart about not returning unnecesary triangles,
+  Tries to be somewhat smart about not returning unnecessary triangles,
   but is not very good at it. A good algorithm for doing that seems to
   be an interesting problem...
  */
 template <typename T>
-void Octree<T>::getTriangles(std::list<Triangle> &triangles)
+void Octree<T>::getAllTriangles(std::list<Triangle> &triangles)
 {
 	if (!mRoot) return;
 	mRoot->getTriangles( true, true, true, true, true, true, 
-			     mCx, mCy, mCz, mDx/2.0, mDy/2.0, mDz/2.0, triangles);
+			     mCx, mCy, mCz, mDx/2.0, mDy/2.0, mDz/2.0, 
+			     triangles, NULL, mEmptyValue);
 }
 
+/*!  Returns the triangles that form the surface mesh of the leaves
+  with the value equal to \a value.
+
+  Tries to be somewhat smart about not returning unnecessary triangles,
+  but is not very good at it. A good algorithm for doing that seems to
+  be an interesting problem...
+ */
+template <typename T>
+void Octree<T>::getTrianglesByValue(std::list<Triangle> &triangles, T value)
+{
+	if (!mRoot) return;
+	T val = value;
+	mRoot->getTriangles( true, true, true, true, true, true, 
+			     mCx, mCy, mCz, mDx/2.0, mDy/2.0, mDz/2.0, 
+			     triangles, &val, mEmptyValue);
+
+}
+
+//---------------------------------------------- Miscellaneous ------------------------------------------
+
+/*! Traces a ray from a scanned through the volume of this octree,
+    marking both empty and occupied cells.
+
+    \param sx,sy,sz - the starting point of the ray (presumably the
+    location of the scanner)
+
+    \param dx,dy,dz - the direction of the ray. Needs not to be
+    normalized.
+
+    \param distance - distance along the ray to object. If a negative
+    value is passed, this will just mark with the empty value along
+    the ray across the entire octree.
+
+    \param emptyVal - the value that is used to mark "empty" cells
+
+    \param occupiedVal - the value that is used to mark the "occupied"
+    cell at the end of the ray.
+
+    All cells on the ray between the starting point and the point that
+    is at \a distance are marked as empty. The one cell that is
+    exactly at \distance away is then marked as occupied. All other
+    cells in the grid (including those beyong \a distance) are left
+    untouched.
+
+    WARNING: this is currently a rather innefficient and incomplete
+    approximation, which was very easy to implement.
+
+ */
+template <typename T>
+void Octree<T>::traceRay(float sx, float sy, float sz, 
+			 float dx, float dy, float dz, float distance, 
+			 T emptyVal, T occupiedVal)
+{
+	//normalize the direction
+	float norm = dx*dx + dy*dy + dz*dz;
+	dx /= norm; dy /= norm; dz /= norm;
+
+	//figure out the smallest dimension of the smallest cell
+	int numCells = (int)pow((float)2,mMaxDepth);
+	float minSize = mDx / numCells;
+	if ( mDy / numCells < minSize) minSize = mDy / numCells;
+	if ( mDz / numCells < minSize) minSize = mDz / numCells;
+
+	float currentDistance = 0;
+	bool done = false;
+	
+	//check if ray hits octree at all, and if it does what are the bounds
+	float minDist=0, maxDist=-1;
+	if (!intersectsRay(sx, sy, sz,  dx, dy, dz,  minDist, maxDist)) {
+		//fprintf(stderr,"Miss\n");
+		return;
+	}
+
+	//fprintf(stderr,"Hit\n");
+	currentDistance = minDist;
+	done = false;
+	//advance until we get to where we should, or exit the octree
+	while (!done) {
+		insert(sx + currentDistance * dx, 
+		       sy + currentDistance * dy, 
+		       sz + currentDistance * dz, emptyVal);
+		currentDistance += minSize;
+		//check if we have hit the occupied cell
+		if (distance > 0 && currentDistance > distance) done = true;
+		//check if we have exited the tree
+		if (currentDistance > maxDist) done = true;
+	}
+
+	//mark the occuppied cell
+	if (distance > 0) {
+		insert( sx + distance * dx, sy + distance * dy, sz + distance * dz, occupiedVal );
+	}
+}
+
+template <typename T>
+bool Octree<T>::intersectsRay(float rx, float ry, float rz, 
+			      float dx, float dy, float dz,
+			      float &t0, float &t1)
+{
+	float ex = mDx / 2.0;
+	float ey = mDy / 2.0;
+	float ez = mDz / 2.0;
+
+	float minx = mCx - ex, maxx = mCx + ex;
+	float miny = mCy - ey, maxy = mCy + ey;
+	float minz = mCz - ez, maxz = mCz + ez;
+
+	float tmin, tmax, tymin, tymax, tzmin, tzmax;
+
+	if (dx >= 0) {
+		tmin = (minx - rx) / dx;
+		tmax = (maxx - rx) / dx;
+	}
+	else {
+		tmin = (maxx - rx) / dx;
+		tmax = (minx - rx) / dx;
+	}
+	if (dy >= 0) {
+		tymin = (miny - ry) / dy;
+		tymax = (maxy - ry) / dy;
+	}
+	else {
+		tymin = (maxy - ry) / dy;
+		tymax = (miny - ry) / dy;
+	}
+
+	if ( (tmin > tymax) || (tymin > tmax) )
+		return false;
+	if (tymin > tmin)
+		tmin = tymin;
+	if (tymax < tmax)
+		tmax = tymax;
+
+	if (dz >= 0) {
+		tzmin = (minz - rz) / dz;
+		tzmax = (maxz - rz) / dz;
+	}
+	else {
+		tzmin = (maxz - rz) / dz;
+		tzmax = (minz - rz) / dz;
+	}
+
+	if ( (tmin > tzmax) || (tzmin > tmax) )
+		return false;
+
+	if (tzmin > tmin)
+		tmin = tzmin;
+	if (tzmax < tmax)
+		tmax = tzmax;
+
+	//return ( (tmin < t1) && (tmax > t0) );
+	if (tmax < t0) return false;
+	if (t1 > 0 && tmin < t1) return false;
+
+	t0 = tmin; t1 = tmax;
+	return true;
+}
 
 } //namespace scan_utils
 

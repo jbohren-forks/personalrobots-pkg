@@ -25,58 +25,13 @@ class OctreeNode {
  public:
 	OctreeNode(){}
 	virtual bool isLeaf() = 0;
-	virtual void getTriangles(bool, bool, bool, bool, bool, bool,
-				  float, float, float,
-				  float, float, float,
-				  std::list<Triangle>&){}
 	virtual void serialize(char*, unsigned int&){}
 	virtual void deserialize(char*, unsigned int&, unsigned int){}
 	virtual int computeMaxDepth(){return 0;}
+	virtual void recursiveAggregation(){}
 
 };
 
-
-/*! An Octree branch. Always contains exactly 8 children pointers. A
-    NULL child pointer means that the respective child points to an
-    unexplored region of space and thus is equivalent to having a
-    child with the mEmptyValue of the Octree set.
- */
-template <typename T>
-class OctreeBranch : public OctreeNode<T> {
- private:
-	OctreeNode<T> **mChildren;
- public:
-	bool isLeaf(){return false;}
-
-	//! Initializes a branch with all NULL (unexplored) children
-	inline OctreeBranch();
-	//! Initializes a branch with all children set to the value \a val 
-	inline OctreeBranch(T val);
-	//! Destructor will delete all children first. Thus, delete an Octree top-down by just deleting its root.
-	inline ~OctreeBranch();
-
-	//! Return the child at address \a adress, between 0 and 7
-	OctreeNode<T>* getChild(unsigned char address) { return mChildren[address]; }
-	//! Sets the child at address \a adress to point at \a child. 
-	/*! If a child was already present at that address it is deleted.*/
-	inline void setChild(unsigned char address, OctreeNode<T> *child);
-	//! Recursively returns the total number of branches below this one (including this one)
-	int getNumBranches();
-	//! Recursively returns the number of leaves between this one
-	int getNumLeaves();
-	//! Recursively return the triangles that form the surface of non-empty cells below this branch.
-	virtual void getTriangles(bool px, bool nx, bool py, bool ny, bool pz, bool nz,
-				  float cx, float cy, float cz,
-				  float dx, float dy, float dz,
-				  std::list<Triangle> &triangles);
-	//! Recursively serializes everything below this branch
-	virtual void serialize(char *destinationString, unsigned int &address);
-	//! Recursively reads in everything below this branch
-	virtual void deserialize(char *sourceString, unsigned int &address, unsigned int size);
-	//! Recursively computes the max depth under this branch
-	virtual int computeMaxDepth();
-
-};
 
 /*! A leaf simply holds a value and nothing else. Do not use a leaf to
     store the empty value, use a NULL pointer in its parent instead.
@@ -93,11 +48,6 @@ class OctreeLeaf : public OctreeNode<T> {
 
 	T getVal(){return mValue;}
 	void setVal(T val){mValue = val;}
-	//! Returns the triangles that surround this cell. 
-	virtual void getTriangles(bool px, bool nx, bool py, bool ny, bool pz, bool nz,
-				  float cx, float cy, float cz,
-				  float dx, float dy, float dz,
-				  std::list<Triangle> &triangles);
 	// Serializes the content of this leaf
 	virtual void serialize(char *destinationString, unsigned int &address);
 	// Reads in the content of this leaf
@@ -105,6 +55,64 @@ class OctreeLeaf : public OctreeNode<T> {
 	//! Returns 0
 	virtual int computeMaxDepth(){return 0;}
 
+};
+
+/*! An Octree branch. Always contains exactly 8 children pointers. A
+    NULL child pointer means that the respective child points to an
+    unexplored region of space and thus is equivalent to having a
+    child with the mEmptyValue of the Octree set.
+ */
+template <typename T>
+class OctreeBranch : public OctreeNode<T> {
+ private:
+	OctreeNode<T> **mChildren;
+
+	//! Returns true if the given child is a leaf and it needs to be triangulated given the required values
+	bool triangulateChild(unsigned char address, T* value, T emptyValue);
+	//! Actually creates the triangles that enclose the given box
+	void createTriangles(bool px, bool nx, bool py, bool ny, bool pz, bool nz,
+			     float cx, float cy, float cz,
+			     float dx, float dy, float dz,
+			     std::list<Triangle> &triangles);
+ public:
+	bool isLeaf(){return false;}
+
+	//! Initializes a branch with all NULL (unexplored) children
+	inline OctreeBranch();
+	//! Initializes a branch with all children set to the value \a val 
+	inline OctreeBranch(T val);
+	//! Destructor will delete all children first. Thus, delete an Octree top-down by just deleting its root.
+	inline ~OctreeBranch();
+
+	//! Return the child at address \a adress, between 0 and 7
+	OctreeNode<T>* getChild(unsigned char address) { return mChildren[address]; }
+	//! Sets the child at address \a adress to point at \a child. 
+	/*! If a child was already present at that address it is deleted.*/
+	inline void setChild(unsigned char address, OctreeNode<T> *child);
+	//! Replaces \a oldChild with \a newChild. \a oldChild is also deleted.
+	inline void replaceChild(OctreeNode<T> *oldChild, OctreeNode<T> *newChild);
+	//! Recursively returns the total number of branches below this one (including this one)
+	int getNumBranches();
+	//! Recursively returns the number of leaves between this one
+	int getNumLeaves();
+
+	//! Recursively goes down the tree and creates triangles
+	void getTriangles(bool px, bool nx, bool py, bool ny, bool pz, bool nz,
+			  float cx, float cy, float cz,
+			  float dx, float dy, float dz,
+			  std::list<Triangle> &triangles, T* value, T emptyValue);
+
+	//! Recursively serializes everything below this branch
+	virtual void serialize(char *destinationString, unsigned int &address);
+	//! Recursively reads in everything below this branch
+	virtual void deserialize(char *sourceString, unsigned int &address, unsigned int size);
+	//! Recursively computes the max depth under this branch
+	virtual int computeMaxDepth();
+
+	//! Checks if all children of this branch are indentical
+	inline bool aggregate(OctreeLeaf<T> **newLeaf);
+	//! Recursively checks the entire subtree under this branch for possible aggregations
+	virtual void recursiveAggregation();
 };
 
 //------------------------------------ Constructors and destructors -------------------------
@@ -145,6 +153,71 @@ void OctreeBranch<T>::setChild(unsigned char address, OctreeNode<T> *child)
 	mChildren[address] = child; 
 }
 
+template <typename T>
+void OctreeBranch<T>::replaceChild(OctreeNode<T> *oldChild, OctreeNode<T> *newChild)
+{
+	for (unsigned char i=0; i<8; i++) {
+		if (mChildren[i]==oldChild) {
+			setChild(i, newChild);
+			return;
+		}
+	}
+}
+
+/*!  If all children of this leaf are identical, returns true and
+  places in \a newLeaf a pointer to a new leaf that can replace this
+  branch.
+
+  Otherwise returns false.
+ */
+template <typename T>
+bool OctreeBranch<T>::aggregate(OctreeLeaf<T> **newLeaf)
+{
+	if (!mChildren[0]) {
+		//first child is NULL
+		for (int i=1; i<8; i++) {
+			//some children are NULL, some not. We are done
+			if (mChildren[i]) return false;
+		}
+		//all children are NULL
+		*newLeaf = NULL;
+		return true;
+	}
+
+	//if any child is a branch, return false
+	if (!mChildren[0]->isLeaf()) return false;
+
+	T val = ((OctreeLeaf<T>*)(mChildren[0]))->getVal();
+
+	for (int i=1; i<8; i++) {
+		//some children are NULL, some not. We are done
+		if (!mChildren[i]) return false;
+		//if any child is a branch, return false
+		if (!mChildren[i]->isLeaf()) return false;
+		//two children leaves have different values
+		if ( ((OctreeLeaf<T>*)(mChildren[i]))->getVal()!= val) return false;
+	}
+	//all children are leaves and they have the same value
+	*newLeaf = new OctreeLeaf<T>(val);
+	return true;
+}
+
+template <typename T>
+void OctreeBranch<T>::recursiveAggregation()
+{
+	//aggregation must be performed bottom-up so go down first
+	for (int i=0; i<8; i++) {
+		if (mChildren[i]) mChildren[i]->recursiveAggregation();
+	}
+
+	OctreeLeaf<T> *newLeaf;
+	for (unsigned char i=0; i<8; i++) {
+		if (!mChildren[i] || mChildren[i]->isLeaf()) continue;
+		if ( ((OctreeBranch<T>*)mChildren[i])->aggregate(&newLeaf) ) {
+			setChild(i,newLeaf);
+		}
+	}
+}
 //-------------------------------------- Statistics -----------------------------------------
 
 template <typename T>
@@ -251,65 +324,90 @@ void OctreeLeaf<T>::deserialize(char *sourceString, unsigned int &address, unsig
 //--------------------------------------------- Triangulation --------------------------------
 
 template <typename T>
+bool OctreeBranch<T>::triangulateChild(unsigned char address, T* value, T emptyValue)
+{
+	if (!mChildren[address]) {
+		if (value && *value == emptyValue) return true;
+		else return false;
+	} else if ( mChildren[address]->isLeaf() ) {
+		if ( value &&  *value != ((OctreeLeaf<T>*)(mChildren[address]))->getVal() ) return false;
+		else return true;
+	}
+	return false;	
+}
+
+/*!  \param value - if this is NULL, the fctn returns the triangles
+  from all non-empty cells. Otherwise, it only returns the triangles
+  from the leaves that hold the given value.
+ */
+template <typename T>
 void OctreeBranch<T>::getTriangles(bool px, bool nx, bool py, bool ny, bool pz, bool nz,
-				float cx, float cy, float cz,
-				float dx, float dy, float dz,
-				std::list<Triangle> &triangles)
+				   float cx, float cy, float cz,
+				   float dx, float dy, float dz,
+				   std::list<Triangle> &triangles, T* value, T emptyValue)
 {
 	dx/=2.0; dy/=2.0; dz/=2.0;
-
+	
 	float nextx, nexty, nextz;
 	bool nextpx, nextnx, nextpy, nextny, nextpz, nextnz;
 	
 	for (int i=0; i<8; i++) {
-		if (!mChildren[i]) continue;
+		
+		if (!mChildren[i] || mChildren[i]->isLeaf()) {
+			if (!triangulateChild(i,value,emptyValue)) continue;
+		}
 
 		if (i/4 == 0) {
 			nextx = cx-dx;
 			nextnx = nx;
-			if ( mChildren[i+4] && mChildren[i+4]->isLeaf() ) nextpx = false;
-			else nextpx = true;			
+			if ( triangulateChild(i+4, value, emptyValue) ) nextpx = false;
+			else nextpx = true;
 		} else {
 			nextx = cx+dx;
 			nextpx = px;
-			if ( mChildren[i-4] && mChildren[i-4]->isLeaf() ) nextnx = false;
+			if ( triangulateChild(i-4, value, emptyValue) ) nextnx = false;
 			else nextnx = true;			
 		}
 
 		if ( (i%4)/2 == 0 ) {
 			nexty = cy-dy;
 			nextny = ny;
-			if ( mChildren[i+2] && mChildren[i+2]->isLeaf() ) nextpy = false;
+			if ( triangulateChild(i+2, value, emptyValue) ) nextpy = false;
 			else nextpy = true;			
 		} else {
 			nexty = cy+dy;
 			nextpy = py;
-			if ( mChildren[i-2] && mChildren[i-2]->isLeaf() ) nextny = false;
+			if ( triangulateChild(i-2, value, emptyValue) ) nextny = false;
 			else nextny = true;			
 		}
 
 		if ( (i%4)%2 == 0 ) {
 			nextz = cz-dz;
 			nextnz = nz;
-			if ( mChildren[i+1] && mChildren[i+1]->isLeaf() ) nextpz = false;
+			if ( triangulateChild(i+1, value, emptyValue) ) nextpz = false;
 			else nextpz = true;			
 		} else {
 			nextz = cz+dz;
 			nextpz = pz;
-			if ( mChildren[i-1] && mChildren[i-1]->isLeaf() ) nextnz = false;
+			if ( triangulateChild(i-1, value, emptyValue) ) nextnz = false;
 			else nextnz = true;			
 		}
 
-		mChildren[i]->getTriangles( nextpx, nextnx, nextpy, nextny, nextpz, nextnz, 
-					    nextx, nexty, nextz, dx, dy, dz, triangles);
+		if (!mChildren[i] || mChildren[i]->isLeaf()) {
+			createTriangles( nextpx, nextnx, nextpy, nextny, nextpz, nextnz, 
+					 nextx, nexty, nextz, dx, dy, dz, triangles);
+		} else {
+			((OctreeBranch<T>*)(mChildren[i]))->getTriangles( nextpx, nextnx, nextpy, nextny, nextpz, nextnz, 
+									  nextx, nexty, nextz, dx, dy, dz, 
+									  triangles, value, emptyValue);		}
 	}
-}
+ }
 
 template <typename T>
-void OctreeLeaf<T>::getTriangles(bool px, bool nx, bool py, bool ny, bool pz, bool nz,
-			      float cx, float cy, float cz,
-			      float dx, float dy, float dz,
-			      std::list<Triangle> &triangles)
+void OctreeBranch<T>::createTriangles(bool px, bool nx, bool py, bool ny, bool pz, bool nz,
+				      float cx, float cy, float cz,
+				      float dx, float dy, float dz,
+				      std::list<Triangle> &triangles)
 {
 	if (px) {
 		triangles.push_back( Triangle( cx+dx, cy+dy, cz+dz,
