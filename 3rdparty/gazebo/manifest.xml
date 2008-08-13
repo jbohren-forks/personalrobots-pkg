@@ -19,6 +19,7 @@ This package contains Gazebo, from the Player Project
 <sysdepend os="ubuntu" version="8.04-hardy" package="pkg-config"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libxml2-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libltdl3-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libboost-signals-dev"/>
 </package>
 
 
