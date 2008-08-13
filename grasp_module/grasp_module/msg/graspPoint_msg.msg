@@ -1,2 +1,2 @@
-std_msgs/TransformQuaternion frame
+rosTF/TransformQuaternion frame
 float32 quality
