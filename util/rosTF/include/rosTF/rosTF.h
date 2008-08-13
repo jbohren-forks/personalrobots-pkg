@@ -55,7 +55,7 @@
  * push incoming date into the library.  
  * The accessors remain available as before.  
  */
-class rosTFClient : public libTF::TransformReference, public nameLookupClient
+class rosTFClient : public libTF::TransformReference
 {
  public:
   //Constructor
@@ -122,7 +122,8 @@ class rosTFClient : public libTF::TransformReference, public nameLookupClient
    */
   std::string viewChain(std::string target_frame, std::string source_frame);
 
-
+  nameLookupClient nameClient;
+  unsigned int lookup(const std::string& name){std::cerr<<"Interface Depricated: use rosTFClient.nameClient.lookup(name) instead."; nameClient.lookup(name);};
 
  private:
   // A reference to the active ros::node to allow setting callbacks
@@ -141,7 +142,7 @@ class rosTFClient : public libTF::TransformReference, public nameLookupClient
  * requiring the user to deal with any communication
  * beyond a function call.
  */
-class rosTFServer : public nameLookupClient
+class rosTFServer 
 {
  public:
   //Constructor
@@ -181,6 +182,9 @@ class rosTFServer : public nameLookupClient
   void sendMatrix(std::string frame, std::string parent, NEWMAT::Matrix matrix, ros::Time rostime);
   /** \brief Send a Transform with 4x4 Matrix */
   void sendMatrix(unsigned int frame, unsigned int parent, NEWMAT::Matrix matrix, ros::Time rostime);
+
+  nameLookupClient nameClient;
+  unsigned int lookup(const std::string& name){std::cerr<<"Interface Depricated: use rosTFServer.nameClient.lookup(name) instead."; nameClient.lookup(name);};
 
 
  private:

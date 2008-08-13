@@ -39,7 +39,7 @@ rosTFClient::rosTFClient(ros::node & rosnode,
   TransformReference(interpolating,
                      max_cache_time,
                      max_extrapolation_distance),
-  nameLookupClient(rosnode),
+  nameClient(rosnode),
   myNode(rosnode)
 {
   //  printf("Constructed rosTF\n");
@@ -239,8 +239,8 @@ std::string rosTFClient::viewChain(std::string target_frame, std::string source_
 
 
 rosTFServer::rosTFServer(ros::node & rosnode):
-  nameLookupClient(rosnode),
-  myNode(rosnode)
+  myNode(rosnode),
+  nameClient(rosnode)
 {
   myNode.advertise<rosTF::TransformArray>("TransformArray");
 };
