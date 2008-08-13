@@ -287,7 +287,7 @@ public:
 	
 	/* cleanup */
 	p.si->clearGoal();
-	p.si->clearStartStates(true);
+	p.si->clearStartStates();
 	p.mp->clear();
 	
 	return true;
@@ -371,11 +371,14 @@ public:
     }
     
 private:
-      
+    
+    class StateValidityPredicate;
+    
     struct Planner
     {
 	ompl::Planner_t                   mp;
 	ompl::SpaceInformationKinematic_t si;
+	StateValidityPredicate*           svc;
 	int                               type;
     };
     	
@@ -403,34 +406,52 @@ private:
 	planning_models::KinematicModel   *kmodel;
 	int                                groupID;	
     };
-    	
+    
+    class StateValidityPredicate : public ompl::SpaceInformation::StateValidityChecker
+    {
+    public:
+	StateValidityPredicate(Model *model) : ompl::SpaceInformation::StateValidityChecker()
+	{
+	    m_model = model;
+	}
+	
+	virtual bool operator()(const ompl::SpaceInformation::State_t state)
+	{
+	    m_model->kmodel->computeTransforms(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);
+	    m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
+	    bool collision = m_model->collisionSpace->isCollision(m_model->collisionSpaceID);
+	    return !collision;
+	}
+	
+    protected:
+	
+	Model *m_model;	
+    };
+    
+	
+    void createMotionPlanningInstances(Model* model)
+    {
+	addRRTInstance(model);
+    }
+    
+    void addRRTInstance(Model *model)
+    {
+	Planner p;
+	p.si   = new SpaceInformationXMLModel(model->kmodel, model->groupID);
+	p.svc  = new StateValidityPredicate(model);
+	p.si->setStateValidityChecker(p.svc);	
+	p.mp   = new ompl::RRT(p.si);
+	p.type = 0;
+	model->planners.push_back(p);
+    }
+    
     std_msgs::PointCloudFloat32        m_cloud;
     std_msgs::RobotBase2DOdom          m_localizedPose;
     double                             m_basePos[3];    
     collision_space::EnvironmentModel *m_collisionSpace;    
     std::map<std::string, Model*>      m_models;
-    std::vector<robot_desc::URDF*>     m_robotDescriptions;
+    std::vector<robot_desc::URDF*>     m_robotDescriptions; 
     
-
-    static bool isStateValid(const ompl::SpaceInformationKinematic::StateKinematic_t state, void *data)
-    {
-	Model *model = reinterpret_cast<Model*>(data);
-	model->kmodel->computeTransforms(state->values, model->groupID);
-	model->collisionSpace->updateRobotModel(model->collisionSpaceID);
-	bool collision = model->collisionSpace->isCollision(model->collisionSpaceID);
-	return !collision;
-    }
-    
-    void createMotionPlanningInstances(Model* model)
-    {
-	Planner p;
-	p.si   = new SpaceInformationXMLModel(model->kmodel, model->groupID);
-	p.si->setStateValidFn(isStateValid, reinterpret_cast<void*>(model));
-	p.mp   = new ompl::RRT(p.si);
-	p.type = 0;	
-	model->planners.push_back(p);
-    }
-
 };
 
 int main(int argc, char **argv)

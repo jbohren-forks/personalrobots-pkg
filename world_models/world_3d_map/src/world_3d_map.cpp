@@ -96,7 +96,7 @@ Provides (name/type):
 - @b "world_3d_map/verbosity_level" : @b [int] sets the verbosity level (default 1)
 **/
 
-#include <planning_models/node.h>
+#include <planning_node_util/knode.h>
 
 #include <rosthread/member_thread.h>
 #include <rosthread/mutex.h>
@@ -111,11 +111,11 @@ Provides (name/type):
 #include <deque>
 #include <cmath>
 
-class World3DMap : public planning_models::NodeWithRobotModel
+class World3DMap : public planning_node_util::NodeWithRobotModel
 {
 public:
 
-    World3DMap(const std::string &robot_model) : planning_models::NodeWithRobotModel(robot_model, "world_3d_map")
+    World3DMap(const std::string &robot_model) : planning_node_util::NodeWithRobotModel(robot_model, "world_3d_map")
     {
 	advertise<std_msgs::PointCloudFloat32>("world_3d_map");
 	advertise<rostools::Log>("roserr");
@@ -158,7 +158,7 @@ public:
     
     virtual void setRobotDescription(robot_desc::URDF *file)
     {
-	planning_models::NodeWithRobotModel::setRobotDescription(file);
+	planning_node_util::NodeWithRobotModel::setRobotDescription(file);
 	addSelfSeeBodies();
     }
     
@@ -172,7 +172,7 @@ private:
   
     void baseUpdate(void)
     {
-	planning_models::NodeWithRobotModel::baseUpdate();
+	planning_node_util::NodeWithRobotModel::baseUpdate();
 	int group = m_kmodel->getGroupID(m_urdf->getRobotName() + "::base");
 	if (group >= 0)
 	    m_kmodel->computeTransforms(m_basePos, group);

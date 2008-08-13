@@ -39,7 +39,7 @@
 #include <std_msgs/RobotBase2DOdom.h>
 #include <rosTF/rosTF.h>
 
-namespace planning_models
+namespace planning_node_util
 {
     
     class NodeWithRobotModel : public ros::node
