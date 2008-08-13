@@ -282,7 +282,7 @@ WavefrontNode::WavefrontNode() :
         dist_eps(1.0),       // overridden by param retrieval below!
         ang_eps(DTOR(4.0)),
         cycletime(0.1),
-        laser_maxrange(10.0),
+        laser_maxrange(4.0),
         laser_buffer_time(3.0),
         lookahead_maxdist(2.0),
         lookahead_distweight(5.0),
