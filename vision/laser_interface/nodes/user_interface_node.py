@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from pkg import *
 from std_msgs.msg import String
 import wx, time, sys
@@ -13,6 +14,9 @@ def key_to_command(key):
 
     if key == u'v':
         ret = 'verbose'
+
+    if key == u' ':
+        ret = 'rebuild'
 
     if key == u'p':
         ret = 'positive'
@@ -32,8 +36,8 @@ class KeyHandler(wx.Window):
         self.Bind(wx.EVT_UPDATE_UI, self.on_size)
         wx.UpdateUIEvent.SetUpdateInterval(500)
 
-        self.mouse_click_pub = rospy.TopicPub(MOUSE_CLICK_TOPIC, String)
-        self.laser_mode_pub  = rospy.TopicPub(LASER_MODE_TOPIC, String)
+        self.mouse_click_pub = rospy.TopicPub(MOUSE_CLICK_TOPIC, String).publish
+        self.laser_mode_pub  = rospy.TopicPub(LASER_MODE_TOPIC, String).publish
         self.SetBackgroundColour(wx.BLACK)
         self.focus = False
         self.text = ''
@@ -56,20 +60,23 @@ class KeyHandler(wx.Window):
         self.Refresh()
 
     def on_left_down(self, evt):
-        self.mouse_click_pub.publish(String('True'))
+        self.mouse_click_pub(String('True'))
         self.set_text('cli....')
         self.Refresh()
 
     def on_left_up(self, evt):
-        self.mouse_click_pub.publish(String('False'))
+        self.mouse_click_pub(String('False'))
         self.set_text('...cked')
         self.Refresh()
 
     def on_key_down(self, evt):
-        command = key_to_command(unichr(evt.GetRawKeyCode()))
+        c = unichr(evt.GetRawKeyCode())
+        command = key_to_command(c)
         if command is not None:
             self.laser_mode_pub(String(command))
-        self.set_text(unichr(evt.GetRawKeyCode()))
+            self.set_text(command)
+        else:
+            self.set_text(unichr(evt.GetRawKeyCode()))
         self.Refresh()
 
     def on_paint(self, evt):
@@ -78,12 +85,16 @@ class KeyHandler(wx.Window):
         font.SetPointSize(20)
         dc.SetFont(font)
         rect = self.GetClientRect()
+
         if self.focus:
             dc.SetTextForeground(wx.GREEN)
             dc.DrawLabel("Focused.", rect, wx.ALIGN_CENTER)
         else:
             dc.SetTextForeground(wx.RED)
             dc.DrawLabel("Got no focus.", rect, wx.ALIGN_CENTER)
+
+        dc.SetTextForeground(wx.WHITE)
+        dc.DrawLabel('g - debug\nd - display\nspace - rebuild\nv - verbose\np - positive', rect, wx.ALIGN_LEFT | wx.ALIGN_TOP)
 
         if (time.time() - self.time) < self.interval:
             dc.SetFont(wx.Font(20, wx.MODERN, wx.NORMAL, wx.NORMAL))
@@ -93,7 +104,7 @@ class KeyHandler(wx.Window):
 app   = wx.PySimpleApp()
 frame = wx.Frame(None, wx.ID_ANY, name='Clickable World GUI', size=(800,600))
 win   = KeyHandler(frame) 
-frame.ShowFullScreen(True)
+frame.Show(True)
 win.SetFocus()
 rospy.ready(sys.argv[0])
 app.MainLoop()

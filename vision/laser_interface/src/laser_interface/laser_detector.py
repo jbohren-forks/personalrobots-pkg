@@ -626,7 +626,8 @@ class LaserPointerDetector:
             print 'selection_time %.4f' % (selection_time - classify_time)
             print 'total %.4f' % (selection_time - start_time)
 
-        return image, combined, laser_blob, intensity_motion_blob
+        return laser_blob, intensity_motion_blob, image, combined
+        #return image, combined, laser_blob, intensity_motion_blob
 
 class PatchClassifier:
     def __init__(self, dataset=None, number_of_learners=30, classification_window_width=7):
@@ -716,11 +717,6 @@ def blobs_list_to_classifier_matrix(img_blobs_list,
             if instance is not None:
                 instance_list.append(instance)
     return ut.list_mat_to_mat(instance_list, axis=1)
-
-def matrix_to_dataset(examples, type=1):
-    outputs_mat      = np.matrix(np.zeros((1, examples.shape[1]), dtype='int'))
-    outputs_mat[:,:] = type
-    return rf.Dataset(examples, outputs_mat)
 
 def classifier_matrix(positive_examples_list, negative_examples_list):
     '''
