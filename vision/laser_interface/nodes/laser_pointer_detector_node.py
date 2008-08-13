@@ -1,5 +1,7 @@
+#!/usr/bin/env python
 from pkg import *
 from std_msgs.msg import Point3DFloat64
+from std_msgs.msg import String
 import sys, time
 import opencv as cv
 import opencv.highgui as hg
@@ -200,6 +202,7 @@ class DetectState:
 
         #Triangulate
         if right_cam_detection != None and left_cam_detection != None:
+            print right_cam_detection.keys()
             print 'DetectState: votes', print_friendly(right_cam_detection['votes']), print_friendly(left_cam_detection['votes'])
             x  = np.matrix(left_cam_detection['centroid']).T
             xp = np.matrix(right_cam_detection['centroid']).T
@@ -246,6 +249,10 @@ class LaserPointerDetectorNode:
         self.verbose = False
         self.debug   = False
 
+        #Subscribe
+        rospy.TopicSub(MOUSE_CLICK_TOPIC, String, self._click_handler)
+        rospy.TopicSub(LASER_MODE_TOPIC, String, self._mode_handler)
+
         #Publish
         self.topic = rospy.TopicPub(CURSOR_TOPIC, Point3DFloat64)
 
@@ -269,6 +276,12 @@ class LaserPointerDetectorNode:
                 if k == 'g':
                     self.debug   = not self.debug"""
         self.set_state(mode)
+
+    def _click_handler(self, message):
+        print 'click_handler: got', message.data
+
+    def _mode_handler(self, message):
+        print 'mode_handler: got', message.data
 
     def _make_windows(self):
         windows = ['video', 'right', 'thresholded', 'motion', 'intensity', 'patch', 'big_patch']

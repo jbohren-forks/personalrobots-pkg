@@ -17,7 +17,7 @@
     <int    name="laser_pointer_detector/TRACKER_MAX_TIME_THRESHOLD"   > 3     </int>
 
     <int    name="laser_pointer_detector/CLASSIFICATION_WINDOW_WIDTH"  > 7     </int>
-    <string name="laser_pointer_detector/DEFAULT_DATASET_FILE">PatchClassifier.dataset.pickle</string>
+    <string name="laser_pointer_detector/DEFAULT_DATASET_FILE">nodes/PatchClassifier.dataset.pickle</string>
     <string name="laser_pointer_detector/CAMERA">videre_stereo</string>
     <int    name="laser_pointer_detector_node/GATHER_MISCLASSIFIED_ONLY"    > 1     </int>
 </params>
