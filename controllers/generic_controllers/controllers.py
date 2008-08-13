@@ -3,6 +3,7 @@
 import rostools
 rostools.update_path('mechanism_control')
 rostools.update_path('generic_controllers')
+rostools.update_path('pr2_controllers')
 
 import rospy, sys
 from mechanism_control.srv import *

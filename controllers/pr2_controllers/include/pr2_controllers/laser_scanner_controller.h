@@ -32,8 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef LASER_SCANNER_CONTROLLER_H
-#define LASER_SCANNER_CONTROLLER_H
+#pragma once
 
 #include <ros/node.h>
 
@@ -163,4 +162,4 @@ private:
 };
 }
 
-#endif /* JOINT_POSITION_CONTROLLER_H */
+
