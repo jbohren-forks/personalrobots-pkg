@@ -336,7 +336,7 @@
       <material>Gazebo/Blue</material>
       <scale>1 1 1</scale>
       <geometry type="mesh" name="pr2_sholder_pan_mesh_file">
-        <filename>sh-pan</filename>
+        <filename>shoulder_yaw</filename>
       </geometry>
     </define> 
 
@@ -370,7 +370,7 @@
       <material>Gazebo/Grey</material>
       <scale>1 1 1</scale>
       <geometry type="mesh" name="pr2_sholder_pitch_mesh_file">
-        <filename>sh-pitch</filename>
+        <filename>shoulder_pitch</filename>
       </geometry>
     </define> 
 
@@ -403,7 +403,7 @@
       <material>Gazebo/Green</material>
       <scale>1 1 1</scale>
       <geometry type="mesh" name="pr2_sholder_roll_mesh_file">
-        <filename>sh-roll</filename>
+        <filename>upperarm_roll</filename>
       </geometry>
     </define> 
 
@@ -437,7 +437,7 @@
       <material>Gazebo/Grey</material>
       <scale>1 1 1</scale>
       <geometry type="mesh" name="pr2_elbow_flex_mesh_file">
-        <filename>el-pitch</filename>
+        <filename>elbow_pitch</filename>
       </geometry>
     </define> 
 
@@ -470,7 +470,7 @@
       <material>Gazebo/Blue</material>
       <scale>1 1 1</scale>
       <geometry type="mesh" name="pr2_forearm_roll_mesh_file">
-        <filename>fa-roll</filename>
+        <filename>forearm_roll</filename>
       </geometry>
     </define> 
 
@@ -504,7 +504,7 @@
       <material>Gazebo/Grey</material>
       <scale>1 1 1</scale>
       <geometry type="mesh" name="pr2_wrist_flex_mesh_file">
-        <filename>wr-pitch</filename>
+        <filename>wrist_pitch</filename>
       </geometry>
     </define> 
 
@@ -538,7 +538,7 @@
       <material>Gazebo/Red</material>
       <scale>1 1 1</scale>
       <geometry type="mesh" name="pr2_gripper_roll_mesh_file">
-        <filename>wr-roll</filename>
+        <filename>wr_roll</filename>
       </geometry>
     </define> 
 
@@ -895,7 +895,7 @@
       <material>Gazebo/Red</material>
       <scale>1 1 1</scale>
       <geometry type="mesh" name="pr2_torso_mesh_file">
-        <filename>body</filename>
+        <filename>torso</filename>
       </geometry>
     </visual> 
 
@@ -1224,7 +1224,7 @@
       <material>Gazebo/Blue</material>
       <scale>1 1 1</scale>
       <geometry type="mesh" name="pr2_head_pan_mesh_file">
-        <filename>head-pan</filename>
+        <filename>head_pan</filename>
       </geometry>
     </visual> 
 
@@ -1265,7 +1265,7 @@
       <material>Gazebo/Green</material> 
       <scale>1 1 1</scale>
       <geometry type="mesh" name="pr2_head_tilt_mesh_file">
-        <filename>head-tilt</filename>
+        <filename>head_tilt</filename>
       </geometry>
     </visual> 
 

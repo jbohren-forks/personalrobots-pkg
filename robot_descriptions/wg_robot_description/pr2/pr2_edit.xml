@@ -232,7 +232,9 @@
     <const_block name="pr2_caster_visual">
       <origin xyz="0 0 0" rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Green</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Green</elem>
+      </map>
       <scale xyz="1 1 1" />
       <geometry type="mesh" name="pr2_caster_mesh_file">
         <mesh filename="caster" /><!-- mesh specified using an obj file --> 
@@ -255,14 +257,16 @@
     <const_block name="pr2_caster_joint" type="revolute"> 
       <axis xyz=" 0 0 1 " /> <!-- direction of the joint in the local coordinate frame -->
       <anchor xyz="0 0 0" /> <!-- point on the joint relative to the local coordinate frame -->
-      <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+      <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
       <limit  effortLimit="100" velocityLimit="5" />
     </const_block>
 
     <const_block name="pr2_wheel_left_visual">
       <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Blue</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Blue</elem>
+      </map>
       <scale xyz="1 1 1" />
       <geometry type="mesh" name="pr2_wheel_mesh_file"><!-- geometry specified using a simple geometric object -->
         <mesh filename="wheel_left" />
@@ -272,7 +276,9 @@
     <const_block name="pr2_wheel_right_visual">
       <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Red</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Red</elem>
+      </map>
       <scale xyz="1 1 1" />
       <geometry type="mesh" name="pr2_wheel_mesh_file"><!-- geometry specified using a simple geometric object -->
         <mesh filename="wheel_right" />
@@ -286,10 +292,10 @@
         <size xyz="wheel_radius wheel_length" /> 
       </geometry>
 
-      <data name="friction_coefficients" type="gazebo">
+      <map name="friction_coefficients" tag="gazebo">
 	<elem key="mu1" value="5.0" /> <!-- john needed so wheel can slip and steer -->
 	<elem key="mu2" value="5.0" /> <!-- john needed so wheel can slip and steer -->
-      </data>
+      </map>
 
     </const_block> 
 
@@ -303,14 +309,14 @@
       <axis xyz=" 0 1 0 " /> <!-- direction of the joint in the local coordinate frame -->
       <anchor xyz="0 0 0" /> <!-- point on the joint relative to the local coordinate frame -->
       <limit effortLimit="100" velocityLimit="5" />
-      <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+      <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
     <const_block name="pr2_shoulder_pan_joint" type="revolute">
       <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit min=" shoulder_pan_min_limit" max="shoulder_pan_max_limit" effortLimit="100" velocityLimit="5" />
-      <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+      <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
     <const_block name="pr2_shoulder_pan_inertial">
@@ -330,10 +336,12 @@
     <const_block name="pr2_shoulder_pan_visual">
       <origin xyz="0 0 0 " rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Blue</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Blue</elem>
+      </map>
       <scale xyz="1 1 1" />
       <geometry type="mesh" name="pr2_sholder_pan_mesh_file">
-        <mesh filename="sh-pan" />
+        <mesh filename="shoulder_yaw" />
       </geometry>
     </const_block> 
 
@@ -341,7 +349,7 @@
       <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit min=" shoulder_pitch_min_limit" max="shoulder_pitch_max_limit" effortLimit="100" velocityLimit="5" />
-      <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+      <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
     <const_block name="pr2_shoulder_pitch_inertial">
@@ -353,7 +361,9 @@
     <const_block name="pr2_shoulder_pitch_collision">
       <origin xyz="shoulder_pitch_length/2 0 0 " rpy="M_PI/2 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Grey</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Grey</elem>
+      </map>
       <geometry type="cylinder">
         <size xyz=" shoulder_pitch_radius shoulder_pitch_length " />
       </geometry>
@@ -362,10 +372,12 @@
     <const_block name="pr2_shoulder_pitch_visual">
       <origin xyz="0 0 0 " rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Grey</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Grey</elem>
+      </map>
       <scale xyz="1 1 1" />
       <geometry type="mesh" name="pr2_sholder_pitch_mesh_file">
-        <mesh filename="sh-pitch" />
+        <mesh filename="shoulder_pitch" />
       </geometry>
     </const_block> 
 
@@ -373,7 +385,7 @@
       <axis xyz=" 1 0 0 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit min=" upperarm_roll_min_limit" max="upperarm_roll_max_limit" effortLimit="100" velocityLimit="5" />
-      <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+      <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
     <const_block name="pr2_upperarm_roll_inertial">
@@ -393,10 +405,12 @@
     <const_block name="pr2_upperarm_roll_visual">
       <origin xyz="0 0 0" rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Green</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Green</elem>
+      </map>
       <scale xyz="1 1 1" />
       <geometry type="mesh" name="pr2_sholder_roll_mesh_file">
-        <mesh filename="sh-roll" />
+        <mesh filename="upperarm_roll" />
       </geometry>
     </const_block> 
 
@@ -404,7 +418,7 @@
       <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit min="  elbow_flex_min_limit" max="elbow_flex_max_limit"  effortLimit="1000" velocityLimit="5" />
-      <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+      <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
     <const_block name="pr2_elbow_flex_inertial">
@@ -416,7 +430,9 @@
     <const_block name="pr2_elbow_flex_collision">
       <origin xyz="0 0 0 " rpy="M_PI/2 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Grey</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Grey</elem>
+      </map>
       <geometry type="cylinder">
         <size xyz="elbow_flex_radius elbow_flex_length " />
       </geometry>
@@ -425,10 +441,12 @@
     <const_block name="pr2_elbow_flex_visual">
       <origin xyz="0 0 0 " rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Grey</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Grey</elem>
+      </map>
       <scale xyz="1 1 1" />
       <geometry type="mesh" name="pr2_elbow_flex_mesh_file">
-        <mesh filename="el-pitch" />
+        <mesh filename="elbow_pitch" />
       </geometry>
     </const_block> 
 
@@ -436,7 +454,7 @@
       <axis xyz=" 1 0 0 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit  effortLimit="100" velocityLimit="5" />
-      <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+      <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
     <const_block name="pr2_forearm_roll_inertial">
@@ -448,7 +466,9 @@
     <const_block name="pr2_forearm_roll_collision">
       <origin xyz="forearm_roll_center_box_center_offset_x 0 0 " rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Red</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Red</elem>
+      </map>
       <geometry type="box">
       <size xyz="forearm_roll_size_x forearm_roll_size_y forearm_roll_size_z " />
       </geometry>
@@ -457,10 +477,12 @@
     <const_block name="pr2_forearm_roll_visual">
       <origin xyz="0 0 0 " rpy=" 0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Blue</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Blue</elem>
+      </map>
       <scale xyz="1 1 1" />
       <geometry type="mesh" name="pr2_forearm_roll_mesh_file">
-        <mesh filename="fa-roll" />
+        <mesh filename="forearm_roll" />
       </geometry>
     </const_block> 
 
@@ -468,7 +490,7 @@
       <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit min=" wrist_flex_min_limit" max="wrist_flex_max_limit" effortLimit="100" velocityLimit="5" />
-      <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+      <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
     <const_block name="pr2_wrist_flex_inertial">
@@ -480,7 +502,9 @@
     <const_block name="pr2_wrist_flex_collision">
       <origin xyz="0 0 0 " rpy="M_PI/2 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Green</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Green</elem>
+      </map>
       <geometry type="cylinder">
       <size xyz="wrist_flex_radius wrist_flex_length" />
       </geometry>
@@ -489,10 +513,12 @@
     <const_block name="pr2_wrist_flex_visual">
       <origin xyz="0 0 0 " rpy=" 0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Grey</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Grey</elem>
+      </map>
       <scale xyz="1 1 1" />
       <geometry type="mesh" name="pr2_wrist_flex_mesh_file">
-        <mesh filename="wr-pitch" />
+        <mesh filename="wrist_pitch" />
       </geometry>
     </const_block> 
 
@@ -501,7 +527,7 @@
       <axis xyz=" 1 0 0 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit effortLimit="100" velocityLimit="5" />
-      <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+      <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
     <const_block name="pr2_gripper_roll_inertial">
@@ -522,10 +548,12 @@
     <const_block name="pr2_gripper_roll_visual">
       <origin xyz="0 0 0 " rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Red</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Red</elem>
+      </map>
       <scale xyz="1 1 1" />
       <geometry type="mesh" name="pr2_gripper_roll_mesh_file">
-        <mesh filename="wr-roll" />
+        <mesh filename="wr_roll" />
       </geometry>
     </const_block> 
 
@@ -535,7 +563,7 @@
       <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit effortLimit="100" velocityLimit="5" />
-      <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+      <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
     <const_block name="pr2_finger_l_inertial">
@@ -556,7 +584,9 @@
     <const_block name="pr2_finger_l_visual">
       <origin xyz="0 0 0 " rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Shell</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Shell</elem>
+      </map>
       <scale xyz="1 1 1" />
       <geometry type="mesh" name="pr2_finger_l_mesh_file">
         <mesh filename="finger-l" />
@@ -569,7 +599,7 @@
       <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
       <limit effortLimit="100" velocityLimit="5" />
-      <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+      <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
     <const_block name="pr2_finger_tip_l_inertial">
@@ -590,7 +620,9 @@
     <const_block name="pr2_finger_tip_l_visual">
       <origin xyz="0 0 0 " rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Green</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Green</elem>
+      </map>
       <scale xyz="1 1 1" />
       <geometry type="mesh" name="pr2_finger_tip_l_mesh_file">
         <mesh filename="finger-tip-l" />
@@ -601,7 +633,7 @@
     <const_block name="pr2_finger_r_joint" type="revolute">
       <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+      <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
     <const_block name="pr2_finger_r_inertial">
@@ -622,7 +654,9 @@
     <const_block name="pr2_finger_r_visual">
       <origin xyz="0 0 0 " rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Blue</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Blue</elem>
+      </map>
       <scale xyz="1 1 1" />
       <geometry type="mesh" name="pr2_finger_r_mesh_file">
         <mesh filename="finger-r" />
@@ -633,7 +667,7 @@
     <const_block name="pr2_finger_tip_r_joint" type="revolute">
       <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <calibration>1.5 -1 </calibration> <!-- Calibration stop/flag indicating location and then direction -->
+      <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
     <const_block name="pr2_finger_tip_r_inertial">
@@ -654,7 +688,9 @@
     <const_block name="pr2_finger_tip_r_visual">
       <origin xyz="0 0 0 " rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Green</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Green</elem>
+      </map>
       <scale xyz="1 1 1" />
       <geometry type="mesh" name="pr2_finger_tip_r_mesh_file">
         <mesh filename="finger-tip-r" />
@@ -690,7 +726,9 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Green</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Green</elem>
+      </map>
       <scale xyz="1 1 1" />
       <geometry type="mesh" name="pr2_base_mesh_file">
         <mesh filename="base" />
@@ -700,7 +738,9 @@
     <collision>
       <origin xyz="0 0 base_size_z/2" rpy="0.0 0.0 0.0 " /> <!-- default box is centered at the origin -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Grey</elem> 
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Grey</elem> 
+      </map>
       <geometry type="box"> <!-- think about putting mesh here as well -->
         <size xyz="base_size_x base_size_y base_size_z" />
       </geometry>
@@ -976,21 +1016,17 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <scale xyz="1 1 1" />
-
-      <!-- change data to map -->
       <map name="foo" tag="gazebo">
 	<elem key="material">Gazebo/Red</elem>
       </map>
-
       <geometry name="pr2_torso_mesh_file">
-        <mesh filename="body" />
+        <mesh filename="torso" />
         <cylinder radius="3" length="99" />
       </geometry>
     </visual> 
 
     <collision>
       <origin xyz="torso_center_box_center_offset_x 0 torso_size_z/2+torso_center_box_center_offset_z" rpy="0 0 0" />
-      <elem key="material">Gazebo/Grey</elem> 
       <geometry type="box">
       <size xyz=" torso_size_x torso_size_y torso_size_z " />
       </geometry>
@@ -1483,10 +1519,12 @@
     <visual>
       <origin xyz="0 0 0.0" rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Blue</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Blue</elem>
+      </map>
       <scale xyz="1 1 1" />
       <geometry type="mesh" name="pr2_head_pan_mesh_file">
-        <mesh filename="head-pan" />
+        <mesh filename="head_pan" />
       </geometry>
     </visual> 
 
@@ -1522,10 +1560,12 @@
     <visual>
       <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Green</elem> 
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Green</elem> 
+      </map>
       <scale xyz="1 1 1" />
       <geometry type="mesh" name="pr2_head_tilt_mesh_file">
-        <mesh filename="head-tilt" />
+        <mesh filename="head_tilt" />
       </geometry>
     </visual> 
 
@@ -1544,7 +1584,7 @@
 <!-- Begin sensor definitions -->
   <sensor name="tilt_laser" type="laser"> 
 
-    <calibration> calib_filename </calibration>
+    <calibration filename="calib_filename" />
     <parent name="torso" />
     <origin xyz=" torso_tilt_laser_offset_x 0 torso_tilt_laser_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
      <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
@@ -1564,8 +1604,9 @@
     <visual>
       <origin xyz="0   0   tilt_laser_center_box_center_offset_z  " rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-
-      <elem key="material">Gazebo/PioneerBody</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/PioneerBody</elem>
+      </map>
       <scale xyz=".5 .5 .5" />
       <geometry type="mesh" name="pr2_tilt_laser_mesh_file">
         <mesh filename="hokuyo" /> <!-- mesh specified using an obj file --> 
@@ -1575,13 +1616,15 @@
     <collision>
       <origin xyz="0   0   tilt_laser_center_box_center_offset_z  " rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Grey</elem> 
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Grey</elem> 
+      </map>
       <geometry type="box" name="collision_tilt_laser"><!-- geometry specified using a simple geometric object -->
         <size xyz=".001 .001 .001" /> 
       </geometry>
     </collision>
 
-    <data name="sensor" type="gazebo">
+    <map name="sensor" tag="gazebo">
       <verbatim key="sensor_ray">
         <sensor:ray name="tilt_laser">
           <rayCount>683</rayCount>
@@ -1605,13 +1648,13 @@
           </controller:ros_laser>
         </sensor:ray>
       </verbatim>
-    </data>
+    </map>
 
   </sensor>
 
   <sensor name="base_laser" type="laser"> 
 
-    <calibration> calib_filename </calibration>
+    <calibration filename="calib_filename" />
     <parent name="base" />
     <origin xyz=" base_base_laser_offset_x 0 base_base_laser_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
      <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
@@ -1630,8 +1673,9 @@
     <visual>
       <origin xyz="0   0   base_laser_center_box_center_offset_z  " rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-
-      <elem key="material">Gazebo/PioneerBody</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/PioneerBody</elem>
+      </map>
       <scale xyz=".5 .5 .5" />
       <geometry type="mesh" name="pr2_base_laser_mesh_file">
         <mesh filename="hokuyo" /> <!-- mesh specified using an obj file --> 
@@ -1641,13 +1685,15 @@
     <collision>
       <origin xyz="0   0   base_laser_center_box_center_offset_z  " rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Grey</elem> 
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Grey</elem> 
+      </map>
       <geometry type="box" name="collision_base_laser"><!-- geometry specified using a simple geometric object -->
         <size xyz=".001 .001 .001" /> 
       </geometry>
     </collision>
 
-    <data name="sensor" type="gazebo">
+    <map name="sensor" tag="gazebo">
       <verbatim key="sensor_ray">
         <sensor:ray name="base_laser">
           <rayCount>683</rayCount>
@@ -1668,7 +1714,9 @@
             <frameName>base_laser</frameName>
             <interface:laser name="ros_base_laser_iface" />
           </controller:ros_laser>
-          <map name="sensor_controller" tag="gazebo"> <!-- CONVERTER -->
+
+
+          <map name="sensor_controller" tag="gazebo"> <!-- CONVERTER need to deal with the sensor block differently -->
             <controller:ros_laser name="ros_base_laser_controller" plugin="libRos_Laser.so">
               <updateRate>10</updateRate>
               <topicName>base_scan</topicName>
@@ -1676,16 +1724,18 @@
               <interface:laser name="ros_base_laser_iface" />
             </controller:ros_laser>
           </map>
+
+
         </sensor:ray>
       </verbatim>
-    </data>
+    </map>
 
   </sensor>
 
 
   <sensor name="wrist_camera_left" type="camera"> 
 
-    <calibration> calib_filename </calibration>
+    <calibration filename="calib_filename" />
     <parent name="gripper_roll_left" />
     <origin xyz=" gripper_roll_camera_offset_x gripper_roll_camera_offset_y gripper_roll_camera_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
      <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
@@ -1704,7 +1754,9 @@
     <visual>
       <origin xyz="0   0   0   " rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/PioneerBody</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/PioneerBody</elem>
+      </map>
       <geometry type="box" name="visual_wrist_camera_left">
         <size xyz="0.02 0.02 0.02" />
       </geometry>
@@ -1718,7 +1770,7 @@
       </geometry>
     </collision>
 
-    <data name="sensor" type="gazebo">
+    <map name="sensor" tag="gazebo">
       <verbatim key="sensor_camera">
         <sensor:camera name="wrist_cam_left_sensor">
           <imageSize>640 480</imageSize>
@@ -1740,14 +1792,14 @@
           -->
         </sensor:camera>
       </verbatim>
-    </data>
+    </map>
 
   </sensor>
 
 
   <sensor name="wrist_camera_right" type="camera"> 
 
-    <calibration> calib_filename </calibration>
+    <calibration filename="calib_filename" />
     <parent name="gripper_roll_right" />
     <origin xyz=" gripper_roll_camera_offset_x gripper_roll_camera_offset_y gripper_roll_camera_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
      <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
@@ -1766,7 +1818,9 @@
     <visual>
       <origin xyz="0   0   0   " rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/PioneerBody</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/PioneerBody</elem>
+      </map>
       <geometry type="box" name="visual_wrist_camera_right">
         <size xyz="0.02 0.02 0.02" />
       </geometry>
@@ -1780,7 +1834,7 @@
       </geometry>
     </collision>
 
-    <data name="sensor" type="gazebo">
+    <map name="sensor" tag="gazebo">
       <verbatim key="sensor_camera">
         <sensor:camera name="wrist_cam_right_sensor">
           <imageSize>640 480</imageSize>
@@ -1802,14 +1856,14 @@
           -->
         </sensor:camera>
       </verbatim>
-    </data>
+    </map>
 
   </sensor>
 
 
   <sensor name="forearm_camera_left" type="camera"> 
 
-    <calibration> calib_filename </calibration>
+    <calibration filename="calib_filename" />
     <parent name="forearm_roll_left" />
     <origin xyz=" forearm_roll_camera_offset_x forearm_roll_camera_offset_y forearm_roll_camera_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
      <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
@@ -1828,7 +1882,9 @@
     <visual>
       <origin xyz="0   0   0   " rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/PioneerBody</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/PioneerBody</elem>
+      </map>
       <geometry type="box" name="visual_forearm_camera_left">
         <size xyz="0.02 0.02 0.02" />
       </geometry>
@@ -1842,7 +1898,7 @@
       </geometry>
     </collision>
 
-    <data name="sensor" type="gazebo">
+    <map name="sensor" tag="gazebo">
       <verbatim key="sensor_camera">
         <sensor:camera name="forearm_cam_left_sensor">
           <imageSize>640 480</imageSize>
@@ -1858,14 +1914,14 @@
           </controller:ros_camera>
         </sensor:camera>
       </verbatim>
-    </data>
+    </map>
 
   </sensor>
 
 
   <sensor name="forearm_camera_right" type="camera"> 
 
-    <calibration> calib_filename </calibration>
+    <calibration filename="calib_filename" />
     <parent name="forearm_roll_right" />
     <origin xyz=" forearm_roll_camera_offset_x forearm_roll_camera_offset_y forearm_roll_camera_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
      <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
@@ -1884,7 +1940,9 @@
     <visual>
       <origin xyz="0   0   0   " rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/PioneerBody</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/PioneerBody</elem>
+      </map>
       <geometry type="box" name="visual_forearm_camera_right">
         <size xyz="0.02 0.02 0.02" />
       </geometry>
@@ -1898,7 +1956,7 @@
       </geometry>
     </collision>
 
-    <data name="sensor" type="gazebo">
+    <map name="sensor" tag="gazebo">
       <verbatim key="sensor_camera">
         <sensor:camera name="forearm_cam_right_sensor">
           <imageSize>640 480</imageSize>
@@ -1914,7 +1972,7 @@
           </controller:ros_camera>
         </sensor:camera>
       </verbatim>
-    </data>
+    </map>
 
   </sensor>
 
@@ -1940,7 +1998,9 @@
     <visual>
       <origin xyz="ptz_pan_left_center_box_center_offset_x   ptz_pan_left_center_box_center_offset_y   ptz_pan_left_center_box_center_offset_z" rpy="M_PI/2 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Blue</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Blue</elem>
+      </map>
       <scale xyz="ptz_pan_size_x ptz_pan_size_y ptz_pan_size_z" />
       <geometry type="cylinder" name="pr2_ptz_pan_left_visual">
       </geometry>
@@ -1977,7 +2037,9 @@
     <visual>
       <origin xyz="0 0 0.0" rpy="0 M_PI/2 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Blue</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Blue</elem>
+      </map>
       <scale xyz="ptz_tilt_size_x ptz_tilt_size_y ptz_tilt_size_z" />
       <geometry type="cylinder" name="pr2_ptz_tilt_left_visual">
       </geometry>
@@ -1991,7 +2053,7 @@
       </geometry>
     </collision> 
 
-    <data name="sensor" type="gazebo">
+    <map name="sensor" tag="gazebo">
       <verbatim key="sensor_camera">
         <sensor:camera name="ptz_cam_left_sensor">
           <imageSize>640 480</imageSize>
@@ -2007,7 +2069,7 @@
           </controller:ros_camera>
         </sensor:camera>
       </verbatim>
-    </data>
+    </map>
 
   </sensor>
 
@@ -2032,7 +2094,9 @@
     <visual>
       <origin xyz="ptz_pan_right_center_box_center_offset_x   ptz_pan_right_center_box_center_offset_y   ptz_pan_right_center_box_center_offset_z" rpy="M_PI/2 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Blue</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Blue</elem>
+      </map>
       <scale xyz="ptz_pan_size_x ptz_pan_size_y ptz_pan_size_z" />
       <geometry type="cylinder" name="pr2_ptz_pan_right_visual">
       </geometry>
@@ -2069,7 +2133,9 @@
     <visual>
       <origin xyz="0 0 0.0" rpy="0 M_PI/2 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Blue</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Blue</elem>
+      </map>
       <scale xyz="ptz_tilt_size_x ptz_tilt_size_y ptz_tilt_size_z" />
       <geometry type="cylinder" name="pr2_ptz_tilt_right_visual">
       </geometry>
@@ -2083,7 +2149,7 @@
       </geometry>
     </collision> 
 
-    <data name="sensor" type="gazebo">
+    <map name="sensor" tag="gazebo">
       <verbatim key="sensor_camera">
         <sensor:camera name="ptz_cam_right_sensor">
           <imageSize>640 480</imageSize>
@@ -2099,7 +2165,7 @@
           </controller:ros_camera>
         </sensor:camera>
       </verbatim>
-    </data>
+    </map>
 
   </sensor>
 
@@ -2132,7 +2198,9 @@
     <visual>
       <origin xyz="stereo_center_box_center_offset_x 0 stereo_center_box_center_offset_z " rpy="0 0 0 " />
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <elem key="material">Gazebo/Blue</elem>
+      <map name="gazebo_material" tag="gazebo">
+        <elem key="material">Gazebo/Blue</elem>
+      </map>
       <geometry type="box" name="pr2_stereo_visual">
         <size xyz="stereo_size_x stereo_size_y stereo_size_z" />
       </geometry>
@@ -2146,7 +2214,7 @@
       </geometry>
     </collision> 
 
-    <data name="sensor" type="gazebo">
+    <map name="sensor" tag="gazebo">
       <verbatim key="sensor_camera">
         <sensor:stereocamera name="stereo_camera_sensor">
           <imageSize>640 480</imageSize>
@@ -2167,7 +2235,7 @@
           </controller:stereocamera>
         </sensor:stereocamera>
       </verbatim>
-    </data>
+    </map>
 
   </sensor>
   
