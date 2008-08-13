@@ -239,8 +239,8 @@ std::string rosTFClient::viewChain(std::string target_frame, std::string source_
 
 
 rosTFServer::rosTFServer(ros::node & rosnode):
-  myNode(rosnode),
-  nameClient(rosnode)
+    nameClient(rosnode),
+    myNode(rosnode)
 {
   myNode.advertise<rosTF::TransformArray>("TransformArray");
 };

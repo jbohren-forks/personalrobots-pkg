@@ -40,6 +40,7 @@
 #include <cmath>
 #include <vector>
 #include <sstream>
+#include <map>
 
 #include "libTF/Pose3DCache.h"
 
@@ -265,6 +266,12 @@ public:
    * Useful for debugging 
    */
   std::string viewFrames();
+
+
+  /** \brief A way to see how transforms relate to each other (a map from frame to frame parent)
+   * Useful for debugging 
+   */
+  std::map<int,int> getFramesMap();
 
   /************ Possible Exceptions ****************************/
 

@@ -455,6 +455,14 @@ std::string TransformReference::viewFrames()
   return mstream.str();
 }
 
+std::map<int, int> TransformReference::getFramesMap(void)
+{
+    std::map<int, int> m;
+    for (unsigned int frameid = 1; frameid < MAX_NUM_FRAMES; frameid++)
+	if (frames[frameid] != NULL)
+	    m[frameid] = frames[frameid]->getParent();
+    return m;
+}
 
 bool TransformReference::RefFrame::setParent(unsigned int parentID)
 {

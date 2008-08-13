@@ -47,24 +47,40 @@ import rospy
 NAME = 'namelookup_server'
 
 names = {}
+revnames = {}
 current_val = 1
 
 def nameLookup(req):
     global current_val
-    if names.has_key(req.name):
+    if req.name in names:
         print 'Repeated Name'
     else:
         names[req.name] = current_val
+        revnames[current_val] = req.name
         current_val += 1
-    print 'Returning: %d for %s'%(names[req.name], req.name)
+    print 'Returning: %d for "%s"'%(names[req.name], req.name)
     return NameToNumberResponse(names[req.name])
+  
+def reverseNameLookup(req):
+    result = ''
+    if req.number in revnames:
+        print 'Existing Number'
+        result = revnames[req.number]
+    else:
+        print 'Number not found'
+    print 'Returning: "%s" for %d'%(revnames[req.number], req.number)
+    return NumberToNameResponse(result)
     
 def nameLookupServer():
     rospy.ready(NAME)
-    print 'startin'
+    print 'starting'
     s = rospy.Service('nameToNumber', NameToNumber, nameLookup)
     s.register()
+    sr = rospy.Service('numberToName', NumberToName, reverseNameLookup)
+    sr.register()
     rospy.spin()
 
 if __name__ == "__main__":
+    names['ROOT'] = 0
+    revnames[0] = 'ROOT'
     nameLookupServer()

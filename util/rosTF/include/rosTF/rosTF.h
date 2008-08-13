@@ -123,7 +123,7 @@ class rosTFClient : public libTF::TransformReference
   std::string viewChain(std::string target_frame, std::string source_frame);
 
   nameLookupClient nameClient;
-  unsigned int lookup(const std::string& name){std::cerr<<"Interface Depricated: use rosTFClient.nameClient.lookup(name) instead."; nameClient.lookup(name);};
+  unsigned int lookup(const std::string& name){std::cerr<<"Interface Depricated: use rosTFClient.nameClient.lookup(name) instead."; return nameClient.lookup(name);};
 
  private:
   // A reference to the active ros::node to allow setting callbacks
@@ -184,7 +184,7 @@ class rosTFServer
   void sendMatrix(unsigned int frame, unsigned int parent, NEWMAT::Matrix matrix, ros::Time rostime);
 
   nameLookupClient nameClient;
-  unsigned int lookup(const std::string& name){std::cerr<<"Interface Depricated: use rosTFServer.nameClient.lookup(name) instead."; nameClient.lookup(name);};
+  unsigned int lookup(const std::string& name){std::cerr<<"Interface Depricated: use rosTFServer.nameClient.lookup(name) instead."; return nameClient.lookup(name);};
 
 
  private:
