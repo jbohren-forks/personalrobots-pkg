@@ -228,7 +228,6 @@
 
   <!-- End constant dimensions -->
   
-  <templates>
     <const_block name="pr2_caster_visual">
       <origin xyz="0 0 0" rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
@@ -698,10 +697,7 @@
     </const_block> 
 
 
-
-
-  </templates>
-
+    
 <!-- End template definitions for ease of reuse -->
 
 
