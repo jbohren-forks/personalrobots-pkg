@@ -53,6 +53,11 @@
 #include "mechanism_control/SpawnController.h"
 #include "mechanism_control/KillController.h"
 
+#include "mechanism_control/JointState.h"
+#include "mechanism_control/MechanismState.h"
+
+#include <pthread.h>
+
 typedef controller::Controller* (*ControllerAllocator)();
 
 class MechanismControl {
@@ -100,7 +105,7 @@ class MechanismControlNode : public ros::node
 {
 public:
   MechanismControlNode(MechanismControl *mc);
-  virtual ~MechanismControlNode() {}
+  virtual ~MechanismControlNode();
 
   bool initXml(TiXmlElement *config);
 
@@ -112,11 +117,27 @@ public:
                        mechanism_control::ListControllers::response &resp);
   bool spawnController(mechanism_control::SpawnController::request &req,
                        mechanism_control::SpawnController::response &resp);
+private:
   bool killController(mechanism_control::KillController::request &req,
                       mechanism_control::KillController::response &resp);
 
-private:
   MechanismControl *mc_;
+  
+  // Non-realtime thread for publishing state information.
+  pthread_t *state_publishing_thread_;
+  void statePublishingLoop(void);
+  bool state_publishing_loop_keep_running_;
+  static const double STATE_PUBLISHING_PERIOD = 0.1;  // in seconds, higher rates are useless with the current speed of the simulator
+
+  
+  // Structure for transfering the mechanism state between realtime and non-realtime.
+  pthread_mutex_t mechanism_state_lock_;
+  // Blocks the ros publishing loop until an update is received from HW loop.
+  bool mechanism_state_updated_;
+  pthread_cond_t mechanism_state_updated_cond_; 
+  mechanism_control::MechanismState mechanism_state_;
+  void publishMechanismState(); // Not realtime safe
+  const char *  const mechanism_state_topic_;
 };
 
 #endif /* MECHANISM_CONTROL_H */

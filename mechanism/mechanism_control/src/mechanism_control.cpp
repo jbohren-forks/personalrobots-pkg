@@ -27,6 +27,7 @@
 
 #include "mechanism_control/mechanism_control.h"
 #include "generic_controllers/controller.h"
+#include "rosthread/member_thread.h"
 
 using namespace mechanism;
 
@@ -141,6 +142,7 @@ bool MechanismControl::addController(controller::Controller *c, const std::strin
 {
   //Add controller to list of controllers in realtime-safe manner;
   controllers_lock_.lock(); //This lock is only to prevent us from other non-realtime threads.  The realtime thread may be spinning through the list of controllers while we are in here, so we need to keep that list always in a valid state.  This is why we fully allocate and set up the controller before adding it into the list of active controllers.
+  
   bool spot_found = false;
   for (int i = 0; i < MAX_NUM_CONTROLLERS; i++)
   {
@@ -209,23 +211,64 @@ bool MechanismControl::killController(const std::string &name)
 
 
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
-  : ros::node("MechanismControl", DONT_HANDLE_SIGINT), mc_(mc)
+  : ros::node("MechanismControl", DONT_HANDLE_SIGINT), mc_(mc),
+              mechanism_state_topic_("mechanism_state")
 {
   assert(mc != NULL);
+  assert(mechanism_state_topic_);
   advertise_service("list_controllers", &MechanismControlNode::listControllers);
   advertise_service("list_controller_types", &MechanismControlNode::listControllerTypes);
   advertise_service("spawn_controller", &MechanismControlNode::spawnController);
+  advertise<mechanism_control::MechanismState>(mechanism_state_topic_);
+  // Launches the worker state_publishing_loop_keep_running_
+  mechanism_state_updated_ = false;
+  pthread_cond_init (&mechanism_state_updated_cond_, NULL);
+  pthread_mutex_init(&mechanism_state_lock_,NULL);
+  state_publishing_loop_keep_running_ = true;
+  state_publishing_thread_ = ros::thread::member_thread::startMemberFunctionThread<MechanismControlNode>(this, &MechanismControlNode::statePublishingLoop);
   advertise_service("kill_controller", &MechanismControlNode::killController);
+}
+
+MechanismControlNode::~MechanismControlNode()
+{ 
+  state_publishing_loop_keep_running_ = false;
 }
 
 bool MechanismControlNode::initXml(TiXmlElement *config)
 {
-  return mc_->initXml(config);
+  if (!mc_->initXml(config))
+    return false;
+  mechanism_state_.set_joint_states_size(mc_->model_.joints_.size());
+  return true;
 }
 
 void MechanismControlNode::update()
 {
   mc_->update();
+ 
+  // Attempts to lock the transfer structure
+  // If we get it, update it
+  if(pthread_mutex_trylock(&mechanism_state_lock_))
+  {
+    // We should not have to resize
+    assert(mc_->model_.joints_.size() == mechanism_state_.get_joint_states_size());
+
+    for (unsigned int i = 0; i < mc_->model_.joints_.size(); ++i)
+    {
+      mechanism_state_.joint_states[i].name = mc_->model_.joints_[i]->name_;
+      mechanism_state_.joint_states[i].initialized = mc_->model_.joints_[i]->initialized_;
+      mechanism_state_.joint_states[i].position = mc_->model_.joints_[i]->position_;
+      mechanism_state_.joint_states[i].velocity = mc_->model_.joints_[i]->velocity_;
+      mechanism_state_.joint_states[i].applied_effort = mc_->model_.joints_[i]->applied_effort_;
+      mechanism_state_.joint_states[i].commanded_effort = mc_->model_.joints_[i]->commanded_effort_;
+    }
+    // Tries to unlock mechanism_updated_lock_ if not already locked.
+    // If the lock is successful or fails due to being already held, unlocks the mutex.
+    // TODO: better way to do it?
+    mechanism_state_updated_ = true;
+    pthread_cond_signal(&mechanism_state_updated_cond_);
+    pthread_mutex_unlock(&mechanism_state_lock_);
+  }
 }
 
 bool MechanismControlNode::listControllerTypes(
@@ -258,6 +301,31 @@ bool MechanismControlNode::listControllers(
   resp.set_controllers_vec(controllers);
   return true;
 }
+
+void MechanismControlNode::publishMechanismState()
+{
+  assert(this->mechanism_state_topic_);
+  // Waits for RT thread to release the mutex, signaling new data has arrived.
+  pthread_mutex_lock(&mechanism_state_lock_);
+  while (!mechanism_state_updated_)
+    pthread_cond_wait(&mechanism_state_updated_cond_, &mechanism_state_lock_);
+  assert(this->mechanism_state_topic_);
+  publish(mechanism_state_topic_, mechanism_state_);
+  mechanism_state_updated_ = false;
+  pthread_mutex_unlock(&mechanism_state_lock_);
+}
+
+void MechanismControlNode::statePublishingLoop()
+{
+  ros::Duration duration(STATE_PUBLISHING_PERIOD);
+  while(state_publishing_loop_keep_running_)
+  {
+    assert(mechanism_state_topic_);
+    publishMechanismState();
+    duration.sleep();
+  }
+}
+
 
 bool MechanismControlNode::killController(
   mechanism_control::KillController::request &req,
