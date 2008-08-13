@@ -37,7 +37,6 @@
 #include <signal.h>
 #include <sys/mman.h>
 
-#include <generic_controllers/joint_position_controller.h>
 #include <mechanism_control/mechanism_control.h>
 #include <ethercat_hardware/ethercat_hardware.h>
 
