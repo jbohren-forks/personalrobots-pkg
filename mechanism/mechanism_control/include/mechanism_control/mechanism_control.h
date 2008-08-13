@@ -68,6 +68,7 @@ public:
   void getControllerNames(std::vector<std::string> &v);
   bool addController(controller::Controller *c, const std::string &name);
   bool spawnController(const std::string &type, const std::string &name, TiXmlElement *config);
+  bool killController(const std::string &name);
 
   mechanism::Robot model_;
   HardwareInterface *hw_;
@@ -79,9 +80,16 @@ private:
   bool initialized_;
 
   const static int MAX_NUM_CONTROLLERS = 100;
-  ros::thread::mutex controllers_mutex_;
+  ros::thread::mutex controllers_lock_;
   controller::Controller* controllers_[MAX_NUM_CONTROLLERS];
   std::string controller_names_[MAX_NUM_CONTROLLERS];
+
+  // The realtime thread might still be using a controller when it is
+  // killed.  When it is killed, it's removed from the controllers_
+  // array and placed here, to be deleted by the realtime thread when
+  // it's safe to delete it.
+  const static int GARBAGE_SIZE = 20;
+  controller::Controller* garbage_[GARBAGE_SIZE];
 };
 
 /*

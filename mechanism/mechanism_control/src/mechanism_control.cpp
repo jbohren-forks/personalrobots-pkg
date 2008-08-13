@@ -31,9 +31,10 @@
 using namespace mechanism;
 
 MechanismControl::MechanismControl(HardwareInterface *hw) :
-  model_((char*)"robot"), initialized_(0), hw_(hw)
+  model_((char*)"robot"), hw_(hw), initialized_(0)
 {
   memset(controllers_, 0, MAX_NUM_CONTROLLERS * sizeof(void*));
+  memset(garbage_, 0, GARBAGE_SIZE * sizeof(void*));
   model_.hw_ = hw;
 }
 
@@ -106,6 +107,16 @@ void MechanismControl::update()
   // Propagates commands back into the actuators.
   for (unsigned int i = 0; i < model_.transmissions_.size(); ++i)
     model_.transmissions_[i]->propagateEffort();
+
+  // Cleanup.  Deletes any controllers in the garbage.
+  for (int i = 0; i < GARBAGE_SIZE; ++i)
+  {
+    if (garbage_[i])
+    {
+      delete garbage_[i];
+      garbage_[i] = NULL;
+    }
+  }
 }
 
 void MechanismControl::registerControllerType(const std::string& type, ControllerAllocator f)
@@ -115,7 +126,7 @@ void MechanismControl::registerControllerType(const std::string& type, Controlle
 
 void MechanismControl::getControllerNames(std::vector<std::string> &controllers)
 {
-  controllers_mutex_.lock();
+  controllers_lock_.lock();
   for (int i = 0; i < MAX_NUM_CONTROLLERS; i++)
   {
     if (controllers_[i] != NULL)
@@ -123,13 +134,13 @@ void MechanismControl::getControllerNames(std::vector<std::string> &controllers)
       controllers.push_back(controller_names_[i]);
     }
   }
-  controllers_mutex_.unlock();
+  controllers_lock_.unlock();
 }
 
 bool MechanismControl::addController(controller::Controller *c, const std::string &name)
 {
   //Add controller to list of controllers in realtime-safe manner;
-  controllers_mutex_.lock(); //This lock is only to prevent us from other non-realtime threads.  The realtime thread may be spinning through the list of controllers while we are in here, so we need to keep that list always in a valid state.  This is why we fully allocate and set up the controller before adding it into the list of active controllers.
+  controllers_lock_.lock(); //This lock is only to prevent us from other non-realtime threads.  The realtime thread may be spinning through the list of controllers while we are in here, so we need to keep that list always in a valid state.  This is why we fully allocate and set up the controller before adding it into the list of active controllers.
   bool spot_found = false;
   for (int i = 0; i < MAX_NUM_CONTROLLERS; i++)
   {
@@ -141,7 +152,7 @@ bool MechanismControl::addController(controller::Controller *c, const std::strin
       break;
     }
   }
-  controllers_mutex_.unlock();
+  controllers_lock_.unlock();
 
   if (!spot_found)
   {
@@ -169,6 +180,32 @@ bool MechanismControl::spawnController(const std::string &type,
   return true;
 }
 
+bool MechanismControl::killController(const std::string &name)
+{
+  bool success = false;
+  controllers_lock_.lock();
+  for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
+  {
+    if (controllers_[i] && controller_names_[i] == name)
+    {
+      // Moves the controller into the garbage.
+      for (int j = 0; j < GARBAGE_SIZE; ++j)
+      {
+        if (NULL == garbage_[j])
+        {
+          garbage_[j] = controllers_[i];
+          controllers_[i] = NULL;
+          success = true;
+          break;
+        }
+      }
+
+      break;
+    }
+  }
+  controllers_lock_.unlock();
+  return success;
+}
 
 
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
@@ -220,3 +257,4 @@ bool MechanismControlNode::listControllers(
   resp.set_controllers_vec(controllers);
   return true;
 }
+
