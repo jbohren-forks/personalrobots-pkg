@@ -88,6 +88,13 @@ TEST(URDF, ComplexFile)
     EXPECT_TRUE(result == 0);
 }
 
+TEST(URDF, Valgrind)
+{
+    int result = runExternalProcess("./run_valgrind.py", "./parse test/data/test3.xml");
+        
+    EXPECT_TRUE(result == 0);
+}
+
 int main(int argc, char **argv)
 {
     testing::InitGoogleTest(&argc, argv);
