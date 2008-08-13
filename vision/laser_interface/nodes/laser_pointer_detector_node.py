@@ -64,15 +64,19 @@ def print_friendly(votes):
     return new_dict
 
 class EmbodiedLaserDetector:
-    def __init__(self, geometric_camera, hardware_camera, gather_misclassified_only = True, expected_class = 0):
+    def __init__(self, geometric_camera, hardware_camera, gather_misclassified_only = True):
         self.stereo_cam                 = geometric_camera
         self.gather_misclassified_only  = gather_misclassified_only
 
         self.examples                   = []
         self.labels                     = []
-        self.expected_class             = expected_class
-        self.expecting_correct_labels   = False
+        self.expected_class             = 0
+        self.expecting_correct_labels   = True
         self.build_detectors(hardware_camera)
+
+    def clear_examples(self):
+        self.examples                   = []
+        self.labels                     = []
 
     def build_detectors(self, hardware_camera):
         self.write()
@@ -108,7 +112,7 @@ class EmbodiedLaserDetector:
             if (self.expecting_correct_labels and self.expected_class == 0):
                 print 'EmbodiedLaserDetector: output suppressed, classified positive in both cameras.'
             else:
-                return triangulate(left_detection, right_detection)
+                return self.triangulate(left_detection, right_detection)
         return None
 
     def set_debug(self, v):
@@ -176,7 +180,7 @@ class EmbodiedLaserDetector:
         #dataset        = matrix_to_dataset(ut.list_mat_to_mat(self.examples, axis=1), type=self.type)
         inputs  = ut.list_mat_to_mat(self.examples, axis = 1)
         outputs = ut.list_mat_to_mat(self.labels, axis = 1)
-        print 'EmbodiedLaserDetector.write: inputs.shape, outputs.shape', inputs.shape(), outputs.shape()
+        print 'EmbodiedLaserDetector.write: inputs.shape, outputs.shape', inputs.shape, outputs.shape
         dim_reduce_set = rf.LinearDimReduceDataset(inputs, outputs)
         print 'EmbodiedLaserDetector.write: appending examples from disk to dataset'
         n = append_examples_from_file(dim_reduce_set, file=LaserPointerDetector.DEFAULT_DATASET_FILE)
@@ -250,6 +254,8 @@ class LaserPointerDetectorNode:
             if self.detector is not None:
                 self.detector.expected_class = 1
                 self.detector.expecting_correct_labels   = True
+        elif(message == 'clear'):
+            self.detector.clear_examples()
         else:
             raise RuntimeError('unexpected mode message from topic' + LASER_MODE_TOPIC)
         

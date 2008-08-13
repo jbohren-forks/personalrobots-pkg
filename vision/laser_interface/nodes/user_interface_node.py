@@ -21,6 +21,9 @@ def key_to_command(key):
     if key == u'p':
         ret = 'positive'
 
+    if key == u'c':
+        ret = 'clear'
+
     return ret
 
 class KeyHandler(wx.Window):
@@ -94,7 +97,7 @@ class KeyHandler(wx.Window):
             dc.DrawLabel("Got no focus.", rect, wx.ALIGN_CENTER)
 
         dc.SetTextForeground(wx.WHITE)
-        dc.DrawLabel('g - debug\nd - display\nspace - rebuild\nv - verbose\np - positive', rect, wx.ALIGN_LEFT | wx.ALIGN_TOP)
+        dc.DrawLabel('g - debug\nd - display\nv - verbose\np - positive\nc - clear\nspace - rebuild', rect, wx.ALIGN_LEFT | wx.ALIGN_TOP)
 
         if (time.time() - self.time) < self.interval:
             dc.SetFont(wx.Font(20, wx.MODERN, wx.NORMAL, wx.NORMAL))
