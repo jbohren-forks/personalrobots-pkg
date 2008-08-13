@@ -81,6 +81,6 @@ def nameLookupServer():
     rospy.spin()
 
 if __name__ == "__main__":
-    names['ROOT'] = 0
-    revnames[0] = 'ROOT'
+    names['NO_PARENT'] = 0
+    revnames[0] = 'NO_PARENT'
     nameLookupServer()

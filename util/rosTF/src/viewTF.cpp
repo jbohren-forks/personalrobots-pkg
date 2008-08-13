@@ -87,7 +87,11 @@ public:
 	out << "digraph TF {" << std::endl;
 	
 	for (std::map<int, int>::iterator it = m.begin() ; it != m.end() ; ++it)
+	{
+	    if (it->second == 0)
+		continue;
 	    out << "\"" << it->first << ": " << names[it->first] << "\" -> \"" << it->second << ": " << names[it->second] << "\"" << std::endl;
+	}	
 	
 	out << "};" << std::endl;	
 	out.close();
