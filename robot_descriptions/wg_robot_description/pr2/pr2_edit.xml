@@ -710,8 +710,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
     <origin xyz=" robot_inital_position_x robot_inital_position_y robot_inital_position_z " rpy=" 0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
 
-    <joint type="planar"> 
-    </joint>
+    <joint name="base_joint" />
 
     <inertial>
       <mass value="70.750964" />
@@ -744,13 +743,186 @@
 
   </link>
 
+  <!-- joint blocks -->
+    <joint name="base_joint" type="planar"> 
+    </joint>
+    <joint name="head_tilt_joint" type="revolute"> 
+      <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
+      <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <limit min=" head_tilt_min_limit" max="head_tilt_max_limit" effortLimit="100" velocityLimit="5" />
+    </joint>
+
+    <joint name="head_pan_joint" type="revolute"> 
+      <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
+      <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <limit min=" head_pan_min_limit" max="head_pan_max_limit" effortLimit="100" velocityLimit="5" />
+    </joint>
+
+  <joint name="finger_tip_r_right_joint" >
+    <insert_const_block name="pr2_finger_tip_r_joint"/>
+  </joint>
+  <joint name="finger_r_right_joint" >
+    <insert_const_block name="pr2_finger_r_joint"/>
+  </joint>
+  <joint name="finger_tip_l_right_joint" >
+    <insert_const_block name="pr2_finger_tip_l_joint"/>
+  </joint>
+  <joint name="finger_l_right_joint" >
+    <insert_const_block name="pr2_finger_l_joint"/>
+  </joint>
+  <joint name="finger_tip_r_left_joint" >
+    <insert_const_block name="pr2_finger_tip_r_joint"/>
+  </joint>
+  <joint name="finger_r_left_joint" >
+    <insert_const_block name="pr2_finger_r_joint"/>
+  </joint>
+  <joint name="finger_tip_l_left_joint" >
+    <insert_const_block name="pr2_finger_tip_l_joint"/>
+  </joint>
+  <joint name="finger_l_left_joint" >
+    <insert_const_block name="pr2_finger_l_joint"/>
+  </joint>
+  <joint name="gripper_roll_right_joint" >
+    <insert_const_block name="pr2_gripper_roll_joint"/>
+  </joint>
+  <joint name="gripper_roll_left_joint" >
+    <insert_const_block name="pr2_gripper_roll_joint"/>
+  </joint>
+  <joint name="wrist_flex_right_joint" >
+    <insert_const_block name="pr2_wrist_flex_joint"/>
+  </joint>
+  <joint name="wrist_flex_left_joint" >
+    <insert_const_block name="pr2_wrist_flex_joint"/>
+  </joint>
+  <joint name="forearm_roll_right_joint" >
+    <insert_const_block name="pr2_forearm_roll_joint"/>
+  </joint>
+  <joint name="forearm_roll_left_joint" >
+    <insert_const_block name="pr2_forearm_roll_joint"/>
+  </joint>
+  <joint name="elbow_flex_right_joint" >
+    <insert_const_block name="pr2_elbow_flex_joint"/>
+  </joint>
+  <joint name="elbow_flex_left_joint" >
+    <insert_const_block name="pr2_elbow_flex_joint"/>
+  </joint>
+  <joint name="upperarm_roll_right_joint" >
+    <insert_const_block name="pr2_upperarm_roll_joint"/>
+  </joint>
+  <joint name="upperarm_roll_left_joint" >
+    <insert_const_block name="pr2_upperarm_roll_joint"/>
+  </joint>
+  <joint name="shoulder_pitch_right_joint" >
+    <insert_const_block name="pr2_shoulder_pitch_joint"/>
+  </joint>
+  <joint name="shoulder_pitch_left_joint" >
+    <insert_const_block name="pr2_shoulder_pitch_joint"/>
+  </joint>
+  <joint name="shoulder_pan_right_joint" >
+    <insert_const_block name="pr2_shoulder_pan_joint"/>
+  </joint>
+  <joint name="shoulder_pan_left_joint" >
+    <insert_const_block name="pr2_shoulder_pan_joint"/>
+  </joint>
+  <joint name="torso_joint" type="prismatic"> 
+    <limit min="0.0" max="torso_max_travel_range" effort="100" velocity="5" />
+    <axis xyz="0 0 0" />
+  </joint>
+
+  <joint name="wheel_rear_right_r_joint" >
+    <insert_const_block name="pr2_wheel_joint"/>
+  </joint>
+  <joint name="wheel_rear_right_l_joint" >
+    <insert_const_block name="pr2_wheel_joint"/>
+  </joint>
+  <joint name="wheel_rear_left_r_joint" >
+    <insert_const_block name="pr2_wheel_joint"/>
+  </joint>
+  <joint name="wheel_rear_left_l_joint" >
+    <insert_const_block name="pr2_wheel_joint"/>
+  </joint>
+  <joint name="wheel_front_right_r_joint" >
+    <insert_const_block name="pr2_wheel_joint"/>
+  </joint>
+  <joint name="wheel_front_right_l_joint" >
+    <insert_const_block name="pr2_wheel_joint"/>
+  </joint>
+  <joint name="wheel_front_left_r_joint" >
+    <insert_const_block name="pr2_wheel_joint"/>
+  </joint>
+  <joint name="wheel_front_left_l_joint" >
+    <insert_const_block name="pr2_wheel_joint"/>
+  </joint>
+    <joint name="caster_rear_right_joint" >
+    <insert_const_block name="pr2_caster_joint"/>
+    </joint>
+    <joint name="caster_rear_left_joint" >
+    <insert_const_block name="pr2_caster_joint"/>
+    </joint>
+  <joint name="caster_front_left_joint" >
+    <insert_const_block name="pr2_caster_joint"/>
+  </joint>
+  <joint name="caster_front_right_joint" >
+    <insert_const_block name="pr2_caster_joint"/>
+  </joint>
+    <joint name="tilt_laser_joint" type="revolute"> 
+      <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
+      <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <limit effortLimit="10" velocityLimit="5" />
+    </joint>
+    <joint name="base_laser_joint" type="fixed"> 
+      <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
+      <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    </joint>
+    <joint name="wrist_camera_left_joint" type="fixed"> 
+      <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
+      <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    </joint>
+    <joint name="wrist_camera_right_joint" type="fixed"> 
+      <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
+      <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    </joint>
+    <joint name="forearm_camera_left_joint" type="fixed"> 
+      <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
+      <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    </joint>
+    <joint name="forearm_camera_right_joint" type="fixed"> 
+      <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
+      <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    </joint>
+    <joint name="ptz_pan_left_joint" type="revolute"> 
+      <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
+      <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <limit min=" ptz_pan_min_limit" max="ptz_pan_max_limit" effortLimit="100" velocityLimit="5" />
+    </joint>
+    <joint name="ptz_tilt_left_joint" type="revolute"> 
+      <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
+      <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <limit min=" ptz_tilt_min_limit" max="ptz_tilt_max_limit" effortLimit="100" velocityLimit="5" />
+    </joint>
+    <joint name="ptz_pan_right_joint" type="revolute"> 
+      <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
+      <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <limit min=" ptz_pan_min_limit" max="ptz_pan_max_limit" effortLimit="100" velocityLimit="5" />
+    </joint>
+    <joint name="ptz_tilt_right_joint" type="revolute"> 
+      <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
+      <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+      <limit min=" ptz_tilt_min_limit" max="ptz_tilt_max_limit" effortLimit="100" velocityLimit="5" />
+    </joint>
+    <joint name="stereo_joint" type="fixed"> 
+      <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
+      <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    </joint>
+
+
+  <!-- link blocks -->
   <link name="caster_front_left">
     <parent name=" base" />
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" base_caster_offset_x base_caster_offset_y base_caster_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
-    <joint name="caster_front_left_joint" >
-      <insert_const_block name="pr2_caster_joint"/>
-    </joint>
+    <joint name="caster_front_left_joint" />
+
     <inertial >
       <insert_const_block name="pr2_caster_inertial"/>
     </inertial>
@@ -770,9 +942,8 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" base_caster_offset_x -base_caster_offset_y base_caster_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="caster_front_right_joint" >
-      <insert_const_block name="pr2_caster_joint"/>
-    </joint>
+    <joint name="caster_front_right_joint" />
+
     <inertial >
       <insert_const_block name="pr2_caster_inertial"/>
     </inertial>
@@ -790,9 +961,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
       <origin xyz=" -base_caster_offset_x base_caster_offset_y base_caster_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-      <joint name="caster_rear_left_joint" >
-      <insert_const_block name="pr2_caster_joint"/>
-      </joint>
+      <joint name="caster_rear_left_joint" />
       <inertial >
       <insert_const_block name="pr2_caster_inertial"/>
       </inertial>
@@ -810,9 +979,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
       <origin xyz=" -base_caster_offset_x -base_caster_offset_y base_caster_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-      <joint name="caster_rear_right_joint" >
-      <insert_const_block name="pr2_caster_joint"/>
-      </joint>
+      <joint name="caster_rear_right_joint" />
       <inertial >
       <insert_const_block name="pr2_caster_inertial"/>
       </inertial>
@@ -830,9 +997,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 caster_wheel_offset_y 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="wheel_front_left_l_joint" >
-      <insert_const_block name="pr2_wheel_joint"/>
-    </joint>
+    <joint name="wheel_front_left_l_joint" />
     <inertial >
       <insert_const_block name="pr2_wheel_inertial"/>
     </inertial>
@@ -850,9 +1015,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 -caster_wheel_offset_y 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="wheel_front_left_r_joint" >
-      <insert_const_block name="pr2_wheel_joint"/>
-    </joint>
+    <joint name="wheel_front_left_r_joint" />
     <inertial >
       <insert_const_block name="pr2_wheel_inertial"/>
     </inertial>
@@ -870,9 +1033,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 caster_wheel_offset_y 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="wheel_front_right_l_joint" >
-      <insert_const_block name="pr2_wheel_joint"/>
-    </joint>
+    <joint name="wheel_front_right_l_joint" />
     <inertial >
       <insert_const_block name="pr2_wheel_inertial"/>
     </inertial>
@@ -891,9 +1052,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 -caster_wheel_offset_y 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="wheel_front_right_r_joint" >
-      <insert_const_block name="pr2_wheel_joint"/>
-    </joint>
+    <joint name="wheel_front_right_r_joint" />
     <inertial >
       <insert_const_block name="pr2_wheel_inertial"/>
     </inertial>
@@ -911,9 +1070,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 caster_wheel_offset_y 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="wheel_rear_left_l_joint" >
-      <insert_const_block name="pr2_wheel_joint"/>
-    </joint>
+    <joint name="wheel_rear_left_l_joint" />
     <inertial >
       <insert_const_block name="pr2_wheel_inertial"/>
     </inertial>
@@ -931,9 +1088,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 -caster_wheel_offset_y 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="wheel_rear_left_r_joint" >
-      <insert_const_block name="pr2_wheel_joint"/>
-    </joint>
+    <joint name="wheel_rear_left_r_joint" />
     <inertial >
       <insert_const_block name="pr2_wheel_inertial"/>
     </inertial>
@@ -951,9 +1106,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 caster_wheel_offset_y 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="wheel_rear_right_l_joint" >
-      <insert_const_block name="pr2_wheel_joint"/>
-    </joint>
+    <joint name="wheel_rear_right_l_joint" />
     <inertial >
       <insert_const_block name="pr2_wheel_inertial"/>
     </inertial>
@@ -971,9 +1124,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 -caster_wheel_offset_y 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="wheel_rear_right_r_joint" >
-      <insert_const_block name="pr2_wheel_joint"/>
-    </joint>
+    <joint name="wheel_rear_right_r_joint" />
     <inertial >
       <insert_const_block name="pr2_wheel_inertial"/>
     </inertial>
@@ -990,11 +1141,6 @@
 <!-- Begin torso definition -->
 
   <!-- move outside of link -->
-  <joint name="torso_joint" type="prismatic"> 
-    <limit min="0.0" max="torso_max_travel_range" effort="100" velocity="5" />
-    <axis xyz="0 0 0" />
-  </joint>
-
 
   <link name="torso">
     <parent name=" base " />
@@ -1039,9 +1185,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 torso_shoulder_pan_offset_y 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="shoulder_pan_left_joint" >
-      <insert_const_block name="pr2_shoulder_pan_joint"/>
-    </joint>
+    <joint name="shoulder_pan_left_joint" />
     <inertial >
       <insert_const_block name="pr2_shoulder_pan_inertial"/>
     </inertial>
@@ -1059,9 +1203,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 -torso_shoulder_pan_offset_y 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="shoulder_pan_right_joint" >
-      <insert_const_block name="pr2_shoulder_pan_joint"/>
-    </joint>
+    <joint name="shoulder_pan_right_joint" />
     <inertial >
       <insert_const_block name="pr2_shoulder_pan_inertial"/>
     </inertial>
@@ -1080,9 +1222,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" shoulder_pan_shoulder_pitch_offset_x 0 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="shoulder_pitch_left_joint" >
-      <insert_const_block name="pr2_shoulder_pitch_joint"/>
-    </joint>
+    <joint name="shoulder_pitch_left_joint" />
     <inertial >
       <insert_const_block name="pr2_shoulder_pitch_inertial"/>
     </inertial>
@@ -1100,9 +1240,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" shoulder_pan_shoulder_pitch_offset_x 0 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="shoulder_pitch_right_joint" >
-      <insert_const_block name="pr2_shoulder_pitch_joint"/>
-    </joint>
+    <joint name="shoulder_pitch_right_joint" />
     <inertial >
       <insert_const_block name="pr2_shoulder_pitch_inertial"/>
     </inertial>
@@ -1120,9 +1258,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 0 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="upperarm_roll_left_joint" >
-      <insert_const_block name="pr2_upperarm_roll_joint"/>
-    </joint>
+    <joint name="upperarm_roll_left_joint" />
     <inertial >
       <insert_const_block name="pr2_upperarm_roll_inertial"/>
     </inertial>
@@ -1140,9 +1276,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 0 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="upperarm_roll_right_joint" >
-      <insert_const_block name="pr2_upperarm_roll_joint"/>
-    </joint>
+    <joint name="upperarm_roll_right_joint" />
     <inertial >
       <insert_const_block name="pr2_upperarm_roll_inertial"/>
     </inertial>
@@ -1161,9 +1295,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" upperarm_roll_elbow_flex_offset_x 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="elbow_flex_left_joint" >
-      <insert_const_block name="pr2_elbow_flex_joint"/>
-    </joint>
+    <joint name="elbow_flex_left_joint" />
     <inertial >
       <insert_const_block name="pr2_elbow_flex_inertial"/>
     </inertial>
@@ -1181,9 +1313,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" upperarm_roll_elbow_flex_offset_x 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="elbow_flex_right_joint" >
-      <insert_const_block name="pr2_elbow_flex_joint"/>
-    </joint>
+    <joint name="elbow_flex_right_joint" />
     <inertial >
       <insert_const_block name="pr2_elbow_flex_inertial"/>
     </inertial>
@@ -1200,9 +1330,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="forearm_roll_left_joint" >
-      <insert_const_block name="pr2_forearm_roll_joint"/>
-    </joint>
+    <joint name="forearm_roll_left_joint" />
     <inertial >
       <insert_const_block name="pr2_forearm_roll_inertial"/>
     </inertial>
@@ -1219,9 +1347,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="forearm_roll_right_joint" >
-      <insert_const_block name="pr2_forearm_roll_joint"/>
-    </joint>
+    <joint name="forearm_roll_right_joint" />
     <inertial >
       <insert_const_block name="pr2_forearm_roll_inertial"/>
     </inertial>
@@ -1238,9 +1364,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" elbow_roll_wrist_flex_offset_x 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="wrist_flex_left_joint" >
-      <insert_const_block name="pr2_wrist_flex_joint"/>
-    </joint>
+    <joint name="wrist_flex_left_joint" />
     <inertial >
       <insert_const_block name="pr2_wrist_flex_inertial"/>
     </inertial>
@@ -1258,9 +1382,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" elbow_roll_wrist_flex_offset_x 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="wrist_flex_right_joint" >
-      <insert_const_block name="pr2_wrist_flex_joint"/>
-    </joint>
+    <joint name="wrist_flex_right_joint" />
     <inertial >
       <insert_const_block name="pr2_wrist_flex_inertial"/>
     </inertial>
@@ -1277,9 +1399,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="gripper_roll_left_joint" >
-      <insert_const_block name="pr2_gripper_roll_joint"/>
-    </joint>
+    <joint name="gripper_roll_left_joint" />
     <inertial >
       <insert_const_block name="pr2_gripper_roll_inertial"/>
     </inertial>
@@ -1297,9 +1417,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="gripper_roll_right_joint" >
-      <insert_const_block name="pr2_gripper_roll_joint"/>
-    </joint>
+    <joint name="gripper_roll_right_joint" />
     <inertial >
       <insert_const_block name="pr2_gripper_roll_inertial"/>
     </inertial>
@@ -1322,9 +1440,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" gripper_roll_finger_l_offset_x gripper_roll_finger_l_offset_y gripper_roll_finger_l_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="finger_l_left_joint" >
-      <insert_const_block name="pr2_finger_l_joint"/>
-    </joint>
+    <joint name="finger_l_left_joint" />
     <inertial >
       <insert_const_block name="pr2_finger_l_inertial"/>
     </inertial>
@@ -1343,9 +1459,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" finger_l_finger_tip_l_offset_x finger_l_finger_tip_l_offset_y finger_l_finger_tip_l_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="finger_tip_l_left_joint" >
-      <insert_const_block name="pr2_finger_tip_l_joint"/>
-    </joint>
+    <joint name="finger_tip_l_left_joint" />
     <inertial >
       <insert_const_block name="pr2_finger_tip_l_inertial"/>
     </inertial>
@@ -1364,9 +1478,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" gripper_roll_finger_r_offset_x gripper_roll_finger_r_offset_y gripper_roll_finger_r_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="finger_r_left_joint" >
-      <insert_const_block name="pr2_finger_r_joint"/>
-    </joint>
+    <joint name="finger_r_left_joint" />
     <inertial >
       <insert_const_block name="pr2_finger_r_inertial"/>
     </inertial>
@@ -1385,9 +1497,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" finger_r_finger_tip_r_offset_x finger_r_finger_tip_r_offset_y finger_r_finger_tip_r_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="finger_tip_r_left_joint" >
-      <insert_const_block name="pr2_finger_tip_r_joint"/>
-    </joint>
+    <joint name="finger_tip_r_left_joint" />
     <inertial >
       <insert_const_block name="pr2_finger_tip_r_inertial"/>
     </inertial>
@@ -1410,9 +1520,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" gripper_roll_finger_l_offset_x gripper_roll_finger_l_offset_y gripper_roll_finger_l_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="finger_l_right_joint" >
-      <insert_const_block name="pr2_finger_l_joint"/>
-    </joint>
+    <joint name="finger_l_right_joint" />
     <inertial >
       <insert_const_block name="pr2_finger_l_inertial"/>
     </inertial>
@@ -1431,9 +1539,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" finger_l_finger_tip_l_offset_x finger_l_finger_tip_l_offset_y finger_l_finger_tip_l_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="finger_tip_l_right_joint" >
-      <insert_const_block name="pr2_finger_tip_l_joint"/>
-    </joint>
+    <joint name="finger_tip_l_right_joint" />
     <inertial >
       <insert_const_block name="pr2_finger_tip_l_inertial"/>
     </inertial>
@@ -1452,9 +1558,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" gripper_roll_finger_r_offset_x gripper_roll_finger_r_offset_y gripper_roll_finger_r_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="finger_r_right_joint" >
-      <insert_const_block name="pr2_finger_r_joint"/>
-    </joint>
+    <joint name="finger_r_right_joint" />
     <inertial >
       <insert_const_block name="pr2_finger_r_inertial"/>
     </inertial>
@@ -1473,9 +1577,7 @@
      <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" finger_r_finger_tip_r_offset_x finger_r_finger_tip_r_offset_y finger_r_finger_tip_r_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
-    <joint name="finger_tip_r_right_joint" >
-      <insert_const_block name="pr2_finger_tip_r_joint"/>
-    </joint>
+    <joint name="finger_tip_r_right_joint" />
     <inertial >
       <insert_const_block name="pr2_finger_tip_r_inertial"/>
     </inertial>
@@ -1500,12 +1602,7 @@
     <origin xyz=" torso_head_pan_offset_x 0 torso_head_pan_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
 
-    <joint name="head_pan_joint" type="revolute"> 
-      <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
-      <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit min=" head_pan_min_limit" max="head_pan_max_limit" effortLimit="100" velocityLimit="5" />
-    </joint>
-
+    <joint name="head_pan_joint" />
     <inertial>
       <mass value="1.611118" />
       <com xyz=" -0.005717  0.010312 -0.029649 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
@@ -1541,12 +1638,7 @@
     <origin xyz=" head_pan_head_tilt_offset_x 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
 
-    <joint name="head_tilt_joint" type="revolute"> 
-      <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
-      <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit min=" head_tilt_min_limit" max="head_tilt_max_limit" effortLimit="100" velocityLimit="5" />
-    </joint>
-
+    <joint name="head_tilt_joint" />
     <inertial>
       <mass value="1.749727" />
       <com xyz=" 0.041935 0.003569 0.028143 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
@@ -1585,12 +1677,7 @@
     <origin xyz=" torso_tilt_laser_offset_x 0 torso_tilt_laser_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
      <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
 
-    <joint type="revolute"> 
-      <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
-      <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit effortLimit="10" velocityLimit="5" />
-    </joint>
-
+    <joint name="tilt_laser_joint"> 
     <inertial>
       <mass value="1.0" />
       <com xyz=" 0 0 0 " /> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
@@ -1655,11 +1742,7 @@
     <origin xyz=" base_base_laser_offset_x 0 base_base_laser_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
      <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
 
-    <joint type="fixed"> 
-      <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
-      <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    </joint>
-
+    <joint name="base_laser_joint"> 
     <inertial>
       <mass value="1.0" />
       <com xyz=" 0 0 0 " /> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
@@ -1736,11 +1819,7 @@
     <origin xyz=" gripper_roll_camera_offset_x gripper_roll_camera_offset_y gripper_roll_camera_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
      <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
 
-    <joint type="fixed"> 
-      <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
-      <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    </joint>
-
+    <joint name="wrist_camera_left_joint" />
     <inertial>
       <mass value="0.5" />
       <com xyz=" 0.0 0.0 0.0 " /> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
@@ -1800,11 +1879,7 @@
     <origin xyz=" gripper_roll_camera_offset_x gripper_roll_camera_offset_y gripper_roll_camera_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
      <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
 
-    <joint type="fixed"> 
-      <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
-      <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    </joint>
-
+    <joint name="wrist_camera_right_joint"> 
     <inertial>
       <mass value="0.5" />
       <com xyz=" 0.0 0.0 0.0 " /> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
@@ -1864,11 +1939,7 @@
     <origin xyz=" forearm_roll_camera_offset_x forearm_roll_camera_offset_y forearm_roll_camera_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
      <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
 
-    <joint type="fixed"> 
-      <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
-      <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    </joint>
-
+    <joint name="forearm_camera_left_joint" /> 
     <inertial>
       <mass value="0.5" />
       <com xyz=" 0.0 0.0 0.0 " /> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
@@ -1922,11 +1993,7 @@
     <origin xyz=" forearm_roll_camera_offset_x forearm_roll_camera_offset_y forearm_roll_camera_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
      <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
 
-    <joint type="fixed"> 
-      <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
-      <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    </joint>
-
+    <joint name="forearm_camera_right_joint" />
     <inertial>
       <mass value="0.5" />
       <com xyz=" 0.0 0.0 0.0 " /> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
@@ -1979,12 +2046,7 @@
     <origin xyz=" torso_ptz_pan_left_offset_x torso_ptz_pan_left_offset_y torso_ptz_pan_left_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
 
-    <joint name="ptz_pan_left_joint" type="revolute"> 
-      <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
-      <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit min=" ptz_pan_min_limit" max="ptz_pan_max_limit" effortLimit="100" velocityLimit="5" />
-    </joint>
-
+    <joint name="ptz_pan_left_joint" />
     <inertial>
       <mass value="0.1" />
       <com xyz=" 0  0 0 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
@@ -2019,12 +2081,7 @@
     <origin xyz=" ptz_pan_ptz_tilt_left_offset_x ptz_pan_ptz_tilt_left_offset_y ptz_pan_ptz_tilt_left_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
 
-    <joint type="revolute"> 
-      <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
-      <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit min=" ptz_tilt_min_limit" max="ptz_tilt_max_limit" effortLimit="100" velocityLimit="5" />
-    </joint>
-
+    <joint name="ptz_tilt_left_joint" />
     <inertial>
       <mass value="0.1" />
       <com xyz=" 0  0 0 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
@@ -2077,12 +2134,7 @@
     <origin xyz=" torso_ptz_pan_right_offset_x torso_ptz_pan_right_offset_y torso_ptz_pan_right_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
 
-    <joint name="ptz_pan_right_joint" type="revolute"> 
-      <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
-      <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit min=" ptz_pan_min_limit" max="ptz_pan_max_limit" effortLimit="100" velocityLimit="5" />
-    </joint>
-
+    <joint name="ptz_pan_right_joint" />
     <inertial>
       <mass value="0.1" />
       <com xyz=" 0  0 0 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
@@ -2117,12 +2169,7 @@
     <origin xyz=" ptz_pan_ptz_tilt_right_offset_x ptz_pan_ptz_tilt_right_offset_y ptz_pan_ptz_tilt_right_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
 
-    <joint type="revolute"> 
-      <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
-      <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit min=" ptz_tilt_min_limit" max="ptz_tilt_max_limit" effortLimit="100" velocityLimit="5" />
-    </joint>
-
+    <joint name="ptz_tilt_right_joint" />
     <inertial>
       <mass value="0.1" />
       <com xyz=" 0  0 0 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
@@ -2184,11 +2231,7 @@
     <origin xyz=" head_tilt_stereo_offset_x 0 head_tilt_stereo_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
 
 
-    <joint type="fixed"> 
-      <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
-      <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    </joint>
-
+    <joint name="stereo_joint" />
     <inertial>
       <mass value="0.1" />
       <com xyz=" 0  0 0 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
