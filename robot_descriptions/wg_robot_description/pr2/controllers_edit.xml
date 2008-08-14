@@ -30,6 +30,7 @@
         <map name="wheel_front_left_l_data" tag="gazebo">
           <elem key="saturationTorque">1000</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -38,6 +39,7 @@
         <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
         <map name="wheel_front_left_l_data" tag="gazebo">
           <elem key="saturationTorque">5</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -46,6 +48,7 @@
         <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
         <map name="wheel_front_left_r_data" tag="gazebo">
           <elem key="saturationTorque">5</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -55,6 +58,7 @@
         <map name="wheel_front_left_l_data" tag="gazebo">
           <elem key="saturationTorque">1000</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -63,6 +67,7 @@
         <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
         <map name="wheel_front_right_l_data" tag="gazebo">
           <elem key="saturationTorque">5</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -71,6 +76,7 @@
         <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
         <map name="wheel_front_right_r_data" tag="gazebo">
           <elem key="saturationTorque">5</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -80,6 +86,7 @@
         <map name="wheel_front_right_r_data" tag="gazebo">
           <elem key="saturationTorque">1000</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -88,6 +95,7 @@
         <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
         <map name="wheel_rear_left_l_data" tag="gazebo">
           <elem key="saturationTorque">5</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -96,6 +104,7 @@
         <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
         <map name="wheel_rear_left_r_data" tag="gazebo">
           <elem key="saturationTorque">5</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -105,6 +114,7 @@
         <map name="wheel_rear_left_l_data" tag="gazebo">
           <elem key="saturationTorque">1000</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -113,6 +123,7 @@
         <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
         <map name="wheel_rear_right_l_data" tag="gazebo">
           <elem key="saturationTorque">5</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -121,17 +132,19 @@
         <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
         <map name="wheel_rear_right_r_data" tag="gazebo">
           <elem key="saturationTorque">5</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
       <!-- ========================================= -->
       <!-- torso array -->
   <controller name="torso_controller" type="JointPositionController">
-      <joint name="torso_joint" type="prismatic">
+      <joint name="torso_joint">
         <controller_defaults p="1000" d="0" i="0" iClamp="0" />
         <map name="wheel_rear_right_l_data" tag="gazebo">
           <elem key="saturationTorque">1000</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Slider</elem>
         </map>
       </joint>
   </controller>
@@ -143,6 +156,7 @@
         <map name="shoulder_pan_left_data" tag="gazebo">
           <elem key="saturationTorque">1000</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -152,6 +166,7 @@
         <map name="shoulder_pitch_left_data" tag="gazebo">
           <elem key="saturationTorque">1000</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -161,6 +176,7 @@
         <map name="upperarm_roll_left_data" tag="gazebo">
           <elem key="saturationTorque">1000</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -170,6 +186,7 @@
         <map name="elbow_flex_left_data" tag="gazebo">
           <elem key="saturationTorque">100</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -179,6 +196,7 @@
         <map name="forearm_roll_left_data" tag="gazebo">
           <elem key="saturationTorque">100</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -188,6 +206,7 @@
         <map name="wrist_flex_left_data" tag="gazebo">
           <elem key="saturationTorque">100</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -197,12 +216,13 @@
         <map name="gripper_roll_left_data" tag="gazebo">
           <elem key="saturationTorque">100</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
   <!-- Special gripper joint -->
   <controller name="gripper_left_controller" type="JointPositionController">
-        <joint name="gripper_left_joint" type="gripper" >
+        <joint name="gripper_left_joint">
         <controller_defaults p="20" d="0" i="0" iClamp="0" />
         <gripper_defaults effortLimit="100" velocityLimit="10" />
         <map name="gripper_joints" tag="gazebo">
@@ -212,6 +232,7 @@
           <elem key="left_distal">finger_tip_l_left_joint</elem>
           <elem key="right_proximal">finger_r_left_joint</elem>
           <elem key="right_distal">finger_tip_r_left_joint</elem>
+          <elem key="jointType">Gripper</elem>
         </map>
       </joint>
   </controller>
@@ -223,6 +244,7 @@
         <map name="shoulder_pan_right_data" tag="gazebo">
           <elem key="saturationTorque">1000</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -232,6 +254,7 @@
         <map name="shoulder_pitch_right_data" tag="gazebo">
           <elem key="saturationTorque">1000</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -241,6 +264,7 @@
         <map name="upperarm_roll_right_data" tag="gazebo">
           <elem key="saturationTorque">1000</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -250,6 +274,7 @@
         <map name="elbow_flex_right_data" tag="gazebo">
           <elem key="saturationTorque">1000</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -259,6 +284,7 @@
         <map name="forearm_roll_right_data" tag="gazebo">
           <elem key="saturationTorque">100</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -268,6 +294,7 @@
         <map name="wrist_flex_right_data" tag="gazebo">
           <elem key="saturationTorque">100</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -277,12 +304,13 @@
         <map name="gripper_roll_right_data" tag="gazebo">
           <elem key="saturationTorque">100</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
       <!-- Special gripper joint -->
   <controller name="gripper_right_controller" type="JointPositionController">
-        <joint name="gripper_right_joint" type="gripper" >
+        <joint name="gripper_right_joint">
         <controller_defaults p="20" d="0" i="0" iClamp="0" />
         <gripper_defaults effortLimit="100" velocityLimit="10" />
         <map name="gripper_joints" tag="gazebo">
@@ -292,6 +320,7 @@
           <elem key="left_distal">finger_tip_l_right_joint</elem>
           <elem key="right_proximal">finger_r_right_joint</elem>
           <elem key="right_distal">finger_tip_r_right_joint</elem>
+          <elem key="jointType">Gripper</elem>
         </map>
       </joint>
   </controller>
@@ -302,6 +331,7 @@
         <map name="head_pan_data" tag="gazebo">
           <elem key="saturationTorque">100</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -311,6 +341,7 @@
         <map name="head_tilt_data" tag="gazebo">
           <elem key="saturationTorque">10</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
@@ -320,6 +351,7 @@
         <map name="tilt_laser_data" tag="gazebo">
           <elem key="saturationTorque">500</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
+          <elem key="jointType">Hinge</elem>
         </map>
       </joint>
   </controller>
