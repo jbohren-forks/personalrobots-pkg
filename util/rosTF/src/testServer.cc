@@ -22,15 +22,15 @@ public:
         << 0 << 0 << 1 << 3
         << 0 << 0 << 0 << 1;
     
-    pTFServer->sendEuler(5,count++,1,1,1,1,1,1,100000,100000);
-    pTFServer->sendInverseEuler(5,count++,1,1,1,1,1,1,100000,100000);
-    pTFServer->sendDH(5,count++,1,1,1,1,100000,100000);
-    pTFServer->sendQuaternion(5,count++,1,1,1,1,1,1,1,100000,100000);
-    pTFServer->sendMatrix(5,count++,mat, ros::Time::now());
+    pTFServer->sendEuler(count++,count++,1,1,1,1,1,1,100000,100000);
+    pTFServer->sendInverseEuler(count++,count++,1,1,1,1,1,1,100000,100000);
+    pTFServer->sendDH(count++,count++,1,1,1,1,100000,100000);
+    pTFServer->sendQuaternion(count++,count++,1,1,1,1,1,1,1,100000,100000);
+    pTFServer->sendMatrix(count++,count++,mat, ros::Time::now());
     if (count > 9000)
       count = 0;
     std::cerr<<count<<std::endl;
-    pTFServer->lookup("asdf");
+    pTFServer->nameClient.lookup("asdf");
   };
 
 private:
