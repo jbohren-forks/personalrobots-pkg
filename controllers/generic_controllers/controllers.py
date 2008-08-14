@@ -3,7 +3,7 @@
 import rostools
 rostools.update_path('mechanism_control')
 rostools.update_path('generic_controllers')
-wh
+
 
 import rospy, sys
 from mechanism_control.srv import *
