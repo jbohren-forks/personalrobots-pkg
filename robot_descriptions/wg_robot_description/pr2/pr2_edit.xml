@@ -288,7 +288,7 @@
       <origin xyz="0 0 0" rpy="M_PI/2 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <geometry type="cylinder"><!-- geometry specified using a simple geometric object -->
-        <size xyz="wheel_radius wheel_length" /> 
+        <size  radius="wheel_radius" length="wheel_length" /> 
       </geometry>
 
       <map name="friction_coefficients" tag="gazebo">
@@ -364,7 +364,7 @@
         <elem key="material">Gazebo/Grey</elem>
       </map>
       <geometry type="cylinder">
-        <size xyz=" shoulder_pitch_radius shoulder_pitch_length " />
+        <size radius="shoulder_pitch_radius" length="shoulder_pitch_length" />
       </geometry>
     </const_block> 
 
@@ -433,7 +433,7 @@
         <elem key="material">Gazebo/Grey</elem>
       </map>
       <geometry type="cylinder">
-        <size xyz="elbow_flex_radius elbow_flex_length " />
+        <size radius="elbow_flex_radius" length="elbow_flex_length" />
       </geometry>
     </const_block> 
 
@@ -505,7 +505,7 @@
         <elem key="material">Gazebo/Green</elem>
       </map>
       <geometry type="cylinder">
-      <size xyz="wrist_flex_radius wrist_flex_length" />
+      <size radius="wrist_flex_radius" length="wrist_flex_length" />
       </geometry>
     </const_block> 
 
@@ -2006,7 +2006,7 @@
       <origin xyz="ptz_pan_left_center_box_center_offset_x   ptz_pan_left_center_box_center_offset_y   ptz_pan_left_center_box_center_offset_z" rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <geometry type="cylinder">
-        <size xyz="ptz_pan_radius ptz_pan_length" />
+        <size radius="ptz_pan_radius" length="ptz_pan_length" />
       </geometry>
     </collision> 
 
@@ -2045,7 +2045,7 @@
       <origin xyz="0   0   0" rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <geometry type="cylinder">
-        <size xyz="ptz_tilt_radius ptz_tilt_length" />
+        <size radius="ptz_tilt_radius" length="ptz_tilt_length" />
       </geometry>
     </collision> 
 
@@ -2102,7 +2102,7 @@
       <origin xyz="ptz_pan_right_center_box_center_offset_x   ptz_pan_right_center_box_center_offset_y   ptz_pan_right_center_box_center_offset_z" rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <geometry type="cylinder">
-        <size xyz="ptz_pan_radius ptz_pan_length" />
+        <size radius="ptz_pan_radius" length="ptz_pan_length" />
       </geometry>
     </collision> 
 
@@ -2141,7 +2141,7 @@
       <origin xyz="0   0   0" rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
        <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <geometry type="cylinder">
-        <size xyz="ptz_tilt_radius ptz_tilt_length" />
+        <size radius="ptz_tilt_radius" length="ptz_tilt_length" />
       </geometry>
     </collision> 
 
