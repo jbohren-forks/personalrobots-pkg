@@ -211,7 +211,7 @@ bool MechanismControl::spawnController(const std::string &type,
   controller::Controller *c = controller::ControllerFactory::instance().create(type);
   if (c == NULL)
     return false;
-  c->init(p_gain,i_gain,d_gain,windup,time,&model_,joint);
+  //c->init(p_gain,i_gain,d_gain,windup,time,&model_,joint);
 
   if (!addController(c, name))
   {
