@@ -14,7 +14,12 @@ OGRE (Object-Oriented Graphics Rendering Engine) is a scene-oriented, flexible 3
   <cpp lflags="-Wl,-rpath,${prefix}/ogre/lib -L${prefix}/ogre/lib/OGRE `PKG_CONFIG_PATH=${prefix}/ogre/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --libs OGRE`" cflags="`PKG_CONFIG_PATH=${prefix}/ogre/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --cflags OGRE`"/>
         <doxymaker external="http://ogre3d.org"/>
 </export>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libzzip-0-13"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libzzip-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libxaw7"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libxaw7-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libxaw7-headers"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libboost-thread1.34.1"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-thread-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libgl1-mesa-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libgtk2.0-dev"/>
