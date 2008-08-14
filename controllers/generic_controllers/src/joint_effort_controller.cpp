@@ -76,7 +76,7 @@ void JointEffortController::setCommand(double command)
 // Return the current position command
 double JointEffortController::getCommand()
 {
-  return joint_->commanded_effort_;
+  return command_;
 }
 
 // Return the measured joint position

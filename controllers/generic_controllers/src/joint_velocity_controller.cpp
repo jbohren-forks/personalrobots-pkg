@@ -85,7 +85,7 @@ void JointVelocityController::setCommand(double command)
 // Return the current velocity command
 double JointVelocityController::getCommand()
 {
-  return joint_->commanded_effort_;
+  return command_;
 }
 
 double JointVelocityController::getTime()

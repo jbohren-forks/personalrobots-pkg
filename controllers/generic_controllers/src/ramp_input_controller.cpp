@@ -76,7 +76,7 @@ void RampInputController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 // Return the current position command
 double RampInputController::getCommand()
 {
-  return joint_->commanded_effort_;
+  return command_;
 }
 
 // Return the measured joint position
