@@ -440,10 +440,7 @@ private:
 		    keep = !m_selfSeeParts[i].body->containsPoint(x, y, z);
 		
 		if (keep)
-		{
 		    copy->pts[j++] = cloud.pts[k];
-		    printf("%f\n", cloud.pts[k].z);
-		}		
 	    }
 	}
 	if (m_verbose)
