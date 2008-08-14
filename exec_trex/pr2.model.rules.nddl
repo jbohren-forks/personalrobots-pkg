@@ -417,6 +417,8 @@ GraspObject::Active {
     eq(armpivot.isLeft, false);
     eq(armpivot.turretAngle,-1.0);
     eq(armpivot.shoulderLiftAngle,-.1);
+    eq(armpivot.gripperForceCmd,CLOSED_GRIPPER_FORCE);
+    eq(armpivot.gripperGapCmd,CLOSED_GRIPPER_GAP);
     temporalDistance(closegrip.end, [2, +inf], armpivot.start);
     //closegrip before armpivot;
     
