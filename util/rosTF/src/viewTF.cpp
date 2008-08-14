@@ -122,36 +122,37 @@ int main(int argc, char **argv)
     
     ros::init(argc, argv);
     ViewTF viewer;
-        
-
-    std::cout<<"Taking data for 5 seconds . . ."<<std::endl;
-    sleep(5);
-    viewer.save("viewTF.dot");
-
-    /*
-    while (viewer.ok() && viewer.active)
+    
+    if (argc >= 2 && strcmp(argv[1], "--dump") == 0)
     {
-	char command;	
-	if (read(kfd, &command, 1) < 0)
+	std::cout<< "Taking data for 5 seconds . . ." << std::endl;
+	sleep(5);
+	viewer.save(argc > 2 ? argv[2] : "viewTF.dot");
+    }
+    else
+        while (viewer.ok() && viewer.active)
 	{
-	    perror("read():");
-	    exit(-1);
+	    char command;	
+	    if (read(kfd, &command, 1) < 0)
+	    {
+		perror("read():");
+		exit(-1);
+	    }
+	    
+	    switch (command)
+	    {
+	    case 32:
+		viewer.save("viewTF.dot");
+		break;
+	    case 3:
+	    case 28:
+		viewer.active = false;
+		break;	    
+	    default:
+		break;
+	    }	
 	}
 	
-	switch (command)
-	{
-	case 32:
-	    viewer.save("viewTF.dot");
-	    break;
-	case 3:
-	case 28:
-	    viewer.active = false;
-	    break;	    
-	default:
-	    break;
-	}	
-    }
-    */    
     viewer.shutdown();
     
     tcsetattr(kfd, TCSANOW, &cooked);
