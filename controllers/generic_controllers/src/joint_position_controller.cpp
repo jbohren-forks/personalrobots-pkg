@@ -42,6 +42,7 @@ using namespace controller;
 ROS_REGISTER_CONTROLLER(JointPositionController)
 
 JointPositionController::JointPositionController()
+: joint_(NULL), last_time_(0), robot_(NULL)
 {
   // Initialize PID class
   pid_controller_.initPid(0, 0, 0, 0, 0);
@@ -55,7 +56,7 @@ JointPositionController::~JointPositionController()
 void JointPositionController::init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint)
 {
   pid_controller_.initPid(p_gain, i_gain, d_gain, windup, -windup);
-  
+
   robot_ = robot;
   command_= 0;
   last_time_= time;
@@ -101,6 +102,7 @@ double JointPositionController::getTime()
 
 void JointPositionController::update()
 {
+  assert(robot_ != NULL);
   double error(0);
   double effort_cmd(0);
   double time = robot_->hw_->current_time_;
@@ -125,7 +127,7 @@ void JointPositionController::setJointEffort(double effort)
 }
 
 ROS_REGISTER_CONTROLLER(JointPositionControllerNode)
-JointPositionControllerNode::JointPositionControllerNode() 
+JointPositionControllerNode::JointPositionControllerNode()
 {
   c_ = new JointPositionController();
 }
@@ -173,7 +175,7 @@ void JointPositionControllerNode::initXml(mechanism::Robot *robot, TiXmlElement 
 {
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
-  
+
   c_->initXml(robot, config);
   node->advertise_service(prefix + "/set_command", &JointPositionControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_actual", &JointPositionControllerNode::getActual, this);
