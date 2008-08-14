@@ -83,7 +83,6 @@ public:
   {
   }
   virtual void update(void) = 0;
-  virtual void init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint) = 0;
   virtual void initXml(mechanism::Robot *robot, TiXmlElement *config) = 0;
 };
 
