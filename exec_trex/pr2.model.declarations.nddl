@@ -40,7 +40,7 @@ typedef float [0.0 +inff] PFLOAT;
 
 float BASE_POSITION_ERROR = 1.0;
 float ANGLE_ERROR = .2;
-float END_EFFECTOR_POSITION_ERROR = 0.005;
+float END_EFFECTOR_POSITION_ERROR = 0.01;
 float END_EFFECTOR_STEP_SIZE = 5.0;
 
 // Bogus

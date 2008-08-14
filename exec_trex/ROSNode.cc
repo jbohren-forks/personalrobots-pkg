@@ -23,6 +23,8 @@ using namespace std_msgs;
 using namespace KDL;
 static const double AllowableArmError = .05;
 static const double AllowableGraspError = .011;
+static const double AllowableGraspDeltaError = .011;
+static const double GripperForceThreshold = .01;
 
 namespace TREX {
   ROSNodeId ROSNode::s_id;
@@ -71,8 +73,8 @@ namespace TREX {
 
     //copied from wavefront_planner.cc
     //TODO change this to broadcast.
-    this->tf.setWithEulers(tf.lookup("FRAMEID_LASER"),
-			   tf.lookup("FRAMEID_ROBOT"),
+    this->tf.setWithEulers(tf.nameClient.lookup("FRAMEID_LASER"),
+			   tf.nameClient.lookup("FRAMEID_ROBOT"),
 			   0.05, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
     
     this->laser_hitpts_size = this->laser_hitpts_len = 0;
@@ -116,12 +118,12 @@ namespace TREX {
     advertise<Polyline2D>("gui_laser");
     advertise<Planner2DGoal>("goal");
     advertise<BaseVel>("cmd_vel");
-    advertise<PR2Arm>("right_pr2arm_set_position");
-    advertise<PR2Arm>("left_pr2arm_set_position");
+    advertise<PR2Arm>("cmd_leftarmconfig");
+    advertise<PR2Arm>("cmd_rightarmconfig");
     advertise<pr2_msgs::EndEffectorState>("cmd_leftarm_cartesian");
     advertise<pr2_msgs::EndEffectorState>("cmd_rightarm_cartesian");
     //subscribe("state", m_rcs_obs, &ROSNode::rcs_cb);
-    subscribe("scan", laserMsg, &ROSNode::laserReceived);
+    subscribe("base_scan", laserMsg, &ROSNode::laserReceived);
     subscribe("left_pr2arm_pos", leftArmPosMsg, &ROSNode::leftArmPosReceived);
     subscribe("right_pr2arm_pos", rightArmPosMsg, &ROSNode::rightArmPosReceived);
     //subscribe("localizedpose", m_localizedOdomMsg, &ROSNode::localizedOdomReceived);
@@ -134,7 +136,7 @@ namespace TREX {
     _rightArmInit = false;
     _lastActiveLeftArmDispatch = 10000;
     _lastActiveRightArmDispatch = 10000;
-
+   
     // Obtain a serial chain for an arm. The call uses the left arm but they can be used interchangeably according to
     // Sachin.
     std::string pr2_configuration_str;
@@ -142,6 +144,7 @@ namespace TREX {
     _pr2Kinematics.loadString(pr2_configuration_str.c_str());
     _armSerialChain = _pr2Kinematics.getSerialChain("leftArm");
     assertTrue(_armSerialChain != NULL, "Could not retrieve serial chain for LeftArm");
+    std::cout << "Done with ROSNODE::constructor.\n";
   }
 
 
@@ -178,12 +181,31 @@ namespace TREX {
 
   void ROSNode::leftArmPosReceived() {
     _leftArmInit = true;
-    //std::cout << "Got left arm message " 
-    //      << " turretAngle " << leftArmPosMsg.turretAngle << std::endl;
+    /*
+    if(_leftArmActive) {
+      _leftGripGapDelta = abs(leftArmPosMsg.gripperGapCmd-_lastLeftGripGapPos);
+      _lastLeftGripGapPos = leftArmPosMsg.gripperGapCmd;
+      //std::cout << "Got left arm message " 
+      //      << " turretAngle " << leftArmPosMsg.turretAngle << std::endl;
+    } else {
+      _leftGripGapDelta = 100.0;
+      _lastLeftGripGapPos = 100.0;
+    }
+    */
   }
 
   void ROSNode::rightArmPosReceived() {
     _rightArmInit = true;
+    /*
+    if(_rightArmActive) {
+      _rightGripGapDelta = abs(rightArmPosMsg.gripperGapCmd-_lastRightGripGapPos);
+      _lastRightGripGapPos = rightArmPosMsg.gripperGapCmd;
+      //std::cout << "Setting right gap delta to " << _rightGripGapDelta << std::endl;
+    } else {
+      _rightGripGapDelta = 100.0;
+      _lastRightGripGapPos = 100.0;
+    }
+    */
     //std::cout << "Got right arm message " 
     //	      << " turretAngle " << leftArmPosMsg.turretAngle << std::endl;
   }
@@ -290,7 +312,7 @@ namespace TREX {
 		 armGoal.wristRollAngle << " " <<
 		 armGoal.gripperForceCmd << " " <<
 		 armGoal.gripperGapCmd);
-	publish("right_pr2arm_set_position",armGoal);
+	publish("cmd_rightarmconfig",armGoal);
 	
 	_lastActiveRightArmDispatch = currentTick;
 	_rightArmActive = true;
@@ -306,7 +328,7 @@ namespace TREX {
 		 armGoal.wristRollAngle << " " <<
 		 armGoal.gripperForceCmd << " " <<
 		 armGoal.gripperGapCmd);
-	publish("left_pr2arm_set_position",armGoal);
+	publish("cmd_leftarmconfig",armGoal);
 	_leftArmActive = true;
 	_lastActiveLeftArmDispatch = currentTick;
 	_lastLeftArmGoal = armGoal;
@@ -406,7 +428,7 @@ namespace TREX {
     robotPose.x = 0;
     robotPose.y = 0;
     robotPose.yaw = 0;
-    robotPose.frame = tf.lookup("FRAMEID_ROBOT");
+    robotPose.frame = tf.nameClient.lookup("FRAMEID_ROBOT");
     robotPose.time = laserMsg.header.stamp.sec * 1000000000ULL + 
       laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
     try {
@@ -420,6 +442,8 @@ namespace TREX {
     } catch(libTF::TransformReference::ExtrapolateException& ex) {
       debugMsg("ROSNode::VS", 
 	       "libTF::Quaternion3D::ExtrapolateException occured");
+    } catch(libTF::TransformReference::ConnectivityException& ce) {
+      puts("no transform parent for vehicle state");
     }
 
     
@@ -477,7 +501,7 @@ namespace TREX {
     obs1->push_back("acGripperForceCmd", new IntervalDomain(leftArmPosMsg.gripperForceCmd));
     obs1->push_back("acGripperGapCmd", new IntervalDomain(leftArmPosMsg.gripperGapCmd));
     buff.push_back(obs1);
-    if(currentTick != _lastActiveLeftArmDispatch) {
+    if(currentTick > (_lastActiveLeftArmDispatch+5) || _generateFirstObservation) {
       if(_generateFirstObservation || 
 	 (_leftArmActive &&
 	  fabs(leftArmPosMsg.turretAngle-_lastLeftArmGoal.turretAngle) < AllowableArmError &&
@@ -487,7 +511,9 @@ namespace TREX {
 	  fabs(leftArmPosMsg.forearmRollAngle-_lastLeftArmGoal.forearmRollAngle) < AllowableArmError &&
 	  fabs(leftArmPosMsg.wristPitchAngle-_lastLeftArmGoal.wristPitchAngle) < AllowableArmError &&
 	  fabs(leftArmPosMsg.wristRollAngle-_lastLeftArmGoal.wristRollAngle) < AllowableArmError &&
-	  fabs(leftArmPosMsg.gripperGapCmd-_lastLeftArmGoal.gripperGapCmd) < AllowableGraspError)) {
+          abs(leftArmPosMsg.gripperForceCmd) < GripperForceThreshold)) {
+          //_leftGripGapDelta < AllowableGraspDeltaError && //)) {
+          //fabs(leftArmPosMsg.gripperGapCmd-_lastLeftArmGoal.gripperGapCmd) < AllowableGraspError)) {
 	
 	std::cout << "Pushing left arm inactive observation.\n";
 	
@@ -525,7 +551,8 @@ namespace TREX {
     obs1->push_back("acGripperGapCmd", new IntervalDomain(rightArmPosMsg.gripperGapCmd));
     buff.push_back(obs1);
 
-    if(currentTick != _lastActiveRightArmDispatch) {
+    if(currentTick > (_lastActiveRightArmDispatch+5) || _generateFirstObservation) {
+      //std::cout << rightArmPosMsg.gripperForceCmd << std::endl;
       if(_generateFirstObservation ||
 	 (_rightArmActive &&
 	  fabs(rightArmPosMsg.turretAngle-_lastRightArmGoal.turretAngle) < AllowableArmError &&
@@ -535,7 +562,9 @@ namespace TREX {
 	  fabs(rightArmPosMsg.forearmRollAngle-_lastRightArmGoal.forearmRollAngle) < AllowableArmError &&
 	  fabs(rightArmPosMsg.wristPitchAngle-_lastRightArmGoal.wristPitchAngle) < AllowableArmError &&
 	  fabs(rightArmPosMsg.wristRollAngle-_lastRightArmGoal.wristRollAngle) < AllowableArmError &&
-	  fabs(rightArmPosMsg.gripperGapCmd-_lastRightArmGoal.gripperGapCmd) < AllowableGraspError)) {
+          abs(rightArmPosMsg.gripperForceCmd) < GripperForceThreshold)) {
+          //_rightGripGapDelta < AllowableGraspDeltaError && //)) {
+          //fabs(rightArmPosMsg.gripperGapCmd-_lastRightArmGoal.gripperGapCmd) < AllowableGraspError)) {
 	std::cout << "Pushing right arm inactive observation.\n";       	
 	
 	ObservationByValue* obs2 = new ObservationByValue("moveRightArm", "MoveArm.Inactive");
@@ -574,7 +603,7 @@ namespace TREX {
     ObservationByValue* obs = NULL;
     Frame f;
     ConvertArmToEndEffectorFrame(rightArmPosMsg,
-				 tf.lookup("FRAMEID_ARM_R_SHOULDER"),
+				 tf.nameClient.lookup("FRAMEID_ARM_R_SHOULDER"),
 				 f);
     
     obs = new ObservationByValue("rightEndEffectorState", "EndEffectorState.Holds");
@@ -599,7 +628,7 @@ namespace TREX {
     ObservationByValue* obs = NULL;
     Frame f;
     ConvertArmToEndEffectorFrame(leftArmPosMsg,
-				 tf.lookup("FRAMEID_ARM_L_SHOULDER"),
+				 tf.nameClient.lookup("FRAMEID_ARM_L_SHOULDER"),
 				 f);
     
     obs = new ObservationByValue("leftEndEffectorState", "EndEffectorState.Holds");
@@ -689,7 +718,8 @@ namespace TREX {
 //   }
 
   void ROSNode::laserReceived() {
-
+    
+    //printf("Got laser.\n");
 
     m_initialized = true;
 
@@ -711,75 +741,62 @@ namespace TREX {
     
     unsigned long long newScanTime = newscan.header.stamp.to_ull();
 
-    // Iterate through the buffered scans, trying to interpolate each one
-    for(std::list<LaserScan>::iterator it = this->buffered_laser_scans.begin();
-	it != this->buffered_laser_scans.end();
-	it++)
-      {
-	// For each beam, convert to cartesian in the laser's frame, then convert
-	// to the map frame and store the result in the the laser_scans list
-	
-	laser_pts_t pts;
-	pts.pts_num = it->get_ranges_size();
-	pts.pts = new double[pts.pts_num*2];
-	assert(pts.pts);
-	pts.ts = it->header.stamp;
-	
-	libTF::TFPose2D local,global;
-	local.frame = it->header.frame_id;
-	local.time = it->header.stamp.to_ull();
-	//local.time = it->header.stamp.sec * 1000000000ULL + 
-	//  it->header.stamp.nsec;
-	float b=it->angle_min;
-	float* r=it->ranges;
-	unsigned int i;
-	unsigned int cnt=0;
-	for(i=0;i<it->get_ranges_size();
-	    i++,r++,b+=it->angle_increment)
-	  {
-	    // TODO: take out the bogus epsilon range_max check, after the
-	    // hokuyourg_player node is fixed
-	    if(((*r) >= this->laser_maxrange) || 
-	       ((it->range_max > 0.1) && ((*r) >= it->range_max)) ||
-	       ((*r) <= 0.01))
-	      continue;
-	    
-	    local.x = (*r)*cos(b);
-	    local.y = (*r)*sin(b);
-	    local.yaw = 0;
-	    try
-	      {
-		global = this->tf.transformPose2D("FRAMEID_MAP", local);
-	      }
-	    catch(libTF::TransformReference::LookupException& ex)
-	      {
-		puts("no global->local Tx yet");
-		delete[] pts.pts;
-		return;
-	      }
-	    catch(libTF::TransformReference::ExtrapolateException& ex)
-	      {
-		puts("extrapolation required");
-		delete[] pts.pts;
-		break;
-	      }
-	    
-	    // Copy in the result
-	    pts.pts[2*cnt] = global.x;
-	    pts.pts[2*cnt+1] = global.y;
-	    cnt++;
-	  }
-	// Did we break early?
-	if(i < it->get_ranges_size())
-	  continue;
-	else
-	  {
-	    pts.pts_num = cnt;
-	    this->laser_scans.push_back(pts);
-	    it = this->buffered_laser_scans.erase(it);
-	    it--;
-	  }
-      }
+   // Iterate through the buffered scans, trying to interpolate each one
+  for(std::list<std_msgs::LaserScan>::iterator it = this->buffered_laser_scans.begin();
+      it != this->buffered_laser_scans.end();
+      it++)
+  {
+    // Is this scan too old?
+    if((laserMsg.header.stamp - it->header.stamp) > this->laser_buffer_time)
+    {
+      it = this->buffered_laser_scans.erase(it);
+      it--;
+      continue;
+    }
+
+
+    // Assemble a point cloud, in the laser's frame
+    std_msgs::PointCloudFloat32 local_cloud;
+    projector_.projectLaser(*it, local_cloud, laser_maxrange);
+    
+    // Convert to a point cloud in the map frame
+    std_msgs::PointCloudFloat32 global_cloud;
+
+    try
+    {
+      global_cloud = this->tf.transformPointCloud("FRAMEID_MAP", local_cloud);
+    }
+    catch(libTF::TransformReference::LookupException& ex)
+    {
+      puts("no global->local Tx yet");
+      return;
+    }
+    catch(libTF::TransformReference::ExtrapolateException& ex)
+    {
+      //      puts("extrapolation required");
+      continue;
+    } catch(libTF::TransformReference::ConnectivityException& ce) {
+      puts("no transform parent for point cloud");
+    }
+
+    // Convert from point cloud to array of doubles formatted XYXYXY...
+    // TODO: increase efficiency by reducing number of data transformations
+    laser_pts_t pts;
+    pts.pts_num = global_cloud.get_pts_size();
+    pts.pts = new double[pts.pts_num*2];
+    assert(pts.pts);
+    pts.ts = global_cloud.header.stamp;
+    for(unsigned int i=0;i<global_cloud.get_pts_size();i++)
+    {
+      pts.pts[2*i] = global_cloud.pts[i].x;
+      pts.pts[2*i+1] = global_cloud.pts[i].y;
+    }
+
+    // Add the new point set to our list
+    this->laser_scans.push_back(pts);
+    it = this->buffered_laser_scans.erase(it);
+    it--;
+  }
     
     // Remove anything that's too old from the laser_scans list
     // Also count how many points we have

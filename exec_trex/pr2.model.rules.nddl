@@ -28,11 +28,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-float OPEN_GRIPPER_GAP = 0.10;
-float OPEN_GRIPPER_FORCE = 100.0;
+float OPEN_GRIPPER_GAP = 0.20;
+float OPEN_GRIPPER_FORCE = 200.0;
 
-float CLOSED_GRIPPER_GAP = 0.02;
-float CLOSED_GRIPPER_FORCE = 100.0;
+float CLOSED_GRIPPER_GAP = 0.00;
+float CLOSED_GRIPPER_FORCE = 200.0;
 
 
 
@@ -380,18 +380,18 @@ GraspObject::Active {
     temporalDistance(opengrip1.end, [2, +inf], me.start);
     //opengrip1 before me;
     
-    eq(me.des_rot1_1, 1.0);
+    eq(me.des_rot1_1, 0.0);
     eq(me.des_rot1_2 , 0.0);
-    eq(me.des_rot1_3 , 0.0);
+    eq(me.des_rot1_3 , 1.0);
     eq(me.des_rot2_1 , 0.0);
     eq(me.des_rot2_2 , 1.0);
     eq(me.des_rot2_3 , 0.0);
-    eq(me.des_rot3_1 , 0.0);
+    eq(me.des_rot3_1 , -1.0);
     eq(me.des_rot3_2 , 0.0);
-    eq(me.des_rot3_3 , 1.0);
-    eq(me.des_x , .563689);
-    eq(me.des_y , -.367447);
-    eq(me.des_z , -.369594);
+    eq(me.des_rot3_3 , 0.0);
+    eq(me.des_x , .650427);
+    eq(me.des_y , -.340284);
+    eq(me.des_z , -.304603);
 
     /*
     bool graspPosOk;
@@ -416,7 +416,7 @@ GraspObject::Active {
     contains(Actions.SetMoveArmGoalRelative armpivot);
     eq(armpivot.isLeft, false);
     eq(armpivot.turretAngle,-1.0);
-    eq(armpivot.shoulderLiftAngle,-.5);
+    eq(armpivot.shoulderLiftAngle,-.1);
     temporalDistance(closegrip.end, [2, +inf], armpivot.start);
     //closegrip before armpivot;
     
@@ -590,12 +590,31 @@ MoveEndEffector::Active {
 
 Actions::SetEndEffectorGoal{
   // Bind to prior state to obtain current distance from target pose
+  contained_by(MoveEndEffector.Active m);
+  eq(isLeft, m.object.isLeft);
+  eq(x, m.x);
+  eq(y, m.y);
+  eq(z, m.z); 
+  eq(rot1_1, m.rot1_1);
+  eq(rot1_2, m.rot1_2);
+  eq(rot1_3, m.rot1_3);
+  eq(rot2_1, m.rot2_1);
+  eq(rot2_2, m.rot2_2);
+  eq(rot2_3, m.rot2_3);
+  eq(rot3_1, m.rot3_1);
+  eq(rot3_2, m.rot3_2);
+  eq(rot3_3, m.rot3_3);
+
   met_by(EndEffectorState.Holds pos);
   eq(pos.object.isLeft, isLeft);
   float distanceToGo;
   bool done;
   calcDistance(distanceToGo, pos.x, pos.y, pos.z, x, y, z);
   testLEQ(done, distanceToGo, END_EFFECTOR_POSITION_ERROR);
+
+  // Hack
+  int l_end;
+  concurrent(l_end, m.end);
 
   if(done == false){
     starts(EndEffectorGoal.Holds g);
@@ -634,8 +653,9 @@ Actions::SetEndEffectorGoal{
   }
 
   if(done == true){
-    ends(MoveEndEffector.Active m);
-    eq(m.object.isLeft, isLeft);
+    //concurrent(end, m.end);
+    concurrent(end, l_end);
+    /*
     eq(x, m.x);
     eq(y, m.y);
     eq(z, m.z); 
@@ -648,6 +668,7 @@ Actions::SetEndEffectorGoal{
     eq(rot3_1, m.rot3_1);
     eq(rot3_2, m.rot3_2);
     eq(rot3_3, m.rot3_3);
+    */
   }
 }
 
@@ -699,14 +720,15 @@ MoveArm::Inactive {
   addEq(acForearmRollAngle,  [-.15 , .15], desForearmRollAngle);
   addEq(acWristPitchAngle, [-.15 , .15], desWristPitchAngle);
   addEq(acWristRollAngle,  [-.15 , .15], desWristRollAngle);
-  addEq(acGripperForceCmd,  [-25 , 25], desGripperForceCmd);
-  addEq(acGripperGapCmd,  [-.015 , .015], desGripperGapCmd);
+  //addEq(acGripperForceCmd,  [-25 , 25], desGripperForceCmd);
+  //addEq(acGripperGapCmd,  [-.015 , .015], desGripperGapCmd);
 
 }
 
 MoveArm::Active {
   contained_by(MoveBase.Inactive wp);
-  contained_by(MoveEndEffector.Inactive);
+  contained_by(MoveEndEffector.Inactive me);
+  eq(me.object.isLeft, object.isLeft);
   met_by(Inactive p);
   meets(Inactive s);
 }

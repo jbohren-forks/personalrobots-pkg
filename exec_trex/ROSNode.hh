@@ -20,6 +20,9 @@
 // For transform support
 #include <rosTF/rosTF.h>
 
+//Laser projection
+#include "laser_scan_utils/laser_scan.h"
+
 //for KDL
 #include <robot_kinematics/robot_kinematics.h>
 
@@ -161,6 +164,8 @@ namespace TREX{
     void laserReceived();
     std_msgs::LaserScan laserMsg;
     
+    laser_scan::LaserProjection projector_;
+
     // Vehcile state updates
     void rcs_cb();
     //void localizedOdomReceived();
