@@ -1163,14 +1163,13 @@
       </map>
       <geometry name="pr2_torso_mesh_file">
         <mesh filename="torso" />
-        <cylinder radius="3" length="99" />
       </geometry>
     </visual> 
 
     <collision>
       <origin xyz="torso_center_box_center_offset_x 0 torso_size_z/2+torso_center_box_center_offset_z" rpy="0 0 0" />
       <geometry name="torso_collision_geom">
-      <box xyz=" torso_size_x torso_size_y torso_size_z " />
+        <box xyz=" torso_size_x torso_size_y torso_size_z " />
       </geometry>
     </collision> 
   </link>
