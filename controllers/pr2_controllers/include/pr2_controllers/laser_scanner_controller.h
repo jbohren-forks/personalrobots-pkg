@@ -50,9 +50,9 @@ class LaserScannerController : public Controller
 {
 public:
   
-  enum ScanMode
-  {NO_PROFILE,SAWTOOTH,SINEWAVE
-
+  enum LaserControllerMode
+  {
+    MANUAL,SAWTOOTH,SINEWAVE,DYNAMIC_SAWTOOTH,DYNAMIC_SINEWAVE,AUTO_LEVEL
   };
 
   /*!
@@ -135,23 +135,30 @@ public:
    */
   void setSinewaveProfile(double period, double amplitude,double offset);
   
-  /*!
-   * \brief Get dynamically calculated sinewave position based on time
-   *\param double time_from_start Time elapsed since beginning of current period
-   */  
-  void setSinewave(double time_from_start);
-  
-   /*!
-   * \brief Get dynamically calculated sawtooth position based on time
-   *\param double time_from_start Time elapsed since beginning of current period
-   */  
-  void setSawtooth(double time_from_start);
+  void startAutoLevelSequence();
+
+  bool checkAutoLevelStatus();
+
+  bool checkAutoLevelResult();
 
 private:
   /*!
    * \brief Actually issue torque set command of the joint motor.
    */
   void setJointEffort(double torque);
+
+  /*!
+   * \brief Get dynamically calculated sinewave position based on time
+   *\param double time_from_start Time elapsed since beginning of current period
+   */  
+  void setDynamicSinewave(double time_from_start);
+  
+   /*!
+   * \brief Get dynamically calculated sawtooth position based on time
+   *\param double time_from_start Time elapsed since beginning of current period
+   */  
+  void setDynamicSawtooth(double time_from_start);
+
 
   mechanism::Joint* joint_; /*!< Joint we're controlling>*/
   JointPositionController joint_position_controller_; /*!< Internal PID controller>*/
@@ -169,6 +176,9 @@ private:
   double amplitude_;/*!<Amplitude for use in dynamic profile calculation>*/
   double offset_;/*!<Offset for use in dynamic profile calculation>*/
   int current_profile_;/*!<Profile type for use in dynamic profile calculation>*/
+
+  LaserControllerMode current_mode_; /*!<Indicates the current status of the controller>*/
+  bool auto_level_result_; /*!<Indicates whether the auto_level_routine finished correct>*/
 
 };
 

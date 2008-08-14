@@ -53,7 +53,7 @@ LaserScannerController::LaserScannerController()
   //Clear arrays
   profile_locations_ = NULL;
   profile_dt_ = NULL;
-  current_profile_=NO_PROFILE;
+  current_mode_ = MANUAL;
 }
 
 LaserScannerController::~LaserScannerController()
@@ -92,7 +92,7 @@ void LaserScannerController::initXml(mechanism::Robot *robot, TiXmlElement *conf
 void LaserScannerController::setCommand(double command)
 {
   command_ = command;
-  use_profile_ = false; //Disable automatic profile mode
+  current_mode_ = MANUAL;
 }
 
 // Return the current position command
@@ -110,43 +110,47 @@ double LaserScannerController::getActual()
 void LaserScannerController::update()
 {
   double time = robot_->hw_->current_time_;
-   if(use_profile_ && current_profile_ == NO_PROFILE)//Use predefined location array
-  {
-  
-//  if(use_profile_)
-//  {
-    joint_position_controller_.setCommand(profile_locations_[profile_index_]); //Issue position command
 
-    //Check if enough time has elapsed to move to next set point
-    if(time-time_of_last_point_ >= profile_dt_[profile_index_])
+  switch(current_mode_)
+  {
+    case MANUAL:
+      joint_position_controller_.setCommand(command_);
+      break;
+    case SAWTOOTH:
+    case SINEWAVE:
+      joint_position_controller_.setCommand(profile_locations_[profile_index_]); //Issue position command
+
+      //Check if enough time has elapsed to move to next set point
+      if(time-time_of_last_point_ >= profile_dt_[profile_index_])
       {  
-    #ifdef DEBUG          
-    printf("DLL : %f %f\n",profile_locations_[profile_index_],time- time_of_last_point_);
-    #endif
-      time_of_last_point_ = time;
+        #ifdef DEBUG          
+        printf("DLL : %f %f\n",profile_locations_[profile_index_],time- time_of_last_point_);
+        #endif
+        time_of_last_point_ = time;
 	   
-       //Advance time index
-  		 if(profile_index_ == (profile_length_-1))
-        {
+        //Advance time index
+    		 if(profile_index_ == (profile_length_-1))
+         {
   			  profile_index_ = 0; //Restart profile
   			  cycle_start_time_ = time;
-  			} else profile_index_++;
-  			 
+  			} else profile_index_++;  		 
       }
-  }
-  
-  else if(use_profile_ && current_profile_!=NO_PROFILE)
-  {
-    //Advance to next period
-    if(time-cycle_start_time_>period_) cycle_start_time_ = time;    
+      break;
+    case DYNAMIC_SAWTOOTH:
+    case DYNAMIC_SINEWAVE:
+      //Advance to next period
+      if(time-cycle_start_time_>period_) cycle_start_time_ = time;    
 
-    //Issue command based on time from start of cycle    
-    if(current_profile_==SINEWAVE) setSinewave(time-cycle_start_time_);
-    else if(current_profile_==SAWTOOTH) setSawtooth(time-cycle_start_time_);
-  }
-  
-  else joint_position_controller_.setCommand(command_);
+      //Issue command based on time from start of cycle    
+      if(current_profile_==SINEWAVE) setDynamicSinewave(time-cycle_start_time_);
+      else if(current_profile_==SAWTOOTH) setDynamicSawtooth(time-cycle_start_time_);
 
+      break;
+    case AUTO_LEVEL:
+      break;
+    default:
+      break;
+  }
   joint_position_controller_.update(); //Update lower controller
 
   last_time_ = time; //Keep track of last time for update
@@ -169,13 +173,13 @@ void LaserScannerController::setSawtoothProfile(double period, double amplitude,
   profile_length_ = 0;
   profile_index_= 0; 
   cycle_start_time_ = robot_->hw_->current_time_;
-
-  use_profile_ = true;
+  
+  current_mode_ = DYNAMIC_SAWTOOTH;
 }
 
 
 //Set mode to use sawtooth profile
-void LaserScannerController::setSawtooth(double time_from_start)
+void LaserScannerController::setDynamicSawtooth(double time_from_start)
 {
   double time_from_peak = fmod(time_from_start,(period_*4));
   double command = (time_from_peak-cycle_start_time_)/period_*amplitude_;  
@@ -195,10 +199,6 @@ void LaserScannerController::setSawtooth(double time_from_start)
   {
     command = -amplitude_ + command + offset_;
   }
-  else if (time_from_start>period_) //Reset
-  {  
-    command = command + offset_;
-  }
   
   joint_position_controller_.setCommand(profile_locations_[profile_index_]);
 }
@@ -211,7 +211,7 @@ void LaserScannerController::setSinewaveProfile(double period, double amplitude,
   profile_length_ = 0;
   profile_index_= 0; 
   cycle_start_time_ = robot_->hw_->current_time_;
-  current_profile_ = SINEWAVE;//Indicate profile
+  current_mode_ = DYNAMIC_SINEWAVE;
 
   use_profile_ = true;
   
@@ -221,7 +221,7 @@ void LaserScannerController::setSinewaveProfile(double period, double amplitude,
 }
 
 //Get sinewave based on current time
-void LaserScannerController::setSinewave(double time_from_start)
+void LaserScannerController::setDynamicSinewave(double time_from_start)
 {
   double command;
   
@@ -274,9 +274,7 @@ void LaserScannerController::setSawtoothProfile(double period, double amplitude,
   profile_index_= 0; //Start at beginning
   time_of_last_point_ = robot_->hw_->current_time_;
 
-  current_profile_ = NO_PROFILE; //Disable dynamic profile
-  use_profile_ = true;
-
+  current_mode_ = SAWTOOTH;
 }
  
 //Set mode to use Sinewave profile
@@ -327,9 +325,9 @@ void LaserScannerController::setSinewaveProfile(double period, double amplitude,
   { 
     temp_value = asin(profile_locations_[i]); //Calculate time 
     profile_dt_[i-1] = fabs(temp_value-last_temp_value)*period/(2*M_PI); //Calculate dt, scale by period
-//    if(profile_dt_[i-1]>profile_dt_[0]*3) profile_dt_[i-1]=profile_dt_[i-2];//smoothing
     profile_locations_[i] = temp_value*amplitude + offset; //Scale goal location by amplitude
     last_temp_value = temp_value;
+
     #ifdef DEBUG           
     printf("*** test %u %f %f\n",i,profile_dt_[i-1],profile_locations_[i]);
     #endif
@@ -343,14 +341,29 @@ void LaserScannerController::setSinewaveProfile(double period, double amplitude,
     printf("*** test %u %f %f\n",i,profile_dt_[i],profile_locations_[i]);
   }
   #endif
+
  //Reset profile settings
   profile_length_ = total_elements; //Keep track of profile length
   profile_index_= 0; //Start at beginning
   time_of_last_point_ = robot_->hw_->current_time_;
   cycle_start_time_ = robot_->hw_->current_time_;
 
-  use_profile_ = true;
-  current_profile_ = NO_PROFILE; //Disable dynamic profile
+  current_mode_ = SINEWAVE;
+}
+
+void LaserScannerController::startAutoLevelSequence()
+{
+  current_mode_=AUTO_LEVEL;
+}
+
+bool LaserScannerController::checkAutoLevelStatus()
+{
+  return (current_mode_==AUTO_LEVEL);
+}
+
+bool LaserScannerController::checkAutoLevelResult()
+{
+  return auto_level_result_;
 }
 
 
@@ -359,6 +372,7 @@ LaserScannerControllerNode::LaserScannerControllerNode()
 {
   c_ = new LaserScannerController();
 }
+
 
 LaserScannerControllerNode::~LaserScannerControllerNode()
 {
