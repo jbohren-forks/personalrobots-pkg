@@ -44,13 +44,6 @@ class IssueKinematicPlan : public ros::node {
 public:
 
   IssueKinematicPlan(void) : ros::node("issue_kinematic_plan") {
-    advertise<std_msgs::PR2Arm>("cmd_leftarmconfig");
-    advertise<std_msgs::PR2Arm>("cmd_rightarmconfig");
-    subscribe("left_pr2arm_pos",  leftArmPos,  &IssueKinematicPlan::currentLeftArmPos);
-    subscribe("right_pr2arm_pos", rightArmPos, &IssueKinematicPlan::currentRightArmPos);
-    
-    subscribe("right_pr2arm_set_position", rightArmGoal, &IssueKinematicPlan::moveRightArm);	
-    subscribe("left_pr2arm_set_position", leftArmGoal, &IssueKinematicPlan::moveLeftArm);
 
     _leftArmExecutingMove = false;
     _leftArmMoveStates = 0;
@@ -59,6 +52,14 @@ public:
     _rightArmExecutingMove = false;
     _rightArmMoveStates = 0;
     _rightArmStateSent = 0;
+
+    advertise<std_msgs::PR2Arm>("cmd_leftarmconfig");
+    advertise<std_msgs::PR2Arm>("cmd_rightarmconfig");
+    subscribe("left_pr2arm_pos",  leftArmPos,  &IssueKinematicPlan::currentLeftArmPos);
+    subscribe("right_pr2arm_pos", rightArmPos, &IssueKinematicPlan::currentRightArmPos);
+    
+    subscribe("right_pr2arm_set_position", rightArmGoal, &IssueKinematicPlan::moveRightArm);	
+    subscribe("left_pr2arm_set_position", leftArmGoal, &IssueKinematicPlan::moveLeftArm);
   }
 
 private:
@@ -70,15 +71,15 @@ private:
       //l1 norm for now
 
       double sum_joint_diff = 0.0;
-      sum_joint_diff += abs(leftArmPos.turretAngle-_leftArmCommand.turretAngle);
-      sum_joint_diff += abs(leftArmPos.shoulderLiftAngle-_leftArmCommand.shoulderLiftAngle);
-      sum_joint_diff += abs(leftArmPos.upperarmRollAngle-_leftArmCommand.upperarmRollAngle);
-      sum_joint_diff += abs(leftArmPos.elbowAngle-_leftArmCommand.elbowAngle);
-      sum_joint_diff += abs(leftArmPos.forearmRollAngle-_leftArmCommand.forearmRollAngle);
-      sum_joint_diff += abs(leftArmPos.wristPitchAngle-_leftArmCommand.wristPitchAngle);
-      sum_joint_diff += abs(leftArmPos.wristRollAngle-_leftArmCommand.wristRollAngle);
+      sum_joint_diff += fabs(leftArmPos.turretAngle-_leftArmCommand.turretAngle);
+      sum_joint_diff += fabs(leftArmPos.shoulderLiftAngle-_leftArmCommand.shoulderLiftAngle);
+      sum_joint_diff += fabs(leftArmPos.upperarmRollAngle-_leftArmCommand.upperarmRollAngle);
+      sum_joint_diff += fabs(leftArmPos.elbowAngle-_leftArmCommand.elbowAngle);
+      sum_joint_diff += fabs(leftArmPos.forearmRollAngle-_leftArmCommand.forearmRollAngle);
+      sum_joint_diff += fabs(leftArmPos.wristPitchAngle-_leftArmCommand.wristPitchAngle);
+      sum_joint_diff += fabs(leftArmPos.wristRollAngle-_leftArmCommand.wristRollAngle);
 
-      double gap_diff = abs(leftArmPos.gripperGapCmd-_leftArmCommand.gripperGapCmd);
+      double gap_diff = fabs(leftArmPos.gripperGapCmd-_leftArmCommand.gripperGapCmd);
 
       if(L1JointDiffMax < sum_joint_diff && L1GripDiffMax < gap_diff) {
 	_leftArmStateSent++;
@@ -102,20 +103,29 @@ private:
   void currentRightArmPos(void) {
     if(_rightArmExecutingMove) {
       
+      //std::cout << "Right " << _rightArmExecutingMove << std::endl;
+      
       //l1 norm for now
       
+      //std::cout << "Right arm "
+      //         << rightArmPos.turretAngle << " versus " << _rightArmCommand.turretAngle << std::endl;
+ 
       double sum_joint_diff = 0.0;
-      sum_joint_diff += abs(rightArmPos.turretAngle-_rightArmCommand.turretAngle);
-      sum_joint_diff += abs(rightArmPos.shoulderLiftAngle-_rightArmCommand.shoulderLiftAngle);
-      sum_joint_diff += abs(rightArmPos.upperarmRollAngle-_rightArmCommand.upperarmRollAngle);
-      sum_joint_diff += abs(rightArmPos.elbowAngle-_rightArmCommand.elbowAngle);
-      sum_joint_diff += abs(rightArmPos.forearmRollAngle-_rightArmCommand.forearmRollAngle);
-      sum_joint_diff += abs(rightArmPos.wristPitchAngle-_rightArmCommand.wristPitchAngle);
-      sum_joint_diff += abs(rightArmPos.wristRollAngle-_rightArmCommand.wristRollAngle);
+      sum_joint_diff += fabs(rightArmPos.turretAngle-_rightArmCommand.turretAngle);
+      sum_joint_diff += fabs(rightArmPos.shoulderLiftAngle-_rightArmCommand.shoulderLiftAngle);
+      sum_joint_diff += fabs(rightArmPos.upperarmRollAngle-_rightArmCommand.upperarmRollAngle);
+      sum_joint_diff += fabs(rightArmPos.elbowAngle-_rightArmCommand.elbowAngle);
+      sum_joint_diff += fabs(rightArmPos.forearmRollAngle-_rightArmCommand.forearmRollAngle);
+      sum_joint_diff += fabs(rightArmPos.wristPitchAngle-_rightArmCommand.wristPitchAngle);
+      sum_joint_diff += fabs(rightArmPos.wristRollAngle-_rightArmCommand.wristRollAngle);
       
-      double gap_diff = abs(rightArmPos.gripperGapCmd-_rightArmCommand.gripperGapCmd);
+      //std::cout << "Sum joint diff " << sum_joint_diff << std::endl;
       
-      if(L1JointDiffMax < sum_joint_diff && L1GripDiffMax < gap_diff) {
+      double gap_diff = fabs(rightArmPos.gripperGapCmd-_rightArmCommand.gripperGapCmd);
+      
+      //std::cout << "Gap diff " << gap_diff << std::endl;
+
+      if(L1JointDiffMax > sum_joint_diff && L1GripDiffMax > gap_diff) {
 	_rightArmStateSent++;
 	if(_rightArmStateSent == _rightArmMoveStates) {
 	  //we're done
@@ -138,20 +148,20 @@ private:
     robot_srvs::KinematicMotionPlan::request req;
     
     req.model_id = "pr2::leftArm";
-    req.start_state.set_vals_size(32);
+    req.start_state.set_vals_size(45);
     
     //initializing full value state
     for (unsigned int i = 0 ; i < req.start_state.vals_size ; ++i) {
       req.start_state.vals[i] = 0.0;
     }
 
-    req.start_state.vals[18] = leftArmPos.turretAngle;
-    req.start_state.vals[19] = leftArmPos.shoulderLiftAngle;
-    req.start_state.vals[20] = leftArmPos.upperarmRollAngle;
-    req.start_state.vals[21] = leftArmPos.elbowAngle;
-    req.start_state.vals[22] = leftArmPos.forearmRollAngle;
-    req.start_state.vals[23] = leftArmPos.wristPitchAngle;
-    req.start_state.vals[24] = leftArmPos.wristRollAngle;
+    req.start_state.vals[22] = leftArmPos.turretAngle;
+    req.start_state.vals[23] = leftArmPos.shoulderLiftAngle;
+    req.start_state.vals[24] = leftArmPos.upperarmRollAngle;
+    req.start_state.vals[25] = leftArmPos.elbowAngle;
+    req.start_state.vals[26] = leftArmPos.forearmRollAngle;
+    req.start_state.vals[27] = leftArmPos.wristPitchAngle;
+    req.start_state.vals[28] = leftArmPos.wristRollAngle;
     //req.start_state.vals[25] = leftArmPos.gripperForceCmd;
     //req.start_state.vals[26] = leftArmPos.gripperGapCmd;
     
@@ -197,20 +207,20 @@ private:
     robot_srvs::KinematicMotionPlan::request req;
     
     req.model_id = "pr2::rightArm";
-    req.start_state.set_vals_size(32);
+    req.start_state.set_vals_size(45);
     
     //initializing full value state
     for (unsigned int i = 0 ; i < req.start_state.vals_size ; ++i) {
       req.start_state.vals[i] = 0.0;
     }
 
-    req.start_state.vals[25] = rightArmPos.turretAngle;
-    req.start_state.vals[26] = rightArmPos.shoulderLiftAngle;
-    req.start_state.vals[27] = rightArmPos.upperarmRollAngle;
-    req.start_state.vals[28] = rightArmPos.elbowAngle;
-    req.start_state.vals[29] = rightArmPos.forearmRollAngle;
-    req.start_state.vals[30] = rightArmPos.wristPitchAngle;
-    req.start_state.vals[31] = rightArmPos.wristRollAngle;
+    req.start_state.vals[33] = rightArmPos.turretAngle;
+    req.start_state.vals[34] = rightArmPos.shoulderLiftAngle;
+    req.start_state.vals[35] = rightArmPos.upperarmRollAngle;
+    req.start_state.vals[36] = rightArmPos.elbowAngle;
+    req.start_state.vals[37] = rightArmPos.forearmRollAngle;
+    req.start_state.vals[38] = rightArmPos.wristPitchAngle;
+    req.start_state.vals[39] = rightArmPos.wristRollAngle;
     //req.start_state.vals[25] = rightArmPos.gripperForceCmd;
     //req.start_state.vals[26] = rightArmPos.gripperGapCmd;
     
@@ -240,6 +250,7 @@ private:
     //now we have to execute the plan
 
     if(nstates > 0) {
+      std::cout << "Number of vals in zero-ith state " << _rightPlanRes.path.states[0].get_vals_size() << std::endl;
       _rightArmExecutingMove = true;
       _rightArmMoveStates = nstates;
       _rightArmStateSent = 0;
@@ -266,6 +277,15 @@ private:
     armCom.forearmRollAngle = res.path.states[stateNum].vals[4];
     armCom.wristPitchAngle = res.path.states[stateNum].vals[5];
     armCom.wristRollAngle = res.path.states[stateNum].vals[6];  
+  
+    std::cout << "Setting state " << stateNum << " " 
+              << res.path.states[stateNum].vals[0] << " "
+              << res.path.states[stateNum].vals[1] << " "
+              << res.path.states[stateNum].vals[2] << " "
+              << res.path.states[stateNum].vals[3] << " "
+              << res.path.states[stateNum].vals[4] << " "
+              << res.path.states[stateNum].vals[5] << " "
+              << res.path.states[stateNum].vals[6] << std::endl;
   }
 
 private:
