@@ -55,7 +55,9 @@ class TestNameLookup(unittest.TestCase):
         self.names = {}
         self.previously_tried_names = {}
         rospy.wait_for_service('/nameToNumber')
+        rospy.wait_for_service('/numberToName')
         s = rospy.ServiceProxy('/nameToNumber', NameToNumber)
+        rs = rospy.ServiceProxy('/numberToName', NumberToName)
 
         ## \todo change this to a random string generator
         alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890/_:-!@#$%^&*()+=\[]{}|~`\';><,.?""'
@@ -82,12 +84,17 @@ class TestNameLookup(unittest.TestCase):
             if x in self.names:
                 ## assert that we have not seen a different value before
                 self.assertEquals(resp.number,self.names[x], "two different values returned for the same string, previous value was %s vs. %d"%( self.names[x], resp.number))
+                revresp = rs.call(NumberToNameRequest(resp.number));
+                self.assertEquals(revresp.name, x, "Reverse lookup didn't work after forward lookup on repeated testing")
             else:
                 ## record this value
                 self.names[x] = resp.number
                 ##  assert that the name was not previously tested
                 self.assertEquals(x in self.previously_tried_names, False )
                 self.previously_tried_names[x] = resp.number
+
+                revresp = rs.call(NumberToNameRequest(resp.number));
+                self.assertEquals(revresp.name, x, "Reverse lookup didn't work after forward lookup on first test")
                 
             print "%s lookus up to %d"%(x, resp.number)            
         
