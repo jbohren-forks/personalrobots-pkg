@@ -25,10 +25,6 @@ robot_msgs/KinematicState start_state
 robot_msgs/KinematicState goal_state
 
 
-# The constraints the motion planner should respect
-robot_msgs/KinematicConstraint[] constraints
-
-
 # The maximum amount of time the motion planner is allowed to plan for
 float64 allowed_time
 
