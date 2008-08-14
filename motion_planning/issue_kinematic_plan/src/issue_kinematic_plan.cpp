@@ -148,6 +148,7 @@ private:
     robot_srvs::KinematicMotionPlan::request req;
     
     req.model_id = "pr2::leftArm";
+    req.threshold = 10e-06;
     req.start_state.set_vals_size(45);
     
     //initializing full value state
@@ -207,6 +208,7 @@ private:
     robot_srvs::KinematicMotionPlan::request req;
     
     req.model_id = "pr2::rightArm";
+    req.threshold = 10e-02;
     req.start_state.set_vals_size(45);
     
     //initializing full value state
