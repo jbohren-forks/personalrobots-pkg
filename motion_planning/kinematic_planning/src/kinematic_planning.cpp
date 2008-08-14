@@ -335,6 +335,7 @@ private:
 	p.svc  = new StateValidityPredicate(model);
 	p.si->setStateValidityChecker(p.svc);	
 	p.mp   = new ompl::RRT(p.si);
+	p.si->setup();
 	p.type = 0;
 	model->planners.push_back(p);
     }
