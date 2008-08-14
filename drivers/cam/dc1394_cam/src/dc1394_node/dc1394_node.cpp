@@ -41,7 +41,7 @@
 #include "std_msgs/Empty.h"
 #include "std_msgs/String.h"
 #include "dc1394_cam/dc1394_cam.h"
-#include <rosTF/rosTF.h>
+#include <namelookup/nameLookupClient.hh>
 
 #include <newmat10/newmat.h>
 #include <newmat10/newmatio.h>
@@ -149,14 +149,14 @@ public:
   }
 
 
-  Dc1394Node() : ros::node("dc1394_node"), rtf(*this)
+  Dc1394Node() : ros::node("dc1394_node"), nlc(*this)
   {
 
     dc1394_cam::init();
 
     int numCams;
     param("numCams", numCams, 1);
-    videre_frame_id_ = rtf.nameClient.lookup("FRAMEID_STEREO_BLOCK");
+    videre_frame_id_ = nlc.lookup("FRAMEID_STEREO_BLOCK");
 
     for (int i = 0; i < numCams; i++)
     {
@@ -697,7 +697,7 @@ public:
 
 
 private:
-  rosTFClient rtf;
+  nameLookupClient nlc;
   int videre_frame_id_;
 };
 
