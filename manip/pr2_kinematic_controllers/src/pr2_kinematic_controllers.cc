@@ -30,10 +30,11 @@ class Pr2KinematicControllers : public ros::node
 
 		Pr2KinematicControllers(void) : ros::node("pr2_kinematic_controller") 
 		{
-			char *c_filename = getenv("ROS_PACKAGE_PATH");
-			std::stringstream filename;
-			filename << c_filename << "/robot_descriptions/wg_robot_description/pr2/pr2.xml" ;
-			pr2_kin.loadXML(filename.str());
+			// matches send.xml
+			std::string pr2Content;
+			get_param("robotdesc/pr2",pr2Content);
+			pr2_kin.loadXMLString(pr2Content.c_str());
+
 			right_arm = pr2_kin.getSerialChain("rightArm");
 
 			step_size = 0.05;

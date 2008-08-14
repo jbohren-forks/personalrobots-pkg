@@ -6,7 +6,6 @@
     <node pkg="pr2_gazebo" type="run-pr2_gazebo.sh" args="" respawn="true" />
     <node pkg="pr2_kinematic_controllers" type="pr2_kinematic_controllers" respawn="true" />
     <node pkg="overhead_grasp_behavior" type="overhead_grasp" respawn="true" />
-    <node pkg="gmmseg" type="gmm_segment.py" args="image:=image_wrist_right" respawn="true" />
   </group>
 </launch>
 
