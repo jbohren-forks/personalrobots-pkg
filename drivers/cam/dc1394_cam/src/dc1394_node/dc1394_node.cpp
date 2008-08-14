@@ -41,6 +41,7 @@
 #include "std_msgs/Empty.h"
 #include "std_msgs/String.h"
 #include "dc1394_cam/dc1394_cam.h"
+#include <rosTF/rosTF.h>
 
 #include <newmat10/newmat.h>
 #include <newmat10/newmatio.h>
@@ -148,13 +149,14 @@ public:
   }
 
 
-  Dc1394Node() : ros::node("dc1394_node")
+  Dc1394Node() : ros::node("dc1394_node"), rtf(*this)
   {
 
     dc1394_cam::init();
 
     int numCams;
     param("numCams", numCams, 1);
+    videre_frame_id_ = rtf.nameClient.lookup("FRAMEID_STEREO_BLOCK");
 
     for (int i = 0; i < numCams; i++)
     {
@@ -624,6 +626,9 @@ public:
                 v->cloud.pts[j].x = Z;
 
                 v->cloud.chan[0].vals[j] = buf[buf_size + i];
+		v->cloud.header.stamp = ros::Time::now();
+		v->cloud.header.frame_id = videre_frame_id_;
+
                 j++;
               }
 
@@ -689,7 +694,11 @@ public:
     return true;
 
   }
-  
+
+
+private:
+  rosTFClient rtf;
+  int videre_frame_id_;
 };
 
 int main(int argc, char **argv)
