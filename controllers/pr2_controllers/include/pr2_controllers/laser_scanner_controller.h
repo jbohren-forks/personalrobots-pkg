@@ -49,6 +49,12 @@ namespace controller
 class LaserScannerController : public Controller
 {
 public:
+  
+  enum ScanMode
+  {NO_PROFILE,SAWTOOTH,SINEWAVE
+
+  };
+
   /*!
    * \brief Default Constructor of the JointController class.
    *
@@ -102,6 +108,15 @@ public:
   void setSawtoothProfile(double period, double amplitude, int num_elements, double offset);
   
   /*!
+   * \brief Set automatic profile to sawtooth, dynamically calculate desired position at each timestep
+   *\param double period Period of signal
+   *\param double amplitude Peak to peak amplitude of signal
+   *\param double offset Offset of minimum point of signal to zero
+   *\param double current_time Used to determine start of cycle
+   */
+  void setSawtoothProfile(double period, double amplitude, double offset);
+  
+  /*!
    * \brief Set automatic profile to sinewave
    *\param double period Period of signal
    *\param double amplitude Peak to peak amplitude of signal
@@ -110,7 +125,27 @@ public:
    *\param double current_time Used to determine start of cycle
    */
   void setSinewaveProfile(double period, double amplitude, int num_elements, double offset);
-
+  
+  /*!
+   * \brief Set automatic profile to sinewave, dynamically calculate desired position at each timestep
+   *\param double period Period of signal
+   *\param double amplitude Peak to peak amplitude of signal
+   *\param double offset Offset of minimum point of signal to zero
+   *\param double current_time Used to determine start of cycle
+   */
+  void setSinewaveProfile(double period, double amplitude,double offset);
+  
+  /*!
+   * \brief Get dynamically calculated sinewave position based on time
+   *\param double time_from_start Time elapsed since beginning of current period
+   */  
+  void setSinewave(double time_from_start);
+  
+   /*!
+   * \brief Get dynamically calculated sawtooth position based on time
+   *\param double time_from_start Time elapsed since beginning of current period
+   */  
+  void setSawtooth(double time_from_start);
 
 private:
   /*!
@@ -129,6 +164,11 @@ private:
   int profile_length_; /**<Number of points in one cycle>*/
   double cycle_start_time_; //**<Start of the last cycle for profile>*/
   bool use_profile_; //**<Track whether we want to servo to points or use scanning profile>**/
+  double time_of_last_point_;/*!<Time of last setpoint>*/  
+  double period_;/*!<Period for use in dynamic profile calculation>*/
+  double amplitude_;/*!<Amplitude for use in dynamic profile calculation>*/
+  double offset_;/*!<Offset for use in dynamic profile calculation>*/
+  int current_profile_;/*!<Profile type for use in dynamic profile calculation>*/
 
 };
 

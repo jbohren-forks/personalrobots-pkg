@@ -53,6 +53,7 @@ LaserScannerController::LaserScannerController()
   //Clear arrays
   profile_locations_ = NULL;
   profile_dt_ = NULL;
+  current_profile_=NO_PROFILE;
 }
 
 LaserScannerController::~LaserScannerController()
@@ -109,25 +110,45 @@ double LaserScannerController::getActual()
 void LaserScannerController::update()
 {
   double time = robot_->hw_->current_time_;
-   if(use_profile_)
+   if(use_profile_ && current_profile_ == NO_PROFILE)//Use predefined location array
   {
+  
+//  if(use_profile_)
+//  {
     joint_position_controller_.setCommand(profile_locations_[profile_index_]); //Issue position command
 
     //Check if enough time has elapsed to move to next set point
-    if(time-cycle_start_time_ >= profile_dt_[profile_index_])
+    if(time-time_of_last_point_ >= profile_dt_[profile_index_])
       {  
-      cycle_start_time_ = time;
-		  
+    #ifdef DEBUG          
+    printf("DLL : %f %f\n",profile_locations_[profile_index_],time- time_of_last_point_);
+    #endif
+      time_of_last_point_ = time;
+	   
        //Advance time index
   		 if(profile_index_ == (profile_length_-1))
         {
   			  profile_index_ = 0; //Restart profile
+  			  cycle_start_time_ = time;
   			} else profile_index_++;
+  			 
       }
   }
+  
+  else if(use_profile_ && current_profile_!=NO_PROFILE)
+  {
+    //Advance to next period
+    if(time-cycle_start_time_>period_) cycle_start_time_ = time;    
+
+    //Issue command based on time from start of cycle    
+    if(current_profile_==SINEWAVE) setSinewave(time-cycle_start_time_);
+    else if(current_profile_==SAWTOOTH) setSawtooth(time-cycle_start_time_);
+  }
+  
   else joint_position_controller_.setCommand(command_);
 
   joint_position_controller_.update(); //Update lower controller
+
   last_time_ = time; //Keep track of last time for update
 
 }
@@ -137,6 +158,76 @@ void LaserScannerController::setJointEffort(double effort)
   joint_->commanded_effort_ = min(max(effort, -joint_->effort_limit_), joint_->effort_limit_);
 }
 
+//Set mode to use sawtooth profile
+void LaserScannerController::setSawtoothProfile(double period, double amplitude, double offset)
+{   
+  period_ = period;
+  amplitude_ = amplitude;
+  offset_ = offset;
+  
+   //Reset profile settings
+  profile_length_ = 0;
+  profile_index_= 0; 
+  cycle_start_time_ = robot_->hw_->current_time_;
+
+  use_profile_ = true;
+}
+
+
+//Set mode to use sawtooth profile
+void LaserScannerController::setSawtooth(double time_from_start)
+{
+  double time_from_peak = fmod(time_from_start,(period_*4));
+  double command = (time_from_peak-cycle_start_time_)/period_*amplitude_;  
+  if(time_from_start<period_/4.0) //Quadrant I
+  {
+    command = command + offset_;
+  }
+  else if (time_from_start>period_/4.0 && time_from_start<period_/2.0) //Quadrant II
+  {
+    command = amplitude_-command + offset_;
+  }
+  else if (time_from_start>period_/2.0 && time_from_start<period_*3/4.0) //Quadrant III
+  {
+    command = -command + offset_;
+  }
+  else if (time_from_start>period_*3/4.0 && time_from_start<period_) //Quadrant IV
+  {
+    command = -amplitude_ + command + offset_;
+  }
+  else if (time_from_start>period_) //Reset
+  {  
+    command = command + offset_;
+  }
+  
+  joint_position_controller_.setCommand(profile_locations_[profile_index_]);
+}
+
+
+//Set mode to use Sinewave profile
+void LaserScannerController::setSinewaveProfile(double period, double amplitude,double offset)
+{
+   //Reset profile settings
+  profile_length_ = 0;
+  profile_index_= 0; 
+  cycle_start_time_ = robot_->hw_->current_time_;
+  current_profile_ = SINEWAVE;//Indicate profile
+
+  use_profile_ = true;
+  
+  period_ = period;
+  amplitude_ = amplitude;
+  offset_ = offset;
+}
+
+//Get sinewave based on current time
+void LaserScannerController::setSinewave(double time_from_start)
+{
+  double command;
+  
+  joint_position_controller_.setCommand(sin(2*M_PI*time_from_start/period_)*amplitude_+offset_);
+  
+}
 
 //Set mode to use sawtooth profile
 void LaserScannerController::setSawtoothProfile(double period, double amplitude, int num_elements, double offset)
@@ -161,7 +252,7 @@ void LaserScannerController::setSawtoothProfile(double period, double amplitude,
   //Construct evenly spaced elements in distance along sine wave
   for(int i = 0;i<total_elements;i++)
   {
-    profile_locations_[i] = current*amplitude; //set current point
+    profile_locations_[i] = current + offset; //set current point
     profile_dt_[i] = dt; //Constant dt because of linear relationship
 
     newvalue = current + delta; //Calculate next value
@@ -181,9 +272,9 @@ void LaserScannerController::setSawtoothProfile(double period, double amplitude,
  //Reset profile settings
   profile_length_ = total_elements; //Keep track of profile length
   profile_index_= 0; //Start at beginning
-  cycle_start_time_ = robot_->hw_->current_time_;
+  time_of_last_point_ = robot_->hw_->current_time_;
 
-
+  current_profile_ = NO_PROFILE; //Disable dynamic profile
   use_profile_ = true;
 
 }
@@ -193,7 +284,7 @@ void LaserScannerController::setSinewaveProfile(double period, double amplitude,
 {
   int smaller_num_elements = num_elements/4; //Number of elements in a single quadrant
   int total_elements = smaller_num_elements*4; //track actual number of elements after int truncation
-  double delta = amplitude/smaller_num_elements;
+  double delta = 1.0/smaller_num_elements;
   double current = 0;
   double newvalue = 0;
   double temp_value = 0.0;
@@ -216,8 +307,7 @@ void LaserScannerController::setSinewaveProfile(double period, double amplitude,
     newvalue = current + delta; //Calculate next value
     if(i == smaller_num_elements) //Shift from quadrant 1 to 2
     {
-      delta = -delta;
-      
+      delta = -delta;      
       newvalue = current + delta;
     }
     else if (i == smaller_num_elements*3)//Shift from quadrant 3-4
@@ -225,24 +315,42 @@ void LaserScannerController::setSinewaveProfile(double period, double amplitude,
       delta = -delta;       
       newvalue = current + delta;
     }
-    current = newvalue;
-  }
+    
+    current = newvalue;   
+    current = min(max(current, -1.0), 1.0); //Make sure asin doesn't fail
+  }        
+  
+  profile_locations_[0] = offset; //set first value
 
-   //At time 0, we wish for our location to be at 0. Start indexing at 1
+   //At time 0, we wish for our location to be at offset. Start indexing at 1, but associate dt with previous value
   for(int i = 1;i<total_elements;i++)
   { 
-    temp_value = asin(profile_locations_[i]); //Calculate time
-    profile_dt_[i] = fabs(temp_value-last_temp_value)*period; //Calculate dt, scale by period
-    profile_locations_[i] = temp_value*amplitude; //Scale goal location by amplitude
-    last_temp_value = temp_value;    
+    temp_value = asin(profile_locations_[i]); //Calculate time 
+    profile_dt_[i-1] = fabs(temp_value-last_temp_value)*period/(2*M_PI); //Calculate dt, scale by period
+//    if(profile_dt_[i-1]>profile_dt_[0]*3) profile_dt_[i-1]=profile_dt_[i-2];//smoothing
+    profile_locations_[i] = temp_value*amplitude + offset; //Scale goal location by amplitude
+    last_temp_value = temp_value;
+    #ifdef DEBUG           
+    printf("*** test %u %f %f\n",i,profile_dt_[i-1],profile_locations_[i]);
+    #endif
   }
 
+  profile_dt_[total_elements-1] = profile_dt_[0]; //Make symmetric
+
+  #ifdef DEBUG
+  for(int i = 0;i<total_elements;i++)
+  {
+    printf("*** test %u %f %f\n",i,profile_dt_[i],profile_locations_[i]);
+  }
+  #endif
  //Reset profile settings
   profile_length_ = total_elements; //Keep track of profile length
   profile_index_= 0; //Start at beginning
+  time_of_last_point_ = robot_->hw_->current_time_;
   cycle_start_time_ = robot_->hw_->current_time_;
 
   use_profile_ = true;
+  current_profile_ = NO_PROFILE; //Disable dynamic profile
 }
 
 
@@ -268,7 +376,18 @@ bool LaserScannerControllerNode::setCommand(
 {
   c_->setCommand(req.command);
   resp.command = c_->getCommand();
-
+  
+  //FIXME: Backdoor method to issue command set
+  if(req.command==41)c_->setSawtoothProfile(1,0.5,100,0);
+  else if(req.command==42)c_->setSawtoothProfile(2,0.5,100,0);
+  else if(req.command==43)c_->setSawtoothProfile(2,0.5,100,0.5);
+  else if(req.command==44)c_->setSawtoothProfile(0.5,0.5,100,0);
+  else if(req.command==45)c_->setSawtoothProfile(1,0.5,0);
+  else if(req.command==-41)c_->setSinewaveProfile(2,0.5,100,0.5);
+  else if(req.command==-42)c_->setSinewaveProfile(2,0.5,100,0);
+  else if(req.command==-43)c_->setSinewaveProfile(1,0.5,100,0);
+  else if(req.command==-44)c_->setSinewaveProfile(4,0.5,100,0);
+  else if (req.command==-45)c_->setSinewaveProfile(1,0.5,0);
   return true;
 }
 
