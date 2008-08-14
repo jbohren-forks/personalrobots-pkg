@@ -123,6 +123,12 @@ int main(int argc, char **argv)
     ros::init(argc, argv);
     ViewTF viewer;
         
+
+    std::cout<<"Taking data for 5 seconds . . ."<<std::endl;
+    sleep(5);
+    viewer.save("viewTF.dot");
+
+    /*
     while (viewer.ok() && viewer.active)
     {
 	char command;	
@@ -145,7 +151,7 @@ int main(int argc, char **argv)
 	    break;
 	}	
     }
-    
+    */    
     viewer.shutdown();
     
     tcsetattr(kfd, TCSANOW, &cooked);

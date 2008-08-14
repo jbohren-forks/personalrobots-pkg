@@ -183,7 +183,9 @@ class rosTFServer
   /** \brief Send a Transform with 4x4 Matrix */
   void sendMatrix(unsigned int frame, unsigned int parent, NEWMAT::Matrix matrix, ros::Time rostime);
 
+  /** \brief A public member to provide name lookup service. */
   nameLookupClient nameClient;
+  /** \brief THIS IS TEMPORARY use nameClient.lookup A pass through to prevent breaking the previous API.   */
   unsigned int lookup(const std::string& name){std::cerr<<"Interface Depricated: use rosTFServer.nameClient.lookup(name) instead."; return nameClient.lookup(name);};
 
 
