@@ -829,4 +829,3 @@ bool WavefrontNode::navToPointCB(
   return true;
 }
 
-
