@@ -59,6 +59,18 @@ void SimpleTransmission::initXml(TiXmlElement *elt, Robot *robot)
   pulses_per_revolution_ = atof(elt->FirstChildElement("pulsesPerRevolution")->GetText());
 }
 
+void SimpleTransmission::initTransmission(std::string transmission_name,std::string joint_name,std::string actuator_name,double mechanical_reduction,double motor_torque_constant,double pulses_per_revolution, Robot *robot)
+{
+  name_     =    transmission_name;
+  joint_name_ = joint_name;
+  actuator_name_ = actuator_name;
+  joint_    = robot->getJoint(   joint_name);
+  actuator_ = robot->getActuator(actuator_name);
+  mechanical_reduction_  = mechanical_reduction ;
+  motor_torque_constant_ = motor_torque_constant;
+  pulses_per_revolution_ = pulses_per_revolution;
+}
+
 void SimpleTransmission::propagatePosition()
 {
   joint_->position_ = ((double)actuator_->state_.encoder_count_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);

@@ -43,7 +43,7 @@ public:
   void enforceLimits();
   void initXml(TiXmlElement *elt);
 
-  char *name_;
+  std::string name_;
   int type_;
 
   // Update every cycle from input data

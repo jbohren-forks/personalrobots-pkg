@@ -85,6 +85,45 @@ bool MechanismControl::initXml(TiXmlElement* config)
   return successful;
 }
 
+bool MechanismControl::addJoint(Joint* j)
+{
+  bool successful = true;
+
+  // add the joints
+  model_.joints_.push_back(j);
+  model_.joints_lookup_.insert(Robot::IndexMap::value_type(j->name_, model_.joints_.size() - 1));
+
+  return successful;
+}
+
+bool MechanismControl::addSimpleTransmission(SimpleTransmission *st)
+{
+  bool successful = true;
+  ros::node *node = ros::node::instance();
+
+  // Construct the transmissions
+  const char *type = "SimpleTransmission";
+  Transmission *t = TransmissionFactory::instance().create(type);
+  if (t == NULL)
+    node->log(ros::FATAL, "Unknown transmission type: %s\n", type);
+
+  t->initTransmission(st->name_,st->joint_name_,st->actuator_name_,st->mechanical_reduction_,st->motor_torque_constant_,st->pulses_per_revolution_, &model_);
+
+  model_.transmissions_.push_back(t);
+
+  return successful;
+}
+
+controller::Controller* MechanismControl::getControllerByName(std::string name)
+{
+  for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
+    if (controller_names_[i] == name)
+     return controllers_[i];
+
+  return NULL;
+}
+
+
 // Must be realtime safe.
 void MechanismControl::update()
 {
@@ -163,6 +202,26 @@ bool MechanismControl::addController(controller::Controller *c, const std::strin
 
   return true;
 }
+
+bool MechanismControl::spawnController(const std::string &type,
+                                       const std::string &name,
+                                       double p_gain, double i_gain, double d_gain, double windup,
+                                       double time, mechanism::Joint *joint)
+{
+  controller::Controller *c = controller::ControllerFactory::instance().create(type);
+  if (c == NULL)
+    return false;
+  c->init(p_gain,i_gain,d_gain,windup,time,&model_,joint);
+
+  if (!addController(c, name))
+  {
+    delete c;
+    return false;
+  }
+
+  return true;
+}
+
 
 bool MechanismControl::spawnController(const std::string &type,
                                        const std::string &name,

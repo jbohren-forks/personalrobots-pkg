@@ -173,7 +173,7 @@ void Ros_Camera::PutCameraData()
 
     this->lock.lock();
     // copy data into image
-    this->imageMsg.header.frame_id = tfc->lookup(this->frameName);
+    this->imageMsg.header.frame_id = tfc->nameClient.lookup(this->frameName);
     this->imageMsg.header.stamp.sec = (unsigned long)floor(this->cameraIface->data->head.time);
     this->imageMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraIface->data->head.time - this->imageMsg.header.stamp.sec) );
 

@@ -75,7 +75,14 @@ public:
   bool addController(controller::Controller *c, const std::string &name);
   bool spawnController(const std::string &type, const std::string &name, TiXmlElement *config);
   bool killController(const std::string &name);
-
+  bool spawnController(const std::string &type,
+                       const std::string &name,
+                       double p_gain, double i_gain, double d_gain, double windup,
+                       double time, mechanism::Joint *joint);
+  bool addJoint(mechanism::Joint* j);
+  bool addSimpleTransmission(mechanism::SimpleTransmission *st);
+  controller::Controller* getControllerByName(std::string name);
+ 
   mechanism::Robot model_;
   HardwareInterface *hw_;
 

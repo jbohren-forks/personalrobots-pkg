@@ -48,7 +48,7 @@ namespace gazebo {
   GZ_REGISTER_DYNAMIC_CONTROLLER("test_actuators", GazeboActuators);
 
   GazeboActuators::GazeboActuators(Entity *parent)
-    : Controller(parent) // , hw_(0), mc_(&hw_) //, mcn_(&mc_)
+    : Controller(parent) , hw_(0), mc_(&hw_), rmc_(&hw_) , mcn_(&mc_), rmcn_(&rmc_)
   {
      this->parent_model_ = dynamic_cast<Model*>(this->parent);
 
@@ -68,15 +68,18 @@ namespace gazebo {
     tfc = new rosTFClient(*rosnode_); //, true, 1 * 1000000000ULL, 0ULL);
     tfs = new rosTFServer(*rosnode_); //, true, 1 * 1000000000ULL, 0ULL);
 
-    // initialize hardware interface
-    hw_ = new HardwareInterface(0);
-
     // uses info from wg_robot_description_parser/send.xml
     std::string pr2Content;
     // get pr2.xml for Ioan's parser
     rosnode_->get_param("robotdesc/pr2",pr2Content);
     // parse the big pr2.xml string from ros
     pr2Description.loadString(pr2Content.c_str());
+
+
+    // using tiny xml
+    pr2Doc_ = new TiXmlDocument();
+    pr2Doc_->SetUserData(NULL);
+    pr2Doc_->Parse(pr2Content.c_str());
 
     AdvertiseSubscribeMessages();
 
@@ -113,7 +116,7 @@ namespace gazebo {
   {
     // TODO: mc_.init();
 
-    hw_->current_time_ = Simulator::Instance()->GetSimTime();
+    hw_.current_time_ = Simulator::Instance()->GetSimTime();
   }
 
   void GazeboActuators::UpdateChild()
@@ -150,24 +153,28 @@ namespace gazebo {
     //
     //-------------------------------------------------------------------------------------------
 
+    // FIXME: mechanism control is not able to read joints from pr2.xml yet. for now, rely on Ioan's parser
     // get all links in pr2.xml
     std::vector<robot_desc::URDF::Link*> links;
     pr2Description.getLinks(links);
-    std::cout << " pr2.xml link size(): " << links.size() << std::endl;
+    std::cout << " pr2.xml link size: " << links.size() << std::endl;
 
     // create a robot for forward transmission
     // create joints for mech_joint_ cycle through all links in pr2.xml
-    mech_robot_ = new mechanism::Robot((char*)NULL);
     for (std::vector<robot_desc::URDF::Link*>::iterator lit = links.begin(); lit != links.end(); lit++)
     {
-      std::cout << " link name: " << (*lit)->name << std::endl;
+      std::cout << " link name: " << (*lit)->name;
       if ((*lit)->isSet["joint"])
       {
         // FIXME: assume there's a joint to every link, this is not true if there are floating joints
-        std::cout << " link joint name: " << (*lit)->joint->name << std::endl;
         mechanism::Joint* joint;
         joint = new mechanism::Joint();
 
+        // assign name of joint
+        joint->name_ = (*lit)->joint->name;
+        //joint->name_ = new char(((*lit)->joint->name).size());
+        //strcpy(joint->name_,(*lit)->joint->name.c_str());
+        //std::cout << " link joint name: " << joint->name_ << std::endl;
         // FIXME: bug: copy name to a variable
         //char* robot_joint_name;
         //robot_joint_name        = new char((*lit)->joint->name.size());
@@ -208,26 +215,28 @@ namespace gazebo {
         joint->joint_limit_max_  = 0;
         joint->effort_limit_     = (*lit)->joint->effortLimit;
         joint->velocity_limit_   = (*lit)->joint->velocityLimit;
-        mech_robot_->joints_.push_back(joint);
-        mech_robot_->joints_lookup_.insert(make_pair((*lit)->joint->name,(mech_robot_->joints_.size())-1));
+        mc_.addJoint(joint);
       }
     }
-    mech_robot_->hw_ = hw_;
 
 
 
     // create a fake robot for reverse transmission in gazebo
     // create joints for reverse_mech_joint_, cycle through all links in pr2.xml
-    reverse_mech_robot_ = new mechanism::Robot((char*)NULL);
     for (std::vector<robot_desc::URDF::Link*>::iterator lit = links.begin(); lit != links.end(); lit++)
     {
-      std::cout << " link name: " << (*lit)->name << std::endl;
+      std::cout << " link name: " << (*lit)->name;
       if ((*lit)->isSet["joint"])
       {
         // FIXME: assume there's a joint to every link, this is not true if there are floating joints
-        std::cout << " link joint name: " << (*lit)->joint->name << std::endl;
         mechanism::Joint* joint;
         joint = new mechanism::Joint();
+
+        // assign name of joint
+        joint->name_ = (*lit)->joint->name;
+        //joint->name_ = new char(((*lit)->joint->name).size());
+        //strcpy(joint->name_,(*lit)->joint->name.c_str());
+        //std::cout << " link joint name: " << joint->name_ << std::endl;
 
         // FIXME: bug: copy name to a variable
         //char* robot_joint_name;
@@ -269,22 +278,19 @@ namespace gazebo {
         joint->joint_limit_max_  = 0;
         joint->effort_limit_     = (*lit)->joint->effortLimit;
         joint->velocity_limit_   = (*lit)->joint->velocityLimit;
-        reverse_mech_robot_->joints_.push_back(joint);
-        reverse_mech_robot_->joints_lookup_.insert(make_pair((*lit)->joint->name,(reverse_mech_robot_->joints_.size())-1));
+        rmc_.addJoint(joint);
       }
     }
-    reverse_mech_robot_->hw_ = hw_;
 
 
 
-    // loop through copied controller, transmission, actuator data in gazebo pr2 model file
+    //-----------------------------------------------------------------------------------------
+    //
+    // CONTROLLER XML
+    //
+    //-----------------------------------------------------------------------------------------
     for (XMLConfigNode *xit = node->GetChild("robot"); xit; xit=xit->GetNext("robot"))
     {
-      //-----------------------------------------------------------------------------------------
-      //
-      // CONTROLLER XML
-      //
-      //-----------------------------------------------------------------------------------------
       std::cout << " LoadChild gazebo controller: " <<  xit->GetString("name","",0) << std::endl;
 
       // one layer below <robot name="pr2">
@@ -301,24 +307,32 @@ namespace gazebo {
         controller.joint_name = jit->GetString("name", "", 1);
         controller.joint_type = jit->GetString("type", "revolute", 0);
 
-        // get a pointer to mech_robot_->joints_!
-        mechanism::Robot::IndexMap::iterator mjit = mech_robot_->joints_lookup_.find(controller.joint_name);
-        if (mjit == mech_robot_->joints_lookup_.end())
+        // get a pointer to mc_->joints_!
+        mechanism::Joint* j = mc_.model_.getJoint(controller.joint_name);
+
+        if (j == NULL)
         {
           // TODO: report: Could not find the joint named xxxx
           std::cout << " join name " << controller.joint_name
                     << " not found, probably an abstract joint, like a gripper joint. " << std::endl;
           // FIXME: need to have a mechanism joint for controller to control!
           //        we can look at the finger joints below, and use one of them, or
-          //        create a new joint: mech_robot_->joints_.insert( new_abstract_joint  );
+          //        create a new joint: mc_.addJoint( new_abstract_joint  );
           //continue; // skip, do not add controller
 
 
           //
-          // artifically insert a gripper joint into mech_robot_->joints_
+          // artifically insert a gripper joint into mc_.model_.joints_
           //
           mechanism::Joint* joint;
           joint = new mechanism::Joint();
+
+          // assign name of joint
+          joint->name_ = controller.joint_name;
+          //joint->name_ = new char(controller.joint_name.size());
+          //strcpy(joint->name_,controller.joint_name.c_str());
+          //std::cout << " link joint name: " << joint->name_ << std::endl;
+
 
           joint->type_             = mechanism::JOINT_ROTARY;
           joint->initialized_      = true;  // from transmission
@@ -330,33 +344,38 @@ namespace gazebo {
           joint->joint_limit_max_  = 0;
           joint->effort_limit_     = (jit->GetChild("gripper_defaults"))->GetDouble("effortLimit",0,0);
           joint->velocity_limit_   = (jit->GetChild("gripper_defaults"))->GetDouble("velocityLimit",0,0);
-          mech_robot_->joints_.push_back(joint);
-          mech_robot_->joints_lookup_.insert(make_pair(controller.joint_name,(mech_robot_->joints_.size())-1));
-          controller.mech_joint_ = mech_robot_->joints_.back();  // return joint we just added
+          mc_.addJoint(joint);
+          controller.mech_joint_ = mc_.model_.joints_.back();  // return joint we just added
         }
         else
         {
-          controller.mech_joint_ = mech_robot_->joints_.at(mjit->second);  // we want to control this link
+          controller.mech_joint_ = j;  // we want to control this link
         }
 
-        // get a pointer to reverse_mech_robot_->joints_!
-        mechanism::Robot::IndexMap::iterator rmjit = reverse_mech_robot_->joints_lookup_.find(controller.joint_name);
-        if (rmjit == reverse_mech_robot_->joints_lookup_.end())
+        // get a pointer to rmc_->joints_!
+        mechanism::Joint* rj = rmc_.model_.getJoint(controller.joint_name);
+        if (rj == NULL)
         {
           // TODO: report: Could not find the joint named xxxx
           std::cout << " join name " << controller.joint_name
                     << " not found, probably an abstract joint, like a gripper joint. " << std::endl;
           // FIXME: need to have a mechanism joint for controller to control!
           //        we can look at the finger joints below, and use one of them, or
-          //        create a new joint: reverse_mech_robot_->joints_.insert( new_abstract_joint  );
+          //        create a new joint: rmc_.addJoint( new_abstract_joint  );
           //continue; // skip, do not add controller
 
 
           //
-          // artifically insert a gripper joint into reverse_mech_robot_->joints_
+          // artifically insert a gripper joint into rmc_.model_.joints_
           //
           mechanism::Joint* joint;
           joint = new mechanism::Joint();
+
+          // assign name of joint
+          joint->name_ = controller.joint_name;
+          //joint->name_ = new char(controller.joint_name.size());
+          //strcpy(joint->name_,controller.joint_name.c_str());
+          //std::cout << " link joint name: " << joint->name_ << std::endl;
 
           joint->type_             = mechanism::JOINT_ROTARY;
           joint->initialized_      = true;  // from transmission
@@ -368,13 +387,13 @@ namespace gazebo {
           joint->joint_limit_max_  = 0;
           joint->effort_limit_     = (jit->GetChild("gripper_defaults"))->GetDouble("effortLimit",0,0);
           joint->velocity_limit_   = (jit->GetChild("gripper_defaults"))->GetDouble("velocityLimit",0,0);
-          reverse_mech_robot_->joints_.push_back(joint);
-          reverse_mech_robot_->joints_lookup_.insert(make_pair(controller.joint_name,(reverse_mech_robot_->joints_.size())-1));
-          controller.reverse_mech_joint_ = reverse_mech_robot_->joints_.back();  // return joint we just added
+          rmc_.addJoint(joint);
+
+          controller.reverse_mech_joint_ = rmc_.model_.joints_.back();  // return joint we just added
         }
         else
         {
-          controller.reverse_mech_joint_ = reverse_mech_robot_->joints_.at(rmjit->second);  // we want to control this link
+          controller.reverse_mech_joint_ = rj;  // we want to control this link
         }
 
 
@@ -388,17 +407,20 @@ namespace gazebo {
         controller.init_time = Simulator::Instance()->GetSimTime();
         // initialize controller
         TiXmlElement junk("");
-        if (controller.control_mode == "PD_CONTROL")
-        {
-          controller.pcontroller.initXml(mech_robot_,&junk); // just pass Robot pointer to controller.  controller uses hw_ to get time
-          controller.pcontroller.init(controller.p_gain,controller.i_gain,controller.d_gain,controller.windup,controller.init_time,mech_robot_, controller.mech_joint_);
-        }
-        else if (controller.control_mode == "VELOCITY_CONTROL")
-        {
-          controller.vcontroller.initXml(mech_robot_,&junk); // just pass Robot pointer to controller.  controller uses hw_ to get time
-          controller.vcontroller.init(controller.p_gain,controller.i_gain,controller.d_gain,controller.windup,controller.init_time,mech_robot_, controller.mech_joint_);
-        }
 
+        mc_.spawnController(controller.control_mode,
+                            controller.name,
+                            controller.p_gain,controller.i_gain,controller.d_gain,controller.windup,
+                            controller.init_time,
+                            controller.mech_joint_);
+
+        rmc_.spawnController(controller.control_mode,
+                             controller.name,
+                             controller.p_gain,controller.i_gain,controller.d_gain,controller.windup,
+                             controller.init_time,
+                             controller.reverse_mech_joint_);
+
+        // setup gazebo joints
         XMLConfigNode *dit = jit->GetChild("data");
         std::string data_name = dit->GetString("name","",1);
         std::string data_type = dit->GetString("type","",1);
@@ -459,7 +481,49 @@ namespace gazebo {
         robot_controllers_.push_back(controller);
 
       }
+    }
 
+    for (XMLConfigNode *xit = node->GetChild("robot"); xit; xit=xit->GetNext("robot"))
+    {
+      //-----------------------------------------------------------------------------------------
+      //
+      // ACTUATOR XML
+      //
+      //-----------------------------------------------------------------------------------------
+      // Reads the actuator information from the config.
+      for (XMLConfigNode *ait = xit->GetChild("actuator"); ait; ait = ait->GetNext("actuator"))
+      {
+        // read from actuator_test.xml
+        std::string actuator_name          = ait->GetString("name", "", 1);
+        // std::string motorboardID     = ait->GetString("motorboardID", "", 1);
+        // double      maxCurrent       = ait->GetDouble("maxCurrent", 0, 1);
+        // std::string motor            = ait->GetString("motor", "", 1);
+        // std::string ip               = ait->GetString("ip", "", 1);
+        // double      port             = ait->GetDouble("port", 0, 1);
+        // double      reduction        = ait->GetDouble("reduction", 0, 1);
+        // Vector3     polymap          = ait->GetVector3("polymap",Vector3(1,0,0));
+
+        Actuator* actuator = new Actuator();
+        // initialize the actuator object
+        actuator->state_.encoder_count_ = 0;
+        actuator->state_.timestamp_     = Simulator::Instance()->GetSimTime();
+        actuator->state_.is_enabled_    = true;
+        actuator->command_.enable_      = true;
+        actuator->command_.current_     = 0;
+
+        // formal structures
+        // forward and revere mc_ share same hardware actuators
+        hw_.actuators_.push_back(actuator);
+        mc_.registerActuator(actuator_name,hw_.actuators_.size()-1);
+        rmc_.registerActuator(actuator_name,hw_.actuators_.size()-1);
+
+        std::cout << " adding actuator name to hw_ " << actuator_name << " " << hw_.actuators_.size() << std::endl;
+      }
+    }
+
+
+    for (XMLConfigNode *xit = node->GetChild("robot"); xit; xit=xit->GetNext("robot"))
+    {
       //-----------------------------------------------------------------------------------------
       //
       // TRANSMISSION XML
@@ -470,118 +534,29 @@ namespace gazebo {
       {
         //==================================================================================================
         //for forward transmission (actuator -> real robot joint)
-        Robot_transmission_ trn;
-        trn.name           = tit->GetString("name", "", 1);
-
-        trn.joint_name     =  tit->GetChild("joint")->GetString("name","",1);
-        trn.actuator_name  =  tit->GetChild("actuator")->GetString("name","",1);
-
-        trn.simple_transmission.mechanical_reduction_ = tit->GetDouble("mechanicalReduction",0,1);
-        trn.simple_transmission.motor_torque_constant_= tit->GetDouble("motorTorqueConstant",0,1);
-        trn.simple_transmission.pulses_per_revolution_= tit->GetDouble("pulsesPerRevolution",0,1);
-        //trn.simple_transmission.actuator_ = ; // pointer to our actuator;
-        //trn.simple_transmission.joint_    = ; // pointer to our robot joint;
-        //trn.gazebo_joints_ = parent_model_->GetJoint(transmission.joint_name); // this is not necessary
-        //assert(trn.gazebo_joints_ != NULL); // this is not necessary
-        robot_transmissions_.push_back(trn);
+        // FIXME: fix parsing in transmission so this is not needed
+        mechanism::SimpleTransmission st; // = new mechanism::SimpleTransmission();
+        transmissions_.push_back(st);
+        //==================================================================================================
+        transmissions_.back().name_           = tit->GetString("name", "", 1);
+        transmissions_.back().joint_name_     =  tit->GetChild("joint")->GetString("name","",1);
+        transmissions_.back().actuator_name_  =  tit->GetChild("actuator")->GetString("name","",1);
+        transmissions_.back().mechanical_reduction_ = tit->GetDouble("mechanicalReduction",0,1);
+        transmissions_.back().motor_torque_constant_= tit->GetDouble("motorTorqueConstant",0,1);
+        transmissions_.back().pulses_per_revolution_= tit->GetDouble("pulsesPerRevolution",0,1);
+        mc_.addSimpleTransmission(&transmissions_.back());
         //==================================================================================================
         //for reverse transmission (actuator -> gazebo's fake robot joint copy
-        Robot_transmission_ rtrn;
-        rtrn.name           = tit->GetString("name", "", 1);
-
-        rtrn.joint_name     =  tit->GetChild("joint")->GetString("name","",1);
-        rtrn.actuator_name  =  tit->GetChild("actuator")->GetString("name","",1);
-
-        rtrn.simple_transmission.mechanical_reduction_ = tit->GetDouble("mechanicalReduction",0,1);
-        rtrn.simple_transmission.motor_torque_constant_= tit->GetDouble("motorTorqueConstant",0,1);
-        rtrn.simple_transmission.pulses_per_revolution_= tit->GetDouble("pulsesPerRevolution",0,1);
-        //rtrn.simple_transmission.actuator_ = ; // pointer to our actuator;
-        //rtrn.simple_transmission.joint_    = ; // pointer to our robot joint;
-        //rtrn.gazebo_joints_ = parent_model_->GetJoint(transmission.joint_name); // this is not necessary
-        //assert(rtrn.gazebo_joints_ != NULL); // this is not necessary
-        reverse_robot_transmissions_.push_back(rtrn);
+        rmc_.addSimpleTransmission(&transmissions_.back());
         //==================================================================================================
-        std::cout << " transmission name " << trn.name
-                  << " joint name    " << trn.joint_name
-                  << " actuator name " << trn.actuator_name
-                  << " mec red "       << trn.simple_transmission.mechanical_reduction_
-                  << " tor con "       << trn.simple_transmission.motor_torque_constant_
-                  << " pul rev "       << trn.simple_transmission.pulses_per_revolution_ << std::endl;
-        //==================================================================================================
+        std::cout << " adding transmission name " << transmissions_.back().name_
+                  << " joint name    " << transmissions_.back().joint_name_
+                  << " actuator name " << transmissions_.back().actuator_name_
+                  << " mec red "       << transmissions_.back().mechanical_reduction_
+                  << " tor con "       << transmissions_.back().motor_torque_constant_
+                  << " pul rev "       << transmissions_.back().pulses_per_revolution_ << std::endl;
       }
-
-      //-----------------------------------------------------------------------------------------
-      //
-      // ACTUATOR XML
-      //
-      //-----------------------------------------------------------------------------------------
-      // Reads the actuator information from the config.
-      for (XMLConfigNode *ait = xit->GetChild("actuator"); ait; ait = ait->GetNext("actuator"))
-      {
-        Robot_actuator_ actuator;
-        // read from actuator_test.xml
-        actuator.name             = ait->GetString("name", "", 1);
-        actuator.motorboardID     = ait->GetString("motorboardID", "", 1);
-        actuator.maxCurrent       = ait->GetDouble("maxCurrent", 0, 1);
-        actuator.motor            = ait->GetString("motor", "", 1);
-        actuator.ip               = ait->GetString("ip", "", 1);
-        actuator.port             = ait->GetDouble("port", 0, 1);
-        actuator.reduction        = ait->GetDouble("reduction", 0, 1);
-        actuator.polymap          = ait->GetVector3("polymap",Vector3(1,0,0));
-
-        // initialize the actuator object
-        actuator.actuator.state_.encoder_count_ = 0;
-        actuator.actuator.state_.timestamp_     = Simulator::Instance()->GetSimTime();
-        actuator.actuator.state_.is_enabled_    = true;
-        actuator.actuator.command_.enable_      = true;
-        actuator.actuator.command_.current_     = 0;
-
-        robot_actuators_.insert(make_pair(actuator.name,actuator));
-
-        // formal structures
-        hw_->actuators_.push_back(&actuator.actuator);
-        //actuator_names_.push_back(actuator.name);
-
-        std::cout << " actuator name " << actuator.name
-                  << " reduction " << actuator.reduction
-                  << " polymap " << actuator.polymap << std::endl;
-
-
-
-      }
-
-
     }
-
-    //==================================================================================================
-    // fetch actuator and joint pair for forward transmission
-    // loop through all transmissions
-    for (std::vector<Robot_transmission_>::iterator rti = robot_transmissions_.begin(); rti != robot_transmissions_.end(); rti++)
-    {
-      // use actuator name to find actuator
-      std::map<std::string,Robot_actuator_>::iterator mrai = robot_actuators_.find((*rti).actuator_name);
-      assert (mrai != robot_actuators_.end()); // actuator must exist
-      (*rti).simple_transmission.actuator_ = &((mrai->second).actuator);  // link actuator to transmission
-      // use joint name to find mech_joint_ in controller, get a pointer to mech_robot_->joints_!
-      mechanism::Robot::IndexMap::iterator mjit = mech_robot_->joints_lookup_.find((*rti).joint_name);
-      assert (mjit != mech_robot_->joints_lookup_.end()); // joint must exist
-      (*rti).simple_transmission.joint_ = mech_robot_->joints_.at(mjit->second);  // link joint to transmission
-    }
-    //==================================================================================================
-    for (std::vector<Robot_transmission_>::iterator rrti = reverse_robot_transmissions_.begin(); rrti != reverse_robot_transmissions_.end(); rrti++)
-    {
-      // use actuator name to find actuator
-      std::map<std::string,Robot_actuator_>::iterator mrai = robot_actuators_.find((*rrti).actuator_name);
-      assert (mrai != robot_actuators_.end()); // actuator must exist
-      (*rrti).simple_transmission.actuator_ = &((mrai->second).actuator);  // link actuator to transmission
-      // use joint name to find reverse_mech_joint_ in controller, get a pointer to reverse_mech_robot_->joints_!
-      mechanism::Robot::IndexMap::iterator rmjit = reverse_mech_robot_->joints_lookup_.find((*rrti).joint_name);
-      assert (rmjit != reverse_mech_robot_->joints_lookup_.end()); // joint must exist
-      (*rrti).simple_transmission.joint_ = reverse_mech_robot_->joints_.at(rmjit->second);  // link joint to transmission
-    }
-    //==================================================================================================
-
-
 
   }
 
@@ -598,7 +573,7 @@ namespace gazebo {
   void GazeboActuators::UpdateMC()
   {
     // pass time to robot
-    hw_->current_time_ = Simulator::Instance()->GetSimTime();
+    hw_.current_time_ = Simulator::Instance()->GetSimTime();
 
 
     this->lock.lock();
@@ -607,8 +582,8 @@ namespace gazebo {
     /*  publish time to ros                                        */
     /*                                                             */
     /***************************************************************/
-    timeMsg.rostime.sec  = (unsigned long)floor(hw_->current_time_);
-    timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  hw_->current_time_ - timeMsg.rostime.sec) );
+    timeMsg.rostime.sec  = (unsigned long)floor(hw_.current_time_);
+    timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  hw_.current_time_ - timeMsg.rostime.sec) );
     rosnode_->publish("time",timeMsg);
     /***************************************************************/
     /*                                                             */
@@ -632,10 +607,10 @@ namespace gazebo {
     this->odomMsg.pos.th = yaw;
 
     // TODO: get the frame ID from somewhere
-    this->odomMsg.header.frame_id = tfs->lookup("FRAMEID_ODOM");
+    this->odomMsg.header.frame_id = tfs->nameClient.lookup("FRAMEID_ODOM");
 
-    this->odomMsg.header.stamp.sec = (unsigned long)floor(hw_->current_time_);
-    this->odomMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  hw_->current_time_ - this->odomMsg.header.stamp.sec) );
+    this->odomMsg.header.stamp.sec = (unsigned long)floor(hw_.current_time_);
+    this->odomMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  hw_.current_time_ - this->odomMsg.header.stamp.sec) );
 
     // This publish call resets odomMsg.header.stamp.sec and 
     // odomMsg.header.stamp.nsec to zero.  Thus, it must be called *after*
@@ -656,7 +631,6 @@ namespace gazebo {
 
     this->lock.unlock();
 
-
     //---------------------------------------------------------------------
     // Real time update calls to mechanism control
     // this is what the hard real time loop does,
@@ -668,90 +642,81 @@ namespace gazebo {
     // update joint status from hardware
     for (std::vector<Robot_controller_>::iterator rci = robot_controllers_.begin(); rci != robot_controllers_.end() ; rci++)
     {
+      // push gazebo joint to reverse joints
       if ((*rci).gazebo_joint_type == "gripper")
       {
         gazebo::HingeJoint* gj_f_l     = (gazebo::HingeJoint*) (*rci).gazebo_joints_[0];
-        //gazebo::HingeJoint* gj_f_r     = (gazebo::HingeJoint*) (*rci).gazebo_joints_[1];
-        //gazebo::HingeJoint* gj_f_tip_l = (gazebo::HingeJoint*) (*rci).gazebo_joints_[2];
-        //gazebo::HingeJoint* gj_f_tip_r = (gazebo::HingeJoint*) (*rci).gazebo_joints_[3];
-        (*rci).mech_joint_->position_       = gj_f_l->GetAngle();
-        (*rci).mech_joint_->velocity_       = gj_f_l->GetAngleRate();
-        (*rci).mech_joint_->applied_effort_ = (*rci).mech_joint_->commanded_effort_;
+        gazebo::HingeJoint* gj_f_r     = (gazebo::HingeJoint*) (*rci).gazebo_joints_[1];
+        gazebo::HingeJoint* gj_f_tip_l = (gazebo::HingeJoint*) (*rci).gazebo_joints_[2];
+        gazebo::HingeJoint* gj_f_tip_r = (gazebo::HingeJoint*) (*rci).gazebo_joints_[3];
+
+        // controller::Controller* gc = mc_.getControllerByName( (*rci).name );
+        double f_l_error     = ( gj_f_l     -> GetAngle() );
+        // double f_r_error     = (-gj_f_r     -> GetAngle() );
+        // double f_tip_l_error = (-gj_f_tip_l -> GetAngle() );
+        // double f_tip_r_error = ( gj_f_tip_l -> GetAngle() );
+        // std::cout << "getting controller error from mc : " << (*rci).name
+        //           << " e1 : " << f_l_error     
+        //           << " e2 : " << f_r_error     
+        //           << " e3 : " << f_tip_l_error 
+        //           << " e4 : " << f_tip_r_error 
+        //           << " cmd "  << dynamic_cast<controller::JointPositionController*>(gc)->getCommand() << std::endl;
+        //(*rci).reverse_mech_joint_->position_       = 0.25*(f_l_error + f_r_error + f_tip_l_error + f_tip_r_error); // average all positions
+
+        (*rci).reverse_mech_joint_->position_       = f_l_error; // use one joint as reference
+        (*rci).reverse_mech_joint_->velocity_       = gj_f_l->GetAngleRate();
+        (*rci).reverse_mech_joint_->applied_effort_ = (*rci).reverse_mech_joint_->commanded_effort_;
 
       }
       else if ((*rci).gazebo_joint_type == "slider")
       {
         gazebo::SliderJoint* gjs  = (SliderJoint*)(*rci).gazebo_joints_[0];
-        (*rci).mech_joint_->position_       = gjs->GetPosition();
-        (*rci).mech_joint_->velocity_       = gjs->GetPositionRate();
-        (*rci).mech_joint_->applied_effort_ = (*rci).mech_joint_->commanded_effort_;
+        (*rci).reverse_mech_joint_->position_       = gjs->GetPosition();
+        (*rci).reverse_mech_joint_->velocity_       = gjs->GetPositionRate();
+        (*rci).reverse_mech_joint_->applied_effort_ = (*rci).reverse_mech_joint_->commanded_effort_;
 
       }
       else // defaults to hinge
       {
         gazebo::HingeJoint* gjh  = (HingeJoint*)(*rci).gazebo_joints_[0];
-        (*rci).mech_joint_->position_       = gjh->GetAngle();
-        (*rci).mech_joint_->velocity_       = gjh->GetAngleRate();
-        (*rci).mech_joint_->applied_effort_ = (*rci).mech_joint_->commanded_effort_;
+        (*rci).reverse_mech_joint_->position_       = gjh->GetAngle();
+        (*rci).reverse_mech_joint_->velocity_       = gjh->GetAngleRate();
+        (*rci).reverse_mech_joint_->applied_effort_ = (*rci).reverse_mech_joint_->commanded_effort_;
 
       }
     }
+    // push reverse_mech_joint_ stuff back toward actuators
+    for (unsigned int i=0; i < rmc_.model_.transmissions_.size(); i++)
+    {
+      rmc_.model_.transmissions_[i]->propagatePositionBackwards();
+      rmc_.model_.transmissions_[i]->propagateEffort();
+      std::cout << " applying reverse transmisison : "
+                <<  dynamic_cast<mechanism::SimpleTransmission*>(rmc_.model_.transmissions_[i])->name_
+                << " " <<  std::endl;
+    }
+
 
     // -------------------------------------------------------------------------------------------------
     // -                                                                                               -
     // -   test some controllers set points by hardcode for debug                                      -
     // -                                                                                               -
     // -------------------------------------------------------------------------------------------------
-    if (true)
-    for (std::vector<Robot_controller_>::iterator rci = robot_controllers_.begin(); rci != robot_controllers_.end() ; rci++)
-    {
-      if (false)
-        if ((*rci).control_mode == "PD_CONTROL")
-          (*rci).pcontroller.setCommand(-0.3);
-        else if ((*rci).control_mode == "VELOCITY_CONTROL")
-          (*rci).vcontroller.setCommand(1.0);
-      if (true)
-        if ((*rci).gazebo_joint_type == "gripper")
-          (*rci).pcontroller.setCommand(0.2);
-    }
+    // set through ros?
+    // artifically set command
+    controller::Controller* mcc = mc_.getControllerByName( "shoulder_pitch_left_controller" );
+    dynamic_cast<controller::JointPositionController*>(mcc)->setCommand(0.2);
 
     // -------------------------------------------------------------------------------------------------
     // -                                                                                               -
     // -  update each controller, this updates the joint that the controller was initialized with      -
     // -                                                                                               -
-    // -------------------------------------------------------------------------------------------------
-    for (std::vector<Robot_controller_>::iterator rci = robot_controllers_.begin(); rci != robot_controllers_.end() ; rci++)
-    {
-      try
-      {
-        if ((*rci).control_mode == "PD_CONTROL")
-        {
-          (*rci).pcontroller.update();
-        }
-        else if ((*rci).control_mode == "VELOCITY_CONTROL")
-        {
-          (*rci).vcontroller.update();
-        }
-
-      }
-      catch (char const* error)
-      {
-        std::cout << " controller update error " << error << std::endl;
-      }
-    }
-
-    // -------------------------------------------------------------------------------------------------
+    // -  update mc given the actuator states are filled from above                                    -
     // -                                                                                               -
-    // -    update actuators from robot joints via forward transmission propagation                    -
+    // -  update actuators from robot joints via forward transmission propagation                      -
     // -                                                                                               -
     // -------------------------------------------------------------------------------------------------
-    for (std::vector<Robot_transmission_>::iterator rti = robot_transmissions_.begin(); rti != robot_transmissions_.end(); rti++)
-    {
-      // assign actuator states
-      (*rti).simple_transmission.propagatePositionBackwards();
-      // assign actuator commands
-      (*rti).simple_transmission.propagateEffort();
-    }
+    mc_.update();
+
 
     //============================================================================================
     // below is when the actuator stuff goes to the hardware
@@ -762,14 +727,15 @@ namespace gazebo {
     // -    reverse transmission, get joint data from actuators                                        -
     // -                                                                                               -
     // -------------------------------------------------------------------------------------------------
-    for (std::vector<Robot_transmission_>::iterator rrti = reverse_robot_transmissions_.begin(); rrti != reverse_robot_transmissions_.end(); rrti++)
+    // propagate actuator data back to reverse-joints
+    for (unsigned int i=0; i < rmc_.model_.transmissions_.size(); i++)
     {
-      // assign joint states
-      (*rrti).simple_transmission.propagatePosition();
+      // assign reverse joint states from actuator states
+      rmc_.model_.transmissions_[i]->propagatePosition();
       // assign joint effort
-      (*rrti).simple_transmission.propagateEffortBackwards();
+      rmc_.model_.transmissions_[i]->propagateEffortBackwards();
     }
-      
+
     // -------------------------------------------------------------------------------------------------
     // -                                                                                               -
     // -     udpate gazebo joint for this controller joint                                             -
@@ -784,14 +750,34 @@ namespace gazebo {
         gazebo::HingeJoint* gj_f_r     = (gazebo::HingeJoint*) (*rci).gazebo_joints_[1];
         gazebo::HingeJoint* gj_f_tip_l = (gazebo::HingeJoint*) (*rci).gazebo_joints_[2];
         gazebo::HingeJoint* gj_f_tip_r = (gazebo::HingeJoint*) (*rci).gazebo_joints_[3];
+
+        controller::Controller* gc = mc_.getControllerByName( (*rci).name );
+
+        double f_l_error     = gj_f_l     -> GetAngle() - dynamic_cast<controller::JointPositionController*>(gc)->getCommand();
+        double f_r_error     = gj_f_r     -> GetAngle() + dynamic_cast<controller::JointPositionController*>(gc)->getCommand();
+        double f_tip_l_error = gj_f_tip_l -> GetAngle() + dynamic_cast<controller::JointPositionController*>(gc)->getCommand();
+        double f_tip_r_error = gj_f_tip_r -> GetAngle() - dynamic_cast<controller::JointPositionController*>(gc)->getCommand();
+        const double correctionConstant = 0.01;
+
+        std::cout << "getting controller from mc : " << (*rci).name
+                  << " e1 : " << f_l_error     << " c1 : " << 0.0*correctionConstant*f_l_error 
+                  << " e2 : " << f_r_error     << " c2 : " << correctionConstant*f_r_error     
+                  << " e3 : " << f_tip_l_error << " c3 : " << correctionConstant*f_tip_l_error 
+                  << " e4 : " << f_tip_r_error << " c4 : " << correctionConstant*f_tip_r_error 
+                  << " cmd "  << dynamic_cast<controller::JointPositionController*>(gc)->getCommand() << std::endl;
+        std::cout << " current " << gj_f_tip_r -> GetAngle() 
+                  << " target "  <<  dynamic_cast<controller::JointPositionController*>(gc)->getCommand()
+                  << " force  "  <<  correctionConstant*f_tip_r_error
+                  << std::endl;
         double damp_force_f_l     = (*rci).explicitDampingCoefficient * gj_f_l    ->GetAngleRate();
         double damp_force_f_r     = (*rci).explicitDampingCoefficient * gj_f_r    ->GetAngleRate();
         double damp_force_f_tip_l = (*rci).explicitDampingCoefficient * gj_f_tip_l->GetAngleRate();
         double damp_force_f_tip_r = (*rci).explicitDampingCoefficient * gj_f_tip_r->GetAngleRate();
-        gj_f_l->SetTorque(     (*rci).reverse_mech_joint_->commanded_effort_ - damp_force_f_l    );
-        gj_f_r->SetTorque(    -(*rci).reverse_mech_joint_->commanded_effort_ - damp_force_f_r    );
-        gj_f_tip_l->SetTorque(-(*rci).reverse_mech_joint_->commanded_effort_ - damp_force_f_tip_l);
-        gj_f_tip_r->SetTorque( (*rci).reverse_mech_joint_->commanded_effort_ - damp_force_f_tip_r);
+
+        gj_f_l    ->SetTorque( (*rci).reverse_mech_joint_->commanded_effort_ + correctionConstant*f_l_error     - damp_force_f_l    );
+        gj_f_r    ->SetTorque(-(*rci).reverse_mech_joint_->commanded_effort_ - correctionConstant*f_r_error     - damp_force_f_r    );
+        gj_f_tip_l->SetTorque(-(*rci).reverse_mech_joint_->commanded_effort_ - correctionConstant*f_tip_l_error - damp_force_f_tip_l);
+        gj_f_tip_r->SetTorque( (*rci).reverse_mech_joint_->commanded_effort_ + correctionConstant*f_tip_r_error - damp_force_f_tip_r);
 
         // std::cout << " updating gripper ----------------------------- " << std::endl;
         // std::cout << " f_l " <<  (*rci).reverse_mech_joint_->commanded_effort_ << " " << damp_force_f_l    << std::endl;
@@ -813,25 +799,10 @@ namespace gazebo {
       }
 
 
-      if ((*rci).control_mode == "PD_CONTROL")
-      {
-        std::cout << " updating -- time is:"
-                  << Simulator::Instance()->GetSimTime()
-                  << "	updating controller:" << (*rci).name
-                  << "	command:" << (*rci).pcontroller.getCommand()
-                  << "	actual:" << (*rci).pcontroller.getActual()
+      std::cout << " updating -- time is:"
+                << Simulator::Instance()->GetSimTime()
+                << "	updating controller:" << (*rci).name
                   << std::endl;
-      }
-      else if ((*rci).control_mode == "VELOCITY_CONTROL")
-      {
-        std::cout << " updating -- time is:"
-                  << Simulator::Instance()->GetSimTime()
-                  << "	updating controller:" << (*rci).name
-                  << "	command:" << (*rci).vcontroller.getCommand()
-                  << "	actual:" << (*rci).vcontroller.getActual()
-                  << std::endl;
-      }
-
 
     }
 

@@ -174,7 +174,7 @@ void Ros_Laser::PutLaserData()
     /*                                                             */
     /***************************************************************/
     this->lock.lock();
-    this->laserMsg.header.frame_id = tfc->lookup(this->frameName);
+    this->laserMsg.header.frame_id = tfc->nameClient.lookup(this->frameName);
     this->laserMsg.header.stamp.sec = (unsigned long)floor(this->laserIface->data->head.time);
     this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->laserIface->data->head.time - this->laserMsg.header.stamp.sec) );
 

@@ -105,11 +105,15 @@ private:
 
   Model *parent_model_;
 
+  TiXmlDocument *pr2Doc_;
+
   //---------------------------------------------------------------------
   //  for mechanism control
   //---------------------------------------------------------------------
-  //MechanismControl mc_;
-  //MechanismControlNode mcn_; // multiple nodes per process
+  MechanismControl mc_;
+  MechanismControl rmc_;
+  MechanismControlNode mcn_;
+  MechanismControlNode rmcn_;
 
   // pointer to ros node
   ros::node *rosnode_;
@@ -133,7 +137,7 @@ private:
   //std::vector<mechanism::Transmission*> transmissions_;
   //std::vector<std::string> actuator_names_;
   //std::vector<gazebo::Joint*> gazebo_joints_;
-  HardwareInterface *hw_;
+  HardwareInterface hw_;
 
   //   2. fill in HardwareInterface
   //           actuators_ is a vector
@@ -164,10 +168,11 @@ private:
   robot_desc::URDF pr2Description;
 
   // for storing pr2 xml
-  mechanism::Robot* mech_robot_;
+  //mechanism::Robot* mech_robot_;
 
   // for storing reverse transmission results
-  mechanism::Robot* reverse_mech_robot_;
+  //mechanism::Robot* reverse_mech_robot_;
+
 
   // for storing controller xml
   struct Robot_controller_
@@ -176,13 +181,12 @@ private:
     std::string type;
     std::string joint_name;
     std::string joint_type;
+
     mechanism::Joint* mech_joint_;
     mechanism::Joint* reverse_mech_joint_;
 
     std::string control_mode; // obsolete? use to pick controller for now
     double p_gain,i_gain,d_gain,windup, init_time;
-    controller::JointPositionController pcontroller; // our fancy controller
-    controller::JointVelocityController vcontroller; // our fancy controller
 
     double saturation_torque;
     double explicitDampingCoefficient;
@@ -193,39 +197,15 @@ private:
   std::vector<Robot_controller_> robot_controllers_;
 
   // for storing transmission xml
-  struct Robot_transmission_
-  {
-      std::string name;
-      std::string joint_name;
-      std::string actuator_name;
-      mechanism::SimpleTransmission simple_transmission;
-      gazebo::Joint* gazebo_joints_;
-  };
-  std::vector<Robot_transmission_> robot_transmissions_;
-  std::vector<Robot_transmission_> reverse_robot_transmissions_;
-
-  // for storing actuator xml
-  struct Robot_actuator_
-  {
-      std::string name;
-      std::string motorboardID;
-      double maxCurrent;
-      std::string motor;
-      std::string ip;
-      double port;
-      double reduction;
-      Vector3 polymap;
-
-      // use our fancy Actuator class
-      Actuator actuator;
-
-      // link to joint?
-      //gazebo::Joint* gazebo_joints_;
-  };
-  std::map<std::string,Robot_actuator_> robot_actuators_;
-
-
-
+  // struct Robot_transmission_
+  // {
+  //     std::string name;
+  //     mechanism::SimpleTransmission simple_transmission;
+  //     gazebo::Joint* gazebo_joints_;
+  // };
+  //std::vector<Robot_transmission_> robot_transmissions_;
+  //std::vector<Robot_transmission_> reverse_robot_transmissions_;
+  std::vector<mechanism::SimpleTransmission> transmissions_;
 
 
 
