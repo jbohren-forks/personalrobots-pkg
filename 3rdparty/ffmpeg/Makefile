@@ -2,7 +2,7 @@ all: build
 
 SVN_DIR = ffmpeg-latest
 SVN_URL = svn://svn.mplayerhq.hu/ffmpeg/trunk 
-SVN_REVISION =
+SVN_REVISION = -r 14758
 include $(shell rospack find mk)/svn_checkout.mk
 
 build: SVN_UP ffmpeg
