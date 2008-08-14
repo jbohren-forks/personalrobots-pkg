@@ -257,7 +257,7 @@
       <axis xyz=" 0 0 1 " /> <!-- direction of the joint in the local coordinate frame -->
       <anchor xyz="0 0 0" /> <!-- point on the joint relative to the local coordinate frame -->
       <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
-      <limit  effortLimit="100" velocityLimit="5" />
+      <limit  effort="100" velocity="5" />
     </const_block>
 
     <const_block name="pr2_wheel_left_visual">
@@ -307,14 +307,14 @@
     <const_block name="pr2_wheel_joint" type="revolute"> 
       <axis xyz=" 0 1 0 " /> <!-- direction of the joint in the local coordinate frame -->
       <anchor xyz="0 0 0" /> <!-- point on the joint relative to the local coordinate frame -->
-      <limit effortLimit="100" velocityLimit="5" />
+      <limit effort="100" velocity="5" />
       <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
     <const_block name="pr2_shoulder_pan_joint" type="revolute">
       <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit min=" shoulder_pan_min_limit" max="shoulder_pan_max_limit" effortLimit="100" velocityLimit="5" />
+      <limit min=" shoulder_pan_min_limit" max="shoulder_pan_max_limit" effort="100" velocity="5" />
       <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
@@ -347,7 +347,7 @@
     <const_block name="pr2_shoulder_pitch_joint" type="revolute">
       <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit min=" shoulder_pitch_min_limit" max="shoulder_pitch_max_limit" effortLimit="100" velocityLimit="5" />
+      <limit min=" shoulder_pitch_min_limit" max="shoulder_pitch_max_limit" effort="100" velocity="5" />
       <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
@@ -383,7 +383,7 @@
     <const_block name="pr2_upperarm_roll_joint" type="revolute">
       <axis xyz=" 1 0 0 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit min=" upperarm_roll_min_limit" max="upperarm_roll_max_limit" effortLimit="100" velocityLimit="5" />
+      <limit min=" upperarm_roll_min_limit" max="upperarm_roll_max_limit" effort="100" velocity="5" />
       <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
@@ -416,7 +416,7 @@
     <const_block name="pr2_elbow_flex_joint" type="revolute">
       <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit min="  elbow_flex_min_limit" max="elbow_flex_max_limit"  effortLimit="1000" velocityLimit="5" />
+      <limit min="  elbow_flex_min_limit" max="elbow_flex_max_limit"  effort="1000" velocity="5" />
       <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
@@ -452,7 +452,7 @@
     <const_block name="pr2_forearm_roll_joint" type="revolute">
       <axis xyz=" 1 0 0 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit  effortLimit="100" velocityLimit="5" />
+      <limit  effort="100" velocity="5" />
       <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
@@ -488,7 +488,7 @@
     <const_block name="pr2_wrist_flex_joint" type="revolute">
       <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit min=" wrist_flex_min_limit" max="wrist_flex_max_limit" effortLimit="100" velocityLimit="5" />
+      <limit min=" wrist_flex_min_limit" max="wrist_flex_max_limit" effort="100" velocity="5" />
       <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
@@ -525,7 +525,7 @@
     <const_block name="pr2_gripper_roll_joint" type="revolute">
       <axis xyz=" 1 0 0 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit effortLimit="100" velocityLimit="5" />
+      <limit effort="100" velocity="5" />
       <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
@@ -561,7 +561,7 @@
     <const_block name="pr2_finger_l_joint" type="revolute">
       <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit effortLimit="100" velocityLimit="5" />
+      <limit effort="100" velocity="5" />
       <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
@@ -597,7 +597,7 @@
     <const_block name="pr2_finger_tip_l_joint" type="revolute">
       <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit effortLimit="100" velocityLimit="5" />
+      <limit effort="100" velocity="5" />
       <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     </const_block>
 
@@ -749,13 +749,13 @@
     <joint name="head_tilt_joint" type="revolute"> 
       <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit min=" head_tilt_min_limit" max="head_tilt_max_limit" effortLimit="100" velocityLimit="5" />
+      <limit min=" head_tilt_min_limit" max="head_tilt_max_limit" effort="100" velocity="5" />
     </joint>
 
     <joint name="head_pan_joint" type="revolute"> 
       <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit min=" head_pan_min_limit" max="head_pan_max_limit" effortLimit="100" velocityLimit="5" />
+      <limit min=" head_pan_min_limit" max="head_pan_max_limit" effort="100" velocity="5" />
     </joint>
 
   <joint name="finger_tip_r_right_joint" >
@@ -868,7 +868,7 @@
     <joint name="tilt_laser_joint" type="revolute"> 
       <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
       <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit effortLimit="10" velocityLimit="5" />
+      <limit effort="10" velocity="5" />
     </joint>
     <joint name="base_laser_joint" type="fixed"> 
       <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
@@ -893,22 +893,22 @@
     <joint name="ptz_pan_left_joint" type="revolute"> 
       <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit min=" ptz_pan_min_limit" max="ptz_pan_max_limit" effortLimit="100" velocityLimit="5" />
+      <limit min=" ptz_pan_min_limit" max="ptz_pan_max_limit" effort="100" velocity="5" />
     </joint>
     <joint name="ptz_tilt_left_joint" type="revolute"> 
       <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit min=" ptz_tilt_min_limit" max="ptz_tilt_max_limit" effortLimit="100" velocityLimit="5" />
+      <limit min=" ptz_tilt_min_limit" max="ptz_tilt_max_limit" effort="100" velocity="5" />
     </joint>
     <joint name="ptz_pan_right_joint" type="revolute"> 
       <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit min=" ptz_pan_min_limit" max="ptz_pan_max_limit" effortLimit="100" velocityLimit="5" />
+      <limit min=" ptz_pan_min_limit" max="ptz_pan_max_limit" effort="100" velocity="5" />
     </joint>
     <joint name="ptz_tilt_right_joint" type="revolute"> 
       <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
       <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-      <limit min=" ptz_tilt_min_limit" max="ptz_tilt_max_limit" effortLimit="100" velocityLimit="5" />
+      <limit min=" ptz_tilt_min_limit" max="ptz_tilt_max_limit" effort="100" velocity="5" />
     </joint>
     <joint name="stereo_joint" type="fixed"> 
       <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
