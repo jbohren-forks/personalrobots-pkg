@@ -122,8 +122,11 @@ namespace TREX {
     advertise<PR2Arm>("cmd_rightarmconfig");
     advertise<pr2_msgs::EndEffectorState>("cmd_leftarm_cartesian");
     advertise<pr2_msgs::EndEffectorState>("cmd_rightarm_cartesian");
-    //subscribe("state", m_rcs_obs, &ROSNode::rcs_cb);
+
+    // These should be mutually exclusive - we should only actually receive a scan (from stage) or a base scan (from Gazebo)
+    subscribe("scan", laserMsg, &ROSNode::laserReceived);
     subscribe("base_scan", laserMsg, &ROSNode::laserReceived);
+
     subscribe("left_pr2arm_pos", leftArmPosMsg, &ROSNode::leftArmPosReceived);
     subscribe("right_pr2arm_pos", rightArmPosMsg, &ROSNode::rightArmPosReceived);
     //subscribe("localizedpose", m_localizedOdomMsg, &ROSNode::localizedOdomReceived);
@@ -167,16 +170,6 @@ namespace TREX {
   bool ROSNode::decRef() {
     m_refCount--;
     return m_refCount == 0;
-  }
-
-
-  /**
-   * @brief Nothing to do here. The msg object will already have been updated and that is what we use
-   * directly in synchronization
-   */
-  void ROSNode::rcs_cb(){
-    m_initialized = true;
-    //debugMsg("ROSNode:Callback", "Received Update:" << toString(m_rcs_obs));
   }
 
   void ROSNode::leftArmPosReceived() {
@@ -424,13 +417,13 @@ namespace TREX {
     lock();
 
 
-    libTF::TFPose2D robotPose,global_pose;
+    libTF::TFPose2D robotPose, global_pose;
     robotPose.x = 0;
     robotPose.y = 0;
     robotPose.yaw = 0;
     robotPose.frame = tf.nameClient.lookup("FRAMEID_ROBOT");
     robotPose.time = laserMsg.header.stamp.sec * 1000000000ULL + 
-      laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
+      laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else,
     try {
       global_pose = this->tf.transformPose2D("FRAMEID_MAP", robotPose);
 

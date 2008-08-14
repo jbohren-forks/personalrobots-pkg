@@ -165,10 +165,6 @@ namespace TREX{
     std_msgs::LaserScan laserMsg;
     
     laser_scan::LaserProjection projector_;
-
-    // Vehcile state updates
-    void rcs_cb();
-    //void localizedOdomReceived();
     
     void leftArmPosReceived();
     void rightArmPosReceived();
