@@ -367,19 +367,22 @@ int main(int argc, char **argv)
     { 
 	ros::init(argc, argv);
 	
-	KinematicPlanning planner(argv[1]);
+	KinematicPlanning *planner = new KinematicPlanning(argv[1]);
+	planner->loadRobotDescription();
 	
 	std::vector<std::string> mlist;    
-	planner.knownModels(mlist);
+	planner->knownModels(mlist);
 	printf("Known models:\n");    
 	for (unsigned int i = 0 ; i < mlist.size() ; ++i)
 	    printf("  * %s\n", mlist[i].c_str());    
 	if (mlist.size() > 0)
-	    planner.spin();
+	    planner->spin();
 	else
 	    printf("No models defined. Kinematic planning node cannot start.\n");
 	
-	planner.shutdown();
+	planner->shutdown();
+
+	delete planner;	
     }
     else
 	usage(argv[0]);
