@@ -233,8 +233,8 @@
         <mesh>default</mesh>
         <size>0.03 0.03 .44</size>
         <mass> 0.1</mass>
-        <cfm>0.000001</cfm>
-        <erp>0.8</erp>
+        <kp>1000000.0</kp>
+        <kd>1.0</kd>
         <visual>
           <size> 0.03 0.03 .44</size>
           <material>Gazebo/PioneerBody</material>
