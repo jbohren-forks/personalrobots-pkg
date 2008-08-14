@@ -135,10 +135,19 @@ public:
    */
   void setSinewaveProfile(double period, double amplitude,double offset);
   
+  /*!
+   * \brief Starts the process of auto-leveling
+   */
   void startAutoLevelSequence();
 
+  /*!
+   * \brief Returns a value indicating whether auto leveling has finished
+   */
   bool checkAutoLevelStatus();
 
+  /*!
+   * \brief Returns whether auto level completed successfully
+   */
   bool checkAutoLevelResult();
 
 private:
@@ -170,12 +179,12 @@ private:
   int profile_index_; /**<Track location in profile>*/
   int profile_length_; /**<Number of points in one cycle>*/
   double cycle_start_time_; //**<Start of the last cycle for profile>*/
-  bool use_profile_; //**<Track whether we want to servo to points or use scanning profile>**/
+
   double time_of_last_point_;/*!<Time of last setpoint>*/  
   double period_;/*!<Period for use in dynamic profile calculation>*/
   double amplitude_;/*!<Amplitude for use in dynamic profile calculation>*/
   double offset_;/*!<Offset for use in dynamic profile calculation>*/
-  int current_profile_;/*!<Profile type for use in dynamic profile calculation>*/
+
 
   LaserControllerMode current_mode_; /*!<Indicates the current status of the controller>*/
   bool auto_level_result_; /*!<Indicates whether the auto_level_routine finished correct>*/

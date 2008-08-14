@@ -46,7 +46,6 @@ LaserScannerController::LaserScannerController()
   // Initialize PID class
   command_ = 0;
 
-  use_profile_ = false;
   profile_index_ = 0;
   profile_length_ = 0;
 
@@ -137,14 +136,18 @@ void LaserScannerController::update()
       }
       break;
     case DYNAMIC_SAWTOOTH:
+      //Advance to next period
+      if(time-cycle_start_time_>period_) cycle_start_time_ = time;    
+
+      //Issue command based on time from start of cycle    
+      setDynamicSawtooth(time-cycle_start_time_);
+      break;
     case DYNAMIC_SINEWAVE:
       //Advance to next period
       if(time-cycle_start_time_>period_) cycle_start_time_ = time;    
 
       //Issue command based on time from start of cycle    
-      if(current_profile_==SINEWAVE) setDynamicSinewave(time-cycle_start_time_);
-      else if(current_profile_==SAWTOOTH) setDynamicSawtooth(time-cycle_start_time_);
-
+      setDynamicSinewave(time-cycle_start_time_);           
       break;
     case AUTO_LEVEL:
       break;
@@ -155,78 +158,6 @@ void LaserScannerController::update()
 
   last_time_ = time; //Keep track of last time for update
 
-}
-
-void LaserScannerController::setJointEffort(double effort)
-{
-  joint_->commanded_effort_ = min(max(effort, -joint_->effort_limit_), joint_->effort_limit_);
-}
-
-//Set mode to use sawtooth profile
-void LaserScannerController::setSawtoothProfile(double period, double amplitude, double offset)
-{   
-  period_ = period;
-  amplitude_ = amplitude;
-  offset_ = offset;
-  
-   //Reset profile settings
-  profile_length_ = 0;
-  profile_index_= 0; 
-  cycle_start_time_ = robot_->hw_->current_time_;
-  
-  current_mode_ = DYNAMIC_SAWTOOTH;
-}
-
-
-//Set mode to use sawtooth profile
-void LaserScannerController::setDynamicSawtooth(double time_from_start)
-{
-  double time_from_peak = fmod(time_from_start,(period_*4));
-  double command = (time_from_peak-cycle_start_time_)/period_*amplitude_;  
-  if(time_from_start<period_/4.0) //Quadrant I
-  {
-    command = command + offset_;
-  }
-  else if (time_from_start>period_/4.0 && time_from_start<period_/2.0) //Quadrant II
-  {
-    command = amplitude_-command + offset_;
-  }
-  else if (time_from_start>period_/2.0 && time_from_start<period_*3/4.0) //Quadrant III
-  {
-    command = -command + offset_;
-  }
-  else if (time_from_start>period_*3/4.0 && time_from_start<period_) //Quadrant IV
-  {
-    command = -amplitude_ + command + offset_;
-  }
-  
-  joint_position_controller_.setCommand(profile_locations_[profile_index_]);
-}
-
-
-//Set mode to use Sinewave profile
-void LaserScannerController::setSinewaveProfile(double period, double amplitude,double offset)
-{
-   //Reset profile settings
-  profile_length_ = 0;
-  profile_index_= 0; 
-  cycle_start_time_ = robot_->hw_->current_time_;
-  current_mode_ = DYNAMIC_SINEWAVE;
-
-  use_profile_ = true;
-  
-  period_ = period;
-  amplitude_ = amplitude;
-  offset_ = offset;
-}
-
-//Get sinewave based on current time
-void LaserScannerController::setDynamicSinewave(double time_from_start)
-{
-  double command;
-  
-  joint_position_controller_.setCommand(sin(2*M_PI*time_from_start/period_)*amplitude_+offset_);
-  
 }
 
 //Set mode to use sawtooth profile
@@ -276,7 +207,22 @@ void LaserScannerController::setSawtoothProfile(double period, double amplitude,
 
   current_mode_ = SAWTOOTH;
 }
- 
+
+//Set mode to use sawtooth profile
+void LaserScannerController::setSawtoothProfile(double period, double amplitude, double offset)
+{   
+  period_ = period;
+  amplitude_ = amplitude;
+  offset_ = offset;
+  
+   //Reset profile settings
+  profile_length_ = 0;
+  profile_index_= 0; 
+  cycle_start_time_ = robot_->hw_->current_time_;
+  
+  current_mode_ = DYNAMIC_SAWTOOTH;
+}
+
 //Set mode to use Sinewave profile
 void LaserScannerController::setSinewaveProfile(double period, double amplitude, int num_elements, double offset)
 {
@@ -338,7 +284,7 @@ void LaserScannerController::setSinewaveProfile(double period, double amplitude,
   #ifdef DEBUG
   for(int i = 0;i<total_elements;i++)
   {
-    printf("*** test %u %f %f\n",i,profile_dt_[i],profile_locations_[i]);
+    printf("** test %u %f %f\n",i,profile_dt_[i],profile_locations_[i]);
   }
   #endif
 
@@ -349,6 +295,20 @@ void LaserScannerController::setSinewaveProfile(double period, double amplitude,
   cycle_start_time_ = robot_->hw_->current_time_;
 
   current_mode_ = SINEWAVE;
+}
+
+//Set mode to use Sinewave profile
+void LaserScannerController::setSinewaveProfile(double period, double amplitude,double offset)
+{
+   //Reset profile settings
+  profile_length_ = 0;
+  profile_index_= 0; 
+  cycle_start_time_ = robot_->hw_->current_time_;
+  current_mode_ = DYNAMIC_SINEWAVE;
+  
+  period_ = period;
+  amplitude_ = amplitude;
+  offset_ = offset;
 }
 
 void LaserScannerController::startAutoLevelSequence()
@@ -366,6 +326,42 @@ bool LaserScannerController::checkAutoLevelResult()
   return auto_level_result_;
 }
 
+void LaserScannerController::setJointEffort(double effort)
+{
+  joint_->commanded_effort_ = min(max(effort, -joint_->effort_limit_), joint_->effort_limit_);
+}
+
+//Get sinewave based on current time
+void LaserScannerController::setDynamicSinewave(double time_from_start)
+{
+  joint_position_controller_.setCommand(sin(2*M_PI*time_from_start/period_)*amplitude_+offset_); 
+}
+
+//Set mode to use sawtooth profile
+void LaserScannerController::setDynamicSawtooth(double time_from_start)
+{
+  double time_from_peak = fmod(time_from_start,(period_/4));
+  double command = (time_from_peak)/(period_/4)*amplitude_;  
+
+  if(time_from_start<period_/4.0) //Quadrant I
+  {
+    command = command + offset_;
+  }
+  else if (time_from_start>period_/4.0 && time_from_start<period_/2.0) //Quadrant II
+  {
+    command = amplitude_-command + offset_;
+  }
+  else if (time_from_start>period_/2.0 && time_from_start<period_*3/4.0) //Quadrant III
+  {
+    command = -command + offset_;
+  }
+  else if (time_from_start>period_*3/4.0 && time_from_start<period_) //Quadrant IV
+  {
+    command = -amplitude_ + command + offset_;
+  }
+  
+  joint_position_controller_.setCommand(command);
+}
 
 ROS_REGISTER_CONTROLLER(LaserScannerControllerNode)
 LaserScannerControllerNode::LaserScannerControllerNode() 
