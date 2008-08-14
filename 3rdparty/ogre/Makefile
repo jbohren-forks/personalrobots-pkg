@@ -48,7 +48,10 @@ $(OGRE_VERSION)/Makefile: $(OGRE_VERSION)
 	  mkdir -p $(ROOT)/ogre/bin; \
 	fi
 
-ogre: $(OGRE_VERSION)/Makefile
+.PHONY: ogre
+ogre: ogre/lib/pkgconfig/OGRE.pc
+
+ogre/lib/pkgconfig/OGRE.pc: $(OGRE_VERSION)/Makefile 
 	# building OGRE
 	if test `uname` = Darwin ; then \
 	  cd $(ROOT)/$(OGRE_VERSION)/Mac/Ogre && \
