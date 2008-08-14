@@ -56,6 +56,11 @@ void JointEffortController::init(mechanism::Robot *robot,mechanism::Joint *joint
   joint_ = joint;
 }
 
+void JointEffortController::init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint)
+{
+}
+
+
 void JointEffortController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
    
@@ -135,6 +140,17 @@ bool JointEffortControllerNode::getActual(
   resp.time = c_->getTime();
   return true;
 }
+
+void JointEffortControllerNode::init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint)
+{
+  ros::node *node = ros::node::instance();
+  string prefix = joint->name_;
+  
+  c_->init(p_gain, i_gain, d_gain, windup, time,robot, joint);
+  node->advertise_service(prefix + "/set_command", &JointEffortControllerNode::setCommand, this);
+  node->advertise_service(prefix + "/get_actual", &JointEffortControllerNode::getActual, this);
+}
+
 
 void JointEffortControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {

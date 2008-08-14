@@ -59,6 +59,10 @@ void RampInputController::init(double input_start, double input_end, double dura
   initial_time_=time;
 }
 
+void RampInputController::init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint)
+{
+}
+
 void RampInputController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   
@@ -136,6 +140,11 @@ bool RampInputControllerNode::getActual(
   resp.command = c_->getActual();
   resp.time = c_->getTime();
   return true;
+}
+
+void RampInputControllerNode::init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint)
+{
+  assert(false); // temporary fix for lack of xml
 }
 
 void RampInputControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)

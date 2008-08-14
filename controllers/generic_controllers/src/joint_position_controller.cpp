@@ -159,6 +159,16 @@ bool JointPositionControllerNode::getActual(
   return true;
 }
 
+void JointPositionControllerNode::init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint)
+{
+  ros::node *node = ros::node::instance();
+  string prefix = joint->name_;
+  
+  c_->init(p_gain, i_gain, d_gain, windup, time,robot, joint);
+  node->advertise_service(prefix + "/set_command", &JointPositionControllerNode::setCommand, this);
+  node->advertise_service(prefix + "/get_actual", &JointPositionControllerNode::getActual, this);
+}
+
 void JointPositionControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();

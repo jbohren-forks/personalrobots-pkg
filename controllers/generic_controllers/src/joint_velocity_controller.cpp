@@ -152,6 +152,16 @@ bool JointVelocityControllerNode::getActual(
   return true;
 }
 
+void JointVelocityControllerNode::init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint)
+{
+  ros::node *node = ros::node::instance();
+  string prefix = joint->name_;
+  
+  c_->init(p_gain, i_gain, d_gain, windup, time,robot, joint);
+  node->advertise_service(prefix + "/set_command", &JointVelocityControllerNode::setCommand, this);
+  node->advertise_service(prefix + "/get_actual", &JointVelocityControllerNode::getActual, this);
+}
+
 void JointVelocityControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
