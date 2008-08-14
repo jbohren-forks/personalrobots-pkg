@@ -828,3 +828,4 @@ bool WavefrontNode::navToPointCB(
   res.result = "failure";
   return true;
 }
+
