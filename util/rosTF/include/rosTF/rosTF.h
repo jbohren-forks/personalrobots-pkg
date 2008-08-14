@@ -125,6 +125,9 @@ class rosTFClient : public libTF::TransformReference
   nameLookupClient nameClient;
   unsigned int lookup(const std::string& name){std::cerr<<"Interface Depricated: use rosTFClient.nameClient.lookup(name) instead."; return nameClient.lookup(name);};
 
+  /** \brief Return all frames and their lookups */
+  std::string viewNamedFrames();
+
  private:
   // A reference to the active ros::node to allow setting callbacks
   ros::node & myNode; 
@@ -187,7 +190,6 @@ class rosTFServer
   nameLookupClient nameClient;
   /** \brief THIS IS TEMPORARY use nameClient.lookup A pass through to prevent breaking the previous API.   */
   unsigned int lookup(const std::string& name){std::cerr<<"Interface Depricated: use rosTFServer.nameClient.lookup(name) instead."; return nameClient.lookup(name);};
-
 
  private:
   //ros::node reference to allow setting callbacks

@@ -235,6 +235,19 @@ libTF::TFPose2D rosTFClient::transformPose2D(std::string target_frame, const lib
 std::string rosTFClient::viewChain(std::string target_frame, std::string source_frame)
 { return viewChain(nameClient.lookup(target_frame), nameClient.lookup(source_frame));};
 
+std::string rosTFClient::viewNamedFrames(){
+  stringstream mstream;
+  for (unsigned int frameid = 1; frameid < MAX_NUM_FRAMES; frameid++)
+  {
+    if (frames[frameid] != NULL)
+    {
+      mstream << "Frame "<< nameClient.reverseLookup(frameid) <<":"<< frameid 
+              << " exists with parent " << nameClient.reverseLookup(frames[frameid]->getParent())
+              <<":"<<frames[frameid]->getParent() << "." <<std::endl;    
+    }
+  }
+  return mstream.str();
+}
 
 
 
@@ -419,6 +432,7 @@ void rosTFServer::sendMatrix(unsigned int frame, unsigned int parent, NEWMAT::Ma
 
   
 };
+
 
 
 bool rosTFServer::checkInvalidFrame(unsigned int frameID)
