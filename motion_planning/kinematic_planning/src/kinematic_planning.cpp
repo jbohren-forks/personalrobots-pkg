@@ -187,7 +187,7 @@ public:
 	{
 	    ros::Time startTime = ros::Time::now();
 	    ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
-	    p.si->smoothVertices(path);
+	    p.si->smoother->smoothVertices(path);
 	    double tsmooth = (ros::Time::now() - startTime).to_double();	
 	    printf("Smoother spent %f seconds (%f seconds in total)\n", tsmooth, tsmooth + tsolve);
 	}	
