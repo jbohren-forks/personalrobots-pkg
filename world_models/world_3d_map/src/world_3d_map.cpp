@@ -119,11 +119,11 @@ public:
 	advertise<std_msgs::PointCloudFloat32>("world_3d_map");
 	advertise<rostools::Log>("roserr");
 
-	param("max_publish_frequency", m_maxPublishFrequency, 0.5);
-	param("retain_pointcloud_duration", m_retainPointcloudDuration, 60.0);
-	param("retain_pointcloud_fraction", m_retainPointcloudFraction, 0.02);
-	param("retain_above_ground_threshold", m_retainAboveGroundThreshold, 0.01);
-	param("verbosity_level", m_verbose, 1);
+	param("world_3d_map/max_publish_frequency", m_maxPublishFrequency, 0.5);
+	param("world_3d_map/retain_pointcloud_duration", m_retainPointcloudDuration, 60.0);
+	param("world_3d_map/retain_pointcloud_fraction", m_retainPointcloudFraction, 0.02);
+	param("world_3d_map/retain_above_ground_threshold", m_retainAboveGroundThreshold, 0.01);
+	param("world_3d_map/verbosity_level", m_verbose, 1);
 	
 	/* create a thread that does the processing of the input data.
 	 * and one that handles the publishing of the data */
@@ -172,9 +172,12 @@ private:
     void baseUpdate(void)
     {
 	planning_node_util::NodeWithRobotModel::baseUpdate();
-	int group = m_kmodel->getGroupID(m_urdf->getRobotName() + "::base");
-	if (group >= 0)
-	    m_kmodel->computeTransforms(m_basePos, group);
+	if (m_kmodel)
+	{
+	    int group = m_kmodel->getGroupID(m_urdf->getRobotName() + "::base");
+	    if (group >= 0)
+		m_kmodel->computeTransforms(m_basePos, group);
+	}	
     }
     
     void pointCloudCallback(void)
@@ -184,6 +187,8 @@ private:
 	   of data will not happen, but we don't want the node to
 	   postpone processing latest data just because it is not done
 	   with older data. */
+	if (m_verbose)
+	    printf("Received laser scan with %u points in frame %d\n", m_inputScan.get_ranges_size(), m_inputScan.header.frame_id);
 	
 	m_flagMutex.lock();
 	bool discard = m_working;
@@ -206,7 +211,7 @@ private:
 	    bool success = true;
 	    try
 	    {
-		m_tf.transformLaserScanToPointCloud("FRAMEID_MAP", m_toProcess, m_inputScan);
+		m_tf.transformLaserScanToPointCloud("tilt_laser", m_toProcess, m_inputScan);
 	    }
 	    catch(libTF::TransformReference::LookupException& ex)
 	    {
@@ -435,7 +440,10 @@ private:
 		    keep = !m_selfSeeParts[i].body->containsPoint(x, y, z);
 		
 		if (keep)
+		{
 		    copy->pts[j++] = cloud.pts[k];
+		    printf("%f\n", cloud.pts[k].z);
+		}		
 	    }
 	}
 	if (m_verbose)
@@ -481,9 +489,11 @@ int main(int argc, char **argv)
     
     if (argc == 2)
     {
-	World3DMap map(argv[1]);
-	map.spin();
-	map.shutdown();
+	World3DMap *map = new World3DMap(argv[1]);
+	map->loadRobotDescription();
+	map->spin();
+	map->shutdown();
+	delete map;
     }
     else
 	usage(argv[0]);

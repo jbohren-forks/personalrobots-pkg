@@ -92,7 +92,10 @@ namespace planning_node_util
 	virtual ~NodeWithODECollisionModel(void)
 	{
 	    if (m_collisionSpace)
+	    {
 		delete m_collisionSpace;
+		m_kmodel = NULL;
+	    }	    
 	}
 	
 	virtual void setRobotDescription(robot_desc::URDF *file)

@@ -88,7 +88,7 @@ namespace planning_node_util
 	    m_urdf = NULL;
 	    m_kmodel = NULL;
 	    m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
-	    loadRobotDescription(robot_model);
+	    m_robotModelName = robot_model;
 	    
 	    subscribe("localizedpose", m_localizedPose, &NodeWithRobotModel::localizedPoseCallback);
 	}
@@ -132,15 +132,15 @@ namespace planning_node_util
 	    m_kmodel->build(*file);
 	}
 	
-	virtual void loadRobotDescription(const std::string &robot_model)
+	virtual void loadRobotDescription(void)
 	{
-	    if (!robot_model.empty() && robot_model != "-")
+	    if (!m_robotModelName.empty() && m_robotModelName != "-")
 	    {
 		std::string content;
-		if (get_param(robot_model, content))
+		if (get_param(m_robotModelName, content))
 		    setRobotDescriptionFromData(content.c_str());
 		else
-		    fprintf(stderr, "Robot model '%s' not found!\n", robot_model.c_str());
+		    fprintf(stderr, "Robot model '%s' not found!\n", m_robotModelName.c_str());
 	    }
 	}
 	
@@ -211,6 +211,7 @@ namespace planning_node_util
 	std_msgs::RobotBase2DOdom        m_localizedPose;
 	robot_desc::URDF                *m_urdf;
 	planning_models::KinematicModel *m_kmodel;	
+	std::string                      m_robotModelName;
 	double                           m_basePos[3];
 
     };

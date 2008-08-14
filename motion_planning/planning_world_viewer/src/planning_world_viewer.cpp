@@ -104,7 +104,6 @@ public:
 	m_displayObstacles = true;
 	m_checkCollision = false;
 	
-	updateODESpaces();
     }
     
     ~PlanningWorldViewer(void)
@@ -139,7 +138,7 @@ public:
 	    {
 		ros::Time startTime = ros::Time::now();
 		printf("Collision: %d     [%f s]\n", m_collisionSpace->isCollision(0), (ros::Time::now() - startTime).to_double());
-	    }	    
+	    }
 	    m_collisionSpace->unlock();
 	}
     }
@@ -235,6 +234,8 @@ public:
     
     void display(void)
     {
+	//	printf("disp\n");
+	
 	m_displayLock.lock();
 	m_spaces.displaySpaces();
 	m_displayLock.unlock();
@@ -318,7 +319,9 @@ int main(int argc, char **argv)
 	ros::init(argc, argv);
         
 	viewer = new PlanningWorldViewer(argv[1]);
-	
+	viewer->loadRobotDescription();
+	viewer->updateODESpaces();
+
 	if (viewer->loadedRobot())
 	{
 	    dsFunctions fn;
