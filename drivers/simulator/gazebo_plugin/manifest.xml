@@ -20,6 +20,7 @@ A test file for Player interface.
 <depend package="rosthread"/>
 <depend package="std_msgs"/>
 <depend package="stl_utils" />
+<depend package="math_utils" />
 <depend package="gazebo_robot_description"/>
 <depend package="hardware_interface" />
 <depend package="mechanism_control" />

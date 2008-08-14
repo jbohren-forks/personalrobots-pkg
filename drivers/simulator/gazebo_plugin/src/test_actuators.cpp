@@ -33,6 +33,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <stl_utils/stl_utils.h>
+#include <math_utils/angles.h>
 #include <gazebo/Global.hh>
 #include <gazebo/XMLConfig.hh>
 #include <gazebo/Model.hh>
@@ -703,8 +704,16 @@ namespace gazebo {
     // -------------------------------------------------------------------------------------------------
     // set through ros?
     // artifically set command
-    controller::Controller* mcc = mc_.getControllerByName( "shoulder_pitch_left_controller" );
-    dynamic_cast<controller::JointPositionController*>(mcc)->setCommand(0.2);
+    controller::Controller* mcc = mc_.getControllerByName( "shoulder_pitch_right_controller" );
+    dynamic_cast<controller::JointPositionController*>(mcc)->setCommand(-0.2);
+    // sample read back angle
+    controller::Controller* mc2 = mc_.getControllerByName( "shoulder_pitch_left_controller" );
+    std::cout << " angle = " << dynamic_cast<controller::JointPositionController*>(mcc)->getActual() << std::endl;
+
+    controller::Controller* mc5 = mc_.getControllerByName( "shoulder_pitch_left_controller" );
+    dynamic_cast<controller::JointPositionController*>(mc5)->setCommand(-0.5);
+    controller::Controller* mc3 = mc_.getControllerByName( "gripper_left_controller" );
+    dynamic_cast<controller::JointPositionController*>(mc3)->setCommand(0.2);
 
     // -------------------------------------------------------------------------------------------------
     // -                                                                                               -
@@ -753,18 +762,32 @@ namespace gazebo {
 
         controller::Controller* gc = mc_.getControllerByName( (*rci).name );
 
-        double f_l_error     = gj_f_l     -> GetAngle() - dynamic_cast<controller::JointPositionController*>(gc)->getCommand();
-        double f_r_error     = gj_f_r     -> GetAngle() + dynamic_cast<controller::JointPositionController*>(gc)->getCommand();
-        double f_tip_l_error = gj_f_tip_l -> GetAngle() + dynamic_cast<controller::JointPositionController*>(gc)->getCommand();
-        double f_tip_r_error = gj_f_tip_r -> GetAngle() - dynamic_cast<controller::JointPositionController*>(gc)->getCommand();
-        const double correctionConstant = 0.01;
+        double f_l_error     =  math_utils::shortest_angular_distance(gj_f_l     -> GetAngle() , dynamic_cast<controller::JointPositionController*>(gc)->getCommand());
+        double f_r_error     =  math_utils::shortest_angular_distance(gj_f_r     -> GetAngle() ,-dynamic_cast<controller::JointPositionController*>(gc)->getCommand());
+        double f_tip_l_error =  math_utils::shortest_angular_distance(gj_f_tip_l -> GetAngle() ,-dynamic_cast<controller::JointPositionController*>(gc)->getCommand());
+        double f_tip_r_error =  math_utils::shortest_angular_distance(gj_f_tip_r -> GetAngle() , dynamic_cast<controller::JointPositionController*>(gc)->getCommand());
+        const double correctionConstant = 1.0;
 
-        std::cout << "getting controller from mc : " << (*rci).name
-                  << " e1 : " << f_l_error     << " c1 : " << 0.0*correctionConstant*f_l_error 
-                  << " e2 : " << f_r_error     << " c2 : " << correctionConstant*f_r_error     
-                  << " e3 : " << f_tip_l_error << " c3 : " << correctionConstant*f_tip_l_error 
-                  << " e4 : " << f_tip_r_error << " c4 : " << correctionConstant*f_tip_r_error 
-                  << " cmd "  << dynamic_cast<controller::JointPositionController*>(gc)->getCommand() << std::endl;
+        // std::cout << "getting controller from mc : " << (*rci).name
+        //           << " e1 : " << f_l_error     << " c1 : " << 0.0*correctionConstant*f_l_error 
+        //           << " e2 : " << f_r_error     << " c2 : " << correctionConstant*f_r_error     
+        //           << " e3 : " << f_tip_l_error << " c3 : " << correctionConstant*f_tip_l_error 
+        //           << " e4 : " << f_tip_r_error << " c4 : " << correctionConstant*f_tip_r_error 
+        //           << " cmd "  << dynamic_cast<controller::JointPositionController*>(gc)->getCommand() << std::endl;
+
+
+        std::cout << "0current " << gj_f_l     -> GetAngle() 
+                  << " target "  <<  dynamic_cast<controller::JointPositionController*>(gc)->getCommand()
+                  << " force  "  <<  correctionConstant*f_l_error
+                  << std::endl;
+        std::cout << " current " << gj_f_r     -> GetAngle() 
+                  << " target "  <<  dynamic_cast<controller::JointPositionController*>(gc)->getCommand()
+                  << " force  "  <<  correctionConstant*f_r_error
+                  << std::endl;
+        std::cout << " current " << gj_f_tip_l -> GetAngle() 
+                  << " target "  <<  dynamic_cast<controller::JointPositionController*>(gc)->getCommand()
+                  << " force  "  <<  correctionConstant*f_tip_l_error
+                  << std::endl;
         std::cout << " current " << gj_f_tip_r -> GetAngle() 
                   << " target "  <<  dynamic_cast<controller::JointPositionController*>(gc)->getCommand()
                   << " force  "  <<  correctionConstant*f_tip_r_error
@@ -775,8 +798,8 @@ namespace gazebo {
         double damp_force_f_tip_r = (*rci).explicitDampingCoefficient * gj_f_tip_r->GetAngleRate();
 
         gj_f_l    ->SetTorque( (*rci).reverse_mech_joint_->commanded_effort_ + correctionConstant*f_l_error     - damp_force_f_l    );
-        gj_f_r    ->SetTorque(-(*rci).reverse_mech_joint_->commanded_effort_ - correctionConstant*f_r_error     - damp_force_f_r    );
-        gj_f_tip_l->SetTorque(-(*rci).reverse_mech_joint_->commanded_effort_ - correctionConstant*f_tip_l_error - damp_force_f_tip_l);
+        gj_f_r    ->SetTorque(-(*rci).reverse_mech_joint_->commanded_effort_ + correctionConstant*f_r_error     - damp_force_f_r    );
+        gj_f_tip_l->SetTorque(-(*rci).reverse_mech_joint_->commanded_effort_ + correctionConstant*f_tip_l_error - damp_force_f_tip_l);
         gj_f_tip_r->SetTorque( (*rci).reverse_mech_joint_->commanded_effort_ + correctionConstant*f_tip_r_error - damp_force_f_tip_r);
 
         // std::cout << " updating gripper ----------------------------- " << std::endl;
