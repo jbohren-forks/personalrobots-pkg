@@ -1,0 +1,14 @@
+<package>
+<description>Data processing and manipulation for learning grasp points from scanned clouds</description>
+<author>Matei Ciocarlie</author>
+<license>BSD</license>
+<depend package="libTF" />
+<depend package="grasp_module" />
+<depend package="grasp_planner" />
+<depend package="scan_utils" />
+<depend package="megamaid"/>
+<depend package="logging"/>
+<export>
+  <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags=""/>
+</export>
+</package>

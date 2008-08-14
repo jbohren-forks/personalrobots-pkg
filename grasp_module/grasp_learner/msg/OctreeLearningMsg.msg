@@ -1,0 +1,3 @@
+scan_utils/OctreeMsg octree
+int32 octree_type
+grasp_module/graspPoint_msg grasp_point
