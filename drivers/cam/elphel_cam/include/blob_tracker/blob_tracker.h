@@ -56,10 +56,11 @@ public:
   Blob_Tracker();
 
   void init();
-  void processFrame(IplImage**);
+  bool processFrame(IplImage**);
   void showFrame(IplImage**);
   void saveFrame(const char*, IplImage*);
-
+  int getNumBlobs();
+  void getBlobCoords(int,float*, float*);
 
 private:
 
