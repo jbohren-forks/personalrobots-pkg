@@ -2,8 +2,7 @@
 WITH_DRAWSTUFF = yes
 
 CFG_OPTIONS = --with-arch=nocona --enable-release --disable-debug --enable-double-precision
-#REVISION = -r 1520
-SVN_REVISION = -r 1534 #this seems to have the bNormalize error removed.
+SVN_REVISION = -r 1540
 
 ifeq ($(WITH_DRAWSTUFF), yes)
 CFG_OPTIONS += --with-drawstuff=X11
