@@ -26,6 +26,6 @@ A test file for Player interface.
 <depend package="mechanism_control" />
 <depend package="wg_robot_description_parser" />
 <export>
-<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lPr2_Actarray -lPr2_Gripper -lP3D -lRos_Camera -lRos_Laser -lgazebo_actuators -ltest_actuators" />
+<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
 </export>
 </package>
