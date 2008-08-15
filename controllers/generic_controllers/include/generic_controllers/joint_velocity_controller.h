@@ -80,7 +80,7 @@ public:
    * \param *joint The joint that is being controlled.
    */
 
-  void init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint);
+  void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot);
   void initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   /*!
@@ -103,7 +103,7 @@ public:
   /*!
    * \brief Read the torque of the motor
    */
-  double getActual();
+  double getMeasuredState();
 
   /*!
    * \brief Issues commands to the joint. Should be called at regular intervals
@@ -118,10 +118,11 @@ private:
   void setJointEffort(double torque);
 
   mechanism::Joint* joint_; /**< Joint we're controlling. */
+  mechanism::Robot *robot_; /**< Pointer to robot structure. */
   Pid pid_controller_;      /**< Internal PID controller. */
   double last_time_;        /**< Last time stamp of update. */
   double command_;          /**< Last commanded position. */
-  mechanism::Robot *robot_; /**< Pointer to robot structure. */
+  
 };
 
 /***************************************************/
@@ -149,7 +150,7 @@ public:
 
   void update();
 
-  void init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint);
+  void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot);
   void initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   // Services

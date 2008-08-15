@@ -34,7 +34,6 @@
 #include <algorithm>
 #include <generic_controllers/ramp_input_controller.h>
 
-
 using namespace std;
 using namespace controller;
 
@@ -42,7 +41,13 @@ ROS_REGISTER_CONTROLLER(RampInputController)
 
 RampInputController::RampInputController()
 {
-
+  robot_ = NULL;
+  joint_ = NULL;
+  
+  input_start_ = 0;
+  input_end_ = 0;
+  duration_ = 0;
+  initial_time_ = 0;
 }
 
 RampInputController::~RampInputController()
@@ -53,13 +58,12 @@ void RampInputController::init(double input_start, double input_end, double dura
 {
   robot_ = robot;
   joint_ = robot->getJoint(name);
+  
   input_start_=input_start;
   input_end_=input_end;
   duration_=duration;
   initial_time_=time;
 }
-
-
 
 void RampInputController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
@@ -82,7 +86,7 @@ double RampInputController::getCommand()
 }
 
 // Return the measured joint position
-double RampInputController::getActual()
+double RampInputController::getMeasuredState()
 {
   return joint_->applied_effort_;
 }
@@ -135,7 +139,7 @@ bool RampInputControllerNode::getActual(
   generic_controllers::GetActual::request &req,
   generic_controllers::GetActual::response &resp)
 {
-  resp.command = c_->getActual();
+  resp.command = c_->getMeasuredState();
   resp.time = c_->getTime();
   return true;
 }

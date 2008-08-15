@@ -34,7 +34,6 @@
 #include <algorithm>
 #include <generic_controllers/joint_effort_controller.h>
 
-
 using namespace std;
 using namespace controller;
 
@@ -42,6 +41,9 @@ ROS_REGISTER_CONTROLLER(JointEffortController)
 
 JointEffortController::JointEffortController()
 {
+  robot_ = NULL;
+  joint_ = NULL;
+  
   command_ = 0;
 }
 
@@ -49,17 +51,13 @@ JointEffortController::~JointEffortController()
 {
 }
 
-void JointEffortController::init(mechanism::Robot *robot,mechanism::Joint *joint)
+void JointEffortController::init(std::string name,mechanism::Robot *robot)
 {
-  command_= 0;
   robot_ = robot;
-  joint_ = joint;
+  joint_ = robot->getJoint(name);
+  
+  command_= 0;
 }
-
-void JointEffortController::init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint)
-{
-}
-
 
 void JointEffortController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
@@ -67,9 +65,8 @@ void JointEffortController::initXml(mechanism::Robot *robot, TiXmlElement *confi
   TiXmlElement *elt = config->FirstChildElement("joint");
   if (elt) 
   {
-    init(robot,robot->getJoint(elt->Attribute("name")));
-  }
-    
+    init(elt->Attribute("name"), robot);
+  } 
 }
 
 // Set the joint position command
@@ -85,7 +82,7 @@ double JointEffortController::getCommand()
 }
 
 // Return the measured joint position
-double JointEffortController::getActual()
+double JointEffortController::getMeasuredState()
 {
   return joint_->applied_effort_;
 }
@@ -136,17 +133,17 @@ bool JointEffortControllerNode::getActual(
   generic_controllers::GetActual::request &req,
   generic_controllers::GetActual::response &resp)
 {
-  resp.command = c_->getActual();
+  resp.command = c_->getMeasuredState();
   resp.time = c_->getTime();
   return true;
 }
 
-void JointEffortControllerNode::init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint)
+void JointEffortControllerNode::init(std::string name, mechanism::Robot *robot)
 {
   ros::node *node = ros::node::instance();
-  string prefix = joint->name_;
+  string prefix = name;
   
-  c_->init(p_gain, i_gain, d_gain, windup, time,robot, joint);
+  c_->init(name, robot);
   node->advertise_service(prefix + "/set_command", &JointEffortControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_actual", &JointEffortControllerNode::getActual, this);
 }

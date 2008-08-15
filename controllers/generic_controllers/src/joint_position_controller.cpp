@@ -32,7 +32,6 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 #include <algorithm>
-
 #include <generic_controllers/joint_position_controller.h>
 #include <math_utils/angles.h>
 
@@ -42,11 +41,14 @@ using namespace controller;
 ROS_REGISTER_CONTROLLER(JointPositionController)
 
 JointPositionController::JointPositionController()
-: joint_(NULL), last_time_(0), robot_(NULL)
 {
+  robot_ = NULL;
+  joint_ = NULL;
+  
   // Initialize PID class
   pid_controller_.initPid(0, 0, 0, 0, 0);
   command_ = 0;
+  last_time_ = 0;
 }
 
 JointPositionController::~JointPositionController()
@@ -55,13 +57,12 @@ JointPositionController::~JointPositionController()
 
 void JointPositionController::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot)
 {
-  pid_controller_.initPid(p_gain, i_gain, d_gain, windup, -windup);
-
   robot_ = robot;
   joint_ = robot->getJoint(name);
-  command_= 0;
-  last_time_= time;
   
+  pid_controller_.initPid(p_gain, i_gain, d_gain, windup, -windup);
+  command_= 0;
+  last_time_= time; 
 }
 
 void JointPositionController::initXml(mechanism::Robot *robot, TiXmlElement *config)
@@ -91,7 +92,7 @@ double JointPositionController::getCommand()
 }
 
 // Return the measured joint position
-double JointPositionController::getActual()
+double JointPositionController::getMeasuredState()
 {
   return joint_->position_;
 }
@@ -157,7 +158,7 @@ bool JointPositionControllerNode::getActual(
   generic_controllers::GetActual::request &req,
   generic_controllers::GetActual::response &resp)
 {
-  resp.command = c_->getActual();
+  resp.command = c_->getMeasuredState();
   resp.time = c_->getTime();
   return true;
 }

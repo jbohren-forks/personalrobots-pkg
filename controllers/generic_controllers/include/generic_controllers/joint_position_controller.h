@@ -97,7 +97,7 @@ public:
   /*!
    * \brief Read the torque of the motor
    */
-  double getActual();
+  double getMeasuredState();
 
   /*!
    * \brief Get latest time..
@@ -118,10 +118,11 @@ private:
   void setJointEffort(double torque);
 
   mechanism::Joint* joint_;  /**< Joint we're controlling. */
+  mechanism::Robot *robot_;  /**< Pointer to robot structure. */
   Pid pid_controller_;       /**< Internal PID controller. */
   double last_time_;         /**< Last time stamp of update. */
   double command_;           /**< Last commanded position. */
-  mechanism::Robot *robot_;  /**< Pointer to robot structure. */
+  
 };
 
 /***************************************************/

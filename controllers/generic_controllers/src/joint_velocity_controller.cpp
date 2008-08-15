@@ -43,23 +43,28 @@ ROS_REGISTER_CONTROLLER(JointVelocityController)
 
 JointVelocityController::JointVelocityController()
 {
+  robot_=NULL;
+  joint_=NULL;
+  
   // Initialize PID class
   pid_controller_.initPid(0, 0, 0, 0, 0);
   command_ = 0;
+  last_time_=0;
 }
 
 JointVelocityController::~JointVelocityController()
 {
 }
 
-void JointVelocityController::init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint)
+void JointVelocityController::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot)
 {
+  robot_ = robot;
+  joint_ = robot->getJoint(name);
+  
   pid_controller_.initPid(p_gain, i_gain, d_gain, windup, -windup);
-
   command_= 0;
   last_time_= time;
-  joint_ = joint;
-  robot_ = robot;
+
 }
 
 void JointVelocityController::initXml(mechanism::Robot *robot, TiXmlElement *config)
@@ -72,7 +77,7 @@ void JointVelocityController::initXml(mechanism::Robot *robot, TiXmlElement *con
     double i_gain = atof(elt->FirstChildElement("iGain")->GetText());
     double d_gain = atof(elt->FirstChildElement("dGain")->GetText());
     double windup= atof(elt->FirstChildElement("windup")->GetText());
-    init(p_gain, i_gain, d_gain, windup, robot->hw_->current_time_,robot, robot->getJoint(elt->Attribute("name")));
+    init(p_gain, i_gain, d_gain, windup, robot->hw_->current_time_,elt->Attribute("name"), robot);
   }
 }
 
@@ -94,7 +99,7 @@ double JointVelocityController::getTime()
 }
 
 // Return the measured joint velocity
-double JointVelocityController::getActual()
+double JointVelocityController::getMeasuredState()
 {
   return joint_->velocity_;
 }
@@ -146,18 +151,18 @@ bool JointVelocityControllerNode::getActual(
   generic_controllers::GetActual::request &req,
   generic_controllers::GetActual::response &resp)
 {
-  resp.command = c_->getActual();
+  resp.command = c_->getMeasuredState();
   resp.time = c_->getTime();
 
   return true;
 }
 
-void JointVelocityControllerNode::init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint)
+void JointVelocityControllerNode::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot)
 {
   ros::node *node = ros::node::instance();
-  string prefix = joint->name_;
+  string prefix = name;
   
-  c_->init(p_gain, i_gain, d_gain, windup, time,robot, joint);
+  c_->init(p_gain, i_gain, d_gain, windup, time,name, robot);
   node->advertise_service(prefix + "/set_command", &JointVelocityControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_actual", &JointVelocityControllerNode::getActual, this);
 }

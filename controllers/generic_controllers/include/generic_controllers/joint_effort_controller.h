@@ -73,8 +73,7 @@ public:
    * \brief Functional way to initialize limits and gains.
    *
    */
-  void init(mechanism::Robot *robot,mechanism::Joint *joint);
-  void init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint);
+  void init(std::string name,mechanism::Robot *robot);
   void initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   /*!
@@ -92,7 +91,7 @@ public:
   /*!
    * \brief Read the effort of the joint
    */
-  double getActual();
+  double getMeasuredState();
 
   /*!
    * \brief Get latest time..
@@ -112,8 +111,8 @@ private:
   void setJointEffort(double torque);
 
   mechanism::Joint* joint_; /**< Joint we're controlling. */
-  double command_;          /**< Last commanded position. */
   mechanism::Robot *robot_; /**< Pointer to robot structure. */
+  double command_;          /**< Last commanded position. */
 };
 
 /***************************************************/
@@ -142,7 +141,7 @@ public:
 
   void update();
 
-  void init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint);
+  void init(std::string name, mechanism::Robot *robot);
   void initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   // Services

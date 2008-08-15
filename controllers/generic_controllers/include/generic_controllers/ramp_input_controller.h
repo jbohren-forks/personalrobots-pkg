@@ -89,7 +89,7 @@ public:
   /*!
    * \brief Read the effort of the joint
    */
-  double getActual();
+  double getMeasuredState();
   
   /*!
    * \brief Read the velocity of the joint
@@ -114,11 +114,12 @@ private:
   void setJointEffort(double torque);
 
   mechanism::Joint* joint_;     /**< Joint we're controlling. */
+  mechanism::Robot *robot_;     /**< Pointer to robot structure. */
   double input_start_;          /**< Begining of the ramp. */
   double input_end_;            /**< End of the ramp. */
   double duration_;             /**< Duration of the ramp. */
   double initial_time_;         /**< Start time of the ramp. */
-  mechanism::Robot *robot_;     /**< Pointer to robot structure. */
+  
 };
 
 /***************************************************/
