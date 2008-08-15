@@ -327,7 +327,7 @@ public:
     ExtrapolateException(const std::string &errorDescription): std::runtime_error(errorDescription) { ; };
   };
 
-private:
+protected:
 
   /** \brief The internal storage class for ReferenceTransform.  
    * 
@@ -390,7 +390,7 @@ private:
     std::vector<unsigned int> forwardTransforms;
   } TransformLists;
 
- private: 
+ protected: 
   /************************* Internal Functions ****************************/
   
   /** \brief An accessor to get a frame, which will throw an exception if the frame is no there. 
