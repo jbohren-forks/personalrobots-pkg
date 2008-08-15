@@ -32,16 +32,17 @@ public:
 
   int lookup(const std::string& str_in)
   {
-    std::map<std::string, int>::iterator it = nameMap.find(str_in);
+    std::string name = myNode.map_name(str_in);
+    std::map<std::string, int>::iterator it = nameMap.find(name);
     if ( it == nameMap.end())
       {
         
         int value = 0;
-        value = lookupOnServer(str_in); //Ask the server
+        value = lookupOnServer(name); //Ask the server
         if (value != 0) //don't record a failure
         {
-          nameMap[str_in] = value; //Record lookup
-          reverseNameMap[value] = str_in;  //Record reverse lookup
+          nameMap[name] = value; //Record lookup
+          reverseNameMap[value] = name;  //Record reverse lookup
         }
         return value;
       }
@@ -75,11 +76,11 @@ private:
   std::map<int, std::string> reverseNameMap;  
   pthread_mutex_t protect_call;
 
-  int lookupOnServer(const std::string &str_in)
+  int lookupOnServer(const std::string &name)
   {
     namelookup::NameToNumber::request req;
     namelookup::NameToNumber::response res;
-    req.name = myNode.map_name(str_in);
+    req.name = name;
     
     int result = 0;
     pthread_mutex_lock(&protect_call);   

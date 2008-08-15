@@ -67,7 +67,7 @@ def reverseNameLookup(req):
         print 'Existing Number'
         result = revnames[req.number]
     else:
-        print 'Number not found'
+        print 'Number %d not found'%req.number
     print 'Returning: "%s" for %d'%(revnames[req.number], req.number)
     return NumberToNameResponse(result)
     
