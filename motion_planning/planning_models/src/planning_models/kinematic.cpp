@@ -311,21 +311,29 @@ void planning_models::KinematicModel::buildChainL(Robot *robot, Joint *parent, L
     switch (urdfLink->collision->geometry->type)
     {
     case robot_desc::URDF::Link::Geometry::UNKNOWN:
-	link->geom->type = Geometry::UNKNOWN; break;
+	link->geom->type = Geometry::UNKNOWN; 
+	break;
     case robot_desc::URDF::Link::Geometry::BOX:
-	link->geom->type = Geometry::BOX; break;
+	link->geom->type = Geometry::BOX;
+	{
+	    const double *size = static_cast<robot_desc::URDF::Link::Geometry::Box*>(urdfLink->collision->geometry->shape)->size;
+	    link->geom->size[0] = size[0];
+	    link->geom->size[1] = size[1];
+	    link->geom->size[2] = size[2];
+	}	
+	break;
     case robot_desc::URDF::Link::Geometry::SPHERE:
-	link->geom->type = Geometry::SPHERE; break;
+	link->geom->type = Geometry::SPHERE; 
+	link->geom->size[0] = static_cast<robot_desc::URDF::Link::Geometry::Sphere*>(urdfLink->collision->geometry->shape)->radius;
+	break;
     case robot_desc::URDF::Link::Geometry::CYLINDER:
-	link->geom->type = Geometry::CYLINDER; break;
+	link->geom->type = Geometry::CYLINDER; 
+	link->geom->size[0] = static_cast<robot_desc::URDF::Link::Geometry::Cylinder*>(urdfLink->collision->geometry->shape)->length;
+	link->geom->size[1] = static_cast<robot_desc::URDF::Link::Geometry::Cylinder*>(urdfLink->collision->geometry->shape)->radius;
+	break;
     default:
 	break;
     }
-    
-    /* copy the geometry of the link */
-    link->geom->size[0] = urdfLink->collision->geometry->size[0];
-    link->geom->size[1] = urdfLink->collision->geometry->size[1];
-    link->geom->size[2] = urdfLink->collision->geometry->size[2];
     
     /* compute the constant transform for this link */
     double *xyz = urdfLink->xyz;

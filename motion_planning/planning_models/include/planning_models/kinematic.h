@@ -66,6 +66,10 @@ namespace planning_models
 		{
 		    UNKNOWN, BOX, CYLINDER, SPHERE
 		}  type;
+	    
+	    /** box: x, y, z
+		cylinder: length, radius
+		sphere: radius */
 	    double size[3];
 	};
 	
