@@ -32,6 +32,7 @@ public:
 	bool testPointClouds();
 	bool testVideos();
     bool test();
+	void display3d();
 
     TestType mTestType;
 
@@ -42,7 +43,6 @@ protected:
 	void randomize(CvMat *xyzs, int num, double maxVal);
 	double randReal(double min, double max);
 	void disturb(const CvMat *xyzs, CvMat *xyzsNoised);
-	void display3d();
 	CvPoint3D64f mEulerAngle;
 	CvPoint3D64f mTranslation;
 	double mRotData[9];
