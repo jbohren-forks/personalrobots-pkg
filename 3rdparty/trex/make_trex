@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# PLASMA_HOME is required to build the PLASMA NDDL.jar
+source devConfig
+
+cd TREX
+
+# Build the debug version
+jam -q libTREX_g.so
+
+# Build the optimized version
+jam -q libTREX_o.so
+
+cd ../
