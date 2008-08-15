@@ -12,7 +12,8 @@ system.
 <license>NOSA</license>
 <url>https://babelfish.arc.nasa.gov/trac/europa/wiki</url>
 <export>
-  <cpp lflags="-Xlinker -rpath ${prefix}/PLASMA/build/lib -L${prefix}/PLASMA/build/lib" cflags="-I${prefix}/TREX/agent/base"/>
+  <cpp lflags="-Xlinker -rpath ${prefix}/PLASMA/build/lib -L${prefix}/PLASMA/build/lib" 
+       cflags="-I${prefix}/include"/>
   <doxymaker external="https://babelfish.arc.nasa.gov/trac/europa/wiki"/>
 </export>
 <versioncontrol type="svn" url="https://babelfish.arc.nasa.gov/svn/europa/PLASMA/trunk"/>

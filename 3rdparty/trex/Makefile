@@ -13,7 +13,11 @@ ifeq ($(strip $(SVN_CMDLINE)),)
 SVN_CMDLINE = svn
 endif
 
-all: trex PlanWorks
+all: trex PlanWorks includes
+
+includes: trex PlanWorks
+	./copyIncludes.sh
+
 
 # GET PLASMA
 PLASMA:
@@ -27,11 +31,12 @@ PlanWorks:
 trex: PLASMA
 	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co https://prdev.willowgarage.com/svn/scratch/TREX TREX; fi
 	@if [ ! -d logs ]; then mkdir logs; fi
+	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else ./make_trex; fi
 
 # Build library and run regression tests
 test: trex
 	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else cd TREX && jam agent-inputs && jam run-agent-module-tests; fi
 
 clean:
-	rm -rf PLASMA TREX trex EUROPA logs PlanWorks
+	rm -rf PLASMA TREX trex EUROPA logs PlanWorks include
 
