@@ -329,24 +329,6 @@ class TupleCastNode(Node):
     def calc(self, t):
         return (type, node.val(t))
 
-    
-#class Pose2D(object):
-#    """ Represents a pose with column vector for pos and radians for angle"""
-#    def __init__(self, x, y, a):
-#        self.pos   = numpy.matrix([x,y]).T
-#        self.angle = a
-#        
-#    #TODO probably this isn't the best way to combine S and R2 space differences
-#    def __sub__(self, other):
-#        return numpy.linalg.norm(self.pos - other.pos) - ut.standard_rad(self.angle - other.angle)
-#    
-#    def __str__(self):
-#        p = StringIO()
-#        print >>p, "(pos = ", self.pos.T, ", angle = ", self.angle, ")", 
-#        s = p.getvalue()
-#        return s
-
-
 class P2d_Player(Node):    
     """
         Gives pose of robot according to odometry. User must call 
@@ -372,44 +354,6 @@ class P2d_Player(Node):
             print "P2d_Player: ", cur_p2d
         return cur_p2d
 
-class V_Laser(Node):
-    """
-        Gives laser readings as column vectors. User must call 
-        player.read before querying for new values.
-    """
-    def __init__(self, snoz, max_range=4.0, laser_num=1,
-                 ignore_ranges=(range(0,75) + range(580,655)), verbosity = 1):
-        self.snoz      = snoz
-        self.laser_num = laser_num
-
-        if self.verbosity > 0:
-            print "V_Laser: waiting to connect to laser..."
-        if snoz.player_client != None:
-            # Wait for player to send us real data 
-            summed = 0.0
-            while summed == 0.0:
-                if self.verbosity > 0:
-                    print "V_Laser: waiting for fresh data from laser", laser_num
-                snoz.player_client.read()
-                summed = sum(self.get_urg().laser.ranges)
-
-        self.num_scans = self.get_urg().laser.scan_count
-        self.ignore_ranges = ignore_ranges
-        self.max_range = max_range
-
-    def get_urg(self):
-        if self.laser_num == 1:
-            return self.snoz.urg0
-        else:
-            return self.snoz.urg1
-
-    def calc(self,t):
-        urg   = self.get_urg() 
-        scans = numpy.matrix(urg.laser.ranges[:urg.laser.scan_count])
-        for i in self.ignore_ranges:
-            scans[0,i] = self.max_range
-        return scans
-
 class V_EuclidOfLaser_V(Node):
     def __init__(self, laser, urg_number=0):
         """ Gets laser points in base's reference frame """
@@ -423,37 +367,6 @@ class V_EuclidOfLaser_V(Node):
 		urg0_global      = tr.globalTurg0(urg0_natural)
 		return urg0_global[:2, :]
 
-def Obj_ConnectedComp_V(laser, max_range=3.9):
-    """
-        Construct a node that gives connected components
-        
-    def find_objects_no_pygeo(self, max_range = 0.7, max_p_dist = 0.04, object_thresh = 4,
-            searchAngle_min=-60, searchAngle_max=60):
-    """
-    def connected_comp(scans):
-        uscan = urg.UrgScan(scans.T)
-        objs  = uscan.find_objects_no_pygeo(max_range=max_range, searchAngle_min=-85, searchAngle_max=85)
-        def to_mat(t):
-            x, y, z     = t
-            transformed = tr.erraticTglobal(tr.globalTurg0(numpy.matrix([x,y,z]).T))
-            #Reverse x,y to match with driving coordinates
-            #in driving +x is forward, +y is left
-            #r = numpy.matrix([y,-1*x])
-            #print "r is", r
-            #print transformed[0:2,0].T
-            return transformed[0:2,0]
-
-        def to_obj(obj):
-            def append(a,b):
-               return numpy.hstack((a,b))
-            return reduce(append, map(to_mat, obj))
-
-        #Convert from list of tuples to list of matrices
-        ret = map(to_obj, objs)
-        #print "Obj_ConnectedComp_V: ret", len(ret)
-        #print "Obj_ConnectedComp_V: objs", len(objs)
-        return ret
-    return Filter(laser, connected_comp)
 
 
 class LACommand(object):
@@ -498,43 +411,6 @@ class BaseCommand(object):
 
    def do(self, p2d):
       p2d.set_cmd_vel(self.forward_vel, 0.0, self.rot_vel, 1)
-
-
-#class B_Stopped(Node):
-#    def __init__(self, start_out_stopped = False, dist_tol=.008, time_tolerance=3.0):
-#        self.tolerance = time_tolerance
-#        self.dist_tol  = dist_tol
-#
-#        self.last_pose        = None
-#        if start_out_stopped:
-#            self.is_stopped       = (True, 0.0)
-#        else:
-#            self.is_stopped       = (False, 0.0)
-#
-#    def calc(self, t):
-#        pose = self.pose2d.val(t)
-#        if self.last_pose == None:
-#            self.last_pose = pose
-#            self.is_stopped = (True, time.time())
-#            return False
-#
-#        if ut.approx_equal(self.is_stopped[1], 0.0):
-#            return True
-#
-#        dist = last_pose.sub_pos(pose)
-#        if dist < self.dist_tol:
-#            if self.is_stopped[0]:
-#                if (time.time() - self.is_stopped[1]) < self.time_tol:
-#                    return True
-#                else:
-#                    return False
-#            else:
-#                self.is_stopped = (True, time.time())
-#                return False
-#        else:
-#            self.is_stopped = (False, time.time())
-#            return False
-
 
 
 class CMDLoop(threading.Thread):
