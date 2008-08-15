@@ -1,52 +1,6 @@
 SubDir exec_trex ;
 
 if ! $(exec_trex_READY) {
-
-   	on exec_trex {
-		SUBDIRC++FLAGS = $(SUBDIRC++FLAGS) $(PKG_CPP_FLAGS) ;
-		LINKFLAGS = $(LINKFLAGS) -Wl,-rpath,$(PLASMA_HOME)/build/lib ;
-		LINKFLAGS = $(LINKFLAGS) $(PKG_LINK_FLAGS) ;
-
-		# PLASMA & TREX libraries found here
-		LINKFLAGS = $(LINKFLAGS) -Wl,-rpath,$(PLASMA_HOME)/build/lib ;	
-	}
-
-	# The executive library specification. Will eventually partition into
-	# core and application specific stuff
-	Module executive : TREX ;
-	ModuleFiles executive : 
-	 	    ROSAdapter.cc
-	 	    ROSNode.cc 
-	 	    Logger.cc 
-	 	    LogClock.cc 
-	 	    CalcCommandConstraintPlayback.cc
-		    CalcGlobalPathConstraintPlayback.cc 
-		    CalcCommandConstraint.cc 
-		    Playback.cc
-		    CalcGlobalPathConstraint.cc
-		    CalcArmInverseKinematicsConstraint.cc
-		    CalcInterpolatedEndEffectorPosConstraint.cc 
-		    CalcGraspPositionConstraint.cc 
-		    CalcAngleDiffConstraint.cc 
-		    CalcDistanceConstraint.cc 
-		    WavefrontPlanner.cc 
-		    map_helpers.cc 
-		    ExecDefs.cc 
-		    Components.cc
-	;
-
-	ModuleLibraries executive : $(DLOPEN_LIBRARY) ;
-	
-	# Main executable for now linked directly with the model. The main executive is pretty slim
-	ModuleMain exec_trex : Executive.cc : executive : exec_trex ;
-	
-	Depends exec_trex : exec_inputs ;
-
-	# Test Targets. Modeul tests will be integrated into a single executable
- 	RunModuleMain run-exec-module-tests : exec-module-tests ;
-	ModuleMain exec-module-tests : module-tests.cc : executive : exec_trex_module-tests ;
-	ModuleMain testCalcArmInverseKinematicsConstraint : testCalcArmInverseKinematicsConstraint.cc  : executive : testCalcArmInverseKinematicsConstraint ;
-
  	# Input file for exec
 	local TestInputs = 
 		clean.0.exec.nddl
@@ -76,13 +30,4 @@ if ! $(exec_trex_READY) {
 		LocalDepends exec_inputs : $(xml) ;
   		NddlParser $(xml) : $(file) ;
  	}
- 
- 	# Build the model - generates .cc and .hh files from .nddl
-	# NddlModel pr2.model.nddl : System ;
-
-	# Build all
-	Depends exec_all : exec_trex logger exec_inputs ;
-
-	# Will be deprecated
-	ModuleMain logger : MessageLogger.cc ExecDefs.cc : TREX : logger ;
 }
