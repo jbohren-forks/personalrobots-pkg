@@ -70,7 +70,7 @@ public:
    * \brief Functional way to initialize limits and gains.
    *
    */
-  void init(double p_gain, double i_gain, double d_gain, double windup, double time, mechanism::Robot *robot, mechanism::Joint *joint);
+  void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot);
   void initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   /*!
@@ -88,7 +88,7 @@ public:
   /*!
    * \brief Read the torque of the motor
    */
-  double getActual();
+  double getMeasuredState();
 
   /*!
    * \brief Issues commands to the joint. Should be called at regular intervals

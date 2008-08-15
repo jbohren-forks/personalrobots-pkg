@@ -203,25 +203,6 @@ bool MechanismControl::addController(controller::Controller *c, const std::strin
   return true;
 }
 
-bool MechanismControl::spawnController(const std::string &type,
-                                       const std::string &name,
-                                       double p_gain, double i_gain, double d_gain, double windup,
-                                       double time, mechanism::Joint *joint)
-{
-  controller::Controller *c = controller::ControllerFactory::instance().create(type);
-  if (c == NULL)
-    return false;
-  //c->init(p_gain,i_gain,d_gain,windup,time,&model_,joint);
-
-  if (!addController(c, name))
-  {
-    delete c;
-    return false;
-  }
-
-  return true;
-}
-
 
 bool MechanismControl::spawnController(const std::string &type,
                                        const std::string &name,
@@ -230,6 +211,7 @@ bool MechanismControl::spawnController(const std::string &type,
   controller::Controller *c = controller::ControllerFactory::instance().create(type);
   if (c == NULL)
     return false;
+  printf("Spawning %s: %08x\n", name.c_str(), &model_);
   c->initXml(&model_, config);
 
   if (!addController(c, name))

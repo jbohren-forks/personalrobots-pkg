@@ -43,9 +43,11 @@ ROS_REGISTER_CONTROLLER(LaserScannerController)
 
 LaserScannerController::LaserScannerController()
 {
-  // Initialize PID class
+  robot_ = NULL;
+  joint_ = NULL;
+  
   command_ = 0;
-
+  last_time_ = 0;
   profile_index_ = 0;
   profile_length_ = 0;
 
@@ -63,27 +65,27 @@ LaserScannerController::~LaserScannerController()
  
 }
 
-void LaserScannerController::init(double p_gain, double i_gain, double d_gain, double windup, double time, mechanism::Robot *robot, mechanism::Joint *joint)
+void LaserScannerController::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot)
 {
-  joint_position_controller_.init( p_gain,  i_gain,  d_gain,  windup, time, robot, joint);
   robot_ = robot;
+  joint_ = robot->getJoint(name);
+  
+  joint_position_controller_.init( p_gain,  i_gain,  d_gain,  windup, time, name, robot);
   command_= 0;
   last_time_= time;
-  joint_ = joint;
 }
 
 void LaserScannerController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
-  
-
   TiXmlElement *elt = config->FirstChildElement("joint");
-  if (elt) {
+  if (elt) 
+  {
     // TODO: error check if xml attributes/elements are missing
     double p_gain = atof(elt->FirstChildElement("pGain")->GetText());
     double i_gain = atof(elt->FirstChildElement("iGain")->GetText());
     double d_gain = atof(elt->FirstChildElement("dGain")->GetText());
     double windup= atof(elt->FirstChildElement("windup")->GetText());
-    init(p_gain, i_gain, d_gain, windup, robot->hw_->current_time_, robot, robot->getJoint(elt->Attribute("name")));
+    init(p_gain, i_gain, d_gain, windup, robot->hw_->current_time_,elt->Attribute("name"), robot);
   }
 }
 
@@ -101,7 +103,7 @@ double LaserScannerController::getCommand()
 }
 
 // Return the measured joint position
-double LaserScannerController::getActual()
+double LaserScannerController::getMeasuredState()
 {
   return joint_->position_;
 }

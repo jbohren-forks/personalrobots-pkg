@@ -76,6 +76,7 @@ void SimpleTransmission::propagatePosition()
   joint_->position_ = ((double)actuator_->state_.encoder_count_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);
   joint_->velocity_ = ((double)actuator_->state_.encoder_velocity_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);
   joint_->applied_effort_ = actuator_->state_.last_measured_current_ * (motor_torque_constant_ * mechanical_reduction_);
+  
 }
 
 void SimpleTransmission::propagatePositionBackwards()
@@ -89,9 +90,11 @@ void SimpleTransmission::propagateEffort()
 {
   actuator_->command_.current_ = joint_->commanded_effort_/(motor_torque_constant_ * mechanical_reduction_);
   actuator_->command_.enable_ = true;
+ 
 }
 
 void SimpleTransmission::propagateEffortBackwards()
 {
   joint_->commanded_effort_ = actuator_->command_.current_ * motor_torque_constant_ * mechanical_reduction_;
+  
 }
