@@ -328,8 +328,8 @@ void planning_models::KinematicModel::buildChainL(Robot *robot, Joint *parent, L
 	break;
     case robot_desc::URDF::Link::Geometry::CYLINDER:
 	link->geom->type = Geometry::CYLINDER; 
-	link->geom->size[0] = static_cast<robot_desc::URDF::Link::Geometry::Cylinder*>(urdfLink->collision->geometry->shape)->length;
-	link->geom->size[1] = static_cast<robot_desc::URDF::Link::Geometry::Cylinder*>(urdfLink->collision->geometry->shape)->radius;
+	link->geom->size[0] = static_cast<robot_desc::URDF::Link::Geometry::Cylinder*>(urdfLink->collision->geometry->shape)->radius;
+	link->geom->size[1] = static_cast<robot_desc::URDF::Link::Geometry::Cylinder*>(urdfLink->collision->geometry->shape)->length;
 	break;
     default:
 	break;
