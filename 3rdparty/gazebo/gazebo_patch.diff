@@ -1666,6 +1666,25 @@ Index: server/controllers/Controller.cc
  
    childNode = node->GetChildByNSPrefix("interface");
  
+Index: server/controllers/ptz/generic/Generic_PTZ.cc
+===================================================================
+--- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 6952)
++++ server/controllers/ptz/generic/Generic_PTZ.cc	(working copy)
+@@ -66,10 +66,10 @@
+ // Destructor
+ Generic_PTZ::~Generic_PTZ()
+ {
+-  if (this->panJoint)
+-    delete this->panJoint;
+-  if (this->tiltJoint)
+-    delete this->tiltJoint;
++  //if (this->panJoint)
++  //  delete this->panJoint;
++  //if (this->tiltJoint)
++  //  delete this->tiltJoint;
+ 
+   this->panJoint = NULL;
+   this->tiltJoint = NULL;
 Index: server/World.cc
 ===================================================================
 --- server/World.cc	(revision 6952)
