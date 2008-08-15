@@ -2,47 +2,54 @@
 
 <robot name="robot">
   
-  <const name="A" value="1.0" />
- 
+  <const name="B" value="2.0" />
+
+  <joint name="base_joint"> 
+  </joint>
+
   
+  <const_block name="myConst">
+    
+    <parent name="world" />
+    
+  </const_block>
+
   <link name="base"><!-- link specifying the base of the robot -->
 
-    <parent>world</parent>
-
-    <rpy> 0 0 0</rpy> <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
-    <xyz> A-A A+B B </xyz> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
-
-    <joint type="floating"> 
+    <origin rpy=" 0 0 0" xyz=" A A+B B "/> <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
+    
+    <joint type="planar"> 
     </joint>
+    
+    <insert_const_block name="myConst" />
 
     <inertial>
-      <mass> 70.750964  </mass>
-      <com> 0 0 0 </com> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
-      <inertia>5.652232699207  -0.009719934438  1.293988226423 5.669473158652 -0.007379583694 3.683196351726 </inertia>
+      <mass value=" 70.750964" />
+      <com xyz=" 0 0 0" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <inertia ixx="5.652232699207"  ixy="-0.009719934438"  ixz="1.293988226423" iyy="5.669473158652" iyz="-0.007379583694" izz="3.683196351726" />
     </inertial> 
 
     <visual>
-      <xyz>0 0 0</xyz> <!-- location defined with respect to the link origin in a local coordinate frame -->
-      <rpy>0 0 0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <material>wood</material>
-      <scale>1 A 1</scale>
-      <geometry type="mesh" name="pr2_base_mesh_file">
-        <filename>base</filename>
+      <origin xyz="0 0 0" rpy="0 0 0"/> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <geometry name="pr2_base_mesh_file">
+        <mesh filename="base" scale="1 1 1 "/>
       </geometry>
     </visual> 
 
     <collision>
-      <xyz>0 -(A+B/4)*A -A/2</xyz> <!-- default box is centered at the origin -->
-      <rpy>0.0 A*0 0.0 </rpy> <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <material>wood</material> 
-      <geometry type="box"> <!-- think about putting mesh here as well -->
-        <size>A A A</size>
+      <origin xyz="0 -(A+B/4)*A -A/2" rpy="0.0 A*0 0.0"/> <!-- default box is centered at the origin -->
+      <map flag="tf" name="test">
+	<elem key="1">val</elem>
+	<elem key="2" value="val" />
+      </map>
+      <geometry> <!-- think about putting mesh here as well -->
+        <box size="A (-A)*(-A) A" />
       </geometry>
     </collision>
-
+    
   </link>
 
-  <include>test3-aux.xml</include>
+  <const name="A" value="1.0" />
 
-  
+  <include>test3-aux.xml</include>
 </robot>
