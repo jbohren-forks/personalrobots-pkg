@@ -1,4 +1,84 @@
 #!/usr/bin/env python
+# laser_interface
+#
+#  Copyright (c) 2008, Willow Garage, Inc.
+#  All rights reserved.
+#  
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  
+#      * Redistributions of source code must retain the above copyright
+#        notice, this list of conditions and the following disclaimer.
+#      * Redistributions in binary form must reproduce the above copyright
+#        notice, this list of conditions and the following disclaimer in the
+#        documentation and/or other materials provided with the distribution.
+#      * Neither the name of the <ORGANIZATION> nor the names of its
+#        contributors may be used to endorse or promote products derived from
+#        this software without specific prior written permission.
+#  
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+#
+##@mainpage
+#
+# @b laser_interface implments a laser pointer finder taking in images from a
+# stereo pair and outputing a 3D point that can be used a mouse cursor in the
+# world.  This works by first filtering the stereo pair based on image
+# intensity and image motion.  Large connected components are then thrown out
+# leaving smaller components representative of laser points.  Each components
+# is then fed to a random forest classifier to find whether the detection is a
+# laser point or not.  To gather positive and negative training examples for
+# the classifier, use the interface launched by the @b user_interface_node.
+# By default the @b laser_pointer_detector_node gathers negative training example
+# so just point the camera to an area containing motion for it to grab negative samples.
+# To gather positive examples, point the camera at a static scene where the laser
+# point is the only moving object then switch to 'positive' mode with the GUI
+# spawned by @ user_interface_node. The modes offered by the interface are:
+# - 'positive': tells the detector to gather positive examples of laser points.
+# - 'rebuild' : rebuild classifier
+# - 'clear' : clear out training examples gathered so far
+# - 'debug' : prints timing information 
+# - 'display': show images being processed
+# - 'verbose': print statistics
+#
+# All parameters for the algorithm is stored in params.xml.  For triangulation
+# this code uses the camera calibrations provided by cameras.xml.
+#
+# @author Hai Nguyen/hai@gatech.edu
+#
+#<hr>
+#
+#@section usage Usage
+#@verbatim
+#$ roslaunch launch.xml
+#@endverbatim
+#
+#<hr>
+#
+#@section topic ROS topics
+#
+#Subscribes to (name/type):
+#- @b "mouse_click"/String : 'True' or 'False' indicating if a normal desktop mouse has been clicked.
+#- @b "laser_mode"/String : sets the mode to either 'debug' 'display' 'verbose' 'rebuild' 'positive' or 'clear'.
+#
+#Publishes to (name / type):
+#- @b "cursor3d"/Point3DFloat64:
+#
+#<hr>
+#
+# @todo remove dependency from the opencv version modified for Videre stereo pairs.
+#
+
 from pkg import *
 from std_msgs.msg import Point3DFloat64
 from std_msgs.msg import String
