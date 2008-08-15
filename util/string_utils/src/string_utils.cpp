@@ -11,3 +11,21 @@ void string_utils::split(const std::string &s, std::vector<std::string> &t, cons
   }
   t.push_back(s.substr(start));
 }
+
+std::string string_utils::trim(const std::string &str)
+{
+    std::string res = str;
+    
+    while (!res.empty() && (res[res.size() - 1] == ' ' || 
+			    res[res.size() - 1] == '\t' || 
+			    res[res.size() - 1] == '\n' || 
+			    res[res.size() - 1] == '\r'))
+	res.erase(res.size() - 1); 
+    
+    while (!res.empty() && (res[0] == ' ' || 
+			    res[0] == '\t' || 
+			    res[0] == '\n' || 
+			    res[0] == '\r'))
+	res.erase(0, 1); 
+    return res;    
+}

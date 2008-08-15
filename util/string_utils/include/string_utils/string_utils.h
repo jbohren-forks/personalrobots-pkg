@@ -11,6 +11,8 @@ namespace string_utils
 	       std::vector<std::string> &token_vec, 
 	       const std::string &delim);
     
+    std::string trim(const std::string &str);
+    
     template<typename T>
     static inline std::string convert2str(const T &value)
     {
