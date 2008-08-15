@@ -148,7 +148,7 @@ public:
 
   bool isDone() {return done_;}
 
-  bool close() {
+  void close() {
     log_file_.close();
 
     for (std::map<std::string, LogHelper*>::iterator topic_it = topics_.begin(); 
@@ -160,6 +160,7 @@ public:
     }
 
     topics_.clear();
+    done_ = false;
   }
 
   bool open(const std::string &file_name, ros::Time start_time)
