@@ -2,7 +2,7 @@ all: build
 
 SVN_DIR = gazebo-svn
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk
-SVN_REVISION = -r 6915 #revision with wall extrusion working, Ogre camera save frame (TP)
+SVN_REVISION = -r 6952 #more updates on geometry creation
 SVN_PATCH = gazebo_patch.diff
 include $(shell rospack find mk)/svn_checkout.mk
 

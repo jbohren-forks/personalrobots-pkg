@@ -148,7 +148,7 @@ void Ros_Camera::PutCameraData()
 
   // GetFOV() returns radians
   data->hfov = this->myParent->GetHFOV();
-  data->vfov = this->myParent->GetVFOV();
+  //data->vfov = this->myParent->GetVFOV(); //FIXME: breaks in gazebo
 
   // Set the pose of the camera
   cameraPose = this->myParent->GetWorldPose();

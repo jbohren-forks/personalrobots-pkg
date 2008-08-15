@@ -1,6 +1,6 @@
 Index: player/SConscript
 ===================================================================
---- player/SConscript	(revision 6915)
+--- player/SConscript	(revision 6952)
 +++ player/SConscript	(working copy)
 @@ -1,7 +1,8 @@
  import os
@@ -14,7 +14,7 @@ Index: player/SConscript
             'GazeboClient.cc',
 Index: libgazebo/Server.cc
 ===================================================================
---- libgazebo/Server.cc	(revision 6915)
+--- libgazebo/Server.cc	(revision 6952)
 +++ libgazebo/Server.cc	(working copy)
 @@ -38,6 +38,7 @@
  #include <sys/sem.h>
@@ -103,7 +103,7 @@ Index: libgazebo/Server.cc
    {
 Index: libgazebo/Iface.cc
 ===================================================================
---- libgazebo/Iface.cc	(revision 6915)
+--- libgazebo/Iface.cc	(revision 6952)
 +++ libgazebo/Iface.cc	(working copy)
 @@ -55,6 +55,8 @@
  GZ_REGISTER_IFACE("factory", FactoryIface);
@@ -116,7 +116,7 @@ Index: libgazebo/Iface.cc
  
 Index: libgazebo/gazebo.h
 ===================================================================
---- libgazebo/gazebo.h	(revision 6915)
+--- libgazebo/gazebo.h	(revision 6952)
 +++ libgazebo/gazebo.h	(working copy)
 @@ -558,7 +558,7 @@
  
@@ -568,7 +568,7 @@ Index: libgazebo/gazebo.h
  #define GAZEBO_STEREO_CAMERA_MAX_DISPARITY_SIZE 640 * 480
  
  /// \brief Stereo data
-@@ -1392,6 +1761,9 @@
+@@ -1380,6 +1749,9 @@
    /// Right depth map (float)
    public: float right_depth[GAZEBO_STEREO_CAMERA_MAX_DISPARITY_SIZE];
  
@@ -578,7 +578,7 @@ Index: libgazebo/gazebo.h
  }; 
  
  
-@@ -1409,6 +1781,7 @@
+@@ -1397,6 +1769,7 @@
            {
              Iface::Create(server,id); 
              this->data = (StereoCameraData*)this->mMap; 
@@ -586,7 +586,7 @@ Index: libgazebo/gazebo.h
            }
  
    /// \brief Open the iface 
-@@ -1416,8 +1789,16 @@
+@@ -1404,8 +1777,16 @@
            {
              Iface::Open(client,id); 
              this->data = (StereoCameraData*)this->mMap; 
@@ -605,30 +605,30 @@ Index: libgazebo/gazebo.h
  };
 Index: server/physics/SphereGeom.cc
 ===================================================================
---- server/physics/SphereGeom.cc	(revision 6915)
+--- server/physics/SphereGeom.cc	(revision 6952)
 +++ server/physics/SphereGeom.cc	(working copy)
-@@ -53,11 +53,16 @@
+@@ -53,11 +53,15 @@
    double radius = node->GetDouble("size",1.0,0);
  
    // Initialize box mass matrix
 -  dMassSetSphereTotal(&this->mass, this->dblMass, radius);
-+  this->SetGeom(dCreateSphere(0, radius ), true);
++  this->SetGeom( dCreateSphere(0, radius ), true);
  
    // Create the sphere geometry
--  this->SetGeom(dCreateSphere(0, radius ), true);
+-  this->SetGeom( dCreateSphere(0, radius ), true);
+-
 +  if (this->massMatrix)
 +    dMassSetParameters(&this->mass, this->dblMass, this->cx, this->cy, this->cz,
 +                       this->ixx,this->iyy,this->izz,this->ixy,this->ixz,this->iyz);
 +  else
 +    dMassSetSphereTotal(&this->mass, this->dblMass, radius);
- 
-+
++  
    //to be able to show physics
    /*  this->visualNode->AttachMesh("unit_sphere"); // unit_sphere radius=1 diameter=2
      this->visualNode->SetScale(Vector3(radius, radius ,radius));
 Index: server/physics/BoxGeom.cc
 ===================================================================
---- server/physics/BoxGeom.cc	(revision 6915)
+--- server/physics/BoxGeom.cc	(revision 6952)
 +++ server/physics/BoxGeom.cc	(working copy)
 @@ -54,11 +54,18 @@
  
@@ -654,9 +654,9 @@ Index: server/physics/BoxGeom.cc
      this->visualNode->SetMaterial("Gazebo/GreenEmissive");
 Index: server/physics/Geom.hh
 ===================================================================
---- server/physics/Geom.hh	(revision 6915)
+--- server/physics/Geom.hh	(revision 6952)
 +++ server/physics/Geom.hh	(working copy)
-@@ -170,6 +170,10 @@
+@@ -164,6 +164,10 @@
      ///  Mass as a double
      protected: double dblMass;
  
@@ -669,7 +669,7 @@ Index: server/physics/Geom.hh
  
 Index: server/physics/HingeJoint.hh
 ===================================================================
---- server/physics/HingeJoint.hh	(revision 6915)
+--- server/physics/HingeJoint.hh	(revision 6952)
 +++ server/physics/HingeJoint.hh	(working copy)
 @@ -117,6 +117,8 @@
  
@@ -682,7 +682,7 @@ Index: server/physics/HingeJoint.hh
  
 Index: server/physics/CylinderGeom.cc
 ===================================================================
---- server/physics/CylinderGeom.cc	(revision 6915)
+--- server/physics/CylinderGeom.cc	(revision 6952)
 +++ server/physics/CylinderGeom.cc	(working copy)
 @@ -50,10 +50,17 @@
    double radius = node->GetTupleDouble("size",0,1.0);
@@ -706,7 +706,7 @@ Index: server/physics/CylinderGeom.cc
    /*this->visualNode->AttachMesh("unit_cylinder");
 Index: server/physics/Geom.cc
 ===================================================================
---- server/physics/Geom.cc	(revision 6915)
+--- server/physics/Geom.cc	(revision 6952)
 +++ server/physics/Geom.cc	(working copy)
 @@ -102,6 +102,21 @@
      this->dblMass = 0.001;
@@ -730,7 +730,7 @@ Index: server/physics/Geom.cc
    this->contact->Load(node);
  
    this->LoadChild(node);
-@@ -403,18 +418,21 @@
+@@ -372,18 +387,21 @@
    if (!this->placeable)
      return NULL;
  
@@ -756,7 +756,7 @@ Index: server/physics/Geom.cc
      dMassRotate(&this->bodyMass, r);
 Index: server/physics/HingeJoint.cc
 ===================================================================
---- server/physics/HingeJoint.cc	(revision 6915)
+--- server/physics/HingeJoint.cc	(revision 6952)
 +++ server/physics/HingeJoint.cc	(working copy)
 @@ -38,6 +38,7 @@
      : Joint()
@@ -785,16 +785,14 @@ Index: server/physics/HingeJoint.cc
  
 Index: server/physics/ode/ODEPhysics.cc
 ===================================================================
---- server/physics/ode/ODEPhysics.cc	(revision 6915)
+--- server/physics/ode/ODEPhysics.cc	(revision 6952)
 +++ server/physics/ode/ODEPhysics.cc	(working copy)
-@@ -259,24 +259,28 @@
+@@ -259,18 +259,18 @@
          double h, kp, kd;
  
          contact.geom = contactGeoms[i];
--        contact.surface.mode = dContactSoftERP | dContactSoftCFM | 
--                               dContactBounce | dContactMu2;
-+        //contact.surface.mode = dContactSoftERP | dContactSoftCFM | 
-+        //                       dContactBounce | dContactMu2;
+-        contact.surface.mode = dContactSoftERP |  dContactBounce | dContactMu2;
++        //contact.surface.mode = dContactSoftERP |  dContactBounce | dContactMu2;
 +        contact.surface.mode = 0;
  
  
@@ -804,27 +802,17 @@ Index: server/physics/ode/ODEPhysics.cc
 -        kp = 1 / (1 / geom1->contact->kp + 1 / geom2->contact->kp);
 +        kp = 1.0 / (1.0 / geom1->contact->kp + 1.0 / geom2->contact->kp);
          kd = geom1->contact->kd + geom2->contact->kd;
-+        //std::cout << " =-======================= " << geom1->contact->kp
-+        //          << " =-======================= " << geom2->contact->kp << std::endl;
          contact.surface.soft_erp = h * kp / (h * kp + kd);
 -        contact.surface.soft_cfm = 1 / (h * kp + kd);
 +        contact.surface.soft_cfm = 1.0 / (h * kp + kd);
  
- 
+-
          contact.surface.mu = MIN(geom1->contact->mu1, geom2->contact->mu1);
--        contact.surface.mu2 = MIN(geom1->contact->mu2, geom2->contact->mu2);
-+        //contact.surface.mu2 = MIN(geom1->contact->mu2, geom2->contact->mu2);
-+        contact.surface.mu2 = 0.0;
+         contact.surface.mu2 = MIN(geom1->contact->mu2, geom2->contact->mu2);
          contact.surface.bounce = 0.1;
-         contact.surface.bounce_vel = 0.1;
--        contact.surface.soft_cfm = 0.01;
-+        //contact.surface.soft_cfm = 0.01;
- 
-         dJointID c = dJointCreateContact (self->worldId,
-                                           self->contactGroup, &contact);
 Index: server/physics/TrimeshGeom.cc
 ===================================================================
---- server/physics/TrimeshGeom.cc	(revision 6915)
+--- server/physics/TrimeshGeom.cc	(revision 6952)
 +++ server/physics/TrimeshGeom.cc	(working copy)
 @@ -208,7 +208,11 @@
  
@@ -841,7 +829,7 @@ Index: server/physics/TrimeshGeom.cc
    this->SetGeom(this->geomId, true);
 Index: server/physics/SliderJoint.cc
 ===================================================================
---- server/physics/SliderJoint.cc	(revision 6915)
+--- server/physics/SliderJoint.cc	(revision 6952)
 +++ server/physics/SliderJoint.cc	(working copy)
 @@ -35,6 +35,8 @@
      : Joint()
@@ -854,7 +842,7 @@ Index: server/physics/SliderJoint.cc
  
 Index: server/sensors/Sensor.hh
 ===================================================================
---- server/sensors/Sensor.hh	(revision 6915)
+--- server/sensors/Sensor.hh	(revision 6952)
 +++ server/sensors/Sensor.hh	(working copy)
 @@ -63,6 +63,7 @@
  
@@ -882,7 +870,7 @@ Index: server/sensors/Sensor.hh
  #endif
 Index: server/sensors/camera/MonoCameraSensor.cc
 ===================================================================
---- server/sensors/camera/MonoCameraSensor.cc	(revision 6915)
+--- server/sensors/camera/MonoCameraSensor.cc	(revision 6952)
 +++ server/sensors/camera/MonoCameraSensor.cc	(working copy)
 @@ -49,6 +49,7 @@
  MonoCameraSensor::MonoCameraSensor(Body *body)
@@ -973,7 +961,7 @@ Index: server/sensors/camera/MonoCameraSensor.cc
  ////////////////////////////////////////////////////////////////////////////////
 Index: server/sensors/camera/StereoCameraSensor.cc
 ===================================================================
---- server/sensors/camera/StereoCameraSensor.cc	(revision 6915)
+--- server/sensors/camera/StereoCameraSensor.cc	(revision 6952)
 +++ server/sensors/camera/StereoCameraSensor.cc	(working copy)
 @@ -58,6 +58,7 @@
    this->depthBuffer[1] = NULL;
@@ -1138,7 +1126,7 @@ Index: server/sensors/camera/StereoCameraSensor.cc
  ////////////////////////////////////////////////////////////////////////////////
 Index: server/sensors/ray/RaySensor.cc
 ===================================================================
---- server/sensors/ray/RaySensor.cc	(revision 6915)
+--- server/sensors/ray/RaySensor.cc	(revision 6952)
 +++ server/sensors/ray/RaySensor.cc	(working copy)
 @@ -237,7 +237,7 @@
  // Update the sensor information
@@ -1151,7 +1139,7 @@ Index: server/sensors/ray/RaySensor.cc
      Pose3d poseDelta;
 Index: server/sensors/Sensor.cc
 ===================================================================
---- server/sensors/Sensor.cc	(revision 6915)
+--- server/sensors/Sensor.cc	(revision 6952)
 +++ server/sensors/Sensor.cc	(working copy)
 @@ -32,6 +32,7 @@
  #include "World.hh"
@@ -1204,17 +1192,17 @@ Index: server/sensors/Sensor.cc
 +
 Index: server/Simulator.cc
 ===================================================================
---- server/Simulator.cc	(revision 6915)
+--- server/Simulator.cc	(revision 6952)
 +++ server/Simulator.cc	(working copy)
-@@ -71,6 +71,7 @@
-   physicsEnabled(true),
-   timeout(-1)
+@@ -72,6 +72,7 @@
+   timeout(-1),
+   selectedEntity(NULL)
  {
 +  selectedEntity = NULL;
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -253,6 +254,9 @@
+@@ -254,6 +255,9 @@
    {
      currTime = this->GetRealTime();
  
@@ -1224,7 +1212,7 @@ Index: server/Simulator.cc
      if (physicsUpdateRate == 0 || 
          currTime - this->prevPhysicsTime >= physicsUpdatePeriod) 
      {
-@@ -277,6 +281,9 @@
+@@ -278,6 +282,9 @@
        this->prevPhysicsTime = this->GetRealTime();
      }
  
@@ -1236,7 +1224,7 @@ Index: server/Simulator.cc
          currTime - this->prevRenderTime >= renderUpdatePeriod)
 Index: server/rendering/UserCamera.hh
 ===================================================================
---- server/rendering/UserCamera.hh	(revision 6915)
+--- server/rendering/UserCamera.hh	(revision 6952)
 +++ server/rendering/UserCamera.hh	(working copy)
 @@ -52,7 +52,7 @@
      public: void Load( XMLConfigNode *node );
@@ -1269,7 +1257,7 @@ Index: server/rendering/UserCamera.hh
  
 Index: server/rendering/UserCamera.cc
 ===================================================================
---- server/rendering/UserCamera.cc	(revision 6915)
+--- server/rendering/UserCamera.cc	(revision 6952)
 +++ server/rendering/UserCamera.cc	(working copy)
 @@ -25,6 +25,7 @@
   */
@@ -1432,7 +1420,7 @@ Index: server/rendering/UserCamera.cc
 +}
 Index: server/GazeboConfig.cc
 ===================================================================
---- server/GazeboConfig.cc	(revision 6915)
+--- server/GazeboConfig.cc	(revision 6952)
 +++ server/GazeboConfig.cc	(working copy)
 @@ -56,6 +56,17 @@
  
@@ -1454,7 +1442,7 @@ Index: server/GazeboConfig.cc
      XMLConfig rc;
 Index: server/gui/GLWindow.hh
 ===================================================================
---- server/gui/GLWindow.hh	(revision 6915)
+--- server/gui/GLWindow.hh	(revision 6952)
 +++ server/gui/GLWindow.hh	(working copy)
 @@ -63,6 +63,9 @@
      /// \brief Initalize the gui
@@ -1468,7 +1456,7 @@ Index: server/gui/GLWindow.hh
  
 Index: server/gui/GLFrame.cc
 ===================================================================
---- server/gui/GLFrame.cc	(revision 6915)
+--- server/gui/GLFrame.cc	(revision 6952)
 +++ server/gui/GLFrame.cc	(working copy)
 @@ -107,7 +107,7 @@
  // Load the frame
@@ -1481,7 +1469,7 @@ Index: server/gui/GLFrame.cc
      this->startPose.pos = node->GetVector3("xyz", Vector3(0,0,0));
 Index: server/gui/GLWindow.cc
 ===================================================================
---- server/gui/GLWindow.cc	(revision 6915)
+--- server/gui/GLWindow.cc	(revision 6952)
 +++ server/gui/GLWindow.cc	(working copy)
 @@ -68,11 +68,17 @@
    this->directionVec.x = 0;
@@ -1590,7 +1578,7 @@ Index: server/gui/GLWindow.cc
            this->moveAmount *= 2;
 Index: server/World.hh
 ===================================================================
---- server/World.hh	(revision 6915)
+--- server/World.hh	(revision 6952)
 +++ server/World.hh	(working copy)
 @@ -91,6 +91,26 @@
    /// \return Pointer to the physics engine
@@ -1631,7 +1619,7 @@ Index: server/World.hh
  };
 Index: server/controllers/camera/generic/Generic_Camera.cc
 ===================================================================
---- server/controllers/camera/generic/Generic_Camera.cc	(revision 6915)
+--- server/controllers/camera/generic/Generic_Camera.cc	(revision 6952)
 +++ server/controllers/camera/generic/Generic_Camera.cc	(working copy)
 @@ -79,7 +79,24 @@
  // Update the controller
@@ -1661,7 +1649,7 @@ Index: server/controllers/camera/generic/Generic_Camera.cc
  ////////////////////////////////////////////////////////////////////////////////
 Index: server/controllers/Controller.cc
 ===================================================================
---- server/controllers/Controller.cc	(revision 6915)
+--- server/controllers/Controller.cc	(revision 6952)
 +++ server/controllers/Controller.cc	(working copy)
 @@ -67,8 +67,12 @@
  
@@ -1680,7 +1668,7 @@ Index: server/controllers/Controller.cc
  
 Index: server/World.cc
 ===================================================================
---- server/World.cc	(revision 6915)
+--- server/World.cc	(revision 6952)
 +++ server/World.cc	(working copy)
 @@ -27,6 +27,7 @@
  #include <assert.h>
@@ -1700,7 +1688,7 @@ Index: server/World.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -152,6 +156,7 @@
+@@ -167,6 +171,7 @@
  
    this->physicsEngine->Init();
  
@@ -1708,7 +1696,7 @@ Index: server/World.cc
    this->toAddModels.clear();
    this->toDeleteModels.clear();
  
-@@ -165,6 +170,11 @@
+@@ -180,6 +185,11 @@
    std::vector< Model* >::iterator miter;
    std::vector< Model* >::iterator miter2;
  
@@ -1720,7 +1708,7 @@ Index: server/World.cc
    // Update all the models
    for (miter=this->models.begin(); miter!=this->models.end(); miter++)
    {
-@@ -174,14 +184,27 @@
+@@ -189,14 +199,27 @@
      }
    }
  
@@ -1748,7 +1736,7 @@ Index: server/World.cc
    // Copy the newly created models into the main model vector
    std::copy(this->toAddModels.begin(), this->toAddModels.end(),
              std::back_inserter(this->models));
-@@ -199,6 +222,9 @@
+@@ -214,6 +237,9 @@
  
    this->toDeleteModels.clear();
  
@@ -1758,7 +1746,7 @@ Index: server/World.cc
    return 0;
  }
  
-@@ -246,6 +272,41 @@
+@@ -268,6 +294,41 @@
    return this->physicsEngine;
  }
  
@@ -1802,7 +1790,7 @@ Index: server/World.cc
  int World::LoadEntities(XMLConfigNode *node, Model *parent)
 Index: SConstruct
 ===================================================================
---- SConstruct	(revision 6915)
+--- SConstruct	(revision 6952)
 +++ SConstruct	(working copy)
 @@ -22,8 +22,11 @@
  # 3rd party packages
