@@ -15,7 +15,7 @@ FI_LD = $(shell rospack find freeimage)/freeimage/lib
 ROOT = $(shell rospack find gazebo)/gazebo
 TESTROOT = $(shell rospack find gazebo)/test-gazebo
 
-build: SVN_UP gazebo
+build: SVN_UP_REVERT_PATCH gazebo
 
 .PHONY: gazebo
 gazebo: $(SVN_DIR)
