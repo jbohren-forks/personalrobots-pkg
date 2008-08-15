@@ -95,7 +95,7 @@ double JointAutotuner::getCommand()
 }
 
 // Return the measured joint position
-double JointAutotuner::getActual()
+double JointAutotuner::getMeasuredState()
 {
   return joint_->position_;
 }
@@ -196,7 +196,7 @@ bool JointAutotunerNode::getActual(
   generic_controllers::GetActual::request &req,
   generic_controllers::GetActual::response &resp)
 {
-  resp.command = c_->getActual();
+  resp.command = c_->getMeasuredState();
   resp.time = c_->getTime();
   return true;
 }
