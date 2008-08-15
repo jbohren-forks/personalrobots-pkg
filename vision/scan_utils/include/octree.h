@@ -62,6 +62,11 @@ class Octree {
 	//! Main accessor loop. Performs either insertion or deletion at the given coordinates.
 	void insertOrErase(float x, float y, float z, T newValue, bool deletion);
 
+	//! Converts cell indices to spatial coordinates. See main class description for details.
+	bool cellToCoordinates(int i, int j, int k, float *x, float *y, float *z);
+	//! Converts spatial coordinates to cell indices. See main class description for details.
+	bool coordinatesToCell(float x, float y, float z, int *i, int *j, int *k);
+
  public:
 	//! Constructor needs all initialization values.
 	Octree(float cx, float cy, float cz,
@@ -75,6 +80,9 @@ class Octree {
 	void setSize(float dx, float dy, float dz){mDx = dx; mDy = dy; mDz = dz;}
 	//! Sets the max depth of this Octree. Does NOT change the inner data.
 	void setDepth(int d){if (d<=0) d=1; mMaxDepth = d;}
+	//! Returns the maximum number of cells along one dimension of this Octree
+	/*! Equals 2^(mMaxDepth). Overall, the Octree might contain up to getNumCells()^3 cells */
+	int getNumCells(){return (int)pow((float)2,mMaxDepth);} 
 	//! Returns \a true if the point at x,y,z is inside the volume of this Octree
 	inline bool testBounds(float x, float y, float z);
 
@@ -94,6 +102,26 @@ class Octree {
 	}
 	//! Returns the value at given spatial coordinates
 	T get(float x, float y, float z);
+
+	//! Inserts a value at given cell coordinates.
+	void cellInsert(int i, int j, int k, T newValue) {
+		float x,y,z;
+		if ( !cellToCoordinates(i,j,k,&x,&y,&z) ) return;
+		insert(x,y,z,newValue);
+	}
+	//! Returns the value at given cell coordinates
+	T cellGet(int i, int j, int k) {
+		float x,y,z;
+		if ( !cellToCoordinates(i,j,k,&x,&y,&z) ) return mEmptyValue;
+		return get(x,y,z);
+	}
+	//! Deletes data at given cell coordinates
+	void cellErase(int i, int j, int k) {
+		float x,y,z;
+		if ( !cellToCoordinates(i,j,k,&x,&y,&z) ) return;
+		erase(x,y,z);
+	}
+
 	//! Traces a scanner ray through this octree
 	void traceRay(float sx, float sy, float sz, 
 		      float dx, float dy, float dz, float distance,  
@@ -132,6 +160,7 @@ class Octree {
 	//! Read Octree from a file saved by the \a writeToFile(...) function 
 	void readFromFile(std::istream &is);
 
+	//! Checks if the given ray intersects the volume that this Octree occupies
 	bool intersectsRay(float rx, float ry, float rz, 
 			   float dx, float dy, float dz,
 			   float &t0, float &t1);
@@ -333,6 +362,36 @@ void Octree<T>::clear()
 	delete mRoot;
 	mRoot = new OctreeBranch<T>();
 }
+
+//----------------------------------------- Cell accessors -----------------------------------------
+
+/*!
+ */
+template <typename T>
+bool Octree<T>::cellToCoordinates(int i, int j, int k, float *x, float *y, float *z)
+{
+	int numCells = getNumCells();
+	*x = mCx - (mDx / 2.0) + (mDx / numCells) * (i + 0.5);
+	*y = mCy - (mDy / 2.0) + (mDy / numCells) * (j + 0.5);
+	*z = mCz - (mDz / 2.0) + (mDz / numCells) * (k + 0.5);
+	if (i<0 || j<0 || k<0) return false;
+	if (i >= numCells || j >= numCells || k >= numCells) return false;
+	return true;
+}
+ 
+ /*!
+  */
+template <typename T>
+bool Octree<T>::coordinatesToCell(float x, float y, float z, int *i, int *j, int *k)
+{
+	int numCells = getNumCells();
+	*i = (int)( floor( (x - mCx) / numCells ) + (numCells / 2) );
+	*j = (int)( floor( (y - mCy) / numCells ) + (numCells / 2) );
+	*k = (int)( floor( (z - mCz) / numCells ) + (numCells / 2) );
+	if (!testBounds(x,y,z)) return false;
+	return true;
+}
+
 
 //------------------------------------------ Statistics --------------------------------------------
 
@@ -614,6 +673,10 @@ void Octree<T>::traceRay(float sx, float sy, float sz,
 	}
 }
 
+/*! Returns \a true if the ray starting at \a rx,ry,rz in the
+    direction \a dx,dy,dz intersects this octree between \a t0 and \a
+    t1.
+ */
 template <typename T>
 bool Octree<T>::intersectsRay(float rx, float ry, float rz, 
 			      float dx, float dy, float dz,

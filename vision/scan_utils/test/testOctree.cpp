@@ -73,6 +73,71 @@ TEST(OctreeTests, insertionDeletion)
 	delete octree;
 }
 
+TEST(OctreeTests, cellAccessors)
+{
+	int depth = 4;
+	scan_utils::Octree<float> *original = new scan_utils::Octree<float>(0,0,0, 1.0,1.0,1.0, depth, (float)0.2);
+	scan_utils::Octree<float> *copy = new scan_utils::Octree<float>(0,0,0, 1.0,1.0,1.0, depth, (float)0.2);
+	int numCells = original->getNumCells();
+	float cellSize = 1.0 / numCells;
+	srand( (unsigned)time(NULL) );
+
+	for (int i=0; i<1000; i++) {
+		float x,y,z;
+		x = ((float)rand()) / (RAND_MAX ) - 0.5;
+		y = ((float)rand()) / (RAND_MAX ) - 0.5;
+		z = ((float)rand()) / (RAND_MAX ) - 0.5;
+		original->insert(x, y, z, ((float)rand())/RAND_MAX);
+	}
+
+	//fprintf(stderr,"Original %d leaves and %d branches (before deletions)\n",original->getNumLeaves(), original->getNumBranches() );
+	for (int i=0; i<100; i++) {
+		float x,y,z;
+		x = ((float)rand()) / (RAND_MAX ) - 0.5;
+		y = ((float)rand()) / (RAND_MAX ) - 0.5;
+		z = ((float)rand()) / (RAND_MAX ) - 0.5;
+		original->erase(x, y, z);
+	}
+
+	for (int i=0; i<numCells; i++) {
+		for (int j=0; j<numCells; j++) {
+			for (int k=0; k<numCells; k++) {
+				float val = original->cellGet(i,j,k);
+				if (val != (float)0.2) copy->cellInsert( i, j, k, val );
+			}
+		}
+	}
+
+	EXPECT_TRUE( original->getNumLeaves() == copy->getNumLeaves() );
+	EXPECT_TRUE( original->getNumBranches() == copy->getNumBranches() );
+
+	//fprintf(stderr,"Original %d leaves and %d branches\n",original->getNumLeaves(), original->getNumBranches() );
+	//fprintf(stderr,"Copy     %d leaves and %d branches\n",copy->getNumLeaves(), copy->getNumBranches() );
+
+	bool pass = true;
+	for (float i1 = 0; i1 < numCells * cellSize; i1+=cellSize) {
+		for (float i2 = 0; i2 < numCells * cellSize; i2+=cellSize) {
+			for (float i3 = 0; i3 < numCells * cellSize; i3+=cellSize) {
+				float c = copy->get(i1-0.5, i2-0.5, i3-0.5);
+				float o = original->get(i1-0.5, i2-0.5, i3-0.5);
+				if ( c!= o) {
+					pass = false;
+					//fprintf(stderr,"Original %f and copy %f \n",o,c);
+				}
+				/*
+				if ( c != (float)0.2) {
+					fprintf(stderr,"Original %f and copy %f \n",o,c);
+				}
+				*/
+			}
+		}
+	}
+	EXPECT_TRUE(pass);
+	
+	delete original;
+	delete copy;	
+}
+
 TEST (OctreeTests, serializationDeserialization)
 {
 	int depth = 4;
