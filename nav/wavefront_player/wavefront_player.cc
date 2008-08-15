@@ -371,8 +371,8 @@ WavefrontNode::WavefrontNode() :
   // Static robot->laser transform
   double laser_x_offset;
   param("laser_x_offset", laser_x_offset, 0.05);
-  this->tf.setWithEulers(tf.lookup("FRAMEID_LASER"),
-                         tf.lookup("FRAMEID_ROBOT"),
+  this->tf.setWithEulers(tf.nameClient.lookup("FRAMEID_LASER"),
+                         tf.nameClient.lookup("FRAMEID_ROBOT"),
                          laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
 
   advertise<std_msgs::Planner2DState>("state");
@@ -573,7 +573,7 @@ WavefrontNode::doOneCycle()
   robotPose.x = 0;
   robotPose.y = 0;
   robotPose.yaw = 0;
-  robotPose.frame = tf.lookup("FRAMEID_ROBOT");
+  robotPose.frame = tf.nameClient.lookup("FRAMEID_ROBOT");
   robotPose.time = 0; // request most recent pose
   //robotPose.time = laserMsg.header.stamp.sec * 1000000000ULL + 
   //        laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
