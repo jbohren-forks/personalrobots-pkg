@@ -208,25 +208,23 @@ private:
 	else
 	{
 	    /* copy data to a place where incoming messages do not affect it */
-	    bool success = true;
+	    bool success = false;
 	    try
 	    {
-		m_tf.transformLaserScanToPointCloud("tilt_laser", m_toProcess, m_inputScan);
+		m_tf.transformLaserScanToPointCloud("FRAMEID_MAP", m_toProcess, m_inputScan);
+		success = true;
 	    }
 	    catch(libTF::TransformReference::LookupException& ex)
 	    {
 		fprintf(stderr, "Discarding pointcloud: Transform reference lookup exception\n");
-		success = false;		
 	    }
 	    catch(libTF::TransformReference::ExtrapolateException& ex)
 	    {
 		fprintf(stderr, "Discarding pointcloud: Extrapolation exception: %s\n", ex.what());
-		success = false;
 	    }
 	    catch(...)
 	    {
 		fprintf(stderr, "Discarding pointcloud: Exception in point cloud computation\n");
-		success = false;
 	    }  
 	    if (success)
 		m_processMutex.unlock();   /* let the processing thread know that there is data to process */
