@@ -183,8 +183,8 @@ void Ros_Camera::PutCameraData()
 
     this->imageMsg.width       = width;
     this->imageMsg.height      = height;
-    this->imageMsg.compression = "jpeg";
-    this->imageMsg.colorspace  = "bgr";
+    this->imageMsg.compression = "raw";
+    this->imageMsg.colorspace  = "rgb24";
 
     // on first pass, the sensor does not update after cameraIface is opened.
     uint32_t       buf_size = (width) * (height) * (depth);
