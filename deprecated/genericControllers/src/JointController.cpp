@@ -471,13 +471,13 @@ controllerErrorCode JointController::loadXML(std::string filename)
    if(!model.loadFile(filename.c_str()))
       return CONTROLLER_MODE_ERROR;
 
-   const robot_desc::URDF::Data &data = model.getData();
+   const robot_desc::URDF::Map &data = model.getMap();
 
    std::vector<std::string> types;
    std::vector<std::string> names;
    std::vector<std::string>::iterator iter;
 
-   data.getDataTagTypes(types);
+   data.getMapTagFlags(types);
 
    for(iter = types.begin(); iter != types.end(); iter++){
       if(*iter == "controller"){
@@ -490,7 +490,7 @@ controllerErrorCode JointController::loadXML(std::string filename)
       return CONTROLLER_MODE_ERROR;
 
    exists = 0;
-   data.getDataTagNames("controller",names);
+   data.getMapTagNames("controller",names);
 
    for(iter = names.begin(); iter != names.end(); iter++){
       if(*iter == this->name){
@@ -502,7 +502,7 @@ controllerErrorCode JointController::loadXML(std::string filename)
    if(!exists)
       return CONTROLLER_MODE_ERROR;
 
-   paramMap = data.getDataTagValues("controller",this->name);
+   paramMap = data.getMapTagValues("controller",this->name);
 
    loadParam("pGain",pGain);
    loadParam("dGain",dGain);
