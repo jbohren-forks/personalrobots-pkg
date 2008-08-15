@@ -41,7 +41,7 @@
 #include "std_msgs/BaseVel.h"
 //#include "elphel_cam/Blob.h"
 #include "math_utils/angles.h"
-#include <genericControllers/Pid.h>
+#include <generic_controllers/pid.h>
 #include <math.h>
 #include <iostream>
 #include <fstream>
@@ -99,7 +99,7 @@ public:
 
     double dummy_dt = 1; // only using proportional so don't need dt
     for ( int i = 0; i < 3; i++ ) {
-      cmd[i] = pidController[i].UpdatePid(double( - baseTargetPos[i]), dummy_dt); 
+      cmd[i] = pidController[i].updatePid(double( - baseTargetPos[i]), dummy_dt); 
     }
 
     setBaseVel(cmd[0], cmd[1], cmd[2]);   
@@ -157,9 +157,9 @@ int main(int argc, char **argv)
   double iMin = 0;
  
   for ( int i = 0; i < 2; i++ ) {
-    pidController[i].InitPid(pGain,iGain,dGain,iMax,iMin);
+    pidController[i].initPid(pGain,iGain,dGain,iMax,iMin);
   }
-  pidController[2].InitPid(0.3,iGain,dGain,iMax,iMin);
+  pidController[2].initPid(0.3,iGain,dGain,iMax,iMin);
   
   while(n.ok()) {
     if ( counter++>100 ) {
