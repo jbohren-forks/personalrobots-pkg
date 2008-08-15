@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// This package provides a library to take OpenCV images and track blobs.
+// This package provides a library to take OpenCV images and track any number of blobs.
 // It follows the camshiftdemo.c from the OpenCV samples.
 //
 // Copyright (C) 2008, Jimmy Sastra
