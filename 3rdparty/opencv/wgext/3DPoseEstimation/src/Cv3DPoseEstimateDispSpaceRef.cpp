@@ -78,7 +78,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimateMixedPointClouds(
 }
 
 int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
-		CvMat *rot, CvMat *shift, CvMat*& outliers0, CvMat*& outliers1) {
+		CvMat *rot, CvMat *shift, CvMat*& inliers0, CvMat*& inliers1) {
 	int numInLiers = 0;
 
 	int numPoints = uvds0->rows;
@@ -96,7 +96,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
 	reprojection(uvds1, xyzs1);
 
 	numInLiers = estimate(xyzs0, xyzs1, uvds0, uvds1, 0, NULL, rot, shift,
-			outliers0, outliers1);
+			inliers0, inliers1);
 
 	cvReleaseMat(&xyzs0);
 	cvReleaseMat(&xyzs1);
