@@ -1,5 +1,5 @@
 /*********************************************************************
-* This node takes OpenCV images and tracks blobs 
+* This node allows you to teleop the base with an overhead camera
 *
 *
 * Software License Agreement (BSD License)
