@@ -33,19 +33,57 @@
 *********************************************************************/
 
 #include <ros/node.h>
-#include <std_msgs/PR2Arm.h>
-
-using namespace std_msgs;
+#include <pr2_msgs/MoveArmState.h>
+#include <pr2_msgs/MoveArmGoal.h>
 
 class TestIssueKinematicPlan : public ros::node
 {
 public:
 
-    TestIssueKinematicPlan(void) : ros::node("test_issue_kinematic_plan")
-    {
-      advertise<PR2Arm>("right_pr2arm_set_position");
-      advertise<PR2Arm>("left_pr2arm_set_position");
-    }    
+  TestIssueKinematicPlan(void) : ros::node("test_issue_kinematic_plan")
+  {
+    advertise<pr2_msgs::MoveArmGoal>("right_movearmgoal");
+    advertise<pr2_msgs::MoveArmGoal>("left_movearmgoal");
+    
+    subscribe("right_movearmstate", right_move_arm_state_, &TestIssueKinematicPlan::recMoveRightArmState);
+    subscribe("left_movearmstate", left_move_arm_state_, &TestIssueKinematicPlan::recMoveLeftArmState);
+  }    
+  
+  void recMoveRightArmState(void) 
+  {
+    std::cout << "Got right arm state message " 
+              << " active " << (right_move_arm_state_.active==1) << " "
+              << " valid " << (right_move_arm_state_.valid==1) << " "
+              << " success " << (right_move_arm_state_.success==1) << std::endl
+              << " arm location " 
+              << right_move_arm_state_.actual_arm_state[0] << " "
+              << right_move_arm_state_.actual_arm_state[1] << " "
+              << right_move_arm_state_.actual_arm_state[2] << " "
+              << right_move_arm_state_.actual_arm_state[3] << " "
+              << right_move_arm_state_.actual_arm_state[4] << " "
+              << right_move_arm_state_.actual_arm_state[5] << " "
+              << right_move_arm_state_.actual_arm_state[6] << " "
+              << right_move_arm_state_.actual_arm_state[7] << " "
+              << right_move_arm_state_.actual_arm_state[8] << " "
+              << std::endl
+              << " desired location "
+              <<  right_move_arm_state_.desired_arm_state[0] << " "
+              <<  right_move_arm_state_.desired_arm_state[1] << " "
+              <<  right_move_arm_state_.desired_arm_state[2] << " "
+              <<  right_move_arm_state_.desired_arm_state[3] << " "
+              <<  right_move_arm_state_.desired_arm_state[4] << " "
+              <<  right_move_arm_state_.desired_arm_state[5] << " "
+              <<  right_move_arm_state_.desired_arm_state[6] << " "
+              <<  right_move_arm_state_.desired_arm_state[7] << " "
+              <<  right_move_arm_state_.desired_arm_state[8] << std::endl;
+  }
+
+  void recMoveLeftArmState(void) 
+  {
+  }
+  pr2_msgs::MoveArmState right_move_arm_state_;
+  pr2_msgs::MoveArmState left_move_arm_state_;
+
 };
 
 
@@ -58,20 +96,21 @@ int main(int argc, char **argv)
     sleep(3);
 
     //for(int i = 0; i < 5; i++) {
-    std_msgs::PR2Arm armGoal;
-    armGoal.turretAngle = -1.0;
-    armGoal.shoulderLiftAngle = 0;
-    armGoal.upperarmRollAngle = 0;
-    armGoal.elbowAngle = 0;
-    armGoal.forearmRollAngle = 0; 
-    armGoal.wristPitchAngle = 0;
-    armGoal.wristRollAngle = 0;
-    armGoal.gripperForceCmd = 0;
-    armGoal.gripperGapCmd = 0;
-    test.publish("right_pr2arm_set_position",armGoal);
+    pr2_msgs::MoveArmGoal arm_goal;
+    arm_goal.set_move_arm_goal_size(9);
+    arm_goal.move_arm_goal[0] = -1.0;
+    arm_goal.move_arm_goal[1] = 0;
+    arm_goal.move_arm_goal[2] = 0;
+    arm_goal.move_arm_goal[3] = 0;
+    arm_goal.move_arm_goal[4] = 0; 
+    arm_goal.move_arm_goal[5] = 0;
+    arm_goal.move_arm_goal[6] = 0;
+    arm_goal.move_arm_goal[7] = 100;
+    arm_goal.move_arm_goal[8] = .2;
+    test.publish("right_movearmgoal",arm_goal);
     //sleep(1);
-    //test.publish("left_pr2arm_set_position",armGoal);
-    sleep(3);
+    //test.publish("left_pr2arm_set_position",arm_goal);
+    test.spin();
         
     test.shutdown();
     
