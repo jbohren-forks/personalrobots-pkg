@@ -49,19 +49,17 @@ RampInputController::~RampInputController()
 {
 }
 
-void RampInputController::init(double input_start, double input_end, double duration, double time,mechanism::Robot *robot, mechanism::Joint *joint)
+void RampInputController::init(double input_start, double input_end, double duration, double time,std::string name,mechanism::Robot *robot)
 {
-  joint_ = joint;
-  robot_ = robot; 
+  robot_ = robot;
+  joint_ = robot->getJoint(name);
   input_start_=input_start;
   input_end_=input_end;
   duration_=duration;
   initial_time_=time;
 }
 
-void RampInputController::init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint)
-{
-}
+
 
 void RampInputController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
@@ -72,7 +70,7 @@ void RampInputController::initXml(mechanism::Robot *robot, TiXmlElement *config)
     double input_start = atof(elt->FirstChildElement("start")->GetText());
     double input_end = atof(elt->FirstChildElement("end")->GetText());
     double duration = atof(elt->FirstChildElement("duration")->GetText());
-    init(input_start, input_end, duration,robot->hw_->current_time_,robot,robot->getJoint(elt->Attribute("name")));
+    init(input_start, input_end, duration,robot->hw_->current_time_,elt->Attribute("name"), robot);
   }
     
 }
@@ -142,7 +140,7 @@ bool RampInputControllerNode::getActual(
   return true;
 }
 
-void RampInputControllerNode::init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint)
+void RampInputControllerNode::init(double input_start, double input_end, double duration, double time,std::string name,mechanism::Robot *robot)
 {
   assert(false); // temporary fix for lack of xml
 }

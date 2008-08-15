@@ -35,7 +35,7 @@
 
 #include <generic_controllers/joint_autotuner.h>
 #include <math_utils/angles.h>
-
+#define DEBUG 1
 using namespace std;
 using namespace controller;
 
@@ -62,7 +62,10 @@ void JointAutotuner::init(double p_gain, double i_gain, double d_gain, double wi
   joint_ = joint;
 
   relay_height_ = RELAYFRACTION * joint_->effort_limit_;
-  
+  #ifdef DEBUG
+    printf("DLL : Relay:%f\n",relay_height_);
+  #endif
+  current_state_ = POSITIVE_PEAK;
 }
 
 void JointAutotuner::initXml(mechanism::Robot *robot, TiXmlElement *config)
@@ -116,11 +119,21 @@ void JointAutotuner::update()
     current_state_ = POSITIVE_PEAK;
     period_ = time-cycle_start_time_;
     amplitude_ = (positive_peak_-negative_peak_)/2; //Record amplitude
+    
+    #ifdef DEBUG
+      printf("DLL period: %f amplitude: %f\n", period_, amplitude_);
+    #endif
+    
     if( (fabs(amplitude_-last_amplitude_) < AMPLITUDETOLERANCE*last_amplitude_) &&(fabs(period_-last_period_)<PERIODTOLERANCE*last_period_))//If the two peaks match closely
-    {
-     
+    {     
         successful_cycles_++; //increment successful cycles
-        if(successful_cycles_>=NUMCYCLES) current_state_ = DONE; //Done testing
+        if(successful_cycles_>=NUMCYCLES) 
+        { 
+            #ifdef DEBUG
+              printf("DLL : DONE! Period: %f Amplitude: %f\n", period_, amplitude_);
+            #endif
+          current_state_ = DONE; //Done testing
+        }
      }
     else successful_cycles_ = 0; //Otherwise, reset if we're varying too much
    

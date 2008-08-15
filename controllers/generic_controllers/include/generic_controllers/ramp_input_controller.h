@@ -77,8 +77,8 @@ public:
    * \param time The current hardware time. 
    * \param *joint The joint that is being controlled.
    */
-  void init(double input_start, double input_end, double duration, double time,mechanism::Robot *robot, mechanism::Joint *joint);
-  void init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint);
+  void init(double input_start, double input_end, double duration, double time,std::string name,mechanism::Robot *robot);
+
   void initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   /*!
@@ -147,9 +147,8 @@ public:
 
   void update();
 
-  void init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint);
+  void init(double input_start, double input_end, double duration, double time,std::string name,mechanism::Robot *robot);
   void initXml(mechanism::Robot *robot, TiXmlElement *config);
-
 
   bool getActual(generic_controllers::GetActual::request &req,
                   generic_controllers::GetActual::response &resp);

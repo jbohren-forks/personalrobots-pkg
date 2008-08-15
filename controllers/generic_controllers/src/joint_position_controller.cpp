@@ -53,14 +53,15 @@ JointPositionController::~JointPositionController()
 {
 }
 
-void JointPositionController::init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint)
+void JointPositionController::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot)
 {
   pid_controller_.initPid(p_gain, i_gain, d_gain, windup, -windup);
 
   robot_ = robot;
+  joint_ = robot->getJoint(name);
   command_= 0;
   last_time_= time;
-  joint_ = joint;
+  
 }
 
 void JointPositionController::initXml(mechanism::Robot *robot, TiXmlElement *config)
@@ -73,7 +74,7 @@ void JointPositionController::initXml(mechanism::Robot *robot, TiXmlElement *con
     double i_gain = atof(elt->FirstChildElement("iGain")->GetText());
     double d_gain = atof(elt->FirstChildElement("dGain")->GetText());
     double windup= atof(elt->FirstChildElement("windup")->GetText());
-    init(p_gain, i_gain, d_gain, windup, robot->hw_->current_time_, robot, robot->getJoint(elt->Attribute("name")));
+    init(p_gain, i_gain, d_gain, windup, robot->hw_->current_time_,elt->Attribute("name"), robot);
   }
 }
 
@@ -161,12 +162,12 @@ bool JointPositionControllerNode::getActual(
   return true;
 }
 
-void JointPositionControllerNode::init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint)
+void JointPositionControllerNode::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot)
 {
   ros::node *node = ros::node::instance();
-  string prefix = joint->name_;
+  string prefix = name;
   
-  c_->init(p_gain, i_gain, d_gain, windup, time,robot, joint);
+  c_->init(p_gain, i_gain, d_gain, windup, time, name,robot);
   node->advertise_service(prefix + "/set_command", &JointPositionControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_actual", &JointPositionControllerNode::getActual, this);
 }
