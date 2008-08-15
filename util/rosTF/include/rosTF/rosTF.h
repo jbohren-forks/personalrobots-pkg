@@ -125,7 +125,9 @@ class rosTFClient : public libTF::TransformReference
   nameLookupClient nameClient;
   unsigned int lookup(const std::string& name){std::cerr<<"Interface Depricated: use rosTFClient.nameClient.lookup(name) instead."; return nameClient.lookup(name);};
 
-  /** \brief Return all frames and their lookups */
+  /** \brief Return all frames and their lookups 
+   This will return a string which is a list of all frames and their parents.
+   Viewing both the string and number representation of their frameid. */
   std::string viewNamedFrames();
 
  private:
