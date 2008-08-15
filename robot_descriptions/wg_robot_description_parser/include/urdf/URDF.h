@@ -53,33 +53,49 @@ namespace robot_desc
     public:
         
 	/** This class encapsulates data that can be attached to various tags in the format */
-	class Data
+	class Map
 	{
 	public:
             
-	    Data(void)
+	    Map(void)
 	    {
 	    }
             
-	    virtual ~Data(void)
+	    virtual ~Map(void)
 	    {
 	    }
             
-	    void getDataTagTypes(std::vector<std::string> &types) const;
-	    void getDataTagNames(const std::string &type, std::vector<std::string> &names) const;
-	    std::map<std::string, std::string> getDataTagValues(const std::string &type, const std::string &name) const;
-	    std::map<std::string, const TiXmlElement*> getDataTagXML(const std::string &type, const std::string &name) const;
+	    /** Get the set of flags used for the processed <map> tags. Each <map> tag has one flag. Multiple tags may
+		have the same flag. */
+	    void getMapTagFlags(std::vector<std::string> &flags) const;
 	    
+	    /** Given a specific flag, retrieve the names of the <map> tags that have the given flag */
+	    void getMapTagNames(const std::string &flag, std::vector<std::string> &names) const;
+	    
+	    /** Given a name and a flag, retrieve the defined map (string, string) */
+	    std::map<std::string, std::string> getMapTagValues(const std::string &type, const std::string &name) const;
+
+	    /** Given a name and a flag, retrieve the defined map (string, XML) */
+	    std::map<std::string, const TiXmlElement*> getMapTagXML(const std::string &flag, const std::string &name) const;
+	    
+	    /** Check whether a key under empty flag and empty name has been defined */
 	    bool hasDefault(const std::string &key) const;
+
+	    /** Retrieve the value of a key (string) under empty flag and empty name has been defined */
 	    std::string getDefaultValue(const std::string &key) const;
+	    
+	    /** Retrieve the value of a key (XML) under empty flag and empty name has been defined */
 	    const TiXmlElement* getDefaultXML(const std::string &key) const;
 	    
 	    virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
             
-	    void add(const std::string &type, const std::string &name, const std::string &key, const std::string &value);
-	    void add(const std::string &type, const std::string &name, const std::string &key, const TiXmlElement *value);
+	    /** Add a string element to the map */
+	    void add(const std::string &flag, const std::string &name, const std::string &key, const std::string &value);
+	    
+	    /** Add an XML element to the map */
+	    void add(const std::string &flag, const std::string &name, const std::string &key, const TiXmlElement *value);
             
-	    Data& operator=(const Data &rhs)
+	    Map& operator=(const Map &rhs)
 	    { 
 		m_data = rhs.m_data;
 		return *this;
@@ -126,7 +142,7 @@ namespace robot_desc
 	    virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
             
 	    std::string                 name;
-	    Data                        data;
+	    Map                         data;
 	    std::map<std::string, bool> isSet;
 	};
 	
@@ -145,7 +161,7 @@ namespace robot_desc
 	    virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
             
 	    std::string                 name;
-	    Data                        data;
+	    Map                         data;
 	    std::map<std::string, bool> isSet;
 	};
 
@@ -157,19 +173,72 @@ namespace robot_desc
 	    /** Class for link geometry instances */
 	    struct Geometry
 	    {
+		struct Shape
+		{
+		    virtual ~Shape(void)
+		    {
+		    }		    
+		};
+		
+		struct Sphere : public Shape
+		{
+		    Sphere(void) : Shape()
+		    {
+			radius = 0.0;
+		    }
+		    
+		    double radius;
+		};
+		
+		struct Box : public Shape
+		{
+		    Box(void) : Shape()
+		    {	
+			size[0] = size[1] = size[2] = 0.0;
+		    }
+		    
+		    double size[3];
+		};
+		
+		struct Cylinder : public Shape
+		{
+		    Cylinder(void) : Shape()
+		    {	
+			length = radius = 0.0;
+		    }
+		    
+		    double length, radius;
+		};		
+
+		struct Mesh : public Shape
+		{
+		    Mesh(void) : Shape()
+		    {
+			scale[0] = scale[1] = scale[2] = 1.0;
+			size[0] = size[1] = size[2] = 0.0;
+		    }
+		    
+		    std::string filename;
+		    double      scale[3];
+		    double      size[3];
+		};		
+
 		Geometry(void)
 		{
 		    type = UNKNOWN;
-		    nsize = -1;
-		    size[0] = size[1] = size[2] = 0.0;
+		    shape = NULL;
 		    isSet["name"] = false;
-		    isSet["type"] = false;
 		    isSet["size"] = false;
+		    isSet["length"] = false;
+		    isSet["radius"] = false;
 		    isSet["filename"] = false;
+		    isSet["scale"] = false;
 		}
                 
 		virtual ~Geometry(void)
 		{
+		    if (shape)
+			delete shape;
 		}
                 
 		virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
@@ -177,14 +246,13 @@ namespace robot_desc
 		enum
 		    {
 			UNKNOWN, SPHERE, BOX, CYLINDER, MESH
-		    }       type;
+		    }                       type;
 		std::string                 name;
-		double                      size[3];
-		int                         nsize;	
-		std::string                 filename;
-		Data                        data;
+		Shape                      *shape;
+		Map                         data;
 		std::map<std::string, bool> isSet;
 	    };
+	    
 
 	    /** Class for link joint instances (connects a link to its parent) */
 	    struct Joint
@@ -223,7 +291,7 @@ namespace robot_desc
 		double                      effortLimit;
 		double                      velocityLimit;
 		std::string                 calibration;
-		Data                        data;
+		Map                         data;
 		std::map<std::string, bool> isSet;
 	    };
 	    
@@ -240,7 +308,6 @@ namespace robot_desc
 		    isSet["verbose"] = false;
 		    isSet["xyz"] = false;
 		    isSet["rpy"] = false;
-		    isSet["material"] = false;
 		    isSet["geometry"] = false;
 		}
                 
@@ -256,9 +323,8 @@ namespace robot_desc
 		bool                        verbose;
 		double                      xyz[3];
 		double                      rpy[3];
-		std::string                 material;
 		Geometry                   *geometry;
-		Data                        data;    
+		Map                         data;    
 		std::map<std::string, bool> isSet;
 	    };
 	    
@@ -284,9 +350,10 @@ namespace robot_desc
                 
 		std::string                 name;
 		double                      mass;
-		double                      inertia[6];
+		/** Ixx Ixy Ixz Iyy Iyz Izz */
+		double                      inertia[6]; 
 		double                      com[3];
-		Data                        data;
+		Map                         data;
 		std::map<std::string, bool> isSet;
 	    };
 	    
@@ -297,13 +364,10 @@ namespace robot_desc
 		{
 		    xyz[0] = xyz[1] = xyz[2] = 0.0;
 		    rpy[0] = rpy[1] = rpy[2] = 0.0;
-		    scale[0] = scale[1] = scale[2] = 1.0;
 		    geometry = new Geometry();
 		    isSet["name"] = false;
 		    isSet["xyz"] = false;
 		    isSet["rpy"] = false;
-		    isSet["scale"] = false;
-		    isSet["material"] = false;
 		    isSet["geometry"] = false;
 		}
                 
@@ -318,10 +382,8 @@ namespace robot_desc
 		std::string                 name;
 		double                      xyz[3];
 		double                      rpy[3];
-		double                      scale[3];
-		std::string                 material;
 		Geometry                   *geometry;
-		Data                        data;
+		Map                         data;
 		std::map<std::string, bool> isSet;
 	    };
             
@@ -379,7 +441,7 @@ namespace robot_desc
             
 	    double                      rpy[3];
 	    double                      xyz[3];
-	    Data                        data;
+	    Map                         data;
 	    
 	    std::vector<Group*>         groups;
 	    std::vector<bool>           inGroup;
@@ -442,7 +504,7 @@ namespace robot_desc
 	    
 	    double                      rpy[3];
 	    double                      xyz[3];
-	    Data                        data;
+	    Map                         data;
 
 	    std::vector<Group*>         groups;
 	    std::map<std::string, bool> isSet;
@@ -563,7 +625,7 @@ namespace robot_desc
 	void getGroups(std::vector<Group*> &groups) const;
 	
 	/** Get the data that was defined at top level */
-	const Data& getData(void) const;
+	const Map& getMap(void) const;
         
 	/** Return the number of encountered errors */
 	unsigned int getErrorCount(void) const;
@@ -616,14 +678,14 @@ namespace robot_desc
 	/** Parse the <inertial> tag */
 	void loadInertial(const TiXmlNode *node, const std::string &defaultName, Link::Inertial *inertial);
 	/** Parse the <data> tag */
-	void loadData(const TiXmlNode *node, Data *data);
+	void loadMap(const TiXmlNode *node, Map *data);
 	
 	/** Parse a list of string expressions and convert them to doubles (this relies on the loaded constants) */
-	unsigned int loadDoubleValues(const TiXmlNode *node, unsigned int count, double *vals);
+	unsigned int loadDoubleValues(const TiXmlNode *node, unsigned int count, double *vals, const char *attrName = NULL, bool warn = false);
 	/** Parse a list of string expressions and convert them to doubles (this relies on the loaded constants) */
 	unsigned int loadDoubleValues(const std::string& data, unsigned int count, double *vals, const TiXmlNode *node = NULL);
 	/** Parse a list of strings and convert them to booleans */
-	unsigned int loadBoolValues  (const TiXmlNode *node, unsigned int count, bool *vals);
+	unsigned int loadBoolValues  (const TiXmlNode *node, unsigned int count, bool *vals, const char *attrName = NULL, bool warn = false);
 	/** Parse a list of string expressions and convert them to doubles (this relies on the loaded constants) */
 	unsigned int loadBoolValues(const std::string& data, unsigned int count, bool *vals, const TiXmlNode *node = NULL);
 	
@@ -675,7 +737,7 @@ namespace robot_desc
 	std::map<std::string, Frame*>        m_frames;
 	
 	/** Contains information specified in <data> tags at the top level */
-	Data                                 m_data;
+	Map                                  m_data;
         
 	/** Additional datastructure containing a list links that are connected to the environment */
 	std::vector<Link*>                   m_linkRoots; 
@@ -704,8 +766,8 @@ namespace robot_desc
 	
 	/** The list of constants (temporary) */
 	std::map<std::string, std::string>      m_constants; 
-	/** The list of templates (temporary) */
-	std::map<std::string, const TiXmlNode*> m_templates;
+	/** The list of constant blocks (temporary) */
+	std::map<std::string, const TiXmlNode*> m_constBlocks;
 	/** List of nodes to be processed after loading the constants and templates (temporary) */
 	std::vector<const TiXmlNode*>           m_stage2;
 	/** List of loaded documents. The documents are not cleared after parse since <data> tags may contain pointers to XML datastructures from these documents */

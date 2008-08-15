@@ -219,59 +219,59 @@ namespace robot_desc {
 	    groups.push_back(getGroup(names[i]));
     }
     
-    const URDF::Data& URDF::getData(void) const
+    const URDF::Map& URDF::getMap(void) const
     {
 	return m_data;
     }
     
-    void URDF::Data::add(const std::string &type, const std::string &name, const std::string &key, const std::string &value)
+    void URDF::Map::add(const std::string &type, const std::string &name, const std::string &key, const std::string &value)
     {
 	if (!m_data[type][name][key].str)
 	    m_data[type][name][key].str = new std::string();
 	*(m_data[type][name][key].str) = value;
     }
     
-    void URDF::Data::add(const std::string &type, const std::string &name, const std::string &key, const TiXmlElement *value)
+    void URDF::Map::add(const std::string &type, const std::string &name, const std::string &key, const TiXmlElement *value)
     {
 	m_data[type][name][key].xml = value;
     }
     
-    bool URDF::Data::hasDefault(const std::string &key) const
+    bool URDF::Map::hasDefault(const std::string &key) const
     {
-	std::map<std::string, std::string> m = getDataTagValues("", "");
+	std::map<std::string, std::string> m = getMapTagValues("", "");
 	return m.find(key) != m.end();
     }
     
-    std::string URDF::Data::getDefaultValue(const std::string &key) const
+    std::string URDF::Map::getDefaultValue(const std::string &key) const
     {
-	return getDataTagValues("", "")[key];
+	return getMapTagValues("", "")[key];
     }
     
-    const TiXmlElement* URDF::Data::getDefaultXML(const std::string &key) const
+    const TiXmlElement* URDF::Map::getDefaultXML(const std::string &key) const
     {
-	return getDataTagXML("", "")[key];
+	return getMapTagXML("", "")[key];
     }
     
-    void URDF::Data::getDataTagTypes(std::vector<std::string> &types) const
+    void URDF::Map::getMapTagFlags(std::vector<std::string> &flags) const
     {
 	for (std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator i = m_data.begin() ; i != m_data.end() ; ++i)
-	    types.push_back(i->first);
+	    flags.push_back(i->first);
     }
     
-    void URDF::Data::getDataTagNames(const std::string &type, std::vector<std::string> &names) const
+    void URDF::Map::getMapTagNames(const std::string &flag, std::vector<std::string> &names) const
     {
-	std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator pos = m_data.find(type);
+	std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator pos = m_data.find(flag);
 	if (pos != m_data.end())
 	{
 	    for (std::map<std::string, std::map<std::string, Element > >::const_iterator i = pos->second.begin() ; i != pos->second.end() ; ++i)
 		names.push_back(i->first);
 	}
     }
-    std::map<std::string, std::string> URDF::Data::getDataTagValues(const std::string &type, const std::string &name) const
+    std::map<std::string, std::string> URDF::Map::getMapTagValues(const std::string &flag, const std::string &name) const
     {    
 	std::map<std::string, std::string> result;
 	
-	std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator pos = m_data.find(type);
+	std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator pos = m_data.find(flag);
 	if (pos != m_data.end())
 	{
 	    std::map<std::string, std::map<std::string, Element > >::const_iterator m = pos->second.find(name);
@@ -285,11 +285,11 @@ namespace robot_desc {
 	return result;
     }
     
-    std::map<std::string, const TiXmlElement*> URDF::Data::getDataTagXML(const std::string &type, const std::string &name) const
+    std::map<std::string, const TiXmlElement*> URDF::Map::getMapTagXML(const std::string &flag, const std::string &name) const
     {    
 	std::map<std::string, const TiXmlElement*> result;
 	
-	std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator pos = m_data.find(type);
+	std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator pos = m_data.find(flag);
 	if (pos != m_data.end())
 	{
 	    std::map<std::string, std::map<std::string, Element > >::const_iterator m = pos->second.find(name);
@@ -347,11 +347,11 @@ namespace robot_desc {
 	m_data.print(out, "  ");
     }
     
-    void URDF::Data::print(std::ostream &out, std::string indent) const
+    void URDF::Map::print(std::ostream &out, std::string indent) const
     {
 	for (std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator i = m_data.begin() ; i != m_data.end() ; ++i)
 	{
-	    out << indent << "Data of type '" << i->first << "':" << std::endl;
+	    out << indent << "Data flagged as '" << i->first << "':" << std::endl;
 	    for (std::map<std::string, std::map<std::string, Element > >::const_iterator j = i->second.begin() ; j != i->second.end() ; ++j)
 	    {
 		out << indent << "  [" << j->first << "]" << std::endl;
@@ -397,11 +397,38 @@ namespace robot_desc {
     {
 	out << indent << "Geometry [" << name << "]:" << std::endl;
 	out << indent << "  - type: " << type << std::endl;
-	out << indent << "  - size: ( ";
-	for (int i = 0 ; i < nsize ; ++i)
-	    out << size[i] << " ";
-	out << ")" << std::endl;
-	out << indent << "  - filename: " << filename << std::endl;
+	if (shape)
+	    switch (type)
+	    {
+	    case SPHERE:
+		out << indent << "  - radius: " << static_cast<Sphere*>(shape)->radius << std::endl;
+		break;
+	    case CYLINDER:
+		out << indent << "  - radius: " << static_cast<Cylinder*>(shape)->radius << std::endl;
+		out << indent << "  - length: " << static_cast<Cylinder*>(shape)->length << std::endl;
+		break;
+	    case BOX:
+		{
+		    const double *size = static_cast<Box*>(shape)->size;
+		    out << indent << "  - size: (" <<  size[0] << ", " << size[1] << ", " << size[2] << ")" << std::endl;
+		}
+		break;
+	    case MESH:
+		out << indent << "  - filename: " << static_cast<Mesh*>(shape)->filename << std::endl;
+		if (isSet.find("size")->second)
+		{
+		    const double *size = static_cast<Mesh*>(shape)->size;
+		    out << indent << "  - size: (" <<  size[0] << ", " << size[1] << ", " << size[2] << ")" << std::endl;
+		}
+		if (isSet.find("scale")->second)
+		{
+		    const double *scale = static_cast<Mesh*>(shape)->scale;
+		    out << indent << "  - scale: (" <<  scale[0] << ", " << scale[1] << ", " << scale[2] << ")" << std::endl;
+		}
+		break;
+	    default:
+		break;
+	    }
 	data.print(out, indent + "  ");
     }
     
@@ -422,7 +449,6 @@ namespace robot_desc {
     {
 	out << indent << "Collision [" << name << "]:" << std::endl;
 	out << indent << "  - verbose: " << (verbose ? "Yes" : "No") << std::endl;
-	out << indent << "  - material: " << material << std::endl;
 	out << indent << "  - rpy: (" <<  rpy[0] << ", " << rpy[1] << ", " << rpy[2] << ")" << std::endl;
 	out << indent << "  - xyz: (" <<  xyz[0] << ", " << xyz[1] << ", " << xyz[2] << ")" << std::endl;
 	geometry->print(out, indent + "  ");
@@ -441,8 +467,6 @@ namespace robot_desc {
     void URDF::Link::Visual::print(std::ostream &out, std::string indent) const
     {
 	out << indent << "Visual [" << name << "]:" << std::endl;
-	out << indent << "  - material: " << material << std::endl;
-	out << indent << "  - scale: " << scale[0] << ", " << scale[1] << ", " << scale[2] << ")" << std::endl;
 	out << indent << "  - rpy: (" <<  rpy[0] << ", " << rpy[1] << ", " << rpy[2] << ")" << std::endl;
 	out << indent << "  - xyz: (" <<  xyz[0] << ", " << xyz[1] << ", " << xyz[2] << ")" << std::endl;
 	geometry->print(out, indent + "  ");
@@ -589,26 +613,35 @@ namespace robot_desc {
     void URDF::getChildrenAndAttributes(const TiXmlNode *node, std::vector<const TiXmlNode*> &children, std::vector<const TiXmlAttribute*> &attributes) const
     {
 	for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
-	    children.push_back(child);
-	if (node->Type() == TiXmlNode::ELEMENT)
 	{
-	    for (const TiXmlAttribute *attr = node->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
+	    if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "insert_const_block")
 	    {
-		if (strcmp(attr->Name(), "clone") == 0)
+		const char *nm = child->ToElement()->Attribute("name");
+		if (nm)
 		{
-		    std::map<std::string, const TiXmlNode*>::const_iterator pos = m_templates.find(attr->ValueStr());
-		    if (pos == m_templates.end())
+		    std::string name = string_utils::trim(nm);		    
+		    std::map<std::string, const TiXmlNode*>::const_iterator pos = m_constBlocks.find(name);
+		    if (pos == m_constBlocks.end())
 		    {
-			errorMessage("Template '" + attr->ValueStr() + "' is not defined");
-			errorLocation(node);
-		    }	
+			errorMessage("Constant block '" + name + "' is not defined");
+			errorLocation(child);
+		    }
 		    else
 			getChildrenAndAttributes(pos->second, children, attributes);
 		}
 		else
-		    attributes.push_back(attr);
+		{
+		    errorMessage("Undefined name when referencing a constant block");
+		    errorLocation(child);
+		}
 	    }
+	    else
+		children.push_back(child);
 	}
+	
+	if (node->Type() == TiXmlNode::ELEMENT && node->ValueStr() != "const_block")
+	    for (const TiXmlAttribute *attr = node->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
+		attributes.push_back(attr);	
     }
     
     void URDF::defaultConstants(void)
@@ -638,7 +671,7 @@ namespace robot_desc {
 	m_geoms.clear();
 	
 	m_constants.clear();
-	m_templates.clear();
+	m_constBlocks.clear();
 	m_stage2.clear();
     }
     
@@ -738,9 +771,10 @@ namespace robot_desc {
     
     char* URDF::findFile(const char *filename)
     {
+	std::string fnm = string_utils::trim(filename);
 	for (unsigned int i = 0 ; i < m_paths.size() ; ++i)
 	{
-	    std::string name = m_paths[i] + filename;
+	    std::string name = m_paths[i] + fnm;
 	    std::fstream fin;
 	    fin.open(name.c_str(), std::ios::in);
 	    bool good = fin.is_open();
@@ -758,7 +792,7 @@ namespace robot_desc {
 	{
 	    if (strcmp(attributes[i]->Name(), "name") == 0)
 	    {
-		name = attributes[i]->ValueStr();
+		name = string_utils::trim(attributes[i]->ValueStr());
 		attributes.erase(attributes.begin() + i);
 		break;
 	    }
@@ -813,14 +847,34 @@ namespace robot_desc {
 	}
     }
     
-    unsigned int URDF::loadDoubleValues(const TiXmlNode *node, unsigned int count, double *vals)
+    unsigned int URDF::loadDoubleValues(const TiXmlNode *node, unsigned int count, double *vals, const char *attrName, bool warn)
     {
-	if (node && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
-	    node = node->FirstChild();
-	if (node && node->Type() == TiXmlNode::TEXT)
-	    return loadDoubleValues(node->ValueStr(), count, vals, node);
+	if (attrName)
+	{
+	    if (node && node->Type() == TiXmlNode::ELEMENT)
+	    {
+		const char* value = node->ToElement()->Attribute(attrName);
+		if (value)
+		    return loadDoubleValues(value, count, vals, node);
+		else
+		{
+		    if (warn)
+		    {
+			errorMessage("Attribute " + std::string(attrName) + " is missing");			
+			errorLocation(node);
+		    }		    
+		    return 0;
+		}		
+	    }
+	}
 	else
-	    return 0;
+	{
+	    if (node && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+		node = node->FirstChild();
+	    if (node && node->Type() == TiXmlNode::TEXT)
+		return loadDoubleValues(node->ValueStr(), count, vals, node);	    
+	}	
+	return 0;
     }
     
     unsigned int URDF::loadDoubleValues(const std::string &data, unsigned int count, double *vals, const TiXmlNode *node)
@@ -847,15 +901,9 @@ namespace robot_desc {
 
 	if (ss.good())
 	{
-	    std::string extra = ss.str();
-	    while (!extra.empty())
-	    {
-		char last = extra[extra.size() - 1];
-		if (last == ' ' || last == '\n' || last == '\t')
-		    extra.erase(extra.size() - 1);
-		else
-		    break;	  
-	    }
+	    std::string extra;
+	    ss >> extra;
+	    extra = string_utils::trim(extra);
 	    if (!extra.empty())
 	    {
 		errorMessage("More data available (" + string_utils::convert2str(read) + " read, rest is ignored): '" + data + "'");
@@ -872,14 +920,34 @@ namespace robot_desc {
 	return read;
     }
     
-    unsigned int URDF::loadBoolValues(const TiXmlNode *node, unsigned int count, bool *vals)
+    unsigned int URDF::loadBoolValues(const TiXmlNode *node, unsigned int count, bool *vals, const char *attrName, bool warn)
     {
-	if (node && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
-	    node = node->FirstChild();
-	if (node && node->Type() == TiXmlNode::TEXT)
-	    return loadBoolValues(node->ValueStr(), count, vals, node);
+    	if (attrName)
+	{
+	    if (node && node->Type() == TiXmlNode::ELEMENT)
+	    {
+		const char* value = node->ToElement()->Attribute(attrName);
+		if (value)
+		    return loadBoolValues(value, count, vals, node);
+		else
+		{
+		    if (warn)
+		    {
+			errorMessage("Attribute " + std::string(attrName) + " is missing");			
+			errorLocation(node);
+		    }		    
+		    return 0;
+		}
+	    }
+	}
 	else
-	    return 0;
+	{
+	    if (node && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+		node = node->FirstChild();
+	    if (node && node->Type() == TiXmlNode::TEXT)
+		return loadBoolValues(node->ValueStr(), count, vals, node);
+	}
+	return 0;
     }
     
     unsigned int URDF::loadBoolValues(const std::string& data, unsigned int count, bool *vals, const TiXmlNode *node)
@@ -900,15 +968,9 @@ namespace robot_desc {
 
 	if (ss.good())
 	{
-	    std::string extra = ss.str();
-	    while (!extra.empty())
-	    {
-		char last = extra[extra.size() - 1];
-		if (last == ' ' || last == '\n' || last == '\t')
-		    extra.erase(extra.size() - 1);
-		else
-		    break;	  
-	    }
+	    std::string extra;
+	    ss >> extra;
+	    extra = string_utils::trim(extra);
 	    if (!extra.empty())
 	    {	
 		errorMessage("More data available (" + string_utils::convert2str(read) + " read, rest is ignored): '" + data + "'");
@@ -949,8 +1011,8 @@ namespace robot_desc {
 	    const TiXmlNode *node = children[i];
 	    if (node->Type() == TiXmlNode::ELEMENT)
 	    {
-		if (node->ValueStr() == "data")
-		    loadData(node, &transmission->data);
+		if (node->ValueStr() == "map")
+		    loadMap(node, &transmission->data);
 		else
 		    ignoreNode(node);
 	    }
@@ -983,8 +1045,8 @@ namespace robot_desc {
 	    const TiXmlNode *node = children[i];
 	    if (node->Type() == TiXmlNode::ELEMENT)
 	    {
-		if (node->ValueStr() == "data")
-		    loadData(node, &actuator->data);
+		if (node->ValueStr() == "map")
+		    loadMap(node, &actuator->data);
 		else
 		    ignoreNode(node);
 	    }
@@ -1017,37 +1079,52 @@ namespace robot_desc {
 	    const TiXmlNode *node = children[i];
 	    if (node->Type() == TiXmlNode::ELEMENT)
 	    {
-		if (node->ValueStr() == "rpy")
+		if (node->ValueStr() == "origin")
 		{
-		    loadDoubleValues(node, 3, frame->rpy);
-		    MARK_SET(node, frame, rpy);		    
-		}		
-		else if (node->ValueStr() == "xyz")
-		{
-		    loadDoubleValues(node, 3, frame->xyz);
-		    MARK_SET(node, frame, xyz);
+		    if (loadDoubleValues(node, 3, frame->rpy, "rpy"))
+			MARK_SET(node, frame, rpy);
+		    if (loadDoubleValues(node, 3, frame->xyz, "xyz"))
+			MARK_SET(node, frame, xyz);
 		}
-		else if (node->ValueStr() == "parent" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+		else if (node->ValueStr() == "parent")
 		{
-		    frame->linkName = node->FirstChild()->ValueStr();
-		    MARK_SET(node, frame, parent);
-		    if (frame->type == Frame::CHILD)
-			errorMessage("Frame '" + frame->name + "' can only have either a child or a parent link");
-		    frame->type = Frame::PARENT;
+		    const char *nm = node->ToElement()->Attribute("name");
+		    if (nm)
+		    {
+			frame->linkName = string_utils::trim(nm);
+			MARK_SET(node, frame, parent);
+			if (frame->type == Frame::CHILD)
+			    errorMessage("Frame '" + frame->name + "' can only have either a child or a parent link");
+			frame->type = Frame::PARENT;
+		    }
+		    else
+		    {
+			errorMessage("No name defined for parent");			
+			errorLocation(node);
+		    }		    
 		}
-		else if (node->ValueStr() == "child" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+		else if (node->ValueStr() == "child")
 		{
-		    frame->linkName = node->FirstChild()->ValueStr();
-		    MARK_SET(node, frame, child);
-		    if (frame->type == Frame::PARENT)
-			errorMessage("Frame '" + frame->name + "' can only have either a child or a parent link");
-		    frame->type = Frame::CHILD;
+		    const char *nm = node->ToElement()->Attribute("name");
+		    if (nm)
+		    {
+			frame->linkName = string_utils::trim(nm);
+			MARK_SET(node, frame, child);
+			if (frame->type == Frame::PARENT)
+			    errorMessage("Frame '" + frame->name + "' can only have either a child or a parent link");
+			frame->type = Frame::CHILD;
+		    }
+		    else
+		    {
+			errorMessage("No name defined for child");			
+			errorLocation(node);
+		    }	
 		}
 		else
-		if (node->ValueStr() == "data")
-		    loadData(node, &frame->data);
-		else
-		    ignoreNode(node);
+		    if (node->ValueStr() == "map")
+			loadMap(node, &frame->data);
+		    else
+			ignoreNode(node);
 	    }
 	    else
 		ignoreNode(node);
@@ -1112,36 +1189,47 @@ namespace robot_desc {
 	    {
 		if (node->ValueStr() == "axis" && !free)
 		{
-		    loadDoubleValues(node, 3, joint->axis);
-		    MARK_SET(node, joint, axis);
+		    if (loadDoubleValues(node, 3, joint->axis, "xyz"), true)
+			MARK_SET(node, joint, axis);
 		}		
 		else if (node->ValueStr() == "anchor" && !free)
 		{
-		    loadDoubleValues(node, 3, joint->anchor);
-		    MARK_SET(node, joint, anchor);
+		    if (loadDoubleValues(node, 3, joint->anchor, "xyz"), true)
+			MARK_SET(node, joint, anchor);
 		}		
 		else if (node->ValueStr() == "limit" && !free)
 		{
-		    loadDoubleValues(node, 2, joint->limit);
-		    MARK_SET(node, joint, limit);
+		    int vmin = loadDoubleValues(node, 1, joint->limit + 0, "min");
+		    int vmax = loadDoubleValues(node, 1, joint->limit + 1, "max");
+		    if (vmin ^ vmax)
+		    {
+			errorMessage("Only one bound given to joint limits");
+			errorLocation(node);
+		    }
+		    if (vmin && vmax)
+			MARK_SET(node, joint, limit);
+		    
+		    if (loadDoubleValues(node, 1, &joint->effortLimit, "effort"))
+			MARK_SET(node, joint, effortLimit);
+		    if (loadDoubleValues(node, 1, &joint->velocityLimit, "velocity"))
+			MARK_SET(node, joint, velocityLimit);
 		}
-		else if (node->ValueStr() == "effortLimit" && !free)
+		else if (node->ValueStr() == "calibration")
 		{
-		    loadDoubleValues(node, 1, &joint->effortLimit);
-		    MARK_SET(node, joint, effortLimit);
-		}
-		else if (node->ValueStr() == "velocityLimit")
-		{
-		    loadDoubleValues(node, 1, &joint->velocityLimit);
-		    MARK_SET(node, joint, velocityLimit);
-		}
-		else if (node->ValueStr() == "calibration" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
-		{
-		    joint->calibration = node->FirstChild()->ValueStr();
-		    MARK_SET(node, joint, calibration);		    
+		    const char *vals = node->ToElement()->Attribute("values");
+		    if (vals)
+		    {
+			joint->calibration = vals;
+			MARK_SET(node, joint, calibration);
+		    }
+		    else
+		    {
+			errorMessage("Calibration values missing");			
+			errorLocation(node);
+		    }
 		}	
-		else if (node->ValueStr() == "data")
-		    loadData(node, &joint->data);
+		else if (node->ValueStr() == "map")
+		    loadMap(node, &joint->data);
 		else
 		    ignoreNode(node);
 	    }
@@ -1175,61 +1263,56 @@ namespace robot_desc {
 	
 	geometry->name = name;
 	m_geoms[name] = geometry;
-	
-	for (unsigned int i = 0 ; i < attributes.size() ; ++i)
-	{
-	    const TiXmlAttribute *attr = attributes[i];
-	    if (strcmp(attr->Name(), "type") == 0)
-	    {
-		if (attr->ValueStr() == "box")
-		{
-		    geometry->type = Link::Geometry::BOX;
-		    geometry->nsize = 3;	  
-		}      
-		else if (attr->ValueStr() == "cylinder")
-		{
-		    geometry->type = Link::Geometry::CYLINDER;
-		    geometry->nsize = 2;	  
-		}
-		else if (attr->ValueStr() == "sphere")
-		{
-		    geometry->type = Link::Geometry::SPHERE;
-		    geometry->nsize = 1;	  
-		}
-		else if (attr->ValueStr() == "mesh")
-		{
-		    geometry->type = Link::Geometry::MESH;
-		    geometry->nsize = 3;
-		}      
-		else
-		{
-		    errorMessage("Unknown geometry type: '" + attr->ValueStr() + "'");
-		    errorLocation(node);
-		}
-		MARK_SET(node, geometry, type);
-	    }
-	}
-	
+
 	for (unsigned int i = 0 ; i < children.size() ; ++i)
 	{
 	    const TiXmlNode *node = children[i];
 	    if (node->Type() == TiXmlNode::ELEMENT)
 	    {
-		if (node->ValueStr() == "size")
+		if (node->ValueStr() == "mesh")
 		{
-		    if (geometry->nsize > 0)
-			loadDoubleValues(node, geometry->nsize, geometry->size);
-		    else
-			ignoreNode(node);
-		    MARK_SET(node, geometry, size);
+		    geometry->type = Link::Geometry::MESH;
+		    Link::Geometry::Mesh* mesh = new Link::Geometry::Mesh();
+		    geometry->shape = mesh;
+		    const char *nm = node->ToElement()->Attribute("filename");
+		    if (nm)
+		    {
+			mesh->filename = nm;
+			MARK_SET(node, geometry, filename);
+		    }
+		    if (loadDoubleValues(node, 3, mesh->size, "size"))
+			MARK_SET(node, geometry, size);
+		    if (loadDoubleValues(node, 3, mesh->scale, "scale"))
+			MARK_SET(node, geometry, scale);
 		}
-		else if (node->ValueStr() == "data")
-		    loadData(node, &geometry->data);
-		else if (node->ValueStr() == "filename" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+		else if (node->ValueStr() == "box")
 		{
-		    geometry->filename = node->FirstChild()->ValueStr();
-		    MARK_SET(node, geometry, filename);
-		}		
+		    geometry->type = Link::Geometry::BOX;
+		    Link::Geometry::Box* box = new Link::Geometry::Box();
+		    geometry->shape = box;
+		    if (loadDoubleValues(node, 3, box->size, "size", true))
+			MARK_SET(node, geometry, size);
+		}
+		else if (node->ValueStr() == "sphere")
+		{
+		    geometry->type = Link::Geometry::SPHERE;
+		    Link::Geometry::Sphere* sphere = new Link::Geometry::Sphere();
+		    geometry->shape = sphere;
+		    if (loadDoubleValues(node, 1, &sphere->radius, "radius", true))
+			MARK_SET(node, geometry, radius);
+		}
+		else if (node->ValueStr() == "cylinder")
+		{
+		    geometry->type = Link::Geometry::CYLINDER;
+		    Link::Geometry::Cylinder* cylinder = new Link::Geometry::Cylinder();
+		    geometry->shape = cylinder;
+		    if (loadDoubleValues(node, 1, &cylinder->radius, "radius", true))
+			MARK_SET(node, geometry, radius);
+		    if (loadDoubleValues(node, 1, &cylinder->length, "length", true))
+			MARK_SET(node, geometry, length);
+		}
+		else if (node->ValueStr() == "map")
+		    loadMap(node, &geometry->data);	
 		else                
 		    ignoreNode(node);
 	    }
@@ -1268,33 +1351,25 @@ namespace robot_desc {
 	    const TiXmlNode *node = children[i];
 	    if (node->Type() == TiXmlNode::ELEMENT)
 	    {
-		if (node->ValueStr() == "rpy")
+		if (node->ValueStr() == "origin")
 		{
-		    loadDoubleValues(node, 3, collision->rpy);
-		    MARK_SET(node, collision, rpy);		    
-		}		
-		else if (node->ValueStr() == "xyz")
-		{
-		    loadDoubleValues(node, 3, collision->xyz);
-		    MARK_SET(node, collision, xyz);
-		}		
+		    if (loadDoubleValues(node, 3, collision->rpy, "rpy"))
+			MARK_SET(node, collision, rpy);		    			
+		    if (loadDoubleValues(node, 3, collision->xyz, "xyz"))
+			MARK_SET(node, collision, xyz);		    
+		}
 		else if (node->ValueStr() == "verbose")
 		{
-		    loadBoolValues(node, 1, &collision->verbose);
+		    loadBoolValues(node, 1, &collision->verbose, "value", true);
 		    MARK_SET(node, collision, verbose);
-		}		
-		else if (node->ValueStr() == "material" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
-		{
-		    collision->material = node->FirstChild()->ValueStr();
-		    MARK_SET(node, collision, material);
 		}		
 		else if (node->ValueStr() == "geometry")
 		{
 		    loadGeometry(node, name + "_geom", collision->geometry);
 		    MARK_SET(node, collision, geometry);		    
 		}		
-		else if (node->ValueStr() == "data")
-		    loadData(node, &collision->data);
+		else if (node->ValueStr() == "map")
+		    loadMap(node, &collision->data);
 		else
 		    ignoreNode(node);
 	    }
@@ -1333,33 +1408,20 @@ namespace robot_desc {
 	    const TiXmlNode *node = children[i];
 	    if (node->Type() == TiXmlNode::ELEMENT)
 	    {
-		if (node->ValueStr() == "rpy")
+		if (node->ValueStr() == "origin")
 		{
-		    loadDoubleValues(node, 3, visual->rpy);
-		    MARK_SET(node, visual, rpy);
+		    if (loadDoubleValues(node, 3, visual->rpy, "rpy"))
+			MARK_SET(node, visual, rpy);
+		    if (loadDoubleValues(node, 3, visual->xyz, "xyz"))
+			MARK_SET(node, visual, xyz);
 		}
-		else if (node->ValueStr() == "xyz")
-		{
-		    loadDoubleValues(node, 3, visual->xyz);
-		    MARK_SET(node, visual, xyz);		    
-		}		
-		else if (node->ValueStr() == "scale")
-		{
-		    loadDoubleValues(node, 3, visual->scale);
-		    MARK_SET(node, visual, scale);
-		}		
-		else if (node->ValueStr() == "material" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
-		{
-		    visual->material = node->FirstChild()->ValueStr();
-		    MARK_SET(node, visual, material);
-		}		
 		else if (node->ValueStr() == "geometry")
 		{
 		    loadGeometry(node, name + "_geom", visual->geometry);
 		    MARK_SET(node, visual, geometry);
 		}
-		else if (node->ValueStr() == "data")
-		    loadData(node, &visual->data);
+		else if (node->ValueStr() == "map")
+		    loadMap(node, &visual->data);
 		else
 		    ignoreNode(node);
 	    }
@@ -1400,21 +1462,27 @@ namespace robot_desc {
 	    {
 		if (node->ValueStr() == "mass")
 		{
-		    loadDoubleValues(node, 1, &inertial->mass);
-		    MARK_SET(node, inertial, mass);		    
+		    if (loadDoubleValues(node, 1, &inertial->mass, "value"), true)
+			MARK_SET(node, inertial, mass);
 		}		
 		else if (node->ValueStr() == "com")
 		{
-		    loadDoubleValues(node, 3, inertial->com);
-		    MARK_SET(node, inertial, com);
+		    if (loadDoubleValues(node, 3, inertial->com, "xyz"), true)
+			MARK_SET(node, inertial, com);
 		}
 		else if (node->ValueStr() == "inertia")
 		{
-		    loadDoubleValues(node, 6, inertial->inertia);
+		    /* Ixx Ixy Ixz Iyy Iyz Izz */
+		    loadDoubleValues(node, 1, inertial->inertia + 0, "ixx", true);
+		    loadDoubleValues(node, 1, inertial->inertia + 1, "ixy", true);
+		    loadDoubleValues(node, 1, inertial->inertia + 2, "ixz", true);
+		    loadDoubleValues(node, 1, inertial->inertia + 3, "iyy", true);
+		    loadDoubleValues(node, 1, inertial->inertia + 4, "iyz", true);
+		    loadDoubleValues(node, 1, inertial->inertia + 5, "izz", true);
 		    MARK_SET(node, inertial, inertia);		    
 		}		
-		else if (node->ValueStr() == "data")
-		    loadData(node, &inertial->data);
+		else if (node->ValueStr() == "map")
+		    loadMap(node, &inertial->data);
 		else
 		    ignoreNode(node);
 	    }
@@ -1452,20 +1520,26 @@ namespace robot_desc {
 	    const TiXmlNode *node = children[i];
 	    if (node->Type() == TiXmlNode::ELEMENT)
 	    {
-		if (node->ValueStr() == "parent" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+		if (node->ValueStr() == "parent")
 		{
-		    link->parentName = node->FirstChild()->ValueStr();
-		    MARK_SET(node, link, parent);
-		}		
-		else if (node->ValueStr() == "rpy")
+		    const char *nm = node->ToElement()->Attribute("name");
+		    if (nm)
+		    {
+			link->parentName = string_utils::trim(nm);
+			MARK_SET(node, link, parent);
+		    }
+		    else
+		    {
+			errorMessage("Parent name is not defined");
+			errorLocation(node);
+		    }		    
+		}
+		else if (node->ValueStr() == "origin")
 		{
-		    loadDoubleValues(node, 3, link->rpy);
-		    MARK_SET(node, link, rpy);
-		}		
-		else if (node->ValueStr() == "xyz")
-		{
-		    loadDoubleValues(node, 3, link->xyz);
-		    MARK_SET(node, link, xyz);
+		    if (loadDoubleValues(node, 3, link->rpy, "rpy"))
+			MARK_SET(node, link, rpy);			
+		    if (loadDoubleValues(node, 3, link->xyz, "xyz"))
+			MARK_SET(node, link, xyz);
 		}		
 		else if (node->ValueStr() == "joint")
 		{
@@ -1487,8 +1561,8 @@ namespace robot_desc {
 		    loadVisual(node, name + "_visual", link->visual);
 		    MARK_SET(node, link, visual);
 		}		
-		else if (node->ValueStr() == "data")
-		    loadData(node, &link->data);
+		else if (node->ValueStr() == "map")
+		    loadMap(node, &link->data);
 		else
 		    ignoreNode(node);
 	    }
@@ -1550,20 +1624,26 @@ namespace robot_desc {
 	    const TiXmlNode *node = children[i];
 	    if (node->Type() == TiXmlNode::ELEMENT)
 	    {
-		if (node->ValueStr() == "parent" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+		if (node->ValueStr() == "parent")
 		{
-		    sensor->parentName = node->FirstChild()->ValueStr();
-		    MARK_SET(node, sensor, parent);		    
-		}		
-		else if (node->ValueStr() == "rpy")
+		    const char *nm = node->ToElement()->Attribute("name");		    
+		    if (nm)
+		    {
+			sensor->parentName = string_utils::trim(nm);
+			MARK_SET(node, sensor, parent);
+		    }
+		    else
+		    {
+			errorMessage("Parent name is not defined");
+			errorLocation(node);
+		    }		    
+		}
+		else if (node->ValueStr() == "origin")
 		{
-		    loadDoubleValues(node, 3, sensor->rpy);
-		    MARK_SET(node, sensor, rpy);		    
-		}		
-		else if (node->ValueStr() == "xyz")
-		{
-		    loadDoubleValues(node, 3, sensor->xyz);
-		    MARK_SET(node, sensor, xyz);		    
+		    if (loadDoubleValues(node, 3, sensor->rpy, "rpy"))
+			MARK_SET(node, sensor, rpy);
+		    if (loadDoubleValues(node, 3, sensor->xyz, "xyz"))
+			MARK_SET(node, sensor, xyz);
 		}		
 		else if (node->ValueStr() == "joint")
 		{
@@ -1585,12 +1665,21 @@ namespace robot_desc {
 		    loadVisual(node, name + "_visual", sensor->visual);
 		    MARK_SET(node, sensor, visual);
 		}		
-		else if (node->ValueStr() == "data")
-		    loadData(node, &sensor->data);
-		else if (node->ValueStr() == "calibration" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+		else if (node->ValueStr() == "map")
+		    loadMap(node, &sensor->data);
+		else if (node->ValueStr() == "calibration")
 		{
-		    sensor->calibration =  node->FirstChild()->ValueStr();
-		    MARK_SET(node, sensor, calibration);
+		    const char *filename = node->ToElement()->Attribute("filename");
+		    if (filename)
+		    {
+			sensor->calibration = string_utils::trim(filename);		    
+			MARK_SET(node, sensor, calibration);
+		    }
+		    else
+		    {
+			errorMessage("Calibration filename not set");
+			errorLocation(node);			
+		    }
 		}		
 		else
 		    ignoreNode(node); 
@@ -1648,34 +1737,42 @@ namespace robot_desc {
 	
     }
 
-    void URDF::loadData(const TiXmlNode *node, Data *data)
+    void URDF::loadMap(const TiXmlNode *node, Map *data)
     {
 	std::string name;
-	std::string type;
+	std::string flag;
 	
 	for (const TiXmlAttribute *attr = node->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
 	{
 	    if (strcmp(attr->Name(), "name") == 0)
-		name = attr->ValueStr();
+		name = string_utils::trim(attr->ValueStr());
 	    else
-		if (strcmp(attr->Name(), "type") == 0)
-		    type = attr->ValueStr();
+		if (strcmp(attr->Name(), "flag") == 0)
+		    flag = string_utils::trim(attr->ValueStr());
 	}
 	
 	for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
 	    if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "elem")
 	    {
-		std::string key;
-		std::string value;
-		for (const TiXmlAttribute *attr = child->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
-		{
-		    if (strcmp(attr->Name(), "key") == 0)
-			key = attr->ValueStr();
+		const char *key = child->ToElement()->Attribute("key");
+		const char *value = child->ToElement()->Attribute("value");
+		if (key)
+		{	    
+		    std::string valStr;
+		    if (value)
+			valStr = value;
 		    else
-			if (strcmp(attr->Name(), "value") == 0)
-			    value = attr->ValueStr();
+		    {
+			if (child->FirstChild() &&  child->FirstChild()->Type() == TiXmlNode::TEXT)
+			    valStr = child->FirstChild()->ValueStr();
+		    }
+		    data->add(flag, name, key, valStr);
 		}
-		data->add(type, name, key, value);
+		else
+		{
+		    errorMessage("No element key defined");
+		    errorLocation(child);
+		}		
 	    }
 	    else if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "verbatim")
 	    {
@@ -1690,13 +1787,12 @@ namespace robot_desc {
 		}
 		if (includes)
 		    replaceIncludes(const_cast<TiXmlElement*>(child->ToElement()));
-		data->add(type, name, key, child->ToElement());
+		data->add(flag, name, key, child->ToElement());
 	    }
 	    else
 		ignoreNode(child);
     }
-     
-
+    
     void URDF::linkDatastructure(void)
     {
 	
@@ -1886,7 +1982,7 @@ namespace robot_desc {
 		const char *name = node->ToElement()->Attribute("name");
 		if (name)
 		{
-		    std::string nameStr = name;
+		    std::string nameStr = string_utils::trim(name);
 		    if (!m_name.empty() && nameStr != m_name)
 			errorMessage("Loading a file with contradicting robot name: '" + m_name + "' - '" + name + "'");
 		    m_name = nameStr;
@@ -1924,40 +2020,28 @@ namespace robot_desc {
 		}
 		else if (node->ValueStr() == "const")
 		{       
-		    std::string name;
-		    std::string value;
-		    
-		    for (const TiXmlAttribute *attr = node->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
-		    {
-			if (strcmp(attr->Name(), "name") == 0)
-			    name = attr->ValueStr();
-			else
-			    if (strcmp(attr->Name(), "value") == 0)
-				value = attr->ValueStr();
-		    }
+		    const char *name = node->ToElement()->Attribute("name");
+		    const char *value = node->ToElement()->Attribute("value");
 		    
 		    if (!node->NoChildren())
 		    {
-			errorMessage("Constant '" + name + "' appears to contain tags. This should not be the case.");
+			errorMessage("Constant '" + std::string(name) + "' appears to contain tags. This should not be the case.");
 			errorLocation(node);
 		    }
-		    
-		    m_constants[name] = value;
+		    if (name && value)
+			m_constants[string_utils::trim(name)] = value;
 		}
 		else
-		    if (node->ValueStr() == "templates")
+		    if (node->ValueStr() == "const_block")
 		    {
-			for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
-			    if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "define")
-			    {
-				const char *name = child->ToElement()->Attribute("template");
-				if (name)
-				    m_templates[name] = child;
-				else
-				    ignoreNode(child);
-			    }
-			    else
-				ignoreNode(child);
+			const char *name = node->ToElement()->Attribute("name");
+			if (name)
+			    m_constBlocks[string_utils::trim(name)] = node;
+			else
+			{
+			    errorMessage("Undefined name for constant block");
+			    errorLocation(node);
+			}
 		    }
 		    else if (node->ValueStr() == "group" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
 		    {
@@ -1967,7 +2051,7 @@ namespace robot_desc {
 			for (const TiXmlAttribute *attr = node->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
 			{
 			    if (strcmp(attr->Name(), "name") == 0)
-				group = attr->ValueStr();
+				group = string_utils::trim(attr->ValueStr());
 			    else
 				if (strcmp(attr->Name(), "flags") == 0)
 				    flags = attr->ValueStr();
@@ -2004,8 +2088,8 @@ namespace robot_desc {
 			    delete g;
 			}			
 		    }
-		    else if (node->ValueStr() == "data")
-			loadData(node, &m_data);
+		    else if (node->ValueStr() == "map")
+			loadMap(node, &m_data);
 		    else
 			m_stage2.push_back(node);
 	    break;
@@ -2045,13 +2129,20 @@ namespace robot_desc {
 		    Link::Geometry *cgeom = links[i]->collision->geometry;
 		    if (cgeom->type == Link::Geometry::UNKNOWN)
 			errorMessage("Collision geometry '" + cgeom->name + "' in link '" + links[i]->name + "' is of unknown type");
-		    if (cgeom->type != Link::Geometry::UNKNOWN && cgeom->type != Link::Geometry::MESH)
+		    else 
 		    {
-			int nzero = 0;
-			for (int k = 0 ; k < cgeom->nsize ; ++k)
-			    nzero += cgeom->size[k] == 0.0 ? 1 : 0;
-			if (nzero > 0)
-			    errorMessage("Collision geometry '" + cgeom->name + "' in link '" + links[i]->name + "' does not seem to have its size properly set");
+			if (cgeom->type == Link::Geometry::SPHERE)
+			    if (static_cast<Link::Geometry::Sphere*>(cgeom->shape)->radius <= 0.0)
+				errorMessage("Collision geometry '" + cgeom->name + "' in link '" + links[i]->name + "' does not seem to have its size properly set");
+			if (cgeom->type == Link::Geometry::CYLINDER)
+			    if (static_cast<Link::Geometry::Cylinder*>(cgeom->shape)->radius <= 0.0 || static_cast<Link::Geometry::Cylinder*>(cgeom->shape)->length <= 0.0)
+				errorMessage("Collision geometry '" + cgeom->name + "' in link '" + links[i]->name + "' does not seem to have its size properly set");
+			if (cgeom->type == Link::Geometry::BOX)
+			{
+			    const double *size = static_cast<Link::Geometry::Box*>(cgeom->shape)->size;
+			    if (size[0] <= 0.0 || size[1] <= 0.0 || size[2] <= 0.0)
+				errorMessage("Collision geometry '" + cgeom->name + "' in link '" + links[i]->name + "' does not seem to have its size properly set");
+			}			
 		    }
 		}
 		else
@@ -2067,13 +2158,20 @@ namespace robot_desc {
 		    Link::Geometry *vgeom = links[i]->visual->geometry;
 		    if (vgeom->type == Link::Geometry::UNKNOWN)
 			errorMessage("Visual geometry '" + vgeom->name + "' in link '" + links[i]->name + "' is of unknown type");
-		    if (vgeom->type != Link::Geometry::UNKNOWN && vgeom->type != Link::Geometry::MESH)
+		    else
 		    {
-			int nzero = 0;
-			for (int k = 0 ; k < vgeom->nsize ; ++k)
-			    nzero += vgeom->size[k] == 0.0 ? 1 : 0;
-			if (nzero > 0)
-			    errorMessage("Visual geometry '" + vgeom->name + "' in link '" + links[i]->name + "' does not seem to have its size properly set");
+			if (vgeom->type == Link::Geometry::SPHERE)
+			    if (static_cast<Link::Geometry::Sphere*>(vgeom->shape)->radius <= 0.0)
+				errorMessage("Visual geometry '" + vgeom->name + "' in link '" + links[i]->name + "' does not seem to have its size properly set");
+			if (vgeom->type == Link::Geometry::CYLINDER)
+			    if (static_cast<Link::Geometry::Cylinder*>(vgeom->shape)->radius <= 0.0 || static_cast<Link::Geometry::Cylinder*>(vgeom->shape)->length <= 0.0)
+				errorMessage("Visual geometry '" + vgeom->name + "' in link '" + links[i]->name + "' does not seem to have its size properly set");
+			if (vgeom->type == Link::Geometry::BOX)
+			{
+			    const double *size = static_cast<Link::Geometry::Box*>(vgeom->shape)->size;
+			    if (size[0] <= 0.0 || size[1] <= 0.0 || size[2] <= 0.0)
+				errorMessage("Visual geometry '" + vgeom->name + "' in link '" + links[i]->name + "' does not seem to have its size properly set");
+			}
 		    }
 		}
 		else

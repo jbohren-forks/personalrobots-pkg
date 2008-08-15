@@ -4,8 +4,8 @@
 
 
 
-<data name="transmissions_gazebo_actuators" type="gazebo"> <!-- we can set a name too, but the convertor only cares about the type -->
-  <verbatim key="transmissions_gazebo_actuators" includes="true"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <data> tag -->
+<map name="transmissions_gazebo_actuators" flag="gazebo"> <!-- we can set a name too, but the convertor only cares about the flag -->
+  <verbatim key="transmissions_gazebo_actuators" includes="true"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <map> tag -->
 
   <!-- PR2_ACTARRAY -->
   <!-- uncomment for testing -->
@@ -20,11 +20,11 @@
   </controller:test_actuators>
 
   </verbatim>
-</data>
+</map>
 
 
-<data name="controllers" type="gazebo"> <!-- we can set a name too, but the convertor only cares about the type -->
-  <verbatim key="controllers"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <data> tag -->
+<map name="controllers" flag="gazebo"> <!-- we can set a name too, but the convertor only cares about the flag -->
+  <verbatim key="controllers"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <map> tag -->
 
   <!-- ptz camera controls -->
   <controller:generic_ptz name="ptz_cam_left_controller">
@@ -62,7 +62,7 @@
 
 
   </verbatim>
-</data>
+</map>
 
 </robot>
 
