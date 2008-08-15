@@ -112,7 +112,7 @@ main(int argc, char** argv)
   signal(SIGTERM, (&finalize));
 
   // let rosgazebonode read the xml data from pr2.xml in ros
-//  rgn.LoadRobotModel();
+  rgn.LoadRobotModel();
 
   // see if we can subscribe models needed
   if (rgn.AdvertiseSubscribeMessages() != 0)
