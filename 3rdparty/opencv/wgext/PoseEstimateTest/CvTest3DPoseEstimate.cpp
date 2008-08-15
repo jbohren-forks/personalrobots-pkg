@@ -287,6 +287,20 @@ static void MyMouseCallback(int event, int x, int y, int flagsm, void* param){
 	}
 }
 
+void cvCross(CvArr* img, CvPoint pt, int halfLen, CvScalar color,
+        int thickness=1, int line_type=8, int shift=0) {
+	CvPoint pt1;
+	CvPoint pt2;
+	pt1.x = pt.x - halfLen;
+	pt2.x = pt.x + halfLen;
+	pt1.y = pt2.y = pt.y;
+	cvLine(img, pt1, pt2, color, thickness, line_type, shift);
+	pt1.x = pt2.x = pt.x;
+	pt1.y = pt.y - halfLen;
+	pt2.y = pt.y + halfLen;
+	cvLine(img, pt1, pt2, color, thickness, line_type, shift);
+}
+
 bool CvTest3DPoseEstimate::testVideos() {
 	bool status = false;
 	int numImages = 1509;
@@ -300,7 +314,7 @@ bool CvTest3DPoseEstimate::testVideos() {
 	peDisp.setCameraParams(this->mFx, this->mFy, this->mTx, this->mClx, this->mCrx, this->mCy);
 
 	// create a list of windows to display results
-	cvNamedWindow("Last Left Cam", CV_WINDOW_AUTOSIZE);
+	cvNamedWindow("Pose Estimated", CV_WINDOW_AUTOSIZE);
 	cvNamedWindow("Left  Cam", CV_WINDOW_AUTOSIZE);
 	cvNamedWindow("Right Cam", CV_WINDOW_AUTOSIZE);
 	cvNamedWindow("Disparity Map", CV_WINDOW_AUTOSIZE);
@@ -310,7 +324,7 @@ bool CvTest3DPoseEstimate::testVideos() {
 	cvNamedWindow("Neighborhood", CV_WINDOW_AUTOSIZE);
 #endif
 
-	cvMoveWindow("Last Left Cam", 0, 0);
+	cvMoveWindow("Pose Estimated", 0, 0);
 	cvMoveWindow("Left  Cam", 650, 0);
 	cvMoveWindow("Right Cam", 1300, 0);
 	cvMoveWindow("Disparity Map", 650, 530);
@@ -331,7 +345,6 @@ bool CvTest3DPoseEstimate::testVideos() {
 	CvPoint2D32f featuresLeft[max_features];
 	CvPoint2D32f featuresRight[max_features];
 	int numFeaturesLastLeft=0;
-	CvMat *lastleftimg3C = NULL; // an image with marks on it
 	CvMat *lastDispImg = NULL; //
 	IplImage *lastleftimg = NULL;   // original image
 
@@ -345,9 +358,11 @@ bool CvTest3DPoseEstimate::testVideos() {
 		rightimg = cvLoadImage(rightfilename, 0);
 
 		// make a copy of color image for display
-		CvMat *leftimgC3 = cvCreateMat(leftimg->height, leftimg->width, CV_8UC3);
+		CvMat *leftimgC3  = cvCreateMat(leftimg->height,  leftimg->width,  CV_8UC3);
+		CvMat *leftimgC3a = cvCreateMat(leftimg->height,  leftimg->width,  CV_8UC3);
 		CvMat *rightimgC3 = cvCreateMat(rightimg->height, rightimg->width, CV_8UC3);
 		cvCvtColor(leftimg, leftimgC3, CV_GRAY2RGB);
+		cvCvtColor(leftimg, leftimgC3a, CV_GRAY2RGB);
 		cvCvtColor(rightimg, rightimgC3, CV_GRAY2RGB);
 
 		//
@@ -484,13 +499,17 @@ bool CvTest3DPoseEstimate::testVideos() {
 		CvScalar yellow = CV_RGB(255, 255, 0);
 		for (int k=0;k<numFeaturesLeft; k++){
 			cvCircle(leftimgC3, cvPoint((int)featuresLeft[k].x, (int)featuresLeft[k].y),
-					4, red, 1, CV_AA, 0);
+					4, green, 1, CV_AA, 0);
 			cvCircle(rightimgC3, cvPoint((int)featuresLeft[k].x, (int)featuresLeft[k].y),
 					0, green, 2, CV_AA, 0);
 		}
 
 		for (int k=0; k<numFeaturesLastLeft; k++){
-			// draw cross instead off circle
+			// draw cross instead of circle
+			CvPoint pt = cvPoint(featuresLastLeft[k].x, featuresLastLeft[k].y);
+			int halfLen = 4;
+			cvCross(leftimgC3, pt, halfLen, yellow, 1, CV_AA, 0);
+#if 0
 			CvPoint pt1;
 			CvPoint pt2;
 			int halfLen = 4;
@@ -502,6 +521,7 @@ bool CvTest3DPoseEstimate::testVideos() {
 			pt1.y = (int)featuresLastLeft[k].y - halfLen;
 			pt2.y = (int)featuresLastLeft[k].y + halfLen;
 			cvLine(leftimgC3, pt1, pt2, yellow, 1, CV_AA, 0);
+#endif
 		}
 
 		for (int k=0;k<numFeaturesRight; k++){
@@ -642,7 +662,11 @@ bool CvTest3DPoseEstimate::testVideos() {
 				const pair<CvPoint3D64f, CvPoint3D64f>& p = *iter;
 				CvPoint p0 = cvPoint(p.first.x, p.first.y);
 				CvPoint p1 = cvPoint(p.second.x, p.second.y);
-				cvRectangle(lastleftimg3C, p0, p1, red);
+				int thickness =2;
+				cvLine(leftimgC3, p0, p1, red, thickness, CV_AA);
+
+				cvLine(leftimgC3a, p0, p1, red, thickness, CV_AA);
+				cvCircle(leftimgC3a, p1, 4, green, 1, CV_AA, 0);
 			}
 
 
@@ -686,8 +710,8 @@ bool CvTest3DPoseEstimate::testVideos() {
 		//
 		//  getting ready for next iteration
 		//
-		if (lastleftimg3C) {
-			cvShowImage("Last Left Cam", lastleftimg3C);
+		if (leftimgC3a) {
+			cvShowImage("Pose Estimated", leftimgC3a);
 		}
 		cvShowImage("Left  Cam", leftimgC3);
 		cvShowImage("Right Cam", rightimgC3);
@@ -703,10 +727,10 @@ bool CvTest3DPoseEstimate::testVideos() {
 			featuresLastLeft[k] = featuresLeft[k];
 		}
 		numFeaturesLastLeft = numFeaturesLeft;
-		if (lastleftimg3C) cvReleaseMat(&lastleftimg3C);
 		if (lastleftimg)   cvReleaseImage(&lastleftimg);
 		if (lastDispImg)   cvReleaseMat(&lastDispImg);
-		lastleftimg3C = leftimgC3;
+		cvReleaseMat(&leftimgC3);
+		cvReleaseMat(&leftimgC3a);
 		lastDispImg = cvCloneMat(&dispImg);
 		lastleftimg = leftimg;
 		cvReleaseImage(&rightimg);
@@ -715,7 +739,6 @@ bool CvTest3DPoseEstimate::testVideos() {
 		cvReleaseMat(&temp_image);
 		cvReleaseMat(&harrisCorners);
 	}
-	if (lastleftimg3C) cvReleaseMat(&lastleftimg3C);
 	if (lastleftimg)   cvReleaseImage(&lastleftimg);
 	if (lastDispImg)   cvReleaseMat(&lastDispImg);
 	return status;
