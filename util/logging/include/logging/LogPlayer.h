@@ -143,6 +143,14 @@ public:
 
   virtual ~LogPlayer()
   {
+    close();
+  }
+
+  bool isDone() {return done_;}
+
+  bool close() {
+    log_file_.close();
+
     for (std::map<std::string, LogHelper*>::iterator topic_it = topics_.begin(); 
          topic_it != topics_.end(); 
          topic_it++)
@@ -151,10 +159,8 @@ public:
         delete topic_it->second;
     }
 
-    log_file_.close();
+    topics_.clear();
   }
-
-  bool isDone() {return done_;}
 
   bool open(const std::string &file_name, ros::Time start_time)
   {
