@@ -15,14 +15,13 @@ public:
   {
     pthread_mutex_init(&protect_call, NULL);
 
-    int value;
+    int value = 0;
     while (value == 0 && myNode.ok())
     {
       printf("Waiting for namelookup_server\n");
       ros::Duration(0.5).sleep();//wait for service to come up
-      value = lookupOnServer("");
+      value = lookupOnServer("testing_service");
     };
-
   };
 
   virtual ~nameLookupClient(void)
