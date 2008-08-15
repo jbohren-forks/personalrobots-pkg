@@ -304,6 +304,8 @@ void cvCross(CvArr* img, CvPoint pt, int halfLen, CvScalar color,
 bool CvTest3DPoseEstimate::testVideos() {
 	bool status = false;
 	int numImages = 1509;
+	double ransacInlierthreshold = 5.0;
+	int numRansacIterations = 100;
 //	int numImages = 1;
 	IplImage* leftimg  = 0;
 	IplImage* rightimg = 0;
@@ -312,6 +314,8 @@ bool CvTest3DPoseEstimate::testVideos() {
 	char rightfilename[256];
 	Cv3DPoseEstimateDisp peDisp;
 	peDisp.setCameraParams(this->mFx, this->mFy, this->mTx, this->mClx, this->mCrx, this->mCy);
+	peDisp.setInlierErrorThreshold(ransacInlierthreshold);
+	peDisp.setNumRansacIterations(numRansacIterations);
 
 	// create a list of windows to display results
 	cvNamedWindow("Pose Estimated", CV_WINDOW_AUTOSIZE);
@@ -418,6 +422,11 @@ bool CvTest3DPoseEstimate::testVideos() {
 					_dispImgU8C3[(v*xim+u)*3 + 0] = 255;
 					_dispImgU8C3[(v*xim+u)*3 + 1] = 0;
 					_dispImgU8C3[(v*xim+u)*3 + 2] = 0;
+				} else if (d==0) {
+					// set it to yellow (BGR)
+					_dispImgU8C3[(v*xim+u)*3 + 0] = 0;
+					_dispImgU8C3[(v*xim+u)*3 + 1] = 255;
+					_dispImgU8C3[(v*xim+u)*3 + 2] = 255;
 				} else if (d > maxDisp) {
 					// set it to red (BGR)
 					_dispImgU8C3[(v*xim+u)*3 + 0] = 0;
@@ -473,7 +482,7 @@ bool CvTest3DPoseEstimate::testVideos() {
 		for (int v=0; v<yim; v++) {
 			for (int u=0; u<xim; u++) {
 				int16_t d = disp[v*xim+u];
-				if (d>=0 and d <=maxDisp) {
+				if (d>0 and d <=maxDisp) {
 					_mask[v*xim+u] = 1;
 				} else {
 					_mask[v*xim+u] = 0;
@@ -665,8 +674,8 @@ bool CvTest3DPoseEstimate::testVideos() {
 				int thickness =2;
 				cvLine(leftimgC3, p0, p1, red, thickness, CV_AA);
 
-				cvLine(leftimgC3a, p0, p1, red, thickness, CV_AA);
-				cvCircle(leftimgC3a, p1, 4, green, 1, CV_AA, 0);
+//				cvLine(leftimgC3a, p0, p1, red, thickness, CV_AA);
+				//				cvCircle(leftimgC3a, p1, 4, green, 1, CV_AA, 0);
 			}
 
 
@@ -697,13 +706,62 @@ bool CvTest3DPoseEstimate::testVideos() {
 			double _rot[9], _shift[3];
 			CvMat rot = cvMat(3, 3, CV_64FC1, _rot);
 			CvMat shift = cvMat(3, 1, CV_64FC1, _shift);
-			peDisp.estimate(&uvds0, &uvds1, &rot, &shift, inliers0, inliers1);
+			// estimate the transform the observed points from current back to last position
+			// it should be equivalent to the transform of the camera frame from
+			// last position to current position
+			int numInliers =
+				peDisp.estimate(&uvds1, &uvds0, &rot, &shift, inliers1, inliers0);
 
 #if DEBUG==1
+			// logging the rotation matrix and the shift vector
 			cout << "Rot Matrix: "<<endl;
 			CvMatUtils::printMat(&rot);
 			cout << "Shift Matrix: "<<endl;
 			CvMatUtils::printMat(&shift);
+
+			cout << "num of inliers: "<< numInliers <<endl;
+
+			if (numInliers <= 0 || inliers0 == NULL || inliers1 ==NULL ) {
+				cout << "No good estimate for these two poses"<<endl;
+				continue;
+			}
+
+			double _xyzs0[3*numInliers];
+			double _xyzs0To1[3*numInliers];
+			double _uvds0To1[3*numInliers];
+			double _xyzs1[3*numInliers];
+			CvMat xyzs0    = cvMat(numInliers, 3, CV_64FC1, _xyzs0);
+			CvMat xyzs0To1 = cvMat(numInliers, 3, CV_64FC1, _xyzs0To1);
+			CvMat uvds0To1 = cvMat(numInliers, 3, CV_64FC1, _uvds0To1);
+			CvMat xyzs1    = cvMat(numInliers, 3, CV_64FC1, _xyzs1);
+
+			peDisp.reprojection(inliers0, &xyzs0);
+			peDisp.reprojection(inliers1, &xyzs1);
+
+			// compute the inverse transformation
+			double _invRot[9], _invShift[3];
+			CvMat invRot   = cvMat(3, 3, CV_64FC1, _invRot);
+			CvMat invShift = cvMat(3, 1, CV_64FC1, _invShift);
+
+			cvInvert(&rot, &invRot);
+			cvGEMM(&invRot, &shift, -1., NULL, 0., &invShift, 0.0);
+			CvMat xyzs0Reshaped;
+			CvMat xyzs0To1Reshaped;
+			cvReshape(&xyzs0,    &xyzs0Reshaped, 3, 0);
+			cvReshape(&xyzs0To1, &xyzs0To1Reshaped, 3, 0);
+			cvTransform(&xyzs0Reshaped, &xyzs0To1Reshaped, &invRot, &invShift);
+
+			peDisp.projection(&xyzs0To1, &uvds0To1);
+
+			// draw uvds0To1 on leftimgeC3a
+			for (int k=0;k<numInliers;k++) {
+				CvPoint pt0To1 = cvPoint((int)(_uvds0To1[k*3+0]+.5), (int)(_uvds0To1[k*3+1] + .5));
+				const int halfLen = 4;
+				cvCross(leftimgC3a, pt0To1, halfLen, yellow);
+				CvPoint pt1 = cvPoint((int)(cvGetReal2D(inliers1, k, 0)+.5), (int)(cvGetReal2D(inliers1, k, 1)+.5));
+				cvCircle(leftimgC3a, pt1, 4, green, 1, CV_AA, 0);
+				cvLine(leftimgC3a, pt1, pt0To1, red, 1, CV_AA, 0);
+			}
 #endif
 		}
 
