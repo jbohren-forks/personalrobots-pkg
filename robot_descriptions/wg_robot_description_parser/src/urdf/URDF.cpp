@@ -73,10 +73,6 @@ namespace robot_desc {
 	    delete i->second;
 	for (std::map<std::string, Group*>::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
 	    delete i->second;
-	for (std::map<std::string, Actuator*>::iterator i = m_actuators.begin() ; i != m_actuators.end() ; i++)
-	    delete i->second;
-	for (std::map<std::string, Transmission*>::iterator i = m_transmissions.begin() ; i != m_transmissions.end() ; i++)
-	    delete i->second;
 	for (std::map<std::string, Frame*>::iterator i = m_frames.begin() ; i != m_frames.end() ; i++)
 	    delete i->second;
     }
@@ -88,8 +84,6 @@ namespace robot_desc {
 	m_source.clear();
 	m_location.clear();
 	m_links.clear();
-	m_actuators.clear();
-	m_transmissions.clear();
 	m_frames.clear();
 	m_groups.clear();
 	m_paths.clear();
@@ -142,36 +136,6 @@ namespace robot_desc {
 	    localFrames.push_back(i->second);
 	std::sort(localFrames.begin(), localFrames.end(), SortByName<Frame>());
 	frames.insert(frames.end(), localFrames.begin(), localFrames.end());
-    }
-    
-    URDF::Actuator* URDF::getActuator(const std::string &name) const
-    {
-	std::map<std::string, Actuator*>::const_iterator it = m_actuators.find(name);
-	return it == m_actuators.end() ? NULL : it->second;
-    }
-
-    void URDF::getActuators(std::vector<Actuator*> &actuators) const
-    {
-	std::vector<Actuator*> localActuators;
-	for (std::map<std::string, Actuator*>::const_iterator i = m_actuators.begin() ; i != m_actuators.end() ; i++)
-	    localActuators.push_back(i->second);
-	std::sort(localActuators.begin(), localActuators.end(), SortByName<Actuator>());
-	actuators.insert(actuators.end(), localActuators.begin(), localActuators.end());
-    }
-
-    URDF::Transmission* URDF::getTransmission(const std::string &name) const
-    {
-	std::map<std::string, Transmission*>::const_iterator it = m_transmissions.find(name);
-	return it == m_transmissions.end() ? NULL : it->second;
-    }
-    
-    void URDF::getTransmissions(std::vector<Transmission*> &transmissions) const
-    {
-	std::vector<Transmission*> localTransmissions;
-	for (std::map<std::string, Transmission*>::const_iterator i = m_transmissions.begin() ; i != m_transmissions.end() ; i++)
-	    localTransmissions.push_back(i->second);
-	std::sort(localTransmissions.begin(), localTransmissions.end(), SortByName<Transmission>());
-	transmissions.insert(transmissions.end(), localTransmissions.begin(), localTransmissions.end());
     }
     
     unsigned int URDF::getDisjointPartCount(void) const
@@ -337,12 +301,6 @@ namespace robot_desc {
 	out << std::endl << "Frames:" << std::endl;
 	for (std::map<std::string, Frame*>::const_iterator i = m_frames.begin() ; i != m_frames.end() ; i++)
 	    i->second->print(out, "  ");
-	out << std::endl << "Actuators:" << std::endl;
-	for (std::map<std::string, Actuator*>::const_iterator i = m_actuators.begin() ; i != m_actuators.end() ; i++)
-	    i->second->print(out, "  "); 
-	out << std::endl << "Transmissions:" << std::endl;
-	for (std::map<std::string, Transmission*>::const_iterator i = m_transmissions.begin() ; i != m_transmissions.end() ; i++)
-	    i->second->print(out, "  ");
 	out << std::endl << "Data types:" << std::endl;
 	m_data.print(out, "  ");
     }
@@ -381,18 +339,6 @@ namespace robot_desc {
 	data.print(out, indent + "  ");
     }
     
-    void URDF::Transmission::print(std::ostream &out, std::string indent) const
-    {
-	out << indent << "Transmission [" << name << "]:" << std::endl;
-	data.print(out, indent + "  ");
-    }
-    
-    void URDF::Actuator::print(std::ostream &out, std::string indent) const
-    {
-	out << indent << "Actuator [" << name << "]:" << std::endl;
-	data.print(out, indent + "  ");
-    }
-     
     void URDF::Link::Geometry::print(std::ostream &out, std::string indent) const
     {
 	out << indent << "Geometry [" << name << "]:" << std::endl;
@@ -985,74 +931,6 @@ namespace robot_desc {
 	}
 	
 	return read;
-    }
-    
-    void URDF::loadTransmission(const TiXmlNode *node)
-    {
-	std::vector<const TiXmlNode*> children;
-	std::vector<const TiXmlAttribute*> attributes;
-	getChildrenAndAttributes(node, children, attributes);
-	
-	std::string name = extractName(attributes, "");    
-	Transmission *transmission = (m_transmissions.find(name) != m_transmissions.end()) ? m_transmissions[name] : new Transmission();
-	transmission->name = name;
-	if (transmission->name.empty())
-	{
-	    errorMessage("No transmission name given");
-	    errorLocation(node);
-	}	
-	else
-	    MARK_SET(node, transmission, name);
-	
-	m_transmissions[transmission->name] = transmission;
-	
-	for (unsigned int i = 0 ; i < children.size() ; ++i)
-	{
-	    const TiXmlNode *node = children[i];
-	    if (node->Type() == TiXmlNode::ELEMENT)
-	    {
-		if (node->ValueStr() == "map")
-		    loadMap(node, &transmission->data);
-		else
-		    ignoreNode(node);
-	    }
-	    else
-		ignoreNode(node);
-	}    
-    }
-    
-    void URDF::loadActuator(const TiXmlNode *node)
-    {
-	std::vector<const TiXmlNode*> children;
-	std::vector<const TiXmlAttribute*> attributes;
-	getChildrenAndAttributes(node, children, attributes);
-	
-	std::string name = extractName(attributes, "");    
-	Actuator *actuator = (m_actuators.find(name) != m_actuators.end()) ? m_actuators[name] : new Actuator();
-	actuator->name = name;
-	if (actuator->name.empty())
-	{
-	    errorMessage("No actuator name given");
-	    errorLocation(node);
-	}
-	else
-	    MARK_SET(node, actuator, name);
-	
-	m_actuators[actuator->name] = actuator;
-	
-	for (unsigned int i = 0 ; i < children.size() ; ++i)
-	{
-	    const TiXmlNode *node = children[i];
-	    if (node->Type() == TiXmlNode::ELEMENT)
-	    {
-		if (node->ValueStr() == "map")
-		    loadMap(node, &actuator->data);
-		else
-		    ignoreNode(node);
-	    }
-	    else
-		ignoreNode(node);
-	}    
     }
     
     void URDF::loadFrame(const TiXmlNode *node)
@@ -1950,10 +1828,6 @@ namespace robot_desc {
 		    
 		    if (name == "frame")
 			loadFrame(m_stage3[i]);
-		    else if (name == "actuator")
-			loadActuator(m_stage3[i]);
-		    else if (name == "transmission")
-			loadTransmission(m_stage3[i]);
 		    else if (name == "joint")
 			loadJoint(m_stage3[i], "", NULL);
 		    else if (name == "geometry")

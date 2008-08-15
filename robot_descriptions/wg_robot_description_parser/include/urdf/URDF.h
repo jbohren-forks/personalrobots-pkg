@@ -126,46 +126,7 @@ namespace robot_desc
 
 	/** Forward declaration of groups */
 	struct Group;
-        
-	/** This class defines actuator instances */
-	struct Actuator
-	{
-	    Actuator(void)
-	    {
-		isSet["name"] = false;
-	    }
-            
-	    virtual ~Actuator(void)
-	    {
-	    }
-            
-	    virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
-            
-	    std::string                 name;
-	    Map                         data;
-	    std::map<std::string, bool> isSet;
-	};
-	
-	/** This class defines transmission instances */
-	struct Transmission
-	{
-	    Transmission(void)
-	    {
-		isSet["name"] = false;
-	    }
-            
-	    virtual ~Transmission(void)
-	    {
-	    }
-            
-	    virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
-            
-	    std::string                 name;
-	    Map                         data;
-	    std::map<std::string, bool> isSet;
-	};
-
-	
+        	
 	/** This class defines link instances */
 	struct Link
 	{
@@ -597,18 +558,6 @@ namespace robot_desc
 	/** Get the list of all links. The array is sorted alphabetically by name. */
 	void getLinks(std::vector<Link*> &links) const;
 	
-	/** Retrieve an actuator by its name */
-	Actuator* getActuator(const std::string &name) const;
-
-	/** Get the list of all actuators. The array is sorted alphabetically by name. */
-	void getActuators(std::vector<Actuator*> &actuators) const;
-
-	/** Retrieve a transmission by its name */
-	Transmission* getTransmission(const std::string &name) const;	
-	
-	/** Get the list of all transmissions. The array is sorted alphabetically by name. */	
-	void getTransmissions(std::vector<Transmission*> &transmissions) const;
-
 	/** Retrieve a frame by its name */
 	Frame* getFrame(const std::string &name) const;	
 
@@ -663,10 +612,6 @@ namespace robot_desc
 	void loadSensor(const TiXmlNode *node);
 	/** Parse the <frame> tag */
 	void loadFrame(const TiXmlNode *node);
-	/** Parse the <actuator> tag */
-	void loadActuator(const TiXmlNode *node);
-	/** Parse the <transmission> tag */
-	void loadTransmission(const TiXmlNode *node);
 	/** Parse the <joint> tag */
 	void loadJoint(const TiXmlNode *node, const std::string &defaultName, Link::Joint *joint);
 	/** Parse the <geometry> tag */
@@ -726,12 +671,6 @@ namespace robot_desc
 
 	/** Contains the list of parsed groups */
 	std::map<std::string, Group*>        m_groups;
-
-	/** Contains the list of parsed actuators */
-	std::map<std::string, Actuator*>     m_actuators;
-
-	/** Contains the list of parsed transmissions */
-	std::map<std::string, Transmission*> m_transmissions;
 
 	/** Contains the list of parsed frames */
 	std::map<std::string, Frame*>        m_frames;
