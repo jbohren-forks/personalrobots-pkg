@@ -102,6 +102,14 @@ public:
 	int	 SizeofCreatedEnv();
 	void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
 	void PrintEnv_Config(FILE* fOut);
+    
+    bool InitializeEnv(int width, int height,
+                       char* mapdata,
+                       int startx, int starty,
+                       int goalx, int goaly);
+    int SetStart(int x, int y);
+    int SetGoal(int x, int y);
+    bool UpdateCost(int x, int y, int new_status);
 
 	void SetConfiguration(int width, int height,
 			      char* mapdata,

@@ -73,7 +73,7 @@ CMDPSTATE* VIPlanner::CreateState(int stateID)
 	environment_->StateID2IndexMapping[stateID][VIMDP_STATEID2IND] = viPlanner.MDP.StateArray.size()-1;
 
 #if DEBUG
-	if(state != viPlanner.MDP.StateArray[environment_->environment_->StateID2IndexMapping[stateID][VIMDP_STATEID2IND]])
+	if(state != viPlanner.MDP.StateArray[environment_->StateID2IndexMapping[stateID][VIMDP_STATEID2IND]])
 	{
 		printf("ERROR in CreateState: invalid state index\n");
 		exit(1);

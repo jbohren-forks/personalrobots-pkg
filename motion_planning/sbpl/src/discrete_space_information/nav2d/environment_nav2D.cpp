@@ -394,6 +394,26 @@ bool EnvironmentNAV2D::InitializeEnv(const char* sEnvFile)
 	return true;
 }
 
+
+
+bool EnvironmentNAV2D::InitializeEnv(int width, int height,
+					char* mapdata,
+					int startx, int starty,
+					int goalx, int goaly)
+{
+
+
+	SetConfiguration(width, height,
+					mapdata,
+					startx, starty,
+					goalx, goaly);
+
+	InitGeneral();
+
+	return true;
+}
+
+
 bool EnvironmentNAV2D::InitGeneral() {
   //Initialize other parameters of the environment
   InitializeEnvConfig();
@@ -696,6 +716,50 @@ void EnvironmentNAV2D::GetCoordFromState(int stateID, int& x, int& y) {
 const EnvNAV2DConfig_t* EnvironmentNAV2D::GetEnvNavConfig() {
   return &EnvNAV2DCfg;
 }
+
+//returns the stateid if success, and -1 otherwise
+int EnvironmentNAV2D::SetGoal(int x, int y){
+
+    if(!IsWithinMapCell(x,y))
+        return -1;
+
+    EnvNAV2DHashEntry_t* OutHashEntry;
+    if((OutHashEntry = GetHashEntry(x, y)) == NULL){
+        //have to create a new entry
+        OutHashEntry = CreateNewHashEntry(x, y);
+    }
+    EnvNAV2D.goalstateid = OutHashEntry->stateID;
+
+    return EnvNAV2D.goalstateid;    
+
+}
+
+
+//returns the stateid if success, and -1 otherwise
+int EnvironmentNAV2D::SetStart(int x, int y){
+
+    if(!IsWithinMapCell(x,y))
+        return -1;
+
+    EnvNAV2DHashEntry_t* OutHashEntry;
+    if((OutHashEntry = GetHashEntry(x, y)) == NULL){
+        //have to create a new entry
+        OutHashEntry = CreateNewHashEntry(x, y);
+    }
+    EnvNAV2D.startstateid = OutHashEntry->stateID;
+
+    return EnvNAV2D.startstateid;    
+
+}
+
+bool EnvironmentNAV2D::UpdateCost(int x, int y, int new_status)
+{
+
+    EnvNAV2DCfg.Grid2D[x][y] = new_status;
+
+    return true;
+}
+
 
 void EnvironmentNAV2D::PrintEnv_Config(FILE* fOut)
 {

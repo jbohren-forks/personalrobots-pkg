@@ -161,7 +161,7 @@ int ARAPlanner::ComputeHeuristic(CMDPSTATE* MDPstate, ARASearchStateSpace_t* pSe
 
 #else
 	//backward search: heur = distance from searchgoal to state
-	return Env_GetFromToHeuristic(pSearchStateSpace->searchgoalstate->StateID, MDPstate->StateID);
+	return environment_->GetFromToHeuristic(pSearchStateSpace->searchgoalstate->StateID, MDPstate->StateID);
 #endif
 
 }
@@ -262,7 +262,7 @@ void ARAPlanner::UpdatePreds(ARAState* state, ARASearchStateSpace_t* pSearchStat
 	CMDPACTION* bestaction;
 	ARAState *predstate;
 
-    Env_GetPreds(state->MDPstate->StateID, &PredIDV, &CostV);
+    environment_->GetPreds(state->MDPstate->StateID, &PredIDV, &CostV);
 
 	//iterate through predecessors of s
 	for(int pind = 0; pind < (int)PredIDV.size(); pind++)
@@ -402,7 +402,7 @@ int ARAPlanner::ImprovePath(ARASearchStateSpace_t* pSearchStateSpace, double Max
 		fprintf(fDeb, "expanding state(%d): h=%d g=%u key=%u v=%u iterc=%d callnuma=%d expands=%d (g(goal)=%u)\n",
 			state->MDPstate->StateID, state->h, state->g, state->g+(int)(pSearchStateSpace->eps*state->h), state->v, 
 			state->iterationclosed, state->callnumberaccessed, state->numofexpands, searchgoalstate->g);
-		Env_PrintState(state->MDPstate->StateID, true, false, fDeb);
+		environment_->PrintState(state->MDPstate->StateID, true, fDeb);
 		fflush(fDeb);
 #endif
 
@@ -606,8 +606,20 @@ void ARAPlanner::ReInitializeSearchStateSpace(ARASearchStateSpace_t* pSearchStat
 	//reset iteration
 	pSearchStateSpace->iteration = 0;
 
+
+#if DEBUG
+    fprintf(fDeb, "reinitializing search state-space (new call number=%d search iter=%d)\n", 
+            pSearchStateSpace->callnumber,pSearchStateSpace->iteration );
+#endif
+
+
+
 	pSearchStateSpace->heap->makeemptyheap();
 	pSearchStateSpace->inconslist->makeemptylist(INCONS_LIST_ID);
+
+    //reset 
+	pSearchStateSpace->eps = this->finitial_eps;
+    pSearchStateSpace->eps_satisfied = INFINITECOST;
 
 	//initialize start state
 	ARAState* startstateinfo = (ARAState*)(pSearchStateSpace->searchstartstate->PlannerSpecificData);
@@ -622,7 +634,7 @@ void ARAPlanner::ReInitializeSearchStateSpace(ARASearchStateSpace_t* pSearchStat
 	pSearchStateSpace->heap->insertheap(startstateinfo, key);
 
     pSearchStateSpace->bReinitializeSearchStateSpace = false;
-
+	pSearchStateSpace->bReevaluatefvals = false;
 }
 
 //very first initialization
@@ -935,6 +947,11 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 		//print the solution cost and eps bound
 		printf("eps=%f expands=%d g(sstart)=%d\n", pSearchStateSpace->eps_satisfied, searchexpands - prevexpands,
 							((ARAState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g);
+
+#if DEBUG
+        fprintf(fDeb, "eps=%f expands=%d g(sstart)=%d\n", pSearchStateSpace->eps_satisfied, searchexpands - prevexpands,
+							((ARAState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g);
+#endif
 		prevexpands = searchexpands;
 
 
