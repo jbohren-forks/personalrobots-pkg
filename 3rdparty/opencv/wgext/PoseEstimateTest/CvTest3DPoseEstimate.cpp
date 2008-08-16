@@ -310,9 +310,18 @@ bool CvTest3DPoseEstimate::testVideos() {
 	IplImage* leftimg  = 0;
 	IplImage* rightimg = 0;
 	CvMat * harrisCorners = NULL;
-	char leftfilename[256];
-	char rightfilename[256];
+	char leftfilename[PATH_MAX];
+	char rightfilename[PATH_MAX];
+	char leftCamWithMarks[PATH_MAX];
+	char rightCamWithMarks[PATH_MAX];
+	char dispMapFilename[PATH_MAX];
+	char poseEstFilename[PATH_MAX];
+
+
 	Cv3DPoseEstimateDisp peDisp;
+	// The following parameters are from indoor1/proj.txt
+	// note that B (or Tx) is in mm
+	this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
 	peDisp.setCameraParams(this->mFx, this->mFy, this->mTx, this->mClx, this->mCrx, this->mCy);
 	peDisp.setInlierErrorThreshold(ransacInlierthreshold);
 	peDisp.setNumRansacIterations(numRansacIterations);
@@ -344,6 +353,7 @@ bool CvTest3DPoseEstimate::testVideos() {
 
 
 	string dirname = "Data/indoor1";
+	string outputDirname = "Output/indoor1";
 	const int max_features = 100;
 	CvPoint2D32f featuresLastLeft[max_features];
 	CvPoint2D32f featuresLeft[max_features];
@@ -354,7 +364,8 @@ bool CvTest3DPoseEstimate::testVideos() {
 
 	int maxDisp = (int)peDisp.getD(10); // the closest point we care is at least 100 mm away
 	cout << "Max disparity is: "<< maxDisp<<endl;
-	for (int i=0; i<numImages; i++) {
+	int start = 910;
+	for (int i=start; i<numImages; i++) {
 		sprintf(leftfilename,  "%s/left-%04d.ppm",  dirname.c_str(), i);
 		sprintf(rightfilename, "%s/right-%04d.ppm", dirname.c_str(), i);
 		cout << "loading "<<leftfilename<<" and "<< rightfilename<< endl;
@@ -545,7 +556,10 @@ bool CvTest3DPoseEstimate::testVideos() {
 		//
 		// match the good feature points between this iteration and last
 		//
-		const CvPoint neighborhoodSize = cvPoint(61, 31);
+		// change from 61 to 101 to accomodate the sudden change around 0915 in
+		// the indoor sequence
+//		const CvPoint neighborhoodSize = cvPoint(61, 31);
+		const CvPoint neighborhoodSize = cvPoint(101, 31);
 		const CvPoint templSize        = cvPoint(11, 11);
 		cout <<"Going thru "<< numFeaturesLastLeft<< " good feature points in last left image"<<endl;
 		int numTrackablePairs=0;
@@ -723,44 +737,45 @@ bool CvTest3DPoseEstimate::testVideos() {
 
 			if (numInliers <= 0 || inliers0 == NULL || inliers1 ==NULL ) {
 				cout << "No good estimate for these two poses"<<endl;
-				continue;
-			}
+			} else {
+				// show the inliers
 
-			double _xyzs0[3*numInliers];
-			double _xyzs0To1[3*numInliers];
-			double _uvds0To1[3*numInliers];
-			double _xyzs1[3*numInliers];
-			CvMat xyzs0    = cvMat(numInliers, 3, CV_64FC1, _xyzs0);
-			CvMat xyzs0To1 = cvMat(numInliers, 3, CV_64FC1, _xyzs0To1);
-			CvMat uvds0To1 = cvMat(numInliers, 3, CV_64FC1, _uvds0To1);
-			CvMat xyzs1    = cvMat(numInliers, 3, CV_64FC1, _xyzs1);
+				double _xyzs0[3*numInliers];
+				double _xyzs0To1[3*numInliers];
+				double _uvds0To1[3*numInliers];
+				double _xyzs1[3*numInliers];
+				CvMat xyzs0    = cvMat(numInliers, 3, CV_64FC1, _xyzs0);
+				CvMat xyzs0To1 = cvMat(numInliers, 3, CV_64FC1, _xyzs0To1);
+				CvMat uvds0To1 = cvMat(numInliers, 3, CV_64FC1, _uvds0To1);
+				CvMat xyzs1    = cvMat(numInliers, 3, CV_64FC1, _xyzs1);
 
-			peDisp.reprojection(inliers0, &xyzs0);
-			peDisp.reprojection(inliers1, &xyzs1);
+				peDisp.reprojection(inliers0, &xyzs0);
+				peDisp.reprojection(inliers1, &xyzs1);
 
-			// compute the inverse transformation
-			double _invRot[9], _invShift[3];
-			CvMat invRot   = cvMat(3, 3, CV_64FC1, _invRot);
-			CvMat invShift = cvMat(3, 1, CV_64FC1, _invShift);
+				// compute the inverse transformation
+				double _invRot[9], _invShift[3];
+				CvMat invRot   = cvMat(3, 3, CV_64FC1, _invRot);
+				CvMat invShift = cvMat(3, 1, CV_64FC1, _invShift);
 
-			cvInvert(&rot, &invRot);
-			cvGEMM(&invRot, &shift, -1., NULL, 0., &invShift, 0.0);
-			CvMat xyzs0Reshaped;
-			CvMat xyzs0To1Reshaped;
-			cvReshape(&xyzs0,    &xyzs0Reshaped, 3, 0);
-			cvReshape(&xyzs0To1, &xyzs0To1Reshaped, 3, 0);
-			cvTransform(&xyzs0Reshaped, &xyzs0To1Reshaped, &invRot, &invShift);
+				cvInvert(&rot, &invRot);
+				cvGEMM(&invRot, &shift, -1., NULL, 0., &invShift, 0.0);
+				CvMat xyzs0Reshaped;
+				CvMat xyzs0To1Reshaped;
+				cvReshape(&xyzs0,    &xyzs0Reshaped, 3, 0);
+				cvReshape(&xyzs0To1, &xyzs0To1Reshaped, 3, 0);
+				cvTransform(&xyzs0Reshaped, &xyzs0To1Reshaped, &invRot, &invShift);
 
-			peDisp.projection(&xyzs0To1, &uvds0To1);
+				peDisp.projection(&xyzs0To1, &uvds0To1);
 
-			// draw uvds0To1 on leftimgeC3a
-			for (int k=0;k<numInliers;k++) {
-				CvPoint pt0To1 = cvPoint((int)(_uvds0To1[k*3+0]+.5), (int)(_uvds0To1[k*3+1] + .5));
-				const int halfLen = 4;
-				cvCross(leftimgC3a, pt0To1, halfLen, yellow);
-				CvPoint pt1 = cvPoint((int)(cvGetReal2D(inliers1, k, 0)+.5), (int)(cvGetReal2D(inliers1, k, 1)+.5));
-				cvCircle(leftimgC3a, pt1, 4, green, 1, CV_AA, 0);
-				cvLine(leftimgC3a, pt1, pt0To1, red, 1, CV_AA, 0);
+				// draw uvds0To1 on leftimgeC3a
+				for (int k=0;k<numInliers;k++) {
+					CvPoint pt0To1 = cvPoint((int)(_uvds0To1[k*3+0]+.5), (int)(_uvds0To1[k*3+1] + .5));
+					const int halfLen = 4;
+					cvCross(leftimgC3a, pt0To1, halfLen, yellow);
+					CvPoint pt1 = cvPoint((int)(cvGetReal2D(inliers1, k, 0)+.5), (int)(cvGetReal2D(inliers1, k, 1)+.5));
+					cvCircle(leftimgC3a, pt1, 4, green, 1, CV_AA, 0);
+					cvLine(leftimgC3a, pt1, pt0To1, red, 1, CV_AA, 0);
+				}
 			}
 #endif
 		}
@@ -776,10 +791,22 @@ bool CvTest3DPoseEstimate::testVideos() {
 //		cvShowImage("Harris Corners", harrisCorners);
 		//		cvShowImage("Harris Corners", eig_image);
 
+		// save the marked images
+#if 0
+		sprintf(leftCamWithMarks, "%s/leftCamWithMarks-%04d.png", outputDirname.c_str(), i);
+		sprintf(rightCamWithMarks, "%s/rightCamwithMarks-%04d.png", outputDirname.c_str(), i);
+		sprintf(dispMapFilename, "%s/dispMapFilename-%04d.png", outputDirname.c_str(), i);
+		sprintf(poseEstFilename, "%s/poseEstFilename-%04d.png", outputDirname.c_str(), i);
+		cvSaveImage(leftCamWithMarks,  leftimgC3);
+		cvSaveImage(rightCamWithMarks, rightimgC3);
+		cvSaveImage(dispMapFilename,   &dispImgU8C3);
+		cvSaveImage(poseEstFilename,   leftimgC3a);
+#endif
+
 
 		// wait for a while for opencv to draw stuff on screen
-//		cvWaitKey(25);  //  milliseconds
-		cvWaitKey(25);  //  wait indefinitely
+//		cvWaitKey(33);  //  milliseconds
+		cvWaitKey(0);  //  wait indefinitely
 
 		for (int k=0;k<numFeaturesLeft; k++){
 			featuresLastLeft[k] = featuresLeft[k];
@@ -877,7 +904,7 @@ bool CvTest3DPoseEstimate::testPointClouds(){
 		cout << "Testing in disparity space"<<endl;
 		uvds0 = cvCreateMat(numPoints, 3, CV_64FC1);
 		uvds1 = cvCreateMat(numPoints, 3, CV_64FC1);
-		this->convert3DToDisparitySpace(points0, uvds0);
+		this->projection(points0, uvds0);
 		cvAvgSdv(uvds0, &mean, &std);
 		cout << "mean and std of point cloud: "<<mean.val[0] << ","<<std.val[0]<<endl;
 
@@ -962,7 +989,7 @@ bool CvTest3DPoseEstimate::testPointClouds(){
 			TransformAfterLevMarq      = peCart.getFinalTransformation();
 		} else if (mTestType == Disparity){
 			// convert both set of points into disparity color space
-			this->convert3DToDisparitySpace(points1, points1d);
+			this->projection(points1, points1d);
 			disturb(points1d, uvds1);
 
 			int64 t = cvGetTickCount();
@@ -973,7 +1000,7 @@ bool CvTest3DPoseEstimate::testPointClouds(){
 			TransformAfterLevMarq      = peDisp.getFinalTransformation();
 		} else if (mTestType == CartAndDisp) {
 			// convert both set of points into disparity color space
-			this->convert3DToDisparitySpace(points1, points1d);
+			this->projection(points1, points1d);
 			disturb(points1d, uvds1);
 
 			int64 t = cvGetTickCount();
