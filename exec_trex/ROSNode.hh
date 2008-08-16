@@ -13,6 +13,7 @@
 
 // For arms
 #include <std_msgs/PR2Arm.h>
+#include <pr2_msgs/MoveArmState.h>
 
 // For GUI debug
 #include <std_msgs/Polyline2D.h>
@@ -133,6 +134,9 @@ namespace TREX{
     Observation* get_right_end_effector_obs();
     Observation* get_left_end_effector_obs();
 
+    void rightMoveArmStateReceived(); 
+    void leftMoveArmStateReceived(); 
+
     void ConvertArmToEndEffectorFrame(const std_msgs::PR2Arm arm,
 				      const unsigned int target_frame,
 				      KDL::Frame& f);
@@ -170,8 +174,10 @@ namespace TREX{
     void rightArmPosReceived();
     std_msgs::PR2Arm leftArmPosMsg;
     std_msgs::PR2Arm rightArmPosMsg;
-    std_msgs::PR2Arm _lastLeftArmGoal;
-    std_msgs::PR2Arm _lastRightArmGoal;
+    pr2_msgs::MoveArmState right_move_arm_state_msg_;
+    pr2_msgs::MoveArmState left_move_arm_state_msg_;
+    bool right_movearm_state_update_;
+    bool left_movearm_state_update_;
     bool _leftArmActive;
     bool _rightArmActive;
     bool _generateFirstObservation;

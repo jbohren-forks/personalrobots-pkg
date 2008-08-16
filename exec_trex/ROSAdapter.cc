@@ -108,8 +108,8 @@ namespace TREX {
       debugMsg("ROSArmAdapter:handleRequest", token->toString());
       m_node->dispatchArm(token, getCurrentTick());
       //assuming instantly active
-      if(token->getPredicateName() == LabelStr("MoveArm.Active"))
-	returnObservation = true;
+      //if(token->getPredicateName() == LabelStr("MoveArm.Active"))
+      //returnObservation = true;
     } else if(token->getBaseObjectType() == MOVE_ENDEFFECTOR_BEHAVIOR) {
       debugMsg("ROSAdapter:handleRequest", token->toString());
       m_node->dispatchEndEffector(token, getCurrentTick());
