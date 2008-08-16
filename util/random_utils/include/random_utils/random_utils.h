@@ -19,11 +19,14 @@ namespace random_utils
   void init(rngState *state);
 
   /** Uniform random number generator */	
-  double uniform(double lower_bound, double upper_bound);
-  double uniform(rngState *state, double lower_bound, double upper_bound);
+  double uniform(double lower_bound = 0.0, double upper_bound = 1.0);
+  double uniform(rngState *state, double lower_bound = 0.0, double upper_bound = 1.0);
 
   int    uniformInt(int lower_bound, int upper_bound);
   int    uniformInt(rngState *state, int lower_bound, int upper_bound);
+
+  bool   uniformBool(void);
+  bool   uniformBool(rngState *state);  
 
   /** Gaussian random number generator */	
   double gaussian(double mean, double stddev);
@@ -32,7 +35,11 @@ namespace random_utils
   double bounded_gaussian(double mean, double stddev, double max_stddev);
   double bounded_gaussian(rngState *state, double mean, double stddev, 
       double max_stddev);
+
+  /** Random quaternion generator */	
+  void quaternion(double value[4]);
+  void quaternion(rngState* state, double value[4]);
+
 }
 
 #endif
-

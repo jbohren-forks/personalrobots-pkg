@@ -7,117 +7,145 @@
 #include <random_utils/random_utils.h>
 
 /* mutex for random number generation locking */
-static ros::thread::mutex rMutex;
+static ros::thread::mutex     rMutex;
+static random_utils::rngState rState;
 
 void random_utils::init(void)
 {
-  rMutex.lock();
-  srandom(time(NULL));
-  rMutex.unlock();
+    rMutex.lock();
+    init(&rState);
+    rMutex.unlock();
 }
 
 void random_utils::init(rngState *state)
 {
-  FILE        *fp = fopen("/dev/urandom", "r");    
-  unsigned int s;
-
-  if(fp != NULL)
-  {
-    fread(&s, sizeof(unsigned int), 1, fp);
-    fclose(fp);
-  }
-  else
-    s = (unsigned int) time(NULL);
-  state->seed = s;
-  state->gaussian.valid = false;
+    FILE        *fp = fopen("/dev/urandom", "r");    
+    unsigned int s;
+    
+    if(fp != NULL)
+    {
+	fread(&s, sizeof(unsigned int), 1, fp);
+	fclose(fp);
+    }
+    else
+	s = (unsigned int) time(NULL);
+    state->seed = s;
+    state->gaussian.valid = false;
 }
 
 double random_utils::uniform(double lower_bound, double upper_bound)
 {
-  rMutex.lock();
-  double r = (double)random();
-  rMutex.unlock();
-  return (upper_bound - lower_bound) 
-         * r / ((double)(RAND_MAX) + 1.0)
-         + lower_bound;
+    rMutex.lock();
+    double r = uniform(&rState, lower_bound, upper_bound);
+    rMutex.unlock();
+    return r;
 }
 
 double random_utils::uniform(rngState *state, double lower_bound, 
                              double upper_bound)
 {
-  return (upper_bound - lower_bound) 
-         * (double)rand_r(&state->seed) / ((double)(RAND_MAX) + 1.0)
-         + lower_bound;     
+    return (upper_bound - lower_bound) 
+	* (double)rand_r(&state->seed) / ((double)(RAND_MAX) + 1.0)
+	+ lower_bound;     
 }
 
 int random_utils::uniformInt(int lower_bound, int upper_bound)
 {
-  return (int)random_utils::uniform((double)lower_bound, 
-                                    (double)(upper_bound + 1));
+    rMutex.lock();
+    int r = uniformInt(&rState, lower_bound, upper_bound);
+    rMutex.unlock();
+    return r;
 }
 
 int random_utils::uniformInt(rngState *state, int lower_bound, int upper_bound)
 {
-  return (int)random_utils::uniform(state, (double)lower_bound, 
-                                    (double)(upper_bound + 1));
+    return (int)random_utils::uniform(state, (double)lower_bound, 
+				      (double)(upper_bound + 1));
+}
+
+bool random_utils::uniformBool(void)
+{
+    rMutex.lock();
+    bool r = uniformBool(&rState);
+    rMutex.unlock();
+    return r;
+}
+
+bool random_utils::uniformBool(rngState *state)
+{
+    return uniform(state, 0.0, 1.0) <= 0.5;
 }
 
 double random_utils::gaussian(double mean, double stddev)
 {
-  double x1, x2, w;
-  do
-  {
-    x1 = random_utils::uniform(-1, 1);
-    x2 = random_utils::uniform(-1, 1);
-    w = x1*x1 + x2*x2;
-  } while (w >= 1.0 || w == 0.0);
-  w = sqrt(-2.0 * log(w) / w);
-  return x1 * w * stddev + mean;
+    rMutex.lock();
+    double r = gaussian(&rState, mean, stddev);
+    rMutex.unlock();
+    return r;
 }
 
 double random_utils::gaussian(rngState *state, double mean, double stddev)
 {
-  if (state->gaussian.valid)
-  {
-    double r = state->gaussian.last * stddev + mean;
-    state->gaussian.valid = false;
-    return r;
-  }
-  else
-  {	
-    double x1, x2, w;
-    do
+    if (state->gaussian.valid)
     {
-      x1 = random_utils::uniform(-1, 1);
-      x2 = random_utils::uniform(-1, 1);
-      w = x1*x1 + x2*x2;
-    } while (w >= 1.0 || w == 0.0);
-    w = sqrt(-2.0 * log(w) / w);
-    state->gaussian.valid = true;
-    state->gaussian.last  = x2 * w;
-    return x1 * stddev * w + mean;
-  }
+	double r = state->gaussian.last * stddev + mean;
+	state->gaussian.valid = false;
+	return r;
+    }
+    else
+    {	
+	double x1, x2, w;
+	do
+	{
+	    x1 = uniform(state, -1.0, 1.0);
+	    x2 = uniform(state, -1.0, 1.0);
+	    w = x1 * x1 + x2 * x2;
+	} while (w >= 1.0 || w == 0.0);
+	w = sqrt(-2.0 * log(w) / w);
+	state->gaussian.valid = true;
+	state->gaussian.last  = x2 * w;
+	return x1 * stddev * w + mean;
+    }
 }
 
 double random_utils::bounded_gaussian(double mean, double stddev, 
                                       double max_stddev)
 {
-  double sample, max_s = max_stddev * stddev;
-  do
-  {
-    sample = random_utils::gaussian(mean, stddev);
-  } while (fabs(sample - mean) > max_s);
-  return sample;
+    rMutex.lock();
+    double r = bounded_gaussian(&rState, mean, stddev, max_stddev);
+    rMutex.unlock();
+    return r;
 }
 
 double random_utils::bounded_gaussian(rngState *state, double mean, 
                                       double stddev, double max_stddev)
 {
-  double sample, max_s = max_stddev * stddev;
-  do
-  {
-    sample = random_utils::gaussian(state, mean, stddev);
-  } while (fabs(sample - mean) > max_s);
-  return sample;
+    double sample, max_s = max_stddev * stddev;
+    do
+    {
+	sample = gaussian(state, mean, stddev);
+    } while (fabs(sample - mean) > max_s);
+    return sample;
 }
 
+// From: "Uniform Random Rotations", Ken Shoemake, Graphics Gems III,
+//       pg. 124-132
+void random_utils::quaternion(double value[4])
+{
+    rMutex.lock();
+    quaternion(&rState, value);
+    rMutex.unlock();
+}
+
+void random_utils::quaternion(rngState* state, double value[4])
+{
+    double x0 = uniform(state);    
+    double r1 = sqrt(1.0 - x0), r2 = sqrt(x0);
+    double t1 = 2.0 * M_PI * uniform(state), t2 = 2.0 * M_PI * uniform(state);
+    double c1 = cos(t1), s1 = sin(t1);
+    double c2 = cos(t2), s2 = sin(t2);
+    value[0] = s1 * r1;
+    value[1] = c1 * r1;
+    value[2] = s2 * r2;
+    value[3] = c2 * r2;
+}
