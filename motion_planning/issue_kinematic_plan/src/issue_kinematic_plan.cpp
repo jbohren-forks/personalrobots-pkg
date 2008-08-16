@@ -39,7 +39,8 @@
 #include <robot_srvs/KinematicMotionPlan.h>
 
 static const double L1_JOINT_DIFF_MAX = .01;
-static const double L1_GRIP_DIFF_MAX = .01;
+static const double L1_GRIP_FORCE_DIFF_MAX = .01;
+static const double L1_GRIP_GAP_DIFF_MAX = .1;
 
 class IssueKinematicPlan : public ros::node {
 
@@ -89,9 +90,11 @@ private:
       sum_joint_diff += fabs(left_arm_pos_.wristPitchAngle-left_arm_command_.wristPitchAngle);
       sum_joint_diff += fabs(left_arm_pos_.wristRollAngle-left_arm_command_.wristRollAngle);
 
-      double gap_diff = fabs(left_arm_pos_.gripperForceCmd);//-left_arm_command_.gripperGapCmd);
+      double force_diff = fabs(left_arm_pos_.gripperForceCmd);//
+      double gap_diff = fabs(left_arm_pos_.gripperGapCmd-left_arm_command_.gripperGapCmd);
 
-      if(L1_JOINT_DIFF_MAX < sum_joint_diff && L1_GRIP_DIFF_MAX < gap_diff) {
+      if(L1_JOINT_DIFF_MAX > sum_joint_diff && L1_GRIP_GAP_DIFF_MAX > gap_diff &&
+         L1_GRIP_FORCE_DIFF_MAX > force_diff) {
 	left_arm_state_sent_++;
 	if(left_arm_state_sent_ == left_arm_move_states_) {
 	  //we're done
@@ -149,12 +152,12 @@ private:
       sum_joint_diff += fabs(right_arm_pos_.wristRollAngle-right_arm_command_.wristRollAngle);
       
       //std::cout << "Sum joint diff " << sum_joint_diff << std::endl;
-      
-      double gap_diff = fabs(right_arm_pos_.gripperForceCmd);//-right_arm_command_.gripperGapCmd);
-      
-      //std::cout << "Gap diff " << gap_diff << std::endl;
+ 
+      double force_diff = fabs(right_arm_pos_.gripperForceCmd);
+      double gap_diff = fabs(right_arm_pos_.gripperGapCmd-right_arm_command_.gripperGapCmd);
 
-      if(L1_JOINT_DIFF_MAX > sum_joint_diff && L1_GRIP_DIFF_MAX > gap_diff) {
+      if(L1_JOINT_DIFF_MAX > sum_joint_diff && L1_GRIP_GAP_DIFF_MAX > gap_diff &&
+         L1_GRIP_FORCE_DIFF_MAX > force_diff) {
 	right_arm_state_sent_++;
 	if(right_arm_state_sent_ == right_arm_move_states_) {
 	  //we're done
