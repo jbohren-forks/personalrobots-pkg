@@ -2,7 +2,7 @@
 WITH_DRAWSTUFF = yes
 
 CFG_OPTIONS = --with-arch=nocona --enable-release --disable-debug --enable-double-precision
-SVN_REVISION = -r 1540
+SVN_REVISION = -r 1534
 
 ifeq ($(WITH_DRAWSTUFF), yes)
 CFG_OPTIONS += --with-drawstuff=X11
