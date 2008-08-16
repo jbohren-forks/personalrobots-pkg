@@ -92,6 +92,8 @@ void Pose3D::setAxisAngle(double ax, double ay, double az, double angle)
     yr = ay * s;
     zr = az * s;
     w  = cos(h);
+    
+    normalize();    
 }
 
 void Pose3D::setFromMatrix(const NEWMAT::Matrix& matIn)
@@ -312,7 +314,6 @@ Pose3D::Euler Pose3D::eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned
 
 Pose3D::Position Pose3D::positionFromMatrix(const NEWMAT::Matrix & matrix_in)
 {
-    
     Position position;
     //get the pointer to the raw data
     double* matrix_pointer = matrix_in.Store();
