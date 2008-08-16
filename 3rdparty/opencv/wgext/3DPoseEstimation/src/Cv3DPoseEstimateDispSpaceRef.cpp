@@ -29,9 +29,7 @@
 
 Cv3DPoseEstimateDispSpaceRef::Cv3DPoseEstimateDispSpaceRef():
 	PoseParent(),
-	Parent(),
-	//mProjectionMat(NULL), mInvProjectionMat(NULL),
-	mDispToCart(NULL), mCartToDisp(NULL)
+	Parent()
 {
 	// overide parent default
 	mErrThreshold = 1.5;
@@ -236,7 +234,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
 	}
 
     // nonlinear optimization by Levenberg-Marquardt
-	CvLevMarqTransformDispSpace levMarq(this->mDispToCart, this->mCartToDisp,
+	CvLevMarqTransformDispSpace levMarq(&mMatDispToCart, &mMatCartToDisp,
         numInliers0);
 
     double param[6];
@@ -311,86 +309,15 @@ bool Cv3DPoseEstimateDispSpaceRef::constructDisparityHomography(CvMat *R, CvMat 
 
     constructRT(R, T, &RT);
 
-    cvMatMul(mCartToDisp, &RT, &G);
-    cvMatMul(&G, mDispToCart, H);
+    cvMatMul(&mMatCartToDisp, &RT, &G);
+    cvMatMul(&G, &mMatDispToCart, H);
     return status;
 }
 
-#if 0 // TODO: delete them
-int Cv3DPoseEstimateDispSpaceRef::checkInLiers(CvMat *uvds0, CvMat *uvds1, CvMat* H){
-    return getInLiers(uvds0, uvds1, H, NULL, NULL);
-}
-int Cv3DPoseEstimateDispSpaceRef::getInLiers(CvMat *uvds0, CvMat *uvds1, CvMat*H,
-    CvMat* uvds0Inlier, CvMat* uvds1Inlier) {
-	int numInLiers = 0;
-	int numPoints = uvds0->rows;
-	double error  = this->mErrThreshold+1;
-
-	CvMat* w0 = cvCreateMat(4, 1, CV_64FC1);
-	CvMat* w1 = cvCreateMat(4, 1, CV_64FC1);
-	for (int i=0; i<numPoints; i++) {
-		if (isInLier(uvds0, uvds1, i, H) == true) {
-            // store the inlier
-            if (uvds0Inlier) {
-                cvmSet(uvds0Inlier, numInLiers, 0, cvmGet(uvds0, i, 0));
-                cvmSet(uvds0Inlier, numInLiers, 1, cvmGet(uvds0, i, 1));
-                cvmSet(uvds0Inlier, numInLiers, 2, cvmGet(uvds0, i, 2));
-            }
-            if (uvds1Inlier) {
-                cvmSet(uvds1Inlier, numInLiers, 0, cvmGet(uvds1, i, 0));
-                cvmSet(uvds1Inlier, numInLiers, 1, cvmGet(uvds1, i, 1));
-                cvmSet(uvds1Inlier, numInLiers, 2, cvmGet(uvds1, i, 2));
-            }
-			numInLiers++;
-		}
-
-#if 0		// TODO: replaced, delete it
-		// copy the ith point in uvds0 into a 4x1 matrix of transpose(u, v, d, 1)
-		cvSetReal2D(w0, 0, 0, cvmGet(uvds0, i, 0));
-		cvSetReal2D(w0, 1, 0, cvmGet(uvds0, i, 1));
-		cvSetReal2D(w0, 2, 0, cvmGet(uvds0, i, 2));
-		cvSetReal2D(w0, 3, 0, 1.0);
-
-		// w1 = H * w0
-		cvMatMul(H, w0, w1);
-
-		// compare the ith point in uvds1
-		double w1_3 = cvmGet(w1, 3, 0);
-
-		double error0 = fabs(cvmGet(uvds1, i, 0)-cvmGet(w1, 0, 0)/w1_3);
-		double error1 = fabs(cvmGet(uvds1, i, 1)-cvmGet(w1, 1, 0)/w1_3);
-		double error2 = fabs(cvmGet(uvds1, i, 2)-cvmGet(w1, 2, 0)/w1_3);
-
-		error = (error0 > error1)? error0 : error1;
-		error = (error  > error2)? error  : error2;
-
-		cout << "i: " << i << " error: " << error << endl;
-
-		if (error <= this->mErrThreshold) {
-            // store the inlier
-            if (uvds0Inlier) {
-                cvmSet(uvds0Inlier, numInLiers, 0, cvmGet(uvds0, i, 0));
-                cvmSet(uvds0Inlier, numInLiers, 1, cvmGet(uvds0, i, 1));
-                cvmSet(uvds0Inlier, numInLiers, 2, cvmGet(uvds0, i, 2));
-            }
-            if (uvds1Inlier) {
-                cvmSet(uvds1Inlier, numInLiers, 0, cvmGet(uvds1, i, 0));
-                cvmSet(uvds1Inlier, numInLiers, 1, cvmGet(uvds1, i, 1));
-                cvmSet(uvds1Inlier, numInLiers, 2, cvmGet(uvds1, i, 2));
-            }
-			numInLiers++;
-		}
-#endif
-	}
-
-	cout << "Num of Inliers: "<<numInLiers<<endl;
-	return numInLiers;
-}
-#endif
-
+#if 0 // TODO delete it - move the CvStereoCamModel already
 bool Cv3DPoseEstimateDispSpaceRef::setCameraParams(double Fx, double Fy,
 		double Tx, double Clx, double Crx, double Cy){
-	Parent::setParams(Fx, Fy, Tx, Clx, Crx, Cy);
+	setParams(Fx, Fy, Tx, Clx, Crx, Cy);
 
 	// free up the old matrices if they are there
 	cvReleaseMat(&mDispToCart);
@@ -420,7 +347,7 @@ bool Cv3DPoseEstimateDispSpaceRef::setCameraParams(double Fx, double Fy,
 
 	CvMat _Q = cvMat(4, 4, CV_64F, Q);
 
-	// construct the matrix that maps from cartesian coordinates to
+	// construct the matrix that maps from Cartesian coordinates to
 	// disparity coordinates
 	double P[] =
 	{
@@ -448,27 +375,7 @@ bool Cv3DPoseEstimateDispSpaceRef::setCameraParams(double Fx, double Fy,
 #endif
 	return true;
 }
-
-bool Cv3DPoseEstimateDispSpaceRef::reprojection(CvMat *uvds, CvMat *XYZs) {
-	bool status = true;
-
-	CvMat uvds0;
-	CvMat XYZs0;
-	cvReshape(uvds, &uvds0, 3, 0);
-	cvReshape(XYZs, &XYZs0, 3, 0);
-	cvPerspectiveTransform(&uvds0, &XYZs0, this->mDispToCart);
-	return status;
-}
-
-bool Cv3DPoseEstimateDispSpaceRef::projection(CvMat *XYZs, CvMat *uvds) {
-	bool status = true;
-	CvMat xyzs0;
-	CvMat uvds0;
-	cvReshape(XYZs, &xyzs0, 3, 0);
-	cvReshape(uvds, &uvds0, 3, 0);
-	cvPerspectiveTransform(&xyzs0, &uvds0, this->mCartToDisp);
-	return status;
-}
+#endif
 
 /*
  * A Convenient function to map z to d, at the optical center

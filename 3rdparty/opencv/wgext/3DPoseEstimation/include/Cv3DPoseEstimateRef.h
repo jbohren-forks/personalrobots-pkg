@@ -9,32 +9,32 @@ class Cv3DPoseEstimateRef
 public:
 	Cv3DPoseEstimateRef();
 	virtual ~Cv3DPoseEstimateRef();
-	
+
 	/**
 	 * set up the error measurement to decide whether a point is inlier
 	 */
-	void configureErrorMeasurement(CvMat *mapping, 
+	void configureErrorMeasurement(CvMat *mapping,
 			double threshold=mDefErrThreshold, int normType=CV_C);
-	
+
 	/**
 	 * INPUT:
  	 * pionts0: 3D points in Cartesian coordinates from camera 0
  	 * points1: 3D points in Cartesian coordinates from camera 1
- 	 * 
- 	 * The points are stored as 
+ 	 *
+ 	 * The points are stored as
  	 *       x0, y0, z0
  	 *       x1, y1, z1
- 	 * 
+ 	 *
  	 *       xi, yi, zi
- 	 * 
-	 * 
+ 	 *
+	 *
 	 * OUTPUT:
 	 * rot: rotation matrix
  	 * trans: translation matrix
- 	 * 
+ 	 *
  	 * RETURN:
  	 * number of inliers
-	 * 
+	 *
 	 */
 	int estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *trans,
 			CvMat *& inliers0, CvMat *& inliers1);
@@ -46,6 +46,10 @@ public:
 	void setInlierErrorThreshold(double threshold) {
 		this->mErrThreshold = threshold;
 	}
+	void setNumRansacIterations(int numIterations) {
+		this->mNumIterations = numIterations;
+	}
+
 protected:
 	// a utility function that shall not belong here
 	bool tooCloseToColinear(CvMat* points);
@@ -60,14 +64,14 @@ protected:
 	double mMinDet; // to decide if 3 points are tooCloseToColinear
 	double mMinAngleForRansacTriple;
 	int mNumTriesForRandomTriple; // max num of tries to get a group of 3 random points
-	
+
 	// parameters for deciding the inliers
 	// the error is define as norm(mMapping * residue), or
 	// norm(residue) if mMapping is NULL;
 	CvMat* mErrMapping;
 	int    mErrNormType; // defined in cxcore.h
 	double mErrThreshold;
-	
+
 	// buffers
 	double  mResidue1_Data[3];
 	CvMat   mResidue1;
@@ -77,9 +81,9 @@ protected:
 	CvMat   mW1;   // 4x1 matrix to hold a point in homogenous coordinates
 	CvMyReal mT_Data[4*4];
 	CvMat    mT;
-	
+
 	CvRNG   mRng;  // random number generator
-	
+
 	CvMyReal mRTBestWithoutLevMarqData[16]; // store the best candidate before levmarq
 	CvMat   mRTBestWithoutLevMarq;
 };
