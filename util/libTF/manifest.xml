@@ -9,6 +9,7 @@ Library for doing transformations.
 <url>http://pr.willowgarage.com</url>
 <depend package="newmat10"/>
 <depend package="gtest"/>
+<depend package="ros_exception"/>
 <export>
 <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lTF"/>
 </export>

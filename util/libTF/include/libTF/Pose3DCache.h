@@ -42,6 +42,7 @@
 #include <cmath>
 #include <pthread.h>
 
+#include <libTF/exception.h>
 #include "libTF/Pose3D.h"
 
 namespace libTF{
@@ -80,10 +81,10 @@ namespace libTF{
     /** \brief An exception class to notify that the requested value would have required extrapolation, and extrapolation is not allowed.
      * 
      */
-    class ExtrapolationException : public std::runtime_error
+    class ExtrapolationException : public libTF::Exception
       { 
       public:
-        ExtrapolationException(const std::string errorDescription) : std::runtime_error(errorDescription) { ; };
+        ExtrapolationException(const std::string errorDescription) : libTF::Exception(errorDescription) { ; };
     };
   
     /** \brief The constructor 

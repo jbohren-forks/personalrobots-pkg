@@ -32,7 +32,6 @@
 
 #ifndef LIBTF_HH
 #define LIBTF_HH
-#include <stdexcept>
 #include <iostream>
 #include <iomanip>
 #include <newmat10/newmat.h>
@@ -42,6 +41,7 @@
 #include <sstream>
 #include <map>
 
+#include <libTF/exception.h>
 #include "libTF/Pose3DCache.h"
 
 namespace libTF
@@ -283,15 +283,10 @@ public:
    * being published, or a parent frame was not set correctly 
    * causing the tree to be broken.  
    */
-  class LookupException : public std::exception
+  class LookupException : public libTF::Exception
   {
   public:
-    LookupException(const std::string errorDescription) { 
-      errorDescription_ = new std::string(errorDescription);
-    };
-    std::string * errorDescription_;
-    ~LookupException() throw() { delete errorDescription_; };
-    virtual const char* what() const throw()    { return errorDescription_->c_str(); };
+    LookupException(const std::string errorDescription) : libTF::Exception(errorDescription) { ; };
   };
 
   /** \brief An exception class to notify of no connection
@@ -299,10 +294,10 @@ public:
    * This is an exception class to be thrown in the case 
    * that the Reference Frame tree is not connected between
    * the frames requested. */
-  class ConnectivityException : public std::runtime_error
+  class ConnectivityException : public libTF::Exception
   {
   public:
-    ConnectivityException(const std::string errorDescription) : std::runtime_error(errorDescription) { ; };
+    ConnectivityException(const std::string errorDescription) : libTF::Exception(errorDescription) { ; };
   };
   
   /** \brief An exception class to notify that the search for connectivity descended too deep. 
@@ -312,19 +307,19 @@ public:
    * infinitely looping in the case that a tree was malformed and 
    * became cyclic.
    */
-  class MaxDepthException : public std::runtime_error
+  class MaxDepthException : public libTF::Exception
   {
   public:
-    MaxDepthException(const std::string errorDescription): std::runtime_error(errorDescription) { ; };
+    MaxDepthException(const std::string errorDescription): libTF::Exception(errorDescription) { ; };
   };
   
   /** \brief An exception class to notify that the requested value would have required extrapolation, and extrapolation is not allowed.
    * 
    */
-  class ExtrapolateException : public std::runtime_error
+  class ExtrapolateException : public libTF::Exception
   { 
   public:
-    ExtrapolateException(const std::string &errorDescription): std::runtime_error(errorDescription) { ; };
+    ExtrapolateException(const std::string &errorDescription): libTF::Exception(errorDescription) { ; };
   };
 
 protected:
