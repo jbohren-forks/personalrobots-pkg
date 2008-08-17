@@ -38,8 +38,8 @@
 
 @htmlinclude ../../manifest.html
 
-@b NodeWithODECollisionModel is a ROS node that in addition to being aware of a robot model,
-is also aware of an ODE collision space
+@b NodeODECollisionModel is a class which in addition to being aware of a robot model,
+is also aware of an ODE collision space.
 
 <hr>
 
@@ -47,6 +47,9 @@ is also aware of an ODE collision space
 
 Subscribes to (name/type):
 - @b world_3d_map/PointCloudFloat32 : point cloud with data describing the 3D environment
+
+Additional subscriptions due to inheritance from NodeRobotModel:
+- @b localizedpose/RobotBase2DOdom : localized position of the robot base
 
 Publishes to (name/type):
 - None
@@ -75,21 +78,21 @@ Provides (name/type):
 namespace planning_node_util
 {
     
-    class NodeWithODECollisionModel : public NodeWithRobotModel
+    class NodeODECollisionModel : public NodeRobotModel
     {
 
     public:
 	
-        NodeWithODECollisionModel(const std::string &robot_model, const std::string &name, uint32_t options = 0) : NodeWithRobotModel(robot_model, name, options)
+        NodeODECollisionModel(ros::node *node, const std::string &robot_model) : NodeRobotModel(node, robot_model)
 	{
 	    m_collisionSpace = new collision_space::EnvironmentModelODE();
 	    m_collisionSpace->setSelfCollision(false);
 	    m_sphereSize = 0.03;
 	    
-	    subscribe("world_3d_map", m_worldCloud, &NodeWithODECollisionModel::worldMapCallback);
+	    m_node->subscribe("world_3d_map", m_worldCloud, &NodeODECollisionModel::worldMapCallback, this);
 	}
 
-	virtual ~NodeWithODECollisionModel(void)
+	virtual ~NodeODECollisionModel(void)
 	{
 	    if (m_collisionSpace)
 	    {
@@ -100,7 +103,7 @@ namespace planning_node_util
 	
 	virtual void setRobotDescription(robot_desc::URDF *file)
 	{
-	    NodeWithRobotModel::setRobotDescription(file);
+	    NodeRobotModel::setRobotDescription(file);
 	    if (m_kmodel)
 	    {
 		m_collisionSpace->lock();
@@ -111,7 +114,7 @@ namespace planning_node_util
 	
     	virtual void defaultPosition(void)
 	{
-	    NodeWithRobotModel::defaultPosition();
+	    NodeRobotModel::defaultPosition();
 	    if (m_collisionSpace && m_collisionSpace->getModelCount() == 1)
 		m_collisionSpace->updateRobotModel(0);
 	}

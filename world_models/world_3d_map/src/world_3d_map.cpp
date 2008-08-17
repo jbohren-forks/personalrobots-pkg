@@ -74,6 +74,9 @@ specify '-' for the robot_model argument.
 Subscribes to (name/type):
 - @b scan/LaserScan : scan data received from a laser
 
+Additional subscriptions due to inheritance from NodeRobotModel:
+- @b localizedpose/RobotBase2DOdom : localized position of the robot base
+
 Publishes to (name/type):
 - @b "world_3d_map"/PointCloudFloat32 : point cloud describing the 3D environment
 - @b "roserr"/Log : output log messages
@@ -110,11 +113,13 @@ Provides (name/type):
 #include <deque>
 #include <cmath>
 
-class World3DMap : public planning_node_util::NodeWithRobotModel
+class World3DMap : public ros::node,
+		   public planning_node_util::NodeRobotModel
 {
 public:
-
-    World3DMap(const std::string &robot_model) : planning_node_util::NodeWithRobotModel(robot_model, "world_3d_map")
+    
+    World3DMap(const std::string &robot_model) : ros::node("world_3d_map"),
+						 planning_node_util::NodeRobotModel(dynamic_cast<ros::node*>(this), robot_model)
     {
 	advertise<std_msgs::PointCloudFloat32>("world_3d_map");
 	advertise<rostools::Log>("roserr");
@@ -157,7 +162,7 @@ public:
     
     virtual void setRobotDescription(robot_desc::URDF *file)
     {
-	planning_node_util::NodeWithRobotModel::setRobotDescription(file);
+	planning_node_util::NodeRobotModel::setRobotDescription(file);
 	addSelfSeeBodies();
     }
     
@@ -171,7 +176,7 @@ private:
   
     void baseUpdate(void)
     {
-	planning_node_util::NodeWithRobotModel::baseUpdate();
+	planning_node_util::NodeRobotModel::baseUpdate();
 	if (m_kmodel)
 	{
 	    int group = m_kmodel->getGroupID(m_urdf->getRobotName() + "::base");

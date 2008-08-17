@@ -61,6 +61,10 @@ $ planning_world_viewer robotdesc/pr2
 Subscribes to (name/type):
 - None
 
+Additional subscriptions due to inheritance from NodeODECollisionModel:
+- @b localizedpose/RobotBase2DOdom : localized position of the robot base
+- @b world_3d_map/PointCloudFloat32 : point cloud with data describing the 3D environment
+
 Publishes to (name/type):
 - None
 
@@ -91,11 +95,13 @@ Provides (name/type):
 #include <sstream>
 #include <map>
 
-class PlanningWorldViewer : public planning_node_util::NodeWithODECollisionModel
+class PlanningWorldViewer : public ros::node,
+			    public planning_node_util::NodeODECollisionModel
 {
 public:
     
-    PlanningWorldViewer(const std::string &robot_model) : planning_node_util::NodeWithODECollisionModel(robot_model, "planning_world_viewer")
+    PlanningWorldViewer(const std::string &robot_model) : ros::node("planning_world_viewer"),
+							  planning_node_util::NodeODECollisionModel(dynamic_cast<ros::node*>(this), robot_model)
     {
 	subscribe("display_kinematic_path", m_displayPath, &PlanningWorldViewer::displayPathCallback);
 	
@@ -126,7 +132,7 @@ public:
     
     void baseUpdate(void)
     {
-	planning_node_util::NodeWithODECollisionModel::baseUpdate();
+	planning_node_util::NodeODECollisionModel::baseUpdate();
 	
 	if (m_collisionSpace && m_collisionSpace->getModelCount() == 1 && m_follow)
 	{
@@ -145,7 +151,7 @@ public:
     
     virtual void beforeWorldUpdate(void)
     {
-	planning_node_util::NodeWithODECollisionModel::beforeWorldUpdate();
+	planning_node_util::NodeODECollisionModel::beforeWorldUpdate();
 	m_displayLock.lock();	
 	m_spaces.clear();
 	m_displayLock.unlock();	
@@ -153,7 +159,7 @@ public:
 
     virtual void afterWorldUpdate(void)
     {
-	planning_node_util::NodeWithODECollisionModel::afterWorldUpdate();
+	planning_node_util::NodeODECollisionModel::afterWorldUpdate();
 	updateODESpaces();
     }	
     
@@ -175,7 +181,7 @@ public:
     
     virtual void setRobotDescription(robot_desc::URDF *file)
     {
-	planning_node_util::NodeWithODECollisionModel::setRobotDescription(file);
+	planning_node_util::NodeODECollisionModel::setRobotDescription(file);
 	defaultPosition();
     }
     

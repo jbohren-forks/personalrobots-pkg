@@ -38,7 +38,8 @@
 
 @htmlinclude ../../manifest.html
 
-@b NodeWithRobotModel is a ROS node that is also aware of a given robot model
+@b NodeRobotModel is a class that is also of a given robot model and
+uses a ROS node to retrieve the necessary data.
 
 <hr>
 
@@ -77,23 +78,23 @@ Provides (name/type):
 namespace planning_node_util
 {
     
-    class NodeWithRobotModel : public ros::node
+    class NodeRobotModel
     {
 
     public:
 	
-        NodeWithRobotModel(const std::string &robot_model, const std::string &name, uint32_t options = 0) : ros::node(name, options),
-	                                                                                                    m_tf(*this, true, 1 * 1000000000ULL, 1000000000ULL)
+        NodeRobotModel(ros::node *node, const std::string &robot_model) : m_tf(*node, true, 1 * 1000000000ULL, 1000000000ULL)
 	{
 	    m_urdf = NULL;
 	    m_kmodel = NULL;
+	    m_node = node;
 	    m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
 	    m_robotModelName = robot_model;
 	    
-	    subscribe("localizedpose", m_localizedPose, &NodeWithRobotModel::localizedPoseCallback);
+	    m_node->subscribe("localizedpose", m_localizedPose, &NodeRobotModel::localizedPoseCallback, this);
 	}
 
-	virtual ~NodeWithRobotModel(void)
+	virtual ~NodeRobotModel(void)
 	{
 	    if (m_urdf)
 		delete m_urdf;
@@ -137,7 +138,7 @@ namespace planning_node_util
 	    if (!m_robotModelName.empty() && m_robotModelName != "-")
 	    {
 		std::string content;
-		if (get_param(m_robotModelName, content))
+		if (m_node->get_param(m_robotModelName, content))
 		    setRobotDescriptionFromData(content.c_str());
 		else
 		    fprintf(stderr, "Robot model '%s' not found!\n", m_robotModelName.c_str());
@@ -208,6 +209,7 @@ namespace planning_node_util
 	}
 	
 	rosTFClient                      m_tf; 
+	ros::node                       *m_node;
 	std_msgs::RobotBase2DOdom        m_localizedPose;
 	robot_desc::URDF                *m_urdf;
 	planning_models::KinematicModel *m_kmodel;	
