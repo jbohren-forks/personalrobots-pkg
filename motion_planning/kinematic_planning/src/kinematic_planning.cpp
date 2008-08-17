@@ -86,7 +86,8 @@ Provides (name/type):
 **/
 
 #include <planning_node_util/cnode.h>
-#include <robot_srvs/KinematicMotionPlan.h>
+#include <robot_srvs/KinematicPlanState.h>
+#include <robot_srvs/KinematicPlanLinkPosition.h>
 
 #include <ompl/extension/samplingbased/kinematic/extension/rrt/LazyRRT.h>
 #include <ompl/extension/samplingbased/kinematic/extension/rrt/RRT.h>
@@ -115,7 +116,7 @@ public:
 	    delete i->second;
     }    
     
-    bool plan(robot_srvs::KinematicMotionPlan::request &req, robot_srvs::KinematicMotionPlan::response &res)
+    bool plan(robot_srvs::KinematicPlanState::request &req, robot_srvs::KinematicPlanState::response &res)
     {
 	if (m_models.find(req.model_id) == m_models.end())
 	{

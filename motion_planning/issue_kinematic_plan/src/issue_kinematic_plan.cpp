@@ -36,7 +36,7 @@
 #include <std_msgs/PR2Arm.h>
 #include <pr2_msgs/MoveArmGoal.h>
 #include <pr2_msgs/MoveArmState.h>
-#include <robot_srvs/KinematicMotionPlan.h>
+#include <robot_srvs/KinematicPlanState.h>
 
 static const double L1_JOINT_DIFF_MAX = .01;
 static const double L1_GRIP_FORCE_DIFF_MAX = .01;
@@ -197,7 +197,7 @@ private:
   
   void moveLeftArm() {
     
-    robot_srvs::KinematicMotionPlan::request req;
+    robot_srvs::KinematicPlanState::request req;
     
     req.model_id = "pr2::leftArm";
     req.threshold = 10e-06;
@@ -286,7 +286,7 @@ private:
   
   void moveRightArm() {
     
-    robot_srvs::KinematicMotionPlan::request req;
+    robot_srvs::KinematicPlanState::request req;
     
     req.model_id = "pr2::rightArm";
     req.threshold = 10e-04;
@@ -385,7 +385,7 @@ private:
 
 private:
 
-  void setStateGoalFromPlan(unsigned int state_num, const robot_srvs::KinematicMotionPlan::response& res,
+  void setStateGoalFromPlan(unsigned int state_num, const robot_srvs::KinematicPlanState::response& res,
 			    std_msgs::PR2Arm& arm_com) {
     if(state_num >= res.path.get_states_size()) {
       printf("SetStateGoalFromPlan:: trying to set state greater than number of states in path.\n");
@@ -411,8 +411,8 @@ private:
 
 private:
 
-  robot_srvs::KinematicMotionPlan::response left_plan_res_;
-  robot_srvs::KinematicMotionPlan::response right_plan_res_;
+  robot_srvs::KinematicPlanState::response left_plan_res_;
+  robot_srvs::KinematicPlanState::response right_plan_res_;
   
   std_msgs::PR2Arm left_arm_command_;
   std_msgs::PR2Arm right_arm_command_;

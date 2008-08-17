@@ -17,12 +17,13 @@ string model_id
 robot_msgs/KinematicState start_state
 
 
-# The goal state for the model to plan for. The dimension of this
-# state must be equal to the dimension of the state space
-# characterizing the model (group) to plan for.  If this state has
-# dimension 0, it is assumed that the first state that satisfies the
-# constraints is correct
-robot_msgs/KinematicState goal_state
+# The goal state for the model to plan for. The state is not explicit.
+# The goal is considered achieved if all the constraints are satisfied.
+robot_msgs/KinematicConstraint[] goal_constraints
+
+
+# No state in the produced motion plan will violate these constraints
+robot_msgs/KinematicConstraint[] constraints
 
 
 # The maximum amount of time the motion planner is allowed to plan for
@@ -31,11 +32,6 @@ float64 allowed_time
 
 # A string that identifies which distance metric the planner should use
 string distance_metric
-
-
-# The threshold (distance) that is allowed between the returned
-# solution and the actual goal
-float64 threshold
 
 
 # Lower coordinate for a box defining the volume in the workspace the

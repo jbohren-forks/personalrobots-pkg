@@ -34,7 +34,7 @@
 
 #include <ros/node.h>
 #include <ros/time.h>
-#include <robot_srvs/KinematicMotionPlan.h>
+#include <robot_srvs/KinematicPlanState.h>
 #include <robot_msgs/NamedKinematicPath.h>
 #include <std_msgs/RobotBase2DOdom.h>
 
@@ -58,7 +58,7 @@ public:
     
     void runTestBase(void)
     {
-	robot_srvs::KinematicMotionPlan::request  req;
+	robot_srvs::KinematicPlanState::request  req;
 	
 	req.model_id = "pr2::base";
 	req.threshold = 0.01;
@@ -87,7 +87,7 @@ public:
     
     void runTestLeftArm(void)
     {
-	robot_srvs::KinematicMotionPlan::request  req;
+	robot_srvs::KinematicPlanState::request  req;
 	
 	req.model_id = "pr2::leftArm";
 	req.threshold = 0.01;
@@ -109,9 +109,9 @@ public:
 	performCall(req);
     }
     
-    void performCall(robot_srvs::KinematicMotionPlan::request &req)
+    void performCall(robot_srvs::KinematicPlanState::request &req)
     {	
-	robot_srvs::KinematicMotionPlan::response res;
+	robot_srvs::KinematicPlanState::response res;
 	robot_msgs::NamedKinematicPath dpath;
 
 	if (ros::service::call("plan_kinematic_path", req, res))
