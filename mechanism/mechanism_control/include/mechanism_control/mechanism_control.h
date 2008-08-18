@@ -104,7 +104,7 @@ private:
 /*
  * Exposes MechanismControl's interface over ROS
  */
-class MechanismControlNode : public ros::node
+class MechanismControlNode 
 {
 public:
   MechanismControlNode(MechanismControl *mc);
@@ -121,6 +121,8 @@ public:
   bool spawnController(mechanism_control::SpawnController::request &req,
                        mechanism_control::SpawnController::response &resp);
 private:
+  ros::node *node;
+
   bool killController(mechanism_control::KillController::request &req,
                       mechanism_control::KillController::response &resp);
 

@@ -256,22 +256,27 @@ bool MechanismControl::killController(const std::string &name)
 
 
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
-  : ros::node("MechanismControl", DONT_HANDLE_SIGINT), mc_(mc),
-              mechanism_state_topic_("mechanism_state")
+  : mc_(mc), mechanism_state_topic_("mechanism_state")
 {
   assert(mc != NULL);
   assert(mechanism_state_topic_);
-  advertise_service("list_controllers", &MechanismControlNode::listControllers);
-  advertise_service("list_controller_types", &MechanismControlNode::listControllerTypes);
-  advertise_service("spawn_controller", &MechanismControlNode::spawnController);
-  advertise<mechanism_control::MechanismState>(mechanism_state_topic_);
+  if ((node = ros::node::instance()) == NULL) {
+    int argc = 0;
+    char** argv = NULL;
+    ros::init(argc, argv);
+    node = new ros::node("mechanism_control", ros::node::DONT_HANDLE_SIGINT);
+  }
+  node->advertise_service("list_controllers", &MechanismControlNode::listControllers);
+  node->advertise_service("list_controller_types", &MechanismControlNode::listControllerTypes);
+  node->advertise_service("spawn_controller", &MechanismControlNode::spawnController);
+  node->advertise<mechanism_control::MechanismState>(mechanism_state_topic_);
   // Launches the worker state_publishing_loop_keep_running_
   mechanism_state_updated_ = false;
   pthread_cond_init (&mechanism_state_updated_cond_, NULL);
   pthread_mutex_init(&mechanism_state_lock_,NULL);
   state_publishing_loop_keep_running_ = true;
   state_publishing_thread_ = ros::thread::member_thread::startMemberFunctionThread<MechanismControlNode>(this, &MechanismControlNode::statePublishingLoop);
-  advertise_service("kill_controller", &MechanismControlNode::killController);
+  node->advertise_service("kill_controller", &MechanismControlNode::killController);
 }
 
 MechanismControlNode::~MechanismControlNode()
@@ -355,7 +360,7 @@ void MechanismControlNode::publishMechanismState()
   while (!mechanism_state_updated_)
     pthread_cond_wait(&mechanism_state_updated_cond_, &mechanism_state_lock_);
   assert(this->mechanism_state_topic_);
-  publish(mechanism_state_topic_, mechanism_state_);
+  node->publish(mechanism_state_topic_, mechanism_state_);
   mechanism_state_updated_ = false;
   pthread_mutex_unlock(&mechanism_state_lock_);
 }
