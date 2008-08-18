@@ -93,14 +93,41 @@ public:
 	req.threshold = 0.01;
 	req.distance_metric = "L2Square";
 	
-	req.start_state.set_vals_size(50);
+	req.start_state.set_vals_size(45);
 	for (unsigned int i = 0 ; i < req.start_state.vals_size ; ++i)
 	    req.start_state.vals[i] = 0.0;
 	
 	req.goal_state.set_vals_size(7);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
-	    req.goal_state.vals[i] = 0.1;
+	    req.goal_state.vals[i] = 0.0;
+	req.goal_state.vals[0] = -1.0;    
+
+	req.allowed_time = 10.0;
 	
+	req.volumeMin.x = -5.0 + m_basePos[0];	req.volumeMin.y = -5.0 + m_basePos[1];	req.volumeMin.z = 0.0;
+	req.volumeMax.x = 5.0 + m_basePos[0];	req.volumeMax.y = 5.0 + m_basePos[1];	req.volumeMax.z = 0.0;
+	
+	performCall(req);
+    }
+
+    
+    void runTestRightArm(void)
+    {
+	robot_srvs::KinematicPlanState::request  req;
+	
+	req.model_id = "pr2::rightArm";
+	req.threshold = 0.01;
+	req.distance_metric = "L2Square";
+	
+	req.start_state.set_vals_size(45);
+	for (unsigned int i = 0 ; i < req.start_state.vals_size ; ++i)
+	    req.start_state.vals[i] = 0.0;
+	
+	req.goal_state.set_vals_size(7);
+	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
+	    req.goal_state.vals[i] = 0.0;
+        req.goal_state.vals[0] = -1.0;    
+
 	req.allowed_time = 10.0;
 	
 	req.volumeMin.x = -5.0 + m_basePos[0];	req.volumeMin.y = -5.0 + m_basePos[1];	req.volumeMin.z = 0.0;
@@ -161,8 +188,9 @@ int main(int argc, char **argv)
 	dur.sleep();
 
     //    plan.runTestLeftArm();    
-    plan.runTestBase();
-    
+    //    plan.runTestBase();
+    plan.runTestRightArm();    
+
     plan.shutdown();
     
     return 0;    
