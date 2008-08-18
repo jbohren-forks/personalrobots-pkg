@@ -1,8 +1,8 @@
 # change the next flag to 'no' if drawstuff is not to be built
 WITH_DRAWSTUFF = yes
 
-CFG_OPTIONS = --with-arch=nocona --enable-release --disable-debug --enable-double-precision
-SVN_REVISION = -r 1534
+CFG_OPTIONS = --with-arch=nocona --enable-release --disable-asserts --with-pic --enable-double-precision
+SVN_REVISION = -r 1540
 
 ifeq ($(WITH_DRAWSTUFF), yes)
 CFG_OPTIONS += --with-drawstuff=X11
@@ -14,7 +14,7 @@ SVN_DIR = opende-svn
 SVN_URL = https://opende.svn.sourceforge.net/svnroot/opende/trunk 
 include $(shell rospack find mk)/svn_checkout.mk
 
-CONFIGURE_FLAGS = $(CFG_OPTIONS) CXXFLAGS='-O3 -fPIC -I$(ROOT)/include' LDFLAGS='-L$(ROOT)/lib' CFLAGS='-O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include'
+CONFIGURE_FLAGS = $(CFG_OPTIONS) CXXFLAGS='-ggdb -fPIC -I$(ROOT)/include' LDFLAGS='-L$(ROOT)/lib' CFLAGS='-ggdb -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include'
 
 ROOT = $(shell rospack find opende)/opende
 
