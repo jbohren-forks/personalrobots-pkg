@@ -2242,7 +2242,7 @@
   <include>groups.xml</include>
   
   <!-- controllers for gazebo -->
-  <!--  <include>controllers_gazebo.xml</include>  -->
+  <include>controllers_gazebo.xml</include>
   
   <!-- new definitions for mechanism controls - JMH -->
   <!--
