@@ -215,7 +215,7 @@ bool MechanismControl::spawnController(const std::string &type,
   controller::Controller *c = controller::ControllerFactory::instance().create(type);
   if (c == NULL)
     return false;
-  printf("Spawning %s: %08x\n", name.c_str(), &model_);
+  printf("Spawning %s: %08x\n", name.c_str(), (int)&model_);
   c->initXml(&model_, config);
 
   if (!addController(c, name))
@@ -326,6 +326,8 @@ bool MechanismControlNode::listControllerTypes(
   mechanism_control::ListControllerTypes::response &resp)
 {
   std::vector<std::string> types;
+
+  (void) req;
   controller::ControllerFactory::instance().getTypes(&types);
   resp.set_types_vec(types);
   return true;
@@ -347,6 +349,7 @@ bool MechanismControlNode::listControllers(
 {
   std::vector<std::string> controllers;
 
+  (void) req;
   mc_->getControllerNames(controllers);
   resp.set_controllers_vec(controllers);
   return true;
