@@ -63,9 +63,9 @@ class Octree {
 	void insertOrErase(float x, float y, float z, T newValue, bool deletion);
 
 	//! Converts cell indices to spatial coordinates. See main class description for details.
-	bool cellToCoordinates(int i, int j, int k, float *x, float *y, float *z);
+	inline bool cellToCoordinates(int i, int j, int k, float *x, float *y, float *z);
 	//! Converts spatial coordinates to cell indices. See main class description for details.
-	bool coordinatesToCell(float x, float y, float z, int *i, int *j, int *k);
+	inline bool coordinatesToCell(float x, float y, float z, int *i, int *j, int *k);
 
  public:
 	//! Constructor needs all initialization values.
@@ -80,6 +80,8 @@ class Octree {
 	void setSize(float dx, float dy, float dz){mDx = dx; mDy = dy; mDz = dz;}
 	//! Sets the max depth of this Octree. Does NOT change the inner data.
 	void setDepth(int d){if (d<=0) d=1; mMaxDepth = d;}
+	//! Returns the max. depth of the Octree
+	int getMaxDepth(){return mMaxDepth;}
 	//! Returns the maximum number of cells along one dimension of this Octree
 	/*! Equals 2^(mMaxDepth). Overall, the Octree might contain up to getNumCells()^3 cells */
 	int getNumCells(){return (int)pow((float)2,mMaxDepth);} 
@@ -121,6 +123,9 @@ class Octree {
 		if ( !cellToCoordinates(i,j,k,&x,&y,&z) ) return;
 		erase(x,y,z);
 	}
+
+	bool intersectsTriangle(float*, float*, float*);
+	bool intersectsBox(const float *center, const float *extents, const float axes[][3]);
 
 	//! Traces a scanner ray through this octree
 	void traceRay(float sx, float sy, float sz, 
@@ -392,6 +397,109 @@ bool Octree<T>::coordinatesToCell(float x, float y, float z, int *i, int *j, int
 	return true;
 }
 
+//------------------------------------------ Intersection tests ------------------------------------
+
+template <typename T>
+bool Octree<T>::intersectsTriangle(float trivert0[3], float trivert1[3], float trivert2[3])
+{
+	std::list< SpatialNode<T>* > stack;
+
+	SpatialNode<T> *sn = new SpatialNode<T>;
+	sn->node = mRoot;
+
+	sn->cx = mCx; sn->cy = mCy; sn->cz = mCz;
+	sn->dx = mDx; sn->dy = mDy; sn->dz = mDz;
+	stack.push_front(sn);
+
+	bool retVal = false;
+	while (!stack.empty()) {
+		sn = stack.front();
+		stack.pop_front();
+
+		if (sn->node) {
+			
+			/* this is the actual intersection test. If you need a novel intersection test
+			   (with a new primitive) this is the only part of this fctn that you need to
+			   modify
+			*/
+			if ( nodeTriangleIntersection<T>(*sn, trivert0, trivert1, trivert2) ) {
+
+				if (sn->node->isLeaf()) {
+					delete sn;
+					retVal = true;
+					break;
+				}
+
+				for (int i=0; i<8; i++) {
+					stack.push_front( ((OctreeBranch<T>*)sn->node)->getSpatialChild(i,sn->cx, sn->cy, 
+													sn->cz, sn->dx, 
+													sn->dy, sn->dz) );
+				}
+			}
+		}
+		delete sn;
+	}
+	
+	while (!stack.empty()) {
+		delete stack.front();
+		stack.pop_front();
+	}
+	return retVal;
+}
+
+template <typename T>
+bool Octree<T>::intersectsBox(const float *center, const float *extents, const float axes[][3])
+{
+	/*
+	fprintf(stderr,"Axes:\n");
+	fprintf(stderr,"%f %f %f \n",axes[0][0], axes[0][1], axes[0][2]);
+	fprintf(stderr,"%f %f %f \n",axes[1][0], axes[1][1], axes[1][2]);
+	fprintf(stderr,"%f %f %f \n",axes[2][0], axes[2][1], axes[2][2]);
+	*/
+	std::list< SpatialNode<T>* > stack;
+
+	SpatialNode<T> *sn = new SpatialNode<T>;
+	sn->node = mRoot;
+
+	sn->cx = mCx; sn->cy = mCy; sn->cz = mCz;
+	sn->dx = mDx; sn->dy = mDy; sn->dz = mDz;
+	stack.push_front(sn);
+
+	bool retVal = false;
+	while (!stack.empty()) {
+		sn = stack.front();
+		stack.pop_front();
+
+		if (sn->node) {
+			
+			/* this is the actual intersection test. If you need a novel intersection test
+			   (with a new primitive) this is the only part of this fctn that you need to
+			   modify
+			*/
+			if ( nodeBoxIntersection<T>(*sn, center, extents, axes) ) {
+				if (sn->node->isLeaf()) {
+					delete sn;
+					retVal = true;
+					break;
+				}
+
+				for (int i=0; i<8; i++) {
+					stack.push_front( ((OctreeBranch<T>*)sn->node)->getSpatialChild(i,sn->cx, sn->cy, 
+													sn->cz, sn->dx, 
+													sn->dy, sn->dz) );
+				}
+			}
+		}
+		delete sn;
+	}
+	
+	while (!stack.empty()) {
+		delete stack.front();
+		stack.pop_front();
+	}
+	return retVal;
+
+}
 
 //------------------------------------------ Statistics --------------------------------------------
 

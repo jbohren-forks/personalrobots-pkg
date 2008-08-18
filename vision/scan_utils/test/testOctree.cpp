@@ -89,8 +89,11 @@ TEST(OctreeTests, cellAccessors)
 		z = ((float)rand()) / (RAND_MAX ) - 0.5;
 		original->insert(x, y, z, ((float)rand())/RAND_MAX);
 	}
-
-	//fprintf(stderr,"Original %d leaves and %d branches (before deletions)\n",original->getNumLeaves(), original->getNumBranches() );
+	
+	/*
+	fprintf(stderr,"Original %d leaves and %d branches (before deletions)\n",
+		original->getNumLeaves(), original->getNumBranches() );
+	*/
 	for (int i=0; i<100; i++) {
 		float x,y,z;
 		x = ((float)rand()) / (RAND_MAX ) - 0.5;
@@ -136,6 +139,65 @@ TEST(OctreeTests, cellAccessors)
 	
 	delete original;
 	delete copy;	
+}
+
+TEST (OctreeTests, triangleIntersection)
+{
+	int depth = 1;
+	scan_utils::Octree<float>  octree(0,0,0, 2.0,2.0,2.0, depth, 0.2);
+	
+	float v0[] = {1.5, 0.0, 0.5};
+	float v1[] = {0.0, 1.5, 0.5};
+	float v2[] = {1.5, 1.5, 0.5};
+
+	EXPECT_FALSE( octree.intersectsTriangle(v0,v1,v2) );
+
+	octree.insert(-0.5, -0.5, -0.5, 1.0);
+	EXPECT_FALSE( octree.intersectsTriangle(v0,v1,v2) );
+
+	octree.insert(+0.5, +0.5, +0.5, 1.0);
+	EXPECT_TRUE( octree.intersectsTriangle(v0,v1,v2) );
+
+	octree.erase(0.5, 0.5, 0.5);
+	EXPECT_FALSE( octree.intersectsTriangle(v0,v1,v2) );
+}
+
+TEST (OctreeTests, boxIntersection)
+{
+	int depth = 1;
+	scan_utils::Octree<float>  octree(0,0,0, 2.0,2.0,2.0, depth, 0.2);
+
+	float center[] = {1.0, 1.0, 1.0};
+	float extents[] = {0.5, 0.5, 0.5};
+
+	float axes[3][3];
+	axes[0][0] =  0.7071; axes[0][1] = 0.7071; axes[0][2] = 0.0;
+	axes[1][0] = -0.7071; axes[1][1] = 0.7071; axes[1][2] = 0.0;
+	axes[2][0] =  0.0; axes[2][1] = 0.0; axes[2][2] = 1.0;
+  
+	EXPECT_FALSE( octree.intersectsBox(center, extents, axes) );
+
+	octree.insert(-0.5, -0.5, -0.5, 1.0);
+	EXPECT_FALSE( octree.intersectsBox(center, extents, axes) );
+
+	octree.insert(+0.5, +0.5, +0.5, 1.0);
+	EXPECT_TRUE( octree.intersectsBox(center, extents, axes) );
+
+	octree.erase(0.5, 0.5, 0.5);
+	EXPECT_FALSE( octree.intersectsBox(center, extents, axes) );
+
+	octree.insert(+0.5, +0.5, +0.5, 1.0);
+	center[0] = 0.5; center[1] = 1.6; center[2] = 0.5;
+
+	axes[0][0] =  1.0; axes[0][1] = 0.0; axes[0][2] = 0.0;
+	axes[1][0] =  0.0; axes[1][1] = 1.0; axes[1][2] = 0.0;
+	axes[2][0] =  0.0; axes[2][1] = 0.0; axes[2][2] = 1.0;
+	EXPECT_FALSE( octree.intersectsBox(center, extents, axes) );
+
+	axes[0][0] =  0.7071; axes[0][1] = 0.7071; axes[0][2] = 0.0;
+	axes[1][0] = -0.7071; axes[1][1] = 0.7071; axes[1][2] = 0.0;
+	axes[2][0] =  0.0; axes[2][1] = 0.0; axes[2][2] = 1.0;
+	EXPECT_TRUE( octree.intersectsBox(center, extents, axes) );
 }
 
 TEST (OctreeTests, serializationDeserialization)

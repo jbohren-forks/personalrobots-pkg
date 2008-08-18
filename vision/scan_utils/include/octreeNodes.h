@@ -5,6 +5,9 @@
 #include <list>
 #include <dataTypes.h>
 
+#include "intersection_triangle.h"
+#include "intersection_obb.h"
+
 namespace scan_utils{
 
 //! Constants that need to be chars to save space
@@ -32,6 +35,19 @@ class OctreeNode {
 
 };
 
+
+/*! This structure holds a pointer to a node as well as the spatial
+    coordinates that the node is responsible for. It is designed to
+    facilitate navigation through the Octree for intersection tests
+    without using recursion. Traversal functions can build their own
+    stack of this structure instead of using recursion, where the
+    system would provide this for them. */
+template <typename T>
+struct SpatialNode {
+	OctreeNode<T> *node;
+	float cx, cy, cz;
+	float dx, dy, dz;
+};
 
 /*! A leaf simply holds a value and nothing else. Do not use a leaf to
     store the empty value, use a NULL pointer in its parent instead.
@@ -86,6 +102,12 @@ class OctreeBranch : public OctreeNode<T> {
 
 	//! Return the child at address \a adress, between 0 and 7
 	OctreeNode<T>* getChild(unsigned char address) { return mChildren[address]; }
+	//! Returns a structure that contains both a pointer to the child and its spatial coordinates
+
+	inline SpatialNode<T>* getSpatialChild(int address, 
+					      float cx, float cy, float cz,
+					      float dx, float dy, float dz);
+
 	//! Sets the child at address \a adress to point at \a child. 
 	/*! If a child was already present at that address it is deleted.*/
 	inline void setChild(unsigned char address, OctreeNode<T> *child);
@@ -218,6 +240,32 @@ void OctreeBranch<T>::recursiveAggregation()
 		}
 	}
 }
+
+/*! Returns a structure that contains both a pointer to the child and
+    its spatial coordinates
+ */
+template <typename T>
+SpatialNode<T>* OctreeBranch<T>::getSpatialChild(int address, 
+					      float cx, float cy, float cz,
+					      float dx, float dy, float dz)
+{
+	SpatialNode<T> *sn = new SpatialNode<T>;
+	sn->node = getChild(address);
+
+	sn->dx=dx/2.0; sn->dy=dy/2.0; sn->dz=dz/2.0;
+
+	if (address/4 == 0) sn->cx = cx-sn->dx/2.0;
+	else sn->cx = cx+sn->dx/2.0;
+	
+	if ( (address%4)/2 == 0 ) sn->cy = cy-sn->dy/2.0;
+	else sn->cy = cy+sn->dy/2.0;       
+	
+	if ( (address%4)%2 == 0 ) sn->cz = cz-sn->dz/2.0;
+	else sn->cz = cz+sn->dz/2.0;
+
+	return sn;
+}
+
 //-------------------------------------- Statistics -----------------------------------------
 
 template <typename T>
@@ -321,6 +369,39 @@ void OctreeLeaf<T>::deserialize(char *sourceString, unsigned int &address, unsig
 	address += sizeof(mValue);
 }
 
+//--------------------------------------------- Intersection tests ---------------------------
+
+template <typename T>
+inline bool nodeTriangleIntersection(const SpatialNode<T> &sn, 
+				     float trivert0[3], float trivert1[3], float trivert2[3])
+{
+	float boxcenter[3];
+	float boxhalfsize[3];
+
+	boxcenter[0] = sn.cx; boxcenter[1] = sn.cy; boxcenter[2] = sn.cz;
+	boxhalfsize[0] = sn.dx/2.0; 
+	boxhalfsize[1] = sn.dy/2.0;
+	boxhalfsize[2] = sn.dz/2.0;
+
+	return triBoxOverlap(boxcenter, boxhalfsize,
+			     trivert0, trivert1, trivert2);
+}
+
+template <typename T>
+inline bool nodeBoxIntersection(const SpatialNode<T> &sn, 
+				const float *center, const float *extents, const float axes[][3])
+{
+	float boxcenter[3];
+	float boxhalfsize[3];
+
+	boxcenter[0] = sn.cx; boxcenter[1] = sn.cy; boxcenter[2] = sn.cz;
+	boxhalfsize[0] = sn.dx/2.0; 
+	boxhalfsize[1] = sn.dy/2.0;
+	boxhalfsize[2] = sn.dz/2.0;
+
+	return boxIntersectionTest( boxcenter, boxhalfsize, NULL,
+				    center, extents, axes );
+}
 //--------------------------------------------- Triangulation --------------------------------
 
 template <typename T>
