@@ -32,6 +32,8 @@
 #include "etherdrive_hardware/etherdrive_hardware.h"
 #include <sys/time.h>
 
+
+
 using namespace std;
 
 double EtherdriveHardware::GetTimeHardware()
@@ -87,10 +89,16 @@ void EtherdriveHardware::updateState(){
   
       hw->actuator[ii].state.timestamp = newTime;
       hw->actuator[ii].state.encoderCount = (int) newCount;
+
 #ifdef DEBUG
-      printf("etherdrive_hardware.cpp:: %d, enc: %d\n",ii,hw->actuator[ii].state.encoderCount);
+      if (ii == 3) {
+      printf("etherdrive_hardware.cpp");
+      printf("encoder %i:  %d, ",ii, hw->actuator[ii].state.encoderCount);
+      printf("\n");
+      }
 #endif
     }
+
 };
 
 void EtherdriveHardware::sendCommand(){
@@ -99,6 +107,7 @@ void EtherdriveHardware::sendCommand(){
     {
       if( hw->actuator[ii].command.enable){
 	command = (int)(ETHERDRIVE_CURRENT_TO_CMD*hw->actuator[ii].command.current);
+
 #ifdef DEBUG
 	printf("command: %d, %d\n", ii, command);
 #endif
