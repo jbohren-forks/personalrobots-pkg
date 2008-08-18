@@ -7,6 +7,7 @@
 
 #include "intersection_triangle.h"
 #include "intersection_obb.h"
+#include "intersection_sphere.h"
 
 namespace scan_utils{
 
@@ -402,6 +403,22 @@ inline bool nodeBoxIntersection(const SpatialNode<T> &sn,
 	return boxIntersectionTest( boxcenter, boxhalfsize, NULL,
 				    center, extents, axes );
 }
+
+template <typename T>
+inline bool nodeSphereIntersection(const SpatialNode<T> &sn, 
+				   const float *center, float radius)
+{
+	float boxcenter[3];
+	float boxhalfsize[3];
+
+	boxcenter[0] = sn.cx; boxcenter[1] = sn.cy; boxcenter[2] = sn.cz;
+	boxhalfsize[0] = sn.dx/2.0; 
+	boxhalfsize[1] = sn.dy/2.0;
+	boxhalfsize[2] = sn.dz/2.0;
+
+	return boxSphereTest( boxcenter, boxhalfsize, center, radius);
+}
+
 //--------------------------------------------- Triangulation --------------------------------
 
 template <typename T>

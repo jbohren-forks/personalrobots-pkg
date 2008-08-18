@@ -25,13 +25,14 @@ namespace scan_utils {
 
     You can specifiy different extents along x,y and z. However, for
     now, this just means that all the Octree branches and leaves will
-    have that given aspect ration. It is not smart enough to always
+    have that given aspect ratio. It is not smart enough to always
     have cubic leaves, but more of them along one direction than
     another.
 
     You can specify the maximum depth of the tree as well. A \a
-    maxDepth of \a d guarantees that the smallest leaves will have size
-    2^(-d) * total_octree_size.
+    maxDepth of \a d guarantees that the smallest leaves will have
+    size 2^(-d) * total_octree_size. The Octree will have at most
+    (2^d)^3 leaves.
 
     Example: an octree that covers a space of 20m * 20m * 20m with max
     depth 10 will have the smallest cells of approx. 2cm * 2cm * 2cm
@@ -40,6 +41,32 @@ namespace scan_utils {
     Set an empty value that will be returned for all unvisited regions
     of space. If you query the value of a region in space that you
     never set, the empty value will be returned.
+
+    IMPORTANT: do not store the \a emptyValue in a leaf and expect the
+    Octree to behave as if that leaf was never set. A NULL leaf and a
+    leaf with the \a emptyValue stored inside will return the same
+    thing, but not always act the same way (see below for intersection
+    tests). If you want a region of space to be EMPTY, use \erase to
+    remove all leaves there.
+
+    The Octree also provides cell access, meaning you can access an
+    individual cell by its indices in the Octree rather than its
+    coordinates in space. This was implemented for using the Octree as
+    a dense voxel grid. However, this kind of access is discouraged -
+    use spatial coordinates and don't worry about cells unless you
+    really need to.
+
+    The convention for cell accessors is the following: all indices
+    range from 0 to 2^(mMaxDepth)-1. The cell with \a 0,0,0 indices is
+    in the negative corner of the Octree, i.e. at the point with
+    spatial coordinates mCx-mDx/2, mCy-mDy/2, mCz-mDz/2.
+
+    The Octree also provides a number of boolean intersection tests
+    against primitives (triangle, box, sphere). These tests will return
+    true if ANY LEAF of the triangle intersects the primitive,
+    REGARDLESS of the leaf's actual value. If you do not want a
+    certain part of space to return true for these intersection tests,
+    use \a erase to remove the leaves in that part of space.
 */
 template <typename T>
 class Octree {
@@ -124,8 +151,12 @@ class Octree {
 		erase(x,y,z);
 	}
 
+	//! Checks intersection of the Octree against a triangle
 	bool intersectsTriangle(float*, float*, float*);
+	//! Checks intersection of the Octree against a box (not necessarily axis-oriented)
 	bool intersectsBox(const float *center, const float *extents, const float axes[][3]);
+	//! Checks intersection of the Octree against a sphere
+	bool intersectsSphere(const float *center, float radius);
 
 	//! Traces a scanner ray through this octree
 	void traceRay(float sx, float sy, float sz, 
@@ -398,7 +429,9 @@ bool Octree<T>::coordinatesToCell(float x, float y, float z, int *i, int *j, int
 }
 
 //------------------------------------------ Intersection tests ------------------------------------
-
+/*!
+  \param trivert0,trivert1,trivert2 - the 3 vertices of the triangle
+ */
 template <typename T>
 bool Octree<T>::intersectsTriangle(float trivert0[3], float trivert1[3], float trivert2[3])
 {
@@ -447,6 +480,17 @@ bool Octree<T>::intersectsTriangle(float trivert0[3], float trivert1[3], float t
 	return retVal;
 }
 
+/*!
+  \param center - the center of the box
+
+  \param extents - the half dimensions of the box along each of its
+  axes. Think of them as how much the box extends from the center in
+  each direction.
+
+  \param axes - a 3x3 orthonormal matrix holding the directions of the
+  box axes. If this is not orthonormal, the behavior of the function
+  is undefined!
+ */
 template <typename T>
 bool Octree<T>::intersectsBox(const float *center, const float *extents, const float axes[][3])
 {
@@ -501,6 +545,58 @@ bool Octree<T>::intersectsBox(const float *center, const float *extents, const f
 
 }
 
+/*!
+  \param center - the center of the sphere
+
+  \param radius - the radius of the sphere
+ */
+template <typename T>
+bool Octree<T>::intersectsSphere(const float *center, float radius)
+{
+	std::list< SpatialNode<T>* > stack;
+
+	SpatialNode<T> *sn = new SpatialNode<T>;
+	sn->node = mRoot;
+
+	sn->cx = mCx; sn->cy = mCy; sn->cz = mCz;
+	sn->dx = mDx; sn->dy = mDy; sn->dz = mDz;
+	stack.push_front(sn);
+
+	bool retVal = false;
+	while (!stack.empty()) {
+		sn = stack.front();
+		stack.pop_front();
+
+		if (sn->node) {
+			
+			/* this is the actual intersection test. If you need a novel intersection test
+			   (with a new primitive) this is the only part of this fctn that you need to
+			   modify
+			*/
+			if ( nodeSphereIntersection<T>(*sn, center, radius) ) {
+				if (sn->node->isLeaf()) {
+					delete sn;
+					retVal = true;
+					break;
+				}
+
+				for (int i=0; i<8; i++) {
+					stack.push_front( ((OctreeBranch<T>*)sn->node)->getSpatialChild(i,sn->cx, sn->cy, 
+													sn->cz, sn->dx, 
+													sn->dy, sn->dz) );
+				}
+			}
+		}
+		delete sn;
+	}
+	
+	while (!stack.empty()) {
+		delete stack.front();
+		stack.pop_front();
+	}
+	return retVal;
+
+}
 //------------------------------------------ Statistics --------------------------------------------
 
 template <typename T>

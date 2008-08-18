@@ -9,7 +9,7 @@
 /*! \file Since the Octree is templated, it is completely contained in
   header files. As a result it is no longer compiled into the
   scan_utils .so. This file creates an executable that is just meant
-  to make the library actually compile the Octree header files to make
+  to make the library actually compiles the Octree header files to make
   sure they work. Can be considered a (fairly simple) unit test for
   the octree class.
 */
@@ -198,6 +198,26 @@ TEST (OctreeTests, boxIntersection)
 	axes[1][0] = -0.7071; axes[1][1] = 0.7071; axes[1][2] = 0.0;
 	axes[2][0] =  0.0; axes[2][1] = 0.0; axes[2][2] = 1.0;
 	EXPECT_TRUE( octree.intersectsBox(center, extents, axes) );
+}
+
+TEST (OctreeTests, sphereIntersection)
+{
+	int depth = 1;
+	scan_utils::Octree<float>  octree(0,0,0, 2.0,2.0,2.0, depth, 0.2);
+	
+	float center[] = {1.5, 1.5, 1.5};
+	float radius = 0.9;
+
+	EXPECT_FALSE( octree.intersectsSphere(center, radius) );
+
+	octree.insert(-0.5, -0.5, -0.5, 1.0);
+	EXPECT_FALSE( octree.intersectsSphere(center, radius) );
+
+	octree.insert(+0.5, +0.5, +0.5, 1.0);
+	EXPECT_TRUE( octree.intersectsSphere(center, radius) );
+
+	octree.erase(0.5, 0.5, 0.5);
+	EXPECT_FALSE( octree.intersectsSphere(center, radius) );
 }
 
 TEST (OctreeTests, serializationDeserialization)
