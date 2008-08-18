@@ -38,9 +38,9 @@
 #include <pr2_msgs/MoveArmState.h>
 #include <robot_srvs/KinematicPlanState.h>
 
-static const double L1_JOINT_DIFF_MAX = .01;
+static const double L1_JOINT_DIFF_MAX = .05;
 static const double L1_GRIP_FORCE_DIFF_MAX = .01;
-static const double L1_GRIP_GAP_DIFF_MAX = .1;
+static const double L1_GRIP_GAP_DIFF_MAX = .135;
 
 class IssueKinematicPlan : public ros::node {
 
@@ -326,7 +326,7 @@ private:
 //               << req.goal_state.vals[5] << " "
 //               << req.goal_state.vals[6] << std::endl;
 
-    req.allowed_time = 2.0;
+    req.allowed_time = 10.0;
     
     req.volumeMin.x = -1.0; req.volumeMin.y = -1.0; req.volumeMin.z = -1.0;
     req.volumeMax.x = -1.0; req.volumeMax.y = -1.0; req.volumeMax.z = -1.0;
