@@ -11,10 +11,21 @@
 
 #include <math_utils/math_utils.h>
 
+#include <newmat10/newmat.h>
+#include <newmat10/newmatio.h>
+#include <newmat10/newmatap.h>
+
+   #include <iostream>
+   #include <iomanip>
+#include "rosTF/rosTF.h"
+//   #include "newmatio.h"
+
 #define BASE_NUM_JOINTS 12
 
 using namespace controller;
 using namespace PR2;
+using namespace NEWMAT;
+using namespace math_utils;
 
 static pthread_mutex_t dataMutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -30,15 +41,15 @@ BaseController::BaseController()
   this->name = "baseController";
 }
 
-BaseController::BaseController(mechanism::Robot *robot, std::string name)
+BaseController::BaseController(Robot *r, std::string name)
 {
-  this->robot = robot;
+  this->robot = r;
   this->name = name;
 }
 
-BaseController::BaseController(mechanism::Robot *robot)
+BaseController::BaseController(Robot *r)
 {
-  this->robot = robot;
+  this->robot = r;
   this->name = "baseController";
 }
 
@@ -121,17 +132,66 @@ void BaseController::init()
   yDotNew = 0;
   yawDotNew = 0;
 
+  pGain = 0.1; /**< Proportional gain for speed control */
+  iGain = 0.1; /**< Integral gain for speed control */
+  dGain = 0; /**< Derivative gain for speed control */
+  iMax  = 10; /**< Max integral error term */
+  iMin  = -10; /**< Min integral error term */
+  //  maxPositiveTorque = 0.75; /**< (in Nm) max current = 0.75 A. Torque constant = 70.4 mNm/A.Max Torque = 70.4*0.75 = 52.8 mNm */
+  //maxNegativeTorque = -0.75; /**< max negative torque */
+  maxEffort = 0.75; /**< maximum effort */
+  minEffort = -0.75;
+  pGainPos = 0.1; /**< Proportional gain for position control */
+  iGainPos = 0.1; /**< Integral gain for position control */
+  dGainPos = 0; /**< Derivative gain for position control */
+
+  lastTime = getTime(); // should be in separate Odometry class?
+  base_x = 0;
+  base_y = 0;
+  base_w = 0;
+  base_vx = 0;
+  base_vy = 0;
+  base_vw = 0;
+
   initJointControllers();
 
   //Subscribe to joystick message
-  (ros::g_node)->subscribe("base_command", baseCommandMessage, &controller::BaseController::receiveBaseCommandMessage, this);
-}
+  //   (ros::g_node)->subscribe("base_command", baseCommandMessage, &controller::BaseController::receiveBaseCommandMessage, this);
+     (ros::g_node)->subscribe("cmd_vel", baseCommandMessage, &controller::BaseController::receiveBaseCommandMessage, this);
+   (ros::g_node)->advertise<std_msgs::RobotBase2DOdom>("odom");
 
+   tf = new rosTFServer(*ros::g_node);
+   
+ }
+
+
+
+
+Matrix commandTest(3,1);
+Matrix aTest(16,1);
 void BaseController::receiveBaseCommandMessage(){
   maxXDot = maxYDot = maxYawDot = 1; //Until we start reading the xml file for parameters
-  double vx = math_utils::clamp<double>(baseCommandMessage.axes[1], -maxXDot, maxXDot);
-  double vy = math_utils::clamp<double>(baseCommandMessage.axes[0], -maxYDot, maxYDot);
-  double vyaw = math_utils::clamp<double>(baseCommandMessage.axes[2], -maxYawDot, maxYawDot);
+ 
+  /*
+  double vx = clamp((double)baseCommandMessage.axes[1], -maxXDot, maxXDot);
+  double vy = clamp((double)baseCommandMessage.axes[0], -maxYDot, maxYDot);
+  double vyaw = clamp((double)baseCommandMessage.axes[2], -maxYawDot, maxYawDot);
+  */
+  double vx = clamp((double)baseCommandMessage.vx, -maxXDot, maxXDot);
+  double vy = clamp((double)baseCommandMessage.vy, -maxYDot, maxYDot);
+  double vyaw = clamp((double)baseCommandMessage.vw, -maxYawDot, maxYawDot);
+
+  printf(" receive vx: %f\n", vx);
+  commandTest.element(0,0) = vx;
+  commandTest.element(1,0) = vy;
+  commandTest.element(2,0) = vyaw;
+
+
+  /* 
+  double vx = clamp((double)baseCommandMessage.vx, -maxXDot, maxXDot);
+  double vy = clamp((double)baseCommandMessage.vy, -maxYDot, maxYDot);
+  double vyaw = clamp((double)baseCommandMessage.vw, -maxYawDot, maxYawDot);
+  */
   setVelocity(vx, vy, vyaw);
 }
 
@@ -139,8 +199,6 @@ void BaseController::initJointControllers()
 {
   this->baseJointControllers = new JointController[BASE_NUM_JOINTS];
 
-  // these loops are not correct, the number is currently: caster drive drive caster drive drive ... NOT caster caster caster caster drvie drive ...
-  // see pr2Core JOINT_ID for details
   for(int ii = 0; ii < NUM_CASTERS; ii++){
     baseJointControllers[ii].init(pGainPos, iGainPos, dGainPos, iMax, iMin, ETHERDRIVE_SPEED, getTime(), maxEffort, minEffort, &(robot->joint[ii]));
     baseJointControllers[ii].enableController();
@@ -175,7 +233,7 @@ void BaseController::update( )
   double steerAngle[NUM_CASTERS];
   point newDriveCenterL, newDriveCenterR;
   double errorSteer[NUM_CASTERS];
-  double kp_local = 10;
+  double kp_local = 15;
   double cmdVel[NUM_CASTERS];
 
   if (pthread_mutex_trylock(&dataMutex) == 0){
@@ -231,14 +289,133 @@ void BaseController::update( )
     baseJointControllers[ii*3+1].setVelCmd(wheelSpeed[ii*2]);
     baseJointControllers[ii*3+2].setVelCmd(wheelSpeed[ii*2+1]);
 
-#ifdef DEBUG       // send command
-    printf("DRIVE::L:: %d, cmdVel:: %f\n",ii,wheelSpeed[ii*2]);
-    printf("DRIVE::R:: %d, cmdVel:: %f\n",ii,wheelSpeed[ii*2+1]);
-#endif
+    #ifdef DEBUG       // send command
+    printf("DRIVE::T:: %d, cmdVel:: %f, pos::%f \n", ii, wheelSpeed[ii*2+2], robot->joint[ii*3].position);
+      printf("DRIVE::L:: %d, cmdVel:: %f, vel::%f \n",ii,wheelSpeed[ii*2], robot->joint[ii*3+1].velocity);
+      printf("DRIVE::R:: %d, cmdVel:: %f, vel::%f \n",ii,wheelSpeed[ii*2+1], robot->joint[ii*3+2].velocity);
+    #endif
   }
   for(int ii = 0; ii < BASE_NUM_JOINTS; ii++) 
     baseJointControllers[ii].update();
+
+
+  static int counter = 0;
+  if (counter++ > 250) {
+  computeBaseVelocity();
+  computeOdometry(getTime());
+  //  printf("vx: %03f, vy: %03f, vw: %03f,", base_vx, base_vy, base_vw);
+
+
+    printf("x: %03f, y: %03f, w: %03f\n",   base_x, base_y, base_w);
+    (ros::g_node)->publish("odom", odomMsg);
+   
+      tf->sendInverseEuler("FRAMEID_ODOM",
+			"FRAMEID_ROBOT",
+			 odomMsg.pos.x,
+			 odomMsg.pos.y,
+			 0.0,
+			 odomMsg.pos.th,
+			 0.0,
+			 0.0,
+			 odomMsg.header.stamp);
+    //rostime?
+    //                      ros::Time(odomMsg.header.stamp.sec,
+    //odomMsg.header.stamp.nsec));
+    counter = 0;
+  
+  }
 }
+
+
+void BaseController::computeOdometry(double time) {
+  double dt;
+  dt = double(time-lastTime);
+  //  printf("dt: %03f", dt); 
+  base_x += Rot2D(base_vx*dt, base_vy*dt, base_w).x;
+  base_y += Rot2D(base_vx*dt, base_vy*dt, base_w).y;
+  base_w += base_vw*dt;
+  lastTime = time;
+  
+  odomMsg.pos.x = base_x;
+  odomMsg.pos.y = base_y;
+  odomMsg.pos.th = base_w;
+  odomMsg.vel.x = base_vx;
+  odomMsg.vel.y = base_vy;
+  odomMsg.vel.th = base_vw;
+  
+}
+
+
+void BaseController::computeBaseVelocity(){
+
+  Matrix A(2*NUM_WHEELS,1);
+  //Matrix B(NUM_WHEELS,1);
+  Matrix C(2*NUM_WHEELS,3);
+  Matrix D(3,1);
+  
+  for(int i = 0; i < NUM_CASTERS; i++) {
+    A.element(i*4,0) = cos(robot->joint[i*3].position) *WHEEL_RADIUS*((double)-1)*robot->joint[i*3+1].velocity;
+    A.element(i*4+1,0) = sin(robot->joint[i*3].position) *WHEEL_RADIUS*((double)-1)*robot->joint[i*3+1].velocity;
+    A.element(i*4+2,0) = cos(robot->joint[i*3].position) *WHEEL_RADIUS*robot->joint[i*3+2].velocity;
+    A.element(i*4+3,0) = sin(robot->joint[i*3].position)* WHEEL_RADIUS*robot->joint[i*3+2].velocity;      
+  }
+
+  /*
+  for(int i = 0; i < (NUM_WHEELS + NUM_CASTERS); i++) {
+    printf("i: %i pos : %03f vel: %03f\n", i,robot->joint[i].position, robot->joint[i].velocity); 
+  }
+  */
+  for(int i = 0; i < NUM_CASTERS; i++) {
+    C.element(i*4, 0) = 1;
+    C.element(i*4, 1) = 0;
+    C.element(i*4, 2) = -(Rot2D(CASTER_DRIVE_OFFSET[i*2].x,CASTER_DRIVE_OFFSET[i*2].y,robot->joint[i*3].position).y + BASE_CASTER_OFFSET[i].y);
+    C.element(i*4+1, 0) = 0;
+    C.element(i*4+1, 1) = 1;
+    C.element(i*4+1, 2) =  Rot2D(CASTER_DRIVE_OFFSET[i*2].x,CASTER_DRIVE_OFFSET[i*2].y,robot->joint[i*3].position).x + BASE_CASTER_OFFSET[i].x;
+    C.element(i*4+2, 0) = 1;
+    C.element(i*4+2, 1) = 0;
+    C.element(i*4+2, 2) =  -(Rot2D(CASTER_DRIVE_OFFSET[i*2+1].x,CASTER_DRIVE_OFFSET[i*2+1].y,robot->joint[i*3].position).y + BASE_CASTER_OFFSET[i].y);
+    C.element(i*4+3, 0) = 0;
+    C.element(i*4+3, 1) = 1;
+    C.element(i*4+3, 2) =  Rot2D(CASTER_DRIVE_OFFSET[i*2+1].x,CASTER_DRIVE_OFFSET[i*2+1].y,robot->joint[i*3].position).x + BASE_CASTER_OFFSET[i].x;
+  }
+
+  D = pseudoInverse(C)*A; 
+  /*
+  aTest = C*commandTest;
+   cout << "A:" << endl;
+  cout << A;
+    cout << "C :" << endl;
+    cout << C<< endl;
+    cout << "commandTest: "<< endl;
+    cout << commandTest << endl;
+    cout << "aTest: "<< endl;
+    cout << aTest << endl;
+ //   
+ //
+ */
+  base_vx = (double)D.element(0,0);
+  base_vy = (double)D.element(1,0);
+  base_vw = (double)D.element(2,0);
+  //cout << "D :" << endl;  
+  //cout << D << endl;
+}
+
+
+Matrix BaseController::pseudoInverse(const Matrix M)
+{
+  Matrix result;
+   //int rows = this->rows();
+   //int cols = this->columns();
+   // calculate SVD decomposition
+  Matrix U,V;
+  DiagonalMatrix D;
+   SVD(M,D,U,V, true, true);
+   Matrix Dinv = D.i();
+   result = V * Dinv * U.t();
+   return result;
+}
+
 
 PR2::PR2_ERROR_CODE BaseController::setCourse(double v , double yaw)
 {
