@@ -115,23 +115,20 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
 
 void BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
-  robot_ = robot;
   TiXmlElement *elt = config->FirstChildElement("controller");
   std::vector<JointControlParam> jcp_vec;
   JointControlParam jcp;
 
   while (elt){
     TiXmlElement *jnt = elt->FirstChildElement("joint");
-    TiXmlElement *elt_c = jnt->FirstChildElement("controller");
 
     // TODO: error check if xml attributes/elements are missing
-    jcp.p_gain = atof(elt_c->FirstChildElement("pGain")->GetText());
-    jcp.i_gain = atof(elt_c->FirstChildElement("iGain")->GetText());
-    jcp.d_gain = atof(elt_c->FirstChildElement("dGain")->GetText());
-    jcp.windup= atof(elt_c->FirstChildElement("windup")->GetText());
+    jcp.p_gain = atof(elt->FirstChildElement("controller_defaults")->Attribute("p"));
+    jcp.i_gain = atof(elt->FirstChildElement("controller_defaults")->Attribute("i"));
+    jcp.d_gain = atof(elt->FirstChildElement("controller_defaults")->Attribute("d"));
+    jcp.windup= atof(elt->FirstChildElement("controller_defaults")->Attribute("iClamp"));
     jcp.control_type = (std::string) elt->Attribute("type");
     jcp.joint_name = jnt->Attribute("name");
-    
     jcp_vec.push_back(jcp);
 
     elt = config->NextSiblingElement("controller");
