@@ -92,6 +92,11 @@ int main(int argc, char ** argv)
   std::cout << matrix;
 
   aPose.setFromMatrix(matrix);
+
+  libTF::Pose3D::Quaternion myquat;
+  aPose.getQuaternion(myquat);
+  std::cout << " MY Quaternion" <<  myquat.x << " " << myquat.y << " " << myquat.z  << " " << myquat.w << std::endl;
+
   NEWMAT::Matrix matrix2 = aPose.asMatrix();
 
 

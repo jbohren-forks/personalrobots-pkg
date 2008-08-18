@@ -101,7 +101,8 @@ void Pose3D::setFromMatrix(const NEWMAT::Matrix& matIn)
     // math derived from http://www.j3d.org/matrix_faq/matrfaq_latest.html
     
     //  std::cout <<std::endl<<"Matrix in"<<std::endl<<matIn;
-    
+
+
     const double * mat = matIn.Store();
     //Get the translations
     xt = mat[3];
@@ -111,8 +112,7 @@ void Pose3D::setFromMatrix(const NEWMAT::Matrix& matIn)
     //TODO ASSERT others are zero and one as they should be
     
     
-    double T  = 1 + mat[0] + mat[5] + mat[10];
-    
+    double T  = mat[0] + mat[5] + mat[10];
     
     //  If the trace of the matrix is greater than zero, then
     //  perform an "instant" calculation.
@@ -120,7 +120,7 @@ void Pose3D::setFromMatrix(const NEWMAT::Matrix& matIn)
     
     if ( T > 0.00000001 ) //to avoid large distortions!
     {
-	double S = sqrt(T) * 2;
+      double S = sqrt(T + 1) * 2;
 	xr = ( mat[9] - mat[6] ) / S;
 	yr = ( mat[2] - mat[8] ) / S;
 	zr = ( mat[4] - mat[1] ) / S;
