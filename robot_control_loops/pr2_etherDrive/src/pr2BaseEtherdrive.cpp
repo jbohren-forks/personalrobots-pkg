@@ -72,17 +72,16 @@ int main(int argc, char *argv[]){
   
   EtherdriveHardware h(numBoards, numActuators, boardLookUp, portLookUp, jointId, etherIP, hostIP);
   //h.init("BaseEtherdrive.xml"); //Should this be a command-line argument?
-
+  h.init();
   //mc.init(h.hardwareInterface, char *namespace or char *init.xml);
   BaseControl mc;
   mc.init(h.hw); //If not hard-coded, this is where the ROS namespace or configuration file would be passed in
-  mc.controller->setVelocity(-0,0,0);
-
+  mc.controller->setVelocity(0,0,0);
 
   //Realtime loop would spawn a thread and make it realtime to run this loop
 
   while(notDone){ //Decide if this is how we want to do this
-//      h.update();
+    h.update();
     mc.update();
     //read out fingertip sensor data from etherCAT hardware
     usleep(1000); //clock_nanosleep();
