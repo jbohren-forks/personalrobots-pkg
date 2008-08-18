@@ -3,18 +3,18 @@
 # specific version without touching the Makefile, for example by
 # typing:
 #
-#  $ make VERSION=0.2
+#  $ make VERSION=1.1
 #
 # Or, to replace an existing build, do e.g.:
 #
-#  $ make VERSION=0.2 rebuild
+#  $ make VERSION=1.1 rebuild
 #
 # It is also possible to use svn checkout to get the sources, in case
 # you need the bleeding edge. This is done using:
 #
 #  $ make svn-all
 
-all: really-all
+all: tarball-all
 
 VERSION=     r900
 
@@ -25,6 +25,7 @@ UNPACK_CMD=  tar xfz
 BUILD_DIR=   $(PWD)/build
 INST_DIR=    $(PWD)/local
 ESTAR_DIR=   `rospack find estar`/local
+BOOST_DIR=   `rospack --cflags-only-I boost`
 
 SVN_DIR=     $(PWD)/sunflower-svn
 SVN_REV=     HEAD
@@ -32,14 +33,18 @@ SVN_URL=     https://libsunflower.svn.sourceforge.net/svnroot/libsunflower/trunk
 
 include $(shell rospack find mk)/download_unpack.mk
 
-.PHONY: reall-all
-really-all: $(SOURCE_DIR) $(SOURCE_DIR)/configure $(BUILD_DIR)/config.h
+.PHONY: really-all
+really-all: $(SOURCE_DIR)/configure $(BUILD_DIR)/config.h
 	$(MAKE) -C $(BUILD_DIR) install
 
 .PHONY: svn-all
 svn-all:
 	test -d $(SVN_DIR) || svn co -r$(SVN_REV) $(SVN_URL) $(SVN_DIR)
 	$(MAKE) SOURCE_DIR=$(SVN_DIR) really-all
+
+.PHONY: tarball-all
+tarball-all: $(SOURCE_DIR)
+	$(MAKE) really-all
 
 rebuild: wipe really-all
 
@@ -48,7 +53,9 @@ $(SOURCE_DIR)/configure: $(SOURCE_DIR)/configure.ac $(SOURCE_DIR)/bootstrap-buil
 
 $(BUILD_DIR)/config.h: $(SOURCE_DIR)/configure $(SOURCE_DIR)/config.h.in
 	test -d $(BUILD_DIR) || mkdir -p $(BUILD_DIR)
-	cd $(BUILD_DIR) && $(SOURCE_DIR)/configure --prefix=$(INST_DIR) --with-estar=$(ESTAR_DIR)
+	cd $(BUILD_DIR) && $(SOURCE_DIR)/configure --prefix=$(INST_DIR) \
+                                                   --with-estar=$(ESTAR_DIR) \
+                                                   --with-boost=$(BOOST_DIR)
 
 clean:
 	$(MAKE) -C $(BUILD_DIR) clean
