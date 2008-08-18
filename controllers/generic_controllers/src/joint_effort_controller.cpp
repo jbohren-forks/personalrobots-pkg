@@ -31,7 +31,6 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <algorithm>
 #include <generic_controllers/joint_effort_controller.h>
 
 using namespace std;
@@ -95,12 +94,7 @@ double JointEffortController::getTime()
 void JointEffortController::update()
 {
 
-  setJointEffort(command_);
-}
-
-void JointEffortController::setJointEffort(double effort)
-{
-  joint_->commanded_effort_ = min(max(effort, -joint_->effort_limit_), joint_->effort_limit_);
+  joint_->commanded_effort_ = command_;
 }
 
 ROS_REGISTER_CONTROLLER(JointEffortControllerNode)

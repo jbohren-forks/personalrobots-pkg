@@ -31,7 +31,6 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <algorithm>
 
 #include <generic_controllers/joint_autotuner.h>
 #include <math_utils/angles.h>
@@ -149,21 +148,16 @@ void JointAutotuner::update()
   if(current_state_ == POSITIVE_PEAK)
   {
     if(position > positive_peak_) positive_peak_ = position;
-  //If looking for positive peak, set positive h
-    setJointEffort(relay_height_);
+    //If looking for positive peak, set positive h
+    joint_->commanded_effort_ = relay_height_;
   }
   else if(current_state_ == NEGATIVE_PEAK)
   {    
     if(position<negative_peak_) negative_peak_ = position;
-  //If looking for negative peak, set negative h
-    setJointEffort(-relay_height_);
+    //If looking for negative peak, set negative h
+    joint_->commanded_effort_ = -relay_height_;
   }
 
-}
-
-void JointAutotuner::setJointEffort(double effort)
-{
-  joint_->commanded_effort_ = min(max(effort, -joint_->effort_limit_), joint_->effort_limit_);
 }
 
 ROS_REGISTER_CONTROLLER(JointAutotunerNode)

@@ -31,7 +31,6 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <algorithm>
 
 #include <generic_controllers/joint_velocity_controller.h>
 #include <math_utils/angles.h>
@@ -107,18 +106,10 @@ double JointVelocityController::getMeasuredState()
 void JointVelocityController::update()
 {
   double error(0);
-  double torque_cmd(0);
   double time = robot_->hw_->current_time_;
 
   error = joint_->velocity_ - command_;
-  torque_cmd = pid_controller_.updatePid(error, time - last_time_);
-
-  setJointEffort(torque_cmd);
-}
-
-void JointVelocityController::setJointEffort(double effort)
-{
-  joint_->commanded_effort_ = min(max(effort, -joint_->effort_limit_), joint_->effort_limit_);
+  joint_->commanded_effort_ = pid_controller_.updatePid(error, time - last_time_);
 }
 
 ROS_REGISTER_CONTROLLER(JointVelocityControllerNode)

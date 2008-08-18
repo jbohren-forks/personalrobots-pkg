@@ -108,11 +108,6 @@ public:
   virtual void update();
 
 private:
-  /*!
-   * \brief Actually issue torque set command of the joint motor.
-   */
-  void setJointEffort(double torque);
-
   mechanism::Joint* joint_;     /**< Joint we're controlling. */
   mechanism::Robot *robot_;     /**< Pointer to robot structure. */
   double input_start_;          /**< Begining of the ramp. */

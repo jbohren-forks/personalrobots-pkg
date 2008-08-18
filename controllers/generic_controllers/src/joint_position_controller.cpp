@@ -31,7 +31,6 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <algorithm>
 #include <generic_controllers/joint_position_controller.h>
 #include <math_utils/angles.h>
 
@@ -106,7 +105,6 @@ void JointPositionController::update()
 {
   assert(robot_ != NULL);
   double error(0);
-  double effort_cmd(0);
   double time = robot_->hw_->current_time_;
 
   if(joint_->type_ == mechanism::JOINT_ROTARY || joint_->type_ == mechanism::JOINT_CONTINUOUS)
@@ -118,14 +116,7 @@ void JointPositionController::update()
     error = joint_->position_ - command_;
   }
 
-  effort_cmd = pid_controller_.updatePid(error, time - last_time_);
-
-  setJointEffort(effort_cmd);
-}
-
-void JointPositionController::setJointEffort(double effort)
-{
-  joint_->commanded_effort_ = min(max(effort, -joint_->effort_limit_), joint_->effort_limit_);
+  joint_->commanded_effort_ = pid_controller_.updatePid(error, time - last_time_);
 }
 
 ROS_REGISTER_CONTROLLER(JointPositionControllerNode)

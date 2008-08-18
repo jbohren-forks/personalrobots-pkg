@@ -139,11 +139,6 @@ public:
   double cycle_start_time_;
 
 private:
-  /*!
-   * \brief Actually issue torque set command of the joint motor.
-   */
-  void setJointEffort(double torque);
-
   mechanism::Joint* joint_;  /**< Joint we're controlling. */
   Pid pid_controller_;       /**< Internal PID controller. */
   double last_time_;         /**< Last time stamp of update. */

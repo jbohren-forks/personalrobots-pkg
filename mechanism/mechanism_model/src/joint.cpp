@@ -51,7 +51,7 @@ static map<string, int> g_type_map(types, types + sizeof(types)/sizeof(types[0])
 
 void Joint::enforceLimits()
 {
-  // TODO: enforce the limits so the joint operates safely
+  commanded_effort_ = min(max(commanded_effort_, -effort_limit_), effort_limit_);
 }
 
 void Joint::initXml(TiXmlElement *elt)
