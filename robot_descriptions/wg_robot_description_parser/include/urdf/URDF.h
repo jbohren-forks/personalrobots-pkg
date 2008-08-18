@@ -555,6 +555,9 @@ namespace robot_desc
 	/** Retrieve a link by its name */
 	Link* getLink(const std::string &name) const;
 
+	/** Retrieve a link by its joint name */
+	Link* getJointLink(const std::string &name) const;
+
 	/** Get the list of all links. The array is sorted alphabetically by name. */
 	void getLinks(std::vector<Link*> &links) const;
 	

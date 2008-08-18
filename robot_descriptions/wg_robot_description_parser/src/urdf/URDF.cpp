@@ -114,6 +114,14 @@ namespace robot_desc {
 	return it == m_links.end() ? NULL : it->second;
     }
     
+    URDF::Link* URDF::getJointLink(const std::string &name) const
+    {	
+	for (std::map<std::string, Link*>::const_iterator i = m_links.begin() ; i != m_links.end() ; i++)
+	    if (i->second->joint->name == name)
+		return i->second;
+	return NULL;	
+    }
+    
     void URDF::getLinks(std::vector<Link*> &links) const
     {
 	std::vector<Link*> localLinks;
