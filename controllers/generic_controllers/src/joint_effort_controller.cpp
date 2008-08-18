@@ -81,7 +81,7 @@ double JointEffortController::getCommand()
 }
 
 // Return the measured joint position
-double JointEffortController::getMeasuredState()
+double JointEffortController::getMeasuredEffort()
 {
   return joint_->applied_effort_;
 }
@@ -127,7 +127,7 @@ bool JointEffortControllerNode::getActual(
   generic_controllers::GetActual::request &req,
   generic_controllers::GetActual::response &resp)
 {
-  resp.command = c_->getMeasuredState();
+  resp.command = c_->getMeasuredEffort();
   resp.time = c_->getTime();
   return true;
 }

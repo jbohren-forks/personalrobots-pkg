@@ -89,7 +89,7 @@ public:
   /*!
    * \brief Read the effort of the joint
    */
-  double getMeasuredState();
+  double getMeasuredEffort();
   
   /*!
    * \brief Read the velocity of the joint

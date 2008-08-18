@@ -97,7 +97,7 @@ public:
   /*!
    * \brief Read the torque of the motor
    */
-  double getMeasuredState();
+  double getMeasuredPosition();
 
   /*!
    * \brief Get latest time..

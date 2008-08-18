@@ -91,7 +91,7 @@ public:
   /*!
    * \brief Read the effort of the joint
    */
-  double getMeasuredState();
+  double getMeasuredEffort();
 
   /*!
    * \brief Get latest time..

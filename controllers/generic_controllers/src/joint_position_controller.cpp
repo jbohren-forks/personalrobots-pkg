@@ -91,7 +91,7 @@ double JointPositionController::getCommand()
 }
 
 // Return the measured joint position
-double JointPositionController::getMeasuredState()
+double JointPositionController::getMeasuredPosition()
 {
   return joint_->position_;
 }
@@ -149,7 +149,7 @@ bool JointPositionControllerNode::getActual(
   generic_controllers::GetActual::request &req,
   generic_controllers::GetActual::response &resp)
 {
-  resp.command = c_->getMeasuredState();
+  resp.command = c_->getMeasuredPosition();
   resp.time = c_->getTime();
   return true;
 }
