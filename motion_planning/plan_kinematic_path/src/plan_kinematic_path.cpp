@@ -56,6 +56,16 @@ public:
 	return m_haveBasePos;
     }
     
+    void initialState(robot_msgs::KinematicState &state)
+    {
+	state.set_vals_size(45);
+	for (unsigned int i = 0 ; i < state.get_vals_size() ; ++i)
+	    state.vals[i] = 0.0;
+	for (unsigned int i = 0 ; i < 3 ; ++i)
+	    state.vals[i] = m_basePos[i];
+    }
+    
+    
     void runTestBase(void)
     {
 	robot_srvs::KinematicPlanState::request  req;
@@ -63,20 +73,15 @@ public:
 	req.model_id = "pr2::base";
 	req.threshold = 0.01;
 	req.distance_metric = "L2Square";
+	req.interpolate = 1;
 	
-	req.start_state.set_vals_size(45);
-	for (unsigned int i = 0 ; i < req.start_state.vals_size ; ++i)
-	    req.start_state.vals[i] = 0.0;
+	initialState(req.start_state);
 	
 	req.goal_state.set_vals_size(3);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
-	{
-	    req.goal_state.vals[i] = m_basePos[i];
 	    req.start_state.vals[i] = m_basePos[i];
-	}
 	req.goal_state.vals[0] += 3.5;
 	
-
 	req.allowed_time = 5.0;
 	
 	req.volumeMin.x = -5.0 + m_basePos[0];	req.volumeMin.y = -5.0 + m_basePos[1];	req.volumeMin.z = 0.0;
@@ -92,10 +97,9 @@ public:
 	req.model_id = "pr2::leftArm";
 	req.threshold = 0.01;
 	req.distance_metric = "L2Square";
-	
-	req.start_state.set_vals_size(45);
-	for (unsigned int i = 0 ; i < req.start_state.vals_size ; ++i)
-	    req.start_state.vals[i] = 0.0;
+	req.interpolate = 1;
+
+	initialState(req.start_state);
 	
 	req.goal_state.set_vals_size(7);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
@@ -118,10 +122,9 @@ public:
 	req.model_id = "pr2::rightArm";
 	req.threshold = 0.01;
 	req.distance_metric = "L2Square";
-	
-	req.start_state.set_vals_size(45);
-	for (unsigned int i = 0 ; i < req.start_state.vals_size ; ++i)
-	    req.start_state.vals[i] = 0.0;
+	req.interpolate = 1;
+
+	initialState(req.start_state);
 	
 	req.goal_state.set_vals_size(7);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
@@ -187,9 +190,23 @@ int main(int argc, char **argv)
     while (!plan.haveBasePos())
 	dur.sleep();
 
-    //    plan.runTestLeftArm();    
-    //    plan.runTestBase();
-    plan.runTestRightArm();    
+    char test = (argc < 2) ? 'b' : argv[1][0];
+    
+    switch (test)
+    {
+    case 'l':
+	plan.runTestLeftArm();    
+	break;
+    case 'b':    
+        plan.runTestBase();
+	break;
+    case 'r':
+	plan.runTestRightArm();    
+	break;
+    default:
+	printf("Unknown test\n");
+	break;
+    } 
 
     plan.shutdown();
     

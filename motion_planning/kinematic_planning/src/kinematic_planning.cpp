@@ -197,6 +197,8 @@ public:
 	    p.si->smoother->smoothVertices(path);
 	    double tsmooth = (ros::Time::now() - startTime).to_double();	
 	    printf("Smoother spent %f seconds (%f seconds in total)\n", tsmooth, tsmooth + tsolve);
+	    if (req.interpolate)
+		p.si->interpolatePath(path);
 	}	
 	
 	m_collisionSpace->unlock();

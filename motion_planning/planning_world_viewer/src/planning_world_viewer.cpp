@@ -103,7 +103,7 @@ public:
     PlanningWorldViewer(const std::string &robot_model) : ros::node("planning_world_viewer"),
 							  planning_node_util::NodeODECollisionModel(dynamic_cast<ros::node*>(this), robot_model)
     {
-	subscribe("display_kinematic_path", m_displayPath, &PlanningWorldViewer::displayPathCallback);
+	subscribe("display_kinematic_path", m_displayPath, &PlanningWorldViewer::displayPathCallback, 1);
 	
 	m_follow = true;
 	m_displayRobot = true;
@@ -130,6 +130,20 @@ public:
 	m_collisionSpace->unlock();
     }
     
+    bool checkCollision(void)
+    {
+	bool result = false;
+	if (m_checkCollision && m_collisionSpace && m_collisionSpace->getModelCount() == 1)
+	{
+	    m_collisionSpace->lock();
+	    ros::Time startTime = ros::Time::now();
+	    result = m_collisionSpace->isCollision(0);
+	    printf("Collision: %d     [%f s]\n", result, (ros::Time::now() - startTime).to_double());
+	    m_collisionSpace->unlock();
+	}
+	return result;
+    }
+    
     void baseUpdate(void)
     {
 	planning_node_util::NodeODECollisionModel::baseUpdate();
@@ -140,12 +154,8 @@ public:
 	    m_collisionSpace->lock();
 	    m_collisionSpace->getModel(0)->computeTransforms(m_basePos, group);
 	    m_collisionSpace->updateRobotModel(0);
-	    if (m_checkCollision)
-	    {
-		ros::Time startTime = ros::Time::now();
-		printf("Collision: %d     [%f s]\n", m_collisionSpace->isCollision(0), (ros::Time::now() - startTime).to_double());
-	    }
 	    m_collisionSpace->unlock();
+	    checkCollision();
 	}
     }
     
@@ -167,13 +177,14 @@ public:
     {
 	bool follow = m_follow;
 	m_follow = false;
-	ros::Duration sleepTime(0.2);
+	ros::Duration sleepTime(0.4);
 	int groupID = m_kmodel->getGroupID(m_displayPath.name);
 	
 	for (unsigned int i = 0 ; i < m_displayPath.path.get_states_size() ; ++i)
 	{
 	    m_kmodel->computeTransforms(m_displayPath.path.states[i].vals, groupID);
 	    m_collisionSpace->updateRobotModel(0);
+	    checkCollision();
 	    sleepTime.sleep();
 	}
 	m_follow = follow;
@@ -240,8 +251,6 @@ public:
     
     void display(void)
     {
-	//	printf("disp\n");
-	
 	m_displayLock.lock();
 	m_spaces.displaySpaces();
 	m_displayLock.unlock();
