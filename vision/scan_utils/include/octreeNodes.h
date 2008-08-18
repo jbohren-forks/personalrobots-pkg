@@ -118,6 +118,8 @@ class OctreeBranch : public OctreeNode<T> {
 	int getNumBranches();
 	//! Recursively returns the number of leaves between this one
 	int getNumLeaves();
+	//! Recursively counts how many CELLS below hold a given value
+	int cellCount(T value, T emptyVal, int height);
 
 	//! Recursively goes down the tree and creates triangles
 	void getTriangles(bool px, bool nx, bool py, bool ny, bool pz, bool nz,
@@ -305,6 +307,33 @@ int OctreeBranch<T>::computeMaxDepth()
 	return maxDepth + 1;
 }
 
+/*!  Note that a LEAF at height h holding a given value is equivalent
+  to 2^h cells! That's because cells are the smallest possible leafes,
+  when many cells have the same value the Octree, by its nature,
+  stores them in a single leaf etc.
+ */
+template <typename T>
+int OctreeBranch<T>::cellCount(T value, T emptyVal, int height)
+{
+	assert(height > 0);
+	int n=0;
+	for (int i=0; i<8; i++) {
+		if (!mChildren[i]) {
+			if (value == emptyVal) {
+				n += (int)pow((float)8, height-1);
+			}
+		}
+		else if (mChildren[i]->isLeaf()) {
+			if ( ((OctreeLeaf<T>*)mChildren[i])->getVal() == value) {
+				n += (int)pow((float)8, height-1);
+			}
+		} else {
+			n += ((OctreeBranch<T>*)mChildren[i])->cellCount(value, emptyVal, height-1);
+		}
+	}
+	return n;
+}
+
 //----------------------------------------- Serialization -----------------------------------
 
 template <typename T>
@@ -435,7 +464,7 @@ bool OctreeBranch<T>::triangulateChild(unsigned char address, T* value, T emptyV
 }
 
 /*!  \param value - if this is NULL, the fctn returns the triangles
-  from all non-empty cells. Otherwise, it only returns the triangles
+  from all non-empty leaves. Otherwise, it only returns the triangles
   from the leaves that hold the given value.
  */
 template <typename T>

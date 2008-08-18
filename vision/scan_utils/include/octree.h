@@ -35,7 +35,7 @@ namespace scan_utils {
     (2^d)^3 leaves.
 
     Example: an octree that covers a space of 20m * 20m * 20m with max
-    depth 10 will have the smallest cells of approx. 2cm * 2cm * 2cm
+    depth 10 will have the smallest leaves of approx. 2cm * 2cm * 2cm
     in size.
 
     Set an empty value that will be returned for all unvisited regions
@@ -56,6 +56,12 @@ namespace scan_utils {
     use spatial coordinates and don't worry about cells unless you
     really need to.
 
+    An important note on the difference between cells and leaves: a
+    leaf can be of any size, up to one eighth of the entire octree (in
+    the case in which is sits directly under the root). A cell on the
+    oter hand is always the same size, equal to the smallest possible
+    leaf.
+
     The convention for cell accessors is the following: all indices
     range from 0 to 2^(mMaxDepth)-1. The cell with \a 0,0,0 indices is
     in the negative corner of the Octree, i.e. at the point with
@@ -74,14 +80,14 @@ class Octree {
 	//! The root of the Octree - always a branch and never NULL.
 	OctreeBranch<T> *mRoot;
 	//! The max depth of the octree, minimum 1 (root and 8 leaves).
-	/*! The smallest cell is guaranteed to have size of 2^(-maxDepth) * total_octree_size
+	/*! The smallest leaf is guaranteed to have size of 2^(-maxDepth) * total_octree_size
 	 */
 	int mMaxDepth;
-	//! The total size of the Octree. Can be thought of as the dimensions of the root cell.
+	//! The total size of the Octree. Can be thought of as the dimensions of the root branch.
 	float mDx, mDy, mDz;
 	//! The location of the center of the octree.
 	float mCx, mCy, mCz;
-	//! The value that is returned for a never visited cell
+	//! The value that is returned for a never visited leaf
 	T mEmptyValue;
 	//! Intended for forward compatibility with future versions that might use timestamps
 	bool mUsesTimestamps;
@@ -118,7 +124,7 @@ class Octree {
 	//! Inserts a value at given spatial coordinates.
 	/*! If you want the region at x,y,z to be treated as if it was
             never visited, do NOT use this to insert an
-            emptyValue. Use \a delete(x,y,z) instead.*/
+            \a emptyValue. Use \a erase(x,y,z) instead.*/
 	void insert(float x, float y, float z, T newValue){
 		this->insertOrErase(x,y,z,newValue,false);
 	}
@@ -150,6 +156,8 @@ class Octree {
 		if ( !cellToCoordinates(i,j,k,&x,&y,&z) ) return;
 		erase(x,y,z);
 	}
+	//!Recursively counts how many cells (not leaves!) hold a particular value
+	int cellCount(T value){return mRoot->cellCount(value, mEmptyValue, mMaxDepth);}
 
 	//! Checks intersection of the Octree against a triangle
 	bool intersectsTriangle(float*, float*, float*);
@@ -168,9 +176,9 @@ class Octree {
 	//! Recursively parses the Octree performing aggregation everyehere where appropriate
 	void aggregate(){mRoot->recursiveAggregation();}
 
-	//! Returns the triangles that form the surface mesh of all non-empty cells
+	//! Returns the triangles that form the surface mesh of all non-empty leaves
 	void getAllTriangles(std::list<Triangle> &triangles);
-	//! Returns the triangles that form the surface mesh of the cells with the given value
+	//! Returns the triangles that form the surface mesh of the leaves with the given value
 	void getTrianglesByValue(std::list<Triangle> &triangles, T value);
 	//! Recursively computes and returns the number of branches of the tree
 	int getNumBranches(){return mRoot->getNumBranches();}
@@ -767,7 +775,7 @@ void Octree<T>::insertScan(const SmartScan *s, T insertVal)
 //--------------------------------------------- Triangulation -----------------------------------------
 
 /*!  Returns the triangles that form the surface mesh of the NON-EMPTY
-  (previously visited) cells in the Octree (regardless of the value
+  (previously visited) leaves in the Octree (regardless of the value
   they hold).
 
   Tries to be somewhat smart about not returning unnecessary triangles,
@@ -804,7 +812,7 @@ void Octree<T>::getTrianglesByValue(std::list<Triangle> &triangles, T value)
 //---------------------------------------------- Miscellaneous ------------------------------------------
 
 /*! Traces a ray from a scanned through the volume of this octree,
-    marking both empty and occupied cells.
+    marking both empty and occupied leaves.
 
     \param sx,sy,sz - the starting point of the ray (presumably the
     location of the scanner)
@@ -816,7 +824,7 @@ void Octree<T>::getTrianglesByValue(std::list<Triangle> &triangles, T value)
     value is passed, this will just mark with the empty value along
     the ray across the entire octree.
 
-    \param emptyVal - the value that is used to mark "empty" cells
+    \param emptyVal - the value that is used to mark "empty" leaves
 
     \param occupiedVal - the value that is used to mark the "occupied"
     cell at the end of the ray.

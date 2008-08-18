@@ -7,14 +7,13 @@
 #include <std_msgs/PointCloudFloat32.h>
 #include <std_msgs/Empty.h>
 
-/**
-   @mainpage 
+/*! \file
 
-   @b This is a thin ROS node that can create instances of the
-   SmartScan class in the library Scan Utils from point clouds received
-   as ROS messages. See Scan Utils package and its SmartScan class for
-   details of the available tools.
- **/
+  This is a thin ROS node that can create instances of the
+  SmartScan class in the library Scan Utils from point clouds received
+  as ROS messages. See Scan Utils package and its SmartScan class for
+  details of the available tools.
+ */
 
 class SmartScan;
 

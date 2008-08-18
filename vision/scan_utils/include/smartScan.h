@@ -33,6 +33,8 @@ namespace scan_utils {
 /**
    @mainpage
    @b A library of tools for processing and manipulating point clouds. See SmartScan class for details.
+
+   Also contains a templated Octree class for general use.
  **/
 
 /*!
