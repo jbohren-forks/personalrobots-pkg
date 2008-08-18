@@ -21,7 +21,10 @@
 #include <pr2Core/pr2Core.h>
 #include <pr2Core/pr2Misc.h>
 
-#include <joy/Joy.h>
+//#include <baseJoy/Joy.h>
+#include <std_msgs/BaseVel.h>
+
+#include <std_msgs/RobotBase2DOdom.h>
 
 #include <genericControllers/Controller.h>
 #include <genericControllers/JointController.h>
@@ -29,12 +32,23 @@
 #include <mechanism_model/robot.h>
 #include <urdf/URDF.h>
 
+
+
+#include <newmat10/newmat.h>
+#include <newmat10/newmatio.h>
+#include <newmat10/newmatap.h>
+
+#include "rosTF/rosTF.h"
+
+
+using namespace NEWMAT;
 using namespace std;
 
 namespace controller
 {
   class BaseController : public Controller
   {
+
     public:
     
     /*!
@@ -54,13 +68,13 @@ namespace controller
     /*!
      * \brief Constructor for the BaseController class.
      * 
-     * \param robot - pointer to the Robot
+     * \param r - pointer to the Robot
      * \param name - std::string name for the controller. This must match the name attribute corresponding to the controller
      * description in the xml description file for the controller. 
      */
-    BaseController(mechanism::Robot *robot, std::string name);
+    BaseController(Robot *r, std::string name);
 
-    BaseController(mechanism::Robot *robot);
+    BaseController(Robot *r);
 
     /*!
      *  \brief Load the parameters for the controller from the controllers.xml file 
@@ -79,6 +93,21 @@ namespace controller
      */       
     void update( );
 
+    /*!
+     * \brief Compute odometry of base, should put in separate odometry class
+     */
+    //    void computeBaseVelocity(float vx, float vy, float vw, double time );
+    void computeOdometry(double time);
+    void computeBaseVelocity();
+    double base_x, base_y, base_w;
+    double base_vx, base_vy, base_vw;
+    double lastTime;
+
+
+
+
+    
+    Matrix pseudoInverse(Matrix M);// should not be in here.
     /*!
      * \brief Initialize the controller
      */
@@ -170,9 +199,11 @@ namespace controller
      * \brief Callback for ROS base command message
      */
     void receiveBaseCommandMessage();
-
-    joy::Joy baseCommandMessage;
-
+    
+    std_msgs::RobotBase2DOdom odomMsg;
+ 
+    //  baseJoy::Joy baseCommandMessage;
+    std_msgs::BaseVel baseCommandMessage;
     private:
 
     void initJointControllers();
@@ -229,7 +260,7 @@ namespace controller
 
     int casterMode;
 
-    mechanism::Robot *robot;
+    Robot *robot;
 
     std::map<std::string,std::string> paramMap;
 
@@ -241,6 +272,8 @@ namespace controller
 
     void computePointVelocity(double vx, double vy, double vw, double x_offset, double y_offset, double &pvx, double &pvy);
 
+    rosTFServer *tf;
+ 
   };
 }
 
