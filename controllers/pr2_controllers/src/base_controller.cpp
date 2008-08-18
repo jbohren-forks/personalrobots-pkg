@@ -197,7 +197,7 @@ void BaseController::setGeomParams()
   robot_desc::URDF::Link *caster_link;
   robot_desc::URDF::Link *wheel_link;
 
-  double base_caster_x_offset(0), base_caster_y_offset(0), wheel_base(0);
+//  double base_caster_x_offset(0), base_caster_y_offset(0), wheel_base_(0);
 
   if((int) base_group->linkRoots.size() != 1)
   {
@@ -207,49 +207,49 @@ void BaseController::setGeomParams()
   caster_link = *(base_link->children.begin());
   wheel_link = *(caster_link->children.begin());
 
-  base_caster_x_offset = fabs(caster_link->xyz[0]);
-  base_caster_y_offset = fabs(caster_link->xyz[1]);
-  wheel_base = sqrt(wheel_link->xyz[0]*wheel_link->xyz[0]+wheel_link->xyz[1]*wheel_link->xyz[1]);
+  base_caster_x_offset_ = fabs(caster_link->xyz[0]);
+  base_caster_y_offset_ = fabs(caster_link->xyz[1]);
+  wheel_base_ = sqrt(wheel_link->xyz[0]*wheel_link->xyz[0]+wheel_link->xyz[1]*wheel_link->xyz[1]);
 
-  robot_desc::URDF::Link::Geometry::Cylinder *wheel_geom = dynamic_cast<robot_desc::URDF::Link::Geometry::Cylinder*> (wheel_link->collision->geometry->shape);
-  wheel_radius_ = wheel_geom->radius;
+//  robot_desc::URDF::Link::Geometry::Cylinder *wheel_geom = dynamic_cast<robot_desc::URDF::Link::Geometry::Cylinder*> (wheel_link->collision->geometry->shape);
+//  wheel_radius_ = wheel_geom->radius;
 
   BaseCasterGeomParam caster;
   libTF::Pose3D::Vector wheel_l;
   libTF::Pose3D::Vector wheel_r;
 
   wheel_l.x = 0;
-  wheel_l.y = wheel_base/2.0;
+  wheel_l.y = wheel_base_/2.0;
   wheel_l.z = 0;
 
   wheel_r.x = 0;
-  wheel_r.y = -wheel_base/2.0;
+  wheel_r.y = -wheel_base_/2.0;
   wheel_r.z = 0;
 
   caster.wheel_pos.push_back(wheel_l);
   caster.wheel_pos.push_back(wheel_r);
 
 // FRONT LEFT
-  caster.pos.x = base_caster_x_offset;
-  caster.pos.y = base_caster_y_offset;
+  caster.pos.x = base_caster_x_offset_;
+  caster.pos.y = base_caster_y_offset_;
   caster.pos.z = 0;
   base_casters_.push_back(caster);
 
 // FRONT RIGHT
-  caster.pos.x = base_caster_x_offset;
-  caster.pos.y = -base_caster_y_offset;
+  caster.pos.x = base_caster_x_offset_;
+  caster.pos.y = -base_caster_y_offset_;
   caster.pos.z = 0;
   base_casters_.push_back(caster);
 
 // REAR LEFT
-  caster.pos.x = -base_caster_x_offset;
-  caster.pos.y = base_caster_y_offset;
+  caster.pos.x = -base_caster_x_offset_;
+  caster.pos.y = base_caster_y_offset_;
   caster.pos.z = 0;
   base_casters_.push_back(caster);
 
 // REAR RIGHT
-  caster.pos.x = -base_caster_x_offset;
-  caster.pos.y = -base_caster_y_offset;
+  caster.pos.x = -base_caster_x_offset_;
+  caster.pos.y = -base_caster_y_offset_;
   caster.pos.z = 0;
   base_casters_.push_back(caster);
 }
@@ -302,7 +302,7 @@ void  BaseController::computeAndSetWheelSpeeds()
   {
     for(int j=0; j < (int) base_casters_[i].wheel_pos.size(); j++)
     {
-      caster_steer_angle_actual = joint_velocity_controllers_[i*2+j].getMeasuredState();
+      caster_steer_angle_actual = joint_velocity_controllers_[i*2+j].getMeasuredVelocity();
       res1 = rotate2D(base_casters_[i].wheel_pos[j],caster_steer_angle_actual);
       res1 = addPosition(res1,base_casters_[i].pos);
       res2 = computePointVelocity2D(res1,cmd_vel_);

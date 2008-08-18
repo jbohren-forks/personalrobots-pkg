@@ -142,6 +142,12 @@ private:
 
   double wheel_radius_;
 
+  double base_caster_x_offset_;
+
+  double base_caster_y_offset_;
+
+  double wheel_base_;
+
 };
 
 class BaseControllerNode : public Controller
