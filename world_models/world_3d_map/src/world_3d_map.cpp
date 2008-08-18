@@ -79,7 +79,6 @@ Additional subscriptions due to inheritance from NodeRobotModel:
 
 Publishes to (name/type):
 - @b "world_3d_map"/PointCloudFloat32 : point cloud describing the 3D environment
-- @b "roserr"/Log : output log messages
 
 <hr>
 
@@ -105,7 +104,6 @@ Provides (name/type):
 
 #include <std_msgs/PointCloudFloat32.h>
 #include <std_msgs/LaserScan.h>
-#include <rostools/Log.h>
 
 #include <collision_space/util.h>
 #include <random_utils/random_utils.h>
@@ -122,7 +120,6 @@ public:
 						 planning_node_util::NodeRobotModel(dynamic_cast<ros::node*>(this), robot_model)
     {
 	advertise<std_msgs::PointCloudFloat32>("world_3d_map");
-	advertise<rostools::Log>("roserr");
 
 	param("world_3d_map/max_publish_frequency", m_maxPublishFrequency, 0.5);
 	param("world_3d_map/retain_pointcloud_duration", m_retainPointcloudDuration, 60.0);
@@ -133,26 +130,20 @@ public:
 	/* create a thread that does the processing of the input data.
 	 * and one that handles the publishing of the data */
 	m_active = true;
-	m_working = false;
 	m_shouldPublish = false;
 	random_utils::init(&m_rng);
 	
-	m_processMutex.lock();
-	m_publishMutex.lock();
-	m_processingThread = ros::thread::member_thread::startMemberFunctionThread<World3DMap>(this, &World3DMap::processDataThread);
 	m_publishingThread = ros::thread::member_thread::startMemberFunctionThread<World3DMap>(this, &World3DMap::publishDataThread);
 
-	subscribe("scan", m_inputScan, &World3DMap::pointCloudCallback);
+	subscribe("scan", m_inputScan, &World3DMap::pointCloudCallback, 1);
     }
     
     ~World3DMap(void)
     {
 	/* terminate spawned threads */
 	m_active = false;
-	m_processMutex.unlock();
 	
 	pthread_join(*m_publishingThread, NULL);
-	pthread_join(*m_processingThread, NULL);
 	for (unsigned int i = 0 ; i < m_currentWorld.size() ; ++i)
 	    delete m_currentWorld[i];
 
@@ -195,75 +186,29 @@ private:
 	if (m_verbose)
 	    printf("Received laser scan with %u points in frame %d\n", m_inputScan.get_ranges_size(), m_inputScan.header.frame_id);
 	
-	m_flagMutex.lock();
-	bool discard = m_working;
-	if (!discard)
-	    m_working = true;
-	
-	if (discard)
+	/* copy data to a place where incoming messages do not affect it */
+	bool success = false;
+	try
 	{
-	    /* log the fact that input was discarded */
-	    rostools::Log l;
-	    l.level = 20;
-	    l.name  = get_name();
-	    l.msg   = "Discarded point cloud data (previous input set not done processing)";
-	    publish("roserr", l);
-	    fprintf(stderr, "Discarding pointcloud: Too much data to process\n");
+	    m_tf.transformLaserScanToPointCloud("FRAMEID_MAP", m_toProcess, m_inputScan);
+	    success = true;
 	}
-	else
+	catch(libTF::TransformReference::LookupException& ex)
 	{
-	    /* copy data to a place where incoming messages do not affect it */
-	    bool success = false;
-	    try
-	    {
-		m_tf.transformLaserScanToPointCloud("FRAMEID_MAP", m_toProcess, m_inputScan);
-		success = true;
-	    }
-	    catch(libTF::TransformReference::LookupException& ex)
-	    {
-		fprintf(stderr, "Discarding pointcloud: Transform reference lookup exception\n");
-	    }
-	    catch(libTF::TransformReference::ExtrapolateException& ex)
-	    {
-		fprintf(stderr, "Discarding pointcloud: Extrapolation exception: %s\n", ex.what());
-	    }
-	    catch(...)
-	    {
-		fprintf(stderr, "Discarding pointcloud: Exception in point cloud computation\n");
-	    }  
-	    if (success)
-		m_processMutex.unlock();   /* let the processing thread know that there is data to process */
-	    else 
-		m_working = false;	   /* unmark the fact we are working */
+	    fprintf(stderr, "Discarding pointcloud: Transform reference lookup exception\n");
 	}
-	m_flagMutex.unlock();
+	catch(libTF::TransformReference::ExtrapolateException& ex)
+	{
+	    fprintf(stderr, "Discarding pointcloud: Extrapolation exception: %s\n", ex.what());
+	}
+	catch(...)
+	{
+	    fprintf(stderr, "Discarding pointcloud: Exception in point cloud computation\n");
+	}  
+	if (success)
+	    processData();
     }
     
-    void processDataThread(void)
-    {
-	while (m_active)
-	{
-	    /* This mutex acts as a condition, but is safer (condition
-	       messages may get lost or interrupted by signals) */
-	    m_processMutex.lock();
-	    if (m_active)
-	    {
-		m_worldDataMutex.lock();
-		processData();
-		m_worldDataMutex.unlock();
-		
-		/* notify the publishing thread that it can send data */
-		m_shouldPublish = true;
-	    }
-	    
-	    /* make a note that there is no active processing */
-	    m_flagMutex.lock();
-	    m_working = false;
-	    m_flagMutex.unlock();
-	}
-    }
-    
-
     void publishDataThread(void)
     {
 	ros::Duration *d = new ros::Duration(1.0/m_maxPublishFrequency);
@@ -362,6 +307,8 @@ private:
 	/* remove old data */
 	ros::Time &time = m_toProcess.header.stamp;
 
+	m_worldDataMutex.lock();
+
 	while (!m_currentWorld.empty() && (time - m_currentWorld.front()->header.stamp).to_double() > m_retainPointcloudDuration)
 	{
 	    std_msgs::PointCloudFloat32* old = m_currentWorld.front();
@@ -379,11 +326,16 @@ private:
 		m_currentWorld.push_back(newData);
 	}
 	
+	/* let the publishing thread know there is new data to publish */
+	m_shouldPublish = true;
+	
 	if (m_verbose)
 	{
 	    double window = m_currentWorld.size() > 0 ? (m_currentWorld.back()->header.stamp - m_currentWorld.front()->header.stamp).to_double() : 0.0;
 	    printf("World map containing %d point clouds (window size = %f seconds)\n", m_currentWorld.size(), window);
-	}	
+	}
+
+	m_worldDataMutex.unlock();
     }
     
     std_msgs::PointCloudFloat32* runFilters(const std_msgs::PointCloudFloat32 &cloud)
@@ -467,10 +419,9 @@ private:
     std_msgs::LaserScan              m_inputScan; //Buffer for recieving scan
     std_msgs::PointCloudFloat32      m_toProcess; 
     
-    pthread_t                       *m_processingThread;
     pthread_t                       *m_publishingThread;
-    ros::thread::mutex               m_processMutex, m_publishMutex, m_worldDataMutex, m_flagMutex;
-    bool                             m_active, m_working, m_shouldPublish;
+    ros::thread::mutex               m_worldDataMutex;
+    bool                             m_active, m_shouldPublish;
     random_utils::rngState           m_rng;
 
 };
