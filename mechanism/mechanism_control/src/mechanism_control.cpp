@@ -130,7 +130,11 @@ void MechanismControl::update()
   // Propagates through the robot model.
   for (unsigned int i = 0; i < model_.transmissions_.size(); ++i)
     model_.transmissions_[i]->propagatePosition();
-
+    
+  //zero all commands
+  for (unsigned int i = 0; i < model_.joints_.size(); ++i)
+    model_.joints_[i]->commanded_effort_= 0.0;
+    
   // TODO: update KDL model with new joint position/velocities
 
   // Update all controllers
