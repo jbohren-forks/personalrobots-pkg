@@ -68,6 +68,7 @@ public:
 
   string name;
   string frameid;
+  string frameid_cloud;
   dc1394_cam::Cam* cam;
   CamTypes  cam_type;
 };
@@ -165,7 +166,7 @@ public:
       param(oss.str(), cd.name, oss.str());
 
       oss.str("");
-      oss << "CAM" << i;
+      oss << "FRAMEID_CAM" << i;
       param(cd.name + string("/frameid"), cd.frameid, oss.str());
 
       uint64_t guid;
@@ -288,6 +289,8 @@ public:
           videre_mode = videre_cam::PROC_MODE_DISPARITY_RAW;
         else
           videre_mode = videre_cam::PROC_MODE_NONE;
+
+        param(cd.name + string("/frameid_cloud"), cd.frameid_cloud, oss.str());
       }
 
       printf("Opening camera with guid: %llx\n", guid);
@@ -460,7 +463,7 @@ public:
               }
 
             cloud_.header.stamp = ros::Time::now();
-            cloud_.header.frame_id = cd.frameid + string("_CLOUD");
+            cloud_.header.frame_id = cd.frameid_cloud;
 
             publish(cd.name + "/cloud", cloud_);
 
@@ -468,7 +471,7 @@ public:
         }
 
       } else {
-        img_.images[i].header.frame_id = cd.frameid;
+        img_.images[0].header.frame_id = cd.frameid;
         publish(cd.name + "/image", img_.images[0]);
       }
     }    
