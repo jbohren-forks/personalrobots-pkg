@@ -3,9 +3,8 @@
 
 #include "octreeNodes.h"
 #include <scan_utils/OctreeMsg.h>
-#include <math.h>
+#include <cmath>
 
-class SmartScan;
 
 namespace scan_utils {
 
@@ -177,7 +176,7 @@ class Octree {
 	void aggregate(){mRoot->recursiveAggregation();}
 
 	//! Returns the triangles that form the surface mesh of all non-empty leaves
-	void getAllTriangles(std::list<Triangle> &triangles);
+	void getAllTriangles(std::list<Triangle> &triangles) const;
 	//! Returns the triangles that form the surface mesh of the leaves with the given value
 	void getTrianglesByValue(std::list<Triangle> &triangles, T value);
 	//! Recursively computes and returns the number of branches of the tree
@@ -783,7 +782,7 @@ void Octree<T>::insertScan(const SmartScan *s, T insertVal)
   be an interesting problem...
  */
 template <typename T>
-void Octree<T>::getAllTriangles(std::list<Triangle> &triangles)
+void Octree<T>::getAllTriangles(std::list<Triangle> &triangles) const
 {
 	if (!mRoot) return;
 	mRoot->getTriangles( true, true, true, true, true, true, 

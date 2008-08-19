@@ -28,7 +28,7 @@ class OctreeNode {
  private:
  public:
 	OctreeNode(){}
-	virtual bool isLeaf() = 0;
+	virtual bool isLeaf() const = 0;
 	virtual void serialize(char*, unsigned int&){}
 	virtual void deserialize(char*, unsigned int&, unsigned int){}
 	virtual int computeMaxDepth(){return 0;}
@@ -61,9 +61,9 @@ class OctreeLeaf : public OctreeNode<T> {
         OctreeLeaf(T val) {setVal(val);}
 	OctreeLeaf(){}
 	~OctreeLeaf(){}
-	bool isLeaf(){return true;}
+	bool isLeaf() const {return true;}
 
-	T getVal(){return mValue;}
+	T getVal() const {return mValue;}
 	void setVal(T val){mValue = val;}
 	// Serializes the content of this leaf
 	virtual void serialize(char *destinationString, unsigned int &address);
@@ -85,14 +85,14 @@ class OctreeBranch : public OctreeNode<T> {
 	OctreeNode<T> **mChildren;
 
 	//! Returns true if the given child is a leaf and it needs to be triangulated given the required values
-	bool triangulateChild(unsigned char address, T* value, T emptyValue);
+	bool triangulateChild(unsigned char address, T* value, T emptyValue) const;
 	//! Actually creates the triangles that enclose the given box
 	void createTriangles(bool px, bool nx, bool py, bool ny, bool pz, bool nz,
 			     float cx, float cy, float cz,
 			     float dx, float dy, float dz,
-			     std::list<Triangle> &triangles);
+			     std::list<Triangle> &triangles) const;
  public:
-	bool isLeaf(){return false;}
+	bool isLeaf() const {return false;}
 
 	//! Initializes a branch with all NULL (unexplored) children
 	inline OctreeBranch();
@@ -125,7 +125,7 @@ class OctreeBranch : public OctreeNode<T> {
 	void getTriangles(bool px, bool nx, bool py, bool ny, bool pz, bool nz,
 			  float cx, float cy, float cz,
 			  float dx, float dy, float dz,
-			  std::list<Triangle> &triangles, T* value, T emptyValue);
+			  std::list<Triangle> &triangles, T* value, T emptyValue) const;
 
 	//! Recursively serializes everything below this branch
 	virtual void serialize(char *destinationString, unsigned int &address);
@@ -451,7 +451,7 @@ inline bool nodeSphereIntersection(const SpatialNode<T> &sn,
 //--------------------------------------------- Triangulation --------------------------------
 
 template <typename T>
-bool OctreeBranch<T>::triangulateChild(unsigned char address, T* value, T emptyValue)
+bool OctreeBranch<T>::triangulateChild(unsigned char address, T* value, T emptyValue) const
 {
 	if (!mChildren[address]) {
 		if (value && *value == emptyValue) return true;
@@ -471,7 +471,7 @@ template <typename T>
 void OctreeBranch<T>::getTriangles(bool px, bool nx, bool py, bool ny, bool pz, bool nz,
 				   float cx, float cy, float cz,
 				   float dx, float dy, float dz,
-				   std::list<Triangle> &triangles, T* value, T emptyValue)
+				   std::list<Triangle> &triangles, T* value, T emptyValue) const
 {
 	dx/=2.0; dy/=2.0; dz/=2.0;
 	
@@ -534,7 +534,7 @@ template <typename T>
 void OctreeBranch<T>::createTriangles(bool px, bool nx, bool py, bool ny, bool pz, bool nz,
 				      float cx, float cy, float cz,
 				      float dx, float dy, float dz,
-				      std::list<Triangle> &triangles)
+				      std::list<Triangle> &triangles) const
 {
 	if (px) {
 		triangles.push_back( Triangle( cx+dx, cy+dy, cz+dz,
