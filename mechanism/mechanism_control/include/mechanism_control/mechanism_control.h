@@ -137,7 +137,6 @@ private:
   // Structure for transfering the mechanism state between realtime and non-realtime.
   pthread_mutex_t mechanism_state_lock_;
   // Blocks the ros publishing loop until an update is received from HW loop.
-  bool mechanism_state_updated_;
   pthread_cond_t mechanism_state_updated_cond_;
   mechanism_control::MechanismState mechanism_state_;
   void publishMechanismState(); // Not realtime safe

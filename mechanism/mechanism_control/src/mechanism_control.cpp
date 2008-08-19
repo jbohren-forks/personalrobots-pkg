@@ -45,8 +45,6 @@ MechanismControl::~MechanismControl()
 
 bool MechanismControl::initXml(TiXmlElement* config)
 {
-  ros::node *node = ros::node::instance();
-
   model_.initXml(config);
 
   initialized_ = true;
@@ -240,7 +238,6 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   node->advertise<mechanism_control::MechanismState>(mechanism_state_topic_);
 
   // Launches the worker state_publishing_loop_keep_running_
-  mechanism_state_updated_ = false;
   pthread_cond_init (&mechanism_state_updated_cond_, NULL);
   pthread_mutex_init(&mechanism_state_lock_,NULL);
   state_publishing_loop_keep_running_ = true;
@@ -264,9 +261,13 @@ void MechanismControlNode::update()
 {
   mc_->update();
 
+  // Only update on every 100th call to update()
+  static int count = 0;
+  if (count++ % 100 != 0) return;
+
   // Attempts to lock the transfer structure
   // If we get it, update it
-  if(pthread_mutex_trylock(&mechanism_state_lock_))
+  if (!pthread_mutex_trylock(&mechanism_state_lock_))
   {
     // We should not have to resize
     assert(mc_->model_.joints_.size() == mechanism_state_.get_joint_states_size());
@@ -280,10 +281,6 @@ void MechanismControlNode::update()
       mechanism_state_.joint_states[i].commanded_effort = mc_->model_.joints_[i]->commanded_effort_;
     }
     mechanism_state_.time = mc_->hw_->current_time_;
-    // Tries to unlock mechanism_updated_lock_ if not already locked.
-    // If the lock is successful or fails due to being already held, unlocks the mutex.
-    // TODO: better way to do it?
-    mechanism_state_updated_ = true;
     pthread_cond_signal(&mechanism_state_updated_cond_);
     pthread_mutex_unlock(&mechanism_state_lock_);
   }
@@ -328,22 +325,18 @@ void MechanismControlNode::publishMechanismState()
   assert(this->mechanism_state_topic_);
   // Waits for RT thread to release the mutex, signaling new data has arrived.
   pthread_mutex_lock(&mechanism_state_lock_);
-  while (!mechanism_state_updated_)
-    pthread_cond_wait(&mechanism_state_updated_cond_, &mechanism_state_lock_);
+  pthread_cond_wait(&mechanism_state_updated_cond_, &mechanism_state_lock_);
   assert(this->mechanism_state_topic_);
   node->publish(mechanism_state_topic_, mechanism_state_);
-  mechanism_state_updated_ = false;
   pthread_mutex_unlock(&mechanism_state_lock_);
 }
 
 void MechanismControlNode::statePublishingLoop()
 {
-  ros::Duration duration(STATE_PUBLISHING_PERIOD);
   while(state_publishing_loop_keep_running_)
   {
     assert(mechanism_state_topic_);
     publishMechanismState();
-    duration.sleep();
   }
 }
 
