@@ -68,7 +68,7 @@ void *controlLoop(void *arg)
   ec.initXml(root, mc);
 
   // Initialize mechanism control from robot description
-  mc.initXml(root);
+  mcn.initXml(root);
 
   // Spawn controllers
   // TODO what file does this come from?
@@ -90,7 +90,7 @@ void *controlLoop(void *arg)
   while (!quit)
   {
     ec.update();
-    mc.update();
+    mcn.update();
 
     tick.tv_nsec += period;
     while (tick.tv_nsec >= NSEC_PER_SEC)
