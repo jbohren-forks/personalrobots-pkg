@@ -16,7 +16,7 @@
 
 all: tarball-all
 
-VERSION=     r900
+VERSION=     r903
 
 TARBALL=     libsunflower-$(VERSION).tar.gz
 TARBALL_URL= http://downloads.sourceforge.net/libsunflower/$(TARBALL)
