@@ -36,8 +36,8 @@
 
 using namespace scan_utils;
 
-#define SU_TFRT 1
-#define SU_TFMF 2
+static const std::string SU_TFRT = "RootFrame";
+static const std::string SU_TFMF = "MyFrame";
 
 SmartScan::SmartScan()
 {
@@ -347,7 +347,7 @@ libTF::TFPoint SmartScan::centroid() const
 {
 	std_msgs::Point3DFloat32 p;
 	libTF::TFPoint c;
-	c.time = 0; c.frame = 0;
+	c.time = 0; c.frame = SU_TFMF;
 	c.x = c.y = c.z = 0;
 
 	if (size()==0) return c;
@@ -408,7 +408,7 @@ void SmartScan::principalAxes(libTF::TFVector &a1, libTF::TFVector &a2,
 
 	//set frame and time to 0. In the future, a smart scan might have its own frame and time
 	a1.time = a2.time = a3.time = 0;
-	a1.frame = a2.frame = a3.frame = 0;
+	a1.frame = a2.frame = a3.frame = SU_TFMF;
 }
 
 /*! Return the two corners of the bounding box of this scan, in \a bb1
