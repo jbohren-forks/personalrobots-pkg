@@ -290,7 +290,7 @@ public:
         else
           videre_mode = videre_cam::PROC_MODE_NONE;
 
-        param(cd.name + string("/frameid_cloud"), cd.frameid_cloud, oss.str());
+        param(cd.name + string("/frameid_cloud"), cd.frameid_cloud, std::string("FRAMEID_STEREO_BLOCK"));
       }
 
       printf("Opening camera with guid: %llx\n", guid);
