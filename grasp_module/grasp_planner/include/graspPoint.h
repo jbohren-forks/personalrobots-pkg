@@ -4,6 +4,8 @@
 #include <libTF/libTF.h>
 #include "grasp_module/graspPoint_msg.h"
 
+#include <string>
+
 namespace NEWMAT {
 	class Matrix;
 }
@@ -56,9 +58,9 @@ class GraspPoint {
 	//! The quality value, between 0 and 1. Higher value means better grasp.
 	float mQuality;
  public:
-	static const unsigned int baseFrame;
-	static const unsigned int graspFrame;
-	static const unsigned int newFrame;
+	static const std::string baseFrame;
+	static const std::string graspFrame;
+	static const std::string newFrame;
 
 	//! Empty constructor initializes GraspPoint to identity and quality to 0
 	GraspPoint();

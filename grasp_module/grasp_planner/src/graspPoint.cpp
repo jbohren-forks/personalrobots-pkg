@@ -36,9 +36,9 @@ libTF::TFVector cross(const libTF::TFVector &f1, const libTF::TFVector &f2)
 
 // Back to the GraspPoint
 
-const unsigned int GraspPoint::baseFrame = 1;
-const unsigned int GraspPoint::graspFrame = 2;
-const unsigned int GraspPoint::newFrame = 3;
+const std::string GraspPoint::baseFrame = "GP_BASE";
+const std::string GraspPoint::graspFrame = "GP_GRASP";
+const std::string GraspPoint::newFrame = "GP_NEW";
 
  bool sortGraspPredicate(const GraspPoint *lhs, const GraspPoint *rhs) {
 	 return (*lhs) < (*rhs);
