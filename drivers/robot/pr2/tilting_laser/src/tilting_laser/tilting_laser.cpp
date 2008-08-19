@@ -174,11 +174,11 @@ public:
     last_motor_time = ros::Time::now();
     next_time = ros::Time::now();
 
-    tf.setWithEulers(tf.lookup("FRAMEID_LASER2"), tf.lookup("FRAMEID_TILT_STAGE"),
+    tf.setWithEulers("FRAMEID_LASER2", "FRAMEID_TILT_STAGE",
 		     0.0, 0, .02,
 		     0.0, 0.0, 0.0,
 		     last_motor_time.to_ull());
-    tf.setWithEulers(tf.lookup("FRAMEID_TILT_STAGE"), tf.lookup("FRAMEID_TILT_BASE"),
+    tf.setWithEulers("FRAMEID_TILT_STAGE", "FRAMEID_TILT_BASE",
 		     0, 0, 0,
 		     0, 0, 0,
 		     last_motor_time.to_ull());
@@ -239,7 +239,7 @@ public:
     u.y = 0;
     u.z = 0;
     u.time = scans.header.stamp.to_ull();
-    u.frame = tf.lookup("FRAMEID_TILT_STAGE");
+    u.frame = "FRAMEID_TILT_STAGE";
 
     libTF::TFVector v = tf.transformVector("FRAMEID_TILT_BASE",u);
     
@@ -321,7 +321,7 @@ public:
       
         long long inc = scans.time_increment * i * 1000000000;
         unsigned long long t = scans.header.stamp.to_ull() + inc;
-        rot_point = tf.getMatrix(tf.lookup("FRAMEID_TILT_BASE"),tf.lookup("FRAMEID_LASER2"),t) * point;
+        rot_point = tf.getMatrix("FRAMEID_TILT_BASE","FRAMEID_LASER2",t) * point;
 
         if (valid)
         {

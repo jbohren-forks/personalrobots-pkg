@@ -532,7 +532,7 @@ RosGazeboControlsNode::Update()
       this->laserMsg.intensities[i] = this->intensities[i];
     }
 
-    this->laserMsg.header.frame_id = tf.lookup("FRAMEID_LASER");
+    this->laserMsg.header.frame_id = "FRAMEID_LASER";
     this->laserMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
     this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->laserMsg.header.stamp.sec) );
 
@@ -565,7 +565,7 @@ RosGazeboControlsNode::Update()
   // this->odomMsg.stall = this->positionmodel->Stall();
 
   // TODO: get the frame ID from somewhere
-  this->odomMsg.header.frame_id = tf.lookup("FRAMEID_ODOM");
+  this->odomMsg.header.frame_id = "FRAMEID_ODOM";
 
   this->odomMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
   this->odomMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->odomMsg.header.stamp.sec) );

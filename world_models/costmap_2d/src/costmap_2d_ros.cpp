@@ -128,8 +128,8 @@ CostMap2DRos::CostMap2DRos() :
   costmap_.setStaticMap(sx, sy, resp.map.resolution, mapdata);
   delete[] mapdata;
   
-  tf_.setWithEulers(tf_.lookup("FRAMEID_LASER"),
-                    tf_.lookup("FRAMEID_ROBOT"),
+  tf_.setWithEulers("FRAMEID_LASER",
+                    "FRAMEID_ROBOT",
                     0.05, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
   
   advertise<std_msgs::Polyline2D>("gui_laser");
@@ -171,7 +171,7 @@ void CostMap2DRos::laserReceived() {
   //   aPose.pitch = 0;
   //   aPose.yaw = 0;
   //   aPose.time = 0;
-  //   aPose.frame = tf.lookup("FRAMEID_ODOM");
+  //   aPose.frame = "FRAMEID_ODOM";
   
   //   libTF::TFPose inMapFrame = tf.transformPose("FRAMEID_MAP", aPose);
   
