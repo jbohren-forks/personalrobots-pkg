@@ -43,7 +43,6 @@ using namespace NEWMAT;
 
 ROS_REGISTER_CONTROLLER(BaseController)
 
-
 BaseController::BaseController() : num_wheels_(0), num_casters_(0)
 {
 }
@@ -120,7 +119,6 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
       }
     }
   }
-
   robot_ = robot;
 }
 
@@ -180,12 +178,12 @@ void BaseController::computeWheelPositions()
   for(int i=0; i < num_wheels_; i++)
   {
     steer_angle = base_wheels_[i].parent_->joint_->position_;
-    res1 = rotate2D(base_wheels_[i].pos_,steer_angle);
+//    res1 = rotate2D(base_wheels_[i].pos_,steer_angle);
+    res1 = base_wheels_[i].pos_.rot2D(steer_angle);
     res1 += base_casters_[i].pos_;
     base_wheels_position_[i] = res1;
   }
 }
-
 
 void BaseController::update()
 {
@@ -227,13 +225,12 @@ void BaseController::computeAndSetCasterSteer()
 {
   libTF::Pose3D::Vector result;
   double steer_angle_desired;
-  double kp_local = 10;
   for(int i=0; i < num_casters_; i++)
   {
     result = computePointVelocity2D(base_casters_[i].pos_, cmd_vel_);
     steer_angle_desired = atan2(result.y,result.x);
     steer_angle_desired = ModNPiBy2(steer_angle_desired);//Clean steer Angle    
-    steer_velocity_desired_[i] = kp_local*steer_angle_desired;
+    steer_velocity_desired_[i] = kp_speed_*steer_angle_desired;
     base_casters_[i].controller_.setCommand(steer_velocity_desired_[i]);
   } 
 }
@@ -257,7 +254,8 @@ void BaseController::computeAndSetWheelSpeeds()
     steer_angle_actual = base_wheels_[i].parent_->joint_->position_;
     wheel_point_velocity = computePointVelocity2D(base_wheels_position_[i],cmd_vel_);
     wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
-    wheel_point_velocity_projected = rotate2D(wheel_point_velocity,-steer_angle_actual);
+//    wheel_point_velocity_projected = rotate2D(wheel_point_velocity,-steer_angle_actual);
+    wheel_point_velocity_projected = wheel_point_velocity.rot2D(-steer_angle_actual);
     wheel_speed_cmd = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/wheel_radius_;     
     base_wheels_[i].controller_.setCommand(wheel_speed_cmd);
   }
@@ -359,7 +357,9 @@ Pose3D::Vector BaseController::rotate2D(const Pose3D::Vector& pos, double theta)
 void BaseController::computeOdometry(double time) 
 {
    double dt = time-last_time_;
-   libTF::Pose3D::Vector base_odom_delta = rotate2D(base_odom_velocity_*dt,base_odom_position_.z);
+//   libTF::Pose3D::Vector base_odom_delta = rotate2D(base_odom_velocity_*dt,base_odom_position_.z);
+
+   libTF::Pose3D::Vector base_odom_delta = (base_odom_velocity_*dt).rot2D(base_odom_position_.z);
    base_odom_delta.z = base_odom_velocity_.z * dt;
    base_odom_position_ += base_odom_delta;
 
