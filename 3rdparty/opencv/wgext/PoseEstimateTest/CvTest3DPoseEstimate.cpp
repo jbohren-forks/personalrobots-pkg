@@ -24,6 +24,7 @@
 #include <vtkInteractorStyleTrackballCamera.h>
 
 #include <stereolib.h> // from 3DPoseEstimation/include. The header file is there temporarily
+#include <CvPoseEstErrMeasDisp.h>
 
 using namespace std;
 
@@ -364,8 +365,34 @@ bool CvTest3DPoseEstimate::testVideos() {
 
 	int maxDisp = (int)peDisp.getD(10); // the closest point we care is at least 100 mm away
 	cout << "Max disparity is: "<< maxDisp<<endl;
-	int start = 910;
-	for (int i=start; i<numImages; i++) {
+
+	CvPoseEstErrMeasDisp peErrMeas;
+	peErrMeas.setParams(mFx, mFy, mTx, mClx, mCrx, mCy);
+
+	int start = 0;
+//	int end   = numImages;
+	int end   = 5;
+	int numFrames = end - start;
+
+	// keep track of the trajectory of the camera w.r.t to the starting frame
+	double _shifts[numFrames*3];
+	double _rods[numFrames*3]; // Rodrigues
+	CvMat shifts;
+	CvMat rods;    // Rodrigues
+	shifts = cvMat(numFrames, 3, CV_64FC1, _shifts);
+	rods   = cvMat(numFrames, 3, CV_64FC1, _rods);
+
+	// Current transformation w.r.t to the starting frame
+	double _transform[16];
+	CvMat transform = cvMat(4, 4, CV_64FC1, _transform);
+	cvSetIdentity(&transform);
+	// current transformation w.r.t. to the current frame
+	double _rt[16];
+	CvMat rt = cvMat(4, 4, CV_64FC1, _rt);
+	double _tempMat[16];
+	CvMat tempMat = cvMat(4, 4, CV_64FC1, _tempMat);
+
+	for (int i=start; i<end; i++) {
 		sprintf(leftfilename,  "%s/left-%04d.ppm",  dirname.c_str(), i);
 		sprintf(rightfilename, "%s/right-%04d.ppm", dirname.c_str(), i);
 		cout << "loading "<<leftfilename<<" and "<< rightfilename<< endl;
@@ -376,8 +403,8 @@ bool CvTest3DPoseEstimate::testVideos() {
 		CvMat *leftimgC3  = cvCreateMat(leftimg->height,  leftimg->width,  CV_8UC3);
 		CvMat *leftimgC3a = cvCreateMat(leftimg->height,  leftimg->width,  CV_8UC3);
 		CvMat *rightimgC3 = cvCreateMat(rightimg->height, rightimg->width, CV_8UC3);
-		cvCvtColor(leftimg, leftimgC3, CV_GRAY2RGB);
-		cvCvtColor(leftimg, leftimgC3a, CV_GRAY2RGB);
+		cvCvtColor(leftimg,  leftimgC3,  CV_GRAY2RGB);
+		cvCvtColor(leftimg,  leftimgC3a, CV_GRAY2RGB);
 		cvCvtColor(rightimg, rightimgC3, CV_GRAY2RGB);
 
 		//
@@ -715,6 +742,12 @@ bool CvTest3DPoseEstimate::testVideos() {
 				iPt++;
 			}
 
+#if 0
+			cout << "trackable pairs"<<endl;
+			CvMatUtils::printMat(&uvds0);
+			CvMatUtils::printMat(&uvds1);
+#endif
+
 			CvMat *inliers0 = NULL;
 			CvMat *inliers1 = NULL;
 			double _rot[9], _shift[3];
@@ -732,6 +765,22 @@ bool CvTest3DPoseEstimate::testVideos() {
 			CvMatUtils::printMat(&rot);
 			cout << "Shift Matrix: "<<endl;
 			CvMatUtils::printMat(&shift);
+
+			Cv3DPoseEstimate::constructTransform(rot, shift, rt);
+			cvCopy(&transform, &tempMat);
+			cvMatMul(&tempMat, &rt, &transform);
+			CvMat rotGlobal;
+			CvMat shiftGlobal;
+			cvGetSubRect(&transform, &rotGlobal,   cvRect(0, 0, 3, 3));
+			cvGetSubRect(&transform, &shiftGlobal, cvRect(3, 0, 1, 3));
+			CvMat rodGlobal2;
+			CvMat shiftGlobal2;
+			cvGetRow(&rods, &rodGlobal2, i-start);
+			cvGetRow(&shifts, &shiftGlobal2, i-start);
+			// make a copy
+			cvRodrigues2(&rotGlobal, &rodGlobal2);
+			cvTranspose(&shiftGlobal,  &shiftGlobal2);
+
 
 			cout << "num of inliers: "<< numInliers <<endl;
 
@@ -776,6 +825,10 @@ bool CvTest3DPoseEstimate::testVideos() {
 					cvCircle(leftimgC3a, pt1, 4, green, 1, CV_AA, 0);
 					cvLine(leftimgC3a, pt1, pt0To1, red, 1, CV_AA, 0);
 				}
+
+				// measure the errors
+				peErrMeas.setTransform(rot, shift);
+				peErrMeas.measure(*inliers1, *inliers0);
 			}
 #endif
 		}
@@ -792,11 +845,11 @@ bool CvTest3DPoseEstimate::testVideos() {
 		//		cvShowImage("Harris Corners", eig_image);
 
 		// save the marked images
-#if 0
+#if 1
 		sprintf(leftCamWithMarks, "%s/leftCamWithMarks-%04d.png", outputDirname.c_str(), i);
 		sprintf(rightCamWithMarks, "%s/rightCamwithMarks-%04d.png", outputDirname.c_str(), i);
-		sprintf(dispMapFilename, "%s/dispMapFilename-%04d.png", outputDirname.c_str(), i);
-		sprintf(poseEstFilename, "%s/poseEstFilename-%04d.png", outputDirname.c_str(), i);
+		sprintf(dispMapFilename, "%s/dispMap-%04d.png", outputDirname.c_str(), i);
+		sprintf(poseEstFilename, "%s/poseEst-%04d.png", outputDirname.c_str(), i);
 		cvSaveImage(leftCamWithMarks,  leftimgC3);
 		cvSaveImage(rightCamWithMarks, rightimgC3);
 		cvSaveImage(dispMapFilename,   &dispImgU8C3);
@@ -805,7 +858,7 @@ bool CvTest3DPoseEstimate::testVideos() {
 
 
 		// wait for a while for opencv to draw stuff on screen
-//		cvWaitKey(33);  //  milliseconds
+//		cvWaitKey(25);  //  milliseconds
 		cvWaitKey(0);  //  wait indefinitely
 
 		for (int k=0;k<numFeaturesLeft; k++){
@@ -824,6 +877,10 @@ bool CvTest3DPoseEstimate::testVideos() {
 		cvReleaseMat(&temp_image);
 		cvReleaseMat(&harrisCorners);
 	}
+
+	cvSave("Output/indoor1/rods.xml",   &rods,   "rods",   "rodrigues of the cam, w.r.t. start frame");
+	cvSave("Output/indoor1/shifts.xml", &shifts, "shifts", "shifts of the cam, w.r.t. start frame");
+
 	if (lastleftimg)   cvReleaseImage(&lastleftimg);
 	if (lastDispImg)   cvReleaseMat(&lastDispImg);
 	return status;
