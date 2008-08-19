@@ -15,6 +15,7 @@
   <param name="cam0" type="str" value="videre"/>
   <param name="videre/video_mode" type="str" value="640x480_videre"/>
   <param name="videre/videre_param/mode" type="str" value="disparity"/>
+  <param name="videre/frameid_cloud" type="str" value="FRAMEID_STEREO_BLOCK"/>
 
 
   <node pkg="hokuyourg_player" type="hokuyourg_player" respawn="false"/>
