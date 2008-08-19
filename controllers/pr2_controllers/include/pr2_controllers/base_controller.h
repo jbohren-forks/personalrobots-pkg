@@ -48,6 +48,12 @@
 #include <libTF/Pose3D.h>
 #include <urdf/URDF.h>
 
+#include <newmat10/newmat.h>
+#include <newmat10/newmatio.h>
+#include <newmat10/newmatap.h>
+
+#include <std_msgs/RobotBase2DOdom.h>
+
 namespace controller
 {
 
@@ -114,7 +120,15 @@ public:
 
   pthread_mutex_t base_controller_lock_;
 
+  robot_desc::URDF urdf_model_;
+
+  void setGeomParams(std:: string joint_name);
+
 private:
+
+  int num_wheels_;
+
+  int num_casters_;
 
   std::vector<JointEffortController> joint_effort_controllers_;
 
@@ -134,6 +148,10 @@ private:
   
   libTF::Pose3D::Vector cmd_vel_t_;  
 
+  libTF::Pose3D::Vector base_odom_position_;  
+
+  libTF::Pose3D::Vector base_odom_velocity_;  
+
   void setGeomParams();
 
   void computeAndSetCasterSteer();
@@ -147,6 +165,26 @@ private:
   double base_caster_y_offset_;
 
   double wheel_base_;
+
+  std::vector<double> steer_angle_actual_;
+
+  std::vector<double> wheel_speed_actual_;
+
+  std::vector<libTF::Pose3D::Vector> base_wheels_position_;
+
+  void computeBaseVelocity();
+
+  void computeOdometry(double);
+
+  NEWMAT::Matrix pseudoInverse(const NEWMAT::Matrix M);
+
+  void computeWheelPositions();
+
+  void getJointValues();
+
+  std_msgs::RobotBase2DOdom odomMsg;
+
+  double last_time_;
 
 };
 

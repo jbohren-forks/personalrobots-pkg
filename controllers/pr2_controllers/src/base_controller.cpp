@@ -39,6 +39,7 @@
 using namespace std;
 using namespace controller;
 using namespace libTF;
+using namespace NEWMAT;
 
 ROS_REGISTER_CONTROLLER(BaseController)
 
@@ -53,7 +54,7 @@ libTF::Pose3D::Vector addPosition(libTF::Pose3D::Vector pos1, libTF::Pose3D::Vec
   return result;
 }
 
-BaseController::BaseController()
+BaseController::BaseController() : num_wheels_(0), num_casters_(0)
 {
 }
 
@@ -101,6 +102,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
       joint_position->init(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup,0.0,jcp_iter->joint_name,robot);
 //      joint_position->init(jcp_iter->joint_name,robot);
       joint_position_controllers_.push_back(*joint_position);
+      setGeomParams(jcp_iter->joint_name);
     }
     else if(jcp_iter->control_type == "JointVelocityController")
     {
@@ -126,136 +128,73 @@ void BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
     jcp.p_gain = atof(elt->FirstChildElement("controller_defaults")->Attribute("p"));
     jcp.i_gain = atof(elt->FirstChildElement("controller_defaults")->Attribute("i"));
     jcp.d_gain = atof(elt->FirstChildElement("controller_defaults")->Attribute("d"));
-    jcp.windup= atof(elt->FirstChildElement("controller_defaults")->Attribute("iClamp"));
+    jcp.windup = atof(elt->FirstChildElement("controller_defaults")->Attribute("iClamp"));
     jcp.control_type = (std::string) elt->Attribute("type");
     jcp.joint_name = jnt->Attribute("name");
     jcp_vec.push_back(jcp);
 
     elt = config->NextSiblingElement("controller");
   }
-  setGeomParams();
   init(jcp_vec,robot);
 }
 
-/*
-void BaseController::getGeomParams(JointControlParam jcp)
+void BaseController::getJointValues()
 {
+  for(int i=0; i < num_casters_; i++)
+    steer_angle_actual_[i] = joint_position_controllers_[i].getMeasuredPosition();
 
-  char *c_filename = getenv("ROS_PACKAGE_PATH");
-  std::stringstream filename;
-  filename << c_filename << "/robot_descriptions/wg_robot_description/pr2/pr2.xml" ;
-  robot_desc::URDF model;
-  if(!model.loadString(filename.c_str()))
+  for(int i=0; i < num_wheels_; i++)
+    wheel_speed_actual_[i] = joint_velocity_controllers_[i].getMeasuredVelocity();
+}
 
-  robot_desc::URDF::Group *base_group = model.getGroup("base_control");
-  std::vector<JointControlParam>::std::iterator jcp_iter;
-
-  if((int) base_group->linkRoots.size() != 1)
+void BaseController::computeWheelPositions()
+{
+  libTF::Pose3D::Vector res1;
+  int wheel_count = 0;
+  for(int i=0; i < num_casters_; i++)
   {
-    fprintf(stderr,"base_control.cpp::Too many roots in base!\n");
-  }
-  base_link = base_group->linkRoots[0];
-
-  for(jcp_iter = jcp.begin(); jcp_iter != jcp.end(); jcp_iter++)
-  {
-    for(caster_link_iter = base_link->children.begin(); caster_link_iter != base_link->children.end(); caster_link_iter++)
+    for(int j=0; j < (int) base_casters_[i].wheel_pos.size(); j++)
     {
-      if((*caster_link_iter)->joint->name == (*jcp_iter)->joint_name)
-      {
-        caster.pos.x = (*caster_link_iter)->xyz[0];
-        caster.pos.y = (*caster_link_iter)->xyz[1];
-        caster.pos.z = (*caster_link_iter)->xyz[2];
-
-        caster.caster_name = (*caster_link_iter)->joint->name;
-
-        for(wheel_link_iter = (*caster_link_iter)->children.begin();  wheel_link_iter != (*caster_link_iter)->children.end(); wheel_link_iter++)
-        {
-          wheel.x = (*wheel_link_iter)->xyz[0];
-          wheel.y = (*wheel_link_iter)->xyz[1];
-          wheel.z = (*wheel_link_iter)->xyz[2];
-          caster.wheel_pos.push_back(wheel);
-          caster.wheel_names.push_back( (*wheel_link_iter)->joint->name);
-        }
-        bcgp.push_back(caster);
-      }
+      res1 = rotate2D(base_casters_[i].wheel_pos[j],steer_angle_actual_[i]);
+      res1 += base_casters_[i].pos;
+      base_wheels_position_[wheel_count] = res1;
+      wheel_count++;
     }
   }
 }
-*/
 
-void BaseController::setGeomParams()
+void BaseController::setGeomParams(std:: string joint_name)
 {
-  char *c_filename = getenv("ROS_PACKAGE_PATH");
-  std::stringstream filename;
-  filename << c_filename << "/robot_descriptions/wg_robot_description/pr2/pr2.xml" ;
-  robot_desc::URDF model;
-  if(!model.loadFile(filename.str().c_str()))
-     return;
-
-  robot_desc::URDF::Group *base_group = model.getGroup("base_control");
-  robot_desc::URDF::Link *base_link;
   robot_desc::URDF::Link *caster_link;
-  robot_desc::URDF::Link *wheel_link;
-
-//  double base_caster_x_offset(0), base_caster_y_offset(0), wheel_base_(0);
-
-  if((int) base_group->linkRoots.size() != 1)
-  {
-    fprintf(stderr,"base_control.cpp::Too many roots in base!\n");
-  }
-  base_link = base_group->linkRoots[0];
-  caster_link = *(base_link->children.begin());
-  wheel_link = *(caster_link->children.begin());
-
-  base_caster_x_offset_ = fabs(caster_link->xyz[0]);
-  base_caster_y_offset_ = fabs(caster_link->xyz[1]);
-  wheel_base_ = sqrt(wheel_link->xyz[0]*wheel_link->xyz[0]+wheel_link->xyz[1]*wheel_link->xyz[1]);
-
-//  robot_desc::URDF::Link::Geometry::Cylinder *wheel_geom = dynamic_cast<robot_desc::URDF::Link::Geometry::Cylinder*> (wheel_link->collision->geometry->shape);
-//  wheel_radius_ = wheel_geom->radius;
-
+  std::vector<robot_desc::URDF::Link*>::iterator wheel_link_iter;
   BaseCasterGeomParam caster;
-  libTF::Pose3D::Vector wheel_l;
-  libTF::Pose3D::Vector wheel_r;
+  libTF::Pose3D::Vector wheel;
 
-  wheel_l.x = 0;
-  wheel_l.y = wheel_base_/2.0;
-  wheel_l.z = 0;
+  caster_link = urdf_model_.getJointLink(joint_name);
 
-  wheel_r.x = 0;
-  wheel_r.y = -wheel_base_/2.0;
-  wheel_r.z = 0;
+  caster.pos.x = caster_link->xyz[0];
+  caster.pos.y = caster_link->xyz[1];
+  caster.pos.z = caster_link->xyz[2];
 
-  caster.wheel_pos.push_back(wheel_l);
-  caster.wheel_pos.push_back(wheel_r);
-
-// FRONT LEFT
-  caster.pos.x = base_caster_x_offset_;
-  caster.pos.y = base_caster_y_offset_;
-  caster.pos.z = 0;
+  for(wheel_link_iter = caster_link->children.begin(); wheel_link_iter != caster_link->children.end(); wheel_link_iter++)
+  {
+    wheel.x = (*wheel_link_iter)->xyz[0];
+    wheel.y = (*wheel_link_iter)->xyz[1];
+    wheel.z = (*wheel_link_iter)->xyz[2];
+    caster.wheel_pos.push_back(wheel);
+    num_wheels_++;
+    base_wheels_position_.push_back(wheel+caster.pos);
+    wheel_speed_actual_.push_back(0.0);
+  }
+  steer_angle_actual_.push_back(0.0);
   base_casters_.push_back(caster);
-
-// FRONT RIGHT
-  caster.pos.x = base_caster_x_offset_;
-  caster.pos.y = -base_caster_y_offset_;
-  caster.pos.z = 0;
-  base_casters_.push_back(caster);
-
-// REAR LEFT
-  caster.pos.x = -base_caster_x_offset_;
-  caster.pos.y = base_caster_y_offset_;
-  caster.pos.z = 0;
-  base_casters_.push_back(caster);
-
-// REAR RIGHT
-  caster.pos.x = -base_caster_x_offset_;
-  caster.pos.y = -base_caster_y_offset_;
-  caster.pos.z = 0;
-  base_casters_.push_back(caster);
+  num_casters_++;  
 }
 
 void BaseController::update()
 {
+  double current_time = robot_->hw_->current_time_;
+
   if(pthread_mutex_trylock(&base_controller_lock_)==0)
   {
     cmd_vel_.x = cmd_vel_t_.x;
@@ -263,9 +202,20 @@ void BaseController::update()
     cmd_vel_.z = cmd_vel_t_.z;
     pthread_mutex_unlock(&base_controller_lock_);
   }
+
+  getJointValues();
+
+  computeWheelPositions();
+
   computeAndSetCasterSteer();
+
   computeAndSetWheelSpeeds();
+
+  computeOdometry(current_time);
+
   updateJointControllers();
+
+  last_time_ = current_time;
 }
 
 double ModNPiBy2(double angle)
@@ -296,24 +246,21 @@ void  BaseController::computeAndSetWheelSpeeds()
   libTF::Pose3D::Vector res2;
   libTF::Pose3D::Vector res3;
 
-  double caster_steer_angle_actual = 0;
   double wheel_speed_cmd = 0;
-  for(int i=0; i < (int) base_casters_.size(); i++)
+  for(int i=0; i < num_casters_; i++)
   {
-    for(int j=0; j < (int) base_casters_[i].wheel_pos.size(); j++)
+    for(int j=0; j < (int) num_wheels_; j++)
     {
-      caster_steer_angle_actual = joint_velocity_controllers_[i*2+j].getMeasuredVelocity();
-      res1 = rotate2D(base_casters_[i].wheel_pos[j],caster_steer_angle_actual);
-      res1 = addPosition(res1,base_casters_[i].pos);
+      res1 = rotate2D(base_casters_[i].wheel_pos[j],steer_angle_actual_[i]);
+      res1 += base_casters_[i].pos;
       res2 = computePointVelocity2D(res1,cmd_vel_);
-      res3 = rotate2D(res2,-caster_steer_angle_actual);
+      res3 = rotate2D(res2,-steer_angle_actual_[i]);
       wheel_speed_cmd = res3.x/wheel_radius_;     
 
       joint_velocity_controllers_[i*2+j].setCommand(wheel_speed_cmd);
     }
   } 
 }
-
 
 void BaseController::updateJointControllers()
 {
@@ -378,9 +325,15 @@ void BaseControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
 
+  std::string xml_content;
+  node->get_param("robotdesc/pr2",xml_content);
+
   c_->initXml(robot, config);
   node->advertise_service(prefix + "/set_command", &BaseControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_command", &BaseControllerNode::getCommand, this);
+
+  if(!c_->urdf_model_.loadString(xml_content.c_str()))
+     return;
 
 }
 
@@ -405,3 +358,210 @@ Pose3D::Vector BaseController::rotate2D(const Pose3D::Vector& pos, double theta)
 
   return result;
 }
+
+void BaseController::computeOdometry(double time) 
+{
+   double dt = time-last_time_;
+   libTF::Pose3D::Vector base_odom_delta = rotate2D(base_odom_velocity_*dt,base_odom_position_.z);
+   base_odom_delta.z = base_odom_velocity_.z * dt;
+   base_odom_position_ += base_odom_delta;
+
+   odomMsg.pos.x  = base_odom_position_.x;
+   odomMsg.pos.y  = base_odom_position_.y;
+   odomMsg.pos.th = base_odom_position_.z;
+
+   odomMsg.vel.x  = base_odom_velocity_.x;
+   odomMsg.vel.y  = base_odom_velocity_.y;
+   odomMsg.vel.th = base_odom_velocity_.z;
+}
+
+void BaseController::computeBaseVelocity()
+{
+  Matrix A(2*num_wheels_,1);
+  Matrix C(2*num_wheels_,3);
+  Matrix D(3,1);
+  
+  for(int i = 0; i < num_casters_; i++) {
+    A.element(i*4,0)   = cos(steer_angle_actual_[i])*wheel_radius_*(-wheel_speed_actual_[2*i]);
+    A.element(i*4+1,0) = sin(steer_angle_actual_[i])*wheel_radius_*(-wheel_speed_actual_[2*i]);
+    A.element(i*4,0)   = cos(steer_angle_actual_[i])*wheel_radius_*(wheel_speed_actual_[2*i+1]);
+    A.element(i*4+1,0) = sin(steer_angle_actual_[i])*wheel_radius_*(wheel_speed_actual_[2*i+1]);
+  }
+
+  for(int i = 0; i < num_casters_; i++) {
+    C.element(i*4, 0)   = 1;
+    C.element(i*4, 1)   = 0;
+    C.element(i*4, 2)   = -base_wheels_position_[i*2].y;
+    C.element(i*4+1, 0) = 0;
+    C.element(i*4+1, 1) = 1;
+    C.element(i*4+1, 2) =  base_wheels_position_[i*2].x;
+    C.element(i*4+2, 0) = 1;
+    C.element(i*4+2, 1) = 0;
+    C.element(i*4+2, 2) =  -base_wheels_position_[i*2+1].y;
+    C.element(i*4+3, 0) = 0;
+    C.element(i*4+3, 1) = 1;
+    C.element(i*4+3, 2) =  base_wheels_position_[i*2+1].x;
+  }
+  D = pseudoInverse(C)*A; 
+  base_odom_velocity_.x = (double)D.element(0,0);
+  base_odom_velocity_.y = (double)D.element(1,0);
+  base_odom_velocity_.z = (double)D.element(2,0);
+}
+
+Matrix BaseController::pseudoInverse(const Matrix M)
+{
+  Matrix result;
+  //int rows = this->rows();
+  //int cols = this->columns();
+  // calculate SVD decomposition
+  Matrix U,V;
+  DiagonalMatrix D;
+  NEWMAT::SVD(M,D,U,V, true, true);
+  Matrix Dinv = D.i();
+  result = V * Dinv * U.t();
+  return result;
+}
+
+
+
+// void BaseController::setGeomParams()
+// {
+//   char *c_filename = getenv("ROS_PACKAGE_PATH");
+//   std::stringstream filename;
+//   filename << c_filename << "/robot_descriptions/wg_robot_description/pr2/pr2.xml" ;
+//   robot_desc::URDF model;
+//   if(!model.loadFile(filename.str().c_str()))
+//      return;
+
+//   robot_desc::URDF::Group *base_group = model.getGroup("base_control");
+//   robot_desc::URDF::Link *base_link;
+//   robot_desc::URDF::Link *caster_link;
+//   robot_desc::URDF::Link *wheel_link;
+
+// //  double base_caster_x_offset(0), base_caster_y_offset(0), wheel_base_(0);
+
+//   if((int) base_group->linkRoots.size() != 1)
+//   {
+//     fprintf(stderr,"base_control.cpp::Too many roots in base!\n");
+//   }
+//   base_link = base_group->linkRoots[0];
+//   caster_link = *(base_link->children.begin());
+//   wheel_link = *(caster_link->children.begin());
+
+//   base_caster_x_offset_ = fabs(caster_link->xyz[0]);
+//   base_caster_y_offset_ = fabs(caster_link->xyz[1]);
+//   wheel_base_ =2*sqrt(wheel_link->xyz[0]*wheel_link->xyz[0]+wheel_link->xyz[1]*wheel_link->xyz[1]);
+
+//   robot_desc::URDF::Link::Geometry::Cylinder *wheel_geom = dynamic_cast<robot_desc::URDF::Link::Geometry::Cylinder*> (wheel_link->collision->geometry->shape);
+//   wheel_radius_ = wheel_geom->radius;
+
+//   BaseCasterGeomParam caster;
+//   libTF::Pose3D::Vector wheel_l;
+//   libTF::Pose3D::Vector wheel_r;
+
+//   wheel_l.x = 0;
+//   wheel_l.y = wheel_base_/2.0;
+//   wheel_l.z = 0;
+
+//   wheel_r.x = 0;
+//   wheel_r.y = -wheel_base_/2.0;
+//   wheel_r.z = 0;
+
+//   caster.wheel_pos.push_back(wheel_l);
+//   caster.wheel_pos.push_back(wheel_r);
+
+// // FRONT LEFT
+//   caster.pos.x = base_caster_x_offset_;
+//   caster.pos.y = base_caster_y_offset_;
+//   caster.pos.z = 0;
+//   base_casters_.push_back(caster);
+
+// // FRONT RIGHT
+//   caster.pos.x = base_caster_x_offset_;
+//   caster.pos.y = -base_caster_y_offset_;
+//   caster.pos.z = 0;
+//   base_casters_.push_back(caster);
+
+// // REAR LEFT
+//   caster.pos.x = -base_caster_x_offset_;
+//   caster.pos.y = base_caster_y_offset_;
+//   caster.pos.z = 0;
+//   base_casters_.push_back(caster);
+
+// // REAR RIGHT
+//   caster.pos.x = -base_caster_x_offset_;
+//   caster.pos.y = -base_caster_y_offset_;
+//   caster.pos.z = 0;
+//   base_casters_.push_back(caster);
+// }
+// void BaseController::computeBaseVelocity()
+// {
+
+//   Matrix A(2*NUM_WHEELS,1);
+//   //Matrix B(NUM_WHEELS,1);
+//   Matrix C(2*NUM_WHEELS,3);
+//   Matrix D(3,1);
+  
+//   for(int i = 0; i < NUM_CASTERS; i++) {
+//     A.element(i*4,0) = cos(robot->joint[i*3].position) *WHEEL_RADIUS*((double)-1)*robot->joint[i*3+1].velocity;
+//     A.element(i*4+1,0) = sin(robot->joint[i*3].position) *WHEEL_RADIUS*((double)-1)*robot->joint[i*3+1].velocity;
+//     A.element(i*4+2,0) = cos(robot->joint[i*3].position) *WHEEL_RADIUS*robot->joint[i*3+2].velocity;
+//     A.element(i*4+3,0) = sin(robot->joint[i*3].position)* WHEEL_RADIUS*robot->joint[i*3+2].velocity;      
+//   }
+
+//   /*
+//     for(int i = 0; i < (NUM_WHEELS + NUM_CASTERS); i++) {
+//     printf("i: %i pos : %03f vel: %03f\n", i,robot->joint[i].position, robot->joint[i].velocity); 
+//     }
+//   */
+//   for(int i = 0; i < NUM_CASTERS; i++) {
+//     C.element(i*4, 0) = 1;
+//     C.element(i*4, 1) = 0;
+//     C.element(i*4, 2) = -(Rot2D(CASTER_DRIVE_OFFSET[i*2].x,CASTER_DRIVE_OFFSET[i*2].y,robot->joint[i*3].position).y + BASE_CASTER_OFFSET[i].y);
+//     C.element(i*4+1, 0) = 0;
+//     C.element(i*4+1, 1) = 1;
+//     C.element(i*4+1, 2) =  Rot2D(CASTER_DRIVE_OFFSET[i*2].x,CASTER_DRIVE_OFFSET[i*2].y,robot->joint[i*3].position).x + BASE_CASTER_OFFSET[i].x;
+//     C.element(i*4+2, 0) = 1;
+//     C.element(i*4+2, 1) = 0;
+//     C.element(i*4+2, 2) =  -(Rot2D(CASTER_DRIVE_OFFSET[i*2+1].x,CASTER_DRIVE_OFFSET[i*2+1].y,robot->joint[i*3].position).y + BASE_CASTER_OFFSET[i].y);
+//     C.element(i*4+3, 0) = 0;
+//     C.element(i*4+3, 1) = 1;
+//     C.element(i*4+3, 2) =  Rot2D(CASTER_DRIVE_OFFSET[i*2+1].x,CASTER_DRIVE_OFFSET[i*2+1].y,robot->joint[i*3].position).x + BASE_CASTER_OFFSET[i].x;
+//   }
+
+//   D = pseudoInverse(C)*A; 
+//   /*
+//     aTest = C*commandTest;
+//     cout << "A:" << endl;
+//     cout << A;
+//     cout << "C :" << endl;
+//     cout << C<< endl;
+//     cout << "commandTest: "<< endl;
+//     cout << commandTest << endl;
+//     cout << "aTest: "<< endl;
+//     cout << aTest << endl;
+//     //   
+//     //
+//   */
+//   base_odom_vx_ = (double)D.element(0,0);
+//   base_odom_vy_ = (double)D.element(1,0);
+//   base_odom_vw_ = (double)D.element(2,0);
+//   //cout << "D :" << endl;  
+//   //cout << D << endl;
+// }
+
+// Matrix BaseController::pseudoInverse(const Matrix M)
+// {
+//   Matrix result;
+//   //int rows = this->rows();
+//   //int cols = this->columns();
+//   // calculate SVD decomposition
+//   Matrix U,V;
+//   DiagonalMatrix D;
+//   SVD(M,D,U,V, true, true);
+//   Matrix Dinv = D.i();
+//   result = V * Dinv * U.t();
+//   return result;
+// }
+
+
