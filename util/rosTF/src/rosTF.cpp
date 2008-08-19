@@ -193,7 +193,7 @@ NEWMAT::Matrix rosTFClient::getMatrix(std::string target_frame, std::string sour
 rosTFServer::rosTFServer(ros::node & rosnode):
   myNode(rosnode)
 {
-  myNode.advertise<rosTF::TransformArray>("TransformArray");
+  myNode.advertise<rosTF::TransformArray>("TransformArray", 100);
 };
 
 void rosTFServer::sendEuler(std::string frame, std::string parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime)
