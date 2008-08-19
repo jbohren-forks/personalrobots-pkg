@@ -54,7 +54,7 @@ void CvPoseEstErrMeasDisp::measure(const CvMat& uvds0, const CvMat& uvds1) {
 	this->compare(uvds0, uvds11);
 }
 
-void compare(const CvMat& uvds11, const CvMat& uvds1){
+void CvPoseEstErrMeasDisp::compare(const CvMat& uvds11, const CvMat& uvds1){
 	cout << "entering "<<__PRETTY_FUNCTION__<<endl;
 	int n = uvds1.rows; // num of points;
 

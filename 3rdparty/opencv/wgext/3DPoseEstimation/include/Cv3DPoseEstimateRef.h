@@ -49,6 +49,7 @@ public:
 	void setNumRansacIterations(int numIterations) {
 		this->mNumIterations = numIterations;
 	}
+	static bool constructTransform(const CvMat& rot, const CvMat& shift, CvMat& transform);
 
 protected:
 	// a utility function that shall not belong here

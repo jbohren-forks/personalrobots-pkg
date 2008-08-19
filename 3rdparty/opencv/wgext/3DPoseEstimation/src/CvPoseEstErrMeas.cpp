@@ -11,6 +11,8 @@
 #include <iostream>
 using namespace std;
 
+#define DISPLAY 1
+
 CvPoseEstErrMeas::CvPoseEstErrMeas() :
 	mRotation(cvMat(3, 3, CV_64FC1, _mRotData)),
 	mShift(cvMat(3, 1, CV_64FC1,    _mShiftData))
@@ -51,22 +53,15 @@ void CvPoseEstErrMeas::measure(const CvMat& xyzs0, const CvMat& xyzs1){
 }
 
 void CvPoseEstErrMeas::compare(const CvMat& xyzs11, const CvMat& xyzs1){
-
+#ifdef DEBUG
 	cout << "entering "<< __PRETTY_FUNCTION__ << endl;
+#endif
 
 	int n = xyzs1.rows; // number of points
 
 	// now compute the diff
-//	double err3DL2 = cvNorm(&xyzs11, &xyzs1, CV_L2)/n;
-	double err3DL1 = cvNorm(&xyzs11, &xyzs1, CV_L1)/n;
-	double err3DC  = cvNorm(&xyzs11, &xyzs1, CV_C);
-
-#if 0
-	cout << "Errors in Cartesian Space"<<endl;
-	cout << "Inf norm of error in mm of all corners: " << err3DC <<endl;
-	cout << "Average L-1 error in mm of all corners: " << err3DL1 <<endl;
-	cout << "Average L-2 error in mm of all corners: " << err3DL2 <<endl;
-#endif
+	this->mErrL1Norm  = cvNorm(&xyzs11, &xyzs1, CV_L1)/n;
+	this->mErrInfNorm  = cvNorm(&xyzs11, &xyzs1, CV_C);
 
 	double _xyzs1AbsDiff[3*n];
 	double _xyzs1Diff[3*n];
@@ -84,14 +79,14 @@ void CvPoseEstErrMeas::compare(const CvMat& xyzs11, const CvMat& xyzs1){
 		_xyzs1AbsDiff[3*k+2]*_xyzs1AbsDiff[3*k+2]);
 	}
 	_err3DL2 /= n;
-//	CvScalar sum = cvSum(&xyzs1AbsDiff);
-//	double _err3DL1 = (sum.val[0]+sum.val[1]+sum.val[2])/n;
-//	double _err3DC  = cvNorm(&xyzs1AbsDiff, NULL, CV_C);
+	this->mErrL2Norm = _err3DL2;
 
+#if DISPLAY==1
 	cout << "Errors  in Cartesian Space"<<endl;
-	cout << "Inf norm of error in mm of all corners: " << err3DC <<endl;
-	cout << "Average L-1 error in mm of all corners: " << err3DL1 <<endl;
-	cout << "Average L-2 error in mm of all corners: " << _err3DL2 <<endl;
+	cout << "Inf norm of error in mm of all corners: " << mErrInfNorm <<endl;
+	cout << "Average L-1 error in mm of all corners: " << mErrL1Norm  <<endl;
+	cout << "Average L-2 error in mm of all corners: " << mErrL2Norm  <<endl;
+#endif
 
 	// measure errors in x-y and z (depth) separately, as the lrf tends to have larger error
 	// in depth
@@ -101,11 +96,11 @@ void CvPoseEstErrMeas::compare(const CvMat& xyzs11, const CvMat& xyzs1){
 	cvGetCols(&xyzs1AbsDiff, &xy1AbsDiff, 0, 1);
 	cvGetCol(&xyzs1AbsDiff,  &z1AbsDiff,  2);
 
-	double errC_3DXY = cvNorm(&xy1AbsDiff, NULL, CV_C);
-	double errC_3DZ  = cvNorm(&z1AbsDiff,  NULL, CV_C);
+	mErrInfNormXY = cvNorm(&xy1AbsDiff, NULL, CV_C);
+	mErrInfNormZ  = cvNorm(&z1AbsDiff,  NULL, CV_C);
 
-	double errL1_3DXY = cvNorm(&xy1AbsDiff, NULL, CV_L1)/n;
-	double errL1_3DZ  = cvNorm(&z1AbsDiff, NULL, CV_L1)/n;
+	mErrL1NormXY  = cvNorm(&xy1AbsDiff, NULL, CV_L1)/n;
+	mErrL1NormZ   = cvNorm(&z1AbsDiff,  NULL, CV_L1)/n;
 
 	double errL2_3DXY = 0;
 	double errL2_3DZ  = 0;
@@ -119,19 +114,24 @@ void CvPoseEstErrMeas::compare(const CvMat& xyzs11, const CvMat& xyzs1){
 	errL2_3DXY /= n;
 	errL2_3DZ  /= n;
 
-	cout << "Errors  in Cartesian Space (measured separately in X-Y and Z"<<endl;
-	cout << "Inf norm of error in mm of all corners: " << errC_3DXY << ","<<errC_3DZ <<endl;
-	cout << "Average L-1 error in mm of all corners: " << errL1_3DXY << ","<<errL1_3DZ <<endl;
-	cout << "Average L-2 error in mm of all corners: " << errL2_3DXY << ","<<errL2_3DZ <<endl;
+	mErrL2NormXY = errL2_3DXY;
+	mErrL2NormZ  = errL2_3DZ;
 
-	// measure bias in cartesian space
+#if DISPLAY==1
+	cout << "Errors  in Cartesian Space (measured separately in X-Y and Z"<<endl;
+	cout << "Inf norm of error in mm of all corners: " << mErrInfNormXY << ","<<mErrInfNormZ <<endl;
+	cout << "Average L-1 error in mm of all corners: " << mErrL1NormXY  << ","<<mErrL1NormZ  <<endl;
+	cout << "Average L-2 error in mm of all corners: " << mErrL2NormXY  << ","<<mErrL2NormZ  <<endl;
+#endif
+	// measure bias in Cartesian space
 	// simply compute the average of the error vectors of each data point
 	CvMat xyzs1Diff_3c;
 	cvReshape(&xyzs1Diff, &xyzs1Diff_3c, 3, 0);
 	CvScalar avgErrorVector = cvAvg(&xyzs1Diff_3c);
 
+#if DISPLAY==1
 	cout << "Average error vector:"<<avgErrorVector.val[0]<<","<<avgErrorVector.val[1]<<","<<avgErrorVector.val[2]<<endl;
-
+#endif
 }
 
 

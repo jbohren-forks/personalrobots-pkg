@@ -22,6 +22,18 @@ public:
 	CvMat mRotation;
 	CvMat mShift;
 
+	double mErrL1Norm;
+	double mErrL2Norm;
+	double mErrInfNorm;
+
+	double mErrL1NormXY;
+	double mErrL1NormZ;
+	double mErrL2NormXY;
+	double mErrL2NormZ;
+	double mErrInfNormXY;
+	double mErrInfNormZ;
+
+
 protected:
 	double _mRotData[9];
 	double _mShiftData[3];

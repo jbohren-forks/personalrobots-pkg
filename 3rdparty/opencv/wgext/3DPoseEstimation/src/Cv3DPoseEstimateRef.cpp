@@ -403,19 +403,28 @@ bool Cv3DPoseEstimateRef::pick3RandomPoints(CvMat* points0, CvMat* points1, CvMa
 }
 
 bool Cv3DPoseEstimateRef::constructRT(CvMat *R, CvMat *T, CvMat *RT){
+	if (R == NULL || T == NULL) {
+		return false;
+	}
+	return constructTransform(*R, *T, *RT);
+}
+
+bool Cv3DPoseEstimateRef::constructTransform(
+		const CvMat& rot, const CvMat& shift, CvMat& transform) {
 	bool status = true;
     // construct RT
     for (int r=0; r<3; r++) {
         for (int c=0; c<3; c++) {
-            cvSetReal2D(RT, r, c, cvmGet(R, r, c));
+            cvSetReal2D(&transform, r, c, cvmGet(&rot, r, c));
         }
-        cvSetReal2D(RT, r, 3, cvmGet(T, r, 0));
+        cvSetReal2D(&transform, r, 3, cvmGet(&shift, r, 0));
     }
 
-    cvSetReal2D(RT, 3, 0, 0.0);
-    cvSetReal2D(RT, 3, 1, 0.0);
-    cvSetReal2D(RT, 3, 2, 0.0);
-    cvSetReal2D(RT, 3, 3, 1.0);
+    // last row
+    cvSetReal2D(&transform, 3, 0, 0.0);
+    cvSetReal2D(&transform, 3, 1, 0.0);
+    cvSetReal2D(&transform, 3, 2, 0.0);
+    cvSetReal2D(&transform, 3, 3, 1.0);
 	return status;
 }
 
