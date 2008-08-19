@@ -183,8 +183,8 @@ private:
 	   of data will not happen, but we don't want the node to
 	   postpone processing latest data just because it is not done
 	   with older data. */
-	if (m_verbose)
-	    printf("Received laser scan with %u points in frame %d\n", m_inputScan.get_ranges_size(), m_inputScan.header.frame_id);
+	if (m_verbose) 
+          fprintf(stdout, "Received laser scan with %d points in frame %s\n", m_inputScan.get_ranges_size(), m_inputScan.header.frame_id.c_str());
 	
 	/* copy data to a place where incoming messages do not affect it */
 	bool success = false;
