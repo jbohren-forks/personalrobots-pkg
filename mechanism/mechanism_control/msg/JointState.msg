@@ -1,5 +1,4 @@
 string name
-byte initialized
 float64 position
 float64 velocity
 float64 applied_effort

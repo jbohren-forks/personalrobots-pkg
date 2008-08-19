@@ -308,7 +308,6 @@ void MechanismControlNode::update()
     for (unsigned int i = 0; i < mc_->model_.joints_.size(); ++i)
     {
       mechanism_state_.joint_states[i].name = mc_->model_.joints_[i]->name_;
-      mechanism_state_.joint_states[i].initialized = mc_->model_.joints_[i]->initialized_;
       mechanism_state_.joint_states[i].position = mc_->model_.joints_[i]->position_;
       mechanism_state_.joint_states[i].velocity = mc_->model_.joints_[i]->velocity_;
       mechanism_state_.joint_states[i].applied_effort = mc_->model_.joints_[i]->applied_effort_;

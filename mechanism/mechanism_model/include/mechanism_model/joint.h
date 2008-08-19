@@ -47,7 +47,6 @@ public:
   int type_;
 
   // Update every cycle from input data
-  bool initialized_;
   double position_;  // In radians
   double velocity_;
   double applied_effort_;
