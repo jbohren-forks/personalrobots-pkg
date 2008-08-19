@@ -1513,7 +1513,7 @@ void SmartScan::computeSpinImageNatural(scan_utils::Grid2D &si, float x, float y
 	// -- Setup libTF.
 	libTF::TFVector tfn0, tfn1, tfn2;
 	libTF::TransformReference tr;
-	tfn0.frame = 13;
+	tfn0.frame = "FRAMEID_SPIN_ORIG";
 	tfn0.time = 0; 
 	tfn0.x = normal.x;
 	tfn0.y = normal.y;
@@ -1521,32 +1521,32 @@ void SmartScan::computeSpinImageNatural(scan_utils::Grid2D &si, float x, float y
 
 	// -- Find the transformation that makes the surface normal point up.
 	double pitch = atan2(normal.x, normal.z);
-	tr.setWithEulers((unsigned int)13, (unsigned int)14, 0.0, 0.0, 0.0, 0.0, -pitch, 0.0, (libTF::TransformReference::ULLtime)0);
-	tfn1 = tr.transformVector(14, tfn0);
+	tr.setWithEulers("FRAMEID_SPIN_ORIG", "FRAMEID_SPIN_STAGE1", 0.0, 0.0, 0.0, 0.0, -pitch, 0.0, (libTF::TransformReference::ULLtime)0);
+	tfn1 = tr.transformVector("FRAMEID_SPIN_STAGE1", tfn0);
 	float roll = atan2(tfn1.y, tfn1.z);
-	tr.setWithEulers((unsigned int)14, (unsigned int)15, 0.0, 0.0, 0.0, 0.0, 0.0, roll, (libTF::TransformReference::ULLtime)0);
-	tfn2 = tr.transformVector(15, tfn1);
+	tr.setWithEulers("FRAMEID_SPIN_STAGE1", "FRAMEID_SPIN_STAGE2", 0.0, 0.0, 0.0, 0.0, 0.0, roll, (libTF::TransformReference::ULLtime)0);
+	tfn2 = tr.transformVector("FRAMEID_SPIN_STAGE2", tfn1);
 
 	// -- Transform the spin image center point.
 	libTF::TFPoint center0, center2;
-	center0.frame = 13;
+	center0.frame = "FRAMEID_SPIN_ORIG";
 	center0.time = 0;
 	center0.x = x;
 	center0.y = y;
 	center0.z = z;
-	center2 = tr.transformPoint(15, center0);
+	center2 = tr.transformPoint("FRAMEID_SPIN_STAGE2", center0);
 
 	// -- Transform the nearby points.
-	//ss.applyTransform(tr.getMatrix(13, 15, 0));  Why doesn't this work? -- ss was a smartscan of cld.
+	//ss.applyTransform(tr.getMatrix("FRAMEID_SPIN_ORIG", "FRAMEID_SPIN_STAGE2", 0));  Why doesn't this work? -- ss was a smartscan of cld.
 	std_msgs::PointCloudFloat32* cld = getPointsWithinRadiusPointCloud(x, y, z, support*sqrt(2));
 	libTF::TFPoint ptf, ptf2;
 	for (unsigned int j=0; j<cld->get_pts_size(); j++) {
-	        ptf.frame = 13;
+	        ptf.frame = "FRAMEID_SPIN_ORIG";
 		ptf.time = 0;
 		ptf.x = cld->pts[j].x;
 		ptf.y = cld->pts[j].y;
 		ptf.z = cld->pts[j].z;
-		ptf2 = tr.transformPoint(15, ptf);
+		ptf2 = tr.transformPoint("FRAMEID_SPIN_STAGE2", ptf);
 		cld->pts[j].x = ptf2.x;
 		cld->pts[j].y = ptf2.y;
 		cld->pts[j].z = ptf2.z;
