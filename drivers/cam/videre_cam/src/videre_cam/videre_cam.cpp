@@ -66,8 +66,6 @@ videre_cam::VidereCam::VidereCam(uint64_t guid,
                                  size_t bufferSize)
   : Cam(guid, speed, DC1394_VIDEO_MODE_640x480_YUV422, fps, bufferSize), proc_mode_(proc_mode), lproj_(3,4), rproj_(3,4), lrect_(3,3), rrect_(3,3)
 {
-  CHECK_READY();
-
   std::cout << "Starting videre constructor!" << std::endl;
 
   if (dcCam->vendor_id != 0x5505)
@@ -274,8 +272,6 @@ videre_cam::VidereCam::setHDR(bool hdr)
 dc1394_cam::FrameSet
 videre_cam::VidereCam::getFrames(dc1394capture_policy_t policy)
 {
-  CHECK_READY();
-
   FrameSet fs;
 
   dc1394video_frame_t* dcframe = getDc1394Frame(policy);

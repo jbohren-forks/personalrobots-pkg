@@ -41,34 +41,6 @@
 
 #include <opencv/cv.h> 
 
-#define CHECK_READY() \
-  if (!dcRef) { \
-    char msg[256]; \
-    snprintf(msg, 256, "Tried to call %s before calling dc1394_cam::Cam::init()", __FUNCTION__); \
-    throw CamException(msg); \
-  }
-
-#define CHECK_ERR(fnc, amsg) \
-  { \
-  dc1394error_t err = fnc; \
-  if (err != DC1394_SUCCESS) { \
-    char msg[256]; \
-    snprintf(msg, 256, "%s: %s", dc1394_error_get_string(err), amsg);        \
-    throw CamException(msg); \
-  } \
-  }
-
-#define CHECK_ERR_CLEAN(fnc, amsg) \
-  { \
-  dc1394error_t err = fnc; \
-  if (err != DC1394_SUCCESS) { \
-    cleanup(); \
-    char msg[256]; \
-    snprintf(msg, 256, "%s: %s", dc1394_error_get_string(err), amsg);        \
-    throw CamException(msg); \
-  }\
-  }
-
 namespace dc1394_cam
 {
 

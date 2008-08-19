@@ -35,6 +35,37 @@
 #include "dc1394_cam/dc1394_cam.h"
 #include <errno.h>
 
+
+#define CHECK_READY() \
+  if (!dcRef) { \
+    char msg[256]; \
+    snprintf(msg, 256, "Tried to call %s before calling dc1394_cam::Cam::init()", __FUNCTION__); \
+    throw CamException(msg); \
+  }
+
+#define CHECK_ERR(fnc, amsg) \
+  { \
+  dc1394error_t err = fnc; \
+  if (err != DC1394_SUCCESS) { \
+    char msg[256]; \
+    snprintf(msg, 256, "%s: %s", dc1394_error_get_string(err), amsg);        \
+    throw CamException(msg); \
+  } \
+  }
+
+#define CHECK_ERR_CLEAN(fnc, amsg) \
+  { \
+  dc1394error_t err = fnc; \
+  if (err != DC1394_SUCCESS) { \
+    cleanup(); \
+    char msg[256]; \
+    snprintf(msg, 256, "%s: %s", dc1394_error_get_string(err), amsg);        \
+    throw CamException(msg); \
+  }\
+  }
+
+
+
 dc1394_t* dc1394_cam::Cam::dcRef = NULL;
 fd_set dc1394_cam::Cam::camFds;
 
@@ -103,8 +134,8 @@ uint64_t dc1394_cam::getGuid(size_t i)
 bool dc1394_cam::waitForData(int usec)
 {
   struct timeval timeout;
-  timeout.tv_sec = 0;     // If you want to sleep longer than a second, you're probably doing something bad...
-  timeout.tv_usec = usec;
+  timeout.tv_sec = usec / 1000000;
+  timeout.tv_usec = usec % 1000000;
 
   fd_set fds = dc1394_cam::Cam::camFds;
 
