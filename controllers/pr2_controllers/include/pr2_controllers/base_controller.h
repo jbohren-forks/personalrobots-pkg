@@ -70,8 +70,25 @@ typedef struct
 typedef struct
 {
     libTF::Pose3D::Vector pos;
+    Controller * controller;
     std::vector<libTF::Pose3D::Vector> wheel_pos;
+    std::vector<Controller*> wheel_controller;
 }BaseCasterGeomParam;
+
+
+class BaseParam
+{
+  public:
+  BaseParam(){}
+  ~BaseParam(){}
+    libTF::Pose3D::Vector pos_;
+    std::string name_;
+    JointVelocityController controller_;
+    mechanism::Joint *joint_;
+    BaseParam *parent_;
+    int local_id_;
+};
+
 
 class BaseController : public Controller
 {
@@ -112,11 +129,9 @@ public:
    */
   virtual void update();
 
-  std::vector<BaseCasterGeomParam> base_casters_;
+  std::vector<BaseParam> base_casters_;
 
-  std::vector<double> caster_steer_angles_;
-
-  std::vector<double> wheel_speeds_;
+  std::vector<BaseParam> base_wheels_;
 
   pthread_mutex_t base_controller_lock_;
 
@@ -130,11 +145,7 @@ private:
 
   int num_casters_;
 
-  std::vector<JointEffortController> joint_effort_controllers_;
-
-  std::vector<JointPositionController> joint_position_controllers_;
-
-  std::vector<JointVelocityController> joint_velocity_controllers_;
+  double kp_speed_;
 
   mechanism::Robot* robot_;
 
@@ -152,23 +163,17 @@ private:
 
   libTF::Pose3D::Vector base_odom_velocity_;  
 
-  void setGeomParams();
-
   void computeAndSetCasterSteer();
 
   void computeAndSetWheelSpeeds();
 
   double wheel_radius_;
 
-  double base_caster_x_offset_;
-
-  double base_caster_y_offset_;
-
-  double wheel_base_;
-
   std::vector<double> steer_angle_actual_;
 
   std::vector<double> wheel_speed_actual_;
+
+  std::vector<double> steer_velocity_desired_;
 
   std::vector<libTF::Pose3D::Vector> base_wheels_position_;
 

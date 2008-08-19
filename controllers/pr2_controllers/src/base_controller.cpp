@@ -43,16 +43,6 @@ using namespace NEWMAT;
 
 ROS_REGISTER_CONTROLLER(BaseController)
 
-libTF::Pose3D::Vector addPosition(libTF::Pose3D::Vector pos1, libTF::Pose3D::Vector pos2)
-{
-  libTF::Pose3D::Vector result;
-
-  result.x = pos1.x + pos2.x;
-  result.y = pos1.y + pos2.y;
-  result.z = pos1.z + pos2.z;
-
-  return result;
-}
 
 BaseController::BaseController() : num_wheels_(0), num_casters_(0)
 {
@@ -86,32 +76,51 @@ libTF::Pose3D::Vector BaseController::getCommand()// Return the current position
 void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *robot)
 {
   std::vector<JointControlParam>::iterator jcp_iter;
+  robot_desc::URDF::Link *link;
+  std::string joint_name;
 
   for(jcp_iter = jcp.begin(); jcp_iter != jcp.end(); jcp_iter++)
   {
-    if(jcp_iter->control_type == "JointTorqueController")
+    joint_name = jcp_iter->joint_name;
+    link = urdf_model_.getJointLink(joint_name);
+
+    BaseParam base_object;
+    base_object.pos_.x = link->xyz[0];
+    base_object.pos_.y = link->xyz[1];
+    base_object.pos_.z = link->xyz[2];
+    base_object.name_ = joint_name;
+    base_object.parent_ = NULL;
+    base_object.joint_ = robot->getJoint(joint_name);
+    base_object.controller_.init(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup,0.0,jcp_iter->joint_name,robot);
+
+    if(joint_name.find("caster") != string::npos)
     {
-      JointEffortController *joint_effort = new JointEffortController();
-      // joint_effort->init(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup,0,robot,robot->getJoint(jcp_iter->joint_name));
-      joint_effort->init(jcp_iter->joint_name,robot);
-      joint_effort_controllers_.push_back(*joint_effort);
+      base_object.local_id_ = num_casters_;
+      base_casters_.push_back(base_object);      
+      num_casters_++;
     }
-    else if(jcp_iter->control_type == "JointPositionController")
+    if(joint_name.find("wheel") != string::npos)
     {
-      JointPositionController *joint_position = new JointPositionController();
-      joint_position->init(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup,0.0,jcp_iter->joint_name,robot);
-//      joint_position->init(jcp_iter->joint_name,robot);
-      joint_position_controllers_.push_back(*joint_position);
-      setGeomParams(jcp_iter->joint_name);
-    }
-    else if(jcp_iter->control_type == "JointVelocityController")
-    {
-      JointVelocityController *joint_velocity = new JointVelocityController();
-      joint_velocity->init(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup,0.0,jcp_iter->joint_name,robot);
-//      joint_velocity->init(jcp_iter->joint_name,robot);
-      joint_velocity_controllers_.push_back(*joint_velocity);
+      base_object.local_id_ = num_wheels_;
+      base_wheels_.push_back(base_object);
+      num_wheels_++;
     }
   }
+
+  for(int i =0; i < num_wheels_; i++)
+  {
+    link = urdf_model_.getJointLink(base_wheels_[i].name_);
+    std::string parent_name = link->parent->joint->name;
+    for(int j =0; j < num_casters_; j++)
+    {
+      if(parent_name == base_casters_[j].name_)
+      {
+        base_wheels_[i].parent_ = &base_casters_[j];
+        break;
+      }
+    }
+  }
+
   robot_ = robot;
 }
 
@@ -120,7 +129,6 @@ void BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
   TiXmlElement *elt = config->FirstChildElement("controller");
   std::vector<JointControlParam> jcp_vec;
   JointControlParam jcp;
-
   while (elt){
     TiXmlElement *jnt = elt->FirstChildElement("joint");
 
@@ -135,61 +143,49 @@ void BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 
     elt = config->NextSiblingElement("controller");
   }
+  elt = config->FirstChildElement("map");
+  while(elt)
+  {
+    if(elt->Attribute("name") == "velocity_control")
+    {
+      TiXmlElement *elt_key = elt->FirstChildElement("elem");
+      while(elt_key)
+      {
+        if(elt_key->Attribute("key") == "kp_speed")
+        {
+          kp_speed_ = atof(elt_key->GetText());
+          break;
+        }
+        elt_key = elt->NextSiblingElement("elem");
+      }
+    }
+    elt = config->NextSiblingElement("map");
+  }
   init(jcp_vec,robot);
 }
 
 void BaseController::getJointValues()
 {
   for(int i=0; i < num_casters_; i++)
-    steer_angle_actual_[i] = joint_position_controllers_[i].getMeasuredPosition();
+    steer_angle_actual_[i] = base_casters_[i].joint_->position_;
 
   for(int i=0; i < num_wheels_; i++)
-    wheel_speed_actual_[i] = joint_velocity_controllers_[i].getMeasuredVelocity();
+    wheel_speed_actual_[i] = base_wheels_[i].controller_.getMeasuredVelocity();
 }
 
 void BaseController::computeWheelPositions()
 {
   libTF::Pose3D::Vector res1;
-  int wheel_count = 0;
-  for(int i=0; i < num_casters_; i++)
+  double steer_angle;
+  for(int i=0; i < num_wheels_; i++)
   {
-    for(int j=0; j < (int) base_casters_[i].wheel_pos.size(); j++)
-    {
-      res1 = rotate2D(base_casters_[i].wheel_pos[j],steer_angle_actual_[i]);
-      res1 += base_casters_[i].pos;
-      base_wheels_position_[wheel_count] = res1;
-      wheel_count++;
-    }
+    steer_angle = base_wheels_[i].parent_->joint_->position_;
+    res1 = rotate2D(base_wheels_[i].pos_,steer_angle);
+    res1 += base_casters_[i].pos_;
+    base_wheels_position_[i] = res1;
   }
 }
 
-void BaseController::setGeomParams(std:: string joint_name)
-{
-  robot_desc::URDF::Link *caster_link;
-  std::vector<robot_desc::URDF::Link*>::iterator wheel_link_iter;
-  BaseCasterGeomParam caster;
-  libTF::Pose3D::Vector wheel;
-
-  caster_link = urdf_model_.getJointLink(joint_name);
-
-  caster.pos.x = caster_link->xyz[0];
-  caster.pos.y = caster_link->xyz[1];
-  caster.pos.z = caster_link->xyz[2];
-
-  for(wheel_link_iter = caster_link->children.begin(); wheel_link_iter != caster_link->children.end(); wheel_link_iter++)
-  {
-    wheel.x = (*wheel_link_iter)->xyz[0];
-    wheel.y = (*wheel_link_iter)->xyz[1];
-    wheel.z = (*wheel_link_iter)->xyz[2];
-    caster.wheel_pos.push_back(wheel);
-    num_wheels_++;
-    base_wheels_position_.push_back(wheel+caster.pos);
-    wheel_speed_actual_.push_back(0.0);
-  }
-  steer_angle_actual_.push_back(0.0);
-  base_casters_.push_back(caster);
-  num_casters_++;  
-}
 
 void BaseController::update()
 {
@@ -230,48 +226,49 @@ double ModNPiBy2(double angle)
 void BaseController::computeAndSetCasterSteer()
 {
   libTF::Pose3D::Vector result;
-  double caster_steer_angle_desired;
-  for(int i=0; i < (int) base_casters_.size(); i++)
+  double steer_angle_desired;
+  double kp_local = 10;
+  for(int i=0; i < num_casters_; i++)
   {
-    result = computePointVelocity2D(base_casters_[i].pos, cmd_vel_);
-    caster_steer_angle_desired = atan2(result.y,result.x);
-    caster_steer_angle_desired = ModNPiBy2(caster_steer_angle_desired);//Clean steer Angle
-    joint_position_controllers_[i].setCommand(caster_steer_angle_desired);
+    result = computePointVelocity2D(base_casters_[i].pos_, cmd_vel_);
+    steer_angle_desired = atan2(result.y,result.x);
+    steer_angle_desired = ModNPiBy2(steer_angle_desired);//Clean steer Angle    
+    steer_velocity_desired_[i] = kp_local*steer_angle_desired;
+    base_casters_[i].controller_.setCommand(steer_velocity_desired_[i]);
   } 
 }
 
-void  BaseController::computeAndSetWheelSpeeds()
+void BaseController::computeAndSetWheelSpeeds()
 {
-  libTF::Pose3D::Vector res1;
-  libTF::Pose3D::Vector res2;
-  libTF::Pose3D::Vector res3;
+  libTF::Pose3D::Vector wheel_point_velocity;
+  libTF::Pose3D::Vector wheel_point_velocity_projected;
+  libTF::Pose3D::Vector wheel_caster_steer_component;
+  libTF::Pose3D::Vector caster_2d_velocity;
+
+  caster_2d_velocity.x = 0;
+  caster_2d_velocity.y = 0;
+  caster_2d_velocity.z = 0;
 
   double wheel_speed_cmd = 0;
-  for(int i=0; i < num_casters_; i++)
+  double steer_angle_actual = 0;
+  for(int i=0; i < (int) num_wheels_; i++)
   {
-    for(int j=0; j < (int) num_wheels_; j++)
-    {
-      res1 = rotate2D(base_casters_[i].wheel_pos[j],steer_angle_actual_[i]);
-      res1 += base_casters_[i].pos;
-      res2 = computePointVelocity2D(res1,cmd_vel_);
-      res3 = rotate2D(res2,-steer_angle_actual_[i]);
-      wheel_speed_cmd = res3.x/wheel_radius_;     
-
-      joint_velocity_controllers_[i*2+j].setCommand(wheel_speed_cmd);
-    }
-  } 
+    caster_2d_velocity.z = steer_velocity_desired_[base_wheels_[i].parent_->local_id_];
+    steer_angle_actual = base_wheels_[i].parent_->joint_->position_;
+    wheel_point_velocity = computePointVelocity2D(base_wheels_position_[i],cmd_vel_);
+    wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
+    wheel_point_velocity_projected = rotate2D(wheel_point_velocity,-steer_angle_actual);
+    wheel_speed_cmd = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/wheel_radius_;     
+    base_wheels_[i].controller_.setCommand(wheel_speed_cmd);
+  }
 }
 
 void BaseController::updateJointControllers()
 {
-  for(int i=0; i < (int) joint_effort_controllers_.size(); i++)
-    joint_effort_controllers_[i].update();
-
-  for(int i=0; i < (int) joint_velocity_controllers_.size(); i++)
-    joint_velocity_controllers_[i].update();
-
-  for(int i=0; i < (int) joint_position_controllers_.size(); i++)
-    joint_position_controllers_[i].update();
+  for(int i=0; i < num_wheels_; i++)
+    base_wheels_[i].controller_.update();
+  for(int i=0; i < num_casters_; i++)
+    base_casters_[i].controller_.update();
 }
 
 ROS_REGISTER_CONTROLLER(BaseControllerNode)
@@ -380,27 +377,21 @@ void BaseController::computeBaseVelocity()
   Matrix A(2*num_wheels_,1);
   Matrix C(2*num_wheels_,3);
   Matrix D(3,1);
-  
-  for(int i = 0; i < num_casters_; i++) {
-    A.element(i*4,0)   = cos(steer_angle_actual_[i])*wheel_radius_*(-wheel_speed_actual_[2*i]);
-    A.element(i*4+1,0) = sin(steer_angle_actual_[i])*wheel_radius_*(-wheel_speed_actual_[2*i]);
-    A.element(i*4,0)   = cos(steer_angle_actual_[i])*wheel_radius_*(wheel_speed_actual_[2*i+1]);
-    A.element(i*4+1,0) = sin(steer_angle_actual_[i])*wheel_radius_*(wheel_speed_actual_[2*i+1]);
+  double steer_angle;
+
+  for(int i = 0; i < num_wheels_; i++) {
+    steer_angle = base_wheels_[i].parent_->joint_->position_;
+    A.element(i*2,0)   = cos(steer_angle)*wheel_radius_*(wheel_speed_actual_[i]);
+    A.element(i*2+1,0) = sin(steer_angle)*wheel_radius_*(wheel_speed_actual_[i]);
   }
 
-  for(int i = 0; i < num_casters_; i++) {
-    C.element(i*4, 0)   = 1;
-    C.element(i*4, 1)   = 0;
-    C.element(i*4, 2)   = -base_wheels_position_[i*2].y;
-    C.element(i*4+1, 0) = 0;
-    C.element(i*4+1, 1) = 1;
-    C.element(i*4+1, 2) =  base_wheels_position_[i*2].x;
-    C.element(i*4+2, 0) = 1;
-    C.element(i*4+2, 1) = 0;
-    C.element(i*4+2, 2) =  -base_wheels_position_[i*2+1].y;
-    C.element(i*4+3, 0) = 0;
-    C.element(i*4+3, 1) = 1;
-    C.element(i*4+3, 2) =  base_wheels_position_[i*2+1].x;
+  for(int i = 0; i < num_wheels_; i++) {
+    C.element(i*2, 0)   = 1;
+    C.element(i*2, 1)   = 0;
+    C.element(i*2, 2)   = -base_wheels_position_[i].y;
+    C.element(i*2+1, 0) = 0;
+    C.element(i*2+1, 1) = 1;
+    C.element(i*2+1, 2) =  base_wheels_position_[i].x;
   }
   D = pseudoInverse(C)*A; 
   base_odom_velocity_.x = (double)D.element(0,0);
