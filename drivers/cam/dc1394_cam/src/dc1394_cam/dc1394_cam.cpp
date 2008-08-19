@@ -121,11 +121,148 @@ bool dc1394_cam::waitForData(int usec)
   return true;
 }
 
+
+dc1394_cam::FrameWrapper
+dc1394_cam::debayerFrame(FrameWrapper& f, dc1394color_filter_t bayer, dc1394bayer_method_t method)
+{
+  dc1394video_frame_t* f2 = (dc1394video_frame_t*)calloc(1,sizeof(dc1394video_frame_t));
+  f.getFrame()->color_filter = bayer;
+
+  if (dc1394_debayer_frames(f.getFrame(), f2, DC1394_BAYER_METHOD_BILINEAR) != DC1394_SUCCESS)
+    throw CamException("Debayering frame failed");
+  else
+  {
+    FrameWrapper fw(f.getName(), f2, f.getParent(), FRAME_OWNS_BOTH);
+    return fw;
+  }
+}
+
+
+void
+dc1394_cam::initUndistortFrame(FrameWrapper& fw, CvMat *intrinsic, CvMat *distortion, IplImage **mapx, IplImage **mapy)
+{
+  if (*mapx)
+    cvReleaseImage(mapx);
+  if (*mapy)
+    cvReleaseImage(mapy);
+
+  *mapx = cvCreateImage( cvSize(fw.getFrame()->size[0], fw.getFrame()->size[1]), IPL_DEPTH_32F, 1 );
+  *mapy = cvCreateImage( cvSize(fw.getFrame()->size[0], fw.getFrame()->size[1]), IPL_DEPTH_32F, 1 );        
+  
+  cvInitUndistortMap(intrinsic,
+                     distortion,
+                     *mapx,
+                     *mapy);  
+}
+
+
+
+dc1394_cam::FrameWrapper
+dc1394_cam::undistortFrame(FrameWrapper& f1, IplImage *mapx, IplImage *mapy)
+{
+  dc1394video_frame_t* dcf2 = (dc1394video_frame_t*)calloc(1,sizeof(dc1394video_frame_t));
+  *dcf2 = *(f1.getFrame());
+  dcf2->image = (unsigned char*)malloc(dcf2->total_bytes);
+
+  int channels = 1;
+  
+  if (f1.getFrame()->color_coding == DC1394_COLOR_CODING_MONO8)
+    channels = 1;
+  else if (f1.getFrame()->color_coding == DC1394_COLOR_CODING_RGB8)
+    channels = 3;
+  
+  IplImage* cv_img1 = cvCreateImageHeader(cvSize(f1.getFrame()->size[0], f1.getFrame()->size[1]), IPL_DEPTH_8U, channels);
+  cv_img1->imageData = (char*)(f1.getFrame()->image);
+  cv_img1->imageSize = f1.getFrame()->image_bytes;
+  
+  IplImage* cv_img2 = cvCreateImageHeader(cvSize(dcf2->size[0], dcf2->size[1]), IPL_DEPTH_8U, channels);
+  cv_img2->imageData = (char*)(dcf2->image);
+  cv_img2->imageSize = dcf2->image_bytes;
+
+  cvRemap(cv_img1, cv_img2, mapx, mapy);
+    
+  cvReleaseImageHeader(&cv_img1);
+  cvReleaseImageHeader(&cv_img2);
+
+  return FrameWrapper(f1.getName(), dcf2, f1.getParent(), FRAME_OWNS_BOTH);
+}
+
+
+dc1394_cam::FrameWrapper
+dc1394_cam::undistortFrame(FrameWrapper& f1, CvMat *intrinsic, CvMat *distortion)
+{
+
+  IplImage *mapx = cvCreateImage( cvSize(f1.getFrame()->size[0], f1.getFrame()->size[1]), IPL_DEPTH_32F, 1 );
+  IplImage *mapy = cvCreateImage( cvSize(f1.getFrame()->size[0], f1.getFrame()->size[1]), IPL_DEPTH_32F, 1 );
+
+  cvInitUndistortMap(intrinsic,
+                     distortion,
+                     mapx,
+                     mapy);
+
+  FrameWrapper f2 = undistortFrame(f1, mapx, mapy);
+
+  cvReleaseImage(&mapx);
+  cvReleaseImage(&mapy);
+
+  return f2;
+}
+
+
+dc1394_cam::FrameWrapper
+dc1394_cam::undistortFrame(FrameWrapper& f1, double fx, double fy, double cx, double cy, double k1, double k2, double p1, double p2)
+{
+
+  CvMat *intrinsic = cvCreateMat(3,3,CV_32FC1);
+  CvMat *distortion = cvCreateMat(4,1,CV_32FC1);  
+
+  CV_MAT_ELEM(*intrinsic, float, 0, 0) = fx;
+  CV_MAT_ELEM(*intrinsic, float, 0, 2) = cx;
+  CV_MAT_ELEM(*intrinsic, float, 1, 1) = fy;
+  CV_MAT_ELEM(*intrinsic, float, 1, 2) = cy;
+  CV_MAT_ELEM(*intrinsic, float, 2, 2) = 1;
+  
+  CV_MAT_ELEM(*distortion, float, 0, 0) = k1;
+  CV_MAT_ELEM(*distortion, float, 1, 0) = k2;
+  CV_MAT_ELEM(*distortion, float, 2, 0) = p1;
+  CV_MAT_ELEM(*distortion, float, 3, 0) = p2;
+
+  FrameWrapper f2 = undistortFrame(f1, intrinsic, distortion);
+
+  cvReleaseMat(&intrinsic);
+  cvReleaseMat(&distortion);
+  
+  return f2;
+}
+
+
+void
+dc1394_cam::FrameWrapper::releaseFrame()
+{
+  if (frame_ != NULL)
+  {
+    if (ownership_ == CAM_OWNS_BOTH)
+    {
+      parent_->releaseDc1394Frame(frame_);
+    } else if (ownership_ == FRAME_OWNS_BOTH)
+    {
+      free(frame_->image);
+      free(frame_);
+    } else  if (ownership_ == FRAME_OWNS_FRAME)
+    {
+      free(frame_);
+    } 
+    frame_ = NULL;
+  }
+}
+
+
+
 dc1394_cam::Cam::Cam(uint64_t guid, 
                      dc1394speed_t speed, 
                      dc1394video_mode_t video,
                      dc1394framerate_t fps,
-                     size_t bufferSize)        : started(false), dcCam(NULL)
+                     size_t bufferSize)        : started(false), dcCam(NULL), colorize_(false), bayer_(DC1394_COLOR_FILTER_RGGB), mapx_(NULL), mapy_(NULL)
 {
   CHECK_READY();
 
@@ -145,12 +282,25 @@ dc1394_cam::Cam::Cam(uint64_t guid,
   CHECK_ERR_CLEAN( dc1394_capture_setup(dcCam, bufferSize, DC1394_CAPTURE_FLAGS_DEFAULT), "Could not setup camera.");
 
   FD_SET(dc1394_capture_get_fileno(dcCam), &camFds);
+
+  intrinsic_ = cvCreateMat(3,3,CV_32FC1);
+  distortion_ = cvCreateMat(4,1,CV_32FC1);
+
+  rectify_ = false;
+  init_rectify_ = false;
 }
 
 
 
 dc1394_cam::Cam::~Cam()
 {
+
+  cvReleaseMat(&intrinsic_);
+  cvReleaseMat(&distortion_);
+
+  cvReleaseImage(&mapx_);
+  cvReleaseImage(&mapy_);
+
   if (dcCam != NULL)
     cleanup();
 }
@@ -179,8 +329,50 @@ dc1394_cam::Cam::stop()
 }
 
 
+dc1394_cam::FrameSet
+dc1394_cam::Cam::getFrames(dc1394capture_policy_t policy)
+{
+  CHECK_READY();
+
+  dc1394video_frame_t* frame = getDc1394Frame(policy);
+
+  FrameSet fs;
+
+  if (frame != NULL)
+  {
+    FrameWrapper fw("image", frame, this, CAM_OWNS_BOTH);
+
+    if (colorize_)
+    {
+      FrameWrapper fw_color = dc1394_cam::debayerFrame(fw, bayer_);
+
+      fw.releaseFrame();
+      fw = fw_color;
+    }
+
+    if (rectify_)
+    {
+      if (init_rectify_)
+      {
+        initUndistortFrame(fw, intrinsic_, distortion_, &mapx_, &mapy_);
+        init_rectify_ = false;
+      }
+
+      FrameWrapper fw_rect = dc1394_cam::undistortFrame(fw, mapx_, mapy_);
+
+      fw.releaseFrame();
+      fw = fw_rect;
+    }
+
+    fs.push_back(fw);
+  }
+
+  return fs;
+}
+
+
 dc1394video_frame_t*
-dc1394_cam::Cam::getFrame(dc1394capture_policy_t policy)
+dc1394_cam::Cam::getDc1394Frame(dc1394capture_policy_t policy)
 {
     CHECK_READY();
 
@@ -194,34 +386,11 @@ dc1394_cam::Cam::getFrame(dc1394capture_policy_t policy)
 }
 
 void
-dc1394_cam::Cam::releaseFrame(dc1394video_frame_t* f)
+dc1394_cam::Cam::releaseDc1394Frame(dc1394video_frame_t* f)
 {
     CHECK_READY();
     CHECK_ERR_CLEAN( dc1394_capture_enqueue(dcCam, f), "Could not release frame");
 }
-
-
-dc1394video_frame_t* 
-dc1394_cam::Cam::debayerFrame(dc1394video_frame_t* f, dc1394color_filter_t bayer, dc1394bayer_method_t method)
-{
-  CHECK_READY();
-
-  dc1394video_frame_t* f2 = (dc1394video_frame_t*)calloc(1,sizeof(dc1394video_frame_t));
-  f->color_filter = bayer;
-
-  CHECK_ERR_CLEAN( dc1394_debayer_frames(f, f2, DC1394_BAYER_METHOD_BILINEAR), "Debayering failed");
-
-  return f2;
-}
-
-
-void
-dc1394_cam::Cam::freeFrame(dc1394video_frame_t* f)
-{  
-  free(f->image);
-  free(f);
-}
-
 
 void
 dc1394_cam::Cam::setFeature(dc1394feature_t feature, uint32_t value)

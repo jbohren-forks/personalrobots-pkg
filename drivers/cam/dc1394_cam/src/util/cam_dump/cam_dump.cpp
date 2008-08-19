@@ -99,16 +99,16 @@ int main(int argc, char *argv[])
   for (int i = 0; i < 100000; i++) {
     for (vector<dc1394_cam::Cam*>::iterator c = cameras.begin(); c != cameras.end(); c++)
     {
-      dc1394video_frame_t* frame = (*c)->getFrame();
+      dc1394_cam::FrameSet fs = (*c)->getFrames();
       
-      if (frame != NULL)
+      if (fs.size() > 0)
       {
-        if (frame->frames_behind >= 44)
-          fprintf(stderr, "\nDropped frames (Behind by %d) time: %d secs\n",frame->frames_behind, next_time.tv_sec - start_time.tv_sec);
+        if (fs[0].getFrame()->frames_behind >= 44)
+          fprintf(stderr, "\nDropped frames (Behind by %d) time: %d secs\n", fs[0].getFrame()->frames_behind, next_time.tv_sec - start_time.tv_sec);
         
-        file1.write((char*)(frame->image), frame->image_bytes);
+        file1.write((char*)(fs[0].getFrame()->image), fs[0].getFrame()->image_bytes);
         
-        (*c)->releaseFrame(frame);
+        fs[0].releaseFrame();
         
         count++;
         

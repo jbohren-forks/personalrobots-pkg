@@ -11,7 +11,3 @@ target_link_libraries(cam_dump dc1394cam)
 
 rospack_add_executable(view_cam src/util/view_cam/view_cam.cpp)
 target_link_libraries(view_cam dc1394cam)
-
-rospack_add_executable(dc1394_node src/dc1394_node/dc1394_node.cpp)
-target_link_libraries(dc1394_node dc1394cam)
-

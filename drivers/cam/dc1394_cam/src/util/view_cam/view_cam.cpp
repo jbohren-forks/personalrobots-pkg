@@ -42,6 +42,7 @@ int main(int argc, char **argv)
 {
 
   bool colorize = false;
+  bool rectify = false;
 
   if (SDL_Init(SDL_INIT_VIDEO) < 0)
   {
@@ -73,56 +74,59 @@ int main(int argc, char **argv)
   dc1394_cam::Cam* c = new dc1394_cam::Cam(guid,
                                            DC1394_ISO_SPEED_400,
                                            DC1394_VIDEO_MODE_640x480_MONO8,
-                                           DC1394_FRAMERATE_30);
+                                           DC1394_FRAMERATE_30, 40);
 
   printf("Using camera with guid: %llx\n", guid);
   snprintf(winName, 256, "%llx", guid);
   SDL_WM_SetCaption(winName, winName);
 
+
+  dc1394_camera_print_info(c->dcCam, stdout);
+
+
   bool done = false;
   while (!done)
   {
 
-    dc1394video_frame_t *in_frame = c->getFrame();
-    dc1394video_frame_t *frame;
+    dc1394_cam::FrameSet fs = c->getFrames();
 
-    if (colorize)
-    {
-      frame = (dc1394video_frame_t*)calloc(1,sizeof(dc1394video_frame_t));
-      in_frame->color_filter =  DC1394_COLOR_FILTER_GBRG;
+    if (fs.size() > 0)
+    {      
+      printf("Behind by %d\n", fs[0].getFrame()->frames_behind);
 
-      dc1394_debayer_frames(in_frame, frame, DC1394_BAYER_METHOD_BILINEAR);
-    } else {
-      frame = in_frame;
+      uint8_t *in = fs[0].getFrame()->image, *out = (uint8_t *)surf->pixels;
+
+      uint32_t height = fs[0].getFrame()->size[0];
+      uint32_t width = fs[0].getFrame()->size[1];
+      dc1394color_coding_t coding = fs[0].getFrame()->color_coding;
+
+
+      if (coding == DC1394_COLOR_CODING_RGB8)
+      {
+        for (uint32_t row = 0; row < height; row++)
+          for (uint32_t col = 0; col < width; col++)
+          {
+            *(out  ) = *(in+2);
+            *(out+1) = *(in+1);
+            *(out+2) = *(in  );
+            in += 3;
+            out += 4;
+          }
+      }
+      else if (coding == DC1394_COLOR_CODING_MONO8)
+      {
+        for (uint32_t row = 0; row < height; row++)
+          for (uint32_t col = 0; col < width; col++)
+          {
+            *(out++) = *in;
+            *(out++) = *in;
+            *(out++) = *in;
+            *(out++);
+            in++;
+          }
+      }
+      fs[0].releaseFrame();
     }
-
-
-    uint8_t *in = frame->image, *out = (uint8_t *)surf->pixels;
-    for (uint32_t row = 0; row < frame->size[0]; row++)
-      for (uint32_t col = 0; col < frame->size[1]; col++)
-        if (frame->color_coding == DC1394_COLOR_CODING_RGB8)
-        {
-          *(out  ) = *(in+2);
-          *(out+1) = *(in+1);
-          *(out+2) = *(in  );
-          in += 3;
-          out += 4;
-        }
-        else if (frame->color_coding == DC1394_COLOR_CODING_MONO8)
-        {
-          *(out++) = *in;
-          *(out++) = *in;
-          *(out++) = *in;
-          *(out++);
-          in++;
-        }
-
-    if (colorize) {
-      free(frame->image);
-      free(frame);
-    }
-
-    c->releaseFrame(in_frame);
 
     SDL_UpdateRect(surf, 0, 0, 640, 480);
     SDL_Event event;
@@ -152,6 +156,22 @@ int main(int argc, char **argv)
             
           case SDLK_c: 
             colorize = !colorize;
+
+            if (colorize)
+              c->enableColorization();
+            else
+              c->disableColorization();
+            break;
+
+          case SDLK_r: 
+            rectify = !rectify;
+            if (rectify)
+            {
+              c->enableRectification(500, 500, 320, 240, -.3, 0.16, 0.0, 0.0);
+            } else {
+              c->disableRectification();
+            }
+
             break;
             
           case SDLK_RETURN:
