@@ -97,7 +97,10 @@ void CostMap2D::setStaticMap(size_t width, size_t height,
   memset(obs_count_, 0, width_*height_);
 }
 
-void CostMap2D::addObstacles(const std_msgs::PointCloudFloat32* cloud) {
+void CostMap2D::addObstacles(const std_msgs::PointCloudFloat32* cloud,
+                             std::list<unsigned int>& occ_ids,
+                             std::list<unsigned int>& unocc_ids) 
+{
   //assume that these points are in the map frame
   
   if(full_data_ == NULL) {
@@ -124,26 +127,37 @@ void CostMap2D::addObstacles(const std_msgs::PointCloudFloat32* cloud) {
     obs->setPoint(i, cloud->pts[i].x, cloud->pts[i].y);
   }
   
-  addObstaclePointsToFullMap(obs);
+  addObstaclePointsToFullMap(obs, occ_ids);
   obstacle_pts_.push_back(obs);  
 
-  refreshFullMap();
+  refreshFullMap(unocc_ids);
 }
 
-void CostMap2D::update(ros::Time ts) {
+void CostMap2D::update(ros::Time ts, std::list<unsigned int>& unocc_ids) {
   if(ts > cur_time_ || ts == cur_time_) {
     cur_time_ = ts;
   } else {
     std::cerr << "CostMap2D::update warning - this map has data more recent than the update time " << ts << std::endl;
   }
-  refreshFullMap();
+  refreshFullMap(unocc_ids);
 }
 
 const unsigned char* CostMap2D::getMap() const {
   return full_data_;
 }
 
-void CostMap2D::refreshFullMap() {
+std::list<unsigned int> CostMap2D::getOccupiedCellDataIndexList() const {
+  std::list<unsigned int> ret_ind;
+
+  for(std::map<unsigned int, bool>::const_iterator it = obstacle_index_map_.begin();
+      it != obstacle_index_map_.end();
+      it++) {
+    ret_ind.push_back(it->first);
+  }
+  return ret_ind;
+}
+
+void CostMap2D::refreshFullMap(std::list<unsigned int>& unocc_ids) {
   //this encodes a system whereby if a cell is an obstacle in
   //any scan we treat is as an obstacle, only reverting to the static map if all
   //scans think it's free
@@ -168,6 +182,9 @@ void CostMap2D::refreshFullMap() {
         //this means that no scans think this is an obstacle, and we can get rid of it.
         if(obs_count_[ind] == 0) {
           full_data_[ind] = static_data_[ind];
+          //erasing entry in obstacle map
+          obstacle_index_map_.erase(ind); 
+          unocc_ids.push_back(ind);
           if(total_obs_points_ == 0) {
             std::cout << "CostMap2D::refreshFullMap problem - total_obs_points_ is zero and we're trying to decrement.\n";
           } else {
@@ -183,13 +200,9 @@ void CostMap2D::refreshFullMap() {
       oit++;
     }
   }
-
-  for(size_t o = 0; o < obstacle_pts_.size(); o++) {
-
-  }
 }
 
-void CostMap2D::addObstaclePointsToFullMap(const ObstaclePts* pts) {
+void CostMap2D::addObstaclePointsToFullMap(const ObstaclePts* pts, std::list<unsigned int>& occ_ids) {
   //sanity check
   if(!isTimeWithinWindow(pts->ts_)) {
     std::cerr << " CostMap2D::addObstaclePointsToFullMap won't add old data to map.\n";
@@ -202,9 +215,11 @@ void CostMap2D::addObstaclePointsToFullMap(const ObstaclePts* pts) {
     if(full_data_[ind] != 75) {
       //this is a new obstacle cell being set
       total_obs_points_++;
+      occ_ids.push_back(ind);
     }
     full_data_[ind] = 75;
     obs_count_[ind]++;
+    obstacle_index_map_[ind] = true;
   }
 }
 
@@ -250,6 +265,16 @@ void CostMap2D::convertFromIndexesToWorldCoord(size_t mx, size_t my,
                                                double& wx, double& wy) const {
   wx = (mx*1.0)*resolution_;
   wy = (my*1.0)*resolution_;
+}
+
+void CostMap2D::convertFromMapIndexToXY(unsigned int ind,
+                                        unsigned int& x,
+                                        unsigned int& y) const {
+  //depending on implicit casting to get floors
+  y = ind/width_;
+  x = ind-(y*width_);
+
+  //std::cout << "Going from " << ind << " to " << x << " " << y << std::endl;
 }
 
 size_t CostMap2D::getWidth() const {

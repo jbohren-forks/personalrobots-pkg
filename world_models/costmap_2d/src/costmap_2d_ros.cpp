@@ -35,7 +35,9 @@
 // our ros messages
 #include <std_msgs/LaserScan.h>
 #include <std_msgs/PointCloudFloat32.h>
+#include <pr2_msgs/OccDiff.h>
 #include <std_srvs/StaticMap.h>
+#include <pr2_srvs/TransientObstacles.h>
 
 //Laser projection
 #include "laser_scan_utils/laser_scan.h"
@@ -59,7 +61,7 @@
 static const double WINDOW_LENGTH = 1.0;
 
 //laser range value - hits beyond this get discard
-static const double LASER_MAX_RANGE = 10.0;
+static const double LASER_MAX_RANGE = 4.0;
 
 class CostMap2DRos: public ros::node
 {
@@ -72,6 +74,13 @@ public:
 
   rosTFClient tf_;
 
+  /** Callback invoked for getting the full list of obstacle
+      points plus a time stamp value
+   */
+  bool fullTransientObstacleCallback(pr2_srvs::TransientObstacles::request  &req,
+                                     pr2_srvs::TransientObstacles::response &res);
+
+  
 private:
   
   void drawCostMap(); 
@@ -80,6 +89,10 @@ private:
 
   //callback for laser data
   void laserReceived();
+  
+  void publishDiffData(const ros::Time ts,
+                       const std::list<unsigned int>& occ_ids,
+                       const std::list<unsigned int>& unocc_ids);
 
   //costmap
   CostMap2D costmap_;
@@ -91,12 +104,14 @@ private:
   //projector for the laser
   laser_scan::LaserProjection projector_;
 
+  std::list<std_msgs::LaserScan> buffered_laser_scans;
+
 };
 
 
 CostMap2DRos::CostMap2DRos() :
   ros::node("costmap2d_ros"),
-  tf_(*this, true),
+  tf_(*this, true, 1 * 1000000000ULL, 0ULL),
   costmap_(WINDOW_LENGTH)
 {
   std_srvs::StaticMap::request  req;
@@ -132,7 +147,8 @@ CostMap2DRos::CostMap2DRos() :
                     "FRAMEID_ROBOT",
                     0.05, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
   
-  advertise<std_msgs::Polyline2D>("gui_laser");
+  advertise<pr2_msgs::OccDiff>("transient_obstacles_diff");
+  advertise_service("transient_obstacles_full", &CostMap2DRos::fullTransientObstacleCallback);
   subscribe("scan", laser_msg_, &CostMap2DRos::laserReceived);
   
 }
@@ -140,84 +156,118 @@ CostMap2DRos::CostMap2DRos() :
 CostMap2DRos::~CostMap2DRos() {
 }
 
+bool CostMap2DRos::fullTransientObstacleCallback(pr2_srvs::TransientObstacles::request  &req,
+                                                 pr2_srvs::TransientObstacles::response &res)
+{
+  //request is empty, so we ignore it
+  
+  std::list<unsigned int> obstacle_indexes = costmap_.getOccupiedCellDataIndexList();
+  
+  res.obs.set_points_size(obstacle_indexes.size());
+  res.obs.color.a = 0.0;
+  res.obs.color.r = 0.0;
+  res.obs.color.b = 0.0;
+  res.obs.color.g = 1.0;
+
+  unsigned int pointcloud_ind = 0;
+
+  for(std::list<unsigned int>::iterator i = obstacle_indexes.begin();
+      i != obstacle_indexes.end();
+      i++) {
+    unsigned int mx, my;
+    double wx, wy;
+    costmap_.convertFromMapIndexToXY((*i), mx, my);
+    costmap_.convertFromIndexesToWorldCoord(mx, my, wx, wy);
+    res.obs.points[pointcloud_ind].x = wx;
+    res.obs.points[pointcloud_ind].y = wy;
+    pointcloud_ind++;
+  }
+
+  return true;
+}
+
 void CostMap2DRos::laserReceived() {
   
-  std_msgs::PointCloudFloat32 local_cloud;
-  projector_.projectLaser(laser_msg_, local_cloud, LASER_MAX_RANGE);
-  
-  // Convert to a point cloud in the map frame
-  std_msgs::PointCloudFloat32 global_cloud;
-  
-  try
+  std_msgs::LaserScan newscan(laser_msg_);
+  this->buffered_laser_scans.push_back(newscan);
+
+  std::list<unsigned int> new_occ_ids;
+  std::list<unsigned int> new_unocc_ids;
+
+  for(std::list<std_msgs::LaserScan>::iterator it = this->buffered_laser_scans.begin();
+      it != this->buffered_laser_scans.end();
+      it++)
   {
-    global_cloud = tf_.transformPointCloud("FRAMEID_MAP", local_cloud);
-  }
-  catch(libTF::TransformReference::LookupException& ex)
-  {
-    puts("no global->local Tx yet");
-    return;
-  }
-  catch(libTF::TransformReference::ExtrapolateException& ex)
-  {
-    puts("extrapolation required");
-    return;
+
+    std_msgs::PointCloudFloat32 local_cloud;
+    projector_.projectLaser((*it), local_cloud, LASER_MAX_RANGE);
+    
+    // Convert to a point cloud in the map frame
+    std_msgs::PointCloudFloat32 global_cloud;
+    
+    try
+    {
+      global_cloud = tf_.transformPointCloud("FRAMEID_MAP", local_cloud);
+    }
+    catch(libTF::TransformReference::LookupException& ex)
+    {
+      puts("no global->local Tx yet");
+      continue;
+    }
+    catch(libTF::TransformReference::ExtrapolateException& ex)
+    {
+      //puts("extrapolation required");
+      continue;
+    }  catch(libTF::TransformReference::ConnectivityException& ce) {
+      puts("no transform parent for frameid_map");
+      continue;
+    }
+
+    costmap_.addObstacles(&global_cloud, new_occ_ids, new_unocc_ids);
+    it = this->buffered_laser_scans.erase(it);
+    it--;
   }
 
-  //  libTF::TFPose aPose;
-  //   aPose.x = 0.0;
-  //   aPose.y = 0.0;
-  //   aPose.z = 0.0;
-  //   aPose.roll = 0;
-  //   aPose.pitch = 0;
-  //   aPose.yaw = 0;
-  //   aPose.time = 0;
-  //   aPose.frame = "FRAMEID_ODOM";
-  
-  //   libTF::TFPose inMapFrame = tf.transformPose("FRAMEID_MAP", aPose);
-  
-  //std::cout << "Map frame x " << inMapFrame.x << std::endl;
-  //std::cout << "Map frame y " << inMapFrame.y << std::endl;
-
-  costmap_.addObstacles(&global_cloud);
-
-  publishMapData();
+  publishDiffData(laser_msg_.header.stamp, new_occ_ids, new_unocc_ids);
  
   //drawCostMap();
 }
 
-void CostMap2DRos::publishMapData()
+void CostMap2DRos::publishDiffData(const ros::Time ts,
+                                   const std::list<unsigned int>& occ_ids,
+                                   const std::list<unsigned int>& unocc_ids)
 {
-  size_t height = costmap_.getHeight();
-  size_t width = costmap_.getWidth();
-  const unsigned char* mapdata = costmap_.getMap();
-  unsigned int tot_points = costmap_.getTotalObsPoints();
+  pr2_msgs::OccDiff occ_diff;
+  occ_diff.header.stamp = ts;
+  occ_diff.set_occ_points_size(occ_ids.size());
+  occ_diff.set_unocc_points_size(unocc_ids.size());
 
-  pointcloud_msg_.set_points_size(tot_points);
-  pointcloud_msg_.color.a = 0.0;
-  pointcloud_msg_.color.r = 0.0;
-  pointcloud_msg_.color.b = 0.0;
-  pointcloud_msg_.color.g = 1.0;
-
-  unsigned int pointcloud_ind = 0;
-  for(size_t i = 0; i < width; i++)
-  {
-    for(size_t j = 0; j < height; j++) 
-    {
-      size_t ind = costmap_.getMapIndex(i,j);
-      if(mapdata[ind] == 75) {
-        double wx, wy;
-        costmap_.convertFromIndexesToWorldCoord(i,j,wx,wy);
-        if(pointcloud_ind > tot_points) {
-          std::cerr << "CostMap2DRos::publishMapData - too many obstacle points.\n";
-        } else {
-          pointcloud_msg_.points[pointcloud_ind].x = wx;
-          pointcloud_msg_.points[pointcloud_ind].y = wy;
-          pointcloud_ind++;
-        }
-      }
-    }
+  size_t i = 0;
+  for(std::list<unsigned int>::const_iterator it = occ_ids.begin();
+      it != occ_ids.end();
+      it++, i++) {
+    unsigned int mx, my;
+    double wx, wy;
+    costmap_.convertFromMapIndexToXY((*it), mx, my);
+    costmap_.convertFromIndexesToWorldCoord(mx, my, wx, wy);
+    occ_diff.occ_points[i].x = wx;
+    occ_diff.occ_points[i].y = wy;
   }
-  publish("gui_laser",pointcloud_msg_);
+
+  i = 0;
+  for(std::list<unsigned int>::const_iterator it = unocc_ids.begin();
+      it != unocc_ids.end();
+      it++, i++) {
+    unsigned int mx, my;
+    double wx, wy;
+    costmap_.convertFromMapIndexToXY((*it), mx, my);
+    costmap_.convertFromIndexesToWorldCoord(mx, my, wx, wy);
+    occ_diff.unocc_points[i].x = wx;
+    occ_diff.unocc_points[i].y = wy;
+  }
+  //std::cout << "New occ " << occ_ids.size() << " unocc " << unocc_ids.size() << std::endl;
+
+  publish("transient_obstacles_diff", occ_diff);
 }
 
 void CostMap2DRos::drawCostMap() 

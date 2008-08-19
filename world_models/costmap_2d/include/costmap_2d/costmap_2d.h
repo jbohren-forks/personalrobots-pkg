@@ -50,6 +50,7 @@ before being discarded.  The static map lives forever.
 
 //c++
 #include <list>
+#include <map>
 
 // For time support
 #include "ros/time.h"
@@ -118,8 +119,13 @@ public:
    * Updates the map to contain the new dynamic obstacles, in addition to
    * any previously added obstacles (but only those that are still within
    * the window_length).
+   * @param cloud holds projected scan data
+   * @param occ_ids holds list for returning newly occupied ids
+   * @param unocc_ids holds list for returning newly unoccupied ids
    */
-  void addObstacles(const std_msgs::PointCloudFloat32* cloud);
+  void addObstacles(const std_msgs::PointCloudFloat32* cloud,
+                    std::list<unsigned int>& occ_ids,
+                    std::list<unsigned int>& unocc_ids);
   
   /**
    * @brief A hook to allow time-based maintenance to occur (e.g.,
@@ -128,14 +134,20 @@ public:
    *
    * @param ts current time
    */
-  void update(ros::Time ts);
+  void update(ros::Time ts, std::list<unsigned int>& unocc_ids);
   
   /**
    * @brief Get pointer into the obstacle map (which contains both static
    * and dynamic obstacles)
    */
   const unsigned char* getMap() const;
-  
+
+  /**
+   * @brief Converts from the occupied cell index map into a list of indexes
+   * that contain obstacles
+   */
+  std::list<unsigned int> getOccupiedCellDataIndexList() const;
+
   /**
    * @brief Get index of given (x,y) point into data
    * 
@@ -164,7 +176,19 @@ public:
    */
   void convertFromIndexesToWorldCoord(size_t mx, size_t my,
                                       double& wx, double& wy) const;
-    
+
+  
+  /**
+   * @brief Converts from 1D map index into x y map coords
+   * 
+   * @param ind 1d map index
+   * @param x 2d map return value
+   * @param y 2d map return value
+   */
+  void convertFromMapIndexToXY(unsigned int ind,
+                               unsigned int& x,
+                               unsigned int& y) const;
+  
   //accessors
   size_t getWidth() const;
   size_t getHeight() const;
@@ -173,10 +197,10 @@ public:
 private:
   
   //refreshes the full_map, chucking old data
-  void refreshFullMap();
+  void refreshFullMap(std::list<unsigned int>& unocc_ids);
   
   //adds the points in the pts arg to the full_map
-  void addObstaclePointsToFullMap(const ObstaclePts* pts);
+  void addObstaclePointsToFullMap(const ObstaclePts* pts, std::list<unsigned int>& occ_ids);
   
   //checks if the time param t falls within the window of our current time
   bool isTimeWithinWindow(ros::Time t) const;
@@ -190,6 +214,7 @@ private:
   unsigned int* obs_count_; /**< this holds the count among current scans of a particular cell as an obstacle cell */
 
   std::list<ObstaclePts*> obstacle_pts_; /**< a list of obstacle points corresponding to scans */
+  std::map<unsigned int, bool> obstacle_index_map_; /**a map for holding occupied points */
   ros::Time cur_time_; /**< the map's current notion of time */
   
   unsigned int total_obs_points_; /**< running total of number of non-static obstacle points in the map */

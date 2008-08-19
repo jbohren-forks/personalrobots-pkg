@@ -6,6 +6,8 @@
 <depend package="std_msgs" />
 <depend package="laser_scan_utils" />
 <depend package="std_srvs" />
+<depend package="pr2_srvs" />
+<depend package="pr2_msgs" />
 <depend package="rosTF" />
 <depend package="rosstage" />
 <export>
