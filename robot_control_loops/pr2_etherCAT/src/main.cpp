@@ -131,6 +131,8 @@ void warnOnSecondary(int sig)
   // secondary mode
   nentries = backtrace(bt, sizeof(bt) / sizeof(bt[0]));
   backtrace_symbols_fd(bt, nentries, fileno(stdout));
+  printf("\n");
+  fflush(stdout);
 }
 
 static pthread_t rtThread;
