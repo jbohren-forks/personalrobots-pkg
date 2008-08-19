@@ -57,172 +57,259 @@
 namespace controller
 {
 
-typedef struct
-{
-    double p_gain;
-    double i_gain; 
-    double d_gain; 
-    double windup;
-    std::string joint_name;
-    std::string control_type;
-}JointControlParam;
+  /*! \struct
+    \brief This class holds information for a joint control parameter structure. 
+   */
+  typedef struct
+  {
+      double p_gain; /** P gain */
 
-typedef struct
-{
-    libTF::Pose3D::Vector pos;
-    Controller * controller;
-    std::vector<libTF::Pose3D::Vector> wheel_pos;
-    std::vector<Controller*> wheel_controller;
-}BaseCasterGeomParam;
+      double i_gain; /** I gain */
 
+      double d_gain; /** D gain */
 
-class BaseParam
-{
-  public:
-  BaseParam(){}
-  ~BaseParam(){}
-    libTF::Pose3D::Vector pos_;
-    std::string name_;
-    JointVelocityController controller_;
-    mechanism::Joint *joint_;
-    BaseParam *parent_;
-    int local_id_;
-};
+      double windup; /** windup protection value */
 
+      std::string joint_name; /** joint name */
 
-class BaseController : public Controller
-{
-public:
+      std::string control_type; /** control type */ 
+
+  }JointControlParam;
+
+  /*! \class 
+    \brief This class holds local information for the links in the base (wheels and casters). It includes position, name, 
+    controller, pointer to the corresponding joint in the Robot structure, pointer to parent and a local ID.
+   */
+  class BaseParam
+  {
+    public:
+
+    BaseParam(){}
+
+    ~BaseParam(){}
+
+    libTF::Pose3D::Vector pos_; /** position of the link*/
+
+    std::string name_; /** name of joint corresponding to the link */
+
+    JointVelocityController controller_; /** controller for the link */
+
+    mechanism::Joint *joint_; /** pointer to joint in Robot structure corresponding to link */
+
+    BaseParam *parent_; /** pointer to parent corresponding to link */
+
+    int local_id_; /** local id number */
+  };
+
+  class BaseController : public Controller
+  {
+    public:
   
-  /*!
-   * \brief Default Constructor of the JointController class.
-   *
-   */
-  BaseController();
+    /*!
+     * \brief Default Constructor of the JointController class.
+     *
+     */
+    BaseController();
 
-  /*!
-   * \brief Destructor of the JointController class.
-   */
-  ~BaseController();
+    /*!
+     * \brief Destructor of the JointController class.
+     */
+    ~BaseController();
 
-  /*!
-   * \brief Functional way to initialize limits and gains.
-   *
-   */
-  void init(std::vector<JointControlParam> jcp, mechanism::Robot *robot);
- void initXml(mechanism::Robot *robot, TiXmlElement *config);
+    /*!
+     * \brief Functional way to initialize limits and gains.
+     *
+     */
+    void init(std::vector<JointControlParam> jcp, mechanism::Robot *robot);
+    void initXml(mechanism::Robot *robot, TiXmlElement *config);
 
-  /*!
-   * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
-   *
-   * \param double pos Position command to issue
-   */
-  void setCommand(libTF::Pose3D::Vector cmd_vel);
+    /*!
+     * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
+     *
+     * \param double pos Position command to issue
+     */
+    void setCommand(libTF::Pose3D::Vector cmd_vel);
 
-  /*!
-   * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
-   */
-  libTF::Pose3D::Vector getCommand();
+    /*!
+     * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
+     */
+    libTF::Pose3D::Vector getCommand();
 
-  /*!
-   * \brief Issues commands to the joint. Should be called at regular intervals
-   */
-  virtual void update();
+    /*!
+     * \brief (a) Updates commands to caster and wheels. 
+     *        (b) Computes odometry
+     *        (c) Publishes odometry
+     *  Should be called at regular intervals
+     */
+    virtual void update();
 
-  std::vector<BaseParam> base_casters_;
+    /*!
+     * \brief struct to represent caster parameters locally.
+     */
+    std::vector<BaseParam> base_casters_;
 
-  std::vector<BaseParam> base_wheels_;
+    /*!
+     * \brief struct to represent wheel parameters locally.
+     */
+    std::vector<BaseParam> base_wheels_;
 
-  pthread_mutex_t base_controller_lock_;
+    /*!
+     * \brief mutex lock for setting and getting commands
+     */
+    pthread_mutex_t base_controller_lock_;
 
-  robot_desc::URDF urdf_model_;
+    /*!
+     * \brief URDF representation of the robot model
+     */
+    robot_desc::URDF urdf_model_;
 
-  void setGeomParams(std:: string joint_name);
+    /*!
+     * \brief number of update ticks to wait before publishing ROS odom message
+     * defaults to 10.
+     */
+    int odom_publish_count_;
 
-private:
+    private:
 
-  int num_wheels_;
+    /*!
+     * \brief number of wheels
+     */
+    int num_wheels_;
 
-  int num_casters_;
+    /*!
+     * \brief number of casters
+     */
+    int num_casters_;
 
-  double kp_speed_;
+    /*!
+     * \brief local gain used for speed control of the caster (to achieve resultant position control)
+     */
+    double kp_speed_;
 
-  mechanism::Robot* robot_;
+    /*!
+     * \brief Robot representation
+     */
+    mechanism::Robot* robot_;
 
-  libTF::Pose3D::Vector computePointVelocity2D(const libTF::Pose3D::Vector& pos, const  libTF::Pose3D::Vector& vel);
+    /*!
+     * \brief compute 2D velocity of a point on a rigid body given a 2D input velocity
+     * \param pos - Vector (see libTF for more information)
+     * \param vel - Vector, vel.x and vel.y represent translational velocities in X and Y directions, vel.z represents rotational(angular velocity)
+     * \return point 2D velocity with .z component set to zero.
+     */
+    libTF::Pose3D::Vector computePointVelocity2D(const libTF::Pose3D::Vector& pos, const  libTF::Pose3D::Vector& vel);
 
-  libTF::Pose3D::Vector rotate2D(const libTF::Pose3D::Vector& pos, double theta);
+    /*!
+     * \brief update the individual joint controllers
+     */
+    void updateJointControllers();
 
-  void updateJointControllers();
-
-  libTF::Pose3D::Vector cmd_vel_;  
+    /*!
+     * \brief speed command vector used internally
+     */
+    libTF::Pose3D::Vector cmd_vel_;  
   
-  libTF::Pose3D::Vector cmd_vel_t_;  
+    /*!
+     * \brief Input speed command vector.
+     */
+    libTF::Pose3D::Vector cmd_vel_t_;  
 
-  libTF::Pose3D::Vector base_odom_position_;  
+    /*!
+     * \brief Position of the robot computed by odometry.
+     */
+    libTF::Pose3D::Vector base_odom_position_;  
 
-  libTF::Pose3D::Vector base_odom_velocity_;  
+    /*!
+     * \brief Speed of the robot computed by odometry.
+     */
+    libTF::Pose3D::Vector base_odom_velocity_;  
 
-  void computeAndSetCasterSteer();
+    /*!
+     * \brief Computed the desired steer angle for the caster.
+     */
+    void computeAndSetCasterSteer();
 
-  void computeAndSetWheelSpeeds();
+    /*!
+     * \brief Computed the desired wheel speeds.
+     */
+    void computeAndSetWheelSpeeds();
 
-  double wheel_radius_;
+    double wheel_radius_; /** radius of the wheel (filled in from urdf robot model) */
 
-  std::vector<double> steer_angle_actual_;
+    std::vector<double> steer_velocity_desired_; /** vector of desired caster steer speeds */
 
-  std::vector<double> wheel_speed_actual_;
+    /*!
+     * \brief compute the speed of the base for odometry calculations 
+     */
+    void computeBaseVelocity(); 
 
-  std::vector<double> steer_velocity_desired_;
+    /*!
+     * \brief compute the odometry
+     */
+    void computeOdometry(double);
 
-  std::vector<libTF::Pose3D::Vector> base_wheels_position_;
+    /*!
+     * \brief pseudo-inverse computation for NEWMAT
+     */
+    NEWMAT::Matrix pseudoInverse(const NEWMAT::Matrix M);
 
-  void computeBaseVelocity();
+    /*!
+     * \brief compute the wheel positions and set them in base_wheels_position_
+     */
+    void computeWheelPositions();
 
-  void computeOdometry(double);
+    std::vector<libTF::Pose3D::Vector> base_wheels_position_; /** vector of current wheel positions */
 
-  NEWMAT::Matrix pseudoInverse(const NEWMAT::Matrix M);
+    /*!
+     * \brief get the joint positions and speeds and set them in steer_angle_actual_ and wheel_speed_actual_
+     */
+    void getJointValues();
 
-  void computeWheelPositions();
+    std::vector<double> steer_angle_actual_; /** vector of actual caster steer angles */
 
-  void getJointValues();
+    std::vector<double> wheel_speed_actual_; /** vector of actual wheel speeds */
 
-  std_msgs::RobotBase2DOdom odomMsg;
+    /*!
+     * \brief std_msgs representation of an odometry message
+     */
+    std_msgs::RobotBase2DOdom odom_msg_;
 
-  double last_time_;
+    double last_time_; /** time corresponding to when update was last called */
 
-};
+    int odom_publish_counter_; /** counter - when this exceeds odom_publish_count_, the odomeetry message will be published on ROS */
 
-class BaseControllerNode : public Controller
-{
-public:
-  /*!
-   * \brief Default Constructor
-   *
-   */
-  BaseControllerNode();
+  };
 
-  /*!
-   * \brief Destructor
-   */
-  ~BaseControllerNode();
+  class BaseControllerNode : public Controller
+  {
+    public:
+    /*!
+     * \brief Default Constructor
+     *
+     */
+    BaseControllerNode();
 
-  void update();
+    /*!
+     * \brief Destructor
+     */
+    ~BaseControllerNode();
 
-  void initXml(mechanism::Robot *robot, TiXmlElement *config);
+    void update();
 
-  // Services
-  bool setCommand(pr2_controllers::SetBaseCommand::request &req,
-                  pr2_controllers::SetBaseCommand::response &resp);
+    void initXml(mechanism::Robot *robot, TiXmlElement *config);
 
-  bool getCommand(pr2_controllers::GetBaseCommand::request &req,
-                  pr2_controllers::GetBaseCommand::response &resp);
+    // Services
+    bool setCommand(pr2_controllers::SetBaseCommand::request &req,
+                    pr2_controllers::SetBaseCommand::response &resp);
 
-private:
-  BaseController *c_;
+    bool getCommand(pr2_controllers::GetBaseCommand::request &req,
+                    pr2_controllers::GetBaseCommand::response &resp);
 
+    private:
 
-};
+    BaseController *c_;
+
+  };
 
 }
 

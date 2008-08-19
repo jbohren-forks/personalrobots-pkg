@@ -43,7 +43,7 @@ using namespace NEWMAT;
 
 ROS_REGISTER_CONTROLLER(BaseController)
 
-BaseController::BaseController() : num_wheels_(0), num_casters_(0)
+  BaseController::BaseController() : num_wheels_(0), num_casters_(0), odom_publish_counter_(0),odom_publish_count_(10)
 {
 }
 
@@ -120,6 +120,9 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
     }
   }
   robot_ = robot;
+
+  ros::g_node->advertise<std_msgs::RobotBase2DOdom>("odom");
+
 }
 
 void BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
@@ -207,9 +210,17 @@ void BaseController::update()
 
   computeOdometry(current_time);
 
+  if(odom_publish_counter_ > odom_publish_count_)
+  {
+    ros::g_node->publish("odom", odom_msg_);
+    odom_publish_counter_ = 0;
+  }
+
   updateJointControllers();
 
   last_time_ = current_time;
+
+  odom_publish_counter_++;
 }
 
 double ModNPiBy2(double angle)
@@ -343,33 +354,24 @@ Pose3D::Vector BaseController::computePointVelocity2D(const Pose3D::Vector& pos,
   return result;
 }
 
-Pose3D::Vector BaseController::rotate2D(const Pose3D::Vector& pos, double theta)
-{
-  Pose3D::Vector result;
-  
-  result.x = cos(theta)*pos.x - sin(theta)*pos.y;
-  result.y = sin(theta)*pos.x + cos(theta)*pos.y;
-  result.z = 0;
-
-  return result;
-}
-
 void BaseController::computeOdometry(double time) 
 {
    double dt = time-last_time_;
 //   libTF::Pose3D::Vector base_odom_delta = rotate2D(base_odom_velocity_*dt,base_odom_position_.z);
 
+   computeBaseVelocity();
+
    libTF::Pose3D::Vector base_odom_delta = (base_odom_velocity_*dt).rot2D(base_odom_position_.z);
    base_odom_delta.z = base_odom_velocity_.z * dt;
    base_odom_position_ += base_odom_delta;
 
-   odomMsg.pos.x  = base_odom_position_.x;
-   odomMsg.pos.y  = base_odom_position_.y;
-   odomMsg.pos.th = base_odom_position_.z;
+   odom_msg_.pos.x  = base_odom_position_.x;
+   odom_msg_.pos.y  = base_odom_position_.y;
+   odom_msg_.pos.th = base_odom_position_.z;
 
-   odomMsg.vel.x  = base_odom_velocity_.x;
-   odomMsg.vel.y  = base_odom_velocity_.y;
-   odomMsg.vel.th = base_odom_velocity_.z;
+   odom_msg_.vel.x  = base_odom_velocity_.x;
+   odom_msg_.vel.y  = base_odom_velocity_.y;
+   odom_msg_.vel.th = base_odom_velocity_.z;
 }
 
 void BaseController::computeBaseVelocity()
