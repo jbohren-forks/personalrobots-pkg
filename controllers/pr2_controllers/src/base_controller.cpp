@@ -133,10 +133,10 @@ void BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
     TiXmlElement *jnt = elt->FirstChildElement("joint");
 
     // TODO: error check if xml attributes/elements are missing
-    jcp.p_gain = atof(elt->FirstChildElement("controller_defaults")->Attribute("p"));
-    jcp.i_gain = atof(elt->FirstChildElement("controller_defaults")->Attribute("i"));
-    jcp.d_gain = atof(elt->FirstChildElement("controller_defaults")->Attribute("d"));
-    jcp.windup = atof(elt->FirstChildElement("controller_defaults")->Attribute("iClamp"));
+    jcp.p_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("p"));
+    jcp.i_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("i"));
+    jcp.d_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("d"));
+    jcp.windup = atof(jnt->FirstChildElement("controller_defaults")->Attribute("iClamp"));
     jcp.control_type = (std::string) elt->Attribute("type");
     jcp.joint_name = jnt->Attribute("name");
     jcp_vec.push_back(jcp);
