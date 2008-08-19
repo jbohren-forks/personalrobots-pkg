@@ -1,11 +1,11 @@
 all: ogre
 
-ogre-v1-4-8.tar.bz2: 
-	wget http://downloads.sourceforge.net/ogre/ogre-v1-4-8.tar.bz2
+ogre-v1-4-9.tar.bz2: 
+	wget http://downloads.sourceforge.net/ogre/ogre-v1-4-9.tar.bz2
 
-OGRE_VERSION = ogre-v1-4-8
+OGRE_VERSION = ogre-v1-4-9
 
-download: ogre-v1-4-8.tar.bz2
+download: ogre-v1-4-9.tar.bz2
 
 $(OGRE_VERSION): $(OGRE_VERSION).tar.bz2
 	tar xf $(OGRE_VERSION).tar.bz2
