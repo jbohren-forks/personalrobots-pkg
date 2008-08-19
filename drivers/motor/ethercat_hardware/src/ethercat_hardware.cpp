@@ -138,7 +138,8 @@ void EthercatHardware::initXml(TiXmlElement *config, MechanismControl &mc)
   // TODO: match actuator name to name supplied by board
   for (TiXmlElement *elt = config->FirstChildElement("actuator"); elt; elt = elt->NextSiblingElement("actuator"))
   {
-    mc.registerActuator(elt->Attribute("name"), i++);
+    hw_->actuators_[i]->name_ = elt->Attribute("name");
+    ++i;
   }
 }
 
