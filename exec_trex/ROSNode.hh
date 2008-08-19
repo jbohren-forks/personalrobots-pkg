@@ -138,8 +138,7 @@ namespace TREX{
     void leftMoveArmStateReceived(); 
 
     void ConvertArmToEndEffectorFrame(const std_msgs::PR2Arm arm,
-				      const unsigned int target_frame,
-				      KDL::Frame& f);
+                                      KDL::Frame& f);
 
     /**
      * Adds a reference

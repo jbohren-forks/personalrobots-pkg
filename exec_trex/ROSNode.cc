@@ -738,7 +738,6 @@ void ROSNode::leftMoveArmStateReceived()
     ObservationByValue* obs = NULL;
     Frame f;
     ConvertArmToEndEffectorFrame(rightArmPosMsg,
-				 tf.nameClient.lookup("FRAMEID_ARM_R_SHOULDER"),
 				 f);
     
     obs = new ObservationByValue("rightEndEffectorState", "EndEffectorState.Holds");
@@ -763,7 +762,6 @@ void ROSNode::leftMoveArmStateReceived()
     ObservationByValue* obs = NULL;
     Frame f;
     ConvertArmToEndEffectorFrame(leftArmPosMsg,
-				 tf.nameClient.lookup("FRAMEID_ARM_L_SHOULDER"),
 				 f);
     
     obs = new ObservationByValue("leftEndEffectorState", "EndEffectorState.Holds");
@@ -784,7 +782,6 @@ void ROSNode::leftMoveArmStateReceived()
   }
 
   void ROSNode::ConvertArmToEndEffectorFrame(const PR2Arm arm,
-					     const unsigned int target_frame,
 					     Frame& f) {
     //frame comes from forward kinematics
     JntArray q = JntArray(_armSerialChain->num_joints_);
@@ -798,23 +795,6 @@ void ROSNode::leftMoveArmStateReceived()
     q(6) = arm.wristRollAngle;
 
     _armSerialChain->computeFK(q,f);
-
-    //for now need to convert to funky shoulder frame
-  //   libTF::TFPose aPose;
-//     aPose.x = 0;
-//     aPose.y = 0;
-//     aPose.z = 0;
-//     aPose.roll = 0;
-//     aPose.pitch = 0;
-//     aPose.yaw = 0;
-//     aPose.time = 0;
-//     aPose.frame = target_frame;
-
-//     libTF::TFPose inShoulderFrame = tf.transformPose(FRAMEID_ODOM, aPose);
-
-//     f.p.data[0] -= inShoulderFrame.x;
-//     f.p.data[1] -= inShoulderFrame.y;
-//     f.p.data[2] -= inShoulderFrame.z;
   }
   
 
