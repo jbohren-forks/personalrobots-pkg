@@ -61,7 +61,6 @@ using namespace dc1394_cam;
 
 videre_cam::VidereCam::VidereCam(uint64_t guid, 
                                  VidereMode proc_mode,
-                                 bool colorize,
                                  bool rectify,
                                  dc1394speed_t speed,
                                  dc1394framerate_t fps,
@@ -70,7 +69,6 @@ videre_cam::VidereCam::VidereCam(uint64_t guid,
 {
   CHECK_READY();
 
-  colorize_ = colorize;
   rectify_ = rectify;
 
   std::cout << "Starting videre constructor!" << std::endl;
@@ -196,6 +194,14 @@ videre_cam::VidereCam::VidereCam(uint64_t guid,
 
   mapx2_ = NULL;
   mapy2_ = NULL;
+
+  colorize_ = hasFeature(DC1394_FEATURE_WHITE_BALANCE);
+
+  uint32_t u_b = 0;
+  uint32_t v_r = 0;
+  dc1394_feature_whitebalance_get_value(dcCam, &u_b, &v_r);
+
+  printf("Reading DC1394_FEATURE_WHITE_BALANCE %d %d %d\n", colorize_, u_b, v_r);
 
   bayer_ = DC1394_COLOR_FILTER_GRBG;
 

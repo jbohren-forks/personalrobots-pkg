@@ -56,7 +56,7 @@ enum CamTypes {NORMAL, VIDERE};
 class CamData
 {
 public:
-  CamData() : name(""), cam(NULL), colorize(false), rectify(false), cam_type(NORMAL) {}
+  CamData() : name(""), cam(NULL), cam_type(NORMAL) {}
 
   void cleanup()
   {
@@ -66,9 +66,6 @@ public:
 
   string name;
   dc1394_cam::Cam* cam;
-  bool colorize;
-  bool rectify;
-  dc1394color_filter_t bayer;
   CamTypes  cam_type;
 };
 
@@ -201,33 +198,32 @@ public:
       int buffer_size;
       param(cd.name + string("/buffer_size"), buffer_size, 8);
 
-      cd.colorize = false;
+      dc1394color_filter_t bayer;
+      bool colorize = false;
 
       if ( mode == DC1394_VIDEO_MODE_640x480_MONO8 ||
            mode == DC1394_VIDEO_MODE_1024x768_MONO8 ||
            mode == DC1394_VIDEO_MODE_1280x960_MONO8 ||
            mode == DC1394_VIDEO_MODE_1600x1200_MONO8)
       {
-        cd.colorize = true;
-        string bayer;
-        param(cd.name + string("/bayer"), bayer, string("none"));
+        colorize = true;
+        string str_bayer;
+        param(cd.name + string("/bayer"), str_bayer, string("none"));
 
-        if (bayer == string("rggb"))
-          cd.bayer = DC1394_COLOR_FILTER_RGGB;
-        else if (bayer == string("gbrg"))
-          cd.bayer = DC1394_COLOR_FILTER_GBRG;
-        else if (bayer == string("grbg"))
-          cd.bayer = DC1394_COLOR_FILTER_GRBG;
-        else if (bayer == string("bggr"))
-          cd.bayer = DC1394_COLOR_FILTER_BGGR;
+        if (str_bayer == string("rggb"))
+          bayer = DC1394_COLOR_FILTER_RGGB;
+        else if (str_bayer == string("gbrg"))
+          bayer = DC1394_COLOR_FILTER_GBRG;
+        else if (str_bayer == string("grbg"))
+          bayer = DC1394_COLOR_FILTER_GRBG;
+        else if (str_bayer == string("bggr"))
+          bayer = DC1394_COLOR_FILTER_BGGR;
         else
-          cd.colorize = false;
+          colorize = false;
       }
 
-      if (has_param(cd.name + string("/colorize")))
-        param(cd.name + string("/colorize"), cd.colorize, false);
-
-      param(cd.name + string("/rectify"), cd.rectify, false);
+      bool rectify = false;
+      param(cd.name + string("/rectify"), rectify, false);
 
       videre_cam::VidereMode videre_mode;
       int texture_thresh = 12;;
@@ -266,8 +262,7 @@ public:
         {
           cd.cam = new videre_cam::VidereCam(guid,
                                              videre_mode,
-                                             cd.colorize,
-                                             cd.rectify,
+                                             rectify,
                                              speed,
                                              fps,
                                              buffer_size);
@@ -281,8 +276,8 @@ public:
                                        fps,
                                        buffer_size);
 
-          if (cd.colorize)
-            cd.cam->enableColorization(cd.bayer);
+          if (colorize)
+            cd.cam->enableColorization(bayer);
         }
       } catch(dc1394_cam::CamException e)
       {

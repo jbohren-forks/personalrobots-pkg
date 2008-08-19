@@ -271,7 +271,7 @@ dc1394_cam::Cam::Cam(uint64_t guid,
   if (!dcCam)
     throw CamException("Could not create camera");
 
-  //  CHECK_ERR_CLEAN( dc1394_reset_bus(dcCam), "Could not reset bus" );
+  //CHECK_ERR_CLEAN( dc1394_reset_bus(dcCam), "Could not reset bus" );
 
   CHECK_ERR_CLEAN( dc1394_video_set_iso_speed(dcCam, speed), "Could not set iso speed");
   
@@ -390,6 +390,15 @@ dc1394_cam::Cam::releaseDc1394Frame(dc1394video_frame_t* f)
 {
     CHECK_READY();
     CHECK_ERR_CLEAN( dc1394_capture_enqueue(dcCam, f), "Could not release frame");
+}
+
+bool
+dc1394_cam::Cam::hasFeature(dc1394feature_t feature)
+{
+  CHECK_READY();
+  dc1394bool_t present;
+  CHECK_ERR_CLEAN( dc1394_feature_is_present(dcCam, feature, &present), "Could not check if feature was present");
+  return present;
 }
 
 void

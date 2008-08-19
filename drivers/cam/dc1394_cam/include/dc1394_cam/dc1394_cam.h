@@ -198,6 +198,8 @@ namespace dc1394_cam
 
     virtual void releaseDc1394Frame(dc1394video_frame_t* f);
 
+    virtual bool hasFeature(dc1394feature_t feature);
+
     virtual void setFeature(dc1394feature_t feature, uint32_t value);
 
     virtual void setFeatureAbsolute(dc1394feature_t feature, float value);

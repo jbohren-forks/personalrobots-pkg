@@ -57,7 +57,6 @@ namespace videre_cam
     
     VidereCam(uint64_t guid,
               VidereMode proc_mode = PROC_MODE_NONE,
-              bool colorize = false,
               bool rectify = false,
               dc1394speed_t speed = DC1394_ISO_SPEED_400,
               // dc1394video_mode_t video = DC1394_VIDEO_MODE_640x480_YUV422, // Force video mode on Videre's
