@@ -62,6 +62,58 @@ namespace libTF
       struct Vector
       {
         double x,y,z;
+
+      /** \brief operator overloading for the + operator */
+          Vector  operator+(const Vector &rhs){
+            Vector result;
+            result.x = x + rhs.x;
+            result.y = y + rhs.y;
+            result.z = z + rhs.z;
+            return result;
+          }
+
+      /** \brief operator overloading for the += operator */
+          Vector & operator+=(const Vector &rhs){
+            x += rhs.x;
+            y += rhs.y;
+            z += rhs.z;
+            return *this;
+          }
+
+      /** \brief operator overloading for the - operator */
+          Vector  operator-(const Vector &rhs){
+            Vector result;
+            result.x = x - rhs.x;
+            result.y = y - rhs.y;
+            result.z = z - rhs.z;
+            return result;
+          }
+
+      /** \brief operator overloading for the -= operator */
+          Vector & operator-=(const Vector &rhs){
+            x -= rhs.x;
+            y -= rhs.y;
+            z -= rhs.z;
+            return *this;
+          }
+
+      /** \brief operator overloading for the *= operator */
+          Vector & operator*=(double rhs){
+            x *= rhs;
+            y *= rhs;
+            z *= rhs;
+            return *this;
+          }
+
+      /** \brief operator overloading for the * operator */
+          Vector  operator*(double rhs){
+            Vector result;
+            result.x = x*rhs;
+            result.y = y*rhs;
+            result.z = z*rhs;
+            return result;
+          }
+
       };
   
       /** \brief A struct to represent the quaternion component */
