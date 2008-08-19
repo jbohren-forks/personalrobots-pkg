@@ -12,6 +12,29 @@ void string_utils::split(const std::string &s, std::vector<std::string> &t, cons
   t.push_back(s.substr(start));
 }
 
+void string_utils::split(const std::string &str, std::vector<std::string> &tokens)
+{
+  std::size_t start = 0, i;
+
+  while (true)
+  {
+    while (start < str.size() && isspace(str[start]))
+      ++start;
+    if (start == str.size())
+      return;
+
+    i = start;
+    while (i < str.size() && !isspace(str[i]))
+      ++i;
+
+    tokens.push_back(str.substr(start, i - start));
+    if (i == str.size())
+      return;
+
+    start = i;
+  }
+}
+
 std::string string_utils::trim(const std::string &str)
 {
     std::string res = str;
@@ -27,5 +50,5 @@ std::string string_utils::trim(const std::string &str)
 			    res[0] == '\n' || 
 			    res[0] == '\r'))
 	res.erase(0, 1); 
-    return res;    
+    return res;
 }

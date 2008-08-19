@@ -43,57 +43,20 @@ MechanismControl::~MechanismControl()
 {
 }
 
-bool MechanismControl::registerActuator(const std::string &name, int index)
-{
-  if (initialized_)
-    return false;
-
-  model_.actuators_lookup_.insert(Robot::IndexMap::value_type(name, index));
-
-  return true;
-}
-
 bool MechanismControl::initXml(TiXmlElement* config)
 {
-  bool successful = true;
   ros::node *node = ros::node::instance();
 
-  TiXmlElement *elt;
-
-  // Construct the joints
-  for (elt = config->FirstChildElement("joint"); elt; elt = elt->NextSiblingElement("joint"))
-  {
-    Joint *j = new Joint;
-    model_.joints_.push_back(j);
-    model_.joints_lookup_.insert(Robot::IndexMap::value_type(elt->Attribute("name"), model_.joints_.size() - 1));
-    j->initXml(elt);
-  }
-
-  // Construct the transmissions
-  elt = config->FirstChildElement("transmission");
-  for (; elt; elt = elt->NextSiblingElement("transmission"))
-  {
-    const char *type = elt->Attribute("type");
-    Transmission *t = TransmissionFactory::instance().create(type);
-    if (t == NULL)
-      node->log(ros::FATAL, "Unknown transmission type: %s\n", type);
-    t->initXml(elt, &model_);
-    model_.transmissions_.push_back(t);
-  }
+  model_.initXml(config);
 
   initialized_ = true;
-  return successful;
+  return true;
 }
 
 bool MechanismControl::addJoint(Joint* j)
 {
-  bool successful = true;
-
-  // add the joints
   model_.joints_.push_back(j);
-  model_.joints_lookup_.insert(Robot::IndexMap::value_type(j->name_, model_.joints_.size() - 1));
-
-  return successful;
+  return true;
 }
 
 bool MechanismControl::addSimpleTransmission(SimpleTransmission *st)
@@ -130,11 +93,11 @@ void MechanismControl::update()
   // Propagates through the robot model.
   for (unsigned int i = 0; i < model_.transmissions_.size(); ++i)
     model_.transmissions_[i]->propagatePosition();
-    
+
   //zero all commands
   for (unsigned int i = 0; i < model_.joints_.size(); ++i)
     model_.joints_[i]->commanded_effort_= 0.0;
-    
+
   // TODO: update KDL model with new joint position/velocities
 
   // Update all controllers
@@ -185,7 +148,7 @@ bool MechanismControl::addController(controller::Controller *c, const std::strin
 {
   //Add controller to list of controllers in realtime-safe manner;
   controllers_lock_.lock(); //This lock is only to prevent us from other non-realtime threads.  The realtime thread may be spinning through the list of controllers while we are in here, so we need to keep that list always in a valid state.  This is why we fully allocate and set up the controller before adding it into the list of active controllers.
-  
+
   bool spot_found = false;
   for (int i = 0; i < MAX_NUM_CONTROLLERS; i++)
   {
@@ -261,6 +224,9 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   assert(mc != NULL);
   assert(mechanism_state_topic_);
   if ((node = ros::node::instance()) == NULL) {
+    int argc = 0;
+    char** argv = NULL;
+    ros::init(argc, argv);
     node = new ros::node("mechanism_control", ros::node::DONT_HANDLE_SIGINT);
   }
 
@@ -282,7 +248,7 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
 }
 
 MechanismControlNode::~MechanismControlNode()
-{ 
+{
   state_publishing_loop_keep_running_ = false;
 }
 
@@ -297,7 +263,7 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
 void MechanismControlNode::update()
 {
   mc_->update();
- 
+
   // Attempts to lock the transfer structure
   // If we get it, update it
   if(pthread_mutex_trylock(&mechanism_state_lock_))

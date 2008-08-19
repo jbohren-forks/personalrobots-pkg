@@ -45,13 +45,15 @@
 #include "mechanism_model/transmission.h"
 #include "hardware_interface/hardware_interface.h"
 
+class TiXmlElement;
+
 namespace mechanism
 {
 
 class Robot
 {
 public:
-  Robot(char *ns){}
+  Robot(const char *ns){}
 
   ~Robot()
   {
@@ -59,28 +61,13 @@ public:
     deleteElements(&joints_);
   }
 
+  bool initXml(TiXmlElement *root);
+
   std::vector<Joint*> joints_;
   std::vector<Transmission*> transmissions_;
 
-  // Supports looking up joints and actuators by name.  The IndexMap
-  // structure maps the name of the item to its index in the vectors.
-  typedef std::map<std::string,int> IndexMap;
-  IndexMap joints_lookup_;
-  IndexMap actuators_lookup_;
-  Joint* getJoint(const std::string &name)
-  {
-    IndexMap::iterator it = joints_lookup_.find(name);
-    if (it == joints_lookup_.end())
-      return NULL;
-    return joints_[it->second];
-  }
-  Actuator* getActuator(const std::string &name)
-  {
-    IndexMap::iterator it = actuators_lookup_.find(name);
-    if (it == actuators_lookup_.end())
-      return NULL;
-    return hw_->actuators_[it->second];
-  }
+  Joint* getJoint(const std::string &name);
+  Actuator* getActuator(const std::string &name);
 
   HardwareInterface *hw_;
 };

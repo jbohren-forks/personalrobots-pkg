@@ -50,13 +50,30 @@ SimpleTransmission::SimpleTransmission(Joint *joint, Actuator *actuator,
   joint_ = joint;
 }
 
-void SimpleTransmission::initXml(TiXmlElement *elt, Robot *robot)
+bool SimpleTransmission::initXml(TiXmlElement *elt, Robot *robot)
 {
-  joint_ = robot->getJoint(elt->FirstChildElement("joint")->Attribute("name"));
-  actuator_ = robot->getActuator(elt->FirstChildElement("actuator")->Attribute("name"));
+  TiXmlElement *jel = elt->FirstChildElement("joint");
+  const char *joint_name = jel ? jel->Attribute("name") : NULL;
+  joint_ = joint_name ? robot->getJoint(joint_name) : NULL;
+  if (!joint_)
+  {
+    fprintf(stderr, "SimpleTransmission could not find joint named \"%s\"\n", joint_name);
+    return false;
+  }
+
+  TiXmlElement *ael = elt->FirstChildElement("actuator");
+  const char *actuator_name = ael ? ael->Attribute("name") : NULL;
+  actuator_ = actuator_name ? robot->getActuator(actuator_name) : NULL;
+  if (!actuator_)
+  {
+    fprintf(stderr, "SimpleTransmission could not find actuator named \"%s\"\n", actuator_name);
+    return false;
+  }
+
   mechanical_reduction_ = atof(elt->FirstChildElement("mechanicalReduction")->GetText()),
   motor_torque_constant_ = atof(elt->FirstChildElement("motorTorqueConstant")->GetText()),
   pulses_per_revolution_ = atof(elt->FirstChildElement("pulsesPerRevolution")->GetText());
+  return true;
 }
 
 void SimpleTransmission::initTransmission(std::string transmission_name,std::string joint_name,std::string actuator_name,double mechanical_reduction,double motor_torque_constant,double pulses_per_revolution, Robot *robot)
@@ -73,14 +90,16 @@ void SimpleTransmission::initTransmission(std::string transmission_name,std::str
 
 void SimpleTransmission::propagatePosition()
 {
+  assert(joint_);  assert(actuator_);
   joint_->position_ = ((double)actuator_->state_.encoder_count_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);
   joint_->velocity_ = ((double)actuator_->state_.encoder_velocity_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);
   joint_->applied_effort_ = actuator_->state_.last_measured_current_ * (motor_torque_constant_ * mechanical_reduction_);
-  
+
 }
 
 void SimpleTransmission::propagatePositionBackwards()
 {
+  assert(joint_);  assert(actuator_);
   actuator_->state_.encoder_count_ = (int)(joint_->position_ * pulses_per_revolution_ * mechanical_reduction_ / (2*M_PI));
   actuator_->state_.encoder_velocity_ = joint_->velocity_ * pulses_per_revolution_ * mechanical_reduction_ / (2*M_PI);
   actuator_->state_.last_measured_current_ = joint_->applied_effort_ / (motor_torque_constant_ * mechanical_reduction_);
@@ -88,13 +107,14 @@ void SimpleTransmission::propagatePositionBackwards()
 
 void SimpleTransmission::propagateEffort()
 {
+  assert(joint_);  assert(actuator_);
   actuator_->command_.current_ = joint_->commanded_effort_/(motor_torque_constant_ * mechanical_reduction_);
   actuator_->command_.enable_ = true;
- 
+
 }
 
 void SimpleTransmission::propagateEffortBackwards()
 {
+  assert(joint_);  assert(actuator_);
   joint_->commanded_effort_ = actuator_->command_.current_ * motor_torque_constant_ * mechanical_reduction_;
-  
 }

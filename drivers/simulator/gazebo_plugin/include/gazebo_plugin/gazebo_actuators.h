@@ -35,6 +35,8 @@
 #include <gazebo/Model.hh>
 #include "hardware_interface/hardware_interface.h"
 #include "mechanism_control/mechanism_control.h"
+#include "mechanism_model/robot.h"
+#include "tinyxml/tinyxml.h"
 
 
 namespace gazebo
@@ -63,15 +65,13 @@ private:
   MechanismControl mc_;
   MechanismControlNode mcn_;
 
-  // Each joint in joints_ corresponds to the joint with the same
-  // index in mech_joints_.  The mech_joints_ vector exists so that
-  // each transmission has a mechanism::Joint to write to, because it
-  // would be best if the transmissions did not depend on Gazebo
-  // objects.
+  TiXmlDocument config_;
+
+  // The fake model helps Gazebo run the transmissions backwards, so
+  // that it can figure out what its joints should do based on the
+  // actuator values.
+  mechanism::Robot fake_model_;
   std::vector<gazebo::Joint*> joints_;
-  std::vector<mechanism::Joint*> mech_joints_;
-  std::vector<mechanism::Transmission*> transmissions_;
-  std::vector<std::string> actuator_names_;
 };
 
 }

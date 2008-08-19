@@ -111,18 +111,24 @@ double meval::EvaluateMathExpression(const std::string &expression, ExpressionVa
     {
       bool variable = false;
       for (unsigned int i = 0 ; i < exp.size() ; ++i)
+      {
         if (!((exp[i] <= '9' && exp[i] >= '0') || exp[i] == '+' || exp[i] == '-' || exp[i] == '.'))
         {
           variable = true;
           break;
         }
+      }
+
       if (variable)
       {
         if (var)
           return var(data, exp);
+        return NAN;
       }
       else
+      {
         return atof(exp.c_str());
+      }
     }
   }
   else
@@ -130,18 +136,28 @@ double meval::EvaluateMathExpression(const std::string &expression, ExpressionVa
     unsigned int pos = ops[0];
     std::string exp1 = exp.substr(0, pos);
     std::string exp2 = exp.substr(pos + 1);
+    double val1, val2;
+    val1 = EvaluateMathExpression(exp1, var, data);
+    val2 = EvaluateMathExpression(exp2, var, data);
+
+    // Hack: handles unary minus
+    if (exp1.size() == 0)
+      val1 = 0.0;
+
     switch (exp[pos])
     {
     case '+':
-      return EvaluateMathExpression(exp1, var, data) + EvaluateMathExpression(exp2, var, data);
+      return val1 + val2;
     case '-':
-      return EvaluateMathExpression(exp1, var, data) - EvaluateMathExpression(exp2, var, data);
+      return val1 - val2;
     case '*':
-      return EvaluateMathExpression(exp1, var, data) * EvaluateMathExpression(exp2, var, data);
+      return val1 * val2;
     case '/':
-      return EvaluateMathExpression(exp1, var, data) / EvaluateMathExpression(exp2, var, data);
+      return val1 / val2;
+    default:
+      return NAN;
     }
   }
 
-  return 0.0;
+  return NAN;
 }

@@ -53,7 +53,11 @@ typedef double (*ExpressionVariableFn)(void *, std::string&);
  * mathematical operators. In addition to floating point constants,
  * this function allows the use of named constants, if a callback is
  * provided to evaluate those named constants. A data pointer for the
- * callback is provided for convenience. */
+
+ * callback is provided for convenience.
+ *
+ * Returns nan on error.
+ */
 double EvaluateMathExpression(const char *expression, ExpressionVariableFn var = NULL, void *data = NULL);
 double EvaluateMathExpression(const std::string &expression, ExpressionVariableFn var = NULL, void *data = NULL);
 

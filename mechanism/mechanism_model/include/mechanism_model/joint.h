@@ -31,6 +31,9 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
+/*
+ *
+ */
 #ifndef JOINT_H
 #define JOINT_H
 
@@ -40,8 +43,11 @@ namespace mechanism {
 
 class Joint{
 public:
+  Joint() : commanded_effort_(0) {}
+  ~Joint() {}
+
   void enforceLimits();
-  void initXml(TiXmlElement *elt);
+  bool initXml(TiXmlElement *elt);
 
   std::string name_;
   int type_;

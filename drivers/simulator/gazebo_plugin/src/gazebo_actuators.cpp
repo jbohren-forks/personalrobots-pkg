@@ -32,6 +32,7 @@
 #include <iostream>
 #include <math.h>
 #include <unistd.h>
+#include <set>
 #include <stl_utils/stl_utils.h>
 #include <gazebo/Global.hh>
 #include <gazebo/XMLConfig.hh>
@@ -42,18 +43,20 @@
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
+#include <urdf/parser.h>
 
 namespace gazebo {
 
 GZ_REGISTER_DYNAMIC_CONTROLLER("gazebo_actuators", GazeboActuators);
 
 GazeboActuators::GazeboActuators(Entity *parent)
-  : Controller(parent), hw_(0), mc_(&hw_), mcn_(&mc_)
+  : Controller(parent), hw_(0), mc_(&hw_), mcn_(&mc_), fake_model_("fake")
 {
-   this->parent_model_ = dynamic_cast<Model*>(this->parent);
+  fake_model_.hw_ = &hw_;
+  this->parent_model_ = dynamic_cast<Model*>(this->parent);
 
-   if (!this->parent_model_)
-      gzthrow("GazeboActuators controller requires a Model as its parent");
+  if (!this->parent_model_)
+    gzthrow("GazeboActuators controller requires a Model as its parent");
 }
 
 GazeboActuators::~GazeboActuators()
@@ -63,75 +66,71 @@ GazeboActuators::~GazeboActuators()
 
 void GazeboActuators::LoadChild(XMLConfigNode *node)
 {
-  XMLConfigNode *xit;  // XML iterator
-
-  // Reads the joints out of Gazebo's config.
-  std::map<std::string,int> joint_lookup;
-  for (xit = node->GetChild("joint"); xit; xit = xit->GetNext("joint"))
+  XMLConfigNode *robot = node->GetChild("robot");
+  if (!robot)
   {
-    std::string joint_name = xit->GetString("name", "", 1);
-    gazebo::Joint *joint = parent_model_->GetJoint(joint_name);
-    assert(joint != NULL);
-    joints_.push_back(joint);
-    mech_joints_.push_back(new mechanism::Joint);
-
-    joint_lookup.insert(std::pair<std::string,int>(joint_name, joints_.size()-1));
+    fprintf(stderr, "Error loading gazebo_actuators config: no robot element\n");
+    return;
   }
 
-  // Reads the transmission information from the config.
-  for (xit = node->GetChild("transmission"); xit; xit = xit->GetNext("transmission"))
+  // TODO: should look for the file relative to the path of the world file.
+  std::string filename = robot->GetString("filename", "", 1);
+  printf("Loading %s\n", filename.c_str());
+
+  TiXmlDocument doc(filename);
+  doc.LoadFile();
+  assert(doc.RootElement());
+  urdf::normalizeXml(doc.RootElement());
+
+  // Pulls out the list of actuators used in the robot configuration.
+  struct GetActuators : public TiXmlVisitor
   {
-    if (0 == strcmp("SimpleTransmission", xit->GetString("type", "", 0).c_str()))
+    std::set<std::string> actuators;
+    virtual bool VisitEnter(const TiXmlElement &elt, const TiXmlAttribute *)
     {
-      // Looks up the joint by name
-      XMLConfigNode *joint_node = xit->GetChild("joint");
-      assert(joint_node != NULL);
-      std::map<std::string,int>::iterator jit = joint_lookup.find(joint_node->GetString("name", "", 1));
-      if (jit == joint_lookup.end())
-      {
-        // TODO: report: Could not find the joint named xxxx
-        continue;
-      }
-
-      // Creates the actuator
-      XMLConfigNode *actuator_node = xit->GetChild("actuator");
-      assert(actuator_node != NULL);
-      Actuator *actuator = new Actuator;
-      hw_.actuators_.push_back(actuator);
-      actuator_names_.push_back(actuator_node->GetString("name", "", 1));
-
-      // Creates the transmission
-      transmissions_.push_back(
-        new mechanism::SimpleTransmission(mech_joints_[jit->second], actuator,
-                                          xit->GetDouble("mechanicalReduction", 0.0, 1),
-                                          xit->GetDouble("motorTorqueConstant", 0.0, 1),
-                                          xit->GetDouble("pulsesPerRevolution", 0.0, 1)));
-
+      if (elt.ValueStr() == std::string("actuator") && elt.Attribute("name"))
+        actuators.insert(elt.Attribute("name"));
+      return true;
     }
+  } get_actuators;
+  doc.RootElement()->Accept(&get_actuators);
+
+  // Places the found actuators into the hardware interface.
+  std::set<std::string>::iterator it;
+  for (it = get_actuators.actuators.begin(); it != get_actuators.actuators.end(); ++it)
+  {
+    hw_.actuators_.push_back(new Actuator(*it));
+  }
+
+  // Initializes the fake model (for running the transmissions backwards).
+  fake_model_.initXml(doc.RootElement());
+
+  // The gazebo joints and mechanism joints should match up.
+  for (unsigned int i = 0; i < fake_model_.joints_.size(); ++i)
+  {
+    std::string joint_name = fake_model_.joints_[i]->name_;
+    gazebo::Joint *joint = parent_model_->GetJoint(joint_name);
+    if (joint)
+      joints_.push_back(joint);
     else
     {
-      // TODO: report: Unknown transmission type
-      continue;
+      fprintf(stderr, "Gazebo does not know about a joint named \"%s\"\n", joint_name.c_str());
+      joints_.push_back(NULL);
     }
   }
+
+  hw_.current_time_ = Simulator::Instance()->GetSimTime();
+  mcn_.initXml(doc.RootElement());
 }
 
 void GazeboActuators::InitChild()
 {
-  // Registers the actuators with MechanismControl
-  assert(actuator_names_.size() == hw_.actuators_.size());
-  for (unsigned int i = 0; i < actuator_names_.size(); ++i)
-    mc_.registerActuator(actuator_names_[i], i);
-
-
-  // TODO: mc.init();
-
   hw_.current_time_ = Simulator::Instance()->GetSimTime();
 }
 
 void GazeboActuators::UpdateChild()
 {
-  assert(joints_.size() == mech_joints_.size());
+  assert(joints_.size() == fake_model_.joints_.size());
 
   //--------------------------------------------------
   //  Pushes out simulation state
@@ -140,22 +139,23 @@ void GazeboActuators::UpdateChild()
   // Copies the state from the gazebo joints into the mechanism joints.
   for (unsigned int i = 0; i < joints_.size(); ++i)
   {
+    if (!joints_[i])
+      continue;
     assert(joints_[i]->GetType() == Joint::HINGE);
     HingeJoint *hj = (HingeJoint*)joints_[i];
-    mech_joints_[i]->position_ = hj->GetAngle();
-    mech_joints_[i]->velocity_ = hj->GetAngleRate();
-    mech_joints_[i]->applied_effort_ = mech_joints_[i]->commanded_effort_;
+    fake_model_.joints_[i]->position_ = hj->GetAngle();
+    fake_model_.joints_[i]->velocity_ = hj->GetAngleRate();
+    fake_model_.joints_[i]->applied_effort_ = fake_model_.joints_[i]->commanded_effort_;
   }
 
   // Reverses the transmissions to propagate the joint position into the actuators.
-  for (unsigned int i = 0; i < transmissions_.size(); ++i)
-    transmissions_[i]->propagatePositionBackwards();
+  for (unsigned int i = 0; i < fake_model_.transmissions_.size(); ++i)
+    fake_model_.transmissions_[i]->propagatePositionBackwards();
 
   //--------------------------------------------------
   //  Runs Mechanism Control
   //--------------------------------------------------
   hw_.current_time_ = Simulator::Instance()->GetSimTime();
-  //mc_.update();
   mcn_.update();
 
   //--------------------------------------------------
@@ -163,15 +163,17 @@ void GazeboActuators::UpdateChild()
   //--------------------------------------------------
 
   // Reverses the transmissions to propagate the actuator commands into the joints.
-  for (unsigned int i = 0; i < transmissions_.size(); ++i)
-    transmissions_[i]->propagateEffortBackwards();
+  for (unsigned int i = 0; i < fake_model_.transmissions_.size(); ++i)
+    fake_model_.transmissions_[i]->propagateEffortBackwards();
 
   // Copies the commands from the mechanism joints into the gazebo joints.
   for (unsigned int i = 0; i < joints_.size(); ++i)
   {
+    if (!joints_[i])
+      continue;
     assert(joints_[i]->GetType() == Joint::HINGE);
     HingeJoint *hj = (HingeJoint*)joints_[i];
-    hj->SetTorque(mech_joints_[i]->commanded_effort_);
+    hj->SetTorque(fake_model_.joints_[i]->commanded_effort_);
   }
 }
 

@@ -61,7 +61,7 @@ public:
   virtual ~Transmission() {}
 
   // Initialize transmission from XML data
-  virtual void initXml(TiXmlElement *config, Robot *robot) = 0;
+  virtual bool initXml(TiXmlElement *config, Robot *robot) = 0;
 
   // another way to initialize simple transmission
   virtual void initTransmission(std::string transmission_name,std::string joint_name,std::string actuator_name,double mechanical_reduction,double motor_torque_constant,double pulses_per_revolution, Robot *robot) = 0;
@@ -88,7 +88,7 @@ public:
   SimpleTransmission(Joint *joint, Actuator *actuator, double mechanical_reduction, double motor_torque_constant, double pulses_per_revolution);
   ~SimpleTransmission() {}
 
-  void initXml(TiXmlElement *config, Robot *robot);
+  bool initXml(TiXmlElement *config, Robot *robot);
 
   void initTransmission(std::string transmission_name,std::string joint_name,std::string actuator_name,double mechanical_reduction,double motor_torque_constant,double pulses_per_revolution, Robot *robot);
   std::string name_;

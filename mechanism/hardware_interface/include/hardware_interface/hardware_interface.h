@@ -35,6 +35,8 @@
 #ifndef HARDWARE_INTERFACE_H
 #define HARDWARE_INTERFACE_H
 
+#include <string>
+#include <vector>
 #include <stl_utils/stl_utils.h>
 
 class ActuatorState{
@@ -81,6 +83,11 @@ public:
 class Actuator
 {
 public:
+  Actuator() {}
+  Actuator(const std::string &name) : name_(name) {}
+  ~Actuator() {}
+
+  std::string name_;
   ActuatorState state_;
   ActuatorCommand command_;
 };

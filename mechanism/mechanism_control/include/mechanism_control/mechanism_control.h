@@ -70,7 +70,6 @@ public:
 
   // Non real-time functions
   bool initXml(TiXmlElement* config);
-  bool registerActuator(const std::string &name, int index);
   void getControllerNames(std::vector<std::string> &v);
   bool addController(controller::Controller *c, const std::string &name);
   bool spawnController(const std::string &type, const std::string &name, TiXmlElement *config);
@@ -78,7 +77,7 @@ public:
   bool addJoint(mechanism::Joint* j);
   bool addSimpleTransmission(mechanism::SimpleTransmission *st);
   controller::Controller* getControllerByName(std::string name);
- 
+
   mechanism::Robot model_;
   HardwareInterface *hw_;
 
@@ -127,19 +126,19 @@ private:
                       mechanism_control::KillController::response &resp);
 
   MechanismControl *mc_;
-  
+
   // Non-realtime thread for publishing state information.
   pthread_t *state_publishing_thread_;
   void statePublishingLoop(void);
   bool state_publishing_loop_keep_running_;
   static const double STATE_PUBLISHING_PERIOD = 0.1;  // in seconds, higher rates are useless with the current speed of the simulator
 
-  
+
   // Structure for transfering the mechanism state between realtime and non-realtime.
   pthread_mutex_t mechanism_state_lock_;
   // Blocks the ros publishing loop until an update is received from HW loop.
   bool mechanism_state_updated_;
-  pthread_cond_t mechanism_state_updated_cond_; 
+  pthread_cond_t mechanism_state_updated_cond_;
   mechanism_control::MechanismState mechanism_state_;
   void publishMechanismState(); // Not realtime safe
   const char *  const mechanism_state_topic_;
