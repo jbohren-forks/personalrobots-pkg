@@ -49,9 +49,9 @@ TransformReference::TransformReference(bool interpolating,
                                        ULLtime cache_time,
                                        unsigned long long max_extrapolation_distance):
   cache_time(cache_time),
+  last_number(1),
   interpolating (interpolating),
-  max_extrapolation_distance(max_extrapolation_distance),
-  last_number(1)
+  max_extrapolation_distance(max_extrapolation_distance)
 {
   nameMap["NO_PARENT"] = 0; //Initialize NO_PARENT
   reverseMap[0] = "NO_PARENT"; //Initialize NO_PARENT
