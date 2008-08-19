@@ -193,7 +193,7 @@ class Octree {
 
 
 	//! Recursively computes the max depth in the Octree. Useful when Octree is read from file.
-	virtual int computeMaxDepth(){return mRoot->computeMaxDepth();}
+	int computeMaxDepth(){return mRoot->computeMaxDepth();}
 	//! Set this Octree from a ROS message
 	void setFromMsg(const OctreeMsg &msg);
 	//! Write this Octree in a ROS message

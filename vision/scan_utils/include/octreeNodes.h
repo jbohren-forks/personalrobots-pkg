@@ -28,6 +28,7 @@ class OctreeNode {
  private:
  public:
 	OctreeNode(){}
+	virtual ~OctreeNode(){}
 	virtual bool isLeaf() const = 0;
 	virtual void serialize(char*, unsigned int&){}
 	virtual void deserialize(char*, unsigned int&, unsigned int){}
@@ -60,7 +61,7 @@ class OctreeLeaf : public OctreeNode<T> {
  public:
         OctreeLeaf(T val) {setVal(val);}
 	OctreeLeaf(){}
-	~OctreeLeaf(){}
+	virtual ~OctreeLeaf(){}
 	bool isLeaf() const {return true;}
 
 	T getVal() const {return mValue;}
@@ -99,7 +100,7 @@ class OctreeBranch : public OctreeNode<T> {
 	//! Initializes a branch with all children set to the value \a val 
 	inline OctreeBranch(T val);
 	//! Destructor will delete all children first. Thus, delete an Octree top-down by just deleting its root.
-	inline ~OctreeBranch();
+	inline virtual ~OctreeBranch();
 
 	//! Return the child at address \a adress, between 0 and 7
 	OctreeNode<T>* getChild(unsigned char address) { return mChildren[address]; }
