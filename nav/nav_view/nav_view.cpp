@@ -104,8 +104,15 @@ Publishes to (name / type):
 #include "std_msgs/Planner2DGoal.h"
 #include "std_msgs/Polyline2D.h"
 #include "std_msgs/Pose2DFloat32.h"
+#include "pr2_msgs/OccDiff.h"
 #include "std_srvs/StaticMap.h"
+#include <pr2_srvs/TransientObstacles.h>
 #include "sdlgl/sdlgl.h"
+
+struct ObstaclePoint {
+  double x;
+  double y;
+};
 
 class NavView : public ros::node, public ros::SDLGL
 {
@@ -115,6 +122,7 @@ public:
   std_msgs::Polyline2D pathline;
   std_msgs::Polyline2D laserscan;
   std_msgs::Pose2DFloat32 initialpose;
+  pr2_msgs::OccDiff occ_diff_;
   float view_scale, view_x, view_y;
   SDL_Surface* map_surface;
   GLuint map_texture;
@@ -123,22 +131,29 @@ public:
   int gwidth, gheight;
   bool setting_theta;
   double gx,gy;
+  int n_val_;
+  std::list<ObstaclePoint> nav_view_points_;
+  bool full_transient_init_;
   
   // Lock for access to class members in callbacks
   ros::thread::mutex lock;
 
   rosTFClient tf;
 
-  NavView() : ros::node("nav_view",ros::node::DONT_HANDLE_SIGINT),
-	      view_scale(10), view_x(0), view_y(0),
-	      tf(*this,false)
+  NavView(int n_val) : ros::node("nav_view",ros::node::DONT_HANDLE_SIGINT),
+                       view_scale(10), view_x(0), view_y(0), n_val_(n_val),
+                       tf(*this,false)
   {
     param("max_frame_rate", max_frame_rate, 5.0);
     advertise<std_msgs::Planner2DGoal>("goal");
     advertise<std_msgs::Pose2DFloat32>("initialpose");
     subscribe("particlecloud", cloud, &NavView::generic_cb);
     subscribe("gui_path", pathline, &NavView::generic_cb);
-    subscribe("gui_laser", laserscan, &NavView::generic_cb);
+    if(n_val_ == 0) {
+      subscribe("gui_laser", laserscan, &NavView::generic_cb);
+    } else {
+      subscribe("transient_obstacles_diff", occ_diff_, &NavView::occDiffCallback);
+    }
     gwidth = 640;
     gheight = 480;
     init_gui(gwidth, gheight, "nav view");
@@ -156,6 +171,9 @@ public:
   
   bool load_map();
   bool load_map_from_image(const char*, double);
+  bool load_full_transient();
+
+  void occDiffCallback();
 
   SDL_Surface* flip_vert(SDL_Surface* sfc);
 
@@ -208,10 +226,22 @@ main(int argc, char **argv)
 
   ros::init(argc, argv);
   
-  NavView view;
+  int n_val = 0;
+  if(argc > 1) 
+  {
+    if(strcmp(argv[1],"transient") == 0) 
+    {
+      n_val = 1;
+    }
+  }
+
+  NavView view(n_val);
   if(!view.load_map())
   //if(!view.load_map_from_image(argv[1],atof(argv[2])))
     puts("WARNING: failed to load map");
+  if(n_val == 1) {
+    view.load_full_transient();
+  }
   view.main_loop();
   ros::fini();
   return 0;
@@ -373,17 +403,90 @@ NavView::render()
   glEnd();
   pathline.unlock();
 
-  laserscan.lock();
-  glColor3f(laserscan.color.r,laserscan.color.g,laserscan.color.b);
-  glBegin(GL_POINTS);
-  for(unsigned int i=0;i<laserscan.get_points_size();i++)
-    glVertex2f(laserscan.points[i].x,laserscan.points[i].y);
-  glEnd();
-  laserscan.unlock();
+  if(n_val_ == 0) {
+    laserscan.lock();
+    glColor3f(laserscan.color.r,laserscan.color.g,laserscan.color.b);
+    glBegin(GL_POINTS);
+    for(unsigned int i=0;i<laserscan.get_points_size();i++)
+      glVertex2f(laserscan.points[i].x,laserscan.points[i].y);
+    glEnd();
+    laserscan.unlock();
+  } else {
+    glColor3f(0,0,255);
+    glBegin(GL_POINTS);
+    for(std::list<ObstaclePoint>::iterator it = nav_view_points_.begin();
+        it != nav_view_points_.end();
+        it++) 
+    {
+      glVertex2f((*it).x, (*it).y);
+    }
+    glEnd();
+  }
 
   SDL_GL_SwapBuffers();
 
   lock.unlock();
+}
+
+bool NavView::load_full_transient() {
+  pr2_srvs::TransientObstacles::request req;
+  pr2_srvs::TransientObstacles::response res;
+  
+  puts("Calling full transient obstacle service");
+  while(!ros::service::call("transient_obstacles_full", req, res)) {
+    puts("request failed; trying again...");
+    usleep(1000000);
+  }
+  puts("Got full transient obstacles");
+
+  for(size_t i = 0; i < res.obs.get_points_size(); i++) 
+  {
+    ObstaclePoint nvp;
+    nvp.x = res.obs.points[i].x;
+    nvp.y = res.obs.points[i].y;
+    nav_view_points_.push_back(nvp);
+  } 
+  full_transient_init_ = true;
+  return true;
+}
+
+void NavView::occDiffCallback() {
+  
+  if(!full_transient_init_) {
+    printf("No full transient init.\n");
+    return;
+  }
+
+  //first take out points
+  for(size_t i = 0; i < occ_diff_.get_unocc_points_size(); i++) 
+  {
+    bool found = false;
+    for(std::list<ObstaclePoint>::iterator it = nav_view_points_.begin();
+        it != nav_view_points_.end();
+        it++) 
+    {
+      if((*it).x == occ_diff_.unocc_points[i].x &&
+         (*it).y == occ_diff_.unocc_points[i].y)
+      {
+        nav_view_points_.erase(it);
+        found = true;
+        //std::cout << "Point " << occ_diff_.unocc_points[i].x << " " <<  occ_diff_.unocc_points[i].y << " was found in nav points.\n";
+        break;
+      }
+    }
+    if(!found) {
+      std::cout << "Point " << occ_diff_.unocc_points[i].x << " " <<  occ_diff_.unocc_points[i].y << " not found in nav points.\n";
+    }
+  }
+
+  //adding new points
+  for(size_t i = 0; i < occ_diff_.get_occ_points_size(); i++)
+  {
+    ObstaclePoint nvp;
+    nvp.x = occ_diff_.occ_points[i].x;
+    nvp.y = occ_diff_.occ_points[i].y;
+    nav_view_points_.push_back(nvp);
+  } 
 }
 
 bool
