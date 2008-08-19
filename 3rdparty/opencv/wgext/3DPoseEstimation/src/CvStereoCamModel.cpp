@@ -161,7 +161,7 @@ bool CvStereoCamModel::reprojection(const CvMat *uvds, CvMat *XYZs) {
 	return dispToCart(*uvds, *XYZs);
 }
 
-bool CvStereoCamModel::dispToCart(const CvMat& XYZs, CvMat & uvds) {
+bool CvStereoCamModel::dispToCart(const CvMat& uvds, CvMat & XYZs) {
 	bool status = true;
 
 	CvMat uvds0;
