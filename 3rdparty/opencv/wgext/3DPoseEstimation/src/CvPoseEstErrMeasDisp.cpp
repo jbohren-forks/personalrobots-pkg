@@ -51,7 +51,7 @@ void CvPoseEstErrMeasDisp::measure(const CvMat& uvds0, const CvMat& uvds1) {
 	CvMat uvds11 = cvMat(n, 3, CV_64FC1, _uvds11);
 	this->transform(uvds0, uvds11);
 
-	this->compare(uvds0, uvds11);
+	this->compare(uvds11, uvds1);
 }
 
 void CvPoseEstErrMeasDisp::compare(const CvMat& uvds11, const CvMat& uvds1){
@@ -91,8 +91,8 @@ void CvPoseEstErrMeasDisp::compare(const CvMat& uvds11, const CvMat& uvds1){
 
 	cvAbsDiff(&uvds11, &uvds1, &uvds1AbsDiff);
 	cvSub(&uvds11, &uvds1, &uvds1Diff);
-	cvAbsDiff(&uvLeftAbsDiff,  &uvsLeft11,  &uvsLeft1);
-	cvAbsDiff(&uvRightAbsDiff, &uvsRight11, &uvsRight1);
+	cvAbsDiff(&uvsLeft11,  &uvsLeft1,  &uvLeftAbsDiff);
+	cvAbsDiff(&uvsRight11, &uvsRight1, &uvRightAbsDiff);
 
 	double _errL2 = 0;
 	double errLeftL2 = 0;
