@@ -266,7 +266,7 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
     ros::init(argc, argv);
     node = new ros::node("mechanism_control", ros::node::DONT_HANDLE_SIGINT);
   }
-  node->advertise_service("list_controllers", &MechanismControlNode::listControllers);
+  node->advertise_service("list_controllers", &MechanismControlNode::listControllers, this);
   node->advertise_service("list_controller_types", &MechanismControlNode::listControllerTypes);
   node->advertise_service("spawn_controller", &MechanismControlNode::spawnController);
   node->advertise<mechanism_control::MechanismState>(mechanism_state_topic_);
@@ -312,6 +312,7 @@ void MechanismControlNode::update()
       mechanism_state_.joint_states[i].applied_effort = mc_->model_.joints_[i]->applied_effort_;
       mechanism_state_.joint_states[i].commanded_effort = mc_->model_.joints_[i]->commanded_effort_;
     }
+    mechanism_state_.time = mc_->hw_->current_time_;
     // Tries to unlock mechanism_updated_lock_ if not already locked.
     // If the lock is successful or fails due to being already held, unlocks the mutex.
     // TODO: better way to do it?
