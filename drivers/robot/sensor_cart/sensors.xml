@@ -13,8 +13,8 @@
   <param name="tilting_laser/min_ang" type="double" value="30"/>
   <param name="tilting_laser/max_ang" type="double" value="130"/>
   <param name="cam0" type="str" value="videre"/>
-  <param name="videre/videoMode" type="str" value="640x480videre"/>
-  <param name="videre/videreParam/mode" type="str" value="disparity"/>
+  <param name="videre/video_mode" type="str" value="640x480_videre"/>
+  <param name="videre/videre_param/mode" type="str" value="disparity"/>
 
 
   <node pkg="hokuyourg_player" type="hokuyourg_player" respawn="false"/>
@@ -24,7 +24,7 @@
     <remap from="mot_cmd" to="mot0_cmd"/>
     <remap from="image" to="intensity_image"/>
   </node>
-  <node pkg="dc1394_cam" type="dc1394_node" respawn="false"/>
+  <node pkg="dc1394_cam_server" type="dc1394_cam_server" respawn="false"/>
 </launch>
 
 
