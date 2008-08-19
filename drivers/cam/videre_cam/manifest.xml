@@ -2,9 +2,6 @@
   <description>A library for connecting to videre cameras</description>
   <author>Jeremy Leibs</author>
   <license>BSD</license>
-  <depend package="newmat10"/>
-  <depend package="roscpp"/>
-  <depend package="std_msgs"/>
   <depend package="dc1394_cam"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lviderecam"/>

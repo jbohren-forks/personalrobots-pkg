@@ -61,15 +61,12 @@ using namespace dc1394_cam;
 
 videre_cam::VidereCam::VidereCam(uint64_t guid, 
                                  VidereMode proc_mode,
-                                 bool rectify,
                                  dc1394speed_t speed,
                                  dc1394framerate_t fps,
                                  size_t bufferSize)
   : Cam(guid, speed, DC1394_VIDEO_MODE_640x480_YUV422, fps, bufferSize), proc_mode_(proc_mode), lproj_(3,4), rproj_(3,4), lrect_(3,3), rrect_(3,3)
 {
   CHECK_READY();
-
-  rectify_ = rectify;
 
   std::cout << "Starting videre constructor!" << std::endl;
 
@@ -144,13 +141,6 @@ videre_cam::VidereCam::VidereCam(uint64_t guid,
   extract(cal_params_, "[right camera]", "tau1",   rt1_);
   extract(cal_params_, "[right camera]", "tau2",   rt2_);
 
-  /*
-  Cx = lproj(1,3);
-  Cy = lproj(2,3);
-  Tx = -rproj(1,4)/lproj(1,1) / 1000.0;
-  f = lproj(1,1);
-  */
-
   extract(cal_params_, "[image]", "width",      w_);
   extract(cal_params_, "[image]", "height",     h_);
   extract(cal_params_, "[stereo]", "corrxsize", corrs_);
@@ -224,6 +214,60 @@ videre_cam::VidereCam::start()
   setControlRegister(0xFF000, qval2);
   
 }
+
+
+void
+videre_cam::VidereCam::setTextureThresh(int thresh)
+{
+        usleep(50000);
+
+        if (thresh < 0)
+          thresh = 0;
+        if (thresh > 63)
+          thresh = 63;
+        
+        uint32_t t_thresh = 0x08000000 | (0x40 << 16) | ( thresh << 16);
+        setControlRegister(0xFF000, t_thresh);
+}
+
+void
+videre_cam::VidereCam::setUniqueThresh(int thresh)
+{
+        usleep(50000);
+
+        if (thresh < 0)
+          thresh = 0;
+        if (thresh > 63)
+          thresh = 63;
+
+        uint32_t u_thresh = 0x08000000 | (0x00 << 16) | ( thresh << 16);
+        setControlRegister(0xFF000, u_thresh);
+}
+
+void
+videre_cam::VidereCam::setCompanding(bool companding)
+{
+        usleep(50000);
+
+        if (companding)
+          setControlRegister(0xFF000, 0x041C0003);
+        else
+          setControlRegister(0xFF000, 0x041C0002);
+}
+
+void
+videre_cam::VidereCam::setHDR(bool hdr)
+{
+        usleep(50000);
+
+        if (hdr)
+          setControlRegister(0xFF000, 0x040F0051);
+        else
+          setControlRegister(0xFF000, 0x040F0011);
+  
+}
+
+
 
 
 

@@ -57,9 +57,7 @@ namespace videre_cam
     
     VidereCam(uint64_t guid,
               VidereMode proc_mode = PROC_MODE_NONE,
-              bool rectify = false,
               dc1394speed_t speed = DC1394_ISO_SPEED_400,
-              // dc1394video_mode_t video = DC1394_VIDEO_MODE_640x480_YUV422, // Force video mode on Videre's
               dc1394framerate_t fps = DC1394_FRAMERATE_30,
               size_t bufferSize = 8);
 
@@ -76,13 +74,25 @@ namespace videre_cam
 
     virtual dc1394_cam::FrameSet getFrames(dc1394capture_policy_t policy = DC1394_CAPTURE_POLICY_WAIT);
 
-    virtual void enableColorization(dc1394color_filter_t bayer = DC1394_COLOR_FILTER_RGGB) { assert(0); }
-
-    virtual void disableColorization() { assert(0); }
+    virtual void enableColorization(dc1394color_filter_t bayer = DC1394_COLOR_FILTER_RGGB) { colorize_ = true; }
 
     virtual void enableRectification(double fx, double fy, double cx, double cy, double k1, double k2, double p1, double p2) { assert(0); }
+    void enableRectification() { rectify_ = true; init_rectify_ = true;}
 
-    virtual void disableRectification() { assert(0); }
+    VidereMode getMode() { return proc_mode_; }
+
+    void setTextureThresh(int thresh);
+
+    void setUniqueThresh(int thresh);
+
+    void setCompanding(bool companding);
+
+    void setHDR(bool hdr);
+
+    NEWMAT::Matrix& getLProj() { return lproj_; }
+    NEWMAT::Matrix& getRProj() { return rproj_; };
+    NEWMAT::Matrix& getLRect() { return lrect_; };
+    NEWMAT::Matrix& getRRect() { return rrect_; };
 
 private:
 

@@ -41,6 +41,8 @@
 #include "std_msgs/Empty.h"
 #include "std_msgs/String.h"
 
+#include "std_srvs/Empty.h"
+
 #include "dc1394_cam/dc1394_cam.h"
 #include "videre_cam/videre_cam.h"
 
@@ -65,6 +67,7 @@ public:
   }
 
   string name;
+  string frameid;
   dc1394_cam::Cam* cam;
   CamTypes  cam_type;
 };
@@ -109,8 +112,44 @@ public:
   }
 
 
-  Dc1394CamServer() : ros::node("dc1394_node")
+  void checkAllFeatures(CamData& cd)
   {
+      checkAndSetFeature(cd, "brightness", DC1394_FEATURE_BRIGHTNESS);
+      checkAndSetFeature(cd, "exposure", DC1394_FEATURE_EXPOSURE);
+      checkAndSetFeature(cd, "shutter", DC1394_FEATURE_SHUTTER);
+      checkAndSetFeature(cd, "gamma", DC1394_FEATURE_GAMMA);
+      checkAndSetFeature(cd, "gain", DC1394_FEATURE_GAIN);
+
+      if (cd.cam_type == VIDERE)
+      {
+        int texture_thresh, unique_thresh;
+        bool companding, hdr;
+        param(cd.name + string("/videre_param/texture_thresh"), texture_thresh, 12);
+        param(cd.name + string("/videre_param/unique_thresh"), unique_thresh, 12);
+        param(cd.name + string("/videre_param/companding"), companding, false);
+        param(cd.name + string("/videre_param/HDR"), hdr, false);
+
+        ((videre_cam::VidereCam*)(cd.cam))->setTextureThresh(texture_thresh);
+        ((videre_cam::VidereCam*)(cd.cam))->setUniqueThresh(unique_thresh);
+        ((videre_cam::VidereCam*)(cd.cam))->setCompanding(companding);
+        ((videre_cam::VidereCam*)(cd.cam))->setHDR(hdr);
+      }
+  }
+
+
+  bool checkFeatureService(std_srvs::Empty::request &req,
+                           std_srvs::Empty::response &res)
+  {
+    for (list<CamData>::iterator c = cams_.begin(); c != cams_.end(); c++)
+      checkAllFeatures(*c);
+    return true;
+  }
+
+
+  Dc1394CamServer() : ros::node("dc1394_cam_server")
+  {
+    advertise_service("~check_params", &Dc1394CamServer::checkFeatureService);
+
     dc1394_cam::init();
 
     int num_cams;
@@ -124,6 +163,10 @@ public:
       oss << "cam" << i;
 
       param(oss.str(), cd.name, oss.str());
+
+      oss.str("");
+      oss << "CAM" << i;
+      param(cd.name + string("/frameid"), cd.frameid, oss.str());
 
       uint64_t guid;
       if (has_param(cd.name + string("/guid")))
@@ -222,15 +265,15 @@ public:
           colorize = false;
       }
 
+      if (has_param(cd.name + string("/colorize")))
+        param(cd.name + string("/colorize"), colorize, false);
+          
+
       bool rectify = false;
       param(cd.name + string("/rectify"), rectify, false);
 
       videre_cam::VidereMode videre_mode;
-      int texture_thresh = 12;;
-      int unique_thresh = 12;
-      bool companding = false;
-      bool hdr = false;
-      
+
       if (cd.cam_type == VIDERE)
       {
         string str_videre_mode;
@@ -245,13 +288,6 @@ public:
           videre_mode = videre_cam::PROC_MODE_DISPARITY_RAW;
         else
           videre_mode = videre_cam::PROC_MODE_NONE;
-
-        param(cd.name + string("/videre_param/companding"), companding, false);
-
-        param(cd.name + string("/videre_param/HDR"), hdr, false);
-
-        param(cd.name + string("/videre_param/texture_thresh"), texture_thresh, 12);
-        param(cd.name + string("/videre_param/unique_thresh"), unique_thresh, 12);
       }
 
       printf("Opening camera with guid: %llx\n", guid);
@@ -262,10 +298,15 @@ public:
         {
           cd.cam = new videre_cam::VidereCam(guid,
                                              videre_mode,
-                                             rectify,
                                              speed,
                                              fps,
                                              buffer_size);
+
+          if (colorize)
+            ((videre_cam::VidereCam*)(cd.cam))->enableColorization();
+
+          if (rectify)
+            ((videre_cam::VidereCam*)(cd.cam))->enableRectification();
 
         }
         else
@@ -286,19 +327,15 @@ public:
         continue;
       }
 
-      checkAndSetFeature(cd, "brightness", DC1394_FEATURE_BRIGHTNESS);
-      checkAndSetFeature(cd, "exposure", DC1394_FEATURE_EXPOSURE);
-      checkAndSetFeature(cd, "shutter", DC1394_FEATURE_SHUTTER);
-      checkAndSetFeature(cd, "gamma", DC1394_FEATURE_GAMMA);
-      checkAndSetFeature(cd, "gain", DC1394_FEATURE_GAIN);
-
       cd.cam->start();
 
+      checkAllFeatures(cd);
 
       if (cd.cam_type == VIDERE)
       {
         advertise<std_msgs::String>(cd.name + string("/cal_params"));
         advertise<std_msgs::ImageArray>(cd.name + string("/images"));
+        advertise<std_msgs::PointCloudFloat32>(cd.name + string("/cloud"));
       } else {
         advertise<std_msgs::Image>(cd.name + string("/image"));
       }
@@ -319,33 +356,6 @@ public:
     dc1394_cam::fini();  
   }
 
-  //TODO: Move this into image codec?
-  void frameToImage(dc1394_cam::FrameWrapper& fw, std_msgs::Image& img)
-  {
-    uint8_t *buf      = fw.getFrame()->image;
-    uint32_t width    = fw.getFrame()->size[0];
-    uint32_t height   = fw.getFrame()->size[1];
-    uint32_t buf_size = width * height;
-      
-    img.width  = width;
-    img.height = height;
-    img.compression = "raw";
-    img.label = fw.getName();
-
-    if (fw.getFrame()->color_coding == DC1394_COLOR_CODING_RGB8)
-    {
-      img.colorspace = "rgb24";
-      buf_size *= 3;
-    } else {
-      img.colorspace = "mono8";
-    }
-      
-    img.set_data_size(buf_size);
-
-    memcpy(img.data, buf, buf_size);
-  }
-
-
   void serviceCam(CamData& cd)
   {
 
@@ -360,15 +370,105 @@ public:
            fs_iter != fs.end();
            fs_iter++)
       {
-        frameToImage(*fs_iter, img_.images[i++]);
+
+        uint8_t *buf      = (*fs_iter).getFrame()->image;
+        uint32_t width    = (*fs_iter).getFrame()->size[0];
+        uint32_t height   = (*fs_iter).getFrame()->size[1];
+        uint32_t buf_size = width * height;
+        
+        img_.images[i].width  = width;
+        img_.images[i].height = height;
+        img_.images[i].compression = "raw";
+        img_.images[i].label = (*fs_iter).getName();
+        
+        if ((*fs_iter).getFrame()->color_coding == DC1394_COLOR_CODING_RGB8)
+        {
+          img_.images[i].colorspace = "rgb24";
+          buf_size *= 3;
+        } else {
+          img_.images[i].colorspace = "mono8";
+        }
+        
+        img_.images[i].set_data_size(buf_size);
+        
+        memcpy(img_.images[i].data, buf, buf_size);
+    
         fs_iter->releaseFrame();
         count_++;
+        i++;
       }
 
       if (cd.cam_type == VIDERE)
       {
+        videre_cam::VidereCam* v = (videre_cam::VidereCam*)(cd.cam);
+        videre_cam::VidereMode mode = v->getMode();
+
+        img_.images[1].header.frame_id = cd.frameid + string("_LEFT");
+        if (mode == videre_cam::PROC_MODE_DISPARITY || mode == videre_cam::PROC_MODE_DISPARITY_RAW)
+        {
+          img_.images[0].header.frame_id = cd.frameid + string("_LEFT");
+        } else {
+          img_.images[0].header.frame_id = cd.frameid + string("_RIGHT");
+        }
+
         publish(cd.name + "/images", img_);
+
+        if (mode == videre_cam::PROC_MODE_DISPARITY || mode == videre_cam::PROC_MODE_DISPARITY_RAW)
+        {
+
+          int goodPixCount = 0;
+
+          uint8_t *buf      = img_.images[0].data;
+          uint8_t *buf1     = img_.images[1].data;
+          uint32_t width    = img_.images[0].width;
+          uint32_t height   = img_.images[0].height;
+          uint32_t buf_size = width * height;
+
+          for (uint32_t i = 0; i < buf_size; i++)
+            if (buf[i] != 0)
+              goodPixCount++;
+
+            cloud_.set_pts_size(goodPixCount);
+            cloud_.set_chan_size(1);
+            cloud_.chan[0].name = "intensities";
+            cloud_.chan[0].set_vals_size(goodPixCount);
+
+            double Cx =  v->getLProj()(1,3);
+            double Cy =  v->getLProj()(2,3);
+            double Tx = -v->getRProj()(1,4)/v->getLProj()(1,1) / 1000.0;
+            double f  =  v->getLProj()(1,1);
+
+            int j = 0;
+            for (uint32_t i = 0; i < buf_size; i++)
+              if (buf[i] != 0)
+              {
+                double X = Tx * ( (double)(i % width) - Cx ) / ((double)(buf[i]) / 4.0);
+                double Y = Tx * ( (double)(i / width) - Cy ) / ((double)(buf[i]) / 4.0);
+                double Z = Tx * ( f ) / ((double)(buf[i]) / 4.0);
+
+                cloud_.pts[j].y = - X;
+                cloud_.pts[j].z = - Y;
+                cloud_.pts[j].x = Z;
+
+                if (mode == videre_cam::PROC_MODE_DISPARITY_RAW)
+                {
+                  cloud_.chan[0].vals[j] = (buf1[i*3] + buf1[i*3 + 1] + buf1[i*3 + 2])/3.0;
+                } else {
+                  cloud_.chan[0].vals[j] = buf1[i];
+                }
+                j++;
+              }
+
+            cloud_.header.stamp = ros::Time::now();
+            cloud_.header.frame_id = cd.frameid + string("_CLOUD");
+
+            publish(cd.name + "/cloud", cloud_);
+
+ 
+        }
+
       } else {
+        img_.images[i].header.frame_id = cd.frameid;
         publish(cd.name + "/image", img_.images[0]);
       }
     }    

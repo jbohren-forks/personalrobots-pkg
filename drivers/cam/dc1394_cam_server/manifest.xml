@@ -5,6 +5,7 @@
   <depend package="newmat10"/>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
+  <depend package="std_srvs"/>
   <depend package="dc1394_cam"/>
   <depend package="videre_cam"/>
   <url></url>
