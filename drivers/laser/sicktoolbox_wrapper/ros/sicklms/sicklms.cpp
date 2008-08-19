@@ -33,8 +33,6 @@
 #include <sicklms-1.0/SickLMS.hh>
 #include "ros/node.h"
 #include "std_msgs/LaserScan.h"
-#include "rosTF/rosTF.h"
-#include "namelookup/nameLookupClient.hh"
 using namespace SickToolbox;
 using namespace std;
 
@@ -44,7 +42,7 @@ void ctrlc_handler(int)
   got_ctrlc = true;
 }
 
-class SickNode : public ros::node, public nameLookupClient
+class SickNode : public ros::node
 {
 public:
   std_msgs::LaserScan scan_msg;
@@ -52,9 +50,9 @@ public:
   string port;
   int baud;
   double last_print_time;
-  SickNode() : ros::node("sicklms"), scan_count(0), last_print_time(0), nameLookupClient(*(ros::node*)this)
+  SickNode() : ros::node("sicklms"), scan_count(0), last_print_time(0)
   {
-    scan_msg.header.frame_id = this->lookup("FRAMEID_LASER");
+    scan_msg.header.frame_id = "FRAMEID_LASER";
     advertise<std_msgs::LaserScan>("scan");
     param("sicklms/port", port, string("/dev/ttyUSB1"));
     param("sicklms/baud", baud, 500000);

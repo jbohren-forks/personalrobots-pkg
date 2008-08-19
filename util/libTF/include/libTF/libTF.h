@@ -58,7 +58,7 @@ namespace libTF
 {
   double x,y,z;
   unsigned long long time;
-  unsigned int frame;
+  std::string frame;
  };
 
 /** ** Point2D ****
@@ -72,7 +72,7 @@ struct TFPoint2D
 {
   double x,y;
   unsigned long long time;
-  unsigned int frame;
+  std::string frame;
 };
 
 
@@ -83,7 +83,7 @@ struct TFVector
 {
   double x,y,z;
   unsigned long long time;
-  unsigned int frame;
+  std::string frame;
 };
 
 /** TFVector2D
@@ -94,7 +94,7 @@ struct TFVector2D
 {
   double x,y;
   unsigned long long time;
-  unsigned int frame;
+  std::string frame;
 };
 
 /** TFEulerYPR
@@ -105,7 +105,7 @@ struct TFEulerYPR
 {
   double yaw, pitch, roll;
   unsigned long long time;
-  unsigned int frame;
+  std::string frame;
 };
 
 /** TFYaw
@@ -115,7 +115,7 @@ struct TFYaw
 {
   double yaw;
   unsigned long long time;
-  unsigned int frame;
+  std::string frame;
 };
 
 /** TFPose
@@ -125,7 +125,7 @@ struct TFPose
 {
   double x,y,z,yaw,pitch,roll;
   unsigned long long time;
-  unsigned int frame;
+  std::string frame;
 };
 
 /** TFPose2D
@@ -135,7 +135,7 @@ struct TFPose2D
 {
   double x,y,yaw;
   unsigned long long time;
-  unsigned int frame;
+  std::string frame;
 };
 
 
@@ -151,7 +151,7 @@ struct TFPose2D
  * 
  * Internal Representation 
  * libTF will store frames with the parameters necessary for generating the transform into that frame from it's parent and a reference to the parent frame.
- * Frames are designated using an unsigned int
+ * Frames are designated using an std::string
  * 0 is a frame without a parent (the top of a tree)
  * The positions of frames over time must be pushed in.  
  * 
@@ -190,7 +190,7 @@ public:
    *
    *  Possible exceptions are: TransformReference::InvaildFrame
    */
-  void addFrame(unsigned int frameid, unsigned int parentid);
+  void addFrame(std::string frameid, std::string parentid);
 
   /** \brief Set a new frame or update an old one.
    * \param frameid The destination frame
@@ -208,22 +208,22 @@ public:
    * 
    *  Possible exceptions are: TransformReference::LookupException
    */
-  void setWithEulers(unsigned int frameid, unsigned int parentid, double x, double y, double z, double yaw, double pitch, double roll, ULLtime time);
+  void setWithEulers(std::string frameid, std::string parentid, double x, double y, double z, double yaw, double pitch, double roll, ULLtime time);
 
   /** \brief Set a transform using DH Parameters 
    * Conventions from http://en.wikipedia.org/wiki/Robotics_conventions 
    *  Possible exceptions are: TransformReference::LookupException
    */
-  void setWithDH(unsigned int frameid, unsigned int parentid, double length, double alpha, double offset, double theta, ULLtime time);
+  void setWithDH(std::string frameid, std::string parentid, double length, double alpha, double offset, double theta, ULLtime time);
 
   /** \brief Set the transform using a matrix 
    *  Possible exceptions are: TransformReference::LookupException
    */
-  void setWithMatrix(unsigned int frameid, unsigned int parentid, const NEWMAT::Matrix & matrix_in, ULLtime time);
+  void setWithMatrix(std::string frameid, std::string parentid, const NEWMAT::Matrix & matrix_in, ULLtime time);
   /** \brief Set the transform using quaternions natively 
    *  Possible exceptions are: TransformReference::LookupException
    */
-  void setWithQuaternion(unsigned int frameid, unsigned int parentid, double xt, double yt, double zt, double xr, double yr, double zr, double w, ULLtime time);
+  void setWithQuaternion(std::string frameid, std::string parentid, double xt, double yt, double zt, double xr, double yr, double zr, double w, ULLtime time);
   
 
   /*********** Accessors *************/
@@ -236,31 +236,31 @@ public:
    * Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
    * TransformReference::MaxDepthException
    */
-  NEWMAT::Matrix getMatrix(unsigned int target_frame, unsigned int source_frame, ULLtime time);
+  NEWMAT::Matrix getMatrix(std::string target_frame, std::string source_frame, ULLtime time);
 
 
   /** \brief Transform a point to a different frame */
-  TFPoint transformPoint(unsigned int target_frame, const TFPoint & point_in);
+  TFPoint transformPoint(std::string target_frame, const TFPoint & point_in);
   /** \brief Transform a 2D point to a different frame */
-  TFPoint2D transformPoint2D(unsigned int target_frame, const TFPoint2D & point_in);
+  TFPoint2D transformPoint2D(std::string target_frame, const TFPoint2D & point_in);
   /** \brief Transform a vector to a different frame */
-  TFVector transformVector(unsigned int target_frame, const TFVector & vector_in);
+  TFVector transformVector(std::string target_frame, const TFVector & vector_in);
   /** \brief Transform a 2D vector to a different frame */
-  TFVector2D transformVector2D(unsigned int target_frame, const TFVector2D & vector_in);
+  TFVector2D transformVector2D(std::string target_frame, const TFVector2D & vector_in);
   /** \brief Transform Euler angles between frames */
-  TFEulerYPR transformEulerYPR(unsigned int target_frame, const TFEulerYPR & euler_in);
+  TFEulerYPR transformEulerYPR(std::string target_frame, const TFEulerYPR & euler_in);
   /** \brief Transform Yaw between frames. Useful for 2D navigation */
-  TFYaw transformYaw(unsigned int target_frame, const TFYaw & euler_in);
+  TFYaw transformYaw(std::string target_frame, const TFYaw & euler_in);
   /** \brief Transform a 6DOF pose.  (x, y, z, yaw, pitch, roll). */
-  TFPose transformPose(unsigned int target_frame, const TFPose & pose_in);
+  TFPose transformPose(std::string target_frame, const TFPose & pose_in);
   /** \brief Transform a planar pose, x,y,yaw */
-  TFPose2D transformPose2D(unsigned int target_frame, const TFPose2D & pose_in);
+  TFPose2D transformPose2D(std::string target_frame, const TFPose2D & pose_in);
 
   /** \brief Debugging function that will print the spanning chain of transforms.
    * Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
    * TransformReference::MaxDepthException
    */
-  std::string viewChain(unsigned int target_frame, unsigned int source_frame);
+  std::string viewChain(std::string target_frame, std::string source_frame);
 
   /** \brief A way to see what frames have been cached 
    * Useful for debugging 
@@ -369,6 +369,11 @@ protected:
   /// How long to cache transform history
   ULLtime cache_time;
 
+  /// Map for storage of name
+  std::map<std::string, unsigned int> nameMap;
+  std::map<unsigned int, std::string> reverseMap;
+  unsigned int last_number; ///\todo init to zero
+
   /// whether or not to interpolate or extrapolate
   bool interpolating;
   
@@ -395,6 +400,11 @@ protected:
    * Possible Exception: TransformReference::LookupException
    */
   inline RefFrame* getFrame(unsigned int frame_number) { if (frames[frame_number] == NULL) { std::stringstream ss; ss << "Frame " << frame_number << " does not exist."; throw LookupException(ss.str());} else return frames[frame_number];};
+  inline RefFrame* getFrame(std::string frame_number_string) { unsigned int frame_number = nameToNumber(frame_number_string); if (frames[frame_number] == NULL) { std::stringstream ss; ss << "Frame " << frame_number << " does not exist."; throw LookupException(ss.str());} else return frames[frame_number];};
+
+
+  unsigned int nameToNumber(std::string frameid);
+  std::string numberToName(unsigned int frameid);
 
   /** Find the list of connected frames necessary to connect two different frames */
   TransformLists  lookUpList(unsigned int target_frame, unsigned int source_frame);

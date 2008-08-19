@@ -241,7 +241,7 @@ StageNode::Update()
     }
 
     // TODO: get the frame ID from somewhere
-    this->laserMsg.header.frame_id = tf.lookup("FRAMEID_LASER");
+    this->laserMsg.header.frame_id = "FRAMEID_LASER";
     this->laserMsg.header.stamp.from_double(world->SimTimeNow() / 1e6);
     //this->laserMsg.header.stamp.sec = 
             //(unsigned long)floor(world->SimTimeNow() / 1e6);
@@ -262,7 +262,7 @@ StageNode::Update()
   this->odomMsg.vel.th = v.a;
   this->odomMsg.stall = this->positionmodel->Stall();
   // TODO: get the frame ID from somewhere
-  this->odomMsg.header.frame_id = tf.lookup("FRAMEID_ODOM");
+  this->odomMsg.header.frame_id = "FRAMEID_ODOM";
 
   this->odomMsg.header.stamp.from_double(world->SimTimeNow() / 1e6);
   //this->odomMsg.header.stamp.sec = 

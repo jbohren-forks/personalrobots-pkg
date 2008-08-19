@@ -50,9 +50,12 @@ TransformReference::TransformReference(bool interpolating,
                                        unsigned long long max_extrapolation_distance):
   cache_time(cache_time),
   interpolating (interpolating),
-  max_extrapolation_distance(max_extrapolation_distance)
+  max_extrapolation_distance(max_extrapolation_distance),
+  last_number(1)
 {
-  
+  nameMap["NO_PARENT"] = 0; //Initialize NO_PARENT
+  reverseMap[0] = "NO_PARENT"; //Initialize NO_PARENT
+
   frames = new RefFrame*[MAX_NUM_FRAMES];
   assert(frames);
   
@@ -76,7 +79,12 @@ TransformReference::~TransformReference()
   delete[] frames;
 };
 
-void TransformReference::addFrame(unsigned int frameID, unsigned int parentID) {
+void TransformReference::addFrame(std::string frame_id, std::string parent_id) {
+  unsigned int frameID, parentID;
+  frameID = nameToNumber(frame_id);
+  parentID = nameToNumber(parent_id);
+  
+  
   if (frameID >= MAX_NUM_FRAMES || parentID >= MAX_NUM_FRAMES || frameID == NO_PARENT)
   {
     std::stringstream ss;
@@ -94,14 +102,14 @@ void TransformReference::addFrame(unsigned int frameID, unsigned int parentID) {
 }
 
 
-void TransformReference::setWithEulers(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d,double e,double f, ULLtime time)
+void TransformReference::setWithEulers(std::string frameID, std::string parentID, double a,double b,double c,double d,double e,double f, ULLtime time)
 {
   addFrame(frameID, parentID);
 
   getFrame(frameID)->addFromEuler(a,b,c,d,e,f,time);
 }
 
-void TransformReference::setWithDH(unsigned int frameID, unsigned int parentID, double a,double b,double c,double d, ULLtime time)
+void TransformReference::setWithDH(std::string frameID, std::string parentID, double a,double b,double c,double d, ULLtime time)
 {
   addFrame(frameID, parentID);
 
@@ -109,7 +117,7 @@ void TransformReference::setWithDH(unsigned int frameID, unsigned int parentID, 
 }
 
 
-void TransformReference::setWithMatrix(unsigned int frameID, unsigned int parentID, const NEWMAT::Matrix & matrix_in, ULLtime time)
+void TransformReference::setWithMatrix(std::string frameID, std::string parentID, const NEWMAT::Matrix & matrix_in, ULLtime time)
 {
   addFrame(frameID, parentID);
 
@@ -117,7 +125,7 @@ void TransformReference::setWithMatrix(unsigned int frameID, unsigned int parent
 }
 
 
-void TransformReference::setWithQuaternion(unsigned int frameID, unsigned int parentID, double xt, double yt, double zt, double xr, double yr, double zr, double w, ULLtime time)
+void TransformReference::setWithQuaternion(std::string frameID, std::string parentID, double xt, double yt, double zt, double xr, double yr, double zr, double w, ULLtime time)
 {
   addFrame(frameID, parentID);
 
@@ -127,8 +135,12 @@ void TransformReference::setWithQuaternion(unsigned int frameID, unsigned int pa
 
 
 
-NEWMAT::Matrix TransformReference::getMatrix(unsigned int target_frame, unsigned int source_frame, ULLtime time)
+NEWMAT::Matrix TransformReference::getMatrix(std::string target_frame_string, std::string source_frame_string, ULLtime time)
 {
+  unsigned int target_frame, source_frame;
+  target_frame = nameToNumber(target_frame_string);
+  source_frame = nameToNumber(source_frame_string);
+
   NEWMAT::Matrix myMat(4,4);
   TransformLists lists = lookUpList(target_frame, source_frame);
   myMat = computeTransformFromList(lists,time);
@@ -138,7 +150,7 @@ NEWMAT::Matrix TransformReference::getMatrix(unsigned int target_frame, unsigned
 
 
 
-TFPoint TransformReference::transformPoint(unsigned int target_frame, const TFPoint & point_in)
+TFPoint TransformReference::transformPoint(std::string target_frame, const TFPoint & point_in)
 {
   //Create a vector
   NEWMAT::Matrix pointMat(4,1);
@@ -156,7 +168,7 @@ TFPoint TransformReference::transformPoint(unsigned int target_frame, const TFPo
   retPoint.time = point_in.time;
   return retPoint;
 }
-TFPoint2D TransformReference::transformPoint2D(unsigned int target_frame, const TFPoint2D & point_in)
+TFPoint2D TransformReference::transformPoint2D(std::string target_frame, const TFPoint2D & point_in)
 {
   //Create a vector
   NEWMAT::Matrix pointMat(4,1);
@@ -174,7 +186,7 @@ TFPoint2D TransformReference::transformPoint2D(unsigned int target_frame, const 
   return retPoint;
 }
 
-TFVector TransformReference::transformVector(unsigned int target_frame, const TFVector & vector_in)
+TFVector TransformReference::transformVector(std::string target_frame, const TFVector & vector_in)
 {
   //Create a vector
   NEWMAT::Matrix vectorMat(4,1);
@@ -192,7 +204,7 @@ TFVector TransformReference::transformVector(unsigned int target_frame, const TF
   return retVector;
 }
 
-TFVector2D TransformReference::transformVector2D(unsigned int target_frame, const TFVector2D & vector_in)
+TFVector2D TransformReference::transformVector2D(std::string target_frame, const TFVector2D & vector_in)
 {
   //Create a vector
   NEWMAT::Matrix vectorMat(4,1);
@@ -211,7 +223,7 @@ TFVector2D TransformReference::transformVector2D(unsigned int target_frame, cons
   return retVector;
 }
 
-TFEulerYPR TransformReference::transformEulerYPR(unsigned int target_frame, const TFEulerYPR & euler_in)
+TFEulerYPR TransformReference::transformEulerYPR(std::string target_frame, const TFEulerYPR & euler_in)
 {
 
   NEWMAT::Matrix local = Pose3D::matrixFromEuler(0,0,0,euler_in.yaw, euler_in.pitch, euler_in.roll);
@@ -228,7 +240,7 @@ TFEulerYPR TransformReference::transformEulerYPR(unsigned int target_frame, cons
   return retEuler;
 }
 
-TFYaw  TransformReference::transformYaw(unsigned int target_frame, const TFYaw & euler_in)
+TFYaw  TransformReference::transformYaw(std::string target_frame, const TFYaw & euler_in)
 {
   TFVector2D vector_in;
   vector_in.x = cos(euler_in.yaw);
@@ -244,7 +256,7 @@ TFYaw  TransformReference::transformYaw(unsigned int target_frame, const TFYaw &
   return retYaw;
 }
 
-TFPose TransformReference::transformPose(unsigned int target_frame, const TFPose & pose_in)
+TFPose TransformReference::transformPose(std::string target_frame, const TFPose & pose_in)
 {
   TFPoint point_in;
   point_in.x = pose_in.x;
@@ -277,7 +289,7 @@ TFPose TransformReference::transformPose(unsigned int target_frame, const TFPose
   return pose_out;
 }
 
-TFPose2D TransformReference::transformPose2D(unsigned int target_frame, const TFPose2D & pose_in)
+TFPose2D TransformReference::transformPose2D(std::string target_frame, const TFPose2D & pose_in)
 {
   TFPoint2D point_in;
   point_in.x = pose_in.x;
@@ -383,6 +395,43 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
 
 }
 
+unsigned int TransformReference::nameToNumber(std::string frameid)
+{
+  std::map<std::string, unsigned int>::iterator it = nameMap.find(frameid);
+  if ( it == nameMap.end())
+  {
+    unsigned int value = last_number++;
+    nameMap[frameid] = value; //Record lookup
+    reverseMap[value] = frameid;  //Record reverse lookup
+    
+    return value;
+  }
+  else
+  {
+    return (*it).second;
+  }
+  
+}
+
+
+std::string TransformReference::numberToName(unsigned int frameid)
+{
+  std::map<unsigned int, std::string>::iterator it = reverseMap.find(frameid);
+  if ( it == reverseMap.end())
+  {
+    std::stringstream ss;
+    ss << "Number " << frameid << " does not exist!!"; 
+    throw LookupException(ss.str()); 
+    return "";//never get here
+  }
+  else
+  {
+    return (*it).second;
+  }
+ 
+}
+
+
 NEWMAT::Matrix TransformReference::computeTransformFromList(const TransformLists & lists, ULLtime time)
 {
   NEWMAT::Matrix retMat(4,4);
@@ -421,8 +470,11 @@ NEWMAT::Matrix TransformReference::computeTransformFromList(const TransformLists
 }
 
 
-std::string TransformReference::viewChain(unsigned int target_frame, unsigned int source_frame)
+std::string TransformReference::viewChain(std::string target_frame_string, std::string source_frame_string)
 {
+  unsigned int target_frame, source_frame;
+  target_frame = nameToNumber(target_frame_string);
+  source_frame = nameToNumber(source_frame_string);
   stringstream mstream;
   TransformLists lists = lookUpList(target_frame, source_frame);
 
@@ -449,7 +501,7 @@ std::string TransformReference::viewFrames()
   {
     if (frames[frameid] != NULL)
     {
-      mstream << "Frame "<< frameid << " exists with parent " << frames[frameid]->getParent() << "." <<std::endl;    
+      mstream << "Frame "<< numberToName(frameid) << " exists with parent " << numberToName(frames[frameid]->getParent()) << "." <<std::endl;    
     }
   }
   return mstream.str();
@@ -467,10 +519,10 @@ std::map<int, int> TransformReference::getFramesMap(void)
 bool TransformReference::RefFrame::setParent(unsigned int parentID)
 {
   if (parent != parentID)
-    {
-      parent = parentID; 
-      clearList(); 
-      return false;
-    } 
+  {
+    parent = parentID; 
+    clearList(); 
+    return false;
+  } 
   return true;
 };

@@ -138,7 +138,7 @@ private:
 	m_currentOdom.pos.x += m_iniPos.x;
 	m_currentOdom.pos.y += m_iniPos.y;
 	m_currentOdom.pos.th = math_utils::normalize_angle(m_currentOdom.pos.th + m_iniPos.th);
-	m_currentOdom.header.frame_id = m_tfServer->nameClient.lookup("FRAMEID_MAP");
+	m_currentOdom.header.frame_id = "FRAMEID_MAP";
 	
 	m_tfServer->sendEuler("FRAMEID_ROBOT",
 			      "FRAMEID_MAP",

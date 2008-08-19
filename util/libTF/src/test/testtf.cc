@@ -64,7 +64,7 @@ main(void)
   diffpose2.frame = 1;
   diffpose2.time = atime;
 
-  mTR.setWithEulers(2,
+  mTR.setWithEulers("2",
                     mappose.frame,
                     mappose.x,
                     mappose.y,
@@ -74,16 +74,16 @@ main(void)
                     0.0,
                     atime);
 
-  mTR.setWithMatrix(3,
-  		    2,
+  mTR.setWithMatrix("3",
+  		    "2",
 		    Pose3D::matrixFromEuler(odompose.x, odompose.y, 0.0, odompose.yaw, 0.0, 0.0).i(),
 		    atime);
 
   // See the list of transforms to get between the frames
   std::cout<<"Viewing (1,3):"<<std::endl;  
-  std::cout << mTR.viewChain(1,3);
+  std::cout << mTR.viewChain("1","3");
   std::cout<<"Viewing (2,3):"<<std::endl;  
-  std::cout << mTR.viewChain(2,3);
+  std::cout << mTR.viewChain("2","3");
 
 
   libTF::TFPose2D result = mTR.transformPose2D(mappose.frame,odompose);
@@ -113,9 +113,9 @@ main(void)
   printf("Point : %.3f %.3f %.3f\n",
          point.x, point.y,point.z);
 
-  std::cout<<"1,2:"<<std::endl<<mTR.getMatrix(1,2,atime);
-  std::cout<<"2,3"<<std::endl<<mTR.getMatrix(2,3,atime);
-  std::cout<<"1,3:"<<std::endl<<mTR.getMatrix(1,3,atime);
+  std::cout<<"1,2:"<<std::endl<<mTR.getMatrix("1","2",atime);
+  std::cout<<"2,3"<<std::endl<<mTR.getMatrix("2","3",atime);
+  std::cout<<"1,3:"<<std::endl<<mTR.getMatrix("1","3",atime);
 
   NEWMAT::Matrix matPoint(4,1);
   matPoint(1,1) = point_in.x;
@@ -144,7 +144,7 @@ main(void)
   ypr_in.roll = 0;
   ypr_in.time = atime;
 
-  libTF::TFEulerYPR ypr = mTR.transformEulerYPR(1, ypr_in);
+  libTF::TFEulerYPR ypr = mTR.transformEulerYPR("1", ypr_in);
 
   printf("Ypr : %.3f %.3f %.3f\n",
          ypr.yaw, ypr.pitch,ypr.roll);
@@ -156,7 +156,7 @@ main(void)
   vec2_in.frame = 2;
   vec2_in.time = atime;
 
-  TFVector2D vec2 = mTR.transformVector2D(1,vec2_in);
+  TFVector2D vec2 = mTR.transformVector2D("1",vec2_in);
   
   printf("Vector : %.3f %.3f\n",
          vec2.x, vec2.y);
@@ -166,21 +166,21 @@ main(void)
   xaxis.x = 1;
   xaxis.y = 0;
   xaxis.z = 0;
-  xaxis.frame = 9;
+  xaxis.frame = "9";
   xaxis.time = atime;
 
   TFVector yaxis;
   yaxis.x = 0;
   yaxis.y = 1;
   yaxis.z = 0;
-  yaxis.frame = 9;
+  yaxis.frame = "9";
   yaxis.time = atime;
 
   TFVector zaxis;
   zaxis.x = 0;
   zaxis.y = 0;
   zaxis.z = 1;
-  zaxis.frame = 9;
+  zaxis.frame = "9";
   zaxis.time = atime;
 
 
@@ -191,8 +191,8 @@ main(void)
       for (int ind2 = 0; ind2 < 2; ind2++)
 	{	
 	  
-	  mTR.setWithEulers(9,
-			    1,
+	  mTR.setWithEulers("9",
+			    "1",
 			    diffpose.x,
 			    diffpose.y,
 			    diffpose.z,
@@ -206,17 +206,17 @@ main(void)
 		 90.0*ind, 90.0*ind1, 90.0*ind2);
 
 
-  TFVector vec_out = mTR.transformVector(1,xaxis);
+  TFVector vec_out = mTR.transformVector("1",xaxis);
   printf("X Axis rotated = ");
   printf("Vector : %.3f %.3f %.3f\n",
          vec_out.x, vec_out.y, vec_out.z);
   
-  vec_out = mTR.transformVector(1,yaxis);
+  vec_out = mTR.transformVector("1",yaxis);
   printf("Y Axis rotated = ");
   printf("Vector : %.3f %.3f %.3f\n",
          vec_out.x, vec_out.y, vec_out.z);
 
-  vec_out = mTR.transformVector(1,zaxis);
+  vec_out = mTR.transformVector("1",zaxis);
   printf("Z Axis rotated = ");
   printf("Vector : %.3f %.3f %.3f\n",
          vec_out.x, vec_out.y, vec_out.z);
@@ -230,21 +230,21 @@ main(void)
   xunit.x = 1;
   xunit.y = 0;
   xunit.z = 0;
-  xunit.frame = 9;
+  xunit.frame = "9";
   xunit.time = atime;
 
   TFPoint yunit;
   yunit.x = 0;
   yunit.y = 1;
   yunit.z = 0;
-  yunit.frame = 9;
+  yunit.frame = "9";
   yunit.time = atime;
 
   TFPoint zunit;
   zunit.x = 0;
   zunit.y = 0;
   zunit.z = 1;
-  zunit.frame = 9;
+  zunit.frame = "9";
   zunit.time = atime;
 
 
@@ -259,8 +259,8 @@ main(void)
       for (int ind2 = 0; ind2 < 2; ind2++)
 	{	
 	  
-	  mTR.setWithEulers(9,
-			    1,
+	  mTR.setWithEulers("9",
+			    "1",
 			    diffpose.x,
 			    diffpose.y,
 			    diffpose.z,
@@ -274,17 +274,17 @@ main(void)
 		 90.0*ind, 90.0*ind1, 90.0*ind2);
 
 
-  TFPoint vec_out = mTR.transformPoint(1,xunit);
+  TFPoint vec_out = mTR.transformPoint("1",xunit);
   printf("X Unit rotated = ");
   printf("Point : %.3f %.3f %.3f\n",
          vec_out.x, vec_out.y, vec_out.z);
   
-  vec_out = mTR.transformPoint(1,yunit);
+  vec_out = mTR.transformPoint("1",yunit);
   printf("Y Unit rotated = ");
   printf("Point : %.3f %.3f %.3f\n",
          vec_out.x, vec_out.y, vec_out.z);
 
-  vec_out = mTR.transformPoint(1,zunit);
+  vec_out = mTR.transformPoint("1",zunit);
   printf("Z Unit rotated = ");
   printf("Point : %.3f %.3f %.3f\n",
          vec_out.x, vec_out.y, vec_out.z);

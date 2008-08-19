@@ -39,7 +39,6 @@ rosTFClient::rosTFClient(ros::node & rosnode,
   TransformReference(interpolating,
                      max_cache_time,
                      max_extrapolation_distance),
-  nameClient(rosnode),
   myNode(rosnode)
 {
   //  printf("Constructed rosTF\n");
@@ -48,11 +47,6 @@ rosTFClient::rosTFClient(ros::node & rosnode,
 
 
 void rosTFClient::transformPointCloud(std::string target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn)
-{
-    transformPointCloud(nameClient.lookup(target_frame), cloudOut, cloudIn);
-}
-
-void rosTFClient::transformPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn)
 {
   NEWMAT::Matrix transform = TransformReference::getMatrix(target_frame, cloudIn.header.frame_id, cloudIn.header.stamp.sec * 1000000000ULL + cloudIn.header.stamp.nsec);
 
@@ -96,13 +90,6 @@ void rosTFClient::transformPointCloud(unsigned int target_frame, std_msgs::Point
 
 std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(std::string target_frame,  const std_msgs::PointCloudFloat32 & cloudIn)
 {
-  return transformPointCloud(nameClient.lookup(target_frame), cloudIn);
-};
-
-
-//PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target_frame, const std_msgs::PointCloudFloat32 & cloudIn) //todo add back const when get_pts_size() is const ticket:232
-std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target_frame,  const std_msgs::PointCloudFloat32 & cloudIn)
-{
     std_msgs::PointCloudFloat32 cloudOut;
     transformPointCloud(target_frame, cloudOut, cloudIn);
     return cloudOut;    
@@ -111,11 +98,6 @@ std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(unsigned int target
 
 
 void rosTFClient::transformLaserScanToPointCloud(std::string target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn)
-{
-  transformLaserScanToPointCloud(nameClient.lookup(target_frame), cloudOut, scanIn);
-}
-
-void rosTFClient::transformLaserScanToPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan &scanIn)
 {
   cloudOut.header = scanIn.header;
   cloudOut.header.frame_id = target_frame;
@@ -171,19 +153,19 @@ void rosTFClient::receiveArray()
 {
   for (unsigned int i = 0; i < tfArrayIn.eulers_size; i++)
   {
-    setWithEulers(tfArrayIn.eulers[i].frame, tfArrayIn.eulers[i].parent, tfArrayIn.eulers[i].x, tfArrayIn.eulers[i].y, tfArrayIn.eulers[i].z, tfArrayIn.eulers[i].yaw, tfArrayIn.eulers[i].pitch, tfArrayIn.eulers[i].roll, tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + tfArrayIn.eulers[i].header.stamp.nsec);
+    setWithEulers(tfArrayIn.eulers[i].header.frame_id, tfArrayIn.eulers[i].parent, tfArrayIn.eulers[i].x, tfArrayIn.eulers[i].y, tfArrayIn.eulers[i].z, tfArrayIn.eulers[i].yaw, tfArrayIn.eulers[i].pitch, tfArrayIn.eulers[i].roll, tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + tfArrayIn.eulers[i].header.stamp.nsec);
   }
-    //std::cout << "received euler frame: " << tfArrayIn.eulers[i].frame << " with parent:" << tfArrayIn.eulers[i].parent << "time " << tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + eulerIn.header.stamp.nsec << std::endl;
+    //std::cout << "received euler frame: " << tfArrayIn.eulers[i].header.frame_id << " with parent:" << tfArrayIn.eulers[i].parent << "time " << tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + eulerIn.header.stamp.nsec << std::endl;
   for (unsigned int i = 0; i < tfArrayIn.dhparams_size; i++)
   {
-    setWithDH(tfArrayIn.dhparams[i].frame, tfArrayIn.dhparams[i].parent, tfArrayIn.dhparams[i].length, tfArrayIn.dhparams[i].twist, tfArrayIn.dhparams[i].offset, tfArrayIn.dhparams[i].angle, tfArrayIn.dhparams[i].header.stamp.sec * 1000000000ULL + tfArrayIn.dhparams[i].header.stamp.nsec);
-    //  std::cout << "recieved DH frame: " << tfArrayIn.dhparams[i].frame << " with parent:" << tfArrayIn.dhparams[i].parent << std::endl;
+    setWithDH(tfArrayIn.dhparams[i].header.frame_id, tfArrayIn.dhparams[i].parent, tfArrayIn.dhparams[i].length, tfArrayIn.dhparams[i].twist, tfArrayIn.dhparams[i].offset, tfArrayIn.dhparams[i].angle, tfArrayIn.dhparams[i].header.stamp.sec * 1000000000ULL + tfArrayIn.dhparams[i].header.stamp.nsec);
+    //  std::cout << "recieved DH frame: " << tfArrayIn.dhparams[i].header.frame_id << " with parent:" << tfArrayIn.dhparams[i].parent << std::endl;
   }
 
   for (unsigned int i = 0; i < tfArrayIn.quaternions_size; i++)
   {
-    setWithQuaternion(tfArrayIn.quaternions[i].frame, tfArrayIn.quaternions[i].parent, tfArrayIn.quaternions[i].xt, tfArrayIn.quaternions[i].yt, tfArrayIn.quaternions[i].zt, tfArrayIn.quaternions[i].xr, tfArrayIn.quaternions[i].yr, tfArrayIn.quaternions[i].zr, tfArrayIn.quaternions[i].w, tfArrayIn.quaternions[i].header.stamp.sec * 1000000000ULL + tfArrayIn.quaternions[i].header.stamp.nsec);
-    //  std::cout << "recieved quaternion frame: " << tfArrayIn.quaternions[i].frame << " with parent:" << tfArrayIn.quaternions[i].parent << std::endl;
+    setWithQuaternion(tfArrayIn.quaternions[i].header.frame_id, tfArrayIn.quaternions[i].parent, tfArrayIn.quaternions[i].xt, tfArrayIn.quaternions[i].yt, tfArrayIn.quaternions[i].zt, tfArrayIn.quaternions[i].xr, tfArrayIn.quaternions[i].yr, tfArrayIn.quaternions[i].zr, tfArrayIn.quaternions[i].w, tfArrayIn.quaternions[i].header.stamp.sec * 1000000000ULL + tfArrayIn.quaternions[i].header.stamp.nsec);
+    //  std::cout << "recieved quaternion frame: " << tfArrayIn.quaternions[i].header.frame_id << " with parent:" << tfArrayIn.quaternions[i].parent << std::endl;
   }
   for (unsigned int i = 0; i < tfArrayIn.matrices_size; i++)
   {
@@ -199,79 +181,28 @@ void rosTFClient::receiveArray()
     
     setWithMatrix(tfArrayIn.matrices[i].header.frame_id, tfArrayIn.matrices[i].parent, tempMatrix, tfArrayIn.matrices[i].header.stamp.sec * 1000000000ULL + tfArrayIn.matrices[i].header.stamp.nsec);
     
-    //  std::cout << "recieved Matrix:" << tempMatrix << " in frame: " << tfArrayIn.matrices[i].header.frame_id << " with parent:" << tfArrayIn.matrices[i].parent << " at time:" << tfArrayIn.matrices[i].header.stamp.to_double() << std::endl;
+    //  std::cout << "recieved Matrix:" << tempMatrix << " in frame: " << tfArrayIn.matrices[i].header.header.frame_id << " with parent:" << tfArrayIn.matrices[i].parent << " at time:" << tfArrayIn.matrices[i].header.stamp.to_double() << std::endl;
   }
 
 };
 
 NEWMAT::Matrix rosTFClient::getMatrix(std::string target_frame, std::string source_frame, ros::Time time)
-{ return getMatrix(nameClient.lookup(target_frame), nameClient.lookup(source_frame), time.to_ull());};
-
-
-libTF::TFPoint rosTFClient::transformPoint(std::string target_frame, const libTF::TFPoint & point_in)
-{ return transformPoint(nameClient.lookup(target_frame), point_in);};
-
-libTF::TFPoint2D rosTFClient::transformPoint2D(std::string target_frame, const libTF::TFPoint2D & point_in)
-{ return transformPoint2D(nameClient.lookup(target_frame), point_in);};
-
-libTF::TFVector rosTFClient::transformVector(std::string target_frame, const libTF::TFVector & vector_in)
-{ return transformVector(nameClient.lookup(target_frame), vector_in);};
-
-libTF::TFVector2D rosTFClient::transformVector2D(std::string target_frame, const libTF::TFVector2D & vector_in)
-{ return transformVector2D(nameClient.lookup(target_frame), vector_in);};
-
-libTF::TFEulerYPR rosTFClient::transformEulerYPR(std::string target_frame, const libTF::TFEulerYPR & euler_in)
-{ return transformEulerYPR(nameClient.lookup(target_frame), euler_in);};
-
-libTF::TFYaw rosTFClient::transformYaw(std::string target_frame, const libTF::TFYaw & euler_in)
-{ return transformYaw(nameClient.lookup(target_frame), euler_in);};
-
-libTF::TFPose rosTFClient::transformPose(std::string target_frame, const libTF::TFPose & pose_in)
-{ return transformPose(nameClient.lookup(target_frame), pose_in);};
-
-libTF::TFPose2D rosTFClient::transformPose2D(std::string target_frame, const libTF::TFPose2D & pose_in)
-{ return transformPose2D(nameClient.lookup(target_frame), pose_in);};
-
-std::string rosTFClient::viewChain(std::string target_frame, std::string source_frame)
-{ return viewChain(nameClient.lookup(target_frame), nameClient.lookup(source_frame));};
-
-std::string rosTFClient::viewNamedFrames(){
-  stringstream mstream;
-  for (unsigned int frameid = 1; frameid < MAX_NUM_FRAMES; frameid++)
-  {
-    if (frames[frameid] != NULL)
-    {
-      mstream << "Frame "<< nameClient.reverseLookup(frameid) <<":"<< frameid 
-              << " exists with parent " << nameClient.reverseLookup(frames[frameid]->getParent())
-              <<":"<<frames[frameid]->getParent() << "." <<std::endl;    
-    }
-  }
-  return mstream.str();
-}
-
+{ return getMatrix(target_frame, source_frame, time.to_ull());};
 
 
 rosTFServer::rosTFServer(ros::node & rosnode):
-    nameClient(rosnode),
-    myNode(rosnode)
+  myNode(rosnode)
 {
   myNode.advertise<rosTF::TransformArray>("TransformArray");
 };
 
 void rosTFServer::sendEuler(std::string frame, std::string parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime)
 {
-  sendEuler(nameClient.lookup(frame), nameClient.lookup(parent), x,y,z,yaw,pitch,roll, rostime.sec, rostime.nsec);
-};
-
-void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs)
-{
-  if (!checkInvalidFrame(frame))
-    return;
 
   rosTF::TransformArray tfArray;
   tfArray.set_eulers_size(1);
 
-  tfArray.eulers[0].frame = frame;
+  tfArray.eulers[0].header.frame_id = frame;
   tfArray.eulers[0].parent = parent;
   tfArray.eulers[0].x = x;
   tfArray.eulers[0].y = y;
@@ -279,30 +210,21 @@ void rosTFServer::sendEuler(unsigned int frame, unsigned int parent, double x, d
   tfArray.eulers[0].yaw = yaw;
   tfArray.eulers[0].pitch = pitch;
   tfArray.eulers[0].roll = roll;
-  tfArray.eulers[0].header.stamp.sec = secs;
-  tfArray.eulers[0].header.stamp.nsec = nsecs;
+  tfArray.eulers[0].header.stamp = rostime;
 
   myNode.publish("TransformArray", tfArray);
 
 };
 
 void rosTFServer::sendInverseEuler(std::string frame, std::string parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime)
-{
-  sendInverseEuler(nameClient.lookup(frame), nameClient.lookup(parent), x,y,z,yaw,pitch,roll, rostime.sec, rostime.nsec);
-};
-
-void rosTFServer::sendInverseEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs)
 { 
-  if (!checkInvalidFrame(frame))
-    return;
-
   rosTF::TransformArray tfArray;
   tfArray.set_eulers_size(1);
   //Invert the transform
   libTF::Pose3D::Euler odomeuler  = libTF::Pose3D::eulerFromMatrix(libTF::Pose3D::matrixFromEuler(x, y, z, yaw, pitch, roll).i()); //todo optimize
   libTF::Pose3D::Position odompos = libTF::Pose3D::positionFromMatrix(libTF::Pose3D::matrixFromEuler(x, y, z, yaw, pitch, roll).i());
   
-  tfArray.eulers[0].frame = frame;
+  tfArray.eulers[0].header.frame_id = frame;
   tfArray.eulers[0].parent = parent;
   tfArray.eulers[0].x = odompos.x;
   tfArray.eulers[0].y = odompos.y;
@@ -310,80 +232,51 @@ void rosTFServer::sendInverseEuler(unsigned int frame, unsigned int parent, doub
   tfArray.eulers[0].yaw = odomeuler.yaw;
   tfArray.eulers[0].pitch = odomeuler.pitch;
   tfArray.eulers[0].roll = odomeuler.roll;
-  tfArray.eulers[0].header.stamp.sec = secs;
-  tfArray.eulers[0].header.stamp.nsec = nsecs;
+  tfArray.eulers[0].header.stamp = rostime;
 
   myNode.publish("TransformArray", tfArray);
  
 };
 
-void rosTFServer::sendPose(libTF::TFPose pose, unsigned int parent)
-{
-  unsigned int nsecs = pose.time % 1000000000;
-  unsigned int secs = (pose.time - nsecs) / 1000000000;
-  sendEuler(pose.frame, parent, pose.x, pose.y, pose.z, pose.yaw, pose.pitch, pose.roll, secs, nsecs);  
-};
 
 void rosTFServer::sendPose(libTF::TFPose pose, std::string parent)
 {
   unsigned int nsecs = pose.time % 1000000000;
   unsigned int secs = (pose.time - nsecs) / 1000000000;
-  sendEuler(pose.frame, nameClient.lookup(parent), pose.x, pose.y, pose.z, pose.yaw, pose.pitch, pose.roll, secs, nsecs);  
+  sendEuler(pose.frame, parent, pose.x, pose.y, pose.z, pose.yaw, pose.pitch, pose.roll, ros::Time(secs, nsecs));  
 };
 
 void rosTFServer::sendInversePose(libTF::TFPose pose, std::string parent)
 {
-  sendInversePose(pose, nameClient.lookup(parent));
-};
-
-void rosTFServer::sendInversePose(libTF::TFPose pose, unsigned int parent)
-{
   unsigned int nsecs = pose.time % 1000000000;
   unsigned int secs = (pose.time - nsecs) / 1000000000;
-  sendInverseEuler(pose.frame, parent, pose.x, pose.y, pose.z, pose.yaw, pose.pitch, pose.roll, secs, nsecs);  
+  sendInverseEuler(pose.frame, parent, pose.x, pose.y, pose.z, pose.yaw, pose.pitch, pose.roll, ros::Time(secs, nsecs));  
 };
 
 
 void rosTFServer::sendDH(std::string frame, std::string parent, double length, double twist, double offset, double angle, ros::Time rostime)
 {
-  sendDH(nameClient.lookup(frame), nameClient.lookup(parent), length, twist, offset, angle, rostime.sec, rostime.nsec);
-};
-
-void rosTFServer::sendDH(unsigned int frame, unsigned int parent, double length, double twist, double offset, double angle, unsigned int secs, unsigned int nsecs)
-{
-  if (!checkInvalidFrame(frame))
-    return;
-
   rosTF::TransformArray tfArray;
   tfArray.set_dhparams_size(1);
 
-  tfArray.dhparams[0].frame = frame;
+  tfArray.dhparams[0].header.frame_id = frame;
   tfArray.dhparams[0].parent = parent;
   tfArray.dhparams[0].length = length;
   tfArray.dhparams[0].twist = twist;
   tfArray.dhparams[0].offset = offset;
   tfArray.dhparams[0].angle = angle;
-  tfArray.dhparams[0].header.stamp.sec = secs;
-  tfArray.dhparams[0].header.stamp.nsec = nsecs;
+  tfArray.dhparams[0].header.stamp = rostime;
 
   myNode.publish("TransformArray", tfArray);
 
 };
 
 void rosTFServer::sendQuaternion(std::string frame, std::string parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, ros::Time rostime)
-{
-  sendQuaternion(nameClient.lookup(frame), nameClient.lookup(parent), xt, yt, zt, xr, yr, zr, w, rostime.sec, rostime.nsec);
-};
-
-void rosTFServer::sendQuaternion(unsigned int frame, unsigned int parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, unsigned int secs, unsigned int nsecs)
-{
-  if (!checkInvalidFrame(frame))
-    return;
-  
+{ 
   rosTF::TransformArray tfArray;
   tfArray.set_quaternions_size(1);
 
-  tfArray.quaternions[0].frame = frame;
+  tfArray.quaternions[0].header.frame_id = frame;
   tfArray.quaternions[0].parent = parent;
   tfArray.quaternions[0].xt = xt;
   tfArray.quaternions[0].yt = yt;
@@ -392,8 +285,7 @@ void rosTFServer::sendQuaternion(unsigned int frame, unsigned int parent, double
   tfArray.quaternions[0].yr = yr;
   tfArray.quaternions[0].zr = zr;
   tfArray.quaternions[0].w = w;
-  tfArray.quaternions[0].header.stamp.sec = secs;
-  tfArray.quaternions[0].header.stamp.nsec = nsecs;
+  tfArray.quaternions[0].header.stamp = rostime;
 
   myNode.publish("TransformArray", tfArray);
 
@@ -402,14 +294,6 @@ void rosTFServer::sendQuaternion(unsigned int frame, unsigned int parent, double
 
 void rosTFServer::sendMatrix(std::string frame, std::string parent, NEWMAT::Matrix matrix, ros::Time rostime)
 {
-  sendMatrix(nameClient.lookup(frame), nameClient.lookup(parent), matrix, rostime);
-};
-
-void rosTFServer::sendMatrix(unsigned int frame, unsigned int parent, NEWMAT::Matrix matrix, ros::Time rostime)
-{
-  if (!checkInvalidFrame(frame))
-    return;
-
   rosTF::TransformArray tfArray;
   tfArray.set_matrices_size(1);
 
@@ -433,14 +317,3 @@ void rosTFServer::sendMatrix(unsigned int frame, unsigned int parent, NEWMAT::Ma
   
 };
 
-
-
-bool rosTFServer::checkInvalidFrame(unsigned int frameID)
-{
-  if (frameID == 0)
-    {
-      std::cerr<<"Attempted to send frameID = 0, this is not valid!" << std::endl;
-      return false;
-    }
-  return true;
-};

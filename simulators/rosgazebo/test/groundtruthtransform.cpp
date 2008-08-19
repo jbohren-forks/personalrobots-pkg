@@ -27,7 +27,7 @@ public:
     robotPose.roll = 0;
     robotPose.time = 0;
     try {
-      robotPose.frame = tf.lookup("FRAMEID_ROBOT");
+      robotPose.frame = "FRAMEID_ROBOT";
     } catch(libTF::TransformReference::LookupException& ex) {
       std::cerr << "LookupException in lookup(\"FRAMEID_ROBOT\"): " << ex.what() << "\n";
       std::cout << "LookupException in lookup(\"FRAMEID_ROBOT\"): " << ex.what();

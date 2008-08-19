@@ -75,8 +75,8 @@ namespace TREX {
 
     //copied from wavefront_planner.cc
     //TODO change this to broadcast.
-    this->tf.setWithEulers(tf.nameClient.lookup("FRAMEID_LASER"),
-			   tf.nameClient.lookup("FRAMEID_ROBOT"),
+    this->tf.setWithEulers("FRAMEID_LASER",
+			   "FRAMEID_ROBOT",
 			   0.05, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
     
     this->laser_hitpts_size = this->laser_hitpts_len = 0;
@@ -464,7 +464,7 @@ void ROSNode::leftMoveArmStateReceived()
     robotPose.x = 0;
     robotPose.y = 0;
     robotPose.yaw = 0;
-    robotPose.frame = tf.nameClient.lookup("FRAMEID_ROBOT");
+    robotPose.frame = "FRAMEID_ROBOT";
     robotPose.time = laserMsg.header.stamp.sec * 1000000000ULL + 
       laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else,
     try {

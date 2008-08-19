@@ -42,7 +42,6 @@
 #include "MonoCameraSensor.hh"
 
 using namespace gazebo;
-using namespace libTF;
 
 GZ_REGISTER_DYNAMIC_CONTROLLER("ros_camera", Ros_Camera);
 
@@ -71,7 +70,6 @@ Ros_Camera::Ros_Camera(Entity *parent)
     rosnode = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
     printf("-------------------- starting node in camera \n");
   }
-  tfc = new rosTFClient(*rosnode); //, true, 1 * 1000000000ULL, 0ULL);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -173,7 +171,7 @@ void Ros_Camera::PutCameraData()
 
     this->lock.lock();
     // copy data into image
-    this->imageMsg.header.frame_id = tfc->nameClient.lookup(this->frameName);
+    this->imageMsg.header.frame_id = this->frameName;
     this->imageMsg.header.stamp.sec = (unsigned long)floor(this->cameraIface->data->head.time);
     this->imageMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraIface->data->head.time - this->imageMsg.header.stamp.sec) );
 

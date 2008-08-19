@@ -41,7 +41,6 @@
 #include "std_msgs/Empty.h"
 #include "std_msgs/String.h"
 #include "dc1394_cam/dc1394_cam.h"
-#include <namelookup/nameLookupClient.hh>
 
 #include <newmat10/newmat.h>
 #include <newmat10/newmatio.h>
@@ -149,14 +148,14 @@ public:
   }
 
 
-  Dc1394Node() : ros::node("dc1394_node"), nlc(*this)
+  Dc1394Node() : ros::node("dc1394_node")
   {
 
     dc1394_cam::init();
 
     int numCams;
     param("numCams", numCams, 1);
-    videre_frame_id_ = nlc.lookup("FRAMEID_STEREO_BLOCK");
+    videre_frame_id_ = "FRAMEID_STEREO_BLOCK";
 
     for (int i = 0; i < numCams; i++)
     {
@@ -697,8 +696,7 @@ public:
 
 
 private:
-  nameLookupClient nlc;
-  int videre_frame_id_;
+  std::string videre_frame_id_;
 };
 
 int main(int argc, char **argv)

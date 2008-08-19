@@ -45,8 +45,6 @@
 #include "rosTF/TransformArray.h"
 #include "libTF/libTF.h"
 #include "std_msgs/PointCloudFloat32.h"
-#include "namelookup/nameLookupClient.hh"
-#include "namelookup/NameToNumber.h"
 #include "laser_scan_utils/laser_scan.h"
 
 
@@ -85,7 +83,6 @@ class rosTFClient : public libTF::TransformReference
   using TransformReference::transformYaw;
   using TransformReference::transformPose;
   using TransformReference::transformPose2D;
-  using TransformReference::viewChain;
 
   /** \brief Get the transform between two frames by frame name
    * \param target_frame The frame to which data should be transformed
@@ -97,38 +94,6 @@ class rosTFClient : public libTF::TransformReference
    */
   NEWMAT::Matrix getMatrix(std::string target_frame, std::string source_frame, ros::Time time);
 
-
-  
-  /** \brief Transform a point to a different frame */
-  libTF::TFPoint transformPoint(std::string target_frame, const libTF::TFPoint & point_in);
-  /** \brief Transform a 2D point to a different frame */
-  libTF::TFPoint2D transformPoint2D(std::string target_frame, const libTF::TFPoint2D & point_in);
-  /** \brief Transform a vector to a different frame */
-  libTF::TFVector transformVector(std::string target_frame, const libTF::TFVector & vector_in);
-  /** \brief Transform a 2D vector to a different frame */
-  libTF::TFVector2D transformVector2D(std::string target_frame, const libTF::TFVector2D & vector_in);
-  /** \brief Transform Euler angles between frames */
-  libTF::TFEulerYPR transformEulerYPR(std::string target_frame, const libTF::TFEulerYPR & euler_in);
-  /** \brief Transform Yaw between frames. Useful for 2D navigation */
-  libTF::TFYaw transformYaw(std::string target_frame, const libTF::TFYaw & euler_in);
-  /** \brief Transform a 6DOF pose.  (x, y, z, yaw, pitch, roll). */
-  libTF::TFPose transformPose(std::string target_frame, const libTF::TFPose & pose_in);
-  /** \brief Transform a planar pose, x,y,yaw */
-  libTF::TFPose2D transformPose2D(std::string target_frame, const libTF::TFPose2D & pose_in);
-
-  /** \brief Debugging function that will print the spanning chain of transforms.
-   * Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
-   * TransformReference::MaxDepthException
-   */
-  std::string viewChain(std::string target_frame, std::string source_frame);
-
-  nameLookupClient nameClient;
-  unsigned int lookup(const std::string& name){std::cerr<<"Interface Depricated: use rosTFClient.nameClient.lookup(name) instead."; return nameClient.lookup(name);};
-
-  /** \brief Return all frames and their lookups 
-   This will return a string which is a list of all frames and their parents.
-   Viewing both the string and number representation of their frameid. */
-  std::string viewNamedFrames();
 
  private:
   // A reference to the active ros::node to allow setting callbacks
@@ -188,16 +153,10 @@ class rosTFServer
   /** \brief Send a Transform with 4x4 Matrix */
   void sendMatrix(unsigned int frame, unsigned int parent, NEWMAT::Matrix matrix, ros::Time rostime);
 
-  /** \brief A public member to provide name lookup service. */
-  nameLookupClient nameClient;
-  /** \brief THIS IS TEMPORARY use nameClient.lookup A pass through to prevent breaking the previous API.   */
-  unsigned int lookup(const std::string& name){std::cerr<<"Interface Depricated: use rosTFServer.nameClient.lookup(name) instead."; return nameClient.lookup(name);};
-
  private:
   //ros::node reference to allow setting callbacks
   ros::node & myNode;
   
-  bool checkInvalidFrame(unsigned int);
   
 };
 #endif //ROSTF_HH

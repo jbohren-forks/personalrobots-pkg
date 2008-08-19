@@ -4,6 +4,7 @@
   <license>BSD</license>
   <depend package="player" />
   <depend package="std_msgs" />
+  <depend package="std_srvs" />
   <depend package="pr2_msgs" />
   <depend package="trex" />
   <depend package="rosTF" />

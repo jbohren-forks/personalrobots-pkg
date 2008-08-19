@@ -678,7 +678,7 @@ RosGazeboNode::Update()
   // this->odomMsg.stall = this->positionmodel->Stall();
 
   // TODO: get the frame ID from somewhere
-  this->odomMsg.header.frame_id = tf.nameClient.lookup("FRAMEID_ODOM");
+  this->odomMsg.header.frame_id = "FRAMEID_ODOM";
 
   this->odomMsg.header.stamp.sec = (unsigned long)floor(this->simTime);
   this->odomMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->simTime - this->odomMsg.header.stamp.sec) );

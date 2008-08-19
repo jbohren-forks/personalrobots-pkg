@@ -108,7 +108,6 @@ Reads the following parameters from the parameter server
 #include "std_msgs/LaserScan.h"
 #include "robot_srvs/SelfTest.h"
 
-#include "namelookup/nameLookupClient.hh"
 
 #include "urg_laser.h"
 
@@ -125,7 +124,6 @@ private:
   int count;
   ros::Time next_time;
   
-  nameLookupClient lookup_client;
 
 public:
   URG::laser urg;
@@ -146,7 +144,7 @@ public:
 
   string id;
 
-  HokuyoNode() : ros::node("urglaser"), running(false), count(0), lookup_client(*this)
+  HokuyoNode() : ros::node("urglaser"), running(false), count(0)
   {
     advertise<std_msgs::LaserScan>("scan");
     advertise_service("~self_test", &HokuyoNode::SelfTest);
@@ -264,7 +262,7 @@ public:
     scan_msg.set_ranges_size(scan.num_readings);
     scan_msg.set_intensities_size(scan.num_readings);
     scan_msg.header.stamp = ros::Time(scan.system_time_stamp);
-    scan_msg.header.frame_id = lookup_client.lookup(frameid);
+    scan_msg.header.frame_id = frameid;
       
     for(int i = 0; i < scan.num_readings; ++i)
     {

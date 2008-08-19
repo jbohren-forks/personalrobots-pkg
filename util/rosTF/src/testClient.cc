@@ -37,9 +37,7 @@ int main(int argc, char ** argv)
   while(testListener.ok())
     {
       std::cout<<testListener.map_name("asdf")<< " Looks up to" <<std::endl;
-      std::cout << testListener.tf.nameClient.lookup("asdf")<< std::endl;
-      std::cout << testListener.tf.nameClient.reverseLookup(testListener.tf.nameClient.lookup("asdf"))<< std::endl;
-      std::cout << testListener.tf.viewNamedFrames()<<std::endl;
+      std::cout << testListener.tf.viewFrames()<<std::endl;
       //      std::cout << testListener.tf.viewFrames()<<std::endl;
       sleep(1);
     }

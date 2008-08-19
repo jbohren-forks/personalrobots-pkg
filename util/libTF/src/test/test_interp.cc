@@ -15,8 +15,8 @@ main(void)
 
   for(int i=0;i<10;i++)
   {
-    mTR.setWithEulers(2,
-                      1,
+    mTR.setWithEulers("2",
+                      "1",
                       i*0.2,
                       i*-0.1,
                       0.0,
@@ -25,8 +25,8 @@ main(void)
                       0.0,
                       atime-i*1000000000ULL);
   }
-  mTR.setWithEulers(2,
-                    1,
+  mTR.setWithEulers("2",
+                   "1",
                     0.0,
                     0.0,
                     0.0,
@@ -35,8 +35,8 @@ main(void)
                     0.0,
                     atime);
 
-  mTR.setWithEulers(2,
-                    1,
+  mTR.setWithEulers("2",
+                    "1",
                     1.0,
                     1.0,
                     0.0,
@@ -50,10 +50,10 @@ main(void)
   inpose.x = 0.0;
   inpose.y = 0.0;
   inpose.yaw = 0.0;
-  inpose.frame = 2;
+  inpose.frame = "2";
   inpose.time = atime;
 
-  libTF::TFPose2D outpose = mTR.transformPose2D(1, inpose);
+  libTF::TFPose2D outpose = mTR.transformPose2D("1", inpose);
 
   printf("in:  %.3f %.3f %.3f\n",
          inpose.x, inpose.y, inpose.yaw);

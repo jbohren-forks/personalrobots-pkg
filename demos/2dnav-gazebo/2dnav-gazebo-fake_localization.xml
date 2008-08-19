@@ -1,6 +1,5 @@
 <launch>
   <group name="wg">
-    <node pkg="namelookup" type="namelookup_server" respawn="false"/>
     <include file="$(find wg_robot_description)/send.xml"/>
     <node pkg="gazebo" type="run-gazebo.sh" args="$(find gazebo_robot_description)/world/robot_rosgazebo.world" respawn="true" />
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" />

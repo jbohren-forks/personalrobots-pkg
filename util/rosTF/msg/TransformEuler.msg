@@ -1,6 +1,5 @@
 Header header
-uint32 frame
-uint32 parent
+string parent
 float64 x
 float64 y
 float64 z

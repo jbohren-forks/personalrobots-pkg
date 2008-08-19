@@ -393,7 +393,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     localizedOdomMsg.header.stamp.from_double(hdr->timestamp);
     try
     {
-	localizedOdomMsg.header.frame_id = tf->lookup("FRAMEID_MAP");
+	localizedOdomMsg.header.frame_id = "FRAMEID_MAP";
     }
     catch(...)
     {
