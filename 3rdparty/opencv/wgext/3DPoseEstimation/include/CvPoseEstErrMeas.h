@@ -16,7 +16,8 @@ public:
 
 	bool setTransform(const CvMat& rot, const CvMat& shift);
 	void transform(const CvMat &src, CvMat &dst);
-	void measure(const CvMat& xyzs0, const CvMat &xyzs1);
+	void measure(const CvMat& xyzs0,  const CvMat& xyzs1);
+	void compare(const CvMat& xyzs11, const CvMat& xyzs1);
 
 	CvMat mRotation;
 	CvMat mShift;

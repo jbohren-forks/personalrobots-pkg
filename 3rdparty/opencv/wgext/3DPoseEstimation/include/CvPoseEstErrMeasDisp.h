@@ -17,7 +17,12 @@ public:
 	virtual ~CvPoseEstErrMeasDisp();
 	void transform(const CvMat& src, CvMat& dst);
 	void measure(const CvMat& uvds0, const CvMat& uvds1);
-	void measureMixed(CvMat& xyzs0, CvMat& uvds1);
+	void compare(const CvMat& uvds0, const CvMat& uvds1);
+	void measureMixed(const CvMat& xyzs0, const CvMat& uvds1);
+
+	CvMat mHomography;
+protected:
+	double _mHomography[16];
 };
 
 #endif /* CVPOSEESTERRMEASDISP_H_ */

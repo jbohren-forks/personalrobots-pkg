@@ -293,6 +293,14 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
 
 bool Cv3DPoseEstimateDispSpaceRef::constructDisparityHomography(CvMat *R, CvMat *T,
     CvMat *H){
+	if (R == NULL || T == NULL) {
+		return false;
+	}
+	return this->constructHomography(*R, *T, mMatDispToCart, mMatCartToDisp, *H);
+}
+
+bool Cv3DPoseEstimateDispSpaceRef::constructHomography(const CvMat& R, const CvMat& T,
+		const CvMat& dispToCart, const CvMat& cartToDisp, CvMat& H){
     bool status = true;
     // Transformation matrix RT:
     //         R  t
@@ -307,10 +315,10 @@ bool Cv3DPoseEstimateDispSpaceRef::constructDisparityHomography(CvMat *R, CvMat 
     cvInitMatHeader(&RT, 4, 4, CV_64FC1, _RT); // transformation matrix (including rotation and translation)
     cvInitMatHeader(&G,  4, 4, CV_64FC1, _G);  // a temp matrix
 
-    constructRT(R, T, &RT);
+    constructRT((CvMat *)&R, (CvMat *)&T, &RT);
 
-    cvMatMul(&mMatCartToDisp, &RT, &G);
-    cvMatMul(&G, &mMatDispToCart, H);
+    cvMatMul(&cartToDisp, &RT, &G);
+    cvMatMul(&G, (CvMat *)&dispToCart, &H);
     return status;
 }
 

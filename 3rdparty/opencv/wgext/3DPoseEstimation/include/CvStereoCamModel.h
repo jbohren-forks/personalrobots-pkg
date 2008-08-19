@@ -32,8 +32,11 @@ public:
 #if 0
     bool convert3DToDisparitySpace(CvMat* src, CvMat* dst);
 #endif
-	bool projection(CvMat *XYZs, CvMat *uvds);
-	bool reprojection(CvMat *uvds, CvMat *XYZs);
+	bool projection(const CvMat *XYZs, CvMat *uvds);
+	bool reprojection(const CvMat *uvds, CvMat *XYZs);
+
+	bool dispToCart(const CvMat& XYZs, CvMat& uvds);
+	bool cartToDisp(const CvMat& uvds, CvMat& XYZs);
 
 protected:
     static void constructMat3DToScreen(double Fx, double Fy, double Tx, double Cx, double Cy,

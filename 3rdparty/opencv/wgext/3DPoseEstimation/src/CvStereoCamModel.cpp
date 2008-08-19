@@ -154,23 +154,37 @@ bool CvStereoCamModel::convert3DToDisparitySpace(CvMat* src, CvMat* dst) {
 }
 #endif
 
-bool CvStereoCamModel::reprojection(CvMat *uvds, CvMat *XYZs) {
+bool CvStereoCamModel::reprojection(const CvMat *uvds, CvMat *XYZs) {
+	if (uvds == NULL || XYZs == NULL) {
+		return false;
+	}
+	return dispToCart(*uvds, *XYZs);
+}
+
+bool CvStereoCamModel::dispToCart(const CvMat& XYZs, CvMat & uvds) {
 	bool status = true;
 
 	CvMat uvds0;
 	CvMat XYZs0;
-	cvReshape(uvds, &uvds0, 3, 0);
-	cvReshape(XYZs, &XYZs0, 3, 0);
+	cvReshape(&uvds, &uvds0, 3, 0);
+	cvReshape(&XYZs, &XYZs0, 3, 0);
 	cvPerspectiveTransform(&uvds0, &XYZs0, &mMatDispToCart);
 	return status;
 }
 
-bool CvStereoCamModel::projection(CvMat *XYZs, CvMat *uvds) {
+bool CvStereoCamModel::projection(const CvMat *XYZs, CvMat *uvds) {
+	if (uvds == NULL || XYZs == NULL) {
+		return false;
+	}
+	return cartToDisp(*XYZs, *uvds);
+}
+
+bool CvStereoCamModel::cartToDisp(const CvMat& XYZs, CvMat& uvds) {
 	bool status = true;
 	CvMat xyzs0;
 	CvMat uvds0;
-	cvReshape(XYZs, &xyzs0, 3, 0);
-	cvReshape(uvds, &uvds0, 3, 0);
+	cvReshape(&XYZs, &xyzs0, 3, 0);
+	cvReshape(&uvds, &uvds0, 3, 0);
 	cvPerspectiveTransform(&xyzs0, &uvds0, &mMatCartToDisp);
 	return status;
 }

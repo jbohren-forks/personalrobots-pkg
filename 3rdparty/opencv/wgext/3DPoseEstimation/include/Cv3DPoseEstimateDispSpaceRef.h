@@ -43,6 +43,8 @@ public:
 			int numRefGrps, int refPoints[],
 			CvMat *rot, CvMat *shift, CvMat *& inliers0, CvMat *& outliers1);
 
+	static bool constructHomography(const CvMat& R, const CvMat& T,
+			const CvMat& dispToCart, const CvMat& cartToDisp, CvMat& H);
 	/*
 	 * A Convenient function to map z to d, at the optical center
 	 */
@@ -57,7 +59,7 @@ protected:
 			CvMat *uvds0, CvMat *uvds1,
 			int numRefGrps, int refPoints[],
 			CvMat *rot, CvMat *shift, CvMat *& inliers0, CvMat *& inliers1);
-    bool constructDisparityHomography(CvMat *R, CvMat *T, CvMat *H);
+	bool constructDisparityHomography(CvMat *R, CvMat *T, CvMat *H);
 };
 
 #endif /*CV3DPOSEESTIMATEDISPREF_H_*/
