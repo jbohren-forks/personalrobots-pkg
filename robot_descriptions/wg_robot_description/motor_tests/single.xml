@@ -20,10 +20,7 @@
 
   <controller name="single_controller" type="JointVelocityController">
     <joint name="single_joint">
-      <pGain>0.01</pGain>
-      <iGain>0.5</iGain>
-      <dGain>0</dGain>
-      <windup>0.1</windup>
+      <controller_defaults p="0.05" i="0.2" d="0" iClamp="0.1" />
     </joint>
   </controller>
 

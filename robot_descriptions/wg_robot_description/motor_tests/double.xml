@@ -38,19 +38,13 @@
 
   <controller name="controller1" type="JointVelocityController">
     <joint name="joint1">
-      <pGain>0.01</pGain>
-      <iGain>0.5</iGain>
-      <dGain>0</dGain>
-      <windup>0.1</windup>
+      <controller_defaults p="0.01" i="0.5" d="0" iClamp="0.1" />
     </joint>
   </controller>
 
   <controller name="controller2" type="JointVelocityController">
     <joint name="joint2">
-      <pGain>0.01</pGain>
-      <iGain>0.5</iGain>
-      <dGain>0</dGain>
-      <windup>0.1</windup>
+      <controller_defaults p="0.01" i="0.5" d="0" iClamp="0.1" />
     </joint>
   </controller>
 
