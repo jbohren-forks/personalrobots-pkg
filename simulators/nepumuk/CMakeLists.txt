@@ -7,52 +7,47 @@
 #
 # later (optional?) code will depend on:
 # - estar ros-pkg
-# - asl-mplan ros-pkg
-# - asl-mcontrol ros-pkg
+# - asl-mplan future ros-pkg
+# - asl-mcontrol future ros-pkg
 
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
-rospack(rosnpm)
+
+rospack(nepumuk)
+
+SET (ROS_BUILD_TYPE Debug)
+SET (ROS_BUILD_STATIC_EXES false)
+SET (ROS_BUILD_SHARED_LIBS true)
+SET (ROS_BUILD_STATIC_LIBS false)
+
+IF (WIN32)
+  MESSAGE (STATUS "Detected Microsoft Windows")
+  SET (ROS_COMPILE_FLAGS "-DWIN32 -Wall -DNPM_HAVE_ROS")
+ELSE (WIN32)
+  IF (APPLE)
+    MESSAGE (STATUS "Detected Mac OS X")
+    SET (ROS_COMPILE_FLAGS "-DOSX -Wall -DNPM_HAVE_ROS")
+  ENDIF (APPLE)
+  
+  IF (CMAKE_SYSTEM_NAME MATCHES Linux)
+    MESSAGE (STATUS "Detected Linux")
+    SET (ROS_COMPILE_FLAGS "-DLINUX -Wall -DNPM_HAVE_ROS")
+  ENDIF (CMAKE_SYSTEM_NAME MATCHES Linux)
+  
+  IF (CMAKE_SYSTEM_NAME MATCHES OpenBSD)
+    MESSAGE (STATUS "Detected OpenBSD")
+    SET (ROS_COMPILE_FLAGS "-DOPENBSD -Wall -DNPM_HAVE_ROS")
+  ENDIF (CMAKE_SYSTEM_NAME MATCHES OpenBSD)
+ENDIF(WIN32)
+
+SET (ROS_LINK_FLAGS "")
+
 rospack_add_executable(nepumuk src/simul/nepumuk.cpp)
 rospack_add_executable(simpletest src/ros/test.cpp)
 
 
 
 SET (CMAKE_VERBOSE_MAKEFILE ON)
-
-ADD_DEFINITIONS (-DNPM_HAVE_ROS)
-
-INCLUDE (CheckCXXCompilerFlag)
-
-CHECK_CXX_COMPILER_FLAG (-Wall NPM_CXX_FLAG_Wall)
-IF (NPM_CXX_FLAG_Wall)
-  ADD_DEFINITIONS (-Wall)
-ENDIF (NPM_CXX_FLAG_Wall)
-
-CHECK_CXX_COMPILER_FLAG (-Wno-long-double NPM_CXX_FLAG_Wnld)
-IF (NPM_CXX_FLAG_Wnld)
-  ADD_DEFINITIONS (-Wno-long-double)
-ENDIF (NPM_CXX_FLAG_Wnld)
-
-IF (WIN32)
-  MESSAGE (STATUS "Detected Microsoft Windows")
-  ADD_DEFINITIONS (-DWIN32)
-ELSE (WIN32)
-  IF (APPLE)
-    MESSAGE (STATUS "Detected Mac OS X")
-    ADD_DEFINITIONS (-DOSX)
-  ENDIF (APPLE)
-  
-  IF (CMAKE_SYSTEM_NAME MATCHES Linux)
-    MESSAGE (STATUS "Detected Linux")
-    ADD_DEFINITIONS (-DLINUX)
-  ENDIF (CMAKE_SYSTEM_NAME MATCHES Linux)
-  
-  IF (CMAKE_SYSTEM_NAME MATCHES OpenBSD)
-    MESSAGE (STATUS "Detected OpenBSD")
-    ADD_DEFINITIONS (-DOPENBSD)
-  ENDIF (CMAKE_SYSTEM_NAME MATCHES OpenBSD)
-ENDIF(WIN32)
 
 INCLUDE (FindOpenGL)
 IF (OPENGL_FOUND)
@@ -83,7 +78,7 @@ ELSE (CMAKE_USE_PTHREADS_INIT)
 ENDIF (CMAKE_USE_PTHREADS_INIT)
 
 
-ADD_LIBRARY (npm
+rospack_add_library (npm
 	     src/common/BBox.cpp
 	     src/common/BicycleDrive.cpp
 	     src/common/BicycleDriveDrawing.cpp
@@ -106,7 +101,6 @@ ADD_LIBRARY (npm
 	     src/common/NoiseModel.cpp
 	     src/common/Object.cpp
 	     src/common/OdometryDrawing.cpp
-	     src/common/Random.cpp
 	     src/common/RobotClient.cpp
 	     src/common/RobotDescriptor.cpp
 	     src/common/RobotDrawing.cpp
@@ -125,7 +119,6 @@ ADD_LIBRARY (npm
 	     src/common/WorldCamera.cpp
 	     src/common/WorldDrawing.cpp
 	     src/common/trfct.cpp
-	     src/common/util.cpp
 	     src/common/wrap_glu.cpp
 	     src/robox/BBDrawing.cpp
 	     src/robox/BLDrawing.cpp
@@ -138,7 +131,6 @@ ADD_LIBRARY (npm
 	     src/robox/ODrawing.cpp
 	     src/robox/RHDrawing.cpp
 	     src/robox/Robox.cpp
-	     src/robox/expoparams.cpp
 	     src/visitor/Visitor.cpp
 	     src/ros/ROSbot.cpp
 	     src/simul/Interlock.cpp
