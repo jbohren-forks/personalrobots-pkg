@@ -46,7 +46,7 @@ rosTFClient::rosTFClient(ros::node & rosnode,
 };
 
 
-void rosTFClient::transformPointCloud(std::string target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn)
+void rosTFClient::transformPointCloud(const std::string & target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn)
 {
   NEWMAT::Matrix transform = TransformReference::getMatrix(target_frame, cloudIn.header.frame_id, cloudIn.header.stamp.sec * 1000000000ULL + cloudIn.header.stamp.nsec);
 
@@ -88,7 +88,7 @@ void rosTFClient::transformPointCloud(std::string target_frame, std_msgs::PointC
     };
 }
 
-std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(std::string target_frame,  const std_msgs::PointCloudFloat32 & cloudIn)
+std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(const std::string & target_frame,  const std_msgs::PointCloudFloat32 & cloudIn)
 {
     std_msgs::PointCloudFloat32 cloudOut;
     transformPointCloud(target_frame, cloudOut, cloudIn);
@@ -97,7 +97,7 @@ std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(std::string target_
 
 
 
-void rosTFClient::transformLaserScanToPointCloud(std::string target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn)
+void rosTFClient::transformLaserScanToPointCloud(const std::string & target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn)
 {
   cloudOut.header = scanIn.header;
   cloudOut.header.frame_id = target_frame;
@@ -186,7 +186,7 @@ void rosTFClient::receiveArray()
 
 };
 
-NEWMAT::Matrix rosTFClient::getMatrix(std::string target_frame, std::string source_frame, ros::Time time)
+NEWMAT::Matrix rosTFClient::getMatrix(const std::string & target_frame, const std::string & source_frame, ros::Time time)
 { return getMatrix(target_frame, source_frame, time.to_ull());};
 
 
@@ -196,7 +196,7 @@ rosTFServer::rosTFServer(ros::node & rosnode):
   myNode.advertise<rosTF::TransformArray>("TransformArray", 100);
 };
 
-void rosTFServer::sendEuler(std::string frame, std::string parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime)
+void rosTFServer::sendEuler(const std::string & frame, const std::string & parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime)
 {
 
   rosTF::TransformArray tfArray;
@@ -216,7 +216,7 @@ void rosTFServer::sendEuler(std::string frame, std::string parent, double x, dou
 
 };
 
-void rosTFServer::sendInverseEuler(std::string frame, std::string parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime)
+void rosTFServer::sendInverseEuler(const std::string & frame, const std::string & parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime)
 { 
   rosTF::TransformArray tfArray;
   tfArray.set_eulers_size(1);
@@ -239,14 +239,14 @@ void rosTFServer::sendInverseEuler(std::string frame, std::string parent, double
 };
 
 
-void rosTFServer::sendPose(libTF::TFPose pose, std::string parent)
+void rosTFServer::sendPose(libTF::TFPose pose, const std::string & parent)
 {
   unsigned int nsecs = pose.time % 1000000000;
   unsigned int secs = (pose.time - nsecs) / 1000000000;
   sendEuler(pose.frame, parent, pose.x, pose.y, pose.z, pose.yaw, pose.pitch, pose.roll, ros::Time(secs, nsecs));  
 };
 
-void rosTFServer::sendInversePose(libTF::TFPose pose, std::string parent)
+void rosTFServer::sendInversePose(libTF::TFPose pose, const std::string & parent)
 {
   unsigned int nsecs = pose.time % 1000000000;
   unsigned int secs = (pose.time - nsecs) / 1000000000;
@@ -254,7 +254,7 @@ void rosTFServer::sendInversePose(libTF::TFPose pose, std::string parent)
 };
 
 
-void rosTFServer::sendDH(std::string frame, std::string parent, double length, double twist, double offset, double angle, ros::Time rostime)
+void rosTFServer::sendDH(const std::string & frame, const std::string & parent, double length, double twist, double offset, double angle, ros::Time rostime)
 {
   rosTF::TransformArray tfArray;
   tfArray.set_dhparams_size(1);
@@ -271,7 +271,7 @@ void rosTFServer::sendDH(std::string frame, std::string parent, double length, d
 
 };
 
-void rosTFServer::sendQuaternion(std::string frame, std::string parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, ros::Time rostime)
+void rosTFServer::sendQuaternion(const std::string & frame, const std::string & parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, ros::Time rostime)
 { 
   rosTF::TransformArray tfArray;
   tfArray.set_quaternions_size(1);
@@ -292,7 +292,7 @@ void rosTFServer::sendQuaternion(std::string frame, std::string parent, double x
 };
 
 
-void rosTFServer::sendMatrix(std::string frame, std::string parent, NEWMAT::Matrix matrix, ros::Time rostime)
+void rosTFServer::sendMatrix(const std::string & frame, const std::string & parent, NEWMAT::Matrix matrix, ros::Time rostime)
 {
   rosTF::TransformArray tfArray;
   tfArray.set_matrices_size(1);

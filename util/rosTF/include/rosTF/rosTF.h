@@ -60,29 +60,21 @@ class rosTFClient : public libTF::TransformReference
   rosTFClient(ros::node & rosnode, bool interpolating = true, unsigned long long max_cache_time = libTF::TransformReference::DEFAULT_CACHE_TIME, unsigned long long max_extrapolation_distance = libTF::TransformReference::DEFAULT_MAX_EXTRAPOLATION_DISTANCE);
 
   //  PointCloudFloat32 transformPointCloud(unsigned int target_frame, const PointCloudFloat32 & cloudIn); // todo switch after ticket:232
-  std_msgs::PointCloudFloat32 transformPointCloud(std::string target_frame, const std_msgs::PointCloudFloat32 & cloudIn);
+  std_msgs::PointCloudFloat32 transformPointCloud(const std::string& target_frame, const std_msgs::PointCloudFloat32 & cloudIn);
   std_msgs::PointCloudFloat32 transformPointCloud(unsigned int target_frame, const std_msgs::PointCloudFloat32 & cloudIn);
-  void transformPointCloud(std::string target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn);
+  void transformPointCloud(const std::string & target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn);
   void transformPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn);
 
-  void transformLaserScanToPointCloud(std::string target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn);
+  void transformLaserScanToPointCloud(const std::string& target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn);
   void transformLaserScanToPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn);
 
-  //Call back functions
+  /** @brief Call back function for receiving on ROS */
   void receiveArray();
 
 
   /*********** Accessors *************/
   /* Unhide base class functions which I'm about to hide otherwise*/
   using TransformReference::getMatrix;
-  using TransformReference::transformPoint;
-  using TransformReference::transformPoint2D;
-  using TransformReference::transformVector;
-  using TransformReference::transformVector2D;
-  using TransformReference::transformEulerYPR;
-  using TransformReference::transformYaw;
-  using TransformReference::transformPose;
-  using TransformReference::transformPose2D;
 
   /** \brief Get the transform between two frames by frame name
    * \param target_frame The frame to which data should be transformed
@@ -92,7 +84,7 @@ class rosTFClient : public libTF::TransformReference
    * Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
    * TransformReference::MaxDepthException
    */
-  NEWMAT::Matrix getMatrix(std::string target_frame, std::string source_frame, ros::Time time);
+  NEWMAT::Matrix getMatrix(const std::string & target_frame, const std::string & source_frame, ros::Time time);
 
 
  private:
@@ -101,6 +93,7 @@ class rosTFClient : public libTF::TransformReference
   //Temporary storage for callbacks(todo check threadsafe? make scoped in call?)
   rosTF::TransformArray tfArrayIn;
 
+  /** @brief A helper class for projecting laser scans */
   laser_scan::LaserProjection projector_;
 
   pthread_mutex_t cb_mutex;
@@ -118,38 +111,38 @@ class rosTFServer
   //Constructor
   rosTFServer(ros::node & rosnode);
   /** \brief Send a Transform with Euler Angles */
-  void sendEuler(std::string frame, std::string parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime);
+  void sendEuler(const std::string & frame, const std::string & parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime);
   /** \brief Send a Transform with Euler Angles using libTF syntax */
   void sendEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs);
 
   /** \brief Send a transform from parent to frame when frame to parent is known */
-  void sendInverseEuler(std::string frame, std::string parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime);
+  void sendInverseEuler(const std::string & frame, const std::string & parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime);
   /** \brief Send a transform from parent to frame when frame to parent is known using libTF syntax */
   void sendInverseEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs);
 
   /** \brief Send a transform using TFPose syntax */
-  void sendPose(libTF::TFPose pose, std::string parent);
+  void sendPose(libTF::TFPose pose, const std::string & parent);
   /** \brief Send a transform using TFPose and libTF syntax */
   void sendPose(libTF::TFPose pose, unsigned int parent);
 
   /** \brief Send a transform using TFPose when frame to parent is known*/
-  void sendInversePose(libTF::TFPose pose, std::string parent);
+  void sendInversePose(libTF::TFPose pose, const std::string & parent);
   /** \brief Send a transform using TFPose and libTF syntax when frame to parent is known*/
   void sendInversePose(libTF::TFPose pose, unsigned int parent);
 
   /** \brief Send a transform using DH Parameters */
-  void sendDH(std::string frame, std::string parent, double length, double twist, double offset, double angle, ros::Time rostime);
+  void sendDH(const std::string & frame, const std::string & parent, double length, double twist, double offset, double angle, ros::Time rostime);
   /** \brief Send a transform using DH Parameters and libTF syntax*/
   void sendDH(unsigned int frame, unsigned int parent, double length, double twist, double offset, double angle, unsigned int secs, unsigned int nsecs);
 
   /** \brief Send a transform using Quaternion notation */
-  void sendQuaternion(std::string frame, std::string parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, ros::Time rostime);
+  void sendQuaternion(const std::string & frame, const std::string & parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, ros::Time rostime);
   /** \brief Send a transform using Quaternion notation and libTF syntax*/
   void sendQuaternion(unsigned int frame, unsigned int parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, unsigned int secs, unsigned int nsecs);
 
 
   /** \brief Send a Transform with 4x4 Matrix */
-  void sendMatrix(std::string frame, std::string parent, NEWMAT::Matrix matrix, ros::Time rostime);
+  void sendMatrix(const std::string & frame, const std::string & parent, NEWMAT::Matrix matrix, ros::Time rostime);
   /** \brief Send a Transform with 4x4 Matrix */
   void sendMatrix(unsigned int frame, unsigned int parent, NEWMAT::Matrix matrix, ros::Time rostime);
 
