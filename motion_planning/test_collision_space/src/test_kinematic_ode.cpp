@@ -34,6 +34,7 @@
 
 #include <collision_space/environmentODE.h>
 #include <display_ode/displayODE.h>
+
 using namespace collision_space;
 using namespace display_ode;
 
@@ -58,48 +59,47 @@ static void simLoop(int)
 
 int main(int argc, char **argv)
 {
-    // TODO: add usage message
-
-    robot_desc::URDF model;
+    robot_desc::URDF file;
     if (argc > 1)
-      model.loadFile(argv[1]);
-    else // default to isucan for now
-      model.loadFile("/u/isucan/ros/ros-pkg/robot_descriptions/wg_robot_description/pr2/pr2.xml");
+	file.loadFile(argv[1]);
+    else
+	file.loadFile("../../robot_descriptions/wg_robot_description/pr2/pr2.xml");
     
-    EnvironmentModel *km = new EnvironmentModelODE();
-    planning_models::KinematicModel *m = new planning_models::KinematicModel();
-    m->setVerbose(true);
-    m->build(model);    
-    km->addRobotModel(m);
-    m->printModelInfo();
     
-    double *param = new double[m->stateDimension];    
+    EnvironmentModelODE *kmODE = new EnvironmentModelODE();
+    planning_models::KinematicModel *model = new planning_models::KinematicModel();
+    model->setVerbose(true);
+    model->build(file);
+    kmODE->addRobotModel(model);
+    model->printModelInfo();
+    
+    double *param = new double[model->stateDimension];    
 
-    for (unsigned int i = 0 ; i < m->stateDimension ; ++i)
+    for (unsigned int i = 0 ; i < model->stateDimension ; ++i)
 	param[i] = 0.0;
-    param[0] = 0.9;
-    param[1] = -0.3;
-    param[2] = M_PI/3;
-    m->computeTransforms(param);
-    km->updateRobotModel(0);
+    model->computeTransforms(param);
+    kmODE->updateRobotModel(0);
     
-    /*
-    for (unsigned int i = 0 ; i < m->stateDimension ; ++i)
-	param[i] = +0.3;
-    m->computeTransforms(param, m->getGroupID("pr2::base+rightArm"));
-    km->updateRobotModel(0);
-    */
-    EnvironmentModelODE* okm = dynamic_cast<EnvironmentModelODE*>(km);
-    spaces.addSpace(okm->getODESpace(), 1.0f, 0.3f, 0.0f);
-    for (unsigned int i = 0 ; i < okm->getModelCount() ; ++i)
-	spaces.addSpace(okm->getModelODESpace(i), 0.0f, 0.5f, (float)(i + 1)/(float)okm->getModelCount());
+    param[3] = -M_PI/2.0;    
+    param[4] = M_PI/4.0;    
+    param[5] = M_PI/4.0;    
     
+    
+    model->computeTransforms(param, model->getGroupID("pr2::leftArm"));
+    kmODE->updateRobotModel(0);
+
+    
+    spaces.addSpace(kmODE->getODESpace(), 1.0f, 0.3f, 0.0f);
+    for (unsigned int i = 0 ; i < kmODE->getModelCount() ; ++i)
+	spaces.addSpace(kmODE->getModelODESpace(i), 0.0f, 0.5f, (float)(i + 1)/(float)kmODE->getModelCount());
+    
+
     double sphere[3] = {0.8,0.2,0.4};    
     
-    km->addPointCloud(1, sphere, 0.15);
-    km->setSelfCollision(false);
-    
-    printf("\n\nCollision: %d\n", km->isCollision(0));
+    kmODE->addPointCloud(1, sphere, 0.1);
+    kmODE->setSelfCollision(false);
+
+    printf("\n\nCollision ODE: %d\n", kmODE->isCollision(0));
     
     dsFunctions fn;
     fn.version = DS_VERSION;
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
     
     dsSimulationLoop(argc, argv, 640, 480, &fn);
     
-    delete km;
+    delete kmODE;
     
     delete[] param;
     

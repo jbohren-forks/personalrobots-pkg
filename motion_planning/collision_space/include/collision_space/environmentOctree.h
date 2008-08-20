@@ -32,47 +32,60 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "ompl/extension/samplingbased/kinematic/KinematicPathSmoother.h"
-#include "ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h"
+#ifndef COLLISION_SPACE_ENVIRONMENT_MODEL_OCTREE_
+#define COLLISION_SPACE_ENVIRONMENT_MODEL_OCTREE_
 
-void ompl::KinematicPathSmoother::smoothVertices(SpaceInformation::Path_t opath)
+#include <collision_space/environment.h>
+#include <octree.h>
+#include <vector>
+
+/** @htmlinclude ../../manifest.html
+
+    A class describing an environment for a kinematic robot using ODE */
+
+namespace collision_space
 {
-    SpaceInformationKinematic::PathKinematic_t path = dynamic_cast<SpaceInformationKinematic::PathKinematic_t>(opath);
-    SpaceInformationKinematic_t                si   = dynamic_cast<SpaceInformationKinematic_t>(m_si);
     
-    if (!si || !path || path->states.size() < 3)
-	return;    
+    static const char OCTREE_CELL_EMPTY    = 0;
+    static const char OCTREE_CELL_OCCUPIED = 1;
     
-    unsigned int nochange = 0;
-    
-    for (unsigned int i = 0 ; i < m_maxSteps && nochange < m_maxEmptySteps ; ++i, ++nochange)
+    class EnvironmentModelOctree : public EnvironmentModel
     {
-	int count = path->states.size();
-	int maxN  = count - 1;
-	int range = 1 + (int)((double)count * m_rangeRatio);
-	
-	int p1 = random_utils::uniformInt(&m_rngState, 0, maxN);
-	int p2 = random_utils::uniformInt(&m_rngState, std::max(p1 - range, 0), std::min(maxN, p1 + range));
-	if (abs(p1 - p2) < 2)
-	{
-	    if (p1 < maxN - 1)
-		p2 = p1 + 2;
-	    else
-		if (p1 > 1)
-		    p2 = p1 - 2;
-		else
-		    continue;
+    public:
+		
+        EnvironmentModelOctree(void) : EnvironmentModel(),
+	                               m_octree(0.0f, 0.0f, 0.0f, 80.0f, 80.0f, 80.0f, 12, OCTREE_CELL_EMPTY)
+	{ 
 	}
+	
+	~EnvironmentModelOctree(void)
+	{
+	}
+	
+	
+	/** Check if a model is in collision */
+	virtual bool isCollision(unsigned int model_id);
+	
+	/** Remove all obstacles from collision model */
+	virtual void clearObstacles(void);
+	
+	/** Add a point cloud to the collision space */
+	virtual void addPointCloud(unsigned int n, const double *points, double radius = 0.01); 
+	
+	/** Add a robot model */
+	virtual unsigned int addRobotModel(planning_models::KinematicModel *model);
+	
+	/** Update the positions of the geometry used in collision detection */
+	virtual void updateRobotModel(unsigned int model_id);
 
-	if (p1 > p2)
-	    std::swap(p1, p2);
+	const scan_utils::Octree<char>* getOctree(void) const;
 	
-	if (si->checkMotionSubdivision(path->states[p1], path->states[p2]))
-	{
-	    for (int i = p1 + 1 ; i < p2 ; ++i)
-		delete path->states[i];
-	    path->states.erase(path->states.begin() + p1 + 1, path->states.begin() + p2);
-	    nochange = 0;
-	}
-    }
+    protected:
+	
+	scan_utils::Octree<char>                                           m_octree;
+	std::vector<std::vector< planning_models::KinematicModel::Link*> > m_modelLinks;
+	
+    };
 }
+
+#endif

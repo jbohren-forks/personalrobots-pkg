@@ -63,22 +63,7 @@ unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models
 	{
 	    kGeom *kg = new kGeom();
 	    kg->link = robot->links[i];
-	    planning_models::KinematicModel::Geometry *geom = robot->links[i]->geom;
-	    dGeomID g = NULL;
-	    switch (geom->type)
-	    {
-	    case planning_models::KinematicModel::Geometry::SPHERE:
-		g = dCreateSphere(m_kgeoms[id].s, geom->size[0]);
-		break;
-	    case planning_models::KinematicModel::Geometry::BOX:
-		g = dCreateBox(m_kgeoms[id].s, geom->size[0], geom->size[1], geom->size[2]);
-		break;
-	    case planning_models::KinematicModel::Geometry::CYLINDER:
-		g = dCreateCylinder(m_kgeoms[id].s, geom->size[0], geom->size[1]);
-		break;
-	    default:
-		break;
-	    }
+	    dGeomID g = createODEGeom(m_kgeoms[id].s, robot->links[i]->shape);
 	    if (g)
 	    {
 		kg->geom = g;
@@ -89,6 +74,34 @@ unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models
 	}
     }
     return id;
+}
+
+dGeomID collision_space::EnvironmentModelODE::createODEGeom(dSpaceID space, planning_models::KinematicModel::Shape *shape) const
+{
+    dGeomID g = NULL;
+    switch (shape->type)
+    {
+    case planning_models::KinematicModel::Shape::SPHERE:
+	{
+	    g = dCreateSphere(space, static_cast<planning_models::KinematicModel::Sphere*>(shape)->radius);
+	}
+	break;
+    case planning_models::KinematicModel::Shape::BOX:
+	{
+	    const double *size = static_cast<planning_models::KinematicModel::Box*>(shape)->size;
+	    g = dCreateBox(space, size[0], size[1], size[2]);
+	}	
+	break;
+    case planning_models::KinematicModel::Shape::CYLINDER:
+	{
+	    g = dCreateCylinder(space, static_cast<planning_models::KinematicModel::Cylinder*>(shape)->radius,
+				static_cast<planning_models::KinematicModel::Cylinder*>(shape)->length);
+	}
+	break;
+    default:
+	break;
+    }
+    return g;
 }
 
 void collision_space::EnvironmentModelODE::updateRobotModel(unsigned int model_id)

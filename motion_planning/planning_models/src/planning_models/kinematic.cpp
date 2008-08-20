@@ -33,77 +33,201 @@
 *********************************************************************/
 
 #include <planning_models/kinematic.h>
+#include <algorithm>
 #include <cmath>
 
+/** Operator for sorting objects by name */
+template<typename T>
+struct SortByName
+{
+    bool operator()(const T *a, const T *b) const
+    {
+	return a->name < b->name;
+    }
+};
+    
 void planning_models::KinematicModel::Robot::computeTransforms(const double *params, int groupID)
 {
-    if (chain->robotRoot)
-	chain->globalTrans = owner->rootTransform;
     chain->computeTransform(params, groupID);
 }
 
 void planning_models::KinematicModel::computeTransforms(const double *params, int groupID)
 {
-    unsigned int n = groupID >= 0 ? groupChainStart[groupID].size() : m_robots.size();
-    for (unsigned int i = 0 ; i < n ; ++i)
+    if (groupID >= 0)
     {
-	Joint *start = groupID >= 0 ? groupChainStart[groupID][i] : m_robots[i]->chain;
-	if (start->robotRoot)
-	    start->globalTrans = rootTransform;
-	params = start->computeTransform(params, groupID);
-    }    
+	for (unsigned int i = 0 ; i < groupChainStart[groupID].size() ; ++i)
+	{
+	    Joint *start = groupChainStart[groupID][i];
+	    params = start->computeTransform(params, groupID);
+	}
+    }
+    else
+    {  
+	for (unsigned int i = 0 ; i < m_robots.size(); ++i)
+	{
+	    Joint *start =  m_robots[i]->chain;
+	    params = start->computeTransform(params, groupID);
+	}
+    }
 }
 
-// we can optimize things here... (when we use identity transforms, for example)
 const double* planning_models::KinematicModel::Joint::computeTransform(const double *params, int groupID)
 {
     unsigned int used = 0;
     
     if (groupID < 0 || inGroup[groupID])
     {
-	switch (type)
-	{
-	case Joint::REVOLUTE:
-	    varTrans.setAxisAngle(axis, params[0]);
-	    break;
-	case Joint::PRISMATIC:
-	    {
-		double p  = params[0];
-		double dx = axis[0] * p;
-		double dy = axis[1] * p;
-		double dz = axis[2] * p;
-		varTrans.setPosition(dx, dy, dz);
-	    }
-	    break;
-	case Joint::PLANAR:
-	    varTrans.setPosition(params[0], params[1], 0.0);
-	    varTrans.setAxisAngle(0.0, 0.0, 1.0, params[2]);
-	    break;
-	case Joint::FLOATING:
-	    varTrans.setPosition(params[0], params[1], params[2]);
-	    varTrans.setQuaternion(params[3], params[4], params[5], params[6]);
-	    break;
-	default:
-	    break;
-	}
+	updateVariableTransform(params);
 	used = usedParams;
     }
     
-    if (before)
-	globalTrans = before->globalTrans; // otherwise, the caller initialized globalTrans already
-    globalTrans.multiplyPose(varTrans);
     return after->computeTransform(params + used, groupID);
 }
 
 const double* planning_models::KinematicModel::Link::computeTransform(const double *params, int groupID)
 {
-    const double *rparams = params;
-    globalTrans = before->globalTrans;
-    globalTrans.multiplyPose(constTrans);
+    globalTransFwd = before->before ? before->before->globalTransFwd : owner->rootTransform;
+    globalTransFwd.multiplyPose(constTrans);
+    globalTransFwd.multiplyPose(before->varTrans);
+    
     for (unsigned int i = 0 ; i < after.size() ; ++i)
-	rparams = after[i]->computeTransform(rparams, groupID);
+	params = after[i]->computeTransform(params, groupID);
+    
+    globalTrans = globalTransFwd;
     globalTrans.multiplyPose(constGeomTrans);
-    return rparams;
+    
+    return params;
+}
+
+void planning_models::KinematicModel::FixedJoint::updateVariableTransform(const double *params)
+{
+    // the joint remains identity
+}
+
+void planning_models::KinematicModel::FixedJoint::extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot)
+{
+    // we need no data
+}
+
+void planning_models::KinematicModel::PlanarJoint::updateVariableTransform(const double *params)
+{
+    varTrans.setPosition(params[0], params[1], 0.0);
+    varTrans.setAxisAngle(0.0, 0.0, 1.0, params[2]);
+}
+
+void planning_models::KinematicModel::PlanarJoint::extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot)
+{
+    robot->stateBounds.insert(robot->stateBounds.end(), 4, 0.0);
+    robot->stateBounds.push_back(-M_PI);
+    robot->stateBounds.push_back(M_PI);
+    robot->planarJoints.push_back(robot->stateDimension);
+}
+
+void planning_models::KinematicModel::FloatingJoint::updateVariableTransform(const double *params)
+{
+    varTrans.setPosition(params[0], params[1], params[2]);
+    varTrans.setQuaternion(params[3], params[4], params[5], params[6]);
+}
+
+void planning_models::KinematicModel::FloatingJoint::extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot)
+{
+    robot->stateBounds.insert(robot->stateBounds.end(), 14, 0.0);
+    robot->floatingJoints.push_back(robot->stateDimension);
+}
+
+void planning_models::KinematicModel::PrismaticJoint::updateVariableTransform(const double *params)
+{
+    double p  = params[0];
+    double dx = axis[0] * p;
+    double dy = axis[1] * p;
+    double dz = axis[2] * p;
+    varTrans.setPosition(dx, dy, dz);
+}
+
+void planning_models::KinematicModel::PrismaticJoint::extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot)
+{
+    axis[0]  = urdfLink->joint->axis[0];
+    axis[1]  = urdfLink->joint->axis[1];
+    axis[2]  = urdfLink->joint->axis[2];
+    limit[0] = urdfLink->joint->limit[0];
+    limit[1] = urdfLink->joint->limit[1];
+    
+    robot->stateBounds.push_back(limit[0]);
+    robot->stateBounds.push_back(limit[1]);
+}
+
+void planning_models::KinematicModel::RevoluteJoint::updateVariableTransform(const double *params)
+{
+    varTrans.setAxisAngle(axis, params[0]);
+}
+
+void planning_models::KinematicModel::RevoluteJoint::extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot)
+{
+    axis[0] = urdfLink->joint->axis[0];
+    axis[1] = urdfLink->joint->axis[1];
+    axis[2] = urdfLink->joint->axis[2];
+    anchor[0] = urdfLink->joint->anchor[0];
+    anchor[1] = urdfLink->joint->anchor[1];
+    anchor[2] = urdfLink->joint->anchor[2];
+    
+    // if the joint is continuous, we set the limit to [-Pi, Pi]
+    if (urdfLink->joint->isSet["limit"])
+    {
+	limit[0] = urdfLink->joint->limit[0];
+	limit[1] = urdfLink->joint->limit[1];
+    }
+    else
+    {
+	limit[0] = -M_PI;
+	limit[1] =  M_PI;
+    }
+    
+    robot->stateBounds.push_back(limit[0]);
+    robot->stateBounds.push_back(limit[1]);
+}
+
+void planning_models::KinematicModel::Link::extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot)
+{
+    /* compute the geometry for this link */
+    switch (urdfLink->collision->geometry->type)
+    {
+    case robot_desc::URDF::Link::Geometry::BOX:
+	{
+	    Box          *box  = new Box();	    
+	    const double *size = static_cast<robot_desc::URDF::Link::Geometry::Box*>(urdfLink->collision->geometry->shape)->size;
+	    box->size[0] = size[0];
+	    box->size[1] = size[1];
+	    box->size[2] = size[2];
+	    shape        = box;
+	}
+	break;
+    case robot_desc::URDF::Link::Geometry::SPHERE:
+	{
+	    Sphere *sphere = new Sphere();
+	    sphere->radius = static_cast<robot_desc::URDF::Link::Geometry::Sphere*>(urdfLink->collision->geometry->shape)->radius;
+	    shape          = sphere;
+	}
+	break;
+    case robot_desc::URDF::Link::Geometry::CYLINDER:
+	{
+	    Cylinder *cylinder = new Cylinder();
+	    cylinder->length = static_cast<robot_desc::URDF::Link::Geometry::Cylinder*>(urdfLink->collision->geometry->shape)->length;
+	    cylinder->radius = static_cast<robot_desc::URDF::Link::Geometry::Cylinder*>(urdfLink->collision->geometry->shape)->radius;
+	    shape            = cylinder;
+	}	
+	break;
+    default:
+	break;
+    }
+    
+    /* compute the constant transform for this link */
+    const double *xyz = urdfLink->xyz;
+    const double *rpy = urdfLink->rpy;
+    constTrans.setFromEuler(xyz[0], xyz[1], xyz[2], rpy[2], rpy[1], rpy[0]);	    
+    
+    xyz = urdfLink->collision->xyz;
+    rpy = urdfLink->collision->rpy;
+    constGeomTrans.setFromEuler(xyz[0], xyz[1], xyz[2], rpy[2], rpy[1], rpy[0]);    
 }
 
 void planning_models::KinematicModel::setVerbose(bool verbose)
@@ -125,16 +249,17 @@ void planning_models::KinematicModel::constructGroupList(robot_desc::URDF &model
 	m_groupsMap[m_groups[i]] = i;
 }
 
-void planning_models::KinematicModel::build(robot_desc::URDF &model)
+void planning_models::KinematicModel::build(robot_desc::URDF &model, bool ignoreSensors)
 {
     if (m_built)
     {
-	fprintf(stderr, "Model has already been built!\n");
+	std::cerr << "Model has already been built!" << std::endl;
 	return;
     }
     
     m_built = true;
-
+    m_ignoreSensors = ignoreSensors;
+    
     /* construct a map for the available groups */
     constructGroupList(model);
     groupStateIndexList.resize(m_groups.size());
@@ -143,10 +268,13 @@ void planning_models::KinematicModel::build(robot_desc::URDF &model)
     for (unsigned int i = 0 ; i < model.getDisjointPartCount() ; ++i)
     {
 	robot_desc::URDF::Link *link = model.getDisjointPart(i);
-	Robot *rb = new Robot(this);
+	if (link->canSense() && m_ignoreSensors)
+	    continue;
+	Robot                  *rb   = new Robot(this);
+	rb->name = model.getRobotName();
 	rb->groupStateIndexList.resize(m_groups.size());
 	rb->groupChainStart.resize(m_groups.size());
-	rb->chain = new Joint();
+	rb->chain = createJoint(link);
 	buildChainJ(rb, NULL, rb->chain, link, model);
 	m_robots.push_back(rb);
     }
@@ -201,6 +329,15 @@ planning_models::KinematicModel::Robot* planning_models::KinematicModel::getRobo
     return m_robots[index];
 }
 
+void planning_models::KinematicModel::getLinks(std::vector<Link*> &links) const
+{
+    std::vector<Link*> localLinks;
+    for (std::map<std::string, Link*>::const_iterator it = m_linkMap.begin() ; it != m_linkMap.end() ; ++it)
+	localLinks.push_back(it->second);
+    std::sort(localLinks.begin(), localLinks.end(), SortByName<Link>());
+    links.insert(links.end(), localLinks.begin(), localLinks.end());
+}
+
 planning_models::KinematicModel::Link* planning_models::KinematicModel::getLink(const std::string &link) const
 {
     std::map<std::string, Link*>::const_iterator pos = m_linkMap.find(link);
@@ -211,62 +348,10 @@ void planning_models::KinematicModel::buildChainJ(Robot *robot, Link *parent, Jo
 {
     joint->before = parent;
     joint->after  = new Link();
+    joint->name   = urdfLink->joint->name;
+    joint->owner  = robot->owner;
     
-    if (model.isRoot(urdfLink))
-	joint->robotRoot = true;
-    
-    /* copy relevant data */
-    joint->limit[0] = urdfLink->joint->limit[0];
-    joint->limit[1] = urdfLink->joint->limit[1];
-    joint->axis[0] = urdfLink->joint->axis[0];
-    joint->axis[1] = urdfLink->joint->axis[1];
-    joint->axis[2] = urdfLink->joint->axis[2];
-    joint->anchor[0] = urdfLink->joint->anchor[0];
-    joint->anchor[1] = urdfLink->joint->anchor[1];
-    joint->anchor[2] = urdfLink->joint->anchor[2];
-    if (!urdfLink->joint->isSet["limit"] && urdfLink->joint->type == robot_desc::URDF::Link::Joint::REVOLUTE)
-    {
-	joint->limit[0] = -M_PI;
-	joint->limit[1] =  M_PI;
-    }
-
-    switch (urdfLink->joint->type)
-    {
-    case robot_desc::URDF::Link::Joint::FLOATING:
-	joint->type = Joint::FLOATING;
-	joint->usedParams = 7;
-	robot->stateBounds.insert(robot->stateBounds.end(), 14, 0.0);
-	robot->floatingJoints.push_back(robot->stateDimension);
-	break;
-    case robot_desc::URDF::Link::Joint::PLANAR:
-	joint->type = Joint::PLANAR;
-	joint->usedParams = 3;
-	robot->stateBounds.insert(robot->stateBounds.end(), 4, 0.0);
-	robot->stateBounds.push_back(-M_PI);
-	robot->stateBounds.push_back(M_PI);
-	robot->planarJoints.push_back(robot->stateDimension);
-	break;
-    case robot_desc::URDF::Link::Joint::FIXED:
-	joint->type = Joint::FIXED; 
-	joint->usedParams = 0;
-	break;
-    case robot_desc::URDF::Link::Joint::REVOLUTE:
-	joint->type = Joint::REVOLUTE;
-	joint->usedParams = 1;
-	robot->stateBounds.push_back(joint->limit[0]);
-	robot->stateBounds.push_back(joint->limit[1]);
-	break;
-    case robot_desc::URDF::Link::Joint::PRISMATIC:
-	joint->type = Joint::PRISMATIC;
-	joint->usedParams = 1;
-	robot->stateBounds.push_back(joint->limit[0]);
-	robot->stateBounds.push_back(joint->limit[1]);
-	break;
-    default:
-	joint->type = Joint::UNKNOWN; 
-	joint->usedParams = 0;
-	break;
-    }
+    joint->extractInformation(urdfLink, robot);
     
     /** construct the inGroup bitvector */
     std::vector<std::string> gnames;
@@ -283,18 +368,17 @@ void planning_models::KinematicModel::buildChainJ(Robot *robot, Link *parent, Jo
     for (unsigned int k = 0 ; k < urdfLink->groups.size() ; ++k)
 	if (urdfLink->groups[k]->isRoot(urdfLink))
 	{
-	    std::string gname = model.getRobotName() + "::" + urdfLink->groups[k]->name;
+	    std::string gname = robot->name + "::" + urdfLink->groups[k]->name;
 	    if (m_groupsMap.find(gname) != m_groupsMap.end())
 		robot->groupChainStart[m_groupsMap[gname]].push_back(joint);
 	}
     
     if (m_verbose && joint->usedParams > 0)
     {
-	printf("Joint '%s' connects link '%s' to link '%s' and uses state coordinates: ",
-	       urdfLink->joint->name.c_str(), urdfLink->parentName.c_str(), urdfLink->name.c_str());
+	std::cout << "Joint '" << urdfLink->joint->name << "' connects link '" << urdfLink->parentName << "' to link '" << urdfLink->name << "' and uses state coordinates: ";
 	for (unsigned int i = 0 ; i < joint->usedParams ; ++i)
-	    printf("%d ", i + robot->stateDimension);
-	printf("\n");
+	    std::cout << i + robot->stateDimension << " ";
+	std::cout << std::endl;
     }
     
     robot->stateDimension += joint->usedParams;
@@ -303,92 +387,98 @@ void planning_models::KinematicModel::buildChainJ(Robot *robot, Link *parent, Jo
 
 void planning_models::KinematicModel::buildChainL(Robot *robot, Joint *parent, Link* link, robot_desc::URDF::Link* urdfLink, robot_desc::URDF &model)
 {
-    link->name = urdfLink->name;
+    link->name   = urdfLink->name;
     link->before = parent;
+    link->owner  = robot->owner;
     robot->links.push_back(link);
     
-    /* copy relevant data */ 
-    switch (urdfLink->collision->geometry->type)
-    {
-    case robot_desc::URDF::Link::Geometry::UNKNOWN:
-	link->geom->type = Geometry::UNKNOWN; 
-	break;
-    case robot_desc::URDF::Link::Geometry::BOX:
-	link->geom->type = Geometry::BOX;
-	{
-	    const double *size = static_cast<robot_desc::URDF::Link::Geometry::Box*>(urdfLink->collision->geometry->shape)->size;
-	    link->geom->size[0] = size[0];
-	    link->geom->size[1] = size[1];
-	    link->geom->size[2] = size[2];
-	}	
-	break;
-    case robot_desc::URDF::Link::Geometry::SPHERE:
-	link->geom->type = Geometry::SPHERE; 
-	link->geom->size[0] = static_cast<robot_desc::URDF::Link::Geometry::Sphere*>(urdfLink->collision->geometry->shape)->radius;
-	break;
-    case robot_desc::URDF::Link::Geometry::CYLINDER:
-	link->geom->type = Geometry::CYLINDER; 
-	link->geom->size[0] = static_cast<robot_desc::URDF::Link::Geometry::Cylinder*>(urdfLink->collision->geometry->shape)->radius;
-	link->geom->size[1] = static_cast<robot_desc::URDF::Link::Geometry::Cylinder*>(urdfLink->collision->geometry->shape)->length;
-	break;
-    default:
-	break;
-    }
-    
-    /* compute the constant transform for this link */
-    double *xyz = urdfLink->xyz;
-    double *rpy = urdfLink->rpy;
-    link->constTrans.setFromEuler(xyz[0], xyz[1], xyz[2], rpy[2], rpy[1], rpy[0]);	    
-    
-    xyz = urdfLink->collision->xyz;
-    rpy = urdfLink->collision->rpy;
-    link->constGeomTrans.setFromEuler(xyz[0], xyz[1], xyz[2], rpy[2], rpy[1], rpy[0]);	    
+    link->extractInformation(urdfLink, robot);
     
     for (unsigned int i = 0 ; i < urdfLink->children.size() ; ++i)
     {
-	Joint *newJoint = new Joint();
+	if (urdfLink->children[i]->canSense() && m_ignoreSensors)
+	    continue;
+	Joint *newJoint = createJoint(urdfLink);
 	buildChainJ(robot, link, newJoint, urdfLink->children[i], model);
 	link->after.push_back(newJoint);
     }
-
+    
     if (link->after.size() == 0)
 	robot->leafs.push_back(link);
 }
 
-void planning_models::KinematicModel::printModelInfo(FILE *out) const
+planning_models::KinematicModel::Joint* planning_models::KinematicModel::createJoint(robot_desc::URDF::Link* urdfLink)
+{
+    Joint *newJoint = NULL;
+    switch (urdfLink->joint->type)
+    {
+    case robot_desc::URDF::Link::Joint::FIXED:
+	newJoint = new FixedJoint();
+	break;	    
+    case robot_desc::URDF::Link::Joint::FLOATING:
+	newJoint = new FloatingJoint();
+	break;	    
+    case robot_desc::URDF::Link::Joint::PLANAR:
+	newJoint = new PlanarJoint();
+	break;	    
+    case robot_desc::URDF::Link::Joint::PRISMATIC:
+	newJoint = new PrismaticJoint();
+	break;
+    case robot_desc::URDF::Link::Joint::REVOLUTE:
+	newJoint = new RevoluteJoint();
+	break;
+    default:
+	std::cerr << "Unknown joint type " << urdfLink->joint->type << std::endl;
+	break;
+    }  
+    return newJoint;
+}
+
+void planning_models::KinematicModel::printModelInfo(std::ostream &out) const
 {   
-    fprintf(out, "Number of robots = %d\n", getRobotCount());
-    fprintf(out, "Complete model state dimension = %d\n", stateDimension);
-
-    fprintf(out, "State bounds: ");
-    for (unsigned int i = 0 ; i < stateDimension ; ++i)
-	fprintf(out, "[%f, %f] ", stateBounds[2 * i], stateBounds[2 * i + 1]);
-    fprintf(out, "\n");
+    out << "Number of robots = " << getRobotCount() << std::endl;
+    out << "Complete model state dimension = " << stateDimension << std::endl;
     
-    fprintf(out, "Floating joints at: ");    
+    out << "State bounds: ";
+    for (unsigned int i = 0 ; i < stateDimension ; ++i)
+	out << "[" << stateBounds[2 * i] << ", " << stateBounds[2 * i + 1] << "] ";
+    out << std::endl;
+    
+    out << "Floating joints at: ";
     for (unsigned int i = 0 ; i < floatingJoints.size() ; ++i)
-	fprintf(out, "%d ", floatingJoints[i]);
-    fprintf(out, "\n");
-
-    fprintf(out, "Planar joints at: ");    
+	out << floatingJoints[i] << " ";
+    out << std::endl;
+    
+    out << "Planar joints at: ";
     for (unsigned int i = 0 ; i < planarJoints.size() ; ++i)
-	fprintf(out, "%d ", planarJoints[i]);
-    fprintf(out, "\n");
-
-    fprintf(out, "Available groups: ");    
-    std::vector<std::string> l;    
+	out << planarJoints[i] << " ";
+    out << std::endl;
+    
+    out << "Available groups: ";
+    std::vector<std::string> l;
     getGroups(l);
     for (unsigned int i = 0 ; i < l.size() ; ++i)
-	fprintf(out, "%s ", l[i].c_str());
-    fprintf(out, "\n");
+	out << l[i] << " ";
+    out << std::endl;
     
     for (unsigned int i = 0 ; i < l.size() ; ++i)
     {
 	int gid = getGroupID(l[i]);
-	fprintf(out, "Group %s has %d roots\n", l[i].c_str(), groupChainStart[gid].size());
-	fprintf(out, "The state components for this group are: ");
+	out << "Group " << l[i] << " has " << groupChainStart[gid].size() << " roots" << std::endl;
+	out << "The state components for this group are: ";
 	for (unsigned int j = 0 ; j < groupStateIndexList[gid].size() ; ++j)
-	    fprintf(out, "%d ", groupStateIndexList[gid][j]);
-	fprintf(out, "\n");
-    }    
+	    out << groupStateIndexList[gid][j] << " ";
+	out << std::endl;
+    }
+}
+
+void planning_models::KinematicModel::printLinkPoses(std::ostream &out) const
+{
+    std::vector<Link*> links;
+    getLinks(links);
+    for (unsigned int i = 0 ; i < links.size() ; ++i)
+    {
+	out << links[i]->name << std::endl;
+	out << links[i]->globalTrans << std::endl;
+    }
 }

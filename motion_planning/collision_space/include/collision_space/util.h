@@ -44,15 +44,15 @@ namespace collision_space
     namespace bodies
     {
 	
-	class Object
+	class Shape
 	{
 	public:
-	    Object(void)
+	    Shape(void)
 	    {
 		m_scale = 1.0;	    
 	    }
 	    
-	    virtual ~Object(void)
+	    virtual ~Shape(void)
 	    {
 	    }
 	    
@@ -92,10 +92,10 @@ namespace collision_space
 	    
 	};
 	
-	class Sphere : public Object
+	class Sphere : public Shape
 	{
 	public:
-        Sphere(void) : Object()
+        Sphere(void) : Shape()
 	    {
 		m_radius = 0.0;
 	    }
@@ -132,10 +132,10 @@ namespace collision_space
 	    
 	};
         
-	class Cylinder : public Object
+	class Cylinder : public Shape
 	{
 	public:
-        Cylinder(void) : Object()
+        Cylinder(void) : Shape()
 	    {
 		m_length = m_radius = 0.0;
 	    }
@@ -198,10 +198,10 @@ namespace collision_space
 	};
 	
 	
-	class Box : public Object
+	class Box : public Shape
 	{
 	public: 
-        Box(void) : Object()
+        Box(void) : Shape()
 	    {
 		m_length = m_width = m_height = 0.0;
 	    }

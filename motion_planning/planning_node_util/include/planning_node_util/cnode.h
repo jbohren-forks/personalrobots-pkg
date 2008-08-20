@@ -38,8 +38,8 @@
 
 @htmlinclude ../../manifest.html
 
-@b NodeODECollisionModel is a class which in addition to being aware of a robot model,
-is also aware of an ODE collision space.
+@b NodeCollisionModel is a class which in addition to being aware of a robot model,
+is also aware of a collision space.
 
 <hr>
 
@@ -74,31 +74,37 @@ Provides (name/type):
 #include <planning_node_util/knode.h>
 #include <std_msgs/PointCloudFloat32.h>
 #include <collision_space/environmentODE.h>
+#include <collision_space/environmentOctree.h>
 
 namespace planning_node_util
 {
     
-    class NodeODECollisionModel : public NodeRobotModel
+    class NodeCollisionModel : public NodeRobotModel
     {
 
     public:
 	
-        NodeODECollisionModel(ros::node *node, const std::string &robot_model) : NodeRobotModel(node, robot_model)
+        NodeCollisionModel(ros::node *node, const std::string &robot_model,
+			   collision_space::EnvironmentModel *collisionSpace = NULL) : NodeRobotModel(node, robot_model)
 	{
-	    m_collisionSpace = new collision_space::EnvironmentModelODE();
+	    if (collisionSpace)
+		m_collisionSpace = collisionSpace;
+	    else
+		m_collisionSpace = new collision_space::EnvironmentModelODE();
 	    m_collisionSpace->setSelfCollision(false);
+	    
 	    m_sphereSize = 0.03;
 	    
-	    m_node->subscribe("world_3d_map", m_worldCloud, &NodeODECollisionModel::worldMapCallback, this);
+	    m_node->subscribe("world_3d_map", m_worldCloud, &NodeCollisionModel::worldMapCallback, this);
 	}
 
-	virtual ~NodeODECollisionModel(void)
+	virtual ~NodeCollisionModel(void)
 	{
 	    if (m_collisionSpace)
 	    {
 		delete m_collisionSpace;
 		m_kmodel = NULL;
-	    }	    
+	    }
 	}
 	
 	virtual void setRobotDescription(robot_desc::URDF *file)
@@ -122,7 +128,7 @@ namespace planning_node_util
     protected:
 	
 	std_msgs::PointCloudFloat32           m_worldCloud;
-	collision_space::EnvironmentModelODE *m_collisionSpace;
+	collision_space::EnvironmentModel    *m_collisionSpace;
 	double                                m_sphereSize;
 	
 	void worldMapCallback(void)

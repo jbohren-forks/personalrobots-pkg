@@ -161,7 +161,7 @@ private:
     
     struct RobotPart
     {
-	collision_space::bodies::Object       *body;
+	collision_space::bodies::Shape        *body;
 	planning_models::KinematicModel::Link *link;	
     };
   
@@ -269,16 +269,31 @@ private:
 		{
 		    RobotPart rp = { NULL, link };    
 		    
-		    switch (link->geom->type)
+		    switch (link->shape->type)
 		    {
-		    case planning_models::KinematicModel::Geometry::BOX:
+		    case planning_models::KinematicModel::Shape::BOX:
 			rp.body = new collision_space::bodies::Box();
-			break;			
-		    case planning_models::KinematicModel::Geometry::SPHERE:
-			rp.body = new collision_space::bodies::Sphere();
+			{
+			    const double* size = static_cast<planning_models::KinematicModel::Box*>(link->shape)->size;
+			    rp.body->setDimensions(size);
+			}
 			break;
-		    case planning_models::KinematicModel::Geometry::CYLINDER:
+		    case planning_models::KinematicModel::Shape::SPHERE:
+			rp.body = new collision_space::bodies::Sphere();
+			{
+			    double size[1];
+			    size[0] = static_cast<planning_models::KinematicModel::Sphere*>(link->shape)->radius;
+			    rp.body->setDimensions(size);
+			}
+			break;
+		    case planning_models::KinematicModel::Shape::CYLINDER:
 			rp.body = new collision_space::bodies::Cylinder();
+			{
+			    double size[2];
+			    size[0] = static_cast<planning_models::KinematicModel::Cylinder*>(link->shape)->length;
+			    size[1] = static_cast<planning_models::KinematicModel::Cylinder*>(link->shape)->radius;
+			    rp.body->setDimensions(size);
+			}
 			break;
 		    default:
 			break;
@@ -286,11 +301,10 @@ private:
 		    
 		    if (!rp.body)
 		    {
-			fprintf(stderr, "Unknown body type: %d\n", link->geom->type);
+			fprintf(stderr, "Unknown body type: %d\n", link->shape->type);
 			continue;
 		    }
 		    
-		    rp.body->setDimensions(link->geom->size);
 		    rp.body->setScale(1.5);
 		    
 		    m_selfSeeParts.push_back(rp);

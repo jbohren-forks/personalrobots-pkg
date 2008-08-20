@@ -163,7 +163,8 @@ namespace collision_space
 	    dSpaceID              s;
 	};
 	
-	void freeMemory(void);	
+	dGeomID createODEGeom(dSpaceID space, planning_models::KinematicModel::Shape *shape) const;
+	void    freeMemory(void);	
 	
 	std::vector<ModelInfo> m_kgeoms;
 	dSpaceID               m_space;

@@ -61,7 +61,7 @@ $ planning_world_viewer robotdesc/pr2
 Subscribes to (name/type):
 - None
 
-Additional subscriptions due to inheritance from NodeODECollisionModel:
+Additional subscriptions due to inheritance from NodeCollisionModel:
 - @b localizedpose/RobotBase2DOdom : localized position of the robot base
 - @b world_3d_map/PointCloudFloat32 : point cloud with data describing the 3D environment
 
@@ -96,14 +96,15 @@ Provides (name/type):
 #include <map>
 
 class PlanningWorldViewer : public ros::node,
-			    public planning_node_util::NodeODECollisionModel
+			    public planning_node_util::NodeCollisionModel
 {
 public:
     
     PlanningWorldViewer(const std::string &robot_model) : ros::node("planning_world_viewer"),
-							  planning_node_util::NodeODECollisionModel(dynamic_cast<ros::node*>(this), robot_model)
+							  planning_node_util::NodeCollisionModel(dynamic_cast<ros::node*>(this), robot_model)
     {
 	subscribe("display_kinematic_path", m_displayPath, &PlanningWorldViewer::displayPathCallback, 1);
+	m_collisionSpaceODE = dynamic_cast<collision_space::EnvironmentModelODE*>(m_collisionSpace);
 	
 	m_follow = true;
 	m_displayRobot = true;
@@ -118,16 +119,19 @@ public:
     
     void updateODESpaces(void)
     {
-	m_collisionSpace->lock();
+	if (!m_collisionSpaceODE)
+	    return;
+	
+	m_collisionSpaceODE->lock();
 	m_displayLock.lock();	
 	m_spaces.clear();	
 	if (m_displayObstacles)
-	    m_spaces.addSpace(m_collisionSpace->getODESpace(), 1.0f, 0.0f, 0.0f);
+	    m_spaces.addSpace(m_collisionSpaceODE->getODESpace(), 1.0f, 0.0f, 0.0f);
 	if (m_displayRobot)
-	    for (unsigned int i = 0 ; i < m_collisionSpace->getModelCount() ; ++i)
-	    m_spaces.addSpace(m_collisionSpace->getModelODESpace(i), 0.1f, 0.5f, (float)(i + 1)/(float)m_collisionSpace->getModelCount());
+	    for (unsigned int i = 0 ; i < m_collisionSpaceODE->getModelCount() ; ++i)
+	    m_spaces.addSpace(m_collisionSpaceODE->getModelODESpace(i), 0.1f, 0.5f, (float)(i + 1)/(float)m_collisionSpaceODE->getModelCount());
 	m_displayLock.unlock();
-	m_collisionSpace->unlock();
+	m_collisionSpaceODE->unlock();
     }
     
     bool checkCollision(void)
@@ -146,7 +150,7 @@ public:
     
     void baseUpdate(void)
     {
-	planning_node_util::NodeODECollisionModel::baseUpdate();
+	planning_node_util::NodeCollisionModel::baseUpdate();
 	
 	if (m_collisionSpace && m_collisionSpace->getModelCount() == 1 && m_follow)
 	{
@@ -161,7 +165,7 @@ public:
     
     virtual void beforeWorldUpdate(void)
     {
-	planning_node_util::NodeODECollisionModel::beforeWorldUpdate();
+	planning_node_util::NodeCollisionModel::beforeWorldUpdate();
 	m_displayLock.lock();	
 	m_spaces.clear();
 	m_displayLock.unlock();	
@@ -169,7 +173,7 @@ public:
 
     virtual void afterWorldUpdate(void)
     {
-	planning_node_util::NodeODECollisionModel::afterWorldUpdate();
+	planning_node_util::NodeCollisionModel::afterWorldUpdate();
 	updateODESpaces();
     }	
     
@@ -192,7 +196,7 @@ public:
     
     virtual void setRobotDescription(robot_desc::URDF *file)
     {
-	planning_node_util::NodeODECollisionModel::setRobotDescription(file);
+	planning_node_util::NodeCollisionModel::setRobotDescription(file);
 	defaultPosition();
     }
     
@@ -258,6 +262,7 @@ public:
     
 private:
     
+    collision_space::EnvironmentModelODE* m_collisionSpaceODE;    
     display_ode::DisplayODESpaces         m_spaces;
     ros::thread::mutex                    m_displayLock;
     

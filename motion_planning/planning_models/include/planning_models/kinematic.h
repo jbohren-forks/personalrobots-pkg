@@ -37,6 +37,8 @@
 
 #include <urdf/URDF.h>
 #include <libTF/Pose3D.h>
+
+#include <iostream>
 #include <vector>
 #include <string>
 #include <cstdio>
@@ -47,63 +49,106 @@
 
 namespace planning_models
 {
-        
+    
+    /** Definition of a kinematic model */
     class KinematicModel
     {
     public:
 	
-	
-	/** Possible geometry elements. These are assumed to be centered at origin (similar to ODE) */
-	struct Geometry
-	{
-	    Geometry(void)
+	/** A basic definition of a shape. Shapes to be centered at origin */
+	class Shape
+	{		    
+	public:	    
+	    Shape(void)
 	    {
 		type = UNKNOWN;
+	    }
+	    
+	    virtual ~Shape(void)
+	    {
+	    }
+	    
+	    enum { UNKNOWN, SPHERE, CYLINDER, BOX } 
+	    type;
+	    
+	};
+	
+	/** Definition of a sphere */
+	class Sphere : public Shape
+	{
+	public:
+	    Sphere(void) : Shape()
+	    {
+		type   = SPHERE;
+		radius = 0.0;
+	    }
+	    
+	    double radius; 
+	};
+	
+	/** Definition of a cylinder */
+	class Cylinder : public Shape
+	{
+	public:
+	    Cylinder(void) : Shape()
+	    {
+		type   = CYLINDER;
+		length = radius = 0.0;
+	    }
+	    
+	    double length, radius; 
+	};
+	
+	/** Definition of a box */
+	class Box : public Shape
+	{
+	public:
+	    Box(void) : Shape()
+	    {
+		type = BOX;
 		size[0] = size[1] = size[2] = 0.0;
 	    }
 	    
-	    enum 
-		{
-		    UNKNOWN, BOX, CYLINDER, SPHERE
-		}  type;
-	    
-	    /** box: x, y, z
-		cylinder: length, radius
-		sphere: radius */
-	    double size[3];
+	    /** x, y, z */
+	    double size[3]; 
 	};
 	
+	/** Forward definition of a joint */
 	class Joint;
-	class Link;	
+	
+	/** Forward definition of a link */
+	class Link;
+	
+	/** Forward definition of a robot */
+	class Robot;
 	
 	/** A joint from the robot. Contains the transform applied by the joint type */
 	class Joint
 	{
 	public:
-
 	    Joint(void)
 	    {
 		usedParams = 0;
 		before = after = NULL;
-		axis[0] = axis[1] = axis[2] = 0.0;
-		anchor[0] = anchor[1] = anchor[2] = 0.0;
-		limit[0] = limit[1] = 0.0;
-		robotRoot = false;
-		type = UNKNOWN;
+		owner = NULL;
 	    }
 	    
-	    ~Joint(void)
+	    virtual ~Joint(void)
 	    {
 		if (after)
 		    delete after;
 	    }
+
+
+	    /** Name of the joint */
+	    std::string       name;
 	    
+	    /** The model that owns this joint */
+	    KinematicModel   *owner;
+
 	    /** the links that this joint connects */	    
-	    Link         *before;
-	    Link         *after;
-	    
-	    /** Flag for marking joints that are roots for the entire robot */
-	    bool          robotRoot;
+	    Link             *before;
+	    Link             *after;
 	    
 	    /** The range of indices in the parameter vector that
 		needed to access information about the position of this
@@ -111,26 +156,114 @@ namespace planning_models
 	    unsigned int      usedParams;
 	    
 	    /** Bitvector identifying which groups this joint is part of */
-	    std::vector<bool> inGroup;	    
-	    
-	    /* relevant joint information */
-	    enum
-		{
-		    UNKNOWN, FIXED, REVOLUTE, PRISMATIC, PLANAR, FLOATING
-		}         type;
-	    double        axis[3];
-	    double        anchor[3];
-	    double        limit[2];
-	    
-	    /* ----------------- Computed data -------------------*/
+	    std::vector<bool> inGroup;
 	    
 	    /** the local transform (computed by forward kinematics) */
-	    libTF::Pose3D varTrans;
-	    libTF::Pose3D globalTrans;
+	    libTF::Pose3D     varTrans;
 	    
+	    /** Update varTrans if this joint is part of the group indicated by groupID
+	     *  and recompute globalTrans using varTrans */
 	    const double* computeTransform(const double *params, int groupID = -1);
 	    
+	    /** Update the value of VarTrans using the information from params */
+	    virtual void updateVariableTransform(const double *params) = 0;
+
+	    /** Extract the information needed by the joint given the URDF description */
+	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot) = 0;
 	};
+
+	/** A fixed joint */
+	class FixedJoint : public Joint
+	{
+	public:
+	    
+	    /** Update the value of varTrans using the information from params */
+	    virtual void updateVariableTransform(const double *params);
+
+	    /** Extract the information needed by the joint given the URDF description */
+	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
+	};
+
+	/** A planar joint */
+	class PlanarJoint : public Joint
+	{
+	public:
+	    
+	    PlanarJoint(void) : Joint()
+	    {
+		usedParams = 3;
+	    }
+	    
+	    /** Update the value of varTrans using the information from params */
+	    virtual void updateVariableTransform(const double *params);
+
+	    /** Extract the information needed by the joint given the URDF description */
+	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
+	};
+
+	/** A floating joint */
+	class FloatingJoint : public Joint
+	{
+	public:
+	    
+	    FloatingJoint(void) : Joint()
+	    {
+		usedParams = 7;
+	    }
+
+	    /** Update the value of varTrans using the information from params */
+	    virtual void updateVariableTransform(const double *params);
+
+	    /** Extract the information needed by the joint given the URDF description */
+	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
+	};
+
+	/** A prismatic joint */
+	class PrismaticJoint : public Joint
+	{
+	public:
+	    
+	    PrismaticJoint(void) : Joint()
+	    {
+		axis[0] = axis[1] = axis[2] = 0.0;
+		limit[0] = limit[1] = 0.0;
+		usedParams = 1;
+	    }
+	    
+	    /** Update the value of varTrans using the information from params */
+	    virtual void updateVariableTransform(const double *params);
+
+	    /** Extract the information needed by the joint given the URDF description */
+	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
+	    
+	    double axis[3];
+	    double limit[2];
+	};
+	
+	/** A revolute joint */
+	class RevoluteJoint : public Joint
+	{
+	public:
+	    
+	    RevoluteJoint(void) : Joint()
+	    {
+		axis[0] = axis[1] = axis[2] = 0.0;
+		anchor[0] = anchor[1] = anchor[2] = 0.0;
+		limit[0] = limit[1] = 0.0;
+		usedParams = 1;
+	    }
+	    
+	    /** Update the value of varTrans using the information from params */
+	    virtual void updateVariableTransform(const double *params);
+
+	    /** Extract the information needed by the joint given the URDF description */
+	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
+	    
+	    double axis[3];	    
+	    double anchor[3];
+	    double limit[2];
+	};
+	
 	
 	/** A link from the robot. Contains the constant transform applied to the link and its geometry */
 	class Link
@@ -140,20 +273,24 @@ namespace planning_models
 	    Link(void)
 	    {
 		before = NULL;
-		geom = new Geometry();
+		shape  = NULL;
+		owner  = NULL;
 	    }
 	    
-	    ~Link(void)
+	    virtual ~Link(void)
 	    {
-		if (geom)
-		    delete geom;
+		if (shape)
+		    delete shape;
 		for (unsigned int i = 0 ; i < after.size() ; ++i)
 		    delete after[i];
 	    }
 
 	    /** Name of the link */
 	    std::string         name;
-	    
+
+	    /** The model that owns this link */
+	    KinematicModel     *owner;
+
 	    /** Joint that connects this link to the parent link */
 	    Joint              *before;
 	    
@@ -167,14 +304,22 @@ namespace planning_models
 	    libTF::Pose3D       constGeomTrans;
 	    
 	    /** The geometry of the link */
-	    Geometry           *geom;
+	    Shape              *shape;
 	    
 	    /* ----------------- Computed data -------------------*/
 	    
+	    /** The global transform this link forwards (computed by forward kinematics) */
+	    libTF::Pose3D       globalTransFwd;
+
 	    /** The global transform for this link (computed by forward kinematics) */
 	    libTF::Pose3D       globalTrans;
+
+	    /** recompute globalTrans */
+	    const double* computeTransform(const double *params, int groupID = -1);
+
+	    /** Extract the information needed by the joint given the URDF description */
+	    void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
 	    
-	    const double* computeTransform(const double *params, int groupID = -1);	
 	};
 	
 	/** A robot structure */
@@ -197,6 +342,12 @@ namespace planning_models
 	    
 	    void computeTransforms(const double *params, int groupID = -1);
 	    
+	    /** The name of the robot */
+	    std::string         name;
+	    
+	    /** The model that owns this robot */
+	    KinematicModel     *owner;
+
 	    /** List of links in the robot */
 	    std::vector<Link*>  links;
 	    
@@ -204,8 +355,8 @@ namespace planning_models
 	    std::vector<Link*>  leafs;
 	    
 	    /** The first joint in the robot -- the root */
-	    Joint              *chain;
-	    
+	    Joint              *chain;	    
+
 	    /** Number of parameters needed to define the joints */
 	    unsigned int        stateDimension;
 	    
@@ -235,16 +386,14 @@ namespace planning_models
 
 	    /* The roots of every group within this robot */
 	    std::vector<std::vector<Joint*> >        groupChainStart;
-
-	    /** The model that owns this robot */
-	    KinematicModel     *owner;
 	    
 	};
 	
 	KinematicModel(void)
 	{
 	    stateDimension = 0;
-	    m_verbose = false;
+	    m_ignoreSensors = false;
+	    m_verbose = false;	    
 	    m_built = false;
 	}
 	
@@ -254,7 +403,7 @@ namespace planning_models
 		delete m_robots[i];
 	}
 	
-	virtual void build(robot_desc::URDF &model);	
+	virtual void build(robot_desc::URDF &model, bool ignoreSensors = false);
 	void         setVerbose(bool verbose);	
 
 	unsigned int getRobotCount(void) const;
@@ -262,9 +411,11 @@ namespace planning_models
 	void         getGroups(std::vector<std::string> &groups) const;
 	int          getGroupID(const std::string &group) const;
 	Link*        getLink(const std::string &link) const;
+	void         getLinks(std::vector<Link*> &links) const;
 	
 	void computeTransforms(const double *params, int groupID = -1);
-	void printModelInfo(FILE *out = stdout) const;
+	void printModelInfo(std::ostream &out = std::cout) const;
+	void printLinkPoses(std::ostream &out = std::cout) const;
 	
 	/** A transform that is applied to the entire model */
 	libTF::Pose3D       rootTransform;
@@ -293,6 +444,7 @@ namespace planning_models
 	std::vector<std::string>          m_groups;
 	std::map<std::string, int>        m_groupsMap;	       
 	std::map<std::string, Link*>      m_linkMap;	       
+	bool                              m_ignoreSensors;
 	bool                              m_verbose;    
 	bool                              m_built;
 	
@@ -306,6 +458,9 @@ namespace planning_models
 
 	/** Construct the list of groups the model knows about (the ones marked with the 'plan' attribute) */
 	void constructGroupList(robot_desc::URDF &model);
+	
+	/** Allocate a joint of appropriate type, depending on the loaded link */
+	Joint* createJoint(robot_desc::URDF::Link* urdfLink);
 	
     };
 

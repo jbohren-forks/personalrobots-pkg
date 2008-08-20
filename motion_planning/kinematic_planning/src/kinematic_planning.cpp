@@ -61,7 +61,7 @@ $ kinematic_planning robotdesc/pr2
 Subscribes to (name/type):
 - None
 
-Additional subscriptions due to inheritance from NodeODECollisionModel:
+Additional subscriptions due to inheritance from NodeCollisionModel:
 - @b localizedpose/RobotBase2DOdom : localized position of the robot base
 - @b world_3d_map/PointCloudFloat32 : point cloud with data describing the 3D environment
 
@@ -100,12 +100,13 @@ Provides (name/type):
 #include <map>
 
 class KinematicPlanning : public ros::node,
-			  public planning_node_util::NodeODECollisionModel
+			  public planning_node_util::NodeCollisionModel
 {
 public:
 
     KinematicPlanning(const std::string &robot_model) : ros::node("kinematic_planning"),
-							planning_node_util::NodeODECollisionModel(dynamic_cast<ros::node*>(this), robot_model)
+							planning_node_util::NodeCollisionModel(dynamic_cast<ros::node*>(this),
+											       robot_model)
     {
 	advertise_service("plan_kinematic_path", &KinematicPlanning::plan);
     }
@@ -233,7 +234,7 @@ public:
 
     virtual void setRobotDescription(robot_desc::URDF *file)
     {
-	planning_node_util::NodeODECollisionModel::setRobotDescription(file);	
+	planning_node_util::NodeCollisionModel::setRobotDescription(file);	
 	defaultPosition();
 	
 	/* set the data for the model */
