@@ -420,7 +420,7 @@ std::string TransformReference::numberToName(unsigned int frameid)
   if ( it == reverseMap.end())
   {
     std::stringstream ss;
-    ss << "Number " << frameid << " does not exist!!"; 
+    ss << "numberToName: Number " << frameid << " does not exist!!"; 
     throw LookupException(ss.str()); 
     return "";//never get here
   }
