@@ -347,8 +347,12 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
       frame = getFrame(frame)->getParent();
 
       /* Check if we've gone too deep.  A loop in the tree would cause this */
-      if (counter++ > MAX_GRAPH_DEPTH)
-	throw(MaxDepthException("Recursed too deep into graph ( > MAX_GRAPH_DEPTH) there is probably a loop in the graph"));
+      if (counter++ > MAX_GRAPH_DEPTH){
+        std::stringstream ss;
+        ss<<"Recursed too deep into graph ( > MAX_GRAPH_DEPTH) there is probably a loop in the graph" << std::endl 
+          << viewFrames() << std::endl;
+        throw(MaxDepthException(ss.str()));
+      }
     }
   
   frame = target_frame;
