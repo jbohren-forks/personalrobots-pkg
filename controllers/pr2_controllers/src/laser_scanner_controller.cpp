@@ -77,15 +77,15 @@ void LaserScannerController::init(double p_gain, double i_gain, double d_gain, d
 
 void LaserScannerController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
-  TiXmlElement *elt = config->FirstChildElement("joint");
-  if (elt) 
+  TiXmlElement *jnt = config->FirstChildElement("joint");
+  if (jnt) 
   {
-    // TODO: error check if xml attributes/elements are missing
-    double p_gain = atof(elt->FirstChildElement("pGain")->GetText());
-    double i_gain = atof(elt->FirstChildElement("iGain")->GetText());
-    double d_gain = atof(elt->FirstChildElement("dGain")->GetText());
-    double windup= atof(elt->FirstChildElement("windup")->GetText());
-    init(p_gain, i_gain, d_gain, windup, robot->hw_->current_time_,elt->Attribute("name"), robot);
+    // TODO: error check if xml attributes/elements are missing 
+    double p_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("p"));
+    double i_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("i"));
+    double d_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("d"));
+    double windup = atof(jnt->FirstChildElement("controller_defaults")->Attribute("iClamp"));
+    init(p_gain, i_gain, d_gain, windup, robot->hw_->current_time_,jnt->Attribute("name"), robot);
   }
 }
 
@@ -103,7 +103,7 @@ double LaserScannerController::getCommand()
 }
 
 // Return the measured joint position
-double LaserScannerController::getMeasuredState()
+double LaserScannerController::getMeasuredPosition()
 {
   return joint_->position_;
 }

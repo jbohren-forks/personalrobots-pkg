@@ -88,7 +88,7 @@ public:
   /*!
    * \brief Read the torque of the motor
    */
-  double getMeasuredState();
+  double getMeasuredPosition();
 
   /*!
    * \brief Issues commands to the joint. Should be called at regular intervals
