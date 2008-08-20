@@ -92,14 +92,11 @@ namespace dc1394_cam
 
   FrameWrapper debayerFrame(FrameWrapper& f, dc1394color_filter_t bayer, dc1394bayer_method_t method = DC1394_BAYER_METHOD_BILINEAR);
 
-  void initUndistortFrame(FrameWrapper& fw, CvMat *intrinsic, CvMat *distortion, IplImage **mapx, IplImage **mapy);
+  void initUndistortFrame(FrameWrapper& fw,
+                          CvMat *intrinsic, CvMat *distortion, CvMat *rectification, CvMat *rectified_instrinsic,
+                          IplImage **mapx, IplImage **mapy);
 
   FrameWrapper undistortFrame(FrameWrapper& f, IplImage *mapx, IplImage *mapy);
-
-  FrameWrapper undistortFrame(FrameWrapper& f, CvMat*, CvMat*);
-
-  FrameWrapper undistortFrame(FrameWrapper& f, double fx, double fy,
-                              double cx, double cy, double k1, double k2, double p1, double p2);
 
   class Cam
   {
@@ -141,23 +138,7 @@ namespace dc1394_cam
       colorize_ = false;;
     }
 
-    virtual void enableRectification(double fx, double fy, double cx, double cy, double k1, double k2, double p1, double p2)
-    {
-      rectify_ = true;
-      init_rectify_ = true;
-  
-      CV_MAT_ELEM(*intrinsic_, float, 0, 0) = fx;
-      CV_MAT_ELEM(*intrinsic_, float, 0, 2) = cx;
-      CV_MAT_ELEM(*intrinsic_, float, 1, 1) = fy;
-      CV_MAT_ELEM(*intrinsic_, float, 1, 2) = cy;
-      CV_MAT_ELEM(*intrinsic_, float, 2, 2) = 1;
-  
-      CV_MAT_ELEM(*distortion_, float, 0, 0) = k1;
-      CV_MAT_ELEM(*distortion_, float, 1, 0) = k2;
-      CV_MAT_ELEM(*distortion_, float, 2, 0) = p1;
-      CV_MAT_ELEM(*distortion_, float, 3, 0) = p2;
-      
-    }
+    virtual void enableRectification(double fx, double fy, double cx, double cy, double k1, double k2, double k3, double p1, double p2);
 
     virtual void disableRectification()
     {
@@ -193,6 +174,8 @@ namespace dc1394_cam
 
     CvMat *intrinsic_;
     CvMat *distortion_;
+    CvMat *rectification_;
+    CvMat *rectified_intrinsic_;
 
     IplImage* mapx_;
     IplImage* mapy_;

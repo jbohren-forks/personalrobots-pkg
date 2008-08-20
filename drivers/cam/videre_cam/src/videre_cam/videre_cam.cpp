@@ -124,6 +124,7 @@ videre_cam::VidereCam::VidereCam(uint64_t guid,
   extract(cal_params_, "[left camera]", "fy",     lfy_);
   extract(cal_params_, "[left camera]", "kappa1", lk1_);
   extract(cal_params_, "[left camera]", "kappa2", lk2_);
+  extract(cal_params_, "[left camera]", "kappa3", lk3_);
   extract(cal_params_, "[left camera]", "tau1",   lt1_);
   extract(cal_params_, "[left camera]", "tau2",   lt2_);
 
@@ -136,6 +137,7 @@ videre_cam::VidereCam::VidereCam(uint64_t guid,
   extract(cal_params_, "[right camera]", "fy",     rfy_);
   extract(cal_params_, "[right camera]", "kappa1", rk1_);
   extract(cal_params_, "[right camera]", "kappa2", rk2_);
+  extract(cal_params_, "[right camera]", "kappa3", rk3_);
   extract(cal_params_, "[right camera]", "tau1",   rt1_);
   extract(cal_params_, "[right camera]", "tau2",   rt2_);
 
@@ -155,62 +157,24 @@ videre_cam::VidereCam::VidereCam(uint64_t guid,
 
   init_rectify_ = true;
 
-  intrinsic2_ = cvCreateMat(3,3,CV_32FC1);
-  distortion2_ = cvCreateMat(4,1,CV_32FC1);
+  intrinsic_ = cvCreateMat(3,3,CV_32FC1);
+  distortion_ = cvCreateMat(5,1,CV_32FC1);
+  rectification_ = cvCreateMat(3,3,CV_32FC1);
+  rectified_intrinsic_ = cvCreateMat(3,3,CV_32FC1);
 
-  CV_MAT_ELEM(*intrinsic_, float, 0, 0) = rf_;
-  CV_MAT_ELEM(*intrinsic_, float, 0, 2) = rCx_;
-  CV_MAT_ELEM(*intrinsic_, float, 1, 1) = rfy_;
-  CV_MAT_ELEM(*intrinsic_, float, 1, 2) = rCy_;
-  CV_MAT_ELEM(*intrinsic_, float, 2, 2) = 1;
-  
-  CV_MAT_ELEM(*distortion_, float, 0, 0) = rk1_;
-  CV_MAT_ELEM(*distortion_, float, 1, 0) = rk2_;
-  CV_MAT_ELEM(*distortion_, float, 2, 0) = rt1_;
-  CV_MAT_ELEM(*distortion_, float, 3, 0) = rt2_;
+  r_intrinsic_ = cvCreateMat(3,3,CV_32FC1);
+  r_distortion_ = cvCreateMat(5,1,CV_32FC1);
+  r_rectification_ = cvCreateMat(3,3,CV_32FC1);
+  r_rectified_intrinsic_ = cvCreateMat(3,3,CV_32FC1);
 
-  CV_MAT_ELEM(*intrinsic2_, float, 0, 0) = lf_;
-  CV_MAT_ELEM(*intrinsic2_, float, 0, 2) = lCx_;
-  CV_MAT_ELEM(*intrinsic2_, float, 1, 1) = lfy_;
-  CV_MAT_ELEM(*intrinsic2_, float, 1, 2) = lCy_;
-  CV_MAT_ELEM(*intrinsic2_, float, 2, 2) = 1;
-  
-  CV_MAT_ELEM(*distortion2_, float, 0, 0) = lk1_;
-  CV_MAT_ELEM(*distortion2_, float, 1, 0) = lk2_;
-  CV_MAT_ELEM(*distortion2_, float, 2, 0) = lt1_;
-  CV_MAT_ELEM(*distortion2_, float, 3, 0) = lt2_;
+  r_mapx_ = NULL;
+  r_mapy_ = NULL;
 
-  mapx2_ = NULL;
-  mapy2_ = NULL;
-
-
-  //  colorize_ = hasFeature(DC1394_FEATURE_WHITE_BALANCE);
-
-
-  uint64_t offset;
-  uint32_t quadval;
-  
-  offset = 0X404;
-  dc1394_get_control_register(dcCam, offset, &quadval);
-  printf("40x: at offset %lx, quadval is: %x\n", (long unsigned int)(offset), (unsigned int)(quadval));
-
-  offset = 0X50c;
-  dc1394_get_control_register(dcCam, offset, &quadval);
-  printf("5xx: at offset %lx, quadval is: %x\n", (long unsigned int)(offset), (unsigned int)(quadval));
-
-  offset = 0X80c;
-  dc1394_get_control_register(dcCam, offset, &quadval);
-  printf("8xx: at offset %lx, quadval is: %x\n", (long unsigned int)(offset), (unsigned int)(quadval));
-
-  uint32_t u_b = 0;
-  uint32_t v_r = 0;
-  dc1394_feature_whitebalance_get_value(dcCam, &u_b, &v_r);
-
-  printf("Reading DC1394_FEATURE_WHITE_BALANCE %d %d %d\n", colorize_, u_b, v_r);
+  color_capable_ = (getControlRegister(0x50c) & 0x80000000UL);
 
   bayer_ = DC1394_COLOR_FILTER_GRBG;
 
-  std::cout << "Read in params: " << std::endl << cal_params_;
+  //  std::cout << "Read in params: " << std::endl << cal_params_;
 }
 
 
@@ -283,6 +247,81 @@ videre_cam::VidereCam::setHDR(bool hdr)
 }
 
 
+
+void
+videre_cam::VidereCam::enableRectification(double fx, double fy, double cx, double cy, double k1, double k2, double k3, double p1, double p2)
+{
+  Cam::enableRectification(fx, fy, cx, cy, k1, k2, k3, p1, p2);
+
+  CV_MAT_ELEM(*r_intrinsic_, float, 0, 0) = fx;
+  CV_MAT_ELEM(*r_intrinsic_, float, 0, 2) = cx;
+  CV_MAT_ELEM(*r_intrinsic_, float, 1, 1) = fy;
+  CV_MAT_ELEM(*r_intrinsic_, float, 1, 2) = cy;
+  CV_MAT_ELEM(*r_intrinsic_, float, 2, 2) = 1;
+  
+  CV_MAT_ELEM(*r_distortion_, float, 0, 0) = k1;
+  CV_MAT_ELEM(*r_distortion_, float, 1, 0) = k2;
+  CV_MAT_ELEM(*r_distortion_, float, 2, 0) = p1;
+  CV_MAT_ELEM(*r_distortion_, float, 3, 0) = p2;
+  CV_MAT_ELEM(*r_distortion_, float, 4, 0) = k3;
+
+  CV_MAT_ELEM(*r_rectification_, float, 0, 0) = 1.0;
+  CV_MAT_ELEM(*r_rectification_, float, 1, 1) = 1.0;
+  CV_MAT_ELEM(*r_rectification_, float, 2, 2) = 1.0;
+
+  CV_MAT_ELEM(*r_rectified_intrinsic_, float, 0, 0) = fx;
+  CV_MAT_ELEM(*r_rectified_intrinsic_, float, 0, 2) = cx;
+  CV_MAT_ELEM(*r_rectified_intrinsic_, float, 1, 1) = fy;
+  CV_MAT_ELEM(*r_rectified_intrinsic_, float, 1, 2) = cy;
+  CV_MAT_ELEM(*r_rectified_intrinsic_, float, 2, 2) = 1;
+
+}
+
+void
+videre_cam::VidereCam::enableRectification()
+{
+  rectify_ = true; 
+  init_rectify_ = true;
+
+  CV_MAT_ELEM(*intrinsic_, float, 0, 0) = lf_;
+  CV_MAT_ELEM(*intrinsic_, float, 0, 2) = lCx_;
+  CV_MAT_ELEM(*intrinsic_, float, 1, 1) = lfy_;
+  CV_MAT_ELEM(*intrinsic_, float, 1, 2) = lCy_;
+  CV_MAT_ELEM(*intrinsic_, float, 2, 2) = 1;
+    
+  CV_MAT_ELEM(*distortion_, float, 0, 0) = lk1_;
+  CV_MAT_ELEM(*distortion_, float, 1, 0) = lk2_;
+  CV_MAT_ELEM(*distortion_, float, 2, 0) = lt1_;
+  CV_MAT_ELEM(*distortion_, float, 3, 0) = lt2_;
+  CV_MAT_ELEM(*distortion_, float, 4, 0) = lk3_;
+    
+  for (int i = 0; i < 3; i++)
+    for (int j = 0; j < 3; j++)
+    {
+      CV_MAT_ELEM(*rectification_, float, i, j) = lrect_(i,j);
+      CV_MAT_ELEM(*rectified_intrinsic_, float, i, j) = lproj_(i,j);
+    }
+
+  CV_MAT_ELEM(*r_intrinsic_, float, 0, 0) = rf_;
+  CV_MAT_ELEM(*r_intrinsic_, float, 0, 2) = rCx_;
+  CV_MAT_ELEM(*r_intrinsic_, float, 1, 1) = rfy_;
+  CV_MAT_ELEM(*r_intrinsic_, float, 1, 2) = rCy_;
+  CV_MAT_ELEM(*r_intrinsic_, float, 2, 2) = 1;
+    
+  CV_MAT_ELEM(*r_distortion_, float, 0, 0) = rk1_;
+  CV_MAT_ELEM(*r_distortion_, float, 1, 0) = rk2_;
+  CV_MAT_ELEM(*r_distortion_, float, 2, 0) = rt1_;
+  CV_MAT_ELEM(*r_distortion_, float, 3, 0) = rt2_;
+  CV_MAT_ELEM(*r_distortion_, float, 4, 0) = rk3_;
+
+  for (int i = 0; i < 3; i++)
+    for (int j = 0; j < 3; j++)
+    {
+      CV_MAT_ELEM(*r_rectification_, float, i, j) = rrect_(i,j);
+      CV_MAT_ELEM(*r_rectified_intrinsic_, float, i, j) = rproj_(i,j);
+    }
+
+}
 
 
 
@@ -364,13 +403,13 @@ videre_cam::VidereCam::getFrames(dc1394capture_policy_t policy)
         {
           if (init_rectify_)
           {
-            initUndistortFrame(fw1, intrinsic_, distortion_, &mapx_, &mapy_);
-            initUndistortFrame(fw2, intrinsic2_, distortion2_, &mapx2_, &mapy2_);
+            initUndistortFrame(fw1, r_intrinsic_, r_distortion_, r_rectification_, r_rectified_intrinsic_, &r_mapx_, &r_mapy_);
+            initUndistortFrame(fw2, intrinsic_, distortion_, rectification_, rectified_intrinsic_, &mapx_, &mapy_);
             init_rectify_ = false;
           }
 
-          FrameWrapper fw1_rect = dc1394_cam::undistortFrame(fw1, mapx_, mapy_);
-          FrameWrapper fw2_rect = dc1394_cam::undistortFrame(fw2, mapx2_, mapy2_);
+          FrameWrapper fw1_rect = dc1394_cam::undistortFrame(fw1, r_mapx_, r_mapy_);
+          FrameWrapper fw2_rect = dc1394_cam::undistortFrame(fw2, mapx_, mapy_);
           
           fw1.releaseFrame();
           fw2.releaseFrame();
@@ -403,11 +442,11 @@ videre_cam::VidereCam::getFrames(dc1394capture_policy_t policy)
         {
           if (init_rectify_)
           {
-            initUndistortFrame(fw2, intrinsic2_, distortion2_, &mapx2_, &mapy2_);
+            initUndistortFrame(fw2, intrinsic_, distortion_, rectification_, rectified_intrinsic_, &mapx_, &mapy_);
             init_rectify_ = false;
           }
           
-          FrameWrapper fw2_rect = dc1394_cam::undistortFrame(fw2, mapx2_, mapy2_);
+          FrameWrapper fw2_rect = dc1394_cam::undistortFrame(fw2, mapx_, mapy_);
           
           fw2.releaseFrame();
           

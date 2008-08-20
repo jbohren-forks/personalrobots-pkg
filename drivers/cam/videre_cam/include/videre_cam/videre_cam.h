@@ -63,21 +63,24 @@ namespace videre_cam
 
     virtual ~VidereCam()
     {
-      cvReleaseMat(&intrinsic2_);
-      cvReleaseMat(&distortion2_);
+      cvReleaseMat(&r_intrinsic_);
+      cvReleaseMat(&r_distortion_);
+      cvReleaseMat(&r_rectification_);
+      cvReleaseMat(&r_rectified_intrinsic_);
       
-      cvReleaseImage(&mapx2_);
-      cvReleaseImage(&mapy2_);
+      cvReleaseImage(&r_mapx_);
+      cvReleaseImage(&r_mapy_);
     };
 
     virtual void start();
 
     virtual dc1394_cam::FrameSet getFrames(dc1394capture_policy_t policy = DC1394_CAPTURE_POLICY_WAIT);
 
-    virtual void enableColorization(dc1394color_filter_t bayer = DC1394_COLOR_FILTER_RGGB) { colorize_ = true; }
+    virtual void enableColorization(dc1394color_filter_t bayer = DC1394_COLOR_FILTER_RGGB) { colorize_ = color_capable_; }
 
-    virtual void enableRectification(double fx, double fy, double cx, double cy, double k1, double k2, double p1, double p2) { assert(0); }
-    void enableRectification() { rectify_ = true; init_rectify_ = true;}
+    virtual void enableRectification(double fx, double fy, double cx, double cy, double k1, double k2, double k3, double p1, double p2);
+
+    void enableRectification();
 
     VidereMode getMode() { return proc_mode_; }
 
@@ -99,6 +102,8 @@ private:
     VidereMode proc_mode_;
     std::string cal_params_;
 
+    bool color_capable_;
+
     NEWMAT::Matrix lproj_;
     NEWMAT::Matrix rproj_;
     NEWMAT::Matrix lrect_;
@@ -110,6 +115,7 @@ private:
     float lfy_;
     float lk1_;
     float lk2_;
+    float lk3_;
     float lt1_;
     float lt2_;
 
@@ -119,6 +125,7 @@ private:
     float rfy_;
     float rk1_;
     float rk2_;
+    float rk3_;
     float rt1_;
     float rt2_;
 
@@ -133,11 +140,13 @@ private:
     int dheight_;
 
 
-    CvMat *intrinsic2_;
-    CvMat *distortion2_;
+    CvMat *r_intrinsic_;
+    CvMat *r_distortion_;
+    CvMat *r_rectification_;
+    CvMat *r_rectified_intrinsic_;
 
-    IplImage* mapx2_;
-    IplImage* mapy2_;
+    IplImage* r_mapx_;
+    IplImage* r_mapy_;
 
   };
 

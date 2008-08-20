@@ -5,7 +5,7 @@
   <depend package="newmat10"/>
   <depend package="libdc1394v2"/>
   <depend package="sdl"/>
-  <depend package="opencv"/>
+  <depend package="opencv_latest"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -ldc1394cam"/>
   </export>

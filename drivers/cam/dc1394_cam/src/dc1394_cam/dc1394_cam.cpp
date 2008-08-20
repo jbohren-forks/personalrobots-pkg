@@ -95,6 +95,7 @@ dc1394_cam::init() {
       dc1394_cam::Cam::dcRef = dc1394_new();
     }
 
+    usleep(500000);
 
   }
 }
@@ -190,7 +191,9 @@ dc1394_cam::debayerFrame(FrameWrapper& f, dc1394color_filter_t bayer, dc1394baye
 
 
 void
-dc1394_cam::initUndistortFrame(FrameWrapper& fw, CvMat *intrinsic, CvMat *distortion, IplImage **mapx, IplImage **mapy)
+dc1394_cam::initUndistortFrame(FrameWrapper& fw,
+                               CvMat *intrinsic, CvMat *distortion, CvMat *rectification, CvMat *rectified_intrinsic,
+                               IplImage **mapx, IplImage **mapy)
 {
   if (*mapx)
     cvReleaseImage(mapx);
@@ -200,10 +203,12 @@ dc1394_cam::initUndistortFrame(FrameWrapper& fw, CvMat *intrinsic, CvMat *distor
   *mapx = cvCreateImage( cvSize(fw.getFrame()->size[0], fw.getFrame()->size[1]), IPL_DEPTH_32F, 1 );
   *mapy = cvCreateImage( cvSize(fw.getFrame()->size[0], fw.getFrame()->size[1]), IPL_DEPTH_32F, 1 );        
   
-  cvInitUndistortMap(intrinsic,
-                     distortion,
-                     *mapx,
-                     *mapy);  
+  cvInitUndistortRectifyMap(intrinsic,
+                            distortion,
+                            rectification,
+                            rectified_intrinsic,
+                            *mapx,
+                            *mapy);  
 }
 
 
@@ -236,54 +241,6 @@ dc1394_cam::undistortFrame(FrameWrapper& f1, IplImage *mapx, IplImage *mapy)
   cvReleaseImageHeader(&cv_img2);
 
   return FrameWrapper(f1.getName(), dcf2, f1.getParent(), FRAME_OWNS_BOTH);
-}
-
-
-dc1394_cam::FrameWrapper
-dc1394_cam::undistortFrame(FrameWrapper& f1, CvMat *intrinsic, CvMat *distortion)
-{
-
-  IplImage *mapx = cvCreateImage( cvSize(f1.getFrame()->size[0], f1.getFrame()->size[1]), IPL_DEPTH_32F, 1 );
-  IplImage *mapy = cvCreateImage( cvSize(f1.getFrame()->size[0], f1.getFrame()->size[1]), IPL_DEPTH_32F, 1 );
-
-  cvInitUndistortMap(intrinsic,
-                     distortion,
-                     mapx,
-                     mapy);
-
-  FrameWrapper f2 = undistortFrame(f1, mapx, mapy);
-
-  cvReleaseImage(&mapx);
-  cvReleaseImage(&mapy);
-
-  return f2;
-}
-
-
-dc1394_cam::FrameWrapper
-dc1394_cam::undistortFrame(FrameWrapper& f1, double fx, double fy, double cx, double cy, double k1, double k2, double p1, double p2)
-{
-
-  CvMat *intrinsic = cvCreateMat(3,3,CV_32FC1);
-  CvMat *distortion = cvCreateMat(4,1,CV_32FC1);  
-
-  CV_MAT_ELEM(*intrinsic, float, 0, 0) = fx;
-  CV_MAT_ELEM(*intrinsic, float, 0, 2) = cx;
-  CV_MAT_ELEM(*intrinsic, float, 1, 1) = fy;
-  CV_MAT_ELEM(*intrinsic, float, 1, 2) = cy;
-  CV_MAT_ELEM(*intrinsic, float, 2, 2) = 1;
-  
-  CV_MAT_ELEM(*distortion, float, 0, 0) = k1;
-  CV_MAT_ELEM(*distortion, float, 1, 0) = k2;
-  CV_MAT_ELEM(*distortion, float, 2, 0) = p1;
-  CV_MAT_ELEM(*distortion, float, 3, 0) = p2;
-
-  FrameWrapper f2 = undistortFrame(f1, intrinsic, distortion);
-
-  cvReleaseMat(&intrinsic);
-  cvReleaseMat(&distortion);
-  
-  return f2;
 }
 
 
@@ -335,7 +292,9 @@ dc1394_cam::Cam::Cam(uint64_t guid,
   FD_SET(dc1394_capture_get_fileno(dcCam), &camFds);
 
   intrinsic_ = cvCreateMat(3,3,CV_32FC1);
-  distortion_ = cvCreateMat(4,1,CV_32FC1);
+  distortion_ = cvCreateMat(5,1,CV_32FC1);
+  rectification_ = cvCreateMat(3,3,CV_32FC1);
+  rectified_intrinsic_ = cvCreateMat(3,3,CV_32FC1);
 
   rectify_ = false;
   init_rectify_ = false;
@@ -348,6 +307,8 @@ dc1394_cam::Cam::~Cam()
 
   cvReleaseMat(&intrinsic_);
   cvReleaseMat(&distortion_);
+  cvReleaseMat(&rectification_);
+  cvReleaseMat(&rectified_intrinsic_);
 
   cvReleaseImage(&mapx_);
   cvReleaseImage(&mapy_);
@@ -380,6 +341,37 @@ dc1394_cam::Cam::stop()
 }
 
 
+void
+dc1394_cam::Cam::enableRectification(double fx, double fy, double cx, double cy, double k1, double k2, double k3, double p1, double p2)
+{
+  rectify_ = true;
+  init_rectify_ = true;
+  
+  CV_MAT_ELEM(*intrinsic_, float, 0, 0) = fx;
+  CV_MAT_ELEM(*intrinsic_, float, 0, 2) = cx;
+  CV_MAT_ELEM(*intrinsic_, float, 1, 1) = fy;
+  CV_MAT_ELEM(*intrinsic_, float, 1, 2) = cy;
+  CV_MAT_ELEM(*intrinsic_, float, 2, 2) = 1;
+  
+  CV_MAT_ELEM(*distortion_, float, 0, 0) = k1;
+  CV_MAT_ELEM(*distortion_, float, 1, 0) = k2;
+  CV_MAT_ELEM(*distortion_, float, 2, 0) = p1;
+  CV_MAT_ELEM(*distortion_, float, 3, 0) = p2;
+  CV_MAT_ELEM(*distortion_, float, 4, 0) = k3;
+
+  CV_MAT_ELEM(*rectification_, float, 0, 0) = 1.0;
+  CV_MAT_ELEM(*rectification_, float, 1, 1) = 1.0;
+  CV_MAT_ELEM(*rectification_, float, 2, 2) = 1.0;
+
+  CV_MAT_ELEM(*rectified_intrinsic_, float, 0, 0) = fx;
+  CV_MAT_ELEM(*rectified_intrinsic_, float, 0, 2) = cx;
+  CV_MAT_ELEM(*rectified_intrinsic_, float, 1, 1) = fy;
+  CV_MAT_ELEM(*rectified_intrinsic_, float, 1, 2) = cy;
+  CV_MAT_ELEM(*rectified_intrinsic_, float, 2, 2) = 1;
+      
+}
+
+
 dc1394_cam::FrameSet
 dc1394_cam::Cam::getFrames(dc1394capture_policy_t policy)
 {
@@ -405,7 +397,7 @@ dc1394_cam::Cam::getFrames(dc1394capture_policy_t policy)
     {
       if (init_rectify_)
       {
-        initUndistortFrame(fw, intrinsic_, distortion_, &mapx_, &mapy_);
+        initUndistortFrame(fw, intrinsic_, distortion_, rectification_, rectified_intrinsic_, &mapx_, &mapy_);
         init_rectify_ = false;
       }
 

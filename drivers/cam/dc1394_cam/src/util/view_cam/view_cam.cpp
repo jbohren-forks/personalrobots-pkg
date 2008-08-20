@@ -92,8 +92,6 @@ int main(int argc, char **argv)
 
     if (fs.size() > 0)
     {      
-      printf("Behind by %d\n", fs[0].getFrame()->frames_behind);
-
       uint8_t *in = fs[0].getFrame()->image, *out = (uint8_t *)surf->pixels;
 
       uint32_t height = fs[0].getFrame()->size[0];
@@ -167,7 +165,7 @@ int main(int argc, char **argv)
             rectify = !rectify;
             if (rectify)
             {
-              c->enableRectification(500, 500, 320, 240, -.3, 0.16, 0.0, 0.0);
+              c->enableRectification(500, 500, 320, 240, -.3, 0.16, 0.0, 0.0, 0.0);
             } else {
               c->disableRectification();
             }
