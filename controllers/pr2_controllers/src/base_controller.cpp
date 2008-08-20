@@ -128,6 +128,10 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
   robot_ = robot;
 
   ros::g_node->advertise<std_msgs::RobotBase2DOdom>("odom");
+  std::string xml_content;
+  ros::g_node->get_param("robotdesc/pr2",xml_content);
+  if(!urdf_model_.loadString(xml_content.c_str()))
+     return;
 
 }
 
@@ -337,15 +341,10 @@ void BaseControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
 
-  std::string xml_content;
-  node->get_param("robotdesc/pr2",xml_content);
-
   c_->initXml(robot, config);
   node->advertise_service(prefix + "/set_command", &BaseControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_command", &BaseControllerNode::getCommand, this);
 
-  if(!c_->urdf_model_.loadString(xml_content.c_str()))
-     return;
 
 }
 
