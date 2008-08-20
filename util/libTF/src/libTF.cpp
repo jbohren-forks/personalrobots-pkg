@@ -401,6 +401,8 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
 
 unsigned int TransformReference::nameToNumber(const std::string & frameid)
 {
+  unsigned int retval;
+  map_mutex_.lock();
   std::map<std::string, unsigned int>::iterator it = nameMap.find(frameid);
   if ( it == nameMap.end())
   {
@@ -408,31 +410,35 @@ unsigned int TransformReference::nameToNumber(const std::string & frameid)
     nameMap[frameid] = value; //Record lookup
     reverseMap[value] = frameid;  //Record reverse lookup
     
-    return value;
+    retval = value;
   }
   else
   {
-    return (*it).second;
+    retval =  (*it).second;
   }
-  
+  map_mutex_.unlock();
+  return retval;
 }
 
 
 std::string TransformReference::numberToName(unsigned int frameid)
 {
+  std::string retval;
+  map_mutex_.lock();
   std::map<unsigned int, std::string>::iterator it = reverseMap.find(frameid);
   if ( it == reverseMap.end())
   {
     std::stringstream ss;
     ss << "numberToName: Number " << frameid << " does not exist!!"; 
     throw LookupException(ss.str()); 
-    return "";//never get here
+    retval = "";//never get here
   }
   else
   {
-    return (*it).second;
+    retval = (*it).second;
   }
- 
+  map_mutex_.unlock();
+  return retval; 
 }
 
 

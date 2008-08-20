@@ -43,6 +43,7 @@
 
 #include <libTF/exception.h>
 #include "libTF/Pose3DCache.h"
+#include <rosthread/mutex.h>
 
 namespace libTF
 {
@@ -372,7 +373,8 @@ protected:
   /// Map for storage of name
   std::map<std::string, unsigned int> nameMap;
   std::map<unsigned int, std::string> reverseMap;
-  unsigned int last_number; ///\todo init to zero
+  unsigned int last_number; 
+  ros::thread::mutex map_mutex_;
 
   /// whether or not to interpolate or extrapolate
   bool interpolating;
