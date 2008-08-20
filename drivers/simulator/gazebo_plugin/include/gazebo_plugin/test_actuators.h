@@ -36,6 +36,7 @@
 
 #include <generic_controllers/joint_position_controller.h>
 #include <generic_controllers/joint_velocity_controller.h>
+#include <pr2_controllers/base_controller.h>
 #include "hardware_interface/hardware_interface.h"
 #include <mechanism_control/mechanism_control.h>
 
@@ -106,6 +107,7 @@ private:
   Model *parent_model_;
 
   TiXmlDocument *pr2Doc_;
+  std::vector<robot_desc::URDF::Link*> pr2Links;
 
   //---------------------------------------------------------------------
   //  for mechanism control
@@ -115,8 +117,6 @@ private:
   MechanismControlNode mcn_;
   MechanismControlNode rmcn_;
 
-  // pointer to ros node
-  ros::node *rosnode_;
 
   void LoadMC(XMLConfigNode *node);
   void UpdateMC();
@@ -175,26 +175,12 @@ private:
 
 
   // for storing controller xml
-  struct Robot_controller_
+  struct Gazebo_joint_
   {
-    std::string name;
-    std::string type;
-    std::string joint_name;
-    std::string joint_type;
-
-    mechanism::Joint* mech_joint_;
-    mechanism::Joint* reverse_mech_joint_;
-
-    std::string control_mode; // obsolete? use to pick controller for now
-    double p_gain,i_gain,d_gain,windup, init_time;
-
-    double saturation_torque;
-    double explicitDampingCoefficient;
-    std::string gazebo_joint_type;
-    std::vector<gazebo::Joint*> gazebo_joints_;
-
+    std::string* name_;
+    gazebo::Joint* joint_;
   };
-  std::vector<Robot_controller_> robot_controllers_;
+  std::vector<Gazebo_joint_*> gazebo_joints_;
 
   // for storing transmission xml
   // struct Robot_transmission_
@@ -205,7 +191,6 @@ private:
   // };
   //std::vector<Robot_transmission_> robot_transmissions_;
   //std::vector<Robot_transmission_> reverse_robot_transmissions_;
-  std::vector<mechanism::SimpleTransmission> transmissions_;
 
 
 
@@ -366,8 +351,9 @@ private:
   // A mutex to lock access to fields that are used in message callbacks
   private: ros::thread::mutex lock;
 
-  // transform server
-  private: rosTFClient *tfc;
+  // pointer to ros node
+  ros::node *rosnode_;
+
   // transform server
   private: rosTFServer *tfs;
 

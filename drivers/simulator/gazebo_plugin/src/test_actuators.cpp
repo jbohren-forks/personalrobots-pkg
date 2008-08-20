@@ -44,6 +44,9 @@
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
 
+// new parser by stu
+#include <urdf/parser.h>
+
 namespace gazebo {
 
   GZ_REGISTER_DYNAMIC_CONTROLLER("test_actuators", GazeboActuators);
@@ -64,18 +67,17 @@ namespace gazebo {
       // this only works for a single camera.
       ros::init(argc,argv);
       rosnode_ = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
-      printf("-------------------- starting node in camera \n");
+      printf("-------------------- starting node in test actuators \n");
     }
-    tfc = new rosTFClient(*rosnode_); //, true, 1 * 1000000000ULL, 0ULL);
     tfs = new rosTFServer(*rosnode_); //, true, 1 * 1000000000ULL, 0ULL);
 
     // uses info from wg_robot_description_parser/send.xml
     std::string pr2Content;
-    // get pr2.xml for Ioan's parser
-    rosnode_->get_param("robotdesc/pr2",pr2Content);
-    // parse the big pr2.xml string from ros
-    pr2Description.loadString(pr2Content.c_str());
 
+    // get pr2.xml for Ioan's parser
+    //rosnode_->get_param("robotdesc/pr2",pr2Content);
+    // parse the big pr2.xml string from ros, or use below so we don't need to roslaunch send.xml
+    //pr2Description.loadString(pr2Content.c_str());
 
     // using tiny xml
     pr2Doc_ = new TiXmlDocument();
@@ -154,410 +156,169 @@ namespace gazebo {
     //
     //-------------------------------------------------------------------------------------------
 
-    // FIXME: mechanism control is not able to read joints from pr2.xml yet. for now, rely on Ioan's parser
+    // parse pr2.xml from filename specified
+    pr2Description.loadFile(node->GetString("robot_filename","",1).c_str());
+
     // get all links in pr2.xml
-    std::vector<robot_desc::URDF::Link*> links;
-    pr2Description.getLinks(links);
-    std::cout << " pr2.xml link size: " << links.size() << std::endl;
+    pr2Description.getLinks(pr2Links);
+    std::cout << " pr2.xml link size: " << pr2Links.size() << std::endl;
 
-    // create a robot for forward transmission
-    // create joints for mech_joint_ cycle through all links in pr2.xml
-    for (std::vector<robot_desc::URDF::Link*>::iterator lit = links.begin(); lit != links.end(); lit++)
+    // as the name states
+    LoadFrameTransformOffsets();
+
+
+
+    //-----------------------------------------------------------------------------------------
+    //
+    // Read XML's and normalize const and const_blocks
+    //
+    //-----------------------------------------------------------------------------------------
+    TiXmlDocument *pr2_xml = new TiXmlDocument();
+    TiXmlDocument *controller_xml = new TiXmlDocument();
+    TiXmlDocument *transmission_xml = new TiXmlDocument();
+    TiXmlDocument *actuator_xml = new TiXmlDocument();
+
+    std::cout << " robot        file name: " << node->GetString("robot_filename","",1) << std::endl;
+    std::cout << " controller   file name: " << node->GetString("controller_filename","",1) << std::endl;
+    std::cout << " transmission file name: " << node->GetString("transmission_filename","",1) << std::endl;
+    std::cout << " actuator     file name: " << node->GetString("actuator_filename","",1) << std::endl;
+
+    pr2_xml->LoadFile(node->GetString("robot_filename","",1));
+    controller_xml->LoadFile(node->GetString("controller_filename","",1));
+    transmission_xml->LoadFile(node->GetString("transmission_filename","",1));
+    actuator_xml->LoadFile(node->GetString("actuator_filename","",1));
+
+    urdf::normalizeXml( pr2_xml->RootElement() );
+    //urdf::normalizeXml( controller_xml->RootElement() );
+    //urdf::normalizeXml( transmission_xml->RootElement() );
+    //urdf::normalizeXml( actuator_xml->RootElement() );
+
+
+    //-----------------------------------------------------------------------------------------
+    //
+    //  parse for joints
+    //
+    //-----------------------------------------------------------------------------------------
+    mcn_.initXml(pr2_xml->FirstChildElement("robot"));
+    rmcn_.initXml(pr2_xml->FirstChildElement("robot"));
+
+    //-----------------------------------------------------------------------------------------
+    //
+    // ACTUATOR XML
+    //
+    // Pulls out the list of actuators used in the robot configuration.
+    //
+    //-----------------------------------------------------------------------------------------
+    struct GetActuators : public TiXmlVisitor
     {
-      std::cout << " link name: " << (*lit)->name;
-      if ((*lit)->isSet["joint"])
+      std::set<std::string> actuators;
+      virtual bool VisitEnter(const TiXmlElement &elt, const TiXmlAttribute *)
       {
-        // FIXME: assume there's a joint to every link, this is not true if there are floating joints
-        mechanism::Joint* joint;
-        joint = new mechanism::Joint();
-
-        // assign name of joint
-        joint->name_ = (*lit)->joint->name;
-        //joint->name_ = new char(((*lit)->joint->name).size());
-        //strcpy(joint->name_,(*lit)->joint->name.c_str());
-        //std::cout << " link joint name: " << joint->name_ << std::endl;
-        // FIXME: bug: copy name to a variable
-        //char* robot_joint_name;
-        //robot_joint_name        = new char((*lit)->joint->name.size());
-        //std::cout << "size " << (*lit)->joint->name.size() << std::endl;
-        //memcpy(robot_joint_name,(*lit)->joint->name.c_str(),(*lit)->joint->name.size());
-        //joint->name_             = robot_joint_name; // does this save the string correctly?
-
-        switch ((*lit)->joint->type)     // not used, it's an int
-        {
-          case robot_desc::URDF::Link::Joint::UNKNOWN:
-            joint->type_         = mechanism::JOINT_NONE;
-            break;
-          case robot_desc::URDF::Link::Joint::FIXED:
-            joint->type_         = mechanism::JOINT_FIXED;
-            break;
-          case robot_desc::URDF::Link::Joint::REVOLUTE:
-            if ((*lit)->isSet["limit"])
-              joint->type_       = mechanism::JOINT_ROTARY;
-            else
-              joint->type_       = mechanism::JOINT_CONTINUOUS;
-            break;
-          case robot_desc::URDF::Link::Joint::PRISMATIC:
-            joint->type_         = mechanism::JOINT_PRISMATIC;
-            break;
-          case robot_desc::URDF::Link::Joint::PLANAR:
-            joint->type_         = mechanism::JOINT_NONE;
-            break;
-          case robot_desc::URDF::Link::Joint::FLOATING:
-            joint->type_         = mechanism::JOINT_NONE;
-            break;
-        }
-        joint->initialized_      = true;  // from transmission
-        joint->position_         = 0;     // from transmission
-        joint->velocity_         = 0;     // from transmission
-        joint->applied_effort_   = 0;     // from transmission
-        joint->commanded_effort_ = 0;     // to transmission
-        joint->joint_limit_min_  = 0;
-        joint->joint_limit_max_  = 0;
-        joint->effort_limit_     = (*lit)->joint->effortLimit;
-        joint->velocity_limit_   = (*lit)->joint->velocityLimit;
-        mc_.addJoint(joint);
+        if (elt.ValueStr() == std::string("actuator") && elt.Attribute("name"))
+          actuators.insert(elt.Attribute("name"));
+        return true;
       }
+    } get_actuators;
+    actuator_xml->RootElement()->Accept(&get_actuators);
+
+    // Places the found actuators into the hardware interface.
+    std::set<std::string>::iterator it;
+    for (it = get_actuators.actuators.begin(); it != get_actuators.actuators.end(); ++it)
+    {
+      std::cout << "adding actuator " << (*it) << std::endl;
+      hw_.actuators_.push_back(new Actuator(*it));
     }
 
-
-
-    // create a fake robot for reverse transmission in gazebo
-    // create joints for reverse_mech_joint_, cycle through all links in pr2.xml
-    for (std::vector<robot_desc::URDF::Link*>::iterator lit = links.begin(); lit != links.end(); lit++)
-    {
-      std::cout << " link name: " << (*lit)->name;
-      if ((*lit)->isSet["joint"])
-      {
-        // FIXME: assume there's a joint to every link, this is not true if there are floating joints
-        mechanism::Joint* joint;
-        joint = new mechanism::Joint();
-
-        // assign name of joint
-        joint->name_ = (*lit)->joint->name;
-        //joint->name_ = new char(((*lit)->joint->name).size());
-        //strcpy(joint->name_,(*lit)->joint->name.c_str());
-        //std::cout << " link joint name: " << joint->name_ << std::endl;
-
-        // FIXME: bug: copy name to a variable
-        //char* robot_joint_name;
-        //robot_joint_name        = new char((*lit)->joint->name.size());
-        //std::cout << "size " << (*lit)->joint->name.size() << std::endl;
-        //memcpy(robot_joint_name,(*lit)->joint->name.c_str(),(*lit)->joint->name.size());
-        //joint->name_             = robot_joint_name; // does this save the string correctly?
-
-        switch ((*lit)->joint->type)     // not used, it's an int
-        {
-          case robot_desc::URDF::Link::Joint::UNKNOWN:
-            joint->type_         = mechanism::JOINT_NONE;
-            break;
-          case robot_desc::URDF::Link::Joint::FIXED:
-            joint->type_         = mechanism::JOINT_FIXED;
-            break;
-          case robot_desc::URDF::Link::Joint::REVOLUTE:
-            if ((*lit)->isSet["limit"])
-              joint->type_       = mechanism::JOINT_ROTARY;
-            else
-              joint->type_       = mechanism::JOINT_CONTINUOUS;
-            break;
-          case robot_desc::URDF::Link::Joint::PRISMATIC:
-            joint->type_         = mechanism::JOINT_PRISMATIC;
-            break;
-          case robot_desc::URDF::Link::Joint::PLANAR:
-            joint->type_         = mechanism::JOINT_NONE;
-            break;
-          case robot_desc::URDF::Link::Joint::FLOATING:
-            joint->type_         = mechanism::JOINT_NONE;
-            break;
-        }
-        joint->initialized_      = true;  // from transmission
-        joint->position_         = 0;     // from transmission
-        joint->velocity_         = 0;     // from transmission
-        joint->applied_effort_   = 0;     // from transmission
-        joint->commanded_effort_ = 0;     // to transmission
-        joint->joint_limit_min_  = 0;
-        joint->joint_limit_max_  = 0;
-        joint->effort_limit_     = (*lit)->joint->effortLimit;
-        joint->velocity_limit_   = (*lit)->joint->velocityLimit;
-        rmc_.addJoint(joint);
-      }
-    }
-
-
+    //-----------------------------------------------------------------------------------------
+    //
+    // TRANSMISSION XML
+    //
+    // make mc parse xml for transmissions
+    //
+    //-----------------------------------------------------------------------------------------
+    mcn_.initXml(transmission_xml->FirstChildElement("robot"));
+    rmcn_.initXml(transmission_xml->FirstChildElement("robot"));
 
     //-----------------------------------------------------------------------------------------
     //
     // CONTROLLER XML
     //
+    //  spawn controllers
+    //
     //-----------------------------------------------------------------------------------------
-    for (XMLConfigNode *xit = node->GetChild("robot"); xit; xit=xit->GetNext("robot"))
+    // make mc parse xml for controllers
+    std::cout << " Loading controllers : " <<  std::endl;
+    for (TiXmlElement *xit = controller_xml->FirstChildElement("robot"); xit ; xit = xit->NextSiblingElement("robot") )
+    for (TiXmlElement *zit = xit->FirstChildElement("controller"); zit ; zit = zit->NextSiblingElement("controller") )
     {
-      std::cout << " LoadChild gazebo controller: " <<  xit->GetString("name","",0) << std::endl;
+      std::string* controller_name = new std::string(zit->Attribute("name"));
+      std::string* controller_type = new std::string(zit->Attribute("type"));
+      std::cout << " LoadChild controller name: " <<  *controller_name << " type " << *controller_type << std::endl;
 
-      // one layer below <robot name="pr2">
-      // Reads the controllers information from the config.
-      for (XMLConfigNode *cit = xit->GetChild("controller"); cit; cit = cit->GetNext("controller"))
+      // initialize controller
+      std::cout << " adding to mc_ " ;
+      mc_.spawnController(*controller_type,
+                          *controller_name,
+                          zit);
+
+      std::cout << " adding to rmc_ " ;
+      rmc_.spawnController(*controller_type,
+                           *controller_name,
+                           zit);
+
+    }
+
+    //-----------------------------------------------------------------------------------------
+    //
+    //  how the mechanism_joints relate to the gazebo_joints
+    //
+    //-----------------------------------------------------------------------------------------
+    // The gazebo joints and mechanism joints should match up.
+    std::cout << " Loading gazebo joints : " <<  std::endl;
+    for (unsigned int i = 0; i < rmc_.model_.joints_.size(); ++i)
+    {
+      Gazebo_joint_* gj = new Gazebo_joint_();
+
+      std::string *joint_name = &rmc_.model_.joints_[i]->name_;
+
+      gj->name_ = joint_name;
+
+      std::cout << "adding gazebo joint: " << *(gj->name_) << std::endl;
+
+      gazebo::Joint *joint = parent_model_->GetJoint(*joint_name);
+      if (joint)
       {
-        Robot_controller_ controller;
 
-        controller.name = cit->GetString("name", "", 1);
-        controller.type = cit->GetString("type", "joint_controller", 1);
+        gj->joint_ = joint;
 
-        XMLConfigNode *jit = cit->GetChild("joint");
-
-        controller.joint_name = jit->GetString("name", "", 1);
-        controller.joint_type = jit->GetString("type", "revolute", 0);
-
-        // get a pointer to mc_->joints_!
-        mechanism::Joint* j = mc_.model_.getJoint(controller.joint_name);
-
-        if (j == NULL)
+        if (joint->GetType() == gazebo::Joint::HINGE)
         {
-          // TODO: report: Could not find the joint named xxxx
-          std::cout << " join name " << controller.joint_name
-                    << " not found, probably an abstract joint, like a gripper joint. " << std::endl;
-          // FIXME: need to have a mechanism joint for controller to control!
-          //        we can look at the finger joints below, and use one of them, or
-          //        create a new joint: mc_.addJoint( new_abstract_joint  );
-          //continue; // skip, do not add controller
-
-
-          //
-          // artifically insert a gripper joint into mc_.model_.joints_
-          //
-          mechanism::Joint* joint;
-          joint = new mechanism::Joint();
-
-          // assign name of joint
-          joint->name_ = controller.joint_name;
-          //joint->name_ = new char(controller.joint_name.size());
-          //strcpy(joint->name_,controller.joint_name.c_str());
-          //std::cout << " link joint name: " << joint->name_ << std::endl;
-
-
-          joint->type_             = mechanism::JOINT_ROTARY;
-          joint->initialized_      = true;  // from transmission
-          joint->position_         = 0;     // from transmission
-          joint->velocity_         = 0;     // from transmission
-          joint->applied_effort_   = 0;     // from transmission
-          joint->commanded_effort_ = 0;     // to transmission
-          joint->joint_limit_min_  = 0;
-          joint->joint_limit_max_  = 0;
-          joint->effort_limit_     = (jit->GetChild("gripper_defaults"))->GetDouble("effortLimit",0,0);
-          joint->velocity_limit_   = (jit->GetChild("gripper_defaults"))->GetDouble("velocityLimit",0,0);
-          mc_.addJoint(joint);
-          controller.mech_joint_ = mc_.model_.joints_.back();  // return joint we just added
+            // initialize for torque control mode
+            joint->SetParam(dParamVel , 0);
+            joint->SetParam(dParamFMax, 0);
+        }
+        else if (joint->GetType() == gazebo::Joint::SLIDER)
+        {
+            // initialize for torque control mode
+            joint->SetParam(dParamVel , 0);
+            joint->SetParam(dParamFMax, 0);
         }
         else
         {
-          controller.mech_joint_ = j;  // we want to control this link
+            // initialize for torque control mode
+            joint->SetParam(dParamVel , 0);
+            joint->SetParam(dParamFMax, 0);
         }
-
-        // get a pointer to rmc_->joints_!
-        mechanism::Joint* rj = rmc_.model_.getJoint(controller.joint_name);
-        if (rj == NULL)
-        {
-          // TODO: report: Could not find the joint named xxxx
-          std::cout << " join name " << controller.joint_name
-                    << " not found, probably an abstract joint, like a gripper joint. " << std::endl;
-          // FIXME: need to have a mechanism joint for controller to control!
-          //        we can look at the finger joints below, and use one of them, or
-          //        create a new joint: rmc_.addJoint( new_abstract_joint  );
-          //continue; // skip, do not add controller
-
-
-          //
-          // artifically insert a gripper joint into rmc_.model_.joints_
-          //
-          mechanism::Joint* joint;
-          joint = new mechanism::Joint();
-
-          // assign name of joint
-          joint->name_ = controller.joint_name;
-          //joint->name_ = new char(controller.joint_name.size());
-          //strcpy(joint->name_,controller.joint_name.c_str());
-          //std::cout << " link joint name: " << joint->name_ << std::endl;
-
-          joint->type_             = mechanism::JOINT_ROTARY;
-          joint->initialized_      = true;  // from transmission
-          joint->position_         = 0;     // from transmission
-          joint->velocity_         = 0;     // from transmission
-          joint->applied_effort_   = 0;     // from transmission
-          joint->commanded_effort_ = 0;     // to transmission
-          joint->joint_limit_min_  = 0;
-          joint->joint_limit_max_  = 0;
-          joint->effort_limit_     = (jit->GetChild("gripper_defaults"))->GetDouble("effortLimit",0,0);
-          joint->velocity_limit_   = (jit->GetChild("gripper_defaults"))->GetDouble("velocityLimit",0,0);
-          rmc_.addJoint(joint);
-
-          controller.reverse_mech_joint_ = rmc_.model_.joints_.back();  // return joint we just added
-        }
-        else
-        {
-          controller.reverse_mech_joint_ = rj;  // we want to control this link
-        }
-
-
-        // setup pid controller
-        XMLConfigNode *pit = jit->GetChild("pid_defaults");
-        controller.control_mode = pit->GetString("controlMode", "PD_CONTROL", 0);
-        controller.p_gain = pit->GetDouble("p", 1, 0);
-        controller.i_gain = pit->GetDouble("i", 0, 0);
-        controller.d_gain = pit->GetDouble("d", 0, 0);
-        controller.windup = pit->GetDouble("iClamp", 0, 0);
-        controller.init_time = Simulator::Instance()->GetSimTime();
-        // initialize controller
-        TiXmlElement junk("");
-
-        mc_.spawnController(controller.control_mode,
-                            controller.name,
-                            controller.p_gain,controller.i_gain,controller.d_gain,controller.windup,
-                            controller.init_time,
-                            controller.mech_joint_);
-
-        rmc_.spawnController(controller.control_mode,
-                             controller.name,
-                             controller.p_gain,controller.i_gain,controller.d_gain,controller.windup,
-                             controller.init_time,
-                             controller.reverse_mech_joint_);
-
-        // setup gazebo joints
-        XMLConfigNode *dit = jit->GetChild("data");
-        std::string data_name = dit->GetString("name","",1);
-        std::string data_type = dit->GetString("type","",1);
-        if (data_type == "gazebo") // check to see if it's for gazebo
-        {
-          for (XMLConfigNode *eit=dit->GetChild("elem"); eit ; eit=eit->GetNext("elem"))
-          {
-            controller.saturation_torque          = eit->GetDouble("saturationTorque",0,0);
-            controller.explicitDampingCoefficient = eit->GetDouble("explicitDampingCoefficient",0,0);
-            controller.gazebo_joint_type          = eit->GetString("type", "hinge_joint", 0);
-            // special gazebo joint type
-            if (controller.gazebo_joint_type == "gripper")
-            {
-                std::string f_l_joint     = eit->GetString("left_proximal","",1);
-                std::string f_r_joint     = eit->GetString("right_proximal","",1);
-                std::string f_tip_l_joint = eit->GetString("left_distal","",1);
-                std::string f_tip_r_joint = eit->GetString("right_distal","",1);
-                gazebo::HingeJoint* gj_f_l     = (gazebo::HingeJoint*)parent_model_->GetJoint(f_l_joint)    ;
-                gazebo::HingeJoint* gj_f_r     = (gazebo::HingeJoint*)parent_model_->GetJoint(f_r_joint)    ;
-                gazebo::HingeJoint* gj_f_tip_l = (gazebo::HingeJoint*)parent_model_->GetJoint(f_tip_l_joint);
-                gazebo::HingeJoint* gj_f_tip_r = (gazebo::HingeJoint*)parent_model_->GetJoint(f_tip_r_joint);
-                controller.gazebo_joints_.push_back(gj_f_l    );
-                controller.gazebo_joints_.push_back(gj_f_r    );
-                controller.gazebo_joints_.push_back(gj_f_tip_l);
-                controller.gazebo_joints_.push_back(gj_f_tip_r);
-                // initialize for torque control mode
-                gj_f_l    ->SetParam(dParamVel , 0);
-                gj_f_l    ->SetParam(dParamFMax, 0);
-                gj_f_r    ->SetParam(dParamVel , 0);
-                gj_f_r    ->SetParam(dParamFMax, 0);
-                gj_f_tip_l->SetParam(dParamVel , 0);
-                gj_f_tip_l->SetParam(dParamFMax, 0);
-                gj_f_tip_r->SetParam(dParamVel , 0);
-                gj_f_tip_r->SetParam(dParamFMax, 0);
-            }
-            else if (controller.gazebo_joint_type == "slider")
-            {
-                gazebo::SliderJoint* gjs     = (gazebo::SliderJoint*)parent_model_->GetJoint(controller.joint_name);
-                controller.gazebo_joints_.push_back(gjs);
-                gjs->SetParam(dParamVel , 0);
-                gjs->SetParam(dParamFMax, 0);
-            }
-            else // defaults to hinge
-            {
-                gazebo::HingeJoint* gjh     = (gazebo::HingeJoint*)parent_model_->GetJoint(controller.joint_name);
-                controller.gazebo_joints_.push_back(gjh);
-                gjh->SetParam(dParamVel , 0);
-                gjh->SetParam(dParamFMax, 0);
-            }
-          }
-          std::cout << " controller name: "   << controller.name
-                    << " controller type: "   << controller.type
-                    << " joint name: "        << controller.joint_name
-                    << " joint type: "        << controller.joint_type
-                    << " gazebo joint size: " << controller.gazebo_joints_.size()
-                    << " gazebo joint type: " << controller.gazebo_joint_type << std::endl;
-        }
-        robot_controllers_.push_back(controller);
-
       }
-    }
-
-    for (XMLConfigNode *xit = node->GetChild("robot"); xit; xit=xit->GetNext("robot"))
-    {
-      //-----------------------------------------------------------------------------------------
-      //
-      // ACTUATOR XML
-      //
-      //-----------------------------------------------------------------------------------------
-      // Reads the actuator information from the config.
-      for (XMLConfigNode *ait = xit->GetChild("actuator"); ait; ait = ait->GetNext("actuator"))
+      else
       {
-        // read from actuator_test.xml
-        std::string actuator_name          = ait->GetString("name", "", 1);
-        // std::string motorboardID     = ait->GetString("motorboardID", "", 1);
-        // double      maxCurrent       = ait->GetDouble("maxCurrent", 0, 1);
-        // std::string motor            = ait->GetString("motor", "", 1);
-        // std::string ip               = ait->GetString("ip", "", 1);
-        // double      port             = ait->GetDouble("port", 0, 1);
-        // double      reduction        = ait->GetDouble("reduction", 0, 1);
-        // Vector3     polymap          = ait->GetVector3("polymap",Vector3(1,0,0));
-
-        Actuator* actuator = new Actuator();
-        // initialize the actuator object
-        actuator->state_.encoder_count_ = 0;
-        actuator->state_.timestamp_     = Simulator::Instance()->GetSimTime();
-        actuator->state_.is_enabled_    = true;
-        actuator->command_.enable_      = true;
-        actuator->command_.current_     = 0;
-
-        // formal structures
-        // forward and revere mc_ share same hardware actuators
-        hw_.actuators_.push_back(actuator);
-        mc_.registerActuator(actuator_name,hw_.actuators_.size()-1);
-        rmc_.registerActuator(actuator_name,hw_.actuators_.size()-1);
-
-        std::cout << " adding actuator name to hw_ " << actuator_name << " " << hw_.actuators_.size() << std::endl;
+        fprintf(stderr, "Gazebo does not know about a joint named \"%s\"\n", joint_name->c_str());
+        gj->joint_ = NULL;
       }
+
+      gazebo_joints_.push_back(gj);
     }
 
-
-    for (XMLConfigNode *xit = node->GetChild("robot"); xit; xit=xit->GetNext("robot"))
-    {
-      //-----------------------------------------------------------------------------------------
-      //
-      // TRANSMISSION XML
-      //
-      //-----------------------------------------------------------------------------------------
-      // Reads the transmission information from the config.
-      for (XMLConfigNode *tit = xit->GetChild("transmission"); tit; tit = tit->GetNext("transmission"))
-      {
-        //==================================================================================================
-        //for forward transmission (actuator -> real robot joint)
-        // FIXME: fix parsing in transmission so this is not needed
-        mechanism::SimpleTransmission st; // = new mechanism::SimpleTransmission();
-        transmissions_.push_back(st);
-        //==================================================================================================
-        transmissions_.back().name_           = tit->GetString("name", "", 1);
-        transmissions_.back().joint_name_     =  tit->GetChild("joint")->GetString("name","",1);
-        transmissions_.back().actuator_name_  =  tit->GetChild("actuator")->GetString("name","",1);
-        transmissions_.back().mechanical_reduction_ = tit->GetDouble("mechanicalReduction",0,1);
-        transmissions_.back().motor_torque_constant_= tit->GetDouble("motorTorqueConstant",0,1);
-        transmissions_.back().pulses_per_revolution_= tit->GetDouble("pulsesPerRevolution",0,1);
-        mc_.addSimpleTransmission(&transmissions_.back());
-        //==================================================================================================
-        //for reverse transmission (actuator -> gazebo's fake robot joint copy
-        rmc_.addSimpleTransmission(&transmissions_.back());
-        //==================================================================================================
-        std::cout << " adding transmission name " << transmissions_.back().name_
-                  << " joint name    " << transmissions_.back().joint_name_
-                  << " actuator name " << transmissions_.back().actuator_name_
-                  << " mec red "       << transmissions_.back().mechanical_reduction_
-                  << " tor con "       << transmissions_.back().motor_torque_constant_
-                  << " pul rev "       << transmissions_.back().pulses_per_revolution_ << std::endl;
-      }
-    }
 
   }
 
@@ -593,30 +354,29 @@ namespace gazebo {
     /***************************************************************/
     // Get latest odometry data
     // Get velocities
-    double vx,vy,vw;
+    //double vx,vy,vw;
     //this->PR2Copy->GetBaseCartesianSpeedActual(&vx,&vy,&vw);
     // Translate into ROS message format and publish
-    this->odomMsg.vel.x  = vx;
-    this->odomMsg.vel.y  = vy;
-    this->odomMsg.vel.th = vw;
+    //this->odomMsg.vel.x  = vx;
+    //this->odomMsg.vel.y  = vy;
+    //this->odomMsg.vel.th = vw;
 
     // Get position
-    double x,y,z,roll,pitch,yaw;
+    //double x,y,z,roll,pitch,yaw;
     //this->PR2Copy->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw);
-    this->odomMsg.pos.x  = x;
-    this->odomMsg.pos.y  = y;
-    this->odomMsg.pos.th = yaw;
+    //this->odomMsg.pos.x  = x;
+    //this->odomMsg.pos.y  = y;
+    //this->odomMsg.pos.th = yaw;
 
     // TODO: get the frame ID from somewhere
-    this->odomMsg.header.frame_id = tfs->nameClient.lookup("FRAMEID_ODOM");
-
+    this->odomMsg.header.frame_id = "FRAMEID_ODOM";
     this->odomMsg.header.stamp.sec = (unsigned long)floor(hw_.current_time_);
     this->odomMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  hw_.current_time_ - this->odomMsg.header.stamp.sec) );
 
     // This publish call resets odomMsg.header.stamp.sec and 
     // odomMsg.header.stamp.nsec to zero.  Thus, it must be called *after*
     // those values are reused in the sendInverseEuler() call above.
-    rosnode_->publish("odom",this->odomMsg);
+    //rosnode_->publish("odom",this->odomMsg);
 
     /***************************************************************/
     /*                                                             */
@@ -624,11 +384,38 @@ namespace gazebo {
     /*                                                             */
     /***************************************************************/
     //this->PR2Copy->GetObjectPositionActual(&x,&y,&z,&roll,&pitch,&yaw);
-    this->objectPosMsg.x  = x;
-    this->objectPosMsg.y  = y;
-    this->objectPosMsg.z  = z;
-    rosnode_->publish("object_position", this->objectPosMsg);
+    //this->objectPosMsg.x  = x;
+    //this->objectPosMsg.y  = y;
+    //this->objectPosMsg.z  = z;
+    //rosnode_->publish("object_position", this->objectPosMsg);
 
+
+
+    std_msgs::PR2Arm larm,rarm;
+    /* get left arm position */
+    larm.turretAngle       = mc_.model_.getJoint("shoulder_pan_left_joint")->position_;
+    larm.shoulderLiftAngle = mc_.model_.getJoint("shoulder_pitch_left_joint")->position_;
+    larm.upperarmRollAngle = mc_.model_.getJoint("upperarm_roll_left_joint")->position_;
+    larm.elbowAngle        = mc_.model_.getJoint("elbow_flex_left_joint")->position_;
+    larm.forearmRollAngle  = mc_.model_.getJoint("forearm_roll_left_joint")->position_;
+    larm.wristPitchAngle   = mc_.model_.getJoint("wrist_flex_left_joint")->position_;
+    larm.wristRollAngle    = mc_.model_.getJoint("gripper_roll_left_joint")->position_;
+    //larm.gripperForceCmd   = mc_.model_.getJoint("gripper_left_joint")->applied_effort_;
+    //larm.gripperGapCmd     = mc_.model_.getJoint("gripper_left_joint")->position_;
+    rosnode_->publish("left_pr2arm_pos", larm);
+    /* get right arm position */
+    rarm.turretAngle       = mc_.model_.getJoint("shoulder_pan_right_joint")->position_;
+    rarm.shoulderLiftAngle = mc_.model_.getJoint("shoulder_pitch_right_joint")->position_;
+    rarm.upperarmRollAngle = mc_.model_.getJoint("upperarm_roll_right_joint")->position_;
+    rarm.elbowAngle        = mc_.model_.getJoint("elbow_flex_right_joint")->position_;
+    rarm.forearmRollAngle  = mc_.model_.getJoint("forearm_roll_right_joint")->position_;
+    rarm.wristPitchAngle   = mc_.model_.getJoint("wrist_flex_right_joint")->position_;
+    rarm.wristRollAngle    = mc_.model_.getJoint("gripper_roll_right_joint")->position_;
+    //rarm.gripperForceCmd   = mc_.model_.getJoint("gripper_right_joint")->applied_effort_;
+    //rarm.gripperGapCmd     = mc_.model_.getJoint("gripper_right_joint")->position_;
+    rosnode_->publish("right_pr2arm_pos", rarm);
+
+    //PublishFrameTransforms();
 
     this->lock.unlock();
 
@@ -641,48 +428,16 @@ namespace gazebo {
     // step through all controllers in the Robot_controller
 
     // update joint status from hardware
-    for (std::vector<Robot_controller_>::iterator rci = robot_controllers_.begin(); rci != robot_controllers_.end() ; rci++)
+    for (std::vector<Gazebo_joint_*>::iterator gji = gazebo_joints_.begin(); gji != gazebo_joints_.end() ; gji++)
     {
+      mechanism::Joint* mech_joint = rmc_.model_.getJoint(*((*gji)->name_));
+
       // push gazebo joint to reverse joints
-      if ((*rci).gazebo_joint_type == "gripper")
+      if ((*gji)->joint_ && (*gji)->joint_->GetType() == gazebo::Joint::HINGE)
       {
-        gazebo::HingeJoint* gj_f_l     = (gazebo::HingeJoint*) (*rci).gazebo_joints_[0];
-        gazebo::HingeJoint* gj_f_r     = (gazebo::HingeJoint*) (*rci).gazebo_joints_[1];
-        gazebo::HingeJoint* gj_f_tip_l = (gazebo::HingeJoint*) (*rci).gazebo_joints_[2];
-        gazebo::HingeJoint* gj_f_tip_r = (gazebo::HingeJoint*) (*rci).gazebo_joints_[3];
-
-        // controller::Controller* gc = mc_.getControllerByName( (*rci).name );
-        double f_l_error     = ( gj_f_l     -> GetAngle() );
-        // double f_r_error     = (-gj_f_r     -> GetAngle() );
-        // double f_tip_l_error = (-gj_f_tip_l -> GetAngle() );
-        // double f_tip_r_error = ( gj_f_tip_l -> GetAngle() );
-        // std::cout << "getting controller error from mc : " << (*rci).name
-        //           << " e1 : " << f_l_error     
-        //           << " e2 : " << f_r_error     
-        //           << " e3 : " << f_tip_l_error 
-        //           << " e4 : " << f_tip_r_error 
-        //           << " cmd "  << dynamic_cast<controller::JointPositionController*>(gc)->getCommand() << std::endl;
-        //(*rci).reverse_mech_joint_->position_       = 0.25*(f_l_error + f_r_error + f_tip_l_error + f_tip_r_error); // average all positions
-
-        (*rci).reverse_mech_joint_->position_       = f_l_error; // use one joint as reference
-        (*rci).reverse_mech_joint_->velocity_       = gj_f_l->GetAngleRate();
-        (*rci).reverse_mech_joint_->applied_effort_ = (*rci).reverse_mech_joint_->commanded_effort_;
-
-      }
-      else if ((*rci).gazebo_joint_type == "slider")
-      {
-        gazebo::SliderJoint* gjs  = (SliderJoint*)(*rci).gazebo_joints_[0];
-        (*rci).reverse_mech_joint_->position_       = gjs->GetPosition();
-        (*rci).reverse_mech_joint_->velocity_       = gjs->GetPositionRate();
-        (*rci).reverse_mech_joint_->applied_effort_ = (*rci).reverse_mech_joint_->commanded_effort_;
-
-      }
-      else // defaults to hinge
-      {
-        gazebo::HingeJoint* gjh  = (HingeJoint*)(*rci).gazebo_joints_[0];
-        (*rci).reverse_mech_joint_->position_       = gjh->GetAngle();
-        (*rci).reverse_mech_joint_->velocity_       = gjh->GetAngleRate();
-        (*rci).reverse_mech_joint_->applied_effort_ = (*rci).reverse_mech_joint_->commanded_effort_;
+        mech_joint->position_       = dynamic_cast<gazebo::HingeJoint*>((*gji)->joint_)->GetAngle(); // use one joint as reference
+        mech_joint->velocity_       = dynamic_cast<gazebo::HingeJoint*>((*gji)->joint_)->GetAngleRate();
+        mech_joint->applied_effort_ = mech_joint->commanded_effort_;
 
       }
     }
@@ -691,9 +446,9 @@ namespace gazebo {
     {
       rmc_.model_.transmissions_[i]->propagatePositionBackwards();
       rmc_.model_.transmissions_[i]->propagateEffort();
-      std::cout << " applying reverse transmisison : "
-                <<  dynamic_cast<mechanism::SimpleTransmission*>(rmc_.model_.transmissions_[i])->name_
-                << " " <<  std::endl;
+      // std::cout << " applying reverse transmisison : "
+      //           <<  dynamic_cast<mechanism::SimpleTransmission*>(rmc_.model_.transmissions_[i])->name_
+      //           << " " <<  std::endl;
     }
 
 
@@ -704,16 +459,23 @@ namespace gazebo {
     // -------------------------------------------------------------------------------------------------
     // set through ros?
     // artifically set command
-    controller::Controller* mcc = mc_.getControllerByName( "shoulder_pitch_right_controller" );
-    dynamic_cast<controller::JointPositionController*>(mcc)->setCommand(-0.2);
-    // sample read back angle
-    controller::Controller* mc2 = mc_.getControllerByName( "shoulder_pitch_left_controller" );
-    std::cout << " angle = " << dynamic_cast<controller::JointPositionController*>(mcc)->getActual() << std::endl;
+    // controller::Controller* mcc = mc_.getControllerByName( "shoulder_pitch_right_controller" );
+    // dynamic_cast<controller::JointPositionController*>(mcc)->setCommand(-0.2);
+    // // sample read back angle
+    // controller::Controller* mc2 = mc_.getControllerByName( "shoulder_pitch_left_controller" );
+    // std::cout << " angle = " << dynamic_cast<controller::JointPositionController*>(mcc)->getActual() << std::endl;
 
-    controller::Controller* mc5 = mc_.getControllerByName( "shoulder_pitch_left_controller" );
-    dynamic_cast<controller::JointPositionController*>(mc5)->setCommand(-0.5);
-    controller::Controller* mc3 = mc_.getControllerByName( "gripper_left_controller" );
-    dynamic_cast<controller::JointPositionController*>(mc3)->setCommand(0.2);
+    // controller::Controller* mc5 = mc_.getControllerByName( "shoulder_pitch_left_controller" );
+    // dynamic_cast<controller::JointPositionController*>(mc5)->setCommand(-0.5);
+    // controller::Controller* mc3 = mc_.getControllerByName( "gripper_left_controller" );
+    // dynamic_cast<controller::JointPositionController*>(mc3)->setCommand(0.2);
+
+    // libTF::Pose3D::Vector cmd_vel;
+    // cmd_vel.x = 1.0;
+    // cmd_vel.y = 0.1;
+    // cmd_vel.z = 0.1;
+    // controller::Controller* bc = mc_.getControllerByName( "base_controller" );
+    // dynamic_cast<controller::BaseController*>(bc)->setCommand(cmd_vel);
 
     // -------------------------------------------------------------------------------------------------
     // -                                                                                               -
@@ -724,7 +486,8 @@ namespace gazebo {
     // -  update actuators from robot joints via forward transmission propagation                      -
     // -                                                                                               -
     // -------------------------------------------------------------------------------------------------
-    mc_.update();
+    mcn_.update();
+    //mc_.update();
 
 
     //============================================================================================
@@ -750,87 +513,25 @@ namespace gazebo {
     // -     udpate gazebo joint for this controller joint                                             -
     // -                                                                                               -
     // -------------------------------------------------------------------------------------------------
-    for (std::vector<Robot_controller_>::iterator rci = robot_controllers_.begin(); rci != robot_controllers_.end() ; rci++)
+    for (std::vector<Gazebo_joint_*>::iterator gji = gazebo_joints_.begin(); gji != gazebo_joints_.end() ; gji++)
     {
-      if ((*rci).gazebo_joint_type == "gripper")
+      mechanism::Joint* mech_joint = mc_.model_.getJoint(*((*gji)->name_));
+
+      // push gazebo joint to reverse joints
+      if ((*gji)->joint_ && (*gji)->joint_->GetType() == gazebo::Joint::HINGE)
       {
-        // the 4 joints are hardcoded for our gripper
-        gazebo::HingeJoint* gj_f_l     = (gazebo::HingeJoint*) (*rci).gazebo_joints_[0];
-        gazebo::HingeJoint* gj_f_r     = (gazebo::HingeJoint*) (*rci).gazebo_joints_[1];
-        gazebo::HingeJoint* gj_f_tip_l = (gazebo::HingeJoint*) (*rci).gazebo_joints_[2];
-        gazebo::HingeJoint* gj_f_tip_r = (gazebo::HingeJoint*) (*rci).gazebo_joints_[3];
-
-        controller::Controller* gc = mc_.getControllerByName( (*rci).name );
-
-        double f_l_error     =  math_utils::shortest_angular_distance(gj_f_l     -> GetAngle() , dynamic_cast<controller::JointPositionController*>(gc)->getCommand());
-        double f_r_error     =  math_utils::shortest_angular_distance(gj_f_r     -> GetAngle() ,-dynamic_cast<controller::JointPositionController*>(gc)->getCommand());
-        double f_tip_l_error =  math_utils::shortest_angular_distance(gj_f_tip_l -> GetAngle() ,-dynamic_cast<controller::JointPositionController*>(gc)->getCommand());
-        double f_tip_r_error =  math_utils::shortest_angular_distance(gj_f_tip_r -> GetAngle() , dynamic_cast<controller::JointPositionController*>(gc)->getCommand());
-        const double correctionConstant = 1.0;
-
-        // std::cout << "getting controller from mc : " << (*rci).name
-        //           << " e1 : " << f_l_error     << " c1 : " << 0.0*correctionConstant*f_l_error 
-        //           << " e2 : " << f_r_error     << " c2 : " << correctionConstant*f_r_error     
-        //           << " e3 : " << f_tip_l_error << " c3 : " << correctionConstant*f_tip_l_error 
-        //           << " e4 : " << f_tip_r_error << " c4 : " << correctionConstant*f_tip_r_error 
-        //           << " cmd "  << dynamic_cast<controller::JointPositionController*>(gc)->getCommand() << std::endl;
-
-
-        std::cout << "0current " << gj_f_l     -> GetAngle() 
-                  << " target "  <<  dynamic_cast<controller::JointPositionController*>(gc)->getCommand()
-                  << " force  "  <<  correctionConstant*f_l_error
-                  << std::endl;
-        std::cout << " current " << gj_f_r     -> GetAngle() 
-                  << " target "  <<  dynamic_cast<controller::JointPositionController*>(gc)->getCommand()
-                  << " force  "  <<  correctionConstant*f_r_error
-                  << std::endl;
-        std::cout << " current " << gj_f_tip_l -> GetAngle() 
-                  << " target "  <<  dynamic_cast<controller::JointPositionController*>(gc)->getCommand()
-                  << " force  "  <<  correctionConstant*f_tip_l_error
-                  << std::endl;
-        std::cout << " current " << gj_f_tip_r -> GetAngle() 
-                  << " target "  <<  dynamic_cast<controller::JointPositionController*>(gc)->getCommand()
-                  << " force  "  <<  correctionConstant*f_tip_r_error
-                  << std::endl;
-        double damp_force_f_l     = (*rci).explicitDampingCoefficient * gj_f_l    ->GetAngleRate();
-        double damp_force_f_r     = (*rci).explicitDampingCoefficient * gj_f_r    ->GetAngleRate();
-        double damp_force_f_tip_l = (*rci).explicitDampingCoefficient * gj_f_tip_l->GetAngleRate();
-        double damp_force_f_tip_r = (*rci).explicitDampingCoefficient * gj_f_tip_r->GetAngleRate();
-
-        gj_f_l    ->SetTorque( (*rci).reverse_mech_joint_->commanded_effort_ + correctionConstant*f_l_error     - damp_force_f_l    );
-        gj_f_r    ->SetTorque(-(*rci).reverse_mech_joint_->commanded_effort_ + correctionConstant*f_r_error     - damp_force_f_r    );
-        gj_f_tip_l->SetTorque(-(*rci).reverse_mech_joint_->commanded_effort_ + correctionConstant*f_tip_l_error - damp_force_f_tip_l);
-        gj_f_tip_r->SetTorque( (*rci).reverse_mech_joint_->commanded_effort_ + correctionConstant*f_tip_r_error - damp_force_f_tip_r);
-
-        // std::cout << " updating gripper ----------------------------- " << std::endl;
-        // std::cout << " f_l " <<  (*rci).reverse_mech_joint_->commanded_effort_ << " " << damp_force_f_l    << std::endl;
-        // std::cout << " f_r " << -(*rci).reverse_mech_joint_->commanded_effort_ << " " << damp_force_f_r    << std::endl;
-        // std::cout << " ftl " << -(*rci).reverse_mech_joint_->commanded_effort_ << " " << damp_force_f_tip_l<< std::endl;
-        // std::cout << " ftr " <<  (*rci).reverse_mech_joint_->commanded_effort_ << " " << damp_force_f_tip_r<< std::endl;
-
+        dynamic_cast<gazebo::HingeJoint*>((*gji)->joint_)->SetTorque( mech_joint->commanded_effort_);
       }
-      else if ((*rci).gazebo_joint_type == "slider")
-      {
-        gazebo::SliderJoint* gjs  = (SliderJoint*)(*rci).gazebo_joints_[0];
-        gjs->SetSliderForce( (*rci).reverse_mech_joint_->commanded_effort_ );
-      }
-      else // defaults to hinge
-      {
-        gazebo::HingeJoint* gjh  = (HingeJoint*)(*rci).gazebo_joints_[0];
-        double damp_force = (*rci).explicitDampingCoefficient * gjh->GetAngleRate();
-        gjh->SetTorque( (*rci).reverse_mech_joint_->commanded_effort_ - damp_force);
-      }
-
-
-      std::cout << " updating -- time is:"
-                << Simulator::Instance()->GetSimTime()
-                << "	updating controller:" << (*rci).name
-                  << std::endl;
-
     }
 
-
   }
+
+
+
+
+
+
+
 
   void
   GazeboActuators::LoadFrameTransformOffsets()
@@ -1019,7 +720,6 @@ namespace gazebo {
     wheel_rear_right_r_offset_y = link->xyz[1];
     wheel_rear_right_r_offset_z = link->xyz[2];
 
-
   }
 
 
@@ -1028,18 +728,18 @@ namespace gazebo {
   int
   GazeboActuators::AdvertiseSubscribeMessages()
   {
-    rosnode_->advertise<std_msgs::RobotBase2DOdom>("odom");
+    //rosnode_->advertise<std_msgs::RobotBase2DOdom>("odom");
     rosnode_->advertise<std_msgs::PR2Arm>("left_pr2arm_pos");
     rosnode_->advertise<std_msgs::PR2Arm>("right_pr2arm_pos");
     rosnode_->advertise<rostools::Time>("time");
     rosnode_->advertise<std_msgs::Empty>("transform");
-    rosnode_->advertise<std_msgs::Point3DFloat32>("object_position");
+    //rosnode_->advertise<std_msgs::Point3DFloat32>("object_position");
 
-    rosnode_->subscribe("cmd_vel", velMsg, &GazeboActuators::CmdBaseVelReceived);
+    //rosnode_->subscribe("cmd_vel", velMsg, &GazeboActuators::CmdBaseVelReceived);
     rosnode_->subscribe("cmd_leftarmconfig", leftarmMsg, &GazeboActuators::CmdLeftarmconfigReceived);
     rosnode_->subscribe("cmd_rightarmconfig", rightarmMsg, &GazeboActuators::CmdRightarmconfigReceived);
-    rosnode_->subscribe("cmd_leftarm_cartesian", leftarmcartesianMsg, &GazeboActuators::CmdLeftarmcartesianReceived);
-    rosnode_->subscribe("cmd_rightarm_cartesian", rightarmcartesianMsg, &GazeboActuators::CmdRightarmcartesianReceived);
+    //rosnode_->subscribe("cmd_leftarm_cartesian", leftarmcartesianMsg, &GazeboActuators::CmdLeftarmcartesianReceived);
+    //rosnode_->subscribe("cmd_rightarm_cartesian", rightarmcartesianMsg, &GazeboActuators::CmdRightarmcartesianReceived);
     
     return(0);
   }
@@ -1048,12 +748,46 @@ namespace gazebo {
   GazeboActuators::CmdLeftarmconfigReceived()
   {
     this->lock.lock();
+    printf("hoo!\n");
+    controller::Controller* j1 = mc_.getControllerByName( "shoulder_pan_left_controller" );
+    controller::Controller* j2 = mc_.getControllerByName( "shoulder_pitch_left_controller" );
+    controller::Controller* j3 = mc_.getControllerByName( "upperarm_roll_left_controller" );
+    controller::Controller* j4 = mc_.getControllerByName( "elbow_flex_left_controller" );
+    controller::Controller* j5 = mc_.getControllerByName( "forearm_roll_left_controller" );
+    controller::Controller* j6 = mc_.getControllerByName( "wrist_flex_left_controller" );
+    controller::Controller* j7 = mc_.getControllerByName( "gripper_roll_left_controller" );
+    controller::Controller* j8 = mc_.getControllerByName( "gripper_left_controller" );
+    dynamic_cast<controller::JointPositionController*>(j1)->setCommand(leftarmMsg.turretAngle       );
+    dynamic_cast<controller::JointPositionController*>(j2)->setCommand(leftarmMsg.shoulderLiftAngle );
+    dynamic_cast<controller::JointPositionController*>(j3)->setCommand(leftarmMsg.upperarmRollAngle );
+    dynamic_cast<controller::JointPositionController*>(j4)->setCommand(leftarmMsg.elbowAngle        );
+    dynamic_cast<controller::JointPositionController*>(j5)->setCommand(leftarmMsg.forearmRollAngle  );
+    dynamic_cast<controller::JointPositionController*>(j6)->setCommand(leftarmMsg.wristPitchAngle   );
+    dynamic_cast<controller::JointPositionController*>(j7)->setCommand(leftarmMsg.wristRollAngle    );
+    dynamic_cast<controller::JointPositionController*>(j8)->setCommand(leftarmMsg.gripperGapCmd     );
     this->lock.unlock();
   }
   void
   GazeboActuators::CmdRightarmconfigReceived()
   {
     this->lock.lock();
+    printf("hoo!\n");
+    controller::Controller* j1 = mc_.getControllerByName( "shoulder_pan_right_controller" );
+    controller::Controller* j2 = mc_.getControllerByName( "shoulder_pitch_right_controller" );
+    controller::Controller* j3 = mc_.getControllerByName( "upperarm_roll_right_controller" );
+    controller::Controller* j4 = mc_.getControllerByName( "elbow_flex_right_controller" );
+    controller::Controller* j5 = mc_.getControllerByName( "forearm_roll_right_controller" );
+    controller::Controller* j6 = mc_.getControllerByName( "wrist_flex_right_controller" );
+    controller::Controller* j7 = mc_.getControllerByName( "gripper_roll_right_controller" );
+    controller::Controller* j8 = mc_.getControllerByName( "gripper_right_controller" );
+    dynamic_cast<controller::JointPositionController*>(j1)->setCommand(rightarmMsg.turretAngle       );
+    dynamic_cast<controller::JointPositionController*>(j2)->setCommand(rightarmMsg.shoulderLiftAngle );
+    dynamic_cast<controller::JointPositionController*>(j3)->setCommand(rightarmMsg.upperarmRollAngle );
+    dynamic_cast<controller::JointPositionController*>(j4)->setCommand(rightarmMsg.elbowAngle        );
+    dynamic_cast<controller::JointPositionController*>(j5)->setCommand(rightarmMsg.forearmRollAngle  );
+    dynamic_cast<controller::JointPositionController*>(j6)->setCommand(rightarmMsg.wristPitchAngle   );
+    dynamic_cast<controller::JointPositionController*>(j7)->setCommand(rightarmMsg.wristRollAngle    );
+    dynamic_cast<controller::JointPositionController*>(j8)->setCommand(rightarmMsg.gripperGapCmd     );
     this->lock.unlock();
   }
 
@@ -1091,7 +825,7 @@ namespace gazebo {
     /*        localization                                         */
     /*                                                             */
     /***************************************************************/
-    double x,y,z,roll,pitch,yaw;
+    double x=0,y=0,z=0,roll=0,pitch=0,yaw=0;
     //this->PR2Copy->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw); // actual CoM of base
 
     tfs->sendInverseEuler("FRAMEID_ODOM",
