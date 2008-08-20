@@ -36,15 +36,22 @@ namespace scan_utils {
     Example: an octree that covers a space of 20m * 20m * 20m with max
     depth 10 will have the smallest leaves of approx. 2cm * 2cm * 2cm
     in size.
-
-    Set an empty value that will be returned for all unvisited regions
-    of space. If you query the value of a region in space that you
-    never set, the empty value will be returned.
+    
+    If you just want to specify the size of the smallest cell instead
+    of the size of the entire Octree, use the constructor and pass it
+    the dimensions that you want along with a depth of 0. Then be sure
+    to set the Octree to autoExpand, and it will grow in height
+    automatically to accept any data you insert, while maintaining the
+    smallest cell at the size you specify.
 
     The Octree can be set to auto expand whenever an insertion is made
     that is currently out of bounds, Expansion works by adding new
     leaves above the current root, this increasing the depth of the
     Octree. The size of the smallest cell stays unchanged.
+
+    Set an empty value that will be returned for all unvisited regions
+    of space. If you query the value of a region in space that you
+    never set, the empty value will be returned.
 
     IMPORTANT: do not store the \a emptyValue in a leaf and expect the
     Octree to behave as if that leaf was never set. A NULL leaf and a
@@ -116,8 +123,11 @@ class Octree {
 	//! Sets the center of this Octree. Does NOT change the inner data.
 	void setCenter(float cx, float cy, float cz){mCx = cx; mCy = cy; mCz = cz;}
 	//! Sets the size of this Octree. Does NOT change the inner data.
+	/*!  \param dx,dy,dz - the size of the ENTIRE Octree. Smallest
+	  cell is then 2^(-maxdepth) * total_octree_size
+	 */
 	void setSize(float dx, float dy, float dz){mDx = dx; mDy = dy; mDz = dz;}
-	//! Sets the max depth of this Octree. Does NOT change the inner data.
+	//! Sets the max depth of this Octree. Does NOT change the inner data. Smallest accepted value is 1.
 	/*! TODO: provide a version (or a flag) that also prunes any
             leaves that are further down than the new depth that is
             set.
@@ -246,6 +256,13 @@ class Octree {
 
   \param emptyValue - the value that is returned for unvisited regions
   of space.
+
+  If you pass a \a maxDepth of 0, than \a dx,dy,dz will become the
+  dimensions of the smallest cell the Octree can have. You can then
+  set the tree to autoExpand and it will grow in height as necessary
+  when data is inserted, but the dimensions of the smallest cell will
+  always remain what you have specified here. Unless you tinker with
+  them with setExtents(...), of course.
  */
 
 template <typename T>
@@ -256,6 +273,11 @@ Octree<T>::Octree(float cx, float cy, float cz,
 {
 	mRoot = new OctreeBranch<T>();
 	setCenter(cx,cy,cz);
+	assert(maxDepth >= 0);
+	if (maxDepth == 0) {
+		maxDepth = 1;
+		dx *= 2; dy *= 2; dz *= 2;
+	}
 	setSize(dx,dy,dz);
 	setDepth(maxDepth);
 	mEmptyValue = emptyValue;
