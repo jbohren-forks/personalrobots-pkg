@@ -44,6 +44,10 @@ TEST(OctreeTests, insertionExtraction)
 		}
 	}
 	EXPECT_TRUE(pass);
+
+	const scan_utils::Octree<float> *const_octree = octree;
+	//const_octree->insert(0,0,0, 1.9); //this should not compile
+	const_octree->get(0,0,0); //this should compile
 	delete octree;
 }
 

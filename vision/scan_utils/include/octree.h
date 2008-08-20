@@ -41,6 +41,11 @@ namespace scan_utils {
     of space. If you query the value of a region in space that you
     never set, the empty value will be returned.
 
+    The Octree can be set to auto expand whenever an insertion is made
+    that is currently out of bounds, Expansion works by adding new
+    leaves above the current root, this increasing the depth of the
+    Octree. The size of the smallest cell stays unchanged.
+
     IMPORTANT: do not store the \a emptyValue in a leaf and expect the
     Octree to behave as if that leaf was never set. A NULL leaf and a
     leaf with the \a emptyValue stored inside will return the same
@@ -90,14 +95,16 @@ class Octree {
 	T mEmptyValue;
 	//! Intended for forward compatibility with future versions that might use timestamps
 	bool mUsesTimestamps;
+	//! If true, the Octree will expand itself whenever asked to insert someplace that is out of bounds
+	bool mAutoExpand;
 
 	//! Main accessor loop. Performs either insertion or deletion at the given coordinates.
 	void insertOrErase(float x, float y, float z, T newValue, bool deletion);
 
 	//! Converts cell indices to spatial coordinates. See main class description for details.
-	inline bool cellToCoordinates(int i, int j, int k, float *x, float *y, float *z);
+	inline bool cellToCoordinates(int i, int j, int k, float *x, float *y, float *z) const;
 	//! Converts spatial coordinates to cell indices. See main class description for details.
-	inline bool coordinatesToCell(float x, float y, float z, int *i, int *j, int *k);
+	inline bool coordinatesToCell(float x, float y, float z, int *i, int *j, int *k) const;
 
  public:
 	//! Constructor needs all initialization values.
@@ -111,14 +118,25 @@ class Octree {
 	//! Sets the size of this Octree. Does NOT change the inner data.
 	void setSize(float dx, float dy, float dz){mDx = dx; mDy = dy; mDz = dz;}
 	//! Sets the max depth of this Octree. Does NOT change the inner data.
+	/*! TODO: provide a version (or a flag) that also prunes any
+            leaves that are further down than the new depth that is
+            set.
+	 */
 	void setDepth(int d){if (d<=0) d=1; mMaxDepth = d;}
 	//! Returns the max. depth of the Octree
-	int getMaxDepth(){return mMaxDepth;}
+	int getMaxDepth() const {return mMaxDepth;}
 	//! Returns the maximum number of cells along one dimension of this Octree
 	/*! Equals 2^(mMaxDepth). Overall, the Octree might contain up to getNumCells()^3 cells */
-	int getNumCells(){return (int)pow((float)2,mMaxDepth);} 
+	int getNumCells() const {return (int)pow((float)2,mMaxDepth);} 
 	//! Returns \a true if the point at x,y,z is inside the volume of this Octree
-	inline bool testBounds(float x, float y, float z);
+	inline bool testBounds(float x, float y, float z) const;
+	//! Sets the mAutoExpand property
+	/*! If the autoExpand flag is set to true, whenever an
+            insertion is made to a point that is out of the bounds of
+            the Octree, the tree will expand itself by increasing the
+            depth until it contains the new coordinates.*/
+	void setAutoExpand(bool ae){mAutoExpand = true;}
+	void isAutoExpand() const {return mAutoExpand;}
 
 	//! Inserts a value at given spatial coordinates.
 	/*! If you want the region at x,y,z to be treated as if it was
@@ -135,7 +153,9 @@ class Octree {
 		this->insertOrErase(x,y,z,mEmptyValue, true);
 	}
 	//! Returns the value at given spatial coordinates
-	T get(float x, float y, float z);
+	T get(float x, float y, float z) const;
+	//! Expands the Octree to contain the point at \a x,y,z. Works by adding new leaves ABOVE the current root.
+	void expandTo(float x, float y, float z);
 
 	//! Inserts a value at given cell coordinates.
 	void cellInsert(int i, int j, int k, T newValue) {
@@ -144,7 +164,7 @@ class Octree {
 		insert(x,y,z,newValue);
 	}
 	//! Returns the value at given cell coordinates
-	T cellGet(int i, int j, int k) {
+	T cellGet(int i, int j, int k) const {
 		float x,y,z;
 		if ( !cellToCoordinates(i,j,k,&x,&y,&z) ) return mEmptyValue;
 		return get(x,y,z);
@@ -156,14 +176,14 @@ class Octree {
 		erase(x,y,z);
 	}
 	//!Recursively counts how many cells (not leaves!) hold a particular value
-	int cellCount(T value){return mRoot->cellCount(value, mEmptyValue, mMaxDepth);}
+	int cellCount(T value) const {return mRoot->cellCount(value, mEmptyValue, mMaxDepth);}
 
 	//! Checks intersection of the Octree against a triangle
-	bool intersectsTriangle(float*, float*, float*);
+	bool intersectsTriangle(float*, float*, float*) const;
 	//! Checks intersection of the Octree against a box (not necessarily axis-oriented)
-	bool intersectsBox(const float *center, const float *extents, const float axes[][3]);
+	bool intersectsBox(const float *center, const float *extents, const float axes[][3]) const;
 	//! Checks intersection of the Octree against a sphere
-	bool intersectsSphere(const float *center, float radius);
+	bool intersectsSphere(const float *center, float radius) const;
 
 	//! Traces a scanner ray through this octree
 	void traceRay(float sx, float sy, float sz, 
@@ -178,35 +198,35 @@ class Octree {
 	//! Returns the triangles that form the surface mesh of all non-empty leaves
 	void getAllTriangles(std::list<Triangle> &triangles) const;
 	//! Returns the triangles that form the surface mesh of the leaves with the given value
-	void getTrianglesByValue(std::list<Triangle> &triangles, T value);
+	void getTrianglesByValue(std::list<Triangle> &triangles, T value) const;
 	//! Recursively computes and returns the number of branches of the tree
-	int getNumBranches(){return mRoot->getNumBranches();}
+	int getNumBranches() const {return mRoot->getNumBranches();}
 	//! Recursively computes and returns the number of leaves of the tree
-	int getNumLeaves(){return mRoot->getNumLeaves();}
+	int getNumLeaves() const {return mRoot->getNumLeaves();}
 	//! Returns the space in memory occupied by the tree
-	long long unsigned int getMemorySize();
+	long long unsigned int getMemorySize() const;
 
 	//! Serializes this octree to a string
-	void serialize(char **destinationString, unsigned int *size);
+	void serialize(char **destinationString, unsigned int *size) const;
 	//! Reads in the content of this Octree. OLD CONTENT IS DELETED!
 	bool deserialize(char *sourceString, unsigned int size);
 
 
 	//! Recursively computes the max depth in the Octree. Useful when Octree is read from file.
-	int computeMaxDepth(){return mRoot->computeMaxDepth();}
+	int computeMaxDepth() const {return mRoot->computeMaxDepth();}
 	//! Set this Octree from a ROS message
 	void setFromMsg(const OctreeMsg &msg);
 	//! Write this Octree in a ROS message
-	void getAsMsg(OctreeMsg &msg);
+	void getAsMsg(OctreeMsg &msg) const;
 	//! Write the Octree to a file in its own internal format
-	void writeToFile(std::ostream &os);
+	void writeToFile(std::ostream &os) const;
 	//! Read Octree from a file saved by the \a writeToFile(...) function 
 	void readFromFile(std::istream &is);
 
 	//! Checks if the given ray intersects the volume that this Octree occupies
 	bool intersectsRay(float rx, float ry, float rz, 
 			   float dx, float dy, float dz,
-			   float &t0, float &t1);
+			   float &t0, float &t1) const;
 
 	//! Inserts the contents of a scan into this octree
 	//void insertScan(const SmartScan *s, T insertVal);
@@ -240,13 +260,14 @@ Octree<T>::Octree(float cx, float cy, float cz,
 	setDepth(maxDepth);
 	mEmptyValue = emptyValue;
 	mUsesTimestamps = false;
+	mAutoExpand = false;
 }
 
 //--------------------------------------- Navigation ------------------------------------------
 
 
 template <typename T>
-bool Octree<T>::testBounds(float x, float y, float z)
+bool Octree<T>::testBounds(float x, float y, float z) const
 {
 	float dx = mDx / 2.0;
 	float dy = mDy / 2.0;
@@ -272,11 +293,23 @@ bool Octree<T>::testBounds(float x, float y, float z)
     After performing deletion or insertion, this function will
     navigate back towards the top of the tree, aggregating leaves
     where appropriate.
+
+    If the point at \a x,y,z is out of bounds: if the \a mAutoExpand
+    is true, the tree will expand (by adding new leaves on top of the
+    current root) until it contains the point at \a x,y,z. It will
+    then proceed with insertion normally. If the flag is false, this
+    will just return without inserting anything.
  */
 template <typename T>
 void Octree<T>::insertOrErase(float x, float y, float z, T newValue, bool deletion)
 {
-	if (!testBounds(x,y,z)) return;
+	if (!testBounds(x,y,z)) {
+		if (mAutoExpand && !deletion) {
+			expandTo(x,y,z);
+		} else {
+			return;
+		}
+	}
 
 	float cx = mCx, cy = mCy, cz = mCz;
 	float dx = mDx / 2.0, dy = mDy / 2.0, dz = mDz / 2.0;
@@ -366,7 +399,7 @@ void Octree<T>::insertOrErase(float x, float y, float z, T newValue, bool deleti
     region of space is unvisited, returns \a mEmptyValue.
  */
 template <typename T>
-T Octree<T>::get(float x, float y, float z)
+T Octree<T>::get(float x, float y, float z) const
 {
 	if (!testBounds(x,y,z)) return mEmptyValue;
 
@@ -406,12 +439,56 @@ void Octree<T>::clear()
 	mRoot = new OctreeBranch<T>();
 }
 
+/*! This works just by increasing the depth of the Octree - adding new
+    leaves ABOVE the current root until the point at \a x,y,z is
+    contained within the Octree. It does not actually insert anyting
+    at \a x,y,z. All the current structure is left unchanged, and the
+    smallest leaves will still have the same size. They will just be
+    deeper down inside the tree.
+ */
+template <typename T>
+void Octree<T>::expandTo(float x, float y, float z)
+{
+	while (!testBounds(x,y,z)) {
+		unsigned char address = 0;
+		//we are now computing the address of the current root in the list of
+		//the future root which will be added on top. It is reversed from the address
+		//computation used in insertOrErase(...)
+		if ( x < mCx - mDx/2.0 ) { address +=4; mCx -= mDx/2.0;}
+		else { mCx += mDx/2.0;}
+		if ( y < mCy - mDy/2.0 ) { address +=2; mCy -= mDy/2.0;}
+		else { mCy += mDy/2.0;}
+		if ( z < mCz - mDz/2.0 ) { address +=1; mCz -= mDz/2.0;}
+		else { mCz += mDz/2.0;}
+
+		//we have doubled the size
+		mDx *= 2.0; mDy *= 2.0; mDz *= 2.0;
+		
+		//create the new root and set current root as child
+		OctreeBranch<T>* newRoot = new OctreeBranch<T>();
+		newRoot->setChild(address,mRoot);
+		
+		//see if we can aggregate the old root
+		OctreeLeaf<T>* newLeaf;
+		if (mRoot->aggregate(&newLeaf)) {
+			//this also deletes the old root
+			newRoot->setChild(address, newLeaf);
+		}
+		
+		//set the new root
+		mRoot = newRoot;
+		
+		//we have increased the depth
+		mMaxDepth++;
+	}
+}
+
 //----------------------------------------- Cell accessors -----------------------------------------
 
 /*!
  */
 template <typename T>
-bool Octree<T>::cellToCoordinates(int i, int j, int k, float *x, float *y, float *z)
+bool Octree<T>::cellToCoordinates(int i, int j, int k, float *x, float *y, float *z) const
 {
 	int numCells = getNumCells();
 	*x = mCx - (mDx / 2.0) + (mDx / numCells) * (i + 0.5);
@@ -425,7 +502,7 @@ bool Octree<T>::cellToCoordinates(int i, int j, int k, float *x, float *y, float
  /*!
   */
 template <typename T>
-bool Octree<T>::coordinatesToCell(float x, float y, float z, int *i, int *j, int *k)
+bool Octree<T>::coordinatesToCell(float x, float y, float z, int *i, int *j, int *k) const
 {
 	int numCells = getNumCells();
 	*i = (int)( floor( (x - mCx) / numCells ) + (numCells / 2) );
@@ -440,7 +517,7 @@ bool Octree<T>::coordinatesToCell(float x, float y, float z, int *i, int *j, int
   \param trivert0,trivert1,trivert2 - the 3 vertices of the triangle
  */
 template <typename T>
-bool Octree<T>::intersectsTriangle(float trivert0[3], float trivert1[3], float trivert2[3])
+bool Octree<T>::intersectsTriangle(float trivert0[3], float trivert1[3], float trivert2[3]) const
 {
 	std::list< SpatialNode<T>* > stack;
 
@@ -499,7 +576,7 @@ bool Octree<T>::intersectsTriangle(float trivert0[3], float trivert1[3], float t
   is undefined!
  */
 template <typename T>
-bool Octree<T>::intersectsBox(const float *center, const float *extents, const float axes[][3])
+bool Octree<T>::intersectsBox(const float *center, const float *extents, const float axes[][3]) const
 {
 	/*
 	fprintf(stderr,"Axes:\n");
@@ -558,7 +635,7 @@ bool Octree<T>::intersectsBox(const float *center, const float *extents, const f
   \param radius - the radius of the sphere
  */
 template <typename T>
-bool Octree<T>::intersectsSphere(const float *center, float radius)
+bool Octree<T>::intersectsSphere(const float *center, float radius) const
 {
 	std::list< SpatialNode<T>* > stack;
 
@@ -607,7 +684,7 @@ bool Octree<T>::intersectsSphere(const float *center, float radius)
 //------------------------------------------ Statistics --------------------------------------------
 
 template <typename T>
-long long unsigned int Octree<T>::getMemorySize()
+long long unsigned int Octree<T>::getMemorySize() const
 {
 	unsigned int leaves = mRoot->getNumLeaves();
 	unsigned int branches = mRoot->getNumBranches();
@@ -620,7 +697,7 @@ long long unsigned int Octree<T>::getMemorySize()
   extents, maxdepth etc.
  */
 template <typename T>
-void Octree<T>::serialize(char **destinationString, unsigned int *size)
+void Octree<T>::serialize(char **destinationString, unsigned int *size) const
 {
 	int nLeaves = mRoot->getNumLeaves();
 	int nBranches = mRoot->getNumBranches();
@@ -691,7 +768,7 @@ void Octree<T>::setFromMsg(const OctreeMsg &msg)
 }
 
 template <typename T>
-void Octree<T>::getAsMsg(OctreeMsg &msg)
+void Octree<T>::getAsMsg(OctreeMsg &msg) const
 {
 	msg.center.x = mCx; msg.center.y = mCy; msg.center.z = mCz;
 	msg.size.x = mDx; msg.size.y = mDy; msg.size.z = mDz;
@@ -711,7 +788,7 @@ void Octree<T>::getAsMsg(OctreeMsg &msg)
 }
 
 template <typename T>
-void Octree<T>::writeToFile(std::ostream &os)
+void Octree<T>::writeToFile(std::ostream &os) const
 {
 	//write the admin data
 	float fl[6];
@@ -798,7 +875,7 @@ void Octree<T>::getAllTriangles(std::list<Triangle> &triangles) const
   be an interesting problem...
  */
 template <typename T>
-void Octree<T>::getTrianglesByValue(std::list<Triangle> &triangles, T value)
+void Octree<T>::getTrianglesByValue(std::list<Triangle> &triangles, T value) const
 {
 	if (!mRoot) return;
 	T val = value;
@@ -891,7 +968,7 @@ void Octree<T>::traceRay(float sx, float sy, float sz,
 template <typename T>
 bool Octree<T>::intersectsRay(float rx, float ry, float rz, 
 			      float dx, float dy, float dz,
-			      float &t0, float &t1)
+			      float &t0, float &t1) const
 {
 	float ex = mDx / 2.0;
 	float ey = mDy / 2.0;

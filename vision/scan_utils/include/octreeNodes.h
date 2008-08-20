@@ -30,9 +30,9 @@ class OctreeNode {
 	OctreeNode(){}
 	virtual ~OctreeNode(){}
 	virtual bool isLeaf() const = 0;
-	virtual void serialize(char*, unsigned int&){}
+	virtual void serialize(char*, unsigned int&) const {}
 	virtual void deserialize(char*, unsigned int&, unsigned int){}
-	virtual int computeMaxDepth(){return 0;}
+	virtual int computeMaxDepth() const {return 0;}
 	virtual void recursiveAggregation(){}
 
 };
@@ -67,11 +67,11 @@ class OctreeLeaf : public OctreeNode<T> {
 	T getVal() const {return mValue;}
 	void setVal(T val){mValue = val;}
 	// Serializes the content of this leaf
-	virtual void serialize(char *destinationString, unsigned int &address);
+	virtual void serialize(char *destinationString, unsigned int &address) const;
 	// Reads in the content of this leaf
 	virtual void deserialize(char *sourceString, unsigned int &address, unsigned int size);
 	//! Returns 0
-	virtual int computeMaxDepth(){return 0;}
+	virtual int computeMaxDepth() const {return 0;}
 
 };
 
@@ -104,8 +104,10 @@ class OctreeBranch : public OctreeNode<T> {
 
 	//! Return the child at address \a adress, between 0 and 7
 	OctreeNode<T>* getChild(unsigned char address) { return mChildren[address]; }
-	//! Returns a structure that contains both a pointer to the child and its spatial coordinates
+	//! Const version of the above
+	const OctreeNode<T>* getChild(unsigned char address) const { return mChildren[address]; }
 
+	//! Returns a structure that contains both a pointer to the child and its spatial coordinates
 	inline SpatialNode<T>* getSpatialChild(int address, 
 					      float cx, float cy, float cz,
 					      float dx, float dy, float dz);
@@ -116,11 +118,11 @@ class OctreeBranch : public OctreeNode<T> {
 	//! Replaces \a oldChild with \a newChild. \a oldChild is also deleted.
 	inline void replaceChild(OctreeNode<T> *oldChild, OctreeNode<T> *newChild);
 	//! Recursively returns the total number of branches below this one (including this one)
-	int getNumBranches();
+	int getNumBranches() const;
 	//! Recursively returns the number of leaves between this one
-	int getNumLeaves();
+	int getNumLeaves() const;
 	//! Recursively counts how many CELLS below hold a given value
-	int cellCount(T value, T emptyVal, int height);
+	int cellCount(T value, T emptyVal, int height) const;
 
 	//! Recursively goes down the tree and creates triangles
 	void getTriangles(bool px, bool nx, bool py, bool ny, bool pz, bool nz,
@@ -129,14 +131,14 @@ class OctreeBranch : public OctreeNode<T> {
 			  std::list<Triangle> &triangles, T* value, T emptyValue) const;
 
 	//! Recursively serializes everything below this branch
-	virtual void serialize(char *destinationString, unsigned int &address);
+	virtual void serialize(char *destinationString, unsigned int &address) const;
 	//! Recursively reads in everything below this branch
 	virtual void deserialize(char *sourceString, unsigned int &address, unsigned int size);
 	//! Recursively computes the max depth under this branch
-	virtual int computeMaxDepth();
+	virtual int computeMaxDepth() const;
 
 	//! Checks if all children of this branch are indentical
-	inline bool aggregate(OctreeLeaf<T> **newLeaf);
+	inline bool aggregate(OctreeLeaf<T> **newLeaf) const;
 	//! Recursively checks the entire subtree under this branch for possible aggregations
 	virtual void recursiveAggregation();
 };
@@ -197,7 +199,7 @@ void OctreeBranch<T>::replaceChild(OctreeNode<T> *oldChild, OctreeNode<T> *newCh
   Otherwise returns false.
  */
 template <typename T>
-bool OctreeBranch<T>::aggregate(OctreeLeaf<T> **newLeaf)
+bool OctreeBranch<T>::aggregate(OctreeLeaf<T> **newLeaf) const
 {
 	if (!mChildren[0]) {
 		//first child is NULL
@@ -273,7 +275,7 @@ SpatialNode<T>* OctreeBranch<T>::getSpatialChild(int address,
 //-------------------------------------- Statistics -----------------------------------------
 
 template <typename T>
-int OctreeBranch<T>::getNumBranches()
+int OctreeBranch<T>::getNumBranches() const
 {
 	int n=1;
 	for (int i=0; i<8; i++) {
@@ -285,7 +287,7 @@ int OctreeBranch<T>::getNumBranches()
 }
 
 template <typename T>
-int OctreeBranch<T>::getNumLeaves()
+int OctreeBranch<T>::getNumLeaves() const
 {
 	int n=0;
 	for (int i=0; i<8; i++) {
@@ -297,7 +299,7 @@ int OctreeBranch<T>::getNumLeaves()
 }
 
 template <typename T>
-int OctreeBranch<T>::computeMaxDepth()
+int OctreeBranch<T>::computeMaxDepth() const
 {
 	int maxDepth = 0;
 	for (int i=0; i<8; i++) {
@@ -314,7 +316,7 @@ int OctreeBranch<T>::computeMaxDepth()
   stores them in a single leaf etc.
  */
 template <typename T>
-int OctreeBranch<T>::cellCount(T value, T emptyVal, int height)
+int OctreeBranch<T>::cellCount(T value, T emptyVal, int height) const
 {
 	assert(height > 0);
 	int n=0;
@@ -338,7 +340,7 @@ int OctreeBranch<T>::cellCount(T value, T emptyVal, int height)
 //----------------------------------------- Serialization -----------------------------------
 
 template <typename T>
-void OctreeBranch<T>::serialize(char *destinationString, unsigned int &address)
+void OctreeBranch<T>::serialize(char *destinationString, unsigned int &address) const
 {
 	for (int i=0; i<8; i++) {
 		if (!mChildren[i]) {
@@ -383,7 +385,7 @@ void OctreeBranch<T>::deserialize(char *sourceString, unsigned int &address, uns
 }
 
 template <typename T>
-void OctreeLeaf<T>::serialize(char *destinationString, unsigned int &address)
+void OctreeLeaf<T>::serialize(char *destinationString, unsigned int &address) const
 {
 	memcpy(&destinationString[address], &mValue, sizeof(mValue));
 	address += sizeof(mValue);
