@@ -74,8 +74,28 @@ void
 dc1394_cam::init() {
   if (dc1394_cam::Cam::dcRef == NULL)
   {
+
     dc1394_cam::Cam::dcRef = dc1394_new();
     FD_ZERO(&Cam::camFds);
+
+    if (numCams() > 0)
+    {
+       dc1394camera_t *camera = dc1394_camera_new(dc1394_cam::Cam::dcRef, getGuid(0));
+      if (!camera) {
+        char msg[256];
+        snprintf(msg, 256, "Could not acquire camera to reset bus in %s", __FUNCTION__);
+        throw CamException(msg);
+      }
+      
+      dc1394_reset_bus (camera);
+      dc1394_camera_free (camera);
+
+      dc1394_free (dc1394_cam::Cam::dcRef);
+
+      dc1394_cam::Cam::dcRef = dc1394_new();
+    }
+
+
   }
 }
 

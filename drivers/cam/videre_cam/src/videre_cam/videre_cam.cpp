@@ -120,7 +120,7 @@ videre_cam::VidereCam::VidereCam(uint64_t guid,
 
   extract(cal_params_, "[left camera]", "Cx",     lCx_);
   extract(cal_params_, "[left camera]", "Cy",     lCy_);
-  extract(cal_params_, "[left camera]", "f",      lf_);
+  extract(cal_params_, "[left camera]", "f ",      lf_);
   extract(cal_params_, "[left camera]", "fy",     lfy_);
   extract(cal_params_, "[left camera]", "kappa1", lk1_);
   extract(cal_params_, "[left camera]", "kappa2", lk2_);
@@ -132,7 +132,7 @@ videre_cam::VidereCam::VidereCam(uint64_t guid,
 
   extract(cal_params_, "[right camera]", "Cx",     rCx_);
   extract(cal_params_, "[right camera]", "Cy",     rCy_);
-  extract(cal_params_, "[right camera]", "f",      rf_);
+  extract(cal_params_, "[right camera]", "f ",      rf_);
   extract(cal_params_, "[right camera]", "fy",     rfy_);
   extract(cal_params_, "[right camera]", "kappa1", rk1_);
   extract(cal_params_, "[right camera]", "kappa2", rk2_);
