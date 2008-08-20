@@ -40,10 +40,11 @@ using namespace std;
 using namespace controller;
 using namespace libTF;
 using namespace NEWMAT;
+using namespace math_utils;
 
 ROS_REGISTER_CONTROLLER(BaseController)
 
-  BaseController::BaseController() : num_wheels_(0), num_casters_(0), odom_publish_count_(10), odom_publish_counter_(0)
+BaseController::BaseController() : num_wheels_(0), num_casters_(0), odom_publish_count_(10), odom_publish_counter_(0)
 {
 }
 
@@ -91,9 +92,8 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
 //  ros::g_node->advertise<std_msgs::RobotBase2DOdom>("odom");
   std::string xml_content;
   (ros::g_node)->get_param("robotdesc/pr2",xml_content);
-  assert(urdf_model_.loadString(xml_content.c_str()));
-  //if(!urdf_model_.loadString(xml_content.c_str()))
-  //   return;
+  if(!urdf_model_.loadString(xml_content.c_str()))
+    return;
 
   for(jcp_iter = jcp.begin(); jcp_iter != jcp.end(); jcp_iter++)
   {
@@ -143,7 +143,6 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
   }
   std::cout << " assigning robot_ " << std::endl;
   robot_ = robot;
-
 }
 
 void BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
@@ -259,15 +258,6 @@ void BaseController::update()
   odom_publish_counter_++;
 }
 
-double ModNPiBy2(double angle)
-{
-  if (angle < -M_PI/2) 
-    angle += M_PI;
-  if(angle > M_PI/2)
-    angle -= M_PI;
-  return angle;
-}
-
 void BaseController::computeAndSetCasterSteer()
 {
   libTF::Pose3D::Vector result;
@@ -277,7 +267,7 @@ void BaseController::computeAndSetCasterSteer()
   {
     result = computePointVelocity2D(base_casters_[i].pos_, cmd_vel_);
     steer_angle_desired = atan2(result.y,result.x);
-    steer_angle_desired = ModNPiBy2(steer_angle_desired);//Clean steer Angle    
+    steer_angle_desired =  modNPiBy2(steer_angle_desired);//Clean steer Angle    
     steer_velocity_desired_[i] = kp_speed_*steer_angle_desired;
     std::cout << "setting steering velocity??? " << i << " : " << steer_velocity_desired_[i] << " kp: " << kp_speed_ << std::endl;
     base_casters_[i].controller_.setCommand(steer_velocity_desired_[i]);
@@ -323,7 +313,7 @@ void BaseController::updateJointControllers()
 }
 
 ROS_REGISTER_CONTROLLER(BaseControllerNode)
-BaseControllerNode::BaseControllerNode() 
+  BaseControllerNode::BaseControllerNode() 
 {
   c_ = new BaseController();
 }
@@ -342,15 +332,15 @@ bool BaseControllerNode::setCommand(
   pr2_controllers::SetBaseCommand::request &req,
   pr2_controllers::SetBaseCommand::response &resp)
 {
-   libTF::Pose3D::Vector command;
-   command.x = req.x_vel;
-   command.y = req.y_vel;
-   command.z = req.theta_vel;
-   c_->setCommand(command);
-   command = c_->getCommand();
-   resp.x_vel = command.x;
-   resp.y_vel = command.y;
-   resp.theta_vel = command.z;
+  libTF::Pose3D::Vector command;
+  command.x = req.x_vel;
+  command.y = req.y_vel;
+  command.z = req.theta_vel;
+  c_->setCommand(command);
+  command = c_->getCommand();
+  resp.x_vel = command.x;
+  resp.y_vel = command.y;
+  resp.theta_vel = command.z;
 
   return true;
 }
@@ -359,11 +349,11 @@ bool BaseControllerNode::getCommand(
   pr2_controllers::GetBaseCommand::request &req,
   pr2_controllers::GetBaseCommand::response &resp)
 {
-   libTF::Pose3D::Vector command;
-   command = c_->getCommand();
-   resp.x_vel = command.x;
-   resp.y_vel = command.y;
-   resp.theta_vel = command.z;
+  libTF::Pose3D::Vector command;
+  command = c_->getCommand();
+  resp.x_vel = command.x;
+  resp.y_vel = command.y;
+  resp.theta_vel = command.z;
 
   return true;
 }
@@ -393,22 +383,22 @@ Pose3D::Vector BaseController::computePointVelocity2D(const Pose3D::Vector& pos,
 
 void BaseController::computeOdometry(double time) 
 {
-   double dt = time-last_time_;
+  double dt = time-last_time_;
 //   libTF::Pose3D::Vector base_odom_delta = rotate2D(base_odom_velocity_*dt,base_odom_position_.z);
 
-   computeBaseVelocity();
+  computeBaseVelocity();
 
-   libTF::Pose3D::Vector base_odom_delta = (base_odom_velocity_*dt).rot2D(base_odom_position_.z);
-   base_odom_delta.z = base_odom_velocity_.z * dt;
-   base_odom_position_ += base_odom_delta;
+  libTF::Pose3D::Vector base_odom_delta = (base_odom_velocity_*dt).rot2D(base_odom_position_.z);
+  base_odom_delta.z = base_odom_velocity_.z * dt;
+  base_odom_position_ += base_odom_delta;
 
-   odom_msg_.pos.x  = base_odom_position_.x;
-   odom_msg_.pos.y  = base_odom_position_.y;
-   odom_msg_.pos.th = base_odom_position_.z;
+  odom_msg_.pos.x  = base_odom_position_.x;
+  odom_msg_.pos.y  = base_odom_position_.y;
+  odom_msg_.pos.th = base_odom_position_.z;
 
-   odom_msg_.vel.x  = base_odom_velocity_.x;
-   odom_msg_.vel.y  = base_odom_velocity_.y;
-   odom_msg_.vel.th = base_odom_velocity_.z;
+  odom_msg_.vel.x  = base_odom_velocity_.x;
+  odom_msg_.vel.y  = base_odom_velocity_.y;
+  odom_msg_.vel.th = base_odom_velocity_.z;
 }
 
 void BaseController::computeBaseVelocity()
