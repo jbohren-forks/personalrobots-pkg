@@ -143,6 +143,14 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
   }
   std::cout << " assigning robot_ " << std::endl;
   robot_ = robot;
+
+  cmd_vel_.x = 0;
+  cmd_vel_.y = 0;
+  cmd_vel_.z = 0;
+  cmd_vel_t_.x = 0;
+  cmd_vel_t_.y = 0;
+  cmd_vel_t_.z = 0;
+
 }
 
 bool BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
@@ -154,12 +162,13 @@ bool BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
   JointControlParam jcp;
   while (elt){
     TiXmlElement *jnt = elt->FirstChildElement("joint");
+    std::cout << "joint snippit" << std::endl << *jnt << std::endl;
 
     // TODO: error check if xml attributes/elements are missing
-    jcp.p_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("p"));
-    jcp.i_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("i"));
-    jcp.d_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("d"));
-    jcp.windup = atof(jnt->FirstChildElement("controller_defaults")->Attribute("iClamp"));
+    jcp.p_gain = atof(jnt->FirstChildElement("pid")->Attribute("p"));
+    jcp.i_gain = atof(jnt->FirstChildElement("pid")->Attribute("i"));
+    jcp.d_gain = atof(jnt->FirstChildElement("pid")->Attribute("d"));
+    jcp.windup = atof(jnt->FirstChildElement("pid")->Attribute("iClamp"));
     jcp.control_type = (std::string) elt->Attribute("type");
     jcp.joint_name = jnt->Attribute("name");
     jcp_vec.push_back(jcp);
