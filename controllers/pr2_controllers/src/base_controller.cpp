@@ -269,7 +269,7 @@ void BaseController::computeAndSetCasterSteer()
     steer_angle_desired = atan2(result.y,result.x);
     steer_angle_desired =  modNPiBy2(steer_angle_desired);//Clean steer Angle    
     steer_velocity_desired_[i] = kp_speed_*steer_angle_desired;
-    std::cout << "setting steering velocity??? " << i << " : " << steer_velocity_desired_[i] << " kp: " << kp_speed_ << std::endl;
+    std::cout << "setting steering velocity " << i << " : " << steer_velocity_desired_[i] << " kp: " << kp_speed_ << std::endl;
     base_casters_[i].controller_.setCommand(steer_velocity_desired_[i]);
   } 
 }
