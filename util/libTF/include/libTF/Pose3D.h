@@ -40,7 +40,7 @@
 #include <newmat10/newmat.h>
 #include <newmat10/newmatio.h>
 #include <pthread.h>
-
+#include <cmath>
 
 namespace libTF
 {
@@ -56,6 +56,68 @@ namespace libTF
       struct Position
       {
         double x,y,z;
+
+      /** \brief operator overloading for the + operator */
+          Position  operator+(const Position &rhs){
+            Position result;
+            result.x = x + rhs.x;
+            result.y = y + rhs.y;
+            result.z = z + rhs.z;
+            return result;
+          }
+
+      /** \brief operator overloading for the += operator */
+          Position & operator+=(const Position &rhs){
+            x += rhs.x;
+            y += rhs.y;
+            z += rhs.z;
+            return *this;
+          }
+
+      /** \brief operator overloading for the - operator */
+          Position  operator-(const Position &rhs){
+            Position result;
+            result.x = x - rhs.x;
+            result.y = y - rhs.y;
+            result.z = z - rhs.z;
+            return result;
+          }
+
+      /** \brief operator overloading for the -= operator */
+          Position & operator-=(const Position &rhs){
+            x -= rhs.x;
+            y -= rhs.y;
+            z -= rhs.z;
+            return *this;
+          }
+
+      /** \brief operator overloading for the *= operator */
+          Position & operator*=(double rhs){
+            x *= rhs;
+            y *= rhs;
+            z *= rhs;
+            return *this;
+          }
+
+      /** \brief operator overloading for the * operator */
+          Position  operator*(double rhs){
+            Position result;
+            result.x = x*rhs;
+            result.y = y*rhs;
+            result.z = z*rhs;
+            return result;
+          }
+
+      /** \brief Rotate a position about the z-axis */
+          Position rot2D(double angle){
+            Position result;
+            double cosa = cos(angle);
+            double sina = sin(angle);
+            result.x = cosa*x - sina*y;
+            result.y = sina*x + cosa*y;
+            result.z = z;
+            return result;
+          }
       };
 
       /** \brief A struct to represent vectors */
@@ -111,6 +173,17 @@ namespace libTF
             result.x = x*rhs;
             result.y = y*rhs;
             result.z = z*rhs;
+            return result;
+          }
+
+      /** \brief Rotate a vector about the z-axis */
+          Vector rot2D(double angle){
+            Vector result;
+            double cosa = cos(angle);
+            double sina = sin(angle);
+            result.x = cosa*x - sina*y;
+            result.y = sina*x + cosa*y;
+            result.z = z;
             return result;
           }
 
