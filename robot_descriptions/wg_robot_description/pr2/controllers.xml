@@ -3,7 +3,7 @@
 <robot name="pr2"><!-- name of the robot-->
 
 
-  <controller name="base_controller" topic="base_controller" type="1BaseControllerNode">
+  <controller name="base_controller" topic="base_controller" type="BaseControllerNode">
     <controller name="caster_front_left_controller" topic="caster_front_left_controller" type="JointVelocityControllerNode">
         <joint name="caster_front_left_joint" >
           <pid p="1" d="0" i="0" iClamp="0" />
