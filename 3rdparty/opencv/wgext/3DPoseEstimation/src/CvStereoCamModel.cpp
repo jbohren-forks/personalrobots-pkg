@@ -5,6 +5,7 @@ using namespace std;
 
 #include <opencv/cxtypes.h>
 #include <opencv/cxcore.h>
+#include "CvMatUtils.h"
 
 
 CvStereoCamModel::CvStereoCamModel(double Fx, double Fy, double Tx, double Clx, double Crx, double Cy):
@@ -74,8 +75,9 @@ bool CvStereoCamModel::constructProjectionMatrices(){
     cvCopy(&_P, &mMatCartToDisp);
 
  	// construct the matrix that maps from disparity coordinates to
-	// cartesian coordinates
-#if 0
+	// Cartesian coordinates
+#if 1
+    // the following is computationally cleaner and may introduce less error
 	double Q[] =
 	{
 		1,         0,          0,               -mClx,
@@ -97,7 +99,6 @@ bool CvStereoCamModel::constructProjectionMatrices(){
 
 	CvMat _Q = cvMat(4, 4, CV_64F, Q);
 	cvCopy(&_Q, &mMatDispToCart);
-
 
     return status;
 }
