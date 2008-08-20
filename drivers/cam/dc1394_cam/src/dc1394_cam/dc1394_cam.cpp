@@ -410,8 +410,17 @@ dc1394_cam::Cam::getDc1394Frame(dc1394capture_policy_t policy)
     if (!started)
       start();
 
-    dc1394video_frame_t* f;
+    dc1394video_frame_t* f = NULL;
     CHECK_ERR_CLEAN( dc1394_capture_dequeue(dcCam, policy, &f), "Could not capture frame");
+
+    if (f != NULL &&
+        (f->frames_behind > 1  || 
+         dc1394_capture_is_frame_corrupt(dcCam, f) == DC1394_TRUE)
+        )
+    {
+      releaseDc1394Frame(f);
+      f = NULL;
+    }
 
     return f;
 }
@@ -487,9 +496,8 @@ dc1394_cam::Cam::getControlRegister(uint64_t offset)
 
 
 void
-dc1394_cam::Cam::cleanup() {
-  CHECK_READY();
-
+dc1394_cam::Cam::cleanup()
+{
   if (FD_ISSET(dc1394_capture_get_fileno(dcCam), &camFds))
     FD_CLR(dc1394_capture_get_fileno(dcCam), &camFds);
 
