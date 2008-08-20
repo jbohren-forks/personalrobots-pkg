@@ -61,10 +61,10 @@ void JointEffortController::init(std::string name,mechanism::Robot *robot)
 void JointEffortController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
    
-  TiXmlElement *elt = config->FirstChildElement("joint");
-  if (elt) 
+  TiXmlElement *jnt = config->FirstChildElement("joint");
+  if (jnt) 
   {
-    init(elt->Attribute("name"), robot);
+    init(jnt->Attribute("name"), robot);
   } 
 }
 

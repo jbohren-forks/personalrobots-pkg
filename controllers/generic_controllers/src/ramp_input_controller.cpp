@@ -67,13 +67,13 @@ void RampInputController::init(double input_start, double input_end, double dura
 void RampInputController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   
-  TiXmlElement *elt = config->FirstChildElement("joint");
-  if (elt) 
+  TiXmlElement *jnt = config->FirstChildElement("joint");
+  if (jnt) 
   {
-    double input_start = atof(elt->FirstChildElement("start")->GetText());
-    double input_end = atof(elt->FirstChildElement("end")->GetText());
-    double duration = atof(elt->FirstChildElement("duration")->GetText());
-    init(input_start, input_end, duration,robot->hw_->current_time_,elt->Attribute("name"), robot);
+    double input_start = atof(jnt->FirstChildElement("controller_defaults")->Attribute("start"));
+    double input_end = atof(jnt->FirstChildElement("controller_defaults")->Attribute("end"));
+    double duration = atof(jnt->FirstChildElement("controller_defaults")->Attribute("duration"));
+    init(input_start, input_end, duration,robot->hw_->current_time_,jnt->Attribute("name"), robot);
   }
     
 }
