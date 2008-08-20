@@ -58,7 +58,7 @@ namespace controller
 {
 
   /*! \struct
-    \brief This class holds information for a joint control parameter structure. 
+    \brief This class holds information for a joint control parameter structure.
    */
   typedef struct
   {
@@ -72,12 +72,12 @@ namespace controller
 
       std::string joint_name; /** joint name */
 
-      std::string control_type; /** control type */ 
+      std::string control_type; /** control type */
 
   }JointControlParam;
 
-  /*! \class 
-    \brief This class holds local information for the links in the base (wheels and casters). It includes position, name, 
+  /*! \class
+    \brief This class holds local information for the links in the base (wheels and casters). It includes position, name,
     controller, pointer to the corresponding joint in the Robot structure, pointer to parent and a local ID.
    */
   class BaseParam
@@ -104,7 +104,7 @@ namespace controller
   class BaseController : public Controller
   {
     public:
-  
+
     /*!
      * \brief Default Constructor of the JointController class.
      *
@@ -121,7 +121,7 @@ namespace controller
      *
      */
     void init(std::vector<JointControlParam> jcp, mechanism::Robot *robot);
-    void initXml(mechanism::Robot *robot, TiXmlElement *config);
+    bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
     /*!
      * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
@@ -136,7 +136,7 @@ namespace controller
     libTF::Pose3D::Vector getCommand();
 
     /*!
-     * \brief (a) Updates commands to caster and wheels. 
+     * \brief (a) Updates commands to caster and wheels.
      *        (b) Computes odometry
      *        (c) Publishes odometry
      *  Should be called at regular intervals
@@ -164,7 +164,7 @@ namespace controller
     robot_desc::URDF urdf_model_;
 
     /*!
-     * \brief Set the publish count (number of update ticks between odometry message publishing). 
+     * \brief Set the publish count (number of update ticks between odometry message publishing).
      */
     void setPublishCount(int publish_count);
 
@@ -212,22 +212,22 @@ namespace controller
     /*!
      * \brief speed command vector used internally
      */
-    libTF::Pose3D::Vector cmd_vel_;  
-  
+    libTF::Pose3D::Vector cmd_vel_;
+
     /*!
      * \brief Input speed command vector.
      */
-    libTF::Pose3D::Vector cmd_vel_t_;  
+    libTF::Pose3D::Vector cmd_vel_t_;
 
     /*!
      * \brief Position of the robot computed by odometry.
      */
-    libTF::Pose3D::Vector base_odom_position_;  
+    libTF::Pose3D::Vector base_odom_position_;
 
     /*!
      * \brief Speed of the robot computed by odometry.
      */
-    libTF::Pose3D::Vector base_odom_velocity_;  
+    libTF::Pose3D::Vector base_odom_velocity_;
 
     /*!
      * \brief Computed the desired steer angle for the caster.
@@ -244,9 +244,9 @@ namespace controller
     std::vector<double> steer_velocity_desired_; /** vector of desired caster steer speeds */
 
     /*!
-     * \brief compute the speed of the base for odometry calculations 
+     * \brief compute the speed of the base for odometry calculations
      */
-    void computeBaseVelocity(); 
+    void computeBaseVelocity();
 
     /*!
      * \brief compute the odometry
@@ -301,7 +301,7 @@ namespace controller
 
     void update();
 
-    void initXml(mechanism::Robot *robot, TiXmlElement *config);
+    bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
     // Services
     bool setCommand(pr2_controllers::SetBaseCommand::request &req,

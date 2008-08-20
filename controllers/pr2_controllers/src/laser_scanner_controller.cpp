@@ -45,7 +45,7 @@ LaserScannerController::LaserScannerController()
 {
   robot_ = NULL;
   joint_ = NULL;
-  
+
   command_ = 0;
   last_time_ = 0;
   profile_index_ = 0;
@@ -62,31 +62,32 @@ LaserScannerController::~LaserScannerController()
   //Free memory in profile if needed
   if(profile_locations_!=NULL) delete[] profile_locations_;
   if(profile_dt_!=NULL) delete[] profile_dt_;
- 
+
 }
 
 void LaserScannerController::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot)
 {
   robot_ = robot;
   joint_ = robot->getJoint(name);
-  
+
   joint_position_controller_.init( p_gain,  i_gain,  d_gain,  windup, time, name, robot);
   command_= 0;
   last_time_= time;
 }
 
-void LaserScannerController::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool LaserScannerController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   TiXmlElement *jnt = config->FirstChildElement("joint");
-  if (jnt) 
+  if (jnt)
   {
-    // TODO: error check if xml attributes/elements are missing 
+    // TODO: error check if xml attributes/elements are missing
     double p_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("p"));
     double i_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("i"));
     double d_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("d"));
     double windup = atof(jnt->FirstChildElement("controller_defaults")->Attribute("iClamp"));
     init(p_gain, i_gain, d_gain, windup, robot->hw_->current_time_,jnt->Attribute("name"), robot);
   }
+  return true;
 }
 
 // Set the joint position command
@@ -123,33 +124,33 @@ void LaserScannerController::update()
 
       //Check if enough time has elapsed to move to next set point
       if(time-time_of_last_point_ >= profile_dt_[profile_index_])
-      {  
-        #ifdef DEBUG          
+      {
+        #ifdef DEBUG
         printf("DLL : %f %f\n",profile_locations_[profile_index_],time- time_of_last_point_);
         #endif
         time_of_last_point_ = time;
-	   
+
         //Advance time index
     		 if(profile_index_ == (profile_length_-1))
          {
   			  profile_index_ = 0; //Restart profile
   			  cycle_start_time_ = time;
-  			} else profile_index_++;  		 
+  			} else profile_index_++;
       }
       break;
     case DYNAMIC_SAWTOOTH:
       //Advance to next period
-      if(time-cycle_start_time_>period_) cycle_start_time_ = time;    
+      if(time-cycle_start_time_>period_) cycle_start_time_ = time;
 
-      //Issue command based on time from start of cycle    
+      //Issue command based on time from start of cycle
       setDynamicSawtooth(time-cycle_start_time_);
       break;
     case DYNAMIC_SINEWAVE:
       //Advance to next period
-      if(time-cycle_start_time_>period_) cycle_start_time_ = time;    
+      if(time-cycle_start_time_>period_) cycle_start_time_ = time;
 
-      //Issue command based on time from start of cycle    
-      setDynamicSinewave(time-cycle_start_time_);           
+      //Issue command based on time from start of cycle
+      setDynamicSinewave(time-cycle_start_time_);
       break;
     case AUTO_LEVEL:
       break;
@@ -173,7 +174,7 @@ void LaserScannerController::setSawtoothProfile(double period, double amplitude,
   double newvalue = 0;
 
   //Error checking
-  if(total_elements<=0) return;  
+  if(total_elements<=0) return;
 
   //Clear arrays
   if(profile_locations_ !=NULL) delete[] profile_locations_;
@@ -191,12 +192,12 @@ void LaserScannerController::setSawtoothProfile(double period, double amplitude,
     newvalue = current + delta; //Calculate next value
     if(i == smaller_num_elements) //Shift from quadrant 1 to 2
     {
-      delta = -delta;      
+      delta = -delta;
       newvalue = current + delta;
     }
     else if (i == smaller_num_elements*3)//Shift from quadrant 3-4
     {
-      delta = -delta;       
+      delta = -delta;
       newvalue = current + delta;
     }
     current = newvalue;
@@ -212,16 +213,16 @@ void LaserScannerController::setSawtoothProfile(double period, double amplitude,
 
 //Set mode to use sawtooth profile
 void LaserScannerController::setSawtoothProfile(double period, double amplitude, double offset)
-{   
+{
   period_ = period;
   amplitude_ = amplitude;
   offset_ = offset;
-  
+
    //Reset profile settings
   profile_length_ = 0;
-  profile_index_= 0; 
+  profile_index_= 0;
   cycle_start_time_ = robot_->hw_->current_time_;
-  
+
   current_mode_ = DYNAMIC_SAWTOOTH;
 }
 
@@ -237,15 +238,15 @@ void LaserScannerController::setSinewaveProfile(double period, double amplitude,
   double last_temp_value = 0.0;
 
   //Error checking
-  if(total_elements<=0) return; 
- 
+  if(total_elements<=0) return;
+
   //Clear arrays
   if(profile_locations_ !=NULL) delete[] profile_locations_;
   if(profile_dt_ !=NULL) delete[] profile_dt_;
 
   profile_locations_ = new double[total_elements];
   profile_dt_ = new double[total_elements];
-  
+
   //Construct evenly spaced elements in distance along sine wave
   for(int i = 0;i<total_elements;i++)
   {
@@ -253,30 +254,30 @@ void LaserScannerController::setSinewaveProfile(double period, double amplitude,
     newvalue = current + delta; //Calculate next value
     if(i == smaller_num_elements) //Shift from quadrant 1 to 2
     {
-      delta = -delta;      
+      delta = -delta;
       newvalue = current + delta;
     }
     else if (i == smaller_num_elements*3)//Shift from quadrant 3-4
     {
-      delta = -delta;       
+      delta = -delta;
       newvalue = current + delta;
     }
-    
-    current = newvalue;   
+
+    current = newvalue;
     current = min(max(current, -1.0), 1.0); //Make sure asin doesn't fail
-  }        
-  
+  }
+
   profile_locations_[0] = offset; //set first value
 
    //At time 0, we wish for our location to be at offset. Start indexing at 1, but associate dt with previous value
   for(int i = 1;i<total_elements;i++)
-  { 
-    temp_value = asin(profile_locations_[i]); //Calculate time 
+  {
+    temp_value = asin(profile_locations_[i]); //Calculate time
     profile_dt_[i-1] = fabs(temp_value-last_temp_value)*period/(2*M_PI); //Calculate dt, scale by period
     profile_locations_[i] = temp_value*amplitude + offset; //Scale goal location by amplitude
     last_temp_value = temp_value;
 
-    #ifdef DEBUG           
+    #ifdef DEBUG
     printf("*** test %u %f %f\n",i,profile_dt_[i-1],profile_locations_[i]);
     #endif
   }
@@ -304,10 +305,10 @@ void LaserScannerController::setSinewaveProfile(double period, double amplitude,
 {
    //Reset profile settings
   profile_length_ = 0;
-  profile_index_= 0; 
+  profile_index_= 0;
   cycle_start_time_ = robot_->hw_->current_time_;
   current_mode_ = DYNAMIC_SINEWAVE;
-  
+
   period_ = period;
   amplitude_ = amplitude;
   offset_ = offset;
@@ -336,14 +337,14 @@ void LaserScannerController::setJointEffort(double effort)
 //Get sinewave based on current time
 void LaserScannerController::setDynamicSinewave(double time_from_start)
 {
-  joint_position_controller_.setCommand(sin(2*M_PI*time_from_start/period_)*amplitude_+offset_); 
+  joint_position_controller_.setCommand(sin(2*M_PI*time_from_start/period_)*amplitude_+offset_);
 }
 
 //Set mode to use sawtooth profile
 void LaserScannerController::setDynamicSawtooth(double time_from_start)
 {
   double time_from_peak = fmod(time_from_start,(period_/4));
-  double command = (time_from_peak)/(period_/4)*amplitude_;  
+  double command = (time_from_peak)/(period_/4)*amplitude_;
 
   if(time_from_start<period_/4.0) //Quadrant I
   {
@@ -361,12 +362,12 @@ void LaserScannerController::setDynamicSawtooth(double time_from_start)
   {
     command = -amplitude_ + command + offset_;
   }
-  
+
   joint_position_controller_.setCommand(command);
 }
 
 ROS_REGISTER_CONTROLLER(LaserScannerControllerNode)
-LaserScannerControllerNode::LaserScannerControllerNode() 
+LaserScannerControllerNode::LaserScannerControllerNode()
 {
   c_ = new LaserScannerController();
 }
@@ -388,7 +389,7 @@ bool LaserScannerControllerNode::setCommand(
 {
   c_->setCommand(req.command);
   resp.command = c_->getCommand();
-  
+
   //FIXME: Backdoor method to issue command set
   if(req.command==41)c_->setSawtoothProfile(1,0.5,100,0);
   else if(req.command==42)c_->setSawtoothProfile(2,0.5,100,0);
@@ -412,13 +413,15 @@ bool LaserScannerControllerNode::getCommand(
   return true;
 }
 
-void LaserScannerControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool LaserScannerControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
-  
-  c_->initXml(robot, config);
+
+  if (!c_->initXml(robot, config))
+    return false;
   node->advertise_service(prefix + "/set_command", &LaserScannerControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_command", &LaserScannerControllerNode::getCommand, this);
+  return true;
 }
 

@@ -112,7 +112,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
     if(joint_name.find("caster") != string::npos)
     {
       base_object.local_id_ = num_casters_;
-      base_casters_.push_back(base_object);      
+      base_casters_.push_back(base_object);
       steer_angle_actual_.push_back(0);
       steer_velocity_desired_.push_back(0);
       num_casters_++;
@@ -145,7 +145,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
   robot_ = robot;
 }
 
-void BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   std::cout << " base controller initxml " << std::endl << *config << std::endl;
   TiXmlElement *elt = config->FirstChildElement("controller");
@@ -193,6 +193,7 @@ void BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
     std::cout << " sub map : " << elt->Attribute("name") << std::endl;
   }
   init(jcp_vec,robot);
+  return true;
 }
 
 void BaseController::getJointValues()
@@ -267,11 +268,11 @@ void BaseController::computeAndSetCasterSteer()
   {
     result = computePointVelocity2D(base_casters_[i].pos_, cmd_vel_);
     steer_angle_desired = atan2(result.y,result.x);
-    steer_angle_desired =  modNPiBy2(steer_angle_desired);//Clean steer Angle    
+    steer_angle_desired =  modNPiBy2(steer_angle_desired);//Clean steer Angle
     steer_velocity_desired_[i] = kp_speed_*steer_angle_desired;
     std::cout << "setting steering velocity " << i << " : " << steer_velocity_desired_[i] << " kp: " << kp_speed_ << std::endl;
     base_casters_[i].controller_.setCommand(steer_velocity_desired_[i]);
-  } 
+  }
 }
 
 void BaseController::computeAndSetWheelSpeeds()
@@ -298,7 +299,7 @@ void BaseController::computeAndSetWheelSpeeds()
     wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
 //    wheel_point_velocity_projected = rotate2D(wheel_point_velocity,-steer_angle_actual);
     wheel_point_velocity_projected = wheel_point_velocity.rot2D(-steer_angle_actual);
-    wheel_speed_cmd = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/wheel_radius_;     
+    wheel_speed_cmd = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/wheel_radius_;
     std::cout << "setting wheel speed " << i << " : " << wheel_speed_cmd << " r:" << wheel_radius_ << std::endl;
     base_wheels_[i].controller_.setCommand(wheel_speed_cmd);
   }
@@ -313,7 +314,7 @@ void BaseController::updateJointControllers()
 }
 
 ROS_REGISTER_CONTROLLER(BaseControllerNode)
-  BaseControllerNode::BaseControllerNode() 
+  BaseControllerNode::BaseControllerNode()
 {
   c_ = new BaseController();
 }
@@ -358,22 +359,22 @@ bool BaseControllerNode::getCommand(
   return true;
 }
 
-void BaseControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool BaseControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
 
-  c_->initXml(robot, config);
+  if (!c_->initXml(robot, config))
+    return false;
   node->advertise_service(prefix + "/set_command", &BaseControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_command", &BaseControllerNode::getCommand, this);
-
-
+  return true;
 }
 
 Pose3D::Vector BaseController::computePointVelocity2D(const Pose3D::Vector& pos, const Pose3D::Vector& vel)
 {
   Pose3D::Vector result;
-  
+
   result.x = vel.x - pos.y * vel.z;
   result.y = vel.y + pos.x * vel.z;
   result.z = 0;
@@ -381,7 +382,7 @@ Pose3D::Vector BaseController::computePointVelocity2D(const Pose3D::Vector& pos,
   return result;
 }
 
-void BaseController::computeOdometry(double time) 
+void BaseController::computeOdometry(double time)
 {
   double dt = time-last_time_;
 //   libTF::Pose3D::Vector base_odom_delta = rotate2D(base_odom_velocity_*dt,base_odom_position_.z);
@@ -422,7 +423,7 @@ void BaseController::computeBaseVelocity()
     C.element(i*2+1, 1) = 1;
     C.element(i*2+1, 2) =  base_wheels_position_[i].x;
   }
-  D = pseudoInverse(C)*A; 
+  D = pseudoInverse(C)*A;
   base_odom_velocity_.x = (double)D.element(0,0);
   base_odom_velocity_.y = (double)D.element(1,0);
   base_odom_velocity_.z = (double)D.element(2,0);
@@ -521,17 +522,17 @@ Matrix BaseController::pseudoInverse(const Matrix M)
 //   //Matrix B(NUM_WHEELS,1);
 //   Matrix C(2*NUM_WHEELS,3);
 //   Matrix D(3,1);
-  
+
 //   for(int i = 0; i < NUM_CASTERS; i++) {
 //     A.element(i*4,0) = cos(robot->joint[i*3].position) *WHEEL_RADIUS*((double)-1)*robot->joint[i*3+1].velocity;
 //     A.element(i*4+1,0) = sin(robot->joint[i*3].position) *WHEEL_RADIUS*((double)-1)*robot->joint[i*3+1].velocity;
 //     A.element(i*4+2,0) = cos(robot->joint[i*3].position) *WHEEL_RADIUS*robot->joint[i*3+2].velocity;
-//     A.element(i*4+3,0) = sin(robot->joint[i*3].position)* WHEEL_RADIUS*robot->joint[i*3+2].velocity;      
+//     A.element(i*4+3,0) = sin(robot->joint[i*3].position)* WHEEL_RADIUS*robot->joint[i*3+2].velocity;
 //   }
 
 //   /*
 //     for(int i = 0; i < (NUM_WHEELS + NUM_CASTERS); i++) {
-//     printf("i: %i pos : %03f vel: %03f\n", i,robot->joint[i].position, robot->joint[i].velocity); 
+//     printf("i: %i pos : %03f vel: %03f\n", i,robot->joint[i].position, robot->joint[i].velocity);
 //     }
 //   */
 //   for(int i = 0; i < NUM_CASTERS; i++) {
@@ -549,7 +550,7 @@ Matrix BaseController::pseudoInverse(const Matrix M)
 //     C.element(i*4+3, 2) =  Rot2D(CASTER_DRIVE_OFFSET[i*2+1].x,CASTER_DRIVE_OFFSET[i*2+1].y,robot->joint[i*3].position).x + BASE_CASTER_OFFSET[i].x;
 //   }
 
-//   D = pseudoInverse(C)*A; 
+//   D = pseudoInverse(C)*A;
 //   /*
 //     aTest = C*commandTest;
 //     cout << "A:" << endl;
@@ -560,13 +561,13 @@ Matrix BaseController::pseudoInverse(const Matrix M)
 //     cout << commandTest << endl;
 //     cout << "aTest: "<< endl;
 //     cout << aTest << endl;
-//     //   
+//     //
 //     //
 //   */
 //   base_odom_vx_ = (double)D.element(0,0);
 //   base_odom_vy_ = (double)D.element(1,0);
 //   base_odom_vw_ = (double)D.element(2,0);
-//   //cout << "D :" << endl;  
+//   //cout << "D :" << endl;
 //   //cout << D << endl;
 // }
 

@@ -49,7 +49,7 @@ namespace controller
 class LaserScannerController : public Controller
 {
 public:
-  
+
   enum LaserControllerMode
   {
     MANUAL,SAWTOOTH,SINEWAVE,DYNAMIC_SAWTOOTH,DYNAMIC_SINEWAVE,AUTO_LEVEL
@@ -71,7 +71,7 @@ public:
    *
    */
   void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot);
-  void initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
@@ -106,7 +106,7 @@ public:
    */
 
   void setSawtoothProfile(double period, double amplitude, int num_elements, double offset);
-  
+
   /*!
    * \brief Set automatic profile to sawtooth, dynamically calculate desired position at each timestep
    *\param double period Period of signal
@@ -115,7 +115,7 @@ public:
    *\param double current_time Used to determine start of cycle
    */
   void setSawtoothProfile(double period, double amplitude, double offset);
-  
+
   /*!
    * \brief Set automatic profile to sinewave
    *\param double period Period of signal
@@ -125,7 +125,7 @@ public:
    *\param double current_time Used to determine start of cycle
    */
   void setSinewaveProfile(double period, double amplitude, int num_elements, double offset);
-  
+
   /*!
    * \brief Set automatic profile to sinewave, dynamically calculate desired position at each timestep
    *\param double period Period of signal
@@ -134,7 +134,7 @@ public:
    *\param double current_time Used to determine start of cycle
    */
   void setSinewaveProfile(double period, double amplitude,double offset);
-  
+
   /*!
    * \brief Starts the process of auto-leveling
    */
@@ -159,13 +159,13 @@ private:
   /*!
    * \brief Get dynamically calculated sinewave position based on time
    *\param double time_from_start Time elapsed since beginning of current period
-   */  
+   */
   void setDynamicSinewave(double time_from_start);
-  
+
    /*!
    * \brief Get dynamically calculated sawtooth position based on time
    *\param double time_from_start Time elapsed since beginning of current period
-   */  
+   */
   void setDynamicSawtooth(double time_from_start);
 
 
@@ -180,7 +180,7 @@ private:
   int profile_length_; /**<Number of points in one cycle>*/
   double cycle_start_time_; //**<Start of the last cycle for profile>*/
 
-  double time_of_last_point_;/*!<Time of last setpoint>*/  
+  double time_of_last_point_;/*!<Time of last setpoint>*/
   double period_;/*!<Period for use in dynamic profile calculation>*/
   double amplitude_;/*!<Amplitude for use in dynamic profile calculation>*/
   double offset_;/*!<Offset for use in dynamic profile calculation>*/
@@ -207,7 +207,7 @@ public:
 
   void update();
 
-  void initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   // Services
   bool setCommand(generic_controllers::SetCommand::request &req,
