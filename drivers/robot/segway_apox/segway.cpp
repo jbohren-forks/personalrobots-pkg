@@ -64,7 +64,7 @@ Segway::Segway() :
   tf(*this),
   req_timeout(false)
 {
-  odom.header.frame_id = tf.lookup("FRAMEID_ODOM");
+  odom.header.frame_id = "FRAMEID_ODOM";
   advertise("odom", odom);
   subscribe("cmd_vel", cmd_vel, &Segway::cmd_vel_cb);
   subscribe("operating_mode", op_mode, &Segway::op_mode_cb);
