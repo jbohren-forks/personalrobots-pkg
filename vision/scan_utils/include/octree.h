@@ -57,8 +57,8 @@ namespace scan_utils {
     Octree to behave as if that leaf was never set. A NULL leaf and a
     leaf with the \a emptyValue stored inside will return the same
     thing, but not always act the same way (see below for intersection
-    tests). If you want a region of space to be EMPTY, use \erase to
-    remove all leaves there.
+    tests). If you want a region of space to be EMPTY, use \a
+    erase(...) to remove all leaves there.
 
     The Octree also provides cell access, meaning you can access an
     individual cell by its indices in the Octree rather than its
@@ -70,7 +70,7 @@ namespace scan_utils {
     An important note on the difference between cells and leaves: a
     leaf can be of any size, up to one eighth of the entire octree (in
     the case in which is sits directly under the root). A cell on the
-    oter hand is always the same size, equal to the smallest possible
+    other hand is always the same size, equal to the smallest possible
     leaf.
 
     The convention for cell accessors is the following: all indices
@@ -83,7 +83,7 @@ namespace scan_utils {
     true if ANY LEAF of the triangle intersects the primitive,
     REGARDLESS of the leaf's actual value. If you do not want a
     certain part of space to return true for these intersection tests,
-    use \a erase to remove the leaves in that part of space.
+    use \a erase(...) to remove the leaves in that part of space.
 */
 template <typename T>
 class Octree {
@@ -262,7 +262,7 @@ class Octree {
   set the tree to autoExpand and it will grow in height as necessary
   when data is inserted, but the dimensions of the smallest cell will
   always remain what you have specified here. Unless you tinker with
-  them with setExtents(...), of course.
+  them with setSize(...), of course.
  */
 
 template <typename T>
