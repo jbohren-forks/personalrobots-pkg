@@ -49,15 +49,15 @@
 
 namespace gazebo {
 
-  GZ_REGISTER_DYNAMIC_CONTROLLER("test_actuators", GazeboActuators);
+  GZ_REGISTER_DYNAMIC_CONTROLLER("test_actuators", TestActuators);
 
-  GazeboActuators::GazeboActuators(Entity *parent)
+  TestActuators::TestActuators(Entity *parent)
     : Controller(parent) , hw_(0), mc_(&hw_), rmc_(&hw_) , mcn_(&mc_), rmcn_(&rmc_)
   {
      this->parent_model_ = dynamic_cast<Model*>(this->parent);
 
      if (!this->parent_model_)
-        gzthrow("GazeboActuators controller requires a Model as its parent");
+        gzthrow("TestActuators controller requires a Model as its parent");
 
     rosnode_ = ros::g_node; // comes from where?
     int argc = 0;
@@ -88,12 +88,12 @@ namespace gazebo {
 
   }
 
-  GazeboActuators::~GazeboActuators()
+  TestActuators::~TestActuators()
   {
     //deleteElements(&gazebo_joints_);
   }
 
-  void GazeboActuators::LoadChild(XMLConfigNode *node)
+  void TestActuators::LoadChild(XMLConfigNode *node)
   {
     // if we were doing some ros publishing...
     //this->topicName = node->GetString("topicName","default_ros_camera",0); //read from xml file
@@ -115,7 +115,7 @@ namespace gazebo {
 
   }
 
-  void GazeboActuators::InitChild()
+  void TestActuators::InitChild()
   {
     // TODO: mc_.init();
 
@@ -126,7 +126,7 @@ namespace gazebo {
     lastTime    = Simulator::Instance()->GetSimTime();
   }
 
-  void GazeboActuators::UpdateChild()
+  void TestActuators::UpdateChild()
   {
     //--------------------------------------------------
     //  run the reattime mc update
@@ -135,7 +135,7 @@ namespace gazebo {
 
   }
 
-  void GazeboActuators::FiniChild()
+  void TestActuators::FiniChild()
   {
     // TODO: will be replaced by global ros node eventually
     if (rosnode_ != NULL)
@@ -147,7 +147,7 @@ namespace gazebo {
     }
   }
 
-  void GazeboActuators::LoadMC(XMLConfigNode *node)
+  void TestActuators::LoadMC(XMLConfigNode *node)
   {
     //-------------------------------------------------------------------------------------------
     //
@@ -384,7 +384,7 @@ namespace gazebo {
   //                                                                                           //
   //                                                                                           //
   //-------------------------------------------------------------------------------------------//
-  void GazeboActuators::UpdateMC()
+  void TestActuators::UpdateMC()
   {
     // pass time to robot
     hw_.current_time_ = Simulator::Instance()->GetSimTime();
@@ -672,7 +672,7 @@ namespace gazebo {
 
 
   void
-  GazeboActuators::LoadFrameTransformOffsets()
+  TestActuators::LoadFrameTransformOffsets()
   {
     // get all links in pr2.xml
     robot_desc::URDF::Link* link;
@@ -864,7 +864,7 @@ namespace gazebo {
 
 
   int
-  GazeboActuators::AdvertiseSubscribeMessages()
+  TestActuators::AdvertiseSubscribeMessages()
   {
     //rosnode_->advertise<std_msgs::RobotBase2DOdom>("odom");
     rosnode_->advertise<std_msgs::PR2Arm>("left_pr2arm_pos");
@@ -873,17 +873,17 @@ namespace gazebo {
     rosnode_->advertise<std_msgs::Empty>("transform");
     //rosnode_->advertise<std_msgs::Point3DFloat32>("object_position");
 
-    //rosnode_->subscribe("cmd_vel", velMsg, &GazeboActuators::CmdBaseVelReceived);
-    rosnode_->subscribe("cmd_leftarmconfig", leftarmMsg, &GazeboActuators::CmdLeftarmconfigReceived);
-    rosnode_->subscribe("cmd_rightarmconfig", rightarmMsg, &GazeboActuators::CmdRightarmconfigReceived);
-    //rosnode_->subscribe("cmd_leftarm_cartesian", leftarmcartesianMsg, &GazeboActuators::CmdLeftarmcartesianReceived);
-    //rosnode_->subscribe("cmd_rightarm_cartesian", rightarmcartesianMsg, &GazeboActuators::CmdRightarmcartesianReceived);
+    //rosnode_->subscribe("cmd_vel", velMsg, &TestActuators::CmdBaseVelReceived);
+    rosnode_->subscribe("cmd_leftarmconfig", leftarmMsg, &TestActuators::CmdLeftarmconfigReceived);
+    rosnode_->subscribe("cmd_rightarmconfig", rightarmMsg, &TestActuators::CmdRightarmconfigReceived);
+    //rosnode_->subscribe("cmd_leftarm_cartesian", leftarmcartesianMsg, &TestActuators::CmdLeftarmcartesianReceived);
+    //rosnode_->subscribe("cmd_rightarm_cartesian", rightarmcartesianMsg, &TestActuators::CmdRightarmcartesianReceived);
     
     return(0);
   }
 
   void
-  GazeboActuators::CmdLeftarmconfigReceived()
+  TestActuators::CmdLeftarmconfigReceived()
   {
     this->lock.lock();
     printf("hoo!\n");
@@ -906,7 +906,7 @@ namespace gazebo {
     this->lock.unlock();
   }
   void
-  GazeboActuators::CmdRightarmconfigReceived()
+  TestActuators::CmdRightarmconfigReceived()
   {
     this->lock.lock();
     printf("hoo!\n");
@@ -930,21 +930,13 @@ namespace gazebo {
   }
 
   void
-  GazeboActuators::CmdLeftarmcartesianReceived()
+  TestActuators::CmdLeftarmcartesianReceived()
   {
     this->lock.lock();
     this->lock.unlock();
   }
   void
-  GazeboActuators::CmdRightarmcartesianReceived()
-  {
-    this->lock.lock();
-    this->lock.unlock();
-  }
-
-
-  void
-  GazeboActuators::CmdBaseVelReceived()
+  TestActuators::CmdRightarmcartesianReceived()
   {
     this->lock.lock();
     this->lock.unlock();
@@ -952,7 +944,15 @@ namespace gazebo {
 
 
   void
-  GazeboActuators::PublishFrameTransforms()
+  TestActuators::CmdBaseVelReceived()
+  {
+    this->lock.lock();
+    this->lock.unlock();
+  }
+
+
+  void
+  TestActuators::PublishFrameTransforms()
   {
 
     /***************************************************************/

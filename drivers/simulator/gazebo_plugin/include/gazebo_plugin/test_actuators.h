@@ -61,11 +61,11 @@ class HingeJoint;
 class PositionIface;
 class XMLConfigNode;
 
-class GazeboActuators : public gazebo::Controller
+class TestActuators : public gazebo::Controller
 {
 public:
-  GazeboActuators(Entity *parent);
-  virtual ~GazeboActuators();
+  TestActuators(Entity *parent);
+  virtual ~TestActuators();
 
   void LoadFrameTransformOffsets();
   void PublishFrameTransforms();
