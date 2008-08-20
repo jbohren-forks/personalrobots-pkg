@@ -225,13 +225,13 @@ class Octree {
 	//! Recursively computes the max depth in the Octree. Useful when Octree is read from file.
 	int computeMaxDepth() const {return mRoot->computeMaxDepth();}
 	//! Set this Octree from a ROS message
-	void setFromMsg(const OctreeMsg &msg);
+	bool setFromMsg(const OctreeMsg &msg);
 	//! Write this Octree in a ROS message
 	void getAsMsg(OctreeMsg &msg) const;
 	//! Write the Octree to a file in its own internal format
 	void writeToFile(std::ostream &os) const;
 	//! Read Octree from a file saved by the \a writeToFile(...) function 
-	void readFromFile(std::istream &is);
+	bool readFromFile(std::istream &is);
 
 	//! Checks if the given ray intersects the volume that this Octree occupies
 	bool intersectsRay(float rx, float ry, float rz, 
@@ -752,34 +752,39 @@ template <typename T>
 bool Octree<T>::deserialize(char *sourceString, unsigned int size)
 {
 	unsigned int address = 0;
-	mRoot->deserialize(sourceString,address, size);
+	mRoot->deserialize(sourceString, address, size);
 	if (address != size) {
-		fprintf(stderr,"Octree serialization error!\n");
+		fprintf(stderr,"Octree deserialization error!\n");
 		return false;
 	}
 	return true;
 }
 
 template <typename T>
-void Octree<T>::setFromMsg(const OctreeMsg &msg)
+bool Octree<T>::setFromMsg(const OctreeMsg &msg)
 {
+	if (sizeof(mEmptyValue) != msg.get_empty_value_size()) {
+		fprintf(stderr,"Incompatible data type in ROS Octree message!\n");
+		return false;
+	}
+
 	setCenter( msg.center.x, msg.center.y, msg.center.z);
 	setSize(msg.size.x, msg.size.y, msg.size.z);
 	setMaxDepth(msg.max_depth);
 	if (msg.uses_timestamps) mUsesTimestamps = true;
 	else mUsesTimestamps = false;
 
-	if (sizeof(mEmptyValue) != msg.get_empty_value_size()) {
-		fprintf(stderr,"Incompatible data type in ROS Octree message!\n");
-		return;
-	}
 	memcpy((char*)&mEmptyValue, msg.empty_value, sizeof(mEmptyValue) );
 
 	unsigned int size = msg.get_structure_data_size();
 	char *data  = new char[size];
 	memcpy(data, msg.structure_data, size);
-	deserialize(data,size);
+	bool result = deserialize(data,size);
 	delete[] data;
+	if (!result) {
+		fprintf(stderr,"Octree read from message: deserialization error!\n");
+		return false;
+	}
 
 	int depth = computeMaxDepth();
 	if (depth > mMaxDepth) {
@@ -787,6 +792,7 @@ void Octree<T>::setFromMsg(const OctreeMsg &msg)
 			"Octree read from message: depth found in data is greater than maxDepth specified in header!\n");
 		mMaxDepth = depth;
 	}
+	return true;
 }
 
 template <typename T>
@@ -835,7 +841,7 @@ void Octree<T>::writeToFile(std::ostream &os) const
   the stream following this Octree.
  */
 template <typename T>
-void Octree<T>::readFromFile(std::istream &is)
+bool Octree<T>::readFromFile(std::istream &is)
 {
 	//read the admin data
 	float fl[6];
@@ -853,14 +859,17 @@ void Octree<T>::readFromFile(std::istream &is)
 	is.seekg (current );
 
 	char *octreeString = new char[size];
+	bool result = true;
 	is.read(octreeString, size);
 	if (is.fail()) {
 		fprintf(stderr,"Only able to read %d instead of %d characters\n",is.gcount(), size);
+		result = false;
 	} else {
-		deserialize(octreeString,size);
+		result = deserialize(octreeString,size);
 	}
 
 	delete [] octreeString;
+	return result;
 }
 
 /*
