@@ -43,7 +43,7 @@ using namespace NEWMAT;
 
 ROS_REGISTER_CONTROLLER(BaseController)
 
-  BaseController::BaseController() : num_wheels_(0), num_casters_(0), odom_publish_counter_(0),odom_publish_count_(10)
+  BaseController::BaseController() : num_wheels_(0), num_casters_(0), odom_publish_count_(10), odom_publish_counter_(0)
 {
 }
 
@@ -71,6 +71,12 @@ libTF::Pose3D::Vector BaseController::getCommand()// Return the current position
   pthread_mutex_unlock(&base_controller_lock_);
   return cmd_vel;
 }
+
+void BaseController::setPublishCount(int publish_count)
+{
+  odom_publish_count_ = publish_count;
+};
+
 
 void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *robot)
 {

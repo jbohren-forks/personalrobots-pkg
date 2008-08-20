@@ -164,10 +164,9 @@ namespace controller
     robot_desc::URDF urdf_model_;
 
     /*!
-     * \brief number of update ticks to wait before publishing ROS odom message
-     * defaults to 10.
+     * \brief Set the publish count (number of update ticks between odometry message publishing). 
      */
-    int odom_publish_count_;
+    void setPublishCount(int publish_count);
 
     private:
 
@@ -180,6 +179,12 @@ namespace controller
      * \brief number of casters
      */
     int num_casters_;
+
+    /*!
+     * \brief number of update ticks to wait before publishing ROS odom message
+     * defaults to 10.
+     */
+    int odom_publish_count_;
 
     /*!
      * \brief local gain used for speed control of the caster (to achieve resultant position control)
