@@ -74,27 +74,28 @@ bool Joint::initXml(TiXmlElement *elt)
   type_ = g_type_map[type];
 
   TiXmlElement *limits = elt->FirstChildElement("limit");
-  if (limits)
+  if (!limits)
   {
-    if (limits->QueryDoubleAttribute("effort", &effort_limit_) != TIXML_SUCCESS)
-      effort_limit_ = 0.0;
-    if (limits->QueryDoubleAttribute("velocity", &velocity_limit_) != TIXML_SUCCESS)
-      velocity_limit_ = 0.0;
-
-
-    int min_ret = limits->QueryDoubleAttribute("min", &joint_limit_min_);
-    int max_ret = limits->QueryDoubleAttribute("max", &joint_limit_max_);
-
-    if (type_ == JOINT_ROTARY && min_ret == TIXML_NO_ATTRIBUTE && max_ret == TIXML_NO_ATTRIBUTE)
-    {
-      type_ = JOINT_CONTINUOUS;
-    }
+    fprintf(stderr, "Error: Joint \"%s\" has no limits specified.\n", name_.c_str());
+    return false;
   }
-  else
+
+  if (limits->QueryDoubleAttribute("effort", &effort_limit_) != TIXML_SUCCESS)
   {
-    if (type_ == JOINT_ROTARY)
-      type_ = JOINT_CONTINUOUS;
-    effort_limit_ = DBL_MAX;
+    fprintf(stderr, "Error: no effort limit specified for joint \"%s\"\n", name_.c_str());
+    return false;
+  }
+
+  if (limits->QueryDoubleAttribute("velocity", &velocity_limit_) != TIXML_SUCCESS)
+    velocity_limit_ = 0.0;
+
+
+  int min_ret = limits->QueryDoubleAttribute("min", &joint_limit_min_);
+  int max_ret = limits->QueryDoubleAttribute("max", &joint_limit_max_);
+
+  if (type_ == JOINT_ROTARY && min_ret == TIXML_NO_ATTRIBUTE && max_ret == TIXML_NO_ATTRIBUTE)
+  {
+    type_ = JOINT_CONTINUOUS;
   }
 
   return true;
