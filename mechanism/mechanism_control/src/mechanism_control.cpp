@@ -177,9 +177,10 @@ bool MechanismControl::spawnController(const std::string &type,
   if (c == NULL)
     return false;
   printf("Spawning %s: %08x\n", name.c_str(), (int)&model_);
-  c->initXml(&model_, config);
 
-  if (!addController(c, name))
+
+  if (!c->initXml(&model_, config) ||
+      !addController(c, name))
   {
     delete c;
     return false;
@@ -327,7 +328,14 @@ bool MechanismControlNode::spawnController(
 {
   TiXmlDocument doc;
   doc.Parse(req.xml_config.c_str());
-  resp.ok = mc_->spawnController(req.type, req.name, doc.RootElement());
+
+  TiXmlElement *config = doc.RootElement();
+  if (!config->Attribute("type"))
+    resp.ok = false;
+  else if (!config->Attribute("name"))
+    resp.ok = false;
+  else
+    resp.ok = mc_->spawnController(config->Attribute("type"), config->Attribute("name"), config);
   return true;
 }
 

@@ -11,7 +11,7 @@ def print_usage(exit_code = 0):
     print '''Commands:
     lt  - List controller Types
     lc  - List active controllers
-    sp <type> <name>  - Spawn a <type> controller, calling it <name> (config on stdin)
+    sp  - Spawn a controller using the xml passed over stdin
     kl <name>  - Kills the controller named <name>'''
     sys.exit(exit_code)
 
@@ -27,12 +27,11 @@ def list_controllers():
     for c in resp.controllers:
         print c
 
-def spawn_controller(args):
-    type, name = args[0], args[1]
+def spawn_controller():
     s = rospy.ServiceProxy('spawn_controller', SpawnController)
-    resp = s.call(SpawnControllerRequest(type, name, sys.stdin.read()))
+    resp = s.call(SpawnControllerRequest(sys.stdin.read()))
     if resp.ok == 1:
-        print "Spawned %s successfully" % name
+        print "Spawned successfully"
     else:
         print "Error when spawning", resp.ok
 
@@ -53,6 +52,6 @@ if __name__ == '__main__':
     elif sys.argv[1] == 'lc':
         list_controllers()
     elif sys.argv[1] == 'sp':
-        spawn_controller(sys.argv[2:])
+        spawn_controller()
     elif sys.argv[1] == 'kl':
         kill_controller(sys.argv[2])
