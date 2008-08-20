@@ -151,6 +151,7 @@ void rosTFClient::transformLaserScanToPointCloud(const std::string & target_fram
 
 void rosTFClient::receiveArray()
 {
+  try{
   for (unsigned int i = 0; i < tfArrayIn.eulers_size; i++)
   {
     setWithEulers(tfArrayIn.eulers[i].header.frame_id, tfArrayIn.eulers[i].parent, tfArrayIn.eulers[i].x, tfArrayIn.eulers[i].y, tfArrayIn.eulers[i].z, tfArrayIn.eulers[i].yaw, tfArrayIn.eulers[i].pitch, tfArrayIn.eulers[i].roll, tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + tfArrayIn.eulers[i].header.stamp.nsec);
@@ -183,6 +184,12 @@ void rosTFClient::receiveArray()
     
     //  std::cout << "recieved Matrix:" << tempMatrix << " in frame: " << tfArrayIn.matrices[i].header.header.frame_id << " with parent:" << tfArrayIn.matrices[i].parent << " at time:" << tfArrayIn.matrices[i].header.stamp.to_double() << std::endl;
   }
+  }
+  catch (libTF::Exception &ex)
+  {
+    std::cerr<< ex.what();
+  };
+
 
 };
 
