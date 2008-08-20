@@ -132,7 +132,7 @@ class Octree {
             leaves that are further down than the new depth that is
             set.
 	 */
-	void setDepth(int d){if (d<=0) d=1; mMaxDepth = d;}
+	void setMaxDepth(int d){if (d<=0) d=1; mMaxDepth = d;}
 	//! Returns the max. depth of the Octree
 	int getMaxDepth() const {return mMaxDepth;}
 	//! Returns the maximum number of cells along one dimension of this Octree
@@ -279,7 +279,7 @@ Octree<T>::Octree(float cx, float cy, float cz,
 		dx *= 2; dy *= 2; dz *= 2;
 	}
 	setSize(dx,dy,dz);
-	setDepth(maxDepth);
+	setMaxDepth(maxDepth);
 	mEmptyValue = emptyValue;
 	mUsesTimestamps = false;
 	mAutoExpand = false;
@@ -765,7 +765,7 @@ void Octree<T>::setFromMsg(const OctreeMsg &msg)
 {
 	setCenter( msg.center.x, msg.center.y, msg.center.z);
 	setSize(msg.size.x, msg.size.y, msg.size.z);
-	setDepth(msg.max_depth);
+	setMaxDepth(msg.max_depth);
 	if (msg.uses_timestamps) mUsesTimestamps = true;
 	else mUsesTimestamps = false;
 
