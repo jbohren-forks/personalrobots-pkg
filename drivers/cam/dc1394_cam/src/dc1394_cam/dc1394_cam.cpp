@@ -459,7 +459,7 @@ dc1394_cam::Cam::setFeature(dc1394feature_t feature, uint32_t value)
   CHECK_READY();
   dc1394bool_t present;
   CHECK_ERR_CLEAN( dc1394_feature_is_present(dcCam, feature, &present), "Could not check if feature was present");
-  if (present)
+  if (present == DC1394_TRUE)
     CHECK_ERR_CLEAN( dc1394_feature_set_value(dcCam, feature, value), "Could not set feature");
 }
 
@@ -469,7 +469,7 @@ dc1394_cam::Cam::setFeatureAbsolute(dc1394feature_t feature, float value)
   CHECK_READY();
   dc1394bool_t present;
   CHECK_ERR_CLEAN( dc1394_feature_is_present(dcCam, feature, &present), "Could not check if feature was present");
-  if (present)
+  if (present == DC1394_TRUE)
   {
     CHECK_ERR_CLEAN( dc1394_feature_set_absolute_control(dcCam, feature,  DC1394_ON), "Could not enable absolute control.");
     CHECK_ERR_CLEAN( dc1394_feature_set_absolute_value(dcCam, feature, value), "Could not set feature");
@@ -482,7 +482,7 @@ dc1394_cam::Cam::setFeatureMode(dc1394feature_t feature, dc1394feature_mode_t mo
   CHECK_READY();
   dc1394bool_t present;
   CHECK_ERR_CLEAN( dc1394_feature_is_present(dcCam, feature, &present), "Could not check if feature was present");
-  if (present)
+  if (present == DC1394_TRUE)
   {
     CHECK_ERR_CLEAN( dc1394_feature_set_absolute_control(dcCam, feature,  DC1394_ON), "Could not disable absolute control.");
     CHECK_ERR_CLEAN( dc1394_feature_set_mode(dcCam, feature, mode), "Could not set feature");
