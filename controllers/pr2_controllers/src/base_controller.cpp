@@ -84,6 +84,12 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
   robot_desc::URDF::Link *link;
   std::string joint_name;
 
+//  ros::g_node->advertise<std_msgs::RobotBase2DOdom>("odom");
+  std::string xml_content;
+  (ros::g_node)->get_param("robotdesc/pr2",xml_content);
+  if(!urdf_model_.loadString(xml_content.c_str()))
+     return;
+
   for(jcp_iter = jcp.begin(); jcp_iter != jcp.end(); jcp_iter++)
   {
     joint_name = jcp_iter->joint_name;
@@ -126,12 +132,6 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
     }
   }
   robot_ = robot;
-
-  ros::g_node->advertise<std_msgs::RobotBase2DOdom>("odom");
-  std::string xml_content;
-  ros::g_node->get_param("robotdesc/pr2",xml_content);
-  if(!urdf_model_.loadString(xml_content.c_str()))
-     return;
 
 }
 
@@ -222,7 +222,7 @@ void BaseController::update()
 
   if(odom_publish_counter_ > odom_publish_count_)
   {
-    ros::g_node->publish("odom", odom_msg_);
+    (ros::g_node)->publish("odom", odom_msg_);
     odom_publish_counter_ = 0;
   }
 
