@@ -41,6 +41,7 @@
 #include <ethercat_hardware/ethercat_hardware.h>
 
 #include <ros/node.h>
+#include <std_srvs/Empty.h>
 
 static int quit = 0;
 static const int NSEC_PER_SEC = 1e+9;
@@ -122,6 +123,15 @@ void quitRequested(int sig)
   quit = 1;
 }
 
+class Shutdown {
+public:
+  bool shutdownService(std_srvs::Empty::request &req, std_srvs::Empty::response &resp)
+  {
+    quitRequested(0);
+    return true;
+  }
+};
+
 void warnOnSecondary(int sig)
 {
   void *bt[32];
@@ -167,6 +177,8 @@ int main(int argc, char *argv[])
   pthread_attr_init(&rtThreadAttr);
   pthread_attr_setinheritsched(&rtThreadAttr, PTHREAD_EXPLICIT_SCHED);
   pthread_attr_setschedpolicy(&rtThreadAttr, SCHED_FIFO);
+
+  node->advertise_service("shutdown", &Shutdown::shutdownService);
 
   //Start thread
   int rv;
