@@ -164,6 +164,13 @@ bool JointPositionControllerNode::setCommand(
   return true;
 }
 
+// Return the current position command
+double JointPositionControllerNode::getCommand()
+{
+  return c_->getCommand();
+}
+
+
 bool JointPositionControllerNode::getActual(
   generic_controllers::GetActual::request &req,
   generic_controllers::GetActual::response &resp)
