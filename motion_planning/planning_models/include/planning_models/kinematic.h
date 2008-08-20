@@ -259,9 +259,12 @@ namespace planning_models
 	    /** Extract the information needed by the joint given the URDF description */
 	    virtual void extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot);
 	    
-	    double axis[3];	    
-	    double anchor[3];
-	    double limit[2];
+	    double        axis[3];	    
+	    double        anchor[3];
+	    double        limit[2];
+
+	    /** the transform induced by the anchor */
+	    libTF::Pose3D anchorTrans;
 	};
 	
 	
