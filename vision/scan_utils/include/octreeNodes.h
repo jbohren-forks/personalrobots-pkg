@@ -31,7 +31,7 @@ class OctreeNode {
 	virtual ~OctreeNode(){}
 	virtual bool isLeaf() const = 0;
 	virtual void serialize(char*, unsigned int&) const {}
-	virtual void deserialize(char*, unsigned int&, unsigned int){}
+	virtual bool deserialize(char*, unsigned int&, unsigned int){return true;}
 	virtual int computeMaxDepth() const {return 0;}
 	virtual void recursiveAggregation(){}
 
@@ -69,7 +69,7 @@ class OctreeLeaf : public OctreeNode<T> {
 	// Serializes the content of this leaf
 	virtual void serialize(char *destinationString, unsigned int &address) const;
 	// Reads in the content of this leaf
-	virtual void deserialize(char *sourceString, unsigned int &address, unsigned int size);
+	virtual bool deserialize(char *sourceString, unsigned int &address, unsigned int size);
 	//! Returns 0
 	virtual int computeMaxDepth() const {return 0;}
 
@@ -133,7 +133,7 @@ class OctreeBranch : public OctreeNode<T> {
 	//! Recursively serializes everything below this branch
 	virtual void serialize(char *destinationString, unsigned int &address) const;
 	//! Recursively reads in everything below this branch
-	virtual void deserialize(char *sourceString, unsigned int &address, unsigned int size);
+	virtual bool deserialize(char *sourceString, unsigned int &address, unsigned int size);
 	//! Recursively computes the max depth under this branch
 	virtual int computeMaxDepth() const;
 
@@ -359,10 +359,10 @@ void OctreeBranch<T>::serialize(char *destinationString, unsigned int &address) 
 }
 
 template <typename T>
-void OctreeBranch<T>::deserialize(char *sourceString, unsigned int &address, unsigned int size)
+bool OctreeBranch<T>::deserialize(char *sourceString, unsigned int &address, unsigned int size)
 {
 	for (int i=0; i<8; i++) {
-		if (address >= size) return;
+		if (address >= size) return false;
 		if (sourceString[address] == OctreeChildType::NULL_CHILD) {
 			setChild(i,NULL);
 			address++;
@@ -376,11 +376,16 @@ void OctreeBranch<T>::deserialize(char *sourceString, unsigned int &address, uns
 		} else {
 			//error
 			address = size;
-			return;
+			return false;
 		}
 		address++;
-		mChildren[i]->deserialize(sourceString, address, size);
+		if (!mChildren[i]->deserialize(sourceString, address, size)) {
+			//error
+			address = size;
+			return false;
+		}
 	}
+	return true;
 
 }
 
@@ -392,14 +397,15 @@ void OctreeLeaf<T>::serialize(char *destinationString, unsigned int &address) co
 }
 
 template <typename T>
-void OctreeLeaf<T>::deserialize(char *sourceString, unsigned int &address, unsigned int size)
+bool OctreeLeaf<T>::deserialize(char *sourceString, unsigned int &address, unsigned int size)
 {
 	if (address + sizeof(mValue) > size) {
 		address = size;
-		return;
+		return false;
 	}
 	memcpy(&mValue, &sourceString[address], sizeof(mValue));
 	address += sizeof(mValue);
+	return true;
 }
 
 //--------------------------------------------- Intersection tests ---------------------------

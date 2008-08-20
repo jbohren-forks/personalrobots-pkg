@@ -250,7 +250,8 @@ TEST (OctreeTests, serializationDeserialization)
 	
 	std::fstream is;
 	is.open("testOctree.dat",std::fstream::in);
-	copy->readFromFile(is);
+	bool result = copy->readFromFile(is);
+	EXPECT_TRUE(result);
 	is.close();
 
 	bool pass = true;
@@ -292,7 +293,8 @@ TEST (OctreeTests, toFromROSMessage)
 	original->getAsMsg(msg);
 
 	scan_utils::Octree<float> *copy = new scan_utils::Octree<float>(0.4,0.4,0.1, 1.5,1.7,1.1, depth, 0.5);
-	copy->setFromMsg(msg);
+	bool result = copy->setFromMsg(msg);
+	EXPECT_TRUE(result);
 	
 	bool pass = true;
 	for (float i1 = 0; i1 < numCells * cellSize; i1+=cellSize) {

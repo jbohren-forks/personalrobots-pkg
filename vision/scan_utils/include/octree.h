@@ -752,8 +752,8 @@ template <typename T>
 bool Octree<T>::deserialize(char *sourceString, unsigned int size)
 {
 	unsigned int address = 0;
-	mRoot->deserialize(sourceString, address, size);
-	if (address != size) {
+	bool result = mRoot->deserialize(sourceString, address, size);
+	if (!result || address != size) {
 		fprintf(stderr,"Octree deserialization error!\n");
 		return false;
 	}
