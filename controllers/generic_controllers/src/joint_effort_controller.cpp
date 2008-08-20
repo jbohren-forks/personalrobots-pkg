@@ -60,12 +60,24 @@ void JointEffortController::init(std::string name,mechanism::Robot *robot)
 
 bool JointEffortController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
+  assert(robot);
+  robot_ = robot;
 
-  TiXmlElement *jnt = config->FirstChildElement("joint");
-  if (jnt)
+  TiXmlElement *j = config->FirstChildElement("joint");
+  if (!j)
   {
-    init(jnt->Attribute("name"), robot);
+    fprintf(stderr, "JointEffortController was not given a joint\n");
+    return false;
   }
+
+  const char *joint_name = j->Attribute("name");
+  joint_ = joint_name ? robot->getJoint(joint_name) : NULL;
+  if (!joint_)
+  {
+    fprintf(stderr, "JointVelocityController could not find joint named \"%s\"\n", joint_name);
+    return false;
+  }
+
   return true;
 }
 
@@ -147,10 +159,18 @@ void JointEffortControllerNode::init(std::string name, mechanism::Robot *robot)
 bool JointEffortControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
-  string prefix = config->Attribute("name");
 
-  c_->initXml(robot, config);
-  node->advertise_service(prefix + "/set_command", &JointEffortControllerNode::setCommand, this);
-  node->advertise_service(prefix + "/get_actual", &JointEffortControllerNode::getActual, this);
+  std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
+  if (topic == "")
+  {
+    fprintf(stderr, "No topic given to JointEffortControllerNode\n");
+    return false;
+  }
+
+  if (!c_->initXml(robot, config))
+    return false;
+  node->advertise_service(topic + "/set_command", &JointEffortControllerNode::setCommand, this);
+  node->advertise_service(topic + "/get_actual", &JointEffortControllerNode::getActual, this);
+  return true;
 }
 

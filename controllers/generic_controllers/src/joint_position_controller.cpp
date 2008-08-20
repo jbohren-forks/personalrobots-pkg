@@ -66,15 +66,31 @@ void JointPositionController::init(double p_gain, double i_gain, double d_gain, 
 
 bool JointPositionController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
-  TiXmlElement *jnt = config->FirstChildElement("joint");
-  if (jnt){
-    // TODO: error check if xml attributes/elements are missing
-    double p_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("p"));
-    double i_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("i"));
-    double d_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("d"));
-    double windup = atof(jnt->FirstChildElement("controller_defaults")->Attribute("iClamp"));
-    init(p_gain, i_gain, d_gain, windup, robot->hw_->current_time_,jnt->Attribute("name"), robot);
+  assert(robot);
+  robot_ = robot;
+  last_time_ = robot->hw_->current_time_;
+
+  TiXmlElement *j = config->FirstChildElement("joint");
+  if (!j)
+  {
+    fprintf(stderr, "JointPositionController was not given a joint\n");
+    return false;
   }
+
+  const char *joint_name = j->Attribute("name");
+  joint_ = joint_name ? robot->getJoint(joint_name) : NULL;
+  if (!joint_)
+  {
+    fprintf(stderr, "JointPositionController could not find joint named \"%s\"\n", joint_name);
+    return false;
+  }
+
+  TiXmlElement *p = j->FirstChildElement("pid");
+  if (p)
+    pid_controller_.initXml(p);
+  else
+    fprintf(stderr, "JointPositionController's config did not specify the default pid parameters.\n");
+
   return true;
 }
 
@@ -172,7 +188,15 @@ bool JointPositionControllerNode::initXml(mechanism::Robot *robot, TiXmlElement 
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
 
-  c_->initXml(robot, config);
+  std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
+  if (topic == "")
+  {
+    fprintf(stderr, "No topic given to JointPositionControllerNode\n");
+    return false;
+  }
+
+  if (!c_->initXml(robot, config))
+    return false;
   node->advertise_service(prefix + "/set_command", &JointPositionControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_actual", &JointPositionControllerNode::getActual, this);
   return true;

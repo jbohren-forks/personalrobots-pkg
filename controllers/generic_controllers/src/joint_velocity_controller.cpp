@@ -68,6 +68,10 @@ void JointVelocityController::init(double p_gain, double i_gain, double d_gain, 
 
 bool JointVelocityController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
+  assert(robot);
+  robot_ = robot;
+  last_time_ = robot->hw_->current_time_;
+
   TiXmlElement *j = config->FirstChildElement("joint");
   if (!j)
   {
@@ -89,7 +93,6 @@ bool JointVelocityController::initXml(mechanism::Robot *robot, TiXmlElement *con
   else
     fprintf(stderr, "JointVelocityController's config did not specify the default pid parameters.\n");
 
-  last_time_ = robot->hw_->current_time_;
   return true;
 }
 
@@ -174,10 +177,17 @@ void JointVelocityControllerNode::init(double p_gain, double i_gain, double d_ga
 bool JointVelocityControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
-  string prefix = config->Attribute("name");
 
-  c_->initXml(robot, config);
-  node->advertise_service(prefix + "/set_command", &JointVelocityControllerNode::setCommand, this);
-  node->advertise_service(prefix + "/get_actual", &JointVelocityControllerNode::getActual, this);
+  std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
+  if (topic == "")
+  {
+    fprintf(stderr, "No topic given to JointVelocityControllerNode\n");
+    return false;
+  }
+
+  if (!c_->initXml(robot, config))
+    return false;
+  node->advertise_service(topic + "/set_command", &JointVelocityControllerNode::setCommand, this);
+  node->advertise_service(topic + "/get_actual", &JointVelocityControllerNode::getActual, this);
   return true;
 }

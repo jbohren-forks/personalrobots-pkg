@@ -41,6 +41,10 @@
     This class basically passes the commanded effort
     down through the transmissions and safety code.
 
+    <controller type="JointEffortController" name="controller_name">
+      <joint name="joint_to_control" />
+    </controller>
+
 */
 /***************************************************/
 

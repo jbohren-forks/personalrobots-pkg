@@ -41,6 +41,14 @@
     This class closes the loop around positon using
     a pid loop.
 
+    Example config:
+
+    <controller type="JointPositionController" name="controller_name" topic="a_topic">
+      <joint name="head_tilt_joint">
+        <pid p="1.0" i="0.0" d="3.0" iClamp="0.0" />
+      </joint>
+    </controller>
+
 */
 /***************************************************/
 

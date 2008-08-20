@@ -41,6 +41,13 @@
     This class closes the loop around velocity using
     a pid loop.
 
+    Example config:
+
+    <controller type="JointVelocityController" name="controller_name">
+      <joint name="joint_to_control">
+        <pid p="1.0" i="2.0" d="3.0" iClamp="4.0" />
+      </joint>
+    </controller>
 */
 /***************************************************/
 
@@ -127,13 +134,10 @@ private:
     This class closes the loop around velocity using
     a pid loop.
 
-    Example config:
-
-    <controller type="JointVelocityControllerNode" topic="some_topic_name">
-      <joint name="joint_to_control">
-        <pid p="1.0" i="2.0" d="3.0" iClamp="4.0" />
-      </joint>
-    </controller>
+    The xml config is the same as for JointVelocityController except
+    the addition of a "topic" attribute, which determines the
+    namespace over which messages are published and services are
+    offered.
 */
 /***************************************************/
 
