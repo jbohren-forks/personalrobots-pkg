@@ -197,7 +197,7 @@ class TArmK_Node : public ros::node
       aPose.pitch = 0;
       aPose.yaw = 0;
       aPose.time = 0;
-      aPose.frame = tf.lookup("FRAMEID_ARM_R_HAND");
+      aPose.frame = "gripper_roll_right";
 
       libTF::TFPose inOdomFrame = tf.transformPose("FRAMEID_ODOM", aPose);
 
@@ -215,9 +215,9 @@ class TArmK_Node : public ros::node
       aPose.pitch = 0;
       aPose.yaw = 0;
       aPose.time = 0;
-      aPose.frame = tf.lookup("FRAMEID_ODOM");
+      aPose.frame = "FRAMEID_ODOM";
 
-      libTF::TFPose inOdomFrame = tf.transformPose("FRAMEID_ARM_R_SHOULDER", aPose);
+      libTF::TFPose inOdomFrame = tf.transformPose("gripper_roll_right", aPose);
 
       std::cout << "In shoulder frame x " << inOdomFrame.x << std::endl;
       std::cout << "In shoulder frame y " << inOdomFrame.y << std::endl;
