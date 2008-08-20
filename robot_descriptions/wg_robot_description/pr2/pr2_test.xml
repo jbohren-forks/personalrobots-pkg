@@ -794,7 +794,7 @@
   <joint name="shoulder_pan_left_joint" type="revolute" >
     <insert_const_block name="pr2_shoulder_pan_joint"/>
   </joint>
-  <joint name="torso_joint"> 
+  <joint name="torso_joint" type="prismatic"> 
     <limit min="0.0" max="torso_max_travel_range" effort="100" velocity="5" />
     <axis xyz="0 0 1" />
   </joint>

@@ -4,7 +4,7 @@
 
 
   <controller name="base_controller" type="BaseControllerNode">
-    <controller name="caster_front_left_controller" type="JointPositionControllerNode">
+    <controller name="caster_front_left_controller" type="JointVelocityControllerNode">
         <joint name="caster_front_left_joint" >
           <controller_defaults p="1" d="0" i="0" iClamp="0" />
           <map name="wheel_front_left_l_data" flag="gazebo">
@@ -33,7 +33,7 @@
           </map>
         </joint>
     </controller>
-    <controller name="caster_front_right_controller" type="JointPositionControllerNode">
+    <controller name="caster_front_right_controller" type="JointVelocityControllerNode">
         <joint name="caster_front_right_joint" >
           <controller_defaults p="1" d="0" i="0" iClamp="0" />
           <map name="wheel_front_left_l_data" flag="gazebo">
@@ -62,7 +62,7 @@
           </map>
         </joint>
     </controller>
-    <controller name="caster_rear_left_controller" type="JointPositionControllerNode">
+    <controller name="caster_rear_left_controller" type="JointVelocityControllerNode">
         <joint name="caster_rear_left_joint" >
           <controller_defaults p="1" d="0" i="0" iClamp="0" />
           <map name="wheel_front_right_r_data" flag="gazebo">
@@ -91,7 +91,7 @@
           </map>
         </joint>
     </controller>
-    <controller name="caster_rear_right_controller" type="JointPositionControllerNode">
+    <controller name="caster_rear_right_controller" type="JointVelocityControllerNode">
         <joint name="caster_rear_right_joint" >
           <controller_defaults p="1" d="0" i="0" iClamp="0" />
           <map name="wheel_rear_left_l_data" flag="gazebo">
