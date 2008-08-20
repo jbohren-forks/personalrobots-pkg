@@ -453,7 +453,7 @@ public:
                 cloud_.pts[j].z = - Y;
                 cloud_.pts[j].x = Z;
 
-                if (mode == videre_cam::PROC_MODE_DISPARITY_RAW)
+                if (img_.images[1].colorspace == std::string("rgb24"))
                 {
                   cloud_.chan[0].vals[j] = (buf1[i*3] + buf1[i*3 + 1] + buf1[i*3 + 2])/3.0;
                 } else {
