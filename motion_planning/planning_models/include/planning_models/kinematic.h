@@ -403,13 +403,15 @@ namespace planning_models
 		delete m_robots[i];
 	}
 	
-	virtual void build(robot_desc::URDF &model, bool ignoreSensors = false);
+	virtual void build(const robot_desc::URDF &model, bool ignoreSensors = false);
 	void         setVerbose(bool verbose);	
 
 	unsigned int getRobotCount(void) const;
 	Robot*       getRobot(unsigned int index) const;
+
 	void         getGroups(std::vector<std::string> &groups) const;
 	int          getGroupID(const std::string &group) const;
+	
 	Link*        getLink(const std::string &link) const;
 	void         getLinks(std::vector<Link*> &links) const;
 	
@@ -451,16 +453,16 @@ namespace planning_models
     private:
 	
 	/** Build the needed datastructure for a joint */
-	void buildChainJ(Robot *robot, Link  *parent, Joint *joint, robot_desc::URDF::Link *urdfLink, robot_desc::URDF &model);
+	void buildChainJ(Robot *robot, Link  *parent, Joint *joint, const robot_desc::URDF::Link *urdfLink, const robot_desc::URDF &model);
 
 	/** Build the needed datastructure for a link */
-	void buildChainL(Robot *robot, Joint *parent, Link  *link,  robot_desc::URDF::Link *urdfLink, robot_desc::URDF &model);
+	void buildChainL(Robot *robot, Joint *parent, Link  *link,  const robot_desc::URDF::Link *urdfLink, const robot_desc::URDF &model);
 
 	/** Construct the list of groups the model knows about (the ones marked with the 'plan' attribute) */
-	void constructGroupList(robot_desc::URDF &model);
+	void constructGroupList(const robot_desc::URDF &model);
 	
 	/** Allocate a joint of appropriate type, depending on the loaded link */
-	Joint* createJoint(robot_desc::URDF::Link* urdfLink);
+	Joint* createJoint(const robot_desc::URDF::Link* urdfLink);
 	
     };
 

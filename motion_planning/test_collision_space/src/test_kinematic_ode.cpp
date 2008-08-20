@@ -34,11 +34,14 @@
 
 #include <collision_space/environmentODE.h>
 #include <display_ode/displayODE.h>
+#include <algorithm>
 
 using namespace collision_space;
 using namespace display_ode;
 
-static DisplayODESpaces spaces;
+static DisplayODESpaces                 spaces;
+static EnvironmentModelODE             *env   = NULL;
+static planning_models::KinematicModel *model = NULL;
 
 static void start(void)
 {
@@ -48,8 +51,51 @@ static void start(void)
     dsSetViewpoint(xyz, hpr);
 }
 
+
+static double*     currentParam = NULL;
+static std::string currentGroup = "";
+
 static void command(int cmd)
 {
+    static int direction = 1;
+    
+    char key = (char)cmd;    
+    
+    if (key == 'g')
+    {
+	std::vector<std::string> groups;
+	model->getGroups(groups);
+	std::vector<std::string>::iterator pos = std::find(groups.begin(), groups.end(), currentGroup);
+	if (groups.size() > 0)
+	{
+	    if (pos == groups.end())
+		currentGroup = groups[0];
+	    else
+	    {
+		pos++;
+		currentGroup = (pos == groups.end()) ? groups[0] : *pos;
+	    }
+	}
+	for (unsigned int i = 0 ; i < model->stateDimension ; ++i)
+	    currentParam[i] = 0.0;
+	
+	printf("Current group is '%s'\n", currentGroup.c_str());
+	
+	model->computeTransforms(currentParam, model->getGroupID(currentGroup));
+	env->updateRobotModel(0);
+    }
+    
+    if (key == 'd')
+	direction = -direction;
+    
+    if (key >= '0' && key <= '9')
+    {
+	currentParam[key-'0'] += direction * 0.1;
+	
+	model->computeTransforms(currentParam, model->getGroupID(currentGroup));
+	env->updateRobotModel(0);
+    }
+        
 }
 
 static void simLoop(int)
@@ -65,41 +111,32 @@ int main(int argc, char **argv)
     else
 	file.loadFile("../../robot_descriptions/wg_robot_description/pr2/pr2.xml");
     
+    env = new EnvironmentModelODE();
+    model = new planning_models::KinematicModel();
     
-    EnvironmentModelODE *kmODE = new EnvironmentModelODE();
-    planning_models::KinematicModel *model = new planning_models::KinematicModel();
     model->setVerbose(true);
     model->build(file);
-    kmODE->addRobotModel(model);
+    env->addRobotModel(model);
     model->printModelInfo();
     
-    double *param = new double[model->stateDimension];    
+    currentParam = new double[model->stateDimension];
 
     for (unsigned int i = 0 ; i < model->stateDimension ; ++i)
-	param[i] = 0.0;
-    model->computeTransforms(param);
-    kmODE->updateRobotModel(0);
-    
-    param[3] = -M_PI/2.0;    
-    param[4] = M_PI/4.0;    
-    param[5] = M_PI/4.0;    
-    
-    
-    model->computeTransforms(param, model->getGroupID("pr2::leftArm"));
-    kmODE->updateRobotModel(0);
-
-    
-    spaces.addSpace(kmODE->getODESpace(), 1.0f, 0.3f, 0.0f);
-    for (unsigned int i = 0 ; i < kmODE->getModelCount() ; ++i)
-	spaces.addSpace(kmODE->getModelODESpace(i), 0.0f, 0.5f, (float)(i + 1)/(float)kmODE->getModelCount());
+	currentParam[i] = 0.0;
+    model->computeTransforms(currentParam);
+    env->updateRobotModel(0);
+        
+    spaces.addSpace(env->getODESpace(), 1.0f, 0.3f, 0.0f);
+    for (unsigned int i = 0 ; i < env->getModelCount() ; ++i)
+	spaces.addSpace(env->getModelODESpace(i), 0.0f, 0.5f, (float)(i + 1)/(float)env->getModelCount());
     
 
     double sphere[3] = {0.8,0.2,0.4};    
     
-    kmODE->addPointCloud(1, sphere, 0.1);
-    kmODE->setSelfCollision(false);
+    env->addPointCloud(1, sphere, 0.1);
+    env->setSelfCollision(false);
 
-    printf("\n\nCollision ODE: %d\n", kmODE->isCollision(0));
+    printf("\n\nCollision ODE: %d\n", env->isCollision(0));
     
     dsFunctions fn;
     fn.version = DS_VERSION;
@@ -111,9 +148,9 @@ int main(int argc, char **argv)
     
     dsSimulationLoop(argc, argv, 640, 480, &fn);
     
-    delete kmODE;
+    delete env;
     
-    delete[] param;
+    delete[] currentParam;
     
     return 0;    
 }
