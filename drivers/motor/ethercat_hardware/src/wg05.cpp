@@ -136,6 +136,7 @@ void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, uns
   memcpy(&last_status, last_buffer, sizeof(last_status));
   memcpy(&last_command, last_buffer + sizeof(last_status), sizeof(last_command));
 
+  state.timestamp_ = current_status.timestamp_ / 1e+6;
   state.encoder_count_ = current_status.encoder_count_;
   state.encoder_velocity_ = double(int(current_status.encoder_count_ - last_status.encoder_count_)) / (current_status.timestamp_ - last_status.timestamp_) * 1e+6;
   state.calibration_reading_ = current_status.calibration_reading_;
