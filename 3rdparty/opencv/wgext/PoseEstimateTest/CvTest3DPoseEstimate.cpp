@@ -370,8 +370,8 @@ bool CvTest3DPoseEstimate::testVideos() {
 	peErrMeas.setParams(mFx, mFy, mTx, mClx, mCrx, mCy);
 
 	int start = 0;
-//	int end   = numImages;
-	int end   = 5;
+	int end   = numImages;
+//	int end   = 60;
 	int numFrames = end - start;
 
 	// keep track of the trajectory of the camera w.r.t to the starting frame
@@ -386,11 +386,14 @@ bool CvTest3DPoseEstimate::testVideos() {
 	double _transform[16];
 	CvMat transform = cvMat(4, 4, CV_64FC1, _transform);
 	cvSetIdentity(&transform);
+
 	// current transformation w.r.t. to the current frame
 	double _rt[16];
 	CvMat rt = cvMat(4, 4, CV_64FC1, _rt);
 	double _tempMat[16];
 	CvMat tempMat = cvMat(4, 4, CV_64FC1, _tempMat);
+
+	double dist = 0; // distance the camera has travel
 
 	for (int i=start; i<end; i++) {
 		sprintf(leftfilename,  "%s/left-%04d.ppm",  dirname.c_str(), i);
@@ -602,6 +605,7 @@ bool CvTest3DPoseEstimate::testVideos() {
 			assert( d == d0);
 			assert(d0 == d1);
 			assert( d>=0);
+			d /= 16.;
 			CvPoint3D64f ptLast = cvPoint3D64f(featurePtLastLeft.x, featurePtLastLeft.y, d);
 
 			cout << "Feature at "<< featurePtLastLeft.x<<","<<featurePtLastLeft.y<<","<<d<<endl;
@@ -685,11 +689,12 @@ bool CvTest3DPoseEstimate::testVideos() {
 				double d = s.val[0];
 				double d0 = disp[bestloc.y*xim+bestloc.x];
 				assert( d == d0);
+
 				if (d<0) {
 					cout << "disparity missing: "<<d<<","<< disp[bestloc.y*xim+bestloc.x] <<endl;
 					continue;
 				}
-
+				d /= 16.;
 				CvPoint3D64f pt = cvPoint3D64f(bestloc.x, bestloc.y, d);
 				cout << "best match: "<<pt.x<<","<<pt.y<<","<<pt.z<<endl;
 				pair<CvPoint3D64f, CvPoint3D64f> p(ptLast, pt);
@@ -766,22 +771,6 @@ bool CvTest3DPoseEstimate::testVideos() {
 			cout << "Shift Matrix: "<<endl;
 			CvMatUtils::printMat(&shift);
 
-			Cv3DPoseEstimate::constructTransform(rot, shift, rt);
-			cvCopy(&transform, &tempMat);
-			cvMatMul(&tempMat, &rt, &transform);
-			CvMat rotGlobal;
-			CvMat shiftGlobal;
-			cvGetSubRect(&transform, &rotGlobal,   cvRect(0, 0, 3, 3));
-			cvGetSubRect(&transform, &shiftGlobal, cvRect(3, 0, 1, 3));
-			CvMat rodGlobal2;
-			CvMat shiftGlobal2;
-			cvGetRow(&rods, &rodGlobal2, i-start);
-			cvGetRow(&shifts, &shiftGlobal2, i-start);
-			// make a copy
-			cvRodrigues2(&rotGlobal, &rodGlobal2);
-			cvTranspose(&shiftGlobal,  &shiftGlobal2);
-
-
 			cout << "num of inliers: "<< numInliers <<endl;
 
 			if (numInliers <= 0 || inliers0 == NULL || inliers1 ==NULL ) {
@@ -829,6 +818,25 @@ bool CvTest3DPoseEstimate::testVideos() {
 				// measure the errors
 				peErrMeas.setTransform(rot, shift);
 				peErrMeas.measure(*inliers1, *inliers0);
+
+				// keep track of the trajectary
+				Cv3DPoseEstimate::constructTransform(rot, shift, rt);
+				cvCopy(&transform, &tempMat);
+				cvMatMul(&tempMat, &rt, &transform);
+				CvMat rotGlobal;
+				CvMat shiftGlobal;
+				cvGetSubRect(&transform, &rotGlobal,   cvRect(0, 0, 3, 3));
+				cvGetSubRect(&transform, &shiftGlobal, cvRect(3, 0, 1, 3));
+				CvMat rodGlobal2;
+				CvMat shiftGlobal2;
+				cvGetRow(&rods, &rodGlobal2, i-start);
+				cvGetRow(&shifts, &shiftGlobal2, i-start);
+				// make a copy
+				cvRodrigues2(&rotGlobal, &rodGlobal2);
+				cvTranspose(&shiftGlobal,  &shiftGlobal2);
+
+				dist += cvNorm((const CvMat *)&shift);
+				cout << "distance covered so far: "<< dist<<" mm"<<endl;
 			}
 #endif
 		}
@@ -858,8 +866,8 @@ bool CvTest3DPoseEstimate::testVideos() {
 
 
 		// wait for a while for opencv to draw stuff on screen
-//		cvWaitKey(25);  //  milliseconds
-		cvWaitKey(0);  //  wait indefinitely
+		cvWaitKey(25);  //  milliseconds
+//		cvWaitKey(0);  //  wait indefinitely
 
 		for (int k=0;k<numFeaturesLeft; k++){
 			featuresLastLeft[k] = featuresLeft[k];
@@ -877,6 +885,8 @@ bool CvTest3DPoseEstimate::testVideos() {
 		cvReleaseMat(&temp_image);
 		cvReleaseMat(&harrisCorners);
 	}
+
+	cout <<"Total distance covered: "<< dist<<" mm"<<endl;
 
 	cvSave("Output/indoor1/rods.xml",   &rods,   "rods",   "rodrigues of the cam, w.r.t. start frame");
 	cvSave("Output/indoor1/shifts.xml", &shifts, "shifts", "shifts of the cam, w.r.t. start frame");
