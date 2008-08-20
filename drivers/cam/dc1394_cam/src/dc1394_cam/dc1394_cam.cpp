@@ -458,7 +458,7 @@ dc1394_cam::Cam::hasFeature(dc1394feature_t feature)
   CHECK_READY();
   dc1394bool_t present;
   CHECK_ERR_CLEAN( dc1394_feature_is_present(dcCam, feature, &present), "Could not check if feature was present");
-  return present;
+  return (present == DC1394_TRUE);
 }
 
 void

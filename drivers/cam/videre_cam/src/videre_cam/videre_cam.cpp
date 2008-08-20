@@ -183,7 +183,24 @@ videre_cam::VidereCam::VidereCam(uint64_t guid,
   mapx2_ = NULL;
   mapy2_ = NULL;
 
-  colorize_ = hasFeature(DC1394_FEATURE_WHITE_BALANCE);
+
+  //  colorize_ = hasFeature(DC1394_FEATURE_WHITE_BALANCE);
+
+
+  uint64_t offset;
+  uint32_t quadval;
+  
+  offset = 0X404;
+  dc1394_get_control_register(dcCam, offset, &quadval);
+  printf("40x: at offset %lx, quadval is: %x\n", (long unsigned int)(offset), (unsigned int)(quadval));
+
+  offset = 0X50c;
+  dc1394_get_control_register(dcCam, offset, &quadval);
+  printf("5xx: at offset %lx, quadval is: %x\n", (long unsigned int)(offset), (unsigned int)(quadval));
+
+  offset = 0X80c;
+  dc1394_get_control_register(dcCam, offset, &quadval);
+  printf("8xx: at offset %lx, quadval is: %x\n", (long unsigned int)(offset), (unsigned int)(quadval));
 
   uint32_t u_b = 0;
   uint32_t v_r = 0;
