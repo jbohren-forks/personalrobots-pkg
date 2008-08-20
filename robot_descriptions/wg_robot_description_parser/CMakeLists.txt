@@ -4,10 +4,12 @@ rospack(wg_robot_description_parser)
 
 set(ROS_COMPILE_FLAGS "-W -Wall -Wextra")
 
-rospack_add_library(URDF src/urdf/URDF.cpp src/parser.cpp)
-rospack_add_executable(parse src/urdf/parse.cpp)
+rospack_add_library(URDF src/URDF.cpp src/parser.cpp)
+
+rospack_add_executable(parse src/parse.cpp)
 target_link_libraries(parse URDF)
-rospack_add_executable(merge src/urdf/merge.cpp)
+
+rospack_add_executable(merge src/merge.cpp)
 
 # Tests
 rospack_add_gtest(test_cpp_parser test/test_cpp_parser.cpp)
