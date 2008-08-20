@@ -178,9 +178,17 @@ private:
   struct Gazebo_joint_
   {
     std::string* name_;
-    gazebo::Joint* joint_;
+    std::vector<gazebo::Joint*> gaz_joints_;
+    mechanism::Joint* rmc_joint_;
+    double saturationTorque;
+    double explicitDampingCoefficient;
+    bool   isGripper;
+    std::string* gripper_controller_name_;
+    std::vector<controller::Pid*> gaz_gripper_pids_;
   };
   std::vector<Gazebo_joint_*> gazebo_joints_;
+  double currentTime;
+  double lastTime;
 
   // for storing transmission xml
   // struct Robot_transmission_

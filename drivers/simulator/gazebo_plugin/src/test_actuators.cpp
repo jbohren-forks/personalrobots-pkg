@@ -120,6 +120,10 @@ namespace gazebo {
     // TODO: mc_.init();
 
     hw_.current_time_ = Simulator::Instance()->GetSimTime();
+
+    // for internal gripper pid use
+    currentTime = Simulator::Instance()->GetSimTime();
+    lastTime    = Simulator::Instance()->GetSimTime();
   }
 
   void GazeboActuators::UpdateChild()
@@ -196,12 +200,112 @@ namespace gazebo {
 
     //-----------------------------------------------------------------------------------------
     //
-    //  parse for joints
+    //  parse for MechanismControl joints
     //
     //-----------------------------------------------------------------------------------------
     mcn_.initXml(pr2_xml->FirstChildElement("robot"));
     rmcn_.initXml(pr2_xml->FirstChildElement("robot"));
+    //-----------------------------------------------------------------------------------------
+    //
+    //  how the mechanism joints relate to the gazebo_joints
+    //
+    //-----------------------------------------------------------------------------------------
+    // The gazebo joints and mechanism joints should match up.
+    std::cout << " Loading gazebo joints : " <<  std::endl;
 
+    for (XMLConfigNode *jNode = node->GetChild("robot")->GetChild("joint"); jNode; )
+    {
+      std::string *joint_name = new std::string(jNode->GetString("name","",1));
+      std::cout << "processing mech joint (" << *joint_name << ") map to gazebo joint. " << std::endl;
+
+      // joint exist in model, proceed to create gazebo joint and mapping
+      Gazebo_joint_* gj = new Gazebo_joint_();
+      gj->name_      = joint_name;
+
+      // check for special cases -- Gripper!
+      if (!rmc_.model_.getJoint(*joint_name))
+      {
+        // joint does not exist in MechanismControl
+        std::cout << std::endl << "mech joint (" << *joint_name << ") does not exist in mechanism control, check pr2.xml. " << std::endl;
+        // create this joint inside MechanismControl if it is an abstract type like a gripper
+        if (jNode->GetString("abstract","",0)== "gripper")
+        {
+           mechanism::Joint *joint = new mechanism::Joint();
+           joint->name_ = joint_name->c_str();
+           joint->type_ = mechanism::JOINT_ROTARY;
+           joint->position_         = 0;     // from transmission
+           joint->velocity_         = 0;     // from transmission
+           joint->applied_effort_   = 0;     // from transmission
+           joint->commanded_effort_ = 0;     // to transmission
+           joint->joint_limit_min_  = 0;
+           joint->joint_limit_max_  = 0;
+           joint->effort_limit_     = jNode->GetDouble("effortLimit",0.0,0);
+           joint->velocity_limit_   = jNode->GetDouble("velocityLimit",0.0,0);
+           mc_.addJoint(joint);
+           rmc_.addJoint(joint);
+           // get controller name from xml
+           gj->gripper_controller_name_     = new std::string(jNode->GetString("gripper_controller","",1));
+           std::cout << " gripper controller name is : " << *(gj->gripper_controller_name_) << std::endl;
+        }
+      }
+
+      // add a link to the mechanism control joint
+      gj->rmc_joint_ = rmc_.model_.getJoint(*joint_name);
+
+      // read gazebo specific joint properties
+      gj->saturationTorque           = jNode->GetDouble("saturationTorque",0.0,0);
+      gj->explicitDampingCoefficient = jNode->GetDouble("explicitDampingCoefficient",0.0,0);
+
+      // deal with special case -- Gripper!
+      if (jNode->GetString("abstract","",0) == "gripper")
+        gj->isGripper                = true;
+      else
+        gj->isGripper                = false;
+
+      if (gj->isGripper)
+      {
+        std::string f_l_joint_name     = jNode->GetString("left_proximal","",1);
+        std::string f_r_joint_name     = jNode->GetString("right_proximal","",1);
+        std::string f_tip_l_joint_name = jNode->GetString("left_distal","",1);
+        std::string f_tip_r_joint_name = jNode->GetString("right_distal","",1);
+        gazebo::HingeJoint* gj_f_l     = (gazebo::HingeJoint*)parent_model_->GetJoint(f_l_joint_name)    ;
+        gazebo::HingeJoint* gj_f_r     = (gazebo::HingeJoint*)parent_model_->GetJoint(f_r_joint_name)    ;
+        gazebo::HingeJoint* gj_f_tip_l = (gazebo::HingeJoint*)parent_model_->GetJoint(f_tip_l_joint_name);
+        gazebo::HingeJoint* gj_f_tip_r = (gazebo::HingeJoint*)parent_model_->GetJoint(f_tip_r_joint_name);
+        gj->gaz_joints_.push_back(gj_f_l    );
+        gj->gaz_joints_.push_back(gj_f_r    );
+        gj->gaz_joints_.push_back(gj_f_tip_l);
+        gj->gaz_joints_.push_back(gj_f_tip_r);
+
+        gj->gaz_gripper_pids_.push_back( new controller::Pid() ); gj->gaz_gripper_pids_.back()->initPid( 1.0, 0.01, 0.0, 0.2, -0.2);
+        gj->gaz_gripper_pids_.push_back( new controller::Pid() ); gj->gaz_gripper_pids_.back()->initPid( 1.0, 0.01, 0.0, 0.2, -0.2);
+        gj->gaz_gripper_pids_.push_back( new controller::Pid() ); gj->gaz_gripper_pids_.back()->initPid( 1.0, 0.01, 0.0, 0.2, -0.2);
+        gj->gaz_gripper_pids_.push_back( new controller::Pid() ); gj->gaz_gripper_pids_.back()->initPid( 1.0, 0.01, 0.0, 0.2, -0.2);
+
+        // initialize for torque control mode
+        gj_f_l    ->SetParam(dParamVel , 0);
+        gj_f_l    ->SetParam(dParamFMax, 0);
+        gj_f_r    ->SetParam(dParamVel , 0);
+        gj_f_r    ->SetParam(dParamFMax, 0);
+        gj_f_tip_l->SetParam(dParamVel , 0);
+        gj_f_tip_l->SetParam(dParamFMax, 0);
+        gj_f_tip_r->SetParam(dParamVel , 0);
+        gj_f_tip_r->SetParam(dParamFMax, 0);
+
+      }
+      else
+      {
+        gazebo::Joint* ggj = (gazebo::Joint*)parent_model_->GetJoint(*joint_name);
+        gj->gaz_joints_.push_back(ggj);
+        // initialize for torque control mode
+        ggj->SetParam(dParamVel , 0);
+        ggj->SetParam(dParamFMax, 0);
+
+      }
+
+      gazebo_joints_.push_back(gj);
+      jNode = jNode->GetNext("joint");
+    }
     //-----------------------------------------------------------------------------------------
     //
     // ACTUATOR XML
@@ -268,58 +372,6 @@ namespace gazebo {
 
     }
 
-    //-----------------------------------------------------------------------------------------
-    //
-    //  how the mechanism_joints relate to the gazebo_joints
-    //
-    //-----------------------------------------------------------------------------------------
-    // The gazebo joints and mechanism joints should match up.
-    std::cout << " Loading gazebo joints : " <<  std::endl;
-    for (unsigned int i = 0; i < rmc_.model_.joints_.size(); ++i)
-    {
-      Gazebo_joint_* gj = new Gazebo_joint_();
-
-      std::string *joint_name = &rmc_.model_.joints_[i]->name_;
-
-      gj->name_ = joint_name;
-
-      std::cout << "adding gazebo joint: " << *(gj->name_) << std::endl;
-
-      gazebo::Joint *joint = parent_model_->GetJoint(*joint_name);
-      if (joint)
-      {
-
-        gj->joint_ = joint;
-
-        if (joint->GetType() == gazebo::Joint::HINGE)
-        {
-            // initialize for torque control mode
-            joint->SetParam(dParamVel , 0);
-            joint->SetParam(dParamFMax, 0);
-        }
-        else if (joint->GetType() == gazebo::Joint::SLIDER)
-        {
-            // initialize for torque control mode
-            joint->SetParam(dParamVel , 0);
-            joint->SetParam(dParamFMax, 0);
-        }
-        else
-        {
-            // initialize for torque control mode
-            joint->SetParam(dParamVel , 0);
-            joint->SetParam(dParamFMax, 0);
-        }
-      }
-      else
-      {
-        fprintf(stderr, "Gazebo does not know about a joint named \"%s\"\n", joint_name->c_str());
-        gj->joint_ = NULL;
-      }
-
-      gazebo_joints_.push_back(gj);
-    }
-
-
   }
 
 
@@ -336,6 +388,7 @@ namespace gazebo {
   {
     // pass time to robot
     hw_.current_time_ = Simulator::Instance()->GetSimTime();
+    currentTime = Simulator::Instance()->GetSimTime();
 
 
     this->lock.lock();
@@ -430,16 +483,51 @@ namespace gazebo {
     // update joint status from hardware
     for (std::vector<Gazebo_joint_*>::iterator gji = gazebo_joints_.begin(); gji != gazebo_joints_.end() ; gji++)
     {
-      mechanism::Joint* mech_joint = rmc_.model_.getJoint(*((*gji)->name_));
-
-      // push gazebo joint to reverse joints
-      if ((*gji)->joint_ && (*gji)->joint_->GetType() == gazebo::Joint::HINGE)
+      // gripper joint, is an ugly special case for now
+      if ((*gji)->isGripper)
       {
-        mech_joint->position_       = dynamic_cast<gazebo::HingeJoint*>((*gji)->joint_)->GetAngle(); // use one joint as reference
-        mech_joint->velocity_       = dynamic_cast<gazebo::HingeJoint*>((*gji)->joint_)->GetAngleRate();
-        mech_joint->applied_effort_ = mech_joint->commanded_effort_;
+        for (std::vector<gazebo::Joint*>::iterator ggji = (*gji)->gaz_joints_.begin(); ggji != (*gji)->gaz_joints_.end() ; ggji++)
+        {
+
+        }
+        gazebo::HingeJoint* gj_f_l     = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0]);
+        gazebo::HingeJoint* gj_f_r     = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[1]);
+        gazebo::HingeJoint* gj_f_tip_l = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[2]);
+        gazebo::HingeJoint* gj_f_tip_r = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[3]);
+
+        (*gji)->rmc_joint_->position_       = gj_f_l->GetAngle();
+        (*gji)->rmc_joint_->velocity_       = gj_f_l->GetAngleRate();
+        (*gji)->rmc_joint_->applied_effort_ = (*gji)->rmc_joint_->commanded_effort_;
 
       }
+      else
+      {
+        // normal joints
+        switch((*gji)->gaz_joints_[0]->GetType())
+        {
+          case gazebo::Joint::SLIDER:
+          {
+            gazebo::SliderJoint* gjs  = dynamic_cast<gazebo::SliderJoint*>((*gji)->gaz_joints_[0]);
+            (*gji)->rmc_joint_->position_       = gjs->GetPosition();
+            (*gji)->rmc_joint_->velocity_       = gjs->GetPositionRate();
+            (*gji)->rmc_joint_->applied_effort_ = (*gji)->rmc_joint_->commanded_effort_;
+            break;
+          }
+          case gazebo::Joint::HINGE:
+          {
+            gazebo::HingeJoint* gjh  = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0]);
+            (*gji)->rmc_joint_->position_       = gjh->GetAngle();
+            (*gji)->rmc_joint_->velocity_       = gjh->GetAngleRate();
+            (*gji)->rmc_joint_->applied_effort_ = (*gji)->rmc_joint_->commanded_effort_;
+            break;
+          }
+          case gazebo::Joint::HINGE2:
+          case gazebo::Joint::BALL:
+          case gazebo::Joint::UNIVERSAL:
+            break;
+        }
+      }
+
     }
     // push reverse_mech_joint_ stuff back toward actuators
     for (unsigned int i=0; i < rmc_.model_.transmissions_.size(); i++)
@@ -515,14 +603,64 @@ namespace gazebo {
     // -------------------------------------------------------------------------------------------------
     for (std::vector<Gazebo_joint_*>::iterator gji = gazebo_joints_.begin(); gji != gazebo_joints_.end() ; gji++)
     {
-      mechanism::Joint* mech_joint = mc_.model_.getJoint(*((*gji)->name_));
-
-      // push gazebo joint to reverse joints
-      if ((*gji)->joint_ && (*gji)->joint_->GetType() == gazebo::Joint::HINGE)
+      // gripper joint, is an ugly special case for now
+      if ((*gji)->isGripper)
       {
-        dynamic_cast<gazebo::HingeJoint*>((*gji)->joint_)->SetTorque( mech_joint->commanded_effort_);
+        double gripperCmd  , currentError, currentCmd  ;
+        // FIXME: this restricts gripper to a position controller... not ideal
+        std::string  jn = *((*gji)->gripper_controller_name_ );
+        controller::Controller* jc = mc_.getControllerByName(jn); // from actual mechanism control, not rmc_
+        controller::JointPositionControllerNode* jpc = dynamic_cast<controller::JointPositionControllerNode*>(jc);
+        gripperCmd   = jpc->getCommand();
+
+        currentError = math_utils::shortest_angular_distance(dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0])->GetAngle(),gripperCmd);
+        currentCmd   = (*gji)->gaz_gripper_pids_[0]->updatePid(currentError,currentTime-lastTime);
+        dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0])->SetParam( dParamVel, currentCmd );
+        dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0])->SetParam( dParamFMax, (*gji)->saturationTorque );
+
+        currentError = math_utils::shortest_angular_distance(dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[1])->GetAngle(),-gripperCmd);
+        currentCmd   = (*gji)->gaz_gripper_pids_[1]->updatePid(currentError,currentTime-lastTime);
+        dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[1])->SetParam( dParamVel, currentCmd );
+        dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[1])->SetParam( dParamFMax, (*gji)->saturationTorque );
+
+        currentError = math_utils::shortest_angular_distance(dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[2])->GetAngle(),-gripperCmd);
+        currentCmd   = (*gji)->gaz_gripper_pids_[2]->updatePid(currentError,currentTime-lastTime);
+        dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[2])->SetParam( dParamVel, currentCmd );
+        dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[2])->SetParam( dParamFMax, (*gji)->saturationTorque );
+
+        currentError = math_utils::shortest_angular_distance(dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[3])->GetAngle(),gripperCmd);
+        currentCmd   = (*gji)->gaz_gripper_pids_[3]->updatePid(currentError,currentTime-lastTime);
+        dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[3])->SetParam( dParamVel, currentCmd );
+        dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[3])->SetParam( dParamFMax, (*gji)->saturationTorque );
+
       }
+      else
+      {
+        // normal joints
+        switch ((*gji)->gaz_joints_[0]->GetType())
+        {
+          case gazebo::Joint::SLIDER:
+          {
+            gazebo::SliderJoint* gjs  = dynamic_cast<gazebo::SliderJoint*>((*gji)->gaz_joints_[0]);
+            gjs->SetSliderForce( (*gji)->rmc_joint_->commanded_effort_);
+            break;
+          }
+          case gazebo::Joint::HINGE:
+          {
+            gazebo::HingeJoint* gjh  = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0]);
+            gjh->SetTorque( (*gji)->rmc_joint_->commanded_effort_);
+            break;
+          }
+          case gazebo::Joint::HINGE2:
+          case gazebo::Joint::BALL:
+          case gazebo::Joint::UNIVERSAL:
+            break;
+        }
+      }
+
     }
+
+    lastTime = currentTime;
 
   }
 
