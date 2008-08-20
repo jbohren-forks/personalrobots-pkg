@@ -545,3 +545,20 @@ bool TransformReference::RefFrame::setParent(unsigned int parentID)
   } 
   return true;
 };
+
+
+
+TransformReference::RefFrame* TransformReference::getFrame(unsigned int frame_number) 
+{ 
+  if (frames[frame_number] == NULL) { 
+    std::stringstream ss; ss << "getFrame: Frame " << numberToName(frame_number) << " does not exist."
+                             << " Frames Present are: " <<std::endl << viewFrames() <<std::endl; 
+    throw LookupException(ss.str());} 
+  else 
+    return frames[frame_number];
+};
+
+TransformReference::RefFrame* TransformReference::getFrame(const std::string & frame_number_string) 
+{
+  return getFrame(nameToNumber(frame_number_string));
+};
