@@ -80,7 +80,7 @@ void *controlLoop(void *arg)
 
   // Switch to hard real-time
 #if defined(__XENO__)
-  pthread_set_mode_np(0, PTHREAD_PRIMARY|PTHREAD_WARNSW);
+  pthread_set_mode_np(0, PTHREAD_PRIMARY/*|PTHREAD_WARNSW*/);
 #endif
 
   struct timespec tick;
