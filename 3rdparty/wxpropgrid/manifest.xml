@@ -1,0 +1,14 @@
+<package>
+<description brief="A property sheet control for wxWidgets">
+Provides an easy way of editing properties in wxWidgets.
+</description>
+<author>Jaakko Salli</author>
+<license>wxWindows</license>
+<url>http://wxpropgrid.sourceforge.net</url>
+<export>
+  <cpp lflags="-L${prefix}/propgrid_install/lib -lwxcode_gtk2u_propgrid-2.8" cflags="-I${prefix}/propgrid_install/include"/>
+</export>
+<sysdepend os="ubuntu" version="7.04-feisty" package="libwxgtk2.8-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libwxgtk2.8-dev"/>
+</package>
+
