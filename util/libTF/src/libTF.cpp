@@ -79,7 +79,7 @@ TransformReference::~TransformReference()
   delete[] frames;
 };
 
-void TransformReference::addFrame(std::string frame_id, std::string parent_id) {
+void TransformReference::addFrame(const std::string & frame_id, const std::string & parent_id) {
   unsigned int frameID, parentID;
   frameID = nameToNumber(frame_id);
   parentID = nameToNumber(parent_id);
@@ -102,14 +102,14 @@ void TransformReference::addFrame(std::string frame_id, std::string parent_id) {
 }
 
 
-void TransformReference::setWithEulers(std::string frameID, std::string parentID, double a,double b,double c,double d,double e,double f, ULLtime time)
+void TransformReference::setWithEulers(const std::string & frameID, const std::string & parentID, double a,double b,double c,double d,double e,double f, ULLtime time)
 {
   addFrame(frameID, parentID);
 
   getFrame(frameID)->addFromEuler(a,b,c,d,e,f,time);
 }
 
-void TransformReference::setWithDH(std::string frameID, std::string parentID, double a,double b,double c,double d, ULLtime time)
+void TransformReference::setWithDH(const std::string & frameID, const std::string & parentID, double a,double b,double c,double d, ULLtime time)
 {
   addFrame(frameID, parentID);
 
@@ -117,7 +117,7 @@ void TransformReference::setWithDH(std::string frameID, std::string parentID, do
 }
 
 
-void TransformReference::setWithMatrix(std::string frameID, std::string parentID, const NEWMAT::Matrix & matrix_in, ULLtime time)
+void TransformReference::setWithMatrix(const std::string & frameID, const std::string & parentID, const NEWMAT::Matrix & matrix_in, ULLtime time)
 {
   addFrame(frameID, parentID);
 
@@ -125,7 +125,7 @@ void TransformReference::setWithMatrix(std::string frameID, std::string parentID
 }
 
 
-void TransformReference::setWithQuaternion(std::string frameID, std::string parentID, double xt, double yt, double zt, double xr, double yr, double zr, double w, ULLtime time)
+void TransformReference::setWithQuaternion(const std::string & frameID, const std::string & parentID, double xt, double yt, double zt, double xr, double yr, double zr, double w, ULLtime time)
 {
   addFrame(frameID, parentID);
 
@@ -135,7 +135,7 @@ void TransformReference::setWithQuaternion(std::string frameID, std::string pare
 
 
 
-NEWMAT::Matrix TransformReference::getMatrix(std::string target_frame_string, std::string source_frame_string, ULLtime time)
+NEWMAT::Matrix TransformReference::getMatrix(const std::string & target_frame_string, const std::string & source_frame_string, ULLtime time)
 {
   unsigned int target_frame, source_frame;
   target_frame = nameToNumber(target_frame_string);
@@ -150,7 +150,7 @@ NEWMAT::Matrix TransformReference::getMatrix(std::string target_frame_string, st
 
 
 
-TFPoint TransformReference::transformPoint(std::string target_frame, const TFPoint & point_in)
+TFPoint TransformReference::transformPoint(const std::string & target_frame, const TFPoint & point_in)
 {
   //Create a vector
   NEWMAT::Matrix pointMat(4,1);
@@ -168,7 +168,7 @@ TFPoint TransformReference::transformPoint(std::string target_frame, const TFPoi
   retPoint.time = point_in.time;
   return retPoint;
 }
-TFPoint2D TransformReference::transformPoint2D(std::string target_frame, const TFPoint2D & point_in)
+TFPoint2D TransformReference::transformPoint2D(const std::string & target_frame, const TFPoint2D & point_in)
 {
   //Create a vector
   NEWMAT::Matrix pointMat(4,1);
@@ -186,7 +186,7 @@ TFPoint2D TransformReference::transformPoint2D(std::string target_frame, const T
   return retPoint;
 }
 
-TFVector TransformReference::transformVector(std::string target_frame, const TFVector & vector_in)
+TFVector TransformReference::transformVector(const std::string & target_frame, const TFVector & vector_in)
 {
   //Create a vector
   NEWMAT::Matrix vectorMat(4,1);
@@ -204,7 +204,7 @@ TFVector TransformReference::transformVector(std::string target_frame, const TFV
   return retVector;
 }
 
-TFVector2D TransformReference::transformVector2D(std::string target_frame, const TFVector2D & vector_in)
+TFVector2D TransformReference::transformVector2D(const std::string & target_frame, const TFVector2D & vector_in)
 {
   //Create a vector
   NEWMAT::Matrix vectorMat(4,1);
@@ -223,7 +223,7 @@ TFVector2D TransformReference::transformVector2D(std::string target_frame, const
   return retVector;
 }
 
-TFEulerYPR TransformReference::transformEulerYPR(std::string target_frame, const TFEulerYPR & euler_in)
+TFEulerYPR TransformReference::transformEulerYPR(const std::string & target_frame, const TFEulerYPR & euler_in)
 {
 
   NEWMAT::Matrix local = Pose3D::matrixFromEuler(0,0,0,euler_in.yaw, euler_in.pitch, euler_in.roll);
@@ -240,7 +240,7 @@ TFEulerYPR TransformReference::transformEulerYPR(std::string target_frame, const
   return retEuler;
 }
 
-TFYaw  TransformReference::transformYaw(std::string target_frame, const TFYaw & euler_in)
+TFYaw  TransformReference::transformYaw(const std::string & target_frame, const TFYaw & euler_in)
 {
   TFVector2D vector_in;
   vector_in.x = cos(euler_in.yaw);
@@ -256,7 +256,7 @@ TFYaw  TransformReference::transformYaw(std::string target_frame, const TFYaw & 
   return retYaw;
 }
 
-TFPose TransformReference::transformPose(std::string target_frame, const TFPose & pose_in)
+TFPose TransformReference::transformPose(const std::string & target_frame, const TFPose & pose_in)
 {
   TFPoint point_in;
   point_in.x = pose_in.x;
@@ -289,7 +289,7 @@ TFPose TransformReference::transformPose(std::string target_frame, const TFPose 
   return pose_out;
 }
 
-TFPose2D TransformReference::transformPose2D(std::string target_frame, const TFPose2D & pose_in)
+TFPose2D TransformReference::transformPose2D(const std::string & target_frame, const TFPose2D & pose_in)
 {
   TFPoint2D point_in;
   point_in.x = pose_in.x;
@@ -367,8 +367,12 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
       frame = getFrame(frame)->getParent();
 
       /* Check if we've gone too deep.  A loop in the tree would cause this*/
-      if (counter++ > MAX_GRAPH_DEPTH)
-	throw(MaxDepthException("Recursed too deep into graph ( > MAX_GRAPH_DEPTH) there is probably a loop in the graph"));
+      if (counter++ > MAX_GRAPH_DEPTH){
+        std::stringstream ss;
+        ss<<"Recursed too deep into graph ( > MAX_GRAPH_DEPTH) there is probably a loop in the graph" << std::endl 
+          << viewFrames() << std::endl;
+        throw(MaxDepthException(ss.str()));
+      }
     }
   
   /* Make sure the end of the search shares a parent. */
@@ -395,7 +399,7 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
 
 }
 
-unsigned int TransformReference::nameToNumber(std::string frameid)
+unsigned int TransformReference::nameToNumber(const std::string & frameid)
 {
   std::map<std::string, unsigned int>::iterator it = nameMap.find(frameid);
   if ( it == nameMap.end())
@@ -470,7 +474,7 @@ NEWMAT::Matrix TransformReference::computeTransformFromList(const TransformLists
 }
 
 
-std::string TransformReference::viewChain(std::string target_frame_string, std::string source_frame_string)
+std::string TransformReference::viewChain(const std::string & target_frame_string, const std::string & source_frame_string)
 {
   unsigned int target_frame, source_frame;
   target_frame = nameToNumber(target_frame_string);
