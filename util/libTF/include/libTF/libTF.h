@@ -366,6 +366,8 @@ protected:
   /** \brief The pointers to potential frames that the tree can be made of.
    * The frames will be dynamically allocated at run time when set the first time. */
   RefFrame** frames;
+  /** \brief A mutex to protect testing and allocating new frames */
+  ros::thread::mutex frame_mutex_;
 
   /// How long to cache transform history
   ULLtime cache_time;

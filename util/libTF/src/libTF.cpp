@@ -53,8 +53,10 @@ TransformReference::TransformReference(bool interpolating,
   interpolating (interpolating),
   max_extrapolation_distance(max_extrapolation_distance)
 {
+  map_mutex_.lock();//unnecessary but if this moves elsewhere it'll be good to have
   nameMap["NO_PARENT"] = 0; //Initialize NO_PARENT
   reverseMap[0] = "NO_PARENT"; //Initialize NO_PARENT
+  map_mutex_.unlock();
 
   frames = new RefFrame*[MAX_NUM_FRAMES];
   assert(frames);
@@ -92,12 +94,15 @@ void TransformReference::addFrame(const std::string & frame_id, const std::strin
     throw LookupException(ss.str());
   }
 
+  frame_mutex_.lock();
+
   if (frames[frameID] == NULL)
     frames[frameID] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
 
   if (frames[parentID] == NULL)
     frames[parentID] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
-
+  frame_mutex_.unlock();
+  
   getFrame(frameID)->setParent(parentID);
 }
 
