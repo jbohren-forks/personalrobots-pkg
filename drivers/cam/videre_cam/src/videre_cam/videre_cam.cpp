@@ -277,6 +277,7 @@ videre_cam::VidereCam::enableRectification(double fx, double fy, double cx, doub
 
 }
 
+
 void
 videre_cam::VidereCam::enableRectification()
 {
@@ -298,8 +299,8 @@ videre_cam::VidereCam::enableRectification()
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
     {
-      CV_MAT_ELEM(*rectification_, float, i, j) = lrect_(i,j);
-      CV_MAT_ELEM(*rectified_intrinsic_, float, i, j) = lproj_(i,j);
+      CV_MAT_ELEM(*rectification_, float, i, j) = lrect_(i+1,j+1);
+      CV_MAT_ELEM(*rectified_intrinsic_, float, i, j) = lproj_(i+1,j+1);
     }
 
   CV_MAT_ELEM(*r_intrinsic_, float, 0, 0) = rf_;
@@ -317,10 +318,9 @@ videre_cam::VidereCam::enableRectification()
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
     {
-      CV_MAT_ELEM(*r_rectification_, float, i, j) = rrect_(i,j);
-      CV_MAT_ELEM(*r_rectified_intrinsic_, float, i, j) = rproj_(i,j);
+      CV_MAT_ELEM(*r_rectification_, float, i, j) = rrect_(i+1,j+1);
+      CV_MAT_ELEM(*r_rectified_intrinsic_, float, i, j) = rproj_(i+1,j+1);
     }
-
 }
 
 
