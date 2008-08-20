@@ -16,6 +16,11 @@
       <include>actuators.xml</include>
       <include>controllers.xml</include>
 
+      <robot_filename>./world/pr2_test.xml</robot_filename>
+      <controller_filename>./world/controllers.xml</controller_filename>
+      <actuator_filename>./world/actuators.xml</actuator_filename>
+      <transmission_filename>./world/transmissions.xml</transmission_filename>
+
       <interface:audio name="test_actuators_dummy_iface" />
   </controller:test_actuators>
 

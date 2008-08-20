@@ -3,36 +3,15 @@
 <robot name="pr2"><!-- name of the robot-->
 
 
-
-  <!-- sample base controller 1
-  <controller name="caster_front_left_controller" type="BaseController">
-      <controller_defaults p="1000" d="0" i="0" iClamp="0" />
-
-      <joint name="caster_front_left_joint" >
-        <joint_param p="1000" d="0" i="0" iClamp="0" />
-      </joint>
-      <joint name="wheel_front_left_l_joint" >
-        <controller_defaults p="1000" d="0" i="0" iClamp="0" />
-      </joint>
-      <joint name="wheel_front_left_r_joint" >
-        <controller_defaults p="1000" d="0" i="0" iClamp="0" />
-      </joint>
-      <map flag="gazebo">
-        <elem key="saturationTorque">1000</elem>
-        <elem key="explicitDampingCoefficient">1.0</elem>
-      </map>
-  </controller>
-  -->
-  <!-- sample base controller 2
   <controller name="base_controller" type="BaseController">
-    <controller_defaults linear="10" />
     <controller name="caster_front_left_controller" type="JointPositionController">
         <joint name="caster_front_left_joint" >
-          <controller_defaults p="1000" d="0" i="0" iClamp="0" />
+          <controller_defaults p="1" d="0" i="0" iClamp="0" />
           <map name="wheel_front_left_l_data" flag="gazebo">
             <elem key="saturationTorque">1000</elem>
             <elem key="explicitDampingCoefficient">1.0</elem>
             <elem key="jointType">Hinge</elem>
+            <elem key="kp_speed">1.0</elem>
           </map>
         </joint>
     </controller>
@@ -54,121 +33,95 @@
           </map>
         </joint>
     </controller>
+    <controller name="caster_front_right_controller" type="JointPositionController">
+        <joint name="caster_front_right_joint" >
+          <controller_defaults p="1" d="0" i="0" iClamp="0" />
+          <map name="wheel_front_left_l_data" flag="gazebo">
+            <elem key="saturationTorque">1000</elem>
+            <elem key="explicitDampingCoefficient">1.0</elem>
+            <elem key="jointType">Hinge</elem>
+            <elem key="kp_speed">1.0</elem>
+          </map>
+        </joint>
+    </controller>
+    <controller name="wheel_front_right_l_controller" type="JointVelocityController">
+        <joint name="wheel_front_right_l_joint" >
+          <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
+          <map name="wheel_front_right_l_data" flag="gazebo">
+            <elem key="saturationTorque">5</elem>
+            <elem key="jointType">Hinge</elem>
+          </map>
+        </joint>
+    </controller>
+    <controller name="wheel_front_right_r_controller" type="JointVelocityController">
+        <joint name="wheel_front_right_r_joint" >
+          <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
+          <map name="wheel_front_right_r_data" flag="gazebo">
+            <elem key="saturationTorque">5</elem>
+            <elem key="jointType">Hinge</elem>
+          </map>
+        </joint>
+    </controller>
+    <controller name="caster_rear_left_controller" type="JointPositionController">
+        <joint name="caster_rear_left_joint" >
+          <controller_defaults p="1" d="0" i="0" iClamp="0" />
+          <map name="wheel_front_right_r_data" flag="gazebo">
+            <elem key="saturationTorque">1000</elem>
+            <elem key="explicitDampingCoefficient">1.0</elem>
+            <elem key="jointType">Hinge</elem>
+            <elem key="kp_speed">1.0</elem>
+          </map>
+        </joint>
+    </controller>
+    <controller name="wheel_rear_left_l_controller" type="JointVelocityController">
+        <joint name="wheel_rear_left_l_joint" >
+          <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
+          <map name="wheel_rear_left_l_data" flag="gazebo">
+            <elem key="saturationTorque">5</elem>
+            <elem key="jointType">Hinge</elem>
+          </map>
+        </joint>
+    </controller>
+    <controller name="wheel_rear_left_r_controller" type="JointVelocityController">
+        <joint name="wheel_rear_left_r_joint" >
+          <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
+          <map name="wheel_rear_left_r_data" flag="gazebo">
+            <elem key="saturationTorque">5</elem>
+            <elem key="jointType">Hinge</elem>
+          </map>
+        </joint>
+    </controller>
+    <controller name="caster_rear_right_controller" type="JointPositionController">
+        <joint name="caster_rear_right_joint" >
+          <controller_defaults p="1" d="0" i="0" iClamp="0" />
+          <map name="wheel_rear_left_l_data" flag="gazebo">
+            <elem key="saturationTorque">1000</elem>
+            <elem key="explicitDampingCoefficient">1.0</elem>
+            <elem key="jointType">Hinge</elem>
+            <elem key="kp_speed">1.0</elem>
+          </map>
+        </joint>
+    </controller>
+    <controller name="wheel_rear_right_l_controller" type="JointVelocityController">
+        <joint name="wheel_rear_right_l_joint" >
+          <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
+          <map name="wheel_rear_right_l_data" flag="gazebo">
+            <elem key="saturationTorque">5</elem>
+            <elem key="jointType">Hinge</elem>
+          </map>
+        </joint>
+    </controller>
+    <controller name="wheel_rear_right_r_controller" type="JointVelocityController">
+        <joint name="wheel_rear_right_r_joint" >
+          <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
+          <map name="wheel_rear_right_r_data" flag="gazebo">
+            <elem key="saturationTorque">5</elem>
+            <elem key="jointType">Hinge</elem>
+          </map>
+        </joint>
+    </controller>
   </controller>
-  -->
 
-  <controller name="caster_front_left_controller" type="JointPositionController">
-      <joint name="caster_front_left_joint" >
-        <controller_defaults p="1000" d="0" i="0" iClamp="0" />
-        <map name="wheel_front_left_l_data" flag="gazebo">
-          <elem key="saturationTorque">1000</elem>
-          <elem key="explicitDampingCoefficient">1.0</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
-  <controller name="wheel_front_left_l_controller" type="JointVelocityController">
-      <joint name="wheel_front_left_l_joint" >
-        <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
-        <map name="wheel_front_left_l_data" flag="gazebo">
-          <elem key="saturationTorque">5</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
-  <controller name="wheel_front_left_r_controller" type="JointVelocityController">
-      <joint name="wheel_front_left_r_joint" >
-        <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
-        <map name="wheel_front_left_r_data" flag="gazebo">
-          <elem key="saturationTorque">5</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
-  <controller name="caster_front_right_controller" type="JointPositionController">
-      <joint name="caster_front_right_joint" >
-        <controller_defaults p="1000" d="0" i="0" iClamp="0" />
-        <map name="wheel_front_left_l_data" flag="gazebo">
-          <elem key="saturationTorque">1000</elem>
-          <elem key="explicitDampingCoefficient">1.0</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
-  <controller name="wheel_front_right_l_controller" type="JointVelocityController">
-      <joint name="wheel_front_right_l_joint" >
-        <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
-        <map name="wheel_front_right_l_data" flag="gazebo">
-          <elem key="saturationTorque">5</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
-  <controller name="wheel_front_right_r_controller" type="JointVelocityController">
-      <joint name="wheel_front_right_r_joint" >
-        <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
-        <map name="wheel_front_right_r_data" flag="gazebo">
-          <elem key="saturationTorque">5</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
-  <controller name="caster_rear_left_controller" type="JointPositionController">
-      <joint name="caster_rear_left_joint" >
-        <controller_defaults p="1000" d="0" i="0" iClamp="0" />
-        <map name="wheel_front_right_r_data" flag="gazebo">
-          <elem key="saturationTorque">1000</elem>
-          <elem key="explicitDampingCoefficient">1.0</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
-  <controller name="wheel_rear_left_l_controller" type="JointVelocityController">
-      <joint name="wheel_rear_left_l_joint" >
-        <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
-        <map name="wheel_rear_left_l_data" flag="gazebo">
-          <elem key="saturationTorque">5</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
-  <controller name="wheel_rear_left_r_controller" type="JointVelocityController">
-      <joint name="wheel_rear_left_r_joint" >
-        <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
-        <map name="wheel_rear_left_r_data" flag="gazebo">
-          <elem key="saturationTorque">5</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
-  <controller name="caster_rear_right_controller" type="JointPositionController">
-      <joint name="caster_rear_right_joint" >
-        <controller_defaults p="1000" d="0" i="0" iClamp="0" />
-        <map name="wheel_rear_left_l_data" flag="gazebo">
-          <elem key="saturationTorque">1000</elem>
-          <elem key="explicitDampingCoefficient">1.0</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
-  <controller name="wheel_rear_right_l_controller" type="JointVelocityController">
-      <joint name="wheel_rear_right_l_joint" >
-        <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
-        <map name="wheel_rear_right_l_data" flag="gazebo">
-          <elem key="saturationTorque">5</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
-  <controller name="wheel_rear_right_r_controller" type="JointVelocityController">
-      <joint name="wheel_rear_right_r_joint" >
-        <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
-        <map name="wheel_rear_right_r_data" flag="gazebo">
-          <elem key="saturationTorque">5</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
       <!-- ========================================= -->
       <!-- torso array -->
   <controller name="torso_controller" type="JointPositionController">
