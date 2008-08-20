@@ -66,7 +66,6 @@ videre_cam::VidereCam::VidereCam(uint64_t guid,
                                  size_t bufferSize)
   : Cam(guid, speed, DC1394_VIDEO_MODE_640x480_YUV422, fps, bufferSize), proc_mode_(proc_mode), lproj_(3,4), rproj_(3,4), lrect_(3,3), rrect_(3,3)
 {
-  std::cout << "Starting videre constructor!" << std::endl;
 
   if (dcCam->vendor_id != 0x5505)
   {
@@ -112,8 +111,6 @@ videre_cam::VidereCam::VidereCam(uint64_t guid,
   *bb = 0; // just in case we missed the last zero
 
   cal_params_ = buf;
-
-  std::cout << "Trying extraction sequence:" << std::endl;
 
   extract(cal_params_, "[left camera]", "proj", lproj_);
   extract(cal_params_, "[left camera]", "rect", lrect_);
