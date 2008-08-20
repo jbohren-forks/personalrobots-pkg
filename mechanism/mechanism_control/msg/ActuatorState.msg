@@ -1,0 +1,15 @@
+string name
+int32 encoder_count
+float64 timestamp
+float64 encoder_velocity
+byte calibration_reading
+int32 last_calibration_high_transition
+int32 last_calibration_low_transition
+byte is_enabled
+byte run_stop_hit
+float64 last_requested_current
+float64 last_commanded_current
+float64 last_measured_current
+int32 motor_voltage
+int32 num_encoder_errors
+

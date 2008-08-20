@@ -53,7 +53,6 @@
 #include "mechanism_control/SpawnController.h"
 #include "mechanism_control/KillController.h"
 
-#include "mechanism_control/JointState.h"
 #include "mechanism_control/MechanismState.h"
 
 #include <pthread.h>
@@ -120,7 +119,7 @@ public:
   bool spawnController(mechanism_control::SpawnController::request &req,
                        mechanism_control::SpawnController::response &resp);
 private:
-  ros::node *node;
+  ros::node *node_;
 
   bool killController(mechanism_control::KillController::request &req,
                       mechanism_control::KillController::response &resp);

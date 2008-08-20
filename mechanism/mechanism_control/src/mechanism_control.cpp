@@ -221,21 +221,21 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
 {
   assert(mc != NULL);
   assert(mechanism_state_topic_);
-  if ((node = ros::node::instance()) == NULL) {
+  if ((node_ = ros::node::instance()) == NULL) {
     int argc = 0;
     char** argv = NULL;
     ros::init(argc, argv);
-    node = new ros::node("mechanism_control", ros::node::DONT_HANDLE_SIGINT);
+    node_ = new ros::node("mechanism_control", ros::node::DONT_HANDLE_SIGINT);
   }
 
   // Advertise services
-  node->advertise_service("list_controllers", &MechanismControlNode::listControllers, this);
-  node->advertise_service("list_controller_types", &MechanismControlNode::listControllerTypes, this);
-  node->advertise_service("spawn_controller", &MechanismControlNode::spawnController, this);
-  node->advertise_service("kill_controller", &MechanismControlNode::killController, this);
+  node_->advertise_service("list_controllers", &MechanismControlNode::listControllers, this);
+  node_->advertise_service("list_controller_types", &MechanismControlNode::listControllerTypes, this);
+  node_->advertise_service("spawn_controller", &MechanismControlNode::spawnController, this);
+  node_->advertise_service("kill_controller", &MechanismControlNode::killController, this);
 
   // Advertise topics
-  node->advertise<mechanism_control::MechanismState>(mechanism_state_topic_);
+  node_->advertise<mechanism_control::MechanismState>(mechanism_state_topic_, 1000);
 
   // Launches the worker state_publishing_loop_keep_running_
   pthread_cond_init (&mechanism_state_updated_cond_, NULL);
@@ -254,6 +254,7 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
   if (!mc_->initXml(config))
     return false;
   mechanism_state_.set_joint_states_size(mc_->model_.joints_.size());
+  mechanism_state_.set_actuator_states_size(mc_->hw_->actuators_.size());
   return true;
 }
 
@@ -274,11 +275,33 @@ void MechanismControlNode::update()
 
     for (unsigned int i = 0; i < mc_->model_.joints_.size(); ++i)
     {
-      mechanism_state_.joint_states[i].name = mc_->model_.joints_[i]->name_;
-      mechanism_state_.joint_states[i].position = mc_->model_.joints_[i]->position_;
-      mechanism_state_.joint_states[i].velocity = mc_->model_.joints_[i]->velocity_;
-      mechanism_state_.joint_states[i].applied_effort = mc_->model_.joints_[i]->applied_effort_;
-      mechanism_state_.joint_states[i].commanded_effort = mc_->model_.joints_[i]->commanded_effort_;
+      mechanism_control::JointState *out = mechanism_state_.joint_states + i;
+      Joint *in = mc_->model_.joints_[i];
+      out->name = in->name_;
+      out->position = in->position_;
+      out->velocity = in->velocity_;
+      out->applied_effort = in->applied_effort_;
+      out->commanded_effort = in->commanded_effort_;
+    }
+
+    for (unsigned int i = 0; i < mc_->hw_->actuators_.size(); ++i)
+    {
+      mechanism_control::ActuatorState *out = mechanism_state_.actuator_states + i;
+      ActuatorState *in = &mc_->hw_->actuators_[i]->state_;
+      out->name = mc_->hw_->actuators_[i]->name_;
+      out->encoder_count = in->encoder_count_;
+      out->timestamp = in->timestamp_;
+      out->encoder_velocity = in->encoder_velocity_;
+      out->calibration_reading = in->calibration_reading_;
+      out->last_calibration_high_transition = in->last_calibration_high_transition_;
+      out->last_calibration_low_transition = in->last_calibration_low_transition_;
+      out->is_enabled = in->is_enabled_;
+      out->run_stop_hit = in->run_stop_hit_;
+      out->last_requested_current = in->last_requested_current_;
+      out->last_commanded_current = in->last_commanded_current_;
+      out->last_measured_current = in->last_measured_current_;
+      out->motor_voltage = in->motor_voltage_;
+      out->num_encoder_errors = in->num_encoder_errors_;
     }
     mechanism_state_.time = mc_->hw_->current_time_;
     pthread_cond_signal(&mechanism_state_updated_cond_);
@@ -327,7 +350,7 @@ void MechanismControlNode::publishMechanismState()
   pthread_mutex_lock(&mechanism_state_lock_);
   pthread_cond_wait(&mechanism_state_updated_cond_, &mechanism_state_lock_);
   assert(this->mechanism_state_topic_);
-  node->publish(mechanism_state_topic_, mechanism_state_);
+  node_->publish(mechanism_state_topic_, mechanism_state_);
   pthread_mutex_unlock(&mechanism_state_lock_);
 }
 
