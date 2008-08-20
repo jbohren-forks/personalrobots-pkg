@@ -3,8 +3,8 @@
 <robot name="pr2"><!-- name of the robot-->
 
 
-  <controller name="base_controller" type="BaseController">
-    <controller name="caster_front_left_controller" type="JointPositionController">
+  <controller name="base_controller" type="BaseControllerNode">
+    <controller name="caster_front_left_controller" type="JointPositionControllerNode">
         <joint name="caster_front_left_joint" >
           <controller_defaults p="1" d="0" i="0" iClamp="0" />
           <map name="wheel_front_left_l_data" flag="gazebo">
@@ -15,7 +15,7 @@
           </map>
         </joint>
     </controller>
-    <controller name="wheel_front_left_l_controller" type="JointVelocityController">
+    <controller name="wheel_front_left_l_controller" type="JointVelocityControllerNode">
         <joint name="wheel_front_left_l_joint" >
           <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
           <map name="wheel_front_left_l_data" flag="gazebo">
@@ -24,7 +24,7 @@
           </map>
         </joint>
     </controller>
-    <controller name="wheel_front_left_r_controller" type="JointVelocityController">
+    <controller name="wheel_front_left_r_controller" type="JointVelocityControllerNode">
         <joint name="wheel_front_left_r_joint" >
           <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
           <map name="wheel_front_left_r_data" flag="gazebo">
@@ -33,7 +33,7 @@
           </map>
         </joint>
     </controller>
-    <controller name="caster_front_right_controller" type="JointPositionController">
+    <controller name="caster_front_right_controller" type="JointPositionControllerNode">
         <joint name="caster_front_right_joint" >
           <controller_defaults p="1" d="0" i="0" iClamp="0" />
           <map name="wheel_front_left_l_data" flag="gazebo">
@@ -44,7 +44,7 @@
           </map>
         </joint>
     </controller>
-    <controller name="wheel_front_right_l_controller" type="JointVelocityController">
+    <controller name="wheel_front_right_l_controller" type="JointVelocityControllerNode">
         <joint name="wheel_front_right_l_joint" >
           <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
           <map name="wheel_front_right_l_data" flag="gazebo">
@@ -53,7 +53,7 @@
           </map>
         </joint>
     </controller>
-    <controller name="wheel_front_right_r_controller" type="JointVelocityController">
+    <controller name="wheel_front_right_r_controller" type="JointVelocityControllerNode">
         <joint name="wheel_front_right_r_joint" >
           <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
           <map name="wheel_front_right_r_data" flag="gazebo">
@@ -62,7 +62,7 @@
           </map>
         </joint>
     </controller>
-    <controller name="caster_rear_left_controller" type="JointPositionController">
+    <controller name="caster_rear_left_controller" type="JointPositionControllerNode">
         <joint name="caster_rear_left_joint" >
           <controller_defaults p="1" d="0" i="0" iClamp="0" />
           <map name="wheel_front_right_r_data" flag="gazebo">
@@ -73,7 +73,7 @@
           </map>
         </joint>
     </controller>
-    <controller name="wheel_rear_left_l_controller" type="JointVelocityController">
+    <controller name="wheel_rear_left_l_controller" type="JointVelocityControllerNode">
         <joint name="wheel_rear_left_l_joint" >
           <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
           <map name="wheel_rear_left_l_data" flag="gazebo">
@@ -82,7 +82,7 @@
           </map>
         </joint>
     </controller>
-    <controller name="wheel_rear_left_r_controller" type="JointVelocityController">
+    <controller name="wheel_rear_left_r_controller" type="JointVelocityControllerNode">
         <joint name="wheel_rear_left_r_joint" >
           <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
           <map name="wheel_rear_left_r_data" flag="gazebo">
@@ -91,7 +91,7 @@
           </map>
         </joint>
     </controller>
-    <controller name="caster_rear_right_controller" type="JointPositionController">
+    <controller name="caster_rear_right_controller" type="JointPositionControllerNode">
         <joint name="caster_rear_right_joint" >
           <controller_defaults p="1" d="0" i="0" iClamp="0" />
           <map name="wheel_rear_left_l_data" flag="gazebo">
@@ -102,7 +102,7 @@
           </map>
         </joint>
     </controller>
-    <controller name="wheel_rear_right_l_controller" type="JointVelocityController">
+    <controller name="wheel_rear_right_l_controller" type="JointVelocityControllerNode">
         <joint name="wheel_rear_right_l_joint" >
           <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
           <map name="wheel_rear_right_l_data" flag="gazebo">
@@ -111,7 +111,7 @@
           </map>
         </joint>
     </controller>
-    <controller name="wheel_rear_right_r_controller" type="JointVelocityController">
+    <controller name="wheel_rear_right_r_controller" type="JointVelocityControllerNode">
         <joint name="wheel_rear_right_r_joint" >
           <controller_defaults p="0.5" d="0" i="0" iClamp="0" />
           <map name="wheel_rear_right_r_data" flag="gazebo">
@@ -124,7 +124,7 @@
 
       <!-- ========================================= -->
       <!-- torso array -->
-  <controller name="torso_controller" type="JointPositionController">
+  <controller name="torso_controller" type="JointPositionControllerNode">
       <joint name="torso_joint">
         <controller_defaults p="1000" d="0" i="0" iClamp="0" />
         <map name="wheel_rear_right_l_data" flag="gazebo">
@@ -136,7 +136,7 @@
   </controller>
       <!-- ========================================= -->
       <!-- left arm array -->
-  <controller name="shoulder_pan_left_controller" type="JointPositionController">
+  <controller name="shoulder_pan_left_controller" type="JointPositionControllerNode">
       <joint name="shoulder_pan_left_joint" >
         <controller_defaults p="1000" d="0" i="0" iClamp="0" />
         <map name="shoulder_pan_left_data" flag="gazebo">
@@ -146,7 +146,7 @@
         </map>
       </joint>
   </controller>
-  <controller name="shoulder_pitch_left_controller" type="JointPositionController">
+  <controller name="shoulder_pitch_left_controller" type="JointPositionControllerNode">
       <joint name="shoulder_pitch_left_joint" >
         <controller_defaults p="10000" d="0" i="0" iClamp="0" />
         <map name="shoulder_pitch_left_data" flag="gazebo">
@@ -156,7 +156,7 @@
         </map>
       </joint>
   </controller>
-  <controller name="upperarm_roll_left_controller" type="JointPositionController">
+  <controller name="upperarm_roll_left_controller" type="JointPositionControllerNode">
       <joint name="upperarm_roll_left_joint" >
         <controller_defaults p="1000" d="0" i="0" iClamp="0" />
         <map name="upperarm_roll_left_data" flag="gazebo">
@@ -166,7 +166,7 @@
         </map>
       </joint>
   </controller>
-  <controller name="elbow_flex_left_controller" type="JointPositionController">
+  <controller name="elbow_flex_left_controller" type="JointPositionControllerNode">
       <joint name="elbow_flex_left_joint" >
         <controller_defaults p="5000" d="0" i="0" iClamp="0" />
         <map name="elbow_flex_left_data" flag="gazebo">
@@ -176,7 +176,7 @@
         </map>
       </joint>
   </controller>
-  <controller name="forearm_roll_left_controller" type="JointPositionController">
+  <controller name="forearm_roll_left_controller" type="JointPositionControllerNode">
       <joint name="forearm_roll_left_joint" >
         <controller_defaults p="100" d="0" i="0" iClamp="0" />
         <map name="forearm_roll_left_data" flag="gazebo">
@@ -186,7 +186,7 @@
         </map>
       </joint>
   </controller>
-  <controller name="wrist_flex_left_controller" type="JointPositionController">
+  <controller name="wrist_flex_left_controller" type="JointPositionControllerNode">
       <joint name="wrist_flex_left_joint" >
         <controller_defaults p="100" d="0" i="0" iClamp="0" />
         <map name="wrist_flex_left_data" flag="gazebo">
@@ -196,7 +196,7 @@
         </map>
       </joint>
   </controller>
-  <controller name="gripper_roll_left_controller" type="JointPositionController">
+  <controller name="gripper_roll_left_controller" type="JointPositionControllerNode">
       <joint name="gripper_roll_left_joint" >
         <controller_defaults p="1" d="0" i="0" iClamp="0" />
         <map name="gripper_roll_left_data" flag="gazebo">
@@ -207,7 +207,7 @@
       </joint>
   </controller>
   <!-- Special gripper joint -->
-  <controller name="gripper_left_controller" type="JointPositionController">
+  <controller name="gripper_left_controller" type="JointPositionControllerNode">
         <joint name="gripper_left_joint">
         <controller_defaults p="20" d="0" i="0" iClamp="0" />
         <gripper_defaults effortLimit="100" velocityLimit="10" />
@@ -224,7 +224,7 @@
   </controller>
       <!-- ========================================= -->
       <!-- right arm array -->
-  <controller name="shoulder_pan_right_controller" type="JointPositionController">
+  <controller name="shoulder_pan_right_controller" type="JointPositionControllerNode">
       <joint name="shoulder_pan_right_joint" >
         <controller_defaults p="1000" d="0" i="0" iClamp="0" />
         <map name="shoulder_pan_right_data" flag="gazebo">
@@ -234,7 +234,7 @@
         </map>
       </joint>
   </controller>
-  <controller name="shoulder_pitch_right_controller" type="JointPositionController">
+  <controller name="shoulder_pitch_right_controller" type="JointPositionControllerNode">
       <joint name="shoulder_pitch_right_joint" >
         <controller_defaults p="10000" d="0" i="0" iClamp="0" />
         <map name="shoulder_pitch_right_data" flag="gazebo">
@@ -244,7 +244,7 @@
         </map>
       </joint>
   </controller>
-  <controller name="upperarm_roll_right_controller" type="JointPositionController">
+  <controller name="upperarm_roll_right_controller" type="JointPositionControllerNode">
       <joint name="upperarm_roll_right_joint" >
         <controller_defaults p="1000" d="0" i="0" iClamp="0" />
         <map name="upperarm_roll_right_data" flag="gazebo">
@@ -254,7 +254,7 @@
         </map>
       </joint>
   </controller>
-  <controller name="elbow_flex_right_controller" type="JointPositionController">
+  <controller name="elbow_flex_right_controller" type="JointPositionControllerNode">
       <joint name="elbow_flex_right_joint" >
         <controller_defaults p="5000" d="0" i="0" iClamp="0" />
         <map name="elbow_flex_right_data" flag="gazebo">
@@ -264,7 +264,7 @@
         </map>
       </joint>
   </controller>
-  <controller name="forearm_roll_right_controller" type="JointPositionController">
+  <controller name="forearm_roll_right_controller" type="JointPositionControllerNode">
       <joint name="forearm_roll_right_joint" >
         <controller_defaults p="100" d="0" i="0" iClamp="0" />
         <map name="forearm_roll_right_data" flag="gazebo">
@@ -274,7 +274,7 @@
         </map>
       </joint>
   </controller>
-  <controller name="wrist_flex_right_controller" type="JointPositionController">
+  <controller name="wrist_flex_right_controller" type="JointPositionControllerNode">
       <joint name="wrist_flex_right_joint" >
         <controller_defaults p="100" d="0" i="0" iClamp="0" />
         <map name="wrist_flex_right_data" flag="gazebo">
@@ -284,7 +284,7 @@
         </map>
       </joint>
   </controller>
-  <controller name="gripper_roll_right_controller" type="JointPositionController">
+  <controller name="gripper_roll_right_controller" type="JointPositionControllerNode">
       <joint name="gripper_roll_right_joint" >
         <controller_defaults p="1" d="0" i="0" iClamp="0" />
         <map name="gripper_roll_right_data" flag="gazebo">
@@ -295,7 +295,7 @@
       </joint>
   </controller>
       <!-- Special gripper joint -->
-  <controller name="gripper_right_controller" type="JointPositionController">
+  <controller name="gripper_right_controller" type="JointPositionControllerNode">
         <joint name="gripper_right_joint">
         <controller_defaults p="20" d="0" i="0" iClamp="0" />
         <gripper_defaults effortLimit="100" velocityLimit="10" />
@@ -311,7 +311,7 @@
       </joint>
   </controller>
       <!-- head and above array -->
-  <controller name="head_pan_controller" type="JointPositionController">
+  <controller name="head_pan_controller" type="JointPositionControllerNode">
       <joint name="head_pan_joint" >
         <controller_defaults p="100" d="0" i="0" iClamp="0" />
         <map name="head_pan_data" flag="gazebo">
@@ -321,7 +321,7 @@
         </map>
       </joint>
   </controller>
-  <controller name="head_tilt_controller" type="JointPositionController">
+  <controller name="head_tilt_controller" type="JointPositionControllerNode">
       <joint name="head_tilt_joint" >
         <controller_defaults p="100" d="0" i="0" iClamp="0" />
         <map name="head_tilt_data" flag="gazebo">
@@ -331,7 +331,7 @@
         </map>
       </joint>
   </controller>
-  <controller name="tilt_laser_controller" type="JointPositionController">
+  <controller name="tilt_laser_controller" type="JointPositionControllerNode">
       <joint name="tilt_laser_joint" >
         <controller_defaults p="0.5" d="0" i="0" iClamp="20" />
         <map name="tilt_laser_data" flag="gazebo">
