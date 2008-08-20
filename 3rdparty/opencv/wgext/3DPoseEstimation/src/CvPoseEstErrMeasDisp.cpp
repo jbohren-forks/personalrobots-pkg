@@ -9,7 +9,7 @@
 #include <opencv/cxcore.h>
 
 #include <iostream>
-#include "../include/Cv3DPoseEstimateDisp.h"
+#include "Cv3DPoseEstimateDisp.h"
 using namespace std;
 
 CvPoseEstErrMeasDisp::CvPoseEstErrMeasDisp():
