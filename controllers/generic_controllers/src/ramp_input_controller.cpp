@@ -42,7 +42,7 @@ RampInputController::RampInputController()
 {
   robot_ = NULL;
   joint_ = NULL;
-  
+
   input_start_ = 0;
   input_end_ = 0;
   duration_ = 0;
@@ -57,25 +57,25 @@ void RampInputController::init(double input_start, double input_end, double dura
 {
   robot_ = robot;
   joint_ = robot->getJoint(name);
-  
+
   input_start_=input_start;
   input_end_=input_end;
   duration_=duration;
   initial_time_=time;
 }
 
-void RampInputController::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool RampInputController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
-  
+
   TiXmlElement *jnt = config->FirstChildElement("joint");
-  if (jnt) 
+  if (jnt)
   {
     double input_start = atof(jnt->FirstChildElement("controller_defaults")->Attribute("start"));
     double input_end = atof(jnt->FirstChildElement("controller_defaults")->Attribute("end"));
     double duration = atof(jnt->FirstChildElement("controller_defaults")->Attribute("duration"));
     init(input_start, input_end, duration,robot->hw_->current_time_,jnt->Attribute("name"), robot);
   }
-    
+  return true;
 }
 
 // Return the current position command
@@ -104,12 +104,12 @@ double RampInputController::getTime()
 void RampInputController::update()
 {
   double time = robot_->hw_->current_time_;
-  
+
   joint_->commanded_effort_ = input_start_+(input_end_-input_start_)*(time-initial_time_)/(duration_);
 }
 
 ROS_REGISTER_CONTROLLER(RampInputControllerNode)
-RampInputControllerNode::RampInputControllerNode() 
+RampInputControllerNode::RampInputControllerNode()
 {
   c_ = new RampInputController();
 }
@@ -140,13 +140,14 @@ void RampInputControllerNode::init(double input_start, double input_end, double 
   assert(false); // temporary fix for lack of xml
 }
 
-void RampInputControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool RampInputControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
-  
+
   c_->initXml(robot, config);
 
   node->advertise_service(prefix + "/get_actual", &RampInputControllerNode::getActual, this);
+  return true;
 }
 

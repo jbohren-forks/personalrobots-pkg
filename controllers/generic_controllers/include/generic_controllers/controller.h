@@ -69,7 +69,7 @@ public:
   {
   }
   virtual void update(void) = 0;
-  virtual void initXml(mechanism::Robot *robot, TiXmlElement *config) = 0;
+  virtual bool initXml(mechanism::Robot *robot, TiXmlElement *config) = 0;
 };
 
 }

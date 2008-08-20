@@ -37,9 +37,9 @@
 /***************************************************/
 /*! \class controller::JointVelocityController
     \brief Joint Velocity Controller
-    
+
     This class closes the loop around velocity using
-    a pid loop. 
+    a pid loop.
 
 */
 /***************************************************/
@@ -76,12 +76,12 @@ public:
    * \param i_gain Integral gain.
    * \param d_gain Derivative gain.
    * \param windup Intergral limit.
-   * \param time The current hardware time. 
+   * \param time The current hardware time.
    * \param *joint The joint that is being controlled.
    */
 
   void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot);
-  void initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
@@ -117,15 +117,23 @@ private:
   Pid pid_controller_;      /**< Internal PID controller. */
   double last_time_;        /**< Last time stamp of update. */
   double command_;          /**< Last commanded position. */
-  
+
 };
 
 /***************************************************/
 /*! \class controller::JointVelocityControllerNode
     \brief Joint Velocity Controller ROS Node
-    
+
     This class closes the loop around velocity using
-    a pid loop. 
+    a pid loop.
+
+    Example config:
+
+    <controller type="JointVelocityControllerNode" topic="some_topic_name">
+      <joint name="joint_to_control">
+        <pid p="1.0" i="2.0" d="3.0" iClamp="4.0" />
+      </joint>
+    </controller>
 */
 /***************************************************/
 
@@ -146,7 +154,7 @@ public:
   void update();
 
   void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot);
-  void initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   // Services
   bool setCommand(generic_controllers::SetCommand::request &req,

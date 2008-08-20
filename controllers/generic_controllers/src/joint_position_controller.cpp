@@ -43,7 +43,7 @@ JointPositionController::JointPositionController()
 {
   robot_ = NULL;
   joint_ = NULL;
-  
+
   // Initialize PID class
   pid_controller_.initPid(0, 0, 0, 0, 0);
   command_ = 0;
@@ -58,14 +58,14 @@ void JointPositionController::init(double p_gain, double i_gain, double d_gain, 
 {
   robot_ = robot;
   joint_ = robot->getJoint(name);
-  
+
   pid_controller_.initPid(p_gain, i_gain, d_gain, windup, -windup);
   command_= 0;
-  last_time_= time; 
+  last_time_= time;
 }
 
-void JointPositionController::initXml(mechanism::Robot *robot, TiXmlElement *config)
-{  
+bool JointPositionController::initXml(mechanism::Robot *robot, TiXmlElement *config)
+{
   TiXmlElement *jnt = config->FirstChildElement("joint");
   if (jnt){
     // TODO: error check if xml attributes/elements are missing
@@ -75,6 +75,7 @@ void JointPositionController::initXml(mechanism::Robot *robot, TiXmlElement *con
     double windup = atof(jnt->FirstChildElement("controller_defaults")->Attribute("iClamp"));
     init(p_gain, i_gain, d_gain, windup, robot->hw_->current_time_,jnt->Attribute("name"), robot);
   }
+  return true;
 }
 
 // Set the joint position command
@@ -160,13 +161,13 @@ void JointPositionControllerNode::init(double p_gain, double i_gain, double d_ga
 {
   ros::node *node = ros::node::instance();
   string prefix = name;
-  
+
   c_->init(p_gain, i_gain, d_gain, windup, time, name,robot);
   node->advertise_service(prefix + "/set_command", &JointPositionControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_actual", &JointPositionControllerNode::getActual, this);
 }
 
-void JointPositionControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool JointPositionControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
@@ -174,5 +175,6 @@ void JointPositionControllerNode::initXml(mechanism::Robot *robot, TiXmlElement 
   c_->initXml(robot, config);
   node->advertise_service(prefix + "/set_command", &JointPositionControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_actual", &JointPositionControllerNode::getActual, this);
+  return true;
 }
 

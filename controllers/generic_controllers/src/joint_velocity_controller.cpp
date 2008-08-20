@@ -44,7 +44,7 @@ JointVelocityController::JointVelocityController()
 {
   robot_=NULL;
   joint_=NULL;
-  
+
   // Initialize PID class
   pid_controller_.initPid(0, 0, 0, 0, 0);
   command_ = 0;
@@ -59,24 +59,38 @@ void JointVelocityController::init(double p_gain, double i_gain, double d_gain, 
 {
   robot_ = robot;
   joint_ = robot->getJoint(name);
-  
+
   pid_controller_.initPid(p_gain, i_gain, d_gain, windup, -windup);
   command_= 0;
   last_time_= time;
 
 }
 
-void JointVelocityController::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool JointVelocityController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
-  TiXmlElement *jnt = config->FirstChildElement("joint");
-  if (jnt){
-    // TODO: error check if xml attributes/elements are missing
-    double p_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("p"));
-    double i_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("i"));
-    double d_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("d"));
-    double windup = atof(jnt->FirstChildElement("controller_defaults")->Attribute("iClamp"));
-    init(p_gain, i_gain, d_gain, windup, robot->hw_->current_time_,jnt->Attribute("name"), robot);
+  TiXmlElement *j = config->FirstChildElement("joint");
+  if (!j)
+  {
+    fprintf(stderr, "JointVelocityController was not given a joint\n");
+    return false;
   }
+
+  const char *joint_name = j->Attribute("name");
+  joint_ = joint_name ? robot->getJoint(joint_name) : NULL;
+  if (!joint_)
+  {
+    fprintf(stderr, "JointVelocityController could not find joint named \"%s\"\n", joint_name);
+    return false;
+  }
+
+  TiXmlElement *p = j->FirstChildElement("pid");
+  if (p)
+    pid_controller_.initXml(p);
+  else
+    fprintf(stderr, "JointVelocityController's config did not specify the default pid parameters.\n");
+
+  last_time_ = robot->hw_->current_time_;
+  return true;
 }
 
 // Set the joint velocity command
@@ -112,7 +126,7 @@ void JointVelocityController::update()
 }
 
 ROS_REGISTER_CONTROLLER(JointVelocityControllerNode)
-JointVelocityControllerNode::JointVelocityControllerNode() 
+JointVelocityControllerNode::JointVelocityControllerNode()
 {
   c_ = new JointVelocityController();
 }
@@ -151,18 +165,19 @@ void JointVelocityControllerNode::init(double p_gain, double i_gain, double d_ga
 {
   ros::node *node = ros::node::instance();
   string prefix = name;
-  
+
   c_->init(p_gain, i_gain, d_gain, windup, time,name, robot);
   node->advertise_service(prefix + "/set_command", &JointVelocityControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_actual", &JointVelocityControllerNode::getActual, this);
 }
 
-void JointVelocityControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool JointVelocityControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
-  
+
   c_->initXml(robot, config);
   node->advertise_service(prefix + "/set_command", &JointVelocityControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_actual", &JointVelocityControllerNode::getActual, this);
+  return true;
 }

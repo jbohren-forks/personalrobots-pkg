@@ -42,7 +42,7 @@ JointEffortController::JointEffortController()
 {
   robot_ = NULL;
   joint_ = NULL;
-  
+
   command_ = 0;
 }
 
@@ -54,18 +54,19 @@ void JointEffortController::init(std::string name,mechanism::Robot *robot)
 {
   robot_ = robot;
   joint_ = robot->getJoint(name);
-  
+
   command_= 0;
 }
 
-void JointEffortController::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool JointEffortController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
-   
+
   TiXmlElement *jnt = config->FirstChildElement("joint");
-  if (jnt) 
+  if (jnt)
   {
     init(jnt->Attribute("name"), robot);
-  } 
+  }
+  return true;
 }
 
 // Set the joint position command
@@ -98,7 +99,7 @@ void JointEffortController::update()
 }
 
 ROS_REGISTER_CONTROLLER(JointEffortControllerNode)
-JointEffortControllerNode::JointEffortControllerNode() 
+JointEffortControllerNode::JointEffortControllerNode()
 {
   c_ = new JointEffortController();
 }
@@ -136,18 +137,18 @@ void JointEffortControllerNode::init(std::string name, mechanism::Robot *robot)
 {
   ros::node *node = ros::node::instance();
   string prefix = name;
-  
+
   c_->init(name, robot);
   node->advertise_service(prefix + "/set_command", &JointEffortControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_actual", &JointEffortControllerNode::getActual, this);
 }
 
 
-void JointEffortControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool JointEffortControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
-  
+
   c_->initXml(robot, config);
   node->advertise_service(prefix + "/set_command", &JointEffortControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_actual", &JointEffortControllerNode::getActual, this);

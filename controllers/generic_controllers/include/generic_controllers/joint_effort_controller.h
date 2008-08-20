@@ -37,8 +37,8 @@
 /***************************************************/
 /*! \class controller::JointEffortController
     \brief Joint Torque Controller
-    
-    This class basically passes the commanded effort 
+
+    This class basically passes the commanded effort
     down through the transmissions and safety code.
 
 */
@@ -74,12 +74,12 @@ public:
    *
    */
   void init(std::string name,mechanism::Robot *robot);
-  void initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
    *
-   * \param command 
+   * \param command
    */
   void setCommand(double command);
 
@@ -113,8 +113,8 @@ private:
 /***************************************************/
 /*! \class controller::JointEffortControllerNode
     \brief Joint Torque Controller ROS Node
-    
-    This class basically passes the commanded effort 
+
+    This class basically passes the commanded effort
     down through the transmissions and safety code.
 
 */
@@ -137,7 +137,7 @@ public:
   void update();
 
   void init(std::string name, mechanism::Robot *robot);
-  void initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   // Services
   bool setCommand(generic_controllers::SetCommand::request &req,

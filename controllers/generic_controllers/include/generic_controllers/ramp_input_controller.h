@@ -37,8 +37,8 @@
 /***************************************************/
 /*! \class controller::RampInputController
     \brief Ramp Input Controller
-    
-    This class basically gives a ramp input to an 
+
+    This class basically gives a ramp input to an
     acuator.
 
 */
@@ -74,12 +74,12 @@ public:
    * \param input_start The start value of the ramp.
    * \param input_end The end value of the ramp.
    * \param duration The duration in seconds from start to finish.
-   * \param time The current hardware time. 
+   * \param time The current hardware time.
    * \param *joint The joint that is being controlled.
    */
   void init(double input_start, double input_end, double duration, double time,std::string name,mechanism::Robot *robot);
 
-  void initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   /*!
    * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
@@ -90,7 +90,7 @@ public:
    * \brief Read the effort of the joint
    */
   double getMeasuredEffort();
-  
+
   /*!
    * \brief Read the velocity of the joint
    */
@@ -114,14 +114,14 @@ private:
   double input_end_;            /**< End of the ramp. */
   double duration_;             /**< Duration of the ramp. */
   double initial_time_;         /**< Start time of the ramp. */
-  
+
 };
 
 /***************************************************/
 /*! \class controller::RampInputControllerNode
     \brief Ram Input Controller ROS Node
-    
-    This class basically gives a ramp input to an 
+
+    This class basically gives a ramp input to an
     acuator.
 
 */
@@ -144,7 +144,7 @@ public:
   void update();
 
   void init(double input_start, double input_end, double duration, double time,std::string name,mechanism::Robot *robot);
-  void initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   bool getActual(generic_controllers::GetActual::request &req,
                   generic_controllers::GetActual::response &resp);
