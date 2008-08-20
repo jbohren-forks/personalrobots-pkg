@@ -36,11 +36,11 @@
 /***************************************************/
 /*! \class controller::Pid
     \brief A basic pid class.
-    
+
     This class implements a generic structure that
-    can be used to create a wide range of pid 
-    controllers. It can function independently or 
-    be subclassed to provide more specific controls 
+    can be used to create a wide range of pid
+    controllers. It can function independently or
+    be subclassed to provide more specific controls
     based on a particular control loop.
 
     In particular, this class implements the standard
@@ -48,22 +48,23 @@
 
     command  = -p_term_ - i_term_ - d_term_
 
-    where: <br> 
+    where: <br>
     <UL TYPE="none">
     <LI>  p_term_  = p_gain_ * p_error_
     <LI>  i_term_  = i_gain_ * i_error_
     <LI>  d_term_  = d_gain_ * d_error_
     <LI>  i_error_ = i_error_ + p_error_ * dt
     <LI>  d_error_ = d_error_ + (p_error_ - p_error_last_) / dt
-    </UL> 
-      
-    given:<br> 
-    <UL TYPE="none"> 
+    </UL>
+
+    given:<br>
+    <UL TYPE="none">
     <LI>  p_error_ = p_state-p_target.
     </UL>
 
 */
 /***************************************************/
+class TiXmlElement;
 namespace controller
 {
 
@@ -92,7 +93,7 @@ public:
    * \brief Update the Pid loop with nonuniform time step size.
    *
    * \param p_error  Error since last call (p_state-p_target)
-   * \param dt Change in time since last call 
+   * \param dt Change in time since last call
    */
   double updatePid(double p_error, double dt);
 
@@ -106,6 +107,8 @@ public:
    * \param I2 The integral lower limit.
    */
   void initPid(double P, double I, double D, double I1, double I2);
+
+  void initXml(TiXmlElement *config);
 
   /*!
    * \brief Set current command for this PID controller
