@@ -106,16 +106,19 @@ void JointPositionController::update()
   double error(0);
   double time = robot_->hw_->current_time_;
 
-  if(joint_->type_ == mechanism::JOINT_ROTARY || joint_->type_ == mechanism::JOINT_CONTINUOUS)
+  if(joint_)
   {
-    error = math_utils::shortest_angular_distance(command_, joint_->position_);
-  }
-  else
-  {
-    error = joint_->position_ - command_;
-  }
+    if(joint_->type_ == mechanism::JOINT_ROTARY || joint_->type_ == mechanism::JOINT_CONTINUOUS)
+    {
+      error = math_utils::shortest_angular_distance(command_, joint_->position_);
+    }
+    else
+    {
+      error = joint_->position_ - command_;
+    }
 
-  joint_->commanded_effort_ = pid_controller_.updatePid(error, time - last_time_);
+    joint_->commanded_effort_ = pid_controller_.updatePid(error, time - last_time_);
+  }
 }
 
 ROS_REGISTER_CONTROLLER(JointPositionControllerNode)
