@@ -134,7 +134,7 @@ int main(int argc, char **argv)
 
   int count;
 
-  count = player.addHandler<std_msgs::RobotBase2DOdom>(string("/odom"), &odom_callback, NULL, true);
+  count = player.addHandler<std_msgs::RobotBase2DOdom>(string("odom"), &odom_callback, NULL, true);
 
   if (count != 1)
   {
@@ -142,7 +142,9 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  count = player.addHandler<std_msgs::LaserScan>(string("/scan"), &scan_callback, NULL, true);
+  count = player.addHandler<std_msgs::LaserScan>(string("scan"), &scan_callback, NULL, true);
+
+  if (count != 1)
   {
     printf("Found %d '/scan' topics when expecting 1\n", count);
     return 1;
