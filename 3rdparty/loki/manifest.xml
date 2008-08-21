@@ -5,7 +5,7 @@ This package contains the C++ library Loki.
 
 </description>
 <author>Andrei Alexandrescu</author>
-<license>MIT http://opensource.org/licenses/mit-license.php</license>
+<license>MIT</license>
 <url>http://loki-lib.sourceforge.net/</url>
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/loki-svn/lib -L${prefix}/loki-svn/lib -lloki" cflags="-I${prefix}/loki-svn/include"/>
