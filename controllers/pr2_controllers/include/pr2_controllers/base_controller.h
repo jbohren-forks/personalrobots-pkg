@@ -54,6 +54,8 @@
 
 #include <std_msgs/RobotBase2DOdom.h>
 
+#include <pthread.h>
+
 namespace controller
 {
   #define KP_SPEED_DEFAULT 0.1

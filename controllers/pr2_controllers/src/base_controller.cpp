@@ -58,6 +58,8 @@ BaseController::BaseController() : num_wheels_(0), num_casters_(0), odom_publish
   base_odom_velocity_.x = 0;
   base_odom_velocity_.y = 0;
   base_odom_velocity_.z = 0;
+
+  pthread_mutex_init(&base_controller_lock_,NULL);
 }
 
 BaseController::~BaseController()
@@ -68,6 +70,7 @@ BaseController::~BaseController()
 void BaseController::setCommand(libTF::Pose3D::Vector cmd_vel)
 {
   pthread_mutex_lock(&base_controller_lock_);
+  //std::cout << "command received : " << cmd_vel_t_ << std::endl;
   cmd_vel_t_.x = cmd_vel.x;
   cmd_vel_t_.y = cmd_vel.y;
   cmd_vel_t_.z = cmd_vel.z;
@@ -268,6 +271,7 @@ void BaseController::update()
     cmd_vel_.z = cmd_vel_t_.z;
     pthread_mutex_unlock(&base_controller_lock_);
   }
+  //std::cout << "command received in update : " << cmd_vel_ << std::endl;
 
   getJointValues();
 
@@ -305,7 +309,7 @@ void BaseController::computeAndSetCasterSteer()
 
     error_steer = steer_angle_actual_[i] - steer_angle_desired;
     steer_velocity_desired_[i] = -kp_speed_*error_steer;
-//    std::cout << "setting steering velocity??? " << i << " : " << steer_velocity_desired_[i] << " kp: " << kp_speed_ << "error_steer" << error_steer << std::endl;
+//    std::cout << "setting steering velocity " << i << " : " << steer_velocity_desired_[i] << " kp: " << kp_speed_ << "error_steer" << error_steer << std::endl;
     base_casters_[i].controller_.setCommand(steer_velocity_desired_[i]);
   }
 }
@@ -392,6 +396,7 @@ void BaseControllerNode::setCommand(double vx, double vy, double vw)
   command.y = vy;
   command.z = vw;
   c_->setCommand(command);
+  //std::cout << "command received : " << vx << "," << vy << "," << vw << std::endl;
 }
 
 
@@ -417,7 +422,7 @@ bool BaseControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
     return false;
   
   node->advertise_service(prefix + "/set_command", &BaseControllerNode::setCommand, this);
-  node->advertise_service(prefix + "/get_command", &BaseControllerNode::getCommand, this);
+  node->advertise_service(prefix + "/get_actual", &BaseControllerNode::getCommand, this); //FIXME: this is actually get command, just returning command for testing.
   return true;
 }
 
