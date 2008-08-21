@@ -55,11 +55,37 @@ class Blob_Tracker
 public:
   Blob_Tracker();
 
+  /*!
+   * \brief Initialize the tracker 
+   */
   void init();
+
+  /*!
+   * \brief Perform blob tracking on image
+   */
   bool processFrame(IplImage**);
+
+  /*!
+   * \brief Show the frame in an OpenCV window 
+   */
   void showFrame(IplImage**);
+
+  /*!
+   * \brief Save the frame to a png file. If called repeatedly, files will be numbered with test as prefix. 
+   */
   void saveFrame(const char*, IplImage*);
+
+  /*!
+   * \brief return number of blobs currently being tracked
+   */
   int getNumBlobs();
+
+  /*!
+   * \brief Get blob coordinates of i-th blob
+   * \param i blob index 
+   * \param x x-coordinate
+   * \param y y-coordinate
+   */
   void getBlobCoords(int,float*, float*);
 
 private:
