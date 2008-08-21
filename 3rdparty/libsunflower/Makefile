@@ -16,7 +16,7 @@
 
 all: tarball-all
 
-VERSION=     r903
+VERSION=     r910
 
 TARBALL=     libsunflower-$(VERSION).tar.gz
 TARBALL_URL= http://downloads.sourceforge.net/libsunflower/$(TARBALL)
@@ -38,9 +38,14 @@ really-all: $(SOURCE_DIR)/configure $(BUILD_DIR)/config.h
 	$(MAKE) -C $(BUILD_DIR) install
 
 .PHONY: svn-all
-svn-all:
-	test -d $(SVN_DIR) || svn co -r$(SVN_REV) $(SVN_URL) $(SVN_DIR)
+svn-all: checkout
 	$(MAKE) SOURCE_DIR=$(SVN_DIR) really-all
+
+checkout:
+	test -d $(SVN_DIR) || svn co -r$(SVN_REV) $(SVN_URL) $(SVN_DIR)
+
+update: checkout
+	test -d $(SVN_DIR) && svn up $(SVN_DIR)
 
 .PHONY: tarball-all
 tarball-all: $(SOURCE_DIR)

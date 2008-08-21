@@ -19,52 +19,70 @@
 
 all: tarball-all
 
-SVN_DIR=     $(PWD)/nepumuk-svn
-SVN_REV=     HEAD
-SVN_URL=     https://libsunflower.svn.sourceforge.net/svnroot/libsunflower/trunk/nepumuk
-
-VERSION=     r903
+VERSION=     r912
 
 TARBALL=     nepumuk-$(VERSION).tar.gz
 TARBALL_URL= http://downloads.sourceforge.net/libsunflower/$(TARBALL)
 SOURCE_DIR=  $(PWD)/nepumuk-$(VERSION)
 UNPACK_CMD=  tar xfz
+BUILD_DIR=   $(PWD)/build
+INST_DIR=    $(PWD)/local
+ESTAR_DIR=   `rospack find estar`/local
+SFL_DIR=     `rospack find libsunflower`/local
+BOOST_DIR=   `rospack --cflags-only-I boost`
 
-SYMLINK=   npm
-SYMTARGET= $(SOURCE_DIR)
+SVN_DIR=     $(PWD)/nepumuk-svn
+SVN_REV=     HEAD
+SVN_URL=     https://libsunflower.svn.sourceforge.net/svnroot/libsunflower/trunk/nepumuk
+
+SIMULINKS=   nepumuk rostest ros0.sh robots.ros0 layout.ros0 expodemo.sh robots.expo layout.expo
+
 
 include $(shell rospack find mk)/download_unpack.mk
 
-.PHONY: really-all tarball-all svn-all checkout
-
+.PHONY: svn-all
 svn-all: checkout
 	$(MAKE) SOURCE_DIR=$(SVN_DIR) really-all
 
+.PHONY: tarball-all
 tarball-all: $(SOURCE_DIR)
 	$(MAKE) really-all
 
-rebuild: clean really-all
+rebuild: wipe really-all
 
-really-all: symlinks build/Makefile
-	test -d build || mkdir build
-	$(MAKE) -C build
+.PHONY: really-all
+really-all: $(SOURCE_DIR)/configure $(BUILD_DIR)/config.h
+	$(MAKE) -C $(BUILD_DIR) install
+	$(MAKE) symlinks
 
 checkout:
 	test -d $(SVN_DIR) || svn co -r$(SVN_REV) $(SVN_URL) $(SVN_DIR)
 
+update: checkout
+	test -d $(SVN_DIR) && svn up $(SVN_DIR)
+
 symlinks:
-	$(MAKE) SYMLINK=src         SYMTARGET=$(SOURCE_DIR)                   symlink
-	$(MAKE) SYMLINK=npm         SYMTARGET=$(SOURCE_DIR)                   symlink
-	$(MAKE) SYMLINK=ros0.sh     SYMTARGET=$(SOURCE_DIR)/simul/ros0.sh     symlink
-	$(MAKE) SYMLINK=robots.ros0 SYMTARGET=$(SOURCE_DIR)/simul/robots.ros0 symlink
-	$(MAKE) SYMLINK=layout.ros0 SYMTARGET=$(SOURCE_DIR)/simul/layout.ros0 symlink
+	for foo in $(SIMULINKS); do \
+	  test -L $$foo || ln -s $(INST_DIR)/bin/$$foo || exit 42; done
 
-symlink:
-	test -L $(SYMLINK) || ln -s $(SYMTARGET) $(SYMLINK)
+$(SOURCE_DIR)/configure: $(SOURCE_DIR)/configure.ac $(SOURCE_DIR)/bootstrap-buildsystem.sh
+	cd $(SOURCE_DIR) && ./bootstrap-buildsystem.sh
 
-build/Makefile: CMakeLists.txt manifest.xml
-	mkdir -p build
-	cd build && `rospack find cmake`/cmake/bin/cmake -DCMAKE_TOOLCHAIN_FILE=`rospack find rosbuild`/rostoolchain.cmake ..
+$(BUILD_DIR)/config.h: $(SOURCE_DIR)/configure $(SOURCE_DIR)/config.h.in
+	test -d $(BUILD_DIR) || mkdir -p $(BUILD_DIR)
+	cd $(BUILD_DIR) && $(SOURCE_DIR)/configure --prefix=$(INST_DIR) \
+                                                   --enable-ros \
+                                                   --with-sfl=$(SFL_DIR) \
+                                                   --with-estar=$(ESTAR_DIR) \
+                                                   --with-boost=$(BOOST_DIR)
 
 clean:
-	rm -rf lib build npm ros0.sh robots.ros0 layout.ros0
+	- rm $(SIMULINKS)
+	$(MAKE) -C $(BUILD_DIR) clean
+
+distclean:
+	- rm $(SIMULINKS)
+	$(MAKE) -C $(BUILD_DIR) distclean
+
+wipe:
+	rm -rf $(BUILD_DIR) $(INST_DIR)
