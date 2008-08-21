@@ -2245,9 +2245,7 @@
   <include>controllers_gazebo.xml</include>
   
   <!-- new definitions for mechanism controls - JMH -->
-  <!--
       <include>controllers.xml</include>
       <include>actuators.xml</include> 
       <include>transmissions.xml</include> 
-      -->
 </robot>
