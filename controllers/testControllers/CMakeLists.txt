@@ -5,7 +5,6 @@ add_definitions(-Wall)
 
 rospack_add_executable(testControllers src/test_base.cpp)
 target_link_libraries(testControllers etherdrive_hardware pr2Controllers)
-rospack_add_executable(testURDF src/test_load_xml.cpp)
 
 #set(my_libraries etherdrive_hardware pr2Controllers rosControllers)
 #rospack_add_executable(testControllers src/test_ros.cpp)
