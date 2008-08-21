@@ -159,7 +159,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
 
 }
 
-void BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   // std::cout << " base controller initxml " << std::endl << *config << std::endl;
   TiXmlElement *elt = config->FirstChildElement("controller");
@@ -209,7 +209,7 @@ void BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
     elt = config->NextSiblingElement("map");
   }
   init(jcp_vec,robot);
-
+  return true;
 }
 
 void BaseController::getJointValues()
@@ -386,16 +386,17 @@ bool BaseControllerNode::getCommand(
   return true;
 }
 
-void BaseControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool BaseControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
 
-  c_->initXml(robot, config);
+  if(!c_->initXml(robot, config))
+    return false;
   
   node->advertise_service(prefix + "/set_command", &BaseControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_command", &BaseControllerNode::getCommand, this);
-  return;
+  return true;
 }
 
 Pose3D::Vector BaseController::computePointVelocity2D(const Pose3D::Vector& pos, const Pose3D::Vector& vel)

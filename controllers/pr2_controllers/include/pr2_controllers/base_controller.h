@@ -127,7 +127,7 @@ namespace controller
      *
      */
     void init(std::vector<JointControlParam> jcp, mechanism::Robot *robot);
-    void initXml(mechanism::Robot *robot, TiXmlElement *config);
+    bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
 
     /*!
@@ -341,7 +341,7 @@ namespace controller
 
     void update();
 
-    void initXml(mechanism::Robot *robot, TiXmlElement *config);
+    bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
     // Services
     bool setCommand(pr2_controllers::SetBaseCommand::request &req,
