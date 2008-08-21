@@ -116,18 +116,19 @@ void scan_callback(string name, ros::msg* m, ros::Time t, void* n)
 
 int main(int argc, char **argv)
 {
-  if (argc != 3)
+  if (argc < 2)
   {
-    printf("usage: genlog_carmen ODOMLOG LASERLOG\n"
-           "  The logs must have been vacuumed up with megamaid's vacuum.\n");
+    printf("usage: genlog_carmen FILE1 [FILE2, ...]\n"
+           "  The logs must have been vacuumed up with megamaid's vacuum or central_vac and contain /odom and /scan messages.\n");
     return 1;
   }
 
   MultiLogPlayer player;
 
   vector<string> files;
-  files.push_back(argv[1]);
-  files.push_back(argv[2]);
+
+  for (int i = 1; i < argc; i++)
+    files.push_back(argv[i]);
 
   player.open(files, ros::Time(0));
 
@@ -137,13 +138,13 @@ int main(int argc, char **argv)
 
   if (count != 1)
   {
-    printf("Found %d '/odom' topics when expecting 1", count);
+    printf("Found %d '/odom' topics when expecting 1\n", count);
     return 1;
   }
 
   count = player.addHandler<std_msgs::LaserScan>(string("/scan"), &scan_callback, NULL, true);
   {
-    printf("Found %d '/scan' topics when expecting 1", count);
+    printf("Found %d '/scan' topics when expecting 1\n", count);
     return 1;
   }
 
