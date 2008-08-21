@@ -151,45 +151,66 @@ void rosTFClient::transformLaserScanToPointCloud(const std::string & target_fram
 
 void rosTFClient::receiveArray()
 {
-  try{
   for (unsigned int i = 0; i < tfArrayIn.eulers_size; i++)
   {
-    setWithEulers(tfArrayIn.eulers[i].header.frame_id, tfArrayIn.eulers[i].parent, tfArrayIn.eulers[i].x, tfArrayIn.eulers[i].y, tfArrayIn.eulers[i].z, tfArrayIn.eulers[i].yaw, tfArrayIn.eulers[i].pitch, tfArrayIn.eulers[i].roll, tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + tfArrayIn.eulers[i].header.stamp.nsec);
+    try{
+      setWithEulers(tfArrayIn.eulers[i].header.frame_id, tfArrayIn.eulers[i].parent, tfArrayIn.eulers[i].x, tfArrayIn.eulers[i].y, tfArrayIn.eulers[i].z, tfArrayIn.eulers[i].yaw, tfArrayIn.eulers[i].pitch, tfArrayIn.eulers[i].roll, tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + tfArrayIn.eulers[i].header.stamp.nsec);
+    }    
+    catch (libTF::Exception &ex)
+    {
+      std::cerr << "receiveArray: setWithEulers failed with frame_id "<< tfArrayIn.eulers[i].header.frame_id << " parent " << tfArrayIn.eulers[i].parent << std::endl;
+      std::cerr<< ex.what();
+    };
   }
-    //std::cout << "received euler frame: " << tfArrayIn.eulers[i].header.frame_id << " with parent:" << tfArrayIn.eulers[i].parent << "time " << tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + eulerIn.header.stamp.nsec << std::endl;
+  //std::cout << "received euler frame: " << tfArrayIn.eulers[i].header.frame_id << " with parent:" << tfArrayIn.eulers[i].parent << "time " << tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + eulerIn.header.stamp.nsec << std::endl;
   for (unsigned int i = 0; i < tfArrayIn.dhparams_size; i++)
   {
+    try{
     setWithDH(tfArrayIn.dhparams[i].header.frame_id, tfArrayIn.dhparams[i].parent, tfArrayIn.dhparams[i].length, tfArrayIn.dhparams[i].twist, tfArrayIn.dhparams[i].offset, tfArrayIn.dhparams[i].angle, tfArrayIn.dhparams[i].header.stamp.sec * 1000000000ULL + tfArrayIn.dhparams[i].header.stamp.nsec);
+    }    
+    catch (libTF::Exception &ex)
+    {
+      std::cerr << "receiveArray: setWithDH failed with frame_id "<< tfArrayIn.dhparams[i].header.frame_id << " parent " << tfArrayIn.dhparams[i].parent << std::endl;
+      std::cerr<< ex.what();
+    };
     //  std::cout << "recieved DH frame: " << tfArrayIn.dhparams[i].header.frame_id << " with parent:" << tfArrayIn.dhparams[i].parent << std::endl;
   }
-
+  
   for (unsigned int i = 0; i < tfArrayIn.quaternions_size; i++)
   {
+    try{
     setWithQuaternion(tfArrayIn.quaternions[i].header.frame_id, tfArrayIn.quaternions[i].parent, tfArrayIn.quaternions[i].xt, tfArrayIn.quaternions[i].yt, tfArrayIn.quaternions[i].zt, tfArrayIn.quaternions[i].xr, tfArrayIn.quaternions[i].yr, tfArrayIn.quaternions[i].zr, tfArrayIn.quaternions[i].w, tfArrayIn.quaternions[i].header.stamp.sec * 1000000000ULL + tfArrayIn.quaternions[i].header.stamp.nsec);
+    }    
+    catch (libTF::Exception &ex)
+    {
+      std::cerr << "receiveArray: setWithQuaternion failed with frame_id "<< tfArrayIn.quaternions[i].header.frame_id << " parent " << tfArrayIn.quaternions[i].parent << std::endl;
+      std::cerr<< ex.what();
+    };
     //  std::cout << "recieved quaternion frame: " << tfArrayIn.quaternions[i].header.frame_id << " with parent:" << tfArrayIn.quaternions[i].parent << std::endl;
   }
   for (unsigned int i = 0; i < tfArrayIn.matrices_size; i++)
   {
-    
+      
+    try{
     if (tfArrayIn.matrices[i].matrix_size != 16)
     {
       std::cerr << "recieved matrix not of size 16, it was "<< tfArrayIn.matrices[i].matrix_size;
       return;
     }
-    
+      
     NEWMAT::Matrix tempMatrix(4,4);
     tempMatrix << tfArrayIn.matrices[i].matrix;
     
     setWithMatrix(tfArrayIn.matrices[i].header.frame_id, tfArrayIn.matrices[i].parent, tempMatrix, tfArrayIn.matrices[i].header.stamp.sec * 1000000000ULL + tfArrayIn.matrices[i].header.stamp.nsec);
     
+    }    
+    catch (libTF::Exception &ex)
+    {
+      std::cerr << "receiveArray: setWithMatrix failed with frame_id "<< tfArrayIn.matrices[i].header.frame_id << " parent " << tfArrayIn.matrices[i].parent << std::endl;
+      std::cerr<< ex.what();
+    };
     //  std::cout << "recieved Matrix:" << tempMatrix << " in frame: " << tfArrayIn.matrices[i].header.header.frame_id << " with parent:" << tfArrayIn.matrices[i].parent << " at time:" << tfArrayIn.matrices[i].header.stamp.to_double() << std::endl;
   }
-  }
-  catch (libTF::Exception &ex)
-  {
-    std::cerr<< ex.what();
-  };
-
 
 };
 
