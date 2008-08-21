@@ -185,8 +185,29 @@ class Octree {
 		if ( !cellToCoordinates(i,j,k,&x,&y,&z) ) return;
 		erase(x,y,z);
 	}
+
+	//! Clears and deallocates the entire Octree. 
+	void clear();
+	//! Recursively parses the Octree performing aggregation everyehere where appropriate
+	void aggregate(){mRoot->recursiveAggregation();}
+
+	//! Returns the triangles that form the surface mesh of the leaves with the given value
+	void getTriangles(std::list<Triangle> &triangles, bool(*testFunc)(T)) const;
+	//! Gets all the triangles for leaves that are not NULL and don't hold the mEmptyValue
+	void getAllTriangles(std::list<Triangle> &triangles) const;
+
 	//!Recursively counts how many cells (not leaves!) hold a particular value
 	int cellCount(T value) const {return mRoot->cellCount(value, mEmptyValue, mMaxDepth);}
+	//! Recursively computes and returns the number of branches of the tree
+	int getNumBranches() const {return mRoot->getNumBranches();}
+	//! Checks if a given value is different from this tree's empty value
+	bool nonEmpty(T val){return val!=mEmptyValue;}
+	//! Recursively computes and returns the number of leaves of the tree
+	int getNumLeaves() const {return mRoot->getNumLeaves();}
+	//! Returns the space in memory occupied by the tree
+	long long unsigned int getMemorySize() const;
+	//! Recursively computes the max depth in the Octree. Useful when Octree is read from file.
+	int computeMaxDepth() const {return mRoot->computeMaxDepth();}
 
 	//! Checks intersection of the Octree against a triangle
 	bool intersectsTriangle(float*, float*, float*) const;
@@ -194,36 +215,19 @@ class Octree {
 	bool intersectsBox(const float *center, const float *extents, const float axes[][3]) const;
 	//! Checks intersection of the Octree against a sphere
 	bool intersectsSphere(const float *center, float radius) const;
-
 	//! Traces a scanner ray through this octree
 	void traceRay(float sx, float sy, float sz, 
 		      float dx, float dy, float dz, float distance,  
 		      T emptyVal, T occupiedVal);
-
-	//! Clears and deallocates the entire Octree. 
-	void clear();
-	//! Recursively parses the Octree performing aggregation everyehere where appropriate
-	void aggregate(){mRoot->recursiveAggregation();}
-
-	//! Returns the triangles that form the surface mesh of all non-empty leaves
-	void getAllTriangles(std::list<Triangle> &triangles) const;
-	//! Returns the triangles that form the surface mesh of the leaves with the given value
-	void getTrianglesByValue(std::list<Triangle> &triangles, T value) const;
-	//! Recursively computes and returns the number of branches of the tree
-	int getNumBranches() const {return mRoot->getNumBranches();}
-	//! Recursively computes and returns the number of leaves of the tree
-	int getNumLeaves() const {return mRoot->getNumLeaves();}
-	//! Returns the space in memory occupied by the tree
-	long long unsigned int getMemorySize() const;
+	//! Checks if the given ray intersects the volume that this Octree occupies
+	bool intersectsRay(float rx, float ry, float rz, 
+			   float dx, float dy, float dz,
+			   float &t0, float &t1) const;
 
 	//! Serializes this octree to a string
 	void serialize(char **destinationString, unsigned int *size) const;
 	//! Reads in the content of this Octree. OLD CONTENT IS DELETED!
 	bool deserialize(char *sourceString, unsigned int size);
-
-
-	//! Recursively computes the max depth in the Octree. Useful when Octree is read from file.
-	int computeMaxDepth() const {return mRoot->computeMaxDepth();}
 	//! Set this Octree from a ROS message
 	bool setFromMsg(const OctreeMsg &msg);
 	//! Write this Octree in a ROS message
@@ -233,10 +237,6 @@ class Octree {
 	//! Read Octree from a file saved by the \a writeToFile(...) function 
 	bool readFromFile(std::istream &is);
 
-	//! Checks if the given ray intersects the volume that this Octree occupies
-	bool intersectsRay(float rx, float ry, float rz, 
-			   float dx, float dy, float dz,
-			   float &t0, float &t1) const;
 
 	//! Inserts the contents of a scan into this octree
 	//void insertScan(const SmartScan *s, T insertVal);
@@ -880,41 +880,53 @@ void Octree<T>::insertScan(const SmartScan *s, T insertVal)
 */
 
 //--------------------------------------------- Triangulation -----------------------------------------
+/*!  Returns the triangles that form the surface mesh of the leaves
+  according to some criterion of your choice.
 
-/*!  Returns the triangles that form the surface mesh of the NON-EMPTY
-  (previously visited) leaves in the Octree (regardless of the value
-  they hold).
+  \param triangles - on return, will contain the list of triangles
 
-  Tries to be somewhat smart about not returning unnecessary triangles,
-  but is not very good at it. A good algorithm for doing that seems to
-  be an interesting problem...
+  \param testFunc - a boolean function that takes a single argument of
+  the same type as the values held in the Octree. \a getTriangles(...)
+  will return only the triangles that form the surface of the Octree
+  leaves that make the \testFunc return \true.
+
+  Example: if you want the triangles around the leaves whose value is
+  greater that 3.2 and the Octree is of type <float>, then pass it this
+  as \testFunc:
+
+  bool leafTest(float f){return f > (float)3.2;}
+
+  octree.getTriangles(triangles, &leafTest);
+
+  Tries to be somewhat smart about not returning unnecessary
+  triangles, but is not very good at it. A good and efficient
+  algorithm for doing that seems to be an interesting problem...
+
+  Now that we have cell accessors we could implement a version of this
+  function that goes cell-by-cell and then also queries all
+  neighboring cells to see what triangles need to be returned. That
+  function would be guaranteed to return THE OPTIMAL number of
+  trinagles, but will be massively slower. So implement it if you will
+  query the Octree for triangles very rarely, but render those
+  triangles very often.
  */
+template <typename T>
+void Octree<T>::getTriangles(std::list<Triangle> &triangles, bool (*testFunc)(T)) const
+{
+	if (!mRoot) return;
+	//if (!testFunc) testFunc = &alwaysTrue<T>;
+	mRoot->getTriangles( true, true, true, true, true, true, 
+			     mCx, mCy, mCz, mDx/2.0, mDy/2.0, mDz/2.0, 
+			     triangles, testFunc, mEmptyValue);
+
+}
+
 template <typename T>
 void Octree<T>::getAllTriangles(std::list<Triangle> &triangles) const
 {
-	if (!mRoot) return;
-	mRoot->getTriangles( true, true, true, true, true, true, 
-			     mCx, mCy, mCz, mDx/2.0, mDy/2.0, mDz/2.0, 
-			     triangles, NULL, mEmptyValue);
+	getTriangles(triangles, NULL);
 }
 
-/*!  Returns the triangles that form the surface mesh of the leaves
-  with the value equal to \a value.
-
-  Tries to be somewhat smart about not returning unnecessary triangles,
-  but is not very good at it. A good algorithm for doing that seems to
-  be an interesting problem...
- */
-template <typename T>
-void Octree<T>::getTrianglesByValue(std::list<Triangle> &triangles, T value) const
-{
-	if (!mRoot) return;
-	T val = value;
-	mRoot->getTriangles( true, true, true, true, true, true, 
-			     mCx, mCy, mCz, mDx/2.0, mDy/2.0, mDz/2.0, 
-			     triangles, &val, mEmptyValue);
-
-}
 
 //---------------------------------------------- Miscellaneous ------------------------------------------
 

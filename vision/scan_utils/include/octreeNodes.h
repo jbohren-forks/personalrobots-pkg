@@ -86,7 +86,7 @@ class OctreeBranch : public OctreeNode<T> {
 	OctreeNode<T> **mChildren;
 
 	//! Returns true if the given child is a leaf and it needs to be triangulated given the required values
-	bool triangulateChild(unsigned char address, T* value, T emptyValue) const;
+	bool triangulateChild(unsigned char address, bool(*testFunc)(T), T emptyValue) const;
 	//! Actually creates the triangles that enclose the given box
 	void createTriangles(bool px, bool nx, bool py, bool ny, bool pz, bool nz,
 			     float cx, float cy, float cz,
@@ -128,7 +128,7 @@ class OctreeBranch : public OctreeNode<T> {
 	void getTriangles(bool px, bool nx, bool py, bool ny, bool pz, bool nz,
 			  float cx, float cy, float cz,
 			  float dx, float dy, float dz,
-			  std::list<Triangle> &triangles, T* value, T emptyValue) const;
+			  std::list<Triangle> &triangles, bool(*testFunc)(T), T emptyValue) const;
 
 	//! Recursively serializes everything below this branch
 	virtual void serialize(char *destinationString, unsigned int &address) const;
@@ -460,16 +460,20 @@ inline bool nodeSphereIntersection(const SpatialNode<T> &sn,
 //--------------------------------------------- Triangulation --------------------------------
 
 template <typename T>
-bool OctreeBranch<T>::triangulateChild(unsigned char address, T* value, T emptyValue) const
+bool OctreeBranch<T>::triangulateChild(unsigned char address, bool(*testFunc)(T), T emptyValue) const
 {
+	T val;
 	if (!mChildren[address]) {
-		if (value && *value == emptyValue) return true;
-		else return false;
+		val = emptyValue;
 	} else if ( mChildren[address]->isLeaf() ) {
-		if ( value &&  *value != ((OctreeLeaf<T>*)(mChildren[address]))->getVal() ) return false;
-		else return true;
+		val = ((OctreeLeaf<T>*)(mChildren[address]))->getVal();
+	} else {
+		return false;
 	}
-	return false;	
+	if (!testFunc) {
+		return val != emptyValue;
+	}
+	return testFunc(val);
 }
 
 /*!  \param value - if this is NULL, the fctn returns the triangles
@@ -480,7 +484,7 @@ template <typename T>
 void OctreeBranch<T>::getTriangles(bool px, bool nx, bool py, bool ny, bool pz, bool nz,
 				   float cx, float cy, float cz,
 				   float dx, float dy, float dz,
-				   std::list<Triangle> &triangles, T* value, T emptyValue) const
+				   std::list<Triangle> &triangles, bool(*testFunc)(T), T emptyValue) const
 {
 	dx/=2.0; dy/=2.0; dz/=2.0;
 	
@@ -490,42 +494,42 @@ void OctreeBranch<T>::getTriangles(bool px, bool nx, bool py, bool ny, bool pz, 
 	for (int i=0; i<8; i++) {
 		
 		if (!mChildren[i] || mChildren[i]->isLeaf()) {
-			if (!triangulateChild(i,value,emptyValue)) continue;
+			if (!triangulateChild(i, testFunc, emptyValue)) continue;
 		}
 
 		if (i/4 == 0) {
 			nextx = cx-dx;
 			nextnx = nx;
-			if ( triangulateChild(i+4, value, emptyValue) ) nextpx = false;
+			if ( triangulateChild(i+4, testFunc, emptyValue) ) nextpx = false;
 			else nextpx = true;
 		} else {
 			nextx = cx+dx;
 			nextpx = px;
-			if ( triangulateChild(i-4, value, emptyValue) ) nextnx = false;
+			if ( triangulateChild(i-4, testFunc, emptyValue) ) nextnx = false;
 			else nextnx = true;			
 		}
 
 		if ( (i%4)/2 == 0 ) {
 			nexty = cy-dy;
 			nextny = ny;
-			if ( triangulateChild(i+2, value, emptyValue) ) nextpy = false;
+			if ( triangulateChild(i+2, testFunc, emptyValue) ) nextpy = false;
 			else nextpy = true;			
 		} else {
 			nexty = cy+dy;
 			nextpy = py;
-			if ( triangulateChild(i-2, value, emptyValue) ) nextny = false;
+			if ( triangulateChild(i-2, testFunc, emptyValue) ) nextny = false;
 			else nextny = true;			
 		}
 
 		if ( (i%4)%2 == 0 ) {
 			nextz = cz-dz;
 			nextnz = nz;
-			if ( triangulateChild(i+1, value, emptyValue) ) nextpz = false;
+			if ( triangulateChild(i+1, testFunc, emptyValue) ) nextpz = false;
 			else nextpz = true;			
 		} else {
 			nextz = cz+dz;
 			nextpz = pz;
-			if ( triangulateChild(i-1, value, emptyValue) ) nextnz = false;
+			if ( triangulateChild(i-1, testFunc, emptyValue) ) nextnz = false;
 			else nextnz = true;			
 		}
 
@@ -535,7 +539,8 @@ void OctreeBranch<T>::getTriangles(bool px, bool nx, bool py, bool ny, bool pz, 
 		} else {
 			((OctreeBranch<T>*)(mChildren[i]))->getTriangles( nextpx, nextnx, nextpy, nextny, nextpz, nextnz, 
 									  nextx, nexty, nextz, dx, dy, dz, 
-									  triangles, value, emptyValue);		}
+									  triangles, testFunc, emptyValue);
+		}
 	}
  }
 

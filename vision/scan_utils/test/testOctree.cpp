@@ -5,6 +5,8 @@
 #include <math.h>
 #include <fstream>
 #include <scan_utils/OctreeMsg.h>
+#include <dataTypes.h>
+#include <list>
 
 /*! \file Since the Octree is templated, it is completely contained in
   header files. As a result it is no longer compiled into the
@@ -202,6 +204,51 @@ TEST (OctreeTests, boxIntersection)
 	axes[1][0] = -0.7071; axes[1][1] = 0.7071; axes[1][2] = 0.0;
 	axes[2][0] =  0.0; axes[2][1] = 0.0; axes[2][2] = 1.0;
 	EXPECT_TRUE( octree.intersectsBox(center, extents, axes) );
+}
+
+bool positive(float t) {
+	return t > 0.0;
+}
+
+bool negative(float t) {
+	return t < 0.0;
+}
+
+bool any(float t) {
+	return t < 5;
+}
+
+bool nonzero(float t) {
+	return t!=(float)0.0;
+}
+
+TEST (OctreeTests, triangulation)
+{
+	scan_utils::Octree<float>  octree(0,0,0, 2.0, 2.0, 2.0, 1, (float)0.0);
+	std::list<scan_utils::Triangle> triangles;
+	octree.insert(0.5, 0.5, 0.5, 1.0);
+	octree.insert(-0.5, 0.5, 0.5, -1.0);
+
+	octree.getTriangles(triangles,nonzero);
+	EXPECT_TRUE(triangles.size() == 20);
+	triangles.clear();
+
+	octree.getAllTriangles(triangles);
+	EXPECT_TRUE(triangles.size() == 20);
+	triangles.clear();
+
+	octree.getTriangles(triangles, &positive);
+	EXPECT_TRUE(triangles.size() == 12);
+	triangles.clear();
+
+	octree.getTriangles(triangles, &negative);
+	EXPECT_TRUE(triangles.size() == 12);
+	triangles.clear();
+
+	octree.getTriangles(triangles, &any);
+	EXPECT_TRUE(triangles.size() == 48);
+	triangles.clear();
+
 }
 
 TEST (OctreeTests, sphereIntersection)
