@@ -95,7 +95,7 @@ namespace planning_node_util
 	    
 	    m_sphereSize = 0.03;
 	    
-	    m_node->subscribe("world_3d_map", m_worldCloud, &NodeCollisionModel::worldMapCallback, this);
+	    m_node->subscribe("world_3d_map", m_worldCloud, &NodeCollisionModel::worldMapCallback, this, 1);
 	}
 
 	virtual ~NodeCollisionModel(void)

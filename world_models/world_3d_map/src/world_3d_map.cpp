@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/** \Author Ioan Sucan */
+
 /**
 
 @mainpage
@@ -119,7 +121,7 @@ public:
     World3DMap(const std::string &robot_model) : ros::node("world_3d_map"),
 						 planning_node_util::NodeRobotModel(dynamic_cast<ros::node*>(this), robot_model)
     {
-	advertise<std_msgs::PointCloudFloat32>("world_3d_map");
+	advertise<std_msgs::PointCloudFloat32>("world_3d_map", 1);
 
 	param("world_3d_map/max_publish_frequency", m_maxPublishFrequency, 0.5);
 	param("world_3d_map/retain_pointcloud_duration", m_retainPointcloudDuration, 60.0);
@@ -305,7 +307,7 @@ private:
 			continue;
 		    }
 		    
-		    rp.body->setScale(1.5);
+		    rp.body->setScale(1.75);
 		    
 		    m_selfSeeParts.push_back(rp);
 		}

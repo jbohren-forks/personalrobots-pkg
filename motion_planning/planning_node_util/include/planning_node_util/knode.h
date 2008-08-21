@@ -91,7 +91,7 @@ namespace planning_node_util
 	    m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
 	    m_robotModelName = robot_model;
 	    
-	    m_node->subscribe("localizedpose", m_localizedPose, &NodeRobotModel::localizedPoseCallback, this);
+	    m_node->subscribe("localizedpose", m_localizedPose, &NodeRobotModel::localizedPoseCallback, this, 1);
 	}
 
 	virtual ~NodeRobotModel(void)
