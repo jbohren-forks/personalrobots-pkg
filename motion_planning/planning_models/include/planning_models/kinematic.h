@@ -262,9 +262,6 @@ namespace planning_models
 	    double        axis[3];	    
 	    double        anchor[3];
 	    double        limit[2];
-
-	    /** the transform induced by the anchor */
-	    libTF::Pose3D anchorTrans;
 	};
 	
 	

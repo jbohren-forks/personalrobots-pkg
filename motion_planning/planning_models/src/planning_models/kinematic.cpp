@@ -158,10 +158,10 @@ void planning_models::KinematicModel::PrismaticJoint::extractInformation(const r
 
 void planning_models::KinematicModel::RevoluteJoint::updateVariableTransform(const double *params)
 {
-    libTF::Pose3D rotation;
-    rotation.setAxisAngle(axis, params[0]); 
-    varTrans = anchorTrans;
-    varTrans.multiplyPose(rotation);
+    varTrans.setAxisAngle(axis, params[0]);
+    // anchor is ignored here; the rotation is assumed to be about
+    // (0,0,0) but it should be about anchor; when this exists in the
+    // transforms library, it should be switched here too
 }
 
 void planning_models::KinematicModel::RevoluteJoint::extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot)
@@ -187,8 +187,6 @@ void planning_models::KinematicModel::RevoluteJoint::extractInformation(const ro
     
     robot->stateBounds.push_back(limit[0]);
     robot->stateBounds.push_back(limit[1]);
-
-    anchorTrans.setPosition(anchor[0], anchor[1], anchor[2]);
 }
 
 void planning_models::KinematicModel::Link::extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot)
