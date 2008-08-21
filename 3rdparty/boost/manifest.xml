@@ -1,5 +1,9 @@
 <package>
-  <license>Boost License, similar to BSD</license>
+  <description brief="boost">
+  NOTE: Boost license is similar to BSD. See
+  http://www.boost.org/LICENSE_1_0.txt
+  </description>
+  <license>Boost License</license>
   <author>See web site for contributors</author>
   <url>http://www.boost.org</url>
   <description>Lots of C++ libraries</description>
