@@ -130,7 +130,7 @@ public:
 	req.threshold = 0.01;
 	req.distance_metric = "L2Square";
 	req.interpolate = 1;
-	req.times = 100;
+	req.times = 1;
 
 	initialState(req.start_state);
 	

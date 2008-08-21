@@ -240,7 +240,7 @@ public:
 		    std::cout << "          Obtained better solution" << std::endl;
 		}
 	    }
-	    p.mp->clear();
+	    p.mp->clear();	    
 	}
 	
 	profiling_utils::Profiler::Stop();
@@ -260,6 +260,7 @@ public:
 		    res.path.states[i].vals[j] = bestPath->states[i]->values[j];
 	    }
 	    res.distance = bestDifference;
+	    delete bestPath;
 	}
 	else
 	{
