@@ -34,17 +34,20 @@
 
 #include <generic_controllers/joint_autotuner.h>
 #include <math_utils/angles.h>
-#define DEBUG 1
 using namespace std;
 using namespace controller;
-
+#define DEBUG 1
 ROS_REGISTER_CONTROLLER(JointAutotuner)
 
 JointAutotuner::JointAutotuner()
 {
+  robot_ = NULL;
+  joint_ = NULL;
+
   // Initialize PID class
   pid_controller_.initPid(0, 0, 0, 0, 0);
   command_ = 0;
+  last_time_ = 0;
 }
 
 JointAutotuner::~JointAutotuner()
@@ -62,23 +65,39 @@ void JointAutotuner::init(double p_gain, double i_gain, double d_gain, double wi
 
   relay_height_ = RELAYFRACTION * joint_->effort_limit_;
   #ifdef DEBUG
-    printf("DLL : Relay:%f\n",relay_height_);
+    printf("AUTO : Relay:%f\n",relay_height_);
   #endif
   current_state_ = POSITIVE_PEAK;
 }
 
-void JointAutotuner::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool JointAutotuner::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
-  
-  TiXmlElement *elt = config->FirstChildElement("joint");
-  if (elt) {
-    // TODO: error check if xml attributes/elements are missing
-    double p_gain = atof(elt->FirstChildElement("pGain")->GetText());
-    double i_gain = atof(elt->FirstChildElement("iGain")->GetText());
-    double d_gain = atof(elt->FirstChildElement("dGain")->GetText());
-    double windup= atof(elt->FirstChildElement("windup")->GetText());
-    init(p_gain, i_gain, d_gain, windup, robot->hw_->current_time_, robot, robot->getJoint(elt->Attribute("name")));
+  assert(robot);
+  robot_ = robot;
+  last_time_ = robot->hw_->current_time_;
+  cycle_start_time_ = getTime();
+   current_state_ = POSITIVE_PEAK;
+  TiXmlElement *j = config->FirstChildElement("joint");
+  if (!j)
+  {
+    fprintf(stderr, "JointAutotuner was not given a joint\n");
+    return false;
   }
+
+  const char *joint_name = j->Attribute("name");
+  joint_ = joint_name ? robot->getJoint(joint_name) : NULL;
+  if (!joint_)
+  {
+    fprintf(stderr, "JointAutotuner could not find joint named \"%s\"\n", joint_name);
+    return false;
+  }
+
+  relay_height_ = RELAYFRACTION * joint_->effort_limit_;
+  #ifdef DEBUG
+    printf("AUTO : Relay:%f\n",relay_height_);
+  #endif
+
+  return true;
 }
 
 // Set the joint position command
@@ -120,7 +139,7 @@ void JointAutotuner::update()
     amplitude_ = (positive_peak_-negative_peak_)/2; //Record amplitude
     
     #ifdef DEBUG
-      printf("DLL period: %f amplitude: %f\n", period_, amplitude_);
+      printf("AUTO period: %f amplitude: %f\n", period_, amplitude_);
     #endif
     
     if( (fabs(amplitude_-last_amplitude_) < AMPLITUDETOLERANCE*last_amplitude_) &&(fabs(period_-last_period_)<PERIODTOLERANCE*last_period_))//If the two peaks match closely
@@ -129,7 +148,7 @@ void JointAutotuner::update()
         if(successful_cycles_>=NUMCYCLES) 
         { 
             #ifdef DEBUG
-              printf("DLL : DONE! Period: %f Amplitude: %f\n", period_, amplitude_);
+              printf("AUTO : DONE! Period: %f Amplitude: %f\n", period_, amplitude_);
             #endif
           current_state_ = DONE; //Done testing
         }
@@ -149,13 +168,13 @@ void JointAutotuner::update()
   {
     if(position > positive_peak_) positive_peak_ = position;
     //If looking for positive peak, set positive h
-    joint_->commanded_effort_ = relay_height_;
+    joint_->commanded_effort_ = -relay_height_;
   }
   else if(current_state_ == NEGATIVE_PEAK)
   {    
     if(position<negative_peak_) negative_peak_ = position;
     //If looking for negative peak, set negative h
-    joint_->commanded_effort_ = -relay_height_;
+    joint_->commanded_effort_ = relay_height_;
   }
 
 }
@@ -195,13 +214,24 @@ bool JointAutotunerNode::getActual(
   return true;
 }
 
-void JointAutotunerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool JointAutotunerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
-  ros::node *node = ros::node::instance();
+ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
-  
-  c_->initXml(robot, config);
+
+  std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
+  if (topic == "")
+  {
+    fprintf(stderr, "No topic given to JointAutotunerNode\n");
+    return false;
+  }
+
+  if (!c_->initXml(robot, config))
+    return false;
   node->advertise_service(prefix + "/set_command", &JointAutotunerNode::setCommand, this);
   node->advertise_service(prefix + "/get_actual", &JointAutotunerNode::getActual, this);
-}
+  return true;
+
+
+ }
 

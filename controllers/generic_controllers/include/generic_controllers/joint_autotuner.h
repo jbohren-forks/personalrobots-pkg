@@ -89,7 +89,7 @@ public:
    * \param *joint The joint that is being controlled.
    */
   void init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint);
-  void initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
@@ -173,7 +173,7 @@ public:
 
   void update();
 
-  void initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   // Services
   bool setCommand(generic_controllers::SetCommand::request &req,
