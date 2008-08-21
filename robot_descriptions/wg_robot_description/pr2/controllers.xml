@@ -4,6 +4,9 @@
 
 
   <controller name="base_controller" topic="base_controller" type="BaseControllerNode">
+    <map name="velocity_control" flag="base_control">
+      <elem key="kp_speed">1.0</elem>
+    </map>
     <controller name="caster_front_left_controller" topic="caster_front_left_controller" type="JointVelocityControllerNode">
         <joint name="caster_front_left_joint" >
           <pid p="1" d="0" i="0" iClamp="0" />
@@ -11,7 +14,6 @@
             <elem key="saturationTorque">1000</elem>
             <elem key="explicitDampingCoefficient">1.0</elem>
             <elem key="jointType">Hinge</elem>
-            <elem key="kp_speed">1.0</elem>
           </map>
         </joint>
     </controller>
@@ -40,7 +42,6 @@
             <elem key="saturationTorque">1000</elem>
             <elem key="explicitDampingCoefficient">1.0</elem>
             <elem key="jointType">Hinge</elem>
-            <elem key="kp_speed">1.0</elem>
           </map>
         </joint>
     </controller>
@@ -69,7 +70,6 @@
             <elem key="saturationTorque">1000</elem>
             <elem key="explicitDampingCoefficient">1.0</elem>
             <elem key="jointType">Hinge</elem>
-            <elem key="kp_speed">1.0</elem>
           </map>
         </joint>
     </controller>
@@ -98,7 +98,6 @@
             <elem key="saturationTorque">1000</elem>
             <elem key="explicitDampingCoefficient">1.0</elem>
             <elem key="jointType">Hinge</elem>
-            <elem key="kp_speed">1.0</elem>
           </map>
         </joint>
     </controller>
