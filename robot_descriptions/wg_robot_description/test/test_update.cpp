@@ -48,6 +48,13 @@ TEST(URDF, CorrectVersion)
     EXPECT_TRUE(result == 0);
 }
 
+TEST(URDF, CorrectFormat)
+{
+    int result = runExternalProcess("../wg_robot_description_parser/parse", "pr2/pr2.xml");
+
+    EXPECT_TRUE(result == 0);
+}
+
 int main(int argc, char **argv)
 {
     testing::InitGoogleTest(&argc, argv);

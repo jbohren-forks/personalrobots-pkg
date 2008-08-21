@@ -1361,13 +1361,31 @@ namespace robot_desc {
 		else if (node->ValueStr() == "inertia")
 		{
 		    /* Ixx Ixy Ixz Iyy Iyz Izz */
-		    loadDoubleValues(node, 1, inertial->inertia + 0, "ixx", true);
-		    loadDoubleValues(node, 1, inertial->inertia + 1, "ixy", true);
-		    loadDoubleValues(node, 1, inertial->inertia + 2, "ixz", true);
-		    loadDoubleValues(node, 1, inertial->inertia + 3, "iyy", true);
-		    loadDoubleValues(node, 1, inertial->inertia + 4, "iyz", true);
-		    loadDoubleValues(node, 1, inertial->inertia + 5, "izz", true);
-		    MARK_SET(node, inertial, inertia);		    
+		    if (node->ToElement()->Attribute("Ixx"))
+			loadDoubleValues(node, 1, inertial->inertia + 0, "Ixx", true);
+		    else
+			loadDoubleValues(node, 1, inertial->inertia + 0, "ixx", true);
+		    if (node->ToElement()->Attribute("Ixy"))
+			loadDoubleValues(node, 1, inertial->inertia + 1, "Ixy", true);
+		    else
+			loadDoubleValues(node, 1, inertial->inertia + 1, "ixy", true);
+		    if (node->ToElement()->Attribute("Ixz"))
+			loadDoubleValues(node, 1, inertial->inertia + 2, "Ixz", true);
+		    else		    
+			loadDoubleValues(node, 1, inertial->inertia + 2, "ixz", true);
+		    if (node->ToElement()->Attribute("Iyy"))
+			loadDoubleValues(node, 1, inertial->inertia + 3, "Iyy", true);
+		    else
+			loadDoubleValues(node, 1, inertial->inertia + 3, "iyy", true);
+		    if (node->ToElement()->Attribute("Iyz"))
+			loadDoubleValues(node, 1, inertial->inertia + 4, "Iyz", true);
+		    else
+			loadDoubleValues(node, 1, inertial->inertia + 4, "iyz", true);
+		    if (node->ToElement()->Attribute("Izz"))
+			loadDoubleValues(node, 1, inertial->inertia + 5, "Izz", true);
+		    else
+			loadDoubleValues(node, 1, inertial->inertia + 5, "izz", true);
+		    MARK_SET(node, inertial, inertia);
 		}		
 		else if (node->ValueStr() == "map")
 		    loadMap(node, &inertial->data);

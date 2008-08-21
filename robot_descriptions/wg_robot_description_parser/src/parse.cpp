@@ -39,14 +39,18 @@
 
 int main(int argc, char **argv)
 {
+    int result = 0;
+    
     if (argc >= 2)
     {
         robot_desc::URDF file(argv[1]);
         if (argc >= 3)
             file.print();
 	file.sanityCheck();
-	printf("%u errors\n", file.getErrorCount());
+	result = file.getErrorCount();
+	if (result)
+	    printf("%u errors\n", result);
     }
     
-    return 0;    
+    return result;
 }
