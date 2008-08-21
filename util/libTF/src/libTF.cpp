@@ -103,6 +103,15 @@ void TransformReference::addFrame(const std::string & frame_id, const std::strin
     frames[parentID] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
   frame_mutex_.unlock();
   
+
+  if (frameID == parentID)
+  {
+    std::stringstream ss;
+    ss << "Bad instruction: frameID("<<frameID<<" is trying to set its parent to "<<parentID
+       << " with frame_id " << frame_id << " and parent_id " << parent_id;
+    throw LookupException(ss.str());
+  }
+
   getFrame(frameID)->setParent(parentID);
 }
 
