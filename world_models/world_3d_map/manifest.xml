@@ -3,7 +3,7 @@
 <author>Willow Garage</author>
 <license>BSD</license>
 <depend package="roscpp" />
-<depend package="roserr" />
+<depend package="roshout />
 <depend package="std_msgs" />
 <depend package="xmlparam" />
 <depend package="rosTF" />
