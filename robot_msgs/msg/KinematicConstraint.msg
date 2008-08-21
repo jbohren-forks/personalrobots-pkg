@@ -2,9 +2,10 @@
 # Since there are multiple types of constraints, the 'type' member is used
 # to identify the different constraints
 
-# 0 = complete pose is considered
-# 1 = only pose position is considered
-# 2 = only pose orientation is considered 
+byte COMPLETE_POSE=0 # 0 = complete pose is considered
+byte ONLY_POSITION=1 # 1 = only pose position is considered
+byte ONLY_ORIENTATION=2 # 2 = only pose orientation is considered 
+
 byte type
 
 # The robot link this constraint refers to
