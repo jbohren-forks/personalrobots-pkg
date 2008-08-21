@@ -613,22 +613,22 @@ namespace gazebo {
         controller::JointPositionControllerNode* jpc = dynamic_cast<controller::JointPositionControllerNode*>(jc);
         gripperCmd   = jpc->getCommand();
 
-        currentError = math_utils::shortest_angular_distance(dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0])->GetAngle(),gripperCmd);
+        currentError = math_utils::shortest_angular_distance( gripperCmd,dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0])->GetAngle());
         currentCmd   = (*gji)->gaz_gripper_pids_[0]->updatePid(currentError,currentTime-lastTime);
         dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0])->SetParam( dParamVel, currentCmd );
         dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0])->SetParam( dParamFMax, (*gji)->saturationTorque );
 
-        currentError = math_utils::shortest_angular_distance(dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[1])->GetAngle(),-gripperCmd);
+        currentError = math_utils::shortest_angular_distance(-gripperCmd,dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[1])->GetAngle());
         currentCmd   = (*gji)->gaz_gripper_pids_[1]->updatePid(currentError,currentTime-lastTime);
         dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[1])->SetParam( dParamVel, currentCmd );
         dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[1])->SetParam( dParamFMax, (*gji)->saturationTorque );
 
-        currentError = math_utils::shortest_angular_distance(dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[2])->GetAngle(),-gripperCmd);
+        currentError = math_utils::shortest_angular_distance(-gripperCmd,dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[2])->GetAngle());
         currentCmd   = (*gji)->gaz_gripper_pids_[2]->updatePid(currentError,currentTime-lastTime);
         dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[2])->SetParam( dParamVel, currentCmd );
         dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[2])->SetParam( dParamFMax, (*gji)->saturationTorque );
 
-        currentError = math_utils::shortest_angular_distance(dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[3])->GetAngle(),gripperCmd);
+        currentError = math_utils::shortest_angular_distance( gripperCmd,dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[3])->GetAngle());
         currentCmd   = (*gji)->gaz_gripper_pids_[3]->updatePid(currentError,currentTime-lastTime);
         dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[3])->SetParam( dParamVel, currentCmd );
         dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[3])->SetParam( dParamFMax, (*gji)->saturationTorque );

@@ -209,7 +209,7 @@
   <!-- Special gripper joint -->
   <controller name="gripper_left_controller" topic="gripper_left_controller" type="JointPositionControllerNode">
         <joint name="gripper_left_joint">
-        <pid p="20" d="0" i="0" iClamp="0" />
+        <pid p="1" d="0" i="0" iClamp="0" />
         <gripper_defaults effortLimit="100" velocityLimit="10" />
         <map name="gripper_joints" flag="gazebo">
           <elem key="saturationTorque">100</elem>
@@ -297,7 +297,7 @@
       <!-- Special gripper joint -->
   <controller name="gripper_right_controller" topic="gripper_right_controller" type="JointPositionControllerNode">
         <joint name="gripper_right_joint">
-        <pid p="20" d="0" i="0" iClamp="0" />
+        <pid p="1" d="0" i="0" iClamp="0" />
         <gripper_defaults effortLimit="100" velocityLimit="10" />
         <map name="gripper_joints" flag="gazebo">
           <elem key="saturationTorque">100</elem>
