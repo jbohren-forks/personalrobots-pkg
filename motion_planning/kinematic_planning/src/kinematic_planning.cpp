@@ -112,7 +112,12 @@ public:
 							planning_node_util::NodeCollisionModel(dynamic_cast<ros::node*>(this),
 											       robot_model)
     {
-	advertise_service("plan_kinematic_path", &KinematicPlanning::plan);
+	advertise_service("plan_kinematic_path_state", &KinematicPlanning::plan);
+
+
+	double sphere[3] = {0.7, 0.5, 0.7 };
+	m_collisionSpace->addPointCloud(1, sphere, 0.2);
+
     }
     
     ~KinematicPlanning(void)
@@ -125,7 +130,7 @@ public:
     {
 	if (m_models.find(req.model_id) == m_models.end())
 	{
-	    fprintf(stderr, "Cannot plan for '%s'. Model does not exist\n", req.model_id.c_str());
+	    std::cerr << "Cannot plan for '" << req.model_id << "'. Model does not exist" << std::endl;
 	    return false;	    
 	}
 	
@@ -134,28 +139,35 @@ public:
 	
 	if (m->kmodel->stateDimension != req.start_state.get_vals_size())
 	{
-	    fprintf(stderr, "Dimension of start state expected to be %u but was received as %u\n", m->kmodel->stateDimension, req.start_state.get_vals_size());
+	    std::cerr << "Dimension of start state expected to be " << m->kmodel->stateDimension << " but was received as " << req.start_state.get_vals_size() << std::endl;
 	    return false;	    
 	}
-
+	
 	const int dim = req.goal_state.get_vals_size();
 	if ((int)p.si->getStateDimension() != dim)
 	{
-	    fprintf(stderr, "Dimension of goal state expected to be %u but was received as %d\n", p.si->getStateDimension(), dim);
+	    std::cerr << "Dimension of start goal expected to be " << p.si->getStateDimension() << " but was received as " << dim << std::endl;
 	    return false;
 	}
+	
+	if (req.times <= 0)
+	{
+	    std::cerr << "Request specifies motion plan should be computed " << req.times << " times" << std::endl;
+	    return false;
+	}
+	
 	
 	/* set the workspace volume for planning */
 	// only area or volume should go through... not sure what happens on really complicated models where 
 	// we have both multiple planar and multiple floating joints...
 	static_cast<SpaceInformationXMLModel*>(p.si)->setPlanningArea(req.volumeMin.x, req.volumeMin.y,
 								      req.volumeMax.x, req.volumeMax.y);
-	static_cast<SpaceInformationXMLModel*>(p.si)->setPlanningVolume(req.volumeMin.x, req.volumeMin.y, req.volumeMin.z,
+        static_cast<SpaceInformationXMLModel*>(p.si)->setPlanningVolume(req.volumeMin.x, req.volumeMin.y, req.volumeMin.z,
 									req.volumeMax.x, req.volumeMax.y, req.volumeMax.z);
-	
+    
 	/* set the starting state */
-	ompl::SpaceInformationKinematic::StateKinematic_t start = new ompl::SpaceInformationKinematic::StateKinematic(dim);
-
+        ompl::SpaceInformationKinematic::StateKinematic_t start = new ompl::SpaceInformationKinematic::StateKinematic(dim);
+    
 	if (m->groupID >= 0)
 	{
 	    /* set the pose of the whole robot */
@@ -168,6 +180,7 @@ public:
 	}
 	else
 	{
+	    /* the start state is the complete state */
 	    for (int i = 0 ; i < dim ; ++i)
 		start->values[i] = req.start_state.vals[i];
 	}
@@ -186,41 +199,60 @@ public:
 	p.si->printSettings();
 	printf("=======================================\n");	
 	
+	
 	/* do the planning */
+        ompl::SpaceInformationKinematic::PathKinematic_t bestPath = NULL;
+        double                                           bestDifference = 0.0;
+        double                                           totalTime = 0.0;
+    
 	m_collisionSpace->lock();
 	
-	ros::Time startTime = ros::Time::now();
-	bool ok = p.mp->solve(req.allowed_time); 
-	double tsolve = (ros::Time::now() - startTime).to_double();	
-	printf("Motion planner spent %f seconds\n", tsolve);
-	
-	/* do path smoothing */
-	if (ok)
+	for (int i = 0 ; i < req.times ; ++i)
 	{
 	    ros::Time startTime = ros::Time::now();
-	    ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
-	    p.smoother->smoothVertices(path);
-	    double tsmooth = (ros::Time::now() - startTime).to_double();	
-	    printf("Smoother spent %f seconds (%f seconds in total)\n", tsmooth, tsmooth + tsolve);
-	    if (req.interpolate)
-		p.si->interpolatePath(path);
-	}	
+	    bool ok = p.mp->solve(req.allowed_time); 
+	    double tsolve = (ros::Time::now() - startTime).to_double();	
+	    std::cout << (ok ? "[Success]" : "[Failure]") << " Motion planner spent " << tsolve << " seconds" << std::endl;
+	    totalTime += tsolve;
+	    
+	    /* do path smoothing */
+	    if (ok)
+	    {
+		ros::Time startTime = ros::Time::now();
+		ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
+		p.smoother->smoothVertices(path);
+		double tsmooth = (ros::Time::now() - startTime).to_double();
+		std::cout << "          Smoother spent " << tsmooth << " seconds (" << (tsmooth + tsolve) << " seconds in total)" << std::endl;
+		if (req.interpolate)
+		    p.si->interpolatePath(path);
+		if (bestPath == NULL || bestDifference > goal->getDifference() || 
+		    (bestPath && bestDifference == goal->getDifference() && bestPath->states.size() > path->states.size()))
+		{
+		    if (bestPath)
+			delete bestPath;
+		    bestPath = path;
+		    bestDifference = goal->getDifference();
+		    goal->forgetSolutionPath();
+		    std::cout << "          Obtained better solution" << std::endl;
+		}
+	    }
+	}
 	
 	m_collisionSpace->unlock();
 
-	
+        std::cout << std::endl << "Total planning time: " << totalTime << "; Average planning time: " << (totalTime / (double)req.times) << " (seconds)" << std::endl;
+
 	/* copy the solution to the result */
-	if (ok)
+	if (bestPath)
 	{
-	    ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
-	    res.path.set_states_size(path->states.size());
-	    for (unsigned int i = 0 ; i < path->states.size() ; ++i)
+	    res.path.set_states_size(bestPath->states.size());
+	    for (unsigned int i = 0 ; i < bestPath->states.size() ; ++i)
 	    {
 		res.path.states[i].set_vals_size(dim);
 		for (int j = 0 ; j < dim ; ++j)
-		    res.path.states[i].vals[j] = path->states[i]->values[j];
+		    res.path.states[i].vals[j] = bestPath->states[i]->values[j];
 	    }
-	    res.distance = goal->getDifference();
+	    res.distance = bestDifference;
 	}
 	else
 	{

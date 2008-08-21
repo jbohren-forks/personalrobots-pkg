@@ -7,4 +7,5 @@
   <depend package="robot_srvs" />
   <depend package="planning_node_util" />
   <depend package="ompl" />
+  <depend package="gtest" />
 </package>

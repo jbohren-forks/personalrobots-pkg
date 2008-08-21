@@ -79,6 +79,7 @@ public:
 	req.threshold = 0.01;
 	req.distance_metric = "L2Square";
 	req.interpolate = 1;
+	req.times = 10;
 	
 	initialState(req.start_state);
 	
@@ -103,13 +104,14 @@ public:
 	req.threshold = 0.01;
 	req.distance_metric = "L2Square";
 	req.interpolate = 1;
+	req.times = 1;
 
 	initialState(req.start_state);
 	
 	req.goal_state.set_vals_size(7);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
 	    req.goal_state.vals[i] = 0.0;
-	req.goal_state.vals[0] = -1.0;    
+	req.goal_state.vals[0] = 1.0;    
 
 	req.allowed_time = 10.0;
 	
@@ -128,6 +130,7 @@ public:
 	req.threshold = 0.01;
 	req.distance_metric = "L2Square";
 	req.interpolate = 1;
+	req.times = 100;
 
 	initialState(req.start_state);
 	
@@ -149,7 +152,7 @@ public:
 	robot_srvs::KinematicPlanState::response res;
 	robot_msgs::NamedKinematicPath dpath;
 
-	if (ros::service::call("plan_kinematic_path", req, res))
+	if (ros::service::call("plan_kinematic_path_state", req, res))
 	{
 	    unsigned int nstates = res.path.get_states_size();
 	    printf("Obtained %ssolution path with %u states, distance to goal = %f\n",
@@ -190,11 +193,11 @@ int main(int argc, char **argv)
     ros::init(argc, argv);
     
     PlanKinematicPath plan;
-    
+    /*
     ros::Duration dur(0.1);
     while (!plan.haveBasePos())
 	dur.sleep();
-    
+    */
     char test = (argc < 2) ? 'b' : argv[1][0];
     
     switch (test)

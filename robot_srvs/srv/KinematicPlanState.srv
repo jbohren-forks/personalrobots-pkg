@@ -24,13 +24,15 @@ robot_msgs/KinematicState start_state
 # constraints is correct
 robot_msgs/KinematicState goal_state
 
-
 # No state in the produced motion plan will violate these constraints
 robot_msgs/KinematicConstraint[] constraints
 
+# The number of times this plan is to be computed. Shortest solution
+# will be reported.
+int32 times
+
 # Boolean flag: if true, the returned path will contain interpolated
 # states as well
-
 byte interpolate
 
 # The maximum amount of time the motion planner is allowed to plan for
