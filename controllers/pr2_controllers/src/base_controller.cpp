@@ -441,8 +441,8 @@ void BaseController::computeOdometry(double time)
   odom_msg_.vel.y  = base_odom_velocity_.y;
   odom_msg_.vel.th = base_odom_velocity_.z;
 
-  cout << "Base Odometry: Velocity " << base_odom_velocity_;
-  cout << "Base Odometry: Position " << base_odom_position_;
+//  cout << "Base Odometry: Velocity " << base_odom_velocity_;
+//  cout << "Base Odometry: Position " << base_odom_position_;
 }
 
 void BaseController::computeBaseVelocity()
