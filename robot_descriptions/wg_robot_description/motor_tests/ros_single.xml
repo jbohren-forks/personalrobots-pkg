@@ -6,8 +6,7 @@
   <joint name="single_joint" type="revolute">
     <limitMin>-1.48</limitMin>
     <limitMax>1.48</limitMax>
-    <effortLimit>3</effortLimit>
-    <velocityLimit>0</velocityLimit>
+    <limit effort="3" velocity="0" />
   </joint>
 
   <transmission type="SimpleTransmission" name="single_transmission">
@@ -18,9 +17,9 @@
     <pulsesPerRevolution>1200</pulsesPerRevolution>
   </transmission>
 
-  <controller name="single_controller" type="JointVelocityControllerNode">
+  <controller name="single_controller" topic="single_controller" type="JointVelocityControllerNode">
     <joint name="single_joint">
-      <controller_defaults p="0.05" i="0.2" d="0" iClamp="0.1" />
+      <pid p="0.05" i="0.2" d="0" iClamp="0.1" />
     </joint>
   </controller>
 
