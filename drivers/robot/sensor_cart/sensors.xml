@@ -5,6 +5,7 @@
   <param name="urglaser/max_ang" type="double" value="70"/>
   <param name="urglaser/cluster" type="int" value="1"/>
   <param name="urglaser/skip" type="int" value="0"/>
+  <param name="urglaser/frameid" type="string" value="FRAMEID_LASER2"/>
   <param name="etherdrive/pulse_per_rad0" type="double" value="-9549"/>
   <param name="etherdrive/frame_id0"  type="str" value="FRAMEID_TILT_STAGE"/>
   <param name="etherdrive/parent_id0" type="str" value="FRAMEID_TILT_BASE"/>
