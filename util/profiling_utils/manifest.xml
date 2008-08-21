@@ -1,0 +1,17 @@
+<package>
+  <description brief="String Utilities">
+
+    This package provides a simple library which allows counting
+    execution time and counting events in various places. Useful for
+    profiling.
+
+  </description>
+  <author>Ioan Sucan</author>
+  <license>BSD</license>
+
+  <depend package="roscpp" />
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lprofiling_utils -lpthread -lrt"/>
+  </export>
+</package>
