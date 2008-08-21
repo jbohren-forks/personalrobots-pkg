@@ -97,6 +97,11 @@ bool Joint::initXml(TiXmlElement *elt)
   {
     type_ = JOINT_CONTINUOUS;
   }
+  else if (min_ret == TIXML_NO_ATTRIBUTE || max_ret == TIXML_NO_ATTRIBUTE)
+  {
+    fprintf(stderr, "Error: no min and max limits specified for joint \"%s\"\n", name_.c_str());
+    return false;
+  }
 
   return true;
 }
