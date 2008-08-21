@@ -17,6 +17,7 @@ setenv PATH $GAZ_TOP/bin:$PATH
 
 setenv GAZEBO_RESOURCE_PATH $PR2MEDIA
 setenv OGRE_RESOURCE_PATH $OGRE_TOP/lib/OGRE
+setenv MC_RESOURCE_PATH $PR2MEDIA
 
 echo
 echo Current GAZ_TOP is set to $GAZ_TOP

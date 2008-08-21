@@ -285,7 +285,7 @@ void BaseController::update()
 
   if(odom_publish_counter_ > odom_publish_count_)
   {
-    //(ros::g_node)->publish("odom", odom_msg_);
+    (ros::g_node)->publish("odom", odom_msg_);
     odom_publish_counter_ = 0;
   }
 
@@ -423,6 +423,9 @@ bool BaseControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
   
   node->advertise_service(prefix + "/set_command", &BaseControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_actual", &BaseControllerNode::getCommand, this); //FIXME: this is actually get command, just returning command for testing.
+
+  node->advertise<std_msgs::RobotBase2DOdom>("odom");
+
   return true;
 }
 

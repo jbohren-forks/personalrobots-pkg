@@ -149,27 +149,6 @@ namespace gazebo {
 
   void TestActuators::LoadMC(XMLConfigNode *node)
   {
-    //-------------------------------------------------------------------------------------------
-    //
-    // GET INFORMATION FROM PR2.XML FROM PARAM SERVER
-    // AND PUT IT INTO ROBOT_
-    //
-    // create a set of mech_joint_ for the robot and
-    //
-    // create a set of reverse_mech_joint_ for the reverse transmission results
-    //
-    //-------------------------------------------------------------------------------------------
-
-    // parse pr2.xml from filename specified
-    pr2Description.loadFile(node->GetString("robot_filename","",1).c_str());
-
-    // get all links in pr2.xml
-    pr2Description.getLinks(pr2Links);
-    std::cout << " pr2.xml link size: " << pr2Links.size() << std::endl;
-
-    // as the name states
-    LoadFrameTransformOffsets();
-
 
 
     //-----------------------------------------------------------------------------------------
@@ -182,20 +161,46 @@ namespace gazebo {
     TiXmlDocument *transmission_xml = new TiXmlDocument();
     TiXmlDocument *actuator_xml = new TiXmlDocument();
 
-    std::cout << " robot        file name: " << node->GetString("robot_filename","",1) << std::endl;
-    std::cout << " controller   file name: " << node->GetString("controller_filename","",1) << std::endl;
-    std::cout << " transmission file name: " << node->GetString("transmission_filename","",1) << std::endl;
-    std::cout << " actuator     file name: " << node->GetString("actuator_filename","",1) << std::endl;
+    std::string pr2_xml_filename = getenv("MC_RESOURCE_PATH"); pr2_xml_filename += "/"; pr2_xml_filename += node->GetString("robot_filename","",1);
+    std::string controller_xml_filename = getenv("MC_RESOURCE_PATH"); controller_xml_filename += "/"; controller_xml_filename += node->GetString("controller_filename","",1);
+    std::string transmission_xml_filename = getenv("MC_RESOURCE_PATH"); transmission_xml_filename += "/"; transmission_xml_filename += node->GetString("transmission_filename","",1);
+    std::string actuator_xml_filename = getenv("MC_RESOURCE_PATH"); actuator_xml_filename += "/"; actuator_xml_filename += node->GetString("actuator_filename","",1);
 
-    pr2_xml->LoadFile(node->GetString("robot_filename","",1));
-    controller_xml->LoadFile(node->GetString("controller_filename","",1));
-    transmission_xml->LoadFile(node->GetString("transmission_filename","",1));
-    actuator_xml->LoadFile(node->GetString("actuator_filename","",1));
+    std::cout << " pr2 robot xml file name: " << pr2_xml_filename << std::endl;
+    std::cout << " controller    file name: " << controller_xml_filename << std::endl;
+    std::cout << " transmission  file name: " << transmission_xml_filename << std::endl;
+    std::cout << " actuator      file name: " << actuator_xml_filename << std::endl;
+
+    pr2_xml         ->LoadFile(pr2_xml_filename);
+    controller_xml  ->LoadFile(controller_xml_filename);
+    transmission_xml->LoadFile(transmission_xml_filename);
+    actuator_xml    ->LoadFile(actuator_xml_filename);
 
     urdf::normalizeXml( pr2_xml->RootElement() );
     //urdf::normalizeXml( controller_xml->RootElement() );
     //urdf::normalizeXml( transmission_xml->RootElement() );
     //urdf::normalizeXml( actuator_xml->RootElement() );
+
+    //-------------------------------------------------------------------------------------------
+    //
+    // GET INFORMATION FROM PR2.XML FROM PARAM SERVER
+    // AND PUT IT INTO ROBOT_
+    //
+    // create a set of mech_joint_ for the robot and
+    //
+    // create a set of reverse_mech_joint_ for the reverse transmission results
+    //
+    //-------------------------------------------------------------------------------------------
+
+    // parse pr2.xml from filename specified
+    pr2Description.loadFile(pr2_xml_filename.c_str());
+
+    // get all links in pr2.xml
+    pr2Description.getLinks(pr2Links);
+    std::cout << " pr2.xml contains " << pr2Links.size() << " links." << std::endl;
+
+    // as the name states
+    LoadFrameTransformOffsets();
 
 
     //-----------------------------------------------------------------------------------------

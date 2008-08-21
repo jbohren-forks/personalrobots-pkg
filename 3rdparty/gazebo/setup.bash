@@ -17,6 +17,7 @@ export PATH=$GAZ_TOP/bin:$PATH
 
 export GAZEBO_RESOURCE_PATH=$PR2MEDIA
 export OGRE_RESOURCE_PATH=$OGRE_TOP/lib/OGRE
+export MC_RESOURCE_PATH=$PR2MEDIA
 
 echo
 echo Current GAZ_TOP is set to $GAZ_TOP
