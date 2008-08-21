@@ -575,3 +575,9 @@ std::ostream & libTF::operator<<(std::ostream& mystream, const Pose3D &storage)
     mystream << "Storage: " << p.x << ", " << p.y << ", " << p.z << ", " << q.x << ", " << q.y << ", " << q.z << ", " << q.w << std::endl; 
     return mystream;
 };
+
+std::ostream & libTF::operator<<(std::ostream& mystream, const Pose3D::Vector &p)
+  {
+    mystream << p.x << ", " << p.y << ", " << p.z << ", " << std::endl; 
+    return mystream;
+  };

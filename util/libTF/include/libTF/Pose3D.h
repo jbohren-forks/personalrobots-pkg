@@ -117,15 +117,18 @@ namespace libTF
             result.y = sina*x + cosa*y;
             result.z = z;
             return result;
+
+
+
           }
       };
 
       /** \brief A struct to represent vectors */
       struct Vector
       {
-        double x,y,z;
+          double x,y,z;
 
-      /** \brief operator overloading for the + operator */
+          /** \brief operator overloading for the + operator */
           Vector  operator+(const Vector &rhs){
             Vector result;
             result.x = x + rhs.x;
@@ -134,7 +137,7 @@ namespace libTF
             return result;
           }
 
-      /** \brief operator overloading for the += operator */
+          /** \brief operator overloading for the += operator */
           Vector & operator+=(const Vector &rhs){
             x += rhs.x;
             y += rhs.y;
@@ -142,7 +145,7 @@ namespace libTF
             return *this;
           }
 
-      /** \brief operator overloading for the - operator */
+          /** \brief operator overloading for the - operator */
           Vector  operator-(const Vector &rhs){
             Vector result;
             result.x = x - rhs.x;
@@ -151,7 +154,7 @@ namespace libTF
             return result;
           }
 
-      /** \brief operator overloading for the -= operator */
+          /** \brief operator overloading for the -= operator */
           Vector & operator-=(const Vector &rhs){
             x -= rhs.x;
             y -= rhs.y;
@@ -159,7 +162,7 @@ namespace libTF
             return *this;
           }
 
-      /** \brief operator overloading for the *= operator */
+          /** \brief operator overloading for the *= operator */
           Vector & operator*=(double rhs){
             x *= rhs;
             y *= rhs;
@@ -167,7 +170,7 @@ namespace libTF
             return *this;
           }
 
-      /** \brief operator overloading for the * operator */
+          /** \brief operator overloading for the * operator */
           Vector  operator*(double rhs){
             Vector result;
             result.x = x*rhs;
@@ -176,7 +179,7 @@ namespace libTF
             return result;
           }
 
-      /** \brief Rotate a vector about the z-axis */
+          /** \brief Rotate a vector about the z-axis */
           Vector rot2D(double angle){
             Vector result;
             double cosa = cos(angle);
@@ -320,6 +323,8 @@ namespace libTF
   /** \brief A namespace ostream overload for displaying poses */
   std::ostream & operator<<(std::ostream& mystream, const Pose3D &pose);
 
+  std::ostream & operator<<(std::ostream& mystream, const Pose3D::Vector &p);
+ 
 }
 
 
