@@ -64,6 +64,11 @@ void *controlLoop(void *arg)
   TiXmlDocument xml(xml_file);
   xml.LoadFile();
   TiXmlElement *root = xml.FirstChildElement("robot");
+  if (!root)
+  {
+    fprintf(stderr, "Could not load the xml file: %s\n", xml_file);
+    exit(1);
+  }
 
   // Register actuators with mechanism control
   ec.initXml(root, mc);
