@@ -130,7 +130,6 @@ int main(int argc, char **argv)
   signal(SIGTERM, &signalHandler);
   signal(SIGQUIT, &signalHandler);
   signal(SIGKILL, &signalHandler);
-  atexit(&cleanup);
 
   bool playback = false;
 
@@ -138,6 +137,7 @@ int main(int argc, char **argv)
     std::cerr << "Invalid argument list: Usage: exec_trex_o_rt configfile" << std::endl;
     return -1;
   }
+  atexit(&cleanup);
 
   LogManager::instance();
 
