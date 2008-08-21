@@ -155,12 +155,12 @@ public:
   Tilting_Laser() : ros::node("tilting_laser"), tf(*this), full_cloud_cnt(0), sizes_ready(false), img_ind(-1), img_dir(1),last_ang(1000000), rate_err_down(0.0), rate_err_up(0.0), accum_angle(0.0), scan_received(false), count(0)
   {
     
-    advertise<PointCloudFloat32>("cloud");
-    advertise<Empty>("shutter");
-    advertise<PointCloudFloat32>("full_cloud");
-    advertise<LaserImage>("laser_image");
-    advertise<Image>("image");
-    advertise<Actuator>("mot_cmd");
+    advertise<PointCloudFloat32>("cloud", 1);
+    advertise<Empty>("shutter", 1);
+    advertise<PointCloudFloat32>("full_cloud", 1);
+    advertise<LaserImage>("laser_image", 1);
+    advertise<Image>("image", 1);
+    advertise<Actuator>("mot_cmd", 100);
 
     subscribe("scan", scans, &Tilting_Laser::scans_callback,40);
     subscribe("mot",  encoder, &Tilting_Laser::encoder_callback,40);

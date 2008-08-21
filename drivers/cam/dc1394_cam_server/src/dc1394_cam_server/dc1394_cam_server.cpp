@@ -336,11 +336,11 @@ public:
 
       if (cd.cam_type == VIDERE)
       {
-        advertise<std_msgs::String>(cd.name + string("/cal_params"));
-        advertise<std_msgs::ImageArray>(cd.name + string("/images"));
-        advertise<std_msgs::PointCloudFloat32>(cd.name + string("/cloud"));
+        advertise<std_msgs::String>(cd.name + string("/cal_params"), 1);
+        advertise<std_msgs::ImageArray>(cd.name + string("/images"), 1);
+        advertise<std_msgs::PointCloudFloat32>(cd.name + string("/cloud"), 1);
       } else {
-        advertise<std_msgs::Image>(cd.name + string("/image"));
+        advertise<std_msgs::Image>(cd.name + string("/image"), 1);
       }
 
       cams_.push_back(cd);

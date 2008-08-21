@@ -146,7 +146,7 @@ public:
 
   HokuyoNode() : ros::node("urglaser"), running(false), count(0)
   {
-    advertise<std_msgs::LaserScan>("scan");
+    advertise<std_msgs::LaserScan>("scan", 100);
     advertise_service("~self_test", &HokuyoNode::SelfTest);
 
     param("~min_ang", min_ang, -90.0);
