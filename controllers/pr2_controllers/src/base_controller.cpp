@@ -35,7 +35,6 @@
 #include <pr2_controllers/base_controller.h>
 #include <math_utils/angles.h>
 
-
 using namespace std;
 using namespace controller;
 using namespace libTF;
@@ -46,6 +45,9 @@ ROS_REGISTER_CONTROLLER(BaseController)
 
 BaseController::BaseController() : num_wheels_(0), num_casters_(0), odom_publish_count_(10), odom_publish_counter_(0)
 {
+  cmd_vel_.x = 0;
+  cmd_vel_.y = 0;
+  cmd_vel_.z = 0.5;
 }
 
 BaseController::~BaseController()
@@ -85,10 +87,6 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
   robot_desc::URDF::Link *link;
   std::string joint_name;
 
-
-
-
-
 //  ros::g_node->advertise<std_msgs::RobotBase2DOdom>("odom");
   std::string xml_content;
   (ros::g_node)->get_param("robotdesc/pr2",xml_content);
@@ -116,10 +114,14 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
       steer_angle_actual_.push_back(0);
       steer_velocity_desired_.push_back(0);
       num_casters_++;
+//      cout << "base_casters" << "::  " << base_object;
     }
     if(joint_name.find("wheel") != string::npos)
     {
       base_object.local_id_ = num_wheels_;
+      if(joint_name.find("_r_") != string::npos)
+        base_object.direction_multiplier_ = 1;
+
       base_wheels_.push_back(base_object);
       wheel_speed_actual_.push_back(0);
       libTF::Pose3D::Vector *v=new libTF::Pose3D::Vector();
@@ -132,16 +134,20 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
   {
     link = urdf_model_.getJointLink(base_wheels_[i].name_);
     std::string parent_name = link->parent->joint->name;
+//    cout << "parent_name from urdf:: " << parent_name << endl;
     for(int j =0; j < num_casters_; j++)
     {
       if(parent_name == base_casters_[j].name_)
       {
+//        cout <<  "base_casters matched name  ::" << base_casters_[j].name_ << endl;
         base_wheels_[i].parent_ = &base_casters_[j];
         break;
       }
     }
+//      cout << "parent assigned name ::" << base_wheels_[i].parent_->name_ << endl << endl;
+//      cout << "base_wheels" << endl << base_wheels_[i];
   }
-  std::cout << " assigning robot_ " << std::endl;
+//  std::cout << " assigning robot_ " << std::endl;
   robot_ = robot;
 
   cmd_vel_.x = 0;
@@ -153,11 +159,11 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
 
 }
 
-bool BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
+void BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
-  std::cout << " base controller initxml " << std::endl << *config << std::endl;
+  // std::cout << " base controller initxml " << std::endl << *config << std::endl;
   TiXmlElement *elt = config->FirstChildElement("controller");
-  std::cout << " child " << std::endl << *elt << std::endl;
+//  std::cout << " child " << std::endl << *elt << std::endl;
   std::vector<JointControlParam> jcp_vec;
   JointControlParam jcp;
   while (elt){
@@ -173,10 +179,10 @@ bool BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
     jcp.joint_name = jnt->Attribute("name");
     jcp_vec.push_back(jcp);
 
-    std::cout << "name:" << jcp.joint_name << std::endl;
-    std::cout << "controller type:" << jcp.control_type << std::endl;
-    std::cout << std::endl << *elt << std::endl;
-    std::cout << " sub controller : " << elt->Attribute("name") << std::endl;
+//    std::cout << "name:" << jcp.joint_name << std::endl;
+//    std::cout << "controller type:" << jcp.control_type << std::endl;
+//    std::cout << std::endl << *elt << std::endl;
+//    std::cout << " sub controller : " << elt->Attribute("name") << std::endl;
 
     elt = elt->NextSiblingElement("controller");
 
@@ -185,12 +191,13 @@ bool BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
   elt = config->FirstChildElement("map");
   while(elt)
   {
-    if(elt->Attribute("name") == "velocity_control")
+    if(elt->Attribute("name") == std::string("velocity_control"))
     {
       TiXmlElement *elt_key = elt->FirstChildElement("elem");
+//      cout << "elt_key" << elt_key->Attribute("key") << endl;
       while(elt_key)
       {
-        if(elt_key->Attribute("key") == "kp_speed")
+        if(elt_key->Attribute("key") == std::string("kp_speed"))
         {
           kp_speed_ = atof(elt_key->GetText());
           break;
@@ -198,11 +205,11 @@ bool BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
         elt_key = elt->NextSiblingElement("elem");
       }
     }
+//    std::cout << " sub map : " << elt->Attribute("name") << std::endl;
     elt = config->NextSiblingElement("map");
-    std::cout << " sub map : " << elt->Attribute("name") << std::endl;
   }
   init(jcp_vec,robot);
-  return true;
+
 }
 
 void BaseController::getJointValues()
@@ -213,10 +220,10 @@ void BaseController::getJointValues()
   for(int i=0; i < num_wheels_; i++)
     wheel_speed_actual_[i] = base_wheels_[i].controller_.getMeasuredVelocity();
 
-  for(int i=0; i < num_casters_; i++)
-    std::cout << " caster angles " << i << " : " << steer_angle_actual_[i] << std::endl;
-  for(int i=0; i < num_wheels_; i++)
-    std::cout << " wheel rates " << i << " : " << wheel_speed_actual_[i] << std::endl;
+//   for(int i=0; i < num_casters_; i++)
+//     std::cout << " caster angles " << i << " : " << steer_angle_actual_[i] << std::endl;
+//   for(int i=0; i < num_wheels_; i++)
+//     std::cout << " wheel rates " << i << " : " << wheel_speed_actual_[i] << std::endl;
 }
 
 void BaseController::computeWheelPositions()
@@ -227,10 +234,15 @@ void BaseController::computeWheelPositions()
   {
     steer_angle = base_wheels_[i].parent_->joint_->position_;
 //    res1 = rotate2D(base_wheels_[i].pos_,steer_angle);
+//    cout << "init position" << base_wheels_[i].pos_.x << " " << base_wheels_[i].pos_.y << " " << base_wheels_[i].pos_.z << endl;
     res1 = base_wheels_[i].pos_.rot2D(steer_angle);
-    res1 += base_casters_[i].pos_;
+//    cout << "rotated position" << res1;
+    res1 += base_wheels_[i].parent_->pos_;
+//    cout << "added position" << res1;
     base_wheels_position_[i] = res1;
+//    cout << "base_wheels_position_(" << i << ")" << base_wheels_position_[i]; 
   }
+//  exit(-1);
 }
 
 void BaseController::update()
@@ -272,14 +284,16 @@ void BaseController::computeAndSetCasterSteer()
 {
   libTF::Pose3D::Vector result;
   double steer_angle_desired;
-  kp_speed_ = 1.0;
+  double error_steer;
   for(int i=0; i < num_casters_; i++)
   {
     result = computePointVelocity2D(base_casters_[i].pos_, cmd_vel_);
     steer_angle_desired = atan2(result.y,result.x);
     steer_angle_desired =  modNPiBy2(steer_angle_desired);//Clean steer Angle
-    steer_velocity_desired_[i] = kp_speed_*steer_angle_desired;
-    std::cout << "setting steering velocity " << i << " : " << steer_velocity_desired_[i] << " kp: " << kp_speed_ << std::endl;
+
+    error_steer = steer_angle_actual_[i] - steer_angle_desired;
+    steer_velocity_desired_[i] = -kp_speed_*error_steer;
+//    std::cout << "setting steering velocity??? " << i << " : " << steer_velocity_desired_[i] << " kp: " << kp_speed_ << "error_steer" << error_steer << std::endl;
     base_casters_[i].controller_.setCommand(steer_velocity_desired_[i]);
   }
 }
@@ -305,12 +319,15 @@ void BaseController::computeAndSetWheelSpeeds()
     caster_2d_velocity.z = steer_velocity_desired_[base_wheels_[i].parent_->local_id_];
     steer_angle_actual = base_wheels_[i].parent_->joint_->position_;
     wheel_point_velocity = computePointVelocity2D(base_wheels_position_[i],cmd_vel_);
+
+//    cout << "wheel_point_velocity" << wheel_point_velocity << ",pos::" << base_wheels_position_[i] << ",cmd::" << cmd_vel_ << endl;
+
     wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
 //    wheel_point_velocity_projected = rotate2D(wheel_point_velocity,-steer_angle_actual);
     wheel_point_velocity_projected = wheel_point_velocity.rot2D(-steer_angle_actual);
     wheel_speed_cmd = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/wheel_radius_;
-    std::cout << "setting wheel speed " << i << " : " << wheel_speed_cmd << " r:" << wheel_radius_ << std::endl;
-    base_wheels_[i].controller_.setCommand(wheel_speed_cmd);
+//    std::cout << "setting wheel speed " << i << " : " << wheel_speed_cmd << " r:" << wheel_radius_ << std::endl;
+    base_wheels_[i].controller_.setCommand(base_wheels_[i].direction_multiplier_*wheel_speed_cmd);
   }
 }
 
@@ -321,6 +338,7 @@ void BaseController::updateJointControllers()
   for(int i=0; i < num_casters_; i++)
     base_casters_[i].controller_.update();
 }
+
 
 ROS_REGISTER_CONTROLLER(BaseControllerNode)
   BaseControllerNode::BaseControllerNode()
@@ -368,16 +386,16 @@ bool BaseControllerNode::getCommand(
   return true;
 }
 
-bool BaseControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+void BaseControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
 
-  if (!c_->initXml(robot, config))
-    return false;
+  c_->initXml(robot, config);
+  
   node->advertise_service(prefix + "/set_command", &BaseControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_command", &BaseControllerNode::getCommand, this);
-  return true;
+  return;
 }
 
 Pose3D::Vector BaseController::computePointVelocity2D(const Pose3D::Vector& pos, const Pose3D::Vector& vel)
@@ -451,6 +469,13 @@ Matrix BaseController::pseudoInverse(const Matrix M)
   result = V * Dinv * U.t();
   return result;
 }
+
+
+std::ostream & controller::operator<<(std::ostream& mystream, const controller::BaseParam &bp)
+{
+  mystream << bp.name_ << endl << "position " << bp.pos_ << "id " << bp.local_id_ << endl << "joint " << bp.joint_->name_ << endl << endl;
+  return mystream;
+};
 
 
 

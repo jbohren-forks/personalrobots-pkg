@@ -79,12 +79,14 @@ namespace controller
   /*! \class
     \brief This class holds local information for the links in the base (wheels and casters). It includes position, name,
     controller, pointer to the corresponding joint in the Robot structure, pointer to parent and a local ID.
-   */
+  */
   class BaseParam
   {
     public:
 
-    BaseParam(){}
+    friend std::ostream & operator<<(std::ostream& mystream, const controller::BaseParam &bp);
+
+    BaseParam():direction_multiplier_(1){};
 
     ~BaseParam(){}
 
@@ -99,6 +101,8 @@ namespace controller
     BaseParam *parent_; /** pointer to parent corresponding to link */
 
     int local_id_; /** local id number */
+
+    int direction_multiplier_;
   };
 
   class BaseController : public Controller
@@ -111,17 +115,20 @@ namespace controller
      */
     BaseController();
 
+
     /*!
      * \brief Destructor of the JointController class.
      */
     ~BaseController();
+
 
     /*!
      * \brief Functional way to initialize limits and gains.
      *
      */
     void init(std::vector<JointControlParam> jcp, mechanism::Robot *robot);
-    bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+    void initXml(mechanism::Robot *robot, TiXmlElement *config);
+
 
     /*!
      * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
@@ -130,10 +137,12 @@ namespace controller
      */
     void setCommand(libTF::Pose3D::Vector cmd_vel);
 
+
     /*!
      * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
      */
     libTF::Pose3D::Vector getCommand();
+
 
     /*!
      * \brief (a) Updates commands to caster and wheels.
@@ -143,30 +152,36 @@ namespace controller
      */
     virtual void update();
 
+
     /*!
      * \brief struct to represent caster parameters locally.
      */
     std::vector<BaseParam> base_casters_;
+
 
     /*!
      * \brief struct to represent wheel parameters locally.
      */
     std::vector<BaseParam> base_wheels_;
 
+
     /*!
      * \brief mutex lock for setting and getting commands
      */
     pthread_mutex_t base_controller_lock_;
+
 
     /*!
      * \brief URDF representation of the robot model
      */
     robot_desc::URDF urdf_model_;
 
+
     /*!
      * \brief Set the publish count (number of update ticks between odometry message publishing).
      */
     void setPublishCount(int publish_count);
+
 
     private:
 
@@ -175,10 +190,12 @@ namespace controller
      */
     int num_wheels_;
 
+
     /*!
      * \brief number of casters
      */
     int num_casters_;
+
 
     /*!
      * \brief number of update ticks to wait before publishing ROS odom message
@@ -186,15 +203,18 @@ namespace controller
      */
     int odom_publish_count_;
 
+
     /*!
      * \brief local gain used for speed control of the caster (to achieve resultant position control)
      */
     double kp_speed_;
 
+
     /*!
      * \brief Robot representation
      */
     mechanism::Robot* robot_;
+
 
     /*!
      * \brief compute 2D velocity of a point on a rigid body given a 2D input velocity
@@ -204,82 +224,102 @@ namespace controller
      */
     libTF::Pose3D::Vector computePointVelocity2D(const libTF::Pose3D::Vector& pos, const  libTF::Pose3D::Vector& vel);
 
+
     /*!
      * \brief update the individual joint controllers
      */
     void updateJointControllers();
+
 
     /*!
      * \brief speed command vector used internally
      */
     libTF::Pose3D::Vector cmd_vel_;
 
+
     /*!
      * \brief Input speed command vector.
      */
     libTF::Pose3D::Vector cmd_vel_t_;
+
 
     /*!
      * \brief Position of the robot computed by odometry.
      */
     libTF::Pose3D::Vector base_odom_position_;
 
+
     /*!
      * \brief Speed of the robot computed by odometry.
      */
     libTF::Pose3D::Vector base_odom_velocity_;
+
 
     /*!
      * \brief Computed the desired steer angle for the caster.
      */
     void computeAndSetCasterSteer();
 
+
     /*!
      * \brief Computed the desired wheel speeds.
      */
     void computeAndSetWheelSpeeds();
 
+
     double wheel_radius_; /** radius of the wheel (filled in from urdf robot model) */
 
+
     std::vector<double> steer_velocity_desired_; /** vector of desired caster steer speeds */
+
 
     /*!
      * \brief compute the speed of the base for odometry calculations
      */
     void computeBaseVelocity();
 
+
     /*!
      * \brief compute the odometry
      */
     void computeOdometry(double);
+
 
     /*!
      * \brief pseudo-inverse computation for NEWMAT
      */
     NEWMAT::Matrix pseudoInverse(const NEWMAT::Matrix M);
 
+
     /*!
      * \brief compute the wheel positions and set them in base_wheels_position_
      */
     void computeWheelPositions();
 
+
     std::vector<libTF::Pose3D::Vector> base_wheels_position_; /** vector of current wheel positions */
+
 
     /*!
      * \brief get the joint positions and speeds and set them in steer_angle_actual_ and wheel_speed_actual_
      */
     void getJointValues();
 
+
     std::vector<double> steer_angle_actual_; /** vector of actual caster steer angles */
 
+
     std::vector<double> wheel_speed_actual_; /** vector of actual wheel speeds */
+
 
     /*!
      * \brief std_msgs representation of an odometry message
      */
     std_msgs::RobotBase2DOdom odom_msg_;
 
+
     double last_time_; /** time corresponding to when update was last called */
+
 
     int odom_publish_counter_; /** counter - when this exceeds odom_publish_count_, the odomeetry message will be published on ROS */
 
@@ -301,7 +341,7 @@ namespace controller
 
     void update();
 
-    bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+    void initXml(mechanism::Robot *robot, TiXmlElement *config);
 
     // Services
     bool setCommand(pr2_controllers::SetBaseCommand::request &req,
@@ -315,6 +355,9 @@ namespace controller
     BaseController *c_;
 
   };
+
+    /** \brief A namespace ostream overload for displaying parameters */
+  std::ostream & operator<<(std::ostream& mystream, const controller::BaseParam &bp);
 
 }
 
