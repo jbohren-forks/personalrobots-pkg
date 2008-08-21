@@ -606,7 +606,7 @@ namespace gazebo {
       // gripper joint, is an ugly special case for now
       if ((*gji)->isGripper)
       {
-        double gripperCmd  , currentError, currentCmd  ;
+        double gripperCmd  , currentError, currentCmd;
         // FIXME: this restricts gripper to a position controller... not ideal
         std::string  jn = *((*gji)->gripper_controller_name_ );
         controller::Controller* jc = mc_.getControllerByName(jn); // from actual mechanism control, not rmc_
@@ -642,13 +642,15 @@ namespace gazebo {
           case gazebo::Joint::SLIDER:
           {
             gazebo::SliderJoint* gjs  = dynamic_cast<gazebo::SliderJoint*>((*gji)->gaz_joints_[0]);
-            gjs->SetSliderForce( (*gji)->rmc_joint_->commanded_effort_);
+            double dampForce    = -(*gji)->explicitDampingCoefficient * gjs->GetPositionRate();
+            gjs->SetSliderForce( (*gji)->rmc_joint_->commanded_effort_+dampForce);
             break;
           }
           case gazebo::Joint::HINGE:
           {
             gazebo::HingeJoint* gjh  = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0]);
-            gjh->SetTorque( (*gji)->rmc_joint_->commanded_effort_);
+            double dampForce    = -(*gji)->explicitDampingCoefficient * gjh->GetAngleRate();
+            gjh->SetTorque( (*gji)->rmc_joint_->commanded_effort_+dampForce);
             break;
           }
           case gazebo::Joint::HINGE2:
