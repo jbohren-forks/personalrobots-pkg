@@ -350,6 +350,8 @@ namespace controller
     bool getCommand(pr2_controllers::GetBaseCommand::request &req,
                     pr2_controllers::GetBaseCommand::response &resp);
 
+    void setCommand(double vx, double vy, double vw);
+
     private:
 
     BaseController *c_;

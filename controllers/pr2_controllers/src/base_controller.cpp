@@ -385,6 +385,16 @@ bool BaseControllerNode::setCommand(
   return true;
 }
 
+void BaseControllerNode::setCommand(double vx, double vy, double vw)
+{
+  libTF::Pose3D::Vector command;
+  command.x = vx;
+  command.y = vy;
+  command.z = vw;
+  c_->setCommand(command);
+}
+
+
 bool BaseControllerNode::getCommand(
   pr2_controllers::GetBaseCommand::request &req,
   pr2_controllers::GetBaseCommand::response &resp)
