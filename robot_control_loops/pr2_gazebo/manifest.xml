@@ -5,7 +5,7 @@
     Start api interfaces for non-RT control in a ros node.
   </description>
   <author>John M. Hsu</author>
-  <license>TBD</license>
+  <license>BSD</license>
   <depend package="roscpp" />
   <depend package="libpr2API" />
   <depend package="genericControllers" />
