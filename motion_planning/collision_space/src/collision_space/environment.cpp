@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/** \Author Ioan Sucan */
+
 #include <collision_space/environment.h>
 
 unsigned int collision_space::EnvironmentModel::addRobotModel(planning_models::KinematicModel *model)

@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/** \Author Ioan Sucan, Matei Ciocarlie */
+
 #include <collision_space/environmentOctree.h>
 
 unsigned int collision_space::EnvironmentModelOctree::addRobotModel(planning_models::KinematicModel *model)

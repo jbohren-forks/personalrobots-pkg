@@ -32,6 +32,11 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/** \Author Ioan Sucan */
+
+/** Test program for displaying and testing ODE collision spaces and
+    kinematic models */
+
 #include <collision_space/environmentODE.h>
 #include <display_ode/displayODE.h>
 #include <algorithm>

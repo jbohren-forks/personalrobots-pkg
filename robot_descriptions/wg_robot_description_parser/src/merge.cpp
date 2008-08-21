@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/** \Author Ioan Sucan */
+
 #include <tinyxml/tinyxml.h>
 #include <cassert>
 #include <vector>

@@ -32,6 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+/** \Author Ioan Sucan, Stu Glassner */
+
 #include <urdf/URDF.h>
 #include <urdf/parser.h>
 #include <gtest/gtest.h>

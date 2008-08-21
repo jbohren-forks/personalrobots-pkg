@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/** \Author Ioan Sucan */
+
 #ifndef COLLISION_SPACE_UTIL_
 #define COLLISION_SPACE_UTIL_
 

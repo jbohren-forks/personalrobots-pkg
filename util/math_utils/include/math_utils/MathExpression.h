@@ -32,6 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+/** \Author Ioan Sucan */
+
 #ifndef MATH_EXPRESSION_
 #define MATH_EXPRESSION_
 

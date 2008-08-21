@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/** \Author Ioan Sucan, Matei Ciocarlie */
+
 #ifndef COLLISION_SPACE_ENVIRONMENT_MODEL_OCTREE_
 #define COLLISION_SPACE_ENVIRONMENT_MODEL_OCTREE_
 

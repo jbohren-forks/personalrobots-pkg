@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/** \Author Ioan Sucan */
+
 #include <ros/node.h>
 #include <ros/time.h>
 #include <rosTF/rosTF.h>

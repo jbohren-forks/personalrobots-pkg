@@ -32,6 +32,11 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+
+/** \Author Ioan Sucan */
+
+/** This is a simple program for requesting a motion plan */
+
 #include <ros/node.h>
 #include <ros/time.h>
 #include <robot_srvs/KinematicPlanState.h>
@@ -44,11 +49,11 @@ public:
     
     PlanKinematicPath(void) : ros::node("plan_kinematic_path")
     {
-	advertise<robot_msgs::NamedKinematicPath>("display_kinematic_path");
+	advertise<robot_msgs::NamedKinematicPath>("display_kinematic_path", 1);
 
 	m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
 	m_haveBasePos = false;
-	subscribe("localizedpose", m_localizedPose, &PlanKinematicPath::localizedPoseCallback);
+	subscribe("localizedpose", m_localizedPose, &PlanKinematicPath::localizedPoseCallback, 1);
     }
   
     bool haveBasePos(void) const

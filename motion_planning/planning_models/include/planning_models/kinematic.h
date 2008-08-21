@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/** \Author Ioan Sucan */
+
 #ifndef KINEMATIC_ROBOT_MODEL_
 #define KINEMATIC_ROBOT_MODEL_
 

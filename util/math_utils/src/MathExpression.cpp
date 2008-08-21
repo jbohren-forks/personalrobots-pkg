@@ -32,6 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+/** \Author Ioan Sucan */
+
 #include "math_utils/MathExpression.h"
 #include <cstring>
 #include <cmath>

@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/** \Author Ioan Sucan */
+
 #include <collision_space/environmentODE.h>
 
 void collision_space::EnvironmentModelODE::freeMemory(void)

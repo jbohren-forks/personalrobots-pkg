@@ -32,6 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+/** \Author Ioan Sucan */
+
 #include <urdf/URDF.h>
 #include <math_utils/MathExpression.h>
 #include <string_utils/string_utils.h>

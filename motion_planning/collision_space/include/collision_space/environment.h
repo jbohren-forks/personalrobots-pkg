@@ -32,6 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/** \Author Ioan Sucan */
+
 #ifndef COLLISION_SPACE_ENVIRONMENT_MODEL_
 #define COLLISION_SPACE_ENVIRONMENT_MODEL_
 
