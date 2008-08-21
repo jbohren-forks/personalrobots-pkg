@@ -97,6 +97,8 @@ Provides (name/type):
 
 #include "SpaceInformationXMLModel.h"
 
+#include <profiling_utils/profiler.h>
+
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -207,6 +209,8 @@ public:
     
 	m_collisionSpace->lock();
 	
+	profiling_utils::Profiler::Start();
+
 	for (int i = 0 ; i < req.times ; ++i)
 	{
 	    ros::Time startTime = ros::Time::now();
@@ -236,7 +240,10 @@ public:
 		    std::cout << "          Obtained better solution" << std::endl;
 		}
 	    }
+	    p.mp->clear();
 	}
+	
+	profiling_utils::Profiler::Stop();
 	
 	m_collisionSpace->unlock();
 
@@ -263,7 +270,6 @@ public:
 	/* cleanup */
 	p.si->clearGoal();
 	p.si->clearStartStates();
-	p.mp->clear();
 	
 	return true;
     }
@@ -360,6 +366,7 @@ private:
 	{
 	    m_model->kmodel->computeTransforms(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);
 	    m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
+
 	    bool collision = m_model->collisionSpace->isCollision(m_model->collisionSpaceID);
 	    return !collision;
 	}
@@ -438,6 +445,8 @@ int main(int argc, char **argv)
     }
     else
 	usage(argv[0]);
+    
+    profiling_utils::Profiler::Status();
     
     return 0;    
 }

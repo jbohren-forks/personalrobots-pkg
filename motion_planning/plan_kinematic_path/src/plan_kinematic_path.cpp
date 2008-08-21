@@ -104,7 +104,7 @@ public:
 	req.threshold = 0.01;
 	req.distance_metric = "L2Square";
 	req.interpolate = 1;
-	req.times = 1;
+	req.times = 5;
 
 	initialState(req.start_state);
 	
@@ -113,7 +113,7 @@ public:
 	    req.goal_state.vals[i] = 0.0;
 	req.goal_state.vals[0] = 1.0;    
 
-	req.allowed_time = 10.0;
+	req.allowed_time = 3.0;
 	
 	req.volumeMin.x = -5.0 + m_basePos[0];	req.volumeMin.y = -5.0 + m_basePos[1];	req.volumeMin.z = 0.0;
 	req.volumeMax.x = 5.0 + m_basePos[0];	req.volumeMax.y = 5.0 + m_basePos[1];	req.volumeMax.z = 0.0;
@@ -168,7 +168,7 @@ public:
 	    publish("display_kinematic_path", dpath);
 	}
 	else
-	    fprintf(stderr, "Service 'plan_kinematic_path' failed\n");	 
+	    fprintf(stderr, "Service 'plan_kinematic_path_state' failed\n");	 
     }
     
 private: 
