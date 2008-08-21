@@ -43,7 +43,6 @@ class SpaceInformationXMLModel : public ompl::SpaceInformationKinematic
  public:
     SpaceInformationXMLModel(planning_models::KinematicModel *kmodel, int groupID = -1, double divisions = 20.0) : SpaceInformationKinematic()
     {	
-	smoother->setMaxSteps(20);
 	m_kmodel = kmodel;
 	m_groupID = groupID;	    
 	m_divisions = divisions;

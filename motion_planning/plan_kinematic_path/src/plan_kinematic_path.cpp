@@ -194,7 +194,7 @@ int main(int argc, char **argv)
     ros::Duration dur(0.1);
     while (!plan.haveBasePos())
 	dur.sleep();
-
+    
     char test = (argc < 2) ? 'b' : argv[1][0];
     
     switch (test)

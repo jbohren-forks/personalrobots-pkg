@@ -91,14 +91,16 @@ Provides (name/type):
 #include <robot_srvs/KinematicPlanState.h>
 #include <robot_srvs/KinematicPlanLinkPosition.h>
 
+#include <ompl/extension/samplingbased/kinematic/PathSmootherKinematic.h>
 #include <ompl/extension/samplingbased/kinematic/extension/rrt/LazyRRT.h>
 #include <ompl/extension/samplingbased/kinematic/extension/rrt/RRT.h>
 
 #include "SpaceInformationXMLModel.h"
 
+#include <iostream>
+#include <sstream>
 #include <vector>
 #include <string>
-#include <sstream>
 #include <map>
 
 class KinematicPlanning : public ros::node,
@@ -197,7 +199,7 @@ public:
 	{
 	    ros::Time startTime = ros::Time::now();
 	    ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
-	    p.si->smoother->smoothVertices(path);
+	    p.smoother->smoothVertices(path);
 	    double tsmooth = (ros::Time::now() - startTime).to_double();	
 	    printf("Smoother spent %f seconds (%f seconds in total)\n", tsmooth, tsmooth + tsolve);
 	    if (req.interpolate)
@@ -284,7 +286,7 @@ private:
 	ompl::Planner_t                   mp;
 	ompl::SpaceInformationKinematic_t si;
 	StateValidityPredicate*           svc;
-	int                               type;
+	ompl::PathSmootherKinematic_t     smoother;
     };
     	
     struct Model
@@ -302,6 +304,7 @@ private:
 	    {
 		delete planners[i].mp;
 		delete planners[i].svc;
+		delete planners[i].smoother;
 		delete planners[i].si;
 	    }
 	}
@@ -343,24 +346,29 @@ private:
     void addRRTInstance(Model *model)
     {
 	Planner p;
-	p.si   = new SpaceInformationXMLModel(model->kmodel, model->groupID);
-	p.svc  = new StateValidityPredicate(model);
-	p.si->setStateValidityChecker(p.svc);	
-	p.mp   = new ompl::RRT(p.si);
+	p.si       = new SpaceInformationXMLModel(model->kmodel, model->groupID);
+	p.svc      = new StateValidityPredicate(model);
+	p.si->setStateValidityChecker(p.svc);
+	p.smoother = new ompl::PathSmootherKinematic(p.si);
+	p.smoother->setMaxSteps(20);	
+	p.mp        = new ompl::RRT(p.si);
 	p.si->setup();
-	p.type = 0;
 	model->planners.push_back(p);
+	std::cout << "Added RRT instance for motion planning" << std::endl;
     }
     
     void addLazyRRTInstance(Model *model)
     {
 	Planner p;
-	p.si   = new SpaceInformationXMLModel(model->kmodel, model->groupID);
-	p.svc  = new StateValidityPredicate(model);
-	p.si->setStateValidityChecker(p.svc);	
-	p.mp   = new ompl::LazyRRT(p.si);
-	p.type = 1;
+	p.si       = new SpaceInformationXMLModel(model->kmodel, model->groupID);
+	p.svc      = new StateValidityPredicate(model);
+	p.si->setStateValidityChecker(p.svc);
+	p.smoother = new ompl::PathSmootherKinematic(p.si);
+	p.smoother->setMaxSteps(20);	
+	p.mp        = new ompl::LazyRRT(p.si);
+	p.si->setup();
 	model->planners.push_back(p);
+	std::cout << "Added LazyRRT instance for motion planning" << std::endl;
     }
 
     std::map<std::string, Model*> m_models;
