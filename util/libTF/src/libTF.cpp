@@ -39,7 +39,7 @@ TransformReference::RefFrame::RefFrame(bool interpolating,
                                        unsigned long long max_cache_time,
                                        unsigned long long max_extrapolation_distance) :
   Pose3DCache(interpolating, max_cache_time, max_extrapolation_distance),
-  parent(TransformReference::NO_PARENT)
+  parent_("NO_PARENT")
 {
   return;
 }
@@ -49,70 +49,39 @@ TransformReference::TransformReference(bool interpolating,
                                        ULLtime cache_time,
                                        unsigned long long max_extrapolation_distance):
   cache_time(cache_time),
-  last_number(1),
   interpolating (interpolating),
   max_extrapolation_distance(max_extrapolation_distance)
 {
-  map_mutex_.lock();//unnecessary but if this moves elsewhere it'll be good to have
-  nameMap["NO_PARENT"] = 0; //Initialize NO_PARENT
-  reverseMap[0] = "NO_PARENT"; //Initialize NO_PARENT
-  map_mutex_.unlock();
-
-  frames = new RefFrame*[MAX_NUM_FRAMES];
-  assert(frames);
-  
-  /* initialize pointers to NULL */
-  for (unsigned int i = 0; i < MAX_NUM_FRAMES; i++)
-    {
-      frames[i] = NULL;
-    }
   return;
 }
 
 TransformReference::~TransformReference()
 {
-  /* initialize pointers to NULL */
-  for (unsigned int i = 0; i < MAX_NUM_FRAMES; i++)
-    {
-      if (frames[i] != NULL)
-	delete frames[i];
-    }
+  /* deallocate all frames */
+  frame_mutex_.lock();
+  for (std::map<std::string, RefFrame*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
+  {
+    delete (*it).second;
+  }
+  frame_mutex_.unlock();
   
-  delete[] frames;
 };
 
 void TransformReference::addFrame(const std::string & frame_id, const std::string & parent_id) {
-  unsigned int frameID, parentID;
-  frameID = nameToNumber(frame_id);
-  parentID = nameToNumber(parent_id);
-  
-  
-  if (frameID >= MAX_NUM_FRAMES || parentID >= MAX_NUM_FRAMES || frameID == NO_PARENT)
-  {
-    std::stringstream ss;
-    ss << "frameID("<<frameID<<") >= MAX_NUM_FRAMES || parentID("<<parentID<<") >= MAX_NUM_FRAMES || frameID("<<frameID<<") == NO_PARENT";
-    throw LookupException(ss.str());
-  }
-
+    
   frame_mutex_.lock();
 
-  if (frames[frameID] == NULL)
-    frames[frameID] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
+  std::map<std::string, RefFrame*>::iterator it = frames_.find(frame_id);
+  if ( it == frames_.end())
+    frames_[frame_id] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
 
-  if (frames[parentID] == NULL)
-    frames[parentID] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
+  it = frames_.find(parent_id);
+  if ( it == frames_.end())
+    frames_[parent_id] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
+
   frame_mutex_.unlock();
   
-
-  if (frameID == parentID)
-  {
-    std::stringstream ss;
-    ss << "Bad instruction: frameID("<<frameID<<" is trying to set its parent to "<<parentID
-       << " with frame_id " << frame_id << " and parent_id " << parent_id;
-    throw LookupException(ss.str());
-  }
-
-  getFrame(frameID)->setParent(parentID);
+  getFrame(frame_id)->setParent(parent_id);
 }
 
 
@@ -149,12 +118,8 @@ void TransformReference::setWithQuaternion(const std::string & frameID, const st
 
 
 
-NEWMAT::Matrix TransformReference::getMatrix(const std::string & target_frame_string, const std::string & source_frame_string, ULLtime time)
+NEWMAT::Matrix TransformReference::getMatrix(const std::string & target_frame, const std::string & source_frame, ULLtime time)
 {
-  unsigned int target_frame, source_frame;
-  target_frame = nameToNumber(target_frame_string);
-  source_frame = nameToNumber(source_frame_string);
-
   NEWMAT::Matrix myMat(4,4);
   TransformLists lists = lookUpList(target_frame, source_frame);
   myMat = computeTransformFromList(lists,time);
@@ -329,31 +294,44 @@ TFPose2D TransformReference::transformPose2D(const std::string & target_frame, c
 
 
 
-TransformReference::TransformLists TransformReference::lookUpList(unsigned int target_frame, unsigned int source_frame)
+TransformReference::TransformLists TransformReference::lookUpList(const std::string & target_frame, const std::string & source_frame)
 {
   TransformLists mTfLs;
-  if (source_frame == NO_PARENT) throw LookupException("cannnot lookup source frame id = NO_PARENT (0)"); 
-  if (target_frame == NO_PARENT) throw LookupException("cannnot lookup target frame id = NO_PARENT (0)"); 
 
-  unsigned int frame = source_frame;
+  std::string frame = source_frame;
   unsigned int counter = 0;  //A counter to keep track of how deep we've descended
+  getFrame(frame); //Test if source frame exists this will throw a lookup error if it does not (inside the loop it will be caught)
   while (true)
     {
+      std::string parent;
+      try
+      {
+        parent = getFrame(frame)->getParent();
+      }
+      catch (TransformReference::LookupException & ex)
+      {
+        //This frame doesn't exist must be at top of list
+        break;
+      }
+      mTfLs.inverseTransforms.push_back(frame);
+      frame = parent;
+
+      /*
       if (frame == NO_PARENT)
 	break;
       mTfLs.inverseTransforms.push_back(frame);
-
+      */
       //Check that we arn't going somewhere illegal 
-      unsigned int parentid = getFrame(frame)->getParent();
-      if (getFrame(frame)->getParent() >=MAX_NUM_FRAMES)
+      //std::string parentid = getFrame(frame)->getParent();
+      /*if (getFrame(frame)->getParent() >=MAX_NUM_FRAMES)
       {
         std::stringstream ss;
         ss <<"parentid("<<parentid<<") greater than MAX_NUM_FRAMES("<<MAX_NUM_FRAMES<<")";
         throw LookupException(ss.str());
-      }
+        }*/
       
       // Descent to parent frame
-      frame = getFrame(frame)->getParent();
+      //        frame = getFrame(frame)->getParent();
 
       /* Check if we've gone too deep.  A loop in the tree would cause this */
       if (counter++ > MAX_GRAPH_DEPTH){
@@ -366,14 +344,30 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
   
   frame = target_frame;
   counter = 0;
+  getFrame(frame); //Test if source frame exists this will throw a lookup error if it does not (inside the loop it will be caught)
   while (true)
     {
+
+      std::string parent;
+      try
+      {
+        parent = getFrame(frame)->getParent();
+      }
+      catch (TransformReference::LookupException & ex)
+      {
+        //This frame doesn't exist don't add to stack
+        break;
+      }
+      mTfLs.forwardTransforms.push_back(frame);
+      frame = parent;
+
+      /*
       if (frame == NO_PARENT)
 	break;
       mTfLs.forwardTransforms.push_back(frame);
 
       //Check that we aren't going somewhere illegal
-      unsigned int parentid = getFrame(frame)->getParent();
+      std::string parentid = getFrame(frame)->getParent();
       if ( parentid >= MAX_NUM_FRAMES)
       {
         std::stringstream ss;
@@ -383,7 +377,7 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
 
       //Descent to parent frame
       frame = getFrame(frame)->getParent();
-
+      */
       /* Check if we've gone too deep.  A loop in the tree would cause this*/
       if (counter++ > MAX_GRAPH_DEPTH){
         std::stringstream ss;
@@ -392,17 +386,56 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
         throw(MaxDepthException(ss.str()));
       }
     }
+
+  /* Check the zero length cases*/
+  if (mTfLs.inverseTransforms.size() == 0)
+  {
+    if (mTfLs.forwardTransforms.size() == 0)
+    {
+      std::stringstream ss;
+      ss<< "No Common ParentD" << std::endl << viewFrames() << std::endl;
+      throw(ConnectivityException(ss.str()));
+    }
+    if (mTfLs.forwardTransforms.back() != source_frame)
+    {
+      std::stringstream ss;
+      ss<< "No Common ParentC" << std::endl << viewFrames() << std::endl;
+      throw(ConnectivityException(ss.str()));
+    }
+  }
+  
+  if (mTfLs.forwardTransforms.size() == 0)
+  {
+    if (mTfLs.inverseTransforms.size() == 0)
+    {
+      std::stringstream ss;
+      ss<< "No Common ParentB" << std::endl << viewFrames() << std::endl;
+      throw(ConnectivityException(ss.str()));
+    }
+    if (mTfLs.inverseTransforms.back() != target_frame)
+    {
+      std::stringstream ss;
+      ss<< "No Common ParentA" << std::endl << viewFrames() << std::endl;
+      throw(ConnectivityException(ss.str()));
+    }
+  }
   
   /* Make sure the end of the search shares a parent. */
   if (mTfLs.inverseTransforms.back() != mTfLs.forwardTransforms.back())
-    throw(ConnectivityException("No Common Parent, at top of search"));
-
+  {
+    std::stringstream ss;
+    ss<< "No Common Parent, at top of search" << std::endl << viewFrames() << std::endl;
+    throw(ConnectivityException(ss.str()));
+  }
   /* Make sure that we don't have a no parent at the top */
-  if (mTfLs.inverseTransforms.back() == NO_PARENT ||  mTfLs.forwardTransforms.back() == NO_PARENT)
-    throw(ConnectivityException("No Common Parent"));
+  if (mTfLs.inverseTransforms.back() == "NO_PARENT" ||  mTfLs.forwardTransforms.back() == "NO_PARENT" ||
+      mTfLs.inverseTransforms.back() == "" ||  mTfLs.forwardTransforms.back() == "")
+    throw(ConnectivityException("NO_PARENT at top of tree"));
+  
 
+  
   while (mTfLs.inverseTransforms.back() == mTfLs.forwardTransforms.back())
-    {
+  {
       mTfLs.inverseTransforms.pop_back();
       mTfLs.forwardTransforms.pop_back();
 
@@ -417,49 +450,6 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
 
 }
 
-unsigned int TransformReference::nameToNumber(const std::string & frameid)
-{
-  unsigned int retval;
-  map_mutex_.lock();
-  std::map<std::string, unsigned int>::iterator it = nameMap.find(frameid);
-  if ( it == nameMap.end())
-  {
-    unsigned int value = last_number++;
-    nameMap[frameid] = value; //Record lookup
-    reverseMap[value] = frameid;  //Record reverse lookup
-    
-    retval = value;
-  }
-  else
-  {
-    retval =  (*it).second;
-  }
-  map_mutex_.unlock();
-  return retval;
-}
-
-
-std::string TransformReference::numberToName(unsigned int frameid)
-{
-  std::string retval;
-  map_mutex_.lock();
-  std::map<unsigned int, std::string>::iterator it = reverseMap.find(frameid);
-  if ( it == reverseMap.end())
-  {
-    std::stringstream ss;
-    ss << "numberToName: Number " << frameid << " does not exist!!"; 
-    throw LookupException(ss.str()); 
-    retval = "";//never get here
-  }
-  else
-  {
-    retval = (*it).second;
-  }
-  map_mutex_.unlock();
-  return retval; 
-}
-
-
 NEWMAT::Matrix TransformReference::computeTransformFromList(const TransformLists & lists, ULLtime time)
 {
   NEWMAT::Matrix retMat(4,4);
@@ -468,7 +458,7 @@ NEWMAT::Matrix TransformReference::computeTransformFromList(const TransformLists
 	 << 0 << 0 << 1 << 0
 	 << 0 << 0 << 0 << 1;
   
-
+  ///@todo change these to iterators
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
       try {
@@ -498,11 +488,8 @@ NEWMAT::Matrix TransformReference::computeTransformFromList(const TransformLists
 }
 
 
-std::string TransformReference::viewChain(const std::string & target_frame_string, const std::string & source_frame_string)
+std::string TransformReference::viewChain(const std::string & target_frame, const std::string & source_frame)
 {
-  unsigned int target_frame, source_frame;
-  target_frame = nameToNumber(target_frame_string);
-  source_frame = nameToNumber(source_frame_string);
   stringstream mstream;
   TransformLists lists = lookUpList(target_frame, source_frame);
 
@@ -525,30 +512,21 @@ std::string TransformReference::viewChain(const std::string & target_frame_strin
 std::string TransformReference::viewFrames()
 {
   stringstream mstream;
-  for (unsigned int frameid = 1; frameid < MAX_NUM_FRAMES; frameid++)
+  frame_mutex_.unlock();
+  for (std::map<std::string, RefFrame*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
   {
-    if (frames[frameid] != NULL)
-    {
-      mstream << "Frame "<< numberToName(frameid) << " exists with parent " << numberToName(frames[frameid]->getParent()) << "." <<std::endl;    
-    }
+    mstream << "Frame "<< (*it).first << " exists with parent " << (*it).second->getParent() << "." <<std::endl;    
   }
+  frame_mutex_.unlock();
   return mstream.str();
 }
 
-std::map<int, int> TransformReference::getFramesMap(void)
-{
-    std::map<int, int> m;
-    for (unsigned int frameid = 1; frameid < MAX_NUM_FRAMES; frameid++)
-	if (frames[frameid] != NULL)
-	    m[frameid] = frames[frameid]->getParent();
-    return m;
-}
 
-bool TransformReference::RefFrame::setParent(unsigned int parentID)
+bool TransformReference::RefFrame::setParent(std::string parent_id)
 {
-  if (parent != parentID)
+  if (parent_ != parent_id)
   {
-    parent = parentID; 
+    parent_ = parent_id; 
     clearList(); 
     return false;
   } 
@@ -556,18 +534,17 @@ bool TransformReference::RefFrame::setParent(unsigned int parentID)
 };
 
 
-
-TransformReference::RefFrame* TransformReference::getFrame(unsigned int frame_number) 
-{ 
-  if (frames[frame_number] == NULL) { 
-    std::stringstream ss; ss << "getFrame: Frame " << numberToName(frame_number) << " does not exist."
-                             << " Frames Present are: " <<std::endl << viewFrames() <<std::endl; 
-    throw LookupException(ss.str());} 
-  else 
-    return frames[frame_number];
-};
-
-TransformReference::RefFrame* TransformReference::getFrame(const std::string & frame_number_string) 
+TransformReference::RefFrame* TransformReference::getFrame(const std::string & frame_id) 
 {
-  return getFrame(nameToNumber(frame_number_string));
+  frame_mutex_.lock();
+
+  std::map<std::string, RefFrame*>::iterator it = frames_.find(frame_id);
+  if (it == frames_.end()){ 
+    frame_mutex_.unlock();
+    std::stringstream ss; ss << "getFrame: Frame " << frame_id  << " does not exist."
+                             << " Frames Present are: " <<std::endl << viewFrames() <<std::endl; 
+    throw LookupException(ss.str());
+  }
+  frame_mutex_.unlock();
+  return it->second;
 };

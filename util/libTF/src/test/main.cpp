@@ -40,6 +40,7 @@ int main(void)
 
 
       double dx,dy,dz,dyaw,dp,dr;
+      std::cout <<"Creating TransformReference" << std::endl;
       TransformReference mTR(caching);
   
       
@@ -54,6 +55,7 @@ int main(void)
       gettimeofday(&temp_time_struct,NULL);
       atime =  temp_time_struct.tv_sec * 1000000000ULL + (unsigned long long)temp_time_struct.tv_usec * 1000ULL;
 
+      std::cout <<"Setting values" << std::endl;
   
       //Fill in some transforms
       //  mTR.setWithEulers(10,2,1,1,1,dyaw,dp,dr,atime); //Switching out for DH params below
@@ -73,7 +75,7 @@ int main(void)
       mTR.setWithDH("8","7",1.0,1.0,1.0,dyaw,atime);
       //mTR.setWithEulers("8","7",1,1,1,dyaw,dp,dr,atime); //Switching out for DH params above
   
-  
+      std::cout <<"Trying some tests" << std::endl;
       //Demonstrate InvalidFrame LookupException
       try
         {
@@ -83,6 +85,7 @@ int main(void)
         {
           std::cout << "Caught " << ex.what()<<std::endl;
         }
+
   
 
   
@@ -132,7 +135,7 @@ int main(void)
       }
       catch (TransformReference::MaxDepthException &ex)
         {
-          std::cout <<"caught loop in graph"<<std::endl;
+          std::cout <<"caught loop in graph"<<ex.what()<<std::endl;
         }
   
       //Break the graph, making it disconnected, and demonstrate catching ConnectivityException
@@ -143,7 +146,7 @@ int main(void)
       }
       catch (TransformReference::ConnectivityException &ex)
         {
-          std::cout <<"caught unconnected frame"<<std::endl;
+          std::cout <<"caught unconnected frame"<<ex.what()<<std::endl;
         }
 
       //Testing clearing the history with parent change
@@ -186,6 +189,10 @@ int main(void)
       catch (TransformReference::LookupException &ex)
         {
           std::cout << "transformPose2D(0,in): Caught " << ex.what()<<std::endl;
+        }
+      catch (TransformReference::ConnectivityException &ex)
+        {
+          std::cout <<"caught unconnected frame, used to be lookup exception: "<<ex.what()<<std::endl;
         }
 
       libTF::TFEulerYPR ypr_in;

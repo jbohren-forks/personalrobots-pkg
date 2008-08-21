@@ -166,8 +166,7 @@ public:
   typedef unsigned long long ULLtime;
   
   /************* Constants ***********************/
-  static const unsigned int NO_PARENT = 0;  //!< The value indicating no parent frame (The top of a tree)
-  static const unsigned int MAX_NUM_FRAMES = 10000; //!< The max value of frameID (due to preallocation of pointers)
+  //  static const unsigned int MAX_NUM_FRAMES = 10000; //!< The max value of frameID (due to preallocation of pointers)
   static const unsigned int MAX_GRAPH_DEPTH = 100;   //!< The maximum number of time to recurse before assuming the tree has a loop.
   static const ULLtime DEFAULT_CACHE_TIME = 10 * 1000000000ULL;  //!< The default amount of time to cache data
   static const ULLtime DEFAULT_MAX_EXTRAPOLATION_DISTANCE = 10 * 1000000000ULL; //!< The default amount of time to extrapolate
@@ -269,11 +268,6 @@ public:
   std::string viewFrames();
 
 
-  /** \brief A way to see how transforms relate to each other (a map from frame to frame parent)
-   * Useful for debugging 
-   */
-  std::map<int,int> getFramesMap();
-
   /************ Possible Exceptions ****************************/
 
   /** \brief An exception class to notify of bad frame number 
@@ -345,19 +339,19 @@ protected:
                unsigned long long  max_extrapolation_time = DEFAULT_MAX_EXTRAPOLATION_TIME); 
       
       /** \brief Get the parent nodeID */
-      inline unsigned int getParent(){return parent;};
+      inline std::string getParent(){return parent_;};
       
       /** \brief Set the parent node 
        * return: false => change of parent, cleared history
        * return: true => no change of parent 
        * \param parentID The frameID of the parent
        */
-      bool setParent(unsigned int parentID);
+      bool setParent(std::string parent_id);
 
     private:
       
       /** Internal storage of the parent */
-      unsigned int parent;
+      std::string parent_;
 
     };
 
@@ -365,18 +359,12 @@ protected:
 
   /** \brief The pointers to potential frames that the tree can be made of.
    * The frames will be dynamically allocated at run time when set the first time. */
-  RefFrame** frames;
+  std::map<std::string, RefFrame*> frames_;
   /** \brief A mutex to protect testing and allocating new frames */
   ros::thread::mutex frame_mutex_;
 
   /// How long to cache transform history
   ULLtime cache_time;
-
-  /// Map for storage of name
-  std::map<std::string, unsigned int> nameMap;
-  std::map<unsigned int, std::string> reverseMap;
-  unsigned int last_number; 
-  ros::thread::mutex map_mutex_;
 
   /// whether or not to interpolate or extrapolate
   bool interpolating;
@@ -390,8 +378,8 @@ protected:
    * This struct is how the list of transforms are stored before being passed to computeTransformFromList. */
   typedef struct 
   {
-    std::vector<unsigned int> inverseTransforms;
-    std::vector<unsigned int> forwardTransforms;
+    std::vector<std::string> inverseTransforms;
+    std::vector<std::string> forwardTransforms;
   } TransformLists;
 
  protected: 
@@ -411,7 +399,7 @@ protected:
   std::string numberToName(unsigned int frameid);
 
   /** Find the list of connected frames necessary to connect two different frames */
-  TransformLists  lookUpList(unsigned int target_frame, unsigned int source_frame);
+  TransformLists  lookUpList(const std::string & target_frame, const std::string & source_frame);
   
   /** Compute the transform based on the list of frames */
   NEWMAT::Matrix computeTransformFromList(const TransformLists & list, ULLtime time);

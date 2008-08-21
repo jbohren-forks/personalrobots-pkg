@@ -23,20 +23,20 @@ main(void)
   odompose.x = 1;
   odompose.y = 0;
   odompose.yaw = DTOR(60);
-  odompose.frame = 3;
+  odompose.frame = "3";
   odompose.time = atime;
 
   mappose.x = 30.0;
   mappose.y = 40.0;
   //  mappose.yaw = DTOR(-36.0);
   mappose.yaw = DTOR(90);
-  mappose.frame = 1;
+  mappose.frame = "1";
   mappose.time = atime;
 
   apose.x = 0;
   apose.y = 0;
   apose.yaw = DTOR(0);
-  apose.frame = 3;
+  apose.frame = "3";
   apose.time = atime;
 
   libTF::TFPose diffpose;
@@ -51,7 +51,7 @@ main(void)
   //diffpose.roll = DTOR(90);
   diffpose.roll = DTOR(0);
   //  diffpose.yaw = 0;
-  diffpose.frame = 1;
+  diffpose.frame = "1";
   diffpose.time = atime;
 
   libTF::TFPose2D diffpose2;
@@ -61,7 +61,7 @@ main(void)
   diffpose2.x = diffpose.x;
   diffpose2.y = diffpose.y;
   diffpose2.yaw = diffpose.yaw;
-  diffpose2.frame = 1;
+  diffpose2.frame = "1";
   diffpose2.time = atime;
 
   mTR.setWithEulers("2",
@@ -153,7 +153,7 @@ main(void)
   TFVector2D vec2_in;
   vec2_in.x = 1;
   vec2_in.y = 1;
-  vec2_in.frame = 2;
+  vec2_in.frame = "2";
   vec2_in.time = atime;
 
   TFVector2D vec2 = mTR.transformVector2D("1",vec2_in);
