@@ -1,7 +1,10 @@
 <package>
-  <description>An simple wrapper library around the KNI library to control the Katana arm, and a few programs which use this library.</description>
+  <description>An simple wrapper library around the KNI library to control the Katana arm, and a few programs which use this library.
+
+  NOTE: GPL license is due to KNI library
+  </description>
   <author>Morgan Quigley</author>
-  <license>GPL (necessary since this code links with the KNI library, which is GPL)</license>
+  <license>GPL</license>
   <depend package="std_msgs"/>
   <depend package="std_srvs"/>
   <depend package="roscpp"/>
