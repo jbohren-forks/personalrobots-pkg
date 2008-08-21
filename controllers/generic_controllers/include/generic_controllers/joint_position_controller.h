@@ -161,6 +161,7 @@ public:
   // Services
   bool setCommand(generic_controllers::SetCommand::request &req,
                   generic_controllers::SetCommand::response &resp);
+  void setCommand(double command);
 
   double getCommand();
 

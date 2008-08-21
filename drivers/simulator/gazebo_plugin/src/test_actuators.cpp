@@ -453,8 +453,8 @@ namespace gazebo {
     larm.forearmRollAngle  = mc_.model_.getJoint("forearm_roll_left_joint")->position_;
     larm.wristPitchAngle   = mc_.model_.getJoint("wrist_flex_left_joint")->position_;
     larm.wristRollAngle    = mc_.model_.getJoint("gripper_roll_left_joint")->position_;
-    //larm.gripperForceCmd   = mc_.model_.getJoint("gripper_left_joint")->applied_effort_;
-    //larm.gripperGapCmd     = mc_.model_.getJoint("gripper_left_joint")->position_;
+    larm.gripperForceCmd   = mc_.model_.getJoint("gripper_left_joint")->applied_effort_;
+    larm.gripperGapCmd     = mc_.model_.getJoint("gripper_left_joint")->position_;
     rosnode_->publish("left_pr2arm_pos", larm);
     /* get right arm position */
     rarm.turretAngle       = mc_.model_.getJoint("shoulder_pan_right_joint")->position_;
@@ -464,8 +464,8 @@ namespace gazebo {
     rarm.forearmRollAngle  = mc_.model_.getJoint("forearm_roll_right_joint")->position_;
     rarm.wristPitchAngle   = mc_.model_.getJoint("wrist_flex_right_joint")->position_;
     rarm.wristRollAngle    = mc_.model_.getJoint("gripper_roll_right_joint")->position_;
-    //rarm.gripperForceCmd   = mc_.model_.getJoint("gripper_right_joint")->applied_effort_;
-    //rarm.gripperGapCmd     = mc_.model_.getJoint("gripper_right_joint")->position_;
+    rarm.gripperForceCmd   = mc_.model_.getJoint("gripper_right_joint")->applied_effort_;
+    rarm.gripperGapCmd     = mc_.model_.getJoint("gripper_right_joint")->position_;
     rosnode_->publish("right_pr2arm_pos", rarm);
 
     //PublishFrameTransforms();
@@ -558,12 +558,9 @@ namespace gazebo {
     // controller::Controller* mc3 = mc_.getControllerByName( "gripper_left_controller" );
     // dynamic_cast<controller::JointPositionController*>(mc3)->setCommand(0.2);
 
-    // libTF::Pose3D::Vector cmd_vel;
-    // cmd_vel.x = 1.0;
-    // cmd_vel.y = 0.1;
-    // cmd_vel.z = 0.1;
-    // controller::Controller* bc = mc_.getControllerByName( "base_controller" );
-    // dynamic_cast<controller::BaseController*>(bc)->setCommand(cmd_vel);
+    //controller::Controller* cc = mc_.getControllerByName( "base_controller" );
+    //controller::BaseControllerNode* bc = dynamic_cast<controller::BaseControllerNode*>(cc);
+    //bc->setCommand(0.0,0.0,0.5);
 
     // -------------------------------------------------------------------------------------------------
     // -                                                                                               -
@@ -875,9 +872,9 @@ namespace gazebo {
     rosnode_->advertise<std_msgs::Empty>("transform");
     //rosnode_->advertise<std_msgs::Point3DFloat32>("object_position");
 
-    //rosnode_->subscribe("cmd_vel", velMsg, &TestActuators::CmdBaseVelReceived);
-    rosnode_->subscribe("cmd_leftarmconfig", leftarmMsg, &TestActuators::CmdLeftarmconfigReceived);
-    rosnode_->subscribe("cmd_rightarmconfig", rightarmMsg, &TestActuators::CmdRightarmconfigReceived);
+    rosnode_->subscribe("cmd_vel", velMsg, &TestActuators::CmdBaseVelReceived, this);
+    rosnode_->subscribe("cmd_leftarmconfig", leftarmMsg, &TestActuators::CmdLeftarmconfigReceived,this);
+    rosnode_->subscribe("cmd_rightarmconfig", rightarmMsg, &TestActuators::CmdRightarmconfigReceived,this);
     //rosnode_->subscribe("cmd_leftarm_cartesian", leftarmcartesianMsg, &TestActuators::CmdLeftarmcartesianReceived);
     //rosnode_->subscribe("cmd_rightarm_cartesian", rightarmcartesianMsg, &TestActuators::CmdRightarmcartesianReceived);
     
@@ -897,14 +894,14 @@ namespace gazebo {
     controller::Controller* j6 = mc_.getControllerByName( "wrist_flex_left_controller" );
     controller::Controller* j7 = mc_.getControllerByName( "gripper_roll_left_controller" );
     controller::Controller* j8 = mc_.getControllerByName( "gripper_left_controller" );
-    dynamic_cast<controller::JointPositionController*>(j1)->setCommand(leftarmMsg.turretAngle       );
-    dynamic_cast<controller::JointPositionController*>(j2)->setCommand(leftarmMsg.shoulderLiftAngle );
-    dynamic_cast<controller::JointPositionController*>(j3)->setCommand(leftarmMsg.upperarmRollAngle );
-    dynamic_cast<controller::JointPositionController*>(j4)->setCommand(leftarmMsg.elbowAngle        );
-    dynamic_cast<controller::JointPositionController*>(j5)->setCommand(leftarmMsg.forearmRollAngle  );
-    dynamic_cast<controller::JointPositionController*>(j6)->setCommand(leftarmMsg.wristPitchAngle   );
-    dynamic_cast<controller::JointPositionController*>(j7)->setCommand(leftarmMsg.wristRollAngle    );
-    dynamic_cast<controller::JointPositionController*>(j8)->setCommand(leftarmMsg.gripperGapCmd     );
+    dynamic_cast<controller::JointPositionControllerNode*>(j1)->setCommand(leftarmMsg.turretAngle       );
+    dynamic_cast<controller::JointPositionControllerNode*>(j2)->setCommand(leftarmMsg.shoulderLiftAngle );
+    dynamic_cast<controller::JointPositionControllerNode*>(j3)->setCommand(leftarmMsg.upperarmRollAngle );
+    dynamic_cast<controller::JointPositionControllerNode*>(j4)->setCommand(leftarmMsg.elbowAngle        );
+    dynamic_cast<controller::JointPositionControllerNode*>(j5)->setCommand(leftarmMsg.forearmRollAngle  );
+    dynamic_cast<controller::JointPositionControllerNode*>(j6)->setCommand(leftarmMsg.wristPitchAngle   );
+    dynamic_cast<controller::JointPositionControllerNode*>(j7)->setCommand(leftarmMsg.wristRollAngle    );
+    dynamic_cast<controller::JointPositionControllerNode*>(j8)->setCommand(leftarmMsg.gripperGapCmd     );
     this->lock.unlock();
   }
   void
@@ -920,14 +917,14 @@ namespace gazebo {
     controller::Controller* j6 = mc_.getControllerByName( "wrist_flex_right_controller" );
     controller::Controller* j7 = mc_.getControllerByName( "gripper_roll_right_controller" );
     controller::Controller* j8 = mc_.getControllerByName( "gripper_right_controller" );
-    dynamic_cast<controller::JointPositionController*>(j1)->setCommand(rightarmMsg.turretAngle       );
-    dynamic_cast<controller::JointPositionController*>(j2)->setCommand(rightarmMsg.shoulderLiftAngle );
-    dynamic_cast<controller::JointPositionController*>(j3)->setCommand(rightarmMsg.upperarmRollAngle );
-    dynamic_cast<controller::JointPositionController*>(j4)->setCommand(rightarmMsg.elbowAngle        );
-    dynamic_cast<controller::JointPositionController*>(j5)->setCommand(rightarmMsg.forearmRollAngle  );
-    dynamic_cast<controller::JointPositionController*>(j6)->setCommand(rightarmMsg.wristPitchAngle   );
-    dynamic_cast<controller::JointPositionController*>(j7)->setCommand(rightarmMsg.wristRollAngle    );
-    dynamic_cast<controller::JointPositionController*>(j8)->setCommand(rightarmMsg.gripperGapCmd     );
+    dynamic_cast<controller::JointPositionControllerNode*>(j1)->setCommand(rightarmMsg.turretAngle       );
+    dynamic_cast<controller::JointPositionControllerNode*>(j2)->setCommand(rightarmMsg.shoulderLiftAngle );
+    dynamic_cast<controller::JointPositionControllerNode*>(j3)->setCommand(rightarmMsg.upperarmRollAngle );
+    dynamic_cast<controller::JointPositionControllerNode*>(j4)->setCommand(rightarmMsg.elbowAngle        );
+    dynamic_cast<controller::JointPositionControllerNode*>(j5)->setCommand(rightarmMsg.forearmRollAngle  );
+    dynamic_cast<controller::JointPositionControllerNode*>(j6)->setCommand(rightarmMsg.wristPitchAngle   );
+    dynamic_cast<controller::JointPositionControllerNode*>(j7)->setCommand(rightarmMsg.wristRollAngle    );
+    dynamic_cast<controller::JointPositionControllerNode*>(j8)->setCommand(rightarmMsg.gripperGapCmd     );
     this->lock.unlock();
   }
 
@@ -949,6 +946,9 @@ namespace gazebo {
   TestActuators::CmdBaseVelReceived()
   {
     this->lock.lock();
+    controller::Controller* cc = mc_.getControllerByName( "base_controller" );
+    controller::BaseControllerNode* bc = dynamic_cast<controller::BaseControllerNode*>(cc);
+    bc->setCommand(velMsg.vx,0.0,velMsg.vw);
     this->lock.unlock();
   }
 

@@ -164,6 +164,12 @@ bool JointPositionControllerNode::setCommand(
   return true;
 }
 
+void JointPositionControllerNode::setCommand(double command)
+{
+  c_->setCommand(command);
+}
+
+
 // Return the current position command
 double JointPositionControllerNode::getCommand()
 {
