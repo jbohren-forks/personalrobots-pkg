@@ -47,7 +47,17 @@ BaseController::BaseController() : num_wheels_(0), num_casters_(0), odom_publish
 {
   cmd_vel_.x = 0;
   cmd_vel_.y = 0;
-  cmd_vel_.z = 0.5;
+  cmd_vel_.z = 0;
+  cmd_vel_t_.x = 0;
+  cmd_vel_t_.y = 0;
+  cmd_vel_t_.z = 0;
+  kp_speed_ = KP_SPEED_DEFAULT;
+  base_odom_position_.x = 0;
+  base_odom_position_.y = 0;
+  base_odom_position_.z = 0;
+  base_odom_velocity_.x = 0;
+  base_odom_velocity_.y = 0;
+  base_odom_velocity_.z = 0;
 }
 
 BaseController::~BaseController()
@@ -147,16 +157,18 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
 //      cout << "parent assigned name ::" << base_wheels_[i].parent_->name_ << endl << endl;
 //      cout << "base_wheels" << endl << base_wheels_[i];
   }
-//  std::cout << " assigning robot_ " << std::endl;
+
+  if(num_wheels_ > 0)
+  {
+    link = urdf_model_.getJointLink(base_wheels_[0].name_);
+    robot_desc::URDF::Link::Geometry::Cylinder *wheel_geom = dynamic_cast<robot_desc::URDF::Link::Geometry::Cylinder*> (link->collision->geometry->shape);
+    wheel_radius_ = wheel_geom->radius;
+  }
+  else
+  {
+    wheel_radius_ = 0.079;
+  }
   robot_ = robot;
-
-  cmd_vel_.x = 0;
-  cmd_vel_.y = 0;
-  cmd_vel_.z = 0;
-  cmd_vel_t_.x = 0;
-  cmd_vel_t_.y = 0;
-  cmd_vel_t_.z = 0;
-
 }
 
 bool BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
@@ -428,6 +440,9 @@ void BaseController::computeOdometry(double time)
   odom_msg_.vel.x  = base_odom_velocity_.x;
   odom_msg_.vel.y  = base_odom_velocity_.y;
   odom_msg_.vel.th = base_odom_velocity_.z;
+
+  cout << "Base Odometry: Velocity " << base_odom_velocity_;
+  cout << "Base Odometry: Position " << base_odom_position_;
 }
 
 void BaseController::computeBaseVelocity()

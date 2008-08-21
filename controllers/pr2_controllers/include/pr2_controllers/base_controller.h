@@ -56,7 +56,7 @@
 
 namespace controller
 {
-
+  #define KP_SPEED_DEFAULT 0.1
   /*! \struct
     \brief This class holds information for a joint control parameter structure.
    */
