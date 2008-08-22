@@ -165,6 +165,8 @@ public:
 
   double getCommand();
 
+  double getMeasuredPosition();
+
   bool getActual(generic_controllers::GetActual::request &req,
                   generic_controllers::GetActual::response &resp);
 

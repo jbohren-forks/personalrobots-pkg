@@ -186,6 +186,11 @@ bool JointPositionControllerNode::getActual(
   return true;
 }
 
+double JointPositionControllerNode::getMeasuredPosition()
+{
+  return c_->getMeasuredPosition();
+}
+
 void JointPositionControllerNode::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot)
 {
   ros::node *node = ros::node::instance();

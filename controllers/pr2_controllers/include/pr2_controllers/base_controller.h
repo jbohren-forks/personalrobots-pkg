@@ -184,6 +184,11 @@ namespace controller
      */
     void setPublishCount(int publish_count);
 
+    /*!
+     * \brief returns odometry data
+     */
+    void getOdometry(double &x, double &y, double &w, double &vx, double &vy, double &vw);
+
 
     private:
 
@@ -225,7 +230,6 @@ namespace controller
      * \return point 2D velocity with .z component set to zero.
      */
     libTF::Pose3D::Vector computePointVelocity2D(const libTF::Pose3D::Vector& pos, const  libTF::Pose3D::Vector& vel);
-
 
     /*!
      * \brief update the individual joint controllers
@@ -344,6 +348,7 @@ namespace controller
     void update();
 
     bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+    void getOdometry(double &x, double &y, double &w, double &vx, double &vy, double &vw);
 
     // Services
     bool setCommand(pr2_controllers::SetBaseCommand::request &req,

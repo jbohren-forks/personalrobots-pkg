@@ -429,6 +429,23 @@ bool BaseControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
   return true;
 }
 
+void BaseControllerNode::getOdometry(double &x, double &y, double &w, double &vx, double &vy, double &vw)
+{
+  c_->getOdometry(x,y,w,vx,vy,vw);
+}
+
+void BaseController::getOdometry(double &x, double &y, double &w, double &vx, double &vy, double &vw)
+{
+  x = base_odom_position_.x;
+  y = base_odom_position_.y;
+  w = base_odom_position_.z;
+
+  vx = base_odom_velocity_.x;
+  vy = base_odom_velocity_.y;
+  vw = base_odom_velocity_.z;
+}
+
+
 Pose3D::Vector BaseController::computePointVelocity2D(const Pose3D::Vector& pos, const Pose3D::Vector& vel)
 {
   Pose3D::Vector result;
