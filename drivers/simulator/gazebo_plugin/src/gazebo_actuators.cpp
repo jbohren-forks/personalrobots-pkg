@@ -141,11 +141,26 @@ void GazeboActuators::UpdateChild()
   {
     if (!joints_[i])
       continue;
-    assert(joints_[i]->GetType() == Joint::HINGE);
-    HingeJoint *hj = (HingeJoint*)joints_[i];
-    fake_model_.joints_[i]->position_ = hj->GetAngle();
-    fake_model_.joints_[i]->velocity_ = hj->GetAngleRate();
+
     fake_model_.joints_[i]->applied_effort_ = fake_model_.joints_[i]->commanded_effort_;
+
+    switch(joints_[i]->GetType())
+    {
+    case Joint::HINGE: {
+      HingeJoint *hj = (HingeJoint*)joints_[i];
+      fake_model_.joints_[i]->position_ = hj->GetAngle();
+      fake_model_.joints_[i]->velocity_ = hj->GetAngleRate();
+      break;
+    }
+    case Joint::SLIDER: {
+      SliderJoint *sj = (SliderJoint*)joints_[i];
+      fake_model_.joints_[i]->position_ = sj->GetPosition();
+      fake_model_.joints_[i]->velocity_ = sj->GetPositionRate();
+      break;
+    }
+    default:
+      abort();
+    }
   }
 
   // Reverses the transmissions to propagate the joint position into the actuators.
@@ -171,9 +186,19 @@ void GazeboActuators::UpdateChild()
   {
     if (!joints_[i])
       continue;
-    assert(joints_[i]->GetType() == Joint::HINGE);
-    HingeJoint *hj = (HingeJoint*)joints_[i];
-    hj->SetTorque(fake_model_.joints_[i]->commanded_effort_);
+
+    double effort = fake_model_.joints_[i]->commanded_effort_;
+    switch (joints_[i]->GetType())
+    {
+    case Joint::HINGE:
+      ((HingeJoint*)joints_[i])->SetTorque(effort);
+      break;
+    case Joint::SLIDER:
+      ((SliderJoint*)joints_[i])->SetSliderForce(effort);
+      break;
+    default:
+      abort();
+    }
   }
 }
 
