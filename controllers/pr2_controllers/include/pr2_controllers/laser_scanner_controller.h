@@ -205,6 +205,8 @@ public:
    */
   ~LaserScannerControllerNode();
 
+  double getMeasuredPosition();
+
   void update();
 
   bool initXml(mechanism::Robot *robot, TiXmlElement *config);

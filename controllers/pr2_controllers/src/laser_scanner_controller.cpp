@@ -400,6 +400,12 @@ void LaserScannerControllerNode::update()
   c_->update();
 }
 
+// Return the measured joint position
+double LaserScannerControllerNode::getMeasuredPosition()
+{
+  return c_->getMeasuredPosition();
+}
+
 bool LaserScannerControllerNode::setCommand(
   generic_controllers::SetCommand::request &req,
   generic_controllers::SetCommand::response &resp)
