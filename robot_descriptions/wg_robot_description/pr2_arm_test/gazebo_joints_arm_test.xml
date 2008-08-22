@@ -1,0 +1,43 @@
+<robot name="pr2">
+      <!-- ========================================= -->
+      <!-- left arm array -->
+      <joint name="shoulder_pan_left_joint" >
+          <saturationTorque>1000</saturationTorque>
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="shoulder_pitch_left_joint" >
+          <saturationTorque>1000</saturationTorque>
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="upperarm_roll_left_joint" >
+          <saturationTorque>1000</saturationTorque>
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="elbow_flex_left_joint" >
+          <saturationTorque>100</saturationTorque>
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="forearm_roll_left_joint" >
+          <saturationTorque>100</saturationTorque>
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="wrist_flex_left_joint" >
+          <saturationTorque>100</saturationTorque>
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="gripper_roll_left_joint" >
+          <saturationTorque>100</saturationTorque>
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+  <!-- Special gripper joint -->
+        <joint name="gripper_left_joint" gripper_controller="gripper_left_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+          <saturationTorque>100</saturationTorque>
+          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
+          <left_proximal>finger_l_left_joint</left_proximal>
+          <left_distal>finger_tip_l_left_joint</left_distal>
+          <right_proximal>finger_r_left_joint</right_proximal>
+          <right_distal>finger_tip_r_left_joint</right_distal>
+      </joint>
+      <!-- ========================================= -->
+
+</robot>
