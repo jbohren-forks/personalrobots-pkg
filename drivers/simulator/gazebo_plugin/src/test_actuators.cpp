@@ -898,19 +898,6 @@ namespace gazebo {
     this->lock.unlock();
   }
 
-  void
-  TestActuators::CmdLeftarmcartesianReceived()
-  {
-    this->lock.lock();
-    this->lock.unlock();
-  }
-  void
-  TestActuators::CmdRightarmcartesianReceived()
-  {
-    this->lock.lock();
-    this->lock.unlock();
-  }
-
 
   void
   TestActuators::CmdBaseVelReceived()
@@ -922,6 +909,80 @@ namespace gazebo {
     this->lock.unlock();
   }
 
+
+
+
+
+  void
+  TestActuators::CmdLeftarmcartesianReceived()
+  {
+    this->lock.lock();
+
+    KDL::Frame f;
+    for(int i = 0; i < 9; i++) {
+      f.M.data[i] = cmd_leftarmcartesian.rot[i];
+    }
+    for(int i = 0; i < 3; i++) {
+      f.p.data[i] = cmd_leftarmcartesian.trans[i];
+    }
+
+    bool reachable;
+    //this->PR2Copy->SetArmCartesianPosition(PR2::PR2_LEFT_ARM,f, reachable);
+
+    this->lock.unlock();
+  }
+  void
+  TestActuators::CmdRightarmcartesianReceived()
+  {
+    this->lock.lock();
+
+    KDL::Frame f;
+    for(int i = 0; i < 9; i++) {
+      f.M.data[i] = cmd_rightarmcartesian.rot[i];
+    }
+    for(int i = 0; i < 3; i++) {
+      f.p.data[i] = cmd_rightarmcartesian.trans[i];
+    }
+
+    bool reachable;
+    //this->PR2Copy->SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f, reachable);
+
+    this->lock.unlock();
+  }
+
+  bool TestActuators::SetRightArmCartesian(rosgazebo::MoveCartesian::request &req, rosgazebo::MoveCartesian::response &res)
+  {
+    this->lock.lock();
+    KDL::Frame f;
+    for(int i = 0; i < 9; i++)
+      f.M.data[i] = req.e.rot[i];
+
+    for(int i = 0; i < 3; i++)
+      f.p.data[i] = req.e.trans[i];
+
+          bool reachable;
+    this->PR2Copy->SetArmCartesianPosition(PR2::PR2_RIGHT_ARM,f,reachable);
+          res.reachable = (reachable==false) ? -1 : 0;
+
+    this->lock.unlock();
+          return true;
+  }
+
+  bool TestActuators::OperateRightGripper(rosgazebo::GripperCmd::request &req, rosgazebo::GripperCmd::response &res)
+  {
+          this->lock.lock();
+          this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER_GAP, req.gap, 0);
+          this->lock.unlock();
+          return true;
+  }
+
+  bool TestActuators::reset_IK_guess(rosgazebo::VoidVoid::request &req, rosgazebo::VoidVoid::response &res)
+  {
+    this->lock.lock();
+          this->PR2Copy->GetArmJointPositionCmd(PR2::PR2_RIGHT_ARM, *(this->PR2Copy->right_arm_chain_->q_IK_guess));
+    this->lock.unlock();
+          return true;
+  }
 
   void
   TestActuators::PublishFrameTransforms()
@@ -941,11 +1002,12 @@ namespace gazebo {
     controller::BaseControllerNode* bc = dynamic_cast<controller::BaseControllerNode*>(cc);
     bc->getOdometry(x,y,yaw,vx,vy,vyaw);
 
+    // FIXME: z, roll, pitch not accounted for
     tfs->sendInverseEuler("FRAMEID_ODOM",
                  "base",
                  x,
                  y,
-                 0, //z - base_center_offset_z, /* get infor from xml: half height of base box */
+                 z, //z - base_center_offset_z, /* get infor from xml: half height of base box */
                  yaw,
                  pitch,
                  roll,
@@ -979,7 +1041,7 @@ namespace gazebo {
                  "base",
                  base_torso_offset_x,
                  base_torso_offset_y,
-                 spine_height+base_torso_offset_z, /* FIXME: spine elevator not accounted for */
+                 spine_height+base_torso_offset_z,
                  0.0,
                  0.0,
                  0.0,
