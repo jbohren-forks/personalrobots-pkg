@@ -488,7 +488,9 @@ namespace robot_desc
 	    
 	    /** Check if a specific link is a root in this group */
 	    bool isRoot(const Link* link) const;
-	    
+	    	    
+	    virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
+
 	    std::string              name;
 	    std::vector<std::string> flags;
 	    std::vector<std::string> linkNames;
@@ -496,6 +498,7 @@ namespace robot_desc
 	    std::vector<Link*>       linkRoots;
 	    std::vector<std::string> frameNames;
 	    std::vector<Frame*>      frames;
+	    Map                      data;
 	};
 	
 	/** Constructor. If a filename if specified as argument, that file is parsed. */

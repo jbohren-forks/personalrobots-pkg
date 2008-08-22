@@ -311,8 +311,28 @@ namespace robot_desc {
 	out << std::endl << "Frames:" << std::endl;
 	for (std::map<std::string, Frame*>::const_iterator i = m_frames.begin() ; i != m_frames.end() ; i++)
 	    i->second->print(out, "  ");
+	for (std::map<std::string, Group*>::const_iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
+	    i->second->print(out, "  ");
 	out << std::endl << "Data types:" << std::endl;
 	m_data.print(out, "  ");
+    }
+
+    void URDF::Group::print(std::ostream &out, std::string indent) const
+    {
+	out << indent << "Group [" << name << "]:" << std::endl;
+	out << indent << "  - links: ";
+	for (unsigned int i = 0 ; i < linkNames.size() ; ++i)
+	    out << linkNames[i] << " ";
+	out << std::endl;
+	out << indent << "  - frames: ";
+	for (unsigned int i = 0 ; i < frameNames.size() ; ++i)
+	    out << frameNames[i] << " ";
+	out << std::endl;
+	out << indent << "  - flags: ";
+	for (unsigned int i = 0 ; i < flags.size() ; ++i)
+	    out << flags[i] << " ";
+	out << std::endl;
+	data.print(out, indent + "  ");
     }
     
     void URDF::Map::print(std::ostream &out, std::string indent) const
@@ -915,9 +935,7 @@ namespace robot_desc {
 	{
 	    std::string value;
 	    ss >> value;
-	    const unsigned int length = value.length();
-	    for(unsigned int j = 0 ; j < length ; ++j)
-		value[j] = std::tolower(value[j]);        
+	    value = string_utils::tolower(value);
 	    vals[i] = (value == "true" || value == "yes" || value == "1");
 	    read++;
 	}
@@ -1945,7 +1963,7 @@ namespace robot_desc {
 			    errorLocation(node);
 			}
 		    }
-		    else if (node->ValueStr() == "group" && node->FirstChild() && node->FirstChild()->Type() == TiXmlNode::TEXT)
+		    else if (node->ValueStr() == "group")
 		    {
 			std::string group;
 			std::string flags;
@@ -1976,11 +1994,24 @@ namespace robot_desc {
 			    g->flags.push_back(flag);	      
 			}
 			
-			std::stringstream ss(node->FirstChild()->ValueStr());
-			while (ss.good())
+			for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
 			{
-			    std::string value; ss >> value;
-			    g->linkNames.push_back(value);
+			    if (child->Type() == TiXmlNode::TEXT)
+			    {
+				std::stringstream ss(child->ValueStr());
+				while (ss.good())
+				{
+				    std::string value; ss >> value;
+				    g->linkNames.push_back(value);
+				}				
+			    }
+			    else
+			    {
+				if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "map")
+				    loadMap(child, &g->data);
+				else
+				    ignoreNode(child);
+			    }
 			}
 			
 			if (g->linkNames.empty())
