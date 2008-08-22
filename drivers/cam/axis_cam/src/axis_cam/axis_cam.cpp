@@ -27,12 +27,18 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <stdio.h>
+
+#include <pthread.h>
+
 #include "ros/node.h"
 #include "std_msgs/Image.h"
 #include "std_srvs/PolledImage.h"
 #include "image_utils/image_codec.h"
 
 #include "axis_cam/axis_cam.h"
+
+#include "self_test/self_test.h"
 
 class Axis_cam_node : public ros::node
 {
@@ -44,7 +50,9 @@ public:
   AxisCam *cam;
   int frame_id;
 
-  Axis_cam_node() : ros::node("axis_cam"), codec(&image), cam(NULL), frame_id(0)
+  SelfTest<Axis_cam_node> self_test_;
+
+  Axis_cam_node() : ros::node("axis_cam"), codec(&image), cam(NULL), frame_id(0), self_test_(this)
   {
     advertise<std_msgs::Image>("image");
     advertise_service("polled_image", &Axis_cam_node::polled_image_cb);
@@ -52,7 +60,13 @@ public:
     param("host", axis_host, string("192.168.0.90"));
     printf("axis_cam host set to [%s]\n", axis_host.c_str());
 
+    self_test_.lock();
+
+    self_test_.addTest(&Axis_cam_node::checkMac);
+
     cam = new AxisCam(axis_host);
+    
+    self_test_.unlock();
   }
 
   virtual ~Axis_cam_node()
@@ -72,12 +86,15 @@ public:
 
   bool take_and_send_image()
   {
+    self_test_.lock();
     uint8_t *jpeg;
     uint32_t jpeg_size;
 
     if (!cam->get_jpeg(&jpeg, &jpeg_size))
     {
       log(ros::ERROR, "woah! AxisCam::get_jpeg returned an error");
+      self_test_.unlock();
+      sched_yield();
       return false;
     }
 
@@ -90,7 +107,36 @@ public:
 
     publish("image", image);
 
+    self_test_.unlock();
+
+    sched_yield();
+
     return true;
+  }
+
+  void checkMac(robot_msgs::DiagnosticStatus& status)
+  {
+    char cmd[100];
+    snprintf(cmd, 100, "arp -n %s", axis_host.c_str());
+    
+    FILE* f = popen(cmd, "r");
+    char buf1[100];
+    char buf2[100];
+    char buf3[100];
+    char buf4[100];
+
+    if (fscanf(f, "Address HWtype HWaddress Flags Mask Iface\n%s %s %s %s", buf1, buf2, buf3, buf4) < 4)
+    {
+      status.level = 2;
+      status.message = "No mac address found in ARP table.";
+    }
+    else
+    {
+      status.level = 0;
+      status.message = buf3;
+      self_test_.setID(buf3);
+    }
+    fclose(f);
   }
 };
 
@@ -105,6 +151,9 @@ int main(int argc, char **argv)
       a.log(ros::ERROR,"couldn't take image.");
       //      break;
     }
+
+  a.self_test_.lock();
+  a.self_test_.unlock();
 
   ros::fini();
   return 0;
