@@ -12,27 +12,25 @@
 #include <cassert>
 #include <stdlib.h>
 #include <sstream>
-
-#define Matrix NEWMAT::Matrix
-//using namespace NEWMAT;
+#include <fstream>
 
 typedef struct 
 {
   string descriptor;
-  Matrix center;
+  NEWMAT::Matrix center;
   float theta;
-  Matrix vals;
+  NEWMAT::Matrix vals;
 } weak_classifier;
 
 typedef struct 
 {
   int label;
-  map<string, Matrix> features;
+  map<string, NEWMAT::Matrix> features;
 } object;
 
 typedef float Real;
 
-inline float euc(Matrix a, Matrix b)
+inline float euc(NEWMAT::Matrix a, NEWMAT::Matrix b)
 {
   assert(a.Ncols() == 1 && b.Ncols() == 1);
   return (a-b).NormFrobenius();
@@ -41,28 +39,20 @@ inline float euc(Matrix a, Matrix b)
 class DorylusDataset {
  public:
   vector<object> objs_;
-  Matrix ymc_;
+  NEWMAT::Matrix ymc_;
   unsigned int nClasses_;
 
- DorylusDataset(unsigned int nClasses) : nClasses_(nClasses)
-  
+ DorylusDataset(unsigned int nClasses) : nClasses_(nClasses)  
   {
+    version_string_ = std::string("#DORYLUS DATASET LOG v0.1");
   }
 
-  std::string status()
-  {
-    ostringstream oss (ostringstream::out);
-
-    oss << "DorylusDataset status: \n";
-    oss << "  nClasses: " << nClasses_ << "\n";
-    return oss.str();
-  }
-
-  void setObjs(vector<object> *objs) {
-    objs_ = *objs;
-    ymc_ = Matrix(nClasses_, objs_.size()); ymc_=0.0;
-    std::cout << "ymc_: " << std::endl << ymc_ << std::endl;
-  }
+  std::string status();
+  std::string displayFeatures();
+  void setObjs(const vector<object> &objs);
+  bool save(std::string filename);
+  bool load(std::string filename);
+  std::string version_string_;
 };
 
 
