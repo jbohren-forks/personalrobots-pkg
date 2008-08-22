@@ -131,6 +131,7 @@ public:
 	
 	m_active = true;
 	m_shouldPublish = false;
+	m_acceptScans = false;
 	random_utils::init(&m_rng);
 
 	/* create a thread that handles the publishing of the data */	
@@ -158,6 +159,11 @@ public:
 	addSelfSeeBodies();
     }
     
+    void setAcceptScans(bool acceptScans)
+    {
+	m_acceptScans = acceptScans;
+    }
+    
 private:
     
     struct RobotPart
@@ -179,6 +185,10 @@ private:
     
     void pointCloudCallback(void)
     {
+	/* If we're not ready to accept scans yet, discard the data */
+	if (!m_acceptScans)
+	    return;
+	
 	/* The idea is that if processing of previous input data is
 	   not done, data will be discarded. Hopefully this discarding
 	   of data will not happen, but we don't want the node to
@@ -436,7 +446,7 @@ private:
     
     pthread_t                       *m_publishingThread;
     ros::thread::mutex               m_worldDataMutex;
-    bool                             m_active, m_shouldPublish;
+    bool                             m_active, m_shouldPublish, m_acceptScans;
     random_utils::rngState           m_rng;
 
 };
@@ -457,6 +467,7 @@ int main(int argc, char **argv)
     {
 	World3DMap *map = new World3DMap(argv[1]);
 	map->loadRobotDescription();
+	map->setAcceptScans(true);
 	map->spin();
 	map->shutdown();
 	delete map;
