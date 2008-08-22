@@ -137,7 +137,7 @@
       <!-- left arm array -->
   <controller name="shoulder_pan_left_controller" topic="shoulder_pan_left_controller" type="JointPositionControllerNode">
       <joint name="shoulder_pan_left_joint" >
-        <pid p="1000" d="0" i="0" iClamp="0" />
+        <pid p="1000" d="100" i="50" iClamp="100" />
         <map name="shoulder_pan_left_data" flag="gazebo">
           <elem key="saturationTorque">1000</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
@@ -147,7 +147,7 @@
   </controller>
   <controller name="shoulder_pitch_left_controller" topic="shoulder_pitch_left_controller" type="JointPositionControllerNode">
       <joint name="shoulder_pitch_left_joint" >
-        <pid p="10000" d="0" i="0" iClamp="0" />
+        <pid p="3000" d="150" i="300" iClamp="500" />
         <map name="shoulder_pitch_left_data" flag="gazebo">
           <elem key="saturationTorque">1000</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
@@ -157,7 +157,7 @@
   </controller>
   <controller name="upperarm_roll_left_controller" topic="upperarm_roll_left_controller" type="JointPositionControllerNode">
       <joint name="upperarm_roll_left_joint" >
-        <pid p="1000" d="0" i="0" iClamp="0" />
+        <pid p="200" d="5" i="2" iClamp="100" />
         <map name="upperarm_roll_left_data" flag="gazebo">
           <elem key="saturationTorque">1000</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>
@@ -330,9 +330,9 @@
         </map>
       </joint>
   </controller>
-  <controller name="tilt_laser_controller" topic="tilt_laser_controller" type="JointPositionControllerNode">
+  <controller name="tilt_laser_controller" topic="tilt_laser_controller" type="LaserScannerControllerNode">
       <joint name="tilt_laser_joint" >
-        <pid p="0.5" d="0" i="0" iClamp="20" />
+        <pid p="0.4" d="0" i="0" iClamp="0.1" />
         <map name="tilt_laser_data" flag="gazebo">
           <elem key="saturationTorque">500</elem>
           <elem key="explicitDampingCoefficient">1.0</elem>

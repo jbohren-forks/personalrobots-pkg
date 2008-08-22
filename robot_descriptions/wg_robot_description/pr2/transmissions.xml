@@ -244,9 +244,9 @@
   <transmission type="SimpleTransmission" name="tilt_laser_trans">
     <actuator name="tilt_laser_motor" />
     <joint name="tilt_laser_joint" />
-    <mechanicalReduction>1</mechanicalReduction>
-    <motorTorqueConstant>1</motorTorqueConstant>
-    <pulsesPerRevolution>90000</pulsesPerRevolution>
+    <mechanicalReduction>6</mechanicalReduction> <!-- per hw test dl 2008 08 22 -->
+    <motorTorqueConstant>-0.538</motorTorqueConstant> <!-- per hw test dl 2008 08 22 -->
+    <pulsesPerRevolution>10000</pulsesPerRevolution> <!-- per hw test dl 2008 08 22 -->
   </transmission>
 
 </robot>

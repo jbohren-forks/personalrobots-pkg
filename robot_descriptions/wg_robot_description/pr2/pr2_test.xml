@@ -675,44 +675,7 @@
   <!-- End template definitions for ease of reuse -->
   
   
-  <!-- Begin base definition -->
-  
-  <link name="base"><!-- link specifying the base of the robot -->
-    
-    <parent name=" world" />
-    
-    <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
-    <origin xyz=" robot_inital_position_x robot_inital_position_y robot_inital_position_z " rpy=" 0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
-    
-    <joint name="base_joint" />
-    
-    <inertial>
-      <mass value="70.750964" />
-      <com xyz=" 0 0 0 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
-      <inertia ixx="5.652232699207"  ixy="-0.009719934438"  ixz="1.293988226423" iyy="5.669473158652" iyz="-0.007379583694" izz="3.683196351726" />
-    </inertial> 
-    
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
-      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <map name="gazebo_material" flag="gazebo">
-        <elem key="material">Gazebo/Green</elem>
-      </map>
-      <geometry name="pr2_base_mesh_file">
-        <mesh filename="base" />
-      </geometry>
-    </visual> 
-    
-    <collision>
-      <origin xyz="0 0 base_size_z/2" rpy="0.0 0.0 0.0 " /> <!-- default box is centered at the origin -->
-      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
-      <geometry name="base_collision_geom"> <!-- think about putting mesh here as well -->
-        <box size="base_size_x base_size_y base_size_z" />
-      </geometry>
-    </collision>
-    
-  </link>
-  
+ 
   <!-- joint blocks -->
   <joint name="base_joint" type="planar"> 
   </joint>
@@ -838,7 +801,7 @@
   <joint name="tilt_laser_joint" type="revolute"> 
     <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
     <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    <limit effort="10" velocity="5" />
+    <limit min= "-0.785" max="1.48" effort="0.5292" velocity="1256.0" />
   </joint>
   <joint name="base_laser_joint" type="fixed"> 
     <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
@@ -887,7 +850,44 @@
   
   
   <!-- link blocks -->
-  <link name="caster_front_left">
+  <!-- Begin base definition -->
+  
+  <link name="base"><!-- link specifying the base of the robot -->
+    
+    <parent name=" world" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
+    <origin xyz=" robot_inital_position_x robot_inital_position_y robot_inital_position_z " rpy=" 0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
+    
+    <joint name="base_joint" />
+    
+    <inertial>
+      <mass value="70.750964" />
+      <com xyz=" 0 0 0 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <inertia ixx="5.652232699207"  ixy="-0.009719934438"  ixz="1.293988226423" iyy="5.669473158652" iyz="-0.007379583694" izz="3.683196351726" />
+    </inertial> 
+    
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/Green</elem>
+      </map>
+      <geometry name="pr2_base_mesh_file">
+        <mesh filename="base" />
+      </geometry>
+    </visual> 
+    
+    <collision>
+      <origin xyz="0 0 base_size_z/2" rpy="0.0 0.0 0.0 " /> <!-- default box is centered at the origin -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="base_collision_geom"> <!-- think about putting mesh here as well -->
+        <box size="base_size_x base_size_y base_size_z" />
+      </geometry>
+    </collision>
+    
+  </link>
+   <link name="caster_front_left">
     <parent name=" base" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" base_caster_offset_x base_caster_offset_y base_caster_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
