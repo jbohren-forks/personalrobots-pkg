@@ -118,9 +118,13 @@ public:
 	
 	bool InitGeneral();
 
-	void GetCoordFromState(int stateID, int& x, int& y);
+	void GetCoordFromState(int stateID, int& x, int& y) const;
+
+  int GetStateFromCoord(int x, int y);
+
 
 	const EnvNAV2DConfig_t* GetEnvNavConfig();
+
 
     ~EnvironmentNAV2D(){};
 

@@ -707,10 +707,20 @@ void EnvironmentNAV2D::PrintState(int stateID, bool bVerbose, FILE* fOut /*=NULL
 
 }
 
-void EnvironmentNAV2D::GetCoordFromState(int stateID, int& x, int& y) {
+void EnvironmentNAV2D::GetCoordFromState(int stateID, int& x, int& y) const {
   EnvNAV2DHashEntry_t* HashEntry = EnvNAV2D.StateID2CoordTable[stateID];
   x = HashEntry->X;
   y = HashEntry->Y;
+}
+
+int EnvironmentNAV2D::GetStateFromCoord(int x, int y) {
+
+   EnvNAV2DHashEntry_t* OutHashEntry;
+    if((OutHashEntry = GetHashEntry(x, y)) == NULL){
+        //have to create a new entry
+        OutHashEntry = CreateNewHashEntry(x, y);
+    }
+    return OutHashEntry->stateID;
 }
 
 const EnvNAV2DConfig_t* EnvironmentNAV2D::GetEnvNavConfig() {
