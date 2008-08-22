@@ -53,17 +53,20 @@ AxisCam::AxisCam(string ip) : ip(ip)
   curl_easy_setopt(jpeg_curl, CURLOPT_URL, image_url);
   curl_easy_setopt(jpeg_curl, CURLOPT_WRITEFUNCTION, AxisCam::jpeg_write);
   curl_easy_setopt(jpeg_curl, CURLOPT_WRITEDATA, this);
+  curl_easy_setopt(jpeg_curl, CURLOPT_TIMEOUT, 1);
 
   getptz_curl = curl_easy_init();
   curl_easy_setopt(getptz_curl, CURLOPT_URL, ptz_url);
   curl_easy_setopt(getptz_curl, CURLOPT_WRITEFUNCTION, AxisCam::ptz_write);
   curl_easy_setopt(getptz_curl, CURLOPT_WRITEDATA, this);
   curl_easy_setopt(getptz_curl, CURLOPT_POSTFIELDS, "query=position");
+  curl_easy_setopt(getptz_curl, CURLOPT_TIMEOUT, 1);
 
   setptz_curl = curl_easy_init();
   curl_easy_setopt(setptz_curl, CURLOPT_URL, ptz_url);
   curl_easy_setopt(setptz_curl, CURLOPT_WRITEFUNCTION, AxisCam::ptz_write);
   curl_easy_setopt(setptz_curl, CURLOPT_WRITEDATA, this);
+  curl_easy_setopt(setptz_curl, CURLOPT_TIMEOUT, 1);
 
   printf("Getting images from [%s]\n", oss.str().c_str());
   if (!query_params())

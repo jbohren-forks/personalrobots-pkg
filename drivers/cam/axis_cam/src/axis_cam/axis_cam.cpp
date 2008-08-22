@@ -57,7 +57,7 @@ public:
     advertise<std_msgs::Image>("image");
     advertise_service("polled_image", &Axis_cam_node::polled_image_cb);
 
-    param("host", axis_host, string("192.168.0.90"));
+    param("~host", axis_host, string("192.168.0.90"));
     printf("axis_cam host set to [%s]\n", axis_host.c_str());
 
     self_test_.lock();
@@ -114,6 +114,29 @@ public:
     return true;
   }
 
+
+  bool spin()
+  {
+
+    while (ok())
+    {
+      if (!take_and_send_image())
+      {
+        log(ros::ERROR,"couldn't take image.");
+      
+      }
+    }
+
+    return true;
+
+  }
+
+
+  void checkImage(robot_msgs::DiagnosticStatus& status)
+  { 
+   
+  }
+
   void checkMac(robot_msgs::DiagnosticStatus& status)
   {
     char cmd[100];
@@ -145,16 +168,10 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
 
   Axis_cam_node a;
-  while (a.ok())
-    if (!a.take_and_send_image())
-    {
-      a.log(ros::ERROR,"couldn't take image.");
-      //      break;
-    }
 
-  a.self_test_.lock();
-  a.self_test_.unlock();
+  a.spin();
 
   ros::fini();
+
   return 0;
 }
