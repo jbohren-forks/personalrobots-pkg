@@ -912,7 +912,7 @@ namespace gazebo {
 
 
 
-
+#if 0
   void
   TestActuators::CmdLeftarmcartesianReceived()
   {
@@ -983,6 +983,7 @@ namespace gazebo {
     this->lock.unlock();
           return true;
   }
+#endif
 
   void
   TestActuators::PublishFrameTransforms()
@@ -1398,8 +1399,6 @@ namespace gazebo {
                  timeMsg.rostime);
 
     // tilt laser location
-    double tmpPitch, tmpPitchRate;
-    //this->PR2Copy->hw.GetJointServoCmd(PR2::HEAD_LASER_PITCH, &tmpPitch, &tmpPitchRate );
     controller::Controller* tlc = mc_.getControllerByName( "tilt_laser_controller" );
     double tilt_laser_angle = dynamic_cast<controller::JointPositionControllerNode*>(tlc)->getMeasuredPosition();
     tfs->sendEuler("tilt_laser",
@@ -1419,6 +1418,8 @@ namespace gazebo {
     double tmpSteerFR, tmpVelFR;
     double tmpSteerRL, tmpVelRL;
     double tmpSteerRR, tmpVelRR;
+    //controller::Controller* bcsw = mc_.getControllerByName( "base_controller" );
+    //double tilt_laser_angle = dynamic_cast<controller::BaseControllerNode*>(bcsw)->getMeasuredPosition();
     //this->PR2Copy->hw.GetJointServoCmd(PR2::CASTER_FL_STEER, &tmpSteerFL, &tmpVelFL );
     //this->PR2Copy->hw.GetJointServoCmd(PR2::CASTER_FR_STEER, &tmpSteerFR, &tmpVelFR );
     //this->PR2Copy->hw.GetJointServoCmd(PR2::CASTER_RL_STEER, &tmpSteerRL, &tmpVelRL );

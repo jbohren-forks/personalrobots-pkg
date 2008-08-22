@@ -1657,7 +1657,7 @@
         <elem key="material">Gazebo/PioneerBody</elem>
       </map>
       <geometry name="pr2_tilt_laser_mesh_file">
-        <mesh filename="hokuyo" /> <!-- mesh specified using an obj file --> 
+        <mesh filename="hok_tilt" /> <!-- mesh specified using an obj file --> 
       </geometry>
     </visual>
     
@@ -1718,7 +1718,7 @@
         <elem key="material">Gazebo/PioneerBody</elem>
       </map>
       <geometry name="pr2_base_laser_mesh_file">
-        <mesh filename="hokuyo" scale="0.5 0.5 0.5"/> <!-- mesh specified using an obj file --> 
+        <mesh scale="0.001 0.001 0.001"/> <!-- mesh specified using an obj file --> 
       </geometry>
     </visual>
     
