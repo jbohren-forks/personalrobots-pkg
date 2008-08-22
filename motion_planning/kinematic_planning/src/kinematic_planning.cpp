@@ -98,6 +98,7 @@ Provides (name/type):
 #include "SpaceInformationXMLModel.h"
 
 #include <profiling_utils/profiler.h>
+#include <string_utils/string_utils.h>
 
 #include <iostream>
 #include <sstream>
@@ -115,11 +116,6 @@ public:
 											       robot_model)
     {
 	advertise_service("plan_kinematic_path_state", &KinematicPlanning::plan);
-
-
-	double sphere[3] = {0.7, 0.5, 0.7 };
-	m_collisionSpace->addPointCloud(1, sphere, 0.2);
-
     }
     
     ~KinematicPlanning(void)
@@ -285,10 +281,11 @@ public:
 	model->collisionSpaceID = 0;
 	model->collisionSpace = m_collisionSpace;
         model->kmodel = m_kmodel;
+	model->groupName = m_kmodel->name;
 	createMotionPlanningInstances(model);
 	
 	/* remember the model by the robot's name */
-	m_models[m_urdf->getRobotName()] = model;
+	m_models[model->groupName] = model;
 	
 	printf("=======================================\n");	
 	m_kmodel->printModelInfo();
@@ -305,8 +302,9 @@ public:
 	    model->collisionSpace = m_collisionSpace;
 	    model->kmodel = m_kmodel;
 	    model->groupID = m_kmodel->getGroupID(groups[i]);
+	    model->groupName = groups[i];
 	    createMotionPlanningInstances(model);
-	    m_models[groups[i]] = model;
+	    m_models[model->groupName] = model;
 	}
     }
     
@@ -352,7 +350,8 @@ private:
 	collision_space::EnvironmentModel *collisionSpace;    	
 	unsigned int                       collisionSpaceID;
 	planning_models::KinematicModel   *kmodel;
-	int                                groupID;	
+	std::string                        groupName;
+	int                                groupID;
     };
     
     class StateValidityPredicate : public ompl::SpaceInformation::StateValidityChecker
@@ -377,7 +376,13 @@ private:
 	Model *m_model;	
     };
     
-	
+    robot_desc::URDF::Group* getURDFGroup(const std::string &gname)
+    {
+	std::string urdfGroup = gname;
+	urdfGroup.erase(0, urdfGroup.find_last_of(":") + 1);
+	return m_urdf->getGroup(urdfGroup);
+    }
+    
     void createMotionPlanningInstances(Model* model)
     {
 	addRRTInstance(model);
@@ -386,29 +391,81 @@ private:
     void addRRTInstance(Model *model)
     {
 	Planner p;
+	std::cout << "Adding RRT instance for motion planning: " << model->groupName << std::endl;
+	
 	p.si       = new SpaceInformationXMLModel(model->kmodel, model->groupID);
 	p.svc      = new StateValidityPredicate(model);
 	p.si->setStateValidityChecker(p.svc);
+	
 	p.smoother = new ompl::PathSmootherKinematic(p.si);
-	p.smoother->setMaxSteps(20);	
-	p.mp        = new ompl::RRT(p.si);
+	p.smoother->setMaxSteps(20);
+	
+	ompl::RRT_t rrt = new ompl::RRT(p.si);
+	p.mp            = rrt;
+	
+	robot_desc::URDF::Group *group = getURDFGroup(model->groupName);
+	if (group)
+	{
+	    const robot_desc::URDF::Map &data = group->data;
+	    std::map<std::string, std::string> info = data.getMapTagValues("plan", "RRT");
+	    
+	    if (info.find("range") != info.end())
+	    {
+		double range = string_utils::fromString<double>(info["range"]);
+		rrt->setRange(range);
+		std::cout << "Range is set to " << range << std::endl;		
+	    }
+	    
+	    if (info.find("goal_bias") != info.end())
+	    {	
+		double bias = string_utils::fromString<double>(info["goal_bias"]);
+		rrt->setGoalBias(bias);
+		std::cout << "Goal bias is set to " << bias << std::endl;
+	    }
+	}	
+	
 	p.si->setup();
 	model->planners.push_back(p);
-	std::cout << "Added RRT instance for motion planning" << std::endl;
     }
     
     void addLazyRRTInstance(Model *model)
     {
 	Planner p;
+	std::cout << "Added LazyRRT instance for motion planning: " << model->groupName << std::endl;
+
 	p.si       = new SpaceInformationXMLModel(model->kmodel, model->groupID);
 	p.svc      = new StateValidityPredicate(model);
 	p.si->setStateValidityChecker(p.svc);
+	
 	p.smoother = new ompl::PathSmootherKinematic(p.si);
-	p.smoother->setMaxSteps(20);	
-	p.mp        = new ompl::LazyRRT(p.si);
+	p.smoother->setMaxSteps(20);
+	
+	ompl::LazyRRT_t lrrt = new ompl::LazyRRT(p.si);
+	p.mp                 = lrrt;	
+
+	robot_desc::URDF::Group *group = getURDFGroup(model->groupName);
+	if (group)
+	{
+	    const robot_desc::URDF::Map &data = group->data;
+	    std::map<std::string, std::string> info = data.getMapTagValues("plan", "LazyRRT");
+	     
+	    if (info.find("range") != info.end())
+	    {
+		double range = string_utils::fromString<double>(info["range"]);
+		lrrt->setRange(range);
+		std::cout << "Range is set to " << range << std::endl;		
+	    }
+	    
+	    if (info.find("goal_bias") != info.end())
+	    {	
+		double bias = string_utils::fromString<double>(info["goal_bias"]);
+		lrrt->setGoalBias(bias);
+		std::cout << "Goal bias is set to " << bias << std::endl;
+	    }
+	}
+	
 	p.si->setup();
 	model->planners.push_back(p);
-	std::cout << "Added LazyRRT instance for motion planning" << std::endl;
     }
 
     std::map<std::string, Model*> m_models;

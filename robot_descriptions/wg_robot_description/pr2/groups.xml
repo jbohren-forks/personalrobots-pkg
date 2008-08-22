@@ -38,6 +38,14 @@
     forearm_roll_left
     wrist_flex_left
     gripper_roll_left
+
+    <map name="RRT" flag="plan">
+      <elem key="range" value="0.75" />
+    </map>
+    
+    <map name="LazyRRT" flag="plan">
+      <elem key="range" value="0.75" />
+    </map>
   </group>
   
   <group name="rightArm" flags="plan kinematic">
@@ -50,8 +58,12 @@
     wrist_flex_right
     gripper_roll_right
 
-    <map name="rrt" flag="plan">
-      <elem key="rho" value="0.5" />
+    <map name="RRT" flag="plan">
+      <elem key="range" value="0.75" />
+    </map>
+
+    <map name="LazyRRT" flag="plan">
+      <elem key="range" value="0.75" />
     </map>
   </group>
 

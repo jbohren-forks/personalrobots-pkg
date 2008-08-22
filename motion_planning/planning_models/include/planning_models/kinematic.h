@@ -344,9 +344,6 @@ namespace planning_models
 	    
 	    void computeTransforms(const double *params, int groupID = -1);
 	    
-	    /** The name of the robot */
-	    std::string         name;
-	    
 	    /** The model that owns this robot */
 	    KinematicModel     *owner;
 
@@ -421,6 +418,9 @@ namespace planning_models
 	void printModelInfo(std::ostream &out = std::cout) const;
 	void printLinkPoses(std::ostream &out = std::cout) const;
 	
+	/** The name of the model */
+	std::string         name;
+	    
 	/** A transform that is applied to the entire model */
 	libTF::Pose3D       rootTransform;
 	

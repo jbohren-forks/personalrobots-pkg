@@ -264,7 +264,8 @@ void planning_models::KinematicModel::build(const robot_desc::URDF &model, bool 
     
     m_built = true;
     m_ignoreSensors = ignoreSensors;
-    
+    name = model.getRobotName();
+
     /* construct a map for the available groups */
     constructGroupList(model);
     groupStateIndexList.resize(m_groups.size());
@@ -276,7 +277,6 @@ void planning_models::KinematicModel::build(const robot_desc::URDF &model, bool 
 	if (link->canSense() && m_ignoreSensors)
 	    continue;
 	Robot                  *rb   = new Robot(this);
-	rb->name = model.getRobotName();
 	rb->groupStateIndexList.resize(m_groups.size());
 	rb->groupChainStart.resize(m_groups.size());
 	rb->chain = createJoint(link);
@@ -373,7 +373,7 @@ void planning_models::KinematicModel::buildChainJ(Robot *robot, Link *parent, Jo
     for (unsigned int k = 0 ; k < urdfLink->groups.size() ; ++k)
 	if (urdfLink->groups[k]->isRoot(urdfLink))
 	{
-	    std::string gname = robot->name + "::" + urdfLink->groups[k]->name;
+	    std::string gname = name + "::" + urdfLink->groups[k]->name;
 	    if (m_groupsMap.find(gname) != m_groupsMap.end())
 		robot->groupChainStart[m_groupsMap[gname]].push_back(joint);
 	}
