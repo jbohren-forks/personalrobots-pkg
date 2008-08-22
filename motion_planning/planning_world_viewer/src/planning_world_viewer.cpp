@@ -112,9 +112,6 @@ public:
 	m_displayRobot = true;
 	m_displayObstacles = true;
 	m_checkCollision = false;
-
-	double sphere[3] = {0.7, 0.5, 0.7 };
-	m_collisionSpace->addPointCloud(1, sphere, 0.2);	
     }
     
     ~PlanningWorldViewer(void)

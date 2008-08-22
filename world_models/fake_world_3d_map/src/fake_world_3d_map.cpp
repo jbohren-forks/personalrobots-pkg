@@ -107,7 +107,10 @@ public:
 	{
 	case 1:
 	    oneObstacle();
-	    break;	    
+	    break;
+	case 3:
+	    planeX();
+	    break;
 	default:
 	    break;
 	}
@@ -122,9 +125,15 @@ private:
     void oneObstacle(void)
     {
 	m_toPublish.set_pts_size(1);
-	m_toPublish.pts[0].x = 0.0;
-	m_toPublish.pts[0].y = 0.0;
-	m_toPublish.pts[0].z = 0.0;
+	m_toPublish.pts[0].x = 0.6;
+	m_toPublish.pts[0].y = 0.35;
+	m_toPublish.pts[0].z = 0.75;
+    }
+    
+    void planeX(void)
+    {
+	//	for (int i = 0 ; i < 20 ; ++i)
+	//	    for (int j = 0 ; j < 20 ;
     }
     
     std_msgs::PointCloudFloat32 m_toPublish; 
@@ -147,6 +156,7 @@ int main(int argc, char **argv)
 	FakeWorld3DMap *map = new FakeWorld3DMap();
 	int index = 0;
 	sscanf(argv[1], "%d", &index);	
+	sleep(1);	
 	map->sendMap(index);
 	map->shutdown();
 	delete map;
