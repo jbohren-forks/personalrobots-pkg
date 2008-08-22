@@ -84,7 +84,7 @@ public:
 
   list<CamData> cams_;
   
-  int count_;
+  unsigned int count_;
 
   void checkAndSetFeature(CamData& cd, string param_name, dc1394feature_t feature)
   {
@@ -415,6 +415,14 @@ public:
         }
 
         publish(cd.name + "/images", img_);
+
+        // This seemsl like a hack people are depending on.
+        if (count_ < cams_.size())
+        {
+          std_msgs::String cal_params;
+          cal_params.data = v->getCalParams();
+          publish(cd.name + string("/cal_params"), cal_params);
+        }
 
         if (mode == videre_cam::PROC_MODE_DISPARITY || mode == videre_cam::PROC_MODE_DISPARITY_RAW)
         {

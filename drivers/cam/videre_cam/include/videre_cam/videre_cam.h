@@ -92,6 +92,8 @@ namespace videre_cam
 
     void setHDR(bool hdr);
 
+    std::string getCalParams() {return cal_params_;}
+
     NEWMAT::Matrix& getLProj() { return lproj_; }
     NEWMAT::Matrix& getRProj() { return rproj_; };
     NEWMAT::Matrix& getLRect() { return lrect_; };
