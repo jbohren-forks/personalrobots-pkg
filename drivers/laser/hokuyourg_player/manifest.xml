@@ -4,8 +4,7 @@
   <license>BSD</license>
   <depend package="roscpp" />
   <depend package="std_msgs" />
-  <depend package="robot_srvs" />
   <depend package="urg_driver" />
-  <depend package="rosthread" />
+  <depend package="self_test" />
   <url>http://pr.willowgarage.com/wiki/Hokuyo_TOP-URG</url>
 </package>

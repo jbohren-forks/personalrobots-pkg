@@ -102,12 +102,11 @@ Reads the following parameters from the parameter server
 #include <pthread.h>
 
 #include "ros/node.h"
-#include "rosthread/mutex.h"
 #include "ros/time.h"
 
 #include "std_msgs/LaserScan.h"
-#include "robot_srvs/SelfTest.h"
 
+#include "self_test/self_test.h"
 
 #include "urg_laser.h"
 
@@ -119,11 +118,11 @@ private:
   URG::laser_scan_t  scan;
   URG::laser_config_t cfg;
   bool running;
-  ros::thread::mutex testing_mutex;
   
   int count;
   ros::Time next_time;
-  
+
+  SelfTest<HokuyoNode> self_test_;
 
 public:
   URG::laser urg;
@@ -144,10 +143,9 @@ public:
 
   string id;
 
-  HokuyoNode() : ros::node("urglaser"), running(false), count(0)
+  HokuyoNode() : ros::node("urglaser"), running(false), count(0), self_test_(this)
   {
     advertise<std_msgs::LaserScan>("scan", 100);
-    advertise_service("~self_test", &HokuyoNode::SelfTest);
 
     param("~min_ang", min_ang, -90.0);
     min_ang *= M_PI/180;
@@ -165,6 +163,20 @@ public:
     param("~calibrate_time", calibrate_time, true);
 
     param("~frameid", frameid, string("FRAMEID_LASER"));
+
+    self_test_.setPretest( &HokuyoNode::pretest );
+    self_test_.addTest( &HokuyoNode::InterruptionTest );
+    self_test_.addTest( &HokuyoNode::ConnectTest );
+    self_test_.addTest( &HokuyoNode::IDTest );
+    self_test_.addTest( &HokuyoNode::StatusTest );
+    self_test_.addTest( &HokuyoNode::LaserTest );
+    self_test_.addTest( &HokuyoNode::PolledDataTest );
+    self_test_.addTest( &HokuyoNode::StreamedDataTest );
+    self_test_.addTest( &HokuyoNode::StreamedIntensityDataTest );
+    self_test_.addTest( &HokuyoNode::LaserOffTest );
+    self_test_.addTest( &HokuyoNode::DisconnectTest );
+    self_test_.addTest( &HokuyoNode::ResumeTest );
+
   }
 
   ~HokuyoNode()
@@ -176,7 +188,7 @@ public:
   {
     stop();
 
-    testing_mutex.lock();
+    self_test_.lock();
     try
     {
       urg.open(port.c_str());
@@ -193,7 +205,7 @@ public:
 
       if (status != 0) {
         printf("Failed to request scans from URG.  Status: %d.\n", status);
-        testing_mutex.unlock();
+        self_test_.unlock();
         return -1;
       }
 
@@ -201,19 +213,19 @@ public:
 
     } catch (URG::exception& e) {
       printf("Exception thrown while starting urg.\n%s\n", e.what());
-      testing_mutex.unlock();
+      self_test_.unlock();
       return -1;
     }
 
     next_time = ros::Time::now();
 
-    testing_mutex.unlock();
+    self_test_.unlock();
     return(0);
   }
 
   int stop()
   {
-    testing_mutex.lock();
+    self_test_.lock();
     if(running)
     {
       try
@@ -225,13 +237,13 @@ public:
       running = false;
     }
 
-    testing_mutex.unlock();
+    self_test_.unlock();
     return 0;
   }
 
   int publish_scan()
   {
-    testing_mutex.lock();
+    self_test_.lock();
     try
     {
       int status = urg.service_scan(&scan);
@@ -243,12 +255,12 @@ public:
       }
     } catch (URG::corrupted_data_exception &e) {
       printf("CORRUPTED DATA\n");
-      testing_mutex.unlock();
+      self_test_.unlock();
       return 0;
     } catch (URG::exception& e) {
       printf("Exception thrown while trying to get scan.\n%s\n", e.what());
       running = false; //If we're here, we are no longer running
-      testing_mutex.unlock();
+      self_test_.unlock();
       return -1;
     }
     
@@ -280,7 +292,7 @@ public:
       next_time = next_time + ros::Duration(1,0);
     }
 
-    testing_mutex.unlock();
+    self_test_.unlock();
     sched_yield();
     return(0);
   }
@@ -309,77 +321,14 @@ public:
   }
 
 
-  bool SelfTest(robot_srvs::SelfTest::request &req,
-                robot_srvs::SelfTest::response &res)
+  void pretest()
   {
-    testing_mutex.lock();
-
-    printf("Entering self test.  Other operation suspended\n");
-
     // Stop for good measure.
     try
     {
       urg.close();
     } catch (URG::exception& e) {
     }
-
-    std::vector<robot_msgs::DiagnosticStatus> status_vec;
-    std::vector<void (HokuyoNode::*)(robot_msgs::DiagnosticStatus&)> test_fncs;
-
-    test_fncs.push_back( &HokuyoNode::InterruptionTest );
-    test_fncs.push_back( &HokuyoNode::ConnectTest );
-    test_fncs.push_back( &HokuyoNode::IDTest );
-    test_fncs.push_back( &HokuyoNode::StatusTest );
-    test_fncs.push_back( &HokuyoNode::LaserTest );
-    test_fncs.push_back( &HokuyoNode::PolledDataTest );
-    test_fncs.push_back( &HokuyoNode::StreamedDataTest );
-    test_fncs.push_back( &HokuyoNode::StreamedIntensityDataTest );
-    test_fncs.push_back( &HokuyoNode::LaserOffTest );
-    test_fncs.push_back( &HokuyoNode::DisconnectTest );
-    test_fncs.push_back( &HokuyoNode::ResumeTest );
-
-    for (std::vector<void (HokuyoNode::*)(robot_msgs::DiagnosticStatus&)>::iterator test_fncs_iter = test_fncs.begin();
-           test_fncs_iter != test_fncs.end();
-           test_fncs_iter++)
-    {
-      robot_msgs::DiagnosticStatus status;
-
-      status.name = "None";
-      status.level = 2;
-      status.message = "No message was set";
-
-      try {
-
-        (*this.*(*test_fncs_iter))(status);
-
-      } catch (URG::exception& e)
-      {
-        status.level = 2;
-        status.message = std::string("Caught exception: ") + e.what();
-      }
-
-      status_vec.push_back(status);
-    }
-
-    res.id = id;
-
-    res.passed = true;
-    for (std::vector<robot_msgs::DiagnosticStatus>::iterator status_iter = status_vec.begin();
-         status_iter != status_vec.end();
-         status_iter++)
-    {
-      if (status_iter->level >= 2)
-      {
-        res.passed = false;
-      }
-    }
-
-    res.set_status_vec(status_vec);
-
-    printf("Self test completed\n");
-
-    testing_mutex.unlock();
-    return true;
   }
 
   void InterruptionTest(robot_msgs::DiagnosticStatus& status)
@@ -412,7 +361,7 @@ public:
   {
     status.name = "ID Test";
 
-    id = urg.get_ID();
+    string id = urg.get_ID();
 
     if (id == std::string("H0000000"))
     {
@@ -424,11 +373,13 @@ public:
       status.level = 0;
       status.message = id;
     }
+
+    self_test_.setID(id);
   }
 
   void StatusTest(robot_msgs::DiagnosticStatus& status)
   {
-    status.name = "ID Test";
+    status.name = "Status Test";
 
     std::string stat = urg.get_status();
 
