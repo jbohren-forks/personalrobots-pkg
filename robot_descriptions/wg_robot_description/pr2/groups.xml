@@ -41,6 +41,7 @@
   </group>
   
   <group name="rightArm" flags="plan kinematic">
+
     shoulder_pan_right
     shoulder_pitch_right
     upperarm_roll_right
@@ -48,6 +49,10 @@
     forearm_roll_right
     wrist_flex_right
     gripper_roll_right
+
+    <map name="rrt" flag="plan">
+      <elem key="rho" value="0.5" />
+    </map>
   </group>
 
   <group name="base+leftArm" flags="plan">
