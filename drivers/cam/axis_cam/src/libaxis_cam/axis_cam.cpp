@@ -39,6 +39,20 @@ AxisCam::AxisCam(string ip) : ip(ip)
   jpeg_buf_size = 0;
   curl_global_init(0);
 
+  set_host(ip);
+}
+
+AxisCam::~AxisCam()
+{
+  delete[] image_url;
+  if (jpeg_buf)
+    delete[] jpeg_buf;
+  jpeg_buf = NULL;
+  curl_global_cleanup();
+}
+
+void AxisCam::set_host(string ip)
+{
   ostringstream oss;
   oss << "http://" << ip << "/jpg/image.jpg";
   image_url = new char[oss.str().length()+1];
@@ -71,15 +85,6 @@ AxisCam::AxisCam(string ip) : ip(ip)
   printf("Getting images from [%s]\n", oss.str().c_str());
   if (!query_params())
     printf("sad! I couldn't query the camera parameters.\n");
-}
-
-AxisCam::~AxisCam()
-{
-  delete[] image_url;
-  if (jpeg_buf)
-    delete[] jpeg_buf;
-  jpeg_buf = NULL;
-  curl_global_cleanup();
 }
 
 bool AxisCam::get_jpeg(uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_size)

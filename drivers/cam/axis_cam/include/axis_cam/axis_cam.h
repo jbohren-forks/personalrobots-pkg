@@ -41,6 +41,8 @@ class AxisCam
 public:
   AxisCam(string ip);
   ~AxisCam();
+  
+  void set_host(string ip);
 
   bool get_jpeg(uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_size);
   bool set_ptz(double pan, double tilt, double zoom, bool relative = false);

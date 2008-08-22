@@ -28,6 +28,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdio.h>
+#include <iostream>
 
 #include <pthread.h>
 
@@ -52,6 +53,9 @@ public:
 
   SelfTest<Axis_cam_node> self_test_;
 
+  ros::Time next_time;
+  int count_;
+
   Axis_cam_node() : ros::node("axis_cam"), codec(&image), cam(NULL), frame_id(0), self_test_(this)
   {
     advertise<std_msgs::Image>("image");
@@ -65,6 +69,9 @@ public:
     self_test_.addTest(&Axis_cam_node::checkMac);
 
     cam = new AxisCam(axis_host);
+
+    next_time = ros::Time::now();
+    count_ = 0;
     
     self_test_.unlock();
   }
@@ -120,15 +127,23 @@ public:
 
     while (ok())
     {
-      if (!take_and_send_image())
+      if (take_and_send_image())
       {
+        count_++;
+        ros::Time now_time = ros::Time::now();
+        if (now_time > next_time) {
+          std::cout << count_ << " frames/sec at " << now_time << std::endl;
+          count_ = 0;
+          next_time = next_time + ros::Duration(1,0);
+        }
+      } else {
         log(ros::ERROR,"couldn't take image.");
-      
+        usleep(1000000);
+        param("~host", axis_host, string("192.168.0.90"));
+        cam->set_host(axis_host);
       }
     }
-
     return true;
-
   }
 
 
