@@ -650,8 +650,8 @@ namespace robot_desc
 	std::string extractName(std::vector<const TiXmlAttribute*> &attributes, const std::string &defaultName) const;
 	
 
-	/** Output a message letting the user know that a specific node was ignored */
-	virtual void ignoreNode(const TiXmlNode* node);
+	/** Behaviour for unknown nodes. Default is to output a message letting the user know that a specific node is unknown */
+	virtual void unknownNode(const TiXmlNode* node);
 	
 	/** Replace include declarations with the indicated file */
 	bool replaceIncludes(TiXmlElement *elem);	
@@ -663,40 +663,48 @@ namespace robot_desc
 	void errorMessage(const std::string& msg) const;
 
 	/** Compute the easy-access pointers inside the parsed datastructures */
-	void linkDatastructure(void);
+	virtual void linkDatastructure(void);
 
 	/** The name of the file where the parsing started */
-	std::string                          m_source;
+	std::string                             m_source;
 	
 	/** The list of paths the parser knows about when it sees an <include> directive */
-	std::vector<std::string>             m_paths;
+	std::vector<std::string>                m_paths;
         
 	/** The robot name */
-	std::string                          m_name;
+	std::string                             m_name;
 
 	/** Contains the list of parsed links and sensors */
-	std::map<std::string, Link*>         m_links;
+	std::map<std::string, Link*>            m_links;
 
 	/** Contains the list of parsed groups */
-	std::map<std::string, Group*>        m_groups;
+	std::map<std::string, Group*>           m_groups;
 
 	/** Contains the list of parsed frames */
-	std::map<std::string, Frame*>        m_frames;
+	std::map<std::string, Frame*>           m_frames;
 	
 	/** Contains information specified in <data> tags at the top level */
-	Map                                  m_data;
+	Map                                     m_data;
         
 	/** Additional datastructure containing a list links that are connected to the environment */
-	std::vector<Link*>                   m_linkRoots; 
+	std::vector<Link*>                      m_linkRoots; 
 	
+	/** The list of constants */
+	std::map<std::string, std::string>      m_constants; 
+	
+	/** The list of constant blocks */
+	std::map<std::string, const TiXmlNode*> m_constBlocks;
+
 	/** Counter for errors */
-	mutable unsigned int                 m_errorCount;
+	mutable unsigned int                    m_errorCount;
 	
 	/** Verbosity flag */
-	bool                                 m_verbose;
+	bool                                    m_verbose;
 	
     private:
-        
+	
+	/* temporary storage for information during parsing; should not be used elsewhere */
+
 	/** Temporary datastructure for keeping track link collision components */
 	std::map<std::string, Link::Collision*> m_collision;
 	/** Temporary datastructure for keeping track link joints */
@@ -709,12 +717,6 @@ namespace robot_desc
 	std::map<std::string, Link::Geometry*>  m_geoms;
 	
 	
-	/* temporary storage for information during parsing; should not be used elsewhere */
-	
-	/** The list of constants (temporary) */
-	std::map<std::string, std::string>      m_constants; 
-	/** The list of constant blocks (temporary) */
-	std::map<std::string, const TiXmlNode*> m_constBlocks;
 	/** List of nodes to be processed after loading the constants and templates (temporary) */
 	std::vector<const TiXmlNode*>           m_stage2;
 	/** List of loaded documents. The documents are not cleared after parse since <data> tags may contain pointers to XML datastructures from these documents */

@@ -563,7 +563,7 @@ namespace robot_desc {
 	}
     }
     
-    void URDF::ignoreNode(const TiXmlNode* node)
+    void URDF::unknownNode(const TiXmlNode* node)
     {
 	switch (node->Type())
 	{
@@ -627,6 +627,10 @@ namespace robot_desc {
     
     void URDF::clearDocs(void)
     {
+	/* first, clear datastructures that may be pointing to xml elements */
+	m_constants.clear();
+	m_constBlocks.clear();
+
 	/* clear memory allocated for loaded documents */
 	for (unsigned int i = 0 ; i < m_docs.size() ; ++i)
 	{
@@ -639,15 +643,12 @@ namespace robot_desc {
     }
     
     void URDF::clearTemporaryData(void)
-    {	
+    {
 	m_collision.clear();
 	m_joints.clear();
 	m_inertial.clear();
 	m_visual.clear();
 	m_geoms.clear();
-	
-	m_constants.clear();
-	m_constBlocks.clear();
 	m_stage2.clear();
     }
     
@@ -1030,10 +1031,10 @@ namespace robot_desc {
 		    if (node->ValueStr() == "map")
 			loadMap(node, &frame->data);
 		    else
-			ignoreNode(node);
+			unknownNode(node);
 	    }
 	    else
-		ignoreNode(node);
+		unknownNode(node);
 	}    
     }
     
@@ -1137,10 +1138,10 @@ namespace robot_desc {
 		else if (node->ValueStr() == "map")
 		    loadMap(node, &joint->data);
 		else
-		    ignoreNode(node);
+		    unknownNode(node);
 	    }
 	    else
-		ignoreNode(node);
+		unknownNode(node);
 	}
 	
     }
@@ -1220,10 +1221,10 @@ namespace robot_desc {
 		else if (node->ValueStr() == "map")
 		    loadMap(node, &geometry->data);	
 		else                
-		    ignoreNode(node);
+		    unknownNode(node);
 	    }
 	    else
-		ignoreNode(node);
+		unknownNode(node);
 	}
     }
     
@@ -1277,10 +1278,10 @@ namespace robot_desc {
 		else if (node->ValueStr() == "map")
 		    loadMap(node, &collision->data);
 		else
-		    ignoreNode(node);
+		    unknownNode(node);
 	    }
 	    else
-		ignoreNode(node);
+		unknownNode(node);
 	}    
     }
     
@@ -1329,10 +1330,10 @@ namespace robot_desc {
 		else if (node->ValueStr() == "map")
 		    loadMap(node, &visual->data);
 		else
-		    ignoreNode(node);
+		    unknownNode(node);
 	    }
 	    else
-		ignoreNode(node);
+		unknownNode(node);
 	}   
     }
     
@@ -1408,10 +1409,10 @@ namespace robot_desc {
 		else if (node->ValueStr() == "map")
 		    loadMap(node, &inertial->data);
 		else
-		    ignoreNode(node);
+		    unknownNode(node);
 	    }
 	    else
-		ignoreNode(node);
+		unknownNode(node);
 	}
     }
     
@@ -1488,10 +1489,10 @@ namespace robot_desc {
 		else if (node->ValueStr() == "map")
 		    loadMap(node, &link->data);
 		else
-		    ignoreNode(node);
+		    unknownNode(node);
 	    }
 	    else
-		ignoreNode(node);
+		unknownNode(node);
 	}
 	
 	m_location = currentLocation;  
@@ -1606,10 +1607,10 @@ namespace robot_desc {
 		    }
 		}		
 		else
-		    ignoreNode(node); 
+		    unknownNode(node); 
 	    }
 	    else
-		ignoreNode(node);
+		unknownNode(node);
 	}
 	
 	m_location = currentLocation;  
@@ -1714,7 +1715,7 @@ namespace robot_desc {
 		data->add(flag, name, key, child->ToElement());
 	    }
 	    else
-		ignoreNode(child);
+		unknownNode(child);
     }
     
     void URDF::linkDatastructure(void)
@@ -1885,7 +1886,7 @@ namespace robot_desc {
 		    else if (name == "inertial")
 			loadInertial(m_stage3[i], "", NULL);
 		    else
-			ignoreNode(m_stage3[i]);
+			unknownNode(m_stage3[i]);
 		}		
 	    }
 	    
@@ -1936,7 +1937,7 @@ namespace robot_desc {
 			    errorMessage("Unable to find " + node->FirstChild()->ValueStr());
 		    }
 		    else 
-			ignoreNode(node);
+			unknownNode(node);
 		}
 		else if (node->ValueStr() == "const")
 		{       
@@ -2010,7 +2011,7 @@ namespace robot_desc {
 				if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "map")
 				    loadMap(child, &g->data);
 				else
-				    ignoreNode(child);
+				    unknownNode(child);
 			    }
 			}
 			
@@ -2027,7 +2028,7 @@ namespace robot_desc {
 			m_stage2.push_back(node);
 	    break;
 	default:
-	    ignoreNode(node);
+	    unknownNode(node);
 	}
 	
 	return true;
