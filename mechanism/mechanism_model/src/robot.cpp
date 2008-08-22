@@ -130,6 +130,7 @@ void printLinkTreeHelper(Link *link, int depth = 0)
 {
   for (int i = 0; i < depth; ++i)
     printf("  ");
+  printf("%s (%s)\n", link->name_.c_str(), link->joint_ ? link->joint_->name_.c_str() : "");
 
   for (unsigned int i = 0; i < link->children_.size(); ++i)
     printLinkTreeHelper(link->children_[i], depth + 1);
