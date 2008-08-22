@@ -468,6 +468,10 @@ void BaseController::computeOdometry(double time)
   base_odom_delta.z = base_odom_velocity_.z * dt;
   base_odom_position_ += base_odom_delta;
 
+  odom_msg_.header.frame_id   = "FRAMEID_ODOM";
+  odom_msg_.header.stamp.sec  = (unsigned long)floor(robot_->hw_->current_time_);
+  odom_msg_.header.stamp.nsec = (unsigned long)floor(  1e9 * (  robot_->hw_->current_time_ - odom_msg_.header.stamp.sec) );
+ 
   odom_msg_.pos.x  = base_odom_position_.x;
   odom_msg_.pos.y  = base_odom_position_.y;
   odom_msg_.pos.th = base_odom_position_.z;
