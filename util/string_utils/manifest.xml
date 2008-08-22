@@ -8,9 +8,11 @@
     provided already.
 
   </description>
-  <author>Morgan Quigley (email: mquigley@cs.stanford.edu), Ioan Sucan</author>
+  <author>Ioan Sucan, Morgan Quigley (email: mquigley@cs.stanford.edu)</author>
   <license>BSD</license>
-  <url>http://stair.stanford.edu</url>
+
+  <depend package="gtest" />
+
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lstring_utils"/>
   </export>

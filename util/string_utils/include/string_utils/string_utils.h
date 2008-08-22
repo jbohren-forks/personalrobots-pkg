@@ -32,6 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+/** \Author Ioan Sucan */
+
 #ifndef STRING_UTILS_STRING_UTILS_
 #define STRING_UTILS_STRING_UTILS_
 
@@ -41,12 +43,10 @@
 
 namespace string_utils
 {
+    
 void split(const std::string &str,
            std::vector<std::string> &token_vec,
-           const std::string &delim);
-
-// Default version, which splits on whitespace.
-void split(const std::string &str, std::vector<std::string> &tokens);
+           const std::string &delim = "\t\n\r ");
 
 std::string trim(const std::string &str);
 
@@ -61,6 +61,14 @@ static inline std::string convert2str(const T &value)
   return ss.str();
 }
 
+template<typename T>
+static inline T fromString(const std::string &str)
+{
+    std::stringstream ss(str);
+    T value;
+    ss >> value;
+    return value;
+}
 
 
 }
