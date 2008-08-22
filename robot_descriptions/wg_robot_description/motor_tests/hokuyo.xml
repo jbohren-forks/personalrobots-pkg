@@ -1,0 +1,25 @@
+<robot name="pr2">
+
+  <actuator name="single_motor">
+  </actuator>
+
+  <joint name="single_joint" type="revolute">
+    <limit min= "-0.785" max="1.48" effort="0.5292" velocity="1256.0"/>
+  </joint>
+
+  <transmission type="SimpleTransmission" name="single_transmission">
+    <actuator name="single_motor" />
+    <joint name="single_joint" />
+    <mechanicalReduction>6</mechanicalReduction>
+    <motorTorqueConstant>-.0538</motorTorqueConstant>
+    <pulsesPerRevolution>10000</pulsesPerRevolution>
+  </transmission>
+
+  <controller name="single_controller" topic="foo" type="LaserScannerControllerNode">
+    <joint name="single_joint">
+      <pid p="0.4" i = "0" d = "0" iClamp = "0.1" />
+    </joint>
+  </controller>
+
+ 
+</robot>
