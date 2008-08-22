@@ -129,12 +129,11 @@ public:
 	param("world_3d_map/retain_above_ground_threshold", m_retainAboveGroundThreshold, 0.01);
 	param("world_3d_map/verbosity_level", m_verbose, 1);
 	
-	/* create a thread that does the processing of the input data.
-	 * and one that handles the publishing of the data */
 	m_active = true;
 	m_shouldPublish = false;
 	random_utils::init(&m_rng);
-	
+
+	/* create a thread that handles the publishing of the data */	
 	m_publishingThread = ros::thread::member_thread::startMemberFunctionThread<World3DMap>(this, &World3DMap::publishDataThread);
 
 	subscribe("scan", m_inputScan, &World3DMap::pointCloudCallback, 1);
