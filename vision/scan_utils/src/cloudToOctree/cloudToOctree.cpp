@@ -30,9 +30,9 @@ namespace scan_utils{
 		CloudToOctree(float cellSize);
 		~CloudToOctree();
 		void resetOctree();
-	}; 
-	
-	
+	};
+
+
 	CloudToOctree::CloudToOctree(float cellSize) : ros::node("cloud_to_octree_node")
 	{
 		/* initialize Octree to depth 0. This means that the
@@ -46,7 +46,7 @@ namespace scan_utils{
 
 		//subsribe and advertise to relevant ROS topics
 		subscribe("full_cloud", mNewCloud, &CloudToOctree::fullCloudCallback,1);
-		advertise<OctreeMsg>("full_octree",1);		
+		advertise<OctreeMsg>("full_octree",1);
 		fprintf(stderr,"ROS cloud-to-octree node with cell size %f created and subscribed!\n",cellSize);
 	}
 
@@ -56,6 +56,7 @@ namespace scan_utils{
 	}
 
 	void CloudToOctree::fullCloudCallback() {
+		fprintf(stderr,"Cloud received with %d points!\n",mNewCloud.get_pts_size());
 		if ( mNewCloud.get_pts_size() == 0 ) {
 			return;
 		}
@@ -68,7 +69,7 @@ namespace scan_utils{
 		OctreeMsg outMsg;
 		mOctree->getAsMsg(outMsg);
 		//and publish
-		publish("full_octree",outMsg);				
+		publish("full_octree",outMsg);
 	}
 	/*! Clears the contents of the Octree. Note that the size and
             depth are not changed, they remain whatever they were
@@ -80,7 +81,7 @@ namespace scan_utils{
 	    2*cell_size along each dimension.
 	 */
 	void CloudToOctree::resetOctree() {
-		mOctree->clear();		
+		mOctree->clear();
 	}
 
 } //namespace scan_utils
