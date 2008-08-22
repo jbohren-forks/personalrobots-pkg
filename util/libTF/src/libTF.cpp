@@ -512,10 +512,10 @@ std::string TransformReference::viewChain(const std::string & target_frame, cons
 std::string TransformReference::viewFrames()
 {
   stringstream mstream;
-  frame_mutex_.unlock();
+  frame_mutex_.lock();
   for (std::map<std::string, RefFrame*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
   {
-    mstream << "Frame "<< (*it).first << " exists with parent " << (*it).second->getParent() << "." <<std::endl;    
+    mstream << "Frame "<< it->first << " exists with parent " << it->second->getParent() << "." <<std::endl;
   }
   frame_mutex_.unlock();
   return mstream.str();
@@ -537,14 +537,17 @@ bool TransformReference::RefFrame::setParent(std::string parent_id)
 TransformReference::RefFrame* TransformReference::getFrame(const std::string & frame_id) 
 {
   frame_mutex_.lock();
-
-  std::map<std::string, RefFrame*>::iterator it = frames_.find(frame_id);
-  if (it == frames_.end()){ 
-    frame_mutex_.unlock();
+  std::map<std::string, RefFrame*>::const_iterator it = frames_.find(frame_id);
+  bool found = it != frames_.end();
+  RefFrame *frame = found ? it->second : NULL;
+  frame_mutex_.unlock();
+  
+  if (!found){ 
+    
     std::stringstream ss; ss << "getFrame: Frame " << frame_id  << " does not exist."
                              << " Frames Present are: " <<std::endl << viewFrames() <<std::endl; 
     throw LookupException(ss.str());
   }
-  frame_mutex_.unlock();
-  return it->second;
+  
+  return frame;
 };

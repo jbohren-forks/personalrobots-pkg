@@ -395,9 +395,6 @@ protected:
   RefFrame* getFrame(const std::string & frame_number_string);
 
 
-  unsigned int nameToNumber(const std::string & frameid);
-  std::string numberToName(unsigned int frameid);
-
   /** Find the list of connected frames necessary to connect two different frames */
   TransformLists  lookUpList(const std::string & target_frame, const std::string & source_frame);
   
