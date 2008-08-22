@@ -85,11 +85,7 @@ public:
 	
 	req.goal_state.set_vals_size(3);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
-	{
-	    req.start_state.vals[i] = m_basePos[i];
 	    req.goal_state.vals[i] = m_basePos[i];
-	}
-	
 	req.goal_state.vals[0] += 3.5;
 	
 	req.allowed_time = 5.0;
@@ -197,11 +193,11 @@ int main(int argc, char **argv)
     ros::init(argc, argv);
     
     PlanKinematicPath plan;
-    /*
+    
     ros::Duration dur(0.1);
     while (!plan.haveBasePos())
 	dur.sleep();
-    */
+
     char test = (argc < 2) ? 'b' : argv[1][0];
     
     switch (test)

@@ -74,11 +74,13 @@ class SpaceInformationXMLModel : public ompl::SpaceInformationKinematic
 		    break;		    
 		}
 	}
+	updateResolution();
     }
         
     virtual ~SpaceInformationXMLModel(void)
     {
     }
+    
     
     void setPlanningVolume(double x0, double y0, double z0, double x1, double y1, double z1)
     {
@@ -94,6 +96,7 @@ class SpaceInformationXMLModel : public ompl::SpaceInformationKinematic
 	    for (int j = 0 ; j < 3 ; ++j)
 		m_stateComponent[j + id].resolution = (m_stateComponent[j + id].maxValue - m_stateComponent[j + id].minValue) / m_divisions;
 	}
+	updateResolution();
     }
     
     void setPlanningArea(double x0, double y0, double x1, double y1)
@@ -108,9 +111,31 @@ class SpaceInformationXMLModel : public ompl::SpaceInformationKinematic
 	    for (int j = 0 ; j < 2 ; ++j)
 		m_stateComponent[j + id].resolution = (m_stateComponent[j + id].maxValue - m_stateComponent[j + id].minValue) / m_divisions;
 	}
+	updateResolution();
     }
     
  protected:
+    
+    void updateResolution(void)
+    {
+	/* for movement in plane/space, we want to make sure the resolution is small enough */
+	for (unsigned int i = 0 ; i < m_planarJoints.size() ; ++i)
+	{
+	    if (m_stateComponent[m_planarJoints[i]].resolution > 0.1)
+		m_stateComponent[m_planarJoints[i]].resolution = 0.1;
+	    if (m_stateComponent[m_planarJoints[i] + 1].resolution > 0.1)
+		m_stateComponent[m_planarJoints[i] + 1].resolution = 0.1;
+	}
+	for (unsigned int i = 0 ; i < m_floatingJoints.size() ; ++i)
+	{
+	    if (m_stateComponent[m_floatingJoints[i]].resolution > 0.1)
+		m_stateComponent[m_floatingJoints[i]].resolution = 0.1;
+	    if (m_stateComponent[m_floatingJoints[i] + 1].resolution > 0.1)
+		m_stateComponent[m_floatingJoints[i] + 1].resolution = 0.1;
+	    if (m_stateComponent[m_floatingJoints[i] + 2].resolution > 0.1)
+		m_stateComponent[m_floatingJoints[i] + 2].resolution = 0.1;
+	}
+    }
     
     double                           m_divisions;
     planning_models::KinematicModel *m_kmodel;
