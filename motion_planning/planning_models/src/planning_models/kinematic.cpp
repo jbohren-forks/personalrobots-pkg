@@ -161,9 +161,9 @@ void planning_models::KinematicModel::PrismaticJoint::extractInformation(const r
 void planning_models::KinematicModel::RevoluteJoint::updateVariableTransform(const double *params)
 {
     varTrans.setAxisAngle(axis, params[0]);
-    // anchor is ignored here; the rotation is assumed to be about
-    // (0,0,0) but it should be about anchor; when this exists in the
-    // transforms library, it should be switched here too
+    /// \todo anchor is ignored here; the rotation is assumed to be
+    /// about (0,0,0) but it should be about anchor; when this exists
+    /// in the transforms library, it should be switched here too
 }
 
 void planning_models::KinematicModel::RevoluteJoint::extractInformation(const robot_desc::URDF::Link *urdfLink, Robot *robot)

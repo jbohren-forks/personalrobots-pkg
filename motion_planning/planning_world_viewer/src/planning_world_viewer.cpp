@@ -103,7 +103,9 @@ class PlanningWorldViewer : public ros::node,
 public:
     
     PlanningWorldViewer(const std::string &robot_model) : ros::node("planning_world_viewer"),
-							  planning_node_util::NodeCollisionModel(dynamic_cast<ros::node*>(this), robot_model)
+							  planning_node_util::NodeCollisionModel(dynamic_cast<ros::node*>(this),
+												 robot_model,
+												 new collision_space::EnvironmentModelODE())
     {
 	subscribe("display_kinematic_path", m_displayPath, &PlanningWorldViewer::displayPathCallback, 1);
 	m_collisionSpaceODE = dynamic_cast<collision_space::EnvironmentModelODE*>(m_collisionSpace);

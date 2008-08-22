@@ -56,11 +56,12 @@ namespace collision_space
     public:
 		
         EnvironmentModelOctree(void) : EnvironmentModel(),
-	                               m_octree(0.0f, 0.0f, 0.0f, 80.0f, 80.0f, 80.0f, 12, OCTREE_CELL_EMPTY)
+	                               m_octree(0.0f, 0.0f, 0.0f, 0.02f, 0.02f, 0.02f, 1, OCTREE_CELL_EMPTY)
 	{ 
+	    m_octree.setAutoExpand(true);
 	}
 	
-	~EnvironmentModelOctree(void)
+	virtual ~EnvironmentModelOctree(void)
 	{
 	}
 	

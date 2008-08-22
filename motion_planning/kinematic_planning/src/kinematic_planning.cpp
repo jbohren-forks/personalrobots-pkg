@@ -113,7 +113,8 @@ public:
 
     KinematicPlanning(const std::string &robot_model) : ros::node("kinematic_planning"),
 							planning_node_util::NodeCollisionModel(dynamic_cast<ros::node*>(this),
-											       robot_model)
+											       robot_model,
+											       new collision_space::EnvironmentModelODE())
     {
 	advertise_service("plan_kinematic_path_state", &KinematicPlanning::plan);
     }

@@ -64,7 +64,7 @@ namespace collision_space
 	    m_space = dHashSpaceCreate(0);
 	}
 	
-	~EnvironmentModelODE(void)
+	virtual ~EnvironmentModelODE(void)
 	{
 	    freeMemory();
 	}

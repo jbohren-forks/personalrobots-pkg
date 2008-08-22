@@ -57,10 +57,11 @@ bool collision_space::EnvironmentModelOctree::isCollision(unsigned int model_id)
     
     for (unsigned int i = 0 ; !result && i < links.size() ; ++i)
     {
-	switch (links[i]->geom->type)
+	switch (links[i]->shape->type)
 	{
-	case planning_models::KinematicModel::Geometry::BOX:
+	case planning_models::KinematicModel::Shape::BOX:
 	    {
+		/** \todo math here is a bit clumsy.... should be fixed when bette libTF is available */
 		NEWMAT::Matrix mat = links[i]->globalTrans.asMatrix();
 		float axes[3][3];
 		
@@ -70,8 +71,8 @@ bool collision_space::EnvironmentModelOctree::isCollision(unsigned int model_id)
 		
 		libTF::Pose3D::Position libTFpos;
 		links[i]->globalTrans.getPosition(libTFpos);
-		float pos[3] = {libTFpos.x, libTFpos.y, libTFpos.z };
-		const double *size = links[i]->geom->size;
+		float pos[3] = {libTFpos.x, libTFpos.y, libTFpos.z};
+		const double *size = static_cast<planning_models::KinematicModel::Box*>(links[i]->shape)->size;
 		const float sizef[3] = {size[0], size[1], size[2]};
 		
 		result = m_octree.intersectsBox(pos, sizef, axes);
@@ -79,7 +80,7 @@ bool collision_space::EnvironmentModelOctree::isCollision(unsigned int model_id)
 	    
 	    break;
 
-	case planning_models::KinematicModel::Geometry::CYLINDER:
+	case planning_models::KinematicModel::Shape::CYLINDER:
 	    {
 		NEWMAT::Matrix mat = links[i]->globalTrans.asMatrix();
 		float axes[3][3];
@@ -91,24 +92,26 @@ bool collision_space::EnvironmentModelOctree::isCollision(unsigned int model_id)
 		libTF::Pose3D::Position libTFpos;
 		links[i]->globalTrans.getPosition(libTFpos);
 		float pos[3] = {libTFpos.x, libTFpos.y, libTFpos.z };
-		const double *size = links[i]->geom->size;
-		const float L = size[1]*sqrt(2);
-		const float sizef[3] = {size[0], L, L};
+		float radius = static_cast<planning_models::KinematicModel::Cylinder*>(links[i]->shape)->radius;
+		float length = static_cast<planning_models::KinematicModel::Cylinder*>(links[i]->shape)->length;
+		float L = radius * 2.0;
+		const float sizef[3] = {length, L, L};
 		
 		result = m_octree.intersectsBox(pos, sizef, axes);
 	    }
 	    break;
 		
-	case planning_models::KinematicModel::Geometry::SPHERE:
+	case planning_models::KinematicModel::Shape::SPHERE:
 	    {
 		libTF::Pose3D::Position libTFpos;
 		links[i]->globalTrans.getPosition(libTFpos);
-		float pos[3] = {libTFpos.x, libTFpos.y, libTFpos.z };
-		result = m_octree.intersectsSphere(pos, links[i]->geom->size[0]);
+		float pos[3] = {libTFpos.x, libTFpos.y, libTFpos.z};
+		float radius = static_cast<planning_models::KinematicModel::Sphere*>(links[i]->shape)->radius;
+		result = m_octree.intersectsSphere(pos, radius);
 	    }
 	    break;
 	default:
-	    fprintf(stderr, "Geometry type not implemented: %d\n", links[i]->geom->type);
+	    fprintf(stderr, "Geometry type not implemented: %d\n", links[i]->shape->type);
 	    break;	    
 	}
     }

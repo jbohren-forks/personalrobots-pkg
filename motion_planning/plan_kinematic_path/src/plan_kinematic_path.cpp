@@ -79,7 +79,7 @@ public:
 	req.threshold = 0.01;
 	req.distance_metric = "L2Square";
 	req.interpolate = 1;
-	req.times = 1;
+	req.times = 10;
 	
 	initialState(req.start_state);
 	
@@ -88,7 +88,7 @@ public:
 	    req.goal_state.vals[i] = m_basePos[i];
 	req.goal_state.vals[0] += 3.5;
 	
-	req.allowed_time = 5.0;
+	req.allowed_time = 30.0;
 	
 	req.volumeMin.x = -5.0 + m_basePos[0];	req.volumeMin.y = -5.0 + m_basePos[1];	req.volumeMin.z = 0.0;
 	req.volumeMax.x = 5.0 + m_basePos[0];	req.volumeMax.y = 5.0 + m_basePos[1];	req.volumeMax.z = 0.0;
