@@ -79,11 +79,6 @@ namespace gazebo {
     // parse the big pr2.xml string from ros, or use below so we don't need to roslaunch send.xml
     //pr2Description.loadString(pr2Content.c_str());
 
-    // using tiny xml
-    pr2Doc_ = new TiXmlDocument();
-    pr2Doc_->SetUserData(NULL);
-    pr2Doc_->Parse(pr2Content.c_str());
-
     AdvertiseSubscribeMessages();
 
   }
@@ -405,40 +400,11 @@ namespace gazebo {
     timeMsg.rostime.sec  = (unsigned long)floor(hw_.current_time_);
     timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  hw_.current_time_ - timeMsg.rostime.sec) );
     rosnode_->publish("time",timeMsg);
-    /***************************************************************/
-    /*                                                             */
-    /*  odometry                                                   */
-    /*                                                             */
-    /***************************************************************/
-    // Get latest odometry data
-    // Get velocities
-    //double vx,vy,vw;
-    //this->PR2Copy->GetBaseCartesianSpeedActual(&vx,&vy,&vw);
-    // Translate into ROS message format and publish
-    //this->odomMsg.vel.x  = vx;
-    //this->odomMsg.vel.y  = vy;
-    //this->odomMsg.vel.th = vw;
-
-    // Get position
-    //double x,y,z,roll,pitch,yaw;
-    //this->PR2Copy->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw);
-    //this->odomMsg.pos.x  = x;
-    //this->odomMsg.pos.y  = y;
-    //this->odomMsg.pos.th = yaw;
-
-    // TODO: get the frame ID from somewhere
-    this->odomMsg.header.frame_id = "FRAMEID_ODOM";
-    this->odomMsg.header.stamp.sec = (unsigned long)floor(hw_.current_time_);
-    this->odomMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  hw_.current_time_ - this->odomMsg.header.stamp.sec) );
-
-    // This publish call resets odomMsg.header.stamp.sec and 
-    // odomMsg.header.stamp.nsec to zero.  Thus, it must be called *after*
-    // those values are reused in the sendInverseEuler() call above.
-    //rosnode_->publish("odom",this->odomMsg);
 
     /***************************************************************/
     /*                                                             */
     /*   object position                                           */
+    /*   FIXME: move this to the P3D plugin (update P3D required)  */
     /*                                                             */
     /***************************************************************/
     //this->PR2Copy->GetObjectPositionActual(&x,&y,&z,&roll,&pitch,&yaw);
@@ -449,7 +415,6 @@ namespace gazebo {
 
 
 
-    std_msgs::PR2Arm larm,rarm;
     /* get left arm position */
     larm.turretAngle       = mc_.model_.getJoint("shoulder_pan_left_joint")->position_;
     larm.shoulderLiftAngle = mc_.model_.getJoint("shoulder_pitch_left_joint")->position_;
@@ -473,7 +438,7 @@ namespace gazebo {
     rarm.gripperGapCmd     = mc_.model_.getJoint("gripper_right_joint")->position_;
     rosnode_->publish("right_pr2arm_pos", rarm);
 
-    //PublishFrameTransforms();
+    PublishFrameTransforms();
 
     this->lock.unlock();
 
@@ -962,6 +927,7 @@ namespace gazebo {
   TestActuators::PublishFrameTransforms()
   {
 
+    std::cout << " publishing frame transforms." << std::endl;
     /***************************************************************/
     /*                                                             */
     /*  frame transforms                                           */
@@ -970,18 +936,20 @@ namespace gazebo {
     /*        localization                                         */
     /*                                                             */
     /***************************************************************/
-    double x=0,y=0,z=0,roll=0,pitch=0,yaw=0;
-    //this->PR2Copy->GetBasePositionActual(&x,&y,&z,&roll,&pitch,&yaw); // actual CoM of base
+    double x=0,y=0,z=0,roll=0,pitch=0,yaw=0,vx,vy,vyaw;
+    controller::Controller* cc = mc_.getControllerByName( "base_controller" );
+    controller::BaseControllerNode* bc = dynamic_cast<controller::BaseControllerNode*>(cc);
+    bc->getOdometry(x,y,yaw,vx,vy,vyaw);
 
     tfs->sendInverseEuler("FRAMEID_ODOM",
                  "base",
                  x,
                  y,
-                 z - base_center_offset_z, /* get infor from xml: half height of base box */
+                 0, //z - base_center_offset_z, /* get infor from xml: half height of base box */
                  yaw,
                  pitch,
                  roll,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     /***************************************************************/
     /*                                                             */
@@ -998,22 +966,24 @@ namespace gazebo {
                  0,
                  0,
                  0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     //std::cout << "base y p r " << yaw << " " << pitch << " " << roll << std::endl;
 
     // base = center of the bottom of the base box
     // torso = midpoint of bottom of turrets
 
+    controller::Controller* tc = mc_.getControllerByName( "torso_controller" );
+    double spine_height = dynamic_cast<controller::JointPositionControllerNode*>(tc)->getMeasuredPosition();
     tfs->sendEuler("torso",
                  "base",
                  base_torso_offset_x,
                  base_torso_offset_y,
-                 base_torso_offset_z, /* FIXME: spine elevator not accounted for */
+                 spine_height+base_torso_offset_z, /* FIXME: spine elevator not accounted for */
                  0.0,
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     // arm_l_turret = bottom of left turret
     tfs->sendEuler("shoulder_pan_left",
@@ -1021,10 +991,10 @@ namespace gazebo {
                  sh_pan_left_torso_offset_x,
                  sh_pan_left_torso_offset_y,
                  sh_pan_left_torso_offset_z,
-                 0.0, //larm.turretAngle,
+                 larm.turretAngle,
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
     //std::cout << "left pan angle " << larm.turretAngle << std::endl;
 
     // arm_l_shoulder = center of left shoulder pitch bracket
@@ -1034,9 +1004,9 @@ namespace gazebo {
                  shoulder_pitch_left_offset_y,
                  shoulder_pitch_left_offset_z,
                  0.0,
-                 0.0, //larm.shoulderLiftAngle,
+                 larm.shoulderLiftAngle,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     // arm_l_upperarm = upper arm with roll DOF, at shoulder pitch center
     tfs->sendEuler("upperarm_roll_left",
@@ -1046,8 +1016,8 @@ namespace gazebo {
                  upperarm_roll_left_offset_z,
                  0.0,
                  0.0,
-                 0.0, //larm.upperarmRollAngle,
-                 odomMsg.header.stamp);
+                 larm.upperarmRollAngle,
+                 timeMsg.rostime);
 
     //frameid_arm_l_elbow = elbow pitch bracket center of rotation
     tfs->sendEuler("elbow_flex_left",
@@ -1056,9 +1026,9 @@ namespace gazebo {
                  elbow_flex_left_offset_y,
                  elbow_flex_left_offset_z,
                  0.0,
-                 0.0, //larm.elbowAngle,
+                 larm.elbowAngle,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     //frameid_arm_l_forearm = forearm roll DOR, at elbow pitch center
     tfs->sendEuler("forearm_roll_left",
@@ -1068,8 +1038,8 @@ namespace gazebo {
                  forearm_roll_left_offset_z,
                  0.0,
                  0.0,
-                 0.0, //larm.forearmRollAngle,
-                 odomMsg.header.stamp);
+                 larm.forearmRollAngle,
+                 timeMsg.rostime);
 
     // arm_l_wrist = wrist pitch DOF.
     tfs->sendEuler("wrist_flex_left",
@@ -1078,9 +1048,9 @@ namespace gazebo {
                  wrist_flex_left_offset_y,
                  wrist_flex_left_offset_z,
                  0.0,
-                 0.0, //larm.wristPitchAngle,
+                 larm.wristPitchAngle,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     // arm_l_hand = hand roll DOF, center at wrist pitch center
     tfs->sendEuler("gripper_roll_left",
@@ -1090,8 +1060,8 @@ namespace gazebo {
                  gripper_roll_left_offset_z,
                  0.0,
                  0.0,
-                 0.0, //larm.wristRollAngle,
-                 odomMsg.header.stamp);
+                 larm.wristRollAngle,
+                 timeMsg.rostime);
 
     // proximal digit, left
     tfs->sendEuler("finger_l_left",
@@ -1102,7 +1072,7 @@ namespace gazebo {
                  0.0,  //FIXME: get angle of finger...
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     // proximal digit, right
     tfs->sendEuler("finger_r_left",
@@ -1113,7 +1083,7 @@ namespace gazebo {
                  0.0,  //FIXME: get angle of finger...
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     // distal digit, left
     tfs->sendEuler("finger_tip_l_left",
@@ -1124,7 +1094,7 @@ namespace gazebo {
                  0.0,  //FIXME: get angle of finger tip...
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     // distal digit, left
     tfs->sendEuler("finger_tip_r_left",
@@ -1135,7 +1105,7 @@ namespace gazebo {
                  0.0,
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
 
 
@@ -1146,10 +1116,10 @@ namespace gazebo {
                  shoulder_pan_right_offset_x,
                  shoulder_pan_right_offset_y,
                  shoulder_pan_right_offset_z,
-                 0.0, //rarm.turretAngle,
+                 rarm.turretAngle,
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
     //std::cout << "right pan angle " << larm.turretAngle << std::endl;
 
     // arm_r_shoulder = center of right shoulder pitch bracket
@@ -1159,9 +1129,9 @@ namespace gazebo {
                  shoulder_pitch_right_offset_y,
                  shoulder_pitch_right_offset_z,
                  0.0,
-                 0.0, //rarm.shoulderLiftAngle,
+                 rarm.shoulderLiftAngle,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     // arm_r_upperarm = upper arm with roll DOF, at shoulder pitch center
     tfs->sendEuler("upperarm_roll_right",
@@ -1171,8 +1141,8 @@ namespace gazebo {
                  upperarm_roll_right_offset_z,
                  0.0,
                  0.0,
-                 0.0, //rarm.upperarmRollAngle,
-                 odomMsg.header.stamp);
+                 rarm.upperarmRollAngle,
+                 timeMsg.rostime);
 
     //frameid_arm_r_elbow = elbow pitch bracket center of rotation
     tfs->sendEuler("elbow_flex_right",
@@ -1181,9 +1151,9 @@ namespace gazebo {
                  elbow_flex_right_offset_y,
                  elbow_flex_right_offset_z,
                  0.0,
-                 0.0, //rarm.elbowAngle,
+                 rarm.elbowAngle,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     //frameid_arm_r_forearm = forearm roll DOR, at elbow pitch center
     tfs->sendEuler("forearm_roll_right",
@@ -1193,8 +1163,8 @@ namespace gazebo {
                  forearm_roll_right_offset_z,
                  0.0,
                  0.0,
-                 0.0, //rarm.forearmRollAngle,
-                 odomMsg.header.stamp);
+                 rarm.forearmRollAngle,
+                 timeMsg.rostime);
 
     // arm_r_wrist = wrist pitch DOF.
     tfs->sendEuler("wrist_flex_right",
@@ -1203,9 +1173,9 @@ namespace gazebo {
                  wrist_flex_right_offset_y,
                  wrist_flex_right_offset_z,
                  0.0,
-                 0.0, //rarm.wristPitchAngle,
+                 rarm.wristPitchAngle,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     // arm_r_hand = hand roll DOF, center at wrist pitch center
     tfs->sendEuler("gripper_roll_right",
@@ -1215,8 +1185,8 @@ namespace gazebo {
                  gripper_roll_right_offset_z,
                  0.0,
                  0.0,
-                 0.0, //rarm.wristRollAngle,
-                 odomMsg.header.stamp);
+                 rarm.wristRollAngle,
+                 timeMsg.rostime);
 
     // proximal digit, right
     tfs->sendEuler("finger_l_right",
@@ -1227,7 +1197,7 @@ namespace gazebo {
                  0.0,  //FIXME: get angle of finger...
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     // proximal digit, right
     tfs->sendEuler("finger_r_right",
@@ -1238,7 +1208,7 @@ namespace gazebo {
                  0.0,  //FIXME: get angle of finger...
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     // distal digit, right
     tfs->sendEuler("finger_tip_l_right",
@@ -1249,7 +1219,7 @@ namespace gazebo {
                  0.0,  //FIXME: get angle of finger tip...
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     // distal digit, right
     tfs->sendEuler("finger_tip_r_right",
@@ -1260,7 +1230,7 @@ namespace gazebo {
                  0.0,  //FIXME: get angle of finger tip...
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
 
 
@@ -1276,7 +1246,7 @@ namespace gazebo {
                  0.0,
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     // forearm camera right
     tfs->sendEuler("forearm_camera_right",
@@ -1287,7 +1257,7 @@ namespace gazebo {
                  0.0,
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     // wrist camera left
     tfs->sendEuler("wrist_camera_left",
@@ -1298,7 +1268,7 @@ namespace gazebo {
                  0.0,
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     // wrist camera right
     tfs->sendEuler("wrist_camera_right",
@@ -1309,7 +1279,7 @@ namespace gazebo {
                  0.0,
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
 
 
@@ -1318,37 +1288,41 @@ namespace gazebo {
 
 
     // head pan angle
+    controller::Controller* hpc = mc_.getControllerByName( "head_pan_controller" );
+    double head_pan_angle = dynamic_cast<controller::JointPositionControllerNode*>(hpc)->getMeasuredPosition();
     tfs->sendEuler("head_pan",
                  "torso",
                  head_pan_offset_x,
                  head_pan_offset_y,
                  head_pan_offset_z,
-                 0.0, //FIXME: get pan angle
+                 head_pan_angle,
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     // head tilt angle
+    controller::Controller* htc = mc_.getControllerByName( "head_tilt_controller" );
+    double head_tilt_angle = dynamic_cast<controller::JointPositionControllerNode*>(htc)->getMeasuredPosition();
     tfs->sendEuler("head_tilt",
                  "head_pan",
                  head_tilt_offset_x,
                  head_tilt_offset_y,
                  head_tilt_offset_z,
-                 0.0, //FIXME: get tilt angle
+                 head_tilt_angle,
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     // FIXME: not implemented
     tfs->sendEuler("stereo",
                  "head_pan",
                  0.0,
                  0.0,
-                 1.10,
                  0.0,
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 0.0,
+                 timeMsg.rostime);
 
     // base laser location
     tfs->sendEuler("base_laser",
@@ -1359,20 +1333,22 @@ namespace gazebo {
                  0.0,
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     // tilt laser location
     double tmpPitch, tmpPitchRate;
     //this->PR2Copy->hw.GetJointServoCmd(PR2::HEAD_LASER_PITCH, &tmpPitch, &tmpPitchRate );
+    controller::Controller* tlc = mc_.getControllerByName( "tilt_laser_controller" );
+    double tilt_laser_angle = dynamic_cast<controller::JointPositionControllerNode*>(tlc)->getMeasuredPosition();
     tfs->sendEuler("tilt_laser",
                  "torso",
                  tilt_laser_offset_x,
                  tilt_laser_offset_y,
                  tilt_laser_offset_z,
                  0.0,
-                 tmpPitch, //FIXME: verify laser tilt angle
+                 tilt_laser_angle,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
 
     /***************************************************************/
@@ -1393,7 +1369,7 @@ namespace gazebo {
                  tmpSteerFL,
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
     tfs->sendEuler("wheel_front_left_l",
                  "caster_front_left",
                  wheel_front_left_l_offset_x,
@@ -1402,7 +1378,7 @@ namespace gazebo {
                  0.0,
                  0.0, //FIXME: get wheel rotation
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
     tfs->sendEuler("wheel_front_left_r",
                  "caster_front_left",
                  wheel_front_left_r_offset_x,
@@ -1411,7 +1387,7 @@ namespace gazebo {
                  0.0,
                  0.0, //FIXME: get wheel rotation
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     tfs->sendEuler("caster_front_right",
                  "base",
@@ -1421,7 +1397,7 @@ namespace gazebo {
                  tmpSteerFR,
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
     tfs->sendEuler("wheel_front_right_l",
                  "caster_front_right",
                  wheel_front_right_l_offset_x,
@@ -1430,7 +1406,7 @@ namespace gazebo {
                  0.0,
                  0.0, //FIXME: get wheel rotation
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
     tfs->sendEuler("wheel_front_right_r",
                  "caster_front_right",
                  wheel_front_right_r_offset_x,
@@ -1439,7 +1415,7 @@ namespace gazebo {
                  0.0,
                  0.0, //FIXME: get wheel rotation
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     tfs->sendEuler("caster_rear_left",
                  "base",
@@ -1449,7 +1425,7 @@ namespace gazebo {
                  tmpSteerRL,
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
     tfs->sendEuler("wheel_rear_left_l",
                  "caster_rear_left",
                  wheel_rear_left_l_offset_x,
@@ -1458,7 +1434,7 @@ namespace gazebo {
                  0.0,
                  0.0, //FIXME: get wheel rotation
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
     tfs->sendEuler("wheel_rear_left_r",
                  "caster_rear_left",
                  wheel_rear_left_r_offset_x,
@@ -1467,7 +1443,7 @@ namespace gazebo {
                  0.0,
                  0.0, //FIXME: get wheel rotation
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     tfs->sendEuler("caster_rear_right",
                  "base",
@@ -1477,7 +1453,7 @@ namespace gazebo {
                  tmpSteerRR,
                  0.0,
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
     tfs->sendEuler("wheel_rear_right_l",
                  "caster_rear_right",
                  wheel_rear_right_l_offset_x,
@@ -1486,7 +1462,7 @@ namespace gazebo {
                  0.0,
                  0.0, //FIXME: get wheel rotation
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
     tfs->sendEuler("wheel_rear_right_r",
                  "caster_rear_right",
                  wheel_rear_right_r_offset_x,
@@ -1495,7 +1471,7 @@ namespace gazebo {
                  0.0,
                  0.0, //FIXME: get wheel rotation
                  0.0,
-                 odomMsg.header.stamp);
+                 timeMsg.rostime);
 
     rosnode_->publish("transform",this->shutterMsg);
    

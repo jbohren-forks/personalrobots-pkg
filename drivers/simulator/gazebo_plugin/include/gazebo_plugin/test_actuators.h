@@ -89,7 +89,6 @@ protected:
 private:
 
   std_msgs::BaseVel velMsg;
-  std_msgs::RobotBase2DOdom odomMsg;
   std_msgs::Empty shutterMsg;
    // arm joint data
   std_msgs::PR2Arm leftarmMsg;
@@ -106,7 +105,6 @@ private:
 
   Model *parent_model_;
 
-  TiXmlDocument *pr2Doc_;
   std::vector<robot_desc::URDF::Link*> pr2Links;
 
   //---------------------------------------------------------------------
@@ -173,6 +171,7 @@ private:
   // for storing reverse transmission results
   //mechanism::Robot* reverse_mech_robot_;
 
+  std_msgs::PR2Arm larm,rarm;
 
   // for storing controller xml
   struct Gazebo_joint_
