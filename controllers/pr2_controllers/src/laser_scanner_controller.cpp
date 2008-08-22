@@ -77,18 +77,35 @@ void LaserScannerController::init(double p_gain, double i_gain, double d_gain, d
 
 bool LaserScannerController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
-  TiXmlElement *jnt = config->FirstChildElement("joint");
-  if (jnt)
+  assert(robot);
+  robot_ = robot;
+  last_time_ = robot->hw_->current_time_;
+
+  //Perform checks at highest level to give the most informative error message possible
+  TiXmlElement *j = config->FirstChildElement("joint");
+  if (!j)
   {
-    // TODO: error check if xml attributes/elements are missing
-    double p_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("p"));
-    double i_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("i"));
-    double d_gain = atof(jnt->FirstChildElement("controller_defaults")->Attribute("d"));
-    double windup = atof(jnt->FirstChildElement("controller_defaults")->Attribute("iClamp"));
-    init(p_gain, i_gain, d_gain, windup, robot->hw_->current_time_,jnt->Attribute("name"), robot);
+    fprintf(stderr, "LaserScannerController was not given a joint\n");
+    return false;
   }
+
+  const char *joint_name = j->Attribute("name");
+  joint_ = joint_name ? robot->getJoint(joint_name) : NULL;
+  if (!joint_)
+  {
+    fprintf(stderr, "LaserScannerController could not find joint named \"%s\"\n", joint_name);
+    return false;
+  }
+
+ TiXmlElement *p = j->FirstChildElement("pid");
+  if (!p)
+    fprintf(stderr, "LaserScannerController's config did not specify the default pid parameters.\n");
+
+  joint_position_controller_.initXml(robot,config); //Pass down XML snippet to encapsulated joint_position_controller_
   return true;
-}
+
+
+ }
 
 // Set the joint position command
 void LaserScannerController::setCommand(double command)
