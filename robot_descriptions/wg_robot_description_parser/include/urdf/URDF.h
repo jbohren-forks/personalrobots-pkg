@@ -585,7 +585,10 @@ namespace robot_desc
 	const Map& getMap(void) const;
 
 	/** Try to evaluate the constant as a double value */
-	double getConstantValue(const std::string &name, bool *error = NULL);
+	double getConstantValue(const std::string &name, bool *error = NULL) const;
+
+	/** Try to retrieve the constant as a string value */
+	std::string getConstantString(const std::string &name, bool *error = NULL) const;
 	
 	/** Return the number of encountered errors */
 	unsigned int getErrorCount(void) const;

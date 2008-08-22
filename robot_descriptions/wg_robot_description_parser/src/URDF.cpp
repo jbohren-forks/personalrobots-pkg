@@ -824,10 +824,10 @@ namespace robot_desc {
 	}
     }
     
-    double URDF::getConstantValue(const std::string &name, bool *error)
+    double URDF::getConstantValue(const std::string &name, bool *error) const
     {
 	getConstantData data;
-	data.m = &m_constants;	
+	data.m = const_cast<std::map<std::string, std::string>*>(&m_constants);
 	double result = meval::EvaluateMathExpression(name, &getConstant, reinterpret_cast<void*>(&data));
 	for (unsigned int k = 0 ; k < data.errorMsg.size() ; ++k)
 	    errorMessage(data.errorMsg[k]);
@@ -836,6 +836,16 @@ namespace robot_desc {
 	if (error)
 	    *error = data.errorCount > 0;
 	return result;
+    }
+    
+    std::string URDF::getConstantString(const std::string &name, bool *error) const
+    {
+	std::map<std::string, std::string>::const_iterator pos = m_constants.find(name);
+	if (error)
+	    *error = pos == m_constants.end();
+	if (pos != m_constants.end())
+	    return pos->second;
+	return "";
     }
     
     unsigned int URDF::loadDoubleValues(const TiXmlNode *node, unsigned int count, double *vals, const char *attrName, bool warn)
