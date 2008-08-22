@@ -31,20 +31,39 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#ifndef LINK_H
-#define LINK_H
+#ifndef MECHANISM_LINK_H
+#define MECHANISM_LINK_H
 
 #include "mechanism_model/joint.h"
+#include <vector>
 
 namespace mechanism {
 
+class Robot;
+
 class Link
 {
-  char *name;
-  //Pointer to KDL link
-  Joint *joint;
+public:
+  Link();
+  ~Link() {}
+
+  // Initialization series.  Call initXml on all the links and then
+  // createTreeLinks on all the links before using the link.
+  bool initXml(TiXmlElement *config, Robot *robot);
+  bool createTreePointers(Robot *robot);
+
+  std::string name_;
+  std::string parent_name_;
+
+  Link *parent_;
+  Joint *joint_;
+  std::vector<Link*> children_;
+
+private:
+  enum InitState {INIT_XML, CREATE_TREE_LINKS, INITIALIZED};
+  InitState init_state_;
 };
 
-}
+} // namespace mechanism
 
-#endif /* LINK_H */
+#endif

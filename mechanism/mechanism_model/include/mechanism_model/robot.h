@@ -59,17 +59,23 @@ public:
   {
     deleteElements(&transmissions_);
     deleteElements(&joints_);
+    deleteElements(&links_);
   }
 
   bool initXml(TiXmlElement *root);
 
   std::vector<Joint*> joints_;
   std::vector<Transmission*> transmissions_;
+  std::vector<Link*> links_;
 
   Joint* getJoint(const std::string &name);
   Actuator* getActuator(const std::string &name);
+  Link* getLink(const std::string &name);
 
   HardwareInterface *hw_;
+
+  // For debugging
+  void printLinkTree();
 };
 
 }

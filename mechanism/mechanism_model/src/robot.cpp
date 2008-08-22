@@ -65,6 +65,35 @@ bool Robot::initXml(TiXmlElement *root)
       transmissions_.push_back(t);
   }
 
+  // Constructs the links.
+  for (xit = root->FirstChildElement("link"); xit;
+       xit = xit->NextSiblingElement("link"))
+  {
+    Link *link = new Link;
+    if (link->initXml(xit, this))
+      links_.push_back(link);
+    else
+      delete link;
+  }
+  for (unsigned int i = 0; i < links_.size(); ++i)
+  {
+    links_[i]->createTreePointers(this);
+  }
+  printLinkTree();
+
+#if 0
+  // Constructs the kinematic chains.
+  for (xit = root->FirstChildElement("chain"); xit;
+       xit = xit->NextSiblingElement("chain"))
+  {
+    kinematics::Chain *c = new kinematics::Chain;
+    if (c->initXml(xit, this))
+      chains_.push_back(c);
+    else
+      delete c;
+  }
+#endif
+
   return true;
 }
 
@@ -90,6 +119,39 @@ Actuator* Robot::getActuator(const std::string &name)
 {
   // Yeah, it's a linear search.  Deal with it.
   return findByName(hw_->actuators_, name);
+}
+
+Link* Robot::getLink(const std::string &name)
+{
+  return findByName(links_, name);
+}
+
+void printLinkTreeHelper(Link *link, int depth = 0)
+{
+  for (int i = 0; i < depth; ++i)
+    printf("  ");
+
+  for (unsigned int i = 0; i < link->children_.size(); ++i)
+    printLinkTreeHelper(link->children_[i], depth + 1);
+}
+void Robot::printLinkTree()
+{
+  Link *root = NULL;
+  for (unsigned int i = 0; i < links_.size(); ++i)
+  {
+    if (links_[i]->parent_name_ == "world")
+    {
+      root = links_[i];
+      break;
+    }
+  }
+  if (!root)
+  {
+    fprintf(stderr, "Could not print the link tree because there's no link connected to the world\n");
+    return;
+  }
+
+  printLinkTreeHelper(root, 0);
 }
 
 } // namespace mechanism
