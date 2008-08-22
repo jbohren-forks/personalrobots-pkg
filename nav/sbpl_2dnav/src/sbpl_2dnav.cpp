@@ -37,180 +37,385 @@
 // roscpp
 #include <ros/node.h>
 
+// For transform support
+#include <rosTF/rosTF.h>
+
+#include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/Planner2DGoal.h>
+#include <pr2_msgs/OccDiff.h>
 #include <std_srvs/StaticMap.h>
+#include <pr2_srvs/TransientObstacles.h>
 
 //sbpl headers file
 #include <headers.h>
 
+static const int NEW_POSE_REPLAN_THRESHOLD=5;
+
 class Sbpl2DNav : public ros::node {
 public:
-  Sbpl2DNav(void) : ros::node("sbpl_2dnav") {
-    std_srvs::StaticMap::request  req;
-    std_srvs::StaticMap::response resp;
-    puts("Requesting the map...");
-    while(!ros::service::call("static_map", req, resp))
-      {
-	puts("request failed; trying again...");
-	usleep(1000000);
-      }
-    printf("Received a %d X %d map @ %.3f m/pix\n",
-	   resp.map.width,
-	   resp.map.height,
-	   resp.map.resolution);
-    
-    char* mapdata;
-    int sx, sy;
-    sx = resp.map.width;
-    sy = resp.map.height;
-    // Convert to player format
-    mapdata = new char[sx*sy];
-    for(int i=0;i<sx*sy;i++) {
-      if(resp.map.data[i] == 0)
-	mapdata[i] = 0;
-      else if(resp.map.data[i] == 100)
-	mapdata[i] = 1;
-      else
-	mapdata[i] = 0;
-    }
+  Sbpl2DNav(void); 
 
-    char* expdata;
-    expdata = new char[sx*sy];
-    memcpy(expdata,mapdata,sx*sy);
-    int g = 3;
-    //stupid 4-connected obstacle growth
-    for(int i = g; i < sx-g; i++) {
-      for(int j = g; j < sy-g; j++) {
-	if(mapdata[i+j*sx] == 1) {
-	  for(int k = i-g; k <= i+g; k++) {
-	    for(int l = j-g; l <= j+g; l++) {
-	      expdata[k+l*sx] = 1;
-	    }
-	  }
-	}
-      }
-    }
+  ~Sbpl2DNav(void);
 
-    environment_nav2D.SetConfiguration(sx,
-				       sy,
-				       expdata,
-				       0,0,
-				       539,586);
-    delete mapdata;
-    environment_nav2D.InitGeneral();
-    
-    //Initialize MDP Info
-    if(!environment_nav2D.InitializeMDPCfg(&MDPCfg)) {
-      printf("ERROR: InitializeMDPCfg failed\n");
-      exit(1);
-    }
-  }
+  void occDiffCallback();
+  
+  void newGoalCallback();
 
-  void DrawEnvMapWithPath(vector<int> path) {
-    GdkPixbuf* pixbuf;
-    GError* error = NULL;
-    guchar* pixels;
-    int p;
-    int paddr;
-    int i, j;
+  void DrawEnvMapWithPath(vector<int> path);
 
-    // Initialize glib
-    g_type_init();
+  void doOneCycle();
 
-    const EnvNAV2DConfig_t* env = environment_nav2D.GetEnvNavConfig();
-
-    pixels = (guchar*)malloc(sizeof(guchar)*env->EnvWidth_c*env->EnvHeight_c*3);
-
-
-    //this draws the obstacles
-    p=0;
-    for(j=env->EnvHeight_c-1;j>=0;j--) {
-      for(i=0; i<env->EnvWidth_c; i++,p++) {
-	paddr = p * 3;
-	
-	/*
-	  if(i > 190 && i < 210 && j > 290 && j < 310) {
-	  pixels[paddr] = 0;
-	  pixels[paddr+1] = 0;
-	  pixels[paddr+2] = 255;
-	} else 
-	*/
-	if(env->Grid2D[i][j] == 1) {
-	  pixels[paddr] = 0;
-	  pixels[paddr+1] = 0;
-	  pixels[paddr+2] = 0;
-	} else {
-	  pixels[paddr] = 255;
-	  pixels[paddr+1] = 255;
-	  pixels[paddr+2] = 255;
-	}
-      }
-    }
-    
-    //now we draw the path
-    for(unsigned int i = 0; i < path.size(); i++) {
-      int px, py;
-      environment_nav2D.GetCoordFromState(path[i], px, py);
-      //std::cout << px << " " << py << std::endl;
-      paddr = 3*(px+env->EnvWidth_c*(env->EnvHeight_c-py-1));
-      pixels[paddr] = 0;
-      pixels[paddr+1] = 255;
-      pixels[paddr+2] = 0;
-    }
-
-    pixbuf = gdk_pixbuf_new_from_data(pixels, 
-				      GDK_COLORSPACE_RGB,
-				      0,8,
-				      env->EnvWidth_c,
-				      env->EnvHeight_c,
-				      env->EnvWidth_c * 3,
-				      NULL, NULL);
-    
-    gdk_pixbuf_save(pixbuf,"path.png","png",&error,NULL);
-    gdk_pixbuf_unref(pixbuf);
-    free(pixels);
-  }
-
-public:
+  rosTFClient tf_;
+private:
 
   MDPConfig MDPCfg;
   EnvironmentNAV2D environment_nav2D;
-    
+  ARAPlanner* ara_planner_;
 
+  bool replan_required_;
+  ros::thread::mutex map_lock_;
+
+  char* static_mapdata_;
+  char* full_mapdata_;
+  int size_x_;
+  int size_y_;
+
+  int last_pose_x_;
+  int last_pose_y_;
+
+  bool goal_set_;
+
+  std_msgs::Planner2DGoal goal_msg_;
+  std_msgs::Polyline2D pointcloud_msg_;
+ pr2_msgs::OccDiff occ_diff_;
 };
 
-int main(int argc, char **argv) {
+Sbpl2DNav::Sbpl2DNav(void): ros::node("sbpl_2dnav"), 
+                            tf_(*this, true, 1 * 1000000000ULL, 0ULL) 
+{
+  last_pose_x_ = -1;
+  last_pose_y_ = -1;
+  replan_required_ = false;
+  goal_set_ = false;
+  
+  std_srvs::StaticMap::request  static_req;
+  std_srvs::StaticMap::response static_resp;
+  puts("Requesting the map...");
+  while(!ros::service::call("static_map", static_req, static_resp))
+  {
+    puts("request failed; trying again...");
+    usleep(1000000);
+  }
+  printf("Received a %d X %d map @ %.3f m/pix\n",
+         static_resp.map.width,
+         static_resp.map.height,
+         static_resp.map.resolution);
+    
+  size_x_ = static_resp.map.width;
+  size_y_ = static_resp.map.height;
+  // Convert to player format
+  static_mapdata_ = new char[size_x_*size_y_];
+  for(int i=0;i<size_x_*size_y_;i++) {
+    if(static_resp.map.data[i] == 0)
+      static_mapdata_[i] = 0;
+    else if(static_resp.map.data[i] == 100)
+      static_mapdata_[i] = 1;
+    else
+      static_mapdata_[i] = 1;
+  }
 
-  struct timeval timebefore;
-  struct timeval timeafter;
+  full_mapdata_ = new char[size_x_*size_y_];
+  memcpy(full_mapdata_,static_mapdata_,size_x_*size_y_);
+  int g = 2;
+  //stupid 4-connected obstacle growth
+  for(int i = g; i < size_x_-g; i++) {
+    for(int j = g; j < size_y_-g; j++) {
+      if(static_mapdata_[i+j*size_x_] == 1) {
+        for(int k = i-g; k <= i+g; k++) {
+          for(int l = j-g; l <= j+g; l++) {
+            full_mapdata_[k+l*size_x_] = 1;
+          }
+        }
+      }
+    }
+  }
+
+  //now getting full transient data
+  pr2_srvs::TransientObstacles::request transient_req;
+  pr2_srvs::TransientObstacles::response transient_res;
+    
+  puts("Calling full transient obstacle service");
+  while(!ros::service::call("transient_obstacles_full", transient_req, transient_res)) {
+    puts("request failed; trying again...");
+    usleep(1000000);
+  }
+  puts("Got full transient obstacles");
+
+  for(size_t i = 0; i < transient_res.obs.get_points_size(); i++) 
+  {
+    int mx = (int) transient_res.obs.points[i].x/.1;
+    int my = (int) transient_res.obs.points[i].y/.1;
+    full_mapdata_[mx+my*size_x_] = 1;
+  }
+  
+  environment_nav2D.SetConfiguration(size_x_,
+                                     size_y_,
+                                     full_mapdata_,
+                                     0,0,
+                                     539,586);
+  environment_nav2D.InitGeneral();
+  
+  //Initialize MDP Info
+  if(!environment_nav2D.InitializeMDPCfg(&MDPCfg)) 
+  {
+    printf("ERROR: InitializeMDPCfg failed\n");
+    exit(1);
+  }
+
+  ara_planner_ = new ARAPlanner(&environment_nav2D);
+
+  /*
+    ara_planner_->set_start(MDPCfg.startstateid);
+    ara_planner_->set_goal(MDPCfg.goalstateid);
+  */    
+
+  advertise<std_msgs::Polyline2D>("gui_path");
+  subscribe("goal", goal_msg_, &Sbpl2DNav::newGoalCallback);
+  subscribe("transient_obstacles_diff", occ_diff_, &Sbpl2DNav::occDiffCallback);
+  
+  /*
+    double allocated_time_secs = 60*10; //in seconds
+    
+    vector<int> solution_stateIDs_V;
+    
+    int bRet = ara_planner_->replan(allocated_time_secs, &solution_stateIDs_V);
+    
+    map_lock_.unlock();
+    
+    pointcloud_msg_.set_points_size(solution_stateIDs_V.size());
+    pointcloud_msg_.color.a = 0.0;
+    pointcloud_msg_.color.r = 0.0;
+    pointcloud_msg_.color.b = 1.0;
+    pointcloud_msg_.color.g = 0.0;
+    for(unsigned int i=0;i<solution_stateIDs_V.size();i++)
+    {
+    int px, py;
+    environment_nav2D.GetCoordFromState(solution_stateIDs_V[i], px, py);
+    
+    pointcloud_msg_.points[i].x = px*.1;
+    pointcloud_msg_.points[i].y = py*.1;
+    }
+    publish("gui_path", pointcloud_msg_);
+  */
+}
+
+Sbpl2DNav::~Sbpl2DNav() {
+  delete static_mapdata_;
+  delete full_mapdata_;
+  delete ara_planner_;
+}
+
+void Sbpl2DNav::newGoalCallback() {
+  map_lock_.lock();
+
+  int mx = (int)goal_msg_.goal.x/.1;
+  int my = (int)goal_msg_.goal.y/.1;
+  
+  environment_nav2D.SetGoal(mx, my);
+  ara_planner_->set_goal(environment_nav2D.GetStateFromCoord(mx, my));
+
+  //std::cout << "Setting new goal " << mx << " " << my << std::endl;
+
+  replan_required_ = true;
+  goal_set_ = true;
+  
+  map_lock_.unlock();
+}
+
+void Sbpl2DNav::occDiffCallback() {
+  map_lock_.lock();
+
+  //first take out points
+  for(size_t i = 0; i < occ_diff_.get_unocc_points_size(); i++) 
+  {
+    int mx = (int) occ_diff_.unocc_points[i].x/.1;
+    int my = (int) occ_diff_.unocc_points[i].y/.1;
+    if(full_mapdata_[mx+my*size_x_] != 1) {
+      //std::cout << "Sbpl2DNav::occDiffCallback() unocc_point cell " << mx << " " << my << " not occupied\n";
+    } else if(static_mapdata_[mx+my*size_x_] != 1) {
+      //only unset if not in static map for now
+      full_mapdata_[mx+my*size_x_] = 0;
+      environment_nav2D.UpdateCost(mx, my, 0);
+      //not replanning on this for now
+    }   
+  }
+
+  //adding new points
+  for(size_t i = 0; i < occ_diff_.get_occ_points_size(); i++)
+  {
+    int mx = (int) occ_diff_.occ_points[i].x/.1;
+    int my = (int) occ_diff_.occ_points[i].y/.1;
+    if(full_mapdata_[mx+my*size_x_] == 0) {
+      full_mapdata_[mx+my*size_x_] = 1;
+      environment_nav2D.UpdateCost(mx, my, 1);
+      replan_required_ = true;
+    }
+  } 
+  map_lock_.unlock();
+}
+
+void Sbpl2DNav::doOneCycle() {
+
+  //first update pose
+  
+  // Get the current robot pose in the map frame
+  libTF::TFPose2D robot_pose, global_pose;
+  robot_pose.x = 0;
+  robot_pose.y = 0;
+  robot_pose.yaw = 0;
+  robot_pose.frame = "FRAMEID_ROBOT";
+  robot_pose.time = 0; // request most recent pose
+  //robot_pose_.time = laserMsg.header.stamp.sec * 1000000000ULL + 
+  //        laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
+  try
+  {
+    global_pose = tf_.transformPose2D("FRAMEID_MAP", robot_pose);
+  }
+  catch(libTF::TransformReference::LookupException& ex)
+  {
+    puts("no global->local Tx yet");
+    return;
+  }
+  catch(libTF::TransformReference::ExtrapolateException& ex)
+  {
+    // this should never happen
+    puts("WARNING: extrapolation failed!");
+    return;
+  }
+
+  int mx = global_pose.x/.1;
+  int my = global_pose.y/.1;
+
+  if(abs(last_pose_x_-mx) >= NEW_POSE_REPLAN_THRESHOLD ||
+     abs(last_pose_y_-my) >= NEW_POSE_REPLAN_THRESHOLD) {
+    replan_required_ = true;
+  }
+
+  if(replan_required_ && goal_set_) {
+    environment_nav2D.SetStart(mx, my);
+    std::cout << "Setting start to " << mx << " " << my << std::endl;
+    ara_planner_->set_start(environment_nav2D.GetStateFromCoord(mx, my));
+
+    last_pose_x_ = mx;
+    last_pose_y_ = my;
+
+    map_lock_.lock();
+
+    double allocated_time_secs = 2; //in seconds
+
+    vector<int> solution_stateIDs_V;
+
+    int bRet = ara_planner_->replan(allocated_time_secs, &solution_stateIDs_V);
+
+    std::cout << "Number of states " << solution_stateIDs_V.size() << std::endl;
+
+    map_lock_.unlock();
+
+    pointcloud_msg_.set_points_size(solution_stateIDs_V.size());
+    pointcloud_msg_.color.a = 0.0;
+    pointcloud_msg_.color.r = 1.0;
+    pointcloud_msg_.color.b = 0.0;
+    pointcloud_msg_.color.g = 0.0;
+    for(unsigned int i=0;i<solution_stateIDs_V.size();i++)
+    {
+      int px, py;
+      environment_nav2D.GetCoordFromState(solution_stateIDs_V[i], px, py);
+      
+      pointcloud_msg_.points[i].x = px*.1;
+      pointcloud_msg_.points[i].y = py*.1;
+    }
+    publish("gui_path", pointcloud_msg_);
+    replan_required_=false;
+  }
+}
+
+
+void Sbpl2DNav::DrawEnvMapWithPath(vector<int> path) {
+  GdkPixbuf* pixbuf;
+  GError* error = NULL;
+  guchar* pixels;
+  int p;
+  int paddr;
+  int i, j;
+  
+  // Initialize glib
+  g_type_init();
+
+  const EnvNAV2DConfig_t* env = environment_nav2D.GetEnvNavConfig();
+
+  pixels = (guchar*)malloc(sizeof(guchar)*env->EnvWidth_c*env->EnvHeight_c*3);
+
+
+  //this draws the obstacles
+  p=0;
+  for(j=env->EnvHeight_c-1;j>=0;j--) {
+    for(i=0; i<env->EnvWidth_c; i++,p++) {
+      paddr = p * 3;
+	
+      /*
+        if(i > 190 && i < 210 && j > 290 && j < 310) {
+        pixels[paddr] = 0;
+        pixels[paddr+1] = 0;
+        pixels[paddr+2] = 255;
+	} else 
+      */
+      if(env->Grid2D[i][j] == 1) {
+        pixels[paddr] = 0;
+        pixels[paddr+1] = 0;
+        pixels[paddr+2] = 0;
+      } else {
+        pixels[paddr] = 255;
+        pixels[paddr+1] = 255;
+        pixels[paddr+2] = 255;
+      }
+    }
+  }
+    
+  //now we draw the path
+  for(unsigned int i = 0; i < path.size(); i++) {
+    int px, py;
+    environment_nav2D.GetCoordFromState(path[i], px, py);
+    //std::cout << px << " " << py << std::endl;
+    paddr = 3*(px+env->EnvWidth_c*(env->EnvHeight_c-py-1));
+    pixels[paddr] = 0;
+    pixels[paddr+1] = 255;
+    pixels[paddr+2] = 0;
+  }
+
+  pixbuf = gdk_pixbuf_new_from_data(pixels, 
+                                    GDK_COLORSPACE_RGB,
+                                    0,8,
+                                    env->EnvWidth_c,
+                                    env->EnvHeight_c,
+                                    env->EnvWidth_c * 3,
+                                    NULL, NULL);
+    
+  gdk_pixbuf_save(pixbuf,"path.png","png",&error,NULL);
+  gdk_pixbuf_unref(pixbuf);
+  free(pixels);
+}
+
+int main(int argc, char **argv) {
 
   ros::init(argc, argv);
   
   Sbpl2DNav snav;
   
   sleep(1);
-  
-  double allocated_time_secs = 60.0*15; //in seconds
 
-  vector<int> solution_stateIDs_V;
-  ARAPlanner ara_planner(&snav.environment_nav2D, &snav.MDPCfg);
-  gettimeofday(&timebefore,NULL);
-  int bRet = ara_planner.replan(allocated_time_secs, &solution_stateIDs_V);
-  gettimeofday(&timeafter,NULL);
-  int best_seconds = timeafter.tv_sec-timebefore.tv_sec;
-  int best_microseconds = timeafter.tv_usec-timebefore.tv_usec;
-  double best_tt = best_seconds*1.0+(.000001)*(best_microseconds*1.0);
-  
-  std::cout << "Planning took " << best_tt << " seconds\n";
-
-  if(bRet) {
-    //print the solution
-    printf("Solution is found\n");
-  } else {
-    printf("Solution does not exist\n");
+  while(1) {
+    snav.doOneCycle();
+    usleep(100000);
   }
-
-  snav.DrawEnvMapWithPath(solution_stateIDs_V);
-    
-
   snav.shutdown();
 }

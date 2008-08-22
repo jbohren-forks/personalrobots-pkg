@@ -8,6 +8,10 @@
 <url>http://pr.willowgarage.com</url>
 <depend package="roscpp"/>
 <depend package="std_srvs" />
+<depend package="std_msgs"/>
+<depend package="pr2_msgs"/>
+<depend package="pr2_srvs"/>
 <depend package="sbpl"/>
+<depend package="rosTF"/>
 <depend package="stage"/>
 </package>
