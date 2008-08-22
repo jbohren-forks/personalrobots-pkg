@@ -40,6 +40,7 @@
 #include <newmat10/newmat.h>
 #include <newmat10/newmatio.h>
 #include <cmath>
+#include <list>
 #include <pthread.h>
 
 #include <libTF/exception.h>
@@ -131,15 +132,11 @@ namespace libTF{
   
   
   private:
-    /**** Linked List stuff ****/
+    /** Storage for data */
+    std::list<Pose3DStorage> storage_;
+    ///A mutex to prevent linked list collisions
+    pthread_mutex_t linked_list_mutex;
 
-    struct data_LL;
-    /// The data structure for the linked list
-    struct data_LL{
-      Pose3DStorage data;
-      struct data_LL * next;
-      struct data_LL * previous;
-    };
     /** \brief The internal method for getting data out of the linked list */
     bool getValue(Pose3DStorage& buff, unsigned long long time, long long  &time_diff);
     /** \brief The internal method for adding to the linked list 
@@ -171,17 +168,6 @@ namespace libTF{
     unsigned long long max_length_linked_list;
     ///Whether to allow extrapolation
     unsigned long long max_extrapolation_time;
-
-    ///A mutex to prevent linked list collisions
-    pthread_mutex_t linked_list_mutex;
-
-    ///Pointer for the start of a sorted linked list.
-    data_LL* first;
-    ///Pointer for the end of a sorted linked list.
-    data_LL* last;
-
-    ///The length of the list
-    unsigned int list_length;
 
     ///Whether or not to interpolate
     bool interpolating;

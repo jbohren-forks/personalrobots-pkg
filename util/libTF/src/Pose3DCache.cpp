@@ -42,9 +42,6 @@ Pose3DCache::Pose3DCache(bool interpolating,
   max_storage_time(max_cache_time),
   max_length_linked_list(MAX_LENGTH_LINKED_LIST),
   max_extrapolation_time(_max_extrapolation_time),
-  first(NULL),
-  last(NULL),
-  list_length(0),
   interpolating(interpolating)
 {
   //Turn of caching, this should only keep a liked list of lenth 1
@@ -202,133 +199,31 @@ void Pose3DCache::add_value(const Pose3DStorage &dataIn)
 
 void Pose3DCache::insertNode(const Pose3DStorage & new_val)
 {
-  data_LL* p_current;
-  data_LL* p_old;
-
-  //  cout << "Inserting Node " << new_val.time << endl;
-
-  //Base case empty list
-  if (first == NULL)
-    {
-      //cout << "Base case" << endl;
-      first = new data_LL;
-      assert(first);
-      first->data = new_val;
-      first->next = NULL;
-      first->previous = NULL;
-      last = first;
-    }
-  else 
-    {
-      //Increment through until at the end of the list or in the right spot
-      p_current = first;
-      while (p_current != NULL && p_current->data.time > new_val.time)
-	{
-	  //  cout << "passed beyond " << p_current->data.time << endl;
-	  p_current = p_current->next;
-	}
-      
-      //THis means we hit the end of the list so just append the node
-      if (p_current == NULL)
-	{
-	  //cout << "Appending node to the end" << endl;
-	  p_current = new data_LL;
-	  assert (p_current);
-	  p_current->data = new_val;
-	  p_current->previous = last;
-	  p_current->next = NULL;
-	  last->next = p_current;
-	  
-	  last = p_current;
-	}
-      else
-	{
-	  
-	  //  cout << "Found a place to put data into the list" << endl;
-	  
-	  // Insert the new node
-	  // Record where the old first node was
-	  p_old = p_current;
-	  //Fill in the new node
-	  p_current = new data_LL;
-	  assert (p_current);
-	  p_current->data = new_val;
-	  p_current->next = p_old;
-	  p_current->previous = p_old->previous;
-	  
-	  
-	  //point the old to the new 
-	  p_old->previous = p_current;
-	  
-
-	  //If at the top of the list make sure we're not 
-	  if (p_current->previous == NULL)
-	    first = p_current;
-	  else
-	    p_current->previous->next = p_current;
-	}
-
-
-
-    }
-
-  // Record that we have increased the length of th elist
-  list_length ++;
-  
+  std::list<Pose3DStorage>::iterator it = storage_.begin();
+  while(it != storage_.end())
+  {
+    if (it->time <= new_val.time)
+      break;
+    it++;
+  }
+  storage_.insert(it, new_val);
 };
 
 void Pose3DCache::pruneList()
 {
-  data_LL* p_current = last;
+  unsigned long long current_time = storage_.begin()->time;
 
-  //  cout << "Pruning List" << endl;
-
-  //Empty Set
-  if (last == NULL) return;
-
-  unsigned long long current_time = first->data.time;;
-
-
-  //While time stamps too old
-  while (p_current->data.time + max_storage_time < current_time || list_length >= max_length_linked_list)
-    {
-      //      cout << "Age of node " << (double)(-p_current->data.time + current_time)/1000000.0 << endl;
-     // Make sure that there's at least one element in the list
-      if (p_current->previous != NULL)
-	{
-	  // Remove the last node
-	  p_current->previous->next = NULL;
-	  last = p_current->previous;
-	  delete p_current;
-	  p_current = last;
-	  // std::cout << " Pruning Node" << list_length << std::endl;
-	  list_length--;
-	}
-      else 
-	break;
-
-    }
+  while(!storage_.empty() && storage_.back().time + max_storage_time < current_time)
+  {
+    storage_.pop_back();
+  }
   
 };
 
 void Pose3DCache::clearList()
 {
   pthread_mutex_lock(&linked_list_mutex);  
-  
-  data_LL * p_current = first;
-  data_LL * p_last = NULL;
-
-  // Delete all nodes in list
-  while (p_current != NULL)
-    {
-      p_last = p_current;
-      p_current = p_current->next;
-      delete p_last;
-    }
-
-  //Clean up pointers
-  first = NULL;
-  last = NULL;
+  storage_.clear();
   pthread_mutex_unlock(&linked_list_mutex);  
   
 };
@@ -337,60 +232,81 @@ void Pose3DCache::clearList()
 int Pose3DCache::findClosest(Pose3DStorage& one, Pose3DStorage& two, const unsigned long long target_time, long long &time_diff)
 {
 
-  data_LL* p_current = first;
+  //No values stored 
+  if (storage_.size() == 0)
+    return 0;
 
+  //If time == 0 return the latest
+  if (target_time == 0)
+  {
+    one = storage_.front();
+    time_diff = storage_.front().time; ///@todo what should this be?? difference from "now"?
+    return 1;
+  }
 
-  // Base case no list
-  if (first == NULL)
-    {
-      return 0;
-    }
+  // One value stored
+  if (storage_.size() ==1)
+  { 
+    one = *(storage_.begin());
+    time_diff = target_time - storage_.begin()->time;
+    return 1;
+  }
   
-  //Case one element list or latest value is wanted.  
-  else if (first->next == NULL || target_time == 0)
+  //At least 2 values stored
+  //Find the first value less than the target value 
+  std::list<Pose3DStorage>::iterator it = storage_.begin();
+  while(it != storage_.end())
+  {
+    if (it->time <= target_time)
+      break;
+    it++;
+  }
+  //Catch the case it is the first value in the list 
+  if (it == storage_.begin())
+  {
+    one = *it;
+    two = *(++it);
+    time_diff = target_time - storage_.begin()->time; 
+    if ((unsigned int) time_diff > max_extrapolation_time) //Guarenteed in the future therefore positive
     {
-      one = first->data;
-      time_diff = target_time - first->data.time;
-      return 1;
+      pthread_mutex_unlock(&linked_list_mutex);
+      std::stringstream ss;
+      ss << "Extrapolation Too Far in the future: target_time = "<< (target_time)/1000000000.0 <<", closest data at "
+         << (one.time)/1000000000.0 << " and " << (two.time)/1000000000.0 <<" which are farther away than max_extrapolation_time "
+         << (max_extrapolation_time)/1000000000.0 <<" at "<< (target_time - one.time)/1000000000.0<< " and " << (target_time - two.time)/1000000000.0 <<" respectively.";
+      throw ExtrapolationException(ss.str());
     }
+    return 2;
+  }
+
+  //Catch the case where it's in the past
+  if (it == storage_.end())
+  {
+    one = *(--it);
+    two = *(--it);
+    time_diff = target_time - one.time; 
+    if (time_diff < -(long long)max_extrapolation_time) //Guarenteed in the past
+    {
+      pthread_mutex_unlock(&linked_list_mutex);
+      std::stringstream ss;
+      ss << "Extrapolation Too Far in the past: target_time = "<< (target_time)/1000000000.0 <<", closest data at "
+         << (one.time)/1000000000.0 << " and " << (two.time)/1000000000.0 <<" which are farther away than max_extrapolation_time "
+         << (max_extrapolation_time)/1000000000.0 <<" at "<< (target_time - one.time)/1000000000.0<< " and " << (target_time - two.time)/1000000000.0 <<" respectively.";
+      throw ExtrapolationException(ss.str());
+    }
+    return 2;
+  }
   
+  //Finally the case were somewhere in the middle  Guarenteed no extrapolation :-)
+  one = *(it); //Older 
+  two = *(--it); //Newer
+  if (fabs(target_time - one.time) < fabs(target_time - two.time))
+    time_diff = target_time - one.time; 
   else
-    {
-      //Two or more elements
-
-      //Find the one that just exceeds the time or hits the end
-      //and then take the previous one
-      p_current = first->next; //Start on the 2nd element so if we fail we fall back to the first one
-      //  cout << p_current->data.time << " vs " << target_time << endl;
-      //while (p_current->next != NULL && p_current->next->data.time < target_time)
-      while (p_current->next != NULL && p_current->data.time > target_time)
-	{
-	  //	  std::cout << "Skipping over " << p_current->data << endl;
-	  p_current = p_current->next;
-	}
-      
-      one = p_current->data;
-      two = p_current->previous->data;
-      
-      
-      // Test Extrapolation Distance
-      /*
-      if(target_time > one.time + max_extrapolation_time ||  //Future Case
-	 target_time + max_extrapolation_time < two.time) // Previous Case
-         */
-      if(target_time > two.time + max_extrapolation_time ||  //Future Case
-	 target_time + max_extrapolation_time < one.time) // Previous Case
-        {
-          pthread_mutex_unlock(&linked_list_mutex);
-          std::stringstream ss;
-          ss << "Extrapolation Too Far: target_time = "<< target_time <<", closest data at "
-             << two.time << " and " << one.time <<" which are farther away than max_extrapolation_time "
-             << max_extrapolation_time <<" at "<< target_time - two.time<< " and " << target_time - one.time <<" respectively.";
-          throw ExtrapolationException(ss.str());
-        }
-      
-      return 2;
-    }
+    time_diff = target_time - two.time; 
+  return 2;
+    
+  
 };
 
 // Quaternion slerp algorithm from http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp/index.htm
