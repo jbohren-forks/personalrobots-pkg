@@ -88,10 +88,23 @@ TEST(Pose3D, MatrixToQuaternionAndBack)
                        (fabs(math_utils::modNPiBy2(out2.yaw) - math_utils::modNPiBy2(yaw)) > 0.001 || fabs(math_utils::modNPiBy2(out2.pitch) - math_utils::modNPiBy2(pitch)) > 0.001 || fabs(math_utils::modNPiBy2(out2.roll) -math_utils::modNPiBy2(roll)) > 0.0001));
           
     ASSERT_FALSE(difference);
+    if (difference){
+      printf("in: %.3f %.3f %.3f\n",
+             yaw, pitch, roll);
+
+      std::cout << m;
+
+
+      printf("out: %.3f %.3f %.3f\n",
+             out.yaw, out.pitch, out.roll);
+      printf("out2: %.3f %.3f %.3f\n\n",
+             out2.yaw, out2.pitch, out2.roll);
+	  
+      printf("FAILURE!!!!!!!!!!\n\n");
+    }
   }
 
 }
-
 
 
 int main(int argc, char **argv){
