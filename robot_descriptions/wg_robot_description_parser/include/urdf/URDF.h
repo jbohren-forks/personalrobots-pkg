@@ -583,7 +583,10 @@ namespace robot_desc
 	
 	/** Get the data that was defined at top level */
 	const Map& getMap(void) const;
-        
+
+	/** Try to evaluate the constant as a double value */
+	double getConstantValue(const std::string &name, bool *error = NULL);
+	
 	/** Return the number of encountered errors */
 	unsigned int getErrorCount(void) const;
 	

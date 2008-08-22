@@ -824,6 +824,20 @@ namespace robot_desc {
 	}
     }
     
+    double URDF::getConstantValue(const std::string &name, bool *error)
+    {
+	getConstantData data;
+	data.m = &m_constants;	
+	double result = meval::EvaluateMathExpression(name, &getConstant, reinterpret_cast<void*>(&data));
+	for (unsigned int k = 0 ; k < data.errorMsg.size() ; ++k)
+	    errorMessage(data.errorMsg[k]);
+	if (data.errorCount)
+	    m_errorCount += data.errorCount;
+	if (error)
+	    *error = data.errorCount > 0;
+	return result;
+    }
+    
     unsigned int URDF::loadDoubleValues(const TiXmlNode *node, unsigned int count, double *vals, const char *attrName, bool warn)
     {
 	if (attrName)
@@ -862,18 +876,12 @@ namespace robot_desc {
 	for (unsigned int i = 0 ; ss.good() && i < count ; ++i)
 	{
 	    std::string value;
+	    bool err;
 	    ss >> value;
-	    getConstantData data;
-	    data.m = &m_constants;
-	    vals[i] = meval::EvaluateMathExpression(value, &getConstant, reinterpret_cast<void*>(&data));
-	    read++;
-	    for (unsigned int k = 0 ; k < data.errorMsg.size() ; ++k)
-		errorMessage(data.errorMsg[k]);
-	    if (data.errorCount)
-	    {
-		m_errorCount += data.errorCount;
+	    vals[i] = getConstantValue(value, &err);
+	    if (err)
 		errorLocation(node);
-	    } 
+	    read++;
 	}
 
 	if (ss.good())
