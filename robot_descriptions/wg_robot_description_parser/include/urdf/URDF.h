@@ -75,7 +75,7 @@ namespace robot_desc
 	    void getMapTagNames(const std::string &flag, std::vector<std::string> &names) const;
 	    
 	    /** Given a name and a flag, retrieve the defined map (string, string) */
-	    std::map<std::string, std::string> getMapTagValues(const std::string &type, const std::string &name) const;
+	    std::map<std::string, std::string> getMapTagValues(const std::string &flag, const std::string &name) const;
 
 	    /** Given a name and a flag, retrieve the defined map (string, XML) */
 	    std::map<std::string, const TiXmlElement*> getMapTagXML(const std::string &flag, const std::string &name) const;
