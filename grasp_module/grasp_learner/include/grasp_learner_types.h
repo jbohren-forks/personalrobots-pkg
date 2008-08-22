@@ -9,6 +9,7 @@ namespace grasp_learner {
 
 const char VOXEL_EMPTY = 2;
 const char VOXEL_OCCUPIED = 1;
+ const char VOXEL_UNKNOWN = 0;
 
 /*!
 Specifies whether the voxel grid stored as an octree is either:
@@ -18,7 +19,7 @@ Specifies whether the voxel grid stored as an octree is either:
 - FREE: grasp point is at 0,0,0, but the orientation of the gripper is unknown
 - ALIGNED: voxel grid is aligned with the orientation of the gripper for the grasp point
 */
-enum OctreeType{BINARY_FREE, BINARY_ALIGNED, CARVED_FREE, CARVED_ALIGNED};
+enum OctreeType{BINARY_FREE, BINARY_ALIGNED, CARVED_FREE, CARVED_ALIGNED, UNSPECIFIED};
 
 } //namespace grasp_learner
 

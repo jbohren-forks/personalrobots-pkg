@@ -5,4 +5,6 @@ genmsg()
 add_definitions(-Wall)
 rospack_add_executable(voxelizer src/scan_voxelizer.cpp)
 rospack_add_executable(voxel_processor src/voxel_processor.cpp)
+target_link_libraries(voxel_processor blas)
+target_link_libraries(voxel_processor lapack)
 

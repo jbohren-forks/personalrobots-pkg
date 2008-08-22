@@ -12,14 +12,20 @@
 #include <vector>
 #include <list>
 #include <errno.h>
+#include <unistd.h>
 
-/*! \file scan_voxelizer.cpp
+/**
+   @mainpage @b A collection of tools for reading in, parsing,
+   processing and saving data from the Grasp Learning Database.
 
-  This executable loads a file saved by GraspIt! containing a point
- cloud and a number of grasp points. It then creates voxel grids
- around each grasp point and saves them as files and also broadcasts
- them as ROS messages that can be logged.
- */
+   The scan_voxelizer reads in files containing point clouds and
+   associated grasp points and voxelizes them, then saves them as
+   files and also broadcasts them as ROS messages.
+
+   The voxel_processor reads in voxels from a ROS bag and does
+   processing on them, such as Principal Component Analysis.
+
+**/
 
 using namespace grasp_module;
 using namespace scan_utils;
@@ -128,6 +134,12 @@ struct Ray{
 	float dx, dy, dz;
 	float dist;
 };
+
+/*!  This class loads a file saved by GraspIt! containing a point
+  cloud and a number of grasp points. It then creates voxel grids
+  around each grasp point and saves them as files and also broadcasts
+  them as ROS messages that can be logged.
+ */
 
 class ScanVoxelizer
 {
@@ -295,7 +307,7 @@ bool ScanVoxelizer::processCloudAndGrasp(SmartScan *cloud, GraspPoint *newGrasp)
 	//remember that GraspIt works in mm!
 	Octree<char> octree(0,0,0,
 			    320, 320, 320, //20 cm size in each direction
-			    5, 0); //depth 5, 1cm cells
+			    5, VOXEL_UNKNOWN); //depth 5, 1cm cells
 	SmartScan savedCloud;	
 
 	savedCloud.addScan(cloud);
@@ -355,7 +367,7 @@ bool ScanVoxelizer::processRaysAndGrasp(std::list<Ray> &rays, GraspPoint *newGra
 	//remember that GraspIt works in mm!
 	Octree<char> octree(0,0,0,
 			    320, 320, 320, //32 cm size in each direction
-			    5, 0); //depth 5, 1 cm cells
+			    5, VOXEL_UNKNOWN); //depth 5, 1 cm cells
 
 	libTF::TFPoint pt = newGrasp->getLocation();
 	newGrasp->getTranInv(&transform);
@@ -446,6 +458,8 @@ void ScanVoxelizer::processData()
 			if (processCloudAndGrasp(&mCloud, newGrasp)) {
 				mFileCount ++;
 			}
+			//cloud messages are sent faster than ROS vacuum can keep up with
+			usleep(10000);
 		} else if (mType == RAW) {
 			if (processRaysAndGrasp(mRays, newGrasp)){
 				mFileCount++;
