@@ -6,7 +6,7 @@
 #include "Cv3DPoseEstimateRef.h"
 
 /**
- * Reference implmentation using OpenCV.
+ * Reference implementation using OpenCV.
  * This implementation is not optimized.
  */
 class Cv3DPoseEstimateDispSpaceRef: public Cv3DPoseEstimateRef, public CvStereoCamModel
