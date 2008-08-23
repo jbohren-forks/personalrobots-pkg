@@ -31,6 +31,7 @@ public:
 	virtual ~CvTest3DPoseEstimate();
 	bool testPointClouds();
 	bool testVideos();
+	bool testVideos2();
     bool test();
 	void display3d();
 
@@ -43,6 +44,8 @@ protected:
 	void randomize(CvMat *xyzs, int num, double maxVal);
 	double randReal(double min, double max);
 	void disturb(const CvMat *xyzs, CvMat *xyzsNoised);
+	static void MyMouseCallback(int event, int x, int y, int flagsm, void* param);
+
 	CvPoint3D64f mEulerAngle;
 	CvPoint3D64f mTranslation;
 	double mRotData[9];
@@ -55,5 +58,7 @@ protected:
 	double mDisturbScale;
 	double mOutlierScale;
 	double mOutlierPercentage;
+
+	bool mStop;
 };
 #endif /*WGTEST3DPOSEESTIMATE_H_*/
