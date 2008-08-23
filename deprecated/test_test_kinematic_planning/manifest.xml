@@ -1,8 +1,0 @@
-<package>
-<description>3D Map Construction</description>
-<author>Ioan A. Sucan</author>
-<license>BSD</license>
-<depend package="roscpp" />
-<depend package="std_msgs" />
-<depend package="std_srvs" />
-</package>
