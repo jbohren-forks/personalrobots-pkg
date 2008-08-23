@@ -14,7 +14,7 @@ string robot_link
 # The desired pose of the robot link
 std_msgs/Pose3DFloat64 pose
 
-# the allowed difference (euclidian distance) for position
+# the allowed difference (square of euclidian distance) for position
 float64 position_distance
 
 # the allowed difference (shortest angular distance) for orientation
