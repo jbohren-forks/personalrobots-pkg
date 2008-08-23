@@ -116,6 +116,7 @@ public:
 											       robot_model)
     {
 	advertise_service("plan_kinematic_path_state", &KinematicPlanning::planToState);
+	advertise_service("plan_kinematic_path_position", &KinematicPlanning::planToPosition);
     }
     
     virtual ~KinematicPlanning(void)
@@ -184,6 +185,22 @@ public:
 	return true;
     }
 
+    bool isRequestValid(robot_srvs::KinematicPlanLinkPosition::request &req)
+    {
+	if (!areSpaceParamsValid(req.params))
+	    return false;
+	
+	XMLModel *m = m_models[req.params.model_id];
+	
+	if (m->kmodel->stateDimension != req.start_state.get_vals_size())
+	{
+	    std::cerr << "Dimension of start state expected to be " << m->kmodel->stateDimension << " but was received as " << req.start_state.get_vals_size() << std::endl;
+	    return false;
+	}
+	
+	return true;
+    }
+
     void setupStateSpaceAndStartState(XMLModel *m, KinematicPlannerSetup &p,
 				      robot_msgs::KinematicSpaceParameters &params,
 				      robot_msgs::KinematicState &start_state)
@@ -232,6 +249,19 @@ public:
 	    goal->state->values[i] = req.goal_state.vals[i];
 	goal->threshold = req.threshold;
 	p.si->setGoal(goal);
+    }    
+    
+    void setupGoalState(KinematicPlannerSetup &p, robot_srvs::KinematicPlanLinkPosition::request &req)
+    {
+	/* set the goal */
+	/*
+	ompl::SpaceInformationKinematic::GoalStateKinematic_t goal = new ompl::SpaceInformationKinematic::GoalStateKinematic(p.si);
+	const unsigned int dim = p.si->getStateDimension();
+	goal->state = new ompl::SpaceInformationKinematic::StateKinematic(dim);
+	for (unsigned int i = 0 ; i < dim ; ++i)
+	    goal->state->values[i] = req.goal_state.vals[i];
+	goal->threshold = req.threshold;
+	p.si->setGoal(goal); */
     }    
     
     void computePlan(KinematicPlannerSetup &p, int times, double allowed_time, bool interpolate,
@@ -325,6 +355,40 @@ public:
     }
     
     bool planToState(robot_srvs::KinematicPlanState::request &req, robot_srvs::KinematicPlanState::response &res)
+    {
+	if (!isRequestValid(req))
+	    return false;
+	
+	/* find the data we need */
+	XMLModel                   *m = m_models[req.params.model_id];
+	KinematicPlannerSetup &psetup = m->planners[req.params.planner_id];
+	
+	/* configure state space and starting state */
+	setupStateSpaceAndStartState(m, psetup, req.params, req.start_state);
+
+	/* add goal state */
+	setupGoalState(psetup, req);
+	
+	/* print some information */
+	printf("=======================================\n");
+	psetup.si->printSettings();
+	printf("=======================================\n");	
+	
+	/* compute actual motion plan */
+	ompl::SpaceInformationKinematic::PathKinematic_t bestPath       = NULL;
+	double                                           bestDifference = 0.0;	
+	computePlan(psetup, req.times, req.allowed_time, req.interpolate, bestPath, bestDifference);
+	
+	/* fill in the results */
+	fillSolution(psetup, bestPath, bestDifference, res.path, res.distance);
+	
+	/* clear memory */
+	cleanupPlanningData(psetup);
+	
+	return true;
+    }
+
+    bool planToPosition(robot_srvs::KinematicPlanLinkPosition::request &req, robot_srvs::KinematicPlanLinkPosition::response &res)
     {
 	if (!isRequestValid(req))
 	    return false;

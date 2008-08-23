@@ -34,6 +34,9 @@
 
 /** \Author Ioan Sucan */
 
+#ifndef KINEMATIC_PLANNING_XML_MODEL_
+#define KINEMATIC_PLANNING_XML_MODEL_
+
 #include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
 #include <collision_space/environment.h>
 #include <planning_models/kinematic.h>
@@ -192,3 +195,5 @@ class SpaceInformationXMLModel : public ompl::SpaceInformationKinematic
     std::vector<int>                 m_planarJoints;
     
 };    
+
+#endif
