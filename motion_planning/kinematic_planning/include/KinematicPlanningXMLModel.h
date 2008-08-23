@@ -35,7 +35,52 @@
 /** \Author Ioan Sucan */
 
 #include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
+#include <collision_space/environment.h>
 #include <planning_models/kinematic.h>
+
+#include <vector>
+#include <string>
+#include <map>
+
+struct KinematicPlannerSetup
+{
+    ompl::Planner_t                                                         mp;
+    ompl::SpaceInformationKinematic_t                                       si;
+    ompl::SpaceInformation::StateValidityChecker_t                          svc;
+    std::map<std::string, ompl::SpaceInformation::StateDistanceEvaluator_t> sde;    
+    ompl::PathSmootherKinematic_t                                           smoother;
+};
+
+struct XMLModel
+{
+    XMLModel(void)
+    {
+	groupID          = -1;
+	collisionSpaceID = 0;
+	collisionSpace   = NULL;	    
+    }
+    
+    ~XMLModel(void)
+    {
+	for (std::map<std::string, KinematicPlannerSetup>::iterator i = planners.begin(); i != planners.end() ; ++i)
+	{
+	    delete i->second.mp;
+	    delete i->second.svc;
+	    for (std::map<std::string, ompl::SpaceInformation::StateDistanceEvaluator_t>::iterator j = i->second.sde.begin(); j != i->second.sde.end() ; ++j)
+		delete j->second;
+	    delete i->second.smoother;
+	    delete i->second.si;
+	}
+    }
+    
+    std::map<std::string, KinematicPlannerSetup>  planners;
+    collision_space::EnvironmentModel            *collisionSpace;
+    unsigned int                                  collisionSpaceID;
+    planning_models::KinematicModel              *kmodel;
+    std::string                                   groupName;
+    int                                           groupID;
+};
+
 
 /** This class configures an instance of SpaceInformationKinematic with data from a KinematicModel */
 class SpaceInformationXMLModel : public ompl::SpaceInformationKinematic
@@ -47,6 +92,7 @@ class SpaceInformationXMLModel : public ompl::SpaceInformationKinematic
 	m_groupID = groupID;	    
 	m_divisions = divisions;
 	
+	/* compute the state space for this group */
 	m_stateDimension = m_groupID >= 0 ? m_kmodel->groupStateIndexList[m_groupID].size() : m_kmodel->stateDimension;
 	m_stateComponent.resize(m_stateDimension);
 	
@@ -81,7 +127,9 @@ class SpaceInformationXMLModel : public ompl::SpaceInformationKinematic
     {
     }
     
-    
+    /** For planar and floating joints, we have infinite
+       dimensions. The bounds for these dimensions are set by the
+       user. */
     void setPlanningVolume(double x0, double y0, double z0, double x1, double y1, double z1)
     {
 	for (unsigned int i = 0 ; i < m_floatingJoints.size() ; ++i)

@@ -95,7 +95,7 @@ Provides (name/type):
 #include <ompl/extension/samplingbased/kinematic/extension/rrt/LazyRRT.h>
 #include <ompl/extension/samplingbased/kinematic/extension/rrt/RRT.h>
 
-#include "SpaceInformationXMLModel.h"
+#include "KinematicPlanningXMLModel.h"
 
 #include <profiling_utils/profiler.h>
 #include <string_utils/string_utils.h>
@@ -113,105 +113,151 @@ public:
 
     KinematicPlanning(const std::string &robot_model) : ros::node("kinematic_planning"),
 							planning_node_util::NodeCollisionModel(dynamic_cast<ros::node*>(this),
-											       robot_model,
-											       new collision_space::EnvironmentModelODE())
+											       robot_model)
     {
-	advertise_service("plan_kinematic_path_state", &KinematicPlanning::plan);
+	advertise_service("plan_kinematic_path_state", &KinematicPlanning::planToState);
     }
     
-    ~KinematicPlanning(void)
+    virtual ~KinematicPlanning(void)
     {
-	for (std::map<std::string, Model*>::iterator i = m_models.begin() ; i != m_models.end() ; i++)
+	for (std::map<std::string, XMLModel*>::iterator i = m_models.begin() ; i != m_models.end() ; i++)
 	    delete i->second;
-    }    
+    }
     
-    bool plan(robot_srvs::KinematicPlanState::request &req, robot_srvs::KinematicPlanState::response &res)
+    bool areSpaceParamsValid(robot_msgs::KinematicSpaceParameters &params)
     {
-	if (m_models.find(req.model_id) == m_models.end())
+	if (m_models.find(params.model_id) == m_models.end())
 	{
-	    std::cerr << "Cannot plan for '" << req.model_id << "'. Model does not exist" << std::endl;
+	    std::cerr << "Cannot plan for '" << params.model_id << "'. Model does not exist" << std::endl;
 	    return false;	    
 	}
+
+	/* find the model */
+	XMLModel *m = m_models[params.model_id];
 	
-	Model   *m = m_models[req.model_id];
-	Planner &p = m->planners[0];
+	/* if the user did not specify a planner, use the first available one */
+	if (params.planner_id.empty())
+	{
+	    if (!m->planners.empty())
+		params.planner_id = m->planners.begin()->first;
+	}
+	
+	/* check if desired planner exists */
+	std::map<std::string, KinematicPlannerSetup>::iterator plannerIt = m->planners.find(params.planner_id);
+	if (plannerIt == m->planners.end())
+	{
+	    std::cerr << "Motion planner not found: '" << params.planner_id << "'" << std::endl;
+	    return false;
+	}
+	
+	KinematicPlannerSetup &psetup = plannerIt->second;
+
+	/* check if the desired distance metric is defined */
+	if (psetup.sde.find(params.distance_metric) == psetup.sde.end())
+	{
+	    std::cerr << "Distance evaluator not found: '" << params.distance_metric << "'" << std::endl;
+	    return false;
+	}
+	return true;
+    }
+    
+    bool isRequestValid(robot_srvs::KinematicPlanState::request &req)
+    {
+	if (!areSpaceParamsValid(req.params))
+	    return false;
+
+	XMLModel *m = m_models[req.params.model_id];
+	KinematicPlannerSetup &psetup = m->planners[req.params.planner_id];
 	
 	if (m->kmodel->stateDimension != req.start_state.get_vals_size())
 	{
 	    std::cerr << "Dimension of start state expected to be " << m->kmodel->stateDimension << " but was received as " << req.start_state.get_vals_size() << std::endl;
-	    return false;	    
-	}
-	
-	const int dim = req.goal_state.get_vals_size();
-	if ((int)p.si->getStateDimension() != dim)
-	{
-	    std::cerr << "Dimension of start goal expected to be " << p.si->getStateDimension() << " but was received as " << dim << std::endl;
 	    return false;
 	}
 	
-	if (req.times <= 0)
+	if (psetup.si->getStateDimension() != req.goal_state.get_vals_size())
 	{
-	    std::cerr << "Request specifies motion plan should be computed " << req.times << " times" << std::endl;
+	    std::cerr << "Dimension of start goal expected to be " << psetup.si->getStateDimension() << " but was received as " <<  req.goal_state.get_vals_size() << std::endl;
 	    return false;
 	}
-	
-	
+
+	return true;
+    }
+
+    void setupStateSpaceAndStartState(XMLModel *m, KinematicPlannerSetup &p,
+				      robot_msgs::KinematicSpaceParameters &params,
+				      robot_msgs::KinematicState &start_state)
+    {
 	/* set the workspace volume for planning */
 	// only area or volume should go through... not sure what happens on really complicated models where 
 	// we have both multiple planar and multiple floating joints...
-	static_cast<SpaceInformationXMLModel*>(p.si)->setPlanningArea(req.volumeMin.x, req.volumeMin.y,
-								      req.volumeMax.x, req.volumeMax.y);
-        static_cast<SpaceInformationXMLModel*>(p.si)->setPlanningVolume(req.volumeMin.x, req.volumeMin.y, req.volumeMin.z,
-									req.volumeMax.x, req.volumeMax.y, req.volumeMax.z);
-    
+	static_cast<SpaceInformationXMLModel*>(p.si)->setPlanningArea(params.volumeMin.x, params.volumeMin.y,
+								      params.volumeMax.x, params.volumeMax.y);
+        static_cast<SpaceInformationXMLModel*>(p.si)->setPlanningVolume(params.volumeMin.x, params.volumeMin.y, params.volumeMin.z,
+									params.volumeMax.x, params.volumeMax.y, params.volumeMax.z);
+
+	p.si->setStateDistanceEvaluator(p.sde[params.distance_metric]);
+	
 	/* set the starting state */
-        ompl::SpaceInformationKinematic::StateKinematic_t start = new ompl::SpaceInformationKinematic::StateKinematic(dim);
-    
+	const unsigned int dim = p.si->getStateDimension();
+	ompl::SpaceInformationKinematic::StateKinematic_t start = new ompl::SpaceInformationKinematic::StateKinematic(dim);
+	
 	if (m->groupID >= 0)
 	{
 	    /* set the pose of the whole robot */
-	    m->kmodel->computeTransforms(req.start_state.vals);
+	    m->kmodel->computeTransforms(start_state.vals);
 	    m->collisionSpace->updateRobotModel(m->collisionSpaceID);
 	    
 	    /* extract the components needed for the start state of the desired group */
-	    for (int i = 0 ; i < dim ; ++i)
-		start->values[i] = req.start_state.vals[m->kmodel->groupStateIndexList[m->groupID][i]];
+	    for (unsigned int i = 0 ; i < dim ; ++i)
+		start->values[i] = start_state.vals[m->kmodel->groupStateIndexList[m->groupID][i]];
 	}
 	else
 	{
 	    /* the start state is the complete state */
-	    for (int i = 0 ; i < dim ; ++i)
-		start->values[i] = req.start_state.vals[i];
+	    for (unsigned int i = 0 ; i < dim ; ++i)
+		start->values[i] = start_state.vals[i];
 	}
 	
 	p.si->addStartState(start);
-	
+    }
+    
+    void setupGoalState(KinematicPlannerSetup &p, robot_srvs::KinematicPlanState::request &req)
+    {
 	/* set the goal */
 	ompl::SpaceInformationKinematic::GoalStateKinematic_t goal = new ompl::SpaceInformationKinematic::GoalStateKinematic(p.si);
+	const unsigned int dim = p.si->getStateDimension();
 	goal->state = new ompl::SpaceInformationKinematic::StateKinematic(dim);
-	for (int i = 0 ; i < dim ; ++i)
+	for (unsigned int i = 0 ; i < dim ; ++i)
 	    goal->state->values[i] = req.goal_state.vals[i];
 	goal->threshold = req.threshold;
 	p.si->setGoal(goal);
-
-	printf("=======================================\n");
-	p.si->printSettings();
-	printf("=======================================\n");	
-	
-	
-	/* do the planning */
-        ompl::SpaceInformationKinematic::PathKinematic_t bestPath = NULL;
-        double                                           bestDifference = 0.0;
-        double                                           totalTime = 0.0;
+    }    
     
+    void computePlan(KinematicPlannerSetup &p, int times, double allowed_time, bool interpolate,
+		     ompl::SpaceInformationKinematic::PathKinematic_t &bestPath, double &bestDifference)
+    {
+		
+	if (times <= 0)
+	{
+	    std::cerr << "Request specifies motion plan cannot be computed " << times << " times" << std::endl;
+	    return;
+	}
+
+	/* do the planning */
+	bestPath = NULL;
+	bestDifference = 0.0;
+        double totalTime = 0.0;
+	ompl::SpaceInformation::Goal_t goal = p.si->getGoal();
+	
 	m_collisionSpace->lock();
 	
 	profiling_utils::Profiler::Start();
 
-	for (int i = 0 ; i < req.times ; ++i)
+	for (int i = 0 ; i < times ; ++i)
 	{
 	    ros::Time startTime = ros::Time::now();
-	    bool ok = p.mp->solve(req.allowed_time); 
+	    bool ok = p.mp->solve(allowed_time); 
 	    double tsolve = (ros::Time::now() - startTime).to_double();	
 	    std::cout << (ok ? "[Success]" : "[Failure]") << " Motion planner spent " << tsolve << " seconds" << std::endl;
 	    totalTime += tsolve;
@@ -224,7 +270,7 @@ public:
 		p.smoother->smoothVertices(path);
 		double tsmooth = (ros::Time::now() - startTime).to_double();
 		std::cout << "          Smoother spent " << tsmooth << " seconds (" << (tsmooth + tsolve) << " seconds in total)" << std::endl;
-		if (req.interpolate)
+		if (interpolate)
 		    p.si->interpolatePath(path);
 		if (bestPath == NULL || bestDifference > goal->getDifference() || 
 		    (bestPath && bestDifference == goal->getDifference() && bestPath->states.size() > path->states.size()))
@@ -241,33 +287,73 @@ public:
 	}
 	
 	profiling_utils::Profiler::Stop();
-	
 	m_collisionSpace->unlock();
+	
+        std::cout << std::endl << "Total planning time: " << totalTime << "; Average planning time: " << (totalTime / (double)times) << " (seconds)" << std::endl;
+    }
 
-        std::cout << std::endl << "Total planning time: " << totalTime << "; Average planning time: " << (totalTime / (double)req.times) << " (seconds)" << std::endl;
-
+    void fillSolution(KinematicPlannerSetup &p, ompl::SpaceInformationKinematic::PathKinematic_t bestPath, double bestDifference,
+		      robot_msgs::KinematicPath &path, double &distance)
+    {
+	const unsigned int dim = p.si->getStateDimension();
+	
 	/* copy the solution to the result */
 	if (bestPath)
 	{
-	    res.path.set_states_size(bestPath->states.size());
+	    path.set_states_size(bestPath->states.size());
 	    for (unsigned int i = 0 ; i < bestPath->states.size() ; ++i)
 	    {
-		res.path.states[i].set_vals_size(dim);
-		for (int j = 0 ; j < dim ; ++j)
-		    res.path.states[i].vals[j] = bestPath->states[i]->values[j];
+		path.states[i].set_vals_size(dim);
+		for (unsigned int j = 0 ; j < dim ; ++j)
+		    path.states[i].vals[j] = bestPath->states[i]->values[j];
 	    }
-	    res.distance = bestDifference;
+	    distance = bestDifference;
 	    delete bestPath;
 	}
 	else
 	{
-	    res.path.set_states_size(0);
-	    res.distance = -1.0;
+	    path.set_states_size(0);
+	    distance = -1.0;
 	}
-	
+    }
+    
+    void cleanupPlanningData(KinematicPlannerSetup &p)
+    {
 	/* cleanup */
 	p.si->clearGoal();
-	p.si->clearStartStates();
+	p.si->clearStartStates();	
+    }
+    
+    bool planToState(robot_srvs::KinematicPlanState::request &req, robot_srvs::KinematicPlanState::response &res)
+    {
+	if (!isRequestValid(req))
+	    return false;
+	
+	/* find the data we need */
+	XMLModel                   *m = m_models[req.params.model_id];
+	KinematicPlannerSetup &psetup = m->planners[req.params.planner_id];
+	
+	/* configure state space and starting state */
+	setupStateSpaceAndStartState(m, psetup, req.params, req.start_state);
+
+	/* add goal state */
+	setupGoalState(psetup, req);
+	
+	/* print some information */
+	printf("=======================================\n");
+	psetup.si->printSettings();
+	printf("=======================================\n");	
+	
+	/* compute actual motion plan */
+	ompl::SpaceInformationKinematic::PathKinematic_t bestPath       = NULL;
+	double                                           bestDifference = 0.0;	
+	computePlan(psetup, req.times, req.allowed_time, req.interpolate, bestPath, bestDifference);
+	
+	/* fill in the results */
+	fillSolution(psetup, bestPath, bestDifference, res.path, res.distance);
+	
+	/* clear memory */
+	cleanupPlanningData(psetup);
 	
 	return true;
     }
@@ -278,7 +364,7 @@ public:
 	defaultPosition();
 	
 	/* set the data for the model */
-	Model *model = new Model();
+	XMLModel *model = new XMLModel();
 	model->collisionSpaceID = 0;
 	model->collisionSpace = m_collisionSpace;
         model->kmodel = m_kmodel;
@@ -298,7 +384,7 @@ public:
 
 	for (unsigned int i = 0 ; i < groups.size() ; ++i)
 	{
-	    Model *model = new Model();
+	    XMLModel *model = new XMLModel();
 	    model->collisionSpaceID = 0;
 	    model->collisionSpace = m_collisionSpace;
 	    model->kmodel = m_kmodel;
@@ -311,87 +397,58 @@ public:
     
     void knownModels(std::vector<std::string> &model_ids)
     {
-	for (std::map<std::string, Model*>::const_iterator i = m_models.begin() ; i != m_models.end() ; ++i)
+	for (std::map<std::string, XMLModel*>::const_iterator i = m_models.begin() ; i != m_models.end() ; ++i)
 	    model_ids.push_back(i->first);
     }
     
 private:
     
-    class StateValidityPredicate;
-    
-    struct Planner
-    {
-	ompl::Planner_t                   mp;
-	ompl::SpaceInformationKinematic_t si;
-	StateValidityPredicate*           svc;
-	ompl::PathSmootherKinematic_t     smoother;
-    };
-    	
-    struct Model
-    {
-	Model(void)
-	{
-	    groupID          = -1;
-	    collisionSpaceID = 0;
-	    collisionSpace   = NULL;	    
-	}
-	
-	~Model(void)
-	{
-	    for (unsigned int i = 0 ; i < planners.size() ; ++i)
-	    {
-		delete planners[i].mp;
-		delete planners[i].svc;
-		delete planners[i].smoother;
-		delete planners[i].si;
-	    }
-	}
-	
-	std::vector<Planner>               planners;
-	collision_space::EnvironmentModel *collisionSpace;    	
-	unsigned int                       collisionSpaceID;
-	planning_models::KinematicModel   *kmodel;
-	std::string                        groupName;
-	int                                groupID;
-    };
-    
     class StateValidityPredicate : public ompl::SpaceInformation::StateValidityChecker
     {
     public:
-	StateValidityPredicate(Model *model) : ompl::SpaceInformation::StateValidityChecker()
+	StateValidityPredicate(XMLModel *model) : ompl::SpaceInformation::StateValidityChecker()
 	{
 	    m_model = model;
+	    m_kc = NULL;
 	}
 	
 	virtual bool operator()(const ompl::SpaceInformation::State_t state)
 	{
 	    m_model->kmodel->computeTransforms(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);
 	    m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
-
+	    
 	    bool collision = m_model->collisionSpace->isCollision(m_model->collisionSpaceID);
 	    return !collision;
 	}
 	
-    protected:
+	void setConstraints(robot_msgs::KinematicConstraint &kc)
+	{
+	    m_kc = &kc;
+	}
 	
-	Model *m_model;	
+    protected:
+	robot_msgs::KinematicConstraint *m_kc;
+	XMLModel                        *m_model;	
     };
-    
+
     robot_desc::URDF::Group* getURDFGroup(const std::string &gname)
     {
 	std::string urdfGroup = gname;
 	urdfGroup.erase(0, urdfGroup.find_last_of(":") + 1);
 	return m_urdf->getGroup(urdfGroup);
     }
-    
-    void createMotionPlanningInstances(Model* model)
+
+    /* instantiate the planners that can be used  */
+    void createMotionPlanningInstances(XMLModel* model)
     {
 	addRRTInstance(model);
+	addLazyRRTInstance(model);
     }
-    
-    void addRRTInstance(Model *model)
+
+    /* instantiate and configure RRT */
+    void addRRTInstance(XMLModel *model)
     {
-	Planner p;
+	KinematicPlannerSetup p;
 	std::cout << "Adding RRT instance for motion planning: " << model->groupName << std::endl;
 	
 	p.si       = new SpaceInformationXMLModel(model->kmodel, model->groupID);
@@ -425,13 +482,16 @@ private:
 	    }
 	}	
 	
+	setupDistanceEvaluators(p);
 	p.si->setup();
-	model->planners.push_back(p);
+
+	model->planners["RRT"] = p;
     }
     
-    void addLazyRRTInstance(Model *model)
+    /* instantiate and configure LazyRRT */
+    void addLazyRRTInstance(XMLModel *model)
     {
-	Planner p;
+	KinematicPlannerSetup p;
 	std::cout << "Added LazyRRT instance for motion planning: " << model->groupName << std::endl;
 
 	p.si       = new SpaceInformationXMLModel(model->kmodel, model->groupID);
@@ -465,12 +525,19 @@ private:
 	    }
 	}
 	
+	setupDistanceEvaluators(p);
 	p.si->setup();
-	model->planners.push_back(p);
-    }
 
-    std::map<std::string, Model*> m_models;
+	model->planners["LazyRRT"] = p;
+    }
     
+    /* for each planner definition, define the set of distance metrics it can use */
+    void setupDistanceEvaluators(KinematicPlannerSetup &p)
+    {
+	p.sde["L2Square"] = new ompl::SpaceInformationKinematic::StateKinematicL2SquareDistanceEvaluator(p.si);
+    }
+    
+    std::map<std::string, XMLModel*> m_models;
 };
 
 void usage(const char *progname)

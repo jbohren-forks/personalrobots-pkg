@@ -75,9 +75,9 @@ public:
     {
 	robot_srvs::KinematicPlanState::request  req;
 	
-	req.model_id = "pr2::base";
+	req.params.model_id = "pr2::base";
+	req.params.distance_metric = "L2Square";
 	req.threshold = 0.01;
-	req.distance_metric = "L2Square";
 	req.interpolate = 1;
 	req.times = 10;
 	
@@ -90,8 +90,8 @@ public:
 	
 	req.allowed_time = 30.0;
 	
-	req.volumeMin.x = -5.0 + m_basePos[0];	req.volumeMin.y = -5.0 + m_basePos[1];	req.volumeMin.z = 0.0;
-	req.volumeMax.x = 5.0 + m_basePos[0];	req.volumeMax.y = 5.0 + m_basePos[1];	req.volumeMax.z = 0.0;
+	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
+	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
 	
 	performCall(req);
     }
@@ -100,9 +100,9 @@ public:
     {
 	robot_srvs::KinematicPlanState::request  req;
 	
-	req.model_id = "pr2::leftArm";
+	req.params.model_id = "pr2::leftArm";
+	req.params.distance_metric = "L2Square";
 	req.threshold = 0.01;
-	req.distance_metric = "L2Square";
 	req.interpolate = 1;
 	req.times = 1;
 
@@ -115,8 +115,8 @@ public:
 
 	req.allowed_time = 3.0;
 	
-	req.volumeMin.x = -5.0 + m_basePos[0];	req.volumeMin.y = -5.0 + m_basePos[1];	req.volumeMin.z = 0.0;
-	req.volumeMax.x = 5.0 + m_basePos[0];	req.volumeMax.y = 5.0 + m_basePos[1];	req.volumeMax.z = 0.0;
+	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
+	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
 	
 	performCall(req);
     }
@@ -126,9 +126,9 @@ public:
     {
 	robot_srvs::KinematicPlanState::request  req;
 	
-	req.model_id = "pr2::rightArm";
+	req.params.model_id = "pr2::rightArm";
+	req.params.distance_metric = "L2Square";
 	req.threshold = 0.01;
-	req.distance_metric = "L2Square";
 	req.interpolate = 1;
 	req.times = 1;
 
@@ -141,8 +141,8 @@ public:
 
 	req.allowed_time = 30.0;
 	
-	req.volumeMin.x = -5.0 + m_basePos[0];	req.volumeMin.y = -5.0 + m_basePos[1];	req.volumeMin.z = 0.0;
-	req.volumeMax.x = 5.0 + m_basePos[0];	req.volumeMax.y = 5.0 + m_basePos[1];	req.volumeMax.z = 0.0;
+	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
+	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
 	
 	performCall(req);
     }
@@ -163,7 +163,7 @@ public:
 		    printf("%f ", res.path.states[i].vals[j]);
 		printf("\n");
 	    }
-	    dpath.name = req.model_id;
+	    dpath.name = req.params.model_id;
 	    dpath.path = res.path;
 	    publish("display_kinematic_path", dpath);
 	}

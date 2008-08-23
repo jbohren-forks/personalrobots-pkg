@@ -1,12 +1,8 @@
 # This message contains the definition for a request to the motion
 # planner
 
-
-
-# The model (defined in pr2.xml as a group) for which the motion
-# planner should plan for
-string model_id
-
+# Parameters for the state space 
+robot_msgs/KinematicSpaceParameters params
 
 # The starting state for the robot. This is eth complete state of the
 # robot, all joint values, everything that needs to be specified to
@@ -39,23 +35,9 @@ byte interpolate
 float64 allowed_time
 
 
-# A string that identifies which distance metric the planner should use
-string distance_metric
-
-
 # The threshold (distance) that is allowed between the returned
 # solution and the actual goal
 float64 threshold
-
-
-# Lower coordinate for a box defining the volume in the workspace the
-# motion planner is active in.  If planning in 2D, only first 2 values
-# (x, y) of the points are used.
-std_msgs/Point3DFloat64 volumeMin
-
-
-# Higher coordinate for the box described above
-std_msgs/Point3DFloat64 volumeMax
 
 ---
 
