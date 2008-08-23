@@ -296,10 +296,17 @@ namespace gazebo {
       else
       {
         gazebo::Joint* ggj = (gazebo::Joint*)parent_model_->GetJoint(*joint_name);
-        gj->gaz_joints_.push_back(ggj);
-        // initialize for torque control mode
-        ggj->SetParam(dParamVel , 0);
-        ggj->SetParam(dParamFMax, 0);
+        if (ggj)
+        {
+          gj->gaz_joints_.push_back(ggj);
+          // initialize for torque control mode
+          ggj->SetParam(dParamVel , 0);
+          ggj->SetParam(dParamFMax, 0);
+        }
+        else // maybe a bad joint in gazebo?
+        {
+          std::cout << " cannot find joint (" << *joint_name << "> in Gazebo " << std::endl;
+        }
 
       }
 
@@ -416,26 +423,26 @@ namespace gazebo {
 
 
     /* get left arm position */
-    larm.turretAngle       = mc_.model_.getJoint("shoulder_pan_left_joint")->position_;
-    larm.shoulderLiftAngle = mc_.model_.getJoint("shoulder_pitch_left_joint")->position_;
-    larm.upperarmRollAngle = mc_.model_.getJoint("upperarm_roll_left_joint")->position_;
-    larm.elbowAngle        = mc_.model_.getJoint("elbow_flex_left_joint")->position_;
-    larm.forearmRollAngle  = mc_.model_.getJoint("forearm_roll_left_joint")->position_;
-    larm.wristPitchAngle   = mc_.model_.getJoint("wrist_flex_left_joint")->position_;
-    larm.wristRollAngle    = mc_.model_.getJoint("gripper_roll_left_joint")->position_;
-    larm.gripperForceCmd   = mc_.model_.getJoint("gripper_left_joint")->applied_effort_;
-    larm.gripperGapCmd     = mc_.model_.getJoint("gripper_left_joint")->position_;
+    if( mc_.model_.getJoint("shoulder_pan_left_joint")   ) larm.turretAngle       = mc_.model_.getJoint("shoulder_pan_left_joint")  ->position_;
+    if( mc_.model_.getJoint("shoulder_pitch_left_joint") ) larm.shoulderLiftAngle = mc_.model_.getJoint("shoulder_pitch_left_joint")->position_;
+    if( mc_.model_.getJoint("upperarm_roll_left_joint")  ) larm.upperarmRollAngle = mc_.model_.getJoint("upperarm_roll_left_joint") ->position_;
+    if( mc_.model_.getJoint("elbow_flex_left_joint")     ) larm.elbowAngle        = mc_.model_.getJoint("elbow_flex_left_joint")    ->position_;
+    if( mc_.model_.getJoint("forearm_roll_left_joint")   ) larm.forearmRollAngle  = mc_.model_.getJoint("forearm_roll_left_joint")  ->position_;
+    if( mc_.model_.getJoint("wrist_flex_left_joint")     ) larm.wristPitchAngle   = mc_.model_.getJoint("wrist_flex_left_joint")    ->position_;
+    if( mc_.model_.getJoint("gripper_roll_left_joint")   ) larm.wristRollAngle    = mc_.model_.getJoint("gripper_roll_left_joint")  ->position_;
+    if( mc_.model_.getJoint("gripper_left_joint")        ) larm.gripperForceCmd   = mc_.model_.getJoint("gripper_left_joint")       ->applied_effort_;
+    if( mc_.model_.getJoint("gripper_left_joint")        ) larm.gripperGapCmd     = mc_.model_.getJoint("gripper_left_joint")       ->position_;
     rosnode_->publish("left_pr2arm_pos", larm);
     /* get right arm position */
-    rarm.turretAngle       = mc_.model_.getJoint("shoulder_pan_right_joint")->position_;
-    rarm.shoulderLiftAngle = mc_.model_.getJoint("shoulder_pitch_right_joint")->position_;
-    rarm.upperarmRollAngle = mc_.model_.getJoint("upperarm_roll_right_joint")->position_;
-    rarm.elbowAngle        = mc_.model_.getJoint("elbow_flex_right_joint")->position_;
-    rarm.forearmRollAngle  = mc_.model_.getJoint("forearm_roll_right_joint")->position_;
-    rarm.wristPitchAngle   = mc_.model_.getJoint("wrist_flex_right_joint")->position_;
-    rarm.wristRollAngle    = mc_.model_.getJoint("gripper_roll_right_joint")->position_;
-    rarm.gripperForceCmd   = mc_.model_.getJoint("gripper_right_joint")->applied_effort_;
-    rarm.gripperGapCmd     = mc_.model_.getJoint("gripper_right_joint")->position_;
+    if( mc_.model_.getJoint("shoulder_pan_right_joint")   ) rarm.turretAngle       = mc_.model_.getJoint("shoulder_pan_right_joint")  ->position_;
+    if( mc_.model_.getJoint("shoulder_pitch_right_joint") ) rarm.shoulderLiftAngle = mc_.model_.getJoint("shoulder_pitch_right_joint")->position_;
+    if( mc_.model_.getJoint("upperarm_roll_right_joint")  ) rarm.upperarmRollAngle = mc_.model_.getJoint("upperarm_roll_right_joint") ->position_;
+    if( mc_.model_.getJoint("elbow_flex_right_joint")     ) rarm.elbowAngle        = mc_.model_.getJoint("elbow_flex_right_joint")    ->position_;
+    if( mc_.model_.getJoint("forearm_roll_right_joint")   ) rarm.forearmRollAngle  = mc_.model_.getJoint("forearm_roll_right_joint")  ->position_;
+    if( mc_.model_.getJoint("wrist_flex_right_joint")     ) rarm.wristPitchAngle   = mc_.model_.getJoint("wrist_flex_right_joint")    ->position_;
+    if( mc_.model_.getJoint("gripper_roll_right_joint")   ) rarm.wristRollAngle    = mc_.model_.getJoint("gripper_roll_right_joint")  ->position_;
+    if( mc_.model_.getJoint("gripper_right_joint")        ) rarm.gripperForceCmd   = mc_.model_.getJoint("gripper_right_joint")       ->applied_effort_;
+    if( mc_.model_.getJoint("gripper_right_joint")        ) rarm.gripperGapCmd     = mc_.model_.getJoint("gripper_right_joint")       ->position_;
     rosnode_->publish("right_pr2arm_pos", rarm);
 
     PublishFrameTransforms();
@@ -648,184 +655,316 @@ namespace gazebo {
 
     // get all the parameters needed for frame transforms
     link = pr2Description.getLink("base");
-    base_center_offset_z = link->collision->xyz[2];
+    if (link)
+    {
+      base_center_offset_z = link->collision->xyz[2];
+    }
     link = pr2Description.getLink("torso");
-    base_torso_offset_x  = link->xyz[0];
-    base_torso_offset_y  = link->xyz[1];
-    base_torso_offset_z  = link->xyz[2];
+    if (link)
+    {
+      base_torso_offset_x  = link->xyz[0];
+      base_torso_offset_y  = link->xyz[1];
+      base_torso_offset_z  = link->xyz[2];
+    }
     link = pr2Description.getLink("shoulder_pan_left");
-    sh_pan_left_torso_offset_x =  link->xyz[0];
-    sh_pan_left_torso_offset_y =  link->xyz[1];
-    sh_pan_left_torso_offset_z =  link->xyz[2];
+    if (link)
+    {
+      sh_pan_left_torso_offset_x =  link->xyz[0];
+      sh_pan_left_torso_offset_y =  link->xyz[1];
+      sh_pan_left_torso_offset_z =  link->xyz[2];
+    }
     link = pr2Description.getLink("shoulder_pitch_left");
-    shoulder_pitch_left_offset_x = link->xyz[0];
-    shoulder_pitch_left_offset_y = link->xyz[1];
-    shoulder_pitch_left_offset_z = link->xyz[2];
+    if (link)
+    {
+      shoulder_pitch_left_offset_x = link->xyz[0];
+      shoulder_pitch_left_offset_y = link->xyz[1];
+      shoulder_pitch_left_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("upperarm_roll_left");
-    upperarm_roll_left_offset_x = link->xyz[0];
-    upperarm_roll_left_offset_y = link->xyz[1];
-    upperarm_roll_left_offset_z = link->xyz[2];
+    if (link)
+    {
+      upperarm_roll_left_offset_x = link->xyz[0];
+      upperarm_roll_left_offset_y = link->xyz[1];
+      upperarm_roll_left_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("elbow_flex_left");
-    elbow_flex_left_offset_x = link->xyz[0];
-    elbow_flex_left_offset_y = link->xyz[1];
-    elbow_flex_left_offset_z = link->xyz[2];
+    if (link)
+    {
+      elbow_flex_left_offset_x = link->xyz[0];
+      elbow_flex_left_offset_y = link->xyz[1];
+      elbow_flex_left_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("finger_l_left");
-    finger_l_left_offset_x = link->xyz[0];
-    finger_l_left_offset_y = link->xyz[1];
-    finger_l_left_offset_z = link->xyz[2];
+    if (link)
+    {
+      finger_l_left_offset_x = link->xyz[0];
+      finger_l_left_offset_y = link->xyz[1];
+      finger_l_left_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("forearm_roll_left");
-    forearm_roll_left_offset_x = link->xyz[0];
-    forearm_roll_left_offset_y = link->xyz[1];
-    forearm_roll_left_offset_z = link->xyz[2];
+    if (link)
+    {
+      forearm_roll_left_offset_x = link->xyz[0];
+      forearm_roll_left_offset_y = link->xyz[1];
+      forearm_roll_left_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("wrist_flex_left");
-    wrist_flex_left_offset_x = link->xyz[0];
-    wrist_flex_left_offset_y = link->xyz[1];
-    wrist_flex_left_offset_z = link->xyz[2];
+    if (link)
+    {
+      wrist_flex_left_offset_x = link->xyz[0];
+      wrist_flex_left_offset_y = link->xyz[1];
+      wrist_flex_left_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("gripper_roll_left");
-    gripper_roll_left_offset_x = link->xyz[0];
-    gripper_roll_left_offset_y = link->xyz[1];
-    gripper_roll_left_offset_z = link->xyz[2];
+    if (link)
+    {
+      gripper_roll_left_offset_x = link->xyz[0];
+      gripper_roll_left_offset_y = link->xyz[1];
+      gripper_roll_left_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("finger_r_left");
-    finger_r_left_offset_x = link->xyz[0];
-    finger_r_left_offset_y = link->xyz[1];
-    finger_r_left_offset_z = link->xyz[2];
+    if (link)
+    {
+      finger_r_left_offset_x = link->xyz[0];
+      finger_r_left_offset_y = link->xyz[1];
+      finger_r_left_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("finger_tip_l_left");
-    finger_tip_l_left_offset_x = link->xyz[0];
-    finger_tip_l_left_offset_y = link->xyz[1];
-    finger_tip_l_left_offset_z = link->xyz[2];
+    if (link)
+    {
+      finger_tip_l_left_offset_x = link->xyz[0];
+      finger_tip_l_left_offset_y = link->xyz[1];
+      finger_tip_l_left_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("finger_tip_r_left");
-    finger_tip_r_left_offset_x = link->xyz[0];
-    finger_tip_r_left_offset_y = link->xyz[1];
-    finger_tip_r_left_offset_z = link->xyz[2];
+    if (link)
+    {
+      finger_tip_r_left_offset_x = link->xyz[0];
+      finger_tip_r_left_offset_y = link->xyz[1];
+      finger_tip_r_left_offset_z = link->xyz[2];
+    }
 
 
     link = pr2Description.getLink("shoulder_pan_right");
-    shoulder_pan_right_offset_x = link->xyz[0];
-    shoulder_pan_right_offset_y = link->xyz[1];
-    shoulder_pan_right_offset_z = link->xyz[2];
+    if (link)
+    {
+      shoulder_pan_right_offset_x = link->xyz[0];
+      shoulder_pan_right_offset_y = link->xyz[1];
+      shoulder_pan_right_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("shoulder_pitch_right");
-    shoulder_pitch_right_offset_x = link->xyz[0];
-    shoulder_pitch_right_offset_y = link->xyz[1];
-    shoulder_pitch_right_offset_z = link->xyz[2];
+    if (link)
+    {
+      shoulder_pitch_right_offset_x = link->xyz[0];
+      shoulder_pitch_right_offset_y = link->xyz[1];
+      shoulder_pitch_right_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("upperarm_roll_right");
-    upperarm_roll_right_offset_x = link->xyz[0];
-    upperarm_roll_right_offset_y = link->xyz[1];
-    upperarm_roll_right_offset_z = link->xyz[2];
+    if (link)
+    {
+      upperarm_roll_right_offset_x = link->xyz[0];
+      upperarm_roll_right_offset_y = link->xyz[1];
+      upperarm_roll_right_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("elbow_flex_right");
-    elbow_flex_right_offset_x = link->xyz[0];
-    elbow_flex_right_offset_y = link->xyz[1];
-    elbow_flex_right_offset_z = link->xyz[2];
+    if (link)
+    {
+      elbow_flex_right_offset_x = link->xyz[0];
+      elbow_flex_right_offset_y = link->xyz[1];
+      elbow_flex_right_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("forearm_roll_right");
-    forearm_roll_right_offset_x = link->xyz[0];
-    forearm_roll_right_offset_y = link->xyz[1];
-    forearm_roll_right_offset_z = link->xyz[2];
+    if (link)
+    {
+      forearm_roll_right_offset_x = link->xyz[0];
+      forearm_roll_right_offset_y = link->xyz[1];
+      forearm_roll_right_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("wrist_flex_right");
-    wrist_flex_right_offset_x = link->xyz[0];
-    wrist_flex_right_offset_y = link->xyz[1];
-    wrist_flex_right_offset_z = link->xyz[2];
+    if (link)
+    {
+      wrist_flex_right_offset_x = link->xyz[0];
+      wrist_flex_right_offset_y = link->xyz[1];
+      wrist_flex_right_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("gripper_roll_right");
-    gripper_roll_right_offset_x = link->xyz[0];
-    gripper_roll_right_offset_y = link->xyz[1];
-    gripper_roll_right_offset_z = link->xyz[2];
+    if (link)
+    {
+      gripper_roll_right_offset_x = link->xyz[0];
+      gripper_roll_right_offset_y = link->xyz[1];
+      gripper_roll_right_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("finger_l_right");
-    finger_l_right_offset_x = link->xyz[0];
-    finger_l_right_offset_y = link->xyz[1];
-    finger_l_right_offset_z = link->xyz[2];
+    if (link)
+    {
+      finger_l_right_offset_x = link->xyz[0];
+      finger_l_right_offset_y = link->xyz[1];
+      finger_l_right_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("finger_r_right");
-    finger_r_right_offset_x = link->xyz[0];
-    finger_r_right_offset_y = link->xyz[1];
-    finger_r_right_offset_z = link->xyz[2];
+    if (link)
+    {
+      finger_r_right_offset_x = link->xyz[0];
+      finger_r_right_offset_y = link->xyz[1];
+      finger_r_right_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("finger_tip_l_right");
-    finger_tip_l_right_offset_x = link->xyz[0];
-    finger_tip_l_right_offset_y = link->xyz[1];
-    finger_tip_l_right_offset_z = link->xyz[2];
+    if (link)
+    {
+      finger_tip_l_right_offset_x = link->xyz[0];
+      finger_tip_l_right_offset_y = link->xyz[1];
+      finger_tip_l_right_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("finger_tip_r_right");
-    finger_tip_r_right_offset_x = link->xyz[0];
-    finger_tip_r_right_offset_y = link->xyz[1];
-    finger_tip_r_right_offset_z = link->xyz[2];
+    if (link)
+    {
+      finger_tip_r_right_offset_x = link->xyz[0];
+      finger_tip_r_right_offset_y = link->xyz[1];
+      finger_tip_r_right_offset_z = link->xyz[2];
 
+    }
     link = pr2Description.getLink("forearm_camera_left");
-    forearm_camera_left_offset_x = link->xyz[0];
-    forearm_camera_left_offset_y = link->xyz[1];
-    forearm_camera_left_offset_z = link->xyz[2];
+    if (link)
+    {
+      forearm_camera_left_offset_x = link->xyz[0];
+      forearm_camera_left_offset_y = link->xyz[1];
+      forearm_camera_left_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("forearm_camera_right");
-    forearm_camera_right_offset_x = link->xyz[0];
-    forearm_camera_right_offset_y = link->xyz[1];
-    forearm_camera_right_offset_z = link->xyz[2];
+    if (link)
+    {
+      forearm_camera_right_offset_x = link->xyz[0];
+      forearm_camera_right_offset_y = link->xyz[1];
+      forearm_camera_right_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("wrist_camera_left");
-    wrist_camera_left_offset_x = link->xyz[0];
-    wrist_camera_left_offset_y = link->xyz[1];
-    wrist_camera_left_offset_z = link->xyz[2];
+    if (link)
+    {
+      wrist_camera_left_offset_x = link->xyz[0];
+      wrist_camera_left_offset_y = link->xyz[1];
+      wrist_camera_left_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("wrist_camera_right");
-    wrist_camera_right_offset_x = link->xyz[0];
-    wrist_camera_right_offset_y = link->xyz[1];
-    wrist_camera_right_offset_z = link->xyz[2];
+    if (link)
+    {
+      wrist_camera_right_offset_x = link->xyz[0];
+      wrist_camera_right_offset_y = link->xyz[1];
+      wrist_camera_right_offset_z = link->xyz[2];
+    }
 
 
     link = pr2Description.getLink("head_pan");
-    head_pan_offset_x = link->xyz[0];
-    head_pan_offset_y = link->xyz[1];
-    head_pan_offset_z = link->xyz[2];
+    if (link)
+    {
+      head_pan_offset_x = link->xyz[0];
+      head_pan_offset_y = link->xyz[1];
+      head_pan_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("head_tilt");
-    head_tilt_offset_x = link->xyz[0];
-    head_tilt_offset_y = link->xyz[1];
-    head_tilt_offset_z = link->xyz[2];
+    if (link)
+    {
+      head_tilt_offset_x = link->xyz[0];
+      head_tilt_offset_y = link->xyz[1];
+      head_tilt_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("base_laser");
-    base_laser_offset_x = link->xyz[0];
-    base_laser_offset_y = link->xyz[1];
-    base_laser_offset_z = link->xyz[2];
+    if (link)
+    {
+      base_laser_offset_x = link->xyz[0];
+      base_laser_offset_y = link->xyz[1];
+      base_laser_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("tilt_laser");
-    tilt_laser_offset_x = link->xyz[0];
-    tilt_laser_offset_y = link->xyz[1];
-    tilt_laser_offset_z = link->xyz[2],
+    if (link)
+    {
+      tilt_laser_offset_x = link->xyz[0];
+      tilt_laser_offset_y = link->xyz[1];
+      tilt_laser_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("caster_front_left");
-    caster_front_left_offset_x = link->xyz[0];
-    caster_front_left_offset_y = link->xyz[1];
-    caster_front_left_offset_z = link->xyz[2];
+    if (link)
+    {
+      caster_front_left_offset_x = link->xyz[0];
+      caster_front_left_offset_y = link->xyz[1];
+      caster_front_left_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("wheel_front_left_l");
-    wheel_front_left_l_offset_x = link->xyz[0];
-    wheel_front_left_l_offset_y = link->xyz[1];
-    wheel_front_left_l_offset_z = link->xyz[2];
+    if (link)
+    {
+      wheel_front_left_l_offset_x = link->xyz[0];
+      wheel_front_left_l_offset_y = link->xyz[1];
+      wheel_front_left_l_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("wheel_front_left_r");
-    wheel_front_left_r_offset_x = link->xyz[0];
-    wheel_front_left_r_offset_y = link->xyz[1];
-    wheel_front_left_r_offset_z = link->xyz[2];
+    if (link)
+    {
+      wheel_front_left_r_offset_x = link->xyz[0];
+      wheel_front_left_r_offset_y = link->xyz[1];
+      wheel_front_left_r_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("caster_front_right");
-    caster_front_right_offset_x = link->xyz[0];
-    caster_front_right_offset_y = link->xyz[1];
-    caster_front_right_offset_z = link->xyz[2];
+    if (link)
+    {
+      caster_front_right_offset_x = link->xyz[0];
+      caster_front_right_offset_y = link->xyz[1];
+      caster_front_right_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("wheel_front_right_l");
-    wheel_front_right_l_offset_x = link->xyz[0];
-    wheel_front_right_l_offset_y = link->xyz[1];
-    wheel_front_right_l_offset_z = link->xyz[2];
+    if (link)
+    {
+      wheel_front_right_l_offset_x = link->xyz[0];
+      wheel_front_right_l_offset_y = link->xyz[1];
+      wheel_front_right_l_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("wheel_front_right_r");
-    wheel_front_right_r_offset_x = link->xyz[0];
-    wheel_front_right_r_offset_y = link->xyz[1];
-    wheel_front_right_r_offset_z = link->xyz[2];
+    if (link)
+    {
+      wheel_front_right_r_offset_x = link->xyz[0];
+      wheel_front_right_r_offset_y = link->xyz[1];
+      wheel_front_right_r_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("caster_rear_left");
-    caster_rear_left_offset_x = link->xyz[0];
-    caster_rear_left_offset_y = link->xyz[1];
-    caster_rear_left_offset_z = link->xyz[2];
+    if (link)
+    {
+      caster_rear_left_offset_x = link->xyz[0];
+      caster_rear_left_offset_y = link->xyz[1];
+      caster_rear_left_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("wheel_rear_left_l");
-    wheel_rear_left_l_offset_x = link->xyz[0];
-    wheel_rear_left_l_offset_y = link->xyz[1];
-    wheel_rear_left_l_offset_z = link->xyz[2];
+    if (link)
+    {
+      wheel_rear_left_l_offset_x = link->xyz[0];
+      wheel_rear_left_l_offset_y = link->xyz[1];
+      wheel_rear_left_l_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("wheel_rear_left_r");
-    wheel_rear_left_r_offset_x = link->xyz[0];
-    wheel_rear_left_r_offset_y = link->xyz[1];
-    wheel_rear_left_r_offset_z = link->xyz[2];
+    if (link)
+    {
+      wheel_rear_left_r_offset_x = link->xyz[0];
+      wheel_rear_left_r_offset_y = link->xyz[1];
+      wheel_rear_left_r_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("caster_rear_right");
-    caster_rear_right_offset_x = link->xyz[0];
-    caster_rear_right_offset_y = link->xyz[1];
-    caster_rear_right_offset_z = link->xyz[2];
+    if (link)
+    {
+      caster_rear_right_offset_x = link->xyz[0];
+      caster_rear_right_offset_y = link->xyz[1];
+      caster_rear_right_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("wheel_rear_right_l");
-    wheel_rear_right_l_offset_x = link->xyz[0];
-    wheel_rear_right_l_offset_y = link->xyz[1];
-    wheel_rear_right_l_offset_z = link->xyz[2];
+    if (link)
+    {
+      wheel_rear_right_l_offset_x = link->xyz[0];
+      wheel_rear_right_l_offset_y = link->xyz[1];
+      wheel_rear_right_l_offset_z = link->xyz[2];
+    }
     link = pr2Description.getLink("wheel_rear_right_r");
-    wheel_rear_right_r_offset_x = link->xyz[0];
-    wheel_rear_right_r_offset_y = link->xyz[1];
-    wheel_rear_right_r_offset_z = link->xyz[2];
+    if (link)
+    {
+      wheel_rear_right_r_offset_x = link->xyz[0];
+      wheel_rear_right_r_offset_y = link->xyz[1];
+      wheel_rear_right_r_offset_z = link->xyz[2];
+    }
 
   }
 
@@ -835,7 +974,6 @@ namespace gazebo {
   int
   TestActuators::AdvertiseSubscribeMessages()
   {
-    //rosnode_->advertise<std_msgs::RobotBase2DOdom>("odom");
     rosnode_->advertise<std_msgs::PR2Arm>("left_pr2arm_pos");
     rosnode_->advertise<std_msgs::PR2Arm>("right_pr2arm_pos");
     rosnode_->advertise<rostools::Time>("time");
@@ -989,6 +1127,20 @@ namespace gazebo {
   TestActuators::PublishFrameTransforms()
   {
 
+
+    // FIXME: the frame transforms should be published by individual controllers nodes, not here
+    // FIXME: the frame transforms should be published by individual controllers nodes, not here
+    // FIXME: the frame transforms should be published by individual controllers nodes, not here
+    // FIXME: the frame transforms should be published by individual controllers nodes, not here
+    // FIXME: the frame transforms should be published by individual controllers nodes, not here
+    // FIXME: the frame transforms should be published by individual controllers nodes, not here
+    // FIXME: the frame transforms should be published by individual controllers nodes, not here
+    // FIXME: the frame transforms should be published by individual controllers nodes, not here
+    // FIXME: the frame transforms should be published by individual controllers nodes, not here
+
+
+
+
     std::cout << " publishing frame transforms." << std::endl;
     /***************************************************************/
     /*                                                             */
@@ -999,9 +1151,9 @@ namespace gazebo {
     /*                                                             */
     /***************************************************************/
     double x=0,y=0,z=0,roll=0,pitch=0,yaw=0,vx,vy,vyaw;
-    controller::Controller* cc = mc_.getControllerByName( "base_controller" );
-    controller::BaseControllerNode* bc = dynamic_cast<controller::BaseControllerNode*>(cc);
-    bc->getOdometry(x,y,yaw,vx,vy,vyaw);
+    controller::Controller* bc = mc_.getControllerByName( "base_controller" );
+    controller::BaseControllerNode* bcn = dynamic_cast<controller::BaseControllerNode*>(bc);
+    if (bcn) bcn->getOdometry(x,y,yaw,vx,vy,vyaw);
 
     // FIXME: z, roll, pitch not accounted for
     tfs->sendInverseEuler("FRAMEID_ODOM",
@@ -1036,8 +1188,10 @@ namespace gazebo {
     // base = center of the bottom of the base box
     // torso = midpoint of bottom of turrets
 
+    double spine_height=0;
     controller::Controller* tc = mc_.getControllerByName( "torso_controller" );
-    double spine_height = dynamic_cast<controller::JointPositionControllerNode*>(tc)->getMeasuredPosition();
+    controller::JointPositionControllerNode* tcn = dynamic_cast<controller::JointPositionControllerNode*>(tc);
+    if (tcn) spine_height = tcn->getMeasuredPosition();
     tfs->sendEuler("torso",
                  "base",
                  base_torso_offset_x,
@@ -1352,7 +1506,9 @@ namespace gazebo {
 
     // head pan angle
     controller::Controller* hpc = mc_.getControllerByName( "head_pan_controller" );
-    double head_pan_angle = dynamic_cast<controller::JointPositionControllerNode*>(hpc)->getMeasuredPosition();
+    double head_pan_angle=0;
+    controller::JointPositionControllerNode* hpcn = dynamic_cast<controller::JointPositionControllerNode*>(hpc);
+    if (hpcn) head_pan_angle = hpcn->getMeasuredPosition();
     tfs->sendEuler("head_pan",
                  "torso",
                  head_pan_offset_x,
@@ -1365,7 +1521,9 @@ namespace gazebo {
 
     // head tilt angle
     controller::Controller* htc = mc_.getControllerByName( "head_tilt_controller" );
-    double head_tilt_angle = dynamic_cast<controller::JointPositionControllerNode*>(htc)->getMeasuredPosition();
+    double head_tilt_angle=0;
+    controller::JointPositionControllerNode* htcn = dynamic_cast<controller::JointPositionControllerNode*>(htc);
+    if (htcn) head_tilt_angle = htcn->getMeasuredPosition();
     tfs->sendEuler("head_tilt",
                  "head_pan",
                  head_tilt_offset_x,
@@ -1399,8 +1557,10 @@ namespace gazebo {
                  timeMsg.rostime);
 
     // tilt laser location
+    double tilt_laser_angle=0;
     controller::Controller* tlc = mc_.getControllerByName( "tilt_laser_controller" );
-    double tilt_laser_angle = dynamic_cast<controller::JointPositionControllerNode*>(tlc)->getMeasuredPosition();
+    controller::LaserScannerControllerNode* tlcn = dynamic_cast<controller::LaserScannerControllerNode*>(tlc);
+    if (tlcn) tilt_laser_angle = tlcn->getMeasuredPosition();
     tfs->sendEuler("tilt_laser",
                  "torso",
                  tilt_laser_offset_x,
@@ -1418,6 +1578,7 @@ namespace gazebo {
     double tmpSteerFR, tmpVelFR;
     double tmpSteerRL, tmpVelRL;
     double tmpSteerRR, tmpVelRR;
+    //FIXME: get the above values from the controllers
     //controller::Controller* bcsw = mc_.getControllerByName( "base_controller" );
     //double tilt_laser_angle = dynamic_cast<controller::BaseControllerNode*>(bcsw)->getMeasuredPosition();
     //this->PR2Copy->hw.GetJointServoCmd(PR2::CASTER_FL_STEER, &tmpSteerFL, &tmpVelFL );
