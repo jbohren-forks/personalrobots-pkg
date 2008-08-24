@@ -263,6 +263,11 @@ public:
 	m_displayLock.unlock();
     }
     
+    void printLinkPoses(void)
+    {
+	m_kmodel->printLinkPoses();
+    }
+    
 private:
     
     collision_space::EnvironmentModelODE* m_collisionSpaceODE;    
@@ -319,6 +324,10 @@ static void command(int cmd)
     case 'D':
 	viewer->defaultPosition();
 	break;
+    case 'p':
+    case 'P':
+	viewer->printLinkPoses();
+	break;	
     default:
 	break;
     }

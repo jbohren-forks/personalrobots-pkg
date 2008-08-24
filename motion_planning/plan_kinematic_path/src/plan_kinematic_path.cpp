@@ -40,6 +40,7 @@
 #include <ros/node.h>
 #include <ros/time.h>
 #include <robot_srvs/KinematicPlanState.h>
+#include <robot_srvs/KinematicPlanLinkPosition.h>
 #include <robot_msgs/NamedKinematicPath.h>
 #include <std_msgs/RobotBase2DOdom.h>
 
@@ -171,6 +172,68 @@ public:
 	    fprintf(stderr, "Service 'plan_kinematic_path_state' failed\n");	 
     }
     
+    void runTestLeftEEf(void)
+    {
+	robot_srvs::KinematicPlanLinkPosition::request req;
+	
+	req.params.model_id = "pr2::leftArm";
+	req.params.distance_metric = "L2Square";
+	req.params.planner_id = "RRT";
+	req.interpolate = 1;
+	req.times = 1;
+
+	initialState(req.start_state);
+	
+	// the goal region is basically the position of a set of bodies
+	req.set_goal_constraints_size(1);
+	req.goal_constraints[0].type = robot_msgs::KinematicConstraint::ONLY_POSITION;
+	req.goal_constraints[0].robot_link = "wrist_flex_left";
+	req.goal_constraints[0].pose.position.x = 0.5;
+	req.goal_constraints[0].pose.position.y = 0.3;
+	req.goal_constraints[0].pose.position.z = 1.0;
+	req.goal_constraints[0].position_distance = 0.01;
+	
+	// an example of constraints: do not move the elbow too much
+	req.set_constraints_size(1);
+	req.constraints[0].type = robot_msgs::KinematicConstraint::ONLY_POSITION;
+	req.constraints[0].robot_link = "elbow_flex_left";
+	req.constraints[0].pose.position.x = 0.45;
+	req.constraints[0].pose.position.y = 0.188;
+	req.constraints[0].pose.position.z = 0.74;
+	req.constraints[0].position_distance = 0.01;
+	
+	req.allowed_time = 3.0;
+	
+	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
+	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
+	
+	performCall(req);
+    }
+
+    void performCall(robot_srvs::KinematicPlanLinkPosition::request &req)
+    {	
+	robot_srvs::KinematicPlanLinkPosition::response res;
+	robot_msgs::NamedKinematicPath dpath;
+
+	if (ros::service::call("plan_kinematic_path_position", req, res))
+	{
+	    unsigned int nstates = res.path.get_states_size();
+	    printf("Obtained solution path with %u states\n", nstates);
+	    
+	    for (unsigned int i = 0 ; i < nstates ; ++i)
+	    {
+		for (unsigned int j = 0 ; j < res.path.states[i].get_vals_size() ; ++j)
+		    printf("%f ", res.path.states[i].vals[j]);
+		printf("\n");
+	    }
+	    dpath.name = req.params.model_id;
+	    dpath.path = res.path;
+	    publish("display_kinematic_path", dpath);
+	}
+	else
+	    fprintf(stderr, "Service 'plan_kinematic_path_position' failed\n");	 
+    }
+    
 private: 
 
     void localizedPoseCallback(void)
@@ -210,6 +273,9 @@ int main(int argc, char **argv)
 	break;
     case 'r':
 	plan.runTestRightArm();    
+	break;
+    case 'e':
+	plan.runTestLeftEEf();    
 	break;
     default:
 	printf("Unknown test\n");

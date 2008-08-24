@@ -34,10 +34,13 @@
 
 /** \Author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_XML_MODEL_
-#define KINEMATIC_PLANNING_XML_MODEL_
+#ifndef KINEMATIC_PLANNING_KINEMATIC_PLANNING_XML_MODEL_
+#define KINEMATIC_PLANNING_KINEMATIC_PLANNING_XML_MODEL_
 
+#include <ompl/base/Planner.h>
 #include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
+#include <ompl/extension/samplingbased/kinematic/PathSmootherKinematic.h>
+
 #include <collision_space/environment.h>
 #include <planning_models/kinematic.h>
 
@@ -84,6 +87,7 @@ struct XMLModel
     int                                           groupID;
 };
 
+typedef std::map<std::string, XMLModel*> ModelMap;
 
 /** This class configures an instance of SpaceInformationKinematic with data from a KinematicModel */
 class SpaceInformationXMLModel : public ompl::SpaceInformationKinematic

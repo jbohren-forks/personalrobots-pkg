@@ -34,27 +34,55 @@
 
 /** \Author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_CONSTRAINT_EVALUATOR__
-#define KINEMATIC_PLANNING_CONSTRAINT_EVALUATOR__
+#ifndef KINEMATIC_PLANNING_REQUEST_PLAN_STATE_
+#define KINEMATIC_PLANNING_REQUEST_PLAN_STATE_
 
-#include <planning_models/kinematic.h>
-#include <robot_msgs/KinematicConstraint.h>
+#include "RequestPlan.h"
+#include <robot_srvs/KinematicPlanState.h>
 
-struct KinematicConstraintEvaluator
+class RequestPlanState : virtual public RequestPlan
 {
-    bool evaluate(planning_models::KinematicModel *kmodel, robot_msgs::KinematicConstraint &kc)
-    {
-	planning_models::KinematicModel::Link *link = kmodel->getLink(kc.robot_link);
-	return link ? evaluate(link, kc) : true;
-    }
+ public:
     
-    bool evaluate(planning_models::KinematicModel::Link *link, robot_msgs::KinematicConstraint &kc)
+    /** Validate request for planning towards a state */
+    bool isRequestValid(ModelMap &models, robot_srvs::KinematicPlanState::request &req)
     {
-	return false;
+	if (!areSpaceParamsValid(models, req.params))
+	    return false;
+
+	XMLModel *m = models[req.params.model_id];
+	KinematicPlannerSetup &psetup = m->planners[req.params.planner_id];
 	
+	if (m->kmodel->stateDimension != req.start_state.get_vals_size())
+	{
+	    std::cerr << "Dimension of start state expected to be " << m->kmodel->stateDimension << " but was received as " << req.start_state.get_vals_size() << std::endl;
+	    return false;
+	}
+	
+	if (psetup.si->getStateDimension() != req.goal_state.get_vals_size())
+	{
+	    std::cerr << "Dimension of start goal expected to be " << psetup.si->getStateDimension() << " but was received as " <<  req.goal_state.get_vals_size() << std::endl;
+	    return false;
+	}
+
+	return true;
     }
-    
+
+    /** Set the goal using a destination state */
+    void setupGoalState(XMLModel *model, KinematicPlannerSetup &psetup, robot_srvs::KinematicPlanState::request &req)
+    {
+	/* set the goal */
+	ompl::SpaceInformationKinematic::GoalStateKinematic_t goal = new ompl::SpaceInformationKinematic::GoalStateKinematic(psetup.si);
+	const unsigned int dim = psetup.si->getStateDimension();
+	goal->state = new ompl::SpaceInformationKinematic::StateKinematic(dim);
+	for (unsigned int i = 0 ; i < dim ; ++i)
+	    goal->state->values[i] = req.goal_state.vals[i];
+	goal->threshold = req.threshold;
+	psetup.si->setGoal(goal);
+    }    
+
 };
+
 
 
 #endif
