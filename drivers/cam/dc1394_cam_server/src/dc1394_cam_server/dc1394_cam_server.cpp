@@ -97,6 +97,9 @@ public:
       if (val.getType() == XmlRpc::XmlRpcValue::TypeString)
         if (val == string("auto"))
           cd.cam->setFeatureMode(feature, DC1394_FEATURE_MODE_AUTO);
+        else 
+          cd.cam->setFeatureMode(feature, DC1394_FEATURE_MODE_MANUAL);
+          
       
       if (val.getType() == XmlRpc::XmlRpcValue::TypeInt)
       {
