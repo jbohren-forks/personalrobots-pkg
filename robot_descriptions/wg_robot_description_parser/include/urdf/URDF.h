@@ -507,6 +507,7 @@ namespace robot_desc
 	{   
 	    m_paths.push_back("");
 	    m_errorCount = 0;
+	    m_rememberUnknownTags = false;
 	    m_verbose = true;
 	    if (filename)
 		loadFile(filename);
@@ -538,12 +539,10 @@ namespace robot_desc
         
 	/** Set the verbosity. Default is true */
 	void setVerbose(bool verbose);
-	
-	/** Check if the links form a cycle */
-	bool containsCycle(unsigned int index) const;
-	
-	/** Simple checks to make sure the parsed values are correct */
-	void sanityCheck(void) const;
+
+	/** If set to true, unknown tags are stored in a list instead
+	    of presenting error messages. */
+	void rememberUnknownTags(bool remember);
 	
 	/** Returns the robot name */
 	const std::string& getRobotName(void) const;
@@ -560,7 +559,7 @@ namespace robot_desc
 	/** Retrieve a link by its name */
 	Link* getLink(const std::string &name) const;
 
-	/** Retrieve a link by its joint name */
+	/** Retrieve a link by its joint name (connecting to the link's parent) */
 	Link* getJointLink(const std::string &name) const;
 
 	/** Get the list of all links. The array is sorted alphabetically by name. */
@@ -589,6 +588,16 @@ namespace robot_desc
 
 	/** Try to retrieve the constant as a string value */
 	std::string getConstantString(const std::string &name, bool *error = NULL) const;
+	
+	/** Get the list of unknown tags. Only available if
+	    rememberUnknownTags(true) was called before parsing. */
+	void getUnknownTags(std::vector<const TiXmlNode*> &unknownTags) const;
+	
+	/** Check if the links form a cycle */
+	bool containsCycle(unsigned int index) const;
+	
+	/** Simple checks to make sure the parsed values are correct */
+	void sanityCheck(void) const;
 	
 	/** Return the number of encountered errors */
 	unsigned int getErrorCount(void) const;
@@ -704,6 +713,14 @@ namespace robot_desc
 	/** Counter for errors */
 	mutable unsigned int                    m_errorCount;
 	
+	/** If this is set to true, unknown tags will be simply added
+	    to a list, no error messages related to unknown tags will
+	    be presented. */
+	bool                                    m_rememberUnknownTags;	
+
+	/** The list of unknown tags (maintained only if rememberUnknownTags(true) was previosuly called) */
+	std::vector<const TiXmlNode*>           m_unknownTags;
+
 	/** Verbosity flag */
 	bool                                    m_verbose;
 	

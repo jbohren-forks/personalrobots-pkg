@@ -36,6 +36,7 @@
 
 #include <urdf/URDF.h>
 #include <cstdio>
+#include <cstring>
 
 int main(int argc, char **argv)
 {
@@ -43,9 +44,18 @@ int main(int argc, char **argv)
     
     if (argc >= 2)
     {
-        robot_desc::URDF file(argv[1]);
-        if (argc >= 3)
-            file.print();
+        robot_desc::URDF file;
+
+	for (int i = 2 ; i < argc ; ++i)
+	    if (strcmp(argv[i], "r") == 0)
+		file.rememberUnknownTags(true);
+	
+	file.loadFile(argv[1]);
+
+	for (int i = 2 ; i < argc ; ++i)
+	    if (strcmp(argv[i], "p") == 0)
+		file.print();
+	
 	file.sanityCheck();
 	result = file.getErrorCount();
 	if (result)

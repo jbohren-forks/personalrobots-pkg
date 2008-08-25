@@ -100,6 +100,11 @@ namespace robot_desc {
 	m_verbose = verbose;
     }
     
+    void URDF::rememberUnknownTags(bool remember)
+    {
+	m_rememberUnknownTags = remember;
+    }
+    
     unsigned int URDF::getErrorCount(void) const
     {
 	return m_errorCount;	
@@ -566,25 +571,33 @@ namespace robot_desc {
     
     void URDF::unknownNode(const TiXmlNode* node)
     {
-	switch (node->Type())
-	{
-	case TiXmlNode::ELEMENT:
-	    errorMessage("Ignoring element node '" + node->ValueStr() + "'");
-	    errorLocation(node);  
-	    break;
-	case TiXmlNode::TEXT:
-	    errorMessage("Ignoring text node with content '" + node->ValueStr() + "'");
-	    errorLocation(node);  
-	    break;
-	case TiXmlNode::COMMENT:
-	case TiXmlNode::DECLARATION:
-	    break;            
-	case TiXmlNode::UNKNOWN:
-	default:
-	    errorMessage("Ignoring unknown node '" + node->ValueStr() + "'");
-	    errorLocation(node);  
-	    break;
-	}
+	if (m_rememberUnknownTags)
+	    m_unknownTags.push_back(node);
+	else
+	    switch (node->Type())
+	    {
+	    case TiXmlNode::ELEMENT:
+		errorMessage("Ignoring element node '" + node->ValueStr() + "'");
+		errorLocation(node);  
+		break;
+	    case TiXmlNode::TEXT:
+		errorMessage("Ignoring text node with content '" + node->ValueStr() + "'");
+		errorLocation(node);  
+		break;
+	    case TiXmlNode::COMMENT:
+	    case TiXmlNode::DECLARATION:
+		break;            
+	    case TiXmlNode::UNKNOWN:
+	    default:
+		errorMessage("Ignoring unknown node '" + node->ValueStr() + "'");
+		errorLocation(node);  
+		break;
+	    }
+    }
+    
+    void URDF::getUnknownTags(std::vector<const TiXmlNode*> &unknownTags) const
+    {
+	unknownTags = m_unknownTags;
     }
     
     void URDF::getChildrenAndAttributes(const TiXmlNode *node, std::vector<const TiXmlNode*> &children, std::vector<const TiXmlAttribute*> &attributes) const
@@ -629,6 +642,7 @@ namespace robot_desc {
     void URDF::clearDocs(void)
     {
 	/* first, clear datastructures that may be pointing to xml elements */
+	m_unknownTags.clear();
 	m_constants.clear();
 	m_constBlocks.clear();
 
