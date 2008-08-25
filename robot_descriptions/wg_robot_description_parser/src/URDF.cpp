@@ -311,6 +311,7 @@ namespace robot_desc {
 	out << std::endl << "Frames:" << std::endl;
 	for (std::map<std::string, Frame*>::const_iterator i = m_frames.begin() ; i != m_frames.end() ; i++)
 	    i->second->print(out, "  ");
+	out << std::endl << "Groups:" << std::endl;
 	for (std::map<std::string, Group*>::const_iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
 	    i->second->print(out, "  ");
 	out << std::endl << "Data types:" << std::endl;

@@ -39,4 +39,6 @@ List of root links in robot 'robot' (1) :
 
 Frames:
 
+Groups:
+
 Data types:
