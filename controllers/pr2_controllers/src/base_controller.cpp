@@ -305,7 +305,7 @@ void BaseController::computeAndSetCasterSteer()
   {
     result = computePointVelocity2D(base_casters_[i].pos_, cmd_vel_);
     steer_angle_desired = atan2(result.y,result.x);
-    steer_angle_desired =  modNPiBy2(steer_angle_desired);//Clean steer Angle
+//     steer_angle_desired =  modNPiBy2(steer_angle_desired);//Clean steer Angle
 
     error_steer = steer_angle_actual_[i] - steer_angle_desired;
     steer_velocity_desired_[i] = -kp_speed_*error_steer;
