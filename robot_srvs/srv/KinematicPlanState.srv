@@ -21,7 +21,7 @@ robot_msgs/KinematicState start_state
 robot_msgs/KinematicState goal_state
 
 # No state in the produced motion plan will violate these constraints
-robot_msgs/KinematicConstraint[] constraints
+robot_msgs/KinematicConstraints constraints
 
 # The number of times this plan is to be computed. Shortest solution
 # will be reported.

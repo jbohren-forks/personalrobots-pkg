@@ -61,7 +61,7 @@ class StateValidityPredicate : public ompl::SpaceInformation::StateValidityCheck
 	return valid;
     }
     
-    void setConstraints(const std::vector<robot_msgs::KinematicConstraint> &kc)
+    void setPoseConstraints(const std::vector<robot_msgs::PoseConstraint> &kc)
     {
 	m_kce.use(m_model->kmodel, kc);
     }
@@ -72,8 +72,8 @@ class StateValidityPredicate : public ompl::SpaceInformation::StateValidityCheck
     }
     
  protected:
-    XMLModel                              *m_model;
-    KinematicConstraintEvaluatorSet        m_kce;
+    XMLModel                        *m_model;
+    KinematicConstraintEvaluatorSet  m_kce;
 };  
 
 #endif

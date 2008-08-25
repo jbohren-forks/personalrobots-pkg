@@ -129,9 +129,9 @@ class RequestPlan
     }
     
     /** Set the kinematic constraints to follow */
-    void setupConstraints(KinematicPlannerSetup &psetup, const std::vector<robot_msgs::KinematicConstraint> &cstrs)
+    void setupPoseConstraints(KinematicPlannerSetup &psetup, const std::vector<robot_msgs::PoseConstraint> &cstrs)
     {
-	static_cast<StateValidityPredicate*>(psetup.si->getStateValidityChecker())->setConstraints(cstrs);
+	static_cast<StateValidityPredicate*>(psetup.si->getStateValidityChecker())->setPoseConstraints(cstrs);
     }    
 
     /** Compute the actual motion plan */

@@ -136,9 +136,9 @@ public:
 	/* configure state space and starting state */
 	setupStateSpaceAndStartState(m, psetup, req.params, req.start_state);
 	
-	std::vector<robot_msgs::KinematicConstraint> cstrs;
-	req.get_constraints_vec(cstrs);
-	setupConstraints(psetup, cstrs);
+	std::vector<robot_msgs::PoseConstraint> cstrs;
+	req.constraints.get_pose_vec(cstrs);
+	setupPoseConstraints(psetup, cstrs);
 	
 	/* add goal state */
 	RequestPlanState::setupGoalState(m, psetup, req);
@@ -179,10 +179,10 @@ public:
 	/* configure state space and starting state */
 	setupStateSpaceAndStartState(m, psetup, req.params, req.start_state);
 	
-	std::vector<robot_msgs::KinematicConstraint> cstrs;
-	req.get_constraints_vec(cstrs);
-	setupConstraints(psetup, cstrs);
-	
+	std::vector<robot_msgs::PoseConstraint> cstrs;
+	req.constraints.get_pose_vec(cstrs);
+	setupPoseConstraints(psetup, cstrs);
+
 	/* add goal state */
 	RequestPlanLinkPosition::setupGoalState(m, psetup, req);
 	

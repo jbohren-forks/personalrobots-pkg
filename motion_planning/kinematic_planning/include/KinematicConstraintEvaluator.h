@@ -38,9 +38,10 @@
 #define KINEMATIC_PLANNING_KINEMATIC_CONSTRAINT_EVALUATOR_
 
 #include <planning_models/kinematic.h>
-#include <robot_msgs/KinematicConstraint.h>
+#include <robot_msgs/KinematicConstraints.h>
 #include <iostream>
 #include <vector>
+
 
 class KinematicConstraintEvaluator
 {
@@ -48,35 +49,71 @@ class KinematicConstraintEvaluator
     
     KinematicConstraintEvaluator(void)
     {
+    }
+
+    virtual ~KinematicConstraintEvaluator(void)
+    {
+    }
+    
+    virtual void clear(void) = 0;
+    virtual void use(planning_models::KinematicModel *kmodel, const ros::msg *kc) = 0;
+    virtual bool decide(void) = 0;
+    virtual void print(std::ostream &out = std::cout) const
+    {
+    }
+};
+
+
+class PoseConstraintEvaluator : public KinematicConstraintEvaluator
+{
+ public:
+    
+    PoseConstraintEvaluator(void) : KinematicConstraintEvaluator()
+    {
 	m_link = NULL;
     }
     
-    void use(planning_models::KinematicModel *kmodel, const robot_msgs::KinematicConstraint &kc)
+    virtual void use(planning_models::KinematicModel *kmodel, const ros::msg *kc)
     {
-	m_link = kmodel->getLink(kc.robot_link);
-	m_kc   = kc;	
+	const robot_msgs::PoseConstraint *pc = dynamic_cast<const robot_msgs::PoseConstraint*>(kc);
+	if (pc)
+	    use(kmodel, *pc);
     }
     
-    void clear(void)
+    void use(planning_models::KinematicModel *kmodel, const robot_msgs::PoseConstraint &pc)
+    {
+	m_link = kmodel->getLink(pc.robot_link);
+	m_pc   = pc;
+    }
+    
+    virtual void clear(void)
     {
 	m_link = NULL;
+    }
+    
+    virtual bool decide(void)
+    {
+	double dPos, dAng;
+	evaluate(&dPos, &dAng);
+
+	return decide(dPos, dAng);
     }
     
     void evaluate(double *distPos, double *distAng)
     {
 	if (m_link)
 	{	    
-	    switch (m_kc.type)
+	    switch (m_pc.type)
 	    {
-	    case robot_msgs::KinematicConstraint::ONLY_POSITION:
+	    case robot_msgs::PoseConstraint::ONLY_POSITION:
 		if (distPos)
 		{
 		    libTF::Pose3D::Position bodyPos;
 		    m_link->globalTrans.getPosition(bodyPos);
 		    
-		    double dx = bodyPos.x - m_kc.pose.position.x;
-		    double dy = bodyPos.y - m_kc.pose.position.y;
-		    double dz = bodyPos.z - m_kc.pose.position.z;
+		    double dx = bodyPos.x - m_pc.pose.position.x;
+		    double dy = bodyPos.y - m_pc.pose.position.y;
+		    double dz = bodyPos.z - m_pc.pose.position.z;
 		    
 		    *distPos = dx * dx + dy * dy + dz * dz;		    
 		}
@@ -84,8 +121,8 @@ class KinematicConstraintEvaluator
 		    *distAng = 0.0;
 		break;
 		
-	    case robot_msgs::KinematicConstraint::ONLY_ORIENTATION:
-	    case robot_msgs::KinematicConstraint::COMPLETE_POSE:		
+	    case robot_msgs::PoseConstraint::ONLY_ORIENTATION:
+	    case robot_msgs::PoseConstraint::COMPLETE_POSE:		
 	    default:
 		if (distPos)
 		    *distPos = 0.0;
@@ -103,29 +140,21 @@ class KinematicConstraintEvaluator
 	}
     }
     
-    bool decide(void)
-    {
-	double dPos, dAng;
-	evaluate(&dPos, &dAng);
-
-	return decide(dPos, dAng);
-    }
-    
     bool decide(double dPos, double dAng)
     {
 	bool result = true;
-	switch (m_kc.type)
+	switch (m_pc.type)
 	{
-	case robot_msgs::KinematicConstraint::ONLY_POSITION:
-	    result = dPos < m_kc.position_distance;
+	case robot_msgs::PoseConstraint::ONLY_POSITION:
+	    result = dPos < m_pc.position_distance;
 	    break;
 	    
-	case robot_msgs::KinematicConstraint::ONLY_ORIENTATION:
-	    result = dAng < m_kc.orientation_distance;
+	case robot_msgs::PoseConstraint::ONLY_ORIENTATION:
+	    result = dAng < m_pc.orientation_distance;
 	    break;
 	    
-	case robot_msgs::KinematicConstraint::COMPLETE_POSE:		
-	    result = (dPos < m_kc.position_distance) && (dAng < m_kc.orientation_distance);
+	case robot_msgs::PoseConstraint::COMPLETE_POSE:		
+	    result = (dPos < m_pc.position_distance) && (dAng < m_pc.orientation_distance);
 	    break;
 	    
 	default:
@@ -134,17 +163,17 @@ class KinematicConstraintEvaluator
 	return result;
     }
     
-    void print(std::ostream &out = std::cout) const
+    virtual void print(std::ostream &out = std::cout) const
     {
 	if (m_link)
 	{
-	    out << "Constraint on link '" << m_kc.robot_link << "'" << std::endl;
-	    if (m_kc.type !=  robot_msgs::KinematicConstraint::ONLY_ORIENTATION)
-		out << "  Desired position: " << m_kc.pose.position.x << ", " << m_kc.pose.position.y << ", " << m_kc.pose.position.z
-		    << " (within distance: " << m_kc.position_distance << ")" << std::endl;
-	    if (m_kc.type !=  robot_msgs::KinematicConstraint::ONLY_POSITION)
-		out << "  Desired orientation: " << m_kc.pose.orientation.x << ", " << m_kc.pose.orientation.y << ", " << m_kc.pose.orientation.z << ", " << m_kc.pose.orientation.w 
-		    << " (within distance: " << m_kc.orientation_distance << ")" << std::endl;
+	    out << "Constraint on link '" << m_pc.robot_link << "'" << std::endl;
+	    if (m_pc.type !=  robot_msgs::PoseConstraint::ONLY_ORIENTATION)
+		out << "  Desired position: " << m_pc.pose.position.x << ", " << m_pc.pose.position.y << ", " << m_pc.pose.position.z
+		    << " (within distance: " << m_pc.position_distance << ")" << std::endl;
+	    if (m_pc.type !=  robot_msgs::PoseConstraint::ONLY_POSITION)
+		out << "  Desired orientation: " << m_pc.pose.orientation.x << ", " << m_pc.pose.orientation.y << ", " << m_pc.pose.orientation.z << ", " << m_pc.pose.orientation.w 
+		    << " (within distance: " << m_pc.orientation_distance << ")" << std::endl;
 	}
 	else
 	    out << "No constraint" << std::endl;
@@ -152,7 +181,7 @@ class KinematicConstraintEvaluator
     
 protected:
     
-    robot_msgs::KinematicConstraint        m_kc;
+    robot_msgs::PoseConstraint             m_pc;
     planning_models::KinematicModel::Link *m_link;    
     
 };
@@ -178,12 +207,12 @@ class KinematicConstraintEvaluatorSet
 	m_kce.clear();	
     }
 	      
-    void use(planning_models::KinematicModel *kmodel, const std::vector<robot_msgs::KinematicConstraint> &kc)
+    void use(planning_models::KinematicModel *kmodel, const std::vector<robot_msgs::PoseConstraint> &kc)
     {
 	clear();
 	for (unsigned int i = 0 ; i < kc.size() ; ++i)
 	{
-	    KinematicConstraintEvaluator *ev = new KinematicConstraintEvaluator();
+	    PoseConstraintEvaluator *ev = new PoseConstraintEvaluator();
 	    ev->use(kmodel, kc[i]);
 	    m_kce.push_back(ev);
 	}

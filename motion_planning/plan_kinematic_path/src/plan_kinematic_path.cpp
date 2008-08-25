@@ -186,7 +186,7 @@ public:
 	
 	// the goal region is basically the position of a set of bodies
 	req.set_goal_constraints_size(1);
-	req.goal_constraints[0].type = robot_msgs::KinematicConstraint::ONLY_POSITION;
+	req.goal_constraints[0].type = robot_msgs::PoseConstraint::ONLY_POSITION;
 	req.goal_constraints[0].robot_link = "wrist_flex_left";
 	req.goal_constraints[0].pose.position.x = 0.5;
 	req.goal_constraints[0].pose.position.y = 0.3;
@@ -194,13 +194,13 @@ public:
 	req.goal_constraints[0].position_distance = 0.01;
 	
 	// an example of constraints: do not move the elbow too much
-	req.set_constraints_size(1);
-	req.constraints[0].type = robot_msgs::KinematicConstraint::ONLY_POSITION;
-	req.constraints[0].robot_link = "elbow_flex_left";
-	req.constraints[0].pose.position.x = 0.45;
-	req.constraints[0].pose.position.y = 0.188;
-	req.constraints[0].pose.position.z = 0.74;
-	req.constraints[0].position_distance = 0.01;
+	req.constraints.set_pose_size(1);
+	req.constraints.pose[0].type = robot_msgs::PoseConstraint::ONLY_POSITION;
+	req.constraints.pose[0].robot_link = "elbow_flex_left";
+	req.constraints.pose[0].pose.position.x = 0.45;
+	req.constraints.pose[0].pose.position.y = 0.188;
+	req.constraints.pose[0].pose.position.z = 0.74;
+	req.constraints.pose[0].position_distance = 0.01;
 	
 	req.allowed_time = 3.0;
 	

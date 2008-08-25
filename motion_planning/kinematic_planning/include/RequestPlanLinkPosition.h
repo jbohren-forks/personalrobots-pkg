@@ -44,21 +44,21 @@ class GoalToPosition : public ompl::SpaceInformationKinematic::GoalRegionKinemat
 {
  public:
     
-    GoalToPosition(ompl::SpaceInformation_t si, XMLModel *model, const std::vector<robot_msgs::KinematicConstraint> &kc) : ompl::SpaceInformationKinematic::GoalRegionKinematic(si)
+    GoalToPosition(ompl::SpaceInformation_t si, XMLModel *model, const std::vector<robot_msgs::PoseConstraint> &pc) : ompl::SpaceInformationKinematic::GoalRegionKinematic(si)
     {
 	m_model = model;
-	for (unsigned int i = 0 ; i < kc.size() ; ++i)
+	for (unsigned int i = 0 ; i < pc.size() ; ++i)
 	{
-	    KinematicConstraintEvaluator *kce = new KinematicConstraintEvaluator();
-	    kce->use(m_model->kmodel, kc[i]);
-	    m_kce.push_back(kce);
+	    PoseConstraintEvaluator *pce = new PoseConstraintEvaluator();
+	    pce->use(m_model->kmodel, pc[i]);
+	    m_pce.push_back(pce);
 	}
     }
     
     virtual ~GoalToPosition(void)
     {
-	for (unsigned int i = 0 ; i < m_kce.size() ; ++i)
-	    delete m_kce[i];
+	for (unsigned int i = 0 ; i < m_pce.size() ; ++i)
+	    delete m_pce[i];
     }
     
     virtual double distanceGoal(ompl::SpaceInformationKinematic::StateKinematic_t state)
@@ -79,42 +79,42 @@ class GoalToPosition : public ompl::SpaceInformationKinematic::GoalRegionKinemat
 	return true;
     }
     
+    virtual void print(std::ostream &out = std::cout) const
+    {
+	ompl::SpaceInformationKinematic::GoalRegionKinematic::print(out);
+	for (unsigned int i = 0 ; i < m_pce.size() ; ++i)
+	    m_pce[i]->print(out);
+    }
+    
+ protected:
+
     double evaluateGoalAux(ompl::SpaceInformationKinematic::StateKinematic_t state, std::vector<bool> *decision)
     {
 	update(state);
 	
 	if (decision)
-	    decision->resize(m_kce.size());
+	    decision->resize(m_pce.size());
 	double distance = 0.0;
-	for (unsigned int i = 0 ; i < m_kce.size() ; ++i)
+	for (unsigned int i = 0 ; i < m_pce.size() ; ++i)
 	{
 	    double dPos, dAng;
-	    m_kce[i]->evaluate(&dPos, &dAng);
+	    m_pce[i]->evaluate(&dPos, &dAng);
 	    if (decision)
-		(*decision)[i] = m_kce[i]->decide(dPos, dAng);
+		(*decision)[i] = m_pce[i]->decide(dPos, dAng);
 	    distance += dPos + dAng;
 	}
 	
 	return distance;
     }
     
-    virtual void print(std::ostream &out = std::cout) const
-    {
-	ompl::SpaceInformationKinematic::GoalRegionKinematic::print(out);
-	for (unsigned int i = 0 ; i < m_kce.size() ; ++i)
-	    m_kce[i]->print(out);
-    }
-    
- protected:
-
     void update(ompl::SpaceInformationKinematic::StateKinematic_t state)
     {
 	m_model->kmodel->computeTransforms(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);
 	m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
     }    
     
-    XMLModel                                   *m_model;
-    std::vector<KinematicConstraintEvaluator*>  m_kce;
+    XMLModel                              *m_model;
+    std::vector<PoseConstraintEvaluator*>  m_pce;
     
 };
     
@@ -143,10 +143,10 @@ class RequestPlanLinkPosition : virtual public RequestPlan
     void setupGoalState(XMLModel *model, KinematicPlannerSetup &psetup, robot_srvs::KinematicPlanLinkPosition::request &req)
     {
 	/* set the goal */
-	std::vector<robot_msgs::KinematicConstraint> kc;
-	req.get_goal_constraints_vec(kc);
+	std::vector<robot_msgs::PoseConstraint> pc;
+	req.get_goal_constraints_vec(pc);
 	
-	GoalToPosition *goal = new GoalToPosition(psetup.si, model, kc);
+	GoalToPosition *goal = new GoalToPosition(psetup.si, model, pc);
 	psetup.si->setGoal(goal); 
     }
     
