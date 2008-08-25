@@ -1675,6 +1675,7 @@
     <map name="sensor" flag="gazebo">
       <verbatim key="sensor_ray">
         <sensor:ray name="tilt_laser">
+          <gaussianNoise>0.05</gaussianNoise>
           <rayCount>683</rayCount>
           <rangeCount>683</rangeCount>
           <laserCount>1</laserCount>
@@ -1736,6 +1737,7 @@
     <map name="sensor" flag="gazebo">
       <verbatim key="sensor_ray">
         <sensor:ray name="base_laser">
+          <gaussianNoise>0.05</gaussianNoise>
           <rayCount>683</rayCount>
           <rangeCount>683</rangeCount>
           <laserCount>1</laserCount>

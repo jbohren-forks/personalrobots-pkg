@@ -98,6 +98,7 @@ void Ros_Laser::LoadChild(XMLConfigNode *node)
   std::cout << "================= " << this->topicName <<  std::endl;
   rosnode->advertise<std_msgs::LaserScan>(this->topicName);
   this->frameName = node->GetString("frameName","default_ros_laser",0); //read from xml file
+  this->gaussianNoise = node->GetDouble("gaussianNoise",0.0,0); //read from xml file
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -221,12 +222,11 @@ void Ros_Laser::PutLaserData()
       /*  point scan from laser                                      */
       /*                                                             */
       /***************************************************************/
-      double sigma = 0.002;  // 2 milimeter noise
       if (r == maxRange)
         this->laserMsg.ranges[i]        = r; // no noise if at max range
       else
-        this->laserMsg.ranges[i]        = r + this->GaussianKernel(0,sigma) ;
-      this->laserMsg.intensities[i]   = v + this->GaussianKernel(0,sigma) ;
+        this->laserMsg.ranges[i]        = r + this->GaussianKernel(0,this->gaussianNoise) ;
+      this->laserMsg.intensities[i]   = v + this->GaussianKernel(0,this->gaussianNoise) ;
     }
 
     // iface writing can be skipped if iface is not used.

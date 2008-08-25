@@ -121,6 +121,8 @@ class Ros_Laser : public Controller
   // FIXME: extract link name directly?
   private: std::string frameName;
 
+  private: double gaussianNoise;
+
   private: double GaussianKernel(double mu,double sigma);
 
   // A mutex to lock access to fields that are used in message callbacks
