@@ -595,6 +595,21 @@ namespace robot_desc {
 	    }
     }
     
+    void URDF::getActuators(std::vector<const TiXmlElement*> &actuators) const
+    {
+	actuators = m_actuators;
+    }
+    
+    void URDF::getTransmissions(std::vector<const TiXmlElement*> &transmissions) const
+    {
+	transmissions = m_transmissions;
+    }
+    
+    void URDF::getControllers(std::vector<const TiXmlElement*> &controllers) const
+    {
+	controllers = m_controllers;
+    }
+    
     void URDF::getUnknownTags(std::vector<const TiXmlNode*> &unknownTags) const
     {
 	unknownTags = m_unknownTags;
@@ -642,9 +657,13 @@ namespace robot_desc {
     void URDF::clearDocs(void)
     {
 	/* first, clear datastructures that may be pointing to xml elements */
-	m_unknownTags.clear();
+	
 	m_constants.clear();
 	m_constBlocks.clear();
+	m_actuators.clear();
+	m_controllers.clear();
+	m_transmissions.clear();	
+	m_unknownTags.clear();
 
 	/* clear memory allocated for loaded documents */
 	for (unsigned int i = 0 ; i < m_docs.size() ; ++i)
@@ -1897,6 +1916,12 @@ namespace robot_desc {
 			    loadLink(m_stage2[i]);
 			else if (name == "sensor")
 			    loadSensor(m_stage2[i]);
+			else if (name == "actuator")
+			    m_actuators.push_back(elem);
+			else if (name == "transmission")
+			    m_transmissions.push_back(elem);
+			else if (name == "controller")
+			    m_controllers.push_back(elem);
 			else
 			    m_stage3.push_back(elem);			
 		    }

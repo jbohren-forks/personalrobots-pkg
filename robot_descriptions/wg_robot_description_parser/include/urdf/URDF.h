@@ -49,7 +49,14 @@
 
 namespace robot_desc
 {
-    /** This class contains a parser for URDF documents */
+    /** This class contains a complete parser for URDF documents.
+	Datastructures that resemble the ones specified in the XML
+	document are instantiated, easy-access pointers are computed
+	(to access a datastructure from another). Checks are made to
+	make sure the parsed data is correct.  Since actuators,
+	transmissions and controllers are potentially robot specific,
+	their data is kept as XML elements.	
+     */
     class URDF
     {
     public:
@@ -589,6 +596,15 @@ namespace robot_desc
 	/** Try to retrieve the constant as a string value */
 	std::string getConstantString(const std::string &name, bool *error = NULL) const;
 	
+	/** Get the list of actuator tags */
+	void getActuators(std::vector<const TiXmlElement*> &actuators) const;
+
+	/** Get the list of transmission tags */
+	void getTransmissions(std::vector<const TiXmlElement*> &transmissions) const;
+
+	/** Get the list of controller tags */
+	void getControllers(std::vector<const TiXmlElement*> &controllers) const;
+	
 	/** Get the list of unknown tags. Only available if
 	    rememberUnknownTags(true) was called before parsing. */
 	void getUnknownTags(std::vector<const TiXmlNode*> &unknownTags) const;
@@ -710,9 +726,15 @@ namespace robot_desc
 	/** The list of constant blocks */
 	std::map<std::string, const TiXmlNode*> m_constBlocks;
 
-	/** Counter for errors */
-	mutable unsigned int                    m_errorCount;
-	
+	/** The list of actuator tags */
+	std::vector<const TiXmlElement*>        m_actuators;
+
+	/** The list of controller tags */
+	std::vector<const TiXmlElement*>        m_controllers;
+
+	/** The list of transmission tags */
+	std::vector<const TiXmlElement*>        m_transmissions;
+
 	/** If this is set to true, unknown tags will be simply added
 	    to a list, no error messages related to unknown tags will
 	    be presented. */
@@ -723,6 +745,9 @@ namespace robot_desc
 
 	/** Verbosity flag */
 	bool                                    m_verbose;
+	
+	/** Counter for errors */
+	mutable unsigned int                    m_errorCount;
 	
     private:
 	
