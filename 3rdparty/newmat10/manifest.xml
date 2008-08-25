@@ -9,7 +9,7 @@ This ROS package also supplies a small patch which enables namespaces and stream
 
 </description>
 <author>Robert Davies</author>
-<license>Zlib-style, see distribution for details</license>
+<license url="http://www.robertnz.net/nm10.htm#use">Zlib-style</license>
 <url>http://www.robertnz.net/nm_intro.htm</url>
 <export>
   <cpp cflags="-I${prefix}/newmat" lflags="-L${prefix}/newmat/newmat10 -lnewmat" />
