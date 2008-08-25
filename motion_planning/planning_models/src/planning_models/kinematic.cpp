@@ -247,7 +247,7 @@ void planning_models::KinematicModel::constructGroupList(const robot_desc::URDF 
     model.getGroupNames(allGroups);
     m_groups.clear();
     for (unsigned int i = 0 ; i < allGroups.size() ; ++i)
-	if (model.getGroup(allGroups[i])->hasFlag("plan"))
+	if (model.getGroup(allGroups[i])->hasFlag("planning"))
 	    m_groups.push_back(rname + "::" + allGroups[i]);
     m_groupsMap.clear();
     for (unsigned int i = 0 ; i < m_groups.size() ; ++i)
@@ -362,7 +362,7 @@ void planning_models::KinematicModel::buildChainJ(Robot *robot, Link *parent, Jo
     std::vector<std::string> gnames;
     model.getGroupNames(gnames);
     for (unsigned int i = 0 ; i < gnames.size() ; ++i)
-	if (model.getGroup(gnames[i])->hasFlag("plan"))
+	if (model.getGroup(gnames[i])->hasFlag("planning"))
 	    joint->inGroup.push_back(urdfLink->inGroup[i]);
     
     for (unsigned int i = 0 ; i < joint->inGroup.size() ; ++i)

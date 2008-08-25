@@ -101,7 +101,7 @@ public:
     {
 	robot_srvs::KinematicPlanState::request  req;
 	
-	req.params.model_id = "pr2::leftArm";
+	req.params.model_id = "pr2::left_arm";
 	req.params.distance_metric = "L2Square";
 	req.threshold = 0.01;
 	req.interpolate = 1;
@@ -127,7 +127,7 @@ public:
     {
 	robot_srvs::KinematicPlanState::request  req;
 	
-	req.params.model_id = "pr2::rightArm";
+	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
 	req.threshold = 0.01;
 	req.interpolate = 1;
@@ -176,7 +176,7 @@ public:
     {
 	robot_srvs::KinematicPlanLinkPosition::request req;
 	
-	req.params.model_id = "pr2::leftArm";
+	req.params.model_id = "pr2::left_arm";
 	req.params.distance_metric = "L2Square";
 	req.params.planner_id = "RRT";
 	req.interpolate = 1;

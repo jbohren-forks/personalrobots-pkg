@@ -291,7 +291,7 @@ private:
 	if (group)
 	{
 	    const robot_desc::URDF::Map &data = group->data;
-	    std::map<std::string, std::string> info = data.getMapTagValues("plan", "RRT");
+	    std::map<std::string, std::string> info = data.getMapTagValues("planning", "RRT");
 	    
 	    if (info.find("range") != info.end())
 	    {
@@ -334,7 +334,7 @@ private:
 	if (group)
 	{
 	    const robot_desc::URDF::Map &data = group->data;
-	    std::map<std::string, std::string> info = data.getMapTagValues("plan", "LazyRRT");
+	    std::map<std::string, std::string> info = data.getMapTagValues("planning", "LazyRRT");
 	     
 	    if (info.find("range") != info.end())
 	    {

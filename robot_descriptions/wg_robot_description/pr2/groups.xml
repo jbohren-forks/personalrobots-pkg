@@ -4,7 +4,7 @@
   
   <!-- Define the parts of the robot that the robot's scanners can see -->
   
-  <group name="self_see">
+  <group name="self_see" flags="mapping">
     upperarm_roll_left
     upperarm_roll_right
     elbow_flex_left
@@ -21,16 +21,21 @@
     finger_r_right
   </group>
   
-
+  <!-- Define groups to check for self collision -->
   
-  <!-- Groups needed for motion planning (flag contains "plan") 
+  <group name="left_arm" flags="self_collision">
+    elbow_flex_left
+    base
+  </group>
+
+  <!-- Groups needed for motion planning (flag contains "planning") 
        and for kinematics (flag contains "kinematic") -->
 
-  <group name="base" flags="plan">
+  <group name="base" flags="planning">
     base
   </group>
   
-  <group name="leftArm" flags="plan kinematic">
+  <group name="left_arm" flags="planning kinematic">
     shoulder_pan_left
     shoulder_pitch_left
     upperarm_roll_left
@@ -39,16 +44,16 @@
     wrist_flex_left
     gripper_roll_left
 
-    <map name="RRT" flag="plan">
+    <map name="RRT" flag="planning">
       <elem key="range" value="0.75" />
     </map>
     
-    <map name="LazyRRT" flag="plan">
+    <map name="LazyRRT" flag="planning">
       <elem key="range" value="0.75" />
     </map>
   </group>
   
-  <group name="rightArm" flags="plan kinematic">
+  <group name="right_arm" flags="planning kinematic">
 
     shoulder_pan_right
     shoulder_pitch_right
@@ -58,16 +63,16 @@
     wrist_flex_right
     gripper_roll_right
 
-    <map name="RRT" flag="plan">
+    <map name="RRT" flag="planning">
       <elem key="range" value="0.75" />
     </map>
 
-    <map name="LazyRRT" flag="plan">
+    <map name="LazyRRT" flag="planning">
       <elem key="range" value="0.75" />
     </map>
   </group>
 
-  <group name="base+leftArm" flags="plan">
+  <group name="base_left_arm" flags="planning">
     base
     torso
     shoulder_pan_left
@@ -79,7 +84,7 @@
     gripper_roll_left
   </group>
   
-  <group name="base+rightArm" flags="plan">
+  <group name="base_right_arm" flags="planning">
     base
     torso
     shoulder_pan_right
@@ -91,7 +96,7 @@
     gripper_roll_right
   </group>
   
-  <group name="arms" flags="plan">
+  <group name="arms" flags="planning">
     shoulder_pan_left
     shoulder_pitch_left
     upperarm_roll_left
@@ -108,7 +113,7 @@
     gripper_roll_right
   </group>
 
-  <group name="base+arms" flags="plan">
+  <group name="base_arms" flags="planning">
     base
     torso
     shoulder_pan_left
