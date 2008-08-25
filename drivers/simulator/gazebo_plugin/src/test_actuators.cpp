@@ -585,27 +585,30 @@ namespace gazebo {
         std::string  jn = *((*gji)->gripper_controller_name_ );
         controller::Controller* jc = mc_.getControllerByName(jn); // from actual mechanism control, not rmc_
         controller::JointPositionControllerNode* jpc = dynamic_cast<controller::JointPositionControllerNode*>(jc);
-        gripperCmd   = jpc->getCommand();
+        if (jpc)
+        {
+          gripperCmd   = jpc->getCommand();
 
-        currentError = math_utils::shortest_angular_distance( gripperCmd,dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0])->GetAngle());
-        currentCmd   = (*gji)->gaz_gripper_pids_[0]->updatePid(currentError,currentTime-lastTime);
-        dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0])->SetParam( dParamVel, currentCmd );
-        dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0])->SetParam( dParamFMax, (*gji)->saturationTorque );
+          currentError = math_utils::shortest_angular_distance( gripperCmd,dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0])->GetAngle());
+          currentCmd   = (*gji)->gaz_gripper_pids_[0]->updatePid(currentError,currentTime-lastTime);
+          dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0])->SetParam( dParamVel, currentCmd );
+          dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0])->SetParam( dParamFMax, (*gji)->saturationTorque );
 
-        currentError = math_utils::shortest_angular_distance(-gripperCmd,dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[1])->GetAngle());
-        currentCmd   = (*gji)->gaz_gripper_pids_[1]->updatePid(currentError,currentTime-lastTime);
-        dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[1])->SetParam( dParamVel, currentCmd );
-        dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[1])->SetParam( dParamFMax, (*gji)->saturationTorque );
+          currentError = math_utils::shortest_angular_distance(-gripperCmd,dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[1])->GetAngle());
+          currentCmd   = (*gji)->gaz_gripper_pids_[1]->updatePid(currentError,currentTime-lastTime);
+          dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[1])->SetParam( dParamVel, currentCmd );
+          dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[1])->SetParam( dParamFMax, (*gji)->saturationTorque );
 
-        currentError = math_utils::shortest_angular_distance(-gripperCmd,dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[2])->GetAngle());
-        currentCmd   = (*gji)->gaz_gripper_pids_[2]->updatePid(currentError,currentTime-lastTime);
-        dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[2])->SetParam( dParamVel, currentCmd );
-        dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[2])->SetParam( dParamFMax, (*gji)->saturationTorque );
+          currentError = math_utils::shortest_angular_distance(-gripperCmd,dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[2])->GetAngle());
+          currentCmd   = (*gji)->gaz_gripper_pids_[2]->updatePid(currentError,currentTime-lastTime);
+          dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[2])->SetParam( dParamVel, currentCmd );
+          dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[2])->SetParam( dParamFMax, (*gji)->saturationTorque );
 
-        currentError = math_utils::shortest_angular_distance( gripperCmd,dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[3])->GetAngle());
-        currentCmd   = (*gji)->gaz_gripper_pids_[3]->updatePid(currentError,currentTime-lastTime);
-        dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[3])->SetParam( dParamVel, currentCmd );
-        dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[3])->SetParam( dParamFMax, (*gji)->saturationTorque );
+          currentError = math_utils::shortest_angular_distance( gripperCmd,dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[3])->GetAngle());
+          currentCmd   = (*gji)->gaz_gripper_pids_[3]->updatePid(currentError,currentTime-lastTime);
+          dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[3])->SetParam( dParamVel, currentCmd );
+          dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[3])->SetParam( dParamFMax, (*gji)->saturationTorque );
+        }
 
       }
       else
@@ -616,16 +619,22 @@ namespace gazebo {
           case gazebo::Joint::SLIDER:
           {
             gazebo::SliderJoint* gjs  = dynamic_cast<gazebo::SliderJoint*>((*gji)->gaz_joints_[0]);
-            double dampForce    = -(*gji)->explicitDampingCoefficient * gjs->GetPositionRate();
-            gjs->SetSliderForce( (*gji)->rmc_joint_->commanded_effort_+dampForce);
-            break;
+            if (gjs)
+            {
+              double dampForce    = -(*gji)->explicitDampingCoefficient * gjs->GetPositionRate();
+              gjs->SetSliderForce( (*gji)->rmc_joint_->commanded_effort_+dampForce);
+              break;
+            }
           }
           case gazebo::Joint::HINGE:
           {
             gazebo::HingeJoint* gjh  = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0]);
-            double dampForce    = -(*gji)->explicitDampingCoefficient * gjh->GetAngleRate();
-            gjh->SetTorque( (*gji)->rmc_joint_->commanded_effort_+dampForce);
-            break;
+            if (gjh)
+            {
+              double dampForce    = -(*gji)->explicitDampingCoefficient * gjh->GetAngleRate();
+              gjh->SetTorque( (*gji)->rmc_joint_->commanded_effort_+dampForce);
+              break;
+            }
           }
           case gazebo::Joint::HINGE2:
           case gazebo::Joint::BALL:
@@ -1043,7 +1052,8 @@ namespace gazebo {
     this->lock.lock();
     controller::Controller* cc = mc_.getControllerByName( "base_controller" );
     controller::BaseControllerNode* bc = dynamic_cast<controller::BaseControllerNode*>(cc);
-    bc->setCommand(velMsg.vx,0.0,velMsg.vw);
+    if (bc)
+      bc->setCommand(velMsg.vx,0.0,velMsg.vw);
     this->lock.unlock();
   }
 
@@ -1088,7 +1098,7 @@ namespace gazebo {
     this->lock.unlock();
   }
 
-  bool TestActuators::SetRightArmCartesian(rosgazebo::MoveCartesian::request &req, rosgazebo::MoveCartesian::response &res)
+  bool TestActuators::SetRightArmCartesian(gazebo_plugin::MoveCartesian::request &req, gazebo_plugin::MoveCartesian::response &res)
   {
     this->lock.lock();
     KDL::Frame f;
@@ -1106,7 +1116,7 @@ namespace gazebo {
           return true;
   }
 
-  bool TestActuators::OperateRightGripper(rosgazebo::GripperCmd::request &req, rosgazebo::GripperCmd::response &res)
+  bool TestActuators::OperateRightGripper(gazebo_plugin::GripperCmd::request &req, gazebo_plugin::GripperCmd::response &res)
   {
           this->lock.lock();
           this->PR2Copy->hw.SetJointServoCmd(PR2::ARM_R_GRIPPER_GAP, req.gap, 0);
@@ -1114,7 +1124,7 @@ namespace gazebo {
           return true;
   }
 
-  bool TestActuators::reset_IK_guess(rosgazebo::VoidVoid::request &req, rosgazebo::VoidVoid::response &res)
+  bool TestActuators::reset_IK_guess(gazebo_plugin::VoidVoid::request &req, gazebo_plugin::VoidVoid::response &res)
   {
     this->lock.lock();
           this->PR2Copy->GetArmJointPositionCmd(PR2::PR2_RIGHT_ARM, *(this->PR2Copy->right_arm_chain_->q_IK_guess));
@@ -1128,15 +1138,15 @@ namespace gazebo {
   {
 
 
-    // FIXME: the frame transforms should be published by individual controllers nodes, not here
-    // FIXME: the frame transforms should be published by individual controllers nodes, not here
-    // FIXME: the frame transforms should be published by individual controllers nodes, not here
-    // FIXME: the frame transforms should be published by individual controllers nodes, not here
-    // FIXME: the frame transforms should be published by individual controllers nodes, not here
-    // FIXME: the frame transforms should be published by individual controllers nodes, not here
-    // FIXME: the frame transforms should be published by individual controllers nodes, not here
-    // FIXME: the frame transforms should be published by individual controllers nodes, not here
-    // FIXME: the frame transforms should be published by individual controllers nodes, not here
+    // FIXME: the frame transforms should be published by individual mechanism joints, not here
+    // FIXME: the frame transforms should be published by individual mechanism joints, not here
+    // FIXME: the frame transforms should be published by individual mechanism joints, not here
+    // FIXME: the frame transforms should be published by individual mechanism joints, not here
+    // FIXME: the frame transforms should be published by individual mechanism joints, not here
+    // FIXME: the frame transforms should be published by individual mechanism joints, not here
+    // FIXME: the frame transforms should be published by individual mechanism joints, not here
+    // FIXME: the frame transforms should be published by individual mechanism joints, not here
+    // FIXME: the frame transforms should be published by individual mechanism joints, not here
 
 
 

@@ -56,6 +56,10 @@
 // Ioan's parser
 #include <urdf/URDF.h>
 
+// Advait and Gil's cartesian services
+#include <gazebo_plugin/MoveCartesian.h>
+#include <gazebo_plugin/GripperCmd.h>
+
 namespace gazebo
 {
 class HingeJoint;
@@ -85,7 +89,21 @@ protected:
   void CmdRightarmconfigReceived();
   void CmdLeftarmcartesianReceived();
   void CmdRightarmcartesianReceived();
+#if 0
+  bool reset_IK_guess(gazebo_plugin::VoidVoid::request &req, gazebo_plugin::VoidVoid::response &res);
+  bool SetRightArmCartesian(gazebo_plugin::MoveCartesian::request &req, gazebo_plugin::MoveCartesian::response &res);
+  bool OperateRightGripper(gazebo_plugin::GripperCmd::request &req, gazebo_plugin::GripperCmd::response &res);
+  // arm joint data
+  std_msgs::PR2Arm leftarm;
+  std_msgs::PR2Arm rightarm;
 
+  // end effector cmds
+  pr2_msgs::EndEffectorState cmd_leftarmcartesian;
+  pr2_msgs::EndEffectorState cmd_rightarmcartesian;
+
+  // need newRightArmPos, UpdateRightArm(), etc...
+
+#endif
 
 private:
 
