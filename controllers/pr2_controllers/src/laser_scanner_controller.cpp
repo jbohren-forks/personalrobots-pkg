@@ -427,6 +427,25 @@ bool LaserScannerControllerNode::setCommand(
   return true;
 }
 
+bool LaserScannerControllerNode::setTestCommand(double command)
+{
+  c_->setCommand(command);
+
+  //FIXME: Backdoor method to issue command set
+  if(command==41)c_->setSawtoothProfile(1,0.5,100,0);
+  else if(command==42)c_->setSawtoothProfile(2,0.5,100,0);
+  else if(command==43)c_->setSawtoothProfile(2,0.5,100,0.5);
+  else if(command==44)c_->setSawtoothProfile(0.5,0.5,100,0);
+  else if(command==45)c_->setSawtoothProfile(1,0.5,0);
+  else if(command==-41)c_->setSinewaveProfile(2,0.5,100,0.5);
+  else if(command==-42)c_->setSinewaveProfile(2,0.5,100,0);
+  else if(command==-43)c_->setSinewaveProfile(1,0.5,100,0);
+  else if(command==-44)c_->setSinewaveProfile(4,0.5,100,0);
+  else if (command==-45)c_->setSinewaveProfile(1,0.5,0);
+  return true;
+}
+
+
 bool LaserScannerControllerNode::getCommand(
   generic_controllers::GetCommand::request &req,
   generic_controllers::GetCommand::response &resp)

@@ -211,6 +211,7 @@ public:
 
   bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
+  bool setTestCommand(double command);
   // Services
   bool setCommand(generic_controllers::SetCommand::request &req,
                   generic_controllers::SetCommand::response &resp);
