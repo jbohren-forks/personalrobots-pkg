@@ -45,6 +45,7 @@
 // Services
 #include <pr2_controllers/SetArmCommand.h>
 #include <pr2_controllers/SetArmCartesianPos.h>
+#include <pr2_controllers/GetArmCartesianPos.h>
 #include <pr2_controllers/GetArmCommand.h>
 
 //Kinematics
@@ -148,10 +149,18 @@ namespace controller
 
       bool getCommand(pr2_controllers::GetArmCommand::request &req,
                       pr2_controllers::GetArmCommand::response &resp);
-      
+      /** \brief sets the command to a cartesian position
+       *  \return always true
+      **/
       bool setCommandCP(pr2_controllers::SetArmCartesianPos::request &req,
                       pr2_controllers::SetArmCartesianPos::response &resp);
 
+      /** \brief gets the cartesian positon of the gripper
+       *  \return always true
+       **/
+      bool getCP(pr2_controllers::GetArmCartesianPos::request &req,
+                        pr2_controllers::GetArmCartesianPos::response &resp);
+    
     private:
       ArmDummyController *c_;
       robot_kinematics::RobotKinematics pr2_kin_;

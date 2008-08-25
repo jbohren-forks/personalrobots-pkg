@@ -91,6 +91,7 @@ void ArmDummyController::setCommand(pr2_controllers::SetArmCommand::request &req
 void ArmDummyController::getCommand(                               pr2_controllers::GetArmCommand::response &resp)
 {
   arm_controller_lock_.lock();
+  resp.set_positions_size(goals_.size());
   assert(resp.get_positions_size() == goals_.size()); // TODO:Check intended behaviour here.
   resp.set_positions_vec(goals_);
   arm_controller_lock_.unlock();
@@ -189,6 +190,7 @@ bool ArmControllerNode::initXml(mechanism::Robot * robot, TiXmlElement * config)
     node->advertise_service(prefix + "/set_command", &ArmControllerNode::setCommand, this);
     node->advertise_service(prefix + "/get_command", &ArmControllerNode::getCommand, this);
     node->advertise_service(prefix + "/set_cartesian_pos", &ArmControllerNode::setCommandCP, this);
+    node->advertise_service(prefix + "/get_cartesian_pos", &ArmControllerNode::getCP, this);
     return true;
   }
   return false;  
@@ -229,11 +231,21 @@ bool ArmControllerNode::setCommandCP(pr2_controllers::SetArmCartesianPos::reques
   KDL::Frame cur_frame;
   arm_chain_->computeFK(cur_cfg, cur_frame);
   
+  // Setting guess of inverse kinematics
+  for(int i=0;i<size;++i)
+    (*arm_chain_->q_IK_guess)(i) = cur_cfg(i);  
   // Inverse kinematics:
   KDL::JntArray target_cfg = KDL::JntArray(size);
-  arm_chain_->computeIK(cur_cfg, targetFrame, target_cfg);
+  if(!arm_chain_->computeIK(targetFrame))
+    return false;
+  target_cfg = *(arm_chain_->q_IK_result);
+  std::cout<<"TARGET\n"<<target_cfg<<std::endl;
+  
   
   //TODO: check IK result
+  if(!arm_chain_->computeFK(target_cfg, targetFrame))
+    return false;
+  std::cout<<"Kinematics seems correct!"<<std::endl;
   
   // Sends commands to the controllers
   pr2_controllers::SetArmCommand::request commands;
@@ -244,3 +256,22 @@ bool ArmControllerNode::setCommandCP(pr2_controllers::SetArmCartesianPos::reques
   return true;
 }
 
+bool ArmControllerNode::getCP(pr2_controllers::GetArmCartesianPos::request &req,
+                                     pr2_controllers::GetArmCartesianPos::response &resp)
+{
+  std::cout<<"Called"<<std::endl;
+  // Stores the current state in a KDL frame in a realtime safe way
+  const int size = arm_chain_->num_joints_;
+  KDL::JntArray cur_cfg = KDL::JntArray(size);
+  std::vector<double> cur_reads(size);
+  c_->getCurrentConfiguration(cur_reads);
+  for(int i=0;i<size;++i)
+    cur_cfg(i) = cur_reads[i];
+  KDL::Frame cur_frame;
+  arm_chain_->computeFK(cur_cfg, cur_frame);
+  resp.x= cur_frame.p.x();
+  resp.y= cur_frame.p.y();
+  resp.z= cur_frame.p.z();
+  cur_frame.M.GetRPY(resp.roll, resp.pitch, resp.yaw);
+  return true;
+}
