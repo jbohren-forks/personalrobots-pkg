@@ -2,8 +2,8 @@ all: build
 
 SVN_DIR = kdl-svn
 SVN_URL = http://svn.mech.kuleuven.be/repos/orocos/trunk/kdl
-SVN_REVISION =  -r 29471
-SVN_PATCH = kdl_patch.diff
+SVN_REVISION =  -r 29562
+SVN_PATCH = kdl_patch29562.diff
 include $(shell rospack find mk)/svn_checkout.mk
 
 CMAKE = `rospack find cmake`/cmake/bin/cmake 
