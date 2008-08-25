@@ -59,12 +59,12 @@ namespace collision_space
 	                               m_octree(0.0f, 0.0f, 0.0f, 0.02f, 0.02f, 0.02f, 1, OCTREE_CELL_EMPTY)
 	{ 
 	    m_octree.setAutoExpand(true);
+	    m_selfCollision = false;
 	}
 	
 	virtual ~EnvironmentModelOctree(void)
 	{
 	}
-	
 	
 	/** Check if a model is in collision */
 	virtual bool isCollision(unsigned int model_id);
@@ -80,6 +80,9 @@ namespace collision_space
 	
 	/** Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(unsigned int model_id);
+
+	/** Add a group of links to be checked for self collision */
+	virtual void addSelfCollisionGroup(unsigned int model_id, std::vector<std::string> &links);
 
 	const scan_utils::Octree<char>* getOctree(void) const;
 	

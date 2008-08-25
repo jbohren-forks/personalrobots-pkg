@@ -40,6 +40,7 @@
 #include <planning_models/kinematic.h>
 #include <rosthread/mutex.h>
 #include <vector>
+#include <string>
 
 /** @htmlinclude ../../manifest.html
 
@@ -78,10 +79,13 @@ namespace collision_space
 	/** Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(unsigned int model_id) = 0;
 
+	/** Add a group of links to be checked for self collision */
+	virtual void addSelfCollisionGroup(unsigned int model_id, std::vector<std::string> &links) = 0;
+	
 	/** Get the number of loaded models */
 	unsigned int getModelCount(void) const;
 	/** Get a specific model */
-	planning_models::KinematicModel* getModel(unsigned int model_id) const;
+	planning_models::KinematicModel* getRobotModel(unsigned int model_id) const;
 	
 	/** Provide interface to a lock. Use carefully! */
 	void lock(void);
@@ -93,8 +97,8 @@ namespace collision_space
 	void setSelfCollision(bool selfCollision);
 	
 	/** Check if self collision is enabled */
-	bool getSelfCollision(void) const;	
-	
+	bool getSelfCollision(void) const;
+
     protected:
         
 	ros::thread::mutex m_lock;
@@ -102,6 +106,8 @@ namespace collision_space
 	
 	/** List of loaded robot models */	
 	std::vector<planning_models::KinematicModel*> m_models;
+	
+	
 	
     };
 }

@@ -137,3 +137,8 @@ const scan_utils::Octree<char>* collision_space::EnvironmentModelOctree::getOctr
 {
     return &m_octree;    
 }
+
+void collision_space::EnvironmentModelOctree::addSelfCollisionGroup(unsigned int model_id, std::vector<std::string> &links)
+{
+    fprintf(stderr, "Octree collision checking does not support self collision\n");    
+}

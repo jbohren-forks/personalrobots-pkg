@@ -157,9 +157,9 @@ public:
 	
 	if (m_collisionSpace && m_collisionSpace->getModelCount() == 1 && m_follow)
 	{
-	    int group = m_collisionSpace->getModel(0)->getGroupID("pr2::base");
+	    int group = m_collisionSpace->getRobotModel(0)->getGroupID("pr2::base");
 	    m_collisionSpace->lock();
-	    m_collisionSpace->getModel(0)->computeTransforms(m_basePos, group);
+	    m_collisionSpace->getRobotModel(0)->computeTransforms(m_basePos, group);
 	    m_collisionSpace->updateRobotModel(0);
 	    m_collisionSpace->unlock();
 	    checkCollision();

@@ -69,7 +69,7 @@ unsigned int collision_space::EnvironmentModel::getModelCount(void) const
     return m_models.size();    
 }
 
-planning_models::KinematicModel* collision_space::EnvironmentModel::getModel(unsigned int model_id) const
+planning_models::KinematicModel* collision_space::EnvironmentModel::getRobotModel(unsigned int model_id) const
 {
     return m_models[model_id];
 }

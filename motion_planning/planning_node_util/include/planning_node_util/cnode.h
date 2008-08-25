@@ -93,7 +93,7 @@ namespace planning_node_util
 		m_collisionSpace = collisionSpace;
 	    else
 		m_collisionSpace = new collision_space::EnvironmentModelODE();
-	    m_collisionSpace->setSelfCollision(false);
+	    m_collisionSpace->setSelfCollision(true);
 	    
 	    m_sphereSize = 0.03;
 	    
@@ -115,8 +115,9 @@ namespace planning_node_util
 	    if (m_kmodel)
 	    {
 		m_collisionSpace->lock();
-		m_collisionSpace->addRobotModel(m_kmodel);
+		unsigned int cid = m_collisionSpace->addRobotModel(m_kmodel);
 		m_collisionSpace->unlock();
+		addSelfCollisionGroups(cid, file);
 	    }	    
 	}
 	
@@ -132,6 +133,18 @@ namespace planning_node_util
 	std_msgs::PointCloudFloat32           m_worldCloud;
 	collision_space::EnvironmentModel    *m_collisionSpace;
 	double                                m_sphereSize;
+	
+	void addSelfCollisionGroups(unsigned int cid, robot_desc::URDF *model)
+	{
+	    std::vector<robot_desc::URDF::Group*> groups;
+	    model->getGroups(groups);
+	    
+	    m_collisionSpace->lock();
+	    for (unsigned int i = 0 ; i < groups.size() ; ++i)
+		if (groups[i]->hasFlag("self_collision"))
+		    m_collisionSpace->addSelfCollisionGroup(cid, groups[i]->linkNames);
+	    m_collisionSpace->unlock();
+	}
 	
 	void worldMapCallback(void)
 	{

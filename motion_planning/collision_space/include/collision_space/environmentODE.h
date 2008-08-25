@@ -87,6 +87,9 @@ namespace collision_space
 	/** Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(unsigned int model_id);
 
+	/** Add a group of links to be checked for self collision */
+	virtual void addSelfCollisionGroup(unsigned int model_id, std::vector<std::string> &links);
+
     protected:
 		
 	class ODECollide2
@@ -161,8 +164,9 @@ namespace collision_space
 	
 	struct ModelInfo
 	{
-	    std::vector< kGeom* > g;
-	    dSpaceID              s;
+	    std::vector< kGeom* >                    geom;
+	    dSpaceID                                 space;
+	    std::vector< std::vector<unsigned int> > selfCollision;	    
 	};
 	
 	dGeomID createODEGeom(dSpaceID space, planning_models::KinematicModel::Shape *shape) const;

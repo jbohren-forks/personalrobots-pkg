@@ -22,8 +22,8 @@
   </group>
   
   <!-- Define groups to check for self collision -->
-  
-  <group name="left_arm" flags="self_collision">
+
+  <group name="collisions1" flags="self_collision">
     elbow_flex_left
     base
   </group>
