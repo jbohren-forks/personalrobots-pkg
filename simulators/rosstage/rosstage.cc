@@ -202,9 +202,9 @@ StageNode::SubscribeModels()
     return(-1);
   }
 
-  advertise<std_msgs::LaserScan>("scan");
-  advertise<std_msgs::RobotBase2DOdom>("odom");
-  subscribe("cmd_vel", velMsg, &StageNode::cmdvelReceived);
+  advertise<std_msgs::LaserScan>("scan",10);
+  advertise<std_msgs::RobotBase2DOdom>("odom",10);
+  subscribe("cmd_vel", velMsg, &StageNode::cmdvelReceived, 10);
   return(0);
 }
 
@@ -273,7 +273,7 @@ StageNode::Update()
   publish("odom",this->odomMsg);
 
   //  printf("%u \n",world->SimTimeNow());
-  printf("time: %u, %u \n",odomMsg.header.stamp.sec, odomMsg.header.stamp.nsec);
+  //printf("time: %u, %u \n",odomMsg.header.stamp.sec, odomMsg.header.stamp.nsec);
 
   tf.sendInverseEuler("FRAMEID_ODOM",
                       "FRAMEID_ROBOT",

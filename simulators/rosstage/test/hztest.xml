@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="rosstage" type="rosstage" args="world/willow-erratic.world"/>
+  <param name="hztest/topic" value="scan" />  
+  <param name="hztest/hz" value="10.0" />
+  <param name="hztest/hzerror" value="0.5" />
+  <param name="hztest/test_duration" value="5.0" />    
+  <test test-name="hztest_test" pkg="rostest" type="hztest" name="hztest" />
+</launch>
