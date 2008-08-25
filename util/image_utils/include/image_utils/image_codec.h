@@ -65,7 +65,7 @@ public:
 
   uint8_t *inflate()
   {
-    msg->lock();
+    //    msg->lock();
 
     // perform decompression and/or colorspace conversion if necessary
     if (msg->compression == string("jpeg"))
@@ -76,16 +76,16 @@ public:
     {
       printf("unimplemented image compression: [%s]\n", 
              msg->compression.c_str());
-      msg->unlock();
+      //      msg->unlock();
       return NULL;
     }
-    msg->unlock();
+    //    msg->unlock();
     return raster;
   }
 
   bool inflate_header()
   {
-    msg->lock();
+    //    msg->lock();
 
     // perform decompression and/or colorspace conversion if necessary
     if (msg->compression == string("jpeg"))
@@ -94,10 +94,10 @@ public:
     {
       printf("unimplemented image header compression: [%s]\n", 
              msg->compression.c_str());
-      msg->unlock();
+      //      msg->unlock();
       return false;
     }
-    msg->unlock();
+    //    msg->unlock();
     return true;
   }
 
