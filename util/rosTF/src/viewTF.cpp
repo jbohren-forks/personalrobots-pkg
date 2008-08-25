@@ -42,71 +42,44 @@
 #include <fstream>
 #include <termios.h>
 
-#include <namelookup/NumberToName.h>
 
-class ViewTF : public ros::node
+class ViewTF : public rosTFClient
 {
 public:
 
-    ViewTF(void) : ros::node("viewTF"),
-		   m_tf(*this, true, 1 * 1000000000ULL, 1000000000ULL)
-    {
-	active = true;
-    }
+  ViewTF(ros::node & aNode) : rosTFClient(aNode, true, 1 * 1000000000ULL, 1000000000ULL)
+  {
+    active = true;
+  }
     
-    ~ViewTF(void)
-    {
-    }
+  ~ViewTF(void)
+  {
+  }
     
-    void save(const char *filename)
-    {
-	std::map<int, int> m = m_tf.getFramesMap();
-	std::map<int, std::string> names;
+  void save(const char *filename)
+  {
 	
-	for (std::map<int, int>::iterator it = m.begin() ; it != m.end() ; ++it)
-	{
-	    namelookup::NumberToName::request req;
-	    namelookup::NumberToName::response res;
-	    if (names.find(it->first) == names.end())
-	    {
-		req.number = it->first;
-		if (ros::service::call("numberToName", req, res))
-		    names[it->first] = res.name;
-		else
-		    names[it->first] = "error";
-	    }
-	    if (names.find(it->second) == names.end())
-	    {
-		req.number = it->second;
-		if (ros::service::call("numberToName", req, res))
-		    names[it->second] = res.name;
-		else
-		    names[it->second] = "error";
-	    }	    
-	}
+      std::ofstream out(filename);
+      out << "digraph TF {" << std::endl;
 	
-	std::ofstream out(filename);
-	out << "digraph TF {" << std::endl;
+      for (std::map<std::string, RefFrame*>::iterator it = frames_.begin() ; it != frames_.end() ; ++it)
+      {
+        if (it->second->getParent() == "NO_PARENT" || it->second->getParent() == "")
+          continue;
+        out << "\"" << it->first << "\" -> \"" << it->second->getParent() << "\"" << std::endl;
+      }	
 	
-	for (std::map<int, int>::iterator it = m.begin() ; it != m.end() ; ++it)
-	{
-	    if (it->second == 0)
-		continue;
-	    out << "\"" << it->first << ": " << names[it->first] << "\" -> \"" << it->second << ": " << names[it->second] << "\"" << std::endl;
-	}	
+      out << "};" << std::endl;	
+      out.close();
 	
-	out << "};" << std::endl;	
-	out.close();
-	
-	printf("Saved '%s'\n", filename);
-    }
-    
-    bool active;    
+      printf("Saved '%s'\n", filename);
 
+  }
+  
+  bool active;    
+  
 private:
-    
-    rosTFClient m_tf; 
-        
+            
 };
 
 int main(int argc, char **argv)
@@ -123,7 +96,10 @@ int main(int argc, char **argv)
     tcsetattr(kfd, TCSANOW, &raw);
     
     ros::init(argc, argv);
-    ViewTF viewer;
+
+    ros::node aNode("viewTF", ros::node::ANONYMOUS_NAME);
+
+    ViewTF viewer(aNode);
     
     if (argc >= 2 && strcmp(argv[1], "--dump") == 0)
     {
@@ -132,7 +108,7 @@ int main(int argc, char **argv)
 	viewer.save(argc > 2 ? argv[2] : "viewTF.dot");
     }
     else
-        while (viewer.ok() && viewer.active)
+        while (aNode.ok() && viewer.active)
 	{
 	    char command;	
 	    if (read(kfd, &command, 1) < 0)
@@ -155,7 +131,7 @@ int main(int argc, char **argv)
 	    }	
 	}
 	
-    viewer.shutdown();
+    aNode.shutdown();
     
     tcsetattr(kfd, TCSANOW, &cooked);
     
