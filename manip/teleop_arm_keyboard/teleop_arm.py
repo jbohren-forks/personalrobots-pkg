@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python -i
 # Software License Agreement (BSD License)
 #
 # Copyright (c) 2008, Willow Garage, Inc.
