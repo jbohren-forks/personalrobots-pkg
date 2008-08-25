@@ -11,4 +11,5 @@
   <depend package="matplotlib" />
   <depend package="std_msgs" />  
   <depend package="newmat10" />
+  <depend package="scene_labeler" />
 </package>

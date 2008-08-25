@@ -56,5 +56,41 @@ class DorylusDataset {
 };
 
 
+class Descriptor 
+{
+/*   virtual vector<float>* operator()(const SmartScan &ss, const IplImage &img, float x, float y, float z, float row, float col); */
+ public:
+  virtual void operator()()
+  {}
+
+};
+
+class SpinLarge : public Descriptor
+{
+/*   vector<float>* operator()(const SmartScan &ss, const IplImage &img, float x, float y, float z, float row, float col) { */
+/*     cout << "Computing large spin image." << endl; */
+/*     return NULL; */
+/*   } */
+ public:
+  void operator()()
+  {
+    std::cout << "Computing large spin image." << std::endl;
+  }
+};
+
+class SpinMedium : public Descriptor
+{
+/*   vector<float>* operator()(const SmartScan &ss, const IplImage &img, float x, float y, float z, float row, float col) { */
+/*     cout << "Computing medium spin image." << endl; */
+/*     return NULL; */
+/*   } */
+ public:
+  void operator()()
+  {
+    std::cout << "Computing medium spin image." << std::endl;
+  }
+
+};
+
 
 #endif
