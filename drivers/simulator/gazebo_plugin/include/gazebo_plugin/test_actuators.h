@@ -57,8 +57,8 @@
 #include <urdf/URDF.h>
 
 // Advait and Gil's cartesian services
-#include <gazebo_plugin/MoveCartesian.h>
-#include <gazebo_plugin/GripperCmd.h>
+//#include <gazebo_plugin/MoveCartesian.h>
+//#include <gazebo_plugin/GripperCmd.h>
 
 namespace gazebo
 {
