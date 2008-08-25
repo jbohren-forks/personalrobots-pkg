@@ -1,8 +1,8 @@
 <launch>
   <master start="auto" />
-  <include file="$(find wg_robot_description)/send.xml"/><!-- Include or you will not get position inputs. -->
-  <node pkg="rosgazebo" type="run-gazebo.sh" args="$(find gazebo_robot_description)/world/testslide.world" respawn="false" />
+  <include file="$(find wg_robot_description)/send_test.xml"/><!-- Include or you will not get position inputs. -->
+  <node pkg="gazebo" type="run-gazebo.sh" args="$(find gazebo_robot_description)/world/testslide.world" respawn="false" />
   <node pkg="rosgazebo" type="groundtruthtransform" args="" respawn="true" />
-  <node pkg="pr2_gazebo" type="run-pr2_gazebo.sh" args="" respawn="true" />
+  <!--node pkg="pr2_gazebo" type="run-pr2_gazebo.sh" args="" respawn="true" /-->
   <test test-name="rosgazebo_testslide" pkg="rosgazebo" type="testslide.py" />
 </launch>
