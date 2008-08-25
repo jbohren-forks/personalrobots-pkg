@@ -27,9 +27,9 @@ def list_controllers():
     for c in resp.controllers:
         print c
 
-def spawn_controller():
+def spawn_controller(xml):
     s = rospy.ServiceProxy('spawn_controller', SpawnController)
-    resp = s.call(SpawnControllerRequest(sys.stdin.read()))
+    resp = s.call(SpawnControllerRequest(xml))
     if resp.ok == 1:
         print "Spawned successfully"
     else:
@@ -52,6 +52,13 @@ if __name__ == '__main__':
     elif sys.argv[1] == 'lc':
         list_controllers()
     elif sys.argv[1] == 'sp':
-        spawn_controller()
+        xml = ""
+        if len(sys.argv) > 2:
+            f = open(sys.argv[2])
+            xml = f.read()
+            f.close()
+        else:
+            xml = sys.stdin.read()
+        spawn_controller(xml)
     elif sys.argv[1] == 'kl':
         kill_controller(sys.argv[2])
