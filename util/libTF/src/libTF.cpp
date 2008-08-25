@@ -116,6 +116,16 @@ void TransformReference::setWithQuaternion(const std::string & frameID, const st
 }
 
 
+void TransformReference::clear()
+{
+  frame_mutex_.lock();
+  for (std::map<std::string, RefFrame*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
+  {
+    it->second->clearList();
+  }
+  frame_mutex_.unlock();
+}
+
 
 
 NEWMAT::Matrix TransformReference::getMatrix(const std::string & target_frame, const std::string & source_frame, ULLtime time)

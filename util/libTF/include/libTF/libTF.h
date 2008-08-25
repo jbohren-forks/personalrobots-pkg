@@ -225,6 +225,9 @@ public:
    */
   void setWithQuaternion(const std::string & frameid, const std::string & parentid, double xt, double yt, double zt, double xr, double yr, double zr, double w, ULLtime time);
   
+  /** \brief Clear all data */
+  void clear();
+
 
   /*********** Accessors *************/
 

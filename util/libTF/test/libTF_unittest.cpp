@@ -291,6 +291,75 @@ TEST(libTF, DataTypes)
 
 }
 
+/** Test basic functionality for linear interpolation */
+TEST(libTF, Interpolation)
+{
+  //Seed random number generator with current microseond count
+  timeval temp_time_struct;
+  gettimeofday(&temp_time_struct,NULL);
+  srand(temp_time_struct.tv_usec);
+
+  libTF::TransformReference mTR(true);
+  gettimeofday(&temp_time_struct,NULL);
+  unsigned long long atime = temp_time_struct.tv_sec * 1000000000ULL + (unsigned long long)temp_time_struct.tv_usec * 1000ULL;
+
+  // Test different values
+  for(int i=0;i<1000;i++)
+  {
+    unsigned long long btime = atime + (int)(1000 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX) * 1000000LL;
+    unsigned long long ctime = atime + (int)(1000 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX) * 1000000LL;
+    if ((long long) btime - (long long) ctime < 1000) ctime += 10000;
+    double xval = ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    double xval1 = ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    //std::cout <<"atime " << atime << " btime " << btime - atime <<" ctime " << (long long)ctime - (long long)atime
+    //          << " xval " << xval << " xval1 " << xval1 << std::endl;
+    mTR.setWithEulers("2",
+                      "1",
+                      xval,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      btime);
+  
+  mTR.setWithEulers("2",
+                   "1",
+                    xval1,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    ctime);
+
+  libTF::TFPose2D inpose;
+  inpose.x = 0.0;
+  inpose.y = 0.0;
+  inpose.yaw = 0.0;
+  inpose.frame = "2";
+  inpose.time = atime;
+
+  libTF::TFPose2D outpose = mTR.transformPose2D("1", inpose);
+  /*
+    printf("in:  %.3f %.3f %.3f\n",
+         inpose.x, inpose.y, inpose.yaw);
+  printf("out: %.3f %.3f %.3f\n",
+         outpose.x, outpose.y, outpose.yaw);
+  */
+
+  double slope = (xval - xval1)/(double)((long long)btime - (long long)ctime);
+  double intercept = xval - ((long long)btime - (long long)atime) * slope;
+  //  std::cout << "slope " << slope << std::endl;
+
+  // Make sure that the interpolation complies in linear case
+  EXPECT_TRUE(fabs(outpose.x - intercept) < 0.000000001);
+  if( fabs(outpose.x - intercept) >= 0.000000001)
+    std::cout << outpose.x << " did not equal " << intercept <<" as it should." << std::endl;
+  mTR.clear(); //Clear cached data to allow reset.
+  }
+}
+
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
