@@ -5,76 +5,84 @@
 
       <!-- ========================================= -->
       <!-- left arm array -->
-  <controller name="shoulder_pan_left_controller" topic="shoulder_pan_left_controller" type="JointPositionControllerNode">
-      <joint name="shoulder_pan_left_joint" >
-        <pid p="1000" d="0" i="0" iClamp="100" />
-        <map name="shoulder_pan_left_data" flag="gazebo">
-          <elem key="saturationTorque">1000</elem>
-          <elem key="explicitDampingCoefficient">1.0</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
-  <controller name="shoulder_pitch_left_controller" topic="shoulder_pitch_left_controller" type="JointPositionControllerNode">
-      <joint name="shoulder_pitch_left_joint" >
-        <pid p="10000" d="1000" i="100" iClamp="10" />
-        <map name="shoulder_pitch_left_data" flag="gazebo">
-          <elem key="saturationTorque">1000</elem>
-          <elem key="explicitDampingCoefficient">1.0</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
-  <controller name="upperarm_roll_left_controller" topic="upperarm_roll_left_controller" type="JointPositionControllerNode">
-      <joint name="upperarm_roll_left_joint" >
-        <pid p="200" d="0" i="0" iClamp="100" />
-        <map name="upperarm_roll_left_data" flag="gazebo">
-          <elem key="saturationTorque">1000</elem>
-          <elem key="explicitDampingCoefficient">1.0</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
-  <controller name="elbow_flex_left_controller" topic="elbow_flex_left_controller" type="JointPositionControllerNode">
-      <joint name="elbow_flex_left_joint" >
-        <pid p="5000" d="0" i="0" iClamp="0" />
-        <map name="elbow_flex_left_data" flag="gazebo">
-          <elem key="saturationTorque">100</elem>
-          <elem key="explicitDampingCoefficient">1.0</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
-  <controller name="forearm_roll_left_controller" topic="forearm_roll_left_controller" type="JointPositionControllerNode">
-      <joint name="forearm_roll_left_joint" >
-        <pid p="100" d="0" i="0" iClamp="0" />
-        <map name="forearm_roll_left_data" flag="gazebo">
-          <elem key="saturationTorque">100</elem>
-          <elem key="explicitDampingCoefficient">1.0</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
-  <controller name="wrist_flex_left_controller" topic="wrist_flex_left_controller" type="JointPositionControllerNode">
-      <joint name="wrist_flex_left_joint" >
-        <pid p="100" d="0" i="0" iClamp="0" />
-        <map name="wrist_flex_left_data" flag="gazebo">
-          <elem key="saturationTorque">100</elem>
-          <elem key="explicitDampingCoefficient">1.0</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
-  <controller name="gripper_roll_left_controller" topic="gripper_roll_left_controller" type="JointPositionControllerNode">
-      <joint name="gripper_roll_left_joint" >
-        <pid p="1" d="0" i="0" iClamp="0" />
-        <map name="gripper_roll_left_data" flag="gazebo">
-          <elem key="saturationTorque">100</elem>
-          <elem key="explicitDampingCoefficient">1.0</elem>
-          <elem key="jointType">Hinge</elem>
-        </map>
-      </joint>
-  </controller>
+      <controller name="left_arm_controller" type="ArmControllerNode">
+	      <kinematics>
+		      <elem key="kdl_chain_name">left_arm</elem>
+	      </kinematics>
+	      <map name="controller_param">
+		      <elem key="kdl_chain_name">left_arm</elem>
+	      </map>
+	      <controller name="shoulder_pan_left_controller" topic="shoulder_pan_left_controller" type="JointPositionController">
+		      <joint name="shoulder_pan_left_joint" >
+			      <pid p="1000" d="0" i="0" iClamp="0" />
+			      <map name="shoulder_pan_left_data" flag="gazebo">
+				      <elem key="saturationTorque">1000</elem>
+				      <elem key="explicitDampingCoefficient">1.0</elem>
+				      <elem key="jointType">Hinge</elem>
+			      </map>
+		      </joint>
+	      </controller>
+	      <controller name="shoulder_pitch_left_controller" topic="shoulder_pitch_left_controller" type="JointPositionController">
+		      <joint name="shoulder_pitch_left_joint" >
+			      <pid p="3000" d="0" i="0" iClamp="500" />
+			      <map name="shoulder_pitch_left_data" flag="gazebo">
+				      <elem key="saturationTorque">1000</elem>
+				      <elem key="explicitDampingCoefficient">1.0</elem>
+				      <elem key="jointType">Hinge</elem>
+			      </map>
+		      </joint>
+	      </controller>
+	      <controller name="upperarm_roll_left_controller" topic="upperarm_roll_left_controller" type="JointPositionController">
+		      <joint name="upperarm_roll_left_joint" >
+			      <pid p="200" d="0" i="0" iClamp="100" />
+			      <map name="upperarm_roll_left_data" flag="gazebo">
+				      <elem key="saturationTorque">1000</elem>
+				      <elem key="explicitDampingCoefficient">1.0</elem>
+				      <elem key="jointType">Hinge</elem>
+			      </map>
+		      </joint>
+	      </controller>
+	      <controller name="elbow_flex_left_controller" topic="elbow_flex_left_controller" type="JointPositionController">
+		      <joint name="elbow_flex_left_joint" >
+			      <pid p="5000" d="0" i="0" iClamp="0" />
+			      <map name="elbow_flex_left_data" flag="gazebo">
+				      <elem key="saturationTorque">100</elem>
+				      <elem key="explicitDampingCoefficient">1.0</elem>
+				      <elem key="jointType">Hinge</elem>
+			      </map>
+		      </joint>
+	      </controller>
+	      <controller name="forearm_roll_left_controller" topic="forearm_roll_left_controller" type="JointPositionController">
+		      <joint name="forearm_roll_left_joint" >
+			      <pid p="100" d="0" i="0" iClamp="0" />
+			      <map name="forearm_roll_left_data" flag="gazebo">
+				      <elem key="saturationTorque">100</elem>
+				      <elem key="explicitDampingCoefficient">1.0</elem>
+				      <elem key="jointType">Hinge</elem>
+			      </map>
+		      </joint>
+	      </controller>
+	      <controller name="wrist_flex_left_controller" topic="wrist_flex_left_controller" type="JointPositionController">
+		      <joint name="wrist_flex_left_joint" >
+			      <pid p="100" d="0" i="0" iClamp="0" />
+			      <map name="wrist_flex_left_data" flag="gazebo">
+				      <elem key="saturationTorque">100</elem>
+				      <elem key="explicitDampingCoefficient">1.0</elem>
+				      <elem key="jointType">Hinge</elem>
+			      </map>
+		      </joint>
+	      </controller>
+	      <controller name="gripper_roll_left_controller" topic="gripper_roll_left_controller" type="JointPositionController">
+		      <joint name="gripper_roll_left_joint" >
+			      <pid p="1" d="0" i="0" iClamp="0" />
+			      <map name="gripper_roll_left_data" flag="gazebo">
+				      <elem key="saturationTorque">100</elem>
+				      <elem key="explicitDampingCoefficient">1.0</elem>
+				      <elem key="jointType">Hinge</elem>
+			      </map>
+		      </joint>
+	      </controller>
+      </controller>
   <!-- Special gripper joint -->
   <controller name="gripper_left_controller" topic="gripper_left_controller" type="JointPositionControllerNode">
         <joint name="gripper_left_joint">
