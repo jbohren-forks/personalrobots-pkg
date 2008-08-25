@@ -58,7 +58,7 @@ public:
 
   Axis_cam_node() : ros::node("axis_cam"), codec(&image), cam(NULL), frame_id(0), self_test_(this)
   {
-    advertise<std_msgs::Image>("image");
+    advertise<std_msgs::Image>("image", 1);
     advertise_service("polled_image", &Axis_cam_node::polled_image_cb);
 
     param("~host", axis_host, string("192.168.0.90"));
@@ -66,6 +66,7 @@ public:
 
     self_test_.lock();
 
+    self_test_.addTest(&Axis_cam_node::checkImage);
     self_test_.addTest(&Axis_cam_node::checkMac);
 
     cam = new AxisCam(axis_host);
@@ -97,7 +98,7 @@ public:
     uint8_t *jpeg;
     uint32_t jpeg_size;
 
-    if (!cam->get_jpeg(&jpeg, &jpeg_size))
+    if (cam->get_jpeg(&jpeg, &jpeg_size))
     {
       log(ros::ERROR, "woah! AxisCam::get_jpeg returned an error");
       self_test_.unlock();
@@ -149,11 +150,43 @@ public:
 
   void checkImage(robot_msgs::DiagnosticStatus& status)
   { 
-   
+    status.name = "Image Test";
+    uint8_t *jpeg;
+    uint32_t jpeg_size;
+    int res;
+    if ((res = cam->get_jpeg(&jpeg, &jpeg_size)))
+    {
+      status.level = 2;
+
+      ostringstream oss;
+      oss << "libaxis error code: " << res << ". Consult manual for meaning.";
+      status.message = oss.str();
+    } else {
+
+
+      image.set_data_size(jpeg_size);
+      memcpy(image.data, jpeg, jpeg_size);
+      image.compression = "jpeg";
+
+      if (!codec.inflate_header())
+      {
+        status.level = 2;
+        status.message = "Could not process header from jpeg.";
+      } else {
+        status.level = 0;
+        status.message = "Retrieved image successfully.";
+        status.set_values_size(2);
+        status.values[0].value_label = "Width";
+        status.values[0].value       = image.width;
+        status.values[1].value_label = "Height";
+        status.values[1].value       = image.height;
+      }
+    }
   }
 
   void checkMac(robot_msgs::DiagnosticStatus& status)
   {
+    status.name = "MAC test";
     char cmd[100];
     snprintf(cmd, 100, "arp -n %s", axis_host.c_str());
     

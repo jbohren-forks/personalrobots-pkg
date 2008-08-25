@@ -44,15 +44,15 @@ public:
   
   void set_host(string ip);
 
-  bool get_jpeg(uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_size);
-  bool set_ptz(double pan, double tilt, double zoom, bool relative = false);
-  bool set_focus(int focus = 0, bool relative = false); // zero for autofocus
-  int  get_focus();
-  bool set_iris(int iris = 0, bool relative = false, bool blocking = true);
-  int  get_iris();
+  int get_jpeg(uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_size);
+  int set_ptz(double pan, double tilt, double zoom, bool relative = false);
+  int set_focus(int focus = 0, bool relative = false); // zero for autofocus
+  int get_focus(int*);
+  int set_iris(int iris = 0, bool relative = false, bool blocking = true);
+  int get_iris(int*);
 
-  bool send_params(string params);
-  bool query_params();
+  int send_params(string params);
+  int query_params();
 
   void print_params();
 
