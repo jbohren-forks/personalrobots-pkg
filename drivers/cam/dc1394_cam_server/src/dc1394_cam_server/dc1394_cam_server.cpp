@@ -127,8 +127,8 @@ public:
     uint32_t min;
     uint32_t max;
     cd.cam->getFeatureBoundaries(feature, min, max);
-    set_param(cd.name + string("/") + param_name + string("_min"), min);
-    set_param(cd.name + string("/") + param_name + string("_max"), max);
+    set_param(cd.name + string("/") + param_name + string("_min"), (int)(min));
+    set_param(cd.name + string("/") + param_name + string("_max"), (int)(max));
 
     string p = cd.name + string("/") + param_name;
     string p_b = cd.name + string("/") + param_name + string("_b");
@@ -141,16 +141,12 @@ public:
       XmlRpc::XmlRpcValue val_r;
 
       get_param(p, val);
-      get_param(p_b, val);
-      get_param(p_r, val);
+      get_param(p_b, val_b);
+      get_param(p_r, val_r);
       
-      if (val.getType() == XmlRpc::XmlRpcValue::TypeString)
-        if (val == string("auto"))
-          cd.cam->setFeatureMode(feature, DC1394_FEATURE_MODE_AUTO);
-        else 
-          cd.cam->setFeatureMode(feature, DC1394_FEATURE_MODE_MANUAL);
-                
-      if (val_b.getType() == XmlRpc::XmlRpcValue::TypeInt && val_r.getType() == XmlRpc::XmlRpcValue::TypeInt)
+      if (val.getType() == XmlRpc::XmlRpcValue::TypeString && val == string("auto"))
+        cd.cam->setFeatureMode(feature, DC1394_FEATURE_MODE_AUTO);
+      else if (val_b.getType() == XmlRpc::XmlRpcValue::TypeInt && val_r.getType() == XmlRpc::XmlRpcValue::TypeInt)
       {
         cd.cam->setFeatureMode(feature, DC1394_FEATURE_MODE_MANUAL);
         cd.cam->setFeature(feature, (int)(val_b), (int)(val_r));
