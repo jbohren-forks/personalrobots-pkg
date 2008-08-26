@@ -172,15 +172,11 @@ private:
 	planning_models::KinematicModel::Link *link;	
     };
   
-    void baseUpdate(void)
+    void stateUpdate(void)
     {
-	planning_node_util::NodeRobotModel::baseUpdate();
+	planning_node_util::NodeRobotModel::stateUpdate();
 	if (m_kmodel)
-	{
-	    int group = m_kmodel->getGroupID(m_urdf->getRobotName() + "::base");
-	    if (group >= 0)
-		m_kmodel->computeTransforms(m_basePos, group);
-	}	
+	    m_kmodel->computeTransforms(m_robotState->getParams());
     }
     
     void pointCloudCallback(void)
