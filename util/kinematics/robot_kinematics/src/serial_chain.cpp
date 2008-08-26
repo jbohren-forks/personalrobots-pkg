@@ -31,10 +31,11 @@
 //POSSIBILITY OF SUCH DAMAGE.
 
 #include <robot_kinematics/serial_chain.h>
-//#include <mechanism_model/robot.h>
 
 #define eps 0.000001
 //#define DEBUG 1
+
+#define KDL_DYNAMICS
 
 using namespace KDL;
 using namespace std;
@@ -50,19 +51,18 @@ void SerialChain::finalize()
   this->q_IK_guess  = new JntArray(this->num_joints_);
   this->q_IK_result = new JntArray(this->num_joints_);
   this->forwardKinematics      = new ChainFkSolverPos_recursive(this->chain);
-  this->differentialKinematics = new ChainIkSolverVel_pinv(this->chain);
-  this->inverseKinematics      = new ChainIkSolverPos_NR(this->chain, *this->forwardKinematics, *this->differentialKinematics);
+  this->differentialKinematicsInv = new ChainIkSolverVel_pinv(this->chain);
+  this->differentialKinematics = new ChainFkSolverVel_recursive(this->chain);
+  this->inverseKinematics      = new ChainIkSolverPos_NR(this->chain, *this->forwardKinematics, *this->differentialKinematicsInv);
   
 #ifdef KDL_DYNAMICS
-  this->inverseDynamics = new ChainIdSolver_NE::ChainIdSolver_NE(this->chain);
+  this->inverseDynamics = new ChainIdSolver_NE(this->chain);
 #endif  
   
   if(!this->link_kdl_frame_)
   {
     this->link_kdl_frame_ = new KDL::Frame[this->num_joints_];
   }
-
-
 /*
   if(!this->joints_)
   {
@@ -113,9 +113,17 @@ bool SerialChain::computeIK(const KDL::Frame &f)
     return false;
 }
 
-bool SerialChain::computeDK(const JntArray & q_in, const Twist &v_in, JntArray & qdot_out)
+bool SerialChain::computeDKInv(const JntArray & q_in, const Twist &v_in, JntArray & qdot_out)
 {
-  if (this->differentialKinematics->CartToJnt(q_in,v_in, qdot_out) >= 0)
+  if (this->differentialKinematicsInv->CartToJnt(q_in,v_in, qdot_out) >= 0)
+    return true;
+  else
+    return false;  
+}
+
+bool SerialChain::computeDK(const JntArrayVel & q_in, FrameVel& out)
+{
+  if (this->differentialKinematics->JntToCart(q_in,out) >= 0)
     return true;
   else
     return false;  

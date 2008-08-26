@@ -43,6 +43,7 @@
 #include <kdl/frames_io.hpp>
 #include <kdl/framevel_io.hpp>
 #include <kdl/utilities/utility.h>
+#include <kdl/chainidsolver_newtoneuler.hpp>
 
 #include <stdio.h>
 #include <iostream>
@@ -143,13 +144,22 @@ namespace robot_kinematics
      */
     bool computeIK(const KDL::Frame &f);
 
-    /*! \brief Compute the differential kinematics
+    /*! \brief Compute the inverse differential kinematics
      * \param q_in - input joint array 
      * \param v_in - input end-effector twist
      * \param qdot_out - output joint velocities
      * returns True if ok, False if error.
      */
-    bool computeDK(const KDL::JntArray & q_in, const KDL::Twist &v_in, KDL::JntArray & qdot_out);
+    bool computeDKInv(const KDL::JntArray & q_in, const KDL::Twist &v_in, KDL::JntArray & qdot_out);
+
+
+    /*! \brief Compute the differential kinematics
+     * \param q_in - input joint velocities 
+     * \param v_in - 
+     * returns True if ok, False if error.
+     */
+    bool computeDK(const KDL::JntArrayVel & q_in, KDL::FrameVel & out);
+
 
     /*! \brief Compute the inverse dynamics
      * \param q - input joint array 
@@ -172,9 +182,13 @@ namespace robot_kinematics
 
     KDL::ChainFkSolverPos_recursive *forwardKinematics; /*< pointer to the forward kinematics solver for this chain*/
 
-    KDL::ChainIkSolverVel_pinv *differentialKinematics; /*< pointer to the differential kinematics solver for this chain */
+    KDL::ChainIkSolverVel_pinv *differentialKinematicsInv; /*< pointer to the differential kinematics solver for this chain */
 
     KDL::ChainIkSolverPos_NR *inverseKinematics; /*< pointer to the inverse kinematics sovler for this case */
+
+    KDL::ChainIdSolver_NE *inverseDynamics; /*< pointer to the inverse dynamics solver for this case */
+
+    KDL::ChainFkSolverVel_recursive *differentialKinematics;
 
     std::map<std::string, int> joint_id_map_;
 
