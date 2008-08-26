@@ -292,7 +292,7 @@ WavefrontNode::WavefrontNode() :
         avmax(DTOR(80.0)),
         amin(DTOR(10.0)),
         amax(DTOR(40.0)),
-        tf(*this, true, 1 * 1000000000ULL, 0ULL)
+        tf(*this, true, 1 * 1000000000ULL, 100000000ULL)
         //tf(*this, true, 200000000ULL, 200000000ULL) //nanoseconds
 {
   // set a few parameters. leave defaults just as in the ctor initializer list
@@ -445,11 +445,13 @@ WavefrontNode::laserReceived()
     catch(libTF::TransformReference::LookupException& ex)
     {
       puts("no global->local Tx yet");
+      printf("%s\n", ex.what());
       return;
     }
     catch(libTF::TransformReference::ExtrapolateException& ex)
     {
-      //      puts("extrapolation required");
+      puts("extrapolation required");
+      printf("%s\n", ex.what());
       continue;
     }
 
@@ -591,6 +593,7 @@ WavefrontNode::doOneCycle()
   {
     // this should never happen
     puts("WARNING: extrapolation failed!");
+    printf("%s",ex.what());
     this->stopRobot();
     return;
   }
