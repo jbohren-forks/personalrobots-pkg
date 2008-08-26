@@ -86,15 +86,17 @@ public:
   
   unsigned int count_;
 
-  void checkAndSetFeature(CamData& cd, string param_name, dc1394feature_t feature)
+  void checkAndPushRanges(CamData& cd, string param_name, dc1394feature_t feature)
   {
-
     uint32_t min;
     uint32_t max;
     cd.cam->getFeatureBoundaries(feature, min, max);
     set_param(cd.name + string("/") + param_name + string("_min"), (int)(min));
     set_param(cd.name + string("/") + param_name + string("_max"), (int)(max));
+  }
 
+  void checkAndSetFeature(CamData& cd, string param_name, dc1394feature_t feature)
+  {
     string p = cd.name + string("/") + param_name;
     if (has_param(p))
     {
@@ -124,12 +126,6 @@ public:
 
   void checkAndSetWhitebalance(CamData& cd, string param_name, dc1394feature_t feature)
   {
-    uint32_t min;
-    uint32_t max;
-    cd.cam->getFeatureBoundaries(feature, min, max);
-    set_param(cd.name + string("/") + param_name + string("_min"), (int)(min));
-    set_param(cd.name + string("/") + param_name + string("_max"), (int)(max));
-
     string p = cd.name + string("/") + param_name;
     string p_b = cd.name + string("/") + param_name + string("_b");
     string p_r = cd.name + string("/") + param_name + string("_r");
@@ -372,6 +368,14 @@ public:
         cd.cleanup();
         continue;
       }
+
+
+      checkAndPushRanges(cd, "brightness", DC1394_FEATURE_BRIGHTNESS);
+      checkAndPushRanges(cd, "exposure", DC1394_FEATURE_EXPOSURE);
+      checkAndPushRanges(cd, "shutter", DC1394_FEATURE_SHUTTER);
+      checkAndPushRanges(cd, "gamma", DC1394_FEATURE_GAMMA);
+      checkAndPushRanges(cd, "gain", DC1394_FEATURE_GAIN);
+      checkAndPushRanges(cd, "whitebalance", DC1394_FEATURE_WHITE_BALANCE);
 
       cd.cam->start();
 
