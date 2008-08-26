@@ -127,7 +127,7 @@ namespace gazebo {
     if (tlcn)
     {
       std::cout << " initializing tile laser scanner\n" << std::endl;
-      tlcn->setTestCommand(41);
+      tlcn->setProfile(controller::LaserScannerController::SINEWAVE, 20, 2.265, 100, 2.265/2);
     }
 
   }
@@ -216,6 +216,7 @@ namespace gazebo {
     //-----------------------------------------------------------------------------------------
     mcn_.initXml(pr2_xml->FirstChildElement("robot"));
     rmcn_.initXml(pr2_xml->FirstChildElement("robot"));
+
     //-----------------------------------------------------------------------------------------
     //
     //  how the mechanism joints relate to the gazebo_joints
