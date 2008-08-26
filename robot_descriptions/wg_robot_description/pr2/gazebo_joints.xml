@@ -58,7 +58,7 @@
       </joint>
       <joint name="shoulder_pitch_left_joint" >
           <saturationTorque>1000</saturationTorque>
-          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+          <explicitDampingCoefficient>100.0</explicitDampingCoefficient>
       </joint>
       <joint name="upperarm_roll_left_joint" >
           <saturationTorque>1000</saturationTorque>
@@ -66,7 +66,7 @@
       </joint>
       <joint name="elbow_flex_left_joint" >
           <saturationTorque>100</saturationTorque>
-          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
       </joint>
       <joint name="forearm_roll_left_joint" >
           <saturationTorque>100</saturationTorque>
@@ -74,7 +74,7 @@
       </joint>
       <joint name="wrist_flex_left_joint" >
           <saturationTorque>100</saturationTorque>
-          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
       </joint>
       <joint name="gripper_roll_left_joint" >
           <saturationTorque>100</saturationTorque>
@@ -97,7 +97,7 @@
       </joint>
       <joint name="shoulder_pitch_right_joint" >
           <saturationTorque>1000</saturationTorque>
-          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+          <explicitDampingCoefficient>100.0</explicitDampingCoefficient>
       </joint>
       <joint name="upperarm_roll_right_joint" >
           <saturationTorque>1000</saturationTorque>
@@ -105,7 +105,7 @@
       </joint>
       <joint name="elbow_flex_right_joint" >
           <saturationTorque>1000</saturationTorque>
-          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
       </joint>
       <joint name="forearm_roll_right_joint" >
           <saturationTorque>100</saturationTorque>
@@ -113,7 +113,7 @@
       </joint>
       <joint name="wrist_flex_right_joint" >
           <saturationTorque>100</saturationTorque>
-          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
       </joint>
       <joint name="gripper_roll_right_joint" >
           <saturationTorque>100</saturationTorque>
@@ -138,7 +138,7 @@
           <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <joint name="tilt_laser_joint" >
-          <saturationTorque>500</saturationTorque>
+          <saturationTorque>100</saturationTorque>
           <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
 

@@ -110,6 +110,20 @@ void Ros_Camera::UpdateChild()
   // do this first so there's chance for sensor to run 1 frame after activate
   if (this->myParent->IsActive())
     this->PutCameraData();
+
+  // activate if iface open
+  if (this->cameraIface->Lock(1))
+  {
+    if (this->cameraIface->GetOpenCount() > 0)
+      this->myParent->SetActive(true);
+    else
+      this->myParent->SetActive(false);
+
+    //std::cout << " camera open count " << this->cameraIface->GetOpenCount() << std::endl;
+    this->cameraIface->Unlock();
+  }
+  //std::cout << " camera     active " << this->myParent->IsActive() << std::endl;
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -145,8 +159,8 @@ void Ros_Camera::PutCameraData()
   data->image_size = data->width * data->height * 3;
 
   // GetFOV() returns radians
-  data->hfov = this->myParent->GetHFOV();
-  //data->vfov = this->myParent->GetVFOV(); //FIXME: breaks in gazebo
+  data->hfov = *(this->myParent->GetHFOV());
+  data->vfov = *(this->myParent->GetVFOV());
 
   // Set the pose of the camera
   cameraPose = this->myParent->GetWorldPose();

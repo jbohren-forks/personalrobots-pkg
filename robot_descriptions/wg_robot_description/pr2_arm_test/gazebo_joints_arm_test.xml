@@ -6,12 +6,12 @@
           <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <joint name="shoulder_pitch_left_joint" >
-          <saturationTorque>1000</saturationTorque>
-          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+          <saturationTorque>10000</saturationTorque>
+          <explicitDampingCoefficient>100.0</explicitDampingCoefficient>
       </joint>
       <joint name="upperarm_roll_left_joint" >
-          <saturationTorque>1000</saturationTorque>
-          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+          <saturationTorque>100</saturationTorque>
+          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
       </joint>
       <joint name="elbow_flex_left_joint" >
           <saturationTorque>100</saturationTorque>
@@ -19,15 +19,15 @@
       </joint>
       <joint name="forearm_roll_left_joint" >
           <saturationTorque>100</saturationTorque>
-          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
       </joint>
       <joint name="wrist_flex_left_joint" >
           <saturationTorque>100</saturationTorque>
           <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <joint name="gripper_roll_left_joint" >
-          <saturationTorque>100</saturationTorque>
-          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+          <saturationTorque>20</saturationTorque>
+          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
       </joint>
 
 

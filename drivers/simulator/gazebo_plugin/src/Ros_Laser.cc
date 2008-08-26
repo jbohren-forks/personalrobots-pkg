@@ -112,12 +112,37 @@ void Ros_Laser::InitChild()
 void Ros_Laser::UpdateChild()
 {
 
-  if (this->laserIface)
+  bool laserOpened = false;
+  bool fidOpened = false;
+
+  if (this->laserIface->Lock(1))
+  {
+    laserOpened = this->laserIface->GetOpenCount() > 0;
+    this->laserIface->Unlock();
+  }
+
+  if (this->fiducialIface && this->fiducialIface->Lock(1))
+  {
+    fidOpened = this->fiducialIface->GetOpenCount() > 0;
+    this->fiducialIface->Unlock();
+  }
+
+  if (laserOpened)
+  {
+    this->myParent->SetActive(true);
     this->PutLaserData();
+  }
 
-  if (this->fiducialIface)
+  if (fidOpened)
+  {
+    this->myParent->SetActive(true);
     this->PutFiducialData();
+  }
 
+  if (!laserOpened && !fidOpened)
+  {
+    this->myParent->SetActive(false);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -142,8 +167,8 @@ void Ros_Laser::PutLaserData()
   double ra, rb, r, b;
   int v;
 
-  double maxAngle = this->myParent->GetMaxAngle();
-  double minAngle = this->myParent->GetMinAngle();
+  Angle maxAngle = this->myParent->GetMaxAngle();
+  Angle minAngle = this->myParent->GetMinAngle();
 
   double maxRange = this->myParent->GetMaxRange();
   double minRange = this->myParent->GetMinRange();
@@ -159,9 +184,9 @@ void Ros_Laser::PutLaserData()
     this->laserIface->data->head.time = Simulator::Instance()->GetSimTime();
 
     // Read out the laser range data
-    this->laserIface->data->min_angle = minAngle;
-    this->laserIface->data->max_angle = maxAngle;
-    this->laserIface->data->res_angle = (maxAngle - minAngle) / (rangeCount - 1);
+    this->laserIface->data->min_angle = minAngle.GetAsRadian();
+    this->laserIface->data->max_angle = maxAngle.GetAsRadian();
+    this->laserIface->data->res_angle = (maxAngle.GetAsRadian() - minAngle.GetAsRadian()) / (rangeCount - 1);
     this->laserIface->data->res_range = 0.1;
     this->laserIface->data->max_range = maxRange;
     this->laserIface->data->range_count = rangeCount;
@@ -179,10 +204,10 @@ void Ros_Laser::PutLaserData()
     this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->laserIface->data->head.time - this->laserMsg.header.stamp.sec) );
 
 
-    double tmp_res_angle = (maxAngle - minAngle)/((double)(rangeCount -1)); // for computing yaw
+    double tmp_res_angle = (maxAngle.GetAsRadian() - minAngle.GetAsRadian())/((double)(rangeCount -1)); // for computing yaw
     int    num_channels = 1;
-    this->laserMsg.angle_min = minAngle;
-    this->laserMsg.angle_max = maxAngle;
+    this->laserMsg.angle_min = minAngle.GetAsRadian();
+    this->laserMsg.angle_max = maxAngle.GetAsRadian();
     this->laserMsg.angle_increment = tmp_res_angle;
     this->laserMsg.time_increment  = 0; // instantaneous simulator scan
     this->laserMsg.scan_time       = 0; // FIXME: what's this?
@@ -252,8 +277,8 @@ void Ros_Laser::PutFiducialData()
   double r, b;
   double ax, ay, bx, by, cx, cy;
 
-  double maxAngle = this->myParent->GetMaxAngle();
-  double minAngle = this->myParent->GetMinAngle();
+  Angle maxAngle = this->myParent->GetMaxAngle();
+  Angle minAngle = this->myParent->GetMinAngle();
 
   double maxRange = this->myParent->GetMaxRange();
   double minRange = this->myParent->GetMinRange();
@@ -285,12 +310,12 @@ void Ros_Laser::PutFiducialData()
       if (j - i + 1 >= 3)
       {
         r = minRange + this->myParent->GetRange(i);
-        b = minAngle + i * ((maxAngle-minAngle) / (rayCount - 1));
+        b = minAngle.GetAsRadian() + i * ((maxAngle.GetAsRadian()-minAngle.GetAsRadian()) / (rayCount - 1));
         ax = r * cos(b);
         ay = r * sin(b);
 
         r = minRange + this->myParent->GetRange(j);
-        b = minAngle + j * ((maxAngle-minAngle) / (rayCount - 1));
+        b = minAngle.GetAsRadian() + j * ((maxAngle.GetAsRadian()-minAngle.GetAsRadian()) / (rayCount - 1));
         bx = r * cos(b);
         by = r * sin(b);
 
@@ -310,12 +335,12 @@ void Ros_Laser::PutFiducialData()
       else
       {
         r = minRange + this->myParent->GetRange(i);
-        b = minAngle + i * ((maxAngle-minAngle) / (rayCount - 1));
+        b = minAngle.GetAsRadian() + i * ((maxAngle.GetAsRadian()-minAngle.GetAsRadian()) / (rayCount - 1));
         ax = r * cos(b);
         ay = r * sin(b);
 
         r = minRange + this->myParent->GetRange(j);
-        b = minAngle + j * ((maxAngle-minAngle) / (rayCount - 1));
+        b = minAngle.GetAsRadian() + j * ((maxAngle.GetAsRadian()-minAngle.GetAsRadian()) / (rayCount - 1));
         bx = r * cos(b);
         by = r * sin(b);
 

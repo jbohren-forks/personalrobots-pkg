@@ -30,6 +30,7 @@
 #include <gazebo_plugin/test_actuators.h>
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <math.h>
 #include <unistd.h>
 #include <stl_utils/stl_utils.h>
@@ -496,6 +497,7 @@ namespace gazebo {
             (*gji)->rmc_joint_->position_       = gjh->GetAngle();
             (*gji)->rmc_joint_->velocity_       = gjh->GetAngleRate();
             (*gji)->rmc_joint_->applied_effort_ = (*gji)->rmc_joint_->commanded_effort_;
+            //std::cout << " hinge " << *((*gji)->name_) << " angle " << (*gji)->rmc_joint_->position_ << std::endl;
             break;
           }
           case gazebo::Joint::HINGE2:
@@ -633,6 +635,7 @@ namespace gazebo {
             {
               double dampForce    = -(*gji)->explicitDampingCoefficient * gjh->GetAngleRate();
               gjh->SetTorque( (*gji)->rmc_joint_->commanded_effort_+dampForce);
+              //std::cout << " hinge " << *((*gji)->name_) << " torque: " << (*gji)->rmc_joint_->commanded_effort_ << " damping " << dampForce << std::endl;
               break;
             }
           }
@@ -1151,7 +1154,6 @@ namespace gazebo {
 
 
 
-    std::cout << " publishing frame transforms." << std::endl;
     /***************************************************************/
     /*                                                             */
     /*  frame transforms                                           */

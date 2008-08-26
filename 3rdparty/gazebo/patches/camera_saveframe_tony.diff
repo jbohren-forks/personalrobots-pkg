@@ -1,6 +1,6 @@
 Index: server/rendering/UserCamera.hh
 ===================================================================
---- server/rendering/UserCamera.hh	(revision 6897)
+--- server/rendering/UserCamera.hh	(revision 6915)
 +++ server/rendering/UserCamera.hh	(working copy)
 @@ -52,7 +52,7 @@
      public: void Load( XMLConfigNode *node );
@@ -21,19 +21,20 @@ Index: server/rendering/UserCamera.hh
  
      /// Pointer to the viewport
      protected: Ogre::Viewport *viewport;
-@@ -80,6 +83,9 @@
+@@ -80,6 +83,10 @@
  
      private: std::string name;
      private: static unsigned int cameraCount;
 +    private: unsigned int windowWidth;
 +    private: unsigned int windowHeight;
 +    private: bool loaded;
++    private: bool saveFramesDefault;
    };
  }
  
 Index: server/rendering/UserCamera.cc
 ===================================================================
---- server/rendering/UserCamera.cc	(revision 6897)
+--- server/rendering/UserCamera.cc	(revision 6915)
 +++ server/rendering/UserCamera.cc	(working copy)
 @@ -25,6 +25,7 @@
   */
@@ -43,7 +44,7 @@ Index: server/rendering/UserCamera.cc
  #include <sstream>
  
  #include "Global.hh"
-@@ -33,16 +34,16 @@
+@@ -33,16 +34,19 @@
  #include "OgreAdaptor.hh"
  #include "OgreCreator.hh"
  #include "UserCamera.hh"   
@@ -55,21 +56,25 @@ Index: server/rendering/UserCamera.cc
  ////////////////////////////////////////////////////////////////////////////////
  /// Constructor
  UserCamera::UserCamera(GLWindow *parentWindow)
--  : OgreCamera("User")
-+  : OgreCamera("User"), windowWidth(0), windowHeight(0), loaded(false)
+-  : OgreCamera("UserCamera")
++   : OgreCamera("User"), windowWidth(0), windowHeight(0), loaded(false)
++//  : OgreCamera("UserCamera")
  {
 -  this->window = OgreCreator::CreateWindow(parentWindow, 
 -                     parentWindow->w(), parentWindow->h());
++//  this->window = OgreCreator::CreateWindow(parentWindow, 
++//                     parentWindow->w(), parentWindow->h());
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -56,15 +57,23 @@
+@@ -56,15 +60,24 @@
  void UserCamera::Load(XMLConfigNode *node)
  {
    OgreCamera::LoadCam(node);
 -
    this->SetClipDist(0.1, 100);
    this->SetFOV( DTOR(60) );
++  this->saveFramesDefault = node->GetBool("startSaveFrames",false,0);
 +  loaded = true;
  }
  
@@ -89,16 +94,16 @@ Index: server/rendering/UserCamera.cc
    this->SetCameraSceneNode( OgreAdaptor::Instance()->sceneMgr->getRootSceneNode()->createChildSceneNode( this->GetCameraName() + "_SceneNode") );
  
    OgreCamera::InitCam();
-@@ -75,6 +84,8 @@
+@@ -75,6 +88,8 @@
    this->SetAspectRatio( Ogre::Real(this->viewport->getActualWidth()) / Ogre::Real(this->viewport->getActualHeight()) );
  
    this->viewport->setVisibilityMask(this->visibilityMask);
 +  
-+  this->saveFrames = false;
++  this->saveFrames = this->saveFramesDefault;
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -84,6 +95,33 @@
+@@ -84,6 +99,33 @@
    OgreCamera::UpdateCam();
  
    OgreAdaptor::Instance()->UpdateWindow(this->window, this);
@@ -132,7 +137,7 @@ Index: server/rendering/UserCamera.cc
  }
  
  
-@@ -119,3 +157,58 @@
+@@ -119,3 +161,58 @@
  
    return avgFPS;
  }
@@ -193,7 +198,7 @@ Index: server/rendering/UserCamera.cc
 +}
 Index: server/gui/GLWindow.hh
 ===================================================================
---- server/gui/GLWindow.hh	(revision 6897)
+--- server/gui/GLWindow.hh	(revision 6915)
 +++ server/gui/GLWindow.hh	(working copy)
 @@ -63,6 +63,9 @@
      /// \brief Initalize the gui
@@ -207,7 +212,7 @@ Index: server/gui/GLWindow.hh
  
 Index: server/gui/GLFrame.cc
 ===================================================================
---- server/gui/GLFrame.cc	(revision 6897)
+--- server/gui/GLFrame.cc	(revision 6915)
 +++ server/gui/GLFrame.cc	(working copy)
 @@ -107,7 +107,7 @@
  // Load the frame
@@ -220,7 +225,7 @@ Index: server/gui/GLFrame.cc
      this->startPose.pos = node->GetVector3("xyz", Vector3(0,0,0));
 Index: server/gui/GLWindow.hh
 ===================================================================
---- server/gui/GLWindow.hh	(revision 6897)
+--- server/gui/GLWindow.hh	(revision 6915)
 +++ server/gui/GLWindow.hh	(working copy)
 @@ -63,6 +63,9 @@
      /// \brief Initalize the gui
@@ -234,9 +239,9 @@ Index: server/gui/GLWindow.hh
  
 Index: server/gui/GLWindow.cc
 ===================================================================
---- server/gui/GLWindow.cc	(revision 6897)
+--- server/gui/GLWindow.cc	(revision 6915)
 +++ server/gui/GLWindow.cc	(working copy)
-@@ -66,11 +66,17 @@
+@@ -68,11 +68,17 @@
    this->directionVec.x = 0;
    this->directionVec.y = 0;
    this->directionVec.z = 0;
@@ -254,11 +259,9 @@ Index: server/gui/GLWindow.cc
  }
  
  
-@@ -79,8 +85,14 @@
- GLWindow::~GLWindow()
- {
+@@ -83,6 +89,14 @@
  }
--
+ 
  ////////////////////////////////////////////////////////////////////////////////
 +// Load
 +void GLWindow::Load( XMLConfigNode *node )
@@ -266,11 +269,12 @@ Index: server/gui/GLWindow.cc
 +  if (node) 
 +    this->userCamera->Load(node);
 +}
++
 +////////////////////////////////////////////////////////////////////////////////
  // Init
  void GLWindow::Init()
  {
-@@ -88,11 +100,7 @@
+@@ -90,11 +104,7 @@
    this->mouseDrag = false;
  
    // Create the default camera.
@@ -283,17 +287,26 @@ Index: server/gui/GLWindow.cc
  
    this->activeCamera = this->userCamera;
  }
-@@ -213,6 +221,21 @@
+@@ -219,17 +229,20 @@
        this->activeCamera->RotateYaw(DTOR(-d.x * this->rotateAmount));
        this->activeCamera->RotatePitch(DTOR(d.y * this->rotateAmount));
      }
+-    else if (this->rightMousePressed)
 +    if (this->rightMousePressed)
-+    {
+     {
+-      Model *model = dynamic_cast<Model*>(Simulator::Instance()->GetSelectedEntity());
+-      if (model)
+-      {
+-        Pose3d pose = model->GetPose();
+-        pose.pos.y -= d.x * 0.05;
+-        pose.pos.x -= d.y * 0.05;
+-        model->SetPose(pose);
+-      }
 +      Vector2<int> d = this->mousePos - this->prevMousePos;
 +      this->directionVec.x = 0;
 +      this->directionVec.y =  d.x * this->moveAmount;
 +      this->directionVec.z =  d.y * this->moveAmount;
-+    }
+     }
 +    if (this->middleMousePressed)
 +    {
 +      Vector2<int> d = this->mousePos - this->prevMousePos;
@@ -301,11 +314,10 @@ Index: server/gui/GLWindow.cc
 +      this->directionVec.y =  0;
 +      this->directionVec.z =  0;
 +    }
-+
+ 
    }
  
-   this->mouseDrag = true;
-@@ -225,12 +248,28 @@
+@@ -257,12 +270,28 @@
    std::map<int,int>::iterator iter;
    this->keys[keyNum] = 1;
  

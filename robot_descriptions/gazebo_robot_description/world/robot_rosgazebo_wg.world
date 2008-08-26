@@ -47,7 +47,7 @@
       <material>Gazebo/CloudySky</material>
     </sky>
     <gazeboPath>media</gazeboPath>
-    <grid>off</grid>
+    <grid>false</grid>
     <maxUpdateRate>100</maxUpdateRate>
   </rendering:ogre>
 
