@@ -36,6 +36,9 @@ monitorBatteries
 To run, invoke nodes/monitorBatteries
 """
  
+import rostools
+rostools.update_path('IBPSBatteryInterface')
+
 import os, sys, getopt, traceback, logging
 import rospy
 import time
@@ -167,8 +170,8 @@ def setupPorts():
 
 def monitorBatteriesMain(argv, stdout, env):
     # default arguments
-    server = "http://localhost"
-    server_port = rospy.DEFAULT_TEST_PORT
+#    server = "http://localhost"
+#    server_port = rospy.DEFAULT_TEST_PORT
 
     #check arguments for a help flag
     optlist, args = getopt.getopt(argv[1:], "h?p:s:", ["help","port=","server=","test"])
@@ -176,24 +179,24 @@ def monitorBatteriesMain(argv, stdout, env):
         if o in ("-h","-?","--help"):
             usage(stdout, argv[0])
             return
-        elif o in ("--test"):
-            server_port = rospy.DEFAULT_TEST_PORT
-        elif o in ("-p", "--port"):
-            server_port = a
-        elif o in ("-s", "--server"):
-            server = a
+#        elif o in ("--test"):
+#            server_port = rospy.DEFAULT_TEST_PORT
+#        elif o in ("-p", "--port"):
+#            server_port = a
+#        elif o in ("-s", "--server"):
+#            server = a
             
-    serverUri = '%s:%s/'%(server,server_port)
-    print "Looking for server at %s"%serverUri
-    os.environ[rospy.ROS_MASTER_URI] = serverUri
-    os.environ[rospy.ROS_NODE] = NAME
-    os.environ[rospy.ROS_PORT] = str(0) # any
+#    serverUri = '%s:%s/'%(server,server_port)
+#    print "Looking for server at %s"%serverUri
+#    os.environ[rospy.ROS_MASTER_URI] = serverUri
+#    os.environ[rospy.ROS_NODE] = NAME
+#    os.environ[rospy.ROS_PORT] = str(0) # any
 
 
     master = rospy.getMaster()
 
 
-    rospy.ready()
+    rospy.ready(NAME)
 
 
     setupPorts()
@@ -365,7 +368,8 @@ def monitorBatteriesMain(argv, stdout, env):
             print "displaying to screen"
             myPow.print_remaining()
             print "updating param server"
-            myPow.updateParamServer(master)
+            print "commented out for now"
+            #myPow.updateParamServer(master)
         
 if __name__ == '__main__':
     try:
