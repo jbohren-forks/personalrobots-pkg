@@ -116,8 +116,6 @@ void WG05::convertCommand(ActuatorCommand &command, unsigned char *buffer)
 
   memset(&c, 0, sizeof(c));
 
-  c.current_loop_ki_ = Ki;
-
   c.programmed_current_ = CURRENT_FACTOR * command.current_;
   c.mode_ = command.enable_ ? (MODE_ENABLE | MODE_CURRENT) : MODE_OFF;
   c.checksum_ = rotate_right_8(compute_checksum(&c, sizeof(c) - 1));
@@ -139,7 +137,7 @@ void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, uns
   state.timestamp_ = current_status.timestamp_ / 1e+6;
   state.encoder_count_ = current_status.encoder_count_;
   state.encoder_velocity_ = double(int(current_status.encoder_count_ - last_status.encoder_count_)) / (current_status.timestamp_ - last_status.timestamp_) * 1e+6;
-  state.calibration_reading_ = current_status.calibration_reading_;
+  state.calibration_reading_ = current_status.calibration_reading_ & LIMIT_SENSOR_0_STATE;
   state.last_calibration_high_transition_ = current_status.last_calibration_high_transition_;
   state.last_calibration_low_transition_ = current_status.last_calibration_low_transition_;
   state.is_enabled_ = current_status.mode_ != MODE_OFF;
@@ -150,7 +148,7 @@ void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, uns
   state.last_measured_current_ = current_status.measured_current_ / CURRENT_FACTOR;
 
   state.num_encoder_errors_ = current_status.num_encoder_errors_;
-  state.num_communication_errors_ = current_status.pdi_timeout_error_count_ + current_status.pdi_checksum_error_count_;
+  state.num_communication_errors_ = 0; // TODO: communication errors are no longer reported in the process data
 
   state.motor_voltage_ = current_status.motor_voltage_;
 }

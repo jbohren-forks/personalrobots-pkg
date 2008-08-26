@@ -119,6 +119,8 @@ void EthercatHardware::init(char *interface)
       {
         node->log(ros::FATAL, "Unable change to OP_STATE");
       }
+    } else {
+      node->log(ros::FATAL, "Unable to configure slave #%d, product code: %d", slave, sh->get_product_code());
     }
   }
   buffers_ = new unsigned char[2 * buffer_size_];

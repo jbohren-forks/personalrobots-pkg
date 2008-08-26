@@ -39,16 +39,11 @@
 
 struct WG05Status
 {
-  uint16_t device_type_id_;
-  uint16_t device_rev_;
   uint8_t mode_;
   uint8_t digital_out_;
-  uint16_t pwm_duty_;
+  uint16_t programmed_pwm_value_;
   int16_t programmed_current_;
-  uint8_t current_loop_kp_;
-  uint8_t current_loop_ki_;
   int16_t measured_current_;
-  uint16_t pad1_;
   uint32_t timestamp_;
   uint32_t encoder_count_;
   uint32_t encoder_index_pos_;
@@ -57,34 +52,41 @@ struct WG05Status
   uint8_t calibration_reading_;
   uint32_t last_calibration_high_transition_;
   uint32_t last_calibration_low_transition_;
-  uint16_t supply_voltage_;
-  uint16_t motor_voltage_;
   uint16_t board_temperature_;
   uint16_t bridge_temperature_;
-  uint8_t pdo_command_irq_count_;
-  uint8_t mbx_command_irq_count_;
+  uint16_t supply_voltage_;
+  uint16_t motor_voltage_;
   uint16_t packet_count_;
-  uint16_t pdi_timeout_error_count_;
-  uint16_t pdi_checksum_error_count_;
-  uint8_t pad2_;
+  uint8_t pad_;
   uint8_t checksum_;
-}__attribute__ ((__packed__));
+} __attribute__ ((__packed__));
 
-typedef WG05Status WG05Command;
+struct WG05Command
+{
+  uint8_t mode_;
+  uint8_t digital_out_;
+  int16_t programmed_pwm;
+  int16_t programmed_current_;
+  uint8_t pad_;
+  uint8_t checksum_;
+} __attribute__ ((__packed__));
 
 class WG05 : public MotorControlBoard
 {
   static const int STATUS_PHY_ADDR = 0x2000;
   static const int COMMAND_PHY_ADDR = 0x1000;
 
-  static const int Ki = 8;
-  static const int Kp = 4;
-
   static const double CURRENT_FACTOR = 2000.0;
 
   enum
   {
     MODE_OFF = 0x00, MODE_CURRENT = 0x01, MODE_ENABLE = 0x02, MODE_UNDERVOLTAGE = 0x04, MODE_RESET = 0x80
+  };
+
+  enum
+  {
+    LIMIT_SENSOR_0_STATE = 1, LIMIT_SENSOR_1_STATE = 2,
+    LIMIT_ON_TO_OFF = 4, LIMIT_OFF_TO_ON = 8
   };
 
 public:
@@ -101,7 +103,7 @@ public:
   }
 
 private:
-  static const EC_UDINT WG05_PRODUCT_CODE = 0x57473035;
+  static const EC_UDINT WG05_PRODUCT_CODE = 6805005;
 };
 
 #endif /* WG05_H */
