@@ -1,0 +1,87 @@
+Index: dc1394/control.c
+===================================================================
+--- dc1394/control.c	(revision 561)
++++ dc1394/control.c	(working copy)
+@@ -1038,6 +1038,20 @@
+ }
+ 
+ dc1394error_t
++dc1394_feature_whitebalance_set_value_blind(dc1394camera_t *camera, uint32_t u_b_value, uint32_t v_r_value)
++{
++    uint32_t curval;
++    dc1394error_t err;
++    //    err=dc1394_get_control_register(camera, REG_CAMERA_WHITE_BALANCE, &curval);
++    //    DC1394_ERR_RTN(err, "Could not get white balance");
++
++    curval= ( ((u_b_value & 0xFFFUL) << 12) | (v_r_value & 0xFFFUL) );
++    err=dc1394_set_control_register(camera, REG_CAMERA_WHITE_BALANCE, curval);
++    DC1394_ERR_RTN(err, "Could not set white balance");
++    return err;
++}
++
++dc1394error_t
+ dc1394_feature_temperature_get_value(dc1394camera_t *camera, uint32_t *target_temperature, uint32_t *temperature)
+ {
+     uint32_t value;
+@@ -1248,6 +1262,33 @@
+ }
+ 
+ dc1394error_t
++dc1394_feature_set_value_blind(dc1394camera_t *camera, dc1394feature_t feature, uint32_t value)
++{
++    uint32_t quadval;
++    uint64_t offset;
++    dc1394error_t err;
++
++    if ( (feature<DC1394_FEATURE_MIN) || (feature>DC1394_FEATURE_MAX) )
++        return DC1394_INVALID_FEATURE;
++
++    if ((feature==DC1394_FEATURE_WHITE_BALANCE)||
++        (feature==DC1394_FEATURE_WHITE_SHADING)||
++        (feature==DC1394_FEATURE_TEMPERATURE)) {
++        err=DC1394_INVALID_FEATURE;
++        DC1394_ERR_RTN(err, "You should use the specific functions to write from multiple-value features");
++    }
++
++    FEATURE_TO_VALUE_OFFSET(feature, offset);
++
++    //    err=dc1394_get_control_register(camera, offset, &quadval);
++    //    DC1394_ERR_RTN(err, "Could not get feature value");
++
++    err=dc1394_set_control_register(camera, offset, (value & 0xFFFUL));
++    DC1394_ERR_RTN(err, "Could not set feature value");
++    return err;
++}
++
++dc1394error_t
+ dc1394_feature_is_present(dc1394camera_t *camera, dc1394feature_t feature, dc1394bool_t *value)
+ {
+ /*
+Index: dc1394/control.h
+===================================================================
+--- dc1394/control.h	(revision 561)
++++ dc1394/control.h	(working copy)
+@@ -234,6 +234,11 @@
+ dc1394error_t dc1394_feature_whitebalance_set_value(dc1394camera_t *camera, uint32_t u_b_value, uint32_t v_r_value);
+ 
+ /**
++ * Sets the whitebalance values without checking the current values
++ */
++dc1394error_t dc1394_feature_whitebalance_set_value_blind(dc1394camera_t *camera, uint32_t u_b_value, uint32_t v_r_value);
++
++/**
+  * Gets the temperature values (target and current)
+  */
+ dc1394error_t dc1394_feature_temperature_get_value(dc1394camera_t *camera, uint32_t *target_temperature, uint32_t *temperature);
+@@ -264,6 +269,11 @@
+ dc1394error_t dc1394_feature_set_value(dc1394camera_t *camera, dc1394feature_t feature, uint32_t value);
+ 
+ /**
++ * Sets the value of a feature without checking the current value
++ */
++dc1394error_t dc1394_feature_set_value_blind(dc1394camera_t *camera, dc1394feature_t feature, uint32_t value);
++
++/**
+  * Tells whether a feature is present or not
+  */
+ dc1394error_t dc1394_feature_is_present(dc1394camera_t *camera, dc1394feature_t feature, dc1394bool_t *value);
