@@ -8,6 +8,8 @@
 <depend package="stl_utils" />
 <depend package="misc_utils" />
 <depend package="tinyxml" />
+<depend package="wg_robot_description_parser" />
+<depend package="kdl" />
 <url>http://pr.willowgarage.com</url>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lmechanism_model -Wl,-rpath,${prefix}/lib"/>

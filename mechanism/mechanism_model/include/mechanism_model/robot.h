@@ -31,7 +31,26 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-//The robot model is populated by the control code infrastructure and used by all the controllers to read mechanism state and command mechanism motion.
+
+/*
+ * The robot model tracks the state of the robot.
+ *
+ * State path:
+ *               +---------------+                +--------+
+ * Actuators --> | Transmissions | --> Joints --> | Chains | --> Links
+ *               +---------------+                +--------+
+ *
+ * The actuators, joints, and links, hold the state information.  The
+ * actuators hold the encoder info, the joints hold the joint angles
+ * and velocities, and the links hold the frame transforms of the body
+ * segments.
+ *
+ * The transmissions and chains are for propagating the state through
+ * the model, and they themselves do not hold any information on the
+ * robot's current state.
+ *
+ * Author: Stuart Glaser
+ */
 
 #ifndef ROBOT_H
 #define ROBOT_H
@@ -43,6 +62,7 @@
 #include "mechanism_model/link.h"
 #include "mechanism_model/joint.h"
 #include "mechanism_model/transmission.h"
+#include "mechanism_model/chain.h"
 #include "hardware_interface/hardware_interface.h"
 
 class TiXmlElement;
@@ -64,15 +84,15 @@ public:
 
   bool initXml(TiXmlElement *root);
 
-  std::vector<Joint*> joints_;
+  HardwareInterface *hw_;  // Holds the array of actuators
   std::vector<Transmission*> transmissions_;
+  std::vector<Joint*> joints_;
+  std::vector<Chain*> chains_;
   std::vector<Link*> links_;
 
   Joint* getJoint(const std::string &name);
   Actuator* getActuator(const std::string &name);
   Link* getLink(const std::string &name);
-
-  HardwareInterface *hw_;
 
   // For debugging
   void printLinkTree();

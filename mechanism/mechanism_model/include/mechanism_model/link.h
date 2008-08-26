@@ -36,6 +36,7 @@
 
 #include "mechanism_model/joint.h"
 #include <vector>
+#include <kdl/frames.hpp>
 
 namespace mechanism {
 
@@ -58,6 +59,8 @@ public:
   Link *parent_;
   Joint *joint_;
   std::vector<Link*> children_;
+
+  KDL::Frame frame_;
 
 private:
   enum InitState {INIT_XML, CREATE_TREE_LINKS, INITIALIZED};

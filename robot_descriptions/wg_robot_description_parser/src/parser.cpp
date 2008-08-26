@@ -32,6 +32,7 @@
  */
 #include "urdf/parser.h"
 #include <map>
+#include <vector>
 #include <cmath>
 #include <sstream>
 #include "tinyxml/tinyxml.h"
@@ -41,6 +42,21 @@
 
 
 namespace urdf {
+
+bool queryVectorAttribute(TiXmlElement *el, const char *name, std::vector<double> *value)
+{
+  value->clear();
+  const char *s = el->Attribute(name);
+  if (!s)
+    return false;
+
+  std::vector<std::string> pieces;
+  string_utils::split(s, pieces);
+  for (unsigned int i = 0; i < pieces.size(); ++i)
+    value->push_back(atof(pieces[i].c_str()));
+
+  return true;
+}
 
 // Pulls the const and const_block elements out of the XML file.
 class ConstsAndBlocks : public TiXmlVisitor
@@ -52,7 +68,7 @@ public:
     deleteValues(&blocks);
   }
 
-  virtual bool VisitEnter(const TiXmlElement &elt, const TiXmlAttribute *firstAttribute)
+  virtual bool VisitEnter(const TiXmlElement &elt, const TiXmlAttribute *)
   {
     if (elt.Value() == std::string("const"))
     {

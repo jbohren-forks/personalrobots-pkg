@@ -40,6 +40,7 @@
 #include <map>
 #include <string>
 #include "mechanism_model/robot.h"
+#include "urdf/parser.h"
 
 namespace mechanism {
 
@@ -64,6 +65,7 @@ bool Link::initXml(TiXmlElement *config, Robot *robot)
   }
   name_ = std::string(name);
 
+  // Parent
   TiXmlElement *p = config->FirstChildElement("parent");
   const char *parent_name = p ? p->Attribute("name") : NULL;
   if (!parent_name)
@@ -73,16 +75,47 @@ bool Link::initXml(TiXmlElement *config, Robot *robot)
   }
   parent_name_ = std::string(parent_name);
 
+  // Joint
   TiXmlElement *j = config->FirstChildElement("joint");
   const char *joint_name = j ? j->Attribute("name") : NULL;
   joint_ = joint_name ? robot->getJoint(joint_name) : NULL;
   if (!joint_)
   {
-    fprintf(stderr, "Error: Link \"%s\" could not find the joint named \"%s\"\n", name_.c_str(), joint_name);
+    fprintf(stderr, "Error: Link \"%s\" could not find the joint named \"%s\"\n",
+            name_.c_str(), joint_name);
     return false;
   }
 
-  // TODO: parse origin info
+  // Origin
+  TiXmlElement *o = config->FirstChildElement("origin");
+  if (!o)
+  {
+    fprintf(stderr, "Error: Link \"%s\" has no origin element\n", name_.c_str());
+    return false;
+  }
+  std::vector<double> xyz, rpy;
+  if (!urdf::queryVectorAttribute(o, "xyz", &xyz))
+  {
+    fprintf(stderr, "Error: Link \"%s\"'s origin has no xyz attribute\n", name_.c_str());
+    return false;
+  }
+  if (!urdf::queryVectorAttribute(o, "rpy", &rpy))
+  {
+    fprintf(stderr, "Error: Link \"%s\"'s origin has no rpy attribute\n", name_.c_str());
+    return false;
+  }
+  if (xyz.size() != 3)
+  {
+    fprintf(stderr, "Error: Link \"%s\"'s xyz origin is malformed\n", name_.c_str());
+    return false;
+  }
+  if (rpy.size() != 3)
+  {
+    fprintf(stderr, "Error: Link \"%s\"'s rpy origin is malformed\n", name_.c_str());
+    return false;
+  }
+  frame_ = KDL::Frame(KDL::Rotation::RPY(rpy[0], rpy[1], rpy[2]), KDL::Vector(xyz[0], xyz[1], xyz[2]));
+
   // TODO: parse inertial info
   // TODO: maybe parse collision info
 

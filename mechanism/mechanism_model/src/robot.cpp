@@ -38,6 +38,7 @@ namespace mechanism {
 
 bool Robot::initXml(TiXmlElement *root)
 {
+  assert(hw_);
   TiXmlElement *xit = NULL;
 
   // Constructs the joints.
@@ -81,18 +82,16 @@ bool Robot::initXml(TiXmlElement *root)
   }
   printLinkTree();
 
-#if 0
   // Constructs the kinematic chains.
   for (xit = root->FirstChildElement("chain"); xit;
        xit = xit->NextSiblingElement("chain"))
   {
-    kinematics::Chain *c = new kinematics::Chain;
+    Chain *c = new Chain;
     if (c->initXml(xit, this))
       chains_.push_back(c);
     else
       delete c;
   }
-#endif
 
   return true;
 }
@@ -117,6 +116,7 @@ Joint* Robot::getJoint(const std::string &name)
 
 Actuator* Robot::getActuator(const std::string &name)
 {
+  assert(hw_);
   // Yeah, it's a linear search.  Deal with it.
   return findByName(hw_->actuators_, name);
 }

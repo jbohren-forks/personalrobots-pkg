@@ -34,6 +34,7 @@
 #define URDF_FUNCTIONAL_PARSER_H
 
 #include "tinyxml/tinyxml.h"
+#include "string_utils/string_utils.h"
 
 namespace urdf {
 
@@ -41,6 +42,8 @@ enum {
   JOINTS = 1,
   TRANSMISSIONS = 2
 };
+
+bool queryVectorAttribute(TiXmlElement *el, const char *name, std::vector<double> *value);
 
 // Destructively modifies the document, replacing references to consts
 // and blocks with the actual values.
