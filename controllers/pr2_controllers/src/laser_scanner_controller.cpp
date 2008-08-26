@@ -96,11 +96,11 @@ bool LaserScannerController::initXml(mechanism::Robot *robot, TiXmlElement *conf
     fprintf(stderr, "LaserScannerController could not find joint named \"%s\"\n", joint_name);
     return false;
   }
-
+/*
  TiXmlElement *p = j->FirstChildElement("pid");
   if (!p)
     fprintf(stderr, "LaserScannerController's config did not specify the default pid parameters.\n");
-
+*/
   joint_position_controller_.initXml(robot,config); //Pass down XML snippet to encapsulated joint_position_controller_
   return true;
 
@@ -124,6 +124,11 @@ double LaserScannerController::getCommand()
 double LaserScannerController::getMeasuredPosition()
 {
   return joint_->position_;
+}
+
+double LaserScannerController::getTime()
+{
+  return robot_->hw_->current_time_;
 }
 
 void LaserScannerController::update()
@@ -354,7 +359,9 @@ void LaserScannerController::setJointEffort(double effort)
 //Get sinewave based on current time
 void LaserScannerController::setDynamicSinewave(double time_from_start)
 {
-  joint_position_controller_.setCommand(sin(2*M_PI*time_from_start/period_)*amplitude_+offset_);
+  double command = sin(2*M_PI*time_from_start/period_)*amplitude_+offset_;
+  joint_position_controller_.setCommand(command);
+  
 }
 
 //Set mode to use sawtooth profile
@@ -424,27 +431,10 @@ bool LaserScannerControllerNode::setCommand(
   else if(req.command==-43)c_->setSinewaveProfile(1,0.5,100,0);
   else if(req.command==-44)c_->setSinewaveProfile(4,0.5,100,0);
   else if (req.command==-45)c_->setSinewaveProfile(1,0.5,0);
+  else if (req.command==-46)c_->setSinewaveProfile(3,0.5,0);
+  else if (req.command==-47)c_->setSinewaveProfile(20,0.7,0);
   return true;
 }
-
-bool LaserScannerControllerNode::setTestCommand(double command)
-{
-  c_->setCommand(command);
-
-  //FIXME: Backdoor method to issue command set
-  if(command==41)c_->setSawtoothProfile(1,0.5,100,0);
-  else if(command==42)c_->setSawtoothProfile(2,0.5,100,0);
-  else if(command==43)c_->setSawtoothProfile(2,0.5,100,0.5);
-  else if(command==44)c_->setSawtoothProfile(0.5,0.5,100,0);
-  else if(command==45)c_->setSawtoothProfile(1,0.5,0);
-  else if(command==-41)c_->setSinewaveProfile(2,0.5,100,0.5);
-  else if(command==-42)c_->setSinewaveProfile(2,0.5,100,0);
-  else if(command==-43)c_->setSinewaveProfile(1,0.5,100,0);
-  else if(command==-44)c_->setSinewaveProfile(4,0.5,100,0);
-  else if (command==-45)c_->setSinewaveProfile(1,0.5,0);
-  return true;
-}
-
 
 bool LaserScannerControllerNode::getCommand(
   generic_controllers::GetCommand::request &req,
@@ -466,4 +456,48 @@ bool LaserScannerControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *
   node->advertise_service(prefix + "/get_command", &LaserScannerControllerNode::getCommand, this);
   return true;
 }
+
+bool LaserScannerControllerNode::getActual(
+  generic_controllers::GetActual::request &req,
+  generic_controllers::GetActual::response &resp)
+{
+  resp.command = c_->getMeasuredPosition();
+  resp.time = c_->getTime();
+  return true;
+}
+
+void LaserScannerControllerNode::setCommand(double command)
+{
+  c_->setCommand(command);
+}
+
+void LaserScannerControllerNode::setProfile(LaserScannerController::LaserControllerMode profile, double period, double amplitude, int num_elements, double offset)
+{
+  //Instruct the controller to perform an automatic profile
+  switch(profile)
+  {
+    case LaserScannerController::SINEWAVE:
+      c_->setSinewaveProfile(period, amplitude, num_elements, offset);
+      break;
+    case LaserScannerController::DYNAMIC_SINEWAVE:
+      c_->setSinewaveProfile(period, amplitude,offset);
+      break;
+    case LaserScannerController::SAWTOOTH:
+      c_->setSawtoothProfile(period, amplitude, num_elements, offset);
+      break;
+    case LaserScannerController::DYNAMIC_SAWTOOTH:
+      c_->setSawtoothProfile(period, amplitude,offset);
+      break;
+    default:
+      break;
+  }
+}
+
+// Return the current position command
+double LaserScannerControllerNode::getCommand()
+{
+  return c_->getCommand();
+}
+
+
 

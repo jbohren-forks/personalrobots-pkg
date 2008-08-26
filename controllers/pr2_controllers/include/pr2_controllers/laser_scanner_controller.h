@@ -150,6 +150,7 @@ public:
    */
   bool checkAutoLevelResult();
 
+  double getTime();
 private:
   /*!
    * \brief Actually issue torque set command of the joint motor.
@@ -211,13 +212,21 @@ public:
 
   bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
-  bool setTestCommand(double command);
   // Services
   bool setCommand(generic_controllers::SetCommand::request &req,
                   generic_controllers::SetCommand::response &resp);
 
   bool getCommand(generic_controllers::GetCommand::request &req,
                   generic_controllers::GetCommand::response &resp);
+
+  bool getActual(generic_controllers::GetActual::request &req,
+                  generic_controllers::GetActual::response &resp);
+ 
+  void setCommand(double command);
+
+  void setProfile(LaserScannerController::LaserControllerMode profile, double period, double amplitude, int num_elements=0, double offset=0.0); 
+
+  double getCommand();
 
 private:
   LaserScannerController *c_;
