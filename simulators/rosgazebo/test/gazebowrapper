@@ -1,8 +1,10 @@
 #!/bin/bash
 
+cd `rospack find rosgazebo`
+
 rm -rf $1
 
 mkdir  -p $1
 
-./run-gazebo.sh $2
+`rospack find gazebo`/run-gazebo.sh $2
 

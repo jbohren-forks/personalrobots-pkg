@@ -45,7 +45,7 @@ import time
 import rospy, rostest
 from std_msgs.msg import *
 
-TARGET_X = -4.6
+TARGET_X = -5.4
 TARGET_Y = 0.0
 TARGET_Z = 2.6
 TARGET_RAD = 4.5
@@ -66,11 +66,11 @@ class TestSlide(unittest.TestCase):
         dy = pos.y - TARGET_Y
         dz = pos.z - TARGET_Z
         d = math.sqrt((dx * dx) + (dy * dy)) #+ (dz * dz))
-        #print "P: " + str(pos.x) + " " + str(pos.y)
+        print "P: " + str(pos.x) + " " + str(pos.y)
         #print "D: " + str(dx) + " " + str(dy) + " " + str(dz) + " " + str(d) + " < " + str(TARGET_RAD * TARGET_RAD)
         if (d < TARGET_RAD):
-            print "HP: " + str(dx) + " " + str(dy) + " " + str(d) + " at " + str(pos.x) + " " + str(pos.y)
-            print "DONE"
+            #print "HP: " + str(dx) + " " + str(dy) + " " + str(d) + " at " + str(pos.x) + " " + str(pos.y)
+            #print "DONE"
             self.hits = self.hits + 1
             if (self.hits > 10):
                 if (self.runs > 20):

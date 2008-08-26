@@ -16,6 +16,7 @@
   <depend package="math_utils" />
   <depend package="string_utils" />
   <depend package="mechanism_model" />
+  <depend package="rostest" />
   <!--
   <depend package="libKDL" />
   <depend package="genericControllers" />
