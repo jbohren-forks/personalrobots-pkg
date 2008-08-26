@@ -120,6 +120,16 @@ namespace gazebo {
     // for internal gripper pid use
     currentTime = Simulator::Instance()->GetSimTime();
     lastTime    = Simulator::Instance()->GetSimTime();
+
+
+    controller::Controller* tlc = mc_.getControllerByName( "tilt_laser_controller" );
+    controller::LaserScannerControllerNode* tlcn = dynamic_cast<controller::LaserScannerControllerNode*>(tlc);
+    if (tlcn)
+    {
+      std::cout << " initializing tile laser scanner\n" << std::endl;
+      tlcn->setTestCommand(41);
+    }
+
   }
 
   void TestActuators::UpdateChild()
@@ -397,9 +407,6 @@ namespace gazebo {
     // pass time to robot
     currentTime = Simulator::Instance()->GetSimTime();
     hw_.current_time_ = currentTime;
-
-    std::cout << " time: " << currentTime << std::endl;
-
 
     this->lock.lock();
     /***************************************************************/
