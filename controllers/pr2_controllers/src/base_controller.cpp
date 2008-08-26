@@ -169,9 +169,11 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
   }
   else
   {
-    wheel_radius_ = 0.079;
+    wheel_radius_ = DEFAULT_WHEEL_RADIUS;
   }
   robot_ = robot;
+
+  last_time_ = robot_->hw_->current_time_;
 }
 
 bool BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
@@ -321,9 +323,6 @@ void BaseController::computeAndSetWheelSpeeds()
   libTF::Pose3D::Vector wheel_caster_steer_component;
   libTF::Pose3D::Vector caster_2d_velocity;
 
-  //---------------------------------------------------------------------FIXME:
-  wheel_radius_ = 0.079;
-
   caster_2d_velocity.x = 0;
   caster_2d_velocity.y = 0;
   caster_2d_velocity.z = 0;
@@ -465,6 +464,19 @@ void BaseController::computeOdometry(double time)
   computeBaseVelocity();
 
   libTF::Pose3D::Vector base_odom_delta = (base_odom_velocity_*dt).rot2D(base_odom_position_.z);
+
+//   if(isnan(dt))
+//   {
+//     cout << "time nan" << endl;
+//     exit(-1);
+//   }
+
+//   if(isnan(base_odom_velocity_.x) || isnan(base_odom_velocity_.y) || isnan(base_odom_velocity_.z))
+//   {
+//     cout << "base odometry velocity :: nan" << endl;
+//     exit(-1);
+//   }
+
   base_odom_delta.z = base_odom_velocity_.z * dt;
   base_odom_position_ += base_odom_delta;
 
@@ -480,8 +492,8 @@ void BaseController::computeOdometry(double time)
   odom_msg_.vel.y  = base_odom_velocity_.y;
   odom_msg_.vel.th = base_odom_velocity_.z;
 
-//  cout << "Base Odometry: Velocity " << base_odom_velocity_;
-//  cout << "Base Odometry: Position " << base_odom_position_;
+//   cout << "Base Odometry: Velocity " << base_odom_velocity_;
+//   cout << "Base Odometry: Position " << base_odom_position_;
 }
 
 void BaseController::computeBaseVelocity()
@@ -495,6 +507,16 @@ void BaseController::computeBaseVelocity()
     steer_angle = base_wheels_[i].parent_->joint_->position_;
     A.element(i*2,0)   = cos(steer_angle)*wheel_radius_*(wheel_speed_actual_[i]);
     A.element(i*2+1,0) = sin(steer_angle)*wheel_radius_*(wheel_speed_actual_[i]);
+//     if(isnan(steer_angle))
+//     {
+//       cout << "steer angle - nan for wheel " << i << endl; 
+//       exit(-1);
+//     }
+//     if(isnan(wheel_speed_actual_[i]))
+//     {
+//       cout << "wheel speed actual - nan for wheel " << i << endl; 
+//       exit(-1);
+//     }
   }
 
   for(int i = 0; i < num_wheels_; i++) {
@@ -504,8 +526,20 @@ void BaseController::computeBaseVelocity()
     C.element(i*2+1, 0) = 0;
     C.element(i*2+1, 1) = 1;
     C.element(i*2+1, 2) =  base_wheels_position_[i].x;
+//     if(isnan(base_wheels_position_[i].y) || isnan(base_wheels_position_[i].x))
+//     {
+//       cout << "base odom position - nan for wheel " << i  << endl; 
+//       exit(-1);
+//     }
   }
   D = pseudoInverse(C)*A;
+
+//   if(isnan(base_odom_velocity_.x) || isnan(base_odom_velocity_.y) || isnan(base_odom_velocity_.z))
+//   {
+//     cout << "base odom velocity - nan" << endl; 
+//     exit(-1);
+//   }
+
   base_odom_velocity_.x = (double)D.element(0,0);
   base_odom_velocity_.y = (double)D.element(1,0);
   base_odom_velocity_.z = (double)D.element(2,0);
@@ -528,7 +562,7 @@ Matrix BaseController::pseudoInverse(const Matrix M)
 
 std::ostream & controller::operator<<(std::ostream& mystream, const controller::BaseParam &bp)
 {
-  mystream << bp.name_ << endl << "position " << bp.pos_ << "id " << bp.local_id_ << endl << "joint " << bp.joint_->name_ << endl << endl;
+  mystream << "BaseParam" << bp.name_ << endl << "position " << bp.pos_ << "id " << bp.local_id_ << endl << "joint " << bp.joint_->name_ << endl << endl;
   return mystream;
 };
 

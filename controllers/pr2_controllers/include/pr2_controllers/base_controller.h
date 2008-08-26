@@ -59,6 +59,8 @@
 namespace controller
 {
   #define KP_SPEED_DEFAULT 0.1
+  #define DEFAULT_WHEEL_RADIUS 0.079
+
   /*! \struct
     \brief This class holds information for a joint control parameter structure.
    */
