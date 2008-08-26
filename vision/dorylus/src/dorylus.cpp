@@ -8,8 +8,16 @@ using namespace std;
 void DorylusDataset::setObjs(const vector<object>& objs) 
 {
   objs_ = objs;
+
+  // -- Get number of classes.
+  for(unsigned int i=0; i<objs_.size(); i++) {
+    class_labels_[objs_[i].label]++;
+  }
+  nClasses_ = class_labels_.size();
+  
+  // -- Build ymc_
   ymc_ = Matrix(nClasses_, objs_.size()); ymc_=0.0;
-  for(unsigned int i=0; i<objs.size(); i++) {
+  for(unsigned int i=0; i<objs_.size(); i++) {
     for(int j=0; j<(int)nClasses_; j++) {
       if(objs[i].label==j)
 	ymc_(j+1, i+1) = 1;
@@ -171,31 +179,31 @@ bool DorylusDataset::load(string filename)
 }
 
 
-int main(int argc, char **argv)
-{
-  DorylusDataset dd(3);
+// int main(int argc, char **argv)
+// {
+//   DorylusDataset dd;
 
-  cout << sizeof(Real) << " " << sizeof(Matrix) << endl;
+//   cout << sizeof(Real) << " " << sizeof(Matrix) << endl;
 
-  map<string, Matrix> f;
-  Matrix spin(3,1); spin = 1.0;
-  Matrix sift(2,1); sift = 2.2;
-  f["spinimg"] = spin;
-  f["sift"] = sift;
+//   map<string, Matrix> f;
+//   Matrix spin(3,1); spin = 1.0;
+//   Matrix sift(2,1); sift = 2.2;
+//   f["spinimg"] = spin;
+//   f["sift"] = sift;
 
-  object obj;
-  obj.label = 0;
-  obj.features = f;
-  vector<object> objs;
-  objs.push_back(obj);
-  dd.setObjs(objs);
+//   object obj;
+//   obj.label = 0;
+//   obj.features = f;
+//   vector<object> objs;
+//   objs.push_back(obj);
+//   dd.setObjs(objs);
 
-  cout << dd.status() << endl;
-  dd.save(string("test.dd"));
+//   cout << dd.status() << endl;
+//   dd.save(string("test.dd"));
   
-  DorylusDataset dd2(3);
-  dd2.load(string("test.dd"));
-  cout << dd2.status() << endl;
-  return 0;
-}
+//   DorylusDataset dd2;
+//   dd2.load(string("test.dd"));
+//   cout << dd2.status() << endl;
+//   return 0;
+// }
     

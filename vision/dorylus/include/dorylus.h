@@ -14,6 +14,7 @@
 #include <sstream>
 #include <fstream>
 
+
 typedef struct 
 {
   string descriptor;
@@ -41,8 +42,9 @@ class DorylusDataset {
   vector<object> objs_;
   NEWMAT::Matrix ymc_;
   unsigned int nClasses_;
+  map<int, unsigned int> class_labels_; //label, nExamples with that label.
 
- DorylusDataset(unsigned int nClasses) : nClasses_(nClasses)  
+ DorylusDataset() : nClasses_(0)
   {
     version_string_ = std::string("#DORYLUS DATASET LOG v0.1");
   }
@@ -53,43 +55,6 @@ class DorylusDataset {
   bool save(std::string filename);
   bool load(std::string filename);
   std::string version_string_;
-};
-
-
-class Descriptor 
-{
-/*   virtual vector<float>* operator()(const SmartScan &ss, const IplImage &img, float x, float y, float z, float row, float col); */
- public:
-  virtual void operator()()
-  {}
-
-};
-
-class SpinLarge : public Descriptor
-{
-/*   vector<float>* operator()(const SmartScan &ss, const IplImage &img, float x, float y, float z, float row, float col) { */
-/*     cout << "Computing large spin image." << endl; */
-/*     return NULL; */
-/*   } */
- public:
-  void operator()()
-  {
-    std::cout << "Computing large spin image." << std::endl;
-  }
-};
-
-class SpinMedium : public Descriptor
-{
-/*   vector<float>* operator()(const SmartScan &ss, const IplImage &img, float x, float y, float z, float row, float col) { */
-/*     cout << "Computing medium spin image." << endl; */
-/*     return NULL; */
-/*   } */
- public:
-  void operator()()
-  {
-    std::cout << "Computing medium spin image." << std::endl;
-  }
-
 };
 
 
