@@ -454,13 +454,34 @@ dc1394_cam::Cam::hasFeature(dc1394feature_t feature)
 }
 
 void
-dc1394_cam::Cam::setFeature(dc1394feature_t feature, uint32_t value)
+dc1394_cam::Cam::setFeature(dc1394feature_t feature, uint32_t value, uint32_t value2)
 {
   CHECK_READY();
   dc1394bool_t present;
   CHECK_ERR_CLEAN( dc1394_feature_is_present(dcCam, feature, &present), "Could not check if feature was present");
   if (present == DC1394_TRUE)
-    CHECK_ERR_CLEAN( dc1394_feature_set_value(dcCam, feature, value), "Could not set feature");
+  {
+    if (feature == DC1394_FEATURE_WHITE_BALANCE)
+    {
+      CHECK_ERR_CLEAN( dc1394_feature_whitebalance_set_value(dcCam, value, value2), "Could not set feature");
+    }
+    else
+    {
+      CHECK_ERR_CLEAN( dc1394_feature_set_value(dcCam, feature, value), "Could not set feature");
+    }
+  }
+}
+
+void
+dc1394_cam::Cam::getFeatureBoundaries(dc1394feature_t feature, uint32_t& min, uint32_t& max)
+{
+  CHECK_READY();
+  dc1394bool_t present;
+  CHECK_ERR_CLEAN( dc1394_feature_is_present(dcCam, feature, &present), "Could not check if feature was present");
+  if (present == DC1394_TRUE)
+  {
+    CHECK_ERR_CLEAN( dc1394_feature_get_boundaries(dcCam, feature, &min, &max), "Could not find feature boundaries");
+  }
 }
 
 void

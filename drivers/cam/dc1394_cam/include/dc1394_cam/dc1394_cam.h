@@ -153,7 +153,9 @@ namespace dc1394_cam
 
     virtual bool hasFeature(dc1394feature_t feature);
 
-    virtual void setFeature(dc1394feature_t feature, uint32_t value);
+    virtual void getFeatureBoundaries(dc1394feature_t feature, uint32_t& min, uint32_t& max);
+
+    virtual void setFeature(dc1394feature_t feature, uint32_t value, uint32_t value2 = 0);
 
     virtual void setFeatureAbsolute(dc1394feature_t feature, float value);
 
