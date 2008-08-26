@@ -13,13 +13,13 @@
     <actuator name="single_motor" />
     <joint name="single_joint" />
     <mechanicalReduction>1</mechanicalReduction>
-    <motorTorqueConstant>-1</motorTorqueConstant>
+    <motorTorqueConstant>-0.0603</motorTorqueConstant>
     <pulsesPerRevolution>1200</pulsesPerRevolution>
   </transmission>
 
   <controller name="single_controller" topic="single_controller" type="JointVelocityControllerNode">
     <joint name="single_joint">
-      <pid p="0.05" i="0.2" d="0" iClamp="0.1" />
+      <pid p="0.0007" i="0.002" d="0" iClamp="0.005" />
     </joint>
   </controller>
 
