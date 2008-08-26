@@ -92,8 +92,8 @@ public:
     uint32_t min;
     uint32_t max;
     cd.cam->getFeatureBoundaries(feature, min, max);
-    set_param(cd.name + string("/") + param_name + string("_min"), min);
-    set_param(cd.name + string("/") + param_name + string("_max"), max);
+    set_param(cd.name + string("/") + param_name + string("_min"), (int)(min));
+    set_param(cd.name + string("/") + param_name + string("_max"), (int)(max));
 
     string p = cd.name + string("/") + param_name;
     if (has_param(p))
