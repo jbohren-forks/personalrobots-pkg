@@ -12,8 +12,9 @@ from generic_controllers.srv import *
 def print_usage(exit_code = 0):
     print '''Commands:
     ls                         - List controllers
-    set <controller> <command> - Set the contorller's commanded value
-    get <controller>           - Get the contorller's commanded value'''
+    set <controller> <command> - Set the controller's commanded value
+    get <controller>           - Get the controller's commanded value
+    profile <controller> <mode> <period> <amplitude> <offset> - Set profile 3 for sawtooth 4 for sinewave'''
     sys.exit(exit_code)
 
 def list_controllers():
@@ -32,6 +33,12 @@ def get_controller(controller):
     resp = s.call(GetActualRequest())
     print str(resp.time) + ": " + str(resp.command)
 
+def set_profile(controller, profile,period,amplitude,offset):
+    s = rospy.ServiceProxy(controller + '/set_profile', SetProfile)
+    resp = s.call(SetProfileRequest(profile,period,amplitude,offset))
+    print str(resp.time)
+
+
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         print_usage()
@@ -45,5 +52,7 @@ if __name__ == '__main__':
         if len(sys.argv) != 3:
           print_usage()
         get_controller(sys.argv[2])
+    elif sys.argv[1] == 'profile':
+        set_profile(sys.argv[2],int(sys.argv[3]),float(sys.argv[4]),float(sys.argv[5]),float(sys.argv[6]))
     else:
         print_usage(1)
