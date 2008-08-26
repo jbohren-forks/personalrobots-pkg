@@ -496,14 +496,10 @@ void planning_models::KinematicModel::StateParams::setValue(std::string &name, c
     {
 	unsigned int pos = m_pos[name];
 	for (unsigned int i = 0 ; i < joint->usedParams ; ++i)
-	{
-	    std::cout << joint->name << ": Setting param " << i << " to " << params[i] << std::endl;	    
 	    m_params[pos + i] = params[i];
-	}
-	
     }
     else
-	fprintf(stderr, "Unknown joint: '%s'\n", name.c_str());
+	std::cerr << "Unknown joint: '" << name << "'" << std::endl;
 }
 
 

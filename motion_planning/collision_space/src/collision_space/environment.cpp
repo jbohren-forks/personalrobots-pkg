@@ -36,7 +36,7 @@
 
 #include <collision_space/environment.h>
 
-unsigned int collision_space::EnvironmentModel::addRobotModel(planning_models::KinematicModel *model)
+unsigned int collision_space::EnvironmentModel::addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links)
 {
     unsigned int pos = m_models.size();
     m_models.push_back(model);

@@ -267,7 +267,7 @@ private:
     void addSelfSeeBodies(void)
     {
 	robot_desc::URDF::Group *ss = m_urdf->getGroup("self_see");
-	if (ss && ss->hasFlag("mapping"))
+	if (ss && ss->hasFlag("collision"))
 	{
 	    for (unsigned int i = 0 ; i < ss->linkNames.size() ; ++i)
 	    {

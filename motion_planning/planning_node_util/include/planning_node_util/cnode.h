@@ -94,6 +94,7 @@ namespace planning_node_util
 	    else
 		m_collisionSpace = new collision_space::EnvironmentModelODE();
 	    m_collisionSpace->setSelfCollision(true);
+	    m_collisionSpace->addPlane(0.0, 0.0, 1.0, -0.01);
 	    
 	    m_sphereSize = 0.03;
 	    
@@ -114,8 +115,12 @@ namespace planning_node_util
 	    NodeRobotModel::setRobotDescription(file);
 	    if (m_kmodel)
 	    {
+		std::vector<std::string> links;
+		robot_desc::URDF::Group *g = file->getGroup("collision_check");
+		if (g && g->hasFlag("collision"))
+		    links = g->linkNames;
 		m_collisionSpace->lock();
-		unsigned int cid = m_collisionSpace->addRobotModel(m_kmodel);
+		unsigned int cid = m_collisionSpace->addRobotModel(m_kmodel, links);
 		m_collisionSpace->unlock();
 		addSelfCollisionGroups(cid, file);
 	    }	    

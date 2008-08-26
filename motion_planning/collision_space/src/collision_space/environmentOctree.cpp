@@ -36,12 +36,22 @@
 
 #include <collision_space/environmentOctree.h>
 
-unsigned int collision_space::EnvironmentModelOctree::addRobotModel(planning_models::KinematicModel *model)
+unsigned int collision_space::EnvironmentModelOctree::addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links)
 {
-    unsigned int id = collision_space::EnvironmentModel::addRobotModel(model);
+    unsigned int id = collision_space::EnvironmentModel::addRobotModel(model, links);
     if (id <= m_modelLinks.size())
 	m_modelLinks.resize(id + 1);
-    m_models[id]->getLinks(m_modelLinks[id]);
+    
+    std::vector< planning_models::KinematicModel::Link*> allLinks;
+    
+    std::map<std::string, bool> exists;
+    for (unsigned int i = 0 ; i < links.size() ; ++i)
+	exists[links[i]] = true;
+    
+    for (unsigned int i = 0 ; i < allLinks.size() ; ++i)
+	if (exists.find(allLinks[i]->name) != exists.end())
+	    m_modelLinks[id].push_back(allLinks[i]);
+    
     return id;
 }
 
@@ -136,6 +146,11 @@ void collision_space::EnvironmentModelOctree::clearObstacles(void)
 const scan_utils::Octree<char>* collision_space::EnvironmentModelOctree::getOctree(void) const
 {
     return &m_octree;    
+}
+
+void collision_space::EnvironmentModelOctree::addPlane(double a, double b, double c, double d)
+{
+    fprintf(stderr, "Octree collision checking does not support planes\n");    
 }
 
 void collision_space::EnvironmentModelOctree::addSelfCollisionGroup(unsigned int model_id, std::vector<std::string> &links)

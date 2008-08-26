@@ -190,10 +190,11 @@ public:
 	req.goal_constraints[0].robot_link = "wrist_flex_left";
 	req.goal_constraints[0].pose.position.x = 0.5;
 	req.goal_constraints[0].pose.position.y = 0.3;
-	req.goal_constraints[0].pose.position.z = 1.0;
+	req.goal_constraints[0].pose.position.z = -1.0;
 	req.goal_constraints[0].position_distance = 0.01;
 	
 	// an example of constraints: do not move the elbow too much
+	/*
 	req.constraints.set_pose_size(1);
 	req.constraints.pose[0].type = robot_msgs::PoseConstraint::ONLY_POSITION;
 	req.constraints.pose[0].robot_link = "elbow_flex_left";
@@ -201,7 +202,7 @@ public:
 	req.constraints.pose[0].pose.position.y = 0.188;
 	req.constraints.pose[0].pose.position.z = 0.74;
 	req.constraints.pose[0].position_distance = 0.01;
-	
+	*/
 	req.allowed_time = 3.0;
 	
 	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;

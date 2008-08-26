@@ -73,8 +73,11 @@ namespace collision_space
 	/** Add a point cloud to the collision space */
 	virtual void addPointCloud(unsigned int n, const double* points, double radius = 0.01) = 0;
 
-	/** Add a robot model */
-	virtual unsigned int addRobotModel(planning_models::KinematicModel *model);
+	/** Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
+	virtual void addPlane(double a, double b, double c, double d) = 0;
+
+	/** Add a robot model. Ignore robot links if their name is not specified in the string vector */
+	virtual unsigned int addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links);
 
 	/** Update the positions of the geometry used in collision detection */
 	virtual void updateRobotModel(unsigned int model_id) = 0;
@@ -84,6 +87,7 @@ namespace collision_space
 	
 	/** Get the number of loaded models */
 	unsigned int getModelCount(void) const;
+
 	/** Get a specific model */
 	planning_models::KinematicModel* getRobotModel(unsigned int model_id) const;
 	
@@ -106,8 +110,6 @@ namespace collision_space
 	
 	/** List of loaded robot models */	
 	std::vector<planning_models::KinematicModel*> m_models;
-	
-	
 	
     };
 }

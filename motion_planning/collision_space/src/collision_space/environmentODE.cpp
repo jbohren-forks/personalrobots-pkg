@@ -35,6 +35,7 @@
 /** \Author Ioan Sucan */
 
 #include <collision_space/environmentODE.h>
+#include <map>
 
 void collision_space::EnvironmentModelODE::freeMemory(void)
 { 
@@ -48,21 +49,33 @@ void collision_space::EnvironmentModelODE::freeMemory(void)
 	dSpaceDestroy(m_space);
 }
 
-unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models::KinematicModel *model)
+unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links)
 {
-    unsigned int id = collision_space::EnvironmentModel::addRobotModel(model);
-
+    unsigned int id = collision_space::EnvironmentModel::addRobotModel(model, links);
+    
     if (m_kgeoms.size() <= id)
     {
 	m_kgeoms.resize(id + 1);
 	m_kgeoms[id].space = dHashSpaceCreate(0);	
     }
+
+    std::map<std::string, bool> exists;
+    for (unsigned int i = 0 ; i < links.size() ; ++i)
+	exists[links[i]] = true;
     
     for (unsigned int j = 0 ; j < m_models[id]->getRobotCount() ; ++j)
     {
 	planning_models::KinematicModel::Robot *robot = m_models[id]->getRobot(j);
 	for (unsigned int i = 0 ; i < robot->links.size() ; ++i)
 	{
+	    /* skip this link if we have no geometry or if the link
+	       name is not specified as enabled for collision
+	       checking */
+	    if (!robot->links[i]->shape)
+		continue;
+	    if (exists.find(robot->links[i]->name) == exists.end())
+		continue;
+	    
 	    kGeom *kg = new kGeom();
 	    kg->link = robot->links[i];
 	    dGeomID g = createODEGeom(m_kgeoms[id].space, robot->links[i]->shape);
@@ -217,6 +230,7 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
     CollisionData cdata;
     cdata.collides = false;
 
+    /* check self collision */
     if (m_selfCollision)
     {
 	for (int i = m_kgeoms[model_id].selfCollision.size() - 1 ; i >= 0 ; --i)
@@ -244,19 +258,49 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
 		    if (cdata.collides)
 		    {
 			std::cout << m_kgeoms[model_id].geom[vec[j]]->link->name << " intersects with " << m_kgeoms[model_id].geom[vec[k]]->link->name  << std::endl;
-			goto OUT;
+			goto OUT1;
 		    }
 		}
 	}
     }
     
- OUT:
+
+    /* check collision with standalone ode bodies */
+ OUT1:
+    
+    if (!cdata.collides)
+    {
+	for (int i = m_kgeoms[model_id].geom.size() - 1 ; i >= 0 ; --i)
+	{
+	    dGeomID g1 = m_kgeoms[model_id].geom[i]->geom;
+	    dReal aabb1[6];
+	    dGeomGetAABB(g1, aabb1);
+	    for (int j = m_odeGeoms.size() - 1 ; j >= 0 ; --j)
+	    {
+		dGeomID g2 = m_odeGeoms[j];
+		dReal aabb2[6];
+		dGeomGetAABB(g2, aabb2);
+		if (!(aabb1[2] > aabb2[3] ||
+		      aabb1[3] < aabb2[2] ||
+		      aabb1[4] > aabb2[5] ||
+		      aabb1[5] < aabb2[4]))
+		    dSpaceCollide2(g1, g2, reinterpret_cast<void*>(&cdata), nearCallbackFn);
+		if (cdata.collides)
+		    goto OUT2;
+	    }
+	}	
+    }
+    
+    /* check collision with pointclouds */
+ OUT2:
 
     if (!cdata.collides)
     {
 	m_collide2.setup();
 	for (int i = m_kgeoms[model_id].geom.size() - 1 ; i >= 0 && !cdata.collides ; --i)
 	    m_collide2.collide(m_kgeoms[model_id].geom[i]->geom, reinterpret_cast<void*>(&cdata), nearCallbackFn);
+	if (cdata.collides)
+	    std::cout << "Pointcloud intersection"  << std::endl;
     }
     
     return cdata.collides;
@@ -272,6 +316,12 @@ void collision_space::EnvironmentModelODE::addPointCloud(unsigned int n, const d
 	m_collide2.registerGeom(g);
     }
     m_collide2.setup();
+}
+
+void collision_space::EnvironmentModelODE::addPlane(double a, double b, double c, double d)
+{
+    dGeomID g = dCreatePlane(m_space, a, b, c, d);
+    m_odeGeoms.push_back(g);
 }
 
 void collision_space::EnvironmentModelODE::clearObstacles(void)

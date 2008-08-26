@@ -94,6 +94,8 @@ namespace display_ode
 		case dCylinderClass:
 		    drawCylinder(geom);
 		    break;	    
+		case dPlaneClass:
+		    break;
 		default:
 		    printf("Geometry class %d not yet implemented\n", cls);	    
 		    break;	    
