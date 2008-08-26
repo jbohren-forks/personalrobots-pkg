@@ -155,7 +155,7 @@ namespace TREX {
     get_param("robotdesc/pr2", pr2_configuration_str);
     _pr2Kinematics.loadString(pr2_configuration_str.c_str());
     _armSerialChain = _pr2Kinematics.getSerialChain("leftArm");
-    assertTrue(_armSerialChain != NULL, "Could not retrieve serial chain for LeftArm");
+    condDebugMsg(_armSerialChain == NULL, "ROSNode", "Could not retrieve serial chain for LeftArm");
     std::cout << "Done with ROSNODE::constructor.\n";
   }
 
@@ -784,6 +784,7 @@ void ROSNode::leftMoveArmStateReceived()
   void ROSNode::ConvertArmToEndEffectorFrame(const PR2Arm arm,
 					     Frame& f) {
     //frame comes from forward kinematics
+    assertTrue(_armSerialChain != NULL, "Could not retrieve serial chain");
     JntArray q = JntArray(_armSerialChain->num_joints_);
     
     q(0) = arm.turretAngle;
