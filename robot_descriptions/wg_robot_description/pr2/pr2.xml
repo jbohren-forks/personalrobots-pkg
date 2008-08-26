@@ -679,9 +679,7 @@
   
  
   <!-- joint blocks -->
-  <joint name="base_joint" type="planar"> 
-    <limit effort="100" velocity="10" min="0" max="10" /><!-- FIXME -->
-  </joint>
+  <joint name="base_joint" type="planar" /> 
   <joint name="head_tilt_joint" type="revolute"> 
     <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
@@ -1120,7 +1118,7 @@
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" base_torso_offset_x 0 base_torso_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
     
-    <joint name="torso_joint" type="prismatic" />
+    <joint name="torso_joint" />
     
     <inertial>
       <mass value="36.248046" />
