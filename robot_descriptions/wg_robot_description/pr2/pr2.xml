@@ -2247,5 +2247,7 @@
   <include>actuators.xml</include> 
   <include>transmissions.xml</include> 
 
-  
+  <!-- Kinematic chains -->
+  <chain root="torso" tip="gripper_roll_left" />
+  <chain root="torso" tip="gripper_roll_right" />
 </robot>
