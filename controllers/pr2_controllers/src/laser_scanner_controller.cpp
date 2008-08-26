@@ -445,6 +445,15 @@ bool LaserScannerControllerNode::getCommand(
   return true;
 }
 
+bool LaserScannerControllerNode::setProfileCall(
+  generic_controllers::SetProfile::request &req,
+  generic_controllers::SetProfile::response &resp)
+{
+  setProfile(LaserScannerController::LaserControllerMode(req.profile),req.period,req.amplitude,req.offset);
+  resp.time = c_->getTime(); 
+  return true;
+}
+
 bool LaserScannerControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
@@ -454,9 +463,9 @@ bool LaserScannerControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *
     return false;
   node->advertise_service(prefix + "/set_command", &LaserScannerControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_command", &LaserScannerControllerNode::getCommand, this);
+  node->advertise_service(prefix + "/set_profile", &LaserScannerControllerNode::setProfileCall, this);
   return true;
 }
-
 bool LaserScannerControllerNode::getActual(
   generic_controllers::GetActual::request &req,
   generic_controllers::GetActual::response &resp)

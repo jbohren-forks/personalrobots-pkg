@@ -42,6 +42,7 @@
 // Services
 #include <generic_controllers/SetCommand.h>
 #include <generic_controllers/GetCommand.h>
+#include <generic_controllers/SetProfile.h>
 
 namespace controller
 {
@@ -222,6 +223,9 @@ public:
   bool getActual(generic_controllers::GetActual::request &req,
                   generic_controllers::GetActual::response &resp);
  
+  bool setProfileCall(generic_controllers::SetProfile::request &req,
+  generic_controllers::SetProfile::response &resp);
+
   void setCommand(double command);
 
   void setProfile(LaserScannerController::LaserControllerMode profile, double period, double amplitude, int num_elements=0, double offset=0.0); 
