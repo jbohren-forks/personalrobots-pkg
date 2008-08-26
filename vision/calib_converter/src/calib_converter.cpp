@@ -99,67 +99,76 @@ public:
     }
     if(!hasImages || !hasPtcld || !hasCalparams) {
       cerr << fullname << " does not have the required message types!  Note that this check is based on topic name, not message type; yell at Alex if this is the problem." << endl;
-      return 1;
+      cerr << "Doing as much conversion as possible..." << endl;
     }
     
-   
-    // -- Save the camera calibration information file.
-    string outputname = outputdir + string("/") + num + string("-cal_params.txt");
-    cout << "Saving cal_params to " << outputname << "..." << endl;
-    ofstream f(outputname.c_str());
-    f << calparams.data;
-    f.close();
-    cout << " done." << endl;
-    
+
+    string outputname;
+
     // -- Save the pointcloud.
-    outputname = outputdir + string("/") + num + string("-J.xml");
-    cout << "Saving pointcloud of " << cloud.get_pts_size() << " points to " << outputname << "..." << endl;
+    if(hasPtcld) {
+      outputname = outputdir + string("/") + num + string("-J.xml");
+      cout << "Saving pointcloud of " << cloud.get_pts_size() << " points to " << outputname << "..." << endl;
     
-    CvMat *M = cvCreateMat(cloud.get_pts_size(), 4, CV_64FC1);
-    for(unsigned int i=0; i<cloud.get_pts_size(); i++) {
-      cvmSet(M, i, 0, cloud.pts[i].x);
-      cvmSet(M, i, 1, cloud.pts[i].y);
-      cvmSet(M, i, 2, cloud.pts[i].z);
-      cvmSet(M, i, 3, cloud.chan[0].vals[i]);
-    }
-    cvSave(outputname.c_str(), M);
-    cout << " done." << endl;
-
-    // -- For each image in the message.
-    cv_mutex.lock();
-    for (uint32_t i = 0; i < image_msg.get_images_size(); i++)
-    {
-      // -- Get the image into openCV and display.
-      string l = image_msg.images[i].label;
-      map<string, imgData>::iterator j = images.find(l);
-
-      if (j == images.end())
-      {
-        images[l].label = image_msg.images[i].label;
-        images[l].bridge = new CvBridge<std_msgs::Image>(&image_msg.images[i], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
-        cvNamedWindow(l.c_str(), CV_WINDOW_AUTOSIZE);
-        images[l].cv_image = 0;
-      } 
-      
-      j = images.find(l);      
-      j->second.bridge->to_cv(&j->second.cv_image);
-
-      // -- Make sure we've got the right image types.
-      if(l.compare(string("left_rectified")) != 0 && l.compare(string("right_rectified")) != 0) {
-	cerr << fullname << " has something other than a left and right rectified image in it!" << endl;
+      CvMat *M = cvCreateMat(cloud.get_pts_size(), 4, CV_64FC1);
+      for(unsigned int i=0; i<cloud.get_pts_size(); i++) {
+	cvmSet(M, i, 0, cloud.pts[i].x);
+	cvmSet(M, i, 1, cloud.pts[i].y);
+	cvmSet(M, i, 2, cloud.pts[i].z);
+	cvmSet(M, i, 3, cloud.chan[0].vals[i]);
       }
-	
-      // -- Save the image.
-      if(l.compare(string("left_rectified")) == 0)
-	outputname = outputdir + string("/") + num + string("-L.png");
-      else
-	outputname = outputdir + string("/") + num + string("-R.png");
-
-      cout << "Saving image to " << outputname << "..." << endl;
-      cvSaveImage(outputname.c_str(), j->second.cv_image);
+      cvSave(outputname.c_str(), M);
       cout << " done." << endl;
     }
-    cv_mutex.unlock();
+    
+    // -- Save the camera calibration information file.
+    if(hasCalparams) {
+      outputname = outputdir + string("/") + num + string("-cal_params.txt");
+      cout << "Saving cal_params to " << outputname << "..." << endl;
+      ofstream f(outputname.c_str());
+      f << calparams.data;
+      f.close();
+      cout << " done." << endl;
+    }
+
+    if(hasImages) {
+      // -- For each image in the message.
+      cv_mutex.lock();
+      for (uint32_t i = 0; i < image_msg.get_images_size(); i++)
+	{
+	  // -- Get the image into openCV and display.
+	  string l = image_msg.images[i].label;
+	  map<string, imgData>::iterator j = images.find(l);
+
+	  if (j == images.end())
+	    {
+	      images[l].label = image_msg.images[i].label;
+	      images[l].bridge = new CvBridge<std_msgs::Image>(&image_msg.images[i], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
+	      cvNamedWindow(l.c_str(), CV_WINDOW_AUTOSIZE);
+	      images[l].cv_image = 0;
+	    } 
+      
+	  j = images.find(l);      
+	  j->second.bridge->to_cv(&j->second.cv_image);
+
+	  // -- Make sure we've got the right image types.
+	  if(l.compare(string("left_rectified")) != 0 && l.compare(string("right_rectified")) != 0) {
+	    cerr << fullname << " has something other than a left and right rectified image in it!" << endl;
+	  }
+	
+	  // -- Save the image.
+	  if(l.find(string("left")) != l.npos)
+	    outputname = outputdir + string("/") + num + string("-L.png");
+	  else
+	    outputname = outputdir + string("/") + num + string("-R.png");
+
+	  cout << "Saving image to " << outputname << "..." << endl;
+	  cvSaveImage(outputname.c_str(), j->second.cv_image);
+	  cout << " done." << endl;
+	}
+      cv_mutex.unlock();
+    }
+
     return 0;
   }
 };
