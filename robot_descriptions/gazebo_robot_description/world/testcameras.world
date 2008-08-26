@@ -50,6 +50,27 @@
     </frames>
   </rendering:gui>
 
+  <model:physical name="cam_mod">
+    <body:empty name="cam_bod">
+        <xyz>-1 0 3</xyz>	
+        <rpy>0 45 0</rpy>
+        <sensor:camera name="cam_sen">
+            <size>1024 800</size>
+            <hfov>60</hfov>
+            <nearClip>0.1</nearClip>
+            <farClip>100</farClip>
+            <updateRate>15.0</updateRate>
+            <saveFrames>true</saveFrames>
+            <saveFramePath>testcameraframes</saveFramePath>
+            <controller:ros_camera name="cam_controller" plugin="libRos_Camera.so">
+                <updateRate>15.0</updateRate>
+                <topicName>cam_test</topicName>
+                <frameName>cam_test</frameName>
+                <interface:camera name="cam_iface" />
+            </controller:ros_camera>
+        </sensor:camera>
+    </body:empty>
+  </model:physical>
 
   <rendering:ogre>
     <ambient>1.0 1.0 1.0 1.0</ambient>
@@ -57,7 +78,7 @@
       <material>Gazebo/CloudySky</material>
     </sky>
     <gazeboPath>media</gazeboPath>
-    <grid>off</grid>
+    <grid>false</grid>
     <maxUpdateRate>100</maxUpdateRate>
   </rendering:ogre>
 
