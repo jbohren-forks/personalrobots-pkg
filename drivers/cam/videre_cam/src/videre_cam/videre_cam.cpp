@@ -39,6 +39,36 @@
 
 #include <iostream>
 
+
+#define CHECK_READY() \
+  if (!dcRef) { \
+    char msg[256]; \
+    snprintf(msg, 256, "Tried to call %s before calling dc1394_cam::Cam::init()", __FUNCTION__); \
+    throw CamException(msg); \
+  }
+
+#define CHECK_ERR(fnc, amsg) \
+  { \
+  dc1394error_t err = fnc; \
+  if (err != DC1394_SUCCESS) { \
+    char msg[256]; \
+    snprintf(msg, 256, "%s: %s", dc1394_error_get_string(err), amsg);        \
+    throw CamException(msg); \
+  } \
+  }
+
+#define CHECK_ERR_CLEAN(fnc, amsg) \
+  { \
+  dc1394error_t err = fnc; \
+  if (err != DC1394_SUCCESS) { \
+    cleanup(); \
+    char msg[256]; \
+    snprintf(msg, 256, "%s: %s", dc1394_error_get_string(err), amsg);        \
+    throw CamException(msg); \
+  }\
+  }
+
+
 template <class T>
 void extract(std::string& data, std::string section, std::string param, T& t)
 {
@@ -243,6 +273,21 @@ videre_cam::VidereCam::setHDR(bool hdr)
   
 }
 
+
+// This is what dc1394_cam does, except we don't check if the feature is present (which is known to fail for the Videre cameras)
+void
+videre_cam::VidereCam::setFeature(dc1394feature_t feature, uint32_t value, uint32_t value2)
+{
+  CHECK_READY();
+  if (feature == DC1394_FEATURE_WHITE_BALANCE)
+  {
+    CHECK_ERR_CLEAN( dc1394_feature_whitebalance_set_value(dcCam, value, value2), "Could not set feature");
+  }
+  else
+  {
+    CHECK_ERR_CLEAN( dc1394_feature_set_value(dcCam, feature, value), "Could not set feature");
+  }
+}
 
 
 void

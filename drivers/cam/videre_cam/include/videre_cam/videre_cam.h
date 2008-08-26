@@ -80,6 +80,8 @@ namespace videre_cam
 
     virtual void enableRectification(double fx, double fy, double cx, double cy, double k1, double k2, double k3, double p1, double p2);
 
+    virtual void setFeature(dc1394feature_t feature, uint32_t value, uint32_t value2 = 0);
+
     void enableRectification();
 
     VidereMode getMode() { return proc_mode_; }
