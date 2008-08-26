@@ -115,6 +115,36 @@ public:
     }
   }
 
+  void checkAndSetWhitebalance(CamData& cd, string param_name, dc1394feature_t feature)
+  {
+    string p = cd.name + string("/") + param_name;
+    string p_b = cd.name + string("/") + param_name + string("_b");
+    string p_r = cd.name + string("/") + param_name + string("_r");
+
+    if (has_param(p_b) && has_param(p_r))
+    {
+      XmlRpc::XmlRpcValue val;
+      XmlRpc::XmlRpcValue val_b;
+      XmlRpc::XmlRpcValue val_r;
+
+      get_param(p, val);
+      get_param(p_b, val);
+      get_param(p_r, val);
+      
+      if (val.getType() == XmlRpc::XmlRpcValue::TypeString)
+        if (val == string("auto"))
+          cd.cam->setFeatureMode(feature, DC1394_FEATURE_MODE_AUTO);
+        else 
+          cd.cam->setFeatureMode(feature, DC1394_FEATURE_MODE_MANUAL);
+                
+      if (val_b.getType() == XmlRpc::XmlRpcValue::TypeInt && val_r.getType() == XmlRpc::XmlRpcValue::TypeInt)
+      {
+        cd.cam->setFeatureMode(feature, DC1394_FEATURE_MODE_MANUAL);
+        cd.cam->setFeature(feature, (int)(val_b), (int)(val_r));
+      }
+    }
+  }
+
 
   void checkAllFeatures(CamData& cd)
   {
@@ -123,6 +153,7 @@ public:
       checkAndSetFeature(cd, "shutter", DC1394_FEATURE_SHUTTER);
       checkAndSetFeature(cd, "gamma", DC1394_FEATURE_GAMMA);
       checkAndSetFeature(cd, "gain", DC1394_FEATURE_GAIN);
+      checkAndSetWhitebalance(cd, "whitebalance", DC1394_FEATURE_WHITE_BALANCE);
 
       if (cd.cam_type == VIDERE)
       {
