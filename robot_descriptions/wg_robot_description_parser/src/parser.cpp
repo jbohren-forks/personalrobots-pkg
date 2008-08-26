@@ -172,21 +172,53 @@ void replaceReference(TiXmlElement **to_replace, TiXmlNode *replacements)
   *to_replace = NULL;
 }
 
-bool normalizeXml(TiXmlElement *elt)
+bool normalizeXml(TiXmlElement *xml)
 {
+  TiXmlElement* elt = xml;
+
   using namespace std;
+
+  TiXmlElement *previous = NULL;  // tracks the element before elt
+
+  while (elt)
+  {
+    if (elt->ValueStr() == std::string("include"))
+    {
+      std::string filename(elt->GetText());
+
+      TiXmlDocument doc(filename);
+      doc.LoadFile();
+
+      if (!doc.RootElement())
+      {
+        fprintf(stderr, "Included file not found: %s\n", filename.c_str());
+        elt->Parent()->RemoveChild(elt);
+      }
+      else
+      {
+        replaceReference(&elt, doc.RootElement()->FirstChild());
+      }
+
+      elt = next_element(previous);
+    }
+    else
+    {
+      previous = elt;
+      elt = next_element(elt);
+    }
+  }
 
   //------------------------------------------------------------
   // First Pass
 
   ConstsAndBlocks lookup;
-  elt->Accept(&lookup);
+  xml->Accept(&lookup);
 
   //------------------------------------------------------------
   // Second Pass (destructive)
 
-  TiXmlElement *previous;  // tracks the element before elt
-
+  previous = NULL;
+  elt = xml;
   // - Removes const and const_block elements.
   // - Replaces insert_const_block elements with the corresponding xml tree.
   // - Replaces const strings with the actual values.
