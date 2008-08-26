@@ -16,7 +16,8 @@ propgrid: $(VERSION)
 
 clean:
 	cd $(VERSION) && \
-		make clean
+		make clean && \
+		rm -f Makefile
 	rm -rf propgrid_install
 
 wipe: clean
