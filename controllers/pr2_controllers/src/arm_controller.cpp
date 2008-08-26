@@ -39,15 +39,14 @@
 using namespace controller;
 using namespace std;
 
-ROS_REGISTER_CONTROLLER(ArmDummyController)
+ROS_REGISTER_CONTROLLER(ArmPositionController)
 
-    
-ArmDummyController::ArmDummyController()
+ArmPositionController::ArmPositionController()
 {
   cout<<"new dummy"<<endl;
 }
 
-ArmDummyController::~ArmDummyController()
+ArmPositionController::~ArmPositionController()
 {
   // Assumes the joint controllers are owned by this class.
   for(unsigned int i=0; i<joint_position_controllers_.size();++i)
@@ -55,7 +54,7 @@ ArmDummyController::~ArmDummyController()
   cout<<"deleted dummy"<<endl;
 }
 
-bool ArmDummyController::initXml(mechanism::Robot * robot, TiXmlElement * config)
+bool ArmPositionController::initXml(mechanism::Robot * robot, TiXmlElement * config)
 {
   robot_ = robot;
   TiXmlElement *elt = config->FirstChildElement("controller");
@@ -77,7 +76,7 @@ bool ArmDummyController::initXml(mechanism::Robot * robot, TiXmlElement * config
   return true;
 }
 
-void ArmDummyController::setCommand(pr2_controllers::SetArmCommand::request &req)
+void ArmPositionController::setJointPosCmd(pr2_controllers::SetJointPosCmd::request &req)
 {
   cout<<"SET COMMANDS"<<endl;
   arm_controller_lock_.lock();
@@ -88,7 +87,7 @@ void ArmDummyController::setCommand(pr2_controllers::SetArmCommand::request &req
   arm_controller_lock_.unlock();
 }
 
-void ArmDummyController::getCommand(                               pr2_controllers::GetArmCommand::response &resp)
+void ArmPositionController::getJointPosCmd(pr2_controllers::GetJointPosCmd::response &resp)
 {
   arm_controller_lock_.lock();
   resp.set_positions_size(goals_.size());
@@ -97,7 +96,7 @@ void ArmDummyController::getCommand(                               pr2_controlle
   arm_controller_lock_.unlock();
 }
 
-void ArmDummyController::getCurrentConfiguration(std::vector<double> &vec)
+void ArmPositionController::getCurrentConfiguration(std::vector<double> &vec)
 {
   //TODO: warning: this read is not safe, since we cannot lock the realtime loop
   // A more complex mechanism is necessary here
@@ -110,7 +109,7 @@ void ArmDummyController::getCurrentConfiguration(std::vector<double> &vec)
   arm_controller_lock_.unlock();
 }
 
-void ArmDummyController::update(void)
+void ArmPositionController::update(void)
 {
   if(arm_controller_lock_.trylock())
   {
@@ -126,7 +125,7 @@ void ArmDummyController::update(void)
   updateJointControllers();
 }
 
-void ArmDummyController::updateJointControllers(void)
+void ArmPositionController::updateJointControllers(void)
 {
   for(unsigned int i=0;i<goals_rt_.size();++i)
     joint_position_controllers_[i]->update();
@@ -134,26 +133,26 @@ void ArmDummyController::updateJointControllers(void)
 
 //------ Arm controller node --------
 
-ROS_REGISTER_CONTROLLER(ArmControllerNode)
+ROS_REGISTER_CONTROLLER(ArmPositionControllerNode)
 
-ArmControllerNode::ArmControllerNode()
+ArmPositionControllerNode::ArmPositionControllerNode()
   : Controller()
 {
   std::cout<<"Controller node created"<<endl;
-  c_ = new ArmDummyController();
+  c_ = new ArmPositionController();
 }
 
-ArmControllerNode::~ArmControllerNode()
+ArmPositionControllerNode::~ArmPositionControllerNode()
 {
   delete c_;
 }
 
-void ArmControllerNode::update()
+void ArmPositionControllerNode::update()
 {
   c_->update();
 }
 
-bool ArmControllerNode::initXml(mechanism::Robot * robot, TiXmlElement * config)
+bool ArmPositionControllerNode::initXml(mechanism::Robot * robot, TiXmlElement * config)
 {
   std::cout<<"LOADING ARMCONTROLLERNODE"<<std::endl;
   ros::node * const node = ros::node::instance();
@@ -184,32 +183,36 @@ bool ArmControllerNode::initXml(mechanism::Robot * robot, TiXmlElement * config)
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
-    node->advertise_service(prefix + "/set_command", &ArmControllerNode::setCommand, this);
-    node->advertise_service(prefix + "/get_command", &ArmControllerNode::getCommand, this);
-    node->advertise_service(prefix + "/set_cartesian_pos", &ArmControllerNode::setCommandCP, this);
-    node->advertise_service(prefix + "/get_cartesian_pos", &ArmControllerNode::getCP, this);
+    node->advertise_service(prefix + "/set_command", &ArmPositionControllerNode::setJointPosCmd, this);
+    node->advertise_service(prefix + "/get_command", &ArmPositionControllerNode::getJointPosCmd, this);
+
+    node->advertise_service(prefix + "/set_cartesian_pos", &ArmPositionControllerNode::setCartesianPosCmd, this);
+    node->advertise_service(prefix + "/get_cartesian_pos", &ArmPositionControllerNode::getCartesianPosCmd, this);
+
     return true;
   }
   return false;  
 }
 
-bool ArmControllerNode::setCommand(pr2_controllers::SetArmCommand::request &req,
-                                   pr2_controllers::SetArmCommand::response &resp)
+
+
+bool ArmPositionControllerNode::setJointPosCmd(pr2_controllers::SetJointPosCmd::request &req,
+                                   pr2_controllers::SetJointPosCmd::response &resp)
 {
-  c_->setCommand(req);
+  c_->setJointPosCmd(req);
   return true;
 }
 
-bool ArmControllerNode::getCommand(pr2_controllers::GetArmCommand::request &req,
-                                   pr2_controllers::GetArmCommand::response &resp)
+bool ArmPositionControllerNode::getJointPosCmd(pr2_controllers::GetJointPosCmd::request &req,
+                                   pr2_controllers::GetJointPosCmd::response &resp)
 {
-  c_->getCommand(resp);
+  c_->getJointPosCmd(resp);
   return true;
 }
 
 
-bool ArmControllerNode::setCommandCP(pr2_controllers::SetArmCartesianPos::request &req,
-                  pr2_controllers::SetArmCartesianPos::response &resp)
+bool ArmPositionControllerNode::setCartesianPosCmd(pr2_controllers::SetCartesianPosCmd::request &req,
+                  pr2_controllers::SetCartesianPosCmd::response &resp)
 {
   KDL::Frame targetFrame;
   targetFrame.p = KDL::Vector(req.x, req.y, req.z);
@@ -242,19 +245,19 @@ bool ArmControllerNode::setCommandCP(pr2_controllers::SetArmCartesianPos::reques
   //TODO: check IK result
   if(!arm_chain_->computeFK(target_cfg, targetFrame))
     return false;
-  std::cout<<"Kinematics seems correct!"<<std::endl;
+  std::cout<<"Positions seems correct!"<<std::endl;
   
   // Sends commands to the controllers
-  pr2_controllers::SetArmCommand::request commands;
+  pr2_controllers::SetJointPosCmd::request commands;
   commands.set_positions_size(size);
   for(int i=0;i<size;++i)
     commands.positions[i] = target_cfg(i);
-  c_->setCommand(commands);
+  c_->setJointPosCmd(commands);
   return true;
 }
 
-bool ArmControllerNode::getCP(pr2_controllers::GetArmCartesianPos::request &req,
-                                     pr2_controllers::GetArmCartesianPos::response &resp)
+bool ArmPositionControllerNode::getCartesianPosCmd(pr2_controllers::GetCartesianPosCmd::request &req,
+                                     pr2_controllers::GetCartesianPosCmd::response &resp)
 {
   std::cout<<"Called"<<std::endl;
   // Stores the current state in a KDL frame in a realtime safe way
@@ -272,3 +275,4 @@ bool ArmControllerNode::getCP(pr2_controllers::GetArmCartesianPos::request &req,
   cur_frame.M.GetRPY(resp.roll, resp.pitch, resp.yaw);
   return true;
 }
+

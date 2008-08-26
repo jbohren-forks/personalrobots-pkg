@@ -38,22 +38,17 @@
 #include <rosthread/mutex.h>
 
 #include <generic_controllers/controller.h>
-#include <generic_controllers/joint_position_controller.h>
 #include <generic_controllers/joint_velocity_controller.h>
-#include <generic_controllers/joint_effort_controller.h>
 
 // Services
-#include <pr2_controllers/SetJointPosCmd.h>
-#include <pr2_controllers/GetJointPosCmd.h>
+#include <pr2_controllers/SetJointVelCmd.h>
+#include <pr2_controllers/GetJointVelCmd.h>
 
-#include <pr2_controllers/SetCartesianPosCmd.h>
-#include <pr2_controllers/GetCartesianPosCmd.h>
+#include <pr2_controllers/SetCartesianVelCmd.h>
+#include <pr2_controllers/GetCartesianVelCmd.h>
 
 //Kinematics
 #include <robot_kinematics/robot_kinematics.h>
-
-// #include <libTF/Pose3D.h>
-// #include <urdf/URDF.h>
 
 namespace controller
 {
@@ -71,7 +66,7 @@ namespace controller
   // The maximum number of joints expected in an arm.
   static const int MAX_ARM_JOINTS = 7;
   
-  class ArmPositionController : public Controller
+  class ArmVelocityController : public Controller
   {
     public:
   
@@ -79,12 +74,12 @@ namespace controller
      * \brief Default Constructor of the JointController class.
      *
    */
-      ArmPositionController();
+      ArmVelocityController();
 
   /*!
        * \brief Destructor of the JointController class.
    */
-      virtual ~ArmPositionController();
+      virtual ~ArmVelocityController();
 
   /*!
        * \brief Functional way to initialize limits and gains.
@@ -97,12 +92,12 @@ namespace controller
        *
        * \param double pos Position command to issue
    */
-      void setJointPosCmd(pr2_controllers::SetJointPosCmd::request &req);
+      void setJointVelCmd(pr2_controllers::SetJointVelCmd::request &req);
 
   /*!
        * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
    */
-          void getJointPosCmd(pr2_controllers::GetJointPosCmd::response &resp);
+          void getJointVelCmd(pr2_controllers::GetJointVelCmd::response &resp);
           
           void getCurrentConfiguration(std::vector<double> &);
   /*!
@@ -114,8 +109,8 @@ namespace controller
 
     private:
 
-      std::vector<JointPositionController *> joint_position_controllers_;     
-
+      std::vector<JointVelocityController *> joint_velocity_controllers_;
+ 
       // Goal of the joints
       std::vector<double> goals_;
       // Goal of the joints - used by the realtime code only
@@ -124,46 +119,39 @@ namespace controller
       mechanism::Robot* robot_;
 
       void updateJointControllers(void);
-
   };
 
-  class ArmPositionControllerNode : public Controller
+  class ArmVelocityControllerNode : public Controller
   {
     public:
   /*!
      * \brief Default Constructor
      *
    */
-      ArmPositionControllerNode();
+      ArmVelocityControllerNode();
 
   /*!
        * \brief Destructor
    */
-      ~ArmPositionControllerNode();
+      ~ArmVelocityControllerNode();
 
       void update();
 
       bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
       // Services
-      bool setJointPosCmd(pr2_controllers::SetJointPosCmd::request &req,
-                      pr2_controllers::SetJointPosCmd::response &resp);
+      bool setJointVelCmd(pr2_controllers::SetJointVelCmd::request &req,
+                      pr2_controllers::SetJointVelCmd::response &resp);
 
-      bool getJointPosCmd(pr2_controllers::GetJointPosCmd::request &req,
-                      pr2_controllers::GetJointPosCmd::response &resp);
-      /** \brief sets the command to a cartesian position
-       *  \return always true
-      **/
-      bool setCartesianPosCmd(pr2_controllers::SetCartesianPosCmd::request &req,
-                      pr2_controllers::SetCartesianPosCmd::response &resp);
+      bool getJointVelCmd(pr2_controllers::GetJointVelCmd::request &req,
+                      pr2_controllers::GetJointVelCmd::response &resp);
 
-      /** \brief gets the cartesian positon of the gripper
-       *  \return always true
-       **/
-      bool getCartesianPosCmd(pr2_controllers::GetCartesianPosCmd::request &req,pr2_controllers::GetCartesianPosCmd::response &resp);
+      bool setCartesianVelCmd(pr2_controllers::SetCartesianVelCmd::request &req,pr2_controllers::SetCartesianVelCmd::response &resp);
+
+      bool getCartesianVelCmd(pr2_controllers::GetCartesianVelCmd::request &req,pr2_controllers::GetCartesianVelCmd::response &resp);
     
     private:
-      ArmPositionController *c_;
+      ArmVelocityController *c_;
       robot_kinematics::RobotKinematics pr2_kin_;
       robot_kinematics::SerialChain * arm_chain_;
 

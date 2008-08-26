@@ -34,6 +34,47 @@ int main( int argc, char** argv )
 
   bc.initXml(robot,root_controller);
   ros::fini();
-
+  delete robot;
 //void BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 }
+
+
+/*class BaseControllerTest : public testing::Test {
+ protected:
+  virtual void SetUp() {
+  }
+
+  // virtual void TearDown() {}
+
+  Queue<int> q0_;
+  Queue<int> q1_;
+  Queue<int> q2_;
+};
+
+
+TEST (BaseControllerTests, constructionDestruction)
+{
+  controller::BaseController *bc = new controller::BaseController();
+  delete bc;
+}
+
+TEST (BaseControllerTests, loadXML)
+{
+  mechanism::Robot *robot = new mechanism::Robot("r2d2");
+  controller::BaseController bc;
+
+  const string xml_controller_file = "controller_base.xml";
+  const string xml_robot_file = "pr2_base.xml"
+
+  TiXmlDocument xml(xml_robot_file);   // Load robot description
+  xml.LoadFile();
+  TiXmlElement *root = xml.FirstChildElement("robot");
+  robot->initXml(root);
+}
+
+int main(int argc, char **argv)
+{
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
+*/
