@@ -186,6 +186,10 @@ bool normalizeXml(TiXmlElement *xml)
     {
       std::string filename(elt->GetText());
 
+      // FIXME: get path of current xml node and use relative path for includes
+      std::string currentPath = getenv("MC_RESOURCE_PATH");
+      if (currentPath!="") filename = (currentPath+"/")+filename;
+
       TiXmlDocument doc(filename);
       doc.LoadFile();
 
@@ -254,6 +258,10 @@ bool normalizeXml(TiXmlElement *xml)
     else if (elt->ValueStr() == std::string("include"))
     {
       std::string filename(elt->GetText());
+
+      // FIXME: get path of current xml node and use relative path for includes
+      std::string currentPath = getenv("MC_RESOURCE_PATH");
+      if (currentPath!="") filename = (currentPath+"/")+filename;
 
       TiXmlDocument doc(filename);
       doc.LoadFile();
