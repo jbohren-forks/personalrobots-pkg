@@ -166,15 +166,12 @@ bool ArmControllerNode::initXml(mechanism::Robot * robot, TiXmlElement * config)
   assert(j);
   while(j!=NULL)
   {
-    std::cout<<j->Attribute("key")<<std::flush;
     if(j->Attribute("key")==std::string("kdl_chain_name"))
     {
-      std::cout<<"XX"<<std::flush;
       kdl_chain_name = j->GetText();
     }
     j = j->NextSiblingElement("elem");
   }
-  std::cout<<"ARM = "<<kdl_chain_name<<std::endl;
   
   // Parses kinematics description
   std::string pr2Contents;
@@ -219,7 +216,7 @@ bool ArmControllerNode::setCommandCP(pr2_controllers::SetArmCartesianPos::reques
   KDL::Rotation targetRot;
   targetRot = targetRot.RPY(req.roll, req.pitch, req.yaw);
   targetFrame.M = targetRot;
-  
+  std::cout<<"TARGET FRAME"<<targetFrame<<std::endl;
   
   // Stores the current state in a KDL frame in a realtime safe way
   const int size = arm_chain_->num_joints_;
@@ -230,7 +227,7 @@ bool ArmControllerNode::setCommandCP(pr2_controllers::SetArmCartesianPos::reques
     cur_cfg(i) = cur_reads[i];
   KDL::Frame cur_frame;
   arm_chain_->computeFK(cur_cfg, cur_frame);
-  
+  std::cout<<"CURRENT CFG"<<cur_cfg<<std::endl;
   // Setting guess of inverse kinematics
   for(int i=0;i<size;++i)
     (*arm_chain_->q_IK_guess)(i) = cur_cfg(i);  
@@ -239,7 +236,7 @@ bool ArmControllerNode::setCommandCP(pr2_controllers::SetArmCartesianPos::reques
   if(!arm_chain_->computeIK(targetFrame))
     return false;
   target_cfg = *(arm_chain_->q_IK_result);
-  std::cout<<"TARGET\n"<<target_cfg<<std::endl;
+  std::cout<<"TARGET CFG\n"<<target_cfg<<std::endl;
   
   
   //TODO: check IK result
