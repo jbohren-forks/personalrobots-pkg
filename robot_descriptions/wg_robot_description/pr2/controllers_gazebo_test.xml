@@ -14,7 +14,7 @@
 
       <include>gazebo_joints.xml</include>
 
-      <robot_filename>pr2_test.xml</robot_filename>
+      <robot_filename>pr2_test_actuators.xml</robot_filename>
       <controller_filename>controllers.xml</controller_filename>
       <actuator_filename>actuators.xml</actuator_filename>
       <transmission_filename>transmissions.xml</transmission_filename>

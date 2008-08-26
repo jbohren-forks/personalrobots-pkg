@@ -14,7 +14,7 @@ message(${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml.model)
 
 # we do not know all the dependencies of pr2.xml so we always build the target
 add_custom_target(pr2_gazebo_model ALL
-		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2/pr2.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml.model
+		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2/pr2_gazebo_actuators.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml.model
 		  DEPENDS urdf2gazebo
 		  COMMENT "Building Gazebo model for PR2 Standard Model")
 
@@ -29,7 +29,7 @@ add_custom_target(pr2_gazebo_model_rosgazebo ALL
 		  COMMENT "Building Gazebo model for PR2 Rosgazebo Model")
 
 add_custom_target(pr2_gazebo_model_test ALL
-		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2/pr2_test.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_test.model
+		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2/pr2_test_actuators.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_test.model
 		  DEPENDS urdf2gazebo
 		  COMMENT "Building Gazebo model for PR2 Test Actuators")
 

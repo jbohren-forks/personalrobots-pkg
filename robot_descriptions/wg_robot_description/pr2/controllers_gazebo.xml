@@ -11,7 +11,7 @@
   <controller:gazebo_actuators name="gazebo_actuators" plugin="libgazebo_actuators.so">
       <updateRate>100.0</updateRate>
 
-      <robot filename="pr2.xml" />
+      <robot filename="pr2_gazebo_actuators.xml" />
 
       <interface:audio name="gazebo_actuators_dummy_iface" />
   </controller:gazebo_actuators>
