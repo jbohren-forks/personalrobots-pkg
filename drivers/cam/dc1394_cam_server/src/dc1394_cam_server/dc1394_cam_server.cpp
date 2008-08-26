@@ -88,6 +88,13 @@ public:
 
   void checkAndSetFeature(CamData& cd, string param_name, dc1394feature_t feature)
   {
+
+    uint32_t min;
+    uint32_t max;
+    cd.cam->getFeatureBoundaries(feature, min, max);
+    set_param(cd.name + string("/") + param_name + string("_min"), min);
+    set_param(cd.name + string("/") + param_name + string("_max"), max);
+
     string p = cd.name + string("/") + param_name;
     if (has_param(p))
     {
@@ -117,6 +124,12 @@ public:
 
   void checkAndSetWhitebalance(CamData& cd, string param_name, dc1394feature_t feature)
   {
+    uint32_t min;
+    uint32_t max;
+    cd.cam->getFeatureBoundaries(feature, min, max);
+    set_param(cd.name + string("/") + param_name + string("_min"), min);
+    set_param(cd.name + string("/") + param_name + string("_max"), max);
+
     string p = cd.name + string("/") + param_name;
     string p_b = cd.name + string("/") + param_name + string("_b");
     string p_r = cd.name + string("/") + param_name + string("_r");
