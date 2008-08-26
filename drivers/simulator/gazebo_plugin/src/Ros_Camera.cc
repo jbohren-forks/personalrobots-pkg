@@ -107,6 +107,8 @@ void Ros_Camera::InitChild()
 void Ros_Camera::UpdateChild()
 {
 
+  this->PutCameraData();
+#if 0
   // do this first so there's chance for sensor to run 1 frame after activate
   if (this->myParent->IsActive())
     this->PutCameraData();
@@ -123,6 +125,7 @@ void Ros_Camera::UpdateChild()
     this->cameraIface->Unlock();
   }
   //std::cout << " camera     active " << this->myParent->IsActive() << std::endl;
+#endif
 
 }
 

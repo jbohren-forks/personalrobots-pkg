@@ -111,7 +111,7 @@ void Ros_Laser::InitChild()
 // Update the controller
 void Ros_Laser::UpdateChild()
 {
-
+#if 0
   bool laserOpened = false;
   bool fidOpened = false;
 
@@ -143,6 +143,8 @@ void Ros_Laser::UpdateChild()
   {
     this->myParent->SetActive(false);
   }
+#endif
+    this->PutLaserData();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

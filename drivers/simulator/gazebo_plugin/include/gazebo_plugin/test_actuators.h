@@ -137,6 +137,8 @@ private:
 
   void LoadMC(XMLConfigNode *node);
   void UpdateMC();
+  void UpdateMCJoints();
+  void UpdateGazeboJoints();
 
   // for the mechanism control code loading xml
   //std::string interface; // xml filename for the hardware interface

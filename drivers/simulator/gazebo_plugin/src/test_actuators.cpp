@@ -395,8 +395,10 @@ namespace gazebo {
   void TestActuators::UpdateMC()
   {
     // pass time to robot
-    hw_.current_time_ = Simulator::Instance()->GetSimTime();
     currentTime = Simulator::Instance()->GetSimTime();
+    hw_.current_time_ = currentTime;
+
+    std::cout << " time: " << currentTime << std::endl;
 
 
     this->lock.lock();
@@ -457,57 +459,9 @@ namespace gazebo {
     //---------------------------------------------------------------------
     //
     // step through all controllers in the Robot_controller
+    UpdateMCJoints();
 
-    // update joint status from hardware
-    for (std::vector<Gazebo_joint_*>::iterator gji = gazebo_joints_.begin(); gji != gazebo_joints_.end() ; gji++)
-    {
-      // gripper joint, is an ugly special case for now
-      if ((*gji)->isGripper)
-      {
-        for (std::vector<gazebo::Joint*>::iterator ggji = (*gji)->gaz_joints_.begin(); ggji != (*gji)->gaz_joints_.end() ; ggji++)
-        {
 
-        }
-        gazebo::HingeJoint* gj_f_l     = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0]);
-        gazebo::HingeJoint* gj_f_r     = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[1]);
-        gazebo::HingeJoint* gj_f_tip_l = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[2]);
-        gazebo::HingeJoint* gj_f_tip_r = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[3]);
-
-        (*gji)->rmc_joint_->position_       = gj_f_l->GetAngle();
-        (*gji)->rmc_joint_->velocity_       = gj_f_l->GetAngleRate();
-        (*gji)->rmc_joint_->applied_effort_ = (*gji)->rmc_joint_->commanded_effort_;
-
-      }
-      else
-      {
-        // normal joints
-        switch((*gji)->gaz_joints_[0]->GetType())
-        {
-          case gazebo::Joint::SLIDER:
-          {
-            gazebo::SliderJoint* gjs  = dynamic_cast<gazebo::SliderJoint*>((*gji)->gaz_joints_[0]);
-            (*gji)->rmc_joint_->position_       = gjs->GetPosition();
-            (*gji)->rmc_joint_->velocity_       = gjs->GetPositionRate();
-            (*gji)->rmc_joint_->applied_effort_ = (*gji)->rmc_joint_->commanded_effort_;
-            break;
-          }
-          case gazebo::Joint::HINGE:
-          {
-            gazebo::HingeJoint* gjh  = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0]);
-            (*gji)->rmc_joint_->position_       = gjh->GetAngle();
-            (*gji)->rmc_joint_->velocity_       = gjh->GetAngleRate();
-            (*gji)->rmc_joint_->applied_effort_ = (*gji)->rmc_joint_->commanded_effort_;
-            //std::cout << " hinge " << *((*gji)->name_) << " angle " << (*gji)->rmc_joint_->position_ << std::endl;
-            break;
-          }
-          case gazebo::Joint::HINGE2:
-          case gazebo::Joint::BALL:
-          case gazebo::Joint::UNIVERSAL:
-            break;
-        }
-      }
-
-    }
     // push reverse_mech_joint_ stuff back toward actuators
     for (unsigned int i=0; i < rmc_.model_.transmissions_.size(); i++)
     {
@@ -572,6 +526,16 @@ namespace gazebo {
       rmc_.model_.transmissions_[i]->propagateEffortBackwards();
     }
 
+    UpdateGazeboJoints();
+
+
+    lastTime = currentTime;
+
+  }
+
+
+  void TestActuators::UpdateGazeboJoints()
+  {
     // -------------------------------------------------------------------------------------------------
     // -                                                                                               -
     // -     udpate gazebo joint for this controller joint                                             -
@@ -647,14 +611,60 @@ namespace gazebo {
       }
 
     }
+  }
+  void TestActuators::UpdateMCJoints()
+  {
+    // update joint status from hardware
+    for (std::vector<Gazebo_joint_*>::iterator gji = gazebo_joints_.begin(); gji != gazebo_joints_.end() ; gji++)
+    {
+      // gripper joint, is an ugly special case for now
+      if ((*gji)->isGripper)
+      {
+        for (std::vector<gazebo::Joint*>::iterator ggji = (*gji)->gaz_joints_.begin(); ggji != (*gji)->gaz_joints_.end() ; ggji++)
+        {
 
-    lastTime = currentTime;
+        }
+        gazebo::HingeJoint* gj_f_l     = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0]);
+        gazebo::HingeJoint* gj_f_r     = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[1]);
+        gazebo::HingeJoint* gj_f_tip_l = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[2]);
+        gazebo::HingeJoint* gj_f_tip_r = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[3]);
+
+        (*gji)->rmc_joint_->position_       = gj_f_l->GetAngle();
+        (*gji)->rmc_joint_->velocity_       = gj_f_l->GetAngleRate();
+        (*gji)->rmc_joint_->applied_effort_ = (*gji)->rmc_joint_->commanded_effort_;
+
+      }
+      else
+      {
+        // normal joints
+        switch((*gji)->gaz_joints_[0]->GetType())
+        {
+          case gazebo::Joint::SLIDER:
+          {
+            gazebo::SliderJoint* gjs  = dynamic_cast<gazebo::SliderJoint*>((*gji)->gaz_joints_[0]);
+            (*gji)->rmc_joint_->position_       = gjs->GetPosition();
+            (*gji)->rmc_joint_->velocity_       = gjs->GetPositionRate();
+            (*gji)->rmc_joint_->applied_effort_ = (*gji)->rmc_joint_->commanded_effort_;
+            break;
+          }
+          case gazebo::Joint::HINGE:
+          {
+            gazebo::HingeJoint* gjh  = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0]);
+            (*gji)->rmc_joint_->position_       = gjh->GetAngle();
+            (*gji)->rmc_joint_->velocity_       = gjh->GetAngleRate();
+            (*gji)->rmc_joint_->applied_effort_ = (*gji)->rmc_joint_->commanded_effort_;
+            //std::cout << " hinge " << *((*gji)->name_) << " angle " << (*gji)->rmc_joint_->position_ << std::endl;
+            break;
+          }
+          case gazebo::Joint::HINGE2:
+          case gazebo::Joint::BALL:
+          case gazebo::Joint::UNIVERSAL:
+            break;
+        }
+      }
+    }
 
   }
-
-
-
-
 
 
 
