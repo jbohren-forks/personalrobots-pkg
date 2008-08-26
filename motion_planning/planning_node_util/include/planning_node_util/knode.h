@@ -76,6 +76,9 @@ Provides (name/type):
 #include <planning_models/kinematic.h>
 #include <std_msgs/RobotBase2DOdom.h>
 #include <rosTF/rosTF.h>
+#include <cmath>
+
+#include <mechanism_control/MechanismState.h>
 
 namespace planning_node_util
 {
@@ -89,17 +92,21 @@ namespace planning_node_util
 	{
 	    m_urdf = NULL;
 	    m_kmodel = NULL;
+	    m_robotState = NULL;
 	    m_node = node;
 	    m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
 	    m_robotModelName = robot_model;
 	    
-	    m_node->subscribe("localizedpose", m_localizedPose, &NodeRobotModel::localizedPoseCallback, this, 1);
+	    m_node->subscribe("localizedpose",   m_localizedPose,  &NodeRobotModel::localizedPoseCallback,  this, 1);
+	    m_node->subscribe("mechanism_state", m_mechanismState, &NodeRobotModel::mechanismStateCallback, this, 1);
 	}
 
 	virtual ~NodeRobotModel(void)
 	{
 	    if (m_urdf)
 		delete m_urdf;
+	    if (m_robotState)
+		delete m_robotState;
 	    if (m_kmodel)
 		delete m_kmodel;
 	}
@@ -133,6 +140,9 @@ namespace planning_node_util
 	    m_kmodel = new planning_models::KinematicModel();
 	    m_kmodel->setVerbose(false);
 	    m_kmodel->build(*file);
+	    
+	    m_robotState = new planning_models::KinematicModel::StateParams(m_kmodel);
+	    m_robotState->setAll(0.0);
 	}
 	
 	virtual void loadRobotDescription(void)
@@ -198,25 +208,56 @@ namespace planning_node_util
 	    
 	    if (success)
 	    {
-		m_basePos[0] = pose.x;
-		m_basePos[1] = pose.y;
-		m_basePos[2] = pose.yaw;
+		if (isfinite(pose.x))
+		    m_basePos[0] = pose.x;
+		if (isfinite(pose.y))
+		    m_basePos[1] = pose.y;
+		if (isfinite(pose.yaw))
+		    m_basePos[2] = pose.yaw;
 		
 		baseUpdate();
 	    }
 	}
 	
+	void mechanismStateCallback(void)
+	{
+	    unsigned int n = m_mechanismState.get_joint_states_size();
+	    for (unsigned int i = 0 ; i < n ; ++i)
+	    {
+		double pos = m_mechanismState.joint_states[i].position;
+		m_robotState->setValue(m_mechanismState.joint_states[i].name, &pos);
+	    }
+	    stateUpdate();
+	}
+	
 	virtual void baseUpdate(void)
+	{
+	    for (unsigned int i = 0 ; i < m_kmodel->getRobotCount() ; ++i)
+	    {
+		planning_models::KinematicModel::PlanarJoint* pj = dynamic_cast<planning_models::KinematicModel::PlanarJoint*>(m_kmodel->getRobot(i)->chain);
+		if (pj)
+		    m_robotState->setValue(pj->name, m_basePos);
+	    }
+	    stateUpdate();
+	}
+	
+	virtual void stateUpdate(void)
 	{
 	}
 	
-	rosTFClient                      m_tf; 
-	ros::node                       *m_node;
-	std_msgs::RobotBase2DOdom        m_localizedPose;
-	robot_desc::URDF                *m_urdf;
-	planning_models::KinematicModel *m_kmodel;	
-	std::string                      m_robotModelName;
-	double                           m_basePos[3];
+	rosTFClient                                   m_tf; 
+	ros::node                                    *m_node;
+	std_msgs::RobotBase2DOdom                     m_localizedPose;
+	
+	mechanism_control::MechanismState             m_mechanismState; // this message should be moved to robot_msgs
+	
+	robot_desc::URDF                             *m_urdf;
+	planning_models::KinematicModel              *m_kmodel;
+	
+	std::string                                   m_robotModelName;
+	double                                        m_basePos[3];
+	
+	planning_models::KinematicModel::StateParams *m_robotState;
 
     };
      

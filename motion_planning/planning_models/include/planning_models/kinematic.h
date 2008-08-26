@@ -44,6 +44,7 @@
 #include <vector>
 #include <string>
 #include <cstdio>
+#include <cassert>
 
 /** @htmlinclude ../../manifest.html
 
@@ -162,7 +163,10 @@ namespace planning_models
 	    
 	    /** the local transform (computed by forward kinematics) */
 	    libTF::Pose3D     varTrans;
-	    
+
+	    /* compute the parameter names from this joint */
+	    unsigned int computeParameterNames(unsigned int pos);
+
 	    /** Update varTrans if this joint is part of the group indicated by groupID
 	     *  and recompute globalTrans using varTrans */
 	    const double* computeTransform(const double *params, int groupID = -1);
@@ -316,6 +320,9 @@ namespace planning_models
 	    /** The global transform for this link (computed by forward kinematics) */
 	    libTF::Pose3D       globalTrans;
 
+	    /* compute the parameter names from this link */
+	    unsigned int computeParameterNames(unsigned int pos);
+
 	    /** recompute globalTrans */
 	    const double* computeTransform(const double *params, int groupID = -1);
 
@@ -349,9 +356,9 @@ namespace planning_models
 
 	    /** List of links in the robot */
 	    std::vector<Link*>  links;
-	    
-	    /** List of leaf links (have no child links) */
-	    std::vector<Link*>  leafs;
+
+	    /** List of joints in the robot */
+	    std::vector<Joint*> joints;
 	    
 	    /** The first joint in the robot -- the root */
 	    Joint              *chain;	    
@@ -388,6 +395,46 @@ namespace planning_models
 	    
 	};
 	
+	/** A class that can hold the named parameters of this planning model */
+	class StateParams
+	{
+	public:
+	    StateParams(KinematicModel *model)
+	    {
+		assert(model->isBuilt());
+		m_owner = model;
+		m_dim = m_owner->stateDimension > 0 ? m_owner->stateDimension : 0;
+		m_params = m_dim > 0 ? new double[m_dim] : NULL;
+		m_pos = m_owner->parameterNames;
+	    }
+	    
+	    virtual ~StateParams(void)
+	    {
+		if (m_params)
+		    delete[] m_params;
+	    }
+	    
+	    /** Given the name of a joint, set the values of the parameters describing the joint */
+	    void setValue(std::string &name, const double *params);
+	    
+	    /** Set all the parameters to a given value */
+	    void setAll(double value);
+	    
+	    /** Return the current value of the params */
+	    const double* getParams(void) const;
+
+	    /** Print the data from the state to screen */
+	    void print(std::ostream &out = std::cout);
+	    
+	protected:
+	    
+	    KinematicModel                      *m_owner;
+	    unsigned int                         m_dim;
+	    double                              *m_params;
+	    std::map<std::string, unsigned int>  m_pos;
+	};
+	
+	
 	KinematicModel(void)
 	{
 	    stateDimension = 0;
@@ -403,7 +450,9 @@ namespace planning_models
 	}
 	
 	virtual void build(const robot_desc::URDF &model, bool ignoreSensors = false);
+	bool         isBuilt(void) const;	
 	void         setVerbose(bool verbose);	
+
 
 	unsigned int getRobotCount(void) const;
 	Robot*       getRobot(unsigned int index) const;
@@ -413,6 +462,9 @@ namespace planning_models
 	
 	Link*        getLink(const std::string &link) const;
 	void         getLinks(std::vector<Link*> &links) const;
+
+	Joint*       getJoint(const std::string &joint) const;
+	void         getJoints(std::vector<Joint*> &joints) const;
 	
 	void computeTransforms(const double *params, int groupID = -1);
 	void printModelInfo(std::ostream &out = std::cout) const;
@@ -436,6 +488,9 @@ namespace planning_models
 	/** Cumulative state bounds */
 	std::vector<double> stateBounds;
 	
+	/** A map defining the parameter names in the complete state */
+	std::map<std::string, unsigned int>      parameterNames;
+	
 	/** Cumulative index list */
 	std::vector< std::vector<unsigned int> > groupStateIndexList;
 
@@ -447,7 +502,8 @@ namespace planning_models
 	std::vector<Robot*>               m_robots;
 	std::vector<std::string>          m_groups;
 	std::map<std::string, int>        m_groupsMap;	       
-	std::map<std::string, Link*>      m_linkMap;	       
+	std::map<std::string, Link*>      m_linkMap;	
+	std::map<std::string, Joint*>     m_jointMap;
 	bool                              m_ignoreSensors;
 	bool                              m_verbose;    
 	bool                              m_built;
@@ -463,6 +519,9 @@ namespace planning_models
 	/** Construct the list of groups the model knows about (the ones marked with the 'plan' attribute) */
 	void constructGroupList(const robot_desc::URDF &model);
 	
+	/* compute the parameter names  */
+	void computeParameterNames(void);
+
 	/** Allocate a joint of appropriate type, depending on the loaded link */
 	Joint* createJoint(const robot_desc::URDF::Link* urdfLink);
 	

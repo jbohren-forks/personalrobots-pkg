@@ -73,6 +73,17 @@ void planning_models::KinematicModel::computeTransforms(const double *params, in
     }
 }
 
+void planning_models::KinematicModel::computeParameterNames(void)
+{
+    parameterNames.clear();
+    
+    for (unsigned int i = 0 ; i < m_robots.size(); ++i)
+    {
+	Joint *start =  m_robots[i]->chain;
+	start->computeParameterNames(0);
+    }
+}
+
 const double* planning_models::KinematicModel::Joint::computeTransform(const double *params, int groupID)
 {
     unsigned int used = 0;
@@ -254,6 +265,25 @@ void planning_models::KinematicModel::constructGroupList(const robot_desc::URDF 
 	m_groupsMap[m_groups[i]] = i;
 }
 
+unsigned int planning_models::KinematicModel::Joint::computeParameterNames(unsigned int pos)
+{
+    if (usedParams > 0)
+	owner->parameterNames[name] = pos;
+    return after->computeParameterNames(pos + usedParams);
+}
+
+unsigned int planning_models::KinematicModel::Link::computeParameterNames(unsigned int pos)
+{
+    for (unsigned int i = 0 ; i < after.size() ; ++i)
+	pos = after[i]->computeParameterNames(pos);
+    return pos;
+}
+
+bool planning_models::KinematicModel::isBuilt(void) const
+{
+    return m_built;
+}
+
 void planning_models::KinematicModel::build(const robot_desc::URDF &model, bool ignoreSensors)
 {
     if (m_built)
@@ -310,7 +340,12 @@ void planning_models::KinematicModel::build(const robot_desc::URDF &model, bool 
 	
 	for (unsigned int j = 0 ; j < m_robots[i]->links.size() ; ++j)
 	    m_linkMap[m_robots[i]->links[j]->name] = m_robots[i]->links[j];
+
+	for (unsigned int j = 0 ; j < m_robots[i]->joints.size() ; ++j)
+	    m_jointMap[m_robots[i]->joints[j]->name] = m_robots[i]->joints[j];
     }
+    
+    computeParameterNames();
 }
 
 int planning_models::KinematicModel::getGroupID(const std::string &group) const
@@ -349,13 +384,30 @@ planning_models::KinematicModel::Link* planning_models::KinematicModel::getLink(
     return pos == m_linkMap.end() ? NULL : pos->second;
 }
 
+
+planning_models::KinematicModel::Joint* planning_models::KinematicModel::getJoint(const std::string &joint) const
+{
+    std::map<std::string, Joint*>::const_iterator pos = m_jointMap.find(joint);
+    return pos == m_jointMap.end() ? NULL : pos->second;
+}
+
+void planning_models::KinematicModel::getJoints(std::vector<Joint*> &joints) const
+{
+    std::vector<Joint*> localJoints;
+    for (std::map<std::string, Joint*>::const_iterator it = m_jointMap.begin() ; it != m_jointMap.end() ; ++it)
+	localJoints.push_back(it->second);
+    std::sort(localJoints.begin(), localJoints.end(), SortByName<Joint>());
+    joints.insert(joints.end(), localJoints.begin(), localJoints.end());  
+}
+
 void planning_models::KinematicModel::buildChainJ(Robot *robot, Link *parent, Joint* joint, const robot_desc::URDF::Link* urdfLink, const robot_desc::URDF &model)
 {
     joint->before = parent;
     joint->after  = new Link();
     joint->name   = urdfLink->joint->name;
     joint->owner  = robot->owner;
-    
+    robot->joints.push_back(joint);
+
     joint->extractInformation(urdfLink, robot);
     
     /** construct the inGroup bitvector */
@@ -408,9 +460,6 @@ void planning_models::KinematicModel::buildChainL(Robot *robot, Joint *parent, L
 	buildChainJ(robot, link, newJoint, urdfLink->children[i], model);
 	link->after.push_back(newJoint);
     }
-    
-    if (link->after.size() == 0)
-	robot->leafs.push_back(link);
 }
 
 planning_models::KinematicModel::Joint* planning_models::KinematicModel::createJoint(const robot_desc::URDF::Link* urdfLink)
@@ -434,10 +483,41 @@ planning_models::KinematicModel::Joint* planning_models::KinematicModel::createJ
 	newJoint = new RevoluteJoint();
 	break;
     default:
-	std::cerr << "Unknown joint type " << urdfLink->joint->type << std::endl;
+ 	std::cerr << "Unknown joint type " << urdfLink->joint->type << std::endl;
 	break;
     }  
     return newJoint;
+}
+
+void planning_models::KinematicModel::StateParams::setValue(std::string &name, const double *params)
+{
+    Joint *joint = m_owner->getJoint(name);
+    if (joint)
+    {
+	unsigned int pos = m_pos[name];
+	for (unsigned int i = 0 ; i < joint->usedParams ; ++i)
+	{
+	    std::cout << joint->name << ": Setting param " << i << " to " << params[i] << std::endl;	    
+	    m_params[pos + i] = params[i];
+	}
+	
+    }
+    else
+	fprintf(stderr, "Unknown joint: '%s'\n", name.c_str());
+}
+
+
+/** Set all the parameters to a given value */
+void planning_models::KinematicModel::StateParams::setAll(double value)
+{
+    for (unsigned int i = 0 ; i < m_dim ; ++i)
+	m_params[i] = value;
+}
+
+/** Return the current value of the params */
+const double*  planning_models::KinematicModel::StateParams::getParams(void) const
+{
+    return m_params;
 }
 
 void planning_models::KinematicModel::printModelInfo(std::ostream &out) const
@@ -487,4 +567,22 @@ void planning_models::KinematicModel::printLinkPoses(std::ostream &out) const
 	out << links[i]->name << std::endl;
 	out << links[i]->globalTrans << std::endl;
     }
+}
+
+void planning_models::KinematicModel::StateParams::print(std::ostream &out)
+{
+    out << std::endl;
+    for (std::map<std::string, unsigned int>::const_iterator it = m_pos.begin() ; it != m_pos.end() ; ++it)
+    {
+	Joint* joint = m_owner->getJoint(it->first);
+	if (joint)
+	{
+	    for (unsigned int i = 0 ; i < joint->usedParams ; ++i)
+		out << it->first << ": " << m_params[it->second + i] << std::endl;
+	}
+    }
+    out << std::endl;
+    for (unsigned int i = 0; i < m_dim ; ++i)
+	out << m_params[i] << " ";
+    out << std::endl;
 }

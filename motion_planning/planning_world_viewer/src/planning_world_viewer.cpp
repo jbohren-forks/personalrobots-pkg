@@ -151,15 +151,14 @@ public:
 	return result;
     }
     
-    void baseUpdate(void)
+    void stateUpdate(void)
     {
-	planning_node_util::NodeCollisionModel::baseUpdate();
+	planning_node_util::NodeCollisionModel::stateUpdate();
 	
 	if (m_collisionSpace && m_collisionSpace->getModelCount() == 1 && m_follow)
 	{
-	    int group = m_collisionSpace->getRobotModel(0)->getGroupID("pr2::base");
 	    m_collisionSpace->lock();
-	    m_collisionSpace->getRobotModel(0)->computeTransforms(m_basePos, group);
+	    m_collisionSpace->getRobotModel(0)->computeTransforms(m_robotState->getParams());
 	    m_collisionSpace->updateRobotModel(0);
 	    m_collisionSpace->unlock();
 	    checkCollision();
