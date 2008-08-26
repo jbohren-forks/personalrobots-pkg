@@ -49,26 +49,26 @@ void scan_callback(string name, ros::msg* m, ros::Time t, void* n)
 
   double rel_time = t.to_double();
 
-  const double fov = fabs(scan->scan.angle_max - scan->scan.angle_min);
+  //const double fov = fabs(scan->scan.angle_max - scan->scan.angle_min);
   // only make an exception for the SICK LMS2xx running in centimeter mode
-  const double acc = (scan->scan.range_max >= 81 ? 0.05 : 0.005); 
+  //const double acc = (scan->scan.range_max >= 81 ? 0.05 : 0.005); 
   /*fprintf(clog, "ROBOTLASER1 0 %f %f %f %f %f 0 %d ",
           scan->scan.angle_min, fov, fov / scan->scan.angle_increment,
           scan->scan.range_max, acc, scan->scan.get_ranges_size());*/
-  fprintf(clog, "FLASER 180 ");
+  fprintf(clog, "FLASER 181 ");
   double bearing = scan->scan.angle_min;
   unsigned int downsample = 0;
+  int count=0;
   for (unsigned int i = 0; i < scan->scan.get_ranges_size(); i++) {
-    //fprintf(clog, "%f ",   bearing / M_PI * 180.0);
-    if (bearing >= -M_PI / 2.0 && bearing <= M_PI / 2.0) {
-      if (downsample == 0) {
-	fprintf(clog, "%.3f ", scan->scan.ranges[i]);
-	downsample = 4;
-      }
-      downsample--;
+    if (downsample == 0) {
+      fprintf(clog, "%.3f ", scan->scan.ranges[i]);
+      downsample = 4;
+      count++;
     }
+    downsample--;
     bearing += scan->scan.angle_increment;
   }
+  assert(count == 181);
   
   fprintf(clog, "%f %f %f %f %f %f %f rosdump %f\n", scan->pose.x, scan->pose.y, scan->pose.th, 
 	  scan->pose.x + LASER_POSITION * cos(scan->pose.th), scan->pose.y + LASER_POSITION * sin(scan->pose.th), scan->pose.th, rel_time, rel_time);
