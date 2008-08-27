@@ -45,7 +45,7 @@ import os, os.path, threading, time
 import rospy, rostest
 from std_msgs.msg import *
 
-FRAME_TARGET = "genericCam-0050.jpg"
+FRAME_TARGET = "cam_sen-0050.jpg"
 FRAME_DIR = "testcameraframes"
 
 class PollCameraThread(threading.Thread):
@@ -91,6 +91,7 @@ class TestCameras(unittest.TestCase):
         timeout_t = time.time() + 30.0 #30 seconds
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
             time.sleep(0.1)
+        os.system("killall gazebo")
         self.assert_(self.success)
         
     
