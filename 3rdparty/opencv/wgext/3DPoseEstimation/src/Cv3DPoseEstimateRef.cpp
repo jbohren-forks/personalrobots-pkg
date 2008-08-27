@@ -31,7 +31,9 @@ Cv3DPoseEstimateRef::Cv3DPoseEstimateRef():
 	mResidue2(cvMat(3, 1, CV_64F, mResidue2_Data)),
 	mW1(cvMat(4, 1, CV_64F, mW1_Data)),
 	mT(cvMat(4, 4, CV_XF, mT_Data)),
-	mRng(time(NULL))
+	mRng(time(NULL)),
+	mInliers0(NULL),
+	mInliers1(NULL)
 {
 	mRTBestWithoutLevMarq = cvMat(4, 4, CV_XF, mRTBestWithoutLevMarqData);
 }
@@ -117,8 +119,7 @@ bool Cv3DPoseEstimateRef::estimateLeastSquareInCol(CvMat *P0, CvMat *P1, CvMat *
 }
 
 // TODO: this function is now not consistency between RT and mT
-int Cv3DPoseEstimateRef::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *trans,
-		CvMat *&inliers0, CvMat *&inliers1){
+int Cv3DPoseEstimateRef::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *trans){
 	int numInLiers = 0;
 
 	int numPoints = points0->rows;
@@ -285,8 +286,8 @@ int Cv3DPoseEstimateRef::estimate(CvMat *points0, CvMat *points1, CvMat *rot, Cv
     cvmSet(trans, 2, 0, param[5]);
 
 #endif
-    inliers0 = points0Inlier;
-    inliers1 = points1Inlier;
+    mInliers0 = points0Inlier;
+    mInliers1 = points1Inlier;
 	return numInLiers0;
 }
 #if 0

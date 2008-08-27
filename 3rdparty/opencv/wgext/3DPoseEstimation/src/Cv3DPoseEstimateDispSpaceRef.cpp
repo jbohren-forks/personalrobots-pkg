@@ -43,7 +43,7 @@ Cv3DPoseEstimateDispSpaceRef::~Cv3DPoseEstimateDispSpaceRef()
 int Cv3DPoseEstimateDispSpaceRef::estimateMixedPointClouds(
 		CvMat *xyzs0, CvMat *uvds1,
 		int numRefGrps, int refPoints[],
-		CvMat *rot, CvMat *shift, CvMat *& inliers0, CvMat *& outliers1) {
+		CvMat *rot, CvMat *shift) {
 
 	// convert the first point cloud, xyzs0, which is in cartesian space
 	// into disparity space
@@ -68,7 +68,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimateMixedPointClouds(
 
 	int numInLiers = estimate(xyzs0, xyzs1, uvds0, uvds1,
 			numRefGrps, refPoints,
-			rot, shift, inliers0, outliers1);
+			rot, shift);
 
 	cvReleaseMat(&uvds0);
 	cvReleaseMat(&xyzs1);
@@ -76,7 +76,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimateMixedPointClouds(
 }
 
 int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
-		CvMat *rot, CvMat *shift, CvMat*& inliers0, CvMat*& inliers1) {
+		CvMat *rot, CvMat *shift) {
 	int numInLiers = 0;
 
 	int numPoints = uvds0->rows;
@@ -93,8 +93,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
 	reprojection(uvds0, xyzs0);
 	reprojection(uvds1, xyzs1);
 
-	numInLiers = estimate(xyzs0, xyzs1, uvds0, uvds1, 0, NULL, rot, shift,
-			inliers0, inliers1);
+	numInLiers = estimate(xyzs0, xyzs1, uvds0, uvds1, 0, NULL, rot, shift);
 
 	cvReleaseMat(&xyzs0);
 	cvReleaseMat(&xyzs1);
@@ -104,7 +103,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
 int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
 		CvMat *uvds0, CvMat *uvds1,
 		int numRefGrps, int refPoints[],
-		CvMat *rot, CvMat *shift, CvMat *& inliers0, CvMat *& inliers1) {
+		CvMat *rot, CvMat *shift) {
 	int numInLiers = 0;
 	double _P0[3*3], _P1[3*3], _R[3*3], _T[3*1], _H[4*4];
 	CvMat P0, P1;
@@ -283,8 +282,8 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
     cvmSet(shift, 1, 0, param[4]);
     cvmSet(shift, 2, 0, param[5]);
 
-    inliers0 = uvds0Inlier;
-    inliers1 = uvds1Inlier;
+    mInliers0 = uvds0Inlier;
+    mInliers1 = uvds1Inlier;
 
     // construct the final transformation matrix
     this->constructDisparityHomography(rot, shift, &mT);

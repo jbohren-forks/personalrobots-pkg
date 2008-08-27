@@ -6,6 +6,10 @@
 
 #define DEBUG
 
+const CvScalar CvMatUtils::red    = CV_RGB(255, 0, 0);
+const CvScalar CvMatUtils::green  = CV_RGB(0, 255, 0);
+const CvScalar CvMatUtils::yellow = CV_RGB(255, 255, 0);
+
 CvMatUtils::CvMatUtils()
 {
 }
@@ -80,4 +84,74 @@ bool CvMatUtils::showDisparityMap(cv::WImage1_16s& dispMap, std::string& windowN
 	cvShowImage(windowName.c_str(),  canvas.Ipl());
 	cvSaveImage(filename.c_str(),    canvas.Ipl());
 	return status;
+}
+
+void CvMatUtils::cvCross(CvArr* img, CvPoint pt, int halfLen, CvScalar color,
+        int thickness, int line_type, int shift) {
+	CvPoint pt1;
+	CvPoint pt2;
+	pt1.x = pt.x - halfLen;
+	pt2.x = pt.x + halfLen;
+	pt1.y = pt2.y = pt.y;
+	cvLine(img, pt1, pt2, color, thickness, line_type, shift);
+	pt1.x = pt2.x = pt.x;
+	pt1.y = pt.y - halfLen;
+	pt2.y = pt.y + halfLen;
+	cvLine(img, pt1, pt2, color, thickness, line_type, shift);
+}
+
+bool CvMatUtils::drawMatchingPairs(CvMat& pts0, CvMat& pts1, cv::WImage3_b& canvas,
+		CvMat& rot, CvMat& shift, Cv3DPoseEstimateDisp& pedisp, bool reversed) {
+	int numInliers = pts0.rows;
+	if (pts1.rows != numInliers) {
+		cerr << __PRETTY_FUNCTION__ << "matching pairs do not match in length"<<endl;
+		return false;
+	}
+
+	double _xyzs0[3*numInliers];
+	double _xyzs0To1[3*numInliers];
+	double _uvds0To1[3*numInliers];
+	double _xyzs1[3*numInliers];
+	CvMat xyzs0    = cvMat(numInliers, 3, CV_64FC1, _xyzs0);
+	CvMat xyzs0To1 = cvMat(numInliers, 3, CV_64FC1, _xyzs0To1);
+	CvMat uvds0To1 = cvMat(numInliers, 3, CV_64FC1, _uvds0To1);
+	CvMat xyzs1    = cvMat(numInliers, 3, CV_64FC1, _xyzs1);
+
+	pedisp.reprojection(&pts0, &xyzs0);
+	pedisp.reprojection(&pts1, &xyzs1);
+
+	if (reversed == true) {
+		// compute the inverse transformation
+		double _invRot[9], _invShift[3];
+		CvMat invRot   = cvMat(3, 3, CV_64FC1, _invRot);
+		CvMat invShift = cvMat(3, 1, CV_64FC1, _invShift);
+
+		cvInvert(&rot, &invRot);
+		cvGEMM(&invRot, &shift, -1., NULL, 0., &invShift, 0.0);
+		CvMat xyzs0Reshaped;
+		CvMat xyzs0To1Reshaped;
+		cvReshape(&xyzs0,    &xyzs0Reshaped, 3, 0);
+		cvReshape(&xyzs0To1, &xyzs0To1Reshaped, 3, 0);
+		cvTransform(&xyzs0Reshaped, &xyzs0To1Reshaped, &invRot, &invShift);
+	} else {
+		CvMat xyzs0Reshaped;
+		CvMat xyzs0To1Reshaped;
+		cvReshape(&xyzs0,    &xyzs0Reshaped, 3, 0);
+		cvReshape(&xyzs0To1, &xyzs0To1Reshaped, 3, 0);
+		cvTransform(&xyzs0Reshaped, &xyzs0To1Reshaped, &rot, &shift);
+	}
+
+	pedisp.projection(&xyzs0To1, &uvds0To1);
+	IplImage* img = canvas.Ipl();
+
+	// draw uvds0To1 on leftimgeC3a
+	for (int k=0;k<numInliers;k++) {
+		CvPoint pt0To1 = cvPoint((int)(_uvds0To1[k*3+0]+.5), (int)(_uvds0To1[k*3+1] + .5));
+		const int halfLen = 4;
+		cvCross(img, pt0To1, halfLen, CvMatUtils::yellow);
+		CvPoint pt1 = cvPoint((int)(cvGetReal2D(&pts1, k, 0)+.5), (int)(cvGetReal2D(&pts1, k, 1)+.5));
+		cvCircle(img, pt1, 4, CvMatUtils::green, 1, CV_AA, 0);
+		cvLine(img, pt1, pt0To1, CvMatUtils::red, 1, CV_AA, 0);
+	}
+	return true;
 }

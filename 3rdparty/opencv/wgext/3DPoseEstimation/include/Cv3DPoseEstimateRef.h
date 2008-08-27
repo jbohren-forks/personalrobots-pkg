@@ -2,7 +2,10 @@
 #define CV3DPOSEESTIMATEREF_H_
 
 #include <opencv/cxcore.h>
-#include "CvMatUtils.h"
+//#include "CvMatUtils.h"
+
+typedef double CvMyReal;
+#define CV_XF CV_64F
 
 class Cv3DPoseEstimateRef
 {
@@ -36,8 +39,8 @@ public:
  	 * number of inliers
 	 *
 	 */
-	int estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *trans,
-			CvMat *& inliers0, CvMat *& inliers1);
+	int estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *trans);
+
 	bool estimateLeastSquare(CvMat *P0, CvMat *P1, CvMat *rot, CvMat *trans);
 	static const double mDefErrThreshold  = 2.0;
 
@@ -48,6 +51,15 @@ public:
 	}
 	void setNumRansacIterations(int numIterations) {
 		this->mNumIterations = numIterations;
+	}
+	bool getInliers(CvMat *& inliers0, CvMat*& inliers1){
+		if (mInliers0 == NULL || mInliers1 == NULL ){
+			return false;
+		} else {
+			inliers0 = mInliers0;
+			inliers1 = mInliers1;
+			return true;
+		}
 	}
 	static bool constructTransform(const CvMat& rot, const CvMat& shift, CvMat& transform);
 
@@ -87,6 +99,9 @@ protected:
 
 	CvMyReal mRTBestWithoutLevMarqData[16]; // store the best candidate before levmarq
 	CvMat   mRTBestWithoutLevMarq;
+
+	CvMat*  mInliers0;
+	CvMat*  mInliers1;
 };
 
 #endif /*CV3DPOSEESTIMATEREF_H_*/

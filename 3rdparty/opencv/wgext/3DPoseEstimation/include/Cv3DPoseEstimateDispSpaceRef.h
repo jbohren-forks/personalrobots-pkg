@@ -37,11 +37,11 @@ public:
  	 * number of inliers
  	 */
 	int estimate(CvMat *points0, CvMat *points1,
-		CvMat *rot, CvMat *trans, CvMat *& inliers0, CvMat *& outliers1);
+		CvMat *rot, CvMat *trans);
 
 	int estimateMixedPointClouds(CvMat *xyzs0, CvMat *uvds1,
 			int numRefGrps, int refPoints[],
-			CvMat *rot, CvMat *shift, CvMat *& inliers0, CvMat *& outliers1);
+			CvMat *rot, CvMat *shift);
 
 	static bool constructHomography(const CvMat& R, const CvMat& T,
 			const CvMat& dispToCart, const CvMat& cartToDisp, CvMat& H);
@@ -58,7 +58,7 @@ protected:
 	int estimate(CvMat *xyzs0, CvMat *xyzs1,
 			CvMat *uvds0, CvMat *uvds1,
 			int numRefGrps, int refPoints[],
-			CvMat *rot, CvMat *shift, CvMat *& inliers0, CvMat *& inliers1);
+			CvMat *rot, CvMat *shift);
 	bool constructDisparityHomography(CvMat *R, CvMat *T, CvMat *H);
 };
 

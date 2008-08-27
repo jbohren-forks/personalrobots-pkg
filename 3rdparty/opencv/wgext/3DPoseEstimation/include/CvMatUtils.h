@@ -4,9 +4,7 @@
 #include <string>
 #include <opencv/cxcore.h>
 #include <opencv/cvwimage.h>
-
-typedef double CvMyReal;
-#define CV_XF CV_64F
+#include "Cv3DPoseEstimateDisp.h"
 
 class CvMatUtils
 {
@@ -18,6 +16,18 @@ public:
     		cv::WImage1_16s& dispMap, cv::WImage3_b& canvas, double maxDisp);
     static bool showDisparityMap(cv::WImage1_16s& dispMap, std::string& windowName, std::string& filename,
     		double maxDisp);
+
+    static void cvCross(CvArr* img, CvPoint pt, int halfLen, CvScalar color,
+            int thickness=1, int line_type=8, int shift=0);
+
+    static bool drawMatchingPairs(CvMat& pts0, CvMat& pts1, cv::WImage3_b& canvas,
+    		CvMat& rot, CvMat& shift, Cv3DPoseEstimateDisp& peDisp, bool reversed=true);
+
+	static const CvScalar red;
+	static const CvScalar green;
+	static const CvScalar yellow;
+
+
 };
 
 #endif /*CVMATUTILS_H_*/
