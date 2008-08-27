@@ -5,9 +5,7 @@ setenv CG_TOP `rospack find Cg`/Cg
 setenv SIM_PLUGIN `rospack find gazebo_plugin`
 setenv PR2MEDIA `rospack find gazebo_robot_description`/world
 
-if (! $?LD_LIBRARY_PATH) setenv LD_LIBRARY_PATH ''
-setenv LD_LIBRARY_PATH ''
-setenv LD_LIBRARY_PATH $SIM_PLUGIN/lib:$LD_LIBRARY_PATH
+setenv LD_LIBRARY_PATH $SIM_PLUGIN/lib
 setenv LD_LIBRARY_PATH $GAZ_TOP/lib:$LD_LIBRARY_PATH
 setenv LD_LIBRARY_PATH $OGRE_TOP/lib:$LD_LIBRARY_PATH
 setenv LD_LIBRARY_PATH $OGRE_TOP/lib/OGRE:$LD_LIBRARY_PATH
