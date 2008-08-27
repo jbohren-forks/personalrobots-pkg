@@ -165,14 +165,14 @@ class robotPower:
         print "average charge percentage"
         print '1: %d, 2:%d, 3:%d, 4:%d'%(self.controllers[0].average_charge,self.controllers[1].average_charge,self.controllers[2].average_charge,self.controllers[3].average_charge)
         print "total_current"
-        print '1: %f, 2:%f, 3:%f, 4:%f'%(self.controllers[0].total_current(),self.controllers[1].total_current(),self.controllers[2].total_current(),self.controllers[3].total_current())
+        print '1: %.2f, 2:%.2f, 3:%.2f, 4:%.2f'%(self.controllers[0].total_current(),self.controllers[1].total_current(),self.controllers[2].total_current(),self.controllers[3].total_current())
         print "average_voltage"
-        print '1: %f, 2:%f, 3:%f, 4:%f'%(self.controllers[0].average_voltage(),self.controllers[1].average_voltage(),self.controllers[2].average_voltage(),self.controllers[3].average_voltage())
+        print '1: %.2f, 2:%.2f, 3:%.2f, 4:%.2f'%(self.controllers[0].average_voltage(),self.controllers[1].average_voltage(),self.controllers[2].average_voltage(),self.controllers[3].average_voltage())
 
         for controller in self.controllers:
             counter = 0
             for b in controller.batteries:
-                if b.voltage > 0.1:
+                if b.present:
                     print "Bat:%d:: V: %.2f Vdesign: %.2f I: %.2f Iave: %.2f Temp: %.1f RelChg: %.1f AbsChg: %.1f RemCap: %.1f Capdesign: %.1f TTEAve: %.1f TTERun: %.1f TTF: %.1f Cycles: %d Serial: %d "%(counter, b.voltage, b.design_voltage, b.current, b.average_current, b.temperature, b.relative_charge, b.absolute_charge, b.remaining_capacity, b.design_capacity, b.average_time_to_empty, b.run_time_to_empty, b.average_time_to_full, b.cycle_count, b.serial_number)
                 counter = counter + 1 # There must be a better way to enumerate this
 
@@ -341,7 +341,7 @@ def monitorBatteriesMain(argv, stdout, env):
             # Battery Message parsing
             if message[0] == 'B':
                 controller_number = int(message[1])
-                battery_number = int(message[2])
+                battery_number = int(message[2]) -1 # -1 for 1 index to 0 index
 
                 #print 'Battery %d on Controller %d'%(battery_number, controller_number)
 
