@@ -96,6 +96,9 @@ namespace planning_node_util
 	    m_node = node;
 	    m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
 	    m_robotModelName = robot_model;
+	    m_haveState = false;
+	    m_haveMechanismState = false;
+	    m_haveBasePos = false;
 	    
 	    m_node->subscribe("localizedpose",   m_localizedPose,  &NodeRobotModel::localizedPoseCallback,  this, 1);
 	    m_node->subscribe("mechanism_state", m_mechanismState, &NodeRobotModel::mechanismStateCallback, this, 1);
@@ -174,6 +177,12 @@ namespace planning_node_util
 	    return m_kmodel != NULL;
 	}
 	
+	void waitForState(void)
+	{
+	    while (m_node->ok() && !(m_haveState ^ loadedRobot()))
+		ros::Duration(0.05).sleep();
+	}
+	
     protected:
 	
 	void localizedPoseCallback(void)
@@ -214,7 +223,7 @@ namespace planning_node_util
 		    m_basePos[1] = pose.y;
 		if (isfinite(pose.yaw))
 		    m_basePos[2] = pose.yaw;
-		
+		m_haveBasePos = true;
 		baseUpdate();
 	    }
 	}
@@ -227,6 +236,7 @@ namespace planning_node_util
 		double pos = m_mechanismState.joint_states[i].position;
 		m_robotState->setValue(m_mechanismState.joint_states[i].name, &pos);
 	    }
+	    m_haveMechanismState = true;
 	    stateUpdate();
 	}
 	
@@ -243,13 +253,16 @@ namespace planning_node_util
 	
 	virtual void stateUpdate(void)
 	{
+	    m_haveState = m_haveBasePos && m_haveMechanismState;
 	}
 	
 	rosTFClient                                   m_tf; 
 	ros::node                                    *m_node;
 	std_msgs::RobotBase2DOdom                     m_localizedPose;
+	bool                                          m_haveBasePos;	
 	
 	mechanism_control::MechanismState             m_mechanismState; // this message should be moved to robot_msgs
+	bool                                          m_haveMechanismState;
 	
 	robot_desc::URDF                             *m_urdf;
 	planning_models::KinematicModel              *m_kmodel;
@@ -258,7 +271,8 @@ namespace planning_node_util
 	double                                        m_basePos[3];
 	
 	planning_models::KinematicModel::StateParams *m_robotState;
-
+	bool                                          m_haveState;
+	
     };
      
 }

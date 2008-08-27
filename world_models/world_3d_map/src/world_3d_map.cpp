@@ -125,7 +125,8 @@ public:
 
 	param("world_3d_map/max_publish_frequency", m_maxPublishFrequency, 0.5);
 	param("world_3d_map/retain_pointcloud_duration", m_retainPointcloudDuration, 60.0);
-	param("world_3d_map/retain_pointcloud_fraction", m_retainPointcloudFraction, 0.02);
+	param("world_3d_map/retain_pointcloud_fraction", m_retainPointcloudFraction, 0.25);
+	
 	param("world_3d_map/retain_above_ground_threshold", m_retainAboveGroundThreshold, 0.01);
 	param("world_3d_map/verbosity_level", m_verbose, 1);
 	
@@ -191,7 +192,7 @@ private:
 	   postpone processing latest data just because it is not done
 	   with older data. */
 	if (m_verbose) 
-          fprintf(stdout, "Received laser scan with %d points in frame %s\n", m_inputScan.get_ranges_size(), m_inputScan.header.frame_id.c_str());
+	    fprintf(stdout, "Received laser scan with %d points in frame %s\n", m_inputScan.get_ranges_size(), m_inputScan.header.frame_id.c_str());
 	
 	/* copy data to a place where incoming messages do not affect it */
 	bool success = false;
@@ -388,7 +389,9 @@ private:
 		if (isfinite(cloud.pts[k].x) && isfinite(cloud.pts[k].y) && isfinite(cloud.pts[k].z))
 		    copy->pts[j++] = cloud.pts[k];
 	copy->set_pts_size(j);
-
+	
+	if (m_verbose)
+	    printf("Filter 0 discarded %d points (%d left) \n", n - j, j);
 	return copy;	
     }    
     
@@ -420,7 +423,7 @@ private:
 	    }
 	}
 	if (m_verbose)
-	    printf("Discarded %d points (%d left) \n", n - j, j);
+	    printf("Filter 1 discarded %d points (%d left) \n", n - j, j);
 	
 	copy->set_pts_size(j);
 
@@ -463,6 +466,7 @@ int main(int argc, char **argv)
     {
 	World3DMap *map = new World3DMap(argv[1]);
 	map->loadRobotDescription();
+	map->waitForState();
 	map->setAcceptScans(true);
 	map->spin();
 	map->shutdown();

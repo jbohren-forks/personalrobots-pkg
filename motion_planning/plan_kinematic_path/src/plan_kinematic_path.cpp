@@ -78,6 +78,7 @@ public:
 	
 	req.params.model_id = "pr2::base";
 	req.params.distance_metric = "L2Square";
+	req.params.planner_id = "RRT";
 	req.threshold = 0.01;
 	req.interpolate = 1;
 	req.times = 10;
@@ -89,7 +90,7 @@ public:
 	    req.goal_state.vals[i] = m_basePos[i];
 	req.goal_state.vals[0] += 3.5;
 	
-	req.allowed_time = 30.0;
+	req.allowed_time = 10.0;
 	
 	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;

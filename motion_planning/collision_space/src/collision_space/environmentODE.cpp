@@ -250,16 +250,14 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
 		    dReal aabb1[6], aabb2[6];		    
 		    dGeomGetAABB(g1, aabb1);
 		    dGeomGetAABB(g2, aabb2);
+		    
 		    if (!(aabb1[2] > aabb2[3] ||
 			  aabb1[3] < aabb2[2] ||
 			  aabb1[4] > aabb2[5] ||
-			  aabb1[5] < aabb2[4]))
+			  aabb1[5] < aabb2[4])) 
 			dSpaceCollide2(g1, g2, reinterpret_cast<void*>(&cdata), nearCallbackFn);
 		    if (cdata.collides)
-		    {
-			std::cout << m_kgeoms[model_id].geom[vec[j]]->link->name << " intersects with " << m_kgeoms[model_id].geom[vec[k]]->link->name  << std::endl;
 			goto OUT1;
-		    }
 		}
 	}
     }
@@ -280,11 +278,13 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
 		dGeomID g2 = m_odeGeoms[j];
 		dReal aabb2[6];
 		dGeomGetAABB(g2, aabb2);
+
 		if (!(aabb1[2] > aabb2[3] ||
 		      aabb1[3] < aabb2[2] ||
 		      aabb1[4] > aabb2[5] ||
 		      aabb1[5] < aabb2[4]))
 		    dSpaceCollide2(g1, g2, reinterpret_cast<void*>(&cdata), nearCallbackFn);
+		
 		if (cdata.collides)
 		    goto OUT2;
 	    }
@@ -299,8 +299,6 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
 	m_collide2.setup();
 	for (int i = m_kgeoms[model_id].geom.size() - 1 ; i >= 0 && !cdata.collides ; --i)
 	    m_collide2.collide(m_kgeoms[model_id].geom[i]->geom, reinterpret_cast<void*>(&cdata), nearCallbackFn);
-	if (cdata.collides)
-	    std::cout << "Pointcloud intersection"  << std::endl;
     }
     
     return cdata.collides;

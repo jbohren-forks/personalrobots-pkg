@@ -19,6 +19,12 @@
     finger_r_left
     finger_l_right
     finger_r_right
+    shoulder_pan_right
+    shoulder_pitch_right 
+    shoulder_pan_left
+    shoulder_pitch_left
+    torso
+    base
   </group>
   
   <!-- Define the parts of the robot that the collision checker should care about -->
