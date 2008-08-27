@@ -72,7 +72,7 @@ int main(int argc, char **argv)
 
     for (std::vector<std::string>::iterator i = names.begin(); i != names.end(); i++)
     {
-      n.advertise<AnyMsg>(*i);
+      n.advertise<AnyMsg>(*i, 1);
     }
     
     player.addHandler<AnyMsg>(string("*"), &doPublish, (void*)(&n), false);
