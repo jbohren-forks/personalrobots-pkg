@@ -565,6 +565,9 @@
         <box size="0.1 0.1 0.1" />
       </geometry>
     </collision>
+    <map name="base_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
     
   </link>
   
@@ -583,6 +586,9 @@
     <collision >
       <insert_const_block name="pr2_shoulder_pan_collision"/>
     </collision>
+    <map name="shoulder_pan_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
   </link>
   
   
@@ -601,6 +607,9 @@
     <collision >
       <insert_const_block name="pr2_shoulder_pitch_collision"/>
     </collision>
+    <map name="shoulder_pitch_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
   </link>
   
   
@@ -619,6 +628,9 @@
     <collision >
       <insert_const_block name="pr2_upperarm_roll_collision"/>
     </collision>
+    <map name="upperarm_roll_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
   </link>
   
   <link name="elbow_flex_left"><!-- link specifying the shoulder of the robot -->
@@ -636,6 +648,9 @@
     <collision >
       <insert_const_block name="pr2_elbow_flex_collision"/>
     </collision>
+    <map name="elbow_flex_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
   </link>
   
   
@@ -654,6 +669,9 @@
     <collision >
       <insert_const_block name="pr2_forearm_roll_collision"/>
     </collision>
+    <map name="forearm_roll_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
   </link>
   
   <link name="wrist_flex_left"><!-- link specifying the shoulder of the robot -->
@@ -671,6 +689,9 @@
     <collision >
       <insert_const_block name="pr2_wrist_flex_collision"/>
     </collision>
+    <map name="wrist_flex_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
   </link>
   
   
@@ -689,6 +710,9 @@
     <collision >
       <insert_const_block name="pr2_gripper_roll_collision"/>
     </collision>
+    <map name="gripper_roll_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
   </link>
   
   
@@ -704,6 +728,9 @@
     <origin xyz=" gripper_roll_finger_l_offset_x gripper_roll_finger_l_offset_y gripper_roll_finger_l_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
     
     <joint name="finger_l_left_joint" />
+    <map name="finger_l_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
     <inertial >
       <insert_const_block name="pr2_finger_l_inertial"/>
     </inertial>
@@ -723,6 +750,9 @@
     <origin xyz=" finger_l_finger_tip_l_offset_x finger_l_finger_tip_l_offset_y finger_l_finger_tip_l_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
     
     <joint name="finger_tip_l_left_joint" />
+    <map name="finger_tip_l_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
     <inertial >
       <insert_const_block name="pr2_finger_tip_l_inertial"/>
     </inertial>
@@ -742,6 +772,9 @@
     <origin xyz=" gripper_roll_finger_r_offset_x gripper_roll_finger_r_offset_y gripper_roll_finger_r_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
     
     <joint name="finger_r_left_joint" />
+    <map name="finger_r_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
     <inertial >
       <insert_const_block name="pr2_finger_r_inertial"/>
     </inertial>
@@ -761,6 +794,9 @@
     <origin xyz=" finger_r_finger_tip_r_offset_x finger_r_finger_tip_r_offset_y finger_r_finger_tip_r_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
     
     <joint name="finger_tip_r_left_joint" />
+    <map name="finger_tip_r_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
     <inertial >
       <insert_const_block name="pr2_finger_tip_r_inertial"/>
     </inertial>
@@ -783,6 +819,9 @@
     <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
     
     <joint name="wrist_camera_left_joint" />
+    <map name="wrist_camera_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
     <inertial>
       <mass value="0.5" />
       <com xyz=" 0.0 0.0 0.0 " /> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
@@ -843,6 +882,9 @@
     <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
     
     <joint name="forearm_camera_left_joint" /> 
+    <map name="forearm_camera_left_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
     <inertial>
       <mass value="0.5" />
       <com xyz=" 0.0 0.0 0.0 " /> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
