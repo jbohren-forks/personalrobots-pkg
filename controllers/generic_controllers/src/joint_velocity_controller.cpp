@@ -119,6 +119,11 @@ double JointVelocityController::getMeasuredVelocity()
   return joint_->velocity_;
 }
 
+std::string JointVelocityController::getJointName()
+{
+  return(joint_->name_);
+}
+
 void JointVelocityController::update()
 {
   double error(0);
@@ -126,7 +131,19 @@ void JointVelocityController::update()
 
   error = joint_->velocity_ - command_;
   joint_->commanded_effort_ = pid_controller_.updatePid(error, time - last_time_);
+  last_time_ = time;
 }
+
+void JointVelocityController::setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min)
+{
+  pid_controller_.setGains(p,i,d,i_max,i_min);
+}
+
+void JointVelocityController::getGains(double &p, double &i, double &d, double &i_max, double &i_min)
+{
+  pid_controller_.getGains(p,i,d,i_max,i_min);
+}
+
 
 ROS_REGISTER_CONTROLLER(JointVelocityControllerNode)
 JointVelocityControllerNode::JointVelocityControllerNode()

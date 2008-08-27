@@ -94,9 +94,14 @@ bool JointPositionController::initXml(mechanism::Robot *robot, TiXmlElement *con
   return true;
 }
 
-void JointPositionController::setGains(double p, double i, double d, double i_min, double i_max)
+void JointPositionController::setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min)
 {
-  pid_controller_.setGains(p,i,d,i_min,i_max);
+  pid_controller_.setGains(p,i,d,i_max,i_min);
+}
+
+void JointPositionController::getGains(double &p, double &i, double &d, double &i_max, double &i_min)
+{
+  pid_controller_.getGains(p,i,d,i_max,i_min);
 }
 
 // Set the joint position command
@@ -146,6 +151,7 @@ void JointPositionController::update()
 
     joint_->commanded_effort_ = pid_controller_.updatePid(error, time - last_time_);
   }
+  last_time_ = time;
 }
 
 ROS_REGISTER_CONTROLLER(JointPositionControllerNode)

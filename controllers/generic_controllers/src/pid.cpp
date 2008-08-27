@@ -64,6 +64,15 @@ void Pid::initPid(double P, double I, double D, double I1, double I2)
   cmd_ = 0.0;
 }
 
+void Pid::getGains(double &p, double &i, double &d, double &i_max, double &i_min)
+{
+  p = p_gain_;
+  i = i_gain_;
+  d = d_gain_;
+  i_max = i_max_;
+  i_min = i_min_;
+}
+
 void Pid::setGains(double P, double I, double D, double I1, double I2)
 {
   p_gain_ = P;

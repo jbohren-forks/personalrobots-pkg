@@ -96,6 +96,40 @@ void ArmVelocityController::getJointVelCmd(pr2_controllers::GetJointVelCmd::resp
   arm_controller_lock_.unlock();
 }
 
+void ArmVelocityController::setJointGains(const pr2_controllers::SetJointGains::request &req)
+{
+  cout<<"SET GAINS"<<endl;
+  arm_controller_lock_.lock();
+  JointVelocityController *jpc = getJointControllerByName(req.name);
+  if(jpc)
+    jpc->setGains(req.p,req.i,req.d,req.i_min,req.i_max);
+  arm_controller_lock_.unlock();
+}
+
+void ArmVelocityController::getJointGains(pr2_controllers::GetJointGains::response &req)
+{
+  cout<<"GET GAINS"<<endl;
+  arm_controller_lock_.lock();
+  JointVelocityController *jpc = getJointControllerByName(req.name);
+  if(jpc)
+  {
+    jpc->getGains(req.p,req.i,req.d,req.i_max,req.i_min);
+  }
+  arm_controller_lock_.unlock();
+}
+
+controller::JointVelocityController* ArmVelocityController::getJointControllerByName(std::string name)
+{
+  for(int i=0; i< (int) joint_velocity_controllers_.size(); i++)
+  {
+    if(joint_velocity_controllers_[i]->getJointName() == name)
+    {
+      return joint_velocity_controllers_[i];
+    }
+  }
+    return NULL;
+}
+
 void ArmVelocityController::getCurrentConfiguration(std::vector<double> &vec)
 {
   //TODO: warning: this read is not safe, since we cannot lock the realtime loop
@@ -206,6 +240,20 @@ bool ArmVelocityControllerNode::getJointVelCmd(pr2_controllers::GetJointVelCmd::
                                    pr2_controllers::GetJointVelCmd::response &resp)
 {
   c_->getJointVelCmd(resp);
+  return true;
+}
+
+bool ArmVelocityControllerNode::setJointGains(pr2_controllers::SetJointGains::request &req,
+                                   pr2_controllers::SetJointGains::response &resp)
+{
+  c_->setJointGains(req);
+  return true;
+}
+
+bool ArmVelocityControllerNode::getJointGains(pr2_controllers::GetJointGains::request &req,
+                                   pr2_controllers::GetJointGains::response &resp)
+{
+  c_->getJointGains(resp);
   return true;
 }
 

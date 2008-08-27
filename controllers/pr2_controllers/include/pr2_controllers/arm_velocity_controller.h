@@ -44,6 +44,9 @@
 #include <pr2_controllers/SetJointVelCmd.h>
 #include <pr2_controllers/GetJointVelCmd.h>
 
+#include <pr2_controllers/SetJointGains.h>
+#include <pr2_controllers/GetJointGains.h>
+
 #include <pr2_controllers/SetCartesianVelCmd.h>
 #include <pr2_controllers/GetCartesianVelCmd.h>
 
@@ -107,6 +110,12 @@ namespace controller
 
       ros::thread::mutex arm_controller_lock_;
 
+      void setJointGains(const pr2_controllers::SetJointGains::request &req);
+
+      void getJointGains(pr2_controllers::GetJointGains::response &resp);
+
+      controller::JointVelocityController* getJointControllerByName(std::string name);
+
     private:
 
       std::vector<JointVelocityController *> joint_velocity_controllers_;
@@ -149,6 +158,12 @@ namespace controller
       bool setCartesianVelCmd(pr2_controllers::SetCartesianVelCmd::request &req,pr2_controllers::SetCartesianVelCmd::response &resp);
 
       bool getCartesianVelCmd(pr2_controllers::GetCartesianVelCmd::request &req,pr2_controllers::GetCartesianVelCmd::response &resp);
+
+      bool setJointGains(pr2_controllers::SetJointGains::request &req,
+                                                    pr2_controllers::SetJointGains::response &resp);
+
+      bool getJointGains(pr2_controllers::GetJointGains::request &req,
+                                                    pr2_controllers::GetJointGains::response &resp);
     
     private:
       ArmVelocityController *c_;

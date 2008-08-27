@@ -133,10 +133,20 @@ public:
    * \param P  The proportional gain.
    * \param I  The integral gain.
    * \param D  The derivative gain.
-   * \param i_min 
    * \param i_max 
+   * \param i_min 
    */
-  void setGains(double P, double I, double D, double i_min, double i_max);
+  void setGains(double P, double I, double D, double i_max, double i_min);
+
+  /*!
+   * \brief Get PID gains for the controller.
+   * \param p  The proportional gain.
+   * \param i  The integral gain.
+   * \param d  The derivative gain.
+   * \param i_max 
+   * \param i_mim 
+   */
+  void getGains(double &p, double &i, double &d, double &i_max, double &i_min);
 
 private:
   double p_error_last_; /**< _Save position state for derivative state calculation. */

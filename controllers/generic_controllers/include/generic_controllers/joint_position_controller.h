@@ -116,11 +116,11 @@ public:
   /*!
    * \brief Issues commands to the joint. Should be called at regular intervals
    */
-
   virtual void update();
 
+  void getGains(double &p, double &i, double &d, double &i_max, double &i_min);
 
-  void setGains(double p, double i, double d, double i_min, double i_max);
+  void setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min);
 
   std::string getJointName();
 

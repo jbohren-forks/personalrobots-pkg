@@ -87,7 +87,7 @@ void ArmPositionController::setJointPosCmd(pr2_controllers::SetJointPosCmd::requ
   arm_controller_lock_.unlock();
 }
 
-void ArmPositionController::setJointGains(pr2_controllers::SetJointGains::request &req)
+void ArmPositionController::setJointGains(const pr2_controllers::SetJointGains::request &req)
 {
   cout<<"SET GAINS"<<endl;
   arm_controller_lock_.lock();
@@ -96,6 +96,19 @@ void ArmPositionController::setJointGains(pr2_controllers::SetJointGains::reques
     jpc->setGains(req.p,req.i,req.d,req.i_min,req.i_max);
   arm_controller_lock_.unlock();
 }
+
+void ArmPositionController::getJointGains(pr2_controllers::GetJointGains::response &req)
+{
+  cout<<"GET GAINS"<<endl;
+  arm_controller_lock_.lock();
+  JointPositionController *jpc = getJointControllerByName(req.name);
+  if(jpc)
+  {
+    jpc->getGains(req.p,req.i,req.d,req.i_max,req.i_min);
+  }
+  arm_controller_lock_.unlock();
+}
+
 
 controller::JointPositionController* ArmPositionController::getJointControllerByName(std::string name)
 {
@@ -209,6 +222,7 @@ bool ArmPositionControllerNode::initXml(mechanism::Robot * robot, TiXmlElement *
     node->advertise_service(prefix + "/get_command", &ArmPositionControllerNode::getJointPosCmd, this);
 
     node->advertise_service(prefix + "/set_joint_gains", &ArmPositionControllerNode::setJointGains, this);
+    node->advertise_service(prefix + "/get_joint_gains", &ArmPositionControllerNode::getJointGains, this);
 
     node->advertise_service(prefix + "/set_cartesian_pos", &ArmPositionControllerNode::setCartesianPosCmd, this);
     node->advertise_service(prefix + "/get_cartesian_pos", &ArmPositionControllerNode::getCartesianPosCmd, this);
@@ -226,6 +240,12 @@ bool ArmPositionControllerNode::setJointGains(pr2_controllers::SetJointGains::re
   return true;
 }
 
+bool ArmPositionControllerNode::getJointGains(pr2_controllers::GetJointGains::request &req,
+                                   pr2_controllers::GetJointGains::response &resp)
+{
+  c_->getJointGains(resp);
+  return true;
+}
 
 bool ArmPositionControllerNode::setJointPosCmd(pr2_controllers::SetJointPosCmd::request &req,
                                    pr2_controllers::SetJointPosCmd::response &resp)

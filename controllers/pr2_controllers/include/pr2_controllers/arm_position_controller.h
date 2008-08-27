@@ -45,7 +45,9 @@
 // Services
 #include <pr2_controllers/SetJointPosCmd.h>
 #include <pr2_controllers/GetJointPosCmd.h>
+
 #include <pr2_controllers/SetJointGains.h>
+#include <pr2_controllers/GetJointGains.h>
 
 #include <pr2_controllers/SetCartesianPosCmd.h>
 #include <pr2_controllers/GetCartesianPosCmd.h>
@@ -113,7 +115,9 @@ namespace controller
 
       ros::thread::mutex arm_controller_lock_;
 
-      void setJointGains(pr2_controllers::SetJointGains::request &req);
+      void setJointGains(const pr2_controllers::SetJointGains::request &req);
+
+      void getJointGains(pr2_controllers::GetJointGains::response &resp);
 
       controller::JointPositionController* getJointControllerByName(std::string name);
 
@@ -169,6 +173,9 @@ namespace controller
     
       bool setJointGains(pr2_controllers::SetJointGains::request &req,
                                                     pr2_controllers::SetJointGains::response &resp);
+
+      bool getJointGains(pr2_controllers::GetJointGains::request &req,
+                                                    pr2_controllers::GetJointGains::response &resp);
     private:
       ArmPositionController *c_;
       robot_kinematics::RobotKinematics pr2_kin_;
