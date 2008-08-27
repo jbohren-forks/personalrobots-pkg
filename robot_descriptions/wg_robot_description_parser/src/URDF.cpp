@@ -44,8 +44,8 @@
 
 namespace robot_desc {
     
-    /** Macro to mark the fact a certain member variable was set. Also
-	prints a warning if the same member was set multiple times. */
+    /* Macro to mark the fact a certain member variable was set. Also
+       prints a warning if the same member was set multiple times. */
 #define MARK_SET(node, owner, variable)					\
     {									\
 	if (owner->isSet[#variable]) {					\
@@ -57,7 +57,7 @@ namespace robot_desc {
     }
     
 
-    /** Operator for sorting objects by name */
+    /* Operator for sorting objects by name */
     template<typename T>
     struct SortByName
     {

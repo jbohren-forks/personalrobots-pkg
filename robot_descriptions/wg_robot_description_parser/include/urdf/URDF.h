@@ -43,10 +43,21 @@
 #include <vector>
 #include <map>
 
-/** @htmlinclude ../../manifest.html
+/** 
+    @mainpage 
     
-    Universal Robot Description Format (URDF) parser */
+    @htmlinclude ../../manifest.html
+    
+    Universal Robot Description Format (URDF) parser. The URDF class
+    is able to load a robot description from multiple files, string
+    buffers, streams and produce a datastructure similar to the XML
+    structure. Expression evaluation and file inclusion are performed
+    if needed. Checks are performed to make sure the document is
+    correct: values that are inconsistend are reported, typos in the
+    names, unknown tags, etc. For more documentation, see the URDF
+    description. */
 
+/** Namespace that contains the URDF parser */
 namespace robot_desc
 {
     /** This class contains a complete parser for URDF documents.
@@ -136,7 +147,7 @@ namespace robot_desc
 	/** Forward declaration of groups */
 	struct Group;
         	
-	/** This class defines link instances */
+	/** This class defines link instances. It contains instances of collision, visual, inertial and joint descriptions. */
 	struct Link
 	{
 	    
@@ -418,7 +429,8 @@ namespace robot_desc
 
 	    std::map<std::string, bool> isSet;
 	};
-        
+	
+	/** Class for defining sensors. This is basically a link with a few extra parameters */
 	struct Sensor : public Link
 	{	    
 	    Sensor(void)
@@ -442,6 +454,10 @@ namespace robot_desc
 	    std::string calibration;
 	};
 	
+	/** Class for defining frames. A frame is attached to a link,
+	    as its parent or as its child. Frames do not have
+	    geometric or inertial properties. They are used to define
+	    coordinate frames. */
 	struct Frame
 	{
 	    Frame(void)
@@ -480,6 +496,7 @@ namespace robot_desc
 	    std::map<std::string, bool> isSet;
 	};
 	
+	/** A class that represents groups of links or frames (or both) */
 	struct Group
 	{
 	    Group(void)
@@ -509,7 +526,6 @@ namespace robot_desc
 	};
 	
 	/** Constructor. If a filename if specified as argument, that file is parsed. */
-	explicit
 	URDF(const char *filename = NULL)
 	{   
 	    m_paths.push_back("");
