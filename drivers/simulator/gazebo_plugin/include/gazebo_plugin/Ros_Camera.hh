@@ -27,9 +27,6 @@
 #ifndef ROS_CAMERA_HH
 #define ROS_CAMERA_HH
 
-#include <rosTF/rosTF.h>
-
-
 #include <ros/node.h>
 #include <std_msgs/Image.h>
 #include <gazebo/Controller.hh>
@@ -117,9 +114,6 @@ class Ros_Camera : public Controller
 
   // A mutex to lock access to fields that are used in message callbacks
   private: ros::thread::mutex lock;
-
-  // transform server
-  private: rosTFClient *tfc;
 
 };
 

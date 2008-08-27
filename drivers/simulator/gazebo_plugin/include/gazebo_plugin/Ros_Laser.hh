@@ -32,7 +32,6 @@
 
 #include <ros/node.h>
 #include <std_msgs/LaserScan.h>
-#include <rosTF/rosTF.h>
 
 namespace gazebo
 {
@@ -127,9 +126,6 @@ class Ros_Laser : public Controller
 
   // A mutex to lock access to fields that are used in message callbacks
   private: ros::thread::mutex lock;
-
-  // transform server
-  private: rosTFClient *tfc;
 
 };
 

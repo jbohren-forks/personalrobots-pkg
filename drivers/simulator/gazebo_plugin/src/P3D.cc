@@ -51,6 +51,17 @@ P3D::P3D(Entity *parent )
 
    if (!this->myParent)
       gzthrow("P3D controller requires a Model as its parent");
+
+  rosnode = ros::g_node; // comes from where?
+  int argc = 0;
+  char** argv = NULL;
+  if (rosnode == NULL)
+  {
+    // this only works for a single camera.
+    ros::init(argc,argv);
+    rosnode = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
+    printf("-------------------- starting node in P3D \n");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -71,6 +82,12 @@ void P3D::LoadChild(XMLConfigNode *node)
   std::string bodyName = node->GetString("bodyName", "", 1);
   this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
 //  this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
+
+  this->topicName = node->GetString("topicName", "", 1);
+  this->frameName = node->GetString("frameName", "", 1);
+
+  std::cout << "==== topic name for P3D ======== " << this->topicName << std::endl;
+  rosnode->advertise<robot_msgs::Pose3DEulerFloat32>(this->topicName);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -99,6 +116,29 @@ void P3D::UpdateChild()
   this->myIface->data->pose.pitch = rot.GetPitch();
   this->myIface->data->pose.yaw   = rot.GetYaw();
 
+
+
+  this->lock.lock();
+  // copy data into pose message
+  this->poseMsg.header.frame_id = this->frameName;
+  this->poseMsg.header.stamp.sec = (unsigned long)floor(this->myIface->data->head.time);
+  this->poseMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->myIface->data->head.time - this->poseMsg.header.stamp.sec) );
+
+  this->poseMsg.position.x          = pos.x;
+  this->poseMsg.position.y          = pos.y;
+  this->poseMsg.position.z          = pos.z;
+                                                      
+  this->poseMsg.orientation.roll    = rot.GetRoll();
+  this->poseMsg.orientation.pitch   = rot.GetPitch();
+  this->poseMsg.orientation.yaw     = rot.GetYaw();
+
+  // publish to ros
+  rosnode->publish(this->topicName,this->poseMsg);
+  this->lock.unlock();
+
+
+
+
   this->myIface->Unlock();
 }
 
@@ -106,4 +146,12 @@ void P3D::UpdateChild()
 // Finalize the controller
 void P3D::FiniChild()
 {
+  // TODO: will be replaced by global ros node eventually
+  if (rosnode != NULL)
+  {
+    std::cout << "shutdown rosnode in P3D" << std::endl;
+    //ros::fini();
+    rosnode->shutdown();
+    //delete rosnode;
+  }
 }

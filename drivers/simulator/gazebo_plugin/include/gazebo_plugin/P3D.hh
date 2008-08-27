@@ -31,6 +31,9 @@
 #include <gazebo/Entity.hh>
 #include <pr2Core/pr2Core.h>
 
+#include <ros/node.h>
+#include <robot_msgs/Pose3DEulerFloat32.h>
+
 namespace gazebo
 {
    class PositionIface;
@@ -84,6 +87,26 @@ namespace gazebo
       private: Model *myParent;
 
       private: Body *myBody; //Gazebo/ODE body
+
+
+
+      // added for ros message
+      // pointer to ros node
+      private: ros::node *rosnode;
+
+      // ros message
+      private: robot_msgs::Pose3DEulerFloat32 poseMsg;
+
+      // topic name
+      private: std::string topicName;
+
+      // frame transform name, should match link name
+      // FIXME: extract link name directly?
+      private: std::string frameName;
+
+      // A mutex to lock access to fields that are used in message callbacks
+      private: ros::thread::mutex lock;
+
    };
 
 /** \} */

@@ -48,18 +48,24 @@
   <controller:P3D name="p3d_right_wrist_controller" plugin="libP3D.so">
       <updateRate>100.0</updateRate>
       <bodyName>gripper_roll_right</bodyName>
+      <topicName>gripper_roll_right_pose</topicName>
+      <frameName>gripper_roll_right_frame</frameName>
       <interface:position name="p3d_right_wrist_position"/>
   </controller:P3D>
 
   <controller:P3D name="p3d_left_wrist_controller" plugin="libP3D.so">
       <updateRate>100.0</updateRate>
       <bodyName>gripper_roll_left</bodyName>
+      <topicName>gripper_roll_left_pose</topicName>
+      <frameName>gripper_roll_left_frame</frameName>
       <interface:position name="p3d_left_wrist_position"/>
   </controller:P3D>
 
   <controller:P3D name="p3d_base_controller" plugin="libP3D.so">
       <updateRate>100.0</updateRate>
       <bodyName>base</bodyName>
+      <topicName>base_pose</topicName>
+      <frameName>base_frame</frameName>
       <interface:position name="p3d_base_position"/>
   </controller:P3D>
 
