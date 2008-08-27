@@ -38,6 +38,7 @@
 #define COLLISION_SPACE_ENVIRONMENT_MODEL_
 
 #include <planning_models/kinematic.h>
+#include <profiling_utils/profiler.h>
 #include <rosthread/mutex.h>
 #include <vector>
 #include <string>

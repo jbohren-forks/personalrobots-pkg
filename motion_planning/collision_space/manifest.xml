@@ -11,6 +11,7 @@
   <depend package="scan_utils"/>
   <depend package="opende"/>
   <depend package="gtest"/>
+  <depend package="profiling_utils"/>
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcollision_space"/>

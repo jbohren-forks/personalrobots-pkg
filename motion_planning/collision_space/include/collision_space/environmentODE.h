@@ -108,6 +108,7 @@ namespace collision_space
 	    
 	    ~ODECollide2(void)
 	    {
+		clear();
 	    }
 	    
 	    void registerSpace(dSpaceID space);
@@ -124,39 +125,73 @@ namespace collision_space
 		dReal   aabb[6];
 	    };
 	    
-	    struct SortByXYZLow
+	    struct SortByXLow
 	    {
-		bool operator()(const Geom &a, const Geom &b) 
+		bool operator()(const Geom *a, const Geom *b) 
 		{
-		    if (a.aabb[0] < b.aabb[0])
-			return true;
-		    if (a.aabb[0] > b.aabb[0])
-			return false;
-		    
-		    if (a.aabb[2] < b.aabb[2])
-			return true;
-		    if (a.aabb[2] > b.aabb[2])
-			return false;
-		    
-		    if (a.aabb[4] < b.aabb[4])
-			return true;
-		    return false;	
-		}
-	    };
-	    
-	    struct SortByX
-	    {
-		bool operator()(const Geom &a, const Geom &b)
-		{
-		    if (a.aabb[1] < b.aabb[0])
+		    if (a->aabb[0] < b->aabb[0])
 			return true;
 		    return false;
 		}
 	    };
 	    
-	    bool              m_setup;
-	    std::vector<Geom> m_geoms;
+	    struct SortByYLow
+	    {
+		bool operator()(const Geom *a, const Geom *b) 
+		{
+		    if (a->aabb[2] < b->aabb[2])
+			return true;
+		    return false;
+		}
+	    };
 	    
+	    struct SortByZLow
+	    {
+		bool operator()(const Geom *a, const Geom *b) 
+		{
+		    if (a->aabb[4] < b->aabb[4])
+			return true;
+		    return false;
+		}
+	    };
+	    
+	    struct SortByXTest
+	    {
+		bool operator()(const Geom *a, const Geom *b)
+		{
+		    if (a->aabb[1] < b->aabb[0])
+			return true;
+		    return false;
+		}
+	    };
+	    
+	    struct SortByYTest
+	    {
+		bool operator()(const Geom *a, const Geom *b)
+		{
+		    if (a->aabb[3] < b->aabb[2])
+			return true;
+		    return false;
+		}
+	    };
+	    
+	    struct SortByZTest
+	    {
+		bool operator()(const Geom *a, const Geom *b)
+		{
+		    if (a->aabb[5] < b->aabb[4])
+			return true;
+		    return false;
+		}
+	    };
+	    
+	    bool               m_setup;
+	    std::vector<Geom*> m_geomsX;
+	    std::vector<Geom*> m_geomsY;
+	    std::vector<Geom*> m_geomsZ;
+	    
+	    void check(std::vector<Geom*>::iterator posStart, std::vector<Geom*>::iterator posEnd,
+		       Geom *g, void *data, dNearCallback *nearCallback);
 	};
 
 	struct kGeom

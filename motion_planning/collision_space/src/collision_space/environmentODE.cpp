@@ -35,6 +35,7 @@
 /** \Author Ioan Sucan */
 
 #include <collision_space/environmentODE.h>
+#include <algorithm>
 #include <map>
 
 void collision_space::EnvironmentModelODE::freeMemory(void)
@@ -145,16 +146,22 @@ void collision_space::EnvironmentModelODE::ODECollide2::registerSpace(dSpaceID s
 
 void collision_space::EnvironmentModelODE::ODECollide2::registerGeom(dGeomID geom)
 {
-    Geom g;
-    g.id = geom;
-    dGeomGetAABB(geom, g.aabb);
-    m_geoms.push_back(g);
+    Geom *g = new Geom();
+    g->id = geom;
+    dGeomGetAABB(geom, g->aabb);
+    m_geomsX.push_back(g);
+    m_geomsY.push_back(g);
+    m_geomsZ.push_back(g);
     m_setup = false;
 }
 	
 void collision_space::EnvironmentModelODE::ODECollide2::clear(void)
 {
-    m_geoms.clear();
+    for (unsigned int i = 0 ; i < m_geomsX.size() ; ++i)
+	delete m_geomsX[i];
+    m_geomsX.clear();
+    m_geomsY.clear();
+    m_geomsZ.clear();
     m_setup = false;
 }
 
@@ -162,37 +169,87 @@ void collision_space::EnvironmentModelODE::ODECollide2::setup(void)
 {
     if (!m_setup)
     {
-	sort(m_geoms.begin(), m_geoms.end(), SortByXYZLow());
+	std::sort(m_geomsX.begin(), m_geomsX.end(), SortByXLow());
+	std::sort(m_geomsY.begin(), m_geomsY.end(), SortByYLow());
+	std::sort(m_geomsZ.begin(), m_geomsZ.end(), SortByZLow());
 	m_setup = true;
     }	    
 }
 
+void collision_space::EnvironmentModelODE::ODECollide2::check(std::vector<Geom*>::iterator posStart, std::vector<Geom*>::iterator posEnd,
+							      Geom *g, void *data, dNearCallback *nearCallback)
+{
+    /* posStart now identifies the first geom which has an AABB
+       that could overlap the AABB of geom on the X axis. posEnd
+       identifies the first one that cannot overlap. */
+    
+    while (posStart < posEnd)
+    {
+	/* if the boxes are not disjoint along Y, Z, check further */
+	if (!((*posStart)->aabb[2] > g->aabb[3] ||
+	      (*posStart)->aabb[3] < g->aabb[2] ||
+	      (*posStart)->aabb[4] > g->aabb[5] ||
+	      (*posStart)->aabb[5] < g->aabb[4]))
+	    dSpaceCollide2(g->id, (*posStart)->id, data, nearCallback);
+	posStart++;
+    }
+}
+
 void collision_space::EnvironmentModelODE::ODECollide2::collide(dGeomID geom, void *data, dNearCallback *nearCallback)
 {
+    static const int CUTOFF = 100;
+
     assert(m_setup);
-    
+
     Geom g;
     g.id = geom;
     dGeomGetAABB(geom, g.aabb);
     
-    std::vector<Geom>::iterator pos = lower_bound(m_geoms.begin(), m_geoms.end(), g, SortByX());
-    
-    /* pos now identifies the first geom which has an AABB that
-       could overlap the AABB of geom on the X axis */
-    
-    while (pos != m_geoms.end())
+    std::vector<Geom*>::iterator posStart1 = std::lower_bound(m_geomsX.begin(), m_geomsX.end(), &g, SortByXTest());
+    if (posStart1 != m_geomsX.end())
     {
-	/* we no longer overlap on X */
-	if (pos->aabb[0] > g.aabb[1])
-	    break;
+	std::vector<Geom*>::iterator posEnd1 = std::upper_bound(posStart1, m_geomsX.end(), &g, SortByXTest());
+	int                          d1      = posEnd1 - posStart1;
 	
-	/* if the boxes are not disjoint along Y, Z, check further */
-	if (!(pos->aabb[2] > g.aabb[3] ||
-	      pos->aabb[3] < g.aabb[2] ||
-	      pos->aabb[4] > g.aabb[5] ||
-	      pos->aabb[5] < g.aabb[4]))
-	    dSpaceCollide2(geom, pos->id, data, nearCallback);
-	pos++;
+	/* Doing two binary searches on the sorted-by-y array takes
+	   log(n) time, which should be around 12 steps. Each step
+	   should be just a few ops, so a cut-off like 100 is
+	   appropriate. */
+	if (d1 > CUTOFF)
+	{
+	    std::vector<Geom*>::iterator posStart2 = std::lower_bound(m_geomsY.begin(), m_geomsY.end(), &g, SortByYTest());
+	    if (posStart2 != m_geomsY.end())
+	    {
+		std::vector<Geom*>::iterator posEnd2 = std::upper_bound(posStart2, m_geomsY.end(), &g, SortByYTest());
+		int                          d2      = posEnd2 - posStart2;
+		
+		if (d2 > CUTOFF)
+		{
+		    std::vector<Geom*>::iterator posStart3 = std::lower_bound(m_geomsZ.begin(), m_geomsZ.end(), &g, SortByZTest());
+		    if (posStart3 != m_geomsZ.end())
+		    {
+			std::vector<Geom*>::iterator posEnd3 = std::upper_bound(posStart3, m_geomsZ.end(), &g, SortByZTest());
+			int                          d3      = posEnd3 - posStart3;
+			if (d3 > CUTOFF)
+			{
+			    if (d3 <= d2 && d3 <= d1)
+				check(posStart3, posEnd3, &g, data, nearCallback);
+			    else
+				if (d2 <= d3 && d2 <= d1)
+				    check(posStart2, posEnd2, &g, data, nearCallback);
+				else
+				    check(posStart1, posEnd1, &g, data, nearCallback);
+			}
+			else
+			    check(posStart3, posEnd3, &g, data, nearCallback);   
+		    }
+		}
+		else
+		    check(posStart2, posEnd2, &g, data, nearCallback);   
+	    }
+	}
+	else 
+	    check(posStart1, posEnd1, &g, data, nearCallback);
     }
 }
 
@@ -229,7 +286,9 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
 {
     CollisionData cdata;
     cdata.collides = false;
-
+    
+    profiling_utils::Profiler::Begin("Check self collision");
+    
     /* check self collision */
     if (m_selfCollision)
     {
@@ -265,7 +324,11 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
 
     /* check collision with standalone ode bodies */
  OUT1:
-    
+
+    profiling_utils::Profiler::End("Check self collision");
+
+    profiling_utils::Profiler::Begin("Check basic objects collision");
+
     if (!cdata.collides)
     {
 	for (int i = m_kgeoms[model_id].geom.size() - 1 ; i >= 0 ; --i)
@@ -294,13 +357,18 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
     /* check collision with pointclouds */
  OUT2:
 
+    profiling_utils::Profiler::End("Check basic objects collision");
+
+    profiling_utils::Profiler::Begin("Check pointcloud collision");
     if (!cdata.collides)
     {
 	m_collide2.setup();
 	for (int i = m_kgeoms[model_id].geom.size() - 1 ; i >= 0 && !cdata.collides ; --i)
 	    m_collide2.collide(m_kgeoms[model_id].geom[i]->geom, reinterpret_cast<void*>(&cdata), nearCallbackFn);
     }
-    
+
+    profiling_utils::Profiler::End("Check pointcloud collision");
+
     return cdata.collides;
 }
 

@@ -81,19 +81,22 @@ public:
 	req.params.planner_id = "RRT";
 	req.threshold = 0.01;
 	req.interpolate = 1;
-	req.times = 10;
+	req.times = 1;
 	
 	initialState(req.start_state);
-	
+	req.start_state.vals[0] -= 1.5;
+
+
 	req.goal_state.set_vals_size(3);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
 	    req.goal_state.vals[i] = m_basePos[i];
-	req.goal_state.vals[0] += 3.5;
+	req.goal_state.vals[0] += 5.5;
+	req.goal_state.vals[1] += 2.0;
+
+	req.allowed_time = 40.0;
 	
-	req.allowed_time = 10.0;
-	
-	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
-	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
+	req.params.volumeMin.x = -10.0 + m_basePos[0];	req.params.volumeMin.y = -10.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
+	req.params.volumeMax.x = 10.0 + m_basePos[0];	req.params.volumeMax.y = 10.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
 	
 	performCall(req);
     }
@@ -258,10 +261,11 @@ int main(int argc, char **argv)
     ros::init(argc, argv);
     
     PlanKinematicPath plan;
-    
+    /*
     ros::Duration dur(0.1);
     while (!plan.haveBasePos())
 	dur.sleep();
+    */
 
     char test = (argc < 2) ? 'b' : argv[1][0];
     
