@@ -9,13 +9,15 @@ public:
 
   vector<Descriptor*> descriptors_;
   //FixedSpinLarge spinL_;
-  FixedSpinMedium spinM_;
+  SpinImage *spinM_;
 
   DorylusNode() : ros::node("dorylus_node")
   {
     // -- Setup descriptor functions.
     //descriptors_.push_back(&spinL_);
-    descriptors_.push_back(&spinM_);  
+
+    spinM_ = new SpinImage(string("FixedSpinMedium"), .05, 200, true);
+    descriptors_.push_back(spinM_);  
     SceneLabelerStereo sls(this);
 
     advertise<std_msgs::VisualizationMarker>("visualizationMarker", 100);
@@ -42,7 +44,7 @@ public:
 	obj.label = sls.ss_objs_[iSS].first;
 
 	for(unsigned int iDesc=0; iDesc<descriptors_.size(); iDesc++) {
-	  cout << "Computing " << descriptors_[iDesc]->name << endl;
+	  cout << "Computing " << descriptors_[iDesc]->name_ << endl;
 	  x=0; y=0; z=0;
 	  sls.getRandomPointFromImage(&x, &y, &z, &row, &col);
 
@@ -50,9 +52,17 @@ public:
 	  //cout << "nrows: " << tmp.Nrows() << endl;
 	  Matrix feat(result->Nrows(), nSamples); feat = 0.0;
 	  for(unsigned int iSample=0; iSample<nSamples; iSample++) {
-	    
-	    //if(!sls.getRandomPointFromImage(&x, &y, &z, &row, &col, obj.label)) { //Gets a point from the object.
-	      
+	    x = 0; y = 0; z = 0; row = 0; col = 0;
+	    //bool found3d = sls.getRandomPointFromImage(&x, &y, &z, &row, &col, obj.label);
+	    bool found3d = true;
+	    sls.getRandomPointFromPointcloud(&x, &y, &z, &row, &col, &ss);
+	    if(!found3d) {
+	      x = 1e20;
+	      y = 1e20;
+	      z = 1e20;
+	    }
+
+	    //cout << "displaying at " << row << " " << col << endl;
 
 	    IplImage *copy;
 	    std_msgs::VisualizationMarker mark;
@@ -60,28 +70,34 @@ public:
 	      publish("videre/cloud", sls.cloud_);
 	      copy = cvCloneImage(sls.left_);
 	      cvNamedWindow("left", 1);
-	      cvCircle(copy, cvPoint(row, col), 5, cvScalar(0,255,0), 1);
+	      cvCircle(copy, cvPoint(col, row), 5, cvScalar(0,255,0), 1);
 	      cvShowImage("left", copy);
 	      cvWaitKey(50);
 	     
-	      mark.id = 1001;
-	      mark.type = 1;
-	      mark.action = 0;
-	      mark.x = x;
-	      mark.y = y;
-	      mark.z = z;
-	      mark.roll = 0;
-	      mark.pitch = 0;
-	      mark.yaw = 0;
-	      mark.xScale = .02;
-	      mark.yScale = .02;
-	      mark.zScale = .02;
-	      mark.alpha = 255;
-	      mark.r = 0;
-	      mark.g = 255;
-	      mark.b = 0;
-	      mark.text = string("");
-	      publish("visualizationMarker", mark);
+	      if(found3d) {
+		mark.id = 1001;
+		mark.type = 1;
+		mark.action = 0;
+		mark.x = x;
+		mark.y = y;
+		mark.z = z;
+		mark.roll = 0;
+		mark.pitch = 0;
+		mark.yaw = 0;
+		mark.xScale = .02;
+		mark.yScale = .02;
+		mark.zScale = .02;
+		mark.alpha = 255;
+		mark.r = 0;
+		mark.g = 255;
+		mark.b = 0;
+		mark.text = string("");
+		publish("visualizationMarker", mark);
+	      }
+	      else {
+		cout << "No 3d point.  Press a key." << endl;
+		cvWaitKey();
+	      }
 	    }
 	    
 	    // -- Compute the descriptor.
@@ -97,7 +113,7 @@ public:
 	    }
 	  }
 	  
-	  obj.features[descriptors_[iDesc]->name] = feat;
+	  obj.features[descriptors_[iDesc]->name_] = feat;
 	}
 	
 	objs.push_back(obj);
@@ -107,7 +123,7 @@ public:
 
     dd.setObjs(objs);
     dd.save(savename);
-    cout << endl << dd.status() << endl;
+    //cout << endl << dd.status() << endl;
   }
 
 private:
@@ -124,7 +140,7 @@ private:
 
 
 
-bool FixedSpinMedium::operator()(SmartScan &ss, const IplImage &img, float x, float y, float z, int row, int col, Matrix** result, bool debug) {
+bool SpinImage::operator()(SmartScan &ss, const IplImage &img, float x, float y, float z, int row, int col, Matrix** result, bool debug) {
 
   // -- Reset psi_.
   for(int i=0; i<width_; i++) {
@@ -135,7 +151,13 @@ bool FixedSpinMedium::operator()(SmartScan &ss, const IplImage &img, float x, fl
  
 
   Matrix* res = new Matrix(height_*width_,1); (*res) = 0.0;
-  bool si_success = ss.computeSpinImageFixedOrientation(*psi_, x, y, z, support_, pixelsPerMeter_, string("-y"));
+  bool si_success;
+  if(fixed_)
+    si_success = ss.computeSpinImageFixedOrientation(*psi_, x, y, z, support_, pixelsPerMeter_, string("-y"));
+  else
+    si_success = ss.computeSpinImageNatural(*psi_, x, y, z, support_, pixelsPerMeter_);
+
+
   if(!si_success) {
     *result = res;
     return false;
@@ -161,7 +183,7 @@ bool FixedSpinMedium::operator()(SmartScan &ss, const IplImage &img, float x, fl
 }
 
 
-void FixedSpinMedium::display(const Matrix& result) {
+void SpinImage::display(const Matrix& result) {
   //Display the spin image with gnuplot.
   char cmd[] = "echo \'set pm3d map; set size ratio -1; splot \"gnuplot_tmp\"\' | gnuplot -persist";
   char filename[] = "gnuplot_tmp";
@@ -199,7 +221,7 @@ int main(int argc, char **argv) {
     datafiles.push_back(string(argv[i]));
   }
 
-  d.buildDataset(2, datafiles, string("savename.dd"), true);
+  d.buildDataset(20, datafiles, string("savename.dd"), true);
   }
   else {
     cout << "Usage: " << endl;
