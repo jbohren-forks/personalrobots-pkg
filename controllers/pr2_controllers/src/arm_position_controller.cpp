@@ -34,7 +34,7 @@
 
 // Original version: Timothy Hunter <tjhunter@willowgarage.com>
 
-#include "pr2_controllers/arm_controller.h"
+#include "pr2_controllers/arm_position_controller.h"
 
 using namespace controller;
 using namespace std;
