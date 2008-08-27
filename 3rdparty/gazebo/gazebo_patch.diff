@@ -809,11 +809,68 @@ Index: server/physics/HingeJoint.cc
  }
  
  
+Index: server/physics/ode/ODEPhysics.hh
+===================================================================
+--- server/physics/ode/ODEPhysics.hh	(revision 6981)
++++ server/physics/ode/ODEPhysics.hh	(working copy)
+@@ -133,6 +133,7 @@
+ 
+   private: Param<double> *globalCFMP; 
+   private: Param<double> *globalERPP; 
++  private: Param<bool> *quickStepP; 
+ };
+ 
+ /** \}*/
 Index: server/physics/ode/ODEPhysics.cc
 ===================================================================
 --- server/physics/ode/ODEPhysics.cc	(revision 6981)
 +++ server/physics/ode/ODEPhysics.cc	(working copy)
-@@ -264,15 +264,16 @@
+@@ -69,6 +69,7 @@
+ 
+   this->globalCFMP = new Param<double>("cfm", 10e-5, 0);
+   this->globalERPP = new Param<double>("erp", 0.2, 0);
++  this->quickStepP = new Param<bool>("quickStep", false, 0);
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -86,6 +87,7 @@
+ 
+   delete this->globalCFMP;
+   delete this->globalERPP;
++  delete this->quickStepP;
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -101,6 +103,7 @@
+   this->updateRateP->Load(cnode);
+   this->globalCFMP->Load(cnode);
+   this->globalERPP->Load(cnode);
++  this->quickStepP->Load(cnode);
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -113,6 +116,7 @@
+   stream << prefix << "  " << *(this->updateRateP) << "\n";
+   stream << prefix << "  " << *(this->globalCFMP) << "\n";
+   stream << prefix << "  " << *(this->globalERPP) << "\n";
++  stream << prefix << "  " << *(this->quickStepP) << "\n";
+   stream << prefix << "</physics:ode>\n";
+ }
+ 
+@@ -135,8 +139,10 @@
+   dSpaceCollide( this->spaceId, this, CollisionCallback );
+ 
+   // Update the dynamical model
+-  dWorldStep( this->worldId, this->stepTimeP->GetValue() );
+-  //dWorldQuickStep(this->worldId, this->stepTime);
++  if (this->quickStepP->GetValue())
++    dWorldQuickStep(this->worldId, this->stepTimeP->GetValue() );
++  else
++    dWorldStep( this->worldId, this->stepTimeP->GetValue() );
+ 
+   // Very important to clear out the contact group
+   dJointGroupEmpty( this->contactGroup );
+@@ -264,15 +270,16 @@
          contact.surface.mode = dContactSlip1 | dContactSlip2 | 
                                 dContactSoftERP | dContactSoftCFM |  
                                 dContactBounce | dContactMu2 | dContactApprox1;
