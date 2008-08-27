@@ -29,6 +29,10 @@ configured: $(SVN_DIR)
 opende: configured
 	cd $(SVN_DIR) && make
 	cd $(SVN_DIR) && make install
+	@echo "patch ode-config to pass -Wl,-rpath,-L{exec_prefix}/lib"
+	sed 's/echo  -L$${exec_prefix}\/lib -lode/echo  -Wl,-rpath,-L$${exec_prefix}\/lib -L$${exec_prefix}\/lib -lode/g' opende-svn/ode-config > opende/bin/ode-config
+	@echo "patch ode.pc to pass -Wl,-rpath,-L{libdir}"
+	sed 's/Libs: -L$${libdir} -lode/Libs: -Wl,-rpath,-L$${libdir} -L$${libdir} -lode/g' opende-svn/ode.pc > opende/lib/pkgconfig/ode.pc
 
 clean:
 	-cd $(SVN_DIR) && make clean
