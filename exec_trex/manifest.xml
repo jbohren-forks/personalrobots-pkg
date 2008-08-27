@@ -8,6 +8,8 @@
   <depend package="pr2_msgs" />
   <depend package="trex" />
   <depend package="rosTF" />
+  <depend package="rospy" />
+  <depend package="rostest" />
   <depend package="pr2Core" />
   <depend package="robot_kinematics" />
   <depend package="rosstage" />
