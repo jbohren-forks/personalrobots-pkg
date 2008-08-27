@@ -1300,16 +1300,14 @@ Index: SConstruct
 ===================================================================
 --- SConstruct	(revision 6981)
 +++ SConstruct	(working copy)
-@@ -22,8 +22,11 @@
+@@ -22,8 +22,9 @@
  # 3rd party packages
  #
  parseConfigs=['pkg-config --cflags --libs OGRE',
-+              'rospack export/cpp/cflags opende',
-+              'rospack export/cpp/lflags opende',
-+              'rospack export/cpp/cflags freeimage',
-+              'rospack export/cpp/lflags freeimage',
++              'pkg-config --cflags --libs freeimage', 
                'xml2-config --cflags --libs', 
 -      	      'ode-config --cflags --libs',
++              'ode-config --cflags --libs', 
                'fltk-config --cflags --libs --ldflags --use-gl --use-images',
                'pkg-config --cflags --libs xft'
                ]

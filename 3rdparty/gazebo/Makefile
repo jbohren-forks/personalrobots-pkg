@@ -9,8 +9,8 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 OGRE_PKG = $(shell rospack find ogre)/ogre/lib/pkgconfig
 PLAYER_PKG = $(shell rospack find player)/player/lib/pkgconfig
+FI_PKG = $(shell rospack find freeimage)
 ODE_PATH = $(shell rospack find opende)/opende
-FI_PATH = $(shell rospack find freeimage)
 FI_LD = $(shell rospack find freeimage)/freeimage/lib
 ROOT = $(shell rospack find gazebo)/gazebo
 TESTROOT = $(shell rospack find gazebo)/test-gazebo
@@ -20,11 +20,22 @@ build: SVN_UP_REVERT_PATCH gazebo
 .PHONY: gazebo
 gazebo: $(SVN_DIR)
 	if [ ! -d gazebo ]; then mkdir -p gazebo; mkdir -p gazebo/share; mkdir -p gazebo/share/gazebo; mkdir -p gazebo/share/gazebo/Media; fi
-	cd $(SVN_DIR) && PKG_CONFIG_PATH=${FI_PATH}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} \
-	LIBPATH="${FI_LD}:`rospack find opende`/opende/lib" scons prefix=$(ROOT) 
-	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${FI_PATH}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} \
-	LIBPATH="${FI_LD}:`rospack find opende`/opende/lib" scons prefix=$(ROOT) install
+	cd $(SVN_DIR) && PKG_CONFIG_PATH=${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}/bin:${PATH} \
+	scons prefix=$(ROOT) 
+	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}/bin:${PATH} \
+	scons prefix=$(ROOT) install
 	touch gazebo
+
+ROOT_ORIG = $(shell rospack find gazebo)/gazebo-original
+SVN_ORIG_DIR = gazebo-svn-original
+.PHONY: gazebo-original
+gazebo-original: $(SVN_ORIG_DIR)
+	if [ ! -d gazebo-original ]; then mkdir -p gazebo-original; mkdir -p gazebo-original/share; mkdir -p gazebo-original/share/gazebo; mkdir -p gazebo-original/share/gazebo/Media; fi
+	cd $(SVN_ORIG_DIR) && PKG_CONFIG_PATH=${ODE_PATH}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}/bin:${PATH} \
+	scons prefix=$(ROOT_ORIG) 
+	-cd $(SVN_ORIG_DIR) && PKG_CONFIG_PATH=${ODE_PATH}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}/bin:${PATH} \
+	scons prefix=$(ROOT_ORIG) install
+	touch gazebo-original
 
 test-$(SVN_TARGET):
 	@if [ ! -d test-$(SVN_DIR) ]; then svn co $(SVN_REVISION) https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk test-$(SVN_DIR); fi

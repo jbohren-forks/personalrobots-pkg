@@ -1,0 +1,10 @@
+prefix=/u/johnhsu/projects/pr2/3rdparty/freeimage/freeimage
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: FreeImage
+Description: Image manipulation tool
+Version: 3.10.0
+Libs: -L${libdir} -lfreeimage
+Cflags: -I${includedir}
