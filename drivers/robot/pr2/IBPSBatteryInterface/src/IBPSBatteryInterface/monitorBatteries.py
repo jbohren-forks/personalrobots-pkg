@@ -134,6 +134,7 @@ class robotPower:
     def __init__(self):
         print "made robot power"
         self.controllers = [powerController(),powerController(),powerController(),powerController()]
+        self.pub = rospy.TopicPub("/diagnostics", DiagnosticMessage)
 
     def print_remaining(self):
         print "___________________________________"
@@ -155,14 +156,35 @@ class robotPower:
                 for message in control.latest_system_messages:
                     print message
 
-    def updateParamServer(self, master):
-        master.setParam('IBPS.current', (self.controllers[0].total_current(),self.controllers[1].total_current(),self.controllers[2].total_current(),self.controllers[3].total_current()))
-        master.setParam('IBPS.voltage', (self.controllers[0].average_voltage(),self.controllers[1].average_voltage(),self.controllers[2].average_voltage(),self.controllers[3].average_voltage()))
-        master.setParam('IBPS.time_remaining', (self.controllers[0].time_remaining,self.controllers[1].time_remaining,self.controllers[2].time_remaining,self.controllers[3].time_remaining))
-        master.setParam('IBPS.average_charge', (self.controllers[0].average_charge,self.controllers[1].average_charge,self.controllers[2].average_charge,self.controllers[3].average_charge))
+    ## Send out the state of the controller on a diagnostic message
+    def broadcast_diagnostic(self):
+        sval = [ DiagnosticValue(self.controllers[0].total_current(), "Current Controller 0"),
+                 DiagnosticValue(self.controllers[1].total_current(), "Current Controller 1"),
+                 DiagnosticValue(self.controllers[2].total_current(), "Current Controller 2"),
+                 DiagnosticValue(self.controllers[3].total_current(), "Current Controller 3"),
+
+                 DiagnosticValue(self.controllers[0].average_voltage(), "Voltage Controller 0"),
+                 DiagnosticValue(self.controllers[1].average_voltage(), "Voltage Controller 1"),
+                 DiagnosticValue(self.controllers[2].average_voltage(), "Voltage Controller 2"),
+                 DiagnosticValue(self.controllers[3].average_voltage(), "Voltage Controller 3"),
+
+                 DiagnosticValue(self.controllers[0].time_remaining, "Time Remaining Controller 0"),
+                 DiagnosticValue(self.controllers[1].time_remaining, "Time Remaining Controller 1"),
+                 DiagnosticValue(self.controllers[2].time_remaining, "Time Remaining Controller 2"),
+                 DiagnosticValue(self.controllers[3].time_remaining, "Time Remaining Controller 3"),
+
+                 DiagnosticValue(self.controllers[0].average_charge, "Average charge percent Controller 0"),
+                 DiagnosticValue(self.controllers[1].average_charge, "Average charge percent Controller 1"),
+                 DiagnosticValue(self.controllers[2].average_charge, "Average charge percent Controller 2"),
+                 DiagnosticValue(self.controllers[3].average_charge, "Average charge percent Controller 3")]
+
+        stat = DiagnosticStatus(0, "Controller", "All good", sval)
+        out = DiagnosticMessage(None, [stat])
+        self.pub.publish(out)
+
         
 
-def setupPorts():
+def setup_serial_ports():
 
     os.system('stty 19200 </dev/ttyUSB0')
     os.system('stty 19200 </dev/ttyUSB1')
@@ -179,30 +201,29 @@ def monitorBatteriesMain(argv, stdout, env):
             usage(stdout, argv[0])
             return
 
-    pub = rospy.TopicPub("/diagnostics", DiagnosticMessage)
-
-    master = rospy.getMaster()
 
 
     rospy.ready(NAME)
 
 
-    setupPorts()
+    setup_serial_ports()
     
 #f= open('testfile.txt','r')
     f0 = open('/dev/ttyUSB0','r')
     f1 = open('/dev/ttyUSB1','r')
     f2 = open('/dev/ttyUSB2','r')
     f3 = open('/dev/ttyUSB3','r')
-# split on %  to string and checksum
-# check checksum
+
 
     myPow = robotPower()
 
     start_time = time.time()
     last_time = start_time
-    while True:
+    # continuously read from the ports while not shutdown
+    while not rospy.is_shutdown():
+        # select from all open ports to wait for new data
         current, blah, blah2 = select.select([f0,f1,f2,f3],[],[],1)
+        # figure out which port(s) got new data
         for f in current:
             if f == f0:
                 port = 0;
@@ -217,12 +238,15 @@ def monitorBatteriesMain(argv, stdout, env):
                 port = 3;
                 port_string = 'f3'
             line = f.readline()
+            # split on %  to string and checksum
             halves = line.split('%')
             if len(halves) != 2:
                 #            print 'I did not split on \% correctly'
                 continue
             halves[1]=halves[1].strip()
             halves[0]=halves[0].lstrip('$')
+
+## @todo check checksum
 
 #        print line
 #    print halves
@@ -247,6 +271,8 @@ def monitorBatteriesMain(argv, stdout, env):
                 print "This often indicates a misconfigured serial port check port:"
                 print f
                 continue
+
+            # Controller Message Parsing
             if message[0] == 'C':
                 controller_number = int(message[1])
                 #print 'Controller on port %s says:'%(port_string)
@@ -286,6 +312,7 @@ def monitorBatteriesMain(argv, stdout, env):
             else:
                 pass
 
+            # Battery Message parsing
             if message[0] == 'B':
                 controller_number = int(message[1])
                 battery_number = int(message[2])
@@ -324,7 +351,7 @@ def monitorBatteriesMain(argv, stdout, env):
 # lookup index
 # record value cast properly so pages 13 to 35
 
-#case S system data
+            #case System Data Parsing
             if message[0] == 'S':
                 splitmessage = message.split(',')
                 #print 'System Message'
@@ -355,13 +382,7 @@ def monitorBatteriesMain(argv, stdout, env):
             last_time = last_time + increment
             print "displaying to screen"
             myPow.print_remaining()
-            print "updating param server"
-            print "commented out for now"
-            sval = DiagnosticValue(2.5, "value label")
-            stat = DiagnosticStatus(0, "Battery", "Message", [sval])
-            out = DiagnosticMessage(None, [stat])
-            pub.publish(out)
-            #myPow.updateParamServer(master)
+            myPow.broadcast_diagnostic()
         
 if __name__ == '__main__':
     try:
