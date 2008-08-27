@@ -184,28 +184,49 @@ class robotPower:
 
     ## Send out the state of the controller on a diagnostic message
     def broadcast_diagnostic(self):
-        sval = [ DiagnosticValue(self.controllers[0].total_current(), "Current Controller 0"),
-                 DiagnosticValue(self.controllers[1].total_current(), "Current Controller 1"),
-                 DiagnosticValue(self.controllers[2].total_current(), "Current Controller 2"),
-                 DiagnosticValue(self.controllers[3].total_current(), "Current Controller 3"),
+        stat = []
 
-                 DiagnosticValue(self.controllers[0].average_voltage(), "Voltage Controller 0"),
-                 DiagnosticValue(self.controllers[1].average_voltage(), "Voltage Controller 1"),
-                 DiagnosticValue(self.controllers[2].average_voltage(), "Voltage Controller 2"),
-                 DiagnosticValue(self.controllers[3].average_voltage(), "Voltage Controller 3"),
 
-                 DiagnosticValue(self.controllers[0].time_remaining, "Time Remaining Controller 0"),
-                 DiagnosticValue(self.controllers[1].time_remaining, "Time Remaining Controller 1"),
-                 DiagnosticValue(self.controllers[2].time_remaining, "Time Remaining Controller 2"),
-                 DiagnosticValue(self.controllers[3].time_remaining, "Time Remaining Controller 3"),
+        for c in range(0,len(self.controllers)):
+            sval = []
+            sval.append(DiagnosticValue(self.controllers[c].time_remaining, "Time Remaining Controller %d"%c))
+            sval.append(DiagnosticValue(self.controllers[c].average_charge, "Average charge percent Controller %d"%c))
+            sval.append(DiagnosticValue(self.controllers[c].total_current(), "Current Controller %d"%c))
+            sval.append(DiagnosticValue(self.controllers[c].average_voltage(), "Voltage Controller %d"%c))
+            stat.append(DiagnosticStatus(0, "IBPS %d"%c, "All good", sval))
+            ## @todo make the status string represent errors etc
 
-                 DiagnosticValue(self.controllers[0].average_charge, "Average charge percent Controller 0"),
-                 DiagnosticValue(self.controllers[1].average_charge, "Average charge percent Controller 1"),
-                 DiagnosticValue(self.controllers[2].average_charge, "Average charge percent Controller 2"),
-                 DiagnosticValue(self.controllers[3].average_charge, "Average charge percent Controller 3")]
+            for b in range(0,len(self.controllers[c].batteries)):
+                bval = []
+                if self.controllers[c].batteries[b].present < 0.5:
+                    continue
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].present, "present (0,1)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].charging, "charging (0,1)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].supplying_power, "supplying power (0,1)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].w_charge_power, "with charge power (0,1)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].charge_inhibited, "charge inhibited (0,1)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].voltage, "voltage (V)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].current, "current (A)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].average_current, "average current (1 minute average A)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].error, "error (0,1)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].temperature, "temperature (K)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].max_relative_charge_error, "max relative charge error (%)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].relative_charge, "relative charge (%)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].remaining_capacity, "remaining capacity (lookup)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].full_charge_capacity, "full charge capacity (lookup"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].run_time_to_empty, "run time to empty (min)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].average_time_to_empty, "average time to empty (min)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].average_time_to_full, "average time to full (min)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].cycle_count, "cycle count"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].design_capacity, "design capacity (lookup)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].design_voltage, "design voltage (V)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].serial_number, "Serial Number"))
+                stat.append(DiagnosticStatus(0, "Smart Battery %d.%d"%(c,b), "All good", bval))
+                ## @todo make the status string represent errors etc
+                            
 
-        stat = DiagnosticStatus(0, "Controller", "All good", sval)
-        out = DiagnosticMessage(None, [stat])
+            
+        out = DiagnosticMessage(None, stat)
         self.pub.publish(out)
 
         
