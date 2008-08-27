@@ -44,6 +44,7 @@ import unittest, sys, os, math
 import time
 import rospy, rostest
 from std_msgs.msg import *
+from robot_msgs.msg import *
 
 TARGET_X = -5.4
 TARGET_Y = 0.0
@@ -58,27 +59,31 @@ class TestSlide(unittest.TestCase):
         self.hits = 0
         self.runs = 0
         
-    def positionInput(self, pos):
+    def positionInput(self, pose):
         self.runs = self.runs + 1
         
         #if (pos.frame == 1):
-        dx = pos.x - TARGET_X
-        dy = pos.y - TARGET_Y
-        dz = pos.z - TARGET_Z
+        dx = pose.position.x - TARGET_X
+        dy = pose.position.y - TARGET_Y
+        dz = pose.position.z - TARGET_Z
         d = math.sqrt((dx * dx) + (dy * dy)) #+ (dz * dz))
-        print "P: " + str(pos.x) + " " + str(pos.y)
+        print "P: " + str(pose.position.x) + " " + str(pose.position.y)
         #print "D: " + str(dx) + " " + str(dy) + " " + str(dz) + " " + str(d) + " < " + str(TARGET_RAD * TARGET_RAD)
         if (d < TARGET_RAD):
-            #print "HP: " + str(dx) + " " + str(dy) + " " + str(d) + " at " + str(pos.x) + " " + str(pos.y)
+            #print "HP: " + str(dx) + " " + str(dy) + " " + str(d) + " at " + str(pos.position.x) + " " + str(pos.position.y)
             #print "DONE"
             self.hits = self.hits + 1
-            if (self.hits > 10):
+            print "Hit goal, " + str(self.hits)
+            if (self.runs < 100 and self.runs > 10):
+                print "Obviously wrong transforms!"
+                self.success = False
+                self.fail = True
+                os.system("killall gazebo")
+                os.system("killall pr2_gazebo")
+                
+            if (self.hits > 200):
                 if (self.runs > 20):
                     self.success = True
-                else:
-                    print "Obviously wrong transforms!"
-                    self.success = False
-                    self.fail = True
                 os.system("killall gazebo")
                 os.system("killall pr2_gazebo")
         
@@ -86,7 +91,7 @@ class TestSlide(unittest.TestCase):
     def test_slide(self):
         print "LINK\n"
         #rospy.TopicSub("Odom", RobotBase2DOdom, self.positionInput)
-        rospy.TopicSub("groundtruthposition", Point3DFloat32, self.positionInput)
+        rospy.TopicSub("base_pose", Pose3DEulerFloat32, self.positionInput)
         rospy.ready(NAME, anonymous=True)
         timeout_t = time.time() + 50.0 #59 seconds
         while not rospy.is_shutdown() and not self.success and not self.fail and time.time() < timeout_t:
