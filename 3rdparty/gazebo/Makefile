@@ -10,7 +10,9 @@ include $(shell rospack find mk)/svn_checkout.mk
 OGRE_PKG = $(shell rospack find ogre)/ogre/lib/pkgconfig
 PLAYER_PKG = $(shell rospack find player)/player/lib/pkgconfig
 FI_PKG = $(shell rospack find freeimage)
-ODE_PATH = $(shell rospack find opende)/opende
+ODE_PKG = $(shell rospack find opende)/opende/lib/pkgconfig
+
+ODE_PATH = $(shell rospack find opende)/opende/bin
 FI_LD = $(shell rospack find freeimage)/freeimage/lib
 ROOT = $(shell rospack find gazebo)/gazebo
 TESTROOT = $(shell rospack find gazebo)/test-gazebo
@@ -20,9 +22,9 @@ build: SVN_UP_REVERT_PATCH gazebo
 .PHONY: gazebo
 gazebo: $(SVN_DIR)
 	if [ ! -d gazebo ]; then mkdir -p gazebo; mkdir -p gazebo/share; mkdir -p gazebo/share/gazebo; mkdir -p gazebo/share/gazebo/Media; fi
-	cd $(SVN_DIR) && PKG_CONFIG_PATH=${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}/bin:${PATH} \
+	cd $(SVN_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
 	scons prefix=$(ROOT) 
-	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}/bin:${PATH} \
+	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
 	scons prefix=$(ROOT) install
 	touch gazebo
 
@@ -31,9 +33,9 @@ SVN_ORIG_DIR = gazebo-svn-original
 .PHONY: gazebo-original
 gazebo-original: $(SVN_ORIG_DIR)
 	if [ ! -d gazebo-original ]; then mkdir -p gazebo-original; mkdir -p gazebo-original/share; mkdir -p gazebo-original/share/gazebo; mkdir -p gazebo-original/share/gazebo/Media; fi
-	cd $(SVN_ORIG_DIR) && PKG_CONFIG_PATH=${ODE_PATH}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}/bin:${PATH} \
+	cd $(SVN_ORIG_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
 	scons prefix=$(ROOT_ORIG) 
-	-cd $(SVN_ORIG_DIR) && PKG_CONFIG_PATH=${ODE_PATH}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}/bin:${PATH} \
+	-cd $(SVN_ORIG_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
 	scons prefix=$(ROOT_ORIG) install
 	touch gazebo-original
 
