@@ -565,9 +565,6 @@
         <box size="0.1 0.1 0.1" />
       </geometry>
     </collision>
-    <map name="base_gravity" flag="gazebo">
-      <elem key="turnGravityOff">true</elem>
-    </map>
     
   </link>
   
