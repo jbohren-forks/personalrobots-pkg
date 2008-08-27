@@ -75,6 +75,7 @@ specify '-' for the robot_model argument.
 
 Subscribes to (name/type):
 - @b scan/LaserScan : scan data received from a laser
+- @b cloud/PointCloudFloat32 : cloud data 
 
 Additional subscriptions due to inheritance from NodeRobotModel:
 - @b localizedpose/RobotBase2DOdom : localized position of the robot base
@@ -138,7 +139,8 @@ public:
 	/* create a thread that handles the publishing of the data */	
 	m_publishingThread = ros::thread::member_thread::startMemberFunctionThread<World3DMap>(this, &World3DMap::publishDataThread);
 
-	subscribe("scan", m_inputScan, &World3DMap::pointCloudCallback, 1);
+	subscribe("scan",  m_inputScan,  &World3DMap::scanCallback, 1);
+	subscribe("cloud", m_inputCloud, &World3DMap::pointCloudCallback, 1);
     }
     
     ~World3DMap(void)
@@ -163,6 +165,8 @@ public:
     void setAcceptScans(bool acceptScans)
     {
 	m_acceptScans = acceptScans;
+	if (m_verbose)
+	    printf("Accepting input scans...\n");
     }
     
 private:
@@ -185,12 +189,48 @@ private:
 	/* If we're not ready to accept scans yet, discard the data */
 	if (!m_acceptScans)
 	    return;
+
+	if (m_verbose) 
+	    fprintf(stdout, "Received point cloud with %d points in frame %s\n", m_inputCloud.get_pts_size(), m_inputCloud.header.frame_id.c_str());
 	
-	/* The idea is that if processing of previous input data is
-	   not done, data will be discarded. Hopefully this discarding
-	   of data will not happen, but we don't want the node to
-	   postpone processing latest data just because it is not done
-	   with older data. */
+	bool success = false;
+	
+	if (m_inputCloud.header.frame_id == "FRAMEID_MAP")
+	{
+	    m_toProcess = m_inputCloud;
+	    success = true;
+	}
+	else
+	{
+	    try
+	    {
+		m_tf.transformPointCloud("FRAMEID_MAP", m_toProcess, m_inputCloud);
+		success = true;
+	    }
+	    catch(libTF::TransformReference::LookupException& ex)
+	    {
+		fprintf(stderr, "Discarding pointcloud: Transform reference lookup exception\n");
+	    }
+	    catch(libTF::TransformReference::ExtrapolateException& ex)
+	    {
+		fprintf(stderr, "Discarding pointcloud: Extrapolation exception: %s\n", ex.what());
+	    }
+	    catch(...)
+	    {
+		fprintf(stderr, "Discarding pointcloud: Exception in point cloud computation\n");
+	    }
+	}
+	
+	if (success)
+	    processData();
+    }
+    
+    void scanCallback(void)
+    {
+	/* If we're not ready to accept scans yet, discard the data */
+	if (!m_acceptScans)
+	    return;
+	
 	if (m_verbose) 
 	    fprintf(stdout, "Received laser scan with %d points in frame %s\n", m_inputScan.get_ranges_size(), m_inputScan.header.frame_id.c_str());
 	
@@ -203,15 +243,15 @@ private:
 	}
 	catch(libTF::TransformReference::LookupException& ex)
 	{
-	    fprintf(stderr, "Discarding pointcloud: Transform reference lookup exception\n");
+	    fprintf(stderr, "Discarding laser scan: Transform reference lookup exception\n");
 	}
 	catch(libTF::TransformReference::ExtrapolateException& ex)
 	{
-	    fprintf(stderr, "Discarding pointcloud: Extrapolation exception: %s\n", ex.what());
+	    fprintf(stderr, "Discarding laser scan: Extrapolation exception: %s\n", ex.what());
 	}
 	catch(...)
 	{
-	    fprintf(stderr, "Discarding pointcloud: Exception in point cloud computation\n");
+	    fprintf(stderr, "Discarding laser scan: Exception in point cloud computation\n");
 	}  
 	if (success)
 	    processData();
@@ -440,7 +480,8 @@ private:
     double                           m_retainAboveGroundThreshold;
     int                              m_verbose;
     
-    std_msgs::LaserScan              m_inputScan; //Buffer for recieving scan
+    std_msgs::LaserScan              m_inputScan;  //Buffer for recieving scan
+    std_msgs::PointCloudFloat32      m_inputCloud; //Buffer for recieving cloud
     std_msgs::PointCloudFloat32      m_toProcess; 
     
     pthread_t                       *m_publishingThread;

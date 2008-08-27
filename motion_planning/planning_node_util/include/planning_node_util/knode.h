@@ -179,7 +179,7 @@ namespace planning_node_util
 	
 	void waitForState(void)
 	{
-	    while (m_node->ok() && !(m_haveState ^ loadedRobot()))
+	    while (m_node->ok() && (m_haveState ^ loadedRobot()))
 		ros::Duration(0.05).sleep();
 	}
 	

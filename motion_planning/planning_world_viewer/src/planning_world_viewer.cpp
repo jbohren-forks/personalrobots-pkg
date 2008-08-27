@@ -353,20 +353,16 @@ int main(int argc, char **argv)
 	viewer->loadRobotDescription();
 	viewer->updateODESpaces();
 
-	if (viewer->loadedRobot())
-	{
-	    dsFunctions fn;
-	    fn.version = DS_VERSION;
-	    fn.start   = &start;
-	    fn.step    = &simLoop;
-	    fn.command = &command;
-	    fn.stop = 0;
-	    fn.path_to_textures = "./res";
-	    
-	    dsSimulationLoop(argc, argv, 640, 480, &fn);
-	}
-	else
-	    printf("No model defined. Display world node cannot start.\n");
+	
+	dsFunctions fn;
+	fn.version = DS_VERSION;
+	fn.start   = &start;
+	fn.step    = &simLoop;
+	fn.command = &command;
+	fn.stop = 0;
+	fn.path_to_textures = "./res";
+	
+	dsSimulationLoop(argc, argv, 640, 480, &fn);
 	
 	viewer->shutdown();
 	
