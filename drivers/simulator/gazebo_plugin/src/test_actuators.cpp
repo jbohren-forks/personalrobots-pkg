@@ -379,12 +379,12 @@ namespace gazebo {
       std::cout << " LoadChild controller name: " <<  *controller_name << " type " << *controller_type << std::endl;
 
       // initialize controller
-      std::cout << " adding to mc_ " ;
+      std::cout << " adding to mc_ " << *controller_name << "(" << *controller_type << ")" << std::endl;
       mc_.spawnController(*controller_type,
                           *controller_name,
                           zit);
 
-      std::cout << " adding to rmc_ " ;
+      std::cout << " adding to rmc_ " << *controller_name << "(" << *controller_type << ")" << std::endl;
       rmc_.spawnController(*controller_type,
                            *controller_name,
                            zit);

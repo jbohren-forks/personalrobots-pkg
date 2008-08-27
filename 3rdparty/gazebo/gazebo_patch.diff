@@ -600,6 +600,18 @@ Index: server/physics/Geom.hh
      private: Param<Vector3> *xyzP;
      private: Param<Quatern> *rpyP;
  
+Index: server/physics/Body.hh
+===================================================================
+--- server/physics/Body.hh	(revision 6981)
++++ server/physics/Body.hh	(working copy)
+@@ -170,6 +170,7 @@
+   
+     private: Param<Vector3> *xyzP;
+     private: Param<Quatern> *rpyP;
++    private: Param<bool> *turnGravityOffP;
+   };
+   
+   /// \}
 Index: server/physics/HingeJoint.hh
 ===================================================================
 --- server/physics/HingeJoint.hh	(revision 6981)
@@ -737,6 +749,27 @@ Index: server/physics/Geom.cc
    if (dMassCheck(&this->bodyMass))
    {
      dMassRotate(&this->bodyMass, r);
+Index: server/physics/Body.cc
+===================================================================
+--- server/physics/Body.cc	(revision 6981)
++++ server/physics/Body.cc	(working copy)
+@@ -66,6 +66,7 @@
+ 
+   this->xyzP = new Param<Vector3>("xyz", Vector3(), 0);
+   this->rpyP = new Param<Quatern>("rpy", Quatern(), 0);
++  this->turnGravityOffP = new Param<bool>("turnGravityOff", false, 0);
+ }
+ 
+ 
+@@ -129,7 +130,7 @@
+   }
+ 
+   // If no geoms are attached, then don't let gravity affect the body.
+-  if (this->geoms.size()==0)
++  if (this->turnGravityOffP->GetValue() || this->geoms.size()==0)
+   {
+     this->SetGravityMode(false);
+   }
 Index: server/physics/HingeJoint.cc
 ===================================================================
 --- server/physics/HingeJoint.cc	(revision 6981)
