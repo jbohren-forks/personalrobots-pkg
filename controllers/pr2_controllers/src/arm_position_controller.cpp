@@ -89,7 +89,7 @@ void ArmPositionController::setJointPosCmd(pr2_controllers::SetJointPosCmd::requ
 
 void ArmPositionController::setJointGains(pr2_controllers::SetJointGains::request &req)
 {
-  cout<<"SET COMMANDS"<<endl;
+  cout<<"SET GAINS"<<endl;
   arm_controller_lock_.lock();
   JointPositionController *jpc = getJointControllerByName(req.name);
   if(jpc)
@@ -207,6 +207,8 @@ bool ArmPositionControllerNode::initXml(mechanism::Robot * robot, TiXmlElement *
   {
     node->advertise_service(prefix + "/set_command", &ArmPositionControllerNode::setJointPosCmd, this);
     node->advertise_service(prefix + "/get_command", &ArmPositionControllerNode::getJointPosCmd, this);
+
+    node->advertise_service(prefix + "/set_joint_gains", &ArmPositionControllerNode::setJointGains, this);
 
     node->advertise_service(prefix + "/set_cartesian_pos", &ArmPositionControllerNode::setCartesianPosCmd, this);
     node->advertise_service(prefix + "/get_cartesian_pos", &ArmPositionControllerNode::getCartesianPosCmd, this);
