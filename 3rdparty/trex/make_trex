@@ -8,7 +8,18 @@ cd TREX
 # Build the debug version
 jam -q libTREX_g.so
 
+if [ $? -ne 0 ] ; then
+    echo "Jam of libTREX_g.so failed."
+    exit 1
+fi
+
 # Build the optimized version
-jam -q libTREX_o.so
+jam -sVARIANTS=OPTIMIZED -q libTREX_o.so
+
+if [ $? -ne 0 ] ; then
+    echo "Jam of libTREX_o.so failed."
+    exit 2
+fi
 
 cd ../
+
