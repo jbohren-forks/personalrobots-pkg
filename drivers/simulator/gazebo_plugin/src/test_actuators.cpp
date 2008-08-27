@@ -127,7 +127,8 @@ namespace gazebo {
     if (tlcn)
     {
       std::cout << " initializing tile laser scanner\n" << std::endl;
-      tlcn->setProfile(controller::LaserScannerController::SINEWAVE, 20, 2.265, 100, 2.265/2);
+      //tlcn->setProfile(controller::LaserScannerController::SINEWAVE, 20, 2.265, 100, 0.3475);
+      tlcn->setProfile(controller::LaserScannerController::SAWTOOTH, 20, 2.265, 100, 0.3475);
     }
 
   }
