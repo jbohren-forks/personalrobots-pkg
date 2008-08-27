@@ -128,6 +128,16 @@ public:
    */
   void getCurrentPIDErrors(double *pe, double *ie, double *de);
 
+  /*!
+   * \brief Set PID gains for the controller.
+   * \param P  The proportional gain.
+   * \param I  The integral gain.
+   * \param D  The derivative gain.
+   * \param i_min 
+   * \param i_max 
+   */
+  void setGains(double P, double I, double D, double i_min, double i_max);
+
 private:
   double p_error_last_; /**< _Save position state for derivative state calculation. */
   double p_error_; /**< Position error. */

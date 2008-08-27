@@ -94,10 +94,20 @@ bool JointPositionController::initXml(mechanism::Robot *robot, TiXmlElement *con
   return true;
 }
 
+void JointPositionController::setGains(double p, double i, double d, double i_min, double i_max)
+{
+  pid_controller_.setGains(p,i,d,i_min,i_max);
+}
+
 // Set the joint position command
 void JointPositionController::setCommand(double command)
 {
   command_ = command;
+}
+
+std::string JointPositionController::getJointName()
+{
+  return(joint_->name_);
 }
 
 // Return the current position command

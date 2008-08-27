@@ -87,6 +87,28 @@ void ArmPositionController::setJointPosCmd(pr2_controllers::SetJointPosCmd::requ
   arm_controller_lock_.unlock();
 }
 
+void ArmPositionController::setJointGains(pr2_controllers::SetJointGains::request &req)
+{
+  cout<<"SET COMMANDS"<<endl;
+  arm_controller_lock_.lock();
+  JointPositionController *jpc = getJointControllerByName(req.name);
+  if(jpc)
+    jpc->setGains(req.p,req.i,req.d,req.i_min,req.i_max);
+  arm_controller_lock_.unlock();
+}
+
+controller::JointPositionController* ArmPositionController::getJointControllerByName(std::string name)
+{
+  for(int i=0; i< (int) joint_position_controllers_.size(); i++)
+  {
+    if(joint_position_controllers_[i]->getJointName() == name)
+    {
+      return joint_position_controllers_[i];
+    }
+  }
+    return NULL;
+}
+
 void ArmPositionController::getJointPosCmd(pr2_controllers::GetJointPosCmd::response &resp)
 {
   arm_controller_lock_.lock();
@@ -194,6 +216,13 @@ bool ArmPositionControllerNode::initXml(mechanism::Robot * robot, TiXmlElement *
   return false;  
 }
 
+
+bool ArmPositionControllerNode::setJointGains(pr2_controllers::SetJointGains::request &req,
+                                   pr2_controllers::SetJointGains::response &resp)
+{
+  c_->setJointGains(req);
+  return true;
+}
 
 
 bool ArmPositionControllerNode::setJointPosCmd(pr2_controllers::SetJointPosCmd::request &req,

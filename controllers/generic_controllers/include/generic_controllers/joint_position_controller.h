@@ -119,6 +119,11 @@ public:
 
   virtual void update();
 
+
+  void setGains(double p, double i, double d, double i_min, double i_max);
+
+  std::string getJointName();
+
 private:
   mechanism::Joint* joint_;  /**< Joint we're controlling. */
   mechanism::Robot *robot_;  /**< Pointer to robot structure. */

@@ -64,6 +64,15 @@ void Pid::initPid(double P, double I, double D, double I1, double I2)
   cmd_ = 0.0;
 }
 
+void Pid::setGains(double P, double I, double D, double I1, double I2)
+{
+  p_gain_ = P;
+  i_gain_ = I;
+  d_gain_ = D;
+  i_max_ = I1;
+  i_min_ = I2;
+}
+
 void Pid::initXml(TiXmlElement *config)
 {
   p_gain_ = config->Attribute("p") ? atof(config->Attribute("p")) : 0.0;
