@@ -2285,6 +2285,7 @@
     
     <map name="sensor" flag="gazebo">
       <verbatim key="sensor_camera">
+        <!--
         <sensor:stereocamera name="stereo_camera_sensor">
           <imageSize>640 480</imageSize>
           <hfov>60</hfov>
@@ -2303,6 +2304,7 @@
             <rightcamera>camera_iface_1</rightcamera>
           </controller:stereocamera>
         </sensor:stereocamera>
+        -->
       </verbatim>
     </map>
     
