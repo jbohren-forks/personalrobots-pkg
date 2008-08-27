@@ -178,14 +178,14 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
 
 bool BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
-  // std::cout << " base controller initxml " << std::endl << *config << std::endl;
+  std::cout << " base controller name: " << config->Attribute("name") << std::endl;
   TiXmlElement *elt = config->FirstChildElement("controller");
 //  std::cout << " child " << std::endl << *elt << std::endl;
   std::vector<JointControlParam> jcp_vec;
   JointControlParam jcp;
   while (elt){
     TiXmlElement *jnt = elt->FirstChildElement("joint");
-    std::cout << "joint snippit" << std::endl << *jnt << std::endl;
+    //std::cout << "joint snippit" << std::endl << *jnt << std::endl;
 
     // TODO: error check if xml attributes/elements are missing
     jcp.p_gain = atof(jnt->FirstChildElement("pid")->Attribute("p"));
