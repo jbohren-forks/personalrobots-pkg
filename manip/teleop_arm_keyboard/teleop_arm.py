@@ -45,18 +45,21 @@ from pr2_controllers.srv import *
 class ArmInterface:
   def __init__(self, arm_name):
     self.arm_name = arm_name
-    self.set_com_sname = '%s/set_command' % arm_name
-    self.get_com_sname = '%s/get_command' % arm_name
+    self.set_pos_sname = '%s/set_command' % arm_name
+    self.get_pos_sname = '%s/get_command' % arm_name
+    self.set_joint_gains_sname = '%s/set_joint_gains' % arm_name
     self.set_cp_sname = '%s/set_cartesian_pos' % arm_name
     self.get_cp_sname = '%s/get_cartesian_pos' % arm_name
-    rospy.wait_for_service(self.set_com_sname)
-    rospy.wait_for_service(self.get_com_sname)
+    rospy.wait_for_service(self.set_pos_sname)
+    rospy.wait_for_service(self.get_pos_sname)
+    rospy.wait_for_service(self.set_joint_gains_sname)
     rospy.wait_for_service(self.set_cp_sname)
     rospy.wait_for_service(self.get_cp_sname)
-    self.set_com = rospy.ServiceProxy(self.set_com_sname, SetArmCommand)
-    self.get_com = rospy.ServiceProxy(self.get_com_sname, GetArmCommand)
-    self.set_cp = rospy.ServiceProxy(self.set_cp_sname, SetArmCartesianPos)
-    self.get_cp = rospy.ServiceProxy(self.get_cp_sname, GetArmCartesianPos)
+    self.set_com = rospy.ServiceProxy(self.set_pos_sname, SetJointPosCmd)
+    self.get_com = rospy.ServiceProxy(self.get_pos_sname, GetJointPosCmd)
+    self.set_joint_gains = rospy.ServiceProxy(self.set_joint_gains_sname, SetJointGains)
+    self.set_cp = rospy.ServiceProxy(self.set_cp_sname, SetCartesianPosCmd)
+    self.get_cp = rospy.ServiceProxy(self.get_cp_sname, GetCartesianPosCmd)
     self.cur_com = self.get()
     self.__doc__ = " Crash course:\n \
     your_arm_name.set([list of positions]) \n \
@@ -77,22 +80,26 @@ class ArmInterface:
     for i in kwargs:
       foo=str(i)[1:]
       self.cur_com[int(foo)-1] = kwargs[i]
-    self.set_com.call(SetArmCommandRequest(self.cur_com))
+    self.set_com.call(SetJointPosCmdRequest(self.cur_com))
     return self.get()
   
   # Get position commands
   def get(self):
     self.cur_com = []
-    self.cur_com += (self.get_com.call(GetArmCommandRequest([0,0,0,0,-0.5,0,0])).positions)
+    self.cur_com += (self.get_com.call(GetJointPosCmdRequest([0,0,0,0,-0.5,0,0])).positions)
     return self.cur_com
+
+  # Set gains
+  def setJointGains(self,name,p,i,d,i_min,i_max):
+    self.set_joint_gains.call(SetJointGainsRequest(name,p,i,d,i_min,i_max))
   
   # Set cartesian position commands
   def setCP(self, x, y, z, roll, pitch, yaw):
-    self.set_cp.call(SetArmCartesianPosRequest(x, y, z, roll, pitch ,yaw))
+    self.set_cp.call(SetCartesianPosCmdRequest(x, y, z, roll, pitch ,yaw))
     
   # Get the current cartesian position of the arm
   def getCP(self):
-    v = self.get_cp.call(GetArmCartesianPosRequest())
+    v = self.get_cp.call(GetCartesianPosCmdRequest())
     return [v.x, v.y, v.z, v.roll, v.pitch, v.yaw]
     
   # Prints some help
