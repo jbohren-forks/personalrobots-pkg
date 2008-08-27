@@ -38,6 +38,7 @@
 #ifndef MECHANISM_CONTROL_H
 #define MECHANISM_CONTROL_H
 
+#include <pthread.h>
 #include <map>
 #include <string>
 #include <vector>
@@ -47,15 +48,14 @@
 #include <mechanism_model/robot.h>
 #include <rosthread/mutex.h>
 #include <generic_controllers/controller.h>
+#include <misc_utils/realtime_publisher.h>
 
 #include "mechanism_control/ListControllerTypes.h"
 #include "mechanism_control/ListControllers.h"
 #include "mechanism_control/SpawnController.h"
 #include "mechanism_control/KillController.h"
-
 #include "mechanism_control/MechanismState.h"
 
-#include <pthread.h>
 
 typedef controller::Controller* (*ControllerAllocator)();
 
@@ -102,7 +102,7 @@ private:
 /*
  * Exposes MechanismControl's interface over ROS
  */
-class MechanismControlNode 
+class MechanismControlNode
 {
 public:
   MechanismControlNode(MechanismControl *mc);
@@ -126,20 +126,10 @@ private:
 
   MechanismControl *mc_;
 
-  // Non-realtime thread for publishing state information.
-  pthread_t *state_publishing_thread_;
-  void statePublishingLoop(void);
-  bool state_publishing_loop_keep_running_;
-  static const double STATE_PUBLISHING_PERIOD = 0.1;  // in seconds, higher rates are useless with the current speed of the simulator
-
-
-  // Structure for transfering the mechanism state between realtime and non-realtime.
-  pthread_mutex_t mechanism_state_lock_;
-  // Blocks the ros publishing loop until an update is received from HW loop.
-  pthread_cond_t mechanism_state_updated_cond_;
   mechanism_control::MechanismState mechanism_state_;
-  void publishMechanismState(); // Not realtime safe
-  const char *  const mechanism_state_topic_;
+  static const double STATE_PUBLISHING_PERIOD = 0.1;  // in seconds, higher rates are useless with the current speed of the simulator
+  const char* const mechanism_state_topic_;
+  RealtimePublisher<mechanism_control::MechanismState> publisher_;
 };
 
 #endif /* MECHANISM_CONTROL_H */

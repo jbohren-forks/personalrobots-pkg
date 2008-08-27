@@ -218,7 +218,7 @@ bool MechanismControl::killController(const std::string &name)
 
 
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
-  : mc_(mc), mechanism_state_topic_("mechanism_state")
+  : mc_(mc), mechanism_state_topic_("mechanism_state"), publisher_(mechanism_state_topic_, 1)
 {
   assert(mc != NULL);
   assert(mechanism_state_topic_);
@@ -236,18 +236,11 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   node_->advertise_service("kill_controller", &MechanismControlNode::killController, this);
 
   // Advertise topics
-  node_->advertise<mechanism_control::MechanismState>(mechanism_state_topic_, 1000);
-
-  // Launches the worker state_publishing_loop_keep_running_
-  pthread_cond_init (&mechanism_state_updated_cond_, NULL);
-  pthread_mutex_init(&mechanism_state_lock_,NULL);
-  state_publishing_loop_keep_running_ = true;
-  state_publishing_thread_ = ros::thread::member_thread::startMemberFunctionThread<MechanismControlNode>(this, &MechanismControlNode::statePublishingLoop);
 }
 
 MechanismControlNode::~MechanismControlNode()
 {
-  state_publishing_loop_keep_running_ = false;
+  publisher_.stop();
 }
 
 bool MechanismControlNode::initXml(TiXmlElement *config)
@@ -263,17 +256,11 @@ void MechanismControlNode::update()
 {
   mc_->update();
 
-  // Only update on every 100th call to update()
+  // Only publish on every 100th call to update()
   static int count = 0;
-  if (count++ % 100 != 0) return;
-
-  // Attempts to lock the transfer structure
-  // If we get it, update it
-  if (!pthread_mutex_trylock(&mechanism_state_lock_))
+  if (count++ % 100 == 0)
   {
-    // We should not have to resize
     assert(mc_->model_.joints_.size() == mechanism_state_.get_joint_states_size());
-
     for (unsigned int i = 0; i < mc_->model_.joints_.size(); ++i)
     {
       mechanism_control::JointState *out = mechanism_state_.joint_states + i;
@@ -305,8 +292,8 @@ void MechanismControlNode::update()
       out->num_encoder_errors = in->num_encoder_errors_;
     }
     mechanism_state_.time = mc_->hw_->current_time_;
-    pthread_cond_signal(&mechanism_state_updated_cond_);
-    pthread_mutex_unlock(&mechanism_state_lock_);
+
+    publisher_.publish(mechanism_state_);
   }
 }
 
@@ -350,27 +337,6 @@ bool MechanismControlNode::listControllers(
   resp.set_controllers_vec(controllers);
   return true;
 }
-
-void MechanismControlNode::publishMechanismState()
-{
-  assert(this->mechanism_state_topic_);
-  // Waits for RT thread to release the mutex, signaling new data has arrived.
-  pthread_mutex_lock(&mechanism_state_lock_);
-  pthread_cond_wait(&mechanism_state_updated_cond_, &mechanism_state_lock_);
-  assert(this->mechanism_state_topic_);
-  node_->publish(mechanism_state_topic_, mechanism_state_);
-  pthread_mutex_unlock(&mechanism_state_lock_);
-}
-
-void MechanismControlNode::statePublishingLoop()
-{
-  while(state_publishing_loop_keep_running_)
-  {
-    assert(mechanism_state_topic_);
-    publishMechanismState();
-  }
-}
-
 
 bool MechanismControlNode::killController(
   mechanism_control::KillController::request &req,
