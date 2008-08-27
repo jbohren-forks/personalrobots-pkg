@@ -5,7 +5,7 @@
 
       <!-- ========================================= -->
       <!-- left arm array -->
-      <controller name="left_arm_controller" type="ArmControllerNode">
+      <controller name="left_arm_controller" type="ArmPositionControllerNode">
 	      <kinematics>
 		      <elem key="kdl_chain_name">left_arm</elem>
 	      </kinematics>
