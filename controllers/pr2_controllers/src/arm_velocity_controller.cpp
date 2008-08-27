@@ -220,6 +220,9 @@ bool ArmVelocityControllerNode::initXml(mechanism::Robot * robot, TiXmlElement *
     node->advertise_service(prefix + "/set_command", &ArmVelocityControllerNode::setJointVelCmd, this);
     node->advertise_service(prefix + "/get_command", &ArmVelocityControllerNode::getJointVelCmd, this);
 
+    node->advertise_service(prefix + "/set_joint_gains", &ArmVelocityControllerNode::setJointGains, this);
+    node->advertise_service(prefix + "/get_joint_gains", &ArmVelocityControllerNode::getJointGains, this);
+
     node->advertise_service(prefix + "/set_cartesian_vel", &ArmVelocityControllerNode::setCartesianVelCmd, this);
     node->advertise_service(prefix + "/get_cartesian_vel", &ArmVelocityControllerNode::getCartesianVelCmd, this);
     return true;
