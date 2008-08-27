@@ -48,13 +48,13 @@
       <!-- torso array -->
       <joint name="torso_joint">
           <saturationTorque>1000</saturationTorque>
-          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
       </joint>
       <!-- ========================================= -->
       <!-- left arm array -->
       <joint name="shoulder_pan_left_joint" >
           <saturationTorque>1000</saturationTorque>
-          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
       </joint>
       <joint name="shoulder_pitch_left_joint" >
           <saturationTorque>1000</saturationTorque>
@@ -93,7 +93,7 @@
       <!-- right arm array -->
       <joint name="shoulder_pan_right_joint" >
           <saturationTorque>1000</saturationTorque>
-          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
       </joint>
       <joint name="shoulder_pitch_right_joint" >
           <saturationTorque>1000</saturationTorque>

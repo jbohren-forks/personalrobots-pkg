@@ -15,71 +15,36 @@
 	      <controller name="shoulder_pan_left_controller" topic="shoulder_pan_left_controller" type="JointPositionController">
 		      <joint name="shoulder_pan_left_joint" >
 			      <pid p="1000" d="0" i="0" iClamp="0" />
-			      <map name="shoulder_pan_left_data" flag="gazebo">
-				      <elem key="saturationTorque">1000</elem>
-				      <elem key="explicitDampingCoefficient">1.0</elem>
-				      <elem key="jointType">Hinge</elem>
-			      </map>
 		      </joint>
 	      </controller>
 	      <controller name="shoulder_pitch_left_controller" topic="shoulder_pitch_left_controller" type="JointPositionController">
 		      <joint name="shoulder_pitch_left_joint" >
 			      <pid p="3000" d="0" i="0" iClamp="500" />
-			      <map name="shoulder_pitch_left_data" flag="gazebo">
-				      <elem key="saturationTorque">1000</elem>
-				      <elem key="explicitDampingCoefficient">1.0</elem>
-				      <elem key="jointType">Hinge</elem>
-			      </map>
 		      </joint>
 	      </controller>
 	      <controller name="upperarm_roll_left_controller" topic="upperarm_roll_left_controller" type="JointPositionController">
 		      <joint name="upperarm_roll_left_joint" >
 			      <pid p="200" d="0" i="0" iClamp="100" />
-			      <map name="upperarm_roll_left_data" flag="gazebo">
-				      <elem key="saturationTorque">1000</elem>
-				      <elem key="explicitDampingCoefficient">1.0</elem>
-				      <elem key="jointType">Hinge</elem>
-			      </map>
 		      </joint>
 	      </controller>
 	      <controller name="elbow_flex_left_controller" topic="elbow_flex_left_controller" type="JointPositionController">
 		      <joint name="elbow_flex_left_joint" >
 			      <pid p="5000" d="0" i="0" iClamp="0" />
-			      <map name="elbow_flex_left_data" flag="gazebo">
-				      <elem key="saturationTorque">100</elem>
-				      <elem key="explicitDampingCoefficient">1.0</elem>
-				      <elem key="jointType">Hinge</elem>
-			      </map>
 		      </joint>
 	      </controller>
 	      <controller name="forearm_roll_left_controller" topic="forearm_roll_left_controller" type="JointPositionController">
 		      <joint name="forearm_roll_left_joint" >
 			      <pid p="100" d="0" i="0" iClamp="0" />
-			      <map name="forearm_roll_left_data" flag="gazebo">
-				      <elem key="saturationTorque">100</elem>
-				      <elem key="explicitDampingCoefficient">1.0</elem>
-				      <elem key="jointType">Hinge</elem>
-			      </map>
 		      </joint>
 	      </controller>
 	      <controller name="wrist_flex_left_controller" topic="wrist_flex_left_controller" type="JointPositionController">
 		      <joint name="wrist_flex_left_joint" >
 			      <pid p="100" d="0" i="0" iClamp="0" />
-			      <map name="wrist_flex_left_data" flag="gazebo">
-				      <elem key="saturationTorque">100</elem>
-				      <elem key="explicitDampingCoefficient">1.0</elem>
-				      <elem key="jointType">Hinge</elem>
-			      </map>
 		      </joint>
 	      </controller>
 	      <controller name="gripper_roll_left_controller" topic="gripper_roll_left_controller" type="JointPositionController">
 		      <joint name="gripper_roll_left_joint" >
 			      <pid p="1" d="0" i="0" iClamp="0" />
-			      <map name="gripper_roll_left_data" flag="gazebo">
-				      <elem key="saturationTorque">100</elem>
-				      <elem key="explicitDampingCoefficient">1.0</elem>
-				      <elem key="jointType">Hinge</elem>
-			      </map>
 		      </joint>
 	      </controller>
       </controller>
@@ -88,15 +53,6 @@
         <joint name="gripper_left_joint">
         <pid p="1" d="0" i="0" iClamp="0" />
         <gripper_defaults effortLimit="100" velocityLimit="10" />
-        <map name="gripper_joints" flag="gazebo">
-          <elem key="saturationTorque">100</elem>
-          <elem key="explicitDampingCoefficient">0.1</elem>
-          <elem key="left_proximal">finger_l_left_joint</elem>
-          <elem key="left_distal">finger_tip_l_left_joint</elem>
-          <elem key="right_proximal">finger_r_left_joint</elem>
-          <elem key="right_distal">finger_tip_r_left_joint</elem>
-          <elem key="jointType">Gripper</elem>
-        </map>
       </joint>
   </controller>
 </robot>

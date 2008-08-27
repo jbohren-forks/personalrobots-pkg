@@ -69,49 +69,57 @@
     </controller>
   </controller>
 
-      <!-- ========================================= -->
-      <!-- torso array -->
+  <!-- ========================================= -->
+  <!-- torso array -->
   <controller name="torso_controller" topic="torso_controller" type="JointPositionControllerNode">
       <joint name="torso_joint">
         <pid p="1000" d="0" i="0" iClamp="0" />
       </joint>
   </controller>
-      <!-- ========================================= -->
-      <!-- left arm array -->
-  <controller name="shoulder_pan_left_controller" topic="shoulder_pan_left_controller" type="JointPositionControllerNode">
+  <!-- ========================================= -->
+  <!-- left arm array -->
+  <controller name="left_arm_controller" type="ArmPositionControllerNode">
+    <kinematics>
+      <elem key="kdl_chain_name">left_arm</elem>
+    </kinematics>
+    <map name="controller_param">
+      <elem key="kdl_chain_name">left_arm</elem>
+    </map>
+    <controller name="shoulder_pan_left_controller" topic="shoulder_pan_left_controller" type="JointPositionController">
       <joint name="shoulder_pan_left_joint" >
         <pid p="1000" d="0" i="0" iClamp="0" />
       </joint>
-  </controller>
-  <controller name="shoulder_pitch_left_controller" topic="shoulder_pitch_left_controller" type="JointPositionControllerNode">
+    </controller>
+    <controller name="shoulder_pitch_left_controller" topic="shoulder_pitch_left_controller" type="JointPositionController">
       <joint name="shoulder_pitch_left_joint" >
-        <pid p="5000" d="0" i="0" iClamp="0" />
+        <pid p="3000" d="0" i="0" iClamp="500" />
       </joint>
-  </controller>
-  <controller name="upperarm_roll_left_controller" topic="upperarm_roll_left_controller" type="JointPositionControllerNode">
+    </controller>
+    <controller name="upperarm_roll_left_controller" topic="upperarm_roll_left_controller" type="JointPositionController">
       <joint name="upperarm_roll_left_joint" >
-        <pid p="200" d="0" i="0" iClamp="0" />
+        <pid p="200" d="0" i="0" iClamp="100" />
       </joint>
-  </controller>
-  <controller name="elbow_flex_left_controller" topic="elbow_flex_left_controller" type="JointPositionControllerNode">
+    </controller>
+    <controller name="elbow_flex_left_controller" topic="elbow_flex_left_controller" type="JointPositionController">
       <joint name="elbow_flex_left_joint" >
         <pid p="5000" d="0" i="0" iClamp="0" />
       </joint>
-  </controller>
-  <controller name="forearm_roll_left_controller" topic="forearm_roll_left_controller" type="JointPositionControllerNode">
+    </controller>
+    <controller name="forearm_roll_left_controller" topic="forearm_roll_left_controller" type="JointPositionController">
       <joint name="forearm_roll_left_joint" >
         <pid p="100" d="0" i="0" iClamp="0" />
       </joint>
-  </controller>
-  <controller name="wrist_flex_left_controller" topic="wrist_flex_left_controller" type="JointPositionControllerNode">
+    </controller>
+    <controller name="wrist_flex_left_controller" topic="wrist_flex_left_controller" type="JointPositionController">
       <joint name="wrist_flex_left_joint" >
-        <pid p="1000" d="0" i="0" iClamp="0" />
+        <pid p="100" d="0" i="0" iClamp="0" />
       </joint>
-  </controller>
-  <controller name="gripper_roll_left_controller" topic="gripper_roll_left_controller" type="JointPositionControllerNode">
+    </controller>
+    <controller name="gripper_roll_left_controller" topic="gripper_roll_left_controller" type="JointPositionController">
       <joint name="gripper_roll_left_joint" >
-        <pid p="10" d="0" i="0" iClamp="0" />
+        <pid p="1" d="0" i="0" iClamp="0" />
       </joint>
+    </controller>
   </controller>
   <!-- Special gripper joint -->
   <controller name="gripper_left_controller" topic="gripper_left_controller" type="JointPositionControllerNode">
@@ -120,51 +128,59 @@
         <gripper_defaults effortLimit="100" velocityLimit="10" />
       </joint>
   </controller>
-      <!-- ========================================= -->
-      <!-- right arm array -->
-  <controller name="shoulder_pan_right_controller" topic="shoulder_pan_right_controller" type="JointPositionControllerNode">
+  <!-- ========================================= -->
+  <!-- right arm array -->
+  <controller name="right_arm_controller" type="ArmPositionControllerNode">
+    <kinematics>
+      <elem key="kdl_chain_name">right_arm</elem>
+    </kinematics>
+    <map name="controller_param">
+      <elem key="kdl_chain_name">right_arm</elem>
+    </map>
+    <controller name="shoulder_pan_right_controller" topic="shoulder_pan_right_controller" type="JointPositionController">
       <joint name="shoulder_pan_right_joint" >
         <pid p="1000" d="0" i="0" iClamp="0" />
       </joint>
-  </controller>
-  <controller name="shoulder_pitch_right_controller" topic="shoulder_pitch_right_controller" type="JointPositionControllerNode">
+    </controller>
+    <controller name="shoulder_pitch_right_controller" topic="shoulder_pitch_right_controller" type="JointPositionController">
       <joint name="shoulder_pitch_right_joint" >
-        <pid p="5000" d="0" i="0" iClamp="0" />
+        <pid p="3000" d="0" i="0" iClamp="500" />
       </joint>
-  </controller>
-  <controller name="upperarm_roll_right_controller" topic="upperarm_roll_right_controller" type="JointPositionControllerNode">
+    </controller>
+    <controller name="upperarm_roll_right_controller" topic="upperarm_roll_right_controller" type="JointPositionController">
       <joint name="upperarm_roll_right_joint" >
-        <pid p="200" d="0" i="0" iClamp="0" />
+        <pid p="200" d="0" i="0" iClamp="100" />
       </joint>
-  </controller>
-  <controller name="elbow_flex_right_controller" topic="elbow_flex_right_controller" type="JointPositionControllerNode">
+    </controller>
+    <controller name="elbow_flex_right_controller" topic="elbow_flex_right_controller" type="JointPositionController">
       <joint name="elbow_flex_right_joint" >
         <pid p="5000" d="0" i="0" iClamp="0" />
       </joint>
-  </controller>
-  <controller name="forearm_roll_right_controller" topic="forearm_roll_right_controller" type="JointPositionControllerNode">
+    </controller>
+    <controller name="forearm_roll_right_controller" topic="forearm_roll_right_controller" type="JointPositionController">
       <joint name="forearm_roll_right_joint" >
         <pid p="100" d="0" i="0" iClamp="0" />
       </joint>
-  </controller>
-  <controller name="wrist_flex_right_controller" topic="wrist_flex_right_controller" type="JointPositionControllerNode">
+    </controller>
+    <controller name="wrist_flex_right_controller" topic="wrist_flex_right_controller" type="JointPositionController">
       <joint name="wrist_flex_right_joint" >
-        <pid p="1000" d="0" i="0" iClamp="0" />
+        <pid p="100" d="0" i="0" iClamp="0" />
       </joint>
-  </controller>
-  <controller name="gripper_roll_right_controller" topic="gripper_roll_right_controller" type="JointPositionControllerNode">
+    </controller>
+    <controller name="gripper_roll_right_controller" topic="gripper_roll_right_controller" type="JointPositionController">
       <joint name="gripper_roll_right_joint" >
-        <pid p="10" d="0" i="0" iClamp="0" />
+        <pid p="1" d="0" i="0" iClamp="0" />
       </joint>
+    </controller>
   </controller>
-      <!-- Special gripper joint -->
+  <!-- Special gripper joint -->
   <controller name="gripper_right_controller" topic="gripper_right_controller" type="JointPositionControllerNode">
-        <joint name="gripper_right_joint">
-        <pid p="10" d="0" i="0" iClamp="0" />
-        <gripper_defaults effortLimit="100" velocityLimit="10" />
-      </joint>
+    <joint name="gripper_right_joint">
+      <pid p="10" d="0" i="0" iClamp="0" />
+      <gripper_defaults effortLimit="100" velocityLimit="10" />
+    </joint>
   </controller>
-      <!-- head and above array -->
+  <!-- head and above array -->
   <controller name="head_pan_controller" topic="head_pan_controller" type="JointPositionControllerNode">
       <joint name="head_pan_joint" >
         <pid p="100" d="0" i="0" iClamp="0" />
