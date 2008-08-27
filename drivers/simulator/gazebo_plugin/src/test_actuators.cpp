@@ -127,8 +127,9 @@ namespace gazebo {
     if (tlcn)
     {
       std::cout << " initializing tile laser scanner\n" << std::endl;
-      //tlcn->setProfile(controller::LaserScannerController::SINEWAVE, 20, 2.265, 100, 0.3475);
-      tlcn->setProfile(controller::LaserScannerController::SAWTOOTH, 20, 2.265, 100, 0.3475);
+      //Typical scan of 100 degrees yields the following amplitudes 
+      //tlcn->setProfile(controller::LaserScannerController::SINEWAVE, 20, 0.872, 100, 0.3475);
+      tlcn->setProfile(controller::LaserScannerController::SAWTOOTH, 20, 0.872, 100, 0.3475);
     }
 
   }
@@ -503,6 +504,25 @@ namespace gazebo {
     //controller::Controller* cc = mc_.getControllerByName( "base_controller" );
     //controller::BaseControllerNode* bc = dynamic_cast<controller::BaseControllerNode*>(cc);
     //bc->setCommand(0.0,0.0,0.5);
+
+//     mechanism::Joint* joint =mc_.model_.getJoint("forearm_roll_left_joint");    
+
+     mechanism::Joint* joint =mc_.model_.getJoint("shoulder_pan_left_joint");    
+//     controller::Controller* mcc = mc_.getControllerByName( "shoulder_pan_left_controller" );
+
+//      dynamic_cast<controller::JointPositionController*>(mcc)->setCommand(-1);
+/*
+     joint->effort_limit_ = 10;
+     joint->velocity_constant_ = 8;
+     joint->equilibrium_length_ = 0.1;
+
+     joint->joint_limit_max_ = 1;
+     joint->joint_limit_min_ = -1;
+*/
+//      dynamic_cast<controller::JointVelocityController*>(mcc)->setCommand(-1);
+    // // sample read back angle
+    std::cout<<hw_.current_time_<<" "<<joint->position_<<" "<<joint->velocity_<<" "<<joint->commanded_effort_<<"\n";
+
 
     // -------------------------------------------------------------------------------------------------
     // -                                                                                               -
@@ -1158,7 +1178,7 @@ namespace gazebo {
   void
   TestActuators::PublishFrameTransforms()
   {
-
+    return;
 
     // FIXME: the frame transforms should be published by individual mechanism joints, not here
     // FIXME: the frame transforms should be published by individual mechanism joints, not here
