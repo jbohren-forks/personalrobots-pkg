@@ -67,6 +67,9 @@ ogre/lib/pkgconfig/OGRE.pc: $(OGRE_VERSION)/Makefile
 	  cd $(ROOT)/$(OGRE_VERSION) && make $(JOBC); \
 	  cd $(ROOT)/$(OGRE_VERSION) && make install; \
 	fi
+	@echo "patch OGRE.pc to pass -Wl,-rpath,-L{libdir}"
+	-mv ogre/lib/pkgconfig/OGRE.pc ogre/lib/pkgconfig/OGRE.bak
+	sed 's%Libs: -L$${libdir} -lOgreMain%Libs: -Wl,-rpath,$${libdir}:$${libdir}/OGRE -L$${libdir} -lOgreMain%g' ogre/lib/pkgconfig/OGRE.bak > ogre/lib/pkgconfig/OGRE.pc
 	@echo "done"
 
 .PHONY: clean wipe
