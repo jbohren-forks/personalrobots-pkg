@@ -411,6 +411,25 @@ namespace gazebo {
     currentTime = Simulator::Instance()->GetSimTime();
     hw_.current_time_ = currentTime;
 
+    /***************************************************************/
+    /*                                                             */
+    /*  check simulator performance                                */
+    /*                                                             */
+    /***************************************************************/
+    static double currentRealTime, lastRealTime;
+    if (getenv("CHECK_PERFORMANCE")) // if this environment var is set, dump outputs
+    {
+      currentRealTime = Simulator::Instance()->GetRealTime();
+      std::cout << "performance measure: "
+                << " elapsed simu time: " <<  currentTime
+                << " elapsed real time: " <<  currentRealTime
+                << " elapsed simu dt: " <<  currentTime - lastTime
+                << " elapsed real dt: " <<  currentRealTime - lastRealTime
+                << " simulator speedup: " <<  currentTime/currentRealTime
+                << std::endl;
+      lastRealTime = currentRealTime;
+    }
+
     this->lock.lock();
     /***************************************************************/
     /*                                                             */
