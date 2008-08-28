@@ -2,7 +2,7 @@ all: build
 
 SVN_DIR = player-svn
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/player/trunk
-SVN_REVISION = -r 6833
+SVN_REVISION = -r 6960
 include $(shell rospack find mk)/svn_checkout.mk
 
 
@@ -14,7 +14,7 @@ CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
 
 build: SVN_UP player
 
-configured: $(SVN_DIR)
+configured: $(SVN_DIR) Makefile
 	mkdir -p $(SVN_DIR)/build
 	cd $(SVN_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
 	touch configured

@@ -7,7 +7,7 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 build: SVN_UP stage
 
-configured: $(SVN_DIR)
+configured: $(SVN_DIR) Makefile
 	cd $(SVN_DIR) && autoreconf -i -s
 	cd $(SVN_DIR) && ./configure --prefix=$(PWD)/stage
 	touch configured

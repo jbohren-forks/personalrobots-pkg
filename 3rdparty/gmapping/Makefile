@@ -8,7 +8,7 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 build: SVN_UP gmapping
 
-configured: $(SVN_DIR)
+configured: $(SVN_DIR) Makefile
 	cd $(SVN_DIR) && ./configure
 	touch configured
 

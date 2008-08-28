@@ -13,7 +13,7 @@ CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/kdl/ \
 
 build: SVN_UP kdl
 
-configured: $(SVN_DIR)
+configured: $(SVN_DIR) Makefile
 	mkdir -p $(SVN_DIR)/build
 	cd $(SVN_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
 	touch configured

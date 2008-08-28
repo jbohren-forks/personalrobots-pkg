@@ -13,7 +13,7 @@ $(CVS_DIR):
 	  cd $(CVS_DIR) && cvs up; \
 	fi
 
-configured: $(CVS_DIR)
+configured: $(CVS_DIR) Makefile
 	@if [ ! -d /usr/include/gtk-2.0 ]; then echo "you don't appear to have the GTK+2.0 headers. On Ubuntu, this is fixed with 'sudo apt-get install libgtk2.0-dev'"; false; fi
 	cd $(CVS_DIR) && ./configure --prefix=$(PWD)/$(INSTALL_DIR) --without-python
 	touch configured

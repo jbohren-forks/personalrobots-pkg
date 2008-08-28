@@ -13,7 +13,7 @@ CONFIGURE_FLAGS = --prefix=$(PWD)/SDL_image \
 		  CPPFLAGS="-I$(shell rospack find ijg_libjpeg)/include" \
 		  LDFLAGS="-L$(shell rospack find ijg_libjpeg)/lib"
 
-configured: $(SOURCE_DIR)
+configured: $(SOURCE_DIR) Makefile
 	cd SDL_image-1.2.6 && ./configure $(CONFIGURE_FLAGS)
 	touch configured
 

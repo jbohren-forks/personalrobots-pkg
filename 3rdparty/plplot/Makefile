@@ -10,7 +10,7 @@ CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/plplot \
 
 build: SVN_UP plplot
 
-configured: $(SVN_DIR)
+configured: $(SVN_DIR) Makefile
 	cd $(SVN_DIR) && mkdir -p build
 	cd $(SVN_DIR)/build &&  $(CMAKE) $(CMAKE_ARGS) ..
 	touch configured
