@@ -243,6 +243,7 @@ bool ArmPositionControllerNode::setJointGains(pr2_controllers::SetJointGains::re
 bool ArmPositionControllerNode::getJointGains(pr2_controllers::GetJointGains::request &req,
                                    pr2_controllers::GetJointGains::response &resp)
 {
+  resp.name = req.name;
   c_->getJointGains(resp);
   return true;
 }
