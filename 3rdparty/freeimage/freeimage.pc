@@ -1,4 +1,4 @@
-prefix=/u/johnhsu/projects/pr2/3rdparty/freeimage/freeimage
+prefix=FREEIMAGE_PATH/freeimage
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include

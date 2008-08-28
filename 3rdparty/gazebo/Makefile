@@ -9,7 +9,7 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 OGRE_PKG = $(shell rospack find ogre)/ogre/lib/pkgconfig
 PLAYER_PKG = $(shell rospack find player)/player/lib/pkgconfig
-FI_PKG = $(shell rospack find freeimage)
+FI_PKG = $(shell rospack find freeimage)/freeimage/lib/pkgconfig
 ODE_PKG = $(shell rospack find opende)/opende/lib/pkgconfig
 
 ODE_PATH = $(shell rospack find opende)/opende/bin
