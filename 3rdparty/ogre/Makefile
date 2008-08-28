@@ -30,7 +30,7 @@ LFLAGS = $(shell rospack export/cpp/lflags freeimage) \
          $(shell rospack export/cpp/lflags ois) \
          $(shell rospack export/cpp/lflags Cg)
 
-CONFIGURE_FLAGS = --with-arch=nocona --enable-release CXXFLAGS='-O3 -I$(FIROOT)/include -I$(OISROOT)/include -I$(CGROOT)/include' LDFLAGS=' -L$(FIROOT)/lib -L$(OISROOT)/lib -L$(CGROOT)/lib' CFLAGS='-O3 -I$(FIROOT)/include -I$(OISROOT)/include -I$(CGROOT)/include'
+CONFIGURE_FLAGS = --with-arch=nocona --enable-release CXXFLAGS='-O3 -I$(FIROOT)/include -I$(OISROOT)/include -I$(CGROOT)/include' LDFLAGS='-Wl,-rpath,$(FIROOT)/lib,-rpath,$(OISROOT)/lib,-rpath,$(CGROOT)/lib -L$(FIROOT)/lib -L$(OISROOT)/lib -L$(CGROOT)/lib' CFLAGS='-O3 -I$(FIROOT)/include -I$(OISROOT)/include -I$(CGROOT)/include'
 
 $(OGRE_VERSION)/Makefile: $(OGRE_VERSION)
 	if test `uname` = Darwin ; then \
@@ -69,7 +69,8 @@ ogre/lib/pkgconfig/OGRE.pc: $(OGRE_VERSION)/Makefile
 	fi
 	@echo "patch OGRE.pc to pass -Wl,-rpath,-L{libdir}"
 	-mv ogre/lib/pkgconfig/OGRE.pc ogre/lib/pkgconfig/OGRE.bak
-	sed 's%Libs: -L$${libdir} -lOgreMain%Libs: -Wl,-rpath,$${libdir}:$${libdir}/OGRE -L$${libdir} -lOgreMain%g' ogre/lib/pkgconfig/OGRE.bak > ogre/lib/pkgconfig/OGRE.pc
+	sed 's%exec_prefix=$${prefix}%exec_prefix=$${prefix}\ncglibdir=$${prefix}/../../Cg/Cg/lib%g' ogre/lib/pkgconfig/OGRE.bak > ogre/lib/pkgconfig/OGRE.tmp
+	sed 's%Libs: -L$${libdir} -lOgreMain%Libs: -Wl,-rpath,$${libdir},-rpath,$${libdir}/OGRE,-rpath,$${cglibdir} -L$${libdir} -lOgreMain%g' ogre/lib/pkgconfig/OGRE.tmp > ogre/lib/pkgconfig/OGRE.pc
 	@echo "done"
 
 .PHONY: clean wipe
