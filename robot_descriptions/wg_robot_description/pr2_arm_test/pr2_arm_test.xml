@@ -117,7 +117,7 @@
   <const_block name="pr2_shoulder_pan_joint">
     <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    <limit min=" shoulder_pan_min_limit" max="shoulder_pan_max_limit" effort="100" velocity="5" />
+    <limit min=" shoulder_pan_min_limit" max="shoulder_pan_max_limit" effort="63.16*0.184" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
 
