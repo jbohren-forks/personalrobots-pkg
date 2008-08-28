@@ -673,6 +673,78 @@ void EnvironmentNAV2D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<
 
 }
 
+void EnvironmentNAV2D::GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV)
+{
+
+    int aind;
+
+#if TIME_DEBUG
+	clock_t currenttime = clock();
+#endif
+
+    //clear the successor array
+    PredIDV->clear();
+    CostV->clear();
+    PredIDV->reserve(ACTIONSWIDTH);
+    CostV->reserve(ACTIONSWIDTH);
+
+	//get X, Y for the state
+	EnvNAV2DHashEntry_t* HashEntry = EnvNAV2D.StateID2CoordTable[TargetStateID];
+	
+	//no predecessors if obstacle
+	if(EnvNAV2DCfg.Grid2D[HashEntry->X][HashEntry->Y] != 0)
+		return;
+
+	//iterate through actions
+    bool bTestBounds = false;
+    if(HashEntry->X == 0 || HashEntry->X == EnvNAV2DCfg.EnvWidth_c-1 || 
+       HashEntry->Y == 0 || HashEntry->Y == EnvNAV2DCfg.EnvHeight_c-1)
+        bTestBounds = true;
+	for (aind = 0; aind < ACTIONSWIDTH; aind++)
+	{
+        int predX = HashEntry->X + EnvNAV2DCfg.dXY[aind][0];
+        int predY = HashEntry->Y + EnvNAV2DCfg.dXY[aind][1];
+    
+        //skip the invalid cells
+         if(bTestBounds){
+            if(!IsValidCell(predX, predY))
+                continue;
+        }
+
+		//skip invalid diagonal move
+        if(predX != HashEntry->X && predY != HashEntry->Y)
+		{
+			if(EnvNAV2DCfg.Grid2D[HashEntry->X][predY] != 0 || EnvNAV2DCfg.Grid2D[predX][HashEntry->Y] != 0)
+				continue;
+        }
+
+
+    	EnvNAV2DHashEntry_t* OutHashEntry;
+		if((OutHashEntry = GetHashEntry(predX, predY)) == NULL)
+		{
+			//have to create a new entry
+			OutHashEntry = CreateNewHashEntry(predX, predY);
+		}
+
+        //compute clow
+        int cost = COSTMULT;
+        //diagonal moves are costlier
+        if(predX != HashEntry->X && predY != HashEntry->Y)
+            cost = (int)(sqrt(2)*cost); 
+
+
+        PredIDV->push_back(OutHashEntry->stateID);
+        CostV->push_back(cost);
+	}
+
+#if TIME_DEBUG
+		time_getsuccs += clock()-currenttime;
+#endif
+
+
+}
+
+
 
 int EnvironmentNAV2D::SizeofCreatedEnv()
 {

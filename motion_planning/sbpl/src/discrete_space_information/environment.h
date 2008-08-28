@@ -49,6 +49,7 @@ public:
 	virtual void SetAllActionsandAllOutcomes(CMDPSTATE* state) = 0;
 	virtual void SetAllPreds(CMDPSTATE* state) = 0;
 	virtual void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV) = 0;
+	virtual void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV) = 0;
 
 	virtual int	 SizeofCreatedEnv() = 0;
 	virtual void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL) = 0;

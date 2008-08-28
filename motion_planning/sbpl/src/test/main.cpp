@@ -145,17 +145,20 @@ int plan2d(int argc, char *argv[])
 int planandnavigate2d(int argc, char *argv[])
 {
 
-	double allocated_time_secs_foreachplan = 0.5; //in seconds
+	double allocated_time_secs_foreachplan = 0.1; //in seconds
 	MDPConfig MDPCfg;
 	EnvironmentNAV2D environment_nav2D;
-    int size_x = 500, size_y = 500;
+    int size_x = 30, size_y = 50;
     char* map = (char*)calloc(size_x*size_y, sizeof(char));
     char* true_map = (char*)calloc(size_x*size_y, sizeof(char));
     int startx = 0, starty = 0;
     int goalx = size_x-1, goaly = size_y-1;
     FILE* fSol = fopen("sol.txt", "w");
     int dx[8] = {-1, -1, -1,  0,  0,  1,  1,  1};
-    int dy[8] = {-1,  0,  1, -1,  1, -1, 0, -1};
+    int dy[8] = {-1,  0,  1, -1,  1, -1,  0,  1};
+	bool bPrint = false;
+	int x,y;
+
 
 	srand(0);
 
@@ -167,6 +170,17 @@ int planandnavigate2d(int argc, char *argv[])
             true_map[i] = 1;
         }
     }
+
+	//print the map
+	if(bPrint) printf("true map:\n");
+	for(y = 0; bPrint && y < size_y; y++){
+		for(x = 0; x < size_x; x++){
+			int index = x + y*size_x;
+			printf("%d ", true_map[index]);
+		}
+		printf("\n");
+	}
+	if(bPrint) system("pause");
 
 
 	//Initialize Environment (should be called before initializing anything else)
@@ -203,13 +217,51 @@ int planandnavigate2d(int argc, char *argv[])
     int goalthresh = 0;
     while(abs(startx - goalx) > goalthresh || abs(starty - goaly) > goalthresh){
 
+        //simulate sensor data update
+        bool bChanges = false;
+        for(i = 0; i < 8; i++){
+            int x = startx + dx[i];
+            int y = starty + dy[i];
+            if(x < 0 || x >= size_x || y < 0 || y >= size_y)
+                continue;
+            int index = x + y*size_x;
+            if(map[index] != true_map[index]){
+                map[index] = true_map[index];
+                environment_nav2D.UpdateCost(x,y,true_map[index]);
+                printf("setting cost[%d][%d] to %d\n", x,y,true_map[index]);
+                bChanges = true;
+            }
+        }
+
+		//print the map
+		int startindex = startx + starty*size_x;
+		int goalindex = goalx + goaly*size_x;
+		for(y = 0; bPrint && y < size_y; y++){
+			for(x = 0; x < size_x; x++){
+				int index = x + y*size_x;
+				if (index != startindex && index != goalindex)
+					printf("%d ", map[index]);
+				else if(index == startindex)
+					printf("X ");
+				else
+					printf("G ");
+			}
+			printf("\n");
+		}
+		if(bPrint) system("pause");
+
+        if(bChanges){
+            ara_planner.costs_changed();
+        }
+
+
         fprintf(fSol, "current state: %d %d\n",  startx, starty);
 
         //plan a path 
         bool bPlanExists = false;
         while(bPlanExists == false){
             printf("new planning...\n");   
-            bPlanExists = ara_planner.replan(allocated_time_secs_foreachplan, &solution_stateIDs_V);
+            bPlanExists = (ara_planner.replan(allocated_time_secs_foreachplan, &solution_stateIDs_V) == 1);
             printf("done with the solution of size=%d\n", solution_stateIDs_V.size());   
             environment_nav2D.PrintTimeStat(stdout);
 
@@ -230,7 +282,7 @@ int planandnavigate2d(int argc, char *argv[])
             printf("moving from %d %d to %d %d\n", startx, starty, newx, newy);
             startx = newx;
             starty = newy;
-
+				
             //update the environment
             environment_nav2D.SetStart(startx, starty);
             
@@ -241,24 +293,6 @@ int planandnavigate2d(int argc, char *argv[])
             }
         }
 
-        //simulate sensor data update
-        bool bChanges = false;
-        for(i = 0; i < 8; i++){
-            int x = startx + dx[i];
-            int y = starty + dy[i];
-            if(x < 0 || x >= size_x || y < 0 || y >= size_y)
-                continue;
-            int index = x + y*size_x;
-            if(map[index] != true_map[index]){
-                map[index] = true_map[index];
-                environment_nav2D.UpdateCost(x,y,true_map[index]);
-                printf("setting cost[%d][%d] to %d\n", x,y,true_map[index]);
-                bChanges = true;
-            }
-        }
-        if(bChanges){
-            ara_planner.costs_changed();
-        }
     }
 	fflush(NULL);
 

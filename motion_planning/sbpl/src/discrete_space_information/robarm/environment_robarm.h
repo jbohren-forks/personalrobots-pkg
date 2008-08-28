@@ -133,6 +133,7 @@ public:
 	void SetAllActionsandAllOutcomes(CMDPSTATE* state);
 	void SetAllPreds(CMDPSTATE* state);
 	void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
+	void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV);
 
 	int	 SizeofCreatedEnv();
 	void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);

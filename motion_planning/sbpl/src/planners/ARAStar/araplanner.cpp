@@ -143,7 +143,7 @@ CMDPSTATE* ARAPlanner::GetState(int stateID, ARASearchStateSpace_t* pSearchState
 int ARAPlanner::ComputeHeuristic(CMDPSTATE* MDPstate, ARASearchStateSpace_t* pSearchStateSpace)
 {
 	//compute heuristic for search
-#if ARA_SEARCH_FORWARD
+#if ARA_SEARCH_FORWARD == 1
 
 #if MEM_CHECK == 1
 	//int WasEn = DisableMemCheck();
@@ -257,9 +257,6 @@ void ARAPlanner::UpdatePreds(ARAState* state, ARASearchStateSpace_t* pSearchStat
     vector<int> PredIDV;
     vector<int> CostV;
 	CKey key;
-	int bestc;
-	double bestprob;
-	CMDPACTION* bestaction;
 	ARAState *predstate;
 
     environment_->GetPreds(state->MDPstate->StateID, &PredIDV, &CostV);
@@ -267,7 +264,7 @@ void ARAPlanner::UpdatePreds(ARAState* state, ARASearchStateSpace_t* pSearchStat
 	//iterate through predecessors of s
 	for(int pind = 0; pind < (int)PredIDV.size(); pind++)
 	{
-		CMDPSTATE* PredMDPState = GetState(PredIDV[pind]);
+		CMDPSTATE* PredMDPState = GetState(PredIDV[pind], pSearchStateSpace);
 		predstate = (ARAState*)(PredMDPState->PlannerSpecificData);
 		if(predstate->callnumberaccessed != pSearchStateSpace->callnumber)
 			ReInitializeSearchStateInfo(predstate, pSearchStateSpace);
@@ -278,7 +275,6 @@ void ARAPlanner::UpdatePreds(ARAState* state, ARASearchStateSpace_t* pSearchStat
 			predstate->g = state->v + CostV[pind];
 			predstate->bestnextstate = state->MDPstate;
 			predstate->costtobestnextstate = CostV[pind];
-			predstate->bestnextaction = bestaction;
 
 			//re-insert into heap if not closed yet
 			if(predstate->iterationclosed != pSearchStateSpace->iteration)
@@ -707,9 +703,12 @@ int ARAPlanner::SetSearchStartState(int SearchStartStateID, ARASearchStateSpace_
 
 
 
-int ARAPlanner::ReconstructPath(ARASearchStateSpace_t* pSearchStateSpace, CMDPSTATE* MDPstateGoal)
+int ARAPlanner::ReconstructPath(ARASearchStateSpace_t* pSearchStateSpace)
 {	
-	CMDPSTATE* MDPstate = MDPstateGoal;
+
+#if ARA_SEARCH_FORWARD == 1 //nothing to do, if search is backward
+
+	CMDPSTATE* MDPstate = pSearchStateSpace->searchgoalstate;
 	CMDPSTATE* PredMDPstate;
 	ARAState *predstateinfo, *stateinfo;
 
@@ -747,16 +746,11 @@ int ARAPlanner::ReconstructPath(ARASearchStateSpace_t* pSearchStateSpace, CMDPST
 		//transition back
 		MDPstate = PredMDPstate;
 	}
-
+#endif
 
 	return 1;
 }
 
-int ARAPlanner::ReconstructPath(ARASearchStateSpace_t* pSearchStateSpace, int StateIDGoal)
-{
-	CMDPSTATE* MDPstateGoal = GetState(StateIDGoal, pSearchStateSpace);
-	return(ReconstructPath(pSearchStateSpace, MDPstateGoal));
-}
 
 
 void ARAPlanner::PrintSearchPath(ARASearchStateSpace_t* pSearchStateSpace, FILE* fOut)
@@ -823,19 +817,36 @@ int ARAPlanner::getHeurValue(ARASearchStateSpace_t* pSearchStateSpace, int State
 }
 
 
-vector<int> ARAPlanner::GetSearchPath(ARASearchStateSpace_t* pSearchStateSpace, CMDPSTATE* stateGoal, int& solcost)
+vector<int> ARAPlanner::GetSearchPath(ARASearchStateSpace_t* pSearchStateSpace, int& solcost)
 {
     vector<int> SuccIDV;
     vector<int> CostV;
 	vector<int> wholePathIds;
 	ARAState* searchstateinfo;
-	CMDPSTATE* state = pSearchStateSpace->searchstartstate;
+	CMDPSTATE* state = NULL; 
+	CMDPSTATE* goalstate = NULL;
+	CMDPSTATE* startstate=NULL;
+
+#if ARA_SEARCH_FORWARD == 1
+	startstate = pSearchStateSpace->searchstartstate;
+	goalstate = pSearchStateSpace->searchgoalstate;
+
+	//reconstruct the path by setting bestnextstate pointers appropriately
+	ReconstructPath(pSearchStateSpace);
+#else
+	startstate = pSearchStateSpace->searchgoalstate;
+	goalstate = pSearchStateSpace->searchstartstate;
+
+#endif
+
+
+	state = startstate;
 
 	wholePathIds.push_back(state->StateID);
     solcost = 0;
 
 	FILE* fOut = stdout;
-	while(state->StateID != stateGoal->StateID)
+	while(state->StateID != goalstate->StateID)
 	{
 		if(state->PlannerSpecificData == NULL)
 		{
@@ -879,12 +890,6 @@ vector<int> ARAPlanner::GetSearchPath(ARASearchStateSpace_t* pSearchStateSpace, 
 	return wholePathIds;
 }
 
-vector<int> ARAPlanner::GetPath(ARASearchStateSpace_t* pSearchStateSpace, int StateIDGoal, int& solcost)
-{
-
-	CMDPSTATE* MDPstateGoal = GetState(StateIDGoal, pSearchStateSpace);
-	return(GetSearchPath(pSearchStateSpace, MDPstateGoal, solcost));
-}
 
 
 bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& pathIds, int & PathCost, bool bFirstSolution, bool bOptimalSolution, double MaxNumofSecs)
@@ -965,9 +970,6 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 
 	}
 
-#if ARA_SEARCH_FORWARD == 1
-	ReconstructPath(pSearchStateSpace, pSearchStateSpace->searchgoalstate);
-#endif
 
 #if DEBUG
 	fflush(fDeb);
@@ -980,7 +982,7 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 
 	int solcost = INFINITECOST;
     bool ret = false;
-	if(((ARAState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g == INFINITECOST)
+	if(PathCost == INFINITECOST)
 	{
 		printf("could not find a solution\n");
 		ret = false;
@@ -988,7 +990,7 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 	else
 	{
 		printf("solution is found\n");      
-    	pathIds = GetSearchPath(pSearchStateSpace, pSearchStateSpace->searchgoalstate, solcost);
+    	pathIds = GetSearchPath(pSearchStateSpace, solcost);
         ret = true;
 	}
 

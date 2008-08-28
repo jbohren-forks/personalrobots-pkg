@@ -448,6 +448,14 @@ void EnvironmentXXX::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<in
 	exit(1);
 }
 
+void EnvironmentXXX::GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV)
+{
+
+	printf("ERROR in EnvXXX... function: GetPreds is undefined\n");
+	exit(1);
+}
+
+
 int EnvironmentXXX::SizeofCreatedEnv()
 {
 	return (int)EnvXXX.StateID2CoordTable.size();

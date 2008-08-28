@@ -1426,6 +1426,14 @@ void EnvironmentROBARM::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector
 	}
 }
 
+void EnvironmentROBARM::GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV)
+{
+
+	printf("ERROR in EnvROBARM... function: GetPreds is undefined\n");
+	exit(1);
+}
+
+
 void EnvironmentROBARM::GetRandomSUCCS(CMDPSTATE* SourceState, vector<int>* SuccIDV, vector<int>* CLowV, int K)
 {
     short unsigned int coord[NUMOFLINKS];

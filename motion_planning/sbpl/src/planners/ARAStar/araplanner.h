@@ -31,7 +31,7 @@
 
 
 //---configuration----
-#define ARA_SEARCH_FORWARD 1
+#define ARA_SEARCH_FORWARD 0
 
 
 //control of EPS
@@ -197,18 +197,16 @@ private:
 
 	int SetSearchStartState(int SearchStartStateID, ARASearchStateSpace_t* pSearchStateSpace);
 
-
-	int ReconstructPath(ARASearchStateSpace_t* pSearchStateSpace, CMDPSTATE* MDPstateGoal);
-
-	int ReconstructPath(ARASearchStateSpace_t* pSearchStateSpace, int StateIDGoal);
+	//reconstruct path functions are only relevant for forward search
+	int ReconstructPath(ARASearchStateSpace_t* pSearchStateSpace);
 
 
 	void PrintSearchPath(ARASearchStateSpace_t* pSearchStateSpace, FILE* fOut);
 
 	int getHeurValue(ARASearchStateSpace_t* pSearchStateSpace, int StateID);
 
-	vector<int> GetSearchPath(ARASearchStateSpace_t* pSearchStateSpace, CMDPSTATE* stateGoal, int& solcost);
-	vector<int> GetPath(ARASearchStateSpace_t* pSearchStateSpace, int StateIDGoal, int& solcost);
+	//get path 
+	vector<int> GetSearchPath(ARASearchStateSpace_t* pSearchStateSpace, int& solcost);
 
 
 	bool Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& pathIds, int & PathCost, bool bFirstSolution, bool bOptimalSolution, double MaxNumofSecs);
