@@ -55,6 +55,7 @@ class DorylusDataset {
   bool save(std::string filename);
   bool load(std::string filename);
   std::string version_string_;
+  bool testSave();
 };
 
 

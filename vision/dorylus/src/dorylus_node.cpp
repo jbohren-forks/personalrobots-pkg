@@ -7,17 +7,39 @@ class DorylusNode : public ros::node
 {
 public:
 
+  DorylusDataset dd_;
   vector<Descriptor*> descriptors_;
   //FixedSpinLarge spinL_;
-  SpinImage *spinM_;
+  SpinImage *spinM_fixed_, *spinL_fixed_, *spinS_fixed_;
+  SpinImage *spinM_fixed_HR_, *spinL_fixed_HR_, *spinS_fixed_HR_;
+  SpinImage *spinM_nat_, *spinL_nat_, *spinS_nat_;
+  vector<int> times;
 
   DorylusNode() : ros::node("dorylus_node")
   {
     // -- Setup descriptor functions.
     //descriptors_.push_back(&spinL_);
 
-    spinM_ = new SpinImage(string("FixedSpinMedium"), .05, 200, true);
-    descriptors_.push_back(spinM_);  
+    spinL_fixed_ = new SpinImage(string("FixedSpinLarge"), .20, 50, true);
+    spinM_fixed_ = new SpinImage(string("FixedSpinMedium"), .10, 100, true);
+    spinS_fixed_ = new SpinImage(string("FixedSpinSmall"), .05, 200, true);
+    spinL_fixed_HR_ = new SpinImage(string("FixedSpinLargeHighRes"), .20, 100, true);
+    spinM_fixed_HR_ = new SpinImage(string("FixedSpinMediumHighRes"), .10, 200, true);
+    spinS_fixed_HR_ = new SpinImage(string("FixedSpinSmallHighRes"), .05, 400, true);
+    spinL_nat_ = new SpinImage(string("NatSpinLarge"), .20, 50, false);
+    spinM_nat_ = new SpinImage(string("NatSpinMedium"), .10, 100, false);
+    spinS_nat_ = new SpinImage(string("NatSpinSmall"), .05, 200, false);
+
+    descriptors_.push_back(spinL_fixed_);  
+    descriptors_.push_back(spinM_fixed_);  
+    descriptors_.push_back(spinS_fixed_);  
+    descriptors_.push_back(spinL_fixed_HR_);  
+    descriptors_.push_back(spinM_fixed_HR_);  
+    descriptors_.push_back(spinS_fixed_HR_);  
+    //WAY too slow.
+//     descriptors_.push_back(spinL_nat_);  
+//     descriptors_.push_back(spinM_nat_);  
+//     descriptors_.push_back(spinS_nat_);  
     SceneLabelerStereo sls(this);
 
     advertise<std_msgs::VisualizationMarker>("visualizationMarker", 100);
@@ -28,7 +50,7 @@ public:
     float x, y, z;
     int row, col;
     vector<object> objs;
-    Matrix* result;
+    Matrix* result = NULL;
 
     cout << "Building dataset." << endl;
     for(unsigned int iFile=0; iFile<datafiles.size(); iFile++) {
@@ -43,77 +65,82 @@ public:
 	object obj;
 	obj.label = sls.ss_objs_[iSS].first;
 
+
+	// -- Initialize features map for this object.
 	for(unsigned int iDesc=0; iDesc<descriptors_.size(); iDesc++) {
-	  cout << "Computing " << descriptors_[iDesc]->name_ << endl;
-	  x=0; y=0; z=0;
-	  sls.getRandomPointFromImage(&x, &y, &z, &row, &col);
+	  obj.features[descriptors_[iDesc]->name_] = Matrix(descriptors_[iDesc]->result_size_, nSamples); 
+	  obj.features[descriptors_[iDesc]->name_] = 0.0;
+	}
+	 
+	for(unsigned int iSample=0; iSample<nSamples; iSample++) {
+	  x = 0; y = 0; z = 0; row = 0; col = 0;
+	  //bool found3d = sls.getRandomPointFromImage(&x, &y, &z, &row, &col, obj.label);
+	  bool found3d = true;
+	  sls.getRandomPointFromPointcloud(&x, &y, &z, &row, &col, &ss);
+	  if(!found3d) {
+	    x = 1e20;
+	    y = 1e20;
+	    z = 1e20;
+	  }
 
-	  (*descriptors_[iDesc])(ss, img, x, y, z, row, col, &result); 
-	  //cout << "nrows: " << tmp.Nrows() << endl;
-	  Matrix feat(result->Nrows(), nSamples); feat = 0.0;
-	  for(unsigned int iSample=0; iSample<nSamples; iSample++) {
-	    x = 0; y = 0; z = 0; row = 0; col = 0;
-	    //bool found3d = sls.getRandomPointFromImage(&x, &y, &z, &row, &col, obj.label);
-	    bool found3d = true;
-	    sls.getRandomPointFromPointcloud(&x, &y, &z, &row, &col, &ss);
-	    if(!found3d) {
-	      x = 1e20;
-	      y = 1e20;
-	      z = 1e20;
-	    }
+	  //cout << "displaying at " << row << " " << col << endl;
 
-	    //cout << "displaying at " << row << " " << col << endl;
-
-	    IplImage *copy;
-	    std_msgs::VisualizationMarker mark;
-	    if(debug) {
-	      publish("videre/cloud", sls.cloud_);
-	      copy = cvCloneImage(sls.left_);
-	      cvNamedWindow("left", 1);
-	      cvCircle(copy, cvPoint(col, row), 5, cvScalar(0,255,0), 1);
-	      cvShowImage("left", copy);
-	      cvWaitKey(50);
+	  IplImage *copy;
+	  std_msgs::VisualizationMarker mark;
+	  if(debug) {
+	    publish("videre/cloud", sls.cloud_);
+	    copy = cvCloneImage(sls.left_);
+	    cvNamedWindow("left", 1);
+	    cvCircle(copy, cvPoint(col, row), 5, cvScalar(0,255,0), 1);
+	    cvShowImage("left", copy);
+	    cvWaitKey(50);
 	     
-	      if(found3d) {
-		mark.id = 1001;
-		mark.type = 1;
-		mark.action = 0;
-		mark.x = x;
-		mark.y = y;
-		mark.z = z;
-		mark.roll = 0;
-		mark.pitch = 0;
-		mark.yaw = 0;
-		mark.xScale = .02;
-		mark.yScale = .02;
-		mark.zScale = .02;
-		mark.alpha = 255;
-		mark.r = 0;
-		mark.g = 255;
-		mark.b = 0;
-		mark.text = string("");
-		publish("visualizationMarker", mark);
-	      }
-	      else {
-		cout << "No 3d point.  Press a key." << endl;
-		cvWaitKey();
-	      }
-	    }
-	    
-	    // -- Compute the descriptor.
-	    //If debug, this will wait.
-	    result = NULL;
-	    (*descriptors_[iDesc])(sls.ss_cloud_, img, x, y, z, row, col, &result, debug);
-	    feat.Column(iSample+1) = *result;
-	    //TODO: Mark down which descriptors are successful.
-	    
-	    if(debug) {
-	      mark.action = 2;
+	    if(found3d) {
+	      mark.id = 1001;
+	      mark.type = 1;
+	      mark.action = 0;
+	      mark.x = x;
+	      mark.y = y;
+	      mark.z = z;
+	      mark.roll = 0;
+	      mark.pitch = 0;
+	      mark.yaw = 0;
+	      mark.xScale = .02;
+	      mark.yScale = .02;
+	      mark.zScale = .02;
+	      mark.alpha = 255;
+	      mark.r = 0;
+	      mark.g = 255;
+	      mark.b = 0;
+	      mark.text = string("");
 	      publish("visualizationMarker", mark);
 	    }
+	    else {
+	      cout << "No 3d point.  Press a key." << endl;
+	      cvWaitKey();
+	    }
 	  }
+	    
+	  // -- Compute the descriptors.
+	  time_t start,end; time(&start);
+	  for(unsigned int iDesc=0; iDesc<descriptors_.size(); iDesc++) {
+	    //cout << "Computing " << descriptors_[iDesc]->name_ << endl;
+
+	    //If debug, this will wait for input.
+	    (*descriptors_[iDesc])(sls.ss_cloud_, img, x, y, z, row, col, &result, debug);
+	    obj.features[descriptors_[iDesc]->name_].Column(iSample+1) = *result;
+	    delete result; result = NULL;
+
+	    //TODO: Mark down which descriptors are successful.	    
+	  }
+	  time(&end);
+	  times.push_back(difftime(end,start));
 	  
-	  obj.features[descriptors_[iDesc]->name_] = feat;
+	  // -- Cleanup vis.
+	  if(debug) {
+	    mark.action = 2;
+	    publish("visualizationMarker", mark);
+	  }
 	}
 	
 	objs.push_back(obj);
@@ -121,13 +148,20 @@ public:
       }
     }
 
-    dd.setObjs(objs);
-    dd.save(savename);
+    // -- Report average time to compute a descriptor.
+    float ave=0.0;
+    for(unsigned int i=0; i<times.size(); i++) {
+      ave += times[i];
+    }
+    ave = ave/times.size();
+    cout << "Average computation time for all descriptors at a point: " << ave << endl; 
+    
+    dd_.setObjs(objs);
+    dd_.save(savename);
     //cout << endl << dd.status() << endl;
   }
 
 private:
-  DorylusDataset dd;
   //Dorylus dory;
   
 };
@@ -163,7 +197,6 @@ bool SpinImage::operator()(SmartScan &ss, const IplImage &img, float x, float y,
     return false;
   }
 
-  cout << "si is " << height_ << " x " << width_ << endl;
   for(int i=0; i<width_; i++) {
     for(int j=0; j<height_; j++) {
       (*res)(i*height_+j+1,1) = (float)psi_->getElement(j,i);
@@ -184,6 +217,8 @@ bool SpinImage::operator()(SmartScan &ss, const IplImage &img, float x, float y,
 
 
 void SpinImage::display(const Matrix& result) {
+  cout << "Starting display of " << name_ << " feature." << endl;
+
   //Display the spin image with gnuplot.
   char cmd[] = "echo \'set pm3d map; set size ratio -1; splot \"gnuplot_tmp\"\' | gnuplot -persist";
   char filename[] = "gnuplot_tmp";
@@ -216,13 +251,23 @@ int main(int argc, char **argv) {
 
   if(argc > 2 && !strcmp(argv[1], "--dataset")) {
 
-  vector<string> datafiles;
-  for(int i=2; i<argc; i++) {
-    datafiles.push_back(string(argv[i]));
+    vector<string> datafiles;
+    for(int i=2; i<argc; i++) {
+      datafiles.push_back(string(argv[i]));
+    }
+    
+    //d.buildDataset(2, datafiles, string("savename.dd"), true);
+    d.buildDataset(50, datafiles, string("savename.dd"), false);
+
+//  DorylusDataset dd2;  dd2.load(string("savename.dd"));
+//  dd2.save(string("savename2.dd"));
+//  cout << d.dd_.status() << endl;
   }
 
-  d.buildDataset(20, datafiles, string("savename.dd"), true);
+  if(!strcmp(argv[1], "--testDatasetSave")) {
+    d.dd_.testSave();
   }
+
   else {
     cout << "Usage: " << endl;
     cout << "  dorylus_node --dataset [BAGFILES]" << endl;

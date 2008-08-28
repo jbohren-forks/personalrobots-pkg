@@ -18,6 +18,7 @@ class Descriptor
  public:
 
   string name_;
+  unsigned int result_size_; 
 
   //Unfortunately ss cannot be const because it might create vtkdata.
   virtual bool operator()(SmartScan &ss, const IplImage &img, float x, float y, float z, int row, int col, NEWMAT::Matrix** result, bool debug=false)
@@ -59,6 +60,7 @@ class SpinImage : public Descriptor
 
       psi_ = new scan_utils::Grid2D(ceil(2*support_*pixelsPerMeter_), ceil(support_*pixelsPerMeter_));
       psi_->getSize(height_, width_);
+      result_size_ = height_*width_;
     }
 
   ~SpinImage()

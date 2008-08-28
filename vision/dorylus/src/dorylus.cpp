@@ -146,8 +146,8 @@ bool DorylusDataset::load(string filename)
       float buf;
       Matrix v(nRows, nCols);
       pobj->features[descriptor] = Matrix(nRows, nCols);
-      for (int j=0; j<nRows; j++) {
-	for(int i=0; i<nCols; i++) {
+      for(int i=0; i<nCols; i++) {
+	for (int j=0; j<nRows; j++) {
 	  f.read((char*)&buf, sizeof(float));
 	  pobj->features[descriptor](j+1, i+1) = buf;
 	}
@@ -179,31 +179,44 @@ bool DorylusDataset::load(string filename)
 }
 
 
-// int main(int argc, char **argv)
-// {
-//   DorylusDataset dd;
+bool DorylusDataset::testSave()
+{
+  cout << "Running save test." << endl;
+  DorylusDataset dd;
 
-//   cout << sizeof(Real) << " " << sizeof(Matrix) << endl;
+  map<string, Matrix> f;
+  Matrix spin(3,2);
+  spin(1,1) = 1;
+  spin(2,1) = 2;
+  spin(3,1) = 3;
+  spin(1,2) = 4;
+  spin(2,2) = 5;
+  spin(3,2) = 6;
+  Matrix sift(3,2); sift = 2.2;
+  sift(1,1) = 101;
+  sift(2,2) = 102;
+  f["spinimg"] = spin;
+  f["sift"] = sift;
 
-//   map<string, Matrix> f;
-//   Matrix spin(3,1); spin = 1.0;
-//   Matrix sift(2,1); sift = 2.2;
-//   f["spinimg"] = spin;
-//   f["sift"] = sift;
+  object obj;
+  obj.label = 0;
+  obj.features = f;
+  vector<object> objs;
+  objs.push_back(obj);
+  obj.label = 1;
+  objs.push_back(obj);
+  dd.setObjs(objs);
 
-//   object obj;
-//   obj.label = 0;
-//   obj.features = f;
-//   vector<object> objs;
-//   objs.push_back(obj);
-//   dd.setObjs(objs);
-
-//   cout << dd.status() << endl;
-//   dd.save(string("test.dd"));
+  cout << dd.status() << endl;
+  dd.save(string("test.dd"));
   
-//   DorylusDataset dd2;
-//   dd2.load(string("test.dd"));
-//   cout << dd2.status() << endl;
-//   return 0;
-// }
+  DorylusDataset dd2;
+  dd2.load(string("test.dd"));
+  dd2.save(string("test2.dd"));
+  cout << dd2.status() << endl;
+
+  
+
+  return true;
+}
     
