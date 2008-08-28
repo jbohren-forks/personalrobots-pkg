@@ -1,3 +1,3 @@
 Header header
-std_msgs/Point3DFloat64 position
-std_msgs/EulerAnglesFloat64 orientation
+std_msgs/Position position
+std_msgs/Quaternion orientation
