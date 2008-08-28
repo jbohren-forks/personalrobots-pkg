@@ -36,9 +36,9 @@
 using namespace std;
 using namespace controller;
 
-ROS_REGISTER_CONTROLLER(RampInputController)
+ROS_REGISTER_CONTROLLER(RampEffortController)
 
-RampInputController::RampInputController()
+RampEffortController::RampEffortController()
 {
   robot_ = NULL;
   joint_ = NULL;
@@ -49,11 +49,11 @@ RampInputController::RampInputController()
   initial_time_ = 0;
 }
 
-RampInputController::~RampInputController()
+RampEffortController::~RampEffortController()
 {
 }
 
-void RampInputController::init(double input_start, double input_end, double duration, double time,std::string name,mechanism::Robot *robot)
+void RampEffortController::init(double input_start, double input_end, double duration, double time,std::string name,mechanism::Robot *robot)
 {
   robot_ = robot;
   joint_ = robot->getJoint(name);
@@ -64,69 +64,86 @@ void RampInputController::init(double input_start, double input_end, double dura
   initial_time_=time;
 }
 
-bool RampInputController::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool RampEffortController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
-
-  TiXmlElement *jnt = config->FirstChildElement("joint");
-  if (jnt)
+  
+  TiXmlElement *j = config->FirstChildElement("joint");
+  if (!j)
   {
-    double input_start = atof(jnt->FirstChildElement("controller_defaults")->Attribute("start"));
-    double input_end = atof(jnt->FirstChildElement("controller_defaults")->Attribute("end"));
-    double duration = atof(jnt->FirstChildElement("controller_defaults")->Attribute("duration"));
-    init(input_start, input_end, duration,robot->hw_->current_time_,jnt->Attribute("name"), robot);
+    fprintf(stderr, "RampEffortController was not given a joint\n");
+    return false;
   }
+
+  const char *joint_name = j->Attribute("name");
+  joint_ = joint_name ? robot->getJoint(joint_name) : NULL;
+  if (!joint_)
+  {
+    fprintf(stderr, "RampEffortController could not find joint named \"%s\"\n", joint_name);
+    return false;
+  }
+  
+  TiXmlElement *cd = j->FirstChildElement("controller_defaults");
+  if (cd)
+  {
+    double input_start = atof(cd->Attribute("start"));
+    double input_end = atof(cd->Attribute("end"));
+    double duration = atof(cd->Attribute("duration"));
+    init(input_start, input_end, duration,robot->hw_->current_time_,j->Attribute("name"), robot);
+  }
+  else
+    fprintf(stderr, "RampEffortController's config did not specify the default control parameters.\n");
   return true;
 }
 
 // Return the current position command
-double RampInputController::getCommand()
+double RampEffortController::getCommand()
 {
   return joint_->commanded_effort_;
 }
 
 // Return the measured joint position
-double RampInputController::getMeasuredEffort()
+double RampEffortController::getMeasuredEffort()
 {
   return joint_->applied_effort_;
 }
 
 // Return the measured joint position
-double RampInputController::getVelocity()
+double RampEffortController::getVelocity()
 {
   return joint_->velocity_;
 }
 
-double RampInputController::getTime()
+double RampEffortController::getTime()
 {
   return robot_->hw_->current_time_;
 }
 
-void RampInputController::update()
+void RampEffortController::update()
 {
   double time = robot_->hw_->current_time_;
 
   joint_->commanded_effort_ = input_start_+(input_end_-input_start_)*(time-initial_time_)/(duration_);
 }
 
-ROS_REGISTER_CONTROLLER(RampInputControllerNode)
-RampInputControllerNode::RampInputControllerNode()
+ROS_REGISTER_CONTROLLER(RampEffortControllerNode)
+RampEffortControllerNode::RampEffortControllerNode()
 {
-  c_ = new RampInputController();
+  c_ = new RampEffortController();
 }
 
-RampInputControllerNode::~RampInputControllerNode()
+RampEffortControllerNode::~RampEffortControllerNode()
 {
   delete c_;
 }
 
-void RampInputControllerNode::update()
+void RampEffortControllerNode::update()
 {
   c_->update();
 }
 
 
 
-bool RampInputControllerNode::getActual(
+bool RampEffortControllerNode::getActual(
   generic_controllers::GetActual::request &req,
   generic_controllers::GetActual::response &resp)
 {
@@ -135,19 +152,19 @@ bool RampInputControllerNode::getActual(
   return true;
 }
 
-void RampInputControllerNode::init(double input_start, double input_end, double duration, double time,std::string name,mechanism::Robot *robot)
+void RampEffortControllerNode::init(double input_start, double input_end, double duration, double time,std::string name,mechanism::Robot *robot)
 {
   assert(false); // temporary fix for lack of xml
 }
 
-bool RampInputControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool RampEffortControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
 
   c_->initXml(robot, config);
 
-  node->advertise_service(prefix + "/get_actual", &RampInputControllerNode::getActual, this);
+  node->advertise_service(prefix + "/get_actual", &RampEffortControllerNode::getActual, this);
   return true;
 }
 

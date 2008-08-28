@@ -35,7 +35,7 @@
 #pragma once
 
 /***************************************************/
-/*! \class controller::RampInputController
+/*! \class controller::RampEffortController
     \brief Ramp Input Controller
 
     This class basically gives a ramp input to an
@@ -55,19 +55,19 @@
 namespace controller
 {
 
-class RampInputController : public Controller
+class RampEffortController : public Controller
 {
 public:
   /*!
-   * \brief Default Constructor of the RampInputController class.
+   * \brief Default Constructor of the RampEffortController class.
    *
    */
-  RampInputController();
+  RampEffortController();
 
   /*!
-   * \brief Destructor of the RampInputController class.
+   * \brief Destructor of the RampEffortController class.
    */
-  ~RampInputController();
+  ~RampEffortController();
 
   /*!
    * \brief Functional way to initialize.
@@ -118,7 +118,7 @@ private:
 };
 
 /***************************************************/
-/*! \class controller::RampInputControllerNode
+/*! \class controller::RampEffortControllerNode
     \brief Ram Input Controller ROS Node
 
     This class basically gives a ramp input to an
@@ -127,19 +127,19 @@ private:
 */
 /***************************************************/
 
-class RampInputControllerNode : public Controller
+class RampEffortControllerNode : public Controller
 {
 public:
   /*!
    * \brief Default Constructor
    *
    */
-  RampInputControllerNode();
+  RampEffortControllerNode();
 
   /*!
    * \brief Destructor
    */
-  ~RampInputControllerNode();
+  ~RampEffortControllerNode();
 
   void update();
 
@@ -150,7 +150,7 @@ public:
                   generic_controllers::GetActual::response &resp);
 
 private:
-  RampInputController *c_;
+  RampEffortController *c_;
 };
 }
 
