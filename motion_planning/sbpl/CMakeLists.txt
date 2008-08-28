@@ -7,6 +7,7 @@ rospack_add_library(sbpl
                          src/discrete_space_information/template/environment_XXX.cpp
                          src/discrete_space_information/robarm/environment_robarm.cpp
                          src/planners/ARAStar/araplanner.cpp
+                         src/planners/ADStar/adplanner.cpp
                          src/planners/VI/viplanner.cpp
                          src/utils/heap.cpp
                          src/utils/mdp.cpp
