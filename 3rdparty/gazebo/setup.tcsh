@@ -1,11 +1,11 @@
 #!/bin/tcsh
 setenv GAZ_TOP `rospack find gazebo`/gazebo
 setenv OGRE_TOP `rospack find ogre`/ogre
+setenv CG_TOP `rospack find Cg`/Cg
 setenv SIM_PLUGIN `rospack find gazebo_plugin`
 setenv PR2MEDIA `rospack find gazebo_robot_description`/world
 
-setenv LD_LIBRARY_PATH $SIM_PLUGIN/lib
-setenv LD_LIBRARY_PATH $GAZ_TOP/lib:$LD_LIBRARY_PATH
+setenv LD_LIBRARY_PATH $SIM_PLUGIN/lib:$GAZ_TOP/lib:$CG_TOP/lib:$LD_LIBRARY_PATH
 setenv PATH $GAZ_TOP/bin:$PATH
 
 setenv GAZEBO_RESOURCE_PATH $PR2MEDIA
