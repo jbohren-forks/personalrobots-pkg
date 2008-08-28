@@ -2,6 +2,8 @@
 #define WGTEST3DPOSEESTIMATE_H_
 
 #include "CvStereoCamModel.h"
+#include <vector>
+using namespace std;
 
 // http://www.videredesign.com/vision/stereo_manuals.htm
 //  Small Vision System Calibration Addendum - Version 4.x
@@ -33,9 +35,20 @@ public:
 	bool testVideos();
 	bool testVideos2();
     bool test();
-	void display3d();
+
+    // move the following two the appropriate place
+    bool eulerAngle(const CvMat& rot, CvPoint3D64f &euler);
+	bool goodAsKeyFrame(vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs,
+			int numInliers, const CvMat& rot, const CvMat& shift);
 
     TestType mTestType;
+
+    static const int    defMaxDisparity  = 15;
+    static const int    defMinNumInliers = 10;
+    static const double defMinAngleAlpha = 2.; // degree (0, 180)
+    static const double defMinAngleBeta  = 2.; // degree (0, 180)
+    static const double defMinAngleGamma = 2.; // degree (0, 180)
+    static const double defMinShift      = 100.; // mm
 
 protected:
 	void _init();
