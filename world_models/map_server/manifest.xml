@@ -11,5 +11,4 @@
   <depend package="roscpp"/>
   <depend package="std_srvs"/>
   <depend package="sdl_image"/>
-  <depend package="gtest"/>
 </package>

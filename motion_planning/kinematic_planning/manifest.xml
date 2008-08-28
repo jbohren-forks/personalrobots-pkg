@@ -9,5 +9,4 @@
   <depend package="ompl" />
   <depend package="profiling_utils" />
   <depend package="string_utils" />
-  <depend package="gtest" />
 </package>

@@ -10,7 +10,6 @@ Helper functions for manipulating Lasers Scans
 <depend package="newmat10"/>
 <depend package="std_msgs"/>
 <depend package="roscpp"/>
-<depend package="gtest"/>
 <export>
 <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -llaser_scan"/>
 </export>
