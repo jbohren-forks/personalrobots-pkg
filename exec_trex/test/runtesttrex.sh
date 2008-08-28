@@ -1,5 +1,9 @@
 #!/bin/bash
 
+
+cd `rospack find exec_trex`
+
+
 cp `rospack find exec_trex`/pr2.sim.cfg `rospack find exec_trex`/pr2.cfg
 
 mkdir $1
