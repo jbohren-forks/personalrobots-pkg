@@ -41,6 +41,7 @@ enum STATEID2IND {	STATEID2IND_SLOT0 = 0, //add more slots if necessary
 //use the slots above for the mutually exclusive algorithms
 #define VIMDP_STATEID2IND STATEID2IND_SLOT0
 #define ARAMDP_STATEID2IND STATEID2IND_SLOT0
+#define ADMDP_STATEID2IND STATEID2IND_SLOT0
 
 //for example
 //#define YYYPLANNER_STATEID2IND STATEID2IND_SLOT0

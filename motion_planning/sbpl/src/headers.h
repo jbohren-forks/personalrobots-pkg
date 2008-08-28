@@ -63,6 +63,7 @@ using namespace std;
 #include "utils/heap.h"
 #include "planners/VI/viplanner.h"
 #include "planners/ARAStar/araplanner.h"
+#include "planners/ADStar/adplanner.h"
 #include "utils/utils.h"
 
 
