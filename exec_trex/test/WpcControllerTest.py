@@ -75,9 +75,10 @@ class WpcControllerTest:
         return hit
 
     def compareTargets(self, targets_passed, targets, tol, pos):
+        print "Position: " + str(pos)
         for i in range(0, len(targets)):
             if (self.compareTarget(targets[i], tol, pos)):
-                #print "Hit target: " + str(i)
+                print "Hit target: " + str(i)
                 targets_passed[i] = True
         return targets_passed
 
