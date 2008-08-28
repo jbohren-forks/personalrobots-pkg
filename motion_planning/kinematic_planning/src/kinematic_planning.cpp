@@ -282,7 +282,8 @@ private:
 	p.si->setStateValidityChecker(p.svc);
 	
 	p.smoother = new ompl::PathSmootherKinematic(p.si);
-	p.smoother->setMaxSteps(20);
+	p.smoother->setMaxSteps(100);
+	p.smoother->setMaxEmptySteps(20);
 	
 	ompl::RRT_t rrt = new ompl::RRT(p.si);
 	p.mp            = rrt;
@@ -325,8 +326,9 @@ private:
 	p.si->setStateValidityChecker(p.svc);
 	
 	p.smoother = new ompl::PathSmootherKinematic(p.si);
-	p.smoother->setMaxSteps(20);
-	
+	p.smoother->setMaxSteps(100);
+	p.smoother->setMaxEmptySteps(20);
+
 	ompl::LazyRRT_t lrrt = new ompl::LazyRRT(p.si);
 	p.mp                 = lrrt;	
 

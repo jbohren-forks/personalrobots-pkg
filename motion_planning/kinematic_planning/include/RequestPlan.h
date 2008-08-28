@@ -164,7 +164,7 @@ class RequestPlan
 	    {
 		ros::Time startTime = ros::Time::now();
 		ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
-		psetup.smoother->smoothVertices(path);
+		psetup.smoother->smoothMax(path);
 		double tsmooth = (ros::Time::now() - startTime).to_double();
 		std::cout << "          Smoother spent " << tsmooth << " seconds (" << (tsmooth + tsolve) << " seconds in total)" << std::endl;
 		if (interpolate)
