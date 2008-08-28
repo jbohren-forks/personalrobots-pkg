@@ -134,6 +134,46 @@ double Pid::updatePid(double error, double dt)
   return cmd_;
 }
 
+
+double Pid::updatePid(double error, double error_dot, double dt)
+{
+  double p_term, d_term, i_term;
+  p_error_ = error; //this is pError = pState-pTarget
+  d_error_ = error_dot;
+  if (dt == 0)
+  {
+    throw "dividebyzero"; //TODO: not sure how to deal with this
+  }
+  else
+  {
+    // Calculate proportional contribution to command
+    p_term = p_gain_ * p_error_;
+
+    // Calculate the integral error
+    i_error_ = i_error_ + dt * p_error_;
+
+    //Calculate integral contribution to command
+    i_term = i_gain_ * i_error_;
+
+    // Limit i_term so that the limit is meaningful in the output
+    if (i_term > i_max_)
+    {
+      i_term = i_max_;
+    }
+    else if (i_term < i_min_)
+    {
+      i_term = i_min_;
+    }
+
+    // Calculate derivative contribution to command
+    d_term = d_gain_ * d_error_;
+    cmd_ = -p_term - i_term - d_term;
+  }
+  return cmd_;
+}
+
+
+
 void Pid::setCurrentCmd(double cmd)
 {
   cmd_ = cmd;

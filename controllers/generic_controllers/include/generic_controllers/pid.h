@@ -148,6 +148,15 @@ public:
    */
   void getGains(double &p, double &i, double &d, double &i_max, double &i_min);
 
+  /*!
+   * \brief Update the Pid loop with nonuniform time step size.
+   *
+   * \param error  Error since last call (p_state-p_target)
+   * \param error_dot d(Error)/dt since last call
+   * \param dt Change in time since last call
+   */
+  double updatePid(double error, double error_dot, double dt);
+
 private:
   double p_error_last_; /**< _Save position state for derivative state calculation. */
   double p_error_; /**< Position error. */
