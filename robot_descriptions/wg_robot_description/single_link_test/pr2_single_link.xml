@@ -1,0 +1,138 @@
+<?xml version="1.0"?>
+
+<robot name="pr2"><!-- name of the robot-->
+  
+  <!-- Begin template definitions for ease of reuse -->
+  
+  
+  <const name="upperarm_roll_size_x" value="0.362" />  <!-- for defining collision geometry -->
+  <const name="upperarm_roll_size_y" value="0.144" />  <!-- for defining collision geometry -->
+  <const name="upperarm_roll_size_z" value="0.157" />  <!-- for defining collision geometry -->
+  <const name="upperarm_roll_center_box_center_offset_x" value=".30" />  <!-- from origin of mesh to center of box-geom -->
+  
+  
+  <const name="upperarm_roll_elbow_flex_offset_x" value="0.4" />  <!-- mp 20080801 -->
+  <const name="upperarm_roll_min_limit" value="-2.3562" />
+  <const name="upperarm_roll_max_limit" value=" 2.3562" />
+  
+  <!-- End constant dimensions -->
+  <const_block name="pr2_upperarm_roll_joint">
+    <axis xyz=" 1 0 0 " /> <!-- direction of the joint in a global coordinate frame -->
+    <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit min=" upperarm_roll_min_limit" max="upperarm_roll_max_limit" effort="100" velocity="5" />
+    <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
+  </const_block>
+  
+  <const_block name="pr2_upperarm_roll_inertial">
+    <mass value="4.9481" />
+    <com xyz=" 0.21227 0.001205 -0.016293  " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --> <!-- FIXME John switched x and z for now -->
+    <inertia  ixx="10.0" ixy="0.000547745916"  ixz="0.000119476885"  iyy="1.0"  iyz="0.001544932307"  izz="1.0" />
+  </const_block> 
+  
+  <const_block name="pr2_upperarm_roll_collision">
+    <origin xyz="upperarm_roll_center_box_center_offset_x 0 0" rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <geometry name="pr2_upperarm_roll_collision_geom">
+      <box size=" upperarm_roll_size_x upperarm_roll_size_y upperarm_roll_size_z " />
+    </geometry>
+  </const_block> 
+  
+  <const_block name="pr2_upperarm_roll_visual">
+    <origin xyz="0 0 0" rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <map name="gazebo_material" flag="gazebo">
+      <elem key="material">Gazebo/Grey</elem>
+    </map>
+    <geometry name="pr2_sholder_roll_mesh_file">
+      <mesh filename="upperarm_roll" />
+    </geometry>
+  </const_block> 
+  
+  <!-- End template definitions for ease of reuse -->
+  
+  <joint name="upperarm_roll_left_joint" type="revolute" >
+    <insert_const_block name="pr2_upperarm_roll_joint"/>
+  </joint>
+  
+  <joint name="base_joint" type="planar"> 
+  </joint>
+
+  <!-- link blocks -->
+
+  <!-- Begin arm definitions -->
+  
+  <link name="base"><!-- link specifying the base of the robot -->
+    
+    <parent name=" world" />
+    
+    <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
+    <origin xyz=" 0 0 0.05 " rpy=" 0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
+    
+    <joint name="base_joint" />
+    
+    <inertial>
+      <mass value="1000" />
+      <com xyz=" 0 0 0 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <inertia ixx="1000"  ixy="0"  ixz="0" iyy="1000" iyz="0" izz="1000" />
+    </inertial> 
+    
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/Green</elem>
+      </map>
+      <geometry name="pr2_base_mesh_file">
+        <mesh size="10 10 0.1" />
+      </geometry>
+    </visual> 
+    
+    <collision>
+      <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " /> <!-- default box is centered at the origin -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="base_collision_geom"> <!-- think about putting mesh here as well -->
+        <box size="10 10 0.1" />
+      </geometry>
+    </collision>
+    
+  </link>
+  
+  <link name="upperarm_roll_left"><!-- link specifying the shoulder of the robot -->
+    <parent name="base" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz=" 0 0 1 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="upperarm_roll_left_joint" />
+    <inertial >
+      <insert_const_block name="pr2_upperarm_roll_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_upperarm_roll_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_upperarm_roll_collision"/>
+    </collision>
+    <map name="upperarm_roll_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  
+  <!-- End sensor definitions -->
+  
+  <!--
+      <frame name="test">
+	<parent name="finger_l_left" />
+	<origin xyz="0   0   0   " rpy="0.0 0.0 0.0 " /> // location defined with respect to the link origin in the sensor's local coordinate frame 
+	// All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis 
+      </frame>
+      -->
+  
+  
+  <!-- Define groups of links; a link may be part of multiple groups -->
+  
+  <include>groups_single_link.xml</include>
+  
+  <!-- controllers for gazebo -->
+  <include>controllers_gazebo_single_link.xml</include>
+  
+</robot>

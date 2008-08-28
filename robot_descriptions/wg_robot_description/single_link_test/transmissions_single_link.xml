@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+
+<robot name="pr2"><!-- name of the robot-->
+
+ <!-- Transmissions -->
+ <!-- ========================================= -->
+  <transmission type="SimpleTransmission" name="upperarm_roll_left_trans">
+    <actuator name="upperarm_roll_left_motor" />
+    <joint name="upperarm_roll_left_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+<!-- ========================================= -->
+</robot>
+
+

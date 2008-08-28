@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+
+<robot name="pr2"><!-- name of the robot-->
+  
+  <group name="left_arm" flags="planning kinematic">
+    upperarm_roll_left
+
+  
+</robot>

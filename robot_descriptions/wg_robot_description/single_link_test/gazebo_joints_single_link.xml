@@ -1,0 +1,9 @@
+<robot name="pr2">
+      <!-- ========================================= -->
+      <!-- left arm array -->
+      <joint name="upperarm_roll_left_joint" >
+          <saturationTorque>100</saturationTorque>
+          <explicitDampingCoefficient>10</explicitDampingCoefficient>
+      </joint>
+
+</robot>

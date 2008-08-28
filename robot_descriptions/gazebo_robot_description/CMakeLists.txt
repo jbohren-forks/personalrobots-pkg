@@ -38,3 +38,8 @@ add_custom_target(pr2_gazebo_model_arm_test ALL
 		  DEPENDS urdf2gazebo
 		  COMMENT "Building Gazebo model for PR2 Arm Test")
 
+add_custom_target(pr2_gazebo_model_single_link ALL
+		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/single_link_test/pr2_single_link.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_single_link.model
+		  DEPENDS urdf2gazebo
+		  COMMENT "Building Gazebo model for PR2 Arm Test")
+
