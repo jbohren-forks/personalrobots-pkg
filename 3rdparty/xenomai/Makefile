@@ -2,7 +2,7 @@ all: build
 
 XENOMAI_REVISION = 4063
 SVN_DIR = xenomai-svn
-SVN_URL = http://svn.gna.org/svn/xenomai/trunk 
+SVN_URL = http://svn.gna.org/svn/xenomai/tags/v2.4.5 
 SVN_REVISION = -r $(XENOMAI_REVISION)
 #SVN_PATCH = xenomai-r$(XENOMAI_REVISION).patch
 include $(shell rospack find mk)/svn_checkout.mk
