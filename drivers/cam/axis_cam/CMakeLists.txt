@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 rospack(axis_cam)
-
+genmsg()
 find_library(curl REQUIRED)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)

@@ -28,28 +28,28 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ros/node.h"
-#include "std_msgs/PTZActuatorCmd.h"
-#include "std_msgs/PTZActuatorState.h"
+#include "axis_cam/PTZActuatorCmd.h"
+#include "axis_cam/PTZActuatorState.h"
 #include "axis_cam/axis_cam.h"
 
 class Axis_PTZ_node : public ros::node
 {
 public:
-  std_msgs::PTZActuatorCmd   ptz_cmd;
-  std_msgs::PTZActuatorState ptz_state;
+  axis_cam::PTZActuatorCmd   ptz_cmd;
+  axis_cam::PTZActuatorState ptz_state;
 
   string axis_host;
   AxisCam *cam;
 
   bool cmd_updated;
 
-  std_msgs::PTZActuatorCmd ptz_cmd_saved;
+  axis_cam::PTZActuatorCmd ptz_cmd_saved;
 
   ros::thread::mutex control_mutex;
 
   Axis_PTZ_node() : node("axis_ptz"), cam(NULL), cmd_updated(false)
   {
-    advertise<std_msgs::PTZActuatorState>("ptz_state");
+    advertise<axis_cam::PTZActuatorState>("ptz_state");
 
     subscribe("ptz_cmd", ptz_cmd, &Axis_PTZ_node::ptz_callback);
 
