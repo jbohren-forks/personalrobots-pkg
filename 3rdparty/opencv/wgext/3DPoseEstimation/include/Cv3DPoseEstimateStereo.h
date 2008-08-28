@@ -34,6 +34,11 @@ public:
 	// constants used in goodFeaturesToTrack
 	static const int DefNumScales    = 7;
 	static const int DefThreshold    = 15;
+//	static const int DefThreshold    = 5;
+
+	// constants used in getting trackable pairs
+	static const CvPoint DefNeighborhoodSize;
+	static const CvPoint DefTemplateSize;
 
 	Cv3DPoseEstimateStereo(int width=DefWidth, int height=DefHeight);
 	virtual ~Cv3DPoseEstimateStereo();

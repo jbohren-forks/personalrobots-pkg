@@ -12,6 +12,10 @@
 #include <star_detector/include/detector.h>
 using namespace std;
 
+const CvPoint Cv3DPoseEstimateStereo::DefNeighborhoodSize = cvPoint(128, 48);
+//const CvPoint Cv3DPoseEstimateStereo::DefNeighborhoodSize = cvPoint(256, 48);
+const CvPoint Cv3DPoseEstimateStereo::DefTemplateSize     = cvPoint(16, 16);
+
 Cv3DPoseEstimateStereo::Cv3DPoseEstimateStereo(int width, int height):
 	mSize(cvSize(width, height)),
 	mFTZero(DefFTZero),
@@ -156,11 +160,8 @@ vector<pair<CvPoint3D64f, CvPoint3D64f> > Cv3DPoseEstimateStereo::getTrackablePa
 			) {
 	// change from 61 to 101 to accommodate the sudden change around 0915 in
 	// the indoor sequence
-//		const CvPoint neighborhoodSize = cvPoint(61, 31);
-//		const CvPoint neighborhoodSize = cvPoint(101, 31);
-	const CvPoint neighborhoodSize = cvPoint(128, 48);
-//		const CvPoint templSize        = cvPoint(11, 11);
-	const CvPoint templSize        = cvPoint(16, 16);
+	CvPoint neighborhoodSize = DefNeighborhoodSize;
+	CvPoint templSize        = DefTemplateSize;
 	int numTrackablePairs=0;
 	vector<pair<CvPoint3D64f, CvPoint3D64f> > trackablePairs;
 
@@ -235,7 +236,7 @@ vector<pair<CvPoint3D64f, CvPoint3D64f> > Cv3DPoseEstimateStereo::getTrackablePa
 			cvGetSubRect(image0.Ipl(), &templ, rectTempl);
 			cvGetSubRect(image1.Ipl(), &neighborhood, rectNeighborhood);
 
-#if 1
+#if 0
 			cvMatchTemplate(&neighborhood, &templ, &res, CV_TM_SQDIFF );
 			CvPoint		minloc, maxloc;
 			double		minval, maxval;
