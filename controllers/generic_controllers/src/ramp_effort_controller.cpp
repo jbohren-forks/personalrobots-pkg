@@ -31,7 +31,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <generic_controllers/ramp_input_controller.h>
+#include <generic_controllers/ramp_effort_controller.h>
 
 using namespace std;
 using namespace controller;
