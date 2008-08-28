@@ -2144,7 +2144,7 @@
           <updateRate>15.0</updateRate>
           <controller:ros_camera name="ptz_cam_left_controller" plugin="libRos_Camera.so">
             <updateRate>15.0</updateRate>
-            <topicName>image_ptz_left</topicName>
+            <topicName>PTZL_image</topicName>
             <frameName>ptz_left</frameName>
             <interface:camera name="ptz_cam_left_iface" />
           </controller:ros_camera>
@@ -2232,7 +2232,7 @@
           <updateRate>15.0</updateRate>
           <controller:ros_camera name="ptz_cam_right_controller" plugin="libRos_Camera.so">
             <updateRate>15.0</updateRate>
-            <topicName>image_ptz_right</topicName>
+            <topicName>PTZR_image</topicName>
             <frameName>ptz_right</frameName>
             <interface:camera name="ptz_cam_right_iface" />
           </controller:ros_camera>
