@@ -81,7 +81,7 @@ public:
 	req.params.planner_id = "RRT";
 	req.threshold = 0.01;
 	req.interpolate = 1;
-	req.times = 1;
+	req.times = 20;
 	
 	initialState(req.start_state);
 	req.start_state.vals[0] -= 1.5;

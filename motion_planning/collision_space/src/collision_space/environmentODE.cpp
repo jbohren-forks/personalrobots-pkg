@@ -48,6 +48,8 @@ void collision_space::EnvironmentModelODE::freeMemory(void)
     }    
     if (m_space)
 	dSpaceDestroy(m_space);
+    if (m_spaceBasicGeoms)
+	dSpaceDestroy(m_spaceBasicGeoms);
 }
 
 unsigned int collision_space::EnvironmentModelODE::addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links)
@@ -258,6 +260,11 @@ dSpaceID collision_space::EnvironmentModelODE::getODESpace(void) const
     return m_space;
 }
 
+dSpaceID collision_space::EnvironmentModelODE::getODEBasicGeomSpace(void) const
+{
+    return m_spaceBasicGeoms;
+}
+
 dSpaceID collision_space::EnvironmentModelODE::getModelODESpace(unsigned int model_id) const
 {
     return m_kgeoms[model_id].space;    
@@ -336,9 +343,9 @@ bool collision_space::EnvironmentModelODE::isCollision(unsigned int model_id)
 	    dGeomID g1 = m_kgeoms[model_id].geom[i]->geom;
 	    dReal aabb1[6];
 	    dGeomGetAABB(g1, aabb1);
-	    for (int j = m_odeGeoms.size() - 1 ; j >= 0 ; --j)
+	    for (int j = m_basicGeoms.size() - 1 ; j >= 0 ; --j)
 	    {
-		dGeomID g2 = m_odeGeoms[j];
+		dGeomID g2 = m_basicGeoms[j];
 		dReal aabb2[6];
 		dGeomGetAABB(g2, aabb2);
 
@@ -386,8 +393,8 @@ void collision_space::EnvironmentModelODE::addPointCloud(unsigned int n, const d
 
 void collision_space::EnvironmentModelODE::addPlane(double a, double b, double c, double d)
 {
-    dGeomID g = dCreatePlane(m_space, a, b, c, d);
-    m_odeGeoms.push_back(g);
+    dGeomID g = dCreatePlane(m_spaceBasicGeoms, a, b, c, d);
+    m_basicGeoms.push_back(g);
 }
 
 void collision_space::EnvironmentModelODE::clearObstacles(void)

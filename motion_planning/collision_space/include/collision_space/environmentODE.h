@@ -62,6 +62,7 @@ namespace collision_space
 	    }
 	    
 	    m_space = dHashSpaceCreate(0);
+	    m_spaceBasicGeoms = dHashSpaceCreate(0);
 	}
 	
 	virtual ~EnvironmentModelODE(void)
@@ -70,6 +71,7 @@ namespace collision_space
 	}
 	
 	dSpaceID getODESpace(void) const;
+	dSpaceID getODEBasicGeomSpace(void) const;
 	dSpaceID getModelODESpace(unsigned int model_id) const;
 	
 	/** Check if a model is in collision */
@@ -212,8 +214,13 @@ namespace collision_space
 	
 	std::vector<ModelInfo> m_kgeoms;
 	dSpaceID               m_space;
+	dSpaceID               m_spaceBasicGeoms;
+	
+	/* This is where geoms from the world (that can be cleared and recreated) are added; the space for this is m_space */
 	ODECollide2            m_collide2;
-	std::vector<dGeomID>   m_odeGeoms;
+
+	/* This is where static geoms from the world (that are not cleared) are added; the space for this is m_spaceBasicGeoms */
+	std::vector<dGeomID>   m_basicGeoms;
 	
     };
 }
