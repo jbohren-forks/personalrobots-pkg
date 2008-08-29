@@ -231,6 +231,8 @@ namespace libTF
       double getMagnitude(void);
       /** \brief Assignment operator overload*/
       Pose3D & operator=(const Pose3D & input);
+      /** \brief Assignment operator overload from Message*/
+      Pose3D & operator=(const std_msgs::Pose3D & input);
   
     
       /* Accessors */

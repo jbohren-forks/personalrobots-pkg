@@ -268,6 +268,12 @@ Pose3D& Pose3D::operator=(const Pose3D & input)
     return *this;
 };
 
+Pose3D& Pose3D::operator=(const std_msgs::Pose3D & input)
+{
+  setFromMessage(input);
+  return *this;
+}
+
 
 Pose3D::Euler Pose3D::eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned int solution_number)
 {
