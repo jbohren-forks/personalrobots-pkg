@@ -132,7 +132,6 @@ private:
   MechanismControl mc_;
   MechanismControl rmc_;
   MechanismControlNode mcn_;
-  MechanismControlNode rmcn_;
 
 
   void LoadMC(XMLConfigNode *node);

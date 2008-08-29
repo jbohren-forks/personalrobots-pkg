@@ -53,7 +53,7 @@ namespace gazebo {
   GZ_REGISTER_DYNAMIC_CONTROLLER("test_actuators", TestActuators);
 
   TestActuators::TestActuators(Entity *parent)
-    : Controller(parent) , hw_(0), mc_(&hw_), rmc_(&hw_) , mcn_(&mc_), rmcn_(&rmc_)
+    : Controller(parent) , hw_(0), mc_(&hw_), rmc_(&hw_) , mcn_(&mc_)
   {
      this->parent_model_ = dynamic_cast<Model*>(this->parent);
 
@@ -210,14 +210,39 @@ namespace gazebo {
     // as the name states
     LoadFrameTransformOffsets();
 
+    //-----------------------------------------------------------------------------------------
+    //
+    // ACTUATOR XML
+    //
+    // Pulls out the list of actuators used in the robot configuration.
+    //
+    //-----------------------------------------------------------------------------------------
+    struct GetActuators : public TiXmlVisitor
+    {
+      std::set<std::string> actuators;
+      virtual bool VisitEnter(const TiXmlElement &elt, const TiXmlAttribute *)
+      {
+        if (elt.ValueStr() == std::string("actuator") && elt.Attribute("name"))
+          actuators.insert(elt.Attribute("name"));
+        return true;
+      }
+    } get_actuators;
+    actuator_xml->RootElement()->Accept(&get_actuators);
 
+    // Places the found actuators into the hardware interface.
+    std::set<std::string>::iterator it;
+    for (it = get_actuators.actuators.begin(); it != get_actuators.actuators.end(); ++it)
+    {
+      std::cout << "adding actuator " << (*it) << std::endl;
+      hw_.actuators_.push_back(new Actuator(*it));
+    }
     //-----------------------------------------------------------------------------------------
     //
     //  parse for MechanismControl joints
     //
     //-----------------------------------------------------------------------------------------
     mcn_.initXml(pr2_xml->FirstChildElement("robot"));
-    rmcn_.initXml(pr2_xml->FirstChildElement("robot"));
+    rmc_.initXml(pr2_xml->FirstChildElement("robot"));
 
     //-----------------------------------------------------------------------------------------
     //
@@ -327,32 +352,7 @@ namespace gazebo {
       gazebo_joints_.push_back(gj);
       jNode = jNode->GetNext("joint");
     }
-    //-----------------------------------------------------------------------------------------
-    //
-    // ACTUATOR XML
-    //
-    // Pulls out the list of actuators used in the robot configuration.
-    //
-    //-----------------------------------------------------------------------------------------
-    struct GetActuators : public TiXmlVisitor
-    {
-      std::set<std::string> actuators;
-      virtual bool VisitEnter(const TiXmlElement &elt, const TiXmlAttribute *)
-      {
-        if (elt.ValueStr() == std::string("actuator") && elt.Attribute("name"))
-          actuators.insert(elt.Attribute("name"));
-        return true;
-      }
-    } get_actuators;
-    actuator_xml->RootElement()->Accept(&get_actuators);
 
-    // Places the found actuators into the hardware interface.
-    std::set<std::string>::iterator it;
-    for (it = get_actuators.actuators.begin(); it != get_actuators.actuators.end(); ++it)
-    {
-      std::cout << "adding actuator " << (*it) << std::endl;
-      hw_.actuators_.push_back(new Actuator(*it));
-    }
 
     //-----------------------------------------------------------------------------------------
     //
@@ -362,7 +362,7 @@ namespace gazebo {
     //
     //-----------------------------------------------------------------------------------------
     mcn_.initXml(transmission_xml->FirstChildElement("robot"));
-    rmcn_.initXml(transmission_xml->FirstChildElement("robot"));
+    rmc_.initXml(transmission_xml->FirstChildElement("robot"));
 
     //-----------------------------------------------------------------------------------------
     //
