@@ -12,7 +12,7 @@ byte type
 string robot_link
 
 # The desired pose of the robot link
-std_msgs/Pose3DFloat64 pose
+std_msgs/Pose3D pose
 
 # the allowed difference (square of euclidian distance) for position
 float64 position_distance
