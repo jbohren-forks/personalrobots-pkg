@@ -1,0 +1,87 @@
+<robot name="pr2">
+
+  <actuator name="shoulder_pan">
+  </actuator>
+
+  <actuator name="elbow">
+  </actuator>
+
+  <actuator name="upper_arm_roll">
+  </actuator>
+
+  <actuator name="shoulder_lift">
+  </actuator>
+
+  <joint name="shoulder_pan_joint" type="revolute">
+    <limit effort="10" velocity="0" />
+  </joint>
+
+  <joint name="elbow_joint" type="revolute">
+    <limit effort="10" velocity="0" />
+  </joint>
+
+  <joint name="upper_arm_joint" type="revolute">
+    <limit effort="10" velocity="0" />
+  </joint>
+
+  <joint name="shoulder_lift_joint" type="revolute">
+    <limit effort="10" velocity="0" />
+  </joint>
+
+  <transmission type="SimpleTransmission" name="transmission1">
+    <actuator name="shoulder_pan" />
+    <joint name="shoulder_pan_joint" />
+    <mechanicalReduction>63.16</mechanicalReduction>
+    <motorTorqueConstant>-0.0603</motorTorqueConstant>
+    <pulsesPerRevolution>1200</pulsesPerRevolution>
+  </transmission>
+
+  <transmission type="SimpleTransmission" name="transmission2">
+    <actuator name="elbow" />
+    <joint name="elbow_joint" />
+    <mechanicalReduction>36.17</mechanicalReduction>
+    <motorTorqueConstant>-0.0603</motorTorqueConstant>
+    <pulsesPerRevolution>1200</pulsesPerRevolution>
+  </transmission>
+
+  <transmission type="SimpleTransmission" name="transmission3">
+    <actuator name="upper_arm_roll" />
+    <joint name="upper_arm_joint" />
+    <mechanicalReduction>32.65</mechanicalReduction>
+    <motorTorqueConstant>-0.0603</motorTorqueConstant>
+    <pulsesPerRevolution>1200</pulsesPerRevolution>
+  </transmission>
+
+  <transmission type="SimpleTransmission" name="transmission4">
+    <actuator name="shoulder_lift" />
+    <joint name="shoulder_lift_joint" />
+    <mechanicalReduction>57.36</mechanicalReduction>
+    <motorTorqueConstant>-0.0603</motorTorqueConstant>
+    <pulsesPerRevolution>1200</pulsesPerRevolution>
+  </transmission>
+
+  <controller name="elbow_controller" topic="elbow_controller" type="JointPositionControllerNode">
+    <joint name="elbow_joint">
+      <pid p="3.0" i="0" d="0" iClamp="0" />
+    </joint>
+  </controller>
+
+  <controller name="upper_arm_controller" topic="upper_arm_controller" type="JointPositionControllerNode">
+    <joint name="upper_arm_joint">
+      <pid p="3.0" i="0" d="0" iClamp="0" />
+    </joint>
+  </controller>
+
+  <controller name="shoulder_pan_controller" topic="shoulder_pan_controller" type="JointPositionControllerNode">
+    <joint name="shoulder_pan_joint">
+      <pid p="12.0" i="0" d="0" iClamp="0" />
+    </joint>
+  </controller>
+
+  <controller name="shoulder_lift_controller" topic="shoulder_lift_controller" type="JointPositionControllerNode">
+    <joint name="shoulder_lift_joint">
+      <pid p="12.0" i="0" d="0" iClamp="0" />
+    </joint>
+  </controller>
+
+</robot>
