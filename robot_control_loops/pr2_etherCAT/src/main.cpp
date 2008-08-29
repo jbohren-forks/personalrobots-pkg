@@ -86,7 +86,7 @@ void *controlLoop(void *arg)
 
   // Switch to hard real-time
 #if defined(__XENO__)
-  pthread_set_mode_np(0, PTHREAD_PRIMARY/*|PTHREAD_WARNSW*/);
+  pthread_set_mode_np(0, PTHREAD_PRIMARY|PTHREAD_WARNSW);
 #endif
 
   struct timespec tick;
@@ -155,6 +155,9 @@ static pthread_attr_t rtThreadAttr;
 
 int main(int argc, char *argv[])
 {
+  // Keep the kernel from swapping us out
+  mlockall(MCL_CURRENT | MCL_FUTURE);
+
   // Initialize ROS and parse command-line arguments
   ros::init(argc, argv);
 
@@ -174,9 +177,6 @@ int main(int argc, char *argv[])
 
   // Catch if we fall back to secondary mode
   signal(SIGXCPU, warnOnSecondary);
-
-  // Keep the kernel from swapping us out
-  mlockall(MCL_CURRENT | MCL_FUTURE);
 
   // Set up thread scheduler for realtime
   pthread_attr_init(&rtThreadAttr);
