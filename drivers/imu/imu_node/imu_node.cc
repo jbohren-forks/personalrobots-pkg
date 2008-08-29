@@ -79,9 +79,13 @@ Reads the following parameters from the parameter server
 #include <std_msgs/EulerAngles.h>
 #include "ros/time.h"
 
+#include "self_test/self_test.h"
+
+#include <pthread.h>
+
 using namespace std;
 
-class IMU_node: public ros::node
+class ImuNode: public ros::node
 {
 public:
   MS_3DMGX2::IMU imu;
@@ -95,21 +99,32 @@ public:
   int count;
   ros::Time next_time;
 
+  SelfTest<ImuNode> self_test_;
+
   bool running;
   
-  IMU_node() : ros::node("imu"), count(0)
+  ImuNode() : ros::node("imu"), count(0), self_test_(this)
   {
-    advertise<std_msgs::ImuData>("imu_data");
-    advertise<std_msgs::EulerAngles>("euler_angles");
+    advertise<std_msgs::ImuData>("imu_data", 100);
+    advertise<std_msgs::EulerAngles>("euler_angles", 100);
 
-    param("imu/port", port, string("/dev/ttyUSB0"));
+    param("~port", port, string("/dev/ttyUSB0"));
 
     string type;
-    param("imu/type", type, string("accel_angrate"));
+    param("~type", type, string("accel_angrate"));
 
     check_msg_type(type);
     
     running = false;
+
+    self_test_.setPretest(&ImuNode::pretest);
+    self_test_.addTest(&ImuNode::InterruptionTest);
+    self_test_.addTest(&ImuNode::ConnectTest);
+    self_test_.addTest(&ImuNode::GyroBiasTest);
+    self_test_.addTest(&ImuNode::StreamedDataTest);
+    self_test_.addTest(&ImuNode::GravityTest);
+    self_test_.addTest(&ImuNode::DisconnectTest);
+    self_test_.addTest(&ImuNode::ResumeTest);
   }
 
   void check_msg_type(string type)
@@ -120,7 +135,7 @@ public:
       cmd = MS_3DMGX2::IMU::CMD_ACCEL_ANGRATE;
   }
 
-  ~IMU_node()
+  ~ImuNode()
   {
     stop();
   }
@@ -129,11 +144,11 @@ public:
   {
     stop();
 
+    self_test_.lock();
+
     try
     {
       imu.open_port(port.c_str());
-
-      running = true;
 
       printf("initializing gyros...\n");
 
@@ -147,18 +162,24 @@ public:
 
       imu.set_continuous(cmd);
 
+      running = true;
+
     } catch (MS_3DMGX2::exception& e) {
       printf("Exception thrown while starting imu.\n %s\n", e.what());
+      self_test_.unlock();
       return -1;
     }
 
     next_time = ros::Time::now();
 
+    self_test_.unlock();
     return(0);
   }
   
   int stop()
   {
+    self_test_.lock();
+
     if(running)
     {
       try
@@ -169,15 +190,18 @@ public:
       }
       running = false;
     }
+
+    self_test_.unlock();
     return(0);
   }
 
   int publish_datum()
   {
 
+    self_test_.lock();
+
     try
     {
-
       uint64_t time;
 
       switch (cmd) {
@@ -219,12 +243,14 @@ public:
 
       default:
         printf("Unhandled message type!\n");
+        self_test_.unlock();
         return -1;
 
       }
         
     } catch (MS_3DMGX2::exception& e) {
       printf("Exception thrown while trying to get the reading.\n%s\n", e.what());
+      self_test_.unlock();
       return -1;
     }
 
@@ -236,7 +262,208 @@ public:
       next_time = next_time + ros::Duration(1,0);
     }
 
+    self_test_.unlock();
+    sched_yield();
     return(0);
+  }
+
+  bool spin()
+  {
+    // Start up the laser
+    while (ok())
+    {
+      if (start() == 0)
+      {
+        while(ok()) {
+          if(publish_datum() < 0)
+            break;
+        }
+      } else {
+        usleep(1000000);
+      }
+    }
+
+    stop();
+
+    return true;
+  }
+
+
+  void pretest()
+  {
+    try
+    {
+      imu.close_port();
+    } catch (MS_3DMGX2::exception& e) {
+    }
+  }
+
+  void InterruptionTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Interruption Test";
+
+    if (num_subscribers("imu_data") == 0 && num_subscribers("euler_angles") == 0)
+    {
+      status.level = 0;
+      status.message = "No operation interrupted.";
+    }
+    else
+    {
+      status.level = 1;
+      status.message = "There were active subscribers.  Running of self test interrupted operations.";
+    }
+  }
+
+  void ConnectTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Connection Test";
+
+    imu.open_port(port.c_str());
+
+    status.level = 0;
+    status.message = "Connected successfully.";
+  }
+
+  void GyroBiasTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Gyro Bias Test";
+
+    double bias_x;
+    double bias_y;
+    double bias_z;
+    
+    imu.init_gyros(&bias_x, &bias_y, &bias_z);
+
+    status.level = 0;
+    status.message = "Successfully calculated gyro biases.";
+
+    status.set_values_size(3);
+    status.values[0].value_label = "Bias_X";
+    status.values[0].value       = bias_x;
+    status.values[1].value_label = "Bias_Y";
+    status.values[1].value       = bias_y;
+    status.values[2].value_label = "Bias_Z";
+    status.values[2].value       = bias_z;
+
+  }
+
+
+  void StreamedDataTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Streamed Data Test";
+
+    uint64_t time;
+    double accel[3];
+    double angrate[3];
+
+    if (!imu.set_continuous(MS_3DMGX2::IMU::CMD_ACCEL_ANGRATE))
+    {
+      status.level = 2;
+      status.message = "Could not start streaming data.";
+    } else {
+
+      for (int i = 0; i < 100; i++)
+      {
+        imu.receive_accel_angrate(&time, accel, angrate);
+      }
+      
+      imu.stop_continuous();
+
+      status.level = 0;
+      status.message = "Data streamed successfully.";
+    }
+  }
+
+  void GravityTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Streamed Data Test";
+
+    uint64_t time;
+    double accel[3];
+    double angrate[3];
+
+    double grav = 0.0;
+
+    double grav_x = 0.0;
+    double grav_y = 0.0;
+    double grav_z = 0.0;
+
+    if (!imu.set_continuous(MS_3DMGX2::IMU::CMD_ACCEL_ANGRATE))
+    {
+      status.level = 2;
+      status.message = "Could not start streaming data.";
+    } else {
+
+      int num = 200;
+
+      for (int i = 0; i < num; i++)
+      {
+        imu.receive_accel_angrate(&time, accel, angrate);
+        
+        grav_x += accel[0];
+        grav_y += accel[1];
+        grav_z += accel[2];
+
+      }
+      
+      imu.stop_continuous();
+
+      grav += sqrt( pow(grav_x / (double)(num), 2.0) + 
+                    pow(grav_y / (double)(num), 2.0) + 
+                    pow(grav_z / (double)(num), 2.0));
+      
+      //      double err = (grav - MS_3DMGX2::G);
+      double err = (grav - 9.796);
+      
+      if (fabs(err) < .05)
+      {
+        status.level = 0;
+        status.message = "Gravity detected correctly.";
+      } else {
+        status.level = 2;
+        ostringstream oss;
+        oss << "Measured gravity deviates by " << err;
+        status.message = oss.str();
+      }
+
+      status.set_values_size(2);
+      status.values[0].value_label = "Measured gravity";
+      status.values[0].value       = grav;
+      status.values[1].value_label = "Gravity error";
+      status.values[1].value       = err;
+    }
+  }
+
+
+  void DisconnectTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Disconnect Test";
+
+    imu.close_port();
+
+    status.level = 0;
+    status.message = "Disconnected successfully.";
+  }
+
+  void ResumeTest(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Resume Test";
+
+    if (running)
+    {
+
+      imu.open_port(port.c_str());
+
+      if (imu.set_continuous(cmd) != true)
+      {
+        status.level = 2;
+        status.message = "Failed to resume previous mode of operation.";
+        return;
+      }
+    }
+
+    status.level = 0;
+    status.message = "Previous operation resumed successfully.";    
   }
 };
 
@@ -245,23 +472,9 @@ main(int argc, char** argv)
 {
   ros::init(argc, argv);
 
-  IMU_node in;
+  ImuNode in;
 
-  // Start up the laser
-  while (in.ok())
-  {
-    do {
-      usleep(1000000);
-    } while(in.ok() && in.start() != 0);
-
-    while(in.ok()) {
-      if(in.publish_datum() < 0)
-        break;
-    }
-  }
-
-  //stopping should be fine even if not running
-  in.stop();
+  in.spin();
 
   ros::fini();
 

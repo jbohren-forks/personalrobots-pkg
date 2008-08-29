@@ -149,7 +149,7 @@ MS_3DMGX2::IMU::init_time()
 
 ////////////////////////////////////////////////////////////////////////////////
 void
-MS_3DMGX2::IMU::init_gyros()
+MS_3DMGX2::IMU::init_gyros(double* bias_x, double* bias_y, double* bias_z)
 {
   wraps = 0;
 
@@ -160,8 +160,17 @@ MS_3DMGX2::IMU::init_gyros()
   cmd[1] = 0xC1;
   cmd[2] = 0x29;
   *(unsigned short*)(&cmd[3]) = bswap_16(10000);
-  
+
   transact(cmd, sizeof(cmd), rep, sizeof(rep));
+
+  if (bias_x)
+    *bias_x = extract_float(rep + 1);
+  
+  if (bias_y)
+    *bias_y = extract_float(rep + 5);
+
+  if (bias_z)
+    *bias_z = extract_float(rep + 9);
 }
 
 

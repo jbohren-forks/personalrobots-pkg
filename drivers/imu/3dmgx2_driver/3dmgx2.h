@@ -105,7 +105,7 @@ namespace MS_3DMGX2
 
     void init_time();
 
-    void init_gyros();
+    void init_gyros(double* bias_x = 0, double* bias_y = 0, double* bias_z = 0);
 
     // Put into continuous mode:
     bool set_continuous(cmd command);

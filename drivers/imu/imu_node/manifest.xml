@@ -7,4 +7,5 @@
   <depend package='roscpp'/>
   <depend package='std_msgs'/>
   <depend package='3dmgx2_driver'/>
+  <depend package='self_test'/>
 </package>
