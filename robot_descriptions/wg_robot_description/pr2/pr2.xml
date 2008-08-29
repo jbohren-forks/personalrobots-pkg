@@ -318,7 +318,7 @@
   <const_block name="pr2_shoulder_pan_inertial">
     <mass value="16.29553" />
     <com xyz=" -0.005215 -0.030552 0.0 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
-    <inertia ixx="0.13915007406"  ixy="0.003412032973"  ixz="0.0096614481"  iyy="0.793291393007"  iyz="-0.033999499551"  izz="0.818419457224" />
+    <inertia ixx="0.793291393007"  ixy="0.003412032973"  ixz="0.0096614481"  iyy="0.818419457224"  iyz="-0.033999499551"  izz="0.13915007406" />
   </const_block> 
   
   <const_block name="pr2_shoulder_pan_collision">
@@ -382,7 +382,7 @@
   <const_block name="pr2_upperarm_roll_inertial">
     <mass value="4.9481" />
     <com xyz=" 0.21227 0.001205 -0.016293  " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --> <!-- FIXME John switched x and z for now -->
-    <inertia  ixx="0.073060715309" ixy="0.000547745916"  ixz="0.000119476885"  iyy="0.072124510748"  iyz="0.001544932307"  izz="0.013383284908" />
+    <inertia  ixx="10.0" ixy="0.000547745916"  ixz="0.000119476885"  iyy="1.0"  iyz="0.001544932307"  izz="1.0" />
   </const_block> 
   
   <const_block name="pr2_upperarm_roll_collision">
@@ -414,7 +414,7 @@
   <const_block name="pr2_elbow_flex_inertial">
     <mass value="1.689246" />
     <com xyz=" -0.011638  0.013173 0.001228 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
-    <inertia  ixx="0.003275298548" ixy="0.000292046674"  ixz="-0.000077359282"  iyy="0.003236815206"  iyz="-0.000001162155"  izz="0.00410053774" />
+    <inertia  ixx="10.0" ixy="0.000292046674"  ixz="-0.000077359282"  iyy="1.0"  iyz="-0.000001162155"  izz="1.0" />
   </const_block> 
   
   <const_block name="pr2_elbow_flex_collision">
@@ -446,7 +446,7 @@
   <const_block name="pr2_forearm_roll_inertial">
     <mass value="1.804155" />
     <com xyz=" 0.179474 -0.000058  0.013779 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --> <!-- FIXME John switched x and z for now-->
-    <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"  iyy="0.013567548848" iyz="-0.000427679042" izz="0.001755089866" />
+    <inertia  ixx="10.0" ixy="-0.000003671102" ixz="0.000029379389"  iyy="1.0" iyz="-0.000427679042" izz="1.0" />
   </const_block> 
   
   <const_block name="pr2_forearm_roll_collision">
@@ -478,7 +478,7 @@
   <const_block name="pr2_wrist_flex_inertial">
     <mass value="0.1" />
     <com xyz=" 0 0 0 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
-    <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"  iyy="0.013567548848" iyz="-0.000427679042" izz="0.001755089866" />
+    <inertia  ixx="1.0" ixy="-0.000003671102" ixz="0.000029379389"  iyy="1.0" iyz="-0.000427679042" izz="1.0" />
   </const_block> 
   
   <const_block name="pr2_wrist_flex_collision">
@@ -511,7 +511,7 @@
   <const_block name="pr2_gripper_roll_inertial">
     <mass value="1.0" />
     <com xyz=" 0.179474 -0.000058  0.013779  " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --><!-- FIXME John switched x and z for now-->
-    <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"  iyy="0.013567548848" iyz="-0.000427679042" izz="0.001755089866" />
+    <inertia  ixx="1.0" ixy="-0.000003671102" ixz="0.000029379389"  iyy="1.0" iyz="-0.000427679042" izz="1.0" />
   </const_block> 
   
   <const_block name="pr2_gripper_roll_collision">
