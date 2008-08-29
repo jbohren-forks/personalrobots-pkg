@@ -36,6 +36,7 @@
 
 #include <generic_controllers/joint_position_controller.h>
 #include <generic_controllers/joint_velocity_controller.h>
+#include <pr2_controllers/arm_position_controller.h>
 #include <pr2_controllers/base_controller.h>
 #include <pr2_controllers/laser_scanner_controller.h>
 #include "hardware_interface/hardware_interface.h"

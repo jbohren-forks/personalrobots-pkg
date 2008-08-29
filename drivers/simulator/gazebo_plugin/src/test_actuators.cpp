@@ -1060,22 +1060,22 @@ namespace gazebo {
   {
     this->lock.lock();
     printf("hoo!\n");
-    controller::Controller* j1 = mc_.getControllerByName( "shoulder_pan_left_controller" );
-    controller::Controller* j2 = mc_.getControllerByName( "shoulder_pitch_left_controller" );
-    controller::Controller* j3 = mc_.getControllerByName( "upperarm_roll_left_controller" );
-    controller::Controller* j4 = mc_.getControllerByName( "elbow_flex_left_controller" );
-    controller::Controller* j5 = mc_.getControllerByName( "forearm_roll_left_controller" );
-    controller::Controller* j6 = mc_.getControllerByName( "wrist_flex_left_controller" );
-    controller::Controller* j7 = mc_.getControllerByName( "gripper_roll_left_controller" );
+
+    std::vector<double> goals;
+    goals.push_back(leftarmMsg.turretAngle       );
+    goals.push_back(leftarmMsg.shoulderLiftAngle );
+    goals.push_back(leftarmMsg.upperarmRollAngle );
+    goals.push_back(leftarmMsg.elbowAngle        );
+    goals.push_back(leftarmMsg.forearmRollAngle  );
+    goals.push_back(leftarmMsg.wristPitchAngle   );
+    goals.push_back(leftarmMsg.wristRollAngle    );
+
+    controller::Controller* j1 = mc_.getControllerByName( "left_arm_controller" );
+    dynamic_cast<controller::ArmPositionControllerNode*>(j1)->setJointPosCmd(goals);
+
     controller::Controller* j8 = mc_.getControllerByName( "gripper_left_controller" );
-    dynamic_cast<controller::JointPositionControllerNode*>(j1)->setCommand(leftarmMsg.turretAngle       );
-    dynamic_cast<controller::JointPositionControllerNode*>(j2)->setCommand(leftarmMsg.shoulderLiftAngle );
-    dynamic_cast<controller::JointPositionControllerNode*>(j3)->setCommand(leftarmMsg.upperarmRollAngle );
-    dynamic_cast<controller::JointPositionControllerNode*>(j4)->setCommand(leftarmMsg.elbowAngle        );
-    dynamic_cast<controller::JointPositionControllerNode*>(j5)->setCommand(leftarmMsg.forearmRollAngle  );
-    dynamic_cast<controller::JointPositionControllerNode*>(j6)->setCommand(leftarmMsg.wristPitchAngle   );
-    dynamic_cast<controller::JointPositionControllerNode*>(j7)->setCommand(leftarmMsg.wristRollAngle    );
-    dynamic_cast<controller::JointPositionControllerNode*>(j8)->setCommand(leftarmMsg.gripperGapCmd     );
+    dynamic_cast<controller::JointPositionControllerNode*>(j8)->setCommand(leftarmMsg.gripperGapCmd);
+
     this->lock.unlock();
   }
   void
@@ -1083,22 +1083,22 @@ namespace gazebo {
   {
     this->lock.lock();
     printf("hoo!\n");
-    controller::Controller* j1 = mc_.getControllerByName( "shoulder_pan_right_controller" );
-    controller::Controller* j2 = mc_.getControllerByName( "shoulder_pitch_right_controller" );
-    controller::Controller* j3 = mc_.getControllerByName( "upperarm_roll_right_controller" );
-    controller::Controller* j4 = mc_.getControllerByName( "elbow_flex_right_controller" );
-    controller::Controller* j5 = mc_.getControllerByName( "forearm_roll_right_controller" );
-    controller::Controller* j6 = mc_.getControllerByName( "wrist_flex_right_controller" );
-    controller::Controller* j7 = mc_.getControllerByName( "gripper_roll_right_controller" );
+
+    std::vector<double> goals;
+    goals.push_back(rightarmMsg.turretAngle       );
+    goals.push_back(rightarmMsg.shoulderLiftAngle );
+    goals.push_back(rightarmMsg.upperarmRollAngle );
+    goals.push_back(rightarmMsg.elbowAngle        );
+    goals.push_back(rightarmMsg.forearmRollAngle  );
+    goals.push_back(rightarmMsg.wristPitchAngle   );
+    goals.push_back(rightarmMsg.wristRollAngle    );
+
+    controller::Controller* j1 = mc_.getControllerByName( "right_arm_controller" );
+    dynamic_cast<controller::ArmPositionControllerNode*>(j1)->setJointPosCmd(goals);
+
     controller::Controller* j8 = mc_.getControllerByName( "gripper_right_controller" );
-    dynamic_cast<controller::JointPositionControllerNode*>(j1)->setCommand(rightarmMsg.turretAngle       );
-    dynamic_cast<controller::JointPositionControllerNode*>(j2)->setCommand(rightarmMsg.shoulderLiftAngle );
-    dynamic_cast<controller::JointPositionControllerNode*>(j3)->setCommand(rightarmMsg.upperarmRollAngle );
-    dynamic_cast<controller::JointPositionControllerNode*>(j4)->setCommand(rightarmMsg.elbowAngle        );
-    dynamic_cast<controller::JointPositionControllerNode*>(j5)->setCommand(rightarmMsg.forearmRollAngle  );
-    dynamic_cast<controller::JointPositionControllerNode*>(j6)->setCommand(rightarmMsg.wristPitchAngle   );
-    dynamic_cast<controller::JointPositionControllerNode*>(j7)->setCommand(rightarmMsg.wristRollAngle    );
-    dynamic_cast<controller::JointPositionControllerNode*>(j8)->setCommand(rightarmMsg.gripperGapCmd     );
+    dynamic_cast<controller::JointPositionControllerNode*>(j8)->setCommand(rightarmMsg.gripperGapCmd);
+
     this->lock.unlock();
   }
 
