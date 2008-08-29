@@ -225,9 +225,10 @@ int WavefrontPlanner::GenerateLocalPlan(double curx, double cury,
     gettimeofday(&timeafter,&tzdummy);
     int best_seconds = timeafter.tv_sec-timebefore.tv_sec;
     int best_microseconds = timeafter.tv_usec-timebefore.tv_usec;
-    //double best_tt = best_seconds*1.0+(.000001)*(best_microseconds*1.0);
-    //std::cout << "Local planning took " << best_tt << " seconds\n";
+    double best_tt = best_seconds*1.0+(.000001)*(best_microseconds*1.0);
+    std::cout << "Local planning took " << best_tt << " seconds\n";
   }
+
   return res;
 }
 
@@ -265,7 +266,7 @@ int WavefrontPlanner::DetermineDiffDriveCmds(double& vx, double& va,
     int best_seconds = timeafter.tv_sec-timebefore.tv_sec;
     int best_microseconds = timeafter.tv_usec-timebefore.tv_usec;
     double best_tt = best_seconds*1.0+(.000001)*(best_microseconds*1.0);
-    //std::cout << "DiffDrive planning took " << best_tt << " seconds\n";
+    std::cout << "DiffDrive planning took " << best_tt << " seconds\n";
   }
   return res;
   
@@ -299,8 +300,8 @@ WavefrontPlanner::PlanEntry* WavefrontPlanner::GetPlan(double gx, double gy) {
   for(std::list<PlanEntry*>::iterator it = _planEntries.begin();
       it != _planEntries.end();
       it++) {
-    if(abs(gx-(*it)->goal_x) < VerySmall &&
-       abs(gy-(*it)->goal_y) < VerySmall) {
+    if(abs(int(gx-(*it)->goal_x)) < VerySmall &&
+       abs(int(gy-(*it)->goal_y)) < VerySmall) {
       return ((*it));
     }
   }
