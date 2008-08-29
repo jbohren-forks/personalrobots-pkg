@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+
+<robot name="pr2"><!-- name of the robot-->
+
+
+
+<map name="transmissions_gazebo_actuators" flag="gazebo"> <!-- we can set a name too, but the convertor only cares about the flag -->
+  <verbatim key="transmissions_gazebo_actuators" includes="true"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <map> tag -->
+
+  <!-- PR2_ACTARRAY -->
+  <!-- uncomment for testing -->
+  <controller:test_actuators name="test_actuators" plugin="libtest_actuators.so">
+      <updateRate>1000.0</updateRate>
+
+      <include>gazebo_joints_arm_test.xml</include>
+
+      <robot_filename>pr2_arm_test.xml</robot_filename>
+      <controller_filename>controllers_arm_test.xml</controller_filename>
+      <actuator_filename>actuators_arm_test.xml</actuator_filename>
+      <transmission_filename>transmissions_arm_test.xml</transmission_filename>
+
+      <interface:audio name="test_actuators_dummy_iface" />
+  </controller:test_actuators>
+
+  </verbatim>
+</map>
+
+
+<map name="controllers" flag="gazebo"> <!-- we can set a name too, but the convertor only cares about the flag -->
+  <verbatim key="controllers"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <map> tag -->
+
+  <!-- P3D for position groundtruth -->
+  <controller:P3D name="p3d_left_wrist_controller" plugin="libP3D.so">
+      <updateRate>100.0</updateRate>
+      <bodyName>gripper_roll_left</bodyName>
+      <topicName>gripper_roll_left_pose</topicName>
+      <frameName>gripper_roll_left_frame</frameName>
+      <interface:position name="p3d_left_wrist_position"/>
+  </controller:P3D>
+
+  </verbatim>
+</map>
+
+</robot>
+

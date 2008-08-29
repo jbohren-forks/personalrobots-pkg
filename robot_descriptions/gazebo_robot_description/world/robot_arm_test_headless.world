@@ -24,11 +24,11 @@
 <!-- erp is typically .1-.8 -->
 <!-- here's the global contact cfm/erp -->
   <physics:ode>
-    <stepTime>0.01</stepTime>
+    <stepTime>0.001</stepTime>
     <gravity>0 0 -9.8</gravity>
     <cfm>0.0000000001</cfm>
     <erp>0.2</erp>
-    <quickStep>false</quickStep>
+    <quickStep>true</quickStep>
   </physics:ode>
 
   <geo:origin>
@@ -306,12 +306,12 @@
 
 
   <model:physical name="robot_model1">
-    <xyz>0.0 0.0 0.05</xyz> <!-- bottom of base off the ground by this much, basically wheel height below skirt -->
+    <xyz>0.0 0.0 0.02</xyz> <!-- bottom of base off the ground by this much, basically wheel height below skirt -->
     <rpy>0.0 0.0 0.0 </rpy>
 
     <!-- base, torso and arms -->
     <include embedded="true">
-      <xi:include href="pr2_xml_test.model" />
+      <xi:include href="pr2_xml_arm_test_headless.model" />
     </include>
 
   </model:physical>

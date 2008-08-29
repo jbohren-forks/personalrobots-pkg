@@ -1,0 +1,8 @@
+<launch>
+  <group name="wg">
+    <include file="$(find wg_robot_description)/send_test_headless.xml"/>
+    <!-- -g flag runs gazebo in gui-less mode -->
+    <node pkg="gazebo" type="run-gazebo.sh" args="-g $(find gazebo_robot_description)/world/robot_test_headless.world" respawn="false" output="screen" />
+  </group>
+</launch>
+
