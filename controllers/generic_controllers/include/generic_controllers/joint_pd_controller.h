@@ -59,6 +59,7 @@
 // Services
 #include <generic_controllers/SetPDCommand.h>
 #include <generic_controllers/GetPDActual.h>
+#include <generic_controllers/GetPDCommand.h>
 
 namespace controller
 {
@@ -190,6 +191,10 @@ namespace controller
     // Services
     bool setPDCommand(generic_controllers::SetPDCommand::request &req,
                     generic_controllers::SetPDCommand::response &resp);
+
+    // Services
+    bool getPDCommand(generic_controllers::GetPDCommand::request &req,
+                    generic_controllers::GetPDCommand::response &resp);
 
     bool getPDActual(generic_controllers::GetPDActual::request &req,
                    generic_controllers::GetPDActual::response &resp);

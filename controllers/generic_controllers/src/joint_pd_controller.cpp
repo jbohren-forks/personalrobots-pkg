@@ -111,8 +111,10 @@ void JointPDController::setPDCommand(double command, double command_dot)
 // Return the current velocity command
 void JointPDController::getPDCommand(double &command, double &command_dot)
 {
- command = command_;
- command_dot = command_dot_;
+  pthread_mutex_lock(&joint_pd_controller_lock_);
+  command = command_t_;
+  command_dot = command_dot_t_;
+  pthread_mutex_lock(&joint_pd_controller_lock_);
 }
 
 double JointPDController::getTime()
@@ -226,7 +228,8 @@ bool JointPDControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *confi
 
   if (!c_->initXml(robot, config))
     return false;
-  node->advertise_service(topic + "/set_command", &JointPDControllerNode::setPDCommand, this);
-  node->advertise_service(topic + "/get_actual", &JointPDControllerNode::getPDActual, this);
+  node->advertise_service(topic + "/set_pd_command", &JointPDControllerNode::setPDCommand, this);
+  node->advertise_service(topic + "/get_pd_command", &JointPDControllerNode::getPDCommand, this);
+  node->advertise_service(topic + "/get_pd_actual", &JointPDControllerNode::getPDActual, this);
   return true;
 }
