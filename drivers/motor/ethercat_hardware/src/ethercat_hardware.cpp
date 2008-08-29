@@ -144,7 +144,6 @@ void EthercatHardware::initXml(TiXmlElement *config, MechanismControl &mc)
     ++i;
   }
 }
-
 void EthercatHardware::update()
 {
   unsigned char *current, *last;
@@ -153,6 +152,8 @@ void EthercatHardware::update()
   current = current_buffer_;
   for (unsigned int i = 0; i < hw_->actuators_.size(); ++i)
   {
+    hw_->actuators_[i]->state_.last_requested_current_ = hw_->actuators_[i]->command_.current_;
+    slaves[i]->truncateCurrent(hw_->actuators_[i]->command_);
     slaves[i]->convertCommand(hw_->actuators_[i]->command_, current);
     current += slaves[i]->commandSize + slaves[i]->statusSize;
   }
@@ -165,6 +166,7 @@ void EthercatHardware::update()
   last = last_buffer_;
   for (unsigned int i = 0; i < hw_->actuators_.size(); ++i)
   {
+    slaves[i]->verifyState(current);
     slaves[i]->convertState(hw_->actuators_[i]->state_, current, last);
     current += slaves[i]->commandSize + slaves[i]->statusSize;
     last += slaves[i]->commandSize + slaves[i]->statusSize;

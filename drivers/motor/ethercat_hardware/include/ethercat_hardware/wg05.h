@@ -97,6 +97,8 @@ public:
   void configure(int &start_address, EtherCAT_SlaveHandler *sh);
   void convertCommand(ActuatorCommand &command, unsigned char *buffer);
   void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
+  void truncateCurrent(ActuatorCommand &command);
+  void verifyState(unsigned char *buffer);
   bool hasActuator(void)
   {
     return true;
@@ -104,6 +106,7 @@ public:
 
 private:
   static const EC_UDINT WG05_PRODUCT_CODE = 6805005;
+  double max_current_;
 };
 
 #endif /* WG05_H */

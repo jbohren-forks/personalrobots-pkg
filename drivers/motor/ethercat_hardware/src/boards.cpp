@@ -33,10 +33,8 @@
  *********************************************************************/
 
 #include <ethercat_hardware/motor_control_board.h>
-#include <ethercat_hardware/mk1000.h>
-#include <ethercat_hardware/mk1001.h>
 #include <ethercat_hardware/wg05.h>
 
-MotorControlBoard *boardArray[] = {new MK1000(), new MK1001(), new WG05(), };
+MotorControlBoard *boardArray[] = {new WG05()};
 
 vector<MotorControlBoard *> boards(boardArray, boardArray + sizeof(boardArray) / sizeof(boardArray[0]));

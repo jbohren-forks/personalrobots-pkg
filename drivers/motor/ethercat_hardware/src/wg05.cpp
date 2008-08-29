@@ -108,6 +108,8 @@ void WG05::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
   (*pd)[1] = *statusSM;
 
   sh->set_pd_config(pd);
+
+  max_current_ = 1.0;
 }
 
 void WG05::convertCommand(ActuatorCommand &command, unsigned char *buffer)
@@ -121,6 +123,18 @@ void WG05::convertCommand(ActuatorCommand &command, unsigned char *buffer)
   c.checksum_ = rotate_right_8(compute_checksum(&c, sizeof(c) - 1));
 
   memcpy(buffer + sizeof(WG05Status), &c, sizeof(c));
+}
+
+void WG05::truncateCurrent(ActuatorCommand &command)
+{
+  if (command.current_ > max_current_)
+  {
+    command.current_ = max_current_;
+  }
+  else if (command.current_ < -max_current_)
+  {
+    command.current_ = -max_current_;
+  }
 }
 
 void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer)
@@ -143,7 +157,6 @@ void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, uns
   state.is_enabled_ = current_status.mode_ != MODE_OFF;
   state.run_stop_hit_ = (current_status.mode_ & MODE_UNDERVOLTAGE) != 0;
 
-  state.last_requested_current_ = current_command.programmed_current_ / CURRENT_FACTOR; // TODO should be pre-safety code value
   state.last_commanded_current_ = current_status.programmed_current_ / CURRENT_FACTOR;
   state.last_measured_current_ = current_status.measured_current_ / CURRENT_FACTOR;
 
@@ -151,4 +164,38 @@ void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, uns
   state.num_communication_errors_ = 0; // TODO: communication errors are no longer reported in the process data
 
   state.motor_voltage_ = current_status.motor_voltage_;
+}
+
+void WG05::verifyState(unsigned char *buffer)
+{
+#if 0
+  WG05Status status;
+
+  memcpy(&status, buffer, sizeof(status));
+
+  // Check board shutdown status
+  // Report temperature shutdown, UV lockout, etc.
+  // Report lots of diagnostics information
+
+  // Check back-EMF consistency
+  expected_voltage = status.measured_current_ * resistance + motor_velocity * backemf_constant_;
+  voltage_error = fabs(expected_voltage - status.motor_voltage_); //Scaled to volts
+  if(voltage_error > 5){ //Arbitary threshold
+    //Something is wrong with the encoder, the motor, or the motor board
+    //Disable motors
+    //Try to diagnose further
+    //motor_velocity == 0 -> encoder failure likely
+    //measured_current_ ~= 0 -> motor open-circuit likely
+    //motor_voltage_ ~= 0 -> motor short-circuit likely
+    //else -> current-sense failure likely
+    //Print error messages
+  }
+
+ //Check current-loop performance
+ double current_error = status.measured_current_ - status.last_commanded_current;
+ if(current_error > threshold);
+   //complain and shut down
+
+ //TODO: filter errors so that one-frame spikes don't shut down the system.
+#endif
 }
