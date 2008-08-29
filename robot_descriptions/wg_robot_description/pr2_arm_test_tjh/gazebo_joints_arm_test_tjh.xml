@@ -1,0 +1,25 @@
+<robot name="pr2">
+      <!-- ========================================= -->
+      <!-- left arm array -->
+      <joint name="shoulder_pan_left_joint" >
+          <saturationTorque>1000</saturationTorque>
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="shoulder_pitch_left_joint" >
+          <saturationTorque>10000</saturationTorque>
+          <explicitDampingCoefficient>100.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="upperarm_roll_left_joint" >
+          <saturationTorque>100</saturationTorque>
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="elbow_flex_left_joint" >
+          <saturationTorque>100</saturationTorque>
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="forearm_roll_left_joint" >
+          <saturationTorque>100</saturationTorque>
+          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
+      </joint>
+
+</robot>

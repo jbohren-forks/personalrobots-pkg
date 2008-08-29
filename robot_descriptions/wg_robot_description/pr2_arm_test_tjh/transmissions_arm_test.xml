@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+
+<robot name="pr2"><!-- name of the robot-->
+
+ <!-- Transmissions -->
+ <!-- ========================================= -->
+<!-- Left Arm -->
+  <transmission type="SimpleTransmission" name="shoulder_pan_left_trans">
+    <actuator name="shoulder_pan_left_motor" />
+    <joint name="shoulder_pan_left_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+  <transmission type="SimpleTransmission" name="shoulder_pitch_left_trans">
+    <actuator name="shoulder_pitch_left_motor" />
+    <joint name="shoulder_pitch_left_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+  <transmission type="SimpleTransmission" name="upperarm_roll_left_trans">
+    <actuator name="upperarm_roll_left_motor" />
+    <joint name="upperarm_roll_left_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+  <transmission type="SimpleTransmission" name="elbow_flex_left_trans">
+    <actuator name="elbow_flex_left_motor" />
+    <joint name="elbow_flex_left_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+  <transmission type="SimpleTransmission" name="forearm_roll_left_trans">
+    <actuator name="forearm_roll_left_motor" />
+    <joint name="forearm_roll_left_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+  <transmission type="SimpleTransmission" name="wrist_flex_left_trans">
+    <actuator name="wrist_flex_left_motor" />
+    <joint name="wrist_flex_left_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+  <transmission type="SimpleTransmission" name="gripper_roll_left_trans">
+    <actuator name="gripper_roll_left_motor" />
+    <joint name="gripper_roll_left_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+
+  <!--  fingers share a single motor -->
+  <transmission type="SimpleTransmission" name="gripper_left_trans">
+    <actuator name="gripper_left_motor" />
+    <joint name="gripper_left_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+<!-- ========================================= -->
+</robot>
+
+
