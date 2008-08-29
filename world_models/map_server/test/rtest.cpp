@@ -45,12 +45,12 @@ class MapClientTest : public testing::Test
     ros::node* n;
 
   protected:
-    void SetUp()
+    virtual void SetUp()
     {
       ros::init(g_argc, g_argv);
       n = new ros::node("map_client_test");
     }
-    void TearDown()
+    virtual void TearDown()
     {
       ros::fini();
       delete n;
