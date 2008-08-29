@@ -57,7 +57,8 @@ void RampEffortController::init(double input_start, double input_end, double dur
 {
   robot_ = robot;
   joint_ = robot->getJoint(name);
-
+  
+  
   input_start_=input_start;
   input_end_=input_end;
   duration_=duration;

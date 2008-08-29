@@ -331,6 +331,7 @@ void BaseController::computeAndSetWheelSpeeds()
   double steer_angle_actual = 0;
   for(int i=0; i < (int) num_wheels_; i++)
   {
+
     caster_2d_velocity.z = steer_velocity_desired_[base_wheels_[i].parent_->local_id_];
     steer_angle_actual = base_wheels_[i].parent_->joint_->position_;
     wheel_point_velocity = computePointVelocity2D(base_wheels_position_[i],cmd_vel_);
@@ -344,6 +345,7 @@ void BaseController::computeAndSetWheelSpeeds()
 //    std::cout << "setting wheel speed " << i << " : " << wheel_speed_cmd << " r:" << wheel_radius_ << std::endl;
     base_wheels_[i].controller_.setCommand(base_wheels_[i].direction_multiplier_*wheel_speed_cmd);
   }
+
 }
 
 void BaseController::updateJointControllers()
