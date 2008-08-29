@@ -291,6 +291,64 @@ TEST(libTF, DataTypes)
 
 }
 
+
+
+/** @brief Check that the lookup is working
+ * This will check whether the findClosest function is 
+ * returning the same values at a point in time as 
+ * were input for that time.  A failure would reveal that 
+ * sequencing was incorrect.  */ 
+TEST(libTF, Lookup)
+{
+  unsigned int runs = 1000;
+
+  //Seed random number generator with current microseond count
+  timeval temp_time_struct;
+  gettimeofday(&temp_time_struct,NULL);
+  srand(temp_time_struct.tv_usec);
+
+  
+  libTF::TransformReference mTR(true);
+  std::vector<double> values(runs);
+  for ( unsigned int i = 0; i < runs ; i++ )
+  {
+    values[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    //    printf("%d %g\n",i,values[i]);
+    mTR.setWithEulers("2",
+                      "1",
+                      values[i],
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      10 + i);
+  }
+
+  for ( unsigned int i = 0; i < runs ; i++ )
+
+  {
+    libTF::TFPose2D inpose;
+    inpose.x = 0.0;
+    inpose.y = 0.0;
+    inpose.yaw = 0.0;
+    inpose.frame = "2";
+    inpose.time = 10 + i;
+    
+    try{
+    libTF::TFPose2D outpose = mTR.transformPose2D("1", inpose);
+    EXPECT_EQ(outpose.x, values[i]);
+    }
+    catch (libTF::Exception & ex)
+    {
+      std::cout << "LibTF Excepion" << ex.what() << std::endl;
+      ASSERT_TRUE(false);
+    }
+  }
+  
+
+}
+
 /** Test basic functionality for linear interpolation */
 TEST(libTF, Interpolation)
 {
