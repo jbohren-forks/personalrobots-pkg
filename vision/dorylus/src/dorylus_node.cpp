@@ -40,7 +40,6 @@ public:
 //     descriptors_.push_back(spinL_nat_);  
 //     descriptors_.push_back(spinM_nat_);  
 //     descriptors_.push_back(spinS_nat_);  
-    SceneLabelerStereo sls(this);
 
     advertise<std_msgs::VisualizationMarker>("visualizationMarker", 100);
   }
@@ -55,8 +54,9 @@ public:
     cout << "Building dataset." << endl;
     for(unsigned int iFile=0; iFile<datafiles.size(); iFile++) {
       SceneLabelerStereo sls(this);
-      //cout << "Loading " << datafiles[iFile] << endl;
+      cout << "** Loading scene " << iFile << " out of " << datafiles.size() << " with name "  << datafiles[iFile] << endl;
       sls.processMsgs(datafiles[iFile]);
+      
 
       for(unsigned int iSS=0; iSS<sls.ss_objs_.size(); iSS++) {
 	//cout << "Object " << iSS << ": class " << sls.ss_objs_[iSS].first << ", " << sls.ss_objs_[iSS].second->size() << " points." << endl;
@@ -252,25 +252,30 @@ int main(int argc, char **argv) {
   if(argc > 2 && !strcmp(argv[1], "--dataset")) {
 
     vector<string> datafiles;
-    for(int i=2; i<argc; i++) {
+    for(int i=3; i<argc; i++) {
       datafiles.push_back(string(argv[i]));
     }
     
     //d.buildDataset(2, datafiles, string("savename.dd"), true);
-    d.buildDataset(50, datafiles, string("savename.dd"), false);
+    string savename(argv[2]);
+    if(savename.find(".dd") == savename.npos) {
+      cerr << "Savename must have .dd extension.  Did you specify a savename?" << endl;
+    }
+    else
+      d.buildDataset(50, datafiles, savename, false);
 
 //  DorylusDataset dd2;  dd2.load(string("savename.dd"));
 //  dd2.save(string("savename2.dd"));
 //  cout << d.dd_.status() << endl;
   }
 
-  if(!strcmp(argv[1], "--testDatasetSave")) {
+  else if(!strcmp(argv[1], "--testDatasetSave")) {
     d.dd_.testSave();
   }
 
   else {
     cout << "Usage: " << endl;
-    cout << "  dorylus_node --dataset [BAGFILES]" << endl;
+    cout << "  dorylus_node --dataset savename [BAGFILES]" << endl;
   }
 
   usleep(250000);

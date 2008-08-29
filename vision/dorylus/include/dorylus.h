@@ -14,6 +14,7 @@
 #include <sstream>
 #include <fstream>
 
+#include <float.h>
 
 typedef struct 
 {
@@ -58,5 +59,27 @@ class DorylusDataset {
   bool testSave();
 };
 
+
+class Dorylus {
+ public:
+  map<string, vector<weak_classifier> > battery_;
+  NEWMAT::Matrix weights_; //nClasses x nTrEx.
+  float objective_, objective_prev_, training_err_;
+  DorylusDataset *dd_;
+
+  void loadDataset(DorylusDataset *dd);
+  void learnWC(int nCandidates, float maxErr);
+  float computeNewObjective(weak_classifier wc);
+  float computeObjective();
+  
+  
+ Dorylus() : dd_(NULL)
+    {
+    }
+
+ private:
+  void normalizeWeights();
+
+};
 
 #endif

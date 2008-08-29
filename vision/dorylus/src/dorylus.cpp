@@ -220,3 +220,32 @@ bool DorylusDataset::testSave()
   return true;
 }
     
+void Dorylus::loadDataset(DorylusDataset *dd) {
+  dd_ = dd;
+  weights_ = Matrix(dd_->nClasses_, dd_->objs_.size());
+
+
+  for(int i=1; i<weights_.Nrows(); i++) {
+    for(int j=1; j<weights_.Ncols(); j++) {
+      weights_(i,j) = 1;
+    }
+  }
+ 
+ normalizeWeights();
+}
+
+
+void Dorylus::normalizeWeights() {
+  Matrix n(1,1); n = (1 / weights_.Sum());
+  weights_ = KP(weights_, n);
+
+  // -- Make sure no weights are zero.
+  for(int i=1; i<weights_.Nrows(); i++) {
+    for(int j=1; j<weights_.Ncols(); j++) {
+      if(weights_(i,j) == 0)
+	weights_(i,j) = FLT_MIN;
+    }
+  }
+}
+	
+
