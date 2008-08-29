@@ -61,9 +61,9 @@ MainWindow *gMainWindow = NULL;
 
 static const wxCmdLineEntryDesc COMMAND_LINE_DESCRIPTION[] =
 {
-    { wxCMD_LINE_OPTION, _T("c"), _T("calibration"), _T("camera calibration coefficients filename") },
-    { wxCMD_LINE_OPTION, _T("o"), _T("objects"), _T("object list XML filename") },
-    { wxCMD_LINE_OPTION, _T("i"), _T("images"), _T("image sequence or video filename") },
+    { wxCMD_LINE_OPTION, "c", "calibration", "camera calibration coefficients filename" },
+    { wxCMD_LINE_OPTION, "o", "objects", "object list XML filename" },
+    { wxCMD_LINE_OPTION, "i", "images", "image sequence or video filename" },
 
     { wxCMD_LINE_NONE }
 };
@@ -145,8 +145,8 @@ void MainCanvas::on_paint(wxPaintEvent &WXUNUSED(event))
     if (_index < 0) {
         dc.Clear();
         dc.SetTextForeground(wxColor(0, 0, 255));
-        wxSize s = dc.GetTextExtent( _T("no images"));
-        dc.DrawText(_T("no images"), (int)(width - s.x)/2, (int)(height - s.y)/2);
+        wxSize s = dc.GetTextExtent("no images");
+        dc.DrawText("no images", (int)(width - s.x)/2, (int)(height - s.y)/2);
     } else {
         dc.DrawBitmap(_image.Scale(width, height), 0, 0);
     }
@@ -181,8 +181,8 @@ void MainCanvas::on_paint(wxPaintEvent &WXUNUSED(event))
                 (int)(_scaleY * (*frame)[i].y),
                 (int)(_scaleX * (*frame)[i].w),
                 (int)(_scaleY * (*frame)[i].h));
-            wxSize s = dc.GetTextExtent(wxString::FromAscii((*frame)[i].name.c_str()));
-            dc.DrawText(wxString::FromAscii((*frame)[i].name.c_str()), 
+            wxSize s = dc.GetTextExtent(wxString((*frame)[i].name.c_str()));
+            dc.DrawText(wxString((*frame)[i].name.c_str()), 
                 (int)(_scaleX * (*frame)[i].x) + 1,
                 (int)(_scaleY * (*frame)[i].y) - s.GetHeight() - 1);
         }
@@ -341,12 +341,12 @@ void MainCanvas::on_mouse(wxMouseEvent &event)
     	_mouseDownPoint = wxPoint(event.m_x, event.m_y);
     } else if (event.LeftDClick() && (_activeObject != -1)) {
         int objectIndex = _activeObject; // to prevent error on mouse move
-        wxTextEntryDialog dlg(this, wxString::Format(_T("Enter name for object at <%d, %d, %d, %d>"), 
+        wxTextEntryDialog dlg(this, wxString::Format("Enter name for object at <%d, %d, %d, %d>", 
 	        (int)(*frame)[objectIndex].x, (int)(*frame)[objectIndex].y,
-                (int)(*frame)[objectIndex].w, (int)(*frame)[objectIndex].h),
-		_T("Object Name"), wxString::FromAscii((*frame)[objectIndex].name.c_str()));
+            (int)(*frame)[objectIndex].w, (int)(*frame)[objectIndex].h),
+            wxString("Object Name"), wxString((*frame)[objectIndex].name.c_str()));
         if (dlg.ShowModal() == wxID_OK) {
-	        (*frame)[objectIndex].name = string(dlg.GetValue().mb_str(wxConvUTF8));
+	        (*frame)[objectIndex].name = string(dlg.GetValue().c_str());
         }	
         findActiveObject();
     } else if (event.Dragging() && (_activeObject != -1)) {
@@ -384,8 +384,8 @@ void MainCanvas::on_mouse(wxMouseEvent &event)
         _mouseDownPoint = wxPoint(event.m_x, event.m_y);
         // update status bar
         ((wxFrame *)GetParent())->SetStatusText(
-	    wxString::Format(_T("Object: %s at (%d, %d) [%d x %d]"),
-	    wxString::FromAscii((*frame)[_activeObject].name.c_str()),
+            wxString::Format("Object: %s at (%d, %d) [%d x %d]",
+            (*frame)[_activeObject].name.c_str(),
             (int)(*frame)[_activeObject].x, (int)(*frame)[_activeObject].y,
             (int)(*frame)[_activeObject].w, (int)(*frame)[_activeObject].h));
     } else if (event.Moving()) {
@@ -459,8 +459,8 @@ void MainCanvas::setDefaultObjectSize(std::string s)
 
 string MainCanvas::getDefaultObjectSize() const
 {
-  return string(wxString::Format(_T("%d %d"), _defaultObjectSize.first,
-				 _defaultObjectSize.second).mb_str(wxConvUTF8));    
+    return string(wxString::Format("%d %d", _defaultObjectSize.first,
+	    _defaultObjectSize.second));    
 }
 
 bool MainCanvas::calibrate(const char *filename)
@@ -484,17 +484,17 @@ void MainCanvas::clearObjects()
 
 bool MainCanvas::loadObjects(const char *filename)
 {
-  bool retVal = readObject2dSequence(filename, _objects);
+    bool retVal = readObject2dSequence(filename, _objects);
     _activeObject = -1;
-    ((MainWindow *)GetParent())->SetStatusText(wxString::Format(_T("%d labeled frames loaded"), _objects.size()));
+    ((MainWindow *)GetParent())->SetStatusText(wxString::Format("%d labeled frames loaded", _objects.size()));
 
     return retVal;
 }
 
 bool MainCanvas::saveObjects(const char *filename) const
 {
-     bool retVal = writeObject2dSequence(filename, _objects);
-     ((MainWindow *)GetParent())->SetStatusText(wxString::Format(_T("%d labeled frames saved"), _objects.size()));
+    bool retVal = writeObject2dSequence(filename, _objects);
+    ((MainWindow *)GetParent())->SetStatusText(wxString::Format("%d labeled frames saved", _objects.size()));
 
     return retVal;
 }
@@ -513,7 +513,7 @@ void MainCanvas::importObjects(const char *filename)
         }
     }
 
-    ((MainWindow *)GetParent())->SetStatusText(wxString::Format(_T("%d labeled frames imported"), newObjects.size()));
+    ((MainWindow *)GetParent())->SetStatusText(wxString::Format("%d labeled frames imported", newObjects.size()));
 }
 
 bool MainCanvas::openSequence(const char *filename)
@@ -536,7 +536,7 @@ bool MainCanvas::openDirectory(const char *directory)
 
     nextFrame();
 
-    ((MainWindow *)GetParent())->SetStatusText(wxString::Format(_T("%d images read"), _imageSequence.size()));
+    ((MainWindow *)GetParent())->SetStatusText(wxString::Format("%d images read", _imageSequence.size()));
     return true;
 }
 
@@ -665,7 +665,7 @@ bool MainCanvas::nextFrame()
     _image.SetData(_imageData, true);
     _index += 1;
     _activeObject = -1;
-    ((wxFrame *)GetParent())->SetStatusText(wxString::Format(_T("Frame %d [%s]"), 
+    ((wxFrame *)GetParent())->SetStatusText(wxString::Format("Frame %d [%s]", 
             _index, _imageSequence[_index].c_str()));
 
     return true;
@@ -679,7 +679,7 @@ void MainCanvas::findActiveObject()
         if (_index == -1) {
             ((wxFrame *)GetParent())->SetStatusText(_T(""));
         } else {
-            ((wxFrame *)GetParent())->SetStatusText(wxString::Format(_T("Frame %d [%s]"), 
+            ((wxFrame *)GetParent())->SetStatusText(wxString::Format("Frame %d [%s]", 
                     _index, _imageSequence[_index].c_str()));
         }
     }
@@ -695,7 +695,7 @@ void MainCanvas::findActiveObject()
         if ((*frame)[lastActiveObject].hit(mouse.x / _scaleX, mouse.y / _scaleY)) {
             _activeObject = lastActiveObject;
             ((wxFrame *)GetParent())->SetStatusText(
-		wxString::Format(_T("Object: %s at (%d, %d) [%d x %d]"),
+                wxString::Format("Object: %s at (%d, %d) [%d x %d]",
                 (*frame)[_activeObject].name.c_str(),
                 (int)(*frame)[_activeObject].x, (int)(*frame)[_activeObject].y,
                 (int)(*frame)[_activeObject].w, (int)(*frame)[_activeObject].h));
@@ -720,7 +720,7 @@ void MainCanvas::findActiveObject()
         if ((*frame)[i].hit(mouse.x / _scaleX, mouse.y / _scaleY)) {
             _activeObject = i;
             ((wxFrame *)GetParent())->SetStatusText(
-		wxString::Format(_T("Object: %s at (%d, %d) [%d x %d]"),
+                wxString::Format("Object: %s at (%d, %d) [%d x %d]",
                 (*frame)[_activeObject].name.c_str(),
                 (int)(*frame)[_activeObject].x, (int)(*frame)[_activeObject].y,
                 (int)(*frame)[_activeObject].w, (int)(*frame)[_activeObject].h));
@@ -849,25 +849,25 @@ void MainWindow::on_file_menu(wxCommandEvent& event)
         wxFileDialog dlg(this, _T("Choose object list file to open"), _T(""), 
 	    _T(""), _T("XML files (*.xml)|*.xml|Text files (*.txt)|*.txt|All files (*.*)|*.*"), wxOPEN | wxFD_CHANGE_DIR);
         if (dlg.ShowModal() == wxID_OK) {
-            _objectFilename = wxString(dlg.GetPath()).mb_str(wxConvUTF8);
+            _objectFilename = dlg.GetPath();
 	    _canvas->loadObjects(_objectFilename.c_str());
         }
     } else if (event.GetId() == FILE_OPEN_SEQUENCE) {
         wxFileDialog dlg(this, _T("Choose image sequence to open"), _T(""), 
 	    _T(""), _T("Sequence files (*.xml)|*.xml"), wxOPEN | wxFD_CHANGE_DIR);
         if (dlg.ShowModal() == wxID_OK) {
-            _canvas->openSequence(dlg.GetPath().mb_str(wxConvUTF8));
+            _canvas->openSequence(dlg.GetPath().c_str());
         }
     } else if (event.GetId() == FILE_OPEN_DIRECTORY) {
 	wxDirDialog dlg(this, _T("Choose image directory"));
 	if (dlg.ShowModal() == wxID_OK) {
-	    _canvas->openDirectory(dlg.GetPath().mb_str(wxConvUTF8));
+	    _canvas->openDirectory(dlg.GetPath().c_str());
 	}
     } else if (event.GetId() == FILE_OPEN_VIDEO) {
         wxFileDialog dlg(this, _T("Choose video file to open"), _T(""), 
 	    _T(""), _T("Video files (*.avi)|*.avi"), wxOPEN | wxFD_CHANGE_DIR);
         if (dlg.ShowModal() == wxID_OK) {
-            _canvas->openVideo(dlg.GetPath().mb_str(wxConvUTF8));
+            _canvas->openVideo(dlg.GetPath().c_str());
         }
     } else if ((event.GetId() == FILE_SAVE) && (_objectFilename.size())) {
 	_canvas->saveObjects(_objectFilename.c_str());
@@ -875,14 +875,14 @@ void MainWindow::on_file_menu(wxCommandEvent& event)
         wxFileDialog dlg(this, _T("Choose object list file to save"), _T(""), 
 	    _T(""), _T("XML files (*.xml)|*.xml"), wxSAVE | wxFD_CHANGE_DIR);
         if (dlg.ShowModal() == wxID_OK) {
-	    _objectFilename = dlg.GetPath().mb_str(wxConvUTF8);
+	    _objectFilename = dlg.GetPath().c_str();
 	    _canvas->saveObjects(_objectFilename.c_str());
         }
     } else if (event.GetId() == FILE_IMPORT) {
         wxFileDialog dlg(this, _T("Choose object list file to import"), _T(""), 
 			 _T(""), _T("XML files (*.xml)|*.xml"), wxOPEN | wxFD_CHANGE_DIR);
         if (dlg.ShowModal() == wxID_OK) {
-	    _canvas->importObjects(dlg.GetPath().mb_str(wxConvUTF8));	    
+	    _canvas->importObjects(dlg.GetPath().c_str());	    
         }       
     } else if (event.GetId() == FILE_EXIT) {
         Close(true);
@@ -897,9 +897,9 @@ void MainWindow::on_edit_menu(wxCommandEvent& event)
     if (event.GetId() == EDIT_FIND) {
     	NOT_IMPLEMENTED_YET;
     } else if (event.GetId() == EDIT_GOTO_FRAME) {
-        wxTextEntryDialog dlg(this, _T("Enter frame index:"));
+        wxTextEntryDialog dlg(this, "Enter frame index:");
         if (dlg.ShowModal() == wxID_OK) {
-            _canvas->gotoFrame(atoi(dlg.GetValue().mb_str(wxConvUTF8)));
+            _canvas->gotoFrame(atoi(dlg.GetValue().c_str()));
         }	
     } else if (event.GetId() == EDIT_GOTO_EMPTY) {
 	_canvas->gotoEmpty();
@@ -918,22 +918,22 @@ void MainWindow::on_options_menu(wxCommandEvent& event)
         wxFileDialog dlg(this, _T("Choose camera calibration file"), _T(""), 
 	        _T(""), _T("XML files (*.xml)|*.xml"), wxOPEN);
         if (dlg.ShowModal() == wxID_OK) {
-	        _canvas->calibrate(dlg.GetPath().mb_str(wxConvUTF8));	    
+	        _canvas->calibrate(dlg.GetPath().c_str());	    
         }       	
     } else if (event.GetId() == OPTIONS_GRID) {
         _canvas->drawGrid(event.IsChecked());
     } else if (event.GetId() == OPTIONS_CENTROID_MODE) {
         _canvas->centroidMode(event.IsChecked());
     } else if (event.GetId() == OPTIONS_DEFAULT_NAME) {
-      wxTextEntryDialog dlg(this, _T("Enter default object name:"));
+        wxTextEntryDialog dlg(this, "Enter default object name:");
         if (dlg.ShowModal() == wxID_OK) {
-	  _canvas->setDefaultObjectName(std::string(dlg.GetValue().mb_str(wxConvUTF8)));
+	        _canvas->setDefaultObjectName(dlg.GetValue().c_str());
         }	
     } else if (event.GetId() == OPTIONS_DEFAULT_SIZE) {
         wxTextEntryDialog dlg(this, (wxString &)_T("Enter default object size:"),
-   	      _T("Set Size"), wxString(_canvas->getDefaultObjectSize().c_str(), wxConvUTF8));
+	    wxString("Set Size"), wxString(_canvas->getDefaultObjectSize().c_str()));
 	    if (dlg.ShowModal() == wxID_OK) {
-	      _canvas->setDefaultObjectSize(std::string(dlg.GetValue().mb_str(wxConvUTF8)));
+	        _canvas->setDefaultObjectSize(dlg.GetValue().c_str());
         }
     }
 
@@ -954,7 +954,7 @@ void MainWindow::on_help_menu(wxCommandEvent& event)
         if (counts.empty()) {
             message = message + string("No objects.");
         }
-        wxMessageBox(wxString(message.c_str(), wxConvUTF8), _T("Statistics"));
+        wxMessageBox(wxString(message.c_str()), _T("Statistics"));
     } else if (event.GetId() == HELP_KEYBOARD) {
         NOT_IMPLEMENTED_YET;
     } else if (event.GetId() == HELP_ABOUT) {
@@ -964,8 +964,7 @@ void MainWindow::on_help_menu(wxCommandEvent& event)
         info.SetDescription(_T("This program allows you to view and label image sequences and video streams."));
         info.SetCopyright(_T("(C) 2007-2008 Staphen Gould <sgould@stanford.edu>"));
 
-	//This is a hack!!!!!!!
-        //wxAboutBox(info);
+        wxAboutBox(info);
     }
 }
 
@@ -1000,17 +999,17 @@ void ImageLabelerApp::OnInitCmdLine(wxCmdLineParser& parser)
     }
 
     wxString str;
-    if (parser.Found(_T("c"), &str)) {
-        gMainWindow->_canvas->calibrate(str.mb_str(wxConvUTF8));
+    if (parser.Found("c", &str)) {
+        gMainWindow->_canvas->calibrate(str.c_str());
     }
 
-    if (parser.Found(_T("o"), &str)) {
-	gMainWindow->_objectFilename = string(str.mb_str(wxConvUTF8));
-	gMainWindow->_canvas->loadObjects(str.mb_str(wxConvUTF8));
+    if (parser.Found("o", &str)) {
+	gMainWindow->_objectFilename = string(str.c_str());
+	gMainWindow->_canvas->loadObjects(str.c_str());
     }
 
-    if (parser.Found(_T("i"), &str)) {
-        gMainWindow->_canvas->openSequence(str.mb_str(wxConvUTF8));
+    if (parser.Found("i", &str)) {
+        gMainWindow->_canvas->openSequence(str.c_str());
     }
 }
 

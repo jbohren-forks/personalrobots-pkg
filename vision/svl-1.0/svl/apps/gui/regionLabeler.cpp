@@ -84,9 +84,9 @@ MainWindow *gMainWindow = NULL;
 
 static const wxCmdLineEntryDesc COMMAND_LINE_DESCRIPTION[] =
 {
-    { wxCMD_LINE_OPTION, _T("d"), _T("definitions"), _T("region definitions") },
-    { wxCMD_LINE_OPTION, _T("i"), _T("image"), _T("image") },
-    { wxCMD_LINE_OPTION, _T("r"), _T("regions"), _T("region labels") },
+    { wxCMD_LINE_OPTION, "d", "definitions", "region definitions" },
+    { wxCMD_LINE_OPTION, "i", "image", "image" },
+    { wxCMD_LINE_OPTION, "r", "regions", "region labels" },
 
     { wxCMD_LINE_NONE }
 };
@@ -183,8 +183,8 @@ void MainCanvas::on_paint(wxPaintEvent &WXUNUSED(event))
     if (_image == NULL) {
         dc.Clear();
         dc.SetTextForeground(wxColor(0, 0, 255));
-        wxSize s = dc.GetTextExtent(_T("no video"));
-        dc.DrawText(_T("no image"), (int)(width - s.x)/2, (int)(height - s.y)/2);
+        wxSize s = dc.GetTextExtent("no video");
+        dc.DrawText("no image", (int)(width - s.x)/2, (int)(height - s.y)/2);
 	    return;
     }
 
@@ -531,16 +531,16 @@ bool MainCanvas::openRegionDefs(const char *filename)
     assert(filename != NULL);
     _regionDefinitions.clear();
 
-    XMLNode root = XMLNode::parseFile(wxString(filename, wxConvUTF8), _T("regionDefinitions"));
+    XMLNode root = XMLNode::parseFile(filename, "regionDefinitions");
     if (root.isEmpty()) {
 	    return false;
     }
 
     TRegionDef definition;
-    for (int i = 0; i < root.nChildNode(_T("region")); i++) {
-        XMLNode node = root.getChildNode(_T("region"), i);
-	int id = atoi(wxString(node.getAttribute(_T("id"))).mb_str(wxConvUTF8));
-       	definition.name = string(wxString(node.getAttribute(_T("name"))).mb_str(wxConvUTF8));
+    for (int i = 0; i < root.nChildNode("region"); i++) {
+	    XMLNode node = root.getChildNode("region", i);
+        int id = atoi(node.getAttribute("id"));
+	    definition.name = string(node.getAttribute("name"));
 #if defined(_WIN32)||defined(WIN32)||defined(__WIN32__)
         int colour1, colour2, colour3;
         if (sscanf(node.getAttribute("color"), "%d %d %d", 
@@ -552,7 +552,7 @@ bool MainCanvas::openRegionDefs(const char *filename)
         definition.green = (unsigned char)colour2;
         definition.blue = (unsigned char)colour3;
 #else
-        if (sscanf(wxString(node.getAttribute(_T("color"))).mb_str(wxConvUTF8), "%hhd %hhd %hhd", 
+        if (sscanf(node.getAttribute("color"), "%hhd %hhd %hhd", 
                 &definition.red, &definition.green, &definition.blue) != 3) {
             cerr << "ERROR: could not parse color for \"" << definition.name << "\" \"" << endl;
             return false;
@@ -693,7 +693,7 @@ void MainCanvas::updateStatusBar()
 	    activeLabelName = _regionDefinitions[_activeLabel].name;
     }
     ((MainWindow *)GetParent())->SetStatusText(wxString::Format(
-       	_T("Current label: %d (%s)"), _activeLabel, activeLabelName.c_str()));
+        "Current label: %d (%s)", _activeLabel, activeLabelName.c_str()));
 }
 
 void MainCanvas::updateToolBar()
@@ -716,8 +716,8 @@ void MainCanvas::updateToolBar()
 	        it->second.green, it->second.blue)));
 	    memDC.DrawRectangle(0, 0, 24, 24);
 	    toolbar->AddTool(TOOLBAR_BASE + it->first,
-		wxString(it->second.name.c_str(), wxConvUTF8), *bmp,
-	        wxString(it->second.name.c_str(), wxConvUTF8));
+	        _T(it->second.name.c_str()), *bmp,
+	        _T(it->second.name.c_str()));
     }
 
     bmp = new wxBitmap(24, 24);
@@ -808,25 +808,25 @@ void MainWindow::on_file_menu(wxCommandEvent& event)
         if (dlg.ShowModal() == wxID_YES) {
             _canvas->newRegions();
             _regionsFilename = string("");
-	    SetTitle(_T("Image Region Labeler"));
+	    SetTitle("Image Region Labeler");
         }
     } else if (event.GetId() == FILE_OPEN) {
         wxFileDialog dlg(this, _T("Choose region file to open"), _T(""), 
 	    _T(""), _T("Text files (*.txt)|*.txt|All files (*.*)|*.*"), wxOPEN | wxFD_CHANGE_DIR);
         if (dlg.ShowModal() == wxID_OK) {
-            _regionsFilename = std::string(dlg.GetPath().mb_str(wxConvUTF8));
+            _regionsFilename = dlg.GetPath();
 	    _canvas->openRegions(_regionsFilename.c_str());
-	    SetTitle(wxString((string("Image Region Labeler [") +
-			       string(dlg.GetFilename().mb_str(wxConvUTF8)) + string("]")).c_str(), wxConvUTF8));
+	    SetTitle((string("Image Region Labeler [") +
+		    dlg.GetFilename() + string("]")).c_str());
         }
     } else if (event.GetId() == FILE_OPEN_IMAGE) {
         wxFileDialog dlg(this, _T("Choose image to open"), _T(""), 
 	    _T(""), _T("Image files (*.jpg)|*.jpg|All files (*.*)|*.*"), wxOPEN | wxFD_CHANGE_DIR);
         if (dlg.ShowModal() == wxID_OK) {
-            _canvas->openImage(dlg.GetPath().mb_str(wxConvUTF8));
+            _canvas->openImage(dlg.GetPath().c_str());
 	    _regionsFilename.clear();
-	    SetTitle(wxString((string("Image Region Labeler [") +
-			       string(dlg.GetFilename().mb_str(wxConvUTF8)) + string("]")).c_str(), wxConvUTF8));
+	    SetTitle((string("Image Region Labeler [") +
+		    dlg.GetFilename() + string("]")).c_str());
         }
     } else if ((event.GetId() == FILE_SAVE) && (_regionsFilename.size())) {
 	_canvas->saveRegions(_regionsFilename.c_str());
@@ -834,16 +834,16 @@ void MainWindow::on_file_menu(wxCommandEvent& event)
         wxFileDialog dlg(this, _T("Choose region file to save"), _T(""), 
 	    _T(""), _T("Text files (*.txt)|*.txt"), wxSAVE | wxFD_CHANGE_DIR);
         if (dlg.ShowModal() == wxID_OK) {
-	    _regionsFilename = string(dlg.GetPath().mb_str(wxConvUTF8));
+	    _regionsFilename = dlg.GetPath().c_str();
 	    _canvas->saveRegions(_regionsFilename.c_str());
-	    SetTitle(wxString((string("Image Region Labeler [") +
-			       string(dlg.GetFilename().mb_str(wxConvUTF8)) + string("]")).c_str(), wxConvUTF8));
+	    SetTitle((string("Image Region Labeler [") +
+		    dlg.GetFilename() + string("]")).c_str());
         }
     } else if (event.GetId() == FILE_IMPORT_REGIONDEFS) {
         wxFileDialog dlg(this, _T("Choose region definitions to open"), _T(""), 
 	    _T(""), _T("XML files (*.xml)|*.xml|All files (*.*)|*.*"), wxOPEN | wxFD_CHANGE_DIR);
         if (dlg.ShowModal() == wxID_OK) {
-	    _canvas->openRegionDefs(dlg.GetPath().mb_str(wxConvUTF8));
+	    _canvas->openRegionDefs(dlg.GetPath().c_str());
         }
     } else if (event.GetId() == FILE_EXIT) {
         Close(true);
@@ -862,9 +862,9 @@ void MainWindow::on_edit_menu(wxCommandEvent& event)
     } else if (event.GetId() == EDIT_FILL_MODE) {
 	_canvas->setDrawMode(DM_FILL);
     } else if (event.GetId() == EDIT_CHANGE_LABEL) {
-        wxTextEntryDialog dlg(this, _T("Enter label id:"));
+        wxTextEntryDialog dlg(this, "Enter label id:");
         if (dlg.ShowModal() == wxID_OK) {
-	    _canvas->setActiveLabel(atoi(dlg.GetValue().mb_str(wxConvUTF8)));
+	    _canvas->setActiveLabel(atoi(dlg.GetValue().c_str()));
         }
     } else if (event.GetId() == EDIT_UNDO) {
 	_canvas->undo();
@@ -942,17 +942,17 @@ void RegionLabelerApp::OnInitCmdLine(wxCmdLineParser& parser)
     }
 
     wxString str;
-    if (parser.Found(_T("d"), &str)) {
-	gMainWindow->_canvas->openRegionDefs(str.mb_str(wxConvUTF8));
+    if (parser.Found("d", &str)) {
+	gMainWindow->_canvas->openRegionDefs(str.c_str());
     }
 
-    if (parser.Found(_T("i"), &str)) {
-        gMainWindow->_canvas->openImage(str.mb_str(wxConvUTF8));
+    if (parser.Found("i", &str)) {
+	gMainWindow->_canvas->openImage(str.c_str());
     }
 
-    if (parser.Found(_T("r"), &str)) {
-	gMainWindow->_regionsFilename = string(str.mb_str(wxConvUTF8));
-	gMainWindow->_canvas->openRegions(str.mb_str(wxConvUTF8));
+    if (parser.Found("r", &str)) {
+	gMainWindow->_regionsFilename = string(str.c_str());
+	gMainWindow->_canvas->openRegions(str.c_str());
     }
 }
 

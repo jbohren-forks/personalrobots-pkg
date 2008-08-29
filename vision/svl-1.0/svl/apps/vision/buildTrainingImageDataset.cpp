@@ -443,37 +443,30 @@ int main(int argc, char *argv[])
                 {
                     r.width = (cvRandInt(&rngState) % (image->width - minWidth)) + minWidth;
                     r.height = (cvRandInt(&rngState) % (image->height - minHeight)) + minHeight;
-		  printf("cp0\n");
                 } else if (negAspectRatio > 1.0) 
                 {
-		  printf("cp1\n");
                     if( negHeight == -1 )
                     {
                       r.width = (cvRandInt(&rngState) % (image->width - minWidth)) + minWidth;
                       r.height = (int)(r.width / negAspectRatio);
-		  printf("cp1.0\n");
                     }
                     else
                     {
                         r.height = negHeight;
                         r.width = (int)(negAspectRatio * r.height);
-		  printf("cp1.2\n");
                     }
                 } 
                 else 
                 {
-		  printf("cp2\n");
                     if( negHeight == -1 )
                     {
                         r.height = (cvRandInt(&rngState) % (image->height - minHeight)) + minHeight;
                         r.width = (int)(negAspectRatio * r.height);
-		  printf("cp2.0\n");
                     }
                     else
                     {
                         r.height = negHeight;
                         r.width = (int)(negAspectRatio * r.height);
-		  printf("cp2.1\n");
                     }
                 }
 
@@ -500,7 +493,7 @@ int main(int argc, char *argv[])
 						
                 }while(flag==0);
                 
-		printf("Going for: %d %d %d %d\n", r.x, r.y, r.width, r.height);
+
                 cvSetImageROI(image, r);
                 
                 IplImage *imageClip = cvCreateImage(cvSize(r.width, r.height), IPL_DEPTH_8U, 1);
