@@ -78,10 +78,10 @@ public:
 	
 	req.params.model_id = "pr2::base";
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "RRT";
+	req.params.planner_id = "SBL";
 	req.threshold = 0.01;
 	req.interpolate = 1;
-	req.times = 20;
+	req.times = 1;
 	
 	initialState(req.start_state);
 	req.start_state.vals[0] -= 1.5;
@@ -90,10 +90,12 @@ public:
 	req.goal_state.set_vals_size(3);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
 	    req.goal_state.vals[i] = m_basePos[i];
-	req.goal_state.vals[0] += 5.5;
-	req.goal_state.vals[1] += 2.0;
 
-	req.allowed_time = 40.0;
+	req.goal_state.vals[0] += 7.5;
+	req.goal_state.vals[1] += 0.5;
+	req.goal_state.vals[2] = -M_PI/2.0;
+
+	req.allowed_time = 5.0;
 	
 	req.params.volumeMin.x = -10.0 + m_basePos[0];	req.params.volumeMin.y = -10.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 10.0 + m_basePos[0];	req.params.volumeMax.y = 10.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
@@ -107,6 +109,7 @@ public:
 	
 	req.params.model_id = "pr2::left_arm";
 	req.params.distance_metric = "L2Square";
+	req.params.planner_id = "SBL";
 	req.threshold = 0.01;
 	req.interpolate = 1;
 	req.times = 1;
@@ -133,6 +136,7 @@ public:
 	
 	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
+	req.params.planner_id = "SBL";
 	req.threshold = 0.01;
 	req.interpolate = 1;
 	req.times = 1;
@@ -180,21 +184,26 @@ public:
     {
 	robot_srvs::KinematicPlanLinkPosition::request req;
 	
-	req.params.model_id = "pr2::left_arm";
+	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
 	req.params.planner_id = "RRT";
 	req.interpolate = 1;
-	req.times = 1;
+	req.times = 2;
 
 	initialState(req.start_state);
-	
+
+	req.start_state.vals[0] += 0.5;
+	req.start_state.vals[1] += 1.5;
+	req.start_state.vals[2] = -M_PI/2.0;
+
+
 	// the goal region is basically the position of a set of bodies
 	req.set_goal_constraints_size(1);
 	req.goal_constraints[0].type = robot_msgs::PoseConstraint::ONLY_POSITION;
-	req.goal_constraints[0].robot_link = "wrist_flex_left";
-	req.goal_constraints[0].pose.position.x = 0.5;
-	req.goal_constraints[0].pose.position.y = 0.3;
-	req.goal_constraints[0].pose.position.z = -1.0;
+	req.goal_constraints[0].robot_link = "wrist_flex_right";
+	req.goal_constraints[0].pose.position.x = 0.0;
+	req.goal_constraints[0].pose.position.y = 0.0;
+	req.goal_constraints[0].pose.position.z = -100.0;
 	req.goal_constraints[0].position_distance = 0.01;
 	
 	// an example of constraints: do not move the elbow too much
@@ -261,6 +270,8 @@ int main(int argc, char **argv)
     ros::init(argc, argv);
     
     PlanKinematicPath plan;
+    sleep(1);
+
     /*
     ros::Duration dur(0.1);
     while (!plan.haveBasePos())
@@ -287,7 +298,8 @@ int main(int argc, char **argv)
 	printf("Unknown test\n");
 	break;
     } 
-
+    sleep(1);
+    
     plan.shutdown();
     
     return 0;    

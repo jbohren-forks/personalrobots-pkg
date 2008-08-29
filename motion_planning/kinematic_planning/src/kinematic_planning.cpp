@@ -92,6 +92,7 @@ Provides (name/type):
 
 #include <ompl/extension/samplingbased/kinematic/extension/rrt/LazyRRT.h>
 #include <ompl/extension/samplingbased/kinematic/extension/rrt/RRT.h>
+#include <ompl/extension/samplingbased/kinematic/extension/sbl/SBL.h>
 
 #include "KinematicPlanningXMLModel.h"
 #include "KinematicConstraintEvaluator.h"
@@ -269,6 +270,7 @@ private:
     {
 	addRRTInstance(model);
 	addLazyRRTInstance(model);
+	addSBLInstance(model);
     }
 
     /* instantiate and configure RRT */
@@ -311,7 +313,8 @@ private:
 	
 	setupDistanceEvaluators(p);
 	p.si->setup();
-
+	p.mp->setup();
+ 
 	model->planners["RRT"] = p;
     }
     
@@ -355,8 +358,93 @@ private:
 	
 	setupDistanceEvaluators(p);
 	p.si->setup();
+	p.mp->setup();
 
 	model->planners["LazyRRT"] = p;
+    }
+    
+    /* instantiate and configure LazyRRT */
+    void addSBLInstance(XMLModel *model)
+    {
+	KinematicPlannerSetup p;
+	bool setDim = false;
+	bool setProj = false;
+	
+	p.si       = new SpaceInformationXMLModel(model->kmodel, model->groupID);
+	p.svc      = new StateValidityPredicate(model);
+	p.si->setStateValidityChecker(p.svc);
+	
+	p.smoother = new ompl::PathSmootherKinematic(p.si);
+	p.smoother->setMaxSteps(100);
+	p.smoother->setMaxEmptySteps(20);
+
+	ompl::SBL_t sbl = new ompl::SBL(p.si);
+	p.mp            = sbl;
+	
+	robot_desc::URDF::Group *group = getURDFGroup(model->groupName);
+	if (group)
+	{
+	    const robot_desc::URDF::Map &data = group->data;
+	    std::map<std::string, std::string> info = data.getMapTagValues("planning", "SBL");
+	    
+	    if (info.find("range") != info.end())
+	    {
+		double range = string_utils::fromString<double>(info["range"]);
+		sbl->setRange(range);
+		std::cout << "Range is set to " << range << std::endl;		
+	    }	 
+	    if (info.find("projection") != info.end())
+	    {
+		std::string proj = info["projection"];
+		std::vector<unsigned int> projection;
+		std::stringstream ss(proj);
+		while (ss.good())
+		{
+		    unsigned int comp;
+		    ss >> comp;
+		    projection.push_back(comp);
+		}
+		
+		sbl->setProjectionEvaluator(new ompl::SBL::OrthogonalProjectionEvaluator(projection));
+		
+		std::cout << "Projection is set to " << proj << std::endl;
+		setProj = true;
+		
+	    }
+	    if (info.find("celldim") != info.end())
+	    {
+		std::string celldim = info["celldim"];
+		std::vector<double> cdim;
+		std::stringstream ss(celldim);
+		while (ss.good())
+		{
+		    double comp;
+		    ss >> comp;
+		    cdim.push_back(comp);
+		}
+		
+		sbl->setCellDimensions(cdim);
+		setDim = true;
+		std::cout << "Cell dimensions set to " << celldim << std::endl;
+	    }
+	}
+	
+	if (setDim && setProj)
+	{
+	    std::cout << "Added SBL instance for motion planning: " << model->groupName << std::endl;
+	    setupDistanceEvaluators(p);
+	    p.si->setup();
+	    p.mp->setup();
+	    
+	    model->planners["SBL"] = p;
+	}
+	else
+	{
+	    delete p.smoother;
+	    delete p.svc;
+	    delete p.si;
+	    delete p.mp;
+	}
     }
     
     /* for each planner definition, define the set of distance metrics it can use */
