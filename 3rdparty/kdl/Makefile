@@ -11,7 +11,7 @@ CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/kdl/ \
 		-DPYTHON_BINDINGS=ON \
 		-DKDL_PYTHON_INSTALL_PATH=$(PWD)/kdl/lib/
 
-build: SVN_UP kdl
+build: SVN_UP_REVERT_PATCH kdl
 
 configured: $(SVN_DIR) Makefile
 	mkdir -p $(SVN_DIR)/build
