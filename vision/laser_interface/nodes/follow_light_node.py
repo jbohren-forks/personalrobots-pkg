@@ -27,7 +27,7 @@
 #
 ## @author Hai Nguyen/hai@gatech.edu
 from pkg import *
-from std_msgs.msg import Point3DFloat64
+from std_msgs.msg import Position
 from std_msgs.msg import BaseVel
 from std_msgs.msg import RobotBase2DOdom
 import sys
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     pub = rospy.TopicPub('cmd_vel', BaseVel)
     follow_behavior = FollowBehavior(pub)
     rospy.TopicSub('odom', RobotBase2DOdom, follow_behavior.robot_moved)
-    rospy.TopicSub(CURSOR_TOPIC, Point3DFloat64, follow_behavior.cursor_moved)
+    rospy.TopicSub(CURSOR_TOPIC, Position, follow_behavior.cursor_moved)
     rospy.ready(sys.argv[0])
     #follow_behavior.cursor_moved(FakePoint(0.0,0.0,1.0))
     while not rospy.isShutdown():

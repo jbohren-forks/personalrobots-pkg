@@ -72,7 +72,7 @@
 #- @b "laser_mode"/String : sets the mode to either 'debug' 'display' 'verbose' 'rebuild' 'positive' or 'clear'.
 #
 #Publishes to (name / type):
-#- @b "cursor3d"/Point3DFloat64:
+#- @b "cursor3d"/Position:
 #
 #<hr>
 #
@@ -80,7 +80,7 @@
 #
 
 from pkg import *
-from std_msgs.msg import Point3DFloat64
+from std_msgs.msg import Position
 from std_msgs.msg import String
 import sys, time
 import opencv as cv
@@ -294,7 +294,7 @@ class LaserPointerDetectorNode:
         rospy.TopicSub(LASER_MODE_TOPIC, String, self._mode_handler)
 
         #Publish
-        self.topic = rospy.TopicPub(CURSOR_TOPIC, Point3DFloat64)
+        self.topic = rospy.TopicPub(CURSOR_TOPIC, Position)
 
         #Ready
         rospy.ready(sys.argv[0])
@@ -368,7 +368,7 @@ class LaserPointerDetectorNode:
 
                 if result != None:
                     p = result['point']
-                    self.topic.publish(Point3DFloat64(p[0,0], p[1,0], p[2,0]))
+                    self.topic.publish(Position(p[0,0], p[1,0], p[2,0]))
 
                 if self.debug:
                     print '>> undistort %.2f' % (undistort_time - start_time)
@@ -576,7 +576,7 @@ if __name__ == '__main__':
 #        rospy.TopicSub(LASER_MODE_TOPIC, String, self._mode_handler)
 #
 #        #Publish
-#        self.topic = rospy.TopicPub(CURSOR_TOPIC, Point3DFloat64)
+#        self.topic = rospy.TopicPub(CURSOR_TOPIC, Position)
 #
 #        #Ready
 #        rospy.ready(sys.argv[0])
@@ -613,7 +613,7 @@ if __name__ == '__main__':
 #                self.video_lock.release()
 #                if result != None:
 #                    p = result['point']
-#                    self.topic.publish(Point3DFloat64(p[0,0], p[1,0], p[2,0]))
+#                    self.topic.publish(Position(p[0,0], p[1,0], p[2,0]))
 #
 #                if self.debug:
 #                    print '>> undistort %.2f' % (undistort_time - start_time)

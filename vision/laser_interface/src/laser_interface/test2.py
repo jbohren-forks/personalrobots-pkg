@@ -39,7 +39,7 @@ except ImportError:
 
 #from pkg import *
 import rospy
-from std_msgs.msg import Point3DFloat64
+from std_msgs.msg import Position
 from std_msgs.msg import RobotBase2DOdom
 from std_msgs.msg import Pose2DFloat32
 import sys

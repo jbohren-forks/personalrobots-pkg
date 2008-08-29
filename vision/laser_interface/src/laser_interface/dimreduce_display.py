@@ -281,7 +281,7 @@ if separate_negatives_positives:
 #
 ##from pkg import *
 #import rospy
-#from std_msgs.msg import Point3DFloat64
+#from std_msgs.msg import Position
 #from std_msgs.msg import RobotBase2DOdom
 #import sys
 #
