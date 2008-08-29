@@ -204,6 +204,19 @@ bool JointPDControllerNode::getPDActual(
 
   return true;
 }
+bool JointPDControllerNode::getPDCommand(
+  generic_controllers::GetPDCommand::request &req,
+  generic_controllers::GetPDCommand::response &resp)
+{
+  double command, command_dot;
+  c_->getPDCommand(command, command_dot);
+  resp.command_dot = command_dot;
+  resp.command     = command;
+  resp.time = c_->getTime();
+
+  return true;
+}
+
 
 void JointPDControllerNode::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot)
 {
