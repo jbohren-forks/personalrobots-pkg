@@ -61,25 +61,6 @@ namespace controller
   #define KP_SPEED_DEFAULT 0.1
   #define DEFAULT_WHEEL_RADIUS 0.079
 
-  /*! \struct
-    \brief This class holds information for a joint control parameter structure.
-   */
-  typedef struct
-  {
-      double p_gain; /** P gain */
-
-      double i_gain; /** I gain */
-
-      double d_gain; /** D gain */
-
-      double windup; /** windup protection value */
-
-      std::string joint_name; /** joint name */
-
-      std::string control_type; /** control type */
-
-  }JointControlParam;
-
   /*! \class
     \brief This class holds local information for the links in the base (wheels and casters). It includes position, name,
     controller, pointer to the corresponding joint in the Robot structure, pointer to parent and a local ID.

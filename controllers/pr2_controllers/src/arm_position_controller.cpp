@@ -76,6 +76,15 @@ bool ArmPositionController::initXml(mechanism::Robot * robot, TiXmlElement * con
   return true;
 }
 
+void ArmPositionController::setJointPosCmd(std::vector<double> &req_goals_)
+{
+  arm_controller_lock_.lock();
+  std::cout<<req_goals_.size()<< " = " <<goals_.size()<<std::endl;
+  assert(req_goals_.size() == goals_.size());
+  for (int i=0; i<req_goals_.size(); i++) goals_[i] = req_goals_[i];
+  arm_controller_lock_.unlock();
+}
+
 void ArmPositionController::setJointPosCmd(pr2_controllers::SetJointPosCmd::request &req)
 {
   cout<<"SET COMMANDS"<<endl;
@@ -255,6 +264,10 @@ bool ArmPositionControllerNode::setJointPosCmd(pr2_controllers::SetJointPosCmd::
   return true;
 }
 
+void ArmPositionControllerNode::setJointPosCmd(std::vector<double> &req_goals_)
+{
+  c_->setJointPosCmd(req_goals_);
+}
 bool ArmPositionControllerNode::getJointPosCmd(pr2_controllers::GetJointPosCmd::request &req,
                                    pr2_controllers::GetJointPosCmd::response &resp)
 {

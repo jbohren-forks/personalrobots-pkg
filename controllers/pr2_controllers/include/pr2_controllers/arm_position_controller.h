@@ -61,16 +61,6 @@
 namespace controller
 {
 
-  typedef struct
-  {
-    double p_gain;
-    double i_gain; 
-    double d_gain; 
-    double windup;
-    std::string joint_name;
-    std::string control_type;
-  } JointControlParam;
-
   // The maximum number of joints expected in an arm.
   static const int MAX_ARM_JOINTS = 7;
   
@@ -101,6 +91,13 @@ namespace controller
        * \param double pos Position command to issue
    */
       void setJointPosCmd(pr2_controllers::SetJointPosCmd::request &req);
+
+  /*!
+       * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
+       *
+       * \param double pos Position command to issue
+   */
+    void setJointPosCmd(std::vector<double> &req_goals_);
 
   /*!
        * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
@@ -153,6 +150,8 @@ namespace controller
       void update();
 
       bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+
+      void setJointPosCmd(std::vector<double> &req_goals_);
 
       // Services
       bool setJointPosCmd(pr2_controllers::SetJointPosCmd::request &req,
