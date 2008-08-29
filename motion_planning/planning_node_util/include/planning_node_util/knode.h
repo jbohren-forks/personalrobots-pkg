@@ -230,11 +230,14 @@ namespace planning_node_util
 	
 	void mechanismStateCallback(void)
 	{
-	    unsigned int n = m_mechanismState.get_joint_states_size();
-	    for (unsigned int i = 0 ; i < n ; ++i)
+	    if (m_robotState)
 	    {
-		double pos = m_mechanismState.joint_states[i].position;
-		m_robotState->setValue(m_mechanismState.joint_states[i].name, &pos);
+		unsigned int n = m_mechanismState.get_joint_states_size();
+		for (unsigned int i = 0 ; i < n ; ++i)
+		{
+		    double pos = m_mechanismState.joint_states[i].position;
+		    m_robotState->setValue(m_mechanismState.joint_states[i].name, &pos);
+		}
 	    }
 	    m_haveMechanismState = true;
 	    stateUpdate();
@@ -242,12 +245,14 @@ namespace planning_node_util
 	
 	virtual void baseUpdate(void)
 	{
-	    for (unsigned int i = 0 ; i < m_kmodel->getRobotCount() ; ++i)
-	    {
-		planning_models::KinematicModel::PlanarJoint* pj = dynamic_cast<planning_models::KinematicModel::PlanarJoint*>(m_kmodel->getRobot(i)->chain);
-		if (pj)
-		    m_robotState->setValue(pj->name, m_basePos);
-	    }
+	    if (m_robotState)
+		for (unsigned int i = 0 ; i < m_kmodel->getRobotCount() ; ++i)
+		{
+		    planning_models::KinematicModel::PlanarJoint* pj = 
+			dynamic_cast<planning_models::KinematicModel::PlanarJoint*>(m_kmodel->getRobot(i)->chain);
+		    if (pj)
+			m_robotState->setValue(pj->name, m_basePos);
+		}
 	    stateUpdate();
 	}
 	
