@@ -87,7 +87,7 @@ void P3D::LoadChild(XMLConfigNode *node)
   this->frameName = node->GetString("frameName", "", 1);
 
   std::cout << "==== topic name for P3D ======== " << this->topicName << std::endl;
-  rosnode->advertise<robot_msgs::Pose3DEulerFloat32>(this->topicName);
+  rosnode->advertise<std_msgs::Pose3DStamped>(this->topicName);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -124,13 +124,14 @@ void P3D::UpdateChild()
   this->poseMsg.header.stamp.sec = (unsigned long)floor(this->myIface->data->head.time);
   this->poseMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->myIface->data->head.time - this->poseMsg.header.stamp.sec) );
 
-  this->poseMsg.position.x          = pos.x;
-  this->poseMsg.position.y          = pos.y;
-  this->poseMsg.position.z          = pos.z;
-                                                      
-  this->poseMsg.orientation.roll    = rot.GetRoll();
-  this->poseMsg.orientation.pitch   = rot.GetPitch();
-  this->poseMsg.orientation.yaw     = rot.GetYaw();
+  this->poseMsg.pose3D.position.x          = pos.x;
+  this->poseMsg.pose3D.position.y          = pos.y;
+  this->poseMsg.pose3D.position.z          = pos.z;
+
+  this->poseMsg.pose3D.orientation.x       = rot.x;
+  this->poseMsg.pose3D.orientation.y       = rot.y;
+  this->poseMsg.pose3D.orientation.z       = rot.z;
+  this->poseMsg.pose3D.orientation.w       = rot.u;
 
   // publish to ros
   rosnode->publish(this->topicName,this->poseMsg);

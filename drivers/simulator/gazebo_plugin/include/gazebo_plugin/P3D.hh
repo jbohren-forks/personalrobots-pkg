@@ -32,7 +32,7 @@
 #include <pr2Core/pr2Core.h>
 
 #include <ros/node.h>
-#include <robot_msgs/Pose3DEulerFloat32.h>
+#include <std_msgs/Pose3DStamped.h>
 
 namespace gazebo
 {
@@ -95,7 +95,7 @@ namespace gazebo
       private: ros::node *rosnode;
 
       // ros message
-      private: robot_msgs::Pose3DEulerFloat32 poseMsg;
+      private: std_msgs::Pose3DStamped poseMsg;
 
       // topic name
       private: std::string topicName;
