@@ -438,8 +438,7 @@ TransformReference::TransformLists TransformReference::lookUpList(const std::str
     throw(ConnectivityException(ss.str()));
   }
   /* Make sure that we don't have a no parent at the top */
-  if (mTfLs.inverseTransforms.back() == "NO_PARENT" ||  mTfLs.forwardTransforms.back() == "NO_PARENT" ||
-      mTfLs.inverseTransforms.back() == "" ||  mTfLs.forwardTransforms.back() == "")
+  if (mTfLs.inverseTransforms.back() == "NO_PARENT" ||  mTfLs.forwardTransforms.back() == "NO_PARENT")
     throw(ConnectivityException("NO_PARENT at top of tree"));
   
 
