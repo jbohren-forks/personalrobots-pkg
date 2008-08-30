@@ -10,6 +10,7 @@
   <logo>http://www.willowgarage.com/files/willowgarage/robot10.jpg</logo>
   <depend package="robot_srvs"/>
   <depend package="pr2_msgs"/>
+  <depend package="std_msgs"/>
   <export>
     <cpp cflags="-I${prefix}/srv/cpp"/>
   </export>
