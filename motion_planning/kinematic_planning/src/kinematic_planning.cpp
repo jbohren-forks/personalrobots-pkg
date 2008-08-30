@@ -270,7 +270,7 @@ private:
     {
 	addRRTInstance(model);
 	addLazyRRTInstance(model);
-	addSBLInstance(model);
+	//	addSBLInstance(model);
     }
 
     /* instantiate and configure RRT */
