@@ -353,14 +353,13 @@ protected:
 
   /** \brief The pointers to potential frames that the tree can be made of.
    * The frames will be dynamically allocated at run time when set the first time. */
-  std::map<unsigned int, RefFrame*> frames_;
+  std::vector< RefFrame*> frames_;
 
   /** \brief A mutex to protect testing and allocating new frames */
   ros::thread::mutex frame_mutex_;
 
   std::map<std::string, unsigned int> frameIDs_;
-  ros::thread::mutex frameIDs_map_mutex_;
-  unsigned int frame_counter;
+  std::vector<std::string> frameIDs_reverse;
   
   /// How long to cache transform history
   ULLtime cache_time;
@@ -403,17 +402,18 @@ protected:
 
   unsigned int lookup(const std::string& frameid_str){
     unsigned int retval = 0;
-    frameIDs_map_mutex_.lock();
+    frame_mutex_.lock();
     std::map<std::string, unsigned int>::iterator it = frameIDs_.find(frameid_str);
     if (it == frameIDs_.end())
     {
-      frameIDs_[frameid_str] = frame_counter;
-      retval = frame_counter;
-      frame_counter++;
+      retval = frames_.size();
+      frameIDs_[frameid_str] = retval;
+      frames_.push_back( new RefFrame(interpolating, cache_time, max_extrapolation_distance));
+      frameIDs_reverse.push_back(frameid_str);
     }
     else
       retval = frameIDs_[frameid_str];
-    frameIDs_map_mutex_.unlock();
+    frame_mutex_.unlock();
     return retval;
   };
 

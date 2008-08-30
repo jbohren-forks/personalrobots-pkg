@@ -62,11 +62,12 @@ public:
       std::ofstream out(filename);
       out << "digraph TF {" << std::endl;
 	
-      for (std::map<std::string, RefFrame*>::iterator it = frames_.begin() ; it != frames_.end() ; ++it)
+      //      for (std::vector<RefFrame*>::iterator it = frames_.begin() ; it != frames_.end() ; ++it)
+      for (unsigned int counter = 1; counter < frames_.size(); counter ++)
       {
-        if (it->second->getParent() == "NO_PARENT" || it->second->getParent() == "")
+        if (frames_[counter]->getParent() == 0)
           continue;
-        out << "\"" << it->first << "\" -> \"" << it->second->getParent() << "\"" << std::endl;
+        out << "\"" << frameIDs_reverse[counter] << "\" -> \"" << frameIDs_reverse[frames_[counter]->getParent()]<<"\"" << std::endl;
       }	
 	
       out << "};" << std::endl;	

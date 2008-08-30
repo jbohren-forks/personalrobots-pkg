@@ -48,13 +48,14 @@ TransformReference::RefFrame::RefFrame(bool interpolating,
 TransformReference::TransformReference(bool interpolating, 
                                        ULLtime cache_time,
                                        unsigned long long max_extrapolation_distance):
-  frame_counter(1),
   cache_time(cache_time),
   interpolating (interpolating),
   max_extrapolation_distance(max_extrapolation_distance)
 {
   frameIDs_["NO_PARENT"] = 0;
-  frameIDs_map_mutex_.unlock();
+  frames_.push_back( new RefFrame(interpolating, cache_time, max_extrapolation_distance));//unused but needed for iteration over all elements
+  frameIDs_reverse.push_back("NO_PARENT");
+
   return;
 }
 
@@ -62,9 +63,9 @@ TransformReference::~TransformReference()
 {
   /* deallocate all frames */
   frame_mutex_.lock();
-  for (std::map<unsigned int, RefFrame*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
+  for (std::vector<RefFrame*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
   {
-    delete (*it).second;
+    delete (*it);
   }
   frame_mutex_.unlock();
   
@@ -72,17 +73,6 @@ TransformReference::~TransformReference()
 
 void TransformReference::addFrame(unsigned int frame_id, unsigned int parent_id) {
   
-  frame_mutex_.lock();
-
-  std::map<unsigned int, RefFrame*>::iterator it = frames_.find(frame_id);
-  if ( it == frames_.end())
-    frames_[frame_id] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
-
-  it = frames_.find(parent_id);
-  if ( it == frames_.end())
-    frames_[parent_id] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
-
-  frame_mutex_.unlock();
   
   getFrame(frame_id)->setParent(parent_id);
 }
@@ -130,9 +120,9 @@ void TransformReference::setWithQuaternion(const std::string & frameID, const st
 void TransformReference::clear()
 {
   frame_mutex_.lock();
-  for (std::map<unsigned int, RefFrame*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
+  for (std::vector< RefFrame*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
   {
-    it->second->clearList();
+    (*it)->clearList();
   }
   frame_mutex_.unlock();
 }
@@ -319,10 +309,10 @@ TFPose2D TransformReference::transformPose2D(const std::string & target_frame, c
 
 TransformReference::TransformLists TransformReference::lookUpList(unsigned int target_frame,unsigned int source_frame)
 {
-  //timeval tempt;
-  //gettimeofday(&tempt,NULL);
-  //  std::cerr << "Looking up list at " <<tempt.tv_sec * 1000000ULL + tempt.tv_usec << std::endl;
-
+  /*  timeval tempt;
+  gettimeofday(&tempt,NULL);
+  std::cerr << "Looking up list at " <<tempt.tv_sec * 1000000ULL + tempt.tv_usec << std::endl;
+  */
 
   TransformLists mTfLs;
   unsigned int frame = source_frame;
@@ -358,8 +348,8 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
         throw(MaxDepthException(ss.str()));
       }
     }
-  
-  /*  timeval tempt2;
+  /*
+    timeval tempt2;
   gettimeofday(&tempt2,NULL);
   std::cerr << "Side A " <<tempt.tv_sec * 1000000LL + tempt.tv_usec- tempt2.tv_sec * 1000000LL - tempt2.tv_usec << std::endl;
   */
@@ -529,9 +519,11 @@ std::string TransformReference::viewFrames()
 {
   stringstream mstream;
   frame_mutex_.lock();
-  for (std::map<unsigned int, RefFrame*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
+  
+  //  for (std::vector< RefFrame*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
+  for (unsigned int counter = 1; counter < frames_.size(); counter ++)
   {
-    mstream << "Frame "<< it->first << " exists with parent " << it->second->getParent() << "." <<std::endl;
+    mstream << "Frame "<< counter << " exists with parent " << frames_[counter]->getParent() << "." <<std::endl;
   }
   frame_mutex_.unlock();
   return mstream.str();
@@ -552,18 +544,23 @@ bool TransformReference::RefFrame::setParent(unsigned int parent_id)
 
 TransformReference::RefFrame* TransformReference::getFrame(unsigned int frame_id) 
 {
-  frame_mutex_.lock();
+  if (frame_id == 0) /// @todo check larger values too
+    return NULL;
+  else 
+    return frames_[frame_id];
+
+  /*  frame_mutex_.lock();
   std::map<unsigned int, RefFrame*>::const_iterator it = frames_.find(frame_id);
   bool found = it != frames_.end();
   RefFrame *frame = found ? it->second : NULL;
   frame_mutex_.unlock();
   
   if (!found){ 
-    return NULL; //HOBBLED THROW
+    return NULL; // @todo check where HOBBLED THROW may effect
     std::stringstream ss; ss << "getFrame: Frame " << frame_id  << " does not exist."
                              << " Frames Present are: " <<std::endl << viewFrames() <<std::endl; 
     throw LookupException(ss.str());
   }
-  
   return frame;
+  */
 };
