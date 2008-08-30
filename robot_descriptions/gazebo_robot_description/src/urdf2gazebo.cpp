@@ -228,10 +228,13 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
 		{  
 		    robot_desc::URDF::Link::Geometry::Mesh* mesh = static_cast<robot_desc::URDF::Link::Geometry::Mesh*>(link->visual->geometry->shape);
 		    /* set mesh size or scale */
+		    /*
 		    if (link->visual->geometry->isSet["size"])
 			addKeyValue(visual, "size", values2str(3, mesh->size));	
 		    else
 			addKeyValue(visual, "scale", values2str(3, mesh->scale));	
+		    */
+		    addKeyValue(visual, "scale", values2str(3, mesh->scale));
 
 		    /* set mesh file */
 		    if (mesh->filename.empty())

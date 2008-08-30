@@ -397,11 +397,6 @@ namespace robot_desc {
 		break;
 	    case MESH:
 		out << indent << "  - filename: " << static_cast<Mesh*>(shape)->filename << std::endl;
-		if (isSet.find("size")->second)
-		{
-		    const double *size = static_cast<Mesh*>(shape)->size;
-		    out << indent << "  - size: (" <<  size[0] << ", " << size[1] << ", " << size[2] << ")" << std::endl;
-		}
 		if (isSet.find("scale")->second)
 		{
 		    const double *scale = static_cast<Mesh*>(shape)->scale;
@@ -1239,8 +1234,6 @@ namespace robot_desc {
 			mesh->filename = nm;
 			MARK_SET(node, geometry, filename);
 		    }
-		    if (loadDoubleValues(node, 3, mesh->size, "size"))
-			MARK_SET(node, geometry, size);
 		    if (loadDoubleValues(node, 3, mesh->scale, "scale"))
 			MARK_SET(node, geometry, scale);
 		}

@@ -9,6 +9,12 @@
 
   <group name="base" flags="planning">
     base
+    
+    <map name="SBL" flag="planning">
+      <elem key="projection" value="0 1"/>
+      <elem key="celldim" value="1 1"/>
+      <elem key="range" value="0.9"/>
+    </map>
   </group>
   
   <group name="left_arm" flags="planning kinematic">
@@ -26,6 +32,11 @@
     
     <map name="LazyRRT" flag="planning">
       <elem key="range" value="0.75" />
+    </map>
+
+    <map name="SBL" flag="planning">
+      <elem key="projection" value="5 6"/>
+      <elem key="celldim" value="0.1 0.1"/>
     </map>
   </group>
   
@@ -46,7 +57,13 @@
     <map name="LazyRRT" flag="planning">
       <elem key="range" value="0.75" />
     </map>
+
+    <map name="SBL" flag="planning">
+      <elem key="projection" value="5 6"/>
+      <elem key="celldim" value="0.1 0.1"/>
+    </map>
   </group>
+
 
   <group name="base_left_arm" flags="planning">
     base
@@ -107,5 +124,5 @@
     wrist_flex_right
     gripper_roll_right
   </group>
-  
+
 </robot>

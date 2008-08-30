@@ -1852,7 +1852,7 @@
         <elem key="material">Gazebo/PioneerBody</elem>
       </map>
       <geometry name="wrist_camera_left_visual_geom">
-        <mesh size="0.02 0.02 0.02" />
+        <mesh scale="0.02 0.02 0.02" />
       </geometry>
     </visual> 
     
@@ -1915,7 +1915,7 @@
         <elem key="material">Gazebo/PioneerBody</elem>
       </map>
       <geometry name="wrist_camera_right_visual_geom">
-        <mesh size="0.02 0.02 0.02" />
+        <mesh scale="0.02 0.02 0.02" />
       </geometry>
     </visual> 
     
@@ -1978,7 +1978,7 @@
         <elem key="material">Gazebo/PioneerBody</elem>
       </map>
       <geometry name="forearm_camera_left_visual_geom">
-        <mesh size="0.02 0.02 0.02" />
+        <mesh scale="0.02 0.02 0.02" />
       </geometry>
     </visual> 
     
@@ -2035,7 +2035,7 @@
         <elem key="material">Gazebo/PioneerBody</elem>
       </map>
       <geometry name="forearm_camera_right_visual_geom">
-        <mesh size="0.02 0.02 0.02" />
+        <mesh scale="0.02 0.02 0.02" />
       </geometry>
     </visual> 
     
@@ -2271,7 +2271,7 @@
         <elem key="material">Gazebo/Blue</elem>
       </map>
       <geometry name="pr2_stereo_visual_geom">
-        <mesh size="stereo_size_x stereo_size_y stereo_size_z" />
+        <mesh scale="stereo_size_x stereo_size_y stereo_size_z" />
       </geometry>
     </visual> 
     

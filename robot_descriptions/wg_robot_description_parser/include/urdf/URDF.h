@@ -196,12 +196,10 @@ namespace robot_desc
 		    Mesh(void) : Shape()
 		    {
 			scale[0] = scale[1] = scale[2] = 1.0;
-			size[0] = size[1] = size[2] = 0.0;
 		    }
 		    
 		    std::string filename;
 		    double      scale[3];
-		    double      size[3];
 		};		
 
 		Geometry(void)
