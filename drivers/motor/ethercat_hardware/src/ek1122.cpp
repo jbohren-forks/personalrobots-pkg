@@ -32,10 +32,26 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <ethercat_hardware/motor_control_board.h>
-#include <ethercat_hardware/wg05.h>
 #include <ethercat_hardware/ek1122.h>
 
-MotorControlBoard *boardArray[] = {new WG05(), new EK1122};
+void EK1122::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
+{
+  sh->set_fmmu_config( new EtherCAT_FMMU_Config(0) );
+  sh->set_pd_config( new EtherCAT_PD_Config(0) );
+}
 
-vector<MotorControlBoard *> boards(boardArray, boardArray + sizeof(boardArray) / sizeof(boardArray[0]));
+void EK1122::convertCommand(ActuatorCommand &command, unsigned char *buffer)
+{
+}
+
+void EK1122::truncateCurrent(ActuatorCommand &command)
+{
+}
+
+void EK1122::convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer)
+{
+}
+
+void EK1122::verifyState(unsigned char *buffer)
+{
+}

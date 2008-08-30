@@ -32,10 +32,30 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#ifndef EK1122_H
+#define EK1122_H
+
 #include <ethercat_hardware/motor_control_board.h>
-#include <ethercat_hardware/wg05.h>
-#include <ethercat_hardware/ek1122.h>
 
-MotorControlBoard *boardArray[] = {new WG05(), new EK1122};
+class EK1122 : public MotorControlBoard
+{
+public:
+  EK1122() :
+  MotorControlBoard(PRODUCT_CODE, 0, 0)
+  {
+  }
+  void configure(int &start_address, EtherCAT_SlaveHandler *sh);
+  void convertCommand(ActuatorCommand &command, unsigned char *buffer);
+  void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
+  void truncateCurrent(ActuatorCommand &command);
+  void verifyState(unsigned char *buffer);
+  bool hasActuator(void)
+  {
+    return false;
+  }
 
-vector<MotorControlBoard *> boards(boardArray, boardArray + sizeof(boardArray) / sizeof(boardArray[0]));
+private:
+  static const EC_UDINT PRODUCT_CODE = 0x4622c52;
+};
+
+#endif /* EK1122_H */
