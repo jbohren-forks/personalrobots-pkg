@@ -1,0 +1,21 @@
+<package>
+<description brief="Mechanism control">
+</description>
+<author>Eric Berger berger@willowgarage.com</author>
+<license>BSD</license>
+<url>http://pr.willowgarage.com</url>
+<depend package="rosthread"/>
+<depend package="roscpp" />
+<depend package="hardware_interface"/>
+<depend package="tinyxml"/>
+<depend package="mechanism_model"/>
+<depend package="generic_controllers"/>
+<depend package="misc_utils" />
+<depend package="rospy" />
+<depend package="xenomai" />
+<export>
+    <cpp cflags='-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp'
+	 lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lmechanism_control_rt'/>
+</export>
+</package>
+
