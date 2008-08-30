@@ -32,14 +32,14 @@
 
 #include "libTF/libTF.h"
 #include <cassert>
-
+#include <sys/time.h>
 using namespace libTF;
 
 TransformReference::RefFrame::RefFrame(bool interpolating, 
                                        unsigned long long max_cache_time,
                                        unsigned long long max_extrapolation_distance) :
   Pose3DCache(interpolating, max_cache_time, max_extrapolation_distance),
-  parent_("NO_PARENT")
+  parent_(0)
 {
   return;
 }
@@ -48,10 +48,13 @@ TransformReference::RefFrame::RefFrame(bool interpolating,
 TransformReference::TransformReference(bool interpolating, 
                                        ULLtime cache_time,
                                        unsigned long long max_extrapolation_distance):
+  frame_counter(1),
   cache_time(cache_time),
   interpolating (interpolating),
   max_extrapolation_distance(max_extrapolation_distance)
 {
+  frameIDs_["NO_PARENT"] = 0;
+  frameIDs_map_mutex_.unlock();
   return;
 }
 
@@ -59,7 +62,7 @@ TransformReference::~TransformReference()
 {
   /* deallocate all frames */
   frame_mutex_.lock();
-  for (std::map<std::string, RefFrame*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
+  for (std::map<unsigned int, RefFrame*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
   {
     delete (*it).second;
   }
@@ -67,11 +70,11 @@ TransformReference::~TransformReference()
   
 };
 
-void TransformReference::addFrame(const std::string & frame_id, const std::string & parent_id) {
-    
+void TransformReference::addFrame(unsigned int frame_id, unsigned int parent_id) {
+  
   frame_mutex_.lock();
 
-  std::map<std::string, RefFrame*>::iterator it = frames_.find(frame_id);
+  std::map<unsigned int, RefFrame*>::iterator it = frames_.find(frame_id);
   if ( it == frames_.end())
     frames_[frame_id] = new RefFrame(interpolating, cache_time, max_extrapolation_distance);
 
@@ -87,39 +90,47 @@ void TransformReference::addFrame(const std::string & frame_id, const std::strin
 
 void TransformReference::setWithEulers(const std::string & frameID, const std::string & parentID, double a,double b,double c,double d,double e,double f, ULLtime time)
 {
-  addFrame(frameID, parentID);
+  unsigned int frame_id_num = lookup(frameID);
+  unsigned int parent_id_num = lookup(parentID);
+  addFrame(frame_id_num, parent_id_num);
 
-  getFrame(frameID)->addFromEuler(a,b,c,d,e,f,time);
+  getFrame(frame_id_num)->addFromEuler(a,b,c,d,e,f,time);
 }
 
 void TransformReference::setWithDH(const std::string & frameID, const std::string & parentID, double a,double b,double c,double d, ULLtime time)
 {
-  addFrame(frameID, parentID);
+  unsigned int frame_id_num = lookup(frameID);
+  unsigned int parent_id_num = lookup(parentID);
+  addFrame(frame_id_num, parent_id_num);
 
-  getFrame(frameID)->addFromDH(a,b,c,d,time);
+  getFrame(frame_id_num)->addFromDH(a,b,c,d,time);
 }
 
 
 void TransformReference::setWithMatrix(const std::string & frameID, const std::string & parentID, const NEWMAT::Matrix & matrix_in, ULLtime time)
 {
-  addFrame(frameID, parentID);
+  unsigned int frame_id_num = lookup(frameID);
+  unsigned int parent_id_num = lookup(parentID);
+  addFrame(frame_id_num, parent_id_num);
 
-  getFrame(frameID)->addFromMatrix(matrix_in,time);
+  getFrame(frame_id_num)->addFromMatrix(matrix_in,time);
 }
 
 
 void TransformReference::setWithQuaternion(const std::string & frameID, const std::string & parentID, double xt, double yt, double zt, double xr, double yr, double zr, double w, ULLtime time)
 {
-  addFrame(frameID, parentID);
+  unsigned int frame_id_num = lookup(frameID);
+  unsigned int parent_id_num = lookup(parentID);
+  addFrame(frame_id_num, parent_id_num);
 
-  getFrame(frameID)->addFromQuaternion(xt, yt, zt, xr, yr, zr, w,time);
+  getFrame(frame_id_num)->addFromQuaternion(xt, yt, zt, xr, yr, zr, w,time);
 }
 
 
 void TransformReference::clear()
 {
   frame_mutex_.lock();
-  for (std::map<std::string, RefFrame*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
+  for (std::map<unsigned int, RefFrame*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
   {
     it->second->clearList();
   }
@@ -130,8 +141,10 @@ void TransformReference::clear()
 
 NEWMAT::Matrix TransformReference::getMatrix(const std::string & target_frame, const std::string & source_frame, ULLtime time)
 {
+  unsigned int target_frame_num = lookup(target_frame);
+  unsigned int source_frame_num = lookup(source_frame);
   NEWMAT::Matrix myMat(4,4);
-  TransformLists lists = lookUpList(target_frame, source_frame);
+  TransformLists lists = lookUpList(target_frame_num, source_frame_num);
   myMat = computeTransformFromList(lists,time);
   return myMat;
 }
@@ -304,17 +317,27 @@ TFPose2D TransformReference::transformPose2D(const std::string & target_frame, c
 
 
 
-TransformReference::TransformLists TransformReference::lookUpList(const std::string & target_frame, const std::string & source_frame)
+TransformReference::TransformLists TransformReference::lookUpList(unsigned int target_frame,unsigned int source_frame)
 {
-  TransformLists mTfLs;
+  //timeval tempt;
+  //gettimeofday(&tempt,NULL);
+  //  std::cerr << "Looking up list at " <<tempt.tv_sec * 1000000ULL + tempt.tv_usec << std::endl;
 
-  std::string frame = source_frame;
+
+  TransformLists mTfLs;
+  unsigned int frame = source_frame;
   unsigned int counter = 0;  //A counter to keep track of how deep we've descended
-  getFrame(frame); //Test if source frame exists this will throw a lookup error if it does not (inside the loop it will be caught)
+  if (getFrame(frame) == NULL) //Test if source frame exists this will throw a lookup error if it does not (inside the loop it will be caught)
+    throw LookupException("fixme");
   while (true)
     {
-      std::string parent;
-      try
+      unsigned int parent;
+
+      RefFrame* pointer = getFrame(frame);
+      if (pointer == NULL) break;
+      parent = pointer->getParent();
+
+      /*      try
       {
         parent = getFrame(frame)->getParent();
       }
@@ -322,26 +345,10 @@ TransformReference::TransformLists TransformReference::lookUpList(const std::str
       {
         //This frame doesn't exist must be at top of list
         break;
-      }
+        }*/
       mTfLs.inverseTransforms.push_back(frame);
       frame = parent;
 
-      /*
-      if (frame == NO_PARENT)
-	break;
-      mTfLs.inverseTransforms.push_back(frame);
-      */
-      //Check that we arn't going somewhere illegal 
-      //std::string parentid = getFrame(frame)->getParent();
-      /*if (getFrame(frame)->getParent() >=MAX_NUM_FRAMES)
-      {
-        std::stringstream ss;
-        ss <<"parentid("<<parentid<<") greater than MAX_NUM_FRAMES("<<MAX_NUM_FRAMES<<")";
-        throw LookupException(ss.str());
-        }*/
-      
-      // Descent to parent frame
-      //        frame = getFrame(frame)->getParent();
 
       /* Check if we've gone too deep.  A loop in the tree would cause this */
       if (counter++ > MAX_GRAPH_DEPTH){
@@ -352,14 +359,22 @@ TransformReference::TransformLists TransformReference::lookUpList(const std::str
       }
     }
   
+  /*  timeval tempt2;
+  gettimeofday(&tempt2,NULL);
+  std::cerr << "Side A " <<tempt.tv_sec * 1000000LL + tempt.tv_usec- tempt2.tv_sec * 1000000LL - tempt2.tv_usec << std::endl;
+  */
   frame = target_frame;
   counter = 0;
-  getFrame(frame); //Test if source frame exists this will throw a lookup error if it does not (inside the loop it will be caught)
+  if (getFrame(frame) == NULL) throw LookupException("fixme");; //Test if source frame exists this will throw a lookup error if it does not (inside the loop it will be caught)
   while (true)
     {
 
-      std::string parent;
-      try
+      unsigned int parent;
+      RefFrame* pointer = getFrame(frame);
+      if (pointer == NULL) break;
+      parent = pointer->getParent();
+
+      /*      try
       {
         parent = getFrame(frame)->getParent();
       }
@@ -367,27 +382,10 @@ TransformReference::TransformLists TransformReference::lookUpList(const std::str
       {
         //This frame doesn't exist don't add to stack
         break;
-      }
+        }*/
       mTfLs.forwardTransforms.push_back(frame);
       frame = parent;
 
-      /*
-      if (frame == NO_PARENT)
-	break;
-      mTfLs.forwardTransforms.push_back(frame);
-
-      //Check that we aren't going somewhere illegal
-      std::string parentid = getFrame(frame)->getParent();
-      if ( parentid >= MAX_NUM_FRAMES)
-      {
-        std::stringstream ss;
-        ss<< "parentid("<<parentid<<") of frame ("<<frame<<") greater than MAX_NUM_FRAMES("<<MAX_NUM_FRAMES<<")";
-        throw LookupException(ss.str());
-      }
-
-      //Descent to parent frame
-      frame = getFrame(frame)->getParent();
-      */
       /* Check if we've gone too deep.  A loop in the tree would cause this*/
       if (counter++ > MAX_GRAPH_DEPTH){
         std::stringstream ss;
@@ -396,6 +394,10 @@ TransformReference::TransformLists TransformReference::lookUpList(const std::str
         throw(MaxDepthException(ss.str()));
       }
     }
+  /*
+  gettimeofday(&tempt2,NULL);
+  std::cerr << "Side B " <<tempt.tv_sec * 1000000LL + tempt.tv_usec- tempt2.tv_sec * 1000000LL - tempt2.tv_usec << std::endl;
+  */
 
   /* Check the zero length cases*/
   if (mTfLs.inverseTransforms.size() == 0)
@@ -438,10 +440,12 @@ TransformReference::TransformLists TransformReference::lookUpList(const std::str
     throw(ConnectivityException(ss.str()));
   }
   /* Make sure that we don't have a no parent at the top */
-  if (mTfLs.inverseTransforms.back() == "NO_PARENT" ||  mTfLs.forwardTransforms.back() == "NO_PARENT")
+  if (mTfLs.inverseTransforms.back() == 0 ||  mTfLs.forwardTransforms.back() == 0)
     throw(ConnectivityException("NO_PARENT at top of tree"));
-  
-
+  /*
+  gettimeofday(&tempt2,NULL);
+  std::cerr << "Base Cases done" <<tempt.tv_sec * 1000000LL + tempt.tv_usec- tempt2.tv_sec * 1000000LL - tempt2.tv_usec << std::endl;
+  */
   
   while (mTfLs.inverseTransforms.back() == mTfLs.forwardTransforms.back())
   {
@@ -454,7 +458,10 @@ TransformReference::TransformLists TransformReference::lookUpList(const std::str
       if (mTfLs.inverseTransforms.size() == 0 || mTfLs.forwardTransforms.size() == 0)
 	break;
     }
-  
+  /*
+  gettimeofday(&tempt2,NULL);
+  std::cerr << "Done looking up list " <<tempt.tv_sec * 1000000LL + tempt.tv_usec- tempt2.tv_sec * 1000000LL - tempt2.tv_usec << std::endl;
+  */
   return mTfLs;
 
 }
@@ -500,7 +507,7 @@ NEWMAT::Matrix TransformReference::computeTransformFromList(const TransformLists
 std::string TransformReference::viewChain(const std::string & target_frame, const std::string & source_frame)
 {
   stringstream mstream;
-  TransformLists lists = lookUpList(target_frame, source_frame);
+  TransformLists lists = lookUpList(lookup(target_frame), lookup(source_frame));
 
   mstream << "Inverse Transforms:" <<std::endl;
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
@@ -522,7 +529,7 @@ std::string TransformReference::viewFrames()
 {
   stringstream mstream;
   frame_mutex_.lock();
-  for (std::map<std::string, RefFrame*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
+  for (std::map<unsigned int, RefFrame*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
   {
     mstream << "Frame "<< it->first << " exists with parent " << it->second->getParent() << "." <<std::endl;
   }
@@ -531,7 +538,7 @@ std::string TransformReference::viewFrames()
 }
 
 
-bool TransformReference::RefFrame::setParent(std::string parent_id)
+bool TransformReference::RefFrame::setParent(unsigned int parent_id)
 {
   if (parent_ != parent_id)
   {
@@ -543,16 +550,16 @@ bool TransformReference::RefFrame::setParent(std::string parent_id)
 };
 
 
-TransformReference::RefFrame* TransformReference::getFrame(const std::string & frame_id) 
+TransformReference::RefFrame* TransformReference::getFrame(unsigned int frame_id) 
 {
   frame_mutex_.lock();
-  std::map<std::string, RefFrame*>::const_iterator it = frames_.find(frame_id);
+  std::map<unsigned int, RefFrame*>::const_iterator it = frames_.find(frame_id);
   bool found = it != frames_.end();
   RefFrame *frame = found ? it->second : NULL;
   frame_mutex_.unlock();
   
   if (!found){ 
-    
+    return NULL; //HOBBLED THROW
     std::stringstream ss; ss << "getFrame: Frame " << frame_id  << " does not exist."
                              << " Frames Present are: " <<std::endl << viewFrames() <<std::endl; 
     throw LookupException(ss.str());

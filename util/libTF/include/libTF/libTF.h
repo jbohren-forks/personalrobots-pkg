@@ -183,15 +183,6 @@ public:
   virtual ~TransformReference(void);
 
   /********** Mutators **************/
-  /** \brief Add a new frame and parent
-   * The frame transformatiosn are left unspecified.
-   * \param frameid The id of a frame to add
-   * \param parentid The id of the parent frame to the one being added
-   *
-   *  Possible exceptions are: TransformReference::InvaildFrame
-   */
-  void addFrame(const std::string & frameid, const std::string & parentid);
-
   /** \brief Set a new frame or update an old one.
    * \param frameid The destination frame
    * \param parentid The frame id of the parent frame.  
@@ -342,19 +333,19 @@ protected:
                unsigned long long  max_extrapolation_time = DEFAULT_MAX_EXTRAPOLATION_TIME); 
       
       /** \brief Get the parent nodeID */
-      inline std::string getParent(){return parent_;};
+      inline unsigned int getParent(){return parent_;};
       
       /** \brief Set the parent node 
        * return: false => change of parent, cleared history
        * return: true => no change of parent 
        * \param parentID The frameID of the parent
        */
-      bool setParent(std::string parent_id);
+      bool setParent(unsigned int parent_id);
 
     private:
       
       /** Internal storage of the parent */
-      std::string parent_;
+      unsigned int parent_;
 
     };
 
@@ -362,10 +353,15 @@ protected:
 
   /** \brief The pointers to potential frames that the tree can be made of.
    * The frames will be dynamically allocated at run time when set the first time. */
-  std::map<std::string, RefFrame*> frames_;
+  std::map<unsigned int, RefFrame*> frames_;
+
   /** \brief A mutex to protect testing and allocating new frames */
   ros::thread::mutex frame_mutex_;
 
+  std::map<std::string, unsigned int> frameIDs_;
+  ros::thread::mutex frameIDs_map_mutex_;
+  unsigned int frame_counter;
+  
   /// How long to cache transform history
   ULLtime cache_time;
 
@@ -381,13 +377,22 @@ protected:
    * This struct is how the list of transforms are stored before being passed to computeTransformFromList. */
   typedef struct 
   {
-    std::vector<std::string> inverseTransforms;
-    std::vector<std::string> forwardTransforms;
+    std::vector<unsigned int> inverseTransforms;
+    std::vector<unsigned int> forwardTransforms;
   } TransformLists;
 
  protected: 
   /************************* Internal Functions ****************************/
   
+  /** \brief Add a new frame and parent
+   * The frame transformatiosn are left unspecified.
+   * \param frameid The id of a frame to add
+   * \param parentid The id of the parent frame to the one being added
+   *
+   *  Possible exceptions are: TransformReference::InvaildFrame
+   */
+  void addFrame(unsigned int frameid, unsigned int parentid);
+
   /** \brief An accessor to get a frame, which will throw an exception if the frame is no there. 
    * \param frame_number The frameID of the desired Reference Frame
    * 
@@ -395,11 +400,26 @@ protected:
    * Possible Exception: TransformReference::LookupException
    */
   RefFrame* getFrame(unsigned int frame_number);
-  RefFrame* getFrame(const std::string & frame_number_string);
+
+  unsigned int lookup(const std::string& frameid_str){
+    unsigned int retval = 0;
+    frameIDs_map_mutex_.lock();
+    std::map<std::string, unsigned int>::iterator it = frameIDs_.find(frameid_str);
+    if (it == frameIDs_.end())
+    {
+      frameIDs_[frameid_str] = frame_counter;
+      retval = frame_counter;
+      frame_counter++;
+    }
+    else
+      retval = frameIDs_[frameid_str];
+    frameIDs_map_mutex_.unlock();
+    return retval;
+  };
 
 
   /** Find the list of connected frames necessary to connect two different frames */
-  TransformLists  lookUpList(const std::string & target_frame, const std::string & source_frame);
+  TransformLists  lookUpList(unsigned int target_frame, unsigned int source_frame);
   
   /** Compute the transform based on the list of frames */
   NEWMAT::Matrix computeTransformFromList(const TransformLists & list, ULLtime time);

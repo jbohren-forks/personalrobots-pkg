@@ -464,6 +464,7 @@ std_msgs::Pose3D Pose3D::getMessage(void) const
   pose.orientation.y = yr;
   pose.orientation.z = zr;
   pose.orientation.w = w;
+  return pose;
 };
 
 void Pose3D::setPosition(double x, double y, double z)
