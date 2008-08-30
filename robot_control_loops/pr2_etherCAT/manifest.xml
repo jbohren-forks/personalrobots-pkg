@@ -4,8 +4,8 @@ Main loop that runs the robot.
   </description>
   <author>Rob Wheeler/wheeler@willowgarage.com</author>
   <license>BSD</license>
+  <depend package="mechanism_control_rt"/>
   <depend package="roscpp" />
-  <depend package="mechanism_control"/>
   <depend package="ethercat_hardware"/>
   <depend package="hardware_interface"/>
   <depend package="std_srvs"/>
