@@ -102,6 +102,8 @@ public:
   SelfTest<ImuNode> self_test_;
 
   bool running;
+
+  bool autostart;
   
   ImuNode() : ros::node("imu"), count(0), self_test_(this)
   {
@@ -109,6 +111,8 @@ public:
     advertise<std_msgs::EulerAngles>("euler_angles", 100);
 
     param("~port", port, string("/dev/ttyUSB0"));
+
+    param("~autostart", autostart, true);
 
     string type;
     param("~type", type, string("accel_angrate"));
@@ -272,7 +276,7 @@ public:
     // Start up the laser
     while (ok())
     {
-      if (start() == 0)
+      if (autostart && start() == 0)
       {
         while(ok()) {
           if(publish_datum() < 0)
