@@ -448,6 +448,12 @@ WavefrontNode::laserReceived()
       printf("%s\n", ex.what());
       return;
     }
+    catch(libTF::TransformReference::ConnectivityException& ex)
+    {
+      puts("no global->local Tx yet");
+      printf("%s\n", ex.what());
+      return;
+    }
     catch(libTF::TransformReference::ExtrapolateException& ex)
     {
       puts("extrapolation required");
@@ -589,6 +595,12 @@ WavefrontNode::doOneCycle()
     this->stopRobot();
     return;
   }
+    catch(libTF::TransformReference::ConnectivityException& ex)
+    {
+      puts("no global->local Tx yet");
+      printf("%s\n", ex.what());
+      return;
+    }
   catch(libTF::TransformReference::ExtrapolateException& ex)
   {
     // this should never happen
