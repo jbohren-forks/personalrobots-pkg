@@ -72,7 +72,7 @@ namespace controller
 
 
 class Controller;
-typedef Factory<Controller> ControllerFactory;
+typedef misc_utils::Factory<Controller> ControllerFactory;
 
 #define ROS_REGISTER_CONTROLLER(c) \
   controller::Controller *ROS_New_##c() { return new c(); }             \

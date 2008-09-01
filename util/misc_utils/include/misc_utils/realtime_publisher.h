@@ -43,6 +43,8 @@
 #include <rosthread/mutex.h>
 #include <rosthread/member_thread.h>
 
+namespace misc_utils {
+
 template <class Msg>
 class RealtimePublisher
 {
@@ -120,5 +122,7 @@ private:
   pthread_mutex_t msg_lock_;  // Protects msg_
   pthread_cond_t updated_cond_;
 };
+
+}
 
 #endif

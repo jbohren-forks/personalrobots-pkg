@@ -46,7 +46,7 @@ namespace mechanism {
 class Robot;
 
 class Transmission;
-typedef Factory<Transmission> TransmissionFactory;
+typedef misc_utils::Factory<Transmission> TransmissionFactory;
 
 #define ROS_REGISTER_TRANSMISSION(c) \
   mechanism::Transmission *ROS_New_##c() { return new c(); }             \

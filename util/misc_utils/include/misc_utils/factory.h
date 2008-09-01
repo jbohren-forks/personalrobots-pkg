@@ -33,6 +33,8 @@
 #include <map>
 #include <vector>
 
+namespace misc_utils {
+
 template <class BaseResult,
           class Constructor = BaseResult* (*)()>
 class Factory
@@ -78,7 +80,7 @@ private:
   ConstructorMap types_;
 };
 
-
+}
 
 
 #endif

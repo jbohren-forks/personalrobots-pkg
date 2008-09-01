@@ -129,7 +129,7 @@ private:
   mechanism_control::MechanismState mechanism_state_;
   static const double STATE_PUBLISHING_PERIOD = 0.1;  // in seconds, higher rates are useless with the current speed of the simulator
   const char* const mechanism_state_topic_;
-  RealtimePublisher<mechanism_control::MechanismState> publisher_;
+  misc_utils::RealtimePublisher<mechanism_control::MechanismState> publisher_;
 };
 
 #endif /* MECHANISM_CONTROL_H */
