@@ -43,12 +43,6 @@ float ANGLE_ERROR = .2;
 float END_EFFECTOR_POSITION_ERROR = 0.01;
 float END_EFFECTOR_STEP_SIZE = 5.0;
 
-// Bogus
-float NOMINAL_SPEED = 1.0;
-
-enum CmdResult {SUCCESS, FAILURE};
-
-
 /**
  * BaseState will capture position and orientation.
  */
