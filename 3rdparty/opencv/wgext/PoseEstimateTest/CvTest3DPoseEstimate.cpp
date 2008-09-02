@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <queue>
 
 #include <opencv/cxcore.h>
 #include <opencv/cv.h>
@@ -72,6 +73,21 @@ CvTest3DPoseEstimate::~CvTest3DPoseEstimate()
 void CvTest3DPoseEstimate::_init(){
 	cvInitMatHeader(&mRot,   3, 3, CV_64FC1, mRotData);
 	cvInitMatHeader(&mTrans, 3, 1, CV_64FC1, mTransData);
+
+	mMinNumInliersForGoodFrame  = defMinNumInliersForGoodFrame;
+	mMinNumInliers  = defMinNumInliers;
+	mMinInlierRatio = defMinInlierRatio;
+	mMaxAngleAlpha  = defMaxAngleAlpha;
+	mMaxAngleBeta   = defMaxAngleBeta;
+	mMaxAngleGamma  = defMaxAngleGamma;
+	mMaxShift       = defMaxShift;
+
+//	mMinNumInliers  = 40;
+	mMaxAngleAlpha  = 15;
+	mMaxAngleBeta   = 15;
+	mMaxAngleGamma  = 15;
+	mMaxShift       = 1000;
+
 }
 
 /**
@@ -196,7 +212,7 @@ void CvTest3DPoseEstimate::MyMouseCallback(int event, int x, int y, int flagsm, 
 		;
 	}
 }
-
+#if 0
 bool CvTest3DPoseEstimate::testVideos() {
 	bool status = false;
 	int numImages = 1509;
@@ -793,6 +809,7 @@ bool CvTest3DPoseEstimate::testVideos() {
 	if (lastDispImg)   cvReleaseMat(&lastDispImg);
 	return status;
 }
+#endif
 
 bool CvTest3DPoseEstimate::eulerAngle(const CvMat& rot, CvPoint3D64f& euler) {
 	double _R[9], _Q[9];
@@ -805,9 +822,14 @@ bool CvTest3DPoseEstimate::eulerAngle(const CvMat& rot, CvPoint3D64f& euler) {
 	return true;
 }
 
-bool CvTest3DPoseEstimate::goodAsKeyFrame(vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs, int numInliers, const CvMat& rot, const CvMat& shift) {
+CvTest3DPoseEstimate::KeyFramingDecision
+CvTest3DPoseEstimate::keyFrameDecision(
+		vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs,
+		vector<Keypoint>& keyPoints,
+		int numInliers, const CvMat& rot, const CvMat& shift
+		) {
 //	return true;
-
+	KeyFramingDecision kfd = (KeyFramingDecision)0x0;
 #if 0
 	double maxDisparity = 0;
 	for (vector<pair<CvPoint3D64f, CvPoint3D64f> >::const_iterator iter = trackablePairs.begin();
@@ -826,30 +848,108 @@ bool CvTest3DPoseEstimate::goodAsKeyFrame(vector<pair<CvPoint3D64f, CvPoint3D64f
 	}
 #endif
 
-	bool status = false;
-	if (numInliers < defMinNumInliers) {
+	//
+	// check if the frame is good enough for checking
+	//
+	if (numInliers < defMinNumInliersForGoodFrame) {
+		// Too few inliers to ensure good tracking
+#if DEBUG==1
 		cout << "Too few inlier to track: "<< numInliers <<endl;
-		return false;
+#endif
+		kfd = (KeyFramingDecision)(kfd | BadKeyFrame);
+	} else {
+		kfd = (KeyFramingDecision)(kfd | GoodKeyFrame);
 	}
+
+	//
+	// Check if a key frame is needed
+	//
 	CvPoint3D64f eulerAngles;
 	eulerAngle(rot, eulerAngles);
 
-	if (fabs(eulerAngles.x) > defMinAngleAlpha ||
-			fabs(eulerAngles.y) > defMinAngleBeta ||
-			fabs(eulerAngles.z) > defMinAngleGamma ){
-		return true;
+	double dist = 0;
+	if (fabs(eulerAngles.x) > mMaxAngleAlpha ||
+		fabs(eulerAngles.y) > mMaxAngleBeta ||
+		fabs(eulerAngles.z) > mMaxAngleGamma ){
+		// at least one of the angle is large enough that a key frame is needed
+//		kfd =  (KeyFramingDecision)(kfd | KeyFrameNeeded);
+		kfd =  KeyFrameNeeded;
+#if DEBUG == 1
+		cerr << "Too much rotation" <<endl;
+#endif
+	} else if (cvNorm(&shift) > mMaxShift) {
+		// the shift is large enough that a key frame is needed
+//		kfd = (KeyFramingDecision)(kfd | KeyFrameNeeded);
+		kfd = KeyFrameNeeded;
+#if DEBUG == 1
+		cerr << "Too much shift" <<endl;
+#endif
+	} else if (numInliers < mMinNumInliers) {
+//		kfd = (KeyFramingDecision)(kfd | KeyFrameNeeded);
+		kfd = KeyFrameNeeded;
+#if DEBUG == 1
+		cerr << "Too Few Inliers" <<endl;
+#endif
+	} else {
+		double ratio = numInliers/keyPoints.size();
+		if (ratio < mMinInlierRatio) {
+			kfd = KeyFrameNeeded;
+//			kfd = (KeyFramingDecision)(kfd | KeyFrameNeeded);
+#if DEBUG == 1
+		cerr << "Too small ratio of inliers" <<endl;
+#endif
+		}
 	}
 
-	double dist = cvNorm(&shift);
-	if (dist > defMinShift) {
-		return true;
+#if DEBUG==1
+	if (kfd & KeyFrameNeeded == 0x0) {
+		cout << "both rotation and shift are too small to be worth tracking: "
+		<< eulerAngles.x<<","<<eulerAngles.y<<","<<eulerAngles.z<<","<<dist<<endl;
 	}
+#endif
 
-	cout << "both rotation and shift are too small to be worth tracking: "
-	<< eulerAngles.x<<","<<eulerAngles.y<<","<<eulerAngles.z<<","<<dist<<endl;
-
-	return status;
+	return kfd;
 }
+
+class PoseEstFrameEntry {
+public:
+	PoseEstFrameEntry(WImageBuffer1_b& image, WImageBuffer1_16s& dispMap,
+			vector<Keypoint>& keypoints, CvMat& rot, CvMat& shift,
+			int numTrackablePair,
+			int numInliers, int frameIndex,
+			WImageBuffer3_b& imageC3a, CvMat* inliers0, CvMat* inliers1){
+		mRot   = cvMat(3, 3, CV_64FC1, _mRot);
+		mShift = cvMat(3, 1, CV_64FC1, _mShift);
+		mImage.CloneFrom(image);
+		mDispMap.CloneFrom(dispMap);
+		mKeypoints  = keypoints;
+		cvCopy(&rot,   &mRot);
+		cvCopy(&shift, &mShift);
+		mNumTrackablePairs = numTrackablePair;
+		mNumInliers = numInliers;
+		mFrameIndex = frameIndex;
+
+		mImageC3a.CloneFrom(imageC3a);
+		mInliers0 = cvCloneMat(inliers0);
+		mInliers1 = cvCloneMat(inliers1);
+	}
+	WImageBuffer1_b   mImage;
+	WImageBuffer1_16s mDispMap;
+	vector<Keypoint>  mKeypoints;
+
+	CvMat mRot;
+	CvMat mShift;
+	int   mNumTrackablePairs;
+	int   mNumInliers;
+	int   mFrameIndex;
+	// display and debugging stuff
+	WImageBuffer3_b  mImageC3a;
+	CvMat* mInliers0;
+	CvMat* mInliers1;
+protected:
+	double _mRot[9];
+	double _mShift[3];
+};
 
 // the following function is a clean-up version of testVideos(), which serves as
 // an intermediate form for re-factorization of  code into pose estimate or 3d reconstruction
@@ -857,7 +957,7 @@ bool CvTest3DPoseEstimate::testVideos2() {
 	bool status = false;
 	int numImages = 1509;
 	double ransacInlierthreshold = 2.0;
-	int numRansacIterations = 100;
+	int numRansacIterations = 200;
 //	int numImages = 1;
 	IplImage* leftimg  = 0;
 	IplImage* rightimg = 0;
@@ -901,9 +1001,6 @@ bool CvTest3DPoseEstimate::testVideos2() {
 
 	const int max_features = 500;
 	vector<Keypoint> keyPointsLast;
-	int numFeaturesLastLeft=0;
-//	IplImage *lastDispImg = NULL; //
-//	IplImage *lastleftimg = NULL;   // original image
 
 	WImageBuffer1_b lastLeftImage(imgSize.width, imgSize.height);
 	WImageBuffer1_16s lastDispMap(imgSize.width, imgSize.height);
@@ -955,59 +1052,74 @@ bool CvTest3DPoseEstimate::testVideos2() {
 	CvFont font;
 	cvInitFont( &font, CV_FONT_HERSHEY_SIMPLEX, .5, .4);
 
-	for (int i=start; i<end && mStop == false; i+=step) {
-		sprintf(leftfilename,  "%s/left-%04d.ppm",  dirname.c_str(), i);
-		sprintf(rightfilename, "%s/right-%04d.ppm", dirname.c_str(), i);
-		cout << "loading "<<leftfilename<<" and "<< rightfilename<< endl;
-		leftimg  = cvLoadImage(leftfilename,  CV_LOAD_IMAGE_GRAYSCALE);
-		rightimg = cvLoadImage(rightfilename, CV_LOAD_IMAGE_GRAYSCALE);
+	PoseEstFrameEntry* lastGoodFrame=NULL;
+	int fBackTracked = false;
 
-		// make a copy of color image for display
-		CvMat *leftimgC3  = cvCreateMat(leftimg->height,  leftimg->width,  CV_8UC3);
-//		CvMat *leftimgC3a = cvCreateMat(leftimg->height,  leftimg->width,  CV_8UC3);
-		cvCvtColor(leftimg,  leftimgC3,  CV_GRAY2RGB);
-//		cvCvtColor(leftimg,  leftimgC3a, CV_GRAY2RGB);
+	CvMat *leftimgC3=NULL;
+	WImageBuffer1_16s dispMap(imgSize.width, imgSize.height);
+	WImageBuffer1_b leftImage;
+	WImageBuffer3_b leftImageC3a(imgSize.width, imgSize.height);
+	IplImage *leftimgC3a = leftImageC3a.Ipl();
+	vector<Keypoint> keyPoints;
 
-		//
-		// Try Kurt's dense stereo pair
-		//
-		WImageBuffer1_16s dispMap(imgSize.width, imgSize.height);
-		WImageBuffer1_b leftImage(leftimg);
-		WImageBuffer3_b leftImageC3a(imgSize.width, imgSize.height);
-		IplImage *leftimgC3a = leftImageC3a.Ipl();
-		cvCvtColor(leftimg,  leftimgC3a, CV_GRAY2RGB);
-		WImageBuffer1_b rightImage(rightimg);
-		pes.getDisparityMap(leftImage, rightImage, dispMap);
+	bool lastGoodFrameAvailable = false;
 
-		//
-		// display disparity map
-		//
-		sprintf(dispMapFilename, "%s/dispMap-%04d.png", outputDirname.c_str(), i);
-		string _dispMapFilename(dispMapFilename);
-		CvMatUtils::showDisparityMap(dispMap, dispWindowName, _dispMapFilename, maxDisp);
-		// end display disparity map
+	for (int i=start; i<end && mStop == false; i+= fBackTracked==false?step:0) {
+		int frameIndex=i;
+		fBackTracked = false;
+
+		if (fBackTracked==true){
+			leftimgC3a = leftImageC3a.Ipl();
+		} else {
+			sprintf(leftfilename,  "%s/left-%04d.ppm",  dirname.c_str(), frameIndex);
+			sprintf(rightfilename, "%s/right-%04d.ppm", dirname.c_str(), frameIndex);
+			cout << "loading "<<leftfilename<<" and "<< rightfilename<< endl;
+			leftimg  = cvLoadImage(leftfilename,  CV_LOAD_IMAGE_GRAYSCALE);
+			rightimg = cvLoadImage(rightfilename, CV_LOAD_IMAGE_GRAYSCALE);
+
+			// make a copy of color image for display
+			leftimgC3  = cvCreateMat(leftimg->height,  leftimg->width,  CV_8UC3);
+			cvCvtColor(leftimg,  leftimgC3,  CV_GRAY2RGB);
+
+			//
+			// Try Kurt's dense stereo pair
+			//
+			leftImage.SetIpl(leftimg);
+			leftimgC3a = leftImageC3a.Ipl();
+			cvCvtColor(leftimg,  leftimgC3a, CV_GRAY2RGB);
+			WImageBuffer1_b rightImage(rightimg);
+			pes.getDisparityMap(leftImage, rightImage, dispMap);
+
+			//
+			// display disparity map
+			//
+			sprintf(dispMapFilename, "%s/dispMap-%04d.png", outputDirname.c_str(), frameIndex);
+			string _dispMapFilename(dispMapFilename);
+			CvMatUtils::showDisparityMap(dispMap, dispWindowName, _dispMapFilename, maxDisp);
+			// end display disparity map
 
 
-		int numFeaturesLeft=max_features;
+			int numFeaturesLeft=max_features;
 
-		//
-		//  compute good key points to track
-		//
-		vector<Keypoint> keyPoints = pes.goodFeaturesToTrack(leftImage, &dispMap);
-		cout << "Found "<<keyPoints.size() <<" good features in left  image"<<endl;
+			//
+			//  compute good key points to track
+			//
+			keyPoints = pes.goodFeaturesToTrack(leftImage, &dispMap);
+			cout << "Found "<<keyPoints.size() <<" good features in left  image"<<endl;
 
-		//
-		// draw the key points
-		//
-		for (vector<Keypoint>::const_iterator ikp = keyPoints.begin(); ikp != keyPoints.end(); ikp++) {
-			cvCircle(leftimgC3, cvPoint(ikp->x, ikp->y), 4, CvMatUtils::green, 1, CV_AA, 0);
-		}
+			//
+			// draw the key points
+			//
+			for (vector<Keypoint>::const_iterator ikp = keyPoints.begin(); ikp != keyPoints.end(); ikp++) {
+				cvCircle(leftimgC3, cvPoint(ikp->x, ikp->y), 4, CvMatUtils::green, 1, CV_AA, 0);
+			}
 
-		for (vector<Keypoint>::const_iterator ikp = keyPointsLast.begin(); ikp != keyPointsLast.end(); ikp++) {
-			// draw cross instead of circle
-			CvPoint pt = cvPoint(ikp->x, ikp->y);
-			int halfLen = 4;
-			CvMatUtils::cvCross(leftimgC3, pt, halfLen, CvMatUtils::yellow, 1, CV_AA, 0);
+			for (vector<Keypoint>::const_iterator ikp = keyPointsLast.begin(); ikp != keyPointsLast.end(); ikp++) {
+				// draw cross instead of circle
+				CvPoint pt = cvPoint(ikp->x, ikp->y);
+				int halfLen = 4;
+				CvMatUtils::cvCross(leftimgC3, pt, halfLen, CvMatUtils::yellow, 1, CV_AA, 0);
+			}
 		}
 		//
 		// match the good feature points between this iteration and last
@@ -1019,10 +1131,10 @@ bool CvTest3DPoseEstimate::testVideos2() {
 
 		int numTrackablePairs = trackablePairs.size();
 
-		if (trackablePairs.size()<10) {
+		if (numTrackablePairs<10) {
 			cout << "Too few trackable pairs" <<endl;
 			sprintf(info, "%04d, #TrackablePair: %d, Too few to track",
-					i, trackablePairs.size());
+					i, numTrackablePairs);
 		} else {
 
 			//
@@ -1042,7 +1154,7 @@ bool CvTest3DPoseEstimate::testVideos2() {
 			//  pose estimation given the feature point pairs
 			//
 			double _rot[9], _shift[3];
-			CvMat rot = cvMat(3, 3, CV_64FC1, _rot);
+			CvMat rot   = cvMat(3, 3, CV_64FC1, _rot);
 			CvMat shift = cvMat(3, 1, CV_64FC1, _shift);
 
 			int numInliers =
@@ -1055,22 +1167,158 @@ bool CvTest3DPoseEstimate::testVideos2() {
 			} else {
 				pes.getInliers(inliers0, inliers1);
 			}
-
+#if 0
 			// logging the rotation matrix and the shift vector
 			cout << "Rot Matrix: "<<endl;
 			CvMatUtils::printMat(&rot);
 			cout << "Shift Matrix: "<<endl;
 			CvMatUtils::printMat(&shift);
+#endif
 
 			cout << "num of inliers: "<< numInliers <<endl;
 
-			if (goodAsKeyFrame(trackablePairs, numInliers, rot, shift) == true || i == end - 1 ) {
-//			if (numInliers >0) {
+			KeyFramingDecision kfd = keyFrameDecision(trackablePairs, keyPoints, numInliers, rot, shift);
+			if (i==end -1){
+				// last frame
+				kfd = (KeyFramingDecision)(kfd|KeyFrameNeeded);
+			}
 
-				assert(inliers0 != NULL);
-				assert(inliers1 != NULL);
+			// TODO: jdc hacking
+			if (lastGoodFrameAvailable == false && (kfd & KeyFrameNeeded)) {
+				kfd = GoodFrameAndNeeded;
+				cerr << "forced to use the current image"<<endl;
+			}
 
+			switch (kfd) {
+			case BadFrameAndNotNeeded:	{
+				// skip this frame
+				numFrameSkipped++;
+				// TODO: we need to keep this frame, may be good for another starting point
+#if DEBUG==1
+				cout << "Found one BadFrameAndNotNeeded. Frame number: "<<i<<endl;
+#endif
+				break;
+			}
+			case BadFrameButNeeded: 	{
+				// TODO: Need to go back to the last good frame
+				fBackTracked = true;
+#if DEBUG==1
+				cerr << "Going back to last good frame  from frame "<<i<<endl;
+#endif
+				if (lastGoodFrame == NULL ) {
+					cerr << "We are in deep trouble: no good frames so far"<<endl;
+				} else {
+					cerr << "Last good frame is "<<lastGoodFrame->mFrameIndex << endl;
+					// show the inlier
+					inliers0 = lastGoodFrame->mInliers0;
+					inliers1 = lastGoodFrame->mInliers1;
+					cvCopy(&lastGoodFrame->mRot, &rot);
+					cvCopy(&lastGoodFrame->mShift, &shift);
+					frameIndex = lastGoodFrame->mFrameIndex;
+					numTrackablePairs = lastGoodFrame->mNumTrackablePairs;
+					numInliers = lastGoodFrame->mNumInliers;
+
+					CvMatUtils::drawMatchingPairs(*inliers0, *inliers1, lastGoodFrame->mImageC3a,
+							rot, shift,
+							(Cv3DPoseEstimateDisp&)pes, reversed);
+
+					// measure the errors
+					peErrMeas.setTransform(rot, shift);
+					if (reversed == true) {
+						// rot and shift transform inliers1 to inliers0
+						peErrMeas.measure(*inliers1, *inliers0);
+					} else {
+						// rot and shift transform inliers0 to inliers1
+						peErrMeas.measure(*inliers0, *inliers1);
+					}
+
+					//
+					// keep track of the trajectory
+					//
+					// store the current transformation from starting point to current position
+					// in transform as
+					// transform = transform * rt
+					//
+					Cv3DPoseEstimate::constructTransform(rot, shift, rt);
+					cvCopy(&transform, &tempMat);
+					if (reversed == true) {
+						cvMatMul(&tempMat, &rt, &transform);
+					} else {
+						cvMatMul(&rt, &tempMat, &transform);
+					}
+
+					if (reversed == true) {
+						double _inliers1xyz[3*inliers1->rows];
+						CvMat inliers1xyz = cvMat(inliers1->rows, 3, CV_64FC1, _inliers1xyz);
+						pes.reprojection(inliers1, &inliers1xyz);
+						double _inliers1t[3*inliers1->rows];
+						CvMat inliers1t = cvMat(inliers1->rows, 1, CV_64FC3, _inliers1t);
+						CvMat inliers1Reshaped;
+						CvMat transform3x4;
+						cvReshape(&inliers1xyz, &inliers1Reshaped, 3, 0);
+						cvGetRows(&transform, &transform3x4, 0, 3);
+						cvTransform(&inliers1Reshaped, &inliers1t, &transform3x4);
+						char filename[256];
+						sprintf(filename, "Output/indoor1/inliers1_%04d.xml", frameIndex);
+						cvSave(filename, &inliers1t,
+								"inliers1", "inliers of current image in start frame");
+					} else {
+						cerr << __PRETTY_FUNCTION__<< "Not implemented yet for reversed == false"<<endl;
+					}
+
+					// stores rotation mat and shift vector in rods and shifts
+					CvMat rotGlobal;
+					CvMat shiftGlobal;
+					cvGetSubRect(&transform, &rotGlobal,   cvRect(0, 0, 3, 3));
+					cvGetSubRect(&transform, &shiftGlobal, cvRect(3, 0, 1, 3));
+					CvMat rodGlobal2;
+					CvMat shiftGlobal2;
+					cvGetRow(&rods, &rodGlobal2, frameIndex-start);
+					cvGetRow(&shifts, &shiftGlobal2, frameIndex-start);
+					// make a copy
+					if (reversed == true) {
+						cvRodrigues2(&rotGlobal, &rodGlobal2);
+						cvTranspose(&shiftGlobal,  &shiftGlobal2);
+					} else {
+						cvRodrigues2(&rotGlobal, &rodGlobal2);
+						cvTranspose(&shiftGlobal,  &shiftGlobal2);
+						cvScale(&shiftGlobal2, &shiftGlobal2, -1.0);
+					}
+
+					dist += cvNorm((const CvMat *)&shift);
+					cout << "distance covered so far: "<< dist<<" mm"<<endl;
+
+					//
+					// getting ready for next key frame
+					//
+					keyPointsLast = lastGoodFrame->mKeypoints;
+					lastDispMap.CloneFrom(lastGoodFrame->mDispMap);
+
+					leftimgC3a = lastGoodFrame->mImageC3a.Ipl();
+					cvShowImage("Last Tracked Left Cam", lastLeftImage.Ipl());
+					lastLeftImage.CloneFrom(lastGoodFrame->mImage);
+
+					// next we are supposed to try current image, frame i again with
+					// last good frame
+					lastGoodFrameAvailable = false;
+				}
+
+				break;
+			}
+			case GoodFrameButNotNeeded: 	{
+				// skip this frame but keep it in record
+				numFrameSkipped++;
+				// TODO: please revisit for efficient and correct memory management
+				delete lastGoodFrame;
+				lastGoodFrame = new PoseEstFrameEntry(leftImage, dispMap, keyPoints,
+						rot, shift, trackablePairs.size(), numInliers, i,
+						leftImageC3a, inliers0, inliers1);
+				lastGoodFrameAvailable = true;
+				break;
+			}
+			case GoodFrameAndNeeded:	{
 				// show the inliers
+				frameIndex = i;
 				CvMatUtils::drawMatchingPairs(*inliers0, *inliers1, leftImageC3a,
 						rot, shift, (Cv3DPoseEstimateDisp&)pes, reversed);
 
@@ -1094,25 +1342,29 @@ bool CvTest3DPoseEstimate::testVideos2() {
 				//
 				Cv3DPoseEstimate::constructTransform(rot, shift, rt);
 				cvCopy(&transform, &tempMat);
-
-				double _inliers1xyz[3*inliers1->rows];
-				CvMat inliers1xyz = cvMat(inliers1->rows, 3, CV_64FC1, _inliers1xyz);
-				pes.reprojection(inliers1, &inliers1xyz);
-				double _inliers1t[3*inliers1->rows];
-				CvMat inliers1t = cvMat(inliers1->rows, 1, CV_64FC3, _inliers1t);
-				CvMat inliers1Reshaped;
-				CvMat transform3x4;
-				cvReshape(&inliers1xyz, &inliers1Reshaped, 3, 0);
 				if (reversed == true) {
 					cvMatMul(&tempMat, &rt, &transform);
+				} else {
+					cvMatMul(&rt, &tempMat, &transform);
+				}
+
+				if (reversed == true) {
+					double _inliers1xyz[3*inliers1->rows];
+					CvMat inliers1xyz = cvMat(inliers1->rows, 3, CV_64FC1, _inliers1xyz);
+					pes.reprojection(inliers1, &inliers1xyz);
+					double _inliers1t[3*inliers1->rows];
+					CvMat inliers1t = cvMat(inliers1->rows, 1, CV_64FC3, _inliers1t);
+					CvMat inliers1Reshaped;
+					CvMat transform3x4;
+					cvReshape(&inliers1xyz, &inliers1Reshaped, 3, 0);
 					cvGetRows(&transform, &transform3x4, 0, 3);
 					cvTransform(&inliers1Reshaped, &inliers1t, &transform3x4);
 					char filename[256];
-					sprintf(filename, "Output/indoor1/inliers1_%04d.xml", i);
+					sprintf(filename, "Output/indoor1/inliers1_%04d.xml", frameIndex);
 					cvSave(filename, &inliers1t,
 							"inliers1", "inliers of current image in start frame");
 				} else {
-					cvMatMul(&rt, &tempMat, &transform);
+					cerr << __PRETTY_FUNCTION__<< "Not implemented yet for reversed == false"<<endl;
 				}
 
 				// stores rotation mat and shift vector in rods and shifts
@@ -1122,8 +1374,8 @@ bool CvTest3DPoseEstimate::testVideos2() {
 				cvGetSubRect(&transform, &shiftGlobal, cvRect(3, 0, 1, 3));
 				CvMat rodGlobal2;
 				CvMat shiftGlobal2;
-				cvGetRow(&rods, &rodGlobal2, i-start);
-				cvGetRow(&shifts, &shiftGlobal2, i-start);
+				cvGetRow(&rods, &rodGlobal2, frameIndex-start);
+				cvGetRow(&shifts, &shiftGlobal2, frameIndex-start);
 				// make a copy
 				if (reversed == true) {
 					cvRodrigues2(&rotGlobal, &rodGlobal2);
@@ -1141,34 +1393,34 @@ bool CvTest3DPoseEstimate::testVideos2() {
 				// getting ready for next key frame
 				//
 				keyPointsLast = keyPoints;
-				numFeaturesLastLeft = numFeaturesLeft;
 				lastDispMap.CloneFrom(dispMap);
 
 				cvShowImage("Last Tracked Left Cam", lastLeftImage.Ipl());
 				lastLeftImage.CloneFrom(leftImage);
 
-			} else {
-				// skip this frame
-				numFrameSkipped++;
+				break;
 			}
+			default:
+				break;
+			}
+
 			CvPoint3D64f euler;
 			eulerAngle(rot, euler);
-			sprintf(info, "%04d, Trackables %d, Inliers %d, euler=(%4.2f,%4.2f,%4.2f), d=%4.1f",
-					i, trackablePairs.size(), numInliers, euler.x, euler.y, euler.z, cvNorm((const CvMat *)&shift));
+			sprintf(info, "%04d, KyPt %d, TrckPir %d, Inlrs %d, eulr=(%4.2f,%4.2f,%4.2f), d=%4.1f",
+					frameIndex, keyPoints.size(), numTrackablePairs, numInliers, euler.x, euler.y, euler.z, cvNorm((const CvMat *)&shift));
 
 		}
 
-		if (leftimgC3a) {
-			cvPutText(leftimgC3a, info, org, &font, CvMatUtils::yellow);
-			cvShowImage("Pose Estimated", leftimgC3a);
-		}
+		// leftimgC3a may be deallocated already
+		cvPutText(leftimgC3a, info, org, &font, CvMatUtils::yellow);
+		cvShowImage("Pose Estimated", leftimgC3a);
 		cvShowImage("Left  Cam", leftimgC3);
 
 		// save the marked images
 #if 1
-		sprintf(leftCamWithMarks, "%s/leftCamWithMarks-%04d.png", outputDirname.c_str(), i);
-		sprintf(rightCamWithMarks, "%s/rightCamwithMarks-%04d.png", outputDirname.c_str(), i);
-		sprintf(poseEstFilename, "%s/poseEst-%04d.png", outputDirname.c_str(), i);
+		sprintf(leftCamWithMarks, "%s/leftCamWithMarks-%04d.png", outputDirname.c_str(), frameIndex);
+		sprintf(rightCamWithMarks, "%s/rightCamwithMarks-%04d.png", outputDirname.c_str(), frameIndex);
+		sprintf(poseEstFilename, "%s/poseEst-%04d.png", outputDirname.c_str(), frameIndex);
 		cvSaveImage(leftCamWithMarks,  leftimgC3);
 		cvSaveImage(poseEstFilename,   leftimgC3a);
 #endif
@@ -1184,11 +1436,11 @@ bool CvTest3DPoseEstimate::testVideos2() {
 
 		if (i==start) {
 			keyPointsLast = keyPoints;
-			numFeaturesLastLeft = numFeaturesLeft;
 			lastDispMap.CloneFrom(dispMap);
 			lastLeftImage.CloneFrom(leftImage);
 		}
-		cvReleaseMat(&leftimgC3);
+		if (fBackTracked == false)
+			cvReleaseMat(&leftimgC3);
 
 	}
 

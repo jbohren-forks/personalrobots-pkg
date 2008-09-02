@@ -3,7 +3,9 @@
 
 #include "CvStereoCamModel.h"
 #include <vector>
+#include <keypoint.h>
 using namespace std;
+
 
 // http://www.videredesign.com/vision/stereo_manuals.htm
 //  Small Vision System Calibration Addendum - Version 4.x
@@ -38,17 +40,43 @@ public:
 
     // move the following two the appropriate place
     bool eulerAngle(const CvMat& rot, CvPoint3D64f &euler);
-	bool goodAsKeyFrame(vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs,
+    typedef enum {
+    	BadKeyFrame    = 0x0,
+    	GoodKeyFrame   = 0x1,
+    	KeyFrameNeeded = 0x2,
+    	KeyFrameNotNeeded = 0x0,
+    	GoodFrameButNotNeeded = GoodKeyFrame,
+    	GoodFrameAndNeeded    = GoodKeyFrame | KeyFrameNeeded,
+    	BadFrameButNeeded     = KeyFrameNeeded,
+    	BadFrameAndNotNeeded  = BadKeyFrame | KeyFrameNotNeeded
+    } KeyFramingDecision;
+    KeyFramingDecision keyFrameDecision(vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs,
+    		vector<Keypoint>& keyPoints,
 			int numInliers, const CvMat& rot, const CvMat& shift);
 
     TestType mTestType;
 
     static const int    defMaxDisparity  = 15;
-    static const int    defMinNumInliers = 10;
-    static const double defMinAngleAlpha = 2.; // degree (0, 180)
-    static const double defMinAngleBeta  = 2.; // degree (0, 180)
-    static const double defMinAngleGamma = 2.; // degree (0, 180)
-    static const double defMinShift      = 100.; // mm
+    static const int    defMinNumInliersForGoodFrame = 10;
+    static const int    defMinNumInliers = 50;
+    static const double defMinInlierRatio  = .3;  // ratio between # inliers and # keypoints
+
+//    static const double defMinAngleAlpha = 20.; // degree (0, 180)
+//    static const double defMinAngleBeta  = 20.; // degree (0, 180)
+//    static const double defMinAngleGamma = 20.; // degree (0, 180)
+//    static const double defMinShift      = 500.; // mm
+    static const double defMaxAngleAlpha = 2.; // degree (0, 180)
+    static const double defMaxAngleBeta  = 2.; // degree (0, 180)
+    static const double defMaxAngleGamma = 2.; // degree (0, 180)
+    static const double defMaxShift      = 100.; // mm
+
+    int mMinNumInliersForGoodFrame;
+    int mMinNumInliers;
+    int mMinInlierRatio;
+    int mMaxAngleAlpha;
+    int mMaxAngleBeta;
+    int mMaxAngleGamma;
+    int mMaxShift;
 
 protected:
 	void _init();
