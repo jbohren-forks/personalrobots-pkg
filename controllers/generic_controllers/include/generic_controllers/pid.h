@@ -133,8 +133,8 @@ public:
    * \param P  The proportional gain.
    * \param I  The integral gain.
    * \param D  The derivative gain.
-   * \param i_max 
-   * \param i_min 
+   * \param i_max
+   * \param i_min
    */
   void setGains(double P, double I, double D, double i_max, double i_min);
 
@@ -143,8 +143,8 @@ public:
    * \param p  The proportional gain.
    * \param i  The integral gain.
    * \param d  The derivative gain.
-   * \param i_max 
-   * \param i_mim 
+   * \param i_max
+   * \param i_mim
    */
   void getGains(double &p, double &i, double &d, double &i_max, double &i_min);
 
@@ -156,6 +156,21 @@ public:
    * \param dt Change in time since last call
    */
   double updatePid(double error, double error_dot, double dt);
+
+  Pid &operator =(const Pid& p)
+  {
+    if (this == &p)
+      return *this;
+
+    p_gain_ = p.p_gain_;
+    i_gain_ = p.i_gain_;
+    d_gain_ = p.d_gain_;
+    i_max_ = p.i_max_;
+    i_min_ = p.i_min_;
+
+    p_error_last_ = p_error_ = i_error_ = d_error = cmd_ = 0.0;
+    return *this;
+  }
 
 private:
   double p_error_last_; /**< _Save position state for derivative state calculation. */
