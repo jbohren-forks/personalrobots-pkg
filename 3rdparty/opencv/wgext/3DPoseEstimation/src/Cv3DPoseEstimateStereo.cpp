@@ -27,6 +27,7 @@ Cv3DPoseEstimateStereo::Cv3DPoseEstimateStereo(int width, int height):
 	mKeyPointDetector(Star),
 	mNumScales(DefNumScales),
 	mThreshold(DefThreshold),
+	mMaxNumKeyPoints(DefMaxNumKeyPoints),
 	mStarDetector(mSize, mNumScales, mThreshold)
 {
 	mBufStereoPairs     = new uint8_t[mSize.height*mDLen*(mCorr+5)]; // local storage for the stereo pair algorithm

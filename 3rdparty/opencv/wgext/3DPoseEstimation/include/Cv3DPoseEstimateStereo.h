@@ -35,6 +35,7 @@ public:
 	static const int DefNumScales    = 7;
 	static const int DefThreshold    = 15;
 //	static const int DefThreshold    = 5;
+	static const int DefMaxNumKeyPoints = 0;
 
 	// constants used in getting trackable pairs
 	static const CvPoint DefNeighborhoodSize;
@@ -83,6 +84,7 @@ protected:
 	// parameters for the star detector
 	int mNumScales;
 	int mThreshold;
+	int mMaxNumKeyPoints; // if greater than zero, get the top mMaxNumKeyPoints key points
 
 	StarDetector mStarDetector;
 };
