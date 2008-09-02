@@ -31,7 +31,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <generic_controllers/pid.h>
+#include "mechanism_model/pid.h"
 #include "tinyxml/tinyxml.h"
 
 using namespace controller;

@@ -54,7 +54,7 @@
 #include <ros/node.h>
 
 #include <generic_controllers/controller.h>
-#include <generic_controllers/pid.h>
+#include <mechanism_model/pid.h>
 
 // Services
 #include <generic_controllers/SetPDCommand.h>

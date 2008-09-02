@@ -168,7 +168,7 @@ public:
     i_max_ = p.i_max_;
     i_min_ = p.i_min_;
 
-    p_error_last_ = p_error_ = i_error_ = d_error = cmd_ = 0.0;
+    p_error_last_ = p_error_ = i_error_ = d_error_ = cmd_ = 0.0;
     return *this;
   }
 
