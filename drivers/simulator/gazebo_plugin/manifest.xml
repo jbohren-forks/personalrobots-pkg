@@ -27,6 +27,7 @@ A test file for Player interface.
 <depend package="mechanism_control" />
 <depend package="wg_robot_description_parser" />
 <depend package="tinyxml" />
+<depend package="axis_cam" />
 <export>
 <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
 </export>

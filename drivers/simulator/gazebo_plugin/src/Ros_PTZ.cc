@@ -36,11 +36,12 @@
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
 #include <gazebo/HingeJoint.hh>
-#include <gazebo/Ros_PTZ.hh>
+
+#include <gazebo_plugin/Ros_PTZ.hh>
 
 using namespace gazebo;
 
-GZ_REGISTER_STATIC_CONTROLLER("ros_ptz", Ros_PTZ);
+GZ_REGISTER_DYNAMIC_CONTROLLER("Ros_PTZ", Ros_PTZ);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -62,6 +63,20 @@ Ros_PTZ::Ros_PTZ(Entity *parent)
   this->tiltJointNameP = new Param<std::string>("tiltJoint", "", 1);
   this->motionGainP = new Param<double>("motionGain",2,0);
   this->forceP = new Param<double>("force",10,0);
+  this->commandTopicNameP = new Param<std::string>("commandTopicName","PTZ_cmd",0);
+  this->stateTopicNameP = new Param<std::string>("stateTopicName","PTZ_state",0);
+
+  rosnode = ros::g_node; // comes from where?
+  int argc = 0;
+  char** argv = NULL;
+  if (rosnode == NULL)
+  {
+    // this only works for a single camera.
+    ros::init(argc,argv);
+    rosnode = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
+    printf("-------------------- starting node in camera \n");
+  }
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -80,6 +95,8 @@ Ros_PTZ::~Ros_PTZ()
   delete this->tiltJointNameP;
   delete this->motionGainP;
   delete this->forceP;
+  delete this->commandTopicNameP;
+  delete this->stateTopicNameP;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -95,9 +112,23 @@ void Ros_PTZ::LoadChild(XMLConfigNode *node)
   this->tiltJointNameP->Load(node);
   this->motionGainP->Load(node);
   this->forceP->Load(node);
+  this->commandTopicNameP->Load(node);
+  this->stateTopicNameP->Load(node);
 
   this->panJoint = dynamic_cast<HingeJoint*>(this->myParent->GetJoint(this->panJointNameP->GetValue()));
   this->tiltJoint = dynamic_cast<HingeJoint*>(this->myParent->GetJoint(this->tiltJointNameP->GetValue()));
+
+  this->commandTopicName = this->commandTopicNameP->GetValue();
+  this->stateTopicName = this->stateTopicNameP->GetValue();
+
+  this->panFrameName = this->panJointNameP->GetValue();
+  this->tiltFrameName = this->tiltJointNameP->GetValue();
+
+  std::cout << " publishing state topic for ptz " << this->stateTopicName << std::endl;
+  std::cout << " subscribing command topic for ptz " << this->commandTopicName << std::endl;
+
+  rosnode->advertise<axis_cam::PTZActuatorState>(this->stateTopicName);
+  rosnode->subscribe( commandTopicName, PTZControlMessage, &Ros_PTZ::PTZCommandReceived,this);
 
   if (!this->panJoint)
     gzthrow("couldn't get pan hinge joint");
@@ -105,6 +136,14 @@ void Ros_PTZ::LoadChild(XMLConfigNode *node)
   if (!this->tiltJoint)
     gzthrow("couldn't get tilt hinge joint");
 
+}
+
+void Ros_PTZ::PTZCommandReceived()
+{
+  this->lock.lock();
+  this->cmdPan  = PTZControlMessage.pan.cmd*M_PI/180.0;
+  this->cmdTilt = PTZControlMessage.tilt.cmd*M_PI/180.0;
+  this->lock.unlock();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -134,13 +173,14 @@ void Ros_PTZ::ResetChild()
 // Update the controller
 void Ros_PTZ::UpdateChild()
 {
-  this->ptzIface->Lock(1);
+  //this->ptzIface->Lock(1);
 
-  this->cmdPan = this->ptzIface->data->cmd_pan;
-  this->cmdTilt = this->ptzIface->data->cmd_tilt;
+  // pan tilt command set in void Ros_PTZ::PTZCommandReceived() rather than from Iface
+  //this->cmdPan = this->ptzIface->data->cmd_pan;
+  //this->cmdTilt = this->ptzIface->data->cmd_tilt;
   //this->cmdZoom = this->hfov / this->ptzIface->data->cmd_zoom;
 
-  this->ptzIface->Unlock();
+  //this->ptzIface->Unlock();
 
   // Apply joint limits to commanded pan/tilt angles
   if (this->cmdTilt > M_PI*0.3)
@@ -165,6 +205,8 @@ void Ros_PTZ::UpdateChild()
   float tilt = this->cmdTilt - this->tiltJoint->GetAngle();
   float pan = this->cmdPan - this->panJoint->GetAngle();
 
+  std::cout << "command received : " << this->cmdPan << ":" << this->cmdTilt;
+  std::cout << " state : " << this->panJoint->GetAngle() << ":" << this->tiltJoint->GetAngle() << std::endl;
   this->tiltJoint->SetParam( dParamVel, **(this->motionGainP) * tilt);
   this->tiltJoint->SetParam( dParamFMax, **(this->forceP) );
 
@@ -199,5 +241,16 @@ void Ros_PTZ::PutPTZData()
 
   // New data is available
   this->ptzIface->Post();
+
+  this->lock.lock();
+  // also put data into ros message
+  PTZStateMessage.pan.pos_valid =1;
+  PTZStateMessage.pan.pos       = this->panJoint->GetAngle();
+  PTZStateMessage.tilt.pos_valid=1;
+  PTZStateMessage.tilt.pos      = this->tiltJoint->GetAngle();
+  // publish topic
+  this->rosnode->publish(this->stateTopicName,PTZStateMessage);
+  this->lock.unlock();
+
 }
 

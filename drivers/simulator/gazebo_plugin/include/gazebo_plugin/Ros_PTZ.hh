@@ -31,6 +31,13 @@
 #include <gazebo/Param.hh>
 #include <gazebo/Controller.hh>
 
+// ros messages
+#include <ros/node.h>
+
+// messages for controlling ptz
+#include <axis_cam/PTZActuatorState.h>
+#include <axis_cam/PTZActuatorCmd.h>
+
 namespace gazebo
 {
   class HingeJoint;
@@ -112,6 +119,30 @@ namespace gazebo
 
     private: Param<std::string> *panJointNameP;
     private: Param<std::string> *tiltJointNameP;
+    private: Param<std::string> *commandTopicNameP;
+    private: Param<std::string> *stateTopicNameP;
+
+    // pointer to ros node
+    private: ros::node *rosnode;
+    // ros message
+    private: axis_cam::PTZActuatorState PTZStateMessage;
+    private: axis_cam::PTZActuatorCmd   PTZControlMessage;
+
+    // receive message
+    private: void PTZCommandReceived();
+
+    // topic name
+    private: std::string commandTopicName;
+    private: std::string stateTopicName;
+
+    // frame transform name, should match link name
+    // FIXME: extract link name directly? currently using joint names
+    private: std::string panFrameName;
+    private: std::string tiltFrameName;
+
+    // A mutex to lock access to fields that are used in message callbacks
+    private: ros::thread::mutex lock;
+
   };
   
   /** /} */
