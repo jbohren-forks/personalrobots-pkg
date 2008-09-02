@@ -95,7 +95,7 @@ public:
 	req.goal_state.vals[1] += 0.5;
 	req.goal_state.vals[2] = -M_PI/2.0;
 
-	req.allowed_time = 5.0;
+	req.allowed_time = 15.0;
 	
 	req.params.volumeMin.x = -10.0 + m_basePos[0];	req.params.volumeMin.y = -10.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 10.0 + m_basePos[0];	req.params.volumeMax.y = 10.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
