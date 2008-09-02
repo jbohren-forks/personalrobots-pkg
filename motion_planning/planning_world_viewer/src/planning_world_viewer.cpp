@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
 /**
 
@@ -89,7 +89,7 @@ Provides (name/type):
 
 #include <planning_node_util/cnode.h>
 #include <rosthread/mutex.h>
-#include <robot_msgs/NamedKinematicPath.h>
+#include <robot_msgs/DisplayKinematicPath.h>
 #include <display_ode/displayODE.h>
 
 #include <vector>
@@ -273,7 +273,7 @@ private:
     display_ode::DisplayODESpaces         m_spaces;
     ros::thread::mutex                    m_displayLock;
     
-    robot_msgs::NamedKinematicPath        m_displayPath;
+    robot_msgs::DisplayKinematicPath      m_displayPath;
     bool                                  m_follow;
     bool                                  m_displayRobot;
     bool                                  m_displayObstacles;  

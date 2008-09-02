@@ -33,7 +33,7 @@
 *********************************************************************/
 
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
 /** This is a simple program for requesting a motion plan */
 
@@ -41,7 +41,7 @@
 #include <ros/time.h>
 #include <robot_srvs/KinematicPlanState.h>
 #include <robot_srvs/KinematicPlanLinkPosition.h>
-#include <robot_msgs/NamedKinematicPath.h>
+#include <robot_msgs/DisplayKinematicPath.h>
 #include <std_msgs/RobotBase2DOdom.h>
 
 class PlanKinematicPath : public ros::node
@@ -50,7 +50,7 @@ public:
     
     PlanKinematicPath(void) : ros::node("plan_kinematic_path")
     {
-	advertise<robot_msgs::NamedKinematicPath>("display_kinematic_path", 1);
+	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 1);
 
 	m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
 	m_haveBasePos = false;
@@ -78,7 +78,7 @@ public:
 	
 	req.params.model_id = "pr2::base";
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "SBL";
+	req.params.planner_id = "LazyRRT";
 	req.threshold = 0.01;
 	req.interpolate = 1;
 	req.times = 1;
@@ -159,8 +159,9 @@ public:
     void performCall(robot_srvs::KinematicPlanState::request &req)
     {	
 	robot_srvs::KinematicPlanState::response res;
-	robot_msgs::NamedKinematicPath dpath;
-
+	robot_msgs::DisplayKinematicPath dpath;
+	dpath.frame_id = "FRAMEID_MAP";
+	
 	if (ros::service::call("plan_kinematic_path_state", req, res))
 	{
 	    unsigned int nstates = res.path.get_states_size();
@@ -227,8 +228,9 @@ public:
     void performCall(robot_srvs::KinematicPlanLinkPosition::request &req)
     {	
 	robot_srvs::KinematicPlanLinkPosition::response res;
-	robot_msgs::NamedKinematicPath dpath;
-
+	robot_msgs::DisplayKinematicPath dpath;
+	dpath.frame_id = "FRAMEID_MAP";
+	
 	if (ros::service::call("plan_kinematic_path_position", req, res))
 	{
 	    unsigned int nstates = res.path.get_states_size();

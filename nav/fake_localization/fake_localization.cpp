@@ -54,7 +54,8 @@ $ odom_localization
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "odom"/RobotBase2DOdom : robot's odometric pose.  Only the position information is used (velocity is ignored).
+- @b "base_pos"/Pose3DEulerFloat32 : robot's odometric pose.  Only the position information is used (velocity is ignored).
+- @b "initialpose"/Pose2DFloat32 : robot's odometric pose.  Only the position information is used (velocity is ignored).
 
 Publishes to (name / type):
 - @b "localizedpose"/RobotBase2DOdom : robot's localized map pose.  Only the position information is set (no velocity).
@@ -74,6 +75,7 @@ Publishes to (name / type):
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/ParticleCloud2D.h>
 #include <std_msgs/Pose2DFloat32.h>
+#include <robot_msgs/Pose3DEulerFloat32.h>
 
 #include <math_utils/angles.h>
 #include <rosTF/rosTF.h>
@@ -95,7 +97,8 @@ public:
 	m_particleCloud.set_particles_size(1);
 
 	param("max_publish_frequency", m_maxPublishFrequency, 0.5);
-	subscribe("odom", m_odomMsg, &FakeOdomNode::odomReceived);
+	
+	subscribe("base_pos", m_basePosMsg, &FakeOdomNode::basePosReceived);
 	subscribe("initialpose", m_iniPos, &FakeOdomNode::initialPoseReceived);
     }
     
@@ -108,14 +111,14 @@ public:
     
 private:
     
-    rosTFServer              *m_tfServer;
-    ros::Time                 m_lastUpdate;
-    double                    m_maxPublishFrequency;
+    rosTFServer                   *m_tfServer;
+    ros::Time                      m_lastUpdate;
+    double                         m_maxPublishFrequency;
     
-    std_msgs::RobotBase2DOdom m_odomMsg;
-    std_msgs::ParticleCloud2D m_particleCloud;
-    std_msgs::RobotBase2DOdom m_currentOdom;
-    std_msgs::Pose2DFloat32   m_iniPos;
+    robot_msgs::Pose3DEulerFloat32 m_basePosMsg;
+    std_msgs::ParticleCloud2D      m_particleCloud;
+    std_msgs::RobotBase2DOdom      m_currentPos;
+    std_msgs::Pose2DFloat32        m_iniPos;
 
     
     void initialPoseReceived(void)
@@ -123,7 +126,7 @@ private:
 	update();
     }
     
-    void odomReceived(void)
+    void basePosReceived(void)
     {
 	update();
     }
@@ -135,26 +138,29 @@ private:
 	
 	m_lastUpdate = ros::Time::now();
 	
-	m_currentOdom = m_odomMsg;
+	m_currentPos.header = m_basePosMsg.header;	
+	m_currentPos.pos.x  = m_basePosMsg.position.x;
+	m_currentPos.pos.y  = m_basePosMsg.position.y;
+	m_currentPos.pos.th = m_basePosMsg.orientation.yaw;
 	
-	m_currentOdom.pos.x += m_iniPos.x;
-	m_currentOdom.pos.y += m_iniPos.y;
-	m_currentOdom.pos.th = math_utils::normalize_angle(m_currentOdom.pos.th + m_iniPos.th);
-	m_currentOdom.header.frame_id = "FRAMEID_MAP";
+	m_currentPos.pos.x += m_iniPos.x;
+	m_currentPos.pos.y += m_iniPos.y;
+	m_currentPos.pos.th = math_utils::normalize_angle(m_currentPos.pos.th + m_iniPos.th);
+	m_currentPos.header.frame_id = "FRAMEID_MAP";
 	
 	m_tfServer->sendEuler("FRAMEID_ROBOT",
 			      "FRAMEID_MAP",
-			      m_currentOdom.pos.x,
-			      m_currentOdom.pos.y,
+			      m_currentPos.pos.x,
+			      m_currentPos.pos.y,
 			      0.0,
-			      m_currentOdom.pos.th,
+			      m_currentPos.pos.th,
 			      0.0,
 			      0.0,
-			      m_currentOdom.header.stamp); 
+			      m_currentPos.header.stamp); 
 			      
-	publish("localizedpose", m_currentOdom);
+	publish("localizedpose", m_currentPos);
 	
-	m_particleCloud.particles[0] = m_currentOdom.pos;
+	m_particleCloud.particles[0] = m_currentPos.pos;
 	publish("particlecloud", m_particleCloud);
     }
     
