@@ -78,6 +78,8 @@ class RequestPlan
 	    return false;
 	}
 	
+	std::cout << "Selected motion planner: '" << params.planner_id << "'" << std::endl;
+	
 	KinematicPlannerSetup &psetup = plannerIt->second;
 
 	/* check if the desired distance metric is defined */
