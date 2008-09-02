@@ -64,7 +64,7 @@ public:
   virtual bool initXml(TiXmlElement *config, Robot *robot) = 0;
 
   // another way to initialize simple transmission
-  virtual void initTransmission(std::string transmission_name,std::string joint_name,std::string actuator_name,double mechanical_reduction,double motor_torque_constant,double pulses_per_revolution, Robot *robot) = 0;
+  virtual void initTransmission(std::string transmission_name,std::string joint_name,std::string actuator_name,double mechanical_reduction,double motor_torque_constant,double pulses_per_revolution, Robot *robot) {}
 
   // Uses encoder data to fill out joint position and velocities
   virtual void propagatePosition() = 0;
