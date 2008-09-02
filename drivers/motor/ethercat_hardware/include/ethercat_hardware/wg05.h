@@ -35,7 +35,7 @@
 #ifndef WG05_H
 #define WG05_H
 
-#include <ethercat_hardware/motor_control_board.h>
+#include <ethercat_hardware/ethercat_device.h>
 
 struct WG05Status
 {
@@ -71,12 +71,10 @@ struct WG05Command
   uint8_t checksum_;
 } __attribute__ ((__packed__));
 
-class WG05 : public MotorControlBoard
+class WG05 : public EthercatDevice
 {
   static const int STATUS_PHY_ADDR = 0x2000;
   static const int COMMAND_PHY_ADDR = 0x1000;
-
-  static const double CURRENT_FACTOR = 2000.0;
 
   enum
   {
@@ -90,23 +88,23 @@ class WG05 : public MotorControlBoard
   };
 
 public:
-  WG05() :
-    MotorControlBoard(WG05_PRODUCT_CODE, sizeof(WG05Command), sizeof(WG05Status))
-  {
-  }
+  WG05() : EthercatDevice(true, sizeof(WG05Command), sizeof(WG05Status)) {}
+
   void configure(int &start_address, EtherCAT_SlaveHandler *sh);
+
   void convertCommand(ActuatorCommand &command, unsigned char *buffer);
   void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
+
   void truncateCurrent(ActuatorCommand &command);
   void verifyState(unsigned char *buffer);
-  bool hasActuator(void)
-  {
-    return true;
-  }
+
+  enum {PRODUCT_CODE = 6805005};
 
 private:
-  static const EC_UDINT WG05_PRODUCT_CODE = 6805005;
+  // TODO: pull these values from the EEPROM
+  static const double CURRENT_FACTOR = 2000.0;
   double max_current_;
+
 };
 
 #endif /* WG05_H */

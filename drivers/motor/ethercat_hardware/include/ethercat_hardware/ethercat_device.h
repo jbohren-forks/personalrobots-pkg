@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef MOTOR_CONTROL_BOARD_H
-#define MOTOR_CONTROL_BOARD_H
+#ifndef ETHERCAT_DEVICE_H
+#define ETHERCAT_DEVICE_H
 
 #include <vector>
 
@@ -42,29 +42,37 @@
 
 #include <hardware_interface/hardware_interface.h>
 
+#include <loki/Factory.h>
+
 using namespace std;
 
-class MotorControlBoard
+class EthercatDevice
 {
 public:
-  MotorControlBoard(EC_UDINT productCode, int commandSize = 0, int statusSize = 0)
-  {
-    this->productCode = productCode;
-    this->commandSize = commandSize;
-    this->statusSize = statusSize;
-  }
+  EthercatDevice(bool has_actuator = false, int command_size = 0, int status_size = 0) :
+    has_actuator_(has_actuator), command_size_(command_size), status_size_(status_size) {}
+
   virtual void configure(int &startAddress, EtherCAT_SlaveHandler *sh) = 0;
+
   virtual void convertCommand(ActuatorCommand &command, unsigned char *buffer) = 0;
   virtual void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer) = 0;
-  virtual bool hasActuator(void) = 0;
+
   virtual void truncateCurrent(ActuatorCommand &command) = 0;
   virtual void verifyState(unsigned char *buffer) = 0;
 
-  EC_UDINT productCode;
-  unsigned int commandSize;
-  unsigned int statusSize;
+  bool has_actuator_;
+  unsigned int command_size_;
+  unsigned int status_size_;
 };
 
-extern vector<MotorControlBoard *> boards;
 
-#endif /* MOTOR_CONTROL_BOARD_H */
+typedef Loki::SingletonHolder
+<
+  Loki::Factory< EthercatDevice, EC_UDINT >,
+  Loki::CreateUsingNew,
+  Loki::LongevityLifetime::DieAsSmallObjectChild
+> DeviceFactory;
+
+template< class T> T* deviceCreator() {return new T;}
+
+#endif /* ETHERCAT_DEVICE_H */

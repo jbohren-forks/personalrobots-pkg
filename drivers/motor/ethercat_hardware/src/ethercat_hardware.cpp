@@ -33,7 +33,6 @@
  *********************************************************************/
 
 #include "ethercat_hardware/ethercat_hardware.h"
-#include "ethercat_hardware/motor_control_board.h"
 
 #include <ethercat/ethercat_xenomai_drv.h>
 #include <dll/ethercat_dll.h>
@@ -99,7 +98,7 @@ void EthercatHardware::init(char *interface)
     node->log(ros::FATAL, "Unable to initialize EtherCAT_Master: %08x", em_);
   }
 
-  slaves = new MotorControlBoard*[num_slaves];
+  slaves_ = new EthercatDevice*[num_slaves];
 
   unsigned int num_actuators = 0;
   for (unsigned int slave = 0; slave < num_slaves; ++slave)
@@ -111,10 +110,10 @@ void EthercatHardware::init(char *interface)
       node->log(ros::FATAL, "Unable to get slave handler #%d", slave);
     }
 
-    if ((slaves[slave] = configSlave(sh)) != NULL)
+    if ((slaves_[slave] = configSlave(sh)) != NULL)
     {
-      num_actuators += slaves[slave]->hasActuator();
-      buffer_size_ += slaves[slave]->commandSize + slaves[slave]->statusSize;
+      num_actuators += slaves_[slave]->has_actuator_;
+      buffer_size_ += slaves_[slave]->command_size_ + slaves_[slave]->status_size_;
       if (!sh->to_state(EC_OP_STATE))
       {
         node->log(ros::FATAL, "Unable change to OP_STATE");
@@ -153,9 +152,9 @@ void EthercatHardware::update()
   for (unsigned int i = 0; i < hw_->actuators_.size(); ++i)
   {
     hw_->actuators_[i]->state_.last_requested_current_ = hw_->actuators_[i]->command_.current_;
-    slaves[i]->truncateCurrent(hw_->actuators_[i]->command_);
-    slaves[i]->convertCommand(hw_->actuators_[i]->command_, current);
-    current += slaves[i]->commandSize + slaves[i]->statusSize;
+    slaves_[i]->truncateCurrent(hw_->actuators_[i]->command_);
+    slaves_[i]->convertCommand(hw_->actuators_[i]->command_, current);
+    current += slaves_[i]->command_size_ + slaves_[i]->status_size_;
   }
 
   // Transmit process data
@@ -166,10 +165,10 @@ void EthercatHardware::update()
   last = last_buffer_;
   for (unsigned int i = 0; i < hw_->actuators_.size(); ++i)
   {
-    slaves[i]->verifyState(current);
-    slaves[i]->convertState(hw_->actuators_[i]->state_, current, last);
-    current += slaves[i]->commandSize + slaves[i]->statusSize;
-    last += slaves[i]->commandSize + slaves[i]->statusSize;
+    slaves_[i]->verifyState(current);
+    slaves_[i]->convertState(hw_->actuators_[i]->state_, current, last);
+    current += slaves_[i]->command_size_ + slaves_[i]->status_size_;
+    last += slaves_[i]->command_size_ + slaves_[i]->status_size_;
   }
 
   // Update current time
@@ -180,19 +179,12 @@ void EthercatHardware::update()
   last_buffer_ = tmp;
 }
 
-MotorControlBoard *
+EthercatDevice *
 EthercatHardware::configSlave(EtherCAT_SlaveHandler *sh)
 {
   static int startAddress = 0x00010000;
 
-  vector<MotorControlBoard *>::iterator it;
-  for (it = boards.begin(); it != boards.end(); ++it)
-  {
-    if (sh->get_product_code() == (*it)->productCode)
-    {
-      (*it)->configure(startAddress, sh);
-      return *it;
-    }
-  }
-  return NULL;
+  EthercatDevice *p = DeviceFactory::Instance().CreateObject(sh->get_product_code());
+  p->configure(startAddress, sh);
+  return p;
 }

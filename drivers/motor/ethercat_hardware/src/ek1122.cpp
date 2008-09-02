@@ -34,6 +34,8 @@
 
 #include <ethercat_hardware/ek1122.h>
 
+static bool reg = DeviceFactory::Instance().Register(EK1122::PRODUCT_CODE, deviceCreator<EK1122>);
+
 void EK1122::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 {
   sh->set_fmmu_config( new EtherCAT_FMMU_Config(0) );

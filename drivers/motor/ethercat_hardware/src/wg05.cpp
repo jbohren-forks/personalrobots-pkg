@@ -34,6 +34,8 @@
 
 #include <ethercat_hardware/wg05.h>
 
+static bool reg = DeviceFactory::Instance().Register(WG05::PRODUCT_CODE, deviceCreator<WG05>);
+
 static unsigned int rotate_right_8(unsigned in)
 {
   in &= 0xff;
@@ -41,8 +43,6 @@ static unsigned int rotate_right_8(unsigned in)
   in &= 0xff;
   return in;
 }
-
-
 
 static unsigned compute_checksum(void const *data, unsigned length)
 {

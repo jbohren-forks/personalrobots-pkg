@@ -44,7 +44,7 @@
 #include <al/ethercat_master.h>
 #include <al/ethercat_slave_handler.h>
 
-#include "ethercat_hardware/motor_control_board.h"
+#include "ethercat_hardware/ethercat_device.h"
 
 class EthercatHardware
 {
@@ -82,8 +82,8 @@ private:
   EtherCAT_AL *al_;
   EtherCAT_Master *em_;
 
-  MotorControlBoard *configSlave(EtherCAT_SlaveHandler *sh);
-  MotorControlBoard **slaves;
+  EthercatDevice *configSlave(EtherCAT_SlaveHandler *sh);
+  EthercatDevice **slaves_;
   unsigned int num_slaves_;
 
   unsigned char *current_buffer_;
