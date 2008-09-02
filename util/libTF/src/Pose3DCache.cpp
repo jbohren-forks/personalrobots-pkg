@@ -36,7 +36,7 @@
 
 using namespace libTF;
 
-Pose3DCache::Pose3DCache(bool interpolating, 
+Pose3DCache::Pose3DCache(bool interpolating,
                            unsigned long long max_cache_time,
                            unsigned long long _max_extrapolation_time):
   max_storage_time(max_cache_time),
@@ -64,7 +64,7 @@ void Pose3DCache::addFromQuaternion(double _xt, double _yt, double _zt, double _
  temp.xt = _xt; temp.yt = _yt; temp.zt = _zt; temp.xr = _xr; temp.yr = _yr; temp.zr = _zr; temp.w = _w; temp.time = time;
 
  add_value(temp);
- 
+
 } ;
 
 
@@ -72,7 +72,7 @@ void Pose3DCache::addFromMatrix(const NEWMAT::Matrix& matIn, unsigned long long 
 {
   Pose3DStorage temp;
   temp.setFromMatrix(matIn);
-  temp.time = time;  
+  temp.time = time;
 
   add_value(temp);
 
@@ -85,7 +85,7 @@ void Pose3DCache::addFromEuler(double _x, double _y, double _z, double _yaw, dou
   temp.setFromEuler(_x,_y,_z,_yaw,_pitch,_roll);
   temp.time = time;
 
-  add_value(temp);  
+  add_value(temp);
 };
 
 void Pose3DCache::addFromDH(double length, double alpha, double offset, double theta, unsigned long long time)
@@ -125,9 +125,9 @@ NEWMAT::Matrix Pose3DCache::getMatrix(unsigned long long time)
 
   //print Storage:
   //  std::cout << temp;
- 
+
   return temp.asMatrix();
-}  
+}
 
 NEWMAT::Matrix Pose3DCache::getInverseMatrix(unsigned long long time)
 {
@@ -164,15 +164,15 @@ bool Pose3DCache::getValue(Pose3DStorage& buff, unsigned long long time, long lo
     else if (num_nodes == 1)
     {
       memcpy(&buff, &p_temp_1, sizeof(Pose3DStorage));
-      retval = true;  
+      retval = true;
     }
     else
     {
       if(interpolating)
-	interpolate(p_temp_1, p_temp_2, time, buff); 
+	interpolate(p_temp_1, p_temp_2, time, buff);
       else
 	buff = p_temp_1;
-      retval = true;  
+      retval = true;
     }
   }
   catch (ExtrapolationException &ex)
@@ -180,7 +180,7 @@ bool Pose3DCache::getValue(Pose3DStorage& buff, unsigned long long time, long lo
     pthread_mutex_unlock(&linked_list_mutex);
     throw ex;
   }
-    
+
   pthread_mutex_unlock(&linked_list_mutex);
 
 
@@ -217,24 +217,26 @@ void Pose3DCache::pruneList()
   {
     storage_.pop_back();
   }
-  
+
 };
 
 void Pose3DCache::clearList()
 {
-  pthread_mutex_lock(&linked_list_mutex);  
+  pthread_mutex_lock(&linked_list_mutex);
   storage_.clear();
-  pthread_mutex_unlock(&linked_list_mutex);  
-  
+  pthread_mutex_unlock(&linked_list_mutex);
+
 };
 
 
 int Pose3DCache::findClosest(Pose3DStorage& one, Pose3DStorage& two, const unsigned long long target_time, long long &time_diff)
 {
 
-  //No values stored 
-  if (storage_.size() == 0)
+  //No values stored
+  if (storage_.empty())
+  {
     return 0;
+  }
 
   //If time == 0 return the latest
   if (target_time == 0)
@@ -245,15 +247,15 @@ int Pose3DCache::findClosest(Pose3DStorage& one, Pose3DStorage& two, const unsig
   }
 
   // One value stored
-  if (storage_.size() ==1)
-  { 
+  if (++storage_.begin() == storage_.end())
+  {
     one = *(storage_.begin());
     time_diff = target_time - storage_.begin()->time;
     return 1;
   }
-  
+
   //At least 2 values stored
-  //Find the first value less than the target value 
+  //Find the first value less than the target value
   std::list<Pose3DStorage>::iterator it = storage_.begin();
   while(it != storage_.end())
   {
@@ -261,12 +263,12 @@ int Pose3DCache::findClosest(Pose3DStorage& one, Pose3DStorage& two, const unsig
       break;
     it++;
   }
-  //Catch the case it is the first value in the list 
+  //Catch the case it is the first value in the list
   if (it == storage_.begin())
   {
     one = *it;
     two = *(++it);
-    time_diff = target_time - storage_.begin()->time; 
+    time_diff = target_time - storage_.begin()->time;
     if ((unsigned int) time_diff > max_extrapolation_time) //Guarenteed in the future therefore positive
     {
       pthread_mutex_unlock(&linked_list_mutex);
@@ -284,7 +286,7 @@ int Pose3DCache::findClosest(Pose3DStorage& one, Pose3DStorage& two, const unsig
   {
     one = *(--it);
     two = *(--it);
-    time_diff = target_time - one.time; 
+    time_diff = target_time - one.time;
     if (time_diff < -(long long)max_extrapolation_time) //Guarenteed in the past
     {
       pthread_mutex_unlock(&linked_list_mutex);
@@ -296,17 +298,17 @@ int Pose3DCache::findClosest(Pose3DStorage& one, Pose3DStorage& two, const unsig
     }
     return 2;
   }
-  
+
   //Finally the case were somewhere in the middle  Guarenteed no extrapolation :-)
-  one = *(it); //Older 
+  one = *(it); //Older
   two = *(--it); //Newer
   if (fabs(target_time - one.time) < fabs(target_time - two.time))
-    time_diff = target_time - one.time; 
+    time_diff = target_time - one.time;
   else
-    time_diff = target_time - two.time; 
+    time_diff = target_time - two.time;
   return 2;
-    
-  
+
+
 };
 
 // Quaternion slerp algorithm from http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp/index.htm
@@ -323,14 +325,14 @@ void Pose3DCache::interpolate(const Pose3DStorage &one, const Pose3DStorage &two
     {
       output = one;
       return;
-    } 
+    }
 
   double t = (double)target_diff / (double) total_diff; //ratio between first and 2nd position interms of time
 
   // Interpolate the translation
-  output.xt = one.xt + t * (two.xt - one.xt);  
-  output.yt = one.yt + t * (two.yt - one.yt);  
-  output.zt = one.zt + t * (two.zt - one.zt);  
+  output.xt = one.xt + t * (two.xt - one.xt);
+  output.yt = one.yt + t * (two.yt - one.yt);
+  output.zt = one.zt + t * (two.zt - one.zt);
 
   // Calculate angle between them.
   double cosHalfTheta = one.w * two.w + one.xr * two.xr + one.yr * two.yr + one.zr * two.zr;
@@ -353,7 +355,7 @@ void Pose3DCache::interpolate(const Pose3DStorage &one, const Pose3DStorage &two
   }
 
   double ratioA = sin((1 - t) * halfTheta) / sinHalfTheta;
-  double ratioB = sin(t * halfTheta) / sinHalfTheta; 
+  double ratioB = sin(t * halfTheta) / sinHalfTheta;
   //calculate Quaternion.
   output.w = (one.w * ratioA + two.w * ratioB);
   output.xr = (one.xr * ratioA + two.xr * ratioB);
