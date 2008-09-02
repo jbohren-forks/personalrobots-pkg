@@ -34,8 +34,6 @@
 #include "mechanism_model/pid.h"
 #include "tinyxml/tinyxml.h"
 
-using namespace controller;
-
 Pid::Pid(double P, double I, double D, double I1, double I2) :
   p_gain_(P), i_gain_(I), d_gain_(D), i_max_(I1), i_min_(I2)
 {

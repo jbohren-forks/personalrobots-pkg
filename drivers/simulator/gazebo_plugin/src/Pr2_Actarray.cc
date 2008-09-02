@@ -44,7 +44,6 @@
 
 using namespace gazebo;
 using namespace PR2;
-using namespace controller;
 
 
 //GZ_REGISTER_STATIC_CONTROLLER("pr2_actarray", Pr2_Actarray);

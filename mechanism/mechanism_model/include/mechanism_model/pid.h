@@ -65,8 +65,6 @@
 */
 /***************************************************/
 class TiXmlElement;
-namespace controller
-{
 
 class Pid
 {
@@ -184,5 +182,3 @@ private:
   double i_min_;   /**< Minimum allowable integral term. */
   double cmd_;     /**< Command to send. */
 };
-
-}

@@ -91,7 +91,7 @@ namespace gazebo
       private: Joint *joints[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
 
       // we'll declare a pid controller for each hinger/slider/... joint
-      private: controller::Pid *pids[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+      private: Pid *pids[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
 
       // number of joints in this array
       private: int num_joints;
@@ -115,10 +115,10 @@ namespace gazebo
       private: HingeJoint *finger_tip_r_joint [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
 
       // assign pid for each finger for PD_CONTROL
-      private: controller::Pid *finger_l_pids     [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
-      private: controller::Pid *finger_tip_l_pids [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
-      private: controller::Pid *finger_r_pids     [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
-      private: controller::Pid *finger_tip_r_pids [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+      private: Pid *finger_l_pids     [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+      private: Pid *finger_tip_l_pids [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+      private: Pid *finger_r_pids     [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
+      private: Pid *finger_tip_r_pids [GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
 
       // get name of each child, e.g. front_left_caster_steer
       std::string actarrayName[GAZEBO_PR2ARRAY_MAX_NUM_ACTUATORS];
