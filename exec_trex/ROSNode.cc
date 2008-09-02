@@ -112,51 +112,51 @@ namespace TREX {
      WavefrontPlanner::Instance(mapdata, sx, sy);
      
      delete[] mapdata;
+     
+     static const size_t QUEUE_MAX(1000);
+     advertise<Planner2DState>("state", QUEUE_MAX);
+     advertise<Polyline2D>("gui_path", QUEUE_MAX);
+     advertise<Polyline2D>("gui_laser", QUEUE_MAX);
+     advertise<Planner2DGoal>("goal", QUEUE_MAX);
+     advertise<BaseVel>("cmd_vel", QUEUE_MAX);
+     advertise<pr2_msgs::MoveArmGoal>("right_movearmgoal", QUEUE_MAX);
+     advertise<pr2_msgs::MoveArmGoal>("left_movearmgoal", QUEUE_MAX);
+     advertise<pr2_msgs::EndEffectorState>("cmd_leftarm_cartesian", QUEUE_MAX);
+     advertise<pr2_msgs::EndEffectorState>("cmd_rightarm_cartesian", QUEUE_MAX);
 
+     // These should be mutually exclusive - we should only actually receive a scan (from stage) or a base scan (from Gazebo)
+     subscribe("scan", laserMsg, &ROSNode::laserReceived, QUEUE_MAX);
+     subscribe("base_scan", laserMsg, &ROSNode::laserReceived, QUEUE_MAX);
 
-    //advertise<MsgToken>("navigator");
-    advertise<Planner2DState>("state");
-    advertise<Polyline2D>("gui_path");
-    advertise<Polyline2D>("gui_laser");
-    advertise<Planner2DGoal>("goal");
-    advertise<BaseVel>("cmd_vel");
-    advertise<pr2_msgs::MoveArmGoal>("right_movearmgoal");
-    advertise<pr2_msgs::MoveArmGoal>("left_movearmgoal");
-    advertise<pr2_msgs::EndEffectorState>("cmd_leftarm_cartesian");
-    advertise<pr2_msgs::EndEffectorState>("cmd_rightarm_cartesian");
-
-    // These should be mutually exclusive - we should only actually receive a scan (from stage) or a base scan (from Gazebo)
-    subscribe("scan", laserMsg, &ROSNode::laserReceived);
-    subscribe("base_scan", laserMsg, &ROSNode::laserReceived);
-
-    //getting arm position
-    subscribe("left_pr2arm_pos", leftArmPosMsg, &ROSNode::leftArmPosReceived);
-    subscribe("right_pr2arm_pos", rightArmPosMsg, &ROSNode::rightArmPosReceived);
+     //getting arm position
+     subscribe("left_pr2arm_pos", leftArmPosMsg, &ROSNode::leftArmPosReceived, QUEUE_MAX);
+     subscribe("right_pr2arm_pos", rightArmPosMsg, &ROSNode::rightArmPosReceived, QUEUE_MAX);
     
-    subscribe("right_movearmstate", right_move_arm_state_msg_, &ROSNode::rightMoveArmStateReceived);
-    subscribe("left_movearmstate", left_move_arm_state_msg_, &ROSNode::leftMoveArmStateReceived);
+     subscribe("right_movearmstate", right_move_arm_state_msg_, &ROSNode::rightMoveArmStateReceived, QUEUE_MAX);
+     subscribe("left_movearmstate", left_move_arm_state_msg_, &ROSNode::leftMoveArmStateReceived, QUEUE_MAX);
     
-    //subscribe("localizedpose", m_localizedOdomMsg, &ROSNode::localizedOdomReceived);
-    m_initialized = false;
+     //subscribe("localizedpose", m_localizedOdomMsg, &ROSNode::localizedOdomReceived);
+     m_initialized = false;
     
-    _leftArmActive = false;
-    _rightArmActive = false;
-    _generateFirstObservation = true;
-    _leftArmInit = false;
-    _rightArmInit = false;
-    right_movearm_state_update_ = false;
-    left_movearm_state_update_ = false;
-    _lastActiveLeftArmDispatch = 10000;
-    _lastActiveRightArmDispatch = 10000;
+     _leftArmActive = false;
+     _rightArmActive = false;
+     _generateFirstObservation = true;
+     _leftArmInit = false;
+     _rightArmInit = false;
+     right_movearm_state_update_ = false;
+     left_movearm_state_update_ = false;
+     _lastActiveLeftArmDispatch = 10000;
+     _lastActiveRightArmDispatch = 10000;
    
-    // Obtain a serial chain for an arm. The call uses the left arm but they can be used interchangeably according to
-    // Sachin.
-    std::string pr2_configuration_str;
-    get_param("robotdesc/pr2", pr2_configuration_str);
-    _pr2Kinematics.loadString(pr2_configuration_str.c_str());
-    _armSerialChain = _pr2Kinematics.getSerialChain("leftArm");
-    condDebugMsg(_armSerialChain == NULL, "ROSNode", "Could not retrieve serial chain for LeftArm");
-    std::cout << "Done with ROSNODE::constructor.\n";
+     // Obtain a serial chain for an arm. The call uses the left arm but they can be used interchangeably according to
+     // Sachin.
+     std::string pr2_configuration_str;
+     get_param("robotdesc/pr2", pr2_configuration_str);
+     _pr2Kinematics.loadString(pr2_configuration_str.c_str());
+     _armSerialChain = _pr2Kinematics.getSerialChain("left_arm");
+     condDebugMsg(_armSerialChain == NULL, "ROSNode", "Could not retrieve serial chain for LeftArm");
+
+     debugMsg("ROSNode:Create", "Done with ROSNODE::constructor.");
   }
 
 
