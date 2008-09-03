@@ -163,13 +163,7 @@ namespace planning_node_util
 	virtual void defaultPosition(void)
 	{
 	    if (m_kmodel)
-	    {
-		double defaultPose[m_kmodel->stateDimension];
-		for (unsigned int i = 0 ; i < m_kmodel->stateDimension ; ++i)
-		    defaultPose[i] = 0.0;
-		
-		m_kmodel->computeTransforms(defaultPose);
-	    }
+		m_kmodel->defaultState();
 	}
 	
 	bool loadedRobot(void) const

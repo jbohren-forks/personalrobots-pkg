@@ -81,7 +81,7 @@ public:
 	req.params.planner_id = "SBL";
 	req.threshold = 0.01;
 	req.interpolate = 1;
-	req.times = 10;
+	req.times = 1;
 	
 	initialState(req.start_state);
 	req.start_state.vals[0] -= 1.5;

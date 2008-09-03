@@ -68,7 +68,7 @@ Additional subscriptions due to inheritance from NodeCollisionModel:
 - @b world_3d_map/PointCloudFloat32 : point cloud with data describing the 3D environment
 
 Publishes to (name/type):
-- None
+- @b planning_statistics/String : a messsage with statistics about computed motion plans
 
 <hr>
 
@@ -94,6 +94,8 @@ Provides (name/type):
 #include <ompl/extension/samplingbased/kinematic/extension/rrt/RRT.h>
 #include <ompl/extension/samplingbased/kinematic/extension/sbl/SBL.h>
 
+#include <std_msgs/String.h>
+
 #include "KinematicPlanningXMLModel.h"
 #include "KinematicConstraintEvaluator.h"
 
@@ -116,6 +118,7 @@ public:
     {
 	advertise_service("plan_kinematic_path_state", &KinematicPlanning::planToState);
 	advertise_service("plan_kinematic_path_position", &KinematicPlanning::planToPosition);
+	advertise<std_msgs::String>("planning_statistics", 10);
     }
     
     /** Free the memory */
