@@ -37,7 +37,7 @@ ADPlanner::ADPlanner(DiscreteSpaceInformation* environment)
 {
     environment_ = environment;
     
-    finitial_eps = DEFAULT_INITIAL_EPS;
+    finitial_eps = AD_DEFAULT_INITIAL_EPS;
     searchexpands = 0;
     MaxMemoryCounter = 0;
     
@@ -194,7 +194,7 @@ void ADPlanner::InitializeSearchStateInfo(ADState* state, ADSearchStateSpace_t* 
 	state->bestnextstate = NULL;
 	state->costtobestnextstate = INFINITECOST;
 	state->heapindex = 0;
-	state->listelem[INCONS_LIST_ID] = 0;
+	state->listelem[AD_INCONS_LIST_ID] = 0;
 	state->numofexpands = 0;
 
 #if AD_SEARCH_FORWARD == 1
@@ -226,7 +226,7 @@ void ADPlanner::ReInitializeSearchStateInfo(ADState* state, ADSearchStateSpace_t
 	state->bestnextstate = NULL;
 	state->costtobestnextstate = INFINITECOST;
 	state->heapindex = 0;
-	state->listelem[INCONS_LIST_ID] = 0;
+	state->listelem[AD_INCONS_LIST_ID] = 0;
 	state->numofexpands = 0;
 
 #if AD_SEARCH_FORWARD == 1
@@ -266,10 +266,78 @@ void ADPlanner::DeleteSearchStateData(ADState* state)
 }
 
 
+void ADPlanner::UpdateSetMembership(ADState* state)
+{
+	CKey key;
+
+    if(state->v != state->g)
+    {
+        if(state->iterationclosed != pSearchStateSpace_->iteration)
+        {
+			key = ComputeKey(state);
+            if(state->heapindex == 0)
+                pSearchStateSpace_->heap->insertheap(state, key);
+            else
+				pSearchStateSpace_->heap->updateheap(state, key);
+        }
+		else if(state->listelem[AD_INCONS_LIST_ID] == NULL)
+		{
+			pSearchStateSpace_->inconslist->insert(state, AD_INCONS_LIST_ID);
+		}
+    }
+    else
+    {
+        if(state->heapindex != 0)
+            pSearchStateSpace_->heap->deleteheap(state);
+        else if(state->listelem[AD_INCONS_LIST_ID] != NULL)
+			pSearchStateSpace_->inconslist->remove(state, AD_INCONS_LIST_ID);
+    }
+}
+
+
+void ADPlanner::Recomputegval(ADState* state)
+{
+    vector<int> searchpredsIDV; //these are predecessors if search is done forward and successors otherwise
+    vector<int> costV;
+	CKey key;
+	ADState *searchpredstate;
+
+#if AD_SEARCH_FORWARD
+    environment_->GetPreds(state->MDPstate->StateID, &searchpredsIDV, &costV);
+#else
+    environment_->GetSuccs(state->MDPstate->StateID, &searchpredsIDV, &costV);
+#endif
+
+
+	//iterate through predecessors of s and pick the best
+	state->g = INFINITECOST;
+	for(int pind = 0; pind < (int)searchpredsIDV.size(); pind++)
+	{
+		CMDPSTATE* predMDPState = GetState(searchpredsIDV[pind], pSearchStateSpace_);
+		int cost = costV[pind];
+		searchpredstate = (ADState*)(predMDPState->PlannerSpecificData);
+	
+		//see if it can be used to improve
+		if(searchpredstate->callnumberaccessed == pSearchStateSpace_->callnumber && state->g > searchpredstate->v + cost)
+		{
+
+#if AD_SEARCH_FORWARD
+			state->g = searchpredstate->v + cost;
+			state->bestpredstate = searchpredstate;
+#else
+			state->g = searchpredstate->v + cost;
+			state->bestnextstate = predMDPState;
+			state->costtobestnextstate = cost;
+#endif
+		}		
+	} //over preds
+}
+
+
 
 #if !AD_SEARCH_FORWARD
 //used for backward search
-void ADPlanner::UpdatePreds(ADState* state, ADSearchStateSpace_t* pSearchStateSpace)
+void ADPlanner::UpdatePredsofOverconsState(ADState* state, ADSearchStateSpace_t* pSearchStateSpace)
 {
     vector<int> PredIDV;
     vector<int> CostV;
@@ -293,20 +361,8 @@ void ADPlanner::UpdatePreds(ADState* state, ADSearchStateSpace_t* pSearchStateSp
 			predstate->bestnextstate = state->MDPstate;
 			predstate->costtobestnextstate = CostV[pind];
 
-			//re-insert into heap if not closed yet
-			if(predstate->iterationclosed != pSearchStateSpace->iteration)
-			{
-				key = ComputeKey(predstate);
-				if(predstate->heapindex != 0)
-					pSearchStateSpace->heap->updateheap(predstate,key);
-				else
-					pSearchStateSpace->heap->insertheap(predstate,key);
-			}
-			//take care of incons list
-			else if(predstate->listelem[INCONS_LIST_ID] == NULL)
-			{
-				pSearchStateSpace->inconslist->insert(predstate, INCONS_LIST_ID);
-			}
+			//update set membership
+			UpdateSetMembership(predstate);
 		}
 	} //for predecessors
 
@@ -315,7 +371,7 @@ void ADPlanner::UpdatePreds(ADState* state, ADSearchStateSpace_t* pSearchStateSp
 
 #if AD_SEARCH_FORWARD
 //used for forward search
-void ADPlanner::UpdateSuccs(ADState* state, ADSearchStateSpace_t* pSearchStateSpace)
+void ADPlanner::UpdateSuccsofOverconsState(ADState* state, ADSearchStateSpace_t* pSearchStateSpace)
 {
     vector<int> SuccIDV;
     vector<int> CostV;
@@ -341,25 +397,77 @@ void ADPlanner::UpdateSuccs(ADState* state, ADSearchStateSpace_t* pSearchStateSp
 			succstate->g = state->v + cost;
 			succstate->bestpredstate = state->MDPstate; 
 
-			//re-insert into heap if not closed yet
-			if(succstate->iterationclosed != pSearchStateSpace->iteration)
-			{
-				key = ComputeKey(succstate);				
-				if(succstate->heapindex != 0)
-					pSearchStateSpace->heap->updateheap(succstate,key);
-				else
-					pSearchStateSpace->heap->insertheap(succstate,key);
-			}
-			//take care of incons list
-			else if(succstate->listelem[INCONS_LIST_ID] == NULL)
-			{
-				pSearchStateSpace->inconslist->insert(succstate, INCONS_LIST_ID);
-			}
+			//update set membership
+			UpdateSetMembership(succstate);
+
 		} //check for cost improvement 
 
 	} //for actions
 }
 #endif
+
+
+
+#if !AD_SEARCH_FORWARD
+//used for backward search
+void ADPlanner::UpdatePredsofUnderconsState(ADState* state, ADSearchStateSpace_t* pSearchStateSpace)
+{
+    vector<int> PredIDV;
+    vector<int> CostV;
+	CKey key;
+	ADState *predstate;
+
+    environment_->GetPreds(state->MDPstate->StateID, &PredIDV, &CostV);
+
+	//iterate through predecessors of s
+	for(int pind = 0; pind < (int)PredIDV.size(); pind++)
+	{
+		CMDPSTATE* PredMDPState = GetState(PredIDV[pind], pSearchStateSpace);
+		predstate = (ADState*)(PredMDPState->PlannerSpecificData);
+		if(predstate->callnumberaccessed != pSearchStateSpace->callnumber)
+			ReInitializeSearchStateInfo(predstate, pSearchStateSpace);
+
+		if(predstate->bestnextstate == state->MDPstate)
+        {				  
+			Recomputegval(predstate);
+			UpdateSetMembership(predstate);
+		}		
+	} //for predecessors
+
+}
+#endif
+
+#if AD_SEARCH_FORWARD
+//used for forward search
+void ADPlanner::UpdateSuccsofUnderconsState(ADState* state, ADSearchStateSpace_t* pSearchStateSpace)
+{
+    vector<int> SuccIDV;
+    vector<int> CostV;
+	CKey key;
+	ADState *succstate;
+
+    environment_->GetSuccs(state->MDPstate->StateID, &SuccIDV, &CostV);
+
+	//iterate through predecessors of s
+	for(int sind = 0; sind < (int)SuccIDV.size(); sind++)
+	{
+		CMDPSTATE* SuccMDPState = GetState(SuccIDV[sind], pSearchStateSpace);
+		int cost = CostV[sind];
+
+		succstate = (ADState*)(SuccMDPState->PlannerSpecificData);
+		if(succstate->callnumberaccessed != pSearchStateSpace->callnumber)
+			ReInitializeSearchStateInfo(succstate, pSearchStateSpace);
+
+		if(succstate->bestpredstate == state->MDPstate)
+        {				  
+			Recomputegval(predstate);
+			UpdateSetMembership(predstate);
+		}		
+
+	} //for actions
+}
+#endif
+
 
 
 int ADPlanner::GetGVal(int StateID, ADSearchStateSpace_t* pSearchStateSpace)
@@ -370,7 +478,7 @@ int ADPlanner::GetGVal(int StateID, ADSearchStateSpace_t* pSearchStateSpace)
 }
 
 //returns 1 if the solution is found, 0 if the solution does not exist and 2 if it ran out of time
-int ADPlanner::ImprovePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNumofSecs)
+int ADPlanner::ComputePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNumofSecs)
 {
 	int expands;
 	ADState *state, *searchgoalstate;
@@ -378,7 +486,6 @@ int ADPlanner::ImprovePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNu
 	CKey goalkey;
 
 	expands = 0;
-
 
 	if(pSearchStateSpace->searchgoalstate == NULL)
 	{
@@ -416,7 +523,7 @@ int ADPlanner::ImprovePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNu
 #if DEBUG
 		if(minkey.key[0] < oldkey.key[0] && fabs(this->finitial_eps - 1.0) < ERR_EPS)
 		{
-			//printf("WARN in search: the sequence of keys decreases\n");
+			printf("WARN in search: the sequence of keys decreases in an optimal search\n");
 			//exit(1);
 		}
 		oldkey = minkey;
@@ -428,21 +535,46 @@ int ADPlanner::ImprovePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNu
 			exit(1);
 		}
 
-		//recompute state value      
-		state->v = state->g;
-		state->iterationclosed = pSearchStateSpace->iteration;
-
 		//new expand      
 		expands++;
 		state->numofexpands++;
 
+		if(state->v > state->g)
+		{
+			//overconsistent expansion
+
+			//recompute state value      
+			state->v = state->g;
+			state->iterationclosed = pSearchStateSpace->iteration;
+
 
 #if AD_SEARCH_FORWARD == 0
-		UpdatePreds(state, pSearchStateSpace);
+			UpdatePredsofOverconsState(state, pSearchStateSpace);
 #else
-		UpdateSuccs(state, pSearchStateSpace);
+			UpdateSuccsofOverconsState(state, pSearchStateSpace);
 #endif
-		
+		}
+		else
+		{
+			//underconsistent expansion
+			printf("underconstistent expansion\n");
+
+			//force the state to be overconsistent
+			state->v = INFINITECOST;
+	
+			//update state membership
+			UpdateSetMembership(state);
+
+
+#if AD_SEARCH_FORWARD == 0
+			UpdatePredsofUnderconsState(state, pSearchStateSpace);
+#else
+			UpdateSuccsofUnderconsState(state, pSearchStateSpace);
+#endif
+
+		}
+      
+
 		//recompute minkey
 		minkey = pSearchStateSpace->heap->getminkeyheap();
 
@@ -510,7 +642,7 @@ void ADPlanner::BuildNewOPENList(ADSearchStateSpace_t* pSearchStateSpace)
 	    //insert into OPEN
 	    pheap->insertheap(state, key);
 	    //remove from INCONS
-	    pinconslist->remove(state, INCONS_LIST_ID);
+	    pinconslist->remove(state, AD_INCONS_LIST_ID);
 	  }
 }
 
@@ -569,7 +701,7 @@ void ADPlanner::DeleteSearchStateSpace(ADSearchStateSpace_t* pSearchStateSpace)
 
 	if(pSearchStateSpace->inconslist != NULL)
 	{
-		pSearchStateSpace->inconslist->makeemptylist(INCONS_LIST_ID);
+		pSearchStateSpace->inconslist->makeemptylist(AD_INCONS_LIST_ID);
 		delete pSearchStateSpace->inconslist;
 		pSearchStateSpace->inconslist = NULL;
 	}
@@ -594,7 +726,7 @@ void ADPlanner::DeleteSearchStateSpace(ADSearchStateSpace_t* pSearchStateSpace)
 int ADPlanner::ResetSearchStateSpace(ADSearchStateSpace_t* pSearchStateSpace)
 {
 	pSearchStateSpace->heap->makeemptyheap();
-	pSearchStateSpace->inconslist->makeemptylist(INCONS_LIST_ID);
+	pSearchStateSpace->inconslist->makeemptylist(AD_INCONS_LIST_ID);
 
 	return 1;
 }
@@ -619,7 +751,7 @@ void ADPlanner::ReInitializeSearchStateSpace(ADSearchStateSpace_t* pSearchStateS
 
 
 	pSearchStateSpace->heap->makeemptyheap();
-	pSearchStateSpace->inconslist->makeemptylist(INCONS_LIST_ID);
+	pSearchStateSpace->inconslist->makeemptylist(AD_INCONS_LIST_ID);
 
     //reset 
 	pSearchStateSpace->eps = this->finitial_eps;
@@ -680,6 +812,7 @@ int ADPlanner::SetSearchGoalState(int SearchGoalStateID, ADSearchStateSpace_t* p
 
 		//recompute heuristic for the heap if heuristics is used
 #if USE_HEUR
+		//TODO - should get rid of and instead use iteration to re-compute h-values online as needed
 		for(int i = 0; i < (int)pSearchStateSpace->searchMDP.StateArray.size(); i++)
 		{
 			CMDPSTATE* MDPstate = pSearchStateSpace->searchMDP.StateArray[i];
@@ -927,7 +1060,7 @@ bool ADPlanner::Search(ADSearchStateSpace_t* pSearchStateSpace, vector<int>& pat
 
 	//the main loop of AD*
 	int prevexpands = 0;
-	while(pSearchStateSpace->eps_satisfied > FINAL_EPS && 
+	while(pSearchStateSpace->eps_satisfied > AD_FINAL_EPS && 
 		(clock()- TimeStarted) < MaxNumofSecs*(double)CLOCKS_PER_SEC)
 	{
 		//it will be a new search iteration
@@ -936,9 +1069,9 @@ bool ADPlanner::Search(ADSearchStateSpace_t* pSearchStateSpace, vector<int>& pat
 		//decrease eps for all subsequent iterations
 		if(fabs(pSearchStateSpace->eps_satisfied - pSearchStateSpace->eps) < ERR_EPS)
 		{
-			pSearchStateSpace->eps = pSearchStateSpace->eps - DECREASE_EPS;
-			if(pSearchStateSpace->eps < FINAL_EPS)
-				pSearchStateSpace->eps = FINAL_EPS;
+			pSearchStateSpace->eps = pSearchStateSpace->eps - AD_DECREASE_EPS;
+			if(pSearchStateSpace->eps < AD_FINAL_EPS)
+				pSearchStateSpace->eps = AD_FINAL_EPS;
 
 
 			pSearchStateSpace->bReevaluatefvals = true;
@@ -952,7 +1085,7 @@ bool ADPlanner::Search(ADSearchStateSpace_t* pSearchStateSpace, vector<int>& pat
 		}
 
 		//improve or compute path
-		if(ImprovePath(pSearchStateSpace, MaxNumofSecs) == 1){
+		if(ComputePath(pSearchStateSpace, MaxNumofSecs) == 1){
             pSearchStateSpace->eps_satisfied = pSearchStateSpace->eps;
         }
 
@@ -1011,6 +1144,40 @@ bool ADPlanner::Search(ADSearchStateSpace_t* pSearchStateSpace, vector<int>& pat
 
 }
 
+void ADPlanner::Update_SearchSuccs_of_ChangedEdges(vector<int>* statesIDV)
+{
+	printf("updating %d affected states\n", statesIDV->size());
+
+	//it will be a new search iteration
+	pSearchStateSpace_->iteration++;
+
+	int numofstatesaffected = 0;
+	for(int pind = 0; pind < (int)statesIDV->size(); pind++)
+	{
+		int stateID = statesIDV->at(pind);
+
+		//first check that the state exists (to avoid creation of additional states)
+		if(environment_->StateID2IndexMapping[stateID][ADMDP_STATEID2IND] == -1)
+			continue;
+
+		//now get the state
+		CMDPSTATE* state = GetState(stateID, pSearchStateSpace_);
+		ADState* searchstateinfo = (ADState*)state->PlannerSpecificData;
+
+		//now check that the state is not start state and was created after last search reset
+		if(stateID != pSearchStateSpace_->searchstartstate->StateID && searchstateinfo->callnumberaccessed == pSearchStateSpace_->callnumber)
+		{
+			//now we really do need to update it
+			Recomputegval(searchstateinfo);
+			UpdateSetMembership(searchstateinfo);
+			numofstatesaffected++;
+		}
+	}
+
+	printf("%d states really affected\n", numofstatesaffected);
+
+}
+
 
 //-----------------------------Interface function-----------------------------------------------------
 //returns 1 if found a solution, and 0 otherwise
@@ -1038,6 +1205,9 @@ int ADPlanner::replan(double allocated_time_secs, vector<int>* solution_stateIDs
 int ADPlanner::set_goal(int goal_stateID)
 {
 
+	//it will be a new search iteration
+	pSearchStateSpace_->iteration++;
+
 #if AD_SEARCH_FORWARD == 1
 
     if(SetSearchGoalState(goal_stateID, pSearchStateSpace_) != 1)
@@ -1061,6 +1231,10 @@ int ADPlanner::set_goal(int goal_stateID)
 int ADPlanner::set_start(int start_stateID)
 {
 
+	//it will be a new search iteration
+	pSearchStateSpace_->iteration++;
+
+
 #if AD_SEARCH_FORWARD == 1
 
     if(SetSearchStartState(start_stateID, pSearchStateSpace_) != 1)
@@ -1082,16 +1256,17 @@ int ADPlanner::set_start(int start_stateID)
 }
 
 
-
-void ADPlanner::costs_changed()
+#if AD_SEARCH_FORWARD == 1
+void ADPlanner::update_succs_of_changededges(vector<int>* succstatesIDV)
 {
-
-
-    pSearchStateSpace_->bReinitializeSearchStateSpace = true;
-
-
+	Update_SearchSuccs_of_ChangedEdges(succstatesIDV);
 }
-
+#else
+void ADPlanner::update_preds_of_changededges(vector<int>* predstatesIDV)
+{
+	Update_SearchSuccs_of_ChangedEdges(predstatesIDV);
+}
+#endif
 
 
 int ADPlanner::force_planning_from_scratch()

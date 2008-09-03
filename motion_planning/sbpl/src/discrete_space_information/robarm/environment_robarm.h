@@ -31,7 +31,7 @@
 
 
 
-#define NUMOFLINKS 6
+#define NUMOFLINKS 20
 
 
 #define ROBARM_LONGACTIONDIST_CELLS 20   //for PES max. distance in coord to a sample point. It should be exactly so for one of the coordinates and this or smaller for the rest

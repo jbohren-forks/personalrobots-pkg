@@ -121,7 +121,7 @@ public:
 
 	void GetCoordFromState(int stateID, int& x, int& y) const;
 
-  int GetStateFromCoord(int x, int y);
+	int GetStateFromCoord(int x, int y);
 
 
 	const EnvNAV2DConfig_t* GetEnvNavConfig();

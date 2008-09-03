@@ -35,14 +35,14 @@
 
 
 //control of EPS
-#define DEFAULT_INITIAL_EPS	    3.0
-#define DECREASE_EPS    0.2
-#define FINAL_EPS	    1.0
+#define AD_DEFAULT_INITIAL_EPS	    10.0
+#define AD_DECREASE_EPS    0.2
+#define AD_FINAL_EPS	    1.0
 
 
 //---------------------
 
-#define INCONS_LIST_ID 0
+#define AD_INCONS_LIST_ID 0
 
 class CMDP;
 class CMDPSTATE;
@@ -112,8 +112,14 @@ public:
 
     int set_goal(int goal_stateID);
     int set_start(int start_stateID);
-    void costs_changed();
     int force_planning_from_scratch(); 
+
+#if AD_SEARCH_FORWARD == 1
+	void update_succs_of_changededges(vector<int>* succsIDV);
+#else
+	void update_preds_of_changededges(vector<int>* predsIDV);
+#endif
+
 
 
 	//constructors & destructors
@@ -156,19 +162,25 @@ private:
 
 #if !AD_SEARCH_FORWARD
 	//used for backward search
-	void UpdatePreds(ADState* state, ADSearchStateSpace_t* pSearchStateSpace);
+	void UpdatePredsofOverconsState(ADState* state, ADSearchStateSpace_t* pSearchStateSpace);
+	void UpdatePredsofUnderconsState(ADState* state, ADSearchStateSpace_t* pSearchStateSpace);
 #endif
-
 
 #if AD_SEARCH_FORWARD
 	//used for forward search
-	void UpdateSuccs(ADState* state, ADSearchStateSpace_t* pSearchStateSpace);
+	void UpdateSuccsofOverconsState(ADState* state, ADSearchStateSpace_t* pSearchStateSpace);
+	void UpdateSuccsofUnderconsState(ADState* state, ADSearchStateSpace_t* pSearchStateSpace);
 #endif
+
+	
+	void UpdateSetMembership(ADState* state);
+	void Recomputegval(ADState* state);
+
 
 	int GetGVal(int StateID, ADSearchStateSpace_t* pSearchStateSpace);
 
 	//returns 1 if the solution is found, 0 if the solution does not exist and 2 if it ran out of time
-	int ImprovePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNumofSecs);
+	int ComputePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNumofSecs);
 
 	void BuildNewOPENList(ADSearchStateSpace_t* pSearchStateSpace);
 
@@ -213,6 +225,7 @@ private:
 
 	CKey ComputeKey(ADState* state);
 
+	void Update_SearchSuccs_of_ChangedEdges(vector<int>* statesIDV);
 
 
 };

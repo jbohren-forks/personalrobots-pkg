@@ -861,8 +861,8 @@ int EnvironmentROBARM::ComputeEndEffectorPos(double angles[NUMOFLINKS], short un
 
 	ContXY2Cell(x, y, pX, pY);
 
-	return 1; //TODO
-	//return retval;
+	//return 1; 
+	return retval;
 }
 
 

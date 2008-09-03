@@ -37,7 +37,7 @@ ARAPlanner::ARAPlanner(DiscreteSpaceInformation* environment)
 {
     environment_ = environment;
     
-    finitial_eps = DEFAULT_INITIAL_EPS;
+    finitial_eps = ARA_DEFAULT_INITIAL_EPS;
     searchexpands = 0;
     MaxMemoryCounter = 0;
     
@@ -177,7 +177,7 @@ void ARAPlanner::InitializeSearchStateInfo(ARAState* state, ARASearchStateSpace_
 	state->bestnextstate = NULL;
 	state->costtobestnextstate = INFINITECOST;
 	state->heapindex = 0;
-	state->listelem[INCONS_LIST_ID] = 0;
+	state->listelem[ARA_INCONS_LIST_ID] = 0;
 	state->numofexpands = 0;
 
 #if ARA_SEARCH_FORWARD == 1
@@ -209,7 +209,7 @@ void ARAPlanner::ReInitializeSearchStateInfo(ARAState* state, ARASearchStateSpac
 	state->bestnextstate = NULL;
 	state->costtobestnextstate = INFINITECOST;
 	state->heapindex = 0;
-	state->listelem[INCONS_LIST_ID] = 0;
+	state->listelem[ARA_INCONS_LIST_ID] = 0;
 	state->numofexpands = 0;
 
 #if ARA_SEARCH_FORWARD == 1
@@ -287,9 +287,9 @@ void ARAPlanner::UpdatePreds(ARAState* state, ARASearchStateSpace_t* pSearchStat
 					pSearchStateSpace->heap->insertheap(predstate,key);
 			}
 			//take care of incons list
-			else if(predstate->listelem[INCONS_LIST_ID] == NULL)
+			else if(predstate->listelem[ARA_INCONS_LIST_ID] == NULL)
 			{
-				pSearchStateSpace->inconslist->insert(predstate, INCONS_LIST_ID);
+				pSearchStateSpace->inconslist->insert(predstate, ARA_INCONS_LIST_ID);
 			}
 		}
 	} //for predecessors
@@ -339,9 +339,9 @@ void ARAPlanner::UpdateSuccs(ARAState* state, ARASearchStateSpace_t* pSearchStat
 					pSearchStateSpace->heap->insertheap(succstate,key);
 			}
 			//take care of incons list
-			else if(succstate->listelem[INCONS_LIST_ID] == NULL)
+			else if(succstate->listelem[ARA_INCONS_LIST_ID] == NULL)
 			{
-				pSearchStateSpace->inconslist->insert(succstate, INCONS_LIST_ID);
+				pSearchStateSpace->inconslist->insert(succstate, ARA_INCONS_LIST_ID);
 			}
 		} //check for cost improvement 
 
@@ -500,7 +500,7 @@ void ARAPlanner::BuildNewOPENList(ARASearchStateSpace_t* pSearchStateSpace)
 	    //insert into OPEN
 	    pheap->insertheap(state, key);
 	    //remove from INCONS
-	    pinconslist->remove(state, INCONS_LIST_ID);
+	    pinconslist->remove(state, ARA_INCONS_LIST_ID);
 	  }
 }
 
@@ -561,7 +561,7 @@ void ARAPlanner::DeleteSearchStateSpace(ARASearchStateSpace_t* pSearchStateSpace
 
 	if(pSearchStateSpace->inconslist != NULL)
 	{
-		pSearchStateSpace->inconslist->makeemptylist(INCONS_LIST_ID);
+		pSearchStateSpace->inconslist->makeemptylist(ARA_INCONS_LIST_ID);
 		delete pSearchStateSpace->inconslist;
 		pSearchStateSpace->inconslist = NULL;
 	}
@@ -586,7 +586,7 @@ void ARAPlanner::DeleteSearchStateSpace(ARASearchStateSpace_t* pSearchStateSpace
 int ARAPlanner::ResetSearchStateSpace(ARASearchStateSpace_t* pSearchStateSpace)
 {
 	pSearchStateSpace->heap->makeemptyheap();
-	pSearchStateSpace->inconslist->makeemptylist(INCONS_LIST_ID);
+	pSearchStateSpace->inconslist->makeemptylist(ARA_INCONS_LIST_ID);
 
 	return 1;
 }
@@ -611,7 +611,7 @@ void ARAPlanner::ReInitializeSearchStateSpace(ARASearchStateSpace_t* pSearchStat
 
 
 	pSearchStateSpace->heap->makeemptyheap();
-	pSearchStateSpace->inconslist->makeemptylist(INCONS_LIST_ID);
+	pSearchStateSpace->inconslist->makeemptylist(ARA_INCONS_LIST_ID);
 
     //reset 
 	pSearchStateSpace->eps = this->finitial_eps;
@@ -920,7 +920,7 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 
 	//the main loop of ARA*
 	int prevexpands = 0;
-	while(pSearchStateSpace->eps_satisfied > FINAL_EPS && 
+	while(pSearchStateSpace->eps_satisfied > ARA_FINAL_EPS && 
 		(clock()- TimeStarted) < MaxNumofSecs*(double)CLOCKS_PER_SEC)
 	{
 		//it will be a new search iteration
@@ -929,9 +929,9 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 		//decrease eps for all subsequent iterations
 		if(fabs(pSearchStateSpace->eps_satisfied - pSearchStateSpace->eps) < ERR_EPS)
 		{
-			pSearchStateSpace->eps = pSearchStateSpace->eps - DECREASE_EPS;
-			if(pSearchStateSpace->eps < FINAL_EPS)
-				pSearchStateSpace->eps = FINAL_EPS;
+			pSearchStateSpace->eps = pSearchStateSpace->eps - ARA_DECREASE_EPS;
+			if(pSearchStateSpace->eps < ARA_FINAL_EPS)
+				pSearchStateSpace->eps = ARA_FINAL_EPS;
 
 
 			pSearchStateSpace->bReevaluatefvals = true;

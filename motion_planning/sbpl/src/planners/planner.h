@@ -86,9 +86,6 @@ public:
     //sets the start of search (planner will automatically decide whether it needs to replan from scratch)
     virtual int set_start(int start_stateID) = 0;
 
-    //should be called whenever edgecosts are changed to let planner know
-    virtual void costs_changed() = 0;
-
     //forgets previous planning efforts and starts planning from scratch next time replan is called
     virtual int force_planning_from_scratch() = 0; 
 

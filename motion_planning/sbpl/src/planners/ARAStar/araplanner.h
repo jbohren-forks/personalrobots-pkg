@@ -31,18 +31,18 @@
 
 
 //---configuration----
-#define ARA_SEARCH_FORWARD 0
+#define ARA_SEARCH_FORWARD 0 //TODO - make it a parameter
 
 
 //control of EPS
-#define DEFAULT_INITIAL_EPS	    3.0
-#define DECREASE_EPS    0.2
-#define FINAL_EPS	    1.0
+#define ARA_DEFAULT_INITIAL_EPS	    5.0
+#define ARA_DECREASE_EPS    0.2
+#define ARA_FINAL_EPS	    1.0
 
 
 //---------------------
 
-#define INCONS_LIST_ID 0
+#define ARA_INCONS_LIST_ID 0
 
 class CMDP;
 class CMDPSTATE;
