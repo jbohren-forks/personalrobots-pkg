@@ -177,8 +177,8 @@ protected:
   jpeg_decompress_struct dinfo;
   jpeg_error_mgr jerr;
 
-  static void buffer_dest_init(j_compress_ptr cinfo) { }
-  static void buffer_source_init(j_decompress_ptr cinfo) { }
+  static void buffer_dest_init(j_compress_ptr) { }
+  static void buffer_source_init(j_decompress_ptr) { }
   static boolean buffer_source_fill(j_decompress_ptr dinfo)
   {
     if (dinfo->src->bytes_in_buffer == 0)
@@ -193,7 +193,7 @@ protected:
     dinfo->src->next_input_byte += (size_t)num_bytes;
     dinfo->src->bytes_in_buffer -= (size_t)num_bytes;
   }
-  static void buffer_source_term(j_decompress_ptr dinfo) { }
+  static void buffer_source_term(j_decompress_ptr) { }
   static boolean buffer_dest_empty(j_compress_ptr cinfo)
   {
     JpegWrapper::g_wrapper->grow_buffer_dest(cinfo->dest->next_output_byte,
@@ -210,7 +210,7 @@ protected:
     free_in_buffer = compress_buf_alloc_size;
     compress_buf_alloc_size *= 2;
   }
-  static void buffer_dest_term(j_compress_ptr cinfo) { }
+  static void buffer_dest_term(j_compress_ptr) { }
   static void jpeg_buffer_src(j_decompress_ptr dinfo, char *buf, int size)
   {
     if (dinfo->src == NULL)
