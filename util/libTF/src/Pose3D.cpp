@@ -589,7 +589,7 @@ void Pose3D::multiplyQuaternion(Quaternion &quat)
 
 void Pose3D::multiplyPose(Pose3D &pose)
 {
-    Position p = { pose.xt, pose.yt, pose.zt };
+  Position p( pose.xt, pose.yt, pose.zt );
     applyToPosition(p);
     xt = p.x; yt = p.y; zt = p.z;
     multiplyQuaternion(pose.xr, pose.yr, pose.zr, pose.w);

@@ -58,7 +58,10 @@ namespace libTF
       struct Position
       {
         double x,y,z;
-
+        /** \brief Constructor */
+        Position():x(0),y(0),z(0){;};
+        /** \brief Constructor */
+        Position(double x, double y, double z):x(x),y(y),z(z){;};
       /** \brief operator overloading for the + operator */
           Position  operator+(const Position &rhs){
             Position result;
@@ -128,7 +131,12 @@ namespace libTF
       /** \brief A struct to represent vectors */
       struct Vector
       {
-          double x,y,z;
+        double x,y,z;
+
+        /** \brief Constructor */
+        Vector():x(0),y(0),z(0){;};
+        /** \brief Constructor */
+        Vector(double x, double y, double z):x(x),y(y),z(z){;};
 
           /** \brief operator overloading for the + operator */
           Vector  operator+(const Vector &rhs){
@@ -198,11 +206,22 @@ namespace libTF
       struct Quaternion
       {
         double x,y,z,w;
+
+        /** \brief Constructor */
+        Quaternion():x(0),y(0),z(0),w(1){;};
+        /** \brief Constructor */
+        Quaternion(double x, double y, double z, double w):x(x),y(y),z(z),w(w){;};
+
       };
       /** \brief A struct to represent Euler angles */
       struct Euler
       {
         double yaw, pitch, roll;
+        /** \brief Constructor */
+        Euler():yaw(0),pitch(0),roll(0){;};
+        /** \brief Constructor */
+        Euler(double yaw, double pitch, double roll):yaw(yaw),pitch(pitch),roll(roll){;};
+
       };
   
       /* Constructors */

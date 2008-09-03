@@ -3,6 +3,15 @@
 #include <math_utils/angles.h>
 #include <sys/time.h>
 
+
+void seed_rand()
+{
+  //Seed random number generator with current microseond count
+  timeval temp_time_struct;
+  gettimeofday(&temp_time_struct,NULL);
+  srand(temp_time_struct.tv_usec);
+};
+
 using namespace libTF;
 /** @todo Make this actually Assert something */
 
@@ -302,11 +311,7 @@ TEST(libTF, Lookup)
 {
   unsigned int runs = 1000;
 
-  //Seed random number generator with current microseond count
-  timeval temp_time_struct;
-  gettimeofday(&temp_time_struct,NULL);
-  srand(temp_time_struct.tv_usec);
-
+  seed_rand();
   
   libTF::TransformReference mTR(true);
   std::vector<double> values(runs);
@@ -342,7 +347,8 @@ TEST(libTF, Lookup)
     catch (libTF::Exception & ex)
     {
       std::cout << "LibTF Excepion" << ex.what() << std::endl;
-      ASSERT_TRUE(false);
+      bool exception_improperly_thrown = true;
+      EXPECT_FALSE(exception_improperly_thrown);
     }
   }
   
@@ -352,12 +358,9 @@ TEST(libTF, Lookup)
 /** Test basic functionality for linear interpolation */
 TEST(libTF, Interpolation)
 {
-  //Seed random number generator with current microseond count
-  timeval temp_time_struct;
-  gettimeofday(&temp_time_struct,NULL);
-  srand(temp_time_struct.tv_usec);
-
+  seed_rand();
   libTF::TransformReference mTR(true);
+  timeval temp_time_struct;
   gettimeofday(&temp_time_struct,NULL);
   unsigned long long atime = temp_time_struct.tv_sec * 1000000000ULL + (unsigned long long)temp_time_struct.tv_usec * 1000ULL;
 
