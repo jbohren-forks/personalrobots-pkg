@@ -36,6 +36,8 @@
 
 #include <generic_controllers/joint_position_controller.h>
 #include <generic_controllers/joint_velocity_controller.h>
+#include <generic_controllers/pid.h>
+
 #include <pr2_controllers/arm_position_controller.h>
 #include <pr2_controllers/base_controller.h>
 #include <pr2_controllers/laser_scanner_controller.h>
@@ -204,7 +206,7 @@ private:
     double explicitDampingCoefficient;
     bool   isGripper;
     std::string* gripper_controller_name_;
-    std::vector<controller::Pid*> gaz_gripper_pids_;
+    std::vector<Pid*> gaz_gripper_pids_;
   };
   std::vector<Gazebo_joint_*> gazebo_joints_;
   double currentTime;

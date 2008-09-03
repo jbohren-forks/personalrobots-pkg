@@ -25,6 +25,7 @@ A test file for Player interface.
 <depend package="gazebo_robot_description"/>
 <depend package="hardware_interface" />
 <depend package="mechanism_control" />
+<depend package="mechanism_model" />
 <depend package="wg_robot_description_parser" />
 <depend package="tinyxml" />
 <depend package="axis_cam" />

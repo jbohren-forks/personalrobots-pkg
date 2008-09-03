@@ -316,10 +316,10 @@ namespace gazebo {
         gj->gaz_joints_.push_back(gj_f_tip_l);
         gj->gaz_joints_.push_back(gj_f_tip_r);
 
-        gj->gaz_gripper_pids_.push_back( new controller::Pid() ); gj->gaz_gripper_pids_.back()->initPid( 1.0, 0.01, 0.0, 0.2, -0.2);
-        gj->gaz_gripper_pids_.push_back( new controller::Pid() ); gj->gaz_gripper_pids_.back()->initPid( 1.0, 0.01, 0.0, 0.2, -0.2);
-        gj->gaz_gripper_pids_.push_back( new controller::Pid() ); gj->gaz_gripper_pids_.back()->initPid( 1.0, 0.01, 0.0, 0.2, -0.2);
-        gj->gaz_gripper_pids_.push_back( new controller::Pid() ); gj->gaz_gripper_pids_.back()->initPid( 1.0, 0.01, 0.0, 0.2, -0.2);
+        gj->gaz_gripper_pids_.push_back( new Pid() ); gj->gaz_gripper_pids_.back()->initPid( 1.0, 0.01, 0.0, 0.2, -0.2);
+        gj->gaz_gripper_pids_.push_back( new Pid() ); gj->gaz_gripper_pids_.back()->initPid( 1.0, 0.01, 0.0, 0.2, -0.2);
+        gj->gaz_gripper_pids_.push_back( new Pid() ); gj->gaz_gripper_pids_.back()->initPid( 1.0, 0.01, 0.0, 0.2, -0.2);
+        gj->gaz_gripper_pids_.push_back( new Pid() ); gj->gaz_gripper_pids_.back()->initPid( 1.0, 0.01, 0.0, 0.2, -0.2);
 
         // initialize for torque control mode
         gj_f_l    ->SetParam(dParamVel , 0);
