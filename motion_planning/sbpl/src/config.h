@@ -31,7 +31,7 @@
 
 
 //if set, then heuristic is used if available
-#define USE_HEUR 0 //TODO
+#define USE_HEUR 1 
 
 //memory debugging
 #define MEM_CHECK 0

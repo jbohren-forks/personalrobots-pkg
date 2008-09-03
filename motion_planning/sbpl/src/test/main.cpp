@@ -200,8 +200,8 @@ int planandnavigate2d(int argc, char *argv[])
 
 	//create a planner
 	vector<int> solution_stateIDs_V;
-	//ARAPlanner planner(&environment_nav2D);
-	ADPlanner planner(&environment_nav2D);
+    ARAPlanner planner(&environment_nav2D);
+	//ADPlanner planner(&environment_nav2D);
 
 
 
@@ -264,8 +264,8 @@ int planandnavigate2d(int argc, char *argv[])
 		if(bPrint) system("pause");
 
         if(bChanges){
-            //planner.costs_changed(); //use by ARA*
-			planner.update_preds_of_changededges(&preds_of_changededgesIDV);
+            planner.costs_changed(); //use by ARA* planner
+			//planner.update_preds_of_changededges(&preds_of_changededgesIDV); //use by AD* planner
         }
 
 
