@@ -78,10 +78,10 @@ public:
 	
 	req.params.model_id = "pr2::base";
 	req.params.distance_metric = "L2Square";
-	req.params.planner_id = "LazyRRT";
+	req.params.planner_id = "SBL";
 	req.threshold = 0.01;
 	req.interpolate = 1;
-	req.times = 1;
+	req.times = 10;
 	
 	initialState(req.start_state);
 	req.start_state.vals[0] -= 1.5;
