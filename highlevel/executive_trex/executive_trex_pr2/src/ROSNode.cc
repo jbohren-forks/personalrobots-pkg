@@ -1,0 +1,85 @@
+#include <signal.h>
+
+//external ros includes for messages
+#include <pr2_msgs/EndEffectorState.h>
+
+//NDDL includes
+#include "Nddl.hh"
+#include "Token.hh"
+#include "TokenVariable.hh"
+#include "Utilities.hh"
+
+// TREX Includes 
+#include "Agent.hh"
+#include "Debug.hh"
+
+#include "ROSNode.hh"
+#include "LogManager.hh"
+
+namespace TREX {
+
+  ROSNodeId ROSNode::s_id;
+
+  /**
+   * ROSNode class implementation.
+   */
+
+
+  /**
+   * @brief Singleton accessor
+   */
+  ROSNodeId ROSNode::request(){
+    if(s_id == ROSNodeId::noId()){
+      int argc = 0;
+      ros::init(argc, NULL);
+      new ROSNode();
+    }
+    s_id->addRef();
+    return s_id;
+  }
+
+  /**
+   * @brief Sets up publish and subscribe topics for this node to integrate it
+   * at the top to publish Execution Status updates and at the bottom to dispatch 
+   * commands to the RCS and receive updates
+   */
+  ROSNode::ROSNode() : ros::node("trex"), m_id(this)
+  {
+
+    debugMsg("ROSNode:Create", "ROSNode created.");
+    s_id = m_id; 
+    m_refCount = 0;
+    pthread_mutex_init(&m_lock, NULL);
+    debugMsg("ROSNode:Create", "Done with ROSNODE::constructor.");
+  }
+
+
+  void ROSNode::release() {
+    if (ROSNode::s_id->decRef()) {
+      ROSNode::s_id->shutdown();
+      delete (ROSNode*)s_id;
+      s_id = ROSNodeId::noId();
+    }
+  }
+
+  ROSNode::~ROSNode() {
+    m_id.remove();
+  }
+
+  void ROSNode::addRef() {
+    m_refCount++;
+  }
+
+  bool ROSNode::decRef() {
+    m_refCount--;
+    return m_refCount == 0;
+  }
+
+  void ROSNode::lock(){
+    pthread_mutex_lock(&m_lock);
+  }
+
+  void ROSNode::unlock(){
+    pthread_mutex_unlock(&m_lock);
+  }
+}
