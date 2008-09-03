@@ -2,6 +2,7 @@ all: build
 
 SVN_DIR = plplot-svn
 SVN_URL = https://plplot.svn.sf.net/svnroot/plplot/trunk 
+SVN_REVISION = -r 8746
 include $(shell rospack find mk)/svn_checkout.mk
 
 CMAKE = `rospack find cmake`/cmake/bin/cmake 
