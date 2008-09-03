@@ -4,6 +4,13 @@
 #include <sys/time.h>
 #include <cstdlib>
 
+  //Seed random number generator with current microseond count
+void seed_rand(){
+  timeval temp_time_struct;
+  gettimeofday(&temp_time_struct,NULL);
+  srand(temp_time_struct.tv_usec);
+};
+
 using namespace libTF;
 
 TEST(Pose3D, DefaultConstructor){
@@ -23,6 +30,98 @@ TEST(Pose3D, DefaultConstructor){
   EXPECT_EQ(0, x.y);
   EXPECT_EQ(0, x.z);
 }
+TEST(Vector, DefaultConstructor){
+  Pose3D::Vector v;
+  EXPECT_EQ(0, v.x);
+  EXPECT_EQ(0, v.y);
+  EXPECT_EQ(0, v.z);
+}
+
+TEST(Vector, Addition){
+  seed_rand();
+  Pose3D::Vector a,b,c;
+for (unsigned int i = 0; i < 1000; i++)
+ {  
+   a.x = rand();
+   a.y = rand();
+   a.z = rand();
+   b.x = rand();
+   b.y = rand();
+   b.z = rand();
+   c = a + b;
+   EXPECT_EQ(c.x, a.x + b.x);
+   EXPECT_EQ(c.y, a.y + b.y);
+   EXPECT_EQ(c.z, a.z + b.z);
+ }
+}
+
+TEST(Vector, Subtraction){
+  seed_rand();
+  Pose3D::Vector a,b,c;
+for (unsigned int i = 0; i < 1000; i++)
+ {  
+   a.x = rand();
+   a.y = rand();
+   a.z = rand();
+   b.x = rand();
+   b.y = rand();
+   b.z = rand();
+   c = a - b;
+   EXPECT_EQ(c.x, a.x - b.x);
+   EXPECT_EQ(c.y, a.y - b.y);
+   EXPECT_EQ(c.z, a.z - b.z);
+ }
+}
+
+TEST(Position, DefaultConstructor){
+  Pose3D::Position po;
+  EXPECT_EQ(0, po.x);
+  EXPECT_EQ(0, po.y);
+  EXPECT_EQ(0, po.z);
+}
+
+TEST(Position, Addition){
+  seed_rand();
+  Pose3D::Position a,b,c;
+for (unsigned int i = 0; i < 1000; i++)
+ {  
+   a.x = rand();
+   a.y = rand();
+   a.z = rand();
+   b.x = rand();
+   b.y = rand();
+   b.z = rand();
+   c = a + b;
+   EXPECT_EQ(c.x, a.x + b.x);
+   EXPECT_EQ(c.y, a.y + b.y);
+   EXPECT_EQ(c.z, a.z + b.z);
+ }
+}
+
+TEST(Position, Subtraction){
+  seed_rand();
+  Pose3D::Position a,b,c;
+for (unsigned int i = 0; i < 1000; i++)
+ {  
+   a.x = rand();
+   a.y = rand();
+   a.z = rand();
+   b.x = rand();
+   b.y = rand();
+   b.z = rand();
+   c = a - b;
+   EXPECT_EQ(c.x, a.x - b.x);
+   EXPECT_EQ(c.y, a.y - b.y);
+   EXPECT_EQ(c.z, a.z - b.z);
+ }
+}
+
+TEST(Quaterion, DefaultConstructor){
+  Pose3D::Quaternion quat;
+  EXPECT_EQ(0, quat.x);
+  EXPECT_EQ(0, quat.y);
+  EXPECT_EQ(0, quat.z);
+}
 
 void testEulerConversion(double yaw, double pitch, double roll){
   Pose3D p;
@@ -33,7 +132,7 @@ void testEulerConversion(double yaw, double pitch, double roll){
   EXPECT_FLOAT_EQ(e.roll, roll);
 }
 
-TEST(Pose3D, EulerConversions){
+TEST(Pose3D, ToFromEulerConversions){
   Pose3D p;
   testEulerConversion(0, 0, 0);
   testEulerConversion(1, 0, 0);
