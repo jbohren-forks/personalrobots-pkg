@@ -7,6 +7,7 @@
     <node pkg="map_server" type="map_server" args="$(find 2dnav-stage)/willow-full.png 0.1" respawn="false" />
     <node pkg="amcl_player" type="amcl_player" respawn="false" />
     <node pkg="nav_view" type="nav_view" args="odom:=localizedpose" respawn="false"/>
+    <node pkg="wavefront_player" type="wavefront_player" respawn="false"/>
   </group>
 </launch>
 
