@@ -127,7 +127,9 @@ vector<Keypoint> Cv3DPoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WIm
 		// Try Star Detector
 		//
 		std::vector<Keypoint> kps = mStarDetector.DetectPoints(img.Ipl());
+#ifdef DEBUG
 		cout << "Found "<< kps.size() << " good keypoints by Star Detector"<<endl;
+#endif
 		if (mask) {
 			vector<Keypoint> keypoints;
 			int16_t* _mask = mask->ImageData();
@@ -140,7 +142,9 @@ vector<Keypoint> Cv3DPoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WIm
 					numKeyPointsHasNoDisp++;
 				}
 			}
+#ifdef DEBUG
 			cout << "Num of keypoints have no disparity: "<< numKeyPointsHasNoDisp <<endl;
+#endif
 			return keypoints;
 		} else {
 			return kps;
@@ -181,7 +185,9 @@ vector<pair<CvPoint3D64f, CvPoint3D64f> > Cv3DPoseEstimateStereo::getTrackablePa
 		d /= 16.;
 		CvPoint3D64f ptLast = cvPoint3D64f(featurePtLastLeft.x, featurePtLastLeft.y, d);
 
+#ifdef DEBUG
 		cout << "Feature at "<< featurePtLastLeft.x<<","<<featurePtLastLeft.y<<","<<d<<endl;
+#endif
 		// find the closest (in distance and appearance) feature
 		// to it in current feature list
 		// In a given neighborhood, if there is at least a good feature
@@ -199,11 +205,15 @@ vector<pair<CvPoint3D64f, CvPoint3D64f> > Cv3DPoseEstimateStereo::getTrackablePa
 			if (fabs(dx)<neighborhoodSize.x && fabs(dy)<neighborhoodSize.y) {
 				goodFeaturePtInCurrentLeftImg = true;
 				featurePtsInNeighborhood.push_back(featurePtLeft);
+#ifdef DEBUG
 				cout << "Good candidate at "<< featurePtLeft.x <<","<< featurePtLeft.y<<endl;
+#endif
 			}
 		}
 		if (goodFeaturePtInCurrentLeftImg == true) {
+#ifdef DEBUG
 			cout <<"Found "<< featurePtsInNeighborhood.size() << " candidates in the neighborhood"<<endl;
+#endif
 			// find the best correlation in the neighborhood
 			// make a template center around featurePtLastLeft;
 			CvRect rectTempl = cvRect(
@@ -259,8 +269,9 @@ vector<pair<CvPoint3D64f, CvPoint3D64f> > Cv3DPoseEstimateStereo::getTrackablePa
 			bestloc.x -= rectNeighborhood.width/2;
 			bestloc.y -= rectNeighborhood.height/2;
 
-
+#ifdef DEBUG
 			cout << "best match offset: "<< bestloc.x <<","<<bestloc.y<<endl;
+#endif
 			bestloc.x += featurePtLastLeft.x;
 			bestloc.y += featurePtLastLeft.y;
 
@@ -268,12 +279,16 @@ vector<pair<CvPoint3D64f, CvPoint3D64f> > Cv3DPoseEstimateStereo::getTrackablePa
 			double d = s.val[0];
 
 			if (d<0) {
+#ifdef DEBUG
 				cout << "disparity missing: "<<d<<endl;
+#endif
 				continue;
 			}
 			d /= 16.;
 			CvPoint3D64f pt = cvPoint3D64f(bestloc.x, bestloc.y, d);
+#ifdef DEBUG
 			cout << "best match: "<<pt.x<<","<<pt.y<<","<<pt.z<<endl;
+#endif
 			pair<CvPoint3D64f, CvPoint3D64f> p(ptLast, pt);
 			trackablePairs.push_back(p);
 			numTrackablePairs++;
@@ -304,12 +319,6 @@ int Cv3DPoseEstimateStereo::estimate(vector<pair<CvPoint3D64f, CvPoint3D64f> >& 
 		_uvds1[iPt*3 + 2] = p.second.z;
 		iPt++;
 	}
-
-#if 0
-	cout << "trackable pairs"<<endl;
-	CvMatUtils::printMat(&uvds0);
-	CvMatUtils::printMat(&uvds1);
-#endif
 
 	// estimate the transform the observed points from current back to last position
 	// it should be equivalent to the transform of the camera frame from

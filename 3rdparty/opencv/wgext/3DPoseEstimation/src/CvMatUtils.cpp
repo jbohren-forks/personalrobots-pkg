@@ -2,6 +2,7 @@
 #include "CvMatUtils.h"
 #include <opencv/cxcore.h>
 #include <opencv/cvwimage.h>
+#include <opencv/cv.h>
 #include <opencv/highgui.h>
 
 #define DEBUG
@@ -155,3 +156,19 @@ bool CvMatUtils::drawMatchingPairs(CvMat& pts0, CvMat& pts1, cv::WImage3_b& canv
 	}
 	return true;
 }
+
+/**
+ * a convenient function to convert from rotation matrix to euler angles.
+ */
+bool CvMatUtils::eulerAngle(const CvMat& rot, CvPoint3D64f& euler) {
+	double _R[9], _Q[9];
+	CvMat R, Q;
+	CvMat *pQx=NULL, *pQy=NULL, *pQz=NULL;  // optional. For debugging.
+	cvInitMatHeader(&R,  3, 3, CV_64FC1, _R);
+	cvInitMatHeader(&Q,  3, 3, CV_64FC1, _Q);
+
+	cvRQDecomp3x3(&rot, &R, &Q, pQx, pQy, pQz, &euler);
+	return true;
+}
+
+

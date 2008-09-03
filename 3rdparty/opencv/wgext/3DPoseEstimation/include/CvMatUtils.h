@@ -12,6 +12,8 @@ public:
 	CvMatUtils();
 	virtual ~CvMatUtils();
     static void printMat(const CvMat *mat, const char *format="%12.5f,");
+
+    static bool eulerAngle(const CvMat& rot, CvPoint3D64f &euler);
     static bool getVisualizableDisparityMap(
     		cv::WImage1_16s& dispMap, cv::WImage3_b& canvas, double maxDisp);
     static bool showDisparityMap(cv::WImage1_16s& dispMap, std::string& windowName, std::string& filename,
@@ -26,8 +28,23 @@ public:
 	static const CvScalar red;
 	static const CvScalar green;
 	static const CvScalar yellow;
-
-
 };
 
+#if 0
+/**
+ *   Trying to copy WImage
+ */
+namespace cv {
+template<typename T> WGMat;
+template <typename T> WGMatBuffer;
+
+template<typename T>
+class WGMatBuffer : public WGMat<T>
+{
+public:
+	typename WGMat<T>::BaseType BaseType;
+
+};
+}
+#endif
 #endif /*CVMATUTILS_H_*/
