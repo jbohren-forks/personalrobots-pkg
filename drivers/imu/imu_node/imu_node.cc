@@ -74,14 +74,12 @@ Reads the following parameters from the parameter server
 
 #include "3dmgx2.h"
 
-#include <ros/node.h>
-#include <std_msgs/ImuData.h>
-#include <std_msgs/EulerAngles.h>
+#include "ros/node.h"
 #include "ros/time.h"
-
 #include "self_test/self_test.h"
 
-#include <pthread.h>
+#include "std_msgs/ImuData.h"
+#include "std_msgs/EulerAngles.h"
 
 using namespace std;
 
@@ -148,8 +146,6 @@ public:
   {
     stop();
 
-    self_test_.lock();
-
     try
     {
       imu.open_port(port.c_str());
@@ -170,20 +166,16 @@ public:
 
     } catch (MS_3DMGX2::exception& e) {
       printf("Exception thrown while starting imu.\n %s\n", e.what());
-      self_test_.unlock();
       return -1;
     }
 
     next_time = ros::Time::now();
 
-    self_test_.unlock();
     return(0);
   }
   
   int stop()
   {
-    self_test_.lock();
-
     if(running)
     {
       try
@@ -195,15 +187,11 @@ public:
       running = false;
     }
 
-    self_test_.unlock();
     return(0);
   }
 
   int publish_datum()
   {
-
-    self_test_.lock();
-
     try
     {
       uint64_t time;
@@ -247,14 +235,12 @@ public:
 
       default:
         printf("Unhandled message type!\n");
-        self_test_.unlock();
         return -1;
 
       }
         
     } catch (MS_3DMGX2::exception& e) {
       printf("Exception thrown while trying to get the reading.\n%s\n", e.what());
-      self_test_.unlock();
       return -1;
     }
 
@@ -266,8 +252,6 @@ public:
       next_time = next_time + ros::Duration(1,0);
     }
 
-    self_test_.unlock();
-    sched_yield();
     return(0);
   }
 
@@ -281,9 +265,11 @@ public:
         while(ok()) {
           if(publish_datum() < 0)
             break;
+          self_test_.checkTest();
         }
       } else {
         usleep(1000000);
+        self_test_.checkTest();
       }
     }
 

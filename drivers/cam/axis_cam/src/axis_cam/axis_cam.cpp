@@ -30,8 +30,6 @@
 #include <stdio.h>
 #include <iostream>
 
-#include <pthread.h>
-
 #include "ros/node.h"
 #include "std_msgs/Image.h"
 #include "std_srvs/PolledImage.h"
@@ -64,8 +62,6 @@ public:
     param("~host", axis_host, string("192.168.0.90"));
     printf("axis_cam host set to [%s]\n", axis_host.c_str());
 
-    self_test_.lock();
-
     self_test_.addTest(&Axis_cam_node::checkImage);
     self_test_.addTest(&Axis_cam_node::checkMac);
 
@@ -73,8 +69,6 @@ public:
 
     next_time = ros::Time::now();
     count_ = 0;
-    
-    self_test_.unlock();
   }
 
   virtual ~Axis_cam_node()
@@ -94,15 +88,12 @@ public:
 
   bool take_and_send_image()
   {
-    self_test_.lock();
     uint8_t *jpeg;
     uint32_t jpeg_size;
 
     if (cam->get_jpeg(&jpeg, &jpeg_size))
     {
       log(ros::ERROR, "woah! AxisCam::get_jpeg returned an error");
-      self_test_.unlock();
-      sched_yield();
       return false;
     }
 
@@ -114,10 +105,6 @@ public:
     codec.inflate_header();
 
     publish("image", image);
-
-    self_test_.unlock();
-
-    sched_yield();
 
     return true;
   }
@@ -143,6 +130,7 @@ public:
         param("~host", axis_host, string("192.168.0.90"));
         cam->set_host(axis_host);
       }
+      self_test_.checkTest();
     }
     return true;
   }

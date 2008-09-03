@@ -99,7 +99,6 @@ Reads the following parameters from the parameter server
 #include <iostream>
 #include <sstream>
 #include <iomanip>
-#include <pthread.h>
 
 #include "ros/node.h"
 #include "ros/time.h"
@@ -188,7 +187,6 @@ public:
   {
     stop();
 
-    self_test_.lock();
     try
     {
       urg.open(port.c_str());
@@ -205,7 +203,6 @@ public:
 
       if (status != 0) {
         printf("Failed to request scans from URG.  Status: %d.\n", status);
-        self_test_.unlock();
         return -1;
       }
 
@@ -213,19 +210,16 @@ public:
 
     } catch (URG::exception& e) {
       printf("Exception thrown while starting urg.\n%s\n", e.what());
-      self_test_.unlock();
       return -1;
     }
 
     next_time = ros::Time::now();
 
-    self_test_.unlock();
     return(0);
   }
 
   int stop()
   {
-    self_test_.lock();
     if(running)
     {
       try
@@ -237,13 +231,11 @@ public:
       running = false;
     }
 
-    self_test_.unlock();
     return 0;
   }
 
   int publish_scan()
   {
-    self_test_.lock();
     try
     {
       int status = urg.service_scan(&scan);
@@ -255,12 +247,10 @@ public:
       }
     } catch (URG::corrupted_data_exception &e) {
       printf("CORRUPTED DATA\n");
-      self_test_.unlock();
       return 0;
     } catch (URG::exception& e) {
       printf("Exception thrown while trying to get scan.\n%s\n", e.what());
       running = false; //If we're here, we are no longer running
-      self_test_.unlock();
       return -1;
     }
     
@@ -292,8 +282,6 @@ public:
       next_time = next_time + ros::Duration(1,0);
     }
 
-    self_test_.unlock();
-    sched_yield();
     return(0);
   }
 
@@ -308,9 +296,11 @@ public:
         while(ok()) {
           if(publish_scan() < 0)
             break;
+          self_test_.checkTest();
         }
       } else {
         usleep(1000000);
+        self_test_.checkTest();
       }
     }
 
