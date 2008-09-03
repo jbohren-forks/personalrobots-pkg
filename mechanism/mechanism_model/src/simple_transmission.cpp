@@ -31,9 +31,12 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
+/*
+ * Author: Stuart Glaser
+ */
 #include <math.h>
-#include <ros/node.h>
-#include <mechanism_model/robot.h>
+#include "mechanism_model/robot.h"
+#include "mechanism_model/simple_transmission.h"
 
 using namespace mechanism;
 
@@ -74,18 +77,6 @@ bool SimpleTransmission::initXml(TiXmlElement *elt, Robot *robot)
   motor_torque_constant_ = atof(elt->FirstChildElement("motorTorqueConstant")->GetText()),
   pulses_per_revolution_ = atof(elt->FirstChildElement("pulsesPerRevolution")->GetText());
   return true;
-}
-
-void SimpleTransmission::initTransmission(std::string transmission_name,std::string joint_name,std::string actuator_name,double mechanical_reduction,double motor_torque_constant,double pulses_per_revolution, Robot *robot)
-{
-  name_     =    transmission_name;
-  joint_name_ = joint_name;
-  actuator_name_ = actuator_name;
-  joint_    = robot->getJoint(   joint_name);
-  actuator_ = robot->getActuator(actuator_name);
-  mechanical_reduction_  = mechanical_reduction ;
-  motor_torque_constant_ = motor_torque_constant;
-  pulses_per_revolution_ = pulses_per_revolution;
 }
 
 void SimpleTransmission::propagatePosition()

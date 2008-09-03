@@ -24,6 +24,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
+/*
+ * Author: Stuart Glaser
+ */
 
 #include "mechanism_control/mechanism_control.h"
 #include "generic_controllers/controller.h"
@@ -49,30 +52,6 @@ bool MechanismControl::initXml(TiXmlElement* config)
 
   initialized_ = true;
   return true;
-}
-
-bool MechanismControl::addJoint(Joint* j)
-{
-  model_.joints_.push_back(j);
-  return true;
-}
-
-bool MechanismControl::addSimpleTransmission(SimpleTransmission *st)
-{
-  bool successful = true;
-  ros::node *node = ros::node::instance();
-
-  // Construct the transmissions
-  const char *type = "SimpleTransmission";
-  Transmission *t = TransmissionFactory::instance().create(type);
-  if (t == NULL)
-    node->log(ros::FATAL, "Unknown transmission type: %s\n", type);
-
-  t->initTransmission(st->name_,st->joint_name_,st->actuator_name_,st->mechanical_reduction_,st->motor_torque_constant_,st->pulses_per_revolution_, &model_);
-
-  model_.transmissions_.push_back(t);
-
-  return successful;
 }
 
 controller::Controller* MechanismControl::getControllerByName(std::string name)

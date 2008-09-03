@@ -34,46 +34,40 @@
 /*
  * Author: Stuart Glaser
  */
-#ifndef TRANSMISSION_H
-#define TRANSMISSION_H
+#ifndef SIMPLE_TRANSMISSION_H
+#define SIMPLE_TRANSMISSION_H
 
 #include <tinyxml/tinyxml.h>
-#include <misc_utils/factory.h>
+#include "mechanism_model/transmission.h"
+#include "mechanism_model/joint.h"
+#include "hardware_interface/hardware_interface.h"
 
 namespace mechanism {
 
-class Robot;
-
-class Transmission;
-typedef misc_utils::Factory<Transmission> TransmissionFactory;
-
-#define ROS_REGISTER_TRANSMISSION(c) \
-  mechanism::Transmission *ROS_New_##c() { return new c(); }             \
-  bool ROS_TRANSMISSION_##c = \
-    mechanism::TransmissionFactory::instance().registerType(#c, ROS_New_##c);
-
-
-class Transmission
+class SimpleTransmission : public Transmission
 {
 public:
-  Transmission() {}
-  virtual ~Transmission() {}
+  SimpleTransmission() {}
+  SimpleTransmission(Joint *joint, Actuator *actuator, double mechanical_reduction, double motor_torque_constant, double pulses_per_revolution);
+  ~SimpleTransmission() {}
 
-  // Initializes the transmission from XML data
-  virtual bool initXml(TiXmlElement *config, Robot *robot) = 0;
+  bool initXml(TiXmlElement *config, Robot *robot);
 
-  // Uses encoder data to fill out joint position and velocities
-  virtual void propagatePosition() = 0;
+  std::string name_;
+  std::string joint_name_;
+  std::string actuator_name_;
 
-  // Uses the joint position to fill out the actuator's encoder.
-  virtual void propagatePositionBackwards() = 0;
+  Actuator *actuator_;
+  Joint *joint_;
 
-  // Uses commanded joint efforts to fill out commanded motor currents
-  virtual void propagateEffort() = 0;
+  double mechanical_reduction_;
+  double motor_torque_constant_;
+  double pulses_per_revolution_;
 
-  // Uses the actuator's commanded effort to fill out the torque on
-  // the joint.
-  virtual void propagateEffortBackwards() = 0;
+  void propagatePosition();
+  void propagateEffort();
+  void propagatePositionBackwards();
+  void propagateEffortBackwards();
 };
 
 } // namespace mechanism

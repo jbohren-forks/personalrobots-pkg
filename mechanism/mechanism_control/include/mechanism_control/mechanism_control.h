@@ -34,6 +34,8 @@
  * mc.initXml(config);
  *
  * mc.spawnController("JointController", controllerConfig);
+ *
+ * Author: Stuart Glaser
  */
 #ifndef MECHANISM_CONTROL_H
 #define MECHANISM_CONTROL_H
@@ -73,8 +75,6 @@ public:
   bool addController(controller::Controller *c, const std::string &name);
   bool spawnController(const std::string &type, const std::string &name, TiXmlElement *config);
   bool killController(const std::string &name);
-  bool addJoint(mechanism::Joint* j);
-  bool addSimpleTransmission(mechanism::SimpleTransmission *st);
   controller::Controller* getControllerByName(std::string name);
 
   mechanism::Robot model_;
