@@ -123,6 +123,13 @@ TEST(Quaterion, DefaultConstructor){
   EXPECT_EQ(0, quat.z);
 }
 
+TEST(Euler, DefaultConstructor){
+  Pose3D::Euler e;
+  EXPECT_EQ(0, e.yaw);
+  EXPECT_EQ(0, e.pitch);
+  EXPECT_EQ(0, e.roll);
+}
+
 void testEulerConversion(double yaw, double pitch, double roll){
   Pose3D p;
   p.setFromEuler(0, 0, 0, yaw, pitch, roll);
@@ -147,13 +154,9 @@ TEST(Pose3D, ToFromEulerConversions){
   testEulerConversion(0, 0, -3.14);
 }
 
-TEST(Pose3D, MatrixToQuaternionAndBack)
+TEST(Pose3D, EulerToMatrixToQuaternionToMatrixToEuler)
 {
-  //Seed random number generator with current microseond count
-  timeval temp_time_struct;
-  gettimeofday(&temp_time_struct,NULL);
-  srand(temp_time_struct.tv_usec);
-
+  seed_rand();
   libTF::Pose3D aPose;
 
   int i_max = 100;
@@ -163,9 +166,9 @@ TEST(Pose3D, MatrixToQuaternionAndBack)
   {
 
     double yaw, pitch, roll;
-    yaw = 2* M_PI * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    yaw = 2 * M_PI * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     pitch = 2 * M_PI * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
-    roll = 2 *M_PI * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    roll = 2 * M_PI * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     
       
     NEWMAT::Matrix m = libTF::Pose3D::matrixFromEuler(0.0,
@@ -177,10 +180,15 @@ TEST(Pose3D, MatrixToQuaternionAndBack)
       
     //          std::cout << m <<std::endl;
     aPose.setFromMatrix(m);
-    m = aPose.asMatrix();
+    NEWMAT::Matrix n = aPose.asMatrix();
           
-    libTF::Pose3D::Euler out = libTF::Pose3D::eulerFromMatrix(m);
-    libTF::Pose3D::Euler out2 = libTF::Pose3D::eulerFromMatrix(m,2);
+    for (unsigned int row = 1; row < 5; row++)
+      for (unsigned int col = 1; col < 5; col++)
+      {
+        EXPECT_LT(fabs(n(row,col) - m(row,col)), 0.00000001);
+      }
+    libTF::Pose3D::Euler out = libTF::Pose3D::eulerFromMatrix(n);
+    libTF::Pose3D::Euler out2 = libTF::Pose3D::eulerFromMatrix(n,2);
 
     //Test the difference between input and output accounting for 2Pi redundancy.  
     bool difference = ((fabs(math_utils::modNPiBy2(out.yaw) - math_utils::modNPiBy2(yaw)) > 0.001 || fabs(math_utils::modNPiBy2(out.pitch) - math_utils::modNPiBy2(pitch)) > 0.001 || fabs(math_utils::modNPiBy2(out.roll) -math_utils::modNPiBy2(roll)) > 0.0001) &&
@@ -204,6 +212,8 @@ TEST(Pose3D, MatrixToQuaternionAndBack)
   }
 
 }
+
+
 
 
 int main(int argc, char **argv){
