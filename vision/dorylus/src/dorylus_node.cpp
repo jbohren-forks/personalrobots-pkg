@@ -14,6 +14,7 @@ public:
   SpinImage *spinM_fixed_HR_, *spinL_fixed_HR_, *spinS_fixed_HR_;
   SpinImage *spinM_nat_, *spinL_nat_, *spinS_nat_;
   vector<int> times;
+  Dorylus d_;
 
   DorylusNode() : ros::node("dorylus_node")
   {
@@ -247,7 +248,7 @@ void SpinImage::display(const Matrix& result) {
 
 int main(int argc, char **argv) {
   ros::init(argc, argv);
-  DorylusNode d;
+  DorylusNode dn;
 
   if(argc > 2 && !strcmp(argv[1], "--dataset")) {
 
@@ -262,7 +263,7 @@ int main(int argc, char **argv) {
       cerr << "Savename must have .dd extension.  Did you specify a savename?" << endl;
     }
     else
-      d.buildDataset(50, datafiles, savename, false);
+      dn.buildDataset(50, datafiles, savename, false);
 
 //  DorylusDataset dd2;  dd2.load(string("savename.dd"));
 //  dd2.save(string("savename2.dd"));
@@ -270,7 +271,16 @@ int main(int argc, char **argv) {
   }
 
   else if(!strcmp(argv[1], "--testDatasetSave")) {
-    d.dd_.testSave();
+    dn.dd_.testSave();
+  }
+
+  else if(!strcmp(argv[1], "--learnwc")) {
+    dn.dd_.load(string(argv[2]));
+    //cout << dn.dd_.displayFeatures() << endl;
+    cout << dn.dd_.status() << endl;
+    
+    dn.d_.loadDataset(&dn.dd_);
+    dn.d_.learnWC(10, 0);
   }
 
   else {

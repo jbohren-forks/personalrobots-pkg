@@ -15,6 +15,7 @@
 #include <fstream>
 
 #include <float.h>
+#include <math.h>
 
 typedef struct 
 {
@@ -68,6 +69,7 @@ class Dorylus {
   DorylusDataset *dd_;
 
   void loadDataset(DorylusDataset *dd);
+  void normalizeWeights();
   void learnWC(int nCandidates, float maxErr);
   float computeNewObjective(weak_classifier wc);
   float computeObjective();
@@ -76,9 +78,6 @@ class Dorylus {
  Dorylus() : dd_(NULL)
     {
     }
-
- private:
-  void normalizeWeights();
 
 };
 

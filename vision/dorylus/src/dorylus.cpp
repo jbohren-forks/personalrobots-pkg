@@ -49,8 +49,12 @@ std::string DorylusDataset::status()
   
   oss << "DorylusDataset status: \n";
   oss << "  nClasses: " << nClasses_ << "\n";
-  oss << "ymc_: " << endl << ymc_ << endl;
-  oss << "object data" << endl << displayFeatures() << endl;
+  oss << "  nObjects: " << objs_.size() << "\n";
+  oss << "  nDescriptors: " << objs_[0].features.size() << "\n";
+//   oss << "  class_labels_: " << "\n";
+//   oss << "       " << "\n";
+  //oss << "ymc_: " << endl << ymc_ << endl;
+  //  oss << "object data" << endl << displayFeatures() << endl;
   return oss.str();
 }
 
@@ -104,6 +108,8 @@ bool DorylusDataset::load(string filename)
     cerr << "Log " << filename << " is of the wrong type!" << endl;
     return false;
   }
+
+  cout << "Loading " << filename << endl;
 
   int nRows, nCols;
   string descriptor;
@@ -174,7 +180,18 @@ bool DorylusDataset::load(string filename)
 	ymc_(r+1,c+1) = -1;
     }
   }
+
+  // -- Get nClasses_ and class_labels_.
+  for(unsigned int c=0; c<objs_.size(); c++) {
+    class_labels_[objs_[c].label] = 0;
+  }
+  for(unsigned int c=0; c<objs_.size(); c++) {
+    class_labels_[objs_[c].label]++;
+  }
+  nClasses_ = class_labels_.size();
+  
 	  
+  cout << "Done loading " << filename << endl;
   return true; 
 }
 
@@ -225,8 +242,8 @@ void Dorylus::loadDataset(DorylusDataset *dd) {
   weights_ = Matrix(dd_->nClasses_, dd_->objs_.size());
 
 
-  for(int i=1; i<weights_.Nrows(); i++) {
-    for(int j=1; j<weights_.Ncols(); j++) {
+  for(int i=1; i<=weights_.Nrows(); i++) {
+    for(int j=1; j<=weights_.Ncols(); j++) {
       weights_(i,j) = 1;
     }
   }
@@ -248,4 +265,112 @@ void Dorylus::normalizeWeights() {
   }
 }
 	
+void Dorylus::learnWC(int nCandidates, float maxErr) {
+  int nThetas = 10;
+  assert(dd_!=0);
+
+  // -- Choose wc candidates from the distribution of weights over the objects.
+
+  vector<weak_classifier> cand;
+  for(int iCand=0; iCand<nCandidates; iCand++) {
+    cout << "Constructing candidate " << iCand << endl;
+    float dice = (float)rand() / (float)RAND_MAX;
+    //cout << "dice " << dice << endl;
+    Matrix &ws = weights_;
+    //cout << ws << endl;
+    float w = 0.0;
+    int obj_id=-1;
+    for(int i=0; i<ws.Ncols(); i++) {
+      w = ws.Column(i+1).Sum();
+      dice -= w;
+      //cout << "dice " << dice << endl;
+      if(dice < 0) {
+	obj_id = i;
+	break;
+      }
+    }
+    cout << "Picking from obj " << obj_id << endl;
+
+    //Get a random descriptor.
+    map<string, Matrix> &ft = dd_->objs_[obj_id].features;
+    //cout << "ft.size " << ft.size() << endl;
+    
+    int desc_id = rand() % (int)ft.size();
+    map<string, Matrix>::iterator it = ft.begin();
+    //cout << desc_id << " desc id" << endl;
+    for(int i=0; i<desc_id; i++) {
+      it++;
+    }
+    Matrix& v = (*it).second;
+    string desc = (*it).first;
+
+    //Get a random feature.
+    int feature_id = rand() % (int)v.Ncols();
+
+    //Make the weak classifier.
+    weak_classifier wc;
+    wc.descriptor = desc;
+    wc.center = v.Column(feature_id);
+    cand.push_back(wc);
+    cout << "Added a new candidate: " << wc.descriptor << " with feature id " << feature_id << " from obj " << obj_id << endl;
+  }
+
+  // -- For all candidates, try several thetas and get their utilities.
+  
+  for(unsigned int i=0; i<cand.size(); i++) {
+    vector<Matrix> dists;
+
+    for(unsigned int j=0; j<dd_->objs_.size(); j++) {
+      Matrix &f = dd_->objs_[j].features[cand[i].descriptor];
+      dists.push_back(Matrix(1, f.Ncols()));  
+      dists[j] = 0.0;
+      for(int k=1; k<=f.Ncols(); k++) {
+	dists[j](1, k) = euc(f.Column(k), cand[i].center);
+      }
+    }
+
+//     for(unsigned int j=0; j<dd_->objs_.size(); j++) {
+//       cout << "*** obj " << j << endl;
+//       cout << dists[j] << endl;
+//     }
+
+    //   float objective = computeObjective();
+    float max_util = 0.0;
+    for(int iTheta=0; iTheta<nThetas; iTheta++) {
+    
+      //For now, take thetas between 0 and .5sqrt(dimensionality) of the feature space uniformly.
+      //This requires that the features all be normalized so that the max element is +1 and the min is 0.
+      Matrix& f = dd_->objs_[0].features[cand[i].descriptor];
+      float theta = ((float)rand() / (float)RAND_MAX) * (1.0/2.0) * sqrt(f.Nrows());
+      cout << "Max theta is " << (1.0/2.0) * sqrt(f.Nrows()) << endl;
+      cout << "Using theta of " << theta << endl;
+
+      //Get the M_m^t, number of points in the hypersphere for each object.
+      Matrix mmt(1,dd_->objs_.size()); mmt=0;
+      for(unsigned int j=0; j<dists.size(); j++) {
+	for(int k=1; k<dists[j].Ncols(); k++) {
+	  if(dists[j](1,k) < theta)
+	    mmt(1, j+1) = mmt(1, j+1) + 1;
+	}
+      }
+
+      cout << mmt << endl;
+
+//       //Use Newton's method to solve for the a_t^c's.
+//       temp_wc = cand[i];
+//       temp_wc.vals = newton;
+
+//       //Get the utility.
+//       float new_objective = computeNewObjective(temp_wc);
+//       float util = objective - new_objective;
+      
+//       //If this is the best theta so far, save it.
+//       if(util > max_util) {
+// 	max_util = util;
+// 	cand[i] = temp_wc;
+//       }
+    }
+  }
+}
+  
 
