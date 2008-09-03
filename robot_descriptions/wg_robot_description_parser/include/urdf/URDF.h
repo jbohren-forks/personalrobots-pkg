@@ -402,7 +402,7 @@ namespace robot_desc
 
 	    /** Check if the link instance is inside some group */
 	    bool insideGroup(const std::string &group) const;
-	    
+	    	    
 	    /** Check if the link instance is also a sensor */
 	    virtual bool canSense(void) const;
 	    
@@ -510,7 +510,10 @@ namespace robot_desc
 	    
 	    /** Check if a specific link is a root in this group */
 	    bool isRoot(const Link* link) const;
-	    	    
+	    	
+	    /** Check if the group is empty */
+	    bool empty(void) const;
+    
 	    virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
 
 	    std::string              name;

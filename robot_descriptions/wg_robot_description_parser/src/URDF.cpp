@@ -515,6 +515,11 @@ namespace robot_desc {
 	return false;
     }
     
+    bool URDF::Group::empty(void) const
+    {
+	return links.empty() && frames.empty();
+    }
+    
     bool URDF::Group::hasFlag(const std::string &flag) const
     {
 	for (unsigned int i = 0 ; i < flags.size() ; ++i)
@@ -1801,12 +1806,24 @@ namespace robot_desc {
 	for (std::map<std::string, Group*>::iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
 	{
 	    std::sort(i->second->linkNames.begin(), i->second->linkNames.end());
-	    
+	    bool repeat = false;
 	    for (unsigned int j = 0 ; j < i->second->linkNames.size() ; ++j)
+	    {
+		if (repeat)
+		{
+		    repeat = false;
+		    j--;
+		}
+		
 		if (m_links.find(i->second->linkNames[j]) == m_links.end())
 		{
 		    if (m_frames.find(i->second->linkNames[j]) == m_frames.end())
+		    {
 			errorMessage("Group '" + i->first + "': '" + i->second->linkNames[j] + "' is not defined as a link or frame");
+			i->second->linkNames.erase(i->second->linkNames.begin() + j);
+			repeat = true;
+			continue;
+		    }
 		    else
 		    {
 			/* name is a frame */
@@ -1820,12 +1837,13 @@ namespace robot_desc {
 		{
 		    /* name is a link */
 		    if (m_frames.find(i->second->linkNames[j]) != m_frames.end())
-			errorMessage("Name '" + i->second->linkNames[j] + "' is used both for a link and a frame");
+			errorMessage("Name '" + i->second->linkNames[j] + "' is used both for a link and a frame; defaulting to link");
 		    
 		    Link* l = m_links[i->second->linkNames[j]];
 		    l->groups.push_back(i->second);
 		    i->second->links.push_back(l);
 		}
+	    }
 	    
 	    /* remove the link names that are in fact frame names */
 	    for (unsigned int j = 0 ; j < i->second->frameNames.size() ; ++j)
