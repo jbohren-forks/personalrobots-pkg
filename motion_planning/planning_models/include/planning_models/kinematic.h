@@ -466,7 +466,9 @@ namespace planning_models
 	Joint*       getJoint(const std::string &joint) const;
 	void         getJoints(std::vector<Joint*> &joints) const;
 	
+	void defaultState(void);
 	void computeTransforms(const double *params, int groupID = -1);
+
 	void printModelInfo(std::ostream &out = std::cout) const;
 	void printLinkPoses(std::ostream &out = std::cout) const;
 	

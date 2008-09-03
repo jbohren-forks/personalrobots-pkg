@@ -48,13 +48,25 @@ struct SortByName
     }
 };
     
-void planning_models::KinematicModel::Robot::computeTransforms(const double *params, int groupID)
+
+void planning_models::KinematicModel::defaultState(void)
 {
-    chain->computeTransform(params, groupID);
+    /* The default state of the robot. Place each value at 0.0, if
+       within bounds. Otherwise, select middle point. */
+    double params[stateDimension];
+    for (unsigned int i = 0 ; i < stateDimension ; ++i)
+	if (stateBounds[2 * i] <= 0.0 && stateBounds[2 * i + 1] >= 0.0)
+	    params[i] = 0.0;
+	else
+	    params[i] = (stateBounds[2 * i] + stateBounds[2 * i + 1]) / 2.0;
+    
+    computeTransforms(params);
 }
 
 void planning_models::KinematicModel::computeTransforms(const double *params, int groupID)
 {
+    assert(m_built);
+    
     if (groupID >= 0)
     {
 	for (unsigned int i = 0 ; i < groupChainStart[groupID].size() ; ++i)
@@ -71,6 +83,11 @@ void planning_models::KinematicModel::computeTransforms(const double *params, in
 	    params = start->computeTransform(params, groupID);
 	}
     }
+}
+
+void planning_models::KinematicModel::Robot::computeTransforms(const double *params, int groupID)
+{
+    chain->computeTransform(params, groupID);
 }
 
 void planning_models::KinematicModel::computeParameterNames(void)
@@ -258,7 +275,7 @@ void planning_models::KinematicModel::constructGroupList(const robot_desc::URDF 
     model.getGroupNames(allGroups);
     m_groups.clear();
     for (unsigned int i = 0 ; i < allGroups.size() ; ++i)
-	if (model.getGroup(allGroups[i])->hasFlag("planning"))
+	if (model.getGroup(allGroups[i])->hasFlag("planning") && !model.getGroup(allGroups[i])->links.empty())
 	    m_groups.push_back(rname + "::" + allGroups[i]);
     m_groupsMap.clear();
     for (unsigned int i = 0 ; i < m_groups.size() ; ++i)
