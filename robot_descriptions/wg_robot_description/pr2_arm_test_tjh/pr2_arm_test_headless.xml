@@ -467,7 +467,7 @@
         <elem key="material">Gazebo/Green</elem>
       </map>
       <geometry name="pr2_base_mesh_file">
-        <mesh size="0.1 0.1 0.1" />
+        <mesh scale="0.1 0.1 0.1" />
       </geometry>
     </visual> 
     
@@ -612,7 +612,7 @@
         <elem key="material">Gazebo/PioneerBody</elem>
       </map>
       <geometry name="forearm_camera_left_visual_geom">
-        <mesh size="0.02 0.02 0.02" />
+        <mesh scale="0.02 0.02 0.02" />
       </geometry>
     </visual> 
     
