@@ -139,7 +139,6 @@ void SineSweepControllerNode::init(double start_freq, double end_freq, double du
 
 bool SineSweepControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
 {
-  ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
 
   c_->initXml(robot, config);
