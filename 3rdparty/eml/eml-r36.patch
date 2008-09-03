@@ -585,6 +585,14 @@ Index: src/arch/RTnet/ethercat_xenomai_drv.c
 ===================================================================
 --- src/arch/RTnet/ethercat_xenomai_drv.c	(revision 36)
 +++ src/arch/RTnet/ethercat_xenomai_drv.c	(working copy)
+@@ -31,6 +31,7 @@
+ //===========================================================================
+ 
+ 
++#include <string.h>
+ #include <errno.h>
+ #include <signal.h>
+ #include <pthread.h> 
 @@ -151,12 +151,12 @@
  		// The actual send
  		int len_send = send(sock,(unsigned char *)&msg_to_send,msg_len  ,0);
