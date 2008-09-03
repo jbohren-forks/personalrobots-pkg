@@ -78,7 +78,7 @@ namespace collision_space
 	    
 	    bool containsPoint(double x, double y, double z) const
 	    {
-		libTF::Pose3D::Position pt = { x, y, z };
+	      libTF::Pose3D::Position pt(x, y, z);
 		return containsPoint(pt);
 	    }
 	    
