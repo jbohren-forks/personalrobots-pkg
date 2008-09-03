@@ -37,6 +37,27 @@ TEST(Vector, DefaultConstructor){
   EXPECT_EQ(0, v.z);
 }
 
+
+TEST(Vector, CopyConstructor){
+  seed_rand();
+  Pose3D::Vector a,b,c;
+  for (unsigned int i = 0; i < 1000; i++)
+  {  
+    a.x = rand();
+    a.y = rand();
+    a.z = rand();
+    b.x = rand();
+    b.y = rand();
+    b.z = rand();
+
+    b = a;
+    EXPECT_EQ(a.x, b.x);
+    EXPECT_EQ(a.y, b.y);
+    EXPECT_EQ(a.z, b.z);
+  }
+  
+}
+
 TEST(Vector, Addition){
   seed_rand();
   Pose3D::Vector a,b,c;
@@ -52,6 +73,25 @@ for (unsigned int i = 0; i < 1000; i++)
    EXPECT_EQ(c.x, a.x + b.x);
    EXPECT_EQ(c.y, a.y + b.y);
    EXPECT_EQ(c.z, a.z + b.z);
+ }
+}
+
+TEST(Vector, PlusEqual){
+  seed_rand();
+  Pose3D::Vector a,b,c;
+for (unsigned int i = 0; i < 1000; i++)
+ {  
+   a.x = rand();
+   a.y = rand();
+   a.z = rand();
+   b.x = rand();
+   b.y = rand();
+   b.z = rand();
+   c = a + b;
+   a += b;
+   EXPECT_EQ(c.x, a.x);
+   EXPECT_EQ(c.y, a.y);
+   EXPECT_EQ(c.z, a.z);
  }
 }
 
@@ -73,11 +113,103 @@ for (unsigned int i = 0; i < 1000; i++)
  }
 }
 
+
+TEST(Vector, MinusEqual){
+  seed_rand();
+  Pose3D::Vector a,b,c;
+for (unsigned int i = 0; i < 1000; i++)
+ {  
+   a.x = rand();
+   a.y = rand();
+   a.z = rand();
+   b.x = rand();
+   b.y = rand();
+   b.z = rand();
+   c = a - b;
+   a -= b;
+   EXPECT_EQ(c.x, a.x);
+   EXPECT_EQ(c.y, a.y);
+   EXPECT_EQ(c.z, a.z);
+ }
+}
+
+TEST(Vector, TimesEqual){
+  seed_rand();
+  Pose3D::Vector a,b,c;
+  double scalar;
+for (unsigned int i = 0; i < 1000; i++)
+ {  
+   scalar = rand();
+   a.x = rand();
+   a.y = rand();
+   a.z = rand();
+   c = a;
+   c *= scalar;
+   EXPECT_EQ(c.x, a.x * scalar);
+   EXPECT_EQ(c.y, a.y * scalar);
+   EXPECT_EQ(c.z, a.z * scalar);
+ }
+}
+
+TEST(Vector, Times){
+  seed_rand();
+  Pose3D::Vector a,b,c;
+  double scalar;
+for (unsigned int i = 0; i < 1000; i++)
+ {  
+   scalar = rand();
+   a.x = rand();
+   a.y = rand();
+   a.z = rand();
+   c = a * scalar;
+   EXPECT_EQ(c.x, a.x * scalar);
+   EXPECT_EQ(c.y, a.y * scalar);
+   EXPECT_EQ(c.z, a.z * scalar);
+ }
+}
+
+TEST(Vector, rot2D){
+  seed_rand();
+  Pose3D::Vector a,b,c;
+  double scalar;
+for (unsigned int i = 0; i < 1000; i++)
+ {  
+   scalar = rand();
+   a.x = rand();
+   a.y = rand();
+   a.z = rand();
+   c = a.rot2D(scalar);
+   EXPECT_LT(fabs(-c.x + a.x * cos(scalar) - a.y * sin(scalar)),0.000001); //Can't go higher precision w/o failing??
+   EXPECT_LT(fabs(-c.y+ a.x * sin(scalar) + a.y * cos(scalar)), 0.000001);
+   EXPECT_LT(fabs(-c.z + a.z), 0.0000001);
+ }
+}
+
 TEST(Position, DefaultConstructor){
   Pose3D::Position po;
   EXPECT_EQ(0, po.x);
   EXPECT_EQ(0, po.y);
   EXPECT_EQ(0, po.z);
+}
+
+TEST(Position, CopyConstructor){
+  seed_rand();
+  Pose3D::Position a,b;
+  for (unsigned int i = 0; i < 1000; i++)
+  {  
+    a.x = rand();
+    a.y = rand();
+    a.z = rand();
+    b.x = rand();
+    b.y = rand();
+    b.z = rand();
+
+    b = a;
+    EXPECT_EQ(a.x, b.x);
+    EXPECT_EQ(a.y, b.y);
+    EXPECT_EQ(a.z, b.z);
+  }
+  
 }
 
 TEST(Position, Addition){
@@ -98,6 +230,25 @@ for (unsigned int i = 0; i < 1000; i++)
  }
 }
 
+TEST(Position, PlusEquals){
+  seed_rand();
+  Pose3D::Position a,b,c;
+for (unsigned int i = 0; i < 1000; i++)
+ {  
+   a.x = rand();
+   a.y = rand();
+   a.z = rand();
+   b.x = rand();
+   b.y = rand();
+   b.z = rand();
+   c = a + b;
+   a += b;
+   EXPECT_EQ(c.x, a.x);
+   EXPECT_EQ(c.y, a.y);
+   EXPECT_EQ(c.z, a.z);
+ }
+}
+
 TEST(Position, Subtraction){
   seed_rand();
   Pose3D::Position a,b,c;
@@ -113,6 +264,77 @@ for (unsigned int i = 0; i < 1000; i++)
    EXPECT_EQ(c.x, a.x - b.x);
    EXPECT_EQ(c.y, a.y - b.y);
    EXPECT_EQ(c.z, a.z - b.z);
+ }
+}
+
+TEST(Position, MinusEquals){
+  seed_rand();
+  Pose3D::Position a,b,c;
+for (unsigned int i = 0; i < 1000; i++)
+ {  
+   a.x = rand();
+   a.y = rand();
+   a.z = rand();
+   b.x = rand();
+   b.y = rand();
+   b.z = rand();
+   c = a - b;
+   a -= b;
+   EXPECT_EQ(c.x, a.x);
+   EXPECT_EQ(c.y, a.y);
+   EXPECT_EQ(c.z, a.z);
+ }
+}
+
+TEST(Position, TimesEqual){
+  seed_rand();
+  Pose3D::Position a,b,c;
+  double scalar;
+  for (unsigned int i = 0; i < 1000; i++)
+ {  
+   scalar = rand();
+   a.x = rand();
+   a.y = rand();
+   a.z = rand();
+   c = a;
+   c *= scalar;
+   EXPECT_EQ(c.x, a.x * scalar);
+   EXPECT_EQ(c.y, a.y * scalar);
+   EXPECT_EQ(c.z, a.z * scalar);
+ }
+}
+
+TEST(Position, Times){
+  seed_rand();
+  Pose3D::Position a,b,c;
+  double scalar;
+  for (unsigned int i = 0; i < 1000; i++)
+ {  
+   scalar = rand();
+   a.x = rand();
+   a.y = rand();
+   a.z = rand();
+   c = a * scalar;
+   EXPECT_EQ(c.x, a.x * scalar);
+   EXPECT_EQ(c.y, a.y * scalar);
+   EXPECT_EQ(c.z, a.z * scalar);
+ }
+}
+
+TEST(Position, rot2D){
+  seed_rand();
+  Pose3D::Position a,b,c;
+  double scalar;
+for (unsigned int i = 0; i < 1000; i++)
+ {  
+   scalar = rand();
+   a.x = rand();
+   a.y = rand();
+   a.z = rand();
+   c = a.rot2D(scalar);
+   EXPECT_LT(fabs(-c.x + a.x * cos(scalar) - a.y * sin(scalar)),0.000001); //Can't go higher precision w/o failing??
+   EXPECT_LT(fabs(-c.y+ a.x * sin(scalar) + a.y * cos(scalar)), 0.000001);
+   EXPECT_LT(fabs(-c.z + a.z), 0.0000001);
  }
 }
 
@@ -213,6 +435,25 @@ TEST(Pose3D, EulerToMatrixToQuaternionToMatrixToEuler)
 
 }
 
+
+TEST(Pose3D, MatrixToPosition){
+  
+  for (unsigned int i = 0; i < 1000; i++)
+  {
+    NEWMAT::Matrix m(4,4);
+    m << 0 << 0 << 0 << rand()
+      << 0 << 0 << 0 << rand()
+      << 0 << 0 << 0 << rand()
+      << 0 << 0 << 0 << 1;
+    
+    Pose3D::Position t = Pose3D::positionFromMatrix(m);
+    
+    EXPECT_EQ(t.x, m(1,4));
+    EXPECT_EQ(t.y, m(2,4));
+    EXPECT_EQ(t.z, m(3,4));
+  }
+
+}
 
 
 
