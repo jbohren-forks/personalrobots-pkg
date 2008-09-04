@@ -26,7 +26,6 @@ set(TREX_FILES src/Executive.cc
                src/LogClock.cc 
 	       src/CalcAngleDiffConstraint.cc 
 	       src/CalcDistanceConstraint.cc 
-	       src/ExecDefs.cc 
 	       src/Components.cc
 	       src/BaseStateAdapter.cc
 	       src/BaseControllerAdapter.cc)

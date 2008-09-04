@@ -1,9 +1,7 @@
 #ifndef H_ROSNode
 #define H_ROSNode
 
-#include "ExecDefs.hh"
 #include "Observer.hh"
-
 #include <pthread.h>
 
 // roscpp

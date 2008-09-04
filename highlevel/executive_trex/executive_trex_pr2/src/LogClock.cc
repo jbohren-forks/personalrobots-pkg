@@ -1,9 +1,11 @@
 #include "Clock.hh"
 #include <errno.h>
 #include <time.h>
+#include <signal.h>
 #include "LogClock.hh"
 #include "Agent.hh"
 #include "LogManager.hh"
+#include "Components.hh"
 
 namespace TREX {
  /**
@@ -30,6 +32,11 @@ namespace TREX {
   }
 
   void* LogClock::threadRunner(void* clk){
+    signal(SIGINT,  &TREX::signalHandler);
+    signal(SIGTERM, &TREX::signalHandler);
+    signal(SIGQUIT, &TREX::signalHandler);
+    signal(SIGKILL, &TREX::signalHandler);
+
     LogClock* This = (LogClock*) clk;
 
     // Loop forever, sleep for a tick

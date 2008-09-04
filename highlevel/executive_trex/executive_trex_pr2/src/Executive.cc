@@ -79,45 +79,33 @@ Publishes to (name/type):
  **/
 
 #include "Nddl.hh"
-#include "ExecDefs.hh"
+#include "Components.hh"
 #include "Logger.hh"
 #include "Agent.hh"
 #include "LogClock.hh"
+#include "Debug.hh"
 #include <signal.h>
 
 TiXmlElement* root = NULL;
-Clock* agentClock = NULL;
+TREX::Clock* agentClock = NULL;
 std::ofstream dbgFile("Debug.log");
 
-using namespace std_msgs;
-
-LoggerId logger;
-
-
-/**
- * @brief Handle cleanup on process termination signals.
- */
-void signalHandler(int signalNo){
-  debugMsg("Executive:signal", "Handling signal...");
-  exit(0);
-}
+TREX::LoggerId logger;
 
 /**
  * @brief Handle cleanup on exit
  */
 void cleanup(){
-  debugMsg("Executive", "Cleaning up...");
-  std::cout << "Shutting down at tick: "
-	    << Agent::instance()->getCurrentTick() << std::endl;
+  std::cout << "Shutting down at tick: "  << TREX::Agent::instance()->getCurrentTick() << std::endl;
 
   // Terminate the agent
-  Agent::terminate();
+  TREX::Agent::terminate();
 
-  Clock::sleep(3);
+  TREX::Clock::sleep(3);
 
-  Agent::cleanupLog();
+  TREX::Agent::cleanupLog();
 
-  if (logger != LoggerId::noId()) {
+  if (logger != TREX::LoggerId::noId()) {
     FILE* file = logger->getFile();
     if (file) { fprintf(file, "\n</log>\n"); }
     logger->release();
@@ -126,10 +114,10 @@ void cleanup(){
 
 int main(int argc, char **argv)
 {
-  signal(SIGINT,  &signalHandler);
-  signal(SIGTERM, &signalHandler);
-  signal(SIGQUIT, &signalHandler);
-  signal(SIGKILL, &signalHandler);
+  signal(SIGINT,  &TREX::signalHandler);
+  signal(SIGTERM, &TREX::signalHandler);
+  signal(SIGQUIT, &TREX::signalHandler);
+  signal(SIGKILL, &TREX::signalHandler);
 
   bool playback = false;
 
@@ -139,19 +127,19 @@ int main(int argc, char **argv)
   }
   atexit(&cleanup);
 
-  LogManager::instance();
+  TREX::LogManager::instance();
 
   char * configFile = argv[1];
-  root = LogManager::initXml( configFile );
+  root = TREX::LogManager::initXml( configFile );
 
   playback = root->Attribute("playback") ? true : false;
 
   if (!playback) {
-    logger = Logger::request();
+    logger = TREX::Logger::request();
     logger->setEnabled(true);
   }
 
-  initROSExecutive(playback);
+  TREX::initROSExecutive(playback);
 
   DebugMessage::setStream(dbgFile);
 
@@ -159,24 +147,23 @@ int main(int argc, char **argv)
   root->Attribute("finalTick", &finalTick);
 
   if (playback) {
-    agentClock = new PlaybackClock(finalTick);
+    agentClock = new TREX::PlaybackClock(finalTick);
   } else {
     // Allocate a real time clock with 1 second per tick
-    agentClock = new LogClock(1.0);
+    agentClock = new TREX::LogClock(1.0);
   }
 
   // Allocate the agent
-  debugMsg("Executive", "Initializing the agent");
-  Agent::initialize(*root, *agentClock);
-
-  debugMsg("Executive", "Starting TREX");
+  TREX::Agent::initialize(*root, *agentClock);
 
   try{
-    debugMsg("ALWAYS", "Executing the agent");
-    Agent::instance()->run();
+    TREX::Agent::instance()->run();
   }
-  catch(void*){
-    debugMsg("Executive", "Caught unexpected exception.");
+  catch(const char* str){
+    std::cout << str << std::endl;
+  }
+  catch(...){
+    std::cout << "Caught unexpected exception." << std::endl;
   }
 
   return 0;

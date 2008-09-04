@@ -26,6 +26,14 @@
 
 namespace TREX{
 
+  /**
+   * @brief Handle cleanup on process termination signals.
+   */
+  void signalHandler(int signalNo){
+    std::cout << "Handling signal..." << signalNo << std::endl;
+    exit(0);
+  }
+
   class ROSSchema: public Assembly::Schema {
   public:
     ROSSchema(bool playback):m_playback(playback){}

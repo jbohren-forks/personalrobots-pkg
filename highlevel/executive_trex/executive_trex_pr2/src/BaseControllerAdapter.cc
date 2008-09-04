@@ -1,6 +1,7 @@
 #include "BaseControllerAdapter.hh"
 #include "IntervalDomain.hh"
 #include "Token.hh"
+#include <std_msgs/Planner2DGoal.h>
 
 namespace TREX {
   BaseControllerAdapter::BaseControllerAdapter(const LabelStr& agentName, const TiXmlElement& configData)
@@ -37,7 +38,8 @@ namespace TREX {
     if(((int) m_lastUpdated) == m_lastPublished)
       return;
 
-    assertTrue(m_state != BaseControllerAdapter::UNDEFINED, "Should not be undefined after we have updated.");
+    if(m_state == BaseControllerAdapter::UNDEFINED)
+      throw "BaseControllerAdapter: Tried to get an observation for adapter with no initial state set yet.";
 
     double x, y, th;
     ObservationByValue* obs = NULL;

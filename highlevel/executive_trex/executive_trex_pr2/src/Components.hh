@@ -1,14 +1,16 @@
 /**
  * @brief Collection of various components to use
  */
-#include "ExecDefs.hh"
-#include "OpenConditionManager.hh"
-#include "FlawFilter.hh"
-#include <list>
+#include "Constraint.hh"
 
-using namespace EUROPA::SOLVERS;
+using namespace EUROPA;
 
 namespace TREX {
+
+  void signalHandler(int signalNo);
+
+  void initROSExecutive(bool playback);
+
   class CostEstimator;
   class FloorFunction: public Constraint{
   public:
@@ -22,10 +24,4 @@ namespace TREX {
     AbstractDomain& m_target;
     const AbstractDomain& m_source;
   };
-
-
-
-
-
-
 }
