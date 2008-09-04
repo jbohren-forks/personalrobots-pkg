@@ -55,25 +55,61 @@ namespace display_ode
     class DisplayODESpaces
     {
     public:
-	
-	void drawSphere(dGeomID geom)
+
+	// copied from an ODE demo program
+	void drawGeom (dGeomID g, const dReal *pos, const dReal *R, int show_aabb)
 	{
-	    dReal radius = dGeomSphereGetRadius(geom);
-	    dsDrawSphere(dGeomGetPosition(geom), dGeomGetRotation(geom), radius);    
-	}
-	
-	void drawBox(dGeomID geom)
-	{
-	    dVector3 sides;	
-	    dGeomBoxGetLengths(geom, sides);	
-	    dsDrawBox(dGeomGetPosition(geom), dGeomGetRotation(geom), sides);
-	}
-	
-	void drawCylinder(dGeomID geom)
-	{
-	    dReal radius, length;
-	    dGeomCylinderGetParams(geom, &radius, &length);	
-	    dsDrawCylinder(dGeomGetPosition(geom), dGeomGetRotation(geom), length, radius);
+	    int i;
+	    
+	    if (!g) return;
+	    if (!pos) pos = dGeomGetPosition (g);
+	    if (!R) R = dGeomGetRotation (g);
+	    
+	    int type = dGeomGetClass (g);
+	    if (type == dBoxClass) {
+		dVector3 sides;
+		dGeomBoxGetLengths (g,sides);
+		dsDrawBox (pos,R,sides);
+	    }
+	    else if (type == dSphereClass) {
+		dsDrawSphere (pos,R,dGeomSphereGetRadius (g));
+	    }
+	    else if (type == dCapsuleClass) {
+		dReal radius,length;
+		dGeomCapsuleGetParams (g,&radius,&length);
+		dsDrawCapsule (pos,R,length,radius);
+	    }
+	    else if (type == dCylinderClass) {
+		dReal radius,length;
+		dGeomCylinderGetParams (g,&radius,&length);
+		dsDrawCylinder (pos,R,length,radius);
+	    }
+	    else if (type == dGeomTransformClass) {
+		dGeomID g2 = dGeomTransformGetGeom (g);
+		const dReal *pos2 = dGeomGetPosition (g2);
+		const dReal *R2 = dGeomGetRotation (g2);
+		dVector3 actual_pos;
+		dMatrix3 actual_R;
+		dMULTIPLY0_331 (actual_pos,R,pos2);
+		actual_pos[0] += pos[0];
+		actual_pos[1] += pos[1];
+		actual_pos[2] += pos[2];
+		dMULTIPLY0_333 (actual_R,R,R2);
+		drawGeom (g2,actual_pos,actual_R,0);
+	    }
+	    if (show_aabb) {
+		// draw the bounding box for this geom
+		dReal aabb[6];
+		dGeomGetAABB (g,aabb);
+		dVector3 bbpos;
+		for (i=0; i<3; i++) bbpos[i] = 0.5*(aabb[i*2] + aabb[i*2+1]);
+		dVector3 bbsides;
+		for (i=0; i<3; i++) bbsides[i] = aabb[i*2+1] - aabb[i*2];
+		dMatrix3 RI;
+		dRSetIdentity (RI);
+		dsSetColorAlpha (1,0,0,0.5);
+		dsDrawBox (bbpos,RI,bbsides);
+	    }
 	}
 	
 	void displaySpace(dSpaceID space)
@@ -82,24 +118,7 @@ namespace display_ode
 	    for (int i = 0 ; i < ngeoms ; ++i)
 	    {
 		dGeomID geom = dSpaceGetGeom(space, i);
-		int cls = dGeomGetClass(geom);
-		switch (cls)
-		{
-		case dSphereClass:
-		    drawSphere(geom);
-		    break;
-		case dBoxClass:
-		    drawBox(geom);
-		    break;
-		case dCylinderClass:
-		    drawCylinder(geom);
-		    break;	    
-		case dPlaneClass:
-		    break;
-		default:
-		    printf("Geometry class %d not yet implemented\n", cls);	    
-		    break;	    
-		}
+		drawGeom(geom, NULL, NULL, 0);
 	    }
 	}
 	
