@@ -239,6 +239,51 @@ class RKPBasicRequest
 	psetup->si->clearGoal();
 	psetup->si->clearStartStates();	
     }
+
+    bool execute(ModelMap &models, _R &req, robot_msgs::KinematicPath &path, double &distance)
+    {
+	if (!isRequestValid(models, req))
+	    return false;
+	
+	/* find the data we need */
+	RKPModel             *m = models[req.params.model_id];
+	RKPPlannerSetup *psetup = m->planners[req.params.planner_id];
+	
+	/* configure state space and starting state */
+	setupStateSpaceAndStartState(m, psetup, req.params, req.start_state);
+	
+	std::vector<robot_msgs::PoseConstraint> cstrs;
+	req.constraints.get_pose_vec(cstrs);
+	setupPoseConstraints(psetup, cstrs);
+	
+	/* add goal state */
+	setupGoalState(m, psetup, req);
+	
+	/* print some information */
+	printf("=======================================\n");
+	psetup->si->printSettings();
+	printf("=======================================\n");	
+	
+	/* compute actual motion plan */
+	ompl::SpaceInformationKinematic::PathKinematic_t bestPath       = NULL;
+	double                                           bestDifference = 0.0;	
+
+	m->collisionSpace->lock();
+	profiling_utils::Profiler::Start();
+
+	computePlan(psetup, req.times, req.allowed_time, req.interpolate, bestPath, bestDifference);
+
+	profiling_utils::Profiler::Stop();
+	m->collisionSpace->unlock();
+	
+	/* fill in the results */
+	fillSolution(psetup, bestPath, bestDifference, path, distance);
+	
+	/* clear memory */
+	cleanupPlanningData(psetup);
+	
+	return true;
+    }
     
 };
 

@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
 /**
 
@@ -41,7 +41,33 @@
 @htmlinclude ../manifest.html
 
 @b KinematicPlanning is a node capable of planning kinematic paths for
-a set of robot models.
+a set of robot models. Each robot model is a complete model specified
+in URDF or consists of an URDF group.
+
+Organization:
+ - there are multiple models
+ - there are multiple planners that can be used for each model
+ - there are multiple types of planning requests
+
+The code is mostly implemented in the included RKP* files (ROS
+Kinematic Planning). There exists one basic class (RKPBasicRequest)
+that can handle different requests. However, since the type of a
+request may vary, the code for this basic request is templated. The
+functions that vary with the type of request have a simple default
+implementation (this implementation should not be used since it is
+incomplete) and specializations for the different types of
+requests. For new requests to be added, only specialization is
+needed. Inheritance is also possible, on top of RKPBasicRequest, but
+is not needed for the types of requets currently handled.
+
+A model is defined for each loaded URDF model, and for each of the
+URDF groups marked for planning. This model includes a kinematic
+model, a collision space (shared between models) and a set of
+planners. If a planner is used for different models, it is
+instantiated each time. Since planners may require different
+setup/configuration code, there exists a base class that defines the
+functionality and an inherited class for each type of planner that can
+be instantiated.
 
 <hr>
 
@@ -95,8 +121,6 @@ Provides (name/type):
 #include "RKPBasicRequestState.h"
 #include "RKPBasicRequestLinkPosition.h"
 
-#include <profiling_utils/profiler.h>
-
 class KinematicPlanning : public ros::node,
 			  public planning_node_util::NodeCollisionModel
 {
@@ -120,90 +144,12 @@ public:
     
     bool planToState(robot_srvs::KinematicPlanState::request &req, robot_srvs::KinematicPlanState::response &res)
     {
-	if (!m_requestState.isRequestValid(m_models, req))
-	    return false;
-	
-	/* find the data we need */
-	RKPModel             *m = m_models[req.params.model_id];
-	RKPPlannerSetup *psetup = m->planners[req.params.planner_id];
-	
-	/* configure state space and starting state */
-	m_requestState.setupStateSpaceAndStartState(m, psetup, req.params, req.start_state);
-	
-	std::vector<robot_msgs::PoseConstraint> cstrs;
-	req.constraints.get_pose_vec(cstrs);
-	m_requestState.setupPoseConstraints(psetup, cstrs);
-	
-	/* add goal state */
-	m_requestState.setupGoalState(m, psetup, req);
-	
-	/* print some information */
-	printf("=======================================\n");
-	psetup->si->printSettings();
-	printf("=======================================\n");	
-	
-	/* compute actual motion plan */
-	ompl::SpaceInformationKinematic::PathKinematic_t bestPath       = NULL;
-	double                                           bestDifference = 0.0;	
-
-	m_collisionSpace->lock();
-	profiling_utils::Profiler::Start();
-	m_requestState.computePlan(psetup, req.times, req.allowed_time, req.interpolate, bestPath, bestDifference);
-	profiling_utils::Profiler::Stop();
-	m_collisionSpace->unlock();
-
-	/* fill in the results */
-	m_requestState.fillSolution(psetup, bestPath, bestDifference, res.path, res.distance);
-	
-	/* clear memory */
-	m_requestState.cleanupPlanningData(psetup);
-	
-	return true;
+	return m_requestState.execute(m_models, req, res.path, res.distance);
     }
 
     bool planToPosition(robot_srvs::KinematicPlanLinkPosition::request &req, robot_srvs::KinematicPlanLinkPosition::response &res)
-    {
-	if (!m_requestLinkPosition.isRequestValid(m_models, req))
-	    return false;
-	
-	/* find the data we need */
-	RKPModel             *m = m_models[req.params.model_id];
-	RKPPlannerSetup *psetup = m->planners[req.params.planner_id];
-	
-	/* configure state space and starting state */
-	m_requestLinkPosition.setupStateSpaceAndStartState(m, psetup, req.params, req.start_state);
-	
-	std::vector<robot_msgs::PoseConstraint> cstrs;
-	req.constraints.get_pose_vec(cstrs);
-	m_requestLinkPosition.setupPoseConstraints(psetup, cstrs);
-
-	/* add goal state */
-	m_requestLinkPosition.setupGoalState(m, psetup, req);
-	
-	/* print some information */
-	printf("=======================================\n");
-	psetup->si->printSettings();
-	printf("=======================================\n");	
-	
-	/* compute actual motion plan */
-	ompl::SpaceInformationKinematic::PathKinematic_t bestPath       = NULL;
-	double                                           bestDifference = 0.0;	
-
-	m_collisionSpace->lock();
-	profiling_utils::Profiler::Start();
-
-	m_requestLinkPosition.computePlan(psetup, req.times, req.allowed_time, req.interpolate, bestPath, bestDifference);
-
-	profiling_utils::Profiler::Stop();
-	m_collisionSpace->unlock();
-
-	/* fill in the results */
-	m_requestLinkPosition.fillSolution(psetup, bestPath, bestDifference, res.path, res.distance);
-	
-	/* clear memory */
-	m_requestLinkPosition.cleanupPlanningData(psetup);
-	
-	return true;
+    {	
+	return m_requestLinkPosition.execute(m_models, req, res.path, res.distance);
     }
 
     virtual void setRobotDescription(robot_desc::URDF *file)
