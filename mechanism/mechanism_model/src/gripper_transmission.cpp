@@ -92,10 +92,9 @@ void GripperTransmission::propagatePosition(
   assert(js.size() == reductions_.size());
   for (unsigned int i = 0; i < js.size(); ++i)
   {
-    double mr = reductions_[i];
-    js[i]->position_ = as[0]->state_.encoder_count_ * 2 * M_PI / (mr * pulses_per_revolution_);
-    js[i]->velocity_ = as[0]->state_.encoder_velocity_ * 2 * M_PI / (mr * pulses_per_revolution_);
-    js[i]->applied_effort_ = as[0]->state_.last_measured_current_ * mr * motor_torque_constant_;
+    js[i]->position_ = as[0]->state_.position_ / reductions_[i];
+    js[i]->velocity_ = as[0]->state_.velocity_ / reductions_[i];
+    js[i]->applied_effort_ = as[0]->state_.last_measured_effort_ * reductions_[i];
   }
 }
 
@@ -105,19 +104,18 @@ void GripperTransmission::propagatePositionBackwards(
   assert(as.size() == 1);
   assert(js.size() == reductions_.size());
 
-  double mean_encoder = 0.0;
-  double mean_encoder_v = 0.0;
-  double mean_current = 0.0;
+  double mean_position = 0.0;
+  double mean_velocity = 0.0;
+  double mean_effort = 0.0;
   for (unsigned int i = 0; i < js.size(); ++i)
   {
-    double mr = reductions_[i];
-    mean_encoder += js[i]->position_ * mr * pulses_per_revolution_ / (2 * M_PI);
-    mean_encoder_v += js[i]->velocity_ * mr * pulses_per_revolution_ / (2 * M_PI);
-    mean_current += js[i]->applied_effort_ / (mr * motor_torque_constant_);
+    mean_position += js[i]->position_ * reductions_[i];
+    mean_velocity += js[i]->velocity_ * reductions_[i];
+    mean_effort += js[i]->applied_effort_ / (reductions_[i]);
   }
-  as[0]->state_.encoder_count_ = mean_encoder / js.size();
-  as[0]->state_.encoder_velocity_ = mean_encoder_v / js.size();
-  as[0]->state_.last_measured_current_ = mean_current / js.size();
+  as[0]->state_.position_ = mean_position / js.size();
+  as[0]->state_.velocity_ = mean_velocity / js.size();
+  as[0]->state_.last_measured_effort_ = mean_effort / js.size();
 }
 
 void GripperTransmission::propagateEffort(
@@ -130,9 +128,9 @@ void GripperTransmission::propagateEffort(
   for (unsigned int i = 0; i < js.size(); ++i)
   {
     if (fabs(js[i]->commanded_effort_ / (reductions_[i])) > fabs(strongest))
-      strongest = js[i]->commanded_effort_ / (reductions_[i] * motor_torque_constant_);
+      strongest = js[i]->commanded_effort_ / reductions_[i];
   }
-  as[0]->command_.current_ = strongest;
+  as[0]->command_.effort_ = strongest;
 }
 
 void GripperTransmission::propagateEffortBackwards(
@@ -154,8 +152,7 @@ void GripperTransmission::propagateEffortBackwards(
     double pid_effort = pids_[i].updatePid(err, 0.001);
 
     js[i]->commanded_effort_ =
-      pid_effort / reductions_[i] +
-      as[0]->command_.current_ * reductions_[i] * motor_torque_constant_;
+      pid_effort / reductions_[i] + as[0]->command_.effort_ * reductions_[i];
   }
 }
 

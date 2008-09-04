@@ -62,9 +62,7 @@ bool SimpleTransmission::initXml(TiXmlElement *elt, Robot *robot)
   }
   actuator_names_.push_back(actuator_name);
 
-  mechanical_reduction_ = atof(elt->FirstChildElement("mechanicalReduction")->GetText()),
-  motor_torque_constant_ = atof(elt->FirstChildElement("motorTorqueConstant")->GetText()),
-  pulses_per_revolution_ = atof(elt->FirstChildElement("pulsesPerRevolution")->GetText());
+  mechanical_reduction_ = atof(elt->FirstChildElement("mechanicalReduction")->GetText());
   return true;
 }
 
@@ -73,9 +71,9 @@ void SimpleTransmission::propagatePosition(
 {
   assert(as.size() == 1);
   assert(js.size() == 1);
-  js[0]->position_ = ((double)as[0]->state_.encoder_count_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);
-  js[0]->velocity_ = ((double)as[0]->state_.encoder_velocity_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);
-  js[0]->applied_effort_ = as[0]->state_.last_measured_current_ * (motor_torque_constant_ * mechanical_reduction_);
+  js[0]->position_ = as[0]->state_.position_ / mechanical_reduction_;
+  js[0]->velocity_ = as[0]->state_.velocity_ / mechanical_reduction_;
+  js[0]->applied_effort_ = as[0]->state_.last_measured_effort_ * mechanical_reduction_;
 }
 
 void SimpleTransmission::propagatePositionBackwards(
@@ -83,9 +81,9 @@ void SimpleTransmission::propagatePositionBackwards(
 {
   assert(as.size() == 1);
   assert(js.size() == 1);
-  as[0]->state_.encoder_count_ = (int)(js[0]->position_ * pulses_per_revolution_ * mechanical_reduction_ / (2*M_PI));
-  as[0]->state_.encoder_velocity_ = js[0]->velocity_ * pulses_per_revolution_ * mechanical_reduction_ / (2*M_PI);
-  as[0]->state_.last_measured_current_ = js[0]->applied_effort_ / (motor_torque_constant_ * mechanical_reduction_);
+  as[0]->state_.position_ = js[0]->position_ * mechanical_reduction_;
+  as[0]->state_.velocity_ = js[0]->velocity_ * mechanical_reduction_;
+  as[0]->state_.last_measured_effort_ = js[0]->applied_effort_ / mechanical_reduction_;
 }
 
 void SimpleTransmission::propagateEffort(
@@ -93,7 +91,7 @@ void SimpleTransmission::propagateEffort(
 {
   assert(as.size() == 1);
   assert(js.size() == 1);
-  as[0]->command_.current_ = js[0]->commanded_effort_/(motor_torque_constant_ * mechanical_reduction_);
+  as[0]->command_.effort_ = js[0]->commanded_effort_ / mechanical_reduction_;
   as[0]->command_.enable_ = true;
 }
 
@@ -102,5 +100,5 @@ void SimpleTransmission::propagateEffortBackwards(
 {
   assert(as.size() == 1);
   assert(js.size() == 1);
-  js[0]->commanded_effort_ = as[0]->command_.current_ * motor_torque_constant_ * mechanical_reduction_;
+  js[0]->commanded_effort_ = as[0]->command_.effort_ * mechanical_reduction_;
 }

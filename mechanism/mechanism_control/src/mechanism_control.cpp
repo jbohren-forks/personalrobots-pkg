@@ -248,16 +248,18 @@ void MechanismControlNode::update()
       ActuatorState *in = &mc_->hw_->actuators_[i]->state_;
       out->name = mc_->hw_->actuators_[i]->name_;
       out->encoder_count = in->encoder_count_;
+      out->position = in->position_;
       out->timestamp = in->timestamp_;
       out->encoder_velocity = in->encoder_velocity_;
+      out->velocity = in->velocity_;
       out->calibration_reading = in->calibration_reading_;
       out->last_calibration_high_transition = in->last_calibration_high_transition_;
       out->last_calibration_low_transition = in->last_calibration_low_transition_;
       out->is_enabled = in->is_enabled_;
       out->run_stop_hit = in->run_stop_hit_;
-      out->last_requested_current = in->last_requested_current_;
-      out->last_commanded_current = in->last_commanded_current_;
-      out->last_measured_current = in->last_measured_current_;
+      out->last_requested_effort = in->last_requested_effort_;
+      out->last_commanded_effort = in->last_commanded_effort_;
+      out->last_measured_effort = in->last_measured_effort_;
       out->motor_voltage = in->motor_voltage_;
       out->num_encoder_errors = in->num_encoder_errors_;
     }

@@ -46,23 +46,28 @@ public:
       last_calibration_low_transition_(0),
       is_enabled_(0),
       run_stop_hit_(0),
-      last_requested_current_(0),
-      last_commanded_current_(0),
-      last_measured_current_(0),
+      last_requested_effort_(0),
+      last_commanded_effort_(0),
+      last_measured_effort_(0),
       num_encoder_errors_(0)
   {}
-  int encoder_count_;
   double timestamp_;
+
+  int encoder_count_;
+  double position_;
   double encoder_velocity_;
+  double velocity_;
+
   bool calibration_reading_;
   int last_calibration_high_transition_;
   int last_calibration_low_transition_;
+
   bool is_enabled_;
   bool run_stop_hit_;
 
-  double last_requested_current_;
-  double last_commanded_current_;
-  double last_measured_current_;
+  double last_requested_effort_;
+  double last_commanded_effort_;
+  double last_measured_effort_;
 
   int motor_voltage_;
 
@@ -74,10 +79,10 @@ class ActuatorCommand
 {
 public:
   ActuatorCommand() :
-    enable_(0), current_(0)
+    enable_(0), effort_(0)
   {}
   bool enable_;
-  double current_;
+  double effort_;
 };
 
 class Actuator

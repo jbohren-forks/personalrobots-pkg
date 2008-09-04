@@ -151,7 +151,7 @@ void EthercatHardware::update()
   current = current_buffer_;
   for (unsigned int i = 0; i < hw_->actuators_.size(); ++i)
   {
-    hw_->actuators_[i]->state_.last_requested_current_ = hw_->actuators_[i]->command_.current_;
+    hw_->actuators_[i]->state_.last_requested_effort_ = hw_->actuators_[i]->command_.effort_;
     slaves_[i]->truncateCurrent(hw_->actuators_[i]->command_);
     slaves_[i]->convertCommand(hw_->actuators_[i]->command_, current);
     current += slaves_[i]->command_size_ + slaves_[i]->status_size_;

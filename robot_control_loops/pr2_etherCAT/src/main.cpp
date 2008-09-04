@@ -111,7 +111,7 @@ void *controlLoop(void *arg)
   for (unsigned int i = 0; i < ec.hw_->actuators_.size(); ++i)
   {
     ec.hw_->actuators_[i]->command_.enable_ = false;
-    ec.hw_->actuators_[i]->command_.current_ = 0;
+    ec.hw_->actuators_[i]->command_.effort_ = 0;
   }
   ec.update();
 

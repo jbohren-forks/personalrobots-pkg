@@ -32,6 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#include <math.h>
+
 #include <ethercat_hardware/wg05.h>
 
 #include <dll/ethercat_dll.h>
@@ -155,13 +157,19 @@ void WG05::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
   max_current_ = config_info_.absolute_current_limit_ * config_info_.nominal_current_scale_;
 }
 
+static const double motor_torque_constant = -0.0603;
+static const int pulses_per_revolution = 1200;
+
 void WG05::convertCommand(ActuatorCommand &command, unsigned char *buffer)
 {
   WG05Command c;
 
   memset(&c, 0, sizeof(c));
 
-  c.programmed_current_ = command.current_ / config_info_.nominal_current_scale_;
+  double current = command.effort_ / motor_torque_constant;
+  current = max(min(current, max_current_), -max_current_);
+
+  c.programmed_current_ = current / config_info_.nominal_current_scale_;
   c.mode_ = command.enable_ ? (MODE_ENABLE | MODE_CURRENT) : MODE_OFF;
   c.checksum_ = rotate_right_8(compute_checksum(&c, sizeof(c) - 1));
 
@@ -170,7 +178,7 @@ void WG05::convertCommand(ActuatorCommand &command, unsigned char *buffer)
 
 void WG05::truncateCurrent(ActuatorCommand &command)
 {
-  command.current_ = max(min(command.current_, max_current_), -max_current_);
+  //command.current_ = max(min(command.current_, max_current_), -max_current_);
 }
 
 void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer)
@@ -186,16 +194,18 @@ void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, uns
 
   state.timestamp_ = current_status.timestamp_ / 1e+6;
   state.encoder_count_ = current_status.encoder_count_;
+  state.position_ = double(current_status.encoder_count_) / pulses_per_revolution * 2 * M_PI;
   state.encoder_velocity_ = double(int(current_status.encoder_count_ - last_status.encoder_count_))
       / (current_status.timestamp_ - last_status.timestamp_) * 1e+6;
+  state.velocity_ = state.encoder_velocity_ / pulses_per_revolution * 2 * M_PI;
   state.calibration_reading_ = current_status.calibration_reading_ & LIMIT_SENSOR_0_STATE;
   state.last_calibration_high_transition_ = current_status.last_calibration_high_transition_;
   state.last_calibration_low_transition_ = current_status.last_calibration_low_transition_;
   state.is_enabled_ = current_status.mode_ != MODE_OFF;
   state.run_stop_hit_ = (current_status.mode_ & MODE_UNDERVOLTAGE) != 0;
 
-  state.last_commanded_current_ = current_status.programmed_current_ * config_info_.nominal_current_scale_;
-  state.last_measured_current_ = current_status.measured_current_ * config_info_.nominal_current_scale_;
+  state.last_commanded_effort_ = current_status.programmed_current_ * config_info_.nominal_current_scale_ * motor_torque_constant;
+  state.last_measured_effort_ = current_status.measured_current_ * config_info_.nominal_current_scale_ * motor_torque_constant;
 
   state.num_encoder_errors_ = current_status.num_encoder_errors_;
   state.num_communication_errors_ = 0; // TODO: communication errors are no longer reported in the process data

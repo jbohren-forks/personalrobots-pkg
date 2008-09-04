@@ -53,8 +53,6 @@ public:
   bool initXml(TiXmlElement *config, Robot *robot);
 
   double mechanical_reduction_;
-  double motor_torque_constant_;
-  double pulses_per_revolution_;
 
   void propagatePosition(std::vector<Actuator*>&, std::vector<JointState*>&);
   void propagatePositionBackwards(std::vector<JointState*>&, std::vector<Actuator*>&);
