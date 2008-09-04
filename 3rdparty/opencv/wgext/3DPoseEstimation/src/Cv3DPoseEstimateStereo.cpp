@@ -12,6 +12,8 @@
 #include <star_detector/include/detector.h>
 using namespace std;
 
+#define DEBUG
+
 const CvPoint Cv3DPoseEstimateStereo::DefNeighborhoodSize = cvPoint(128, 48);
 // increasing the neighborhood size does not help very much. In fact, I have been
 // degradation of performance.
@@ -200,24 +202,7 @@ vector<pair<CvPoint3D64f, CvPoint3D64f> > Cv3DPoseEstimateStereo::getTrackablePa
 		bool goodFeaturePtInCurrentLeftImg = false;
 		vector<CvPoint2D32f> featurePtsInNeighborhood;
 		assert(featurePtsInNeighborhood.size()==0);
-		for (vector<Keypoint>::const_iterator jkp = keyPoints1.begin();
-			jkp!=keyPoints1.end(); jkp++) {
-			CvPoint2D32f featurePtLeft = cvPoint2D32f(jkp->x, jkp->y);
-			float dx = featurePtLeft.x - featurePtLastLeft.x;
-			float dy = featurePtLeft.y - featurePtLastLeft.y;
-			if (fabs(dx)<neighborhoodSize.x && fabs(dy)<neighborhoodSize.y) {
-				goodFeaturePtInCurrentLeftImg = true;
-				featurePtsInNeighborhood.push_back(featurePtLeft);
-#ifdef DEBUG
-				cout << "Good candidate at "<< featurePtLeft.x <<","<< featurePtLeft.y<<endl;
-#endif
-			}
-		}
-		if (goodFeaturePtInCurrentLeftImg == true) {
-#ifdef DEBUG
-			cout <<"Found "<< featurePtsInNeighborhood.size() << " candidates in the neighborhood"<<endl;
-#endif
-			// find the best correlation in the neighborhood
+		if (mKeypointVsKeyPoint == true) {
 			// make a template center around featurePtLastLeft;
 			CvRect rectTempl = cvRect(
 					(int)(.5 + featurePtLastLeft.x - templSize.x/2),
@@ -230,6 +215,111 @@ vector<pair<CvPoint3D64f, CvPoint3D64f> > Cv3DPoseEstimateStereo::getTrackablePa
 					rectTempl.y + rectTempl.height > mSize.height ) {
 				// (partially) out of bound.
 				// skip this
+				continue;
+			}
+			CvMat templ;
+			cvGetSubRect(image0.Ipl(), &templ, rectTempl);
+			CvMat templ2;
+			float _res[0];
+			CvMat res = cvMat(1, 1, CV_32FC1, _res);
+			cvMatchTemplate(&templ, &templ, &res, CV_TM_CCORR_NORMED );
+			double threshold = _res[0]*.75;
+			CvPoint bestloc = cvPoint(-1,-1);
+			double maxScore = threshold;
+			for (vector<Keypoint>::const_iterator jkp = keyPoints1.begin();
+			jkp!=keyPoints1.end(); jkp++) {
+				CvPoint2D32f featurePtLeft = cvPoint2D32f(jkp->x, jkp->y);
+				float dx = featurePtLeft.x - featurePtLastLeft.x;
+				float dy = featurePtLeft.y - featurePtLastLeft.y;
+				if (fabs(dx)<neighborhoodSize.x && fabs(dy)<neighborhoodSize.y) {
+					goodFeaturePtInCurrentLeftImg = true;
+					featurePtsInNeighborhood.push_back(featurePtLeft);
+#ifdef DEBUG
+					cout << "Good candidate at "<< featurePtLeft.x <<","<< featurePtLeft.y<<endl;
+#endif
+					CvRect rectTempl2 = cvRect(
+							(int)(.5 + featurePtLeft.x - templSize.x/2),
+							(int)(.5 + featurePtLeft.y - templSize.y/2),
+							templSize.x, templSize.y
+					);
+					// check if rectTempl is all within bound
+					if (rectTempl2.x < 0 || rectTempl2.y < 0 ||
+							rectTempl2.x + rectTempl2.width  > mSize.width ||
+							rectTempl2.y + rectTempl2.height > mSize.height ) {
+						// (partially) out of bound.
+						// skip this
+						continue;
+					}
+					cvGetSubRect(image1.Ipl(), &templ2, rectTempl2);
+					cvMatchTemplate(&templ2, &templ, &res, CV_TM_CCORR_NORMED );
+					double score = _res[0];
+					if (score > maxScore) {
+						bestloc.x = featurePtLeft.x;
+						bestloc.y = featurePtLeft.y;
+						maxScore = score;
+					}
+				}
+			}
+			if (maxScore <= threshold ) {
+				continue;
+			}
+
+			CvScalar s = cvGet2D(dispMap1.Ipl(), bestloc.y, bestloc.x);
+			double d = s.val[0];
+
+			if (d<0) {
+#ifdef DEBUG
+				cout << "disparity missing: "<<d<<endl;
+#endif
+				continue;
+			}
+			d /= 16.;
+			CvPoint3D64f pt = cvPoint3D64f(bestloc.x, bestloc.y, d);
+#ifdef DEBUG
+			cout << "best match: "<<pt.x<<","<<pt.y<<","<<pt.z<<endl;
+#endif
+			pair<CvPoint3D64f, CvPoint3D64f> p(ptLast, pt);
+			trackablePairs.push_back(p);
+			numTrackablePairs++;
+		} else {
+			for (vector<Keypoint>::const_iterator jkp = keyPoints1.begin();
+			jkp!=keyPoints1.end(); jkp++) {
+				CvPoint2D32f featurePtLeft = cvPoint2D32f(jkp->x, jkp->y);
+				float dx = featurePtLeft.x - featurePtLastLeft.x;
+				float dy = featurePtLeft.y - featurePtLastLeft.y;
+				if (fabs(dx)<neighborhoodSize.x && fabs(dy)<neighborhoodSize.y) {
+					goodFeaturePtInCurrentLeftImg = true;
+					featurePtsInNeighborhood.push_back(featurePtLeft);
+#ifdef DEBUG
+					cout << "Good candidate at "<< featurePtLeft.x <<","<< featurePtLeft.y<<endl;
+#endif
+
+				}
+			}
+			if (goodFeaturePtInCurrentLeftImg == false)
+				continue;
+#ifdef DEBUG
+			cout <<"Found "<< featurePtsInNeighborhood.size() << " candidates in the neighborhood"<<endl;
+#endif
+			/* find the best correlation in the neighborhood */
+			/** make a template center around featurePtLastLeft; */
+			CvRect rectTempl;
+
+			bool fOutOfBound = false;
+			rectTempl = cvRect(
+					(int)(.5 + featurePtLastLeft.x - templSize.x/2),
+					(int)(.5 + featurePtLastLeft.y - templSize.y/2),
+					templSize.x, templSize.y
+			);
+			// check if rectTempl is all within bound
+			if (rectTempl.x < 0 || rectTempl.y < 0 ||
+					rectTempl.x + rectTempl.width  > mSize.width ||
+					rectTempl.y + rectTempl.height > mSize.height ) {
+				/* (partially) out of bound. */
+				/* skip this */
+				fOutOfBound = true;
+			}
+			if (fOutOfBound == true) {
 				continue;
 			}
 			CvRect rectNeighborhood = cvRect(

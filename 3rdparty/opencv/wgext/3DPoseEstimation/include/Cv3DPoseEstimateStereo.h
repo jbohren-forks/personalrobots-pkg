@@ -41,6 +41,9 @@ public:
 	static const CvPoint DefNeighborhoodSize;
 	static const CvPoint DefTemplateSize;
 	static const double  DefTemplateMatchThreshold = 0;
+	// if true, only do matching between keypoints.
+	// search a neighborhood otherwise
+	static const bool    mKeypointVsKeyPoint = false;
 
 	Cv3DPoseEstimateStereo(int width=DefWidth, int height=DefHeight);
 	virtual ~Cv3DPoseEstimateStereo();
