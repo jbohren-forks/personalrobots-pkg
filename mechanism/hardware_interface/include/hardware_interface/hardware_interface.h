@@ -49,7 +49,8 @@ public:
       last_requested_effort_(0),
       last_commanded_effort_(0),
       last_measured_effort_(0),
-      num_encoder_errors_(0)
+      num_encoder_errors_(0),
+      zero_offset_(0)
   {}
   double timestamp_;
 
@@ -73,6 +74,8 @@ public:
 
   int num_encoder_errors_;
   int num_communication_errors_;
+
+  int zero_offset_; // In encoder counts
 };
 
 class ActuatorCommand

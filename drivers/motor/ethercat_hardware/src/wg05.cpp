@@ -194,7 +194,7 @@ void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, uns
 
   state.timestamp_ = current_status.timestamp_ / 1e+6;
   state.encoder_count_ = current_status.encoder_count_;
-  state.position_ = double(current_status.encoder_count_) / pulses_per_revolution * 2 * M_PI;
+  state.position_ = double(current_status.encoder_count_ - state.zero_offset_) / pulses_per_revolution * 2 * M_PI;
   state.encoder_velocity_ = double(int(current_status.encoder_count_ - last_status.encoder_count_))
       / (current_status.timestamp_ - last_status.timestamp_) * 1e+6;
   state.velocity_ = state.encoder_velocity_ / pulses_per_revolution * 2 * M_PI;
