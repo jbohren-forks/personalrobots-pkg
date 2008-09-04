@@ -1,0 +1,13 @@
+<package>
+<description brief="wxPython SWIG interface files">
+Interface files used for 
+
+</description>
+<author>Many</author>
+<license url="http://www.opensource.org/licenses/wxwindows.php">wxWidgets</license>
+<url>http://www.wxpython.org/</url>
+<export>
+  <swig flags="-I${prefix}/src"/>
+</export>
+</package>
+
