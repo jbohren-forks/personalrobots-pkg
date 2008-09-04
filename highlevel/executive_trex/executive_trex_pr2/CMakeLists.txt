@@ -31,11 +31,11 @@ set(TREX_FILES src/Executive.cc
 	       src/BaseStateAdapter.cc
 	       src/BaseControllerAdapter.cc)
 
-rospack_add_executable(executive_trex_pr2_g_rt ${TREX_FILES})
-target_link_libraries(executive_trex_pr2_g_rt Utils_g TREX_g)
+rospack_add_executable(build/trex_debug ${TREX_FILES})
+target_link_libraries(build/trex_debug Utils_g TREX_g)
 
 
-rospack_add_executable(executive_trex_pr2_o_rt ${TREX_FILES})
-target_link_libraries(executive_trex_pr2_o_rt Utils_o TREX_o)
-rospack_add_compile_flags(executive_trex_pr2_o_rt "-O3 -DEUROPA_FAST")
+rospack_add_executable(build/trex_fast ${TREX_FILES})
+target_link_libraries(build/trex_fast Utils_o TREX_o)
+rospack_add_compile_flags(build/trex_fast "-O3 -DEUROPA_FAST")
 
