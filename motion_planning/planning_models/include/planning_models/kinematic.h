@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
 #ifndef KINEMATIC_ROBOT_MODEL_
 #define KINEMATIC_ROBOT_MODEL_
@@ -43,7 +43,6 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <cstdio>
 #include <cassert>
 
 /** @htmlinclude ../../manifest.html
