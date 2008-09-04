@@ -412,6 +412,7 @@ bool CvTest3DPoseEstimate::testVideos() {
 			loadStereoImagePair(dirname, frameIndex, leftImage, rightImage);
 			pathRecon.mPoseEstimator.getDisparityMap(leftImage, rightImage, dispMap);
 			keyPointsCurr = pathRecon.mPoseEstimator.goodFeaturesToTrack(leftImage, &dispMap);
+			pathRecon.mTotalKeypoints += keyPointsCurr.size();
 			cout << "Found " << keyPointsCurr.size() << " good features in left  image" << endl;
 			cvCvtColor(leftImage.Ipl(),  leftimgC3,  CV_GRAY2RGB);
 			leftimgC3a = leftImageC3a.Ipl();
@@ -425,6 +426,7 @@ bool CvTest3DPoseEstimate::testVideos() {
 		//
 		vector<pair<CvPoint3D64f, CvPoint3D64f> > trackablePairs =
 			pathRecon.mPoseEstimator.getTrackablePairs(lastLeftImage, leftImage, lastDispMap, dispMap, keyPointsLast, keyPointsCurr);
+		pathRecon.mTotalTrackablePairs += trackablePairs.size();
 
 		cout << "Num of trackable pairs for pose estimate: "<<trackablePairs.size() <<endl;
 
@@ -442,6 +444,8 @@ bool CvTest3DPoseEstimate::testVideos() {
 			//  pose estimation given the feature point pairs
 			int numInliers =
 				pathRecon.mPoseEstimator.estimate(trackablePairs, rot, shift, reversed);
+
+			pathRecon.mTotalInliers += numInliers;
 
 			CvMat *inliers0 = NULL;
 			CvMat *inliers1 = NULL;
@@ -464,62 +468,59 @@ bool CvTest3DPoseEstimate::testVideos() {
 #if DEBUG==1
 				cerr << "Going back to last good frame  from frame "<<i<<endl;
 #endif
-				if (pathRecon.mLastGoodFrame == NULL ) {
-					cerr << "We are in deep trouble: no good frames so far"<<endl;
-				} else {
-					cerr << "Last good frame is "<<pathRecon.mLastGoodFrame->mFrameIndex << endl;
-					pathRecon.mNumFramesSkipped--;
-					// show the inlier
-					inliers0 = pathRecon.mLastGoodFrame->mInliers0;
-					inliers1 = pathRecon.mLastGoodFrame->mInliers1;
-					cvCopy(&pathRecon.mLastGoodFrame->mRot, &rot);
-					cvCopy(&pathRecon.mLastGoodFrame->mShift, &shift);
-					frameIndex = pathRecon.mLastGoodFrame->mFrameIndex;
-					numTrackablePairs = pathRecon.mLastGoodFrame->mNumTrackablePairs;
-					numInliers = pathRecon.mLastGoodFrame->mNumInliers;
-					leftimgC3a = pathRecon.mLastGoodFrame->mImageC3a.Ipl();
+				assert(pathRecon.mLastGoodFrame != NULL);
 
-					// keep track of the trajectory
-					pathRecon.appendTransform(rot, shift);
+				cerr << "Last good frame is "<<pathRecon.mLastGoodFrame->mFrameIndex << endl;
+				pathRecon.mNumFramesSkipped--;
+				// show the inlier
+				inliers0 = pathRecon.mLastGoodFrame->mInliers0;
+				inliers1 = pathRecon.mLastGoodFrame->mInliers1;
+				cvCopy(&pathRecon.mLastGoodFrame->mRot, &rot);
+				cvCopy(&pathRecon.mLastGoodFrame->mShift, &shift);
+				frameIndex = pathRecon.mLastGoodFrame->mFrameIndex;
+				numTrackablePairs = pathRecon.mLastGoodFrame->mNumTrackablePairs;
+				numInliers = pathRecon.mLastGoodFrame->mNumInliers;
+				leftimgC3a = pathRecon.mLastGoodFrame->mImageC3a.Ipl();
 
-					// save the inliers into a file
-					sprintf(inliersFilename, "Output/indoor1/inliers1_%04d.xml", frameIndex);
-					pathRecon.saveKeyPoints(*inliers1, string(inliersFilename));
+				// keep track of the trajectory
+				pathRecon.appendTransform(rot, shift);
+				pathRecon.mTotalInliersInKeyFrames += numInliers;
+				pathRecon.mTotalKeypointsInKeyFrames += pathRecon.mLastGoodFrame->mKeypoints.size();
+				pathRecon.mTotalTrackablePairsInKeyFrames += pathRecon.mLastGoodFrame->mNumTrackablePairs;
 
-					// stores rotation mat and shift vector in rods and shifts
-					pathRecon.storeTransform(rot, shift, frameIndex - pathRecon.mStartFrameIndex);
+				// save the inliers into a file
+				sprintf(inliersFilename, "Output/indoor1/inliers1_%04d.xml", frameIndex);
+				pathRecon.saveKeyPoints(*inliers1, string(inliersFilename));
+
+				// stores rotation mat and shift vector in rods and shifts
+				pathRecon.storeTransform(rot, shift, frameIndex - pathRecon.mStartFrameIndex);
 
 
-					CvMatUtils::drawMatchingPairs(*inliers0, *inliers1, pathRecon.mLastGoodFrame->mImageC3a,
-							rot, shift,
-							(Cv3DPoseEstimateDisp&)pathRecon.mPoseEstimator, reversed);
+				CvMatUtils::drawMatchingPairs(*inliers0, *inliers1, pathRecon.mLastGoodFrame->mImageC3a,
+						rot, shift,
+						(Cv3DPoseEstimateDisp&)pathRecon.mPoseEstimator, reversed);
 
-					// measure the errors
-					pathRecon.measureErr(inliers0, inliers1);
+				// measure the errors
+				pathRecon.measureErr(inliers0, inliers1);
 
-					// getting ready for next key frame
-					keyPointsLast = pathRecon.mLastGoodFrame->mKeypoints;
-					lastDispMap.CloneFrom(pathRecon.mLastGoodFrame->mDispMap);
+				cvShowImage(lastTrackedLeftCam.c_str(), lastLeftImage.Ipl());
 
-					cvShowImage(lastTrackedLeftCam.c_str(), lastLeftImage.Ipl());
-					lastLeftImage.CloneFrom(pathRecon.mLastGoodFrame->mImage);
+				// getting ready for next key frame
+				// TODO: shall replace the next 3 lines with more efficient implementation
+				keyPointsLast = pathRecon.mLastGoodFrame->mKeypoints;
+				lastDispMap.CloneFrom(pathRecon.mLastGoodFrame->mDispMap);
+				lastLeftImage.CloneFrom(pathRecon.mLastGoodFrame->mImage);
 
-					// next we are supposed to try current image, frame i again with
-					// last good frame
-					pathRecon.mLastGoodFrameAvailable = false;
-				}
+				// next we are supposed to try current image, frame i again with
+				// last good frame
+				pathRecon.mLastGoodFrameAvailable = false;
 
 				break;
 			}
 			case CvPathRecon::KeyFrameKeep: 	{
-				// skip this frame but keep it in record
-				pathRecon.mNumFramesSkipped++;
-				// TODO: please revisit for efficient and correct memory management
-				delete pathRecon.mLastGoodFrame;
-				pathRecon.mLastGoodFrame = new CvPathRecon::PoseEstFrameEntry(leftImage, dispMap, keyPointsCurr,
-						rot, shift, trackablePairs.size(), numInliers, i,
-						leftImageC3a, inliers0, inliers1);
-				pathRecon.mLastGoodFrameAvailable = true;
+				int numTrackablePairs = trackablePairs.size();
+				pathRecon.keepGoodFrame(leftImage, dispMap, keyPointsCurr, rot, shift,
+						numTrackablePairs, numInliers, frameIndex, leftImageC3a, inliers0, inliers1);
 				break;
 			}
 			case CvPathRecon::KeyFrameUse:	{
@@ -528,6 +529,9 @@ bool CvTest3DPoseEstimate::testVideos() {
 
 				// keep track of the trajectory
 				pathRecon.appendTransform(rot, shift);
+				pathRecon.mTotalInliersInKeyFrames   += numInliers;
+				pathRecon.mTotalKeypointsInKeyFrames += keyPointsCurr.size();
+				pathRecon.mTotalTrackablePairsInKeyFrames += trackablePairs.size();
 
 				// save the inliers into a file
 				sprintf(inliersFilename, "Output/indoor1/inliers1_%04d.xml", frameIndex);
@@ -590,8 +594,21 @@ bool CvTest3DPoseEstimate::testVideos() {
 		}
 	}
 
+	int numKeyFrames = pathRecon.mEndFrameIndex - pathRecon.mStartFrameIndex - pathRecon.mNumFramesSkipped;
+	double scale   = 1./(double)(pathRecon.mEndFrameIndex - pathRecon.mStartFrameIndex);
+	double kfScale = 1./(double)numKeyFrames;
 	cout <<"Num of frames skipped: " << pathRecon.mNumFramesSkipped <<endl;
 	cout <<"Total distance covered: "<< pathRecon.mPathLength <<" mm"<<endl;
+	cout <<"Total/Average keypoints: "<< pathRecon.mTotalKeypoints << ","<< (double)pathRecon.mTotalKeypoints*scale <<endl;
+	cout <<"Total/Average trackable pairs: "<< pathRecon.mTotalTrackablePairs << ","<< (double)pathRecon.mTotalTrackablePairs*scale <<endl;
+	cout <<"Total/Average inliers: "<< pathRecon.mTotalInliers << ","<< (double)pathRecon.mTotalInliers*scale <<endl;
+	cout << "Total/Average keypoints with no disparity: "<< pathRecon.mPoseEstimator.mNumKeyPointsWithNoDisparity <<","<<
+	(double)pathRecon.mPoseEstimator.mNumKeyPointsWithNoDisparity*kfScale <<endl;
+
+	cout << "In Key Frames: "<<endl;
+	cout <<"Total/Average keypoints: "<< pathRecon.mTotalKeypointsInKeyFrames << ","<< (double)pathRecon.mTotalKeypointsInKeyFrames*kfScale <<endl;
+	cout <<"Total/Average trackable pairs: "<< pathRecon.mTotalTrackablePairsInKeyFrames << ","<< (double)pathRecon.mTotalTrackablePairsInKeyFrames*kfScale <<endl;
+	cout <<"Total/Average inliers: "<< pathRecon.mTotalInliersInKeyFrames << ","<< (double)pathRecon.mTotalInliersInKeyFrames*kfScale <<endl;
 
 	pathRecon.saveFramePoses(string("Output/indoor1/"));
 
