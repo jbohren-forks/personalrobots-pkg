@@ -248,6 +248,7 @@ namespace robot_desc
 		    isSet["type"] = false;
 		    isSet["axis"] = false;
 		    isSet["anchor"] = false;
+		    isSet["limit"] = false;
 		    isSet["effortLimit"] = false;
 		    isSet["velocityLimit"] = false;
 		    isSet["calibration"] = false;
