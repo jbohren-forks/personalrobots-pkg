@@ -40,6 +40,7 @@ public:
 	// constants used in getting trackable pairs
 	static const CvPoint DefNeighborhoodSize;
 	static const CvPoint DefTemplateSize;
+	static const double  DefTemplateMatchThreshold = 0;
 
 	Cv3DPoseEstimateStereo(int width=DefWidth, int height=DefHeight);
 	virtual ~Cv3DPoseEstimateStereo();
@@ -87,6 +88,8 @@ protected:
 	int mMaxNumKeyPoints; // if greater than zero, get the top mMaxNumKeyPoints key points
 
 	StarDetector mStarDetector;
+
+	double mTemplateMatchThreshold; // minimum threshold for template matching
 };
 
 #endif /* CV3DPOSEESTIMATESTEREO_H_ */

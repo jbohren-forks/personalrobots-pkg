@@ -13,6 +13,8 @@
 using namespace std;
 
 const CvPoint Cv3DPoseEstimateStereo::DefNeighborhoodSize = cvPoint(128, 48);
+// increasing the neighborhood size does not help very much. In fact, I have been
+// degradation of performance.
 //const CvPoint Cv3DPoseEstimateStereo::DefNeighborhoodSize = cvPoint(256, 48);
 const CvPoint Cv3DPoseEstimateStereo::DefTemplateSize     = cvPoint(16, 16);
 
@@ -28,7 +30,8 @@ Cv3DPoseEstimateStereo::Cv3DPoseEstimateStereo(int width, int height):
 	mNumScales(DefNumScales),
 	mThreshold(DefThreshold),
 	mMaxNumKeyPoints(DefMaxNumKeyPoints),
-	mStarDetector(mSize, mNumScales, mThreshold)
+	mStarDetector(mSize, mNumScales, mThreshold),
+	mTemplateMatchThreshold(DefTemplateMatchThreshold)
 {
 	mBufStereoPairs     = new uint8_t[mSize.height*mDLen*(mCorr+5)]; // local storage for the stereo pair algorithm
 	mFeatureImgBufLeft  = new uint8_t[mSize.width*mSize.height];
@@ -223,7 +226,7 @@ vector<pair<CvPoint3D64f, CvPoint3D64f> > Cv3DPoseEstimateStereo::getTrackablePa
 			);
 			// check if rectTempl is all within bound
 			if (rectTempl.x < 0 || rectTempl.y < 0 ||
-					rectTempl.x+rectTempl.width    > mSize.width ||
+					rectTempl.x + rectTempl.width  > mSize.width ||
 					rectTempl.y + rectTempl.height > mSize.height ) {
 				// (partially) out of bound.
 				// skip this
@@ -262,8 +265,13 @@ vector<pair<CvPoint3D64f, CvPoint3D64f> > Cv3DPoseEstimateStereo::getTrackablePa
 			double		minval, maxval;
 			cvMinMaxLoc( &res, &minval, &maxval, &minloc, &maxloc, 0 );
 			CvPoint     bestloc = maxloc;
+			if (maxval < mTemplateMatchThreshold) {
+				// best matching is not good enough, skip this key point
+				continue;
+			}
 #endif
 
+			// shift bestloc to image coordinates
 			bestloc.x += rectTempl.width/2;  // please note that they are integer
 			bestloc.y += rectTempl.height/2;
 			bestloc.x -= rectNeighborhood.width/2;

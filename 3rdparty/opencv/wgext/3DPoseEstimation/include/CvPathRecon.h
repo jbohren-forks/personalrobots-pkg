@@ -119,6 +119,12 @@ public:
     	}
     }
 
+    void keepGoodFrame(WImageBuffer1_b & image, WImageBuffer1_16s & dispMap,
+    		vector<Keypoint>& keyPoints, CvMat& rot, CvMat& shift,
+    		int numTrackablePairs, int numInliers, int frameIndex,
+    		WImageBuffer3_b& imageC3a, CvMat* inliers0, CvMat* inliers1);
+
+
     static const int    defMaxDisparity  = 15;
     static const int    defMinNumInliersForGoodFrame = 10;
     static const int    defMinNumInliers = 50;
@@ -144,7 +150,6 @@ public:
     int    mStartFrameIndex;
     int    mEndFrameIndex;  // exclusive
     int    mFrameStep;      // increase of frame index from one to another
-    int    mNumFramesSkipped;
 
     int mMinNumInliersForGoodFrame;
     int mMinNumInliers;
@@ -161,6 +166,14 @@ public:
     WImageBuffer1_16s mLastKeyFrameDispMap;
 
     double mPathLength; // path length so far
+    int    mNumFramesSkipped;
+    int	   mTotalInliers; // total number of inliers in all frames
+    int    mTotalTrackablePairs; // total number of trackable pairs in all frames
+    int    mTotalKeypoints;      // total number of keypoints in all frames
+    int    mTotalInliersInKeyFrames;        // total number of inliers in all key frames
+    int    mTotalTrackablePairsInKeyFrames; // total number of trackable pairs in all key frames
+    int    mTotalKeypointsInKeyFrames;      // total number of keypoints in all key frames
+
     // error meas
     CvPoseEstErrMeasDisp mErrMeas;
 protected:

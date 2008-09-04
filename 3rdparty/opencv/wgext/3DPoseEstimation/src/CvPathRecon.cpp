@@ -28,6 +28,12 @@ CvPathRecon::CvPathRecon(const CvSize& imageSize):
 	mLastKeyFrameImage(imageSize.width, imageSize.height),
 	mLastKeyFrameDispMap(imageSize.width, imageSize.height),
 	mPathLength(0.),
+	mTotalInliers(0),
+	mTotalTrackablePairs(0),
+	mTotalKeypoints(0),
+	mTotalInliersInKeyFrames(0),
+	mTotalTrackablePairsInKeyFrames(0),
+	mTotalKeypointsInKeyFrames(0),
 	mRT(cvMat(4,4, CV_64FC1, _rt)),
 	_mTempMat(cvMat(4,4,CV_64FC1, _tempMat))
 {
@@ -201,3 +207,16 @@ void CvPathRecon::measureErr(const CvMat* inliers0, const CvMat* inliers1){
 		mErrMeas.measure(*inliers0, *inliers1);
 	}
 }
+
+void CvPathRecon::keepGoodFrame(WImageBuffer1_b& image,
+		WImageBuffer1_16s & dispMap, vector<Keypoint>& keyPoints, CvMat& rot, CvMat& shift,
+		int numTrackablePairs, int numInliers, int frameIndex, WImageBuffer3_b & imageC3a,
+		CvMat* inliers0, CvMat* inliers1)
+{
+    mNumFramesSkipped++;
+    delete mLastGoodFrame;
+    mLastGoodFrame = new CvPathRecon::PoseEstFrameEntry(image, dispMap, keyPoints,
+    		rot, shift, numTrackablePairs, numInliers, frameIndex, imageC3a, inliers0, inliers1);
+    mLastGoodFrameAvailable = true;
+}
+
