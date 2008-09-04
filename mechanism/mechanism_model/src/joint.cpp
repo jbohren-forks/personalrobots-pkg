@@ -50,9 +50,9 @@ static const pair<string, int> types[] = {
 
 static map<string, int> g_type_map(types, types + sizeof(types)/sizeof(types[0]));
 
-void Joint::enforceLimits()
+void Joint::enforceLimits(JointState *s)
 {
-  commanded_effort_ = min(max(commanded_effort_, -effort_limit_), effort_limit_);
+  s->commanded_effort_ = min(max(s->commanded_effort_, -effort_limit_), effort_limit_);
 }
 
 bool Joint::initXml(TiXmlElement *elt)

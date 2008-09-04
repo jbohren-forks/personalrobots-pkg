@@ -54,7 +54,7 @@ ArmPositionController::~ArmPositionController()
   cout<<"deleted dummy"<<endl;
 }
 
-bool ArmPositionController::initXml(mechanism::Robot * robot, TiXmlElement * config)
+bool ArmPositionController::initXml(mechanism::RobotState * robot, TiXmlElement * config)
 {
   robot_ = robot;
   TiXmlElement *elt = config->FirstChildElement("controller");
@@ -66,12 +66,12 @@ bool ArmPositionController::initXml(mechanism::Robot * robot, TiXmlElement * con
     joint_position_controllers_.push_back(jpc);
     if(!jpc->initXml(robot_, elt))
       return false;
-    
+
     elt = elt->NextSiblingElement("controller");
   }
   goals_.resize(joint_position_controllers_.size());
   goals_rt_.resize(joint_position_controllers_.size());
-  
+
   cout<<"CONFIGURE DUMMY "<<joint_position_controllers_.size()<<endl;
   return true;
 }
@@ -162,10 +162,10 @@ void ArmPositionController::update(void)
       goals_rt_[i] = goals_[i];
     arm_controller_lock_.unlock();
   }
-  
+
   for(unsigned int i=0;i<goals_rt_.size();++i)
     joint_position_controllers_[i]->setCommand(goals_rt_[i]);
-  
+
   updateJointControllers();
 }
 
@@ -196,12 +196,12 @@ void ArmPositionControllerNode::update()
   c_->update();
 }
 
-bool ArmPositionControllerNode::initXml(mechanism::Robot * robot, TiXmlElement * config)
+bool ArmPositionControllerNode::initXml(mechanism::RobotState * robot, TiXmlElement * config)
 {
   std::cout<<"LOADING ARMCONTROLLERNODE"<<std::endl;
   ros::node * const node = ros::node::instance();
   string prefix = config->Attribute("name");
-  
+
   // Parses controller configuration.
   std::string kdl_chain_name="";
   TiXmlElement *j = config->FirstChildElement("map");
@@ -215,15 +215,15 @@ bool ArmPositionControllerNode::initXml(mechanism::Robot * robot, TiXmlElement *
     }
     j = j->NextSiblingElement("elem");
   }
-  
+
   // Parses kinematics description
   std::string pr2Contents;
   node->get_param("robotdesc/pr2", pr2Contents);
   pr2_kin_.loadString(pr2Contents.c_str());
   arm_chain_ = pr2_kin_.getSerialChain(kdl_chain_name.c_str());
-      
+
   assert(arm_chain_);
-  
+
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
@@ -238,7 +238,7 @@ bool ArmPositionControllerNode::initXml(mechanism::Robot * robot, TiXmlElement *
 
     return true;
   }
-  return false;  
+  return false;
 }
 
 
@@ -285,7 +285,7 @@ bool ArmPositionControllerNode::setCartesianPosCmd(pr2_controllers::SetCartesian
   targetRot = targetRot.RPY(req.roll, req.pitch, req.yaw);
   targetFrame.M = targetRot;
   std::cout<<"TARGET FRAME"<<targetFrame<<std::endl;
-  
+
   // Stores the current state in a KDL frame in a realtime safe way
   const int size = arm_chain_->num_joints_;
   KDL::JntArray cur_cfg = KDL::JntArray(size);
@@ -298,20 +298,20 @@ bool ArmPositionControllerNode::setCartesianPosCmd(pr2_controllers::SetCartesian
   std::cout<<"CURRENT CFG"<<cur_cfg<<std::endl;
   // Setting guess of inverse kinematics
   for(int i=0;i<size;++i)
-    (*arm_chain_->q_IK_guess)(i) = cur_cfg(i);  
+    (*arm_chain_->q_IK_guess)(i) = cur_cfg(i);
   // Inverse kinematics:
   KDL::JntArray target_cfg = KDL::JntArray(size);
   if(!arm_chain_->computeIK(targetFrame))
     return false;
   target_cfg = *(arm_chain_->q_IK_result);
   std::cout<<"TARGET CFG\n"<<target_cfg<<std::endl;
-  
-  
+
+
   //TODO: check IK result
   if(!arm_chain_->computeFK(target_cfg, targetFrame))
     return false;
   std::cout<<"Positions seems correct!"<<std::endl;
-  
+
   // Sends commands to the controllers
   pr2_controllers::SetJointPosCmd::request commands;
   commands.set_positions_size(size);

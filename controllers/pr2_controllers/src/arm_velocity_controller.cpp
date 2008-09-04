@@ -54,7 +54,7 @@ ArmVelocityController::~ArmVelocityController()
   cout<<"deleted dummy"<<endl;
 }
 
-bool ArmVelocityController::initXml(mechanism::Robot * robot, TiXmlElement * config)
+bool ArmVelocityController::initXml(mechanism::RobotState * robot, TiXmlElement * config)
 {
   robot_ = robot;
   TiXmlElement *elt = config->FirstChildElement("controller");
@@ -66,12 +66,12 @@ bool ArmVelocityController::initXml(mechanism::Robot * robot, TiXmlElement * con
     joint_velocity_controllers_.push_back(jpc);
     if(!jpc->initXml(robot_, elt))
       return false;
-    
+
     elt = elt->NextSiblingElement("controller");
   }
   goals_.resize(joint_velocity_controllers_.size());
   goals_rt_.resize(joint_velocity_controllers_.size());
-  
+
   cout<<"CONFIGURE DUMMY "<<joint_velocity_controllers_.size()<<endl;
   return true;
 }
@@ -152,10 +152,10 @@ void ArmVelocityController::update(void)
       goals_rt_[i] = goals_[i];
     arm_controller_lock_.unlock();
   }
-  
+
   for(unsigned int i=0;i<goals_rt_.size();++i)
     joint_velocity_controllers_[i]->setCommand(goals_rt_[i]);
-  
+
   updateJointControllers();
 }
 
@@ -186,12 +186,12 @@ void ArmVelocityControllerNode::update()
   c_->update();
 }
 
-bool ArmVelocityControllerNode::initXml(mechanism::Robot * robot, TiXmlElement * config)
+bool ArmVelocityControllerNode::initXml(mechanism::RobotState * robot, TiXmlElement * config)
 {
   std::cout<<"LOADING ARMCONTROLLERNODE"<<std::endl;
   ros::node * const node = ros::node::instance();
   string prefix = config->Attribute("name");
-  
+
   // Parses controller configuration.
   std::string kdl_chain_name="";
   TiXmlElement *j = config->FirstChildElement("map");
@@ -205,15 +205,15 @@ bool ArmVelocityControllerNode::initXml(mechanism::Robot * robot, TiXmlElement *
     }
     j = j->NextSiblingElement("elem");
   }
-  
+
   // Parses kinematics description
   std::string pr2Contents;
   node->get_param("robotdesc/pr2", pr2Contents);
   pr2_kin_.loadString(pr2Contents.c_str());
   arm_chain_ = pr2_kin_.getSerialChain(kdl_chain_name.c_str());
-      
+
   assert(arm_chain_);
-  
+
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
@@ -227,7 +227,7 @@ bool ArmVelocityControllerNode::initXml(mechanism::Robot * robot, TiXmlElement *
     node->advertise_service(prefix + "/get_cartesian_vel", &ArmVelocityControllerNode::getCartesianVelCmd, this);
     return true;
   }
-  return false;  
+  return false;
 }
 
 
@@ -280,7 +280,7 @@ bool ArmVelocityControllerNode::setCartesianVelCmd(pr2_controllers::SetCartesian
 
   arm_chain_->computeDKInv(cur_joint_pos,end_effector_twist,target_joint_vel);
   std::cout << "TARGET VEL\n" << target_joint_vel << std::endl;
-    
+
 /*  // Sends commands to the controllers
   pr2_controllers::SetJointVelCmd::request commands;
   commands.set_velocity_size(size);

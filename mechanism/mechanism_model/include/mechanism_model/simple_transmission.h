@@ -48,26 +48,18 @@ class SimpleTransmission : public Transmission
 {
 public:
   SimpleTransmission() {}
-  SimpleTransmission(Joint *joint, Actuator *actuator, double mechanical_reduction, double motor_torque_constant, double pulses_per_revolution);
   ~SimpleTransmission() {}
 
   bool initXml(TiXmlElement *config, Robot *robot);
-
-  std::string name_;
-  std::string joint_name_;
-  std::string actuator_name_;
-
-  Actuator *actuator_;
-  Joint *joint_;
 
   double mechanical_reduction_;
   double motor_torque_constant_;
   double pulses_per_revolution_;
 
-  void propagatePosition();
-  void propagateEffort();
-  void propagatePositionBackwards();
-  void propagateEffortBackwards();
+  void propagatePosition(std::vector<Actuator*>&, std::vector<JointState*>&);
+  void propagatePositionBackwards(std::vector<JointState*>&, std::vector<Actuator*>&);
+  void propagateEffort(std::vector<JointState*>&, std::vector<Actuator*>&);
+  void propagateEffortBackwards(std::vector<Actuator*>&, std::vector<JointState*>&);
 };
 
 } // namespace mechanism

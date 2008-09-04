@@ -50,15 +50,7 @@ JointEffortController::~JointEffortController()
 {
 }
 
-void JointEffortController::init(std::string name,mechanism::Robot *robot)
-{
-  robot_ = robot;
-  joint_ = robot->getJoint(name);
-
-  command_= 0;
-}
-
-bool JointEffortController::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool JointEffortController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   robot_ = robot;
@@ -71,7 +63,7 @@ bool JointEffortController::initXml(mechanism::Robot *robot, TiXmlElement *confi
   }
 
   const char *joint_name = j->Attribute("name");
-  joint_ = joint_name ? robot->getJoint(joint_name) : NULL;
+  joint_ = joint_name ? robot->getJointState(joint_name) : NULL;
   if (!joint_)
   {
     fprintf(stderr, "JointVelocityController could not find joint named \"%s\"\n", joint_name);
@@ -145,18 +137,7 @@ bool JointEffortControllerNode::getActual(
   return true;
 }
 
-void JointEffortControllerNode::init(std::string name, mechanism::Robot *robot)
-{
-  ros::node *node = ros::node::instance();
-  string prefix = name;
-
-  c_->init(name, robot);
-  node->advertise_service(prefix + "/set_command", &JointEffortControllerNode::setCommand, this);
-  node->advertise_service(prefix + "/get_actual", &JointEffortControllerNode::getActual, this);
-}
-
-
-bool JointEffortControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool JointEffortControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
 

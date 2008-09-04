@@ -73,8 +73,7 @@ public:
    * \param *robot The robot that is being controlled.
    */
   void init(double duration, std::string fixture_name, double time, std::string name,mechanism::Robot *robot);
-
-  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   /*!
    * \brief Get latest time..
@@ -93,6 +92,7 @@ public:
   virtual void update();
 
 private:
+<<<<<<< HEAD:controllers/testing_controllers/motor_qualification_controllers/include/motor_qualification_controllers/motor_test1.h
   mechanism::Joint* joint_;           /**< Joint we're controlling. */
   mechanism::Joint* fixture_joint_;   /**< Joint we're qualifying against. */
   mechanism::Robot *robot_;           /**< Pointer to robot structure. */
@@ -103,6 +103,14 @@ private:
   double test_joint_end_pos_;         /**< End pos of the test joint. */
   double fixture_joint_end_pos_;      /**< End pos of the fixture joint. */
   bool complete;
+=======
+  mechanism::Joint::State *joint_state_;
+  mechanism::RobotState *robot_;     /**< Pointer to robot structure. */
+  double input_start_;          /**< Begining of the ramp. */
+  double input_end_;            /**< End of the ramp. */
+  double duration_;             /**< Duration of the ramp. */
+  double initial_time_;         /**< Start time of the ramp. */
+>>>>>>> Separated robot state from the robot model and ported all the controllers.:controllers/generic_controllers/include/generic_controllers/ramp_input_controller.h
 
 };
 
@@ -133,7 +141,7 @@ public:
   void update();
 
   void init(double duration, std::string fixture_name, double time, std::string name ,mechanism::Robot *robot);
-  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
 private:
   MotorTest1 *c_;

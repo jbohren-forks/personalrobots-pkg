@@ -85,12 +85,15 @@ bool Chain::initXml(TiXmlElement *config, Robot *robot)
   links_.push_back(root);
   std::reverse(links_.begin(), links_.end());
 
+#if 0
+
   // Adds segments to the KDL chain.
   for (unsigned int i = 1; i < links_.size(); ++i)
     kdl_chain_.addSegment(KDL::Segment(KDL::Joint(KDL::Joint::RotZ), links_[i]->frame_));
 
   // Initializes the solver.
   solverFK_ = new KDL::ChainFkSolverPos_recursive(kdl_chain_);
+#endif
 
   return true;
 }
@@ -98,6 +101,7 @@ bool Chain::initXml(TiXmlElement *config, Robot *robot)
 bool Chain::propagateFK()
 {
   assert(solverFK_);
+#if 0
 
   // Copies the joint angles into the KDL structure.
   KDL::JntArray ja(links_.size() - 1);
@@ -107,7 +111,7 @@ bool Chain::propagateFK()
   // Forward kinematics (placing results into links_)
   for (unsigned int i = 0; i < links_.size(); ++i)
     assert(solverFK_->JntToCart(ja, links_[i]->frame_, i) >= 0);
-
+#endif
   return true;
 }
 

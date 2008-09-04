@@ -57,10 +57,10 @@ JointPDController::~JointPDController()
 {
 }
 
-void JointPDController::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot)
+void JointPDController::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::RobotState *robot)
 {
   robot_ = robot;
-  joint_ = robot->getJoint(name);
+  joint_ = robot->getJointState(name);
 
   pid_controller_.initPid(p_gain, i_gain, d_gain, windup, -windup);
   command_= 0;
@@ -69,7 +69,7 @@ void JointPDController::init(double p_gain, double i_gain, double d_gain, double
 
 }
 
-bool JointPDController::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool JointPDController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   robot_ = robot;
@@ -83,7 +83,7 @@ bool JointPDController::initXml(mechanism::Robot *robot, TiXmlElement *config)
   }
 
   const char *joint_name = j->Attribute("name");
-  joint_ = joint_name ? robot->getJoint(joint_name) : NULL;
+  joint_ = joint_name ? robot->getJointState(joint_name) : NULL;
   if (!joint_)
   {
     fprintf(stderr, "JointPDController could not find joint named \"%s\"\n", joint_name);
@@ -137,7 +137,7 @@ double JointPDController::getMeasuredPosition()
 
 std::string JointPDController::getJointName()
 {
-  return(joint_->name_);
+  return(joint_->joint_->name_);
 }
 
 void JointPDController::update()
@@ -218,7 +218,7 @@ bool JointPDControllerNode::getPDCommand(
 }
 
 
-void JointPDControllerNode::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot)
+void JointPDControllerNode::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::RobotState *robot)
 {
   ros::node *node = ros::node::instance();
   string prefix = name;
@@ -228,7 +228,7 @@ void JointPDControllerNode::init(double p_gain, double i_gain, double d_gain, do
   node->advertise_service(prefix + "/get_actual", &JointPDControllerNode::getPDActual, this);
 }
 
-bool JointPDControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool JointPDControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
 

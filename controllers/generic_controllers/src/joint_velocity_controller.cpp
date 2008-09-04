@@ -41,10 +41,8 @@ using namespace controller;
 ROS_REGISTER_CONTROLLER(JointVelocityController)
 
 JointVelocityController::JointVelocityController()
+: joint_state_(NULL), robot_(NULL)
 {
-  robot_=NULL;
-  joint_=NULL;
-
   // Initialize PID class
   pid_controller_.initPid(0, 0, 0, 0, 0);
   command_ = 0;
@@ -55,18 +53,7 @@ JointVelocityController::~JointVelocityController()
 {
 }
 
-void JointVelocityController::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot)
-{
-  robot_ = robot;
-  joint_ = robot->getJoint(name);
-
-  pid_controller_.initPid(p_gain, i_gain, d_gain, windup, -windup);
-  command_= 0;
-  last_time_= time;
-
-}
-
-bool JointVelocityController::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool JointVelocityController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   robot_ = robot;
@@ -80,12 +67,13 @@ bool JointVelocityController::initXml(mechanism::Robot *robot, TiXmlElement *con
   }
 
   const char *joint_name = j->Attribute("name");
-  joint_ = joint_name ? robot->getJoint(joint_name) : NULL;
-  if (!joint_)
+  int index = joint_name ? robot->model_->getJointIndex(joint_name) : NULL;
+  if (index < 0)
   {
     fprintf(stderr, "JointVelocityController could not find joint named \"%s\"\n", joint_name);
     return false;
   }
+  joint_state_ = &robot_->joint_states_[index];
 
   TiXmlElement *p = j->FirstChildElement("pid");
   if (p)
@@ -116,12 +104,12 @@ double JointVelocityController::getTime()
 // Return the measured joint velocity
 double JointVelocityController::getMeasuredVelocity()
 {
-  return joint_->velocity_;
+  return joint_state_->velocity_;
 }
 
 std::string JointVelocityController::getJointName()
 {
-  return(joint_->name_);
+  return joint_state_->joint_->name_;
 }
 
 void JointVelocityController::update()
@@ -129,8 +117,8 @@ void JointVelocityController::update()
   double error(0);
   double time = robot_->hw_->current_time_;
 
-  error = joint_->velocity_ - command_;
-  joint_->commanded_effort_ = pid_controller_.updatePid(error, time - last_time_);
+  error = joint_state_->velocity_ - command_;
+  joint_state_->commanded_effort_ = pid_controller_.updatePid(error, time - last_time_);
   last_time_ = time;
 }
 
@@ -181,17 +169,7 @@ bool JointVelocityControllerNode::getActual(
   return true;
 }
 
-void JointVelocityControllerNode::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot)
-{
-  ros::node *node = ros::node::instance();
-  string prefix = name;
-
-  c_->init(p_gain, i_gain, d_gain, windup, time,name, robot);
-  node->advertise_service(prefix + "/set_command", &JointVelocityControllerNode::setCommand, this);
-  node->advertise_service(prefix + "/get_actual", &JointVelocityControllerNode::getActual, this);
-}
-
-bool JointVelocityControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool JointVelocityControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
 

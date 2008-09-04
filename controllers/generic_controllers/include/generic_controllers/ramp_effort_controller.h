@@ -69,17 +69,8 @@ public:
    */
   ~RampEffortController();
 
-  /*!
-   * \brief Functional way to initialize.
-   * \param input_start The start value of the ramp.
-   * \param input_end The end value of the ramp.
-   * \param duration The duration in seconds from start to finish.
-   * \param time The current hardware time.
-   * \param *joint The joint that is being controlled.
-   */
-  void init(double input_start, double input_end, double duration, double time,std::string name,mechanism::Robot *robot);
-
-  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+  void init(double input_start, double input_end, double duration, double time,std::string name,mechanism::RobotState *robot);
+  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   /*!
    * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
@@ -108,8 +99,8 @@ public:
   virtual void update();
 
 private:
-  mechanism::Joint* joint_;     /**< Joint we're controlling. */
-  mechanism::Robot *robot_;     /**< Pointer to robot structure. */
+  mechanism::JointState *joint_state_;     /**< Joint we're controlling. */
+  mechanism::RobotState *robot_;     /**< Pointer to robot structure. */
   double input_start_;          /**< Begining of the ramp. */
   double input_end_;            /**< End of the ramp. */
   double duration_;             /**< Duration of the ramp. */
@@ -143,8 +134,7 @@ public:
 
   void update();
 
-  void init(double input_start, double input_end, double duration, double time,std::string name,mechanism::Robot *robot);
-  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   bool getActual(generic_controllers::GetActual::request &req,
                   generic_controllers::GetActual::response &resp);

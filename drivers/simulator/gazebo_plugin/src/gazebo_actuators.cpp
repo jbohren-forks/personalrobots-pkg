@@ -50,9 +50,8 @@ namespace gazebo {
 GZ_REGISTER_DYNAMIC_CONTROLLER("gazebo_actuators", GazeboActuators);
 
 GazeboActuators::GazeboActuators(Entity *parent)
-  : Controller(parent), hw_(0), mc_(&hw_), mcn_(&mc_), fake_model_("fake")
+  : Controller(parent), hw_(0), mc_(&hw_), mcn_(&mc_), fake_state_(NULL)
 {
-  fake_model_.hw_ = &hw_;
   this->parent_model_ = dynamic_cast<Model*>(this->parent);
 
   if (!this->parent_model_)
@@ -62,6 +61,7 @@ GazeboActuators::GazeboActuators(Entity *parent)
 GazeboActuators::~GazeboActuators()
 {
   deleteElements(&joints_);
+  delete fake_state_;
 }
 
 void GazeboActuators::LoadChild(XMLConfigNode *node)
@@ -102,13 +102,15 @@ void GazeboActuators::LoadChild(XMLConfigNode *node)
     hw_.actuators_.push_back(new Actuator(*it));
   }
 
-  // Initializes the fake model (for running the transmissions backwards).
-  fake_model_.initXml(doc.RootElement());
+  mcn_.initXml(doc.RootElement());
+
+  // Initializes the fake state (for running the transmissions backwards).
+  fake_state_ = new mechanism::RobotState(&mc_.model_, &hw_);
 
   // The gazebo joints and mechanism joints should match up.
-  for (unsigned int i = 0; i < fake_model_.joints_.size(); ++i)
+  for (unsigned int i = 0; i < mc_.model_.joints_.size(); ++i)
   {
-    std::string joint_name = fake_model_.joints_[i]->name_;
+    std::string joint_name = mc_.model_.joints_[i]->name_;
     gazebo::Joint *joint = parent_model_->GetJoint(joint_name);
     if (joint)
       joints_.push_back(joint);
@@ -120,7 +122,6 @@ void GazeboActuators::LoadChild(XMLConfigNode *node)
   }
 
   hw_.current_time_ = Simulator::Instance()->GetSimTime();
-  mcn_.initXml(doc.RootElement());
 }
 
 void GazeboActuators::InitChild()
@@ -130,7 +131,7 @@ void GazeboActuators::InitChild()
 
 void GazeboActuators::UpdateChild()
 {
-  assert(joints_.size() == fake_model_.joints_.size());
+  assert(joints_.size() == fake_state_->joint_states_.size());
 
   //--------------------------------------------------
   //  Pushes out simulation state
@@ -142,20 +143,20 @@ void GazeboActuators::UpdateChild()
     if (!joints_[i])
       continue;
 
-    fake_model_.joints_[i]->applied_effort_ = fake_model_.joints_[i]->commanded_effort_;
+    fake_state_->joint_states_[i].applied_effort_ = fake_state_->joint_states_[i].commanded_effort_;
 
     switch(joints_[i]->GetType())
     {
     case Joint::HINGE: {
       HingeJoint *hj = (HingeJoint*)joints_[i];
-      fake_model_.joints_[i]->position_ = hj->GetAngle();
-      fake_model_.joints_[i]->velocity_ = hj->GetAngleRate();
+      fake_state_->joint_states_[i].position_ = hj->GetAngle();
+      fake_state_->joint_states_[i].velocity_ = hj->GetAngleRate();
       break;
     }
     case Joint::SLIDER: {
       SliderJoint *sj = (SliderJoint*)joints_[i];
-      fake_model_.joints_[i]->position_ = sj->GetPosition();
-      fake_model_.joints_[i]->velocity_ = sj->GetPositionRate();
+      fake_state_->joint_states_[i].position_ = sj->GetPosition();
+      fake_state_->joint_states_[i].velocity_ = sj->GetPositionRate();
       break;
     }
     default:
@@ -164,8 +165,7 @@ void GazeboActuators::UpdateChild()
   }
 
   // Reverses the transmissions to propagate the joint position into the actuators.
-  for (unsigned int i = 0; i < fake_model_.transmissions_.size(); ++i)
-    fake_model_.transmissions_[i]->propagatePositionBackwards();
+  fake_state_->propagateStateBackwards();
 
   //--------------------------------------------------
   //  Runs Mechanism Control
@@ -178,8 +178,7 @@ void GazeboActuators::UpdateChild()
   //--------------------------------------------------
 
   // Reverses the transmissions to propagate the actuator commands into the joints.
-  for (unsigned int i = 0; i < fake_model_.transmissions_.size(); ++i)
-    fake_model_.transmissions_[i]->propagateEffortBackwards();
+  fake_state_->propagateEffortBackwards();
 
   // Copies the commands from the mechanism joints into the gazebo joints.
   for (unsigned int i = 0; i < joints_.size(); ++i)
@@ -187,7 +186,7 @@ void GazeboActuators::UpdateChild()
     if (!joints_[i])
       continue;
 
-    double effort = fake_model_.joints_[i]->commanded_effort_;
+    double effort = fake_state_->joint_states_[i].commanded_effort_;
     switch (joints_[i]->GetType())
     {
     case Joint::HINGE:

@@ -77,8 +77,7 @@ public:
    * \brief Functional way to initialize limits and gains.
    *
    */
-  void init(std::string name,mechanism::Robot *robot);
-  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
@@ -109,8 +108,8 @@ public:
   virtual void update();
 
 private:
-  mechanism::Joint* joint_; /**< Joint we're controlling. */
-  mechanism::Robot *robot_; /**< Pointer to robot structure. */
+  mechanism::JointState *joint_; /**< Joint we're controlling. */
+  mechanism::RobotState *robot_; /**< Pointer to robot structure. */
   double command_;          /**< Last commanded position. */
 };
 
@@ -140,8 +139,7 @@ public:
 
   void update();
 
-  void init(std::string name, mechanism::Robot *robot);
-  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   // Services
   bool setCommand(generic_controllers::SetCommand::request &req,

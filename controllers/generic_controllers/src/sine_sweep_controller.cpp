@@ -35,14 +35,14 @@
 #include <math.h>
 
 using namespace std;
-using namespace controller;
+namespace controller {
 
 ROS_REGISTER_CONTROLLER(SineSweepController)
 
 SineSweepController::SineSweepController()
 {
   robot_ = NULL;
-  joint_ = NULL;
+  joint_state_ = NULL;
 
   start_freq_=0;
   end_freq_=0;
@@ -55,24 +55,24 @@ SineSweepController::~SineSweepController()
 {
 }
 
-void SineSweepController::init(double start_freq, double end_freq, double duration, double amplitude, double time,std::string name,mechanism::Robot *robot)
+void SineSweepController::init(double start_freq, double end_freq, double duration, double amplitude, double time,std::string name,mechanism::RobotState *robot)
 {
   robot_ = robot;
-  joint_ = robot->getJoint(name);
+  joint_state_ = robot->getJointState(name);
 
   start_freq_=start_freq; //in Hz
   end_freq_=end_freq; //in Hz
   amplitude_=amplitude; //in Newtons
   duration_=duration; //in seconds
   initial_time_=time;
-  
+
   start_angular_freq_ =2*M_PI*start_freq_;
   end_angular_freq_ =2*M_PI*end_freq_;
   K_factor_ = (start_angular_freq_*duration_)/log(end_angular_freq_/start_angular_freq_);
   L_factor_ = (duration_)/log(end_angular_freq_/start_angular_freq_);
 }
 
-bool SineSweepController::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool SineSweepController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
 
   TiXmlElement *jnt = config->FirstChildElement("joint");
@@ -90,13 +90,13 @@ bool SineSweepController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 // Return the current position command
 double SineSweepController::getCommand()
 {
-  return joint_->commanded_effort_;
+  return joint_state_->commanded_effort_;
 }
 
 // Return the measured joint position
 double SineSweepController::getMeasuredEffort()
 {
-  return joint_->applied_effort_;
+  return joint_state_->applied_effort_;
 }
 
 
@@ -108,10 +108,10 @@ double SineSweepController::getTime()
 void SineSweepController::update()
 {
   double time = robot_->hw_->current_time_;
-  
+
   if((time-initial_time_)<duration_)
   {
-    joint_->commanded_effort_ = amplitude_*sin(K_factor_*(exp((time-initial_time_)/(L_factor_))-1));
+    joint_state_->commanded_effort_ = amplitude_*sin(K_factor_*(exp((time-initial_time_)/(L_factor_))-1));
   }
 }
 
@@ -132,12 +132,7 @@ void SineSweepControllerNode::update()
 }
 
 
-void SineSweepControllerNode::init(double start_freq, double end_freq, double duration, double amplitude, double time,std::string name,mechanism::Robot *robot)
-{
-  assert(false); // temporary fix for lack of xml
-}
-
-bool SineSweepControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool SineSweepControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   string prefix = config->Attribute("name");
 
@@ -146,3 +141,4 @@ bool SineSweepControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *con
   return true;
 }
 
+}

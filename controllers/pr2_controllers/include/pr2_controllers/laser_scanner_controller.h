@@ -71,8 +71,8 @@ public:
    * \brief Functional way to initialize limits and gains.
    *
    */
-  void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot);
-  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+  void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::RobotState *robot);
+  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
@@ -171,11 +171,11 @@ private:
   void setDynamicSawtooth(double time_from_start);
 
 
-  mechanism::Joint* joint_; /*!< Joint we're controlling>*/
+  mechanism::JointState* joint_; /*!< Joint we're controlling>*/
   JointPositionController joint_position_controller_; /*!< Internal PID controller>*/
   double last_time_; /*!< Last time stamp of update> */
   double command_; /*!< Last commanded position> */
-  mechanism::Robot *robot_; /*!< Pointer to robot structure>*/
+  mechanism::RobotState *robot_; /*!< Pointer to robot structure>*/
   double* profile_locations_; /**<Contains locations for profile>*/
   double* profile_dt_; /**<Contains timesteps for profile locations>*/
   int profile_index_; /**<Track location in profile>*/
@@ -211,7 +211,7 @@ public:
 
   void update();
 
-  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   // Services
   bool setCommand(generic_controllers::SetCommand::request &req,
@@ -222,13 +222,13 @@ public:
 
   bool getActual(generic_controllers::GetActual::request &req,
                   generic_controllers::GetActual::response &resp);
- 
+
   bool setProfileCall(generic_controllers::SetProfile::request &req,
   generic_controllers::SetProfile::response &resp);
 
   void setCommand(double command);
 
-  void setProfile(LaserScannerController::LaserControllerMode profile, double period, double amplitude, int num_elements=0, double offset=0.0); 
+  void setProfile(LaserScannerController::LaserControllerMode profile, double period, double amplitude, int num_elements=0, double offset=0.0);
 
   double getCommand();
 

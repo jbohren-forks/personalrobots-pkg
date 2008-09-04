@@ -88,7 +88,7 @@ public:
    */
 
   void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot);
-  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
@@ -125,8 +125,8 @@ public:
   std::string getJointName();
 
 private:
-  mechanism::Joint* joint_; /**< Joint we're controlling. */
-  mechanism::Robot *robot_; /**< Pointer to robot structure. */
+  mechanism::JointState *joint_state_;
+  mechanism::RobotState *robot_; /**< Pointer to robot structure. */
   Pid pid_controller_;      /**< Internal PID controller. */
   double last_time_;        /**< Last time stamp of update. */
   double command_;          /**< Last commanded position. */
@@ -163,8 +163,7 @@ public:
 
   void update();
 
-  void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot);
-  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   // Services
   bool setCommand(generic_controllers::SetCommand::request &req,

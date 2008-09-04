@@ -39,6 +39,8 @@
 
 #include <tinyxml/tinyxml.h>
 #include <misc_utils/factory.h>
+#include "mechanism_model/joint.h"
+#include "hardware_interface/hardware_interface.h"
 
 namespace mechanism {
 
@@ -63,17 +65,20 @@ public:
   virtual bool initXml(TiXmlElement *config, Robot *robot) = 0;
 
   // Uses encoder data to fill out joint position and velocities
-  virtual void propagatePosition() = 0;
+  virtual void propagatePosition(std::vector<Actuator*>&, std::vector<JointState*>&) = 0;
 
   // Uses the joint position to fill out the actuator's encoder.
-  virtual void propagatePositionBackwards() = 0;
+  virtual void propagatePositionBackwards(std::vector<JointState*>&, std::vector<Actuator*>&) = 0;
 
   // Uses commanded joint efforts to fill out commanded motor currents
-  virtual void propagateEffort() = 0;
+  virtual void propagateEffort(std::vector<JointState*>&, std::vector<Actuator*>&) = 0;
 
   // Uses the actuator's commanded effort to fill out the torque on
   // the joint.
-  virtual void propagateEffortBackwards() = 0;
+  virtual void propagateEffortBackwards(std::vector<Actuator*>&, std::vector<JointState*>&) = 0;
+
+  std::vector<std::string> actuator_names_;
+  std::vector<std::string> joint_names_;
 };
 
 } // namespace mechanism

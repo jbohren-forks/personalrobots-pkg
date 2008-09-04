@@ -79,9 +79,9 @@ public:
    * \param time The current hardware time.
    * \param *robot The robot that is being controlled.
    */
-  void init(double start_freq, double end_freq, double duration, double amplitude, double time,std::string name,mechanism::Robot *robot);
+  void init(double start_freq, double end_freq, double duration, double amplitude, double time,std::string name,mechanism::RobotState *robot);
 
-  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   /*!
    * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
@@ -106,8 +106,8 @@ public:
   virtual void update();
 
 private:
-  mechanism::Joint* joint_;     /**< Joint we're controlling. */
-  mechanism::Robot *robot_;     /**< Pointer to robot structure. */
+  mechanism::JointState *joint_state_;     /**< Joint we're controlling. */
+  mechanism::RobotState *robot_;     /**< Pointer to robot structure. */
   double start_freq_;           /**< Begining of the sweep. */
   double end_freq_;             /**< End of the sweep. */
   double amplitude_;            /**< Amplitude of the sweep. */
@@ -146,8 +146,7 @@ public:
 
   void update();
 
-  void init(double start_freq, double end_freq, double duration, double amplitude, double time,std::string name,mechanism::Robot *robot);
-  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
 private:
   SineSweepController *c_;

@@ -63,11 +63,11 @@ namespace controller
 
   // The maximum number of joints expected in an arm.
   static const int MAX_ARM_JOINTS = 7;
-  
+
   class ArmPositionController : public Controller
   {
     public:
-  
+
   /*!
      * \brief Default Constructor of the JointController class.
      *
@@ -83,8 +83,8 @@ namespace controller
        * \brief Functional way to initialize limits and gains.
        *
    */
-      bool initXml(mechanism::Robot *robot, TiXmlElement *config);
-  
+      bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+
   /*!
        * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
        *
@@ -103,7 +103,7 @@ namespace controller
        * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
    */
           void getJointPosCmd(pr2_controllers::GetJointPosCmd::response &resp);
-          
+
           void getCurrentConfiguration(std::vector<double> &);
   /*!
        * \brief Issues commands to the joint. Should be called at regular intervals
@@ -120,14 +120,14 @@ namespace controller
 
     private:
 
-      std::vector<JointPositionController *> joint_position_controllers_;     
+      std::vector<JointPositionController *> joint_position_controllers_;
 
       // Goal of the joints
       std::vector<double> goals_;
       // Goal of the joints - used by the realtime code only
-      std::vector<double> goals_rt_; 
+      std::vector<double> goals_rt_;
 
-      mechanism::Robot* robot_;
+      mechanism::RobotState* robot_;
 
       void updateJointControllers(void);
 
@@ -149,7 +149,7 @@ namespace controller
 
       void update();
 
-      bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+      bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
       void setJointPosCmd(std::vector<double> &req_goals_);
 
@@ -169,7 +169,7 @@ namespace controller
        *  \return always true
        **/
       bool getCartesianPosCmd(pr2_controllers::GetCartesianPosCmd::request &req,pr2_controllers::GetCartesianPosCmd::response &resp);
-    
+
       bool setJointGains(pr2_controllers::SetJointGains::request &req,
                                                     pr2_controllers::SetJointGains::response &resp);
 

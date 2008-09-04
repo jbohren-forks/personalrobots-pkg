@@ -94,7 +94,7 @@ void BaseController::setPublishCount(int publish_count)
 };
 
 
-void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *robot)
+void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotState *robot)
 {
   std::vector<JointControlParam>::iterator jcp_iter;
   robot_desc::URDF::Link *link;
@@ -117,8 +117,10 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
     base_object.pos_.z = link->xyz[2];
     base_object.name_ = joint_name;
     base_object.parent_ = NULL;
-    base_object.joint_ = robot->getJoint(joint_name);
-    base_object.controller_.init(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup,0.0,jcp_iter->joint_name,robot);
+    base_object.joint_ = robot->getJointState(joint_name);
+
+    abort();
+    // TODO base_object.controller_.init(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup,0.0,jcp_iter->joint_name,robot);
 
     if(joint_name.find("caster") != string::npos)
     {
@@ -176,7 +178,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::Robot *
   last_time_ = robot_->hw_->current_time_;
 }
 
-bool BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool BaseController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   std::cout << " base controller name: " << config->Attribute("name") << std::endl;
   TiXmlElement *elt = config->FirstChildElement("controller");
@@ -257,7 +259,7 @@ void BaseController::computeWheelPositions()
     res1 += base_wheels_[i].parent_->pos_;
 //    cout << "added position" << res1;
     base_wheels_position_[i] = res1;
-//    cout << "base_wheels_position_(" << i << ")" << base_wheels_position_[i]; 
+//    cout << "base_wheels_position_(" << i << ")" << base_wheels_position_[i];
   }
 //  exit(-1);
 }
@@ -414,14 +416,14 @@ bool BaseControllerNode::getCommand(
   return true;
 }
 
-bool BaseControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool BaseControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
 
   if(!c_->initXml(robot, config))
     return false;
-  
+
   node->advertise_service(prefix + "/set_command", &BaseControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_actual", &BaseControllerNode::getCommand, this); //FIXME: this is actually get command, just returning command for testing.
 
@@ -485,7 +487,7 @@ void BaseController::computeOdometry(double time)
   odom_msg_.header.frame_id   = "FRAMEID_ODOM";
   odom_msg_.header.stamp.sec  = (unsigned long)floor(robot_->hw_->current_time_);
   odom_msg_.header.stamp.nsec = (unsigned long)floor(  1e9 * (  robot_->hw_->current_time_ - odom_msg_.header.stamp.sec) );
- 
+
   odom_msg_.pos.x  = base_odom_position_.x;
   odom_msg_.pos.y  = base_odom_position_.y;
   odom_msg_.pos.th = base_odom_position_.z;
@@ -511,12 +513,12 @@ void BaseController::computeBaseVelocity()
     A.element(i*2+1,0) = sin(steer_angle)*wheel_radius_*(wheel_speed_actual_[i]);
 //     if(isnan(steer_angle))
 //     {
-//       cout << "steer angle - nan for wheel " << i << endl; 
+//       cout << "steer angle - nan for wheel " << i << endl;
 //       exit(-1);
 //     }
 //     if(isnan(wheel_speed_actual_[i]))
 //     {
-//       cout << "wheel speed actual - nan for wheel " << i << endl; 
+//       cout << "wheel speed actual - nan for wheel " << i << endl;
 //       exit(-1);
 //     }
   }
@@ -530,7 +532,7 @@ void BaseController::computeBaseVelocity()
     C.element(i*2+1, 2) =  base_wheels_position_[i].x;
 //     if(isnan(base_wheels_position_[i].y) || isnan(base_wheels_position_[i].x))
 //     {
-//       cout << "base odom position - nan for wheel " << i  << endl; 
+//       cout << "base odom position - nan for wheel " << i  << endl;
 //       exit(-1);
 //     }
   }
@@ -538,7 +540,7 @@ void BaseController::computeBaseVelocity()
 
 //   if(isnan(base_odom_velocity_.x) || isnan(base_odom_velocity_.y) || isnan(base_odom_velocity_.z))
 //   {
-//     cout << "base odom velocity - nan" << endl; 
+//     cout << "base odom velocity - nan" << endl;
 //     exit(-1);
 //   }
 
@@ -564,7 +566,7 @@ Matrix BaseController::pseudoInverse(const Matrix M)
 
 std::ostream & controller::operator<<(std::ostream& mystream, const controller::BaseParam &bp)
 {
-  mystream << "BaseParam" << bp.name_ << endl << "position " << bp.pos_ << "id " << bp.local_id_ << endl << "joint " << bp.joint_->name_ << endl << endl;
+  mystream << "BaseParam" << bp.name_ << endl << "position " << bp.pos_ << "id " << bp.local_id_ << endl << "joint " << bp.joint_->joint_->name_ << endl << endl;
   return mystream;
 };
 

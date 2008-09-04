@@ -43,23 +43,22 @@ bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
 {
   TiXmlElement *ael = config->FirstChildElement("actuator");
   const char *actuator_name = ael ? ael->Attribute("name") : NULL;
-  actuator_ = actuator_name ? robot->getActuator(actuator_name) : NULL;
-  if (!actuator_)
+  if (!actuator_name || !robot->getActuator(actuator_name))
   {
     fprintf(stderr, "GripperTransmission could not find actuator named \"%s\"\n", actuator_name);
     return false;
   }
+  actuator_names_.push_back(actuator_name);
 
   for (TiXmlElement *j = config->FirstChildElement("joint"); j; j = j->NextSiblingElement("joint"))
   {
     const char *joint_name = j->Attribute("name");
-    Joint* joint = joint_name ? robot->getJoint(joint_name) : NULL;
-    if (!joint)
+    if (!joint_name || !robot->getJoint(joint_name))
     {
       fprintf(stderr, "GripperTransmission could not find joint named \"%s\"\n", joint_name);
       return false;
     }
-    joints_.push_back(joint);
+    joint_names_.push_back(joint_name);
 
     const char *joint_red = j->Attribute("reduction");
     if (!joint_red)
@@ -70,7 +69,7 @@ bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
     reductions_.push_back(atof(joint_red));
   }
 
-  pids_.resize(joints_.size());
+  pids_.resize(joint_names_.size());
   TiXmlElement *pel = config->FirstChildElement("pid");
   if (pel)
   {
@@ -86,63 +85,77 @@ bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
   return true;
 }
 
-void GripperTransmission::propagatePosition()
+void GripperTransmission::propagatePosition(
+  std::vector<Actuator*>& as, std::vector<JointState*>& js)
 {
-  assert(actuator_);
-  for (unsigned int i = 0; i < joints_.size(); ++i)
+  assert(as.size() == 1);
+  assert(js.size() == reductions_.size());
+  for (unsigned int i = 0; i < js.size(); ++i)
   {
     double mr = reductions_[i];
-    joints_[i]->position_ = actuator_->state_.encoder_count_ * 2 * M_PI / (mr * pulses_per_revolution_);
-    joints_[i]->velocity_ = actuator_->state_.encoder_velocity_ * 2 * M_PI / (mr * pulses_per_revolution_);
-    joints_[i]->applied_effort_ = actuator_->state_.last_measured_current_ * mr * motor_torque_constant_;
+    js[i]->position_ = as[0]->state_.encoder_count_ * 2 * M_PI / (mr * pulses_per_revolution_);
+    js[i]->velocity_ = as[0]->state_.encoder_velocity_ * 2 * M_PI / (mr * pulses_per_revolution_);
+    js[i]->applied_effort_ = as[0]->state_.last_measured_current_ * mr * motor_torque_constant_;
   }
 }
 
-void GripperTransmission::propagatePositionBackwards()
+void GripperTransmission::propagatePositionBackwards(
+  std::vector<JointState*>& js, std::vector<Actuator*>& as)
 {
+  assert(as.size() == 1);
+  assert(js.size() == reductions_.size());
+
   double mean_encoder = 0.0;
   double mean_encoder_v = 0.0;
   double mean_current = 0.0;
-  for (unsigned int i = 0; i < joints_.size(); ++i)
+  for (unsigned int i = 0; i < js.size(); ++i)
   {
     double mr = reductions_[i];
-    mean_encoder += joints_[i]->position_ * mr * pulses_per_revolution_ / (2 * M_PI);
-    mean_encoder_v += joints_[i]->velocity_ * mr * pulses_per_revolution_ / (2 * M_PI);
-    mean_current += joints_[i]->applied_effort_ / (mr * motor_torque_constant_);
+    mean_encoder += js[i]->position_ * mr * pulses_per_revolution_ / (2 * M_PI);
+    mean_encoder_v += js[i]->velocity_ * mr * pulses_per_revolution_ / (2 * M_PI);
+    mean_current += js[i]->applied_effort_ / (mr * motor_torque_constant_);
   }
-  actuator_->state_.encoder_count_ = mean_encoder / joints_.size();
-  actuator_->state_.encoder_velocity_ = mean_encoder_v / joints_.size();
-  actuator_->state_.last_measured_current_ = mean_current / joints_.size();
+  as[0]->state_.encoder_count_ = mean_encoder / js.size();
+  as[0]->state_.encoder_velocity_ = mean_encoder_v / js.size();
+  as[0]->state_.last_measured_current_ = mean_current / js.size();
 }
 
-void GripperTransmission::propagateEffort()
+void GripperTransmission::propagateEffort(
+  std::vector<JointState*>& js, std::vector<Actuator*>& as)
 {
+  assert(as.size() == 1);
+  assert(js.size() == reductions_.size());
+
   double strongest = 0.0;
-  for (unsigned int i = 0; i < joints_.size(); ++i)
+  for (unsigned int i = 0; i < js.size(); ++i)
   {
-    if (fabs(joints_[i]->commanded_effort_ / (reductions_[i])) > fabs(strongest))
-      strongest = joints_[i]->commanded_effort_ / (reductions_[i] * motor_torque_constant_);
+    if (fabs(js[i]->commanded_effort_ / (reductions_[i])) > fabs(strongest))
+      strongest = js[i]->commanded_effort_ / (reductions_[i] * motor_torque_constant_);
   }
-  actuator_->command_.current_ = strongest;
+  as[0]->command_.current_ = strongest;
 }
 
-void GripperTransmission::propagateEffortBackwards()
+void GripperTransmission::propagateEffortBackwards(
+  std::vector<Actuator*>& as, std::vector<JointState*>& js)
 {
-  std::vector<double> scaled_positions(joints_.size());
-  for (unsigned int i = 0; i < joints_.size(); ++i)
-    scaled_positions[i] = joints_[i]->position_ * reductions_[i];
+  assert(as.size() == 1);
+  assert(js.size() == reductions_.size());
+
+  std::vector<double> scaled_positions(js.size());
+  for (unsigned int i = 0; i < js.size(); ++i)
+    scaled_positions[i] = js[i]->position_ * reductions_[i];
 
   double mean = std::accumulate(scaled_positions.begin(), scaled_positions.end(), 0.0)
     / scaled_positions.size();
 
-  for (unsigned int i = 0; i < joints_.size(); ++i)
+  for (unsigned int i = 0; i < js.size(); ++i)
   {
     double err = scaled_positions[i] - mean;
     double pid_effort = pids_[i].updatePid(err, 0.001);
 
-    joints_[i]->commanded_effort_ =
+    js[i]->commanded_effort_ =
       pid_effort / reductions_[i] +
-      actuator_->command_.current_ * reductions_[i] * motor_torque_constant_;
+      as[0]->command_.current_ * reductions_[i] * motor_torque_constant_;
   }
 }
 

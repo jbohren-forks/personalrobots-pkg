@@ -73,10 +73,11 @@ namespace mechanism
 class Robot
 {
 public:
-  Robot(const char *ns){}
+  Robot() {}
 
   ~Robot()
   {
+    deleteElements(&chains_);
     deleteElements(&transmissions_);
     deleteElements(&joints_);
     deleteElements(&links_);
@@ -90,12 +91,46 @@ public:
   std::vector<Chain*> chains_;
   std::vector<Link*> links_;
 
+  // All return -1 on failure.
+  int getJointIndex(const std::string &name);
+  int getActuatorIndex(const std::string &name);
+  int getLinkIndex(const std::string &name);
+
+  // All return NULL on failure
   Joint* getJoint(const std::string &name);
   Actuator* getActuator(const std::string &name);
   Link* getLink(const std::string &name);
 
   // For debugging
   void printLinkTree();
+};
+
+class RobotState
+{
+public:
+  RobotState(Robot *model, HardwareInterface *hw);
+
+  Robot *model_;
+
+  HardwareInterface *hw_;  // Actuator states
+  std::vector<JointState> joint_states_;
+  std::vector<LinkState> link_states_;
+
+  std::vector<std::vector<Actuator*> > transmissions_in_;
+  std::vector<std::vector<JointState*> > transmissions_out_;
+  std::vector<std::vector<JointState*> > chains_in_;
+  std::vector<std::vector<LinkState*> > chains_out_;
+
+  JointState *getJointState(const std::string &name);
+  LinkState *getLinkState(const std::string &name);
+
+  void propagateState();
+  void propagateEffort();
+  void enforceSafety();
+  void zeroCommands();
+
+  void propagateStateBackwards();
+  void propagateEffortBackwards();
 };
 
 }

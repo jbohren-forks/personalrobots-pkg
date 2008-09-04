@@ -46,7 +46,6 @@
 #include <mechanism_model/robot.h>
 
 #include <tinyxml/tinyxml.h>
-//class TiXmlElement;
 
 namespace controller
 {
@@ -89,7 +88,7 @@ public:
   {
   }
   virtual void update(void) = 0;
-  virtual bool initXml(mechanism::Robot *robot, TiXmlElement *config) = 0;
+  virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config) = 0;
 };
 
 }

@@ -60,12 +60,21 @@ public:
   Joint *joint_;
   std::vector<Link*> children_;
 
-  KDL::Frame frame_;
-
 private:
   enum InitState {INIT_XML, CREATE_TREE_LINKS, INITIALIZED};
   InitState init_state_;
 };
+
+class LinkState
+{
+public:
+  Link *link_;
+  KDL::Frame frame_;
+
+  LinkState() : link_(NULL) {}
+  LinkState(const LinkState &s) : link_(s.link_), frame_(s.frame_) {}
+};
+
 
 } // namespace mechanism
 

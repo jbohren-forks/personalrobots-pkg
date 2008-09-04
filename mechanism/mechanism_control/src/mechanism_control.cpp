@@ -35,7 +35,7 @@
 using namespace mechanism;
 
 MechanismControl::MechanismControl(HardwareInterface *hw) :
-  model_((char*)"robot"), hw_(hw), initialized_(0)
+  state_(NULL), hw_(hw), initialized_(0)
 {
   memset(controllers_, 0, MAX_NUM_CONTROLLERS * sizeof(void*));
   memset(garbage_, 0, GARBAGE_SIZE * sizeof(void*));
@@ -44,11 +44,14 @@ MechanismControl::MechanismControl(HardwareInterface *hw) :
 
 MechanismControl::~MechanismControl()
 {
+  if (state_)
+    delete state_;
 }
 
 bool MechanismControl::initXml(TiXmlElement* config)
 {
   model_.initXml(config);
+  state_ = new RobotState(&model_, hw_);
 
   initialized_ = true;
   return true;
@@ -67,15 +70,8 @@ controller::Controller* MechanismControl::getControllerByName(std::string name)
 // Must be realtime safe.
 void MechanismControl::update()
 {
-  // Propagates through the robot model.
-  for (unsigned int i = 0; i < model_.transmissions_.size(); ++i)
-    model_.transmissions_[i]->propagatePosition();
-  for (unsigned int i = 0; i < model_.chains_.size(); ++i)
-    model_.chains_[i]->propagateFK();
-
-  // Zeros all commands
-  for (unsigned int i = 0; i < model_.joints_.size(); ++i)
-    model_.joints_[i]->commanded_effort_= 0.0;
+  state_->propagateState();
+  state_->zeroCommands();
 
   // Update all controllers
   for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
@@ -84,13 +80,8 @@ void MechanismControl::update()
       controllers_[i]->update();
   }
 
-  // Performs safety checks on the commands.
-  for (unsigned int i = 0; i < model_.joints_.size(); ++i)
-    model_.joints_[i]->enforceLimits();
-
-  // Propagates commands back into the actuators.
-  for (unsigned int i = 0; i < model_.transmissions_.size(); ++i)
-    model_.transmissions_[i]->propagateEffort();
+  state_->enforceSafety();
+  state_->propagateEffort();
 
   // Cleanup.  Deletes any controllers in the garbage.
   for (int i = 0; i < GARBAGE_SIZE; ++i)
@@ -158,7 +149,7 @@ bool MechanismControl::spawnController(const std::string &type,
   printf("Spawning %s: %08x\n", name.c_str(), (int)&model_);
 
 
-  if (!c->initXml(&model_, config) ||
+  if (!c->initXml(state_, config) ||
       !addController(c, name))
   {
     delete c;
@@ -243,8 +234,8 @@ void MechanismControlNode::update()
     for (unsigned int i = 0; i < mc_->model_.joints_.size(); ++i)
     {
       mechanism_control::JointState *out = mechanism_state_.joint_states + i;
-      Joint *in = mc_->model_.joints_[i];
-      out->name = in->name_;
+      mechanism::JointState *in = &mc_->state_->joint_states_[i];
+      out->name = mc_->model_.joints_[i]->name_;
       out->position = in->position_;
       out->velocity = in->velocity_;
       out->applied_effort = in->applied_effort_;

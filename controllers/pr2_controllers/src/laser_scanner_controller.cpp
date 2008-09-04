@@ -65,17 +65,18 @@ LaserScannerController::~LaserScannerController()
 
 }
 
-void LaserScannerController::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot)
+void LaserScannerController::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::RobotState *robot)
 {
   robot_ = robot;
-  joint_ = robot->getJoint(name);
+  joint_ = robot->getJointState(name);
 
-  joint_position_controller_.init( p_gain,  i_gain,  d_gain,  windup, time, name, robot);
+  // TODO
+  abort(); //joint_position_controller_.init( p_gain,  i_gain,  d_gain,  windup, time, name, robot);
   command_= 0;
   last_time_= time;
 }
 
-bool LaserScannerController::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool LaserScannerController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   robot_ = robot;
@@ -90,7 +91,7 @@ bool LaserScannerController::initXml(mechanism::Robot *robot, TiXmlElement *conf
   }
 
   const char *joint_name = j->Attribute("name");
-  joint_ = joint_name ? robot->getJoint(joint_name) : NULL;
+  joint_ = joint_name ? robot->getJointState(joint_name) : NULL;
   if (!joint_)
   {
     fprintf(stderr, "LaserScannerController could not find joint named \"%s\"\n", joint_name);
@@ -353,7 +354,7 @@ bool LaserScannerController::checkAutoLevelResult()
 
 void LaserScannerController::setJointEffort(double effort)
 {
-  joint_->commanded_effort_ = min(max(effort, -joint_->effort_limit_), joint_->effort_limit_);
+  joint_->commanded_effort_ = effort;
 }
 
 //Get sinewave based on current time
@@ -361,7 +362,7 @@ void LaserScannerController::setDynamicSinewave(double time_from_start)
 {
   double command = sin(2*M_PI*time_from_start/period_)*amplitude_+offset_;
   joint_position_controller_.setCommand(command);
-  
+
 }
 
 //Set mode to use sawtooth profile
@@ -450,11 +451,11 @@ bool LaserScannerControllerNode::setProfileCall(
   generic_controllers::SetProfile::response &resp)
 {
   setProfile(LaserScannerController::LaserControllerMode(req.profile),req.period,req.amplitude,req.offset);
-  resp.time = c_->getTime(); 
+  resp.time = c_->getTime();
   return true;
 }
 
-bool LaserScannerControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool LaserScannerControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");

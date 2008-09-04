@@ -97,33 +97,48 @@ bool Robot::initXml(TiXmlElement *root)
 }
 
 template <class T>
-T* findByName(std::vector<T*>& v, const std::string &name)
+int findIndexByName(std::vector<T*>& v, const std::string &name)
 {
-  typename std::vector<T*>::iterator it;
-  for (it = v.begin(); it != v.end(); ++it)
+  for (unsigned int i = 0; i < v.size(); ++i)
   {
-    if ((*it) && (*it)->name_ == name)
-      return *it;
+    if (v[i]->name_ == name)
+      return i;
   }
-  return NULL;
+  return -1;
+}
+
+int Robot::getActuatorIndex(const std::string &name)
+{
+  assert(hw_);
+  return findIndexByName(hw_->actuators_, name);
+}
+
+int Robot::getJointIndex(const std::string &name)
+{
+  return findIndexByName(joints_, name);
+}
+
+int Robot::getLinkIndex(const std::string &name)
+{
+  return findIndexByName(links_, name);
 }
 
 Joint* Robot::getJoint(const std::string &name)
 {
-  // Yeah, it's a linear search.  Deal with it.
-  return findByName(joints_, name);
+  int i = getJointIndex(name);
+  return i >= 0 ? joints_[i] : NULL;
 }
 
 Actuator* Robot::getActuator(const std::string &name)
 {
-  assert(hw_);
-  // Yeah, it's a linear search.  Deal with it.
-  return findByName(hw_->actuators_, name);
+  int i = getActuatorIndex(name);
+  return i >= 0 ? hw_->actuators_[i] : NULL;
 }
 
 Link* Robot::getLink(const std::string &name)
 {
-  return findByName(links_, name);
+  int i = getLinkIndex(name);
+  return i >= 0 ? links_[i] : NULL;
 }
 
 void printLinkTreeHelper(Link *link, int depth = 0)
@@ -153,6 +168,107 @@ void Robot::printLinkTree()
   }
 
   printLinkTreeHelper(root, 0);
+}
+
+RobotState::RobotState(Robot *model, HardwareInterface *hw)
+  : model_(model), hw_(hw)
+{
+  assert(model_);
+  assert(hw_);
+
+  joint_states_.resize(model->joints_.size());
+  link_states_.resize(model->links_.size());
+  transmissions_in_.resize(model->transmissions_.size());
+  transmissions_out_.resize(model->transmissions_.size());
+
+  // Points each state object at the corresponding model object
+  for (unsigned int i = 0; i < joint_states_.size(); ++i)
+    joint_states_[i].joint_ = model->joints_[i];
+  for (unsigned int i = 0; i < link_states_.size(); ++i)
+    link_states_[i].link_ = model->links_[i];
+
+  // Wires up the transmissions to the state
+  for (unsigned int i = 0; i < model_->transmissions_.size(); ++i)
+  {
+    Transmission *t = model_->transmissions_[i];
+    for (unsigned int j = 0; j < t->actuator_names_.size(); ++j)
+    {
+      int index = model_->getActuatorIndex(t->actuator_names_[j]);
+      assert(index >= 0);
+      transmissions_in_[i].push_back(hw_->actuators_[index]);
+    }
+    for (unsigned int j = 0; j < t->joint_names_.size(); ++j)
+    {
+      int index = model_->getJointIndex(t->joint_names_[j]);
+      assert(index >= 0);
+      transmissions_out_[i].push_back(&joint_states_[index]);
+    }
+  }
+}
+
+
+JointState *RobotState::getJointState(const std::string &name)
+{
+  int i = model_->getJointIndex(name);
+  return i >= 0 ? &joint_states_[i] : NULL;
+}
+
+LinkState *RobotState::getLinkState(const std::string &name)
+{
+  int i = model_->getLinkIndex(name);
+  return i >= 0 ? &link_states_[i] : NULL;
+}
+
+void RobotState::propagateState()
+{
+  for (unsigned int i = 0; i < model_->transmissions_.size(); ++i)
+  {
+    model_->transmissions_[i]->propagatePosition(transmissions_in_[i],
+                                                 transmissions_out_[i]);
+  }
+
+  // TODO: KDL
+}
+
+void RobotState::propagateEffort()
+{
+  for (unsigned int i = 0; i < model_->transmissions_.size(); ++i)
+  {
+    model_->transmissions_[i]->propagateEffort(transmissions_out_[i],
+                                               transmissions_in_[i]);
+  }
+}
+
+void RobotState::enforceSafety()
+{
+  for (unsigned int i = 0; i < joint_states_.size(); ++i)
+  {
+    model_->joints_[i]->enforceLimits(&joint_states_[i]);
+  }
+}
+
+void RobotState::zeroCommands()
+{
+  for (unsigned int i = 0; i < joint_states_.size(); ++i)
+    joint_states_[i].commanded_effort_ = 0;
+}
+
+void RobotState::propagateStateBackwards()
+{
+  for (unsigned int i = 0; i < model_->transmissions_.size(); ++i)
+  {
+    model_->transmissions_[i]->propagatePositionBackwards(transmissions_out_[i],
+                                                          transmissions_in_[i]);
+  }
+}
+
+void RobotState::propagateEffortBackwards()
+{
+  for (unsigned int i = 0; i < model_->transmissions_.size(); ++i)
+  {
+    model_->transmissions_[i]->propagateEffortBackwards(transmissions_in_[i],
+                                                        transmissions_out_[i]);
+  }
 }
 
 } // namespace mechanism

@@ -6,8 +6,9 @@
 
 int main( int argc, char** argv )
 {
-  mechanism::Robot *robot = new mechanism::Robot("r2d2");
+  mechanism::Robot *robot_model = new mechanism::Robot;
   controller::BaseController bc;
+  HardwareInterface hw(0);
 
   if(argc != 3)
   {
@@ -23,8 +24,8 @@ int main( int argc, char** argv )
   TiXmlDocument xml(xml_robot_file);   // Load robot description
   xml.LoadFile();
   TiXmlElement *root = xml.FirstChildElement("robot");
-  robot->initXml(root);
-  
+  robot_model->initXml(root);
+
 
   char *xml_control_file = argv[2];
   TiXmlDocument xml_control(xml_control_file);   // Load robot description
@@ -32,9 +33,12 @@ int main( int argc, char** argv )
   TiXmlElement *root_control = xml_control.FirstChildElement("robot");
   TiXmlElement *root_controller = root_control->FirstChildElement("controller");
 
-  bc.initXml(robot,root_controller);
+  mechanism::RobotState *robot_state = new mechanism::RobotState(robot_model, &hw);
+
+  bc.initXml(robot_state,root_controller);
   ros::fini();
-  delete robot;
+  delete robot_model;
+  delete robot_state;
 //void BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 }
 

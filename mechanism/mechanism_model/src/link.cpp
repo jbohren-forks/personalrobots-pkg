@@ -114,7 +114,9 @@ bool Link::initXml(TiXmlElement *config, Robot *robot)
     fprintf(stderr, "Error: Link \"%s\"'s rpy origin is malformed\n", name_.c_str());
     return false;
   }
-  frame_ = KDL::Frame(KDL::Rotation::RPY(rpy[0], rpy[1], rpy[2]), KDL::Vector(xyz[0], xyz[1], xyz[2]));
+
+  // TODO: Do something with the origin information
+  // frame_ = KDL::Frame(KDL::Rotation::RPY(rpy[0], rpy[1], rpy[2]), KDL::Vector(xyz[0], xyz[1], xyz[2]));
 
   // TODO: parse inertial info
   // TODO: maybe parse collision info

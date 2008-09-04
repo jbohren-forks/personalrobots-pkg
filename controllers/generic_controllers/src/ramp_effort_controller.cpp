@@ -34,15 +34,14 @@
 #include <generic_controllers/ramp_effort_controller.h>
 
 using namespace std;
-using namespace controller;
+
+namespace controller {
 
 ROS_REGISTER_CONTROLLER(RampEffortController)
 
 RampEffortController::RampEffortController()
+: joint_state_(NULL), robot_(NULL)
 {
-  robot_ = NULL;
-  joint_ = NULL;
-
   input_start_ = 0;
   input_end_ = 0;
   duration_ = 0;
@@ -53,21 +52,21 @@ RampEffortController::~RampEffortController()
 {
 }
 
-void RampEffortController::init(double input_start, double input_end, double duration, double time,std::string name,mechanism::Robot *robot)
+void RampEffortController::init(double input_start, double input_end, double duration, double time,std::string name,mechanism::RobotState *robot)
 {
   robot_ = robot;
-  joint_ = robot->getJoint(name);
-  
-  
+  int index = robot->model_->getJointIndex(name);
+  joint_state_ = &robot->joint_states_[index];
+
   input_start_=input_start;
   input_end_=input_end;
   duration_=duration;
   initial_time_=time;
 }
 
-bool RampEffortController::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool RampEffortController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  
+
   TiXmlElement *j = config->FirstChildElement("joint");
   if (!j)
   {
@@ -76,13 +75,13 @@ bool RampEffortController::initXml(mechanism::Robot *robot, TiXmlElement *config
   }
 
   const char *joint_name = j->Attribute("name");
-  joint_ = joint_name ? robot->getJoint(joint_name) : NULL;
-  if (!joint_)
+  joint_state_ = joint_name ? robot->getJointState(joint_name) : NULL;
+  if (!joint_state_)
   {
     fprintf(stderr, "RampEffortController could not find joint named \"%s\"\n", joint_name);
     return false;
   }
-  
+
   TiXmlElement *cd = j->FirstChildElement("controller_defaults");
   if (cd)
   {
@@ -99,19 +98,19 @@ bool RampEffortController::initXml(mechanism::Robot *robot, TiXmlElement *config
 // Return the current position command
 double RampEffortController::getCommand()
 {
-  return joint_->commanded_effort_;
+  return joint_state_->commanded_effort_;
 }
 
 // Return the measured joint position
 double RampEffortController::getMeasuredEffort()
 {
-  return joint_->applied_effort_;
+  return joint_state_->applied_effort_;
 }
 
 // Return the measured joint position
 double RampEffortController::getVelocity()
 {
-  return joint_->velocity_;
+  return joint_state_->velocity_;
 }
 
 double RampEffortController::getTime()
@@ -123,7 +122,7 @@ void RampEffortController::update()
 {
   double time = robot_->hw_->current_time_;
 
-  joint_->commanded_effort_ = input_start_+(input_end_-input_start_)*(time-initial_time_)/(duration_);
+  joint_state_->commanded_effort_ = input_start_+(input_end_-input_start_)*(time-initial_time_)/(duration_);
 }
 
 ROS_REGISTER_CONTROLLER(RampEffortControllerNode)
@@ -153,12 +152,7 @@ bool RampEffortControllerNode::getActual(
   return true;
 }
 
-void RampEffortControllerNode::init(double input_start, double input_end, double duration, double time,std::string name,mechanism::Robot *robot)
-{
-  assert(false); // temporary fix for lack of xml
-}
-
-bool RampEffortControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *config)
+bool RampEffortControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
@@ -169,3 +163,4 @@ bool RampEffortControllerNode::initXml(mechanism::Robot *robot, TiXmlElement *co
   return true;
 }
 
+}

@@ -62,13 +62,11 @@ public:
 
   bool initXml(TiXmlElement *config, Robot *robot);
 
-  void propagatePosition();
-  void propagatePositionBackwards();
-  void propagateEffort();
-  void propagateEffortBackwards();
+  void propagatePosition(std::vector<Actuator*>&, std::vector<JointState*>&);
+  void propagatePositionBackwards(std::vector<JointState*>&, std::vector<Actuator*>&);
+  void propagateEffort(std::vector<JointState*>&, std::vector<Actuator*>&);
+  void propagateEffortBackwards(std::vector<Actuator*>&, std::vector<JointState*>&);
 
-  Actuator *actuator_;
-  std::vector<Joint*> joints_;
   std::vector<double> reductions_;  // Mechanical reduction for each joint
   std::vector<Pid> pids_;  // For keeping the joint angles aligned in Gazebo
 

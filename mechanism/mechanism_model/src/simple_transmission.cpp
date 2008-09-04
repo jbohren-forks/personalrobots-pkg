@@ -42,36 +42,25 @@ using namespace mechanism;
 
 ROS_REGISTER_TRANSMISSION(SimpleTransmission)
 
-SimpleTransmission::SimpleTransmission(Joint *joint, Actuator *actuator,
-  double mechanical_reduction, double motor_torque_constant,
-  double pulses_per_revolution)
-{
-  actuator_ = actuator;
-  mechanical_reduction_ = mechanical_reduction;
-  motor_torque_constant_ = motor_torque_constant;
-  pulses_per_revolution_ = pulses_per_revolution;
-  joint_ = joint;
-}
-
 bool SimpleTransmission::initXml(TiXmlElement *elt, Robot *robot)
 {
   TiXmlElement *jel = elt->FirstChildElement("joint");
   const char *joint_name = jel ? jel->Attribute("name") : NULL;
-  joint_ = joint_name ? robot->getJoint(joint_name) : NULL;
-  if (!joint_)
+  if (!joint_name || robot->getJointIndex(joint_name) < 0)
   {
     fprintf(stderr, "SimpleTransmission could not find joint named \"%s\"\n", joint_name);
     return false;
   }
+  joint_names_.push_back(joint_name);
 
   TiXmlElement *ael = elt->FirstChildElement("actuator");
   const char *actuator_name = ael ? ael->Attribute("name") : NULL;
-  actuator_ = actuator_name ? robot->getActuator(actuator_name) : NULL;
-  if (!actuator_)
+  if (!actuator_name || robot->getActuatorIndex(actuator_name) < 0)
   {
     fprintf(stderr, "SimpleTransmission could not find actuator named \"%s\"\n", actuator_name);
     return false;
   }
+  actuator_names_.push_back(actuator_name);
 
   mechanical_reduction_ = atof(elt->FirstChildElement("mechanicalReduction")->GetText()),
   motor_torque_constant_ = atof(elt->FirstChildElement("motorTorqueConstant")->GetText()),
@@ -79,33 +68,39 @@ bool SimpleTransmission::initXml(TiXmlElement *elt, Robot *robot)
   return true;
 }
 
-void SimpleTransmission::propagatePosition()
+void SimpleTransmission::propagatePosition(
+  std::vector<Actuator*>& as, std::vector<JointState*>& js)
 {
-  assert(joint_);  assert(actuator_);
-  joint_->position_ = ((double)actuator_->state_.encoder_count_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);
-  joint_->velocity_ = ((double)actuator_->state_.encoder_velocity_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);
-  joint_->applied_effort_ = actuator_->state_.last_measured_current_ * (motor_torque_constant_ * mechanical_reduction_);
-
+  assert(as.size() == 1);
+  assert(js.size() == 1);
+  js[0]->position_ = ((double)as[0]->state_.encoder_count_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);
+  js[0]->velocity_ = ((double)as[0]->state_.encoder_velocity_*2*M_PI)/(pulses_per_revolution_ * mechanical_reduction_);
+  js[0]->applied_effort_ = as[0]->state_.last_measured_current_ * (motor_torque_constant_ * mechanical_reduction_);
 }
 
-void SimpleTransmission::propagatePositionBackwards()
+void SimpleTransmission::propagatePositionBackwards(
+  std::vector<JointState*>& js, std::vector<Actuator*>& as)
 {
-  assert(joint_);  assert(actuator_);
-  actuator_->state_.encoder_count_ = (int)(joint_->position_ * pulses_per_revolution_ * mechanical_reduction_ / (2*M_PI));
-  actuator_->state_.encoder_velocity_ = joint_->velocity_ * pulses_per_revolution_ * mechanical_reduction_ / (2*M_PI);
-  actuator_->state_.last_measured_current_ = joint_->applied_effort_ / (motor_torque_constant_ * mechanical_reduction_);
+  assert(as.size() == 1);
+  assert(js.size() == 1);
+  as[0]->state_.encoder_count_ = (int)(js[0]->position_ * pulses_per_revolution_ * mechanical_reduction_ / (2*M_PI));
+  as[0]->state_.encoder_velocity_ = js[0]->velocity_ * pulses_per_revolution_ * mechanical_reduction_ / (2*M_PI);
+  as[0]->state_.last_measured_current_ = js[0]->applied_effort_ / (motor_torque_constant_ * mechanical_reduction_);
 }
 
-void SimpleTransmission::propagateEffort()
+void SimpleTransmission::propagateEffort(
+  std::vector<JointState*>& js, std::vector<Actuator*>& as)
 {
-  assert(joint_);  assert(actuator_);
-  actuator_->command_.current_ = joint_->commanded_effort_/(motor_torque_constant_ * mechanical_reduction_);
-  actuator_->command_.enable_ = true;
-
+  assert(as.size() == 1);
+  assert(js.size() == 1);
+  as[0]->command_.current_ = js[0]->commanded_effort_/(motor_torque_constant_ * mechanical_reduction_);
+  as[0]->command_.enable_ = true;
 }
 
-void SimpleTransmission::propagateEffortBackwards()
+void SimpleTransmission::propagateEffortBackwards(
+  std::vector<Actuator*>& as, std::vector<JointState*>& js)
 {
-  assert(joint_);  assert(actuator_);
-  joint_->commanded_effort_ = actuator_->command_.current_ * motor_torque_constant_ * mechanical_reduction_;
+  assert(as.size() == 1);
+  assert(js.size() == 1);
+  js[0]->commanded_effort_ = as[0]->command_.current_ * motor_torque_constant_ * mechanical_reduction_;
 }

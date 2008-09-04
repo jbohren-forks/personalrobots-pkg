@@ -41,30 +41,46 @@
 
 namespace mechanism {
 
+class JointState;
+
 class Joint{
 public:
-  Joint() : commanded_effort_(0) {}
+  Joint() {}
   ~Joint() {}
 
-  void enforceLimits();
+  void enforceLimits(JointState *s);
   bool initXml(TiXmlElement *elt);
 
   std::string name_;
   int type_;
-
-  // Update every cycle from input data
-  double position_;  // In radians
-  double velocity_;
-  double applied_effort_;
-
-  // Written every cycle out to motor boards
-  double commanded_effort_;
 
   // Constants
   double joint_limit_min_;  // In radians
   double joint_limit_max_;  // In radians
   double effort_limit_;
   double velocity_limit_;
+
+};
+
+
+class JointState
+{
+public:
+  Joint *joint_;
+
+  // State
+  double position_;  // In radians
+  double velocity_;
+  double applied_effort_;
+
+  // Command
+  double commanded_effort_;
+
+  JointState() : joint_(NULL), commanded_effort_(0) {}
+  JointState(const JointState &s)
+    : joint_(s.joint_), position_(s.position_), velocity_(s.velocity_),
+      applied_effort_(s.applied_effort_), commanded_effort_(s.commanded_effort_)
+  {}
 };
 
 enum

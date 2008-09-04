@@ -81,7 +81,7 @@ namespace controller
 
     JointVelocityController controller_; /** controller for the link */
 
-    mechanism::Joint *joint_; /** pointer to joint in Robot structure corresponding to link */
+    mechanism::JointState *joint_; /** pointer to joint in Robot structure corresponding to link */
 
     BaseParam *parent_; /** pointer to parent corresponding to link */
 
@@ -111,8 +111,8 @@ namespace controller
      * \brief Functional way to initialize limits and gains.
      *
      */
-    void init(std::vector<JointControlParam> jcp, mechanism::Robot *robot);
-    bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+    void init(std::vector<JointControlParam> jcp, mechanism::RobotState *robot);
+    bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
 
     /*!
@@ -203,7 +203,7 @@ namespace controller
     /*!
      * \brief Robot representation
      */
-    mechanism::Robot* robot_;
+    mechanism::RobotState* robot_;
 
 
     /*!
@@ -330,7 +330,7 @@ namespace controller
 
     void update();
 
-    bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+    bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
     void getOdometry(double &x, double &y, double &w, double &vx, double &vy, double &vw);
 
     // Services

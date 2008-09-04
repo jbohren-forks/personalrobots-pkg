@@ -44,9 +44,9 @@
   Example config:
 
   <controller type="JointPDController" name="controller_name">
-  <joint name="joint_to_control">
-  <pid p="1.0" i="2.0" d="3.0" iClamp="4.0" />
-  </joint>
+    <joint name="joint_to_control">
+      <pid p="1.0" i="2.0" d="3.0" iClamp="4.0" />
+    </joint>
   </controller>
 */
 /***************************************************/
@@ -88,8 +88,8 @@ namespace controller
      * \param *joint The joint that is being controlled.
      */
 
-    void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot);
-    bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+    void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::RobotState *robot);
+    bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
     /*!
      * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
@@ -130,22 +130,15 @@ namespace controller
 
     std::string getJointName();
 
-    private:
+  private:
 
-    mechanism::Joint* joint_; /**< Joint we're controlling. */
-
-    mechanism::Robot *robot_; /**< Pointer to robot structure. */
-
+    mechanism::JointState* joint_; /**< Joint we're controlling. */
+    mechanism::RobotState *robot_; /**< Pointer to robot structure. */
     Pid pid_controller_;      /**< Internal PID controller. */
-
     double last_time_;        /**< Last time stamp of update. */
-
     double command_;          /**< Last commanded position. */
-
     double command_dot_;
-
     double command_t_;          /**< Last commanded position. */
-
     double command_dot_t_;
 
     /*!
@@ -185,8 +178,8 @@ namespace controller
 
     void update();
 
-    void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot);
-    bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+    void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::RobotState *robot);
+    bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
     // Services
     bool setPDCommand(generic_controllers::SetPDCommand::request &req,

@@ -78,6 +78,7 @@ public:
   controller::Controller* getControllerByName(std::string name);
 
   mechanism::Robot model_;
+  mechanism::RobotState *state_;
   HardwareInterface *hw_;
 
   // TODO: deprecated.  Replaced by ControllerFactory
