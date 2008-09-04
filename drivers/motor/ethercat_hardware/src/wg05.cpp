@@ -161,7 +161,7 @@ void WG05::convertCommand(ActuatorCommand &command, unsigned char *buffer)
 
   memset(&c, 0, sizeof(c));
 
-  c.programmed_current_ = command.current_ * config_info_.nominal_current_scale_;
+  c.programmed_current_ = command.current_ / config_info_.nominal_current_scale_;
   c.mode_ = command.enable_ ? (MODE_ENABLE | MODE_CURRENT) : MODE_OFF;
   c.checksum_ = rotate_right_8(compute_checksum(&c, sizeof(c) - 1));
 
@@ -194,13 +194,13 @@ void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, uns
   state.is_enabled_ = current_status.mode_ != MODE_OFF;
   state.run_stop_hit_ = (current_status.mode_ & MODE_UNDERVOLTAGE) != 0;
 
-  state.last_commanded_current_ = current_status.programmed_current_ / config_info_.nominal_current_scale_;
-  state.last_measured_current_ = current_status.measured_current_ / config_info_.nominal_current_scale_;
+  state.last_commanded_current_ = current_status.programmed_current_ * config_info_.nominal_current_scale_;
+  state.last_measured_current_ = current_status.measured_current_ * config_info_.nominal_current_scale_;
 
   state.num_encoder_errors_ = current_status.num_encoder_errors_;
   state.num_communication_errors_ = 0; // TODO: communication errors are no longer reported in the process data
 
-  state.motor_voltage_ = current_status.motor_voltage_ / config_info_.nominal_voltage_scale_;
+  state.motor_voltage_ = current_status.motor_voltage_ * config_info_.nominal_voltage_scale_;
 }
 
 void WG05::verifyState(unsigned char *buffer)
