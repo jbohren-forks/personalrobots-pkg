@@ -1,140 +1,31 @@
 #include <cstdio>
+#include <vector.h>
+#include <math.h>
 #include <SDL.h>
 #include <GL/gl.h>
 #include "cloud_viewer/cloud_viewer.h"
-#include "mqmat.h"
-#include "mqdh.h"
-#include "mqunits.h"
+#include "matrix_utils.h"
 
-//#define DEBUG
+#define PI 3.14159265358979323846
 
 using namespace std;
-using namespace mqmath;
 
-double ray[3], laser_norm[3], laser_origin[3], cam_point[3], world_point[3];
-const double cam_tilt = 30.0 * units::DEGREES(); //30
+vector<vector<double> > Rmotorzero2laser;
+vector<double> Tmotorzero2laser;
+vector<vector<double> > Rcam2laser;
+vector<double> Tcam2laser;
 
-
-
-//void intrinsics(double u, double v)
-//{
-////	focal length: (393.756   393.798)
-////principal point:  (315.432  247.361)
-//
-//  //double fx = 949.415, fy = 870.535;
-//  //double u0 = 340.7  , v0 = 278.8;
-//	double fx = 393.756, fy = 393.798;
-//	double u0 = 315.432 , v0 = 247.361;
-//  // express the pixel ray in the base kinematic frame
-//  ray[0] = 1; 
-//  ray[1] = -(v - v0) / fy;
-//  ray[2] = (u - u0) / fx;
-//
-//  double ray_norm = sqrt(ray[0]*ray[0] + ray[1]*ray[1] + ray[2]*ray[2]);
-//  ray[0] /= ray_norm;
-//  ray[1] /= ray_norm;
-//  ray[2] /= ray_norm;
-//}
-
-void intrinsics(double xp, double yp)
-{
-
-	//394.493   0   318.619
-	//0  394.327  247.207
-	//0 0 1
-	//first two radial distortion coefficients:
-	//-0.344023   0.127415
-	//and the first two tangential distortion coefficients:
-	//-0.000815   -0.000350
-	double fx = 392.953, fy = 392.757;
-	double x0 = 316.125, y0 = 248.496; //318.619 , y0 = 247.207;
-
-	// express the pixel ray in the base kinematic frame
-	//ray[0] = 1; 
-	//ray[1] = -(y - y0) / fy;
-	//ray[2] = (x - x0) / fx;
-	//double zd =	1;
-	double yd = (yp - y0) / fy;
-	double xd = (xp - x0) / fx;
-/*
-
-	double r2 = pow(xd,2) + pow(yd,2);
-
-	double radialDistortion =  1 + k1 *	r2 + k2 * pow(r2,2) + k5 * pow(r2,2) * r2;
-
-	double tangentialX = 2 * k3 * xd * yd + k4 * ( r2  + 2 * pow(xd,2));
-	double tangentialY = k3 * (r2 + 2 * pow(yd,2)) + 2 * k4 * xd * yd;
-
-	double x =  (xd - tangentialX) / radialDistortion;
-	double y =  (yd - tangentialY) / radialDistortion;
- */ 
-	ray[0] = 1;
-	ray[1] = -yd;
-	ray[2] = xd;
-	
-
-	double ray_norm = sqrt(ray[0]*ray[0] + ray[1]*ray[1] + ray[2]*ray[2]);
-	ray[0] /= ray_norm;
-	ray[1] /= ray_norm;
-	ray[2] /= ray_norm;
-
-}
-
-void extrinsics(const mqmat<4,4> &T)
-{
-  laser_norm[0] = T.at(0, 0);
-  laser_norm[1] = T.at(1, 0);
-  laser_norm[2] = T.at(2, 0);
-  laser_origin[0] = T.at(0, 3);
-  laser_origin[1] = T.at(1, 3);
-  laser_origin[2] = T.at(2, 3);
-}
-
-void intersect()
-{
-  double u = (laser_norm[0] * laser_origin[0] +
-              laser_norm[1] * laser_origin[1] +
-              laser_norm[2] * laser_origin[2]) /
-             (laser_norm[0] * ray[0] +
-              laser_norm[1] * ray[1] +
-              laser_norm[2] * ray[2]);
-  cam_point[0] = u * ray[0];
-  cam_point[1] = u * ray[1];
-  cam_point[2] = u * ray[2];
-}
-
-void camera_to_world()
-{ 
-  // express these in the standard graphics frame:
-  // x = right
-  // y = down
-  // z = into the world
-  world_point[0] = cam_point[2]; 
-  world_point[1] = -cam_point[1]; //cos(-cam_tilt) * cam_point[1] - sin(-cam_tilt) * cam_point[2]; 
-  world_point[2] = cam_point[0]; //sin(-cam_tilt) * cam_point[1] + cos(-cam_tilt) * cam_point[2];
-  // un-rotate the camera
-
-  double tmp[3];
-  tmp[1] = cos(-cam_tilt) * world_point[1] - sin(-cam_tilt) * world_point[2];
-  tmp[2] = sin(-cam_tilt) * world_point[1] + cos(-cam_tilt) * world_point[2];
-  world_point[1] = tmp[1];
-  world_point[2] = tmp[2];
-
-}
-/*  
-double laser_encoder_offset = 152 * units::DEGREES();
-double baseline   = 6.25 * units::INCHES(); //9.25
-double stage_tilt = 2 * units::DEGREES();//15
-double stage_back = -2.5  * units::INCHES();
-double stage_up   = 5.5  * units::INCHES();
-double laser_rotation = -2.0 * units::DEGREES();
-*/
-double laser_encoder_offset = 2.5929;
-double baseline   = 0.16875;
-double stage_tilt = -0.07509;
-double stage_back = -0.163;
-double stage_up   = 0.0897;
-double laser_rotation = -0.0849;
+// stair 2 initial values for extrinsic parameters
+// measured angle when laser is pointing straight ahead
+double laser_encoder_offset = 85.0 * PI/180.0;
+// tilt of camera about x-axis (of laser frame)
+double laser_tilt_offset = -5.0 * PI/180.0;
+// displacement of camera frame from laser in laser frame coord (in m)
+double dx = 6.1 * 2.54/100.;
+double dy = 4.2 * 2.54/100.;
+double dz = 4.0 * 2.54/100.;
+// angle to account for bracket holding laser not being exactly 90 degrees
+double laser_rotation = 0;//-0.0849;
 
 char *laserfile = NULL;
 CloudViewer *cv = NULL;
@@ -146,63 +37,143 @@ public:
 };
 vector<laser_point> laser_points;
 
-void generate_cloud()
+
+void update_cam2laser_transformation()
+{	
+  Tcam2laser.clear();
+  Rcam2laser.clear();
+	// tranformation from camera frame to laser frame.
+	Tcam2laser.push_back(dx);
+	Tcam2laser.push_back(dy);
+	Tcam2laser.push_back(dz);
+	Rcam2laser = x_axis_rotation(laser_tilt_offset);
+
+	//cout << "Rcam2laser: " << endl;
+	//cout << Rcam2laser[0][0] << " " << Rcam2laser[0][1] << " " << Rcam2laser[0][2] << endl;
+	//cout << Rcam2laser[1][0] << " " << Rcam2laser[1][1] << " " << Rcam2laser[1][2] << endl;
+	//cout << Rcam2laser[2][0] << " " << Rcam2laser[2][1] << " " << Rcam2laser[2][2] << endl;
+	//cout << "Tcam2laser: " << endl;
+	//cout << Tcam2laser[0] << " " << Tcam2laser[1] << " " << Tcam2laser[2] << endl;
+	
+	return;
+}
+
+void update_laserang_transformation(double laser_angle) 
 {
-  double a2 = stage_up * sin(-stage_tilt) + stage_back * cos(-stage_tilt);
-  double d2 = stage_up * cos(-stage_tilt) - stage_back * sin(-stage_tilt);
-  mqdh T0(0, 0, 0, 0);
-  mqdh T1(0, 0, baseline, stage_tilt);
-  mqdh T3(M_PI/2, 0, 0, laser_rotation); //-2 * units::DEGREES()); //M_PI in linux
-  glPointSize(2);
-  if (laser_points.size() == 0)
-  {
-    FILE *f = fopen(laserfile, "r");
-    if (!f)
-    {
-      printf("couldn't open [%s]\n", laserfile);
-      return;
-    }
-    int line = 0;
-    while (!feof(f))
-    {
-      line++;
-      double laser_ang, row, col, r, g, b;
-      if (6 != fscanf(f, "%lf %lf %lf %lf %lf %lf\n", &laser_ang, &row, &col,
-                      &r, &g, &b))
-      {
-        printf("error in parse\n");
-        break;
-      }
-      if ((line % 1) != 0)
-        continue;
-      laser_point pt;
-      pt.laser_ang = laser_ang;
-      pt.row = row;
-      pt.col = col;
-      pt.r = r;
-      pt.g = g;
-      pt.b = b;
-      laser_points.push_back(pt);
-    }
-    fclose(f);
-  }
+  Tmotorzero2laser.clear();
+  Rmotorzero2laser.clear();
+	// tranformation from motor zero position to laser frame
+	vector<double> v(3,0);
+	Tmotorzero2laser = v;
+	Rmotorzero2laser = Rmultiply(y_axis_rotation(laser_encoder_offset - laser_angle),
+																z_axis_rotation(laser_rotation));
+	return;
+}
+
+vector<double> intrinsics(double xp, double yp)
+{
+	vector<double> cam_ray;
+
+  // stair 2 intrinsics
+  // measured by Quoc and Aaron:
+  //double fx = 554.69171, fy = 555.16712;
+  //double x0 = 321.04175, y0 = 260.40547;
+  // measured by Morgan:
+  double fx = 535.985, fy = 535.071;
+  double x0 = 335.106, y0 = 260.255;
+	
+// express the pixel ray in the camera frame
+	double yc = (yp - y0) / fy;
+	double xc = (xp - x0) / fx;
+ 
+	cam_ray.push_back(xc);
+	cam_ray.push_back(yc);
+	cam_ray.push_back(1);
+
+	double norm = sqrt(cam_ray[0]*cam_ray[0] + cam_ray[1]*cam_ray[1] + 
+								cam_ray[2]*cam_ray[2]);
+	
+	for (size_t i=0; i<cam_ray.size(); i++) {
+		cam_ray[i] /= norm;
+	}
+	
+	return cam_ray;
+}
+
+void generate_cloud() 
+{
+	// origin of camera frame in laser frame coord
+	vector<double> p0 = Tcam2laser;
+	vector<double> V;
+	vector<double> unit_ray;
+	vector<double> N_laser_plane (3,0);
+  N_laser_plane[0] = 1;
+	vector<double> N;
+	double t;
+	vector<double> P (3,0);
+
   cv->clear_cloud();
-  for (size_t i = 0; i < laser_points.size(); i++)
-  {
+
+	for (size_t i = 0; i < laser_points.size(); i++) {	
+
     laser_point pt = laser_points[i];
-    double stage = laser_encoder_offset - pt.laser_ang * units::DEGREES();
-    mqdh T2(-M_PI/2, a2, d2, stage); //M_PI in linux
-    mqmat<4,4> T(T0 * T1 * T2 * T3);
-    extrinsics(T);
-    intrinsics(pt.col, pt.row);
-    intersect();
-    camera_to_world();
+	
+		// get unit vector along the ray from the camera origin through the pixel
+		unit_ray = intrinsics(pt.col, pt.row);
+		// transform unit vector along the camera ray into laser frame
+		V = apply_rotation(unit_ray, Rcam2laser);
+
+		// rotate the laser plane normal from the moving motor frame to the stationary laser frame
+		update_laserang_transformation(pt.laser_ang*PI/180);
+		N = apply_rotation(N_laser_plane, Rmotorzero2laser);
+		t = -(dot_product(p0,N)/dot_product(V,N));
+		for (size_t j = 0; j<V.size(); j++) {
+			P[j] = p0[j] + t*V[j];
+		}
+
     float rowcol[2];
     rowcol[0] = pt.row;
     rowcol[1] = pt.col;
-    cv->add_point(world_point[0], world_point[1], world_point[2], 255*pt.r, 255*pt.g, 255*pt.b,
+    cv->add_point(P[0], P[1], P[2], 255*pt.r, 255*pt.g, 255*pt.b,
                   rowcol, 2);
+	}
+	return;
+}
+
+void read_laserfile()
+{
+  laser_points.clear();
+  FILE *f = fopen(laserfile, "r");
+  if (!f)
+  {
+    printf("couldn't open [%s]\n", laserfile);
+    return;
   }
+  int line = 0;
+  while (!feof(f))
+  {
+    line++;
+    double laser_ang, row, col, r, g, b;
+    if (6 != fscanf(f, "%lf %lf %lf %lf %lf %lf\n", &laser_ang, &row, &col,
+                    &r, &g, &b))
+    {
+      printf("error in parse\n");
+      break;
+    }
+    if ((line % 1) != 0)
+      continue;
+    laser_point pt;
+    pt.laser_ang = laser_ang;
+    pt.row = row;
+    pt.col = col;
+    pt.r = r;
+    pt.g = g;
+    pt.b = b;
+    laser_points.push_back(pt);
+  }
+  fclose(f);
+
+  return;
 }
 
 int main(int argc, char **argv)
@@ -234,9 +205,14 @@ int main(int argc, char **argv)
   cv->set_opengl_params(w,h);
 
   laserfile = argv[1];
+
+	update_cam2laser_transformation();
+
+	read_laserfile();
+
   generate_cloud();
 
-  bool done = false;
+	bool done = false;
   while(!done)
   {
     usleep(1000);
@@ -270,33 +246,33 @@ int main(int argc, char **argv)
             done = true;
             break;
           }
-          else if (event.key.keysym.sym == SDLK_b)
+          else if (event.key.keysym.sym == SDLK_x)
           {
             if (event.key.keysym.mod & KMOD_LSHIFT)
-              baseline += 0.01;
+              dx += 0.01;
             else
-              baseline -= 0.01;
+              dx -= 0.01;
           }
           else if (event.key.keysym.sym == SDLK_t)
           {
             if (event.key.keysym.mod & KMOD_LSHIFT)
-              stage_tilt += 0.01;
+              laser_tilt_offset += 0.01;
             else
-              stage_tilt -= 0.01;
+              laser_tilt_offset -= 0.01;
           }
-          else if (event.key.keysym.sym == SDLK_c)
+          else if (event.key.keysym.sym == SDLK_z)
           {
             if (event.key.keysym.mod & KMOD_LSHIFT)
-              stage_back += 0.01;
+              dz += 0.01;
             else
-              stage_back -= 0.01;
+              dz -= 0.01;
           }
-          else if (event.key.keysym.sym == SDLK_u)
+          else if (event.key.keysym.sym == SDLK_y)
           {
             if (event.key.keysym.mod & KMOD_LSHIFT)
-              stage_up += 0.01;
+              dy += 0.01;
             else
-              stage_up -= 0.01;
+              dy -= 0.01;
           }
           else if (event.key.keysym.sym == SDLK_l)
           {
@@ -316,17 +292,22 @@ int main(int argc, char **argv)
             cv->write_file("cloud.txt");
           else
             cv->keypress(event.key.keysym.sym);
+
+          update_cam2laser_transformation();
+          read_laserfile();
           generate_cloud();
           cv->render();
           SDL_GL_SwapBuffers();
-          printf("keys: r = laser rotation, l = encoder offset, b = baseline, t = tilt\n");
-          printf("      c = stage back, u = stage up\n");
-          printf("baseline = %f\n", baseline);
-          printf("stage_tilt = %f\n", stage_tilt);
-          printf("stage_back = %f\n", stage_back);
-          printf("stage_up = %f\n", stage_up);
+          printf("keys: x = x-distance between laser and camera\n");
+          printf("      y = y-distance between laser and camera\n");
+          printf("      z = z-distance between laser and camera\n");
+          printf("      l = encoder offset, t = tilt, r = laser rotation\n");
+          printf("x = %f\n", dx);
+          printf("y = %f\n", dy);
+          printf("z = %f\n", dz);
           printf("laser encoder offset = %f\n", laser_encoder_offset);
-          printf("laser rotatoin = %f\n", laser_rotation);
+          printf("laser tilt = %f\n", laser_tilt_offset);
+          printf("laser rotation = %f\n", laser_rotation);
           printf("\n");
           break;
         case SDL_QUIT:
@@ -335,9 +316,9 @@ int main(int argc, char **argv)
       }
     }
   }
+
   delete cv;
   SDL_Quit();
 
   return 0;
 }
-
