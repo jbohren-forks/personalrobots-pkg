@@ -45,12 +45,15 @@ public:
 	// search a neighborhood otherwise
 	static const bool    mKeypointVsKeyPoint = false;
 
+	// misc constants
+	static const double DefDisparityUnitInPixels = 16.;
+
 	Cv3DPoseEstimateStereo(int width=DefWidth, int height=DefHeight);
 	virtual ~Cv3DPoseEstimateStereo();
 
 	typedef enum  {
-		Star,
-		HarrisCorner
+		Star,			// use star detector
+		HarrisCorner    // use harris corner
 	} KeyPointDetector;
 	void setKeyPointDector(KeyPointDetector detector) {	mKeyPointDetector = detector;}
 	KeyPointDetector getKeyPointDetector() {return mKeyPointDetector;}
@@ -69,7 +72,16 @@ public:
 	int estimate(vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs, CvMat& rot, CvMat& shift,
 			bool reversed=false);
 
+	bool makePatchRect(const CvPoint& rectSize, const CvPoint2D32f& featurePt, CvRect& rect);
+
+	int mNumKeyPointsWithNoDisparity;  // a convenient counter for analysis
+
 protected:
+	/**
+	 * convenient function to call cvMatchTemplate with normalized cross correlation
+	 * for template matching over a neighborhood
+	 */
+	double matchTemplate(const CvMat& neighborhood, const CvMat& templ, CvMat& res, CvPoint& loc);
 	CvSize mSize;
 
 	// some parameters for Kurt's stereo pair code
@@ -93,6 +105,8 @@ protected:
 	StarDetector mStarDetector;
 
 	double mTemplateMatchThreshold; // minimum threshold for template matching
+
+	double mDisparityUnitInPixels;  // disparity unit in pixels
 };
 
 #endif /* CV3DPOSEESTIMATESTEREO_H_ */
