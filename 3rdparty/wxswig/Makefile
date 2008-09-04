@@ -10,7 +10,7 @@ $(VERSION)/Makefile:
 $(VERSION): $(VERSION)/Makefile
 	cd $(VERSION) && \
 		make && \
-		make install-main
+		make install
 
 wxswig: $(VERSION) 
 
