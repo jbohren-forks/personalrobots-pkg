@@ -1,20 +1,11 @@
 #! /usr/bin/env python
-# Provides quick access to the services exposed by MechanismControlNode
+# Wrappers around the services provided by MechanismControlNode
 
 import rostools
 rostools.update_path('mechanism_control')
 
 import rospy, sys
 from mechanism_control.srv import *
-
-def print_usage(exit_code = 0):
-    print '''Commands:
-    lt  - List controller Types
-    lc  - List active controllers
-    sp  - Spawn a controller using the xml passed over stdin
-    kl <name>  - Kills the controller named <name>
-    shutdown - Ends whole process'''
-    sys.exit(exit_code)
 
 def list_controller_types():
     s = rospy.ServiceProxy('list_controller_types', ListControllerTypes)
@@ -44,29 +35,3 @@ def kill_controller(name):
     else:
         print "Error when killing", resp.ok
 
-def shutdown():
-  s = rospy.ServiceProxy('shutdown', Empty)
-  s.call(EmptyRequest())
-  return
-
-if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print_usage()
-
-    if sys.argv[1] == 'lt':
-        list_controller_types()
-    elif sys.argv[1] == 'lc':
-        list_controllers()
-    elif sys.argv[1] == 'sp':
-        xml = ""
-        if len(sys.argv) > 2:
-            f = open(sys.argv[2])
-            xml = f.read()
-            f.close()
-        else:
-            xml = sys.stdin.read()
-        spawn_controller(xml)
-    elif sys.argv[1] == 'kl':
-        kill_controller(sys.argv[2])
-    elif sys.argv[1] == 'shutdown':
-        shutdown()
