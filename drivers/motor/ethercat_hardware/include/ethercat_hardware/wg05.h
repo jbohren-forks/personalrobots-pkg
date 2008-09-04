@@ -37,6 +37,65 @@
 
 #include <ethercat_hardware/ethercat_device.h>
 
+struct WG05MbxHdr
+{
+  uint16_t address_;
+  union
+  {
+    uint16_t command_;
+    struct
+    {
+      uint16_t length_:12;
+      uint16_t pad_:3;
+      uint16_t write_nread_:1;
+    }__attribute__ ((__packed__));
+  };
+  uint8_t checksum_;
+
+  void build(uint16_t address, uint16_t length, bool write_nread);
+  bool verify_checksum(void) const;
+}__attribute__ ((__packed__));
+
+static const unsigned MBX_SIZE = 512;
+static const unsigned MBX_DATA_SIZE = (MBX_SIZE - sizeof(WG05MbxHdr) - 1);
+struct WG05MbxCmd
+{
+  WG05MbxHdr hdr_;
+  uint8_t data_[MBX_DATA_SIZE];
+  uint8_t checksum_;
+
+  void build(unsigned address, unsigned length, bool write_nread, void const* data);
+}__attribute__ ((__packed__));
+
+struct WG05ConfigInfo
+{
+  uint32_t product_id_;
+  union
+  {
+    uint32_t revision_;
+    struct
+    {
+      uint8_t firmware_minor_revision_;
+      uint8_t firmware_major_revision_;
+      uint8_t pca_revision_;
+      uint8_t pcb_revision_;
+    }__attribute__ ((__packed__));
+  }__attribute__ ((__packed__));
+  uint32_t device_serial_number_;
+  uint8_t current_loop_kp_;
+  uint8_t current_loop_ki_;
+  uint16_t absolute_current_limit_;
+  float nominal_current_scale_;
+  float nominal_voltage_scale_;
+  uint8_t pad_[8];
+  uint8_t configuration_status_;
+  uint8_t safety_disable_status_;
+  uint8_t safety_disable_countdown_;
+  uint8_t safety_disable_count_;
+
+  static const unsigned CONFIG_INFO_BASE_ADDR = 0x0080;
+}__attribute__ ((__packed__));
+
 struct WG05Status
 {
   uint8_t mode_;
@@ -59,7 +118,7 @@ struct WG05Status
   uint16_t packet_count_;
   uint8_t pad_;
   uint8_t checksum_;
-} __attribute__ ((__packed__));
+}__attribute__ ((__packed__));
 
 struct WG05Command
 {
@@ -69,24 +128,10 @@ struct WG05Command
   int16_t programmed_current_;
   uint8_t pad_;
   uint8_t checksum_;
-} __attribute__ ((__packed__));
+}__attribute__ ((__packed__));
 
 class WG05 : public EthercatDevice
 {
-  static const int STATUS_PHY_ADDR = 0x2000;
-  static const int COMMAND_PHY_ADDR = 0x1000;
-
-  enum
-  {
-    MODE_OFF = 0x00, MODE_CURRENT = 0x01, MODE_ENABLE = 0x02, MODE_UNDERVOLTAGE = 0x04, MODE_RESET = 0x80
-  };
-
-  enum
-  {
-    LIMIT_SENSOR_0_STATE = 1, LIMIT_SENSOR_1_STATE = 2,
-    LIMIT_ON_TO_OFF = 4, LIMIT_OFF_TO_ON = 8
-  };
-
 public:
   WG05() : EthercatDevice(true, sizeof(WG05Command), sizeof(WG05Status)) {}
 
@@ -98,13 +143,39 @@ public:
   void truncateCurrent(ActuatorCommand &command);
   void verifyState(unsigned char *buffer);
 
-  enum {PRODUCT_CODE = 6805005};
+  enum
+  {
+    PRODUCT_CODE = 6805005
+  };
 
 private:
-  // TODO: pull these values from the EEPROM
-  static const double CURRENT_FACTOR = 2000.0;
-  double max_current_;
+  int mailboxRead(EtherCAT_SlaveHandler *sh, int address, void *data, int length);
+  int writeData(EtherCAT_SlaveHandler *sh, EC_UINT address, void const* buffer, EC_UINT length);
 
+  int readData(EtherCAT_SlaveHandler *sh, EC_UINT address, void* buffer, EC_UINT length);
+
+  static const int COMMAND_PHY_ADDR = 0x1000;
+  static const int STATUS_PHY_ADDR = 0x2000;
+  static const int MBX_COMMAND_PHY_ADDR = 0x1400;
+  static const int MBX_COMMAND_SIZE = 512;
+  static const int MBX_STATUS_PHY_ADDR = 0x2400;
+  static const int MBX_STATUS_SIZE = 512;
+
+  enum
+  {
+    MODE_OFF = 0x00, MODE_CURRENT = 0x01, MODE_ENABLE = 0x02,
+    MODE_UNDERVOLTAGE = 0x04, MODE_RESET = 0x80
+  };
+
+  enum
+  {
+    LIMIT_SENSOR_0_STATE = 1, LIMIT_SENSOR_1_STATE = 2,
+    LIMIT_ON_TO_OFF = 4, LIMIT_OFF_TO_ON = 8
+  };
+
+  // Board configuration parameters
+  double max_current_;
+  WG05ConfigInfo config_info_;
 };
 
 #endif /* WG05_H */
