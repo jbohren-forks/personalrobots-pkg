@@ -1,0 +1,9 @@
+<package>
+  <description>
+    This program extracts a laser line from images given to it.
+  </description>
+  <author>Morgan Quigley</author>
+  <license>BSD</license>
+  <depend package="opencv"/>
+</package>
+
