@@ -32,10 +32,10 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_KINEMATIC_CONSTRAINT_EVALUATOR_
-#define KINEMATIC_PLANNING_KINEMATIC_CONSTRAINT_EVALUATOR_
+#ifndef KINEMATIC_PLANNING_RKP_CONSTRAINT_EVALUATOR_
+#define KINEMATIC_PLANNING_RKP_CONSTRAINT_EVALUATOR_
 
 #include <planning_models/kinematic.h>
 #include <robot_msgs/KinematicConstraints.h>

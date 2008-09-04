@@ -32,48 +32,64 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_STATE_VALIDITY_CHECKER_
-#define KINEMATIC_PLANNING_STATE_VALIDITY_CHECKER_
+#ifndef KINEMATIC_PLANNING_KINEMATIC_RKP_MODEL_
+#define KINEMATIC_PLANNING_KINEMATIC_RKP_MODEL_
 
-#include "KinematicPlanningXMLModel.h"
-#include "KinematicConstraintEvaluator.h"
+#include "RKPModelBase.h"
 
-class StateValidityPredicate : public ompl::SpaceInformation::StateValidityChecker
+#include "RKPRRTSetup.h"
+#include "RKPLazyRRTSetup.h"
+#include "RKPSBLSetup.h"
+
+#include <string>
+#include <map>
+
+class RKPModel : public RKPModelBase
 {
  public:
- StateValidityPredicate(XMLModel *model) : ompl::SpaceInformation::StateValidityChecker()
+    RKPModel(void) : RKPModelBase()
     {
-	m_model = model;
     }
     
-    virtual bool operator()(const ompl::SpaceInformation::State_t state)
+    virtual ~RKPModel(void)
     {
-	m_model->kmodel->computeTransforms(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);
-	m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
-	
-	bool valid = !m_model->collisionSpace->isCollision(m_model->collisionSpaceID);
-	
-	if (valid)
-	    valid = m_kce.decide();
-	
-	return valid;
+	for (std::map<std::string, RKPPlannerSetup*>::iterator i = planners.begin(); i != planners.end() ; ++i)
+	    if (i->second)
+		delete i->second;
     }
     
-    void setPoseConstraints(const std::vector<robot_msgs::PoseConstraint> &kc)
+    void addRRT(std::map<std::string, std::string> &options)
     {
-	m_kce.use(m_model->kmodel, kc);
+	RKPPlannerSetup *rrt = new RKPRRTSetup();
+	if (rrt->setup(dynamic_cast<RKPModelBase*>(this), options))
+	    planners["RRT"] = rrt;
+	else
+	    delete rrt;
     }
     
-    void clearConstraints(void)
+    void addLazyRRT(std::map<std::string, std::string> &options)
     {
-	m_kce.clear();
+	RKPPlannerSetup *rrt = new RKPLazyRRTSetup();
+	if (rrt->setup(dynamic_cast<RKPModelBase*>(this), options))
+	    planners["LazyRRT"] = rrt;
+	else
+	    delete rrt;
     }
     
- protected:
-    XMLModel                        *m_model;
-    KinematicConstraintEvaluatorSet  m_kce;
-};  
+    void addSBL(std::map<std::string, std::string> &options)
+    {
+	RKPPlannerSetup *sbl = new RKPSBLSetup();
+	if (sbl->setup(dynamic_cast<RKPModelBase*>(this), options))
+	    planners["SBL"] = sbl;
+	else
+	    delete sbl;
+    }
+    
+    std::map<std::string, RKPPlannerSetup*> planners;
+};
+
+typedef std::map<std::string, RKPModel*> ModelMap;
 
 #endif

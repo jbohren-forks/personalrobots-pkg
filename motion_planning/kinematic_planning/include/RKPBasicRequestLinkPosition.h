@@ -32,19 +32,19 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_REQUEST_PLAN_LINK_POSITION_
-#define KINEMATIC_PLANNING_REQUEST_PLAN_LINK_POSITION_
+#ifndef KINEMATIC_PLANNING_RPK_BASIC_REQUEST_LINK_POSITION_
+#define KINEMATIC_PLANNING_RPK_BASIC_REQUEST_LINK_POSITION_
 
-#include "RequestPlan.h"
+#include "RKPBasicRequest.h"
 #include <robot_srvs/KinematicPlanLinkPosition.h>
 
 class GoalToPosition : public ompl::SpaceInformationKinematic::GoalRegionKinematic
 {
  public:
     
-    GoalToPosition(ompl::SpaceInformation_t si, XMLModel *model, const std::vector<robot_msgs::PoseConstraint> &pc) : ompl::SpaceInformationKinematic::GoalRegionKinematic(si)
+    GoalToPosition(ompl::SpaceInformation_t si, RKPModel *model, const std::vector<robot_msgs::PoseConstraint> &pc) : ompl::SpaceInformationKinematic::GoalRegionKinematic(si)
     {
 	m_model = model;
 	for (unsigned int i = 0 ; i < pc.size() ; ++i)
@@ -113,45 +113,39 @@ class GoalToPosition : public ompl::SpaceInformationKinematic::GoalRegionKinemat
 	m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
     }    
     
-    XMLModel                              *m_model;
+    RKPModel                              *m_model;
     std::vector<PoseConstraintEvaluator*>  m_pce;
     
 };
     
-class RequestPlanLinkPosition : virtual public RequestPlan
+/** Validate request for planning towards a link position */
+template<>
+bool RKPBasicRequest<robot_srvs::KinematicPlanLinkPosition::request>::isRequestValid(ModelMap &models, robot_srvs::KinematicPlanLinkPosition::request &req)
 {
- public:
+    if (!areSpaceParamsValid(models, req.params))
+	return false;
     
-    /** Validate request for planning towards a link position */
-    bool isRequestValid(ModelMap &models, robot_srvs::KinematicPlanLinkPosition::request &req)
+    RKPModel *m = models[req.params.model_id];
+    
+    if (m->kmodel->stateDimension != req.start_state.get_vals_size())
     {
-	if (!areSpaceParamsValid(models, req.params))
-	    return false;
-	
-	XMLModel *m = models[req.params.model_id];
-	
-	if (m->kmodel->stateDimension != req.start_state.get_vals_size())
-	{
-	    std::cerr << "Dimension of start state expected to be " << m->kmodel->stateDimension << " but was received as " << req.start_state.get_vals_size() << std::endl;
-	    return false;
-	}
-	
-	return true;
+	std::cerr << "Dimension of start state expected to be " << m->kmodel->stateDimension << " but was received as " << req.start_state.get_vals_size() << std::endl;
+	return false;
     }
     
-    /** Set the goal using a destination link position */
-    void setupGoalState(XMLModel *model, KinematicPlannerSetup &psetup, robot_srvs::KinematicPlanLinkPosition::request &req)
-    {
-	/* set the goal */
-	std::vector<robot_msgs::PoseConstraint> pc;
-	req.get_goal_constraints_vec(pc);
-	
-	GoalToPosition *goal = new GoalToPosition(psetup.si, model, pc);
-	psetup.si->setGoal(goal); 
-    }
+    return true;
+}
+
+/** Set the goal using a destination link position */
+template<>
+void RKPBasicRequest<robot_srvs::KinematicPlanLinkPosition::request>::setupGoalState(RKPModel *model, RKPPlannerSetup *psetup, robot_srvs::KinematicPlanLinkPosition::request &req)
+{
+    /* set the goal */
+    std::vector<robot_msgs::PoseConstraint> pc;
+    req.get_goal_constraints_vec(pc);
     
-};
-
-
+    GoalToPosition *goal = new GoalToPosition(psetup->si, model, pc);
+    psetup->si->setGoal(goal); 
+}
 
 #endif

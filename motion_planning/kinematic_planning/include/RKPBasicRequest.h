@@ -32,25 +32,43 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_REQUEST_PLAN_
-#define KINEMATIC_PLANNING_REQUEST_PLAN_
+#ifndef KINEMATIC_PLANNING_RKP_BASIC_REQUEST_
+#define KINEMATIC_PLANNING_RKP_BASIC_REQUEST_
 
-#include "KinematicPlanningXMLModel.h"
-#include "StateValidityChecker.h"
+#include "RKPModel.h"
 
 #include <robot_msgs/KinematicPath.h>
 #include <robot_msgs/KinematicSpaceParameters.h>
+#include <robot_msgs/PoseConstraint.h>
 
 #include <iostream>
 
-class RequestPlan
+template<typename _R>
+class RKPBasicRequest
 {
  public:
     
+    RKPBasicRequest(void)
+    {
+    }
+    
+    virtual ~RKPBasicRequest(void)
+    {
+    }
+    
+    bool isRequestValid(ModelMap &models, _R &req)
+    {
+	return areSpaceParamsValid(models, req.params);
+    }
+    
+    void setupGoalState(RKPModel *model, RKPPlannerSetup *psetup, _R &req)
+    {
+    }
+    
     /** Validate common space parameters */
-    bool areSpaceParamsValid(ModelMap &modelsRef, robot_msgs::KinematicSpaceParameters &params) const
+    bool areSpaceParamsValid(const ModelMap &modelsRef, robot_msgs::KinematicSpaceParameters &params) const
     { 
 	ModelMap::const_iterator pos = modelsRef.find(params.model_id);
 	
@@ -59,9 +77,9 @@ class RequestPlan
 	    std::cerr << "Cannot plan for '" << params.model_id << "'. Model does not exist" << std::endl;
 	    return false;	    
 	}
-
+	
 	/* find the model */
-	XMLModel *m = pos->second;
+	RKPModel *m = pos->second;
 	
 	/* if the user did not specify a planner, use the first available one */
 	if (params.planner_id.empty())
@@ -71,7 +89,7 @@ class RequestPlan
 	}
 	
 	/* check if desired planner exists */
-	std::map<std::string, KinematicPlannerSetup>::iterator plannerIt = m->planners.find(params.planner_id);
+	std::map<std::string, RKPPlannerSetup*>::iterator plannerIt = m->planners.find(params.planner_id);
 	if (plannerIt == m->planners.end())
 	{
 	    std::cerr << "Motion planner not found: '" << params.planner_id << "'" << std::endl;
@@ -80,45 +98,46 @@ class RequestPlan
 	
 	std::cout << "Selected motion planner: '" << params.planner_id << "'" << std::endl;
 	
-	KinematicPlannerSetup &psetup = plannerIt->second;
+	RKPPlannerSetup *psetup = plannerIt->second;
 
 	/* check if the desired distance metric is defined */
-	if (psetup.sde.find(params.distance_metric) == psetup.sde.end())
+	if (psetup->sde.find(params.distance_metric) == psetup->sde.end())
 	{
 	    std::cerr << "Distance evaluator not found: '" << params.distance_metric << "'" << std::endl;
 	    return false;
 	}
+	
 	return true;
     }
     
     /** Configure the state space for a given set of parameters and set the starting state */
-    void setupStateSpaceAndStartState(XMLModel *m, KinematicPlannerSetup &psetup,
+    void setupStateSpaceAndStartState(RKPModel *model, RKPPlannerSetup *psetup,
 				      robot_msgs::KinematicSpaceParameters &params,
 				      robot_msgs::KinematicState &start_state)
     {
 	/* set the workspace volume for planning */
 	// only area or volume should go through... not sure what happens on really complicated models where 
 	// we have both multiple planar and multiple floating joints...
-	static_cast<SpaceInformationXMLModel*>(psetup.si)->setPlanningArea(params.volumeMin.x, params.volumeMin.y,
-									   params.volumeMax.x, params.volumeMax.y);
-        static_cast<SpaceInformationXMLModel*>(psetup.si)->setPlanningVolume(params.volumeMin.x, params.volumeMin.y, params.volumeMin.z,
-									     params.volumeMax.x, params.volumeMax.y, params.volumeMax.z);
+	static_cast<RKPPlannerSetup::SpaceInformationRKPModel*>(psetup->si)->setPlanningArea(params.volumeMin.x, params.volumeMin.y,
+											     params.volumeMax.x, params.volumeMax.y);
+        static_cast<RKPPlannerSetup::SpaceInformationRKPModel*>(psetup->si)->setPlanningVolume(params.volumeMin.x, params.volumeMin.y, params.volumeMin.z,
+											       params.volumeMax.x, params.volumeMax.y, params.volumeMax.z);
 
-	psetup.si->setStateDistanceEvaluator(psetup.sde[params.distance_metric]);
+	psetup->si->setStateDistanceEvaluator(psetup->sde[params.distance_metric]);
 	
 	/* set the starting state */
-	const unsigned int dim = psetup.si->getStateDimension();
+	const unsigned int dim = psetup->si->getStateDimension();
 	ompl::SpaceInformationKinematic::StateKinematic_t start = new ompl::SpaceInformationKinematic::StateKinematic(dim);
 	
-	if (m->groupID >= 0)
+	if (model->groupID >= 0)
 	{
 	    /* set the pose of the whole robot */
-	    m->kmodel->computeTransforms(start_state.vals);
-	    m->collisionSpace->updateRobotModel(m->collisionSpaceID);
+	    model->kmodel->computeTransforms(start_state.vals);
+	    model->collisionSpace->updateRobotModel(model->collisionSpaceID);
 	    
 	    /* extract the components needed for the start state of the desired group */
 	    for (unsigned int i = 0 ; i < dim ; ++i)
-		start->values[i] = start_state.vals[m->kmodel->groupStateIndexList[m->groupID][i]];
+		start->values[i] = start_state.vals[model->kmodel->groupStateIndexList[model->groupID][i]];
 	}
 	else
 	{
@@ -127,17 +146,17 @@ class RequestPlan
 		start->values[i] = start_state.vals[i];
 	}
 	
-	psetup.si->addStartState(start);
+	psetup->si->addStartState(start);
     }
     
     /** Set the kinematic constraints to follow */
-    void setupPoseConstraints(KinematicPlannerSetup &psetup, const std::vector<robot_msgs::PoseConstraint> &cstrs)
+    void setupPoseConstraints(RKPPlannerSetup *psetup, const std::vector<robot_msgs::PoseConstraint> &cstrs)
     {
-	static_cast<StateValidityPredicate*>(psetup.si->getStateValidityChecker())->setPoseConstraints(cstrs);
+	static_cast<RKPPlannerSetup::StateValidityPredicate*>(psetup->si->getStateValidityChecker())->setPoseConstraints(cstrs);
     }    
 
     /** Compute the actual motion plan */
-    void computePlan(KinematicPlannerSetup &psetup, int times, double allowed_time, bool interpolate,
+    void computePlan(RKPPlannerSetup *psetup, int times, double allowed_time, bool interpolate,
 		     ompl::SpaceInformationKinematic::PathKinematic_t &bestPath, double &bestDifference)
     {
 		
@@ -151,12 +170,12 @@ class RequestPlan
 	bestPath = NULL;
 	bestDifference = 0.0;
         double totalTime = 0.0;
-	ompl::SpaceInformation::Goal_t goal = psetup.si->getGoal();
+	ompl::SpaceInformation::Goal_t goal = psetup->si->getGoal();
 	
 	for (int i = 0 ; i < times ; ++i)
 	{
 	    ros::Time startTime = ros::Time::now();
-	    bool ok = psetup.mp->solve(allowed_time); 
+	    bool ok = psetup->mp->solve(allowed_time); 
 	    double tsolve = (ros::Time::now() - startTime).to_double();	
 	    std::cout << (ok ? "[Success]" : "[Failure]") << " Motion planner spent " << tsolve << " seconds" << std::endl;
 	    totalTime += tsolve;
@@ -166,11 +185,11 @@ class RequestPlan
 	    {
 		ros::Time startTime = ros::Time::now();
 		ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
-		psetup.smoother->smoothMax(path);
+		psetup->smoother->smoothMax(path);
 		double tsmooth = (ros::Time::now() - startTime).to_double();
 		std::cout << "          Smoother spent " << tsmooth << " seconds (" << (tsmooth + tsolve) << " seconds in total)" << std::endl;
 		if (interpolate)
-		    psetup.si->interpolatePath(path);
+		    psetup->si->interpolatePath(path);
 		if (bestPath == NULL || bestDifference > goal->getDifference() || 
 		    (bestPath && bestDifference == goal->getDifference() && bestPath->states.size() > path->states.size()))
 		{
@@ -182,17 +201,17 @@ class RequestPlan
 		    std::cout << "          Obtained better solution" << std::endl;
 		}
 	    }
-	    psetup.mp->clear();	    
+	    psetup->mp->clear();	    
 	}
 	
 	
         std::cout << std::endl << "Total planning time: " << totalTime << "; Average planning time: " << (totalTime / (double)times) << " (seconds)" << std::endl;
     }
 
-    void fillSolution(KinematicPlannerSetup &psetup, ompl::SpaceInformationKinematic::PathKinematic_t bestPath, double bestDifference,
+    void fillSolution(RKPPlannerSetup *psetup, ompl::SpaceInformationKinematic::PathKinematic_t bestPath, double bestDifference,
 		      robot_msgs::KinematicPath &path, double &distance)
     {
-	const unsigned int dim = psetup.si->getStateDimension();
+	const unsigned int dim = psetup->si->getStateDimension();
 	
 	/* copy the solution to the result */
 	if (bestPath)
@@ -214,15 +233,13 @@ class RequestPlan
 	}
     }
     
-    void cleanupPlanningData(KinematicPlannerSetup &psetup)
+    void cleanupPlanningData(RKPPlannerSetup *psetup)
     {
 	/* cleanup */
-	psetup.si->clearGoal();
-	psetup.si->clearStartStates();	
+	psetup->si->clearGoal();
+	psetup->si->clearStartStates();	
     }
     
 };
-
-
 
 #endif

@@ -89,26 +89,16 @@ Provides (name/type):
 **/
 
 #include <planning_node_util/cnode.h>
-
-#include <ompl/extension/samplingbased/kinematic/extension/rrt/LazyRRT.h>
-#include <ompl/extension/samplingbased/kinematic/extension/rrt/RRT.h>
-#include <ompl/extension/samplingbased/kinematic/extension/sbl/SBL.h>
-
 #include <std_msgs/String.h>
 
-#include "KinematicPlanningXMLModel.h"
-#include "KinematicConstraintEvaluator.h"
-
-#include "RequestPlanState.h"
-#include "RequestPlanLinkPosition.h"
+#include "RKPModel.h"
+#include "RKPBasicRequestState.h"
+#include "RKPBasicRequestLinkPosition.h"
 
 #include <profiling_utils/profiler.h>
-#include <string_utils/string_utils.h>
 
 class KinematicPlanning : public ros::node,
-			  public planning_node_util::NodeCollisionModel,
-			  public RequestPlanState,
-			  public RequestPlanLinkPosition
+			  public planning_node_util::NodeCollisionModel
 {
 public:
 
@@ -122,34 +112,34 @@ public:
     }
     
     /** Free the memory */
-    ~KinematicPlanning(void)
+    virtual ~KinematicPlanning(void)
     {
-	for (std::map<std::string, XMLModel*>::iterator i = m_models.begin() ; i != m_models.end() ; i++)
+	for (std::map<std::string, RKPModel*>::iterator i = m_models.begin() ; i != m_models.end() ; i++)
 	    delete i->second;
     }
     
     bool planToState(robot_srvs::KinematicPlanState::request &req, robot_srvs::KinematicPlanState::response &res)
     {
-	if (!RequestPlanState::isRequestValid(m_models, req))
+	if (!m_requestState.isRequestValid(m_models, req))
 	    return false;
 	
 	/* find the data we need */
-	XMLModel                   *m = m_models[req.params.model_id];
-	KinematicPlannerSetup &psetup = m->planners[req.params.planner_id];
+	RKPModel             *m = m_models[req.params.model_id];
+	RKPPlannerSetup *psetup = m->planners[req.params.planner_id];
 	
 	/* configure state space and starting state */
-	setupStateSpaceAndStartState(m, psetup, req.params, req.start_state);
+	m_requestState.setupStateSpaceAndStartState(m, psetup, req.params, req.start_state);
 	
 	std::vector<robot_msgs::PoseConstraint> cstrs;
 	req.constraints.get_pose_vec(cstrs);
-	setupPoseConstraints(psetup, cstrs);
+	m_requestState.setupPoseConstraints(psetup, cstrs);
 	
 	/* add goal state */
-	RequestPlanState::setupGoalState(m, psetup, req);
+	m_requestState.setupGoalState(m, psetup, req);
 	
 	/* print some information */
 	printf("=======================================\n");
-	psetup.si->printSettings();
+	psetup->si->printSettings();
 	printf("=======================================\n");	
 	
 	/* compute actual motion plan */
@@ -158,41 +148,41 @@ public:
 
 	m_collisionSpace->lock();
 	profiling_utils::Profiler::Start();
-	computePlan(psetup, req.times, req.allowed_time, req.interpolate, bestPath, bestDifference);
+	m_requestState.computePlan(psetup, req.times, req.allowed_time, req.interpolate, bestPath, bestDifference);
 	profiling_utils::Profiler::Stop();
 	m_collisionSpace->unlock();
 
 	/* fill in the results */
-	fillSolution(psetup, bestPath, bestDifference, res.path, res.distance);
+	m_requestState.fillSolution(psetup, bestPath, bestDifference, res.path, res.distance);
 	
 	/* clear memory */
-	cleanupPlanningData(psetup);
+	m_requestState.cleanupPlanningData(psetup);
 	
 	return true;
     }
 
     bool planToPosition(robot_srvs::KinematicPlanLinkPosition::request &req, robot_srvs::KinematicPlanLinkPosition::response &res)
     {
-	if (!RequestPlanLinkPosition::isRequestValid(m_models, req))
+	if (!m_requestLinkPosition.isRequestValid(m_models, req))
 	    return false;
 	
 	/* find the data we need */
-	XMLModel                   *m = m_models[req.params.model_id];
-	KinematicPlannerSetup &psetup = m->planners[req.params.planner_id];
+	RKPModel             *m = m_models[req.params.model_id];
+	RKPPlannerSetup *psetup = m->planners[req.params.planner_id];
 	
 	/* configure state space and starting state */
-	setupStateSpaceAndStartState(m, psetup, req.params, req.start_state);
+	m_requestLinkPosition.setupStateSpaceAndStartState(m, psetup, req.params, req.start_state);
 	
 	std::vector<robot_msgs::PoseConstraint> cstrs;
 	req.constraints.get_pose_vec(cstrs);
-	setupPoseConstraints(psetup, cstrs);
+	m_requestLinkPosition.setupPoseConstraints(psetup, cstrs);
 
 	/* add goal state */
-	RequestPlanLinkPosition::setupGoalState(m, psetup, req);
+	m_requestLinkPosition.setupGoalState(m, psetup, req);
 	
 	/* print some information */
 	printf("=======================================\n");
-	psetup.si->printSettings();
+	psetup->si->printSettings();
 	printf("=======================================\n");	
 	
 	/* compute actual motion plan */
@@ -202,16 +192,16 @@ public:
 	m_collisionSpace->lock();
 	profiling_utils::Profiler::Start();
 
-	computePlan(psetup, req.times, req.allowed_time, req.interpolate, bestPath, bestDifference);
+	m_requestLinkPosition.computePlan(psetup, req.times, req.allowed_time, req.interpolate, bestPath, bestDifference);
 
 	profiling_utils::Profiler::Stop();
 	m_collisionSpace->unlock();
 
 	/* fill in the results */
-	fillSolution(psetup, bestPath, bestDifference, res.path, res.distance);
+	m_requestLinkPosition.fillSolution(psetup, bestPath, bestDifference, res.path, res.distance);
 	
 	/* clear memory */
-	cleanupPlanningData(psetup);
+	m_requestLinkPosition.cleanupPlanningData(psetup);
 	
 	return true;
     }
@@ -226,7 +216,7 @@ public:
 	printf("=======================================\n");
 
 	/* set the data for the model */
-	XMLModel *model = new XMLModel();
+	RKPModel *model = new RKPModel();
 	model->collisionSpaceID = 0;
 	model->collisionSpace = m_collisionSpace;
         model->kmodel = m_kmodel;
@@ -242,7 +232,7 @@ public:
 
 	for (unsigned int i = 0 ; i < groups.size() ; ++i)
 	{
-	    XMLModel *model = new XMLModel();
+	    RKPModel *model = new RKPModel();
 	    model->collisionSpaceID = 0;
 	    model->collisionSpace = m_collisionSpace;
 	    model->kmodel = m_kmodel;
@@ -255,208 +245,48 @@ public:
     
     void knownModels(std::vector<std::string> &model_ids)
     {
-	for (std::map<std::string, XMLModel*>::const_iterator i = m_models.begin() ; i != m_models.end() ; ++i)
+	for (std::map<std::string, RKPModel*>::const_iterator i = m_models.begin() ; i != m_models.end() ; ++i)
 	    model_ids.push_back(i->first);
     }
     
 private:
     
-    robot_desc::URDF::Group* getURDFGroup(const std::string &gname)
-    {
-	std::string urdfGroup = gname;
-	urdfGroup.erase(0, urdfGroup.find_last_of(":") + 1);
-	return m_urdf->getGroup(urdfGroup);
-    }
-
     /* instantiate the planners that can be used  */
-    void createMotionPlanningInstances(XMLModel* model)
-    {
-	addRRTInstance(model);
-	addLazyRRTInstance(model);
-	addSBLInstance(model);
-    }
-
-    /* instantiate and configure RRT */
-    void addRRTInstance(XMLModel *model)
-    {
-	KinematicPlannerSetup p;
-	std::cout << "Adding RRT instance for motion planning: " << model->groupName << std::endl;
+    void createMotionPlanningInstances(RKPModel* model)
+    {	
+	std::map<std::string, std::string> options;
+	robot_desc::URDF::Group *group = m_urdf->getGroup(model->kmodel->getURDFGroup(model->groupName));
 	
-	p.si       = new SpaceInformationXMLModel(model->kmodel, model->groupID);
-	p.svc      = new StateValidityPredicate(model);
-	p.si->setStateValidityChecker(p.svc);
-	
-	p.smoother = new ompl::PathSmootherKinematic(p.si);
-	p.smoother->setMaxSteps(100);
-	p.smoother->setMaxEmptySteps(20);
-	
-	ompl::RRT_t rrt = new ompl::RRT(p.si);
-	p.mp            = rrt;
-	
-	robot_desc::URDF::Group *group = getURDFGroup(model->groupName);
+	options.clear();
 	if (group)
 	{
 	    const robot_desc::URDF::Map &data = group->data;
-	    std::map<std::string, std::string> info = data.getMapTagValues("planning", "RRT");
-	    
-	    if (info.find("range") != info.end())
-	    {
-		double range = string_utils::fromString<double>(info["range"]);
-		rrt->setRange(range);
-		std::cout << "Range is set to " << range << std::endl;		
-	    }
-	    
-	    if (info.find("goal_bias") != info.end())
-	    {	
-		double bias = string_utils::fromString<double>(info["goal_bias"]);
-		rrt->setGoalBias(bias);
-		std::cout << "Goal bias is set to " << bias << std::endl;
-	    }
-	}	
+	    options = data.getMapTagValues("planning", "RRT");
+	}
+	model->addRRT(options);
 	
-	setupDistanceEvaluators(p);
-	p.si->setup();
-	p.mp->setup();
- 
-	model->planners["RRT"] = p;
-    }
-    
-    /* instantiate and configure LazyRRT */
-    void addLazyRRTInstance(XMLModel *model)
-    {
-	KinematicPlannerSetup p;
-	std::cout << "Added LazyRRT instance for motion planning: " << model->groupName << std::endl;
 
-	p.si       = new SpaceInformationXMLModel(model->kmodel, model->groupID);
-	p.svc      = new StateValidityPredicate(model);
-	p.si->setStateValidityChecker(p.svc);
-	
-	p.smoother = new ompl::PathSmootherKinematic(p.si);
-	p.smoother->setMaxSteps(100);
-	p.smoother->setMaxEmptySteps(20);
-
-	ompl::LazyRRT_t lrrt = new ompl::LazyRRT(p.si);
-	p.mp                 = lrrt;	
-
-	robot_desc::URDF::Group *group = getURDFGroup(model->groupName);
+	options.clear();
 	if (group)
 	{
 	    const robot_desc::URDF::Map &data = group->data;
-	    std::map<std::string, std::string> info = data.getMapTagValues("planning", "LazyRRT");
-	     
-	    if (info.find("range") != info.end())
-	    {
-		double range = string_utils::fromString<double>(info["range"]);
-		lrrt->setRange(range);
-		std::cout << "Range is set to " << range << std::endl;		
-	    }
-	    
-	    if (info.find("goal_bias") != info.end())
-	    {	
-		double bias = string_utils::fromString<double>(info["goal_bias"]);
-		lrrt->setGoalBias(bias);
-		std::cout << "Goal bias is set to " << bias << std::endl;
-	    }
+	    options = data.getMapTagValues("planning", "LazyRRT");
 	}
+	model->addLazyRRT(options);
 	
-	setupDistanceEvaluators(p);
-	p.si->setup();
-	p.mp->setup();
 
-	model->planners["LazyRRT"] = p;
-    }
-    
-    /* instantiate and configure LazyRRT */
-    void addSBLInstance(XMLModel *model)
-    {
-	KinematicPlannerSetup p;
-	bool setDim = false;
-	bool setProj = false;
-	
-	p.si       = new SpaceInformationXMLModel(model->kmodel, model->groupID);
-	p.svc      = new StateValidityPredicate(model);
-	p.si->setStateValidityChecker(p.svc);
-	
-	p.smoother = new ompl::PathSmootherKinematic(p.si);
-	p.smoother->setMaxSteps(100);
-	p.smoother->setMaxEmptySteps(20);
-
-	ompl::SBL_t sbl = new ompl::SBL(p.si);
-	p.mp            = sbl;
-	
-	robot_desc::URDF::Group *group = getURDFGroup(model->groupName);
+	options.clear();
 	if (group)
 	{
 	    const robot_desc::URDF::Map &data = group->data;
-	    std::map<std::string, std::string> info = data.getMapTagValues("planning", "SBL");
-	    
-	    if (info.find("range") != info.end())
-	    {
-		double range = string_utils::fromString<double>(info["range"]);
-		sbl->setRange(range);
-		std::cout << "Range is set to " << range << std::endl;		
-	    }	 
-	    if (info.find("projection") != info.end())
-	    {
-		std::string proj = info["projection"];
-		std::vector<unsigned int> projection;
-		std::stringstream ss(proj);
-		while (ss.good())
-		{
-		    unsigned int comp;
-		    ss >> comp;
-		    projection.push_back(comp);
-		}
-		
-		sbl->setProjectionEvaluator(new ompl::SBL::OrthogonalProjectionEvaluator(projection));
-		
-		std::cout << "Projection is set to " << proj << std::endl;
-		setProj = true;
-		
-	    }
-	    if (info.find("celldim") != info.end())
-	    {
-		std::string celldim = info["celldim"];
-		std::vector<double> cdim;
-		std::stringstream ss(celldim);
-		while (ss.good())
-		{
-		    double comp;
-		    ss >> comp;
-		    cdim.push_back(comp);
-		}
-		
-		sbl->setCellDimensions(cdim);
-		setDim = true;
-		std::cout << "Cell dimensions set to " << celldim << std::endl;
-	    }
+	    options = data.getMapTagValues("planning", "SBL");
 	}
-	
-	if (setDim && setProj)
-	{
-	    std::cout << "Added SBL instance for motion planning: " << model->groupName << std::endl;
-	    setupDistanceEvaluators(p);
-	    p.si->setup();
-	    p.mp->setup();
-	    
-	    model->planners["SBL"] = p;
-	}
-	else
-	{
-	    delete p.smoother;
-	    delete p.svc;
-	    delete p.si;
-	    delete p.mp;
-	}
+	model->addSBL(options);
     }
     
-    /* for each planner definition, define the set of distance metrics it can use */
-    void setupDistanceEvaluators(KinematicPlannerSetup &p)
-    {
-	p.sde["L2Square"] = new ompl::SpaceInformationKinematic::StateKinematicL2SquareDistanceEvaluator(p.si);
-    }
-    
-    ModelMap m_models;
+    ModelMap                                                        m_models;
+    RKPBasicRequest<robot_srvs::KinematicPlanState::request>        m_requestState;
+    RKPBasicRequest<robot_srvs::KinematicPlanLinkPosition::request> m_requestLinkPosition;
 };
 
 void usage(const char *progname)

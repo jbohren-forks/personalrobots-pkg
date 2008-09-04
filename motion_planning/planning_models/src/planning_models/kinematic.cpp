@@ -376,6 +376,13 @@ void planning_models::KinematicModel::getGroups(std::vector<std::string> &groups
     groups = m_groups;
 }
 
+std::string planning_models::KinematicModel::getURDFGroup(const std::string &group) const
+{
+    std::string urdfGroup = group;
+    urdfGroup.erase(0, urdfGroup.find_last_of(":") + 1);
+    return urdfGroup;
+}
+
 unsigned int planning_models::KinematicModel::getRobotCount(void) const
 {
     return m_robots.size();

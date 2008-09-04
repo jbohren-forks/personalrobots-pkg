@@ -459,6 +459,9 @@ namespace planning_models
 
 	void         getGroups(std::vector<std::string> &groups) const;
 	int          getGroupID(const std::string &group) const;
+
+	/** Return the group name as it was in the original URDF document */
+	std::string  getURDFGroup(const std::string &group) const;
 	
 	Link*        getLink(const std::string &link) const;
 	void         getLinks(std::vector<Link*> &links) const;
