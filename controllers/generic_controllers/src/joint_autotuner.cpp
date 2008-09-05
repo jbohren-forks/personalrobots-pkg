@@ -159,6 +159,7 @@ void JointAutotuner::update()
         successful_cycles_++; //increment successful cycles
         if(successful_cycles_>=num_cycles_) 
         { 
+            joint_->commanded_effort_ = 0;
             writeGainValues(period_,amplitude_,relay_height_);
             #ifdef DEBUG
               printf("AUTO : DONE! Period: %f Amplitude: %f\n", period_, amplitude_);
