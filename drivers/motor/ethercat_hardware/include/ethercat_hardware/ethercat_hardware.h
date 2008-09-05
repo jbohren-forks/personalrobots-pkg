@@ -46,6 +46,9 @@
 
 #include "ethercat_hardware/ethercat_device.h"
 
+#include <misc_utils/realtime_publisher.h>
+#include <robot_msgs/DiagnosticMessage.h>
+
 class EthercatHardware
 {
 public:
@@ -74,10 +77,16 @@ public:
    */
   void initXml(TiXmlElement *config, MechanismControl &mc);
 
+  /*!
+   * \brief Publish diagnostic messages
+   */
+  void publishDiagnostics();
+
   HardwareInterface *hw_;
 
 private:
   struct netif *ni_;
+  string interface_;
 
   EtherCAT_AL *al_;
   EtherCAT_Master *em_;
@@ -90,6 +99,14 @@ private:
   unsigned char *last_buffer_;
   unsigned char *buffers_;
   unsigned int buffer_size_;
+
+  misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
+  struct {
+    struct {
+      double roundtrip_;
+    } iteration_[1000];
+    double max_roundtrip_;
+  } diagnostics_;
 };
 
 #endif /* ETHERCAT_HARDWARE_H */

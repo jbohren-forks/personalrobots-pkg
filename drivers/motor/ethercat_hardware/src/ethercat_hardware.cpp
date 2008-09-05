@@ -40,7 +40,7 @@
 #include <ros/node.h>
 
 EthercatHardware::EthercatHardware() :
-  hw_(0), ni_(0), current_buffer_(0), last_buffer_(0), buffer_size_(0)
+  hw_(0), ni_(0), current_buffer_(0), last_buffer_(0), buffer_size_(0), publisher_("/diagnostics", 1)
 {
 }
 
@@ -58,15 +58,16 @@ EthercatHardware::~EthercatHardware()
   {
     delete hw_;
   }
+  publisher_.stop();
 }
 
 static const int NSEC_PER_SEC = 1e+9;
 
 static double now()
 {
-  struct timespec now;
-  clock_gettime(CLOCK_REALTIME, &now);
-  return double(now.tv_nsec) / NSEC_PER_SEC + now.tv_sec;
+  struct timespec n;
+  clock_gettime(CLOCK_REALTIME, &n);
+  return double(n.tv_nsec) / NSEC_PER_SEC + n.tv_sec;
 }
 
 void EthercatHardware::init(char *interface)
@@ -74,6 +75,7 @@ void EthercatHardware::init(char *interface)
   ros::node *node = ros::node::instance();
 
   // Initialize network interface
+  interface_ = interface;
   if ((ni_ = init_ec(interface)) == NULL)
   {
     node->log(ros::FATAL, "Unable to initialize interface: %s", interface);
@@ -86,8 +88,8 @@ void EthercatHardware::init(char *interface)
     node->log(ros::FATAL, "Unable to initialize Application Layer (AL): %08x", al_);
   }
 
-  unsigned int num_slaves = al_->get_num_slaves();
-  if (num_slaves == 0)
+  num_slaves_ = al_->get_num_slaves();
+  if (num_slaves_ == 0)
   {
     node->log(ros::FATAL, "Unable to locate any slaves");
   }
@@ -98,10 +100,10 @@ void EthercatHardware::init(char *interface)
     node->log(ros::FATAL, "Unable to initialize EtherCAT_Master: %08x", em_);
   }
 
-  slaves_ = new EthercatDevice*[num_slaves];
+  slaves_ = new EthercatDevice*[num_slaves_];
 
   unsigned int num_actuators = 0;
-  for (unsigned int slave = 0; slave < num_slaves; ++slave)
+  for (unsigned int slave = 0; slave < num_slaves_; ++slave)
   {
     EC_FixedStationAddress fsa(slave + 1);
     EtherCAT_SlaveHandler *sh = em_->get_slave_handler(fsa);
@@ -143,9 +145,56 @@ void EthercatHardware::initXml(TiXmlElement *config, MechanismControl &mc)
     ++i;
   }
 }
+
+void EthercatHardware::publishDiagnostics()
+{
+    vector<robot_msgs::DiagnosticStatus> status_vec;
+
+    // Publish status of EtherCAT master
+    robot_msgs::DiagnosticStatus master;
+    master.level = 0;
+    master.name = "EtherCAT Master";
+    master.message = "all good";
+
+    vector<robot_msgs::DiagnosticValue> value_vec;
+    robot_msgs::DiagnosticValue value;
+
+    // Num devices
+    value.value = num_slaves_;
+    value.value_label = "EtherCAT devices";
+    value_vec.push_back(value);
+
+    // Roundtrip
+    double total = 0;
+    for (int i = 0; i < 1000; ++i)
+    {
+      total += diagnostics_.iteration_[i].roundtrip_;
+      diagnostics_.max_roundtrip_ = max(diagnostics_.max_roundtrip_, diagnostics_.iteration_[i].roundtrip_);
+    }
+    value.value = total / 1000.0;
+    value.value_label= "Average roundtrip time";
+    value_vec.push_back(value);
+
+    value.value = diagnostics_.max_roundtrip_;
+    value.value_label = "Maximum roundtrip time";
+    value_vec.push_back(value);
+
+    master.set_values_vec(value_vec);
+
+
+    status_vec.push_back(master);
+
+    // Publish status of each EtherCAT device
+    robot_msgs::DiagnosticMessage diagnostics;
+    diagnostics.set_status_vec(status_vec);
+    publisher_.publish(diagnostics);
+}
+
 void EthercatHardware::update()
 {
   unsigned char *current, *last;
+
+  static int count = 0;
 
   // Convert HW Interface commands to MCB-specific buffers
   current = current_buffer_;
@@ -158,7 +207,9 @@ void EthercatHardware::update()
   }
 
   // Transmit process data
+  double start = now();
   em_->txandrx_PD(buffer_size_, current_buffer_);
+  diagnostics_.iteration_[count].roundtrip_ = now()-start;
 
   // Convert status back to HW Interface
   current = current_buffer_;
@@ -177,6 +228,11 @@ void EthercatHardware::update()
   unsigned char *tmp = current_buffer_;
   current_buffer_ = last_buffer_;
   last_buffer_ = tmp;
+
+  if (++count == 1000) {
+    count = 0;
+    publishDiagnostics();
+  }
 }
 
 EthercatDevice *
