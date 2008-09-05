@@ -163,6 +163,9 @@ class WavefrontNode: public ros::node
       //STUCK,
       REACHED_GOAL
     } planner_state;
+
+  libTF::TFPose2D global_pose;
+
     // If we can't reach the goal, note when it happened and keep trying a bit
     //ros::Time stuck_time;
     // Are we enabled?
@@ -295,6 +298,11 @@ WavefrontNode::WavefrontNode() :
         tf(*this, true, 1 * 1000000000ULL, 100000000ULL)
         //tf(*this, true, 200000000ULL, 200000000ULL) //nanoseconds
 {
+  // Initialize global pose. Will be set in control loop based on actual data.
+  global_pose.x = 0;
+  global_pose.y = 0;
+  global_pose.yaw = 0;
+
   // set a few parameters. leave defaults just as in the ctor initializer list
   param("dist_eps", dist_eps, 1.0);
   param("robot_radius", robot_radius, 0.175);
@@ -395,18 +403,45 @@ WavefrontNode::goalReceived()
   this->lock.lock();
   // Got a new goal message; handle it
   this->enable = goalMsg.enable;
-  printf("got new goal: %.3f %.3f %.3f\n", 
-         goalMsg.goal.x,
-         goalMsg.goal.y,
-         RTOD(goalMsg.goal.th));
 
-  if(this->enable)
-  {
+  if(this->enable){
+    printf("got new goal: %.3f %.3f %.3f\n", 
+	   goalMsg.goal.x,
+	   goalMsg.goal.y,
+	   RTOD(goalMsg.goal.th));
+
+    // Populate goal data
     this->goal[0] = goalMsg.goal.x;
     this->goal[1] = goalMsg.goal.y;
     this->goal[2] = goalMsg.goal.th;
     this->planner_state = NEW_GOAL;
+
+    // Set state for actively pursuing a goal
+    this->pstate.active = 1;
+    this->pstate.valid = 0;
+    this->pstate.done = 0;
   }
+  else {
+    // Clear goal data
+    this->planner_state = NO_GOAL;
+
+    // Set state inactive
+    this->pstate.active = 0;
+  }
+
+  // Fill out and publish response
+  this->pstate.pos.x = global_pose.x;
+  this->pstate.pos.y = global_pose.y;
+  this->pstate.pos.th = global_pose.yaw;
+  this->pstate.goal.x = this->goal[0];
+  this->pstate.goal.y = this->goal[1];
+  this->pstate.goal.th = this->goal[2];
+  this->pstate.waypoint.x = 0.0;
+  this->pstate.waypoint.y = 0.0;
+  this->pstate.waypoint.th = 0.0;
+  this->pstate.set_waypoints_size(0);
+  this->pstate.waypoint_idx = -1;
+  publish("state",this->pstate);
   this->lock.unlock();
 }
 
@@ -570,14 +605,8 @@ WavefrontNode::sendVelCmd(double vx, double vy, double vth)
 void 
 WavefrontNode::doOneCycle()
 {
-  if(!this->enable)
-  {
-    this->stopRobot();
-    return;
-  }
-  
   // Get the current robot pose in the map frame
-  libTF::TFPose2D robotPose, global_pose;
+  libTF::TFPose2D robotPose;
   robotPose.x = 0;
   robotPose.y = 0;
   robotPose.yaw = 0;
@@ -595,10 +624,11 @@ WavefrontNode::doOneCycle()
     this->stopRobot();
     return;
   }
-    catch(libTF::TransformReference::ConnectivityException& ex)
+  catch(libTF::TransformReference::ConnectivityException& ex)
     {
       puts("no global->local Tx yet");
       printf("%s\n", ex.what());
+      this->stopRobot();
       return;
     }
   catch(libTF::TransformReference::ExtrapolateException& ex)
@@ -606,6 +636,12 @@ WavefrontNode::doOneCycle()
     // this should never happen
     puts("WARNING: extrapolation failed!");
     printf("%s",ex.what());
+    this->stopRobot();
+    return;
+  }
+
+  if(!this->enable)
+  {
     this->stopRobot();
     return;
   }
