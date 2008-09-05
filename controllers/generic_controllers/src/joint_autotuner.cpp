@@ -22,7 +22,7 @@
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
  *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+   *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
  *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
  *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
@@ -34,8 +34,10 @@
 
 #include <generic_controllers/joint_autotuner.h>
 #include <math_utils/angles.h>
+#include <fstream>
 using namespace std;
 using namespace controller;
+#define POSITION 1
 #define DEBUG 1
 ROS_REGISTER_CONTROLLER(JointAutotuner)
 
@@ -63,11 +65,8 @@ void JointAutotuner::init(double p_gain, double i_gain, double d_gain, double wi
   last_time_= time;
   joint_ = joint;
 
-  relay_height_ = RELAYFRACTION * joint_->effort_limit_;
-  #ifdef DEBUG
-    printf("AUTO : Relay:%f\n",relay_height_);
-  #endif
-  current_state_ = POSITIVE_PEAK;
+  relay_height_ = relay_effort_percent_* joint_->effort_limit_;
+   current_state_ = POSITIVE_PEAK;
 }
 
 bool JointAutotuner::initXml(mechanism::Robot *robot, TiXmlElement *config)
@@ -76,8 +75,7 @@ bool JointAutotuner::initXml(mechanism::Robot *robot, TiXmlElement *config)
   robot_ = robot;
   last_time_ = robot->hw_->current_time_;
   cycle_start_time_ = getTime();
-   current_state_ = POSITIVE_PEAK;
-  TiXmlElement *j = config->FirstChildElement("joint");
+   TiXmlElement *j = config->FirstChildElement("joint");
   if (!j)
   {
     fprintf(stderr, "JointAutotuner was not given a joint\n");
@@ -92,11 +90,26 @@ bool JointAutotuner::initXml(mechanism::Robot *robot, TiXmlElement *config)
     return false;
   }
 
-  relay_height_ = RELAYFRACTION * joint_->effort_limit_;
+  TiXmlElement *f = config->FirstChildElement("autotune");
+  file_path_ =  f->Attribute("file_path");
+  if (!file_path_)
+  {
+    fprintf(stderr, "JointAutotuner could not find filepath \n");
+    return false;
+  }
+  std::cout<<"FOO!\n";
+  num_cycles_ = atoi(f->FirstChildElement("cycles")->GetText()); 
+  amplitude_tolerance_ = atof(f->FirstChildElement("amplitudeTolerance")->GetText());
+  period_tolerance_ = atof(f->FirstChildElement("periodTolerance")->GetText());
+  relay_effort_percent_ = atof(f->FirstChildElement("relayEffortPercent")->GetText());
+  std::cout<<"BAR!\n";
+  relay_height_ = relay_effort_percent_ * joint_->effort_limit_;
   #ifdef DEBUG
     printf("AUTO : Relay:%f\n",relay_height_);
   #endif
-
+  
+  current_state_ = START;
+  
   return true;
 }
 
@@ -125,28 +138,31 @@ double JointAutotuner::getTime()
 
 void JointAutotuner::update()
 {
+  #ifdef POSITION
   double position = joint_->position_;
   double time = getTime();
+  if(current_state_==START)//Read crossing point
+  {
+    crossing_point_ = joint_->position_;
+    current_state_ = NEGATIVE_PEAK;
+  }
   //Scan for transitions
-  if(current_state_==POSITIVE_PEAK && position<0) //Transition negative
+  if(current_state_==POSITIVE_PEAK && position<crossing_point_) //Transition negative
   {
     current_state_=NEGATIVE_PEAK;
   }
-  else if (current_state_==NEGATIVE_PEAK && position>0) //Transition to next period
+  else if (current_state_==NEGATIVE_PEAK && position>crossing_point_) //Transition to next period
   {
     current_state_ = POSITIVE_PEAK;
     period_ = time-cycle_start_time_;
     amplitude_ = (positive_peak_-negative_peak_)/2; //Record amplitude
     
-    #ifdef DEBUG
-      printf("AUTO period: %f amplitude: %f\n", period_, amplitude_);
-    #endif
-    
-    if( (fabs(amplitude_-last_amplitude_) < AMPLITUDETOLERANCE*last_amplitude_) &&(fabs(period_-last_period_)<PERIODTOLERANCE*last_period_))//If the two peaks match closely
+    if( (fabs(amplitude_-last_amplitude_) < amplitude_tolerance_*last_amplitude_) &&(fabs(period_-last_period_)<period_tolerance_*last_period_))//If the two peaks match closely
     {     
         successful_cycles_++; //increment successful cycles
-        if(successful_cycles_>=NUMCYCLES) 
+        if(successful_cycles_>=num_cycles_) 
         { 
+            writeGainValues(period_,amplitude_,relay_height_);
             #ifdef DEBUG
               printf("AUTO : DONE! Period: %f Amplitude: %f\n", period_, amplitude_);
             #endif
@@ -176,6 +192,81 @@ void JointAutotuner::update()
     //If looking for negative peak, set negative h
     joint_->commanded_effort_ = relay_height_;
   }
+  #else 
+  double velocity = joint_->velocity_;
+  double time = getTime();
+  //Scan for transitions
+  if(current_state_==POSITIVE_PEAK && velocity<0) //Transition negative
+  {
+    current_state_=NEGATIVE_PEAK;
+  }
+  else if (current_state_==NEGATIVE_PEAK && velocity>0) //Transition to next period
+  {
+    current_state_ = POSITIVE_PEAK;
+    period_ = time-cycle_start_time_;
+    amplitude_ = (positive_peak_-negative_peak_)/2; //Record amplitude
+    
+      
+    if( (fabs(amplitude_-last_amplitude_) < amplitude_tolerance_*last_amplitude_) &&(fabs(period_-last_period_)<period_tolerance*last_period_))//If the two peaks match closely
+    {     
+        successful_cycles_++; //increment successful cycles
+        if(successful_cycles_>=num_cycles) 
+        { 
+          current_state_ = DONE; //Done testing
+        }
+     }
+    else successful_cycles_ = 0; //Otherwise, reset if we're varying too much
+   
+    //Reset for next period
+    positive_peak_ = 0.0;
+    negative_peak_ = 0.0;
+    cycle_start_time_ = time;
+    last_period_ = period_;
+    last_amplitude_ = amplitude_;
+  }
+
+  //Update amplitude measures
+  if(current_state_ == POSITIVE_PEAK)
+  {
+    if(velocity > positive_peak_) positive_peak_ = velocity;
+    //If looking for positive peak, set positive h
+    joint_->commanded_effort_ = -relay_height_;
+  }
+  else if(current_state_ == NEGATIVE_PEAK)
+  {    
+    if(velocity<negative_peak_) negative_peak_ = velocity;
+    //If looking for negative peak, set negative h
+    joint_->commanded_effort_ = relay_height_;
+  }
+
+  #endif
+}
+
+void JointAutotuner::writeGainValues(double period, double amplitude, double relay_height)
+{
+  double ku, pu, kc, ti, td, Kp, Ki, Kd;
+  //Calculate gain values
+  ku = 4*relay_height/M_PI/amplitude;
+  pu = period;
+  kc = ku/2.2;
+  ti = pu/0.45;
+  td = pu/6.3;
+
+  Kp = kc;
+  Ki = Kp/ti;
+  Kd = Kp*td;
+ 
+  std::ofstream datafile;
+  datafile.open (file_path_);
+  datafile<<"Autotuning result for joint: "<<joint_->name_<<"\n";
+  datafile<<"Kp:"<<Kp<<"\n";
+  datafile<<"Ki:"<<Ki<<"\n";
+  datafile<<"Kd:"<<Kd<<"\n";
+  
+  datafile<<"Ultimate Period:"<<period<<"\n";
+  datafile<<"Ultimate Amplitude:"<<amplitude<<"\n";
+  datafile<<"Relay Height:"<<relay_height<<"\n";
+  datafile.close(); 
 
 }
 

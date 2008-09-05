@@ -47,7 +47,7 @@
 #include <ros/node.h>
 #include <vector>
 #include <generic_controllers/controller.h>
-#include <generic_controllers/pid.h>
+#include <mechanism_model/pid.h>
 
 // Services
 #include <generic_controllers/SetCommand.h>
@@ -58,14 +58,9 @@ namespace controller
 
 class JointAutotuner : public Controller
 {
-
-  static const double NUMCYCLES = 5; /*!<Number of cycles that need to match for autotuner to read as stable>!*/
-  static const double AMPLITUDETOLERANCE = 0.05; //Allow 5% variance 
-  static const double PERIODTOLERANCE = 0.05; //Allow 5% variance 
-  static const double RELAYFRACTION = 0.05; //Use 5% of effort
  enum AutoControlState
   { 
-    POSITIVE_PEAK,NEGATIVE_PEAK, DONE
+    START,POSITIVE_PEAK,NEGATIVE_PEAK, DONE, MANUAL
   };
 public:
   /*!
@@ -125,33 +120,41 @@ public:
   double d_gain_;
 
   AutoControlState current_state_;
-  double amplitude_;
-  double last_amplitude_;
-  double period_;
-  double last_period_;
-
-  double positive_peak_;
-  double negative_peak_;
-
-  double relay_height_;
-  int successful_cycles_;
-
-  double cycle_start_time_;
-
+ 
 private:
-  mechanism::Joint* joint_;  /**< Joint we're controlling. */
-  Pid pid_controller_;       /**< Internal PID controller. */
-  double last_time_;         /**< Last time stamp of update. */
-  double command_;           /**< Last commanded position. */
-  mechanism::Robot *robot_;  /**< Pointer to robot structure. */
+  mechanism::Joint* joint_;  /**< Joint we're controlling.> */
+  Pid pid_controller_;       /**< Internal PID controller.> */
+  double last_time_;         /**< Last time stamp of update.> */
+  double command_;           /**< Last commanded position.> */
+  mechanism::Robot *robot_;  /**< Pointer to robot structure.> */
+  const char* file_path_; /**<Filename and location to write results. >*/
+  void writeGainValues(double period, double amplitude, double relay_height); /**<Calculate and write gain values> */
+
+  double amplitude_; /**< Current amplitude of relay cycle> */
+  double last_amplitude_;/**< Last amplitude of relay cycle> */
+  double period_;/**< Current period of relay cycle> */
+  double last_period_;/**< Last period of relay cycle> */
+
+  double positive_peak_;/**< Positive peak reached in cycle> */
+  double negative_peak_;/**< Negative peak reached in cycle> */
+
+  double relay_height_;/**< Amount of relay input> */
+  int successful_cycles_;/**< Number of matching cycles > */
+  double crossing_point_;/**< Location of crossover point for relay test> */
+  double cycle_start_time_;/**< Mark time of cycle start> */
+
+  int num_cycles_; /*!<Number of cycles that need to match for autotuner to read as stable>!*/
+  double amplitude_tolerance_; /*!<% variation amplitude allowed between successful cycles>!*/
+  double period_tolerance_; /*!<% variation period allowed between successful cycles>!*/
+  double relay_effort_percent_; /*!<% of effort limit to use in relay test>!*/
+
 };
 
 /***************************************************/
 /*! \class controller::JointAutotunerNode
     \brief Joint Position Controller ROS Node
     
-    This class closes the loop around positon using
-    a pid loop. 
+   This class performs an autotuning routine using the relay method. 
 
 
 */
