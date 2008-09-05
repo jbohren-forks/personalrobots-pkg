@@ -398,6 +398,7 @@ namespace planning_models
 	class StateParams
 	{
 	public:
+
 	    StateParams(KinematicModel *model)
 	    {
 		assert(model->isBuilt());
@@ -414,14 +415,26 @@ namespace planning_models
 	    }
 	    
 	    /** Given the name of a joint, set the values of the parameters describing the joint */
-	    void setValue(std::string &name, const double *params);
+	    void setParams(const double *params, const std::string &name);
 	    
 	    /** Set all the parameters to a given value */
-	    void setAll(double value);
+	    void setAll(const double value);
+	    
+	    /** Set the parameters for a given group */
+	    void setParams(const double *params, int groupID = -1);
 	    
 	    /** Return the current value of the params */
 	    const double* getParams(void) const;
+	    
+	    /** Get the offset for the parameter of a joint in a given group */
+	    int getPos(const std::string &name, int groupID = -1) const;
 
+	    /** Copy the parameters for a given group to a destination address */
+	    void copyParams(double *params, int groupID = -1) const;
+	    
+	    /** Copy the parameters describen a given joint */
+	    void copyParams(double *params, const std::string &name) const;
+	    
 	    /** Print the data from the state to screen */
 	    void print(std::ostream &out = std::cout);
 	    
@@ -449,9 +462,11 @@ namespace planning_models
 	}
 	
 	virtual void build(const robot_desc::URDF &model, bool ignoreSensors = false);
-	bool         isBuilt(void) const;	
+	bool         isBuilt(void) const;
+	StateParams* newStateParams(void);
+	
 	void         setVerbose(bool verbose);	
-
+	
 
 	unsigned int getRobotCount(void) const;
 	Robot*       getRobot(unsigned int index) const;
@@ -467,7 +482,10 @@ namespace planning_models
 
 	Joint*       getJoint(const std::string &joint) const;
 	void         getJoints(std::vector<Joint*> &joints) const;
-	
+
+	/** Get the names of the joints in a specific group */
+	void         getJointsInGroup(std::vector<std::string> &names, int groupID = -1) const;
+
 	void defaultState(void);
 	void computeTransforms(const double *params, int groupID = -1);
 

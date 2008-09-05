@@ -37,18 +37,23 @@
 
 /** This is a simple program for requesting a motion plan */
 
-#include <ros/node.h>
-#include <ros/time.h>
+#include <planning_node_util/knode.h>
+
 #include <robot_srvs/KinematicPlanState.h>
 #include <robot_srvs/KinematicPlanLinkPosition.h>
 #include <robot_msgs/DisplayKinematicPath.h>
-#include <std_msgs/RobotBase2DOdom.h>
 
-class PlanKinematicPath : public ros::node
+#include <pr2_controllers/SetJointPathCmd.h>
+
+#include <cassert>
+
+class PlanKinematicPath : public ros::node,
+			  public planning_node_util::NodeRobotModel
 {
 public:
     
-    PlanKinematicPath(void) : ros::node("plan_kinematic_path")
+    PlanKinematicPath(const std::string& robot_model) : ros::node("plan_kinematic_path"),
+							planning_node_util::NodeRobotModel(dynamic_cast<ros::node*>(this), robot_model)
     {
 	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 1);
 
@@ -197,18 +202,8 @@ public:
 	
 	if (ros::service::call("plan_kinematic_path_state", req, res))
 	{
-	    unsigned int nstates = res.path.get_states_size();
-	    printf("Obtained %ssolution path with %u states, distance to goal = %f\n",
-		   res.distance > req.threshold ? "approximate " : "", nstates, res.distance);
-	    for (unsigned int i = 0 ; i < nstates ; ++i)
-	    {
-		for (unsigned int j = 0 ; j < res.path.states[i].get_vals_size() ; ++j)
-		    printf("%f ", res.path.states[i].vals[j]);
-		printf("\n");
-	    }
-	    dpath.name = req.params.model_id;
-	    dpath.path = res.path;
-	    publish("display_kinematic_path", dpath);
+	    printPath(res.path, res.distance);
+	    sendDisplay(res.path, req.params.model_id);
 	}
 	else
 	    fprintf(stderr, "Service 'plan_kinematic_path_state' failed\n");	 
@@ -260,27 +255,91 @@ public:
     void performCall(robot_srvs::KinematicPlanLinkPosition::request &req)
     {	
 	robot_srvs::KinematicPlanLinkPosition::response res;
-	robot_msgs::DisplayKinematicPath dpath;
-	dpath.frame_id = "FRAMEID_MAP";
 	
 	if (ros::service::call("plan_kinematic_path_position", req, res))
 	{
-	    unsigned int nstates = res.path.get_states_size();
-	    printf("Obtained solution path with %u states\n", nstates);
-	    
-	    for (unsigned int i = 0 ; i < nstates ; ++i)
-	    {
-		for (unsigned int j = 0 ; j < res.path.states[i].get_vals_size() ; ++j)
-		    printf("%f ", res.path.states[i].vals[j]);
-		printf("\n");
-	    }
-	    dpath.name = req.params.model_id;
-	    dpath.path = res.path;
-	    publish("display_kinematic_path", dpath);
+	    printPath(res.path, res.distance);
+	    sendDisplay(res.path, req.params.model_id);
 	}
 	else
 	    fprintf(stderr, "Service 'plan_kinematic_path_position' failed\n");	 
     }
+
+    void printPath(robot_msgs::KinematicPath &path, const double distance)
+    {	
+	unsigned int nstates = path.get_states_size();
+	printf("Obtained ssolution path with %u states, distance to goal = %f\n", nstates, distance);
+	
+	for (unsigned int i = 0 ; i < nstates ; ++i)
+	{
+	    for (unsigned int j = 0 ; j < path.states[i].get_vals_size() ; ++j)
+		printf("%f ", path.states[i].vals[j]);
+	    printf("\n");
+	}
+    }
+    
+    void sendDisplay(robot_msgs::KinematicPath &path, const std::string &model)
+    {
+	robot_msgs::DisplayKinematicPath dpath;
+	dpath.frame_id = "FRAMEID_MAP";
+	dpath.name = model;
+	dpath.path = path;
+	publish("display_kinematic_path", dpath);
+    }
+    
+    void sendCommand(robot_msgs::KinematicPath &path, const std::string &model)
+    {
+	// create the service request 
+
+	const double margin_fraction = 0.1;
+	
+	planning_models::KinematicModel::StateParams *state = m_kmodel->newStateParams();
+	pr2_controllers::SetJointPathCmd::request req;
+	req.set_path_size(path.get_states_size());
+	
+	
+	int groupID = m_kmodel->getGroupID(model);
+	std::vector<std::string> joints;
+	m_kmodel->getJointsInGroup(joints);
+	
+	
+	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
+	{
+	    assert(path.states[i].get_vals_size() == joints.size());
+	    
+	    state->setParams(path.states[i].vals, groupID);
+	    
+	    req.path[i].set_names_size(joints.size());
+	    req.path[i].set_positions_size(joints.size());
+	    req.path[i].set_margins_size(joints.size());
+	    req.path[i].timeout = 1.0;
+	    
+	    for (unsigned int j = 0 ; j < joints.size() ; ++j)
+	    {
+		req.path[i].names[j] = joints[j];
+		
+		state->copyParams(&(req.path[i].positions[j]), joints[j]);
+		
+		int pos = state->getPos(joints[j]);
+		assert(pos >= 0);
+		req.path[i].margins[j] = margin_fraction * (m_kmodel->stateBounds[2 * pos + 1] - m_kmodel->stateBounds[2 * pos]);
+	    }	    
+	}
+	
+	delete state;
+	
+	// perform the service call 
+	
+	pr2_controllers::SetJointPathCmd::response res;
+	
+	if (ros::service::call("set_joint_path_cmd", req, res))
+	{
+	    
+	}
+	else
+	    fprintf(stderr, "Service 'set_....' failed\n");	 
+    }
+    
     
 private: 
 
@@ -299,45 +358,55 @@ private:
 };
 
 
+void usage(const char *progname)
+{
+    printf("\nUsage: %s robot_model [standard ROS args]\n", progname);
+    printf("       \"robot_model\" is the name (string) of a robot description to be used when building the map.\n");
+}
+
 int main(int argc, char **argv)
 {  
     ros::init(argc, argv);
     
-    PlanKinematicPath plan;
-    sleep(1);
-
-    /*
-    ros::Duration dur(0.1);
-    while (!plan.haveBasePos())
-	dur.sleep();
-    */
-
-    char test = (argc < 2) ? 'b' : argv[1][0];
-    
-    switch (test)
+    if (argc >= 2)
     {
-    case 'l':
-	plan.runTestLeftArm();    
-	break;
-    case 'b':    
-        plan.runTestBase();
-	break;
-    case 'r':
-	plan.runTestRightArm();    
-	break;
-    case 'e':
-	plan.runTestLeftEEf();    
-	break;
-    case 'x':
-	plan.runTestBaseRightArm();
-	break;
-    default:
-	printf("Unknown test\n");
-	break;
-    } 
-    sleep(1);
-    
-    plan.shutdown();
+	PlanKinematicPath *plan = new PlanKinematicPath(argv[1]);
+	plan->loadRobotDescription();
+	//	plan->waitForState();
+	sleep(1);
+	
+	
+	char test = (argc < 3) ? 'b' : argv[2][0];
+	
+	switch (test)
+	{
+	case 'l':
+	    plan->runTestLeftArm();    
+	    break;
+	case 'b':    
+	    plan->runTestBase();
+	    break;
+	case 'r':
+	    plan->runTestRightArm();    
+	    break;
+	case 'e':
+	    plan->runTestLeftEEf();    
+	    break;
+	case 'x':
+	    plan->runTestBaseRightArm();
+	    break;
+	default:
+	    printf("Unknown test\n");
+	    break;
+	} 
+
+	sleep(1);	
+
+	plan->shutdown();
+	delete plan;
+    }
+    else
+	usage(argv[0]);
     
     return 0;    
 }

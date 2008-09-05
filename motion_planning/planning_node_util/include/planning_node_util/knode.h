@@ -144,7 +144,7 @@ namespace planning_node_util
 	    m_kmodel->setVerbose(false);
 	    m_kmodel->build(*file);
 	    
-	    m_robotState = new planning_models::KinematicModel::StateParams(m_kmodel);
+	    m_robotState = m_kmodel->newStateParams();
 	    m_robotState->setAll(0.0);
 	}
 	
@@ -230,7 +230,7 @@ namespace planning_node_util
 		for (unsigned int i = 0 ; i < n ; ++i)
 		{
 		    double pos = m_mechanismState.joint_states[i].position;
-		    m_robotState->setValue(m_mechanismState.joint_states[i].name, &pos);
+		    m_robotState->setParams(&pos, m_mechanismState.joint_states[i].name);
 		}
 	    }
 	    m_haveMechanismState = true;
@@ -245,7 +245,7 @@ namespace planning_node_util
 		    planning_models::KinematicModel::PlanarJoint* pj = 
 			dynamic_cast<planning_models::KinematicModel::PlanarJoint*>(m_kmodel->getRobot(i)->chain);
 		    if (pj)
-			m_robotState->setValue(pj->name, m_basePos);
+			m_robotState->setParams(m_basePos, pj->name);
 		}
 	    stateUpdate();
 	}

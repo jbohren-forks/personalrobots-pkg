@@ -5,5 +5,7 @@
   <depend package="roscpp" />
   <depend package="robot_msgs" />
   <depend package="robot_srvs" />
-  <depend package="xmlparam" />
+  <depend package="planning_node_util" />
+  <depend package="planning_models" />
+  <depend package="pr2_controllers" />
 </package>
