@@ -95,6 +95,20 @@
     forearm_roll_right
     wrist_flex_right
     gripper_roll_right
+
+    <map name="RRT" flag="planning">
+      <elem key="range" value="0.75" />
+    </map>
+    
+    <map name="LazyRRT" flag="planning">
+      <elem key="range" value="0.75" />
+    </map>
+
+    <map name="SBL" flag="planning">
+      <elem key="projection" value="5 6"/>
+      <elem key="celldim" value="0.1 0.1"/>
+    </map>
+
   </group>
   
   <group name="arms" flags="planning">

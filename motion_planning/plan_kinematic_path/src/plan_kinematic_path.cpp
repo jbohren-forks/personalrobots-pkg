@@ -156,6 +156,39 @@ public:
 	performCall(req);
     }
     
+    
+    void runTestBaseRightArm(void)
+    {
+	robot_srvs::KinematicPlanState::request  req;
+	
+	req.params.model_id = "pr2::base_right_arm";
+	req.params.distance_metric = "L2Square";
+	req.params.planner_id = "SBL";
+	req.threshold = 0.01;
+	req.interpolate = 1;
+	req.times = 1;
+
+	initialState(req.start_state);
+	req.start_state.vals[0] -= 1.0;
+
+	req.goal_state.set_vals_size(11);
+
+	for (unsigned int i = 0 ; i < 3 ; ++i)
+	    req.goal_state.vals[i] = m_basePos[i];
+	req.goal_state.vals[0] += 2.0;
+	req.goal_state.vals[2] = M_PI + M_PI/4.0;
+
+	for (unsigned int i = 3 ; i < req.goal_state.vals_size ; ++i)
+	    req.goal_state.vals[i] = 0.0;
+	
+	req.allowed_time = 30.0;
+	
+	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
+	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
+	
+	performCall(req);
+    }
+    
     void performCall(robot_srvs::KinematicPlanState::request &req)
     {	
 	robot_srvs::KinematicPlanState::response res;
@@ -189,13 +222,12 @@ public:
 	req.params.distance_metric = "L2Square";
 	req.params.planner_id = "RRT";
 	req.interpolate = 1;
-	req.times = 2;
+	req.times = 4;
 
 	initialState(req.start_state);
 
-	req.start_state.vals[0] += 0.5;
-	req.start_state.vals[1] += 1.5;
-	req.start_state.vals[2] = -M_PI/2.0;
+	req.start_state.vals[0] += 2.0;
+	req.start_state.vals[2] = M_PI + M_PI/4.0;
 
 
 	// the goal region is basically the position of a set of bodies
@@ -217,7 +249,7 @@ public:
 	req.constraints.pose[0].pose.position.z = 0.74;
 	req.constraints.pose[0].position_distance = 0.01;
 	*/
-	req.allowed_time = 3.0;
+	req.allowed_time = 0.1;
 	
 	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
@@ -295,6 +327,9 @@ int main(int argc, char **argv)
 	break;
     case 'e':
 	plan.runTestLeftEEf();    
+	break;
+    case 'x':
+	plan.runTestBaseRightArm();
 	break;
     default:
 	printf("Unknown test\n");
