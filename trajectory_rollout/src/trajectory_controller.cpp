@@ -31,12 +31,14 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include "trajectory_controller.h"
+#include <trajectory_rollout/trajectory_controller.h>
 
 using namespace std;
 
-TrajectoryController::TrajectoryController(MapGrid mg, vector<pair<int, int> > path, double acc_x, double acc_y, double acc_theta)
-  : map_(mg), planned_path_(path), acc_x_(acc_x), acc_y_(acc_y), acc_theta_(acc_theta)
+TrajectoryController::TrajectoryController(MapGrid mg, vector<pair<int, int> > path, double acc_x, double acc_y, double acc_theta,
+    double sim_time, int num_steps, int samples_per_dim)
+  : map_(mg), acc_x_(acc_x), acc_y_(acc_y), acc_theta_(acc_theta), sim_time_(sim_time),
+  num_steps_(num_steps), samples_per_dim_(samples_per_dim)
 {
 }
 
@@ -90,24 +92,24 @@ void TrajectoryController::cellPathDistance(MapCell* current, int di, int dj){
 }
 
 //create a trajectory given the current pose of the robot and selected velocities
-void TrajectoryController::generateTrajectory(double x, double y, double theta, double vx, double vy, 
-    double vtheta, double num_steps, double sim_time){
+Trajectory TrajectoryController::generateTrajectory(double x, double y, double theta, double vx, double vy, 
+    double vtheta, double vx_samp, double vy_samp, double vtheta_samp){
   double x_i = x;
   double y_i = y;
   double theta_i = theta;
   double vx_i = vx;
   double vy_i = vy;
   double vtheta_i = vtheta;
-  double dt = sim_time / num_steps;
+  double dt = sim_time_ / num_steps_;
 
-  Trajectory traj(vx, vy, vtheta, num_steps);
-  for(int i = 0; i < num_steps; ++i){
+  Trajectory traj(vx, vy, vtheta, num_steps_);
+  for(int i = 0; i < num_steps_; ++i){
     traj.addPoint(i, TrajectoryPoint(i * dt, x_i, y_i, theta_i, vx_i, vy_i, vtheta_i));
 
     //calculate velocities
-    vx_i = computeNewVelocity(vx, vx_i, acc_x_, dt);
-    vy_i = computeNewVelocity(vy, vy_i, acc_y_, dt);
-    vtheta_i = computeNewVelocity(vtheta, vtheta_i, acc_theta_, dt);
+    vx_i = computeNewVelocity(vx_samp, vx_i, acc_x_, dt);
+    vy_i = computeNewVelocity(vy_samp, vy_i, acc_y_, dt);
+    vtheta_i = computeNewVelocity(vtheta_samp, vtheta_i, acc_theta_, dt);
 
     //calculate positions
     x_i = computeNewPosition(x_i, vx_i, dt);
@@ -115,6 +117,7 @@ void TrajectoryController::generateTrajectory(double x, double y, double theta, 
     theta_i = computeNewPosition(theta_i, vtheta_i, dt);
     
   }
+  return traj;
 }
 
 //compute position based on velocity
@@ -130,26 +133,48 @@ double TrajectoryController::computeNewVelocity(double vg, double vi, double a_m
 }
 
 
-/*TODO: Implement this for real
-void TrajectoryController::findPath(){
+void TrajectoryController::createTrajectories(double x, double y, double theta, double vx, double vy, double vtheta){
   //compute feasible velocity limits
-  double max_vel_x = vel_x_ + acc_x_;
-  double min_vel_x = vel_x_ - acc_x_;
+  double max_vel_x = vx + acc_x_ * sim_time_;
+  double min_vel_x = vx - acc_x_ * sim_time_;
 
-  double max_vel_y = vel_y_ + acc_y_;
-  double min_vel_y = vel_y_ - acc_y_;
+  double max_vel_y = vy + acc_y_ * sim_time_;
+  double min_vel_y = vy - acc_y_ * sim_time_;
 
-  double max_vel_theta = vel_theta_ + acc_theta_;
-  double min_vel_theta = vel_theta_ - acc_theta_;
-}
+  double max_vel_theta = vtheta + acc_theta_ * sim_time_;
+  double min_vel_theta = vtheta - acc_theta_ * sim_time_;
 
-void TrajectoryController::sampleSpace(){
-  srand((unsigned) time(0));
-  int random_int;
-  int highest, lowest;
+  //we want to sample the velocity space regularly
+  double dvx = (max_vel_x - min_vel_x) / samples_per_dim_;
+  double dvy = (max_vel_y - min_vel_y) / samples_per_dim_;
+  double dvtheta = (max_vel_theta - min_vel_theta) / samples_per_dim_;
 
-  for(int i = 0; i < num_samples; ++i){
-    rand_int = lowest + int(range * rand() / RAND_MAX + 1.0);
+  double vx_samp = min_vel_x;
+  double vy_samp = min_vel_y;
+  double vtheta_samp = min_vel_theta;
+
+  //generate trajectories for regularly sampled velocities
+  for(int i = 0; i < samples_per_dim_; ++i){
+    for(int j = 0; j < samples_per_dim_; ++j){
+      for(int k = 0; k < samples_per_dim_; ++k){
+        trajectories_.push_back(generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp));
+        vtheta_samp += dvtheta;
+      }
+    vy_samp += dvy;
+    }
+    vx_samp += dvx;
   }
 }
-*/
+
+Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel){
+  //first compute the path distance for all cells in our map grid
+  computePathDistance();
+
+  //next create the trajectories we wish to explore in world space
+  createTrajectories(global_pose.x, global_pose.y, global_pose.yaw, global_vel.x, global_vel.y, global_vel.yaw);
+
+  //now we want to score the trajectories that we've created and return the best one
+
+  return Trajectory(1, 1, 1, 1);
+}
+

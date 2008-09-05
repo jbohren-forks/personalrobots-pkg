@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "map_cell.h"
+#include "trajectory_rollout/map_cell.h"
 
 MapCell::MapCell()
   : ci(0), cj(0), path_dist(DBL_MAX), goal_dist(DBL_MAX), occ_state(0)

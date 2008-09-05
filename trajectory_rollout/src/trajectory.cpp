@@ -31,10 +31,10 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include "trajectory.h"
+#include "trajectory_rollout/trajectory.h"
 
 Trajectory::Trajectory(double xv, double yv, double thetav, double steps)
-  : xv_(xv), yv_(yv), thetav_(thetav)
+  : xv_(xv), yv_(yv), thetav_(thetav), score_(0.0)
 {
   //size points to hold everything
   points_.resize(steps);
