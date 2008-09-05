@@ -108,7 +108,7 @@ class PoseConstraintEvaluator : public KinematicConstraintEvaluator
 	    case robot_msgs::PoseConstraint::ONLY_POSITION:
 		if (distPos)
 		{
-		    libTF::Pose3D::Position bodyPos;
+		    libTF::Position bodyPos;
 		    m_link->globalTrans.getPosition(bodyPos);
 		    
 		    double dx = bodyPos.x - m_pc.pose.position.x;

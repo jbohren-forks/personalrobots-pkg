@@ -67,7 +67,7 @@ BaseController::~BaseController()
 }
 
 // Set the joint position command
-void BaseController::setCommand(libTF::Pose3D::Vector cmd_vel)
+void BaseController::setCommand(libTF::Vector cmd_vel)
 {
   pthread_mutex_lock(&base_controller_lock_);
   //std::cout << "command received : " << cmd_vel_t_ << std::endl;
@@ -77,9 +77,9 @@ void BaseController::setCommand(libTF::Pose3D::Vector cmd_vel)
   pthread_mutex_unlock(&base_controller_lock_);
 }
 
-libTF::Pose3D::Vector BaseController::getCommand()// Return the current position command
+libTF::Vector BaseController::getCommand()// Return the current position command
 {
-  libTF::Pose3D::Vector cmd_vel;
+  libTF::Vector cmd_vel;
   pthread_mutex_lock(&base_controller_lock_);
   cmd_vel.x = cmd_vel_t_.x;
   cmd_vel.y = cmd_vel_t_.y;
@@ -139,7 +139,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
 
       base_wheels_.push_back(base_object);
       wheel_speed_actual_.push_back(0);
-      libTF::Pose3D::Vector *v=new libTF::Pose3D::Vector();
+      libTF::Vector *v=new libTF::Vector();
       base_wheels_position_.push_back(*v);
       num_wheels_++;
     }
@@ -247,7 +247,7 @@ void BaseController::getJointValues()
 
 void BaseController::computeWheelPositions()
 {
-  libTF::Pose3D::Vector res1;
+  libTF::Vector res1;
   double steer_angle;
   for(int i=0; i < num_wheels_; i++)
   {
@@ -302,7 +302,7 @@ void BaseController::update()
 
 void BaseController::computeAndSetCasterSteer()
 {
-  libTF::Pose3D::Vector result;
+  libTF::Vector result;
   double steer_angle_desired;
   double error_steer;
   for(int i=0; i < num_casters_; i++)
@@ -320,10 +320,10 @@ void BaseController::computeAndSetCasterSteer()
 
 void BaseController::computeAndSetWheelSpeeds()
 {
-  libTF::Pose3D::Vector wheel_point_velocity;
-  libTF::Pose3D::Vector wheel_point_velocity_projected;
-  libTF::Pose3D::Vector wheel_caster_steer_component;
-  libTF::Pose3D::Vector caster_2d_velocity;
+  libTF::Vector wheel_point_velocity;
+  libTF::Vector wheel_point_velocity_projected;
+  libTF::Vector wheel_caster_steer_component;
+  libTF::Vector caster_2d_velocity;
 
   caster_2d_velocity.x = 0;
   caster_2d_velocity.y = 0;
@@ -379,7 +379,7 @@ bool BaseControllerNode::setCommand(
   pr2_controllers::SetBaseCommand::request &req,
   pr2_controllers::SetBaseCommand::response &resp)
 {
-  libTF::Pose3D::Vector command;
+  libTF::Vector command;
   command.x = req.x_vel;
   command.y = req.y_vel;
   command.z = req.theta_vel;
@@ -394,7 +394,7 @@ bool BaseControllerNode::setCommand(
 
 void BaseControllerNode::setCommand(double vx, double vy, double vw)
 {
-  libTF::Pose3D::Vector command;
+  libTF::Vector command;
   command.x = vx;
   command.y = vy;
   command.z = vw;
@@ -407,7 +407,7 @@ bool BaseControllerNode::getCommand(
   pr2_controllers::GetBaseCommand::request &req,
   pr2_controllers::GetBaseCommand::response &resp)
 {
-  libTF::Pose3D::Vector command;
+  libTF::Vector command;
   command = c_->getCommand();
   resp.x_vel = command.x;
   resp.y_vel = command.y;
@@ -449,9 +449,9 @@ void BaseController::getOdometry(double &x, double &y, double &w, double &vx, do
 }
 
 
-Pose3D::Vector BaseController::computePointVelocity2D(const Pose3D::Vector& pos, const Pose3D::Vector& vel)
+Vector BaseController::computePointVelocity2D(const Vector& pos, const Vector& vel)
 {
-  Pose3D::Vector result;
+  Vector result;
 
   result.x = vel.x - pos.y * vel.z;
   result.y = vel.y + pos.x * vel.z;
@@ -463,11 +463,11 @@ Pose3D::Vector BaseController::computePointVelocity2D(const Pose3D::Vector& pos,
 void BaseController::computeOdometry(double time)
 {
   double dt = time-last_time_;
-//   libTF::Pose3D::Vector base_odom_delta = rotate2D(base_odom_velocity_*dt,base_odom_position_.z);
+//   libTF::Vector base_odom_delta = rotate2D(base_odom_velocity_*dt,base_odom_position_.z);
 
   computeBaseVelocity();
 
-  libTF::Pose3D::Vector base_odom_delta = (base_odom_velocity_*dt).rot2D(base_odom_position_.z);
+  libTF::Vector base_odom_delta = (base_odom_velocity_*dt).rot2D(base_odom_position_.z);
 
 //   if(isnan(dt))
 //   {
@@ -604,8 +604,8 @@ std::ostream & controller::operator<<(std::ostream& mystream, const controller::
 //   wheel_radius_ = wheel_geom->radius;
 
 //   BaseCasterGeomParam caster;
-//   libTF::Pose3D::Vector wheel_l;
-//   libTF::Pose3D::Vector wheel_r;
+//   libTF::Vector wheel_l;
+//   libTF::Vector wheel_r;
 
 //   wheel_l.x = 0;
 //   wheel_l.y = wheel_base_/2.0;

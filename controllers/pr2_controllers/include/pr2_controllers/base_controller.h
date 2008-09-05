@@ -75,7 +75,7 @@ namespace controller
 
     ~BaseParam(){}
 
-    libTF::Pose3D::Vector pos_; /** position of the link*/
+    libTF::Vector pos_; /** position of the link*/
 
     std::string name_; /** name of joint corresponding to the link */
 
@@ -120,13 +120,13 @@ namespace controller
      *
      * \param double pos Position command to issue
      */
-    void setCommand(libTF::Pose3D::Vector cmd_vel);
+    void setCommand(libTF::Vector cmd_vel);
 
 
     /*!
      * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
      */
-    libTF::Pose3D::Vector getCommand();
+    libTF::Vector getCommand();
 
 
     /*!
@@ -212,7 +212,7 @@ namespace controller
      * \param vel - Vector, vel.x and vel.y represent translational velocities in X and Y directions, vel.z represents rotational(angular velocity)
      * \return point 2D velocity with .z component set to zero.
      */
-    libTF::Pose3D::Vector computePointVelocity2D(const libTF::Pose3D::Vector& pos, const  libTF::Pose3D::Vector& vel);
+    libTF::Vector computePointVelocity2D(const libTF::Vector& pos, const  libTF::Vector& vel);
 
     /*!
      * \brief update the individual joint controllers
@@ -223,25 +223,25 @@ namespace controller
     /*!
      * \brief speed command vector used internally
      */
-    libTF::Pose3D::Vector cmd_vel_;
+    libTF::Vector cmd_vel_;
 
 
     /*!
      * \brief Input speed command vector.
      */
-    libTF::Pose3D::Vector cmd_vel_t_;
+    libTF::Vector cmd_vel_t_;
 
 
     /*!
      * \brief Position of the robot computed by odometry.
      */
-    libTF::Pose3D::Vector base_odom_position_;
+    libTF::Vector base_odom_position_;
 
 
     /*!
      * \brief Speed of the robot computed by odometry.
      */
-    libTF::Pose3D::Vector base_odom_velocity_;
+    libTF::Vector base_odom_velocity_;
 
 
     /*!
@@ -286,7 +286,7 @@ namespace controller
     void computeWheelPositions();
 
 
-    std::vector<libTF::Pose3D::Vector> base_wheels_position_; /** vector of current wheel positions */
+    std::vector<libTF::Vector> base_wheels_position_; /** vector of current wheel positions */
 
 
     /*!

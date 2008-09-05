@@ -48,7 +48,7 @@ int main(int argc, char ** argv)
 							    pitch,
 							    roll);
 
-	  libTF::Pose3D::Euler out = libTF::Pose3D::eulerFromMatrix(m);
+	  libTF::Euler out = libTF::Pose3D::eulerFromMatrix(m);
 
 	  //TODO add +- 2PI checking/redundant angles checking
 	  // see if input is the same as output (accounting for floating point errors)

@@ -21,7 +21,7 @@ int main(void)
   NEWMAT::Matrix m = pz.asMatrix();
   cout << m;
   
-  Pose3D::Position p;
+  Position p;
   p.x = 0;
   p.y = 0;
   p.z = 1;

@@ -46,7 +46,177 @@
 
 namespace libTF
 {
-  /** \brief A class used to store and do basic minipulations of 3D transformations
+/** \brief A struct to represent the translational component (a point) */
+struct Position
+{
+  double x,y,z;
+  /** \brief Constructor */
+  Position():x(0),y(0),z(0){;};
+  /** \brief Constructor */
+  Position(double x, double y, double z):x(x),y(y),z(z){;};
+  /** \brief operator overloading for the + operator */
+  Position  operator+(const Position &rhs){
+    Position result;
+    result.x = x + rhs.x;
+    result.y = y + rhs.y;
+    result.z = z + rhs.z;
+    return result;
+  }
+
+  /** \brief operator overloading for the += operator */
+  Position & operator+=(const Position &rhs){
+    x += rhs.x;
+    y += rhs.y;
+    z += rhs.z;
+    return *this;
+  }
+
+  /** \brief operator overloading for the - operator */
+  Position  operator-(const Position &rhs){
+    Position result;
+    result.x = x - rhs.x;
+    result.y = y - rhs.y;
+    result.z = z - rhs.z;
+    return result;
+  }
+
+  /** \brief operator overloading for the -= operator */
+  Position & operator-=(const Position &rhs){
+    x -= rhs.x;
+    y -= rhs.y;
+    z -= rhs.z;
+    return *this;
+  }
+
+  /** \brief operator overloading for the *= operator */
+  Position & operator*=(double rhs){
+    x *= rhs;
+    y *= rhs;
+    z *= rhs;
+    return *this;
+  }
+
+  /** \brief operator overloading for the * operator */
+  Position  operator*(double rhs){
+    Position result;
+    result.x = x*rhs;
+    result.y = y*rhs;
+    result.z = z*rhs;
+    return result;
+  }
+
+  /** \brief Rotate a position about the z-axis */
+  Position rot2D(double angle){
+    Position result;
+    double cosa = cos(angle);
+    double sina = sin(angle);
+    result.x = cosa*x - sina*y;
+    result.y = sina*x + cosa*y;
+    result.z = z;
+    return result;
+
+
+
+  }
+};
+
+/** \brief A struct to represent vectors */
+struct Vector
+{
+  double x,y,z;
+
+  /** \brief Constructor */
+  Vector():x(0),y(0),z(0){;};
+  /** \brief Constructor */
+  Vector(double x, double y, double z):x(x),y(y),z(z){;};
+
+  /** \brief operator overloading for the + operator */
+  Vector  operator+(const Vector &rhs){
+    Vector result;
+    result.x = x + rhs.x;
+    result.y = y + rhs.y;
+    result.z = z + rhs.z;
+    return result;
+  }
+
+  /** \brief operator overloading for the += operator */
+  Vector & operator+=(const Vector &rhs){
+    x += rhs.x;
+    y += rhs.y;
+    z += rhs.z;
+    return *this;
+  }
+
+  /** \brief operator overloading for the - operator */
+  Vector  operator-(const Vector &rhs){
+    Vector result;
+    result.x = x - rhs.x;
+    result.y = y - rhs.y;
+    result.z = z - rhs.z;
+    return result;
+  }
+
+  /** \brief operator overloading for the -= operator */
+  Vector & operator-=(const Vector &rhs){
+    x -= rhs.x;
+    y -= rhs.y;
+    z -= rhs.z;
+    return *this;
+  }
+
+  /** \brief operator overloading for the *= operator */
+  Vector & operator*=(double rhs){
+    x *= rhs;
+    y *= rhs;
+    z *= rhs;
+    return *this;
+  }
+
+  /** \brief operator overloading for the * operator */
+  Vector  operator*(double rhs){
+    Vector result;
+    result.x = x*rhs;
+    result.y = y*rhs;
+    result.z = z*rhs;
+    return result;
+  }
+
+  /** \brief Rotate a vector about the z-axis */
+  Vector rot2D(double angle){
+    Vector result;
+    double cosa = cos(angle);
+    double sina = sin(angle);
+    result.x = cosa*x - sina*y;
+    result.y = sina*x + cosa*y;
+    result.z = z;
+    return result;
+  }
+
+};
+  
+/** \brief A struct to represent the quaternion component */
+struct Quaternion
+{
+  double x,y,z,w;
+
+  /** \brief Constructor */
+  Quaternion():x(0),y(0),z(0),w(1){;};
+  /** \brief Constructor */
+  Quaternion(double x, double y, double z, double w):x(x),y(y),z(z),w(w){;};
+
+};
+/** \brief A struct to represent Euler angles */
+struct Euler
+{
+  double yaw, pitch, roll;
+  /** \brief Constructor */
+  Euler():yaw(0),pitch(0),roll(0){;};
+  /** \brief Constructor */
+  Euler(double yaw, double pitch, double roll):yaw(yaw),pitch(pitch),roll(roll){;};
+
+};
+
+/** \brief A class used to store and do basic minipulations of 3D transformations
    * 
    */
   class Pose3D 
@@ -54,175 +224,6 @@ namespace libTF
       friend class Pose3DCache;
       
   public:
-      /** \brief A struct to represent the translational component (a point) */
-      struct Position
-      {
-        double x,y,z;
-        /** \brief Constructor */
-        Position():x(0),y(0),z(0){;};
-        /** \brief Constructor */
-        Position(double x, double y, double z):x(x),y(y),z(z){;};
-      /** \brief operator overloading for the + operator */
-          Position  operator+(const Position &rhs){
-            Position result;
-            result.x = x + rhs.x;
-            result.y = y + rhs.y;
-            result.z = z + rhs.z;
-            return result;
-          }
-
-      /** \brief operator overloading for the += operator */
-          Position & operator+=(const Position &rhs){
-            x += rhs.x;
-            y += rhs.y;
-            z += rhs.z;
-            return *this;
-          }
-
-      /** \brief operator overloading for the - operator */
-          Position  operator-(const Position &rhs){
-            Position result;
-            result.x = x - rhs.x;
-            result.y = y - rhs.y;
-            result.z = z - rhs.z;
-            return result;
-          }
-
-      /** \brief operator overloading for the -= operator */
-          Position & operator-=(const Position &rhs){
-            x -= rhs.x;
-            y -= rhs.y;
-            z -= rhs.z;
-            return *this;
-          }
-
-      /** \brief operator overloading for the *= operator */
-          Position & operator*=(double rhs){
-            x *= rhs;
-            y *= rhs;
-            z *= rhs;
-            return *this;
-          }
-
-      /** \brief operator overloading for the * operator */
-          Position  operator*(double rhs){
-            Position result;
-            result.x = x*rhs;
-            result.y = y*rhs;
-            result.z = z*rhs;
-            return result;
-          }
-
-      /** \brief Rotate a position about the z-axis */
-          Position rot2D(double angle){
-            Position result;
-            double cosa = cos(angle);
-            double sina = sin(angle);
-            result.x = cosa*x - sina*y;
-            result.y = sina*x + cosa*y;
-            result.z = z;
-            return result;
-
-
-
-          }
-      };
-
-      /** \brief A struct to represent vectors */
-      struct Vector
-      {
-        double x,y,z;
-
-        /** \brief Constructor */
-        Vector():x(0),y(0),z(0){;};
-        /** \brief Constructor */
-        Vector(double x, double y, double z):x(x),y(y),z(z){;};
-
-          /** \brief operator overloading for the + operator */
-          Vector  operator+(const Vector &rhs){
-            Vector result;
-            result.x = x + rhs.x;
-            result.y = y + rhs.y;
-            result.z = z + rhs.z;
-            return result;
-          }
-
-          /** \brief operator overloading for the += operator */
-          Vector & operator+=(const Vector &rhs){
-            x += rhs.x;
-            y += rhs.y;
-            z += rhs.z;
-            return *this;
-          }
-
-          /** \brief operator overloading for the - operator */
-          Vector  operator-(const Vector &rhs){
-            Vector result;
-            result.x = x - rhs.x;
-            result.y = y - rhs.y;
-            result.z = z - rhs.z;
-            return result;
-          }
-
-          /** \brief operator overloading for the -= operator */
-          Vector & operator-=(const Vector &rhs){
-            x -= rhs.x;
-            y -= rhs.y;
-            z -= rhs.z;
-            return *this;
-          }
-
-          /** \brief operator overloading for the *= operator */
-          Vector & operator*=(double rhs){
-            x *= rhs;
-            y *= rhs;
-            z *= rhs;
-            return *this;
-          }
-
-          /** \brief operator overloading for the * operator */
-          Vector  operator*(double rhs){
-            Vector result;
-            result.x = x*rhs;
-            result.y = y*rhs;
-            result.z = z*rhs;
-            return result;
-          }
-
-          /** \brief Rotate a vector about the z-axis */
-          Vector rot2D(double angle){
-            Vector result;
-            double cosa = cos(angle);
-            double sina = sin(angle);
-            result.x = cosa*x - sina*y;
-            result.y = sina*x + cosa*y;
-            result.z = z;
-            return result;
-          }
-
-      };
-  
-      /** \brief A struct to represent the quaternion component */
-      struct Quaternion
-      {
-        double x,y,z,w;
-
-        /** \brief Constructor */
-        Quaternion():x(0),y(0),z(0),w(1){;};
-        /** \brief Constructor */
-        Quaternion(double x, double y, double z, double w):x(x),y(y),z(z),w(w){;};
-
-      };
-      /** \brief A struct to represent Euler angles */
-      struct Euler
-      {
-        double yaw, pitch, roll;
-        /** \brief Constructor */
-        Euler():yaw(0),pitch(0),roll(0){;};
-        /** \brief Constructor */
-        Euler(double yaw, double pitch, double roll):yaw(yaw),pitch(pitch),roll(roll){;};
-
-      };
   
       /* Constructors */
       /** \brief Empty Constructor initialize to zero */
@@ -352,7 +353,7 @@ namespace libTF
   /** \brief A namespace ostream overload for displaying poses */
   std::ostream & operator<<(std::ostream& mystream, const Pose3D &pose);
 
-  std::ostream & operator<<(std::ostream& mystream, const Pose3D::Vector &p);
+  std::ostream & operator<<(std::ostream& mystream, const libTF::Vector &p);
  
 }
 

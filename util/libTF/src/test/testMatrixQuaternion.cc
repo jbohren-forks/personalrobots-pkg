@@ -58,8 +58,8 @@ int main(int argc, char ** argv)
           aPose.setFromMatrix(m);
           m = aPose.asMatrix();
 
-	  libTF::Pose3D::Euler out = libTF::Pose3D::eulerFromMatrix(m);
-	  libTF::Pose3D::Euler out2 = libTF::Pose3D::eulerFromMatrix(m,2);
+	  libTF::Euler out = libTF::Pose3D::eulerFromMatrix(m);
+	  libTF::Euler out2 = libTF::Pose3D::eulerFromMatrix(m,2);
 
 	  // see if input is the same as output (accounting for floating point errors)
 	  if ((fabs(modNPiBy2(out.yaw) - modNPiBy2(yaw)) > 0.001 || fabs(modNPiBy2(out.pitch) - modNPiBy2(pitch)) > 0.001 || fabs(modNPiBy2(out.roll) -modNPiBy2(roll)) > 0.0001) &&
@@ -95,7 +95,7 @@ int main(int argc, char ** argv)
 
   aPose.setFromMatrix(matrix);
 
-  libTF::Pose3D::Quaternion myquat;
+  libTF::Quaternion myquat;
   aPose.getQuaternion(myquat);
   std::cout << " MY Quaternion" <<  myquat.x << " " << myquat.y << " " << myquat.z  << " " << myquat.w << std::endl;
 

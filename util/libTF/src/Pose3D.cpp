@@ -275,7 +275,7 @@ Pose3D& Pose3D::operator=(const std_msgs::Pose3D & input)
 }
 
 
-Pose3D::Euler Pose3D::eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned int solution_number)
+Euler Pose3D::eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned int solution_number)
 {
     
     Euler euler_out;
@@ -328,7 +328,7 @@ Pose3D::Euler Pose3D::eulerFromMatrix(const NEWMAT::Matrix & matrix_in, unsigned
 	return euler_out2;
 };
 
-Pose3D::Position Pose3D::positionFromMatrix(const NEWMAT::Matrix & matrix_in)
+Position Pose3D::positionFromMatrix(const NEWMAT::Matrix & matrix_in)
 {
     Position position;
     //get the pointer to the raw data
@@ -410,7 +410,7 @@ void Pose3D::getAxisAngle(double axis[3], double *angle) const
     axis[2] = zr / d;
 }
 
-Pose3D::Euler Pose3D::getEuler(void) const
+Euler Pose3D::getEuler(void) const
 {
     return eulerFromMatrix(asMatrix());
 }
@@ -420,7 +420,7 @@ void Pose3D::getEuler(Euler &eu) const
     eu = eulerFromMatrix(asMatrix());
 }
 
-Pose3D::Quaternion Pose3D::getQuaternion(void) const
+Quaternion Pose3D::getQuaternion(void) const
 {
     Quaternion quat;
     quat.x = xr;
@@ -430,7 +430,7 @@ Pose3D::Quaternion Pose3D::getQuaternion(void) const
     return quat;
 };
 
-Pose3D::Position Pose3D::getPosition(void) const
+Position Pose3D::getPosition(void) const
 {
     Position pos;
     pos.x = xt;
@@ -599,13 +599,13 @@ void Pose3D::multiplyPose(Pose3D &pose)
 //Note not member function
 std::ostream & libTF::operator<<(std::ostream& mystream, const Pose3D &storage)
 {
-    Pose3D::Quaternion q = storage.getQuaternion();
-    Pose3D::Position   p = storage.getPosition();
+    Quaternion q = storage.getQuaternion();
+    Position   p = storage.getPosition();
     mystream << "Storage: " << p.x << ", " << p.y << ", " << p.z << ", " << q.x << ", " << q.y << ", " << q.z << ", " << q.w << std::endl; 
     return mystream;
 };
 
-std::ostream & libTF::operator<<(std::ostream& mystream, const Pose3D::Vector &p)
+std::ostream & libTF::operator<<(std::ostream& mystream, const Vector &p)
   {
     mystream << p.x << ", " << p.y << ", " << p.z << ", " << std::endl; 
     return mystream;

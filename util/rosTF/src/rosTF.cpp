@@ -249,8 +249,8 @@ void rosTFServer::sendInverseEuler(const std::string & frame, const std::string 
   rosTF::TransformArray tfArray;
   tfArray.set_eulers_size(1);
   //Invert the transform
-  libTF::Pose3D::Euler odomeuler  = libTF::Pose3D::eulerFromMatrix(libTF::Pose3D::matrixFromEuler(x, y, z, yaw, pitch, roll).i()); //todo optimize
-  libTF::Pose3D::Position odompos = libTF::Pose3D::positionFromMatrix(libTF::Pose3D::matrixFromEuler(x, y, z, yaw, pitch, roll).i());
+  libTF::Euler odomeuler  = libTF::Pose3D::eulerFromMatrix(libTF::Pose3D::matrixFromEuler(x, y, z, yaw, pitch, roll).i()); //todo optimize
+  libTF::Position odompos = libTF::Pose3D::positionFromMatrix(libTF::Pose3D::matrixFromEuler(x, y, z, yaw, pitch, roll).i());
   
   tfArray.eulers[0].header.frame_id = frame;
   tfArray.eulers[0].parent = parent;

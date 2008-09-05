@@ -75,11 +75,11 @@ void addKeyValue(TiXmlElement *elem, const std::string& key, const std::string &
 
 void addTransform(TiXmlElement *elem, const::libTF::Pose3D& transform)
 {
-    libTF::Pose3D::Position pz;
+    libTF::Position pz;
     transform.getPosition(pz);
     double cpos[3] = { pz.x, pz.y, pz.z };
     
-    libTF::Pose3D::Euler eu;
+    libTF::Euler eu;
     transform.getEuler(eu);
     double crot[3] = { eu.roll, eu.pitch, eu.yaw };        
     

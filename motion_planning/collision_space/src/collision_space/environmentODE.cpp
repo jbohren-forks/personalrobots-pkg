@@ -131,9 +131,9 @@ void collision_space::EnvironmentModelODE::updateRobotModel(unsigned int model_i
 	libTF::Pose3D &pose = m_kgeoms[model_id].geom[i]->link->globalTrans;
 	dGeomID        geom = m_kgeoms[model_id].geom[i]->geom;
 	
-	libTF::Pose3D::Position pos = pose.getPosition();
+	libTF::Position pos = pose.getPosition();
 	dGeomSetPosition(geom, pos.x, pos.y, pos.z);
-	libTF::Pose3D::Quaternion quat = pose.getQuaternion();
+	libTF::Quaternion quat = pose.getQuaternion();
 	dQuaternion q; q[0] = quat.w; q[1] = quat.x; q[2] = quat.y; q[3] = quat.z;
 	dGeomSetQuaternion(geom, q);
     }    

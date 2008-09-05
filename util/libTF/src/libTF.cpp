@@ -223,7 +223,7 @@ TFEulerYPR TransformReference::transformEulerYPR(const std::string & target_fram
   
   NEWMAT::Matrix output = local.i() * Transform;
 
-  Pose3D::Euler eulers = Pose3D::eulerFromMatrix(output,1); 
+  Euler eulers = Pose3D::eulerFromMatrix(output,1); 
 
   TFEulerYPR retEuler;
   retEuler.yaw = eulers.yaw;

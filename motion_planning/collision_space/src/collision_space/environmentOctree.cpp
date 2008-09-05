@@ -79,7 +79,7 @@ bool collision_space::EnvironmentModelOctree::isCollision(unsigned int model_id)
 		    for (unsigned int k=0; k<3; k++)
 			axes[j][k] = mat.element(j,k);
 		
-		libTF::Pose3D::Position libTFpos;
+		libTF::Position libTFpos;
 		links[i]->globalTrans.getPosition(libTFpos);
 		float pos[3] = {libTFpos.x, libTFpos.y, libTFpos.z};
 		const double *size = static_cast<planning_models::KinematicModel::Box*>(links[i]->shape)->size;
@@ -99,7 +99,7 @@ bool collision_space::EnvironmentModelOctree::isCollision(unsigned int model_id)
 		    for (unsigned int k=0; k<3; k++)
 			axes[j][k] = mat.element(j,k);
 		
-		libTF::Pose3D::Position libTFpos;
+		libTF::Position libTFpos;
 		links[i]->globalTrans.getPosition(libTFpos);
 		float pos[3] = {libTFpos.x, libTFpos.y, libTFpos.z };
 		float radius = static_cast<planning_models::KinematicModel::Cylinder*>(links[i]->shape)->radius;
@@ -113,7 +113,7 @@ bool collision_space::EnvironmentModelOctree::isCollision(unsigned int model_id)
 		
 	case planning_models::KinematicModel::Shape::SPHERE:
 	    {
-		libTF::Pose3D::Position libTFpos;
+		libTF::Position libTFpos;
 		links[i]->globalTrans.getPosition(libTFpos);
 		float pos[3] = {libTFpos.x, libTFpos.y, libTFpos.z};
 		float radius = static_cast<planning_models::KinematicModel::Sphere*>(links[i]->shape)->radius;

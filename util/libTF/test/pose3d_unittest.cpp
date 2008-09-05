@@ -16,22 +16,22 @@ using namespace libTF;
 TEST(Pose3D, DefaultConstructor){
   Pose3D p;
 //EXPECT_EQ(0, p.getMagnitude());
-  Pose3D::Euler e = p.getEuler();
+  Euler e = p.getEuler();
   EXPECT_EQ(0, e.yaw);
   EXPECT_EQ(0, e.pitch);
   EXPECT_EQ(0, e.roll);
-  Pose3D::Quaternion q = p.getQuaternion();
+  Quaternion q = p.getQuaternion();
   EXPECT_EQ(0, q.x);
   EXPECT_EQ(0, q.y);
   EXPECT_EQ(0, q.z);
   EXPECT_EQ(1, q.w);
-  Pose3D::Position x = p.getPosition();
+  Position x = p.getPosition();
   EXPECT_EQ(0, x.x);
   EXPECT_EQ(0, x.y);
   EXPECT_EQ(0, x.z);
 }
 TEST(Vector, DefaultConstructor){
-  Pose3D::Vector v;
+  Vector v;
   EXPECT_EQ(0, v.x);
   EXPECT_EQ(0, v.y);
   EXPECT_EQ(0, v.z);
@@ -40,7 +40,7 @@ TEST(Vector, DefaultConstructor){
 
 TEST(Vector, CopyConstructor){
   seed_rand();
-  Pose3D::Vector a,b,c;
+  Vector a,b,c;
   for (unsigned int i = 0; i < 1000; i++)
   {  
     a.x = rand();
@@ -60,7 +60,7 @@ TEST(Vector, CopyConstructor){
 
 TEST(Vector, Addition){
   seed_rand();
-  Pose3D::Vector a,b,c;
+  Vector a,b,c;
 for (unsigned int i = 0; i < 1000; i++)
  {  
    a.x = rand();
@@ -78,7 +78,7 @@ for (unsigned int i = 0; i < 1000; i++)
 
 TEST(Vector, PlusEqual){
   seed_rand();
-  Pose3D::Vector a,b,c;
+  Vector a,b,c;
 for (unsigned int i = 0; i < 1000; i++)
  {  
    a.x = rand();
@@ -97,7 +97,7 @@ for (unsigned int i = 0; i < 1000; i++)
 
 TEST(Vector, Subtraction){
   seed_rand();
-  Pose3D::Vector a,b,c;
+  Vector a,b,c;
 for (unsigned int i = 0; i < 1000; i++)
  {  
    a.x = rand();
@@ -116,7 +116,7 @@ for (unsigned int i = 0; i < 1000; i++)
 
 TEST(Vector, MinusEqual){
   seed_rand();
-  Pose3D::Vector a,b,c;
+  Vector a,b,c;
 for (unsigned int i = 0; i < 1000; i++)
  {  
    a.x = rand();
@@ -135,7 +135,7 @@ for (unsigned int i = 0; i < 1000; i++)
 
 TEST(Vector, TimesEqual){
   seed_rand();
-  Pose3D::Vector a,b,c;
+  Vector a,b,c;
   double scalar;
 for (unsigned int i = 0; i < 1000; i++)
  {  
@@ -153,7 +153,7 @@ for (unsigned int i = 0; i < 1000; i++)
 
 TEST(Vector, Times){
   seed_rand();
-  Pose3D::Vector a,b,c;
+  Vector a,b,c;
   double scalar;
 for (unsigned int i = 0; i < 1000; i++)
  {  
@@ -170,7 +170,7 @@ for (unsigned int i = 0; i < 1000; i++)
 
 TEST(Vector, rot2D){
   seed_rand();
-  Pose3D::Vector a,b,c;
+  Vector a,b,c;
   double scalar;
 for (unsigned int i = 0; i < 1000; i++)
  {  
@@ -186,7 +186,7 @@ for (unsigned int i = 0; i < 1000; i++)
 }
 
 TEST(Position, DefaultConstructor){
-  Pose3D::Position po;
+  Position po;
   EXPECT_EQ(0, po.x);
   EXPECT_EQ(0, po.y);
   EXPECT_EQ(0, po.z);
@@ -194,7 +194,7 @@ TEST(Position, DefaultConstructor){
 
 TEST(Position, CopyConstructor){
   seed_rand();
-  Pose3D::Position a,b;
+  Position a,b;
   for (unsigned int i = 0; i < 1000; i++)
   {  
     a.x = rand();
@@ -214,7 +214,7 @@ TEST(Position, CopyConstructor){
 
 TEST(Position, Addition){
   seed_rand();
-  Pose3D::Position a,b,c;
+  Position a,b,c;
 for (unsigned int i = 0; i < 1000; i++)
  {  
    a.x = rand();
@@ -232,7 +232,7 @@ for (unsigned int i = 0; i < 1000; i++)
 
 TEST(Position, PlusEquals){
   seed_rand();
-  Pose3D::Position a,b,c;
+  Position a,b,c;
 for (unsigned int i = 0; i < 1000; i++)
  {  
    a.x = rand();
@@ -251,7 +251,7 @@ for (unsigned int i = 0; i < 1000; i++)
 
 TEST(Position, Subtraction){
   seed_rand();
-  Pose3D::Position a,b,c;
+  Position a,b,c;
 for (unsigned int i = 0; i < 1000; i++)
  {  
    a.x = rand();
@@ -269,7 +269,7 @@ for (unsigned int i = 0; i < 1000; i++)
 
 TEST(Position, MinusEquals){
   seed_rand();
-  Pose3D::Position a,b,c;
+  Position a,b,c;
 for (unsigned int i = 0; i < 1000; i++)
  {  
    a.x = rand();
@@ -288,7 +288,7 @@ for (unsigned int i = 0; i < 1000; i++)
 
 TEST(Position, TimesEqual){
   seed_rand();
-  Pose3D::Position a,b,c;
+  Position a,b,c;
   double scalar;
   for (unsigned int i = 0; i < 1000; i++)
  {  
@@ -306,7 +306,7 @@ TEST(Position, TimesEqual){
 
 TEST(Position, Times){
   seed_rand();
-  Pose3D::Position a,b,c;
+  Position a,b,c;
   double scalar;
   for (unsigned int i = 0; i < 1000; i++)
  {  
@@ -323,7 +323,7 @@ TEST(Position, Times){
 
 TEST(Position, rot2D){
   seed_rand();
-  Pose3D::Position a,b,c;
+  Position a,b,c;
   double scalar;
 for (unsigned int i = 0; i < 1000; i++)
  {  
@@ -339,14 +339,14 @@ for (unsigned int i = 0; i < 1000; i++)
 }
 
 TEST(Quaterion, DefaultConstructor){
-  Pose3D::Quaternion quat;
+  Quaternion quat;
   EXPECT_EQ(0, quat.x);
   EXPECT_EQ(0, quat.y);
   EXPECT_EQ(0, quat.z);
 }
 
 TEST(Euler, DefaultConstructor){
-  Pose3D::Euler e;
+  Euler e;
   EXPECT_EQ(0, e.yaw);
   EXPECT_EQ(0, e.pitch);
   EXPECT_EQ(0, e.roll);
@@ -355,7 +355,7 @@ TEST(Euler, DefaultConstructor){
 void testEulerConversion(double yaw, double pitch, double roll){
   Pose3D p;
   p.setFromEuler(0, 0, 0, yaw, pitch, roll);
-  Pose3D::Euler e = p.getEuler();
+  Euler e = p.getEuler();
   EXPECT_FLOAT_EQ(e.yaw, yaw);
   EXPECT_FLOAT_EQ(e.pitch, pitch);
   EXPECT_FLOAT_EQ(e.roll, roll);
@@ -409,8 +409,8 @@ TEST(Pose3D, EulerToMatrixToQuaternionToMatrixToEuler)
       {
         EXPECT_LT(fabs(n(row,col) - m(row,col)), 0.00000001);
       }
-    libTF::Pose3D::Euler out = libTF::Pose3D::eulerFromMatrix(n);
-    libTF::Pose3D::Euler out2 = libTF::Pose3D::eulerFromMatrix(n,2);
+    libTF::Euler out = libTF::Pose3D::eulerFromMatrix(n);
+    libTF::Euler out2 = libTF::Pose3D::eulerFromMatrix(n,2);
 
     //Test the difference between input and output accounting for 2Pi redundancy.  
     bool difference = ((fabs(math_utils::modNPiBy2(out.yaw) - math_utils::modNPiBy2(yaw)) > 0.001 || fabs(math_utils::modNPiBy2(out.pitch) - math_utils::modNPiBy2(pitch)) > 0.001 || fabs(math_utils::modNPiBy2(out.roll) -math_utils::modNPiBy2(roll)) > 0.0001) &&
@@ -446,7 +446,7 @@ TEST(Pose3D, MatrixToPosition){
       << 0 << 0 << 0 << rand()
       << 0 << 0 << 0 << 1;
     
-    Pose3D::Position t = Pose3D::positionFromMatrix(m);
+    Position t = Pose3D::positionFromMatrix(m);
     
     EXPECT_EQ(t.x, m(1,4));
     EXPECT_EQ(t.y, m(2,4));

@@ -78,11 +78,11 @@ namespace collision_space
 	    
 	    bool containsPoint(double x, double y, double z) const
 	    {
-	      libTF::Pose3D::Position pt(x, y, z);
+	      libTF::Position pt(x, y, z);
 		return containsPoint(pt);
 	    }
 	    
-	    virtual bool containsPoint(const libTF::Pose3D::Position &p) const = 0;	
+	    virtual bool containsPoint(const libTF::Position &p) const = 0;	
 	    
 	protected:
 	    
@@ -106,7 +106,7 @@ namespace collision_space
 	    {
 	    }
 	    
-	    virtual bool containsPoint(const libTF::Pose3D::Position &p) const 
+	    virtual bool containsPoint(const libTF::Position &p) const 
 	    {
 		double dx = m_center.x - p.x;
 		double dy = m_center.y - p.y;
@@ -128,7 +128,7 @@ namespace collision_space
 		m_pose.getPosition(m_center);
 	    }
 	    
-	    libTF::Pose3D::Position m_center;
+	    libTF::Position m_center;
 	    double                  m_radius;	
 	    double                  m_radius2;	
 	    
@@ -146,7 +146,7 @@ namespace collision_space
 	    {
 	    }
 	    
-	    virtual bool containsPoint(const libTF::Pose3D::Position &p) const 
+	    virtual bool containsPoint(const libTF::Position &p) const 
 	    {
 		double vx = p.x - m_center.x;
 		double vy = p.y - m_center.y;
@@ -188,10 +188,10 @@ namespace collision_space
 		m_pose.applyToVector(m_normalB2);
 	    }
 	    
-	    libTF::Pose3D::Position m_center;
-	    libTF::Pose3D::Vector   m_normalH;
-	    libTF::Pose3D::Vector   m_normalB1;
-	    libTF::Pose3D::Vector   m_normalB2;
+	    libTF::Position m_center;
+	    libTF::Vector   m_normalH;
+	    libTF::Vector   m_normalB1;
+	    libTF::Vector   m_normalB2;
 	    
 	    double                  m_length;
 	    double                  m_length2;	
@@ -212,7 +212,7 @@ namespace collision_space
 	    {
 	    }
 	    
-	    virtual bool containsPoint(const libTF::Pose3D::Position &p) const 
+	    virtual bool containsPoint(const libTF::Position &p) const 
 	    {
 		double vx = p.x - m_center.x;
 		double vy = p.y - m_center.y;
@@ -263,10 +263,10 @@ namespace collision_space
 		m_pose.applyToVector(m_normalW);
 	    }
 	    
-	    libTF::Pose3D::Position m_center;
-	    libTF::Pose3D::Vector   m_normalL;
-	    libTF::Pose3D::Vector   m_normalW;
-	    libTF::Pose3D::Vector   m_normalH;
+	    libTF::Position m_center;
+	    libTF::Vector   m_normalL;
+	    libTF::Vector   m_normalW;
+	    libTF::Vector   m_normalH;
 	    
 	    double                  m_length;
 	    double                  m_width;
