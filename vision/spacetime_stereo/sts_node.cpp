@@ -18,11 +18,11 @@
 #include <vector.h>
 
 #define SUBPIXEL 16
-//#define FILTERS
+#define FILTERS
 
-#define RADIUS 4
-#define MAXDISP 120
-#define NIMAGES 25
+#define RADIUS 3
+#define MAXDISP 110
+#define NIMAGES 20
 
 struct calib_params{
 
@@ -87,6 +87,57 @@ for(x=0; x<w; x++){
 
 }
 
+
+
+void uniqueness_constraint_reducedrange(stereo_params par, int* mins, int row){
+
+int x, d, x_oth, d_oth;
+
+int w = par.w;
+short int* disp = par.disp;
+int maxdisp = par.maxdisp;
+int r = par.radius;
+
+//Init array
+int* unique;
+unique = (int *)malloc(w*sizeof(int));
+for(x=r; x<w-r; x++)
+	unique[x] = -1;
+	
+for(x=maxdisp+r+1; x<w-r; x++){
+	
+	if(disp[row*w + x] >= 0){		//this is needed since previous filters may have already discarded this correspondence
+		d = (disp[row*w + x]+8)/SUBPIXEL;
+		if(d>maxdisp){
+			//printf("%d %d\n", disp[row*w + x], d);
+			d=maxdisp;
+		}
+		//d = disp[row*w + x];
+		//UNIQUENESS CONSTRAINT
+		
+		if(unique[x-d] == -1)
+			unique[x-d] = d;
+		else{
+			d_oth = unique[x-d];	
+			x_oth = x - d + d_oth;
+			if(mins[x_oth] > mins[x]){
+ 				unique[x-d] = d;
+ 				disp[row*w + x_oth] = -3;
+ 			}
+			else{
+				disp[row*w + x] = -3;
+ 			}
+		}
+	}
+}//y
+
+free(unique);
+}
+
+
+
+
+
 void spacetime_stereo(vector<IplImage*> left_frames, vector<IplImage*> right_frames, unsigned int nImages, short int* disp);
 
 // -- ROS Node class for getting Videre images.
@@ -103,14 +154,15 @@ class SpacetimeStereoNode : public ros::node
 	vector<IplImage*> left_frames;
 	vector<IplImage*> right_frames;
 	unsigned int nImages;
-	
+	short int* disp;
+		
 	SpacetimeStereoNode() : ros::node("spacetime_stereo_node"), builtBridge(false), nImages(NIMAGES)
 	{
 		left_bridge_in = NULL;
 		right_bridge_in = NULL;
 		
 		subscribe("videre/images", frame_msg, &SpacetimeStereoNode::processFrame, 1);
-		advertise<std_msgs::PointCloudFloat32>("spacetime_stereo");
+		advertise<std_msgs::PointCloudFloat32>("spacetime_stereo", 5);
 	}
 	
 	~SpacetimeStereoNode()
@@ -119,15 +171,16 @@ class SpacetimeStereoNode : public ros::node
 		delete left_bridge_in;
 	}
 	
-	void compute_point_cloud(calib_params cpar, short int* disp, int w, int h);
+	//void compute_point_cloud(calib_params cpar, short int* disp, int w, int h);
+	void spacetime_stereo(vector<IplImage*> left_frames, vector<IplImage*> right_frames, unsigned int nImages, short int *disp);
 
 	//Copies the image out of the frame_msg and into frame.
 	void processFrame() 
 	{
 		
 		if(!builtBridge) {
-			left_bridge_in = new CvBridge<std_msgs::Image>(&frame_msg.images[0], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
-			right_bridge_in = new CvBridge<std_msgs::Image>(&frame_msg.images[1], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
+			left_bridge_in = new CvBridge<std_msgs::Image>(&frame_msg.images[1], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
+			right_bridge_in = new CvBridge<std_msgs::Image>(&frame_msg.images[0], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
 			builtBridge = true;
 		}
 		
@@ -149,16 +202,20 @@ class SpacetimeStereoNode : public ros::node
 		else {
 			int w = left_frames[0]->width;
 			int h = left_frames[0]->height;
-			short int* disp = NULL;
+			disp = (short int *)malloc(w*h*sizeof(short int));
 			spacetime_stereo(left_frames, right_frames, nImages, disp);
-			compute_point_cloud(cpar, disp, w, h);
+			//compute_point_cloud(cpar, disp, w, h);
 			
 			for(unsigned int i=0; i<nImages; i++){
 				cvReleaseImage(&left_frames[i]);	
 				cvReleaseImage(&right_frames[i]);
 			}
+			left_frames.clear();
+			right_frames.clear();
 			free(disp);
 			
+			printf("processframe is complete!\n");
+	
 		}
 	}  
 };
@@ -264,48 +321,14 @@ free(acc);
 }
 
 
-void SpacetimeStereoNode::compute_point_cloud(calib_params cpar, short int* disp, int w, int h){
-
-std_msgs::PointCloudFloat32 ros_cloud;
-ros_cloud.set_chan_size(1);
-ros_cloud.chan[0].name = "intensities";
-int i,j;
-float x,y,z;
-
-//int w = Left->width;
-//int h = Left->height;
-//int wsi = Left->widthStep;
-//unsigned char *dL = ((unsigned char *)(Left->imageData));
-
-ros_cloud.set_pts_size(w*h);
-ros_cloud.chan[0].set_vals_size(w*h);
-
-for(j=0; j<h; j++)
-	for(i=0; i<w; i++)
-		if( disp[j*w+i] > 0) {
-			z = (cpar.tx * cpar.feq) / ( (disp[j*w+i]*1.0) / SUBPIXEL) ;
-			x = ((i - cpar.u0) * z) / cpar.fx;
-			y = ((j - cpar.v0) * z) / cpar.fy;
-			
-			ros_cloud.pts[j*w+i].x = x/100; //from millimiters to decimiters
-			ros_cloud.pts[j*w+i].y = y/100;
-			ros_cloud.pts[j*w+i].z = z/100;
-
-			ros_cloud.chan[0].vals[j*w+i] = 16*255;
-			
-		}
-
-ros_cloud.header.frame_id = "FRAMEID_SMALLV";
-publish("spacetime_stereo", ros_cloud);
+//void SpacetimeStereoNode::compute_point_cloud(calib_params cpar, short int* disp, int w, int h){
 
 
-//m_rosNode->publish("full_cloud",ros_cloud);
-
-}
+//}
 
 
 
-void spacetime_stereo(vector<IplImage*> left_frames, vector<IplImage*> right_frames, unsigned int nImages, short int* disp){
+void SpacetimeStereoNode::spacetime_stereo(vector<IplImage*> left_frames, vector<IplImage*> right_frames, unsigned int nImages, short int* disp){
 
 	par.radius = RADIUS;
 	par.maxdisp = MAXDISP;
@@ -335,6 +358,7 @@ void spacetime_stereo(vector<IplImage*> left_frames, vector<IplImage*> right_fra
 	unsigned char *L = (unsigned char *)malloc(w*h*sizeof(unsigned char));
 	unsigned char *R = (unsigned char *)malloc(w*h*sizeof(unsigned char));
 	//unsigned char *L, *R;
+
 	
 	//par.Lf = Leftf;
 	//par.Rf = Rightf;
@@ -345,21 +369,34 @@ void spacetime_stereo(vector<IplImage*> left_frames, vector<IplImage*> right_fra
 	IplImage *Rightg = cvCreateImage(cvSize(w, h), 8, 1);
 		
 	#ifdef FILTERS
-	int n = 2*r+1;
-	int sqn = n*n;
-	int rel_filter = sqn * par.rel_filter * par.nframes;
+	par.unique = 1;
+	par.ratio_filter = 90;
+	par.peak_filter = 120;
+
+	//int n = 2*r+1;
+	//int sqn = n*n;
+	//int rel_filter = sqn * par.rel_filter * par.nframes;
 	int *min_scores = (int *)malloc(w * sizeof(int ));
 	int sad_second_min;
 	int da, db;
 	#endif
 
+	
+
 	for(framecount = 0; framecount < nImages; framecount ++){
+	
+// 		cvNamedWindow("L", 1);
+// 		cvNamedWindow("R", 1);
+// 		cvShowImage("L", left_frames[framecount]);
+// 		cvShowImage("R", right_frames[framecount]);
+// 		cvWaitKey(0);
 
 		printf("Processing frame %d .. \n", framecount);
-		
+		printf("Channel n: %d %d\n", left_frames[framecount]->nChannels, right_frames[framecount]->nChannels);
 		cvCvtColor(left_frames[framecount], Leftg, CV_BGR2GRAY);
 		cvCvtColor(right_frames[framecount], Rightg, CV_BGR2GRAY);
-		
+		//cvShowImage("Reference Image", left_frames[framecount]);
+		//cvWaitKey(100);
 		cv2array(Leftg, L);
 		cv2array(Rightg, R);
 		
@@ -380,7 +417,7 @@ void spacetime_stereo(vector<IplImage*> left_frames, vector<IplImage*> right_fra
 			}}//d
 				
 			alfa = 0;
-			if(dbest > 0){
+			if(dbest > 0 & dbest<maxdisp-1){
 				den = 2* (mins[y*w+x][dbest+1] + mins[y*w+x][dbest-1]-2*mins[y*w+x][dbest]);
 				if(den!=0)
 					alfa = (SUBPIXEL*(mins[y*w+x][dbest-1] - mins[y*w+x][dbest+1])) / den;
@@ -390,8 +427,8 @@ void spacetime_stereo(vector<IplImage*> left_frames, vector<IplImage*> right_fra
 			#ifdef FILTERS
 			//******* FILTERS ********
 			//1) rel filter	
-			if(costmin > rel_filter)
-				disp[y*w + x] = -2;
+			//if(costmin > rel_filter)
+			//	disp[y*w + x] = -2;
 	
 			//( 2)needed for uniqueness constraint filter )
 			min_scores[x] = costmin;
@@ -428,8 +465,14 @@ void spacetime_stereo(vector<IplImage*> left_frames, vector<IplImage*> right_fra
 		#endif
 	}//y
 	
-	printf("DONE!\n");
-
+// 	IplImage *idisp = cvCreateImage(cvSize(w, h), 8, 1);
+// 	for(y=r; y<h-r; y++){
+// 	for(x=maxdisp+r+1; x<w-r; x++){
+// 		((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x] = disp[y*w+x]/8;
+// 	}}
+// 	cvNamedWindow("Disp Image", 0);
+// 	cvShowImage("Disp Image", idisp);
+// 	cvWaitKey(10);
 	for(d=0; d<w*h;d++)
 		free(mins[d]);	
 	free(mins);
@@ -438,11 +481,88 @@ void spacetime_stereo(vector<IplImage*> left_frames, vector<IplImage*> right_fra
 	free(R);
 	cvReleaseImage(&Leftg);
 	cvReleaseImage(&Rightg);
-		
+	cvDestroyWindow("Reference Image");
 	#ifdef FILTERS
 	free(min_scores);
 	#endif
+	printf("DONE!\n");
+
+//BEGIN COMPUTING POINT CLOUD
+printf("Computing Point Cloud; w: %d h:%d ...", w, h);
+
+cpar.tx = 59.934176;
+cpar.u0 = 332.544501;
+cpar.v0 = 254.563215;
+cpar.dpx = 0.006;
+cpar.dpy = 0.006;
+cpar.fx = 945.598886;
+cpar.fy =  950.594644;
+cpar.feq =  (cpar.fx+cpar.fy) / 2;
+
+std_msgs::PointCloudFloat32 ros_cloud;
+
+ros_cloud.set_chan_size(1);
+ros_cloud.chan[0].name = "intensities";
+
+
+int i,j;
+float xf,yf,zf;
+
+//int w = Left->width;
+//int h = Left->height;
+//int wsi = Left->widthStep;
+//unsigned char *dL = ((unsigned char *)(Left->imageData));
+
+ros_cloud.set_pts_size(w*h);
+ros_cloud.chan[0].set_vals_size(w*h);
+
+for(j=0; j<h; j++)
+	for(i=0; i<w; i++)
+		if( disp[j*w+i] > 0) {
+			zf = (cpar.tx * cpar.feq) / ( (disp[j*w+i]*1.0) / SUBPIXEL) ;
+			xf = ((i - cpar.u0) * zf) / cpar.fx;
+			yf = ((j - cpar.v0) * zf) / cpar.fy;
+			
+			ros_cloud.pts[j*w+i].x = xf/100; //from millimiters to decimiters
+			ros_cloud.pts[j*w+i].y = yf/100;
+			ros_cloud.pts[j*w+i].z = zf/100;
+
+			ros_cloud.chan[0].vals[j*w+i] = 16*255;
+			
+		}
+
+printf("DON");
+
+ros_cloud.header.frame_id = "FRAMEID_SMALLV";
+publish("spacetime_stereo", ros_cloud);
+
+IplImage *idisp = cvCreateImage(cvSize(w, h), 8, 3);
+for(int y=RADIUS; y<h-RADIUS; y++){
+for(int x=MAXDISP+RADIUS+1; x<w-RADIUS; x++){
+	if(disp[y*w+x]-8 < 0){
+		((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3] = 255;
+		((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3+1] = 0;
+		((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3+2] = 0;
+	}
+	else{
+		((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3] = disp[y*w+x]/8;
+		((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3+1] = disp[y*w+x]/8;
+		((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3+2] = disp[y*w+x]/8;
+	}
+}}
+cvNamedWindow("Disp Image", 1);
+cvShowImage("Disp Image", idisp);
+int key = cvWaitKey(0);
+
+cvReleaseImage(&idisp);
+
+
+printf("E!\n");
+//m_rosNode->publish("full_cloud",ros_cloud);
+		
 	
+
+
 }
 
 
@@ -453,19 +573,10 @@ void spacetime_stereo(vector<IplImage*> left_frames, vector<IplImage*> right_fra
 
 int main(int argc, char **argv){
 
-	cpar.tx = 59.934176;
-	cpar.u0 = 332.544501;
-	cpar.v0 = 254.563215;
-	cpar.dpx = 0.006;
-	cpar.dpy = 0.006;
-	cpar.fx = 945.598886;
-	cpar.fy =  950.594644;
-	cpar.feq =  (cpar.fx+cpar.fy) / 2;
-
 	ros::init(argc, argv);
 	SpacetimeStereoNode sts;
 	sts.spin();
-
+	//ros::fini();
 // 	static uint32_t count = 0;
 // 	std::stringstream ss;
 // 	ss << "spacetime_stereo" << count++;

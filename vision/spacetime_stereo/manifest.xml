@@ -1,5 +1,5 @@
 <package>
-<author>Federico and Matthew</author>
+<author>Federico</author>
 <depend package="roscpp" />
 <depend package="std_msgs" />
 <depend package="opencv" />
