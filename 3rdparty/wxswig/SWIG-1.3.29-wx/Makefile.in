@@ -13,7 +13,7 @@ srcdir      = @srcdir@
 SHELL       = /bin/sh
 SWIG_LIB    = @swig_lib@
 BIN_DIR     = @bindir@
-DATA_DIR    = @datadir@
+DATA_DIR    = @datadir@/$(SWIG_LIB)
 TARGET_NOEXE= swig
 TARGET      = $(TARGET_NOEXE)@EXEEXT@
 SOURCE      = Source
@@ -85,179 +85,14 @@ check-aliveness:
 	@$(skip-modula3)  || ./$(TARGET) -modula3  -help
 	@$(skip-lua)      || ./$(TARGET) -lua      -help
 
-# Checks examples for compilation (does not run them)
-check-examples:					\
-	check-tcl-examples			\
-	check-perl5-examples			\
-	check-python-examples			\
-	check-java-examples			\
-	check-guile-examples			\
-	check-mzscheme-examples			\
-	check-ruby-examples			\
-	check-ocaml-examples			\
-	check-php4-examples			\
-	check-pike-examples			\
-	check-chicken-examples                  \
-	check-csharp-examples                   \
-	check-modula3-examples                  \
-	check-lua-examples			\
-	check-allegrocl-examples		\
-	check-clisp-examples			\
-	check-uffi-examples			\
-	check-cffi-examples
+check: check-aliveness
 
-check-%-examples:
-	@passed=true;						\
-	dir="Examples/$*";					\
-	if $(skip-$*); then					\
-	  echo skipping $* $(ACTION);				\
-	elif [ ! -f $$dir/check.list ]; then			\
-	  echo skipping $* $(ACTION) "(no $$dir/check.list)";	\
-	else							\
-	  all=`sed '/^#/d' $$dir/check.list`;			\
-	  for a in $$all; do					\
-            if $(skip-gcj) && test $$a = "java"; then		\
-              echo "skipping $* $$dir/$$a $(ACTION) (gcj test)";\
-            else						\
-	    echo $(ACTION)ing $$dir/$$a;			\
-	    (cd $$dir/$$a && $(chk))				\
-	    || passed=false;					\
-	    fi;							\
-	  done;							\
-	fi;							\
-	test $$passed = true
-
-gifplot-library:
-	@echo $(ACTION)ing Examples/GIFPlot/Lib
-	@cd Examples/GIFPlot/Lib && $(MAKE) -k -s $(ACTION)
-
-check-gifplot:					\
-	check-tcl-gifplot			\
-	check-perl5-gifplot			\
-	check-python-gifplot			\
-	check-java-gifplot			\
-	check-guile-gifplot			\
-	check-mzscheme-gifplot			\
-	check-ruby-gifplot			\
-	check-ocaml-gifplot			\
-	check-php4-gifplot			\
-	check-pike-gifplot			\
-	check-chicken-gifplot                   \
-#	check-lua-gifplot                  	\
-#	check-csharp-gifplot                    \
-#	check-modula3-gifplot
-
-check-%-gifplot: gifplot-library
-	@passed=true;						\
-	up=`$(srcdir)/Tools/capitalize $*`;			\
-	dir="Examples/GIFPlot/$$up";				\
-	if $(skip-$*); then					\
-	  echo skipping $$up $(ACTION);				\
-	elif [ ! -f $$dir/check.list ]; then			\
-	  echo skipping $$up $(ACTION) "(no $$dir/check.list)";	\
-	else							\
-	  all=`sed '/^#/d' $$dir/check.list`;			\
-	  for a in $$all; do					\
-	    echo $(ACTION)ing $$dir/$$a;			\
-	    (cd $$dir/$$a && $(chk))				\
-	    || passed=false;					\
-	  done;							\
-	fi;							\
-	test $$passed = true
-
-# Checks testcases in the test-suite excluding those which are known to be broken
-check-test-suite:				\
-	check-tcl-test-suite			\
-	check-perl5-test-suite			\
-	check-python-test-suite			\
-	check-java-test-suite			\
-	check-guilescm-test-suite		\
-	check-guile-test-suite			\
-	check-mzscheme-test-suite		\
-	check-ruby-test-suite			\
-	check-ocaml-test-suite			\
-	check-php4-test-suite			\
-	check-pike-test-suite			\
-	check-csharp-test-suite			\
-	check-modula3-test-suite		\
-	check-lua-test-suite			\
-	check-allegrocl-test-suite		\
-	check-clisp-test-suite			\
-	check-uffi-test-suite			\
-	check-cffi-test-suite			\
-	check-chicken-test-suite
-
-check-%-test-suite:
-	@passed=true;							\
-	dir="Examples/test-suite/$*";					\
-	if $(skip-$*); then						\
-	  echo skipping $* test-suite $(ACTION);			\
-	elif [ ! -d $$dir ]; then					\
-	  echo warning: cannot $(ACTION) $* test-suite "(no dir $$dir)";\
-	else								\
-	  echo $(ACTION)ing $* test-suite;				\
-	  (cd $$dir && $(MAKE) -k -s $(ACTION))				\
-	  || passed=false;						\
-	fi;								\
-	test $$passed = true
-
-check: check-aliveness check-examples check-gifplot check-test-suite
-
-# Run known-to-be-broken as well as not broken testcases in the test-suite
-all-test-suite:					\
-	all-tcl-test-suite			\
-	all-perl5-test-suite			\
-	all-python-test-suite			\
-	all-java-test-suite			\
-	all-guilescm-test-suite			\
-	all-guile-test-suite			\
-	all-mzscheme-test-suite			\
-	all-ruby-test-suite			\
-	all-ocaml-test-suite			\
-	all-php4-test-suite			\
-	all-pike-test-suite			\
-	all-csharp-test-suite			\
-	all-modula3-test-suite			\
-	all-lua-test-suite			\
-	all-allegrocl-test-suite		\
-	all-clisp-test-suite			\
-	all-uffi-test-suite			\
-	all-cffi-test-suite			\
-	all-chicken-test-suite
-
-all-%-test-suite:
-	@$(MAKE) -k -s check-$*-test-suite ACTION=all
-
-# Run known-to-be-broken testcases in the test-suite
-broken-test-suite:				\
-	broken-tcl-test-suite			\
-	broken-perl5-test-suite			\
-	broken-python-test-suite		\
-	broken-java-test-suite			\
-	broken-guilescm-test-suite		\
-	broken-guile-test-suite			\
-	broken-mzscheme-test-suite		\
-	broken-ruby-test-suite			\
-	broken-ocaml-test-suite			\
-	broken-php4-test-suite			\
-	broken-pike-test-suite			\
-	broken-csharp-test-suite		\
-	broken-modula3-test-suite		\
-	broken-lua-test-suite			\
-	broken-allegrocl-test-suite		\
-	broken-clisp-test-suite			\
-	broken-uffi-test-suite			\
-	broken-cffi-test-suite			\
-	broken-chicken-test-suite
-
-broken-%-test-suite:
-	@$(MAKE) -k -s check-$*-test-suite ACTION=broken
 
 #####################################################################
 # CLEAN
 #####################################################################
 
-clean: clean-objects clean-libfiles clean-examples clean-gifplot clean-test-suite
+clean: clean-objects clean-libfiles
 
 clean-objects: clean-source
 
@@ -269,31 +104,13 @@ clean-source:
 clean-libfiles:
 	@rm -f Lib/swigwarn.swg
 
-clean-examples:
-	@$(MAKE) -k -s check-examples ACTION=clean
-
-clean-gifplot:
-	@$(MAKE) -k -s check-gifplot ACTION=clean
-
-clean-test-suite:
-	@$(MAKE) -k -s check-test-suite ACTION=clean
-
-clean-%-examples:
-	@$(MAKE) -k -s check-$*-examples ACTION=clean
-
-clean-%-test-suite:
-	@$(MAKE) -k -s check-$*-test-suite ACTION=clean
-
-clean-%-gifplot:
-	@$(MAKE) -k -s check-$*-gifplot ACTION=clean
-
 #####################################################################
 # DISTCLEAN
 #####################################################################
 
 DISTCLEAN-DEAD = config.status config.log config.cache swig.spec Makefile mkmf.log libtool
 
-distclean: distclean-objects clean-examples clean-gifplot distclean-test-suite distclean-dead
+distclean: distclean-objects distclean-dead
 
 distclean-objects: distclean-source
 
@@ -301,38 +118,6 @@ distclean-source:
 	@echo dist cleaning Source
 	@cd $(SOURCE) && $(MAKE) -s distclean
 	@rm -f $(TARGET)
-
-distclean-test-suite:
-	@echo dist cleaning Examples/test-suite
-	@$(MAKE) -k -s noskip-test-suite ACTION=distclean
-
-noskip-test-suite:				\
-	noskip-tcl-test-suite			\
-	noskip-perl5-test-suite			\
-	noskip-python-test-suite		\
-	noskip-java-test-suite			\
-	noskip-guilescm-test-suite		\
-	noskip-guile-test-suite			\
-	noskip-mzscheme-test-suite		\
-	noskip-ruby-test-suite			\
-	noskip-ocaml-test-suite			\
-	noskip-php4-test-suite			\
-	noskip-pike-test-suite			\
-	noskip-csharp-test-suite		\
-	noskip-lua-test-suite			\
-	noskip-allegrocl-test-suite		\
-	noskip-clisp-test-suite			\
-	noskip-uffi-test-suite			\
-	noskip-cffi-test-suite			\
-	noskip-chicken-test-suite
-
-noskip-%-test-suite:
-	dir="Examples/test-suite/$*";					\
-	if [ ! -d $$dir ]; then						\
-	  echo warning: cannot $(ACTION) $* test-suite "(no dir $$dir)";\
-	else								\
-	  (cd $$dir && $(MAKE) -k -s $(ACTION))				\
-	fi;
 
 distclean-dead:
 	rm -f $(DISTCLEAN-DEAD)
@@ -418,7 +203,7 @@ uninstall-main:
 
 uninstall-lib:
 	@echo "Uninstalling the SWIG library"
-	rm -rf $(DESTDIR)$(SWIG_LIB)/
+	rm -rf $(DESTDIR)$(DATA_DIR)/
 
 ############################################################################
 # DIST and other maintenance
