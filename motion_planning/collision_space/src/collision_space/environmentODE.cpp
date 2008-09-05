@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
 #include <collision_space/environmentODE.h>
 #include <algorithm>
@@ -391,7 +391,7 @@ void collision_space::EnvironmentModelODE::addPointCloud(unsigned int n, const d
     m_collide2.setup();
 }
 
-void collision_space::EnvironmentModelODE::addPlane(double a, double b, double c, double d)
+void collision_space::EnvironmentModelODE::addStaticPlane(double a, double b, double c, double d)
 {
     dGeomID g = dCreatePlane(m_spaceBasicGeoms, a, b, c, d);
     m_basicGeoms.push_back(g);

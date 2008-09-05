@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
 #ifndef COLLISION_SPACE_ENVIRONMENT_MODEL_
 #define COLLISION_SPACE_ENVIRONMENT_MODEL_
@@ -45,7 +45,13 @@
 
 /** @htmlinclude ../../manifest.html
 
-    A class describing an environment for a kinematic robot */
+    A class describing an environment for a kinematic robot. This is
+    the base (abstract) definition. Different implementations are
+    possible. The class is aware of a certain set of fixed
+    (addStatic*) obstacles that never change, a set of obstacles that
+    can change (removed by clearObstacles()) and a set of kinematic
+    robots. The class provides functionality for checking whether a
+    given robot is in collision. */
 
 namespace collision_space
 {
@@ -75,7 +81,7 @@ namespace collision_space
 	virtual void addPointCloud(unsigned int n, const double* points, double radius = 0.01) = 0;
 
 	/** Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
-	virtual void addPlane(double a, double b, double c, double d) = 0;
+	virtual void addStaticPlane(double a, double b, double c, double d) = 0;
 
 	/** Add a robot model. Ignore robot links if their name is not specified in the string vector */
 	virtual unsigned int addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links);

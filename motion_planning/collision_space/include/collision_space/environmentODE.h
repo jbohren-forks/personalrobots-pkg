@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
 #ifndef COLLISION_SPACE_ENVIRONMENT_MODEL_ODE_
 #define COLLISION_SPACE_ENVIRONMENT_MODEL_ODE_
@@ -84,7 +84,7 @@ namespace collision_space
 	virtual void addPointCloud(unsigned int n, const double *points, double radius = 0.01); 
 
 	/** Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
-	virtual void addPlane(double a, double b, double c, double d);
+	virtual void addStaticPlane(double a, double b, double c, double d);
 
 	/** Add a robot model. Ignore robot links if their name is not specified in the string vector */
 	virtual unsigned int addRobotModel(planning_models::KinematicModel *model, const std::vector<std::string> &links);

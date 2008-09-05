@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
 /**
 
@@ -94,7 +94,7 @@ namespace planning_node_util
 	    else
 		m_collisionSpace = new collision_space::EnvironmentModelODE();
 	    m_collisionSpace->setSelfCollision(true);
-	    m_collisionSpace->addPlane(0.0, 0.0, 1.0, -0.01);
+	    m_collisionSpace->addStaticPlane(0.0, 0.0, 1.0, -0.01);
 	    
 	    m_sphereSize = 0.03;
 	    

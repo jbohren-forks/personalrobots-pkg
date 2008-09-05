@@ -32,13 +32,21 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
 #ifndef COLLISION_SPACE_UTIL_
 #define COLLISION_SPACE_UTIL_
 
 #include <libTF/Pose3D.h>
 #include <cmath>
+
+/**
+   This set of classes allows quickly detecting whether a given point
+   is inside an object or not. Only basic (simple) types of objects
+   are supported: spheres, cylinders, boxes. This capability is useful
+   when removing points from inside the robot (when the robot sees its
+   arms, for example).
+*/
 
 namespace collision_space
 {
@@ -78,7 +86,7 @@ namespace collision_space
 	    
 	    bool containsPoint(double x, double y, double z) const
 	    {
-	      libTF::Position pt(x, y, z);
+		libTF::Position pt(x, y, z);
 		return containsPoint(pt);
 	    }
 	    
@@ -129,8 +137,8 @@ namespace collision_space
 	    }
 	    
 	    libTF::Position m_center;
-	    double                  m_radius;	
-	    double                  m_radius2;	
+	    double          m_radius;	
+	    double          m_radius2;	
 	    
 	};
         
@@ -178,6 +186,8 @@ namespace collision_space
 		
 		m_pose.getPosition(m_center);
 		
+		// this can probably be optimized by simply taking 
+		// the columns of the transform matrix 
 		m_normalH.x = m_normalH.y = 0.0; m_normalH.z = 1.0;
 		m_pose.applyToVector(m_normalH);
 		
@@ -193,10 +203,10 @@ namespace collision_space
 	    libTF::Vector   m_normalB1;
 	    libTF::Vector   m_normalB2;
 	    
-	    double                  m_length;
-	    double                  m_length2;	
-	    double                  m_radius;	
-	    double                  m_radius2;
+	    double          m_length;
+	    double          m_length2;	
+	    double          m_radius;	
+	    double          m_radius2;
 	};
 	
 	

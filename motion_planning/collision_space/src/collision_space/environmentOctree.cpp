@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \Author Ioan Sucan, Matei Ciocarlie */
+/** \author Ioan Sucan, Matei Ciocarlie */
 
 #include <collision_space/environmentOctree.h>
 
@@ -148,7 +148,7 @@ const scan_utils::Octree<char>* collision_space::EnvironmentModelOctree::getOctr
     return &m_octree;    
 }
 
-void collision_space::EnvironmentModelOctree::addPlane(double a, double b, double c, double d)
+void collision_space::EnvironmentModelOctree::addStaticPlane(double a, double b, double c, double d)
 {
     fprintf(stderr, "Octree collision checking does not support planes\n");    
 }
