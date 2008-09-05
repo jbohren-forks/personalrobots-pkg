@@ -56,17 +56,8 @@ public:
 							planning_node_util::NodeRobotModel(dynamic_cast<ros::node*>(this), robot_model)
     {
 	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 1);
-
-	m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
-	m_haveBasePos = false;
-	subscribe("localizedpose", m_localizedPose, &PlanKinematicPath::localizedPoseCallback, 1);
     }
   
-    bool haveBasePos(void) const
-    {
-	return m_haveBasePos;
-    }
-    
     void initialState(robot_msgs::KinematicState &state)
     {
 	state.set_vals_size(45);
@@ -74,8 +65,7 @@ public:
 	    state.vals[i] = 0.0;
 	for (unsigned int i = 0 ; i < 3 ; ++i)
 	    state.vals[i] = m_basePos[i];
-    }
-    
+    }    
     
     void runTestBase(void)
     {
@@ -197,8 +187,6 @@ public:
     void performCall(robot_srvs::KinematicPlanState::request &req)
     {	
 	robot_srvs::KinematicPlanState::response res;
-	robot_msgs::DisplayKinematicPath dpath;
-	dpath.frame_id = "FRAMEID_MAP";
 	
 	if (ros::service::call("plan_kinematic_path_state", req, res))
 	{
@@ -339,21 +327,6 @@ public:
 	else
 	    fprintf(stderr, "Service 'set_....' failed\n");	 
     }
-    
-    
-private: 
-
-    void localizedPoseCallback(void)
-    {
-	m_basePos[0] = m_localizedPose.pos.x;
-	m_basePos[1] = m_localizedPose.pos.y;
-	m_basePos[2] = m_localizedPose.pos.th;
-	m_haveBasePos = true;
-    }
-    
-    std_msgs::RobotBase2DOdom m_localizedPose;
-    double                    m_basePos[3];
-    bool                      m_haveBasePos;
     
 };
 
