@@ -17,6 +17,7 @@ const double cam_fx =  535.985,  cam_fy = 535.071;
 const double cam_x0 =  335.106,  cam_y0 = 260.255;
 const double cam_k1 = -0.30187,  cam_k2 = 0.038429;
 const double cam_k3 =  0.000102, cam_k4 = -0.001886;
+const int LASER_THRESH = 10;
 
 class Centroid
 {
@@ -39,7 +40,7 @@ int main(int argc, char **argv)
   assert(dir);
   vector<string> filenames;
   for (struct dirent *e = readdir(dir); e; e = readdir(dir))
-    if (strstr(e->d_name, "jpg"))
+    if (strstr(e->d_name, "pgm"))
       filenames.push_back(e->d_name);
   sort(filenames.begin(), filenames.end());
 
@@ -105,7 +106,7 @@ int main(int argc, char **argv)
       {
         int cur  = CV_IMAGE_ELEM(image,     unsigned char, row, col);
         int prev = CV_IMAGE_ELEM(ref_image, unsigned char, row, col);
-        if (cur - prev > 15) // the laser always injects light
+        if (cur - prev > LASER_THRESH) // the laser always injects light
           CV_IMAGE_ELEM(diff_image, unsigned char, row, col) = cur - prev;
         else
           CV_IMAGE_ELEM(diff_image, unsigned char, row, col) = 0;
