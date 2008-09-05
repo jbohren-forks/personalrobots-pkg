@@ -1,4 +1,4 @@
-prefix      = /u/jfaust
+prefix      = /u/jfaust/ros/ros-pkg/3rdparty/wxswig
 exec_prefix = ${prefix}
 RANLIB      = ranlib
 OPT         =
