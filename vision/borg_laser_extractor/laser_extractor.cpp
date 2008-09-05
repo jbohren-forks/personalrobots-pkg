@@ -13,7 +13,6 @@ using std::string;
 using std::deque;
 
 const size_t IMAGE_QUEUE_SIZE = 15;
-
 const double cam_fx =  535.985,  cam_fy = 535.071;
 const double cam_x0 =  335.106,  cam_y0 = 260.255;
 const double cam_k1 = -0.30187,  cam_k2 = 0.038429;
@@ -81,6 +80,10 @@ int main(int argc, char **argv)
     cvRemap(image, remapped, mapX, mapY);
     cvReleaseImage(&image);
     image = remapped;
+    if (i == 0)
+    {
+      cvSaveImage("first_image.jpg", image);
+    }
     /*
     cvShowImage("borg", image);
     cvWaitKey(10);
