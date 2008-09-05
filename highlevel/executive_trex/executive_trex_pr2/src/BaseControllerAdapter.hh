@@ -22,11 +22,14 @@ namespace TREX {
 
   private:
     // Message and message handler for base odometry observations
-    virtual void handleCallback();
-    virtual void dispatch(const TokenId& goal);
-    virtual void registerSubscribers();
-    virtual void registerPublishers();
-    virtual void getObservations(std::vector<Observation*>& obsBuffer);
+    void handleCallback();
+    void handleRequest(const TokenId& goal);
+    void handleRecall(const TokenId& goal);
+    void registerSubscribers();
+    void registerPublishers();
+    void getObservations(std::vector<Observation*>& obsBuffer);
+    void dispatchRequest(const TokenId& goal, bool enabled);
+
     std_msgs::Planner2DState m_msgPlanner2DState;
     State m_state;
     int m_lastPublished;

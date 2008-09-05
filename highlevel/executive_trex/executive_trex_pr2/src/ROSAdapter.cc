@@ -52,12 +52,6 @@ namespace TREX {
 
   void ROSAdapter::handleNextTick(){}
 
-  void ROSAdapter::handleRequest(const TokenId& token){
-    m_node->lock();
-    dispatch(token);
-    m_node->unlock();
-  }
-
   void ROSAdapter::handleCallback(){
     debugMsg("ROSAdapter:handleCallback", nameString() << "Update received");
     m_node->lock();

@@ -10,24 +10,29 @@ namespace TREX {
   void BaseControllerAdapter::handleCallback(){
     ROSAdapter::handleCallback();
 
+    // If we have already changed the state in this tick, we do not want to over-ride that. This will ensure we do not miss a state change
+    // where the goal to move is accompished almost instantly, for example if the robot is already at the goal.
+    if(m_lastUpdated == getCurrentTick() && m_state != BaseControllerAdapter::UNDEFINED)
+      return;
+
     if(m_msgPlanner2DState.active && m_state != BaseControllerAdapter::ACTIVE){
       m_state = BaseControllerAdapter::ACTIVE;
       m_lastUpdated = getCurrentTick();
+      debugMsg("BaseControllerAdapter", "Received transition to INACTIVE");
     }
     else if(!m_msgPlanner2DState.active && m_state != BaseControllerAdapter::INACTIVE){
       m_state = BaseControllerAdapter::INACTIVE;
       m_lastUpdated = getCurrentTick();
+      debugMsg("BaseControllerAdapter", "Received transition to INACTIVE");
     }
   }
 
   void BaseControllerAdapter::registerPublishers(){
-    static const size_t QUEUE_MAX(1000);
-    m_node->registerPublisher<std_msgs::Planner2DGoal>("goal", QUEUE_MAX);
+    m_node->registerPublisher<std_msgs::Planner2DGoal>("goal", QUEUE_MAX());
   }
 
   void BaseControllerAdapter::registerSubscribers(){
-    static const size_t QUEUE_MAX(1000);
-    m_node->registerSubscriber("state", m_msgPlanner2DState, &BaseControllerAdapter::handleCallback, this, QUEUE_MAX);
+    m_node->registerSubscriber("state", m_msgPlanner2DState, &BaseControllerAdapter::handleCallback, this, QUEUE_MAX());
   }
 
   /**
@@ -64,7 +69,15 @@ namespace TREX {
     m_lastPublished = m_lastUpdated;
   }
 
-  void BaseControllerAdapter::dispatch(const TokenId& goal){
+  void BaseControllerAdapter::handleRequest(const TokenId& goal){
+    dispatchRequest(goal, true);
+  }
+
+  void BaseControllerAdapter::handleRecall(const TokenId& goal){
+    dispatchRequest(goal, false);
+  }
+
+  void BaseControllerAdapter::dispatchRequest(const TokenId& goal, bool enabled){
     static const LabelStr MOVE_BASE_ACTIVE("MoveBase.Active");
     if(goal->getPredicateName() == MOVE_BASE_ACTIVE){
       const IntervalDomain& x = goal->getVariable("x")->lastDomain();
@@ -77,7 +90,7 @@ namespace TREX {
       msgGoal.goal.x = x.getSingletonValue();
       msgGoal.goal.y = y.getSingletonValue();
       msgGoal.goal.th= th.getSingletonValue();
-      msgGoal.enable = 1;
+      msgGoal.enable = enabled;
       m_node->publishMsg<std_msgs::Planner2DGoal>("goal", msgGoal);
     }
   }

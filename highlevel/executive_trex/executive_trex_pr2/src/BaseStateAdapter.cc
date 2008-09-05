@@ -8,8 +8,7 @@ namespace TREX {
   }
 
   void BaseStateAdapter::registerSubscribers(){
-    static const size_t QUEUE_MAX(1000);
-    m_node->registerSubscriber("localizedpose", m_msgRobotBase2DOdom, &BaseStateAdapter::handleCallback, this, QUEUE_MAX);
+    m_node->registerSubscriber("localizedpose", m_msgRobotBase2DOdom, &BaseStateAdapter::handleCallback, this, QUEUE_MAX());
   }
 
   /**

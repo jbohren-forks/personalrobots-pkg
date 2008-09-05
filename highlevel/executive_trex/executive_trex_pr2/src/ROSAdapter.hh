@@ -9,6 +9,7 @@ namespace TREX {
   class ROSAdapter: public Adapter {
   public:
     ROSAdapter(const LabelStr& agentName, const TiXmlElement& configData);
+
     virtual ~ROSAdapter();
 
     void handleInit(TICK initialTick, const std::map<double, ServerId>& serversByTimeline, const ObserverId& observer);
@@ -17,8 +18,6 @@ namespace TREX {
 
     bool synchronize();
 
-    void handleRequest(const TokenId& goal);
-
   private:
     bool isInitialized() const;
 
@@ -26,8 +25,8 @@ namespace TREX {
 
 
   protected:
+    static unsigned int QUEUE_MAX(){return 10;}
     virtual void handleCallback();
-    virtual void dispatch(const TokenId& goal){}
     virtual void registerSubscribers() {}
     virtual void registerPublishers() {}
     virtual void getObservations(std::vector<Observation*>& obsBuffer) = 0;
