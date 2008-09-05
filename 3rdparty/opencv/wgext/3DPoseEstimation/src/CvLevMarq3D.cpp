@@ -12,6 +12,8 @@ using namespace std;
 
 //#define DEBUG 1
 #define USE_UPDATEALT
+// define the following if the last three parameters is linear (e.g. shift parameters),
+// so as to speed up by skipping over unnecessary computation
 #define LAST3ISLIN
 
 // Please note that because the timing code is executed is called lots of lots of times
@@ -190,33 +192,9 @@ bool CvLevMarqTransform::constructTransformationMatrix(const CvMat *param, CvMyR
 	return constructRTMatrix(param, T);
 }
 
-#if 1
 bool CvLevMarqTransform::constructTransformationMatrices(const CvMat *param, CvMyReal delta){
 	return constructRTMatrices(param, delta);
 }
-#else
-
-bool CvLevMarqTransform::constructTransformationMatrices(const CvMat *param, CvMyReal delta) {
-	CvMyReal x  = cvmGet(param, 0, 0);
-	CvMyReal y  = cvmGet(param, 1, 0);
-	CvMyReal z  = cvmGet(param, 2, 0);
-	CvMyReal tx = cvmGet(param, 3, 0);
-	CvMyReal ty = cvmGet(param, 4, 0);
-	CvMyReal tz = cvmGet(param, 5, 0);
-
-	CvMat3X3<CvMyReal>::transformMatrix(x, y, z, tx, ty, tz, mRTData, 4, CvMat3X3<CvMyReal>::XYZ);
-
-	CvMyReal _param1[numParams];
-	CvMat param1 = cvMat(numParams, 1, CV_XF, _param1);
-	// transformation matrices for each parameter
-	for (int k=0; k<numParams; k++) {
-		cvCopy(param, &param1);
-		_param1[k] += delta;
-		constructTransformationMatrix(&param1, mFwdTData[k]);
-	}
-	return true;
-}
-#endif
 
 bool CvLevMarqTransform::optimize(CvMat *xyzs0, CvMat *xyzs1, CvMat *rot, CvMat* trans) {
 	bool status = true;
@@ -288,7 +266,7 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 		cout << "iteration: "<<i<<endl;
 #endif
 		if (i> defMaxTimesOfUpdates){
-			cout << "Rearch the max number of iteration that jdc can tolerate"<<endl;
+			cout << "Reach the max number of iteration that jdc can tolerate"<<endl;
 			double change = cvNorm(mLevMarq.param, mLevMarq.prevParam, CV_RELATIVE_L2);
 			cout << "norm diff of param:" << change<<endl;
 			cout << "error: "<< mLevMarq.errNorm<<","<<mLevMarq.prevErrNorm<<endl;
@@ -318,7 +296,7 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
     		double* JtErrData = _JtErr->data.db;
 
     		TIMERSTART(ConstructMatrices);
-    		// construct all the matirces need for JtJData JtErrData
+    		// construct all the matrices need for JtJData JtErrData
 	    	constructTransformationMatrices(param0, delta);
     		TIMEREND(ConstructMatrices);
 
@@ -333,25 +311,19 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 	        	CvMyReal _r0x;
 	        	CvMyReal _r0y;
 	        	CvMyReal _r0z;
-#if 0
-	        	computeResidue(&point0, &point1, &r0);
-	        	_r0x = _r0[0];
-	        	_r0y = _r0[1];
-	        	_r0z = _r0[2];
-#else
 	        	CvMyReal _p0x, _p0y, _p0z,  _p1x, _p1y, _p1z;
 	        	TIMERSTART2(Residue);
 //	        	xyzs0 and xyzs1's are inliers we copy. so we know
-//	        	how their data are orgainized
-#if 0
-	        	_p0x = cvmGet(xyzs0, j, 0);
-	        	_p0y = cvmGet(xyzs0, j, 1);
-	        	_p0z = cvmGet(xyzs0, j, 2);
+//	        	how their data are organized
+//				nevertheless the following 6 lines is equivalent to the following
+	        	// more readable code
+//	        	_p0x = cvmGet(xyzs0, j, 0);
+//	        	_p0y = cvmGet(xyzs0, j, 1);
+//	        	_p0z = cvmGet(xyzs0, j, 2);
 
-	        	_p1x = cvmGet(xyzs1, j, 0);
-	        	_p1y = cvmGet(xyzs1, j, 1);
-	        	_p1z = cvmGet(xyzs1, j, 2);
-#else
+//	        	_p1x = cvmGet(xyzs1, j, 0);
+//	        	_p1y = cvmGet(xyzs1, j, 1);
+//	        	_p1z = cvmGet(xyzs1, j, 2);
 	        	_p0x = *p0++;
 	        	_p0y = *p0++;
 	        	_p0z = *p0++;
@@ -359,16 +331,14 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 	        	_p1x = *p1++;
 	        	_p1y = *p1++;
 	        	_p1z = *p1++;
-#endif
 	        	TRANSFORMRESIDUE(mRTData, _p0x, _p0y, _p0z, _p1x, _p1y, _p1z, _r0x, _r0y, _r0z);
 	        	TIMEREND2(Residue);
-#endif
 
 	        	if (_errNorm) {
 	        		errNorm += _r0x*_r0x + _r0y*_r0y + _r0z*_r0z;
 	        	}
 
-	        	// compute the residues w.r.t. the fowarded parameters in
+	        	// compute the residues w.r.t. the forwarded parameters in
 	        	// each of the 6 component
 #ifdef LAST3ISLIN
 	        	// skip the last 3 params as they are linear, and so can be
@@ -377,17 +347,10 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 #else
 	    		for (int k=0; k<numParams; k++) {
 #endif
-#if 0
-	    			CvMat r1_k;
-	    			cvGetRow(&r1, &r1_k, k);
-
-	    			computeResidue(&point0, &point1, &mFwdT3x4[k], &r1_k);
-#else
 	    			TIMERSTART2(FwdResidue);
 		        	TRANSFORMRESIDUE(mFwdTData[k], _p0x, _p0y, _p0z, _p1x, _p1y, _p1z,
 		        			_r1[k*3], _r1[k*3+1], _r1[k*3+2]);
 		        	TIMEREND2(FwdResidue);
-#endif
 	    		}
 
 #ifdef DEBUG
@@ -437,7 +400,6 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 	    				JtJData[k*numParams + l] +=
 	    					_r1x*_r1[l*3+0] + _r1y*_r1[l*3+1] + _r1z*_r1[l*3+2];
 	    			}
-	    			// TODO: not sure if the following is correct
 	    			JtJData[k*numParams + 3] += _r1x;
 	    			JtJData[k*numParams + 4] += _r1y;
 	    			JtJData[k*numParams + 5] += _r1z;
@@ -532,16 +494,16 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
     				double _r0x, _r0y, _r0z;
     				TIMERSTART2(Residue);
     				//	        	xyzs0 and xyzs1's are inliers we copy. so we know
-    				//	        	how their data are orgainized
-#if 0
-    				CvMyReal _p0x = cvmGet(xyzs0, j, 0);
-    				CvMyReal _p0y = cvmGet(xyzs0, j, 1);
-    				CvMyReal _p0z = cvmGet(xyzs0, j, 2);
-
-    				CvMyReal _p1x = cvmGet(xyzs1, j, 0);
-    				CvMyReal _p1y = cvmGet(xyzs1, j, 1);
-    				CvMyReal _p1z = cvmGet(xyzs1, j, 2);
-#else
+    				//	        	how their data are organized
+    				// nevertheless the following 6 lines are equivalent to the following
+    				// more readable code
+//    				CvMyReal _p0x = cvmGet(xyzs0, j, 0);
+//    				CvMyReal _p0y = cvmGet(xyzs0, j, 1);
+//    				CvMyReal _p0z = cvmGet(xyzs0, j, 2);
+//
+//    				CvMyReal _p1x = cvmGet(xyzs1, j, 0);
+//    				CvMyReal _p1y = cvmGet(xyzs1, j, 1);
+//    				CvMyReal _p1z = cvmGet(xyzs1, j, 2);
     				CvMyReal _p0x = *p0++;
     				CvMyReal _p0y = *p0++;
     				CvMyReal _p0z = *p0++;
@@ -549,7 +511,7 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
     				CvMyReal _p1x = *p1++;
     				CvMyReal _p1y = *p1++;
     				CvMyReal _p1z = *p1++;
-#endif
+
     				TRANSFORMRESIDUE(mRTData, _p0x, _p0y, _p0z, _p1x, _p1y, _p1z, _r0x, _r0y, _r0z);
     				TIMEREND2(Residue);
 
@@ -670,7 +632,7 @@ bool CvLevMarqTransform::optimizeDefault(CvMat *xyzs0, CvMat *xyzs1, double _par
 	    	for (int k=0; k<numParams; k++){
 	    		for (int j=0; j<numPoints; j++){
 	    			for (int l=0; l<3; l++) {
-	    				// compute the jacobian
+	    				// TODO: compute the jacobian
 	    			}
 	    		}
 	    	}
