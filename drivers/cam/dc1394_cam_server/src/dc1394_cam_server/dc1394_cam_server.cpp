@@ -463,14 +463,6 @@ public:
 
         publish(cd.name + "/images", img_);
 
-        // This seemsl like a hack people are depending on.
-        if (count_ < cams_.size())
-        {
-          std_msgs::String cal_params;
-          cal_params.data = v->getCalParams();
-          publish(cd.name + string("/cal_params"), cal_params);
-        }
-
         if (mode == videre_cam::PROC_MODE_DISPARITY || mode == videre_cam::PROC_MODE_DISPARITY_RAW)
         {
 
@@ -541,10 +533,22 @@ public:
       serviceCam(*c);
 
     ros::Time now_time = ros::Time::now();
-    if (now_time > next_time_) {
+    if (now_time > next_time_)
+    {
       std::cout << count_ << " imgs/sec at " << now_time << std::endl;
       count_ = 0;
       next_time_ = next_time_ + ros::Duration(1,0);
+
+      // publish relevant cal params at 1 Hz
+      for (list<CamData>::iterator c = cams_.begin(); c != cams_.end(); c++)
+      {
+        if (c->cam_type == VIDERE)
+        {
+          std_msgs::String cal_params;
+          cal_params.data = ((videre_cam::VidereCam*)(c->cam))->getCalParams();
+          publish(c->name + string("/cal_params"), cal_params);
+        }
+      }
     }
 
     return true;
