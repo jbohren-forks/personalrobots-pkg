@@ -133,6 +133,14 @@ void EthercatHardware::init(char *interface)
   // Create HardwareInterface
   hw_ = new HardwareInterface(num_actuators);
   hw_->current_time_ = now();
+
+  // Initialize diagnostic data structures
+  diagnostic_message_.set_status_size(1 + num_slaves_);
+  diagnostic_message_.status[0].set_values_size(3);
+  for (unsigned int slave = 0; slave < num_slaves_; ++slave)
+  {
+    diagnostic_message_.status[1 + slave].set_values_size(1);
+  }
 }
 
 void EthercatHardware::initXml(TiXmlElement *config, MechanismControl &mc)
@@ -149,23 +157,21 @@ void EthercatHardware::initXml(TiXmlElement *config, MechanismControl &mc)
 
 void EthercatHardware::publishDiagnostics()
 {
-  robot_msgs::DiagnosticMessage diagnostics;
   vector<robot_msgs::DiagnosticStatus> status_vec;
 
   // Publish status of EtherCAT master
   {
-    robot_msgs::DiagnosticStatus master;
-    master.level = 0;
-    master.name = "EtherCAT Master";
-    master.message = "OK";
+    robot_msgs::DiagnosticStatus *master = diagnostic_message_.status;
+    master->level = 0;
+    master->name = "EtherCAT Master";
+    master->message = "OK";
 
-    vector<robot_msgs::DiagnosticValue> values_vec;
-    robot_msgs::DiagnosticValue value;
+    robot_msgs::DiagnosticValue *value = master->values;
 
     // Num devices
-    value.value = num_slaves_;
-    value.value_label = "EtherCAT devices";
-    values_vec.push_back(value);
+    value->value = num_slaves_;
+    value->value_label = "EtherCAT devices";
+    ++value;
 
     // Roundtrip
     double total = 0;
@@ -174,43 +180,34 @@ void EthercatHardware::publishDiagnostics()
       total += diagnostics_.iteration_[i].roundtrip_;
       diagnostics_.max_roundtrip_ = max(diagnostics_.max_roundtrip_, diagnostics_.iteration_[i].roundtrip_);
     }
-    value.value = total / 1000.0;
-    value.value_label = "Average roundtrip time";
-    values_vec.push_back(value);
+    value->value = total / 1000.0;
+    value->value_label = "Average roundtrip time";
+    ++value;
 
-    value.value = diagnostics_.max_roundtrip_;
-    value.value_label = "Maximum roundtrip time";
-    values_vec.push_back(value);
-
-    master.set_values_vec(values_vec);
-
-    status_vec.push_back(master);
+    value->value = diagnostics_.max_roundtrip_;
+    value->value_label = "Maximum roundtrip time";
+    ++value;
   }
 
   for (unsigned int slave = 0; slave < num_slaves_; ++slave)
   {
-    robot_msgs::DiagnosticStatus device;
-    vector<robot_msgs::DiagnosticValue> values_vec;
-    robot_msgs::DiagnosticValue value;
+    robot_msgs::DiagnosticStatus *device= diagnostic_message_.status + 1 + slave;
+    robot_msgs::DiagnosticValue *value = device->values;
 
     stringstream str;
     str << "EtherCAT Device #" << slave;
-    device.name = str.str();
+    device->name = str.str();
 
-    device.message = "OK";
-    device.level = 0;
+    device->message = "OK";
+    device->level = 0;
 
-    value.value = 10;
-    value.value_label = "Temperature";
-    values_vec.push_back(value);
-
-    device.set_values_vec(values_vec);
-    status_vec.push_back(device);
+    value->value = 10;
+    value->value_label = "Temperature";
+    value++;
   }
 
   // Publish status of each EtherCAT device
-  diagnostics.set_status_vec(status_vec);
-  publisher_.publish(diagnostics);
+  publisher_.publish(diagnostic_message_);
 }
 
 void EthercatHardware::update()
@@ -221,12 +218,16 @@ void EthercatHardware::update()
 
   // Convert HW Interface commands to MCB-specific buffers
   current = current_buffer_;
-  for (unsigned int i = 0; i < hw_->actuators_.size(); ++i)
+  for (unsigned int s = 0, a = 0; s < num_slaves_; ++s)
   {
-    hw_->actuators_[i]->state_.last_requested_effort_ = hw_->actuators_[i]->command_.effort_;
-    slaves_[i]->truncateCurrent(hw_->actuators_[i]->command_);
-    slaves_[i]->convertCommand(hw_->actuators_[i]->command_, current);
-    current += slaves_[i]->command_size_ + slaves_[i]->status_size_;
+    if (slaves_[s]->has_actuator_)
+    {
+      hw_->actuators_[a]->state_.last_requested_effort_ = hw_->actuators_[a]->command_.effort_;
+      slaves_[s]->truncateCurrent(hw_->actuators_[a]->command_);
+      slaves_[s]->convertCommand(hw_->actuators_[a]->command_, current);
+      current += slaves_[s]->command_size_ + slaves_[s]->status_size_;
+      ++a;
+    }
   }
 
   // Transmit process data
@@ -237,12 +238,16 @@ void EthercatHardware::update()
   // Convert status back to HW Interface
   current = current_buffer_;
   last = last_buffer_;
-  for (unsigned int i = 0; i < hw_->actuators_.size(); ++i)
+  for (unsigned int s = 0, a = 0; s < num_slaves_; ++s)
   {
-    slaves_[i]->verifyState(current);
-    slaves_[i]->convertState(hw_->actuators_[i]->state_, current, last);
-    current += slaves_[i]->command_size_ + slaves_[i]->status_size_;
-    last += slaves_[i]->command_size_ + slaves_[i]->status_size_;
+    if (slaves_[s]->has_actuator_)
+    {
+      slaves_[s]->verifyState(current);
+      slaves_[s]->convertState(hw_->actuators_[a]->state_, current, last);
+      current += slaves_[s]->command_size_ + slaves_[s]->status_size_;
+      last += slaves_[s]->command_size_ + slaves_[s]->status_size_;
+      ++a;
+    }
   }
 
   // Update current time

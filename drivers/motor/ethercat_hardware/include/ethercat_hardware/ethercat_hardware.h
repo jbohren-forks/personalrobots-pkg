@@ -107,6 +107,7 @@ private:
     } iteration_[1000];
     double max_roundtrip_;
   } diagnostics_;
+  robot_msgs::DiagnosticMessage diagnostic_message_;
 };
 
 #endif /* ETHERCAT_HARDWARE_H */
