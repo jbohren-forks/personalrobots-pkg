@@ -73,19 +73,22 @@ class Dorylus {
   DorylusDataset *dd_;
   string version_string_;
   int nWCs_;
+  unsigned int nClasses_;
 
   void loadDataset(DorylusDataset *dd);
   void normalizeWeights();
   void learnWC(int nCandidates);
-  float computeNewObjective(const weak_classifier& wc, const NEWMAT::Matrix& mmt, NEWMAT::Matrix** ppweights);
+  float computeNewObjective(const weak_classifier& wc, const NEWMAT::Matrix& mmt, NEWMAT::Matrix** ppweights = NULL);
   float computeObjective();
   void train(int nCandidates, int max_secs, int max_wcs);
   bool save(string filename);
   bool load(string filename);
-
+  vector<weak_classifier*> findActivatedWCs(const string &descriptor, const NEWMAT::Matrix &pt);
   NEWMAT::Matrix computeDatasetActivations(const weak_classifier& wc, const NEWMAT::Matrix& mmt);
+  NEWMAT::Matrix classify(object &obj, NEWMAT::Matrix **confidence = NULL);
+  float classify(DorylusDataset &dd);
   
- Dorylus() : dd_(NULL), nWCs_(0)
+ Dorylus() : dd_(NULL), nWCs_(0), nClasses_(0)
     {
       version_string_ = std::string("#DORYLUS CLASSIFIER LOG v0.1");
     }
