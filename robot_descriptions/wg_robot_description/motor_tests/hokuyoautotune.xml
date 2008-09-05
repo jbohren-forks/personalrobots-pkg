@@ -1,0 +1,32 @@
+<robot name="pr2">
+
+  <actuator name="single_motor">
+  </actuator>
+
+  <joint name="single_joint" type="revolute">
+    <limit min= "-0.785" max="1.48" effort="0.5292" velocity="1256.0"/>
+   <!-- safety code- disabled for auto-leveling-->
+<!--    <safety_limit_min spring_constant="4.0" safety_length="0.01" damping_constant="0.1"/>
+    <safety_limit_max spring_constant="4.0" safety_length="0.01" damping_constant="0.1"/>
+-->
+  </joint>
+
+  <transmission type="SimpleTransmission" name="single_transmission">
+    <actuator name="single_motor" />
+    <joint name="single_joint" />
+    <mechanicalReduction>6</mechanicalReduction>
+    <motorTorqueConstant>-.0538</motorTorqueConstant>
+    <pulsesPerRevolution>10000</pulsesPerRevolution>
+  </transmission>
+
+  <controller name="single_controller" topic="laser_tune" type="JointAutotunerNode">
+    <autotune file_path="HokuyoAutotuning">
+      <cycles>5</cycles>
+      <amplitudeTolerance>0.05</amplitudeTolerance>
+      <periodTolerance>0.05</periodTolerance>
+      <relayEffortPercent>0.85</relayEffortPercent>
+    </autotune>
+    <joint name="single_joint">
+    </joint>
+  </controller>
+</robot>
