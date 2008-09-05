@@ -23,7 +23,10 @@ typedef struct
   NEWMAT::Matrix center;
   float theta;
   NEWMAT::Matrix vals;
+  int id; //to identify which was learned first, second, third, etc.
 } weak_classifier;
+
+string displayWeakClassifier(const weak_classifier &wc); 
 
 typedef struct 
 {
@@ -44,7 +47,8 @@ class DorylusDataset {
   vector<object> objs_;
   NEWMAT::Matrix ymc_;
   unsigned int nClasses_;
-  map<int, unsigned int> class_labels_; //label, nExamples with that label.
+  map<int, unsigned int> num_class_objs_; //label, nExamples with that label.
+  vector<int> classes_;
 
  DorylusDataset() : nClasses_(0)
   {
@@ -67,18 +71,86 @@ class Dorylus {
   NEWMAT::Matrix weights_; //nClasses x nTrEx.
   float objective_, objective_prev_, training_err_;
   DorylusDataset *dd_;
+  string version_string_;
+  int nWCs_;
 
   void loadDataset(DorylusDataset *dd);
   void normalizeWeights();
-  void learnWC(int nCandidates, float maxErr);
-  float computeNewObjective(weak_classifier wc);
+  void learnWC(int nCandidates);
+  float computeNewObjective(const weak_classifier& wc, const NEWMAT::Matrix& mmt, NEWMAT::Matrix** ppweights);
   float computeObjective();
+  void train(int nCandidates, int max_secs, int max_wcs);
+  bool save(string filename);
+  bool load(string filename);
+
+  NEWMAT::Matrix computeDatasetActivations(const weak_classifier& wc, const NEWMAT::Matrix& mmt);
   
-  
- Dorylus() : dd_(NULL)
+ Dorylus() : dd_(NULL), nWCs_(0)
     {
+      version_string_ = std::string("#DORYLUS CLASSIFIER LOG v0.1");
     }
 
 };
 
+class Function {
+ public:
+  Dorylus *d_;
+  const NEWMAT::Matrix &mmt_;
+  int label_;
+
+ Function(Dorylus* d, const NEWMAT::Matrix &mmt, int label) : 
+  d_(d), mmt_(mmt), label_(label)
+  {
+  }
+
+  float operator()(float x) const {
+    float val = 0.0;
+    for(unsigned int m=0; m<d_->dd_->objs_.size(); m++) {
+      val += d_->weights_(label_+1, m+1) * exp(-d_->dd_->ymc_(label_+1, m+1) * mmt_(1, m+1) * x);
+    }
+    return val;
+  }
+
+};
+
+
+class Gradient : public Function {
+ public:
+ Gradient(Dorylus* d, const NEWMAT::Matrix &mmt, int label) : Function(d, mmt, label)
+  {
+  }
+
+  float operator()(float x) const {
+    float val = 0.0;
+    for(unsigned int m=0; m<d_->dd_->objs_.size(); m++) {
+      //      cout << "m " << m << endl;
+/*       cout << d_->weights_.Nrows() << endl; */
+/*       cout << d_->dd_->ymc_.Nrows() << endl; */
+/*       cout << mmt_.Nrows() << endl; */
+/*       cout << label_ << endl; */
+      val += d_->weights_(label_+1, m+1) * exp(-d_->dd_->ymc_(label_+1, m+1) * mmt_(1, m+1) * x) * (-d_->dd_->ymc_(label_+1, m+1) * mmt_(1, m+1));
+    }
+    return val;
+  }
+};
+
+
+class Hessian : public Function {
+ public:
+
+ Hessian(Dorylus* d, const NEWMAT::Matrix &mmt, int label) : Function(d, mmt, label)
+  {
+  }
+
+  float operator()(float x) const {
+    float val = 0.0;
+    for(unsigned int m=0; m<d_->dd_->objs_.size(); m++) {
+      val += d_->weights_(label_+1, m+1) * exp(-d_->dd_->ymc_(label_+1, m+1) * mmt_(1, m+1) * x) * (mmt_(1, m+1) * mmt_(1, m+1));
+    }
+    return val;
+  }
+};
+
+
+float newtonSingle(const Function &fcn, const Gradient &grad, const Hessian &hes, float minDelta);
 #endif

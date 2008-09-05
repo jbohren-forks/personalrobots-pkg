@@ -280,7 +280,12 @@ int main(int argc, char **argv) {
     cout << dn.dd_.status() << endl;
     
     dn.d_.loadDataset(&dn.dd_);
-    dn.d_.learnWC(10, 0);
+    dn.d_.train(5, 100000, 2);
+    dn.d_.save("dorytest.dory");
+    Dorylus d2;
+    d2.load("dorytest.dory");
+    d2.save("dorytest2.dory");
+    //dn.d_.learnWC(50);
   }
 
   else {
