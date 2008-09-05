@@ -31,33 +31,38 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#ifndef MAP_CELL_H_
-#define MAP_CELL_H_
+#ifndef MAP_GRID_H_
+#define MAP_GRID_H_
 
-#include "trajectory_inc.h"
+#include <vector>
+#include <iostream>
+#include "assert.h"
+#include <trajectory_rollout/trajectory_inc.h>
 
-//Information contained in each map cell
-class MapCell{
+#include <trajectory_rollout/map_cell.h>
+
+//A grid of MapCells
+class MapGrid{
   public:
-    //default constructor
-    MapCell();
+    MapGrid(unsigned rows, unsigned cols);
 
-    MapCell(const MapCell& mc);
-    MapCell(const MapCell* mc);
+    //cells will be accessed by (row, col)
+    MapCell& operator() (unsigned row, unsigned col);
+    MapCell operator() (unsigned row, unsigned col) const;
 
-    //cell index in the grid map
-    unsigned ci, cj;
+    ~MapGrid(){}
 
-    //distance to planner's path
-    double path_dist;
+    MapGrid(const MapGrid& mg);
+    MapGrid& operator= (const MapGrid& mg);
 
-    //distance to goal
-    double goal_dist;
+    unsigned rows_, cols_;
+    std::vector<MapCell> map_;
 
-    //occupancy state (-1 = free, 0 = unknown, 1 = occupied)
-    int occ_state;
+    //lower left corner of grid in world space
+    double origin_x, origin_y;
 
-    //compares two cells based on path_dist so we can use stl priority queues
-    const bool operator< (const MapCell& mc) const;
+    //grid scale in meters/cell
+    double scale;
 };
+
 #endif

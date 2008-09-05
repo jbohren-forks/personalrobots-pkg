@@ -31,18 +31,20 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
+#include <gtest/gtest.h>
 #include <iostream>
 #include <vector>
 #include <utility>
-#include "map_cell.h"
-#include "map_grid.h"
-#include "trajectory_controller.h"
+#include <trajectory_rollout/map_cell.h>
+#include <trajectory_rollout/map_grid.h>
+#include <trajectory_rollout/trajectory_controller.h>
+#include <math.h>
+
 
 using namespace std;
 
 //make sure that we are getting the path distance map expected
-bool testPathDistance(){
-  bool pass = true;
+TEST(TrajectoryController, correctPathDistance){
   vector<pair<int, int> > path;
   
   MapGrid mg(6, 6);
@@ -69,11 +71,22 @@ bool testPathDistance(){
   mg(0,5).occ_state = 1;
 
   //create a trajectory_controller
-  TrajectoryController tc(mg, path, 1, 1, 1);
+  TrajectoryController tc(mg, path, 1, 1, 1, 2.0, 20, 20);
 
   tc.computePathDistance();
 
+  //test enough of the 36 cell grid to be convinced
+  EXPECT_FLOAT_EQ(tc.map_(0,0).path_dist, 2.0);
+  EXPECT_FLOAT_EQ(tc.map_(1,0).path_dist, 1.0);
+  EXPECT_FLOAT_EQ(tc.map_(2,4).path_dist, DBL_MAX);
+  EXPECT_FLOAT_EQ(tc.map_(5,0).path_dist, sqrt(2));
+  EXPECT_FLOAT_EQ(tc.map_(0,4).path_dist, 1.0);
+  EXPECT_FLOAT_EQ(tc.map_(3,3).path_dist, 0.0);
+  EXPECT_FLOAT_EQ(tc.map_(0,1).path_dist, 2.0);
+  EXPECT_FLOAT_EQ(tc.map_(0,5).path_dist, DBL_MAX);
+
   //print the results
+  /*
   cout.precision(2);
   for(int k = tc.map_.rows_ - 1 ; k >= 0; --k){
     for(unsigned int m = 0; m < tc.map_.cols_; ++m){
@@ -81,12 +94,11 @@ bool testPathDistance(){
     }
     cout << endl;
   }
-  return pass;
+  */
 }
 
 //sanity check to make sure the grid functions correctly
-bool testGrid(){
-  bool pass = true;
+TEST(MapGrid, properGridConstruction){
   MapGrid mg(10, 10);
   MapCell mc;
 
@@ -100,20 +112,14 @@ bool testGrid(){
 
   for(int i = 0; i < 10; ++i){
     for(int j = 0; j < 10; ++j){
-      if(!mg(i, j).ci == i || !mg(i, j).cj == j)
-        pass = false;
+      EXPECT_FLOAT_EQ(mg(i, j).ci, i);
+      EXPECT_FLOAT_EQ(mg(i, j).cj, j);
     }
   }
-  return pass;
 }
 
 //test some stuff
 int main(int argc, char** argv){
-  cout << "Test Grid: ";
-  testGrid() ? cout << "PASS" : cout << "FAIL";
-  cout << endl;
-
-  cout << "Test Path Distance: " << endl;
-  testPathDistance() ? cout << "PASS" : cout << "FAIL";
-  cout << endl;
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
