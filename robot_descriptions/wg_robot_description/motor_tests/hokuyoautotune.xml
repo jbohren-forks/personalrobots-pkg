@@ -20,11 +20,11 @@
   </transmission>
 
   <controller name="single_controller" topic="laser_tune" type="JointAutotunerNode">
-    <autotune file_path="HokuyoAutotuning">
+    <autotune file_path="HokuyoAutotuningVelocity" mode="velocity">
       <cycles>5</cycles>
-      <amplitudeTolerance>0.05</amplitudeTolerance>
-      <periodTolerance>0.05</periodTolerance>
-      <relayEffortPercent>0.85</relayEffortPercent>
+      <amplitudeTolerance>0.15</amplitudeTolerance>
+      <periodTolerance>0.15</periodTolerance>
+      <relayEffortPercent>1</relayEffortPercent>
     </autotune>
     <joint name="single_joint">
     </joint>
