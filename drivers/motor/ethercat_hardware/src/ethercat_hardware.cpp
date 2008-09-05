@@ -254,8 +254,8 @@ void EthercatHardware::update()
 
   if (++count == 1000)
   {
-    count = 0;
     publishDiagnostics();
+    count = 0;
   }
 }
 
@@ -264,7 +264,11 @@ EthercatHardware::configSlave(EtherCAT_SlaveHandler *sh)
 {
   static int startAddress = 0x00010000;
 
-  EthercatDevice *p = DeviceFactory::Instance().CreateObject(sh->get_product_code());
-  p->configure(startAddress, sh);
+  EthercatDevice *p = NULL;
+  try {
+    p = DeviceFactory::Instance().CreateObject(sh->get_product_code());
+    p = p->configure(startAddress, sh);
+  } catch (Loki::DefaultFactoryError<unsigned int, EthercatDevice>::Exception) {
+  }
   return p;
 }

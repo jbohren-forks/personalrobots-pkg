@@ -93,7 +93,7 @@ void WG05MbxCmd::build(unsigned address, unsigned length, bool write_nread, void
   data_[length] = checksum;
 }
 
-void WG05::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
+EthercatDevice *WG05::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 {
   printf("configure WG05\n");
   EC_FMMU *statusFMMU = new EC_FMMU(startAddress, // Logical start address
@@ -152,9 +152,13 @@ void WG05::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 
   sh->set_pd_config(pd);
 
-  mailboxRead(sh, WG05ConfigInfo::CONFIG_INFO_BASE_ADDR, &config_info_, sizeof(config_info_));
+  if (mailboxRead(sh, WG05ConfigInfo::CONFIG_INFO_BASE_ADDR, &config_info_, sizeof(config_info_)) != 0)
+  {
+    return NULL;
+  }
 
-  max_current_ = config_info_.absolute_current_limit_ * config_info_.nominal_current_scale_;
+  max_current_ = 1.5;
+  return this;
 }
 
 static const double motor_torque_constant = -0.0603;
@@ -251,45 +255,35 @@ void WG05::verifyState(unsigned char *buffer)
 int WG05::readData(EtherCAT_SlaveHandler *sh, EC_UINT address, void* buffer, EC_UINT length)
 {
   unsigned char *p = (unsigned char *)buffer;
-  EC_UINT bytes_read = 0;
-  while (bytes_read < length)
+  EtherCAT_DataLinkLayer *dll = EtherCAT_DataLinkLayer::instance();
+  EC_Logic *logic = EC_Logic::instance();
+
+  // Build read telegram, use slave position
+  APRD_Telegram status(logic->get_idx(), // Index
+                       -sh->get_ring_position(), // Slave position on ethercat chain (auto increment address)
+                       address, // ESC physical memory address (start address)
+                       logic->get_wkc(), // Working counter
+                       length, // Data Length,
+                       p); // Buffer to put read result into
+
+  // Put read telegram in ethercat/ethernet frame
+  EC_Ethernet_Frame frame(&status);
+
+  // Send/Recv data from slave
+  if (!dll->txandrx(&frame))
   {
-    static const int MAX_READ_AMOUNT = 1200;
-
-    EC_UINT chunk_size = min(length - bytes_read, MAX_READ_AMOUNT);
-
-    EtherCAT_DataLinkLayer *dll = EtherCAT_DataLinkLayer::instance();
-    EC_Logic *logic = EC_Logic::instance();
-
-    // Build read telegram, use slave position
-    APRD_Telegram status(logic->get_idx(), // Index
-                         -sh->get_ring_position(), // Slave position on ethercat chain (auto increment address)
-                         address + bytes_read, // ESC physical memory address (start address)
-                         logic->get_wkc(), // Working counter
-                         chunk_size, // Data Length,
-                         p + bytes_read); // Buffer to put read result into
-
-    // Put read telegram in ethercat/ethernet frame
-    EC_Ethernet_Frame frame(&status);
-
-    // Send/Recv data from slave
+    status.set_wkc(logic->get_wkc());
+    status.set_idx(logic->get_idx());
     if (!dll->txandrx(&frame))
     {
-      status.set_wkc(logic->get_wkc());
-      status.set_idx(logic->get_idx());
-      if (!dll->txandrx(&frame))
-      {
-        return -1;
-      }
+      return -1;
     }
+  }
 
-    // In some cases (clearing status mailbox) this is expected to occur
-    if (status.get_wkc() != 1)
-    {
-      return -2;
-    }
-
-    bytes_read += chunk_size;
+  // In some cases (clearing status mailbox) this is expected to occur
+  if (status.get_wkc() != 1)
+  {
+    return -2;
   }
 
   return 0;
@@ -298,44 +292,35 @@ int WG05::readData(EtherCAT_SlaveHandler *sh, EC_UINT address, void* buffer, EC_
 // Writes <length> amount of data from ethercat slave <sh_hub> from physical address <address> to <buffer>
 int WG05::writeData(EtherCAT_SlaveHandler *sh, EC_UINT address, void const* buffer, EC_UINT length)
 {
-  unsigned char const *p = (unsigned char const *)buffer;
-  EC_UINT bytes_written = 0;
-  while (bytes_written < length)
+  unsigned char *p = (unsigned char *)buffer;
+  EtherCAT_DataLinkLayer *m_dll_instance = EtherCAT_DataLinkLayer::instance();
+  EC_Logic *m_logic_instance = EC_Logic::instance();
+
+  // Build write telegram, use slave position
+  APWR_Telegram command(m_logic_instance->get_idx(), // Index
+                        -sh->get_ring_position(), // Slave position on ethercat chain (auto increment address) (
+                        address, // ESC physical memory address (start address)
+                        m_logic_instance->get_wkc(), // Working counter
+                        length, // Data Length,
+                        p); // Buffer to put read result into
+
+  // Put read telegram in ethercat/ethernet frame
+  EC_Ethernet_Frame frame(&command);
+
+  // Send/Recv data from slave
+  if (!m_dll_instance->txandrx(&frame))
   {
-    static const int MAX_WRITE_AMOUNT = 1200; 
-    EC_UINT chunk_size = min(length - bytes_written, MAX_WRITE_AMOUNT);
-
-    EtherCAT_DataLinkLayer *m_dll_instance = EtherCAT_DataLinkLayer::instance();
-    EC_Logic *m_logic_instance = EC_Logic::instance();
-
-    // Build write telegram, use slave position
-    APWR_Telegram command(m_logic_instance->get_idx(), // Index
-                          -sh->get_ring_position(), // Slave position on ethercat chain (auto increment address) (
-                          address + bytes_written, // ESC physical memory address (start address)
-                          m_logic_instance->get_wkc(), // Working counter
-                          chunk_size, // Data Length,
-                          p + bytes_written); // Buffer to put read result into
-
-    // Put read telegram in ethercat/ethernet frame
-    EC_Ethernet_Frame frame(&command);
-
-    // Send/Recv data from slave
+    command.set_wkc(m_logic_instance->get_wkc());
+    command.set_idx(m_logic_instance->get_idx());
     if (!m_dll_instance->txandrx(&frame))
     {
-      command.set_wkc(m_logic_instance->get_wkc());
-      command.set_idx(m_logic_instance->get_idx());
-      if (!m_dll_instance->txandrx(&frame))
-      {
-        return -1;
-      }
+      return -1;
     }
+  }
 
-    if (command.get_wkc() != 1)
-    {
-      return -2;
-    }
-
-    bytes_written += chunk_size;
+  if (command.get_wkc() != 1)
+  {
+    return -2;
   }
 
   return 0;

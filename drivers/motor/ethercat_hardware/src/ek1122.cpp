@@ -36,10 +36,11 @@
 
 static bool reg = DeviceFactory::Instance().Register(EK1122::PRODUCT_CODE, deviceCreator<EK1122>);
 
-void EK1122::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
+EthercatDevice *EK1122::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 {
   sh->set_fmmu_config( new EtherCAT_FMMU_Config(0) );
   sh->set_pd_config( new EtherCAT_PD_Config(0) );
+  return this;
 }
 
 void EK1122::convertCommand(ActuatorCommand &command, unsigned char *buffer)

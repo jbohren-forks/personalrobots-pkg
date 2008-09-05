@@ -135,7 +135,7 @@ class WG05 : public EthercatDevice
 public:
   WG05() : EthercatDevice(true, sizeof(WG05Command), sizeof(WG05Status)) {}
 
-  void configure(int &start_address, EtherCAT_SlaveHandler *sh);
+  EthercatDevice *configure(int &start_address, EtherCAT_SlaveHandler *sh);
 
   void convertCommand(ActuatorCommand &command, unsigned char *buffer);
   void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);

@@ -41,13 +41,14 @@ class EK1122 : public EthercatDevice
 {
 public:
   EK1122() : EthercatDevice() {}
-  void configure(int &start_address, EtherCAT_SlaveHandler *sh);
+  EthercatDevice *configure(int &start_address, EtherCAT_SlaveHandler *sh);
   void convertCommand(ActuatorCommand &command, unsigned char *buffer);
   void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
   void truncateCurrent(ActuatorCommand &command);
   void verifyState(unsigned char *buffer);
 
   enum {PRODUCT_CODE = 0x4622c52};
+
 };
 
 #endif /* EK1122_H */
