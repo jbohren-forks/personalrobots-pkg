@@ -81,6 +81,9 @@ int main(int argc, char **argv)
     cvRemap(image, remapped, mapX, mapY);
     cvReleaseImage(&image);
     image = remapped;
+    char dumpfn[500];
+    sprintf(dumpfn, "img%d_remap.jpg", i);
+    cvSaveImage(dumpfn, image);
     if (i == 0)
     {
       cvSaveImage("first_image.jpg", image);
