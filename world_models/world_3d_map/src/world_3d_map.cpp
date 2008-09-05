@@ -182,6 +182,8 @@ private:
 	planning_node_util::NodeRobotModel::stateUpdate();
 	if (m_kmodel)
 	    m_kmodel->computeTransforms(m_robotState->getParams());
+	if (m_kmodelSimple)
+	    m_kmodelSimple->computeTransforms(m_robotStateSimple->getParams());
     }
     
     void pointCloudCallback(void)
@@ -414,8 +416,9 @@ private:
 	return cloudF;
     }
     
-    /* Remove invalid floating point values and strip channel iformation.
-     * Also keep a certain ratio of the cloud information only */
+    /** Remove invalid floating point values and strip channel
+     *  iformation.  Also keep a certain ratio of the cloud information
+     *  only. Works with pointclouds in FRAMEID_ROBOT or FRAMEID_MAP */
     std_msgs::PointCloudFloat32* filter0(const std_msgs::PointCloudFloat32 &cloud, double frac = 1.0)
     {
 	std_msgs::PointCloudFloat32 *copy = new std_msgs::PointCloudFloat32();
@@ -435,6 +438,9 @@ private:
 	return copy;	
     }    
     
+    /** Remove points from the cloud if the robot sees parts of
+	itself. Works for pointclouds in FRAMEID_ROBOT \todo make the
+	comment true, separate function in 2*/
     std_msgs::PointCloudFloat32* filter1(const std_msgs::PointCloudFloat32 &cloud)
     {
 	std_msgs::PointCloudFloat32 *copy = new std_msgs::PointCloudFloat32();

@@ -92,7 +92,9 @@ namespace planning_node_util
 	{
 	    m_urdf = NULL;
 	    m_kmodel = NULL;
+	    m_kmodelSimple = NULL;
 	    m_robotState = NULL;
+	    m_robotStateSimple = NULL;
 	    m_node = node;
 	    m_basePos[0] = m_basePos[1] = m_basePos[2] = 0.0;
 	    m_robotModelName = robot_model;
@@ -110,8 +112,12 @@ namespace planning_node_util
 		delete m_urdf;
 	    if (m_robotState)
 		delete m_robotState;
+	    if (m_robotStateSimple)
+		delete m_robotStateSimple;
 	    if (m_kmodel)
 		delete m_kmodel;
+	    if (m_kmodelSimple)
+		delete m_kmodelSimple;
 	}
 	
 	void setRobotDescriptionFromData(const char *data)
@@ -138,14 +144,22 @@ namespace planning_node_util
 		delete m_urdf;
 	    if (m_kmodel)
 		delete m_kmodel;
+	    if (m_kmodelSimple)
+		delete m_kmodelSimple;
 	    
 	    m_urdf = file;
 	    m_kmodel = new planning_models::KinematicModel();
 	    m_kmodel->setVerbose(false);
 	    m_kmodel->build(*file);
+
+	    m_kmodelSimple = new planning_models::KinematicModel();
+	    m_kmodelSimple->setVerbose(false);
+	    m_kmodelSimple->build(*file);
 	    
 	    m_robotState = m_kmodel->newStateParams();
 	    m_robotState->setAll(0.0);
+	    m_robotStateSimple = m_kmodelSimple->newStateParams();
+	    m_robotStateSimple->setAll(0.0);
 	}
 	
 	virtual void loadRobotDescription(void)
@@ -164,6 +178,8 @@ namespace planning_node_util
 	{
 	    if (m_kmodel)
 		m_kmodel->defaultState();
+	    if (m_kmodelSimple)
+		m_kmodelSimple->defaultState();
 	}
 	
 	bool loadedRobot(void) const
@@ -232,6 +248,15 @@ namespace planning_node_util
 		    double pos = m_mechanismState.joint_states[i].position;
 		    m_robotState->setParams(&pos, m_mechanismState.joint_states[i].name);
 		}
+	    }	 
+	    if (m_robotStateSimple)
+	    {
+		unsigned int n = m_mechanismState.get_joint_states_size();
+		for (unsigned int i = 0 ; i < n ; ++i)
+		{
+		    double pos = m_mechanismState.joint_states[i].position;
+		    m_robotStateSimple->setParams(&pos, m_mechanismState.joint_states[i].name);
+		}
 	    }
 	    m_haveMechanismState = true;
 	    stateUpdate();
@@ -264,13 +289,18 @@ namespace planning_node_util
 	bool                                          m_haveMechanismState;
 	
 	robot_desc::URDF                             *m_urdf;
-	planning_models::KinematicModel              *m_kmodel;
+	planning_models::KinematicModel              *m_kmodel;         // MAP frame
+	planning_models::KinematicModel              *m_kmodelSimple;   // ROBOT frame
 	
 	std::string                                   m_robotModelName;
 	double                                        m_basePos[3];
 	
+	/** The complete robot state (MAP frame) */
 	planning_models::KinematicModel::StateParams *m_robotState;
 	bool                                          m_haveState;
+
+	/** The robot state without the base position. The robot is at the origin (ROBOT frame) */
+	planning_models::KinematicModel::StateParams *m_robotStateSimple;
 	
     };
      
