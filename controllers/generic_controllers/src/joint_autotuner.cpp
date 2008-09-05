@@ -38,7 +38,6 @@
 using namespace std;
 using namespace controller;
 #define POSITION 1
-#define DEBUG 1
 ROS_REGISTER_CONTROLLER(JointAutotuner)
 
 JointAutotuner::JointAutotuner()
@@ -97,12 +96,10 @@ bool JointAutotuner::initXml(mechanism::Robot *robot, TiXmlElement *config)
     fprintf(stderr, "JointAutotuner could not find filepath \n");
     return false;
   }
-  std::cout<<"FOO!\n";
   num_cycles_ = atoi(f->FirstChildElement("cycles")->GetText()); 
   amplitude_tolerance_ = atof(f->FirstChildElement("amplitudeTolerance")->GetText());
   period_tolerance_ = atof(f->FirstChildElement("periodTolerance")->GetText());
   relay_effort_percent_ = atof(f->FirstChildElement("relayEffortPercent")->GetText());
-  std::cout<<"BAR!\n";
   relay_height_ = relay_effort_percent_ * joint_->effort_limit_;
   #ifdef DEBUG
     printf("AUTO : Relay:%f\n",relay_height_);
