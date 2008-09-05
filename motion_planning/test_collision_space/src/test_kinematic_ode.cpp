@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
 /** Test program for displaying and testing ODE collision spaces and
     kinematic models */
@@ -121,7 +121,15 @@ int main(int argc, char **argv)
     
     model->setVerbose(true);
     model->build(file);
-    env->addRobotModel(model);
+    
+    std::vector<planning_models::KinematicModel::Link*> links;
+    model->getLinks(links);
+
+    std::vector<std::string> linkNames;
+    for (unsigned int i =0 ; i < links.size() ; ++i)
+	linkNames.push_back(links[i]->name);
+    
+    env->addRobotModel(model, linkNames);
     model->printModelInfo();
     
     currentParam = new double[model->stateDimension];
