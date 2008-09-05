@@ -96,6 +96,8 @@ bool JointAutotuner::initXml(mechanism::Robot *robot, TiXmlElement *config)
     fprintf(stderr, "JointAutotuner could not find filepath \n");
     return false;
   }
+  
+  tune_velocity_ = !strcmp(f->Attribute("mode"),"velocity");
   num_cycles_ = atoi(f->FirstChildElement("cycles")->GetText()); 
   amplitude_tolerance_ = atof(f->FirstChildElement("amplitudeTolerance")->GetText());
   period_tolerance_ = atof(f->FirstChildElement("periodTolerance")->GetText());
@@ -135,109 +137,122 @@ double JointAutotuner::getTime()
 
 void JointAutotuner::update()
 {
-  #ifdef POSITION
-  double position = joint_->position_;
-  double time = getTime();
-  if(current_state_==START)//Read crossing point
-  {
-    crossing_point_ = joint_->position_;
-    current_state_ = NEGATIVE_PEAK;
-  }
-  //Scan for transitions
-  if(current_state_==POSITIVE_PEAK && position<crossing_point_) //Transition negative
-  {
-    current_state_=NEGATIVE_PEAK;
-  }
-  else if (current_state_==NEGATIVE_PEAK && position>crossing_point_) //Transition to next period
-  {
-    current_state_ = POSITIVE_PEAK;
-    period_ = time-cycle_start_time_;
-    amplitude_ = (positive_peak_-negative_peak_)/2; //Record amplitude
-    
-    if( (fabs(amplitude_-last_amplitude_) < amplitude_tolerance_*last_amplitude_) &&(fabs(period_-last_period_)<period_tolerance_*last_period_))//If the two peaks match closely
-    {     
-        successful_cycles_++; //increment successful cycles
-        if(successful_cycles_>=num_cycles_) 
-        { 
-            joint_->commanded_effort_ = 0;
-            writeGainValues(period_,amplitude_,relay_height_);
-            #ifdef DEBUG
-              printf("AUTO : DONE! Period: %f Amplitude: %f\n", period_, amplitude_);
-            #endif
-          current_state_ = DONE; //Done testing
-        }
-     }
-    else successful_cycles_ = 0; //Otherwise, reset if we're varying too much
-   
-    //Reset for next period
-    positive_peak_ = 0.0;
-    negative_peak_ = 0.0;
-    cycle_start_time_ = time;
-    last_period_ = period_;
-    last_amplitude_ = amplitude_;
-  }
+  if(tune_velocity_)
+  { 
+    double velocity = joint_->velocity_;
+    double time = getTime();
+    if(current_state_==START)//Read crossing point
+      {
+        current_state_ = NEGATIVE_PEAK;
+      }
 
-  //Update amplitude measures
-  if(current_state_ == POSITIVE_PEAK)
-  {
-    if(position > positive_peak_) positive_peak_ = position;
-    //If looking for positive peak, set positive h
-    joint_->commanded_effort_ = -relay_height_;
-  }
-  else if(current_state_ == NEGATIVE_PEAK)
-  {    
-    if(position<negative_peak_) negative_peak_ = position;
-    //If looking for negative peak, set negative h
-    joint_->commanded_effort_ = relay_height_;
-  }
-  #else 
-  double velocity = joint_->velocity_;
-  double time = getTime();
-  //Scan for transitions
-  if(current_state_==POSITIVE_PEAK && velocity<0) //Transition negative
-  {
-    current_state_=NEGATIVE_PEAK;
-  }
-  else if (current_state_==NEGATIVE_PEAK && velocity>0) //Transition to next period
-  {
-    current_state_ = POSITIVE_PEAK;
-    period_ = time-cycle_start_time_;
-    amplitude_ = (positive_peak_-negative_peak_)/2; //Record amplitude
-    
+    //Scan for transitions
+    if(current_state_==POSITIVE_PEAK && velocity<0) //Transition negative
+    {
+      current_state_=NEGATIVE_PEAK;
+    }
+    else if (current_state_==NEGATIVE_PEAK && velocity>0) //Transition to next period
+    {
+      current_state_ = POSITIVE_PEAK;
+      period_ = time-cycle_start_time_;
+      amplitude_ = (positive_peak_-negative_peak_)/2; //Record amplitude
       
-    if( (fabs(amplitude_-last_amplitude_) < amplitude_tolerance_*last_amplitude_) &&(fabs(period_-last_period_)<period_tolerance*last_period_))//If the two peaks match closely
-    {     
-        successful_cycles_++; //increment successful cycles
-        if(successful_cycles_>=num_cycles) 
-        { 
-          current_state_ = DONE; //Done testing
-        }
-     }
-    else successful_cycles_ = 0; //Otherwise, reset if we're varying too much
-   
-    //Reset for next period
-    positive_peak_ = 0.0;
-    negative_peak_ = 0.0;
-    cycle_start_time_ = time;
-    last_period_ = period_;
-    last_amplitude_ = amplitude_;
+        
+      if( (fabs(amplitude_-last_amplitude_) < amplitude_tolerance_*last_amplitude_) &&(fabs(period_-last_period_)<period_tolerance_*last_period_))//If the two peaks match closely
+      {     
+          successful_cycles_++; //increment successful cycles
+          if(successful_cycles_>=num_cycles_) 
+          { 
+            current_state_ = DONE; //Done testing
+            joint_->commanded_effort_ = 0;
+              writeGainValues(period_,amplitude_,relay_height_);
+              #ifdef DEBUG
+                printf("AUTO : DONE! Period: %f Amplitude: %f\n", period_, amplitude_);
+              #endif
+          }
+       }
+      else successful_cycles_ = 0; //Otherwise, reset if we're varying too much
+     
+      //Reset for next period
+      positive_peak_ = 0.0;
+      negative_peak_ = 0.0;
+      cycle_start_time_ = time;
+      last_period_ = period_;
+      last_amplitude_ = amplitude_;
+    }
+  
+    //Update amplitude measures
+    if(current_state_ == POSITIVE_PEAK)
+    {
+      if(velocity > positive_peak_) positive_peak_ = velocity;
+      //If looking for positive peak, set positive h
+      joint_->commanded_effort_ = -relay_height_;
+    }
+    else if(current_state_ == NEGATIVE_PEAK)
+    {    
+      if(velocity<negative_peak_) negative_peak_ = velocity;
+      //If looking for negative peak, set negative h
+      joint_->commanded_effort_ = relay_height_;
+    }    
   }
-
-  //Update amplitude measures
-  if(current_state_ == POSITIVE_PEAK)
+  else
   {
-    if(velocity > positive_peak_) positive_peak_ = velocity;
-    //If looking for positive peak, set positive h
-    joint_->commanded_effort_ = -relay_height_;
-  }
-  else if(current_state_ == NEGATIVE_PEAK)
-  {    
-    if(velocity<negative_peak_) negative_peak_ = velocity;
-    //If looking for negative peak, set negative h
-    joint_->commanded_effort_ = relay_height_;
-  }
+      double position = joint_->position_;
+      double time = getTime();
+      if(current_state_==START)//Read crossing point
+      {
+        crossing_point_ = joint_->position_;
+        current_state_ = NEGATIVE_PEAK;
+      }
+      //Scan for transitions
+       if(current_state_==POSITIVE_PEAK && position<crossing_point_) //Transition negative
+      {
+       current_state_=NEGATIVE_PEAK;
+      }
+      else if (current_state_==NEGATIVE_PEAK && position>crossing_point_) //Transition to next period
+      {
+      current_state_ = POSITIVE_PEAK;
+      period_ = time-cycle_start_time_;
+      amplitude_ = (positive_peak_-negative_peak_)/2; //Record amplitude
+      
+      if( (fabs(amplitude_-last_amplitude_) < amplitude_tolerance_*last_amplitude_) &&(fabs(period_-last_period_)<period_tolerance_*last_period_))//If the two peaks match closely
+      {     
+          successful_cycles_++; //increment successful cycles
+          if(successful_cycles_>=num_cycles_) 
+          { 
+              joint_->commanded_effort_ = 0;
+              writeGainValues(period_,amplitude_,relay_height_);
+              #ifdef DEBUG
+                printf("AUTO : DONE! Period: %f Amplitude: %f\n", period_, amplitude_);
+              #endif
+            current_state_ = DONE; //Done testing
+          }
+       }
+      else successful_cycles_ = 0; //Otherwise, reset if we're varying too much
+     
+      //Reset for next period
+      positive_peak_ = 0.0;
+      negative_peak_ = 0.0;
+      cycle_start_time_ = time;
+      last_period_ = period_;
+      last_amplitude_ = amplitude_;
+    }
+  
+    //Update amplitude measures
+    if(current_state_ == POSITIVE_PEAK)
+    {
+      if(position > positive_peak_) positive_peak_ = position;
+      //If looking for positive peak, set positive h
+      joint_->commanded_effort_ = -relay_height_;
+    }
+    else if(current_state_ == NEGATIVE_PEAK)
+    {    
+      if(position<negative_peak_) negative_peak_ = position;
+      //If looking for negative peak, set negative h
+      joint_->commanded_effort_ = relay_height_;
+    }
+  } 
 
-  #endif
 }
 
 void JointAutotuner::writeGainValues(double period, double amplitude, double relay_height)
@@ -257,6 +272,10 @@ void JointAutotuner::writeGainValues(double period, double amplitude, double rel
   std::ofstream datafile;
   datafile.open (file_path_);
   datafile<<"Autotuning result for joint: "<<joint_->name_<<"\n";
+  if(tune_velocity_) datafile<<"Velocity Mode\n";
+  else datafile<<"Position Mode\n";
+  
+  
   datafile<<"Kp:"<<Kp<<"\n";
   datafile<<"Ki:"<<Ki<<"\n";
   datafile<<"Kd:"<<Kd<<"\n";

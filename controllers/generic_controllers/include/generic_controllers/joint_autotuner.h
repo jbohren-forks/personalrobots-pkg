@@ -122,6 +122,7 @@ public:
   AutoControlState current_state_;
  
 private:
+  bool tune_velocity_; /**<If true, uses velocity to tune. Otherwise uses position>*/
   mechanism::Joint* joint_;  /**< Joint we're controlling.> */
   Pid pid_controller_;       /**< Internal PID controller.> */
   double last_time_;         /**< Last time stamp of update.> */
