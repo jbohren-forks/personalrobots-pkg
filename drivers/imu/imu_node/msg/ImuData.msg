@@ -1,3 +1,3 @@
 Header header
-Point3DFloat32 accel
-Point3DFloat32 angrate
+std_msgs/Point3DFloat32 accel
+std_msgs/Point3DFloat32 angrate

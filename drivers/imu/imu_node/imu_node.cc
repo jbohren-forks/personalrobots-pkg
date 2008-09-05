@@ -78,7 +78,7 @@ Reads the following parameters from the parameter server
 #include "ros/time.h"
 #include "self_test/self_test.h"
 
-#include "std_msgs/ImuData.h"
+#include "imu_node/ImuData.h"
 #include "std_msgs/EulerAngles.h"
 
 using namespace std;
@@ -87,7 +87,7 @@ class ImuNode: public ros::node
 {
 public:
   MS_3DMGX2::IMU imu;
-  std_msgs::ImuData reading;
+  imu_node::ImuData reading;
   std_msgs::EulerAngles euler;
 
   string port;
@@ -105,7 +105,7 @@ public:
   
   ImuNode() : ros::node("imu"), count(0), self_test_(this)
   {
-    advertise<std_msgs::ImuData>("imu_data", 100);
+    advertise<imu_node::ImuData>("imu_data", 100);
     advertise<std_msgs::EulerAngles>("euler_angles", 100);
 
     param("~port", port, string("/dev/ttyUSB0"));
