@@ -128,6 +128,8 @@ public:
       ObjectClass oclass(istr);
       insert(oclass);
     }
+
+    /// @todo ensure that the user did not misspecify the number of objects
   }
 
   /**

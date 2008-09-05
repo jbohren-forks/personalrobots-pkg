@@ -1,11 +1,12 @@
 #ifndef __FEAT_GRAPH_H__
 #define __FEAT_GRAPH_H__
 
-#define H_BINS 50
+#define H_BINS 70
 #define S_BINS 50
-#define V_BINS 50
+#define V_BINS 30
 #define THETA_BINS 30
-#define MAG_BINS 30
+#define MAG_BINS 20
+//#define N_CHAN_FEAT 3		/* number of "channel" features */
 
 #define IMAGE_MAX_VAL 255
 
@@ -55,6 +56,13 @@ class FeatureGraphExtractor {
 
   const IplImage* getContourImage();
 
+  /**
+     Returns a vector of blobs in which adjacent blobs 
+     with the same labels are merged.
+   */
+  void getMergedBlobs(const std::vector<int>& labeling,
+		      std::vector<blobStat>& blobStats);
+
   /*
   static int numNodeFeatures() { return H_BINS*S_BINS*V_BINS + 1; }
   static int numEdgeFeatures() { return 2*numNodeFeatures() + 1; }
@@ -67,6 +75,7 @@ class FeatureGraphExtractor {
   vector<pair<int, int> > edgeList;
   IplImage *contourImage;
   UndirectedFeatureGraph<FM> *fgraph;
+  int nNodeFeat;
 
   void makeAdjacencyGraph();
 

@@ -171,6 +171,8 @@ public:
 	       const ObjectSet& objSet,
 	       const std::vector<int>& labeling, 
 	       const std::vector<blobStat>& blobStats) {
+    static int counter = 0;
+
     IplImage* hsvResult = cvCreateImage(cvGetSize(rgbImage), 8, 3);
 
     cvCvtColor(rgbImage, hsvResult, CV_BGR2HSV);
@@ -193,9 +195,16 @@ public:
 
     cvCvtColor(hsvResult, rgbResult, CV_HSV2BGR);
 
+
+
+    cvNamedWindow("Sans labels", 0);
+    cvShowImage("Sans labels", rgbResult);
+
+
+
     // add text labels
     CvFont font;
-    cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 0.25, 0.5);
+    cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 0.5, 1.0);
 
     for (int bi = 0; bi < (int)labeling.size(); bi++) {
       int label = labeling[bi];
@@ -211,6 +220,14 @@ public:
 		blobMean, &font, cvScalar(255, 255, 255));
     }
 
+    if (getenv("oSaveLabelings")) {
+      char fname[255];
+      snprintf(fname, sizeof(fname), "segmented%05d.jpg", counter);
+      cvSaveImage(fname, rgbResult);
+      snprintf(fname, sizeof(fname), "original%05d.jpg", counter);
+      cvSaveImage(fname, rgbImage);
+      counter++;
+    }
 
     cvNamedWindow(wname, 0);
     cvShowImage(wname, rgbResult);

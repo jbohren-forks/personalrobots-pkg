@@ -348,7 +348,7 @@ relabelNodesToBinary(const vector<vector<int> >& vlabels,
       else if (scope1.find(oclass) != scope1.end())
 	newLabels.push_back(1);
       else
-	throw "Node in neither scope";
+	throw "Node in neither scope.  Incorrect # of objects in object set?";
     }
 
     vnewLabels.push_back(newLabels);

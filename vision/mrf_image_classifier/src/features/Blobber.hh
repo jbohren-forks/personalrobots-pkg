@@ -70,6 +70,37 @@ public:
      @return A vector of blob statistics
    */
   virtual std::vector<blobStat> getBlobStatsCopy() = 0;
+
+  /*
+      Merges adjacent blobs with the same label.  
+  void mergeBlobs(const std::vector<int>& labelingOld,
+		  const std::vector<blobStat>& blobStatsOld,
+		  const std::vector<std::pair<int,int> >& edgeList,
+		  std::vector<int>& labelingNew,
+		  std::vector<blobStat>& blobStatsNew);
+   */
 };
+
+/*
+void Blobber::
+mergeBlobs(const std::vector<int>& labelingOld,
+	   const std::vector<blobStat>& blobStatsOld,
+	   const std::vector<std::pair<int,int> >& edgeList,
+	   std::vector<int>& labelingNew,
+	   std::vector<blobStat>& blobStatsNew) {
+  using namespace std;  
+  
+  vector<pair<int,int> > newEdges;
+  bool mergedSomething = false;
+  for (vector<pair<int,int> >::iterator it = edgeList.begin();
+       it != edgeList.end();
+       it++) {
+    pair<int,int> edge = *it;
+    if (labelingOld[edge.first] == labelingOld[edge.second]) {
+      
+    }
+  }
+}
+*/
 
 #endif

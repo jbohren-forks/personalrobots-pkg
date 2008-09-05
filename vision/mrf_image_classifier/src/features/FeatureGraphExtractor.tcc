@@ -30,7 +30,9 @@ FeatureGraphExtractor(const IplImage *iplImage) :
   blobber(iplImage),
   nNodes(blobber.numBlobs()),
   contourImage(NULL),
-  fgraph(NULL)
+  fgraph(NULL),
+  nNodeFeat(H_BINS + S_BINS + V_BINS + THETA_BINS + MAG_BINS + 1)
+  //  nNodeFeat(H_BINS + S_BINS + V_BINS + THETA_BINS + MAG_BINS + N_CHAN_FEAT + 1)
 {
   
 };
@@ -303,8 +305,6 @@ FM* FeatureGraphExtractor<FM>::
 getNodeFeaturesSeparateHist(SuperpixelBlobber &blobber) {
   boost::timer timer;
 
-  int nNodeFeat = H_BINS + S_BINS + V_BINS + THETA_BINS + MAG_BINS + 1;
-
   // make feature matrix
   FM *fmat = new FM(blobber.numBlobs(), nNodeFeat);
   
@@ -383,6 +383,19 @@ getNodeFeaturesSeparateHist(SuperpixelBlobber &blobber) {
     }
     blobNum++;
   }
+
+  /*
+  // calculate whole-channel features
+  CvScalar hMean = cvAvg(hPlane);
+  CvScalar sMean = cvAvg(sPlane);
+  CvScalar vMean = cvAvg(vPlane);
+  
+  for (int row = 0; row < fmat->rows(); row++) {
+    fmat->set(row, nNodeFeat-2, vMean.val[0] / 255);
+    fmat->set(row, nNodeFeat-3, sMean.val[0] / 255);
+    fmat->set(row, nNodeFeat-4, hMean.val[0] / 255);
+  }
+  */
 
   for (int row = 0; row < fmat->rows(); row++) 
     fmat->set(row, nNodeFeat-1, 1);
@@ -514,7 +527,7 @@ getEdgeFeatures(const SuperpixelBlobber &blobber,
   */
 
   // FIXME: don't hard-code this
-  int nNodeFeat = H_BINS + S_BINS + V_BINS + THETA_BINS + MAG_BINS + 1;
+  //  int nNodeFeat = H_BINS + S_BINS + V_BINS + THETA_BINS + MAG_BINS + 1;
   int nEdgeFeat = 2*nNodeFeat + 1;
 
   // make feature matrix
@@ -839,5 +852,4 @@ displayGraph(const IplImage* sourceImage,
   cvReleaseImage(&imdisp);
   cvReleaseImage(&temp);
 }
-
 
