@@ -120,14 +120,15 @@ void EthercatHardware::init(char *interface)
       {
         node->log(ros::FATAL, "Unable change to OP_STATE");
       }
-    } else {
+    }
+    else
+    {
       node->log(ros::FATAL, "Unable to configure slave #%d, product code: %d", slave, sh->get_product_code());
     }
   }
   buffers_ = new unsigned char[2 * buffer_size_];
   current_buffer_ = buffers_;
   last_buffer_ = buffers_ + buffer_size_;
-
 
   // Create HardwareInterface
   hw_ = new HardwareInterface(num_actuators);
@@ -148,21 +149,23 @@ void EthercatHardware::initXml(TiXmlElement *config, MechanismControl &mc)
 
 void EthercatHardware::publishDiagnostics()
 {
-    vector<robot_msgs::DiagnosticStatus> status_vec;
+  robot_msgs::DiagnosticMessage diagnostics;
+  vector<robot_msgs::DiagnosticStatus> status_vec;
 
-    // Publish status of EtherCAT master
+  // Publish status of EtherCAT master
+  {
     robot_msgs::DiagnosticStatus master;
     master.level = 0;
     master.name = "EtherCAT Master";
-    master.message = "all good";
+    master.message = "OK";
 
-    vector<robot_msgs::DiagnosticValue> value_vec;
+    vector<robot_msgs::DiagnosticValue> values_vec;
     robot_msgs::DiagnosticValue value;
 
     // Num devices
     value.value = num_slaves_;
     value.value_label = "EtherCAT devices";
-    value_vec.push_back(value);
+    values_vec.push_back(value);
 
     // Roundtrip
     double total = 0;
@@ -172,22 +175,42 @@ void EthercatHardware::publishDiagnostics()
       diagnostics_.max_roundtrip_ = max(diagnostics_.max_roundtrip_, diagnostics_.iteration_[i].roundtrip_);
     }
     value.value = total / 1000.0;
-    value.value_label= "Average roundtrip time";
-    value_vec.push_back(value);
+    value.value_label = "Average roundtrip time";
+    values_vec.push_back(value);
 
     value.value = diagnostics_.max_roundtrip_;
     value.value_label = "Maximum roundtrip time";
-    value_vec.push_back(value);
+    values_vec.push_back(value);
 
-    master.set_values_vec(value_vec);
-
+    master.set_values_vec(values_vec);
 
     status_vec.push_back(master);
+  }
 
-    // Publish status of each EtherCAT device
-    robot_msgs::DiagnosticMessage diagnostics;
-    diagnostics.set_status_vec(status_vec);
-    publisher_.publish(diagnostics);
+  for (unsigned int slave = 0; slave < num_slaves_; ++slave)
+  {
+    robot_msgs::DiagnosticStatus device;
+    vector<robot_msgs::DiagnosticValue> values_vec;
+    robot_msgs::DiagnosticValue value;
+
+    stringstream str;
+    str << "EtherCAT Device #" << slave;
+    device.name = str.str();
+
+    device.message = "OK";
+    device.level = 0;
+
+    value.value = 10;
+    value.value_label = "Temperature";
+    values_vec.push_back(value);
+
+    device.set_values_vec(values_vec);
+    status_vec.push_back(device);
+  }
+
+  // Publish status of each EtherCAT device
+  diagnostics.set_status_vec(status_vec);
+  publisher_.publish(diagnostics);
 }
 
 void EthercatHardware::update()
@@ -209,7 +232,7 @@ void EthercatHardware::update()
   // Transmit process data
   double start = now();
   em_->txandrx_PD(buffer_size_, current_buffer_);
-  diagnostics_.iteration_[count].roundtrip_ = now()-start;
+  diagnostics_.iteration_[count].roundtrip_ = now() - start;
 
   // Convert status back to HW Interface
   current = current_buffer_;
@@ -229,7 +252,8 @@ void EthercatHardware::update()
   current_buffer_ = last_buffer_;
   last_buffer_ = tmp;
 
-  if (++count == 1000) {
+  if (++count == 1000)
+  {
     count = 0;
     publishDiagnostics();
   }
