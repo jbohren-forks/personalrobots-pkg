@@ -1,6 +1,6 @@
 all: wxswig
 
-VERSION = SWIG-1.3.29
+VERSION = SWIG-1.3.29-wx
 WXSWIG_ROOT = $(shell rospack find wxswig)
 
 $(VERSION)/Makefile:

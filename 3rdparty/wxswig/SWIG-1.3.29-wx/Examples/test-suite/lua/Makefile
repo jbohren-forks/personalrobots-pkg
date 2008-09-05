@@ -4,7 +4,7 @@
 #######################################################################
 
 LANGUAGE     = lua
-LUA          = 
+LUA          = /usr/bin/lua
 SCRIPTSUFFIX = _runme.lua
 srcdir       = .
 top_srcdir   = ../../..
