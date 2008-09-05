@@ -1,6 +1,0 @@
-std_msgs/Planner2DGoal goal
-# stuck_time is how long we're willing to let the planner try before
-# deciding that it's just not going to find a path
-duration stuck_time
----
-string result

@@ -239,9 +239,6 @@ class WavefrontNode: public ros::node
     void doOneCycle();
     // Sleep for the remaining time of the cycle
     void sleep(double loopstart);
-    // Handle a navigation transaction
-    bool navToPointCB(wavefront_player::NavigateToPoint::request  &req,
-                      wavefront_player::NavigateToPoint::response &res);
     // Compare two poses, tell whether they are close enough to be
     // considered the same, with tolerance
     bool comparePoses(double x1, double y1, double a1,
@@ -387,7 +384,6 @@ WavefrontNode::WavefrontNode() :
   advertise<std_msgs::Polyline2D>("gui_path");
   advertise<std_msgs::Polyline2D>("gui_laser");
   advertise<std_msgs::BaseVel>("cmd_vel");
-  advertise_service("NavigateToPoint", &WavefrontNode::navToPointCB);
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived);
   subscribe("scan", laserMsg, &WavefrontNode::laserReceived);
 }
@@ -827,56 +823,3 @@ WavefrontNode::comparePoses(double x1, double y1, double a1,
     res = false;
   return(res);
 }
-
-bool WavefrontNode::navToPointCB(
-          wavefront_player::NavigateToPoint::request  &req,
-          wavefront_player::NavigateToPoint::response &res)
-{
-  printf("got new goal: (%f, %f, %f)\n", 
-         req.goal.goal.x, req.goal.goal.y, RTOD(req.goal.goal.th));
-
-  ros::Time start = ros::Time::now();
-
-  this->lock.lock();
-  // Got a new goal message; handle it
-  this->enable = req.goal.enable;
-  if(this->enable)
-  {
-    this->goal[0] = req.goal.goal.x;
-    this->goal[1] = req.goal.goal.y;
-    this->goal[2] = req.goal.goal.th;
-    this->planner_state = NEW_GOAL;
-  }
-  this->lock.unlock();
-
-  while((ros::Time::now() - start) < req.stuck_time)
-  {
-    this->lock.lock();
-    // Has our new goal has been taken up by the planner?
-    if(comparePoses(req.goal.goal.x,
-                    req.goal.goal.y,
-                    req.goal.goal.th,
-                    pstate.goal.x,
-                    pstate.goal.y,
-                    pstate.goal.th))
-    {
-      if(pstate.valid == 1)
-      {
-        res.result = "success";
-        this->lock.unlock();
-        return true;
-      }
-    }
-
-    this->lock.unlock();
-    usleep(100000); // spin here...
-  }
-
-  // In the failure case, we give up on this goal, on the assumption
-  // that the caller will come back with another, hopefully feasible, 
-  // goal
-  planner_state = NO_GOAL;
-  res.result = "failure";
-  return true;
-}
-
