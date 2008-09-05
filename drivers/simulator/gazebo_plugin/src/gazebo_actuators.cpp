@@ -73,13 +73,16 @@ void GazeboActuators::LoadChild(XMLConfigNode *node)
     return;
   }
 
-  // TODO: should look for the file relative to the path of the world file.
-  std::string filename = robot->GetString("filename", "", 1);
+  std::string filename = robot->GetFilename("filename", "", 1);
   printf("Loading %s\n", filename.c_str());
 
   TiXmlDocument doc(filename);
-  doc.LoadFile();
-  assert(doc.RootElement());
+  if (!doc.LoadFile())
+  {
+    fprintf(stderr, "Error: Could not load the gazebo actuators plugin's configuration file: %s\n",
+            filename.c_str());
+    abort();
+  }
   urdf::normalizeXml(doc.RootElement());
 
   // Pulls out the list of actuators used in the robot configuration.

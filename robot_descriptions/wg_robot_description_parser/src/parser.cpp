@@ -196,6 +196,10 @@ bool normalizeXml(TiXmlElement *xml)
 
   TiXmlElement *previous = NULL;  // tracks the element before elt
 
+  //------------------------------------------------------------
+  // Zeroeth Pass
+
+  // - Replaces include elements with the desired file
   while (elt)
   {
     if (elt->ValueStr() == std::string("include"))
@@ -243,7 +247,6 @@ bool normalizeXml(TiXmlElement *xml)
   // - Replaces insert_const_block elements with the corresponding xml tree.
   // - Replaces const strings with the actual values.
   // - Reduces mathematical expressions.
-  // - Replaces include elements with the desired file
   while (elt)
   {
     // Kills elt, if it's a const or const_block definition
@@ -266,30 +269,6 @@ bool normalizeXml(TiXmlElement *xml)
       {
         elt->Parent()->RemoveChild(elt);
         fprintf(stderr, "No const_block named \"%s\"\n", name);
-      }
-
-      elt = next_element(previous);
-    }
-    // Replaces elt if it's an include tag.
-    else if (elt->ValueStr() == std::string("include"))
-    {
-      std::string filename(elt->GetText());
-
-      // FIXME: get path of current xml node and use relative path for includes
-      std::string currentPath = getenv("MC_RESOURCE_PATH") ? getenv("MC_RESOURCE_PATH") : ".";
-      if (currentPath!="") filename = (currentPath+"/")+filename;
-
-      TiXmlDocument doc(filename);
-      doc.LoadFile();
-
-      if (!doc.RootElement())
-      {
-        fprintf(stderr, "Included file not found: %s\n", filename.c_str());
-        elt->Parent()->RemoveChild(elt);
-      }
-      else
-      {
-        replaceReference(&elt, doc.RootElement()->FirstChild());
       }
 
       elt = next_element(previous);
