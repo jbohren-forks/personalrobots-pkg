@@ -22,11 +22,11 @@ vector<double> T_stage_to_cam;
 // measured angle when laser is pointing straight ahead
 double laser_encoder_offset = 1.52; //1.5252; //1.4912; //85.0 * PI/180.0;
 // tilt of camera about x-axis (of laser frame)
-double laser_tilt = 0; //-0.0786; //1.4912; //-5.0 * PI/180.0;
+double laser_tilt = 15 * M_PI / 180.0; //-0.0786; //1.4912; //-5.0 * PI/180.0;
 // displacement of camera frame from laser in laser frame coord (in m)
-double dx = -0.1465;//1825; //1945; 
-double dy = 0; //0.1067; //4.2 * 2.54/100.;
-double dz = 0;//-0.16;//138; //0.114; //0.1742; //4.0 * 2.54/100.;
+double dx = -0.21;//115; //-0.1465;//1825; //1945; 
+double dy = -0.18;//21;//0; //0.1067; //4.2 * 2.54/100.;
+double dz = -0.10;//28;//-0.16;//138; //0.114; //0.1742; //4.0 * 2.54/100.;
 // angle to account for bracket holding laser not being exactly 90 degrees
 double laser_rotation = 0;//-0.0067; //0;//-0.0849;
 
@@ -88,8 +88,8 @@ vector<double> intrinsics(double xp, double yp)
   //double fx = 554.69171, fy = 555.16712;
   //double x0 = 321.04175, y0 = 260.40547;
   // measured by Morgan:
-  double fx = 580, fy = 580; //533.43634, fy = 532.25193;
-  double x0 = 320, y0 = 240; //329.769073, y0 = 265.015808; //335.106, y0 = 260.255;
+  double fx = 558.332947, fy = 559.151245;
+  double x0 = 317.075287, y0 = 255.558075;
 	
 // express the pixel ray in the camera frame
 	double xc = (xp - x0) / fx;
@@ -130,11 +130,11 @@ void generate_cloud()
 		// transform unit vector along the camera ray into laser frame
 		// rotate the laser plane normal from the moving motor frame to the stationary laser frame
 		update_laserang_transformation(pt.laser_ang * PI/180);
-		N = apply_rotation(N_laser_plane, R_laser_to_stage); //Rmotorzero2laser);
     // now rotate by the x-axis to account for the stage's axis of rotation
     // not being parallel ot the camera's y-axis (since the camera's principal
     // point is not dead-center on the imager)
-    N = apply_rotation(N, x_axis_rotation(laser_tilt));
+    N = apply_rotation(N_laser_plane, x_axis_rotation(laser_tilt));
+		N = apply_rotation(N, R_laser_to_stage); //Rmotorzero2laser);
 		double t = dot_product(p0,N) / dot_product(unit_ray, N);
 		for (size_t j = 0; j < 3; j++)
 			P[j] = t*unit_ray[j];
@@ -143,7 +143,7 @@ void generate_cloud()
     const double wx = P[0];
     const double wy =  cos(wrot) * P[1] + sin(wrot) * P[2];
     const double wz = -sin(wrot) * P[1] + cos(wrot) * P[2];
-    if (i == 90000)
+    if (i == 60000)
     {
       sample_x = wx;
       sample_y = wy;
@@ -212,37 +212,13 @@ void draw_plane()
   const float ty = dy;
   const float tz = dz;
   const float a = laser_encoder_offset - sample_ang;
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glColor4f(1, 0, 0, 0.2f);
-  vector<double> top_laser(3, 0), bot_laser(3, 0);
-  top_laser[1] = -5.0;
-  bot_laser[1] =  5.0;
-  top_laser[2] = 10.0;
-  bot_laser[2] = 10.0;
-  top_laser = apply_rotation(top_laser, z_axis_rotation(laser_rotation));
-  bot_laser = apply_rotation(bot_laser, z_axis_rotation(laser_rotation));
-  top_laser = apply_rotation(top_laser, y_axis_rotation(a));
-  bot_laser = apply_rotation(bot_laser, y_axis_rotation(a));
-  glBegin(GL_TRIANGLES);
-    const float tri_len = 10.0f;
-    const float tri_height = 5.0f;
-    glVertex3f(tx, ty, tz);
-    glVertex3f(tx + top_laser[0], ty + top_laser[1], tz + top_laser[2]);
-    glVertex3f(tx + bot_laser[0], ty + bot_laser[1], tz + bot_laser[2]);
-    //glVertex3f(tx, ty,     tz);
-    //glVertex3f(tx + -tri_len * sin(a), ty + tri_height, tz + tri_len * cos(a));
-    //glVertex3f(tx + -tri_len * sin(a), ty - tri_height, tz + tri_len * cos(a));
-  glEnd();
-  glDisable(GL_BLEND);
-
+  
   glColor3f(0,1,0);
   glPointSize(5.0);
   glBegin(GL_POINTS);
     glVertex3f(sample_x, sample_y, sample_z);
   glEnd();
   glPointSize(1.0);
-
 
   const float line_len = 10.0f;
   const double wrot = 30 * M_PI / 180.0;
@@ -255,6 +231,32 @@ void draw_plane()
                line_len * sy,
                line_len * sz);
   glEnd();
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glColor4f(1, 0, 0, 0.2f);
+  vector<double> top_laser(3, 0), bot_laser(3, 0);
+  top_laser[1] = -15.0;
+  bot_laser[1] =  15.0;
+  top_laser[2] = 10.0;
+  bot_laser[2] = 10.0;
+  top_laser = apply_rotation(top_laser, z_axis_rotation(laser_rotation));
+  bot_laser = apply_rotation(bot_laser, z_axis_rotation(laser_rotation));
+  top_laser = apply_rotation(top_laser, x_axis_rotation(laser_tilt));
+  bot_laser = apply_rotation(bot_laser, x_axis_rotation(laser_tilt));
+  top_laser = apply_rotation(top_laser, y_axis_rotation(a));
+  bot_laser = apply_rotation(bot_laser, y_axis_rotation(a));
+  glBegin(GL_TRIANGLES);
+    //const float tri_len = 10.0f;
+    //const float tri_height = 5.0f;
+    glVertex3f(tx, ty, tz);
+    glVertex3f(tx + top_laser[0], ty + top_laser[1], tz + top_laser[2]);
+    glVertex3f(tx + bot_laser[0], ty + bot_laser[1], tz + bot_laser[2]);
+    //glVertex3f(tx, ty,     tz);
+    //glVertex3f(tx + -tri_len * sin(a), ty + tri_height, tz + tri_len * cos(a));
+    //glVertex3f(tx + -tri_len * sin(a), ty - tri_height, tz + tri_len * cos(a));
+  glEnd();
+  glDisable(GL_BLEND);
+
 
 
   /*
