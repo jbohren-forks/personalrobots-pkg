@@ -1,0 +1,5 @@
+<ImageSequence version="1.0"
+  dir="input/">
+  <Image name="image001.jpg" />
+  <Image name="image002.jpg" />
+</ImageSequence>
