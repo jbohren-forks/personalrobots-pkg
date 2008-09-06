@@ -60,7 +60,7 @@ public:
   
     void initialState(robot_msgs::KinematicState &state)
     {
-	state.set_vals_size(45);
+	state.set_vals_size(m_kmodel->stateDimension);
 	for (unsigned int i = 0 ; i < state.get_vals_size() ; ++i)
 	    state.vals[i] = 0.0;
 	for (unsigned int i = 0 ; i < 3 ; ++i)
@@ -192,6 +192,7 @@ public:
 	{
 	    printPath(res.path, res.distance);
 	    sendDisplay(res.path, req.params.model_id);
+	    //	    sendCommand(res.path, req.params.model_id);
 	}
 	else
 	    fprintf(stderr, "Service 'plan_kinematic_path_state' failed\n");	 
@@ -288,7 +289,7 @@ public:
 	
 	int groupID = m_kmodel->getGroupID(model);
 	std::vector<std::string> joints;
-	m_kmodel->getJointsInGroup(joints);
+	m_kmodel->getJointsInGroup(joints, groupID);
 	
 	
 	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
@@ -345,36 +346,40 @@ int main(int argc, char **argv)
     {
 	PlanKinematicPath *plan = new PlanKinematicPath(argv[1]);
 	plan->loadRobotDescription();
-	//	plan->waitForState();
-	sleep(1);
-	
-	
-	char test = (argc < 3) ? 'b' : argv[2][0];
-	
-	switch (test)
+	if (plan->loadedRobot())
 	{
-	case 'l':
-	    plan->runTestLeftArm();    
-	    break;
-	case 'b':    
-	    plan->runTestBase();
-	    break;
-	case 'r':
-	    plan->runTestRightArm();    
-	    break;
-	case 'e':
-	    plan->runTestLeftEEf();    
-	    break;
-	case 'x':
-	    plan->runTestBaseRightArm();
-	    break;
-	default:
-	    printf("Unknown test\n");
-	    break;
-	} 
+	    //	plan->waitForState();
 
-	sleep(1);	
-
+	    sleep(1);
+	    
+	    
+	    char test = (argc < 3) ? 'b' : argv[2][0];
+	    
+	    switch (test)
+	    {
+	    case 'l':
+		plan->runTestLeftArm();    
+		break;
+	    case 'b':    
+		plan->runTestBase();
+		break;
+	    case 'r':
+		plan->runTestRightArm();    
+		break;
+	    case 'e':
+		plan->runTestLeftEEf();    
+		break;
+	    case 'x':
+		plan->runTestBaseRightArm();
+		break;
+	    default:
+		printf("Unknown test\n");
+		break;
+	    } 
+	    
+	    sleep(1);	
+	}
+	
 	plan->shutdown();
 	delete plan;
     }
