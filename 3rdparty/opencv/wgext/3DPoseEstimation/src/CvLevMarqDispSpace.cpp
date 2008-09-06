@@ -25,7 +25,7 @@ using namespace std;
 #endif
 
 CvLevMarqTransformDispSpace::CvLevMarqTransformDispSpace(
-            CvMat* disparityTo3D, CvMat *threeDToDisparity,
+            const CvMat* disparityTo3D, const CvMat *threeDToDisparity,
             int numErrors, int numMaxIter):
 	CvLevMarqTransform(
 			numErrors /* dimensionality of the error vector */,

@@ -6,13 +6,13 @@
 class CvLevMarqTransformDispSpace : public CvLevMarqTransform
 {
 public:
-	CvLevMarqTransformDispSpace(CvMat *disparityTo3D, CvMat *threeDToDisparity, int numErrors, 
+	CvLevMarqTransformDispSpace(const CvMat *disparityTo3D, const CvMat *threeDToDisparity, int numErrors,
         int numMaxInter = defNumMaxIter);
 	virtual ~CvLevMarqTransformDispSpace();
 	/**
 	 *  initParams [alpha, beta, gamma, x, y, z];
 	 */
-	bool optimize(CvMat* A, CvMat* B, double param[]=NULL) {
+	bool optimize(const CvMat* A, const CvMat* B, double param[]) {
 		return optimizeAlt(A, B, param);
 	}
 private:
@@ -27,9 +27,9 @@ private:
 	bool optimizeAlt(const CvMat *xyzs0, const CvMat *xyzs1, double _param[]);
 	double _Homography[16];
 	CvMat mHomography;
-	
-	CvMat *m3DToDisparity; // projection from 3D coordinate to disparity coordinates
-	CvMat *mDisparityTo3D; // projection from disparity coordinate to 3D coordinates
+
+	const CvMat *m3DToDisparity; // projection from 3D coordinate to disparity coordinates
+	const CvMat *mDisparityTo3D; // projection from disparity coordinate to 3D coordinates
 };
 
 #endif /*WGLEVMARQDISPSPACE_H_*/
