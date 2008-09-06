@@ -1,4 +1,0 @@
-
-OBJECT	COUNT	HIT	ERROR	RECALL	PREC.
-monitor	1	0	0	0	nan
-mug	11	6	48	0.545	0.111

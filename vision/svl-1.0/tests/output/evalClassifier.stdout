@@ -1,6 +1,0 @@
---- Confusion matrix: (actual, predicted) ---
-	1.000	0.000	0.000
-	0.000	0.940	0.060
-	0.000	0.040	0.960
-
---- Classifier accuracy: 0.966667
