@@ -69,6 +69,7 @@ public:
     }
     msgBufUsed = __serialized_length;
     memcpy(msgBuf, readPtr, __serialized_length);
+    return NULL;
   }
 };
 
