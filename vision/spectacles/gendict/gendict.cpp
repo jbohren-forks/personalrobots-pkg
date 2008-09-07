@@ -40,8 +40,21 @@ const char *win_name = "labelview";
 using namespace std;
 using namespace spectacles;
 
+CvRect rect_intersect(const CvRect &r1, const CvRect &r2)
+{
+  CvRect r;
+  r.x =  r1.x < r2.x ? r2.x : r1.x;
+  r.y =  r1.y < r2.y ? r2.y : r1.y;
+  r.w = (r1.x + r1.w < r2.x + r2.w ? r1.x + r1.w : r2.x + r2.w) - r.x;
+  r.h = (r1.y + r1.h < r2.y + r2.h ? r1.y + r1.h : r2.y + r2.h) - r.y;
+  if (r.w < 0 || r.h < 0)
+    r.w = r.h = 0;
+  return r;
+}
+
 int main(int argc, char **argv)
 {
+  srand(time(NULL));
   if (argc < 3)
   {
     printf("usage: labelview LABELFILE IMAGES\n");
@@ -51,17 +64,17 @@ int main(int argc, char **argv)
   imgset.load(argv[1], argc, argv, 2);
   cvNamedWindow(win_name, CV_WINDOW_AUTOSIZE);
   bool done = false;
-  vector<IplImage *> positives;
+  vector<IplImage *> positives, negatives;
   for (size_t i = 0; !done && i < imgset.images.size(); i++)
   {
+    int width = imgset.images[i]->image->width;
+    int height = imgset.images[i]->image->height;
     for (size_t l = 0; !done && l < imgset.images[i]->labels.size(); l++)
     {
       labelrect r = imgset.images[i]->labels[l];
       if (r.name != string("mug"))
         continue;
       int diff = fabs(r.h - r.w);
-      int width = imgset.images[i]->image->width;
-      int height = imgset.images[i]->image->height;
       if (r.w > r.h)
       {
         r.y -= diff / 2;
@@ -78,20 +91,26 @@ int main(int argc, char **argv)
       cvGetSubRect(imgset.images[i]->image, &mat, cvRect(r.x, r.y, r.w, r.h));
       IplImage *positive = cvCreateImage(cvSize(32, 32), IPL_DEPTH_8U, 3);
       cvResize(&mat, positive);
-      /*
-      cvShowImage(win_name, positive);
-      if ((char)cvWaitKey() == 27)
-        done = true;
-        */
-      /*
-      double minval, maxval;
-      cvMinMaxLoc(positive, &minval, &maxval);
-      if (minval != maxval)
-        cvConvertScale(positive, positive, 255.0 / (maxval - minval), -minval);
-        */
-      //cvNormalize(positive, positive, 0, 255, CV_MINMAX, NULL);
-      positives.push_back(positive);
-      //cvReleaseImage(&positive);
+      IplImage *pos_1ch = cvCreateImage(cvSize(32, 32), IPL_DEPTH_8U, 1);
+      cvConvertImage(positive, pos_1ch, 0);
+      IplImage *pos_norm = cvCreateImage(cvSize(32, 32), IPL_DEPTH_8U, 1);
+      cvEqualizeHist(pos_1ch, pos_norm);
+      cvReleaseImage(&pos_1ch);
+      cvReleaseImage(&positive);
+      positives.push_back(pos_norm);
+    }
+    // now, generate some random negatives
+    for (int n = 0; n < 10; n++)
+    {
+      bool bogus = true;
+      do
+      {
+        CvRect nr(rand() % width, rand() % height, 
+                  rand() % 100 + 10, rand() % 100 + 10);
+        if (nr.x + nr.w >= width || nr.y + nr.h >= height)
+          continue;
+          
+      } while (bogus);
     }
   }
   printf("found %d positives\n", positives.size());
@@ -99,7 +118,7 @@ int main(int argc, char **argv)
   int tile_cols = (int)ceil(sqrt(np));
   printf("%d tile cols\n", tile_cols);
   IplImage *poster = cvCreateImage(cvSize(tile_cols * 32, tile_cols * 32), 
-                                   IPL_DEPTH_8U, 3);
+                                   IPL_DEPTH_8U, 1);
   for (int y = 0; y < tile_cols; y++)
     for (int x = 0; x < tile_cols && y*tile_cols+x < (int)positives.size(); x++)
     {
@@ -109,7 +128,8 @@ int main(int argc, char **argv)
   
   cvResetImageROI(poster);
   cvShowImage(win_name, poster);
-  cvWaitKey();
+  char c;
+  while ((c = cvWaitKey()) != 27) ;
   cvReleaseImage(&poster);
 
 
