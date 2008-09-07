@@ -54,7 +54,7 @@ public:
   {
     scan_msg.header.frame_id = "FRAMEID_LASER";
     advertise<std_msgs::LaserScan>("scan");
-    param("sicklms/port", port, string("/dev/ttyUSB1"));
+    param("sicklms/port", port, string("/dev/ttyUSB0"));
     param("sicklms/baud", baud, 500000);
   }
   void publish_scan(uint32_t *values, uint32_t num_values, double scale)
@@ -81,7 +81,7 @@ public:
       scan_msg.range_max = 8.192;
     scan_msg.set_ranges_size(num_values);
     scan_msg.header.stamp = t;
-    for (int i = 0; i < num_values; i++)
+    for (size_t i = 0; i < num_values; i++)
       scan_msg.ranges[i] = (float)values[i] * (float)scale;
     publish("scan", scan_msg);
   }
