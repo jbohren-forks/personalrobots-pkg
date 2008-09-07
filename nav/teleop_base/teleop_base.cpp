@@ -34,13 +34,13 @@ public:
     printf("deadman_button: %d\n", deadman_button);
     printf("passthrough_button: %d\n", passthrough_button);
 
-    advertise("cmd_vel", cmd);
-    subscribe("joy", joy, &TeleopBase::joy_cb);
-    subscribe("cmd_passthrough", cmd_passthrough, &TeleopBase::passthrough_cb);
+    advertise<std_msgs::BaseVel>("cmd_vel", 1);
+    subscribe("joy", joy, &TeleopBase::joy_cb, 1);
+    subscribe("cmd_passthrough", cmd_passthrough, &TeleopBase::passthrough_cb, 1);
+    printf("done with ctor\n");
   }
   void joy_cb()
   {
-    joy.lock();
     /*
     printf("axes: ");
     for(int i=0;i<joy.get_axes_size();i++)
@@ -60,7 +60,6 @@ public:
       req_vw = joy.axes[axis_vw] * max_vw;
     else
       req_vw = 0.0;
-    joy.unlock();
   }
   void passthrough_cb() { }
   void send_cmd_vel()
@@ -71,7 +70,7 @@ public:
         joy.buttons[deadman_button]))
     {
       if (passthrough_button >= 0 && 
-          passthrough_button < joy.get_buttons_size() &&
+          passthrough_button < (int)joy.get_buttons_size() &&
           joy.buttons[passthrough_button])
       {
         // pass through commands that we have received (e.g. from wavefront)
