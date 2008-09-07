@@ -121,9 +121,6 @@ robot.
 #include <std_msgs/Pose2DFloat32.h>
 #include <std_srvs/StaticMap.h>
 
-// Provides a blocking navigation service for higher-level sequencing
-#include "wavefront_player/NavigateToPoint.h"
-
 // For GUI debug
 #include <std_msgs/Polyline2D.h>
 
