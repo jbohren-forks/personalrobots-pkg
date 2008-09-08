@@ -16,10 +16,22 @@ public:
   vector<int> times;
   Dorylus d_;
 
+  std_msgs::String cal_params_msg_;
+  std_msgs::PointCloudFloat32 ptcld_msg_;
+  SmartScan ss_;
+  std_msgs::ImageArray images_msg_;
+  IplImage *img_, *vis_;
+  CvBridge<std_msgs::Image> *bridge_;
+  bool built_bridge_;
+  bool has_cal_params_, has_ptcld_, has_img_;
+  Matrix transform_;
+
   DorylusNode() : ros::node("dorylus_node")
   {
     // -- Setup descriptor functions.
     //descriptors_.push_back(&spinL_);
+
+    transform_ = Matrix(3,4); transform_ = 0.0;
 
     spinL_fixed_ = new SpinImage(string("FixedSpinLarge"), .20, 50, true);
     spinM_fixed_ = new SpinImage(string("FixedSpinMedium"), .10, 100, true);
@@ -27,9 +39,9 @@ public:
     spinL_fixed_HR_ = new SpinImage(string("FixedSpinLargeHighRes"), .20, 100, true);
     spinM_fixed_HR_ = new SpinImage(string("FixedSpinMediumHighRes"), .10, 200, true);
     spinS_fixed_HR_ = new SpinImage(string("FixedSpinSmallHighRes"), .05, 400, true);
-    spinL_nat_ = new SpinImage(string("NatSpinLarge"), .20, 50, false);
-    spinM_nat_ = new SpinImage(string("NatSpinMedium"), .10, 100, false);
-    spinS_nat_ = new SpinImage(string("NatSpinSmall"), .05, 200, false);
+//     spinL_nat_ = new SpinImage(string("NatSpinLarge"), .20, 50, false);
+//     spinM_nat_ = new SpinImage(string("NatSpinMedium"), .10, 100, false);
+//     spinS_nat_ = new SpinImage(string("NatSpinSmall"), .05, 200, false);
 
     descriptors_.push_back(spinL_fixed_);  
     descriptors_.push_back(spinM_fixed_);  
@@ -37,13 +49,206 @@ public:
     descriptors_.push_back(spinL_fixed_HR_);  
     descriptors_.push_back(spinM_fixed_HR_);  
     descriptors_.push_back(spinS_fixed_HR_);  
-    //WAY too slow.
-//     descriptors_.push_back(spinL_nat_);  
-//     descriptors_.push_back(spinM_nat_);  
-//     descriptors_.push_back(spinS_nat_);  
 
+    has_ptcld_ = has_img_ = has_cal_params_ = false;
+    built_bridge_ = false;
+    img_ = NULL;
+
+    subscribe("videre/images", images_msg_, &DorylusNode::cbImageArray, 10); 
+    //    subscribe("spacetime_stereo", ptcld_msg_, &DorylusNode::cbPtcld, 1); 
+    subscribe("videre/cloud_smallv", ptcld_msg_, &DorylusNode::cbPtcld, 10); 
+    subscribe("videre/cal_params", cal_params_msg_, &DorylusNode::cbCalParams, 10); 
     advertise<std_msgs::VisualizationMarker>("visualizationMarker", 100);
   }
+
+  ~DorylusNode() {
+    delete bridge_;
+  }
+
+  void cbImageArray() {
+    cout << " in imagearray cb" << endl;
+    if(has_img_)
+      return;
+
+    if(!built_bridge_) {
+      bridge_ = 
+	new CvBridge<std_msgs::Image>
+	(&images_msg_.images[1], 
+	 CvBridge<std_msgs::Image>::CORRECT_BGR | 
+	 CvBridge<std_msgs::Image>::MAXDEPTH_8U);
+      built_bridge_ = true;
+    }
+
+    bridge_->to_cv(&img_); 
+    vis_ = cvCloneImage(img_);
+    has_img_ = true;
+  }
+
+  void cbPtcld() {
+    cout << " in ptcld cb" << endl;
+    if(has_ptcld_)
+      return;
+
+    ss_.setFromRosCloud(ptcld_msg_);
+    has_ptcld_ = true;
+  }
+
+  void cbCalParams() {
+    cout << " in cal cb" << endl;
+
+    // -- Extract the transformation matrix.
+    string cal = cal_params_msg_.data;
+    string proj = cal.substr(cal.find("proj"), cal.find("rect"));
+    NEWMAT::Real trnsele[12];
+    sscanf(proj.c_str(), "%*s %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %*s", &trnsele[0], &trnsele[1], &trnsele[2], &trnsele[3], &trnsele[4], &trnsele[5], &trnsele[6], &trnsele[7], &trnsele[8], &trnsele[9], &trnsele[10], &trnsele[11]);
+    transform_ << trnsele;
+    cout << transform_;
+
+    has_cal_params_ = true;
+  }   
+    
+  void classifyRandomPoint() {
+    if(!has_img_ || !has_ptcld_ || !has_cal_params_) {
+      usleep(100000);
+      cout << "Don't have all msgs yet..." << endl;
+      return;
+    }
+
+
+    cout << "classifying point." << endl;
+
+    // -- Get a random point from the pointcloud and project it into the image.
+    int randId = 0;
+    randId = rand() % ss_.size();
+    std_msgs::Point3DFloat32 pt = ss_.getPoint(randId);
+    float x = pt.x;
+    float y = pt.y;
+    float z = pt.z;
+
+    Matrix point(4,1);
+    point(1,1) = pt.x;
+    point(2,1) = pt.y;
+    point(3,1) = pt.z;
+    point(4,1) = 1;
+
+    Matrix projected = transform_ * point;
+    projected(1,1) = projected(1,1) / projected(3,1);
+    projected(2,1) = projected(2,1) / projected(3,1);
+    projected(3,1) = 1;
+    int row = (int)projected(2,1);
+    int col = (int)projected(1,1);
+
+    // -- Get all the features for that point and construct the point object.
+    Matrix* result;
+    object obj;
+    obj.label = -1; //To be classified.
+    for(unsigned int d=0; d<descriptors_.size(); d++) {
+      (*descriptors_[d])(ss_, *img_, x, y, z, row, col, &result);
+      obj.features[descriptors_[d]->name_] = *result;      
+      delete result; result = NULL;
+
+//       cout << descriptors_[d]->name_ << " descriptor." << endl;
+//       cout << obj.features[descriptors_[d]->name_];
+    }
+    
+
+    // -- Classify 
+    Matrix response = d_.classify(obj);
+    int label_idx, trash;
+    float val;
+    val = response.Maximum2(label_idx, trash);
+    int label = d_.classes_[label_idx-1];
+    
+    cout << "Response: " << endl << response;
+    cout << "Class " << label << endl;  
+    cout << "Confidence " << val << endl;
+
+    if(val <= 0) 
+      return;
+
+    // -- Visualize
+    char* label_str;
+    sprintf(label_str,"%d",label);
+    CvFont font;
+    double hScale=3.5*val;
+    double vScale=3.5*val;
+    int    lineWidth=(int)5*val;
+    cvInitFont(&font,CV_FONT_HERSHEY_SIMPLEX, hScale,vScale,0,lineWidth);
+    cvPutText(vis_,label_str,cvPoint(col, row), &font, cvScalar(255,255,0));
+    cvShowImage("Classification Visualization", vis_);
+    cvWaitKey(0);
+  }
+  
+  
+  void run(string classifier_file) {
+    d_.load(classifier_file);
+
+    cout << "Press spacebar to listen for new data, q to quit." << endl;
+    cvNamedWindow("Classification Visualization", 0);
+    while(true) {
+      char c = cvWaitKey(5);
+      if(c == 'q')
+	break;
+      if(c == ' ') {
+	if(img_)
+	  cvReleaseImage(&img_);
+	img_ = NULL;
+	has_img_ = has_ptcld_ = has_cal_params_ = false;
+	subscribe("videre/images", images_msg_, &DorylusNode::cbImageArray, 1); 
+	
+	//Wait for a new videre/images.
+	cout << "waiting for img" << endl;
+	while(!has_img_) 
+	  usleep(100000);
+	cout << "got one" << endl;
+      }
+
+      if(has_img_)
+	unsubscribe(images_msg_);
+
+      classifyRandomPoint();
+    }
+  }
+
+
+
+  void train(int nCandidates, int max_secs, int max_wcs) {
+    time_t start, end;
+    time(&start);
+  
+    cout << "Objective: " << d_.computeObjective() << endl;
+    cout << "Objective (from classify()): " << d_.classify(dd_) << endl;
+    int wcs=0;
+    while(true) {
+      bool found_better = d_.learnWC(nCandidates);
+      if(!found_better) {
+	continue;
+      }
+      wcs++;
+      time(&end);
+      cout << "Objective: " << d_.computeObjective() << endl;
+      cout << "Objective (from classify()): " << d_.classify(dd_) << endl;
+      cout << "Difference: " << d_.computeObjective() - d_.classify(dd_) << endl;
+
+      // -- Display weak classifier.
+//       for(unsigned int d=0; d<descriptors_.size(); d++) {
+// 	weak_classifier wc = *d_.pwcs_.back();
+// 	displayWeakClassifier(wc);
+// 	if(descriptors_[d]->name_.compare(wc.descriptor) == 0) {
+// 	  descriptors_[d]->display(wc.center);
+// 	  break;
+// 	}
+//       }
+
+      if(difftime(end,start) > max_secs)
+	break;
+      if(wcs >= max_wcs)
+	break;
+    }
+
+    cout << "Done training." << endl;
+  }
+
 
   void buildDataset(unsigned int nSamples, vector<string> datafiles, string savename, bool debug=false)
   {
@@ -270,27 +475,34 @@ int main(int argc, char **argv) {
 //  cout << d.dd_.status() << endl;
   }
 
-  else if(!strcmp(argv[1], "--testDatasetSave")) {
+  else if(argc == 2 && !strcmp(argv[1], "--testDatasetSave")) {
     dn.dd_.testSave();
   }
 
-  else if(!strcmp(argv[1], "--learnwc")) {
-    dn.dd_.load(string(argv[2]));
+  else if(argc == 4 && !strcmp(argv[1], "--train")) {
+    dn.dd_.load(string(argv[3]));
     //cout << dn.dd_.displayFeatures() << endl;
     cout << dn.dd_.status() << endl;
-    
     dn.d_.loadDataset(&dn.dd_);
-    dn.d_.train(50, 100000, 10);
-    dn.d_.save("dorytest.dory");
-    Dorylus d2;
-    d2.load("dorytest.dory");
-    d2.save("dorytest2.dory");
-    //dn.d_.learnWC(50);
+    dn.train(50, 100000, 10);
+    dn.d_.save(string(argv[2]));
+
+//     Dorylus d2;
+//     d2.load(argv[2]);
+//     d2.save(string(argv[2]) + "2");
+
   }
 
+  else if(argc == 3 && !strcmp(argv[1], "--run")) {
+    dn.run(string(argv[2]));
+  }
+	
   else {
     cout << "Usage: " << endl;
-    cout << "  dorylus_node --dataset savename [BAGFILES]" << endl;
+    cout << "  dorylus_node --dataset [DORYLUS DATASET SAVENAME] [BAGFILES]" << endl;
+    cout << "  dorylus_node --train [CLASSIFIER SAVENAME] [DORYLUS DATASET]" << endl;
+    cout << "  dorylus_node --run [CLASSIFIER]" << endl;
+    cout << "  dorylus_node --testDatasetSave" << endl;
   }
 
   usleep(250000);

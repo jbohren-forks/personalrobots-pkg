@@ -68,16 +68,18 @@ class DorylusDataset {
 class Dorylus {
  public:
   map<string, vector<weak_classifier> > battery_;
+  vector<weak_classifier*> pwcs_; //In the order that they were learned.
   NEWMAT::Matrix weights_; //nClasses x nTrEx.
   float objective_, objective_prev_, training_err_;
   DorylusDataset *dd_;
   string version_string_;
   int nWCs_;
   unsigned int nClasses_;
+  vector<int> classes_;
 
   void loadDataset(DorylusDataset *dd);
   void normalizeWeights();
-  void learnWC(int nCandidates);
+  bool learnWC(int nCandidates);
   float computeNewObjective(const weak_classifier& wc, const NEWMAT::Matrix& mmt, NEWMAT::Matrix** ppweights = NULL);
   float computeObjective();
   void train(int nCandidates, int max_secs, int max_wcs);

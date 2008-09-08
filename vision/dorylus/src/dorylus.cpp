@@ -271,6 +271,12 @@ bool Dorylus::save(string filename)
   }
 
   f << version_string_ << endl;
+  f << "Classes." << endl;
+  for(unsigned int i=0; i<classes_.size(); i++) {
+    f << classes_[i] << endl;
+  }
+  f << "End classes." << endl;
+
   float buf;
   map<string, vector<weak_classifier> >::iterator bit;
   for(bit = battery_.begin(); bit != battery_.end(); bit++) {
@@ -318,6 +324,20 @@ bool Dorylus::load(string filename)
 
   cout << "Loading " << filename << endl;
 
+  // -- Read the classes.
+  getline(f, line);
+  assert(line.compare("Classes.") == 0); 
+  while(true) {
+    getline(f, line);
+    if(line.compare("End classes.") == 0)
+      break;
+    istringstream iss_class(line);
+    int c;
+    iss_class >> c;
+    classes_.push_back(c);
+  }
+ 
+
   battery_.clear();
   string descriptor;
   weak_classifier *pwc = NULL;
@@ -328,6 +348,7 @@ bool Dorylus::load(string filename)
     if(line.size() == 0) {
       if(pwc) {
 	battery_[pwc->descriptor].push_back(*pwc);
+	pwcs_.push_back(&battery_[pwc->descriptor].back());
 	cout << "Stored new wc." << endl;
 	cout << displayWeakClassifier(*pwc);
 	delete pwc; pwc = NULL;
@@ -341,6 +362,7 @@ bool Dorylus::load(string filename)
     else if(line.compare(string("New weak classifier.")) == 0) {	
       if(pwc) {
 	battery_[pwc->descriptor].push_back(*pwc);
+	pwcs_.push_back(&battery_[pwc->descriptor].back());
 	cout << "Stored new wc." << endl;
 	cout << displayWeakClassifier(*pwc);
 	delete pwc; pwc = NULL;
@@ -414,6 +436,7 @@ void Dorylus::loadDataset(DorylusDataset *dd) {
  
  normalizeWeights();
  nClasses_ = dd_->nClasses_;
+ classes_ = dd->classes_;
 }
 
 
@@ -442,9 +465,12 @@ vector<weak_classifier*> Dorylus::findActivatedWCs(const string &descriptor, con
   return activated;
 }
 
+
 void Dorylus::train(int nCandidates, int max_secs, int max_wcs) {
   time_t start, end;
   time(&start);
+
+  cout << "Use training function in node!" << endl;
   
   cout << "Objective: " << computeObjective() << endl;
   cout << "Objective (from classify()): " << classify(*dd_) << endl;
@@ -466,7 +492,7 @@ void Dorylus::train(int nCandidates, int max_secs, int max_wcs) {
   cout << "Done training." << endl;
 }
 
-void Dorylus::learnWC(int nCandidates) {
+bool Dorylus::learnWC(int nCandidates) {
   int nThetas = 500;
   assert(dd_!=0);
   weak_classifier best;
@@ -528,6 +554,7 @@ void Dorylus::learnWC(int nCandidates) {
   float objective = computeObjective();
   float max_util = 0.0;
   Matrix best_mmt;
+  bool found_better = false;
   for(unsigned int i=0; i<cand.size(); i++) {
     vector<Matrix> dists;
 
@@ -601,6 +628,7 @@ void Dorylus::learnWC(int nCandidates) {
       //If this is the best wc so far, save it.
       if(util >= max_util) {
 	//cout << "***" << endl;
+	found_better = true;
 	max_util = util;
 	best = cand[i];
 	best_weights = *ppweights;
@@ -616,13 +644,17 @@ void Dorylus::learnWC(int nCandidates) {
     cout << "."; cout.flush();
   }
   cout << endl;
-  // -- Save the best weak classifier in the battery.
+
+  if(!found_better) {
+    cout << "Did not find a weak classifier that improves the classification!" << endl;
+    return false;
+  }
+  // -- Add the best to the strong classifier.
   best.id = nWCs_++;
   battery_[best.descriptor].push_back(best);
+  pwcs_.push_back(&battery_[best.descriptor].back());
 
-  //cout << dd_->ymc_;
   time(&end);
-  //cout << dd_->status();
   cout << "Took " << difftime(end,start) << " seconds to try " << nCandidates << " wcs with " << nThetas << " thetas each." << endl;
   cout << displayWeakClassifier(best) << endl;
   int nObjs_encompassed = 0;
@@ -633,10 +665,9 @@ void Dorylus::learnWC(int nCandidates) {
   cout << "WC encompasses at least one point from " << nObjs_encompassed << " out of " << best_mmt.Ncols() << " objects." << endl;
 
   // -- Update the weights.
-  //  cout << weights_ << endl;
-  //  cout << *best_weights << endl;
   weights_ = *best_weights;
   delete *ppweights; *ppweights = NULL;
+  return true;
 }
 
 
