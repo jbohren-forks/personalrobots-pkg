@@ -513,23 +513,30 @@ float xf,yf,zf;
 //int wsi = Left->widthStep;
 //unsigned char *dL = ((unsigned char *)(Left->imageData));
 
-ros_cloud.set_pts_size(w*h);
-ros_cloud.chan[0].set_vals_size(w*h);
+
+int point_count = 0, tot_points=0;
+for(j=0; j<h; j++)
+for(i=0; i<w; i++)
+if( disp[j*w+i] > 0) 
+	tot_points ++;
+
+ros_cloud.set_pts_size(tot_points);
+ros_cloud.chan[0].set_vals_size(tot_points);
 
 for(j=0; j<h; j++)
-	for(i=0; i<w; i++)
-		if( disp[j*w+i] > 0) {
-			zf = (cpar.tx * cpar.feq) / ( (disp[j*w+i]*1.0) / SUBPIXEL) ;
-			xf = ((i - cpar.u0) * zf) / cpar.fx;
-			yf = ((j - cpar.v0) * zf) / cpar.fy;
-			
-			ros_cloud.pts[j*w+i].x = xf/100; //from millimiters to decimiters
-			ros_cloud.pts[j*w+i].y = yf/100;
-			ros_cloud.pts[j*w+i].z = zf/100;
+for(i=0; i<w; i++)
+if( disp[j*w+i] > 0) {
+	zf = (cpar.tx * cpar.feq) / ( (disp[j*w+i]*1.0) / SUBPIXEL) ;
+	xf = ((i - cpar.u0) * zf) / cpar.fx;
+	yf = ((j - cpar.v0) * zf) / cpar.fy;
+	
+	ros_cloud.pts[point_count].x = xf/100; //from millimiters to decimiters
+	ros_cloud.pts[point_count].y = yf/100;
+	ros_cloud.pts[point_count].z = zf/100;
 
-			ros_cloud.chan[0].vals[j*w+i] = 16*255;
-			
-		}
+	ros_cloud.chan[0].vals[point_count] = 16*255;
+	point_count++;
+}
 
 printf("DON");
 
