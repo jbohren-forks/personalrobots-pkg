@@ -205,8 +205,8 @@ void Ros_PTZ::UpdateChild()
   float tilt = this->cmdTilt - this->tiltJoint->GetAngle();
   float pan = this->cmdPan - this->panJoint->GetAngle();
 
-  std::cout << "command received : " << this->cmdPan << ":" << this->cmdTilt;
-  std::cout << " state : " << this->panJoint->GetAngle() << ":" << this->tiltJoint->GetAngle() << std::endl;
+  //std::cout << "command received : " << this->cmdPan << ":" << this->cmdTilt;
+  //std::cout << " state : " << this->panJoint->GetAngle() << ":" << this->tiltJoint->GetAngle() << std::endl;
   this->tiltJoint->SetParam( dParamVel, **(this->motionGainP) * tilt);
   this->tiltJoint->SetParam( dParamFMax, **(this->forceP) );
 
