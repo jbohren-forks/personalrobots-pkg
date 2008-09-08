@@ -1,10 +1,10 @@
 PKG = libKinematics
 
-CFLAGS = -g -Wall -Iinclude $(shell rospack export/cpp/cflags $(PKG))
+CFLAGS = -g -Wall -Iinclude $(shell rospack --lang=cpp --attrib=cflags export $(PKG))
 
-LDFLAGS = $(shell rospack export/cpp/lflags newmat10)
+LDFLAGS = $(shell rospack --lang=cpp --attrib=lflags export newmat10)
 
-LFLAGS  = $(shell rospack export/cpp/lflags $(PKG))
+LFLAGS  = $(shell rospack --lang=cpp --attrib=lflags export $(PKG))
 
 LIBK  = lib/libKinematics.a
 LIBIK = lib/libIk.a

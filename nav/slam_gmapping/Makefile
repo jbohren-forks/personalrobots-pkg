@@ -2,8 +2,8 @@ PKG = slam_gmapping
 CXX = g++
 all: $(PKG)
 
-CFLAGS = -O3 -Wall `rospack export/cpp/cflags $(PKG)`
-LFLAGS = `rospack export/cpp/lflags $(PKG)`
+CFLAGS = -O3 -Wall `rospack --lang=cpp --attrib=cflags export $(PKG)`
+LFLAGS = `rospack --lang=cpp --attrib=lflags export $(PKG)`
 
 slam_gmapping: slam_gmapping.cc
 	$(CXX) $(CFLAGS) -o $@ $< $(LFLAGS)

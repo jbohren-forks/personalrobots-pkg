@@ -25,7 +25,7 @@ UNPACK_CMD=  tar xfz
 BUILD_DIR=   $(PWD)/build
 INST_DIR=    $(PWD)/local
 ESTAR_DIR=   `rospack find estar`/local
-BOOST_DIR=   `rospack --cflags-only-I boost`
+BOOST_DIR=   `rospack cflags-only-I boost`
 
 SVN_DIR=     $(PWD)/sunflower-svn
 SVN_REV=     HEAD

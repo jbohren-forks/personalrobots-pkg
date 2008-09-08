@@ -23,7 +23,7 @@ SOURCE_DIR=  $(PWD)/estar-$(VERSION)
 UNPACK_CMD=  tar xfz
 BUILD_DIR=   $(PWD)/build
 INST_DIR=    $(PWD)/local
-BOOST_DIR=   `rospack --cflags-only-I boost`
+BOOST_DIR=   `rospack cflags-only-I boost`
 
 SVN_DIR=     $(PWD)/estar-svn
 SVN_REV=     HEAD

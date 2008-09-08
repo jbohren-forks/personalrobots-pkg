@@ -29,7 +29,7 @@ BUILD_DIR=   $(PWD)/build
 INST_DIR=    $(PWD)/local
 ESTAR_DIR=   `rospack find estar`/local
 SFL_DIR=     `rospack find libsunflower`/local
-BOOST_DIR=   `rospack --cflags-only-I boost`
+BOOST_DIR=   `rospack cflags-only-I boost`
 
 SVN_DIR=     $(PWD)/nepumuk-svn
 SVN_REV=     HEAD

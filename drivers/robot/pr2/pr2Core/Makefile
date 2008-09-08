@@ -1,8 +1,8 @@
 PKG = pr2Core
 
-CFLAGS = -g -Wall -Iinclude `rospack export/cpp/cflags $(PKG)`
+CFLAGS = -g -Wall -Iinclude `rospack --lang=cpp --attrib=cflags export $(PKG)`
 
-LDFLAGS = `rospack export/cpp/lflags $(PKG)`
+LDFLAGS = `rospack --lang=cpp --attrib=lflags export $(PKG)`
 
 LIB = 
 
