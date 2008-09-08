@@ -1,0 +1,31 @@
+<robot name="pr2">
+
+  <actuator name="single_motor">
+  </actuator>
+
+  <joint name="single_joint" type="revolute">
+    <limit min= "-0.785" max="1.48" effort="0.5292" velocity="1256.0"/>
+    <!-- Disable safely limits to find endstops -->
+<!--    <safety_limit_min spring_constant="4.0" safety_length="0.01" damping_constant="0.1"/>
+    <safety_limit_max spring_constant="4.0" safety_length="0.01" damping_constant="0.1"/>
+-->
+  </joint>
+
+  <transmission type="SimpleTransmission" name="single_transmission">
+    <actuator name="single_motor" />
+    <joint name="single_joint" />
+    <mechanicalReduction>6</mechanicalReduction>
+    <motorTorqueConstant>-.0538</motorTorqueConstant>
+    <pulsesPerRevolution>10000</pulsesPerRevolution>
+  </transmission>
+
+  <controller name="single_controller" topic="laser_test" type="LaserScannerQualificationNode">
+    <velocity smoothing="0.2"/>
+    <joint name="single_joint">
+      <effort_test effort_percent="0.5" effort_length="0.1"/>
+      <sinesweep_test start_freq="0.1" end_freq="100" amplitude="0.1" duration="4"/>
+      <endstop_test velocity="0.5"  velocity_stopped_length="0.1" stopped_velocity="0.3"/>
+      <pid p="0.56" i = "14" d = "0.000001" iClamp = "0.02" />    
+    </joint>
+  </controller>
+</robot>
