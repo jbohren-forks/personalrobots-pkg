@@ -76,7 +76,6 @@ Provides (name/type):
 #include <planning_node_util/knode.h>
 #include <std_msgs/PointCloudFloat32.h>
 #include <collision_space/environmentODE.h>
-#include <collision_space/environmentOctree.h>
 
 namespace planning_node_util
 {
