@@ -32,18 +32,34 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "std_msgs/RobotBase2DOdom.h"
+#include "robot_msgs/BaseActualMsg.h"
 #include <string>
 #include "logging/LogPlayer.h"
 
-void localize_callback(std::string name, ros::msg* m, ros::Time t, void* f)
+void odom_callback(std::string name, ros::msg* m, ros::Time t, void* f)
 {
   FILE* file = (FILE*)f;
-  std_msgs::RobotBase2DOdom* bL = (std_msgs::RobotBase2DOdom*)(m);
+  robot_msgs::BaseActualMsg* baseActual = (robot_msgs::BaseActualMsg*)(m);
 
   fprintf(file, "%.5f ",t.to_double());
 
-  fprintf(file, "%0.5f %0.5f %0.5f %0.5f %0.5f %0.5f %d", bL->pos.x, bL->pos.y, bL->pos.th, bL->vel.x, bL->vel.y, bL->vel.th, bL->stall);
+  for(unsigned int i=0; i < baseActual->get_baseSteerPosition_size(); i++)
+    {
+      fprintf(file,"%.5f ",baseActual->baseSteerPosition[i]);
+    }
+  for(unsigned int i=0; i < baseActual->get_baseWheelPosition_size(); i++)
+    {
+      fprintf(file,"%.5f ",baseActual->baseWheelPosition[i]);
+    }
+
+  for(unsigned int i=0; i < baseActual->get_baseSteerVelocity_size(); i++)
+    {
+      fprintf(file,"%.5f ",baseActual->baseSteerVelocity[i]);
+    }
+  for(unsigned int i=0; i < baseActual->get_baseWheelVelocity_size(); i++)
+    {
+      fprintf(file,"%.5f ",baseActual->baseWheelVelocity[i]);
+    }
 
   fprintf(file, "\n");
 }
@@ -52,7 +68,7 @@ int main(int argc, char **argv)
 {
   if (argc != 2)
   {
-    printf("usage: localize_extract LOG\n");
+    printf("usage: imu_extract LOG\n");
     return 1;
   }
 
@@ -62,9 +78,9 @@ int main(int argc, char **argv)
 
   int count;
 
-  FILE* file = fopen("localize_actual.txt", "w");
+  FILE* file = fopen("base_actual.txt", "w");
 
-  count = player.addHandler<std_msgs::RobotBase2DOdom>(std::string("localizedPose"), &localize_callback, file, true);
+  count = player.addHandler<robot_msgs::BaseActualMsg>(std::string("baseActual"), &odom_callback, file, true);
 
   if (count != 1)
   {
