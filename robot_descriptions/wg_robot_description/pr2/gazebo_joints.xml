@@ -81,7 +81,7 @@
           <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
   <!-- Special gripper joint -->
-        <joint name="gripper_left_joint" gripper_controller="gripper_left_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+        <joint name="finger_l_left_joint" gripper_controller="gripper_left_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
           <saturationTorque>100</saturationTorque>
           <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
           <left_proximal>finger_l_left_joint</left_proximal>
@@ -120,7 +120,7 @@
           <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <!-- Special gripper joint -->
-        <joint name="gripper_right_joint" gripper_controller="gripper_right_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+        <joint name="finger_l_right_joint" gripper_controller="gripper_right_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
           <saturationTorque>100</saturationTorque>
           <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
           <left_proximal>finger_l_right_joint</left_proximal>

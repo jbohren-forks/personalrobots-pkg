@@ -81,7 +81,7 @@ namespace controller
 
     JointVelocityController controller_; /** controller for the link */
 
-    mechanism::JointState *joint_; /** pointer to joint in Robot structure corresponding to link */
+    mechanism::JointState *joint_state_; /** pointer to joint in Robot structure corresponding to link */
 
     BaseParam *parent_; /** pointer to parent corresponding to link */
 
@@ -203,7 +203,7 @@ namespace controller
     /*!
      * \brief Robot representation
      */
-    mechanism::RobotState* robot_;
+    mechanism::RobotState* robot_state_;
 
 
     /*!

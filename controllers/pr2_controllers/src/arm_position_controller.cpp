@@ -268,6 +268,7 @@ void ArmPositionControllerNode::setJointPosCmd(std::vector<double> &req_goals_)
 {
   c_->setJointPosCmd(req_goals_);
 }
+
 bool ArmPositionControllerNode::getJointPosCmd(pr2_controllers::GetJointPosCmd::request &req,
                                    pr2_controllers::GetJointPosCmd::response &resp)
 {

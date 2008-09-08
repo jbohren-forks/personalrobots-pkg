@@ -94,7 +94,7 @@ void BaseController::setPublishCount(int publish_count)
 };
 
 
-void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotState *robot)
+void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotState *robot_state)
 {
   std::vector<JointControlParam>::iterator jcp_iter;
   robot_desc::URDF::Link *link;
@@ -117,22 +117,27 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
     base_object.pos_.z = link->xyz[2];
     base_object.name_ = joint_name;
     base_object.parent_ = NULL;
-    base_object.joint_ = robot->getJointState(joint_name);
+    base_object.joint_state_ = robot_state->getJointState(joint_name);
+    if (base_object.joint_state_==NULL)
+      std::cout << " unsuccessful getting joint state for " << joint_name << std::endl;
 
-    abort();
-    // TODO base_object.controller_.init(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup,0.0,jcp_iter->joint_name,robot);
+    //abort();
+    base_object.controller_.init(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup,0.0,jcp_iter->joint_name,robot_state);
 
     if(joint_name.find("caster") != string::npos)
     {
+      std::cout << " assigning casters " << joint_name << std::endl;
       base_object.local_id_ = num_casters_;
       base_casters_.push_back(base_object);
       steer_angle_actual_.push_back(0);
       steer_velocity_desired_.push_back(0);
       num_casters_++;
-//      cout << "base_casters" << "::  " << base_object;
+      cout << "base_casters" << "::  " << base_object;
     }
+
     if(joint_name.find("wheel") != string::npos)
     {
+      std::cout << " assigning wheels " << joint_name << std::endl;
       base_object.local_id_ = num_wheels_;
       if(joint_name.find("_r_") != string::npos)
         base_object.direction_multiplier_ = 1;
@@ -173,12 +178,12 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
   {
     wheel_radius_ = DEFAULT_WHEEL_RADIUS;
   }
-  robot_ = robot;
+  robot_state_ = robot_state;
 
-  last_time_ = robot_->hw_->current_time_;
+  last_time_ = robot_state_->hw_->current_time_;
 }
 
-bool BaseController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 {
   std::cout << " base controller name: " << config->Attribute("name") << std::endl;
   TiXmlElement *elt = config->FirstChildElement("controller");
@@ -227,14 +232,14 @@ bool BaseController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 //    std::cout << " sub map : " << elt->Attribute("name") << std::endl;
     elt = config->NextSiblingElement("map");
   }
-  init(jcp_vec,robot);
+  init(jcp_vec,robot_state);
   return true;
 }
 
 void BaseController::getJointValues()
 {
   for(int i=0; i < num_casters_; i++)
-    steer_angle_actual_[i] = base_casters_[i].joint_->position_;
+    steer_angle_actual_[i] = base_casters_[i].joint_state_->position_;
 
   for(int i=0; i < num_wheels_; i++)
     wheel_speed_actual_[i] = base_wheels_[i].controller_.getMeasuredVelocity();
@@ -251,7 +256,7 @@ void BaseController::computeWheelPositions()
   double steer_angle;
   for(int i=0; i < num_wheels_; i++)
   {
-    steer_angle = base_wheels_[i].parent_->joint_->position_;
+    steer_angle = base_wheels_[i].parent_->joint_state_->position_;
 //    res1 = rotate2D(base_wheels_[i].pos_,steer_angle);
 //    cout << "init position" << base_wheels_[i].pos_.x << " " << base_wheels_[i].pos_.y << " " << base_wheels_[i].pos_.z << endl;
     res1 = base_wheels_[i].pos_.rot2D(steer_angle);
@@ -266,7 +271,7 @@ void BaseController::computeWheelPositions()
 
 void BaseController::update()
 {
-  double current_time = robot_->hw_->current_time_;
+  double current_time = robot_state_->hw_->current_time_;
 
   if(pthread_mutex_trylock(&base_controller_lock_)==0)
   {
@@ -287,7 +292,7 @@ void BaseController::update()
 
   computeOdometry(current_time);
 
-  if(odom_publish_counter_ > odom_publish_count_)
+  if(odom_publish_counter_ > odom_publish_count_) // FIXME: time based rate limiting
   {
     (ros::g_node)->publish("odom", odom_msg_);
     odom_publish_counter_ = 0;
@@ -335,7 +340,7 @@ void BaseController::computeAndSetWheelSpeeds()
   {
 
     caster_2d_velocity.z = steer_velocity_desired_[base_wheels_[i].parent_->local_id_];
-    steer_angle_actual = base_wheels_[i].parent_->joint_->position_;
+    steer_angle_actual = base_wheels_[i].parent_->joint_state_->position_;
     wheel_point_velocity = computePointVelocity2D(base_wheels_position_[i],cmd_vel_);
 
 //    cout << "wheel_point_velocity" << wheel_point_velocity << ",pos::" << base_wheels_position_[i] << ",cmd::" << cmd_vel_ << endl;
@@ -416,12 +421,12 @@ bool BaseControllerNode::getCommand(
   return true;
 }
 
-bool BaseControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
 
-  if(!c_->initXml(robot, config))
+  if(!c_->initXml(robot_state, config))
     return false;
 
   node->advertise_service(prefix + "/set_command", &BaseControllerNode::setCommand, this);
@@ -485,8 +490,8 @@ void BaseController::computeOdometry(double time)
   base_odom_position_ += base_odom_delta;
 
   odom_msg_.header.frame_id   = "FRAMEID_ODOM";
-  odom_msg_.header.stamp.sec  = (unsigned long)floor(robot_->hw_->current_time_);
-  odom_msg_.header.stamp.nsec = (unsigned long)floor(  1e9 * (  robot_->hw_->current_time_ - odom_msg_.header.stamp.sec) );
+  odom_msg_.header.stamp.sec  = (unsigned long)floor(robot_state_->hw_->current_time_);
+  odom_msg_.header.stamp.nsec = (unsigned long)floor(  1e9 * (  robot_state_->hw_->current_time_ - odom_msg_.header.stamp.sec) );
 
   odom_msg_.pos.x  = base_odom_position_.x;
   odom_msg_.pos.y  = base_odom_position_.y;
@@ -508,7 +513,7 @@ void BaseController::computeBaseVelocity()
   double steer_angle;
 
   for(int i = 0; i < num_wheels_; i++) {
-    steer_angle = base_wheels_[i].parent_->joint_->position_;
+    steer_angle = base_wheels_[i].parent_->joint_state_->position_;
     A.element(i*2,0)   = cos(steer_angle)*wheel_radius_*(wheel_speed_actual_[i]);
     A.element(i*2+1,0) = sin(steer_angle)*wheel_radius_*(wheel_speed_actual_[i]);
 //     if(isnan(steer_angle))
@@ -566,7 +571,7 @@ Matrix BaseController::pseudoInverse(const Matrix M)
 
 std::ostream & controller::operator<<(std::ostream& mystream, const controller::BaseParam &bp)
 {
-  mystream << "BaseParam" << bp.name_ << endl << "position " << bp.pos_ << "id " << bp.local_id_ << endl << "joint " << bp.joint_->joint_->name_ << endl << endl;
+  mystream << "BaseParam" << bp.name_ << endl << "position " << bp.pos_ << "id " << bp.local_id_ << endl << "joint " << bp.joint_state_->joint_->name_ << endl << endl;
   return mystream;
 };
 
@@ -651,30 +656,30 @@ std::ostream & controller::operator<<(std::ostream& mystream, const controller::
 //   Matrix D(3,1);
 
 //   for(int i = 0; i < NUM_CASTERS; i++) {
-//     A.element(i*4,0) = cos(robot->joint[i*3].position) *WHEEL_RADIUS*((double)-1)*robot->joint[i*3+1].velocity;
-//     A.element(i*4+1,0) = sin(robot->joint[i*3].position) *WHEEL_RADIUS*((double)-1)*robot->joint[i*3+1].velocity;
-//     A.element(i*4+2,0) = cos(robot->joint[i*3].position) *WHEEL_RADIUS*robot->joint[i*3+2].velocity;
-//     A.element(i*4+3,0) = sin(robot->joint[i*3].position)* WHEEL_RADIUS*robot->joint[i*3+2].velocity;
+//     A.element(i*4,0) = cos(robot_state->joint[i*3].position) *WHEEL_RADIUS*((double)-1)*robot_state->joint[i*3+1].velocity;
+//     A.element(i*4+1,0) = sin(robot_state->joint[i*3].position) *WHEEL_RADIUS*((double)-1)*robot_state->joint[i*3+1].velocity;
+//     A.element(i*4+2,0) = cos(robot_state->joint[i*3].position) *WHEEL_RADIUS*robot_state->joint[i*3+2].velocity;
+//     A.element(i*4+3,0) = sin(robot_state->joint[i*3].position)* WHEEL_RADIUS*robot_state->joint[i*3+2].velocity;
 //   }
 
 //   /*
 //     for(int i = 0; i < (NUM_WHEELS + NUM_CASTERS); i++) {
-//     printf("i: %i pos : %03f vel: %03f\n", i,robot->joint[i].position, robot->joint[i].velocity);
+//     printf("i: %i pos : %03f vel: %03f\n", i,robot_state->joint[i].position, robot_state->joint[i].velocity);
 //     }
 //   */
 //   for(int i = 0; i < NUM_CASTERS; i++) {
 //     C.element(i*4, 0) = 1;
 //     C.element(i*4, 1) = 0;
-//     C.element(i*4, 2) = -(Rot2D(CASTER_DRIVE_OFFSET[i*2].x,CASTER_DRIVE_OFFSET[i*2].y,robot->joint[i*3].position).y + BASE_CASTER_OFFSET[i].y);
+//     C.element(i*4, 2) = -(Rot2D(CASTER_DRIVE_OFFSET[i*2].x,CASTER_DRIVE_OFFSET[i*2].y,robot_state->joint[i*3].position).y + BASE_CASTER_OFFSET[i].y);
 //     C.element(i*4+1, 0) = 0;
 //     C.element(i*4+1, 1) = 1;
-//     C.element(i*4+1, 2) =  Rot2D(CASTER_DRIVE_OFFSET[i*2].x,CASTER_DRIVE_OFFSET[i*2].y,robot->joint[i*3].position).x + BASE_CASTER_OFFSET[i].x;
+//     C.element(i*4+1, 2) =  Rot2D(CASTER_DRIVE_OFFSET[i*2].x,CASTER_DRIVE_OFFSET[i*2].y,robot_state->joint[i*3].position).x + BASE_CASTER_OFFSET[i].x;
 //     C.element(i*4+2, 0) = 1;
 //     C.element(i*4+2, 1) = 0;
-//     C.element(i*4+2, 2) =  -(Rot2D(CASTER_DRIVE_OFFSET[i*2+1].x,CASTER_DRIVE_OFFSET[i*2+1].y,robot->joint[i*3].position).y + BASE_CASTER_OFFSET[i].y);
+//     C.element(i*4+2, 2) =  -(Rot2D(CASTER_DRIVE_OFFSET[i*2+1].x,CASTER_DRIVE_OFFSET[i*2+1].y,robot_state->joint[i*3].position).y + BASE_CASTER_OFFSET[i].y);
 //     C.element(i*4+3, 0) = 0;
 //     C.element(i*4+3, 1) = 1;
-//     C.element(i*4+3, 2) =  Rot2D(CASTER_DRIVE_OFFSET[i*2+1].x,CASTER_DRIVE_OFFSET[i*2+1].y,robot->joint[i*3].position).x + BASE_CASTER_OFFSET[i].x;
+//     C.element(i*4+3, 2) =  Rot2D(CASTER_DRIVE_OFFSET[i*2+1].x,CASTER_DRIVE_OFFSET[i*2+1].y,robot_state->joint[i*3].position).x + BASE_CASTER_OFFSET[i].x;
 //   }
 
 //   D = pseudoInverse(C)*A;
