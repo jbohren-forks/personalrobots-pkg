@@ -289,7 +289,7 @@ WavefrontNode::WavefrontNode() :
         avmax(DTOR(80.0)),
         amin(DTOR(10.0)),
         amax(DTOR(40.0)),
-        tf(*this, true, 1 * 1000000000ULL, 100000000ULL)
+        tf(*this, true, 10000000000ULL, 0)// cache for 10 sec, no extrapolation
         //tf(*this, true, 200000000ULL, 200000000ULL) //nanoseconds
 {
   // Initialize global pose. Will be set in control loop based on actual data.
@@ -484,8 +484,8 @@ WavefrontNode::laserReceived()
     }
     catch(libTF::TransformReference::ExtrapolateException& ex)
     {
-      puts("extrapolation required");
-      printf("%s\n", ex.what());
+      //      puts("extrapolation required");
+      //      printf("%s\n", ex.what());
       continue;
     }
 
