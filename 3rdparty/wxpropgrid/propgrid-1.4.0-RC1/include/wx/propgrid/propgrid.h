@@ -22,7 +22,7 @@
 #include <wx/datetime.h>
 
 // NB: Do *NOT * remove this.
-#if defined(SWIG) || defined(SWIG_TYPE_TABLE)
+#if defined(SWIG) //|| defined(SWIG_TYPE_TABLE)
     #ifndef __WXPYTHON__
         #define __WXPYTHON__
     #endif
