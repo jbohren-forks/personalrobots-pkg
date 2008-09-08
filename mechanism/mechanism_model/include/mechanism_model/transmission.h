@@ -77,6 +77,7 @@ public:
   // the joint.
   virtual void propagateEffortBackwards(std::vector<Actuator*>&, std::vector<JointState*>&) = 0;
 
+  std::string name_;
   std::vector<std::string> actuator_names_;
   std::vector<std::string> joint_names_;
 };

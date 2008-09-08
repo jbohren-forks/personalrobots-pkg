@@ -44,6 +44,9 @@ ROS_REGISTER_TRANSMISSION(SimpleTransmission)
 
 bool SimpleTransmission::initXml(TiXmlElement *elt, Robot *robot)
 {
+  const char *name = elt->Attribute("name");
+  name_ = name ? name : "";
+
   TiXmlElement *jel = elt->FirstChildElement("joint");
   const char *joint_name = jel ? jel->Attribute("name") : NULL;
   if (!joint_name || robot->getJointIndex(joint_name) < 0)

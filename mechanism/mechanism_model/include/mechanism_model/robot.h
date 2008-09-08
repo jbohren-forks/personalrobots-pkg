@@ -95,6 +95,7 @@ public:
   int getJointIndex(const std::string &name);
   int getActuatorIndex(const std::string &name);
   int getLinkIndex(const std::string &name);
+  int getTransmissionIndex(const std::string &name);
 
   // All return NULL on failure
   Joint* getJoint(const std::string &name);

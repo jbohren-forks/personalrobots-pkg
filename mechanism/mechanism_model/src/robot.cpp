@@ -123,6 +123,11 @@ int Robot::getLinkIndex(const std::string &name)
   return findIndexByName(links_, name);
 }
 
+int Robot::getTransmissionIndex(const std::string &name)
+{
+  return findIndexByName(transmissions_, name);
+}
+
 Joint* Robot::getJoint(const std::string &name)
 {
   int i = getJointIndex(name);

@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,7 +31,11 @@
 
 ROS_REGISTER_TRANSMISSION(NonlinearTransmission)
 
-void NonlinearTransmission::initXml(TiXmlElement *elt, Robot *robot){
+void NonlinearTransmission::initXml(TiXmlElement *elt, Robot *robot)
+{
+  const char *name = elt->Attribute("name");
+  name_ = name ? name : "";
+
   TiXmlElement *jel = elt->FirstChildElement("joint");
   const char *joint_name = jel ? jel -> Attribute("name") : NULL;
   joint_ = joint_name ? joint->getJoint(joint_name) : NULL;
@@ -58,7 +62,7 @@ void NonlinearTransmission::propagatePosition()
   double actuator_applied_effort = ((double)actuator_->state_.last_measured_current_ * motor_torque_constant);
 
   double local_reduction = lookupReductionByInput(actuator_position);
-  
+
   joint_->position_ = lookupJointPosition(actuator_position);
   joint_->velocity_ = actuator_velocity * local_reduction;
   joint_->applied_effort_ = actuator_applied_effort / local_reduction;
@@ -69,7 +73,7 @@ void NonlinearTransmission::propagatePositionBackwards()
   assert(joint_); assert(actuator_);
 
   double local_reduction = lookupReductionByOutput(joint_->position);
-  
+
   actuator_->state_.encoder_count = (int)(lookupActuatorPosition(joint_->position) * pulses_per_revolution / (2 * M_PI));
   actuator_->state_.encoder_velocity = joint_->velocity / local_reduction;
   actuator_->state.last_measured_current_ = joint_->applied_effort_ / motor_torque_constant_ * local_reduction;

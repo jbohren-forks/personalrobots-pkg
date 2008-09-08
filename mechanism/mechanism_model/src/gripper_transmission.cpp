@@ -41,6 +41,9 @@ ROS_REGISTER_TRANSMISSION(GripperTransmission)
 
 bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
 {
+  const char *name = config->Attribute("name");
+  name_ = name ? name : "";
+
   TiXmlElement *ael = config->FirstChildElement("actuator");
   const char *actuator_name = ael ? ael->Attribute("name") : NULL;
   if (!actuator_name || !robot->getActuator(actuator_name))
