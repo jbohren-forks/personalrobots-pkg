@@ -94,12 +94,13 @@ int main(int argc, char **argv)
 
   while(n.ok())
   {
+    if(at_once)
+      usleep(100000);
     if (!player.nextMsg())
     {
       n.self_destruct();
     }
-    if(at_once)
-      usleep(100000);
+
   }
 
   usleep(100000);
