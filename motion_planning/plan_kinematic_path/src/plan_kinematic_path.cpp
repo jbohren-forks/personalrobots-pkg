@@ -192,7 +192,7 @@ public:
 	{
 	    printPath(res.path, res.distance);
 	    sendDisplay(res.path, req.params.model_id);
-	    //	    sendCommand(res.path, req.params.model_id);
+	    sendCommand(res.path, req.params.model_id);
 	}
 	else
 	    fprintf(stderr, "Service 'plan_kinematic_path_state' failed\n");	 
@@ -249,6 +249,7 @@ public:
 	{
 	    printPath(res.path, res.distance);
 	    sendDisplay(res.path, req.params.model_id);
+	    sendCommand(res.path, req.params.model_id);
 	}
 	else
 	    fprintf(stderr, "Service 'plan_kinematic_path_position' failed\n");	 
@@ -321,12 +322,12 @@ public:
 	
 	pr2_controllers::SetJointPathCmd::response res;
 	
-	if (ros::service::call("set_joint_path_cmd", req, res))
+	if (ros::service::call("left_arm_controller/set_target", req, res))
 	{
 	    
 	}
 	else
-	    fprintf(stderr, "Service 'set_....' failed\n");	 
+	    fprintf(stderr, "Service 'left_arm_controller/set_target' failed\n");	 
     }
     
 };
