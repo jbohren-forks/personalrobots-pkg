@@ -1,0 +1,1 @@
+rospack_add_executable(odom_extract odom_extract.cpp)
