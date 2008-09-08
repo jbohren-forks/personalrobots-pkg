@@ -33,7 +33,7 @@
 *********************************************************************/
 
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
 #include <profiling_utils/profiler.h>
 #include <pthread.h>

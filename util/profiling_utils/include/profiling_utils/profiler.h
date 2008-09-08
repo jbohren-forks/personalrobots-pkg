@@ -33,72 +33,97 @@
 *********************************************************************/
 
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
 #ifndef UTIL_PROFILING_UTILS_PROFILER_
 #define UTIL_PROFILING_UTILS_PROFILER_
 
 #include <map>
 #include <string>
-#include <ros/time.h>
+#include <ros/time.h> /// \todo this is bad, need to switch to some separate time_utils library, remove dependency on roscpp
 #include <iostream>
 
 namespace profiling_utils
 {
 
+    /** This is a simple thread-safe tool for counting time spent in
+	various chunks of code. */
+
     class Profiler
     {
     public:
 	
+	/** Return an instance of the class */
 	static Profiler* Instance(void);
-
+	
+	/** Constructor. It is allowed to separately instantiate this
+	    class (not only as a singleton) */
 	Profiler(void)
 	{
 	    m_running = false;
 	}
 	
+	/** Destructor */
 	virtual ~Profiler(void)
 	{
 	}
 	
+	/** Start counting time */
 	static void Start(void)
 	{
 	    Instance()->start();
 	}
-	
+
+	/** Stop counting time */	
 	static void Stop(void)
 	{
 	    Instance()->stop();
 	}
-	
+
+	/** Start counting time */
 	void start(void);
+
+	/** Stop counting time */	
 	void stop(void);
 	
+	/** Count a specific event for a number of times */
 	static void Event(const std::string& name, const unsigned int times = 1)
 	{
 	    Instance()->event(name, times);
 	}
 	
+	/** Count a specific event for a number of times */
 	void event(const std::string &name, const unsigned int times = 1);
 	
+	/** Begin counting time for a specific chunk of code */
 	static void Begin(const std::string &name)
 	{
 	    Instance()->begin(name);
 	}
 	
+	/** Stop counting time for a specific chunk of code */
 	static void End(const std::string &name)
 	{
 	    Instance()->end(name);
 	}
-	
+
+	/** Begin counting time for a specific chunk of code */
 	void begin(const std::string &name);
+	
+	/** Stop counting time for a specific chunk of code */
 	void end(const std::string &name);	
 	
+	/** Print the status of the profiled code chunks and
+	    events. Optionally, computation done by different threads
+	    can be printed separately. */
 	static void Status(std::ostream &out = std::cout, bool merge = true)
 	{
 	    Instance()->status(out, merge);
 	}
 	
+	/** Print the status of the profiled code chunks and
+	    events. Optionally, computation done by different threads
+	    can be printed separately. */
 	void status(std::ostream &out = std::cout, bool merge = true);
 	
     protected:
@@ -110,7 +135,7 @@ namespace profiling_utils
 	    
 	    void set(void)
 	    {
-		start = ros::Time::now();
+		start = ros::Time::now(); /// \todo change this from ros::Time 
 	    }
 	    
 	    void update(void)
