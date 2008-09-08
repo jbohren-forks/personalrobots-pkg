@@ -121,8 +121,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
     if (base_object.joint_state_==NULL)
       std::cout << " unsuccessful getting joint state for " << joint_name << std::endl;
 
-    //abort();
-    base_object.controller_.init(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup,0.0,jcp_iter->joint_name,robot_state);
+    base_object.controller_.init(robot_state, joint_name, Pid(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup));
 
     if(joint_name.find("caster") != string::npos)
     {
