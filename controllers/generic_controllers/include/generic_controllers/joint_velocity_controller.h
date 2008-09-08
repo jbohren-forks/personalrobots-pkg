@@ -77,17 +77,7 @@ public:
    */
   ~JointVelocityController();
 
-  /*!
-   * \brief Functional way to initialize limits and gains.
-   * \param p_gain Proportional gain.
-   * \param i_gain Integral gain.
-   * \param d_gain Derivative gain.
-   * \param windup Intergral limit.
-   * \param time The current hardware time.
-   * \param *joint The joint that is being controlled.
-   */
-
-  void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::RobotState *robot_state);
+  bool init(mechanism::RobotState *robot_state, const std::string &joint_name, const Pid &pid);
   bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
 
   /*!
@@ -127,7 +117,7 @@ public:
 private:
   mechanism::JointState *joint_state_;
   mechanism::RobotState *robot_state_; /**< Pointer to robot structure. */
-  Pid pid_controller_;      /**< Internal PID controller. */
+  Pid pid_;
   double last_time_;        /**< Last time stamp of update. */
   double command_;          /**< Last commanded position. */
 

@@ -41,51 +41,35 @@ using namespace controller;
 ROS_REGISTER_CONTROLLER(JointVelocityController)
 
 JointVelocityController::JointVelocityController()
-: joint_state_(NULL), robot_state_(NULL)
+: joint_state_(NULL), robot_state_(NULL), last_time_(0), command_(0)
 {
-  // Initialize PID class
-  pid_controller_.initPid(0, 0, 0, 0, 0);
-  command_ = 0;
-  last_time_=0;
 }
 
 JointVelocityController::~JointVelocityController()
 {
 }
 
-void JointVelocityController::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::RobotState *robot_state)
+bool JointVelocityController::init(mechanism::RobotState *robot_state, const std::string &joint_name, const Pid &pid)
 {
   assert(robot_state);
   robot_state_ = robot_state;
   last_time_ = robot_state->hw_->current_time_;
 
-  // FIXME: BRING BACK THIS FUNCTION CALL...
-  // const char *joint_name = j->Attribute("name");
-  // joint_state_ = robot_state_->getJointState(joint_name);
-  // if (joint_state_ == NULL)
-  // {
-  //   std::cout << "JointVelocityController could not find joint named: " <<  joint_name << std::endl;
-  //   fprintf(stderr, "JointVelocityController could not find joint named \"%s\"\n", joint_name);
-  //   return false;
-  // }
-  // std::cout << "JointVelocityController loaded joint named: " <<  joint_name << std::endl;
+  joint_state_ = robot_state_->getJointState(joint_name);
+  if (!joint_state_)
+  {
+    fprintf(stderr, "JointVelocityController could not find joint named \"%s\"\n",
+            joint_name.c_str());
+    return false;
+  }
 
-  // TiXmlElement *p = j->FirstChildElement("pid");
-  // if (p)
-  //   pid_controller_.initXml(p);
-  // else
-  //   fprintf(stderr, "JointVelocityController's config did not specify the default pid parameters.\n");
+  pid_ = pid;
 
-  // return true;
-
+  return true;
 }
 
 bool JointVelocityController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 {
-  assert(robot_state);
-  robot_state_ = robot_state;
-  last_time_ = robot_state->hw_->current_time_;
-
   TiXmlElement *j = config->FirstChildElement("joint");
   if (!j)
   {
@@ -93,23 +77,20 @@ bool JointVelocityController::initXml(mechanism::RobotState *robot_state, TiXmlE
     return false;
   }
 
-  const char *joint_name = j->Attribute("name");
-  joint_state_ = robot_state_->getJointState(joint_name);
-  if (joint_state_ == NULL)
-  {
-    std::cout << "JointVelocityController could not find joint named: " <<  joint_name << std::endl;
-    fprintf(stderr, "JointVelocityController could not find joint named \"%s\"\n", joint_name);
-    return false;
-  }
-  std::cout << "JointVelocityController loaded joint named: " <<  joint_name << std::endl;
+  const char *jn = j->Attribute("name");
+  std::string joint_name = jn ? jn : "";
 
+  Pid pid;
   TiXmlElement *p = j->FirstChildElement("pid");
   if (p)
-    pid_controller_.initXml(p);
+    pid.initXml(p);
   else
+  {
     fprintf(stderr, "JointVelocityController's config did not specify the default pid parameters.\n");
+    return false;
+  }
 
-  return true;
+  return this->init(robot_state, joint_name, pid);
 }
 
 // Set the joint velocity command
@@ -146,18 +127,18 @@ void JointVelocityController::update()
   double time = robot_state_->hw_->current_time_;
 
   error = joint_state_->velocity_ - command_;
-  joint_state_->commanded_effort_ = pid_controller_.updatePid(error, time - last_time_);
+  joint_state_->commanded_effort_ = pid_.updatePid(error, time - last_time_);
   last_time_ = time;
 }
 
 void JointVelocityController::setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min)
 {
-  pid_controller_.setGains(p,i,d,i_max,i_min);
+  pid_.setGains(p,i,d,i_max,i_min);
 }
 
 void JointVelocityController::getGains(double &p, double &i, double &d, double &i_max, double &i_min)
 {
-  pid_controller_.getGains(p,i,d,i_max,i_min);
+  pid_.getGains(p,i,d,i_max,i_min);
 }
 
 
