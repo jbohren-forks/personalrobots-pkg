@@ -38,6 +38,22 @@
 #ifndef UTIL_PROFILING_UTILS_PROFILER_
 #define UTIL_PROFILING_UTILS_PROFILER_
 
+
+#ifndef ENABLE_PROFILING
+
+/** The ENABLE_PROFILING macro can be set externally. If it is not,
+    profiling is enabled by default, unless NDEBUG is defined. */
+
+#  ifdef NDEBUG
+#    define ENABLE_PROFILING 0
+#  else
+#    define ENABLE_PROFILING 1
+#  endif
+
+#endif
+
+#if ENABLE_PROFILING
+
 #include <map>
 #include <string>
 #include <ros/time.h> /// \todo this is bad, need to switch to some separate time_utils library, remove dependency on roscpp
@@ -64,7 +80,7 @@ namespace profiling_utils
 	}
 	
 	/** Destructor */
-	virtual ~Profiler(void)
+	~Profiler(void)
 	{
 	}
 	
@@ -159,5 +175,85 @@ namespace profiling_utils
     };
     
 }
+
+#else
+
+#include <string>
+#include <iostream>
+
+/* If profiling is disabled, provide empty implementations for the
+   public functions */
+namespace profiling_utils
+{
+
+    class Profiler
+    {
+    public:
+	
+	static Profiler* Instance(void)
+	{
+	    return NULL;
+	}
+	
+	Profiler(void)
+	{
+	}
+	
+	~Profiler(void)
+	{
+	}
+	
+	static void Start(void)
+	{
+	}
+
+	static void Stop(void)
+	{
+	}
+
+	void start(void)
+	{
+	}
+	
+	void stop(void)
+	{
+	}
+
+	static void Event(const std::string& name, const unsigned int times = 1)
+	{
+	}
+	
+	void event(const std::string &name, const unsigned int times = 1)
+	{
+	}
+	
+	static void Begin(const std::string &name)
+	{
+	}
+	
+	static void End(const std::string &name)
+	{
+	}
+
+	void begin(const std::string &name)
+	{
+	}
+
+	void end(const std::string &name)
+	{
+	}
+	
+	static void Status(std::ostream &out = std::cout, bool merge = true)
+	{
+	}
+	
+	void status(std::ostream &out = std::cout, bool merge = true)
+	{
+	}
+    };
+}
+
+#endif
+
 
 #endif

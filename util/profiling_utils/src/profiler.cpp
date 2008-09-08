@@ -36,6 +36,9 @@
 /** \author Ioan Sucan */
 
 #include <profiling_utils/profiler.h>
+
+#if ENABLE_PROFILING
+
 #include <pthread.h>
 #include <vector>
 #include <algorithm>
@@ -191,3 +194,4 @@ void profiling_utils::Profiler::printThreadInfo(std::ostream &out, const PerThre
     out << std::endl;    
 }
 
+#endif
