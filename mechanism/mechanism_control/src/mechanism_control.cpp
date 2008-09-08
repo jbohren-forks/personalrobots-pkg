@@ -289,12 +289,21 @@ bool MechanismControlNode::spawnController(
   doc.Parse(req.xml_config.c_str());
 
   TiXmlElement *config = doc.RootElement();
-  if (!config->Attribute("type"))
-    resp.ok = false;
-  else if (!config->Attribute("name"))
-    resp.ok = false;
-  else
-    resp.ok = mc_->spawnController(config->Attribute("type"), config->Attribute("name"), config);
+  if (0 == strcmp(config->Value(), "controllers"))
+  {
+    config = config->FirstChildElement("controller");
+  }
+
+  for (; config; config = config->NextSiblingElement("controller"))
+  {
+    if (!config->Attribute("type"))
+      resp.ok = false;
+    else if (!config->Attribute("name"))
+      resp.ok = false;
+    else
+      resp.ok = mc_->spawnController(config->Attribute("type"), config->Attribute("name"), config);
+  }
+
   return true;
 }
 

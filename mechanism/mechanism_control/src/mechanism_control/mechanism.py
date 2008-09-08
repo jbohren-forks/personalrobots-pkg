@@ -20,6 +20,7 @@ def list_controllers():
         print c
 
 def spawn_controller(xml):
+    rospy.wait_for_service('spawn_controller')
     s = rospy.ServiceProxy('spawn_controller', SpawnController)
     resp = s.call(SpawnControllerRequest(xml))
     if resp.ok == 1:
