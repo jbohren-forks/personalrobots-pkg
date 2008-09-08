@@ -37,15 +37,18 @@
 
 using namespace std;
 
+bool at_once; 
+
 void doPublish(string name, ros::msg* m, ros::Time t, void* n)
 {
-  ros::Time now = ros::Time::now();
+  if(!at_once) {
+    ros::Time now = ros::Time::now();
+    ros::Duration delta = t - ros::Time::now();
 
-  ros::Duration delta = t - ros::Time::now();
+    if (delta > ros::Duration(0, 5000))
+      usleep(delta.to_ll()/1000 - 5);
+  }
 
-  if (delta > ros::Duration(0, 5000))
-    usleep(delta.to_ll()/1000 - 5);
-  
   ((ros::node*)(n))->publish(name, *m);
 }
 
@@ -54,8 +57,11 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   if (argc <= 1)
   {
-    printf("\nusage: playback BAG1 [BAG2] ...\n  this is a good place to use "
-           "the shell * feature\n\n");
+    printf("\nusage:\n");
+
+    printf("playback BAG1 [BAG2] ...\n");
+    printf("playback --atonce BAG1 [BAG2] ...   #To send all messages at once.\n"); 
+    printf("this is a good place to use the shell * feature\n\n");
     return 1;
   }
 
@@ -64,8 +70,13 @@ int main(int argc, char **argv)
   MultiLogPlayer player;
 
   std::vector<std::string> topics;
-  for (int i = 1; i < argc; i++)
-    topics.push_back(argv[i]);
+  at_once = false;
+  for (int i = 1; i < argc; i++) {
+    if(!strcmp(argv[i], "--atonce"))
+      at_once = true;
+    else
+      topics.push_back(argv[i]);
+  }
 
   ros::Time start = ros::Time::now();
 
@@ -87,6 +98,8 @@ int main(int argc, char **argv)
     {
       n.self_destruct();
     }
+    if(at_once)
+      usleep(100000);
   }
 
   usleep(100000);
