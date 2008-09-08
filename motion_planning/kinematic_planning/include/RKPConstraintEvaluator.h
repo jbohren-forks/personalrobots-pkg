@@ -56,7 +56,7 @@ class KinematicConstraintEvaluator
     }
     
     virtual void clear(void) = 0;
-    virtual void use(planning_models::KinematicModel *kmodel, const ros::msg *kc) = 0;
+    virtual bool use(planning_models::KinematicModel *kmodel, const ros::msg *kc) = 0;
     virtual bool decide(void) = 0;
     virtual void print(std::ostream &out = std::cout) const
     {
@@ -73,17 +73,20 @@ class PoseConstraintEvaluator : public KinematicConstraintEvaluator
 	m_link = NULL;
     }
     
-    virtual void use(planning_models::KinematicModel *kmodel, const ros::msg *kc)
+    virtual bool use(planning_models::KinematicModel *kmodel, const ros::msg *kc)
     {
 	const robot_msgs::PoseConstraint *pc = dynamic_cast<const robot_msgs::PoseConstraint*>(kc);
 	if (pc)
-	    use(kmodel, *pc);
+	    return use(kmodel, *pc);
+	else
+	    return false;
     }
     
-    void use(planning_models::KinematicModel *kmodel, const robot_msgs::PoseConstraint &pc)
+    bool use(planning_models::KinematicModel *kmodel, const robot_msgs::PoseConstraint &pc)
     {
 	m_link = kmodel->getLink(pc.robot_link);
 	m_pc   = pc;
+	return true;
     }
     
     virtual void clear(void)
@@ -207,15 +210,17 @@ class KinematicConstraintEvaluatorSet
 	m_kce.clear();	
     }
 	      
-    void use(planning_models::KinematicModel *kmodel, const std::vector<robot_msgs::PoseConstraint> &kc)
+    bool use(planning_models::KinematicModel *kmodel, const std::vector<robot_msgs::PoseConstraint> &kc)
     {
 	clear();
+	bool result = true;
 	for (unsigned int i = 0 ; i < kc.size() ; ++i)
 	{
 	    PoseConstraintEvaluator *ev = new PoseConstraintEvaluator();
-	    ev->use(kmodel, kc[i]);
+	    result = result && ev->use(kmodel, kc[i]);
 	    m_kce.push_back(ev);
 	}
+	return result;
     }
     
     bool decide(void)
