@@ -293,7 +293,7 @@ int Pose3DCache::findClosest(Pose3DStorage& one, Pose3DStorage& two, const unsig
       std::stringstream ss;
       ss << "Extrapolation Too Far in the past: target_time = "<< (target_time)/1000000000.0 <<", closest data at "
          << (one.time)/1000000000.0 << " and " << (two.time)/1000000000.0 <<" which are farther away than max_extrapolation_time "
-         << (max_extrapolation_time)/1000000000.0 <<" at "<< (target_time - one.time)/1000000000.0<< " and " << (target_time - two.time)/1000000000.0 <<" respectively.";
+         << (max_extrapolation_time)/1000000000.0 <<" at "<< (-target_time + one.time)/1000000000.0<< " and " << (-target_time + two.time)/1000000000.0 <<" respectively."; //sign flip since in the past
       throw ExtrapolationException(ss.str());
     }
     return 2;
