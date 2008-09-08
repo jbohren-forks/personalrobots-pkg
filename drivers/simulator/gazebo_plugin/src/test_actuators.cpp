@@ -53,7 +53,7 @@ namespace gazebo {
   GZ_REGISTER_DYNAMIC_CONTROLLER("test_actuators", TestActuators);
 
   TestActuators::TestActuators(Entity *parent)
-    : Controller(parent) , hw_(0), mc_(&hw_), rmc_(&hw_) , mcn_(&mc_)
+    : Controller(parent) , hw_(0), mc_(&hw_), fake_state_(NULL) , mcn_(&mc_)
   {
      this->parent_model_ = dynamic_cast<Model*>(this->parent);
 
@@ -167,22 +167,22 @@ namespace gazebo {
     //-----------------------------------------------------------------------------------------
     TiXmlDocument *pr2_xml = new TiXmlDocument();
     TiXmlDocument *controller_xml = new TiXmlDocument();
-    TiXmlDocument *transmission_xml = new TiXmlDocument();
+    //TiXmlDocument *transmission_xml = new TiXmlDocument();
     TiXmlDocument *actuator_xml = new TiXmlDocument();
 
     std::string pr2_xml_filename = getenv("MC_RESOURCE_PATH"); pr2_xml_filename += "/"; pr2_xml_filename += node->GetString("robot_filename","",1);
     std::string controller_xml_filename = getenv("MC_RESOURCE_PATH"); controller_xml_filename += "/"; controller_xml_filename += node->GetString("controller_filename","",1);
-    std::string transmission_xml_filename = getenv("MC_RESOURCE_PATH"); transmission_xml_filename += "/"; transmission_xml_filename += node->GetString("transmission_filename","",1);
+    //std::string transmission_xml_filename = getenv("MC_RESOURCE_PATH"); transmission_xml_filename += "/"; transmission_xml_filename += node->GetString("transmission_filename","",1);
     std::string actuator_xml_filename = getenv("MC_RESOURCE_PATH"); actuator_xml_filename += "/"; actuator_xml_filename += node->GetString("actuator_filename","",1);
 
     std::cout << " pr2 robot xml file name: " << pr2_xml_filename << std::endl;
     std::cout << " controller    file name: " << controller_xml_filename << std::endl;
-    std::cout << " transmission  file name: " << transmission_xml_filename << std::endl;
+    //std::cout << " transmission  file name: " << transmission_xml_filename << std::endl;
     std::cout << " actuator      file name: " << actuator_xml_filename << std::endl;
 
     pr2_xml         ->LoadFile(pr2_xml_filename);
     controller_xml  ->LoadFile(controller_xml_filename);
-    transmission_xml->LoadFile(transmission_xml_filename);
+    //transmission_xml->LoadFile(transmission_xml_filename);
     actuator_xml    ->LoadFile(actuator_xml_filename);
 
     urdf::normalizeXml( pr2_xml->RootElement() );
@@ -243,7 +243,8 @@ namespace gazebo {
     //
     //-----------------------------------------------------------------------------------------
     mcn_.initXml(pr2_xml->FirstChildElement("robot"));
-    rmc_.initXml(pr2_xml->FirstChildElement("robot"));
+
+    fake_state_ = new mechanism::RobotState(&mc_.model_, &hw_);
 
     //-----------------------------------------------------------------------------------------
     //
@@ -264,7 +265,7 @@ namespace gazebo {
 
 
       // add a link to the mechanism control joint
-      gj->rmc_joint_state_ = rmc_.state_->getJointState(*joint_name);
+      gj->fake_joint_state_ = fake_state_->getJointState(*joint_name);
 
       // read gazebo specific joint properties
       gj->saturationTorque           = jNode->GetDouble("saturationTorque",0.0,0);
@@ -291,16 +292,6 @@ namespace gazebo {
 
     //-----------------------------------------------------------------------------------------
     //
-    // TRANSMISSION XML
-    //
-    // make mc parse xml for transmissions
-    //
-    //-----------------------------------------------------------------------------------------
-    mcn_.initXml(transmission_xml->FirstChildElement("robot"));
-    rmc_.initXml(transmission_xml->FirstChildElement("robot"));
-
-    //-----------------------------------------------------------------------------------------
-    //
     // CONTROLLER XML
     //
     //  spawn controllers
@@ -320,12 +311,6 @@ namespace gazebo {
       mc_.spawnController(*controller_type,
                           *controller_name,
                           zit);
-
-      std::cout << " adding to rmc_ " << *controller_name << "(" << *controller_type << ")" << std::endl;
-      rmc_.spawnController(*controller_type,
-                           *controller_name,
-                           zit);
-
     }
 
   }
@@ -365,76 +350,18 @@ namespace gazebo {
       lastRealTime = currentRealTime;
     }
 
-    this->lock.lock();
-    /***************************************************************/
-    /*                                                             */
-    /*  publish time to ros                                        */
-    /*                                                             */
-    /***************************************************************/
-    timeMsg.rostime.sec  = (unsigned long)floor(hw_.current_time_);
-    timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  hw_.current_time_ - timeMsg.rostime.sec) );
-    rosnode_->publish("time",timeMsg);
-
-    /***************************************************************/
-    /*                                                             */
-    /*   object position                                           */
-    /*   FIXME: move this to the P3D plugin (update P3D required)  */
-    /*                                                             */
-    /***************************************************************/
-    //this->PR2Copy->GetObjectPositionActual(&x,&y,&z,&roll,&pitch,&yaw);
-    //this->objectPosMsg.x  = x;
-    //this->objectPosMsg.y  = y;
-    //this->objectPosMsg.z  = z;
-    //rosnode_->publish("object_position", this->objectPosMsg);
-
-
-
-    /* get left arm position */
-    if( mc_.state_->getJointState("shoulder_pan_left_joint")   ) larm.turretAngle       = mc_.state_->getJointState("shoulder_pan_left_joint")  ->position_;
-    if( mc_.state_->getJointState("shoulder_pitch_left_joint") ) larm.shoulderLiftAngle = mc_.state_->getJointState("shoulder_pitch_left_joint")->position_;
-    if( mc_.state_->getJointState("upperarm_roll_left_joint")  ) larm.upperarmRollAngle = mc_.state_->getJointState("upperarm_roll_left_joint") ->position_;
-    if( mc_.state_->getJointState("elbow_flex_left_joint")     ) larm.elbowAngle        = mc_.state_->getJointState("elbow_flex_left_joint")    ->position_;
-    if( mc_.state_->getJointState("forearm_roll_left_joint")   ) larm.forearmRollAngle  = mc_.state_->getJointState("forearm_roll_left_joint")  ->position_;
-    if( mc_.state_->getJointState("wrist_flex_left_joint")     ) larm.wristPitchAngle   = mc_.state_->getJointState("wrist_flex_left_joint")    ->position_;
-    if( mc_.state_->getJointState("gripper_roll_left_joint")   ) larm.wristRollAngle    = mc_.state_->getJointState("gripper_roll_left_joint")  ->position_;
-    if( mc_.state_->getJointState("gripper_left_joint")        ) larm.gripperForceCmd   = mc_.state_->getJointState("gripper_left_joint")       ->applied_effort_;
-    if( mc_.state_->getJointState("gripper_left_joint")        ) larm.gripperGapCmd     = mc_.state_->getJointState("gripper_left_joint")       ->position_;
-    rosnode_->publish("left_pr2arm_pos", larm);
-    /* get right arm position */
-    if( mc_.state_->getJointState("shoulder_pan_right_joint")   ) rarm.turretAngle       = mc_.state_->getJointState("shoulder_pan_right_joint")  ->position_;
-    if( mc_.state_->getJointState("shoulder_pitch_right_joint") ) rarm.shoulderLiftAngle = mc_.state_->getJointState("shoulder_pitch_right_joint")->position_;
-    if( mc_.state_->getJointState("upperarm_roll_right_joint")  ) rarm.upperarmRollAngle = mc_.state_->getJointState("upperarm_roll_right_joint") ->position_;
-    if( mc_.state_->getJointState("elbow_flex_right_joint")     ) rarm.elbowAngle        = mc_.state_->getJointState("elbow_flex_right_joint")    ->position_;
-    if( mc_.state_->getJointState("forearm_roll_right_joint")   ) rarm.forearmRollAngle  = mc_.state_->getJointState("forearm_roll_right_joint")  ->position_;
-    if( mc_.state_->getJointState("wrist_flex_right_joint")     ) rarm.wristPitchAngle   = mc_.state_->getJointState("wrist_flex_right_joint")    ->position_;
-    if( mc_.state_->getJointState("gripper_roll_right_joint")   ) rarm.wristRollAngle    = mc_.state_->getJointState("gripper_roll_right_joint")  ->position_;
-    if( mc_.state_->getJointState("gripper_right_joint")        ) rarm.gripperForceCmd   = mc_.state_->getJointState("gripper_right_joint")       ->applied_effort_;
-    if( mc_.state_->getJointState("gripper_right_joint")        ) rarm.gripperGapCmd     = mc_.state_->getJointState("gripper_right_joint")       ->position_;
-    rosnode_->publish("right_pr2arm_pos", rarm);
-
-    PublishFrameTransforms();
-
-    this->lock.unlock();
+    PublishROS();
 
     //---------------------------------------------------------------------
     // Real time update calls to mechanism control
     // this is what the hard real time loop does,
     // minus the tick() call to etherCAT
     //---------------------------------------------------------------------
-    //
-    // step through all controllers in the Robot_controller
+    // fetch joint info into fake_state_ from gazebo joints
     UpdateMCJoints();
-
-
     // push reverse_mech_joint_ stuff back toward actuators
-    for (unsigned int i=0; i < rmc_.model_.transmissions_.size(); i++)
-    {
-      rmc_.state_->propagateStateBackwards();
-      rmc_.state_->propagateEffort();
-      // std::cout << " applying reverse transmisison : "
-      //           <<  dynamic_cast<mechanism::SimpleTransmission*>(rmc_.model_.transmissions_[i])->name_
-      //           << " " <<  std::endl;
-    }
+    fake_state_->propagateStateBackwards();
+    fake_state_->propagateEffort();
 
 
     // -------------------------------------------------------------------------------------------------
@@ -497,19 +424,70 @@ namespace gazebo {
     // -                                                                                               -
     // -------------------------------------------------------------------------------------------------
     // propagate actuator data back to reverse-joints
-    for (unsigned int i=0; i < rmc_.model_.transmissions_.size(); i++)
-    {
-      // assign reverse joint states from actuator states
-      rmc_.state_->propagateState();
-      // assign joint effort
-      rmc_.state_->propagateEffortBackwards();
-    }
+    // assign reverse joint states from actuator states
+    fake_state_->propagateState();
+    // assign joint effort
+    fake_state_->propagateEffortBackwards();
 
     UpdateGazeboJoints();
 
 
     lastTime = currentTime;
 
+  }
+
+  void TestActuators::PublishROS()
+  {
+    this->lock.lock();
+    /***************************************************************/
+    /*                                                             */
+    /*  publish time to ros                                        */
+    /*                                                             */
+    /***************************************************************/
+    timeMsg.rostime.sec  = (unsigned long)floor(hw_.current_time_);
+    timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  hw_.current_time_ - timeMsg.rostime.sec) );
+    rosnode_->publish("time",timeMsg);
+
+    /***************************************************************/
+    /*                                                             */
+    /*   object position                                           */
+    /*   FIXME: move this to the P3D plugin (update P3D required)  */
+    /*                                                             */
+    /***************************************************************/
+    //this->PR2Copy->GetObjectPositionActual(&x,&y,&z,&roll,&pitch,&yaw);
+    //this->objectPosMsg.x  = x;
+    //this->objectPosMsg.y  = y;
+    //this->objectPosMsg.z  = z;
+    //rosnode_->publish("object_position", this->objectPosMsg);
+
+
+
+    /* get left arm position */
+    if( mc_.state_->getJointState("shoulder_pan_left_joint")   ) larm.turretAngle       = mc_.state_->getJointState("shoulder_pan_left_joint")  ->position_;
+    if( mc_.state_->getJointState("shoulder_pitch_left_joint") ) larm.shoulderLiftAngle = mc_.state_->getJointState("shoulder_pitch_left_joint")->position_;
+    if( mc_.state_->getJointState("upperarm_roll_left_joint")  ) larm.upperarmRollAngle = mc_.state_->getJointState("upperarm_roll_left_joint") ->position_;
+    if( mc_.state_->getJointState("elbow_flex_left_joint")     ) larm.elbowAngle        = mc_.state_->getJointState("elbow_flex_left_joint")    ->position_;
+    if( mc_.state_->getJointState("forearm_roll_left_joint")   ) larm.forearmRollAngle  = mc_.state_->getJointState("forearm_roll_left_joint")  ->position_;
+    if( mc_.state_->getJointState("wrist_flex_left_joint")     ) larm.wristPitchAngle   = mc_.state_->getJointState("wrist_flex_left_joint")    ->position_;
+    if( mc_.state_->getJointState("gripper_roll_left_joint")   ) larm.wristRollAngle    = mc_.state_->getJointState("gripper_roll_left_joint")  ->position_;
+    if( mc_.state_->getJointState("gripper_left_joint")        ) larm.gripperForceCmd   = mc_.state_->getJointState("gripper_left_joint")       ->applied_effort_;
+    if( mc_.state_->getJointState("gripper_left_joint")        ) larm.gripperGapCmd     = mc_.state_->getJointState("gripper_left_joint")       ->position_;
+    rosnode_->publish("left_pr2arm_pos", larm);
+    /* get right arm position */
+    if( mc_.state_->getJointState("shoulder_pan_right_joint")   ) rarm.turretAngle       = mc_.state_->getJointState("shoulder_pan_right_joint")  ->position_;
+    if( mc_.state_->getJointState("shoulder_pitch_right_joint") ) rarm.shoulderLiftAngle = mc_.state_->getJointState("shoulder_pitch_right_joint")->position_;
+    if( mc_.state_->getJointState("upperarm_roll_right_joint")  ) rarm.upperarmRollAngle = mc_.state_->getJointState("upperarm_roll_right_joint") ->position_;
+    if( mc_.state_->getJointState("elbow_flex_right_joint")     ) rarm.elbowAngle        = mc_.state_->getJointState("elbow_flex_right_joint")    ->position_;
+    if( mc_.state_->getJointState("forearm_roll_right_joint")   ) rarm.forearmRollAngle  = mc_.state_->getJointState("forearm_roll_right_joint")  ->position_;
+    if( mc_.state_->getJointState("wrist_flex_right_joint")     ) rarm.wristPitchAngle   = mc_.state_->getJointState("wrist_flex_right_joint")    ->position_;
+    if( mc_.state_->getJointState("gripper_roll_right_joint")   ) rarm.wristRollAngle    = mc_.state_->getJointState("gripper_roll_right_joint")  ->position_;
+    if( mc_.state_->getJointState("gripper_right_joint")        ) rarm.gripperForceCmd   = mc_.state_->getJointState("gripper_right_joint")       ->applied_effort_;
+    if( mc_.state_->getJointState("gripper_right_joint")        ) rarm.gripperGapCmd     = mc_.state_->getJointState("gripper_right_joint")       ->position_;
+    rosnode_->publish("right_pr2arm_pos", rarm);
+
+    PublishFrameTransforms();
+
+    this->lock.unlock();
   }
 
 
@@ -531,7 +509,7 @@ namespace gazebo {
           if (gjs)
           {
             double dampForce    = -(*gji)->explicitDampingCoefficient * gjs->GetPositionRate();
-            gjs->SetSliderForce( (*gji)->rmc_joint_state_->commanded_effort_+dampForce);
+            gjs->SetSliderForce( (*gji)->fake_joint_state_->commanded_effort_+dampForce);
             break;
           }
         }
@@ -541,8 +519,8 @@ namespace gazebo {
           if (gjh)
           {
             double dampForce    = -(*gji)->explicitDampingCoefficient * gjh->GetAngleRate();
-            gjh->SetTorque( (*gji)->rmc_joint_state_->commanded_effort_+dampForce);
-            //std::cout << " hinge " << *((*gji)->name_) << " torque: " << (*gji)->rmc_joint_state_->commanded_effort_ << " damping " << dampForce << std::endl;
+            gjh->SetTorque( (*gji)->fake_joint_state_->commanded_effort_+dampForce);
+            //std::cout << " hinge " << *((*gji)->name_) << " torque: " << (*gji)->fake_joint_state_->commanded_effort_ << " damping " << dampForce << std::endl;
             break;
           }
         }
@@ -565,18 +543,18 @@ namespace gazebo {
         case gazebo::Joint::SLIDER:
         {
           gazebo::SliderJoint* gjs  = dynamic_cast<gazebo::SliderJoint*>((*gji)->gaz_joints_[0]);
-          (*gji)->rmc_joint_state_->position_       = gjs->GetPosition();
-          (*gji)->rmc_joint_state_->velocity_       = gjs->GetPositionRate();
-          (*gji)->rmc_joint_state_->applied_effort_ = (*gji)->rmc_joint_state_->commanded_effort_;
+          (*gji)->fake_joint_state_->position_       = gjs->GetPosition();
+          (*gji)->fake_joint_state_->velocity_       = gjs->GetPositionRate();
+          (*gji)->fake_joint_state_->applied_effort_ = (*gji)->fake_joint_state_->commanded_effort_;
           break;
         }
         case gazebo::Joint::HINGE:
         {
           gazebo::HingeJoint* gjh  = dynamic_cast<gazebo::HingeJoint*>((*gji)->gaz_joints_[0]);
-          (*gji)->rmc_joint_state_->position_       = gjh->GetAngle();
-          (*gji)->rmc_joint_state_->velocity_       = gjh->GetAngleRate();
-          (*gji)->rmc_joint_state_->applied_effort_ = (*gji)->rmc_joint_state_->commanded_effort_;
-          //std::cout << " hinge " << *((*gji)->name_) << " angle " << (*gji)->rmc_joint_state_->position_ << std::endl;
+          (*gji)->fake_joint_state_->position_       = gjh->GetAngle();
+          (*gji)->fake_joint_state_->velocity_       = gjh->GetAngleRate();
+          (*gji)->fake_joint_state_->applied_effort_ = (*gji)->fake_joint_state_->commanded_effort_;
+          //std::cout << " hinge " << *((*gji)->name_) << " angle " << (*gji)->fake_joint_state_->position_ << std::endl;
           break;
         }
         case gazebo::Joint::HINGE2:

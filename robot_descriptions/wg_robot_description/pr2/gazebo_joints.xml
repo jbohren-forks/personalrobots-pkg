@@ -80,14 +80,22 @@
           <saturationTorque>100</saturationTorque>
           <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
-  <!-- Special gripper joint -->
-        <joint name="finger_l_left_joint" gripper_controller="gripper_left_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+      <!-- Special gripper joint -->
+      <joint name="finger_l_left_joint" gripper_controller="gripper_left_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
           <saturationTorque>100</saturationTorque>
           <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
-          <left_proximal>finger_l_left_joint</left_proximal>
-          <left_distal>finger_tip_l_left_joint</left_distal>
-          <right_proximal>finger_r_left_joint</right_proximal>
-          <right_distal>finger_tip_r_left_joint</right_distal>
+      </joint>
+      <joint name="finger_r_left_joint" gripper_controller="gripper_left_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+          <saturationTorque>100</saturationTorque>
+          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
+      </joint>
+      <joint name="finger_tip_l_left_joint" gripper_controller="gripper_left_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+          <saturationTorque>100</saturationTorque>
+          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
+      </joint>
+      <joint name="finger_tip_r_left_joint" gripper_controller="gripper_left_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+          <saturationTorque>100</saturationTorque>
+          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
       </joint>
       <!-- ========================================= -->
       <!-- right arm array -->
@@ -120,13 +128,21 @@
           <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
       <!-- Special gripper joint -->
-        <joint name="finger_l_right_joint" gripper_controller="gripper_right_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+      <joint name="finger_l_right_joint" gripper_controller="gripper_right_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
           <saturationTorque>100</saturationTorque>
           <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
-          <left_proximal>finger_l_right_joint</left_proximal>
-          <left_distal>finger_tip_l_right_joint</left_distal>
-          <right_proximal>finger_r_right_joint</right_proximal>
-          <right_distal>finger_tip_r_right_joint</right_distal>
+      </joint>
+      <joint name="finger_r_right_joint" gripper_controller="gripper_right_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+          <saturationTorque>100</saturationTorque>
+          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
+      </joint>
+      <joint name="finger_tip_l_right_joint" gripper_controller="gripper_right_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+          <saturationTorque>100</saturationTorque>
+          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
+      </joint>
+      <joint name="finger_tip_r_right_joint" gripper_controller="gripper_right_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+          <saturationTorque>100</saturationTorque>
+          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
       </joint>
       <!-- head and above array -->
       <joint name="head_pan_joint" >

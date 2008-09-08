@@ -132,12 +132,14 @@ private:
   //  for mechanism control
   //---------------------------------------------------------------------
   MechanismControl mc_;
-  MechanismControl rmc_;
   MechanismControlNode mcn_;
+
+  mechanism::RobotState *fake_state_;
 
 
   void LoadMC(XMLConfigNode *node);
   void UpdateMC();
+  void PublishROS();
   void UpdateMCJoints();
   void UpdateGazeboJoints();
 
@@ -200,7 +202,7 @@ private:
   {
     std::string* name_;
     std::vector<gazebo::Joint*> gaz_joints_;
-    mechanism::JointState* rmc_joint_state_;
+    mechanism::JointState* fake_joint_state_;
     double saturationTorque;
     double explicitDampingCoefficient;
   };
