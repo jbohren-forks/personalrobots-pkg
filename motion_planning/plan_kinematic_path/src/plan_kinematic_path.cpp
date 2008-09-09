@@ -42,6 +42,7 @@
 #include <robot_srvs/KinematicPlanState.h>
 #include <robot_srvs/KinematicPlanLinkPosition.h>
 #include <robot_msgs/DisplayKinematicPath.h>
+#include <robot_srvs/ValidateKinematicPath.h>
 
 #include <pr2_controllers/SetJointPathCmd.h>
 
@@ -192,6 +193,7 @@ public:
 	{
 	    printPath(res.path, res.distance);
 	    sendDisplay(res.path, req.params.model_id);
+	    verifyPath(req.start_state, req.constraints, res.path, req.params.model_id);
 	    sendCommand(res.path, req.params.model_id);
 	}
 	else
@@ -249,7 +251,8 @@ public:
 	{
 	    printPath(res.path, res.distance);
 	    sendDisplay(res.path, req.params.model_id);
-	    sendCommand(res.path, req.params.model_id);
+	    verifyPath(req.start_state, req.constraints, res.path, req.params.model_id);
+	    sendCommand(res.path, req.params.model_id);	    
 	}
 	else
 	    fprintf(stderr, "Service 'plan_kinematic_path_position' failed\n");	 
@@ -265,6 +268,27 @@ public:
 	    for (unsigned int j = 0 ; j < path.states[i].get_vals_size() ; ++j)
 		printf("%f ", path.states[i].vals[j]);
 	    printf("\n");
+	}
+    }
+    
+    void verifyPath(robot_msgs::KinematicState &start, robot_msgs::KinematicConstraints &cstrs,
+		    robot_msgs::KinematicPath &path, const std::string &model)
+    {
+	if (path.get_states_size() > 0)
+	{
+	    robot_srvs::ValidateKinematicPath::request  req;
+	    robot_srvs::ValidateKinematicPath::response res;
+	    req.model_id = model;
+	    req.start_state = start;
+	    req.constraints = cstrs;
+	    
+	    req.goal_state = path.states[path.get_states_size() - 1];
+	    if (ros::service::call("validate_path", req, res))
+	    {
+		printf("Direct path is %svalid\n", res.valid ? "" : "not ");
+	    }
+	    else
+		fprintf(stderr, "Service 'left_arm_controller/set_target' failed\n");
 	}
     }
     
@@ -295,7 +319,11 @@ public:
 	
 	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
 	{
-	    assert(path.states[i].get_vals_size() == joints.size());
+	    if (path.states[i].get_vals_size() != joints.size())
+	    {
+		delete state;
+		return;
+	    }
 	    
 	    state->setParams(path.states[i].vals, groupID);
 	    

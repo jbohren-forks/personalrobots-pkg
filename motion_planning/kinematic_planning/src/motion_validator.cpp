@@ -126,7 +126,7 @@ public:
 	ompl::SpaceInformation::StateValidityChecker_t svc;
     };    
     
-    MotionValidator(const std::string &robot_model) : ros::node("kinematic_planning"),
+    MotionValidator(const std::string &robot_model) : ros::node("motion_validator"),
 						      planning_node_util::NodeCollisionModel(dynamic_cast<ros::node*>(this),
 											     robot_model)
     {
@@ -183,10 +183,13 @@ public:
 	    for (unsigned int i = 0 ; i < dim ; ++i)
 		goal->values[i] = req.goal_state.vals[i];
 	    
-	    
+	    std::vector<robot_msgs::PoseConstraint> cstrs;
+	    req.constraints.get_pose_vec(cstrs);
+	    static_cast<StateValidityPredicate*>(model->svc)->setPoseConstraints(cstrs);
+
 	    res.valid = model->si->checkMotionIncremental(start, goal);
 	    
-	    std::cout << "Result: " << res.valid << std::endl;
+	    std::cout << "Result: " << (int)res.valid << std::endl;
 	    
 	    delete start;
 	    delete goal;
