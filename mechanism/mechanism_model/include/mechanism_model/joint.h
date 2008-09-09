@@ -60,6 +60,9 @@ public:
   double effort_limit_;
   double velocity_limit_;
 
+  // Axis of motion (x,y,z).  Axis of rotation for revolute/continuous
+  // joints, axis of translation for prismatic joints.
+  double axis_[3];
 };
 
 

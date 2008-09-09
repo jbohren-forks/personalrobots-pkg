@@ -35,7 +35,9 @@
 #include <mechanism_model/joint.h>
 #include <map>
 #include <string>
+#include <vector>
 #include <cfloat>
+#include "urdf/parser.h"
 
 using namespace std;
 using namespace mechanism;
@@ -104,6 +106,27 @@ bool Joint::initXml(TiXmlElement *elt)
       fprintf(stderr, "Error: no min and max limits specified for joint \"%s\"\n", name_.c_str());
       return false;
     }
+  }
+
+  if (type_ == JOINT_ROTARY || type_ == JOINT_CONTINUOUS || type_ == JOINT_PRISMATIC)
+  {
+    // Parses out the joint axis
+    TiXmlElement *axis_el = elt->FirstChildElement("axis");
+    if (!axis_el)
+    {
+      fprintf(stderr, "Error: Joint \"%s\" did not specify an axis\n", name_.c_str());
+      return false;
+    }
+    std::vector<double> axis_pieces;
+    urdf::queryVectorAttribute(axis_el, "xyz", &axis_pieces);
+    if (axis_pieces.size() != 3)
+    {
+      fprintf(stderr, "Error: The axis for joint \"%s\" must have 3 value\n", name_.c_str());
+      return false;
+    }
+    axis_[0] = axis_pieces[0];
+    axis_[1] = axis_pieces[1];
+    axis_[2] = axis_pieces[2];
   }
 
   return true;
