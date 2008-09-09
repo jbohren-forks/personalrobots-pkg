@@ -6,10 +6,10 @@ class Stair1 < Rubot
     register_action('deadreckon', 'deadreckon RANGE BEARING FINALHEADING')
     register_action('inventory', 'inventory')
   end
-  def navigate(x, y, th)
+  def navigate(x, y, th, timeout=120)
     puts "stair1 navigate to #{x}, #{y}, #{th}"
     system "#{`rospack find mux`.strip}/switch mux:=velMuxSrv wavefrontVel"
-    system "#{`rospack find wavefront_player`.strip}/query_wavefront #{x} #{y} #{th}"
+    system "#{`rospack find wavefront_player`.strip}/cli #{x} #{y} #{th} #{timeout}"
   end
   def opendoor turn_after
     system "#{`rospack find mux`.strip}/switch mux:=velMuxSrv deadReckonVel"
