@@ -75,35 +75,35 @@ bool Joint::initXml(TiXmlElement *elt)
 
   if (type_ != JOINT_PLANAR && type_ != JOINT_FIXED)
   {
-  TiXmlElement *limits = elt->FirstChildElement("limit");
-  if (!limits)
-  {
-    fprintf(stderr, "Error: Joint \"%s\" has no limits specified.\n", name_.c_str());
-    return false;
-  }
+    TiXmlElement *limits = elt->FirstChildElement("limit");
+    if (!limits)
+    {
+      fprintf(stderr, "Error: Joint \"%s\" has no limits specified.\n", name_.c_str());
+      return false;
+    }
 
-  if (limits->QueryDoubleAttribute("effort", &effort_limit_) != TIXML_SUCCESS)
-  {
-    fprintf(stderr, "Error: no effort limit specified for joint \"%s\"\n", name_.c_str());
-    return false;
-  }
+    if (limits->QueryDoubleAttribute("effort", &effort_limit_) != TIXML_SUCCESS)
+    {
+      fprintf(stderr, "Error: no effort limit specified for joint \"%s\"\n", name_.c_str());
+      return false;
+    }
 
-  if (limits->QueryDoubleAttribute("velocity", &velocity_limit_) != TIXML_SUCCESS)
-    velocity_limit_ = 0.0;
+    if (limits->QueryDoubleAttribute("velocity", &velocity_limit_) != TIXML_SUCCESS)
+      velocity_limit_ = 0.0;
 
 
-  int min_ret = limits->QueryDoubleAttribute("min", &joint_limit_min_);
-  int max_ret = limits->QueryDoubleAttribute("max", &joint_limit_max_);
+    int min_ret = limits->QueryDoubleAttribute("min", &joint_limit_min_);
+    int max_ret = limits->QueryDoubleAttribute("max", &joint_limit_max_);
 
-  if (type_ == JOINT_ROTARY && min_ret == TIXML_NO_ATTRIBUTE && max_ret == TIXML_NO_ATTRIBUTE)
-  {
-    type_ = JOINT_CONTINUOUS;
-  }
-  else if (min_ret == TIXML_NO_ATTRIBUTE || max_ret == TIXML_NO_ATTRIBUTE)
-  {
-    fprintf(stderr, "Error: no min and max limits specified for joint \"%s\"\n", name_.c_str());
-    return false;
-  }
+    if (type_ == JOINT_ROTARY && min_ret == TIXML_NO_ATTRIBUTE && max_ret == TIXML_NO_ATTRIBUTE)
+    {
+      type_ = JOINT_CONTINUOUS;
+    }
+    else if (min_ret == TIXML_NO_ATTRIBUTE || max_ret == TIXML_NO_ATTRIBUTE)
+    {
+      fprintf(stderr, "Error: no min and max limits specified for joint \"%s\"\n", name_.c_str());
+      return false;
+    }
   }
 
   return true;
