@@ -57,6 +57,7 @@ class DorylusDataset {
 
   std::string status();
   std::string displayFeatures();
+  std::string displayYmc();
   void setObjs(const vector<object> &objs);
   bool save(std::string filename);
   bool load(std::string filename);

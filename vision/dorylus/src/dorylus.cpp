@@ -24,6 +24,8 @@ float newtonSingle(const Function &fcn, const Gradient &grad, const Hessian &hes
 
 void DorylusDataset::setObjs(const vector<object>& objs) 
 {
+  //num_class_objs_ contains the number of bg objs.  classes_ does NOT, nor does nClasses_
+
   objs_ = objs;
 
   num_class_objs_.clear();
@@ -31,26 +33,35 @@ void DorylusDataset::setObjs(const vector<object>& objs)
 
   // -- Get num_class_objs_.
   for(unsigned int m=0; m<objs.size(); m++) {
-    if(num_class_objs_.find(objs[m].label) == num_class_objs_.end())
+    // Don't count label=0 as a class!
+    if(num_class_objs_.find(objs[m].label) == num_class_objs_.end() && objs[m].label != 0)
       classes_.push_back(objs[m].label);
     num_class_objs_[objs[m].label] = 0;
   }
   for(unsigned int m=0; m<objs.size(); m++) {
     num_class_objs_[objs[m].label]++;
   }
-  nClasses_ = num_class_objs_.size();
+  nClasses_ = classes_.size();
+
   
   // -- Reconstruct ymc_
   ymc_ = Matrix(nClasses_, objs.size());
   for(unsigned int m=0; m<objs.size(); m++) {
     for(unsigned int c=0; c<nClasses_; c++) {
-      if(objs_[m].label == (int)classes_[c]) {
+      //If the label is 0 (BG), make all y_m^c's be -1.
+      if(objs_[m].label == (int)classes_[c] && objs_[m].label != 0) {
 	ymc_(c+1,m+1) = 1;
       }
       else
 	ymc_(c+1,m+1) = -1;
     }
   }
+}
+
+string DorylusDataset::displayYmc() {
+  ostringstream oss (ostringstream::out);
+  oss << "ymc_: " << endl << ymc_ << endl;
+  return oss.str();
 }
 
 string DorylusDataset::displayFeatures() {
@@ -65,6 +76,7 @@ string DorylusDataset::displayFeatures() {
       oss << v;
     }
   }
+  oss << "ymc_: " << endl << ymc_ << endl;
   return oss.str();
 }
   
@@ -95,6 +107,7 @@ std::string DorylusDataset::status()
   for(pit = nPts.begin(); pit != nPts.end(); pit++) {
     oss << "    nPts in " << pit->first << " space: " << pit->second << "\n";
   }
+
   //oss << "ymc_: " << endl << ymc_ << endl;
   //  oss << "object data" << endl << displayFeatures() << endl;
   return oss.str();
