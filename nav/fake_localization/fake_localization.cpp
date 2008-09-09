@@ -138,11 +138,15 @@ private:
 	    return;
 	
 	m_lastUpdate = ros::Time::now();
+
+  //since the msg uses Quaternion use libTF to get yaw
+  libTF::Pose3D pose;
+  pose.setFromMessage(m_basePosMsg.pose3D);
 	
 	m_currentPos.header = m_basePosMsg.header;	
 	m_currentPos.pos.x  = m_basePosMsg.pose3D.position.x;
 	m_currentPos.pos.y  = m_basePosMsg.pose3D.position.y;
-	m_currentPos.pos.th = m_basePosMsg.pose3D.orientation.z;
+	m_currentPos.pos.th = pose.getEuler().yaw;
 
 	m_currentPos.pos.x += m_iniPos.x;
 	m_currentPos.pos.y += m_iniPos.y;
