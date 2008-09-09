@@ -12,12 +12,11 @@
   <controller:test_actuators name="test_actuators" plugin="libtest_actuators.so">
       <updateRate>1000.0</updateRate>
 
+      <!-- used exclusively by test_actuators to find out where these files are, in combination with env var MC_RESOURCE_PATH -->
       <include>gazebo_joints.xml</include>
-
       <robot_filename>pr2_test_actuators.xml</robot_filename>
       <controller_filename>controllers.xml</controller_filename>
       <actuator_filename>actuators.xml</actuator_filename>
-      <transmission_filename>transmissions.xml</transmission_filename>
 
       <interface:audio name="test_actuators_dummy_iface" />
   </controller:test_actuators>

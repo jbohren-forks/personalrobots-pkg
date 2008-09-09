@@ -7,9 +7,9 @@
     <node pkg="nav_view" type="nav_view" respawn="false" output="screen" />
 
     <!-- for visualization -->
-    <node pkg="wx_camera_panel" type="standalone_camera.py" args="-i PTZR_image -s PTZR_state -c PTZR_cmd -n PTZR" respawn="false" output="screen" />
-    <node pkg="laser_view" type="laser_view" args="scan:=tilt_scan" respawn="false" output="screen" />
-    <!--node pkg="ogre_visualizer" type="visualizer_test" respawn="false" output="screen" /--><!-- way too slow, why? -->
+    <node pkg="wx_camera_panel" type="camera_test" args="" respawn="true" output="screen" />
+    <node pkg="laser_view" type="laser_view" args="scan:=tilt_scan" respawn="true" output="screen" />
+    <node pkg="ogre_visualizer" type="visualizer_test" respawn="true" output="screen" />
     <!--node pkg="wxpy_ros" type="ros_panel" respawn="false" output="screen" /--><!-- does not start correctly-->
 
     <!-- for manual control -->

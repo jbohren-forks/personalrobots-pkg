@@ -75,11 +75,6 @@ namespace gazebo {
     // uses info from wg_robot_description_parser/send.xml
     std::string pr2Content;
 
-    // get pr2.xml for Ioan's parser
-    //rosnode_->get_param("robotdesc/pr2",pr2Content);
-    // parse the big pr2.xml string from ros, or use below so we don't need to roslaunch send.xml
-    //pr2Description.loadString(pr2Content.c_str());
-
     AdvertiseSubscribeMessages();
 
   }
@@ -167,27 +162,22 @@ namespace gazebo {
     //-----------------------------------------------------------------------------------------
     TiXmlDocument *pr2_xml = new TiXmlDocument();
     TiXmlDocument *controller_xml = new TiXmlDocument();
-    //TiXmlDocument *transmission_xml = new TiXmlDocument();
     TiXmlDocument *actuator_xml = new TiXmlDocument();
 
     std::string pr2_xml_filename = getenv("MC_RESOURCE_PATH"); pr2_xml_filename += "/"; pr2_xml_filename += node->GetString("robot_filename","",1);
     std::string controller_xml_filename = getenv("MC_RESOURCE_PATH"); controller_xml_filename += "/"; controller_xml_filename += node->GetString("controller_filename","",1);
-    //std::string transmission_xml_filename = getenv("MC_RESOURCE_PATH"); transmission_xml_filename += "/"; transmission_xml_filename += node->GetString("transmission_filename","",1);
     std::string actuator_xml_filename = getenv("MC_RESOURCE_PATH"); actuator_xml_filename += "/"; actuator_xml_filename += node->GetString("actuator_filename","",1);
 
     std::cout << " pr2 robot xml file name: " << pr2_xml_filename << std::endl;
     std::cout << " controller    file name: " << controller_xml_filename << std::endl;
-    //std::cout << " transmission  file name: " << transmission_xml_filename << std::endl;
     std::cout << " actuator      file name: " << actuator_xml_filename << std::endl;
 
     pr2_xml         ->LoadFile(pr2_xml_filename);
     controller_xml  ->LoadFile(controller_xml_filename);
-    //transmission_xml->LoadFile(transmission_xml_filename);
     actuator_xml    ->LoadFile(actuator_xml_filename);
 
     urdf::normalizeXml( pr2_xml->RootElement() );
     //urdf::normalizeXml( controller_xml->RootElement() );
-    //urdf::normalizeXml( transmission_xml->RootElement() );
     //urdf::normalizeXml( actuator_xml->RootElement() );
 
     //-------------------------------------------------------------------------------------------

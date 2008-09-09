@@ -148,37 +148,7 @@ private:
   //std::string xml_file; // xml filename for the robot
   //TiXmlElement *root;
 
-  // JMH: as far as I know, this parsing in mech-control is not functional yet,
-  // so I am going to use either:
-  //   1. Ioan's parser 
-  //   2. My own parser to fill out mappings
-  // 
-  // steps are defined below
-  //   1. fill in MechanismControl->Robot->Joint                                    (defines robot)
-  //std::vector<mechanism::Joint*> mech_joints_;
-  //std::vector<mechanism::Transmission*> transmissions_;
-  //std::vector<std::string> actuator_names_;
-  //std::vector<gazebo::Joint*> gazebo_joints_;
   HardwareInterface hw_;
-
-  //   2. fill in HardwareInterface
-  //           actuators_ is a vector
-  //           current_time_ is a double
-  //   3. fill in MechanismControl->Robot->Transmission->Actuators->ActuatorState   (define transmissions)
-  //      fill in MechanismControl->Robot->Transmission->Actuators->ActuatorCommand
-  //   4. fill in MechanismControl->JointController                                 (define controllers)
-  //      fill in MechanismControl->JointController->*Joints                        (define joints controlled)
-  //
-  //---------------------------------------------------------------------
-  //  for gazebo hardware
-  //---------------------------------------------------------------------
-  // Each joint in joints_ corresponds to the joint with the same
-  // index in mech_joints_.  The mech_joints_ vector exists so that
-  // each transmission has a mechanism::Joint to write to, because it
-  // would be best if the transmissions did not depend on Gazebo
-  // objects.
-  // define a map to keep track of joints mapping from mech to gaz
-  // struct robot_to_gazebo_joints_
 
   //---------------------------------------------------------------------
   //                                                                   --
@@ -209,18 +179,6 @@ private:
   std::vector<Gazebo_joint_*> gazebo_joints_;
   double currentTime;
   double lastTime;
-
-  // for storing transmission xml
-  // struct Robot_transmission_
-  // {
-  //     std::string name;
-  //     mechanism::SimpleTransmission simple_transmission;
-  //     gazebo::Joint* gazebo_joints_;
-  // };
-  //std::vector<Robot_transmission_> robot_transmissions_;
-  //std::vector<Robot_transmission_> reverse_robot_transmissions_;
-
-
 
 
 
