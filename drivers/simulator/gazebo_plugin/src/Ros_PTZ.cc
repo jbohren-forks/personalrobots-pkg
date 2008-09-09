@@ -59,12 +59,14 @@ Ros_PTZ::Ros_PTZ(Entity *parent)
   this->panJoint = NULL;
   this->tiltJoint = NULL;
 
-  this->panJointNameP = new Param<std::string>("panJoint", "", 1);
-  this->tiltJointNameP = new Param<std::string>("tiltJoint", "", 1);
-  this->motionGainP = new Param<double>("motionGain",2,0);
-  this->forceP = new Param<double>("force",10,0);
-  this->commandTopicNameP = new Param<std::string>("commandTopicName","PTZ_cmd",0);
-  this->stateTopicNameP = new Param<std::string>("stateTopicName","PTZ_state",0);
+  Param::Begin(&this->parameters);
+  this->panJointNameP = new ParamT<std::string>("panJoint", "", 1);
+  this->tiltJointNameP = new ParamT<std::string>("tiltJoint", "", 1);
+  this->motionGainP = new ParamT<double>("motionGain",2,0);
+  this->forceP = new ParamT<double>("force",10,0);
+  this->commandTopicNameP = new ParamT<std::string>("commandTopicName","PTZ_cmd",0);
+  this->stateTopicNameP = new ParamT<std::string>("stateTopicName","PTZ_state",0);
+  Param::End();
 
   rosnode = ros::g_node; // comes from where?
   int argc = 0;

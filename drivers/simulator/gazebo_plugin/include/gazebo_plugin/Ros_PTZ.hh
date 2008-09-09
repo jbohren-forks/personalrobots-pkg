@@ -114,13 +114,13 @@ namespace gazebo
     private: float cmdTilt;
     private: float cmdPan;
 
-    private: Param<double> *motionGainP;
-    private: Param<double> *forceP;
+    private: ParamT<double> *motionGainP;
+    private: ParamT<double> *forceP;
 
-    private: Param<std::string> *panJointNameP;
-    private: Param<std::string> *tiltJointNameP;
-    private: Param<std::string> *commandTopicNameP;
-    private: Param<std::string> *stateTopicNameP;
+    private: ParamT<std::string> *panJointNameP;
+    private: ParamT<std::string> *tiltJointNameP;
+    private: ParamT<std::string> *commandTopicNameP;
+    private: ParamT<std::string> *stateTopicNameP;
 
     // pointer to ros node
     private: ros::node *rosnode;

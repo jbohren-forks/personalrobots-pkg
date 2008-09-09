@@ -1,10 +1,10 @@
 Index: player/SConscript
 ===================================================================
---- player/SConscript	(revision 6981)
+--- player/SConscript	(revision 7016)
 +++ player/SConscript	(working copy)
 @@ -1,7 +1,8 @@
  import os
- Import('env install_prefix staticObjs sharedObjs subdirs')
+ Import('env install_prefix sharedObjs subdirs')
  
 -parseConfigs = ['pkg-config --cflags --libs playerc++']
 +parseConfigs = ['pkg-config --cflags --libs playerc++',
@@ -14,9 +14,9 @@ Index: player/SConscript
             'GazeboClient.cc',
 Index: libgazebo/gazebo.h
 ===================================================================
---- libgazebo/gazebo.h	(revision 6981)
+--- libgazebo/gazebo.h	(revision 7016)
 +++ libgazebo/gazebo.h	(working copy)
-@@ -558,7 +558,7 @@
+@@ -556,7 +556,7 @@
  
  
  /// Maximum image pixels (width x height)
@@ -25,7 +25,7 @@ Index: libgazebo/gazebo.h
  
  /// \brief Camera interface data
  class CameraData
-@@ -586,6 +586,9 @@
+@@ -584,6 +584,9 @@
    /// Pose of the camera
    public: Pose camera_pose;
    
@@ -35,7 +35,7 @@ Index: libgazebo/gazebo.h
  };
  
  /// \brief The camera interface
-@@ -604,6 +607,7 @@
+@@ -602,6 +605,7 @@
            {
              Iface::Create(server,id); 
              this->data = (CameraData*)this->mMap; 
@@ -43,7 +43,7 @@ Index: libgazebo/gazebo.h
            }
  
    /// \brief Open an existing interface
-@@ -613,8 +617,18 @@
+@@ -611,8 +615,18 @@
            {
              Iface::Open(client,id); 
              this->data = (CameraData*)this->mMap; 
@@ -62,7 +62,7 @@ Index: libgazebo/gazebo.h
    /// Pointer to the camera data
    public: CameraData *data;
  };
-@@ -833,6 +847,9 @@
+@@ -831,6 +845,9 @@
  
    /// Commaned range count
    public: int cmd_range_count;
@@ -72,7 +72,7 @@ Index: libgazebo/gazebo.h
  };
  
  /// \brief Laser interface
-@@ -851,6 +868,7 @@
+@@ -849,6 +866,7 @@
            {
              Iface::Create(server,id); 
              this->data = (LaserData*)this->mMap; 
@@ -80,7 +80,7 @@ Index: libgazebo/gazebo.h
            }
  
    /// \brief Open an existing interface
-@@ -860,8 +878,16 @@
+@@ -858,8 +876,16 @@
            {
              Iface::Open(client,id); 
              this->data = (LaserData*)this->mMap; 
@@ -97,7 +97,7 @@ Index: libgazebo/gazebo.h
    /// Pointer to the laser data
    public: LaserData *data;
  };
-@@ -1065,6 +1091,30 @@
+@@ -1063,6 +1089,30 @@
  
    /// Lift down flag
    public: int lift_down;
@@ -128,7 +128,7 @@ Index: libgazebo/gazebo.h
  };
  
  /// \brief Gripper interface
-@@ -1262,6 +1312,8 @@
+@@ -1260,6 +1310,8 @@
  /// \} */
  
  
@@ -137,7 +137,7 @@ Index: libgazebo/gazebo.h
  /***************************************************************************/
  /// \addtogroup libgazebo_iface
  /// \{
-@@ -1342,7 +1394,7 @@
+@@ -1340,7 +1392,7 @@
  \{
  */
  
@@ -146,7 +146,7 @@ Index: libgazebo/gazebo.h
  #define GAZEBO_STEREO_CAMERA_MAX_DISPARITY_SIZE 640 * 480
  
  /// \brief Stereo data
-@@ -1380,6 +1432,9 @@
+@@ -1378,6 +1430,9 @@
    /// Right depth map (float)
    public: float right_depth[GAZEBO_STEREO_CAMERA_MAX_DISPARITY_SIZE];
  
@@ -156,7 +156,7 @@ Index: libgazebo/gazebo.h
  }; 
  
  
-@@ -1397,6 +1452,7 @@
+@@ -1395,6 +1450,7 @@
            {
              Iface::Create(server,id); 
              this->data = (StereoCameraData*)this->mMap; 
@@ -164,7 +164,7 @@ Index: libgazebo/gazebo.h
            }
  
    /// \brief Open the iface 
-@@ -1404,8 +1460,16 @@
+@@ -1402,8 +1458,16 @@
            {
              Iface::Open(client,id); 
              this->data = (StereoCameraData*)this->mMap; 
@@ -183,13 +183,14 @@ Index: libgazebo/gazebo.h
  };
 Index: server/physics/SphereGeom.cc
 ===================================================================
---- server/physics/SphereGeom.cc	(revision 6981)
+--- server/physics/SphereGeom.cc	(revision 7016)
 +++ server/physics/SphereGeom.cc	(working copy)
-@@ -55,10 +55,18 @@
-   this->radiusP->Load(node);
+@@ -66,11 +66,18 @@
+   this->radiusP->SetValue( radius );
  
    // Initialize box mass matrix
--  dMassSetSphereTotal(&this->mass, this->massP->GetValue(), this->radiusP->GetValue());
+-  dMassSetSphereTotal(&this->mass, this->massP->GetValue(), 
+-                      this->radiusP->GetValue());
 +  this->SetGeom( dCreateSphere(0, this->radiusP->GetValue()), true);
  
    // Create the sphere geometry
@@ -205,27 +206,18 @@ Index: server/physics/SphereGeom.cc
 +  
  }
  
- //////////////////////////////////////////////////////////////////////////////
+ ////////////////////////////////////////////////////////////////////////////////
 Index: server/physics/BoxGeom.cc
 ===================================================================
---- server/physics/BoxGeom.cc	(revision 6981)
+--- server/physics/BoxGeom.cc	(revision 7016)
 +++ server/physics/BoxGeom.cc	(working copy)
-@@ -54,16 +54,25 @@
- {
-   this->sizeP->Load(node);
+@@ -66,9 +66,18 @@
+   this->sizeP->SetValue( size );
  
--  // Initialize box mass matrix
--  dMassSetBoxTotal(&this->mass, this->massP->GetValue(),
--      this->sizeP->GetValue().x,
--      this->sizeP->GetValue().y,
+   // Initialize box mass matrix
+-  dMassSetBoxTotal(&this->mass, this->massP->GetValue(), 
+-      this->sizeP->GetValue().x, this->sizeP->GetValue().y, 
 -      this->sizeP->GetValue().z);
--
-   // Create a box geometry with box mass matrix
-   this->SetGeom(dCreateBox( 0, this->sizeP->GetValue().x, 
-                             this->sizeP->GetValue().y,
-                             this->sizeP->GetValue().z), true );
-+
-+  // Initialize box mass matrix
 +  // set mass matrix if user provides some info
 +  // pending a tag <massMatrix>true</massMatrix> in geom:
 +  if (this->customMassMatrix)
@@ -234,80 +226,72 @@ Index: server/physics/BoxGeom.cc
 +           this->ixx,this->iyy,this->izz,
 +           this->ixy,this->ixz,this->iyz);
 +  else
-+    dMassSetBoxTotal(&this->mass, this->massP->GetValue(),
-+        this->sizeP->GetValue().x,
-+        this->sizeP->GetValue().y,
++    // Initialize box mass matrix
++    dMassSetBoxTotal(&this->mass, this->massP->GetValue(), 
++        this->sizeP->GetValue().x, this->sizeP->GetValue().y, 
 +        this->sizeP->GetValue().z);
-+
- }
  
- //////////////////////////////////////////////////////////////////////////////
+ 
+   // Create a box geometry with box mass matrix
 Index: server/physics/Geom.hh
 ===================================================================
---- server/physics/Geom.hh	(revision 6981)
+--- server/physics/Geom.hh	(revision 7016)
 +++ server/physics/Geom.hh	(working copy)
-@@ -168,6 +168,20 @@
+@@ -171,6 +171,20 @@
      ///  Mass as a double
-     protected: Param<double> *massP;
+     protected: ParamT<double> *massP;
  
 +    ///  User specified Mass Matrix
-+    protected: Param<bool> *customMassMatrixP;
-+    protected: Param<double> *cxP ;
-+    protected: Param<double> *cyP ;
-+    protected: Param<double> *czP ;
-+    protected: Param<double> *ixxP;
-+    protected: Param<double> *iyyP;
-+    protected: Param<double> *izzP;
-+    protected: Param<double> *ixyP;
-+    protected: Param<double> *ixzP;
-+    protected: Param<double> *iyzP;
++    protected: ParamT<bool> *customMassMatrixP;
++    protected: ParamT<double> *cxP ;
++    protected: ParamT<double> *cyP ;
++    protected: ParamT<double> *czP ;
++    protected: ParamT<double> *ixxP;
++    protected: ParamT<double> *iyyP;
++    protected: ParamT<double> *izzP;
++    protected: ParamT<double> *ixyP;
++    protected: ParamT<double> *ixzP;
++    protected: ParamT<double> *iyzP;
 +    protected: bool customMassMatrix;
 +    protected: double cx,cy,cz,ixx,iyy,izz,ixy,ixz,iyz;
 +
-     private: Param<Vector3> *xyzP;
-     private: Param<Quatern> *rpyP;
+     private: ParamT<Vector3> *xyzP;
+     private: ParamT<Quatern> *rpyP;
  
 Index: server/physics/Body.hh
 ===================================================================
---- server/physics/Body.hh	(revision 6981)
+--- server/physics/Body.hh	(revision 7016)
 +++ server/physics/Body.hh	(working copy)
-@@ -170,6 +170,7 @@
+@@ -180,6 +180,7 @@
    
-     private: Param<Vector3> *xyzP;
-     private: Param<Quatern> *rpyP;
-+    private: Param<bool> *turnGravityOffP;
+     private: ParamT<Vector3> *xyzP;
+     private: ParamT<Quatern> *rpyP;
++    private: ParamT<bool> *turnGravityOffP;
    };
    
    /// \}
 Index: server/physics/HingeJoint.hh
 ===================================================================
---- server/physics/HingeJoint.hh	(revision 6981)
+--- server/physics/HingeJoint.hh	(revision 7016)
 +++ server/physics/HingeJoint.hh	(working copy)
 @@ -126,6 +126,7 @@
-     private: Param<Vector3> *axisP;
-     private: Param<Angle> *loStopP;
-     private: Param<Angle> *hiStopP; 
-+    private: Param<Vector3> *anchorOffsetP;
+     private: ParamT<Vector3> *axisP;
+     private: ParamT<Angle> *loStopP;
+     private: ParamT<Angle> *hiStopP; 
++    private: ParamT<Vector3> *anchorOffsetP;
    };
    /// \}
    
 Index: server/physics/CylinderGeom.cc
 ===================================================================
---- server/physics/CylinderGeom.cc	(revision 6981)
+--- server/physics/CylinderGeom.cc	(revision 7016)
 +++ server/physics/CylinderGeom.cc	(working copy)
-@@ -51,13 +51,22 @@
- {
-   this->sizeP->Load(node);
+@@ -64,11 +64,21 @@
+   this->sizeP->SetValue( size );
  
--  // Initialize mass matrix
+   // Initialize mass matrix
 -  dMassSetCylinderTotal(&this->mass, this->massP->GetValue(), 3, 
 -      this->sizeP->GetValue().x, this->sizeP->GetValue().y);
--
-+  // create a cylinder geometry
-   this->SetGeom( dCreateCylinder( 0, this->sizeP->GetValue().x, 
-         this->sizeP->GetValue().y ), true );
- 
-+  // Initialize mass matrix
 +  // pending a tag <massMatrix>true</massMatrix> in geom:
 +  if (this->customMassMatrix)
 +    dMassSetParameters(&this->mass, this->massP->GetValue(),
@@ -315,8 +299,12 @@ Index: server/physics/CylinderGeom.cc
 +           this->ixx,this->iyy,this->izz,
 +           this->ixy,this->ixz,this->iyz);
 +  else
++    // Initialize mass matrix
 +    dMassSetCylinderTotal(&this->mass, this->massP->GetValue(), 3, 
 +        this->sizeP->GetValue().x, this->sizeP->GetValue().y);
+ 
+   this->SetGeom( dCreateCylinder( 0, this->sizeP->GetValue().x, 
+         this->sizeP->GetValue().y ), true );
 +
 +
  }
@@ -324,27 +312,27 @@ Index: server/physics/CylinderGeom.cc
  //////////////////////////////////////////////////////////////////////////////
 Index: server/physics/Geom.cc
 ===================================================================
---- server/physics/Geom.cc	(revision 6981)
+--- server/physics/Geom.cc	(revision 7016)
 +++ server/physics/Geom.cc	(working copy)
-@@ -66,6 +66,17 @@
-   this->rpyP = new Param<Quatern>("rpy", Quatern(), 0);
-   this->laserFiducialIdP = new Param<int>("laserFiducialId",-1,0);
-   this->laserRetroP = new Param<float>("laserRetro",-1,0);
+@@ -73,6 +73,17 @@
+ 
+   this->laserFiducialIdP = new ParamT<int>("laserFiducialId",-1,0);
+   this->laserRetroP = new ParamT<float>("laserRetro",-1,0);
 +
-+  this->customMassMatrixP = new Param<bool>("massMatrix",false,0);
-+  this->cxP = new Param<double>("cx",0.0,0);
-+  this->cyP = new Param<double>("cy",0.0,0);
-+  this->czP = new Param<double>("cz",0.0,0);
-+  this->ixxP = new Param<double>("ixx",1e-6,0);
-+  this->iyyP = new Param<double>("iyy",1e-6,0);
-+  this->izzP = new Param<double>("izz",1e-6,0);
-+  this->ixyP = new Param<double>("ixy",0.0,0);
-+  this->ixzP = new Param<double>("ixz",0.0,0);
-+  this->iyzP = new Param<double>("iyz",0.0,0);
++  this->customMassMatrixP = new ParamT<bool>("massMatrix",false,0);
++  this->cxP = new ParamT<double>("cx",0.0,0);
++  this->cyP = new ParamT<double>("cy",0.0,0);
++  this->czP = new ParamT<double>("cz",0.0,0);
++  this->ixxP = new ParamT<double>("ixx",1e-6,0);
++  this->iyyP = new ParamT<double>("iyy",1e-6,0);
++  this->izzP = new ParamT<double>("izz",1e-6,0);
++  this->ixyP = new ParamT<double>("ixy",0.0,0);
++  this->ixzP = new ParamT<double>("ixz",0.0,0);
++  this->iyzP = new ParamT<double>("iyz",0.0,0);
+   Param::End();
  }
  
- ////////////////////////////////////////////////////////////////////////////////
-@@ -91,6 +102,16 @@
+@@ -99,6 +110,16 @@
    delete this->rpyP;
    delete this->laserFiducialIdP;
    delete this->laserRetroP;
@@ -361,7 +349,7 @@ Index: server/physics/Geom.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -115,6 +136,30 @@
+@@ -123,6 +144,30 @@
      this->massP->SetValue( 0.001 );
    }
  
@@ -392,7 +380,7 @@ Index: server/physics/Geom.cc
    this->contact->Load(node);
  
    this->LoadChild(node);
-@@ -393,18 +438,21 @@
+@@ -401,18 +446,21 @@
    if (!this->placeable)
      return NULL;
  
@@ -418,17 +406,17 @@ Index: server/physics/Geom.cc
      dMassRotate(&this->bodyMass, r);
 Index: server/physics/Body.cc
 ===================================================================
---- server/physics/Body.cc	(revision 6981)
+--- server/physics/Body.cc	(revision 7016)
 +++ server/physics/Body.cc	(working copy)
-@@ -66,6 +66,7 @@
+@@ -70,6 +70,7 @@
  
-   this->xyzP = new Param<Vector3>("xyz", Vector3(), 0);
-   this->rpyP = new Param<Quatern>("rpy", Quatern(), 0);
-+  this->turnGravityOffP = new Param<bool>("turnGravityOff", false, 0);
+   this->rpyP = new ParamT<Quatern>("rpy", Quatern(), 0);
+   this->rpyP->Callback( &Body::SetRotation, this );
++  this->turnGravityOffP = new ParamT<bool>("turnGravityOff", false, 0);
+   Param::End();
  }
  
- 
-@@ -102,6 +103,7 @@
+@@ -107,6 +108,7 @@
    this->nameP->Load(node);
    this->xyzP->Load(node);
    this->rpyP->Load(node);
@@ -436,7 +424,7 @@ Index: server/physics/Body.cc
    Pose3d initPose;
  
    initPose.pos = **(this->xyzP);
-@@ -129,8 +131,9 @@
+@@ -134,8 +136,9 @@
    }
  
    // If no geoms are attached, then don't let gravity affect the body.
@@ -449,17 +437,17 @@ Index: server/physics/Body.cc
  
 Index: server/physics/HingeJoint.cc
 ===================================================================
---- server/physics/HingeJoint.cc	(revision 6981)
+--- server/physics/HingeJoint.cc	(revision 7016)
 +++ server/physics/HingeJoint.cc	(working copy)
-@@ -43,6 +43,7 @@
-   this->axisP = new Param<Vector3>("axis",Vector3(0,1,0), 1);
-   this->loStopP = new Param<Angle>("lowStop",-M_PI,0);
-   this->hiStopP = new Param<Angle>("highStop",M_PI,0);
-+  this->anchorOffsetP = new Param<Vector3>("anchorOffset",Vector3(0,0,0),0);
+@@ -44,6 +44,7 @@
+   this->axisP = new ParamT<Vector3>("axis",Vector3(0,1,0), 1);
+   this->loStopP = new ParamT<Angle>("lowStop",-M_PI,0);
+   this->hiStopP = new ParamT<Angle>("highStop",M_PI,0);
++  this->anchorOffsetP = new ParamT<Vector3>("anchorOffset",Vector3(0,0,0),0);
+   Param::End();
  }
  
- 
-@@ -62,6 +63,7 @@
+@@ -64,6 +65,7 @@
    this->axisP->Load(node);
    this->loStopP->Load(node);
    this->hiStopP->Load(node);
@@ -467,7 +455,7 @@ Index: server/physics/HingeJoint.cc
  
    // Perform this three step ordering to ensure the parameters are set
    // properly. This is taken from the ODE wiki.
-@@ -131,7 +133,7 @@
+@@ -133,7 +135,7 @@
  // Set the anchor point
  void HingeJoint::SetAnchor( const Vector3 &anchor )
  {
@@ -478,29 +466,29 @@ Index: server/physics/HingeJoint.cc
  
 Index: server/physics/ode/ODEPhysics.hh
 ===================================================================
---- server/physics/ode/ODEPhysics.hh	(revision 6981)
+--- server/physics/ode/ODEPhysics.hh	(revision 7016)
 +++ server/physics/ode/ODEPhysics.hh	(working copy)
 @@ -133,6 +133,7 @@
  
-   private: Param<double> *globalCFMP; 
-   private: Param<double> *globalERPP; 
-+  private: Param<bool> *quickStepP; 
+   private: ParamT<double> *globalCFMP; 
+   private: ParamT<double> *globalERPP; 
++  private: ParamT<bool> *quickStepP; 
  };
  
  /** \}*/
 Index: server/physics/ode/ODEPhysics.cc
 ===================================================================
---- server/physics/ode/ODEPhysics.cc	(revision 6981)
+--- server/physics/ode/ODEPhysics.cc	(revision 7016)
 +++ server/physics/ode/ODEPhysics.cc	(working copy)
-@@ -69,6 +69,7 @@
- 
-   this->globalCFMP = new Param<double>("cfm", 10e-5, 0);
-   this->globalERPP = new Param<double>("erp", 0.2, 0);
-+  this->quickStepP = new Param<bool>("quickStep", false, 0);
+@@ -70,6 +70,7 @@
+   Param::Begin(&this->parameters);
+   this->globalCFMP = new ParamT<double>("cfm", 10e-5, 0);
+   this->globalERPP = new ParamT<double>("erp", 0.2, 0);
++  this->quickStepP = new ParamT<bool>("quickStep", false, 0);
+   Param::End();
  }
  
- ////////////////////////////////////////////////////////////////////////////////
-@@ -86,6 +87,7 @@
+@@ -88,6 +89,7 @@
  
    delete this->globalCFMP;
    delete this->globalERPP;
@@ -508,7 +496,7 @@ Index: server/physics/ode/ODEPhysics.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -101,6 +103,7 @@
+@@ -103,6 +105,7 @@
    this->updateRateP->Load(cnode);
    this->globalCFMP->Load(cnode);
    this->globalERPP->Load(cnode);
@@ -516,7 +504,7 @@ Index: server/physics/ode/ODEPhysics.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -113,6 +116,7 @@
+@@ -115,6 +118,7 @@
    stream << prefix << "  " << *(this->updateRateP) << "\n";
    stream << prefix << "  " << *(this->globalCFMP) << "\n";
    stream << prefix << "  " << *(this->globalERPP) << "\n";
@@ -524,7 +512,7 @@ Index: server/physics/ode/ODEPhysics.cc
    stream << prefix << "</physics:ode>\n";
  }
  
-@@ -135,8 +139,10 @@
+@@ -137,8 +141,10 @@
    dSpaceCollide( this->spaceId, this, CollisionCallback );
  
    // Update the dynamical model
@@ -537,7 +525,7 @@ Index: server/physics/ode/ODEPhysics.cc
  
    // Very important to clear out the contact group
    dJointGroupEmpty( this->contactGroup );
-@@ -264,15 +270,16 @@
+@@ -266,15 +272,16 @@
          contact.surface.mode = dContactSlip1 | dContactSlip2 | 
                                 dContactSoftERP | dContactSoftCFM |  
                                 dContactBounce | dContactMu2 | dContactApprox1;
@@ -558,9 +546,9 @@ Index: server/physics/ode/ODEPhysics.cc
          contact.surface.mu2 = MIN(geom1->contact->mu2, geom2->contact->mu2);
 Index: server/physics/TrimeshGeom.cc
 ===================================================================
---- server/physics/TrimeshGeom.cc	(revision 6981)
+--- server/physics/TrimeshGeom.cc	(revision 7016)
 +++ server/physics/TrimeshGeom.cc	(working copy)
-@@ -206,7 +206,13 @@
+@@ -208,7 +208,13 @@
  
    this->geomId = dCreateTriMesh( this->spaceId, this->odeData,0,0,0 );
  
@@ -577,7 +565,7 @@ Index: server/physics/TrimeshGeom.cc
    this->SetGeom(this->geomId, true);
 Index: server/sensors/Sensor.hh
 ===================================================================
---- server/sensors/Sensor.hh	(revision 6981)
+--- server/sensors/Sensor.hh	(revision 7016)
 +++ server/sensors/Sensor.hh	(working copy)
 @@ -70,6 +70,7 @@
  
@@ -597,9 +585,9 @@ Index: server/sensors/Sensor.hh
  #endif
 Index: server/sensors/ray/RaySensor.cc
 ===================================================================
---- server/sensors/ray/RaySensor.cc	(revision 6981)
+--- server/sensors/ray/RaySensor.cc	(revision 7016)
 +++ server/sensors/ray/RaySensor.cc	(working copy)
-@@ -271,7 +271,7 @@
+@@ -273,7 +273,7 @@
  // Update the sensor information
  void RaySensor::UpdateChild()
  {
@@ -610,7 +598,7 @@ Index: server/sensors/ray/RaySensor.cc
      Pose3d poseDelta;
 Index: server/sensors/Sensor.cc
 ===================================================================
---- server/sensors/Sensor.cc	(revision 6981)
+--- server/sensors/Sensor.cc	(revision 7016)
 +++ server/sensors/Sensor.cc	(working copy)
 @@ -33,6 +33,7 @@
  #include "ControllerFactory.hh"
@@ -620,7 +608,7 @@ Index: server/sensors/Sensor.cc
  
  using namespace gazebo;
  
-@@ -69,6 +70,14 @@
+@@ -71,6 +72,14 @@
  
    this->LoadController( node->GetChildByNSPrefix("controller") );
    this->LoadChild(node);
@@ -635,7 +623,7 @@ Index: server/sensors/Sensor.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -183,4 +192,11 @@
+@@ -185,4 +194,11 @@
    this->active = value;
  }
  
@@ -649,7 +637,7 @@ Index: server/sensors/Sensor.cc
 +
 Index: server/Simulator.cc
 ===================================================================
---- server/Simulator.cc	(revision 6981)
+--- server/Simulator.cc	(revision 7016)
 +++ server/Simulator.cc	(working copy)
 @@ -72,6 +72,7 @@
    timeout(-1),
@@ -670,7 +658,7 @@ Index: server/Simulator.cc
          currTime - this->prevPhysicsTime >= physicsUpdatePeriod) 
      {
 @@ -315,6 +319,9 @@
-       this->prevPhysicsTime = this->GetRealTime();
+       World::Instance()->Update();
      }
  
 +    //double tmpT2 = this->GetWallTime();
@@ -681,7 +669,7 @@ Index: server/Simulator.cc
          currTime - this->prevRenderTime >= renderUpdatePeriod)
 Index: server/XMLConfig.cc
 ===================================================================
---- server/XMLConfig.cc	(revision 6981)
+--- server/XMLConfig.cc	(revision 7016)
 +++ server/XMLConfig.cc	(working copy)
 @@ -513,29 +513,59 @@
  ///////////////////////////////////////////////////////////////////////////
@@ -759,7 +747,7 @@ Index: server/XMLConfig.cc
  
 Index: server/GazeboConfig.cc
 ===================================================================
---- server/GazeboConfig.cc	(revision 6981)
+--- server/GazeboConfig.cc	(revision 7016)
 +++ server/GazeboConfig.cc	(working copy)
 @@ -67,31 +67,34 @@
      this->gazeboPaths.push_back(gazebo_resource_path);
@@ -835,7 +823,7 @@ Index: server/GazeboConfig.cc
  }
 Index: server/gui/StatusBar.cc
 ===================================================================
---- server/gui/StatusBar.cc	(revision 6981)
+--- server/gui/StatusBar.cc	(revision 7016)
 +++ server/gui/StatusBar.cc	(working copy)
 @@ -25,6 +25,7 @@
   */
@@ -847,7 +835,7 @@ Index: server/gui/StatusBar.cc
  #include <FL/Fl_Button.H>
 Index: server/gui/GLWindow.cc
 ===================================================================
---- server/gui/GLWindow.cc	(revision 6981)
+--- server/gui/GLWindow.cc	(revision 7016)
 +++ server/gui/GLWindow.cc	(working copy)
 @@ -227,21 +227,10 @@
      }
@@ -877,7 +865,7 @@ Index: server/gui/GLWindow.cc
      {
 Index: server/World.hh
 ===================================================================
---- server/World.hh	(revision 6981)
+--- server/World.hh	(revision 7016)
 +++ server/World.hh	(working copy)
 @@ -92,6 +92,26 @@
    /// \return Pointer to the physics engine
@@ -918,7 +906,7 @@ Index: server/World.hh
  };
 Index: server/controllers/camera/generic/Generic_Camera.cc
 ===================================================================
---- server/controllers/camera/generic/Generic_Camera.cc	(revision 6981)
+--- server/controllers/camera/generic/Generic_Camera.cc	(revision 7016)
 +++ server/controllers/camera/generic/Generic_Camera.cc	(working copy)
 @@ -86,7 +86,24 @@
  // Update the controller
@@ -948,9 +936,9 @@ Index: server/controllers/camera/generic/Generic_Camera.cc
  ////////////////////////////////////////////////////////////////////////////////
 Index: server/controllers/Controller.cc
 ===================================================================
---- server/controllers/Controller.cc	(revision 6981)
+--- server/controllers/Controller.cc	(revision 7016)
 +++ server/controllers/Controller.cc	(working copy)
-@@ -73,11 +73,15 @@
+@@ -75,11 +75,15 @@
    this->typeName = node->GetName();
  
    this->nameP->Load(node);
@@ -971,9 +959,9 @@ Index: server/controllers/Controller.cc
    // Create the interfaces
 Index: server/controllers/ptz/generic/Generic_PTZ.cc
 ===================================================================
---- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 6981)
+--- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 7016)
 +++ server/controllers/ptz/generic/Generic_PTZ.cc	(working copy)
-@@ -68,10 +68,10 @@
+@@ -70,10 +70,10 @@
  // Destructor
  Generic_PTZ::~Generic_PTZ()
  {
@@ -990,7 +978,7 @@ Index: server/controllers/ptz/generic/Generic_PTZ.cc
    this->tiltJoint = NULL;
 Index: server/World.cc
 ===================================================================
---- server/World.cc	(revision 6981)
+--- server/World.cc	(revision 7016)
 +++ server/World.cc	(working copy)
 @@ -27,6 +27,7 @@
  #include <assert.h>
@@ -1112,7 +1100,7 @@ Index: server/World.cc
  int World::LoadEntities(XMLConfigNode *node, Model *parent)
 Index: SConstruct
 ===================================================================
---- SConstruct	(revision 6981)
+--- SConstruct	(revision 7016)
 +++ SConstruct	(working copy)
 @@ -22,8 +22,9 @@
  # 3rd party packages
@@ -1125,7 +1113,7 @@ Index: SConstruct
                'fltk-config --cflags --libs --ldflags --use-gl --use-images',
                'pkg-config --cflags --libs xft'
                ]
-@@ -80,7 +81,7 @@
+@@ -81,7 +82,7 @@
  rcconfig = env.RCConfig(target='gazeborc', source=Value(install_prefix))
  
  # DEFAULT list of subdirectories to build
