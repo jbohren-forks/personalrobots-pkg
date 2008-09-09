@@ -545,9 +545,13 @@ int position = cal_string.find("Tx");
 string substring = cal_string.substr(position, cal_string.find("Ty") - position);
 sscanf(substring.c_str(), "%*s %f", &cpar.tx);
 
-position = cal_string.find("dpx");
-substring = cal_string.substr(position, cal_string.find("alpha")-position);
-sscanf(substring.c_str(), "%*s %f %*s %f %*s %*f %*s %f %*s %f %*s %f %*s %f", &cpar.dpx, &cpar.dpy, &cpar.u0, &cpar.v0, &cpar.fx, &cpar.fy);
+position = cal_string.find("proj");
+substring = cal_string.substr(position, cal_string.find("rect")-position);
+sscanf(substring.c_str(), "%*s \n %f %*f %f %*f \n %*f %f %f", &cpar.fx, &cpar.u0, &cpar.fy, &cpar.v0);
+
+// position = cal_string.find("dpx");
+// substring = cal_string.substr(position, cal_string.find("alpha")-position);
+// sscanf(substring.c_str(), "%*s %f %*s %f %*s %*f %*s %f %*s %f %*s %f %*s %f", &cpar.dpx, &cpar.dpy, &cpar.u0, &cpar.v0, &cpar.fx, &cpar.fy);
 
 // cpar.tx = 59.934176;
 // cpar.u0 = 332.544501;
@@ -558,8 +562,7 @@ sscanf(substring.c_str(), "%*s %f %*s %f %*s %*f %*s %f %*s %f %*s %f %*s %f", &
 // cpar.fy =  950.594644;
  cpar.feq =  (cpar.fx+cpar.fy) / 2;
 
-
-printf("\nReading Parameters: tx: %f, u0: %f v0: %f dpx: %f dpy:%f fx:%f fy:%f\n", cpar.tx, cpar.u0, cpar.v0, cpar.dpx, cpar.dpy, cpar.fx, cpar.fy);
+printf("\nReading Parameters: tx: %f, u0: %f, v0: %f, fx:%f, fy:%f\n", cpar.tx, cpar.u0, cpar.v0, cpar.fx, cpar.fy);
 
 // cpar.tx = 59.934176;
 // cpar.u0 = 332.544501;
@@ -601,9 +604,9 @@ if( disp[j*w+i] > 0) {
 	xf = ((i - cpar.u0) * zf) / cpar.fx;
 	yf = ((j - cpar.v0) * zf) / cpar.fy;
 	
-	ros_cloud.pts[point_count].x = -xf/1000; //from millimiters to decimiters
-	ros_cloud.pts[point_count].y = -yf/1000; //Why does this need to be flipped?
-	ros_cloud.pts[point_count].z = -zf/1000; //Why does this need to be flipped?
+	ros_cloud.pts[point_count].x = xf/1000; //from millimiters to decimiters
+	ros_cloud.pts[point_count].y = yf/1000; //Why does this need to be flipped?
+	ros_cloud.pts[point_count].z = zf/1000; //Why does this need to be flipped?
 
 	ros_cloud.chan[0].vals[point_count] = 16*255;
 	point_count++;
