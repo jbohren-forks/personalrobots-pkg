@@ -600,7 +600,7 @@ ros_cloud.chan[0].set_vals_size(tot_points);
 for(j=0; j<h; j++)
 for(i=0; i<w; i++)
 if( disp[j*w+i] > 0) {
-	zf = (cpar.tx * cpar.feq) / ( (disp[j*w+i]*1.0) / SUBPIXEL) ;
+	zf = (abs(cpar.tx) * cpar.feq) / ( (disp[j*w+i]*1.0) / SUBPIXEL) ;
 	xf = ((i - cpar.u0) * zf) / cpar.fx;
 	yf = ((j - cpar.v0) * zf) / cpar.fy;
 	
@@ -637,12 +637,18 @@ for(int x=MAXDISP+RADIUS+1; x<w-RADIUS; x++){
 printf("Done; press q to quit, other key to continue.. \n");
 cvNamedWindow("Disp Image", 1);
 cvShowImage("Disp Image", idisp);
+cvNamedWindow("Ref Image", 1);
+cvShowImage("Ref Image", left_frames[0]);
+cvNamedWindow("Tar Image", 1);
+cvShowImage("Tar Image", left_frames[1]);
+
 int key = cvWaitKey(0);
 
 if (key=='q')
 	exit(1);
 cvReleaseImage(&idisp);
-
+cvDestroyWindow("Disp Image");
+cvDestroyWindow("Ref Image");
 
 //printf("E!\n");
 //m_rosNode->publish("full_cloud",ros_cloud);
