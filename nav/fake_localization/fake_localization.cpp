@@ -54,7 +54,7 @@ $ odom_localization
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "base_pos"/Pose3DEulerFloat32 : robot's odometric pose.  Only the position information is used (velocity is ignored).
+- @b "base_pose"/Pose3DEulerFloat32 : robot's odometric pose.  Only the position information is used (velocity is ignored).
 - @b "initialpose"/Pose2DFloat32 : robot's odometric pose.  Only the position information is used (velocity is ignored).
 
 Publishes to (name / type):
@@ -73,6 +73,7 @@ Publishes to (name / type):
 #include <ros/time.h>
 
 #include <std_msgs/RobotBase2DOdom.h>
+#include <std_msgs/Pose3DStamped.h>
 #include <std_msgs/ParticleCloud2D.h>
 #include <std_msgs/Pose2DFloat32.h>
 #include <robot_msgs/Pose3DEulerFloat32.h>
@@ -98,7 +99,7 @@ public:
 
 	param("max_publish_frequency", m_maxPublishFrequency, 0.5);
 	
-	subscribe("base_pos", m_basePosMsg, &FakeOdomNode::basePosReceived);
+	subscribe("base_pose", m_basePosMsg, &FakeOdomNode::basePosReceived);
 	subscribe("initialpose", m_iniPos, &FakeOdomNode::initialPoseReceived);
     }
     
@@ -115,7 +116,7 @@ private:
     ros::Time                      m_lastUpdate;
     double                         m_maxPublishFrequency;
     
-    robot_msgs::Pose3DEulerFloat32 m_basePosMsg;
+    std_msgs::Pose3DStamped m_basePosMsg;
     std_msgs::ParticleCloud2D      m_particleCloud;
     std_msgs::RobotBase2DOdom      m_currentPos;
     std_msgs::Pose2DFloat32        m_iniPos;
@@ -139,10 +140,10 @@ private:
 	m_lastUpdate = ros::Time::now();
 	
 	m_currentPos.header = m_basePosMsg.header;	
-	m_currentPos.pos.x  = m_basePosMsg.position.x;
-	m_currentPos.pos.y  = m_basePosMsg.position.y;
-	m_currentPos.pos.th = m_basePosMsg.orientation.yaw;
-	
+	m_currentPos.pos.x  = m_basePosMsg.pose3D.position.x;
+	m_currentPos.pos.y  = m_basePosMsg.pose3D.position.y;
+	m_currentPos.pos.th = m_basePosMsg.pose3D.orientation.z;
+
 	m_currentPos.pos.x += m_iniPos.x;
 	m_currentPos.pos.y += m_iniPos.y;
 	m_currentPos.pos.th = math_utils::normalize_angle(m_currentPos.pos.th + m_iniPos.th);
