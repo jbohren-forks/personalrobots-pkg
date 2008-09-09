@@ -831,7 +831,7 @@
     <limit min=" ptz_pan_min_limit" max="ptz_pan_max_limit" effort="10" velocity="5" />
   </joint>
   <joint name="ptz_tilt_left_joint" type="revolute"> 
-    <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
+    <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit min=" ptz_tilt_min_limit" max="ptz_tilt_max_limit" effort="10" velocity="5" />
   </joint>
@@ -841,7 +841,7 @@
     <limit min=" ptz_pan_min_limit" max="ptz_pan_max_limit" effort="10" velocity="5" />
   </joint>
   <joint name="ptz_tilt_right_joint" type="revolute"> 
-    <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
+    <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit min=" ptz_tilt_min_limit" max="ptz_tilt_max_limit" effort="10" velocity="5" />
   </joint>
@@ -2327,7 +2327,4 @@
   <include>actuators.xml</include> 
   <include>transmissions.xml</include> 
 
-  <!-- Kinematic chains -->
-  <chain root="torso" tip="gripper_roll_left" />
-  <chain root="torso" tip="gripper_roll_right" />
 </robot>
