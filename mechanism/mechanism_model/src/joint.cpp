@@ -73,6 +73,8 @@ bool Joint::initXml(TiXmlElement *elt)
   }
   type_ = g_type_map[type];
 
+  if (type_ != JOINT_PLANAR && type_ != JOINT_FIXED)
+  {
   TiXmlElement *limits = elt->FirstChildElement("limit");
   if (!limits)
   {
@@ -101,6 +103,7 @@ bool Joint::initXml(TiXmlElement *elt)
   {
     fprintf(stderr, "Error: no min and max limits specified for joint \"%s\"\n", name_.c_str());
     return false;
+  }
   }
 
   return true;
