@@ -118,10 +118,10 @@ class RKPBasicRequest
 	/* set the workspace volume for planning */
 	// only area or volume should go through... not sure what happens on really complicated models where 
 	// we have both multiple planar and multiple floating joints...
-	static_cast<RKPPlannerSetup::SpaceInformationRKPModel*>(psetup->si)->setPlanningArea(params.volumeMin.x, params.volumeMin.y,
-											     params.volumeMax.x, params.volumeMax.y);
-        static_cast<RKPPlannerSetup::SpaceInformationRKPModel*>(psetup->si)->setPlanningVolume(params.volumeMin.x, params.volumeMin.y, params.volumeMin.z,
-											       params.volumeMax.x, params.volumeMax.y, params.volumeMax.z);
+	static_cast<SpaceInformationRKPModel*>(psetup->si)->setPlanningArea(params.volumeMin.x, params.volumeMin.y,
+									    params.volumeMax.x, params.volumeMax.y);
+        static_cast<SpaceInformationRKPModel*>(psetup->si)->setPlanningVolume(params.volumeMin.x, params.volumeMin.y, params.volumeMin.z,
+									      params.volumeMax.x, params.volumeMax.y, params.volumeMax.z);
 
 	psetup->si->setStateDistanceEvaluator(psetup->sde[params.distance_metric]);
 	
@@ -152,7 +152,7 @@ class RKPBasicRequest
     /** Set the kinematic constraints to follow */
     void setupPoseConstraints(RKPPlannerSetup *psetup, const std::vector<robot_msgs::PoseConstraint> &cstrs)
     {
-	static_cast<RKPPlannerSetup::StateValidityPredicate*>(psetup->si->getStateValidityChecker())->setPoseConstraints(cstrs);
+	static_cast<StateValidityPredicate*>(psetup->si->getStateValidityChecker())->setPoseConstraints(cstrs);
     }    
 
     /** Compute the actual motion plan */

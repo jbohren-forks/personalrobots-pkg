@@ -15,9 +15,7 @@ robot_msgs/KinematicState start_state
 
 # The goal state for the model to plan for. The dimension of this
 # state must be equal to the dimension of the state space
-# characterizing the model (group) to plan for.  If this state has
-# dimension 0, it is assumed that the first state that satisfies the
-# constraints is correct
+# characterizing the model (group) to plan for.
 robot_msgs/KinematicState goal_state
 
 # No state in the produced motion plan will violate these constraints

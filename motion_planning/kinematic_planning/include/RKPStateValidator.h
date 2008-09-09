@@ -34,64 +34,49 @@
 
 /** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_RKP_PLANNER_SETUP_
-#define KINEMATIC_PLANNING_RKP_PLANNER_SETUP_
+#ifndef KINEMATIC_PLANNING_RKP_STATE_VALIDATOR
+#define KINEMATIC_PLANNING_RKP_STATE_VALIDATOR
 
+#include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
+#include <planning_models/kinematic.h>
+#include <collision_space/environment.h>
 #include "RKPModelBase.h"
-#include "RKPStateValidator.h"
-#include "RKPSpaceInformation.h"
+#include "RKPConstraintEvaluator.h"
 
-#include <ompl/base/Planner.h>
-#include <ompl/extension/samplingbased/kinematic/PathSmootherKinematic.h>
-
-#include <string_utils/string_utils.h>
-#include <cassert>
-
-#include <vector>
-#include <string>
-#include <map>
-
-class RKPPlannerSetup
+class StateValidityPredicate : public ompl::SpaceInformation::StateValidityChecker
 {
  public:
-
-    RKPPlannerSetup(void)
+ StateValidityPredicate(RKPModelBase *model) : ompl::SpaceInformation::StateValidityChecker()
     {
-	mp = NULL;
-	si = NULL;
-	svc = NULL;
-	smoother = NULL;
+	m_model = model;
     }
     
-    virtual ~RKPPlannerSetup(void)
+    virtual bool operator()(const ompl::SpaceInformation::State_t state)
     {
-	if (mp)
-	    delete mp;
-	if (svc)
-	    delete svc;
-	for (std::map<std::string, ompl::SpaceInformation::StateDistanceEvaluator_t>::iterator j = sde.begin(); j != sde.end() ; ++j)
-	    if (j->second)
-		delete j->second;
-	if (smoother)
-	    delete smoother;
-	if (si)
-	    delete si;
+	m_model->kmodel->computeTransforms(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);
+	m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
+	
+	bool valid = !m_model->collisionSpace->isCollision(m_model->collisionSpaceID);
+	
+	if (valid)
+	    valid = m_kce.decide();
+	
+	return valid;
     }
     
-    /* for each planner definition, define the set of distance metrics it can use */
-    virtual void setupDistanceEvaluators(void)
+    void setPoseConstraints(const std::vector<robot_msgs::PoseConstraint> &kc)
     {
-	assert(si);
-	sde["L2Square"] = new ompl::SpaceInformationKinematic::StateKinematicL2SquareDistanceEvaluator(si);
+	m_kce.use(m_model->kmodel, kc);
     }
     
-    virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options) = 0;
+    void clearConstraints(void)
+    {
+	m_kce.clear();
+    }
     
-    ompl::Planner_t                                                         mp;
-    ompl::SpaceInformationKinematic_t                                       si;
-    ompl::SpaceInformation::StateValidityChecker_t                          svc;
-    std::map<std::string, ompl::SpaceInformation::StateDistanceEvaluator_t> sde;
-    ompl::PathSmootherKinematic_t                                           smoother;
-};
+ protected:
+    RKPModelBase                    *m_model;
+    KinematicConstraintEvaluatorSet  m_kce;
+};  
 
 #endif
