@@ -29,7 +29,6 @@
 
 #include <gazebo/Controller.hh>
 #include <gazebo/Entity.hh>
-#include <pr2Core/pr2Core.h>
 
 #include <ros/node.h>
 #include <std_msgs/Pose3DStamped.h>

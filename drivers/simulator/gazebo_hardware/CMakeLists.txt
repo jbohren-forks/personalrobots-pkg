@@ -1,5 +1,0 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
-rospack(gazebo_hardware)
-add_definitions(-Wall)
-rospack_add_library(gazebo_hardware src/gazebo_hardware.cpp)

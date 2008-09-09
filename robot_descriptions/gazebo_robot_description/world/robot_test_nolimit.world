@@ -28,6 +28,7 @@
     <gravity>0 0 -9.8</gravity>
     <cfm>0.0000000001</cfm>
     <erp>0.2</erp>
+    <quickStep>false</quickStep>
   </physics:ode>
 
   <geo:origin>
@@ -305,12 +306,12 @@
 
 
   <model:physical name="robot_model1">
-    <xyz>0.0 0.0 0.02</xyz> <!-- bottom of base off the ground by this much, basically wheel height below skirt -->
+    <xyz>0.0 0.0 0.05</xyz> <!-- bottom of base off the ground by this much, basically wheel height below skirt -->
     <rpy>0.0 0.0 0.0 </rpy>
 
     <!-- base, torso and arms -->
     <include embedded="true">
-      <xi:include href="pr2_xml_rosgazebo.model" />
+      <xi:include href="pr2_xml_nolimit_test.model" />
     </include>
 
   </model:physical>

@@ -97,7 +97,7 @@
 
     <!-- base, torso and arms -->
     <include embedded="true">
-      <xi:include href="pr2_xml_rosgazebo.model" />
+      <xi:include href="pr2_xml_test.model" />
     </include>
 
   </model:physical>

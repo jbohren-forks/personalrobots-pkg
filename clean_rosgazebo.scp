@@ -2,19 +2,10 @@
  
 #clean controllers
 (cd `rospack find generic_controllers`   ; rm -f lib/* ;make clean)
-(cd `rospack find genericControllers`    ; rm -f lib/* ;make clean)
-(cd `rospack find pr2Controllers`        ; rm -f lib/* ;make clean)
+(cd `rospack find pr2_controllers`       ; rm -f lib/* ;make clean)
 
-#clean gazebo dependent stuff
-(cd `rospack find libpr2HW`              ; rm -f lib/* ;make clean)
-(cd `rospack find libpr2API`             ; rm -f lib/* ;make clean)
-
+# clean gazebo plugins
 (cd `rospack find gazebo_plugin`         ; rm -f lib/* ;make clean)
-(cd `rospack find gazebo_hardware`       ; rm -f lib/* ;make clean)
-(cd `rospack find gazebo_sensors`        ; rm -f lib/* ;make clean)
-
-(cd `rospack find rosgazebo`             ; rm -f lib/* ;make clean)
-(cd `rospack find pr2_gazebo`            ; rm -f lib/* ;make clean)
 
 #clean 2dnav stack stuff
 (cd `rospack find nav_view`              ; rm -f lib/* ;make clean)
@@ -28,12 +19,16 @@
 
 # clean kinematics
 (cd `rospack find libKinematics`         ; rm -f lib/* ;make clean)
-(cd `rospack find libKDL`                ; rm -f lib/* ;make clean)
 (cd `rospack find robot_kinematics`      ; rm -f lib/* ;make clean)
 
 # clean visualization
 (cd `rospack find irrlicht_viewer`       ; rm -f lib/* ;make clean)
 (cd `rospack find cloud_viewer`          ; rm -f lib/* ;make clean)
+(cd `rospack find ogre_visualizer`          ; rm -f lib/* ;make clean)
+
+# clean mechanism control
+(cd `rospack find mechanism_control`     ; rm -f lib/* ;make clean)
+(cd `rospack find mechanism_model`       ; rm -f lib/* ;make clean)
 
 # note for users
 echo "if gazebo still functions incorrectly, please perform a make wipe in 3rdparty/gazebo directory."

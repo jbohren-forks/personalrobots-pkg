@@ -18,20 +18,15 @@ add_custom_target(pr2_gazebo_model ALL
 		  DEPENDS urdf2gazebo
 		  COMMENT "Building Gazebo model for PR2 Standard Model")
 
-add_custom_target(pr2_gazebo_model_nolimit_rosgazebo ALL
-		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2/pr2_rosgazebo.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_nolimit.model 1
-		  DEPENDS urdf2gazebo
-		  COMMENT "Building Gazebo model for PR2 Rosgazebo Model without Joint Limits for Kinematics")
-
-add_custom_target(pr2_gazebo_model_rosgazebo ALL
-		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2/pr2_rosgazebo.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_rosgazebo.model
-		  DEPENDS urdf2gazebo
-		  COMMENT "Building Gazebo model for PR2 Rosgazebo Model")
-
 add_custom_target(pr2_gazebo_model_test ALL
 		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2/pr2_test_actuators.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_test.model
 		  DEPENDS urdf2gazebo
 		  COMMENT "Building Gazebo model for PR2 Test Actuators")
+
+add_custom_target(pr2_gazebo_model_nolimit_test ALL
+		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2/pr2_test_actuators.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_nolimit_test.model 1
+		  DEPENDS urdf2gazebo
+		  COMMENT "Building Gazebo model for PR2 Test Actuators with no limits")
 
 add_custom_target(pr2_gazebo_model_arm_test ALL
 		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2_arm_test/pr2_arm_test.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_arm_test.model
