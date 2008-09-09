@@ -1,6 +1,7 @@
 #include <dorylus_node.h>
 
 #define Matrix NEWMAT::Matrix
+
 using namespace std;
 
 class DorylusNode : public ros::node
@@ -26,10 +27,16 @@ public:
   bool has_cal_params_, has_ptcld_, has_img_;
   Matrix transform_;
 
+  vector<CvScalar> colors_;
+  string ptcld_topic_;
+
   DorylusNode() : ros::node("dorylus_node")
   {
     // -- Setup descriptor functions.
     //descriptors_.push_back(&spinL_);
+
+    ptcld_topic_ = string("spacetime_stereo");
+    //ptcld_topic_ = string("videre/cloud_smallv");
 
     transform_ = Matrix(3,4); transform_ = 0.0;
 
@@ -46,23 +53,40 @@ public:
     descriptors_.push_back(spinL_fixed_);  
     descriptors_.push_back(spinM_fixed_);  
     descriptors_.push_back(spinS_fixed_);  
-    descriptors_.push_back(spinL_fixed_HR_);  
-    descriptors_.push_back(spinM_fixed_HR_);  
-    descriptors_.push_back(spinS_fixed_HR_);  
+//     descriptors_.push_back(spinL_fixed_HR_);  
+//     descriptors_.push_back(spinM_fixed_HR_);  
+//     descriptors_.push_back(spinS_fixed_HR_);  
 
     has_ptcld_ = has_img_ = has_cal_params_ = false;
     built_bridge_ = false;
+    bridge_ = NULL;
     img_ = NULL;
 
     subscribe("videre/images", images_msg_, &DorylusNode::cbImageArray, 10); 
-    //    subscribe("spacetime_stereo", ptcld_msg_, &DorylusNode::cbPtcld, 1); 
-    subscribe("videre/cloud_smallv", ptcld_msg_, &DorylusNode::cbPtcld, 10); 
+    subscribe(ptcld_topic_, ptcld_msg_, &DorylusNode::cbPtcld, 10); 
     subscribe("videre/cal_params", cal_params_msg_, &DorylusNode::cbCalParams, 10); 
     advertise<std_msgs::VisualizationMarker>("visualizationMarker", 100);
+
+
+    colors_.push_back(cvScalar(255,0,0));
+    colors_.push_back(cvScalar(0,255,0));
+    colors_.push_back(cvScalar(0,0,255));
+    colors_.push_back(cvScalar(255,255,0));
+    colors_.push_back(cvScalar(255,0,255));
+    colors_.push_back(cvScalar(0,255,255));
+    colors_.push_back(cvScalar(127,255,0));
+    colors_.push_back(cvScalar(127,0,255));
+    colors_.push_back(cvScalar(0,127,255));
+    colors_.push_back(cvScalar(255,127,0));
+    colors_.push_back(cvScalar(255,0,127));
+    colors_.push_back(cvScalar(0,255,127));
+    colors_.push_back(cvScalar(255,255,255));
+
   }
 
   ~DorylusNode() {
-    delete bridge_;
+//     if(bridge_)
+//       delete bridge_;
   }
 
   void cbImageArray() {
@@ -170,13 +194,13 @@ public:
     char* label_str;
     sprintf(label_str,"%d",label);
     CvFont font;
-    double hScale=3.5*val;
-    double vScale=3.5*val;
-    int    lineWidth=(int)5*val;
+    double hScale=val;
+    double vScale=val;
+    int    lineWidth=(int)val;
     cvInitFont(&font,CV_FONT_HERSHEY_SIMPLEX, hScale,vScale,0,lineWidth);
-    cvPutText(vis_,label_str,cvPoint(col, row), &font, cvScalar(255,255,0));
+    cvPutText(vis_,label_str,cvPoint(col, row), &font, colors_[label_idx-1]);
     cvShowImage("Classification Visualization", vis_);
-    cvWaitKey(0);
+    //cvWaitKey(0);
   }
   
   
@@ -227,8 +251,8 @@ public:
       wcs++;
       time(&end);
       cout << "Objective: " << d_.computeObjective() << endl;
-      cout << "Objective (from classify()): " << d_.classify(dd_) << endl;
-      cout << "Difference: " << d_.computeObjective() - d_.classify(dd_) << endl;
+//       cout << "Objective (from classify()): " << d_.classify(dd_) << endl;
+//       cout << "Difference: " << d_.computeObjective() - d_.classify(dd_) << endl;
 
       // -- Display weak classifier.
 //       for(unsigned int d=0; d<descriptors_.size(); d++) {
@@ -250,12 +274,100 @@ public:
   }
 
 
-  void buildDataset(unsigned int nSamples, vector<string> datafiles, string savename, bool debug=false)
-  {
+  object getObject(SceneLabelerStereo &sls, SmartScan &ss, IplImage& img, unsigned int nSamples, bool debug) {
+    object obj;
+    Matrix* result = NULL;
+
+	
+    
+    // -- Initialize features map for this object.
+    for(unsigned int iDesc=0; iDesc<descriptors_.size(); iDesc++) {
+      obj.features[descriptors_[iDesc]->name_] = Matrix(descriptors_[iDesc]->result_size_, nSamples); 
+      obj.features[descriptors_[iDesc]->name_] = 0.0;
+    }
+	 
     float x, y, z;
     int row, col;
+
+    for(unsigned int iSample=0; iSample<nSamples; iSample++) {
+      x = 0; y = 0; z = 0; row = 0; col = 0;
+      //bool found3d = sls.getRandomPointFromImage(&x, &y, &z, &row, &col, obj.label);
+      bool found3d = true;
+      sls.getRandomPointFromPointcloud(&x, &y, &z, &row, &col, &ss);
+      if(!found3d) {
+	x = 1e20;
+	y = 1e20;
+	z = 1e20;
+      }
+
+      //cout << "displaying at " << row << " " << col << endl;
+
+      IplImage *copy;
+      std_msgs::VisualizationMarker mark;
+      if(debug) {
+	usleep(100000);
+	publish(ptcld_topic_, sls.cloud_);
+	usleep(100000);
+	copy = cvCloneImage(sls.left_);
+	cvNamedWindow("left", 1);
+	cvCircle(copy, cvPoint(col, row), 5, cvScalar(0,255,0), 1);
+	cvShowImage("left", copy);
+	cvWaitKey(50);
+	     
+	if(found3d) {
+	  mark.id = 1001;
+	  mark.type = 1;
+	  mark.action = 0;
+	  mark.x = x;
+	  mark.y = y;
+	  mark.z = z;
+	  mark.roll = 0;
+	  mark.pitch = 0;
+	  mark.yaw = 0;
+	  mark.xScale = .02;
+	  mark.yScale = .02;
+	  mark.zScale = .02;
+	  mark.alpha = 255;
+	  mark.r = 0;
+	  mark.g = 255;
+	  mark.b = 0;
+	  mark.text = string("");
+	  publish("visualizationMarker", mark);
+	}
+	else {
+	  cout << "No 3d point.  Press a key." << endl;
+	  cvWaitKey();
+	}
+      }
+	    
+      // -- Compute the descriptors.
+      time_t start,end; time(&start);
+      for(unsigned int iDesc=0; iDesc<descriptors_.size(); iDesc++) {
+	//cout << "Computing " << descriptors_[iDesc]->name_ << endl;
+
+	//If debug, this will wait for input.
+	(*descriptors_[iDesc])(sls.ss_cloud_, img, x, y, z, row, col, &result, debug);
+	obj.features[descriptors_[iDesc]->name_].Column(iSample+1) = *result;
+	delete result; result = NULL;
+
+	//TODO: Mark down which descriptors are successful.	    
+      }
+      time(&end);
+      times.push_back(difftime(end,start));
+	  
+      // -- Cleanup vis.
+      if(debug) {
+	mark.action = 2;
+	publish("visualizationMarker", mark);
+      }
+    }
+
+    return obj;
+  }
+
+  void buildDataset(unsigned int nSamples, vector<string> datafiles, string savename, bool debug=false, int nBG_pts=0)
+  {
     vector<object> objs;
-    Matrix* result = NULL;
 
     cout << "Building dataset." << endl;
     for(unsigned int iFile=0; iFile<datafiles.size(); iFile++) {
@@ -263,95 +375,29 @@ public:
       cout << "** Loading scene " << iFile << " out of " << datafiles.size() << " with name "  << datafiles[iFile] << endl;
       sls.processMsgs(datafiles[iFile]);
       
+      object obj;
+      // -- Collect data from background.
+      for(int i=0; i<nBG_pts; i++) {
+	SmartScan &ss = sls.ss_labels_[0]; //Ptcld of background.
+	IplImage &img = *sls.left_;
+	obj = getObject(sls, ss, img, 1, debug);
+	obj.label = 0;
+	objs.push_back(obj);
+	cout << "Adding object of class " << obj.label << " with " << obj.features.size() << " descriptors." << endl;
+      }
 
+
+      // -- Collect data from objects.
       for(unsigned int iSS=0; iSS<sls.ss_objs_.size(); iSS++) {
 	//cout << "Object " << iSS << ": class " << sls.ss_objs_[iSS].first << ", " << sls.ss_objs_[iSS].second->size() << " points." << endl;
 	SmartScan &ss = *sls.ss_objs_[iSS].second;
 	IplImage &img = *sls.left_;
-	object obj;
+	obj = getObject(sls, ss, img, nSamples, debug);
 	obj.label = sls.ss_objs_[iSS].first;
-
-
-	// -- Initialize features map for this object.
-	for(unsigned int iDesc=0; iDesc<descriptors_.size(); iDesc++) {
-	  obj.features[descriptors_[iDesc]->name_] = Matrix(descriptors_[iDesc]->result_size_, nSamples); 
-	  obj.features[descriptors_[iDesc]->name_] = 0.0;
-	}
-	 
-	for(unsigned int iSample=0; iSample<nSamples; iSample++) {
-	  x = 0; y = 0; z = 0; row = 0; col = 0;
-	  //bool found3d = sls.getRandomPointFromImage(&x, &y, &z, &row, &col, obj.label);
-	  bool found3d = true;
-	  sls.getRandomPointFromPointcloud(&x, &y, &z, &row, &col, &ss);
-	  if(!found3d) {
-	    x = 1e20;
-	    y = 1e20;
-	    z = 1e20;
-	  }
-
-	  //cout << "displaying at " << row << " " << col << endl;
-
-	  IplImage *copy;
-	  std_msgs::VisualizationMarker mark;
-	  if(debug) {
-	    publish("videre/cloud", sls.cloud_);
-	    copy = cvCloneImage(sls.left_);
-	    cvNamedWindow("left", 1);
-	    cvCircle(copy, cvPoint(col, row), 5, cvScalar(0,255,0), 1);
-	    cvShowImage("left", copy);
-	    cvWaitKey(50);
-	     
-	    if(found3d) {
-	      mark.id = 1001;
-	      mark.type = 1;
-	      mark.action = 0;
-	      mark.x = x;
-	      mark.y = y;
-	      mark.z = z;
-	      mark.roll = 0;
-	      mark.pitch = 0;
-	      mark.yaw = 0;
-	      mark.xScale = .02;
-	      mark.yScale = .02;
-	      mark.zScale = .02;
-	      mark.alpha = 255;
-	      mark.r = 0;
-	      mark.g = 255;
-	      mark.b = 0;
-	      mark.text = string("");
-	      publish("visualizationMarker", mark);
-	    }
-	    else {
-	      cout << "No 3d point.  Press a key." << endl;
-	      cvWaitKey();
-	    }
-	  }
-	    
-	  // -- Compute the descriptors.
-	  time_t start,end; time(&start);
-	  for(unsigned int iDesc=0; iDesc<descriptors_.size(); iDesc++) {
-	    //cout << "Computing " << descriptors_[iDesc]->name_ << endl;
-
-	    //If debug, this will wait for input.
-	    (*descriptors_[iDesc])(sls.ss_cloud_, img, x, y, z, row, col, &result, debug);
-	    obj.features[descriptors_[iDesc]->name_].Column(iSample+1) = *result;
-	    delete result; result = NULL;
-
-	    //TODO: Mark down which descriptors are successful.	    
-	  }
-	  time(&end);
-	  times.push_back(difftime(end,start));
-	  
-	  // -- Cleanup vis.
-	  if(debug) {
-	    mark.action = 2;
-	    publish("visualizationMarker", mark);
-	  }
-	}
-	
+	cout << "Adding object of class " << obj.label << " with " << obj.features.size() << " descriptors." << endl;
 	objs.push_back(obj);
-	//cout << "Adding object of class " << obj.label << " with " << obj.features.size() << " descriptors." << endl;
-      }
+      }	
+
     }
 
     // -- Report average time to compute a descriptor.
@@ -364,6 +410,8 @@ public:
     
     dd_.setObjs(objs);
     dd_.save(savename);
+    cout << dd_.status() << endl;
+    cout << dd_.displayYmc() << endl;
     //cout << endl << dd.status() << endl;
   }
 
@@ -468,7 +516,7 @@ int main(int argc, char **argv) {
       cerr << "Savename must have .dd extension.  Did you specify a savename?" << endl;
     }
     else
-      dn.buildDataset(50, datafiles, savename, false);
+      dn.buildDataset(2, datafiles, savename, false, 5);
 
 //  DorylusDataset dd2;  dd2.load(string("savename.dd"));
 //  dd2.save(string("savename2.dd"));
@@ -484,7 +532,7 @@ int main(int argc, char **argv) {
     //cout << dn.dd_.displayFeatures() << endl;
     cout << dn.dd_.status() << endl;
     dn.d_.loadDataset(&dn.dd_);
-    dn.train(50, 100000, 10);
+    dn.train(100, 60*60*10, 10000000);
     dn.d_.save(string(argv[2]));
 
 //     Dorylus d2;

@@ -72,3 +72,4 @@ class SpinImage : public Descriptor
   bool operator()(SmartScan &ss, const IplImage &img, float x, float y, float z, int row, int col, NEWMAT::Matrix** result, bool debug=false);
   void display(const NEWMAT::Matrix& result);
 };
+
