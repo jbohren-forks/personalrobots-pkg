@@ -232,37 +232,40 @@ class robotPower:
 
         
 
-def setup_serial_ports():
-
-    os.system('stty 19200 </dev/ttyUSB4')
-    os.system('stty 19200 </dev/ttyUSB1')
-    os.system('stty 19200 </dev/ttyUSB2')
-    os.system('stty 19200 </dev/ttyUSB3')
-
 
 def monitorBatteriesMain(argv, stdout, env):
-
+    port_name_template = "/dev/ttyUSB"
+    port_list = ["/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyUSB2", "/dev/ttyUSB3"] # default list of ports that controllers are on
     #check arguments for a help flag
-    optlist, args = getopt.getopt(argv[1:], "h?p:s:", ["help","port=","server=","test"])
+    optlist, args = getopt.getopt(argv[1:], "h?p:s:t:", ["help","port=","server=","template="])
     for o, a in optlist:
         if o in ("-h","-?","--help"):
             usage(stdout, argv[0])
             return
-
+        elif o in ("-t", "--template"):
+            port_name_template = a
+        elif o in ("-p", "--port"):
+            port_list = [] #clear list and load from 
+            for i in range(0,len(a)):
+                port_list.append("%s%d"%(port_name_template, int(a[i])))
 
 
     rospy.ready(NAME)
 
+    print "opening ports:", port_list
 
-    setup_serial_ports()
-    
-#f= open('testfile.txt','r')
-    f0 = open('/dev/ttyUSB4','r')
-    f1 = open('/dev/ttyUSB1','r')
-    f2 = open('/dev/ttyUSB2','r')
-    f3 = open('/dev/ttyUSB3','r')
+    # set port settings to talk to IBPS
+    for port in port_list:
+        os.system('stty 19200 <%s'%port)
 
-
+    p_num = 0 # temp variable for filling in controller numbers
+    port_number = {} # dictionary to hold lookup to port number
+    ports = [] # list of opened ports
+    for name in port_list:
+        ports.append (open('%s'%name,'r'))
+        port_number[ports[-1]] = p_num
+        p_num = p_num + 1
+        
     myPow = robotPower()
 
     start_time = time.time()
@@ -270,21 +273,12 @@ def monitorBatteriesMain(argv, stdout, env):
     # continuously read from the ports while not shutdown
     while not rospy.is_shutdown():
         # select from all open ports to wait for new data
-        current, blah, blah2 = select.select([f0,f1,f2,f3],[],[],1)
+        current, blah, blah2 = select.select(ports,[],[],1)
         # figure out which port(s) got new data
         for f in current:
-            if f == f0:
-                port = 0;
-                port_string = 'f0'
-            if f == f1:
-                port = 1;
-                port_string = 'f1'
-            if f == f2:
-                port = 2;
-                port_string = 'f2'
-            if f == f3:
-                port = 3;
-                port_string = 'f3'
+            for p in ports: #determine which port it came in on
+                if f == p:
+                    port = port_number[p];
             line = f.readline()
             # split on %  to string and checksum
             halves = line.split('%')
