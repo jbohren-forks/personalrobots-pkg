@@ -603,7 +603,7 @@ if( disp[j*w+i] > 0) {
 	
 	ros_cloud.pts[point_count].x = xf/1000; //from millimiters to decimiters
 	ros_cloud.pts[point_count].y = -yf/1000; //Why does this need to be flipped?
-	ros_cloud.pts[point_count].z = zf/1000;
+	ros_cloud.pts[point_count].z = -zf/1000; //Why does this need to be flipped?
 
 	ros_cloud.chan[0].vals[point_count] = 16*255;
 	point_count++;
