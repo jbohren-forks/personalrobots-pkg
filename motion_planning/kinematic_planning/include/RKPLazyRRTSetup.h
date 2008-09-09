@@ -62,7 +62,7 @@ class RKPLazyRRTSetup : public RKPPlannerSetup
 	
 	smoother = new ompl::PathSmootherKinematic(si);
 	smoother->setMaxSteps(50);
-	smoother->setMaxEmptySteps(10);
+	smoother->setMaxEmptySteps(4);
 	
 	ompl::LazyRRT_t rrt = new ompl::LazyRRT(si);
 	mp                  = rrt;

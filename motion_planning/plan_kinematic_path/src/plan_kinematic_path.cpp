@@ -288,7 +288,7 @@ public:
 		printf("Direct path is %svalid\n", res.valid ? "" : "not ");
 	    }
 	    else
-		fprintf(stderr, "Service 'left_arm_controller/set_target' failed\n");
+		fprintf(stderr, "Service 'validate_path' failed\n");
 	}
     }
     
