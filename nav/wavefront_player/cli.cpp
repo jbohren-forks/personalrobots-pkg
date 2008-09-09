@@ -8,10 +8,10 @@ class WavefrontCLI : public ros::node
 public:
   std_msgs::Planner2DState wf_state;
   std_msgs::Planner2DGoal wf_goal;
-  bool goal_sent;
+  enum { WF_IDLE, WF_SEEKING_GOAL, WF_DONE } state;
 
-  WavefrontCLI(double x, double y, double th, double timeout) 
-  : ros::node("wavefront_cli"), goal_sent(false)
+  WavefrontCLI(double x, double y, double th) 
+  : ros::node("wavefront_cli"), state(WF_IDLE)
   {
     wf_goal.goal.x  = x;
     wf_goal.goal.y  = y;
@@ -22,28 +22,23 @@ public:
   }
   void state_cb()
   {
-    printf("wavefront active: %d\n", wf_state.active);
-    if (goal_sent && !wf_state.active) // todo, add better time delay
-      raise(SIGINT); // bye bye
+    if (state == WF_IDLE && wf_state.active)
+      state = WF_SEEKING_GOAL;
+    else if (state == WF_SEEKING_GOAL && !wf_state.active)
+      state = WF_DONE;
+  }
+  void deactivate_goal()
+  {
+    wf_goal.enable = 0;
+    publish("goal", wf_goal);
+    ros::Duration(0.5).sleep(); // hack to try and wait for the message to go
   }
   virtual void peer_subscribe(const std::string &topic_name, 
                               ros::pub_sub_conn * const psc)
   {
     if (topic_name == "goal")
-    {
       publish("goal", wf_goal);
-      goal_sent = true;
-      sleep(1);
-    }
   }
-  /*
-    printf("a peer subscribed on topic [%s].\n", topic_name.c_str());
-    {
-      printf("publishing: %f %f %f\n", wf_goal.goal.x, wf_goal.goal.y, wf_goal.goal.th);
-      psc->publish(wf_goal);
-    }
-  }
-  */
 };
 
 int main(int argc, char **argv)
@@ -57,9 +52,19 @@ int main(int argc, char **argv)
     return 1;
   }
   ros::init(argc, argv);
-  WavefrontCLI wf_cli(atof(argv[1]), atof(argv[2]), 
-                      atof(argv[3]), atof(argv[4]));
-  wf_cli.spin();
+  double max_secs = atof(argv[4]);
+  WavefrontCLI wf_cli(atof(argv[1]), atof(argv[2]), atof(argv[3]));
+  ros::Time t_start(ros::Time::now());
+  while (wf_cli.ok() && wf_cli.state != WavefrontCLI::WF_DONE && 
+         ros::Time::now() - t_start < max_secs)
+    ros::Duration(0.1).sleep();
+  if (wf_cli.ok() && wf_cli.state != WavefrontCLI::WF_DONE) // didn't get there
+  {
+    printf("timeout\n");
+    wf_cli.deactivate_goal();
+  }
+  else
+    printf("success\n");
   ros::fini();
   return 0;
 }
