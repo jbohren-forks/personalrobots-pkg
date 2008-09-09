@@ -31,9 +31,10 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include "trajectory_rollout/map_grid.h"
+#include <trajectory_rollout/map_grid.h>
 
 using namespace std;
+using namespace trajectory_rollout;
 
 MapGrid::MapGrid(unsigned rows, unsigned cols) 
   : rows_(rows), cols_(cols)
@@ -45,7 +46,7 @@ MapGrid::MapGrid(unsigned rows, unsigned cols)
 
   //make each cell aware of its location in the grid
   for(unsigned int i = 0; i < rows; ++i){
-    for(unsigned int j = 0; j < cols; ++ j){
+    for(unsigned int j = 0; j < cols; ++j){
       map_[cols * i + j].ci = i;
       map_[cols * i + j].cj = j;
     }
@@ -76,4 +77,27 @@ MapGrid& MapGrid::operator= (const MapGrid& mg){
   cols_ = mg.cols_;
   map_ = mg.map_;
   return *this;
+}
+
+//allow easy updating from message representations
+void MapGrid::update(ScoreMap2D new_map){
+  if(map_.size() != new_map.rows * new_map.cols)
+    map_.resize(new_map.rows * new_map.cols);
+
+  rows_ = new_map.rows;
+  cols_ = new_map.cols;
+  scale = new_map.scale;
+  origin_x = new_map.origin.x;
+  origin_y = new_map.origin.y;
+
+  for(unsigned int i = 0; i < rows_; ++i){
+    for(unsigned int j = 0; j < cols_; ++j){
+      int index = cols_ * i + j;
+      map_[index].ci = i;
+      map_[index].cj = j;
+      map_[index].path_dist = new_map.data[i].path_dist;
+      map_[index].goal_dist = new_map.data[i].goal_dist;
+      map_[index].occ_state = new_map.data[i].occ_state;
+    }
+  }
 }

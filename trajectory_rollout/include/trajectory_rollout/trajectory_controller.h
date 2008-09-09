@@ -35,6 +35,7 @@
 #define TRAJECTORY_CONTROLLER_H_
 
 #include <vector>
+#include <utility>
 #include <iostream>
 #include <math.h>
 #include <utility>
@@ -48,9 +49,6 @@
 #include <trajectory_rollout/map_grid.h>
 #include <trajectory_rollout/trajectory.h>
 
-#define SIM_STEPS 20
-#define SIM_TIME 2 //in seconds
-
 #define MAX(x, y) x > y ? x : y
 #define MIN(x, y) x < y ? x : y
 #define VALID_CELL(map, i, j) ((i >= 0) && (i < (int)map.rows_) && (j >= 0) && (j < (int)map.cols_))
@@ -59,8 +57,8 @@
 class TrajectoryController {
   public:
     //create a controller given a map, path, and acceleration limits of the robot
-    TrajectoryController(MapGrid mg, std::vector<std::pair<int, int> > path, double acc_x, double acc_y, double acc_theta,
-        double sim_time, int num_steps, int samples_per_dim);
+    TrajectoryController(MapGrid& mg, double acc_x, double acc_y, double acc_theta,
+        double sim_time, int num_steps, int samples_per_dim, rosTFClient* tf);
 
     //compute the distance from each cell in the map grid to the planned path
     void computePathDistance();
@@ -72,7 +70,13 @@ class TrajectoryController {
     void updateNeighbors(MapCell* current);
 
     //given the current state of the robot, find a good trajectory
-    Trajectory findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel);
+    Trajectory findBestPath(libTF::TFPose2D robot_pose, libTF::TFPose2D robot_vel);
+
+    //compute the cost for a single trajectory
+    double trajectoryCost(Trajectory t, double pdist_scale, double gdist_scale, double dfast_scale);
+
+    //given a position (in map space) return the containing cell
+    std::pair<int, int> getMapCell(double x, double y);
 
     //create the trajectories we wish to score
     void createTrajectories(double x, double y, double theta, double vx, double vy, double vtheta);
@@ -81,6 +85,9 @@ class TrajectoryController {
     Trajectory generateTrajectory(double x, double y, double theta, double vx, double vy, 
         double vtheta, double vx_samp, double vy_samp, double vtheta_samp);
 
+    //given a trajectory in map space get the drive commands to send to the robot
+    libTF::TFPose2D getDriveVelocities(Trajectory t);
+
     //compute position based on velocity
     double computeNewPosition(double xi, double v, double dt);
 
@@ -88,7 +95,7 @@ class TrajectoryController {
     double computeNewVelocity(double vg, double vi, double amax, double dt);
     
     //the map passed on from the planner
-    MapGrid map_;
+    MapGrid& map_;
 
     //the acceleration limits of the robot
     double acc_x_, acc_y_, acc_theta_;
@@ -99,6 +106,9 @@ class TrajectoryController {
 
     //possible trajectories for this run
     std::vector<Trajectory> trajectories_;
+
+    //transform client
+    rosTFClient* tf_;
     
 };
 

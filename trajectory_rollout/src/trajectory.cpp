@@ -33,11 +33,9 @@
  *********************************************************************/
 #include "trajectory_rollout/trajectory.h"
 
-Trajectory::Trajectory(double xv, double yv, double thetav, double steps)
-  : xv_(xv), yv_(yv), thetav_(thetav), score_(0.0)
+Trajectory::Trajectory(double xv, double yv, double thetav, size_t steps)
+  : xv_(xv), yv_(yv), thetav_(thetav), cost_(0.0), points_(steps)
 {
-  //size points to hold everything
-  points_.resize(steps);
 }
 
 void Trajectory::addPoint(int step, TrajectoryPoint tp){

@@ -8,11 +8,12 @@
   <license>BSD</license>
   <depend package="stl_utils" />
   <depend package="std_msgs" />
+  <depend package="rosTF" />
   <depend package="xmlparam" />
   <depend package="rosTF" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
-    <cpp cflags='-I${prefix}/include' />
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" />
   </export>
 </package>

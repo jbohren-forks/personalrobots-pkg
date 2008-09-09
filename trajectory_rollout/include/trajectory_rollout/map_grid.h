@@ -38,6 +38,7 @@
 #include <iostream>
 #include "assert.h"
 #include <trajectory_rollout/trajectory_inc.h>
+#include <trajectory_rollout/ScoreMap2D.h>
 
 #include <trajectory_rollout/map_cell.h>
 
@@ -54,6 +55,9 @@ class MapGrid{
 
     MapGrid(const MapGrid& mg);
     MapGrid& operator= (const MapGrid& mg);
+    
+    //allow easy updating from message representations
+    void update(trajectory_rollout::ScoreMap2D new_map);
 
     unsigned rows_, cols_;
     std::vector<MapCell> map_;

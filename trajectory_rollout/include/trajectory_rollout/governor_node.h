@@ -32,28 +32,84 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+#ifndef GOVERNOR_NODE_H_
+#define GOVERNOR_NODE_H_
 #include <ros/node.h>
 
 //The messages that we'll use
 #include <std_msgs/BaseVel.h>
+#include <trajectory_rollout/ScoreMap2D.h>
+#include <std_msgs/RobotBase2DOdom.h>
 
 //for GUI debugging
 #include <std_msgs/Polyline2D.h>
 
 //for time support
-#include <ros/time.h>
+#include <sys/time.h>
 
 //for transform support
 #include <rosTF/rosTF.h>
+
+//the trajectory controller
+#include <trajectory_rollout/trajectory_controller.h>
+#include <trajectory_rollout/map_grid.h>
+#include <trajectory_rollout/trajectory.h>
+
+#define MAP_ROWS 10
+#define MAP_COLS 10
+#define MAX_ACC_X 1.0
+#define MAX_ACC_Y 1.0
+#define MAX_ACC_THETA 1.0
+#define SIM_TIME 2.0
+#define SIM_STEPS 20
+#define VEL_SAMPLES 25
 
 class GovernorNode: public ros::node
 {
   public:
     GovernorNode();
 
-    //transform client
-    rosTFClient tf;
+    //callback for when the planned passes a new map
+    void mapReceived();
 
-  private:
-    TrajectoryController tc;
+    //callback for odometry information
+    void odomReceived();
+
+    //processing loop
+    void processPlan();
+
+    //sleep for remaining time of cycle
+    void sleep(double loopstart);
+
+    //a map
+    MapGrid map_;
+    
+    //transform client
+    rosTFClient tf_;
+
+    //local controller
+    TrajectoryController tc_;
+
+    //incoming messages
+    trajectory_rollout::ScoreMap2D map_msg_;
+    std_msgs::RobotBase2DOdom odom_msg_;
+
+    //outgoing messages
+    std_msgs::Polyline2D poly_line_msg_;
+    std_msgs::BaseVel cmd_vel_msg_;
+
+    //since both odomReceived and processPlan access robot_vel we need to lock
+    ros::thread::mutex vel_lock;
+
+    //since both mapReceived and processPlan access map_ we need to lock
+    ros::thread::mutex map_lock;
+
+    //keep track of the robot's velocity
+    libTF::TFPose2D robot_vel_;
+
+    //how long for each cycle
+    double cycle_time_;
+    
+
 };
+#endif

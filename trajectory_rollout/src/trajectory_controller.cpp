@@ -35,10 +35,10 @@
 
 using namespace std;
 
-TrajectoryController::TrajectoryController(MapGrid mg, vector<pair<int, int> > path, double acc_x, double acc_y, double acc_theta,
-    double sim_time, int num_steps, int samples_per_dim)
+TrajectoryController::TrajectoryController(MapGrid& mg, double acc_x, double acc_y, double acc_theta,
+    double sim_time, int num_steps, int samples_per_dim, rosTFClient* tf)
   : map_(mg), acc_x_(acc_x), acc_y_(acc_y), acc_theta_(acc_theta), sim_time_(sim_time),
-  num_steps_(num_steps), samples_per_dim_(samples_per_dim)
+  num_steps_(num_steps), samples_per_dim_(samples_per_dim), tf_(tf)
 {
 }
 
@@ -133,25 +133,39 @@ double TrajectoryController::computeNewVelocity(double vg, double vi, double a_m
 }
 
 
+//create the trajectories we wish to score
 void TrajectoryController::createTrajectories(double x, double y, double theta, double vx, double vy, double vtheta){
-  //compute feasible velocity limits
-  double max_vel_x = vx + acc_x_ * sim_time_;
-  double min_vel_x = vx - acc_x_ * sim_time_;
+  //compute feasible velocity limits in robot space
+  libTF::TFPose2D max_vel;
+  libTF::TFPose2D min_vel;
 
-  double max_vel_y = vy + acc_y_ * sim_time_;
-  double min_vel_y = vy - acc_y_ * sim_time_;
+  max_vel.x = vx + acc_x_ * sim_time_;
+  min_vel.x = vx - acc_x_ * sim_time_;
 
-  double max_vel_theta = vtheta + acc_theta_ * sim_time_;
-  double min_vel_theta = vtheta - acc_theta_ * sim_time_;
+  max_vel.y = vy + acc_y_ * sim_time_;
+  min_vel.y = vy - acc_y_ * sim_time_;
+
+  max_vel.yaw = vtheta + acc_theta_ * sim_time_;
+  min_vel.yaw = vtheta - acc_theta_ * sim_time_;
+
+  max_vel.frame = "FRAMEID_ROBOT";
+  min_vel.frame = "FRAMEID_ROBOT";
+
+  //we could lack transforms in unit tests
+  if(tf_){
+    //convert our min and max velocities to map space
+    max_vel = tf_->transformPose2D("FRAMEID_MAP", max_vel);
+    min_vel = tf_->transformPose2D("FRAMEID_MAP", min_vel);
+  }
 
   //we want to sample the velocity space regularly
-  double dvx = (max_vel_x - min_vel_x) / samples_per_dim_;
-  double dvy = (max_vel_y - min_vel_y) / samples_per_dim_;
-  double dvtheta = (max_vel_theta - min_vel_theta) / samples_per_dim_;
+  double dvx = (max_vel.x - min_vel.x) / samples_per_dim_;
+  double dvy = (max_vel.y - min_vel.y) / samples_per_dim_;
+  double dvtheta = (max_vel.yaw - min_vel.yaw) / samples_per_dim_;
 
-  double vx_samp = min_vel_x;
-  double vy_samp = min_vel_y;
-  double vtheta_samp = min_vel_theta;
+  double vx_samp = min_vel.x;
+  double vy_samp = min_vel.y;
+  double vtheta_samp = min_vel.yaw;
 
   //generate trajectories for regularly sampled velocities
   for(int i = 0; i < samples_per_dim_; ++i){
@@ -166,15 +180,75 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
   }
 }
 
-Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel){
+//given the current state of the robot, find a good trajectory
+Trajectory TrajectoryController::findBestPath(libTF::TFPose2D robot_pose, libTF::TFPose2D robot_vel){
   //first compute the path distance for all cells in our map grid
   computePathDistance();
 
-  //next create the trajectories we wish to explore in world space
-  createTrajectories(global_pose.x, global_pose.y, global_pose.yaw, global_vel.x, global_vel.y, global_vel.yaw);
+  //next create the trajectories we wish to explore
+  createTrajectories(robot_pose.x, robot_pose.y, robot_pose.yaw, robot_vel.x, robot_vel.y, robot_vel.yaw);
 
   //now we want to score the trajectories that we've created and return the best one
+  double min_cost = DBL_MAX;
 
-  return Trajectory(1, 1, 1, 1);
+  //default to a trajectory that goes nowhere
+  Trajectory best(0, 0, 0, 1);
+
+  for(unsigned int i = 0; i < trajectories_.size(); ++i){
+    double cost = trajectoryCost(trajectories_[i], .33, .33, .33);
+
+    //so we can draw with cost info
+    trajectories_[i].cost_ = cost;
+
+    //find the minimum cost path
+    if(cost < min_cost){
+      best = trajectories_[i];
+      min_cost = cost;
+    }
+  }
+
+  return best;
 }
 
+//compute the cost for a single trajectory
+double TrajectoryController::trajectoryCost(Trajectory t, double pdist_scale, double gdist_scale, double dfast_scale){
+  //we need to know in which cell the path ends
+  pair<int, int> point_cell = getMapCell(t.points_.back().x_, t.points_.back().y_);
+
+  //we don't want a path that ends off the known map
+  if(!VALID_CELL(map_, point_cell.first, point_cell.second))
+    return DBL_MAX;
+
+  double path_dist = map_(point_cell.first, point_cell.second).path_dist;
+  double goal_dist = map_(point_cell.first, point_cell.second).goal_dist;
+
+  double cost = pdist_scale * path_dist + gdist_scale * goal_dist + dfast_scale * (1.0 / (t.xv_ * t.xv_ + t.yv_ * t.yv_));
+  
+  return cost;
+}
+
+//given a position (in map space) return the containing cell
+pair<int, int> TrajectoryController::getMapCell(double x, double y){
+  //size of each cell meters/cell
+  double scale = map_.scale;
+
+  int i = (int)(x / scale);
+  int j = (int)(y / scale);
+
+  return pair<int, int>(i, j);
+}
+
+//given a trajectory in map space get the drive commands to send to the robot
+libTF::TFPose2D TrajectoryController::getDriveVelocities(Trajectory t){
+  libTF::TFPose2D tVel;
+  tVel.x = t.xv_;
+  tVel.y = t.yv_;
+  tVel.yaw = t.thetav_;
+  tVel.frame = "FRAMEID_MAP";
+
+  //might not have a transform client with unit tests
+  if(tf_)
+    tVel = tf_->transformPose2D("FRAMEID_ROBOT", tVel);
+
+  return tVel;
+}
