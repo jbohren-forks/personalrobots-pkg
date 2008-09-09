@@ -46,14 +46,16 @@
 
 
 #include <ros/node.h>
+#include <robot_msgs/DiagnosticMessage.h>
+#include <misc_utils/realtime_publisher.h>
 #include <generic_controllers/controller.h>
-#include "robot_msgs/DiagnosticStatus.h"
 
 namespace controller
 {
 
 class MotorTest1 : public Controller
 {
+
 public:
   /*!
    * \brief Default Constructor of the MotorTest1 class.
@@ -72,7 +74,7 @@ public:
    * \param time The current hardware time.
    * \param *robot The robot that is being controlled.
    */
-  void init(double duration, std::string fixture_name, double time, std::string name,mechanism::Robot *robot);
+  void init(double duration, std::string fixture_name, double time, std::string name,mechanism::RobotState *robot);
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   /*!
@@ -92,26 +94,20 @@ public:
   virtual void update();
 
 private:
-<<<<<<< HEAD:controllers/testing_controllers/motor_qualification_controllers/include/motor_qualification_controllers/motor_test1.h
-  mechanism::Joint* joint_;           /**< Joint we're controlling. */
-  mechanism::Joint* fixture_joint_;   /**< Joint we're qualifying against. */
-  mechanism::Robot *robot_;           /**< Pointer to robot structure. */
-  double duration_;                   /**< Duration of the test. */
-  double initial_time_;               /**< Start time of the test. */
-  double test_joint_start_pos_;       /**< Start pos of the test joint. */
-  double fixture_joint_start_pos_;    /**< Start pos of the fixture joint. */
-  double test_joint_end_pos_;         /**< End pos of the test joint. */
-  double fixture_joint_end_pos_;      /**< End pos of the fixture joint. */
-  bool complete;
-=======
-  mechanism::Joint::State *joint_state_;
-  mechanism::RobotState *robot_;     /**< Pointer to robot structure. */
-  double input_start_;          /**< Begining of the ramp. */
-  double input_end_;            /**< End of the ramp. */
-  double duration_;             /**< Duration of the ramp. */
-  double initial_time_;         /**< Start time of the ramp. */
->>>>>>> Separated robot state from the robot model and ported all the controllers.:controllers/generic_controllers/include/generic_controllers/ramp_input_controller.h
 
+  mechanism::JointState *joint_;                    /**< Joint we're controlling. */
+  mechanism::JointState *fixture_joint_;            /**< Joint we're qualifying against. */
+  mechanism::RobotState *robot_;                    /**< Pointer to robot structure. */
+  double duration_;                                 /**< Duration of the test. */
+  double initial_time_;                             /**< Start time of the test. */
+  double test_joint_start_pos_;                     /**< Start pos of the test joint. */
+  double fixture_joint_start_pos_;                  /**< Start pos of the fixture joint. */
+  double test_joint_end_pos_;                       /**< End pos of the test joint. */
+  double fixture_joint_end_pos_;                    /**< End pos of the fixture joint. */
+  bool complete;
+  misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;dr
+  robot_msgs::DiagnosticMessage diagnostic_message_;
+  
 };
 
 /***************************************************/
@@ -140,7 +136,6 @@ public:
 
   void update();
 
-  void init(double duration, std::string fixture_name, double time, std::string name ,mechanism::Robot *robot);
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
 private:
