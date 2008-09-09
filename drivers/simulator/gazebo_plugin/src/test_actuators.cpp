@@ -1442,8 +1442,8 @@ namespace gazebo {
                  head_tilt_offset_x,
                  head_tilt_offset_y,
                  head_tilt_offset_z,
-                 head_tilt_angle,
                  0.0,
+                 head_tilt_angle,
                  0.0,
                  timeMsg.rostime);
 
