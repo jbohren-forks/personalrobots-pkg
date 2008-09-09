@@ -114,12 +114,11 @@ bool Link::initXml(TiXmlElement *config, Robot *robot)
     fprintf(stderr, "Error: Link \"%s\"'s rpy origin is malformed\n", name_.c_str());
     return false;
   }
-
-  // TODO: Do something with the origin information
-  // frame_ = KDL::Frame(KDL::Rotation::RPY(rpy[0], rpy[1], rpy[2]), KDL::Vector(xyz[0], xyz[1], xyz[2]));
-
-  // TODO: parse inertial info
-  // TODO: maybe parse collision info
+  for (int i = 0; i < 3; ++i)
+  {
+    origin_xyz[i] = xyz[i];
+    origin_rpy[i] = rpy[i];
+  }
 
   init_state_ = CREATE_TREE_LINKS;
   return true;

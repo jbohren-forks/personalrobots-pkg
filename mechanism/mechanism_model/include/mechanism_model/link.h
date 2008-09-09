@@ -56,6 +56,9 @@ public:
   std::string name_;
   std::string parent_name_;
 
+  double origin_xyz[3];
+  double origin_rpy[3];
+
   Link *parent_;
   Joint *joint_;
   std::vector<Link*> children_;
