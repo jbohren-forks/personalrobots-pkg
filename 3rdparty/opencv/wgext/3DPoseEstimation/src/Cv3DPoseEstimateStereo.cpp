@@ -9,9 +9,15 @@
 #include <stereolib.h> // from 3DPoseEstimation/include. The header file is there temporarily
 
 #include <iostream>
+using namespace std;
+
+// star detector
 #include <star_detector/include/detector.h>
 
-using namespace std;
+
+// boost
+#include <boost/foreach.hpp>
+#include <cassert>
 
 //#define DEBUG
 
@@ -37,17 +43,32 @@ Cv3DPoseEstimateStereo::Cv3DPoseEstimateStereo(int width, int height):
 	mThreshold(DefThreshold),
 	mMaxNumKeyPoints(DefMaxNumKeyPoints),
 	mStarDetector(mSize, mNumScales, mThreshold),
+	mMatchMethod(CalonderDescriptor),
+	mCalonderMatcher(NULL),
 	mTemplateMatchThreshold(DefTemplateMatchThreshold),
 	mDisparityUnitInPixels(DefDisparityUnitInPixels)
 {
 	mBufStereoPairs     = new uint8_t[mSize.height*mDLen*(mCorr+5)]; // local storage for the stereo pair algorithm
 	mFeatureImgBufLeft  = new uint8_t[mSize.width*mSize.height];
 	mFeatureImgBufRight = new uint8_t[mSize.width*mSize.height];
+
+	switch(mMatchMethod) {
+	case CalonderDescriptor:{
+		string modelFile("land30.trees");
+		mCalonderMatcher = new CalonderMatcher(modelFile);
+		break;
+	}
+	case CrossCorrelation:
+		break;
+	case KeyPointCrossCorrelation:
+		break;
+	}
 }
 
 Cv3DPoseEstimateStereo::~Cv3DPoseEstimateStereo() {
 	delete [] mBufStereoPairs;
 	delete [] mFeatureImgBufLeft;
+	delete mCalonderMatcher;
 }
 
 bool Cv3DPoseEstimateStereo::getDisparityMap(
@@ -137,6 +158,11 @@ vector<Keypoint> Cv3DPoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WIm
 		// Try Star Detector
 		//
 		std::vector<Keypoint> kps = mStarDetector.DetectPoints(img.Ipl());
+		std::sort(kps.begin(), kps.end());
+		if (kps.size()>mMaxNumKeyPoints) {
+		  kps.erase(kps.begin() + mMaxNumKeyPoints, kps.end());
+		}
+
 #ifdef DEBUG
 		cout << "Found "<< kps.size() << " good keypoints by Star Detector"<<endl;
 #endif
@@ -195,34 +221,220 @@ bool Cv3DPoseEstimateStereo::makePatchRect(const CvPoint& rectSize, const CvPoin
 	return fOutOfBound;
 }
 
-vector<pair<CvPoint3D64f, CvPoint3D64f> > Cv3DPoseEstimateStereo::getTrackablePairs(
-			WImage1_b& image0, WImage1_b& image1,
-			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
-			vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoints1
-			) {
+bool
+Cv3DPoseEstimateStereo::getTrackablePairsByCalonder(
+		WImage1_b& image0, WImage1_b& image1,
+		WImage1_16s& dispMap0, WImage1_16s& dispMap1,
+		vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoints1,
+		vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs
+		) {
+	assert(this->mCalonderMatcher!=NULL);
+	bool status = true;
 	CvPoint neighborhoodSize = DefNeighborhoodSize;
 	CvPoint templSize        = DefTemplateSize;
 	// a buffer for neighborhood template matching
 	float _res[(neighborhoodSize.y-templSize.y+1)*(neighborhoodSize.x-templSize.x+1)];
 	CvMat res = cvMat(neighborhoodSize.y-templSize.y+1, neighborhoodSize.x-templSize.x+1, CV_32FC1, _res);
 	int numTrackablePairs=0;
-	vector<pair<CvPoint3D64f, CvPoint3D64f> > trackablePairs;
+
+	// for image1
+	// Extract patches and add their signatures to matcher database
+	BruteForceMatcher<CvPoint> matcher;
+
+	BOOST_FOREACH( Keypoint &pt, keyPoints1 ) {
+		cv::WImageView1_b view = extractPatch(image1.Ipl(), pt);
+		CalonderMatcher::Signature sig = mCalonderMatcher->mClassifier.getSparseSignature(view.Ipl());
+		matcher.addSignature(sig, cvPoint(pt.x, pt.y));
+	}
+
+	// For each key point in image0, find its best match in matcher
+	float distance;
+	int index = 0;
+	CvPoint bestloc;
+	BOOST_FOREACH( Keypoint &pt, keyPoints0 ) {
+	  CvRect rectNeighborhood;
+	  CvPoint2D32f pt2D32f = cvPoint2D32f(pt.x, pt.y);
+	  makePatchRect(neighborhoodSize, pt2D32f, rectNeighborhood);
+
+		cv::WImageView1_b view = extractPatch(image0.Ipl(), pt);
+		CalonderMatcher::Signature sig = mCalonderMatcher->mClassifier.getSparseSignature(view.Ipl());
+//		int match = matcher.findMatch(sig, &distance);
+		int match = matcher.findMatchInWindow(sig, rectNeighborhood, &distance);
+		if (match<0) {		  // no match
+		  continue;
+		}
+
+		Keypoint& kp = keyPoints1.at(match);
+		bestloc.x = kp.x;
+		bestloc.y = kp.y;
+
+		double disp = getDisparity(dispMap1, bestloc);
+		if (disp<0) {
+			mNumKeyPointsWithNoDisparity++;
+			continue;
+		}
+		CvPoint pt0Int = cvPoint(pt.x, pt.y);
+		double disp0 = getDisparity(dispMap0, pt0Int);
+		CvPoint3D64f pt0 = cvPoint3D64f(pt0Int.x, pt0Int.y, disp0);
+		CvPoint3D64f pt1 = cvPoint3D64f(bestloc.x, bestloc.y, disp);
+#ifdef DEBUG
+		cout << "best match: "<<pt1.x<<","<<pt1.y<<","<<pt1.z<<endl;
+#endif
+		pair<CvPoint3D64f, CvPoint3D64f> p(pt0, pt1);
+		trackablePairs.push_back(p);
+		numTrackablePairs++;
+
+		++index;
+	}
+	assert(numTrackablePairs == (int)trackablePairs.size());
+	return status;
+}
+
+
+bool
+Cv3DPoseEstimateStereo::getTrackablePairsByCrossCorr(
+		WImage1_b& image0, WImage1_b& image1,
+		WImage1_16s& dispMap0, WImage1_16s& dispMap1,
+		vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoints1,
+		vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs
+		) {
+	bool status = true;
+	CvPoint neighborhoodSize = DefNeighborhoodSize;
+	CvPoint templSize        = DefTemplateSize;
+	// a buffer for neighborhood template matching
+	float _res[(neighborhoodSize.y-templSize.y+1)*(neighborhoodSize.x-templSize.x+1)];
+	CvMat res = cvMat(neighborhoodSize.y-templSize.y+1, neighborhoodSize.x-templSize.x+1, CV_32FC1, _res);
+	int numTrackablePairs=0;
 
 	// loop thru the keypoints of image0 and look for best match from image1
 	for (vector<Keypoint>::const_iterator ikp = keyPoints0.begin(); ikp!=keyPoints0.end(); ikp++) {
 		CvPoint2D32f featurePtLastLeft = cvPoint2D32f(ikp->x, ikp->y);
 		CvPoint fPtLastLeft = cvPoint(ikp->x, ikp->y);
 
-		CvScalar s = cvGet2D(dispMap0.Ipl(), fPtLastLeft.y, fPtLastLeft.x);
-		double disp = s.val[0];
-		double disp1 = CV_IMAGE_ELEM(dispMap0.Ipl(), int16_t, fPtLastLeft.y, fPtLastLeft.x);
-		assert(disp == disp1);
-		if (disp<0) {
-			printf("%d, %d, %d\n", fPtLastLeft.y, fPtLastLeft.x, (int)disp);
-		}
+		double disp = getDisparity(dispMap0, fPtLastLeft);
+		// we should have check if disparity is available already for all key points
 		assert( disp>=0);
-		// the unit of disp is 1/16 of a pixel
-		disp /= mDisparityUnitInPixels;
+		CvPoint3D64f ptLast = cvPoint3D64f(featurePtLastLeft.x, featurePtLastLeft.y, disp);
+
+#ifdef DEBUG
+		cout << "Feature at "<< featurePtLastLeft.x<<","<<featurePtLastLeft.y<<","<<disp<<endl;
+#endif
+		// find the closest (in distance and appearance) feature
+		// to it in current feature list
+		// In a given neighborhood, if there is at least a good feature
+		// in the left cam image,
+		// we search for a location in current
+		// left cam image is that is closest to this one in appearance
+		vector<CvPoint2D32f> featurePtsInNeighborhood;
+		assert(featurePtsInNeighborhood.size()==0);
+#ifdef DEBUG
+		bool goodFeaturePtInCurrentLeftImg = false;
+		for (vector<Keypoint>::const_iterator jkp = keyPoints1.begin();
+		jkp!=keyPoints1.end(); jkp++) {
+			CvPoint2D32f featurePtLeft = cvPoint2D32f(jkp->x, jkp->y);
+			float dx = featurePtLeft.x - featurePtLastLeft.x;
+			float dy = featurePtLeft.y - featurePtLastLeft.y;
+			if (fabs(dx)<neighborhoodSize.x && fabs(dy)<neighborhoodSize.y) {
+				goodFeaturePtInCurrentLeftImg = true;
+				featurePtsInNeighborhood.push_back(featurePtLeft);
+				cout << "Good candidate at "<< featurePtLeft.x <<","<< featurePtLeft.y<<endl;
+			}
+		}
+		if (goodFeaturePtInCurrentLeftImg == false)
+			continue;
+		cout <<"Found "<< featurePtsInNeighborhood.size() << " candidates in the neighborhood"<<endl;
+#endif
+		/* find the best correlation in the neighborhood */
+		/** make a template center around featurePtLastLeft; */
+		CvRect rectTempl;
+
+		bool fOutOfBound = makePatchRect(templSize, featurePtLastLeft, rectTempl);
+		if (fOutOfBound == true) {
+			continue;
+		}
+		CvRect rectNeighborhood;
+
+		fOutOfBound = makePatchRect(neighborhoodSize, featurePtLastLeft, rectNeighborhood);
+		if (fOutOfBound == true) {
+			// (partially) out of bound.
+			if (rectNeighborhood.width < rectTempl.width || rectNeighborhood.height < rectTempl.height) {
+				// skip this
+				continue;
+			}
+		}
+		CvMat templ, neighborhood;
+		cvGetSubRect(image0.Ipl(), &templ, rectTempl);
+		cvGetSubRect(image1.Ipl(), &neighborhood, rectNeighborhood);
+
+		CvPoint bestloc;
+		CvMat res0;
+		CvRect rectRes = cvRect(0, 0,
+				rectNeighborhood.width - rectTempl.width + 1, rectNeighborhood.height - rectTempl.height + 1);
+		cvGetSubRect(&res, &res0, rectRes);
+		double  matchingScore = matchTemplate(neighborhood, templ, res0, bestloc);
+		if (matchingScore < mTemplateMatchThreshold) {
+			// best matching is not good enough, skip this key point
+			continue;
+		}
+
+		bestloc.x += rectNeighborhood.x + rectTempl.width/2;
+		bestloc.y += rectNeighborhood.y + rectTempl.height/2;
+
+#if 0
+		// shift bestloc to  coordinates w.r.t the neighborhood
+		bestloc.x += rectTempl.width/2;  // please note that they are integer
+		bestloc.y += rectTempl.height/2;
+		bestloc.x -= rectNeighborhood.width/2;
+		bestloc.y -= rectNeighborhood.height/2;
+
+#ifdef DEBUG
+		cout << "best match offset: "<< bestloc.x <<","<<bestloc.y<<endl;
+#endif
+		// further shift to the coordinates of the left image
+		bestloc.x += featurePtLastLeft.x;
+		bestloc.y += featurePtLastLeft.y;
+#endif
+
+		disp = getDisparity(dispMap1, bestloc);
+
+		if (disp<0) {
+			this->mNumKeyPointsWithNoDisparity++;
+			continue;
+		}
+		CvPoint3D64f pt = cvPoint3D64f(bestloc.x, bestloc.y, disp);
+#ifdef DEBUG
+		cout << "best match: "<<pt.x<<","<<pt.y<<","<<pt.z<<endl;
+#endif
+		pair<CvPoint3D64f, CvPoint3D64f> p(ptLast, pt);
+		trackablePairs.push_back(p);
+		numTrackablePairs++;
+	}
+	assert(numTrackablePairs == (int)trackablePairs.size());
+	return status;
+}
+
+bool
+Cv3DPoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
+		WImage1_b& image0, WImage1_b& image1,
+		WImage1_16s& dispMap0, WImage1_16s& dispMap1,
+		vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoints1,
+		vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs
+		) {
+	bool status = true;
+	CvPoint neighborhoodSize = DefNeighborhoodSize;
+	CvPoint templSize        = DefTemplateSize;
+	// a buffer for neighborhood template matching
+	float _res[(neighborhoodSize.y-templSize.y+1)*(neighborhoodSize.x-templSize.x+1)];
+	CvMat res = cvMat(neighborhoodSize.y-templSize.y+1, neighborhoodSize.x-templSize.x+1, CV_32FC1, _res);
+	int numTrackablePairs=0;
+
+	// loop thru the keypoints of image0 and look for best match from image1
+	for (vector<Keypoint>::const_iterator ikp = keyPoints0.begin(); ikp!=keyPoints0.end(); ikp++) {
+		CvPoint2D32f featurePtLastLeft = cvPoint2D32f(ikp->x, ikp->y);
+		CvPoint fPtLastLeft = cvPoint(ikp->x, ikp->y);
+
+		double disp = getDisparity(dispMap0, fPtLastLeft);
+		assert( disp>=0);
 		CvPoint3D64f ptLast = cvPoint3D64f(featurePtLastLeft.x, featurePtLastLeft.y, disp);
 
 #ifdef DEBUG
@@ -237,171 +449,110 @@ vector<pair<CvPoint3D64f, CvPoint3D64f> > Cv3DPoseEstimateStereo::getTrackablePa
 		bool goodFeaturePtInCurrentLeftImg = false;
 		vector<CvPoint2D32f> featurePtsInNeighborhood;
 		assert(featurePtsInNeighborhood.size()==0);
-		if (mKeypointVsKeyPoint == true) {
-			// make a template center around featurePtLastLeft;
-			CvRect rectTempl = cvRect(
-					(int)(.5 + featurePtLastLeft.x - templSize.x/2),
-					(int)(.5 + featurePtLastLeft.y - templSize.y/2),
-					templSize.x, templSize.y
-			);
-			// check if rectTempl is all within bound
-			if (rectTempl.x < 0 || rectTempl.y < 0 ||
-					rectTempl.x + rectTempl.width  > mSize.width ||
-					rectTempl.y + rectTempl.height > mSize.height ) {
-				// (partially) out of bound.
-				// skip this
-				continue;
-			}
-			CvMat templ;
-			cvGetSubRect(image0.Ipl(), &templ, rectTempl);
-			CvMat templ2;
-			float _res[0];
-			CvMat res = cvMat(1, 1, CV_32FC1, _res);
-			cvMatchTemplate(&templ, &templ, &res, CV_TM_CCORR_NORMED );
-			double threshold = _res[0]*.75;
-			CvPoint bestloc = cvPoint(-1,-1);
-			double maxScore = threshold;
-			for (vector<Keypoint>::const_iterator jkp = keyPoints1.begin();
-			jkp!=keyPoints1.end(); jkp++) {
-				CvPoint2D32f featurePtLeft = cvPoint2D32f(jkp->x, jkp->y);
-				float dx = featurePtLeft.x - featurePtLastLeft.x;
-				float dy = featurePtLeft.y - featurePtLastLeft.y;
-				if (fabs(dx)<neighborhoodSize.x && fabs(dy)<neighborhoodSize.y) {
-					goodFeaturePtInCurrentLeftImg = true;
-					featurePtsInNeighborhood.push_back(featurePtLeft);
+
+		// make a template center around featurePtLastLeft;
+		CvRect rectTempl = cvRect(
+				(int)(.5 + featurePtLastLeft.x - templSize.x/2),
+				(int)(.5 + featurePtLastLeft.y - templSize.y/2),
+				templSize.x, templSize.y
+		);
+		// check if rectTempl is all within bound
+		if (rectTempl.x < 0 || rectTempl.y < 0 ||
+				rectTempl.x + rectTempl.width  > mSize.width ||
+				rectTempl.y + rectTempl.height > mSize.height ) {
+			// (partially) out of bound.
+			// skip this
+			continue;
+		}
+		CvMat templ;
+		cvGetSubRect(image0.Ipl(), &templ, rectTempl);
+		CvMat templ2;
+		float _res[0];
+		CvMat res = cvMat(1, 1, CV_32FC1, _res);
+		cvMatchTemplate(&templ, &templ, &res, CV_TM_CCORR_NORMED );
+		double threshold = _res[0]*.75;
+		CvPoint bestloc = cvPoint(-1,-1);
+		double maxScore = threshold;
+		for (vector<Keypoint>::const_iterator jkp = keyPoints1.begin();
+		jkp!=keyPoints1.end(); jkp++) {
+			CvPoint2D32f featurePtLeft = cvPoint2D32f(jkp->x, jkp->y);
+			float dx = featurePtLeft.x - featurePtLastLeft.x;
+			float dy = featurePtLeft.y - featurePtLastLeft.y;
+			if (fabs(dx)<neighborhoodSize.x && fabs(dy)<neighborhoodSize.y) {
+				goodFeaturePtInCurrentLeftImg = true;
+				featurePtsInNeighborhood.push_back(featurePtLeft);
 #ifdef DEBUG
-					cout << "Good candidate at "<< featurePtLeft.x <<","<< featurePtLeft.y<<endl;
+				cout << "Good candidate at "<< featurePtLeft.x <<","<< featurePtLeft.y<<endl;
 #endif
-					CvRect rectTempl2 = cvRect(
-							(int)(.5 + featurePtLeft.x - templSize.x/2),
-							(int)(.5 + featurePtLeft.y - templSize.y/2),
-							templSize.x, templSize.y
-					);
-					// check if rectTempl is all within bound
-					if (rectTempl2.x < 0 || rectTempl2.y < 0 ||
-							rectTempl2.x + rectTempl2.width  > mSize.width ||
-							rectTempl2.y + rectTempl2.height > mSize.height ) {
-						// (partially) out of bound.
-						// skip this
-						continue;
-					}
-					cvGetSubRect(image1.Ipl(), &templ2, rectTempl2);
-					cvMatchTemplate(&templ2, &templ, &res, CV_TM_CCORR_NORMED );
-					double score = _res[0];
-					if (score > maxScore) {
-						bestloc.x = featurePtLeft.x;
-						bestloc.y = featurePtLeft.y;
-						maxScore = score;
-					}
-				}
-			}
-			if (maxScore <= threshold ) {
-				continue;
-			}
-
-			CvScalar s = cvGet2D(dispMap1.Ipl(), bestloc.y, bestloc.x);
-			disp = s.val[0];
-
-			if (disp<0) {
-				mNumKeyPointsWithNoDisparity++;
-				continue;
-			}
-			// the unit of disp is 1/16 of a pixel
-			disp /= mDisparityUnitInPixels;
-			CvPoint3D64f pt = cvPoint3D64f(bestloc.x, bestloc.y, disp);
-#ifdef DEBUG
-			cout << "best match: "<<pt.x<<","<<pt.y<<","<<pt.z<<endl;
-#endif
-			pair<CvPoint3D64f, CvPoint3D64f> p(ptLast, pt);
-			trackablePairs.push_back(p);
-			numTrackablePairs++;
-		} else {
-#ifdef DEBUG
-			for (vector<Keypoint>::const_iterator jkp = keyPoints1.begin();
-			jkp!=keyPoints1.end(); jkp++) {
-				CvPoint2D32f featurePtLeft = cvPoint2D32f(jkp->x, jkp->y);
-				float dx = featurePtLeft.x - featurePtLastLeft.x;
-				float dy = featurePtLeft.y - featurePtLastLeft.y;
-				if (fabs(dx)<neighborhoodSize.x && fabs(dy)<neighborhoodSize.y) {
-					goodFeaturePtInCurrentLeftImg = true;
-					featurePtsInNeighborhood.push_back(featurePtLeft);
-					cout << "Good candidate at "<< featurePtLeft.x <<","<< featurePtLeft.y<<endl;
-				}
-			}
-			if (goodFeaturePtInCurrentLeftImg == false)
-				continue;
-			cout <<"Found "<< featurePtsInNeighborhood.size() << " candidates in the neighborhood"<<endl;
-#endif
-			/* find the best correlation in the neighborhood */
-			/** make a template center around featurePtLastLeft; */
-			CvRect rectTempl;
-
-			bool fOutOfBound = makePatchRect(templSize, featurePtLastLeft, rectTempl);
-			if (fOutOfBound == true) {
-				continue;
-			}
-			CvRect rectNeighborhood;
-
-			fOutOfBound = makePatchRect(neighborhoodSize, featurePtLastLeft, rectNeighborhood);
-			if (fOutOfBound == true) {
-				// (partially) out of bound.
-				if (rectNeighborhood.width < rectTempl.width || rectNeighborhood.height < rectTempl.height) {
+				CvRect rectTempl2 = cvRect(
+						(int)(.5 + featurePtLeft.x - templSize.x/2),
+						(int)(.5 + featurePtLeft.y - templSize.y/2),
+						templSize.x, templSize.y
+				);
+				// check if rectTempl is all within bound
+				if (rectTempl2.x < 0 || rectTempl2.y < 0 ||
+						rectTempl2.x + rectTempl2.width  > mSize.width ||
+						rectTempl2.y + rectTempl2.height > mSize.height ) {
+					// (partially) out of bound.
 					// skip this
 					continue;
 				}
+				cvGetSubRect(image1.Ipl(), &templ2, rectTempl2);
+				cvMatchTemplate(&templ2, &templ, &res, CV_TM_CCORR_NORMED );
+				double score = _res[0];
+				if (score > maxScore) {
+					bestloc.x = featurePtLeft.x;
+					bestloc.y = featurePtLeft.y;
+					maxScore = score;
+				}
 			}
-			CvMat templ, neighborhood;
-			cvGetSubRect(image0.Ipl(), &templ, rectTempl);
-			cvGetSubRect(image1.Ipl(), &neighborhood, rectNeighborhood);
-
-			CvPoint bestloc;
-			CvMat res0;
-			CvRect rectRes = cvRect(0, 0,
-					rectNeighborhood.width - rectTempl.width + 1, rectNeighborhood.height - rectTempl.height + 1);
-			cvGetSubRect(&res, &res0, rectRes);
-			double  matchingScore = matchTemplate(neighborhood, templ, res0, bestloc);
-			if (matchingScore < mTemplateMatchThreshold) {
-				// best matching is not good enough, skip this key point
-				continue;
-			}
-
-			bestloc.x += rectNeighborhood.x + rectTempl.width/2;
-			bestloc.y += rectNeighborhood.y + rectTempl.height/2;
-
-#if 0
-			// shift bestloc to  coordinates w.r.t the neighborhood
-			bestloc.x += rectTempl.width/2;  // please note that they are integer
-			bestloc.y += rectTempl.height/2;
-			bestloc.x -= rectNeighborhood.width/2;
-			bestloc.y -= rectNeighborhood.height/2;
-
-#ifdef DEBUG
-			cout << "best match offset: "<< bestloc.x <<","<<bestloc.y<<endl;
-#endif
-			// further shift to the coordinates of the left image
-			bestloc.x += featurePtLastLeft.x;
-			bestloc.y += featurePtLastLeft.y;
-#endif
-
-			CvScalar s = cvGet2D(dispMap1.Ipl(), bestloc.y, bestloc.x);
-			disp = s.val[0];
-
-			if (disp<0) {
-				this->mNumKeyPointsWithNoDisparity++;
-				continue;
-			}
-			// the unit of disparity is 1/16 of a pixel
-			CvPoint3D64f pt = cvPoint3D64f(bestloc.x, bestloc.y, disp/ mDisparityUnitInPixels);
-#ifdef DEBUG
-			cout << "best match: "<<pt.x<<","<<pt.y<<","<<pt.z<<endl;
-#endif
-			pair<CvPoint3D64f, CvPoint3D64f> p(ptLast, pt);
-			trackablePairs.push_back(p);
-			numTrackablePairs++;
 		}
+		if (maxScore <= threshold ) {
+			continue;
+		}
+
+		disp = getDisparity(dispMap1, bestloc);
+		if (disp<0) {
+			mNumKeyPointsWithNoDisparity++;
+			continue;
+		}
+		CvPoint3D64f pt = cvPoint3D64f(bestloc.x, bestloc.y, disp);
+#ifdef DEBUG
+		cout << "best match: "<<pt.x<<","<<pt.y<<","<<pt.z<<endl;
+#endif
+		pair<CvPoint3D64f, CvPoint3D64f> p(ptLast, pt);
+		trackablePairs.push_back(p);
+		numTrackablePairs++;
 	}
 	assert(numTrackablePairs == (int)trackablePairs.size());
-	return trackablePairs;
+	return status;
+}
+
+bool Cv3DPoseEstimateStereo::getTrackablePairs(
+			WImage1_b& image0, WImage1_b& image1,
+			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
+			vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoints1,
+			vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs
+			) {
+	bool status = true;
+	switch(mMatchMethod){
+	case CrossCorrelation:
+		status = getTrackablePairsByCrossCorr(image0, image1, dispMap0, dispMap1, keyPoints0, keyPoints1,
+				trackablePairs);
+		break;
+	case KeyPointCrossCorrelation:
+		status = getTrackablePairsByKeypointCrossCorr(image0, image1, dispMap0, dispMap1, keyPoints0, keyPoints1,
+				trackablePairs);
+		break;
+	case CalonderDescriptor:
+		status = getTrackablePairsByCalonder(image0, image1, dispMap0, dispMap1, keyPoints0, keyPoints1,
+						trackablePairs);
+		break;
+	default:
+		status = false;
+		break;
+	}
+	return status;
 }
 
 int Cv3DPoseEstimateStereo::estimate(vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs,
@@ -441,8 +592,13 @@ int Cv3DPoseEstimateStereo::estimate(vector<pair<CvPoint3D64f, CvPoint3D64f> >& 
 double Cv3DPoseEstimateStereo::matchTemplate(const CvMat& neighborhood, const CvMat& templ, CvMat& res,
 		CvPoint& loc){
 	cvMatchTemplate(&neighborhood, &templ, &res, CV_TM_CCORR_NORMED );
-	CvPoint		minloc;
 	double		minval, maxval;
 	cvMinMaxLoc( &res, &minval, &maxval, NULL, &loc, NULL);
 	return maxval;
 }
+
+Cv3DPoseEstimateStereo::CalonderMatcher::CalonderMatcher(string& modelfilename){
+	  mClassifier.read(modelfilename.c_str());
+	  mClassifier.setThreshold(SIG_THRESHOLD);
+}
+

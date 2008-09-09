@@ -97,7 +97,7 @@ bool CvLevMarqTransform::constructRTMatrix(const CvMat * param, CvMyReal _RT[]){
 	switch(mAngleType) {
 	case Euler:
 	{
-		CvMyReal x  = cvmGet(param, 0, 0);
+        CvMyReal x  = cvmGet(param, 0, 0);
 		CvMyReal y  = cvmGet(param, 1, 0);
 		CvMyReal z  = cvmGet(param, 2, 0);
 		CvMyReal tx = cvmGet(param, 3, 0);

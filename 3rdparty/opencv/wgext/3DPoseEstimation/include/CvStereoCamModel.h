@@ -29,6 +29,7 @@ public:
      *  Cy  - y coordinate of the optical center of both left and right camera
      */
     bool setCameraParams(double Fx, double Fy, double Tx, double Clx, double Crx, double Cy);
+    bool setCameraParams(const CvStereoCamParams& params);
 #if 0
     bool convert3DToDisparitySpace(CvMat* src, CvMat* dst);
 #endif

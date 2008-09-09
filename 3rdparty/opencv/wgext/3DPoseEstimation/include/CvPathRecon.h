@@ -13,7 +13,8 @@ using namespace std;
 
 #include <opencv/cxtypes.h>
 
-#include <keypoint.h>
+// star detector
+#include <star_detector/include/keypoint.h>
 
 #include <Cv3DPoseEstimateStereo.h>
 #include "CvPoseEstErrMeasDisp.h"
@@ -29,7 +30,7 @@ public:
 				vector<Keypoint>& keypoints, CvMat& rot, CvMat& shift,
 				int numTrackablePair,
 				int numInliers, int frameIndex,
-				WImageBuffer3_b& imageC3a, CvMat* inliers0, CvMat* inliers1){
+				const WImageBuffer3_b* imageC3a, CvMat* inliers0, CvMat* inliers1){
 			mRot   = cvMat(3, 3, CV_64FC1, _mRot);
 			mShift = cvMat(3, 1, CV_64FC1, _mShift);
 			mImage.CloneFrom(image);
@@ -41,7 +42,8 @@ public:
 			mNumInliers = numInliers;
 			mFrameIndex = frameIndex;
 
-			mImageC3a.CloneFrom(imageC3a);
+			if (imageC3a)
+			  mImageC3a.CloneFrom(*imageC3a);
 			mInliers0 = cvCloneMat(inliers0);
 			mInliers1 = cvCloneMat(inliers1);
 		}
@@ -122,8 +124,31 @@ public:
     void keepGoodFrame(WImageBuffer1_b & image, WImageBuffer1_16s & dispMap,
     		vector<Keypoint>& keyPoints, CvMat& rot, CvMat& shift,
     		int numTrackablePairs, int numInliers, int frameIndex,
-    		WImageBuffer3_b& imageC3a, CvMat* inliers0, CvMat* inliers1);
+    		const WImageBuffer3_b* imageC3a, CvMat* inliers0, CvMat* inliers1);
 
+    /**
+     * Given a sequence of stereo video, reconstruct the path of the
+     * camera.
+     * dirname  - directory of where the video sequence is stored
+     * leftFileFmt  - format for generating the filename of an image from the
+     *                left camera. e.g. left-%04d.ppm, for filenames like
+     *                left-0500.ppm, etc.
+     * rightFileFmt - format for generating the filename of an image from the
+     *                right camera. Same convention as leftFileFmt.
+     * start        - index of the first frame to be processed
+     * end          - index of the first frame not to be process
+     *              - namely, process the frame at most to frame number end-1
+     * step         - step size of the increase of the index from one frame
+     *                to next one.
+     */
+    bool recon(const string& dirname, const string& leftFileFmt,
+        const string& rightFileFmt, int start, int end, int step);
+
+    void loadStereoImagePair(int & frameIndex,
+        WImageBuffer1_b & leftImage, WImageBuffer1_b & rightImage);
+    static void loadStereoImagePair(string& dirname, string& leftimagefmt,
+        string& rightimagefmt, int & frameIndex,
+        WImageBuffer1_b & leftImage, WImageBuffer1_b & rightImage);
 
     static const int    defMaxDisparity  = 15;
     static const int    defMinNumInliersForGoodFrame = 10;
@@ -176,6 +201,11 @@ public:
 
     // error meas
     CvPoseEstErrMeasDisp mErrMeas;
+
+    // diretory and file name format for the input images
+    string mDirname;
+    string mLeftImageFilenameFmt;
+    string mRightImageFilenameFmt;
 protected:
 
     double _transform[16];  // data portion of mTransform
@@ -185,6 +215,8 @@ protected:
 	CvMat  _mTempMat;
 	// buffer for rotation matrix and shift matrix
 	double _rot[9], _shift[3];
+
+	bool mStop;
 };
 
 #endif /* CVPATHRECON_H_ */

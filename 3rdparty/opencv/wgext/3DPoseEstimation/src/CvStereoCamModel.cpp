@@ -117,43 +117,11 @@ bool CvStereoCamModel::setCameraParams(double Fx, double Fy, double Tx, double C
     return status;
 }
 
-#if 0 // TODO: delete it. Seems to be duplicated
-bool CvStereoCamModel::convert3DToDisparitySpace(CvMat* src, CvMat* dst) {
-    bool status = true;
-    int numPoints = src->rows;
-    if (numPoints != dst->rows) {
-        cerr << "mismatch numbers of points in src and dst"<<endl;
-        return false;
-    }
-
-#if 0
-    CvMat src0, dst0;
-    cvReshape(src, &src0, 3, 0);
-    cvReshape(dst, &dst0, 3, 0);
-    cvPerspectiveTransform(&src0, &dst0, this->mMatCartToDisp);
-#endif
-    double dst1_data[4];
-    CvMat src1;
-    CvMat dst1 = cvMat(4, 1, CV_64FC1, dst1_data);
-
-    for (int i=0; i<numPoints; i++) {
-    	double data []= {
-    			cvmGet(src, i, 0),
-    			cvmGet(src, i, 1),
-    			cvmGet(src, i, 2),
-    			1.0,
-    	};
-    	cvInitMatHeader(&src1, 4, 1, CV_64FC1, data);
-    	cvMatMul(&mMatCartToDisp, &src1, &dst1);
-
-    	cvSetReal2D(dst, i, 0, dst1_data[0]/dst1_data[3]);
-    	cvSetReal2D(dst, i, 1, dst1_data[1]/dst1_data[3]);
-    	cvSetReal2D(dst, i, 2, dst1_data[2]/dst1_data[3]);
-//    	cout<<"dst1: "<<dst1_data[0]<<","<<dst1_data[1]<<","<<dst1_data[2]<<","<<dst1_data[3]<<endl;
-    }
-    return status;
+bool CvStereoCamModel::setCameraParams(const CvStereoCamParams& params) {
+  *this = params;
+  bool status = this->constructProjectionMatrices();
+  return status;
 }
-#endif
 
 bool CvStereoCamModel::reprojection(const CvMat *uvds, CvMat *XYZs) {
 	if (uvds == NULL || XYZs == NULL) {

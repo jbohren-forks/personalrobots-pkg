@@ -115,6 +115,8 @@ int Cv3DPoseEstimate::getInLiers(CvMat *points0, CvMat *points1, CvMat* transfor
 		CvMyReal scale = 1.0/w3;
 
 		CvMyReal rx = *_P1++ - (_T[3] + _T[2]*p0z + _T[1]*p0y + _T[0]*p0x)*scale;
+		// Experiments have shown that checking rx, ry, rz separately and rejecting the current
+		// point as early as possible helps speeding up the computation
 		if (rx> thresholdM || rx< thresholdm) {
 			(++_P1)++;
 			continue;

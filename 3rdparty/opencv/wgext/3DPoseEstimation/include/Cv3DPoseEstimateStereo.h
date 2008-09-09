@@ -18,6 +18,10 @@ using namespace cv;
 // star detector
 #include <star_detector/include/detector.h>
 
+// Calonder descriptor
+#include <calonder_descriptor/include/matcher.h>
+#include <calonder_descriptor/include/rtree_classifier.h>
+using namespace features;
 
 class Cv3DPoseEstimateStereo: public Cv3DPoseEstimateDisp {
 public:
@@ -31,19 +35,24 @@ public:
 	static const int DefTextThresh   = 10;		// texture threshold
 	static const int DefUniqueThresh = 15;		// uniqueness threshold
 
-	// constants used in goodFeaturesToTrack
+	// constants used in goodFeaturesToTrack/star_detector
 	static const int DefNumScales    = 7;
 	static const int DefThreshold    = 15;
-//	static const int DefThreshold    = 5;
-	static const int DefMaxNumKeyPoints = 0;
+	static const int DefMaxNumKeyPoints = 500;
 
 	// constants used in getting trackable pairs
 	static const CvPoint DefNeighborhoodSize;
 	static const CvPoint DefTemplateSize;
 	static const double  DefTemplateMatchThreshold = 0;
-	// if true, only do matching between keypoints.
-	// search a neighborhood otherwise
-	static const bool    mKeypointVsKeyPoint = false;
+	/**
+	 * matching method to find a best match of a key point in a neighborhood
+	 */
+	typedef enum {
+		CrossCorrelation,   // best location by cross correlation
+		KeyPointCrossCorrelation, // best key point cross correlation
+		CalonderDescriptor  // best key point by Calonder descriptor
+	} MatchMethod;
+	static const MatchMethod DefMatchMethod = CrossCorrelation;
 
 	// misc constants
 	static const double DefDisparityUnitInPixels = 16.;
@@ -53,7 +62,7 @@ public:
 
 	typedef enum  {
 		Star,			// use star detector
-		HarrisCorner    // use harris corner
+		HarrisCorner    // use Harris corner
 	} KeyPointDetector;
 	void setKeyPointDector(KeyPointDetector detector) {	mKeyPointDetector = detector;}
 	KeyPointDetector getKeyPointDetector() {return mKeyPointDetector;}
@@ -63,10 +72,37 @@ public:
 	bool getDisparityMap(WImage1_b& leftImage, WImage1_b& rightImage, WImage1_16s& dispMap);
 	vector<Keypoint> goodFeaturesToTrack(WImage1_b& img, WImage1_16s* mask);
 
-	vector<pair<CvPoint3D64f, CvPoint3D64f> > getTrackablePairs(
+	class CalonderMatcher {
+	public:
+		typedef BruteForceMatcher<CvPoint>::Signature Signature;
+		// load random forests classifier
+		CalonderMatcher(string& modelfilename);
+		~CalonderMatcher(){}
+		// random forests classifier
+		RTreeClassifier mClassifier;
+	protected:
+		// A threshold of 0 is safest (but slowest), as the signatures are
+		// effectively dense vectors. Increasing the threshold makes the
+		// signatures sparser, increasing the speed of matching at some cost
+		// in the recognition rate. Reasonable thresholds are in [0, 0.01].
+		static const float SIG_THRESHOLD = 0.0;
+	};
+	/**
+	 *  img0
+	 *  img1
+	 *  dispMap0,
+	 *  dispMap1
+	 *  keyPoints0
+	 *  keyPoints1
+	 *  trackablePairs -- output
+	 *  Match up two list of key points and output a list of trackable pairs.
+	 *  returns true if the status of execution is normal.
+	 */
+	bool getTrackablePairs(
 			WImage1_b& img0, WImage1_b& img1,
 			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
-			vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoint1
+			vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoints1,
+			vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs
 			);
 	using Parent::estimate;
 	int estimate(vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs, CvMat& rot, CvMat& shift,
@@ -82,6 +118,29 @@ protected:
 	 * for template matching over a neighborhood
 	 */
 	double matchTemplate(const CvMat& neighborhood, const CvMat& templ, CvMat& res, CvPoint& loc);
+	bool getTrackablePairsByCalonder(
+			WImage1_b& img0, WImage1_b& img1,
+			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
+			vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoint1,
+			vector<pair<CvPoint3D64f, CvPoint3D64f> > & trackablePairs
+			);
+	bool getTrackablePairsByCrossCorr(
+			WImage1_b& img0, WImage1_b& img1,
+			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
+			vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoint1,
+			vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs
+			);
+	bool  getTrackablePairsByKeypointCrossCorr(
+			WImage1_b& img0, WImage1_b& img1,
+			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
+			vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoint1,
+			vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs
+			);
+	double 	getDisparity(WImage1_16s& dispMap, CvPoint& pt) {
+		// the unit of disp is 1/16 of a pixel - mDisparityUnitInPixels
+		return CV_IMAGE_ELEM(dispMap.Ipl(), int16_t, pt.y, pt.x)/mDisparityUnitInPixels;
+	}
+
 	CvSize mSize;
 
 	// some parameters for Kurt's stereo pair code
@@ -103,6 +162,9 @@ protected:
 	int mMaxNumKeyPoints; // if greater than zero, get the top mMaxNumKeyPoints key points
 
 	StarDetector mStarDetector;
+
+	MatchMethod mMatchMethod;
+	CalonderMatcher* mCalonderMatcher;
 
 	double mTemplateMatchThreshold; // minimum threshold for template matching
 
