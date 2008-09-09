@@ -601,9 +601,9 @@ if( disp[j*w+i] > 0) {
 	xf = ((i - cpar.u0) * zf) / cpar.fx;
 	yf = ((j - cpar.v0) * zf) / cpar.fy;
 	
-	ros_cloud.pts[point_count].x = xf/100; //from millimiters to decimiters
-	ros_cloud.pts[point_count].y = yf/100;
-	ros_cloud.pts[point_count].z = zf/100;
+	ros_cloud.pts[point_count].x = xf/1000; //from millimiters to decimiters
+	ros_cloud.pts[point_count].y = yf/1000;
+	ros_cloud.pts[point_count].z = zf/1000;
 
 	ros_cloud.chan[0].vals[point_count] = 16*255;
 	point_count++;
