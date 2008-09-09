@@ -149,6 +149,7 @@ int planandnavigate2d(int argc, char *argv[])
 	MDPConfig MDPCfg;
 	EnvironmentNAV2D environment_nav2D;
     int size_x = 30, size_y = 50;
+    //int size_x = 10, size_y = 10;
     char* map = (char*)calloc(size_x*size_y, sizeof(char));
     char* true_map = (char*)calloc(size_x*size_y, sizeof(char));
     int startx = 0, starty = 0;
@@ -181,7 +182,7 @@ int planandnavigate2d(int argc, char *argv[])
 		}
 		printf("\n");
 	}
-	if(bPrint) system("pause");
+	//if(bPrint) system("pause");
 
 
 	//Initialize Environment (should be called before initializing anything else)
@@ -200,8 +201,8 @@ int planandnavigate2d(int argc, char *argv[])
 
 	//create a planner
 	vector<int> solution_stateIDs_V;
-    ARAPlanner planner(&environment_nav2D);
-	//ADPlanner planner(&environment_nav2D);
+    //ARAPlanner planner(&environment_nav2D);
+	ADPlanner planner(&environment_nav2D);
 
 
 
@@ -236,6 +237,7 @@ int planandnavigate2d(int argc, char *argv[])
                 printf("setting cost[%d][%d] to %d\n", x,y,true_map[index]);
                 bChanges = true;
 				//store the affected states
+				preds_of_changededgesIDV.push_back(environment_nav2D.GetStateFromCoord(x,y));
 				for(int j = 0; j < 8; j++){
 					int affx = x + dx[j];
 					int affy = y + dy[j];
@@ -264,8 +266,8 @@ int planandnavigate2d(int argc, char *argv[])
 		if(bPrint) system("pause");
 
         if(bChanges){
-            planner.costs_changed(); //use by ARA* planner
-			//planner.update_preds_of_changededges(&preds_of_changededgesIDV); //use by AD* planner
+            //planner.costs_changed(); //use by ARA* planner
+			planner.update_preds_of_changededges(&preds_of_changededgesIDV); //use by AD* planner
         }
 
 

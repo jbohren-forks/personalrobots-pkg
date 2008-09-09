@@ -213,6 +213,7 @@ private:
 	int ReconstructPath(ADSearchStateSpace_t* pSearchStateSpace);
 
 
+	void PrintSearchState(ADState* searchstateinfo, FILE* fOut);
 	void PrintSearchPath(ADSearchStateSpace_t* pSearchStateSpace, FILE* fOut);
 
 	int getHeurValue(ADSearchStateSpace_t* pSearchStateSpace, int StateID);
