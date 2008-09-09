@@ -56,10 +56,13 @@
   </transmission>
 
   <!--  fingers share a single motor -->
-  <transmission type="SimpleTransmission" name="gripper_left_trans">
+  <transmission type="GripperTransmission" name="gripper_left_trans">
     <actuator name="gripper_left_motor" />
-    <joint name="gripper_left_joint" />
-    <mechanicalReduction>1</mechanicalReduction>
+    <joint name="finger_r_left_joint" reduction="-1.0" />
+    <joint name="finger_tip_r_left_joint" reduction="1.0" />
+    <joint name="finger_l_left_joint" reduction="1.0" />
+    <joint name="finger_tip_l_left_joint" reduction="-1.0" />
+    <pid p="0.10" i="0.0" d="0.005" iClamp="0.5" />
     <motorTorqueConstant>1</motorTorqueConstant>
     <pulsesPerRevolution>90000</pulsesPerRevolution>
   </transmission>

@@ -256,6 +256,7 @@ namespace gazebo {
 
       // add a link to the mechanism control joint
       gj->fake_joint_state_ = fake_state_->getJointState(*joint_name);
+      if (gj->fake_joint_state_==NULL) {std::cout << " no joint name found in joint state " << *joint_name << std::endl; abort();}; // make sure no NULL fake_joint_state_
 
       // read gazebo specific joint properties
       gj->saturationTorque           = jNode->GetDouble("saturationTorque",0.0,0);

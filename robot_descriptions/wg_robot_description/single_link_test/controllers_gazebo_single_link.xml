@@ -17,7 +17,6 @@
       <robot_filename>pr2_single_link.xml</robot_filename>
       <controller_filename>controllers_single_link.xml</controller_filename>
       <actuator_filename>actuators_single_link.xml</actuator_filename>
-      <transmission_filename>transmissions_single_link.xml</transmission_filename>
 
       <interface:audio name="test_actuators_dummy_iface" />
   </controller:test_actuators>

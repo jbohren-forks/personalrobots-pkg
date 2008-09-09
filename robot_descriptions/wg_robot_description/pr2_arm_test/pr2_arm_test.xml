@@ -414,6 +414,7 @@
   <const_block name="pr2_finger_r_joint">
     <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit effort="100" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
@@ -447,6 +448,7 @@
   <const_block name="pr2_finger_tip_r_joint">
     <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit effort="100" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
@@ -943,13 +945,13 @@
   
   <include>groups_arm_test.xml</include>
   
-  <!-- controllers for gazebo -->
-  <include>controllers_gazebo_arm_test.xml</include>
   
   <!-- new definitions for mechanism controls - JMH -->
-  <!--
-      <include>controllers.xml</include>
-      <include>actuators.xml</include> 
-      <include>transmissions.xml</include> 
-      -->
+  <include>controllers_arm_test.xml</include>
+  <include>actuators_arm_test.xml</include> 
+  <include>transmissions_arm_test.xml</include> 
+
+  <!-- controllers for gazebo -->
+  <include>controllers_gazebo_arm_test.xml</include>
+
 </robot>
