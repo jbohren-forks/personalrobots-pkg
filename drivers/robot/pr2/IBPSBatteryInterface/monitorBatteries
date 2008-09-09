@@ -193,11 +193,12 @@ class robotPower:
             sval.append(DiagnosticValue(self.controllers[c].average_charge, "Average charge percent Controller %d"%c))
             sval.append(DiagnosticValue(self.controllers[c].total_current(), "Current Controller %d"%c))
             sval.append(DiagnosticValue(self.controllers[c].average_voltage(), "Voltage Controller %d"%c))
-            stat.append(DiagnosticStatus(0, "IBPS %d"%c, "All good", sval))
+            stat.append(DiagnosticStatus(0, "IBPS %d"%c, "All good", sval, []))
             ## @todo make the status string represent errors etc
 
             for b in range(0,len(self.controllers[c].batteries)):
                 bval = []
+                stringval = []
                 if self.controllers[c].batteries[b].present < 0.5:
                     continue
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].present, "present (0,1)"))
@@ -220,8 +221,8 @@ class robotPower:
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].cycle_count, "cycle count"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].design_capacity, "design capacity (lookup)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].design_voltage, "design voltage (V)"))
-                bval.append(DiagnosticValue(self.controllers[c].batteries[b].serial_number, "Serial Number"))
-                stat.append(DiagnosticStatus(0, "Smart Battery %d.%d"%(c,b), "All good", bval))
+                stringval.append(DiagnosticString(self.controllers[c].batteries[b].serial_number, "Serial Number"))
+                stat.append(DiagnosticStatus(0, "Smart Battery %d.%d"%(c,b), "All good", bval, stringval))
                 ## @todo make the status string represent errors etc
                             
 
@@ -233,7 +234,7 @@ class robotPower:
 
 def setup_serial_ports():
 
-    os.system('stty 19200 </dev/ttyUSB0')
+    os.system('stty 19200 </dev/ttyUSB4')
     os.system('stty 19200 </dev/ttyUSB1')
     os.system('stty 19200 </dev/ttyUSB2')
     os.system('stty 19200 </dev/ttyUSB3')
@@ -256,7 +257,7 @@ def monitorBatteriesMain(argv, stdout, env):
     setup_serial_ports()
     
 #f= open('testfile.txt','r')
-    f0 = open('/dev/ttyUSB0','r')
+    f0 = open('/dev/ttyUSB4','r')
     f1 = open('/dev/ttyUSB1','r')
     f2 = open('/dev/ttyUSB2','r')
     f3 = open('/dev/ttyUSB3','r')
