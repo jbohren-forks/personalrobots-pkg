@@ -529,8 +529,8 @@ int ADPlanner::ComputePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNu
 
 #if DEBUG
 		CKey debkey = ComputeKey(state);
-		fprintf(fDeb, "expanding state(%d): g=%u v=%u h=%d key=[%u %u] iterc=%d callnuma=%d expands=%d (g(goal)=%u)\n",
-			state->MDPstate->StateID, state->g, state->v, state->h, debkey[0], debkey[1],  
+		fprintf(fDeb, "expanding state(%d): g=%u v=%u h=%d key=[%d %d] iterc=%d callnuma=%d expands=%d (g(goal)=%u)\n",
+			state->MDPstate->StateID, state->g, state->v, state->h, (int)debkey[0], (int)debkey[1],  
 			state->iterationclosed, state->callnumberaccessed, state->numofexpands, searchgoalstate->g);
 		environment_->PrintState(state->MDPstate->StateID, true, fDeb);
 		fflush(fDeb);
@@ -938,7 +938,7 @@ void ADPlanner::PrintSearchState(ADState* searchstateinfo, FILE* fOut)
 	CKey key = ComputeKey(searchstateinfo);
 	fprintf(fOut, "g=%d v=%d h = %d heapindex=%d inconslist=%d key=[%d %d]", 
 			searchstateinfo->g, searchstateinfo->v, searchstateinfo->h, searchstateinfo->heapindex, (searchstateinfo->listelem[AD_INCONS_LIST_ID] != NULL),
-			key[0], key[1]);
+			(int)key[0], (int)key[1]);
 
 }
 
