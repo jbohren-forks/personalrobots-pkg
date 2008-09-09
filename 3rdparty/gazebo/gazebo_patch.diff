@@ -1440,9 +1440,9 @@ Index: SConstruct
  #
  parseConfigs=['pkg-config --cflags --libs OGRE',
 +              'pkg-config --cflags --libs freeimage', 
++              'ode-config --cflags --libs', 
                'xml2-config --cflags --libs', 
 -      	      'ode-config --cflags --libs',
-+              'ode-config --cflags --libs', 
                'fltk-config --cflags --libs --ldflags --use-gl --use-images',
                'pkg-config --cflags --libs xft'
                ]
