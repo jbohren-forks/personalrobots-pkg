@@ -633,6 +633,7 @@
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
           <controller:ros_camera name="forearm_cam_left_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>image_forearm_left</topicName>
             <frameName>forearm_roll_left</frameName>

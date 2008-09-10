@@ -10,6 +10,7 @@
   <!-- PR2_ACTARRAY -->
   <!-- uncomment for testing -->
   <controller:test_actuators name="test_actuators" plugin="libtest_actuators.so">
+      <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
 
       <include>gazebo_joints_arm_test_tjh.xml</include>
@@ -30,6 +31,7 @@
 
   <!-- P3D for position groundtruth -->
   <controller:P3D name="p3d_left_wrist_controller" plugin="libP3D.so">
+      <alwaysOn>true</alwaysOn>
       <updateRate>100.0</updateRate>
       <bodyName>gripper_roll_left</bodyName>
       <topicName>gripper_roll_left_pose</topicName>

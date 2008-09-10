@@ -855,6 +855,7 @@
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
           <controller:ros_camera name="wrist_cam_left_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
 	    <updateRate>15.0</updateRate>
 	    <topicName>image_wrist_left</topicName>
 	    <frameName>wrist_camera_left</frameName>
@@ -862,6 +863,7 @@
           </controller:ros_camera>
           <!--
 	      <controller:generic_camera name="wrist_cam_left_controller">
+                <alwaysOn>true</alwaysOn>
 		<updateRate>15.0</updateRate>
 		<interface:camera name="wrist_cam_left_iface_1" />
 	      </controller:generic_camera>
@@ -918,6 +920,7 @@
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
           <controller:ros_camera name="forearm_cam_left_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>image_forearm_left</topicName>
             <frameName>forearm_roll_left</frameName>

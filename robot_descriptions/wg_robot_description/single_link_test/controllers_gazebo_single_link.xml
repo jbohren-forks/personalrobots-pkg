@@ -10,6 +10,7 @@
   <!-- PR2_ACTARRAY -->
   <!-- uncomment for testing -->
   <controller:test_actuators name="test_actuators" plugin="libtest_actuators.so">
+      <alwaysOn>true</alwaysOn>
       <updateRate>100.0</updateRate>
 
       <include>gazebo_joints_single_link.xml</include>
@@ -30,6 +31,7 @@
 
   <!-- P3D for position groundtruth -->
   <controller:P3D name="p3d_upperarm_roll_controller" plugin="libP3D.so">
+      <alwaysOn>true</alwaysOn>
       <updateRate>100.0</updateRate>
       <bodyName>upperarm_roll_left</bodyName>
       <topicName>upperarm_roll_left_pose</topicName>
