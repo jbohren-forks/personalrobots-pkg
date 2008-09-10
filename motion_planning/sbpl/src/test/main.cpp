@@ -145,46 +145,42 @@ int plan2d(int argc, char *argv[])
 int planandnavigate2d(int argc, char *argv[])
 {
 
-	double allocated_time_secs_foreachplan = 0.1; //in seconds
+	double allocated_time_secs_foreachplan = 0.5; //in seconds
 	MDPConfig MDPCfg;
 	EnvironmentNAV2D environment_nav2D;
-    int size_x = 30, size_y = 50;
-    //int size_x = 10, size_y = 10;
-    char* map = (char*)calloc(size_x*size_y, sizeof(char));
-    char* true_map = (char*)calloc(size_x*size_y, sizeof(char));
+	EnvironmentNAV2D trueenvironment_nav2D;
+    int size_x=-1,size_y=-1;
     int startx = 0, starty = 0;
-    int goalx = size_x-1, goaly = size_y-1;
+    int goalx=-1, goaly=-1;
     FILE* fSol = fopen("sol.txt", "w");
     int dx[8] = {-1, -1, -1,  0,  0,  1,  1,  1};
     int dy[8] = {-1,  0,  1, -1,  1, -1,  0,  1};
-	bool bPrint = true;
+	bool bPrint = false;
 	int x,y;
 	vector<int> preds_of_changededgesIDV;
 	vector<nav2dcell_t> changedcellsV;
 	nav2dcell_t nav2dcell;
+	int i;
+	//srand(0);
 
-	srand(0);
-
-    //initialize true map
-    int i;    
-    const double obs_density = 0.25;
-    for(i = 0; i < size_x*size_y; i++){
-        if(i != startx + starty*size_x && i != goalx + goaly*size_x && (((double)rand())/RAND_MAX) <= obs_density){ 
-            true_map[i] = 1;
-        }
-    }
+    //initialize true map and robot map
+	if(!trueenvironment_nav2D.InitializeEnv(argv[1]))
+	{
+		printf("ERROR: InitializeEnv failed\n");
+		exit(1);
+	}
+	trueenvironment_nav2D.GetEnvParms(&size_x, &size_y, &startx, &starty, &goalx, &goaly);
+    char* map = (char*)calloc(size_x*size_y, sizeof(char));
 
 	//print the map
 	if(bPrint) printf("true map:\n");
 	for(y = 0; bPrint && y < size_y; y++){
 		for(x = 0; x < size_x; x++){
-			int index = x + y*size_x;
-			printf("%d ", true_map[index]);
+			printf("%d ", (int)trueenvironment_nav2D.IsObstacle(x,y));
 		}
 		printf("\n");
 	}
-	//if(bPrint) system("pause");
-
+	if(bPrint) system("pause");
 
 	//Initialize Environment (should be called before initializing anything else)
     if(!environment_nav2D.InitializeEnv(size_x, size_y, map, startx, starty, goalx, goaly)){
@@ -233,10 +229,10 @@ int planandnavigate2d(int argc, char *argv[])
             if(x < 0 || x >= size_x || y < 0 || y >= size_y)
                 continue;
             int index = x + y*size_x;
-            if(map[index] != true_map[index]){
-                map[index] = true_map[index];
-                environment_nav2D.UpdateCost(x,y,true_map[index]);
-                printf("setting cost[%d][%d] to %d\n", x,y,true_map[index]);
+            if(map[index] != 1 && trueenvironment_nav2D.IsObstacle(x,y)){
+                map[index] = 1;
+                environment_nav2D.UpdateCost(x,y,map[index]);
+                printf("setting cost[%d][%d] to %d\n", x,y,map[index]);
                 bChanges = true;
 				//store the changed cells
 				nav2dcell.x = x;
@@ -296,7 +292,7 @@ int planandnavigate2d(int argc, char *argv[])
             int newx, newy;
             environment_nav2D.GetCoordFromState(solution_stateIDs_V[1], newx, newy);
 
-			if(true_map[newx + newy*size_x] == 1)
+			if(trueenvironment_nav2D.IsObstacle(newx,newy))
 			{
 				printf("ERROR: robot is commanded to move into an obstacle\n");
 				exit(1);

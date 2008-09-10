@@ -882,4 +882,25 @@ void EnvironmentNAV2D::GetPredsofChangedEdges(vector<nav2dcell_t>* changedcellsV
 	}
 }
 
+
+bool EnvironmentNAV2D::IsObstacle(int x, int y)
+{
+
+	return (EnvNAV2DCfg.Grid2D[x][y] != 0);
+
+}
+
+void EnvironmentNAV2D::GetEnvParms(int *size_x, int *size_y, int* startx, int* starty, int* goalx, int* goaly)
+{
+	*size_x = EnvNAV2DCfg.EnvWidth_c;
+	*size_y = EnvNAV2DCfg.EnvHeight_c;
+
+	*startx = EnvNAV2DCfg.StartX_c;
+	*starty = EnvNAV2DCfg.StartY_c;
+	*goalx = EnvNAV2DCfg.EndX_c;
+	*goaly = EnvNAV2DCfg.EndY_c;
+}
+
+
+
 //------------------------------------------------------------------------------

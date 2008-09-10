@@ -130,6 +130,8 @@ public:
 
 	int GetStateFromCoord(int x, int y);
 
+	bool IsObstacle(int x, int y);
+	void GetEnvParms(int *size_x, int *size_y, int* startx, int* starty, int* goalx, int* goaly);
 
 	const EnvNAV2DConfig_t* GetEnvNavConfig();
 
