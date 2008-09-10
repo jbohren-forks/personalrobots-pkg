@@ -36,7 +36,4 @@ def kill_controller(name):
     else:
         print "Error when killing", resp.ok
 
-#def shutdown():
-#    s = rospy.ServiceProxy('shutdown', Shutdown)
-#    resp = s()
 shutdown = rospy.ServiceProxy('shutdown', Shutdown)

@@ -48,7 +48,6 @@
 #include "mechanism_control/ListControllers.h"
 #include "mechanism_control/SpawnController.h"
 #include "mechanism_control/KillController.h"
-#include "mechanism_control/Shutdown.h"
 #include "mechanism_control/MechanismState.h"
 
 
@@ -112,8 +111,7 @@ public:
                        mechanism_control::ListControllers::response &resp);
   bool spawnController(mechanism_control::SpawnController::request &req,
                        mechanism_control::SpawnController::response &resp);
-  bool shutdown(mechanism_control::Shutdown::request &req,
-                mechanism_control::Shutdown::response &resp);
+
 private:
   ros::node *node_;
 

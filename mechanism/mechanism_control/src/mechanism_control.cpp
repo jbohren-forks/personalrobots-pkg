@@ -204,7 +204,6 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   node_->advertise_service("list_controller_types", &MechanismControlNode::listControllerTypes, this);
   node_->advertise_service("spawn_controller", &MechanismControlNode::spawnController, this);
   node_->advertise_service("kill_controller", &MechanismControlNode::killController, this);
-  node_->advertise_service("shutdown", &MechanismControlNode::shutdown, this);
 
   // Advertise topics
 }
@@ -325,15 +324,5 @@ bool MechanismControlNode::killController(
   mechanism_control::KillController::response &resp)
 {
   resp.ok = mc_->killController(req.name);
-  return true;
-}
-
-bool MechanismControlNode::shutdown(
-  mechanism_control::Shutdown::request &req,
-  mechanism_control::Shutdown::response &resp)
-{
-  // Not the best way of exitting, since the service never returns the result.
-  exit(0);
-
   return true;
 }
