@@ -1,0 +1,14 @@
+<package>
+<description brief="Bullet Physics Engine">
+
+The Bullet Physics Engine
+
+</description>
+<author>FIXME</author>
+<license>ZLib</license>
+<url>http://code.google.com/p/bullet/</url>
+<export>
+  <doxymaker external="http://code.google.com/p/bullet/" />
+</export>
+</package>
+
