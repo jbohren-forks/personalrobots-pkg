@@ -34,25 +34,25 @@
 
 /** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_RKP_SBL_SETUP_
-#define KINEMATIC_PLANNING_RKP_SBL_SETUP_
+#ifndef KINEMATIC_PLANNING_RKP_EST_SETUP_
+#define KINEMATIC_PLANNING_RKP_EST_SETUP_
 
 #include "RKPPlannerSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/sbl/SBL.h>
+#include <ompl/extension/samplingbased/kinematic/extension/est/EST.h>
 
-class RKPSBLSetup : public RKPPlannerSetup
+class RKPESTSetup : public RKPPlannerSetup
 {
  public:
     
-    RKPSBLSetup(void) : RKPPlannerSetup()
+    RKPESTSetup(void) : RKPPlannerSetup()
     {
     }
     
-    virtual ~RKPSBLSetup(void)
+    virtual ~RKPESTSetup(void)
     {
-	if (dynamic_cast<ompl::SBL_t>(mp))
+	if (dynamic_cast<ompl::EST_t>(mp))
 	{
-	    ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::SBL_t>(mp)->getProjectionEvaluator();
+	    ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::EST_t>(mp)->getProjectionEvaluator();
 	    if (pe)
 		delete pe;
 	}
@@ -60,7 +60,7 @@ class RKPSBLSetup : public RKPPlannerSetup
     
     virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
     {
-	std::cout << "Adding SBL instance for motion planning: " << model->groupName << std::endl;
+	std::cout << "Adding EST instance for motion planning: " << model->groupName << std::endl;
 	
 	si       = new SpaceInformationRKPModel(model);
 	svc      = new StateValidityPredicate(model);
@@ -70,7 +70,7 @@ class RKPSBLSetup : public RKPPlannerSetup
 	smoother->setMaxSteps(50);
 	smoother->setMaxEmptySteps(4);
 	
-	ompl::SBL_t sbl = new ompl::SBL(si);
+	ompl::EST_t sbl = new ompl::EST(si);
 	mp              = sbl;	
 	
 	bool setDim  = false;
@@ -120,7 +120,7 @@ class RKPSBLSetup : public RKPPlannerSetup
 	
 	if (!setDim || !setProj)
 	{
-	    std::cout << "Adding SBL failed: need to set both 'projection' and 'cellldim' for " << model->groupName << std::endl;
+	    std::cout << "Adding EST failed: need to set both 'projection' and 'cellldim' for " << model->groupName << std::endl;
 	    return false;
 	}
 	else

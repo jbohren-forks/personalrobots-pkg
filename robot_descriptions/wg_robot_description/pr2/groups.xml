@@ -15,6 +15,12 @@
       <elem key="range" value="0.5"/>
     </map>
 
+    <map name="EST" flag="planning">
+      <elem key="projection" value="0 1"/>
+      <elem key="celldim" value="1 1"/>
+      <elem key="range" value="0.5"/>
+    </map>
+
     <map name="LazyRRT" flag="planning">
       <elem key="range" value="0.75" />
     </map>

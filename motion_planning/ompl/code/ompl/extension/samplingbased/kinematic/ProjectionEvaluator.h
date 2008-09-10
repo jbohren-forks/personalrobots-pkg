@@ -32,73 +32,65 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/** \author Ioan Sucan */
+/* \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_KINEMATIC_RKP_MODEL_
-#define KINEMATIC_PLANNING_KINEMATIC_RKP_MODEL_
+#ifndef OMPL_EXTENSION_SAMPLINGBASED_KINEMATIC_PROJECTION_EVALUATOR_
+#define OMPL_EXTENSION_SAMPLINGBASED_KINEMATIC_PROJECTION_EVALUATOR_
 
-#include "RKPModelBase.h"
+#include "ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h"
 
-#include "RKPRRTSetup.h"
-#include "RKPLazyRRTSetup.h"
-#include "RKPSBLSetup.h"
-#include "RKPESTSetup.h"
-
-#include <string>
-#include <map>
-
-class RKPModel : public RKPModelBase
+namespace ompl
 {
- public:
-    RKPModel(void) : RKPModelBase()
-    {
-    }
     
-    virtual ~RKPModel(void)
-    {
-	for (std::map<std::string, RKPPlannerSetup*>::iterator i = planners.begin(); i != planners.end() ; ++i)
-	    if (i->second)
-		delete i->second;
-    }
+    /** Forward class declaration */
+    ForwardClassDeclaration(ProjectionEvaluator);	
     
-    void addRRT(std::map<std::string, std::string> &options)
+    /** Abstract definition for a class computing projections */
+    class ProjectionEvaluator
     {
-	RKPPlannerSetup *rrt = new RKPRRTSetup();
-	if (rrt->setup(dynamic_cast<RKPModelBase*>(this), options))
-	    planners["RRT"] = rrt;
-	else
-	    delete rrt;
-    }
+    public:
+	/** Destructor */
+	virtual ~ProjectionEvaluator(void)
+	{
+	}
+	
+	/** Return the dimension of the projection defined by this evaluator */
+	virtual unsigned int getDimension(void) const = 0;
+	
+	/** Compute the projection as an array of double values */
+	virtual void operator()(const SpaceInformationKinematic::StateKinematic_t state, double *projection) = 0;
+    };
     
-    void addLazyRRT(std::map<std::string, std::string> &options)
-    {
-	RKPPlannerSetup *rrt = new RKPLazyRRTSetup();
-	if (rrt->setup(dynamic_cast<RKPModelBase*>(this), options))
-	    planners["LazyRRT"] = rrt;
-	else
-	    delete rrt;
-    }
+    /** Forward class declaration */
+    ForwardClassDeclaration(OrthogonalProjectionEvaluator);	
     
-    void addEST(std::map<std::string, std::string> &options)
+    /** Definition for a class computing orthogonal projections */
+    class OrthogonalProjectionEvaluator : public ProjectionEvaluator
     {
-	RKPPlannerSetup *est = new RKPESTSetup();
-	if (est->setup(dynamic_cast<RKPModelBase*>(this), options))
-	    planners["EST"] = est;
-	else
-	    delete est;
-    }
-    void addSBL(std::map<std::string, std::string> &options)
-    {
-	RKPPlannerSetup *sbl = new RKPSBLSetup();
-	if (sbl->setup(dynamic_cast<RKPModelBase*>(this), options))
-	    planners["SBL"] = sbl;
-	else
-	    delete sbl;
-    }
+    public:
+	
+        OrthogonalProjectionEvaluator(const std::vector<unsigned int> &components) : ProjectionEvaluator()
+	{
+	    m_components = components;
+	}
+	
+	virtual unsigned int getDimension(void) const
+	{
+	    return m_components.size();
+	}
+	
+	virtual void operator()(const SpaceInformationKinematic::StateKinematic_t state, double *projection)
+	{
+	    for (unsigned int i = 0 ; i < m_components.size() ; ++i)
+		projection[i] = state->values[m_components[i]];
+	}
+	
+    protected:
+	
+	std::vector<unsigned int> m_components;
+	
+    };	
     
-    std::map<std::string, RKPPlannerSetup*> planners;
-};
-
-typedef std::map<std::string, RKPModel*> ModelMap;
+}
 
 #endif

@@ -228,6 +228,14 @@ private:
 	    options = data.getMapTagValues("planning", "SBL");
 	}
 	model->addSBL(options);
+
+	options.clear();
+	if (group)
+	{
+	    const robot_desc::URDF::Map &data = group->data;
+	    options = data.getMapTagValues("planning", "EST");
+	}
+	model->addEST(options);
     }
     
     ModelMap                                                        m_models;
