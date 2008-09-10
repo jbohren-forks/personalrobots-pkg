@@ -2305,7 +2305,7 @@
           <saveFramePath>frames</saveFramePath>
           <baseline>0.2</baseline>
           <updateRate>15.0</updateRate>
-          <controller:stereocamera name="stereo_camera_controller">
+          <controller:ros_stereocamera name="stereo_camera_controller" plugin="libRos_Stereo_Camera.so">
             <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <interface:stereocamera name="stereo_iface_0" />
@@ -2313,7 +2313,11 @@
             <interface:camera name="camera_iface_1" />
             <leftcamera>camera_iface_0</leftcamera>
             <rightcamera>camera_iface_1</rightcamera>
-          </controller:stereocamera>
+            <topicName>stereo_cloud</topicName>
+            <leftTopicName>stereo_left_image</leftTopicName>
+            <rightTopicName>stereo_right_image</rightTopicName>
+            <frameName>stereo</frameName>
+          </controller:ros_stereocamera>
         </sensor:stereocamera>
         -->
       </verbatim>
