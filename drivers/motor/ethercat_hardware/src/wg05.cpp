@@ -151,12 +151,12 @@ EthercatDevice *WG05::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
   (*pd)[3] = *mbxStatusSM;
 
   sh->set_pd_config(pd);
-
+/*
   if (mailboxRead(sh, WG05ConfigInfo::CONFIG_INFO_BASE_ADDR, &config_info_, sizeof(config_info_)) != 0)
   {
     return NULL;
-  }
-
+  }*/
+  config_info_.nominal_current_scale_ = 1.0 / 2000.;
   max_current_ = 1.5;
   return this;
 }
@@ -173,7 +173,7 @@ void WG05::convertCommand(ActuatorCommand &command, unsigned char *buffer)
   double current = command.effort_ / motor_torque_constant;
   current = max(min(current, max_current_), -max_current_);
 
-  c.programmed_current_ = current / config_info_.nominal_current_scale_;
+  c.programmed_current_ = int(current / config_info_.nominal_current_scale_);
   c.mode_ = command.enable_ ? (MODE_ENABLE | MODE_CURRENT) : MODE_OFF;
   c.checksum_ = rotate_right_8(compute_checksum(&c, sizeof(c) - 1));
 
@@ -198,13 +198,13 @@ void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, uns
 
   state.timestamp_ = current_status.timestamp_ / 1e+6;
   state.encoder_count_ = current_status.encoder_count_;
-  state.position_ = double(current_status.encoder_count_ - state.zero_offset_) / pulses_per_revolution * 2 * M_PI;
+  state.position_ = double(current_status.encoder_count_) / pulses_per_revolution * 2 * M_PI - state.zero_offset_;
   state.encoder_velocity_ = double(int(current_status.encoder_count_ - last_status.encoder_count_))
       / (current_status.timestamp_ - last_status.timestamp_) * 1e+6;
   state.velocity_ = state.encoder_velocity_ / pulses_per_revolution * 2 * M_PI;
   state.calibration_reading_ = current_status.calibration_reading_ & LIMIT_SENSOR_0_STATE;
-  state.last_calibration_high_transition_ = current_status.last_calibration_high_transition_;
-  state.last_calibration_low_transition_ = current_status.last_calibration_low_transition_;
+  state.last_calibration_high_transition_ = double(current_status.last_calibration_high_transition_) / pulses_per_revolution;
+  state.last_calibration_low_transition_ = double(current_status.last_calibration_low_transition_) / pulses_per_revolution;
   state.is_enabled_ = current_status.mode_ != MODE_OFF;
   state.run_stop_hit_ = (current_status.mode_ & MODE_UNDERVOLTAGE) != 0;
 
@@ -214,7 +214,7 @@ void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, uns
   state.num_encoder_errors_ = current_status.num_encoder_errors_;
   state.num_communication_errors_ = 0; // TODO: communication errors are no longer reported in the process data
 
-  state.motor_voltage_ = current_status.motor_voltage_ * config_info_.nominal_voltage_scale_;
+  state.motor_voltage_ = int(current_status.motor_voltage_ * config_info_.nominal_voltage_scale_);
 }
 
 void WG05::verifyState(unsigned char *buffer)

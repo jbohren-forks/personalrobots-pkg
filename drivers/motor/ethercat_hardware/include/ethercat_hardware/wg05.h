@@ -104,13 +104,13 @@ struct WG05Status
   int16_t programmed_current_;
   int16_t measured_current_;
   uint32_t timestamp_;
-  uint32_t encoder_count_;
-  uint32_t encoder_index_pos_;
+  int32_t encoder_count_;
+  int32_t encoder_index_pos_;
   uint16_t num_encoder_errors_;
   uint8_t encoder_status_;
   uint8_t calibration_reading_;
-  uint32_t last_calibration_high_transition_;
-  uint32_t last_calibration_low_transition_;
+  int32_t last_calibration_high_transition_;
+  int32_t last_calibration_low_transition_;
   uint16_t board_temperature_;
   uint16_t bridge_temperature_;
   uint16_t supply_voltage_;
