@@ -67,7 +67,21 @@ planners. If a planner is used for different models, it is
 instantiated each time. Since planners may require different
 setup/configuration code, there exists a base class that defines the
 functionality and an inherited class for each type of planner that can
-be instantiated.
+be instantiated. The planners are associated to string names: RRT,
+LazyRRT, EST, SBL. These string names can be used for the planner_id
+component of the planning request.
+
+When checking states for validity, a resolution at which paths are
+check needs to be defined. To make things easier for the user, this
+parameter is computed by default by the SpaceInformationRKPModel
+class. The current settings work fine for the PR2, but if another
+robot is to be used, different settings man need to be used.
+
+\todo
+- Find a better way to specify resolution for state validity
+checking.
+- Move code from header files to .cpp files (maybe define a library?)
+
 
 <hr>
 
