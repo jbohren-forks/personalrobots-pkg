@@ -22,7 +22,7 @@ using namespace std;
 // star detector
 #include <star_detector/include/detector.h>
 
-//#define DEBUG
+#undef DEBUG
 
 // change from 61 to 101 to accommodate the sudden change around frame 0915 in
 // the indoor sequence "indoor1"
@@ -57,7 +57,7 @@ Cv3DPoseEstimateStereo::Cv3DPoseEstimateStereo(int width, int height):
 
 	switch(mMatchMethod) {
 	case CalonderDescriptor:{
-		string modelFile("land30.trees");
+		string modelFile("land50.trees");
 		mCalonderMatcher = new CalonderMatcher(modelFile);
 		break;
 	}
@@ -161,16 +161,16 @@ bool Cv3DPoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* ma
 		// Try Star Detector
 		//
 		std::vector<Keypoint> kps = mStarDetector.DetectPoints(img.Ipl());
+#ifdef DEBUG
+    cout << "Found "<< kps.size() << " good keypoints by Star Detector"<<endl;
+#endif
 		if (kps.size() > mMaxNumKeyPoints) {
 	    std::nth_element(kps.begin(), kps.begin()+mMaxNumKeyPoints, kps.end());
+	    kps.erase(kps.begin()+mMaxNumKeyPoints, kps.end());
 		}
 
-#ifdef DEBUG
-		cout << "Found "<< kps.size() << " good keypoints by Star Detector"<<endl;
-#endif
 		// filter out keypoints that do not have disparity value
 		if (mask) {
-			vector<Keypoint> keypoints;
 			int16_t* _mask = mask->ImageData();
 			int numKeyPointsHasNoDisp=0;
 			BOOST_FOREACH( Keypoint &pt, kps ) {

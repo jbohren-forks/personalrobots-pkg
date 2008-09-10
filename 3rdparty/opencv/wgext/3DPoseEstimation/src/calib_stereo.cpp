@@ -13,7 +13,7 @@
 
 using namespace std;
 
-//#define DEBUG
+#undef DEBUG
 
 #if 0 // seems that this file is already in opencv
 // reimplementation of dAB.m

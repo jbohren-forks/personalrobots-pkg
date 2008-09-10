@@ -10,7 +10,7 @@ using namespace std;
 
 #include "CvTestTimer.h"
 
-//#define DEBUG 1
+#undef DEBUG
 
 // define the following if the last three parameters is linear (e.g. shift parameters),
 // so as to speed up by skipping over unnecessary computation
@@ -526,10 +526,6 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 	    TIMEREND2(LevMarq5);
 	    TIMEREND2(LevMarq3);
 	}
-#ifdef DEBUG
-	fprintf(stdout, "Num of JtJ computed: %d\n", numJtJComputed);
-	fprintf(stdout, "Num of iteration with LevMarq.update(): %d\n", mLevMarq.iters);
-#endif
 	// now mLevMarq.params contains the solution.
     if (_param) {
         // copy the parameters out

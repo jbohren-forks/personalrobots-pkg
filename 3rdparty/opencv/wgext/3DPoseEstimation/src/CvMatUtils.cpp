@@ -5,7 +5,7 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 
-#define DEBUG
+#undef DEBUG
 
 const CvScalar CvMatUtils::red    = CV_RGB(255, 0, 0);
 const CvScalar CvMatUtils::green  = CV_RGB(0, 255, 0);

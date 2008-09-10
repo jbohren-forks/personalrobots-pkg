@@ -10,7 +10,7 @@
 
 #include "CvTestTimer.h"
 
-//#define DEBUG
+#undef DEBUG
 
 //#define DEBUG_DISTURB_PARAM
 

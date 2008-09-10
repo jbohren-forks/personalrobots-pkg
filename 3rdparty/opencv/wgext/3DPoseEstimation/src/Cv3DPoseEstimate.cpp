@@ -8,7 +8,7 @@
 #include "CvTestTimer.h"
 using namespace std;
 
-//#define DEBUG
+#undef DEBUG
 #define USE_LEVMARQ
 //#define DEBUG_DISTURB_PARAM
 

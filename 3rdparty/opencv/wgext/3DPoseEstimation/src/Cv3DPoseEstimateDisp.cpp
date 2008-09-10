@@ -7,7 +7,7 @@
 #include "CvTestTimer.h"
 using namespace std;
 
-//#define DEBUG
+#undef DEBUG
 #define USE_LEVMARQ
 //#define DEBUG_DISTURB_PARAM
 
@@ -22,16 +22,16 @@ Cv3DPoseEstimateDisp::~Cv3DPoseEstimateDisp()
 int Cv3DPoseEstimateDisp::checkInLiers(CvMat *points0, CvMat *points1, CvMat* transformation){
 	int numInLiers = 0;
 	int numPoints = points0->rows;
-	
-	// TODO: I hope this is okay. We need to make sure that the matrix data is in rows, 
+
+	// TODO: I hope this is okay. We need to make sure that the matrix data is in rows,
 	// and num of col is 3
 	CvMyReal *_P0 = points0->data.db;
 	CvMyReal *_P1 = points1->data.db;
 	CvMyReal thresholdM =  this->mErrThreshold;
 	CvMyReal thresholdm = -this->mErrThreshold;
-	double *_T = transformation->data.db;  
+	double *_T = transformation->data.db;
 	for (int i=0; i<numPoints; i++) {
-		
+
 		CvMyReal p0x, p0y, p0z;
 
 #if 1
@@ -40,14 +40,14 @@ int Cv3DPoseEstimateDisp::checkInLiers(CvMat *points0, CvMat *points1, CvMat* tr
 		p0z = *_P0++;
 
 		CvMyReal w3 = _T[15] + _T[14]*p0z + _T[13]*p0y + _T[12]*p0x;
-#else 
+#else
 		// not worth using the following code
-		// 1) not sure if it helps on speed. 
+		// 1) not sure if it helps on speed.
 		// 2) not sure if the order of evaluation is preserved as left to right.
-		CvMyReal w3 = 
-			_T[12]*(p0x=*_P0++) + 
-			_T[13]*(p0y=*_P0++) + 
-			_T[14]*(p0z=*_P0++) + 
+		CvMyReal w3 =
+			_T[12]*(p0x=*_P0++) +
+			_T[13]*(p0y=*_P0++) +
+			_T[14]*(p0z=*_P0++) +
 			_T[15];
 #endif
 
@@ -71,10 +71,10 @@ int Cv3DPoseEstimateDisp::checkInLiers(CvMat *points0, CvMat *points1, CvMat* tr
 
 		numInLiers++;
 	}
-#ifdef DEBUG	
+#ifdef DEBUG
 	cout << "Num of Inliers: "<<numInLiers<<endl;
 #endif
-	return numInLiers;	
+	return numInLiers;
 }
 
 // almost the same as the function above
@@ -82,16 +82,16 @@ int Cv3DPoseEstimateDisp::getInLiers(CvMat *points0, CvMat *points1, CvMat* tran
     CvMat* points0Inlier, CvMat* points1Inlier) {
 	int numInLiers = 0;
 	int numPoints = points0->rows;
-	
-	// TODO: I hope this is okay. We need to make sure that the matrix data is in rows, 
+
+	// TODO: I hope this is okay. We need to make sure that the matrix data is in rows,
 	// and num of col is 3
 	CvMyReal *_P0 = points0->data.db;
 	CvMyReal *_P1 = points1->data.db;
 	CvMyReal thresholdM =  this->mErrThreshold;
 	CvMyReal thresholdm = -this->mErrThreshold;
-	double *_T = transformation->data.db;  
+	double *_T = transformation->data.db;
 	for (int i=0; i<numPoints; i++) {
-		
+
 		CvMyReal p0x, p0y, p0z;
 
 		p0x = *_P0++;
@@ -130,8 +130,8 @@ int Cv3DPoseEstimateDisp::getInLiers(CvMat *points0, CvMat *points1, CvMat* tran
         }
 		numInLiers++;
 	}
-#ifdef DEBUG	
+#ifdef DEBUG
 	cout << "Num of Inliers: "<<numInLiers<<endl;
 #endif
-	return numInLiers;	
+	return numInLiers;
 }

@@ -7,7 +7,7 @@ using namespace std;
 
 #include "CvTestTimer.h"
 
-//#define DEBUG 1
+#undef DEBUG
 
 #define USE_UPDATEALT
 #define LAST3ISLIN

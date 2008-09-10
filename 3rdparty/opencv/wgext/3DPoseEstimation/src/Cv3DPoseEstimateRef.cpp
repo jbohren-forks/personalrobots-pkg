@@ -8,7 +8,7 @@
 #include "CvMatUtils.h"
 #include "CvTestTimer.h"
 
-//#define DEBUG
+#undef DEBUG
 #define USE_LEVMARQ
 
 #if 0
