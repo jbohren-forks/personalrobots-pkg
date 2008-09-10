@@ -215,47 +215,6 @@ void CvTest3DPoseEstimate::MyMouseCallback(int event, int x, int y, int flagsm, 
     ;
   }
 }
-#if 0
-class PoseEstFrameEntry {
-public:
-  PoseEstFrameEntry(WImageBuffer1_b& image, WImageBuffer1_16s& dispMap,
-      vector<Keypoint>& keypoints, CvMat& rot, CvMat& shift,
-      int numTrackablePair,
-      int numInliers, int frameIndex,
-      WImageBuffer3_b& imageC3a, CvMat* inliers0, CvMat* inliers1){
-    mRot   = cvMat(3, 3, CV_64FC1, _mRot);
-    mShift = cvMat(3, 1, CV_64FC1, _mShift);
-    mImage.CloneFrom(image);
-    mDispMap.CloneFrom(dispMap);
-    mKeypoints  = keypoints;
-    cvCopy(&rot,   &mRot);
-    cvCopy(&shift, &mShift);
-    mNumTrackablePairs = numTrackablePair;
-    mNumInliers = numInliers;
-    mFrameIndex = frameIndex;
-
-    mImageC3a.CloneFrom(imageC3a);
-    mInliers0 = cvCloneMat(inliers0);
-    mInliers1 = cvCloneMat(inliers1);
-  }
-  WImageBuffer1_b   mImage;
-  WImageBuffer1_16s mDispMap;
-  vector<Keypoint>  mKeypoints;
-
-  CvMat mRot;
-  CvMat mShift;
-  int   mNumTrackablePairs;
-  int   mNumInliers;
-  int   mFrameIndex;
-  // display and debugging stuff
-  WImageBuffer3_b  mImageC3a;
-  CvMat* mInliers0;
-  CvMat* mInliers1;
-protected:
-  double _mRot[9];
-  double _mShift[3];
-};
-#endif
 
 /** display disparity map */
 bool CvTest3DPoseEstimate::showDisparityMap(WImageBuffer1_16s& dispMap, string& dispWindowName,
@@ -296,13 +255,11 @@ bool CvTest3DPoseEstimate::drawTrackablePairs(
   return true;
 }
 
-// the following function is a clean-up version of testVideos(), which serves as
-// an intermediate form for re-factorization of  code into pose estimate or 3d reconstruction
 void CvTest3DPoseEstimate::loadStereoImagePair(string & dirname, int & frameIndex, WImageBuffer1_b & leftImage, WImageBuffer1_b & rightImage)
 {
     char leftfilename[PATH_MAX];
     char rightfilename[PATH_MAX];
-    sprintf(leftfilename, "%s/left-%04d.ppm", dirname.c_str(), frameIndex);
+    sprintf(leftfilename,  "%s/left-%04d.ppm",  dirname.c_str(), frameIndex);
     sprintf(rightfilename, "%s/right-%04d.ppm", dirname.c_str(), frameIndex);
     cout << "loading " << leftfilename << " and " << rightfilename << endl;
     IplImage* leftimg  = cvLoadImage(leftfilename,  CV_LOAD_IMAGE_GRAYSCALE);
@@ -312,6 +269,26 @@ void CvTest3DPoseEstimate::loadStereoImagePair(string & dirname, int & frameInde
 }
 
 bool CvTest3DPoseEstimate::testVideos() {
+  bool status = false;
+  CvSize imgSize = cvSize(640, 480);
+  CvPathRecon pathRecon(imgSize);
+  // The following parameters are from indoor1/proj.txt
+  // note that B (or Tx) is in mm
+  this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
+  pathRecon.mPoseEstimator.setCameraParams(this->mFx, this->mFy, this->mTx, this->mClx, this->mCrx, this->mCy);
+
+  string dirname("Data/indoor1");
+  string leftimgfmt("/left-%04d.ppm");
+  string rightimgfmt("/right-%04d.ppm");
+  int start = 0;
+  int end   = 1509;
+  int step  = 1;
+  pathRecon.recon(dirname, leftimgfmt, rightimgfmt, start, end, step);
+
+  return status;
+}
+
+bool CvTest3DPoseEstimate::testVideos1() {
   bool status = false;
   int numImages = 1509;
   double ransacInlierthreshold = 2.0;
@@ -336,7 +313,6 @@ bool CvTest3DPoseEstimate::testVideos() {
   string leftCamWinName = string("Left  Cam");
   string lastTrackedLeftCam = string("Last Tracked Left Cam");
   string dispWindowName = string("Disparity Map");
-
 
   // create a list of windows to display results
   cvNamedWindow(poseEstWinName.c_str(), CV_WINDOW_AUTOSIZE);
@@ -411,7 +387,8 @@ bool CvTest3DPoseEstimate::testVideos() {
     } else {
       loadStereoImagePair(dirname, frameIndex, leftImage, rightImage);
       pathRecon.mPoseEstimator.getDisparityMap(leftImage, rightImage, dispMap);
-      keyPointsCurr = pathRecon.mPoseEstimator.goodFeaturesToTrack(leftImage, &dispMap);
+      keyPointsCurr.clear();
+      pathRecon.mPoseEstimator.goodFeaturesToTrack(leftImage, &dispMap, keyPointsCurr);
       pathRecon.mTotalKeypoints += keyPointsCurr.size();
       cout << "Found " << keyPointsCurr.size() << " good features in left  image" << endl;
       cvCvtColor(leftImage.Ipl(),  leftimgC3,  CV_GRAY2RGB);
@@ -424,8 +401,10 @@ bool CvTest3DPoseEstimate::testVideos() {
     //
     // match the good feature points between this iteration and last
     //
-    vector<pair<CvPoint3D64f, CvPoint3D64f> > trackablePairs =
-      pathRecon.mPoseEstimator.getTrackablePairs(lastLeftImage, leftImage, lastDispMap, dispMap, keyPointsLast, keyPointsCurr);
+    vector<pair<CvPoint3D64f, CvPoint3D64f> > trackablePairs;
+
+    pathRecon.mPoseEstimator.getTrackablePairs(lastLeftImage, leftImage,
+        lastDispMap, dispMap, keyPointsLast, keyPointsCurr, trackablePairs);
     pathRecon.mTotalTrackablePairs += trackablePairs.size();
 
     cout << "Num of trackable pairs for pose estimate: "<<trackablePairs.size() <<endl;
@@ -520,7 +499,7 @@ bool CvTest3DPoseEstimate::testVideos() {
       case CvPathRecon::KeyFrameKeep:   {
         int numTrackablePairs = trackablePairs.size();
         pathRecon.keepGoodFrame(leftImage, dispMap, keyPointsCurr, rot, shift,
-            numTrackablePairs, numInliers, frameIndex, leftImageC3a, inliers0, inliers1);
+            numTrackablePairs, numInliers, frameIndex, &leftImageC3a, inliers0, inliers1);
         break;
       }
       case CvPathRecon::KeyFrameUse:  {

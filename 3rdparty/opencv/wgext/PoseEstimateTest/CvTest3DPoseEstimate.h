@@ -3,7 +3,8 @@
 
 #include "CvStereoCamModel.h"
 #include <vector>
-#include <keypoint.h>
+// star detector
+#include <star_detector/include/keypoint.h>
 #include <opencv/cvwimage.h>
 using namespace cv;
 using namespace std;
@@ -26,6 +27,7 @@ public:
     CvTest3DPoseEstimate();
     virtual ~CvTest3DPoseEstimate();
     bool testPointClouds();
+    bool testVideos1();
     bool testVideos();
     bool test();
     TestType mTestType;
