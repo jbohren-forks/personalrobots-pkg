@@ -202,7 +202,7 @@ public:
     // error meas
     CvPoseEstErrMeasDisp mErrMeas;
 
-    // diretory and file name format for the input images
+    // Directory and file name format for the input images
     string mDirname;
     string mLeftImageFilenameFmt;
     string mRightImageFilenameFmt;

@@ -19,6 +19,7 @@ using namespace cv;
 #include <star_detector/include/detector.h>
 
 // Calonder descriptor
+//#include <calonder_descriptor/include/signature.h>
 #include <calonder_descriptor/include/matcher.h>
 #include <calonder_descriptor/include/rtree_classifier.h>
 using namespace features;
@@ -70,11 +71,19 @@ public:
 	CvSize& getSize() {	return mSize; }
 
 	bool getDisparityMap(WImage1_b& leftImage, WImage1_b& rightImage, WImage1_16s& dispMap);
-	vector<Keypoint> goodFeaturesToTrack(WImage1_b& img, WImage1_16s* mask);
+	/**
+	 * Compute a list of good feature point for tracking
+	 * img   -- input image
+	 * mask  -- mask of regions where feature points shall be found, positive value for yes
+	 *          and negative value for no. Typically, mask is disMap, the output of
+	 *          getDisparityMap()
+	 * keypoints  -- Output. A vector of feature points that are believed to be
+	 *               good for tracking.
+	 */
+	bool goodFeaturesToTrack(WImage1_b& img, WImage1_16s* mask, vector<Keypoint>& keypoints);
 
 	class CalonderMatcher {
 	public:
-		typedef BruteForceMatcher<CvPoint>::Signature Signature;
 		// load random forests classifier
 		CalonderMatcher(string& modelfilename);
 		~CalonderMatcher(){}
@@ -159,7 +168,7 @@ protected:
 	// parameters for the star detector
 	int mNumScales;
 	int mThreshold;
-	int mMaxNumKeyPoints; // if greater than zero, get the top mMaxNumKeyPoints key points
+	unsigned int mMaxNumKeyPoints; // if greater than zero, get the top mMaxNumKeyPoints key points
 
 	StarDetector mStarDetector;
 

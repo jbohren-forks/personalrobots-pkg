@@ -17,19 +17,28 @@ CvTestTimer::~CvTestTimer()
 {
 }
 
+// Depreciated
 #define PRINTSTAT(title, name) do {printStat((title), m##name, mCount##name);}while (0)
 
 #define PRINTSTAT2(title, name) do {printStat((title), m##name.mTime, m##name.mCount);} while(0)
 
 void CvTestTimer::printStat(const char* title, int64 val, int64 count) {
 	fprintf(stdout, "total time spend in %s: %10.2f, %6.2f%%, %10.2f\n",
-			title,
-			(double)val/(double)mNumIters/(double)mFrequency, 
-			(double)val/(double)mTotal*100.0, (double)count/(double)mNumIters);
+	    title,
+	    (mNumIters>0&&mFrequency>0)?((double)val/(double)mNumIters/(double)mFrequency):0.0,
+	    (mTotal>0&&mNumIters>0)?    ((double)val/(double)mTotal*100.0)      :0.0,
+	    (mNumIters>0)?              ((double)count/(double)mNumIters)       :0.0);
 }
 
 void CvTestTimer::printStat() {
-	cout << "num of iters: "<< this->mNumIters<<endl;
+  cout << "Statistics of all counters (time in milli seconds)"<<endl;
+  cout << "[counter]  [Avg time] [% of Total] [Avg Freq]"<<endl;
+
+	cout << "num of iters: "<< mNumIters<<endl;
+	if (mNumIters==0) {
+	  cerr << "Please set mNumIters, the number of iterations"<<endl;
+	  return;
+	}
 	PRINTSTAT("Total               ", Total);
 	PRINTSTAT2("SVD                 ", SVD);
 	PRINTSTAT("CheckInliers        ", CheckInliers);
@@ -45,5 +54,10 @@ void CvTestTimer::printStat() {
 	PRINTSTAT("LevMarq::JtJJtErr   ", JtJJtErr);
 	PRINTSTAT("LevMarq::CvLevMarq  ", CvLevMarq);
 	PRINTSTAT("LevMarq::CnstrctMats", ConstructMatrices);
+	PRINTSTAT2("LoadImage           ", LoadImage);
+	PRINTSTAT2("DisparityMap        ", DisparityMap);
+	PRINTSTAT2("FeaturePoint        ", FeaturePoint);
+	PRINTSTAT2("TrackablePair       ", TrackablePair);
+	PRINTSTAT2("PoseEstimate        ", PoseEstimate);
 }
 

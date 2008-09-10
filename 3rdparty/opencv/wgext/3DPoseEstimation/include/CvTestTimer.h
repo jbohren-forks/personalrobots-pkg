@@ -12,7 +12,7 @@ class CvTestTimer
 public:
 	CvTestTimer();
 	virtual ~CvTestTimer();
-	
+
 	class RecordType {
 	public:
 		int64 mTime;
@@ -23,7 +23,7 @@ public:
 			mCount = 0;
 		}
 	};
-	
+
 	void reset(){
 		mTotal   = 0;
 		mCountTotal   = 0;
@@ -52,13 +52,18 @@ public:
 		RESET(LevMarq3);
 		RESET(LevMarq4);
 		RESET(LevMarq5);
+    RESET(LoadImage);
+    RESET(DisparityMap);
+		RESET(FeaturePoint);
+		RESET(TrackablePair);
+		RESET(PoseEstimate);
 	}
 	int64 mNumIters;
 	int64 mFrequency;
-	
+
 	int64 mTotal;
 	int64 mCountTotal;
-	
+
 	int64 mErrNorm;
 	int64 mCountErrNorm;
 	int64 mJtJJtErr;
@@ -77,7 +82,7 @@ public:
 	int64 mCountCheckInliers;
 	int64 mConstructMatrices;
 	int64 mCountConstructMatrices;
-	
+
 	DECLARE(SVD);
 	DECLARE(Residue);
 	DECLARE(FwdResidue);
@@ -85,7 +90,12 @@ public:
 	DECLARE(LevMarq3);
 	DECLARE(LevMarq4);
 	DECLARE(LevMarq5);
-	
+	DECLARE(LoadImage);
+	DECLARE(DisparityMap);
+  DECLARE(FeaturePoint);
+  DECLARE(TrackablePair);
+  DECLARE(PoseEstimate);
+
 	void printStat();
 	void printStat(const char* title, int64 val, int64 count);
 	static inline CvTestTimer& getTimer() {
@@ -101,7 +111,6 @@ public:
 #define CvTestTimerEnd(timerName) \
 	CvTestTimer::getTimer().m##timerName += cvGetTickCount() - _CvTestTimer_##timerName;}
 
-
 #define CvTestTimerStart2(timerName) \
 	do { CvTestTimer::getTimer().m##timerName.mTimeStart = cvGetTickCount(); \
 	  CvTestTimer::getTimer().m##timerName.mCount++;} while(0)
@@ -109,6 +118,5 @@ public:
 #define CvTestTimerEnd2(timerName) \
 	do { CvTestTimer::getTimer().m##timerName.mTime += \
 			cvGetTickCount() - CvTestTimer::getTimer().m##timerName.mTimeStart;} while (0)
-
 
 #endif /*CVTESTTIMER_H_*/

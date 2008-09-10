@@ -11,13 +11,17 @@
 #include <iostream>
 using namespace std;
 
-// star detector
-#include <star_detector/include/detector.h>
-
+//opencv
+#include <cv.h>
+#include <cvwimage.h>
 
 // boost
 #include <boost/foreach.hpp>
 #include <cassert>
+//using namespace boost::numeric::ublas;
+
+// star detector
+#include <star_detector/include/detector.h>
 
 //#define DEBUG
 
@@ -101,14 +105,14 @@ bool Cv3DPoseEstimateStereo::getDisparityMap(
 	return status;
 }
 
-vector<Keypoint> Cv3DPoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* mask){
+bool Cv3DPoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* mask, vector<Keypoint>& keypoints){
+  bool status = true;
 	KeyPointDetector keyPointDetector = getKeyPointDetector();
 	switch(keyPointDetector) {
 	case HarrisCorner: {
 		//
 		//  Try cvGoodFeaturesToTrack
 		//
-		vector<Keypoint> keypoints;
 		int maxKeypoints = 500;
 		CvPoint2D32f kps[maxKeypoints];
 		CvMat* eig_image  = cvCreateMat(mSize.height, mSize.width, CV_32FC1);
@@ -150,7 +154,7 @@ vector<Keypoint> Cv3DPoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WIm
 		for (int i=0; i<numkeypoints; i++) {
 			keypoints.push_back(Keypoint(kps[i].x, kps[i].y, 0., 0., 0));
 		}
-		return keypoints;
+		return status;
 		break;
 	}
 	case Star: {
@@ -158,22 +162,22 @@ vector<Keypoint> Cv3DPoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WIm
 		// Try Star Detector
 		//
 		std::vector<Keypoint> kps = mStarDetector.DetectPoints(img.Ipl());
-		std::sort(kps.begin(), kps.end());
-		if (kps.size()>mMaxNumKeyPoints) {
-		  kps.erase(kps.begin() + mMaxNumKeyPoints, kps.end());
+		if (kps.size() > mMaxNumKeyPoints) {
+	    std::nth_element(kps.begin(), kps.begin()+mMaxNumKeyPoints, kps.end());
 		}
 
 #ifdef DEBUG
 		cout << "Found "<< kps.size() << " good keypoints by Star Detector"<<endl;
 #endif
+		// filter out keypoints that do not have disparity value
 		if (mask) {
 			vector<Keypoint> keypoints;
 			int16_t* _mask = mask->ImageData();
 			int numKeyPointsHasNoDisp=0;
-			for (vector<Keypoint>::const_iterator ikp = kps.begin(); ikp != kps.end(); ikp++) {
-				int16_t d = _mask[ikp->y*mSize.width+ikp->x];
+			BOOST_FOREACH( Keypoint &pt, kps ) {
+				int16_t d = _mask[pt.y*mSize.width+pt.x];
 				if (d>0) {
-					keypoints.push_back(*ikp);
+					keypoints.push_back(pt);
 				} else {
 					numKeyPointsHasNoDisp++;
 				}
@@ -181,17 +185,20 @@ vector<Keypoint> Cv3DPoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WIm
 #ifdef DEBUG
 			cout << "Num of keypoints have no disparity: "<< numKeyPointsHasNoDisp <<endl;
 #endif
-			return keypoints;
+			return status;
 		} else {
-			return kps;
+		  // make a copy, will compiler be smart enough to save real copying
+		  // since kps is going out of scope anyway.
+		  keypoints = kps;
+			return status;
 		}
 
 	}
 	default:
 		cerr << __PRETTY_FUNCTION__ <<"() Not implemented yet";
-		return vector<Keypoint>();
+		return false;
 	}
-	return vector<Keypoint>();
+	return status;
 }
 
 bool Cv3DPoseEstimateStereo::makePatchRect(const CvPoint& rectSize, const CvPoint2D32f& featurePt, CvRect& rect) {
@@ -237,13 +244,13 @@ Cv3DPoseEstimateStereo::getTrackablePairsByCalonder(
 	CvMat res = cvMat(neighborhoodSize.y-templSize.y+1, neighborhoodSize.x-templSize.x+1, CV_32FC1, _res);
 	int numTrackablePairs=0;
 
-	// for image1
+	// for image1Brute
 	// Extract patches and add their signatures to matcher database
-	BruteForceMatcher<CvPoint> matcher;
+	BruteForceMatcher<DenseSignature, CvPoint> matcher;
 
 	BOOST_FOREACH( Keypoint &pt, keyPoints1 ) {
 		cv::WImageView1_b view = extractPatch(image1.Ipl(), pt);
-		CalonderMatcher::Signature sig = mCalonderMatcher->mClassifier.getSparseSignature(view.Ipl());
+		DenseSignature sig = mCalonderMatcher->mClassifier.getDenseSignature(view.Ipl());
 		matcher.addSignature(sig, cvPoint(pt.x, pt.y));
 	}
 
@@ -257,7 +264,7 @@ Cv3DPoseEstimateStereo::getTrackablePairsByCalonder(
 	  makePatchRect(neighborhoodSize, pt2D32f, rectNeighborhood);
 
 		cv::WImageView1_b view = extractPatch(image0.Ipl(), pt);
-		CalonderMatcher::Signature sig = mCalonderMatcher->mClassifier.getSparseSignature(view.Ipl());
+		DenseSignature sig = mCalonderMatcher->mClassifier.getDenseSignature(view.Ipl());
 //		int match = matcher.findMatch(sig, &distance);
 		int match = matcher.findMatchInWindow(sig, rectNeighborhood, &distance);
 		if (match<0) {		  // no match

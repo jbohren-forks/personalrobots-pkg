@@ -15,10 +15,28 @@ using namespace std;
 #include "../include/CvMatUtils.h"
 #include "../include/Cv3DPoseEstimate.h"
 
+// timing
+#include "CvTestTimer.h"
+
 //#define DISPLAY
 
 #define DEBUG
-#define TIMING
+
+// Please note that because the timing code is executed is called lots of lots of times
+// they themselves have taken substantial timing as well
+#define CHECKTIMING 1
+
+#if CHECKTIMING == 0
+#define TIMERSTART(x)
+#define TIMEREND(x)
+#define TIMERSTART2(x)
+#define TIMEREND2(x)
+#else
+#define TIMERSTART(x)  CvTestTimerStart(x)
+#define TIMEREND(x)    CvTestTimerEnd(x)
+#define TIMERSTART2(x) CvTestTimerStart2(x)
+#define TIMEREND2(x)   CvTestTimerEnd2(x)
+#endif
 
 CvPathRecon::CvPathRecon(const CvSize& imageSize):
 	mPoseEstimator(imageSize.width, imageSize.height),
@@ -32,22 +50,22 @@ CvPathRecon::CvPathRecon(const CvSize& imageSize):
 	mStartFrameIndex(0),
 	mEndFrameIndex(0),
 	mFrameStep(1),
-	mNumFramesSkipped(0),
 	mLastKeyFrameImage(imageSize.width, imageSize.height),
 	mLastKeyFrameDispMap(imageSize.width, imageSize.height),
 	mPathLength(0.),
+  mNumFramesSkipped(0),
 	mTotalInliers(0),
 	mTotalTrackablePairs(0),
 	mTotalKeypoints(0),
 	mTotalInliersInKeyFrames(0),
 	mTotalTrackablePairsInKeyFrames(0),
 	mTotalKeypointsInKeyFrames(0),
-	mRT(cvMat(4,4, CV_64FC1, _rt)),
-	_mTempMat(cvMat(4,4,CV_64FC1, _tempMat)),
-	mStop(false),
 	mDirname(string("Data/indoor1")),
   mLeftImageFilenameFmt(mDirname.append("/left-%04.ppm")),
-  mRightImageFilenameFmt(mDirname.append("/right-%04.ppm"))
+  mRightImageFilenameFmt(mDirname.append("/right-%04.ppm")),
+  mRT(cvMat(4,4, CV_64FC1, _rt)),
+  _mTempMat(cvMat(4,4,CV_64FC1, _tempMat)),
+  mStop(false)
 {
 	_init();
 }
@@ -318,6 +336,7 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
     i<mEndFrameIndex && mStop == false;
     i+= (fBackTracked==false)?mFrameStep:0
   ) {
+    TIMERSTART(Total);
     int frameIndex=i;
 //    fBackTracked = false;
 
@@ -328,9 +347,15 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
 #endif
       fBackTracked = false;
     } else {
+      TIMERSTART2(LoadImage);
       loadStereoImagePair(frameIndex, leftImage, rightImage);
+      TIMEREND2(LoadImage);
+      TIMERSTART2(DisparityMap);
       mPoseEstimator.getDisparityMap(leftImage, rightImage, dispMap);
-      keyPointsCurr = mPoseEstimator.goodFeaturesToTrack(leftImage, &dispMap);
+      TIMEREND2(DisparityMap);
+      TIMERSTART2(FeaturePoint);
+      status = mPoseEstimator.goodFeaturesToTrack(leftImage, &dispMap, keyPointsCurr);
+      TIMEREND2(FeaturePoint);
       mTotalKeypoints += keyPointsCurr.size();
 #ifdef DEBUG
       cout << "Found " << keyPointsCurr.size() << " good features in left  image" << endl;
@@ -349,9 +374,10 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
     // match the good feature points between this iteration and last
     //
     vector<pair<CvPoint3D64f, CvPoint3D64f> > trackablePairs;
-
+    TIMERSTART2(TrackablePair);
     mPoseEstimator.getTrackablePairs(lastLeftImage, leftImage,
         lastDispMap, dispMap, keyPointsLast, keyPointsCurr, trackablePairs);
+    TIMEREND2(TrackablePair);
     mTotalTrackablePairs += trackablePairs.size();
 
 #ifdef DEBUG
@@ -373,9 +399,12 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
       // Draw all the trackable pairs
       this->drawTrackablePairs(leftImageC3, trackablePairs);
 #endif
+
       //  pose estimation given the feature point pairs
+      TIMERSTART2(PoseEstimate);
       int numInliers =
         mPoseEstimator.estimate(trackablePairs, rot, shift, reversed);
+      TIMEREND2(PoseEstimate);
 
       mTotalInliers += numInliers;
 
@@ -430,13 +459,16 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
         // stores rotation mat and shift vector in rods and shifts
         storeTransform(rot, shift, frameIndex - mStartFrameIndex);
 
-
+#ifdef DISPLAY
         CvMatUtils::drawMatchingPairs(*inliers0, *inliers1, mLastGoodFrame->mImageC3a,
             rot, shift,
             (Cv3DPoseEstimateDisp&)mPoseEstimator, reversed);
+#endif
 
+#ifdef DEBUG
         // measure the errors
         measureErr(inliers0, inliers1);
+#endif
 
 #ifdef DISPLAY
         cvShowImage(lastTrackedLeftCam.c_str(), lastLeftImage.Ipl());
@@ -513,6 +545,7 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
       sprintf(info, "%04d, KyPt %d, TrckPir %d, Inlrs %d, eulr=(%4.2f,%4.2f,%4.2f), d=%4.1f",
           frameIndex, keyPointsCurr.size(), numTrackablePairs, numInliers, euler.x, euler.y, euler.z, cvNorm((const CvMat *)&shift));
 #endif
+      TIMEREND(Total);
     }
 #ifdef DISPLAY
     cvPutText(leftimgC3a, info, org, &font, CvMatUtils::yellow);
@@ -561,6 +594,10 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
   cout <<"Total/Average inliers: "<< mTotalInliersInKeyFrames << ","<< (double)mTotalInliersInKeyFrames*kfScale <<endl;
 
   saveFramePoses(string("Output/indoor1/"));
+
+  CvTestTimer& timer = CvTestTimer::getTimer();
+  timer.mNumIters = mNumFrames/mFrameStep;
+  timer.printStat();
 
   return status;
 }
