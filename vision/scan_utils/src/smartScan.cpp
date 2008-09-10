@@ -1092,10 +1092,10 @@ std::vector<std_msgs::Point3DFloat32>* SmartScan::getPointsWithinRadius(float x,
 
 	getVtkLocator()->FindPointsWithinRadius( radius, x, y, z, result );
 	int n = result->GetNumberOfIds();
+	resPts->reserve(n);
 	for (int i=0; i<n; i++){
 		int nbrId = result->GetId(i);
-		std_msgs::Point3DFloat32 p = getPoint(nbrId);
-		resPts->push_back(p);
+		resPts->push_back(getPoint(nbrId));
 	}
 
 	result->Delete();
@@ -1474,7 +1474,7 @@ void SmartScan::subtractScan(const SmartScan *target, float thresh)
 
 
 /*! 
-  The choice of \a support and \a pixelsPerMeter determines how many pixels are in the spin image.  \a si is filled with the relevant data.
+  The choice of \a support and \a pixelsPerMeter determines how many pixels are in the spin image.  \a si is filled with the relevant data.  
 
   This does NOT yet do any point cloud conditioning such as removing grazing points.
 
@@ -1482,45 +1482,76 @@ void SmartScan::subtractScan(const SmartScan *target, float thresh)
   \param x, y, z The location of the spin image center.
   \param support The support of the spin image, i.e. the "radius" it cares about.
   \param pixelsPerMeter Discretization of the spin image.
+  \param up "z" if you want the beta axis to be parallel to z (i.e. standard ROS coordinates); "-y" if you want smallv mode where beta points along -y.
 
 */
-void SmartScan::computeSpinImageFixedOrientation(Grid2D &si, float x, float y, float z, float support, float pixelsPerMeter) {
+bool SmartScan::computeSpinImageFixedOrientation(Grid2D &si, float x, float y, float z, float support, float pixelsPerMeter, string up) {
+        bool z_up;
+	if(up.compare("z") == 0) {
+	        z_up = true;
+	}
+	else if(up.compare("-y") == 0) {
+	        z_up = false;
+	}
+	else {
+	        cerr << "parameter 'up' is not a valid string." << endl;
+	        return false;
+	}
 
         // -- Make sure si has the appropriate dimensions.
         int height, width, hsi, wsi;
-	height = (int)(2*support*pixelsPerMeter);
-	width = (int)(support*pixelsPerMeter);
+	height = ceil(2*support*pixelsPerMeter);
+	width = ceil(support*pixelsPerMeter);
 	si.getSize(hsi, wsi);
 	assert(height==hsi && width==wsi);
 
 	// -- Get a first cut at points close enough to care about.
 	std::vector<std_msgs::Point3DFloat32> *point;
 	point = getPointsWithinRadius(x, y, z, support*sqrt(2));
-	assert(point->size() != 0);
+	if(point->size() == 0) {
+   	        cerr << "Not enough points at "  << x << " " << y << " " << z  << endl;
+    	        return false;
+	}
 	
 	// -- TODO: Cut away grazing points.  Will this still work when used for natural spin images? (the points are pre-rotated)
 
 	// -- Add points within the support to the appropriate cell in the spin image.
+	float beta;
+	float alpha;
 	for (unsigned int i=0; i<point->size(); i++) {
-	        std_msgs::Point3DFloat32 pt;
-		pt = (*point)[i];
-		float beta = -(pt.z - z - support);
-		if(beta > 2*support || beta < 0)
+	  	std_msgs::Point3DFloat32 &pt = (*point)[i];
+		if(z_up) {
+		        beta = -(pt.z - z - support);
+		}
+		else {
+		        beta = pt.y - y + support;
+		}
+		if(beta >= 2*support || beta < 0)
 		        continue;
-		float alpha = sqrt(pow(x - pt.x, 2) + pow(y - pt.y, 2));
-		if(alpha > support)
+
+		if(z_up) {
+		        alpha = sqrt(pow(x - pt.x, 2) + pow(y - pt.y, 2));
+		}
+		else {
+		        alpha = sqrt(pow(x - pt.x, 2) + pow(z - pt.z, 2));
+		}
+
+		if(alpha >= support)
 		        continue;
 		assert(beta >= 0);
 		
 		int n1, n2;
-		n1 = (int)(beta*pixelsPerMeter);
-		n2 = (int)(alpha*pixelsPerMeter);
+		n1 = (int)floor(beta*pixelsPerMeter);
+		n2 = (int)floor(alpha*pixelsPerMeter);
+
 		si.addElement(n1, n2, 1);
 	}
+	delete point;
+	return true;
 }
 
 /*! 
-  The choice of \a support and \a pixelsPerMeter determines how many pixels are in the spin image.  \a si is filled with the relevant data.  If the surface normal is not reliable, then si has a -1 placed in the (0,0) position.
+  The choice of \a support and \a pixelsPerMeter determines how many pixels are in the spin image.  \a si is filled with the relevant data.  If the surface normal is not reliable, then this returns false.
 
   This does NOT yet do any point cloud conditioning such as removing grazing points.
 
@@ -1532,13 +1563,12 @@ void SmartScan::computeSpinImageFixedOrientation(Grid2D &si, float x, float y, f
   \param nbrs Parameter passed to computePointNormal.
 
 */
-void SmartScan::computeSpinImageNatural(scan_utils::Grid2D &si, float x, float y, float z, float support, float pixelsPerMeter, float radius, int nbrs) {
+bool SmartScan::computeSpinImageNatural(scan_utils::Grid2D &si, float x, float y, float z, float support, float pixelsPerMeter, float radius, int nbrs) {
 
         // -- Get the surface normal.
         std_msgs::Point3DFloat32 normal = computePointNormal(x, y, z, radius, nbrs);
 	if(normal.x == 0 && normal.y == 0 && normal.z == 0) {
-	        si.setElement(0,0,-1);
-	        return;
+	        return false;
 	}
 	
 	// -- Setup libTF.
@@ -1550,7 +1580,7 @@ void SmartScan::computeSpinImageNatural(scan_utils::Grid2D &si, float x, float y
 	tfn0.y = normal.y;
 	tfn0.z = normal.z;
 
-	// -- Find the transformation that makes the surface normal point up.
+	// -- Find the transformation that makes the surface normal point up along z.
 	double pitch = atan2(normal.x, normal.z);
 	tr.setWithEulers("FRAMEID_SPIN_ORIG", "FRAMEID_SPIN_STAGE1", 0.0, 0.0, 0.0, 0.0, -pitch, 0.0, (libTF::TransformReference::ULLtime)0);
 	tfn1 = tr.transformVector("FRAMEID_SPIN_STAGE1", tfn0);
@@ -1586,7 +1616,7 @@ void SmartScan::computeSpinImageNatural(scan_utils::Grid2D &si, float x, float y
 	// -- Compute the spin image.
 	SmartScan ss;
 	ss.setFromRosCloud(*cld);
-	ss.computeSpinImageFixedOrientation(si, center2.x, center2.y, center2.z, support, pixelsPerMeter);
+	return ss.computeSpinImageFixedOrientation(si, center2.x, center2.y, center2.z, support, pixelsPerMeter, string("z"));
 }
 
 
