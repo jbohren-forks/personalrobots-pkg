@@ -77,6 +77,7 @@ int firstframe;		//for playing point cloud sequences
 };
 
 stereo_params par;
+bool wait;
 
 void cv2array(IplImage *A, unsigned char *B){
 
@@ -91,6 +92,13 @@ for(x=0; x<w; x++){
 
 }
 
+
+
+void toggle_wait(int foo){
+//printf("Togglin'  \n");
+wait = !wait;
+
+}
 
 
 void uniqueness_constraint_reducedrange(stereo_params par, int* mins, int row){
@@ -201,6 +209,7 @@ class SpacetimeStereoNode : public ros::node
 			builtBridge = true;
 		}
 		
+
 		if(left_frames.size() != nImages) {
 			
 		
@@ -218,7 +227,8 @@ class SpacetimeStereoNode : public ros::node
 		}
 		else {
 			while(!IsCal && ok()){printf("; ");}
-			
+
+			system("killall -s USR1 lpg");
 			
 			string cal_string = cal_msg.data;
 
@@ -438,8 +448,8 @@ void SpacetimeStereoNode::spacetime_stereo(vector<IplImage*> left_frames, vector
 // 		cvShowImage("R", right_frames[framecount]);
 // 		cvWaitKey(0);
 
-		printf("%d\n", framecount);
-		//flush();
+		printf("%d ", framecount);
+		fflush(stdout);
 
 		cvCvtColor(left_frames[framecount], Leftg, CV_BGR2GRAY);
 		cvCvtColor(right_frames[framecount], Rightg, CV_BGR2GRAY);
@@ -635,20 +645,26 @@ for(int x=MAXDISP+RADIUS+1; x<w-RADIUS; x++){
 }}
 
 printf("Done; press q to quit, other key to continue.. \n");
-cvNamedWindow("Disp Image", 1);
 cvShowImage("Disp Image", idisp);
-cvNamedWindow("Ref Image", 1);
 cvShowImage("Ref Image", left_frames[0]);
-cvNamedWindow("Tar Image", 1);
-cvShowImage("Tar Image", left_frames[1]);
 
-int key = cvWaitKey(0);
+signal(SIGUSR1, toggle_wait);
+	
+wait = 1;
+int key = 'a';
+while(wait){
+	key = cvWaitKey(10);
+	if(key == ' ')
+		wait = 0;
+	if (key=='q')
+		exit(1);
+}
 
-if (key=='q')
-	exit(1);
+
+
 cvReleaseImage(&idisp);
-cvDestroyWindow("Disp Image");
-cvDestroyWindow("Ref Image");
+
+system("killall -s USR1 lpg");
 
 //printf("E!\n");
 //m_rosNode->publish("full_cloud",ros_cloud);
@@ -661,14 +677,16 @@ cvDestroyWindow("Ref Image");
 
 
 
-
-
-
 int main(int argc, char **argv){
+
+cvNamedWindow("Disp Image", 1);
+cvNamedWindow("Ref Image", 1);
 
 	ros::init(argc, argv);
 	SpacetimeStereoNode sts;
 	sts.spin();
+
+
 	//ros::fini();
 // 	static uint32_t count = 0;
 // 	std::stringstream ss;
@@ -679,6 +697,8 @@ int main(int argc, char **argv){
 // 	m_rosNode = new ros::node( ss.str() );
 // 	m_rosNode->advertise<std_msgs::PointCloudFloat32>("full_cloud", 5);
 
+cvDestroyWindow("Disp Image");
+cvDestroyWindow("Ref Image");
 
 return 0;
 
