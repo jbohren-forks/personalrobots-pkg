@@ -76,22 +76,6 @@ bool Robot::initXml(TiXmlElement *root)
     else
       delete link;
   }
-  for (unsigned int i = 0; i < links_.size(); ++i)
-  {
-    links_[i]->createTreePointers(this);
-  }
-  printLinkTree();
-
-  // Constructs the kinematic chains.
-  for (xit = root->FirstChildElement("chain"); xit;
-       xit = xit->NextSiblingElement("chain"))
-  {
-    Chain *c = new Chain;
-    if (c->initXml(xit, this))
-      chains_.push_back(c);
-    else
-      delete c;
-  }
 
   return true;
 }
@@ -123,11 +107,6 @@ int Robot::getLinkIndex(const std::string &name)
   return findIndexByName(links_, name);
 }
 
-int Robot::getTransmissionIndex(const std::string &name)
-{
-  return findIndexByName(transmissions_, name);
-}
-
 Joint* Robot::getJoint(const std::string &name)
 {
   int i = getJointIndex(name);
@@ -146,35 +125,6 @@ Link* Robot::getLink(const std::string &name)
   return i >= 0 ? links_[i] : NULL;
 }
 
-void printLinkTreeHelper(Link *link, int depth = 0)
-{
-  for (int i = 0; i < depth; ++i)
-    printf("  ");
-  printf("%s (%s)\n", link->name_.c_str(), link->joint_ ? link->joint_->name_.c_str() : "");
-
-  for (unsigned int i = 0; i < link->children_.size(); ++i)
-    printLinkTreeHelper(link->children_[i], depth + 1);
-}
-void Robot::printLinkTree()
-{
-  Link *root = NULL;
-  for (unsigned int i = 0; i < links_.size(); ++i)
-  {
-    if (links_[i]->parent_name_ == "world")
-    {
-      root = links_[i];
-      break;
-    }
-  }
-  if (!root)
-  {
-    fprintf(stderr, "Could not print the link tree because there's no link connected to the world\n");
-    return;
-  }
-
-  printLinkTreeHelper(root, 0);
-}
-
 RobotState::RobotState(Robot *model, HardwareInterface *hw)
   : model_(model), hw_(hw)
 {
@@ -185,6 +135,9 @@ RobotState::RobotState(Robot *model, HardwareInterface *hw)
   link_states_.resize(model->links_.size());
   transmissions_in_.resize(model->transmissions_.size());
   transmissions_out_.resize(model->transmissions_.size());
+  links_joint_.resize(model_->links_.size(), NULL);
+  links_parent_.resize(model_->links_.size(), NULL);
+  links_children_.resize(model_->links_.size());
 
   // Points each state object at the corresponding model object
   for (unsigned int i = 0; i < joint_states_.size(); ++i)
@@ -207,6 +160,20 @@ RobotState::RobotState(Robot *model, HardwareInterface *hw)
       int index = model_->getJointIndex(t->joint_names_[j]);
       assert(index >= 0);
       transmissions_out_[i].push_back(&joint_states_[index]);
+    }
+  }
+
+  // Wires up each link to its joint, its parent, and its children.
+  for (unsigned int i = 0; i < model_->links_.size(); ++i)
+  {
+    int joint_index = model_->getJointIndex(model_->links_[i]->joint_name_);
+    int parent_index = model_->getLinkIndex(model_->links_[i]->parent_name_);
+
+    if (joint_index >= 0 && parent_index >= 0)
+    {
+      links_joint_[i] = &joint_states_[joint_index];
+      links_parent_[i] = &link_states_[parent_index];
+      links_children_[parent_index].push_back(&link_states_[i]);
     }
   }
 }
@@ -232,7 +199,49 @@ void RobotState::propagateState()
                                                  transmissions_out_[i]);
   }
 
-  // TODO: KDL
+  // Computes the frame transform for each link relative to its parent.
+  for (unsigned int i = 0; i < link_states_.size(); ++i)
+  {
+    if (!links_joint_[i]) // Root link, attached to the world'
+    {
+      link_states_[i].rel_frame_.setIdentity();
+    }
+    else
+    {
+      JointState &j = *links_joint_[i];
+      Link &l = *link_states_[i].link_;
+
+      libTF::Pose3D offset;
+      libTF::Pose3D joint_transform;
+      libTF::Pose3D rotation;
+
+      offset.setPosition(l.origin_xyz_[0], l.origin_xyz_[1], l.origin_xyz_[2]);
+
+      switch (j.joint_->type_)
+      {
+      case JOINT_ROTARY:
+      case JOINT_CONTINUOUS:
+        joint_transform.setAxisAngle(j.joint_->axis_, j.position_);
+        break;
+      case JOINT_PRISMATIC:
+        joint_transform.setPosition(j.position_ * j.joint_->axis_[0],
+                                    j.position_ * j.joint_->axis_[1],
+                                    j.position_ * j.joint_->axis_[2]);
+        break;
+      case JOINT_FIXED:
+      case JOINT_PLANAR:
+        joint_transform.setIdentity();
+        break;
+      }
+
+      rotation.setFromEuler(0,0,0, l.origin_rpy_[0], l.origin_rpy_[1], l.origin_rpy_[2]);
+
+      link_states_[i].rel_frame_.setIdentity();
+      link_states_[i].rel_frame_.multiplyPose(offset);
+      link_states_[i].rel_frame_.multiplyPose(joint_transform);
+      link_states_[i].rel_frame_.multiplyPose(rotation);
+    }
+  }
 }
 
 void RobotState::propagateEffort()

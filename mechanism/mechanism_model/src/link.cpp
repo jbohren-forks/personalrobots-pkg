@@ -45,18 +45,11 @@
 namespace mechanism {
 
 Link::Link()
-  : parent_(NULL), joint_(NULL), init_state_(INIT_XML)
 {
 }
 
 bool Link::initXml(TiXmlElement *config, Robot *robot)
 {
-  if (init_state_ != INIT_XML)
-  {
-    fprintf(stderr, "initXml already called on link \"%s\"\n", name_.c_str());
-    return false;
-  }
-
   const char *name = config->Attribute("name");
   if (!name)
   {
@@ -78,13 +71,13 @@ bool Link::initXml(TiXmlElement *config, Robot *robot)
   // Joint
   TiXmlElement *j = config->FirstChildElement("joint");
   const char *joint_name = j ? j->Attribute("name") : NULL;
-  joint_ = joint_name ? robot->getJoint(joint_name) : NULL;
-  if (!joint_)
+  if (!joint_name || !robot->getJoint(joint_name))
   {
     fprintf(stderr, "Error: Link \"%s\" could not find the joint named \"%s\"\n",
             name_.c_str(), joint_name);
     return false;
   }
+  joint_name_ = std::string(joint_name);
 
   // Origin
   TiXmlElement *o = config->FirstChildElement("origin");
@@ -116,46 +109,11 @@ bool Link::initXml(TiXmlElement *config, Robot *robot)
   }
   for (int i = 0; i < 3; ++i)
   {
-    origin_xyz[i] = xyz[i];
-    origin_rpy[i] = rpy[i];
+    origin_xyz_[i] = xyz[i];
+    origin_rpy_[i] = rpy[i];
   }
 
-  init_state_ = CREATE_TREE_LINKS;
   return true;
 }
-
-bool Link::createTreePointers(Robot *robot)
-{
-  // Enforce initialization series order.
-  switch(init_state_) {
-  case INIT_XML:
-    fprintf(stderr, "Error: Must call initXml on the link before createTreePointers\n");
-    return false;
-  case INITIALIZED:
-    fprintf(stderr, "Error: createTreePointers already called on link\n");
-    return false;
-  case CREATE_TREE_LINKS:
-    break;
-  }
-
-  if (parent_name_ == std::string("world"))
-  {
-    parent_ = NULL;
-    return true;
-  }
-
-  parent_ = robot->getLink(parent_name_);
-  if (!parent_)
-  {
-    fprintf(stderr, "Error: Could not find parent link named \"%s\"\n", parent_name_.c_str());
-    return false;
-  }
-
-  parent_->children_.push_back(this);
-
-  init_state_ = INITIALIZED;
-  return true;
-}
-
 
 } // namespace mechanism

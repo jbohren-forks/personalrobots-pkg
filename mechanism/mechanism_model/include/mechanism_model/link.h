@@ -36,7 +36,7 @@
 
 #include "mechanism_model/joint.h"
 #include <vector>
-#include <kdl/frames.hpp>
+#include "libTF/Pose3D.h"
 
 namespace mechanism {
 
@@ -48,34 +48,25 @@ public:
   Link();
   ~Link() {}
 
-  // Initialization series.  Call initXml on all the links and then
-  // createTreeLinks on all the links before using the link.
   bool initXml(TiXmlElement *config, Robot *robot);
-  bool createTreePointers(Robot *robot);
 
   std::string name_;
   std::string parent_name_;
+  std::string joint_name_;
 
-  double origin_xyz[3];
-  double origin_rpy[3];
-
-  Link *parent_;
-  Joint *joint_;
-  std::vector<Link*> children_;
-
-private:
-  enum InitState {INIT_XML, CREATE_TREE_LINKS, INITIALIZED};
-  InitState init_state_;
+  double origin_xyz_[3];
+  double origin_rpy_[3];
 };
 
 class LinkState
 {
 public:
   Link *link_;
-  KDL::Frame frame_;
+
+  libTF::Pose3D rel_frame_;  // Transformation relative to the parent's frame.
 
   LinkState() : link_(NULL) {}
-  LinkState(const LinkState &s) : link_(s.link_), frame_(s.frame_) {}
+  LinkState(const LinkState &s) : link_(s.link_), rel_frame_(s.rel_frame_) {}
 };
 
 

@@ -62,7 +62,6 @@
 #include "mechanism_model/link.h"
 #include "mechanism_model/joint.h"
 #include "mechanism_model/transmission.h"
-#include "mechanism_model/chain.h"
 #include "hardware_interface/hardware_interface.h"
 
 class TiXmlElement;
@@ -77,7 +76,6 @@ public:
 
   ~Robot()
   {
-    deleteElements(&chains_);
     deleteElements(&transmissions_);
     deleteElements(&joints_);
     deleteElements(&links_);
@@ -88,22 +86,17 @@ public:
   HardwareInterface *hw_;  // Holds the array of actuators
   std::vector<Transmission*> transmissions_;
   std::vector<Joint*> joints_;
-  std::vector<Chain*> chains_;
   std::vector<Link*> links_;
 
   // All return -1 on failure.
   int getJointIndex(const std::string &name);
   int getActuatorIndex(const std::string &name);
   int getLinkIndex(const std::string &name);
-  int getTransmissionIndex(const std::string &name);
 
   // All return NULL on failure
   Joint* getJoint(const std::string &name);
   Actuator* getActuator(const std::string &name);
   Link* getLink(const std::string &name);
-
-  // For debugging
-  void printLinkTree();
 };
 
 class RobotState
@@ -119,8 +112,10 @@ public:
 
   std::vector<std::vector<Actuator*> > transmissions_in_;
   std::vector<std::vector<JointState*> > transmissions_out_;
-  std::vector<std::vector<JointState*> > chains_in_;
-  std::vector<std::vector<LinkState*> > chains_out_;
+
+  std::vector<JointState*> links_joint_;
+  std::vector<LinkState*> links_parent_;
+  std::vector<std::vector<LinkState*> > links_children_;
 
   JointState *getJointState(const std::string &name);
   LinkState *getLinkState(const std::string &name);
