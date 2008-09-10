@@ -66,6 +66,8 @@
     <bodyName>base</bodyName>
     <topicName>base_pose</topicName>
     <frameName>base_frame</frameName>
+    <xyzOffsets>25.65 25.65 0</xyzOffsets> <!-- initialize odometry for fake localization-->
+    <rpyOffsets>0 0 0</rpyOffsets>
     <interface:position name="p3d_base_position"/>
   </controller:P3D>
 

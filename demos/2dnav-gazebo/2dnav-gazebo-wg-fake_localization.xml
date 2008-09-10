@@ -1,14 +1,14 @@
 <launch>
   <group name="wg">
-    <include file="$(find gazebo_robot_description)/pr2_test_headless.xml"/>
-    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" output="screen" />
-    <node pkg="amcl_player" type="amcl_player" args="scan:=base_scan" respawn="false" output="screen" />
+    <include file="$(find gazebo_robot_description)/pr2_test_wg.xml"/>
+    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/willowMap.png 0.1" respawn="false" output="screen" />
+    <node pkg="fake_localization" type="fake_localization" respawn="false" output="screen" />
     <node pkg="wavefront_player" type="wavefront_player" args="scan:=base_scan" respawn="false" output="screen" />
     <node pkg="nav_view" type="nav_view" respawn="false" output="screen" />
 
     <!-- for visualization -->
     <node pkg="wx_camera_panel" type="camera_test" args="" respawn="true" output="screen" />
-    <!--node pkg="wx_camera_panel" type="standalone_camera.py" args="-i PTZL_image -s PTZL_state -c PTZL_cmd" respawn="true" output="screen" /--> <!-- not working yet -->
+    <!--node pkg="wx_camera_panel" type="standalone_camera.py" args="-i PTZL_image -s PTZL_state -c PTZL_cmd" respawn="true" output="screen" /-->
     <node pkg="laser_view" type="laser_view" args="scan:=tilt_scan" respawn="true" output="screen" />
     <node pkg="ogre_visualizer" type="visualizer_test" respawn="true" output="screen" />
     <!--node pkg="wxpy_ros" type="ros_panel" respawn="false" output="screen" /--><!-- does not start correctly-->

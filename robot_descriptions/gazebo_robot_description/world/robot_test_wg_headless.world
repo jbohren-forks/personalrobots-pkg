@@ -24,7 +24,7 @@
 <!-- erp is typically .1-.8 -->
 <!-- here's the global contact cfm/erp -->
   <physics:ode>
-    <stepTime>0.01</stepTime>
+    <stepTime>0.001</stepTime>
     <gravity>0 0 -9.8</gravity>
     <cfm>0.0000000001</cfm>
     <erp>0.2</erp>
@@ -73,11 +73,11 @@
   </include>
   </model:physical>
 <!--
- <model:physical name="willow_map">
+ <model:physical name="map">
   <xyz>-25.65 25.65 1.0</xyz>	
   <rpy>180 0 0</rpy>
-  <body:map name="willow_map_body">
-    <geom:map name="willow_map_geom">
+  <body:map name="map_body">
+    <geom:map name="map_geom">
       <image>willowMap.png</image>
       <threshold>200</threshold>
       <granularity>2</granularity>
