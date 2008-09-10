@@ -3,6 +3,7 @@
 
 #include <sys/time.h>
 #include <iostream>
+#include "tf/cache.h"
 
 using namespace std;
 
@@ -22,6 +23,8 @@ int main(void)
   btTransform tran(quat, btVector3(btScalar(1), btScalar(1), btScalar(1)));
 
   std::cout << sizeof(btScalar)<<std::endl;
+
+  tf::TimeCache myCache;
     
 return 0;
 };
