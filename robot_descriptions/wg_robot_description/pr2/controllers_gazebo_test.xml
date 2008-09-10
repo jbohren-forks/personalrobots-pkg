@@ -10,15 +10,16 @@
   <!-- PR2_ACTARRAY -->
   <!-- uncomment for testing -->
   <controller:test_actuators name="test_actuators" plugin="libtest_actuators.so">
-      <updateRate>100.0</updateRate>
+    <alwaysOn>true</alwaysOn>
+    <updateRate>100.0</updateRate>
 
-      <!-- used exclusively by test_actuators to find out where these files are, in combination with env var MC_RESOURCE_PATH -->
-      <include>gazebo_joints.xml</include>
-      <robot_filename>pr2_test_actuators.xml</robot_filename>
-      <controller_filename>controllers.xml</controller_filename>
-      <actuator_filename>actuators.xml</actuator_filename>
+    <!-- used exclusively by test_actuators to find out where these files are, in combination with env var MC_RESOURCE_PATH -->
+    <include>gazebo_joints.xml</include>
+    <robot_filename>pr2_test_actuators.xml</robot_filename>
+    <controller_filename>controllers.xml</controller_filename>
+    <actuator_filename>actuators.xml</actuator_filename>
 
-      <interface:audio name="test_actuators_dummy_iface" />
+    <interface:audio name="test_actuators_dummy_iface" />
   </controller:test_actuators>
 
   </verbatim>
@@ -30,6 +31,7 @@
 
   <!-- ptz camera controls -->
   <controller:Ros_PTZ name="ptz_cam_left_controller" plugin="libRos_PTZ.so">
+    <alwaysOn>true</alwaysOn>
     <updateRate>15.0</updateRate> <!-- rate not implemented in gazebo yet-->
     <panJoint>ptz_pan_left_joint</panJoint>
     <tiltJoint>ptz_tilt_left_joint</tiltJoint>
@@ -39,6 +41,7 @@
   </controller:Ros_PTZ>
 
   <controller:Ros_PTZ name="ptz_cam_right_controller" plugin="libRos_PTZ.so">
+    <alwaysOn>true</alwaysOn>
     <updateRate>15.0</updateRate> <!-- rate not implemented in gazebo yet-->
     <panJoint>ptz_pan_right_joint</panJoint>
     <tiltJoint>ptz_tilt_right_joint</tiltJoint>
@@ -49,27 +52,30 @@
 
   <!-- P3D for position groundtruth -->
   <controller:P3D name="p3d_right_wrist_controller" plugin="libP3D.so">
-      <updateRate>100.0</updateRate>
-      <bodyName>gripper_roll_right</bodyName>
-      <topicName>gripper_roll_right_pose</topicName>
-      <frameName>gripper_roll_right_frame</frameName>
-      <interface:position name="p3d_right_wrist_position"/>
+    <alwaysOn>true</alwaysOn>
+    <updateRate>100.0</updateRate>
+    <bodyName>gripper_roll_right</bodyName>
+    <topicName>gripper_roll_right_pose</topicName>
+    <frameName>gripper_roll_right_frame</frameName>
+    <interface:position name="p3d_right_wrist_position"/>
   </controller:P3D>
 
   <controller:P3D name="p3d_left_wrist_controller" plugin="libP3D.so">
-      <updateRate>100.0</updateRate>
-      <bodyName>gripper_roll_left</bodyName>
-      <topicName>gripper_roll_left_pose</topicName>
-      <frameName>gripper_roll_left_frame</frameName>
-      <interface:position name="p3d_left_wrist_position"/>
+    <alwaysOn>true</alwaysOn>
+    <updateRate>100.0</updateRate>
+    <bodyName>gripper_roll_left</bodyName>
+    <topicName>gripper_roll_left_pose</topicName>
+    <frameName>gripper_roll_left_frame</frameName>
+    <interface:position name="p3d_left_wrist_position"/>
   </controller:P3D>
 
   <controller:P3D name="p3d_base_controller" plugin="libP3D.so">
-      <updateRate>100.0</updateRate>
-      <bodyName>base</bodyName>
-      <topicName>base_pose</topicName>
-      <frameName>base_frame</frameName>
-      <interface:position name="p3d_base_position"/>
+    <alwaysOn>true</alwaysOn>
+    <updateRate>100.0</updateRate>
+    <bodyName>base</bodyName>
+    <topicName>base_pose</topicName>
+    <frameName>base_frame</frameName>
+    <interface:position name="p3d_base_position"/>
   </controller:P3D>
 
 

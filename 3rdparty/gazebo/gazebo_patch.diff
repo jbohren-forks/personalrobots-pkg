@@ -904,6 +904,20 @@ Index: server/World.hh
    private: friend class DestroyerT<World>;
    private: friend class SingletonT<World>;
  };
+Index: server/controllers/Controller.hh
+===================================================================
+--- server/controllers/Controller.hh	(revision 7016)
++++ server/controllers/Controller.hh	(working copy)
+@@ -105,6 +105,9 @@
+   /// \brief The entity that owns this controller
+   protected: Entity *parent;
+ 
++  /// \breif flag to keep controllers updating continuously
++  protected: ParamT<bool> *alwaysOnP;
++
+   /// \brief Update period 
+   protected: double updatePeriod;
+   protected: ParamT<double> *updatePeriodP;
 Index: server/controllers/camera/generic/Generic_Camera.cc
 ===================================================================
 --- server/controllers/camera/generic/Generic_Camera.cc	(revision 7016)
@@ -938,13 +952,33 @@ Index: server/controllers/Controller.cc
 ===================================================================
 --- server/controllers/Controller.cc	(revision 7016)
 +++ server/controllers/Controller.cc	(working copy)
-@@ -75,11 +75,15 @@
+@@ -43,6 +43,7 @@
+ {
+   Param::Begin(&this->parameters);
+   this->nameP = new ParamT<std::string>("name","",1);
++  this->alwaysOnP = new ParamT<bool>("alwaysOn", false, 0);
+   this->updatePeriodP = new ParamT<double>("updateRate", 10, 0);
+   Param::End();
+ 
+@@ -60,6 +61,7 @@
+ {
+   this->Fini();
+   delete this->nameP;
++  delete this->alwaysOnP;
+   delete this->updatePeriodP;
+ }
+ 
+@@ -75,10 +77,17 @@
    this->typeName = node->GetName();
  
    this->nameP->Load(node);
 +
++  this->alwaysOnP->Load(node);
++
    this->updatePeriodP->Load(node);
 -  this->updatePeriod = 1.0 / (this->updatePeriodP->GetValue() + 1e-6);
+ 
+-  this->lastUpdate = -1e6;
 +  double updateRate  = this->updatePeriodP->GetValue();
 +  if (updateRate == 0)
 +    this->updatePeriod = 0.0; // no throttling if updateRate is 0
@@ -952,11 +986,17 @@ Index: server/controllers/Controller.cc
 +    this->updatePeriod = 1.0 / updateRate;
 +  this->lastUpdate   = Simulator::Instance()->GetSimTime();
  
--  this->lastUpdate = -1e6;
--
    childNode = node->GetChildByNSPrefix("interface");
  
-   // Create the interfaces
+@@ -178,7 +187,7 @@
+ /// Update the controller. Called every cycle.
+ void Controller::Update()
+ {
+-  if (this->IsConnected())
++  if (this->IsConnected() || this->alwaysOnP->GetValue())
+   {
+     if (lastUpdate + updatePeriod <= Simulator::Instance()->GetSimTime())
+     {
 Index: server/controllers/ptz/generic/Generic_PTZ.cc
 ===================================================================
 --- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 7016)

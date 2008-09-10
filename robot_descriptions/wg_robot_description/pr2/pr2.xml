@@ -1755,6 +1755,7 @@
           <maxRange>10.0</maxRange>
           <updateRate>10.0</updateRate>
           <controller:ros_laser name="ros_tilt_laser_controller" plugin="libRos_Laser.so">
+            <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>tilt_scan</topicName>
             <frameName>tilt_laser</frameName>
@@ -1816,6 +1817,7 @@
           <maxRange>10.0</maxRange>
           <updateRate>10.0</updateRate>
           <controller:ros_laser name="ros_base_laser_controller" plugin="libRos_Laser.so">
+            <alwaysOn>true</alwaysOn>
 	    <updateRate>10</updateRate>
 	    <topicName>base_scan</topicName>
 	    <frameName>base_laser</frameName>
@@ -1873,6 +1875,7 @@
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
           <controller:ros_camera name="wrist_cam_left_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
 	    <updateRate>15.0</updateRate>
 	    <topicName>image_wrist_left</topicName>
 	    <frameName>wrist_camera_left</frameName>
@@ -1880,6 +1883,7 @@
           </controller:ros_camera>
           <!--
 	      <controller:generic_camera name="wrist_cam_left_controller">
+                <alwaysOn>true</alwaysOn>
 		<updateRate>15.0</updateRate>
 		<interface:camera name="wrist_cam_left_iface_1" />
 	      </controller:generic_camera>
@@ -1936,6 +1940,7 @@
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
           <controller:ros_camera name="wrist_cam_right_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>image_wrist_right</topicName>
             <frameName>wrist_camera_right</frameName>
@@ -1943,6 +1948,7 @@
           </controller:ros_camera>
           <!--
               <controller:generic_camera name="wrist_cam_right_controller">
+                <alwaysOn>true</alwaysOn>
 		<updateRate>15.0</updateRate>
 		<interface:camera name="wrist_cam_right_iface_1" />
               </controller:generic_camera>
@@ -1999,6 +2005,7 @@
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
           <controller:ros_camera name="forearm_cam_left_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>image_forearm_left</topicName>
             <frameName>forearm_roll_left</frameName>
@@ -2056,6 +2063,7 @@
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
           <controller:ros_camera name="forearm_cam_right_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>image_forearm_right</topicName>
             <frameName>forearm_roll_right</frameName>
@@ -2143,6 +2151,7 @@
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
           <controller:ros_camera name="ptz_cam_left_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>PTZL_image</topicName>
             <frameName>ptz_left</frameName>
@@ -2231,6 +2240,7 @@
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
           <controller:ros_camera name="ptz_cam_right_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>PTZR_image</topicName>
             <frameName>ptz_right</frameName>
@@ -2296,6 +2306,7 @@
           <baseline>0.2</baseline>
           <updateRate>15.0</updateRate>
           <controller:stereocamera name="stereo_camera_controller">
+            <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <interface:stereocamera name="stereo_iface_0" />
             <interface:camera name="camera_iface_0" />
