@@ -60,7 +60,7 @@ class DorylusDataset {
   std::string displayYmc();
   void setObjs(const vector<object> &objs);
   bool save(std::string filename);
-  bool load(std::string filename);
+  bool load(std::string filename, bool quiet=false);
   std::string version_string_;
   bool testSave();
 };
@@ -74,7 +74,6 @@ class Dorylus {
   float objective_, objective_prev_, training_err_;
   DorylusDataset *dd_;
   string version_string_;
-  int nWCs_;
   unsigned int nClasses_;
   vector<int> classes_;
 
@@ -85,13 +84,14 @@ class Dorylus {
   float computeObjective();
   void train(int nCandidates, int max_secs, int max_wcs);
   bool save(string filename);
-  bool load(string filename);
+  bool load(string filename, bool quiet=false);
+  std::string status();
   vector<weak_classifier*> findActivatedWCs(const string &descriptor, const NEWMAT::Matrix &pt);
   NEWMAT::Matrix computeDatasetActivations(const weak_classifier& wc, const NEWMAT::Matrix& mmt);
   NEWMAT::Matrix classify(object &obj, NEWMAT::Matrix **confidence = NULL);
   float classify(DorylusDataset &dd);
   
- Dorylus() : dd_(NULL), nWCs_(0), nClasses_(0)
+ Dorylus() : dd_(NULL), nClasses_(0)
     {
       version_string_ = std::string("#DORYLUS CLASSIFIER LOG v0.1");
     }

@@ -62,11 +62,7 @@ public:
     bridge_ = NULL;
     img_ = NULL;
 
-    subscribe("videre/images", images_msg_, &DorylusNode::cbImageArray, 10); 
-    subscribe(ptcld_topic_, ptcld_msg_, &DorylusNode::cbPtcld, 10); 
-    subscribe("videre/cal_params", cal_params_msg_, &DorylusNode::cbCalParams, 10); 
     advertise<std_msgs::VisualizationMarker>("visualizationMarker", 100);
-
 
     colors_.push_back(cvScalar(255,0,0));
     colors_.push_back(cvScalar(0,255,0));
@@ -182,29 +178,39 @@ public:
     float val;
     val = response.Maximum2(label_idx, trash);
     int label = d_.classes_[label_idx-1];
+    char* label_str;
     
     cout << "Response: " << endl << response;
     cout << "Class " << label << endl;  
     cout << "Confidence " << val << endl;
 
-    if(val <= 0) 
+    if(val == 0) 
       return;
 
     // -- Visualize
-    char* label_str;
-    sprintf(label_str,"%d",label);
     CvFont font;
-    double hScale=val;
-    double vScale=val;
-    int    lineWidth=(int)val;
+    double hScale=fabs(val)*.2 + .1;
+    double vScale=fabs(val)*.2 + .1;
+    int    lineWidth=(int)(fabs(val)*.2);
     cvInitFont(&font,CV_FONT_HERSHEY_SIMPLEX, hScale,vScale,0,lineWidth);
-    cvPutText(vis_,label_str,cvPoint(col, row), &font, colors_[label_idx-1]);
+    if(val < 0) {
+      cvPutText(vis_,"-",cvPoint(col, row), &font, cvScalar(30,30,30));
+    }
+    else {
+      sprintf(label_str,"%d",label);
+      cvPutText(vis_,label_str,cvPoint(col, row), &font, colors_[label_idx-1]);
+    }
+
     cvShowImage("Classification Visualization", vis_);
     //cvWaitKey(0);
   }
   
   
   void run(string classifier_file) {
+    subscribe("videre/images", images_msg_, &DorylusNode::cbImageArray, 10); 
+    subscribe(ptcld_topic_, ptcld_msg_, &DorylusNode::cbPtcld, 10); 
+    subscribe("videre/cal_params", cal_params_msg_, &DorylusNode::cbCalParams, 10); 
+
     d_.load(classifier_file);
 
     cout << "Press spacebar to listen for new data, q to quit." << endl;
@@ -365,7 +371,7 @@ public:
     return obj;
   }
 
-  void buildDataset(unsigned int nSamples, vector<string> datafiles, string savename, bool debug=false, int nBG_pts=0)
+  void buildDataset(unsigned int nSamples, vector<string> datafiles, string savename, bool debug=false, int nBG_pts=0, int nRepetitions_per_obj=1)
   {
     vector<object> objs;
 
@@ -392,10 +398,12 @@ public:
 	//cout << "Object " << iSS << ": class " << sls.ss_objs_[iSS].first << ", " << sls.ss_objs_[iSS].second->size() << " points." << endl;
 	SmartScan &ss = *sls.ss_objs_[iSS].second;
 	IplImage &img = *sls.left_;
-	obj = getObject(sls, ss, img, nSamples, debug);
-	obj.label = sls.ss_objs_[iSS].first;
-	cout << "Adding object of class " << obj.label << " with " << obj.features.size() << " descriptors." << endl;
-	objs.push_back(obj);
+	for(int iRep=0; iRep<nRepetitions_per_obj; iRep++) {
+	  obj = getObject(sls, ss, img, nSamples, debug);
+	  obj.label = sls.ss_objs_[iSS].first;
+	  cout << "Adding object of class " << obj.label << " with " << obj.features.size() << " descriptors." << endl;
+	  objs.push_back(obj);
+	}
       }	
 
     }
@@ -515,9 +523,12 @@ int main(int argc, char **argv) {
     if(savename.find(".dd") == savename.npos) {
       cerr << "Savename must have .dd extension.  Did you specify a savename?" << endl;
     }
-    else
-      dn.buildDataset(2, datafiles, savename, false, 5);
-
+    else {
+      int nSamples = 1;
+      int nBG_pts = 1000;
+      int nRepetitions_per_obj = 1000;
+      dn.buildDataset(nSamples, datafiles, savename, false, nBG_pts, nRepetitions_per_obj);
+    }
 //  DorylusDataset dd2;  dd2.load(string("savename.dd"));
 //  dd2.save(string("savename2.dd"));
 //  cout << d.dd_.status() << endl;
@@ -532,13 +543,22 @@ int main(int argc, char **argv) {
     //cout << dn.dd_.displayFeatures() << endl;
     cout << dn.dd_.status() << endl;
     dn.d_.loadDataset(&dn.dd_);
-    dn.train(100, 60*60*10, 10000000);
+    dn.train(100, 60*35, 50);
     dn.d_.save(string(argv[2]));
 
 //     Dorylus d2;
 //     d2.load(argv[2]);
 //     d2.save(string(argv[2]) + "2");
 
+  }
+
+  else if(argc == 3 && !strcmp(argv[1], "--status")) {
+
+    if(dn.dd_.load(string(argv[2]), true))
+      cout << dn.dd_.status() << endl;
+
+    if(dn.d_.load(string(argv[2]), true))
+      cout << dn.d_.status() << endl;
   }
 
   else if(argc == 3 && !strcmp(argv[1], "--run")) {

@@ -81,6 +81,21 @@ string DorylusDataset::displayFeatures() {
 }
   
 
+std::string Dorylus::status()
+{
+  ostringstream oss (ostringstream::out);
+  oss << version_string_ << " status: \n";
+  oss << "  nWeakClassifier: " << pwcs_.size() << endl;
+  map<string, vector<weak_classifier> >::iterator it;
+  oss << "  weak classifiers: \n";
+  for(it=battery_.begin(); it != battery_.end(); it++) {
+    oss << "    " << it->first << ": " << it->second.size() << " weak classifiers." << endl;
+  }
+  return oss.str();
+}
+
+
+
 std::string DorylusDataset::status()
 {
   ostringstream oss (ostringstream::out);
@@ -148,19 +163,21 @@ bool DorylusDataset::save(string filename)
   return true; 
 }
 
-bool DorylusDataset::load(string filename) 
+bool DorylusDataset::load(string filename, bool quiet) 
 {
   ifstream f;
   f.open(filename.c_str());
   if(f.fail()) {
-    cerr << "Failed to open file " << filename << endl;
+    if(!quiet)
+      cerr << "Failed to open file " << filename << endl;
     return false;
   }
 
   string line;
   getline(f, line);
   if(line.compare(version_string_) != 0) {
-    cerr << "Log " << filename << " is of the wrong type!" << endl;
+    if(!quiet)
+      cerr << "Log " << filename << " is of the wrong type!" << endl;
     return false;
   }
 
@@ -318,20 +335,23 @@ bool Dorylus::save(string filename)
 }
 
 
-bool Dorylus::load(string filename) 
+bool Dorylus::load(string filename, bool quiet) 
 {
   ifstream f;
   f.open(filename.c_str());
   if(f.fail()) {
-    cerr << "Failed to open file " << filename << endl;
+    if(!quiet)
+      cerr << "Failed to open file " << filename << endl;
     return false;
   }
 
   string line;
   getline(f, line);
   if(line.compare(version_string_) != 0) {
-    cerr << "Log " << filename << " is of the wrong type!" << endl;
-    cerr << "First line is: " << line << " instead of " << version_string_ << endl;
+    if(!quiet) {
+      cerr << "Log " << filename << " is of the wrong type!" << endl;
+      cerr << "First line is: " << line << " instead of " << version_string_ << endl;
+    }
     return false;
   }
 
@@ -362,8 +382,8 @@ bool Dorylus::load(string filename)
       if(pwc) {
 	battery_[pwc->descriptor].push_back(*pwc);
 	pwcs_.push_back(&battery_[pwc->descriptor].back());
-	cout << "Stored new wc." << endl;
-	cout << displayWeakClassifier(*pwc);
+	// cout << "Stored new wc." << endl;
+// 	cout << displayWeakClassifier(*pwc);
 	delete pwc; pwc = NULL;
       }	
       else {
@@ -489,7 +509,8 @@ void Dorylus::train(int nCandidates, int max_secs, int max_wcs) {
   cout << "Objective (from classify()): " << classify(*dd_) << endl;
   int wcs=0;
   while(true) {
-    learnWC(nCandidates);
+    if(!learnWC(nCandidates))
+      continue;
     wcs++;
     time(&end);
     cout << "Objective: " << computeObjective() << endl;
@@ -506,34 +527,58 @@ void Dorylus::train(int nCandidates, int max_secs, int max_wcs) {
 }
 
 bool Dorylus::learnWC(int nCandidates) {
-  int nThetas = 500;
+  int nThetas = 100;
   assert(dd_!=0);
   weak_classifier best;
   time_t start, end;
   time(&start);
 
-  // -- Choose wc candidates from the distribution of weights over the objects.
+  // -- Get a weights matrix that does not include the bg pts.
+  map<int, unsigned int>:: iterator it = dd_->num_class_objs_.begin();
+  int nNonBGObjs = 0;
+  for(; it != dd_->num_class_objs_.end(); it++) {
+    if(it->first == 0)
+      continue;
+    nNonBGObjs += it->second;
+  }
+  Matrix non_bg_weights = Matrix(nClasses_, nNonBGObjs);
+  int m=0;
+  for(int col=1; col<=nNonBGObjs; col++) {
+    while(dd_->objs_[m].label==0) {
+      m++;
+    }
+    non_bg_weights.Column(col) = weights_.Column(m+1);
+    m++;
+  }
 
+//   cout << weights_;
+//   cout << "nbgw" << endl;
+//   cout << non_bg_weights;
+//   cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+  // -- Choose wc candidates from the distribution of weights over the objects.
   vector<weak_classifier> cand;
   for(int iCand=0; iCand<nCandidates; iCand++) {
     //cout << "Constructing candidate " << iCand << endl;
-    float dice = (float)rand() / (float)RAND_MAX * weights_.Sum(); //The weights aren't necessarily normalized.
+    float dice = (float)rand() / (float)RAND_MAX * non_bg_weights.Sum(); //The weights aren't necessarily normalized.
     //cout << "dice " << dice << endl;
     Matrix &ws = weights_;
     //cout << ws << endl;
     float w = 0.0;
     int obj_id=-1;
     for(int i=0; i<ws.Ncols(); i++) {
+      if(dd_->objs_[i].label == 0)
+	continue;
       w = ws.Column(i+1).Sum();
       dice -= w;
       //cout << "dice " << dice << endl;
-      if(dice < 0) {
+      if(dice <= 0) {
 	obj_id = i;
 	break;
       }
     }
     assert(obj_id >= 0);
-    //cout << "Picking from obj " << obj_id << endl;
+    //cout << "Picking from obj " << obj_id << " with label " << dd_->objs_[obj_id].label << endl;
 
     //Get a random descriptor.
     map<string, Matrix> &ft = dd_->objs_[obj_id].features;
@@ -562,7 +607,7 @@ bool Dorylus::learnWC(int nCandidates) {
   cout << "Added " << nCandidates << " candidate wcs" << endl;
 
   // -- For all candidates, try several thetas and get their utilities.
-  Matrix *best_weights, *pweights=NULL;
+  Matrix best_weights, *pweights=NULL;
   Matrix **ppweights = &pweights;
   float objective = computeObjective();
   float max_util = 0.0;
@@ -631,6 +676,12 @@ bool Dorylus::learnWC(int nCandidates) {
 	  cand[i].vals(c+1,1) = 0;
 	else
 	  cand[i].vals(c+1,1) = numerator / denominator;
+
+	// Non-negative responses test.
+// 	if(cand[i].vals(c+1,1) < 0) {
+// 	  cand[i].vals(c+1,1) = 0;
+// 	}
+
       }
 
       //Get the utility.
@@ -639,19 +690,15 @@ bool Dorylus::learnWC(int nCandidates) {
 
       //cout << "  Theta " << cand[i].theta << ": objective " << objective << ",  new_objective " << new_objective << ", max_util " << max_util << ", util " << util;
       //If this is the best wc so far, save it.
-      if(util >= max_util) {
+      if(util > max_util) {
 	//cout << "***" << endl;
 	found_better = true;
 	max_util = util;
 	best = cand[i];
-	best_weights = *ppweights;
+	best_weights = **ppweights;
 	best_mmt = mmt;
       }
-      else {
-	delete *ppweights; *ppweights = NULL;
-	//cout << endl;
-      }
-
+      delete *ppweights; *ppweights = NULL;
     }
     //cout << "WC " << i <<": Tried " << nThetas << " thetas, max utility is " << max_util << endl;
     cout << "."; cout.flush();
@@ -663,7 +710,7 @@ bool Dorylus::learnWC(int nCandidates) {
     return false;
   }
   // -- Add the best to the strong classifier.
-  best.id = nWCs_++;
+  best.id = pwcs_.size()+1;
   battery_[best.descriptor].push_back(best);
   pwcs_.push_back(&battery_[best.descriptor].back());
 
@@ -678,7 +725,7 @@ bool Dorylus::learnWC(int nCandidates) {
   cout << "WC encompasses at least one point from " << nObjs_encompassed << " out of " << best_mmt.Ncols() << " objects." << endl;
 
   // -- Update the weights.
-  weights_ = *best_weights;
+  weights_ = best_weights;
   delete *ppweights; *ppweights = NULL;
   return true;
 }
@@ -716,18 +763,23 @@ Matrix Dorylus::computeDatasetActivations(const weak_classifier& wc, const Matri
 float Dorylus::computeNewObjective(const weak_classifier& wc, const Matrix& mmt, Matrix** new_weights) {
   Matrix weights = weights_;
   Matrix act = computeDatasetActivations(wc, mmt);
-
+  
+  float new_weight;
   for(unsigned int c=0; c<dd_->nClasses_; c++) {
     for(unsigned int m=0; m<dd_->objs_.size(); m++) {
-      weights(c+1, m+1) = weights(c+1, m+1) * exp(-dd_->ymc_(c+1, m+1) * act(c+1,m+1));
-      if(weights(c+1, m+1) < 0) {
+      new_weight = weights(c+1, m+1) * exp(-dd_->ymc_(c+1, m+1) * act(c+1,m+1));
+      if(new_weight < 0) {
 	cerr << "One of the weights is negative!" << endl;
 	exit(0);
       }
-      if(weights(c+1, m+1) == 0) {
-	cerr << "One of the weights is zero!" << endl;
+      else if(new_weight == 0) {
+// 	cerr << "One of the weights is zero! Obj " << m << ", label " << classes_[c] << ", nPts in this obj: " << dd_->objs_[m].features.begin()->second.Ncols();
+// 	cerr << "  Old weight was " << weights(c+1, m+1) << ", ymc was " << dd_->ymc_(c+1,m+1) << " act was " << act(c+1, m+1) << " and FLT_MIN is " << FLT_MIN << endl;
 	weights(c+1, m+1) = FLT_MIN;
       }
+      else
+	weights(c+1, m+1) = new_weight;
+	
     }
   }
 
