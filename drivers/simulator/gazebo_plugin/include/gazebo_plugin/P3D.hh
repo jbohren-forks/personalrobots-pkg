@@ -103,6 +103,10 @@ namespace gazebo
       // FIXME: extract link name directly?
       private: std::string frameName;
 
+      // allow specifying constant xyz and rpy offsets
+      private: Vector3 xyzOffsets;
+      private: Vector3 rpyOffsets;
+
       // A mutex to lock access to fields that are used in message callbacks
       private: ros::thread::mutex lock;
 

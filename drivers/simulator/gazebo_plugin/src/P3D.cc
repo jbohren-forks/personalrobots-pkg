@@ -85,6 +85,8 @@ void P3D::LoadChild(XMLConfigNode *node)
 
   this->topicName = node->GetString("topicName", "", 1);
   this->frameName = node->GetString("frameName", "", 1);
+  this->xyzOffsets  = node->GetVector3("xyzOffsets", Vector3(0,0,0));
+  this->rpyOffsets  = node->GetVector3("rpyOffsets", Vector3(0,0,0));
 
   std::cout << "==== topic name for P3D ======== " << this->topicName << std::endl;
   rosnode->advertise<std_msgs::Pose3DStamped>(this->topicName);
@@ -102,11 +104,20 @@ void P3D::UpdateChild()
 {
   Quatern rot;
   Vector3 pos;
+
+  // apply xyz offsets
+  pos = this->myBody->GetPosition() + this->xyzOffsets;
+
+  // apply rpy offsets
+  Vector3 rpyTotal;
+  rot = this->myBody->GetRotation();
+  rpyTotal.x = this->rpyOffsets.x + rot.GetRoll();
+  rpyTotal.y = this->rpyOffsets.y + rot.GetPitch();
+  rpyTotal.z = this->rpyOffsets.z + rot.GetYaw();
+  rot.SetFromEuler(rpyTotal);
+
   this->myIface->Lock(1);
   this->myIface->data->head.time = Simulator::Instance()->GetSimTime();
-
-  pos = this->myBody->GetPosition();
-  rot =  this->myBody->GetRotation();
   
   this->myIface->data->pose.pos.x = pos.x;
   this->myIface->data->pose.pos.y = pos.y;

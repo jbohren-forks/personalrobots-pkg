@@ -162,6 +162,9 @@ void Ros_PTZ::SaveChild(std::string &prefix, std::ostream &stream)
 // Initialize the controller
 void Ros_PTZ::InitChild()
 {
+  // initialize pan/tilt angles
+  this->cmdPan  = 0.0;
+  this->cmdTilt = 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
