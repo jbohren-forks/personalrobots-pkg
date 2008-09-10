@@ -997,6 +997,17 @@ Index: server/controllers/Controller.cc
    {
      if (lastUpdate + updatePeriod <= Simulator::Instance()->GetSimTime())
      {
+@@ -210,6 +219,10 @@
+ {
+   std::vector<Iface*>::const_iterator iter;
+ 
++  // if the alwaysOn flag is true, this controller is connected
++  if (this->alwaysOnP->GetValue())
++    return true;
++
+   for (iter=this->ifaces.begin(); iter!=this->ifaces.end(); iter++)
+   {
+     if ((*iter)->GetOpenCount() > 0)
 Index: server/controllers/ptz/generic/Generic_PTZ.cc
 ===================================================================
 --- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 7016)

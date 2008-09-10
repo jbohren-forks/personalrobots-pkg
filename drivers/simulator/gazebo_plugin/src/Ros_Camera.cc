@@ -107,7 +107,9 @@ void Ros_Camera::InitChild()
 void Ros_Camera::UpdateChild()
 {
 
-  this->PutCameraData();
+  // do this first so there's chance for sensor to run 1 frame after activate
+  if (this->myParent->IsActive())
+    this->PutCameraData();
 #if 0
   // do this first so there's chance for sensor to run 1 frame after activate
   if (this->myParent->IsActive())
@@ -181,6 +183,7 @@ void Ros_Camera::PutCameraData()
   src = this->myParent->GetImageData(0);
   dst = data->image;
 
+  //std::cout << " updating camera " << this->topicName << " " << data->image_size << std::endl;
   // TODO: can skip copy to Iface if Iface is not used
   if (src)
   {
