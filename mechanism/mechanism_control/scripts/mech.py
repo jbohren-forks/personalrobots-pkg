@@ -35,3 +35,5 @@ if __name__ == '__main__':
         mechanism.spawn_controller(xml)
     elif sys.argv[1] == 'kl':
         mechanism.kill_controller(sys.argv[2])
+    elif sys.argv[1] == 'shutdown':
+        mechanism.shutdown()
