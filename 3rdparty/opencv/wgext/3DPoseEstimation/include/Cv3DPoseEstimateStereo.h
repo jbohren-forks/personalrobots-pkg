@@ -19,7 +19,12 @@ using namespace cv;
 #include <star_detector/include/detector.h>
 
 // Calonder descriptor
-//#include <calonder_descriptor/include/signature.h>
+// Not defining NDEBUG reveals an issue in Boost (instantiation problem)
+#ifndef NDEBUG
+#define NDEBUG
+#include <calonder_descriptor/include/signature.h>
+#undef NDEBUG
+#endif
 #include <calonder_descriptor/include/matcher.h>
 #include <calonder_descriptor/include/rtree_classifier.h>
 using namespace features;

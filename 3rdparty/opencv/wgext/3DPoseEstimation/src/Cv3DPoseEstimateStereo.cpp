@@ -18,7 +18,6 @@ using namespace std;
 // boost
 #include <boost/foreach.hpp>
 #include <cassert>
-//using namespace boost::numeric::ublas;
 
 // star detector
 #include <star_detector/include/detector.h>

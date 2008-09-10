@@ -30,23 +30,7 @@ public:
 				vector<Keypoint>& keypoints, CvMat& rot, CvMat& shift,
 				int numTrackablePair,
 				int numInliers, int frameIndex,
-				const WImageBuffer3_b* imageC3a, CvMat* inliers0, CvMat* inliers1){
-			mRot   = cvMat(3, 3, CV_64FC1, _mRot);
-			mShift = cvMat(3, 1, CV_64FC1, _mShift);
-			mImage.CloneFrom(image);
-			mDispMap.CloneFrom(dispMap);
-			mKeypoints  = keypoints;
-			cvCopy(&rot,   &mRot);
-			cvCopy(&shift, &mShift);
-			mNumTrackablePairs = numTrackablePair;
-			mNumInliers = numInliers;
-			mFrameIndex = frameIndex;
-
-			if (imageC3a)
-			  mImageC3a.CloneFrom(*imageC3a);
-			mInliers0 = cvCloneMat(inliers0);
-			mInliers1 = cvCloneMat(inliers1);
-		}
+				const WImageBuffer3_b* imageC3a, CvMat* inliers0, CvMat* inliers1);
 		WImageBuffer1_b   mImage;
 		WImageBuffer1_16s mDispMap;
 		vector<Keypoint>  mKeypoints;
