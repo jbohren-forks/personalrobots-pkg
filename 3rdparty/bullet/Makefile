@@ -10,7 +10,7 @@ include $(shell rospack find mk)/download_unpack.mk
 bullet: $(SOURCE_DIR)
 	mkdir -p src
 	cd $(SOURCE_DIR) && cmake .
-	make -C $(SOURCE_DIR) 
+	make -C $(SOURCE_DIR) LibLinearMath
 	touch bullet
 clean:
 	rm -rf src $(SOURCE_DIR)
