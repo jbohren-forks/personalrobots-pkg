@@ -864,4 +864,22 @@ void EnvironmentNAV2D::PrintTimeStat(FILE* fOut)
 }
 
 
+void EnvironmentNAV2D::GetPredsofChangedEdges(vector<nav2dcell_t>* changedcellsV, vector<int> *preds_of_changededgesIDV)
+{
+	nav2dcell_t cell;
+
+	for(int i = 0; i < changedcellsV->size(); i++)
+	{
+		cell = changedcellsV->at(i);
+		preds_of_changededgesIDV->push_back(GetStateFromCoord(cell.x,cell.y));
+		for(int j = 0; j < 8; j++){
+			int affx = cell.x + EnvNAV2DCfg.dXY[j][0];
+			int affy = cell.y + EnvNAV2DCfg.dXY[j][1];
+			if(affx < 0 || affx >= EnvNAV2DCfg.EnvWidth_c || affy < 0 || affy >= EnvNAV2DCfg.EnvHeight_c)
+				continue;
+			preds_of_changededgesIDV->push_back(GetStateFromCoord(affx,affy));
+		}
+	}
+}
+
 //------------------------------------------------------------------------------

@@ -160,7 +160,8 @@ int planandnavigate2d(int argc, char *argv[])
 	bool bPrint = true;
 	int x,y;
 	vector<int> preds_of_changededgesIDV;
-
+	vector<nav2dcell_t> changedcellsV;
+	nav2dcell_t nav2dcell;
 
 	srand(0);
 
@@ -225,6 +226,7 @@ int planandnavigate2d(int argc, char *argv[])
         //simulate sensor data update
         bool bChanges = false;
 		preds_of_changededgesIDV.clear();
+		changedcellsV.clear();
         for(i = 0; i < 8; i++){
             int x = startx + dx[i];
             int y = starty + dy[i];
@@ -236,17 +238,13 @@ int planandnavigate2d(int argc, char *argv[])
                 environment_nav2D.UpdateCost(x,y,true_map[index]);
                 printf("setting cost[%d][%d] to %d\n", x,y,true_map[index]);
                 bChanges = true;
-				//store the affected states
-				preds_of_changededgesIDV.push_back(environment_nav2D.GetStateFromCoord(x,y));
-				for(int j = 0; j < 8; j++){
-					int affx = x + dx[j];
-					int affy = y + dy[j];
-					if(affx < 0 || affx >= size_x || affy < 0 || affy >= size_y)
-						continue;
-					preds_of_changededgesIDV.push_back(environment_nav2D.GetStateFromCoord(affx,affy));
-				}
+				//store the changed cells
+				nav2dcell.x = x;
+				nav2dcell.y = y;
+				changedcellsV.push_back(nav2dcell);
             }
         }
+		
 
 		//print the map
 		int startindex = startx + starty*size_x;
@@ -266,8 +264,12 @@ int planandnavigate2d(int argc, char *argv[])
 		if(bPrint) system("pause");
 
         if(bChanges){
-            //planner.costs_changed(); //use by ARA* planner
-			planner.update_preds_of_changededges(&preds_of_changededgesIDV); //use by AD* planner
+            //planner.costs_changed(); //use by ARA* planner (non-incremental)
+
+			//get the affected states
+			environment_nav2D.GetPredsofChangedEdges(&changedcellsV, &preds_of_changededgesIDV);
+			//let know the incremental planner about them
+			planner.update_preds_of_changededges(&preds_of_changededgesIDV); //use by AD* planner (incremental)
         }
 
 

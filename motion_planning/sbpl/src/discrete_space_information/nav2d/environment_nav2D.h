@@ -63,6 +63,12 @@ typedef struct ENVHASHENTRY
 } EnvNAV2DHashEntry_t;
 
 
+typedef struct NAV2D_CELL
+{
+	int x;
+	int y;
+}nav2dcell_t;
+
 //variables that dynamically change (e.g., array of states, ...)
 typedef struct
 {
@@ -111,6 +117,7 @@ public:
     int SetStart(int x, int y);
     int SetGoal(int x, int y);
     bool UpdateCost(int x, int y, int new_status);
+	void GetPredsofChangedEdges(vector<nav2dcell_t>* changedcellsV, vector<int> *preds_of_changededgesIDV);
 
 	void SetConfiguration(int width, int height,
 			      char* mapdata,
