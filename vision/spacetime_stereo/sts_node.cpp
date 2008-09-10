@@ -24,9 +24,9 @@
 #define SUBPIXEL 16
 #define FILTERS
 
-#define RADIUS 3
-#define MAXDISP 110
-#define NIMAGES 20
+#define RADIUS 2
+#define MAXDISP 80
+#define NIMAGES 30
 
 struct calib_params{
 
@@ -627,6 +627,10 @@ if( disp[j*w+i] > 0) {
 ros_cloud.header.frame_id = "FRAMEID_SMALLV";
 publish("spacetime_stereo", ros_cloud);
 
+signal(SIGUSR1, toggle_wait);
+
+//#ifdef DISPLAY
+
 IplImage *idisp = cvCreateImage(cvSize(w, h), 8, 3);
 cvZero(idisp);
 
@@ -645,11 +649,11 @@ for(int x=MAXDISP+RADIUS+1; x<w-RADIUS; x++){
 }}
 
 printf("Done; press q to quit, other key to continue.. \n");
+
 cvShowImage("Disp Image", idisp);
 cvShowImage("Ref Image", left_frames[0]);
+cvReleaseImage(&idisp);
 
-signal(SIGUSR1, toggle_wait);
-	
 wait = 1;
 int key = 'a';
 while(wait){
@@ -659,10 +663,7 @@ while(wait){
 	if (key=='q')
 		exit(1);
 }
-
-
-
-cvReleaseImage(&idisp);
+//#else
 
 system("killall -s USR1 lpg");
 
@@ -679,8 +680,10 @@ system("killall -s USR1 lpg");
 
 int main(int argc, char **argv){
 
+//#ifdef DISPLAY
 cvNamedWindow("Disp Image", 1);
 cvNamedWindow("Ref Image", 1);
+//#endif
 
 	ros::init(argc, argv);
 	SpacetimeStereoNode sts;
@@ -697,8 +700,10 @@ cvNamedWindow("Ref Image", 1);
 // 	m_rosNode = new ros::node( ss.str() );
 // 	m_rosNode->advertise<std_msgs::PointCloudFloat32>("full_cloud", 5);
 
+//#ifdef DISPLAY
 cvDestroyWindow("Disp Image");
 cvDestroyWindow("Ref Image");
+//#endif
 
 return 0;
 
