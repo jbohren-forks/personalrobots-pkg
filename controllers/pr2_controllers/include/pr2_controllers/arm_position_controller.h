@@ -52,6 +52,9 @@
 #include <pr2_controllers/SetCartesianPosCmd.h>
 #include <pr2_controllers/GetCartesianPosCmd.h>
 
+#include <pr2_controllers/SetJointTarget.h>
+#include <pr2_controllers/JointPosCmd.h>
+
 //Kinematics
 #include <robot_kinematics/robot_kinematics.h>
 
@@ -63,11 +66,11 @@ namespace controller
 
   // The maximum number of joints expected in an arm.
   static const int MAX_ARM_JOINTS = 7;
-
+  
   class ArmPositionController : public Controller
   {
     public:
-
+  
   /*!
      * \brief Default Constructor of the JointController class.
      *
@@ -84,7 +87,7 @@ namespace controller
        *
    */
       bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-
+  
   /*!
        * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
        *
@@ -98,12 +101,14 @@ namespace controller
        * \param double pos Position command to issue
    */
     void setJointPosCmd(std::vector<double> &req_goals_);
+    
+    void setJointPosCmd(const pr2_controllers::JointPosCmd & cmd);
 
   /*!
        * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
    */
           void getJointPosCmd(pr2_controllers::GetJointPosCmd::response &resp);
-
+          
           void getCurrentConfiguration(std::vector<double> &);
   /*!
        * \brief Issues commands to the joint. Should be called at regular intervals
@@ -117,19 +122,28 @@ namespace controller
       void getJointGains(pr2_controllers::GetJointGains::response &resp);
 
       controller::JointPositionController* getJointControllerByName(std::string name);
+      
+      bool goalAchieved;
 
     private:
 
-      std::vector<JointPositionController *> joint_position_controllers_;
+      std::vector<JointPositionController *> joint_position_controllers_;     
 
       // Goal of the joints
       std::vector<double> goals_;
       // Goal of the joints - used by the realtime code only
-      std::vector<double> goals_rt_;
+      std::vector<double> goals_rt_; 
 
-      mechanism::RobotState* robot_;
+      // Error margins of the goals. If set to <=0, they are not enforced
+      std::vector<double> error_margins_;
+      
+      mechanism::Robot* robot_;
 
       void updateJointControllers(void);
+      
+      int getJointControllerPosByName(std::string name);
+      
+      void checkForGoalAchieved_(void);
 
   };
 
@@ -153,32 +167,26 @@ namespace controller
 
       void setJointPosCmd(std::vector<double> &req_goals_);
 
+      bool setSingleTargetCmd(const pr2_controllers::JointPosCmd & cmd);
+
       // Services
       bool setJointPosCmd(pr2_controllers::SetJointPosCmd::request &req,
                       pr2_controllers::SetJointPosCmd::response &resp);
 
       bool getJointPosCmd(pr2_controllers::GetJointPosCmd::request &req,
                       pr2_controllers::GetJointPosCmd::response &resp);
-      /** \brief sets the command to a cartesian position
-       *  \return always true
-      **/
-      bool setCartesianPosCmd(pr2_controllers::SetCartesianPosCmd::request &req,
-                      pr2_controllers::SetCartesianPosCmd::response &resp);
+      
+      bool jointPosCmd(pr2_controllers::SetJointTarget::request &req,
+                       pr2_controllers::SetJointTarget::response &resp);
+    
+//       bool setJointGains(pr2_controllers::SetJointGains::request &req,
+//                                                     pr2_controllers::SetJointGains::response &resp);
 
-      /** \brief gets the cartesian positon of the gripper
-       *  \return always true
-       **/
-      bool getCartesianPosCmd(pr2_controllers::GetCartesianPosCmd::request &req,pr2_controllers::GetCartesianPosCmd::response &resp);
+//       bool getJointGains(pr2_controllers::GetJointGains::request &req,
+//                                                     pr2_controllers::GetJointGains::response &resp);
 
-      bool setJointGains(pr2_controllers::SetJointGains::request &req,
-                                                    pr2_controllers::SetJointGains::response &resp);
-
-      bool getJointGains(pr2_controllers::GetJointGains::request &req,
-                                                    pr2_controllers::GetJointGains::response &resp);
     private:
       ArmPositionController *c_;
-      robot_kinematics::RobotKinematics pr2_kin_;
-      robot_kinematics::SerialChain * arm_chain_;
 
   };
 
