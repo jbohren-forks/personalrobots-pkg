@@ -241,7 +241,7 @@ public:
 	if (ros::service::call("plan_kinematic_path_position", req, res))
 	{
 	    printPath(res.path, res.distance);
-	    sendDisplay(res.path, req.params.model_id);
+	    sendDisplay(req.start_state, res.path, req.params.model_id);
 	    verifyPath(req.start_state, req.constraints, res.path, req.params.model_id);
 	    sendCommand(res.path, req.params.model_id);	    
 	}
@@ -256,7 +256,7 @@ public:
 	if (ros::service::call("plan_kinematic_path_state", req, res))
 	{
 	    printPath(res.path, res.distance);
-	    sendDisplay(res.path, req.params.model_id);
+	    sendDisplay(req.start_state, res.path, req.params.model_id);
 	    verifyPath(req.start_state, req.constraints, res.path, req.params.model_id);
 	    sendCommand(res.path, req.params.model_id);
 	}
@@ -298,11 +298,12 @@ public:
 	}
     }
     
-    void sendDisplay(robot_msgs::KinematicPath &path, const std::string &model)
+    void sendDisplay(robot_msgs::KinematicState &start, robot_msgs::KinematicPath &path, const std::string &model)
     {
 	robot_msgs::DisplayKinematicPath dpath;
 	dpath.frame_id = "FRAMEID_MAP";
-	dpath.name = model;
+	dpath.model_name = model;
+	dpath.start_state = start;
 	dpath.path = path;
 	publish("display_kinematic_path", dpath);
     }
@@ -312,7 +313,7 @@ public:
 	// create the service request 
 	//	return;
 	
-	const double margin_fraction = 0.1;
+	//	const double margin_fraction = 0.1;
 	
 	planning_models::KinematicModel::StateParams *state = m_kmodel->newStateParams();
 	pr2_controllers::SetJointTarget::request req;
