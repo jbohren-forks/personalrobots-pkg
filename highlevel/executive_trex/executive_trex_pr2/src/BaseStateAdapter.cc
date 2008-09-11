@@ -1,30 +1,24 @@
-#include "BaseStateAdapter.hh"
+#include "ROSStateAdapter.hh"
 #include "IntervalDomain.hh"
+#include <std_msgs/RobotBase2DOdom.h>
 
 namespace TREX {
 
-  void BaseStateAdapter::handleCallback(){
-    ROSAdapter::handleCallback();
-  }
+  class BaseStateAdapter: public ROSStateAdapter<std_msgs::RobotBase2DOdom> {
+  public:
+    BaseStateAdapter(const LabelStr& agentName, const TiXmlElement& configData)
+      : ROSStateAdapter<std_msgs::RobotBase2DOdom> ( agentName, configData) {
+    }
 
-  void BaseStateAdapter::registerSubscribers(){
-    m_node->registerSubscriber("localizedpose", m_msgRobotBase2DOdom, &BaseStateAdapter::handleCallback, this, QUEUE_MAX());
-  }
+    virtual ~BaseStateAdapter(){}
 
-  /**
-   * @brief This method assumes the lock has been aquired.
-   */
-  void BaseStateAdapter::getObservations(std::vector<Observation*>& obsBuffer){
-    double x, y, th;
-    x = m_msgRobotBase2DOdom.pos.x;
-    y = m_msgRobotBase2DOdom.pos.y;
-    th= m_msgRobotBase2DOdom.pos.th;
-    ObservationByValue* obs = new ObservationByValue("baseState", "BaseState.Holds");
-    obs->push_back("x", new IntervalDomain(x));
-    obs->push_back("y", new IntervalDomain(y));
-    obs->push_back("th",new IntervalDomain(th));
-    obsBuffer.push_back(obs);
-  }
+  private:
+    void fillObservationParameters(ObservationByValue* obs){
+      obs->push_back("x", new IntervalDomain(stateMsg.pos.x));
+      obs->push_back("y", new IntervalDomain(stateMsg.pos.y));
+      obs->push_back("th",new IntervalDomain(stateMsg.pos.th));
+    }
+  };
 
   // Allocate a Factory
   TeleoReactor::ConcreteFactory<BaseStateAdapter> l_BaseStateAdapter_Factory("BaseStateAdapter");

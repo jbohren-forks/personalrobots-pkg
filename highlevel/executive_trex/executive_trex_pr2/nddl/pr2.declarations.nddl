@@ -36,8 +36,6 @@
 
 typedef int [0 5] PRIORITY; /* Used to assign a priority to goals */
 
-typedef float [0.0 +inff] PFLOAT;
-
 float BASE_POSITION_ERROR = 1.0;
 float ANGLE_ERROR = .2;
 float END_EFFECTOR_POSITION_ERROR = 0.01;
@@ -55,8 +53,8 @@ float CLOSED_GRIPPER_FORCE = 200.0;
  */
 class BaseState extends AgentTimeline {
 	predicate Holds{
-		PFLOAT x;
-		PFLOAT y;
+		float x;
+		float y;
 		float th;
 	}
 
@@ -139,22 +137,69 @@ class Behavior extends AgentTimeline {
  */
 class MoveBase extends Behavior {
   predicate Inactive{
-    PFLOAT x;
-    PFLOAT y;
+    float x;
+    float y;
     float th;
-    PFLOAT desX;
-    PFLOAT desY;
+    float desX;
+    float desY;
     float desTh;
   }
 
   // Parameters to get to the target
   predicate Active{
-    PFLOAT x;
-    PFLOAT y;
+    float x;
+    float y;
     float th;
   }
 
   MoveBase(Mode _mode){
     super(_mode);
+  }
+};
+
+/**
+ * MoveArm behavior will handle active control to move the arm to a desired joint configuration
+ */
+class MoveArm extends Behavior {
+
+  bool isLeft; // True if this is for the left arm, else false.
+  
+  predicate Inactive{
+    float turretAngle;
+    float shoulderLiftAngle;
+    float upperarmRollAngle;
+    float elbowAngle;
+    float forearmRollAngle;
+    float wristPitchAngle;
+    float wristRollAngle;
+    float gripperForceCmd;
+    float gripperGapCmd;
+
+    float desTurretAngle;
+    float desShoulderLiftAngle;
+    float desUpperarmRollAngle;
+    float desElbowAngle;
+    float desForearmRollAngle;
+    float desWristPitchAngle;
+    float desWristRollAngle;
+    float desGripperForceCmd;
+    float desGripperGapCmd;
+  }
+
+  predicate Active {
+    float turretAngle;
+    float shoulderLiftAngle;
+    float upperarmRollAngle;
+    float elbowAngle;
+    float forearmRollAngle;
+    float wristPitchAngle;
+    float wristRollAngle;
+    float gripperForceCmd;
+    float gripperGapCmd;
+  }
+  
+  MoveArm(Mode _mode, bool _isLeft){
+    super(_mode, "Inactive");
+    isLeft = _isLeft;
   }
 };

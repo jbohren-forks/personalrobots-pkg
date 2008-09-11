@@ -2,7 +2,6 @@
 #define H_ROSNode
 
 #include "Observer.hh"
-#include <pthread.h>
 
 // roscpp
 #include <ros/node.h>
@@ -30,9 +29,6 @@ namespace TREX{
     ROSNode();
 
     ~ROSNode();
-
-    void lock();
-    void unlock();
 
     template<class T> 
     void registerPublisher(const std::string &topic, size_t max_queue){
@@ -63,7 +59,6 @@ namespace TREX{
     static ROSNodeId s_id;
     ROSNodeId m_id;
     unsigned int m_refCount;
-    pthread_mutex_t m_lock; /*!< Protect access to buffers */
   };
 }
 

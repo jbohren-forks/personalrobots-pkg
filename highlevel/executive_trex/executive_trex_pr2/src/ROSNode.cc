@@ -49,7 +49,6 @@ namespace TREX {
     debugMsg("ROSNode:Create", "ROSNode created.");
     s_id = m_id; 
     m_refCount = 0;
-    pthread_mutex_init(&m_lock, NULL);
     debugMsg("ROSNode:Create", "Done with ROSNODE::constructor.");
   }
 
@@ -73,13 +72,5 @@ namespace TREX {
   bool ROSNode::decRef() {
     m_refCount--;
     return m_refCount == 0;
-  }
-
-  void ROSNode::lock(){
-    pthread_mutex_lock(&m_lock);
-  }
-
-  void ROSNode::unlock(){
-    pthread_mutex_unlock(&m_lock);
   }
 }

@@ -18,16 +18,15 @@ namespace TREX {
 		ACTIVE};
 
     BaseControllerAdapter(const LabelStr& agentName, const TiXmlElement& configData);
+
     virtual ~BaseControllerAdapter(){}
 
   private:
     // Message and message handler for base odometry observations
     void handleCallback();
-    void handleRequest(const TokenId& goal);
-    void handleRecall(const TokenId& goal);
     void registerSubscribers();
     void registerPublishers();
-    void getObservations(std::vector<Observation*>& obsBuffer);
+    Observation* getObservation();
     void dispatchRequest(const TokenId& goal, bool enabled);
 
     std_msgs::Planner2DState m_msgPlanner2DState;

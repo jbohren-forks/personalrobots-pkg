@@ -59,11 +59,54 @@ MoveBase::Inactive {
   // Require actual and desired values to be within some tolerance
   addEq(x, [-1.5, 1.5], desX);
   addEq(y, [-1.5, 1.5], desY);
-  float dt;
-  calcAngleDiff(dt, th, desTh);
-  addEq(dt, [-.25, .25], 0);
+  addEq(th, [-.25, .25], desTh);
 }
 
 MoveBase::Active{
  default(th, 0.0);
+}
+
+MoveArm::Inactive{
+  met_by(Active p);
+
+  if(desTurretAngle){
+    if(desShoulderLiftAngle){
+      if(desUpperarmRollAngle){
+	if(desUpperarmRollAngle){
+	  if(desElbowAngle){
+	    if(desForearmRollAngle){
+	      if(desWristPitchAngle){
+		if(desWristRollAngle){
+		  if(desGripperForceCmd){
+		    if(desGripperGapCmd){
+		      eq(p.turretAngle,desTurretAngle);
+		      eq(p.shoulderLiftAngle,desShoulderLiftAngle);
+		      eq(p.upperarmRollAngle,desUpperarmRollAngle);
+		      eq(p.elbowAngle,desElbowAngle);
+		      eq(p.forearmRollAngle,desForearmRollAngle);
+		      eq(p.wristPitchAngle,desWristPitchAngle);
+		      eq(p.wristRollAngle,desWristRollAngle);
+		      eq(p.gripperForceCmd,desGripperForceCmd);
+		      eq(p.gripperGapCmd,desGripperGapCmd);
+
+		      //checking desired values
+		      addEq(turretAngle, [-.15 , .15], desTurretAngle);
+		      addEq(shoulderLiftAngle, [-.15 , .15], desShoulderLiftAngle);
+		      addEq(upperarmRollAngle,  [-.15 , .15], desUpperarmRollAngle);
+		      addEq(elbowAngle,  [-.15 , .15], desElbowAngle);
+		      addEq(forearmRollAngle,  [-.15 , .15], desForearmRollAngle);
+		      addEq(wristPitchAngle, [-.15 , .15], desWristPitchAngle);
+		      addEq(wristRollAngle,  [-.15 , .15], desWristRollAngle);
+		      addEq(gripperForceCmd,  [-25 , 25], desGripperForceCmd);
+		      addEq(gripperGapCmd,  [-.015 , .015], desGripperGapCmd);
+		    }
+		  }
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  }
 }

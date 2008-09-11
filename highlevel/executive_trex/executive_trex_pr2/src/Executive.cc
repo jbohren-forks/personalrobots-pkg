@@ -159,7 +159,7 @@ int main(int argc, char **argv)
   try{
     TREX::Agent::instance()->run();
   }
-  catch(const char* str){
+  catch(const char * str){
     std::cout << str << std::endl;
   }
   catch(...){

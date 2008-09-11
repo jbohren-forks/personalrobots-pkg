@@ -7,10 +7,13 @@
 #include "ROSNode.hh"
 #include "Logger.hh"
 
-namespace TREX {
+namespace TREX { 				     
 
-  ROSAdapter::ROSAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-    : Adapter(agentName, configData), m_initialized(false){
+  ROSAdapter::ROSAdapter(const LabelStr& agentName, const TiXmlElement& configData, TICK lookAhead)
+    : Adapter(agentName, configData, lookAhead, 0), m_initialized(false),
+      timelineName(extractData(configData, "timelineName").toString()),
+      timelineType(extractData(configData, "timelineType").toString()), 
+      stateTopic(extractData(configData, "stateTopic").toString()){
     m_node = ROSNode::request();
   }
 
@@ -18,13 +21,16 @@ namespace TREX {
     TREX::Adapter::handleInit(initialTick, serversByTimeline, observer);
 
     registerPublishers();
+
     registerSubscribers();
 
     // Wait till we get a message before starting the agent
     while(!isInitialized() && m_node->ok()){
-      debugMsg("ROSAdapter:Create", "Waiting...");
+      debugMsg("ROS:Create", "Waiting to connect for " << timelineName);
       sleep(1);
     }
+
+    debugMsg("ROS:Create", "Connection established for " << timelineName);
   }
 
   ROSAdapter::~ROSAdapter() {
@@ -32,17 +38,13 @@ namespace TREX {
   }
 
   bool ROSAdapter::synchronize(){
-    debugMsg("ROSAdapter:synchronize", nameString() << "Checking..");
-
-    std::vector<Observation*> obsBuffer;
+    debugMsg("ROS:synchronize", nameString() << "Checking..");
 
     // Derived class will populate actual observations
-    m_node->lock();
-    getObservations(obsBuffer);
-    m_node->unlock();
+    Observation* obs = NULL;
+    obs = getObservation();
 
-    for(unsigned int i = 0; i<obsBuffer.size(); i++){
-      Observation* obs = obsBuffer[i];
+    if(obs != NULL){
       sendNotify(*obs);
       delete obs;
     }
@@ -53,14 +55,18 @@ namespace TREX {
   void ROSAdapter::handleNextTick(){}
 
   void ROSAdapter::handleCallback(){
-    debugMsg("ROSAdapter:handleCallback", nameString() << "Update received");
-    m_node->lock();
     m_initialized = true;
-    m_node->unlock();
   }
-
 
   bool ROSAdapter::isInitialized() const {
     return m_initialized;
+  }
+
+  void ROSAdapter::handleRequest(const TokenId& goal){
+    dispatchRequest(goal, true);
+  }
+
+  void ROSAdapter::handleRecall(const TokenId& goal){
+    dispatchRequest(goal, false);
   }
 }

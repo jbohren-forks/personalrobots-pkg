@@ -28,7 +28,9 @@ set(TREX_FILES src/Executive.cc
 	       src/CalcDistanceConstraint.cc 
 	       src/Components.cc
 	       src/BaseStateAdapter.cc
-	       src/BaseControllerAdapter.cc)
+	       src/BaseControllerAdapter.cc
+	       src/ArmStateAdapter.cc
+	       src/ArmControllerAdapter.cc)
 
 rospack_add_executable(build/trex_debug ${TREX_FILES})
 target_link_libraries(build/trex_debug Utils_g TREX_g)
