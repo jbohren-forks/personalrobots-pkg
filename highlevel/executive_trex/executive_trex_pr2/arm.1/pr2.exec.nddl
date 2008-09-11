@@ -1,0 +1,48 @@
+#include "exec.init.nddl"
+
+rejectable(moveLeftArm.Inactive leftArmGoal_0);
+leftArmGoal_0.desTurretAngle = 1.0;
+leftArmGoal_0.desShoulderLiftAngle = 0.0;
+leftArmGoal_0.desUpperarmRollAngle = 0.0;
+leftArmGoal_0.desElbowAngle = 0.0;
+leftArmGoal_0.desForearmRollAngle = 0.0;
+leftArmGoal_0.desWristPitchAngle = 0.0;
+leftArmGoal_0.desWristRollAngle = 0.0;
+leftArmGoal_0.desGripperForceCmd = 0.0;//OPEN_GRIPPER_FORCE;
+leftArmGoal_0.desGripperGapCmd = 0.0;//OPEN_GRIPPER_FORCE;
+
+rejectable(moveRightArm.Inactive rightArmGoal_0);
+rightArmGoal_0.desTurretAngle = -1.0;
+rightArmGoal_0.desShoulderLiftAngle = 0.0;
+rightArmGoal_0.desUpperarmRollAngle = 0.0;
+rightArmGoal_0.desElbowAngle = 0.0;
+rightArmGoal_0.desForearmRollAngle = 0.0;
+rightArmGoal_0.desWristPitchAngle = 0.0;
+rightArmGoal_0.desWristRollAngle = 0.0;
+rightArmGoal_0.desGripperForceCmd = 0.0; //OPEN_GRIPPER_FORCE;
+rightArmGoal_0.desGripperGapCmd = 0.0; //OPEN_GRIPPER_FORCE;
+
+rejectable(moveLeftArm.Inactive leftArmGoal_1);
+leftArmGoal_1.desTurretAngle = 0.0;
+leftArmGoal_1.desShoulderLiftAngle = 0.0;
+leftArmGoal_1.desUpperarmRollAngle = 0.0;
+leftArmGoal_1.desElbowAngle = 0.0;
+leftArmGoal_1.desForearmRollAngle = 0.0;
+leftArmGoal_1.desWristPitchAngle = 0.0;
+leftArmGoal_1.desWristRollAngle = 0.0;
+leftArmGoal_1.desGripperForceCmd = 0.0;//OPEN_GRIPPER_FORCE;
+leftArmGoal_1.desGripperGapCmd = 0.0;//OPEN_GRIPPER_FORCE;
+
+rejectable(moveRightArm.Inactive rightArmGoal_1);
+rightArmGoal_1.desTurretAngle = 0.0;
+rightArmGoal_1.desShoulderLiftAngle = 0.0;
+rightArmGoal_1.desUpperarmRollAngle = 0.0;
+rightArmGoal_1.desElbowAngle = 0.0;
+rightArmGoal_1.desForearmRollAngle = 0.0;
+rightArmGoal_1.desWristPitchAngle = 0.0;
+rightArmGoal_1.desWristRollAngle = 0.0;
+rightArmGoal_1.desGripperForceCmd = 0.0; //OPEN_GRIPPER_FORCE;
+rightArmGoal_1.desGripperGapCmd = 0.0; //OPEN_GRIPPER_FORCE;
+
+leftArmGoal_0 before leftArmGoal_1;
+rightArmGoal_0 before rightArmGoal_1;
