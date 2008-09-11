@@ -125,7 +125,7 @@ namespace gazebo {
       std::cout << " initializing tile laser scanner\n" << std::endl;
       //Typical scan of 100 degrees yields the following amplitudes 
       //tlcn->setProfile(controller::LaserScannerController::SINEWAVE, 20, 0.872, 100, 0.3475);
-      tlcn->setProfile(controller::LaserScannerController::SAWTOOTH, 20, 0.872, 100, 0.3475);
+      //tlcn->setProfile(controller::LaserScannerController::SAWTOOTH, 20, 0.872, 100, 0.3475); //FIXME: sawtooth disappeared in r4180!!
     }
 
   }
