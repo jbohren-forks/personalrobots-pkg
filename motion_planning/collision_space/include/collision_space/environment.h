@@ -45,14 +45,20 @@
 
 /** @htmlinclude ../../manifest.html
 
+    @mainpage
+    
     A class describing an environment for a kinematic robot. This is
     the base (abstract) definition. Different implementations are
     possible. The class is aware of a certain set of fixed
     (addStatic*) obstacles that never change, a set of obstacles that
     can change (removed by clearObstacles()) and a set of kinematic
     robots. The class provides functionality for checking whether a
-    given robot is in collision. */
+    given robot is in collision. 
 
+    
+ */
+
+/** Main namespace */
 namespace collision_space
 {
     

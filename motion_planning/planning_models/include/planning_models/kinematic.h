@@ -47,8 +47,11 @@
 
 /** @htmlinclude ../../manifest.html
 
+    @mainpage
+    
     A class describing a kinematic robot model loaded from URDF */
 
+/** Main namespace */
 namespace planning_models
 {
     

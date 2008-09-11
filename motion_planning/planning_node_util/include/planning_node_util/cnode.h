@@ -34,51 +34,56 @@
 
 /** \author Ioan Sucan */
 
-/**
-
-@mainpage
-
-@htmlinclude ../../manifest.html
-
-@b NodeCollisionModel is a class which in addition to being aware of a robot model,
-is also aware of a collision space.
-
-<hr>
-
-@section topic ROS topics
-
-Subscribes to (name/type):
-- @b world_3d_map/PointCloudFloat32 : point cloud with data describing the 3D environment
-
-Additional subscriptions due to inheritance from NodeRobotModel:
-- @b localizedpose/RobotBase2DOdom : localized position of the robot base
-
-Publishes to (name/type):
-- None
-
-<hr>
-
-@section services ROS services
-
-Uses (name/type):
-- None
-
-Provides (name/type):
-- None
-
-<hr>
-
-@section parameters ROS parameters
-- None
-
-**/
-
 #include <planning_node_util/knode.h>
 #include <std_msgs/PointCloudFloat32.h>
 #include <collision_space/environmentODE.h>
 
+/** Main namespace */
 namespace planning_node_util
 {
+    
+    /**
+       
+       @b NodeCollisionModel is a class which in addition to being aware of a robot model,
+       is also aware of a collision space.
+       
+       <hr>
+       
+       @section topic ROS topics
+       
+       Subscribes to (name/type):
+       - @b world_3d_map/PointCloudFloat32 : point cloud with data describing the 3D environment
+       
+       Additional subscriptions due to inheritance from NodeRobotModel:
+       - @b localizedpose/RobotBase2DOdom : localized position of the robot base
+       
+       Publishes to (name/type):
+       - None
+       
+       <hr>
+       
+       @section services ROS services
+       
+       Uses (name/type):
+       - None
+       
+       Provides (name/type):
+       - None
+       
+       <hr>
+       
+       @section notes Notes
+       
+       This class uses the following special groups (from the URDF document)
+       
+       - "collision_check" with the flag "collision": if present, this is used
+       to define the links of the robot that are to be checked for
+       collision. If not present, NO COLLISION CHECKING IS PERFORMED!
+       
+       - any group name with the flag "self_collision": checks the links in
+       each group for collision against every other link in the same group.
+       
+    **/
     
     class NodeCollisionModel : public NodeRobotModel
     {

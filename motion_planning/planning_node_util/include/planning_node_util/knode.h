@@ -40,35 +40,8 @@
 
 @htmlinclude ../../manifest.html
 
-@b NodeRobotModel is a class that is also of a given robot model and
-uses a ROS node to retrieve the necessary data.
+*/
 
-<hr>
-
-@section topic ROS topics
-
-Subscribes to (name/type):
-- @b localizedpose/RobotBase2DOdom : localized position of the robot base
-
-Publishes to (name/type):
-- None
-
-<hr>
-
-@section services ROS services
-
-Uses (name/type):
-- None
-
-Provides (name/type):
-- None
-
-<hr>
-
-@section parameters ROS parameters
-- None
-
-**/
 
 #include <ros/node.h>
 #include <ros/time.h>
@@ -80,9 +53,36 @@ Provides (name/type):
 
 #include <mechanism_control/MechanismState.h>
 
+/** Main namespace */
 namespace planning_node_util
 {
-    
+    /**
+       @b NodeRobotModel is a class that is also of a given robot model and
+       uses a ROS node to retrieve the necessary data.
+       
+       <hr>
+       
+       @section topic ROS topics
+       
+       Subscribes to (name/type):
+       - @b localizedpose/RobotBase2DOdom : localized position of the robot base
+       
+       Publishes to (name/type):
+       - None
+       
+       <hr>
+       
+       @section services ROS services
+       
+       Uses (name/type):
+       - None
+       
+       Provides (name/type):
+       - None
+       
+       <hr>
+       
+    **/
     class NodeRobotModel
     {
 
