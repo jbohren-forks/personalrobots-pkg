@@ -4,6 +4,7 @@
 #include <sys/time.h>
 #include <iostream>
 #include "tf/cache.h"
+#include "tf/tf.h"
 
 using namespace std;
 
@@ -25,6 +26,8 @@ int main(void)
   std::cout << sizeof(btScalar)<<std::endl;
 
   tf::TimeCache myCache;
+
+  tf::Transformer myTR;
     
 return 0;
 };

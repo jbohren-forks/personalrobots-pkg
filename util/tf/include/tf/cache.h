@@ -12,6 +12,14 @@
 
 namespace tf
 {
+  
+/** \brief Storage for transforms and their parent */
+class  TransformStorage : public Stamped<btTransform>
+{
+public:
+  int parent_frame_id;
+};
+
 
 /** \brief A class to keep a sorted linked list in time
  * This builds and maintains a list of timestamped
@@ -36,12 +44,12 @@ class TimeCache
 
   void clearCache(void);
   
-  int64_t getData(uint64_t time, Stamped<btTransform> & data_out); //returns distance in time to nearest value
+  int64_t getData(uint64_t time, TransformStorage & data_out); //returns distance in time to nearest value
 
-  void insertData(const Stamped<btTransform>& new_data)
+  void insertData(const TransformStorage& new_data)
     {
       storage_lock_.lock();
-      std::list<Stamped<btTransform> >::iterator it = storage_.begin();
+      std::list<TransformStorage >::iterator it = storage_.begin();
       while(it != storage_.end())
       {
         if (it->stamp_ <= new_data.stamp_)
@@ -55,11 +63,13 @@ class TimeCache
     };
 
 
-  /** \todo implement this */  
-  void interpolate(const Stamped<btTransform>& one, const Stamped<btTransform>& two, uint64_t time, Stamped<btTransform>& output);  //specific implementation for each T
+  void interpolate(const TransformStorage& one, const TransformStorage& two, uint64_t time, TransformStorage& output);  //specific implementation for each T
+
+
+  void clearList() { storage_lock_.lock(); storage_.clear(); storage_lock_.unlock();};
 
  private:
-  std::list<Stamped<btTransform> > storage_; 
+  std::list<TransformStorage > storage_; 
 
   bool interpolating_;
   uint64_t max_storage_time_;
@@ -69,7 +79,7 @@ class TimeCache
 
   /// A helper function for getData 
   //Assumes storage is already locked for it
-  uint8_t findClosest(Stamped<btTransform>& one, Stamped<btTransform>& two, uint64_t target_time, int64_t &time_diff);
+  uint8_t findClosest(TransformStorage& one, TransformStorage& two, uint64_t target_time, int64_t &time_diff);
 
   void pruneList()
     {
@@ -85,16 +95,13 @@ class TimeCache
     };
 
   
-  void clearList() { storage_lock_.lock(); storage_.clear(); storage_lock_.unlock();};
 
 };
 
-  int64_t TimeCache::getData(uint64_t time, Stamped<btTransform> & data_out) //returns distance in time to nearest value
+  int64_t TimeCache::getData(uint64_t time, TransformStorage & data_out) //returns distance in time to nearest value
   //bool Pose3DCache::getValue(Pose3DStorage& buff, unsigned long long time, long long  &time_diff)
   {
-    btTransform a,b;
-    Stamped<btTransform> p_temp_1(a,0,"UNUSED");
-    Stamped<btTransform> p_temp_2(b,0,"UNUSED");
+    TransformStorage p_temp_1, p_temp_2;
 
     int num_nodes;
     int64_t time_diff;
@@ -133,7 +140,7 @@ class TimeCache
   };
 
 
-uint8_t TimeCache::findClosest(Stamped<btTransform>& one, Stamped<btTransform>& two, uint64_t target_time, int64_t &time_diff)
+uint8_t TimeCache::findClosest(TransformStorage& one, TransformStorage& two, uint64_t target_time, int64_t &time_diff)
 {
   //No values stored
   if (storage_.empty())
@@ -159,7 +166,7 @@ uint8_t TimeCache::findClosest(Stamped<btTransform>& one, Stamped<btTransform>& 
 
   //At least 2 values stored
   //Find the first value less than the target value
-  std::list<Stamped<btTransform> >::iterator it = storage_.begin();
+  std::list<TransformStorage >::iterator it = storage_.begin();
   while(it != storage_.end())
   {
     if (it->stamp_ <= target_time)
@@ -212,7 +219,7 @@ uint8_t TimeCache::findClosest(Stamped<btTransform>& one, Stamped<btTransform>& 
 
 };
 
-void TimeCache::interpolate(const Stamped<btTransform>& one, const Stamped<btTransform>& two, uint64_t time, Stamped<btTransform>& output)
+void TimeCache::interpolate(const TransformStorage& one, const TransformStorage& two, uint64_t time, TransformStorage& output)
 { 
   //Calculate the ratio
   btScalar ratio = ((double) ((int64_t)time - (int64_t)one.stamp_)) / ((double) ((int64_t)two.stamp_ - (int64_t)one.stamp_));

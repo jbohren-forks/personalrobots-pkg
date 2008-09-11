@@ -34,30 +34,35 @@
 #define LIBTF_HH
 #include <iostream>
 #include <iomanip>
-#include <newmat10/newmat.h>
-#include <newmat10/newmatio.h>
 #include <cmath>
 #include <vector>
 #include <sstream>
 #include <map>
 
-#include <libTF/exception.h>
-#include "libTF/Pose3DCache.h"
+#include <tf/exceptions.h>
+#include "tf/cache.h"
 #include <rosthread/mutex.h>
 
 namespace tf
 {
+
+
+class TransformWithID
+{
+public:
+  unsigned int frame_id;
+  btTransform transform;
+  TransformWithID(unsigned int frame, btTransform trans):frame_id(frame), transform(trans) {};
+} ;
 
   /** \brief An internal representation of transform chains
    * 
    * This struct is how the list of transforms are stored before being passed to computeTransformFromList. */
   typedef struct 
   {
-    std::vector<unsigned int> inverseTransforms;
-    std::vector<unsigned int> forwardTransforms;
+    std::vector<TransformWithID> inverseTransforms;
+    std::vector<TransformWithID> forwardTransforms;
   } TransformLists;
-
-
 
 /** \brief A Class which provides coordinate transforms between any two frames in a system. 
  * 
@@ -91,15 +96,16 @@ public:
    * \param cache_time How long to keep a history of transforms in nanoseconds
    * \param max_extrapolation_distance How far to extrapolate before throwing an exception
    */
-  TransformReference(bool interpolating = true, 
-                     ULLtime cache_time = DEFAULT_CACHE_TIME,
-                     unsigned long long max_extrapolation_distance = DEFAULT_MAX_EXTRAPOLATION_DISTANCE);
-  virtual ~TransformReference(void);
-
-  void setTransform(const Stamped<Transform>& transform, const std::string& parent_id);
+  Transformer(bool interpolating = true, 
+              uint64_t cache_time_ = DEFAULT_CACHE_TIME,
+              unsigned long long max_extrapolation_distance_ = DEFAULT_MAX_EXTRAPOLATION_DISTANCE);
+  virtual ~Transformer(void);
 
   /** \brief Clear all data */
   void clear();
+
+  void setTransform(const Stamped<btTransform>& transform, const std::string& parent_id);
+
 
 
   /*********** Accessors *************/
@@ -113,11 +119,11 @@ public:
    * TransformReference::MaxDepthException
    */
   void lookupTransform(const std::string& target_frame, const std::string& source_frame, 
-                       const uint64_t& time, Stamped<T>& transform);
+                       uint64_t time, Stamped<btTransform>& transform);
   //time traveling version
-  void lookupTransform(const std::string& target_frame, const uint64_t& target_time, 
-                       const std::string& source_frame, const uint64_t& _source_time, 
-                       const std::string& fixed_frame, Stamped<T>& transform);  
+  void lookupTransform(const std::string& target_frame, uint64_t target_time, 
+                       const std::string& source_frame, uint64_t _source_time, 
+                       const std::string& fixed_frame, Stamped<btTransform>& transform);  
 
 
   template<typename T>
@@ -131,7 +137,7 @@ public:
    * Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
    * TransformReference::MaxDepthException
    */
-  std::string chainAsString(const std::string & target_frame, const std::string & source_frame);
+  std::string chainAsString(const std::string & target_frame, const std::string & source_frame, uint64_t time);
 
   /** \brief A way to see what frames have been cached 
    * Useful for debugging 
@@ -151,37 +157,12 @@ protected:
    * 
    */
   
-  class RefFrame: public Pose3DCache 
-    {
-    public:
-
-      /** Constructor */
-      RefFrame(bool interpolating = true,  
-               unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME,
-               unsigned long long  max_extrapolation_time = DEFAULT_MAX_EXTRAPOLATION_TIME); 
-      
-      /** \brief Get the parent nodeID */
-      inline unsigned int getParent(){return parent_;};
-      
-      /** \brief Set the parent node 
-       * return: false => change of parent, cleared history
-       * return: true => no change of parent 
-       * \param parentID The frameID of the parent
-       */
-      bool setParent(unsigned int parent_id);
-
-    private:
-      
-      /** Internal storage of the parent */
-      unsigned int parent_;
-
-    };
 
   /******************** Internal Storage ****************/
 
   /** \brief The pointers to potential frames that the tree can be made of.
    * The frames will be dynamically allocated at run time when set the first time. */
-  std::vector< RefFrame*> frames_;
+  std::vector< TimeCache*> frames_;
 
   /** \brief A mutex to protect testing and allocating new frames */
   ros::thread::mutex frame_mutex_;
@@ -190,7 +171,7 @@ protected:
   std::vector<std::string> frameIDs_reverse;
   
   /// How long to cache transform history
-   cache_time;
+  uint64_t cache_time;
 
   /// whether or not to interpolate or extrapolate
   bool interpolating;
@@ -198,19 +179,8 @@ protected:
   /// whether or not to allow extrapolation
   unsigned long long max_extrapolation_distance;
 
- public:
 
- protected: 
   /************************* Internal Functions ****************************/
-  
-  /** \brief Add a new frame and parent
-   * The frame transformatiosn are left unspecified.
-   * \param frameid The id of a frame to add
-   * \param parentid The id of the parent frame to the one being added
-   *
-   *  Possible exceptions are: TransformReference::InvaildFrame
-   */
-  void addFrame(unsigned int frameid, unsigned int parentid);
 
   /** \brief An accessor to get a frame, which will throw an exception if the frame is no there. 
    * \param frame_number The frameID of the desired Reference Frame
@@ -218,9 +188,9 @@ protected:
    * This is an internal function which will get the pointer to the frame associated with the frame id
    * Possible Exception: TransformReference::LookupException
    */
-  RefFrame* getFrame(unsigned int frame_number);
+  TimeCache* getFrame(unsigned int frame_number);
 
-  unsigned int lookup(const std::string& frameid_str){
+  unsigned int lookupFrameID(const std::string& frameid_str){
     unsigned int retval = 0;
     frame_mutex_.lock();
     std::map<std::string, unsigned int>::iterator it = frameIDs_.find(frameid_str);
@@ -228,7 +198,7 @@ protected:
     {
       retval = frames_.size();
       frameIDs_[frameid_str] = retval;
-      frames_.push_back( new RefFrame(interpolating, cache_time, max_extrapolation_distance));
+      frames_.push_back( new TimeCache(interpolating, cache_time, max_extrapolation_distance));
       frameIDs_reverse.push_back(frameid_str);
     }
     else
@@ -239,10 +209,10 @@ protected:
 
 
   /** Find the list of connected frames necessary to connect two different frames */
-  TransformLists  lookUpList(unsigned int target_frame, unsigned int source_frame);
+  TransformLists  lookupLists(unsigned int target_frame, unsigned int source_frame, uint64_t time);
   
   /** Compute the transform based on the list of frames */
-  NEWMAT::Matrix computeTransformFromList(const TransformLists & list, ULLtime time);
+  btTransform computeTransformFromList(const TransformLists & list, uint64_t time);
 
 };
 }

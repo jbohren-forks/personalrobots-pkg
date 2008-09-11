@@ -14,8 +14,10 @@ class Stamped{
   uint64_t stamp_;
   std::string frame_id_;
 
-  Stamped(const T& input, const uint64_t& timestamp, const std::string & frame_id){
-    data_ = input; stamp_ = timestamp, frame_id_ = frame_id; };
+  Stamped() :stamp_ (0),frame_id_ ("NO_ID"){}; //Default constructor used only for preallocation
+
+  Stamped(const T& input, const uint64_t& timestamp, const std::string & frame_id):
+    data_ (input), stamp_ ( timestamp ), frame_id_ (frame_id){ };
 
   void stripStamp(T & output) { output = data_;};
 };
