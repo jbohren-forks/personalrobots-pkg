@@ -1173,6 +1173,16 @@ namespace robot_desc {
 		    if (loadDoubleValues(node, 1, &joint->velocityLimit, "velocity"))
 			MARK_SET(node, joint, velocityLimit);
 		}
+		else if (node->ValueStr() == "safety_limit_min" && !free)
+		{
+		    if (loadDoubleValues(node, 1, joint->safetyLength + 0, "safety_length"))
+			MARK_SET(node, joint, safetyLengthMin);
+		}
+		else if (node->ValueStr() == "safety_limit_max" && !free)
+		{
+		    if (loadDoubleValues(node, 1, joint->safetyLength + 1, "safety_length"))
+			MARK_SET(node, joint, safetyLengthMax);
+		}
 		else if (node->ValueStr() == "calibration")
 		{
 		    const char *vals = node->ToElement()->Attribute("values");

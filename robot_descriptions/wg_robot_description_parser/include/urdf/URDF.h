@@ -241,6 +241,7 @@ namespace robot_desc
 		    axis[0] = axis[1] = axis[2] = 0.0;
 		    anchor[0] = anchor[1] = anchor[2] = 0.0;
 		    limit[0] = limit[1] = 0.0;
+		    safetyLength[0] = safetyLength[1] = 0.0;
 		    velocityLimit = 0.0;
 		    effortLimit = 0.0;
 		    type = UNKNOWN;
@@ -249,6 +250,8 @@ namespace robot_desc
 		    isSet["axis"] = false;
 		    isSet["anchor"] = false;
 		    isSet["limit"] = false;
+		    isSet["safetyLengthMin"] = false;
+		    isSet["safetyLengthMax"] = false;
 		    isSet["effortLimit"] = false;
 		    isSet["velocityLimit"] = false;
 		    isSet["calibration"] = false;
@@ -265,9 +268,10 @@ namespace robot_desc
 			UNKNOWN, FIXED, REVOLUTE, PRISMATIC, PLANAR, FLOATING
 		    }                       type;
 		std::string                 name;	
-		double                      axis[3];       // vector describing the axis of rotation: (x,y,z)
-		double                      anchor[3];     // point about which the axis defines the rotation: (x,y,z)
-		double                      limit[2];      // the joint limits: (min, max)
+		double                      axis[3];         // vector describing the axis of rotation: (x,y,z)
+		double                      anchor[3];       // point about which the axis defines the rotation: (x,y,z)
+		double                      limit[2];        // the joint limits: (min, max)
+		double                      safetyLength[2]; // the joint limits: (min, max)
 		double                      effortLimit;
 		double                      velocityLimit;
 		std::string                 calibration;
