@@ -108,6 +108,9 @@ public:
 	case 1:
 	    oneObstacle();
 	    break;
+	case 2:
+	    verticalObstacle();
+	    break;
 	case 3:
 	    planeX();
 	    break;
@@ -128,6 +131,33 @@ private:
 	m_toPublish.pts[0].x = 0.6;
 	m_toPublish.pts[0].y = 0.35;
 	m_toPublish.pts[0].z = 0.75;
+    }
+    
+    void verticalObstacle(void)
+    {
+	const int N = 30;
+	const int M = 3;
+	const int L = 3;
+	
+	m_toPublish.set_pts_size(N * M * L);
+
+	for (int k = 0 ; k < L ; ++k)
+	{
+	    double x = 0.30 + 0.02 * k;
+	    
+	    for (int j = 0 ; j < M ; ++j)
+	    {
+		double y = -0.30 - 0.02 * j;
+		
+		for (int i = 0 ; i < N ; ++i)
+		{
+		    double z = 0.1 + i * 0.05;
+		    m_toPublish.pts[i + j*N + k*N*M].x = x;
+		    m_toPublish.pts[i + j*N + k*N*M].y = y;
+		    m_toPublish.pts[i + j*N + k*N*M].z = z;
+		}
+	    }
+	}	
     }
     
     void planeX(void)

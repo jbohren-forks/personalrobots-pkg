@@ -44,7 +44,7 @@
 #include <robot_msgs/DisplayKinematicPath.h>
 #include <robot_srvs/ValidateKinematicPath.h>
 
-#include <pr2_controllers/SetJointPathCmd.h>
+#include <pr2_controllers/SetJointTarget.h>
 
 #include <cassert>
 
@@ -86,10 +86,16 @@ public:
 	req.goal_state.set_vals_size(3);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
 	    req.goal_state.vals[i] = m_basePos[i];
-
+	/*
 	req.goal_state.vals[0] += 7.5;
 	req.goal_state.vals[1] += 0.5;
 	req.goal_state.vals[2] = -M_PI/2.0;
+	*/
+
+	req.goal_state.vals[0] += 5.5;
+	req.goal_state.vals[1] += 0.5;
+	req.goal_state.vals[2] = -M_PI/2.0;
+
 
 	req.allowed_time = 15.0;
 	
@@ -139,10 +145,10 @@ public:
 
 	initialState(req.start_state);
 	
-	req.goal_state.set_vals_size(7);
+	req.goal_state.set_vals_size(4);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
 	    req.goal_state.vals[i] = 0.0;
-        req.goal_state.vals[0] = -1.0;    
+        req.goal_state.vals[0] = -1.3;    
 
 	req.allowed_time = 30.0;
 	
@@ -185,21 +191,6 @@ public:
 	performCall(req);
     }
     
-    void performCall(robot_srvs::KinematicPlanState::request &req)
-    {	
-	robot_srvs::KinematicPlanState::response res;
-	
-	if (ros::service::call("plan_kinematic_path_state", req, res))
-	{
-	    printPath(res.path, res.distance);
-	    sendDisplay(res.path, req.params.model_id);
-	    verifyPath(req.start_state, req.constraints, res.path, req.params.model_id);
-	    sendCommand(res.path, req.params.model_id);
-	}
-	else
-	    fprintf(stderr, "Service 'plan_kinematic_path_state' failed\n");	 
-    }
-    
     void runTestLeftEEf(void)
     {
 	robot_srvs::KinematicPlanLinkPosition::request req;
@@ -208,7 +199,7 @@ public:
 	req.params.distance_metric = "L2Square";
 	req.params.planner_id = "RRT";
 	req.interpolate = 1;
-	req.times = 4;
+	req.times = 3;
 
 	initialState(req.start_state);
 
@@ -235,7 +226,7 @@ public:
 	req.constraints.pose[0].pose.position.z = 0.74;
 	req.constraints.pose[0].position_distance = 0.01;
 	*/
-	req.allowed_time = 0.1;
+	req.allowed_time = 0.3;
 	
 	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
@@ -258,10 +249,25 @@ public:
 	    fprintf(stderr, "Service 'plan_kinematic_path_position' failed\n");	 
     }
 
+    void performCall(robot_srvs::KinematicPlanState::request &req)
+    {	
+	robot_srvs::KinematicPlanState::response res;
+	
+	if (ros::service::call("plan_kinematic_path_state", req, res))
+	{
+	    printPath(res.path, res.distance);
+	    sendDisplay(res.path, req.params.model_id);
+	    verifyPath(req.start_state, req.constraints, res.path, req.params.model_id);
+	    sendCommand(res.path, req.params.model_id);
+	}
+	else
+	    fprintf(stderr, "Service 'plan_kinematic_path_state' failed\n");	 
+    }
+    
     void printPath(robot_msgs::KinematicPath &path, const double distance)
     {	
 	unsigned int nstates = path.get_states_size();
-	printf("Obtained ssolution path with %u states, distance to goal = %f\n", nstates, distance);
+	printf("Obtained solution path with %u states, distance to goal = %f\n", nstates, distance);
 	
 	for (unsigned int i = 0 ; i < nstates ; ++i)
 	{
@@ -304,12 +310,13 @@ public:
     void sendCommand(robot_msgs::KinematicPath &path, const std::string &model)
     {
 	// create the service request 
-
+	//	return;
+	
 	const double margin_fraction = 0.1;
 	
 	planning_models::KinematicModel::StateParams *state = m_kmodel->newStateParams();
-	pr2_controllers::SetJointPathCmd::request req;
-	req.set_path_size(path.get_states_size());
+	pr2_controllers::SetJointTarget::request req;
+	req.set_positions_size(path.get_states_size());
 	
 	
 	int groupID = m_kmodel->getGroupID(model);
@@ -327,20 +334,20 @@ public:
 	    
 	    state->setParams(path.states[i].vals, groupID);
 	    
-	    req.path[i].set_names_size(joints.size());
-	    req.path[i].set_positions_size(joints.size());
-	    req.path[i].set_margins_size(joints.size());
-	    req.path[i].timeout = 1.0;
+	    req.positions[i].set_names_size(joints.size());
+	    req.positions[i].set_positions_size(joints.size());
+	    req.positions[i].set_margins_size(joints.size());
+	    req.positions[i].timeout = 10.0;
 	    
 	    for (unsigned int j = 0 ; j < joints.size() ; ++j)
 	    {
-		req.path[i].names[j] = joints[j];
+		req.positions[i].names[j] = joints[j];
 		
-		state->copyParams(&(req.path[i].positions[j]), joints[j]);
+		state->copyParams(&(req.positions[i].positions[j]), joints[j]);
 		
 		int pos = state->getPos(joints[j]);
 		assert(pos >= 0);
-		req.path[i].margins[j] = margin_fraction * (m_kmodel->stateBounds[2 * pos + 1] - m_kmodel->stateBounds[2 * pos]);
+		req.positions[i].margins[j] = 0.25; // margin_fraction * (m_kmodel->stateBounds[2 * pos + 1] - m_kmodel->stateBounds[2 * pos]);
 	    }	    
 	}
 	
@@ -348,9 +355,9 @@ public:
 	
 	// perform the service call 
 	
-	pr2_controllers::SetJointPathCmd::response res;
+	pr2_controllers::SetJointTarget::response res;
 	
-	if (ros::service::call("left_arm_controller/set_target", req, res))
+	if (ros::service::call("/left_arm_controller/set_target", req, res))
 	{
 	    
 	}
