@@ -270,8 +270,11 @@ bool ArmPositionControllerNode::getJointPosCmd(pr2_controllers::GetJointPosCmd::
 
 bool ArmPositionControllerNode::setSingleTargetCmd(const pr2_controllers::JointPosCmd & cmd)
 {
+  std::cout<<"waypoint "<<std::flush;
+  for(unsigned int i=0;i<cmd.positions_size;++i)
+    std::cout<<cmd.positions[i]<<' ';
+  std::cout<<std::flush;
   c_->setJointPosCmd(cmd);
-  std::cout<<"waypoint"<<std::flush;
   int ticks=0;
   double interval=1e-2;
   const int max_ticks = int(cmd.timeout/interval);
