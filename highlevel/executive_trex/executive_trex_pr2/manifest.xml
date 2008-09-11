@@ -18,5 +18,6 @@
   <depend package="kinematic_planning" />
   <depend package="gazebo" />
   <depend package="gazebo_plugin" />
+  <depend package="world_3d_map" />
   <sysdepend os="ubuntu" version="8.04-hardy" package="jam"/>
 </package>
