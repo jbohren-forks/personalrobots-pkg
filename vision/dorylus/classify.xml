@@ -1,0 +1,14 @@
+<launch>
+  <include file="$(find sensor_cart)/sensors.xml"/>
+
+  <param name="videre/brightness" type="str" value="auto"/>
+  <param name="videre/gain" type="str" value="auto"/>
+  <param name="videre/exposure" type="str" value="auto"/>
+  <param name="videre/videre_param/companding" type="bool" value="true"/>
+
+  <node pkg="dc1394_cam_server" type="check_params" />
+  <node pkg="rosTF" type="frameServer"/>
+  <node pkg="spacetime_stereo" type="sts_node"/>
+  <node pkg="ogre_visualizer" type="visualizer_test" args="videre/cloud:=spacetime_stereo"/>
+  <node pkg="dorylus" type="dorylus_node" args="--run 4party_unlinked_A.dory"/>
+</launch>
