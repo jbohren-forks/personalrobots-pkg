@@ -6,7 +6,7 @@
     defined at Willow Garage.
     
   </description>
-  <author>Sachin Chitta, John Hsu, Ioan Sucan</author>
+  <author>Sachin Chitta, John Hsu</author>
   <license>BSD</license>
   
   <depend package="wg_robot_description_parser" />
