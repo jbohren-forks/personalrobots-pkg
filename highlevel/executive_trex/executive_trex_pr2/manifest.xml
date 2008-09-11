@@ -16,5 +16,7 @@
   <depend package="map_server" />
   <depend package="highlevel_controllers" />
   <depend package="kinematic_planning" />
+  <depend package="gazebo" />
+  <depend package="gazebo_plugin" />
   <sysdepend os="ubuntu" version="8.04-hardy" package="jam"/>
 </package>

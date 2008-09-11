@@ -1,0 +1,23 @@
+#include "exec.init.nddl"
+
+rejectable(moveLeftArm.Inactive leftArmGoal_0);
+leftArmGoal_0.desTurretAngle = 1.0;
+leftArmGoal_0.desShoulderLiftAngle = 0.0;
+leftArmGoal_0.desUpperarmRollAngle = 0.0;
+leftArmGoal_0.desElbowAngle = 0.0;
+leftArmGoal_0.desForearmRollAngle = 0.0;
+leftArmGoal_0.desWristPitchAngle = 0.0;
+leftArmGoal_0.desWristRollAngle = 0.0;
+leftArmGoal_0.desGripperForceCmd = 0.0;
+leftArmGoal_0.desGripperGapCmd = 0.0;
+
+rejectable(moveRightArm.Inactive rightArmGoal_0);
+rightArmGoal_0.desTurretAngle = -1.0;
+rightArmGoal_0.desShoulderLiftAngle = 0.0;
+rightArmGoal_0.desUpperarmRollAngle = 0.0;
+rightArmGoal_0.desElbowAngle = 0.0;
+rightArmGoal_0.desForearmRollAngle = 0.0;
+rightArmGoal_0.desWristPitchAngle = 0.0;
+rightArmGoal_0.desWristRollAngle = 0.0;
+rightArmGoal_0.desGripperForceCmd = 0.0;
+rightArmGoal_0.desGripperGapCmd = 0.0;
