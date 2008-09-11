@@ -185,7 +185,7 @@ bool MechanismControl::killController(const std::string &name)
 
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   : mc_(mc), mechanism_state_topic_("mechanism_state"), publisher_(mechanism_state_topic_, 1),
-    transform_array_publisher_("mechanism_transforms", 1)
+    transform_array_publisher_("TransformArray", 1)
 {
   assert(mc != NULL);
   assert(mechanism_state_topic_);
@@ -276,7 +276,8 @@ void MechanismControlNode::update()
       mc_->state_->link_states_[i].rel_frame_.getQuaternion(quat);
       rosTF::TransformQuaternion &out = transform_array_msg_.quaternions[i];
 
-      out.parent = mc_->model_.links_[i]->name_;
+      out.header.frame_id = mc_->model_.links_[i]->name_;
+      out.parent = mc_->model_.links_[i]->parent_name_;
       out.xt = pos.x;
       out.yt = pos.y;
       out.zt = pos.z;
