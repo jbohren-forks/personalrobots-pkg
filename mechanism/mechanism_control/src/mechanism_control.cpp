@@ -31,6 +31,7 @@
 #include "mechanism_control/mechanism_control.h"
 #include "generic_controllers/controller.h"
 #include "rosthread/member_thread.h"
+#include "rosTF/rosTF.h"
 
 using namespace mechanism;
 
@@ -92,11 +93,6 @@ void MechanismControl::update()
       garbage_[i] = NULL;
     }
   }
-}
-
-void MechanismControl::registerControllerType(const std::string& type, ControllerAllocator f)
-{
-  controller::ControllerFactory::instance().registerType(type, f);
 }
 
 void MechanismControl::getControllerNames(std::vector<std::string> &controllers)
@@ -188,7 +184,8 @@ bool MechanismControl::killController(const std::string &name)
 
 
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
-  : mc_(mc), mechanism_state_topic_("mechanism_state"), publisher_(mechanism_state_topic_, 1)
+  : mc_(mc), mechanism_state_topic_("mechanism_state"), publisher_(mechanism_state_topic_, 1),
+    transform_array_publisher_("mechanism_transforms", 1)
 {
   assert(mc != NULL);
   assert(mechanism_state_topic_);
@@ -219,6 +216,7 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
     return false;
   mechanism_state_.set_joint_states_size(mc_->model_.joints_.size());
   mechanism_state_.set_actuator_states_size(mc_->hw_->actuators_.size());
+  transform_array_msg_.set_quaternions_size(mc_->model_.links_.size());
   return true;
 }
 
@@ -266,6 +264,28 @@ void MechanismControlNode::update()
     mechanism_state_.time = mc_->hw_->current_time_;
 
     publisher_.publish(mechanism_state_);
+
+
+    // Frame transforms
+    assert(mc_->model_.links_.size() == transform_array_msg_.get_quaternions_size());
+    for (unsigned int i = 0; i < mc_->model_.links_.size(); ++i)
+    {
+      libTF::Position pos;
+      libTF::Quaternion quat;
+      mc_->state_->link_states_[i].rel_frame_.getPosition(pos);
+      mc_->state_->link_states_[i].rel_frame_.getQuaternion(quat);
+      rosTF::TransformQuaternion &out = transform_array_msg_.quaternions[i];
+
+      out.parent = mc_->model_.links_[i]->name_;
+      out.xt = pos.x;
+      out.yt = pos.y;
+      out.zt = pos.z;
+      out.w = quat.w;
+      out.xr = quat.x;
+      out.yr = quat.y;
+      out.zr = quat.z;
+    }
+    transform_array_publisher_.publish(transform_array_msg_);
   }
 }
 

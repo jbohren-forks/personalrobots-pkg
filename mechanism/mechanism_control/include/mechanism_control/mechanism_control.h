@@ -49,6 +49,7 @@
 #include "mechanism_control/SpawnController.h"
 #include "mechanism_control/KillController.h"
 #include "mechanism_control/MechanismState.h"
+#include "rosTF/TransformArray.h"
 
 
 typedef controller::Controller* (*ControllerAllocator)();
@@ -72,9 +73,6 @@ public:
   mechanism::Robot model_;
   mechanism::RobotState *state_;
   HardwareInterface *hw_;
-
-  // TODO: deprecated.  Replaced by ControllerFactory
-  void registerControllerType(const std::string& type, ControllerAllocator f);
 
 private:
   bool initialized_;
@@ -120,10 +118,14 @@ private:
 
   MechanismControl *mc_;
 
-  mechanism_control::MechanismState mechanism_state_;
   static const double STATE_PUBLISHING_PERIOD = 0.1;  // in seconds, higher rates are useless with the current speed of the simulator
+
+  mechanism_control::MechanismState mechanism_state_;
   const char* const mechanism_state_topic_;
   misc_utils::RealtimePublisher<mechanism_control::MechanismState> publisher_;
+
+  rosTF::TransformArray transform_array_msg_;
+  misc_utils::RealtimePublisher<rosTF::TransformArray> transform_array_publisher_;
 };
 
 #endif /* MECHANISM_CONTROL_H */
