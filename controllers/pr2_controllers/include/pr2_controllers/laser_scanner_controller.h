@@ -38,22 +38,25 @@
 
 #include <generic_controllers/controller.h>
 #include <generic_controllers/joint_position_controller.h>
+#include <generic_controllers/joint_velocity_controller.h>
 
 // Services
 #include <generic_controllers/SetCommand.h>
 #include <generic_controllers/GetCommand.h>
 #include <generic_controllers/SetProfile.h>
-
+#include <generic_controllers/SetPosition.h>
+#include <generic_controllers/GetPosition.h>
 namespace controller
 {
 
 class LaserScannerController : public Controller
 {
-public:
 
+public:
+  //Indicates whether we close the loop around position or velocity
   enum LaserControllerMode
   {
-    MANUAL,SAWTOOTH,SINEWAVE,DYNAMIC_SAWTOOTH,DYNAMIC_SINEWAVE,AUTO_LEVEL
+    VELOCITY,POSITION
   };
 
   /*!
@@ -98,100 +101,45 @@ public:
   virtual void update();
 
   /*!
-   * \brief Set automatic profile to sawtooth
-   *\param double period Period of signal
-   *\param double amplitude Peak to peak amplitude of signal
-   *\param int num_elements Number of points along one period of sawtooth wave
-   *\param double offset Offset of minimum point of signal to zero
-   *\param double current_time Used to determine start of cycle
+   * \brief Returns the time 
    */
-
-  void setSawtoothProfile(double period, double amplitude, int num_elements, double offset);
-
-  /*!
-   * \brief Set automatic profile to sawtooth, dynamically calculate desired position at each timestep
-   *\param double period Period of signal
-   *\param double amplitude Peak to peak amplitude of signal
-   *\param double offset Offset of minimum point of signal to zero
-   *\param double current_time Used to determine start of cycle
-   */
-  void setSawtoothProfile(double period, double amplitude, double offset);
-
-  /*!
-   * \brief Set automatic profile to sinewave
-   *\param double period Period of signal
-   *\param double amplitude Peak to peak amplitude of signal
-   *\param int num_elements Number of points along one period of sine wave
-   *\param double offset Offset of minimum point of signal to zero
-   *\param double current_time Used to determine start of cycle
-   */
-  void setSinewaveProfile(double period, double amplitude, int num_elements, double offset);
-
-  /*!
-   * \brief Set automatic profile to sinewave, dynamically calculate desired position at each timestep
-   *\param double period Period of signal
-   *\param double amplitude Peak to peak amplitude of signal
-   *\param double offset Offset of minimum point of signal to zero
-   *\param double current_time Used to determine start of cycle
-   */
-  void setSinewaveProfile(double period, double amplitude,double offset);
-
-  /*!
-   * \brief Starts the process of auto-leveling
-   */
-  void startAutoLevelSequence();
-
-  /*!
-   * \brief Returns a value indicating whether auto leveling has finished
-   */
-  bool checkAutoLevelStatus();
-
-  /*!
-   * \brief Returns whether auto level completed successfully
-   */
-  bool checkAutoLevelResult();
-
   double getTime();
-private:
-  /*!
+
+  double upper_turnaround_offset_; /*!<Distance from positive endstop where turnaround occurs>*/
+  double lower_turnaround_offset_;/*!<Distance from negative endstop where turnaround occurs>*/
+
+  double upper_deceleration_buffer_;/*!<Distance from positive turnaround where deceleration occurs>*/
+  double lower_deceleration_buffer_;/*!<Distance from negative turnaround where deceleration occurs>*/
+
+  bool passed_center_; /*!<Marker that indicates that we've recently moved past the center point>*/
+  double last_position_; /*!<Record last read position>*/
+  bool automatic_turnaround_; /*!<Do we automatically turn around at edges of workspace?>*/
+
+  void setTurnaroundPoints(void);
+
+  LaserControllerMode current_mode_; /*!<Indicates the current status of the controller>*/
+
+  private:
+
+  double upper_deceleration_zone_; /*!<Location near upper endstop where deceleration starts>*/
+  double upper_turnaround_location_;/*!<Location near upper endstop where turnaround actually occurs>*/
+  
+  double lower_deceleration_zone_;/*!<Location near lower endstop where deceleration starts>*/
+  double lower_turnaround_location_;/*!<Location near lower endstop where turnaround actually occurs>*/
+  
+   /*!
    * \brief Actually issue torque set command of the joint motor.
    */
   void setJointEffort(double torque);
 
-  /*!
-   * \brief Get dynamically calculated sinewave position based on time
-   *\param double time_from_start Time elapsed since beginning of current period
-   */
-  void setDynamicSinewave(double time_from_start);
-
-   /*!
-   * \brief Get dynamically calculated sawtooth position based on time
-   *\param double time_from_start Time elapsed since beginning of current period
-   */
-  void setDynamicSawtooth(double time_from_start);
-
-
   mechanism::JointState* joint_; /*!< Joint we're controlling>*/
-  JointPositionController joint_position_controller_; /*!< Internal PID controller>*/
+  JointPositionController joint_position_controller_; /*!< Internal PID controller for position>*/
+  JointVelocityController joint_velocity_controller_;/*!< Internal PID controller for velocity>*/
   double last_time_; /*!< Last time stamp of update> */
   double command_; /*!< Last commanded position> */
   mechanism::RobotState *robot_; /*!< Pointer to robot structure>*/
-  double* profile_locations_; /**<Contains locations for profile>*/
-  double* profile_dt_; /**<Contains timesteps for profile locations>*/
-  int profile_index_; /**<Track location in profile>*/
-  int profile_length_; /**<Number of points in one cycle>*/
-  double cycle_start_time_; //**<Start of the last cycle for profile>*/
-
-  double time_of_last_point_;/*!<Time of last setpoint>*/
-  double period_;/*!<Period for use in dynamic profile calculation>*/
-  double amplitude_;/*!<Amplitude for use in dynamic profile calculation>*/
-  double offset_;/*!<Offset for use in dynamic profile calculation>*/
-
-
-  LaserControllerMode current_mode_; /*!<Indicates the current status of the controller>*/
-  bool auto_level_result_; /*!<Indicates whether the auto_level_routine finished correct>*/
-
-};
+ 
+ };
 
 class LaserScannerControllerNode : public Controller
 {
@@ -213,23 +161,51 @@ public:
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-  // Services
+  // Services 
+   /*!
+   * \brief Send velocity command
+   */
+
   bool setCommand(generic_controllers::SetCommand::request &req,
                   generic_controllers::SetCommand::response &resp);
+ /*!
+   * \brief Send velocity command
+   */
 
   bool getCommand(generic_controllers::GetCommand::request &req,
                   generic_controllers::GetCommand::response &resp);
+ /*!
+   * \brief Send velocity command
+   */
+
+  bool setPosition(generic_controllers::SetPosition::request &req,
+                  generic_controllers::SetPosition::response &resp);
+ /*!
+   * \brief Send velocity command
+   */
+
+  bool getPosition(generic_controllers::GetPosition::request &req,
+                  generic_controllers::GetPosition::response &resp);
+ /*!
+   * \brief Send velocity command
+   */
 
   bool getActual(generic_controllers::GetActual::request &req,
                   generic_controllers::GetActual::response &resp);
+  /*!
+   * \brief Send velocity command
+   */
 
-  bool setProfileCall(generic_controllers::SetProfile::request &req,
+  bool setProfile(generic_controllers::SetProfile::request &req,
   generic_controllers::SetProfile::response &resp);
+  /*!
+   * \brief Send velocity command
+   */
+
+  bool setProfileCall(double upper_turn_around, double lower_turn_around, double upper_decel_buffer, double lower_decel_buffer);
+
 
   void setCommand(double command);
-
-  void setProfile(LaserScannerController::LaserControllerMode profile, double period, double amplitude, int num_elements=0, double offset=0.0);
-
   double getCommand();
 
 private:
