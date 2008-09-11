@@ -179,8 +179,8 @@ void planning_models::KinematicModel::PrismaticJoint::extractInformation(const r
     axis[0]  = urdfLink->joint->axis[0];
     axis[1]  = urdfLink->joint->axis[1];
     axis[2]  = urdfLink->joint->axis[2];
-    limit[0] = urdfLink->joint->limit[0];
-    limit[1] = urdfLink->joint->limit[1];
+    limit[0] = urdfLink->joint->limit[0] + urdfLink->joint->safetyLength[0];
+    limit[1] = urdfLink->joint->limit[1] - urdfLink->joint->safetyLength[1];
     
     robot->stateBounds.push_back(limit[0]);
     robot->stateBounds.push_back(limit[1]);
@@ -206,8 +206,8 @@ void planning_models::KinematicModel::RevoluteJoint::extractInformation(const ro
     // if the joint is continuous, we set the limit to [-Pi, Pi]
     if (urdfLink->joint->isSet["limit"])
     {
-	limit[0] = urdfLink->joint->limit[0];
-	limit[1] = urdfLink->joint->limit[1];
+	limit[0] = urdfLink->joint->limit[0] + urdfLink->joint->safetyLength[0];
+	limit[1] = urdfLink->joint->limit[1] - urdfLink->joint->safetyLength[1];
     }
     else
     {
