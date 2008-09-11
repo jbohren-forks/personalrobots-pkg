@@ -3,9 +3,11 @@
 
 import rostools
 rostools.update_path('mechanism_control')
+rostools.update_path('std_srvs')
 
 import rospy, sys
 from mechanism_control.srv import *
+import std_srvs.srv
 
 def list_controller_types():
     s = rospy.ServiceProxy('list_controller_types', ListControllerTypes)
@@ -36,4 +38,6 @@ def kill_controller(name):
     else:
         print "Error when killing", resp.ok
 
-shutdown = rospy.ServiceProxy('shutdown', Shutdown)
+
+shutdown = rospy.ServiceProxy('shutdown', std_srvs.srv.Empty)
+
