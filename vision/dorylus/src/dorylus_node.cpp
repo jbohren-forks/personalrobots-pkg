@@ -551,7 +551,7 @@ int main(int argc, char **argv) {
     //cout << dn.dd_.displayFeatures() << endl;
     cout << dn.dd_.status() << endl;
     dn.d_.loadDataset(&dn.dd_);
-    dn.train(100, 60*60*10, 209);
+    dn.train(50, 60*60*10, 1000);
     dn.d_.save(string(argv[2]));
 
 //     Dorylus d2;
