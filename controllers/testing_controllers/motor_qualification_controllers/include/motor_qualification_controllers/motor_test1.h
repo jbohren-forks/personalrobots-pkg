@@ -74,7 +74,7 @@ public:
    * \param time The current hardware time.
    * \param *robot The robot that is being controlled.
    */
-  void init(double duration, std::string fixture_name, double time, std::string name,mechanism::RobotState *robot);
+  void init(double duration, double torque, std::string fixture_name, double time, std::string name ,mechanism::RobotState *robot);
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   /*!
@@ -99,13 +99,14 @@ private:
   mechanism::JointState *fixture_joint_;            /**< Joint we're qualifying against. */
   mechanism::RobotState *robot_;                    /**< Pointer to robot structure. */
   double duration_;                                 /**< Duration of the test. */
+  double torque_;                                   /**< Torque applied during the test. */
   double initial_time_;                             /**< Start time of the test. */
   double test_joint_start_pos_;                     /**< Start pos of the test joint. */
   double fixture_joint_start_pos_;                  /**< Start pos of the fixture joint. */
   double test_joint_end_pos_;                       /**< End pos of the test joint. */
   double fixture_joint_end_pos_;                    /**< End pos of the fixture joint. */
   bool complete;
-  misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;dr
+  misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
   robot_msgs::DiagnosticMessage diagnostic_message_;
   
 };

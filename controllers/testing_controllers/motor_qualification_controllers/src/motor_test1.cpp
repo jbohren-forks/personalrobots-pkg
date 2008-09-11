@@ -45,6 +45,7 @@ MotorTest1::MotorTest1():
   joint_ = NULL;
   
   duration_=0;
+  torque_=0;
   initial_time_=0;
   fixture_joint_start_pos_= 0;
   test_joint_start_pos_= 0;
@@ -58,13 +59,14 @@ MotorTest1::~MotorTest1()
 {
 }
 
-void MotorTest1::init(double duration, std::string fixture_name, double time, std::string name ,mechanism::RobotState *robot)
+void MotorTest1::init(double duration, double torque, std::string fixture_name, double time, std::string name ,mechanism::RobotState *robot)
 {
   robot_ = robot;
   joint_ = robot->getJointState(name);
   fixture_joint_ =robot->getJointState(fixture_name);
 
   duration_=duration;
+  torque_=torque;
   initial_time_=time;
   fixture_joint_start_pos_=fixture_joint_->position_;
   test_joint_start_pos_=joint_->position_;
@@ -94,8 +96,9 @@ bool MotorTest1::initXml(mechanism::RobotState *robot, TiXmlElement *config)
   if (cd)
   {
     double duration = atof(cd->Attribute("duration"));
+    double torque = atof(cd->Attribute("torque"));
     std::string fixture_name = cd->Attribute("fixture_name");
-    init(duration, fixture_name, robot->hw_->current_time_,j->Attribute("name"), robot);
+    init(duration, torque, fixture_name, robot->hw_->current_time_,j->Attribute("name"), robot);
   }
   else
   {
@@ -116,7 +119,7 @@ void MotorTest1::update()
   
   if((time-initial_time_)<duration_)
   {
-    joint_->commanded_effort_ = 0.01;
+    joint_->commanded_effort_ = torque_;
   }
   else if((time-initial_time_)<2*duration_)
   {
@@ -139,7 +142,7 @@ void MotorTest1::analysis()
   double t_delta = test_joint_end_pos_-test_joint_start_pos_;
   diagnostic_message_.set_status_size(1);
   robot_msgs::DiagnosticStatus *status = diagnostic_message_.status;
-  status->name = "MotorTest1";
+  status->name = "MotorTest";
   if (f_delta==0 && t_delta==0)
   {
     //the motor isn't moving
@@ -175,7 +178,7 @@ void MotorTest1::analysis()
   {
     //test passed
     status->level = 0;
-    status->message = "OK: The motor passed test.";
+    status->message = "OK: Passed.";
    }
    publisher_.publish(diagnostic_message_);
   return;
@@ -200,8 +203,6 @@ void MotorTest1Node::update()
 
 bool MotorTest1Node::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  ros::node *node = ros::node::instance();
-
   std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
   if (topic == "")
   {
